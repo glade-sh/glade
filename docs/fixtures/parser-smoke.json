@@ -1,0 +1,21 @@
+{
+  "name": "parser-smoke",
+  "source": [
+    {
+      "path": "classes/Hello.cls",
+      "content": "public class Hello { public static void run() { System.debug('hello'); } }"
+    }
+  ],
+  "command": {
+    "kind": "parse",
+    "args": [
+      "classes/Hello.cls"
+    ]
+  },
+  "expected": {
+    "result": {
+      "files": 1,
+      "ok": true
+    }
+  }
+}
