@@ -16,6 +16,16 @@ func TestParseSimpleQuery(t *testing.T) {
 	}
 }
 
+func TestParseCountQuery(t *testing.T) {
+	query, err := Parse("SELECT COUNT() FROM Account")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !query.Count || len(query.Fields) != 1 || query.Fields[0] != "COUNT()" {
+		t.Fatalf("query = %#v", query)
+	}
+}
+
 func TestExecuteFiltersProjectsAndOrders(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Objects["Account"] = storage.ObjectState{
@@ -60,6 +70,48 @@ func TestExecuteFiltersProjectsAndOrders(t *testing.T) {
 	}
 	if _, ok := record.Fields["Active"]; ok {
 		t.Fatalf("unprojected field leaked: %#v", record.Fields)
+	}
+}
+
+func TestExecuteProjectsParentRelationshipField(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Records: map[storage.ID]storage.Record{
+			"001000000000001": {
+				ID:     "001000000000001",
+				Object: "Account",
+				Fields: map[string]storage.Value{
+					"Name": storage.StringValue("Acme"),
+				},
+			},
+		},
+	}
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Contact",
+			Relations: []storage.Relationship{{
+				Field:              "AccountId",
+				ParentObjects:      []string{"Account"},
+				ParentRelationship: "Account",
+			}},
+		},
+		Records: map[storage.ID]storage.Record{
+			"003000000000001": {
+				ID:     "003000000000001",
+				Object: "Contact",
+				Fields: map[string]storage.Value{
+					"AccountId": storage.IDValue("001000000000001"),
+				},
+			},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT Id, Account.Name FROM Contact")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := result.Records[0].Fields["Account.Name"].String; got != "Acme" {
+		t.Fatalf("Account.Name = %q", got)
 	}
 }
 

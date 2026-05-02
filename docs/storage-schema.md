@@ -1,33 +1,35 @@
 # Storage Schema Design
 
-This document defines the first in-memory storage schema for the post-Phase-4
-runtime. It is a contract for future SObject, SOQL, DML, trigger, test
-isolation, and fixture work. It is not a database engine design and does not
-attempt to implement Salesforce persistence behavior yet.
+This document defines the storage schema used by the current runtime baseline.
+It started as the in-memory contract for SObject, SOQL, DML, trigger, test
+isolation, and fixture work; it now also describes the logical model persisted
+by the SQLite-backed store.
 
-The matching Go model lives in `internal/storage`. That package should stay
-small until the SObject, SOQL, and DML phases need executable behavior.
+The matching Go model lives in `internal/storage`. The package contains the
+cloneable in-memory org model, fixture import/export, deterministic platform
+seed data, and the SQLite persistence adapter.
 
 ## Goals
 
-- Represent a Salesforce-like org state in memory with deterministic,
-  serializable data structures.
+- Represent a Salesforce-like org state with deterministic, serializable data
+  structures.
 - Keep schema metadata, records, relationships, indexes, transaction frames,
   and fixture data in one coherent model.
 - Support deterministic replay: the same schema and fixture input should
   produce the same record IDs and export ordering policy.
-- Give later phases a stable place to attach SObject values, SOQL materialized
-  results, DML validation, trigger context, and test rollback.
+- Provide a stable boundary for SObject values, SOQL materialized results, DML
+  validation, trigger context, test rollback, CLI fixture commands, and the
+  local API server.
 
 ## Non-Goals
 
-- No query planner, predicate evaluator, DML pipeline, trigger runtime, sharing
-  engine, validation rule evaluator, or SQLite mapping in this slice.
+- No claim of full Salesforce storage parity, sharing engine, validation rule
+  evaluator, row-locking behavior, or permission enforcement.
 - No claim of full Salesforce ID checksum compatibility. The first generator
   emits deterministic 15-character IDs and accepts 15- or 18-character IDs.
-- No enforcement of field types, required fields, foreign keys, uniqueness, or
-  external-ID semantics beyond carrying the metadata required to enforce them
-  later.
+- No complete enforcement of field types, foreign keys, uniqueness, external-ID
+  semantics, or object permissions beyond the validation currently implemented
+  by the DML layer.
 
 ## Core Model
 
@@ -63,8 +65,9 @@ can map Metadata API types into this storage enum while retaining raw metadata
 outside the storage core. Reference fields carry `ReferenceTo` as a list so
 polymorphic fields such as `WhoId` and `WhatId` have a natural shape.
 
-Required, unique, external ID, and case sensitivity flags are stored for future
-DML validation. They are not enforced by the model package.
+Required, unique, external ID, and case sensitivity flags are stored so the DML
+and SOQL layers can enforce or inspect them. The storage model itself remains a
+logical record container; behavioral validation stays outside the model.
 
 ## Records And Values
 
@@ -110,7 +113,7 @@ Indexes have two layers:
   field, unique, and external-ID lookups.
 - `IndexSet`: an in-memory derived map from encoded index key to record IDs.
 
-The first required indexes for future phases are:
+The current logical indexes are:
 
 - primary ID lookup per object
 - object record scan order
@@ -118,9 +121,9 @@ The first required indexes for future phases are:
 - external ID lookup
 - reference field lookup for child relationship queries
 
-Index sets may be marked dirty. Future SOQL/DML work can choose eager
-maintenance for DML operations or lazy rebuild before query execution. The
-model package only defines the shape.
+Index sets may be marked dirty. The in-memory executor can rebuild or scan as
+needed, while the SQLite store persists canonical records and object
+definitions rather than relying on in-memory index state as source of truth.
 
 ## Transactions
 
@@ -131,7 +134,7 @@ contains:
 - ordered `Mutation` entries
 - optional before/after record snapshots
 
-This supports the first rollback design without committing to a storage engine:
+This supports rollback without tying the runtime to a specific storage engine:
 
 1. DML opens or reuses the active Apex transaction frame.
 2. Each insert, update, delete, undelete, or merge appends a mutation.
@@ -150,6 +153,8 @@ The storage fixture envelope uses `version: "oaer.storage.v1"` and contains:
 - `org`: org ID, API version, and namespace.
 - `objects`: named object blocks with records.
 - `idSequences`: optional deterministic counters for continued ID generation.
+- `platformData`: optional deterministic users, profiles, permission sets, and
+  assignments used by local tests and server runs.
 
 Each fixture record may include:
 
@@ -158,13 +163,18 @@ Each fixture record may include:
 - `fields`: tagged `Value` entries keyed by field API name.
 - `explicitNulls`: field names intentionally set to null.
 
-Import should happen in two passes once implemented:
+Import happens in two passes:
 
 1. Allocate or validate IDs and collect aliases.
 2. Resolve relationship field aliases into IDs and load records.
 
-Export should sort object names, record IDs, field names, and explicit-null
-lists to keep compatibility fixtures stable in source control.
+Export sorts object names, record IDs, field names, and explicit-null lists to
+keep compatibility fixtures stable in source control. The CLI exposes this
+through `oaer db seed`, `oaer db reset`, `oaer db export`, and
+`oaer db inspect --db <path>`.
+
+`fieldRefs` can resolve fixture relationships by alias so fixtures do not need
+to hard-code generated record IDs.
 
 ## Deterministic IDs
 
@@ -187,18 +197,25 @@ an explicit prefix. The initial custom prefix range starts at `a00`.
 The generator is intentionally deterministic, not globally unique. It is scoped
 to one fixture/org state and exists to make tests repeatable.
 
+## Current Integration Points
+
+- SObject runtime values convert to and from `Record` while preserving
+  projected-field absence and explicit-null semantics.
+- SOQL reads `ObjectDefinition`, `Relationship`, and record data for the
+  supported query subset.
+- DML owns field validation, trigger invocation, and
+  transaction rollback using `Mutation`.
+- Test runner isolation clones or resets `OrgState` around each test
+  method.
+- The SQLite backend uses these types as the logical schema while persisting
+  object definitions, records, and ID sequences.
+
 ## Future Integration Points
 
-- SObject runtime values should convert to and from `Record` while preserving
-  projected-field absence and explicit-null semantics.
-- SOQL should read `ObjectDefinition`, `Relationship`, and `IndexDefinition`
-  before deciding whether to scan records or use `IndexSet`.
-- DML should own field validation, index maintenance, trigger invocation, and
-  transaction rollback using `Mutation`.
-- Test runner isolation should clone or reset `OrgState` around each test
-  method.
-- A future SQLite backend can use these types as the logical schema while
-  storing records as normalized rows or JSON columns.
+- SQLite query planning and explain metadata for SOQL profiling.
+- Richer system fields, sharing, permissions, validation rules, and relationship
+  constraints.
+- Large-fixture performance tuning and optional alternate backends.
 
 ## Open Questions
 

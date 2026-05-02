@@ -59,6 +59,11 @@ func evalBinary(op string, left, right Value) (Value, error) {
 			return Null, fmt.Errorf("division by zero")
 		}
 		return intBinary(op, left, right, func(a, b int64) int64 { return a / b })
+	case "%":
+		if right.Kind == ValueInt && right.Int == 0 {
+			return Null, fmt.Errorf("division by zero")
+		}
+		return intBinary(op, left, right, func(a, b int64) int64 { return a % b })
 	case "==":
 		return Bool(left.Equal(right)), nil
 	case "!=":
@@ -117,6 +122,9 @@ func ensureAssignable(typeName string, value Value) error {
 	case "Object":
 		return nil
 	}
+	if value.Kind == ValueObject {
+		return nil
+	}
 	if strings.HasPrefix(typeName, "List<") && value.Kind == ValueList {
 		return nil
 	}
@@ -141,6 +149,9 @@ func constructValue(typeName string, args []Value) (Value, error) {
 		}
 		return Map(), nil
 	default:
-		return Null, fmt.Errorf("unsupported constructor %q", typeName)
+		if len(args) != 0 {
+			return Null, fmt.Errorf("%s constructor does not accept arguments", typeName)
+		}
+		return Object(typeName), nil
 	}
 }

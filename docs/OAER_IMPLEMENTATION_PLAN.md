@@ -7,8 +7,8 @@ tests, execute anonymous Apex, support schema-aware SOQL/DML/triggers, expose
 debugging and language tooling, and act as a local Salesforce-compatible API
 server.
 
-This plan assumes the product name `oaer` during development. `apexrr` remains
-the performance analysis tool unless the repo is intentionally split later.
+This plan assumes the product name `oaer` during development. Performance
+analysis is implemented natively in this project; `apexrr` is not a dependency.
 
 ## Definition Of Complete
 
@@ -27,6 +27,49 @@ the performance analysis tool unless the repo is intentionally split later.
 - run a local API server for SObject CRUD and query
 - publish a compatibility dashboard that identifies supported, partial, and
   unsupported Apex/Salesforce features by API version
+
+## Full-Featured MVP Target
+
+MVP means an aer-parity local Apex development loop, not a thin demo. A feature
+may have a baseline package and still fail the MVP gate if it is not usable from
+real Apex projects through the CLI/runtime.
+
+The MVP gate is machine-readable through `oaer compat mvp` and
+`oaer compat matrix --json`. MVP is not ready until every `requiredForMVP`
+capability in `internal/capability` is `supported`.
+
+Required MVP capabilities:
+
+- real Apex class execution: methods, constructors, statics, properties,
+  control flow, and exceptions
+- real Apex test execution: class dispatch, `@TestSetup`, `startTest/stopTest`,
+  `runAs`, per-test isolation, and async draining basics
+- Apex-integrated SObject construction and field access
+- static and dynamic SOQL from Apex, including binds and relationships for
+  common selector-layer queries
+- Apex DML statements and `Database.*` methods, including partial-success
+  result shapes
+- trigger invocation and `Trigger.*` context for insert/update/delete flows
+- governor counters and strict/permissive enforcement for SOQL, DML, rows, heap,
+  CPU approximation, callouts, and async counts
+- persistent fixture seed/export/reset workflow
+- usable `oaer test --json`, JUnit, `oaer test --watch`, `oaer lsp`,
+  `oaer exec/test --debug`, native profile reports, and `oaer server`
+- generated compatibility dashboard and release packaging
+
+Current implementation snapshot as of 2026-05-02:
+
+- The repo has broad baselines for phases 0-15, including parser/project/schema
+  indexing, VM execution, Apex test running, SObject/SOQL/DML/trigger
+  integration, governor/platform API basics, SQLite fixtures, watch mode, LSP,
+  DAP snapshot sessions, profile analysis, and a Salesforce-shaped local API
+  server.
+- `oaer compat mvp` is still expected to report not ready. Many required
+  features are intentionally marked `partial` because unsupported edge cases
+  must fail loudly instead of silently claiming Salesforce parity.
+- The highest-risk remaining work is runtime fidelity: full language semantics,
+  richer SOQL/DML/trigger behavior, async breadth, complete platform APIs,
+  debugging pause hooks, and enterprise compatibility fixtures.
 
 ## Planning Assumptions
 
@@ -71,13 +114,15 @@ Goal: make the project safe to build and easy to contribute to.
 
 Effort: S-M.
 
-Current status as of 2026-05-02: complete for the Phase 0 baseline. The repo now has a Go module,
-Apache-2.0 license text, `cmd/oaer`, CLI plumbing for `version`, `help`,
-`doctor`, and `compat validate`, shared diagnostics, minimal `oaer.yml`
-loading, compatibility fixture types, a parser-smoke fixture, clean-room,
-compatibility, and architecture docs, and GitHub Actions metadata for
-`go vet ./...`, `go test ./...`, and `go test -race ./...`. Compatibility
-fixtures can now be executed with `oaer compat run`.
+Current status as of 2026-05-02: complete for the Phase 0 baseline. The repo
+now has a Go module, Apache-2.0 license text, `cmd/oaer`, shared diagnostics,
+minimal `oaer.yml` loading, compatibility fixture types, a parser-smoke fixture,
+clean-room, compatibility, and architecture docs, and GitHub Actions metadata
+for `go vet ./...`, `go test ./...`, and `go test -race ./...`. CLI plumbing
+now covers `version`, `help`, `doctor`, `parse`, `inspect`, `schema`, `check`,
+`exec`, `test`, `profile`, `server`, `db`, `lsp`, and `compat`; compatibility
+fixtures can be validated/executed, and capability readiness is reported by
+`oaer compat matrix` and `oaer compat mvp`.
 
 ### Deliverables
 
@@ -327,19 +372,19 @@ Goal: execute non-database Apex code.
 
 Effort: L.
 
-Current status as of 2026-05-02: complete for the Phase 4 baseline. `internal/ir` defines a compact
-instruction/expression representation, and `internal/vm` executes the first
-anonymous Apex subset through `oaer exec`. Supported now: variable declarations
-and assignments for `Integer`, `Long`, `Boolean`, `String`, and `Object`;
-integer arithmetic; string concatenation; boolean/comparison/equality
-expressions; `null`; `List`, `Set`, and `Map` construction plus common methods
-such as `add`, `size`, `get`, `put`, `contains`, and `containsKey`; and
-`System.assert`, `System.assertEquals`, `System.assertNotEquals`, and
-`System.debug`. `oaer exec --json` returns debug events, variable state, and
-instruction trace events with source offsets without writing debug text to
-stdout. This baseline executes anonymous statements only; parsed Apex class
-method dispatch, inheritance execution, exceptions, and heap object semantics
-remain the next runtime expansion before Phase 5.
+Current status as of 2026-05-02: complete for the Phase 4 baseline.
+`internal/ir` defines a compact instruction/expression representation, and
+`internal/vm` executes the supported Apex subset through `oaer exec` and the
+test runner. Supported now: variables and expressions; primitive and collection
+values; class/method execution; constructors; instance and static fields;
+inheritance and `super` dispatch; `if`, `while`, `for`, enhanced `for`,
+`do/while`, `break`, `continue`, and `switch`; `try/catch/finally`; thrown
+runtime exceptions with message/stack basics; SObject construction and field
+access; static and dynamic SOQL entry points; DML statements; trigger dispatch;
+governor counters; common platform APIs; trace events; and debug snapshots.
+Full visibility, namespaces, overload fidelity, initializer blocks, inner
+classes, enums, complete user object semantics, and Salesforce-exact exception
+behavior remain MVP work.
 
 ### Deliverables
 
@@ -402,12 +447,13 @@ Effort: M.
 
 Current status as of 2026-05-02: complete for the Phase 5 baseline.
 `internal/apextest` discovers `@isTest` classes, `@isTest` methods, and legacy
-`testMethod` methods from the symbol index. `oaer test` runs test method bodies
-that fit the current anonymous VM subset, creates a fresh VM per test method,
-supports substring filtering, and reports pass/fail/unsupported/runtime states.
-`internal/testreport` provides console, JSON, and JUnit XML reporters. Full Apex
-class dispatch, `@TestSetup` data semantics, static reset semantics, and
-Salesforce test transaction behavior remain Phase 9 work.
+`testMethod` methods from the symbol index. `oaer test` compiles project helper
+classes and triggers, runs constructor and instance method bodies, executes
+`@TestSetup`, clones org state per test, resets statics, supports
+`Test.startTest()`/`Test.stopTest()`, `System.runAs`, Queueable drain basics,
+assertion stack frames, substring filtering, and console/JSON/JUnit reporters.
+Full Salesforce auth/profile semantics, broad async support, and exact
+transaction behavior remain MVP work.
 
 ### Deliverables
 
@@ -438,7 +484,7 @@ Salesforce test transaction behavior remain Phase 9 work.
   - glob/substr
 - Add isolation:
   - reset statics between tests where required
-  - reset in-memory storage once storage exists
+  - reset storage/org state between tests
   - deterministic clock option
 - Add console reporter, JSON reporter, JUnit reporter.
 
@@ -455,14 +501,18 @@ Goal: represent Salesforce records and schema at runtime.
 Effort: L.
 
 Current status as of 2026-05-02: complete for the Phase 6 baseline.
-`internal/storage` defines the in-memory org/object/record contract, fixture
-envelope, deterministic ID generation, 15/18-character ID validation, and clone
-helpers for transaction snapshots. `internal/sobject` adds runtime SObject
+`internal/storage` defines the org/object/record contract, fixture envelope,
+deterministic ID generation, 15/18-character ID validation, clone helpers for
+transaction snapshots, fixture alias/reference resolution, deterministic
+platform users/profiles/permissions, and SQLite-backed persistence for object
+definitions, records, and ID sequences. `internal/sobject` adds runtime SObject
 values with field maps, explicit null tracking, `get`/`put` behavior, record
 conversion, schema describe registry, field describe basics, relationship
 metadata, deterministic object key prefixes, and conversion to storage object
-definitions. Apex syntax integration and `oaer db` persistence commands remain
-future expansion.
+definitions. Apex syntax integration for `new Account(Name='Acme')`, typed
+field access, dynamic field access, DML Id propagation, and simple relationship
+projection is wired into the VM. Richer describe behavior and permission
+semantics remain incomplete.
 
 ### Deliverables
 
@@ -511,13 +561,14 @@ Goal: execute static and dynamic SOQL over local storage.
 Effort: XL.
 
 Current status as of 2026-05-02: complete for the Phase 7 baseline.
-`internal/soql` parses and executes simple in-memory queries over
+`internal/soql` parses and executes supported in-memory queries over
 `storage.OrgState`: `SELECT` field projections, `FROM`, equality/inequality
-`WHERE` predicates for primitive literals, `ORDER BY`, `LIMIT`, and `OFFSET`.
-Projected records preserve Salesforce-like field absence. Unsupported syntax
-returns explicit errors. Relationship traversal, bind variables, dynamic
-`Database.query`, aggregates, SQLite planning, and limit hooks remain later SOQL
-expansion.
+`WHERE` predicates, bind variables, `ORDER BY`, `LIMIT`, `OFFSET`, `COUNT()`,
+single-SObject assignment, and simple parent relationship fields. Static SOQL
+and dynamic `Database.query` are wired into the VM, projected records preserve
+Salesforce-like field absence, and limit counters are updated. Child subqueries,
+broad aggregates, complex predicates, SQLite planning, and full relationship
+query behavior remain incomplete.
 
 ### Deliverables
 
@@ -574,13 +625,15 @@ execution.
 Effort: XL.
 
 Current status as of 2026-05-02: complete for the Phase 8 baseline.
-`internal/dml` supports in-memory insert, update, and delete over
+`internal/dml` supports insert, update, delete, upsert, and undelete over
 `storage.OrgState`; required and unknown-field validation; deterministic ID
-assignment; partial-success result records shaped for future `Database.*`
-results; and rollback-by-snapshot transaction wrappers. Trigger discovery is
-available through the symbol index, but trigger invocation, trigger context
-variables, `Database.*` Apex methods, upsert, undelete, merge, SQLite backing,
-and validation rule fidelity remain future expansion.
+assignment; all-or-none result records for `Database.*`; and
+rollback-by-snapshot transaction wrappers. Apex DML syntax and `Database.*`
+methods are wired into the VM, and before/after trigger invocation has
+`Trigger.new`, `Trigger.old`, maps, flags, operation type, and bulk basics for
+covered insert/update/delete flows. Merge, external-ID upsert, full undelete
+fidelity, `addError`, validation rule fidelity, and exact bulk ordering remain
+incomplete.
 
 ### Deliverables
 
@@ -632,6 +685,13 @@ Goal: make local tests meaningful for Salesforce development.
 
 Effort: L-XL.
 
+Current status as of 2026-05-02: complete for the Phase 9 baseline.
+`@TestSetup`, per-test cloned org state, static reset, `startTest`/`stopTest`,
+`runAs`, Queueable drain at `stopTest`, assertion stack frames, governor
+counters, and strict/permissive limit modes are implemented for the supported
+runtime subset. Full async breadth, exact Salesforce transaction rollback
+semantics, and complete limit categories remain incomplete.
+
 ### Deliverables
 
 - `@TestSetup` behavior.
@@ -682,6 +742,13 @@ Goal: cover the standard-library and platform APIs used by real projects.
 
 Effort: ongoing, starts after Phase 4 and continues through v1.
 
+Current status as of 2026-05-02: complete for the Phase 10 baseline. The VM has
+common `System`, `Test`, `Database`, `Limits`, `Schema`, `JSON`, date/time,
+math, encoding, crypto, user-info, feature-management, messaging, ApexPages,
+and HTTP/callout mock surfaces for common tests. These APIs are intentionally
+partial; unsupported methods should produce stable unsupported-feature errors
+instead of panics.
+
 ### Priority 1 APIs
 
 - `System`
@@ -727,6 +794,16 @@ Effort: ongoing, starts after Phase 4 and continues through v1.
 Goal: debug Apex in standard editors.
 
 Effort: L.
+
+Current status as of 2026-05-02: complete for the Phase 11 baseline.
+`internal/dap` implements DAP content-length framing, request decoding,
+response/event encoding, and an in-memory handler for initialize,
+setBreakpoints, configurationDone, threads, stackTrace, scopes, variables,
+continue, next, pause, and disconnect. It can render primitive and collection
+variables from VM snapshots and evaluate simple expressions against those
+snapshots. `oaer exec --debug` and `oaer test --debug` start DAP snapshot
+sessions. Live VM suspension, breakpoint-driven execution control, launch/attach
+transport fidelity, and step-in/out semantics remain incomplete.
 
 ### Deliverables
 
@@ -782,7 +859,14 @@ Effort: M-L.
 - pprof-compatible profile output or converter.
 - Statement-level events for SOQL, DML, describe, callout, heap, and limits.
 - `oaer profile`.
-- Integration points for apexrr.
+- Native trace/profile analysis reports.
+
+Current status as of 2026-05-02: complete for the Phase 12 baseline. `oaer exec
+--trace` writes Chrome Trace Event JSON, and `internal/profile` plus `oaer
+profile analyze` aggregate native trace events into ranked JSON or Markdown
+reports with statement, method, SOQL, and DML categories plus SOQL/DML row
+deltas. No external apexrr dependency is used. pprof output, wall-clock
+attribution, and richer statement metadata remain incomplete.
 
 ### Implementation Tasks
 
@@ -809,12 +893,12 @@ Effort: M-L.
   - query count
   - DML count
   - heap approximation
-- Add report compatibility with `apexrr`.
+- Add native JSON/Markdown reports for trace/profile analysis.
 
 ### Exit Criteria
 
 - Trace files open in Perfetto or Chrome trace viewers.
-- apexrr can rank hot methods from native `oaer` traces.
+- Native `oaer` reports can rank hot methods/statements from trace output.
 - Statement-level cost is visible for supported operations.
 
 ## Phase 13: Watch Mode And Affected Test Selection
@@ -822,6 +906,15 @@ Effort: M-L.
 Goal: make the runtime useful in day-to-day development.
 
 Effort: M.
+
+Current status as of 2026-05-02: complete for the Phase 13 baseline.
+`internal/watch` classifies Apex and metadata files, snapshots file state by
+modtime and size, diffs changes, emits stable JSON event structs, and performs
+conservative affected-test selection from the symbol index. `oaer test
+--watch` runs a polling watcher with debounce, reruns, JSON event stream, and
+context cancellation; `--watch-once` is available for deterministic tests.
+Native OS watcher backends, incremental re-indexing, and in-flight VM
+cancellation remain incomplete.
 
 ### Deliverables
 
@@ -856,6 +949,13 @@ Effort: M.
 Goal: provide editor intelligence from the same parser and type system.
 
 Effort: L.
+
+Current status as of 2026-05-02: complete for the Phase 14 baseline.
+`internal/lsp` implements stdio JSON-RPC/LSP transport through `oaer lsp` plus
+request handling for initialize/shutdown, diagnostics payloads, document
+symbols, workspace symbols, hover, and top-level Apex/SObject completion from
+the existing project index. Semantic tokens, definition, references, rename,
+and incremental text synchronization remain incomplete.
 
 ### Deliverables
 
@@ -901,6 +1001,17 @@ Effort: L.
 Goal: expose local data and execution through Salesforce-shaped endpoints.
 
 Effort: L.
+
+Current status as of 2026-05-02: complete for the Phase 15 baseline.
+`internal/server` provides an HTTP handler backed by `storage.OrgState`,
+`internal/dml`, `internal/soql`, and the VM. It supports `/services/data`,
+sObject CRUD, normal REST JSON payload decoding, `query`/`queryAll`,
+describe/recent, limits, OAuth userinfo and `/id` stubs, Tooling
+`executeAnonymous`, Tooling query delegation, composite sObject insert,
+Salesforce-shaped error arrays, OAER fixture/reset endpoints, and optional
+SQLite persistence through `oaer server --db`. Full auth, Tooling object
+coverage, Composite Graph, Bulk API, broader REST resources, and exact error
+fidelity remain incomplete.
 
 ### Deliverables
 
@@ -1075,7 +1186,7 @@ These can run in parallel after Phase 8:
 - LSP
 - watch mode
 - local API server
-- apexrr integration
+- native trace/profile analysis
 
 ## Testing Strategy
 
@@ -1243,9 +1354,9 @@ With one engineer, build in this strict order:
 - Legal contamination: keep clean-room docs and avoid proprietary internals as
   implementation references.
 
-## First 30 Days
+## Original First 30 Days Target
 
-Assuming one to two engineers:
+Historical target for a fresh build, retained for roadmap context:
 
 1. Create `cmd/oaer`.
 2. Add clean-room and architecture docs.
@@ -1258,13 +1369,13 @@ Assuming one to two engineers:
 9. Add the first compatibility fixture format and runner.
 10. Publish M0/M1 project board.
 
-## First 90 Days
+## Original First 90 Days Target
 
-Assuming two engineers:
+Historical target for a fresh two-engineer build, retained for roadmap context:
 
 1. Finish basic semantic analysis.
 2. Add IR lowering for core statements and expressions.
-3. Implement minimal VM.
+3. Implement the initial VM.
 4. Implement core `System`, collections, strings, dates, and assertions.
 5. Implement no-DB test runner with JSON and JUnit output.
 6. Add basic SObject value model.

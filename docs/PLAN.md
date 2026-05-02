@@ -1,5 +1,9 @@
 # apexrr — plan
 
+Status: historical. This project now implements trace/profile analysis natively
+inside `oaer` (`internal/profile` and `oaer profile analyze`) and must not take
+an apexrr dependency. Keep this document only as background for report ideas.
+
 ## Goal
 
 Phase 1 finds Apex performance bottlenecks in a Salesforce codebase and ranks

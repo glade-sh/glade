@@ -19,30 +19,58 @@ and composed by the CLI.
   and schema objects.
 - `internal/sema`: first semantic pass for known-type catalogs and declaration
   type-reference diagnostics.
-- `internal/ir`: compact executable representation for the initial VM slice.
-- `internal/vm`: minimal interpreter for anonymous Apex smoke execution,
-  including primitives, simple collections, `System` assertions/debug, and
-  instruction traces.
-- `internal/apextest` and `internal/testreport`: minimal Apex test discovery,
-  execution against the current VM subset, and console/JSON/JUnit reporting.
+- `internal/ir`: compact executable representation for VM-supported Apex
+  statements and expressions.
+- `internal/vm`: interpreter for the supported Apex subset, including
+  anonymous execution, class and method dispatch, constructors, instance and
+  static fields, inheritance/super dispatch, common control flow, exceptions,
+  SObjects, SOQL/DML entry points, governor counters, platform API basics, and
+  trace/debug snapshots.
+- `internal/apextest` and `internal/testreport`: Apex test discovery,
+  project class/trigger compilation, `@TestSetup`, per-test org isolation,
+  static reset, `startTest`/`stopTest`, `runAs`, Queueable drain basics, and
+  console/JSON/JUnit reporting.
 - `internal/sobject`: runtime SObject value and schema describe helpers.
-- `internal/storage`: in-memory org/object/record model, fixture envelope,
-  deterministic IDs, and cloneable transaction snapshots.
-- `internal/soql`: simple in-memory SOQL parser and executor.
-- `internal/dml`: in-memory DML insert/update/delete pipeline and rollback
-  wrapper.
+- `internal/storage`: org/object/record model, fixture envelope, deterministic
+  IDs, cloneable transaction snapshots, fixture alias/reference resolution,
+  deterministic platform users/profiles/permissions, and SQLite persistence.
+- `internal/soql`: in-memory SOQL parser and executor for the supported query
+  subset, including binds, ordering, limits, offsets, `COUNT()`, and simple
+  parent relationship projection.
+- `internal/dml`: DML insert/update/delete/upsert/undelete pipeline,
+  all-or-none result shaping, validation, rollback snapshots, and trigger
+  invocation hooks for the supported VM paths.
+- `internal/dap`: Debug Adapter Protocol framing, request/response handling,
+  and snapshot sessions used by `oaer exec --debug` and `oaer test --debug`.
+- `internal/lsp`: stdio LSP/JSON-RPC server backed by the project index for
+  initialize/shutdown, diagnostics, symbols, hover, and completion basics.
+- `internal/watch`: file classification, snapshot diffing, polling watch loop,
+  debounce, JSON events, cancellation, and conservative affected-test
+  selection.
+- `internal/profile`: native trace/profile aggregation and JSON/Markdown
+  reporting.
+- `internal/server`: Salesforce-shaped HTTP handler for supported SObject CRUD,
+  query/queryAll, describe/recent, limits, identity/userinfo stubs, Tooling
+  `executeAnonymous`, composite sObject insert, fixture/reset endpoints, and
+  optional SQLite-backed persistence.
 - `internal/compat`: compatibility fixture schema.
+- `internal/capability`: machine-readable feature matrix and MVP readiness
+  gate.
 
-## Planned Runtime Pipeline
+## Runtime Pipeline
 
 1. Load project configuration and Salesforce metadata.
 2. Parse Apex source through `internal/apexast`.
 3. Build symbols and resolve references through `internal/typesys`.
 4. Type-check through `internal/sema`.
 5. Lower checked code into `internal/ir`.
-6. Execute with `internal/vm`, routing platform calls into dedicated packages.
-7. Record diagnostics, traces, profiles, test reports, and compatibility
-   results in stable machine-readable formats.
+6. Execute with `internal/vm`, routing SObject, SOQL, DML, trigger, limit, and
+   platform calls into dedicated packages where behavior has a supported
+   baseline.
+7. Surface the same runtime through CLI execution, tests, watch mode, LSP/DAP
+   snapshots, profile analysis, compatibility checks, and the local API server.
+8. Record diagnostics, traces, profiles, test reports, storage fixtures, server
+   responses, and compatibility results in stable machine-readable formats.
 
 ## Design Constraints
 

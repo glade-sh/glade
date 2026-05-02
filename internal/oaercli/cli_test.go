@@ -53,6 +53,102 @@ func TestRunCompatRun(t *testing.T) {
 	}
 }
 
+func TestRunCompatMVP(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "mvp"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "MVP readiness: not ready") || !strings.Contains(stdout.String(), "full-featured aer-parity MVP") {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
+func TestRunCompatMatrixJSON(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "matrix", "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), `"ready": false`) || !strings.Contains(stdout.String(), `"requiredForMVP": true`) {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
+func TestRunCompatDashboard(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "dashboard"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "# Compatibility Dashboard") || !strings.Contains(stdout.String(), "`triggers.runtime`") {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
+func TestRunCompatDashboardOutputAndCheck(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "dashboard.md")
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "dashboard", "--output", path}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("output exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	content, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(content), "# Compatibility Dashboard") {
+		t.Fatalf("dashboard file = %q", string(content))
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "dashboard", "--check", path}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("check exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "up to date") {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
+func TestRunCompatGaps(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "gaps"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "# Known Gaps") || !strings.Contains(stdout.String(), "`apex.sema.body`") {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
+func TestRunCompatGapsOutputAndCheck(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "known-gaps.md")
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "gaps", "--output", path}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("output exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	content, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(content), "# Known Gaps") {
+		t.Fatalf("known gaps file = %q", string(content))
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "gaps", "--check", path}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("check exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "up to date") {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
 func TestRunParseJSON(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "Hello.cls")
@@ -209,6 +305,266 @@ private class SampleTest {
 	}
 	if !strings.Contains(string(junit), `<testsuites name="oaer test" tests="1" failures="0" errors="0" skipped="0"`) {
 		t.Fatalf("junit output = %q", string(junit))
+	}
+}
+
+func TestRunTestStaticHelperMethod(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/MathUtil.cls"), `
+public class MathUtil {
+  public static Integer add(Integer a, Integer b) {
+    return a + b;
+  }
+}
+`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/MathUtilTest.cls"), `
+@isTest
+private class MathUtilTest {
+  @isTest static void adds() {
+    System.assertEquals(3, MathUtil.add(1, 2));
+  }
+}
+`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"test", "--project", root, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if !strings.Contains(stdout.String(), `"className": "MathUtilTest"`) || !strings.Contains(stdout.String(), `"passed": 1`) {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
+func TestRunTestStaticHelperMethodWithBranching(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/MathUtil.cls"), `
+public class MathUtil {
+  public static Integer max(Integer a, Integer b) {
+    if (a > b) {
+      return a;
+    } else {
+      return b;
+    }
+  }
+}
+`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/MathUtilTest.cls"), `
+@isTest
+private class MathUtilTest {
+  @isTest static void maxChoosesLargerValue() {
+    System.assertEquals(5, MathUtil.max(5, 2));
+    System.assertEquals(7, MathUtil.max(3, 7));
+  }
+}
+`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"test", "--project", root, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if !strings.Contains(stdout.String(), `"passed": 1`) {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
+func TestRunTestStaticHelperMethodWithWhileLoop(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/MathUtil.cls"), `
+public class MathUtil {
+  public static Integer sumTo(Integer n) {
+    Integer total = 0;
+    Integer i = 1;
+    while (i <= n) {
+      total = total + i;
+      i = i + 1;
+    }
+    return total;
+  }
+}
+`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/MathUtilTest.cls"), `
+@isTest
+private class MathUtilTest {
+  @isTest static void sumsRange() {
+    System.assertEquals(15, MathUtil.sumTo(5));
+  }
+}
+`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"test", "--project", root, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if !strings.Contains(stdout.String(), `"passed": 1`) {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
+func TestRunTestInstanceHelperMethod(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/Calculator.cls"), `
+public class Calculator {
+  public Integer add(Integer a, Integer b) {
+    return a + b;
+  }
+}
+`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/CalculatorTest.cls"), `
+@isTest
+private class CalculatorTest {
+  @isTest static void instanceMethodAdds() {
+    Calculator calc = new Calculator();
+    System.assertEquals(7, calc.add(3, 4));
+  }
+}
+`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"test", "--project", root, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if !strings.Contains(stdout.String(), `"passed": 1`) {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
+func TestRunTestWatchOnceStreamsEvents(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/SampleTest.cls"), `
+@isTest
+private class SampleTest {
+  @isTest static void passes() {
+    System.assert(true);
+  }
+}
+`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"test", "--project", root, "--watch-once"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if !strings.Contains(stdout.String(), `"event":"watch.started"`) || !strings.Contains(stdout.String(), `"event":"watch.run_finished"`) {
+		t.Fatalf("watch stdout = %q", stdout.String())
+	}
+}
+
+func TestRunLSPDiagnosticsOnce(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/Broken.cls"), "public class Broken { public MissingType run() { return null; } }")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"lsp", "--project", root, "--diagnostics-once"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "Content-Length:") || !strings.Contains(stdout.String(), "textDocument/publishDiagnostics") {
+		t.Fatalf("lsp stdout = %q", stdout.String())
+	}
+}
+
+func TestRunExecDebugEmitsDAPInitializeResponse(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"exec", "--debug", "Integer x = 1; System.assertEquals(1, x);"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "Content-Length:") || !strings.Contains(stdout.String(), "supportsConfigurationDoneRequest") {
+		t.Fatalf("debug stdout = %q", stdout.String())
+	}
+}
+
+func TestRunTestDebugEmitsDAPInitializeResponse(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/SampleTest.cls"), `
+@isTest
+private class SampleTest {
+  @isTest static void passes() {
+    System.assert(true);
+  }
+}
+`)
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"test", "--project", root, "--debug"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "Content-Length:") || !strings.Contains(stdout.String(), "supportsConfigurationDoneRequest") {
+		t.Fatalf("debug stdout = %q", stdout.String())
+	}
+}
+
+func TestRunProfileAnalyzeJSON(t *testing.T) {
+	tracePath := filepath.Join(t.TempDir(), "trace.json")
+	writeTestFile(t, tracePath, `{"format":"chrome-trace-event","version":1,"traceEvents":[{"name":"apex.statement.expr","cat":"apex.statement","ph":"i","ts":1,"pid":1,"tid":1,"args":{"sourceOffset":5}}]}`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"profile", "analyze", tracePath, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), `"events": 1`) || !strings.Contains(stdout.String(), `"apex.statement.expr"`) {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
+func TestRunDBSeedInspectExportAndReset(t *testing.T) {
+	dir := t.TempDir()
+	dbPath := filepath.Join(dir, "oaer.db")
+	fixturePath := filepath.Join(dir, "fixture.json")
+	writeTestFile(t, fixturePath, `{
+  "version":"oaer.storage.v1",
+  "objects":[{"name":"Account","records":[{"alias":"acme","fields":{"Name":{"kind":"string","string":"Acme"}}}]}]
+}`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"db", "seed", "--db", dbPath, fixturePath, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("seed exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if !strings.Contains(stdout.String(), `"Account": 1`) || !strings.Contains(stdout.String(), `"users": 1`) {
+		t.Fatalf("seed stdout = %q", stdout.String())
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"db", "inspect", "--db", dbPath}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("inspect exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "Account: 1") || !strings.Contains(stdout.String(), "User: 1") {
+		t.Fatalf("inspect stdout = %q", stdout.String())
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"db", "export", "--db", dbPath}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("export exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), `"version": "oaer.storage.v1"`) || !strings.Contains(stdout.String(), `"Acme"`) {
+		t.Fatalf("export stdout = %q", stdout.String())
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"db", "reset", "--db", dbPath, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("reset exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if !strings.Contains(stdout.String(), `"Account": 0`) || !strings.Contains(stdout.String(), `"users": 1`) {
+		t.Fatalf("reset stdout = %q", stdout.String())
 	}
 }
 

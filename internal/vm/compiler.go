@@ -83,14 +83,14 @@ func lex(source string) ([]token, error) {
 			if i+1 < len(source) {
 				two := source[i : i+2]
 				switch two {
-				case "==", "!=", "<=", ">=", "&&", "||":
+				case "==", "!=", "<=", ">=", "&&", "||", "++", "--", "+=", "-=":
 					tokens = append(tokens, token{kind: tokenSymbol, text: two, pos: start})
 					i += 2
 					goto next
 				}
 			}
 			switch source[i] {
-			case '(', ')', '{', '}', '[', ']', ';', ',', '.', '+', '-', '*', '/', '=', '<', '>', '!':
+			case '(', ')', '{', '}', '[', ']', ';', ',', '.', ':', '+', '-', '*', '/', '%', '=', '<', '>', '!':
 				tokens = append(tokens, token{kind: tokenSymbol, text: source[i : i+1], pos: start})
 				i++
 			default:
@@ -122,6 +122,197 @@ func (p *parser) parseProgram() (ir.Program, error) {
 
 func (p *parser) parseStatement() (ir.Instruction, error) {
 	start := p.tokens[p.pos]
+	if p.peek(tokenIdent, "System") && p.peekNext(tokenSymbol, ".") && p.peekN(2, tokenIdent, "runAs") {
+		p.advance()
+		p.advance()
+		p.advance()
+		if _, err := p.expect(tokenSymbol, "("); err != nil {
+			return ir.Instruction{}, err
+		}
+		userExpr, err := p.parseExpression()
+		if err != nil {
+			return ir.Instruction{}, err
+		}
+		if _, err := p.expect(tokenSymbol, ")"); err != nil {
+			return ir.Instruction{}, err
+		}
+		body, err := p.parseStatementBlock()
+		if err != nil {
+			return ir.Instruction{}, err
+		}
+		return ir.Instruction{Op: ir.OpRunAs, Expr: userExpr, Then: body, Pos: start.pos}, nil
+	}
+
+	if p.match(tokenIdent, "if") {
+		if _, err := p.expect(tokenSymbol, "("); err != nil {
+			return ir.Instruction{}, err
+		}
+		condition, err := p.parseExpression()
+		if err != nil {
+			return ir.Instruction{}, err
+		}
+		if _, err := p.expect(tokenSymbol, ")"); err != nil {
+			return ir.Instruction{}, err
+		}
+		thenBlock, err := p.parseStatementBlock()
+		if err != nil {
+			return ir.Instruction{}, err
+		}
+		var elseBlock []ir.Instruction
+		if p.match(tokenIdent, "else") {
+			elseBlock, err = p.parseStatementBlock()
+			if err != nil {
+				return ir.Instruction{}, err
+			}
+		}
+		return ir.Instruction{Op: ir.OpIf, Expr: condition, Then: thenBlock, Else: elseBlock, Pos: start.pos}, nil
+	}
+
+	if p.match(tokenIdent, "while") {
+		if _, err := p.expect(tokenSymbol, "("); err != nil {
+			return ir.Instruction{}, err
+		}
+		condition, err := p.parseExpression()
+		if err != nil {
+			return ir.Instruction{}, err
+		}
+		if _, err := p.expect(tokenSymbol, ")"); err != nil {
+			return ir.Instruction{}, err
+		}
+		body, err := p.parseStatementBlock()
+		if err != nil {
+			return ir.Instruction{}, err
+		}
+		return ir.Instruction{Op: ir.OpWhile, Expr: condition, Then: body, Pos: start.pos}, nil
+	}
+
+	if p.match(tokenIdent, "do") {
+		body, err := p.parseStatementBlock()
+		if err != nil {
+			return ir.Instruction{}, err
+		}
+		if _, err := p.expect(tokenIdent, "while"); err != nil {
+			return ir.Instruction{}, err
+		}
+		if _, err := p.expect(tokenSymbol, "("); err != nil {
+			return ir.Instruction{}, err
+		}
+		condition, err := p.parseExpression()
+		if err != nil {
+			return ir.Instruction{}, err
+		}
+		if _, err := p.expect(tokenSymbol, ")"); err != nil {
+			return ir.Instruction{}, err
+		}
+		if _, err := p.expect(tokenSymbol, ";"); err != nil {
+			return ir.Instruction{}, err
+		}
+		return ir.Instruction{Op: ir.OpDoWhile, Expr: condition, Then: body, Pos: start.pos}, nil
+	}
+
+	if p.match(tokenIdent, "for") {
+		return p.parseFor(start.pos)
+	}
+
+	if p.match(tokenIdent, "break") {
+		if _, err := p.expect(tokenSymbol, ";"); err != nil {
+			return ir.Instruction{}, err
+		}
+		return ir.Instruction{Op: ir.OpBreak, Pos: start.pos}, nil
+	}
+
+	if p.match(tokenIdent, "continue") {
+		if _, err := p.expect(tokenSymbol, ";"); err != nil {
+			return ir.Instruction{}, err
+		}
+		return ir.Instruction{Op: ir.OpContinue, Pos: start.pos}, nil
+	}
+
+	if p.match(tokenIdent, "throw") {
+		expr, err := p.parseExpression()
+		if err != nil {
+			return ir.Instruction{}, err
+		}
+		if _, err := p.expect(tokenSymbol, ";"); err != nil {
+			return ir.Instruction{}, err
+		}
+		return ir.Instruction{Op: ir.OpThrow, Expr: expr, Pos: start.pos}, nil
+	}
+
+	if p.match(tokenIdent, "try") {
+		tryBlock, err := p.parseStatementBlock()
+		if err != nil {
+			return ir.Instruction{}, err
+		}
+		inst := ir.Instruction{Op: ir.OpTry, Then: tryBlock, Pos: start.pos}
+		if p.match(tokenIdent, "catch") {
+			if _, err := p.expect(tokenSymbol, "("); err != nil {
+				return ir.Instruction{}, err
+			}
+			catchType, err := p.parseTypeName()
+			if err != nil {
+				return ir.Instruction{}, err
+			}
+			catchName, err := p.expect(tokenIdent, "")
+			if err != nil {
+				return ir.Instruction{}, err
+			}
+			if _, err := p.expect(tokenSymbol, ")"); err != nil {
+				return ir.Instruction{}, err
+			}
+			catchBlock, err := p.parseStatementBlock()
+			if err != nil {
+				return ir.Instruction{}, err
+			}
+			inst.Type = catchType
+			inst.Name = catchName.text
+			inst.Catch = catchBlock
+		}
+		if p.match(tokenIdent, "finally") {
+			finallyBlock, err := p.parseStatementBlock()
+			if err != nil {
+				return ir.Instruction{}, err
+			}
+			inst.Finally = finallyBlock
+		}
+		if len(inst.Catch) == 0 && len(inst.Finally) == 0 {
+			return ir.Instruction{}, fmt.Errorf("try requires catch or finally at byte %d", start.pos)
+		}
+		return inst, nil
+	}
+
+	if p.match(tokenIdent, "switch") {
+		return p.parseSwitch(start.pos)
+	}
+
+	for _, op := range []string{"insert", "update", "delete", "upsert", "undelete"} {
+		if p.match(tokenIdent, op) {
+			expr, err := p.parseExpression()
+			if err != nil {
+				return ir.Instruction{}, err
+			}
+			if _, err := p.expect(tokenSymbol, ";"); err != nil {
+				return ir.Instruction{}, err
+			}
+			return ir.Instruction{Op: ir.OpDML, Name: op, Expr: expr, Pos: start.pos}, nil
+		}
+	}
+
+	if p.match(tokenIdent, "return") {
+		inst := ir.Instruction{Op: ir.OpReturn, Pos: start.pos}
+		if !p.peek(tokenSymbol, ";") {
+			expr, err := p.parseExpression()
+			if err != nil {
+				return ir.Instruction{}, err
+			}
+			inst.Expr = expr
+		}
+		if _, err := p.expect(tokenSymbol, ";"); err != nil {
+			return ir.Instruction{}, err
+		}
+		return inst, nil
+	}
+
 	if p.isDeclarationStart() {
 		typeName, err := p.parseTypeName()
 		if err != nil {
@@ -145,17 +336,11 @@ func (p *parser) parseStatement() (ir.Instruction, error) {
 		return inst, nil
 	}
 
-	if p.peek(tokenIdent, "") && p.peekNext(tokenSymbol, "=") {
-		name := p.advance().text
-		p.advance()
-		expr, err := p.parseExpression()
+	if inst, ok, err := p.parseAssignmentLike(true); ok || err != nil {
 		if err != nil {
 			return ir.Instruction{}, err
 		}
-		if _, err := p.expect(tokenSymbol, ";"); err != nil {
-			return ir.Instruction{}, err
-		}
-		return ir.Instruction{Op: ir.OpAssign, Name: name, Expr: expr, Pos: start.pos}, nil
+		return inst, nil
 	}
 
 	expr, err := p.parseExpression()
@@ -166,6 +351,243 @@ func (p *parser) parseStatement() (ir.Instruction, error) {
 		return ir.Instruction{}, err
 	}
 	return ir.Instruction{Op: ir.OpExpr, Expr: expr, Pos: start.pos}, nil
+}
+
+func (p *parser) parseFor(pos int) (ir.Instruction, error) {
+	if _, err := p.expect(tokenSymbol, "("); err != nil {
+		return ir.Instruction{}, err
+	}
+	save := p.pos
+	if p.isDeclarationStart() {
+		typeName, err := p.parseTypeName()
+		if err != nil {
+			return ir.Instruction{}, err
+		}
+		name, err := p.expect(tokenIdent, "")
+		if err != nil {
+			return ir.Instruction{}, err
+		}
+		if p.match(tokenSymbol, ":") {
+			iterable, err := p.parseExpression()
+			if err != nil {
+				return ir.Instruction{}, err
+			}
+			if _, err := p.expect(tokenSymbol, ")"); err != nil {
+				return ir.Instruction{}, err
+			}
+			body, err := p.parseStatementBlock()
+			if err != nil {
+				return ir.Instruction{}, err
+			}
+			return ir.Instruction{Op: ir.OpForEach, Type: typeName, Name: name.text, Expr: iterable, Then: body, Pos: pos}, nil
+		}
+		p.pos = save
+	}
+
+	var init *ir.Instruction
+	if !p.peek(tokenSymbol, ";") {
+		stmt, err := p.parseForPart()
+		if err != nil {
+			return ir.Instruction{}, err
+		}
+		init = &stmt
+	}
+	if _, err := p.expect(tokenSymbol, ";"); err != nil {
+		return ir.Instruction{}, err
+	}
+	condition := ir.Expr{Kind: ir.ExprLiteral, Value: "true"}
+	if !p.peek(tokenSymbol, ";") {
+		expr, err := p.parseExpression()
+		if err != nil {
+			return ir.Instruction{}, err
+		}
+		condition = expr
+	}
+	if _, err := p.expect(tokenSymbol, ";"); err != nil {
+		return ir.Instruction{}, err
+	}
+	var update *ir.Instruction
+	if !p.peek(tokenSymbol, ")") {
+		stmt, err := p.parseForPart()
+		if err != nil {
+			return ir.Instruction{}, err
+		}
+		update = &stmt
+	}
+	if _, err := p.expect(tokenSymbol, ")"); err != nil {
+		return ir.Instruction{}, err
+	}
+	body, err := p.parseStatementBlock()
+	if err != nil {
+		return ir.Instruction{}, err
+	}
+	return ir.Instruction{Op: ir.OpFor, Expr: condition, Init: init, Update: update, Then: body, Pos: pos}, nil
+}
+
+func (p *parser) parseForPart() (ir.Instruction, error) {
+	start := p.tokens[p.pos]
+	if p.isDeclarationStart() {
+		typeName, err := p.parseTypeName()
+		if err != nil {
+			return ir.Instruction{}, err
+		}
+		name, err := p.expect(tokenIdent, "")
+		if err != nil {
+			return ir.Instruction{}, err
+		}
+		inst := ir.Instruction{Op: ir.OpDeclare, Type: typeName, Name: name.text, Pos: start.pos}
+		if p.match(tokenSymbol, "=") {
+			expr, err := p.parseExpression()
+			if err != nil {
+				return ir.Instruction{}, err
+			}
+			inst.Expr = expr
+		}
+		return inst, nil
+	}
+	if inst, ok, err := p.parseAssignmentLike(false); ok || err != nil {
+		return inst, err
+	}
+	expr, err := p.parseExpression()
+	if err != nil {
+		return ir.Instruction{}, err
+	}
+	return ir.Instruction{Op: ir.OpExpr, Expr: expr, Pos: start.pos}, nil
+}
+
+func (p *parser) parseAssignmentLike(requireSemicolon bool) (ir.Instruction, bool, error) {
+	if !p.peek(tokenIdent, "") {
+		return ir.Instruction{}, false, nil
+	}
+	save := p.pos
+	start := p.tokens[p.pos]
+	name, ok := p.parseAssignableName()
+	if !ok {
+		p.pos = save
+		return ir.Instruction{}, false, nil
+	}
+	if p.match(tokenSymbol, "=") || p.match(tokenSymbol, "+=") || p.match(tokenSymbol, "-=") {
+		op := p.tokens[p.pos-1].text
+		expr, err := p.parseExpression()
+		if err != nil {
+			return ir.Instruction{}, true, err
+		}
+		if op != "=" {
+			operator := strings.TrimSuffix(op, "=")
+			left := ir.Expr{Kind: ir.ExprVariable, Name: name}
+			expr = binary(operator, left, expr)
+		}
+		if requireSemicolon {
+			if _, err := p.expect(tokenSymbol, ";"); err != nil {
+				return ir.Instruction{}, true, err
+			}
+		}
+		return ir.Instruction{Op: ir.OpAssign, Name: name, Expr: expr, Pos: start.pos}, true, nil
+	}
+	if p.match(tokenSymbol, "++") || p.match(tokenSymbol, "--") {
+		op := p.tokens[p.pos-1].text
+		operator := "+"
+		if op == "--" {
+			operator = "-"
+		}
+		expr := binary(operator, ir.Expr{Kind: ir.ExprVariable, Name: name}, ir.Expr{Kind: ir.ExprLiteral, Value: "1"})
+		if requireSemicolon {
+			if _, err := p.expect(tokenSymbol, ";"); err != nil {
+				return ir.Instruction{}, true, err
+			}
+		}
+		return ir.Instruction{Op: ir.OpAssign, Name: name, Expr: expr, Pos: start.pos}, true, nil
+	}
+	p.pos = save
+	return ir.Instruction{}, false, nil
+}
+
+func (p *parser) parseAssignableName() (string, bool) {
+	if !p.peek(tokenIdent, "") {
+		return "", false
+	}
+	name := p.advance().text
+	for p.match(tokenSymbol, ".") {
+		next, err := p.expect(tokenIdent, "")
+		if err != nil {
+			return "", false
+		}
+		name += "." + next.text
+	}
+	return name, true
+}
+
+func (p *parser) parseSwitch(pos int) (ir.Instruction, error) {
+	if _, err := p.expect(tokenIdent, "on"); err != nil {
+		return ir.Instruction{}, err
+	}
+	expr, err := p.parseExpression()
+	if err != nil {
+		return ir.Instruction{}, err
+	}
+	if _, err := p.expect(tokenSymbol, "{"); err != nil {
+		return ir.Instruction{}, err
+	}
+	inst := ir.Instruction{Op: ir.OpSwitch, Expr: expr, Pos: pos}
+	for !p.peek(tokenSymbol, "}") {
+		caseStart := p.tokens[p.pos]
+		if _, err := p.expect(tokenIdent, "when"); err != nil {
+			return ir.Instruction{}, err
+		}
+		if p.match(tokenIdent, "else") {
+			body, err := p.parseStatementBlock()
+			if err != nil {
+				return ir.Instruction{}, err
+			}
+			inst.Cases = append(inst.Cases, ir.SwitchCase{Else: true, Body: body, Pos: caseStart.pos})
+			continue
+		}
+		var exprs []ir.Expr
+		for {
+			caseExpr, err := p.parseExpression()
+			if err != nil {
+				return ir.Instruction{}, err
+			}
+			exprs = append(exprs, caseExpr)
+			if !p.match(tokenSymbol, ",") {
+				break
+			}
+		}
+		body, err := p.parseStatementBlock()
+		if err != nil {
+			return ir.Instruction{}, err
+		}
+		inst.Cases = append(inst.Cases, ir.SwitchCase{Exprs: exprs, Body: body, Pos: caseStart.pos})
+	}
+	if _, err := p.expect(tokenSymbol, "}"); err != nil {
+		return ir.Instruction{}, err
+	}
+	return inst, nil
+}
+
+func (p *parser) parseStatementBlock() ([]ir.Instruction, error) {
+	if !p.match(tokenSymbol, "{") {
+		stmt, err := p.parseStatement()
+		if err != nil {
+			return nil, err
+		}
+		return []ir.Instruction{stmt}, nil
+	}
+	var out []ir.Instruction
+	for !p.peek(tokenSymbol, "}") {
+		if p.peek(tokenEOF, "") {
+			return nil, fmt.Errorf("unterminated block at byte %d", p.tokens[p.pos].pos)
+		}
+		stmt, err := p.parseStatement()
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, stmt)
+	}
+	if _, err := p.expect(tokenSymbol, "}"); err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (p *parser) parseExpression() (ir.Expr, error) {
@@ -295,6 +717,12 @@ func (p *parser) parseFactor() (ir.Expr, error) {
 				return ir.Expr{}, err
 			}
 			left = binary("/", left, right)
+		case p.match(tokenSymbol, "%"):
+			right, err := p.parseUnary()
+			if err != nil {
+				return ir.Expr{}, err
+			}
+			left = binary("%", left, right)
 		default:
 			return left, nil
 		}
@@ -335,11 +763,11 @@ func (p *parser) parsePrimary() (ir.Expr, error) {
 			if err != nil {
 				return ir.Expr{}, err
 			}
-			args, err := p.parseNewArgs()
+			args, namedArgs, err := p.parseNewArgs()
 			if err != nil {
 				return ir.Expr{}, err
 			}
-			return ir.Expr{Kind: ir.ExprCall, Callee: "new:" + typeName, Args: args}, nil
+			return ir.Expr{Kind: ir.ExprCall, Callee: "new:" + typeName, Args: args, NamedArgs: namedArgs}, nil
 		}
 		switch tok.text {
 		case "true", "false", "null":
@@ -372,38 +800,86 @@ func (p *parser) parsePrimary() (ir.Expr, error) {
 			}
 			return expr, nil
 		}
+		if tok.text == "[" {
+			return p.parseSOQLLiteral(tok.pos)
+		}
 	}
 	return ir.Expr{}, fmt.Errorf("unexpected token %q at byte %d", p.tokens[p.pos-1].text, p.tokens[p.pos-1].pos)
 }
 
-func (p *parser) parseNewArgs() ([]ir.Expr, error) {
+func (p *parser) parseNewArgs() ([]ir.Expr, []ir.NamedArg, error) {
 	switch {
 	case p.match(tokenSymbol, "("):
-		if _, err := p.expect(tokenSymbol, ")"); err != nil {
-			return nil, err
+		if p.match(tokenSymbol, ")") {
+			return nil, nil, nil
 		}
-		return nil, nil
+		var args []ir.Expr
+		var named []ir.NamedArg
+		for {
+			if p.peek(tokenIdent, "") && p.peekNext(tokenSymbol, "=") {
+				name := p.advance().text
+				p.advance()
+				expr, err := p.parseExpression()
+				if err != nil {
+					return nil, nil, err
+				}
+				named = append(named, ir.NamedArg{Name: name, Expr: expr})
+			} else {
+				expr, err := p.parseExpression()
+				if err != nil {
+					return nil, nil, err
+				}
+				args = append(args, expr)
+			}
+			if p.match(tokenSymbol, ")") {
+				return args, named, nil
+			}
+			if _, err := p.expect(tokenSymbol, ","); err != nil {
+				return nil, nil, err
+			}
+		}
 	case p.match(tokenSymbol, "{"):
 		if p.match(tokenSymbol, "}") {
-			return nil, nil
+			return nil, nil, nil
 		}
 		var args []ir.Expr
 		for {
 			expr, err := p.parseExpression()
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 			args = append(args, expr)
 			if p.match(tokenSymbol, "}") {
-				return args, nil
+				return args, nil, nil
 			}
 			if _, err := p.expect(tokenSymbol, ","); err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 		}
 	default:
-		return nil, fmt.Errorf("expected collection constructor at byte %d", p.tokens[p.pos].pos)
+		return nil, nil, fmt.Errorf("expected constructor arguments at byte %d", p.tokens[p.pos].pos)
 	}
+}
+
+func (p *parser) parseSOQLLiteral(pos int) (ir.Expr, error) {
+	depth := 1
+	var parts []string
+	for !p.peek(tokenEOF, "") {
+		tok := p.advance()
+		if tok.kind == tokenSymbol {
+			switch tok.text {
+			case "[":
+				depth++
+			case "]":
+				depth--
+				if depth == 0 {
+					return ir.Expr{Kind: ir.ExprSOQL, Value: strings.Join(parts, " ")}, nil
+				}
+			}
+		}
+		parts = append(parts, tok.text)
+	}
+	return ir.Expr{}, fmt.Errorf("unterminated SOQL literal at byte %d", pos)
 }
 
 func (p *parser) parseArguments() ([]ir.Expr, error) {
@@ -434,9 +910,6 @@ func (p *parser) isDeclarationStart() bool {
 	if !p.peek(tokenIdent, "") {
 		return false
 	}
-	if !isSupportedTypeStart(p.tokens[p.pos].text) {
-		return false
-	}
 	save := p.pos
 	if _, err := p.parseTypeName(); err != nil {
 		p.pos = save
@@ -453,9 +926,6 @@ func (p *parser) parseTypeName() (string, error) {
 		return "", err
 	}
 	name := first.text
-	if !isSupportedTypeStart(name) && !isSupportedScalarType(name) {
-		return "", fmt.Errorf("unsupported type %q at byte %d", name, first.pos)
-	}
 	if p.match(tokenSymbol, "<") {
 		var args []string
 		for {
@@ -480,24 +950,6 @@ func (p *parser) parseTypeName() (string, error) {
 		name += "[]"
 	}
 	return name, nil
-}
-
-func isSupportedTypeStart(name string) bool {
-	switch name {
-	case "Boolean", "Integer", "Long", "String", "Object", "List", "Set", "Map":
-		return true
-	default:
-		return false
-	}
-}
-
-func isSupportedScalarType(name string) bool {
-	switch name {
-	case "Boolean", "Integer", "Long", "String", "Object":
-		return true
-	default:
-		return false
-	}
 }
 
 func (p *parser) expect(kind tokenKind, text string) (token, error) {
@@ -529,10 +981,14 @@ func (p *parser) peek(kind tokenKind, text string) bool {
 }
 
 func (p *parser) peekNext(kind tokenKind, text string) bool {
-	if p.pos+1 >= len(p.tokens) {
+	return p.peekN(1, kind, text)
+}
+
+func (p *parser) peekN(offset int, kind tokenKind, text string) bool {
+	if p.pos+offset >= len(p.tokens) {
 		return false
 	}
-	tok := p.tokens[p.pos+1]
+	tok := p.tokens[p.pos+offset]
 	if tok.kind != kind {
 		return false
 	}

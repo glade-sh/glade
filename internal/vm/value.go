@@ -6,13 +6,15 @@ import (
 )
 
 type Value struct {
-	Kind ValueKind        `json:"kind"`
-	Int  int64            `json:"int,omitempty"`
-	Bool bool             `json:"bool,omitempty"`
-	Text string           `json:"text,omitempty"`
-	List []Value          `json:"list,omitempty"`
-	Set  []Value          `json:"set,omitempty"`
-	Map  map[string]Value `json:"map,omitempty"`
+	Kind   ValueKind        `json:"kind"`
+	Int    int64            `json:"int,omitempty"`
+	Bool   bool             `json:"bool,omitempty"`
+	Text   string           `json:"text,omitempty"`
+	Type   string           `json:"type,omitempty"`
+	Fields map[string]Value `json:"fields,omitempty"`
+	List   []Value          `json:"list,omitempty"`
+	Set    []Value          `json:"set,omitempty"`
+	Map    map[string]Value `json:"map,omitempty"`
 }
 
 type ValueKind string
@@ -25,6 +27,7 @@ const (
 	ValueList   ValueKind = "list"
 	ValueSet    ValueKind = "set"
 	ValueMap    ValueKind = "map"
+	ValueObject ValueKind = "object"
 )
 
 var Null = Value{Kind: ValueNull}
@@ -59,6 +62,10 @@ func Map() Value {
 	return Value{Kind: ValueMap, Map: make(map[string]Value)}
 }
 
+func Object(typeName string) Value {
+	return Value{Kind: ValueObject, Type: typeName, Fields: make(map[string]Value)}
+}
+
 func (v Value) String() string {
 	switch v.Kind {
 	case ValueNull:
@@ -78,6 +85,11 @@ func (v Value) String() string {
 		return "Set" + valuesString(v.Set)
 	case ValueMap:
 		return fmt.Sprintf("Map(size=%d)", len(v.Map))
+	case ValueObject:
+		if message, ok := v.Fields["message"]; ok && message.Kind == ValueString {
+			return message.Text
+		}
+		return fmt.Sprintf("%s{}", v.Type)
 	default:
 		return fmt.Sprintf("<%s>", v.Kind)
 	}
@@ -126,6 +138,11 @@ func (v Value) Equal(other Value) bool {
 			}
 		}
 		return true
+	case ValueObject:
+		if v.Text != "" || other.Text != "" {
+			return v.Type == other.Type && v.Text == other.Text
+		}
+		return v.Type == other.Type && fmt.Sprintf("%p", v.Fields) == fmt.Sprintf("%p", other.Fields)
 	default:
 		return false
 	}

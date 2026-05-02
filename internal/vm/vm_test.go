@@ -85,8 +85,62 @@ System.assert(counts.containsKey('a'));
 	}
 }
 
-func TestCompileRejectsUnsupportedSyntax(t *testing.T) {
-	if _, err := CompileAnonymous("for (Integer i = 0; i < 1; i++) {}"); err == nil {
-		t.Fatal("expected compile error")
+func TestExecForBreakContinueDoWhileSwitchAndEnhancedFor(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Integer> xs = new List<Integer>{1, 2, 3, 4};
+Integer total = 0;
+for (Integer i = 0; i < xs.size(); i++) {
+	if (i == 1) {
+		continue;
+	}
+	if (i == 3) {
+		break;
+	}
+	total = total + xs.get(i);
+}
+Integer seen = 0;
+for (Integer x : xs) {
+	seen = seen + x;
+}
+Integer once = 0;
+do {
+	once++;
+} while (once < 1);
+String label = '';
+switch on total {
+	when 1 { label = 'one'; }
+	when 4 { label = 'four'; }
+	when else { label = 'other'; }
+}
+System.assertEquals(4, total);
+System.assertEquals(10, seen);
+System.assertEquals(1, once);
+System.assertEquals('four', label);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecTryCatchFinallyThrow(t *testing.T) {
+	program, err := CompileAnonymous(`
+Integer cleaned = 0;
+try {
+	throw new MyException();
+} catch (Exception e) {
+	cleaned = cleaned + 1;
+} finally {
+	cleaned = cleaned + 2;
+}
+System.assertEquals(3, cleaned);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
 	}
 }

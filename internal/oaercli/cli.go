@@ -6,26 +6,37 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strings"
+	"time"
 
 	"github.com/open-aer/oaer/internal/apexast"
 	"github.com/open-aer/oaer/internal/apextest"
+	"github.com/open-aer/oaer/internal/capability"
 	"github.com/open-aer/oaer/internal/compat"
 	"github.com/open-aer/oaer/internal/config"
+	"github.com/open-aer/oaer/internal/dap"
 	"github.com/open-aer/oaer/internal/diagnostic"
+	"github.com/open-aer/oaer/internal/lsp"
+	"github.com/open-aer/oaer/internal/profile"
 	"github.com/open-aer/oaer/internal/project"
 	oaerschema "github.com/open-aer/oaer/internal/schema"
 	"github.com/open-aer/oaer/internal/sema"
+	"github.com/open-aer/oaer/internal/server"
+	"github.com/open-aer/oaer/internal/sobject"
+	"github.com/open-aer/oaer/internal/storage"
 	"github.com/open-aer/oaer/internal/testreport"
 	"github.com/open-aer/oaer/internal/trace"
 	"github.com/open-aer/oaer/internal/typesys"
 	"github.com/open-aer/oaer/internal/vm"
+	"github.com/open-aer/oaer/internal/watch"
 )
 
-const Version = "0.0.0-dev"
+var Version = "0.0.0-dev"
 
 // Run executes the oaer CLI and returns a process exit code.
 func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
@@ -100,6 +111,30 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 			return 1
 		}
 		return 0
+	case "lsp":
+		if err := runLSP(ctx, args[1:], stdout); err != nil {
+			fmt.Fprintf(stderr, "oaer: %v\n", err)
+			return 1
+		}
+		return 0
+	case "profile":
+		if err := runProfile(ctx, args[1:], stdout); err != nil {
+			fmt.Fprintf(stderr, "oaer: %v\n", err)
+			return 1
+		}
+		return 0
+	case "server":
+		if err := runServer(ctx, args[1:], stdout); err != nil {
+			fmt.Fprintf(stderr, "oaer: %v\n", err)
+			return 1
+		}
+		return 0
+	case "db":
+		if err := runDB(ctx, args[1:], stdout); err != nil {
+			fmt.Fprintf(stderr, "oaer: %v\n", err)
+			return 1
+		}
+		return 0
 	case "compat":
 		if err := runCompat(ctx, args[1:], stdout); err != nil {
 			fmt.Fprintf(stderr, "oaer: %v\n", err)
@@ -137,7 +172,11 @@ Commands:
   check     Run semantic checks over a project.
   exec      Execute anonymous Apex.
   test      Discover and run supported Apex tests.
-  compat    Validate compatibility fixtures.
+  lsp       Run the Language Server Protocol server over stdio.
+  profile   Analyze oaer trace output.
+  server    Start the local Salesforce-compatible API baseline.
+  db        Seed, reset, export, and inspect a persistent local database.
+  compat    Validate fixtures and report capability readiness.
   help      Print this help text.
 `)+"\n")
 }
@@ -391,18 +430,32 @@ func runExec(ctx context.Context, args []string, w io.Writer) error {
 	}
 
 	jsonOut := false
+	debug := false
 	tracePath := ""
+	limitMode := vm.LimitMode("")
 	sourceParts := make([]string, 0, len(args))
 	for i := 0; i < len(args); i++ {
 		arg := args[i]
 		switch arg {
 		case "--json":
 			jsonOut = true
+		case "--debug":
+			debug = true
 		case "--trace":
 			if i+1 >= len(args) {
 				return errors.New("--trace requires a path")
 			}
 			tracePath = args[i+1]
+			i++
+		case "--limit-mode":
+			if i+1 >= len(args) {
+				return errors.New("--limit-mode requires a value")
+			}
+			mode, err := parseLimitMode(args[i+1])
+			if err != nil {
+				return err
+			}
+			limitMode = mode
 			i++
 		default:
 			sourceParts = append(sourceParts, arg)
@@ -421,7 +474,11 @@ func runExec(ctx context.Context, args []string, w io.Writer) error {
 	if jsonOut {
 		stdout = nil
 	}
-	result, err := vm.Execute(program, stdout)
+	machine := vm.New(stdout)
+	if limitMode != "" {
+		machine.SetLimitMode(limitMode)
+	}
+	result, err := machine.Execute(program)
 	if err != nil {
 		return err
 	}
@@ -429,6 +486,9 @@ func runExec(ctx context.Context, args []string, w io.Writer) error {
 		if err := writeTraceFile(tracePath, result.Trace); err != nil {
 			return err
 		}
+	}
+	if debug {
+		return serveDAPSnapshot(dap.NewSnapshot(result.Trace, result.Vars), w)
 	}
 
 	if jsonOut {
@@ -440,6 +500,13 @@ func runExec(ctx context.Context, args []string, w io.Writer) error {
 	return nil
 }
 
+func serveDAPSnapshot(snapshot dap.Snapshot, w io.Writer) error {
+	if file, ok := w.(*os.File); ok && file.Fd() == os.Stdout.Fd() {
+		return dap.Serve(os.Stdin, w, dap.NewHandler(snapshot))
+	}
+	return dap.Write(w, dap.NewHandler(snapshot).Handle(dap.Request{Seq: 1, Type: dap.MessageTypeRequest, Command: dap.CommandInitialize})[0])
+}
+
 func runTest(ctx context.Context, args []string, w io.Writer) (testreport.Run, error) {
 	if err := ctx.Err(); err != nil {
 		return testreport.Run{}, err
@@ -449,6 +516,11 @@ func runTest(ctx context.Context, args []string, w io.Writer) (testreport.Run, e
 	filter := ""
 	format := "console"
 	junitPath := ""
+	limitMode := vm.LimitMode("")
+	watchMode := false
+	watchOnce := false
+	debug := false
+	debounce := watch.DefaultDebounce
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--project":
@@ -471,6 +543,33 @@ func runTest(ctx context.Context, args []string, w io.Writer) (testreport.Run, e
 			}
 			junitPath = args[i+1]
 			i++
+		case "--limit-mode":
+			if i+1 >= len(args) {
+				return testreport.Run{}, errors.New("--limit-mode requires a value")
+			}
+			mode, err := parseLimitMode(args[i+1])
+			if err != nil {
+				return testreport.Run{}, err
+			}
+			limitMode = mode
+			i++
+		case "--watch":
+			watchMode = true
+		case "--watch-once":
+			watchMode = true
+			watchOnce = true
+		case "--debug":
+			debug = true
+		case "--debounce":
+			if i+1 >= len(args) {
+				return testreport.Run{}, errors.New("--debounce requires a duration")
+			}
+			parsed, err := time.ParseDuration(args[i+1])
+			if err != nil {
+				return testreport.Run{}, err
+			}
+			debounce = parsed
+			i++
 		default:
 			return testreport.Run{}, fmt.Errorf("unknown flag %q", args[i])
 		}
@@ -480,7 +579,13 @@ func runTest(ctx context.Context, args []string, w io.Writer) (testreport.Run, e
 	if err != nil {
 		return testreport.Run{}, err
 	}
-	result := apextest.Run(index, apextest.Options{Filter: filter})
+	if watchMode {
+		return runWatchTests(ctx, root, index, apextest.Options{Filter: filter, LimitMode: limitMode}, watch.Config{Root: root, Debounce: debounce}, watchOnce, w)
+	}
+	result := apextest.Run(index, apextest.Options{Filter: filter, LimitMode: limitMode})
+	if debug {
+		return result, serveDAPSnapshot(testRunSnapshot(result), w)
+	}
 	if junitPath != "" {
 		if err := writeJUnitFile(junitPath, result); err != nil {
 			return result, err
@@ -494,6 +599,129 @@ func runTest(ctx context.Context, args []string, w io.Writer) (testreport.Run, e
 	}
 }
 
+func testRunSnapshot(result testreport.Run) dap.Snapshot {
+	summary := result.Summary()
+	vars := map[string]vm.Value{
+		"total":       vm.Int(int64(summary.Total)),
+		"passed":      vm.Int(int64(summary.Passed)),
+		"failed":      vm.Int(int64(summary.Failed)),
+		"unsupported": vm.Int(int64(summary.Unsupported)),
+	}
+	frames := make([]dap.StackFrame, 0)
+	id := 1
+	for _, suite := range result.Suites {
+		for _, testCase := range suite.Cases {
+			frames = append(frames, dap.StackFrame{
+				ID:     id,
+				Name:   testCase.ClassName + "." + testCase.MethodName,
+				Line:   1,
+				Column: 1,
+			})
+			id++
+		}
+	}
+	return dap.Snapshot{Frames: frames, Vars: vars}
+}
+
+func runWatchTests(ctx context.Context, root string, index typesys.Index, opts apextest.Options, cfg watch.Config, once bool, w io.Writer) (testreport.Run, error) {
+	cfg = cfg.Normalized()
+	if cfg.Root == "" {
+		cfg.Root = root
+	}
+	if err := writeJSONLine(w, watch.NewWatchStartedEvent(time.Now().UTC(), cfg)); err != nil {
+		return testreport.Run{}, err
+	}
+	previous, err := watch.CaptureSnapshot(root)
+	if err != nil {
+		return testreport.Run{}, err
+	}
+	result := runSelectedTests(index, opts, watch.TestSelection{Mode: watch.SelectionAll, TestClasses: nil, Reason: "initial watch run"})
+	if err := writeJSONLine(w, watch.RunStartedEvent{Event: watch.EventRunStarted, Time: time.Now().UTC()}); err != nil {
+		return result, err
+	}
+	if err := writeJSONLine(w, watch.RunFinishedEvent{Event: watch.EventRunFinished, Time: time.Now().UTC(), Summary: watchSummary(result)}); err != nil {
+		return result, err
+	}
+	if once {
+		return result, nil
+	}
+	ticker := time.NewTicker(cfg.Debounce)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return result, ctx.Err()
+		case <-ticker.C:
+			current, err := watch.CaptureSnapshot(root)
+			if err != nil {
+				_ = writeJSONLine(w, watch.NewErrorEvent(time.Now().UTC(), err.Error(), root))
+				continue
+			}
+			changes := watch.DiffSnapshots(previous, current)
+			if len(changes) == 0 {
+				continue
+			}
+			previous = current
+			if err := writeJSONLine(w, watch.NewChangesEvent(time.Now().UTC(), changes)); err != nil {
+				return result, err
+			}
+			if err := writeJSONLine(w, watch.NewDebouncedEvent(time.Now().UTC(), cfg, changes)); err != nil {
+				return result, err
+			}
+			index, err = loadIndex(root)
+			if err != nil {
+				_ = writeJSONLine(w, watch.NewErrorEvent(time.Now().UTC(), err.Error(), root))
+				continue
+			}
+			selection := watch.SelectAffectedTests(index, changes)
+			if err := writeJSONLine(w, watch.NewTestsSelectedEvent(time.Now().UTC(), selection)); err != nil {
+				return result, err
+			}
+			if selection.Mode == watch.SelectionNone {
+				continue
+			}
+			result = runSelectedTests(index, opts, selection)
+			if err := writeJSONLine(w, watch.RunStartedEvent{Event: watch.EventRunStarted, Time: time.Now().UTC(), TestClasses: selection.TestClasses}); err != nil {
+				return result, err
+			}
+			if err := writeJSONLine(w, watch.RunFinishedEvent{Event: watch.EventRunFinished, Time: time.Now().UTC(), Summary: watchSummary(result)}); err != nil {
+				return result, err
+			}
+		}
+	}
+}
+
+func runSelectedTests(index typesys.Index, opts apextest.Options, selection watch.TestSelection) testreport.Run {
+	if selection.Mode == watch.SelectionDirect && len(selection.TestClasses) == 1 {
+		opts.Filter = selection.TestClasses[0]
+	}
+	return apextest.Run(index, opts)
+}
+
+func watchSummary(result testreport.Run) watch.RunSummary {
+	s := result.Summary()
+	return watch.RunSummary{
+		Total:         s.Total,
+		Passed:        s.Passed,
+		Failed:        s.Failed,
+		CompileErrors: s.Errors,
+		Unsupported:   s.Unsupported,
+		PassedAll:     s.Failed == 0 && s.Errors == 0 && s.Unsupported == 0,
+	}
+}
+
+func writeJSONLine(w io.Writer, value any) error {
+	data, err := json.Marshal(value)
+	if err != nil {
+		return err
+	}
+	if _, err := w.Write(data); err != nil {
+		return err
+	}
+	_, err = io.WriteString(w, "\n")
+	return err
+}
+
 func writeJUnitFile(path string, result testreport.Run) error {
 	file, err := os.Create(path)
 	if err != nil {
@@ -501,6 +729,316 @@ func writeJUnitFile(path string, result testreport.Run) error {
 	}
 	defer file.Close()
 	return testreport.WriteJUnitXML(file, result)
+}
+
+func parseLimitMode(raw string) (vm.LimitMode, error) {
+	switch strings.ToLower(raw) {
+	case "", "permissive":
+		return vm.LimitModePermissive, nil
+	case "strict":
+		return vm.LimitModeStrict, nil
+	default:
+		return "", fmt.Errorf("unsupported limit mode %q", raw)
+	}
+}
+
+func runLSP(ctx context.Context, args []string, w io.Writer) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	root := "."
+	diagnosticsOnce := false
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--project":
+			if i+1 >= len(args) {
+				return errors.New("--project requires a value")
+			}
+			root = args[i+1]
+			i++
+		case "--diagnostics-once":
+			diagnosticsOnce = true
+		default:
+			return fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	index, err := loadIndex(root)
+	if err != nil {
+		return err
+	}
+	handler := lsp.NewHandler(index)
+	if diagnosticsOnce {
+		for _, notification := range handler.PublishDiagnostics(sema.Analyze(index).Diagnostics) {
+			if err := lsp.WriteMessage(w, notification); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	return lsp.Serve(os.Stdin, w, handler)
+}
+
+func runProfile(ctx context.Context, args []string, w io.Writer) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if len(args) == 0 || args[0] != "analyze" {
+		return errors.New("usage: oaer profile analyze <trace.json> [--json]")
+	}
+	jsonOut := false
+	tracePath := ""
+	for _, arg := range args[1:] {
+		switch arg {
+		case "--json":
+			jsonOut = true
+		default:
+			if tracePath != "" {
+				return fmt.Errorf("unexpected argument %q", arg)
+			}
+			tracePath = arg
+		}
+	}
+	if tracePath == "" {
+		return errors.New("usage: oaer profile analyze <trace.json> [--json]")
+	}
+	file, err := os.Open(tracePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	doc, err := profile.ReadTrace(file)
+	if err != nil {
+		return err
+	}
+	report := profile.Analyze(doc)
+	if jsonOut {
+		return profile.WriteJSON(w, report)
+	}
+	return profile.WriteMarkdown(w, report)
+}
+
+func runServer(ctx context.Context, args []string, w io.Writer) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	addr := "127.0.0.1:8080"
+	dbPath := ""
+	root := "."
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--addr":
+			if i+1 >= len(args) {
+				return errors.New("--addr requires a value")
+			}
+			addr = args[i+1]
+			i++
+		case "--db":
+			if i+1 >= len(args) {
+				return errors.New("--db requires a path")
+			}
+			dbPath = args[i+1]
+			i++
+		case "--project":
+			if i+1 >= len(args) {
+				return errors.New("--project requires a value")
+			}
+			root = args[i+1]
+			i++
+		default:
+			return fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	var org storage.OrgState
+	var handler http.Handler
+	if dbPath != "" {
+		store, loaded, err := openDBStore(dbPath, root)
+		if err != nil {
+			return err
+		}
+		defer store.Close()
+		org = loaded
+		handler = server.NewWithStore(&org, store)
+	} else {
+		org = storageBaseline()
+		handler = server.New(&org)
+	}
+	fmt.Fprintf(w, "oaer server: %s\n", server.URL(addr))
+	return http.ListenAndServe(addr, handler)
+}
+
+func storageBaseline() storage.OrgState {
+	org := storage.NewOrgState()
+	org.APIVersion = "61.0"
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Account",
+			KeyPrefix: "001",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	storage.EnsureDeterministicPlatformData(&org)
+	return org
+}
+
+func runDB(ctx context.Context, args []string, w io.Writer) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if len(args) == 0 {
+		return errors.New("usage: oaer db seed|reset|export|inspect --db <path> [--project <root>] [--json] [fixture.json]")
+	}
+	command := args[0]
+	dbPath := ""
+	root := "."
+	jsonOut := false
+	positionals := make([]string, 0)
+	for i := 1; i < len(args); i++ {
+		switch args[i] {
+		case "--db":
+			if i+1 >= len(args) {
+				return errors.New("--db requires a path")
+			}
+			dbPath = args[i+1]
+			i++
+		case "--project":
+			if i+1 >= len(args) {
+				return errors.New("--project requires a value")
+			}
+			root = args[i+1]
+			i++
+		case "--json":
+			jsonOut = true
+		default:
+			positionals = append(positionals, args[i])
+		}
+	}
+	if dbPath == "" {
+		return errors.New("oaer db requires --db <path>")
+	}
+	store, org, err := openDBStore(dbPath, root)
+	if err != nil {
+		return err
+	}
+	defer store.Close()
+	switch command {
+	case "seed":
+		if len(positionals) != 1 {
+			return errors.New("usage: oaer db seed --db <path> [--project <root>] <fixture.json>")
+		}
+		file, err := os.Open(positionals[0])
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+		fixture, err := storage.ReadFixture(file)
+		if err != nil {
+			return err
+		}
+		if err := storage.ApplyFixture(&org, fixture); err != nil {
+			return err
+		}
+		storage.EnsureDeterministicPlatformData(&org)
+		if err := store.Save(org); err != nil {
+			return err
+		}
+		return writeDBInspect(w, dbPath, org, jsonOut)
+	case "reset":
+		if len(positionals) != 0 {
+			return fmt.Errorf("unexpected argument %q", positionals[0])
+		}
+		storage.ResetData(&org)
+		if err := store.Save(org); err != nil {
+			return err
+		}
+		return writeDBInspect(w, dbPath, org, jsonOut)
+	case "export":
+		if len(positionals) != 0 {
+			return fmt.Errorf("unexpected argument %q", positionals[0])
+		}
+		return storage.WriteFixture(w, storage.FixtureFromOrg(org))
+	case "inspect":
+		if len(positionals) != 0 {
+			return fmt.Errorf("unexpected argument %q", positionals[0])
+		}
+		return writeDBInspect(w, dbPath, org, jsonOut)
+	default:
+		return errors.New("usage: oaer db seed|reset|export|inspect --db <path> [--project <root>] [--json] [fixture.json]")
+	}
+}
+
+func openDBStore(path, root string) (*storage.SQLiteStore, storage.OrgState, error) {
+	store, err := storage.OpenSQLite(path)
+	if err != nil {
+		return nil, storage.OrgState{}, err
+	}
+	org, err := store.Load()
+	if err != nil {
+		_ = store.Close()
+		return nil, storage.OrgState{}, err
+	}
+	if len(org.Objects) == 0 {
+		org, err = orgForProject(root)
+		if err != nil {
+			_ = store.Close()
+			return nil, storage.OrgState{}, err
+		}
+		storage.EnsureDeterministicPlatformData(&org)
+		if err := store.Save(org); err != nil {
+			_ = store.Close()
+			return nil, storage.OrgState{}, err
+		}
+	}
+	return store, org, nil
+}
+
+func orgForProject(root string) (storage.OrgState, error) {
+	index, err := loadIndex(root)
+	if err != nil {
+		if root == "." {
+			return storageBaseline(), nil
+		}
+		return storage.OrgState{}, err
+	}
+	org := storage.NewOrgState()
+	org.APIVersion = index.Project.SourceAPIVersion
+	org.Namespace = index.Project.Namespace
+	registry := sobject.BuildDescribeRegistry(oaerschema.Schema{Objects: append([]oaerschema.Object(nil), index.Objects...)})
+	for name, describe := range registry.Objects {
+		org.Objects[name] = storage.ObjectState{
+			Definition: sobject.ToObjectDefinition(describe),
+			Records:    make(map[storage.ID]storage.Record),
+		}
+	}
+	storage.EnsureDeterministicPlatformData(&org)
+	return org, nil
+}
+
+func writeDBInspect(w io.Writer, path string, org storage.OrgState, jsonOut bool) error {
+	summary := storage.InspectOrg(path, org)
+	if jsonOut {
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		return enc.Encode(summary)
+	}
+	fmt.Fprintf(w, "db: %s\n", path)
+	fmt.Fprintf(w, "objects: %d\n", summary.Objects)
+	fmt.Fprintf(w, "records: %d\n", summary.Records)
+	fmt.Fprintf(w, "users: %d\n", summary.Users)
+	fmt.Fprintf(w, "profiles: %d\n", summary.Profiles)
+	fmt.Fprintf(w, "permissions: %d\n", summary.Permissions)
+	objects := make([]string, 0, len(summary.ByObject))
+	for object := range summary.ByObject {
+		objects = append(objects, object)
+	}
+	sort.Strings(objects)
+	for _, object := range objects {
+		count := summary.ByObject[object]
+		fmt.Fprintf(w, "%s: %d\n", object, count)
+	}
+	return nil
 }
 
 func writeTraceFile(path string, events []trace.Event) error {
@@ -566,8 +1104,22 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	if len(args) < 2 || (args[0] != "validate" && args[0] != "run") {
-		return errors.New("usage: oaer compat validate|run <fixture.json...>")
+	if len(args) == 0 {
+		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] | dashboard|gaps [--output <path>|--check <path>]")
+	}
+	switch args[0] {
+	case "matrix", "mvp":
+		return runCompatCapabilities(args[1:], w)
+	case "dashboard":
+		return runCompatDashboard(args[1:], w)
+	case "gaps":
+		return runCompatGaps(args[1:], w)
+	case "validate", "run":
+		if len(args) < 2 {
+			return errors.New("usage: oaer compat validate|run <fixture.json...>")
+		}
+	default:
+		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] | dashboard|gaps [--output <path>|--check <path>]")
 	}
 
 	for _, path := range args[1:] {
@@ -589,4 +1141,79 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 		fmt.Fprintf(w, "%s: ok\n", path)
 	}
 	return nil
+}
+
+func runCompatCapabilities(args []string, w io.Writer) error {
+	jsonOut := false
+	for _, arg := range args {
+		switch arg {
+		case "--json":
+			jsonOut = true
+		default:
+			return fmt.Errorf("unknown flag %q", arg)
+		}
+	}
+	report := capability.MVPReport()
+	if jsonOut {
+		return capability.WriteJSON(w, report)
+	}
+	return capability.WriteText(w, report)
+}
+
+func runCompatDashboard(args []string, w io.Writer) error {
+	return runCompatGeneratedMarkdown(args, w, "dashboard", "compatibility dashboard", capability.WriteMarkdown)
+}
+
+func runCompatGaps(args []string, w io.Writer) error {
+	return runCompatGeneratedMarkdown(args, w, "gaps", "known gaps", capability.WriteKnownGapsMarkdown)
+}
+
+func runCompatGeneratedMarkdown(args []string, w io.Writer, command, label string, write func(io.Writer, capability.Report) error) error {
+	outputPath := ""
+	checkPath := ""
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--output":
+			i++
+			if i >= len(args) {
+				return fmt.Errorf("usage: oaer compat %s [--output <path>|--check <path>]", command)
+			}
+			outputPath = args[i]
+		case "--check":
+			i++
+			if i >= len(args) {
+				return fmt.Errorf("usage: oaer compat %s [--output <path>|--check <path>]", command)
+			}
+			checkPath = args[i]
+		default:
+			return fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	if outputPath != "" && checkPath != "" {
+		return errors.New("use only one of --output or --check")
+	}
+
+	var buf strings.Builder
+	if err := write(&buf, capability.MVPReport()); err != nil {
+		return err
+	}
+	content := buf.String()
+
+	switch {
+	case outputPath != "":
+		return os.WriteFile(outputPath, []byte(content), 0o644)
+	case checkPath != "":
+		existing, err := os.ReadFile(checkPath)
+		if err != nil {
+			return err
+		}
+		if string(existing) != content {
+			return fmt.Errorf("%s drift: run `oaer compat %s --output %s`", label, command, checkPath)
+		}
+		fmt.Fprintf(w, "%s: up to date\n", checkPath)
+		return nil
+	default:
+		_, err := io.WriteString(w, content)
+		return err
+	}
 }

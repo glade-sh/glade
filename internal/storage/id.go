@@ -66,12 +66,14 @@ func AssignDeterministicPrefixes(objectNames []string, explicit map[string]strin
 
 func StandardKeyPrefixes() map[string]string {
 	return map[string]string{
-		"Account":     "001",
-		"Contact":     "003",
-		"User":        "005",
-		"Opportunity": "006",
-		"RecordType":  "012",
-		"Profile":     "00e",
+		"Account":                 "001",
+		"Contact":                 "003",
+		"User":                    "005",
+		"Opportunity":             "006",
+		"RecordType":              "012",
+		"Profile":                 "00e",
+		"PermissionSet":           "0PS",
+		"PermissionSetAssignment": "0Pa",
 	}
 }
 

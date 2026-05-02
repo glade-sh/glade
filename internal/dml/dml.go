@@ -67,6 +67,44 @@ func (e *Engine) Delete(records []storage.Record) []Result {
 	return results
 }
 
+func (e *Engine) Upsert(records []storage.Record) []Result {
+	results := make([]Result, len(records))
+	for i, record := range records {
+		if record.ID == "" {
+			id, err := e.insertOne(record)
+			if err != nil {
+				results[i] = Result{ID: record.ID, Success: false, Error: err.Error()}
+				continue
+			}
+			results[i] = Result{ID: id, Success: true}
+			continue
+		}
+		if err := e.updateOne(record); err != nil {
+			results[i] = Result{ID: record.ID, Success: false, Error: err.Error()}
+			continue
+		}
+		results[i] = Result{ID: record.ID, Success: true}
+	}
+	e.Org.IDSequences = copySequences(e.IDs.Sequences)
+	return results
+}
+
+func (e *Engine) Undelete(records []storage.Record) []Result {
+	results := make([]Result, len(records))
+	for i, record := range records {
+		if record.ID == "" {
+			results[i] = Result{Success: false, Error: "dml: undelete requires id"}
+			continue
+		}
+		if _, err := e.object(record.Object); err != nil {
+			results[i] = Result{ID: record.ID, Success: false, Error: err.Error()}
+			continue
+		}
+		results[i] = Result{ID: record.ID, Success: true}
+	}
+	return results
+}
+
 func (e *Engine) WithTransaction(fn func(*Engine) error) error {
 	before := e.Org.Clone()
 	if err := fn(e); err != nil {

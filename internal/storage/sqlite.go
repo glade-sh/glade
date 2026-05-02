@@ -1,0 +1,263 @@
+package storage
+
+import (
+	"database/sql"
+	"encoding/json"
+	"fmt"
+	"sort"
+
+	_ "modernc.org/sqlite"
+)
+
+type SQLiteStore struct {
+	db *sql.DB
+}
+
+type InspectSummary struct {
+	Path        string         `json:"path,omitempty"`
+	Objects     int            `json:"objects"`
+	Records     int            `json:"records"`
+	ByObject    map[string]int `json:"byObject"`
+	Users       int            `json:"users"`
+	Profiles    int            `json:"profiles"`
+	Permissions int            `json:"permissions"`
+}
+
+func OpenSQLite(path string) (*SQLiteStore, error) {
+	db, err := sql.Open("sqlite", path)
+	if err != nil {
+		return nil, err
+	}
+	store := &SQLiteStore{db: db}
+	if err := store.init(); err != nil {
+		_ = db.Close()
+		return nil, err
+	}
+	return store, nil
+}
+
+func (s *SQLiteStore) Close() error {
+	if s == nil || s.db == nil {
+		return nil
+	}
+	return s.db.Close()
+}
+
+func (s *SQLiteStore) Load() (OrgState, error) {
+	org := NewOrgState()
+	rows, err := s.db.Query(`select key, value from org_meta`)
+	if err != nil {
+		return OrgState{}, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var key, value string
+		if err := rows.Scan(&key, &value); err != nil {
+			return OrgState{}, err
+		}
+		switch key {
+		case "orgId":
+			org.OrgID = value
+		case "apiVersion":
+			org.APIVersion = value
+		case "namespace":
+			org.Namespace = value
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return OrgState{}, err
+	}
+	defRows, err := s.db.Query(`select name, definition_json from object_definitions order by name`)
+	if err != nil {
+		return OrgState{}, err
+	}
+	defer defRows.Close()
+	for defRows.Next() {
+		var name string
+		var raw []byte
+		if err := defRows.Scan(&name, &raw); err != nil {
+			return OrgState{}, err
+		}
+		var definition ObjectDefinition
+		if err := json.Unmarshal(raw, &definition); err != nil {
+			return OrgState{}, fmt.Errorf("storage: decode object definition %s: %w", name, err)
+		}
+		org.Objects[name] = ObjectState{Definition: definition, Records: make(map[ID]Record)}
+	}
+	if err := defRows.Err(); err != nil {
+		return OrgState{}, err
+	}
+	recordRows, err := s.db.Query(`select object_name, id, record_json from records order by object_name, id`)
+	if err != nil {
+		return OrgState{}, err
+	}
+	defer recordRows.Close()
+	for recordRows.Next() {
+		var objectName string
+		var id ID
+		var raw []byte
+		if err := recordRows.Scan(&objectName, &id, &raw); err != nil {
+			return OrgState{}, err
+		}
+		var record Record
+		if err := json.Unmarshal(raw, &record); err != nil {
+			return OrgState{}, fmt.Errorf("storage: decode record %s/%s: %w", objectName, id, err)
+		}
+		object := org.Objects[objectName]
+		if object.Definition.APIName == "" {
+			object.Definition.APIName = objectName
+		}
+		if object.Records == nil {
+			object.Records = make(map[ID]Record)
+		}
+		object.Records[id] = record
+		org.Objects[objectName] = object
+	}
+	if err := recordRows.Err(); err != nil {
+		return OrgState{}, err
+	}
+	seqRows, err := s.db.Query(`select object_name, sequence from id_sequences`)
+	if err != nil {
+		return OrgState{}, err
+	}
+	defer seqRows.Close()
+	for seqRows.Next() {
+		var objectName string
+		var sequence uint64
+		if err := seqRows.Scan(&objectName, &sequence); err != nil {
+			return OrgState{}, err
+		}
+		org.IDSequences[objectName] = sequence
+	}
+	if err := seqRows.Err(); err != nil {
+		return OrgState{}, err
+	}
+	return org, nil
+}
+
+func (s *SQLiteStore) Save(org OrgState) error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	for _, stmt := range []string{
+		`delete from org_meta`,
+		`delete from object_definitions`,
+		`delete from records`,
+		`delete from id_sequences`,
+	} {
+		if _, err := tx.Exec(stmt); err != nil {
+			return err
+		}
+	}
+	meta := map[string]string{
+		"orgId":      org.OrgID,
+		"apiVersion": org.APIVersion,
+		"namespace":  org.Namespace,
+	}
+	for key, value := range meta {
+		if value == "" {
+			continue
+		}
+		if _, err := tx.Exec(`insert into org_meta(key, value) values(?, ?)`, key, value); err != nil {
+			return err
+		}
+	}
+	names := make([]string, 0, len(org.Objects))
+	for name := range org.Objects {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		object := org.Objects[name]
+		raw, err := json.Marshal(object.Definition)
+		if err != nil {
+			return err
+		}
+		if _, err := tx.Exec(`insert into object_definitions(name, definition_json) values(?, ?)`, name, raw); err != nil {
+			return err
+		}
+		ids := make([]string, 0, len(object.Records))
+		for id := range object.Records {
+			ids = append(ids, string(id))
+		}
+		sort.Strings(ids)
+		for _, idText := range ids {
+			record := object.Records[ID(idText)]
+			raw, err := json.Marshal(record)
+			if err != nil {
+				return err
+			}
+			if _, err := tx.Exec(`insert into records(object_name, id, record_json) values(?, ?, ?)`, name, idText, raw); err != nil {
+				return err
+			}
+		}
+	}
+	for objectName, sequence := range org.IDSequences {
+		if _, err := tx.Exec(`insert into id_sequences(object_name, sequence) values(?, ?)`, objectName, sequence); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
+func (s *SQLiteStore) Reset(org OrgState) error {
+	ResetData(&org)
+	return s.Save(org)
+}
+
+func (s *SQLiteStore) Inspect(path string) (InspectSummary, error) {
+	org, err := s.Load()
+	if err != nil {
+		return InspectSummary{}, err
+	}
+	return InspectOrg(path, org), nil
+}
+
+func InspectOrg(path string, org OrgState) InspectSummary {
+	summary := InspectSummary{Path: path, Objects: len(org.Objects), ByObject: make(map[string]int, len(org.Objects))}
+	for name, object := range org.Objects {
+		count := len(object.Records)
+		summary.ByObject[name] = count
+		summary.Records += count
+		switch name {
+		case "User":
+			summary.Users = count
+		case "Profile":
+			summary.Profiles = count
+		case "PermissionSet", "PermissionSetAssignment":
+			summary.Permissions += count
+		}
+	}
+	return summary
+}
+
+func (s *SQLiteStore) init() error {
+	for _, stmt := range []string{
+		`pragma foreign_keys = on`,
+		`create table if not exists org_meta (
+			key text primary key,
+			value text not null
+		)`,
+		`create table if not exists object_definitions (
+			name text primary key,
+			definition_json blob not null
+		)`,
+		`create table if not exists records (
+			object_name text not null,
+			id text not null,
+			record_json blob not null,
+			primary key(object_name, id)
+		)`,
+		`create table if not exists id_sequences (
+			object_name text primary key,
+			sequence integer not null
+		)`,
+	} {
+		if _, err := s.db.Exec(stmt); err != nil {
+			return err
+		}
+	}
+	return nil
+}

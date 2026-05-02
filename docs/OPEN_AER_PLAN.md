@@ -17,11 +17,10 @@ structures, or license enforcement details.
 - `aer-reverse-engineering.md`: identifies AER's broad package boundaries:
   CLI, VM, storage, schema, driver, discovery, trace, report, LSP, and a
   DataWeave dependency.
-- `docs/PLAN.md`: existing apexrr plan is a profiling layer on top of AER, not
-  a runtime replacement.
-- `apexrr-out/*.trace.json` and `apexrr-out/report.md`: captured trace output
-  proves the practical value of Chrome Trace Event output and method-level
-  attribution.
+- `docs/PLAN.md`: historical profiling plan. The profiling/reporting work is
+  now native to `oaer`; `apexrr` is not a dependency.
+- Captured trace/report examples prove the practical value of Chrome Trace
+  Event output and method-level attribution.
 - Public AER docs and VS Code marketplace docs: current public feature surface
   includes local tests, anonymous Apex, triggers, schema-aware execution,
   governor limits, DAP debugging, and LSP features.
@@ -40,11 +39,13 @@ we can add an `aer`-compatible command alias if the community wants it.
 - `oaer exec <paths...> '<anonymous apex>'`: run anonymous Apex.
 - `oaer exec --debug`: debug anonymous Apex.
 - `oaer server`: local Salesforce-compatible REST/SOAP-ish API backed by the
-  same data store.
+  same data store; `--db <path>` enables persistent SQLite state.
 - `oaer lsp`: language server.
 - `oaer schema pull|load|export`: manage local schema metadata.
-- `oaer db init|seed|reset|inspect`: manage local SObject persistence.
-- `oaer profile`: produce pprof and Chrome Trace Event output.
+- `oaer db seed|reset|export|inspect`: manage local SObject persistence.
+- `oaer exec --trace <path>`: write Chrome Trace Event output.
+- `oaer profile analyze <trace.json>`: produce native JSON or Markdown trace
+  analysis. pprof-compatible CPU output remains future work.
 
 ### Runtime Fidelity Targets
 
@@ -98,7 +99,8 @@ internal/
   test/          Apex test discovery, isolation, scheduler, JSON/JUnit results
   async/         Queueable/Future/Batch/Scheduled execution
   limits/        governor counters and enforcement
-  trace/         Chrome Trace Event, pprof, statement-level metrics
+  trace/         Chrome Trace Event output
+  profile/       native trace aggregation and JSON/Markdown reports
   dap/           Debug Adapter Protocol server
   lsp/           Language Server Protocol server
   server/        local Salesforce-compatible API
@@ -119,8 +121,10 @@ interface.
 ## Storage Strategy
 
 Use SQLite first because it gives local persistence, transactions, indexing,
-and explain plans without a service dependency. Define a neutral `storage.Store`
-interface so teams can later run Postgres for larger fixtures and CI sharing.
+and explain plans without a service dependency. The current baseline has a
+concrete SQLite-backed store for object definitions, records, and ID sequences;
+a neutral `storage.Store` interface can come later when larger fixtures or
+alternate backends need it.
 
 Core tables:
 
@@ -169,8 +173,8 @@ golden files; they can validate CLI/profile shape only.
 
 - Choose license and contributor agreement.
 - Document clean-room rules.
-- Rename/re-scope this repo or create a sibling repo for `oaer`; apexrr can
-  remain the performance analyzer.
+- Keep profiling and report generation inside `oaer`; do not depend on a
+  separate apexrr tool.
 - Add architecture decision records and compatibility test format.
 
 Exit: repo builds, docs are clear, no proprietary implementation dependency.
@@ -219,7 +223,8 @@ Exit: meaningful org-parity test execution for common enterprise projects.
 - DAP server: breakpoints, step in/over/out, scopes, variables, watch eval,
   call stack.
 - Chrome Trace Event output.
-- pprof-compatible CPU/profile output or a pprof bridge.
+- Native trace analysis reports; pprof-compatible CPU/profile output or a
+  pprof bridge remains future work.
 - Statement-level metrics for SOQL/DML/describe/callout/heap.
 - Watch mode with affected-test selection from dependency graph.
 
@@ -257,25 +262,21 @@ Exit: local apps and integration tests can target `oaer server`.
 
 Exit: compatibility dashboard drives issue priority.
 
-## Immediate Next Steps
+## Current Next Steps
 
-1. Create `cmd/oaer` and keep `cmd/apexrr` intact.
-2. Add `internal/apexast` wrapping apexfmt.
-3. Replace regex discovery with AST-backed discovery.
-4. Add a compatibility fixture format:
-   - source path
-   - schema JSON
-   - seed data
-   - Apex invocation
-   - expected output/errors/side effects
-5. Implement a tiny interpreter spike:
-   - variables
-   - method calls
-   - classes/static methods
-   - `System.assert*`
-   - `List`, `Map`, `Set`
-6. Run the spike against 20 hand-written Apex tests.
-7. Only after the spike works, add SObject/SOQL/DML.
+1. Deepen runtime fidelity around instance/class execution, properties,
+   initializer blocks, overload dispatch, inner classes, enums, namespaces, and
+   Salesforce-exact exception behavior.
+2. Expand Apex test semantics with broader async draining, exact transaction
+   rollback behavior, richer auth/profile behavior, and file/line assertion
+   fidelity.
+3. Expand SOQL/DML/trigger compatibility for child subqueries, broader
+   aggregates, complex predicates, external-ID upsert, `addError`, validation
+   rules, and bulk ordering.
+4. Add live debugger pause hooks and breakpoint-driven execution control on top
+   of the current DAP snapshot sessions.
+5. Grow Salesforce black-box compatibility fixtures and keep
+   `oaer compat mvp` as the release gate.
 
 ## Risk Register
 
@@ -292,12 +293,12 @@ Exit: compatibility dashboard drives issue priority.
 
 Keep:
 
-- trace parser/report ideas from `internal/trace` and `internal/report`
+- trace parser/report ideas from `internal/trace` and `internal/profile`
 - smoke categorization concepts from `internal/smoke`
 - transform lexer tests as useful Apex lexical edge cases
 - project config detection from `internal/smoke/config.go`
 
-Replace:
+Replace or keep replaced:
 
 - regex discovery with AST discovery
 - AER subprocess driver with native `oaer` runtime
@@ -307,4 +308,3 @@ Do not reuse:
 
 - license details from the reverse engineering report
 - inferred proprietary package/type/function internals as implementation design
-
