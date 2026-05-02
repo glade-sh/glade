@@ -219,6 +219,153 @@ private class CounterTest {
 	}
 }
 
+func TestRunExecutesInitializerBlocks(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/InitCounter.cls"), `
+public class InitCounter {
+  public Integer value { get; set; }
+  public static Integer seed = 0;
+
+  static {
+    seed = 4;
+  }
+
+  {
+    value = seed + 1;
+  }
+
+  public Integer score() {
+    return value;
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/InitCounterTest.cls"), `
+@isTest
+private class InitCounterTest {
+  @isTest static void initializersRun() {
+    System.assertEquals(4, InitCounter.seed);
+    InitCounter counter = new InitCounter();
+    System.assertEquals(5, counter.score());
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v run=%#v", got, run)
+	}
+}
+
+func TestRunExecutesConstructorChaining(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/BaseCounter.cls"), `
+public class BaseCounter {
+  public Integer base { get; set; }
+
+  public BaseCounter(Integer seed) {
+    base = seed;
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ChainedCounter.cls"), `
+public class ChainedCounter extends BaseCounter {
+  public Integer bonus { get; set; }
+
+  public ChainedCounter() {
+    this(4);
+  }
+
+  public ChainedCounter(Integer bonusSeed) {
+    super(3);
+    bonus = bonusSeed;
+  }
+
+  public Integer score() {
+    return base + bonus;
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ChainedCounterTest.cls"), `
+@isTest
+private class ChainedCounterTest {
+  @isTest static void constructorsChain() {
+    ChainedCounter counter = new ChainedCounter();
+    System.assertEquals(7, counter.score());
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v run=%#v", got, run)
+	}
+}
+
+func TestRunExecutesPropertyAccessorBodies(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/PropertyBox.cls"), `
+public class PropertyBox {
+  private String backing;
+
+  public String Name {
+    get {
+      return backing + '!';
+    }
+    set {
+      backing = value.toUpperCase();
+    }
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/PropertyBoxTest.cls"), `
+@isTest
+private class PropertyBoxTest {
+  @isTest static void accessorsRun() {
+    PropertyBox box = new PropertyBox();
+    box.Name = 'acme';
+    System.assertEquals('ACME!', box.Name);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v run=%#v", got, run)
+	}
+}
+
+func TestRunExecutesOverloadedMethodsByArgumentTypes(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/OverloadUtil.cls"), `
+public class OverloadUtil {
+  public static String pick(Integer value) {
+    return 'int';
+  }
+  public static String pick(String value) {
+    return 'string';
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/OverloadUtilTest.cls"), `
+@isTest
+private class OverloadUtilTest {
+  @isTest static void choosesSpecificMethod() {
+    System.assertEquals('int', OverloadUtil.pick(1));
+    System.assertEquals('string', OverloadUtil.pick('one'));
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v run=%#v", got, run)
+	}
+}
+
 func TestRunExecutesInheritanceAndSuperDispatch(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)

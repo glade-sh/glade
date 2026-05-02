@@ -79,3 +79,24 @@ func TestRunExecFixture(t *testing.T) {
 		t.Fatalf("result = %#v", result)
 	}
 }
+
+func TestRunUnsupportedExecFixtureMatchesExpectedError(t *testing.T) {
+	fixture := Fixture{
+		Name:    "unsupported-exec-call",
+		Source:  []SourceFile{{Path: "anonymous.apex", Content: "System.nope();"}},
+		Command: Invocation{Kind: "exec", Args: []string{"System.nope();"}},
+		Expected: ExpectedBehavior{
+			Error: &ExpectedError{
+				Type:    "UnsupportedFeature",
+				Message: `unsupported call "System.nope"`,
+			},
+		},
+	}
+	result, err := Run(fixture)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.OK || result.Error == nil || result.Error.Type != "UnsupportedFeature" {
+		t.Fatalf("result = %#v", result)
+	}
+}

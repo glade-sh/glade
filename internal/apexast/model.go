@@ -24,10 +24,26 @@ type Declaration struct {
 	Name       string           `json:"name,omitempty"`
 	Type       string           `json:"type,omitempty"`
 	Modifiers  []string         `json:"modifiers,omitempty"`
+	Parameters []Parameter      `json:"parameters,omitempty"`
+	Accessors  []Accessor       `json:"accessors,omitempty"`
 	ObjectName string           `json:"objectName,omitempty"`
 	Events     []string         `json:"events,omitempty"`
 	Range      diagnostic.Range `json:"range"`
 	Members    []Declaration    `json:"members,omitempty"`
+}
+
+type Accessor struct {
+	Kind      string           `json:"kind"`
+	Modifiers []string         `json:"modifiers,omitempty"`
+	Range     diagnostic.Range `json:"range"`
+	HasBody   bool             `json:"hasBody,omitempty"`
+}
+
+type Parameter struct {
+	Name      string           `json:"name"`
+	Type      string           `json:"type"`
+	Modifiers []string         `json:"modifiers,omitempty"`
+	Range     diagnostic.Range `json:"range"`
 }
 
 type DeclarationKind string
@@ -41,6 +57,7 @@ const (
 	DeclarationConstructor DeclarationKind = "constructor"
 	DeclarationField       DeclarationKind = "field"
 	DeclarationProperty    DeclarationKind = "property"
+	DeclarationInitializer DeclarationKind = "initializer"
 )
 
 type Result struct {

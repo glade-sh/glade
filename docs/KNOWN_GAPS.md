@@ -18,8 +18,8 @@ The MVP target is `full-featured aer-parity MVP`. This document lists required c
 
 ### `apex.sema.body`: Method-body semantic analysis
 
-- Status: `unsupported`
-- Gap: Current sema checks declarations and member type references only.
+- Status: `partial`
+- Gap: Current sema checks declarations, member and parameter type references, project namespace-qualified type references, basic visibility conflicts, interface member visibility, and a conservative method-body baseline for local declarations, constructor references, simple assignments, project method calls, and known-receiver overload arity/simple argument type matching. Full expression typing, flow-sensitive scopes, inherited/interface dispatch, and Apex coercion rules remain incomplete.
 
 ## Data runtime
 
@@ -106,12 +106,12 @@ The MVP target is `full-featured aer-parity MVP`. This document lists required c
 ### `vm.classes`: Classes, methods, constructors, statics, properties
 
 - Status: `partial`
-- Gap: The VM now registers class metadata from project tests, constructs objects with instance fields/properties, runs constructor bodies, stores static fields, dispatches overrides through inheritance, and supports super calls. Full Apex visibility enforcement, namespace resolution, initializer blocks, and generic overload selection remain incomplete.
+- Gap: The VM now registers class metadata from project tests, constructs objects with instance fields/properties, invokes property getter/setter bodies, runs constructor bodies, supports this(...) and super(...) constructor chaining, matches overloaded methods/constructors by argument types, executes static and instance initializer blocks, preserves source field order for initialization/reset, resets statics through initializer blocks, stores static fields, dispatches overrides through inheritance, supports super method calls, resolves namespace-qualified class names, and enforces a runtime baseline for private/protected and namespace-global access. Full Apex visibility/test-visible rules, package semantics, field initializer expression ordering, and generic overload/coercion fidelity remain incomplete.
 
 ### `vm.control-flow`: Control flow and exceptions
 
 - Status: `partial`
-- Gap: Anonymous and test method execution now supports for/enhanced-for/do-while, break/continue, switch-on, throw, try/catch/finally, exception messages/getMessage, and basic exception stack reporting. Multi-catch, typed rethrow fidelity, and complete Apex exception hierarchy semantics remain incomplete.
+- Gap: Anonymous and test method execution now supports for/enhanced-for/do-while, break/continue, switch-on, throw, try/catch/finally, multi-catch, bare rethrow, exception messages/getMessage, catchable null dereference, and basic exception stack reporting. Complete Apex exception hierarchy semantics remain incomplete.
 
 ## Tests
 

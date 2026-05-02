@@ -144,3 +144,25 @@ System.assertEquals(3, cleaned);
 		t.Fatal(err)
 	}
 }
+
+func TestExecMultiCatchAndRethrow(t *testing.T) {
+	program, err := CompileAnonymous(`
+String message = '';
+try {
+	try {
+		throw new MyException('boom');
+	} catch (Exception e) {
+		throw;
+	}
+} catch (OtherException | MyException e) {
+	message = e.getMessage();
+}
+System.assertEquals('boom', message);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}

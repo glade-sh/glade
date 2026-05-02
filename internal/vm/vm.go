@@ -26,20 +26,23 @@ const (
 )
 
 type VM struct {
-	Globals         map[string]Value
-	Methods         map[string]Method
-	Classes         map[string]Class
-	Org             *storage.OrgState
-	Triggers        map[string][]Trigger
-	Stdout          io.Writer
-	callStack       []callFrame
-	currentClass    string
-	testContext     *TestContext
-	limits          Limits
-	limitCaps       LimitCaps
-	limitMode       LimitMode
-	limitViolations []LimitViolation
-	fakeNow         time.Time
+	Globals          map[string]Value
+	Methods          map[string]Method
+	MethodOverloads  map[string][]Method
+	Classes          map[string]Class
+	Org              *storage.OrgState
+	Triggers         map[string][]Trigger
+	Stdout           io.Writer
+	callStack        []callFrame
+	currentClass     string
+	currentMethod    Method
+	testContext      *TestContext
+	limits           Limits
+	limitCaps        LimitCaps
+	limitMode        LimitMode
+	limitViolations  []LimitViolation
+	fakeNow          time.Time
+	activeExceptions []Value
 }
 
 type Result struct {
@@ -101,14 +104,15 @@ type Trigger struct {
 
 func New(stdout io.Writer) *VM {
 	return &VM{
-		Globals:   make(map[string]Value),
-		Methods:   make(map[string]Method),
-		Classes:   make(map[string]Class),
-		Triggers:  make(map[string][]Trigger),
-		Stdout:    stdout,
-		limitCaps: defaultLimitCaps(),
-		limitMode: LimitModePermissive,
-		fakeNow:   time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC),
+		Globals:         make(map[string]Value),
+		Methods:         make(map[string]Method),
+		MethodOverloads: make(map[string][]Method),
+		Classes:         make(map[string]Class),
+		Triggers:        make(map[string][]Trigger),
+		Stdout:          stdout,
+		limitCaps:       defaultLimitCaps(),
+		limitMode:       LimitModePermissive,
+		fakeNow:         time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC),
 	}
 }
 
@@ -134,14 +138,21 @@ func (vm *VM) EnableTestContext() {
 	vm.testContext = &TestContext{CurrentUser: String("system")}
 }
 
-func (vm *VM) ResetStatics() {
+func (vm *VM) ResetStatics() error {
 	for className, class := range vm.Classes {
-		for fieldName, field := range class.StaticFields {
+		for _, fieldName := range orderedFieldNames(class.StaticFields, class.StaticFieldOrder) {
+			field := class.StaticFields[fieldName]
 			field.Value = defaultValue(field.Type, field.InitialValue)
 			class.StaticFields[fieldName] = field
 		}
 		vm.Classes[className] = class
 	}
+	for _, class := range vm.Classes {
+		if err := vm.runStaticInitializers(class); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func Execute(program ir.Program, stdout io.Writer) (Result, error) {
@@ -151,6 +162,9 @@ func Execute(program ir.Program, stdout io.Writer) (Result, error) {
 func (vm *VM) Execute(program ir.Program) (result Result, err error) {
 	result = Result{Vars: vm.Globals, TraceFormat: trace.FormatChromeTraceEvent}
 	defer func() {
+		if recovered := recover(); recovered != nil {
+			err = fmt.Errorf("internal VM panic: %v", recovered)
+		}
 		result.Limits = vm.limits
 		result.LimitMode = vm.limitMode
 		result.LimitViolations = append([]LimitViolation(nil), vm.limitViolations...)
@@ -292,6 +306,11 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (execOutcome, e
 					return execOutcome{}, err
 				}
 				thrown = value
+			} else {
+				if len(vm.activeExceptions) == 0 {
+					return execOutcome{}, fmt.Errorf("rethrow outside catch block")
+				}
+				thrown = vm.activeExceptions[len(vm.activeExceptions)-1]
 			}
 			return execOutcome{signal: signalThrow, thrown: thrown}, nil
 		case ir.OpTry:
@@ -490,10 +509,12 @@ func (vm *VM) executeTry(inst ir.Instruction, result *Result) (execOutcome, erro
 		}
 		out = execOutcome{signal: signalThrow, thrown: thrown.value}
 	}
-	if out.signal == signalThrow && len(inst.Catch) > 0 && vm.exceptionMatches(inst.Type, out.thrown) {
+	if out.signal == signalThrow && len(inst.Catch) > 0 && vm.exceptionMatchesAny(catchTypes(inst), out.thrown) {
 		previous, existed := vm.Globals[inst.Name]
 		vm.Globals[inst.Name] = out.thrown
+		vm.activeExceptions = append(vm.activeExceptions, out.thrown)
 		out, err = vm.executeProgram(ir.Program{Instructions: inst.Catch}, result)
+		vm.activeExceptions = vm.activeExceptions[:len(vm.activeExceptions)-1]
 		if existed {
 			vm.Globals[inst.Name] = previous
 		} else {
@@ -566,12 +587,18 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 	case ir.ExprVariable:
 		return vm.lookup(expr.Name)
 	case ir.ExprUnary:
+		if expr.Left == nil {
+			return Null, fmt.Errorf("unary expression %q missing operand", expr.Operator)
+		}
 		value, err := vm.eval(*expr.Left, result)
 		if err != nil {
 			return Null, err
 		}
 		return evalUnary(expr.Operator, value)
 	case ir.ExprBinary:
+		if expr.Left == nil || expr.Right == nil {
+			return Null, fmt.Errorf("binary expression %q missing operand", expr.Operator)
+		}
 		left, err := vm.eval(*expr.Left, result)
 		if err != nil {
 			return Null, err
@@ -617,11 +644,37 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 	if strings.HasPrefix(callee, "new:") {
 		return vm.constructValue(strings.TrimPrefix(callee, "new:"), args, namedArgs, result)
 	}
+	if (callee == "this" || callee == "super") && vm.currentMethod.IsConstructor {
+		return vm.callChainedConstructor(callee, args, result)
+	}
 	if value, ok, err := vm.callMember(callee, args, result); ok || err != nil {
 		return value, err
 	}
-	if method, ok := vm.Methods[callee]; ok {
+	if vm.currentClass != "" && !strings.Contains(callee, ".") {
+		if method, ok := vm.resolveInstanceMethodForArgs(vm.currentClass, callee, args); ok {
+			if err := vm.checkMemberAccess(method.ClassName, method.Access, method.Name); err != nil {
+				return Null, err
+			}
+			receiver := Null
+			if this, ok := vm.Globals["this"]; ok {
+				receiver = this
+			}
+			return vm.callMethodWithReceiver(method, receiver, args, result)
+		}
+	}
+	if method, ok := vm.matchRegisteredMethod(callee, args); ok {
+		if err := vm.checkMemberAccess(method.ClassName, method.Access, method.Name); err != nil {
+			return Null, err
+		}
 		return vm.callMethod(method, args, result)
+	}
+	if className, methodName, ok := vm.splitClassMember(callee); ok {
+		if method, ok := vm.matchRegisteredMethod(className+"."+methodName, args); ok {
+			if err := vm.checkMemberAccess(method.ClassName, method.Access, method.Name); err != nil {
+				return Null, err
+			}
+			return vm.callMethod(method, args, result)
+		}
 	}
 	switch callee {
 	case "System.assert":
@@ -1651,22 +1704,32 @@ func (vm *VM) lookup(name string) (Value, error) {
 	if value, ok := vm.Globals[name]; ok {
 		return value, nil
 	}
+	if strings.HasSuffix(name, ".class") {
+		className := strings.TrimSuffix(name, ".class")
+		if resolved, ok := vm.resolveClassName(className); ok {
+			return Value{Kind: ValueObject, Type: "Type", Text: resolved}, nil
+		}
+		return Value{Kind: ValueObject, Type: "Type", Text: className}, nil
+	}
 	parts := strings.Split(name, ".")
 	if len(parts) > 1 {
 		if root, ok := vm.Globals[parts[0]]; ok {
 			return vm.lookupPath(root, parts[1:])
 		}
-		if len(parts) == 2 {
-			if parts[1] == "class" {
-				return Value{Kind: ValueObject, Type: "Type", Text: parts[0]}, nil
-			}
-			if class, ok := vm.Classes[parts[0]]; ok {
-				if field, ok := class.StaticFields[parts[1]]; ok {
+		if className, memberName, ok := vm.splitClassMember(name); ok {
+			if class, ok := vm.Classes[className]; ok {
+				if field, ok := class.StaticFields[memberName]; ok {
+					if err := vm.checkMemberAccess(class.Name, field.Access, className+"."+memberName); err != nil {
+						return Null, err
+					}
+					if field.Getter != nil {
+						return vm.callMethod(*field.Getter, nil, resultForLookup())
+					}
 					return field.Value, nil
 				}
 				for _, enumValue := range class.EnumValues {
-					if enumValue == parts[1] {
-						return Value{Kind: ValueObject, Type: parts[0], Text: parts[1]}, nil
+					if enumValue == memberName {
+						return Value{Kind: ValueObject, Type: class.Name, Text: memberName}, nil
 					}
 				}
 			}
@@ -1674,12 +1737,26 @@ func (vm *VM) lookup(name string) (Value, error) {
 	}
 	if this, ok := vm.Globals["this"]; ok && this.Kind == ValueObject {
 		if value, ok := this.Fields[name]; ok {
+			if field, owner, ok := vm.lookupField(this.Type, name); ok {
+				if err := vm.checkMemberAccess(owner, field.Access, owner+"."+name); err != nil {
+					return Null, err
+				}
+				if field.Getter != nil {
+					return vm.callMethodWithReceiver(*field.Getter, this, nil, resultForLookup())
+				}
+			}
 			return value, nil
 		}
 	}
 	if vm.currentClass != "" {
 		if class, ok := vm.Classes[vm.currentClass]; ok {
 			if field, ok := class.StaticFields[name]; ok {
+				if err := vm.checkMemberAccess(class.Name, field.Access, class.Name+"."+name); err != nil {
+					return Null, err
+				}
+				if field.Getter != nil {
+					return vm.callMethod(*field.Getter, nil, resultForLookup())
+				}
 				return field.Value, nil
 			}
 		}
@@ -1690,8 +1767,24 @@ func (vm *VM) lookup(name string) (Value, error) {
 func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 	current := root
 	for _, part := range parts {
+		if current.Kind == ValueNull {
+			return Null, newExceptionError("NullPointerException", "Attempt to de-reference a null object")
+		}
 		if current.Kind != ValueObject {
 			return Null, fmt.Errorf("cannot access %s on %s", part, current.Kind)
+		}
+		if field, owner, ok := vm.lookupField(current.Type, part); ok {
+			if err := vm.checkMemberAccess(owner, field.Access, owner+"."+part); err != nil {
+				return Null, err
+			}
+			if field.Getter != nil {
+				value, err := vm.callMethodWithReceiver(*field.Getter, current, nil, resultForLookup())
+				if err != nil {
+					return Null, err
+				}
+				current = value
+				continue
+			}
 		}
 		value, ok := current.Fields[part]
 		if !ok {
@@ -1712,15 +1805,23 @@ func (vm *VM) assign(name string, value Value) error {
 		if root, ok := vm.Globals[parts[0]]; ok {
 			return vm.assignPath(root, parts[1:], value)
 		}
-		if len(parts) == 2 {
-			if class, ok := vm.Classes[parts[0]]; ok {
-				if field, ok := class.StaticFields[parts[1]]; ok {
+		if className, memberName, ok := vm.splitClassMember(name); ok {
+			if class, ok := vm.Classes[className]; ok {
+				if field, ok := class.StaticFields[memberName]; ok {
+					if err := vm.checkMemberAccess(class.Name, field.Access, className+"."+memberName); err != nil {
+						return err
+					}
 					if err := ensureAssignable(field.Type, value); err != nil {
-						return fmt.Errorf("%s.%s: %w", parts[0], parts[1], err)
+						return fmt.Errorf("%s.%s: %w", className, memberName, err)
+					}
+					if field.Setter != nil {
+						_, err := vm.callMethod(*field.Setter, []Value{value}, resultForLookup())
+						return err
 					}
 					field.Value = value
-					class.StaticFields[parts[1]] = field
-					vm.Classes[parts[0]] = class
+					class.StaticFields[memberName] = field
+					vm.Classes[className] = class
+					vm.storeClassAliases(class)
 					return nil
 				}
 			}
@@ -1730,8 +1831,15 @@ func (vm *VM) assign(name string, value Value) error {
 		if field, ok := this.Fields[name]; ok {
 			class := vm.Classes[this.Type]
 			if def, ok := class.Fields[name]; ok {
+				if err := vm.checkMemberAccess(class.Name, def.Access, class.Name+"."+name); err != nil {
+					return err
+				}
 				if err := ensureAssignable(def.Type, value); err != nil {
 					return fmt.Errorf("%s.%s: %w", this.Type, name, err)
+				}
+				if def.Setter != nil {
+					_, err := vm.callMethodWithReceiver(*def.Setter, this, []Value{value}, resultForLookup())
+					return err
 				}
 			}
 			_ = field
@@ -1742,8 +1850,15 @@ func (vm *VM) assign(name string, value Value) error {
 	if vm.currentClass != "" {
 		if class, ok := vm.Classes[vm.currentClass]; ok {
 			if field, ok := class.StaticFields[name]; ok {
+				if err := vm.checkMemberAccess(class.Name, field.Access, class.Name+"."+name); err != nil {
+					return err
+				}
 				if err := ensureAssignable(field.Type, value); err != nil {
 					return fmt.Errorf("%s.%s: %w", vm.currentClass, name, err)
+				}
+				if field.Setter != nil {
+					_, err := vm.callMethod(*field.Setter, []Value{value}, resultForLookup())
+					return err
 				}
 				field.Value = value
 				class.StaticFields[name] = field
@@ -1761,6 +1876,12 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 	}
 	current := root
 	for _, part := range parts[:len(parts)-1] {
+		if current.Kind == ValueNull {
+			return newExceptionError("NullPointerException", "Attempt to de-reference a null object")
+		}
+		if current.Kind != ValueObject {
+			return fmt.Errorf("cannot assign field %s on %s", part, current.Kind)
+		}
 		next, ok := current.Fields[part]
 		if !ok || next.Kind != ValueObject {
 			return fmt.Errorf("unknown field %q on %s", part, current.Type)
@@ -1768,20 +1889,151 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 		current = next
 	}
 	fieldName := parts[len(parts)-1]
+	if current.Kind == ValueNull {
+		return newExceptionError("NullPointerException", "Attempt to de-reference a null object")
+	}
 	if current.Kind != ValueObject {
 		return fmt.Errorf("cannot assign field %s on %s", fieldName, current.Kind)
 	}
 	class := vm.Classes[current.Type]
 	if def, ok := class.Fields[fieldName]; ok {
+		if err := vm.checkMemberAccess(class.Name, def.Access, class.Name+"."+fieldName); err != nil {
+			return err
+		}
 		if err := ensureAssignable(def.Type, value); err != nil {
 			return fmt.Errorf("%s.%s: %w", current.Type, fieldName, err)
+		}
+		if def.Setter != nil {
+			_, err := vm.callMethodWithReceiver(*def.Setter, current, []Value{value}, resultForLookup())
+			return err
 		}
 	}
 	current.Fields[fieldName] = value
 	return nil
 }
 
+func (vm *VM) lookupField(typeName, fieldName string) (Field, string, bool) {
+	for typeName != "" {
+		class, ok := vm.Classes[typeName]
+		if !ok {
+			return Field{}, "", false
+		}
+		if field, ok := class.Fields[fieldName]; ok {
+			return field, class.Name, true
+		}
+		typeName = class.SuperClass
+	}
+	return Field{}, "", false
+}
+
+func (vm *VM) checkMemberAccess(ownerClass, access, member string) error {
+	if err := vm.checkNamespaceAccess(ownerClass, access, member); err != nil {
+		return err
+	}
+	switch strings.ToLower(access) {
+	case "", "public", "global", "webservice":
+		return nil
+	case "private":
+		if vm.currentClass == ownerClass {
+			return nil
+		}
+	case "protected":
+		if vm.currentClass == ownerClass || vm.isSubclass(vm.currentClass, ownerClass) {
+			return nil
+		}
+	default:
+		return nil
+	}
+	if vm.currentClass == "" {
+		return fmt.Errorf("%s is %s and not visible", member, access)
+	}
+	return fmt.Errorf("%s is %s and not visible from %s", member, access, vm.currentClass)
+}
+
+func (vm *VM) checkNamespaceAccess(ownerClass, access, member string) error {
+	ownerNS := vm.classNamespace(ownerClass)
+	if ownerNS == "" {
+		return nil
+	}
+	callerNS := vm.classNamespace(vm.currentClass)
+	if callerNS == ownerNS {
+		return nil
+	}
+	switch strings.ToLower(access) {
+	case "global", "webservice":
+		return nil
+	}
+	if vm.currentClass == "" {
+		return fmt.Errorf("%s is not global and not visible outside namespace %s", member, ownerNS)
+	}
+	return fmt.Errorf("%s is not global and not visible from namespace %s", member, callerNS)
+}
+
+func (vm *VM) classNamespace(className string) string {
+	class, ok := vm.Classes[className]
+	if !ok {
+		if resolved, found := vm.resolveClassName(className); found {
+			class, ok = vm.Classes[resolved]
+		}
+	}
+	if !ok {
+		return ""
+	}
+	return class.Namespace
+}
+
+func (vm *VM) isSubclass(child, parent string) bool {
+	for child != "" {
+		class, ok := vm.Classes[child]
+		if !ok {
+			return false
+		}
+		if class.SuperClass == parent {
+			return true
+		}
+		child = class.SuperClass
+	}
+	return false
+}
+
+func (vm *VM) splitClassMember(name string) (string, string, bool) {
+	parts := strings.Split(name, ".")
+	for i := len(parts) - 1; i > 0; i-- {
+		className := strings.Join(parts[:i], ".")
+		if resolved, ok := vm.resolveClassName(className); ok {
+			return resolved, strings.Join(parts[i:], "."), true
+		}
+	}
+	return "", "", false
+}
+
+func (vm *VM) resolveClassName(typeName string) (string, bool) {
+	if class, ok := vm.Classes[typeName]; ok {
+		return class.Name, true
+	}
+	for _, class := range vm.Classes {
+		if class.Namespace != "" && typeName == class.Namespace+"."+class.Name {
+			return class.Name, true
+		}
+	}
+	return "", false
+}
+
+func (vm *VM) storeClassAliases(class Class) {
+	vm.Classes[class.Name] = class
+	if class.Namespace != "" && !strings.Contains(class.Name, ".") {
+		vm.Classes[class.Namespace+"."+class.Name] = class
+	}
+}
+
+func resultForLookup() *Result {
+	return &Result{TraceFormat: trace.FormatChromeTraceEvent}
+}
+
 func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string]Value, result *Result) (Value, error) {
+	if resolved, ok := vm.resolveClassName(typeName); ok {
+		typeName = resolved
+	}
 	switch {
 	case strings.HasPrefix(typeName, "List<"):
 		if len(namedArgs) > 0 {
@@ -1805,6 +2057,9 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 	}
 	vm.initializeFields(&object, typeName)
 	if class, ok := vm.Classes[typeName]; ok {
+		if err := vm.runInstanceInitializers(class, object, result); err != nil {
+			return Null, err
+		}
 		ctor, ok := vm.matchConstructor(class, args)
 		if ok {
 			if _, err := vm.callMethodWithReceiver(ctor, object, args, result); err != nil {
@@ -1825,6 +2080,28 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 	return object, nil
 }
 
+func (vm *VM) runInstanceInitializers(class Class, object Value, result *Result) error {
+	if class.SuperClass != "" {
+		if superClass, ok := vm.Classes[class.SuperClass]; ok {
+			if err := vm.runInstanceInitializers(superClass, object, result); err != nil {
+				return err
+			}
+		}
+	}
+	for _, initializer := range class.InstanceInitializers {
+		if initializer.Name == "" {
+			initializer.Name = class.Name + ".<init_block>"
+		}
+		if initializer.ClassName == "" {
+			initializer.ClassName = class.Name
+		}
+		if _, err := vm.callMethodWithReceiver(initializer, object, nil, result); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func isExceptionType(typeName string) bool {
 	return typeName == "Exception" || strings.HasSuffix(typeName, "Exception")
 }
@@ -1837,18 +2114,63 @@ func (vm *VM) initializeFields(object *Value, typeName string) {
 	if class.SuperClass != "" {
 		vm.initializeFields(object, class.SuperClass)
 	}
-	for name, field := range class.Fields {
+	for _, name := range orderedFieldNames(class.Fields, class.FieldOrder) {
+		field := class.Fields[name]
 		object.Fields[name] = defaultValue(field.Type, field.InitialValue)
 	}
 }
 
 func (vm *VM) matchConstructor(class Class, args []Value) (Method, bool) {
-	for _, ctor := range class.Constructors {
-		if len(ctor.Params) == len(args) {
-			return ctor, true
+	return matchMethodByArgs(class.Constructors, args)
+}
+
+func (vm *VM) callChainedConstructor(callee string, args []Value, result *Result) (Value, error) {
+	receiver, ok := vm.Globals["this"]
+	if !ok || receiver.Kind != ValueObject {
+		return Null, fmt.Errorf("%s constructor call requires instance receiver", callee)
+	}
+	class, ok := vm.Classes[receiver.Type]
+	if !ok {
+		return Null, fmt.Errorf("%s constructor call requires registered class %q", callee, receiver.Type)
+	}
+	targetClass := class
+	if callee == "super" {
+		if class.SuperClass == "" {
+			if len(args) == 0 {
+				return Null, nil
+			}
+			return Null, fmt.Errorf("%s has no superclass constructor", receiver.Type)
+		}
+		var found bool
+		targetClass, found = vm.Classes[class.SuperClass]
+		if !found {
+			return Null, fmt.Errorf("unknown superclass %q", class.SuperClass)
 		}
 	}
-	return Method{}, false
+	target, found := vm.matchConstructor(targetClass, args)
+	if !found {
+		if len(args) == 0 {
+			return Null, nil
+		}
+		return Null, fmt.Errorf("%s constructor expects 0 arguments", targetClass.Name)
+	}
+	if callee == "this" && sameConstructorSignature(vm.currentMethod, target) {
+		return Null, fmt.Errorf("recursive constructor invocation %s", target.Name)
+	}
+	_, err := vm.callMethodWithReceiver(target, receiver, args, result)
+	return Null, err
+}
+
+func sameConstructorSignature(left, right Method) bool {
+	if left.Name != right.Name || len(left.Params) != len(right.Params) {
+		return false
+	}
+	for i := range left.Params {
+		if left.Params[i].Type != right.Params[i].Type {
+			return false
+		}
+	}
+	return true
 }
 
 func (vm *VM) resolveInstanceMethod(typeName, method string) (Method, bool) {
@@ -1863,6 +2185,106 @@ func (vm *VM) resolveInstanceMethod(typeName, method string) (Method, bool) {
 		typeName = class.SuperClass
 	}
 	return Method{}, false
+}
+
+func (vm *VM) resolveInstanceMethodForArgs(typeName, method string, args []Value) (Method, bool) {
+	for typeName != "" {
+		if target, ok := vm.matchRegisteredMethod(typeName+"."+method, args); ok {
+			return target, true
+		}
+		class, ok := vm.Classes[typeName]
+		if !ok {
+			break
+		}
+		typeName = class.SuperClass
+	}
+	return Method{}, false
+}
+
+func (vm *VM) matchRegisteredMethod(name string, args []Value) (Method, bool) {
+	if candidates := vm.MethodOverloads[name]; len(candidates) > 0 {
+		return matchMethodByArgs(candidates, args)
+	}
+	method, ok := vm.Methods[name]
+	if !ok {
+		return Method{}, false
+	}
+	return method, len(method.Params) == len(args)
+}
+
+func matchMethodByArgs(candidates []Method, args []Value) (Method, bool) {
+	bestScore := -1
+	var best Method
+	matched := false
+	for _, candidate := range candidates {
+		if len(candidate.Params) != len(args) {
+			continue
+		}
+		score := 0
+		assignable := true
+		for i, param := range candidate.Params {
+			if err := ensureAssignable(param.Type, args[i]); err != nil {
+				assignable = false
+				break
+			}
+			if param.Type == valueTypeName(args[i]) {
+				score += 2
+			} else if param.Type != "Object" {
+				score++
+			}
+		}
+		if assignable && score > bestScore {
+			bestScore = score
+			best = candidate
+			matched = true
+		}
+	}
+	return best, matched
+}
+
+func valueTypeName(value Value) string {
+	switch value.Kind {
+	case ValueInt:
+		return "Integer"
+	case ValueBool:
+		return "Boolean"
+	case ValueString:
+		return "String"
+	case ValueList:
+		return "List"
+	case ValueSet:
+		return "Set"
+	case ValueMap:
+		return "Map"
+	case ValueObject:
+		return value.Type
+	case ValueNull:
+		return "null"
+	default:
+		return string(value.Kind)
+	}
+}
+
+func newExceptionError(typeName, message string) error {
+	value := Object(typeName)
+	value.Fields["message"] = String(message)
+	return &apexThrowError{value: value}
+}
+
+func catchTypes(inst ir.Instruction) []string {
+	if len(inst.CatchTypes) > 0 {
+		return inst.CatchTypes
+	}
+	return []string{inst.Type}
+}
+
+func (vm *VM) exceptionMatchesAny(catchTypes []string, thrown Value) bool {
+	for _, catchType := range catchTypes {
+		if vm.exceptionMatches(catchType, thrown) {
+			return true
+		}
+	}
+	return false
 }
 
 func (vm *VM) exceptionMatches(catchType string, thrown Value) bool {
@@ -1967,8 +2389,10 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	}
 	caller := vm.Globals
 	callerClass := vm.currentClass
+	callerMethod := vm.currentMethod
 	vm.Globals = frame
 	vm.currentClass = method.ClassName
+	vm.currentMethod = method
 	if vm.currentClass == "" {
 		vm.currentClass = classNameFromMethod(method.Name)
 	}
@@ -1991,6 +2415,7 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		vm.callStack = vm.callStack[:len(vm.callStack)-1]
 		vm.Globals = caller
 		vm.currentClass = callerClass
+		vm.currentMethod = callerMethod
 	}()
 
 	out, err := vm.executeProgram(method.Program, result)
@@ -2034,9 +2459,12 @@ func (vm *VM) callMember(callee string, args []Value, result *Result) (Value, bo
 			return Null, true, fmt.Errorf("super call requires instance receiver")
 		}
 		class := vm.Classes[receiver.Type]
-		target, ok := vm.resolveInstanceMethod(class.SuperClass, method)
+		target, ok := vm.resolveInstanceMethodForArgs(class.SuperClass, method, args)
 		if !ok {
 			return Null, true, fmt.Errorf("unsupported call %q", callee)
+		}
+		if err := vm.checkMemberAccess(target.ClassName, target.Access, target.Name); err != nil {
+			return Null, true, err
 		}
 		value, err := vm.callMethodWithReceiver(target, receiver, args, result)
 		return value, true, err
@@ -2044,6 +2472,9 @@ func (vm *VM) callMember(callee string, args []Value, result *Result) (Value, bo
 	receiver, ok := vm.Globals[receiverName]
 	if !ok {
 		return Null, false, nil
+	}
+	if receiver.Kind == ValueNull {
+		return Null, true, newExceptionError("NullPointerException", "Attempt to de-reference a null object")
 	}
 	if value, updated, mutated, ok, err := callStdlibMember(receiver, method, args); ok || err != nil {
 		if mutated {
@@ -2064,9 +2495,12 @@ func (vm *VM) callMember(callee string, args []Value, result *Result) (Value, bo
 			}
 			return value, true, err
 		}
-		target, ok := vm.resolveInstanceMethod(receiver.Type, method)
+		target, ok := vm.resolveInstanceMethodForArgs(receiver.Type, method, args)
 		if !ok {
 			return Null, true, fmt.Errorf("unsupported call %q", callee)
+		}
+		if err := vm.checkMemberAccess(target.ClassName, target.Access, target.Name); err != nil {
+			return Null, true, err
 		}
 		value, err := vm.callMethodWithReceiver(target, receiver, args, result)
 		return value, true, err

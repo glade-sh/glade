@@ -12,6 +12,28 @@ execute anonymous Apex, support schema-aware SObjects/SOQL/DML/triggers,
 enforce or report limits, provide usable debug/LSP/watch workflows, and expose
 a Salesforce-shaped local API server without silently wrong behavior.
 
+## Suggested Completion Order
+
+1. Runtime fidelity: method-body sema, class/object execution, exceptions,
+   properties, statics, namespaces, and no-panic VM behavior.
+2. Test fidelity: transaction isolation, `@TestSetup`, static reset,
+   start/stop windows, `runAs`, async drain, and assertion stack traces.
+3. Data fidelity: SObject, SOQL, DML, triggers, rollback, and result/error
+   shape coverage.
+4. Limits and platform APIs: counters, strict/permissive enforcement, and
+   common standard-library surfaces.
+5. Fixtures and persistence: large SQLite-backed fixtures, deterministic
+   platform data, seed/reset/export/import, and server state reset.
+6. Developer experience: debug pause hooks, LSP completeness, watch
+   cancellation, and native trace/profile reports.
+7. Local API server: auth/user context, broader REST/Tooling/Composite
+   resources, persistence, and error fidelity.
+8. Compatibility and release: dashboard, black-box/enterprise fixtures,
+   no-panic hardening, benchmarks, release artifacts, install docs, and
+   known-gaps docs.
+9. Beyond parity: query plans, cost attribution, anonymization, replay bundles,
+   SARIF, API-versioned dashboard, plugins, fuzzing, and mutation testing.
+
 ## Parity Gate
 
 - [ ] Make every `requiredForMVP` capability in `internal/capability`
@@ -27,7 +49,7 @@ a Salesforce-shaped local API server without silently wrong behavior.
 
 ## 1. Apex Front End
 
-- [ ] Build method-body semantic analysis beyond declaration/member type
+- [x] Build method-body semantic analysis beyond declaration/member type
   references.
 - [ ] Model local variables, scopes, expressions, statements, method calls, and
   constructor calls in sema.
@@ -49,9 +71,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
 
 - [ ] Complete class and instance execution fidelity for real service/domain
   classes.
-- [ ] Finish properties, getters/setters, initializer blocks, static
+- [x] Finish properties, getters/setters, initializer blocks, static
   initializers, static field ordering, and static reset behavior.
-- [ ] Complete constructor chaining, default constructors, overloaded
+- [x] Complete constructor chaining, default constructors, overloaded
   constructors, and `this(...)`/`super(...)` behavior.
 - [ ] Complete virtual dispatch, overrides, interfaces, abstract classes, and
   inherited member lookup.
@@ -65,7 +87,7 @@ a Salesforce-shaped local API server without silently wrong behavior.
   not only in sema.
 - [ ] Support Apex numeric, decimal, boolean, string, collection, null, enum,
   and object coercion rules closely enough for enterprise code.
-- [ ] Add no-panic guards around all VM execution paths for malformed or
+- [x] Add no-panic guards around all VM execution paths for malformed or
   unsupported user code.
 
 ## 3. Apex Test Semantics And Async
@@ -179,7 +201,7 @@ a Salesforce-shaped local API server without silently wrong behavior.
 - [ ] Complete DAP scopes and variable rendering for SObjects, user objects,
   statics, collections, exceptions, and trigger context.
 - [ ] Complete watch expression evaluation against VM context.
-- [ ] Add VS Code launch/task examples and editor documentation.
+- [x] Add VS Code launch/task examples and editor documentation.
 - [ ] Expand `oaer lsp` with incremental document sync.
 - [ ] Add LSP semantic tokens, definition, references, rename, and richer
   completion.
@@ -217,12 +239,12 @@ a Salesforce-shaped local API server without silently wrong behavior.
 ## 9. Compatibility, Hardening, And Release
 
 - [x] Generate a public compatibility dashboard from `internal/capability`.
-- [ ] Add CI gates for compatibility matrix drift and MVP readiness.
+- [x] Add CI gates for compatibility matrix drift and MVP readiness.
 - [ ] Build black-box fixtures against Salesforce behavior for every supported
   language/runtime/data/server feature.
 - [ ] Add enterprise fixtures for trigger-heavy, selector/service/domain,
   async-heavy, describe-heavy, namespace-heavy, and package-style projects.
-- [ ] Add fixture coverage for unsupported-feature diagnostics so failures are
+- [x] Add fixture coverage for unsupported-feature diagnostics so failures are
   stable and intentional.
 - [x] Add panic recovery and no-panic tests around parser, sema, VM, SOQL, DML,
   test runner, watcher, LSP, DAP, fixture loading, and server routes.
@@ -264,25 +286,3 @@ green.
 - [ ] Optional alternate persistence backends for larger shared CI fixtures.
 - [ ] Rich compatibility reports that explain why a project is blocked and
   which unsupported features are highest impact.
-
-## Suggested Completion Order
-
-1. Runtime fidelity: method-body sema, class/object execution, exceptions,
-   properties, statics, namespaces, and no-panic VM behavior.
-2. Test fidelity: transaction isolation, `@TestSetup`, static reset,
-   start/stop windows, `runAs`, async drain, and assertion stack traces.
-3. Data fidelity: SObject, SOQL, DML, triggers, rollback, and result/error
-   shape coverage.
-4. Limits and platform APIs: counters, strict/permissive enforcement, and
-   common standard-library surfaces.
-5. Fixtures and persistence: large SQLite-backed fixtures, deterministic
-   platform data, seed/reset/export/import, and server state reset.
-6. Developer experience: debug pause hooks, LSP completeness, watch
-   cancellation, and native trace/profile reports.
-7. Local API server: auth/user context, broader REST/Tooling/Composite
-   resources, persistence, and error fidelity.
-8. Compatibility and release: dashboard, black-box/enterprise fixtures,
-   no-panic hardening, benchmarks, release artifacts, install docs, and
-   known-gaps docs.
-9. Beyond parity: query plans, cost attribution, anonymization, replay bundles,
-   SARIF, API-versioned dashboard, plugins, fuzzing, and mutation testing.

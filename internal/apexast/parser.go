@@ -166,6 +166,18 @@ func buildTrigger(ctx parser.ITriggerUnitContext) Declaration {
 }
 
 func buildClassBodyDeclaration(ctx parser.IClassBodyDeclarationContext) []Declaration {
+	if block := ctx.Block(); block != nil {
+		mods := modifiers(ctx.AllModifier())
+		if ctx.STATIC() != nil && !containsModifier(mods, "static") {
+			mods = append(mods, "static")
+		}
+		return []Declaration{{
+			Kind:      DeclarationInitializer,
+			Name:      "initializer",
+			Modifiers: mods,
+			Range:     rangeOf(block),
+		}}
+	}
 	member := ctx.MemberDeclaration()
 	if member == nil {
 		return nil
@@ -194,22 +206,40 @@ func buildClassBodyDeclaration(ctx parser.IClassBodyDeclarationContext) []Declar
 
 func buildMethod(ctx parser.IMethodDeclarationContext, mods []string) Declaration {
 	return Declaration{
-		Kind:      DeclarationMethod,
-		Name:      textOf(ctx.MethodId()),
-		Type:      returnType(ctx.TypeRef(), ctx.VOID() != nil),
-		Modifiers: mods,
-		Range:     rangeOf(ctx),
+		Kind:       DeclarationMethod,
+		Name:       textOf(ctx.MethodId()),
+		Type:       returnType(ctx.TypeRef(), ctx.VOID() != nil),
+		Modifiers:  mods,
+		Parameters: extractFormalParameters(ctx.FormalParameters()),
+		Range:      rangeOf(ctx),
 	}
 }
 
 func buildInterfaceMethod(ctx parser.IInterfaceMethodDeclarationContext) Declaration {
 	return Declaration{
-		Kind:      DeclarationMethod,
-		Name:      textOf(ctx.MethodId()),
-		Type:      returnType(ctx.TypeRef(), ctx.VOID() != nil),
-		Modifiers: modifiers(ctx.AllModifier()),
-		Range:     rangeOf(ctx),
+		Kind:       DeclarationMethod,
+		Name:       textOf(ctx.MethodId()),
+		Type:       returnType(ctx.TypeRef(), ctx.VOID() != nil),
+		Modifiers:  modifiers(ctx.AllModifier()),
+		Parameters: extractFormalParameters(ctx.FormalParameters()),
+		Range:      rangeOf(ctx),
 	}
+}
+
+func extractFormalParameters(ctx parser.IFormalParametersContext) []Parameter {
+	if ctx == nil || ctx.FormalParameterList() == nil {
+		return nil
+	}
+	var params []Parameter
+	for _, param := range ctx.FormalParameterList().AllFormalParameter() {
+		params = append(params, Parameter{
+			Name:      textOf(param.Id()),
+			Type:      textOf(param.TypeRef()),
+			Modifiers: modifiers(param.AllModifier()),
+			Range:     rangeOf(param),
+		})
+	}
+	return params
 }
 
 func buildFields(ctx parser.IFieldDeclarationContext, mods []string) []Declaration {
@@ -229,10 +259,11 @@ func buildFields(ctx parser.IFieldDeclarationContext, mods []string) []Declarati
 
 func buildConstructor(ctx parser.IConstructorDeclarationContext, mods []string) Declaration {
 	return Declaration{
-		Kind:      DeclarationConstructor,
-		Name:      textOf(ctx.QualifiedName()),
-		Modifiers: mods,
-		Range:     rangeOf(ctx),
+		Kind:       DeclarationConstructor,
+		Name:       textOf(ctx.QualifiedName()),
+		Modifiers:  mods,
+		Parameters: extractFormalParameters(ctx.FormalParameters()),
+		Range:      rangeOf(ctx),
 	}
 }
 
@@ -242,8 +273,30 @@ func buildProperty(ctx parser.IPropertyDeclarationContext, mods []string) Declar
 		Name:      textOf(ctx.Id()),
 		Type:      textOf(ctx.TypeRef()),
 		Modifiers: mods,
+		Accessors: extractPropertyAccessors(ctx),
 		Range:     rangeOf(ctx),
 	}
+}
+
+func extractPropertyAccessors(ctx parser.IPropertyDeclarationContext) []Accessor {
+	var accessors []Accessor
+	for _, block := range ctx.AllPropertyBlock() {
+		acc := Accessor{Modifiers: modifiers(block.AllModifier())}
+		switch {
+		case block.Getter() != nil:
+			acc.Kind = "get"
+			acc.HasBody = block.Getter().Block() != nil
+			acc.Range = rangeOf(block.Getter())
+		case block.Setter() != nil:
+			acc.Kind = "set"
+			acc.HasBody = block.Setter().Block() != nil
+			acc.Range = rangeOf(block.Setter())
+		default:
+			continue
+		}
+		accessors = append(accessors, acc)
+	}
+	return accessors
 }
 
 func returnType(ctx parser.ITypeRefContext, isVoid bool) string {
@@ -275,6 +328,15 @@ func normalizeModifier(mod parser.IModifierContext) string {
 	default:
 		return textOf(mod)
 	}
+}
+
+func containsModifier(mods []string, expected string) bool {
+	for _, mod := range mods {
+		if strings.EqualFold(mod, expected) {
+			return true
+		}
+	}
+	return false
 }
 
 func textOf(node interface{ GetText() string }) string {

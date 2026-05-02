@@ -90,7 +90,7 @@ func lex(source string) ([]token, error) {
 				}
 			}
 			switch source[i] {
-			case '(', ')', '{', '}', '[', ']', ';', ',', '.', ':', '+', '-', '*', '/', '%', '=', '<', '>', '!':
+			case '(', ')', '{', '}', '[', ']', ';', ',', '.', ':', '+', '-', '*', '/', '%', '=', '<', '>', '!', '|':
 				tokens = append(tokens, token{kind: tokenSymbol, text: source[i : i+1], pos: start})
 				i++
 			default:
@@ -229,6 +229,9 @@ func (p *parser) parseStatement() (ir.Instruction, error) {
 	}
 
 	if p.match(tokenIdent, "throw") {
+		if p.match(tokenSymbol, ";") {
+			return ir.Instruction{Op: ir.OpThrow, Pos: start.pos}, nil
+		}
 		expr, err := p.parseExpression()
 		if err != nil {
 			return ir.Instruction{}, err
@@ -253,6 +256,14 @@ func (p *parser) parseStatement() (ir.Instruction, error) {
 			if err != nil {
 				return ir.Instruction{}, err
 			}
+			catchTypes := []string{catchType}
+			for p.match(tokenSymbol, "|") {
+				nextType, err := p.parseTypeName()
+				if err != nil {
+					return ir.Instruction{}, err
+				}
+				catchTypes = append(catchTypes, nextType)
+			}
 			catchName, err := p.expect(tokenIdent, "")
 			if err != nil {
 				return ir.Instruction{}, err
@@ -265,6 +276,7 @@ func (p *parser) parseStatement() (ir.Instruction, error) {
 				return ir.Instruction{}, err
 			}
 			inst.Type = catchType
+			inst.CatchTypes = catchTypes
 			inst.Name = catchName.text
 			inst.Catch = catchBlock
 		}
@@ -926,6 +938,13 @@ func (p *parser) parseTypeName() (string, error) {
 		return "", err
 	}
 	name := first.text
+	for p.match(tokenSymbol, ".") {
+		next, err := p.expect(tokenIdent, "")
+		if err != nil {
+			return "", err
+		}
+		name += "." + next.text
+	}
 	if p.match(tokenSymbol, "<") {
 		var args []string
 		for {

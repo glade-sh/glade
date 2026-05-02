@@ -1105,7 +1105,7 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 		return err
 	}
 	if len(args) == 0 {
-		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] | dashboard|gaps [--output <path>|--check <path>]")
+		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | dashboard|gaps [--output <path>|--check <path>]")
 	}
 	switch args[0] {
 	case "matrix", "mvp":
@@ -1119,7 +1119,7 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 			return errors.New("usage: oaer compat validate|run <fixture.json...>")
 		}
 	default:
-		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] | dashboard|gaps [--output <path>|--check <path>]")
+		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | dashboard|gaps [--output <path>|--check <path>]")
 	}
 
 	for _, path := range args[1:] {
@@ -1145,19 +1145,29 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 
 func runCompatCapabilities(args []string, w io.Writer) error {
 	jsonOut := false
+	requireReady := false
 	for _, arg := range args {
 		switch arg {
 		case "--json":
 			jsonOut = true
+		case "--require-ready":
+			requireReady = true
 		default:
 			return fmt.Errorf("unknown flag %q", arg)
 		}
 	}
 	report := capability.MVPReport()
 	if jsonOut {
-		return capability.WriteJSON(w, report)
+		if err := capability.WriteJSON(w, report); err != nil {
+			return err
+		}
+	} else if err := capability.WriteText(w, report); err != nil {
+		return err
 	}
-	return capability.WriteText(w, report)
+	if requireReady && !report.Ready {
+		return fmt.Errorf("MVP readiness gate failed: %d required capabilities incomplete", report.Incomplete)
+	}
+	return nil
 }
 
 func runCompatDashboard(args []string, w io.Writer) error {

@@ -2,6 +2,8 @@ package vm
 
 import (
 	"fmt"
+	"sort"
+	"strings"
 
 	"github.com/open-aer/oaer/internal/ir"
 )
@@ -33,7 +35,11 @@ func (vm *VM) RegisterMethod(method Method) error {
 	if vm.Methods == nil {
 		vm.Methods = make(map[string]Method)
 	}
+	if vm.MethodOverloads == nil {
+		vm.MethodOverloads = make(map[string][]Method)
+	}
 	vm.Methods[method.Name] = method
+	vm.MethodOverloads[method.Name] = append(vm.MethodOverloads[method.Name], method)
 	return nil
 }
 
@@ -45,19 +51,25 @@ type Field struct {
 	InitialValue Value
 	Access       string
 	Property     bool
+	Getter       *Method
+	Setter       *Method
 }
 
 type Class struct {
-	Name         string
-	Namespace    string
-	SuperClass   string
-	Interfaces   []string
-	Fields       map[string]Field
-	StaticFields map[string]Field
-	Methods      map[string]Method
-	Constructors []Method
-	EnumValues   []string
-	Access       string
+	Name                 string
+	Namespace            string
+	SuperClass           string
+	Interfaces           []string
+	Fields               map[string]Field
+	StaticFields         map[string]Field
+	FieldOrder           []string
+	StaticFieldOrder     []string
+	Methods              map[string]Method
+	Constructors         []Method
+	StaticInitializers   []Method
+	InstanceInitializers []Method
+	EnumValues           []string
+	Access               string
 }
 
 func (vm *VM) RegisterClass(class Class) error {
@@ -70,7 +82,10 @@ func (vm *VM) RegisterClass(class Class) error {
 	if class.StaticFields == nil {
 		class.StaticFields = make(map[string]Field)
 	}
-	for name, field := range class.StaticFields {
+	class.FieldOrder = orderedFieldNames(class.Fields, class.FieldOrder)
+	class.StaticFieldOrder = orderedFieldNames(class.StaticFields, class.StaticFieldOrder)
+	for _, name := range class.StaticFieldOrder {
+		field := class.StaticFields[name]
 		if field.InitialValue.Kind == "" {
 			field.InitialValue = defaultValue(field.Type, field.Value)
 		}
@@ -94,6 +109,13 @@ func (vm *VM) RegisterClass(class Class) error {
 		if err := vm.RegisterMethod(method); err != nil {
 			return err
 		}
+		if class.Namespace != "" && !strings.HasPrefix(method.Name, class.Namespace+".") {
+			alias := method
+			alias.Name = class.Namespace + "." + method.Name
+			if err := vm.RegisterMethod(alias); err != nil {
+				return err
+			}
+		}
 	}
 	for i := range class.Constructors {
 		if class.Constructors[i].Name == "" {
@@ -105,5 +127,44 @@ func (vm *VM) RegisterClass(class Class) error {
 		class.Constructors[i].IsConstructor = true
 	}
 	vm.Classes[class.Name] = class
+	if class.Namespace != "" && !strings.Contains(class.Name, ".") {
+		vm.Classes[class.Namespace+"."+class.Name] = class
+	}
+	return vm.runStaticInitializers(class)
+}
+
+func orderedFieldNames(fields map[string]Field, order []string) []string {
+	out := make([]string, 0, len(fields))
+	seen := make(map[string]bool, len(fields))
+	for _, name := range order {
+		if _, ok := fields[name]; ok && !seen[name] {
+			out = append(out, name)
+			seen[name] = true
+		}
+	}
+	missing := make([]string, 0, len(fields)-len(out))
+	for name := range fields {
+		if !seen[name] {
+			missing = append(missing, name)
+		}
+	}
+	sort.Strings(missing)
+	out = append(out, missing...)
+	return out
+}
+
+func (vm *VM) runStaticInitializers(class Class) error {
+	for _, initializer := range class.StaticInitializers {
+		if initializer.Name == "" {
+			initializer.Name = class.Name + ".<static_init>"
+		}
+		if initializer.ClassName == "" {
+			initializer.ClassName = class.Name
+		}
+		initializer.IsStatic = true
+		if _, err := vm.callMethod(initializer, nil, &Result{}); err != nil {
+			return err
+		}
+	}
 	return nil
 }

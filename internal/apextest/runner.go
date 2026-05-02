@@ -167,7 +167,11 @@ func runCase(testCase TestCase, methods map[string]vm.Method, classes []vm.Class
 			return out
 		}
 	}
-	machine.ResetStatics()
+	if err := machine.ResetStatics(); err != nil {
+		out.Status = testreport.StatusFail
+		out.Problem = problemFromError(err, testCase)
+		return out
+	}
 	program, err := vm.CompileAnonymous(testMethod.Name + "();")
 	if err != nil {
 		out.Status = testreport.StatusUnsupported
@@ -200,6 +204,7 @@ func compileProjectClasses(index typesys.Index, methods map[string]vm.Method) []
 		}
 		class := vm.Class{
 			Name:         typ.Name,
+			Namespace:    index.Project.Namespace,
 			Access:       accessModifier(typ.Modifiers),
 			Fields:       make(map[string]vm.Field),
 			StaticFields: make(map[string]vm.Field),
@@ -213,7 +218,7 @@ func compileProjectClasses(index typesys.Index, methods map[string]vm.Method) []
 		}
 		for _, method := range methods {
 			if method.ClassName == typ.Name {
-				class.Methods[methodShortName(method.Name)] = method
+				class.Methods[methodShortName(method.Name)+methodParamKey(method.Params)] = method
 			}
 		}
 		for _, member := range typ.Members {
@@ -226,25 +231,57 @@ func compileProjectClasses(index typesys.Index, methods map[string]vm.Method) []
 					Access:   accessModifier(member.Modifiers),
 					Property: member.Kind == apexast.DeclarationProperty,
 				}
+				if member.Kind == apexast.DeclarationProperty {
+					attachPropertyAccessors(&field, typ.Name, typ.File, member, source)
+				}
 				if value, ok := compileFieldInitializer(member.Type, member.Range, source); ok {
 					field.Value = value
 					field.InitialValue = value
 				}
 				if field.Static {
 					class.StaticFields[field.Name] = field
+					class.StaticFieldOrder = append(class.StaticFieldOrder, field.Name)
 				} else {
 					class.Fields[field.Name] = field
+					class.FieldOrder = append(class.FieldOrder, field.Name)
 				}
 			case apexast.DeclarationConstructor:
 				ctor, err := compileProjectConstructor(typ.Name, typ.File, member.Range, source)
 				if err == nil {
 					class.Constructors = append(class.Constructors, ctor)
 				}
+			case apexast.DeclarationInitializer:
+				init, err := compileProjectInitializer(typ.Name, typ.File, member.Range, source, hasModifier(member.Modifiers, "static"))
+				if err == nil {
+					if init.IsStatic {
+						class.StaticInitializers = append(class.StaticInitializers, init)
+					} else {
+						class.InstanceInitializers = append(class.InstanceInitializers, init)
+					}
+				}
 			}
 		}
 		out = append(out, class)
 	}
 	return out
+}
+
+func attachPropertyAccessors(field *vm.Field, className, file string, member typesys.MemberSymbol, source string) {
+	for _, accessor := range member.Accessors {
+		if !accessor.HasBody {
+			continue
+		}
+		method, err := compilePropertyAccessor(className, file, member, accessor, source)
+		if err != nil {
+			continue
+		}
+		switch accessor.Kind {
+		case "get":
+			field.Getter = &method
+		case "set":
+			field.Setter = &method
+		}
+	}
 }
 
 func compileProjectMethods(index typesys.Index) map[string]vm.Method {
@@ -271,7 +308,7 @@ func compileProjectMethods(index typesys.Index) map[string]vm.Method {
 			if err != nil {
 				continue
 			}
-			out[method.Name] = method
+			out[method.Name+methodParamKey(method.Params)] = method
 		}
 	}
 	return out
@@ -438,6 +475,61 @@ func compileProjectConstructor(className, file string, r diagnostic.Range, sourc
 	}, nil
 }
 
+func compileProjectInitializer(className, file string, r diagnostic.Range, source string, static bool) (vm.Method, error) {
+	body, err := extractMethodBody(source, r)
+	if err != nil {
+		return vm.Method{}, err
+	}
+	program, err := vm.CompileAnonymous(body)
+	if err != nil {
+		return vm.Method{}, err
+	}
+	name := className + ".<init_block>"
+	if static {
+		name = className + ".<static_init>"
+	}
+	return vm.Method{
+		Name:       name,
+		ReturnType: "void",
+		Program:    program,
+		ClassName:  className,
+		IsStatic:   static,
+		File:       file,
+		Line:       r.Start.Line,
+		Column:     r.Start.Column,
+	}, nil
+}
+
+func compilePropertyAccessor(className, file string, member typesys.MemberSymbol, accessor apexast.Accessor, source string) (vm.Method, error) {
+	body, err := extractMethodBody(source, accessor.Range)
+	if err != nil {
+		return vm.Method{}, err
+	}
+	program, err := vm.CompileAnonymous(body)
+	if err != nil {
+		return vm.Method{}, err
+	}
+	method := vm.Method{
+		Name:       className + "." + member.Name + "." + accessor.Kind,
+		ReturnType: "void",
+		Program:    program,
+		ClassName:  className,
+		IsStatic:   hasModifier(member.Modifiers, "static"),
+		Access:     accessModifier(accessor.Modifiers),
+		Modifiers:  accessor.Modifiers,
+		File:       file,
+		Line:       accessor.Range.Start.Line,
+		Column:     accessor.Range.Start.Column,
+	}
+	if accessor.Kind == "get" {
+		method.ReturnType = member.Type
+	}
+	if accessor.Kind == "set" {
+		method.Params = []vm.Param{{Name: "value", Type: member.Type}}
+	}
+	return method, nil
+}
+
 func extractMethodSource(source string, r diagnostic.Range) (string, error) {
 	return extractSourceRange(source, r)
 }
@@ -483,6 +575,16 @@ func methodShortName(name string) string {
 		return name[i+1:]
 	}
 	return name
+}
+
+func methodParamKey(params []vm.Param) string {
+	var b strings.Builder
+	b.WriteString("#")
+	for _, param := range params {
+		b.WriteString(param.Type)
+		b.WriteString(";")
+	}
+	return b.String()
 }
 
 func accessModifier(modifiers []string) string {

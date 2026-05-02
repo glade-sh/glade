@@ -7,7 +7,8 @@ platform archives and `SHA256SUMS.txt` from the tagged source.
 
 A release can be promoted as MVP-ready only when:
 
-- `oaer compat mvp` reports `MVP readiness: ready`.
+- `oaer compat mvp --require-ready` exits successfully and reports
+  `MVP readiness: ready`.
 - Every `requiredForMVP` capability in `internal/capability` is `supported`.
 - Any feature marked `supported` has compatibility fixtures.
 - `docs/COMPATIBILITY_DASHBOARD.md` and `docs/KNOWN_GAPS.md` are regenerated

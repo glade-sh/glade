@@ -36,12 +36,14 @@ type TypeSymbol struct {
 }
 
 type MemberSymbol struct {
-	Kind      apexast.DeclarationKind `json:"kind"`
-	Name      string                  `json:"name"`
-	Type      string                  `json:"type,omitempty"`
-	Modifiers []string                `json:"modifiers,omitempty"`
-	IsTest    bool                    `json:"isTest,omitempty"`
-	Range     diagnostic.Range        `json:"range"`
+	Kind       apexast.DeclarationKind `json:"kind"`
+	Name       string                  `json:"name"`
+	Type       string                  `json:"type,omitempty"`
+	Modifiers  []string                `json:"modifiers,omitempty"`
+	Parameters []apexast.Parameter     `json:"parameters,omitempty"`
+	Accessors  []apexast.Accessor      `json:"accessors,omitempty"`
+	IsTest     bool                    `json:"isTest,omitempty"`
+	Range      diagnostic.Range        `json:"range"`
 }
 
 type TriggerSymbol struct {
@@ -134,12 +136,14 @@ func typeSymbolFromDeclaration(path string, decl apexast.Declaration) TypeSymbol
 			continue
 		}
 		sym.Members = append(sym.Members, MemberSymbol{
-			Kind:      member.Kind,
-			Name:      member.Name,
-			Type:      member.Type,
-			Modifiers: member.Modifiers,
-			IsTest:    hasTestModifier(member.Modifiers) || (member.Kind == apexast.DeclarationMethod && hasModifier(member.Modifiers, "testmethod")),
-			Range:     member.Range,
+			Kind:       member.Kind,
+			Name:       member.Name,
+			Type:       member.Type,
+			Modifiers:  member.Modifiers,
+			Parameters: member.Parameters,
+			Accessors:  member.Accessors,
+			IsTest:     hasTestModifier(member.Modifiers) || (member.Kind == apexast.DeclarationMethod && hasModifier(member.Modifiers, "testmethod")),
+			Range:      member.Range,
 		})
 	}
 	return sym

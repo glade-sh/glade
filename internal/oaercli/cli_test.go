@@ -64,6 +64,20 @@ func TestRunCompatMVP(t *testing.T) {
 	}
 }
 
+func TestRunCompatMVPRequireReadyFailsWhilePreview(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "mvp", "--require-ready"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1", code)
+	}
+	if !strings.Contains(stdout.String(), "MVP readiness: not ready") {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+	if !strings.Contains(stderr.String(), "MVP readiness gate failed") {
+		t.Fatalf("stderr = %q", stderr.String())
+	}
+}
+
 func TestRunCompatMatrixJSON(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"compat", "matrix", "--json"}, &stdout, &stderr)

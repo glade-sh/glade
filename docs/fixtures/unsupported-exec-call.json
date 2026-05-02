@@ -1,0 +1,21 @@
+{
+  "name": "unsupported-exec-call",
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "System.nope();"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "System.nope();"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"System.nope\""
+    }
+  }
+}

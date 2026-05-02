@@ -114,6 +114,8 @@ grep -q 'v61.0' "${TMP}/server-data.json"
 grep -q 'MVP readiness: not ready' "${TMP}/compat-mvp.out"
 "${OAER}" compat matrix --json >"${TMP}/compat-matrix.json"
 grep -q '"ready": false' "${TMP}/compat-matrix.json"
+"${OAER}" compat validate docs/fixtures/*.json
+"${OAER}" compat run docs/fixtures/*.json
 "${OAER}" compat dashboard --check docs/COMPATIBILITY_DASHBOARD.md
 "${OAER}" compat gaps --check docs/KNOWN_GAPS.md
 

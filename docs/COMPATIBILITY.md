@@ -24,6 +24,7 @@ Use:
 
 ```bash
 oaer compat mvp
+oaer compat mvp --require-ready
 oaer compat matrix --json
 oaer compat dashboard --output docs/COMPATIBILITY_DASHBOARD.md
 oaer compat gaps --output docs/KNOWN_GAPS.md
@@ -33,10 +34,14 @@ The source of truth for required MVP capabilities is `internal/capability`.
 The generated public dashboard is checked in at
 [`docs/COMPATIBILITY_DASHBOARD.md`](COMPATIBILITY_DASHBOARD.md). The generated
 known-gaps document is checked in at [`docs/KNOWN_GAPS.md`](KNOWN_GAPS.md). CI
-verifies that both generated documents match the capability source.
+prints the machine-readable MVP gate and verifies that both generated documents
+match the capability source. Use `oaer compat mvp --require-ready` for release
+promotion checks that must fail while the target is not ready.
 
 Release installation and artifact verification are documented in
 [`docs/INSTALL.md`](INSTALL.md).
+Editor tasks, LSP wiring, and VS Code launch examples are documented in
+[`docs/EDITOR.md`](EDITOR.md).
 Release promotion, upgrade, and API-version compatibility policy are documented
 in [`docs/RELEASE_POLICY.md`](RELEASE_POLICY.md), with ongoing notes in
 [`docs/RELEASE_NOTES.md`](RELEASE_NOTES.md).
@@ -53,8 +58,8 @@ in [`docs/RELEASE_POLICY.md`](RELEASE_POLICY.md), with ongoing notes in
 | Project loader | partial | SFDX package directories and Apex/object/field files are discovered. |
 | Schema loader | partial | Custom object and custom field metadata are loaded. |
 | Symbol table | partial | Top-level Apex declarations, members, test annotations, triggers, duplicate names, and schema objects are indexed. |
-| Semantic analysis | partial | `oaer check` validates declaration/member type references, trigger SObjects, schema lookup references, and test discovery. Method-body type checking is not implemented yet. |
-| VM | partial | `oaer exec` runs the supported anonymous Apex subset with variables, expressions, methods/classes, constructors, instance/static fields, inheritance/super dispatch, collections, for/enhanced-for/do-while/switch, try/catch/finally, exception messages, trace events, assertions, and common platform APIs. Full visibility, namespaces, initializer blocks, inner classes, and overload fidelity are not complete. |
+| Semantic analysis | partial | `oaer check` validates declaration/member type references, method and constructor parameter type references, project namespace-qualified type references, basic visibility conflicts, interface member visibility, trigger SObjects, schema lookup references, test discovery, and a conservative method-body baseline for local declarations, constructor references, simple assignments, project method calls, and known-receiver overload arity/simple argument type matching. Full expression typing, flow-sensitive scopes, inherited/interface dispatch, and Apex coercion rules are not complete. |
+| VM | partial | `oaer exec` runs the supported anonymous Apex subset with variables, expressions, methods/classes, namespace-qualified class names, constructors, `this(...)`/`super(...)` constructor chaining, overloaded method/constructor selection by argument types, instance/static fields, property accessor bodies, source-ordered field initialization/reset, static and instance initializer blocks, static reset through initializer blocks, inheritance/super dispatch, baseline runtime visibility and namespace-global checks, collections, for/enhanced-for/do-while/switch, try/catch/finally, multi-catch, bare rethrow, catchable null dereference, exception messages, trace events, assertions, and common platform APIs. Full Apex visibility/test-visible rules, package semantics, field initializer expression ordering, inner classes, and generic overload/coercion fidelity are not complete. |
 | Test runner | partial | `oaer test` discovers `@isTest` and legacy test methods, compiles project helper classes/triggers, runs constructor and instance method bodies, executes `@TestSetup`, resets statics, clones org state per test, supports `startTest`/`stopTest`, `runAs`, Queueable drain, assertion stack frames, and emits console, JSON, and JUnit reports. Full Salesforce auth/profile and async breadth are not complete. |
 | SObject/schema runtime | partial | Runtime SObject values preserve projected fields and explicit nulls; schema describe registry and deterministic key prefixes are available. Apex construction, typed/dynamic field access, DML Id propagation, and simple parent relationship projection are wired into the VM. Broader describe/system fields remain incomplete. |
 | SOQL | partial | Static SOQL and `Database.query` execute in-memory `SELECT fields FROM Object` queries with binds, equality/inequality filters, `ORDER BY`, `LIMIT`, `OFFSET`, `COUNT()`, single-SObject assignment, and simple parent relationship fields. Subqueries, broad aggregates, complex predicates, SQLite planning, and full relationship query behavior are not complete. |

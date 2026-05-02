@@ -55,6 +55,21 @@ func TestBuildIndexDiscoversTests(t *testing.T) {
 	}
 }
 
+func TestBuildIndexKeepsMethodParameters(t *testing.T) {
+	root := t.TempDir()
+	classPath := filepath.Join(root, "Hello.cls")
+	writeFile(t, classPath, "public class Hello { public void run(String name, Account account) {} }")
+
+	idx := Build(project.Project{Root: root, ApexFiles: []string{classPath}}, schema.Schema{})
+	if idx.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", idx.Diagnostics)
+	}
+	params := idx.Types[0].Members[0].Parameters
+	if len(params) != 2 || params[0].Name != "name" || params[1].Type != "Account" {
+		t.Fatalf("parameters = %#v", params)
+	}
+}
+
 func writeFile(t *testing.T, path, content string) {
 	t.Helper()
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/open-aer/oaer/internal/apexast"
 	"github.com/open-aer/oaer/internal/vm"
@@ -16,6 +17,7 @@ type RunResult struct {
 	Kind   string          `json:"kind"`
 	Result json.RawMessage `json:"result,omitempty"`
 	Stdout string          `json:"stdout,omitempty"`
+	Error  *ExpectedError  `json:"error,omitempty"`
 }
 
 func Run(fixture Fixture) (RunResult, error) {
@@ -49,15 +51,54 @@ func runExecFixture(fixture Fixture) (RunResult, error) {
 	}
 	program, err := vm.CompileAnonymous(fixture.Command.Args[0])
 	if err != nil {
-		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+		return compareError(fixture, err)
 	}
 	var stdout bytes.Buffer
 	result, err := vm.Execute(program, &stdout)
 	if err != nil {
-		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+		return compareError(fixture, err)
 	}
 	payload := map[string]any{"ok": true, "debug": result.Debug}
 	return compareResult(fixture, payload, stdout.String())
+}
+
+func compareError(fixture Fixture, runErr error) (RunResult, error) {
+	actual := classifyError(runErr)
+	out := RunResult{
+		Name:  fixture.Name,
+		Kind:  fixture.Command.Kind,
+		Error: &actual,
+	}
+	if fixture.Expected.Error == nil {
+		return out, runErr
+	}
+	expected := *fixture.Expected.Error
+	if expected.Type != "" && expected.Type != actual.Type {
+		return out, fmt.Errorf("fixture %q error type mismatch: expected %q, got %q", fixture.Name, expected.Type, actual.Type)
+	}
+	if expected.Code != "" && expected.Code != actual.Code {
+		return out, fmt.Errorf("fixture %q error code mismatch: expected %q, got %q", fixture.Name, expected.Code, actual.Code)
+	}
+	if expected.Message != "" && !strings.Contains(actual.Message, expected.Message) {
+		return out, fmt.Errorf("fixture %q error message mismatch: expected to contain %q, got %q", fixture.Name, expected.Message, actual.Message)
+	}
+	out.OK = true
+	payload := map[string]any{"ok": false, "error": actual}
+	encoded, err := json.Marshal(payload)
+	if err != nil {
+		return out, err
+	}
+	out.Result = encoded
+	return out, nil
+}
+
+func classifyError(err error) ExpectedError {
+	message := err.Error()
+	errorType := "Error"
+	if strings.Contains(strings.ToLower(message), "unsupported") {
+		errorType = "UnsupportedFeature"
+	}
+	return ExpectedError{Type: errorType, Message: message}
 }
 
 func compareResult(fixture Fixture, payload map[string]any, stdout string) (RunResult, error) {

@@ -5,18 +5,19 @@ type Program struct {
 }
 
 type Instruction struct {
-	Op      Op            `json:"op"`
-	Type    string        `json:"type,omitempty"`
-	Name    string        `json:"name,omitempty"`
-	Expr    Expr          `json:"expr,omitempty"`
-	Init    *Instruction  `json:"init,omitempty"`
-	Update  *Instruction  `json:"update,omitempty"`
-	Then    []Instruction `json:"then,omitempty"`
-	Else    []Instruction `json:"else,omitempty"`
-	Catch   []Instruction `json:"catch,omitempty"`
-	Finally []Instruction `json:"finally,omitempty"`
-	Cases   []SwitchCase  `json:"cases,omitempty"`
-	Pos     int           `json:"pos,omitempty"`
+	Op         Op            `json:"op"`
+	Type       string        `json:"type,omitempty"`
+	CatchTypes []string      `json:"catchTypes,omitempty"`
+	Name       string        `json:"name,omitempty"`
+	Expr       Expr          `json:"expr,omitempty"`
+	Init       *Instruction  `json:"init,omitempty"`
+	Update     *Instruction  `json:"update,omitempty"`
+	Then       []Instruction `json:"then,omitempty"`
+	Else       []Instruction `json:"else,omitempty"`
+	Catch      []Instruction `json:"catch,omitempty"`
+	Finally    []Instruction `json:"finally,omitempty"`
+	Cases      []SwitchCase  `json:"cases,omitempty"`
+	Pos        int           `json:"pos,omitempty"`
 }
 
 type Op string
