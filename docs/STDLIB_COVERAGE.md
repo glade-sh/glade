@@ -122,6 +122,10 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | List | `List.set` | `supported` | Indexed replacement with typed value coercion. |
 | List | `List.size` | `supported` | Returns local list length. |
 | List | `List.sort` | `partial` | Deterministic sort for local primitive comparable values only. |
+| LoggingLevel | `LoggingLevel.name` | `supported` | Returns deterministic built-in enum member text. |
+| LoggingLevel | `LoggingLevel.ordinal` | `supported` | Returns deterministic built-in enum order for the local logging level set. |
+| LoggingLevel | `LoggingLevel.toString` | `supported` | Returns deterministic built-in enum member text. |
+| LoggingLevel | `LoggingLevel.values` | `supported` | Returns NONE, ERROR, WARN, INFO, DEBUG, FINE, FINER, FINEST in deterministic order. |
 | Long | `Long.MAX_VALUE` | `supported` | Exposes the public 64-bit Long maximum constant. |
 | Long | `Long.MIN_VALUE` | `supported` | Exposes the public 64-bit Long minimum constant. |
 | Long | `Long.valueOf` | `supported` | Parses integer strings and numeric values with overflow checks. |
@@ -290,6 +294,10 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | System | `System.assertNotEquals` | `supported` | Assertion failure returns runtime error. |
 | System | `System.currentTimeMillis` | `partial` | Returns deterministic VM-clock epoch milliseconds. |
 | System | `System.debug` | `supported` | One-argument and LoggingLevel overloads are collected in result debug output. |
+| System | `System.isBatch` | `partial` | Returns false in the local non-async VM context. |
+| System | `System.isFuture` | `partial` | Returns false in the local non-async VM context. |
+| System | `System.isQueueable` | `partial` | Returns false in the local non-async VM context. |
+| System | `System.isScheduled` | `partial` | Returns false in the local non-async VM context. |
 | System | `System.now` | `partial` | Returns deterministic VM-clock Datetime. |
 | System | `System.today` | `partial` | Returns deterministic VM-clock Date. |
 | Test | `Test.getStandardPricebookId` | `partial` | Deterministic test-context-only ID. |
@@ -312,7 +320,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | TimeZone | `TimeZone.getOffset` | `partial` | Returns fixed offset milliseconds; named zones and DST are unsupported. |
 | TimeZone | `TimeZone.getTimeZone` | `partial` | Supports UTC/GMT and fixed GMT/UTC offsets; named zones and DST are unsupported. |
 | Type | `Type.equals` | `supported` | Compares local Type tokens by type name. |
-| Type | `Type.forName` | `partial` | Local class/type token lookup. |
+| Type | `Type.forName` | `partial` | Local class/type token lookup, common local SObjects, built-in types, and null for null/blank/unknown local names. |
 | Type | `Type.getName` | `supported` | Returns local type token name. |
 | Type | `Type.hashCode` | `supported` | Matches the local String.hashCode of the type name. |
 | Type | `Type.isAssignableFrom` | `partial` | Uses the local class/interface and built-in exception hierarchy. |
