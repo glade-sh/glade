@@ -84,7 +84,9 @@ Current progress:
   collection copy constructors, `clone`, no-argument local `deepClone`,
   primitive `List.sort`, common `Set<T>` bulk operations, deterministic
   `Map<K,V>` key/value views, previous-value, `putAll`, `containsValue`,
-  `toString`, equality, and clear/isEmpty/remove behavior.
+  `toString`, equality, clear/isEmpty/remove behavior, null membership edges,
+  and bounded `Map<Id,SObject>` construction/`putAll(List<SObject>)` for rows
+  with non-null unique Ids.
 - String: runtime support now covers case-insensitive contains/prefix/suffix,
   equality/comparison, capitalization, padding/centering, left/right/mid,
   reverse, substring-before/after variants, remove variants, whitespace
@@ -155,11 +157,9 @@ Current progress:
 Remaining cuts:
 
 1. Collections hardening
-   - Remaining gaps: iterator edge cases, null-heavy edge behavior, exact
-     platform exception shapes, SObject-aware deep-clone options, and broader
-     comparable-object sorting.
-   - SObject-map constructors and `Map<Id,SObject>` behavior where supported by
-     the front end.
+   - Remaining gaps: iterator edge cases, exact platform exception shapes,
+      SObject-aware deep-clone options, broader comparable-object sorting, and
+      wider SObject-map behavior beyond the covered non-null unique-Id slice.
 
 2. String completion
    - Remaining StringUtils-style methods not yet pinned by owned fixtures:

@@ -4977,7 +4977,11 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 			return value, nil
 		}
 		if len(args) == 1 && args[0].Kind == ValueList {
-			return Null, unsupportedCallError("Map constructor from SObject list")
+			value, err := vm.mapFromSObjectList(typeName, args[0])
+			if err != nil {
+				return Null, err
+			}
+			return value, nil
 		}
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Map constructor does not accept positional values")
@@ -5851,6 +5855,52 @@ func (vm *VM) coerceMapEntry(mapType string, key, value Value) (Value, Value, er
 	return coercedKey, coercedValue, nil
 }
 
+func (vm *VM) mapFromSObjectList(mapType string, list Value) (Value, error) {
+	keyType, valueType, ok := mapTypeArgs(mapType)
+	if !ok || !strings.EqualFold(keyType, "Id") {
+		return Null, unsupportedCallError("Map constructor from SObject list")
+	}
+	out := Map()
+	out.Type = mapType
+	for i, item := range list.List {
+		if item.Kind == ValueNull {
+			return Null, fmt.Errorf("Map constructor from SObject list requires non-null SObject at index %d", i)
+		}
+		if item.Kind != ValueObject {
+			return Null, fmt.Errorf("Map constructor from SObject list requires SObject values at index %d", i)
+		}
+		coerced, err := vm.coerceAssignable(valueType, item)
+		if err != nil {
+			return Null, fmt.Errorf("Map constructor from SObject list: value at index %d: %w", i, err)
+		}
+		id, ok := coerced.Fields["Id"]
+		if !ok || id.Kind == ValueNull {
+			return Null, fmt.Errorf("Map constructor from SObject list requires non-null Id at index %d", i)
+		}
+		key, err := vm.coerceAssignable(keyType, id)
+		if err != nil {
+			return Null, fmt.Errorf("Map constructor from SObject list: Id at index %d: %w", i, err)
+		}
+		encodedKey := mapKey(key)
+		if _, exists := out.Map[encodedKey]; exists {
+			return Null, fmt.Errorf("Map constructor from SObject list found duplicate Id at index %d", i)
+		}
+		out.Map[encodedKey] = coerced
+	}
+	return out, nil
+}
+
+func (vm *VM) putAllSObjectList(receiver Value, list Value) (Value, error) {
+	value, err := vm.mapFromSObjectList(receiver.Type, list)
+	if err != nil {
+		return receiver, err
+	}
+	for key, item := range value.Map {
+		receiver.Map[key] = item
+	}
+	return receiver, nil
+}
+
 func collectionMembers(value Value) []Value {
 	switch value.Kind {
 	case ValueList:
@@ -5924,6 +5974,8 @@ func valueFromMapKey(key string) Value {
 		return String(key)
 	}
 	switch ValueKind(kind) {
+	case ValueNull:
+		return Null
 	case ValueInt:
 		var parsed int64
 		if _, err := fmt.Sscan(text, &parsed); err == nil {
@@ -6573,8 +6625,18 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			}
 			return previous, true, nil
 		case "putAll":
-			if len(args) != 1 || args[0].Kind != ValueMap {
-				return Null, true, fmt.Errorf("Map.putAll expects Map")
+			if len(args) != 1 || (args[0].Kind != ValueMap && args[0].Kind != ValueList) {
+				return Null, true, fmt.Errorf("Map.putAll expects Map or List")
+			}
+			if args[0].Kind == ValueList {
+				updated, err := vm.putAllSObjectList(receiver, args[0])
+				if err != nil {
+					return Null, true, err
+				}
+				if err := vm.storeReceiver(receiverName, updated); err != nil {
+					return Null, true, err
+				}
+				return Null, true, nil
 			}
 			for rawKey, value := range args[0].Map {
 				keyValue := valueFromMapKey(rawKey)

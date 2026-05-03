@@ -111,10 +111,11 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | List | `List.addAll` | `supported` | Appends typed values from local List or Set values. |
 | List | `List.clear` | `supported` | Removes all local list elements. |
 | List | `List.clone` | `supported` | Copies the local list container; elements keep local value identity. |
+| List | `List.contains` | `supported` | Checks local values, including null, using local value equality. |
 | List | `List.copyConstructor` | `supported` | Copies values from a local List or Set constructor argument. |
 | List | `List.deepClone` | `partial` | No-argument local recursive clone; SObject preserve-option overloads are unsupported. |
 | List | `List.get` | `supported` | Indexed lookup with stable bounds errors. |
-| List | `List.indexOf` | `supported` | Local equality search with -1 for misses. |
+| List | `List.indexOf` | `supported` | Local equality search, including null elements, with -1 for misses. |
 | List | `List.isEmpty` | `supported` | Checks local list length. |
 | List | `List.remove` | `supported` | Indexed removal returns the removed value. |
 | List | `List.set` | `supported` | Indexed replacement with typed value coercion. |
@@ -125,15 +126,15 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Long | `Long.valueOf` | `supported` | Parses integer strings and numeric values with overflow checks. |
 | Map | `Map.clear` | `supported` | Removes all local map entries. |
 | Map | `Map.clone` | `supported` | Copies the local map container; values keep local identity. |
-| Map | `Map.containsKey` | `supported` | Checks local keys using deterministic key encoding. |
-| Map | `Map.containsValue` | `supported` | Checks local values using local value equality. |
-| Map | `Map.copyConstructor` | `supported` | Copies entries from a local Map constructor argument. |
+| Map | `Map.containsKey` | `supported` | Checks local keys, including null keys, using deterministic key encoding. |
+| Map | `Map.containsValue` | `supported` | Checks local values, including null values, using local value equality. |
+| Map | `Map.copyConstructor` | `supported` | Copies entries from a local Map and supports Map<Id,SObject> construction from List<SObject> with non-null unique Ids. |
 | Map | `Map.deepClone` | `partial` | No-argument local recursive clone; SObject preserve-option overloads are unsupported. |
 | Map | `Map.get` | `supported` | Returns local value or null for missing keys. |
 | Map | `Map.isEmpty` | `supported` | Checks local map size. |
-| Map | `Map.keySet` | `supported` | Returns deterministic local key Set. |
+| Map | `Map.keySet` | `supported` | Returns deterministic local key Set, preserving null keys. |
 | Map | `Map.put` | `supported` | Stores typed local entries and returns the previous value. |
-| Map | `Map.putAll` | `supported` | Copies local entries from another Map. |
+| Map | `Map.putAll` | `supported` | Copies local entries from another Map or SObject rows into Map<Id,SObject> by non-null unique Id. |
 | Map | `Map.remove` | `supported` | Removes a key and returns its previous local value or null. |
 | Map | `Map.size` | `supported` | Returns local map size. |
 | Map | `Map.toString` | `partial` | Deterministic local entry string form; exact platform formatting may differ. |
@@ -188,12 +189,12 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Set | `Set.addAll` | `supported` | Adds typed values from local List or Set values. |
 | Set | `Set.clear` | `supported` | Removes all local set elements. |
 | Set | `Set.clone` | `supported` | Copies the local set container; elements keep local value identity. |
-| Set | `Set.contains` | `supported` | Checks local values using local value equality. |
+| Set | `Set.contains` | `supported` | Checks local values, including null, using local value equality. |
 | Set | `Set.containsAll` | `supported` | Checks local List or Set membership. |
 | Set | `Set.copyConstructor` | `supported` | Copies unique values from a local List or Set constructor argument. |
 | Set | `Set.deepClone` | `partial` | No-argument local recursive clone; SObject preserve-option overloads are unsupported. |
 | Set | `Set.isEmpty` | `supported` | Checks local set length. |
-| Set | `Set.remove` | `supported` | Removes a local value and reports whether the Set changed. |
+| Set | `Set.remove` | `supported` | Removes a local value, including null, and reports whether the Set changed. |
 | Set | `Set.removeAll` | `supported` | Removes local List or Set members. |
 | Set | `Set.retainAll` | `supported` | Retains only local List or Set members. |
 | Set | `Set.size` | `supported` | Returns local set length. |
