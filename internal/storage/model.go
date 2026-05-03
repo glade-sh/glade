@@ -20,16 +20,17 @@ type ObjectState struct {
 }
 
 type ObjectDefinition struct {
-	APIName      string            `json:"apiName"`
-	Label        string            `json:"label,omitempty"`
-	PluralLabel  string            `json:"pluralLabel,omitempty"`
-	KeyPrefix    string            `json:"keyPrefix,omitempty"`
-	SharingModel string            `json:"sharingModel,omitempty"`
-	Fields       map[string]Field  `json:"fields,omitempty"`
-	Relations    []Relationship    `json:"relationships,omitempty"`
-	RecordTypes  []RecordTypeInfo  `json:"recordTypes,omitempty"`
-	Indexes      []IndexDefinition `json:"indexes,omitempty"`
-	Metadata     map[string]string `json:"metadata,omitempty"`
+	APIName         string            `json:"apiName"`
+	Label           string            `json:"label,omitempty"`
+	PluralLabel     string            `json:"pluralLabel,omitempty"`
+	KeyPrefix       string            `json:"keyPrefix,omitempty"`
+	SharingModel    string            `json:"sharingModel,omitempty"`
+	Fields          map[string]Field  `json:"fields,omitempty"`
+	Relations       []Relationship    `json:"relationships,omitempty"`
+	RecordTypes     []RecordTypeInfo  `json:"recordTypes,omitempty"`
+	ValidationRules []ValidationRule  `json:"validationRules,omitempty"`
+	Indexes         []IndexDefinition `json:"indexes,omitempty"`
+	Metadata        map[string]string `json:"metadata,omitempty"`
 }
 
 type Field struct {
@@ -59,6 +60,14 @@ type RecordTypeInfo struct {
 	Available     bool   `json:"available,omitempty"`
 	Default       bool   `json:"default,omitempty"`
 	Description   string `json:"description,omitempty"`
+}
+
+type ValidationRule struct {
+	Name                  string `json:"name"`
+	Active                bool   `json:"active,omitempty"`
+	ErrorConditionFormula string `json:"errorConditionFormula,omitempty"`
+	ErrorMessage          string `json:"errorMessage,omitempty"`
+	ErrorDisplayField     string `json:"errorDisplayField,omitempty"`
 }
 
 type FieldType string

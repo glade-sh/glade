@@ -90,6 +90,8 @@ Release engineering:
   marked locked in local org state.
 - Filtered DML after-trigger contexts to rows that succeeded during
   partial-success engine validation.
+- Added simple Metadata API validation-rule loading and DML enforcement with
+  structured validation errors.
 - Added SOQL `ALL ROWS` support for querying soft-deleted records.
 - Added SOQL `WITH SECURITY_ENFORCED`, `WITH USER_MODE`, and
   `WITH SYSTEM_MODE` parsing as local security-mode markers.

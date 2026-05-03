@@ -272,6 +272,9 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 	if err := e.validateReferences(object.Definition, record); err != nil {
 		return "", err
 	}
+	if err := validateValidationRules(object.Definition, record); err != nil {
+		return "", err
+	}
 	if err := e.validateUnique(objectName, object.Definition, record, ""); err != nil {
 		return "", err
 	}
@@ -346,6 +349,26 @@ func (e *Engine) updateOne(record storage.Record) error {
 	}
 	if existing.System.IsDeleted {
 		return fmt.Errorf("dml: record %s is deleted", record.ID)
+	}
+	finalRecord := existing.Clone()
+	if finalRecord.Fields == nil {
+		finalRecord.Fields = make(map[string]storage.Value)
+	}
+	if finalRecord.ExplicitNulls == nil {
+		finalRecord.ExplicitNulls = make(map[string]bool)
+	}
+	for field, value := range record.Fields {
+		finalRecord.Fields[field] = value.Clone()
+		delete(finalRecord.ExplicitNulls, field)
+	}
+	for field, isNull := range record.ExplicitNulls {
+		if isNull {
+			delete(finalRecord.Fields, field)
+			finalRecord.ExplicitNulls[field] = true
+		}
+	}
+	if err := validateValidationRules(object.Definition, finalRecord); err != nil {
+		return err
 	}
 	if existing.Fields == nil {
 		existing.Fields = make(map[string]storage.Value)
@@ -605,6 +628,116 @@ func (e *Engine) validateUnique(objectName string, definition storage.ObjectDefi
 		}
 	}
 	return nil
+}
+
+func validateValidationRules(definition storage.ObjectDefinition, record storage.Record) error {
+	for _, rule := range definition.ValidationRules {
+		if !rule.Active {
+			continue
+		}
+		matches, ok := evaluateValidationFormula(rule.ErrorConditionFormula, record)
+		if !ok || !matches {
+			continue
+		}
+		message := rule.ErrorMessage
+		if message == "" {
+			message = fmt.Sprintf("dml: validation rule %s failed", rule.Name)
+		}
+		fields := []string(nil)
+		if rule.ErrorDisplayField != "" {
+			fields = []string{rule.ErrorDisplayField}
+		}
+		return dmlErrorf("FIELD_CUSTOM_VALIDATION_EXCEPTION", fields, "%s", message)
+	}
+	return nil
+}
+
+func evaluateValidationFormula(formula string, record storage.Record) (bool, bool) {
+	formula = strings.TrimSpace(formula)
+	if formula == "" {
+		return false, false
+	}
+	upper := strings.ToUpper(formula)
+	if strings.HasPrefix(upper, "NOT(") && strings.HasSuffix(formula, ")") {
+		value, ok := evaluateValidationFormula(formula[4:len(formula)-1], record)
+		return !value, ok
+	}
+	if strings.HasPrefix(upper, "ISBLANK(") && strings.HasSuffix(formula, ")") {
+		field := strings.TrimSpace(formula[len("ISBLANK(") : len(formula)-1])
+		return validationFieldBlank(record, field), true
+	}
+	for _, op := range []string{"<>", "!="} {
+		if left, right, ok := splitValidationComparison(formula, op); ok {
+			return !validationFieldEquals(record, left, right), true
+		}
+	}
+	if left, right, ok := splitValidationComparison(formula, "="); ok {
+		return validationFieldEquals(record, left, right), true
+	}
+	return false, false
+}
+
+func splitValidationComparison(formula, op string) (string, string, bool) {
+	index := strings.Index(formula, op)
+	if index < 0 {
+		return "", "", false
+	}
+	left := strings.TrimSpace(formula[:index])
+	right := strings.TrimSpace(formula[index+len(op):])
+	if left == "" || right == "" {
+		return "", "", false
+	}
+	return left, trimFormulaLiteral(right), true
+}
+
+func trimFormulaLiteral(value string) string {
+	value = strings.TrimSpace(value)
+	if len(value) >= 2 {
+		quote := value[0]
+		if (quote == '\'' || quote == '"') && value[len(value)-1] == quote {
+			return value[1 : len(value)-1]
+		}
+	}
+	return value
+}
+
+func validationFieldBlank(record storage.Record, field string) bool {
+	if field == "Id" {
+		return record.ID == ""
+	}
+	if record.ExplicitNulls[field] {
+		return true
+	}
+	value, ok := record.Fields[field]
+	if !ok || value.Kind == storage.ValueNull {
+		return true
+	}
+	return value.Kind == storage.ValueString && value.String == ""
+}
+
+func validationFieldEquals(record storage.Record, field, want string) bool {
+	if field == "Id" {
+		return string(record.ID) == want
+	}
+	if record.ExplicitNulls[field] {
+		return want == "" || strings.EqualFold(want, "NULL")
+	}
+	value, ok := record.Fields[field]
+	if !ok || value.Kind == storage.ValueNull {
+		return want == "" || strings.EqualFold(want, "NULL")
+	}
+	switch value.Kind {
+	case storage.ValueString, storage.ValueDate, storage.ValueDateTime, storage.ValueDecimal:
+		return value.String == want
+	case storage.ValueID:
+		return string(value.ID) == want
+	case storage.ValueInteger:
+		return fmt.Sprintf("%d", value.Integer) == want
+	case storage.ValueBoolean:
+		return strings.EqualFold(fmt.Sprintf("%t", value.Boolean), want)
+	default:
+		return false
+	}
 }
 
 func (e *Engine) validateDeleteReferences(objectName string, id storage.ID) error {

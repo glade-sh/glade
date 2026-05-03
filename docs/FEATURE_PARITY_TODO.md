@@ -343,11 +343,13 @@ a Salesforce-shaped local API server without silently wrong behavior.
     is populated and reject ID/object key-prefix mismatches.
   - [x] Support explicit `upsert rows Field__c` and
     `Database.upsert(rows, Field__c, ...)` field-token overloads.
-- [ ] Implement validation rules, required fields, uniqueness, foreign-key
+- [x] Implement validation rules, required fields, uniqueness, foreign-key
   behavior, and relationship constraints where representable locally.
   - [x] Enforce required/unknown fields, unique fields, lookup reference
     existence, and restricted-delete lookup constraints.
-  - **Limitation**: Formula-backed validation rules, owner/sharing side effects,
+  - [x] Load and enforce simple Metadata API validation rules with stable
+    `FIELD_CUSTOM_VALIDATION_EXCEPTION` error shaping.
+  - **Limitation**: Complex validation-rule formulas, owner/sharing side effects,
     and broad relationship constraints remain incomplete.
 - [ ] Complete trigger ordering, before/after state, bulk execution,
   recursion behavior, operation type, maps, old/new values, and rollback on

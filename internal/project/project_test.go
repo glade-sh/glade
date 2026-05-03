@@ -18,6 +18,7 @@ func TestLoadSFDXProject(t *testing.T) {
 	writeFile(t, filepath.Join(root, "force-app/main/objects/Thing__c/Thing__c.object-meta.xml"), "<CustomObject/>")
 	writeFile(t, filepath.Join(root, "force-app/main/objects/Thing__c/fields/Name__c.field-meta.xml"), "<CustomField/>")
 	writeFile(t, filepath.Join(root, "force-app/main/objects/Thing__c/recordTypes/Business.recordType-meta.xml"), "<RecordType/>")
+	writeFile(t, filepath.Join(root, "force-app/main/objects/Thing__c/validationRules/Block.validationRule-meta.xml"), "<ValidationRule/>")
 
 	p, err := Load(root)
 	if err != nil {
@@ -26,7 +27,7 @@ func TestLoadSFDXProject(t *testing.T) {
 	if p.Namespace != "NU" || p.SourceAPIVersion != "61.0" {
 		t.Fatalf("project metadata = %#v", p)
 	}
-	if len(p.ApexFiles) != 2 || len(p.ObjectFiles) != 1 || len(p.FieldFiles) != 1 || len(p.RecordTypeFiles) != 1 {
+	if len(p.ApexFiles) != 2 || len(p.ObjectFiles) != 1 || len(p.FieldFiles) != 1 || len(p.RecordTypeFiles) != 1 || len(p.ValidationRuleFiles) != 1 {
 		t.Fatalf("unexpected file counts: %#v", p)
 	}
 }

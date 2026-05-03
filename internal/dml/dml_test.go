@@ -247,6 +247,43 @@ func TestReferenceValidationRestrictedDeleteAndUndelete(t *testing.T) {
 	}
 }
 
+func TestValidationRules(t *testing.T) {
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.ValidationRules = []storage.ValidationRule{{
+		Name:                  "BlockBadName",
+		Active:                true,
+		ErrorConditionFormula: `Name = "Blocked"`,
+		ErrorMessage:          "blocked by validation rule",
+		ErrorDisplayField:     "Name",
+	}}
+	org.Objects["Account"] = account
+	engine := NewEngine(&org)
+
+	blockedInsert := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Blocked")},
+	}})
+	if blockedInsert[0].Success || blockedInsert[0].StatusCode != "FIELD_CUSTOM_VALIDATION_EXCEPTION" || blockedInsert[0].Fields[0] != "Name" {
+		t.Fatalf("blocked insert = %#v", blockedInsert)
+	}
+	insert := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Allowed")},
+	}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert)
+	}
+	blockedUpdate := engine.Update([]storage.Record{{
+		ID:     insert[0].ID,
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Blocked")},
+	}})
+	if blockedUpdate[0].Success || blockedUpdate[0].Error != "blocked by validation rule" {
+		t.Fatalf("blocked update = %#v", blockedUpdate)
+	}
+}
+
 func TestMergeSoftDeletesDuplicateAndReparentsChildren(t *testing.T) {
 	org := testOrg()
 	org.Objects["Contact"] = storage.ObjectState{

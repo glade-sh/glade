@@ -91,13 +91,14 @@ type DescribeRegistry struct {
 }
 
 type DescribeSObjectResult struct {
-	Name          string                         `json:"name"`
-	Label         string                         `json:"label,omitempty"`
-	PluralLabel   string                         `json:"pluralLabel,omitempty"`
-	KeyPrefix     string                         `json:"keyPrefix,omitempty"`
-	Fields        map[string]DescribeFieldResult `json:"fields,omitempty"`
-	Relationships []storage.Relationship         `json:"relationships,omitempty"`
-	RecordTypes   []DescribeRecordTypeInfo       `json:"recordTypes,omitempty"`
+	Name            string                         `json:"name"`
+	Label           string                         `json:"label,omitempty"`
+	PluralLabel     string                         `json:"pluralLabel,omitempty"`
+	KeyPrefix       string                         `json:"keyPrefix,omitempty"`
+	Fields          map[string]DescribeFieldResult `json:"fields,omitempty"`
+	Relationships   []storage.Relationship         `json:"relationships,omitempty"`
+	RecordTypes     []DescribeRecordTypeInfo       `json:"recordTypes,omitempty"`
+	ValidationRules []storage.ValidationRule       `json:"validationRules,omitempty"`
 }
 
 type DescribeFieldResult struct {
@@ -182,6 +183,15 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 				Description:   recordType.Description,
 			})
 		}
+		for _, rule := range object.ValidationRules {
+			describe.ValidationRules = append(describe.ValidationRules, storage.ValidationRule{
+				Name:                  rule.Name,
+				Active:                rule.Active,
+				ErrorConditionFormula: rule.ErrorConditionFormula,
+				ErrorMessage:          rule.ErrorMessage,
+				ErrorDisplayField:     rule.ErrorDisplayField,
+			})
+		}
 		registry.Objects[object.Name] = describe
 	}
 	return registry
@@ -218,18 +228,20 @@ func (d DescribeSObjectResult) Clone() DescribeSObjectResult {
 		out.Relationships[i].ParentObjects = append([]string(nil), d.Relationships[i].ParentObjects...)
 	}
 	out.RecordTypes = append([]DescribeRecordTypeInfo(nil), d.RecordTypes...)
+	out.ValidationRules = append([]storage.ValidationRule(nil), d.ValidationRules...)
 	return out
 }
 
 func ToObjectDefinition(describe DescribeSObjectResult) storage.ObjectDefinition {
 	definition := storage.ObjectDefinition{
-		APIName:     describe.Name,
-		Label:       describe.Label,
-		PluralLabel: describe.PluralLabel,
-		KeyPrefix:   describe.KeyPrefix,
-		Fields:      make(map[string]storage.Field, len(describe.Fields)),
-		Relations:   append([]storage.Relationship(nil), describe.Relationships...),
-		RecordTypes: make([]storage.RecordTypeInfo, 0, len(describe.RecordTypes)),
+		APIName:         describe.Name,
+		Label:           describe.Label,
+		PluralLabel:     describe.PluralLabel,
+		KeyPrefix:       describe.KeyPrefix,
+		Fields:          make(map[string]storage.Field, len(describe.Fields)),
+		Relations:       append([]storage.Relationship(nil), describe.Relationships...),
+		RecordTypes:     make([]storage.RecordTypeInfo, 0, len(describe.RecordTypes)),
+		ValidationRules: append([]storage.ValidationRule(nil), describe.ValidationRules...),
 	}
 	for name, field := range describe.Fields {
 		definition.Fields[name] = storage.Field{

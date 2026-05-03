@@ -10,14 +10,15 @@ import (
 )
 
 type Project struct {
-	Root               string             `json:"root"`
-	Namespace          string             `json:"namespace,omitempty"`
-	SourceAPIVersion   string             `json:"sourceApiVersion,omitempty"`
-	PackageDirectories []PackageDirectory `json:"packageDirectories"`
-	ApexFiles          []string           `json:"apexFiles"`
-	ObjectFiles        []string           `json:"objectFiles"`
-	FieldFiles         []string           `json:"fieldFiles"`
-	RecordTypeFiles    []string           `json:"recordTypeFiles"`
+	Root                string             `json:"root"`
+	Namespace           string             `json:"namespace,omitempty"`
+	SourceAPIVersion    string             `json:"sourceApiVersion,omitempty"`
+	PackageDirectories  []PackageDirectory `json:"packageDirectories"`
+	ApexFiles           []string           `json:"apexFiles"`
+	ObjectFiles         []string           `json:"objectFiles"`
+	FieldFiles          []string           `json:"fieldFiles"`
+	RecordTypeFiles     []string           `json:"recordTypeFiles"`
+	ValidationRuleFiles []string           `json:"validationRuleFiles"`
 }
 
 type PackageDirectory struct {
@@ -69,6 +70,7 @@ func Load(root string) (Project, error) {
 	sort.Strings(p.ObjectFiles)
 	sort.Strings(p.FieldFiles)
 	sort.Strings(p.RecordTypeFiles)
+	sort.Strings(p.ValidationRuleFiles)
 	return p, nil
 }
 
@@ -108,6 +110,8 @@ func collectFiles(root string, p *Project) error {
 			p.FieldFiles = append(p.FieldFiles, path)
 		case strings.HasSuffix(lower, ".recordtype-meta.xml"):
 			p.RecordTypeFiles = append(p.RecordTypeFiles, path)
+		case strings.HasSuffix(lower, ".validationrule-meta.xml"):
+			p.ValidationRuleFiles = append(p.ValidationRuleFiles, path)
 		}
 		return nil
 	})

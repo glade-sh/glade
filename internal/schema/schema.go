@@ -15,12 +15,13 @@ type Schema struct {
 }
 
 type Object struct {
-	Name         string       `json:"name"`
-	Label        string       `json:"label,omitempty"`
-	PluralLabel  string       `json:"pluralLabel,omitempty"`
-	SharingModel string       `json:"sharingModel,omitempty"`
-	Fields       []Field      `json:"fields,omitempty"`
-	RecordTypes  []RecordType `json:"recordTypes,omitempty"`
+	Name            string           `json:"name"`
+	Label           string           `json:"label,omitempty"`
+	PluralLabel     string           `json:"pluralLabel,omitempty"`
+	SharingModel    string           `json:"sharingModel,omitempty"`
+	Fields          []Field          `json:"fields,omitempty"`
+	RecordTypes     []RecordType     `json:"recordTypes,omitempty"`
+	ValidationRules []ValidationRule `json:"validationRules,omitempty"`
 }
 
 type Field struct {
@@ -52,6 +53,14 @@ type RecordType struct {
 	Description   string `json:"description,omitempty"`
 }
 
+type ValidationRule struct {
+	Name                  string `json:"name"`
+	Active                bool   `json:"active,omitempty"`
+	ErrorConditionFormula string `json:"errorConditionFormula,omitempty"`
+	ErrorMessage          string `json:"errorMessage,omitempty"`
+	ErrorDisplayField     string `json:"errorDisplayField,omitempty"`
+}
+
 type customObjectXML struct {
 	XMLName      xml.Name `xml:"CustomObject"`
 	Label        string   `xml:"label"`
@@ -81,6 +90,15 @@ type recordTypeXML struct {
 	Active      *bool    `xml:"active"`
 	Default     bool     `xml:"default"`
 	Description string   `xml:"description"`
+}
+
+type validationRuleXML struct {
+	XMLName               xml.Name `xml:"ValidationRule"`
+	FullName              string   `xml:"fullName"`
+	Active                bool     `xml:"active"`
+	ErrorConditionFormula string   `xml:"errorConditionFormula"`
+	ErrorMessage          string   `xml:"errorMessage"`
+	ErrorDisplayField     string   `xml:"errorDisplayField"`
 }
 
 type valueSetXML struct {
@@ -143,6 +161,23 @@ func LoadProject(p project.Project) (Schema, error) {
 		object.RecordTypes = append(object.RecordTypes, recordType)
 	}
 
+	for _, path := range p.ValidationRuleFiles {
+		objectName := objectNameFromValidationRulePath(path)
+		if objectName == "" {
+			continue
+		}
+		rule, err := loadValidationRule(path)
+		if err != nil {
+			return Schema{}, err
+		}
+		object := byName[objectName]
+		if object == nil {
+			object = &Object{Name: objectName}
+			byName[objectName] = object
+		}
+		object.ValidationRules = append(object.ValidationRules, rule)
+	}
+
 	out := Schema{Objects: make([]Object, 0, len(byName))}
 	for _, object := range byName {
 		sort.Slice(object.Fields, func(i, j int) bool {
@@ -151,12 +186,37 @@ func LoadProject(p project.Project) (Schema, error) {
 		sort.Slice(object.RecordTypes, func(i, j int) bool {
 			return object.RecordTypes[i].DeveloperName < object.RecordTypes[j].DeveloperName
 		})
+		sort.Slice(object.ValidationRules, func(i, j int) bool {
+			return object.ValidationRules[i].Name < object.ValidationRules[j].Name
+		})
 		out.Objects = append(out.Objects, *object)
 	}
 	sort.Slice(out.Objects, func(i, j int) bool {
 		return out.Objects[i].Name < out.Objects[j].Name
 	})
 	return out, nil
+}
+
+func loadValidationRule(path string) (ValidationRule, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return ValidationRule{}, err
+	}
+	var raw validationRuleXML
+	if err := xml.Unmarshal(data, &raw); err != nil {
+		return ValidationRule{}, err
+	}
+	name := raw.FullName
+	if name == "" {
+		name = trimMetadataSuffix(filepath.Base(path), ".validationRule-meta.xml")
+	}
+	return ValidationRule{
+		Name:                  name,
+		Active:                raw.Active,
+		ErrorConditionFormula: strings.TrimSpace(raw.ErrorConditionFormula),
+		ErrorMessage:          raw.ErrorMessage,
+		ErrorDisplayField:     raw.ErrorDisplayField,
+	}, nil
 }
 
 func loadRecordType(path string) (RecordType, error) {
@@ -268,6 +328,14 @@ func objectNameFromFieldPath(path string) string {
 func objectNameFromRecordTypePath(path string) string {
 	dir := filepath.Dir(filepath.Dir(path))
 	if filepath.Base(filepath.Dir(path)) != "recordTypes" {
+		return ""
+	}
+	return filepath.Base(dir)
+}
+
+func objectNameFromValidationRulePath(path string) string {
+	dir := filepath.Dir(filepath.Dir(path))
+	if filepath.Base(filepath.Dir(path)) != "validationRules" {
 		return ""
 	}
 	return filepath.Base(dir)

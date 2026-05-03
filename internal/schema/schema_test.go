@@ -14,12 +14,14 @@ func TestLoadProject(t *testing.T) {
 	fieldPath := filepath.Join(root, "force-app/main/objects/Thing__c/fields/Parent__c.field-meta.xml")
 	recordTypePath := filepath.Join(root, "force-app/main/objects/Thing__c/recordTypes/Business.recordType-meta.xml")
 	lowercaseRecordTypePath := filepath.Join(root, "force-app/main/objects/Thing__c/recordTypes/Consumer.recordtype-meta.xml")
+	validationRulePath := filepath.Join(root, "force-app/main/objects/Thing__c/validationRules/Block.validationRule-meta.xml")
 	writeFile(t, objectPath, `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Thing</label><pluralLabel>Things</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>`)
 	writeFile(t, fieldPath, `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Parent__c</fullName><label>Parent</label><type>Picklist</type><referenceTo>Thing__c</referenceTo><referenceTo>Account</referenceTo><relationshipName>Parent__r</relationshipName><childRelationshipName>Children__r</childRelationshipName><deleteConstraint>Cascade</deleteConstraint><valueSet><valueSetDefinition><value><fullName>Hot</fullName><default>true</default><label>Hot Label</label></value><value><fullName>Cold</fullName><isActive>false</isActive></value></valueSetDefinition></valueSet></CustomField>`)
 	writeFile(t, recordTypePath, `<RecordType xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Business</fullName><label>Business Thing</label><active>true</active><default>true</default><description>Business records</description></RecordType>`)
 	writeFile(t, lowercaseRecordTypePath, `<RecordType xmlns="http://soap.sforce.com/2006/04/metadata"><label>Consumer Thing</label><active>false</active></RecordType>`)
+	writeFile(t, validationRulePath, `<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Block</fullName><active>true</active><errorConditionFormula>Parent__c = "Blocked"</errorConditionFormula><errorMessage>blocked by rule</errorMessage><errorDisplayField>Parent__c</errorDisplayField></ValidationRule>`)
 
-	s, err := LoadProject(project.Project{ObjectFiles: []string{objectPath}, FieldFiles: []string{fieldPath}, RecordTypeFiles: []string{recordTypePath, lowercaseRecordTypePath}})
+	s, err := LoadProject(project.Project{ObjectFiles: []string{objectPath}, FieldFiles: []string{fieldPath}, RecordTypeFiles: []string{recordTypePath, lowercaseRecordTypePath}, ValidationRuleFiles: []string{validationRulePath}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,6 +50,10 @@ func TestLoadProject(t *testing.T) {
 	}
 	if recordTypes[1].DeveloperName != "Consumer" || recordTypes[1].Label != "Consumer Thing" || recordTypes[1].Active {
 		t.Fatalf("record types = %#v", recordTypes)
+	}
+	rules := s.Objects[0].ValidationRules
+	if len(rules) != 1 || rules[0].Name != "Block" || !rules[0].Active || rules[0].ErrorMessage != "blocked by rule" || rules[0].ErrorDisplayField != "Parent__c" {
+		t.Fatalf("validation rules = %#v", rules)
 	}
 }
 
