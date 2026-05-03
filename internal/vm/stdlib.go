@@ -28,6 +28,11 @@ func callStdlibMember(receiver Value, method string, args []Value) (Value, Value
 		return callSetStdlibMember(receiver, method, args)
 	case ValueMap:
 		return callMapStdlibMember(receiver, method, args)
+	case ValueObject:
+		if isIteratorValue(receiver) {
+			return callIteratorMember(receiver, method, args)
+		}
+		return Null, receiver, false, false, nil
 	default:
 		return Null, receiver, false, false, nil
 	}
@@ -1386,6 +1391,11 @@ func callListStdlibMember(receiver Value, method string, args []Value) (Value, V
 		}
 		receiver.List = nil
 		return Null, receiver, true, true, nil
+	case "iterator":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("List.iterator expects 0 arguments")
+		}
+		return collectionIterator(receiver), receiver, false, true, nil
 	default:
 		return Null, receiver, false, false, nil
 	}
@@ -1404,6 +1414,11 @@ func callSetStdlibMember(receiver Value, method string, args []Value) (Value, Va
 		}
 		receiver.Set = nil
 		return Null, receiver, true, true, nil
+	case "iterator":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Set.iterator expects 0 arguments")
+		}
+		return collectionIterator(receiver), receiver, false, true, nil
 	default:
 		return Null, receiver, false, false, nil
 	}

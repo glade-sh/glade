@@ -97,6 +97,9 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Integer | `Integer.doubleValue` | `supported` | Converts local Integer values to the local numeric representation. |
 | Integer | `Integer.format` | `partial` | Simple deterministic base-10 formatting; locale grouping is not modeled. |
 | Integer | `Integer.valueOf` | `supported` | Parses integer strings and numeric values with 32-bit overflow checks. |
+| Iterator | `Iterator.hasNext` | `supported` | Checks remaining elements in a local collection snapshot. |
+| Iterator | `Iterator.next` | `supported` | Returns the next element from a local collection snapshot and raises NoSuchElementException when exhausted. |
+| Iterator | `Iterator.remove` | `unsupported` | Returns an explicit unsupported error; mutating collection iterators are not modeled. |
 | JSON | `JSON.createGenerator` | `supported` | Creates deterministic local JSONGenerator instances. |
 | JSON | `JSON.createParser` | `partial` | Creates deterministic local JSONParser token streams for valid JSON strings. |
 | JSON | `JSON.deserialize` | `partial` | SObject, class, collection, and primitive shapes for supported subset. |
@@ -118,6 +121,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | List | `List.get` | `supported` | Indexed lookup with stable bounds errors. |
 | List | `List.indexOf` | `supported` | Local equality search, including null elements, with -1 for misses. |
 | List | `List.isEmpty` | `supported` | Checks local list length. |
+| List | `List.iterator` | `supported` | Returns a deterministic snapshot Iterator for local List values. |
 | List | `List.remove` | `supported` | Indexed removal returns the removed value. |
 | List | `List.set` | `supported` | Indexed replacement with typed value coercion. |
 | List | `List.size` | `supported` | Returns local list length. |
@@ -206,6 +210,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Set | `Set.copyConstructor` | `supported` | Copies unique values from a local List or Set constructor argument. |
 | Set | `Set.deepClone` | `partial` | No-argument local recursive clone; SObject preserve-option overloads are unsupported. |
 | Set | `Set.isEmpty` | `supported` | Checks local set length. |
+| Set | `Set.iterator` | `supported` | Returns a deterministic snapshot Iterator for local Set values. |
 | Set | `Set.remove` | `supported` | Removes a local value, including null, and reports whether the Set changed. |
 | Set | `Set.removeAll` | `supported` | Removes local List or Set members. |
 | Set | `Set.retainAll` | `supported` | Retains only local List or Set members. |
