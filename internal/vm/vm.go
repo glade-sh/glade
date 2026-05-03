@@ -3389,6 +3389,26 @@ func parseTimeText(text string) (string, error) {
 	return "", fmt.Errorf("unsupported Time value %q", text)
 }
 
+func httpSetHeader(receiver Value, name string, value Value) {
+	headers, ok := receiver.Fields["headers"]
+	if !ok || headers.Kind != ValueMap {
+		headers = Map()
+	}
+	headers.Map[mapKey(String(strings.ToLower(name)))] = value
+	receiver.Fields["headers"] = headers
+}
+
+func httpGetHeader(receiver Value, name string) Value {
+	headers, ok := receiver.Fields["headers"]
+	if !ok || headers.Kind != ValueMap {
+		return Null
+	}
+	if value, ok := headers.Map[mapKey(String(strings.ToLower(name)))]; ok {
+		return value
+	}
+	return Null
+}
+
 func assertMessage(base string, extra []Value) string {
 	if len(extra) == 0 {
 		return base
@@ -6341,23 +6361,73 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			receiver.Fields["endpoint"] = args[0]
 			return Null, receiver, true, true, nil
+		case "getEndpoint":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("HttpRequest.getEndpoint expects 0 arguments")
+			}
+			return receiver.Fields["endpoint"], receiver, false, true, nil
 		case "setMethod":
 			if len(args) != 1 || args[0].Kind != ValueString {
 				return Null, receiver, false, true, fmt.Errorf("HttpRequest.setMethod expects String")
 			}
 			receiver.Fields["method"] = args[0]
 			return Null, receiver, true, true, nil
+		case "getMethod":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("HttpRequest.getMethod expects 0 arguments")
+			}
+			return receiver.Fields["method"], receiver, false, true, nil
 		case "setBody":
 			if len(args) != 1 || args[0].Kind != ValueString {
 				return Null, receiver, false, true, fmt.Errorf("HttpRequest.setBody expects String")
 			}
 			receiver.Fields["body"] = args[0]
 			return Null, receiver, true, true, nil
+		case "setBodyAsBlob":
+			if len(args) != 1 || args[0].Kind != ValueObject || args[0].Type != "Blob" {
+				return Null, receiver, false, true, fmt.Errorf("HttpRequest.setBodyAsBlob expects Blob")
+			}
+			receiver.Fields["body"] = args[0].Fields["value"]
+			return Null, receiver, true, true, nil
+		case "setHeader":
+			if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+				return Null, receiver, false, true, fmt.Errorf("HttpRequest.setHeader expects name and value Strings")
+			}
+			httpSetHeader(receiver, args[0].Text, args[1])
+			return Null, receiver, true, true, nil
+		case "getHeader":
+			if len(args) != 1 || args[0].Kind != ValueString {
+				return Null, receiver, false, true, fmt.Errorf("HttpRequest.getHeader expects name String")
+			}
+			return httpGetHeader(receiver, args[0].Text), receiver, false, true, nil
+		case "setTimeout":
+			if len(args) != 1 || args[0].Kind != ValueInt {
+				return Null, receiver, false, true, fmt.Errorf("HttpRequest.setTimeout expects Integer")
+			}
+			receiver.Fields["timeout"] = args[0]
+			return Null, receiver, true, true, nil
+		case "getTimeout":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("HttpRequest.getTimeout expects 0 arguments")
+			}
+			if value, ok := receiver.Fields["timeout"]; ok {
+				return value, receiver, false, true, nil
+			}
+			return Int(0), receiver, false, true, nil
 		case "getBody":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("HttpRequest.getBody expects 0 arguments")
 			}
 			return receiver.Fields["body"], receiver, false, true, nil
+		case "getBodyAsBlob":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("HttpRequest.getBodyAsBlob expects 0 arguments")
+			}
+			body := ""
+			if value, ok := receiver.Fields["body"]; ok && value.Kind == ValueString {
+				body = value.Text
+			}
+			return platformScalar("Blob", body), receiver, false, true, nil
 		}
 	case "HttpResponse":
 		switch method {
@@ -6367,17 +6437,57 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			receiver.Fields["body"] = args[0]
 			return Null, receiver, true, true, nil
+		case "setBodyAsBlob":
+			if len(args) != 1 || args[0].Kind != ValueObject || args[0].Type != "Blob" {
+				return Null, receiver, false, true, fmt.Errorf("HttpResponse.setBodyAsBlob expects Blob")
+			}
+			receiver.Fields["body"] = args[0].Fields["value"]
+			return Null, receiver, true, true, nil
 		case "getBody":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("HttpResponse.getBody expects 0 arguments")
 			}
 			return receiver.Fields["body"], receiver, false, true, nil
+		case "getBodyAsBlob":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("HttpResponse.getBodyAsBlob expects 0 arguments")
+			}
+			body := ""
+			if value, ok := receiver.Fields["body"]; ok && value.Kind == ValueString {
+				body = value.Text
+			}
+			return platformScalar("Blob", body), receiver, false, true, nil
 		case "setStatusCode":
 			if len(args) != 1 || args[0].Kind != ValueInt {
 				return Null, receiver, false, true, fmt.Errorf("HttpResponse.setStatusCode expects Integer")
 			}
 			receiver.Fields["statusCode"] = args[0]
 			return Null, receiver, true, true, nil
+		case "setStatus":
+			if len(args) != 1 || args[0].Kind != ValueString {
+				return Null, receiver, false, true, fmt.Errorf("HttpResponse.setStatus expects String")
+			}
+			receiver.Fields["status"] = args[0]
+			return Null, receiver, true, true, nil
+		case "getStatus":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("HttpResponse.getStatus expects 0 arguments")
+			}
+			if value, ok := receiver.Fields["status"]; ok {
+				return value, receiver, false, true, nil
+			}
+			return String("OK"), receiver, false, true, nil
+		case "setHeader":
+			if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+				return Null, receiver, false, true, fmt.Errorf("HttpResponse.setHeader expects name and value Strings")
+			}
+			httpSetHeader(receiver, args[0].Text, args[1])
+			return Null, receiver, true, true, nil
+		case "getHeader":
+			if len(args) != 1 || args[0].Kind != ValueString {
+				return Null, receiver, false, true, fmt.Errorf("HttpResponse.getHeader expects name String")
+			}
+			return httpGetHeader(receiver, args[0].Text), receiver, false, true, nil
 		case "getStatusCode":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("HttpResponse.getStatusCode expects 0 arguments")

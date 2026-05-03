@@ -693,10 +693,26 @@ Test.setMock('HttpCalloutMock', new MockResponse(body = 'ok', statusCode = 201))
 HttpRequest req = new HttpRequest();
 req.setEndpoint('https://example.test');
 req.setMethod('GET');
+req.setBodyAsBlob(Blob.valueOf('request-body'));
+Blob requestBlob = req.getBodyAsBlob();
+System.assertEquals('request-body', req.getBody());
+System.assertEquals('726571756573742d626f6479', EncodingUtil.convertToHex(requestBlob));
+req.setHeader('X-Test', 'yes');
+req.setTimeout(5000);
+System.assertEquals('https://example.test', req.getEndpoint());
+System.assertEquals('GET', req.getMethod());
+System.assertEquals('yes', req.getHeader('x-test'));
+System.assertEquals(5000, req.getTimeout());
 Http h = new Http();
 HttpResponse res = h.send(req);
 System.assertEquals(201, res.getStatusCode());
 System.assertEquals('ok', res.getBody());
+res.setStatus('Created');
+res.setHeader('Content-Type', 'text/plain');
+System.assertEquals('Created', res.getStatus());
+System.assertEquals('text/plain', res.getHeader('content-type'));
+Blob bodyBlob = res.getBodyAsBlob();
+System.assertEquals('6f6b', EncodingUtil.convertToHex(bodyBlob));
 System.assertEquals(1, Limits.getCallouts());
 `)
 	if err != nil {

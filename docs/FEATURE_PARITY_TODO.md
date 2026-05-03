@@ -446,6 +446,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     Java-regex parity remain outside the current local subset.
 - [ ] Complete HTTP/callout mock behavior: request/response types,
   `HttpCalloutMock`, callout limits, and test isolation.
+  - [x] Add common `HttpRequest`/`HttpResponse` endpoint, method, header,
+    timeout, status, and body/blob accessors.
 - [ ] Complete `UserInfo`, `FeatureManagement`, `Messaging`, `ApexPages`,
   `URL`, and `PageReference` basics.
 - [ ] Add stable unsupported-feature errors for every unimplemented standard
