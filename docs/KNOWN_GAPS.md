@@ -68,7 +68,7 @@ The MVP target is `full-featured aer-parity MVP`. This document lists required c
 ### `watch.command`: oaer test --watch affected-test loop
 
 - Status: `partial`
-- Gap: oaer test --watch now runs a polling watch loop with debounce, JSON event stream, affected-test selection, reruns, and context cancellation. Native OS watcher backends and in-flight VM cancellation remain incomplete.
+- Gap: oaer test --watch now supports fsnotify native watching with recursive directory registration, automatic polling fallback, explicit --watch-backend auto|native|poll selection, debounce, JSON event stream with backend and run IDs, affected-test selection, reruns, and context cancellation. In-flight VM cancellation remains incomplete.
 
 ## Limits
 

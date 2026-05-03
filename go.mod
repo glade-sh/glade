@@ -4,6 +4,7 @@ go 1.26
 
 require (
 	github.com/antlr4-go/antlr/v4 v4.13.0
+	github.com/fsnotify/fsnotify v1.10.0
 	github.com/octoberswimmer/apexfmt v0.55.0
 	modernc.org/sqlite v1.50.0
 )

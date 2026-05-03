@@ -574,6 +574,7 @@ func runTest(ctx context.Context, args []string, w io.Writer) (testreport.Run, e
 	watchOnce := false
 	debug := false
 	debounce := watch.DefaultDebounce
+	backend := watch.BackendAuto
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--project":
@@ -623,6 +624,16 @@ func runTest(ctx context.Context, args []string, w io.Writer) (testreport.Run, e
 			}
 			debounce = parsed
 			i++
+		case "--watch-backend":
+			if i+1 >= len(args) {
+				return testreport.Run{}, errors.New("--watch-backend requires a value")
+			}
+			parsed, err := parseWatchBackend(args[i+1])
+			if err != nil {
+				return testreport.Run{}, err
+			}
+			backend = parsed
+			i++
 		default:
 			return testreport.Run{}, fmt.Errorf("unknown flag %q", args[i])
 		}
@@ -633,7 +644,7 @@ func runTest(ctx context.Context, args []string, w io.Writer) (testreport.Run, e
 		return testreport.Run{}, err
 	}
 	if watchMode {
-		return runWatchTests(ctx, root, index, apextest.Options{Filter: filter, LimitMode: limitMode}, watch.Config{Root: root, Debounce: debounce}, watchOnce, w)
+		return runWatchTests(ctx, root, index, apextest.Options{Filter: filter, LimitMode: limitMode}, watch.Config{Root: root, Debounce: debounce, Backend: backend}, watchOnce, w)
 	}
 	result := apextest.Run(index, apextest.Options{Filter: filter, LimitMode: limitMode})
 	if debug {
@@ -681,40 +692,43 @@ func runWatchTests(ctx context.Context, root string, index typesys.Index, opts a
 	if cfg.Root == "" {
 		cfg.Root = root
 	}
-	if err := writeJSONLine(w, watch.NewWatchStartedEvent(time.Now().UTC(), cfg)); err != nil {
-		return testreport.Run{}, err
-	}
 	previous, err := watch.CaptureSnapshot(root)
 	if err != nil {
 		return testreport.Run{}, err
 	}
+	watcher, backend, err := watch.NewBackendWatcher(ctx, cfg, previous)
+	if err != nil {
+		return testreport.Run{}, err
+	}
+	defer watcher.Close()
+	cfg.Backend = backend
+	if err := writeJSONLine(w, watch.NewWatchStartedEvent(time.Now().UTC(), cfg)); err != nil {
+		return testreport.Run{}, err
+	}
 	result := runSelectedTests(index, opts, watch.TestSelection{Mode: watch.SelectionAll, TestClasses: nil, Reason: "initial watch run"})
-	if err := writeJSONLine(w, watch.RunStartedEvent{Event: watch.EventRunStarted, Time: time.Now().UTC()}); err != nil {
+	runID := 1
+	if err := writeJSONLine(w, watch.RunStartedEvent{Event: watch.EventRunStarted, Time: time.Now().UTC(), RunID: runID}); err != nil {
 		return result, err
 	}
-	if err := writeJSONLine(w, watch.RunFinishedEvent{Event: watch.EventRunFinished, Time: time.Now().UTC(), Summary: watchSummary(result)}); err != nil {
+	if err := writeJSONLine(w, watch.RunFinishedEvent{Event: watch.EventRunFinished, Time: time.Now().UTC(), RunID: runID, Summary: watchSummary(result)}); err != nil {
 		return result, err
 	}
 	if once {
 		return result, nil
 	}
-	ticker := time.NewTicker(cfg.Debounce)
-	defer ticker.Stop()
 	for {
 		select {
 		case <-ctx.Done():
 			return result, ctx.Err()
-		case <-ticker.C:
-			current, err := watch.CaptureSnapshot(root)
-			if err != nil {
-				_ = writeJSONLine(w, watch.NewErrorEvent(time.Now().UTC(), err.Error(), root))
-				continue
+		case err, ok := <-watcher.Errors():
+			if !ok {
+				return result, nil
 			}
-			changes := watch.DiffSnapshots(previous, current)
-			if len(changes) == 0 {
-				continue
+			_ = writeJSONLine(w, watch.NewErrorEvent(time.Now().UTC(), err.Error(), root))
+		case changes, ok := <-watcher.Changes():
+			if !ok {
+				return result, nil
 			}
-			previous = current
 			if err := writeJSONLine(w, watch.NewChangesEvent(time.Now().UTC(), changes)); err != nil {
 				return result, err
 			}
@@ -734,13 +748,27 @@ func runWatchTests(ctx context.Context, root string, index typesys.Index, opts a
 				continue
 			}
 			result = runSelectedTests(index, opts, selection)
-			if err := writeJSONLine(w, watch.RunStartedEvent{Event: watch.EventRunStarted, Time: time.Now().UTC(), TestClasses: selection.TestClasses}); err != nil {
+			runID++
+			if err := writeJSONLine(w, watch.RunStartedEvent{Event: watch.EventRunStarted, Time: time.Now().UTC(), RunID: runID, TestClasses: selection.TestClasses}); err != nil {
 				return result, err
 			}
-			if err := writeJSONLine(w, watch.RunFinishedEvent{Event: watch.EventRunFinished, Time: time.Now().UTC(), Summary: watchSummary(result)}); err != nil {
+			if err := writeJSONLine(w, watch.RunFinishedEvent{Event: watch.EventRunFinished, Time: time.Now().UTC(), RunID: runID, Summary: watchSummary(result)}); err != nil {
 				return result, err
 			}
 		}
+	}
+}
+
+func parseWatchBackend(value string) (watch.Backend, error) {
+	switch watch.Backend(strings.ToLower(strings.TrimSpace(value))) {
+	case watch.BackendAuto:
+		return watch.BackendAuto, nil
+	case watch.BackendNative:
+		return watch.BackendNative, nil
+	case watch.BackendPoll:
+		return watch.BackendPoll, nil
+	default:
+		return "", fmt.Errorf("unknown watch backend %q (expected auto, native, or poll)", value)
 	}
 }
 

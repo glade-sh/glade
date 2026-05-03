@@ -49,8 +49,8 @@ and composed by the CLI.
   and snapshot sessions used by `oaer exec --debug` and `oaer test --debug`.
 - `internal/lsp`: stdio LSP/JSON-RPC server backed by the project index for
   initialize/shutdown, diagnostics, symbols, hover, and completion basics.
-- `internal/watch`: file classification, snapshot diffing, polling watch loop,
-  debounce, JSON events, cancellation, and conservative affected-test
+- `internal/watch`: file classification, snapshot diffing, native/polling watch
+  backends, debounce, JSON events, cancellation, and conservative affected-test
   selection.
 - `internal/profile`: native trace/profile aggregation and JSON/Markdown
   reporting.

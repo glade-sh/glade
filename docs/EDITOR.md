@@ -3,7 +3,8 @@
 `oaer` exposes editor-facing entry points through normal CLI commands. The
 current baseline is useful for local Apex development, but it is still a
 preview: DAP has live VM pause/step primitives, LSP uses full-project indexing
-at startup with open-buffer overlays, and watch mode uses polling.
+at startup with open-buffer overlays, and watch mode uses native file watching
+with polling fallback.
 
 ## VS Code Tasks
 
@@ -158,7 +159,7 @@ oaer lsp --project . --diagnostics-once
 Watch mode emits newline-delimited JSON events for editor and test UI consumers.
 
 ```bash
-oaer test --project . --watch --debounce 750ms
+oaer test --project . --watch --debounce 750ms --watch-backend auto
 ```
 
 For CI or editor tasks that need a single machine-readable run, use:

@@ -69,6 +69,9 @@ Release engineering:
 - Aligned LSP diagnostics with the shared `oaer check` diagnostic model,
   restored project diagnostics when edited buffers close, and added test-result
   diagnostics from failure stack frames.
+- Added `oaer test --watch --watch-backend auto|native|poll` with `fsnotify`
+  native watching, polling fallback, backend reporting, and run IDs in watch
+  JSON events.
 - Added parser diagnostic-count fixtures plus type-index and sema panic recovery
   diagnostics for malformed project inputs.
 - Added method/constructor parameter type diagnostics and expanded VM exception

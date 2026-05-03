@@ -926,10 +926,10 @@ Current status as of 2026-05-02: complete for the Phase 13 baseline.
 `internal/watch` classifies Apex and metadata files, snapshots file state by
 modtime and size, diffs changes, emits stable JSON event structs, and performs
 conservative affected-test selection from the symbol index. `oaer test
---watch` runs a polling watcher with debounce, reruns, JSON event stream, and
-context cancellation; `--watch-once` is available for deterministic tests.
-Native OS watcher backends, incremental re-indexing, and in-flight VM
-cancellation remain incomplete.
+--watch` supports native `fsnotify` watching with polling fallback, debounce,
+reruns, JSON event stream with backend/run IDs, and context cancellation;
+`--watch-once` is available for deterministic tests. Incremental re-indexing and
+in-flight VM cancellation remain incomplete.
 
 ### Deliverables
 

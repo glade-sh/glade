@@ -570,7 +570,11 @@ a Salesforce-shaped local API server without silently wrong behavior.
     used by `oaer check`, overlay open-buffer parse diagnostics while editing,
     restore project diagnostics on close, and expose test-result diagnostics
     from failure stack frames.
-- [ ] Add native OS watcher backends for `oaer test --watch`.
+- [x] Add native OS watcher backends for `oaer test --watch`.
+  - [x] Add `fsnotify` native watching with recursive directory registration,
+    automatic fallback to polling in `auto` mode, explicit
+    `--watch-backend auto|native|poll` selection, backend reporting in
+    `watch.started`, and polling/native backend tests.
 - [ ] Add incremental re-indexing and affected-test dependency graph updates.
 - [ ] Add in-flight VM/test cancellation for watch reruns.
 - [ ] Stabilize watch JSON stream for editor/test UI consumers.

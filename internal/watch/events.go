@@ -44,11 +44,13 @@ type RunStartedEvent struct {
 	Event       EventType `json:"event"`
 	Time        time.Time `json:"time"`
 	TestClasses []string  `json:"testClasses,omitempty"`
+	RunID       int       `json:"runId,omitempty"`
 }
 
 type RunFinishedEvent struct {
 	Event   EventType  `json:"event"`
 	Time    time.Time  `json:"time"`
+	RunID   int        `json:"runId,omitempty"`
 	Summary RunSummary `json:"summary"`
 }
 

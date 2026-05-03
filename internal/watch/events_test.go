@@ -28,6 +28,9 @@ func TestEventJSONShapes(t *testing.T) {
 	if config["debounceMillis"] != float64(350) {
 		t.Fatalf("started config JSON = %s", string(data))
 	}
+	if config["backend"] != string(BackendAuto) {
+		t.Fatalf("started config backend = %s", string(data))
+	}
 
 	debounced := NewDebouncedEvent(now, Config{}, []Change{{
 		Path: "/tmp/project/InvoiceServiceTest.cls",
