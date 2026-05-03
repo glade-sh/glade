@@ -1070,6 +1070,148 @@ System.assertEquals(0, survivors.size());
 	}
 }
 
+func TestExecPartialDeleteAfterTriggerSeesOnlySuccessfulRows(t *testing.T) {
+	triggerProgram, err := CompileAnonymous(`
+for (Account oldAccount : Trigger.old) {
+	insert new Contact(LastName = 'after-delete-fired');
+}
+System.assertEquals(1, Trigger.size);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Account blocked = new Account(Name = 'Blocked');
+Account free = new Account(Name = 'Free');
+insert new List<Account>{blocked, free};
+insert new Contact(LastName = 'Child', AccountId = blocked.Id);
+List<Object> results = Database.delete(new List<Account>{blocked, free}, false);
+System.assertEquals(2, results.size());
+Object first = results.get(0);
+Object second = results.get(1);
+System.assert(!first.isSuccess());
+System.assert(second.isSuccess());
+List<Contact> markers = [SELECT Id FROM Contact WHERE LastName = 'after-delete-fired'];
+System.assertEquals(1, markers.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Contact",
+			KeyPrefix: "003",
+			Fields: map[string]storage.Field{
+				"LastName":  {APIName: "LastName", Type: storage.FieldString},
+				"AccountId": {APIName: "AccountId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}},
+			},
+			Relations: []storage.Relationship{{
+				Field:            "AccountId",
+				ParentObjects:    []string{"Account"},
+				RestrictedDelete: true,
+			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine.SetOrg(&org)
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "AccountAfterDelete",
+		Object:    "Account",
+		Timing:    triggerTimingAfter,
+		Operation: "delete",
+		Program:   triggerProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecPartialDeleteAfterTriggerAlignsBeforeAndEngineFailures(t *testing.T) {
+	beforeTrigger, err := CompileAnonymous(`
+for (Account oldAccount : Trigger.old) {
+	if (oldAccount.Name == 'Before Block') {
+		oldAccount.addError('blocked before delete');
+	}
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	afterTrigger, err := CompileAnonymous(`
+System.assertEquals(1, Trigger.size);
+Account oldAccount = Trigger.old.get(0);
+System.assertEquals('Free', oldAccount.Name);
+insert new Contact(LastName = 'after-delete-combined');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Account beforeBlock = new Account(Name = 'Before Block');
+Account free = new Account(Name = 'Free');
+Account engineBlock = new Account(Name = 'Engine Block');
+insert new List<Account>{beforeBlock, free, engineBlock};
+insert new Contact(LastName = 'Child', AccountId = engineBlock.Id);
+List<Object> results = Database.delete(new List<Account>{beforeBlock, free, engineBlock}, false);
+System.assertEquals(3, results.size());
+Object first = results.get(0);
+Object second = results.get(1);
+Object third = results.get(2);
+System.assert(!first.isSuccess());
+System.assert(second.isSuccess());
+System.assert(!third.isSuccess());
+List<Contact> markers = [SELECT Id FROM Contact WHERE LastName = 'after-delete-combined'];
+System.assertEquals(1, markers.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Contact",
+			KeyPrefix: "003",
+			Fields: map[string]storage.Field{
+				"LastName":  {APIName: "LastName", Type: storage.FieldString},
+				"AccountId": {APIName: "AccountId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}},
+			},
+			Relations: []storage.Relationship{{
+				Field:            "AccountId",
+				ParentObjects:    []string{"Account"},
+				RestrictedDelete: true,
+			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine.SetOrg(&org)
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "AccountBeforeDelete",
+		Object:    "Account",
+		Timing:    triggerTimingBefore,
+		Operation: "delete",
+		Program:   beforeTrigger,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "AccountAfterDeleteCombined",
+		Object:    "Account",
+		Timing:    triggerTimingAfter,
+		Operation: "delete",
+		Program:   afterTrigger,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecTriggerContextMapsAndOperationFlags(t *testing.T) {
 	updateTrigger, err := CompileAnonymous(`
 System.assert(Trigger.isExecuting);

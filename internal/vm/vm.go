@@ -2254,20 +2254,38 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 			vm.populateDMLResultFields(targets[i], engineResults[i:i+1])
 		}
 	}
-	afterRecords, err := vm.afterRecords(op, records, engineResults)
+	afterInputRecords, afterInputBefore, afterInputResults := successfulDMLInputs(records, before, engineResults)
+	afterRecords, err := vm.afterRecords(op, afterInputRecords, afterInputResults)
 	if err != nil {
 		if allOrNone {
 			*vm.Org = backup
 		}
 		return results, err
 	}
-	if _, err := vm.runTriggers(triggerTimingAfter, op, afterRecords, before, result); err != nil {
+	if _, err := vm.runTriggers(triggerTimingAfter, op, afterRecords, afterInputBefore, result); err != nil {
 		if allOrNone {
 			*vm.Org = backup
 		}
 		return nil, err
 	}
 	return results, nil
+}
+
+func successfulDMLInputs(records, before []storage.Record, results []dml.Result) ([]storage.Record, []storage.Record, []dml.Result) {
+	filteredRecords := make([]storage.Record, 0, len(records))
+	filteredBefore := make([]storage.Record, 0, len(before))
+	filteredResults := make([]dml.Result, 0, len(results))
+	for i, record := range records {
+		if i >= len(results) || !results[i].Success {
+			continue
+		}
+		filteredRecords = append(filteredRecords, record)
+		if i < len(before) {
+			filteredBefore = append(filteredBefore, before[i])
+		}
+		filteredResults = append(filteredResults, results[i])
+	}
+	return filteredRecords, filteredBefore, filteredResults
 }
 
 func (vm *VM) checkMixedDML(records []storage.Record) error {

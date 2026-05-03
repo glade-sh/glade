@@ -318,7 +318,7 @@ a Salesforce-shaped local API server without silently wrong behavior.
   Salesforce-visible behavior.
   - [x] Rebuild runtime index sets from object index definitions and use
     single-field equality indexes as SOQL candidate sets.
-- [ ] Complete Apex DML statements: `insert`, `update`, `delete`, `upsert`,
+- [x] Complete Apex DML statements: `insert`, `update`, `delete`, `upsert`,
   `undelete`, and `merge`.
   - [x] Support soft delete visibility and undelete restoration for VM/SOQL
     paths.
@@ -326,6 +326,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
      duplicate soft delete, child lookup reparenting, and `MergeResult` shape.
   - [x] Fire supported merge trigger hooks for master `before/after update` and
     duplicate `before/after delete` contexts with rollback on trigger errors.
+  - [x] Run after-trigger contexts only for rows that survive partial-success
+    engine validation.
 - [x] Improve `Database.insert/update/delete/upsert/undelete` result fidelity
   with structured `Database.Error` objects carrying `statusCode`, `message`, and
   `fields` arrays; add `Database.UpsertResult.isCreated()`.
