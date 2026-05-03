@@ -923,6 +923,10 @@ func runDB(ctx context.Context, args []string, w io.Writer) error {
 		return err
 	}
 	defer store.Close()
+	schemaVersion, err := store.SchemaVersion()
+	if err != nil {
+		return err
+	}
 	switch command {
 	case "seed":
 		if len(positionals) != 1 {
@@ -944,7 +948,7 @@ func runDB(ctx context.Context, args []string, w io.Writer) error {
 		if err := store.Save(org); err != nil {
 			return err
 		}
-		return writeDBInspect(w, dbPath, org, jsonOut)
+		return writeDBInspect(w, dbPath, org, jsonOut, schemaVersion)
 	case "reset":
 		if len(positionals) != 0 {
 			return fmt.Errorf("unexpected argument %q", positionals[0])
@@ -953,7 +957,7 @@ func runDB(ctx context.Context, args []string, w io.Writer) error {
 		if err := store.Save(org); err != nil {
 			return err
 		}
-		return writeDBInspect(w, dbPath, org, jsonOut)
+		return writeDBInspect(w, dbPath, org, jsonOut, schemaVersion)
 	case "export":
 		if len(positionals) != 0 {
 			return fmt.Errorf("unexpected argument %q", positionals[0])
@@ -963,7 +967,7 @@ func runDB(ctx context.Context, args []string, w io.Writer) error {
 		if len(positionals) != 0 {
 			return fmt.Errorf("unexpected argument %q", positionals[0])
 		}
-		return writeDBInspect(w, dbPath, org, jsonOut)
+		return writeDBInspect(w, dbPath, org, jsonOut, schemaVersion)
 	default:
 		return errors.New("usage: oaer db seed|reset|export|inspect --db <path> [--project <root>] [--json] [fixture.json]")
 	}
@@ -1016,14 +1020,18 @@ func orgForProject(root string) (storage.OrgState, error) {
 	return org, nil
 }
 
-func writeDBInspect(w io.Writer, path string, org storage.OrgState, jsonOut bool) error {
+func writeDBInspect(w io.Writer, path string, org storage.OrgState, jsonOut bool, schemaVersion int) error {
 	summary := storage.InspectOrg(path, org)
+	summary.SchemaVersion = schemaVersion
 	if jsonOut {
 		enc := json.NewEncoder(w)
 		enc.SetIndent("", "  ")
 		return enc.Encode(summary)
 	}
 	fmt.Fprintf(w, "db: %s\n", path)
+	if schemaVersion > 0 {
+		fmt.Fprintf(w, "schemaVersion: %d\n", schemaVersion)
+	}
 	fmt.Fprintf(w, "objects: %d\n", summary.Objects)
 	fmt.Fprintf(w, "records: %d\n", summary.Records)
 	fmt.Fprintf(w, "users: %d\n", summary.Users)

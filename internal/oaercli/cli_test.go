@@ -547,7 +547,7 @@ func TestRunDBSeedInspectExportAndReset(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("seed exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
 	}
-	if !strings.Contains(stdout.String(), `"Account": 1`) || !strings.Contains(stdout.String(), `"users": 1`) {
+	if !strings.Contains(stdout.String(), `"schemaVersion": 1`) || !strings.Contains(stdout.String(), `"Account": 1`) || !strings.Contains(stdout.String(), `"users": 1`) {
 		t.Fatalf("seed stdout = %q", stdout.String())
 	}
 
@@ -557,7 +557,7 @@ func TestRunDBSeedInspectExportAndReset(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("inspect exit code = %d, want 0; stderr=%q", code, stderr.String())
 	}
-	if !strings.Contains(stdout.String(), "Account: 1") || !strings.Contains(stdout.String(), "User: 1") {
+	if !strings.Contains(stdout.String(), "schemaVersion: 1") || !strings.Contains(stdout.String(), "Account: 1") || !strings.Contains(stdout.String(), "User: 1") {
 		t.Fatalf("inspect stdout = %q", stdout.String())
 	}
 

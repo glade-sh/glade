@@ -13,14 +13,50 @@ type SQLiteStore struct {
 	db *sql.DB
 }
 
+const sqliteSchemaVersion = 1
+
+type sqliteMigration struct {
+	version    int
+	statements []string
+}
+
+var sqliteMigrations = []sqliteMigration{{
+	version: 1,
+	statements: []string{
+		`create table if not exists schema_migrations (
+			version integer primary key,
+			applied_at text not null default (datetime('now'))
+		)`,
+		`create table if not exists org_meta (
+			key text primary key,
+			value text not null
+		)`,
+		`create table if not exists object_definitions (
+			name text primary key,
+			definition_json blob not null
+		)`,
+		`create table if not exists records (
+			object_name text not null,
+			id text not null,
+			record_json blob not null,
+			primary key(object_name, id)
+		)`,
+		`create table if not exists id_sequences (
+			object_name text primary key,
+			sequence integer not null
+		)`,
+	},
+}}
+
 type InspectSummary struct {
-	Path        string         `json:"path,omitempty"`
-	Objects     int            `json:"objects"`
-	Records     int            `json:"records"`
-	ByObject    map[string]int `json:"byObject"`
-	Users       int            `json:"users"`
-	Profiles    int            `json:"profiles"`
-	Permissions int            `json:"permissions"`
+	Path          string         `json:"path,omitempty"`
+	SchemaVersion int            `json:"schemaVersion,omitempty"`
+	Objects       int            `json:"objects"`
+	Records       int            `json:"records"`
+	ByObject      map[string]int `json:"byObject"`
+	Users         int            `json:"users"`
+	Profiles      int            `json:"profiles"`
+	Permissions   int            `json:"permissions"`
 }
 
 func OpenSQLite(path string) (*SQLiteStore, error) {
@@ -212,7 +248,13 @@ func (s *SQLiteStore) Inspect(path string) (InspectSummary, error) {
 	if err != nil {
 		return InspectSummary{}, err
 	}
-	return InspectOrg(path, org), nil
+	summary := InspectOrg(path, org)
+	version, err := s.SchemaVersion()
+	if err != nil {
+		return InspectSummary{}, err
+	}
+	summary.SchemaVersion = version
+	return summary, nil
 }
 
 func InspectOrg(path string, org OrgState) InspectSummary {
@@ -234,30 +276,44 @@ func InspectOrg(path string, org OrgState) InspectSummary {
 }
 
 func (s *SQLiteStore) init() error {
-	for _, stmt := range []string{
-		`pragma foreign_keys = on`,
-		`create table if not exists org_meta (
-			key text primary key,
-			value text not null
-		)`,
-		`create table if not exists object_definitions (
-			name text primary key,
-			definition_json blob not null
-		)`,
-		`create table if not exists records (
-			object_name text not null,
-			id text not null,
-			record_json blob not null,
-			primary key(object_name, id)
-		)`,
-		`create table if not exists id_sequences (
-			object_name text primary key,
-			sequence integer not null
-		)`,
-	} {
-		if _, err := s.db.Exec(stmt); err != nil {
-			return err
+	if _, err := s.db.Exec(`pragma foreign_keys = on`); err != nil {
+		return err
+	}
+	version, err := s.SchemaVersion()
+	if err != nil {
+		return err
+	}
+	if version > sqliteSchemaVersion {
+		return fmt.Errorf("storage: sqlite schema version %d is newer than supported version %d", version, sqliteSchemaVersion)
+	}
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	for _, migration := range sqliteMigrations {
+		if migration.version <= version {
+			continue
+		}
+		for _, stmt := range migration.statements {
+			if _, err := tx.Exec(stmt); err != nil {
+				return fmt.Errorf("storage: apply sqlite migration %d: %w", migration.version, err)
+			}
+		}
+		if _, err := tx.Exec(`insert or ignore into schema_migrations(version) values(?)`, migration.version); err != nil {
+			return fmt.Errorf("storage: record sqlite migration %d: %w", migration.version, err)
+		}
+		if _, err := tx.Exec(fmt.Sprintf("pragma user_version = %d", migration.version)); err != nil {
+			return fmt.Errorf("storage: set sqlite schema version %d: %w", migration.version, err)
 		}
 	}
-	return nil
+	return tx.Commit()
+}
+
+func (s *SQLiteStore) SchemaVersion() (int, error) {
+	var version int
+	if err := s.db.QueryRow(`pragma user_version`).Scan(&version); err != nil {
+		return 0, err
+	}
+	return version, nil
 }

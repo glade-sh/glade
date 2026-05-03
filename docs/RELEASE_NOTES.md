@@ -116,6 +116,8 @@ Release engineering:
   before-trigger `addError` filters failed rows before after triggers run.
 - Added deterministic trigger recursion guard rollback with catchable
   `DmlException`.
+- Added SQLite schema migrations/versioning for persistent org databases and
+  exposed the schema version in DB inspection summaries.
 - Preserved source ranges through parser syntax diagnostics, compiled project
   method/trigger bodies, VM statement traces, runtime/test failure stacks, DAP
   stack frames, and profile source ranges.

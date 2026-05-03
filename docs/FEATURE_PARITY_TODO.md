@@ -388,6 +388,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
 
 - [ ] Performance-tune SQLite-backed storage for large fixture sets.
 - [ ] Add migrations/versioning for persistent databases.
+  - [x] Add a SQLite migration runner backed by `PRAGMA user_version`, record
+    applied migrations, and expose schema version in DB inspection summaries.
 - [ ] Add stronger transaction boundaries across CLI tests, server requests,
   DML failures, triggers, and async drains.
 - [ ] Complete fixture alias resolution for polymorphic and relationship-heavy
