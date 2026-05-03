@@ -84,6 +84,8 @@ Release engineering:
 - Added SOQL `ALL ROWS` support for querying soft-deleted records.
 - Added SOQL `WITH SECURITY_ENFORCED`, `WITH USER_MODE`, and
   `WITH SYSTEM_MODE` parsing as local security-mode markers.
+- Added local projection validation for SOQL security-mode queries so unknown
+  selected fields raise catchable `QueryException`s.
 - Added baseline SOQL `TYPEOF` relationship projection for parent lookup
   branches.
 - Added multi-hop SOQL parent relationship projection and filtering with nested

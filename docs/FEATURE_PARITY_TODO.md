@@ -305,6 +305,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - **Limitation**: Formula-adjacent predicate behavior remains incomplete.
 - [ ] Add SOQL features commonly used by real projects: security enforcement,
   lock contention behavior, and advanced query row shape fidelity.
+  - [x] Validate projected fields for `WITH SECURITY_ENFORCED`, `WITH USER_MODE`,
+    and `WITH SYSTEM_MODE` queries and return catchable `QueryException`s for
+    unavailable fields.
 - [ ] Wire SQLite planning or indexed execution where needed without changing
   Salesforce-visible behavior.
 - [ ] Complete Apex DML statements: `insert`, `update`, `delete`, `upsert`,

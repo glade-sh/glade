@@ -463,6 +463,15 @@ List<Account> rows = [SELECT Id, Name FROM Account WHERE Name = 'Acme' WITH SECU
 System.assertEquals(1, rows.size());
 Account row = rows.get(0);
 System.assertEquals('Acme', row.Name);
+Boolean caught = false;
+try {
+    Database.query('SELECT Missing__c FROM Account WITH SECURITY_ENFORCED');
+} catch (QueryException qe) {
+    caught = true;
+    String message = qe.getMessage();
+    System.assert(message.contains('Missing__c'));
+}
+System.assert(caught);
 `)
 	if err != nil {
 		t.Fatal(err)

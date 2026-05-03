@@ -256,6 +256,14 @@ func TestExecuteCubeAggregateQueries(t *testing.T) {
 func TestExecuteFiltersProjectsAndOrders(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Account",
+			Fields: map[string]storage.Field{
+				"Name":   {APIName: "Name", Type: storage.FieldString},
+				"Active": {APIName: "Active", Type: storage.FieldBoolean},
+				"Rating": {APIName: "Rating", Type: storage.FieldString},
+			},
+		},
 		Records: map[storage.ID]storage.Record{
 			"001000000000002": {
 				ID:     "001000000000002",
@@ -354,6 +362,9 @@ func TestExecuteFiltersProjectsAndOrders(t *testing.T) {
 	}
 	if query.SecurityMode != "SYSTEM_MODE" {
 		t.Fatalf("query = %#v", query)
+	}
+	if _, err := ParseAndExecute(org, "SELECT Missing__c FROM Account WITH SECURITY_ENFORCED"); err == nil || !strings.Contains(err.Error(), "Missing__c") {
+		t.Fatalf("expected security projection error, got %v", err)
 	}
 }
 

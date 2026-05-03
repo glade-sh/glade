@@ -100,6 +100,11 @@ func Execute(org storage.OrgState, query Query) (Result, error) {
 		return Result{}, err
 	}
 	query.Fields = fields
+	if query.SecurityMode != "" {
+		if err := validateSecurityProjection(org, object.Definition, query); err != nil {
+			return Result{}, err
+		}
+	}
 	if len(query.ChildQueries) > 0 && len(query.Aggregates) > 0 {
 		return Result{}, fmt.Errorf("soql: child relationship subqueries are not supported in aggregate queries")
 	}
@@ -739,6 +744,87 @@ func fieldsFunctionMode(field string) (string, bool) {
 		return "", false
 	}
 	return strings.TrimSpace(upper[len("FIELDS(") : len(upper)-1]), true
+}
+
+func validateSecurityProjection(org storage.OrgState, definition storage.ObjectDefinition, query Query) error {
+	for _, field := range query.Fields {
+		if !projectionFieldKnown(org, definition, field) {
+			return fmt.Errorf("soql: field %s is not available in %s mode", field, query.SecurityMode)
+		}
+	}
+	for _, aggregate := range query.Aggregates {
+		if aggregate.Field != "" && aggregate.Field != "*" && !projectionFieldKnown(org, definition, aggregate.Field) {
+			return fmt.Errorf("soql: field %s is not available in %s mode", aggregate.Field, query.SecurityMode)
+		}
+	}
+	for _, spec := range query.Typeofs {
+		for typeName, fields := range spec.When {
+			parentName, ok := storage.ResolveObjectName(org, typeName)
+			if !ok {
+				return fmt.Errorf("soql: unknown TYPEOF target %s in %s mode", typeName, query.SecurityMode)
+			}
+			parent := org.Objects[parentName]
+			for _, field := range fields {
+				if !projectionFieldKnown(org, parent.Definition, field) {
+					return fmt.Errorf("soql: field %s.%s is not available in %s mode", typeName, field, query.SecurityMode)
+				}
+			}
+		}
+	}
+	for _, childQuery := range query.ChildQueries {
+		childName, _, ok := childRelationship(org, definition, childQuery.Relationship)
+		if !ok {
+			return fmt.Errorf("soql: unknown child relationship %s in %s mode", childQuery.Relationship, query.SecurityMode)
+		}
+		child := org.Objects[childName]
+		childFields, err := expandFieldsFunctions(child.Definition, childQuery.Query.Fields)
+		if err != nil {
+			return err
+		}
+		nested := childQuery.Query
+		nested.Fields = childFields
+		nested.SecurityMode = query.SecurityMode
+		if err := validateSecurityProjection(org, child.Definition, nested); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func projectionFieldKnown(org storage.OrgState, definition storage.ObjectDefinition, field string) bool {
+	if field == "Id" || isSystemField(field) {
+		return true
+	}
+	if strings.Contains(field, ".") {
+		parts := strings.SplitN(field, ".", 2)
+		for _, relation := range definition.Relations {
+			if relation.ParentRelationship != parts[0] {
+				continue
+			}
+			for _, parentName := range relation.ParentObjects {
+				canonical, ok := storage.ResolveObjectName(org, parentName)
+				if !ok {
+					continue
+				}
+				if projectionFieldKnown(org, org.Objects[canonical].Definition, parts[1]) {
+					return true
+				}
+			}
+			return false
+		}
+		return false
+	}
+	_, ok := storage.ResolveFieldName(definition, org.Namespace, field)
+	return ok
+}
+
+func isSystemField(field string) bool {
+	switch field {
+	case "CreatedDate", "CreatedById", "LastModifiedDate", "LastModifiedById", "SystemModstamp", "OwnerId", "IsDeleted":
+		return true
+	default:
+		return false
+	}
 }
 
 func isCustomFieldName(name string) bool {
