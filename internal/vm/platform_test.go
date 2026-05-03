@@ -477,6 +477,23 @@ System.runAs(new User(Id = '005-user-a', ProfileId = '00e-profile-a', Username =
 
 func TestExecPlatformAPIs(t *testing.T) {
 	program, err := CompileAnonymous(`
+String padded = '  Alpha,Beta,Alpha  ';
+String trimmed = padded.trim();
+System.assertEquals('Alpha,Beta,Alpha', trimmed);
+System.assertEquals(0, trimmed.indexOf('Alpha'));
+System.assertEquals(11, trimmed.lastIndexOf('Alpha'));
+System.assertEquals('Omega,Beta,Omega', trimmed.replace('Alpha', 'Omega'));
+List<String> pieces = trimmed.split(',');
+System.assertEquals(3, pieces.size());
+System.assertEquals('Alpha|Beta|Alpha', String.join(pieces, '|'));
+System.assert(String.isBlank('   '));
+System.assert(String.isNotBlank('x'));
+System.assert(trimmed.equalsIgnoreCase('alpha,beta,alpha'));
+Pattern pattern = Pattern.compile('[A-Z]+');
+Matcher matcher = pattern.matcher('abc DEF ghi');
+System.assert(matcher.find());
+System.assertEquals('DEF', matcher.group());
+System.assert(Pattern.matches('[0-9]+', '12345'));
 System.assertEquals(5, Math.abs(-5));
 System.assertEquals(7, Math.max(3, 7));
 Date d = Date.today();

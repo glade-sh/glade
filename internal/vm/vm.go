@@ -999,6 +999,12 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return value, nil
 		}
 		return Null, fmt.Errorf("unsupported call %q", callee)
+	case "String.isBlank", "String.isNotBlank", "String.valueOf", "String.join":
+		return stringStatic(callee, args)
+	case "Pattern.compile":
+		return patternCompile(args)
+	case "Pattern.matches":
+		return patternMatches(args)
 	case "Math.abs", "Math.floor", "Math.ceil", "Math.round":
 		return mathUnary(callee, args)
 	case "Math.max", "Math.min":
@@ -5814,6 +5820,10 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			return receiver.Fields["active"], receiver, false, true, nil
 		}
+	case "Pattern":
+		return callPatternMember(receiver, method, args)
+	case "Matcher":
+		return callMatcherMember(receiver, method, args)
 	case "Date":
 		switch method {
 		case "format", "toString":

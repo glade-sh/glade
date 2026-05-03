@@ -2,6 +2,7 @@ package vm
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"unicode/utf8"
 )
@@ -57,11 +58,178 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 			return Null, true, fmt.Errorf("String.toUpperCase expects 0 arguments")
 		}
 		return String(strings.ToUpper(receiver.Text)), true, nil
+	case "trim":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("String.trim expects 0 arguments")
+		}
+		return String(strings.TrimSpace(receiver.Text)), true, nil
+	case "indexOf":
+		needle, err := stringArg("String.indexOf", args)
+		if err != nil {
+			return Null, true, err
+		}
+		return Int(int64(strings.Index(receiver.Text, needle))), true, nil
+	case "lastIndexOf":
+		needle, err := stringArg("String.lastIndexOf", args)
+		if err != nil {
+			return Null, true, err
+		}
+		return Int(int64(strings.LastIndex(receiver.Text, needle))), true, nil
+	case "replace":
+		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+			return Null, true, fmt.Errorf("String.replace expects target and replacement Strings")
+		}
+		return String(strings.ReplaceAll(receiver.Text, args[0].Text, args[1].Text)), true, nil
+	case "split":
+		separator, err := stringArg("String.split", args)
+		if err != nil {
+			return Null, true, err
+		}
+		parts := strings.Split(receiver.Text, separator)
+		out := make([]Value, 0, len(parts))
+		for _, part := range parts {
+			out = append(out, String(part))
+		}
+		return List(out...), true, nil
+	case "equalsIgnoreCase":
+		other, err := stringArg("String.equalsIgnoreCase", args)
+		if err != nil {
+			return Null, true, err
+		}
+		return Bool(strings.EqualFold(receiver.Text, other)), true, nil
 	case "substring":
 		return substring(receiver.Text, args)
 	default:
 		return Null, false, nil
 	}
+}
+
+func stringStatic(callee string, args []Value) (Value, error) {
+	switch callee {
+	case "String.isBlank", "String.isNotBlank":
+		if len(args) != 1 {
+			return Null, fmt.Errorf("%s expects 1 argument", callee)
+		}
+		blank := args[0].Kind == ValueNull || (args[0].Kind == ValueString && strings.TrimSpace(args[0].Text) == "")
+		if callee == "String.isNotBlank" {
+			return Bool(!blank), nil
+		}
+		return Bool(blank), nil
+	case "String.valueOf":
+		if len(args) != 1 {
+			return Null, fmt.Errorf("String.valueOf expects 1 argument")
+		}
+		return String(args[0].String()), nil
+	case "String.join":
+		if len(args) != 2 || args[0].Kind != ValueList || args[1].Kind != ValueString {
+			return Null, fmt.Errorf("String.join expects List and separator String")
+		}
+		parts := make([]string, 0, len(args[0].List))
+		for _, item := range args[0].List {
+			parts = append(parts, item.String())
+		}
+		return String(strings.Join(parts, args[1].Text)), nil
+	default:
+		return Null, fmt.Errorf("unsupported call %q", callee)
+	}
+}
+
+func patternCompile(args []Value) (Value, error) {
+	if len(args) != 1 || args[0].Kind != ValueString {
+		return Null, fmt.Errorf("Pattern.compile expects regex String")
+	}
+	if _, err := regexp.Compile(args[0].Text); err != nil {
+		return Null, err
+	}
+	pattern := Object("Pattern")
+	pattern.Fields["source"] = args[0]
+	return pattern, nil
+}
+
+func patternMatches(args []Value) (Value, error) {
+	if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+		return Null, fmt.Errorf("Pattern.matches expects regex and input Strings")
+	}
+	matched, err := regexp.MatchString("^(?:"+args[0].Text+")$", args[1].Text)
+	if err != nil {
+		return Null, err
+	}
+	return Bool(matched), nil
+}
+
+func callPatternMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	if method != "matcher" {
+		return Null, receiver, false, false, nil
+	}
+	if len(args) != 1 || args[0].Kind != ValueString {
+		return Null, receiver, false, true, fmt.Errorf("Pattern.matcher expects input String")
+	}
+	matcher := Object("Matcher")
+	matcher.Fields["source"] = receiver.Fields["source"]
+	matcher.Fields["input"] = args[0]
+	matcher.Fields["index"] = Int(0)
+	matcher.Fields["group"] = Null
+	return matcher, receiver, false, true, nil
+}
+
+func callMatcherMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	if len(args) != 0 {
+		return Null, receiver, false, true, fmt.Errorf("Matcher.%s expects 0 arguments", method)
+	}
+	source, input, err := matcherSourceInput(receiver)
+	if err != nil {
+		return Null, receiver, false, true, err
+	}
+	re, err := regexp.Compile(source)
+	if err != nil {
+		return Null, receiver, false, true, err
+	}
+	switch method {
+	case "matches":
+		return Bool(re.MatchString(input) && re.FindString(input) == input), receiver, false, true, nil
+	case "find":
+		start := 0
+		if index, ok := receiver.Fields["index"]; ok && index.Kind == ValueInt {
+			start = int(index.Int)
+		}
+		if start < 0 {
+			start = 0
+		}
+		if start > len(input) {
+			start = len(input)
+		}
+		loc := re.FindStringIndex(input[start:])
+		if loc == nil {
+			receiver.Fields["group"] = Null
+			receiver.Fields["index"] = Int(int64(len(input) + 1))
+			return Bool(false), receiver, true, true, nil
+		}
+		matchStart := start + loc[0]
+		matchEnd := start + loc[1]
+		receiver.Fields["group"] = String(input[matchStart:matchEnd])
+		receiver.Fields["index"] = Int(int64(matchEnd))
+		return Bool(true), receiver, true, true, nil
+	case "group":
+		group, ok := receiver.Fields["group"]
+		if !ok || group.Kind == ValueNull {
+			return Null, receiver, false, true, fmt.Errorf("Matcher.group called before a successful find")
+		}
+		return group, receiver, false, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
+func matcherSourceInput(receiver Value) (string, string, error) {
+	source, ok := receiver.Fields["source"]
+	if !ok || source.Kind != ValueString {
+		return "", "", fmt.Errorf("Matcher missing Pattern source")
+	}
+	input, ok := receiver.Fields["input"]
+	if !ok || input.Kind != ValueString {
+		return "", "", fmt.Errorf("Matcher missing input")
+	}
+	return source.Text, input.Text, nil
 }
 
 func callListStdlibMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {

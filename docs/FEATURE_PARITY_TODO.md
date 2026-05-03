@@ -434,6 +434,10 @@ a Salesforce-shaped local API server without silently wrong behavior.
     the common stdlib and unsupported-error rows below.
 - [ ] Complete common `String`, `Pattern`, `Matcher`, `Date`, `Datetime`,
   `Time`, `Math`, `Decimal`, `EncodingUtil`, and `Crypto` behavior.
+  - [x] Add common `String` helpers for trim, search, replacement, split/join,
+    blank checks, and case-insensitive equality.
+  - [x] Add `Pattern.compile`, `Pattern.matches`, and basic `Matcher`
+    `find`/`matches`/`group` behavior.
 - [ ] Complete HTTP/callout mock behavior: request/response types,
   `HttpCalloutMock`, callout limits, and test isolation.
 - [ ] Complete `UserInfo`, `FeatureManagement`, `Messaging`, `ApexPages`,
