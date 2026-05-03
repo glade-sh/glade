@@ -138,6 +138,10 @@
       "content": "trigger AccountMergeBeforeDeleteBlock on Account (before delete) { Account oldRow = Trigger.old.get(0); if (oldRow.get('Name') == 'Blocked Merge Duplicate') { oldRow.addError('blocked duplicate merge'); } }"
     },
     {
+      "path": "force-app/main/classes/AccountAfterUndeleteContext.trigger",
+      "content": "trigger AccountAfterUndeleteContext on Account (after undelete) { System.assert(Trigger.isExecuting); System.assert(Trigger.isAfter); System.assert(Trigger.isUndelete); System.assertEquals(1, Trigger.size); System.assertEquals(null, Trigger.old); System.assertEquals(null, Trigger.oldMap); Account newer = Trigger.new.get(0); System.assert(Trigger.newMap.containsKey(newer.Id)); }"
+    },
+    {
       "path": "force-app/main/classes/MergeTriggerFidelityTest.cls",
       "content": "@isTest private class MergeTriggerFidelityTest { @isTest static void mergeFiresUpdateAndDeleteTriggers() { Account master = new Account(Name = 'Merge Master For Triggers'); insert master; Account duplicate = new Account(Name = 'Merge Duplicate For Triggers'); insert duplicate; Account mergeMaster = new Account(Id = master.Id, Name = 'Merged Name'); Object result = Database.merge(mergeMaster, duplicate, false); System.assert(result.isSuccess()); Account row = [SELECT Id, Name, Rating FROM Account WHERE Id = :master.Id]; System.assertEquals('Merged Name', row.Name); System.assertEquals('merge-before-update', row.Rating); List<Contact> updateMarkers = [SELECT Id FROM Contact WHERE LastName = 'merge-update-fired']; System.assertEquals(1, updateMarkers.size()); List<Contact> deleteMarkers = [SELECT Id FROM Contact WHERE LastName = 'merge-delete-fired']; System.assertEquals(1, deleteMarkers.size()); Account blockedMaster = new Account(Name = 'Blocked Merge Master'); insert blockedMaster; Account blockedDuplicate = new Account(Name = 'Blocked Merge Duplicate'); insert blockedDuplicate; Account blockedUpdate = new Account(Id = blockedMaster.Id, Name = 'Blocked Applied'); Object blockedResult = Database.merge(blockedUpdate, blockedDuplicate, false); System.assert(!blockedResult.isSuccess()); List<Object> blockedErrors = blockedResult.getErrors(); System.assertEquals(1, blockedErrors.size()); Object blockedError = blockedErrors.get(0); System.assertEquals('blocked duplicate merge', blockedError.getMessage()); List<Account> blockedRows = [SELECT Id FROM Account WHERE Id = :blockedDuplicate.Id]; System.assertEquals(1, blockedRows.size()); } }"
     },
@@ -160,6 +164,10 @@
     {
       "path": "force-app/main/classes/ValidationRuleFidelityTest.cls",
       "content": "@isTest private class ValidationRuleFidelityTest { @isTest static void metadataValidationRuleBlocksDml() { Account blocked = new Account(Name = 'Rule Block'); Object result = Database.insert(blocked, false); System.assert(!result.isSuccess()); List<Object> errors = result.getErrors(); System.assertEquals(1, errors.size()); Object err = errors.get(0); System.assertEquals('FIELD_CUSTOM_VALIDATION_EXCEPTION', err.getStatusCode()); System.assertEquals('blocked by validation rule', err.getMessage()); List<Object> fields = err.getFields(); System.assertEquals(1, fields.size()); System.assertEquals('Name', fields.get(0)); } }"
+    },
+    {
+      "path": "force-app/main/classes/UndeleteTriggerFidelityTest.cls",
+      "content": "@isTest private class UndeleteTriggerFidelityTest { @isTest static void afterUndeleteContextRuns() { Account a = new Account(Name = 'Undelete Me'); insert a; delete a; undelete a; System.assert(!a.IsDeleted); } }"
     },
     {
       "path": "force-app/main/classes/DataFidelityTest.cls",
@@ -202,8 +210,8 @@
       "errors": 0,
       "failed": 0,
       "ok": true,
-      "passed": 21,
-      "total": 21
+      "passed": 22,
+      "total": 22
     }
   }
 }

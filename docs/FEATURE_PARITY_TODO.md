@@ -351,7 +351,7 @@ a Salesforce-shaped local API server without silently wrong behavior.
     `FIELD_CUSTOM_VALIDATION_EXCEPTION` error shaping.
   - **Limitation**: Complex validation-rule formulas, owner/sharing side effects,
     and broad relationship constraints remain incomplete.
-- [ ] Complete trigger ordering, before/after state, bulk execution,
+- [x] Complete trigger ordering, before/after state, bulk execution,
   recursion behavior, operation type, maps, old/new values, and rollback on
   failures.
   - [x] Support trigger operation flags, `Trigger.size`, nullable unavailable
@@ -361,6 +361,10 @@ a Salesforce-shaped local API server without silently wrong behavior.
     successful rows.
   - [x] Enforce a deterministic trigger recursion depth guard with catchable
     `DmlException` rollback.
+  - [x] Run supported after-undelete trigger contexts while skipping unsupported
+    before-undelete invocation.
+  - **Limitation**: Complete platform trigger ordering across all automation
+    types remains outside the local trigger runtime.
 - [ ] Implement `addError` behavior on SObjects and fields.
   - [x] Support object-level `SObject.addError`, `hasErrors`, and `getErrors`
     in before-trigger DML with row-level `SaveResult` error shaping and

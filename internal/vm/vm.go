@@ -2202,10 +2202,13 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 		return nil, err
 	}
 	backup := vm.Org.Clone()
-	beforeFailures, err := vm.runTriggers(triggerTimingBefore, op, records, before, result)
-	if err != nil {
-		*vm.Org = backup
-		return nil, err
+	var beforeFailures []dml.Result
+	if op != "undelete" {
+		beforeFailures, err = vm.runTriggers(triggerTimingBefore, op, records, before, result)
+		if err != nil {
+			*vm.Org = backup
+			return nil, err
+		}
 	}
 	if hasDMLFailures(beforeFailures) {
 		if allOrNone {

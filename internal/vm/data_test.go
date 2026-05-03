@@ -1283,6 +1283,62 @@ delete updated;
 	}
 }
 
+func TestExecUndeleteRunsOnlyAfterTrigger(t *testing.T) {
+	beforeTrigger, err := CompileAnonymous(`
+System.assert(false);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	afterTrigger, err := CompileAnonymous(`
+System.assert(Trigger.isExecuting);
+System.assert(Trigger.isAfter);
+System.assert(Trigger.isUndelete);
+System.assertEquals(1, Trigger.size);
+System.assertEquals(null, Trigger.old);
+System.assertEquals(null, Trigger.oldMap);
+Account newer = Trigger.new.get(0);
+System.assert(Trigger.newMap.containsKey(newer.Id));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Account a = new Account(Name = 'Gone');
+insert a;
+delete a;
+undelete a;
+System.assert(!a.IsDeleted);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "AccountBeforeUndelete",
+		Object:    "Account",
+		Timing:    triggerTimingBefore,
+		Operation: "undelete",
+		Program:   beforeTrigger,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "AccountAfterUndelete",
+		Object:    "Account",
+		Timing:    triggerTimingAfter,
+		Operation: "undelete",
+		Program:   afterTrigger,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecTriggerBulkPartialSuccessKeepsRowAlignment(t *testing.T) {
 	beforeInsert, err := CompileAnonymous(`
 System.assert(Trigger.isExecuting);

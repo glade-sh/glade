@@ -46,7 +46,7 @@ The MVP target is `full-featured aer-parity MVP`. This document lists required c
 ### `triggers.runtime`: Trigger invocation and context
 
 - Status: `partial`
-- Gap: Project triggers are compiled and invoked from VM DML for before/after operations with Trigger.new/old/maps/flags/operationType/size basics, bulk partial-success row alignment before and after engine validation, deterministic recursion guard rollback, merge master update hooks, merge duplicate delete hooks, rollback on thrown errors, and object-level/field-level addError shaping single and multiple row SaveResult errors with field lists. Full bulk ordering semantics and relationship side effects remain incomplete.
+- Gap: Project triggers are compiled and invoked from VM DML for before/after operations with Trigger.new/old/maps/flags/operationType/size basics, after-undelete context, no before-undelete invocation, bulk partial-success row alignment before and after engine validation, deterministic recursion guard rollback, merge master update hooks, merge duplicate delete hooks, rollback on thrown errors, and object-level/field-level addError shaping single and multiple row SaveResult errors with field lists. Full bulk ordering semantics and relationship side effects remain incomplete.
 
 ## Developer experience
 
