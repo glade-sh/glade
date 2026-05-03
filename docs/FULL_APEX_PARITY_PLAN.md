@@ -118,8 +118,11 @@ Current progress:
   Time, Id, and Blob accessors, `nextValue`, and `skipChildren`.
 - Blob/Encoding/Crypto: runtime support now covers deterministic local
   `Blob.valueOf`, `Blob.toString`, `Blob.size`, Base64 encode/decode,
-  hex encode/decode, digest generation for the documented MD5/SHA1/SHA2/SHA3
-  slice, and HMAC generation for documented local algorithms.
+  hex encode/decode, empty Blob/encoding edge cases, URL encode/decode for the
+  UTF-8/utf8 charset slice, digest generation for the documented
+  MD5/SHA1/SHA2/SHA3 slice, HMAC generation for documented local algorithms,
+  `Crypto.areEqualConstantTime`, and explicit unsupported errors for local
+  key/certificate/encryption surfaces.
 - Type/Id/URL/Object: runtime support now covers `Type` equality, hash and
   string forms, constructor-backed zero-arg `Type.newInstance` for registered
   classes, lightweight `Id.valueOf` validation and `to15`, deterministic URL
@@ -179,11 +182,12 @@ Remaining cuts:
 
 5. Blob, EncodingUtil, and Crypto
    - Blob conversion and charset behavior.
-   - Base64, hex, URL encoding edge cases.
+   - Remaining Base64, hex, and URL encoding edge cases beyond the pinned
+     empty, casing, invalid-input, and UTF-8 URL charset slice.
    - Digests, HMAC, signatures, and encryption surfaces where local deterministic
      implementation is safe.
-   - Explicit unsupported diagnostics for key-store or org-cloud-dependent
-     operations.
+   - Additional explicit unsupported diagnostics for any key-store or
+     org-cloud-dependent operations not yet routed through stable errors.
 
 6. JSON
    - Complete remaining `JSONGenerator` methods such as raw writers and exact

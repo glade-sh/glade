@@ -14,6 +14,8 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Blob | `Blob.size` | `supported` | Returns local Blob byte length. |
 | Blob | `Blob.toString` | `supported` | Returns the local Blob bytes as a string. |
 | Blob | `Blob.valueOf` | `supported` | Stores the string bytes in a local Blob value. |
+| Crypto | `Crypto.areEqualConstantTime` | `supported` | Constant-time local Blob equality comparison. |
+| Crypto | `Crypto.encrypt/decrypt/sign/verify` | `unsupported` | Org key, certificate, and encryption surfaces return explicit unsupported errors. |
 | Crypto | `Crypto.generateDigest` | `supported` | MD5, SHA1, SHA-256, SHA-512, and SHA3-256/384/512. |
 | Crypto | `Crypto.generateMac` | `supported` | HMAC MD5, SHA1, SHA256, and SHA512 with local Blob keys. |
 | Database | `Database.delete` | `supported` | DML pipeline with result/error shapes for supported SObjects. |
@@ -74,8 +76,8 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | EncodingUtil | `EncodingUtil.base64Encode` | `supported` | Blob-shaped local value. |
 | EncodingUtil | `EncodingUtil.convertFromHex` | `supported` | Blob-shaped local value. |
 | EncodingUtil | `EncodingUtil.convertToHex` | `supported` | Blob-shaped local value. |
-| EncodingUtil | `EncodingUtil.urlDecode` | `partial` | Uses query unescape; charset validation is not modeled. |
-| EncodingUtil | `EncodingUtil.urlEncode` | `partial` | Uses query escape; charset validation is not modeled. |
+| EncodingUtil | `EncodingUtil.urlDecode` | `partial` | Uses query unescape with UTF-8/utf8 charset validation only. |
+| EncodingUtil | `EncodingUtil.urlEncode` | `partial` | Uses query escape with UTF-8/utf8 charset validation only. |
 | Exception | `Exception.getLineNumber` | `partial` | Returns deterministic local throw-site line metadata when available; otherwise 0. |
 | Exception | `Exception.getMessage` | `supported` | Returns the local exception message. |
 | Exception | `Exception.getStackTraceString` | `partial` | Returns the local VM stack trace captured at throw time when available. |
