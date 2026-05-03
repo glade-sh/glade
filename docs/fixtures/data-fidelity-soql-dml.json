@@ -70,6 +70,10 @@
       "content": "@isTest private class DynamicSoqlFidelityTest { @isTest static void databaseQueryBindsAndErrors() { insert new Account(Name = 'Acme', RenewalDate__c = Date.today()); insert new Account(Name = 'Beta', RenewalDate__c = Date.today()); String wanted = 'Acme'; List<Account> rows = Database.query('SELECT Id, Name FROM Account WHERE Name=:wanted'); System.assertEquals(1, rows.size()); List<String> names = new List<String>{'Acme', 'Beta'}; rows = Database.query('SELECT Id FROM Account WHERE Name IN :names ORDER BY Name'); System.assertEquals(2, rows.size()); Account probe = new Account(Name = 'Beta'); rows = Database.query('SELECT Id FROM Account WHERE Name = :probe.Name'); System.assertEquals(1, rows.size()); rows = Database.query('SELECT Id FROM Account WHERE RenewalDate__c = LAST_N_DAYS:2'); System.assertEquals(2, rows.size()); Boolean caught = false; try { Database.query('SELECT FROM Account'); } catch (QueryException qe) { caught = true; String message = qe.getMessage(); System.assert(message != null); } System.assert(caught); } }"
     },
     {
+      "path": "force-app/main/classes/SObjectFieldShapeTest.cls",
+      "content": "@isTest private class SObjectFieldShapeTest { @isTest static void explicitNullAndPopulatedFields() { Account a = new Account(); System.assert(!a.isSet('Name')); System.assertEquals(null, a.get('Name')); Object previous = a.put('Name', 'Acme'); System.assertEquals(null, previous); System.assert(a.isSet('Name')); previous = a.put('Name', 'Changed'); System.assertEquals('Acme', previous); a.put('Rating', null); System.assert(a.isSet('Rating')); Map<String,Object> populated = a.getPopulatedFieldsAsMap(); System.assertEquals(2, populated.size()); System.assert(populated.containsKey('Name')); System.assert(populated.containsKey('Rating')); insert a; System.assert(a.isSet('Id')); a.clear(); System.assert(!a.isSet('Name')); System.assert(!a.isSet('Id')); } }"
+    },
+    {
       "path": "force-app/main/classes/DateLiteralFidelityTest.cls",
       "content": "@isTest private class DateLiteralFidelityTest { @isTest static void dateLiteralsFilterRows() { insert new Account(Name = 'Today', RenewalDate__c = Date.today()); Date oldDate = Date.today(); oldDate = oldDate.addDays(-2); insert new Account(Name = 'Old', RenewalDate__c = oldDate); List<Account> todayRows = [SELECT Id FROM Account WHERE RenewalDate__c = TODAY]; System.assertEquals(1, todayRows.size()); List<Account> recentRows = [SELECT Id FROM Account WHERE RenewalDate__c = LAST_N_DAYS:2]; System.assertEquals(2, recentRows.size()); } }"
     }
@@ -82,8 +86,8 @@
       "errors": 0,
       "failed": 0,
       "ok": true,
-      "passed": 7,
-      "total": 7
+      "passed": 8,
+      "total": 8
     }
   }
 }

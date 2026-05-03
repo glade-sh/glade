@@ -44,6 +44,8 @@ Release engineering:
 - Added namespace-token custom object and field alias resolution through VM
   SObject construction, direct field access, `get`/`put`, DML validation, and
   SOQL projection/where clauses.
+- Added SObject field-shape helpers for `put` previous-value returns, `isSet`,
+  `clear`, and `getPopulatedFieldsAsMap` with explicit-null fields.
 - Expanded data-fidelity coverage for SOQL complex predicates, numeric
   comparison semantics, `Database.Error` result shapes, and
   `Database.UpsertResult.isCreated()`.

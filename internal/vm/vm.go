@@ -4291,7 +4291,7 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 		}
 		if vm.isSObjectType(receiver.Type) {
 			if value, handled, err := vm.callSObjectMember(receiver, method, args); handled || err != nil {
-				if method == "put" || method == "addError" {
+				if method == "put" || method == "addError" || method == "clear" {
 					if err := vm.storeReceiver(receiverName, receiver); err != nil {
 						return Null, true, err
 					}
@@ -4483,8 +4483,41 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		if len(args) != 2 || args[0].Kind != ValueString {
 			return Null, true, fmt.Errorf("SObject.put expects field name String and value")
 		}
-		receiver.Fields[vm.resolveSObjectFieldName(receiver.Type, args[0].Text)] = args[1]
+		field := vm.resolveSObjectFieldName(receiver.Type, args[0].Text)
+		previous, ok := receiver.Fields[field]
+		if !ok {
+			previous = Null
+		}
+		receiver.Fields[field] = args[1]
+		return previous, true, nil
+	case "isSet":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, true, fmt.Errorf("SObject.isSet expects field name String")
+		}
+		field := vm.resolveSObjectFieldName(receiver.Type, args[0].Text)
+		_, ok := receiver.Fields[field]
+		return Bool(ok), true, nil
+	case "clear":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("SObject.clear expects 0 arguments")
+		}
+		for field := range receiver.Fields {
+			delete(receiver.Fields, field)
+		}
 		return Null, true, nil
+	case "getPopulatedFieldsAsMap":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("SObject.getPopulatedFieldsAsMap expects 0 arguments")
+		}
+		out := Map()
+		out.Type = "Map<String,Object>"
+		for field, value := range receiver.Fields {
+			if field == sobjectErrorsField {
+				continue
+			}
+			out.Map[mapKey(String(field))] = value
+		}
+		return out, true, nil
 	default:
 		return Null, false, nil
 	}

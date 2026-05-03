@@ -238,6 +238,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
 
 - [ ] Complete typed SObject field access, dynamic `get`/`put`, absent-field
   behavior, explicit null behavior, and system fields.
+  - [x] Support `SObject.put` previous-value returns, `isSet`, `clear`, and
+    `getPopulatedFieldsAsMap` with explicit-null field tracking.
 - [ ] Complete schema describe objects, field describes, record type info,
   picklists, relationship metadata, and common describe-heavy code paths.
 - [x] Expand static SOQL parsing/execution with `AND`/`OR`, `IN`/`NOT IN`,

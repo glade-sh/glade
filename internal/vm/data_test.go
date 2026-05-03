@@ -38,6 +38,42 @@ System.assertEquals(0, empty.size());
 	}
 }
 
+func TestExecSObjectFieldShape(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account a = new Account();
+System.assert(!a.isSet('Name'), 'new sobject should not have Name set');
+System.assertEquals(null, a.get('Name'));
+Object previous = a.put('Name', 'Acme');
+System.assertEquals(null, previous);
+System.assert(a.isSet('Name'), 'put should set Name');
+previous = a.put('Name', 'Changed');
+System.assertEquals('Acme', previous);
+a.put('Rating', null);
+System.assert(a.isSet('Rating'), 'explicit null should count as set');
+Map<String,Object> populated = a.getPopulatedFieldsAsMap();
+System.assertEquals(2, populated.size());
+System.assert(populated.containsKey('Name'), 'populated fields should include Name');
+System.assert(populated.containsKey('Rating'), 'populated fields should include explicit null Rating');
+insert a;
+System.assert(a.isSet('Id'), 'insert should set Id');
+a.clear();
+System.assert(!a.isSet('Name'), 'clear should unset Name');
+System.assert(!a.isSet('Id'), 'clear should unset Id');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Rating"] = storage.Field{APIName: "Rating", Type: storage.FieldString}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSOQLCountAndSingleSObjectAssignment(t *testing.T) {
 	program, err := CompileAnonymous(`
 insert new Account(Name = 'Acme');

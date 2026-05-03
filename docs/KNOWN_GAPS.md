@@ -36,7 +36,7 @@ The MVP target is `full-featured aer-parity MVP`. This document lists required c
 ### `sobject.apex`: Apex-integrated SObject construction and field access
 
 - Status: `partial`
-- Gap: Apex now supports schema-backed new Account(Name='Acme'), typed field access, dotted assignment, get/put, object-level and field-level addError, hasErrors/getErrors, Id propagation after DML, parent relationship projection access, and VM/storage record conversion. Typed describe APIs and broader SObject system fields remain incomplete.
+- Gap: Apex now supports schema-backed new Account(Name='Acme'), typed field access, dotted assignment, get/put with previous-value return, isSet, clear, getPopulatedFieldsAsMap including explicit nulls, object-level and field-level addError, hasErrors/getErrors, Id propagation after DML, parent relationship projection access, and VM/storage record conversion. Typed describe APIs and broader SObject system fields remain incomplete.
 
 ### `soql.apex`: Static and dynamic SOQL from Apex
 
