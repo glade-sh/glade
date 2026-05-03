@@ -3711,6 +3711,144 @@ func formatPlatformDatetime(value time.Time) string {
 	return value.UTC().Format(time.RFC3339Nano)
 }
 
+func formatApexDatetimePattern(value time.Time, pattern, zoneID string, offset time.Duration) (string, error) {
+	var b strings.Builder
+	for i := 0; i < len(pattern); {
+		ch := pattern[i]
+		if ch == '\'' {
+			next, literal, err := readApexDatePatternLiteral(pattern, i)
+			if err != nil {
+				return "", err
+			}
+			b.WriteString(literal)
+			i = next
+			continue
+		}
+		if (ch < 'A' || ch > 'Z') && (ch < 'a' || ch > 'z') {
+			b.WriteByte(ch)
+			i++
+			continue
+		}
+		j := i + 1
+		for j < len(pattern) && pattern[j] == ch {
+			j++
+		}
+		token := pattern[i:j]
+		text, err := formatApexDatetimeToken(value, token, zoneID, offset)
+		if err != nil {
+			return "", err
+		}
+		b.WriteString(text)
+		i = j
+	}
+	return b.String(), nil
+}
+
+func readApexDatePatternLiteral(pattern string, start int) (int, string, error) {
+	var b strings.Builder
+	for i := start + 1; i < len(pattern); i++ {
+		if pattern[i] != '\'' {
+			b.WriteByte(pattern[i])
+			continue
+		}
+		if i+1 < len(pattern) && pattern[i+1] == '\'' {
+			b.WriteByte('\'')
+			i++
+			continue
+		}
+		return i + 1, b.String(), nil
+	}
+	return 0, "", fmt.Errorf("Datetime.format unsupported unterminated quoted literal")
+}
+
+func formatApexDatetimeToken(value time.Time, token, zoneID string, offset time.Duration) (string, error) {
+	count := len(token)
+	switch token[0] {
+	case 'y':
+		year := value.Year()
+		if count == 2 {
+			return fmt.Sprintf("%02d", year%100), nil
+		}
+		return fmt.Sprintf("%0*d", maxInt(count, 4), year), nil
+	case 'M':
+		month := value.Month()
+		switch {
+		case count >= 4:
+			return month.String(), nil
+		case count == 3:
+			return month.String()[:3], nil
+		case count == 2:
+			return fmt.Sprintf("%02d", int(month)), nil
+		default:
+			return strconv.Itoa(int(month)), nil
+		}
+	case 'd':
+		return formatPaddedDateNumber(value.Day(), count), nil
+	case 'H':
+		return formatPaddedDateNumber(value.Hour(), count), nil
+	case 'h':
+		hour := value.Hour() % 12
+		if hour == 0 {
+			hour = 12
+		}
+		return formatPaddedDateNumber(hour, count), nil
+	case 'm':
+		return formatPaddedDateNumber(value.Minute(), count), nil
+	case 's':
+		return formatPaddedDateNumber(value.Second(), count), nil
+	case 'S':
+		millisecond := value.Nanosecond() / int(time.Millisecond)
+		if count <= 1 {
+			return strconv.Itoa(millisecond), nil
+		}
+		return fmt.Sprintf("%0*d", minInt(count, 3), millisecond), nil
+	case 'a':
+		if value.Hour() < 12 {
+			return "AM", nil
+		}
+		return "PM", nil
+	case 'E':
+		name := value.Weekday().String()
+		if count >= 4 {
+			return name, nil
+		}
+		return name[:3], nil
+	case 'Z':
+		return formatRFC822Offset(offset), nil
+	case 'z':
+		if zoneID == "UTC" {
+			return "UTC", nil
+		}
+		return zoneID, nil
+	default:
+		return "", fmt.Errorf("Datetime.format unsupported pattern token %q", token)
+	}
+}
+
+func formatPaddedDateNumber(value, count int) string {
+	if count >= 2 {
+		return fmt.Sprintf("%02d", value)
+	}
+	return strconv.Itoa(value)
+}
+
+func formatRFC822Offset(offset time.Duration) string {
+	sign := "+"
+	if offset < 0 {
+		sign = "-"
+		offset = -offset
+	}
+	totalMinutes := int(offset / time.Minute)
+	return fmt.Sprintf("%s%02d%02d", sign, totalMinutes/60, totalMinutes%60)
+}
+
+func maxInt(left, right int) int {
+	if left > right {
+		return left
+	}
+	return right
+}
+
 func validateDateParts(year, month, day int) error {
 	value := time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
 	if value.Year() != year || int(value.Month()) != month || value.Day() != day {
@@ -7272,14 +7410,40 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	case "Datetime":
 		switch method {
 		case "format", "formatGmt", "toString":
-			if len(args) != 0 {
-				return Null, receiver, false, true, fmt.Errorf("Datetime.%s expects 0 arguments", method)
-			}
-			text, err := platformScalarText(receiver, "Datetime")
+			t, err := parsePlatformDatetime(receiver)
 			if err != nil {
 				return Null, receiver, false, true, err
 			}
-			return String(text), receiver, false, true, nil
+			if len(args) == 0 {
+				return String(formatPlatformDatetime(t)), receiver, false, true, nil
+			}
+			if method == "toString" {
+				return Null, receiver, false, true, fmt.Errorf("Datetime.toString expects 0 arguments")
+			}
+			if len(args) != 1 && !(method == "format" && len(args) == 2) {
+				return Null, receiver, false, true, fmt.Errorf("Datetime.%s expects optional pattern String", method)
+			}
+			if args[0].Kind != ValueString {
+				return Null, receiver, false, true, fmt.Errorf("Datetime.%s expects pattern String", method)
+			}
+			tzID := "UTC"
+			offset := time.Duration(0)
+			if method == "format" && len(args) == 2 {
+				if args[1].Kind != ValueString {
+					return Null, receiver, false, true, fmt.Errorf("Datetime.format expects timezone String")
+				}
+				canonical, parsedOffset, ok := parseFixedTimeZoneID(args[1].Text)
+				if !ok {
+					return Null, receiver, false, true, unsupportedCallError("Datetime.format timezone " + args[1].Text)
+				}
+				tzID = canonical
+				offset = parsedOffset
+			}
+			formatted, err := formatApexDatetimePattern(t.Add(offset), args[0].Text, tzID, offset)
+			if err != nil {
+				return Null, receiver, false, true, err
+			}
+			return String(formatted), receiver, false, true, nil
 		case "date", "dateGmt":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Datetime.%s expects 0 arguments", method)

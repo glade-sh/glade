@@ -106,7 +106,9 @@ Current progress:
   arithmetic and component getters, month-start/month-end helpers, and
   UTC-modeled `Datetime` date arithmetic plus date/time component getters,
   deterministic VM-clock `Date.today`/`Datetime.now`, GMT construction/parsing
-  and component helpers, and millisecond arithmetic.
+  and component helpers, millisecond arithmetic, deterministic `Datetime`
+  `format`/`formatGmt` Java-pattern slices for UTC and fixed offsets, and
+  explicit unsupported diagnostics for named timezone formatting.
 - Time/TimeZone: runtime support now covers `Time` construction/parsing,
   component getters including milliseconds, wraparound arithmetic, and a
   deterministic `TimeZone` slice for UTC/GMT plus fixed GMT/UTC offsets.
@@ -182,9 +184,11 @@ Remaining cuts:
      slice.
 
 4. Date and time classes
-   - Remaining work: locale-aware formatting, user-local timezone variants
-     beyond the UTC model, named `TimeZone` IDs, timezone database offsets, DST
-     behavior where public behavior is known, and unsupported static helpers.
+   - Remaining work: full locale-aware formatting beyond the pinned English
+     `Datetime` pattern tokens, user-local timezone variants beyond the UTC
+     model, named `TimeZone` IDs, timezone database offsets, DST behavior where
+     public behavior is known, `Date`/`Time` pattern overloads if public
+     behavior is pinned, and unsupported static helpers.
 
 5. Blob, EncodingUtil, and Crypto
    - Blob conversion and charset behavior.

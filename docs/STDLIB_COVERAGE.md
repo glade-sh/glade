@@ -49,7 +49,8 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Datetime | `Datetime.date` | `partial` | Returns UTC-modeled Date component; no user timezone model. |
 | Datetime | `Datetime.dateGmt` | `supported` | Returns the UTC Date component. |
 | Datetime | `Datetime.day` | `partial` | UTC-modeled component getter. |
-| Datetime | `Datetime.formatGmt` | `partial` | Returns the deterministic UTC scalar string; locale patterns are not modeled. |
+| Datetime | `Datetime.format` | `partial` | Deterministic UTC/fixed-offset Java-pattern slice; named zones, DST, user locale, and user timezone are unsupported. |
+| Datetime | `Datetime.formatGmt` | `partial` | Deterministic UTC Java-pattern slice; locale patterns are not modeled beyond pinned English names. |
 | Datetime | `Datetime.hour` | `partial` | UTC-modeled component getter. |
 | Datetime | `Datetime.millisecond` | `partial` | UTC-modeled component getter. |
 | Datetime | `Datetime.minute` | `partial` | UTC-modeled component getter. |
