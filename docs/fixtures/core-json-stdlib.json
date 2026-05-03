@@ -58,24 +58,100 @@
       "kind": "exec"
     },
     {
+      "symbol": "JSONGenerator.writeDateField",
+      "kind": "exec"
+    },
+    {
+      "symbol": "JSONGenerator.writeDateTimeField",
+      "kind": "exec"
+    },
+    {
+      "symbol": "JSONGenerator.writeTimeField",
+      "kind": "exec"
+    },
+    {
+      "symbol": "JSONGenerator.writeIdField",
+      "kind": "exec"
+    },
+    {
+      "symbol": "JSONGenerator.writeBlobField",
+      "kind": "exec"
+    },
+    {
       "symbol": "JSONGenerator.getAsString",
       "kind": "exec"
     },
     {
       "symbol": "JSONGenerator.isClosed",
       "kind": "exec"
+    },
+    {
+      "symbol": "JSON.createParser",
+      "kind": "exec"
+    },
+    {
+      "symbol": "JSONParser.nextToken",
+      "kind": "exec"
+    },
+    {
+      "symbol": "JSONParser.nextValue",
+      "kind": "exec"
+    },
+    {
+      "symbol": "JSONParser.getCurrentToken",
+      "kind": "exec"
+    },
+    {
+      "symbol": "JSONParser.getText",
+      "kind": "exec"
+    },
+    {
+      "symbol": "JSONParser.getIntegerValue",
+      "kind": "exec"
+    },
+    {
+      "symbol": "JSONParser.getBooleanValue",
+      "kind": "exec"
+    },
+    {
+      "symbol": "JSONParser.getDateValue",
+      "kind": "exec"
+    },
+    {
+      "symbol": "JSONParser.getDatetimeValue",
+      "kind": "exec"
+    },
+    {
+      "symbol": "JSONParser.getTimeValue",
+      "kind": "exec"
+    },
+    {
+      "symbol": "JSONParser.getIdValue",
+      "kind": "exec"
+    },
+    {
+      "symbol": "JSONParser.getBlobValue",
+      "kind": "exec"
+    },
+    {
+      "symbol": "JSONParser.skipChildren",
+      "kind": "exec"
+    },
+    {
+      "symbol": "JSONToken",
+      "kind": "exec"
     }
   ],
   "source": [
     {
       "path": "anonymous.apex",
-      "content": "JSONGenerator gen = JSON.createGenerator(false);\ngen.writeStartObject();\ngen.writeStringField('name', 'Acme');\ngen.writeNumberField('n', 7);\ngen.writeBooleanField('ok', true);\ngen.writeNullField('missing');\ngen.writeFieldName('items');\ngen.writeStartArray();\ngen.writeString('x');\ngen.writeNumber(2);\ngen.writeBoolean(false);\ngen.writeNull();\ngen.writeEndArray();\ngen.writeEndObject();\nSystem.assertEquals('{\"name\":\"Acme\",\"n\":7,\"ok\":true,\"missing\":null,\"items\":[\"x\",2,false,null]}', gen.getAsString());\nSystem.assert(gen.isClosed());\nJSONGenerator pretty = JSON.createGenerator(true);\npretty.writeStartObject();\npretty.writeStringField('name', 'Acme');\npretty.writeBooleanField('ok', true);\npretty.writeEndObject();\nString prettyText = pretty.getAsString();\nSystem.assert(prettyText.contains('  \"name\": \"Acme\"'));\n"
+      "content": "JSONGenerator gen = JSON.createGenerator(false);\ngen.writeStartObject();\ngen.writeStringField('name', 'Acme');\ngen.writeNumberField('n', 7);\ngen.writeBooleanField('ok', true);\ngen.writeNullField('missing');\ngen.writeDateField('date', Date.newInstance(2024, 2, 29));\ngen.writeDateTimeField('when', Datetime.newInstance(2024, 2, 29, 12, 34, 56));\ngen.writeTimeField('clock', Time.newInstance(5, 6, 7, 0));\ngen.writeIdField('id', Id.valueOf('001B000001DVM9t'));\ngen.writeBlobField('blob', Blob.valueOf('abc'));\ngen.writeFieldName('items');\ngen.writeStartArray();\ngen.writeString('x');\ngen.writeNumber(2);\ngen.writeBoolean(false);\ngen.writeNull();\ngen.writeEndArray();\ngen.writeEndObject();\nString text = gen.getAsString();\nSystem.assert(text.contains('\"name\":\"Acme\"'));\nSystem.assert(text.contains('\"date\":\"2024-02-29\"'));\nSystem.assert(text.contains('\"when\":\"2024-02-29T12:34:56Z\"'));\nSystem.assert(text.contains('\"clock\":\"05:06:07\"'));\nSystem.assert(text.contains('\"id\":\"001B000001DVM9t\"'));\nSystem.assert(text.contains('\"blob\":\"YWJj\"'));\nSystem.assert(text.contains('\"items\":[\"x\",2,false,null]'));\nSystem.assert(gen.isClosed());\nJSONGenerator pretty = JSON.createGenerator(true);\npretty.writeStartObject();\npretty.writeStringField('name', 'Acme');\npretty.writeBooleanField('ok', true);\npretty.writeEndObject();\nString prettyText = pretty.getAsString();\nSystem.assert(prettyText.contains('  \"name\": \"Acme\"'));\nJSONParser parser = JSON.createParser(text);\nSystem.assertEquals(JSONToken.START_OBJECT, parser.nextToken());\nSystem.assertEquals(JSONToken.FIELD_NAME, parser.nextToken());\nSystem.assertEquals('name', parser.getText());\nSystem.assertEquals(JSONToken.VALUE_STRING, parser.nextValue());\nSystem.assertEquals('Acme', parser.getText());\nSystem.assertEquals(JSONToken.FIELD_NAME, parser.nextToken());\nSystem.assertEquals(JSONToken.VALUE_NUMBER_INT, parser.nextValue());\nSystem.assertEquals(7, parser.getIntegerValue());\nSystem.assertEquals(JSONToken.FIELD_NAME, parser.nextToken());\nSystem.assertEquals(JSONToken.VALUE_TRUE, parser.nextValue());\nSystem.assertEquals(true, parser.getBooleanValue());\nSystem.assertEquals(JSONToken.FIELD_NAME, parser.nextToken());\nSystem.assertEquals(JSONToken.VALUE_NULL, parser.nextValue());\nSystem.assertEquals(JSONToken.FIELD_NAME, parser.nextToken());\nSystem.assertEquals(JSONToken.VALUE_STRING, parser.nextValue());\nSystem.assertEquals(Date.newInstance(2024, 2, 29), parser.getDateValue());\nSystem.assertEquals(JSONToken.FIELD_NAME, parser.nextToken());\nSystem.assertEquals(JSONToken.VALUE_STRING, parser.nextValue());\nSystem.assertEquals(Datetime.newInstance(2024, 2, 29, 12, 34, 56), parser.getDatetimeValue());\nSystem.assertEquals(JSONToken.FIELD_NAME, parser.nextToken());\nSystem.assertEquals(JSONToken.VALUE_STRING, parser.nextValue());\nSystem.assertEquals(Time.newInstance(5, 6, 7, 0), parser.getTimeValue());\nSystem.assertEquals(JSONToken.FIELD_NAME, parser.nextToken());\nSystem.assertEquals(JSONToken.VALUE_STRING, parser.nextValue());\nId parsedId = parser.getIdValue();\nSystem.assertEquals('001B000001DVM9t', parsedId.toString());\nSystem.assertEquals('001B000001DVM9t', parsedId.to15());\nSystem.assertEquals(JSONToken.FIELD_NAME, parser.nextToken());\nSystem.assertEquals(JSONToken.VALUE_STRING, parser.nextValue());\nBlob parsedBlob = parser.getBlobValue();\nSystem.assertEquals('abc', parsedBlob.toString());\nSystem.assertEquals(JSONToken.FIELD_NAME, parser.nextToken());\nSystem.assertEquals(JSONToken.START_ARRAY, parser.nextValue());\nparser.skipChildren();\nSystem.assertEquals(JSONToken.END_ARRAY, parser.getCurrentToken());\nSystem.assertEquals(JSONToken.END_OBJECT, parser.nextToken());\nSystem.assertEquals(null, parser.nextToken());\n"
     }
   ],
   "command": {
     "kind": "exec",
     "args": [
-      "JSONGenerator gen = JSON.createGenerator(false);\ngen.writeStartObject();\ngen.writeStringField('name', 'Acme');\ngen.writeNumberField('n', 7);\ngen.writeBooleanField('ok', true);\ngen.writeNullField('missing');\ngen.writeFieldName('items');\ngen.writeStartArray();\ngen.writeString('x');\ngen.writeNumber(2);\ngen.writeBoolean(false);\ngen.writeNull();\ngen.writeEndArray();\ngen.writeEndObject();\nSystem.assertEquals('{\"name\":\"Acme\",\"n\":7,\"ok\":true,\"missing\":null,\"items\":[\"x\",2,false,null]}', gen.getAsString());\nSystem.assert(gen.isClosed());\nJSONGenerator pretty = JSON.createGenerator(true);\npretty.writeStartObject();\npretty.writeStringField('name', 'Acme');\npretty.writeBooleanField('ok', true);\npretty.writeEndObject();\nString prettyText = pretty.getAsString();\nSystem.assert(prettyText.contains('  \"name\": \"Acme\"'));\n"
+      "JSONGenerator gen = JSON.createGenerator(false);\ngen.writeStartObject();\ngen.writeStringField('name', 'Acme');\ngen.writeNumberField('n', 7);\ngen.writeBooleanField('ok', true);\ngen.writeNullField('missing');\ngen.writeDateField('date', Date.newInstance(2024, 2, 29));\ngen.writeDateTimeField('when', Datetime.newInstance(2024, 2, 29, 12, 34, 56));\ngen.writeTimeField('clock', Time.newInstance(5, 6, 7, 0));\ngen.writeIdField('id', Id.valueOf('001B000001DVM9t'));\ngen.writeBlobField('blob', Blob.valueOf('abc'));\ngen.writeFieldName('items');\ngen.writeStartArray();\ngen.writeString('x');\ngen.writeNumber(2);\ngen.writeBoolean(false);\ngen.writeNull();\ngen.writeEndArray();\ngen.writeEndObject();\nString text = gen.getAsString();\nSystem.assert(text.contains('\"name\":\"Acme\"'));\nSystem.assert(text.contains('\"date\":\"2024-02-29\"'));\nSystem.assert(text.contains('\"when\":\"2024-02-29T12:34:56Z\"'));\nSystem.assert(text.contains('\"clock\":\"05:06:07\"'));\nSystem.assert(text.contains('\"id\":\"001B000001DVM9t\"'));\nSystem.assert(text.contains('\"blob\":\"YWJj\"'));\nSystem.assert(text.contains('\"items\":[\"x\",2,false,null]'));\nSystem.assert(gen.isClosed());\nJSONGenerator pretty = JSON.createGenerator(true);\npretty.writeStartObject();\npretty.writeStringField('name', 'Acme');\npretty.writeBooleanField('ok', true);\npretty.writeEndObject();\nString prettyText = pretty.getAsString();\nSystem.assert(prettyText.contains('  \"name\": \"Acme\"'));\nJSONParser parser = JSON.createParser(text);\nSystem.assertEquals(JSONToken.START_OBJECT, parser.nextToken());\nSystem.assertEquals(JSONToken.FIELD_NAME, parser.nextToken());\nSystem.assertEquals('name', parser.getText());\nSystem.assertEquals(JSONToken.VALUE_STRING, parser.nextValue());\nSystem.assertEquals('Acme', parser.getText());\nSystem.assertEquals(JSONToken.FIELD_NAME, parser.nextToken());\nSystem.assertEquals(JSONToken.VALUE_NUMBER_INT, parser.nextValue());\nSystem.assertEquals(7, parser.getIntegerValue());\nSystem.assertEquals(JSONToken.FIELD_NAME, parser.nextToken());\nSystem.assertEquals(JSONToken.VALUE_TRUE, parser.nextValue());\nSystem.assertEquals(true, parser.getBooleanValue());\nSystem.assertEquals(JSONToken.FIELD_NAME, parser.nextToken());\nSystem.assertEquals(JSONToken.VALUE_NULL, parser.nextValue());\nSystem.assertEquals(JSONToken.FIELD_NAME, parser.nextToken());\nSystem.assertEquals(JSONToken.VALUE_STRING, parser.nextValue());\nSystem.assertEquals(Date.newInstance(2024, 2, 29), parser.getDateValue());\nSystem.assertEquals(JSONToken.FIELD_NAME, parser.nextToken());\nSystem.assertEquals(JSONToken.VALUE_STRING, parser.nextValue());\nSystem.assertEquals(Datetime.newInstance(2024, 2, 29, 12, 34, 56), parser.getDatetimeValue());\nSystem.assertEquals(JSONToken.FIELD_NAME, parser.nextToken());\nSystem.assertEquals(JSONToken.VALUE_STRING, parser.nextValue());\nSystem.assertEquals(Time.newInstance(5, 6, 7, 0), parser.getTimeValue());\nSystem.assertEquals(JSONToken.FIELD_NAME, parser.nextToken());\nSystem.assertEquals(JSONToken.VALUE_STRING, parser.nextValue());\nId parsedId = parser.getIdValue();\nSystem.assertEquals('001B000001DVM9t', parsedId.toString());\nSystem.assertEquals('001B000001DVM9t', parsedId.to15());\nSystem.assertEquals(JSONToken.FIELD_NAME, parser.nextToken());\nSystem.assertEquals(JSONToken.VALUE_STRING, parser.nextValue());\nBlob parsedBlob = parser.getBlobValue();\nSystem.assertEquals('abc', parsedBlob.toString());\nSystem.assertEquals(JSONToken.FIELD_NAME, parser.nextToken());\nSystem.assertEquals(JSONToken.START_ARRAY, parser.nextValue());\nparser.skipChildren();\nSystem.assertEquals(JSONToken.END_ARRAY, parser.getCurrentToken());\nSystem.assertEquals(JSONToken.END_OBJECT, parser.nextToken());\nSystem.assertEquals(null, parser.nextToken());\n"
     ]
   },
   "expected": {

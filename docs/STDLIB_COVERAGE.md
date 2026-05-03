@@ -67,11 +67,16 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | HTTP | `HttpResponse` | `partial` | Status, status code, headers, body, and blob body accessors. |
 | Id | `Id.to15` | `supported` | Converts validated 18-character IDs to their 15-character prefix. |
 | Id | `Id.valueOf` | `supported` | Validates 15- and 18-character alphanumeric IDs and restores 18-character casing from checksum suffixes. |
+| JSON | `JSON.createGenerator` | `supported` | Creates deterministic local JSONGenerator instances. |
+| JSON | `JSON.createParser` | `partial` | Creates deterministic local JSONParser token streams for valid JSON strings. |
 | JSON | `JSON.deserialize` | `partial` | SObject, class, collection, and primitive shapes for supported subset. |
 | JSON | `JSON.deserializeStrict` | `partial` | Rejects unknown fields for supported schema/class targets. |
 | JSON | `JSON.deserializeUntyped` | `partial` | Maps JSON into local primitive/list/map values. |
 | JSON | `JSON.serialize` | `partial` | Includes suppressApexObjectNulls overload for supported values. |
 | JSON | `JSON.serializePretty` | `partial` | Pretty output for supported values. |
+| JSON | `JSONGenerator` | `partial` | Object/array boundaries, field names, scalar string/number/Boolean/null, Date/Datetime/Time/Id/Blob, Object writers, getAsString, close, isClosed, and stable invalid-order errors. |
+| JSON | `JSONParser` | `partial` | Token navigation, current token/name/text, numeric/Boolean/date/datetime/time/id/blob accessors, nextValue, and skipChildren for deterministic local JSON. |
+| JSON | `JSONToken` | `partial` | Common parser token constants for object, array, field, string, number, Boolean, and null tokens. |
 | Limits | `Limits.get*` | `partial` | SOQL, DML, heap, CPU, async, callout, and email counters. |
 | Math | `Math.abs` | `supported` | Integer and Decimal values. |
 | Math | `Math.ceil` | `supported` | Numeric values. |
