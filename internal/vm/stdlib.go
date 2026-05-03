@@ -648,6 +648,9 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 		}
 		return String(stripped), true, nil
 	case "stripToNull":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("String.stripToNull expects 0 arguments")
+		}
 		stripped, err := stringStrip(receiver.Text, args, stripBoth)
 		if err != nil {
 			return Null, true, err
@@ -657,6 +660,9 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 		}
 		return String(stripped), true, nil
 	case "stripToEmpty":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("String.stripToEmpty expects 0 arguments")
+		}
 		stripped, err := stringStrip(receiver.Text, args, stripBoth)
 		if err != nil {
 			return Null, true, err

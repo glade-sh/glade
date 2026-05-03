@@ -310,6 +310,8 @@ func TestStringStdlibCompletionRejectsBadArguments(t *testing.T) {
 		{method: "rotate", args: []Value{String("1")}},
 		{method: "swapCase", args: []Value{String("x")}},
 		{method: "strip", args: []Value{Int(1)}},
+		{method: "stripToNull", args: []Value{String("x")}},
+		{method: "stripToEmpty", args: []Value{String("x")}},
 		{method: "ordinalIndexOf", args: []Value{String("a")}},
 	}
 	for _, tc := range tests {
