@@ -109,6 +109,91 @@ func TestOAERFixtureAndResetEndpointsPersist(t *testing.T) {
 	}
 }
 
+func TestOAERScopedResetEndpoints(t *testing.T) {
+	org := testOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	org.Objects["Account"].Records["001000000000001"] = storage.Record{
+		ID: "001000000000001",
+		Fields: map[string]storage.Value{
+			"Id":   storage.StringValue("001000000000001"),
+			"Name": storage.StringValue("Acme"),
+		},
+	}
+	userObject := org.Objects["User"]
+	userObject.Records["005000000000999"] = storage.Record{
+		ID: "005000000000999",
+		Fields: map[string]storage.Value{
+			"Id":    storage.StringValue("005000000000999"),
+			"Alias": storage.StringValue("extra"),
+		},
+	}
+	org.Objects["User"] = userObject
+	handler := New(&org)
+
+	resetData := httptest.NewRecorder()
+	handler.ServeHTTP(resetData, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/oaer/reset/data", nil))
+	if resetData.Code != http.StatusOK {
+		t.Fatalf("reset data status = %d body=%s", resetData.Code, resetData.Body.String())
+	}
+	if got := len(org.Objects["Account"].Records); got != 0 {
+		t.Fatalf("account records after data reset = %d", got)
+	}
+	if got := len(org.Objects["User"].Records); got != 2 {
+		t.Fatalf("user records after data reset = %d", got)
+	}
+
+	resetUsers := httptest.NewRecorder()
+	handler.ServeHTTP(resetUsers, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/oaer/reset", strings.NewReader(`{"scopes":["users","limits","async"]}`)))
+	if resetUsers.Code != http.StatusOK {
+		t.Fatalf("reset users status = %d body=%s", resetUsers.Code, resetUsers.Body.String())
+	}
+	if got := len(org.Objects["User"].Records); got != 1 {
+		t.Fatalf("user records after users reset = %d", got)
+	}
+	if !bytes.Contains(resetUsers.Body.Bytes(), []byte(`"scopes":["users","limits","async"]`)) {
+		t.Fatalf("reset users response missing scopes: %s", resetUsers.Body.String())
+	}
+}
+
+func TestOAERScopedResetRejectsUnknownScope(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	reset := httptest.NewRecorder()
+	handler.ServeHTTP(reset, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/oaer/reset/nope", nil))
+	if reset.Code != http.StatusBadRequest {
+		t.Fatalf("reset status = %d body=%s", reset.Code, reset.Body.String())
+	}
+}
+
+func TestOAERScopedResetDeduplicatesAndAllWins(t *testing.T) {
+	org := testOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	org.Objects["Account"].Records["001000000000001"] = storage.Record{
+		ID: "001000000000001",
+		Fields: map[string]storage.Value{
+			"Id":   storage.StringValue("001000000000001"),
+			"Name": storage.StringValue("Acme"),
+		},
+	}
+	handler := New(&org)
+
+	reset := httptest.NewRecorder()
+	handler.ServeHTTP(reset, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/oaer/reset?scope=all,data,data", nil))
+	if reset.Code != http.StatusOK {
+		t.Fatalf("reset status = %d body=%s", reset.Code, reset.Body.String())
+	}
+	if !bytes.Contains(reset.Body.Bytes(), []byte(`"scopes":["all","data"]`)) {
+		t.Fatalf("reset response missing deduplicated scopes: %s", reset.Body.String())
+	}
+	if got := len(org.Objects["Account"].Records); got != 0 {
+		t.Fatalf("account records after reset = %d", got)
+	}
+	if got := len(org.Objects["User"].Records); got != 1 {
+		t.Fatalf("user records after reset = %d", got)
+	}
+}
+
 func TestIdentityLimitsDescribeRecentAndNormalRESTPayloads(t *testing.T) {
 	org := testOrg()
 	storage.EnsureDeterministicPlatformData(&org)

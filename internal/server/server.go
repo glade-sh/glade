@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"sort"
 	"strings"
@@ -206,14 +207,19 @@ func (s *Server) handleRecord(w http.ResponseWriter, r *http.Request, objectName
 
 func (s *Server) handleOAER(w http.ResponseWriter, r *http.Request, parts []string) {
 	switch {
-	case len(parts) == 1 && parts[0] == "reset" && r.Method == http.MethodPost:
+	case len(parts) >= 1 && parts[0] == "reset" && r.Method == http.MethodPost:
+		scopes, err := resetScopes(r, parts[1:])
+		if err != nil {
+			writeError(w, http.StatusBadRequest, "INVALID_RESET", err.Error())
+			return
+		}
 		next := s.Org.Clone()
-		storage.ResetData(&next)
+		applyResetScopes(&next, scopes)
 		if err := s.commitOrg(next); err != nil {
 			writeError(w, http.StatusInternalServerError, "SERVER_ERROR", err.Error())
 			return
 		}
-		writeJSON(w, http.StatusOK, map[string]any{"success": true, "summary": storage.InspectOrg("", *s.Org)})
+		writeJSON(w, http.StatusOK, map[string]any{"success": true, "scopes": scopes, "summary": storage.InspectOrg("", *s.Org)})
 	case len(parts) == 1 && parts[0] == "fixture" && r.Method == http.MethodGet:
 		writeJSON(w, http.StatusOK, storage.FixtureFromOrg(*s.Org))
 	case len(parts) == 1 && parts[0] == "fixture" && r.Method == http.MethodPost:
@@ -234,6 +240,79 @@ func (s *Server) handleOAER(w http.ResponseWriter, r *http.Request, parts []stri
 		writeJSON(w, http.StatusOK, map[string]any{"success": true, "summary": storage.InspectOrg("", *s.Org)})
 	default:
 		writeError(w, http.StatusNotFound, "NOT_FOUND", "unknown oaer endpoint")
+	}
+}
+
+func resetScopes(r *http.Request, pathScopes []string) ([]string, error) {
+	scopes := append([]string(nil), pathScopes...)
+	for _, raw := range r.URL.Query()["scope"] {
+		for _, part := range strings.Split(raw, ",") {
+			if trimmed := strings.TrimSpace(part); trimmed != "" {
+				scopes = append(scopes, trimmed)
+			}
+		}
+	}
+	if len(scopes) == 0 && r.Body != nil {
+		var body struct {
+			Scopes []string `json:"scopes"`
+			Scope  string   `json:"scope"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil && err != io.EOF {
+			return nil, err
+		}
+		scopes = append(scopes, body.Scopes...)
+		if body.Scope != "" {
+			scopes = append(scopes, body.Scope)
+		}
+	}
+	if len(scopes) == 0 {
+		scopes = []string{"all"}
+	}
+	normalized := make([]string, 0, len(scopes))
+	seen := make(map[string]bool, len(scopes))
+	for _, scope := range scopes {
+		for _, part := range strings.Split(scope, ",") {
+			name := strings.ToLower(strings.TrimSpace(part))
+			if name == "" {
+				continue
+			}
+			switch name {
+			case "all", "data", "users", "platform", "limits", "async":
+			default:
+				return nil, fmt.Errorf("unknown reset scope %q", part)
+			}
+			if !seen[name] {
+				seen[name] = true
+				normalized = append(normalized, name)
+			}
+		}
+	}
+	if len(normalized) == 0 {
+		return []string{"all"}, nil
+	}
+	return normalized, nil
+}
+
+func applyResetScopes(org *storage.OrgState, scopes []string) {
+	for _, scope := range scopes {
+		if scope == "all" {
+			storage.ResetData(org)
+			return
+		}
+	}
+	resetPlatform := false
+	for _, scope := range scopes {
+		switch scope {
+		case "data":
+			storage.ResetNonPlatformData(org)
+		case "users", "platform":
+			resetPlatform = true
+		case "limits", "async":
+			// Limits and async queues are per-VM today; no persistent server state remains.
+		}
+	}
+	if resetPlatform {
+		storage.ResetPlatformData(org)
 	}
 }
 

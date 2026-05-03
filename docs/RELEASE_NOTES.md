@@ -36,6 +36,8 @@ Release engineering:
 - Expanded deterministic platform seed data with Organization, UserRole,
   enriched User/PermissionSet metadata, and RecordType records from local object
   metadata.
+- Added scoped OAER reset endpoints for deterministic data, user/platform,
+  limits, and async reset requests while preserving full-reset compatibility.
 - Added `check` compatibility fixture execution and an enterprise-style
   multi-class fixture covering parse/index/check behavior.
 - Added parser diagnostic-count fixtures plus type-index and sema panic recovery

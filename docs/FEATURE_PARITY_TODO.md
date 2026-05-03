@@ -500,8 +500,13 @@ a Salesforce-shaped local API server without silently wrong behavior.
     local user/org state.
   - [x] Materialize object record-type metadata as deterministic `RecordType`
     records.
-- [ ] Add fixture reset endpoints that can reset data, users, platform state,
+- [x] Add fixture reset endpoints that can reset data, users, platform state,
   limits, and async queues deterministically.
+  - [x] Support full reset plus scoped `data`, `users`, `platform`, `limits`,
+    and `async` reset requests through path, query, and JSON body scopes.
+  - [x] Keep data resets from clearing deterministic platform users/org state.
+  - [x] Rebuild user/platform baseline records deterministically for users and
+    platform resets.
 - [ ] Add persistent server database lifecycle docs and operational checks.
 - [ ] Add import/export compatibility tests for `oaer db seed/reset/export/
   inspect`.

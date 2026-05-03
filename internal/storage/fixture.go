@@ -479,6 +479,38 @@ func ResetData(org *OrgState) {
 	EnsureDeterministicPlatformData(org)
 }
 
+func ResetNonPlatformData(org *OrgState) {
+	for name, object := range org.Objects {
+		if IsPlatformObject(name) {
+			continue
+		}
+		object.Records = make(map[ID]Record)
+		org.Objects[name] = object
+		delete(org.IDSequences, name)
+	}
+}
+
+func ResetPlatformData(org *OrgState) {
+	for name, object := range org.Objects {
+		if !IsPlatformObject(name) {
+			continue
+		}
+		object.Records = make(map[ID]Record)
+		org.Objects[name] = object
+		delete(org.IDSequences, name)
+	}
+	EnsureDeterministicPlatformData(org)
+}
+
+func IsPlatformObject(name string) bool {
+	switch name {
+	case "Organization", "Profile", "UserRole", "User", "PermissionSet", "PermissionSetAssignment", "RecordType":
+		return true
+	default:
+		return false
+	}
+}
+
 func prefixesForOrg(org OrgState) map[string]string {
 	prefixes := make(map[string]string, len(org.Objects))
 	for name, object := range org.Objects {
