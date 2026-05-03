@@ -88,6 +88,8 @@ Release engineering:
   branches.
 - Added multi-hop SOQL parent relationship projection and filtering with nested
   VM SObject row shape.
+- Added multi-target relationship metadata loading and polymorphic SOQL parent
+  projection/`TYPEOF` resolution from the referenced record type.
 - Improved `Database.query` dynamic SOQL binds for operator-adjacent binds,
   dotted bind paths, collection binds, date-literal colons, and catchable
   `QueryException` parse errors.

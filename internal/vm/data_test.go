@@ -402,6 +402,60 @@ System.assertEquals('Acme', row.What.Name);
 	}
 }
 
+func TestExecSOQLPolymorphicRelationshipProjection(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account a = new Account(Name = 'Acme');
+insert a;
+Contact c = new Contact(LastName = 'Smith');
+insert c;
+Task accountTask = new Task(Subject = 'A', WhoId = a.Id);
+Task contactTask = new Task(Subject = 'C', WhoId = c.Id);
+insert new List<Task>{accountTask, contactTask};
+List<Task> rows = [SELECT Id, Subject, Who.Name, TYPEOF Who WHEN Account THEN Name WHEN Contact THEN LastName END FROM Task ORDER BY Subject];
+System.assertEquals(2, rows.size());
+Task first = rows.get(0);
+System.assertEquals('Acme', first.Who.Name);
+Task second = rows.get(1);
+System.assertEquals('Smith', second.Who.LastName);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Contact",
+			KeyPrefix: "003",
+			Fields: map[string]storage.Field{
+				"LastName": {APIName: "LastName", Type: storage.FieldString},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	org.Objects["Task"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Task",
+			KeyPrefix: "00T",
+			Fields: map[string]storage.Field{
+				"Subject": {APIName: "Subject", Type: storage.FieldString},
+				"WhoId":   {APIName: "WhoId", Type: storage.FieldReference, ReferenceTo: []string{"Account", "Contact"}, RelationshipName: "Who"},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "WhoId",
+				ParentObjects:      []string{"Account", "Contact"},
+				ParentRelationship: "Who",
+				Polymorphic:        true,
+			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSOQLForUpdate(t *testing.T) {
 	program, err := CompileAnonymous(`
 insert new Account(Name = 'Acme');

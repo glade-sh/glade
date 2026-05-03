@@ -62,6 +62,18 @@
       "content": "<CustomField><fullName>AccountId</fullName><label>Account</label><type>Lookup</type><referenceTo>Account</referenceTo><relationshipName>Account</relationshipName><childRelationshipName>Contacts</childRelationshipName><deleteConstraint>Cascade</deleteConstraint></CustomField>"
     },
     {
+      "path": "force-app/main/default/objects/Task/Task.object-meta.xml",
+      "content": "<CustomObject><label>Task</label><pluralLabel>Tasks</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Task/fields/Subject.field-meta.xml",
+      "content": "<CustomField><fullName>Subject</fullName><label>Subject</label><type>Text</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Task/fields/WhoId.field-meta.xml",
+      "content": "<CustomField><fullName>WhoId</fullName><label>Name</label><type>Lookup</type><referenceTo>Account</referenceTo><referenceTo>Contact</referenceTo><relationshipName>Who</relationshipName></CustomField>"
+    },
+    {
       "path": "force-app/main/classes/AccountAddError.trigger",
       "content": "trigger AccountAddError on Account (before insert) { for (Account a : Trigger.new) { if (a.get('Name') == 'Block') { a.Name.addError('blocked by trigger'); } if (a.get('Name') == 'Multi Block') { a.addError('blocked at record'); a.Name.addError('blocked at name'); a.Rating.addError('blocked at rating'); } } }"
     },
@@ -131,7 +143,11 @@
     },
     {
       "path": "force-app/main/classes/DescribeFidelityTest.cls",
-      "content": "@isTest private class DescribeFidelityTest { @isTest static void describeFieldsMapAndRecordTypes() { Object accountType = Account.SObjectType; Object accountDescribe = accountType.getDescribe(); Object fieldsToken = accountDescribe.fields; Map<String,Object> fields = fieldsToken.getMap(); System.assert(fields.containsKey('Name')); Object nameField = fields.get('Name'); Object nameDescribe = nameField.getDescribe(); System.assertEquals('Name', nameDescribe.getName()); System.assertEquals('string', nameDescribe.getType()); Object ratingDescribe = Account.Rating.getDescribe(); List<Object> picklists = ratingDescribe.getPicklistValues(); System.assertEquals(3, picklists.size()); Object hot = picklists.get(0); System.assertEquals('Hot Label', hot.getLabel()); Map<String,Object> byDeveloperName = accountDescribe.getRecordTypeInfosByDeveloperName(); Object business = byDeveloperName.get('Business'); System.assertEquals('Business Account', business.getName()); Object schemaType = Schema.SObjectType.Account; Object schemaDescribe = schemaType.getDescribe(); System.assertEquals('Account', schemaDescribe.getName()); List<Object> childRelationships = schemaDescribe.getChildRelationships(); System.assertEquals(2, childRelationships.size()); Object contacts = childRelationships.get(1); System.assertEquals('Contacts', contacts.getRelationshipName()); Object childField = contacts.getField(); Object childFieldDescribe = childField.getDescribe(); System.assertEquals('AccountId', childFieldDescribe.getName()); Object childType = contacts.getChildSObject(); Object childDescribe = childType.getDescribe(); System.assertEquals('Contact', childDescribe.getName()); System.assert(contacts.isCascadeDelete()); } }"
+      "content": "@isTest private class DescribeFidelityTest { @isTest static void describeFieldsMapAndRecordTypes() { Object accountType = Account.SObjectType; Object accountDescribe = accountType.getDescribe(); Object fieldsToken = accountDescribe.fields; Map<String,Object> fields = fieldsToken.getMap(); System.assert(fields.containsKey('Name')); Object nameField = fields.get('Name'); Object nameDescribe = nameField.getDescribe(); System.assertEquals('Name', nameDescribe.getName()); System.assertEquals('string', nameDescribe.getType()); Object ratingDescribe = Account.Rating.getDescribe(); List<Object> picklists = ratingDescribe.getPicklistValues(); System.assertEquals(3, picklists.size()); Object hot = picklists.get(0); System.assertEquals('Hot Label', hot.getLabel()); Map<String,Object> byDeveloperName = accountDescribe.getRecordTypeInfosByDeveloperName(); Object business = byDeveloperName.get('Business'); System.assertEquals('Business Account', business.getName()); Object schemaType = Schema.SObjectType.Account; Object schemaDescribe = schemaType.getDescribe(); System.assertEquals('Account', schemaDescribe.getName()); List<Object> childRelationships = schemaDescribe.getChildRelationships(); System.assertEquals(3, childRelationships.size()); Object contacts = childRelationships.get(1); System.assertEquals('Contacts', contacts.getRelationshipName()); Object childField = contacts.getField(); Object childFieldDescribe = childField.getDescribe(); System.assertEquals('AccountId', childFieldDescribe.getName()); Object childType = contacts.getChildSObject(); Object childDescribe = childType.getDescribe(); System.assertEquals('Contact', childDescribe.getName()); System.assert(contacts.isCascadeDelete()); } }"
+    },
+    {
+      "path": "force-app/main/classes/PolymorphicRelationshipFidelityTest.cls",
+      "content": "@isTest private class PolymorphicRelationshipFidelityTest { @isTest static void whoRelationshipUsesActualTargetType() { Account a = new Account(Name = 'Acme'); insert a; Contact c = new Contact(LastName = 'Smith'); insert c; Task accountTask = new Task(Subject = 'A', WhoId = a.Id); Task contactTask = new Task(Subject = 'C', WhoId = c.Id); insert new List<Task>{accountTask, contactTask}; List<Task> rows = [SELECT Id, Subject, Who.Name, TYPEOF Who WHEN Account THEN Name WHEN Contact THEN LastName END FROM Task ORDER BY Subject]; System.assertEquals(2, rows.size()); Task first = rows.get(0); System.assertEquals('Acme', first.Who.Name); Task second = rows.get(1); System.assertEquals('Smith', second.Who.LastName); } }"
     },
     {
       "path": "force-app/main/classes/DataFidelityTest.cls",
@@ -174,8 +190,8 @@
       "errors": 0,
       "failed": 0,
       "ok": true,
-      "passed": 18,
-      "total": 18
+      "passed": 19,
+      "total": 19
     }
   }
 }

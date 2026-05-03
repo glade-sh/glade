@@ -33,7 +33,8 @@ func TestBuildDescribeRegistry(t *testing.T) {
 		Label: "Widget",
 		Fields: []schema.Field{
 			{Name: "Name", Type: "Text", Required: true},
-			{Name: "Account__c", Type: "Lookup", ReferenceTo: "Account", RelationshipName: "Account__r", ChildRelationshipName: "Widgets__r", DeleteConstraint: "Cascade"},
+			{Name: "Account__c", Type: "Lookup", ReferenceTo: []string{"Account"}, RelationshipName: "Account__r", ChildRelationshipName: "Widgets__r", DeleteConstraint: "Cascade"},
+			{Name: "Who__c", Type: "Lookup", ReferenceTo: []string{"Account", "Contact"}, RelationshipName: "Who__r", ChildRelationshipName: "WhoWidgets__r"},
 			{Name: "Rating__c", Type: "Picklist", PicklistValues: []schema.PicklistValue{{FullName: "Hot", Label: "Hot", Default: true, Active: true}}},
 		},
 		RecordTypes: []schema.RecordType{{DeveloperName: "Business", Label: "Business Widget", Active: true, Default: true}},
@@ -57,6 +58,9 @@ func TestBuildDescribeRegistry(t *testing.T) {
 	}
 	if got := describe.Relationships[0].ChildRelationship; got != "Widgets__r" {
 		t.Fatalf("child relationship = %q", got)
+	}
+	if !describe.Relationships[1].Polymorphic {
+		t.Fatalf("polymorphic relationship not marked: %#v", describe.Relationships[1])
 	}
 	if got := describe.Fields["Rating__c"].PicklistValues; len(got) != 1 || got[0].Value != "Hot" || !got[0].Default {
 		t.Fatalf("picklist values = %#v", got)

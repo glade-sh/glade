@@ -192,14 +192,16 @@ func (a *Analyzer) checkSchemaReferences(index typesys.Index) []diagnostic.Diagn
 	var diagnostics []diagnostic.Diagnostic
 	for _, object := range index.Objects {
 		for _, field := range object.Fields {
-			if field.ReferenceTo == "" || a.hasKnown(field.ReferenceTo) {
-				continue
+			for _, referenceTo := range field.ReferenceTo {
+				if referenceTo == "" || a.hasKnown(referenceTo) {
+					continue
+				}
+				diagnostics = append(diagnostics, diagnostic.Diagnostic{
+					Severity: diagnostic.Error,
+					Code:     "OAERSEMA003",
+					Message:  fmt.Sprintf("field %s.%s references unknown SObject %q", object.Name, field.Name, referenceTo),
+				})
 			}
-			diagnostics = append(diagnostics, diagnostic.Diagnostic{
-				Severity: diagnostic.Error,
-				Code:     "OAERSEMA003",
-				Message:  fmt.Sprintf("field %s.%s references unknown SObject %q", object.Name, field.Name, field.ReferenceTo),
-			})
 		}
 	}
 	return diagnostics

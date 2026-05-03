@@ -51,7 +51,7 @@ func TestAnalyzeResolvesNamespaceQualifiedSchemaAliases(t *testing.T) {
 		Objects: []schema.Object{{
 			Name: "Thing__c",
 			Fields: []schema.Field{
-				{Name: "Parent__c", Type: "Lookup", ReferenceTo: "pkg__Thing__c"},
+				{Name: "Parent__c", Type: "Lookup", ReferenceTo: []string{"pkg__Thing__c"}},
 			},
 		}},
 	}

@@ -154,12 +154,14 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 				Unique:                field.Unique,
 				PicklistValues:        storagePicklistValues(field.PicklistValues),
 			}
-			if field.ReferenceTo != "" {
+			references := referenceTargets(field.ReferenceTo)
+			if len(references) != 0 {
 				describe.Relationships = append(describe.Relationships, storage.Relationship{
 					Field:              field.Name,
-					ParentObjects:      referenceTargets(field.ReferenceTo),
+					ParentObjects:      references,
 					ParentRelationship: field.RelationshipName,
 					ChildRelationship:  field.ChildRelationshipName,
+					Polymorphic:        len(references) > 1,
 					CascadeDelete:      strings.EqualFold(field.DeleteConstraint, "Cascade"),
 					RestrictedDelete:   strings.EqualFold(field.DeleteConstraint, "Restrict"),
 				})
@@ -298,11 +300,17 @@ func objectNames(objects []schema.Object) []string {
 	return names
 }
 
-func referenceTargets(raw string) []string {
-	if raw == "" {
+func referenceTargets(raw []string) []string {
+	if len(raw) == 0 {
 		return nil
 	}
-	return []string{raw}
+	out := make([]string, 0, len(raw))
+	for _, item := range raw {
+		if item != "" {
+			out = append(out, item)
+		}
+	}
+	return out
 }
 
 func storageFieldType(raw string) storage.FieldType {

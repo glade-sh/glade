@@ -27,7 +27,7 @@ type Field struct {
 	Name                  string          `json:"name"`
 	Label                 string          `json:"label,omitempty"`
 	Type                  string          `json:"type,omitempty"`
-	ReferenceTo           string          `json:"referenceTo,omitempty"`
+	ReferenceTo           []string        `json:"referenceTo,omitempty"`
 	RelationshipName      string          `json:"relationshipName,omitempty"`
 	ChildRelationshipName string          `json:"childRelationshipName,omitempty"`
 	DeleteConstraint      string          `json:"deleteConstraint,omitempty"`
@@ -64,7 +64,7 @@ type customFieldXML struct {
 	FullName              string      `xml:"fullName"`
 	Label                 string      `xml:"label"`
 	Type                  string      `xml:"type"`
-	ReferenceTo           string      `xml:"referenceTo"`
+	ReferenceTo           []string    `xml:"referenceTo"`
 	RelationshipName      string      `xml:"relationshipName"`
 	ChildRelationshipName string      `xml:"childRelationshipName"`
 	DeleteConstraint      string      `xml:"deleteConstraint"`
