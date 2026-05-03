@@ -281,9 +281,6 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (execOutcome, e
 			value = coerced
 			vm.Globals[inst.Name] = value
 			vm.VarTypes[inst.Name] = inst.Type
-			if err := vm.incrementLimit("heapSize", approxValueSize(value)); err != nil {
-				return execOutcome{}, err
-			}
 		case ir.OpAssign:
 			value, err := vm.eval(inst.Expr, result)
 			if err != nil {
@@ -304,6 +301,9 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (execOutcome, e
 					return execOutcome{}, err
 				}
 				value = evaluated
+			}
+			if err := vm.updateHeapLimit(); err != nil {
+				return execOutcome{}, err
 			}
 			return execOutcome{value: value, signal: signalReturn}, nil
 		case ir.OpIf:
@@ -388,8 +388,20 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (execOutcome, e
 		default:
 			return execOutcome{}, fmt.Errorf("unsupported instruction %q", inst.Op)
 		}
+		if err := vm.updateHeapLimit(); err != nil {
+			return execOutcome{}, err
+		}
 	}
 	return execOutcome{}, nil
+}
+
+func (vm *VM) updateHeapLimit() error {
+	total := 0
+	for name, value := range vm.Globals {
+		total += len(name) + approxValueSize(value)
+	}
+	vm.limits.HeapSize = total
+	return vm.checkLimit("heapSize", vm.limits.HeapSize, vm.limitCaps.HeapSize)
 }
 
 func statementTraceEvent(seq int, inst ir.Instruction, source string) trace.Event {

@@ -100,6 +100,8 @@ Release engineering:
   contexts and added fixture coverage for upsert/undelete trigger paths.
 - Count projected child relationship rows in SOQL governor row counters.
 - Count supported cascade-delete child records in DML governor row counters.
+- Recompute deterministic live heap usage after VM statements so mutated
+  collections update `Limits.getHeapSize()`.
 - Added SOQL `ALL ROWS` support for querying soft-deleted records.
 - Added SOQL `WITH SECURITY_ENFORCED`, `WITH USER_MODE`, and
   `WITH SYSTEM_MODE` parsing as local security-mode markers.

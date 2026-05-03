@@ -122,6 +122,23 @@ System.assertEquals(6, Limits.getDmlRows());
 	}
 }
 
+func TestExecHeapLimitTracksMutatedCollections(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<String> values = new List<String>();
+Integer before = Limits.getHeapSize();
+values.add('abcdefghijklmnopqrstuvwxyz');
+Integer after = Limits.getHeapSize();
+System.assert(after > before);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecStrictLimitModeFails(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<Account> rows = [SELECT Id FROM Account];
