@@ -979,6 +979,11 @@ func TestExecCollectionStdlibRejectsSObjectMapEdgeErrors(t *testing.T) {
 			want: "duplicate Id at index 1",
 		},
 		{
+			name: "putAll duplicate Id",
+			body: "Account a = new Account(Id = '001B000001DVM9tIAH'); List<Account> accounts = new List<Account>{a, a}; Map<Id, Account> byId = new Map<Id, Account>(); byId.putAll(accounts);",
+			want: "duplicate Id at index 1",
+		},
+		{
 			name: "wrong map key type",
 			body: "List<Account> accounts = new List<Account>{new Account(Id = '001B000001DVM9tIAH')}; Map<String, Account> byId = new Map<String, Account>(accounts);",
 			want: "unsupported call \"Map constructor from SObject list\"",
