@@ -1,0 +1,24 @@
+{
+  "name": "front-end-static-access",
+  "source": [
+    {
+      "path": "classes/Worker.cls",
+      "content": "public class Worker {\n  public static void stat() {}\n  public void inst() {}\n}\n"
+    },
+    {
+      "path": "classes/Caller.cls",
+      "content": "public class Caller {\n  public void run() {\n    Worker.stat();\n    Worker w = new Worker();\n    w.inst();\n    Worker.inst();\n    w.stat();\n  }\n  public static void runStatic() {\n    helper();\n  }\n  public void helper() {}\n}\n"
+    }
+  ],
+  "command": {
+    "kind": "check"
+  },
+  "expected": {
+    "result": {
+      "diagnostics": 3,
+      "files": 2,
+      "ok": false,
+      "types": 2
+    }
+  }
+}

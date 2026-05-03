@@ -1,0 +1,20 @@
+{
+  "name": "front-end-generic-collections",
+  "source": [
+    {
+      "path": "classes/GenericCollections.cls",
+      "content": "public class GenericCollections {\n  public String first(List<String> names) {\n    return names.get(0);\n  }\n  public void mapValues(Map<String, Account> byName) {\n    Account account = byName.get('Acme');\n    String badAccount = byName.get('Acme');\n    Set<String> keys = byName.keySet();\n    List<Account> values = byName.values();\n    Integer keyCount = keys.size();\n    Boolean hasAccount = values.contains(account);\n    Integer badContains = keys.contains('Acme');\n    byName.put('Other', account);\n    byName.put(1, account);\n    byName.put('Bad', 'not account');\n    values.add(account);\n    values.add('not account');\n    values.add(0, account);\n    values.add(0, 'not account');\n    values.addAll(values);\n    values.addAll(keys);\n    Account removed = values.remove(0);\n    String badRemoved = values.remove(0);\n    values.set(0, account);\n    values.set(0, 'not account');\n    Integer accountIndex = values.indexOf(account);\n    values.clear();\n    values.sort();\n    keys.addAll(new Set<String>{'Other'});\n    keys.addAll(values);\n    keys.removeAll(new Set<String>{'Other'});\n    keys.retainAll(new List<String>{'Acme'});\n    Account removedByName = byName.remove('Acme');\n    String badMapRemove = byName.remove('Acme');\n    byName.putAll(byName);\n    byName.putAll(keys);\n    List<Account> accountList = new List<Account>{account};\n    List<Account> accountCopy = new List<Account>(accountList);\n    Set<Account> accountSet = new Set<Account>(accountList);\n    List<Account> accountListFromSet = new List<Account>(accountSet);\n    Map<Id, Account> byId = new Map<Id, Account>(accountList);\n    Set<String> nameSet = new Set<String>{'Acme'};\n    List<Account> badAccountList = new List<Account>{'not account'};\n    Set<String> badNameSet = new Set<String>{1};\n    Map<String, Account> badMapLiteral = new Map<String, Account>{account};\n    List<String> badCopy = new List<String>(accountSet);\n    Map<Id, String> badById = new Map<Id, String>(accountList);\n    for (Account value : byName.values()) {\n      value = account;\n    }\n    for (String badValue : values) {\n      System.debug(badValue);\n    }\n    for (Account badMap : byName) {\n      System.debug(badMap);\n    }\n  }\n}"
+    }
+  ],
+  "command": {
+    "kind": "check"
+  },
+  "expected": {
+    "result": {
+      "diagnostics": 19,
+      "files": 1,
+      "ok": false,
+      "types": 1
+    }
+  }
+}

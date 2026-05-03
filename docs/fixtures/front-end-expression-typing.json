@@ -1,0 +1,20 @@
+{
+  "name": "front-end-expression-typing",
+  "source": [
+    {
+      "path": "classes/ExpressionTyping.cls",
+      "content": "public class ExpressionTyping {\n  public Account choose(Boolean pick, Account left, Account right) {\n    Account selected = pick ? left : right;\n    Object broader = pick ? left : 'fallback';\n    Account nullable = pick ? left : null;\n    String badLocal = pick ? left : right;\n    return pick ? left : right;\n  }\n  public String badReturn(Boolean pick, Account account) {\n    return pick ? account : null;\n  }\n  public void badConditionStillInfers(Integer pick, Account left, Account right) {\n    String bad = pick ? left : right;\n    Account okComparison = pick < 3 ? left : right;\n  }\n  public void castAndCheck(Object raw, Account fallback) {\n    Account castAccount = (Account) raw;\n    Boolean accountLike = raw instanceof Account;\n    Account selected = raw instanceof Account ? (Account) raw : fallback;\n    String badCast = (Account) raw;\n    Integer badInstanceof = raw instanceof Account;\n    Object badUnknownCast = (MissingType) raw;\n    Boolean badUnknownCheck = raw instanceof MissingType;\n  }\n}"
+    }
+  ],
+  "command": {
+    "kind": "check"
+  },
+  "expected": {
+    "result": {
+      "diagnostics": 8,
+      "files": 1,
+      "ok": false,
+      "types": 1
+    }
+  }
+}

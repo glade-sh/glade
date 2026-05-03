@@ -1,0 +1,36 @@
+{
+  "name": "front-end-annotations",
+  "source": [
+    {
+      "path": "classes/GoodRest.cls",
+      "content": "@RestResource(urlMapping='/good/*')\nglobal class GoodRest {\n  @HttpGet global static void getIt() {}\n  @future(callout=true) public static void later() {}\n}\n"
+    },
+    {
+      "path": "classes/GoodRestTest.cls",
+      "content": "@IsTest\nprivate class GoodRestTest {\n  @TestSetup static void seed() {}\n}\n"
+    },
+    {
+      "path": "classes/GoodInvocable.cls",
+      "content": "public class GoodInvocable {\n  @InvocableMethod public static void run(List<String> names) {}\n  @InvocableVariable public String name;\n}\n"
+    },
+    {
+      "path": "classes/BadRest.cls",
+      "content": "@RestResource(urlMapping='/bad/*')\npublic interface BadRest {\n}\n"
+    },
+    {
+      "path": "classes/BadAnnotations.cls",
+      "content": "public class BadAnnotations {\n  @HttpPost public static void postIt() {}\n  @TestSetup static void seed(String name) {}\n  @future public static String later() { return 'x'; }\n  @InvocableMethod public void run() {}\n  @InvocableVariable public void notVariable() {}\n}\n"
+    }
+  ],
+  "command": {
+    "kind": "check"
+  },
+  "expected": {
+    "result": {
+      "diagnostics": 6,
+      "files": 5,
+      "ok": false,
+      "types": 5
+    }
+  }
+}

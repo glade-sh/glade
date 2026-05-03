@@ -761,6 +761,225 @@ public class Hello {
 	}
 }
 
+func TestAnalyzeGenericCollectionMethodReturnTypes(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public String first(List<String> names) {
+    return names.get(0);
+  }
+  public void mapValues(Map<String, Account> byName) {
+    Account account = byName.get('Acme');
+    String badAccount = byName.get('Acme');
+    Set<String> keys = byName.keySet();
+    List<Account> values = byName.values();
+    Integer keyCount = keys.size();
+    Boolean hasAccount = values.contains(account);
+    Integer badContains = keys.contains('Acme');
+    byName.put('Other', account);
+    byName.put(1, account);
+    byName.put('Bad', 'not account');
+    values.add(account);
+    values.add('not account');
+    values.add(0, account);
+    values.add(0, 'not account');
+    values.addAll(values);
+    values.addAll(keys);
+    Account removed = values.remove(0);
+    String badRemoved = values.remove(0);
+    values.set(0, account);
+    values.set(0, 'not account');
+    Integer accountIndex = values.indexOf(account);
+    values.clear();
+    values.sort();
+    keys.addAll(new Set<String>{'Other'});
+    keys.addAll(values);
+    keys.removeAll(new Set<String>{'Other'});
+    keys.retainAll(new List<String>{'Acme'});
+    Account removedByName = byName.remove('Acme');
+    String badMapRemove = byName.remove('Acme');
+    byName.putAll(byName);
+    byName.putAll(keys);
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	count := 0
+	unknownCalls := 0
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "OAERSEMA018" {
+			count++
+		}
+		if diag.Code == "OAERSEMA008" {
+			unknownCalls++
+		}
+	}
+	collectionCalls := 0
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "OAERSEMA023" {
+			collectionCalls++
+		}
+	}
+	if count != 4 {
+		t.Fatalf("OAERSEMA018 count = %d diagnostics=%#v", count, result.Diagnostics)
+	}
+	if unknownCalls != 0 {
+		t.Fatalf("collection methods should resolve without unknown-call diagnostics: %#v", result.Diagnostics)
+	}
+	if collectionCalls != 8 {
+		t.Fatalf("OAERSEMA023 count = %d diagnostics=%#v", collectionCalls, result.Diagnostics)
+	}
+}
+
+func TestAnalyzeEnhancedForGenericCollectionTypes(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public void run(List<Account> accounts, Set<String> names, Map<String, Account> byName, Account fallback) {
+    for (Account account : accounts) {
+      account = fallback;
+    }
+    for (Object anyName : names) {
+      System.debug(anyName);
+    }
+    for (Account value : byName.values()) {
+      value = fallback;
+    }
+    for (String badAccount : accounts) {
+      System.debug(badAccount);
+    }
+    for (Account badMap : byName) {
+      System.debug(badMap);
+    }
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	count := 0
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "OAERSEMA024" {
+			count++
+		}
+	}
+	if count != 2 {
+		t.Fatalf("OAERSEMA024 count = %d diagnostics=%#v", count, result.Diagnostics)
+	}
+}
+
+func TestAnalyzeGenericCollectionInitializerTypes(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public void run(Account account) {
+    List<Account> accounts = new List<Account>{account};
+    Set<String> names = new Set<String>{'Acme'};
+    List<Account> copy = new List<Account>(accounts);
+    Set<Account> accountSet = new Set<Account>(accounts);
+    List<Account> copyFromSet = new List<Account>(accountSet);
+    Map<Id, Account> byId = new Map<Id, Account>(accounts);
+    List<Account> badAccounts = new List<Account>{'not account'};
+    Set<String> badNames = new Set<String>{1};
+    Map<String, Account> byName = new Map<String, Account>{account};
+    List<String> badCopy = new List<String>(accountSet);
+    Map<Id, String> badById = new Map<Id, String>(accounts);
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	count := 0
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "OAERSEMA025" {
+			count++
+		}
+	}
+	if count != 5 {
+		t.Fatalf("OAERSEMA025 count = %d diagnostics=%#v", count, result.Diagnostics)
+	}
+}
+
+func TestAnalyzeTernaryExpressionTypes(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public Account choose(Boolean pick, Account left, Account right) {
+    Account selected = pick ? left : right;
+    Object broader = pick ? left : 'fallback';
+    Account nullable = pick ? left : null;
+    String badLocal = pick ? left : right;
+    return pick ? left : right;
+  }
+  public String badReturn(Boolean pick, Account account) {
+    return pick ? account : null;
+  }
+  public void badConditionStillInfers(Integer pick, Account left, Account right) {
+    String bad = pick ? left : right;
+    Account okComparison = pick < 3 ? left : right;
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	assignments := 0
+	returns := 0
+	conditions := 0
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "OAERSEMA018" {
+			assignments++
+		}
+		if diag.Code == "OAERSEMA019" {
+			returns++
+		}
+		if diag.Code == "OAERSEMA020" {
+			conditions++
+		}
+	}
+	if assignments != 2 || returns != 1 || conditions != 1 {
+		t.Fatalf("ternary diagnostics assignments=%d returns=%d conditions=%d diagnostics=%#v", assignments, returns, conditions, result.Diagnostics)
+	}
+}
+
+func TestAnalyzeCastAndInstanceOfExpressionTypes(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public void run(Object raw, Account fallback) {
+    Account castAccount = (Account) raw;
+    Boolean accountLike = raw instanceof Account;
+    Account selected = raw instanceof Account ? (Account) raw : fallback;
+    String badCast = (Account) raw;
+    Integer badInstanceof = raw instanceof Account;
+    String parenthesized = ('a') + 'b';
+    Integer parenthesizedMinus = (1) - 2;
+    Object badUnknownCast = (MissingType) raw;
+    Boolean badUnknownCheck = raw instanceof MissingType;
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	count := 0
+	unknownTypes := 0
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "OAERSEMA018" {
+			count++
+		}
+		if diag.Code == "OAERSEMA006" {
+			unknownTypes++
+		}
+	}
+	if count != 2 || unknownTypes != 2 {
+		t.Fatalf("cast diagnostics OAERSEMA018=%d OAERSEMA006=%d diagnostics=%#v", count, unknownTypes, result.Diagnostics)
+	}
+}
+
 func TestAnalyzeSimpleReturnTypeDiagnostics(t *testing.T) {
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
@@ -1401,6 +1620,101 @@ public class Intruder {
 	}
 	if count != 1 {
 		t.Fatalf("OAERSEMA010 count = %d diagnostics=%#v", count, result.Diagnostics)
+	}
+}
+
+func TestAnalyzeAnnotationSemantics(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "GoodRest.cls"), `
+@RestResource(urlMapping='/good/*')
+global class Good {
+  @HttpGet global static void getIt() {}
+  @future(callout=true) public static void later() {}
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "GoodTest.cls"), `
+@IsTest
+private class GoodTest {
+  @TestSetup static void seed() {}
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "GoodInvocable.cls"), `
+public class GoodInvocable {
+  @InvocableMethod public static void run(List<String> names) {}
+  @InvocableVariable public String name;
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "BadRest.cls"), `
+@RestResource(urlMapping='/bad/*')
+public interface BadRest {
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "BadAnnotations.cls"), `
+public class BadAnnotations {
+  @HttpPost public static void postIt() {}
+  @TestSetup static void seed(String name) {}
+  @future public static String later() { return 'x'; }
+  @InvocableMethod public void run() {}
+  @InvocableVariable public void notVariable() {}
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "GoodRest.cls"),
+		filepath.Join(root, "GoodTest.cls"),
+		filepath.Join(root, "GoodInvocable.cls"),
+		filepath.Join(root, "BadRest.cls"),
+		filepath.Join(root, "BadAnnotations.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	count := 0
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "OAERSEMA026" {
+			count++
+		}
+	}
+	if count != 6 {
+		t.Fatalf("OAERSEMA026 count = %d diagnostics=%#v", count, result.Diagnostics)
+	}
+}
+
+func TestAnalyzeStaticAndInstanceMethodAccess(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Worker.cls"), `
+public class Worker {
+  public static void stat() {}
+  public void inst() {}
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "Caller.cls"), `
+public class Caller {
+  public void run() {
+    Worker.stat();
+    Worker w = new Worker();
+    w.inst();
+    Worker.inst();
+    w.stat();
+  }
+  public static void runStatic() {
+    helper();
+  }
+  public void helper() {}
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "Worker.cls"),
+		filepath.Join(root, "Caller.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	count := 0
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "OAERSEMA027" {
+			count++
+		}
+	}
+	if count != 3 {
+		t.Fatalf("OAERSEMA027 count = %d diagnostics=%#v", count, result.Diagnostics)
 	}
 }
 
