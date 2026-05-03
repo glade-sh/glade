@@ -820,6 +820,9 @@ func patternCompile(args []Value) (Value, error) {
 	if len(args) != 1 || args[0].Kind != ValueString {
 		return Null, fmt.Errorf("Pattern.compile expects regex String")
 	}
+	if feature := unsupportedJavaRegexFeature(args[0].Text); feature != "" {
+		return Null, unsupportedCallError("Pattern.compile " + feature)
+	}
 	if _, err := regexp.Compile(args[0].Text); err != nil {
 		return Null, fmt.Errorf("Pattern.compile invalid regex: %w", err)
 	}
@@ -831,6 +834,9 @@ func patternCompile(args []Value) (Value, error) {
 func patternMatches(args []Value) (Value, error) {
 	if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
 		return Null, fmt.Errorf("Pattern.matches expects regex and input Strings")
+	}
+	if feature := unsupportedJavaRegexFeature(args[0].Text); feature != "" {
+		return Null, unsupportedCallError("Pattern.matches " + feature)
 	}
 	matched, err := regexp.MatchString("^(?:"+args[0].Text+")$", args[1].Text)
 	if err != nil {
@@ -863,6 +869,23 @@ func callPatternMember(receiver Value, method string, args []Value) (Value, Valu
 			return Null, receiver, false, true, fmt.Errorf("Pattern missing source")
 		}
 		return source, receiver, false, true, nil
+	case "split":
+		if len(args) != 1 && len(args) != 2 {
+			return Null, receiver, false, true, fmt.Errorf("Pattern.split expects input String and optional Integer limit")
+		}
+		source, ok := receiver.Fields["source"]
+		if !ok || source.Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("Pattern missing source")
+		}
+		parts, err := patternSplit(source.Text, args)
+		if err != nil {
+			return Null, receiver, false, true, err
+		}
+		out := make([]Value, 0, len(parts))
+		for _, part := range parts {
+			out = append(out, String(part))
+		}
+		return List(out...), receiver, false, true, nil
 	default:
 		return Null, receiver, false, false, nil
 	}
@@ -992,6 +1015,38 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		matcherClearMatch(receiver)
 		receiver.Fields["index"] = Int(0)
 		return String(replaced), receiver, true, true, nil
+	case "reset":
+		if len(args) != 0 && (len(args) != 1 || args[0].Kind != ValueString) {
+			return Null, receiver, false, true, fmt.Errorf("Matcher.reset expects optional input String")
+		}
+		if len(args) == 1 {
+			receiver.Fields["input"] = args[0]
+		}
+		matcherClearMatch(receiver)
+		receiver.Fields["index"] = Int(0)
+		return receiver, receiver, true, true, nil
+	case "hasAnchoringBounds":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Matcher.hasAnchoringBounds expects 0 arguments")
+		}
+		return Bool(matcherBoolField(receiver, "anchoringBounds", true)), receiver, false, true, nil
+	case "hasTransparentBounds":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Matcher.hasTransparentBounds expects 0 arguments")
+		}
+		return Bool(matcherBoolField(receiver, "transparentBounds", false)), receiver, false, true, nil
+	case "useAnchoringBounds":
+		if len(args) != 1 || args[0].Kind != ValueBool {
+			return Null, receiver, false, true, fmt.Errorf("Matcher.useAnchoringBounds expects Boolean")
+		}
+		receiver.Fields["anchoringBounds"] = args[0]
+		return receiver, receiver, true, true, nil
+	case "useTransparentBounds":
+		if len(args) != 1 || args[0].Kind != ValueBool {
+			return Null, receiver, false, true, fmt.Errorf("Matcher.useTransparentBounds expects Boolean")
+		}
+		receiver.Fields["transparentBounds"] = args[0]
+		return receiver, receiver, true, true, nil
 	default:
 		return Null, receiver, false, false, nil
 	}
@@ -1019,6 +1074,14 @@ func matcherSaveMatch(matcher Value, indices []int) {
 		groups = append(groups, Int(int64(index)))
 	}
 	matcher.Fields["groups"] = List(groups...)
+}
+
+func matcherBoolField(matcher Value, name string, defaultValue bool) bool {
+	value, ok := matcher.Fields[name]
+	if !ok || value.Kind != ValueBool {
+		return defaultValue
+	}
+	return value.Bool
 }
 
 func matcherOptionalGroupIndex(name string, args []Value) (int, error) {
@@ -1319,6 +1382,56 @@ func stringRegexSplit(text string, args []Value) ([]string, error) {
 		}
 	}
 	return parts, nil
+}
+
+func patternSplit(source string, args []Value) ([]string, error) {
+	if len(args) != 1 && len(args) != 2 {
+		return nil, fmt.Errorf("Pattern.split expects input String and optional Integer limit")
+	}
+	if args[0].Kind != ValueString || (len(args) == 2 && args[1].Kind != ValueInt) {
+		return nil, fmt.Errorf("Pattern.split expects input String and optional Integer limit")
+	}
+	splitArgs := []Value{String(source)}
+	if len(args) == 2 {
+		splitArgs = append(splitArgs, args[1])
+	}
+	parts, err := stringRegexSplit(args[0].Text, splitArgs)
+	if err != nil {
+		return nil, fmt.Errorf("Pattern.split invalid regex: %w", err)
+	}
+	return parts, nil
+}
+
+func unsupportedJavaRegexFeature(source string) string {
+	for i := 0; i < len(source); i++ {
+		switch source[i] {
+		case '\\':
+			if i+1 < len(source) {
+				next := source[i+1]
+				if next >= '1' && next <= '9' {
+					return "Java regex backreferences"
+				}
+				if next == 'k' {
+					return "Java regex named backreferences"
+				}
+				i++
+			}
+		case '(':
+			if i+2 >= len(source) || source[i+1] != '?' {
+				continue
+			}
+			switch source[i+2] {
+			case '<':
+				if i+3 < len(source) && (source[i+3] == '=' || source[i+3] == '!') {
+					return "Java regex lookbehind"
+				}
+				return "Java regex named groups"
+			case '=', '!':
+				return "Java regex lookahead"
+			}
+		}
+	}
+	return ""
 }
 
 func stringList(parts []string) Value {
