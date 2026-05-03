@@ -558,8 +558,13 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Handle `textDocument/didOpen`, `didChange`, and `didClose`, apply
     full-document or ranged incremental text edits to in-memory overlays, publish
     parse diagnostics from open buffers, and clear diagnostics on close.
-- [ ] Add LSP semantic tokens, definition, references, rename, and richer
+- [x] Add LSP semantic tokens, definition, references, rename, and richer
   completion.
+  - [x] Advertise semantic-token, definition, references, prepare-rename, and
+    rename providers, return semantic tokens from indexed declarations, resolve
+    definitions from cursor words to Apex/schema symbols, scan project/open
+    buffers for references, build workspace edits for rename, and include
+    members, schema fields, and Apex keywords in completion.
 - [ ] Make LSP diagnostics match `oaer check` and test results consistently.
 - [ ] Add native OS watcher backends for `oaer test --watch`.
 - [ ] Add incremental re-indexing and affected-test dependency graph updates.

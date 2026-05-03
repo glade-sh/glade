@@ -2,6 +2,7 @@ package lsp
 
 import (
 	"encoding/json"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -30,7 +31,7 @@ func TestHandleJSONInitializeAndShutdown(t *testing.T) {
 		t.Fatalf("unexpected error: %#v", initialized.Error)
 	}
 	caps := initialized.Result.Capabilities
-	if !caps.DocumentSymbolProvider || !caps.WorkspaceSymbolProvider || !caps.HoverProvider || len(caps.CompletionProvider.TriggerCharacters) == 0 {
+	if !caps.DocumentSymbolProvider || !caps.WorkspaceSymbolProvider || !caps.HoverProvider || !caps.DefinitionProvider || !caps.ReferencesProvider || !caps.RenameProvider.PrepareProvider || !caps.SemanticTokensProvider.Full || len(caps.CompletionProvider.TriggerCharacters) == 0 {
 		t.Fatalf("capabilities = %#v", caps)
 	}
 
@@ -281,15 +282,66 @@ func TestCompletionIncludesTopLevelApexTypesAndSObjects(t *testing.T) {
 	items := NewHandler(sampleIndex(t)).Completion(CompletionParams{}).Items
 
 	var labels []string
+	foundField := false
+	foundMember := false
+	foundKeyword := false
 	for _, item := range items {
 		labels = append(labels, item.Label)
-		if item.Label == "Name" {
-			t.Fatalf("field should not be a top-level completion item: %#v", item)
+		if item.Label == "Name" && item.Detail == "Account.Name" {
+			foundField = true
+		}
+		if item.Label == "run" && item.Detail == "InvoiceService.run" {
+			foundMember = true
+		}
+		if item.Label == "trigger" && item.Kind == completionItemKindKeyword {
+			foundKeyword = true
 		}
 	}
-	want := []string{"Account", "InvoiceService", "PaymentGateway"}
-	if strings.Join(labels, ",") != strings.Join(want, ",") {
+	for _, want := range []string{"Account", "InvoiceService", "PaymentGateway"} {
+		if !containsString(labels, want) {
+			t.Fatalf("missing %s in %#v", want, labels)
+		}
+	}
+	if !foundField || !foundMember || !foundKeyword {
 		t.Fatalf("labels = %#v", labels)
+	}
+}
+
+func TestDefinitionReferencesRenameAndSemanticTokens(t *testing.T) {
+	idx := sampleIndex(t)
+	writeSampleSources(t, idx)
+	handler := NewHandler(idx)
+	uri := uriFromPath(idx.Types[0].File)
+
+	definition := handler.Definition(DefinitionParams{
+		TextDocument: TextDocumentIdentifier{URI: uri},
+		Position:     Position{Line: 2, Character: 15},
+	})
+	if len(definition) != 1 || definition[0].Range.Start.Line != 0 {
+		t.Fatalf("definition = %#v", definition)
+	}
+
+	references := handler.References(ReferenceParams{
+		TextDocument: TextDocumentIdentifier{URI: uri},
+		Position:     Position{Line: 2, Character: 15},
+		Context:      ReferenceContext{IncludeDeclaration: true},
+	})
+	if len(references) != 3 || references[2].Range.Start.Character != 40 {
+		t.Fatalf("references = %#v", references)
+	}
+
+	edit := handler.Rename(RenameParams{
+		TextDocument: TextDocumentIdentifier{URI: uri},
+		Position:     Position{Line: 2, Character: 15},
+		NewName:      "InvoiceRunner",
+	})
+	if edit == nil || len(edit.Changes[uri]) != 3 {
+		t.Fatalf("rename = %#v", edit)
+	}
+
+	tokens := handler.SemanticTokensFull(SemanticTokensParams{TextDocument: TextDocumentIdentifier{URI: uri}})
+	if len(tokens.Data) == 0 || len(tokens.Data)%5 != 0 {
+		t.Fatalf("tokens = %#v", tokens.Data)
 	}
 }
 
@@ -383,6 +435,25 @@ func sampleIndex(t *testing.T) typesys.Index {
 	}
 }
 
+func writeSampleSources(t *testing.T, idx typesys.Index) {
+	t.Helper()
+	if err := os.WriteFile(idx.Types[0].File, []byte(`public class InvoiceService {
+  Account account;
+  void run() { InvoiceService svc = new invoiceservice(); account = new Account(); }
+}
+`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(idx.Types[1].File, []byte(`public interface PaymentGateway {}
+`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(idx.Triggers[0].File, []byte(`trigger InvoiceTrigger on Account (before insert) {}
+`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func diagnosticsCount(t *testing.T, notifications []Notification) int {
 	t.Helper()
 	if len(notifications) != 1 {
@@ -393,6 +464,15 @@ func diagnosticsCount(t *testing.T, notifications []Notification) int {
 		t.Fatalf("params type = %T", notifications[0].Params)
 	}
 	return len(payload.Diagnostics)
+}
+
+func containsString(values []string, needle string) bool {
+	for _, value := range values {
+		if value == needle {
+			return true
+		}
+	}
+	return false
 }
 
 func mustJSON(t *testing.T, value any) []byte {

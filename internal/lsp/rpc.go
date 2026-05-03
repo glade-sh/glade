@@ -119,6 +119,36 @@ func (h *Handler) handle(method string, params json.RawMessage) (any, *ResponseE
 			return nil, invalidParams(err)
 		}
 		return h.Completion(p), nil
+	case "textDocument/definition":
+		var p DefinitionParams
+		if err := decodeParams(params, &p); err != nil {
+			return nil, invalidParams(err)
+		}
+		return h.Definition(p), nil
+	case "textDocument/references":
+		var p ReferenceParams
+		if err := decodeParams(params, &p); err != nil {
+			return nil, invalidParams(err)
+		}
+		return h.References(p), nil
+	case "textDocument/prepareRename":
+		var p RenameParams
+		if err := decodeParams(params, &p); err != nil {
+			return nil, invalidParams(err)
+		}
+		return h.PrepareRename(p), nil
+	case "textDocument/rename":
+		var p RenameParams
+		if err := decodeParams(params, &p); err != nil {
+			return nil, invalidParams(err)
+		}
+		return h.Rename(p), nil
+	case "textDocument/semanticTokens/full":
+		var p SemanticTokensParams
+		if err := decodeParams(params, &p); err != nil {
+			return nil, invalidParams(err)
+		}
+		return h.SemanticTokensFull(p), nil
 	default:
 		return nil, &ResponseError{Code: errorCodeMethodNotFound, Message: "method not found"}
 	}

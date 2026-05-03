@@ -58,16 +58,34 @@ type ServerInfo struct {
 }
 
 type ServerCapabilities struct {
-	TextDocumentSync        int               `json:"textDocumentSync,omitempty"`
-	DocumentSymbolProvider  bool              `json:"documentSymbolProvider"`
-	WorkspaceSymbolProvider bool              `json:"workspaceSymbolProvider"`
-	HoverProvider           bool              `json:"hoverProvider"`
-	CompletionProvider      CompletionOptions `json:"completionProvider"`
+	TextDocumentSync        int                   `json:"textDocumentSync,omitempty"`
+	DocumentSymbolProvider  bool                  `json:"documentSymbolProvider"`
+	WorkspaceSymbolProvider bool                  `json:"workspaceSymbolProvider"`
+	HoverProvider           bool                  `json:"hoverProvider"`
+	CompletionProvider      CompletionOptions     `json:"completionProvider"`
+	DefinitionProvider      bool                  `json:"definitionProvider"`
+	ReferencesProvider      bool                  `json:"referencesProvider"`
+	RenameProvider          RenameOptions         `json:"renameProvider"`
+	SemanticTokensProvider  SemanticTokensOptions `json:"semanticTokensProvider"`
 }
 
 type CompletionOptions struct {
 	ResolveProvider   bool     `json:"resolveProvider"`
 	TriggerCharacters []string `json:"triggerCharacters,omitempty"`
+}
+
+type RenameOptions struct {
+	PrepareProvider bool `json:"prepareProvider"`
+}
+
+type SemanticTokensOptions struct {
+	Legend SemanticTokensLegend `json:"legend"`
+	Full   bool                 `json:"full"`
+}
+
+type SemanticTokensLegend struct {
+	TokenTypes     []string `json:"tokenTypes"`
+	TokenModifiers []string `json:"tokenModifiers"`
 }
 
 type PublishDiagnosticsParams struct {
@@ -146,6 +164,44 @@ type CompletionParams struct {
 	Position     Position               `json:"position,omitempty"`
 }
 
+type DefinitionParams struct {
+	TextDocument TextDocumentIdentifier `json:"textDocument"`
+	Position     Position               `json:"position"`
+}
+
+type ReferenceParams struct {
+	TextDocument TextDocumentIdentifier `json:"textDocument"`
+	Position     Position               `json:"position"`
+	Context      ReferenceContext       `json:"context,omitempty"`
+}
+
+type ReferenceContext struct {
+	IncludeDeclaration bool `json:"includeDeclaration"`
+}
+
+type RenameParams struct {
+	TextDocument TextDocumentIdentifier `json:"textDocument"`
+	Position     Position               `json:"position"`
+	NewName      string                 `json:"newName"`
+}
+
+type SemanticTokensParams struct {
+	TextDocument TextDocumentIdentifier `json:"textDocument"`
+}
+
+type SemanticTokens struct {
+	Data []int `json:"data"`
+}
+
+type TextEdit struct {
+	Range   Range  `json:"range"`
+	NewText string `json:"newText"`
+}
+
+type WorkspaceEdit struct {
+	Changes map[DocumentURI][]TextEdit `json:"changes"`
+}
+
 type CompletionList struct {
 	IsIncomplete bool             `json:"isIncomplete"`
 	Items        []CompletionItem `json:"items"`
@@ -183,8 +239,12 @@ const (
 	symbolKindEvent       = 24
 
 	completionItemKindClass     = 7
+	completionItemKindMethod    = 2
+	completionItemKindField     = 5
+	completionItemKindProperty  = 10
 	completionItemKindInterface = 8
 	completionItemKindEnum      = 13
+	completionItemKindKeyword   = 14
 	completionItemKindStruct    = 22
 )
 
@@ -350,6 +410,12 @@ func completionKind(kind apexast.DeclarationKind) int {
 		return completionItemKindInterface
 	case apexast.DeclarationEnum:
 		return completionItemKindEnum
+	case apexast.DeclarationMethod, apexast.DeclarationConstructor:
+		return completionItemKindMethod
+	case apexast.DeclarationField:
+		return completionItemKindField
+	case apexast.DeclarationProperty:
+		return completionItemKindProperty
 	default:
 		return completionItemKindClass
 	}

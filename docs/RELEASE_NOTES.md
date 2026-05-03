@@ -63,6 +63,9 @@ Release engineering:
   static fields, Trigger values, list/set indexes, map keys, and nested paths.
 - Added LSP `didOpen`/`didChange`/`didClose` document overlays with incremental
   text edits and publishDiagnostics updates for open-buffer parse diagnostics.
+- Added LSP semantic tokens, definition, references, prepare-rename/rename
+  workspace edits, and richer completion for Apex members, schema fields, and
+  keywords.
 - Added parser diagnostic-count fixtures plus type-index and sema panic recovery
   diagnostics for malformed project inputs.
 - Added method/constructor parameter type diagnostics and expanded VM exception

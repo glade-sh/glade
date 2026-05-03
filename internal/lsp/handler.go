@@ -49,6 +49,10 @@ func (h *Handler) Initialize(_ InitializeParams) InitializeResult {
 				ResolveProvider:   false,
 				TriggerCharacters: []string{".", "_"},
 			},
+			DefinitionProvider:     true,
+			ReferencesProvider:     true,
+			RenameProvider:         RenameOptions{PrepareProvider: true},
+			SemanticTokensProvider: SemanticTokensOptions{Legend: semanticTokensLegend(), Full: true},
 		},
 		ServerInfo: &ServerInfo{Name: "oaer"},
 	}
@@ -362,27 +366,147 @@ func (h *Handler) HoverForName(name string, hoverRange *Range) *Hover {
 
 func (h *Handler) Completion(_ CompletionParams) CompletionList {
 	items := make([]CompletionItem, 0, len(h.index.Types)+len(h.index.Objects))
+	seen := make(map[string]bool)
+	add := func(item CompletionItem) {
+		key := item.Label + "\x00" + item.Detail
+		if seen[key] {
+			return
+		}
+		seen[key] = true
+		items = append(items, item)
+	}
 	for _, typ := range h.index.Types {
-		items = append(items, CompletionItem{
+		add(CompletionItem{
 			Label:  typ.Name,
 			Kind:   completionKind(typ.Kind),
 			Detail: string(typ.Kind),
 		})
+		for _, member := range typ.Members {
+			add(CompletionItem{
+				Label:  member.Name,
+				Kind:   completionKind(member.Kind),
+				Detail: typ.Name + "." + member.Name,
+			})
+		}
 	}
 	for _, object := range h.index.Objects {
 		detail := "SObject"
 		if object.Label != "" {
 			detail = "SObject: " + object.Label
 		}
-		items = append(items, CompletionItem{
+		add(CompletionItem{
 			Label:         object.Name,
 			Kind:          completionItemKindStruct,
 			Detail:        detail,
 			Documentation: objectHover(object),
 		})
+		for _, field := range object.Fields {
+			add(CompletionItem{
+				Label:         field.Name,
+				Kind:          completionItemKindField,
+				Detail:        object.Name + "." + field.Name,
+				Documentation: field.Type,
+			})
+		}
+	}
+	for _, keyword := range []string{"class", "trigger", "interface", "enum", "public", "private", "protected", "global", "static", "void", "return", "new", "for", "if", "else"} {
+		add(CompletionItem{Label: keyword, Kind: completionItemKindKeyword, Detail: "Apex keyword"})
 	}
 	sortCompletionItems(items)
 	return CompletionList{Items: items}
+}
+
+func (h *Handler) Definition(params DefinitionParams) []Location {
+	name := h.wordAt(params.TextDocument.URI, params.Position)
+	if name == "" {
+		return nil
+	}
+	if loc, ok := h.definitionForName(name); ok {
+		return []Location{loc}
+	}
+	return nil
+}
+
+func (h *Handler) References(params ReferenceParams) []Location {
+	name := h.wordAt(params.TextDocument.URI, params.Position)
+	if name == "" {
+		return nil
+	}
+	locations := h.referenceLocations(name)
+	if params.Context.IncludeDeclaration {
+		return locations
+	}
+	if def, ok := h.definitionForName(name); ok {
+		filtered := locations[:0]
+		for _, loc := range locations {
+			if loc.URI == def.URI && loc.Range == def.Range {
+				continue
+			}
+			filtered = append(filtered, loc)
+		}
+		return filtered
+	}
+	return locations
+}
+
+func (h *Handler) PrepareRename(params RenameParams) *Range {
+	name := h.wordAt(params.TextDocument.URI, params.Position)
+	if name == "" {
+		return nil
+	}
+	if _, ok := h.definitionForName(name); !ok {
+		return nil
+	}
+	wordRange, ok := h.wordRangeAt(params.TextDocument.URI, params.Position)
+	if !ok {
+		return nil
+	}
+	return &wordRange
+}
+
+func (h *Handler) Rename(params RenameParams) *WorkspaceEdit {
+	if strings.TrimSpace(params.NewName) == "" {
+		return nil
+	}
+	if h.PrepareRename(params) == nil {
+		return nil
+	}
+	locations := h.referenceLocations(h.wordAt(params.TextDocument.URI, params.Position))
+	if len(locations) == 0 {
+		return nil
+	}
+	edit := &WorkspaceEdit{Changes: make(map[DocumentURI][]TextEdit)}
+	for _, loc := range locations {
+		edit.Changes[loc.URI] = append(edit.Changes[loc.URI], TextEdit{Range: loc.Range, NewText: params.NewName})
+	}
+	return edit
+}
+
+func (h *Handler) SemanticTokensFull(params SemanticTokensParams) SemanticTokens {
+	var raw []semanticToken
+	path := pathFromURI(params.TextDocument.URI)
+	for _, typ := range h.index.Types {
+		if !sameDocument(path, typ.File) && !sameDocument(string(params.TextDocument.URI), typ.File) {
+			continue
+		}
+		raw = append(raw, semanticTokenFromRange(typ.Name, typ.Range, semanticTokenType(typ.Kind)))
+		for _, member := range typ.Members {
+			raw = append(raw, semanticTokenFromRange(member.Name, member.Range, semanticTokenType(member.Kind)))
+		}
+	}
+	for _, trigger := range h.index.Triggers {
+		if !sameDocument(path, trigger.File) && !sameDocument(string(params.TextDocument.URI), trigger.File) {
+			continue
+		}
+		raw = append(raw, semanticTokenFromRange(trigger.Name, trigger.Range, semanticTokenEvent))
+	}
+	sort.Slice(raw, func(i, j int) bool {
+		if raw[i].Line == raw[j].Line {
+			return raw[i].Start < raw[j].Start
+		}
+		return raw[i].Line < raw[j].Line
+	})
+	return SemanticTokens{Data: encodeSemanticTokens(raw)}
 }
 
 func (h *Handler) hoverForTypeExpression(typeRef string, hoverRange Range) *Hover {
