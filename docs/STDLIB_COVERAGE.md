@@ -101,9 +101,9 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Integer | `Integer.valueOf` | `supported` | Parses integer strings and numeric values with 32-bit overflow checks. |
 | JSON | `JSON.createGenerator` | `supported` | Creates deterministic local JSONGenerator instances. |
 | JSON | `JSON.createParser` | `partial` | Creates deterministic local JSONParser token streams for valid JSON strings. |
-| JSON | `JSON.deserialize` | `partial` | SObject, class, collection, and primitive shapes for supported subset. |
-| JSON | `JSON.deserializeStrict` | `partial` | Rejects unknown fields for supported schema/class targets. |
-| JSON | `JSON.deserializeUntyped` | `partial` | Maps JSON into local primitive/list/map values. |
+| JSON | `JSON.deserialize` | `partial` | Primitive, platform scalar, List, Map<String,Object/value>, SObject, and class shapes for the supported local subset; stable mapping errors for mismatched typed shapes. |
+| JSON | `JSON.deserializeStrict` | `partial` | Rejects unknown fields for supported schema/class targets; otherwise shares the bounded typed local mapping subset. |
+| JSON | `JSON.deserializeUntyped` | `partial` | Maps JSON into local primitive/list/map values with deterministic null and number handling. |
 | JSON | `JSON.serialize` | `partial` | Includes suppressApexObjectNulls overload for supported values. |
 | JSON | `JSON.serializePretty` | `partial` | Pretty output for supported values. |
 | JSON | `JSONGenerator` | `partial` | Object/array boundaries, field names, scalar string/number/Boolean/null, Date/Datetime/Time/Id/Blob, Object and validated raw value writers, getAsString, close, isClosed, and stable invalid-order errors. |
@@ -322,7 +322,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | TimeZone | `TimeZone.getOffset` | `partial` | Returns fixed offset milliseconds; named zones and DST are unsupported. |
 | TimeZone | `TimeZone.getTimeZone` | `partial` | Supports UTC/GMT and fixed GMT/UTC offsets; named zones and DST are unsupported. |
 | Type | `Type.equals` | `supported` | Compares local Type tokens by type name. |
-| Type | `Type.forName` | `partial` | Local class/type token lookup, common local SObjects, built-in types, and null for null/blank/unknown local names. |
+| Type | `Type.forName` | `partial` | Local class/type token lookup, common local SObjects, built-in and generic collection type strings, and null for null/blank/unknown local names. |
 | Type | `Type.getName` | `supported` | Returns local type token name. |
 | Type | `Type.hashCode` | `supported` | Matches the local String.hashCode of the type name. |
 | Type | `Type.isAssignableFrom` | `partial` | Uses the local class/interface and built-in exception hierarchy. |
