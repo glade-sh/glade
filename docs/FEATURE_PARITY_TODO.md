@@ -273,20 +273,31 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Support comma-separated `ORDER BY ASC` and `ORDER BY DESC` for normal,
     aggregate, and child relationship query rows.
   - [x] Support explicit `NULLS FIRST` and `NULLS LAST` ordering modifiers.
+  - [x] Support `FIELDS(ALL)`, `FIELDS(STANDARD)`, and `FIELDS(CUSTOM)` field
+    projection expansion.
+  - [x] Parse and execute `FOR UPDATE` as a local lock marker.
+  - [x] Support `ALL ROWS` queries that include soft-deleted records.
+  - [x] Parse and execute `WITH SECURITY_ENFORCED`, `WITH USER_MODE`, and
+    `WITH SYSTEM_MODE` as local security-mode markers.
+  - [x] Support baseline `TYPEOF` relationship projection for parent lookup
+    branches.
   - **Limitation**: Formula-adjacent predicate behavior remains incomplete.
-- [ ] Add SOQL features commonly used by real projects: `FIELDS()`, `TYPEOF`,
-  security clauses, `FOR UPDATE` handling, and query row shape fidelity.
+- [ ] Add SOQL features commonly used by real projects: security enforcement,
+  lock contention behavior, and advanced query row shape fidelity.
 - [ ] Wire SQLite planning or indexed execution where needed without changing
   Salesforce-visible behavior.
 - [ ] Complete Apex DML statements: `insert`, `update`, `delete`, `upsert`,
   `undelete`, and `merge`.
   - [x] Support soft delete visibility and undelete restoration for VM/SOQL
     paths.
+  - [x] Support baseline `merge` statement and `Database.merge` execution with
+    duplicate soft delete, child lookup reparenting, and `MergeResult` shape.
 - [x] Improve `Database.insert/update/delete/upsert/undelete` result fidelity
   with structured `Database.Error` objects carrying `statusCode`, `message`, and
   `fields` arrays; add `Database.UpsertResult.isCreated()`.
   - [x] Cascade soft-delete child records from relationship metadata.
-  - **Limitation**: Merge and full undelete edge-case parity remain incomplete.
+  - **Limitation**: Full merge trigger semantics and full undelete edge-case
+    parity remain incomplete.
   - **Limitation**: The VM `Database.Error` shape covers the most common status
     codes; full Salesforce status-code parity is not yet complete.
 - [x] Complete external-ID upsert and ID/object mismatch behavior.

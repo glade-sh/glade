@@ -66,11 +66,22 @@ Release engineering:
 - Added comma-separated SOQL `ORDER BY ASC` and `ORDER BY DESC` handling for
   regular, aggregate, and child relationship query rows.
 - Added SOQL `ORDER BY NULLS FIRST` and `NULLS LAST` modifiers.
+- Added SOQL `FIELDS(ALL)`, `FIELDS(STANDARD)`, and `FIELDS(CUSTOM)` projection
+  expansion.
+- Added SOQL `FOR UPDATE` parsing and execution as a local lock marker.
+- Added SOQL `ALL ROWS` support for querying soft-deleted records.
+- Added SOQL `WITH SECURITY_ENFORCED`, `WITH USER_MODE`, and
+  `WITH SYSTEM_MODE` parsing as local security-mode markers.
+- Added baseline SOQL `TYPEOF` relationship projection for parent lookup
+  branches.
 - Added DML fidelity for implicit external-ID upsert, unique-field checks,
   lookup reference validation, ID/object mismatch errors, soft delete visibility,
   and undelete restoration.
 - Added explicit external-ID upsert support for `upsert rows Field__c` and
   `Database.upsert(rows, Field__c, allOrNone)` field tokens.
+- Added baseline DML merge support for the `merge` statement and
+  `Database.merge`, including duplicate soft-delete, child lookup reparenting,
+  and `Database.MergeResult` accessors.
 - Added cascade soft-delete behavior from relationship metadata, including
   Metadata API `deleteConstraint` loading for local fixtures.
 - Added object-level and field-level `SObject.addError`, `hasErrors`, and

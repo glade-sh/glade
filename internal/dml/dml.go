@@ -127,6 +127,87 @@ func (e *Engine) Undelete(records []storage.Record) []Result {
 	return results
 }
 
+func (e *Engine) Merge(master storage.Record, duplicates []storage.Record) []Result {
+	results := make([]Result, len(duplicates))
+	object, objectName, err := e.object(master.Object)
+	if err != nil {
+		for i := range results {
+			results[i] = resultFromError(master.ID, err)
+		}
+		return results
+	}
+	if master.ID == "" {
+		for i := range results {
+			results[i] = Result{Success: false, Error: "dml: merge master requires id", StatusCode: "MISSING_ARGUMENT", Fields: []string{"Id"}}
+		}
+		return results
+	}
+	storedMaster, ok := object.Records[master.ID]
+	if !ok || storedMaster.System.IsDeleted {
+		for i := range results {
+			results[i] = resultFromError(master.ID, fmt.Errorf("dml: merge master %s does not exist", master.ID))
+		}
+		return results
+	}
+	if len(master.Fields) > 0 || len(master.ExplicitNulls) > 0 {
+		if err := e.updateOne(master); err != nil {
+			for i := range results {
+				results[i] = resultFromError(master.ID, err)
+			}
+			return results
+		}
+		object = e.Org.Objects[objectName]
+	}
+	for i, duplicate := range duplicates {
+		if duplicate.ID == "" {
+			results[i] = Result{Success: false, Error: "dml: merge duplicate requires id", StatusCode: "MISSING_ARGUMENT", Fields: []string{"Id"}}
+			continue
+		}
+		if duplicate.Object != "" && duplicate.Object != objectName {
+			results[i] = resultFromError(duplicate.ID, fmt.Errorf("dml: merge duplicate object %s does not match master %s", duplicate.Object, objectName))
+			continue
+		}
+		if duplicate.ID == master.ID {
+			results[i] = resultFromError(duplicate.ID, fmt.Errorf("dml: merge duplicate cannot be master"))
+			continue
+		}
+		storedDuplicate, ok := object.Records[duplicate.ID]
+		if !ok || storedDuplicate.System.IsDeleted {
+			results[i] = resultFromError(duplicate.ID, fmt.Errorf("dml: merge duplicate %s does not exist", duplicate.ID))
+			continue
+		}
+		e.reparentLookups(objectName, duplicate.ID, master.ID)
+		storedDuplicate.System.IsDeleted = true
+		object.Records[duplicate.ID] = storedDuplicate
+		e.Org.Objects[objectName] = object
+		results[i] = Result{ID: master.ID, Success: true}
+	}
+	return results
+}
+
+func (e *Engine) reparentLookups(parentObject string, oldID, newID storage.ID) {
+	for childObjectName, childObject := range e.Org.Objects {
+		changed := false
+		for _, relation := range childObject.Definition.Relations {
+			if !containsString(relation.ParentObjects, parentObject) {
+				continue
+			}
+			for id, record := range childObject.Records {
+				value, ok := record.Fields[relation.Field]
+				if !ok || idFromStorageValue(value) != oldID {
+					continue
+				}
+				record.Fields[relation.Field] = storage.IDValue(newID)
+				childObject.Records[id] = record
+				changed = true
+			}
+		}
+		if changed {
+			e.Org.Objects[childObjectName] = childObject
+		}
+	}
+}
+
 func (e *Engine) WithTransaction(fn func(*Engine) error) error {
 	before := e.Org.Clone()
 	if err := fn(e); err != nil {

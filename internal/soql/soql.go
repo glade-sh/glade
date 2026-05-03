@@ -14,6 +14,7 @@ import (
 type Query struct {
 	Fields       []string
 	ChildQueries []ChildQuery
+	Typeofs      []TypeofSpec
 	Object       string
 	Where        *Condition
 	Having       *Condition
@@ -23,6 +24,9 @@ type Query struct {
 	Limit        int
 	Offset       int
 	Count        bool
+	ForUpdate    bool
+	AllRows      bool
+	SecurityMode string
 	Aggregates   []Aggregate
 	GroupBy      []string
 	GroupMode    string
@@ -37,6 +41,12 @@ type OrderSpec struct {
 type ChildQuery struct {
 	Relationship string
 	Query        Query
+}
+
+type TypeofSpec struct {
+	Relationship string
+	When         map[string][]string
+	Else         []string
 }
 
 type Aggregate struct {
@@ -82,9 +92,14 @@ func Execute(org storage.OrgState, query Query) (Result, error) {
 		return Result{}, fmt.Errorf("soql: unknown object %s", query.Object)
 	}
 	object := org.Objects[objectName]
-	if len(query.Fields) == 0 && len(query.ChildQueries) == 0 {
+	if len(query.Fields) == 0 && len(query.ChildQueries) == 0 && len(query.Typeofs) == 0 {
 		return Result{}, fmt.Errorf("soql: SELECT requires at least one field")
 	}
+	fields, err := expandFieldsFunctions(object.Definition, query.Fields)
+	if err != nil {
+		return Result{}, err
+	}
+	query.Fields = fields
 	if len(query.ChildQueries) > 0 && len(query.Aggregates) > 0 {
 		return Result{}, fmt.Errorf("soql: child relationship subqueries are not supported in aggregate queries")
 	}
@@ -112,7 +127,7 @@ func Execute(org storage.OrgState, query Query) (Result, error) {
 	matchedRecords := make([]storage.Record, 0, len(ids))
 	for _, idText := range ids {
 		record := object.Records[storage.ID(idText)]
-		if record.System.IsDeleted {
+		if record.System.IsDeleted && !query.AllRows {
 			continue
 		}
 		record.Object = objectName
@@ -141,7 +156,7 @@ func Execute(org storage.OrgState, query Query) (Result, error) {
 	matchedRecords = applyWindow(matchedRecords, query.Offset, query.Limit)
 	records := make([]storage.Record, 0, len(matchedRecords))
 	for _, record := range matchedRecords {
-		projected, err := projectRecord(org, object.Definition, record, query.Fields, query.ChildQueries)
+		projected, err := projectRecord(org, object.Definition, record, query.Fields, query.ChildQueries, query.Typeofs)
 		if err != nil {
 			return Result{}, err
 		}
@@ -522,7 +537,7 @@ func subqueryRecordValue(org storage.OrgState, record storage.Record, field stri
 	return value, ok
 }
 
-func projectRecord(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, fields []string, childQueries []ChildQuery) (storage.Record, error) {
+func projectRecord(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, fields []string, childQueries []ChildQuery, typeofs []TypeofSpec) (storage.Record, error) {
 	out := storage.Record{
 		ID:            record.ID,
 		Object:        record.Object,
@@ -552,6 +567,10 @@ func projectRecord(org storage.OrgState, definition storage.ObjectDefinition, re
 		}
 		if value, ok := record.Fields[canonicalField]; ok {
 			out.Fields[canonicalField] = value.Clone()
+			continue
+		}
+		if value, ok := recordValue(org, definition, record, field); ok {
+			out.Fields[canonicalField] = value.Clone()
 		}
 	}
 	for _, childQuery := range childQueries {
@@ -560,6 +579,22 @@ func projectRecord(org storage.OrgState, definition storage.ObjectDefinition, re
 			return storage.Record{}, err
 		}
 		out.Children[childQuery.Relationship] = records
+	}
+	for _, spec := range typeofs {
+		typeName, ok := polymorphicParentObject(org, definition, record, spec.Relationship)
+		if !ok {
+			continue
+		}
+		selected := spec.When[typeName]
+		if len(selected) == 0 {
+			selected = spec.Else
+		}
+		for _, field := range selected {
+			value, ok := relationshipValue(org, record, spec.Relationship+"."+field)
+			if ok {
+				out.Fields[spec.Relationship+"."+field] = value.Clone()
+			}
+		}
 	}
 	if len(out.Children) == 0 {
 		out.Children = nil
@@ -581,6 +616,11 @@ func executeChildRelationshipQuery(org storage.OrgState, parentDefinition storag
 	if query.Count || len(query.Aggregates) > 0 || len(query.GroupBy) > 0 || query.Having != nil {
 		return nil, fmt.Errorf("soql: aggregate child relationship subqueries are not supported")
 	}
+	fields, err := expandFieldsFunctions(childObject.Definition, query.Fields)
+	if err != nil {
+		return nil, err
+	}
+	query.Fields = fields
 	if query.Where != nil {
 		condition, err := resolveSubqueries(org, *query.Where)
 		if err != nil {
@@ -596,7 +636,7 @@ func executeChildRelationshipQuery(org storage.OrgState, parentDefinition storag
 	matched := make([]storage.Record, 0, len(ids))
 	for _, idText := range ids {
 		child := childObject.Records[storage.ID(idText)]
-		if child.System.IsDeleted {
+		if child.System.IsDeleted && !query.AllRows {
 			continue
 		}
 		child.Object = childObjectName
@@ -616,7 +656,7 @@ func executeChildRelationshipQuery(org storage.OrgState, parentDefinition storag
 	matched = applyWindow(matched, query.Offset, query.Limit)
 	out := make([]storage.Record, 0, len(matched))
 	for _, child := range matched {
-		projected, err := projectRecord(org, childObject.Definition, child, query.Fields, nil)
+		projected, err := projectRecord(org, childObject.Definition, child, query.Fields, nil, query.Typeofs)
 		if err != nil {
 			return nil, err
 		}
@@ -644,6 +684,92 @@ func childRelationship(org storage.OrgState, parentDefinition storage.ObjectDefi
 		}
 	}
 	return "", storage.Relationship{}, false
+}
+
+func expandFieldsFunctions(definition storage.ObjectDefinition, fields []string) ([]string, error) {
+	out := make([]string, 0, len(fields))
+	seen := make(map[string]bool, len(fields))
+	appendField := func(field string) {
+		if seen[field] {
+			return
+		}
+		seen[field] = true
+		out = append(out, field)
+	}
+	names := make([]string, 0, len(definition.Fields))
+	for name := range definition.Fields {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	for _, field := range fields {
+		mode, ok := fieldsFunctionMode(field)
+		if !ok {
+			appendField(field)
+			continue
+		}
+		switch mode {
+		case "ALL":
+			appendField("Id")
+			for _, name := range names {
+				appendField(name)
+			}
+		case "STANDARD":
+			appendField("Id")
+			for _, name := range names {
+				if !isCustomFieldName(name) {
+					appendField(name)
+				}
+			}
+		case "CUSTOM":
+			for _, name := range names {
+				if isCustomFieldName(name) {
+					appendField(name)
+				}
+			}
+		default:
+			return nil, fmt.Errorf("soql: unsupported FIELDS(%s)", mode)
+		}
+	}
+	return out, nil
+}
+
+func fieldsFunctionMode(field string) (string, bool) {
+	upper := strings.ToUpper(field)
+	if !strings.HasPrefix(upper, "FIELDS(") || !strings.HasSuffix(upper, ")") {
+		return "", false
+	}
+	return strings.TrimSpace(upper[len("FIELDS(") : len(upper)-1]), true
+}
+
+func isCustomFieldName(name string) bool {
+	return strings.HasSuffix(name, "__c")
+}
+
+func polymorphicParentObject(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, relationship string) (string, bool) {
+	for _, relation := range definition.Relations {
+		if relation.ParentRelationship != relationship {
+			continue
+		}
+		parentID, ok := recordValue(org, definition, record, relation.Field)
+		if !ok || parentID.Kind == storage.ValueNull {
+			return "", false
+		}
+		id := idFromValue(parentID)
+		for _, parentObjectName := range relation.ParentObjects {
+			canonicalParent, ok := storage.ResolveObjectName(org, parentObjectName)
+			if !ok {
+				continue
+			}
+			parentObject := org.Objects[canonicalParent]
+			if _, ok := parentObject.Records[id]; ok {
+				return canonicalParent, true
+			}
+			if parentObject.Definition.KeyPrefix != "" && strings.HasPrefix(string(id), parentObject.Definition.KeyPrefix) {
+				return canonicalParent, true
+			}
+		}
+	}
+	return "", false
 }
 
 func relationshipValue(org storage.OrgState, record storage.Record, field string) (storage.Value, bool) {
@@ -1034,7 +1160,7 @@ func (p *parser) parseQuery() (Query, error) {
 	if !p.matchWord("SELECT") {
 		return Query{}, p.errorf("expected SELECT")
 	}
-	fields, childQueries, err := p.parseFields()
+	fields, childQueries, typeofs, err := p.parseFields()
 	if err != nil {
 		return Query{}, err
 	}
@@ -1049,7 +1175,7 @@ func (p *parser) parseQuery() (Query, error) {
 	if err != nil {
 		return Query{}, err
 	}
-	q := Query{Fields: fields, ChildQueries: childQueries, Object: object, Count: len(fields) == 1 && strings.EqualFold(fields[0], "COUNT()"), Aggregates: aggregates}
+	q := Query{Fields: fields, ChildQueries: childQueries, Typeofs: typeofs, Object: object, Count: len(fields) == 1 && strings.EqualFold(fields[0], "COUNT()"), Aggregates: aggregates}
 	for p.peek().text != "" && p.peek().text != ")" {
 		switch {
 		case p.matchWord("WHERE"):
@@ -1111,6 +1237,22 @@ func (p *parser) parseQuery() (Query, error) {
 				return Query{}, err
 			}
 			q.Offset = offset
+		case p.matchWord("FOR"):
+			if !p.matchWord("UPDATE") {
+				return Query{}, p.errorf("expected UPDATE after FOR")
+			}
+			q.ForUpdate = true
+		case p.matchWord("ALL"):
+			if !p.matchWord("ROWS") {
+				return Query{}, p.errorf("expected ROWS after ALL")
+			}
+			q.AllRows = true
+		case p.matchWord("WITH"):
+			mode, err := p.parseSecurityMode()
+			if err != nil {
+				return Query{}, err
+			}
+			q.SecurityMode = mode
 		default:
 			return Query{}, p.errorf("unsupported SOQL token %q", p.peek().text)
 		}
@@ -1121,30 +1263,57 @@ func (p *parser) parseQuery() (Query, error) {
 	return q, nil
 }
 
-func (p *parser) parseFields() ([]string, []ChildQuery, error) {
+func (p *parser) parseFields() ([]string, []ChildQuery, []TypeofSpec, error) {
 	var fields []string
 	var childQueries []ChildQuery
+	var typeofs []TypeofSpec
 	for {
 		if p.match("(") {
 			query, err := p.parseQuery()
 			if err != nil {
-				return nil, nil, err
+				return nil, nil, nil, err
 			}
 			if !p.match(")") {
-				return nil, nil, p.errorf("expected ) after child relationship subquery")
+				return nil, nil, nil, p.errorf("expected ) after child relationship subquery")
 			}
-			if len(query.Fields) == 0 {
-				return nil, nil, p.errorf("child relationship subquery requires at least one field")
+			if len(query.Fields) == 0 && len(query.Typeofs) == 0 {
+				return nil, nil, nil, p.errorf("child relationship subquery requires at least one field")
 			}
 			childQueries = append(childQueries, ChildQuery{Relationship: query.Object, Query: query})
 			if !p.match(",") {
-				return fields, childQueries, nil
+				return fields, childQueries, typeofs, nil
 			}
 			continue
 		}
 		field, err := p.parseName()
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
+		}
+		if strings.EqualFold(field, "TYPEOF") {
+			spec, err := p.parseTypeofSpec()
+			if err != nil {
+				return nil, nil, nil, err
+			}
+			typeofs = append(typeofs, spec)
+			if !p.match(",") {
+				return fields, childQueries, typeofs, nil
+			}
+			continue
+		}
+		if strings.EqualFold(field, "FIELDS") && p.match("(") {
+			arg, err := p.parseName()
+			if err != nil {
+				return nil, nil, nil, err
+			}
+			if !p.match(")") {
+				return nil, nil, nil, p.errorf("expected ) after FIELDS(")
+			}
+			field = "FIELDS(" + strings.ToUpper(arg) + ")"
+			fields = append(fields, field)
+			if !p.match(",") {
+				return fields, childQueries, typeofs, nil
+			}
+			continue
 		}
 		isAggregate := isAggregateFunc(field) && p.match("(")
 		if isAggregate {
@@ -1153,10 +1322,10 @@ func (p *parser) parseFields() ([]string, []ChildQuery, error) {
 			} else {
 				arg, err := p.parseName()
 				if err != nil {
-					return nil, nil, err
+					return nil, nil, nil, err
 				}
 				if !p.match(")") {
-					return nil, nil, p.errorf("expected ) after %s(", field)
+					return nil, nil, nil, p.errorf("expected ) after %s(", field)
 				}
 				field = strings.ToUpper(field) + "(" + arg + ")"
 			}
@@ -1165,7 +1334,7 @@ func (p *parser) parseFields() ([]string, []ChildQuery, error) {
 				var err error
 				alias, err = p.parseName()
 				if err != nil {
-					return nil, nil, err
+					return nil, nil, nil, err
 				}
 			} else if tok := p.peek().text; tok != "" && tok != "," && !strings.EqualFold(tok, "FROM") {
 				alias = p.advance().text
@@ -1176,7 +1345,7 @@ func (p *parser) parseFields() ([]string, []ChildQuery, error) {
 		}
 		fields = append(fields, field)
 		if !p.match(",") {
-			return fields, childQueries, nil
+			return fields, childQueries, typeofs, nil
 		}
 	}
 }
@@ -1191,6 +1360,61 @@ func (p *parser) parseNameList() ([]string, error) {
 		names = append(names, name)
 		if !p.match(",") {
 			return names, nil
+		}
+	}
+}
+
+func (p *parser) parseTypeofSpec() (TypeofSpec, error) {
+	relationship, err := p.parseName()
+	if err != nil {
+		return TypeofSpec{}, err
+	}
+	spec := TypeofSpec{Relationship: relationship, When: make(map[string][]string)}
+	for {
+		switch {
+		case p.matchWord("WHEN"):
+			objectName, err := p.parseName()
+			if err != nil {
+				return TypeofSpec{}, err
+			}
+			if !p.matchWord("THEN") {
+				return TypeofSpec{}, p.errorf("expected THEN in TYPEOF")
+			}
+			fields, err := p.parseTypeofFieldList()
+			if err != nil {
+				return TypeofSpec{}, err
+			}
+			spec.When[objectName] = fields
+		case p.matchWord("ELSE"):
+			fields, err := p.parseTypeofFieldList()
+			if err != nil {
+				return TypeofSpec{}, err
+			}
+			spec.Else = fields
+		case p.matchWord("END"):
+			return spec, nil
+		default:
+			return TypeofSpec{}, p.errorf("expected WHEN, ELSE, or END in TYPEOF")
+		}
+	}
+}
+
+func (p *parser) parseTypeofFieldList() ([]string, error) {
+	var fields []string
+	for {
+		if p.peek().text == "" || p.peek().text == "," || strings.EqualFold(p.peek().text, "WHEN") || strings.EqualFold(p.peek().text, "ELSE") || strings.EqualFold(p.peek().text, "END") {
+			if len(fields) == 0 {
+				return nil, p.errorf("TYPEOF branch requires at least one field")
+			}
+			return fields, nil
+		}
+		field, err := p.parseName()
+		if err != nil {
+			return nil, err
+		}
+		fields = append(fields, field)
+		if !p.match(",") {
+			continue
 		}
 	}
 }
@@ -1225,6 +1449,19 @@ func (p *parser) parseOrderList() ([]OrderSpec, error) {
 		if !p.match(",") {
 			return order, nil
 		}
+	}
+}
+
+func (p *parser) parseSecurityMode() (string, error) {
+	switch {
+	case p.matchWord("SECURITY_ENFORCED"):
+		return "SECURITY_ENFORCED", nil
+	case p.matchWord("USER_MODE"):
+		return "USER_MODE", nil
+	case p.matchWord("SYSTEM_MODE"):
+		return "SYSTEM_MODE", nil
+	default:
+		return "", p.errorf("expected SECURITY_ENFORCED, USER_MODE, or SYSTEM_MODE after WITH")
 	}
 }
 

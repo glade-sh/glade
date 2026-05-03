@@ -233,6 +233,55 @@ func TestReferenceValidationRestrictedDeleteAndUndelete(t *testing.T) {
 	}
 }
 
+func TestMergeSoftDeletesDuplicateAndReparentsChildren(t *testing.T) {
+	org := testOrg()
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Contact",
+			KeyPrefix: "003",
+			Fields: map[string]storage.Field{
+				"LastName":  {APIName: "LastName", Type: storage.FieldString},
+				"AccountId": {APIName: "AccountId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}},
+			},
+			Relations: []storage.Relationship{{
+				Field:         "AccountId",
+				ParentObjects: []string{"Account"},
+			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+	master := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Master")},
+	}})
+	duplicate := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Duplicate")},
+	}})
+	child := engine.Insert([]storage.Record{{
+		Object: "Contact",
+		Fields: map[string]storage.Value{
+			"LastName":  storage.StringValue("Smith"),
+			"AccountId": storage.IDValue(duplicate[0].ID),
+		},
+	}})
+	if !master[0].Success || !duplicate[0].Success || !child[0].Success {
+		t.Fatalf("setup = %#v %#v %#v", master, duplicate, child)
+	}
+
+	merge := engine.Merge(storage.Record{Object: "Account", ID: master[0].ID}, []storage.Record{{Object: "Account", ID: duplicate[0].ID}})
+	if len(merge) != 1 || !merge[0].Success || merge[0].ID != master[0].ID {
+		t.Fatalf("merge = %#v", merge)
+	}
+	if !org.Objects["Account"].Records[duplicate[0].ID].System.IsDeleted {
+		t.Fatalf("duplicate was not soft deleted")
+	}
+	if got := org.Objects["Contact"].Records[child[0].ID].Fields["AccountId"].ID; got != master[0].ID {
+		t.Fatalf("child account id = %s", got)
+	}
+}
+
 func TestDeleteCascadesThroughRelationshipMetadata(t *testing.T) {
 	org := testOrg()
 	org.Objects["Contact"] = storage.ObjectState{

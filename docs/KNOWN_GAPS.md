@@ -26,7 +26,7 @@ The MVP target is `full-featured aer-parity MVP`. This document lists required c
 ### `dml.apex`: Apex DML statements and Database methods
 
 - Status: `partial`
-- Gap: Apex insert/update/delete/upsert/undelete syntax and Database.insert/update/delete/upsert/undelete allOrNone paths now call the DML engine, return SaveResult/UpsertResult objects with statusCode, message, fields arrays, isCreated, set Ids, roll back allOrNone failures, soft-delete and undelete records, match implicit and explicit external-ID upserts, reject ID/object mismatches, enforce unique fields, validate lookup references, and cascade soft-delete children from relationship metadata. Merge, validation-rule formulas, and full Salesforce status-code parity remain incomplete.
+- Gap: Apex insert/update/delete/upsert/undelete/merge syntax and Database.insert/update/delete/upsert/undelete/merge allOrNone paths now call the DML engine, return SaveResult/UpsertResult/MergeResult objects with statusCode, message, fields arrays, isCreated, merged record IDs, set Ids, roll back allOrNone failures, soft-delete and undelete records, match implicit and explicit external-ID upserts, reject ID/object mismatches, enforce unique fields, validate lookup references, reparent lookups on merge, and cascade soft-delete children from relationship metadata. Validation-rule formulas, full merge trigger semantics, and full Salesforce status-code parity remain incomplete.
 
 ### `fixtures.persistence`: Seed/export/reset local fixtures with persistence
 
@@ -41,7 +41,7 @@ The MVP target is `full-featured aer-parity MVP`. This document lists required c
 ### `soql.apex`: Static and dynamic SOQL from Apex
 
 - Status: `partial`
-- Gap: Static SOQL literals and Database.query now execute against the in-memory org with simple bind variables, projection, parent relationship fields, child relationship subqueries, semi-joins, anti-joins, COUNT(), COUNT(field), COUNT_DISTINCT, SUM, MIN, MAX, AVG, GROUP BY, ROLLUP, CUBE, HAVING on aggregate expressions, aggregate aliases, GROUPING(field), common date literals, AggregateResult exprN fields, single-SObject assignment, equality/inequality/comparison filters, AND/OR boolean combinations, IN/NOT IN, LIKE, NOT, parentheses, comma-separated ORDER BY ASC/DESC with NULLS FIRST/LAST, limit, and offset. SQLite planning and advanced relationship query behavior remain incomplete.
+- Gap: Static SOQL literals and Database.query now execute against the in-memory org with simple bind variables, projection, FIELDS(ALL/STANDARD/CUSTOM), TYPEOF relationship projection, parent relationship fields, child relationship subqueries, semi-joins, anti-joins, COUNT(), COUNT(field), COUNT_DISTINCT, SUM, MIN, MAX, AVG, GROUP BY, ROLLUP, CUBE, HAVING on aggregate expressions, aggregate aliases, GROUPING(field), common date literals, AggregateResult exprN fields, single-SObject assignment, soft-deleted row visibility through ALL ROWS, equality/inequality/comparison filters, AND/OR boolean combinations, IN/NOT IN, LIKE, NOT, parentheses, comma-separated ORDER BY ASC/DESC with NULLS FIRST/LAST, FOR UPDATE parsing, WITH SECURITY_ENFORCED/USER_MODE/SYSTEM_MODE parsing, limit, and offset. SQLite planning, lock contention, security enforcement, and advanced relationship query behavior remain incomplete.
 
 ### `triggers.runtime`: Trigger invocation and context
 

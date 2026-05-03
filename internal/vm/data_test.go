@@ -79,6 +79,107 @@ System.assertEquals('Beta', row.Name);
 	}
 }
 
+func TestExecSOQLFieldsFunction(t *testing.T) {
+	program, err := CompileAnonymous(`
+insert new Account(Name = 'Acme', Rating = 'Hot', Score__c = 7);
+Account row = [SELECT FIELDS(ALL) FROM Account WHERE Name = 'Acme'];
+System.assertEquals('Acme', row.Name);
+System.assertEquals('Hot', row.Rating);
+System.assertEquals(7, row.Score__c);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Rating"] = storage.Field{APIName: "Rating", Type: storage.FieldString}
+	account.Definition.Fields["Score__c"] = storage.Field{APIName: "Score__c", Type: storage.FieldInteger}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSOQLTypeofProjection(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account a = new Account(Name = 'Acme');
+insert a;
+Task t = new Task(Subject = 'Call', WhatId = a.Id);
+insert t;
+Task row = [SELECT Id, TYPEOF What WHEN Account THEN Name END FROM Task WHERE Id = :t.Id];
+System.assertEquals('Acme', row.What.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Task"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Task",
+			KeyPrefix: "00T",
+			Fields: map[string]storage.Field{
+				"Subject": {APIName: "Subject", Type: storage.FieldString},
+				"WhatId":  {APIName: "WhatId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "What"},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "WhatId",
+				ParentObjects:      []string{"Account"},
+				ParentRelationship: "What",
+			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSOQLForUpdate(t *testing.T) {
+	program, err := CompileAnonymous(`
+insert new Account(Name = 'Acme');
+List<Account> rows = [SELECT Id, Name FROM Account WHERE Name = 'Acme' WITH SECURITY_ENFORCED FOR UPDATE];
+System.assertEquals(1, rows.size());
+Account row = rows.get(0);
+System.assertEquals('Acme', row.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSOQLAllRows(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account a = new Account(Name = 'Acme');
+insert a;
+delete a;
+List<Account> visible = [SELECT Id FROM Account WHERE Id = :a.Id];
+System.assertEquals(0, visible.size());
+List<Account> rows = [SELECT Id, IsDeleted FROM Account WHERE Id = :a.Id ALL ROWS];
+System.assertEquals(1, rows.size());
+Account row = rows.get(0);
+System.assert(row.IsDeleted);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSOQLSemiJoinPredicates(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account acme = new Account(Name = 'Acme');
@@ -545,6 +646,37 @@ Object undeleteResult = Database.undelete(good, false);
 System.assert(undeleteResult.isSuccess());
 List<Contact> restored = [SELECT Id FROM Contact WHERE Id = :good.Id];
 System.assertEquals(1, restored.size(), 'undelete should restore query visibility');
+
+Account mergeDuplicate = new Account(Name = 'Merge Duplicate');
+insert mergeDuplicate;
+Contact mergeChild = new Contact(LastName = 'Merge Child', AccountId = mergeDuplicate.Id);
+insert mergeChild;
+Account mergeMaster = new Account(Id = created.getId());
+Object mergeResult = Database.merge(mergeMaster, mergeDuplicate, false);
+System.assert(mergeResult.isSuccess());
+System.assertEquals(created.getId(), mergeResult.getId());
+String mergedMasterId = created.getId();
+List<Object> mergedIds = mergeResult.getMergedRecordIds();
+System.assertEquals(1, mergedIds.size());
+List<Account> activeDuplicate = [SELECT Id FROM Account WHERE Id = :mergeDuplicate.Id];
+System.assertEquals(0, activeDuplicate.size(), 'merge duplicate should be hidden from default SOQL');
+List<Account> deletedDuplicate = [SELECT Id, IsDeleted FROM Account WHERE Id = :mergeDuplicate.Id ALL ROWS];
+System.assertEquals(1, deletedDuplicate.size(), 'merge duplicate should remain available with ALL ROWS');
+Account deletedDuplicateRow = deletedDuplicate.get(0);
+System.assert(deletedDuplicateRow.IsDeleted);
+List<Contact> reparented = [SELECT Id FROM Contact WHERE Id = :mergeChild.Id AND AccountId = :mergedMasterId];
+System.assertEquals(1, reparented.size(), 'merge should reparent child lookups');
+Account statementMergeDuplicate = new Account(Name = 'Statement Merge Duplicate');
+insert statementMergeDuplicate;
+Contact statementMergeChild = new Contact(LastName = 'Statement Merge Child', AccountId = statementMergeDuplicate.Id);
+insert statementMergeChild;
+Account statementMergeMaster = new Account(Id = created.getId());
+merge statementMergeMaster statementMergeDuplicate;
+List<Account> statementDeletedDuplicate = [SELECT Id FROM Account WHERE Id = :statementMergeDuplicate.Id ALL ROWS];
+System.assertEquals(1, statementDeletedDuplicate.size(), 'merge statement should soft-delete duplicate');
+List<Contact> statementReparented = [SELECT Id FROM Contact WHERE Id = :statementMergeChild.Id AND AccountId = :mergedMasterId];
+System.assertEquals(1, statementReparented.size(), 'merge statement should reparent child lookups');
+
 Account parentDelete = new Account(Id = created.getId());
 delete parentDelete;
 List<Contact> cascadeDeleted = [SELECT Id FROM Contact WHERE Id = :good.Id];

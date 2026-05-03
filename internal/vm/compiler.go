@@ -308,11 +308,26 @@ func (p *parser) parseStatement() (ir.Instruction, error) {
 		return p.parseSwitch(start.pos)
 	}
 
-	for _, op := range []string{"insert", "update", "delete", "upsert", "undelete"} {
+	for _, op := range []string{"insert", "update", "delete", "upsert", "undelete", "merge"} {
 		if p.match(tokenIdent, op) {
 			expr, err := p.parseExpression()
 			if err != nil {
 				return ir.Instruction{}, err
+			}
+			if op == "merge" {
+				duplicate, err := p.parseExpression()
+				if err != nil {
+					return ir.Instruction{}, err
+				}
+				if _, err := p.expect(tokenSymbol, ";"); err != nil {
+					return ir.Instruction{}, err
+				}
+				expr = ir.Expr{Kind: ir.ExprCall, Callee: "Database.merge", Args: []ir.Expr{
+					expr,
+					duplicate,
+					{Kind: ir.ExprLiteral, Value: "true"},
+				}}
+				return ir.Instruction{Op: ir.OpDML, Name: op, Expr: expr, Pos: start.pos}, nil
 			}
 			field := ""
 			if op == "upsert" && !p.peek(tokenSymbol, ";") {

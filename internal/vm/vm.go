@@ -886,6 +886,8 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		return vm.executeDatabaseDML(strings.TrimPrefix(callee, "Database."), args, result)
 	case "Database.insert", "Database.update", "Database.delete":
 		return vm.executeDatabaseDML(strings.TrimPrefix(callee, "Database."), args, result)
+	case "Database.merge":
+		return vm.executeDatabaseMerge(args, result)
 	case "Limits.getQueries", "Limits.getLimitQueries", "Limits.getQueryRows", "Limits.getLimitQueryRows",
 		"Limits.getDmlStatements", "Limits.getLimitDmlStatements", "Limits.getDmlRows", "Limits.getLimitDmlRows",
 		"Limits.getHeapSize", "Limits.getLimitHeapSize", "Limits.getCpuTime", "Limits.getLimitCpuTime",
@@ -1635,6 +1637,41 @@ func isSOQLDateLiteralPrefix(token string) bool {
 }
 
 func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, result *Result) error {
+	if op == "merge" {
+		if expr.Kind != ir.ExprCall || len(expr.Args) < 2 {
+			return fmt.Errorf("merge statement requires master and duplicate record(s)")
+		}
+		args := make([]Value, 0, len(expr.Args))
+		for _, arg := range expr.Args {
+			value, err := vm.eval(arg, result)
+			if err != nil {
+				return err
+			}
+			args = append(args, value)
+		}
+		value, err := vm.executeDatabaseMerge(args, result)
+		if err != nil {
+			return err
+		}
+		results := []Value{value}
+		if value.Kind == ValueList {
+			results = value.List
+		}
+		for _, mergeResult := range results {
+			if mergeResult.Kind != ValueObject {
+				continue
+			}
+			success, ok := mergeResult.Fields["success"]
+			if ok && success.Kind == ValueBool && success.Bool {
+				continue
+			}
+			if errValue, ok := mergeResult.Fields["error"]; ok && errValue.Kind == ValueString && errValue.Text != "" {
+				return errors.New(errValue.Text)
+			}
+			return errors.New("merge failed")
+		}
+		return nil
+	}
 	value, err := vm.eval(expr, result)
 	if err != nil {
 		return err
@@ -1722,6 +1759,98 @@ func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value
 		values = append(values, row)
 	}
 	if args[0].Kind == ValueList {
+		return List(values...), nil
+	}
+	if len(values) == 0 {
+		return Null, nil
+	}
+	return values[0], nil
+}
+
+func (vm *VM) executeDatabaseMerge(args []Value, result *Result) (Value, error) {
+	if len(args) < 2 || len(args) > 3 {
+		return Null, fmt.Errorf("Database.merge expects master, duplicate record(s), and optional allOrNone")
+	}
+	allOrNone := true
+	if len(args) == 3 {
+		if args[2].Kind != ValueBool {
+			return Null, fmt.Errorf("Database.merge allOrNone expects Boolean")
+		}
+		allOrNone = args[2].Bool
+	}
+	if vm.Org == nil {
+		return Null, fmt.Errorf("DML requires org state")
+	}
+	master, _, err := vm.recordsFromValue(args[0])
+	if err != nil {
+		return Null, err
+	}
+	if len(master) != 1 {
+		return Null, fmt.Errorf("Database.merge master expects one sObject")
+	}
+	duplicates, _, err := vm.recordsFromValue(args[1])
+	if err != nil {
+		return Null, err
+	}
+	recordsForChecks := append([]storage.Record{master[0]}, duplicates...)
+	if err := vm.incrementLimit("dmlStatements", 1); err != nil {
+		return Null, err
+	}
+	if err := vm.incrementLimit("dmlRows", len(recordsForChecks)); err != nil {
+		return Null, err
+	}
+	if err := vm.checkMixedDML(recordsForChecks); err != nil {
+		return Null, err
+	}
+	if result != nil {
+		result.Trace = append(result.Trace, trace.Instant("apex.dml.merge", "apex.dml", int64(len(result.Trace)), map[string]any{
+			"operation": "merge",
+			"rows":      len(recordsForChecks),
+		}))
+	}
+	backup := vm.Org.Clone()
+	engine := dml.NewEngine(vm.Org)
+	results := engine.Merge(master[0], duplicates)
+	if allOrNone {
+		for _, dmlResult := range results {
+			if !dmlResult.Success {
+				*vm.Org = backup
+				break
+			}
+		}
+	}
+	values := make([]Value, 0, len(results))
+	for i, dmlResult := range results {
+		row := Object("Database.MergeResult")
+		row.Fields["success"] = Bool(dmlResult.Success)
+		row.Fields["id"] = String(string(dmlResult.ID))
+		row.Fields["error"] = String(dmlResult.Error)
+		mergedIDs := List()
+		if dmlResult.Success && i < len(duplicates) {
+			mergedIDs.List = append(mergedIDs.List, String(string(duplicates[i].ID)))
+		}
+		row.Fields["mergedRecordIds"] = mergedIDs
+		row.Fields["updatedRelatedIds"] = List()
+		errorsList := List()
+		if dmlResult.Error != "" {
+			errValue := Object("Database.Error")
+			errValue.Fields["message"] = String(dmlResult.Error)
+			code := dmlResult.StatusCode
+			if code == "" {
+				code = "FIELD_CUSTOM_VALIDATION_EXCEPTION"
+			}
+			errValue.Fields["statusCode"] = String(code)
+			fieldsList := List()
+			for _, f := range dmlResult.Fields {
+				fieldsList.List = append(fieldsList.List, String(f))
+			}
+			errValue.Fields["fields"] = fieldsList
+			errorsList = List(errValue)
+		}
+		row.Fields["errors"] = errorsList
+		values = append(values, row)
+	}
+	if args[1].Kind == ValueList {
 		return List(values...), nil
 	}
 	if len(values) == 0 {
@@ -4534,6 +4663,34 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Database.UpsertResult.getErrors expects 0 arguments")
 			}
 			return receiver.Fields["errors"], receiver, false, true, nil
+		}
+	case "Database.MergeResult":
+		switch method {
+		case "isSuccess":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Database.MergeResult.isSuccess expects 0 arguments")
+			}
+			return receiver.Fields["success"], receiver, false, true, nil
+		case "getId":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Database.MergeResult.getId expects 0 arguments")
+			}
+			return receiver.Fields["id"], receiver, false, true, nil
+		case "getErrors":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Database.MergeResult.getErrors expects 0 arguments")
+			}
+			return receiver.Fields["errors"], receiver, false, true, nil
+		case "getMergedRecordIds":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Database.MergeResult.getMergedRecordIds expects 0 arguments")
+			}
+			return receiver.Fields["mergedRecordIds"], receiver, false, true, nil
+		case "getUpdatedRelatedIds":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Database.MergeResult.getUpdatedRelatedIds expects 0 arguments")
+			}
+			return receiver.Fields["updatedRelatedIds"], receiver, false, true, nil
 		}
 	case "Database.Error":
 		switch method {

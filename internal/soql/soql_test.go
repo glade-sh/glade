@@ -10,11 +10,11 @@ import (
 )
 
 func TestParseSimpleQuery(t *testing.T) {
-	query, err := Parse("SELECT Id, Name FROM Account WHERE Name = 'Acme' ORDER BY Name DESC NULLS LAST LIMIT 10 OFFSET 1")
+	query, err := Parse("SELECT Id, Name FROM Account WHERE Name = 'Acme' WITH SECURITY_ENFORCED ORDER BY Name DESC NULLS LAST LIMIT 10 OFFSET 1 FOR UPDATE")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if query.Object != "Account" || len(query.Fields) != 2 || query.Where.Field != "Name" || query.OrderBy != "Name" || !query.OrderDesc || len(query.Order) != 1 || query.Order[0].Nulls != "LAST" || query.Limit != 10 || query.Offset != 1 {
+	if query.Object != "Account" || len(query.Fields) != 2 || query.Where.Field != "Name" || query.SecurityMode != "SECURITY_ENFORCED" || query.OrderBy != "Name" || !query.OrderDesc || len(query.Order) != 1 || query.Order[0].Nulls != "LAST" || query.Limit != 10 || query.Offset != 1 || !query.ForUpdate {
 		t.Fatalf("query = %#v", query)
 	}
 }
@@ -331,6 +331,131 @@ func TestExecuteFiltersProjectsAndOrders(t *testing.T) {
 	if result.Rows != 1 || result.Records[0].ID != "001000000000003" {
 		t.Fatalf("nulls first result = %#v", result)
 	}
+
+	result, err = ParseAndExecute(org, "SELECT Id, Name FROM Account WHERE Active = true ORDER BY Name FOR UPDATE")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 2 || result.Records[0].ID != "001000000000001" || result.Records[1].ID != "001000000000002" {
+		t.Fatalf("for update result = %#v", result)
+	}
+
+	result, err = ParseAndExecute(org, "SELECT Id, Name FROM Account WHERE Active = true WITH USER_MODE ORDER BY Name")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 2 {
+		t.Fatalf("user mode result = %#v", result)
+	}
+
+	query, err := Parse("SELECT Id FROM Account WITH SYSTEM_MODE")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if query.SecurityMode != "SYSTEM_MODE" {
+		t.Fatalf("query = %#v", query)
+	}
+}
+
+func TestExecuteFieldsFunctionProjection(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Account",
+			Fields: map[string]storage.Field{
+				"Name":      {APIName: "Name", Type: storage.FieldString},
+				"Rating":    {APIName: "Rating", Type: storage.FieldString},
+				"Score__c":  {APIName: "Score__c", Type: storage.FieldInteger},
+				"Hidden__c": {APIName: "Hidden__c", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"001000000000001": {
+				ID:     "001000000000001",
+				Object: "Account",
+				Fields: map[string]storage.Value{
+					"Name":      storage.StringValue("Acme"),
+					"Rating":    storage.StringValue("Hot"),
+					"Score__c":  storage.IntegerValue(7),
+					"Hidden__c": storage.StringValue("kept"),
+				},
+			},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT FIELDS(STANDARD) FROM Account")
+	if err != nil {
+		t.Fatal(err)
+	}
+	fields := result.Records[0].Fields
+	if _, ok := fields["Id"]; !ok {
+		t.Fatalf("Id missing from standard fields: %#v", fields)
+	}
+	if fields["Name"].String != "Acme" || fields["Rating"].String != "Hot" {
+		t.Fatalf("standard fields = %#v", fields)
+	}
+	if _, ok := fields["Score__c"]; ok {
+		t.Fatalf("custom field leaked into standard fields: %#v", fields)
+	}
+
+	result, err = ParseAndExecute(org, "SELECT FIELDS(CUSTOM) FROM Account")
+	if err != nil {
+		t.Fatal(err)
+	}
+	fields = result.Records[0].Fields
+	if _, ok := fields["Name"]; ok {
+		t.Fatalf("standard field leaked into custom fields: %#v", fields)
+	}
+	if fields["Score__c"].Integer != 7 || fields["Hidden__c"].String != "kept" {
+		t.Fatalf("custom fields = %#v", fields)
+	}
+
+	result, err = ParseAndExecute(org, "SELECT Name, FIELDS(CUSTOM) FROM Account")
+	if err != nil {
+		t.Fatal(err)
+	}
+	fields = result.Records[0].Fields
+	if fields["Name"].String != "Acme" || fields["Score__c"].Integer != 7 {
+		t.Fatalf("mixed fields = %#v", fields)
+	}
+}
+
+func TestExecuteAllRowsIncludesDeletedRecords(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Account",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"001000000000001": {ID: "001000000000001", Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("Active")}},
+			"001000000000002": {ID: "001000000000002", Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("Deleted")}, System: storage.SystemFields{IsDeleted: true}},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT Id, IsDeleted FROM Account ORDER BY Name")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 || result.Records[0].ID != "001000000000001" {
+		t.Fatalf("default rows = %#v", result)
+	}
+	result, err = ParseAndExecute(org, "SELECT Id, IsDeleted FROM Account ORDER BY Name ALL ROWS")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 2 || result.Records[1].Fields["IsDeleted"].Kind != storage.ValueBoolean || !result.Records[1].Fields["IsDeleted"].Boolean {
+		t.Fatalf("all rows = %#v", result)
+	}
+	query, err := Parse("SELECT Id FROM Account ALL ROWS FOR UPDATE")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !query.AllRows || !query.ForUpdate {
+		t.Fatalf("query = %#v", query)
+	}
 }
 
 func TestExecuteProjectsParentRelationshipField(t *testing.T) {
@@ -372,6 +497,55 @@ func TestExecuteProjectsParentRelationshipField(t *testing.T) {
 	}
 	if got := result.Records[0].Fields["Account.Name"].String; got != "Acme" {
 		t.Fatalf("Account.Name = %q", got)
+	}
+}
+
+func TestExecuteTypeofRelationshipProjection(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Account", KeyPrefix: "001", Fields: map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}}},
+		Records: map[storage.ID]storage.Record{
+			"001000000000001": {ID: "001000000000001", Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")}},
+		},
+	}
+	org.Objects["Opportunity"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Opportunity", KeyPrefix: "006", Fields: map[string]storage.Field{"Amount": {APIName: "Amount", Type: storage.FieldDecimal}}},
+		Records: map[storage.ID]storage.Record{
+			"006000000000001": {ID: "006000000000001", Object: "Opportunity", Fields: map[string]storage.Value{"Amount": storage.DecimalValue("42")}},
+		},
+	}
+	org.Objects["Task"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Task",
+			Fields: map[string]storage.Field{
+				"Subject": {APIName: "Subject", Type: storage.FieldString},
+				"WhatId":  {APIName: "WhatId", Type: storage.FieldReference, ReferenceTo: []string{"Account", "Opportunity"}, RelationshipName: "What"},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "WhatId",
+				ParentObjects:      []string{"Account", "Opportunity"},
+				ParentRelationship: "What",
+				Polymorphic:        true,
+			}},
+		},
+		Records: map[storage.ID]storage.Record{
+			"00T000000000001": {ID: "00T000000000001", Object: "Task", Fields: map[string]storage.Value{"Subject": storage.StringValue("A"), "WhatId": storage.IDValue("001000000000001")}},
+			"00T000000000002": {ID: "00T000000000002", Object: "Task", Fields: map[string]storage.Value{"Subject": storage.StringValue("B"), "WhatId": storage.IDValue("006000000000001")}},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT Id, TYPEOF What WHEN Account THEN Name WHEN Opportunity THEN Amount END FROM Task ORDER BY Subject")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 2 {
+		t.Fatalf("result = %#v", result)
+	}
+	if got := result.Records[0].Fields["What.Name"].String; got != "Acme" {
+		t.Fatalf("What.Name = %q", got)
+	}
+	if got := result.Records[1].Fields["What.Amount"].Decimal; got != "42" {
+		t.Fatalf("What.Amount = %q", got)
 	}
 }
 
@@ -445,6 +619,15 @@ func TestExecuteProjectsChildRelationshipSubquery(t *testing.T) {
 	children = result.Records[0].Children["Contacts"]
 	if len(children) != 1 || children[0].ID != "003000000000004" {
 		t.Fatalf("nulls first children = %#v", children)
+	}
+
+	result, err = ParseAndExecute(org, "SELECT Id, (SELECT FIELDS(STANDARD) FROM Contacts ORDER BY LastName ASC NULLS LAST LIMIT 1) FROM Account WHERE Name = 'Acme'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	children = result.Records[0].Children["Contacts"]
+	if len(children) != 1 || children[0].Fields["LastName"].String != "Alpha" || children[0].Fields["AccountId"].ID != "001000000000001" {
+		t.Fatalf("child FIELDS() rows = %#v", children)
 	}
 }
 
