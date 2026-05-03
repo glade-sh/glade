@@ -26,7 +26,7 @@ The MVP target is `full-featured aer-parity MVP`. This document lists required c
 ### `dml.apex`: Apex DML statements and Database methods
 
 - Status: `partial`
-- Gap: Apex insert/update/delete/upsert/undelete/merge syntax and Database.insert/update/delete/upsert/undelete/merge allOrNone paths now call the DML engine, return SaveResult/UpsertResult/MergeResult objects with statusCode, message, fields arrays, isCreated, merged record IDs, set Ids, roll back allOrNone failures, soft-delete and undelete records, match implicit and explicit external-ID upserts, reject ID/object mismatches, enforce unique fields, validate lookup references, reparent lookups on merge, and cascade soft-delete children from relationship metadata. Validation-rule formulas, full merge trigger semantics, and full Salesforce status-code parity remain incomplete.
+- Gap: Apex insert/update/delete/upsert/undelete/merge syntax and Database.insert/update/delete/upsert/undelete/merge allOrNone paths now call the DML engine, return SaveResult/UpsertResult/MergeResult objects with statusCode, message, fields arrays, isCreated, merged record IDs, set Ids, roll back allOrNone failures, soft-delete and undelete records, match implicit and explicit external-ID upserts, reject ID/object mismatches, enforce unique fields, validate lookup references, reparent lookups on merge, and cascade soft-delete children from relationship metadata. Trigger context includes operation flags, size, new/old lists, nullable unavailable contexts, and newMap/oldMap for supported operations. Validation-rule formulas, full merge trigger semantics, and full Salesforce status-code parity remain incomplete.
 
 ### `fixtures.persistence`: Seed/export/reset local fixtures with persistence
 

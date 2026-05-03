@@ -92,6 +92,9 @@ Release engineering:
 - Added object-level and field-level `SObject.addError`, `hasErrors`, and
   `getErrors` handling in before-trigger DML, including row-level `SaveResult`
   error shaping and `Database.Error.getFields()` attribution.
+- Tightened trigger context shape with `Trigger.isExecuting`, operation flags,
+  `Trigger.size`, nullable unavailable contexts, and `Trigger.newMap`/
+  `Trigger.oldMap` coverage for update and delete triggers.
 - Preserved source ranges through parser syntax diagnostics, compiled project
   method/trigger bodies, VM statement traces, runtime/test failure stacks, DAP
   stack frames, and profile source ranges.

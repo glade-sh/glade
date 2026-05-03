@@ -318,6 +318,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
 - [ ] Complete trigger ordering, before/after state, bulk execution,
   recursion behavior, operation type, maps, old/new values, and rollback on
   failures.
+  - [x] Support trigger operation flags, `Trigger.size`, nullable unavailable
+    contexts, and `Trigger.newMap`/`Trigger.oldMap` for supported operations.
 - [ ] Implement `addError` behavior on SObjects and fields.
   - [x] Support object-level `SObject.addError`, `hasErrors`, and `getErrors`
     in before-trigger DML with row-level `SaveResult` error shaping and

@@ -659,6 +659,77 @@ System.assertEquals(1, survivors.size(), 'partial insert should keep only unbloc
 	}
 }
 
+func TestExecTriggerContextMapsAndOperationFlags(t *testing.T) {
+	updateTrigger, err := CompileAnonymous(`
+System.assert(Trigger.isExecuting);
+System.assert(Trigger.isBefore);
+System.assert(Trigger.isUpdate);
+System.assertEquals(1, Trigger.size);
+Account newer = Trigger.new.get(0);
+Account older = Trigger.oldMap.get(newer.Id);
+System.assertEquals('Before', older.Name);
+System.assertEquals('After', newer.Name);
+Account byMap = Trigger.newMap.get(newer.Id);
+byMap.Rating = 'Warm';
+newer.Name = 'After!';
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	deleteTrigger, err := CompileAnonymous(`
+System.assert(Trigger.isExecuting);
+System.assert(Trigger.isBefore);
+System.assert(Trigger.isDelete);
+System.assertEquals(null, Trigger.new);
+System.assertEquals(null, Trigger.newMap);
+Account oldRow = Trigger.old.get(0);
+System.assert(Trigger.oldMap.containsKey(oldRow.Id));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Account a = new Account(Name = 'Before');
+insert a;
+a.Name = 'After';
+update a;
+Account updated = [SELECT Id, Name, Rating FROM Account WHERE Id = :a.Id];
+System.assertEquals('After!', updated.Name);
+System.assertEquals('Warm', updated.Rating);
+delete updated;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Rating"] = storage.Field{APIName: "Rating", Type: storage.FieldString}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "AccountBeforeUpdateContext",
+		Object:    "Account",
+		Timing:    triggerTimingBefore,
+		Operation: "update",
+		Program:   updateTrigger,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "AccountBeforeDeleteContext",
+		Object:    "Account",
+		Timing:    triggerTimingBefore,
+		Operation: "delete",
+		Program:   deleteTrigger,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDMLExternalIDValidationAndUndelete(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account first = new Account(Name = 'Acme', External_Key__c = 'ext-1', Code__c = 'A');

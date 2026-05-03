@@ -2548,11 +2548,26 @@ func triggerContext(trigger Trigger, records, oldRecords []storage.Record) map[s
 			oldMap.Map[mapKey(String(string(record.ID)))] = value
 		}
 	}
+	newListValue := Null
+	newMapValue := Null
+	if trigger.Operation == "insert" || trigger.Operation == "update" || trigger.Operation == "undelete" {
+		newListValue = List(newValues...)
+		if trigger.Operation != "insert" || trigger.Timing == triggerTimingAfter {
+			newMapValue = newMap
+		}
+	}
+	oldListValue := Null
+	oldMapValue := Null
+	if trigger.Operation == "update" || trigger.Operation == "delete" {
+		oldListValue = List(oldValues...)
+		oldMapValue = oldMap
+	}
 	ctx := map[string]Value{
-		"Trigger.new":           List(newValues...),
-		"Trigger.old":           List(oldValues...),
-		"Trigger.newMap":        newMap,
-		"Trigger.oldMap":        oldMap,
+		"Trigger.new":           newListValue,
+		"Trigger.old":           oldListValue,
+		"Trigger.newMap":        newMapValue,
+		"Trigger.oldMap":        oldMapValue,
+		"Trigger.isExecuting":   Bool(true),
 		"Trigger.isBefore":      Bool(trigger.Timing == triggerTimingBefore),
 		"Trigger.isAfter":       Bool(trigger.Timing == triggerTimingAfter),
 		"Trigger.isInsert":      Bool(trigger.Operation == "insert"),
