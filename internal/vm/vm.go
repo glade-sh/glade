@@ -1457,6 +1457,11 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
 		return platformScalar("URL", "https://local.oaer.example"), nil
+	case "URL.getCurrentRequestUrl":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("URL.getCurrentRequestUrl expects 0 arguments")
+		}
+		return Null, unsupportedCallError(callee)
 	case "Test.setMock":
 		if len(args) != 2 {
 			return Null, fmt.Errorf("Test.setMock expects mock type and mock instance")
@@ -3591,6 +3596,36 @@ func triggerContext(trigger Trigger, records, oldRecords []storage.Record) map[s
 	return ctx
 }
 
+func (vm *VM) sObjectNameForIDPrefix(prefix string) (string, bool) {
+	if vm.Org != nil {
+		names := make([]string, 0, len(vm.Org.Objects))
+		for name := range vm.Org.Objects {
+			names = append(names, name)
+		}
+		sort.Strings(names)
+		for _, name := range names {
+			if strings.EqualFold(vm.Org.Objects[name].Definition.KeyPrefix, prefix) {
+				return name, true
+			}
+		}
+	}
+	name, ok := standardSObjectPrefixes[prefix]
+	return name, ok
+}
+
+var standardSObjectPrefixes = map[string]string{
+	"001": "Account",
+	"003": "Contact",
+	"005": "User",
+	"006": "Opportunity",
+	"00Q": "Lead",
+	"00T": "Task",
+	"00U": "Event",
+	"00D": "Organization",
+	"500": "Case",
+	"701": "Campaign",
+}
+
 func platformScalar(typeName, value string) Value {
 	out := Object(typeName)
 	out.Fields["value"] = String(value)
@@ -5021,6 +5056,23 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 				return Null, fmt.Errorf("URL constructor expects String")
 			}
 			raw = args[0].Text
+		case 2:
+			if args[0].Kind != ValueObject || args[0].Type != "URL" || args[1].Kind != ValueString {
+				return Null, fmt.Errorf("URL constructor expects URL context and String spec")
+			}
+			baseRaw, err := platformScalarText(args[0], "URL")
+			if err != nil {
+				return Null, err
+			}
+			base, err := url.Parse(baseRaw)
+			if err != nil {
+				return Null, err
+			}
+			ref, err := url.Parse(args[1].Text)
+			if err != nil {
+				return Null, err
+			}
+			raw = base.ResolveReference(ref).String()
 		case 3, 4:
 			if args[0].Kind != ValueString || args[1].Kind != ValueString || args[len(args)-1].Kind != ValueString {
 				return Null, fmt.Errorf("URL constructor expects protocol, host, [port,] file")
@@ -5034,7 +5086,7 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 			}
 			raw = protocol + "://" + host + file
 		default:
-			return Null, fmt.Errorf("URL constructor expects spec or protocol, host, [port,] file")
+			return Null, fmt.Errorf("URL constructor expects spec, context and spec, or protocol, host, [port,] file")
 		}
 		if _, err := url.Parse(raw); err != nil {
 			return Null, err
@@ -6178,7 +6230,7 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 		return Null, true, newExceptionError("NullPointerException", "Attempt to de-reference a null object")
 	}
 	if receiverType := vm.VarTypes[receiverName]; strings.EqualFold(receiverType, "Id") {
-		if value, handled, err := callIdMember(receiver, method, args); handled || err != nil {
+		if value, handled, err := vm.callIdMember(receiver, method, args); handled || err != nil {
 			return value, true, err
 		}
 	}

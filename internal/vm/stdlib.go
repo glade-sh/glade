@@ -1848,7 +1848,7 @@ func platformScalarValue(value Value) (string, bool) {
 	return raw.Text, true
 }
 
-func callIdMember(receiver Value, method string, args []Value) (Value, bool, error) {
+func (vm *VM) callIdMember(receiver Value, method string, args []Value) (Value, bool, error) {
 	if receiver.Kind != ValueString {
 		return Null, false, nil
 	}
@@ -1864,12 +1864,47 @@ func callIdMember(receiver Value, method string, args []Value) (Value, bool, err
 			return String(receiver.Text), true, nil
 		}
 		return String(receiver.Text[:15]), true, nil
+	case "to18":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("Id.to18 expects 0 arguments")
+		}
+		if err := validateApexID(receiver.Text); err != nil {
+			return Null, true, err
+		}
+		if len(receiver.Text) == 18 {
+			return String(receiver.Text), true, nil
+		}
+		return String(apexIDTo18(receiver.Text)), true, nil
+	case "getSObjectType":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("Id.getSObjectType expects 0 arguments")
+		}
+		if err := validateApexID(receiver.Text); err != nil {
+			return Null, true, err
+		}
+		objectName, ok := vm.sObjectNameForIDPrefix(receiver.Text[:3])
+		if !ok {
+			return Null, true, fmt.Errorf("System.StringException: Invalid id prefix: %s", receiver.Text[:3])
+		}
+		token := Object("Schema.SObjectType")
+		token.Fields["object"] = String(objectName)
+		return token, true, nil
 	default:
 		return Null, false, nil
 	}
 }
 
 func validateApexID(text string) error {
+	if err := validateApexIDShape(text); err != nil {
+		return err
+	}
+	if len(text) == 18 && apexIDTo18(text[:15]) != text {
+		return fmt.Errorf("System.StringException: Invalid id: %s", text)
+	}
+	return nil
+}
+
+func validateApexIDShape(text string) error {
 	if len(text) != 15 && len(text) != 18 {
 		return fmt.Errorf("System.StringException: Invalid id: %s", text)
 	}
@@ -1879,6 +1914,22 @@ func validateApexID(text string) error {
 		}
 	}
 	return nil
+}
+
+func apexIDTo18(text string) string {
+	checksumChars := "ABCDEFGHIJKLMNOPQRSTUVWXYZ012345"
+	out := text[:15]
+	for chunk := 0; chunk < 3; chunk++ {
+		mask := 0
+		for bit := 0; bit < 5; bit++ {
+			ch := text[chunk*5+bit]
+			if ch >= 'A' && ch <= 'Z' {
+				mask |= 1 << bit
+			}
+		}
+		out += string(checksumChars[mask])
+	}
+	return out
 }
 
 func idStatic(callee string, args []Value) (Value, error) {
@@ -1910,15 +1961,16 @@ func idStatic(callee string, args []Value) (Value, error) {
 }
 
 func restoreApexIDCasing(text string) (string, error) {
-	if err := validateApexID(text); err != nil {
+	if err := validateApexIDShape(text); err != nil {
 		return "", err
 	}
 	if len(text) != 18 {
 		return text, nil
 	}
+	checksum := strings.ToUpper(text[15:])
 	out := []byte(strings.ToLower(text[:15]))
 	for chunk := 0; chunk < 3; chunk++ {
-		mask, ok := apexIDChecksumMask(text[15+chunk])
+		mask, ok := apexIDChecksumMask(checksum[chunk])
 		if !ok {
 			return "", fmt.Errorf("System.StringException: Invalid id: %s", text)
 		}
@@ -1929,7 +1981,7 @@ func restoreApexIDCasing(text string) (string, error) {
 			}
 		}
 	}
-	return string(out) + text[15:], nil
+	return string(out) + checksum, nil
 }
 
 func apexIDChecksumMask(ch byte) (int, bool) {

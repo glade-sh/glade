@@ -4,6 +4,8 @@ import (
 	"errors"
 	"strings"
 	"testing"
+
+	"github.com/open-aer/oaer/internal/storage"
 )
 
 func TestExecStringStdlibMethods(t *testing.T) {
@@ -374,12 +376,16 @@ System.assertEquals(accountName.hashCode(), accountType.hashCode());
 Id valid = Id.valueOf('001B000001DVM9t');
 Id same = Id.valueOf('001B000001DVM9t', false);
 Id restored = Id.valueOf('001b000001dvm9tIAH', true);
+Id restoredLowerChecksum = Id.valueOf('001b000001dvm9tiah', true);
 System.assert(valid.equals(same));
 System.assertEquals('001B000001DVM9t', valid.toString());
 System.assertEquals('001B000001DVM9t', valid.to15());
+System.assertEquals('001B000001DVM9tIAH', valid.to18());
 Id longId = Id.valueOf('001B000001DVM9tIAH');
 System.assertEquals('001B000001DVM9t', longId.to15());
+System.assertEquals('001B000001DVM9tIAH', longId.to18());
 System.assertEquals('001B000001DVM9tIAH', restored.toString());
+System.assertEquals('001B000001DVM9tIAH', restoredLowerChecksum.toString());
 
 String text = 'trail';
 System.assert(text.equals('trail'));
@@ -408,6 +414,12 @@ System.assertEquals('id=001', detailed.getQuery());
 System.assertEquals('top', detailed.getRef());
 System.assertEquals('/apex/Page?id=001', detailed.getFile());
 System.assertEquals(8443, detailed.getPort());
+URL protocolHost = new URL('https', 'example.test', '/trail');
+System.assertEquals('https://example.test/trail', protocolHost.toExternalForm());
+URL protocolHostPort = new URL('https', 'example.test', 8443, '/ridge');
+System.assertEquals('https://example.test:8443/ridge', protocolHostPort.toExternalForm());
+URL relative = new URL(detailed, '../Other?x=1');
+System.assertEquals('https://example.test:8443/Other?x=1', relative.toExternalForm());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -603,6 +615,7 @@ func TestCoreIDValueOfRejectsInvalidAndRestoreCasing(t *testing.T) {
 	tests := []string{
 		`Id.valueOf('short');`,
 		`Id.valueOf('001B000001DVM9!');`,
+		`Id.valueOf('001B000001DVM9tIAA');`,
 		`Id.valueOf('001B000001DVM9t999', true);`,
 	}
 	for _, source := range tests {
@@ -613,6 +626,52 @@ func TestCoreIDValueOfRejectsInvalidAndRestoreCasing(t *testing.T) {
 		if _, err := Execute(program, nil); err == nil {
 			t.Fatalf("expected error for %s", source)
 		}
+	}
+}
+
+func TestExecIDGetSObjectType(t *testing.T) {
+	program, err := CompileAnonymous(`
+Id accountId = Id.valueOf('001B000001DVM9t');
+Object accountType = accountId.getSObjectType();
+Object accountDescribe = accountType.getDescribe();
+System.assertEquals('Account', accountDescribe.getName());
+Id contactId = Id.valueOf('003B000001DVM9tIAH');
+Object contactType = contactId.getSObjectType();
+Object contactDescribe = contactType.getDescribe();
+System.assertEquals('Contact', contactDescribe.getName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Contact",
+			KeyPrefix: "003",
+			Fields: map[string]storage.Field{
+				"LastName": {APIName: "LastName", Type: storage.FieldString},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecURLCurrentRequestUrlUnsupported(t *testing.T) {
+	program, err := CompileAnonymous(`URL.getCurrentRequestUrl();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = Execute(program, nil)
+	if err == nil {
+		t.Fatal("expected URL.getCurrentRequestUrl to be unsupported")
+	}
+	if got := err.Error(); got != `unsupported call "URL.getCurrentRequestUrl"` {
+		t.Fatalf("error = %q", got)
 	}
 }
 
