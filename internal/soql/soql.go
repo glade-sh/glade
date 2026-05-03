@@ -165,6 +165,9 @@ func Execute(org storage.OrgState, query Query) (Result, error) {
 		if err != nil {
 			return Result{}, err
 		}
+		if query.ForUpdate {
+			projected.System.Locked = true
+		}
 		records = append(records, projected)
 	}
 	return Result{Records: records, Rows: len(records)}, nil

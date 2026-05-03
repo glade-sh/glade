@@ -107,6 +107,7 @@ type SystemFields struct {
 	SystemModstamp   string `json:"systemModstamp,omitempty"`
 	OwnerID          ID     `json:"ownerId,omitempty"`
 	IsDeleted        bool   `json:"isDeleted,omitempty"`
+	Locked           bool   `json:"locked,omitempty"`
 }
 
 type Value struct {

@@ -81,6 +81,7 @@ Release engineering:
 - Added SOQL `FIELDS(ALL)`, `FIELDS(STANDARD)`, and `FIELDS(CUSTOM)` projection
   expansion.
 - Added SOQL `FOR UPDATE` parsing and execution as a local lock marker.
+- Marked `FOR UPDATE` result records with an internal local lock marker.
 - Added SOQL `ALL ROWS` support for querying soft-deleted records.
 - Added SOQL `WITH SECURITY_ENFORCED`, `WITH USER_MODE`, and
   `WITH SYSTEM_MODE` parsing as local security-mode markers.

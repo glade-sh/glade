@@ -347,6 +347,9 @@ func TestExecuteFiltersProjectsAndOrders(t *testing.T) {
 	if result.Rows != 2 || result.Records[0].ID != "001000000000001" || result.Records[1].ID != "001000000000002" {
 		t.Fatalf("for update result = %#v", result)
 	}
+	if !result.Records[0].System.Locked || !result.Records[1].System.Locked {
+		t.Fatalf("for update did not mark rows locked: %#v", result.Records)
+	}
 
 	result, err = ParseAndExecute(org, "SELECT Id, Name FROM Account WHERE Active = true WITH USER_MODE ORDER BY Name")
 	if err != nil {
