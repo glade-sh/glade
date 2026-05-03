@@ -1,6 +1,9 @@
 package vm
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestExecStringStdlibMethods(t *testing.T) {
 	program, err := CompileAnonymous(`
@@ -580,5 +583,74 @@ System.assert(!counts.containsKey('b'));
 	}
 	if _, err := Execute(program, nil); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecCollectionStdlibMoreMethods(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Integer> source = new List<Integer>{3, 1, 2};
+List<Integer> copied = new List<Integer>(source);
+source.set(0, 9);
+System.assertEquals(3, copied.size());
+System.assertEquals(3, copied.get(0));
+copied.sort();
+System.assertEquals(1, copied.get(0));
+System.assertEquals(3, copied.get(2));
+List<Integer> cloned = copied.clone();
+cloned.set(0, 7);
+System.assertEquals(1, copied.get(0));
+System.assertEquals(7, cloned.get(0));
+List<Integer> deep = copied.deepClone();
+deep.set(1, 8);
+System.assertEquals(2, copied.get(1));
+System.assertEquals(8, deep.get(1));
+
+List<String> words = new List<String>{'delta', 'alpha', 'charlie'};
+words.sort();
+System.assertEquals('alpha', words.get(0));
+System.assertEquals('delta', words.get(2));
+
+Set<String> fromList = new Set<String>(new List<String>{'b', 'a', 'b'});
+System.assertEquals(2, fromList.size());
+Set<String> setClone = fromList.clone();
+setClone.add('c');
+System.assertEquals(2, fromList.size());
+System.assertEquals(3, setClone.size());
+Set<String> setDeep = fromList.deepClone();
+setDeep.remove('a');
+System.assert(fromList.contains('a'));
+System.assert(!setDeep.contains('a'));
+
+Map<String,Integer> counts = new Map<String,Integer>();
+counts.put('b', 2);
+counts.put('a', 1);
+Map<String,Integer> copiedCounts = new Map<String,Integer>(counts);
+System.assertEquals(counts, copiedCounts);
+System.assertEquals('Map{a=1, b=2}', copiedCounts.toString());
+List<Integer> orderedValues = copiedCounts.values();
+System.assertEquals(1, orderedValues.get(0));
+System.assertEquals(2, orderedValues.get(1));
+Map<String,Integer> clonedCounts = copiedCounts.clone();
+clonedCounts.put('a', 9);
+System.assertEquals(1, copiedCounts.get('a'));
+System.assertEquals(9, clonedCounts.get('a'));
+Map<String,Integer> deepCounts = copiedCounts.deepClone();
+deepCounts.put('b', 8);
+System.assertEquals(2, copiedCounts.get('b'));
+System.assertEquals(8, deepCounts.get('b'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCollectionStdlibMoreRejectsUnsupportedSortValues(t *testing.T) {
+	values := []Value{Map()}
+	err := sortComparableValues(values)
+	if err == nil || !strings.Contains(err.Error(), "List.sort supports only primitive comparable values") {
+		t.Fatalf("err = %v, want primitive comparable sort error", err)
 	}
 }

@@ -81,8 +81,10 @@ business logic and tests.
 Current progress:
 
 - Collections: runtime support now covers indexed and bulk `List<T>` mutation,
-  common `Set<T>` bulk operations, and `Map<K,V>` previous-value, `putAll`,
-  `containsValue`, `keySet`, and `values` behavior.
+  collection copy constructors, `clone`, no-argument local `deepClone`,
+  primitive `List.sort`, common `Set<T>` bulk operations, deterministic
+  `Map<K,V>` key/value views, previous-value, `putAll`, `containsValue`,
+  `toString`, equality, and clear/isEmpty/remove behavior.
 - String: runtime support now covers case-insensitive contains/prefix/suffix,
   equality/comparison, capitalization, padding/centering, left/right/mid,
   reverse, substring-before/after variants, remove variants, whitespace
@@ -131,8 +133,9 @@ Current progress:
 Remaining cuts:
 
 1. Collections hardening
-   - Constructors/copy forms, `clone`, `deepClone`, `sort`, equality/hash
-     behavior, iterator edge cases, null behavior, and precise exception shapes.
+   - Remaining gaps: iterator edge cases, null-heavy edge behavior, exact
+     platform exception shapes, SObject-aware deep-clone options, and broader
+     comparable-object sorting.
    - SObject-map constructors and `Map<Id,SObject>` behavior where supported by
      the front end.
 
