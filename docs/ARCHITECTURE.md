@@ -56,7 +56,7 @@ and composed by the CLI.
   reporting.
 - `internal/server`: Salesforce-shaped HTTP handler for supported SObject CRUD,
   query/queryAll, describe/recent, limits, identity/userinfo stubs, Tooling
-  `executeAnonymous`, composite sObject insert, fixture/reset endpoints, and
+  `executeAnonymous`, composite sObject insert, fixture/scoped reset endpoints, and
   optional SQLite-backed persistence.
 - `internal/compat`: compatibility fixture schema, fixture evidence metadata,
   parse/check/exec/test/DB fixture execution, and catalog evidence reports.

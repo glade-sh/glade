@@ -176,6 +176,51 @@ through `oaer db seed`, `oaer db reset`, `oaer db export`, and
 `fieldRefs` can resolve fixture relationships by alias so fixtures do not need
 to hard-code generated record IDs.
 
+## Persistent Server Lifecycle
+
+`oaer server --db <path>` loads the SQLite org state at startup and saves every
+mutating request after it succeeds. If a REST create/update/delete, fixture load,
+reset, composite insert, or Tooling `executeAnonymous` request fails, the server
+keeps the prior org state and does not save the failed mutation.
+
+The same database file can be prepared and inspected through the CLI:
+
+```bash
+oaer db reset --db .oaer/local-org.sqlite --json
+oaer db seed --db .oaer/local-org.sqlite fixtures/base-org.json --json
+oaer db inspect --db .oaer/local-org.sqlite --json
+oaer server --db .oaer/local-org.sqlite --addr 127.0.0.1:8080
+```
+
+Server-side OAER endpoints mirror the fixture lifecycle:
+
+```bash
+curl -s -X GET  http://127.0.0.1:8080/services/data/v61.0/oaer/fixture
+curl -s -X POST http://127.0.0.1:8080/services/data/v61.0/oaer/fixture \
+  -H 'content-type: application/json' --data @fixtures/base-org.json
+curl -s -X POST http://127.0.0.1:8080/services/data/v61.0/oaer/reset
+curl -s -X POST http://127.0.0.1:8080/services/data/v61.0/oaer/reset/data
+curl -s -X POST 'http://127.0.0.1:8080/services/data/v61.0/oaer/reset?scope=users,limits,async'
+```
+
+`/oaer/reset` with no scope performs the full deterministic reset. Scoped resets
+accept path segments, repeated or comma-separated `scope` query parameters, or a
+JSON body with `scope` or `scopes`. Supported scopes are `all`, `data`, `users`,
+`platform`, `limits`, and `async`. The `data` scope clears non-platform records
+and leaves deterministic user/org data in place. The `users` and `platform`
+scopes rebuild deterministic platform records. Limits and async queues have no
+durable server storage today, so those scopes are accepted as deterministic
+no-ops.
+
+Operational checks for a persistent server should verify three things:
+
+1. `oaer db inspect --db <path> --json` reports the expected schema version,
+   object count, record count, and ID sequence count.
+2. A mutating server request changes the same counts after restart, proving the
+   mutation reached SQLite.
+3. A failing mutating request leaves the counts unchanged, proving the cloned-org
+   commit boundary rolled back before save.
+
 ## Deterministic IDs
 
 The first ID rule is:

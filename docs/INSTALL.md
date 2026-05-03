@@ -61,6 +61,37 @@ Use a release artifact:
     oaer version
 ```
 
+## Persistent Local Server
+
+Use `--db` when the local Salesforce-shaped API server should keep org state
+across restarts.
+
+```bash
+oaer db reset --db .oaer/local-org.sqlite --json
+oaer server --db .oaer/local-org.sqlite --addr 127.0.0.1:8080
+```
+
+Seed and inspect the same file with the DB commands:
+
+```bash
+oaer db seed --db .oaer/local-org.sqlite docs/fixtures/storage-db-lifecycle.json --json
+oaer db inspect --db .oaer/local-org.sqlite --json
+oaer db export --db .oaer/local-org.sqlite > exported-fixture.json
+```
+
+The running server exposes fixture and reset endpoints under the REST version
+path. Full reset remains `POST /services/data/v61.0/oaer/reset`. Scoped resets
+can target only data or platform state:
+
+```bash
+curl -s -X POST http://127.0.0.1:8080/services/data/v61.0/oaer/reset/data
+curl -s -X POST 'http://127.0.0.1:8080/services/data/v61.0/oaer/reset?scope=users,limits,async'
+```
+
+Use `oaer db inspect --json` before and after mutating server requests as the
+basic operational check. Counts should change after successful mutations and
+stay fixed after failed mutations.
+
 ## Homebrew
 
 Homebrew distribution is not published yet. A future tap formula should use the

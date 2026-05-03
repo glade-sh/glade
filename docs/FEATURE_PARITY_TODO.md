@@ -507,7 +507,11 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Keep data resets from clearing deterministic platform users/org state.
   - [x] Rebuild user/platform baseline records deterministically for users and
     platform resets.
-- [ ] Add persistent server database lifecycle docs and operational checks.
+- [x] Add persistent server database lifecycle docs and operational checks.
+  - [x] Document `oaer server --db` startup, DB seed/inspect/export/reset
+    preparation, server fixture/reset endpoints, and restart persistence checks.
+  - [x] Document operational checks for saved mutations and rollback-on-failure
+    commit boundaries.
 - [ ] Add import/export compatibility tests for `oaer db seed/reset/export/
   inspect`.
   - [x] Add a DB lifecycle compatibility fixture that seeds SQLite storage,

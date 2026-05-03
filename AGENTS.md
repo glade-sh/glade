@@ -215,6 +215,8 @@ generated docs are in sync.
 - `docs/RELEASE_POLICY.md` — release promotion and upgrade policy.
 - `docs/EDITOR.md` — VS Code tasks, DAP launch examples, and LSP wiring.
 - `docs/INSTALL.md` — installation and CI usage instructions.
+- `docs/storage-schema.md` — storage model plus fixture, SQLite, and persistent
+  server lifecycle notes.
 
 ## Release and Deployment
 

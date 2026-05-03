@@ -38,6 +38,8 @@ Release engineering:
   metadata.
 - Added scoped OAER reset endpoints for deterministic data, user/platform,
   limits, and async reset requests while preserving full-reset compatibility.
+- Documented persistent server database setup, fixture/reset lifecycle commands,
+  and operational checks for saved mutations and rollback-on-failure behavior.
 - Added `check` compatibility fixture execution and an enterprise-style
   multi-class fixture covering parse/index/check behavior.
 - Added parser diagnostic-count fixtures plus type-index and sema panic recovery
