@@ -34,10 +34,19 @@ type Range struct {
 }
 
 type LimitAttribution struct {
-	SOQLQueries int `json:"soqlQueries,omitempty"`
-	SOQLRows    int `json:"soqlRows,omitempty"`
-	DML         int `json:"dml,omitempty"`
-	DMLRows     int `json:"dmlRows,omitempty"`
+	SOQLQueries      int `json:"soqlQueries,omitempty"`
+	SOQLRows         int `json:"soqlRows,omitempty"`
+	DML              int `json:"dml,omitempty"`
+	DMLRows          int `json:"dmlRows,omitempty"`
+	Callouts         int `json:"callouts,omitempty"`
+	AsyncJobs        int `json:"asyncJobs,omitempty"`
+	FutureCalls      int `json:"futureCalls,omitempty"`
+	QueueableJobs    int `json:"queueableJobs,omitempty"`
+	BatchJobs        int `json:"batchJobs,omitempty"`
+	ScheduledJobs    int `json:"scheduledJobs,omitempty"`
+	EmailInvocations int `json:"emailInvocations,omitempty"`
+	CPUTimeMS        int `json:"cpuTimeMs,omitempty"`
+	HeapSize         int `json:"heapSize,omitempty"`
 }
 
 func Analyze(doc trace.Document) Report {
@@ -94,6 +103,54 @@ func Analyze(doc trace.Document) Report {
 			if rows, ok := intArg(event.Args["rows"]); ok {
 				report.Limits.DMLRows += rows
 			}
+		case "apex.callout":
+			report.Limits.Callouts++
+		case "apex.async":
+			if event.Name == "apex.async.enqueue" {
+				report.Limits.AsyncJobs++
+				if kind, _ := event.Args["kind"].(string); kind != "" {
+					switch kind {
+					case "Future":
+						report.Limits.FutureCalls++
+					case "Queueable":
+						report.Limits.QueueableJobs++
+					case "BatchApex":
+						report.Limits.BatchJobs++
+					case "ScheduledApex":
+						report.Limits.ScheduledJobs++
+					}
+				}
+			}
+		case "apex.email":
+			report.Limits.EmailInvocations++
+		case "apex.limits":
+			if value, ok := intArg(event.Args["callouts"]); ok {
+				report.Limits.Callouts = maxInt(report.Limits.Callouts, value)
+			}
+			if value, ok := intArg(event.Args["asyncJobs"]); ok {
+				report.Limits.AsyncJobs = maxInt(report.Limits.AsyncJobs, value)
+			}
+			if value, ok := intArg(event.Args["futureCalls"]); ok {
+				report.Limits.FutureCalls = maxInt(report.Limits.FutureCalls, value)
+			}
+			if value, ok := intArg(event.Args["queueableJobs"]); ok {
+				report.Limits.QueueableJobs = maxInt(report.Limits.QueueableJobs, value)
+			}
+			if value, ok := intArg(event.Args["batchJobs"]); ok {
+				report.Limits.BatchJobs = maxInt(report.Limits.BatchJobs, value)
+			}
+			if value, ok := intArg(event.Args["scheduledJobs"]); ok {
+				report.Limits.ScheduledJobs = maxInt(report.Limits.ScheduledJobs, value)
+			}
+			if value, ok := intArg(event.Args["emailInvocations"]); ok {
+				report.Limits.EmailInvocations = maxInt(report.Limits.EmailInvocations, value)
+			}
+			if value, ok := intArg(event.Args["cpuTimeMs"]); ok {
+				report.Limits.CPUTimeMS = maxInt(report.Limits.CPUTimeMS, value)
+			}
+			if value, ok := intArg(event.Args["heapSize"]); ok {
+				report.Limits.HeapSize = maxInt(report.Limits.HeapSize, value)
+			}
 		}
 	}
 	sort.Slice(report.Hot, func(i, j int) bool {
@@ -126,7 +183,7 @@ func WriteMarkdown(w io.Writer, report Report) error {
 	if _, err := fmt.Fprintf(w, "# oaer profile\n\nEvents: %d\n\n", report.Events); err != nil {
 		return err
 	}
-	if _, err := fmt.Fprintf(w, "SOQL: %d queries / %d rows\n\nDML: %d statements / %d rows\n\n", report.Limits.SOQLQueries, report.Limits.SOQLRows, report.Limits.DML, report.Limits.DMLRows); err != nil {
+	if _, err := fmt.Fprintf(w, "SOQL: %d queries / %d rows\n\nDML: %d statements / %d rows\n\nCallouts: %d\n\nAsync: %d jobs\n\nEmail: %d invocations\n\n", report.Limits.SOQLQueries, report.Limits.SOQLRows, report.Limits.DML, report.Limits.DMLRows, report.Limits.Callouts, report.Limits.AsyncJobs, report.Limits.EmailInvocations); err != nil {
 		return err
 	}
 	if _, err := fmt.Fprintln(w, "| Rank | Event | Category | Count | Source offsets |"); err != nil {
@@ -141,6 +198,13 @@ func WriteMarkdown(w io.Writer, report Report) error {
 		}
 	}
 	return nil
+}
+
+func maxInt(a, b int) int {
+	if b > a {
+		return b
+	}
+	return a
 }
 
 func intArg(value any) (int, bool) {

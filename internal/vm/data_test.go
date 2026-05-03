@@ -218,8 +218,22 @@ System.assert(contacts.isCascadeDelete());
 		Records: map[storage.ID]storage.Record{},
 	}
 	machine.SetOrg(&org)
-	if _, err := machine.Execute(program); err != nil {
+	result, err := machine.Execute(program)
+	if err != nil {
 		t.Fatal(err)
+	}
+	for _, event := range []struct {
+		name     string
+		category string
+	}{
+		{"apex.describe.sobject", "apex.describe"},
+		{"apex.describe.fields", "apex.describe"},
+		{"apex.describe.field", "apex.describe"},
+		{"apex.describe.sobjects", "apex.describe"},
+	} {
+		if !traceHas(result.Trace, event.name, event.category) {
+			t.Fatalf("trace missing %s/%s: %#v", event.name, event.category, result.Trace)
+		}
 	}
 }
 
@@ -967,8 +981,12 @@ try {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := machine.Execute(program); err != nil {
+	result, err := machine.Execute(program)
+	if err != nil {
 		t.Fatal(err)
+	}
+	if !traceHas(result.Trace, "apex.trigger.AccountBeforeInsert", "apex.trigger") {
+		t.Fatalf("trace missing trigger event: %#v", result.Trace)
 	}
 }
 

@@ -458,6 +458,15 @@ System.assertEquals(1, Limits.getScheduledJobs());
 	if result.Limits.FutureCalls != 1 || result.Limits.QueueableJobs != 1 || result.Limits.BatchJobs != 1 || result.Limits.ScheduledJobs != 1 || result.Limits.EmailInvokes != 1 {
 		t.Fatalf("limits = %#v", result.Limits)
 	}
+	if !traceHas(result.Trace, "apex.email.send", "apex.email") {
+		t.Fatalf("trace missing email event: %#v", result.Trace)
+	}
+	if !traceHas(result.Trace, "apex.async.enqueue", "apex.async") {
+		t.Fatalf("trace missing async enqueue event: %#v", result.Trace)
+	}
+	if !traceHas(result.Trace, "apex.limits", "apex.limits") {
+		t.Fatalf("trace missing limits event: %#v", result.Trace)
+	}
 }
 
 func TestExecRunAsUserObjectScopesUserInfo(t *testing.T) {
@@ -809,8 +818,12 @@ System.assertEquals(1, Limits.getCallouts());
 	}
 	machine := New(nil)
 	machine.EnableTestContext()
-	if _, err := machine.Execute(program); err != nil {
+	result, err := machine.Execute(program)
+	if err != nil {
 		t.Fatal(err)
+	}
+	if !traceHas(result.Trace, "apex.callout.http", "apex.callout") {
+		t.Fatalf("trace missing callout event: %#v", result.Trace)
 	}
 }
 

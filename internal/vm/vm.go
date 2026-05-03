@@ -238,6 +238,7 @@ func (vm *VM) Execute(program ir.Program) (result Result, err error) {
 		result.Limits = vm.limits
 		result.LimitMode = vm.limitMode
 		result.LimitViolations = append([]LimitViolation(nil), vm.limitViolations...)
+		appendTrace(&result, "apex.limits", "apex.limits", limitTraceArgs(vm.limits))
 	}()
 	out, err := vm.executeProgram(program, &result)
 	if err != nil {
@@ -460,6 +461,31 @@ func statementTraceEvent(seq int, inst ir.Instruction, source string) trace.Even
 		args["type"] = inst.Type
 	}
 	return trace.Instant("apex.statement."+string(inst.Op), "apex.statement", int64(seq), args)
+}
+
+func appendTrace(result *Result, name, category string, args map[string]any) {
+	if result == nil {
+		return
+	}
+	result.Trace = append(result.Trace, trace.Instant(name, category, int64(len(result.Trace)), args))
+}
+
+func limitTraceArgs(limits Limits) map[string]any {
+	return map[string]any{
+		"queries":          limits.Queries,
+		"queryRows":        limits.QueryRows,
+		"dmlStatements":    limits.DMLStatements,
+		"dmlRows":          limits.DMLRows,
+		"heapSize":         limits.HeapSize,
+		"cpuTimeMs":        limits.CPUTimeMS,
+		"callouts":         limits.Callouts,
+		"asyncJobs":        limits.AsyncJobs,
+		"futureCalls":      limits.FutureCalls,
+		"queueableJobs":    limits.QueueableJobs,
+		"batchJobs":        limits.BatchJobs,
+		"scheduledJobs":    limits.ScheduledJobs,
+		"emailInvocations": limits.EmailInvokes,
+	}
 }
 
 func childProgram(parent ir.Program, instructions []ir.Instruction) ir.Program {
@@ -842,7 +868,7 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 				receiver = this
 			}
 			if vm.shouldEnqueueFuture(method) {
-				return vm.enqueueFuture(method, args)
+				return vm.enqueueFuture(method, args, result)
 			}
 			return vm.callMethodWithReceiver(method, receiver, args, result)
 		} else if ambiguous {
@@ -854,7 +880,7 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return Null, err
 		}
 		if vm.shouldEnqueueFuture(method) {
-			return vm.enqueueFuture(method, args)
+			return vm.enqueueFuture(method, args, result)
 		}
 		return vm.callMethod(method, args, result)
 	} else if ambiguous {
@@ -869,7 +895,7 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 				return Null, err
 			}
 			if vm.shouldEnqueueFuture(method) {
-				return vm.enqueueFuture(method, args)
+				return vm.enqueueFuture(method, args, result)
 			}
 			return vm.callMethod(method, args, result)
 		} else if ambiguous {
@@ -1256,6 +1282,7 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Schema.getGlobalDescribe expects 0 arguments")
 		}
+		appendTrace(result, "apex.describe.global", "apex.describe", map[string]any{"operation": "getGlobalDescribe"})
 		return vm.schemaGlobalDescribe(), nil
 	case "Schema.describeSObjects":
 		if len(args) != 1 || args[0].Kind != ValueList {
@@ -1276,6 +1303,10 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			}
 			describes = append(describes, vm.describeSObjectValue(resolved, vm.Org.Objects[resolved].Definition))
 		}
+		appendTrace(result, "apex.describe.sobjects", "apex.describe", map[string]any{
+			"operation": "describeSObjects",
+			"count":     len(describes),
+		})
 		return List(describes...), nil
 	case "FeatureManagement.checkPermission":
 		if len(args) != 1 || args[0].Kind != ValueString {
@@ -1292,6 +1323,7 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		if err := vm.incrementLimit("emailInvocations", 1); err != nil {
 			return Null, err
 		}
+		appendTrace(result, "apex.email.send", "apex.email", map[string]any{"messages": len(args[0].List)})
 		result := Object("Messaging.SendEmailResult")
 		result.Fields["success"] = Bool(true)
 		result.Fields["errors"] = List()
@@ -1338,11 +1370,11 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 	case "Test.stopTest":
 		return vm.testStop(result)
 	case "System.enqueueJob":
-		return vm.enqueueJob(args)
+		return vm.enqueueJob(args, result)
 	case "Database.executeBatch":
-		return vm.executeBatch(args)
+		return vm.executeBatch(args, result)
 	case "System.schedule":
-		return vm.scheduleJob(args)
+		return vm.scheduleJob(args, result)
 	case "UserInfo.getUserId":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("UserInfo.getUserId expects 0 arguments")
@@ -1438,7 +1470,7 @@ func (vm *VM) shouldEnqueueFuture(method Method) bool {
 	return methodHasModifier(method.Modifiers, "future")
 }
 
-func (vm *VM) enqueueFuture(method Method, args []Value) (Value, error) {
+func (vm *VM) enqueueFuture(method Method, args []Value, result *Result) (Value, error) {
 	if vm.testContext == nil {
 		return Null, nil
 	}
@@ -1459,6 +1491,11 @@ func (vm *VM) enqueueFuture(method Method, args []Value) (Value, error) {
 	}
 	vm.testContext.AsyncJobs = append(vm.testContext.AsyncJobs, job)
 	vm.recordAsyncJob(job, "Queued", "")
+	appendTrace(result, "apex.async.enqueue", "apex.async", map[string]any{
+		"kind":   job.Kind,
+		"jobId":  job.ID,
+		"method": method.Name,
+	})
 	return Null, nil
 }
 
@@ -1503,7 +1540,7 @@ func (vm *VM) testStop(result *Result) (Value, error) {
 	return Null, err
 }
 
-func (vm *VM) enqueueJob(args []Value) (Value, error) {
+func (vm *VM) enqueueJob(args []Value, result *Result) (Value, error) {
 	if len(args) != 1 {
 		return Null, fmt.Errorf("System.enqueueJob expects 1 argument")
 	}
@@ -1528,10 +1565,15 @@ func (vm *VM) enqueueJob(args []Value) (Value, error) {
 	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "Queueable", Object: args[0]}
 	vm.testContext.AsyncJobs = append(vm.testContext.AsyncJobs, job)
 	vm.recordAsyncJob(job, "Queued", "")
+	appendTrace(result, "apex.async.enqueue", "apex.async", map[string]any{
+		"kind":  job.Kind,
+		"jobId": job.ID,
+		"class": args[0].Type,
+	})
 	return String(job.ID), nil
 }
 
-func (vm *VM) executeBatch(args []Value) (Value, error) {
+func (vm *VM) executeBatch(args []Value, result *Result) (Value, error) {
 	if len(args) < 1 || len(args) > 2 {
 		return Null, fmt.Errorf("Database.executeBatch expects batch instance[, scopeSize]")
 	}
@@ -1560,10 +1602,16 @@ func (vm *VM) executeBatch(args []Value) (Value, error) {
 	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "BatchApex", Object: args[0], BatchSize: batchSize}
 	vm.testContext.AsyncJobs = append(vm.testContext.AsyncJobs, job)
 	vm.recordAsyncJob(job, "Queued", "")
+	appendTrace(result, "apex.async.enqueue", "apex.async", map[string]any{
+		"kind":      job.Kind,
+		"jobId":     job.ID,
+		"class":     args[0].Type,
+		"batchSize": batchSize,
+	})
 	return String(job.ID), nil
 }
 
-func (vm *VM) scheduleJob(args []Value) (Value, error) {
+func (vm *VM) scheduleJob(args []Value, result *Result) (Value, error) {
 	if len(args) != 3 || args[0].Kind != ValueString || args[1].Kind != ValueString || args[2].Kind != ValueObject {
 		return Null, fmt.Errorf("System.schedule expects name, cron, and Schedulable object")
 	}
@@ -1580,6 +1628,12 @@ func (vm *VM) scheduleJob(args []Value) (Value, error) {
 	vm.testContext.AsyncJobs = append(vm.testContext.AsyncJobs, job)
 	vm.recordAsyncJob(job, "Queued", "")
 	vm.recordCronTrigger(job, "Waiting")
+	appendTrace(result, "apex.async.enqueue", "apex.async", map[string]any{
+		"kind":  job.Kind,
+		"jobId": job.ID,
+		"class": args[2].Type,
+		"name":  job.Name,
+	})
 	return String(job.ID), nil
 }
 
@@ -1599,6 +1653,10 @@ func (vm *VM) drainAsync(result *Result) error {
 		}
 		vm.testContext.ChainEnqueued = false
 		vm.recordAsyncJob(job, "Processing", "")
+		appendTrace(result, "apex.async.run", "apex.async", map[string]any{
+			"kind":  job.Kind,
+			"jobId": job.ID,
+		})
 		if err := vm.runAsyncJob(job, result); err != nil {
 			vm.recordAsyncJob(job, "Failed", err.Error())
 			return err
@@ -3320,6 +3378,16 @@ func (vm *VM) runTriggers(timing, op string, records, oldRecords []storage.Recor
 }
 
 func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, result *Result) ([]dml.Result, error) {
+	appendTrace(result, "apex.trigger."+trigger.Name, "apex.trigger", map[string]any{
+		"trigger":   trigger.Name,
+		"object":    trigger.Object,
+		"timing":    trigger.Timing,
+		"operation": trigger.Operation,
+		"rows":      len(records),
+		"file":      trigger.File,
+		"line":      trigger.Line,
+		"column":    trigger.Column,
+	})
 	caller := vm.Globals
 	callerClass := vm.currentClass
 	frame := make(map[string]Value)
@@ -5512,7 +5580,7 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 				return value, true, err
 			}
 		}
-		if value, updated, mutated, handled, err := vm.callPlatformObjectMember(receiver, method, args); handled || err != nil {
+		if value, updated, mutated, handled, err := vm.callPlatformObjectMember(receiver, method, args, result); handled || err != nil {
 			if mutated {
 				if err := vm.storeReceiver(receiverName, updated); err != nil {
 					return Null, true, err
@@ -5938,7 +6006,7 @@ func (vm *VM) callEnumMember(receiver Value, method string, args []Value) (Value
 	}
 }
 
-func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Value, result *Result) (Value, Value, bool, bool, error) {
 	if isExceptionType(receiver.Type) {
 		switch method {
 		case "getMessage":
@@ -5989,6 +6057,10 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if !ok {
 				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectType.getDescribe unknown object %s", objectValue.Text)
 			}
+			appendTrace(result, "apex.describe.sobject", "apex.describe", map[string]any{
+				"operation": "SObjectType.getDescribe",
+				"object":    objectName,
+			})
 			return vm.describeSObjectValue(objectName, vm.Org.Objects[objectName].Definition), receiver, false, true, nil
 		}
 	case "Schema.SObjectFieldMap":
@@ -5996,6 +6068,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectFieldMap.getMap expects 0 arguments")
 			}
+			appendTrace(result, "apex.describe.fields", "apex.describe", map[string]any{"operation": "fields.getMap"})
 			return receiver.Fields["map"], receiver, false, true, nil
 		}
 	case "Schema.SObjectField":
@@ -6015,6 +6088,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if err != nil {
 				return Null, receiver, false, true, err
 			}
+			appendTrace(result, "apex.describe.field", "apex.describe", map[string]any{
+				"operation": "SObjectField.getDescribe",
+				"object":    objectValue.Text,
+				"field":     fieldValue.Text,
+			})
 			return describe, receiver, false, true, nil
 		}
 	case "Schema.DescribeFieldResult":
@@ -6605,6 +6683,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if err := vm.incrementLimit("callouts", 1); err != nil {
 				return Null, receiver, false, true, err
 			}
+			appendTrace(result, "apex.callout.http", "apex.callout", map[string]any{"operation": "Http.send"})
 			response := Object("HttpResponse")
 			response.Fields["statusCode"] = Int(200)
 			response.Fields["body"] = String("")

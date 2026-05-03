@@ -30,6 +30,40 @@ func TestAnalyzeRanksTraceEvents(t *testing.T) {
 	}
 }
 
+func TestAnalyzeAttributesExpandedRuntimeEvents(t *testing.T) {
+	doc := trace.NewDocument([]trace.Event{
+		trace.Instant("apex.soql", "apex.soql", 1, map[string]any{"rows": 3}),
+		trace.Instant("apex.dml.insert", "apex.dml", 2, map[string]any{"rows": 2}),
+		trace.Instant("apex.callout.http", "apex.callout", 3, nil),
+		trace.Instant("apex.email.send", "apex.email", 4, nil),
+		trace.Instant("apex.async.enqueue", "apex.async", 5, map[string]any{"kind": "Queueable"}),
+		trace.Instant("apex.trigger.AccountBeforeInsert", "apex.trigger", 6, map[string]any{"rows": 2}),
+		trace.Instant("apex.describe.sobject", "apex.describe", 7, map[string]any{"object": "Account"}),
+		trace.Instant("apex.limits", "apex.limits", 8, map[string]any{
+			"callouts":         1,
+			"asyncJobs":        1,
+			"queueableJobs":    1,
+			"emailInvocations": 1,
+			"cpuTimeMs":        9,
+			"heapSize":         128,
+		}),
+	})
+
+	report := Analyze(doc)
+	if report.Categories["apex.trigger"] != 1 || report.Categories["apex.describe"] != 1 {
+		t.Fatalf("categories = %#v", report.Categories)
+	}
+	if report.Limits.SOQLQueries != 1 || report.Limits.SOQLRows != 3 || report.Limits.DML != 1 || report.Limits.DMLRows != 2 {
+		t.Fatalf("data limits = %#v", report.Limits)
+	}
+	if report.Limits.Callouts != 1 || report.Limits.AsyncJobs != 1 || report.Limits.QueueableJobs != 1 || report.Limits.EmailInvocations != 1 {
+		t.Fatalf("platform limits = %#v", report.Limits)
+	}
+	if report.Limits.CPUTimeMS != 9 || report.Limits.HeapSize != 128 {
+		t.Fatalf("resource limits = %#v", report.Limits)
+	}
+}
+
 func TestWriteMarkdown(t *testing.T) {
 	report := Report{Events: 1, Hot: []Entry{{Name: "apex.statement.expr", Category: "apex.statement", Count: 1, SourceOffsets: []int{5}}}}
 	var out bytes.Buffer

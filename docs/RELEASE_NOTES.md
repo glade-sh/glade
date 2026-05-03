@@ -78,6 +78,9 @@ Release engineering:
   Apex test runner and VM instruction loop, with stale run-result suppression.
 - Stabilized watch newline-delimited JSON events with `schemaVersion: 1`,
   persistent run IDs, and stable `testClasses` array output for run-start events.
+- Expanded native trace/profile events across describe, callout, email, async,
+  trigger, and final limit-summary activity, with profile attribution for the
+  added platform/resource counters.
 - Added parser diagnostic-count fixtures plus type-index and sema panic recovery
   diagnostics for malformed project inputs.
 - Added method/constructor parameter type diagnostics and expanded VM exception

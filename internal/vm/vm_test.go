@@ -6,6 +6,8 @@ import (
 	"errors"
 	"strings"
 	"testing"
+
+	"github.com/open-aer/oaer/internal/trace"
 )
 
 func TestExecAssertEquals(t *testing.T) {
@@ -30,6 +32,15 @@ func TestExecuteStopsWhenContextCanceled(t *testing.T) {
 	if _, err := machine.Execute(program); !errors.Is(err, context.Canceled) {
 		t.Fatalf("err = %v, want context.Canceled", err)
 	}
+}
+
+func traceHas(events []trace.Event, name, category string) bool {
+	for _, event := range events {
+		if event.Name == name && event.Category == category {
+			return true
+		}
+	}
+	return false
 }
 
 func TestExecVariablesAndDebug(t *testing.T) {
@@ -146,8 +157,8 @@ System.assert(counts.containsKey('a'));
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(result.Trace) != len(program.Instructions) {
-		t.Fatalf("trace length = %d, want %d", len(result.Trace), len(program.Instructions))
+	if len(result.Trace) != len(program.Instructions)+1 {
+		t.Fatalf("trace length = %d, want %d", len(result.Trace), len(program.Instructions)+1)
 	}
 	if result.TraceFormat != "chrome-trace-event" {
 		t.Fatalf("trace format = %q", result.TraceFormat)
@@ -161,6 +172,10 @@ System.assert(counts.containsKey('a'));
 	}
 	if first.Args["line"] != 2 || first.Args["column"] != 1 {
 		t.Fatalf("trace source position = %#v", first.Args)
+	}
+	last := result.Trace[len(result.Trace)-1]
+	if last.Name != "apex.limits" || last.Category != "apex.limits" {
+		t.Fatalf("trace missing limits summary: %#v", last)
 	}
 }
 

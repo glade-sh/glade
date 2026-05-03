@@ -589,8 +589,12 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Add `schemaVersion: 1` to each newline-delimited watch event, keep
     `runId` present on run events, emit `testClasses` as a stable array on
     `watch.run_started`, and cover the wire shape with exact JSON tests.
-- [ ] Expand profile/trace events for SOQL, DML, describe, callouts, limits,
+- [x] Expand profile/trace events for SOQL, DML, describe, callouts, limits,
   methods, triggers, and async.
+  - [x] Keep existing statement/method/SOQL/DML trace events, add describe,
+    callout, email, async enqueue/run, trigger invocation, and final governor
+    limit summary events, and expand profile attribution for platform/resource
+    counters.
 - [ ] Add native reports that fully replace apexrr-style analysis for local
   runtime data.
 
