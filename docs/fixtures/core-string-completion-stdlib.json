@@ -1,0 +1,135 @@
+{
+  "name": "core-string-completion-stdlib",
+  "evidence": [
+    {
+      "symbol": "String.escapeCsv",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.unescapeCsv",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.escapeHtml4",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.unescapeHtml4",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.escapeXml",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.unescapeXml",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.escapeEcmaScript",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.unescapeEcmaScript",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.escapeJava",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.unescapeJava",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.escapeUnicode",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.unescapeUnicode",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.escapeSingleQuotes",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.format",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.abbreviate",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.difference",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.commonPrefix",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.getCommonPrefix",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.getLevenshteinDistance",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.charAt",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.codePointAt",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.codePointBefore",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.codePointCount",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.getChars",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.fromCharArray",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.isAsciiPrintable",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.splitByCharacterType",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.splitByCharacterTypeCamelCase",
+      "kind": "exec"
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "String csv = 'a,\"b\",c';\nSystem.assertEquals('\"a,\"\"b\"\",c\"', csv.escapeCsv());\nString escapedCsv = csv.escapeCsv();\nSystem.assertEquals(csv, escapedCsv.unescapeCsv());\nString html = '<tag attr=''x''>&';\nSystem.assertEquals('&lt;tag attr=&#39;x&#39;&gt;&amp;', html.escapeHtml4());\nString escapedHtml = html.escapeHtml4();\nSystem.assertEquals(html, escapedHtml.unescapeHtml4());\nSystem.assertEquals('&lt;tag attr=&apos;x&apos;&gt;&amp;', html.escapeXml());\nString escapedXml = html.escapeXml();\nSystem.assertEquals(html, escapedXml.unescapeXml());\nString slash = 'a/b';\nSystem.assertEquals('a\\/b', slash.escapeEcmaScript());\nString escapedSlash = slash.escapeEcmaScript();\nSystem.assertEquals(slash, escapedSlash.unescapeEcmaScript());\nString quoted = 'He said \"hi\"';\nSystem.assertEquals('He said \\\"hi\\\"', quoted.escapeJava());\nString escapedQuoted = quoted.escapeJava();\nSystem.assertEquals(quoted, escapedQuoted.unescapeJava());\nString omega = 'AΩ';\nSystem.assertEquals('A\\u03A9', omega.escapeUnicode());\nString escapedOmega = omega.escapeUnicode();\nSystem.assertEquals(omega, escapedOmega.unescapeUnicode());\nSystem.assertEquals('Bob\\''s', String.escapeSingleQuotes('Bob''s'));\nList<String> formatArgs = new List<String>();\nformatArgs.add('Ada');\nformatArgs.add('Lovelace');\nSystem.assertEquals('Hello Ada Lovelace', String.format('Hello {0} {1}', formatArgs));\nString alphabet = 'abcdefghijklmnopqrstuvwxyz';\nSystem.assertEquals('abcdefg...', alphabet.abbreviate(10));\nSystem.assertEquals('...ijklmn...', alphabet.abbreviate(8, 12));\nString machine = 'i am a machine';\nSystem.assertEquals('robot', machine.difference('i am a robot'));\nString interstate = 'interstate';\nSystem.assertEquals('interst', interstate.commonPrefix('interstellar'));\nList<String> prefixes = new List<String>();\nprefixes.add('flower');\nprefixes.add('flow');\nprefixes.add('flight');\nSystem.assertEquals('fl', String.getCommonPrefix(prefixes));\nString kitten = 'kitten';\nSystem.assertEquals(3, kitten.getLevenshteinDistance('sitting'));\nSystem.assertEquals(3, String.getLevenshteinDistance('kitten', 'sitting'));\nString chars = 'AΩ';\nSystem.assertEquals('A', chars.charAt(0));\nSystem.assertEquals(937, chars.codePointAt(1));\nSystem.assertEquals(65, chars.codePointBefore(1));\nSystem.assertEquals(2, chars.codePointCount(0, 2));\nList<Integer> charCodes = chars.getChars();\nSystem.assertEquals(2, charCodes.size());\nSystem.assertEquals(65, charCodes.get(0));\nSystem.assertEquals(937, charCodes.get(1));\nSystem.assertEquals(chars, String.fromCharArray(charCodes));\nString printable = 'AZ 19~';\nString nonPrintable = 'Snow Ω';\nSystem.assert(printable.isAsciiPrintable());\nSystem.assert(!nonPrintable.isAsciiPrintable());\nString typeSource = 'ab12 CD';\nList<String> splitType = typeSource.splitByCharacterType();\nSystem.assertEquals(4, splitType.size());\nSystem.assertEquals('ab', splitType.get(0));\nSystem.assertEquals('12', splitType.get(1));\nSystem.assertEquals(' ', splitType.get(2));\nSystem.assertEquals('CD', splitType.get(3));\nString camelSource = 'HTTPServer42';\nList<String> camel = camelSource.splitByCharacterTypeCamelCase();\nSystem.assertEquals(3, camel.size());\nSystem.assertEquals('HTTP', camel.get(0));\nSystem.assertEquals('Server', camel.get(1));\nSystem.assertEquals('42', camel.get(2));\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "String csv = 'a,\"b\",c';\nSystem.assertEquals('\"a,\"\"b\"\",c\"', csv.escapeCsv());\nString escapedCsv = csv.escapeCsv();\nSystem.assertEquals(csv, escapedCsv.unescapeCsv());\nString html = '<tag attr=''x''>&';\nSystem.assertEquals('&lt;tag attr=&#39;x&#39;&gt;&amp;', html.escapeHtml4());\nString escapedHtml = html.escapeHtml4();\nSystem.assertEquals(html, escapedHtml.unescapeHtml4());\nSystem.assertEquals('&lt;tag attr=&apos;x&apos;&gt;&amp;', html.escapeXml());\nString escapedXml = html.escapeXml();\nSystem.assertEquals(html, escapedXml.unescapeXml());\nString slash = 'a/b';\nSystem.assertEquals('a\\/b', slash.escapeEcmaScript());\nString escapedSlash = slash.escapeEcmaScript();\nSystem.assertEquals(slash, escapedSlash.unescapeEcmaScript());\nString quoted = 'He said \"hi\"';\nSystem.assertEquals('He said \\\"hi\\\"', quoted.escapeJava());\nString escapedQuoted = quoted.escapeJava();\nSystem.assertEquals(quoted, escapedQuoted.unescapeJava());\nString omega = 'AΩ';\nSystem.assertEquals('A\\u03A9', omega.escapeUnicode());\nString escapedOmega = omega.escapeUnicode();\nSystem.assertEquals(omega, escapedOmega.unescapeUnicode());\nSystem.assertEquals('Bob\\''s', String.escapeSingleQuotes('Bob''s'));\nList<String> formatArgs = new List<String>();\nformatArgs.add('Ada');\nformatArgs.add('Lovelace');\nSystem.assertEquals('Hello Ada Lovelace', String.format('Hello {0} {1}', formatArgs));\nString alphabet = 'abcdefghijklmnopqrstuvwxyz';\nSystem.assertEquals('abcdefg...', alphabet.abbreviate(10));\nSystem.assertEquals('...ijklmn...', alphabet.abbreviate(8, 12));\nString machine = 'i am a machine';\nSystem.assertEquals('robot', machine.difference('i am a robot'));\nString interstate = 'interstate';\nSystem.assertEquals('interst', interstate.commonPrefix('interstellar'));\nList<String> prefixes = new List<String>();\nprefixes.add('flower');\nprefixes.add('flow');\nprefixes.add('flight');\nSystem.assertEquals('fl', String.getCommonPrefix(prefixes));\nString kitten = 'kitten';\nSystem.assertEquals(3, kitten.getLevenshteinDistance('sitting'));\nSystem.assertEquals(3, String.getLevenshteinDistance('kitten', 'sitting'));\nString chars = 'AΩ';\nSystem.assertEquals('A', chars.charAt(0));\nSystem.assertEquals(937, chars.codePointAt(1));\nSystem.assertEquals(65, chars.codePointBefore(1));\nSystem.assertEquals(2, chars.codePointCount(0, 2));\nList<Integer> charCodes = chars.getChars();\nSystem.assertEquals(2, charCodes.size());\nSystem.assertEquals(65, charCodes.get(0));\nSystem.assertEquals(937, charCodes.get(1));\nSystem.assertEquals(chars, String.fromCharArray(charCodes));\nString printable = 'AZ 19~';\nString nonPrintable = 'Snow Ω';\nSystem.assert(printable.isAsciiPrintable());\nSystem.assert(!nonPrintable.isAsciiPrintable());\nString typeSource = 'ab12 CD';\nList<String> splitType = typeSource.splitByCharacterType();\nSystem.assertEquals(4, splitType.size());\nSystem.assertEquals('ab', splitType.get(0));\nSystem.assertEquals('12', splitType.get(1));\nSystem.assertEquals(' ', splitType.get(2));\nSystem.assertEquals('CD', splitType.get(3));\nString camelSource = 'HTTPServer42';\nList<String> camel = camelSource.splitByCharacterTypeCamelCase();\nSystem.assertEquals(3, camel.size());\nSystem.assertEquals('HTTP', camel.get(0));\nSystem.assertEquals('Server', camel.get(1));\nSystem.assertEquals('42', camel.get(2));\n"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

@@ -2,6 +2,7 @@ package vm
 
 import (
 	"fmt"
+	"html"
 	"math"
 	"regexp"
 	"sort"
@@ -166,6 +167,78 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 			return Null, true, err
 		}
 		return Int(int64(countStringMatches(receiver.Text, needle))), true, nil
+	case "escapeCsv":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("String.escapeCsv expects 0 arguments")
+		}
+		return String(escapeCSV(receiver.Text)), true, nil
+	case "unescapeCsv":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("String.unescapeCsv expects 0 arguments")
+		}
+		return String(unescapeCSV(receiver.Text)), true, nil
+	case "escapeHtml3", "escapeHtml4":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("String.%s expects 0 arguments", method)
+		}
+		return String(html.EscapeString(receiver.Text)), true, nil
+	case "unescapeHtml3", "unescapeHtml4":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("String.%s expects 0 arguments", method)
+		}
+		return String(html.UnescapeString(receiver.Text)), true, nil
+	case "escapeXml", "escapeXml10", "escapeXml11":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("String.%s expects 0 arguments", method)
+		}
+		return String(escapeXML(receiver.Text)), true, nil
+	case "unescapeXml", "unescapeXml10", "unescapeXml11":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("String.%s expects 0 arguments", method)
+		}
+		return String(html.UnescapeString(receiver.Text)), true, nil
+	case "escapeJava":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("String.escapeJava expects 0 arguments")
+		}
+		return String(escapeJavaLike(receiver.Text, false, false)), true, nil
+	case "unescapeJava":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("String.unescapeJava expects 0 arguments")
+		}
+		unescaped, err := unescapeJavaLike("String.unescapeJava", receiver.Text)
+		if err != nil {
+			return Null, true, err
+		}
+		return String(unescaped), true, nil
+	case "escapeEcmaScript":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("String.escapeEcmaScript expects 0 arguments")
+		}
+		return String(escapeJavaLike(receiver.Text, true, true)), true, nil
+	case "unescapeEcmaScript":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("String.unescapeEcmaScript expects 0 arguments")
+		}
+		unescaped, err := unescapeJavaLike("String.unescapeEcmaScript", receiver.Text)
+		if err != nil {
+			return Null, true, err
+		}
+		return String(unescaped), true, nil
+	case "escapeUnicode":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("String.escapeUnicode expects 0 arguments")
+		}
+		return String(escapeUnicode(receiver.Text)), true, nil
+	case "unescapeUnicode":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("String.unescapeUnicode expects 0 arguments")
+		}
+		unescaped, err := unescapeJavaLike("String.unescapeUnicode", receiver.Text)
+		if err != nil {
+			return Null, true, err
+		}
+		return String(unescaped), true, nil
 	case "startsWith":
 		prefix, err := stringArg("String.startsWith", args)
 		if err != nil {
@@ -310,6 +383,55 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 		return Int(int64(strings.Compare(receiver.Text, other))), true, nil
 	case "substring":
 		return substring(receiver.Text, args)
+	case "charAt":
+		index, err := stringIntArg("String.charAt", args)
+		if err != nil {
+			return Null, true, err
+		}
+		runes := []rune(receiver.Text)
+		if index < 0 || index >= len(runes) {
+			return Null, true, fmt.Errorf("String.charAt index out of bounds: %d", index)
+		}
+		return String(string(runes[index])), true, nil
+	case "codePointAt":
+		index, err := stringIntArg("String.codePointAt", args)
+		if err != nil {
+			return Null, true, err
+		}
+		runes := []rune(receiver.Text)
+		if index < 0 || index >= len(runes) {
+			return Null, true, fmt.Errorf("String.codePointAt index out of bounds: %d", index)
+		}
+		return Int(int64(runes[index])), true, nil
+	case "codePointBefore":
+		index, err := stringIntArg("String.codePointBefore", args)
+		if err != nil {
+			return Null, true, err
+		}
+		runes := []rune(receiver.Text)
+		if index <= 0 || index > len(runes) {
+			return Null, true, fmt.Errorf("String.codePointBefore index out of bounds: %d", index)
+		}
+		return Int(int64(runes[index-1])), true, nil
+	case "codePointCount":
+		begin, end, err := stringTwoIntArgs("String.codePointCount", args)
+		if err != nil {
+			return Null, true, err
+		}
+		runes := []rune(receiver.Text)
+		if begin < 0 || end < begin || end > len(runes) {
+			return Null, true, fmt.Errorf("String.codePointCount index out of bounds")
+		}
+		return Int(int64(end - begin)), true, nil
+	case "getChars", "toCharArray":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("String.%s expects 0 arguments", method)
+		}
+		chars := make([]Value, 0, len([]rune(receiver.Text)))
+		for _, r := range receiver.Text {
+			chars = append(chars, Int(int64(r)))
+		}
+		return List(chars...), true, nil
 	case "left":
 		length, err := stringIntArg("String.left", args)
 		if err != nil {
@@ -365,6 +487,40 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 			runes[i], runes[j] = runes[j], runes[i]
 		}
 		return String(string(runes)), true, nil
+	case "abbreviate":
+		abbreviated, err := stringAbbreviate(receiver.Text, args)
+		if err != nil {
+			return Null, true, err
+		}
+		return String(abbreviated), true, nil
+	case "difference":
+		other, err := stringArg("String.difference", args)
+		if err != nil {
+			return Null, true, err
+		}
+		return String(stringDifference(receiver.Text, other)), true, nil
+	case "commonPrefix":
+		other, err := stringArg("String.commonPrefix", args)
+		if err != nil {
+			return Null, true, err
+		}
+		return String(commonPrefix([]string{receiver.Text, other})), true, nil
+	case "getLevenshteinDistance":
+		other, err := stringArg("String.getLevenshteinDistance", args)
+		if err != nil {
+			return Null, true, err
+		}
+		return Int(int64(levenshteinDistance(receiver.Text, other))), true, nil
+	case "splitByCharacterType":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("String.splitByCharacterType expects 0 arguments")
+		}
+		return stringList(splitByCharacterType(receiver.Text, false)), true, nil
+	case "splitByCharacterTypeCamelCase":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("String.splitByCharacterTypeCamelCase expects 0 arguments")
+		}
+		return stringList(splitByCharacterType(receiver.Text, true)), true, nil
 	case "substringAfter":
 		separator, err := stringArg("String.substringAfter", args)
 		if err != nil {
@@ -460,6 +616,11 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 			return Null, true, fmt.Errorf("String.isAllUpperCase expects 0 arguments")
 		}
 		return Bool(stringAllLetters(receiver.Text, unicode.IsUpper)), true, nil
+	case "isAsciiPrintable":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("String.isAsciiPrintable expects 0 arguments")
+		}
+		return Bool(stringAllRunes(receiver.Text, func(r rune) bool { return r >= 32 && r < 127 }, true)), true, nil
 	case "repeat":
 		if len(args) == 1 && args[0].Kind == ValueInt {
 			if args[0].Int < 0 {
@@ -517,6 +678,45 @@ func stringStatic(callee string, args []Value) (Value, error) {
 			parts = append(parts, item.String())
 		}
 		return String(strings.Join(parts, args[1].Text)), nil
+	case "String.format":
+		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueList {
+			return Null, fmt.Errorf("String.format expects format String and List arguments")
+		}
+		return String(formatString(args[0].Text, args[1].List)), nil
+	case "String.getCommonPrefix":
+		if len(args) != 1 || args[0].Kind != ValueList {
+			return Null, fmt.Errorf("String.getCommonPrefix expects List argument")
+		}
+		texts := make([]string, 0, len(args[0].List))
+		for _, item := range args[0].List {
+			if item.Kind != ValueString {
+				return Null, fmt.Errorf("String.getCommonPrefix expects List<String>")
+			}
+			texts = append(texts, item.Text)
+		}
+		return String(commonPrefix(texts)), nil
+	case "String.getLevenshteinDistance":
+		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+			return Null, fmt.Errorf("String.getLevenshteinDistance expects two Strings")
+		}
+		return Int(int64(levenshteinDistance(args[0].Text, args[1].Text))), nil
+	case "String.fromCharArray":
+		if len(args) != 1 || args[0].Kind != ValueList {
+			return Null, fmt.Errorf("String.fromCharArray expects List<Integer>")
+		}
+		var b strings.Builder
+		for _, item := range args[0].List {
+			if item.Kind != ValueInt || item.Int < 0 || item.Int > utf8.MaxRune {
+				return Null, fmt.Errorf("String.fromCharArray expects valid code points")
+			}
+			b.WriteRune(rune(item.Int))
+		}
+		return String(b.String()), nil
+	case "String.escapeSingleQuotes":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("String.escapeSingleQuotes expects String argument")
+		}
+		return String(strings.ReplaceAll(args[0].Text, "'", "\\'")), nil
 	default:
 		return Null, unsupportedCallError(callee)
 	}
@@ -1084,6 +1284,326 @@ func stringRegexSplit(text string, args []Value) ([]string, error) {
 		}
 	}
 	return parts, nil
+}
+
+func stringList(parts []string) Value {
+	values := make([]Value, 0, len(parts))
+	for _, part := range parts {
+		values = append(values, String(part))
+	}
+	return List(values...)
+}
+
+func escapeCSV(text string) string {
+	if !strings.ContainsAny(text, ",\r\n\"") {
+		return text
+	}
+	return `"` + strings.ReplaceAll(text, `"`, `""`) + `"`
+}
+
+func unescapeCSV(text string) string {
+	if len(text) >= 2 && text[0] == '"' && text[len(text)-1] == '"' {
+		return strings.ReplaceAll(text[1:len(text)-1], `""`, `"`)
+	}
+	return text
+}
+
+func escapeXML(text string) string {
+	replacer := strings.NewReplacer(
+		"&", "&amp;",
+		"<", "&lt;",
+		">", "&gt;",
+		`"`, "&quot;",
+		"'", "&apos;",
+	)
+	return replacer.Replace(text)
+}
+
+func escapeJavaLike(text string, escapeSingleQuote, escapeSlash bool) string {
+	var b strings.Builder
+	for _, r := range text {
+		switch r {
+		case '\b':
+			b.WriteString(`\b`)
+		case '\n':
+			b.WriteString(`\n`)
+		case '\t':
+			b.WriteString(`\t`)
+		case '\f':
+			b.WriteString(`\f`)
+		case '\r':
+			b.WriteString(`\r`)
+		case '"':
+			b.WriteString(`\"`)
+		case '\'':
+			if escapeSingleQuote {
+				b.WriteString(`\'`)
+			} else {
+				b.WriteRune(r)
+			}
+		case '\\':
+			b.WriteString(`\\`)
+		case '/':
+			if escapeSlash {
+				b.WriteString(`\/`)
+			} else {
+				b.WriteRune(r)
+			}
+		default:
+			if r < 32 || r > 0x7e {
+				writeUnicodeEscapes(&b, r)
+			} else {
+				b.WriteRune(r)
+			}
+		}
+	}
+	return b.String()
+}
+
+func escapeUnicode(text string) string {
+	var b strings.Builder
+	for _, r := range text {
+		if r < 32 || r > 0x7e {
+			writeUnicodeEscapes(&b, r)
+		} else {
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
+}
+
+func writeUnicodeEscapes(b *strings.Builder, r rune) {
+	for _, unit := range utf16.Encode([]rune{r}) {
+		b.WriteString(`\u`)
+		b.WriteString(fmt.Sprintf("%04X", unit))
+	}
+}
+
+func unescapeJavaLike(name, text string) (string, error) {
+	var out []rune
+	for i := 0; i < len(text); i++ {
+		if text[i] != '\\' {
+			r, size := utf8.DecodeRuneInString(text[i:])
+			out = append(out, r)
+			i += size - 1
+			continue
+		}
+		i++
+		if i >= len(text) {
+			return "", fmt.Errorf("%s trailing escape", name)
+		}
+		switch text[i] {
+		case 'b':
+			out = append(out, '\b')
+		case 'n':
+			out = append(out, '\n')
+		case 't':
+			out = append(out, '\t')
+		case 'f':
+			out = append(out, '\f')
+		case 'r':
+			out = append(out, '\r')
+		case '"', '\'', '\\', '/':
+			out = append(out, rune(text[i]))
+		case 'u':
+			units := []uint16{}
+			for {
+				if i+4 >= len(text) {
+					return "", fmt.Errorf("%s invalid unicode escape", name)
+				}
+				value, err := strconv.ParseUint(text[i+1:i+5], 16, 16)
+				if err != nil {
+					return "", fmt.Errorf("%s invalid unicode escape", name)
+				}
+				units = append(units, uint16(value))
+				i += 4
+				if i+2 >= len(text) || text[i+1] != '\\' || text[i+2] != 'u' {
+					break
+				}
+				i += 2
+			}
+			out = append(out, utf16.Decode(units)...)
+		default:
+			out = append(out, rune(text[i]))
+		}
+	}
+	return string(out), nil
+}
+
+func formatString(pattern string, args []Value) string {
+	return regexp.MustCompile(`\{([0-9]+)\}`).ReplaceAllStringFunc(pattern, func(match string) string {
+		inner := match[1 : len(match)-1]
+		index, err := strconv.Atoi(inner)
+		if err != nil || index < 0 || index >= len(args) {
+			return match
+		}
+		return args[index].String()
+	})
+}
+
+func stringAbbreviate(text string, args []Value) (string, error) {
+	if len(args) == 1 && args[0].Kind == ValueInt {
+		return abbreviateRunes([]rune(text), 0, int(args[0].Int))
+	}
+	if len(args) == 2 && args[0].Kind == ValueInt && args[1].Kind == ValueInt {
+		return abbreviateRunes([]rune(text), int(args[0].Int), int(args[1].Int))
+	}
+	return "", fmt.Errorf("String.abbreviate expects maxWidth or offset and maxWidth")
+}
+
+func abbreviateRunes(runes []rune, offset, maxWidth int) (string, error) {
+	if maxWidth < 4 {
+		return "", fmt.Errorf("String.abbreviate maxWidth must be at least 4")
+	}
+	if len(runes) <= maxWidth {
+		return string(runes), nil
+	}
+	if offset < 0 {
+		offset = 0
+	}
+	if offset > len(runes) {
+		offset = len(runes)
+	}
+	if len(runes)-offset < maxWidth-3 {
+		offset = len(runes) - (maxWidth - 3)
+	}
+	if offset <= 4 {
+		return string(runes[:maxWidth-3]) + "...", nil
+	}
+	if maxWidth < 7 {
+		return "", fmt.Errorf("String.abbreviate maxWidth with offset must be at least 7")
+	}
+	if offset+maxWidth-3 < len(runes) {
+		abbreviated, err := abbreviateRunes(runes[offset:], 0, maxWidth-3)
+		if err != nil {
+			return "", err
+		}
+		return "..." + abbreviated, nil
+	}
+	return "..." + string(runes[len(runes)-(maxWidth-3):]), nil
+}
+
+func stringDifference(left, right string) string {
+	leftRunes := []rune(left)
+	rightRunes := []rune(right)
+	limit := len(leftRunes)
+	if len(rightRunes) < limit {
+		limit = len(rightRunes)
+	}
+	for i := 0; i < limit; i++ {
+		if leftRunes[i] != rightRunes[i] {
+			return string(rightRunes[i:])
+		}
+	}
+	return string(rightRunes[limit:])
+}
+
+func commonPrefix(texts []string) string {
+	if len(texts) == 0 {
+		return ""
+	}
+	prefix := []rune(texts[0])
+	for _, text := range texts[1:] {
+		runes := []rune(text)
+		limit := len(prefix)
+		if len(runes) < limit {
+			limit = len(runes)
+		}
+		i := 0
+		for i < limit && prefix[i] == runes[i] {
+			i++
+		}
+		prefix = prefix[:i]
+		if len(prefix) == 0 {
+			break
+		}
+	}
+	return string(prefix)
+}
+
+func levenshteinDistance(left, right string) int {
+	a := []rune(left)
+	b := []rune(right)
+	prev := make([]int, len(b)+1)
+	for j := range prev {
+		prev[j] = j
+	}
+	for i := 1; i <= len(a); i++ {
+		curr := make([]int, len(b)+1)
+		curr[0] = i
+		for j := 1; j <= len(b); j++ {
+			cost := 0
+			if a[i-1] != b[j-1] {
+				cost = 1
+			}
+			curr[j] = minInt(curr[j-1]+1, prev[j]+1, prev[j-1]+cost)
+		}
+		prev = curr
+	}
+	return prev[len(b)]
+}
+
+func minInt(values ...int) int {
+	best := values[0]
+	for _, value := range values[1:] {
+		if value < best {
+			best = value
+		}
+	}
+	return best
+}
+
+func splitByCharacterType(text string, camelCase bool) []string {
+	runes := []rune(text)
+	if len(runes) == 0 {
+		return nil
+	}
+	parts := []string{}
+	start := 0
+	lastType := characterType(runes[0])
+	for i := 1; i < len(runes); i++ {
+		currentType := characterType(runes[i])
+		if currentType == lastType {
+			continue
+		}
+		if camelCase && lastType == stringCharUpper && currentType == stringCharLower {
+			if i-start > 1 {
+				parts = append(parts, string(runes[start:i-1]))
+				start = i - 1
+			}
+		} else {
+			parts = append(parts, string(runes[start:i]))
+			start = i
+		}
+		lastType = currentType
+	}
+	parts = append(parts, string(runes[start:]))
+	return parts
+}
+
+type stringCharType int
+
+const (
+	stringCharUpper stringCharType = iota
+	stringCharLower
+	stringCharDigit
+	stringCharSpace
+	stringCharOther
+)
+
+func characterType(r rune) stringCharType {
+	switch {
+	case unicode.IsUpper(r):
+		return stringCharUpper
+	case unicode.IsLower(r):
+		return stringCharLower
+	case unicode.IsDigit(r):
+		return stringCharDigit
+	case unicode.IsSpace(r):
+		return stringCharSpace
+	default:
+		return stringCharOther
+	}
 }
 
 func transformFirstRune(text string, transform func(string) string) string {

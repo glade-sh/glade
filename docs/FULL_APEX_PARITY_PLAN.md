@@ -112,10 +112,16 @@ Current progress:
   string forms, constructor-backed zero-arg `Type.newInstance` for registered
   classes, lightweight `Id.valueOf` validation and `to15`, deterministic URL
   parsing accessors, and primitive `Object` equality/hash/string behavior.
+- String completion: runtime support now covers deterministic CSV, HTML4, XML,
+  Java, EcmaScript, Unicode, and single-quote escaping/unescaping helpers;
+  `{0}`-style `String.format`; abbreviation; common prefix and difference
+  helpers; Levenshtein distance; rune/code-point and char-array helpers; ASCII
+  printable checks; and split-by-character-type helpers.
 - Fixtures:
   - `docs/fixtures/core-collection-stdlib.json`
   - `docs/fixtures/core-string-stdlib.json`
   - `docs/fixtures/core-string-more-stdlib.json`
+  - `docs/fixtures/core-string-completion-stdlib.json`
   - `docs/fixtures/core-numeric-stdlib.json`
   - `docs/fixtures/core-datetime-stdlib.json`
   - `docs/fixtures/core-json-stdlib.json`
@@ -131,12 +137,12 @@ Remaining cuts:
      the front end.
 
 2. String completion
-   - Character/category predicates still remaining: printable and the split-by-
-     character-type helpers.
-   - Escaping/unescaping: CSV, HTML, XML, Java, EcmaScript, Unicode, and single
-     quote behavior.
-   - Formatting and distance helpers: `format`, abbreviate, common prefix,
-     difference, Levenshtein, code point and char-array helpers.
+   - Remaining StringUtils-style methods not yet pinned by owned fixtures:
+     index-of-any/index-of-any-but, overlay, rotate, swapCase, strip variants,
+     ordinal index helpers, and additional remove/replace edge cases.
+   - Version-specific XML 1.0/1.1 validity, full HTML3/HTML4 named entity
+     coverage, full Java/EcmaScript parity, and MessageFormat quoting remain
+     partial until public behavior is pinned.
    - Locale overloads only after behavior is pinned to public expectations.
 
 3. Numeric classes
