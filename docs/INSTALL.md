@@ -40,13 +40,23 @@ Build from source:
 
 If your CI job has access to the scraped public Apex docs corpus, set
 `OAER_APEX_DOCS_SOURCE` and run the docs support gate. The gate regenerates the
-docs inventory, capability catalog, and fixture evidence report, then fails if
-fixture evidence points at a symbol missing from the catalog.
+docs inventory, capability catalog, product namespace typed-stub report, and
+fixture evidence report, then fails if fixture evidence points at a symbol
+missing from the catalog.
 
 ```yaml
 - run: scripts/apex-docs-support-gate.sh
   env:
     OAER_APEX_DOCS_SOURCE: /path/to/salesforce-docs/apex
+```
+
+The product namespace report can also be generated directly from a catalog when
+reviewing broad typed-stub coverage:
+
+```bash
+oaer compat docs-inventory --source /path/to/salesforce-docs/apex --output inventory.json
+oaer compat catalog --inventory inventory.json --output catalog.json
+oaer compat product-namespaces --catalog catalog.json --json
 ```
 
 Use a release artifact:

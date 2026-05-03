@@ -1281,7 +1281,7 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 		return err
 	}
 	if len(args) == 0 {
-		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]")
+		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | product-namespaces --catalog <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]")
 	}
 	switch args[0] {
 	case "matrix", "mvp":
@@ -1296,6 +1296,8 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 		return runCompatDocsInventory(args[1:], w)
 	case "catalog":
 		return runCompatCatalog(args[1:], w)
+	case "product-namespaces":
+		return runCompatProductNamespaces(args[1:], w)
 	case "evidence":
 		return runCompatEvidence(args[1:], w)
 	case "validate", "run":
@@ -1303,7 +1305,7 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 			return errors.New("usage: oaer compat validate|run <fixture.json...>")
 		}
 	default:
-		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]")
+		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | product-namespaces --catalog <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]")
 	}
 
 	for _, path := range args[1:] {
@@ -1591,6 +1593,82 @@ func writeCatalogSummary(w io.Writer, catalog capability.Catalog) {
 	fmt.Fprintln(w, "summary:")
 	for _, summary := range catalog.Summary {
 		fmt.Fprintf(w, "  %s [%s/%s]: entries=%d documents=%d members=%d\n", summary.Area, summary.Target, summary.Status, summary.Entries, summary.Documents, summary.Members)
+	}
+}
+
+func runCompatProductNamespaces(args []string, w io.Writer) error {
+	catalogPath := ""
+	outputPath := ""
+	checkPath := ""
+	jsonOut := false
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--catalog":
+			i++
+			if i >= len(args) {
+				return errors.New("usage: oaer compat product-namespaces --catalog <path> [--json|--output <path>|--check <path>]")
+			}
+			catalogPath = args[i]
+		case "--json":
+			jsonOut = true
+		case "--output":
+			i++
+			if i >= len(args) {
+				return errors.New("usage: oaer compat product-namespaces --catalog <path> [--json|--output <path>|--check <path>]")
+			}
+			outputPath = args[i]
+		case "--check":
+			i++
+			if i >= len(args) {
+				return errors.New("usage: oaer compat product-namespaces --catalog <path> [--json|--output <path>|--check <path>]")
+			}
+			checkPath = args[i]
+		default:
+			return fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	if catalogPath == "" {
+		return errors.New("usage: oaer compat product-namespaces --catalog <path> [--json|--output <path>|--check <path>]")
+	}
+	requested := 0
+	for _, set := range []bool{jsonOut, outputPath != "", checkPath != ""} {
+		if set {
+			requested++
+		}
+	}
+	if requested > 1 {
+		return errors.New("use only one of --json, --output, or --check")
+	}
+	catalog, err := capability.ReadCatalog(catalogPath)
+	if err != nil {
+		return err
+	}
+	report := capability.BuildProductNamespaceReport(catalog)
+	switch {
+	case jsonOut:
+		return capability.WriteProductNamespaceJSON(w, report)
+	case outputPath != "":
+		var buf strings.Builder
+		if err := capability.WriteProductNamespaceJSON(&buf, report); err != nil {
+			return err
+		}
+		return os.WriteFile(outputPath, []byte(buf.String()), 0o644)
+	case checkPath != "":
+		var buf strings.Builder
+		if err := capability.WriteProductNamespaceJSON(&buf, report); err != nil {
+			return err
+		}
+		existing, err := os.ReadFile(checkPath)
+		if err != nil {
+			return err
+		}
+		if string(existing) != buf.String() {
+			return fmt.Errorf("product namespace report drift: run `oaer compat product-namespaces --catalog %s --output %s`", catalogPath, checkPath)
+		}
+		fmt.Fprintf(w, "%s: up to date\n", checkPath)
+		return nil
+	default:
+		return capability.WriteProductNamespaceText(w, report)
 	}
 }
 

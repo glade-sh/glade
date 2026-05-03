@@ -150,6 +150,8 @@ func classifyDoc(doc apexdocs.Document) docClassification {
 		return docClassification{area: "Tests, async, and limits", target: TargetLocalModel, owner: "internal/vm"}
 	case isIntegrationSecurityUI(ns, name):
 		return docClassification{area: "Integration, security, and UI", target: TargetLocalModel, owner: "internal/vm"}
+	case ns == "System":
+		return docClassification{area: "Core stdlib", target: TargetExecutableParity, owner: "internal/vm"}
 	case ns == "":
 		return docClassification{area: "Language and guide docs", target: TargetUnsupported, owner: "internal/apexast"}
 	default:
