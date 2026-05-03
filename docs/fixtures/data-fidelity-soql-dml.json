@@ -59,7 +59,7 @@
     },
     {
       "path": "force-app/main/classes/AccountBeforeUpdateContext.trigger",
-      "content": "trigger AccountBeforeUpdateContext on Account (before update) { System.assert(Trigger.isExecuting); System.assert(Trigger.isBefore); System.assert(Trigger.isUpdate); System.assertEquals(1, Trigger.size); Account newer = Trigger.new.get(0); Account older = Trigger.oldMap.get(newer.Id); System.assertEquals('Before', older.Name); System.assertEquals('After', newer.Name); Account byMap = Trigger.newMap.get(newer.Id); byMap.Rating = 'Warm'; newer.Name = 'After!'; }"
+      "content": "trigger AccountBeforeUpdateContext on Account (before update) { System.assert(Trigger.isExecuting); System.assert(Trigger.isBefore); System.assert(Trigger.isUpdate); System.assertEquals(1, Trigger.size); Account newer = Trigger.new.get(0); if (newer.get('Name') == 'After') { Account older = Trigger.oldMap.get(newer.Id); System.assertEquals('Before', older.Name); System.assertEquals('After', newer.Name); Account byMap = Trigger.newMap.get(newer.Id); byMap.Rating = 'Warm'; newer.Name = 'After!'; } }"
     },
     {
       "path": "force-app/main/classes/AccountBeforeDeleteContext.trigger",
@@ -72,6 +72,26 @@
     {
       "path": "force-app/main/classes/TriggerContextFidelityTest.cls",
       "content": "@isTest private class TriggerContextFidelityTest { @isTest static void updateAndDeleteContextMaps() { Account a = new Account(Name = 'Before'); insert a; a.Name = 'After'; update a; Account updated = [SELECT Id, Name, Rating FROM Account WHERE Id = :a.Id]; System.assertEquals('After!', updated.Name); System.assertEquals('Warm', updated.Rating); delete updated; } }"
+    },
+    {
+      "path": "force-app/main/classes/AccountMergeBeforeUpdate.trigger",
+      "content": "trigger AccountMergeBeforeUpdate on Account (before update) { Account newer = Trigger.new.get(0); if (newer.get('Name') == 'Merged Name') { System.assert(Trigger.isExecuting); System.assert(Trigger.isBefore); System.assert(Trigger.isUpdate); Account older = Trigger.oldMap.get(newer.Id); System.assertEquals('Merge Master For Triggers', older.Name); newer.Rating = 'merge-before-update'; } }"
+    },
+    {
+      "path": "force-app/main/classes/AccountMergeAfterUpdate.trigger",
+      "content": "trigger AccountMergeAfterUpdate on Account (after update) { Account newer = Trigger.new.get(0); if (newer.get('Name') == 'Merged Name') { System.assert(Trigger.isExecuting); System.assert(Trigger.isAfter); System.assert(Trigger.isUpdate); Account older = Trigger.oldMap.get(newer.Id); System.assertEquals('Merge Master For Triggers', older.Name); System.assertEquals('merge-before-update', newer.Rating); insert new Contact(LastName = 'merge-update-fired'); } }"
+    },
+    {
+      "path": "force-app/main/classes/AccountMergeAfterDelete.trigger",
+      "content": "trigger AccountMergeAfterDelete on Account (after delete) { Account oldRow = Trigger.old.get(0); if (oldRow.get('Name') == 'Merge Duplicate For Triggers') { System.assert(Trigger.isExecuting); System.assert(Trigger.isAfter); System.assert(Trigger.isDelete); System.assertEquals(null, Trigger.new); System.assert(Trigger.oldMap.containsKey(oldRow.Id)); insert new Contact(LastName = 'merge-delete-fired'); } }"
+    },
+    {
+      "path": "force-app/main/classes/AccountMergeBeforeDeleteBlock.trigger",
+      "content": "trigger AccountMergeBeforeDeleteBlock on Account (before delete) { Account oldRow = Trigger.old.get(0); if (oldRow.get('Name') == 'Blocked Merge Duplicate') { oldRow.addError('blocked duplicate merge'); } }"
+    },
+    {
+      "path": "force-app/main/classes/MergeTriggerFidelityTest.cls",
+      "content": "@isTest private class MergeTriggerFidelityTest { @isTest static void mergeFiresUpdateAndDeleteTriggers() { Account master = new Account(Name = 'Merge Master For Triggers'); insert master; Account duplicate = new Account(Name = 'Merge Duplicate For Triggers'); insert duplicate; Account mergeMaster = new Account(Id = master.Id, Name = 'Merged Name'); Object result = Database.merge(mergeMaster, duplicate, false); System.assert(result.isSuccess()); Account row = [SELECT Id, Name, Rating FROM Account WHERE Id = :master.Id]; System.assertEquals('Merged Name', row.Name); System.assertEquals('merge-before-update', row.Rating); List<Contact> updateMarkers = [SELECT Id FROM Contact WHERE LastName = 'merge-update-fired']; System.assertEquals(1, updateMarkers.size()); List<Contact> deleteMarkers = [SELECT Id FROM Contact WHERE LastName = 'merge-delete-fired']; System.assertEquals(1, deleteMarkers.size()); Account blockedMaster = new Account(Name = 'Blocked Merge Master'); insert blockedMaster; Account blockedDuplicate = new Account(Name = 'Blocked Merge Duplicate'); insert blockedDuplicate; Account blockedUpdate = new Account(Id = blockedMaster.Id, Name = 'Blocked Applied'); Object blockedResult = Database.merge(blockedUpdate, blockedDuplicate, false); System.assert(!blockedResult.isSuccess()); List<Object> blockedErrors = blockedResult.getErrors(); System.assertEquals(1, blockedErrors.size()); Object blockedError = blockedErrors.get(0); System.assertEquals('blocked duplicate merge', blockedError.getMessage()); List<Account> blockedRows = [SELECT Id FROM Account WHERE Id = :blockedDuplicate.Id]; System.assertEquals(1, blockedRows.size()); } }"
     },
     {
       "path": "force-app/main/classes/AggregateFidelityTest.cls",
@@ -110,8 +130,8 @@
       "errors": 0,
       "failed": 0,
       "ok": true,
-      "passed": 11,
-      "total": 11
+      "passed": 12,
+      "total": 12
     }
   }
 }

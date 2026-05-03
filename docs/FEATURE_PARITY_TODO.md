@@ -299,13 +299,15 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Support soft delete visibility and undelete restoration for VM/SOQL
     paths.
   - [x] Support baseline `merge` statement and `Database.merge` execution with
-    duplicate soft delete, child lookup reparenting, and `MergeResult` shape.
+     duplicate soft delete, child lookup reparenting, and `MergeResult` shape.
+  - [x] Fire supported merge trigger hooks for master `before/after update` and
+    duplicate `before/after delete` contexts with rollback on trigger errors.
 - [x] Improve `Database.insert/update/delete/upsert/undelete` result fidelity
   with structured `Database.Error` objects carrying `statusCode`, `message`, and
   `fields` arrays; add `Database.UpsertResult.isCreated()`.
   - [x] Cascade soft-delete child records from relationship metadata.
-  - **Limitation**: Full merge trigger semantics and full undelete edge-case
-    parity remain incomplete.
+  - **Limitation**: Full merge loser relationship result details and full
+    undelete edge-case parity remain incomplete.
   - **Limitation**: The VM `Database.Error` shape covers the most common status
     codes; full Salesforce status-code parity is not yet complete.
 - [x] Complete external-ID upsert and ID/object mismatch behavior.

@@ -91,6 +91,8 @@ Release engineering:
 - Added baseline DML merge support for the `merge` statement and
   `Database.merge`, including duplicate soft-delete, child lookup reparenting,
   and `Database.MergeResult` accessors.
+- Added supported merge trigger hooks for master before/after update and
+  duplicate before/after delete trigger contexts.
 - Added cascade soft-delete behavior from relationship metadata, including
   Metadata API `deleteConstraint` loading for local fixtures.
 - Added object-level and field-level `SObject.addError`, `hasErrors`, and

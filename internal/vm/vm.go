@@ -1890,16 +1890,103 @@ func (vm *VM) executeDatabaseMerge(args []Value, result *Result) (Value, error) 
 		}))
 	}
 	backup := vm.Org.Clone()
+	masterBefore, err := vm.oldRecords("update", master)
+	if err != nil {
+		return Null, err
+	}
+	duplicateBefore, err := vm.oldRecords("delete", duplicates)
+	if err != nil {
+		return Null, err
+	}
+	if beforeUpdateFailures, err := vm.runTriggers(triggerTimingBefore, "update", master, masterBefore, result); err != nil {
+		*vm.Org = backup
+		return Null, err
+	} else if hasDMLFailures(beforeUpdateFailures) {
+		*vm.Org = backup
+		results := make([]dml.Result, len(duplicates))
+		failure := beforeUpdateFailures[0]
+		for i := range results {
+			results[i] = failure
+		}
+		return vm.mergeResultValue(args[1].Kind == ValueList, duplicates, results), nil
+	}
+	beforeDeleteFailures, err := vm.runTriggers(triggerTimingBefore, "delete", duplicates, duplicateBefore, result)
+	if err != nil {
+		*vm.Org = backup
+		return Null, err
+	}
+	mergeDuplicates := duplicates
+	mergeDuplicateBefore := duplicateBefore
+	if hasDMLFailures(beforeDeleteFailures) {
+		if allOrNone {
+			*vm.Org = backup
+			return vm.mergeResultValue(args[1].Kind == ValueList, duplicates, beforeDeleteFailures), nil
+		}
+		mergeDuplicates, mergeDuplicateBefore, _ = filterDMLInputs(duplicates, duplicateBefore, nil, beforeDeleteFailures)
+		if len(mergeDuplicates) == 0 {
+			return vm.mergeResultValue(args[1].Kind == ValueList, duplicates, beforeDeleteFailures), nil
+		}
+	}
 	engine := dml.NewEngine(vm.Org)
-	results := engine.Merge(master[0], duplicates)
+	results := engine.Merge(master[0], mergeDuplicates)
+	if hasDMLFailures(beforeDeleteFailures) {
+		results = mergeDMLResults(beforeDeleteFailures, results)
+	}
+	engineRolledBack := false
 	if allOrNone {
 		for _, dmlResult := range results {
 			if !dmlResult.Success {
 				*vm.Org = backup
+				engineRolledBack = true
 				break
 			}
 		}
 	}
+	successfulDuplicates := make([]storage.Record, 0, len(duplicates))
+	successfulDuplicateBefore := make([]storage.Record, 0, len(mergeDuplicateBefore))
+	if !engineRolledBack {
+		successIndex := 0
+		for i, dmlResult := range results {
+			if !dmlResult.Success {
+				continue
+			}
+			if i < len(beforeDeleteFailures) && !beforeDeleteFailures[i].Success && beforeDeleteFailures[i].Error != "" {
+				continue
+			}
+			if successIndex < len(mergeDuplicates) {
+				successfulDuplicates = append(successfulDuplicates, mergeDuplicates[successIndex])
+			}
+			if successIndex < len(mergeDuplicateBefore) {
+				successfulDuplicateBefore = append(successfulDuplicateBefore, mergeDuplicateBefore[successIndex])
+			}
+			successIndex++
+		}
+	}
+	if len(successfulDuplicates) > 0 {
+		afterMaster, err := vm.afterRecords("update", master, []dml.Result{{ID: master[0].ID, Success: true}})
+		if err != nil {
+			if allOrNone {
+				*vm.Org = backup
+			}
+			return Null, err
+		}
+		if _, err := vm.runTriggers(triggerTimingAfter, "update", afterMaster, masterBefore, result); err != nil {
+			if allOrNone {
+				*vm.Org = backup
+			}
+			return Null, err
+		}
+		if _, err := vm.runTriggers(triggerTimingAfter, "delete", successfulDuplicates, successfulDuplicateBefore, result); err != nil {
+			if allOrNone {
+				*vm.Org = backup
+			}
+			return Null, err
+		}
+	}
+	return vm.mergeResultValue(args[1].Kind == ValueList, duplicates, results), nil
+}
+
+func (vm *VM) mergeResultValue(listInput bool, duplicates []storage.Record, results []dml.Result) Value {
 	values := make([]Value, 0, len(results))
 	for i, dmlResult := range results {
 		row := Object("Database.MergeResult")
@@ -1931,13 +2018,13 @@ func (vm *VM) executeDatabaseMerge(args []Value, result *Result) (Value, error) 
 		row.Fields["errors"] = errorsList
 		values = append(values, row)
 	}
-	if args[1].Kind == ValueList {
-		return List(values...), nil
+	if listInput {
+		return List(values...)
 	}
 	if len(values) == 0 {
-		return Null, nil
+		return Null
 	}
-	return values[0], nil
+	return values[0]
 }
 
 func (vm *VM) externalIDFieldName(value Value) (string, error) {
@@ -2506,20 +2593,26 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 		return nil, &apexThrowError{value: out.thrown, stack: append([]callFrame(nil), vm.callStack...)}
 	}
 	if trigger.Timing == triggerTimingBefore {
-		if updated := ctx["Trigger.new"]; updated.Kind == ValueList {
+		updated := ctx["Trigger.new"]
+		if trigger.Operation == "delete" {
+			updated = ctx["Trigger.old"]
+		}
+		if updated.Kind == ValueList {
 			failures := dmlResultsFromSObjectErrors(records, updated.List)
-			for i, item := range updated.List {
-				if i >= len(records) {
-					break
+			if trigger.Operation != "delete" {
+				for i, item := range updated.List {
+					if i >= len(records) {
+						break
+					}
+					record, err := vm.recordFromValue(&item)
+					if err != nil {
+						return nil, err
+					}
+					if records[i].ID != "" && record.ID == "" {
+						record.ID = records[i].ID
+					}
+					records[i] = record
 				}
-				record, err := vm.recordFromValue(&item)
-				if err != nil {
-					return nil, err
-				}
-				if records[i].ID != "" && record.ID == "" {
-					record.ID = records[i].ID
-				}
-				records[i] = record
 			}
 			if hasDMLFailures(failures) {
 				return failures, nil

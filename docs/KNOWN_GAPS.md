@@ -26,7 +26,7 @@ The MVP target is `full-featured aer-parity MVP`. This document lists required c
 ### `dml.apex`: Apex DML statements and Database methods
 
 - Status: `partial`
-- Gap: Apex insert/update/delete/upsert/undelete/merge syntax and Database.insert/update/delete/upsert/undelete/merge allOrNone paths now call the DML engine, return SaveResult/UpsertResult/MergeResult objects with statusCode, message, fields arrays, isCreated, merged record IDs, set Ids, roll back allOrNone failures, soft-delete and undelete records, match implicit and explicit external-ID upserts, reject ID/object mismatches, enforce unique fields, validate lookup references, reparent lookups on merge, and cascade soft-delete children from relationship metadata. Trigger context includes operation flags, size, new/old lists, nullable unavailable contexts, and newMap/oldMap for supported operations. Validation-rule formulas, full merge trigger semantics, and full Salesforce status-code parity remain incomplete.
+- Gap: Apex insert/update/delete/upsert/undelete/merge syntax and Database.insert/update/delete/upsert/undelete/merge allOrNone paths now call the DML engine, return SaveResult/UpsertResult/MergeResult objects with statusCode, message, fields arrays, isCreated, merged record IDs, set Ids, roll back allOrNone failures, soft-delete and undelete records, match implicit and explicit external-ID upserts, reject ID/object mismatches, enforce unique fields, validate lookup references, reparent lookups on merge, fire supported merge update/delete trigger hooks, and cascade soft-delete children from relationship metadata. Trigger context includes operation flags, size, new/old lists, nullable unavailable contexts, and newMap/oldMap for supported operations. Validation-rule formulas, full merge loser relationship result details, and full Salesforce status-code parity remain incomplete.
 
 ### `fixtures.persistence`: Seed/export/reset local fixtures with persistence
 
@@ -46,7 +46,7 @@ The MVP target is `full-featured aer-parity MVP`. This document lists required c
 ### `triggers.runtime`: Trigger invocation and context
 
 - Status: `partial`
-- Gap: Project triggers are compiled and invoked from VM DML for before/after operations with Trigger.new/old/maps/flags/operationType/size basics, rollback on thrown errors, and object-level/field-level addError shaping row SaveResult errors with field lists. Full bulk ordering semantics, recursive limits, and relationship side effects remain incomplete.
+- Gap: Project triggers are compiled and invoked from VM DML for before/after operations with Trigger.new/old/maps/flags/operationType/size basics, merge master update hooks, merge duplicate delete hooks, rollback on thrown errors, and object-level/field-level addError shaping row SaveResult errors with field lists. Full bulk ordering semantics, recursive limits, and relationship side effects remain incomplete.
 
 ## Developer experience
 

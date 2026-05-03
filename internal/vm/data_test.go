@@ -775,6 +775,144 @@ delete updated;
 	}
 }
 
+func TestExecMergeInvokesUpdateAndDeleteTriggers(t *testing.T) {
+	beforeUpdate, err := CompileAnonymous(`
+System.assert(Trigger.isExecuting);
+System.assert(Trigger.isBefore);
+System.assert(Trigger.isUpdate);
+System.assertEquals(1, Trigger.size);
+Account newer = Trigger.new.get(0);
+Account older = Trigger.oldMap.get(newer.Id);
+System.assertEquals('Merge Master', older.Name);
+System.assertEquals('Merged Name', newer.Name);
+newer.Rating = 'before-update';
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	afterUpdate, err := CompileAnonymous(`
+System.assert(Trigger.isExecuting);
+System.assert(Trigger.isAfter);
+System.assert(Trigger.isUpdate);
+Account newer = Trigger.new.get(0);
+Account older = Trigger.oldMap.get(newer.Id);
+System.assertEquals('Merge Master', older.Name);
+System.assertEquals('before-update', newer.Rating);
+insert new Contact(LastName = 'merge-update-fired');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	afterDelete, err := CompileAnonymous(`
+System.assert(Trigger.isExecuting);
+System.assert(Trigger.isAfter);
+System.assert(Trigger.isDelete);
+System.assertEquals(null, Trigger.new);
+Account oldRow = Trigger.old.get(0);
+System.assertEquals('Merge Duplicate', oldRow.Name);
+System.assert(Trigger.oldMap.containsKey(oldRow.Id));
+insert new Contact(LastName = 'merge-delete-fired');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Account master = new Account(Name = 'Merge Master');
+insert master;
+Account duplicate = new Account(Name = 'Merge Duplicate');
+insert duplicate;
+Account mergeMaster = new Account(Id = master.Id, Name = 'Merged Name');
+Object merged = Database.merge(mergeMaster, duplicate, false);
+System.assert(merged.isSuccess());
+Account row = [SELECT Id, Name, Rating FROM Account WHERE Id = :master.Id];
+System.assertEquals('Merged Name', row.Name);
+System.assertEquals('before-update', row.Rating);
+List<Contact> updateMarkers = [SELECT Id FROM Contact WHERE LastName = 'merge-update-fired'];
+System.assertEquals(1, updateMarkers.size());
+List<Contact> deleteMarkers = [SELECT Id FROM Contact WHERE LastName = 'merge-delete-fired'];
+System.assertEquals(1, deleteMarkers.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Rating"] = storage.Field{APIName: "Rating", Type: storage.FieldString}
+	org.Objects["Account"] = account
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Contact",
+			KeyPrefix: "003",
+			Fields: map[string]storage.Field{
+				"LastName": {APIName: "LastName", Type: storage.FieldString},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine.SetOrg(&org)
+	for _, trigger := range []Trigger{
+		{Name: "AccountMergeBeforeUpdate", Object: "Account", Timing: triggerTimingBefore, Operation: "update", Program: beforeUpdate},
+		{Name: "AccountMergeAfterUpdate", Object: "Account", Timing: triggerTimingAfter, Operation: "update", Program: afterUpdate},
+		{Name: "AccountMergeAfterDelete", Object: "Account", Timing: triggerTimingAfter, Operation: "delete", Program: afterDelete},
+	} {
+		if err := machine.RegisterTrigger(trigger); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMergeHonorsBeforeDeleteAddError(t *testing.T) {
+	beforeDelete, err := CompileAnonymous(`
+for (Account oldRow : Trigger.old) {
+	if (oldRow.get('Name') == 'Blocked Duplicate') {
+		oldRow.addError('blocked duplicate merge');
+	}
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Account master = new Account(Name = 'Merge Master');
+insert master;
+Account duplicate = new Account(Name = 'Blocked Duplicate');
+insert duplicate;
+Account mergeMaster = new Account(Id = master.Id, Name = 'Should Not Apply');
+Object merged = Database.merge(mergeMaster, duplicate, false);
+System.assert(!merged.isSuccess());
+List<Object> errors = merged.getErrors();
+System.assertEquals(1, errors.size());
+Object err = errors.get(0);
+System.assertEquals('blocked duplicate merge', err.getMessage());
+List<Account> duplicateRows = [SELECT Id FROM Account WHERE Id = :duplicate.Id];
+System.assertEquals(1, duplicateRows.size());
+Account masterRow = [SELECT Id, Name FROM Account WHERE Id = :master.Id];
+System.assertEquals('Merge Master', masterRow.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "AccountMergeBeforeDeleteAddError",
+		Object:    "Account",
+		Timing:    triggerTimingBefore,
+		Operation: "delete",
+		Program:   beforeDelete,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDMLExternalIDValidationAndUndelete(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account first = new Account(Name = 'Acme', External_Key__c = 'ext-1', Code__c = 'A');
