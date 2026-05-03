@@ -916,7 +916,11 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return Null, fmt.Errorf("System.assert expects Boolean, got %s", args[0].Kind)
 		}
 		if !args[0].Bool {
-			return Null, vm.assertError(assertMessage("assertion failed", args[1:]))
+			message, err := vm.assertMessage("assertion failed", args[1:], result)
+			if err != nil {
+				return Null, err
+			}
+			return Null, vm.assertError(message)
 		}
 		return Null, nil
 	case "System.assertEquals":
@@ -932,7 +936,11 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			if err != nil {
 				return Null, err
 			}
-			return Null, vm.assertError(assertMessage(fmt.Sprintf("expected <%s>, actual <%s>", expected, actual), args[2:]))
+			message, err := vm.assertMessage(fmt.Sprintf("expected <%s>, actual <%s>", expected, actual), args[2:], result)
+			if err != nil {
+				return Null, err
+			}
+			return Null, vm.assertError(message)
 		}
 		return Null, nil
 	case "System.assertNotEquals":
@@ -944,7 +952,11 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			if err != nil {
 				return Null, err
 			}
-			return Null, vm.assertError(assertMessage(fmt.Sprintf("values should not be equal: <%s>", value), args[2:]))
+			message, err := vm.assertMessage(fmt.Sprintf("values should not be equal: <%s>", value), args[2:], result)
+			if err != nil {
+				return Null, err
+			}
+			return Null, vm.assertError(message)
 		}
 		return Null, nil
 	case "System.debug":
@@ -4007,11 +4019,15 @@ func httpGetHeader(receiver Value, name string) Value {
 	return Null
 }
 
-func assertMessage(base string, extra []Value) string {
+func (vm *VM) assertMessage(base string, extra []Value, result *Result) (string, error) {
 	if len(extra) == 0 {
-		return base
+		return base, nil
 	}
-	return base + ": " + extra[0].String()
+	message, err := vm.displayString(extra[0], result)
+	if err != nil {
+		return "", err
+	}
+	return base + ": " + message, nil
 }
 
 func blobStringArg(name string, args []Value) (string, error) {
@@ -6394,6 +6410,9 @@ func (vm *VM) displayString(value Value, result *Result) (string, error) {
 	if value.Type == "LoggingLevel" && isLoggingLevelName(value.Text) {
 		return value.Text, nil
 	}
+	if isExceptionType(value.Type) {
+		return exceptionToString(value), nil
+	}
 	target, ok, ambiguous := vm.resolveInstanceMethodForArgs(value.Type, "toString", nil)
 	if ambiguous {
 		return "", fmt.Errorf("ambiguous overload for call %q", "toString")
@@ -7281,6 +7300,23 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return message, receiver, false, true, nil
 			}
 			return Null, receiver, false, true, nil
+		case "getCause":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("%s.getCause expects 0 arguments", receiver.Type)
+			}
+			if cause, ok := receiver.Fields["__cause"]; ok {
+				return cause, receiver, false, true, nil
+			}
+			return Null, receiver, false, true, nil
+		case "initCause":
+			if len(args) != 1 {
+				return Null, receiver, false, true, fmt.Errorf("%s.initCause expects 1 argument", receiver.Type)
+			}
+			if args[0].Kind != ValueNull && (args[0].Kind != ValueObject || !isExceptionType(args[0].Type)) {
+				return Null, receiver, false, true, fmt.Errorf("%s.initCause expects Exception", receiver.Type)
+			}
+			receiver.Fields["__cause"] = args[0]
+			return Null, receiver, true, true, nil
 		case "getTypeName":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("%s.getTypeName expects 0 arguments", receiver.Type)
