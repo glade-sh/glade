@@ -954,3 +954,101 @@ func TestCollectionStdlibMoreRejectsUnsupportedSortValues(t *testing.T) {
 		t.Fatalf("err = %v, want primitive comparable sort error", err)
 	}
 }
+
+func TestExecCollectionStdlibNullAndSObjectMapEdges(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<String> words = new List<String>{null, 'a', null};
+System.assert(words.contains(null));
+System.assertEquals(0, words.indexOf(null));
+System.assertEquals(-1, words.indexOf('missing'));
+System.assertEquals(null, words.remove(0));
+System.assertEquals(2, words.size());
+
+Set<String> names = new Set<String>{null, 'a', null};
+System.assert(names.contains(null));
+System.assert(!names.add(null));
+System.assert(names.remove(null));
+System.assert(!names.contains(null));
+System.assert(!names.isEmpty());
+names.clear();
+System.assert(names.isEmpty());
+
+Map<String, String> labels = new Map<String, String>();
+labels.put(null, 'nil');
+labels.put('blank', null);
+System.assert(labels.containsKey(null));
+System.assert(labels.containsValue(null));
+System.assertEquals('nil', labels.get(null));
+Set<String> nullKeys = labels.keySet();
+System.assert(nullKeys.contains(null));
+System.assertEquals(null, labels.remove('blank'));
+System.assert(!labels.containsValue(null));
+labels.clear();
+System.assert(labels.isEmpty());
+
+Account a = new Account(Id = '001B000001DVM9tIAH', Name = 'Acme');
+Account b = new Account(Id = '001B000001DVM9uIAH', Name = 'Beta');
+List<Account> accounts = new List<Account>{a, b};
+Map<Id, Account> byId = new Map<Id, Account>(accounts);
+System.assertEquals(2, byId.size());
+Account fromById = byId.get(a.Id);
+System.assertEquals('Acme', fromById.Name);
+System.assert(byId.containsKey(b.Id));
+Map<Id, Account> more = new Map<Id, Account>();
+more.putAll(new List<Account>{b});
+Account fromMore = more.get(b.Id);
+System.assertEquals('Beta', fromMore.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecCollectionStdlibRejectsSObjectMapEdgeErrors(t *testing.T) {
+	tests := []struct {
+		name string
+		body string
+		want string
+	}{
+		{
+			name: "missing Id",
+			body: "List<Account> accounts = new List<Account>{new Account(Name = 'Acme')}; Map<Id, Account> byId = new Map<Id, Account>(accounts);",
+			want: "requires non-null Id at index 0",
+		},
+		{
+			name: "duplicate Id",
+			body: "Account a = new Account(Id = '001B000001DVM9tIAH'); List<Account> accounts = new List<Account>{a, a}; Map<Id, Account> byId = new Map<Id, Account>(accounts);",
+			want: "duplicate Id at index 1",
+		},
+		{
+			name: "putAll duplicate Id",
+			body: "Account a = new Account(Id = '001B000001DVM9tIAH'); List<Account> accounts = new List<Account>{a, a}; Map<Id, Account> byId = new Map<Id, Account>(); byId.putAll(accounts);",
+			want: "duplicate Id at index 1",
+		},
+		{
+			name: "wrong map key type",
+			body: "List<Account> accounts = new List<Account>{new Account(Id = '001B000001DVM9tIAH')}; Map<String, Account> byId = new Map<String, Account>(accounts);",
+			want: "unsupported call \"Map constructor from SObject list\"",
+		},
+		{
+			name: "deepClone options",
+			body: "List<Account> accounts = new List<Account>{new Account(Id = '001B000001DVM9tIAH')}; accounts.deepClone(true);",
+			want: "unsupported call \"List.deepClone with preserve options\"",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			program, err := CompileAnonymous(tt.body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = Execute(program, nil)
+			if err == nil || !strings.Contains(err.Error(), tt.want) {
+				t.Fatalf("err = %v, want %q", err, tt.want)
+			}
+		})
+	}
+}
