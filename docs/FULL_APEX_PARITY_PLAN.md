@@ -122,6 +122,10 @@ Current progress:
   coverage includes token navigation, `JSONToken` constants, text/current-name
   accessors, integer/long/decimal/double, Boolean, Date, Datetime, Time, Id,
   and Blob accessors, `nextValue`, `skipChildren`, and `clearCurrentToken`.
+  Deserialize coverage includes deterministic untyped primitive/list/map/null
+  mapping, typed primitive/platform scalar mapping, `List<T>` and
+  `Map<String,T>` via local `Type` tokens, strict unknown-field rejection for
+  supported SObject/class targets, and stable typed shape errors.
 - Blob/Encoding/Crypto: runtime support now covers deterministic local
   `Blob.valueOf`, `Blob.toString`, `Blob.size`, Base64 encode/decode,
   hex encode/decode, empty Blob/encoding edge cases, URL encode/decode for the
@@ -209,9 +213,14 @@ Remaining cuts:
      exception shapes; raw writer support is limited to validated single-value
      raw JSON strings.
    - Extend `JSONParser` with full streaming edge behavior, parser recovery
-     semantics beyond the deterministic clear-current-token slice, typed
-     deserialize, strict deserialize, untyped edge behavior, class/SObject
-     mapping, additional suppress-null overloads, and stable error shapes.
+     semantics beyond the deterministic clear-current-token slice.
+   - Extend `JSON.deserialize`/`deserializeStrict` beyond the bounded local
+     typed primitive/platform scalar, `List<T>`, `Map<String,T>`, and supported
+     class/SObject slices; remaining gaps include exact platform exception
+     shapes, full class/SObject mapping parity, polymorphic mappings, and
+     unsupported Map key coercions.
+   - Add any remaining suppress-null overloads and edge parity not covered by
+     the current `serialize`/`serializePretty` Boolean overload slice.
 
 7. System, exceptions, Type, and reflection
    - Newly covered slice: deterministic current-time helpers, debug

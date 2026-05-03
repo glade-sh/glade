@@ -249,6 +249,76 @@ System.assertEquals(1.25, parser.getDecimalValue());
 	}
 }
 
+func TestExecJSONDeserializeTypedPrimitiveCollectionAndPlatformScalars(t *testing.T) {
+	program, err := CompileAnonymous(`
+Integer n = JSON.deserialize('7', Integer.class);
+System.assertEquals(7, n);
+Long big = JSON.deserialize('9223372036854775807', Long.class);
+System.assertEquals(9223372036854775807, big);
+Decimal ratio = JSON.deserialize('1.25', Decimal.class);
+System.assertEquals(1.25, ratio);
+Boolean ok = JSON.deserialize('true', Boolean.class);
+System.assertEquals(true, ok);
+String text = JSON.deserialize('"Acme"', String.class);
+System.assertEquals('Acme', text);
+Object missing = JSON.deserialize('null', String.class);
+System.assertEquals(null, missing);
+Date dateValue = JSON.deserialize('"2024-02-29"', Date.class);
+System.assertEquals(Date.newInstance(2024, 2, 29), dateValue);
+Datetime whenValue = JSON.deserialize('"2024-02-29T12:34:56Z"', Datetime.class);
+System.assertEquals(Datetime.newInstance(2024, 2, 29, 12, 34, 56), whenValue);
+Time timeValue = JSON.deserialize('"05:06:07"', Time.class);
+System.assertEquals(Time.newInstance(5, 6, 7, 0), timeValue);
+Id idValue = JSON.deserialize('"001B000001DVM9t"', Id.class);
+System.assertEquals('001B000001DVM9t', idValue.toString());
+Blob blobValue = JSON.deserialize('"YWJj"', Blob.class);
+System.assertEquals('abc', blobValue.toString());
+Type listType = Type.forName('List<Integer>');
+List<Integer> nums = JSON.deserialize('[1,2,null]', listType);
+System.assertEquals(3, nums.size());
+System.assertEquals(2, nums.get(1));
+System.assertEquals(null, nums.get(2));
+Type mapType = Type.forName('Map<String,Integer>');
+Map<String,Integer> counts = JSON.deserialize('{"a":1,"b":null}', mapType);
+System.assertEquals(1, counts.get('a'));
+System.assertEquals(null, counts.get('b'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecJSONDeserializeTypedRejectsMismatchedShapes(t *testing.T) {
+	program, err := CompileAnonymous(`
+Object n = JSON.deserialize('"not-a-number"', Integer.class);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), "JSON.deserialize cannot map JSON String to Integer") {
+		t.Fatalf("err = %v", err)
+	}
+}
+
+func TestExecJSONDeserializeTypedRejectsUnsupportedMapKeyTargets(t *testing.T) {
+	program, err := CompileAnonymous(`
+Type mapType = Type.forName('Map<Integer,Object>');
+Object value = JSON.deserialize('{"1":"one"}', mapType);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), "Map keys only for String/Object targets") {
+		t.Fatalf("err = %v", err)
+	}
+}
+
 func TestExecJSONGeneratorWritesPlatformAndObjectValues(t *testing.T) {
 	program, err := CompileAnonymous(`
 JSONGenerator gen = JSON.createGenerator(false);

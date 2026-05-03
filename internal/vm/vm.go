@@ -1373,8 +1373,8 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("JSON.deserializeUntyped expects String")
 		}
-		var decoded any
-		if err := json.Unmarshal([]byte(args[0].Text), &decoded); err != nil {
+		decoded, err := decodeJSONValue(args[0].Text)
+		if err != nil {
 			return Null, err
 		}
 		return valueFromJSON(decoded), nil
@@ -1382,12 +1382,12 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		if len(args) != 2 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("%s expects String and Type", callee)
 		}
-		var decoded any
-		if err := json.Unmarshal([]byte(args[0].Text), &decoded); err != nil {
+		decoded, err := decodeJSONValue(args[0].Text)
+		if err != nil {
 			return Null, err
 		}
 		if args[1].Kind == ValueObject && args[1].Type == "Type" {
-			return vm.typedValueFromJSON(args[1].Text, decoded, callee == "JSON.deserializeStrict")
+			return vm.typedValueFromJSON(typeValueName(args[1]), decoded, callee == "JSON.deserializeStrict")
 		}
 		return valueFromJSON(decoded), nil
 	case "Schema.getGlobalDescribe":
@@ -4278,6 +4278,23 @@ func jsonFromValue(value Value, suppressObjectNulls bool) any {
 	}
 }
 
+func decodeJSONValue(text string) (any, error) {
+	decoder := json.NewDecoder(strings.NewReader(text))
+	decoder.UseNumber()
+	var decoded any
+	if err := decoder.Decode(&decoded); err != nil {
+		return nil, err
+	}
+	var extra any
+	if err := decoder.Decode(&extra); err != io.EOF {
+		if err == nil {
+			return nil, fmt.Errorf("JSON input contains multiple values")
+		}
+		return nil, err
+	}
+	return decoded, nil
+}
+
 func valueFromJSON(raw any) Value {
 	switch v := raw.(type) {
 	case nil:
@@ -4291,6 +4308,17 @@ func valueFromJSON(raw any) Value {
 			}
 		}
 		return Decimal(v)
+	case json.Number:
+		text := v.String()
+		if !strings.ContainsAny(text, ".eE") {
+			if converted, err := strconv.ParseInt(text, 10, 64); err == nil {
+				return Int(converted)
+			}
+		}
+		if converted, err := strconv.ParseFloat(text, 64); err == nil {
+			return Decimal(converted)
+		}
+		return String(text)
 	case string:
 		return String(v)
 	case []any:
@@ -4311,10 +4339,56 @@ func valueFromJSON(raw any) Value {
 }
 
 func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, error) {
+	if value, ok, err := typedScalarFromJSON(typeName, raw); ok || err != nil {
+		return value, err
+	}
+	if strings.HasPrefix(typeName, "List<") {
+		items, ok := raw.([]any)
+		if !ok {
+			return Null, jsonTypeMappingError(typeName, raw)
+		}
+		elementType, _ := collectionElementType(typeName)
+		out := List()
+		out.Type = typeName
+		for _, item := range items {
+			value, err := vm.typedValueFromJSON(elementType, item, strict)
+			if err != nil {
+				return Null, err
+			}
+			out.List = append(out.List, value)
+		}
+		return out, nil
+	}
+	if strings.HasPrefix(typeName, "Map<") {
+		fields, ok := raw.(map[string]any)
+		if !ok {
+			return Null, jsonTypeMappingError(typeName, raw)
+		}
+		keyType, valueType, ok := mapTypeArgs(typeName)
+		if !ok {
+			return Null, jsonTypeMappingError(typeName, raw)
+		}
+		if keyType != "String" && keyType != "Object" {
+			return Null, fmt.Errorf("JSON.deserialize supports Map keys only for String/Object targets, got %s", keyType)
+		}
+		out := Map()
+		out.Type = typeName
+		for key, item := range fields {
+			value, err := vm.typedValueFromJSON(valueType, item, strict)
+			if err != nil {
+				return Null, err
+			}
+			out.Map[mapKey(String(key))] = value
+		}
+		return out, nil
+	}
+	if typeName == "Object" {
+		return valueFromJSON(raw), nil
+	}
 	obj := Object(typeName)
 	fields, ok := raw.(map[string]any)
 	if !ok {
-		return valueFromJSON(raw), nil
+		return Null, jsonTypeMappingError(typeName, raw)
 	}
 	if strict {
 		allowed := vm.jsonAllowedFields(typeName)
@@ -4331,9 +4405,160 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 		if key == "attributes" {
 			continue
 		}
+		if class, ok := vm.Classes[typeName]; ok {
+			if field, ok := class.Fields[key]; ok && field.Type != "" {
+				value, err := vm.typedValueFromJSON(field.Type, item, strict)
+				if err != nil {
+					return Null, err
+				}
+				obj.Fields[key] = value
+				continue
+			}
+		}
 		obj.Fields[key] = valueFromJSON(item)
 	}
 	return obj, nil
+}
+
+func typedScalarFromJSON(typeName string, raw any) (Value, bool, error) {
+	if raw == nil {
+		return Null, true, nil
+	}
+	switch typeName {
+	case "String":
+		text, ok := raw.(string)
+		if !ok {
+			return Null, true, jsonTypeMappingError(typeName, raw)
+		}
+		return String(text), true, nil
+	case "Boolean":
+		value, ok := raw.(bool)
+		if !ok {
+			return Null, true, jsonTypeMappingError(typeName, raw)
+		}
+		return Bool(value), true, nil
+	case "Integer", "Long":
+		value, ok := jsonIntegralNumber(raw)
+		if !ok {
+			return Null, true, jsonTypeMappingError(typeName, raw)
+		}
+		return Int(value), true, nil
+	case "Decimal", "Double":
+		value, ok := jsonDecimalNumber(raw)
+		if !ok {
+			return Null, true, jsonTypeMappingError(typeName, raw)
+		}
+		return Decimal(value), true, nil
+	case "Date":
+		text, ok := raw.(string)
+		if !ok {
+			return Null, true, jsonTypeMappingError(typeName, raw)
+		}
+		if _, err := time.Parse("2006-01-02", text); err != nil {
+			return Null, true, fmt.Errorf("JSON.deserialize cannot parse Date %q", text)
+		}
+		return platformScalar("Date", text), true, nil
+	case "Datetime":
+		text, ok := raw.(string)
+		if !ok {
+			return Null, true, jsonTypeMappingError(typeName, raw)
+		}
+		value, err := parseDatetimeText(text)
+		if err != nil {
+			return Null, true, err
+		}
+		return platformScalar("Datetime", value.UTC().Format(time.RFC3339)), true, nil
+	case "Time":
+		text, ok := raw.(string)
+		if !ok {
+			return Null, true, jsonTypeMappingError(typeName, raw)
+		}
+		value, err := parseTimeText(text)
+		if err != nil {
+			return Null, true, err
+		}
+		return platformScalar("Time", value), true, nil
+	case "Id":
+		text, ok := raw.(string)
+		if !ok {
+			return Null, true, jsonTypeMappingError(typeName, raw)
+		}
+		if err := validateApexID(text); err != nil {
+			return Null, true, err
+		}
+		return platformScalar("Id", text), true, nil
+	case "Blob":
+		text, ok := raw.(string)
+		if !ok {
+			return Null, true, jsonTypeMappingError(typeName, raw)
+		}
+		decoded, err := base64.StdEncoding.DecodeString(text)
+		if err != nil {
+			return Null, true, fmt.Errorf("JSON.deserialize cannot decode Blob base64: %w", err)
+		}
+		return platformScalar("Blob", string(decoded)), true, nil
+	}
+	return Null, false, nil
+}
+
+func jsonIntegralNumber(raw any) (int64, bool) {
+	switch value := raw.(type) {
+	case json.Number:
+		text := value.String()
+		if strings.ContainsAny(text, ".eE") {
+			decimal, err := strconv.ParseFloat(text, 64)
+			if err != nil || math.Trunc(decimal) != decimal {
+				return 0, false
+			}
+			converted, err := int64FromFloat("JSON number", decimal)
+			return converted, err == nil
+		}
+		converted, err := strconv.ParseInt(text, 10, 64)
+		return converted, err == nil
+	case float64:
+		if math.Trunc(value) != value {
+			return 0, false
+		}
+		converted, err := int64FromFloat("JSON number", value)
+		return converted, err == nil
+	default:
+		return 0, false
+	}
+}
+
+func jsonDecimalNumber(raw any) (float64, bool) {
+	switch value := raw.(type) {
+	case json.Number:
+		converted, err := strconv.ParseFloat(value.String(), 64)
+		return converted, err == nil
+	case float64:
+		return value, true
+	default:
+		return 0, false
+	}
+}
+
+func jsonTypeMappingError(typeName string, raw any) error {
+	return fmt.Errorf("JSON.deserialize cannot map JSON %s to %s", jsonRawKind(raw), typeName)
+}
+
+func jsonRawKind(raw any) string {
+	switch raw.(type) {
+	case nil:
+		return "null"
+	case bool:
+		return "Boolean"
+	case json.Number, float64:
+		return "number"
+	case string:
+		return "String"
+	case []any:
+		return "array"
+	case map[string]any:
+		return "object"
+	default:
+		return fmt.Sprintf("%T", raw)
+	}
 }
 
 func (vm *VM) jsonAllowedFields(typeName string) map[string]struct{} {
@@ -5083,7 +5308,7 @@ func (vm *VM) typeForName(namespace, name string) Value {
 			return platformScalar("Type", canonical)
 		}
 	}
-	if isBuiltinTypeName(name) || isCommonSObjectTypeName(name) {
+	if isBuiltinTypeName(name) || isGenericTypeName(name) || isCommonSObjectTypeName(name) {
 		return platformScalar("Type", name)
 	}
 	return Null
@@ -5096,6 +5321,30 @@ func isBuiltinTypeName(name string) bool {
 	default:
 		return isExceptionType(name)
 	}
+}
+
+func isGenericTypeName(name string) bool {
+	open := strings.IndexByte(name, '<')
+	if open <= 0 || !strings.HasSuffix(name, ">") {
+		return false
+	}
+	base := name[:open]
+	args, ok := genericTypeArgs(name)
+	if !ok {
+		return false
+	}
+	switch base {
+	case "List", "Set":
+		return len(args) == 1 && isTypeNameToken(args[0])
+	case "Map":
+		return len(args) == 2 && isTypeNameToken(args[0]) && isTypeNameToken(args[1])
+	default:
+		return false
+	}
+}
+
+func isTypeNameToken(name string) bool {
+	return isBuiltinTypeName(name) || isGenericTypeName(name) || isCommonSObjectTypeName(name)
 }
 
 func isCommonSObjectTypeName(name string) bool {
