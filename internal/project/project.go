@@ -17,6 +17,7 @@ type Project struct {
 	ApexFiles          []string           `json:"apexFiles"`
 	ObjectFiles        []string           `json:"objectFiles"`
 	FieldFiles         []string           `json:"fieldFiles"`
+	RecordTypeFiles    []string           `json:"recordTypeFiles"`
 }
 
 type PackageDirectory struct {
@@ -67,6 +68,7 @@ func Load(root string) (Project, error) {
 	sort.Strings(p.ApexFiles)
 	sort.Strings(p.ObjectFiles)
 	sort.Strings(p.FieldFiles)
+	sort.Strings(p.RecordTypeFiles)
 	return p, nil
 }
 
@@ -104,6 +106,8 @@ func collectFiles(root string, p *Project) error {
 			p.ObjectFiles = append(p.ObjectFiles, path)
 		case strings.HasSuffix(lower, ".field-meta.xml"):
 			p.FieldFiles = append(p.FieldFiles, path)
+		case strings.HasSuffix(lower, ".recordtype-meta.xml"):
+			p.RecordTypeFiles = append(p.RecordTypeFiles, path)
 		}
 		return nil
 	})

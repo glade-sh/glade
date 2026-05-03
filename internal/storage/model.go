@@ -27,6 +27,7 @@ type ObjectDefinition struct {
 	SharingModel string            `json:"sharingModel,omitempty"`
 	Fields       map[string]Field  `json:"fields,omitempty"`
 	Relations    []Relationship    `json:"relationships,omitempty"`
+	RecordTypes  []RecordTypeInfo  `json:"recordTypes,omitempty"`
 	Indexes      []IndexDefinition `json:"indexes,omitempty"`
 	Metadata     map[string]string `json:"metadata,omitempty"`
 }
@@ -48,6 +49,16 @@ type PicklistValue struct {
 	Label   string `json:"label,omitempty"`
 	Default bool   `json:"default,omitempty"`
 	Active  bool   `json:"active,omitempty"`
+}
+
+type RecordTypeInfo struct {
+	ID            ID     `json:"id,omitempty"`
+	DeveloperName string `json:"developerName"`
+	Name          string `json:"name,omitempty"`
+	Active        bool   `json:"active,omitempty"`
+	Available     bool   `json:"available,omitempty"`
+	Default       bool   `json:"default,omitempty"`
+	Description   string `json:"description,omitempty"`
 }
 
 type FieldType string
@@ -314,6 +325,7 @@ func (d ObjectDefinition) Clone() ObjectDefinition {
 	for i := range out.Relations {
 		out.Relations[i].ParentObjects = append([]string(nil), d.Relations[i].ParentObjects...)
 	}
+	out.RecordTypes = append([]RecordTypeInfo(nil), d.RecordTypes...)
 	out.Indexes = append([]IndexDefinition(nil), d.Indexes...)
 	for i := range out.Indexes {
 		out.Indexes[i].Fields = append([]string(nil), d.Indexes[i].Fields...)

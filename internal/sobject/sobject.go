@@ -97,6 +97,7 @@ type DescribeSObjectResult struct {
 	KeyPrefix     string                         `json:"keyPrefix,omitempty"`
 	Fields        map[string]DescribeFieldResult `json:"fields,omitempty"`
 	Relationships []storage.Relationship         `json:"relationships,omitempty"`
+	RecordTypes   []DescribeRecordTypeInfo       `json:"recordTypes,omitempty"`
 }
 
 type DescribeFieldResult struct {
@@ -113,6 +114,16 @@ type DescribeFieldResult struct {
 	PicklistValues        []storage.PicklistValue `json:"picklistValues,omitempty"`
 }
 
+type DescribeRecordTypeInfo struct {
+	ID            storage.ID `json:"id,omitempty"`
+	DeveloperName string     `json:"developerName"`
+	Name          string     `json:"name,omitempty"`
+	Active        bool       `json:"active,omitempty"`
+	Available     bool       `json:"available,omitempty"`
+	Default       bool       `json:"default,omitempty"`
+	Description   string     `json:"description,omitempty"`
+}
+
 func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 	objects := make([]schema.Object, len(s.Objects))
 	copy(objects, s.Objects)
@@ -120,6 +131,7 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 	prefixes := storage.AssignDeterministicPrefixes(objectNames(objects), nil)
 
 	registry := DescribeRegistry{Objects: make(map[string]DescribeSObjectResult, len(objects))}
+	recordTypeIDs := storage.NewIDGenerator(map[string]string{"RecordType": storage.StandardKeyPrefixes()["RecordType"]})
 	for _, object := range objects {
 		describe := DescribeSObjectResult{
 			Name:        object.Name,
@@ -152,6 +164,21 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 					RestrictedDelete:   strings.EqualFold(field.DeleteConstraint, "Restrict"),
 				})
 			}
+		}
+		for _, recordType := range object.RecordTypes {
+			id, err := recordTypeIDs.Next("RecordType")
+			if err != nil {
+				id = ""
+			}
+			describe.RecordTypes = append(describe.RecordTypes, DescribeRecordTypeInfo{
+				ID:            id,
+				DeveloperName: recordType.DeveloperName,
+				Name:          recordType.Label,
+				Active:        recordType.Active,
+				Available:     recordType.Active,
+				Default:       recordType.Default,
+				Description:   recordType.Description,
+			})
 		}
 		registry.Objects[object.Name] = describe
 	}
@@ -188,6 +215,7 @@ func (d DescribeSObjectResult) Clone() DescribeSObjectResult {
 	for i := range out.Relationships {
 		out.Relationships[i].ParentObjects = append([]string(nil), d.Relationships[i].ParentObjects...)
 	}
+	out.RecordTypes = append([]DescribeRecordTypeInfo(nil), d.RecordTypes...)
 	return out
 }
 
@@ -199,6 +227,7 @@ func ToObjectDefinition(describe DescribeSObjectResult) storage.ObjectDefinition
 		KeyPrefix:   describe.KeyPrefix,
 		Fields:      make(map[string]storage.Field, len(describe.Fields)),
 		Relations:   append([]storage.Relationship(nil), describe.Relationships...),
+		RecordTypes: make([]storage.RecordTypeInfo, 0, len(describe.RecordTypes)),
 	}
 	for name, field := range describe.Fields {
 		definition.Fields[name] = storage.Field{
@@ -211,6 +240,17 @@ func ToObjectDefinition(describe DescribeSObjectResult) storage.ObjectDefinition
 			RelationshipName: field.RelationshipName,
 			PicklistValues:   append([]storage.PicklistValue(nil), field.PicklistValues...),
 		}
+	}
+	for _, recordType := range describe.RecordTypes {
+		definition.RecordTypes = append(definition.RecordTypes, storage.RecordTypeInfo{
+			ID:            recordType.ID,
+			DeveloperName: recordType.DeveloperName,
+			Name:          recordType.Name,
+			Active:        recordType.Active,
+			Available:     recordType.Available,
+			Default:       recordType.Default,
+			Description:   recordType.Description,
+		})
 	}
 	return definition
 }

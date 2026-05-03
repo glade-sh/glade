@@ -36,6 +36,7 @@ func TestBuildDescribeRegistry(t *testing.T) {
 			{Name: "Account__c", Type: "Lookup", ReferenceTo: "Account", RelationshipName: "Account__r", ChildRelationshipName: "Widgets__r", DeleteConstraint: "Cascade"},
 			{Name: "Rating__c", Type: "Picklist", PicklistValues: []schema.PicklistValue{{FullName: "Hot", Label: "Hot", Default: true, Active: true}}},
 		},
+		RecordTypes: []schema.RecordType{{DeveloperName: "Business", Label: "Business Widget", Active: true, Default: true}},
 	}}})
 
 	describe, err := registry.Describe("Widget__c")
@@ -60,11 +61,17 @@ func TestBuildDescribeRegistry(t *testing.T) {
 	if got := describe.Fields["Rating__c"].PicklistValues; len(got) != 1 || got[0].Value != "Hot" || !got[0].Default {
 		t.Fatalf("picklist values = %#v", got)
 	}
+	if got := describe.RecordTypes; len(got) != 1 || got[0].ID != "012000000000001" || got[0].DeveloperName != "Business" || got[0].Name != "Business Widget" || !got[0].Default {
+		t.Fatalf("record types = %#v", got)
+	}
 	definition := ToObjectDefinition(describe)
 	if definition.Fields["Account__c"].Type != storage.FieldReference {
 		t.Fatalf("definition = %#v", definition)
 	}
 	if got := definition.Fields["Rating__c"].PicklistValues; len(got) != 1 || got[0].Value != "Hot" {
 		t.Fatalf("definition picklist values = %#v", got)
+	}
+	if got := definition.RecordTypes; len(got) != 1 || got[0].ID != "012000000000001" || got[0].DeveloperName != "Business" {
+		t.Fatalf("definition record types = %#v", got)
 	}
 }

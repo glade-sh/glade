@@ -2891,13 +2891,45 @@ func (vm *VM) schemaGlobalDescribe() Value {
 		return out
 	}
 	for name, object := range vm.Org.Objects {
-		desc := Object("Schema.DescribeSObjectResult")
-		desc.Fields["name"] = String(name)
-		desc.Fields["label"] = String(object.Definition.Label)
-		desc.Fields["keyPrefix"] = String(object.Definition.KeyPrefix)
+		desc := vm.describeSObjectValue(name, object.Definition)
 		out.Map[mapKey(String(name))] = desc
 	}
 	return out
+}
+
+func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinition) Value {
+	desc := Object("Schema.DescribeSObjectResult")
+	desc.Fields["name"] = String(name)
+	desc.Fields["label"] = String(definition.Label)
+	desc.Fields["keyPrefix"] = String(definition.KeyPrefix)
+	recordTypes := make([]Value, 0, len(definition.RecordTypes))
+	byName := Map()
+	byDeveloperName := Map()
+	for _, recordType := range definition.RecordTypes {
+		value := recordTypeInfoValue(recordType)
+		recordTypes = append(recordTypes, value)
+		if recordType.Name != "" {
+			byName.Map[mapKey(String(recordType.Name))] = value
+		}
+		if recordType.DeveloperName != "" {
+			byDeveloperName.Map[mapKey(String(recordType.DeveloperName))] = value
+		}
+	}
+	desc.Fields["recordTypeInfos"] = List(recordTypes...)
+	desc.Fields["recordTypeInfosByName"] = byName
+	desc.Fields["recordTypeInfosByDeveloperName"] = byDeveloperName
+	return desc
+}
+
+func recordTypeInfoValue(recordType storage.RecordTypeInfo) Value {
+	value := Object("Schema.RecordTypeInfo")
+	value.Fields["recordTypeId"] = String(recordType.ID.String())
+	value.Fields["developerName"] = String(recordType.DeveloperName)
+	value.Fields["name"] = String(recordType.Name)
+	value.Fields["active"] = Bool(recordType.Active)
+	value.Fields["available"] = Bool(recordType.Available)
+	value.Fields["default"] = Bool(recordType.Default)
+	return value
 }
 
 func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
@@ -5196,6 +5228,54 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.getKeyPrefix expects 0 arguments")
 			}
 			return receiver.Fields["keyPrefix"], receiver, false, true, nil
+		case "getRecordTypeInfos":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.getRecordTypeInfos expects 0 arguments")
+			}
+			return receiver.Fields["recordTypeInfos"], receiver, false, true, nil
+		case "getRecordTypeInfosByName":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.getRecordTypeInfosByName expects 0 arguments")
+			}
+			return receiver.Fields["recordTypeInfosByName"], receiver, false, true, nil
+		case "getRecordTypeInfosByDeveloperName":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.getRecordTypeInfosByDeveloperName expects 0 arguments")
+			}
+			return receiver.Fields["recordTypeInfosByDeveloperName"], receiver, false, true, nil
+		}
+	case "Schema.RecordTypeInfo":
+		switch method {
+		case "getName":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.RecordTypeInfo.getName expects 0 arguments")
+			}
+			return receiver.Fields["name"], receiver, false, true, nil
+		case "getDeveloperName":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.RecordTypeInfo.getDeveloperName expects 0 arguments")
+			}
+			return receiver.Fields["developerName"], receiver, false, true, nil
+		case "getRecordTypeId":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.RecordTypeInfo.getRecordTypeId expects 0 arguments")
+			}
+			return receiver.Fields["recordTypeId"], receiver, false, true, nil
+		case "isAvailable":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.RecordTypeInfo.isAvailable expects 0 arguments")
+			}
+			return receiver.Fields["available"], receiver, false, true, nil
+		case "isDefaultRecordTypeMapping":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.RecordTypeInfo.isDefaultRecordTypeMapping expects 0 arguments")
+			}
+			return receiver.Fields["default"], receiver, false, true, nil
+		case "isActive":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.RecordTypeInfo.isActive expects 0 arguments")
+			}
+			return receiver.Fields["active"], receiver, false, true, nil
 		}
 	case "HttpRequest":
 		switch method {

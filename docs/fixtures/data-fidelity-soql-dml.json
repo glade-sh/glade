@@ -6,6 +6,14 @@
       "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
     },
     {
+      "path": "force-app/main/default/objects/Account/recordTypes/Business.recordType-meta.xml",
+      "content": "<RecordType><fullName>Business</fullName><label>Business Account</label><active>true</active><default>true</default></RecordType>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/recordTypes/Consumer.recordType-meta.xml",
+      "content": "<RecordType><fullName>Consumer</fullName><label>Consumer Account</label><active>false</active></RecordType>"
+    },
+    {
       "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
       "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type><required>true</required></CustomField>"
     },
@@ -134,6 +142,10 @@
       "content": "@isTest private class DescribePicklistFidelityTest { @isTest static void picklistDescribeValues() { Object describe = Account.Rating.getDescribe(); System.assertEquals('Rating', describe.getName()); System.assertEquals('picklist', describe.getType()); List<Object> values = describe.getPicklistValues(); System.assertEquals(3, values.size()); Object hot = values.get(0); System.assertEquals('Hot', hot.getValue()); System.assertEquals('Hot Label', hot.getLabel()); System.assert(hot.isDefaultValue()); System.assert(hot.isActive()); Object cold = values.get(2); System.assertEquals('Cold', cold.getValue()); System.assert(!cold.isDefaultValue()); System.assert(!cold.isActive()); } }"
     },
     {
+      "path": "force-app/main/classes/RecordTypeDescribeFidelityTest.cls",
+      "content": "@isTest private class RecordTypeDescribeFidelityTest { @isTest static void recordTypeDescribeValues() { Map<String,Object> describes = Schema.getGlobalDescribe(); Object accountDescribe = describes.get('Account'); List<Object> infos = accountDescribe.getRecordTypeInfos(); System.assertEquals(2, infos.size()); Map<String,Object> byName = accountDescribe.getRecordTypeInfosByName(); Map<String,Object> byDeveloperName = accountDescribe.getRecordTypeInfosByDeveloperName(); Object business = byName.get('Business Account'); System.assertEquals('Business Account', business.getName()); System.assertEquals('Business', business.getDeveloperName()); System.assertEquals('012000000000001', business.getRecordTypeId()); System.assert(business.isActive()); System.assert(business.isAvailable()); System.assert(business.isDefaultRecordTypeMapping()); Object consumer = byDeveloperName.get('Consumer'); System.assertEquals('Consumer Account', consumer.getName()); System.assertEquals('Consumer', consumer.getDeveloperName()); System.assertEquals('012000000000002', consumer.getRecordTypeId()); System.assert(!consumer.isActive()); System.assert(!consumer.isAvailable()); System.assert(!consumer.isDefaultRecordTypeMapping()); } }"
+    },
+    {
       "path": "force-app/main/classes/ParentRelationshipFidelityTest.cls",
       "content": "@isTest private class ParentRelationshipFidelityTest { @isTest static void multiHopParentRelationshipProjectionAndFilter() { Account parent = new Account(Name = 'Parent'); insert parent; Account child = new Account(Name = 'Child', ParentId = parent.Id); insert child; Contact contact = new Contact(LastName = 'Smith', AccountId = child.Id); insert contact; Contact row = [SELECT Id, Account.Name, Account.Parent.Name FROM Contact WHERE Account.Parent.Name = 'Parent']; System.assertEquals('Child', row.Account.Name); System.assertEquals('Parent', row.Account.Parent.Name); } }"
     },
@@ -154,8 +166,8 @@
       "errors": 0,
       "failed": 0,
       "ok": true,
-      "passed": 15,
-      "total": 15
+      "passed": 16,
+      "total": 16
     }
   }
 }

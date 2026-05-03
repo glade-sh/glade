@@ -15,11 +15,12 @@ type Schema struct {
 }
 
 type Object struct {
-	Name         string  `json:"name"`
-	Label        string  `json:"label,omitempty"`
-	PluralLabel  string  `json:"pluralLabel,omitempty"`
-	SharingModel string  `json:"sharingModel,omitempty"`
-	Fields       []Field `json:"fields,omitempty"`
+	Name         string       `json:"name"`
+	Label        string       `json:"label,omitempty"`
+	PluralLabel  string       `json:"pluralLabel,omitempty"`
+	SharingModel string       `json:"sharingModel,omitempty"`
+	Fields       []Field      `json:"fields,omitempty"`
+	RecordTypes  []RecordType `json:"recordTypes,omitempty"`
 }
 
 type Field struct {
@@ -43,6 +44,14 @@ type PicklistValue struct {
 	Active   bool   `json:"active,omitempty"`
 }
 
+type RecordType struct {
+	DeveloperName string `json:"developerName"`
+	Label         string `json:"label,omitempty"`
+	Active        bool   `json:"active,omitempty"`
+	Default       bool   `json:"default,omitempty"`
+	Description   string `json:"description,omitempty"`
+}
+
 type customObjectXML struct {
 	XMLName      xml.Name `xml:"CustomObject"`
 	Label        string   `xml:"label"`
@@ -63,6 +72,15 @@ type customFieldXML struct {
 	ExternalID            bool        `xml:"externalId"`
 	Unique                bool        `xml:"unique"`
 	ValueSet              valueSetXML `xml:"valueSet"`
+}
+
+type recordTypeXML struct {
+	XMLName     xml.Name `xml:"RecordType"`
+	FullName    string   `xml:"fullName"`
+	Label       string   `xml:"label"`
+	Active      *bool    `xml:"active"`
+	Default     bool     `xml:"default"`
+	Description string   `xml:"description"`
 }
 
 type valueSetXML struct {
@@ -108,10 +126,30 @@ func LoadProject(p project.Project) (Schema, error) {
 		object.Fields = append(object.Fields, field)
 	}
 
+	for _, path := range p.RecordTypeFiles {
+		objectName := objectNameFromRecordTypePath(path)
+		if objectName == "" {
+			continue
+		}
+		recordType, err := loadRecordType(path)
+		if err != nil {
+			return Schema{}, err
+		}
+		object := byName[objectName]
+		if object == nil {
+			object = &Object{Name: objectName}
+			byName[objectName] = object
+		}
+		object.RecordTypes = append(object.RecordTypes, recordType)
+	}
+
 	out := Schema{Objects: make([]Object, 0, len(byName))}
 	for _, object := range byName {
 		sort.Slice(object.Fields, func(i, j int) bool {
 			return object.Fields[i].Name < object.Fields[j].Name
+		})
+		sort.Slice(object.RecordTypes, func(i, j int) bool {
+			return object.RecordTypes[i].DeveloperName < object.RecordTypes[j].DeveloperName
 		})
 		out.Objects = append(out.Objects, *object)
 	}
@@ -119,6 +157,36 @@ func LoadProject(p project.Project) (Schema, error) {
 		return out.Objects[i].Name < out.Objects[j].Name
 	})
 	return out, nil
+}
+
+func loadRecordType(path string) (RecordType, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return RecordType{}, err
+	}
+	var raw recordTypeXML
+	if err := xml.Unmarshal(data, &raw); err != nil {
+		return RecordType{}, err
+	}
+	developerName := raw.FullName
+	if developerName == "" {
+		developerName = trimMetadataSuffix(filepath.Base(path), ".recordType-meta.xml")
+	}
+	label := raw.Label
+	if label == "" {
+		label = developerName
+	}
+	active := true
+	if raw.Active != nil {
+		active = *raw.Active
+	}
+	return RecordType{
+		DeveloperName: developerName,
+		Label:         label,
+		Active:        active,
+		Default:       raw.Default,
+		Description:   raw.Description,
+	}, nil
 }
 
 func loadObject(path string) (Object, error) {
@@ -131,7 +199,7 @@ func loadObject(path string) (Object, error) {
 		return Object{}, err
 	}
 	return Object{
-		Name:         strings.TrimSuffix(filepath.Base(path), ".object-meta.xml"),
+		Name:         trimMetadataSuffix(filepath.Base(path), ".object-meta.xml"),
 		Label:        raw.Label,
 		PluralLabel:  raw.PluralLabel,
 		SharingModel: raw.SharingModel,
@@ -149,7 +217,7 @@ func loadField(path string) (Field, error) {
 	}
 	name := raw.FullName
 	if name == "" {
-		name = strings.TrimSuffix(filepath.Base(path), ".field-meta.xml")
+		name = trimMetadataSuffix(filepath.Base(path), ".field-meta.xml")
 	}
 	return Field{
 		Name:                  name,
@@ -182,9 +250,24 @@ func picklistValues(values []picklistValueXML) []PicklistValue {
 	return out
 }
 
+func trimMetadataSuffix(name, suffix string) string {
+	if len(name) >= len(suffix) && strings.EqualFold(name[len(name)-len(suffix):], suffix) {
+		return name[:len(name)-len(suffix)]
+	}
+	return strings.TrimSuffix(name, suffix)
+}
+
 func objectNameFromFieldPath(path string) string {
 	dir := filepath.Dir(filepath.Dir(path))
 	if filepath.Base(filepath.Dir(path)) != "fields" {
+		return ""
+	}
+	return filepath.Base(dir)
+}
+
+func objectNameFromRecordTypePath(path string) string {
+	dir := filepath.Dir(filepath.Dir(path))
+	if filepath.Base(filepath.Dir(path)) != "recordTypes" {
 		return ""
 	}
 	return filepath.Base(dir)

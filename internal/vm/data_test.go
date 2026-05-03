@@ -112,6 +112,46 @@ System.assert(!cold.isActive());
 	}
 }
 
+func TestExecDescribeRecordTypeInfos(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String,Object> describes = Schema.getGlobalDescribe();
+Object accountDescribe = describes.get('Account');
+List<Object> infos = accountDescribe.getRecordTypeInfos();
+System.assertEquals(2, infos.size());
+Map<String,Object> byName = accountDescribe.getRecordTypeInfosByName();
+Map<String,Object> byDeveloperName = accountDescribe.getRecordTypeInfosByDeveloperName();
+Object business = byName.get('Business Account');
+System.assertEquals('Business Account', business.getName());
+System.assertEquals('Business', business.getDeveloperName());
+System.assertEquals('012000000000001', business.getRecordTypeId());
+System.assert(business.isActive());
+System.assert(business.isAvailable());
+System.assert(business.isDefaultRecordTypeMapping());
+Object consumer = byDeveloperName.get('Consumer');
+System.assertEquals('Consumer Account', consumer.getName());
+System.assertEquals('Consumer', consumer.getDeveloperName());
+System.assertEquals('012000000000002', consumer.getRecordTypeId());
+System.assert(!consumer.isActive());
+System.assert(!consumer.isAvailable());
+System.assert(!consumer.isDefaultRecordTypeMapping());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.RecordTypes = []storage.RecordTypeInfo{
+		{ID: "012000000000001", DeveloperName: "Business", Name: "Business Account", Active: true, Available: true, Default: true},
+		{ID: "012000000000002", DeveloperName: "Consumer", Name: "Consumer Account", Active: false, Available: false},
+	}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSOQLCountAndSingleSObjectAssignment(t *testing.T) {
 	program, err := CompileAnonymous(`
 insert new Account(Name = 'Acme');

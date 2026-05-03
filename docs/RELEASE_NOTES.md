@@ -51,6 +51,9 @@ Release engineering:
   state.
 - Added Metadata API picklist value loading and baseline
   `Schema.SObjectField.getDescribe().getPicklistValues()` support.
+- Added Metadata API record type loading and baseline
+  `Schema.DescribeSObjectResult` record type describe maps/lists with common
+  `Schema.RecordTypeInfo` methods and deterministic local `012` IDs.
 - Expanded data-fidelity coverage for SOQL complex predicates, numeric
   comparison semantics, `Database.Error` result shapes, and
   `Database.UpsertResult.isCreated()`.
