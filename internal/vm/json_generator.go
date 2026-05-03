@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"math"
 	"strconv"
 	"strings"
@@ -100,6 +101,21 @@ func callJSONGeneratorMember(receiver Value, method string, args []Value) (Value
 			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeNullField expects String field name")
 		}
 		return jsonGeneratorWriteField(receiver, args[0].Text, Null)
+	case "writeRaw":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeRaw expects String")
+		}
+		return jsonGeneratorWriteRawValue(receiver, args[0].Text, method)
+	case "writeRawValue":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeRawValue expects String")
+		}
+		return jsonGeneratorWriteRawValue(receiver, args[0].Text, method)
+	case "writeRawField":
+		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeRawField expects String field name and String raw JSON value")
+		}
+		return jsonGeneratorWriteRawField(receiver, args[0].Text, args[1].Text)
 	case "writeDate":
 		if len(args) != 1 || !jsonGeneratorIsPlatformScalar(args[0], "Date") {
 			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeDate expects Date")
@@ -321,6 +337,55 @@ func jsonGeneratorWriteAny(receiver Value, value Value) (Value, Value, bool, boo
 	}
 	jsonGeneratorAppend(&updated, rendered)
 	return Null, updated, true, true, nil
+}
+
+func jsonGeneratorWriteRawField(receiver Value, name, raw string) (Value, Value, bool, bool, error) {
+	normalized, err := jsonGeneratorValidateRawValue(raw, "writeRawField")
+	if err != nil {
+		return Null, receiver, false, true, err
+	}
+	updated, err := jsonGeneratorWriteFieldName(receiver, name)
+	if err != nil {
+		return Null, updated, true, true, err
+	}
+	return jsonGeneratorWriteRawValue(updated, normalized, "writeRawField")
+}
+
+func jsonGeneratorWriteRawValue(receiver Value, raw, method string) (Value, Value, bool, bool, error) {
+	normalized, err := jsonGeneratorValidateRawValue(raw, method)
+	if err != nil {
+		return Null, receiver, false, true, err
+	}
+	if err := jsonGeneratorEnsureOpen(receiver); err != nil {
+		return Null, receiver, false, true, err
+	}
+	updated, err := jsonGeneratorBeforeValue(receiver)
+	if err != nil {
+		return Null, updated, true, true, err
+	}
+	jsonGeneratorAppend(&updated, normalized)
+	return Null, updated, true, true, nil
+}
+
+func jsonGeneratorValidateRawValue(raw, method string) (string, error) {
+	normalized := strings.TrimSpace(raw)
+	if normalized == "" {
+		return "", fmt.Errorf("JSONGenerator.%s expects valid raw JSON value", method)
+	}
+	decoder := json.NewDecoder(strings.NewReader(normalized))
+	decoder.UseNumber()
+	var decoded any
+	if err := decoder.Decode(&decoded); err != nil {
+		return "", fmt.Errorf("JSONGenerator.%s expects valid raw JSON value: %w", method, err)
+	}
+	var extra any
+	if err := decoder.Decode(&extra); err != io.EOF {
+		if err == nil {
+			return "", fmt.Errorf("JSONGenerator.%s expects one raw JSON value", method)
+		}
+		return "", fmt.Errorf("JSONGenerator.%s expects one raw JSON value: %w", method, err)
+	}
+	return normalized, nil
 }
 
 func jsonGeneratorBeforeValue(receiver Value) (Value, error) {

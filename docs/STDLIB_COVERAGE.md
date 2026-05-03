@@ -99,8 +99,8 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | JSON | `JSON.deserializeUntyped` | `partial` | Maps JSON into local primitive/list/map values. |
 | JSON | `JSON.serialize` | `partial` | Includes suppressApexObjectNulls overload for supported values. |
 | JSON | `JSON.serializePretty` | `partial` | Pretty output for supported values. |
-| JSON | `JSONGenerator` | `partial` | Object/array boundaries, field names, scalar string/number/Boolean/null, Date/Datetime/Time/Id/Blob, Object writers, getAsString, close, isClosed, and stable invalid-order errors. |
-| JSON | `JSONParser` | `partial` | Token navigation, current token/name/text, numeric/Boolean/date/datetime/time/id/blob accessors, nextValue, and skipChildren for deterministic local JSON. |
+| JSON | `JSONGenerator` | `partial` | Object/array boundaries, field names, scalar string/number/Boolean/null, Date/Datetime/Time/Id/Blob, Object and validated raw value writers, getAsString, close, isClosed, and stable invalid-order errors. |
+| JSON | `JSONParser` | `partial` | Token navigation, current token/name/text, integer/long/decimal/double/Boolean/date/datetime/time/id/blob accessors, nextValue, skipChildren, and clearCurrentToken for deterministic local JSON. |
 | JSON | `JSONToken` | `partial` | Common parser token constants for object, array, field, string, number, Boolean, and null tokens. |
 | Limits | `Limits.get*` | `partial` | SOQL, DML, heap, CPU, async, callout, and email counters. |
 | List | `List.add` | `supported` | Adds typed local values, including indexed insertion. |

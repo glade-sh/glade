@@ -24,6 +24,7 @@ func newJSONParser(text string) (Value, error) {
 	parser := Object("JSONParser")
 	parser.Fields["tokens"] = List(tokens...)
 	parser.Fields["index"] = Int(-1)
+	parser.Fields["cleared"] = Bool(false)
 	return parser, nil
 }
 
@@ -64,9 +65,9 @@ func callJSONParserMember(receiver Value, method string, args []Value) (Value, V
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("JSONParser.getCurrentName expects 0 arguments")
 		}
-		token, err := jsonParserRequireCurrent(receiver, "getCurrentName")
-		if err != nil {
-			return Null, receiver, false, true, err
+		token, ok := jsonParserCurrent(receiver)
+		if !ok {
+			return Null, receiver, false, true, nil
 		}
 		if jsonParserTokenKind(token) == "FIELD_NAME" {
 			return String(jsonParserTokenText(token)), receiver, false, true, nil
@@ -171,6 +172,15 @@ func callJSONParserMember(receiver Value, method string, args []Value) (Value, V
 		}
 		updated, err := jsonParserSkipChildren(receiver)
 		return Null, updated, true, true, err
+	case "clearCurrentToken":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("JSONParser.clearCurrentToken expects 0 arguments")
+		}
+		updated := receiver
+		if _, ok := jsonParserCurrentTokenEvenIfCleared(receiver); ok {
+			updated.Fields["cleared"] = Bool(true)
+		}
+		return Null, updated, true, true, nil
 	default:
 		return Null, receiver, false, false, nil
 	}
@@ -310,9 +320,11 @@ func jsonParserNextToken(receiver Value) (Value, Value, bool, bool, error) {
 	tokens := jsonParserTokens(updated)
 	if next >= int64(len(tokens.List)) {
 		updated.Fields["index"] = Int(int64(len(tokens.List)))
+		updated.Fields["cleared"] = Bool(false)
 		return Null, updated, true, true, nil
 	}
 	updated.Fields["index"] = Int(next)
+	updated.Fields["cleared"] = Bool(false)
 	return jsonTokenValue(jsonParserTokenKind(tokens.List[next])), updated, true, true, nil
 }
 
@@ -422,6 +434,13 @@ func jsonParserRequireCurrent(receiver Value, method string) (Value, error) {
 }
 
 func jsonParserCurrent(receiver Value) (Value, bool) {
+	if jsonParserBoolField(receiver, "cleared").Bool {
+		return Null, false
+	}
+	return jsonParserCurrentTokenEvenIfCleared(receiver)
+}
+
+func jsonParserCurrentTokenEvenIfCleared(receiver Value) (Value, bool) {
 	index := jsonParserIndex(receiver)
 	tokens := jsonParserTokens(receiver)
 	if index < 0 || index >= int64(len(tokens.List)) {
@@ -442,6 +461,13 @@ func jsonParserIndex(receiver Value) int64 {
 		return index.Int
 	}
 	return -1
+}
+
+func jsonParserBoolField(receiver Value, field string) Value {
+	if value, ok := receiver.Fields[field]; ok && value.Kind == ValueBool {
+		return value
+	}
+	return Bool(false)
 }
 
 func jsonParserTokenKind(token Value) string {

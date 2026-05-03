@@ -111,11 +111,12 @@ Current progress:
 - JSON: runtime support now covers `JSON.createGenerator(Boolean)`,
   `JSON.createParser(String)`, and deterministic `JSONGenerator`/`JSONParser`
   slices. Generator coverage includes object/array boundaries, field names,
-  string/number/Boolean/null, Date/Datetime/Time/Id/Blob and Object writers,
-  `getAsString`, `close`, and `isClosed`, with explicit errors for invalid
-  write order. Parser coverage includes token navigation, `JSONToken`
-  constants, text/current-name accessors, numeric, Boolean, Date, Datetime,
-  Time, Id, and Blob accessors, `nextValue`, and `skipChildren`.
+  string/number/Boolean/null, Date/Datetime/Time/Id/Blob, Object, and
+  validated raw value writers, `getAsString`, `close`, and `isClosed`, with
+  explicit errors for invalid write order and invalid raw JSON values. Parser
+  coverage includes token navigation, `JSONToken` constants, text/current-name
+  accessors, integer/long/decimal/double, Boolean, Date, Datetime, Time, Id,
+  and Blob accessors, `nextValue`, `skipChildren`, and `clearCurrentToken`.
 - Blob/Encoding/Crypto: runtime support now covers deterministic local
   `Blob.valueOf`, `Blob.toString`, `Blob.size`, Base64 encode/decode,
   hex encode/decode, digest generation for the documented MD5/SHA1/SHA2/SHA3
@@ -186,12 +187,13 @@ Remaining cuts:
      operations.
 
 6. JSON
-   - Complete remaining `JSONGenerator` methods such as raw writers and exact
-     Salesforce exception shapes.
-   - Extend `JSONParser` with full streaming edge behavior, remaining accessors,
-     parser recovery/clear-current-token semantics, typed deserialize, strict
-     deserialize, untyped edge behavior, class/SObject mapping, additional
-     suppress-null overloads, and stable error shapes.
+   - Complete remaining `JSONGenerator` overloads and exact Salesforce
+     exception shapes; raw writer support is limited to validated single-value
+     raw JSON strings.
+   - Extend `JSONParser` with full streaming edge behavior, parser recovery
+     semantics beyond the deterministic clear-current-token slice, typed
+     deserialize, strict deserialize, untyped edge behavior, class/SObject
+     mapping, additional suppress-null overloads, and stable error shapes.
 
 7. System, exceptions, Type, and reflection
    - Newly covered slice: deterministic current-time helpers, debug
