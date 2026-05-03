@@ -1,32 +1,173 @@
 {
   "name": "core-numeric-stdlib",
   "evidence": [
-    {"symbol": "Integer.valueOf", "kind": "exec"},
-    {"symbol": "Integer.format", "kind": "exec"},
-    {"symbol": "Integer.doubleValue", "kind": "exec"},
-    {"symbol": "Long.valueOf", "kind": "exec"},
-    {"symbol": "Decimal.valueOf", "kind": "exec"},
-    {"symbol": "Decimal.abs", "kind": "exec"},
-    {"symbol": "Decimal.intValue", "kind": "exec"},
-    {"symbol": "Decimal.longValue", "kind": "exec"},
-    {"symbol": "Decimal.doubleValue", "kind": "exec"},
-    {"symbol": "Decimal.pow", "kind": "exec"},
-    {"symbol": "Decimal.format", "kind": "exec"},
-    {"symbol": "Double.valueOf", "kind": "exec"},
-    {"symbol": "Math.mod", "kind": "exec"},
-    {"symbol": "Math.roundToLong", "kind": "exec"},
-    {"symbol": "Math.signum", "kind": "exec"}
+    {
+      "symbol": "Integer.valueOf",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Integer.format",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Integer.doubleValue",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Integer.MAX_VALUE",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Integer.MIN_VALUE",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Long.valueOf",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Long.MAX_VALUE",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Long.MIN_VALUE",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Decimal.valueOf",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Decimal.abs",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Decimal.intValue",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Decimal.longValue",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Decimal.doubleValue",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Decimal.pow",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Decimal.format",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Double.valueOf",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Math.E",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Math.PI",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Math.abs",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Math.ceil",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Math.floor",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Math.round",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Math.max",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Math.min",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Math.sqrt",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Math.pow",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Math.mod",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Math.roundToLong",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Math.signum",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Math.acos",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Math.asin",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Math.atan",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Math.atan2",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Math.cos",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Math.sin",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Math.tan",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Math.exp",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Math.log",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Math.log10",
+      "kind": "exec"
+    }
   ],
   "source": [
     {
       "path": "anonymous.apex",
-      "content": "Integer i = Integer.valueOf('42');\nLong l = Long.valueOf('9001');\nDecimal d = Decimal.valueOf('12.5');\nDouble x = Double.valueOf('2.25');\nSystem.assertEquals(42, i);\nSystem.assertEquals(9001, l);\nSystem.assertEquals(12.5, d);\nSystem.assertEquals(2.25, x);\nSystem.assertEquals('42', i.format());\nSystem.assertEquals(42.0, i.doubleValue());\nSystem.assertEquals(12, d.intValue());\nSystem.assertEquals(12, d.longValue());\nSystem.assertEquals(12.5, d.doubleValue());\nSystem.assertEquals(12.5, d.abs());\nSystem.assertEquals(156.25, d.pow(2));\nSystem.assertEquals('12.5', d.format());\nSystem.assertEquals(1, Math.signum(12.5));\nSystem.assertEquals(-1, Math.signum(-4));\nSystem.assertEquals(0, Math.signum(0));\nSystem.assertEquals(1, Math.mod(10, 3));\nSystem.assertEquals(2.5, Math.mod(12.5, 5));\nSystem.assertEquals(13, Math.roundToLong(12.5));\n"
+      "content": "Integer i = Integer.valueOf('42');\nLong l = Long.valueOf('9001');\nDecimal d = Decimal.valueOf('12.5');\nDouble x = Double.valueOf('2.25');\nDecimal bigLong = Decimal.valueOf('3000000000');\nSystem.assertEquals(42, i);\nSystem.assertEquals(9001, l);\nSystem.assertEquals(12.5, d);\nSystem.assertEquals(2.25, x);\nSystem.assertEquals('42', i.format());\nSystem.assertEquals(42.0, i.doubleValue());\nSystem.assertEquals(12, d.intValue());\nSystem.assertEquals(12, d.longValue());\nSystem.assertEquals(3000000000, bigLong.longValue());\nSystem.assertEquals(12.5, d.doubleValue());\nSystem.assertEquals(12.5, d.abs());\nSystem.assertEquals(156.25, d.pow(2));\nSystem.assertEquals('12.5', d.format());\nSystem.assertEquals(1, Math.signum(12.5));\nSystem.assertEquals(-1, Math.signum(-4));\nSystem.assertEquals(0, Math.signum(0));\nSystem.assertEquals(1, Math.mod(10, 3));\nSystem.assertEquals(2.5, Math.mod(12.5, 5));\nSystem.assertEquals(13, Math.roundToLong(12.5));\nSystem.assertEquals(3.0, Math.ceil(2.1));\nSystem.assertEquals(2.0, Math.floor(2.9));\nSystem.assertEquals(3.0, Math.round(2.5));\nSystem.assertEquals(7, Math.max(3, 7));\nSystem.assertEquals(3, Math.min(3, 7));\nSystem.assertEquals(3.0, Math.sqrt(9));\nSystem.assertEquals(8.0, Math.pow(2, 3));\nSystem.assertEquals(2147483647, Integer.MAX_VALUE);\nSystem.assertEquals(-2147483648, Integer.MIN_VALUE);\nSystem.assert(Long.MAX_VALUE > 0);\nSystem.assert(Long.MIN_VALUE < 0);\nSystem.assert(Math.abs(Math.PI - 3.141592653589793) < 0.000000000000001);\nSystem.assert(Math.abs(Math.E - 2.718281828459045) < 0.000000000000001);\nSystem.assert(Math.abs(Math.sin(Math.PI / 2) - 1) < 0.000000000001);\nSystem.assert(Math.abs(Math.cos(0) - 1) < 0.000000000001);\nSystem.assert(Math.abs(Math.tan(0)) < 0.000000000001);\nSystem.assert(Math.abs(Math.acos(1)) < 0.000000000001);\nSystem.assert(Math.abs(Math.asin(1) - (Math.PI / 2)) < 0.000000000001);\nSystem.assert(Math.abs(Math.atan(1) - (Math.PI / 4)) < 0.000000000001);\nSystem.assert(Math.abs(Math.atan2(1, 1) - (Math.PI / 4)) < 0.000000000001);\nSystem.assert(Math.abs(Math.exp(1) - Math.E) < 0.000000000001);\nSystem.assert(Math.abs(Math.log(Math.E) - 1) < 0.000000000001);\nSystem.assert(Math.abs(Math.log10(1000) - 3) < 0.000000000001);\n"
     }
   ],
   "command": {
     "kind": "exec",
     "args": [
-      "Integer i = Integer.valueOf('42');\nLong l = Long.valueOf('9001');\nDecimal d = Decimal.valueOf('12.5');\nDouble x = Double.valueOf('2.25');\nSystem.assertEquals(42, i);\nSystem.assertEquals(9001, l);\nSystem.assertEquals(12.5, d);\nSystem.assertEquals(2.25, x);\nSystem.assertEquals('42', i.format());\nSystem.assertEquals(42.0, i.doubleValue());\nSystem.assertEquals(12, d.intValue());\nSystem.assertEquals(12, d.longValue());\nSystem.assertEquals(12.5, d.doubleValue());\nSystem.assertEquals(12.5, d.abs());\nSystem.assertEquals(156.25, d.pow(2));\nSystem.assertEquals('12.5', d.format());\nSystem.assertEquals(1, Math.signum(12.5));\nSystem.assertEquals(-1, Math.signum(-4));\nSystem.assertEquals(0, Math.signum(0));\nSystem.assertEquals(1, Math.mod(10, 3));\nSystem.assertEquals(2.5, Math.mod(12.5, 5));\nSystem.assertEquals(13, Math.roundToLong(12.5));\n"
+      "Integer i = Integer.valueOf('42');\nLong l = Long.valueOf('9001');\nDecimal d = Decimal.valueOf('12.5');\nDouble x = Double.valueOf('2.25');\nDecimal bigLong = Decimal.valueOf('3000000000');\nSystem.assertEquals(42, i);\nSystem.assertEquals(9001, l);\nSystem.assertEquals(12.5, d);\nSystem.assertEquals(2.25, x);\nSystem.assertEquals('42', i.format());\nSystem.assertEquals(42.0, i.doubleValue());\nSystem.assertEquals(12, d.intValue());\nSystem.assertEquals(12, d.longValue());\nSystem.assertEquals(3000000000, bigLong.longValue());\nSystem.assertEquals(12.5, d.doubleValue());\nSystem.assertEquals(12.5, d.abs());\nSystem.assertEquals(156.25, d.pow(2));\nSystem.assertEquals('12.5', d.format());\nSystem.assertEquals(1, Math.signum(12.5));\nSystem.assertEquals(-1, Math.signum(-4));\nSystem.assertEquals(0, Math.signum(0));\nSystem.assertEquals(1, Math.mod(10, 3));\nSystem.assertEquals(2.5, Math.mod(12.5, 5));\nSystem.assertEquals(13, Math.roundToLong(12.5));\nSystem.assertEquals(3.0, Math.ceil(2.1));\nSystem.assertEquals(2.0, Math.floor(2.9));\nSystem.assertEquals(3.0, Math.round(2.5));\nSystem.assertEquals(7, Math.max(3, 7));\nSystem.assertEquals(3, Math.min(3, 7));\nSystem.assertEquals(3.0, Math.sqrt(9));\nSystem.assertEquals(8.0, Math.pow(2, 3));\nSystem.assertEquals(2147483647, Integer.MAX_VALUE);\nSystem.assertEquals(-2147483648, Integer.MIN_VALUE);\nSystem.assert(Long.MAX_VALUE > 0);\nSystem.assert(Long.MIN_VALUE < 0);\nSystem.assert(Math.abs(Math.PI - 3.141592653589793) < 0.000000000000001);\nSystem.assert(Math.abs(Math.E - 2.718281828459045) < 0.000000000000001);\nSystem.assert(Math.abs(Math.sin(Math.PI / 2) - 1) < 0.000000000001);\nSystem.assert(Math.abs(Math.cos(0) - 1) < 0.000000000001);\nSystem.assert(Math.abs(Math.tan(0)) < 0.000000000001);\nSystem.assert(Math.abs(Math.acos(1)) < 0.000000000001);\nSystem.assert(Math.abs(Math.asin(1) - (Math.PI / 2)) < 0.000000000001);\nSystem.assert(Math.abs(Math.atan(1) - (Math.PI / 4)) < 0.000000000001);\nSystem.assert(Math.abs(Math.atan2(1, 1) - (Math.PI / 4)) < 0.000000000001);\nSystem.assert(Math.abs(Math.exp(1) - Math.E) < 0.000000000001);\nSystem.assert(Math.abs(Math.log(Math.E) - 1) < 0.000000000001);\nSystem.assert(Math.abs(Math.log10(1000) - 3) < 0.000000000001);\n"
     ]
   },
   "expected": {

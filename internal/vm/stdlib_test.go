@@ -565,6 +565,7 @@ Integer i = Integer.valueOf('42');
 Long l = Long.valueOf('9001');
 Decimal d = Decimal.valueOf('12.5');
 Double x = Double.valueOf('2.25');
+Decimal bigLong = Decimal.valueOf('3000000000');
 System.assertEquals(42, i);
 System.assertEquals(9001, l);
 System.assertEquals(12.5, d);
@@ -573,6 +574,7 @@ System.assertEquals('42', i.format());
 System.assertEquals(42.0, i.doubleValue());
 System.assertEquals(12, d.intValue());
 System.assertEquals(12, d.longValue());
+System.assertEquals(3000000000, bigLong.longValue());
 System.assertEquals(12.5, d.doubleValue());
 System.assertEquals(12.5, d.abs());
 System.assertEquals(156.25, d.pow(2));
@@ -583,12 +585,60 @@ System.assertEquals(0, Math.signum(0));
 System.assertEquals(1, Math.mod(10, 3));
 System.assertEquals(2.5, Math.mod(12.5, 5));
 System.assertEquals(13, Math.roundToLong(12.5));
+System.assertEquals(3.0, Math.ceil(2.1));
+System.assertEquals(2.0, Math.floor(2.9));
+System.assertEquals(3.0, Math.round(2.5));
+System.assertEquals(7, Math.max(3, 7));
+System.assertEquals(3, Math.min(3, 7));
+System.assertEquals(3.0, Math.sqrt(9));
+System.assertEquals(8.0, Math.pow(2, 3));
+System.assertEquals(2147483647, Integer.MAX_VALUE);
+System.assertEquals(-2147483648, Integer.MIN_VALUE);
+System.assert(Long.MAX_VALUE > 0);
+System.assert(Long.MIN_VALUE < 0);
+System.assert(Math.abs(Math.PI - 3.141592653589793) < 0.000000000000001);
+System.assert(Math.abs(Math.E - 2.718281828459045) < 0.000000000000001);
+System.assert(Math.abs(Math.sin(Math.PI / 2) - 1) < 0.000000000001);
+System.assert(Math.abs(Math.cos(0) - 1) < 0.000000000001);
+System.assert(Math.abs(Math.tan(0)) < 0.000000000001);
+System.assert(Math.abs(Math.acos(1)) < 0.000000000001);
+System.assert(Math.abs(Math.asin(1) - (Math.PI / 2)) < 0.000000000001);
+System.assert(Math.abs(Math.atan(1) - (Math.PI / 4)) < 0.000000000001);
+System.assert(Math.abs(Math.atan2(1, 1) - (Math.PI / 4)) < 0.000000000001);
+System.assert(Math.abs(Math.exp(1) - Math.E) < 0.000000000001);
+System.assert(Math.abs(Math.log(Math.E) - 1) < 0.000000000001);
+System.assert(Math.abs(Math.log10(1000) - 3) < 0.000000000001);
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, err := Execute(program, nil); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecNumericStdlibRejectsInvalidInputs(t *testing.T) {
+	tests := []string{
+		"Integer.valueOf('not an integer');",
+		"Integer.valueOf('2147483648');",
+		"Long.valueOf('9223372036854775808');",
+		"Decimal.valueOf('1e309');",
+		"Double.valueOf('NaN');",
+		"Decimal d = Decimal.valueOf('3000000000');\nd.intValue();",
+		"Math.acos(2);",
+		"Math.asin(-2);",
+		"Math.log(0);",
+		"Math.log10(-1);",
+		"Math.exp(1000);",
+	}
+	for _, source := range tests {
+		program, err := CompileAnonymous(source)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := Execute(program, nil); err == nil {
+			t.Fatalf("expected numeric stdlib error for %s", source)
+		}
 	}
 }
 

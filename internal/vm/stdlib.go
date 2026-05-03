@@ -85,11 +85,11 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Decimal.intValue expects 0 arguments")
 		}
-		converted, err := int64FromFloat("Decimal.intValue", receiver.Decimal)
+		converted, err := int32FromFloat("Decimal.intValue", receiver.Decimal)
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
-		return Int(converted), receiver, false, true, nil
+		return Int(int64(converted)), receiver, false, true, nil
 	case "longValue":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Decimal.longValue expects 0 arguments")
@@ -727,7 +727,30 @@ func numericStatic(callee string, args []Value) (Value, error) {
 		return Null, fmt.Errorf("%s expects 1 argument", callee)
 	}
 	switch callee {
-	case "Integer.valueOf", "Long.valueOf":
+	case "Integer.valueOf":
+		switch args[0].Kind {
+		case ValueInt:
+			converted, err := int32FromFloat(callee, float64(args[0].Int))
+			if err != nil {
+				return Null, err
+			}
+			return Int(int64(converted)), nil
+		case ValueDecimal:
+			converted, err := int32FromFloat(callee, args[0].Decimal)
+			if err != nil {
+				return Null, err
+			}
+			return Int(int64(converted)), nil
+		case ValueString:
+			parsed, err := strconv.ParseInt(strings.TrimSpace(args[0].Text), 10, 32)
+			if err != nil {
+				return Null, fmt.Errorf("%s invalid integer %q", callee, args[0].Text)
+			}
+			return Int(parsed), nil
+		default:
+			return Null, fmt.Errorf("%s expects String or numeric argument", callee)
+		}
+	case "Long.valueOf":
 		switch args[0].Kind {
 		case ValueInt:
 			return args[0], nil
@@ -776,9 +799,21 @@ func int64FromFloat(name string, value float64) (int64, error) {
 		return 0, fmt.Errorf("%s value must be finite", name)
 	}
 	if value < int64MinFloat || value >= int64MaxExclusiveFloat {
-		return 0, fmt.Errorf("%s value out of Integer range", name)
+		return 0, fmt.Errorf("%s value out of 64-bit integer range", name)
 	}
 	return int64(value), nil
+}
+
+func int32FromFloat(name string, value float64) (int32, error) {
+	const int32MinFloat = -2147483648.0
+	const int32MaxExclusiveFloat = 2147483648.0
+	if math.IsInf(value, 0) || math.IsNaN(value) {
+		return 0, fmt.Errorf("%s value must be finite", name)
+	}
+	if value < int32MinFloat || value >= int32MaxExclusiveFloat {
+		return 0, fmt.Errorf("%s value out of Integer range", name)
+	}
+	return int32(value), nil
 }
 
 func patternCompile(args []Value) (Value, error) {

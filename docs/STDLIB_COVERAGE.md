@@ -60,10 +60,16 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Datetime | `Datetime.valueOf` | `supported` | Parses supported datetime strings. |
 | Datetime | `Datetime.valueOfGmt` | `supported` | Parses supported UTC datetime strings. |
 | Datetime | `Datetime.year` | `partial` | UTC-modeled component getter. |
+| Decimal | `Decimal.abs` | `supported` | Absolute value for local Decimal values. |
 | Decimal | `Decimal.doubleValue` | `supported` | Returns local Decimal value. |
-| Decimal | `Decimal.intValue` | `supported` | Truncates to integer. |
+| Decimal | `Decimal.format` | `partial` | Simple deterministic numeric formatting; locale grouping is not modeled. |
+| Decimal | `Decimal.intValue` | `supported` | Truncates to 32-bit Integer with overflow checks. |
+| Decimal | `Decimal.longValue` | `supported` | Truncates to local Long representation with overflow checks. |
+| Decimal | `Decimal.pow` | `supported` | Power with Integer exponent for local Decimal values. |
 | Decimal | `Decimal.round` | `partial` | Uses Go round-half-away behavior. |
 | Decimal | `Decimal.setScale` | `partial` | Non-negative scale only; advanced rounding modes not modeled. |
+| Decimal | `Decimal.valueOf` | `supported` | Parses finite decimal strings and numeric values. |
+| Double | `Double.valueOf` | `supported` | Parses finite decimal strings and numeric values into the local numeric representation. |
 | EncodingUtil | `EncodingUtil.base64Decode` | `supported` | Blob-shaped local value. |
 | EncodingUtil | `EncodingUtil.base64Encode` | `supported` | Blob-shaped local value. |
 | EncodingUtil | `EncodingUtil.convertFromHex` | `supported` | Blob-shaped local value. |
@@ -81,6 +87,11 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | HTTP | `HttpResponse` | `partial` | Status, status code, headers, body, and blob body accessors. |
 | Id | `Id.to15` | `supported` | Converts validated 18-character IDs to their 15-character prefix. |
 | Id | `Id.valueOf` | `supported` | Validates 15- and 18-character alphanumeric IDs and restores 18-character casing from checksum suffixes. |
+| Integer | `Integer.MAX_VALUE` | `supported` | Exposes the public 32-bit Integer maximum constant. |
+| Integer | `Integer.MIN_VALUE` | `supported` | Exposes the public 32-bit Integer minimum constant. |
+| Integer | `Integer.doubleValue` | `supported` | Converts local Integer values to the local numeric representation. |
+| Integer | `Integer.format` | `partial` | Simple deterministic base-10 formatting; locale grouping is not modeled. |
+| Integer | `Integer.valueOf` | `supported` | Parses integer strings and numeric values with 32-bit overflow checks. |
 | JSON | `JSON.createGenerator` | `supported` | Creates deterministic local JSONGenerator instances. |
 | JSON | `JSON.createParser` | `partial` | Creates deterministic local JSONParser token streams for valid JSON strings. |
 | JSON | `JSON.deserialize` | `partial` | SObject, class, collection, and primitive shapes for supported subset. |
@@ -105,6 +116,9 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | List | `List.set` | `supported` | Indexed replacement with typed value coercion. |
 | List | `List.size` | `supported` | Returns local list length. |
 | List | `List.sort` | `partial` | Deterministic sort for local primitive comparable values only. |
+| Long | `Long.MAX_VALUE` | `supported` | Exposes the public 64-bit Long maximum constant. |
+| Long | `Long.MIN_VALUE` | `supported` | Exposes the public 64-bit Long minimum constant. |
+| Long | `Long.valueOf` | `supported` | Parses integer strings and numeric values with overflow checks. |
 | Map | `Map.clear` | `supported` | Removes all local map entries. |
 | Map | `Map.clone` | `supported` | Copies the local map container; values keep local identity. |
 | Map | `Map.containsKey` | `supported` | Checks local keys using deterministic key encoding. |
@@ -120,14 +134,29 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Map | `Map.size` | `supported` | Returns local map size. |
 | Map | `Map.toString` | `partial` | Deterministic local entry string form; exact platform formatting may differ. |
 | Map | `Map.values` | `supported` | Returns deterministic local values List. |
+| Math | `Math.E` | `supported` | Euler's number from Go's deterministic math constant. |
+| Math | `Math.PI` | `supported` | Pi from Go's deterministic math constant. |
 | Math | `Math.abs` | `supported` | Integer and Decimal values. |
+| Math | `Math.acos` | `supported` | Finite deterministic result for inputs in [-1, 1]. |
+| Math | `Math.asin` | `supported` | Finite deterministic result for inputs in [-1, 1]. |
+| Math | `Math.atan` | `supported` | Finite deterministic result for numeric values. |
+| Math | `Math.atan2` | `supported` | Finite deterministic result for two numeric values. |
 | Math | `Math.ceil` | `supported` | Numeric values. |
+| Math | `Math.cos` | `supported` | Finite deterministic result for numeric values. |
+| Math | `Math.exp` | `supported` | Finite deterministic result; overflow is reported. |
 | Math | `Math.floor` | `supported` | Numeric values. |
+| Math | `Math.log` | `supported` | Finite deterministic result for positive numeric values. |
+| Math | `Math.log10` | `supported` | Finite deterministic result for positive numeric values. |
 | Math | `Math.max` | `supported` | Integer and Decimal values. |
 | Math | `Math.min` | `supported` | Integer and Decimal values. |
+| Math | `Math.mod` | `supported` | Integer remainder and Decimal modulus with zero-divisor errors. |
 | Math | `Math.pow` | `supported` | Numeric values. |
 | Math | `Math.round` | `supported` | Numeric values. |
+| Math | `Math.roundToLong` | `supported` | Rounds to local Long representation with overflow checks. |
+| Math | `Math.signum` | `supported` | Returns -1, 0, or 1 for local numeric values. |
+| Math | `Math.sin` | `supported` | Finite deterministic result for numeric values. |
 | Math | `Math.sqrt` | `supported` | Numeric values. |
+| Math | `Math.tan` | `supported` | Finite deterministic result for numeric values. |
 | Messaging | `Messaging.SingleEmailMessage` | `partial` | Common setters only; no delivery transport. |
 | Messaging | `Messaging.sendEmail` | `partial` | Returns local SendEmailResult and increments email limits. |
 | Object | `Object.equals` | `supported` | Uses local value equality for primitives, collections, platform scalars, and object identity. |
