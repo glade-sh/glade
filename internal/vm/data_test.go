@@ -484,6 +484,28 @@ System.assert(caught);
 	}
 }
 
+func TestExecSOQLRowJSONAttributesURL(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account a = new Account(Name = 'Acme');
+insert a;
+Account row = [SELECT Id, Name FROM Account WHERE Id = :a.Id];
+String text = JSON.serialize(row);
+Object decoded = JSON.deserializeUntyped(text);
+Object attrs = decoded.get('attributes');
+System.assertEquals('Account', attrs.get('type'));
+System.assertEquals('/services/data/v60.0/sobjects/Account/' + a.Id, attrs.get('url'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSOQLAllRows(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account a = new Account(Name = 'Acme');

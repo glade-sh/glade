@@ -308,6 +308,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Validate projected fields for `WITH SECURITY_ENFORCED`, `WITH USER_MODE`,
     and `WITH SYSTEM_MODE` queries and return catchable `QueryException`s for
     unavailable fields.
+  - [x] Mark `FOR UPDATE` result records with a local lock marker and serialize
+    queried SObjects with `attributes.type` and `attributes.url`.
 - [ ] Wire SQLite planning or indexed execution where needed without changing
   Salesforce-visible behavior.
 - [ ] Complete Apex DML statements: `insert`, `update`, `delete`, `upsert`,

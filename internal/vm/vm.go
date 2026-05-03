@@ -2861,7 +2861,11 @@ func jsonFromValue(value Value) any {
 	case ValueObject:
 		out := make(map[string]any, len(value.Fields)+1)
 		if value.Type != "" {
-			out["attributes"] = map[string]any{"type": value.Type}
+			attributes := map[string]any{"type": value.Type}
+			if id, ok := value.Fields["Id"]; ok && id.Kind == ValueString && id.Text != "" && !strings.Contains(value.Type, ".") {
+				attributes["url"] = "/services/data/v60.0/sobjects/" + value.Type + "/" + id.Text
+			}
+			out["attributes"] = attributes
 		}
 		for field, item := range value.Fields {
 			out[field] = jsonFromValue(item)
