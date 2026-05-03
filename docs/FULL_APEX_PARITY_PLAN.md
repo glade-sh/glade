@@ -96,11 +96,14 @@ Current progress:
 - Date/Datetime: runtime support now covers deterministic local `Date` calendar
   arithmetic and component getters, month-start/month-end helpers, and
   UTC-modeled `Datetime` date arithmetic plus date/time component getters.
-- JSON: runtime support now covers `JSON.createGenerator(Boolean)` and a
-  deterministic `JSONGenerator` slice for object/array boundaries, field names,
-  string/number/Boolean/null scalar writers, field writer overloads,
+- JSON: runtime support now covers `JSON.createGenerator(Boolean)`,
+  `JSON.createParser(String)`, and deterministic `JSONGenerator`/`JSONParser`
+  slices. Generator coverage includes object/array boundaries, field names,
+  string/number/Boolean/null, Date/Datetime/Time/Id/Blob and Object writers,
   `getAsString`, `close`, and `isClosed`, with explicit errors for invalid
-  write order.
+  write order. Parser coverage includes token navigation, `JSONToken`
+  constants, text/current-name accessors, numeric, Boolean, Date, Datetime,
+  Time, Id, and Blob accessors, `nextValue`, and `skipChildren`.
 - Blob/Encoding/Crypto: runtime support now covers deterministic local
   `Blob.valueOf`, `Blob.toString`, `Blob.size`, Base64 encode/decode,
   hex encode/decode, digest generation for the documented MD5/SHA1/SHA2/SHA3
@@ -155,11 +158,12 @@ Remaining cuts:
      operations.
 
 6. JSON
-   - Complete remaining `JSONGenerator` methods such as object/date/time/id/blob
-     writers and exact Salesforce exception shapes.
-   - Add `JSONParser`, streaming tokens, typed deserialize, strict deserialize,
-     untyped edge behavior, class/SObject mapping, additional suppress-null
-     overloads, and stable error shapes.
+   - Complete remaining `JSONGenerator` methods such as raw writers and exact
+     Salesforce exception shapes.
+   - Extend `JSONParser` with full streaming edge behavior, remaining accessors,
+     parser recovery/clear-current-token semantics, typed deserialize, strict
+     deserialize, untyped edge behavior, class/SObject mapping, additional
+     suppress-null overloads, and stable error shapes.
 
 7. System, exceptions, Type, and reflection
    - Assert overloads and messages, debug/log levels, current-time helpers,

@@ -1278,6 +1278,11 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return Null, fmt.Errorf("JSON.createGenerator expects Boolean")
 		}
 		return newJSONGenerator(args[0].Bool), nil
+	case "JSON.createParser":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("JSON.createParser expects String")
+		}
+		return newJSONParser(args[0].Text)
 	case "JSON.serialize":
 		if len(args) != 1 && len(args) != 2 {
 			return Null, fmt.Errorf("JSON.serialize expects 1 or 2 arguments")
@@ -3831,6 +3836,8 @@ func jsonFromValue(value Value, suppressObjectNulls bool) any {
 		return nil
 	case ValueInt:
 		return value.Int
+	case ValueDecimal:
+		return value.Decimal
 	case ValueBool:
 		return value.Bool
 	case ValueString:
@@ -3857,6 +3864,9 @@ func jsonFromValue(value Value, suppressObjectNulls bool) any {
 		}
 		return out
 	case ValueObject:
+		if scalar, ok := jsonPlatformScalarFromValue(value); ok {
+			return scalar
+		}
 		out := make(map[string]any, len(value.Fields)+1)
 		if value.Type != "" {
 			attributes := map[string]any{"type": value.Type}
@@ -4161,6 +4171,13 @@ func (vm *VM) lookup(name string) (Value, error) {
 	switch name {
 	case "AccessLevel.USER_MODE", "AccessLevel.SYSTEM_MODE":
 		return Value{Kind: ValueObject, Type: "AccessLevel", Text: strings.TrimPrefix(name, "AccessLevel.")}, nil
+	}
+	if strings.HasPrefix(name, "JSONToken.") {
+		tokenName := strings.TrimPrefix(name, "JSONToken.")
+		switch tokenName {
+		case "START_OBJECT", "END_OBJECT", "START_ARRAY", "END_ARRAY", "FIELD_NAME", "VALUE_STRING", "VALUE_NUMBER_INT", "VALUE_NUMBER_FLOAT", "VALUE_TRUE", "VALUE_FALSE", "VALUE_NULL":
+			return jsonTokenValue(tokenName), nil
+		}
 	}
 	if strings.HasSuffix(name, ".class") {
 		className := strings.TrimSuffix(name, ".class")
@@ -6508,6 +6525,8 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	switch receiver.Type {
 	case "JSONGenerator":
 		return callJSONGeneratorMember(receiver, method, args)
+	case "JSONParser":
+		return callJSONParserMember(receiver, method, args)
 	case "Schema.SObjectType":
 		if method == "getDescribe" {
 			if len(args) != 0 {

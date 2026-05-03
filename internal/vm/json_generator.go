@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -59,6 +60,16 @@ func callJSONGeneratorMember(receiver Value, method string, args []Value) (Value
 			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeStringField expects String field name and String value")
 		}
 		return jsonGeneratorWriteField(receiver, args[0].Text, args[1])
+	case "writeObject":
+		if len(args) != 1 {
+			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeObject expects Object")
+		}
+		return jsonGeneratorWriteAny(receiver, args[0])
+	case "writeObjectField":
+		if len(args) != 2 || args[0].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeObjectField expects String field name and Object value")
+		}
+		return jsonGeneratorWriteAnyField(receiver, args[0].Text, args[1])
 	case "writeNumber":
 		if len(args) != 1 || !jsonGeneratorIsNumber(args[0]) {
 			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeNumber expects numeric value")
@@ -89,6 +100,56 @@ func callJSONGeneratorMember(receiver Value, method string, args []Value) (Value
 			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeNullField expects String field name")
 		}
 		return jsonGeneratorWriteField(receiver, args[0].Text, Null)
+	case "writeDate":
+		if len(args) != 1 || !jsonGeneratorIsPlatformScalar(args[0], "Date") {
+			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeDate expects Date")
+		}
+		return jsonGeneratorWriteScalar(receiver, args[0])
+	case "writeDateField":
+		if len(args) != 2 || args[0].Kind != ValueString || !jsonGeneratorIsPlatformScalar(args[1], "Date") {
+			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeDateField expects String field name and Date value")
+		}
+		return jsonGeneratorWriteField(receiver, args[0].Text, args[1])
+	case "writeDateTime", "writeDatetime":
+		if len(args) != 1 || !jsonGeneratorIsPlatformScalar(args[0], "Datetime") {
+			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.%s expects Datetime", method)
+		}
+		return jsonGeneratorWriteScalar(receiver, args[0])
+	case "writeDateTimeField", "writeDatetimeField":
+		if len(args) != 2 || args[0].Kind != ValueString || !jsonGeneratorIsPlatformScalar(args[1], "Datetime") {
+			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.%s expects String field name and Datetime value", method)
+		}
+		return jsonGeneratorWriteField(receiver, args[0].Text, args[1])
+	case "writeTime":
+		if len(args) != 1 || !jsonGeneratorIsPlatformScalar(args[0], "Time") {
+			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeTime expects Time")
+		}
+		return jsonGeneratorWriteScalar(receiver, args[0])
+	case "writeTimeField":
+		if len(args) != 2 || args[0].Kind != ValueString || !jsonGeneratorIsPlatformScalar(args[1], "Time") {
+			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeTimeField expects String field name and Time value")
+		}
+		return jsonGeneratorWriteField(receiver, args[0].Text, args[1])
+	case "writeId":
+		if len(args) != 1 || !jsonGeneratorIsID(args[0]) {
+			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeId expects Id")
+		}
+		return jsonGeneratorWriteScalar(receiver, args[0])
+	case "writeIdField":
+		if len(args) != 2 || args[0].Kind != ValueString || !jsonGeneratorIsID(args[1]) {
+			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeIdField expects String field name and Id value")
+		}
+		return jsonGeneratorWriteField(receiver, args[0].Text, args[1])
+	case "writeBlob":
+		if len(args) != 1 || !jsonGeneratorIsPlatformScalar(args[0], "Blob") {
+			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeBlob expects Blob")
+		}
+		return jsonGeneratorWriteScalar(receiver, args[0])
+	case "writeBlobField":
+		if len(args) != 2 || args[0].Kind != ValueString || !jsonGeneratorIsPlatformScalar(args[1], "Blob") {
+			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeBlobField expects String field name and Blob value")
+		}
+		return jsonGeneratorWriteField(receiver, args[0].Text, args[1])
 	case "getAsString":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.getAsString expects 0 arguments")
@@ -186,6 +247,14 @@ func jsonGeneratorWriteField(receiver Value, name string, value Value) (Value, V
 	return jsonGeneratorWriteScalar(updated, value)
 }
 
+func jsonGeneratorWriteAnyField(receiver Value, name string, value Value) (Value, Value, bool, bool, error) {
+	updated, err := jsonGeneratorWriteFieldName(receiver, name)
+	if err != nil {
+		return Null, updated, true, true, err
+	}
+	return jsonGeneratorWriteAny(updated, value)
+}
+
 func jsonGeneratorWriteFieldName(receiver Value, name string) (Value, error) {
 	if err := jsonGeneratorEnsureOpen(receiver); err != nil {
 		return receiver, err
@@ -231,6 +300,22 @@ func jsonGeneratorWriteScalar(receiver Value, value Value) (Value, Value, bool, 
 		return Null, updated, true, true, err
 	}
 	rendered, err := jsonGeneratorRenderScalar(value)
+	if err != nil {
+		return Null, updated, true, true, err
+	}
+	jsonGeneratorAppend(&updated, rendered)
+	return Null, updated, true, true, nil
+}
+
+func jsonGeneratorWriteAny(receiver Value, value Value) (Value, Value, bool, bool, error) {
+	if err := jsonGeneratorEnsureOpen(receiver); err != nil {
+		return Null, receiver, false, true, err
+	}
+	updated, err := jsonGeneratorBeforeValue(receiver)
+	if err != nil {
+		return Null, updated, true, true, err
+	}
+	rendered, err := jsonGeneratorRenderAny(value)
 	if err != nil {
 		return Null, updated, true, true, err
 	}
@@ -317,8 +402,45 @@ func jsonGeneratorRenderScalar(value Value) (string, error) {
 			return "", fmt.Errorf("JSONGenerator.writeNumber cannot write non-finite number")
 		}
 		return strconv.FormatFloat(value.Decimal, 'f', -1, 64), nil
+	case ValueObject:
+		if scalar, ok := jsonPlatformScalarFromValue(value); ok {
+			data, err := json.Marshal(scalar)
+			if err != nil {
+				return "", err
+			}
+			return string(data), nil
+		}
+		return "", fmt.Errorf("JSONGenerator scalar writer does not support %s", value.Type)
 	default:
 		return "", fmt.Errorf("JSONGenerator scalar writer does not support %s", value.Kind)
+	}
+}
+
+func jsonGeneratorRenderAny(value Value) (string, error) {
+	data, err := json.Marshal(jsonFromValue(value, false))
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
+}
+
+func jsonPlatformScalarFromValue(value Value) (any, bool) {
+	if value.Kind != ValueObject {
+		return nil, false
+	}
+	text, ok := value.Fields["value"]
+	if !ok || text.Kind != ValueString {
+		return nil, false
+	}
+	switch value.Type {
+	case "Date", "Datetime", "Time", "URL":
+		return text.Text, true
+	case "Blob":
+		return base64.StdEncoding.EncodeToString([]byte(text.Text)), true
+	case "Id":
+		return text.Text, true
+	default:
+		return nil, false
 	}
 }
 
@@ -369,4 +491,15 @@ func jsonGeneratorIntField(receiver Value, field string) Value {
 
 func jsonGeneratorIsNumber(value Value) bool {
 	return value.Kind == ValueInt || value.Kind == ValueDecimal
+}
+
+func jsonGeneratorIsPlatformScalar(value Value, typeName string) bool {
+	return value.Kind == ValueObject && value.Type == typeName
+}
+
+func jsonGeneratorIsID(value Value) bool {
+	if value.Kind == ValueString {
+		return validateApexID(value.Text) == nil
+	}
+	return jsonGeneratorIsPlatformScalar(value, "Id")
 }
