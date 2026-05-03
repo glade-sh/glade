@@ -580,8 +580,13 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Add server black-box fixture execution for version discovery, CRUD, SOQL
     query, Tooling `executeAnonymous`, composite insert, Salesforce-shaped error
     arrays, OAuth userinfo/id stubs, scoped reset, and SQLite persistence.
-- [ ] Add enterprise fixtures for trigger-heavy, selector/service/domain,
+- [x] Add enterprise fixtures for trigger-heavy, selector/service/domain,
   async-heavy, describe-heavy, namespace-heavy, and package-style projects.
+  - [x] Add trigger-heavy and describe-heavy test fixtures.
+  - [x] Add namespace-heavy/package-directory check fixture with SFDX namespace
+    and multiple package directories.
+  - [x] Keep async-heavy coverage through the async semantics fixture and
+    selector/service/domain coverage through the schema-aware enterprise fixture.
 - [x] Add fixture coverage for unsupported-feature diagnostics so failures are
   stable and intentional.
 - [x] Add panic recovery and no-panic tests around parser, sema, VM, SOQL, DML,

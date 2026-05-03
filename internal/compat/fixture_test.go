@@ -11,6 +11,14 @@ import (
 func TestFixtureJSONRoundTrip(t *testing.T) {
 	in := Fixture{
 		Name: "parser-smoke",
+		Project: ProjectConfig{
+			Namespace:        "pkg",
+			SourceAPIVersion: "61.0",
+			PackageDirectories: []PackageDirectory{
+				{Path: "force-app", Default: true},
+				{Path: "modules/core"},
+			},
+		},
 		Schema: []SchemaFile{{
 			Path:    "force-app/main/default/objects/Account/Account.object-meta.xml",
 			Content: "<CustomObject><label>Account</label></CustomObject>",
@@ -34,7 +42,7 @@ func TestFixtureJSONRoundTrip(t *testing.T) {
 	if err := json.Unmarshal(data, &out); err != nil {
 		t.Fatal(err)
 	}
-	if out.Name != in.Name || out.Command.Kind != "parse" || out.Command.LimitMode != "strict" || out.Schema[0].Content != in.Schema[0].Content {
+	if out.Name != in.Name || out.Command.Kind != "parse" || out.Command.LimitMode != "strict" || out.Schema[0].Content != in.Schema[0].Content || out.Project.Namespace != "pkg" || len(out.Project.PackageDirectories) != 2 {
 		t.Fatalf("unexpected fixture after round trip: %#v", out)
 	}
 }
@@ -159,6 +167,26 @@ func TestRunServerBlackBoxFixture(t *testing.T) {
 	}
 	if !result.OK {
 		t.Fatalf("result = %#v", result)
+	}
+}
+
+func TestRunEnterpriseSectionNineFixtures(t *testing.T) {
+	for _, path := range []string{
+		"../../docs/fixtures/enterprise-trigger-heavy.json",
+		"../../docs/fixtures/enterprise-describe-heavy.json",
+		"../../docs/fixtures/enterprise-namespace-package.json",
+	} {
+		fixture, err := LoadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		result, err := Run(fixture)
+		if err != nil {
+			t.Fatalf("%s: %v", path, err)
+		}
+		if !result.OK {
+			t.Fatalf("%s result = %#v", path, result)
+		}
 	}
 }
 

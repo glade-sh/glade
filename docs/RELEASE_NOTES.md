@@ -48,6 +48,9 @@ Release engineering:
 - Added server black-box compatibility fixtures for version discovery, CRUD,
   SOQL query, Tooling `executeAnonymous`, composite insert, Salesforce-shaped
   errors, OAuth userinfo/id stubs, scoped reset, and SQLite persistence.
+- Added enterprise trigger-heavy, describe-heavy, namespace-heavy, and
+  package-style compatibility fixtures, with SFDX namespace/package-directory
+  support in schema-aware check fixtures.
 - Added parser diagnostic-count fixtures plus type-index and sema panic recovery
   diagnostics for malformed project inputs.
 - Added method/constructor parameter type diagnostics and expanded VM exception

@@ -80,8 +80,9 @@ func runCheckFixture(fixture Fixture) (RunResult, error) {
 	}
 	var apexFiles []string
 	sch := schema.Schema{}
+	buildProject := project.Project{Root: root}
 	if len(fixture.Schema) > 0 {
-		if err := writeSFDXProject(root); err != nil {
+		if err := writeSFDXProject(root, fixture.Project); err != nil {
 			return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
 		}
 		proj, err := project.Load(root)
@@ -94,6 +95,7 @@ func runCheckFixture(fixture Fixture) (RunResult, error) {
 		}
 		apexFiles = proj.ApexFiles
 		sch = loaded
+		buildProject = proj
 	} else {
 		apexFiles = make([]string, 0, len(fixture.Source))
 		for _, source := range fixture.Source {
@@ -103,9 +105,10 @@ func runCheckFixture(fixture Fixture) (RunResult, error) {
 			}
 			apexFiles = append(apexFiles, path)
 		}
+		buildProject.ApexFiles = apexFiles
 	}
 
-	index := typesys.Build(project.Project{Root: root, ApexFiles: apexFiles}, sch)
+	index := typesys.Build(buildProject, sch)
 	result := sema.Analyze(index)
 	payload := map[string]any{
 		"ok":          !result.HasErrors(),
@@ -115,6 +118,12 @@ func runCheckFixture(fixture Fixture) (RunResult, error) {
 	}
 	if len(fixture.Schema) > 0 {
 		payload["schemaObjects"] = len(sch.Objects)
+	}
+	if len(fixture.Project.PackageDirectories) > 0 {
+		payload["packageDirectories"] = len(fixture.Project.PackageDirectories)
+	}
+	if fixture.Project.Namespace != "" {
+		payload["namespace"] = fixture.Project.Namespace
 	}
 	return compareResult(fixture, payload, "")
 }
@@ -150,7 +159,7 @@ func runTestFixture(fixture Fixture) (RunResult, error) {
 		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
 	}
 	defer os.RemoveAll(root)
-	if err := writeSFDXProject(root); err != nil {
+	if err := writeSFDXProject(root, fixture.Project); err != nil {
 		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
 	}
 	if err := writeFixtureFiles(root, fixture); err != nil {
@@ -184,8 +193,36 @@ func runTestFixture(fixture Fixture) (RunResult, error) {
 	return compareResult(fixture, payload, "")
 }
 
-func writeSFDXProject(root string) error {
-	return os.WriteFile(filepath.Join(root, "sfdx-project.json"), []byte(`{"packageDirectories":[{"path":"force-app","default":true}]}`), 0o644)
+func writeSFDXProject(root string, cfg ProjectConfig) error {
+	type sfdxPackageDirectory struct {
+		Path    string `json:"path"`
+		Default bool   `json:"default,omitempty"`
+	}
+	type sfdxProject struct {
+		PackageDirectories []sfdxPackageDirectory `json:"packageDirectories"`
+		Namespace          string                 `json:"namespace,omitempty"`
+		SourceAPIVersion   string                 `json:"sourceApiVersion,omitempty"`
+	}
+	packages := make([]sfdxPackageDirectory, 0, len(cfg.PackageDirectories))
+	for _, pkg := range cfg.PackageDirectories {
+		path := pkg.Path
+		if path == "" {
+			path = "force-app"
+		}
+		packages = append(packages, sfdxPackageDirectory{Path: path, Default: pkg.Default})
+	}
+	if len(packages) == 0 {
+		packages = []sfdxPackageDirectory{{Path: "force-app", Default: true}}
+	}
+	data, err := json.Marshal(sfdxProject{
+		PackageDirectories: packages,
+		Namespace:          cfg.Namespace,
+		SourceAPIVersion:   cfg.SourceAPIVersion,
+	})
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(root, "sfdx-project.json"), data, 0o644)
 }
 
 func writeFixtureFiles(root string, fixture Fixture) error {

@@ -10,6 +10,7 @@ import (
 type Fixture struct {
 	Name           string            `json:"name"`
 	Evidence       []FixtureEvidence `json:"evidence,omitempty"`
+	Project        ProjectConfig     `json:"project,omitempty"`
 	Source         []SourceFile      `json:"source,omitempty"`
 	Schema         []SchemaFile      `json:"schema,omitempty"`
 	SeedData       []SeedData        `json:"seedData,omitempty"`
@@ -17,6 +18,17 @@ type Fixture struct {
 	Command        Invocation        `json:"command"`
 	Expected       ExpectedBehavior  `json:"expected"`
 	Limits         ExpectedLimits    `json:"limits,omitempty"`
+}
+
+type ProjectConfig struct {
+	Namespace          string             `json:"namespace,omitempty"`
+	SourceAPIVersion   string             `json:"sourceApiVersion,omitempty"`
+	PackageDirectories []PackageDirectory `json:"packageDirectories,omitempty"`
+}
+
+type PackageDirectory struct {
+	Path    string `json:"path"`
+	Default bool   `json:"default,omitempty"`
 }
 
 type FixtureEvidence struct {
