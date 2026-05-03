@@ -1,0 +1,111 @@
+{
+  "name": "core-datetime-stdlib",
+  "evidence": [
+    {
+      "symbol": "Date.addDays",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Date.addMonths",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Date.addYears",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Date.daysBetween",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Date.day",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Date.month",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Date.year",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Date.toStartOfMonth",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Date.toEndOfMonth",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Datetime.addDays",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Datetime.addMonths",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Datetime.addHours",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Datetime.addMinutes",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Datetime.addSeconds",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Datetime.date",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Datetime.day",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Datetime.month",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Datetime.year",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Datetime.hour",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Datetime.minute",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Datetime.second",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Datetime.newInstance",
+      "kind": "exec"
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Date leap = Date.newInstance(2024, 1, 31);\nDate nextMonth = leap.addMonths(1);\nSystem.assertEquals('2024-02-29', nextMonth.format());\nDate leapDay = Date.newInstance(2024, 2, 29);\nDate nextYear = leapDay.addYears(1);\nSystem.assertEquals('2025-02-28', nextYear.format());\nSystem.assertEquals(31, leap.day());\nSystem.assertEquals(1, leap.month());\nSystem.assertEquals(2024, leap.year());\nDate monthStart = leap.toStartOfMonth();\nDate monthEnd = leap.toEndOfMonth();\nSystem.assertEquals('2024-01-01', monthStart.format());\nSystem.assertEquals('2024-01-31', monthEnd.format());\nDate due = leap.addDays(10);\nSystem.assertEquals(10, leap.daysBetween(due));\nSystem.assertEquals(-10, due.daysBetween(leap));\nDate nextDay = leap.addDays(1);\nDate expectedNextDay = Date.newInstance(2024, 2, 1);\nSystem.assertEquals(expectedNextDay, nextDay);\nDatetime stamp = Datetime.newInstance(2024, 1, 31, 23, 58, 59);\nDatetime stampNextMonth = stamp.addMonths(1);\nSystem.assertEquals('2024-02-29T23:58:59Z', stampNextMonth.format());\nDatetime plusHour = stamp.addHours(1);\nDatetime plusMinutes = plusHour.addMinutes(2);\nDatetime plusSeconds = plusMinutes.addSeconds(3);\nSystem.assertEquals('2024-02-01T01:01:02Z', plusSeconds.format());\nDatetime tomorrowStamp = stamp.addDays(1);\nDate tomorrowDate = tomorrowStamp.date();\nSystem.assertEquals('2024-02-01', tomorrowDate.format());\nSystem.assertEquals(2024, stamp.year());\nSystem.assertEquals(1, stamp.month());\nSystem.assertEquals(31, stamp.day());\nSystem.assertEquals(23, stamp.hour());\nSystem.assertEquals(58, stamp.minute());\nSystem.assertEquals(59, stamp.second());\nDatetime midnight = Datetime.newInstance(2024, 1, 31);\nSystem.assertEquals('2024-01-31T00:00:00Z', midnight.format());\nDatetime sameStamp = Datetime.newInstance(2024, 1, 31, 23, 58, 59);\nSystem.assertEquals(sameStamp, stamp);\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Date leap = Date.newInstance(2024, 1, 31);\nDate nextMonth = leap.addMonths(1);\nSystem.assertEquals('2024-02-29', nextMonth.format());\nDate leapDay = Date.newInstance(2024, 2, 29);\nDate nextYear = leapDay.addYears(1);\nSystem.assertEquals('2025-02-28', nextYear.format());\nSystem.assertEquals(31, leap.day());\nSystem.assertEquals(1, leap.month());\nSystem.assertEquals(2024, leap.year());\nDate monthStart = leap.toStartOfMonth();\nDate monthEnd = leap.toEndOfMonth();\nSystem.assertEquals('2024-01-01', monthStart.format());\nSystem.assertEquals('2024-01-31', monthEnd.format());\nDate due = leap.addDays(10);\nSystem.assertEquals(10, leap.daysBetween(due));\nSystem.assertEquals(-10, due.daysBetween(leap));\nDate nextDay = leap.addDays(1);\nDate expectedNextDay = Date.newInstance(2024, 2, 1);\nSystem.assertEquals(expectedNextDay, nextDay);\nDatetime stamp = Datetime.newInstance(2024, 1, 31, 23, 58, 59);\nDatetime stampNextMonth = stamp.addMonths(1);\nSystem.assertEquals('2024-02-29T23:58:59Z', stampNextMonth.format());\nDatetime plusHour = stamp.addHours(1);\nDatetime plusMinutes = plusHour.addMinutes(2);\nDatetime plusSeconds = plusMinutes.addSeconds(3);\nSystem.assertEquals('2024-02-01T01:01:02Z', plusSeconds.format());\nDatetime tomorrowStamp = stamp.addDays(1);\nDate tomorrowDate = tomorrowStamp.date();\nSystem.assertEquals('2024-02-01', tomorrowDate.format());\nSystem.assertEquals(2024, stamp.year());\nSystem.assertEquals(1, stamp.month());\nSystem.assertEquals(31, stamp.day());\nSystem.assertEquals(23, stamp.hour());\nSystem.assertEquals(58, stamp.minute());\nSystem.assertEquals(59, stamp.second());\nDatetime midnight = Datetime.newInstance(2024, 1, 31);\nSystem.assertEquals('2024-01-31T00:00:00Z', midnight.format());\nDatetime sameStamp = Datetime.newInstance(2024, 1, 31, 23, 58, 59);\nSystem.assertEquals(sameStamp, stamp);\n"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

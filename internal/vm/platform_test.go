@@ -698,6 +698,57 @@ func TestExecDateTimeConstructorsRejectInvalidParts(t *testing.T) {
 	}
 }
 
+func TestExecDateDatetimeDeterministicInstanceMethods(t *testing.T) {
+	program, err := CompileAnonymous(`
+Date leap = Date.newInstance(2024, 1, 31);
+Date nextMonth = leap.addMonths(1);
+System.assertEquals('2024-02-29', nextMonth.format());
+Date leapDay = Date.newInstance(2024, 2, 29);
+Date nextYear = leapDay.addYears(1);
+System.assertEquals('2025-02-28', nextYear.format());
+System.assertEquals(31, leap.day());
+System.assertEquals(1, leap.month());
+System.assertEquals(2024, leap.year());
+Date monthStart = leap.toStartOfMonth();
+Date monthEnd = leap.toEndOfMonth();
+System.assertEquals('2024-01-01', monthStart.format());
+System.assertEquals('2024-01-31', monthEnd.format());
+Date due = leap.addDays(10);
+System.assertEquals(10, leap.daysBetween(due));
+System.assertEquals(-10, due.daysBetween(leap));
+Date nextDay = leap.addDays(1);
+Date expectedNextDay = Date.newInstance(2024, 2, 1);
+System.assertEquals(expectedNextDay, nextDay);
+
+Datetime stamp = Datetime.newInstance(2024, 1, 31, 23, 58, 59);
+Datetime stampNextMonth = stamp.addMonths(1);
+System.assertEquals('2024-02-29T23:58:59Z', stampNextMonth.format());
+Datetime plusHour = stamp.addHours(1);
+Datetime plusMinutes = plusHour.addMinutes(2);
+Datetime plusSeconds = plusMinutes.addSeconds(3);
+System.assertEquals('2024-02-01T01:01:02Z', plusSeconds.format());
+Datetime tomorrowStamp = stamp.addDays(1);
+Date tomorrowDate = tomorrowStamp.date();
+System.assertEquals('2024-02-01', tomorrowDate.format());
+System.assertEquals(2024, stamp.year());
+System.assertEquals(1, stamp.month());
+System.assertEquals(31, stamp.day());
+System.assertEquals(23, stamp.hour());
+System.assertEquals(58, stamp.minute());
+System.assertEquals(59, stamp.second());
+Datetime midnight = Datetime.newInstance(2024, 1, 31);
+System.assertEquals('2024-01-31T00:00:00Z', midnight.format());
+Datetime sameStamp = Datetime.newInstance(2024, 1, 31, 23, 58, 59);
+System.assertEquals(sameStamp, stamp);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDatabaseSaveResultMethods(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account good = new Account(Name = 'Acme');
