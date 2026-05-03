@@ -310,8 +310,10 @@ a Salesforce-shaped local API server without silently wrong behavior.
     unavailable fields.
   - [x] Mark `FOR UPDATE` result records with a local lock marker and serialize
     queried SObjects with `attributes.type` and `attributes.url`.
-- [ ] Wire SQLite planning or indexed execution where needed without changing
+- [x] Wire SQLite planning or indexed execution where needed without changing
   Salesforce-visible behavior.
+  - [x] Rebuild runtime index sets from object index definitions and use
+    single-field equality indexes as SOQL candidate sets.
 - [ ] Complete Apex DML statements: `insert`, `update`, `delete`, `upsert`,
   `undelete`, and `merge`.
   - [x] Support soft delete visibility and undelete restoration for VM/SOQL

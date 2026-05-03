@@ -123,10 +123,7 @@ func Execute(org storage.OrgState, query Query) (Result, error) {
 		query.Having = &condition
 	}
 
-	ids := make([]string, 0, len(object.Records))
-	for id := range object.Records {
-		ids = append(ids, string(id))
-	}
+	ids := candidateRecordIDs(object, query.Where)
 	sort.Strings(ids)
 
 	matchedRecords := make([]storage.Record, 0, len(ids))
@@ -171,6 +168,31 @@ func Execute(org storage.OrgState, query Query) (Result, error) {
 		records = append(records, projected)
 	}
 	return Result{Records: records, Rows: len(records)}, nil
+}
+
+func candidateRecordIDs(object storage.ObjectState, where *Condition) []string {
+	if ids, ok := indexedCandidateIDs(object, where); ok {
+		out := make([]string, 0, len(ids))
+		for _, id := range ids {
+			out = append(out, string(id))
+		}
+		return out
+	}
+	out := make([]string, 0, len(object.Records))
+	for id := range object.Records {
+		out = append(out, string(id))
+	}
+	return out
+}
+
+func indexedCandidateIDs(object storage.ObjectState, where *Condition) ([]storage.ID, bool) {
+	if where == nil || where.Not || len(where.And) != 0 || len(where.Or) != 0 || where.Range || where.Subquery != nil || where.Op != "=" {
+		return nil, false
+	}
+	if strings.Contains(where.Field, ".") {
+		return nil, false
+	}
+	return storage.LookupIndex(object, where.Field, where.Value)
 }
 
 func applyWindow[T any](records []T, offset, limit int) []T {

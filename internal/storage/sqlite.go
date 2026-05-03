@@ -168,6 +168,7 @@ func (s *SQLiteStore) Load() (OrgState, error) {
 	if err := seqRows.Err(); err != nil {
 		return OrgState{}, err
 	}
+	RebuildIndexes(&org)
 	return org, nil
 }
 

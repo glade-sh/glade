@@ -371,6 +371,31 @@ func TestExecuteFiltersProjectsAndOrders(t *testing.T) {
 	}
 }
 
+func TestExecuteUsesSingleFieldIndexCandidates(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Account",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+			Indexes: []storage.IndexDefinition{{Name: "Account.Name", Object: "Account", Fields: []string{"Name"}}},
+		},
+		Records: map[storage.ID]storage.Record{
+			"001000000000001": {ID: "001000000000001", Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")}},
+			"001000000000002": {ID: "001000000000002", Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("Beta")}},
+		},
+	}
+	storage.RebuildIndexes(&org)
+	result, err := ParseAndExecute(org, "SELECT Id, Name FROM Account WHERE Name = 'Acme'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 || result.Records[0].ID != "001000000000001" {
+		t.Fatalf("indexed result = %#v", result)
+	}
+}
+
 func TestExecuteFieldsFunctionProjection(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Objects["Account"] = storage.ObjectState{
