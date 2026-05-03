@@ -44,6 +44,38 @@ Release engineering:
 - Added namespace-token custom object and field alias resolution through VM
   SObject construction, direct field access, `get`/`put`, DML validation, and
   SOQL projection/where clauses.
+- Expanded data-fidelity coverage for SOQL complex predicates, numeric
+  comparison semantics, `Database.Error` result shapes, and
+  `Database.UpsertResult.isCreated()`.
+- Added no-`GROUP BY` SOQL aggregate support for `COUNT(field)`,
+  `COUNT_DISTINCT`, `SUM`, `MIN`, `MAX`, and `AVG` with `AggregateResult`
+  `exprN` fields.
+- Added SOQL `GROUP BY` with grouped field projection, aggregate `HAVING`, and
+  ordering/limits over grouped aggregate rows.
+- Added SOQL aggregate aliases on `AggregateResult` rows while preserving
+  `exprN` compatibility.
+- Added SOQL `GROUP BY ROLLUP`, `GROUP BY CUBE`, and `GROUPING(field)` subtotal
+  metadata for aggregate result rows.
+- Added common SOQL date literals, including day, month/year, and `*_N_DAYS:n`
+  ranges, for Date and Datetime comparisons.
+- Added SOQL semi-join and anti-join predicate support for single-field
+  subqueries in `IN` and `NOT IN` filters.
+- Added SOQL child relationship subquery projection with metadata-driven
+  relationship names and VM `List<SObject>` row shapes.
+- Made SOQL `LIKE` and `NOT LIKE` matching case-insensitive for ASCII letters.
+- Added comma-separated SOQL `ORDER BY ASC` and `ORDER BY DESC` handling for
+  regular, aggregate, and child relationship query rows.
+- Added SOQL `ORDER BY NULLS FIRST` and `NULLS LAST` modifiers.
+- Added DML fidelity for implicit external-ID upsert, unique-field checks,
+  lookup reference validation, ID/object mismatch errors, soft delete visibility,
+  and undelete restoration.
+- Added explicit external-ID upsert support for `upsert rows Field__c` and
+  `Database.upsert(rows, Field__c, allOrNone)` field tokens.
+- Added cascade soft-delete behavior from relationship metadata, including
+  Metadata API `deleteConstraint` loading for local fixtures.
+- Added object-level and field-level `SObject.addError`, `hasErrors`, and
+  `getErrors` handling in before-trigger DML, including row-level `SaveResult`
+  error shaping and `Database.Error.getFields()` attribution.
 - Preserved source ranges through parser syntax diagnostics, compiled project
   method/trigger bodies, VM statement traces, runtime/test failure stacks, DAP
   stack frames, and profile source ranges.

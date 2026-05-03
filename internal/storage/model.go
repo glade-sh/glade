@@ -72,11 +72,12 @@ type Relationship struct {
 }
 
 type Record struct {
-	ID            ID               `json:"id"`
-	Object        string           `json:"object"`
-	Fields        map[string]Value `json:"fields,omitempty"`
-	ExplicitNulls map[string]bool  `json:"explicitNulls,omitempty"`
-	System        SystemFields     `json:"system,omitempty"`
+	ID            ID                  `json:"id"`
+	Object        string              `json:"object"`
+	Fields        map[string]Value    `json:"fields,omitempty"`
+	Children      map[string][]Record `json:"children,omitempty"`
+	ExplicitNulls map[string]bool     `json:"explicitNulls,omitempty"`
+	System        SystemFields        `json:"system,omitempty"`
 }
 
 type SystemFields struct {
@@ -247,6 +248,15 @@ func (r Record) Clone() Record {
 		out.ExplicitNulls = make(map[string]bool, len(r.ExplicitNulls))
 		for name, value := range r.ExplicitNulls {
 			out.ExplicitNulls[name] = value
+		}
+	}
+	if r.Children != nil {
+		out.Children = make(map[string][]Record, len(r.Children))
+		for name, records := range r.Children {
+			out.Children[name] = make([]Record, len(records))
+			for i, record := range records {
+				out.Children[name][i] = record.Clone()
+			}
 		}
 	}
 	return out

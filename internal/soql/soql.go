@@ -2,27 +2,60 @@ package soql
 
 import (
 	"fmt"
+	"math/big"
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/open-aer/oaer/internal/storage"
 )
 
 type Query struct {
-	Fields  []string
-	Object  string
-	Where   *Condition
-	OrderBy string
-	Limit   int
-	Offset  int
-	Count   bool
+	Fields       []string
+	ChildQueries []ChildQuery
+	Object       string
+	Where        *Condition
+	Having       *Condition
+	OrderBy      string
+	OrderDesc    bool
+	Order        []OrderSpec
+	Limit        int
+	Offset       int
+	Count        bool
+	Aggregates   []Aggregate
+	GroupBy      []string
+	GroupMode    string
+}
+
+type OrderSpec struct {
+	Field string
+	Desc  bool
+	Nulls string
+}
+
+type ChildQuery struct {
+	Relationship string
+	Query        Query
+}
+
+type Aggregate struct {
+	Func  string
+	Field string
+	Alias string
 }
 
 type Condition struct {
-	Field string
-	Op    string
-	Value storage.Value
+	Not      bool
+	And      []Condition
+	Or       []Condition
+	Field    string
+	Op       string
+	Value    storage.Value
+	Value2   storage.Value
+	Range    bool
+	Values   []storage.Value
+	Subquery *Query
 }
 
 type Result struct {
@@ -31,11 +64,15 @@ type Result struct {
 }
 
 func Parse(input string) (Query, error) {
+	return ParseAt(input, time.Now().UTC())
+}
+
+func ParseAt(input string, now time.Time) (Query, error) {
 	tokens, err := lex(input)
 	if err != nil {
 		return Query{}, err
 	}
-	p := parser{tokens: tokens}
+	p := parser{tokens: tokens, now: now.UTC()}
 	return p.parseQuery()
 }
 
@@ -45,8 +82,25 @@ func Execute(org storage.OrgState, query Query) (Result, error) {
 		return Result{}, fmt.Errorf("soql: unknown object %s", query.Object)
 	}
 	object := org.Objects[objectName]
-	if len(query.Fields) == 0 {
+	if len(query.Fields) == 0 && len(query.ChildQueries) == 0 {
 		return Result{}, fmt.Errorf("soql: SELECT requires at least one field")
+	}
+	if len(query.ChildQueries) > 0 && len(query.Aggregates) > 0 {
+		return Result{}, fmt.Errorf("soql: child relationship subqueries are not supported in aggregate queries")
+	}
+	if query.Where != nil {
+		condition, err := resolveSubqueries(org, *query.Where)
+		if err != nil {
+			return Result{}, err
+		}
+		query.Where = &condition
+	}
+	if query.Having != nil {
+		condition, err := resolveSubqueries(org, *query.Having)
+		if err != nil {
+			return Result{}, err
+		}
+		query.Having = &condition
 	}
 
 	ids := make([]string, 0, len(object.Records))
@@ -55,45 +109,285 @@ func Execute(org storage.OrgState, query Query) (Result, error) {
 	}
 	sort.Strings(ids)
 
-	records := make([]storage.Record, 0, len(ids))
+	matchedRecords := make([]storage.Record, 0, len(ids))
 	for _, idText := range ids {
 		record := object.Records[storage.ID(idText)]
+		if record.System.IsDeleted {
+			continue
+		}
 		record.Object = objectName
 		if matches(org, object.Definition, record, query.Where) {
-			records = append(records, projectRecord(org, object.Definition, record, query.Fields))
+			matchedRecords = append(matchedRecords, record)
 		}
 	}
-	if query.OrderBy != "" {
-		sort.SliceStable(records, func(i, j int) bool {
-			return valueSortKey(records[i].Fields[query.OrderBy]) < valueSortKey(records[j].Fields[query.OrderBy])
+	if len(query.Aggregates) > 0 {
+		records, err := aggregateRecords(org, object.Definition, matchedRecords, query)
+		if err != nil {
+			return Result{}, err
+		}
+		if len(query.Order) > 0 {
+			sort.SliceStable(records, func(i, j int) bool {
+				return aggregateOrderedBefore(records[i], records[j], query.Order)
+			})
+		}
+		records = applyWindow(records, query.Offset, query.Limit)
+		return Result{Records: records, Rows: len(records)}, nil
+	}
+	if len(query.Order) > 0 {
+		sort.SliceStable(matchedRecords, func(i, j int) bool {
+			return recordsOrderedBefore(org, object.Definition, matchedRecords[i], matchedRecords[j], query.Order)
 		})
 	}
-	if query.Offset > 0 {
-		if query.Offset >= len(records) {
-			records = nil
-		} else {
-			records = records[query.Offset:]
+	matchedRecords = applyWindow(matchedRecords, query.Offset, query.Limit)
+	records := make([]storage.Record, 0, len(matchedRecords))
+	for _, record := range matchedRecords {
+		projected, err := projectRecord(org, object.Definition, record, query.Fields, query.ChildQueries)
+		if err != nil {
+			return Result{}, err
 		}
-	}
-	if query.Limit > 0 && query.Limit < len(records) {
-		records = records[:query.Limit]
-	}
-	if query.Count {
-		return Result{
-			Records: []storage.Record{{
-				Object: "AggregateResult",
-				Fields: map[string]storage.Value{
-					"expr0": storage.IntegerValue(int64(len(records))),
-				},
-			}},
-			Rows: 1,
-		}, nil
+		records = append(records, projected)
 	}
 	return Result{Records: records, Rows: len(records)}, nil
 }
 
+func applyWindow[T any](records []T, offset, limit int) []T {
+	if offset > 0 {
+		if offset >= len(records) {
+			return nil
+		}
+		records = records[offset:]
+	}
+	if limit > 0 && limit < len(records) {
+		return records[:limit]
+	}
+	return records
+}
+
+func aggregateRecords(org storage.OrgState, definition storage.ObjectDefinition, records []storage.Record, query Query) ([]storage.Record, error) {
+	if len(query.GroupBy) == 0 {
+		fields, err := aggregateFields(org, definition, records, query.Aggregates, nil)
+		if err != nil {
+			return nil, err
+		}
+		record := storage.Record{Object: "AggregateResult", Fields: fields}
+		if query.Having != nil && !matches(org, storage.ObjectDefinition{}, record, query.Having) {
+			return nil, nil
+		}
+		return []storage.Record{record}, nil
+	}
+
+	type group struct {
+		key      string
+		values   map[string]storage.Value
+		grouping map[string]bool
+		records  []storage.Record
+	}
+	groups := map[string]*group{}
+	var order []string
+	sets := groupingSets(query.GroupBy, query.GroupMode)
+	for _, record := range records {
+		for setIndex, active := range sets {
+			values := make(map[string]storage.Value, len(query.GroupBy))
+			grouping := make(map[string]bool, len(query.GroupBy))
+			parts := []string{strconv.Itoa(setIndex)}
+			for _, field := range query.GroupBy {
+				if !active[field] {
+					values[field] = storage.NullValue()
+					grouping[field] = true
+					parts = append(parts, "1:")
+					continue
+				}
+				value, ok := recordValue(org, definition, record, field)
+				if !ok {
+					value = storage.NullValue()
+				}
+				values[field] = value
+				parts = append(parts, "0:"+valueKey(value))
+			}
+			key := strings.Join(parts, "\x00")
+			current, ok := groups[key]
+			if !ok {
+				current = &group{key: key, values: values, grouping: grouping}
+				groups[key] = current
+				order = append(order, key)
+			}
+			current.records = append(current.records, record)
+		}
+	}
+	sort.Strings(order)
+	out := make([]storage.Record, 0, len(order))
+	for _, key := range order {
+		group := groups[key]
+		fields := make(map[string]storage.Value, len(group.values)+len(query.Aggregates))
+		for _, field := range query.GroupBy {
+			fields[field] = group.values[field].Clone()
+		}
+		aggregateFields, err := aggregateFields(org, definition, group.records, query.Aggregates, group.grouping)
+		if err != nil {
+			return nil, err
+		}
+		for field, value := range aggregateFields {
+			fields[field] = value
+		}
+		record := storage.Record{Object: "AggregateResult", Fields: fields}
+		if query.Having != nil && !matches(org, storage.ObjectDefinition{}, record, query.Having) {
+			continue
+		}
+		out = append(out, record)
+	}
+	return out, nil
+}
+
+func groupingSets(fields []string, mode string) []map[string]bool {
+	switch strings.ToUpper(mode) {
+	case "ROLLUP":
+		sets := make([]map[string]bool, 0, len(fields)+1)
+		for activeCount := len(fields); activeCount >= 0; activeCount-- {
+			active := make(map[string]bool, activeCount)
+			for i := 0; i < activeCount; i++ {
+				active[fields[i]] = true
+			}
+			sets = append(sets, active)
+		}
+		return sets
+	case "CUBE":
+		if len(fields) == 0 {
+			return []map[string]bool{{}}
+		}
+		total := 1 << len(fields)
+		sets := make([]map[string]bool, 0, total)
+		for mask := total - 1; mask >= 0; mask-- {
+			active := make(map[string]bool, len(fields))
+			for i, field := range fields {
+				if mask&(1<<i) != 0 {
+					active[field] = true
+				}
+			}
+			sets = append(sets, active)
+		}
+		return sets
+	default:
+		active := make(map[string]bool, len(fields))
+		for _, field := range fields {
+			active[field] = true
+		}
+		return []map[string]bool{active}
+	}
+}
+
+func aggregateRecordValue(record storage.Record, field string) storage.Value {
+	if value, ok := record.Fields[field]; ok {
+		return value
+	}
+	return storage.NullValue()
+}
+
+func aggregateFields(org storage.OrgState, definition storage.ObjectDefinition, records []storage.Record, aggregates []Aggregate, grouping map[string]bool) (map[string]storage.Value, error) {
+	fields := make(map[string]storage.Value, len(aggregates)*2)
+	for i, aggregate := range aggregates {
+		var value storage.Value
+		var err error
+		if aggregate.Func == "GROUPING" {
+			if grouping[aggregate.Field] {
+				value = storage.IntegerValue(1)
+			} else {
+				value = storage.IntegerValue(0)
+			}
+		} else {
+			value, err = aggregateValue(org, definition, records, aggregate)
+			if err != nil {
+				return nil, err
+			}
+		}
+		fields[fmt.Sprintf("expr%d", i)] = value
+		if aggregate.Alias != "" {
+			fields[aggregate.Alias] = value.Clone()
+		}
+	}
+	return fields, nil
+}
+
+func aggregateValue(org storage.OrgState, definition storage.ObjectDefinition, records []storage.Record, aggregate Aggregate) (storage.Value, error) {
+	switch aggregate.Func {
+	case "COUNT":
+		if aggregate.Field == "" {
+			return storage.IntegerValue(int64(len(records))), nil
+		}
+		var count int64
+		for _, record := range records {
+			value, ok := recordValue(org, definition, record, aggregate.Field)
+			if ok && value.Kind != storage.ValueNull {
+				count++
+			}
+		}
+		return storage.IntegerValue(count), nil
+	case "COUNT_DISTINCT":
+		seen := map[string]bool{}
+		for _, record := range records {
+			value, ok := recordValue(org, definition, record, aggregate.Field)
+			if ok && value.Kind != storage.ValueNull {
+				seen[valueKey(value)] = true
+			}
+		}
+		return storage.IntegerValue(int64(len(seen))), nil
+	case "SUM", "AVG":
+		sum := new(big.Rat)
+		var count int64
+		for _, record := range records {
+			value, ok := recordValue(org, definition, record, aggregate.Field)
+			if !ok || value.Kind == storage.ValueNull {
+				continue
+			}
+			number, ok := numericValue(value)
+			if !ok {
+				return storage.Value{}, fmt.Errorf("soql: %s requires numeric field %s", aggregate.Func, aggregate.Field)
+			}
+			sum.Add(sum, number)
+			count++
+		}
+		if count == 0 {
+			return storage.NullValue(), nil
+		}
+		if aggregate.Func == "AVG" {
+			sum.Quo(sum, new(big.Rat).SetInt64(count))
+		}
+		return storage.DecimalValue(decimalString(sum)), nil
+	case "MIN", "MAX":
+		var best storage.Value
+		found := false
+		for _, record := range records {
+			value, ok := recordValue(org, definition, record, aggregate.Field)
+			if !ok || value.Kind == storage.ValueNull {
+				continue
+			}
+			if !found {
+				best = value.Clone()
+				found = true
+				continue
+			}
+			cmp := compareValues(value, best)
+			if aggregate.Func == "MIN" && cmp < 0 {
+				best = value.Clone()
+			}
+			if aggregate.Func == "MAX" && cmp > 0 {
+				best = value.Clone()
+			}
+		}
+		if !found {
+			return storage.NullValue(), nil
+		}
+		return best, nil
+	default:
+		return storage.Value{}, fmt.Errorf("soql: unsupported aggregate %s", aggregate.Func)
+	}
+}
+
 func ParseAndExecute(org storage.OrgState, input string) (Result, error) {
-	query, err := Parse(input)
+	return ParseAndExecuteAt(org, input, time.Now().UTC())
+}
+
+func ParseAndExecuteAt(org storage.OrgState, input string, now time.Time) (Result, error) {
+	query, err := ParseAt(input, now)
 	if err != nil {
 		return Result{}, err
 	}
@@ -104,25 +398,136 @@ func matches(org storage.OrgState, definition storage.ObjectDefinition, record s
 	if condition == nil {
 		return true
 	}
+	if condition.Not {
+		return !matches(org, definition, record, &Condition{
+			And: condition.And, Or: condition.Or,
+			Field: condition.Field, Op: condition.Op,
+			Value: condition.Value, Value2: condition.Value2, Range: condition.Range, Values: condition.Values, Subquery: condition.Subquery,
+		})
+	}
+	if len(condition.And) > 0 {
+		for _, c := range condition.And {
+			if !matches(org, definition, record, &c) {
+				return false
+			}
+		}
+		return true
+	}
+	if len(condition.Or) > 0 {
+		for _, c := range condition.Or {
+			if matches(org, definition, record, &c) {
+				return true
+			}
+		}
+		return false
+	}
 	left, ok := recordValue(org, definition, record, condition.Field)
 	if !ok {
 		left = storage.NullValue()
 	}
 	switch condition.Op {
 	case "=":
+		if condition.Range {
+			return compareValues(left, condition.Value) >= 0 && compareValues(left, condition.Value2) < 0
+		}
 		return equalValues(left, condition.Value)
 	case "!=":
+		if condition.Range {
+			return compareValues(left, condition.Value) < 0 || compareValues(left, condition.Value2) >= 0
+		}
 		return !equalValues(left, condition.Value)
+	case ">":
+		return compareValues(left, condition.Value) > 0
+	case ">=":
+		return compareValues(left, condition.Value) >= 0
+	case "<":
+		return compareValues(left, condition.Value) < 0
+	case "<=":
+		return compareValues(left, condition.Value) <= 0
+	case "LIKE":
+		return likeMatch(left, condition.Value)
+	case "NOT LIKE":
+		return !likeMatch(left, condition.Value)
+	case "IN":
+		if condition.Subquery != nil {
+			return false
+		}
+		for _, v := range condition.Values {
+			if equalValues(left, v) {
+				return true
+			}
+		}
+		return false
+	case "NOT IN":
+		if condition.Subquery != nil {
+			return false
+		}
+		for _, v := range condition.Values {
+			if equalValues(left, v) {
+				return false
+			}
+		}
+		return true
 	default:
 		return false
 	}
 }
 
-func projectRecord(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, fields []string) storage.Record {
+func resolveSubqueries(org storage.OrgState, condition Condition) (Condition, error) {
+	if condition.Subquery != nil {
+		if len(condition.Subquery.Fields) != 1 || condition.Subquery.Count || len(condition.Subquery.Aggregates) > 0 {
+			return Condition{}, fmt.Errorf("soql: semi-join subquery must select exactly one field")
+		}
+		result, err := Execute(org, *condition.Subquery)
+		if err != nil {
+			return Condition{}, err
+		}
+		field := condition.Subquery.Fields[0]
+		values := make([]storage.Value, 0, len(result.Records))
+		for _, record := range result.Records {
+			value, ok := subqueryRecordValue(org, record, field)
+			if !ok {
+				return Condition{}, fmt.Errorf("soql: unknown subquery field %s", field)
+			}
+			values = append(values, value)
+		}
+		condition.Values = values
+		condition.Subquery = nil
+	}
+	for i := range condition.And {
+		resolved, err := resolveSubqueries(org, condition.And[i])
+		if err != nil {
+			return Condition{}, err
+		}
+		condition.And[i] = resolved
+	}
+	for i := range condition.Or {
+		resolved, err := resolveSubqueries(org, condition.Or[i])
+		if err != nil {
+			return Condition{}, err
+		}
+		condition.Or[i] = resolved
+	}
+	return condition, nil
+}
+
+func subqueryRecordValue(org storage.OrgState, record storage.Record, field string) (storage.Value, bool) {
+	if field == "Id" {
+		return storage.IDValue(record.ID), true
+	}
+	if object, ok := org.Objects[record.Object]; ok {
+		return recordValue(org, object.Definition, record, field)
+	}
+	value, ok := record.Fields[field]
+	return value, ok
+}
+
+func projectRecord(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, fields []string, childQueries []ChildQuery) (storage.Record, error) {
 	out := storage.Record{
 		ID:            record.ID,
 		Object:        record.Object,
 		Fields:        make(map[string]storage.Value),
+		Children:      make(map[string][]storage.Record),
 		ExplicitNulls: make(map[string]bool),
 		System:        record.System,
 	}
@@ -142,14 +547,103 @@ func projectRecord(org storage.OrgState, definition storage.ObjectDefinition, re
 			canonicalField = field
 		}
 		if record.ExplicitNulls[canonicalField] {
-			out.ExplicitNulls[field] = true
+			out.ExplicitNulls[canonicalField] = true
 			continue
 		}
 		if value, ok := record.Fields[canonicalField]; ok {
-			out.Fields[field] = value.Clone()
+			out.Fields[canonicalField] = value.Clone()
 		}
 	}
-	return out
+	for _, childQuery := range childQueries {
+		records, err := executeChildRelationshipQuery(org, definition, record, childQuery)
+		if err != nil {
+			return storage.Record{}, err
+		}
+		out.Children[childQuery.Relationship] = records
+	}
+	if len(out.Children) == 0 {
+		out.Children = nil
+	}
+	return out, nil
+}
+
+func executeChildRelationshipQuery(org storage.OrgState, parentDefinition storage.ObjectDefinition, parent storage.Record, childQuery ChildQuery) ([]storage.Record, error) {
+	childObjectName, relation, ok := childRelationship(org, parentDefinition, childQuery.Relationship)
+	if !ok {
+		return nil, fmt.Errorf("soql: unknown child relationship %s on %s", childQuery.Relationship, parentDefinition.APIName)
+	}
+	childObject := org.Objects[childObjectName]
+	query := childQuery.Query
+	query.Object = childObjectName
+	if len(query.ChildQueries) > 0 {
+		return nil, fmt.Errorf("soql: nested child relationship subqueries are not supported")
+	}
+	if query.Count || len(query.Aggregates) > 0 || len(query.GroupBy) > 0 || query.Having != nil {
+		return nil, fmt.Errorf("soql: aggregate child relationship subqueries are not supported")
+	}
+	if query.Where != nil {
+		condition, err := resolveSubqueries(org, *query.Where)
+		if err != nil {
+			return nil, err
+		}
+		query.Where = &condition
+	}
+	ids := make([]string, 0, len(childObject.Records))
+	for id := range childObject.Records {
+		ids = append(ids, string(id))
+	}
+	sort.Strings(ids)
+	matched := make([]storage.Record, 0, len(ids))
+	for _, idText := range ids {
+		child := childObject.Records[storage.ID(idText)]
+		if child.System.IsDeleted {
+			continue
+		}
+		child.Object = childObjectName
+		parentID, ok := recordValue(org, childObject.Definition, child, relation.Field)
+		if !ok || !equalValues(parentID, storage.IDValue(parent.ID)) {
+			continue
+		}
+		if matches(org, childObject.Definition, child, query.Where) {
+			matched = append(matched, child)
+		}
+	}
+	if len(query.Order) > 0 {
+		sort.SliceStable(matched, func(i, j int) bool {
+			return recordsOrderedBefore(org, childObject.Definition, matched[i], matched[j], query.Order)
+		})
+	}
+	matched = applyWindow(matched, query.Offset, query.Limit)
+	out := make([]storage.Record, 0, len(matched))
+	for _, child := range matched {
+		projected, err := projectRecord(org, childObject.Definition, child, query.Fields, nil)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, projected)
+	}
+	return out, nil
+}
+
+func childRelationship(org storage.OrgState, parentDefinition storage.ObjectDefinition, relationship string) (string, storage.Relationship, bool) {
+	parentName := parentDefinition.APIName
+	for childObjectName, childObject := range org.Objects {
+		for _, relation := range childObject.Definition.Relations {
+			if relation.ChildRelationship != relationship {
+				continue
+			}
+			for _, candidate := range relation.ParentObjects {
+				resolved, ok := storage.ResolveObjectName(org, candidate)
+				if !ok {
+					resolved = candidate
+				}
+				if resolved == parentName {
+					return childObjectName, relation, true
+				}
+			}
+		}
+	}
+	return "", storage.Relationship{}, false
 }
 
 func relationshipValue(org storage.OrgState, record storage.Record, field string) (storage.Value, bool) {
@@ -176,7 +670,7 @@ func relationshipValue(org storage.OrgState, record storage.Record, field string
 			}
 			parentObject := org.Objects[canonicalParent]
 			parent, ok := parentObject.Records[idFromValue(parentID)]
-			if !ok {
+			if !ok || parent.System.IsDeleted {
 				continue
 			}
 			value, ok := recordValue(org, parentObject.Definition, parent, parts[1])
@@ -203,6 +697,26 @@ func recordValue(org storage.OrgState, definition storage.ObjectDefinition, reco
 	if field == "Id" {
 		return storage.IDValue(record.ID), true
 	}
+	switch field {
+	case "CreatedDate":
+		if record.System.CreatedDate != "" {
+			return storage.DateTimeValue(record.System.CreatedDate), true
+		}
+	case "CreatedById":
+		if record.System.CreatedByID != "" {
+			return storage.IDValue(record.System.CreatedByID), true
+		}
+	case "LastModifiedDate":
+		if record.System.LastModifiedDate != "" {
+			return storage.DateTimeValue(record.System.LastModifiedDate), true
+		}
+	case "LastModifiedById":
+		if record.System.LastModifiedByID != "" {
+			return storage.IDValue(record.System.LastModifiedByID), true
+		}
+	case "IsDeleted":
+		return storage.BooleanValue(record.System.IsDeleted), true
+	}
 	canonicalField, ok := storage.ResolveFieldName(definition, org.Namespace, field)
 	if !ok {
 		canonicalField = field
@@ -215,6 +729,9 @@ func recordValue(org storage.OrgState, definition storage.ObjectDefinition, reco
 }
 
 func equalValues(left, right storage.Value) bool {
+	if leftNumber, rightNumber, ok := numericValues(left, right); ok {
+		return leftNumber.Cmp(rightNumber) == 0
+	}
 	if left.Kind == storage.ValueID && right.Kind == storage.ValueString {
 		return string(left.ID) == right.String
 	}
@@ -242,22 +759,216 @@ func equalValues(left, right storage.Value) bool {
 	}
 }
 
-func valueSortKey(value storage.Value) string {
-	switch value.Kind {
-	case storage.ValueString, storage.ValueDate, storage.ValueDateTime:
-		return value.String
-	case storage.ValueInteger:
-		return fmt.Sprintf("%020d", value.Integer)
-	case storage.ValueID:
-		return string(value.ID)
-	case storage.ValueBoolean:
-		if value.Boolean {
-			return "1"
+func compareValues(left, right storage.Value) int {
+	if left.Kind == storage.ValueNull || right.Kind == storage.ValueNull {
+		if left.Kind == right.Kind {
+			return 0
 		}
-		return "0"
-	default:
-		return ""
+		if left.Kind == storage.ValueNull {
+			return -1
+		}
+		return 1
 	}
+	if left.Kind == storage.ValueID && right.Kind == storage.ValueString {
+		return strings.Compare(string(left.ID), right.String)
+	}
+	if left.Kind == storage.ValueString && right.Kind == storage.ValueID {
+		return strings.Compare(left.String, string(right.ID))
+	}
+	if leftNumber, rightNumber, ok := numericValues(left, right); ok {
+		return leftNumber.Cmp(rightNumber)
+	}
+	if isTemporalKind(left.Kind) && isTemporalKind(right.Kind) {
+		return strings.Compare(temporalCompareString(left), temporalCompareString(right))
+	}
+	if left.Kind != right.Kind {
+		return strings.Compare(string(left.Kind), string(right.Kind))
+	}
+	switch left.Kind {
+	case storage.ValueString, storage.ValueDate, storage.ValueDateTime:
+		return strings.Compare(left.String, right.String)
+	case storage.ValueInteger:
+		if left.Integer < right.Integer {
+			return -1
+		}
+		if left.Integer > right.Integer {
+			return 1
+		}
+		return 0
+	case storage.ValueBoolean:
+		if !left.Boolean && right.Boolean {
+			return -1
+		}
+		if left.Boolean && !right.Boolean {
+			return 1
+		}
+		return 0
+	case storage.ValueDecimal:
+		return strings.Compare(left.Decimal, right.Decimal)
+	case storage.ValueID:
+		return strings.Compare(string(left.ID), string(right.ID))
+	default:
+		return 0
+	}
+}
+
+func recordsOrderedBefore(org storage.OrgState, definition storage.ObjectDefinition, leftRecord, rightRecord storage.Record, order []OrderSpec) bool {
+	for _, spec := range order {
+		left, ok := recordValue(org, definition, leftRecord, spec.Field)
+		if !ok {
+			left = storage.NullValue()
+		}
+		right, ok := recordValue(org, definition, rightRecord, spec.Field)
+		if !ok {
+			right = storage.NullValue()
+		}
+		cmp := orderCompare(left, right, spec)
+		if cmp == 0 {
+			continue
+		}
+		return cmp < 0
+	}
+	return false
+}
+
+func aggregateOrderedBefore(leftRecord, rightRecord storage.Record, order []OrderSpec) bool {
+	for _, spec := range order {
+		left := aggregateRecordValue(leftRecord, spec.Field)
+		right := aggregateRecordValue(rightRecord, spec.Field)
+		cmp := orderCompare(left, right, spec)
+		if cmp == 0 {
+			continue
+		}
+		return cmp < 0
+	}
+	return false
+}
+
+func orderCompare(left, right storage.Value, spec OrderSpec) int {
+	if spec.Nulls != "" && (left.Kind == storage.ValueNull || right.Kind == storage.ValueNull) {
+		if left.Kind == right.Kind {
+			return 0
+		}
+		if spec.Nulls == "FIRST" {
+			if left.Kind == storage.ValueNull {
+				return -1
+			}
+			return 1
+		}
+		if left.Kind == storage.ValueNull {
+			return 1
+		}
+		return -1
+	}
+	cmp := compareValues(left, right)
+	if spec.Desc {
+		return -cmp
+	}
+	return cmp
+}
+
+func isTemporalKind(kind storage.ValueKind) bool {
+	return kind == storage.ValueDate || kind == storage.ValueDateTime
+}
+
+func temporalCompareString(value storage.Value) string {
+	if value.Kind == storage.ValueDate {
+		return value.String + "T00:00:00Z"
+	}
+	return value.String
+}
+
+func numericValues(left, right storage.Value) (*big.Rat, *big.Rat, bool) {
+	leftNumber, ok := numericValue(left)
+	if !ok {
+		return nil, nil, false
+	}
+	rightNumber, ok := numericValue(right)
+	if !ok {
+		return nil, nil, false
+	}
+	return leftNumber, rightNumber, true
+}
+
+func numericValue(value storage.Value) (*big.Rat, bool) {
+	switch value.Kind {
+	case storage.ValueInteger:
+		return new(big.Rat).SetInt64(value.Integer), true
+	case storage.ValueDecimal:
+		parsed, ok := new(big.Rat).SetString(value.Decimal)
+		return parsed, ok
+	default:
+		return nil, false
+	}
+}
+
+func decimalString(value *big.Rat) string {
+	if value.IsInt() {
+		return value.Num().String()
+	}
+	return strings.TrimRight(strings.TrimRight(value.FloatString(10), "0"), ".")
+}
+
+func valueKey(value storage.Value) string {
+	switch value.Kind {
+	case storage.ValueString, storage.ValueDate, storage.ValueDateTime, storage.ValueDecimal:
+		return string(value.Kind) + ":" + value.String
+	case storage.ValueInteger:
+		return string(value.Kind) + ":" + strconv.FormatInt(value.Integer, 10)
+	case storage.ValueBoolean:
+		return string(value.Kind) + ":" + strconv.FormatBool(value.Boolean)
+	case storage.ValueID:
+		return string(value.Kind) + ":" + string(value.ID)
+	default:
+		return string(value.Kind)
+	}
+}
+
+func likeMatch(left, right storage.Value) bool {
+	if left.Kind != storage.ValueString || right.Kind != storage.ValueString {
+		return false
+	}
+	return matchLikePattern(left.String, right.String)
+}
+
+func matchLikePattern(text, pattern string) bool {
+	// Dynamic programming approach for SQL LIKE matching.
+	// % matches any sequence, _ matches any single character.
+	m, n := len(text), len(pattern)
+	// dp[i][j] = true if text[i:] matches pattern[j:]
+	// Use two rows to keep O(n) space.
+	prev := make([]bool, n+1)
+	curr := make([]bool, n+1)
+	prev[n] = true
+	for j := n - 1; j >= 0; j-- {
+		if pattern[j] == '%' {
+			prev[j] = prev[j+1]
+		} else {
+			prev[j] = false
+		}
+	}
+	for i := m - 1; i >= 0; i-- {
+		curr[n] = false
+		for j := n - 1; j >= 0; j-- {
+			switch pattern[j] {
+			case '%':
+				curr[j] = curr[j+1] || prev[j]
+			case '_':
+				curr[j] = prev[j+1]
+			default:
+				curr[j] = (asciiLower(text[i]) == asciiLower(pattern[j])) && prev[j+1]
+			}
+		}
+		prev, curr = curr, prev
+	}
+	return prev[0]
+}
+
+func asciiLower(ch byte) byte {
+	if ch >= 'A' && ch <= 'Z' {
+		return ch + ('a' - 'A')
+	}
+	return ch
 }
 
 type token struct {
@@ -286,9 +997,15 @@ func lex(input string) ([]token, error) {
 				i++
 			}
 			return nil, fmt.Errorf("soql: unterminated string literal")
-		case strings.ContainsRune(",=!*()", rune(input[i])):
+		case strings.ContainsRune(",=!*()<>", rune(input[i])):
 			if i+1 < len(input) && input[i:i+2] == "!=" {
 				out = append(out, token{text: "!="})
+				i += 2
+			} else if i+1 < len(input) && input[i:i+2] == "<=" {
+				out = append(out, token{text: "<="})
+				i += 2
+			} else if i+1 < len(input) && input[i:i+2] == ">=" {
+				out = append(out, token{text: ">="})
 				i += 2
 			} else {
 				out = append(out, token{text: input[i : i+1]})
@@ -296,7 +1013,7 @@ func lex(input string) ([]token, error) {
 			}
 		default:
 			start := i
-			for i < len(input) && !strings.ContainsRune(" \n\t\r,=!*()", rune(input[i])) {
+			for i < len(input) && !strings.ContainsRune(" \n\t\r,=!*()<>", rune(input[i])) {
 				i++
 			}
 			out = append(out, token{text: input[start:i]})
@@ -310,13 +1027,14 @@ func lex(input string) ([]token, error) {
 type parser struct {
 	tokens []token
 	pos    int
+	now    time.Time
 }
 
 func (p *parser) parseQuery() (Query, error) {
 	if !p.matchWord("SELECT") {
 		return Query{}, p.errorf("expected SELECT")
 	}
-	fields, err := p.parseFields()
+	fields, childQueries, err := p.parseFields()
 	if err != nil {
 		return Query{}, err
 	}
@@ -327,27 +1045,60 @@ func (p *parser) parseQuery() (Query, error) {
 	if object == "" {
 		return Query{}, p.errorf("expected object name")
 	}
-	q := Query{Fields: fields, Object: object, Count: len(fields) == 1 && strings.EqualFold(fields[0], "COUNT()")}
-	for p.peek().text != "" {
+	aggregates, err := aggregateSpecs(fields)
+	if err != nil {
+		return Query{}, err
+	}
+	q := Query{Fields: fields, ChildQueries: childQueries, Object: object, Count: len(fields) == 1 && strings.EqualFold(fields[0], "COUNT()"), Aggregates: aggregates}
+	for p.peek().text != "" && p.peek().text != ")" {
 		switch {
 		case p.matchWord("WHERE"):
-			condition, err := p.parseCondition()
+			condition, err := p.parseOrCondition()
 			if err != nil {
 				return Query{}, err
 			}
 			q.Where = &condition
+		case p.matchWord("GROUP"):
+			if !p.matchWord("BY") {
+				return Query{}, p.errorf("expected BY after GROUP")
+			}
+			groupMode := ""
+			if p.matchWord("ROLLUP") || p.matchWord("CUBE") {
+				groupMode = strings.ToUpper(p.tokens[p.pos-1].text)
+				if !p.match("(") {
+					return Query{}, p.errorf("expected ( after GROUP BY %s", groupMode)
+				}
+			}
+			groupBy, err := p.parseNameList()
+			if err != nil {
+				return Query{}, err
+			}
+			if groupMode != "" && !p.match(")") {
+				return Query{}, p.errorf("expected ) after GROUP BY %s", groupMode)
+			}
+			q.GroupBy = groupBy
+			q.GroupMode = groupMode
+		case p.matchWord("HAVING"):
+			condition, err := p.parseOrCondition()
+			if err != nil {
+				return Query{}, err
+			}
+			condition = rewriteConditionAggregates(condition, aggregateExprMap(q.Aggregates))
+			q.Having = &condition
 		case p.matchWord("ORDER"):
 			if !p.matchWord("BY") {
 				return Query{}, p.errorf("expected BY after ORDER")
 			}
-			orderBy, err := p.parseName()
+			order, err := p.parseOrderList()
 			if err != nil {
 				return Query{}, err
 			}
-			q.OrderBy = orderBy
-			if q.OrderBy == "" {
+			if len(order) == 0 {
 				return Query{}, p.errorf("expected ORDER BY field")
 			}
+			q.Order = order
+			q.OrderBy = order[0].Field
+			q.OrderDesc = order[0].Desc
 		case p.matchWord("LIMIT"):
 			limit, err := p.parseInt()
 			if err != nil {
@@ -364,47 +1115,414 @@ func (p *parser) parseQuery() (Query, error) {
 			return Query{}, p.errorf("unsupported SOQL token %q", p.peek().text)
 		}
 	}
+	if err := validateAggregateQuery(q); err != nil {
+		return Query{}, err
+	}
 	return q, nil
 }
 
-func (p *parser) parseFields() ([]string, error) {
+func (p *parser) parseFields() ([]string, []ChildQuery, error) {
 	var fields []string
+	var childQueries []ChildQuery
+	for {
+		if p.match("(") {
+			query, err := p.parseQuery()
+			if err != nil {
+				return nil, nil, err
+			}
+			if !p.match(")") {
+				return nil, nil, p.errorf("expected ) after child relationship subquery")
+			}
+			if len(query.Fields) == 0 {
+				return nil, nil, p.errorf("child relationship subquery requires at least one field")
+			}
+			childQueries = append(childQueries, ChildQuery{Relationship: query.Object, Query: query})
+			if !p.match(",") {
+				return fields, childQueries, nil
+			}
+			continue
+		}
+		field, err := p.parseName()
+		if err != nil {
+			return nil, nil, err
+		}
+		isAggregate := isAggregateFunc(field) && p.match("(")
+		if isAggregate {
+			if strings.EqualFold(field, "COUNT") && p.match(")") {
+				field = "COUNT()"
+			} else {
+				arg, err := p.parseName()
+				if err != nil {
+					return nil, nil, err
+				}
+				if !p.match(")") {
+					return nil, nil, p.errorf("expected ) after %s(", field)
+				}
+				field = strings.ToUpper(field) + "(" + arg + ")"
+			}
+			alias := ""
+			if p.matchWord("AS") {
+				var err error
+				alias, err = p.parseName()
+				if err != nil {
+					return nil, nil, err
+				}
+			} else if tok := p.peek().text; tok != "" && tok != "," && !strings.EqualFold(tok, "FROM") {
+				alias = p.advance().text
+			}
+			if alias != "" {
+				field += " " + alias
+			}
+		}
+		fields = append(fields, field)
+		if !p.match(",") {
+			return fields, childQueries, nil
+		}
+	}
+}
+
+func (p *parser) parseNameList() ([]string, error) {
+	var names []string
+	for {
+		name, err := p.parseName()
+		if err != nil {
+			return nil, err
+		}
+		names = append(names, name)
+		if !p.match(",") {
+			return names, nil
+		}
+	}
+}
+
+func (p *parser) parseOrderList() ([]OrderSpec, error) {
+	var order []OrderSpec
 	for {
 		field, err := p.parseName()
 		if err != nil {
 			return nil, err
 		}
-		if strings.EqualFold(field, "COUNT") && p.match("(") {
-			if !p.match(")") {
-				return nil, p.errorf("expected ) after COUNT(")
-			}
-			field = "COUNT()"
+		if field == "" {
+			return nil, p.errorf("expected ORDER BY field")
 		}
-		fields = append(fields, field)
+		spec := OrderSpec{Field: field}
+		if p.matchWord("ASC") {
+			spec.Desc = false
+		} else if p.matchWord("DESC") {
+			spec.Desc = true
+		}
+		if p.matchWord("NULLS") {
+			switch {
+			case p.matchWord("FIRST"):
+				spec.Nulls = "FIRST"
+			case p.matchWord("LAST"):
+				spec.Nulls = "LAST"
+			default:
+				return nil, p.errorf("expected FIRST or LAST after NULLS")
+			}
+		}
+		order = append(order, spec)
 		if !p.match(",") {
-			return fields, nil
+			return order, nil
 		}
 	}
 }
 
-func (p *parser) parseCondition() (Condition, error) {
-	field, err := p.parseName()
+func isAggregateFunc(name string) bool {
+	switch strings.ToUpper(name) {
+	case "COUNT", "COUNT_DISTINCT", "SUM", "MIN", "MAX", "AVG", "GROUPING":
+		return true
+	default:
+		return false
+	}
+}
+
+func aggregateSpecs(fields []string) ([]Aggregate, error) {
+	var aggregates []Aggregate
+	for _, field := range fields {
+		aggregate, ok, err := parseAggregateField(field)
+		if err != nil {
+			return nil, err
+		}
+		if ok {
+			aggregates = append(aggregates, aggregate)
+		}
+	}
+	return aggregates, nil
+}
+
+func validateAggregateQuery(query Query) error {
+	if len(query.Aggregates) == 0 {
+		if len(query.GroupBy) > 0 || query.Having != nil {
+			return fmt.Errorf("soql: GROUP BY and HAVING require aggregate fields")
+		}
+		return nil
+	}
+	for _, field := range query.Fields {
+		aggregate, ok, err := parseAggregateField(field)
+		if err != nil {
+			return err
+		}
+		if ok {
+			if aggregate.Func == "GROUPING" {
+				if len(query.GroupBy) == 0 {
+					return fmt.Errorf("soql: GROUPING requires GROUP BY")
+				}
+				if !containsName(query.GroupBy, aggregate.Field) {
+					return fmt.Errorf("soql: GROUPING field %s must be grouped", aggregate.Field)
+				}
+			}
+			continue
+		}
+		if !containsName(query.GroupBy, field) {
+			return fmt.Errorf("soql: field %s must be grouped or aggregated", field)
+		}
+	}
+	return nil
+}
+
+func aggregateExprMap(aggregates []Aggregate) map[string]string {
+	out := make(map[string]string, len(aggregates))
+	for i, aggregate := range aggregates {
+		field := aggregate.Func + "(" + aggregate.Field + ")"
+		if aggregate.Field == "" {
+			field = aggregate.Func + "()"
+		}
+		out[field] = fmt.Sprintf("expr%d", i)
+		if aggregate.Alias != "" {
+			out[aggregate.Alias] = aggregate.Alias
+		}
+	}
+	return out
+}
+
+func rewriteConditionAggregates(condition Condition, aliases map[string]string) Condition {
+	if condition.Field != "" {
+		if alias, ok := aliases[condition.Field]; ok {
+			condition.Field = alias
+		}
+	}
+	for i := range condition.And {
+		condition.And[i] = rewriteConditionAggregates(condition.And[i], aliases)
+	}
+	for i := range condition.Or {
+		condition.Or[i] = rewriteConditionAggregates(condition.Or[i], aliases)
+	}
+	return condition
+}
+
+func containsName(values []string, want string) bool {
+	for _, value := range values {
+		if value == want {
+			return true
+		}
+	}
+	return false
+}
+
+func parseAggregateField(field string) (Aggregate, bool, error) {
+	alias := ""
+	parts := strings.Fields(field)
+	if len(parts) > 2 {
+		return Aggregate{}, false, fmt.Errorf("soql: invalid aggregate field %s", field)
+	}
+	if len(parts) == 2 {
+		field = parts[0]
+		alias = parts[1]
+	}
+	open := strings.Index(field, "(")
+	if open < 0 || !strings.HasSuffix(field, ")") {
+		return Aggregate{}, false, nil
+	}
+	fn := strings.ToUpper(field[:open])
+	if !isAggregateFunc(fn) {
+		return Aggregate{}, false, nil
+	}
+	arg := strings.TrimSpace(field[open+1 : len(field)-1])
+	if fn == "GROUPING" {
+		if arg == "" {
+			return Aggregate{}, false, fmt.Errorf("soql: GROUPING requires a field")
+		}
+		return Aggregate{Func: fn, Field: arg, Alias: alias}, true, nil
+	}
+	if fn == "COUNT" && arg == "" {
+		return Aggregate{Func: fn, Alias: alias}, true, nil
+	}
+	if arg == "" {
+		return Aggregate{}, false, fmt.Errorf("soql: %s requires a field", fn)
+	}
+	return Aggregate{Func: fn, Field: arg, Alias: alias}, true, nil
+}
+
+func (p *parser) parseOrCondition() (Condition, error) {
+	left, err := p.parseAndCondition()
 	if err != nil {
 		return Condition{}, err
 	}
-	op := p.advance().text
-	if op != "=" && op != "!=" {
-		return Condition{}, p.errorf("unsupported WHERE operator %q", op)
+	var ors []Condition
+	for p.matchWord("OR") {
+		right, err := p.parseAndCondition()
+		if err != nil {
+			return Condition{}, err
+		}
+		ors = append(ors, right)
+	}
+	if len(ors) == 0 {
+		return left, nil
+	}
+	return Condition{Or: append([]Condition{left}, ors...)}, nil
+}
+
+func (p *parser) parseAndCondition() (Condition, error) {
+	left, err := p.parsePrimaryCondition()
+	if err != nil {
+		return Condition{}, err
+	}
+	var ands []Condition
+	for p.matchWord("AND") {
+		right, err := p.parsePrimaryCondition()
+		if err != nil {
+			return Condition{}, err
+		}
+		ands = append(ands, right)
+	}
+	if len(ands) == 0 {
+		return left, nil
+	}
+	return Condition{And: append([]Condition{left}, ands...)}, nil
+}
+
+func (p *parser) parsePrimaryCondition() (Condition, error) {
+	if p.matchWord("NOT") {
+		cond, err := p.parsePrimaryCondition()
+		if err != nil {
+			return Condition{}, err
+		}
+		cond.Not = true
+		return cond, nil
+	}
+	if p.match("(") {
+		cond, err := p.parseOrCondition()
+		if err != nil {
+			return Condition{}, err
+		}
+		if !p.match(")") {
+			return Condition{}, p.errorf("expected ) after condition")
+		}
+		return cond, nil
+	}
+	field, err := p.parseConditionField()
+	if err != nil {
+		return Condition{}, err
+	}
+	op, err := p.parseOperator()
+	if err != nil {
+		return Condition{}, err
+	}
+	if op == "IN" || op == "NOT IN" {
+		values, subquery, err := p.parseInOperand()
+		if err != nil {
+			return Condition{}, err
+		}
+		return Condition{Field: field, Op: op, Values: values, Subquery: subquery}, nil
 	}
 	valueToken := p.advance().text
 	if valueToken == "" {
 		return Condition{}, p.errorf("expected WHERE value")
 	}
-	value, err := literal(valueToken)
+	value, value2, isRange, err := literalAt(valueToken, p.now)
 	if err != nil {
 		return Condition{}, err
 	}
-	return Condition{Field: field, Op: op, Value: value}, nil
+	return Condition{Field: field, Op: op, Value: value, Value2: value2, Range: isRange}, nil
+}
+
+func (p *parser) parseConditionField() (string, error) {
+	field, err := p.parseName()
+	if err != nil {
+		return "", err
+	}
+	if isAggregateFunc(field) && p.match("(") {
+		if strings.EqualFold(field, "COUNT") && p.match(")") {
+			return "COUNT()", nil
+		}
+		arg, err := p.parseName()
+		if err != nil {
+			return "", err
+		}
+		if !p.match(")") {
+			return "", p.errorf("expected ) after %s(", field)
+		}
+		return strings.ToUpper(field) + "(" + arg + ")", nil
+	}
+	return field, nil
+}
+
+func (p *parser) parseOperator() (string, error) {
+	tok := p.advance().text
+	switch tok {
+	case "=", "!=", ">", "<", ">=", "<=":
+		return tok, nil
+	}
+	// Word operators
+	word := tok
+	if strings.EqualFold(word, "LIKE") {
+		return "LIKE", nil
+	}
+	if strings.EqualFold(word, "IN") {
+		return "IN", nil
+	}
+	if strings.EqualFold(word, "NOT") {
+		if p.matchWord("IN") {
+			return "NOT IN", nil
+		}
+		if p.matchWord("LIKE") {
+			return "NOT LIKE", nil
+		}
+		return "", p.errorf("expected IN or LIKE after NOT")
+	}
+	return "", p.errorf("unsupported WHERE operator %q", tok)
+}
+
+func (p *parser) parseInOperand() ([]storage.Value, *Query, error) {
+	if !p.match("(") {
+		return nil, nil, p.errorf("expected ( after IN")
+	}
+	if strings.EqualFold(p.peek().text, "SELECT") {
+		query, err := p.parseQuery()
+		if err != nil {
+			return nil, nil, err
+		}
+		if len(query.Fields) != 1 {
+			return nil, nil, p.errorf("semi-join subquery must select one field")
+		}
+		if !p.match(")") {
+			return nil, nil, p.errorf("expected ) after semi-join subquery")
+		}
+		return nil, &query, nil
+	}
+	var values []storage.Value
+	for {
+		tok := p.advance().text
+		if tok == "" {
+			return nil, nil, p.errorf("expected value in IN list")
+		}
+		value, _, isRange, err := literalAt(tok, p.now)
+		if err != nil {
+			return nil, nil, err
+		}
+		if isRange {
+			return nil, nil, p.errorf("date range literal %s is not supported in IN lists", tok)
+		}
+		values = append(values, value)
+		if p.match(")") {
+			break
+		}
+		if !p.match(",") {
+			return nil, nil, p.errorf("expected , or ) in IN list")
+		}
+	}
+	return values, nil, nil
 }
 
 func (p *parser) parseName() (string, error) {
@@ -461,22 +1579,94 @@ func (p *parser) errorf(format string, args ...any) error {
 	return fmt.Errorf("soql: "+format, args...)
 }
 
-func literal(text string) (storage.Value, error) {
+func literalAt(text string, now time.Time) (storage.Value, storage.Value, bool, error) {
+	if start, end, ok := dateLiteral(text, now); ok {
+		return start, end, true, nil
+	}
 	switch {
 	case strings.EqualFold(text, "null"):
-		return storage.NullValue(), nil
+		return storage.NullValue(), storage.Value{}, false, nil
 	case strings.EqualFold(text, "true"):
-		return storage.BooleanValue(true), nil
+		return storage.BooleanValue(true), storage.Value{}, false, nil
 	case strings.EqualFold(text, "false"):
-		return storage.BooleanValue(false), nil
+		return storage.BooleanValue(false), storage.Value{}, false, nil
 	case strings.HasPrefix(text, "'") && strings.HasSuffix(text, "'"):
 		inner := strings.TrimSuffix(strings.TrimPrefix(text, "'"), "'")
-		return storage.StringValue(strings.ReplaceAll(inner, "''", "'")), nil
+		return storage.StringValue(strings.ReplaceAll(inner, "''", "'")), storage.Value{}, false, nil
 	default:
+		if t, ok := parseISODate(text); ok {
+			return storage.DateValue(t.Format("2006-01-02")), storage.Value{}, false, nil
+		}
 		value, err := strconv.ParseInt(text, 10, 64)
 		if err != nil {
-			return storage.IDValue(storage.ID(text)), nil
+			return storage.IDValue(storage.ID(text)), storage.Value{}, false, nil
 		}
-		return storage.IntegerValue(value), nil
+		return storage.IntegerValue(value), storage.Value{}, false, nil
 	}
+}
+
+func dateLiteral(text string, now time.Time) (storage.Value, storage.Value, bool) {
+	today := dateOnly(now)
+	upper := strings.ToUpper(text)
+	switch upper {
+	case "TODAY":
+		return dateRange(today, today.AddDate(0, 0, 1))
+	case "YESTERDAY":
+		return dateRange(today.AddDate(0, 0, -1), today)
+	case "TOMORROW":
+		return dateRange(today.AddDate(0, 0, 1), today.AddDate(0, 0, 2))
+	case "THIS_MONTH":
+		start := time.Date(today.Year(), today.Month(), 1, 0, 0, 0, 0, time.UTC)
+		return dateRange(start, start.AddDate(0, 1, 0))
+	case "LAST_MONTH":
+		thisMonth := time.Date(today.Year(), today.Month(), 1, 0, 0, 0, 0, time.UTC)
+		return dateRange(thisMonth.AddDate(0, -1, 0), thisMonth)
+	case "NEXT_MONTH":
+		nextMonth := time.Date(today.Year(), today.Month(), 1, 0, 0, 0, 0, time.UTC).AddDate(0, 1, 0)
+		return dateRange(nextMonth, nextMonth.AddDate(0, 1, 0))
+	case "THIS_YEAR":
+		start := time.Date(today.Year(), 1, 1, 0, 0, 0, 0, time.UTC)
+		return dateRange(start, start.AddDate(1, 0, 0))
+	case "LAST_YEAR":
+		thisYear := time.Date(today.Year(), 1, 1, 0, 0, 0, 0, time.UTC)
+		return dateRange(thisYear.AddDate(-1, 0, 0), thisYear)
+	case "NEXT_YEAR":
+		nextYear := time.Date(today.Year()+1, 1, 1, 0, 0, 0, 0, time.UTC)
+		return dateRange(nextYear, nextYear.AddDate(1, 0, 0))
+	}
+	if n, ok := literalNumberSuffix(upper, "LAST_N_DAYS:"); ok {
+		return dateRange(today.AddDate(0, 0, -n), today.AddDate(0, 0, 1))
+	}
+	if n, ok := literalNumberSuffix(upper, "NEXT_N_DAYS:"); ok {
+		return dateRange(today, today.AddDate(0, 0, n+1))
+	}
+	return storage.Value{}, storage.Value{}, false
+}
+
+func literalNumberSuffix(text, prefix string) (int, bool) {
+	if !strings.HasPrefix(text, prefix) {
+		return 0, false
+	}
+	value, err := strconv.Atoi(strings.TrimPrefix(text, prefix))
+	if err != nil || value < 0 {
+		return 0, false
+	}
+	return value, true
+}
+
+func dateOnly(now time.Time) time.Time {
+	utc := now.UTC()
+	return time.Date(utc.Year(), utc.Month(), utc.Day(), 0, 0, 0, 0, time.UTC)
+}
+
+func dateRange(start, end time.Time) (storage.Value, storage.Value, bool) {
+	return storage.DateValue(start.Format("2006-01-02")), storage.DateValue(end.Format("2006-01-02")), true
+}
+
+func parseISODate(text string) (time.Time, bool) {
+	t, err := time.Parse("2006-01-02", text)
+	if err != nil {
+		return time.Time{}, false
+	}
+	return t, true
 }

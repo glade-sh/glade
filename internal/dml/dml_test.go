@@ -39,8 +39,8 @@ func TestInsertUpdateDelete(t *testing.T) {
 	if !deleteResult[0].Success {
 		t.Fatalf("delete = %#v", deleteResult)
 	}
-	if len(org.Objects["Account"].Records) != 0 {
-		t.Fatalf("records = %#v", org.Objects["Account"].Records)
+	if !org.Objects["Account"].Records[insert[0].ID].System.IsDeleted {
+		t.Fatalf("record was not soft deleted: %#v", org.Objects["Account"].Records[insert[0].ID])
 	}
 }
 
@@ -84,6 +84,200 @@ func TestWithTransactionRollsBackOnError(t *testing.T) {
 	}
 	if len(org.Objects["Account"].Records) != 0 {
 		t.Fatalf("transaction did not roll back: %#v", org.Objects["Account"].Records)
+	}
+}
+
+func TestUpsertByExternalIDAndUniqueValidation(t *testing.T) {
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["External_Key__c"] = storage.Field{APIName: "External_Key__c", Type: storage.FieldString, ExternalID: true, Unique: true}
+	account.Definition.Fields["Code__c"] = storage.Field{APIName: "Code__c", Type: storage.FieldString, Unique: true}
+	org.Objects["Account"] = account
+	engine := NewEngine(&org)
+
+	insert := engine.Upsert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":            storage.StringValue("Acme"),
+			"External_Key__c": storage.StringValue("ext-1"),
+			"Code__c":         storage.StringValue("A"),
+		},
+	}})
+	if !insert[0].Success || !insert[0].Created {
+		t.Fatalf("external insert = %#v", insert)
+	}
+	update := engine.Upsert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"External_Key__c": storage.StringValue("EXT-1"),
+			"Name":            storage.StringValue("Changed"),
+		},
+	}})
+	if !update[0].Success || update[0].Created || update[0].ID != insert[0].ID {
+		t.Fatalf("external update = %#v", update)
+	}
+	if got := org.Objects["Account"].Records[insert[0].ID].Fields["Name"].String; got != "Changed" {
+		t.Fatalf("updated name = %q", got)
+	}
+
+	duplicate := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":    storage.StringValue("Other"),
+			"Code__c": storage.StringValue("a"),
+		},
+	}})
+	if duplicate[0].Success || duplicate[0].StatusCode != "DUPLICATE_VALUE" {
+		t.Fatalf("duplicate = %#v", duplicate)
+	}
+}
+
+func TestUpsertWithExplicitExternalID(t *testing.T) {
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["External_Key__c"] = storage.Field{APIName: "External_Key__c", Type: storage.FieldString, ExternalID: true, Unique: true}
+	account.Definition.Fields["Other_Key__c"] = storage.Field{APIName: "Other_Key__c", Type: storage.FieldString, ExternalID: true, Unique: true}
+	org.Objects["Account"] = account
+	engine := NewEngine(&org)
+
+	insert := engine.UpsertWithExternalID([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":            storage.StringValue("Acme"),
+			"External_Key__c": storage.StringValue("ext-1"),
+			"Other_Key__c":    storage.StringValue("other-1"),
+		},
+	}}, "Other_Key__c")
+	if !insert[0].Success || !insert[0].Created {
+		t.Fatalf("explicit insert = %#v", insert)
+	}
+	update := engine.UpsertWithExternalID([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":         storage.StringValue("Changed"),
+			"Other_Key__c": storage.StringValue("OTHER-1"),
+		},
+	}}, "Other_Key__c")
+	if !update[0].Success || update[0].Created || update[0].ID != insert[0].ID {
+		t.Fatalf("explicit update = %#v", update)
+	}
+	if got := org.Objects["Account"].Records[insert[0].ID].Fields["Name"].String; got != "Changed" {
+		t.Fatalf("updated name = %q", got)
+	}
+	missing := engine.UpsertWithExternalID([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Missing")},
+	}}, "Other_Key__c")
+	if missing[0].Success || missing[0].StatusCode != "MISSING_ARGUMENT" {
+		t.Fatalf("missing external id = %#v", missing)
+	}
+}
+
+func TestReferenceValidationRestrictedDeleteAndUndelete(t *testing.T) {
+	org := testOrg()
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Contact",
+			KeyPrefix: "003",
+			Fields: map[string]storage.Field{
+				"LastName":  {APIName: "LastName", Type: storage.FieldString},
+				"AccountId": {APIName: "AccountId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}},
+			},
+			Relations: []storage.Relationship{{
+				Field:            "AccountId",
+				ParentObjects:    []string{"Account"},
+				RestrictedDelete: true,
+			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+	account := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")},
+	}})
+	if !account[0].Success {
+		t.Fatalf("account = %#v", account)
+	}
+	missingParent := engine.Insert([]storage.Record{{
+		Object: "Contact",
+		Fields: map[string]storage.Value{
+			"LastName":  storage.StringValue("Smith"),
+			"AccountId": storage.IDValue("001999999999999"),
+		},
+	}})
+	if missingParent[0].Success || missingParent[0].StatusCode != "FIELD_INTEGRITY_EXCEPTION" {
+		t.Fatalf("missing parent = %#v", missingParent)
+	}
+	contact := engine.Insert([]storage.Record{{
+		Object: "Contact",
+		Fields: map[string]storage.Value{
+			"LastName":  storage.StringValue("Smith"),
+			"AccountId": storage.IDValue(account[0].ID),
+		},
+	}})
+	if !contact[0].Success {
+		t.Fatalf("contact = %#v", contact)
+	}
+	blockedDelete := engine.Delete([]storage.Record{{Object: "Account", ID: account[0].ID}})
+	if blockedDelete[0].Success || blockedDelete[0].StatusCode != "DELETE_FAILED" {
+		t.Fatalf("blocked delete = %#v", blockedDelete)
+	}
+	deleteContact := engine.Delete([]storage.Record{{Object: "Contact", ID: contact[0].ID}})
+	if !deleteContact[0].Success {
+		t.Fatalf("delete contact = %#v", deleteContact)
+	}
+	undeleteContact := engine.Undelete([]storage.Record{{Object: "Contact", ID: contact[0].ID}})
+	if !undeleteContact[0].Success || org.Objects["Contact"].Records[contact[0].ID].System.IsDeleted {
+		t.Fatalf("undelete contact = %#v", undeleteContact)
+	}
+}
+
+func TestDeleteCascadesThroughRelationshipMetadata(t *testing.T) {
+	org := testOrg()
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Contact",
+			KeyPrefix: "003",
+			Fields: map[string]storage.Field{
+				"LastName":  {APIName: "LastName", Type: storage.FieldString},
+				"AccountId": {APIName: "AccountId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}},
+			},
+			Relations: []storage.Relationship{{
+				Field:         "AccountId",
+				ParentObjects: []string{"Account"},
+				CascadeDelete: true,
+			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+	account := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")},
+	}})
+	if !account[0].Success {
+		t.Fatalf("account = %#v", account)
+	}
+	contact := engine.Insert([]storage.Record{{
+		Object: "Contact",
+		Fields: map[string]storage.Value{
+			"LastName":  storage.StringValue("Smith"),
+			"AccountId": storage.IDValue(account[0].ID),
+		},
+	}})
+	if !contact[0].Success {
+		t.Fatalf("contact = %#v", contact)
+	}
+	deleteAccount := engine.Delete([]storage.Record{{Object: "Account", ID: account[0].ID}})
+	if !deleteAccount[0].Success {
+		t.Fatalf("delete account = %#v", deleteAccount)
+	}
+	if !org.Objects["Account"].Records[account[0].ID].System.IsDeleted {
+		t.Fatalf("account was not deleted")
+	}
+	if !org.Objects["Contact"].Records[contact[0].ID].System.IsDeleted {
+		t.Fatalf("contact was not cascade deleted")
 	}
 }
 

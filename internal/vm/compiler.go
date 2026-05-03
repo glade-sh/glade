@@ -314,10 +314,17 @@ func (p *parser) parseStatement() (ir.Instruction, error) {
 			if err != nil {
 				return ir.Instruction{}, err
 			}
+			field := ""
+			if op == "upsert" && !p.peek(tokenSymbol, ";") {
+				field, err = p.parseQualifiedName()
+				if err != nil {
+					return ir.Instruction{}, err
+				}
+			}
 			if _, err := p.expect(tokenSymbol, ";"); err != nil {
 				return ir.Instruction{}, err
 			}
-			return ir.Instruction{Op: ir.OpDML, Name: op, Expr: expr, Pos: start.pos}, nil
+			return ir.Instruction{Op: ir.OpDML, Name: op, Expr: expr, Field: field, Pos: start.pos}, nil
 		}
 	}
 
@@ -904,7 +911,11 @@ func (p *parser) parseSOQLLiteral(pos int) (ir.Expr, error) {
 				}
 			}
 		}
-		parts = append(parts, tok.text)
+		if tok.kind == tokenString {
+			parts = append(parts, "'"+tok.text+"'")
+		} else {
+			parts = append(parts, tok.text)
+		}
 	}
 	return ir.Expr{}, fmt.Errorf("unterminated SOQL literal at byte %d", pos)
 }
@@ -948,6 +959,10 @@ func (p *parser) isDeclarationStart() bool {
 }
 
 func (p *parser) parseTypeName() (string, error) {
+	return p.parseQualifiedName()
+}
+
+func (p *parser) parseQualifiedName() (string, error) {
 	first, err := p.expect(tokenIdent, "")
 	if err != nil {
 		return "", err

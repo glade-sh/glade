@@ -3,6 +3,7 @@ package sobject
 import (
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/open-aer/oaer/internal/schema"
 	"github.com/open-aer/oaer/internal/storage"
@@ -99,14 +100,16 @@ type DescribeSObjectResult struct {
 }
 
 type DescribeFieldResult struct {
-	Name             string            `json:"name"`
-	Type             storage.FieldType `json:"type"`
-	Label            string            `json:"label,omitempty"`
-	ReferenceTo      []string          `json:"referenceTo,omitempty"`
-	RelationshipName string            `json:"relationshipName,omitempty"`
-	Required         bool              `json:"required,omitempty"`
-	ExternalID       bool              `json:"externalId,omitempty"`
-	Unique           bool              `json:"unique,omitempty"`
+	Name                  string            `json:"name"`
+	Type                  storage.FieldType `json:"type"`
+	Label                 string            `json:"label,omitempty"`
+	ReferenceTo           []string          `json:"referenceTo,omitempty"`
+	RelationshipName      string            `json:"relationshipName,omitempty"`
+	ChildRelationshipName string            `json:"childRelationshipName,omitempty"`
+	DeleteConstraint      string            `json:"deleteConstraint,omitempty"`
+	Required              bool              `json:"required,omitempty"`
+	ExternalID            bool              `json:"externalId,omitempty"`
+	Unique                bool              `json:"unique,omitempty"`
 }
 
 func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
@@ -126,20 +129,25 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 		}
 		for _, field := range object.Fields {
 			describe.Fields[field.Name] = DescribeFieldResult{
-				Name:             field.Name,
-				Type:             storageFieldType(field.Type),
-				Label:            field.Label,
-				ReferenceTo:      referenceTargets(field.ReferenceTo),
-				RelationshipName: field.RelationshipName,
-				Required:         field.Required,
-				ExternalID:       field.ExternalID,
-				Unique:           field.Unique,
+				Name:                  field.Name,
+				Type:                  storageFieldType(field.Type),
+				Label:                 field.Label,
+				ReferenceTo:           referenceTargets(field.ReferenceTo),
+				RelationshipName:      field.RelationshipName,
+				ChildRelationshipName: field.ChildRelationshipName,
+				DeleteConstraint:      field.DeleteConstraint,
+				Required:              field.Required,
+				ExternalID:            field.ExternalID,
+				Unique:                field.Unique,
 			}
 			if field.ReferenceTo != "" {
 				describe.Relationships = append(describe.Relationships, storage.Relationship{
 					Field:              field.Name,
 					ParentObjects:      referenceTargets(field.ReferenceTo),
 					ParentRelationship: field.RelationshipName,
+					ChildRelationship:  field.ChildRelationshipName,
+					CascadeDelete:      strings.EqualFold(field.DeleteConstraint, "Cascade"),
+					RestrictedDelete:   strings.EqualFold(field.DeleteConstraint, "Restrict"),
 				})
 			}
 		}

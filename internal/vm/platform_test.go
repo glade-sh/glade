@@ -3,6 +3,8 @@ package vm
 import (
 	"strings"
 	"testing"
+
+	"github.com/open-aer/oaer/internal/storage"
 )
 
 func TestExecLimitsCountersAndPermissiveViolations(t *testing.T) {
@@ -223,6 +225,67 @@ System.assert(message.contains('unknown field'));
 	}
 	machine := New(nil)
 	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDatabaseErrorShapeAndUpsertResult(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account good = new Account(Name = 'Acme');
+Account missing = new Account();
+Account bad = new Account(Bogus__c = 'nope');
+List<Account> records = new List<Account>{good, missing, bad};
+List<Object> results = Database.insert(records, false);
+
+Object first = results.get(0);
+Object second = results.get(1);
+Object third = results.get(2);
+
+System.assert(first.isSuccess());
+System.assert(!second.isSuccess());
+System.assert(!third.isSuccess());
+
+List<Object> errors2 = second.getErrors();
+Object err2 = errors2.get(0);
+System.assertEquals('REQUIRED_FIELD_MISSING', err2.getStatusCode());
+List<Object> fields2 = err2.getFields();
+System.assertEquals(1, fields2.size());
+System.assertEquals('Name', fields2.get(0));
+
+List<Object> errors3 = third.getErrors();
+Object err3 = errors3.get(0);
+System.assertEquals('INVALID_FIELD_FOR_INSERT_UPDATE', err3.getStatusCode());
+List<Object> fields3 = err3.getFields();
+System.assertEquals(1, fields3.size());
+System.assertEquals('Bogus__c', fields3.get(0));
+
+Account upsertNew = new Account(Name = 'NewCo');
+Object upsertCreate = Database.upsert(upsertNew, false);
+System.assert(upsertCreate.isSuccess());
+System.assert(upsertCreate.isCreated());
+
+Account upsertExisting = new Account(Id = upsertCreate.getId(), Name = 'OldCo');
+Object upsertUpdate = Database.upsert(upsertExisting, false);
+System.assert(upsertUpdate.isSuccess());
+System.assert(!upsertUpdate.isCreated());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Account",
+			KeyPrefix: "001",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString, Required: true},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)

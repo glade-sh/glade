@@ -23,14 +23,16 @@ type Object struct {
 }
 
 type Field struct {
-	Name             string `json:"name"`
-	Label            string `json:"label,omitempty"`
-	Type             string `json:"type,omitempty"`
-	ReferenceTo      string `json:"referenceTo,omitempty"`
-	RelationshipName string `json:"relationshipName,omitempty"`
-	Required         bool   `json:"required,omitempty"`
-	ExternalID       bool   `json:"externalId,omitempty"`
-	Unique           bool   `json:"unique,omitempty"`
+	Name                  string `json:"name"`
+	Label                 string `json:"label,omitempty"`
+	Type                  string `json:"type,omitempty"`
+	ReferenceTo           string `json:"referenceTo,omitempty"`
+	RelationshipName      string `json:"relationshipName,omitempty"`
+	ChildRelationshipName string `json:"childRelationshipName,omitempty"`
+	DeleteConstraint      string `json:"deleteConstraint,omitempty"`
+	Required              bool   `json:"required,omitempty"`
+	ExternalID            bool   `json:"externalId,omitempty"`
+	Unique                bool   `json:"unique,omitempty"`
 }
 
 type customObjectXML struct {
@@ -41,15 +43,17 @@ type customObjectXML struct {
 }
 
 type customFieldXML struct {
-	XMLName          xml.Name `xml:"CustomField"`
-	FullName         string   `xml:"fullName"`
-	Label            string   `xml:"label"`
-	Type             string   `xml:"type"`
-	ReferenceTo      string   `xml:"referenceTo"`
-	RelationshipName string   `xml:"relationshipName"`
-	Required         bool     `xml:"required"`
-	ExternalID       bool     `xml:"externalId"`
-	Unique           bool     `xml:"unique"`
+	XMLName               xml.Name `xml:"CustomField"`
+	FullName              string   `xml:"fullName"`
+	Label                 string   `xml:"label"`
+	Type                  string   `xml:"type"`
+	ReferenceTo           string   `xml:"referenceTo"`
+	RelationshipName      string   `xml:"relationshipName"`
+	ChildRelationshipName string   `xml:"childRelationshipName"`
+	DeleteConstraint      string   `xml:"deleteConstraint"`
+	Required              bool     `xml:"required"`
+	ExternalID            bool     `xml:"externalId"`
+	Unique                bool     `xml:"unique"`
 }
 
 func LoadProject(p project.Project) (Schema, error) {
@@ -124,14 +128,16 @@ func loadField(path string) (Field, error) {
 		name = strings.TrimSuffix(filepath.Base(path), ".field-meta.xml")
 	}
 	return Field{
-		Name:             name,
-		Label:            raw.Label,
-		Type:             raw.Type,
-		ReferenceTo:      raw.ReferenceTo,
-		RelationshipName: raw.RelationshipName,
-		Required:         raw.Required,
-		ExternalID:       raw.ExternalID,
-		Unique:           raw.Unique,
+		Name:                  name,
+		Label:                 raw.Label,
+		Type:                  raw.Type,
+		ReferenceTo:           raw.ReferenceTo,
+		RelationshipName:      raw.RelationshipName,
+		ChildRelationshipName: raw.ChildRelationshipName,
+		DeleteConstraint:      raw.DeleteConstraint,
+		Required:              raw.Required,
+		ExternalID:            raw.ExternalID,
+		Unique:                raw.Unique,
 	}, nil
 }
 

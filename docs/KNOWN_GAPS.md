@@ -26,7 +26,7 @@ The MVP target is `full-featured aer-parity MVP`. This document lists required c
 ### `dml.apex`: Apex DML statements and Database methods
 
 - Status: `partial`
-- Gap: Apex insert/update/delete/upsert/undelete syntax and Database.insert/update/delete allOrNone paths now call the DML engine, return SaveResult-like objects, set Ids, and roll back allOrNone failures. Merge, external-id upsert, undelete fidelity, and full error arrays remain incomplete.
+- Gap: Apex insert/update/delete/upsert/undelete syntax and Database.insert/update/delete/upsert/undelete allOrNone paths now call the DML engine, return SaveResult/UpsertResult objects with statusCode, message, fields arrays, isCreated, set Ids, roll back allOrNone failures, soft-delete and undelete records, match implicit and explicit external-ID upserts, reject ID/object mismatches, enforce unique fields, validate lookup references, and cascade soft-delete children from relationship metadata. Merge, validation-rule formulas, and full Salesforce status-code parity remain incomplete.
 
 ### `fixtures.persistence`: Seed/export/reset local fixtures with persistence
 
@@ -36,17 +36,17 @@ The MVP target is `full-featured aer-parity MVP`. This document lists required c
 ### `sobject.apex`: Apex-integrated SObject construction and field access
 
 - Status: `partial`
-- Gap: Apex now supports schema-backed new Account(Name='Acme'), typed field access, dotted assignment, get/put, Id propagation after DML, parent relationship projection access, and VM/storage record conversion. Typed describe APIs and broader SObject system fields remain incomplete.
+- Gap: Apex now supports schema-backed new Account(Name='Acme'), typed field access, dotted assignment, get/put, object-level and field-level addError, hasErrors/getErrors, Id propagation after DML, parent relationship projection access, and VM/storage record conversion. Typed describe APIs and broader SObject system fields remain incomplete.
 
 ### `soql.apex`: Static and dynamic SOQL from Apex
 
 - Status: `partial`
-- Gap: Static SOQL literals and Database.query now execute against the in-memory org with simple bind variables, projection, parent relationship fields, COUNT(), single-SObject assignment, equality/inequality filters, order, limit, and offset. Subqueries, broader aggregates, complex predicates, and SQLite planning remain incomplete.
+- Gap: Static SOQL literals and Database.query now execute against the in-memory org with simple bind variables, projection, parent relationship fields, child relationship subqueries, semi-joins, anti-joins, COUNT(), COUNT(field), COUNT_DISTINCT, SUM, MIN, MAX, AVG, GROUP BY, ROLLUP, CUBE, HAVING on aggregate expressions, aggregate aliases, GROUPING(field), common date literals, AggregateResult exprN fields, single-SObject assignment, equality/inequality/comparison filters, AND/OR boolean combinations, IN/NOT IN, LIKE, NOT, parentheses, comma-separated ORDER BY ASC/DESC with NULLS FIRST/LAST, limit, and offset. SQLite planning and advanced relationship query behavior remain incomplete.
 
 ### `triggers.runtime`: Trigger invocation and context
 
 - Status: `partial`
-- Gap: Project triggers are compiled and invoked from VM DML for before/after operations with Trigger.new/old/maps/flags/operationType/size basics and rollback on thrown errors. Full bulk ordering semantics, recursive limits, addError, undelete storage state, and relationship side effects remain incomplete.
+- Gap: Project triggers are compiled and invoked from VM DML for before/after operations with Trigger.new/old/maps/flags/operationType/size basics, rollback on thrown errors, and object-level/field-level addError shaping row SaveResult errors with field lists. Full bulk ordering semantics, recursive limits, and relationship side effects remain incomplete.
 
 ## Developer experience
 

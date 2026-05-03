@@ -11,6 +11,7 @@ type Instruction struct {
 	CatchTypes []string      `json:"catchTypes,omitempty"`
 	Name       string        `json:"name,omitempty"`
 	Expr       Expr          `json:"expr,omitempty"`
+	Field      string        `json:"field,omitempty"`
 	Init       *Instruction  `json:"init,omitempty"`
 	Update     *Instruction  `json:"update,omitempty"`
 	Then       []Instruction `json:"then,omitempty"`

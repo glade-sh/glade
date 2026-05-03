@@ -33,7 +33,7 @@ func TestBuildDescribeRegistry(t *testing.T) {
 		Label: "Widget",
 		Fields: []schema.Field{
 			{Name: "Name", Type: "Text", Required: true},
-			{Name: "Account__c", Type: "Lookup", ReferenceTo: "Account", RelationshipName: "Account__r"},
+			{Name: "Account__c", Type: "Lookup", ReferenceTo: "Account", RelationshipName: "Account__r", ChildRelationshipName: "Widgets__r", DeleteConstraint: "Cascade"},
 		},
 	}}})
 
@@ -49,6 +49,12 @@ func TestBuildDescribeRegistry(t *testing.T) {
 	}
 	if got := describe.Relationships[0].ParentObjects[0]; got != "Account" {
 		t.Fatalf("relationship target = %q", got)
+	}
+	if !describe.Relationships[0].CascadeDelete {
+		t.Fatalf("relationship did not carry cascade delete: %#v", describe.Relationships[0])
+	}
+	if got := describe.Relationships[0].ChildRelationship; got != "Widgets__r" {
+		t.Fatalf("child relationship = %q", got)
 	}
 	definition := ToObjectDefinition(describe)
 	if definition.Fields["Account__c"].Type != storage.FieldReference {

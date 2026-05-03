@@ -369,7 +369,7 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (execOutcome, e
 				return out, err
 			}
 		case ir.OpDML:
-			if err := vm.executeDML(inst.Name, inst.Expr, result); err != nil {
+			if err := vm.executeDML(inst.Name, inst.Expr, inst.Field, result); err != nil {
 				return execOutcome{}, err
 			}
 		default:
@@ -1560,7 +1560,7 @@ func (vm *VM) executeSOQLRows(raw string, execResult *Result) ([]Value, error) {
 	if err != nil {
 		return nil, err
 	}
-	result, err := soql.ParseAndExecute(*vm.Org, queryText)
+	result, err := soql.ParseAndExecuteAt(*vm.Org, queryText, vm.fakeNow)
 	if err != nil {
 		return nil, err
 	}
@@ -1598,6 +1598,11 @@ func (vm *VM) expandSOQLBinds(raw string) (string, error) {
 	for i := 0; i < len(tokens); i++ {
 		token := tokens[i]
 		if token == ":" && i+1 < len(tokens) {
+			if len(out) > 0 && isSOQLDateLiteralPrefix(out[len(out)-1]) {
+				out[len(out)-1] = out[len(out)-1] + ":" + tokens[i+1]
+				i++
+				continue
+			}
 			nameParts := []string{tokens[i+1]}
 			i++
 			for i+2 < len(tokens) && tokens[i+1] == "." {
@@ -1620,12 +1625,21 @@ func (vm *VM) expandSOQLBinds(raw string) (string, error) {
 	return strings.Join(out, " "), nil
 }
 
-func (vm *VM) executeDML(op string, expr ir.Expr, result *Result) error {
+func isSOQLDateLiteralPrefix(token string) bool {
+	switch strings.ToUpper(token) {
+	case "LAST_N_DAYS", "NEXT_N_DAYS":
+		return true
+	default:
+		return false
+	}
+}
+
+func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, result *Result) error {
 	value, err := vm.eval(expr, result)
 	if err != nil {
 		return err
 	}
-	results, err := vm.applyDML(op, value, true, result)
+	results, err := vm.applyDML(op, value, true, externalIDField, result)
 	if err != nil {
 		return err
 	}
@@ -1644,31 +1658,64 @@ func (vm *VM) executeDML(op string, expr ir.Expr, result *Result) error {
 }
 
 func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value, error) {
-	if len(args) == 0 || len(args) > 2 {
-		return Null, fmt.Errorf("Database.%s expects records and optional allOrNone", op)
+	if len(args) == 0 || len(args) > 3 {
+		return Null, fmt.Errorf("Database.%s expects records, optional external id field, and optional allOrNone", op)
 	}
 	allOrNone := true
-	if len(args) == 2 {
-		if args[1].Kind != ValueBool {
+	externalIDField := ""
+	if len(args) >= 2 {
+		if args[1].Kind == ValueBool {
+			allOrNone = args[1].Bool
+		} else if op == "upsert" {
+			field, err := vm.externalIDFieldName(args[1])
+			if err != nil {
+				return Null, err
+			}
+			externalIDField = field
+		} else {
 			return Null, fmt.Errorf("Database.%s allOrNone expects Boolean", op)
 		}
-		allOrNone = args[1].Bool
 	}
-	results, err := vm.applyDML(op, args[0], allOrNone, result)
+	if len(args) == 3 {
+		if op != "upsert" {
+			return Null, fmt.Errorf("Database.%s expects at most records and allOrNone", op)
+		}
+		if args[2].Kind != ValueBool {
+			return Null, fmt.Errorf("Database.%s allOrNone expects Boolean", op)
+		}
+		allOrNone = args[2].Bool
+	}
+	results, err := vm.applyDML(op, args[0], allOrNone, externalIDField, result)
 	if err != nil {
 		return Null, err
 	}
 	values := make([]Value, 0, len(results))
 	for _, dmlResult := range results {
-		row := Object("Database.SaveResult")
+		resultType := "Database.SaveResult"
+		if op == "upsert" {
+			resultType = "Database.UpsertResult"
+		}
+		row := Object(resultType)
 		row.Fields["success"] = Bool(dmlResult.Success)
 		row.Fields["id"] = String(string(dmlResult.ID))
 		row.Fields["error"] = String(dmlResult.Error)
+		if op == "upsert" {
+			row.Fields["created"] = Bool(dmlResult.Created)
+		}
 		errorsList := List()
 		if dmlResult.Error != "" {
 			errValue := Object("Database.Error")
 			errValue.Fields["message"] = String(dmlResult.Error)
-			errValue.Fields["statusCode"] = String("FIELD_CUSTOM_VALIDATION_EXCEPTION")
+			code := dmlResult.StatusCode
+			if code == "" {
+				code = "FIELD_CUSTOM_VALIDATION_EXCEPTION"
+			}
+			errValue.Fields["statusCode"] = String(code)
+			fieldsList := List()
+			for _, f := range dmlResult.Fields {
+				fieldsList.List = append(fieldsList.List, String(f))
+			}
+			errValue.Fields["fields"] = fieldsList
 			errorsList = List(errValue)
 		}
 		row.Fields["errors"] = errorsList
@@ -1681,6 +1728,22 @@ func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value
 		return Null, nil
 	}
 	return values[0], nil
+}
+
+func (vm *VM) externalIDFieldName(value Value) (string, error) {
+	switch value.Kind {
+	case ValueString:
+		return value.Text, nil
+	case ValueObject:
+		if value.Type == "Schema.SObjectField" {
+			field, ok := value.Fields["field"]
+			if !ok || field.Kind != ValueString {
+				return "", fmt.Errorf("Database.upsert external id field token is missing field name")
+			}
+			return field.Text, nil
+		}
+	}
+	return "", fmt.Errorf("Database.upsert external id field expects Schema.SObjectField")
 }
 
 func applyDMLIDs(value *Value, results []dml.Result) {
@@ -1698,7 +1761,66 @@ func applyDMLIDs(value *Value, results []dml.Result) {
 	}
 }
 
-func (vm *VM) applyDML(op string, value Value, allOrNone bool, result *Result) ([]dml.Result, error) {
+func hasDMLFailures(results []dml.Result) bool {
+	for _, result := range results {
+		if !result.Success && result.Error != "" {
+			return true
+		}
+	}
+	return false
+}
+
+func filterDMLInputs(records, before []storage.Record, targets []*Value, failures []dml.Result) ([]storage.Record, []storage.Record, []*Value) {
+	filteredRecords := make([]storage.Record, 0, len(records))
+	filteredBefore := make([]storage.Record, 0, len(before))
+	filteredTargets := make([]*Value, 0, len(targets))
+	for i, record := range records {
+		if i < len(failures) && !failures[i].Success && failures[i].Error != "" {
+			continue
+		}
+		filteredRecords = append(filteredRecords, record)
+		if i < len(before) {
+			filteredBefore = append(filteredBefore, before[i])
+		}
+		if i < len(targets) {
+			filteredTargets = append(filteredTargets, targets[i])
+		}
+	}
+	return filteredRecords, filteredBefore, filteredTargets
+}
+
+func mergeDMLResults(failures, successes []dml.Result) []dml.Result {
+	out := make([]dml.Result, len(failures))
+	successIndex := 0
+	for i, failure := range failures {
+		if !failure.Success && failure.Error != "" {
+			out[i] = failure
+			continue
+		}
+		if successIndex < len(successes) {
+			out[i] = successes[successIndex]
+			successIndex++
+		}
+	}
+	return out
+}
+
+func mergeDMLFailuresInPlace(target, source []dml.Result) {
+	for i, failure := range source {
+		if i >= len(target) || failure.Success || failure.Error == "" {
+			continue
+		}
+		if target[i].Error == "" {
+			target[i] = failure
+			continue
+		}
+		target[i].Error += "; " + failure.Error
+		target[i].StatusCode = failure.StatusCode
+		target[i].Fields = append(target[i].Fields, failure.Fields...)
+	}
+}
+
+func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField string, result *Result) ([]dml.Result, error) {
 	if vm.Org == nil {
 		return nil, fmt.Errorf("DML requires org state")
 	}
@@ -1726,9 +1848,20 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, result *Result) (
 		return nil, err
 	}
 	backup := vm.Org.Clone()
-	if err := vm.runTriggers(triggerTimingBefore, op, records, before, result); err != nil {
+	beforeFailures, err := vm.runTriggers(triggerTimingBefore, op, records, before, result)
+	if err != nil {
 		*vm.Org = backup
 		return nil, err
+	}
+	if hasDMLFailures(beforeFailures) {
+		if allOrNone {
+			*vm.Org = backup
+			return beforeFailures, nil
+		}
+		records, before, targets = filterDMLInputs(records, before, targets, beforeFailures)
+		if len(records) == 0 {
+			return beforeFailures, nil
+		}
 	}
 	engine := dml.NewEngine(vm.Org)
 	var results []dml.Result
@@ -1740,11 +1873,18 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, result *Result) (
 	case "delete":
 		results = engine.Delete(records)
 	case "upsert":
-		results = engine.Upsert(records)
+		if externalIDField != "" {
+			results = engine.UpsertWithExternalID(records, externalIDField)
+		} else {
+			results = engine.Upsert(records)
+		}
 	case "undelete":
 		results = engine.Undelete(records)
 	default:
 		return nil, fmt.Errorf("unsupported DML operation %s", op)
+	}
+	if hasDMLFailures(beforeFailures) {
+		results = mergeDMLResults(beforeFailures, results)
 	}
 	if allOrNone {
 		for _, dmlResult := range results {
@@ -1766,7 +1906,7 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, result *Result) (
 		}
 		return results, err
 	}
-	if err := vm.runTriggers(triggerTimingAfter, op, afterRecords, before, result); err != nil {
+	if _, err := vm.runTriggers(triggerTimingAfter, op, afterRecords, before, result); err != nil {
 		if allOrNone {
 			*vm.Org = backup
 		}
@@ -1852,6 +1992,9 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 		ExplicitNulls: make(map[string]bool),
 	}
 	for field, fieldValue := range value.Fields {
+		if field == sobjectErrorsField {
+			continue
+		}
 		if field == "Id" {
 			if fieldValue.Kind == ValueString {
 				record.ID = storage.ID(fieldValue.Text)
@@ -1889,6 +2032,13 @@ func vmValueFromRecord(record storage.Record) Value {
 	}
 	for field, fieldValue := range record.Fields {
 		putVMFieldPath(value, field, vmValueFromStorage(fieldValue))
+	}
+	for relationship, records := range record.Children {
+		children := make([]Value, 0, len(records))
+		for _, child := range records {
+			children = append(children, vmValueFromRecord(child))
+		}
+		value.Fields[relationship] = List(children...)
 	}
 	for field, isNull := range record.ExplicitNulls {
 		if isNull {
@@ -1938,9 +2088,27 @@ func storageValueFromVMForField(value Value, fieldType storage.FieldType) (stora
 		return storageValueFromVM(value)
 	}
 	switch fieldType {
-	case storage.FieldID, storage.FieldString, storage.FieldPicklist, storage.FieldReference, storage.FieldDate, storage.FieldDateTime:
+	case storage.FieldID, storage.FieldString, storage.FieldPicklist, storage.FieldReference:
 		if value.Kind == ValueString {
 			return storageValueFromVM(value)
+		}
+	case storage.FieldDate:
+		if value.Kind == ValueString {
+			return storage.DateValue(value.Text), nil
+		}
+		if value.Kind == ValueObject && value.Type == "Date" {
+			if raw, ok := value.Fields["value"]; ok && raw.Kind == ValueString {
+				return storage.DateValue(raw.Text), nil
+			}
+		}
+	case storage.FieldDateTime:
+		if value.Kind == ValueString {
+			return storage.DateTimeValue(value.Text), nil
+		}
+		if value.Kind == ValueObject && value.Type == "Datetime" {
+			if raw, ok := value.Fields["value"]; ok && raw.Kind == ValueString {
+				return storage.DateTimeValue(raw.Text), nil
+			}
 		}
 	case storage.FieldBoolean:
 		if value.Kind == ValueBool {
@@ -2063,23 +2231,29 @@ func (vm *VM) afterRecords(op string, records []storage.Record, results []dml.Re
 	return out, nil
 }
 
-func (vm *VM) runTriggers(timing, op string, records, oldRecords []storage.Record, result *Result) error {
+func (vm *VM) runTriggers(timing, op string, records, oldRecords []storage.Record, result *Result) ([]dml.Result, error) {
 	if len(records) == 0 {
-		return nil
+		return nil, nil
 	}
 	object := records[0].Object
+	failures := make([]dml.Result, len(records))
 	for _, trigger := range vm.Triggers[object] {
 		if trigger.Timing != timing || trigger.Operation != op {
 			continue
 		}
-		if err := vm.runTrigger(trigger, records, oldRecords, result); err != nil {
-			return err
+		triggerFailures, err := vm.runTrigger(trigger, records, oldRecords, result)
+		if err != nil {
+			return nil, err
 		}
+		mergeDMLFailuresInPlace(failures, triggerFailures)
 	}
-	return nil
+	if hasDMLFailures(failures) {
+		return failures, nil
+	}
+	return nil, nil
 }
 
-func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, result *Result) error {
+func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, result *Result) ([]dml.Result, error) {
 	caller := vm.Globals
 	callerClass := vm.currentClass
 	frame := make(map[string]Value)
@@ -2097,29 +2271,33 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 	}()
 	out, err := vm.executeProgram(trigger.Program, result)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if out.signal == signalThrow {
-		return &apexThrowError{value: out.thrown, stack: append([]callFrame(nil), vm.callStack...)}
+		return nil, &apexThrowError{value: out.thrown, stack: append([]callFrame(nil), vm.callStack...)}
 	}
 	if trigger.Timing == triggerTimingBefore {
 		if updated := ctx["Trigger.new"]; updated.Kind == ValueList {
+			failures := dmlResultsFromSObjectErrors(records, updated.List)
 			for i, item := range updated.List {
 				if i >= len(records) {
 					break
 				}
 				record, err := vm.recordFromValue(&item)
 				if err != nil {
-					return err
+					return nil, err
 				}
 				if records[i].ID != "" && record.ID == "" {
 					record.ID = records[i].ID
 				}
 				records[i] = record
 			}
+			if hasDMLFailures(failures) {
+				return failures, nil
+			}
 		}
 	}
-	return nil
+	return nil, nil
 }
 
 func triggerContext(trigger Trigger, records, oldRecords []storage.Record) map[string]Value {
@@ -2364,6 +2542,9 @@ func (vm *VM) lookup(name string) (Value, error) {
 		if root, ok := vm.Globals[parts[0]]; ok {
 			return vm.lookupPath(root, parts[1:])
 		}
+		if token, ok := vm.lookupSObjectFieldToken(parts); ok {
+			return token, nil
+		}
 		if className, memberName, ok := vm.splitClassMember(name); ok {
 			if field, owner, ok := vm.lookupStaticField(className, memberName); ok {
 				if err := vm.checkMemberAccess(owner, field.Access, owner+"."+memberName); err != nil {
@@ -2408,6 +2589,34 @@ func (vm *VM) lookup(name string) (Value, error) {
 		}
 	}
 	return Null, fmt.Errorf("unknown variable %q", name)
+}
+
+func (vm *VM) lookupSObjectFieldToken(parts []string) (Value, bool) {
+	if vm.Org == nil || len(parts) < 2 {
+		return Null, false
+	}
+	objectName, ok := storage.ResolveObjectName(*vm.Org, parts[0])
+	if !ok {
+		return Null, false
+	}
+	fieldName := ""
+	switch {
+	case len(parts) == 2:
+		fieldName = parts[1]
+	case len(parts) == 3 && strings.EqualFold(parts[1], "Fields"):
+		fieldName = parts[2]
+	default:
+		return Null, false
+	}
+	definition := vm.Org.Objects[objectName].Definition
+	canonical, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, fieldName)
+	if !ok {
+		return Null, false
+	}
+	token := Object("Schema.SObjectField")
+	token.Fields["object"] = String(objectName)
+	token.Fields["field"] = String(canonical)
+	return token, true
 }
 
 func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
@@ -3785,6 +3994,12 @@ func (vm *VM) callMember(callee string, args []Value, result *Result) (Value, bo
 	if len(parts) > 2 {
 		receiverName = strings.Join(parts[:len(parts)-1], ".")
 		method = parts[len(parts)-1]
+		if method == "addError" {
+			value, handled, err := vm.callSObjectFieldAddError(parts[:len(parts)-1], args)
+			if handled || err != nil {
+				return value, true, err
+			}
+		}
 		receiver, err := vm.lookup(receiverName)
 		if err != nil {
 			if _, ok := vm.Globals[parts[0]]; ok {
@@ -3799,6 +4014,34 @@ func (vm *VM) callMember(callee string, args []Value, result *Result) (Value, bo
 		return Null, false, nil
 	}
 	return vm.callValueMember(receiverName, receiver, method, args, result)
+}
+
+func (vm *VM) callSObjectFieldAddError(path []string, args []Value) (Value, bool, error) {
+	if len(path) != 2 {
+		return Null, false, nil
+	}
+	if len(args) != 1 {
+		return Null, true, fmt.Errorf("SObject field addError expects message")
+	}
+	root, ok := vm.Globals[path[0]]
+	if !ok || root.Kind != ValueObject || !vm.isSObjectType(root.Type) {
+		return Null, false, nil
+	}
+	field := vm.resolveSObjectFieldName(root.Type, path[1])
+	if _, ok := root.Fields[field]; !ok {
+		if _, ok := root.Fields[path[1]]; !ok {
+			return Null, false, nil
+		}
+	}
+	message := args[0].String()
+	if args[0].Kind == ValueObject {
+		if value, ok := args[0].Fields["message"]; ok {
+			message = value.String()
+		}
+	}
+	addSObjectError(&root, message, []string{field})
+	vm.Globals[path[0]] = root
+	return Null, true, nil
 }
 
 func (vm *VM) callValueMember(receiverName string, receiver Value, method string, args []Value, result *Result) (Value, bool, error) {
@@ -3817,13 +4060,15 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 		if value, handled, err := vm.callEnumMember(receiver, method, args); handled || err != nil {
 			return value, true, err
 		}
-		if value, handled, err := vm.callSObjectMember(receiver, method, args); handled || err != nil {
-			if method == "put" {
-				if err := vm.storeReceiver(receiverName, receiver); err != nil {
-					return Null, true, err
+		if vm.isSObjectType(receiver.Type) {
+			if value, handled, err := vm.callSObjectMember(receiver, method, args); handled || err != nil {
+				if method == "put" || method == "addError" {
+					if err := vm.storeReceiver(receiverName, receiver); err != nil {
+						return Null, true, err
+					}
 				}
+				return value, true, err
 			}
-			return value, true, err
 		}
 		if value, updated, mutated, handled, err := vm.callPlatformObjectMember(receiver, method, args); handled || err != nil {
 			if mutated {
@@ -3963,8 +4208,38 @@ func (vm *VM) storeReceiver(receiverName string, value Value) error {
 	return nil
 }
 
+func (vm *VM) isSObjectType(typeName string) bool {
+	if vm.Org == nil {
+		return false
+	}
+	_, ok := storage.ResolveObjectName(*vm.Org, typeName)
+	return ok
+}
+
 func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Value, bool, error) {
 	switch method {
+	case "addError":
+		if len(args) != 1 {
+			return Null, true, fmt.Errorf("SObject.addError expects message")
+		}
+		message := args[0].String()
+		if args[0].Kind == ValueObject {
+			if value, ok := args[0].Fields["message"]; ok {
+				message = value.String()
+			}
+		}
+		addSObjectError(&receiver, message, nil)
+		return Null, true, nil
+	case "hasErrors":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("SObject.hasErrors expects 0 arguments")
+		}
+		return Bool(len(sobjectErrors(receiver)) > 0), true, nil
+	case "getErrors":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("SObject.getErrors expects 0 arguments")
+		}
+		return List(sobjectErrors(receiver)...), true, nil
 	case "get":
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, true, fmt.Errorf("SObject.get expects field name String")
@@ -3984,6 +4259,67 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 	default:
 		return Null, false, nil
 	}
+}
+
+const sobjectErrorsField = "__oaer_errors"
+
+func addSObjectError(value *Value, message string, fields []string) {
+	if value.Fields == nil {
+		value.Fields = make(map[string]Value)
+	}
+	errorValue := Object("Database.Error")
+	errorValue.Fields["message"] = String(message)
+	errorValue.Fields["statusCode"] = String("FIELD_CUSTOM_VALIDATION_EXCEPTION")
+	fieldsList := List()
+	for _, field := range fields {
+		fieldsList.List = append(fieldsList.List, String(field))
+	}
+	errorValue.Fields["fields"] = fieldsList
+	errorsList, ok := value.Fields[sobjectErrorsField]
+	if !ok || errorsList.Kind != ValueList {
+		errorsList = List()
+	}
+	errorsList.List = append(errorsList.List, errorValue)
+	value.Fields[sobjectErrorsField] = errorsList
+}
+
+func sobjectErrors(value Value) []Value {
+	errorsList, ok := value.Fields[sobjectErrorsField]
+	if !ok || errorsList.Kind != ValueList {
+		return nil
+	}
+	return append([]Value(nil), errorsList.List...)
+}
+
+func dmlResultsFromSObjectErrors(records []storage.Record, values []Value) []dml.Result {
+	results := make([]dml.Result, len(records))
+	for i, value := range values {
+		if i >= len(results) {
+			break
+		}
+		errors := sobjectErrors(value)
+		if len(errors) == 0 {
+			continue
+		}
+		message := "record blocked by addError"
+		statusCode := "FIELD_CUSTOM_VALIDATION_EXCEPTION"
+		var fields []string
+		if first := errors[0]; first.Kind == ValueObject {
+			if value, ok := first.Fields["message"]; ok {
+				message = value.String()
+			}
+			if value, ok := first.Fields["statusCode"]; ok {
+				statusCode = value.String()
+			}
+			if value, ok := first.Fields["fields"]; ok && value.Kind == ValueList {
+				for _, field := range value.List {
+					fields = append(fields, field.String())
+				}
+			}
+		}
+		results[i] = dml.Result{ID: records[i].ID, Success: false, Error: message, StatusCode: statusCode, Fields: fields}
+	}
+	return results
 }
 
 func (vm *VM) resolveSObjectFieldName(typeName, field string) string {
@@ -4173,6 +4509,32 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			return receiver.Fields["errors"], receiver, false, true, nil
 		}
+	case "Database.UpsertResult":
+		switch method {
+		case "isSuccess":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Database.UpsertResult.isSuccess expects 0 arguments")
+			}
+			return receiver.Fields["success"], receiver, false, true, nil
+		case "getId":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Database.UpsertResult.getId expects 0 arguments")
+			}
+			return receiver.Fields["id"], receiver, false, true, nil
+		case "isCreated":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Database.UpsertResult.isCreated expects 0 arguments")
+			}
+			if created, ok := receiver.Fields["created"]; ok {
+				return created, receiver, false, true, nil
+			}
+			return Bool(false), receiver, false, true, nil
+		case "getErrors":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Database.UpsertResult.getErrors expects 0 arguments")
+			}
+			return receiver.Fields["errors"], receiver, false, true, nil
+		}
 	case "Database.Error":
 		switch method {
 		case "getMessage":
@@ -4185,6 +4547,14 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Database.Error.getStatusCode expects 0 arguments")
 			}
 			return receiver.Fields["statusCode"], receiver, false, true, nil
+		case "getFields":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Database.Error.getFields expects 0 arguments")
+			}
+			if fields, ok := receiver.Fields["fields"]; ok {
+				return fields, receiver, false, true, nil
+			}
+			return List(), receiver, false, true, nil
 		}
 	case "Exception":
 		if method == "getMessage" {

@@ -240,32 +240,77 @@ a Salesforce-shaped local API server without silently wrong behavior.
   behavior, explicit null behavior, and system fields.
 - [ ] Complete schema describe objects, field describes, record type info,
   picklists, relationship metadata, and common describe-heavy code paths.
-- [ ] Complete static SOQL parsing/execution for common selector-layer queries.
+- [x] Expand static SOQL parsing/execution with `AND`/`OR`, `IN`/`NOT IN`,
+  `LIKE`, comparison operators, `NOT`, and parenthesized conditions.
+  - **Limitation**: Apex compiler does not support chained method calls
+    (e.g., `obj.getErrors().get(0)`); intermediate variables are required.
+  - **Limitation**: SOQL string literals inside Apex `[SELECT ...]` were missing
+    quotes due to a compiler lexer bug; this has been fixed, but complex string
+    escapes inside SOQL literals may still have edge cases.
 - [ ] Complete dynamic SOQL binding and runtime parse/error behavior for
   `Database.query`.
-- [ ] Add relationship child subqueries.
+- [x] Add relationship child subqueries.
+  - [x] Support child relationship query projection with metadata-driven
+    relationship names, child filters, ordering, limits, and VM list row shape.
 - [ ] Expand parent relationship traversal and polymorphic relationship
   behavior.
-- [ ] Add aggregates: `COUNT`, `COUNT(field)`, `COUNT_DISTINCT`, `SUM`, `MIN`,
+- [x] Add aggregates: `COUNT`, `COUNT(field)`, `COUNT_DISTINCT`, `SUM`, `MIN`,
   `MAX`, `AVG`, `GROUP BY`, `ROLLUP`, `CUBE`, and `HAVING`.
-- [ ] Add complex predicates: `IN`, `NOT IN`, `LIKE`, boolean combinations,
-  date literals, null semantics, semi-joins, anti-joins, and formula-adjacent
-  behavior where locally representable.
+  - [x] Support no-`GROUP BY` `COUNT()`, `COUNT(field)`, `COUNT_DISTINCT`,
+    `SUM`, `MIN`, `MAX`, and `AVG` with `AggregateResult.exprN` fields.
+  - [x] Support `GROUP BY`, `HAVING` on aggregate expressions, grouped field
+    projection, and grouped result ordering/limits for aggregate rows.
+  - [x] Support aggregate aliases on `AggregateResult` rows while preserving
+    `exprN` fields.
+  - [x] Support `ROLLUP`, `CUBE`, and `GROUPING(field)` subtotal metadata.
+- [x] Add complex predicates: `IN`, `NOT IN`, `LIKE`, boolean combinations,
+  null semantics, and comparison operators (`>`, `<`, `>=`, `<=`).
+  - [x] Support common date literals including `TODAY`, `YESTERDAY`,
+    `TOMORROW`, `LAST_N_DAYS:n`, `NEXT_N_DAYS:n`, and month/year ranges.
+  - [x] Support semi-joins and anti-joins with single-field subqueries in
+    `IN`/`NOT IN` predicates.
+  - [x] Match SOQL `LIKE` and `NOT LIKE` ASCII letters case-insensitively.
+  - [x] Support comma-separated `ORDER BY ASC` and `ORDER BY DESC` for normal,
+    aggregate, and child relationship query rows.
+  - [x] Support explicit `NULLS FIRST` and `NULLS LAST` ordering modifiers.
+  - **Limitation**: Formula-adjacent predicate behavior remains incomplete.
 - [ ] Add SOQL features commonly used by real projects: `FIELDS()`, `TYPEOF`,
   security clauses, `FOR UPDATE` handling, and query row shape fidelity.
 - [ ] Wire SQLite planning or indexed execution where needed without changing
   Salesforce-visible behavior.
 - [ ] Complete Apex DML statements: `insert`, `update`, `delete`, `upsert`,
   `undelete`, and `merge`.
-- [ ] Complete `Database.insert/update/delete/upsert/undelete` result fidelity,
-  error arrays, `allOrNone`, partial success, and status codes.
-- [ ] Complete external-ID upsert and ID/object mismatch behavior.
+  - [x] Support soft delete visibility and undelete restoration for VM/SOQL
+    paths.
+- [x] Improve `Database.insert/update/delete/upsert/undelete` result fidelity
+  with structured `Database.Error` objects carrying `statusCode`, `message`, and
+  `fields` arrays; add `Database.UpsertResult.isCreated()`.
+  - [x] Cascade soft-delete child records from relationship metadata.
+  - **Limitation**: Merge and full undelete edge-case parity remain incomplete.
+  - **Limitation**: The VM `Database.Error` shape covers the most common status
+    codes; full Salesforce status-code parity is not yet complete.
+- [x] Complete external-ID upsert and ID/object mismatch behavior.
+  - [x] Support implicit external-ID matching for upsert when an external ID field
+    is populated and reject ID/object key-prefix mismatches.
+  - [x] Support explicit `upsert rows Field__c` and
+    `Database.upsert(rows, Field__c, ...)` field-token overloads.
 - [ ] Implement validation rules, required fields, uniqueness, foreign-key
   behavior, and relationship constraints where representable locally.
+  - [x] Enforce required/unknown fields, unique fields, lookup reference
+    existence, and restricted-delete lookup constraints.
+  - **Limitation**: Formula-backed validation rules, owner/sharing side effects,
+    and broad relationship constraints remain incomplete.
 - [ ] Complete trigger ordering, before/after state, bulk execution,
   recursion behavior, operation type, maps, old/new values, and rollback on
   failures.
 - [ ] Implement `addError` behavior on SObjects and fields.
+  - [x] Support object-level `SObject.addError`, `hasErrors`, and `getErrors`
+    in before-trigger DML with row-level `SaveResult` error shaping and
+    all-or-none rollback.
+  - [x] Support field-level `someRecord.Field__c.addError(...)` with
+    `Database.Error.getFields()` attribution.
+  - **Limitation**: Richer multi-error ordering and advanced overload parity
+    remain incomplete.
 - [ ] Add trigger fixtures covering insert/update/delete/upsert/undelete,
   all-or-none failures, partial success, recursion, and bulk batches.
 
