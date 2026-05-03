@@ -492,8 +492,14 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Track fixture aliases with object type and generated ID for every record.
   - [x] Support qualified `Object.alias` refs and reject ambiguous short aliases.
   - [x] Validate `fieldRefs` against reference field target metadata.
-- [ ] Expand deterministic platform data for users, profiles, roles,
+- [x] Expand deterministic platform data for users, profiles, roles,
   permission sets, permission assignments, record types, and org settings.
+  - [x] Seed deterministic `Organization`, `Profile`, `UserRole`, `User`,
+    `PermissionSet`, `PermissionSetAssignment`, and `RecordType` objects.
+  - [x] Add locale/timezone/language, role, and permission metadata fields for
+    local user/org state.
+  - [x] Materialize object record-type metadata as deterministic `RecordType`
+    records.
 - [ ] Add fixture reset endpoints that can reset data, users, platform state,
   limits, and async queues deterministically.
 - [ ] Add persistent server database lifecycle docs and operational checks.

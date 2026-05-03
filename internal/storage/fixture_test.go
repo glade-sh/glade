@@ -188,11 +188,88 @@ func fixtureRelationshipOrg() OrgState {
 
 func TestEnsureDeterministicPlatformData(t *testing.T) {
 	org := NewOrgState()
+	org.Objects["Account"] = ObjectState{
+		Definition: ObjectDefinition{APIName: "Account", KeyPrefix: "001", Fields: map[string]Field{"Name": {APIName: "Name", Type: FieldString}}},
+		Records:    make(map[ID]Record),
+	}
 	EnsureDeterministicPlatformData(&org)
+	for _, objectName := range []string{"Organization", "UserRole", "User", "Profile", "PermissionSet", "PermissionSetAssignment", "RecordType"} {
+		if len(org.Objects[objectName].Records) != 1 {
+			t.Fatalf("%s records = %#v", objectName, InspectOrg("", org))
+		}
+	}
+	if len(org.Objects["Account"].Definition.RecordTypes) != 1 {
+		t.Fatalf("account record types = %#v", org.Objects["Account"].Definition.RecordTypes)
+	}
+	recordTypeID := org.Objects["Account"].Definition.RecordTypes[0].ID
+	if recordTypeID == "" {
+		t.Fatalf("missing Account record type ID")
+	}
+	if _, ok := org.Objects["RecordType"].Records[recordTypeID]; !ok {
+		t.Fatalf("missing RecordType record %s: %#v", recordTypeID, org.Objects["RecordType"].Records)
+	}
 	if len(org.Objects["User"].Records) != 1 || len(org.Objects["Profile"].Records) != 1 {
 		t.Fatalf("platform records = %#v", InspectOrg("", org))
 	}
-	if _, ok := org.Objects["User"].Records["005000000000001"]; !ok {
+	user, ok := org.Objects["User"].Records["005000000000001"]
+	if !ok {
 		t.Fatalf("missing deterministic user: %#v", org.Objects["User"].Records)
+	}
+	if user.Fields["UserRoleId"].ID != "00E000000000001" || user.Fields["LocaleSidKey"].String != "en_US" || user.Fields["TimeZoneSidKey"].String != "UTC" {
+		t.Fatalf("user fields = %#v", user.Fields)
+	}
+	orgRecord := org.Objects["Organization"].Records["00D000000000001"]
+	if orgRecord.Fields["IsSandbox"].Kind != ValueBoolean || !orgRecord.Fields["IsSandbox"].Boolean {
+		t.Fatalf("organization fields = %#v", orgRecord.Fields)
+	}
+}
+
+func TestEnsureDeterministicPlatformDataSkipsUsedRecordTypeIDs(t *testing.T) {
+	org := NewOrgState()
+	org.Objects["RecordType"] = ObjectState{
+		Definition: ObjectDefinition{APIName: "RecordType", KeyPrefix: "012", Fields: map[string]Field{}},
+		Records: map[ID]Record{
+			"012000000000001": {ID: "012000000000001", Object: "RecordType", Fields: map[string]Value{"SobjectType": StringValue("Contact")}},
+		},
+	}
+	org.Objects["Account"] = ObjectState{
+		Definition: ObjectDefinition{APIName: "Account", KeyPrefix: "001", Fields: map[string]Field{"Name": {APIName: "Name", Type: FieldString}}},
+		Records:    make(map[ID]Record),
+	}
+	EnsureDeterministicPlatformData(&org)
+	info := org.Objects["Account"].Definition.RecordTypes[0]
+	if info.ID == "012000000000001" || info.ID == "" {
+		t.Fatalf("record type id = %q", info.ID)
+	}
+	record := org.Objects["RecordType"].Records[info.ID]
+	if record.Fields["SobjectType"].String != "Account" {
+		t.Fatalf("record type record = %#v", record)
+	}
+}
+
+func TestEnsureDeterministicPlatformDataAdvancesRecordTypeSequenceToMaxID(t *testing.T) {
+	org := NewOrgState()
+	org.Objects["RecordType"] = ObjectState{
+		Definition: ObjectDefinition{APIName: "RecordType", KeyPrefix: "012", Fields: map[string]Field{}},
+		Records: map[ID]Record{
+			"012000000000010": {ID: "012000000000010", Object: "RecordType", Fields: map[string]Value{"SobjectType": StringValue("Contact")}},
+		},
+	}
+	org.Objects["Account"] = ObjectState{
+		Definition: ObjectDefinition{APIName: "Account", KeyPrefix: "001", Fields: map[string]Field{"Name": {APIName: "Name", Type: FieldString}}},
+		Records:    make(map[ID]Record),
+	}
+	EnsureDeterministicPlatformData(&org)
+	if got := org.IDSequences["RecordType"]; got != 36 {
+		t.Fatalf("RecordType sequence = %d, want 36", got)
+	}
+	generator := NewIDGenerator(prefixesForOrg(org))
+	generator.Sequences = copySequences(org.IDSequences)
+	next, err := generator.Next("RecordType")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, exists := org.Objects["RecordType"].Records[next]; exists {
+		t.Fatalf("next RecordType ID %s collides with existing records", next)
 	}
 }

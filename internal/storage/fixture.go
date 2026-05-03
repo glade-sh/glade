@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -255,53 +256,113 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	if org.Objects == nil {
 		org.Objects = make(map[string]ObjectState)
 	}
+	ensureObject(org, "Organization", "00D", map[string]Field{
+		"Name":                 {APIName: "Name", Type: FieldString},
+		"InstanceName":         {APIName: "InstanceName", Type: FieldString},
+		"IsSandbox":            {APIName: "IsSandbox", Type: FieldBoolean},
+		"DefaultLocaleSidKey":  {APIName: "DefaultLocaleSidKey", Type: FieldString},
+		"TimeZoneSidKey":       {APIName: "TimeZoneSidKey", Type: FieldString},
+		"LanguageLocaleKey":    {APIName: "LanguageLocaleKey", Type: FieldString},
+		"OrganizationType":     {APIName: "OrganizationType", Type: FieldString},
+		"FiscalYearStartMonth": {APIName: "FiscalYearStartMonth", Type: FieldInteger},
+	})
 	ensureObject(org, "Profile", "00e", map[string]Field{
 		"Name": {APIName: "Name", Type: FieldString, Required: true},
 	})
+	ensureObject(org, "UserRole", "00E", map[string]Field{
+		"Name":          {APIName: "Name", Type: FieldString, Required: true},
+		"DeveloperName": {APIName: "DeveloperName", Type: FieldString},
+		"ParentRoleId":  {APIName: "ParentRoleId", Type: FieldReference, ReferenceTo: []string{"UserRole"}, RelationshipName: "ParentRole"},
+	})
 	ensureObject(org, "User", "005", map[string]Field{
-		"Username":    {APIName: "Username", Type: FieldString, Required: true},
-		"Alias":       {APIName: "Alias", Type: FieldString},
-		"Email":       {APIName: "Email", Type: FieldString},
-		"ProfileId":   {APIName: "ProfileId", Type: FieldReference, ReferenceTo: []string{"Profile"}, RelationshipName: "Profile"},
-		"IsActive":    {APIName: "IsActive", Type: FieldBoolean},
-		"UserType":    {APIName: "UserType", Type: FieldString},
-		"Permissions": {APIName: "Permissions", Type: FieldAny},
+		"Username":          {APIName: "Username", Type: FieldString, Required: true},
+		"Alias":             {APIName: "Alias", Type: FieldString},
+		"Email":             {APIName: "Email", Type: FieldString},
+		"ProfileId":         {APIName: "ProfileId", Type: FieldReference, ReferenceTo: []string{"Profile"}, RelationshipName: "Profile"},
+		"UserRoleId":        {APIName: "UserRoleId", Type: FieldReference, ReferenceTo: []string{"UserRole"}, RelationshipName: "UserRole"},
+		"IsActive":          {APIName: "IsActive", Type: FieldBoolean},
+		"UserType":          {APIName: "UserType", Type: FieldString},
+		"LocaleSidKey":      {APIName: "LocaleSidKey", Type: FieldString},
+		"LanguageLocaleKey": {APIName: "LanguageLocaleKey", Type: FieldString},
+		"TimeZoneSidKey":    {APIName: "TimeZoneSidKey", Type: FieldString},
+		"EmailEncodingKey":  {APIName: "EmailEncodingKey", Type: FieldString},
+		"Permissions":       {APIName: "Permissions", Type: FieldAny},
 	})
 	ensureObject(org, "PermissionSet", "0PS", map[string]Field{
-		"Name":  {APIName: "Name", Type: FieldString, Required: true},
-		"Label": {APIName: "Label", Type: FieldString},
+		"Name":             {APIName: "Name", Type: FieldString, Required: true},
+		"Label":            {APIName: "Label", Type: FieldString},
+		"Type":             {APIName: "Type", Type: FieldString},
+		"IsOwnedByProfile": {APIName: "IsOwnedByProfile", Type: FieldBoolean},
 	})
 	ensureObject(org, "PermissionSetAssignment", "0Pa", map[string]Field{
 		"AssigneeId":      {APIName: "AssigneeId", Type: FieldReference, ReferenceTo: []string{"User"}, RelationshipName: "Assignee"},
 		"PermissionSetId": {APIName: "PermissionSetId", Type: FieldReference, ReferenceTo: []string{"PermissionSet"}, RelationshipName: "PermissionSet"},
 	})
+	ensureObject(org, "RecordType", "012", map[string]Field{
+		"Name":          {APIName: "Name", Type: FieldString},
+		"DeveloperName": {APIName: "DeveloperName", Type: FieldString},
+		"SobjectType":   {APIName: "SobjectType", Type: FieldString},
+		"IsActive":      {APIName: "IsActive", Type: FieldBoolean},
+		"Description":   {APIName: "Description", Type: FieldString},
+	})
+	orgID := ID("00D000000000001")
 	profileID := ID("00e000000000001")
+	roleID := ID("00E000000000001")
 	userID := ID("005000000000001")
 	permissionSetID := ID("0PS000000000001")
 	assignmentID := ID("0Pa000000000001")
+	putSeedRecord(org, "Organization", Record{
+		ID:     orgID,
+		Object: "Organization",
+		Fields: map[string]Value{
+			"Name":                 StringValue("OAER Local Org"),
+			"InstanceName":         StringValue("LOCAL"),
+			"IsSandbox":            BooleanValue(true),
+			"DefaultLocaleSidKey":  StringValue("en_US"),
+			"TimeZoneSidKey":       StringValue("UTC"),
+			"LanguageLocaleKey":    StringValue("en_US"),
+			"OrganizationType":     StringValue("Developer Edition"),
+			"FiscalYearStartMonth": IntegerValue(1),
+		},
+	})
 	putSeedRecord(org, "Profile", Record{
 		ID:     profileID,
 		Object: "Profile",
 		Fields: map[string]Value{"Name": StringValue("System Administrator")},
 	})
+	putSeedRecord(org, "UserRole", Record{
+		ID:     roleID,
+		Object: "UserRole",
+		Fields: map[string]Value{
+			"Name":          StringValue("CEO"),
+			"DeveloperName": StringValue("CEO"),
+		},
+	})
 	putSeedRecord(org, "User", Record{
 		ID:     userID,
 		Object: "User",
 		Fields: map[string]Value{
-			"Username":  StringValue("system@example.invalid"),
-			"Alias":     StringValue("system"),
-			"Email":     StringValue("system@example.invalid"),
-			"ProfileId": IDValue(profileID),
-			"IsActive":  BooleanValue(true),
-			"UserType":  StringValue("Standard"),
+			"Username":          StringValue("system@example.invalid"),
+			"Alias":             StringValue("system"),
+			"Email":             StringValue("system@example.invalid"),
+			"ProfileId":         IDValue(profileID),
+			"UserRoleId":        IDValue(roleID),
+			"IsActive":          BooleanValue(true),
+			"UserType":          StringValue("Standard"),
+			"LocaleSidKey":      StringValue("en_US"),
+			"LanguageLocaleKey": StringValue("en_US"),
+			"TimeZoneSidKey":    StringValue("UTC"),
+			"EmailEncodingKey":  StringValue("UTF-8"),
 		},
 	})
 	putSeedRecord(org, "PermissionSet", Record{
 		ID:     permissionSetID,
 		Object: "PermissionSet",
 		Fields: map[string]Value{
-			"Name":  StringValue("OaerBaseline"),
-			"Label": StringValue("OAER Baseline"),
+			"Name":             StringValue("OaerBaseline"),
+			"Label":            StringValue("OAER Baseline"),
+			"Type":             StringValue("Regular"),
+			"IsOwnedByProfile": BooleanValue(false),
 		},
 	})
 	putSeedRecord(org, "PermissionSetAssignment", Record{
@@ -312,17 +373,99 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 			"PermissionSetId": IDValue(permissionSetID),
 		},
 	})
+	ensureRecordTypeRecords(org)
 	if org.IDSequences == nil {
 		org.IDSequences = make(map[string]uint64)
 	}
 	for object, sequence := range map[string]uint64{
+		"Organization":            1,
 		"Profile":                 1,
+		"UserRole":                1,
 		"User":                    1,
 		"PermissionSet":           1,
 		"PermissionSetAssignment": 1,
+		"RecordType":              maxRecordTypeSequence(*org),
 	} {
 		if org.IDSequences[object] < sequence {
 			org.IDSequences[object] = sequence
+		}
+	}
+}
+
+func maxRecordTypeSequence(org OrgState) uint64 {
+	var max uint64
+	for id := range org.Objects["RecordType"].Records {
+		text := string(id)
+		if len(text) < 4 || !strings.HasPrefix(text, "012") {
+			continue
+		}
+		sequence, err := strconv.ParseUint(text[3:], 36, 64)
+		if err != nil {
+			continue
+		}
+		if sequence > max {
+			max = sequence
+		}
+	}
+	return max
+}
+
+func ensureRecordTypeRecords(org *OrgState) {
+	usedIDs := make(map[ID]bool)
+	if recordTypeObject := org.Objects["RecordType"]; len(recordTypeObject.Records) > 0 {
+		for id := range recordTypeObject.Records {
+			usedIDs[id] = true
+		}
+	}
+	next := uint64(1)
+	objectNames := objectNamesFromOrg(*org)
+	sort.Strings(objectNames)
+	for _, objectName := range objectNames {
+		if objectName == "RecordType" {
+			continue
+		}
+		object := org.Objects[objectName]
+		if len(object.Definition.RecordTypes) == 0 && objectName == "Account" {
+			object.Definition.RecordTypes = []RecordTypeInfo{{
+				DeveloperName: "Business",
+				Name:          "Business Account",
+				Active:        true,
+				Available:     true,
+				Default:       true,
+			}}
+		}
+		for i, info := range object.Definition.RecordTypes {
+			if info.ID == "" {
+				info.ID, next = nextUnusedRecordTypeID(usedIDs, next)
+			}
+			usedIDs[info.ID] = true
+			if info.Name == "" {
+				info.Name = info.DeveloperName
+			}
+			object.Definition.RecordTypes[i] = info
+			putSeedRecord(org, "RecordType", Record{
+				ID:     info.ID,
+				Object: "RecordType",
+				Fields: map[string]Value{
+					"Name":          StringValue(info.Name),
+					"DeveloperName": StringValue(info.DeveloperName),
+					"SobjectType":   StringValue(objectName),
+					"IsActive":      BooleanValue(info.Active),
+					"Description":   StringValue(info.Description),
+				},
+			})
+		}
+		org.Objects[objectName] = object
+	}
+}
+
+func nextUnusedRecordTypeID(used map[ID]bool, start uint64) (ID, uint64) {
+	next := start
+	for {
+		id := ID("012" + leftPadBase36(next, 12))
+		next++
+		if !used[id] {
+			return id, next
 		}
 	}
 }

@@ -33,6 +33,9 @@ Release engineering:
 - Completed fixture alias resolution with object-qualified aliases,
   relationship target validation, and ambiguity checks for relationship-heavy
   seed data.
+- Expanded deterministic platform seed data with Organization, UserRole,
+  enriched User/PermissionSet metadata, and RecordType records from local object
+  metadata.
 - Added `check` compatibility fixture execution and an enterprise-style
   multi-class fixture covering parse/index/check behavior.
 - Added parser diagnostic-count fixtures plus type-index and sema panic recovery

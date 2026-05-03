@@ -71,6 +71,8 @@ func StandardKeyPrefixes() map[string]string {
 		"User":                    "005",
 		"Opportunity":             "006",
 		"RecordType":              "012",
+		"Organization":            "00D",
+		"UserRole":                "00E",
 		"Profile":                 "00e",
 		"PermissionSet":           "0PS",
 		"PermissionSetAssignment": "0Pa",
