@@ -101,6 +101,10 @@ Current progress:
   string/number/Boolean/null scalar writers, field writer overloads,
   `getAsString`, `close`, and `isClosed`, with explicit errors for invalid
   write order.
+- Blob/Encoding/Crypto: runtime support now covers deterministic local
+  `Blob.valueOf`, `Blob.toString`, `Blob.size`, Base64 encode/decode,
+  hex encode/decode, digest generation for the documented MD5/SHA1/SHA2/SHA3
+  slice, and HMAC generation for documented local algorithms.
 - Fixtures:
   - `docs/fixtures/core-collection-stdlib.json`
   - `docs/fixtures/core-string-stdlib.json`
@@ -108,6 +112,7 @@ Current progress:
   - `docs/fixtures/core-numeric-stdlib.json`
   - `docs/fixtures/core-datetime-stdlib.json`
   - `docs/fixtures/core-json-stdlib.json`
+  - `docs/fixtures/core-blob-crypto-stdlib.json`
 
 Remaining cuts:
 
