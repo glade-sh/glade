@@ -440,6 +440,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     `find`/`matches`/`group` behavior.
   - [x] Add common `Date`, `Datetime`, and `Time` factories, parsing,
     arithmetic, and component helpers.
+  - [x] Add common numeric `Math` helpers, `Decimal` scale/conversion helpers,
+    URL encoding helpers, and MD5/SHA1/SHA-256 digest coverage.
 - [ ] Complete HTTP/callout mock behavior: request/response types,
   `HttpCalloutMock`, callout limits, and test isolation.
 - [ ] Complete `UserInfo`, `FeatureManagement`, `Messaging`, `ApexPages`,

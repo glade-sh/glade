@@ -1,6 +1,8 @@
 package vm
 
 import (
+	"crypto/md5"
+	"crypto/sha1"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
@@ -9,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -1005,9 +1008,9 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		return patternCompile(args)
 	case "Pattern.matches":
 		return patternMatches(args)
-	case "Math.abs", "Math.floor", "Math.ceil", "Math.round":
+	case "Math.abs", "Math.floor", "Math.ceil", "Math.round", "Math.sqrt":
 		return mathUnary(callee, args)
-	case "Math.max", "Math.min":
+	case "Math.max", "Math.min", "Math.pow":
 		return mathBinary(callee, args)
 	case "Date.today":
 		if len(args) != 0 {
@@ -1144,6 +1147,20 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return Null, err
 		}
 		return String(hex.EncodeToString([]byte(blob))), nil
+	case "EncodingUtil.urlEncode":
+		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+			return Null, fmt.Errorf("EncodingUtil.urlEncode expects String and charset")
+		}
+		return String(url.QueryEscape(args[0].Text)), nil
+	case "EncodingUtil.urlDecode":
+		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+			return Null, fmt.Errorf("EncodingUtil.urlDecode expects String and charset")
+		}
+		decoded, err := url.QueryUnescape(args[0].Text)
+		if err != nil {
+			return Null, err
+		}
+		return String(decoded), nil
 	case "Crypto.generateDigest":
 		if len(args) != 2 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("Crypto.generateDigest expects algorithm and Blob")
@@ -1152,11 +1169,11 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		if err != nil {
 			return Null, err
 		}
-		if !strings.EqualFold(args[0].Text, "SHA-256") && !strings.EqualFold(args[0].Text, "SHA256") {
-			return Null, fmt.Errorf("unsupported digest algorithm %q", args[0].Text)
+		digest, err := generateDigest(args[0].Text, []byte(blob))
+		if err != nil {
+			return Null, err
 		}
-		sum := sha256.Sum256([]byte(blob))
-		return platformScalar("Blob", string(sum[:])), nil
+		return platformScalar("Blob", string(digest)), nil
 	case "JSON.serialize":
 		if len(args) != 1 && len(args) != 2 {
 			return Null, fmt.Errorf("JSON.serialize expects 1 or 2 arguments")
@@ -3386,35 +3403,86 @@ func blobStringArg(name string, args []Value) (string, error) {
 	return args[0].Fields["value"].String(), nil
 }
 
-func mathUnary(callee string, args []Value) (Value, error) {
-	if len(args) != 1 || args[0].Kind != ValueInt {
-		return Null, fmt.Errorf("%s expects Integer", callee)
+func generateDigest(algorithm string, data []byte) ([]byte, error) {
+	normalized := strings.ToUpper(strings.ReplaceAll(algorithm, "-", ""))
+	switch normalized {
+	case "MD5":
+		sum := md5.Sum(data)
+		return sum[:], nil
+	case "SHA1":
+		sum := sha1.Sum(data)
+		return sum[:], nil
+	case "SHA256":
+		sum := sha256.Sum256(data)
+		return sum[:], nil
+	default:
+		return nil, fmt.Errorf("unsupported digest algorithm %q", algorithm)
 	}
+}
+
+func mathUnary(callee string, args []Value) (Value, error) {
+	if len(args) != 1 || (args[0].Kind != ValueInt && args[0].Kind != ValueDecimal) {
+		return Null, fmt.Errorf("%s expects numeric argument", callee)
+	}
+	n := numericFloat(args[0])
 	switch callee {
 	case "Math.abs":
-		if args[0].Int < 0 {
-			return Int(-args[0].Int), nil
+		if args[0].Kind == ValueInt {
+			if args[0].Int < 0 {
+				return Int(-args[0].Int), nil
+			}
+			return args[0], nil
 		}
-		return args[0], nil
+		return Decimal(math.Abs(n)), nil
 	case "Math.floor", "Math.ceil", "Math.round":
-		return args[0], nil
+		switch callee {
+		case "Math.floor":
+			return Decimal(math.Floor(n)), nil
+		case "Math.ceil":
+			return Decimal(math.Ceil(n)), nil
+		default:
+			return Decimal(math.Round(n)), nil
+		}
+	case "Math.sqrt":
+		return Decimal(math.Sqrt(n)), nil
 	default:
 		return Null, fmt.Errorf("unsupported call %q", callee)
 	}
 }
 
 func mathBinary(callee string, args []Value) (Value, error) {
-	if len(args) != 2 || args[0].Kind != ValueInt || args[1].Kind != ValueInt {
-		return Null, fmt.Errorf("%s expects two Integers", callee)
+	if len(args) != 2 || !isMathNumeric(args[0]) || !isMathNumeric(args[1]) {
+		return Null, fmt.Errorf("%s expects two numeric arguments", callee)
 	}
+	left := numericFloat(args[0])
+	right := numericFloat(args[1])
 	switch callee {
 	case "Math.max":
-		return Int(int64(math.Max(float64(args[0].Int), float64(args[1].Int)))), nil
+		if args[0].Kind == ValueInt && args[1].Kind == ValueInt {
+			return Int(int64(math.Max(left, right))), nil
+		}
+		return Decimal(math.Max(left, right)), nil
 	case "Math.min":
-		return Int(int64(math.Min(float64(args[0].Int), float64(args[1].Int)))), nil
+		if args[0].Kind == ValueInt && args[1].Kind == ValueInt {
+			return Int(int64(math.Min(left, right))), nil
+		}
+		return Decimal(math.Min(left, right)), nil
+	case "Math.pow":
+		return Decimal(math.Pow(left, right)), nil
 	default:
 		return Null, fmt.Errorf("unsupported call %q", callee)
 	}
+}
+
+func isMathNumeric(value Value) bool {
+	return value.Kind == ValueInt || value.Kind == ValueDecimal
+}
+
+func numericFloat(value Value) float64 {
+	if value.Kind == ValueInt {
+		return float64(value.Int)
+	}
+	return value.Decimal
 }
 
 func jsonSuppressNulls(callee string, args []Value) (bool, error) {

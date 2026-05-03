@@ -2,6 +2,7 @@ package vm
 
 import (
 	"fmt"
+	"math"
 	"regexp"
 	"strings"
 	"unicode/utf8"
@@ -12,12 +13,46 @@ func callStdlibMember(receiver Value, method string, args []Value) (Value, Value
 	case ValueString:
 		value, handled, err := callStringMember(receiver, method, args)
 		return value, receiver, false, handled, err
+	case ValueDecimal:
+		return callDecimalMember(receiver, method, args)
 	case ValueList:
 		return callListStdlibMember(receiver, method, args)
 	case ValueSet:
 		return callSetStdlibMember(receiver, method, args)
 	case ValueMap:
 		return callMapStdlibMember(receiver, method, args)
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
+func callDecimalMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	switch method {
+	case "setScale":
+		if len(args) != 1 || args[0].Kind != ValueInt {
+			return Null, receiver, false, true, fmt.Errorf("Decimal.setScale expects Integer")
+		}
+		scale := int(args[0].Int)
+		if scale < 0 {
+			return Null, receiver, false, true, fmt.Errorf("Decimal.setScale expects non-negative scale")
+		}
+		factor := math.Pow10(scale)
+		return Decimal(math.Round(receiver.Decimal*factor) / factor), receiver, false, true, nil
+	case "round":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Decimal.round expects 0 arguments")
+		}
+		return Int(int64(math.Round(receiver.Decimal))), receiver, false, true, nil
+	case "intValue":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Decimal.intValue expects 0 arguments")
+		}
+		return Int(int64(receiver.Decimal)), receiver, false, true, nil
+	case "doubleValue":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Decimal.doubleValue expects 0 arguments")
+		}
+		return receiver, receiver, false, true, nil
 	default:
 		return Null, receiver, false, false, nil
 	}

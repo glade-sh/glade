@@ -121,6 +121,8 @@ Release engineering:
 - Added common `String` helpers and `Pattern`/`Matcher` regex basics.
 - Added common `Date`, `Datetime`, and `Time` factories, parsing, arithmetic,
   and component helpers.
+- Added common `Math`, `Decimal`, `EncodingUtil.urlEncode/urlDecode`, and
+  MD5/SHA1/SHA-256 `Crypto.generateDigest` behavior.
 - Added SOQL `ALL ROWS` support for querying soft-deleted records.
 - Added SOQL `WITH SECURITY_ENFORCED`, `WITH USER_MODE`, and
   `WITH SYSTEM_MODE` parsing as local security-mode markers.
