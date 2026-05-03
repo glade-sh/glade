@@ -267,6 +267,25 @@ System.assertEquals(1, Limits.getQueryRows());
 	}
 }
 
+func TestExecTypeForNameAndNewInstance(t *testing.T) {
+	program, err := CompileAnonymous(`
+Type accountType = Type.forName('Account');
+System.assertEquals('Account', accountType.getName());
+Account account = accountType.newInstance();
+account.Name = 'Acme';
+System.assertEquals('Acme', account.Name);
+Type namespaced = Type.forName('pkg', 'Thing');
+System.assertEquals('pkg.Thing', namespaced.getName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecStandardPricebookIdRequiresTestContext(t *testing.T) {
 	program, err := CompileAnonymous(`
 String pricebookId = Test.getStandardPricebookId();

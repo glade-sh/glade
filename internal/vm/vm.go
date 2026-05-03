@@ -973,6 +973,30 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
 		return Bool(vm.testContext != nil), nil
+	case "Type.forName":
+		if len(args) != 1 && len(args) != 2 {
+			return Null, fmt.Errorf("Type.forName expects type name or namespace and type name")
+		}
+		typeName := ""
+		if len(args) == 1 {
+			if args[0].Kind != ValueString {
+				return Null, fmt.Errorf("Type.forName expects String")
+			}
+			typeName = args[0].Text
+		} else {
+			if args[0].Kind != ValueString && args[0].Kind != ValueNull {
+				return Null, fmt.Errorf("Type.forName expects namespace String or null")
+			}
+			if args[1].Kind != ValueString {
+				return Null, fmt.Errorf("Type.forName expects type name String")
+			}
+			if args[0].Kind == ValueString && args[0].Text != "" {
+				typeName = args[0].Text + "." + args[1].Text
+			} else {
+				typeName = args[1].Text
+			}
+		}
+		return platformScalar("Type", typeName), nil
 	case "Test.getStandardPricebookId":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Test.getStandardPricebookId expects 0 arguments")
@@ -5889,7 +5913,20 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Type.getName expects 0 arguments")
 			}
+			if value, ok := receiver.Fields["value"]; ok && value.Kind == ValueString {
+				return value, receiver, false, true, nil
+			}
 			return String(receiver.Text), receiver, false, true, nil
+		}
+		if method == "newInstance" {
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Type.newInstance expects 0 arguments")
+			}
+			typeName := receiver.Text
+			if value, ok := receiver.Fields["value"]; ok && value.Kind == ValueString {
+				typeName = value.Text
+			}
+			return Object(typeName), receiver, false, true, nil
 		}
 	case "Schema.DescribeSObjectResult":
 		switch method {
