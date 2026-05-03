@@ -48,7 +48,7 @@ composed by the CLI in `internal/oaercli`.
 | `internal/config` | `oaer.yml` discovery and parsing. |
 | `internal/diagnostic` | Shared diagnostic model for parser, semantic analysis, runtime, and CLI. |
 | `internal/project` | SFDX package directory discovery and source file collection. |
-| `internal/schema` | Metadata API custom object and field model. |
+| `internal/schema` | Metadata API custom object, field, picklist, and record type model. |
 | `internal/typesys` | First symbol index for declarations, members, triggers, and schema objects. |
 | `internal/sema` | Semantic analysis, type-checking, and stable diagnostics. |
 | `internal/ir` | Compact executable representation for VM-supported Apex. |
@@ -56,7 +56,7 @@ composed by the CLI in `internal/oaercli`.
 | `internal/apextest` | Apex test discovery, compilation, and execution. |
 | `internal/testreport` | Console, JSON, and JUnit test reporting. |
 | `internal/sobject` | Runtime SObject value and schema describe helpers. |
-| `internal/storage` | Org/object/record model, fixtures, deterministic IDs, and SQLite persistence. |
+| `internal/storage` | Org/object/record model, fixtures, deterministic IDs, SQLite persistence, and schema migrations. |
 | `internal/soql` | In-memory SOQL parser and executor. |
 | `internal/dml` | DML pipeline, validation, rollback snapshots, and trigger hooks. |
 | `internal/dap` | Debug Adapter Protocol framing and snapshot sessions. |
@@ -64,7 +64,7 @@ composed by the CLI in `internal/oaercli`.
 | `internal/watch` | File classification, snapshot diffing, polling watch loop, and debounce. |
 | `internal/profile` | Native trace/profile aggregation and JSON/Markdown reporting. |
 | `internal/server` | Salesforce-shaped HTTP handler. |
-| `internal/compat` | Compatibility fixture schema and execution. |
+| `internal/compat` | Compatibility fixture schema and parse/check/exec/test/DB execution. |
 | `internal/capability` | Machine-readable feature matrix and MVP readiness gate. |
 
 ### Runtime Pipeline

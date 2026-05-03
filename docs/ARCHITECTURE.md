@@ -14,7 +14,8 @@ and composed by the CLI.
   runtime, and CLI.
 - `internal/project`: SFDX package directory discovery and source file
   collection.
-- `internal/schema`: Metadata API custom object and field model.
+- `internal/schema`: Metadata API custom object, field, picklist, and record type
+  model.
 - `internal/typesys`: first symbol index for declarations, members, triggers,
   and schema objects.
 - `internal/sema`: semantic analysis for known-type catalogs, declaration and
@@ -34,7 +35,8 @@ and composed by the CLI.
 - `internal/sobject`: runtime SObject value and schema describe helpers.
 - `internal/storage`: org/object/record model, fixture envelope, deterministic
   IDs, cloneable transaction snapshots, fixture alias/reference resolution,
-  deterministic platform users/profiles/permissions, and SQLite persistence.
+  deterministic platform users/profiles/permissions, SQLite persistence, and
+  schema migrations.
 - `internal/soql`: in-memory SOQL parser and executor for the supported query
   subset, including binds, ordering, limits, offsets, `COUNT()`, and simple
   parent relationship projection.
@@ -54,7 +56,8 @@ and composed by the CLI.
   query/queryAll, describe/recent, limits, identity/userinfo stubs, Tooling
   `executeAnonymous`, composite sObject insert, fixture/reset endpoints, and
   optional SQLite-backed persistence.
-- `internal/compat`: compatibility fixture schema.
+- `internal/compat`: compatibility fixture schema and parse/check/exec/test/DB
+  fixture execution.
 - `internal/capability`: machine-readable feature matrix and MVP readiness
   gate.
 

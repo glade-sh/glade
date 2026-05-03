@@ -511,15 +511,16 @@ Current status as of 2026-05-02: complete for the Phase 6 baseline.
 `internal/storage` defines the org/object/record contract, fixture envelope,
 deterministic ID generation, 15/18-character ID validation, clone helpers for
 transaction snapshots, fixture alias/reference resolution, deterministic
-platform users/profiles/permissions, and SQLite-backed persistence for object
-definitions, records, and ID sequences. `internal/sobject` adds runtime SObject
-values with field maps, explicit null tracking, `get`/`put` behavior, record
-conversion, schema describe registry, field describe basics, relationship
-metadata, deterministic object key prefixes, and conversion to storage object
-definitions. Apex syntax integration for `new Account(Name='Acme')`, typed
-field access, dynamic field access, DML Id propagation, and simple relationship
-projection is wired into the VM. Richer describe behavior and permission
-semantics remain incomplete.
+platform users/profiles/permissions, SQLite-backed persistence for object
+definitions, records, and ID sequences, and schema migrations/versioning with DB
+inspection summaries. `internal/sobject` adds runtime SObject values with field
+maps, explicit null tracking, `get`/`put` behavior, record conversion, schema
+describe registry, field describe basics, picklist values, record type describe
+information, relationship metadata, deterministic object key prefixes, and
+conversion to storage object definitions. Apex syntax integration for
+`new Account(Name='Acme')`, typed field access, dynamic field access, DML Id
+propagation, and simple relationship projection is wired into the VM. Richer
+describe behavior and permission semantics remain incomplete.
 
 ### Deliverables
 
@@ -569,13 +570,16 @@ Effort: XL.
 
 Current status as of 2026-05-02: complete for the Phase 7 baseline.
 `internal/soql` parses and executes supported in-memory queries over
-`storage.OrgState`: `SELECT` field projections, `FROM`, equality/inequality
-`WHERE` predicates, bind variables, `ORDER BY`, `LIMIT`, `OFFSET`, `COUNT()`,
-single-SObject assignment, and simple parent relationship fields. Static SOQL
+`storage.OrgState`: `SELECT` field projections, `FROM`, equality/inequality and
+comparison `WHERE` predicates, boolean combinations, binds, date literals,
+semi-joins, anti-joins, child relationship subqueries, multi-hop parent
+relationship fields and filters, `ORDER BY`, `LIMIT`, `OFFSET`, `COUNT()`,
+broader aggregates, `GROUP BY`, `ROLLUP`, `CUBE`, `HAVING`, `FIELDS()`,
+`TYPEOF`, soft-deleted row visibility, and security-mode markers. Static SOQL
 and dynamic `Database.query` are wired into the VM, projected records preserve
-Salesforce-like field absence, and limit counters are updated. Child subqueries,
-broad aggregates, complex predicates, SQLite planning, and full relationship
-query behavior remain incomplete.
+Salesforce-like field absence, and limit counters are updated. SQLite planning,
+lock contention, security enforcement, and advanced polymorphic relationship
+behavior remain incomplete.
 
 ### Deliverables
 
@@ -632,15 +636,18 @@ execution.
 Effort: XL.
 
 Current status as of 2026-05-02: complete for the Phase 8 baseline.
-`internal/dml` supports insert, update, delete, upsert, and undelete over
-`storage.OrgState`; required and unknown-field validation; deterministic ID
-assignment; all-or-none result records for `Database.*`; and
-rollback-by-snapshot transaction wrappers. Apex DML syntax and `Database.*`
-methods are wired into the VM, and before/after trigger invocation has
-`Trigger.new`, `Trigger.old`, maps, flags, operation type, and bulk basics for
-covered insert/update/delete flows. Merge, external-ID upsert, full undelete
-fidelity, `addError`, validation rule fidelity, and exact bulk ordering remain
-incomplete.
+`internal/dml` supports insert, update, delete, upsert, undelete, and merge over
+`storage.OrgState`; required, unknown-field, unique-field, lookup-reference, and
+ID/object mismatch validation; deterministic ID assignment; all-or-none and
+partial-success result records for `Database.*`; single and multi-entry
+`Database.Error` shaping; and rollback-by-snapshot transaction wrappers. Apex
+DML syntax and `Database.*` methods are wired into the VM, including implicit
+and explicit external-ID upsert, soft delete/undelete, merge hooks, cascade
+soft-delete metadata, object-level and field-level `addError`, and before/after
+trigger invocation with `Trigger.new`, `Trigger.old`, maps, flags, operation
+type, size, supported bulk partial-success alignment, and recursion rollback.
+Validation-rule formulas, full merge loser relationship result details, full
+undelete edge-case parity, and exact bulk ordering remain incomplete.
 
 ### Deliverables
 

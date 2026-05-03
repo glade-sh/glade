@@ -264,11 +264,12 @@ Exit: compatibility dashboard drives issue priority.
 
 ## Current Next Steps
 
-1. Expand SOQL/DML/trigger compatibility for child subqueries, broader
-   aggregates, complex predicates, external-ID upsert, `addError`, validation
-   rules, and bulk ordering.
-2. Improve SObject describe fidelity, system fields, record type information,
-   permission semantics, and large-fixture performance.
+1. Expand SOQL/DML/trigger compatibility for security enforcement, lock
+   contention behavior, advanced polymorphic relationship query shape,
+   validation rules, full merge/undelete edge cases, and bulk ordering.
+2. Improve SObject describe fidelity beyond the current field, picklist, and
+   record type baseline, including permission semantics and large-fixture
+   performance.
 3. Add live debugger pause hooks and breakpoint-driven execution control on top
    of the current DAP snapshot sessions.
 4. Complete LSP definition/references/semantic tokens and native watcher

@@ -387,7 +387,7 @@ a Salesforce-shaped local API server without silently wrong behavior.
 ## 6. Storage, Fixtures, And Persistence
 
 - [ ] Performance-tune SQLite-backed storage for large fixture sets.
-- [ ] Add migrations/versioning for persistent databases.
+- [x] Add migrations/versioning for persistent databases.
   - [x] Add a SQLite migration runner backed by `PRAGMA user_version`, record
     applied migrations, and expose schema version in DB inspection summaries.
 - [ ] Add stronger transaction boundaries across CLI tests, server requests,
