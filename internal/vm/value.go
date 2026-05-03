@@ -6,34 +6,40 @@ import (
 )
 
 type Value struct {
-	Kind   ValueKind        `json:"kind"`
-	Int    int64            `json:"int,omitempty"`
-	Bool   bool             `json:"bool,omitempty"`
-	Text   string           `json:"text,omitempty"`
-	Type   string           `json:"type,omitempty"`
-	Fields map[string]Value `json:"fields,omitempty"`
-	List   []Value          `json:"list,omitempty"`
-	Set    []Value          `json:"set,omitempty"`
-	Map    map[string]Value `json:"map,omitempty"`
+	Kind    ValueKind        `json:"kind"`
+	Int     int64            `json:"int,omitempty"`
+	Decimal float64          `json:"decimal,omitempty"`
+	Bool    bool             `json:"bool,omitempty"`
+	Text    string           `json:"text,omitempty"`
+	Type    string           `json:"type,omitempty"`
+	Fields  map[string]Value `json:"fields,omitempty"`
+	List    []Value          `json:"list,omitempty"`
+	Set     []Value          `json:"set,omitempty"`
+	Map     map[string]Value `json:"map,omitempty"`
 }
 
 type ValueKind string
 
 const (
-	ValueNull   ValueKind = "null"
-	ValueInt    ValueKind = "integer"
-	ValueBool   ValueKind = "boolean"
-	ValueString ValueKind = "string"
-	ValueList   ValueKind = "list"
-	ValueSet    ValueKind = "set"
-	ValueMap    ValueKind = "map"
-	ValueObject ValueKind = "object"
+	ValueNull    ValueKind = "null"
+	ValueInt     ValueKind = "integer"
+	ValueDecimal ValueKind = "decimal"
+	ValueBool    ValueKind = "boolean"
+	ValueString  ValueKind = "string"
+	ValueList    ValueKind = "list"
+	ValueSet     ValueKind = "set"
+	ValueMap     ValueKind = "map"
+	ValueObject  ValueKind = "object"
 )
 
 var Null = Value{Kind: ValueNull}
 
 func Int(v int64) Value {
 	return Value{Kind: ValueInt, Int: v}
+}
+
+func Decimal(v float64) Value {
+	return Value{Kind: ValueDecimal, Decimal: v}
 }
 
 func Bool(v bool) Value {
@@ -72,6 +78,8 @@ func (v Value) String() string {
 		return "null"
 	case ValueInt:
 		return strconv.FormatInt(v.Int, 10)
+	case ValueDecimal:
+		return strconv.FormatFloat(v.Decimal, 'f', -1, 64)
 	case ValueBool:
 		if v.Bool {
 			return "true"
@@ -104,6 +112,8 @@ func (v Value) Equal(other Value) bool {
 		return true
 	case ValueInt:
 		return v.Int == other.Int
+	case ValueDecimal:
+		return v.Decimal == other.Decimal
 	case ValueBool:
 		return v.Bool == other.Bool
 	case ValueString:

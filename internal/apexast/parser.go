@@ -27,7 +27,7 @@ func (p *Parser) ParseFile(path string) (File, error) {
 }
 
 func (p *Parser) ParseSource(path, source string) File {
-	listener := &syntaxErrorListener{path: path, source: source}
+	listener := &syntaxErrorListener{path: path, source: source, lineMap: NewLineMap(source)}
 	parseSource := normalizeVoidIdentifiers(source)
 	input := antlr.NewInputStream(parseSource)
 	lexer := parser.NewApexLexer(input)
@@ -70,11 +70,14 @@ type syntaxErrorListener struct {
 	*antlr.DefaultErrorListener
 	path        string
 	source      string
+	lineMap     LineMap
 	diagnostics []diagnostic.Diagnostic
 }
 
 func (l *syntaxErrorListener) SyntaxError(_ antlr.Recognizer, _ interface{}, line, column int, msg string, _ antlr.RecognitionException) {
-	start := diagnostic.Position{Line: line, Column: column + 1}
+	offset := l.offset(line, column)
+	start := l.lineMap.Position(offset)
+	end := l.lineMap.Position(offset + 1)
 	l.diagnostics = append(l.diagnostics, diagnostic.Diagnostic{
 		Severity: diagnostic.Error,
 		Code:     "OAERPARSE001",
@@ -82,10 +85,27 @@ func (l *syntaxErrorListener) SyntaxError(_ antlr.Recognizer, _ interface{}, lin
 		File:     l.path,
 		Range: &diagnostic.Range{
 			Start: start,
-			End:   start,
+			End:   end,
 		},
 		Excerpt: excerpt(l.source, line),
 	})
+}
+
+func (l *syntaxErrorListener) offset(line, column int) int {
+	if line <= 0 {
+		line = 1
+	}
+	if line > len(l.lineMap.starts) {
+		return len(l.source)
+	}
+	offset := l.lineMap.starts[line-1] + column
+	if offset < 0 {
+		return 0
+	}
+	if offset > len(l.source) {
+		return len(l.source)
+	}
+	return offset
 }
 
 func buildTypeDeclaration(ctx parser.ITypeDeclarationContext, mods []string) []Declaration {

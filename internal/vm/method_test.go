@@ -54,6 +54,29 @@ func TestExecRegisteredMethodDoesNotLeakParams(t *testing.T) {
 	}
 }
 
+func TestExecRegisteredMethodCoercesParamsAndReturns(t *testing.T) {
+	methodProgram, err := CompileAnonymous("return value;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous("System.assertEquals(1.5, Util.id(1) + 0.5);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterMethod(Method{
+		Name:       "Util.id",
+		ReturnType: "Decimal",
+		Params:     []Param{{Name: "value", Type: "Decimal"}},
+		Program:    methodProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecRegisteredStaticMethodWithBranchingReturn(t *testing.T) {
 	methodProgram, err := CompileAnonymous(`
 if (a > b) {
@@ -497,6 +520,92 @@ String value = s.code;
 	}
 }
 
+func TestRuntimeAllowsProtectedAccessThroughInheritanceChain(t *testing.T) {
+	guarded, err := CompileAnonymous("return 'guarded';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	run, err := CompileAnonymous("return guarded();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Leaf leaf = new Leaf();
+System.assertEquals('guarded', leaf.run());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Root",
+		Methods: map[string]Method{
+			"guarded": {Name: "Root.guarded", ClassName: "Root", ReturnType: "String", Access: "protected", Program: guarded},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "Middle", SuperClass: "Root"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Leaf",
+		SuperClass: "Middle",
+		Methods: map[string]Method{
+			"run": {Name: "Leaf.run", ClassName: "Leaf", ReturnType: "String", Program: run},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRuntimeAllowsTestVisiblePrivateMethodFromTestClass(t *testing.T) {
+	visible, err := CompileAnonymous("return 'visible';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	run, err := CompileAnonymous("return Secret.visibleForTests();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous("System.assertEquals('visible', SecretTest.run());")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Secret",
+		Methods: map[string]Method{
+			"visibleForTests": {
+				Name:       "Secret.visibleForTests",
+				ClassName:  "Secret",
+				ReturnType: "String",
+				Access:     "private",
+				Modifiers:  []string{"@TestVisible", "private", "static"},
+				IsStatic:   true,
+				Program:    visible,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:   "SecretTest",
+		IsTest: true,
+		Methods: map[string]Method{
+			"run": {Name: "SecretTest.run", ClassName: "SecretTest", ReturnType: "String", IsStatic: true, Program: run},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestRuntimeNamespaceRequiresGlobalAcrossBoundary(t *testing.T) {
 	publicProgram, err := CompileAnonymous("return 'public';")
 	if err != nil {
@@ -517,6 +626,7 @@ String value = pkg.Secret.pub();
 	if err := machine.RegisterClass(Class{
 		Name:      "Secret",
 		Namespace: "pkg",
+		Access:    "global",
 		Methods: map[string]Method{
 			"pub":  {Name: "Secret.pub", ClassName: "Secret", ReturnType: "String", Access: "public", IsStatic: true, Program: publicProgram},
 			"glob": {Name: "Secret.glob", ClassName: "Secret", ReturnType: "String", Access: "global", IsStatic: true, Program: globalProgram},
@@ -542,6 +652,7 @@ System.assertEquals('Box', box.kind);
 	if err := machine.RegisterClass(Class{
 		Name:       "Box",
 		Namespace:  "pkg",
+		Access:     "global",
 		Fields:     map[string]Field{"kind": {Name: "kind", Type: "String", Access: "global", InitialValue: String("Box")}},
 		FieldOrder: []string{"kind"},
 	}); err != nil {
@@ -590,6 +701,249 @@ System.assertEquals('string', Util.pick('one'));
 	}
 }
 
+func TestRuntimeNamespaceRequiresGlobalClassAcrossBoundary(t *testing.T) {
+	globalProgram, err := CompileAnonymous("return 'global';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous("String value = pkg.Secret.glob();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:      "Secret",
+		Namespace: "pkg",
+		Access:    "public",
+		Methods: map[string]Method{
+			"glob": {Name: "Secret.glob", ClassName: "Secret", ReturnType: "String", Access: "global", IsStatic: true, Program: globalProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	_, err = machine.Execute(program)
+	if err == nil || !strings.Contains(err.Error(), "not global") {
+		t.Fatalf("err = %v, want namespace class visibility error", err)
+	}
+}
+
+func TestRuntimeNamespaceRequiresGlobalClassForConstruction(t *testing.T) {
+	program, err := CompileAnonymous("pkg.Box box = new pkg.Box();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:      "Box",
+		Namespace: "pkg",
+		Access:    "public",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	_, err = machine.Execute(program)
+	if err == nil || !strings.Contains(err.Error(), "not global") {
+		t.Fatalf("err = %v, want namespace constructor visibility error", err)
+	}
+}
+
+func TestRuntimeNumericOverloadSpecificityBaseline(t *testing.T) {
+	intProgram, err := CompileAnonymous("return 'integer';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	decimalProgram, err := CompileAnonymous("return 'decimal';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	objectProgram, err := CompileAnonymous("return 'object';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	longProgram, err := CompileAnonymous("return 'long';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+System.assertEquals('integer', Util.pick(1));
+System.assertEquals('decimal', Util.pick(1.5));
+System.assertEquals('long', Util.onlyLong(1));
+System.assertEquals('object', Util.pick(true));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	for _, method := range []Method{
+		{Name: "Util.pick", ReturnType: "String", Params: []Param{{Name: "value", Type: "Object"}}, Program: objectProgram},
+		{Name: "Util.pick", ReturnType: "String", Params: []Param{{Name: "value", Type: "Decimal"}}, Program: decimalProgram},
+		{Name: "Util.pick", ReturnType: "String", Params: []Param{{Name: "value", Type: "Integer"}}, Program: intProgram},
+		{Name: "Util.onlyLong", ReturnType: "String", Params: []Param{{Name: "value", Type: "Long"}}, Program: longProgram},
+	} {
+		if err := machine.RegisterMethod(method); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRuntimeNumericOverloadChoosesNarrowestWidening(t *testing.T) {
+	longProgram, err := CompileAnonymous("return 'long';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	decimalProgram, err := CompileAnonymous("return 'decimal';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	doubleProgram, err := CompileAnonymous("return 'double';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+System.assertEquals('long', Util.pick(1));
+System.assertEquals('decimal', Util.pickDecimal(1));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	for _, method := range []Method{
+		{Name: "Util.pick", ReturnType: "String", Params: []Param{{Name: "value", Type: "Double"}}, Program: doubleProgram},
+		{Name: "Util.pick", ReturnType: "String", Params: []Param{{Name: "value", Type: "Decimal"}}, Program: decimalProgram},
+		{Name: "Util.pick", ReturnType: "String", Params: []Param{{Name: "value", Type: "Long"}}, Program: longProgram},
+		{Name: "Util.pickDecimal", ReturnType: "String", Params: []Param{{Name: "value", Type: "Double"}}, Program: doubleProgram},
+		{Name: "Util.pickDecimal", ReturnType: "String", Params: []Param{{Name: "value", Type: "Decimal"}}, Program: decimalProgram},
+	} {
+		if err := machine.RegisterMethod(method); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRuntimeObjectOverloadChoosesNearestAncestor(t *testing.T) {
+	parentProgram, err := CompileAnonymous("return 'parent';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	rootProgram, err := CompileAnonymous("return 'root';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	objectProgram, err := CompileAnonymous("return 'object';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous("System.assertEquals('parent', Util.pick(new Child()));")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	for _, class := range []Class{
+		{Name: "Root"},
+		{Name: "Parent", SuperClass: "Root"},
+		{Name: "Child", SuperClass: "Parent"},
+	} {
+		if err := machine.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, method := range []Method{
+		{Name: "Util.pick", ReturnType: "String", Params: []Param{{Name: "value", Type: "Object"}}, Program: objectProgram},
+		{Name: "Util.pick", ReturnType: "String", Params: []Param{{Name: "value", Type: "Root"}}, Program: rootProgram},
+		{Name: "Util.pick", ReturnType: "String", Params: []Param{{Name: "value", Type: "Parent"}}, Program: parentProgram},
+	} {
+		if err := machine.RegisterMethod(method); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRuntimeOverloadUsesPairwiseSpecificity(t *testing.T) {
+	firstProgram, err := CompileAnonymous("return 'first';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	secondProgram, err := CompileAnonymous("return 'second';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous("Util.pick(1, 'one');")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	for _, method := range []Method{
+		{Name: "Util.pick", ReturnType: "String", Params: []Param{{Name: "count", Type: "Integer"}, {Name: "label", Type: "Object"}}, Program: firstProgram},
+		{Name: "Util.pick", ReturnType: "String", Params: []Param{{Name: "count", Type: "Long"}, {Name: "label", Type: "String"}}, Program: secondProgram},
+	} {
+		if err := machine.RegisterMethod(method); err != nil {
+			t.Fatal(err)
+		}
+	}
+	_, err = machine.Execute(program)
+	if err == nil || !strings.Contains(err.Error(), "ambiguous overload") {
+		t.Fatalf("expected ambiguous overload error, got %v", err)
+	}
+}
+
+func TestRuntimeNullOverloadChoosesMostSpecificType(t *testing.T) {
+	stringProgram, err := CompileAnonymous("return 'string';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	objectProgram, err := CompileAnonymous("return 'object';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous("System.assertEquals('string', Util.pick(null));")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	for _, method := range []Method{
+		{Name: "Util.pick", ReturnType: "String", Params: []Param{{Name: "value", Type: "Object"}}, Program: objectProgram},
+		{Name: "Util.pick", ReturnType: "String", Params: []Param{{Name: "value", Type: "String"}}, Program: stringProgram},
+	} {
+		if err := machine.RegisterMethod(method); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRuntimeRejectsNonVoidMethodFallthrough(t *testing.T) {
+	noReturnProgram, err := CompileAnonymous("Integer value = 1;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous("Missing.value();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterMethod(Method{
+		Name:       "Missing.value",
+		ReturnType: "Integer",
+		Program:    noReturnProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	_, err = machine.Execute(program)
+	if err == nil || !strings.Contains(err.Error(), "Missing.value must return Integer") {
+		t.Fatalf("error = %v", err)
+	}
+}
+
 func TestExecStaticFieldsAndInheritanceDispatch(t *testing.T) {
 	parentProgram, err := CompileAnonymous("return 1;")
 	if err != nil {
@@ -630,6 +984,423 @@ System.assertEquals(5, c.score());
 	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecInterfaceMethodLookupFallback(t *testing.T) {
+	methodProgram, err := CompileAnonymous("return 'iface';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+ImplementsWorker worker = new ImplementsWorker();
+System.assertEquals('iface', worker.work());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Worker",
+		Methods: map[string]Method{
+			"work": {Name: "Worker.work", ClassName: "Worker", ReturnType: "String", Program: methodProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "ImplementsWorker",
+		Interfaces: []string{"Worker"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecVirtualDispatchThroughBaseAndInterfaceReferences(t *testing.T) {
+	baseProgram, err := CompileAnonymous("return 'base';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	childProgram, err := CompileAnonymous("return 'child';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Base base = new Child();
+Worker worker = new Child();
+System.assertEquals('child', base.work());
+System.assertEquals('child', worker.work());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Base",
+		Methods: map[string]Method{
+			"work": {Name: "Base.work", ClassName: "Base", ReturnType: "String", Program: baseProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:        "Worker",
+		IsInterface: true,
+		Methods: map[string]Method{
+			"work": {Name: "Worker.work", ClassName: "Worker", ReturnType: "String", Program: baseProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Child",
+		SuperClass: "Base",
+		Interfaces: []string{"Worker"},
+		Methods: map[string]Method{
+			"work": {Name: "Child.work", ClassName: "Child", ReturnType: "String", Program: childProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSuperDispatchUsesDeclaringClass(t *testing.T) {
+	parentProgram, err := CompileAnonymous("return 1;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	childProgram, err := CompileAnonymous("return super.score() + 1;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+GrandChild value = new GrandChild();
+System.assertEquals(2, value.score());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Parent",
+		Methods: map[string]Method{
+			"score": {Name: "Parent.score", ClassName: "Parent", ReturnType: "Integer", Program: parentProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Child",
+		SuperClass: "Parent",
+		Methods: map[string]Method{
+			"score": {Name: "Child.score", ClassName: "Child", ReturnType: "Integer", Program: childProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "GrandChild", SuperClass: "Child"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecInheritedConcreteMethodBeatsInterfaceFallback(t *testing.T) {
+	parentProgram, err := CompileAnonymous("return 'parent';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	interfaceProgram, err := CompileAnonymous("return 'interface';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Worker worker = new Child();
+System.assertEquals('parent', worker.work());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Parent",
+		Methods: map[string]Method{
+			"work": {Name: "Parent.work", ClassName: "Parent", ReturnType: "String", Program: parentProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:        "Worker",
+		IsInterface: true,
+		Methods: map[string]Method{
+			"work": {Name: "Worker.work", ClassName: "Worker", ReturnType: "String", Program: interfaceProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "Child", SuperClass: "Parent", Interfaces: []string{"Worker"}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecInheritedStaticMembersViaSubclassName(t *testing.T) {
+	staticProgram, err := CompileAnonymous("return total;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Child.total = 5;
+System.assertEquals(5, Child.total);
+System.assertEquals(5, Child.totalValue());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Parent",
+		StaticFields: map[string]Field{
+			"total": {Name: "total", Type: "Integer", Static: true, Value: Int(1)},
+		},
+		Methods: map[string]Method{
+			"totalValue": {Name: "Parent.totalValue", ClassName: "Parent", ReturnType: "Integer", IsStatic: true, Program: staticProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "Child", SuperClass: "Parent"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecEnumMethods(t *testing.T) {
+	program, err := CompileAnonymous(`
+Mood mood = Mood.Happy;
+System.assertEquals('Happy', mood.name());
+System.assertEquals(0, mood.ordinal());
+List<Mood> values = Mood.values();
+System.assertEquals(2, values.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Mood", EnumValues: []string{"Happy", "Sad"}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecObjectToStringDispatch(t *testing.T) {
+	toStringProgram, err := CompileAnonymous("return 'custom';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Named named = new Named();
+Plain plain = new Plain();
+System.assertEquals('custom', named.toString());
+System.assertEquals('Plain{}', plain.toString());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Named",
+		Methods: map[string]Method{
+			"toString": {Name: "Named.toString", ClassName: "Named", ReturnType: "String", Program: toStringProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "Plain"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecObjectToStringUsedForDebugAndAssertMessages(t *testing.T) {
+	toStringProgram, err := CompileAnonymous("return 'named-value';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Named named = new Named();
+System.debug(named);
+System.assertEquals('expected-value', named);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Named",
+		Methods: map[string]Method{
+			"toString": {Name: "Named.toString", ClassName: "Named", ReturnType: "String", Program: toStringProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	result, err := machine.Execute(program)
+	if err == nil || !strings.Contains(err.Error(), "actual <named-value>") {
+		t.Fatalf("error = %v", err)
+	}
+	if len(result.Debug) != 1 || result.Debug[0] != "named-value" {
+		t.Fatalf("debug = %#v", result.Debug)
+	}
+}
+
+func TestExecUserObjectEqualityUsesIdentity(t *testing.T) {
+	program, err := CompileAnonymous(`
+Box first = new Box();
+Box second = new Box();
+Box alias = first;
+System.assertNotEquals(first, second);
+System.assertEquals(first, alias);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Box"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecObjectAssignabilityUsesInheritanceAndInterfaces(t *testing.T) {
+	acceptProgram, err := CompileAnonymous("return 1;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Base base = new Child();
+Marker marker = new Child();
+System.assertEquals(1, Util.acceptBase(new Child()));
+System.assertEquals(1, Util.acceptMarker(new Child()));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	for _, class := range []Class{
+		{Name: "Base"},
+		{Name: "Marker", IsInterface: true},
+		{Name: "Child", SuperClass: "Base", Interfaces: []string{"Marker"}},
+	} {
+		if err := machine.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := machine.RegisterMethod(Method{
+		Name:       "Util.acceptBase",
+		ReturnType: "Integer",
+		Params:     []Param{{Name: "base", Type: "Base"}},
+		Program:    acceptProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterMethod(Method{
+		Name:       "Util.acceptMarker",
+		ReturnType: "Integer",
+		Params:     []Param{{Name: "marker", Type: "Marker"}},
+		Program:    acceptProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecRejectsUnrelatedObjectAssignment(t *testing.T) {
+	program, err := CompileAnonymous("Base base = new Other();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	for _, class := range []Class{{Name: "Base"}, {Name: "Other"}} {
+		if err := machine.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), "cannot assign Other to Base") {
+		t.Fatalf("expected object assignment error, got %v", err)
+	}
+}
+
+func TestExecRejectsNonConstructableRegisteredTypes(t *testing.T) {
+	cases := []struct {
+		name  string
+		class Class
+		want  string
+	}{
+		{name: "abstract", class: Class{Name: "Base", IsAbstract: true}, want: "cannot instantiate abstract class Base"},
+		{name: "interface", class: Class{Name: "IThing", IsInterface: true}, want: "cannot instantiate interface IThing"},
+		{name: "enum", class: Class{Name: "Mood", EnumValues: []string{"Happy"}}, want: "cannot instantiate enum Mood"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			program, err := CompileAnonymous("Object value = new " + tc.class.Name + "();")
+			if err != nil {
+				t.Fatal(err)
+			}
+			machine := New(nil)
+			if err := machine.RegisterClass(tc.class); err != nil {
+				t.Fatal(err)
+			}
+			_, err = machine.Execute(program)
+			if err == nil || !strings.Contains(err.Error(), tc.want) {
+				t.Fatalf("error = %v, want %q", err, tc.want)
+			}
+		})
+	}
+}
+
+func TestExecRejectsAbstractMethodInvocation(t *testing.T) {
+	program, err := CompileAnonymous(`
+Base value = new Concrete();
+value.required();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Base",
+		Methods: map[string]Method{
+			"required": {Name: "Base.required", ClassName: "Base", ReturnType: "void", Modifiers: []string{"abstract"}},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "Concrete", SuperClass: "Base"}); err != nil {
+		t.Fatal(err)
+	}
+	_, err = machine.Execute(program)
+	if err == nil || !strings.Contains(err.Error(), "cannot execute abstract method Base.required") {
+		t.Fatalf("error = %v", err)
 	}
 }
 

@@ -297,17 +297,21 @@ Goal: type-check enough Apex to lower it into an executable representation.
 
 Effort: L.
 
-Current status as of 2026-05-02: complete for the Phase 3 baseline. `internal/sema` provides the first
-semantic pass over the project index. It builds a known-type catalog from Apex
-symbols, nested type declarations, schema objects, builtin Apex types, and a
-starter Salesforce platform type catalog. `oaer check --project <root> --json`
-now validates declaration/member type references, trigger SObject references,
-and schema lookup references while carrying parser/index diagnostics forward.
-This is not method-body type checking yet. The small example project
-`example-projects/src-nmb-nutpl-develop` checks cleanly: 134 types, 1 trigger,
-3 objects, zero diagnostics. The large example project
-`example-projects/src-nmb-nu-develop` checks cleanly in about 9 seconds:
-2,898 types, 65 triggers, 168 objects, zero diagnostics.
+Current status as of 2026-05-02: complete for the Phase 3 baseline.
+`internal/sema` builds a known-type catalog from Apex symbols, nested type
+declarations, schema objects, builtin Apex types, and a starter Salesforce
+platform type catalog. `oaer check --project <root> --json` validates
+declaration/member type references, method and constructor references,
+visibility, overrides, namespace/schema aliases, constructor chaining,
+non-instantiable constructor calls, overload specificity, object assignability,
+and a conservative IR-backed method-body baseline for locals, assignments,
+returns, scoped reads, Boolean conditions, user-object field reads/writes, known
+method calls, all-path non-void returns, and constructor calls. Full expression
+typing and full flow analysis remain incomplete. The small example project
+`example-projects/src-nmb-nutpl-develop` checks cleanly: 134 types, 1 trigger, 3
+objects, zero diagnostics. The large example project
+`example-projects/src-nmb-nu-develop` checks cleanly in about 9 seconds: 2,898
+types, 65 triggers, 168 objects, zero diagnostics.
 
 ### Deliverables
 
@@ -375,16 +379,18 @@ Effort: L.
 Current status as of 2026-05-02: complete for the Phase 4 baseline.
 `internal/ir` defines a compact instruction/expression representation, and
 `internal/vm` executes the supported Apex subset through `oaer exec` and the
-test runner. Supported now: variables and expressions; primitive and collection
-values; class/method execution; constructors; instance and static fields;
-inheritance and `super` dispatch; `if`, `while`, `for`, enhanced `for`,
-`do/while`, `break`, `continue`, and `switch`; `try/catch/finally`; thrown
-runtime exceptions with message/stack basics; SObject construction and field
-access; static and dynamic SOQL entry points; DML statements; trigger dispatch;
-governor counters; common platform APIs; trace events; and debug snapshots.
-Full visibility, namespaces, overload fidelity, initializer blocks, inner
-classes, enums, complete user object semantics, and Salesforce-exact exception
-behavior remain MVP work.
+test runner. Supported now: variables and expressions; primitive, collection,
+enum, null, and user-object values; class/method execution; constructors and
+constructor chaining; instance/static fields; property accessors; initializer
+blocks; inheritance, interface, virtual, and `super` dispatch; nested classes,
+interfaces, and enums; visibility and namespace enforcement; overload matching;
+typed coercion; `if`, `while`, `for`, enhanced `for`, `do/while`, `break`,
+`continue`, and `switch`; ordered catch blocks, multi-catch, try/catch/finally,
+rethrow, stack accessors, and common exception hierarchy matching; SObject
+construction and field access; static and dynamic SOQL entry points; DML
+statements; trigger dispatch; governor counters; common platform APIs; trace
+events; and debug snapshots. Broader platform APIs, expression fidelity, data
+edge cases, and debugger pause hooks remain MVP work.
 
 ### Deliverables
 
@@ -450,14 +456,15 @@ Current status as of 2026-05-02: complete for the Phase 5 baseline.
 `testMethod` methods from the symbol index. `oaer test` compiles project helper
 classes and triggers, runs constructor and instance method bodies, executes
 `@TestSetup`, clones org state per test, resets statics, supports
-`Test.startTest()`/`Test.stopTest()`, `System.runAs`, Queueable drain basics,
-assertion stack frames, substring filtering, and console/JSON/JUnit reporters.
-Full Salesforce auth/profile semantics, broad async support, and exact
-transaction behavior remain MVP work.
+`Test.startTest()`/`Test.stopTest()`, `System.runAs`, Queueable/Future/Batch/
+Scheduled draining, durable async job records, assertion stack frames, substring
+filtering, and console/JSON/JUnit reporters. Richer auth/profile semantics,
+broader permission behavior, and unsupported edge-case fidelity remain MVP work.
 
 ### Deliverables
 
-- `internal/test`: test discovery, scheduling, result model.
+- `internal/apextest`: test discovery, scheduling, isolation, and execution.
+- `internal/testreport`: console, JSON, and JUnit result output.
 - `oaer test`.
 - `oaer test --json`.
 - JUnit XML output.
@@ -687,10 +694,11 @@ Effort: L-XL.
 
 Current status as of 2026-05-02: complete for the Phase 9 baseline.
 `@TestSetup`, per-test cloned org state, static reset, `startTest`/`stopTest`,
-`runAs`, Queueable drain at `stopTest`, assertion stack frames, governor
-counters, and strict/permissive limit modes are implemented for the supported
-runtime subset. Full async breadth, exact Salesforce transaction rollback
-semantics, and complete limit categories remain incomplete.
+`runAs`, Queueable/Future/Batch/Scheduled draining at `stopTest`, durable
+`AsyncApexJob`/`CronTrigger` records, assertion stack frames, governor counters,
+and strict/permissive limit modes are implemented for the supported runtime
+subset. Exact Salesforce accounting, configurable per-test caps, broader
+permission semantics, and unsupported edge-case fidelity remain incomplete.
 
 ### Deliverables
 

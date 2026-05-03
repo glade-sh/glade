@@ -6,20 +6,20 @@ The MVP target is `full-featured aer-parity MVP`. This document lists required c
 
 ## Summary
 
-- Required complete: 0/21
-- Required incomplete: 21
+- Required complete: 4/21
+- Required incomplete: 17
 
 ## Apex front end
 
 ### `apex.parser.project-scale`: Parse and index large SFDX projects
 
 - Status: `partial`
-- Gap: Parser and symbol baselines exist; method-body model and large-project compatibility fixtures are incomplete.
+- Gap: Parser and symbol baselines exist, including qualified nested type symbols, stable malformed-parse diagnostics, type-index/sema panic recovery diagnostics, and an enterprise-style multi-class check fixture. Broader real-repository scale and method-body model fidelity are incomplete.
 
 ### `apex.sema.body`: Method-body semantic analysis
 
 - Status: `partial`
-- Gap: Current sema checks declarations, member and parameter type references, project namespace-qualified type references, basic visibility conflicts, interface member visibility, and a conservative method-body baseline for local declarations, constructor references, simple assignments, project method calls, and known-receiver overload arity/simple argument type matching. Full expression typing, flow-sensitive scopes, inherited/interface dispatch, and Apex coercion rules remain incomplete.
+- Gap: Current sema checks declarations, member and parameter type references, project namespace-qualified and namespace-token schema references, basic visibility conflicts, interface member visibility, override markers, missing concrete interface/abstract method implementations, and a conservative method-body baseline for local declarations, duplicate locals, local initializer and simple assignment type mismatches, simple return type mismatches and missing non-void returns, constructor references, constructor chaining, non-instantiable interface/enum/abstract constructor calls, unknown variable reads in call arguments, project method calls, inherited/interface/super calls, this/super field and return type inference, inherited instance field scope, private/protected method and field visibility through inheritance chains, @TestVisible method access from test classes, known-receiver overload arity/argument matching with exact and narrowest numeric specificity, nearest class/interface specificity, null specificity, and ambiguous overload diagnostics, integer-to-Long/Decimal/Double widening, decimal-literal argument typing, simple binary expression typing, class/interface object assignability, generic collection constructor assignability, known method-call return typing for receiver and chained constructor calls, an IR-backed sema pass for scoped local reads, Boolean conditions, declaration/assignment/return type checks, all-path non-void returns, known user-object field reads/writes, known receiver/same-class method calls, and constructor-call validation across statements/control-flow bodies, and token-level ranges for body diagnostics. Full expression typing and full flow analysis remain incomplete.
 
 ## Data runtime
 
@@ -53,7 +53,7 @@ The MVP target is `full-featured aer-parity MVP`. This document lists required c
 ### `dap.command`: VS Code debug flow through oaer test/exec --debug
 
 - Status: `partial`
-- Gap: DAP content-length transport, setBreakpoints, continue/pause/next, stackTrace, scopes, variables, evaluate, and oaer exec/test --debug snapshot sessions are wired. True live VM suspension, step-in/out semantics, and breakpoint-driven execution control remain incomplete.
+- Gap: DAP content-length transport, setBreakpoints, continue/pause/next, stackTrace with trace-provided line/column positions, scopes, variables, evaluate, and oaer exec/test --debug snapshot sessions are wired. True live VM suspension, step-in/out semantics, and breakpoint-driven execution control remain incomplete.
 
 ### `lsp.command`: oaer lsp core editor features
 
@@ -63,7 +63,7 @@ The MVP target is `full-featured aer-parity MVP`. This document lists required c
 ### `profile.native`: Native trace/profile reports
 
 - Status: `partial`
-- Gap: Trace/profile reports aggregate statements, methods, SOQL, DML, source offsets, event categories, and governor-like SOQL/DML deltas. pprof-compatible CPU output and per-statement wall-clock timing remain incomplete.
+- Gap: Trace/profile reports aggregate statements, methods, SOQL, DML, source offsets, statement line/column ranges, event categories, and governor-like SOQL/DML deltas. pprof-compatible CPU output and per-statement wall-clock timing remain incomplete.
 
 ### `watch.command`: oaer test --watch affected-test loop
 
@@ -75,7 +75,7 @@ The MVP target is `full-featured aer-parity MVP`. This document lists required c
 ### `limits.core`: Governor counters and strict/permissive enforcement
 
 - Status: `partial`
-- Gap: The VM now tracks SOQL queries/rows, DML statements/rows, approximate heap, statement-count CPU, callouts, and async jobs. Limits.* exposes current and max counters, permissive mode records violations, strict mode raises System.LimitException, and oaer exec/test accept --limit-mode. Exact Salesforce accounting and configurable per-test caps remain incomplete.
+- Gap: The VM now tracks SOQL queries/rows, DML statements/rows, approximate heap, statement-count CPU, callouts, and async jobs. Limits.* exposes current and max counters, Test.startTest/Test.stopTest reset and restore test windows, permissive mode records violations, strict mode raises System.LimitException, and oaer exec/test accept --limit-mode. Exact Salesforce accounting and configurable per-test caps remain incomplete.
 
 ## Local API server
 
@@ -93,40 +93,18 @@ The MVP target is `full-featured aer-parity MVP`. This document lists required c
 
 ### `release.packaging`: Installable release binaries, checksums, docs
 
-- Status: `unsupported`
-- Gap: Release packaging is not implemented.
+- Status: `partial`
+- Gap: Release archives, checksums, GitHub Release upload workflow, install docs, release policy, and smoke coverage exist. Published package-manager distribution, stronger artifact signing, and release promotion automation remain incomplete.
 
 ## Runtime
 
 ### `stdlib.core`: Core System/String/Date/Datetime/JSON/Math APIs
 
 - Status: `partial`
-- Gap: Assertions, debug, collections, selected String methods, Limits counters, Date/Datetime/Time basics, Math integer helpers, JSON serialize/deserializeUntyped, EncodingUtil, Crypto SHA-256, Schema global describe basics, UserInfo, FeatureManagement, Messaging, ApexPages, and HttpResponse-shaped callout mocks now exist for the supported VM subset.
-
-### `vm.classes`: Classes, methods, constructors, statics, properties
-
-- Status: `partial`
-- Gap: The VM now registers class metadata from project tests, constructs objects with instance fields/properties, invokes property getter/setter bodies, runs constructor bodies, supports this(...) and super(...) constructor chaining, matches overloaded methods/constructors by argument types, executes static and instance initializer blocks, preserves source field order for initialization/reset, resets statics through initializer blocks, stores static fields, dispatches overrides through inheritance, supports super method calls, resolves namespace-qualified class names, and enforces a runtime baseline for private/protected and namespace-global access. Full Apex visibility/test-visible rules, package semantics, field initializer expression ordering, and generic overload/coercion fidelity remain incomplete.
+- Gap: Assertions, debug, collections, selected String methods, Limits counters, Date/Datetime/Time basics, Decimal literals/arithmetic/storage conversion, Math integer helpers, JSON serialize/deserializeUntyped, EncodingUtil, Crypto SHA-256, Schema global describe basics, UserInfo user/profile identity in test context, FeatureManagement user permission-list checks, Messaging, ApexPages, and HttpResponse-shaped callout mocks now exist for the supported VM subset.
 
 ### `vm.control-flow`: Control flow and exceptions
 
 - Status: `partial`
-- Gap: Anonymous and test method execution now supports for/enhanced-for/do-while, break/continue, switch-on, throw, try/catch/finally, multi-catch, bare rethrow, exception messages/getMessage, catchable null dereference, and basic exception stack reporting. Complete Apex exception hierarchy semantics remain incomplete.
-
-## Tests
-
-### `async.core`: Queueable/Future/Batch/Scheduled basics
-
-- Status: `partial`
-- Gap: System.enqueueJob queues object jobs in test context and Test.stopTest drains Queueable execute methods. Future, Batchable, Schedulable, chained job limits, and durable async job records remain incomplete.
-
-### `tests.runner`: Run real Apex test classes
-
-- Status: `partial`
-- Gap: Discovery, method dispatch, @TestSetup execution, static reset, startTest/stopTest, runAs, Queueable stopTest draining, and assertion stack frames now work for the supported VM subset.
-
-### `tests.salesforce-semantics`: @TestSetup, startTest/stopTest, runAs, isolation
-
-- Status: `partial`
-- Gap: @TestSetup methods execute before each test with statics reset before the test body; each test gets a fresh cloned org and VM for isolation; startTest/stopTest and runAs are modeled. Exact governor window restoration, profile/permission semantics, and platform auth details remain incomplete.
+- Gap: Anonymous and test method execution now supports for/enhanced-for/do-while, break/continue, switch-on with switch-local break, throw, ordered catch blocks, pipe-style multi-catch, try/catch/finally including finally-on-return, return override, throw unwinding, finally-preserved and finally-overridden loop signals, bare rethrow with original stack preservation, exception messages/getMessage, getTypeName, getLineNumber, getStackTraceString, System.*Exception name normalization, catchable null dereference, interface-based catch matching, and exception hierarchy matching for common Apex exception types. Remaining gaps are outside control-flow and exception semantics.
 

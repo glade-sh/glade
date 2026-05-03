@@ -4,10 +4,17 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 
 	"github.com/open-aer/oaer/internal/apexast"
+	"github.com/open-aer/oaer/internal/apextest"
+	"github.com/open-aer/oaer/internal/project"
+	"github.com/open-aer/oaer/internal/schema"
+	"github.com/open-aer/oaer/internal/sema"
+	"github.com/open-aer/oaer/internal/typesys"
 	"github.com/open-aer/oaer/internal/vm"
 )
 
@@ -28,8 +35,12 @@ func Run(fixture Fixture) (RunResult, error) {
 	switch fixture.Command.Kind {
 	case "parse":
 		return runParseFixture(fixture)
+	case "check":
+		return runCheckFixture(fixture)
 	case "exec":
 		return runExecFixture(fixture)
+	case "test":
+		return runTestFixture(fixture)
 	default:
 		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, fmt.Errorf("unsupported fixture command kind %q", fixture.Command.Kind)
 	}
@@ -41,7 +52,41 @@ func runParseFixture(fixture Fixture) (RunResult, error) {
 	for _, source := range fixture.Source {
 		result.Files = append(result.Files, parser.ParseSource(source.Path, source.Content))
 	}
-	payload := map[string]any{"ok": !result.HasErrors(), "files": len(result.Files)}
+	diagnostics := 0
+	for _, file := range result.Files {
+		diagnostics += len(file.Diagnostics)
+	}
+	payload := map[string]any{"ok": !result.HasErrors(), "files": len(result.Files), "diagnostics": diagnostics}
+	return compareResult(fixture, payload, "")
+}
+
+func runCheckFixture(fixture Fixture) (RunResult, error) {
+	root, err := os.MkdirTemp("", "oaer-compat-check-*")
+	if err != nil {
+		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+	}
+	defer os.RemoveAll(root)
+
+	apexFiles := make([]string, 0, len(fixture.Source))
+	for _, source := range fixture.Source {
+		path := filepath.Join(root, filepath.Clean(source.Path))
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+		}
+		if err := os.WriteFile(path, []byte(source.Content), 0o644); err != nil {
+			return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+		}
+		apexFiles = append(apexFiles, path)
+	}
+
+	index := typesys.Build(project.Project{Root: root, ApexFiles: apexFiles}, schema.Schema{})
+	result := sema.Analyze(index)
+	payload := map[string]any{
+		"ok":          !result.HasErrors(),
+		"files":       len(apexFiles),
+		"types":       result.Summary.Types,
+		"diagnostics": result.Summary.Diagnostics,
+	}
 	return compareResult(fixture, payload, "")
 }
 
@@ -60,6 +105,44 @@ func runExecFixture(fixture Fixture) (RunResult, error) {
 	}
 	payload := map[string]any{"ok": true, "debug": result.Debug}
 	return compareResult(fixture, payload, stdout.String())
+}
+
+func runTestFixture(fixture Fixture) (RunResult, error) {
+	root, err := os.MkdirTemp("", "oaer-compat-test-*")
+	if err != nil {
+		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+	}
+	defer os.RemoveAll(root)
+	if err := os.WriteFile(filepath.Join(root, "sfdx-project.json"), []byte(`{"packageDirectories":[{"path":"force-app","default":true}]}`), 0o644); err != nil {
+		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+	}
+	for _, source := range fixture.Source {
+		path := filepath.Join(root, filepath.Clean(source.Path))
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+		}
+		if err := os.WriteFile(path, []byte(source.Content), 0o644); err != nil {
+			return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+		}
+	}
+	proj, err := project.Load(root)
+	if err != nil {
+		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+	}
+	sch, err := schema.LoadProject(proj)
+	if err != nil {
+		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+	}
+	run := apextest.Run(typesys.Build(proj, sch), apextest.Options{})
+	summary := run.Summary()
+	payload := map[string]any{
+		"ok":     summary.Total > 0 && summary.Failed == 0 && summary.Errors == 0,
+		"total":  summary.Total,
+		"passed": summary.Passed,
+		"failed": summary.Failed,
+		"errors": summary.Errors,
+	}
+	return compareResult(fixture, payload, "")
 }
 
 func compareError(fixture Fixture, runErr error) (RunResult, error) {

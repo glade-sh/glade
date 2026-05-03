@@ -69,6 +69,90 @@ List<Account> rows = [SELECT Id FROM Account];
 	}
 }
 
+func TestExecStartStopRestoresOuterLimitWindow(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account beforeStart = new Account(Name = 'Before');
+insert beforeStart;
+System.assertEquals(1, Limits.getDmlStatements());
+Test.startTest();
+Account insideWindow = new Account(Name = 'Inside');
+insert insideWindow;
+System.assertEquals(1, Limits.getDmlStatements());
+Test.stopTest();
+System.assertEquals(1, Limits.getDmlStatements());
+Account afterStop = new Account(Name = 'After');
+insert afterStop;
+System.assertEquals(2, Limits.getDmlStatements());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecRunAsUserObjectScopesUserInfo(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.runAs(new User(Id = '005-user-a', ProfileId = '00e-profile-a', Username = 'user-a@example.test')) {
+  System.assertEquals('005-user-a', UserInfo.getUserId());
+  System.assertEquals('00e-profile-a', UserInfo.getProfileId());
+  System.assertEquals('user-a@example.test', UserInfo.getUserName());
+}
+System.assertEquals('system', UserInfo.getUserId());
+System.runAs(new User(Id = '005-user-b', Permissions = new List<String>{'CanRunLocal'})) {
+  System.assert(FeatureManagement.checkPermission('CanRunLocal'));
+  System.assert(!FeatureManagement.checkPermission('OtherPermission'));
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecRunAsScopesSupportedMixedDMLMode(t *testing.T) {
+	fails, err := CompileAnonymous(`
+insert new User(Username = 'setup@example.test');
+insert new Account(Name = 'Acme');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(fails); err == nil || !strings.Contains(err.Error(), "Mixed DML") {
+		t.Fatalf("err = %v", err)
+	}
+
+	passes, err := CompileAnonymous(`
+insert new User(Username = 'setup@example.test');
+System.runAs(new User(Id = '005-user-a', ProfileId = '00e-profile-a', Username = 'user-a@example.test')) {
+  insert new Account(Name = 'Acme');
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine = New(nil)
+	org = testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(passes); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecPlatformAPIs(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals(5, Math.abs(-5));

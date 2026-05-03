@@ -19,6 +19,7 @@ func CompileAnonymous(source string) (ir.Program, error) {
 	if err != nil {
 		return ir.Program{}, err
 	}
+	program.Source = source
 	return program, nil
 }
 
@@ -57,6 +58,12 @@ func lex(source string) ([]token, error) {
 			i++
 			for i < len(source) && source[i] >= '0' && source[i] <= '9' {
 				i++
+			}
+			if i < len(source) && source[i] == '.' && i+1 < len(source) && source[i+1] >= '0' && source[i+1] <= '9' {
+				i++
+				for i < len(source) && source[i] >= '0' && source[i] <= '9' {
+					i++
+				}
 			}
 			tokens = append(tokens, token{kind: tokenNumber, text: source[start:i], pos: start})
 		case source[i] == '\'':
@@ -248,7 +255,8 @@ func (p *parser) parseStatement() (ir.Instruction, error) {
 			return ir.Instruction{}, err
 		}
 		inst := ir.Instruction{Op: ir.OpTry, Then: tryBlock, Pos: start.pos}
-		if p.match(tokenIdent, "catch") {
+		for p.match(tokenIdent, "catch") {
+			catchPos := p.tokens[p.pos-1].pos
 			if _, err := p.expect(tokenSymbol, "("); err != nil {
 				return ir.Instruction{}, err
 			}
@@ -275,10 +283,13 @@ func (p *parser) parseStatement() (ir.Instruction, error) {
 			if err != nil {
 				return ir.Instruction{}, err
 			}
-			inst.Type = catchType
-			inst.CatchTypes = catchTypes
-			inst.Name = catchName.text
-			inst.Catch = catchBlock
+			inst.Catches = append(inst.Catches, ir.CatchClause{Types: catchTypes, Name: catchName.text, Body: catchBlock, Pos: catchPos})
+			if len(inst.Catches) == 1 {
+				inst.Type = catchType
+				inst.CatchTypes = catchTypes
+				inst.Name = catchName.text
+				inst.Catch = catchBlock
+			}
 		}
 		if p.match(tokenIdent, "finally") {
 			finallyBlock, err := p.parseStatementBlock()
@@ -287,7 +298,7 @@ func (p *parser) parseStatement() (ir.Instruction, error) {
 			}
 			inst.Finally = finallyBlock
 		}
-		if len(inst.Catch) == 0 && len(inst.Finally) == 0 {
+		if len(inst.Catches) == 0 && len(inst.Catch) == 0 && len(inst.Finally) == 0 {
 			return ir.Instruction{}, fmt.Errorf("try requires catch or finally at byte %d", start.pos)
 		}
 		return inst, nil
@@ -763,7 +774,11 @@ func (p *parser) parseUnary() (ir.Expr, error) {
 func (p *parser) parsePrimary() (ir.Expr, error) {
 	switch tok := p.advance(); tok.kind {
 	case tokenNumber:
-		if _, err := strconv.ParseInt(tok.text, 10, 64); err != nil {
+		if strings.Contains(tok.text, ".") {
+			if _, err := strconv.ParseFloat(tok.text, 64); err != nil {
+				return ir.Expr{}, fmt.Errorf("invalid decimal %q at byte %d", tok.text, tok.pos)
+			}
+		} else if _, err := strconv.ParseInt(tok.text, 10, 64); err != nil {
 			return ir.Expr{}, fmt.Errorf("invalid integer %q at byte %d", tok.text, tok.pos)
 		}
 		return ir.Expr{Kind: ir.ExprLiteral, Value: tok.text}, nil

@@ -70,6 +70,9 @@ type Class struct {
 	InstanceInitializers []Method
 	EnumValues           []string
 	Access               string
+	IsAbstract           bool
+	IsInterface          bool
+	IsTest               bool
 }
 
 func (vm *VM) RegisterClass(class Class) error {

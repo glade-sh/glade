@@ -51,67 +51,188 @@ a Salesforce-shaped local API server without silently wrong behavior.
 
 - [x] Build method-body semantic analysis beyond declaration/member type
   references.
-- [ ] Model local variables, scopes, expressions, statements, method calls, and
+- [x] Model local variables, scopes, expressions, statements, method calls, and
   constructor calls in sema.
-- [ ] Resolve overloads with Apex-compatible conversion and specificity rules.
-- [ ] Resolve inherited members, interface members, virtual/override methods,
+- [x] Add an IR-backed method-body sema pass for scoped local reads across
+  declarations, assignments, conditions, returns, calls, loops, switch, and
+  try/catch/finally bodies.
+- [x] Extend the IR-backed sema pass with condition Boolean checks and scoped
+  declaration, assignment, and return type checks.
+- [x] Diagnose non-void method bodies where not all IR control-flow paths return
+  or throw.
+- [x] Validate known user-object field reads and writes in the IR-backed sema
+  pass, including inherited fields.
+- [x] Validate known receiver and same-class method calls in the IR-backed sema
+  pass for unknown methods and argument type mismatches.
+- [x] Validate constructor calls in the IR-backed sema pass for unknown types,
+  non-instantiable types, and argument mismatches.
+- [x] Diagnose simple local initializer and assignment type mismatches in sema.
+- [x] Diagnose simple return type mismatches in sema.
+- [x] Reject non-void method fallthrough in sema and the VM.
+- [x] Infer simple binary expression types in sema for numeric, string,
+  comparison, and boolean operators.
+- [x] Resolve overloads with Apex-compatible conversion and specificity rules.
+- [x] Add a numeric overload/widening baseline for `Integer` to `Long`,
+  `Decimal`, and `Double` in sema and VM coverage.
+- [x] Choose exact and narrowest numeric overloads ahead of wider candidates in
+  sema return inference and VM dispatch.
+- [x] Choose the nearest class/interface overload ahead of broader ancestors and
+  `Object` in sema return inference and VM dispatch.
+- [x] Diagnose ambiguous overloads instead of selecting by registration order
+  when candidates are pairwise incomparable.
+- [x] Resolve `null` overload calls to the most specific applicable parameter
+  type when one candidate is strictly narrower.
+- [x] Infer decimal literal argument types in sema method-call matching.
+- [x] Enforce a class/interface object assignability baseline for local
+  declarations, assignments, returns, and method calls in sema.
+- [x] Infer known method-call return types for receiver and chained constructor
+  calls in sema.
+- [x] Resolve inherited members, interface members, virtual/override methods,
   and `super` references in sema.
-- [ ] Enforce visibility: `private`, `protected`, `public`, `global`, test
+- [x] Include inherited instance fields in method-body sema scopes.
+- [x] Infer `this`/`super` field and method return types for assignments and
+  returns in the IR-backed sema pass.
+- [x] Infer interface method calls and superclass-typed virtual method calls from
+  the compile-time receiver type.
+- [x] Diagnose invalid `override` markers and missing concrete
+  interface/abstract method implementations.
+- [x] Diagnose constructor calls that instantiate interfaces, enums, and
+  abstract classes.
+- [x] Add private/protected method-call visibility diagnostics for supported
+  same-class and subclass references.
+- [x] Resolve protected method visibility through superclass chains in sema and
+  the VM.
+- [x] Allow `@TestVisible` method access from test classes in sema and the VM.
+- [x] Enforce visibility: `private`, `protected`, `public`, `global`, test
   visibility, and package boundaries.
-- [ ] Resolve namespaces for managed-package style references, custom metadata,
+- [x] Diagnose private/protected field visibility for known user-object field
+  reads in method-body sema.
+- [x] Require global class and member access across runtime namespace
+  boundaries, including namespace-qualified constructors.
+- [x] Resolve namespaces for managed-package style references, custom metadata,
   custom objects, custom fields, and package-local symbols.
-- [ ] Preserve stable source ranges through parser, sema, VM, test failures,
+- [x] Resolve namespace-token schema aliases like `pkg__Thing__c` to local
+  `Thing__c` metadata in sema when the project namespace is `pkg`.
+- [x] Resolve namespace-token custom object and field aliases through VM
+  SObject construction, field access, DML validation, and SOQL projection/where
+  clauses.
+- [x] Preserve stable source ranges through parser, sema, VM, test failures,
   LSP, DAP, and trace/profile events.
-- [ ] Add large-project compatibility fixtures that prove parse/index/check
+- [x] Include offsets on parser syntax diagnostics instead of line/column-only
+  parse errors.
+- [x] Preserve original file line/column positions for compiled project method
+  and trigger bodies.
+- [x] Emit statement trace line/column alongside source offsets so DAP and
+  profile reports can consume real source positions.
+- [x] Attach statement-level source positions to VM assertion/runtime stacks and
+  test failure reports.
+- [x] Add large-project compatibility fixtures that prove parse/index/check
   behavior across enterprise repositories.
-- [ ] Ensure unsupported syntax and semantic features return stable diagnostics
+- [x] Ensure unsupported syntax and semantic features return stable diagnostics
   instead of parser/VM panics.
 
 ## 2. Apex Runtime Core
 
-- [ ] Complete class and instance execution fidelity for real service/domain
+- [x] Complete class and instance execution fidelity for real service/domain
   classes.
 - [x] Finish properties, getters/setters, initializer blocks, static
   initializers, static field ordering, and static reset behavior.
+- [x] Execute static and instance field initializer expressions in source order,
+  interleaved with initializer blocks and reset behavior.
 - [x] Complete constructor chaining, default constructors, overloaded
   constructors, and `this(...)`/`super(...)` behavior.
-- [ ] Complete virtual dispatch, overrides, interfaces, abstract classes, and
+- [x] Complete virtual dispatch, overrides, interfaces, abstract classes, and
   inherited member lookup.
-- [ ] Implement inner classes, nested types, enums, and user object values with
-  Salesforce-like equality/string/debug behavior.
-- [ ] Complete exception hierarchy semantics, typed catch matching, multi-catch
+- [x] Add runtime virtual dispatch coverage through superclass-typed and
+  interface-typed references.
+- [x] Resolve `super` method calls from the declaring class, not the runtime
+  receiver class.
+- [x] Prefer inherited concrete methods before interface fallback methods.
+- [x] Resolve inherited static fields and static methods through subclass names.
+- [x] Block abstract method invocation at runtime.
+- [x] Reject interface, enum, and abstract-class instantiation in the VM.
+- [x] Add enum method baselines and explicit user object `toString()` dispatch.
+- [x] Use user object `toString()` for debug and assertion message display.
+- [x] Add qualified nested type symbols and a nested class method/static member
+  execution baseline.
+- [x] Pin user object identity equality behavior.
+- [x] Implement inner classes, nested types, and user object values with
+  Salesforce-like equality/debug behavior.
+- [x] Resolve relative nested type names inside owning classes for constructors,
+  declarations, returns, and implemented interfaces.
+- [x] Execute nested class constructors, instance fields, methods, static
+  methods, and static fields through qualified and relative references.
+- [x] Execute nested interfaces and nested enum values/methods, including chained
+  enum member calls such as `Outer.Choice.Two.name()`.
+- [x] Preserve identity equality for nested user objects and existing
+  user-object debug/toString behavior.
+- [x] Complete exception hierarchy semantics, typed catch matching, multi-catch
   behavior, rethrow behavior, stack traces, and file/line reporting.
-- [ ] Complete control-flow edge cases for loops, `switch`, `break`,
+- [x] Support ordered multiple `catch` blocks in addition to pipe-style
+  multi-catch clauses.
+- [x] Normalize `System.*Exception` names against unqualified Apex catch types.
+- [x] Preserve original throw stacks across catch/rethrow and expose
+  `getTypeName`, `getLineNumber`, and `getStackTraceString`.
+- [x] Complete control-flow edge cases for loops, `switch`, `break`,
   `continue`, `return`, `finally`, and exception unwinding.
-- [ ] Implement access modifiers and namespace/package boundaries at runtime,
+- [x] Cover `finally` execution across return, return override, and uncaught
+  throw unwinding in the VM.
+- [x] Treat `break` inside `switch` as switch-local while still propagating
+  `continue`, `return`, and `throw` to surrounding loops/methods.
+- [x] Preserve and override loop signals through `finally`, including
+  break/continue preservation, continue overriding break, and finally-thrown
+  exceptions overriding pending returns.
+- [x] Cover enhanced-for break/continue/finally signal behavior.
+- [x] Implement access modifiers and namespace/package boundaries at runtime,
   not only in sema.
-- [ ] Support Apex numeric, decimal, boolean, string, collection, null, enum,
+- [x] Support Apex numeric, decimal, boolean, string, collection, null, enum,
   and object coercion rules closely enough for enterprise code.
+- [x] Coerce declared locals, method params/returns, object fields,
+  collection members, and schema-backed DML storage values through a shared VM
+  assignability path.
+- [x] Reject invalid String/Boolean, narrowing numeric, collection generic, and
+  schema field coercions in VM/sema coverage.
+- [x] Enforce a class/interface object assignability baseline for VM locals,
+  fields, params, returns, and overload matching.
 - [x] Add no-panic guards around all VM execution paths for malformed or
   unsupported user code.
 
 ## 3. Apex Test Semantics And Async
 
-- [ ] Make `@TestSetup` match Salesforce transaction behavior exactly,
-  including setup data visibility and rollback.
-- [ ] Restore governor windows around `Test.startTest()` and `Test.stopTest()`
-  with Salesforce-compatible counter behavior.
-- [ ] Complete per-test transaction rollback for all storage mutations,
-  triggers, async jobs, and platform side effects.
-- [ ] Complete static reset behavior across test methods, test setup, async
-  drain, and nested execution.
-- [ ] Complete `System.runAs` profile, user, permission, sharing, and mixed-DML
-  behavior for supported modes.
-- [ ] Implement `@future` execution and stopTest drain behavior.
-- [ ] Implement Batchable execution, batch chunking, finish behavior, and
-  observable async records where useful.
-- [ ] Implement Schedulable execution and direct scheduling model.
-- [ ] Complete Queueable behavior: chaining limits, job IDs, error handling,
-  and durable job state where useful.
-- [ ] Improve assertion failures and runtime errors with precise file/line
-  stack traces.
-- [ ] Add enterprise test fixtures for trigger-heavy, selector/service/domain,
+- [x] Make `@TestSetup` match Salesforce transaction behavior exactly,
+   including setup data visibility and rollback.
+- [x] Run `@TestSetup` once per test class into an org snapshot, then clone that
+  snapshot for each test method.
+- [x] Restore governor windows around `Test.startTest()` and `Test.stopTest()`
+   with Salesforce-compatible counter behavior.
+- [x] Preserve pre-`startTest` counters, reset the inner window, drain async work
+  at `stopTest`, and restore the outer counter window for post-stop code.
+- [x] Complete per-test transaction rollback for all storage mutations,
+   triggers, async jobs, and platform side effects.
+- [x] Complete static reset behavior across test methods, test setup, async
+   drain, and nested execution.
+- [x] Reset statics before each drained Queueable job so async execution starts
+  with a fresh transaction-shaped static state.
+- [x] Complete `System.runAs` user/profile identity behavior for supported local
+  test modes.
+- [x] Complete broader `System.runAs` permission, sharing, and mixed-DML
+  enforcement for supported modes.
+- [x] Scope `FeatureManagement.checkPermission` to supported `runAs` user
+  permission lists, enforce mixed-DML guards, and pin local tests to
+  system-sharing mode.
+- [x] Implement `@future` execution and stopTest drain behavior.
+- [x] Implement Batchable execution, batch chunking, finish behavior, and
+   observable async records where useful.
+- [x] Implement Schedulable execution and direct scheduling model.
+- [x] Drain Queueable jobs at `Test.stopTest()` with deterministic job IDs,
+  error propagation, and fresh async static state.
+- [x] Complete Queueable chaining limits and durable async job state where useful.
+- [x] Improve assertion failures and runtime errors with precise file/line
+   stack traces.
+- [x] Add enterprise test fixtures for trigger-heavy, selector/service/domain,
   async-heavy, describe-heavy, and namespace-heavy projects.
+- [x] Add an async-heavy compatibility test fixture that covers future, batch,
+  schedule, chained Queueable, `AsyncApexJob`, and `CronTrigger` behavior.
 
 ## 4. SObjects, SOQL, DML, And Triggers
 

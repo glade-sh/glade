@@ -3,6 +3,7 @@ package sema
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/open-aer/oaer/internal/apexast"
@@ -25,6 +26,34 @@ func TestAnalyzeResolvesMemberTypes(t *testing.T) {
 			},
 		},
 		Objects: []schema.Object{{Name: "Thing__c"}},
+	}
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeResolvesNamespaceQualifiedSchemaAliases(t *testing.T) {
+	index := typesys.Index{
+		Project: typesys.ProjectInfo{Namespace: "pkg"},
+		Types: []typesys.TypeSymbol{
+			{
+				Kind: apexast.DeclarationClass,
+				Name: "Hello",
+				File: "Hello.cls",
+				Members: []typesys.MemberSymbol{
+					{Kind: apexast.DeclarationMethod, Name: "run", Type: "List<pkg__Thing__c>"},
+				},
+			},
+		},
+		Triggers: []typesys.TriggerSymbol{{Name: "ThingTrigger", ObjectName: "pkg__Thing__c", File: "Thing.trigger"}},
+		Objects: []schema.Object{{
+			Name: "Thing__c",
+			Fields: []schema.Field{
+				{Name: "Parent__c", Type: "Lookup", ReferenceTo: "pkg__Thing__c"},
+			},
+		}},
 	}
 
 	result := Analyze(index)
@@ -120,6 +149,63 @@ func TestAnalyzeProjectNamespaceQualifiedTypes(t *testing.T) {
 	}
 }
 
+func TestAnalyzeNestedTypeReferences(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Outer.cls"), `
+public class Outer {
+  public class Inner {}
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "UsesInner.cls"), `
+public class UsesInner {
+  public Outer.Inner build() {
+    Outer.Inner value = new Outer.Inner();
+    return value;
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "Outer.cls"),
+		filepath.Join(root, "UsesInner.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeNestedTypeRelativeReferencesInsideOwner(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Outer.cls"), `
+public class Outer {
+  public interface Named {
+    String name();
+  }
+  public class Inner {
+    public Inner(Integer value) {}
+  }
+  public class NamedImpl implements Named {
+    public String name() {
+      return 'named';
+    }
+  }
+  public static Inner build(Integer value) {
+    Inner made = new Inner(value);
+    return made;
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "Outer.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
 func TestAnalyzeVisibilityBaseline(t *testing.T) {
 	index := typesys.Index{
 		Types: []typesys.TypeSymbol{
@@ -202,10 +288,600 @@ public class Hello {
 	for _, diag := range result.Diagnostics {
 		codes[diag.Code] = true
 	}
-	for _, code := range []string{"OAERSEMA006", "OAERSEMA007", "OAERSEMA008"} {
+	for _, code := range []string{"OAERSEMA006", "OAERSEMA013", "OAERSEMA008"} {
 		if !codes[code] {
 			t.Fatalf("missing %s in diagnostics: %#v", code, result.Diagnostics)
 		}
+	}
+}
+
+func TestAnalyzeNonConstructableTypeDiagnostics(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Base.cls"), `public abstract class Base {}`)
+	writeSemaFile(t, filepath.Join(root, "IThing.cls"), `public interface IThing {}`)
+	writeSemaFile(t, filepath.Join(root, "Mood.cls"), `public enum Mood { Happy }`)
+	writeSemaFile(t, filepath.Join(root, "Uses.cls"), `
+public class Uses {
+  public void run() {
+    Base base = new Base();
+    IThing thing = new IThing();
+    Mood mood = new Mood();
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "Base.cls"),
+		filepath.Join(root, "IThing.cls"),
+		filepath.Join(root, "Mood.cls"),
+		filepath.Join(root, "Uses.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	count := 0
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "OAERSEMA015" {
+			count++
+		}
+	}
+	if count != 3 {
+		t.Fatalf("OAERSEMA015 count = %d, diagnostics = %#v", count, result.Diagnostics)
+	}
+}
+
+func TestAnalyzeObjectAssignabilityUsesInheritanceAndInterfaces(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Base.cls"), `public virtual class Base {}`)
+	writeSemaFile(t, filepath.Join(root, "Child.cls"), `public class Child extends Base implements Marker {}`)
+	writeSemaFile(t, filepath.Join(root, "Marker.cls"), `public interface Marker {}`)
+	writeSemaFile(t, filepath.Join(root, "Other.cls"), `public class Other {}`)
+	writeSemaFile(t, filepath.Join(root, "Uses.cls"), `
+public class Uses {
+  public void acceptsBase(Base base) {}
+  public void acceptsMarker(Marker marker) {}
+  public Base returnsBase() {
+    return new Child();
+  }
+  public void run() {
+    Base base = new Child();
+    Marker marker = new Child();
+    acceptsBase(new Child());
+    acceptsMarker(new Child());
+    base = new Other();
+    acceptsBase(new Other());
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "Base.cls"),
+		filepath.Join(root, "Child.cls"),
+		filepath.Join(root, "Marker.cls"),
+		filepath.Join(root, "Other.cls"),
+		filepath.Join(root, "Uses.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	assignabilityDiagnostics := 0
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "OAERSEMA018" || diag.Code == "OAERSEMA009" {
+			assignabilityDiagnostics++
+		}
+	}
+	if assignabilityDiagnostics != 2 {
+		t.Fatalf("expected two object assignability diagnostics, got %d: %#v", assignabilityDiagnostics, result.Diagnostics)
+	}
+}
+
+func TestAnalyzeInfersKnownMethodCallReturnTypes(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Factory.cls"), `
+public class Factory {
+  public Product make() {
+    return new Product();
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "Product.cls"), `
+public class Product {
+  public String label() {
+    return 'ready';
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "Uses.cls"), `
+public class Uses {
+  public Product direct() {
+    return new Factory().make();
+  }
+  public String chained() {
+    return new Factory().make().label();
+  }
+  public void run() {
+    Product product = new Factory().make();
+    String label = product.label();
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "Factory.cls"),
+		filepath.Join(root, "Product.cls"),
+		filepath.Join(root, "Uses.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeMethodBodyDiagnosticRangesPointAtTokens(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public void run() {
+    MissingType item;
+    missingValue = 1;
+    missingCall();
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	positions := map[string]int{}
+	for _, diag := range result.Diagnostics {
+		if diag.Range != nil {
+			positions[diag.Code] = diag.Range.Start.Line
+		}
+	}
+	if positions["OAERSEMA006"] != 4 {
+		t.Fatalf("OAERSEMA006 line = %d diagnostics=%#v", positions["OAERSEMA006"], result.Diagnostics)
+	}
+	if positions["OAERSEMA013"] != 5 {
+		t.Fatalf("OAERSEMA013 line = %d diagnostics=%#v", positions["OAERSEMA013"], result.Diagnostics)
+	}
+	if positions["OAERSEMA008"] != 6 {
+		t.Fatalf("OAERSEMA008 line = %d diagnostics=%#v", positions["OAERSEMA008"], result.Diagnostics)
+	}
+}
+
+func TestAnalyzeMethodBodyScopeDiagnostics(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public void useIt(Integer value) {}
+  public void run(Boolean flag) {
+    Integer local = 1;
+    Integer local = 2;
+    useIt(missingArg);
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	codes := map[string]bool{}
+	for _, diag := range result.Diagnostics {
+		codes[diag.Code] = true
+	}
+	for _, code := range []string{"OAERSEMA014", "OAERSEMA013"} {
+		if !codes[code] {
+			t.Fatalf("missing %s in diagnostics: %#v", code, result.Diagnostics)
+		}
+	}
+}
+
+func TestAnalyzeIRBodyDiagnosticsForUnknownVariableReads(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public Integer run(Boolean flag) {
+    Integer total = 1;
+    if (missingFlag) {
+      total = total + missingAmount;
+    }
+    return missingReturn;
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	unknowns := map[string]bool{}
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "OAERSEMA013" {
+			unknowns[diag.Message] = true
+		}
+	}
+	for _, name := range []string{"missingFlag", "missingAmount", "missingReturn"} {
+		found := false
+		for message := range unknowns {
+			if strings.Contains(message, name) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Fatalf("missing unknown read for %s: %#v", name, result.Diagnostics)
+		}
+	}
+}
+
+func TestAnalyzeIRBodyScopesNestedLocals(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public void run(Boolean flag) {
+    if (flag) {
+      Integer inside = 1;
+      System.debug(inside);
+    }
+    System.debug(inside);
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	count := 0
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "OAERSEMA013" && strings.Contains(diag.Message, "inside") {
+			count++
+		}
+	}
+	if count != 1 {
+		t.Fatalf("expected one out-of-scope diagnostic for inside, got %d: %#v", count, result.Diagnostics)
+	}
+}
+
+func TestAnalyzeIRBodyConditionTypeDiagnostics(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public void run(Integer count, String label) {
+    if (count) {
+      System.debug(label);
+    }
+    while (label) {
+      break;
+    }
+    for (Integer i = 0; label; i = i + 1) {
+      break;
+    }
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	count := 0
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "OAERSEMA020" {
+			count++
+		}
+	}
+	if count != 3 {
+		t.Fatalf("OAERSEMA020 count = %d diagnostics=%#v", count, result.Diagnostics)
+	}
+}
+
+func TestAnalyzeIRBodyTypeChecksNestedAssignmentsAndReturns(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public Integer run(Boolean flag) {
+    if (flag) {
+      Integer count = 'bad';
+      count = 'also bad';
+      return 'still bad';
+    }
+    return 1;
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	codes := map[string]int{}
+	for _, diag := range result.Diagnostics {
+		codes[diag.Code]++
+	}
+	if codes["OAERSEMA018"] == 0 || codes["OAERSEMA019"] == 0 {
+		t.Fatalf("missing IR type diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeIRBodyFieldShapeDiagnostics(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Base.cls"), `
+public class Base {
+  public String inherited;
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "Helper.cls"), `
+public class Helper extends Base {
+  public String value;
+  public void run(Helper other) {
+    String ok = other.value;
+    String alsoOk = other.inherited;
+    String missing = other.nope;
+    other.nope = 'x';
+    String thisMissing = this.nope;
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "Base.cls"),
+		filepath.Join(root, "Helper.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	count := 0
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "OAERSEMA021" {
+			count++
+		}
+	}
+	if count != 3 {
+		t.Fatalf("OAERSEMA021 count = %d diagnostics=%#v", count, result.Diagnostics)
+	}
+}
+
+func TestAnalyzeIRBodyMethodCalls(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Helper.cls"), `
+public class Helper {
+  public void use(Integer value) {}
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public void localUse(String value) {}
+  public void run(Boolean flag) {
+    if (flag) {
+      Helper helper = new Helper();
+      helper.use('bad');
+      helper.missing();
+      localUse(1);
+    }
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "Helper.cls"),
+		filepath.Join(root, "Hello.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	counts := map[string]int{}
+	for _, diag := range result.Diagnostics {
+		counts[diag.Code]++
+	}
+	if counts["OAERSEMA008"] == 0 || counts["OAERSEMA009"] == 0 {
+		t.Fatalf("missing IR call diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeIRBodyConstructorCalls(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Helper.cls"), `
+public class Helper {
+  public Helper(Integer value) {}
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "AbstractThing.cls"), `public abstract class AbstractThing {}`)
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public void run() {
+    Helper ok = new Helper(1);
+    Helper wrongArgs = new Helper('bad');
+    MissingType missing = new MissingType();
+    AbstractThing abstractThing = new AbstractThing();
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "Helper.cls"),
+		filepath.Join(root, "AbstractThing.cls"),
+		filepath.Join(root, "Hello.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	codes := map[string]int{}
+	for _, diag := range result.Diagnostics {
+		codes[diag.Code]++
+	}
+	for _, code := range []string{"OAERSEMA006", "OAERSEMA011", "OAERSEMA015"} {
+		if codes[code] == 0 {
+			t.Fatalf("missing %s diagnostics=%#v", code, result.Diagnostics)
+		}
+	}
+}
+
+func TestAnalyzeSimpleAssignmentTypeDiagnostics(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  Integer count;
+  Decimal total;
+  public void run(String name, Integer input) {
+    Decimal widened = 1;
+    Integer local = 'bad';
+    count = input;
+    total = count;
+    count = 'bad';
+    name = 1.5;
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	count := 0
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "OAERSEMA018" {
+			count++
+		}
+	}
+	if count != 3 {
+		t.Fatalf("OAERSEMA018 count = %d diagnostics=%#v", count, result.Diagnostics)
+	}
+}
+
+func TestAnalyzeCoercionRules(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public Double doubleMath(Double value) {
+    return value + 1;
+  }
+  public void run(Integer count, String name, Boolean ready) {
+    Long widenedLong = count;
+    Decimal widenedDecimal = count;
+    Double widenedDouble = widenedDecimal;
+    Object anyValue = new List<String>();
+    List<Decimal> decimals = new List<Decimal>();
+    List<Integer> ints = new List<Decimal>();
+    Integer badNarrow = widenedDecimal;
+    Boolean badBoolean = name;
+    String badString = ready;
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	count := 0
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "OAERSEMA018" {
+			count++
+		}
+	}
+	if count != 4 {
+		t.Fatalf("OAERSEMA018 count = %d diagnostics=%#v", count, result.Diagnostics)
+	}
+}
+
+func TestAnalyzeSimpleReturnTypeDiagnostics(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public Integer ok(Integer value) {
+    return value;
+  }
+  public Decimal widened(Integer value) {
+    return value;
+  }
+  public Integer badString() {
+    return 'bad';
+  }
+  public void badVoid() {
+    return 1;
+  }
+  public String missingReturn() {
+    Integer value = 1;
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	count := 0
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "OAERSEMA019" {
+			count++
+		}
+	}
+	if count != 3 {
+		t.Fatalf("OAERSEMA019 count = %d diagnostics=%#v", count, result.Diagnostics)
+	}
+}
+
+func TestAnalyzeIRBodyAllPathsReturnDiagnostics(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public Integer bothBranches(Boolean flag) {
+    if (flag) {
+      return 1;
+    } else {
+      return 2;
+    }
+  }
+  public Integer switchAll(Integer value) {
+    switch on value {
+      when 1 { return 1; }
+      when else { return 2; }
+    }
+  }
+  public Integer tryCatchAll(Boolean flag) {
+    try {
+      return 1;
+    } catch (Exception e) {
+      return 2;
+    }
+  }
+  public Integer missingElse(Boolean flag) {
+    if (flag) {
+      return 1;
+    }
+  }
+  public Integer missingSwitchElse(Integer value) {
+    switch on value {
+      when 1 { return 1; }
+    }
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	count := 0
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "OAERSEMA019" && strings.Contains(diag.Message, "on all paths") {
+			count++
+		}
+	}
+	if count != 2 {
+		t.Fatalf("all-path return diagnostic count = %d diagnostics=%#v", count, result.Diagnostics)
+	}
+}
+
+func TestAnalyzeSimpleExpressionTypeDiagnostics(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Helper.cls"), `
+public class Helper {
+  public void acceptDecimal(Decimal value) {}
+  public void acceptBoolean(Boolean value) {}
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public Integer add(Integer left, Integer right) {
+    return left + right;
+  }
+  public void run(Integer count, String name, Boolean ready) {
+    Helper h = new Helper();
+    Decimal total = count + 1.5;
+    Boolean ok = ready && true;
+    h.acceptDecimal(count + 2);
+    h.acceptBoolean(count > 0);
+    count = name + 'x';
+    ready = count + 1;
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "Helper.cls"),
+		filepath.Join(root, "Hello.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	counts := map[string]int{}
+	for _, diag := range result.Diagnostics {
+		counts[diag.Code]++
+	}
+	if counts["OAERSEMA018"] != 2 || counts["OAERSEMA009"] != 0 || counts["OAERSEMA019"] != 0 {
+		t.Fatalf("diagnostic counts = %#v diagnostics=%#v", counts, result.Diagnostics)
 	}
 }
 
@@ -241,6 +917,536 @@ public class Hello {
 	}
 	if !got {
 		t.Fatalf("expected OAERSEMA009: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeMethodCallNumericWideningBaseline(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Helper.cls"), `
+public class Helper {
+  public void acceptInteger(Integer value) {}
+  public void acceptLong(Long value) {}
+  public void acceptDecimal(Decimal value) {}
+  public void acceptDouble(Double value) {}
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public void run() {
+    Helper h = new Helper();
+    Integer count = 1;
+    h.acceptLong(count);
+    h.acceptDecimal(1);
+    h.acceptDouble(1.5);
+    h.acceptInteger(1.5);
+    h.acceptDouble(count);
+    h.acceptDecimal(true);
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "Helper.cls"),
+		filepath.Join(root, "Hello.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	count := 0
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "OAERSEMA009" {
+			count++
+		}
+	}
+	if count != 2 {
+		t.Fatalf("OAERSEMA009 count = %d diagnostics=%#v", count, result.Diagnostics)
+	}
+}
+
+func TestAnalyzeMethodCallNumericOverloadChoosesNarrowestWidening(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Helper.cls"), `
+public class Helper {
+  public String pick(Integer value) { return 'integer'; }
+  public Boolean pick(Decimal value) { return true; }
+  public String widen(Integer value) { return 'integer'; }
+  public String widen(Long value) { return 'long'; }
+  public Boolean widen(Decimal value) { return true; }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public void run() {
+    Helper h = new Helper();
+    String exact = h.pick(1);
+    String widened = h.widen(1);
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "Helper.cls"),
+		filepath.Join(root, "Hello.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("expected no errors: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeMethodCallObjectOverloadChoosesNearestAncestor(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Root.cls"), `public virtual class Root {}`)
+	writeSemaFile(t, filepath.Join(root, "Parent.cls"), `public virtual class Parent extends Root {}`)
+	writeSemaFile(t, filepath.Join(root, "Child.cls"), `public class Child extends Parent {}`)
+	writeSemaFile(t, filepath.Join(root, "Helper.cls"), `
+public class Helper {
+  public Boolean pick(Object value) { return true; }
+  public Boolean pick(Root value) { return true; }
+  public String pick(Parent value) { return 'parent'; }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public void run() {
+    Helper h = new Helper();
+    String result = h.pick(new Child());
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "Root.cls"),
+		filepath.Join(root, "Parent.cls"),
+		filepath.Join(root, "Child.cls"),
+		filepath.Join(root, "Helper.cls"),
+		filepath.Join(root, "Hello.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("expected no errors: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeMethodCallOverloadUsesPairwiseSpecificity(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Helper.cls"), `
+public class Helper {
+  public Boolean pick(Integer count, Object label) { return true; }
+  public Boolean pick(Long count, String label) { return true; }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public void run() {
+    Helper h = new Helper();
+    h.pick(1, 'one');
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "Helper.cls"),
+		filepath.Join(root, "Hello.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	found := false
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "OAERSEMA022" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("expected OAERSEMA022: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeMethodCallNullUsesMostSpecificOverload(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Helper.cls"), `
+public class Helper {
+  public Boolean pick(Object value) { return true; }
+  public String pick(String value) { return 'string'; }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public void run() {
+    Helper h = new Helper();
+    String value = h.pick(null);
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "Helper.cls"),
+		filepath.Join(root, "Hello.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("expected no errors: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeInheritedAndSuperMethodCalls(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Worker.cls"), `
+public interface Worker {
+  void work(Integer value);
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "Base.cls"), `
+public class Base {
+  public void inherited(String value) {}
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "Child.cls"), `
+public class Child extends Base implements Worker {
+  public void work(Integer value) {}
+  public void run() {
+    inherited('x');
+    super.inherited('y');
+    work(1);
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "Worker.cls"),
+		filepath.Join(root, "Base.cls"),
+		filepath.Join(root, "Child.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeInheritedSuperReturnAndFieldTypes(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Base.cls"), `
+public virtual class Base {
+  public String label;
+  public String inheritedLabel() {
+    return label;
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "Child.cls"), `
+public class Child extends Base {
+  public String okThisCall() {
+    return this.inheritedLabel();
+  }
+  public String okSuperCall() {
+    return super.inheritedLabel();
+  }
+  public Integer badSuperReturn() {
+    return super.inheritedLabel();
+  }
+  public void badSuperFieldAssign() {
+    super.label = 1;
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "Base.cls"),
+		filepath.Join(root, "Child.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	counts := map[string]int{}
+	for _, diag := range result.Diagnostics {
+		counts[diag.Code]++
+	}
+	if counts["OAERSEMA018"] != 1 || counts["OAERSEMA019"] != 1 {
+		t.Fatalf("diagnostic counts = %#v diagnostics=%#v", counts, result.Diagnostics)
+	}
+}
+
+func TestAnalyzeInterfaceAndOverrideReturnInference(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Worker.cls"), `
+public interface Worker {
+  String work();
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "Base.cls"), `
+public virtual class Base {
+  public virtual Object pick() {
+    return new Object();
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "Child.cls"), `
+public class Child extends Base implements Worker {
+  public String work() {
+    return 'work';
+  }
+  public override Object pick() {
+    return 'child';
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "Uses.cls"), `
+public class Uses {
+  public void run() {
+    Worker worker = new Child();
+    String label = worker.work();
+    Base base = new Child();
+    String bad = base.pick();
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "Worker.cls"),
+		filepath.Join(root, "Base.cls"),
+		filepath.Join(root, "Child.cls"),
+		filepath.Join(root, "Uses.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	count := 0
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "OAERSEMA018" {
+			count++
+		}
+	}
+	if count != 1 {
+		t.Fatalf("OAERSEMA018 count = %d diagnostics=%#v", count, result.Diagnostics)
+	}
+}
+
+func TestAnalyzeOverrideAndImplementationContracts(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Worker.cls"), `
+public interface Worker {
+  void work(Integer value);
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "Base.cls"), `
+public abstract class Base {
+  public abstract String label();
+  public virtual Integer score() { return 1; }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "Good.cls"), `
+public class Good extends Base implements Worker {
+  public override String label() { return 'ok'; }
+  public void work(Integer value) {}
+  public override Integer score() { return 2; }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "Bad.cls"), `
+public class Bad extends Base implements Worker {
+  public override void missing() {}
+  public abstract void ownAbstract();
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "Worker.cls"),
+		filepath.Join(root, "Base.cls"),
+		filepath.Join(root, "Good.cls"),
+		filepath.Join(root, "Bad.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	counts := map[string]int{}
+	for _, diag := range result.Diagnostics {
+		counts[diag.Code]++
+	}
+	if counts["OAERSEMA016"] != 1 || counts["OAERSEMA017"] != 3 {
+		t.Fatalf("diagnostic counts = %#v diagnostics=%#v", counts, result.Diagnostics)
+	}
+}
+
+func TestAnalyzeConstructorChainingBaseline(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Base.cls"), `
+public class Base {
+  public Base(Integer value) {}
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "Child.cls"), `
+public class Child extends Base {
+  public Child() {
+    super(1);
+  }
+  public Child(String value) {
+    this();
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "Base.cls"),
+		filepath.Join(root, "Child.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeConstructorChainingDiagnostics(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Plain.cls"), `
+public class Plain {
+  public void run() {
+    this();
+  }
+  public Plain() {
+    super(1);
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Plain.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	var count int
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "OAERSEMA011" {
+			count++
+		}
+	}
+	if count != 2 {
+		t.Fatalf("OAERSEMA011 count = %d diagnostics=%#v", count, result.Diagnostics)
+	}
+}
+
+func TestAnalyzeMethodCallVisibilityDiagnostics(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Secret.cls"), `
+public class Secret {
+  private void hidden() {}
+  protected void guarded() {}
+  public void ownAccess() {
+    hidden();
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "ChildSecret.cls"), `
+public class ChildSecret extends Secret {
+  public void run() {
+    guarded();
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "GrandChildSecret.cls"), `
+public class GrandChildSecret extends ChildSecret {
+  public void runAgain() {
+    guarded();
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "Intruder.cls"), `
+public class Intruder {
+  public void run() {
+    Secret s = new Secret();
+    s.hidden();
+    s.guarded();
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "Secret.cls"),
+		filepath.Join(root, "ChildSecret.cls"),
+		filepath.Join(root, "GrandChildSecret.cls"),
+		filepath.Join(root, "Intruder.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	var count int
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "OAERSEMA010" {
+			count++
+		}
+	}
+	if count != 2 {
+		t.Fatalf("OAERSEMA010 count = %d diagnostics=%#v", count, result.Diagnostics)
+	}
+}
+
+func TestAnalyzeTestVisibleMethodAccess(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Secret.cls"), `
+public class Secret {
+  @TestVisible private static void visibleForTests() {}
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "SecretTest.cls"), `
+@IsTest
+private class SecretTest {
+  @IsTest static void run() {
+    Secret.visibleForTests();
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "Intruder.cls"), `
+public class Intruder {
+  public void run() {
+    Secret.visibleForTests();
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "Secret.cls"),
+		filepath.Join(root, "SecretTest.cls"),
+		filepath.Join(root, "Intruder.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	count := 0
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "OAERSEMA010" {
+			count++
+		}
+	}
+	if count != 1 {
+		t.Fatalf("OAERSEMA010 count = %d diagnostics=%#v", count, result.Diagnostics)
+	}
+}
+
+func TestAnalyzeFieldVisibilityDiagnostics(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Secret.cls"), `
+public class Secret {
+  private String code;
+  protected String guarded;
+  public String ownAccess() {
+    return code;
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "ChildSecret.cls"), `
+public class ChildSecret extends Secret {
+  public String run() {
+    return guarded;
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "Intruder.cls"), `
+public class Intruder {
+  public void run() {
+    Secret s = new Secret();
+    String a = s.code;
+    String b = s.guarded;
+    s.code = 'x';
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "Secret.cls"),
+		filepath.Join(root, "ChildSecret.cls"),
+		filepath.Join(root, "Intruder.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	count := 0
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "OAERSEMA010" {
+			count++
+		}
+	}
+	if count != 3 {
+		t.Fatalf("OAERSEMA010 count = %d diagnostics=%#v", count, result.Diagnostics)
 	}
 }
 

@@ -49,7 +49,29 @@ func TestRunParseFixture(t *testing.T) {
 		Source:  []SourceFile{{Path: "Hello.cls", Content: "public class Hello {}"}},
 		Command: Invocation{Kind: "parse"},
 		Expected: ExpectedBehavior{
-			Result: json.RawMessage(`{"files":1,"ok":true}`),
+			Result: json.RawMessage(`{"diagnostics":0,"files":1,"ok":true}`),
+		},
+	}
+	result, err := Run(fixture)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.OK {
+		t.Fatalf("result = %#v", result)
+	}
+}
+
+func TestRunCheckFixture(t *testing.T) {
+	fixture := Fixture{
+		Name: "check-smoke",
+		Source: []SourceFile{
+			{Path: "classes/Greeter.cls", Content: "public interface Greeter { String greet(); }"},
+			{Path: "classes/DefaultGreeter.cls", Content: "public class DefaultGreeter implements Greeter { public String greet() { return 'hello'; } }"},
+			{Path: "classes/GreeterService.cls", Content: "public class GreeterService { public String run(Greeter greeter) { return greeter.greet(); } }"},
+		},
+		Command: Invocation{Kind: "check"},
+		Expected: ExpectedBehavior{
+			Result: json.RawMessage(`{"diagnostics":0,"files":3,"ok":true,"types":3}`),
 		},
 	}
 	result, err := Run(fixture)

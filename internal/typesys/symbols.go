@@ -2,6 +2,7 @@ package typesys
 
 import (
 	"fmt"
+	"os"
 	"sort"
 	"strings"
 
@@ -26,13 +27,15 @@ type ProjectInfo struct {
 }
 
 type TypeSymbol struct {
-	Kind      apexast.DeclarationKind `json:"kind"`
-	Name      string                  `json:"name"`
-	File      string                  `json:"file"`
-	Modifiers []string                `json:"modifiers,omitempty"`
-	IsTest    bool                    `json:"isTest,omitempty"`
-	Range     diagnostic.Range        `json:"range"`
-	Members   []MemberSymbol          `json:"members,omitempty"`
+	Kind       apexast.DeclarationKind `json:"kind"`
+	Name       string                  `json:"name"`
+	File       string                  `json:"file"`
+	Modifiers  []string                `json:"modifiers,omitempty"`
+	IsTest     bool                    `json:"isTest,omitempty"`
+	SuperClass string                  `json:"superClass,omitempty"`
+	Interfaces []string                `json:"interfaces,omitempty"`
+	Range      diagnostic.Range        `json:"range"`
+	Members    []MemberSymbol          `json:"members,omitempty"`
 }
 
 type MemberSymbol struct {
@@ -54,9 +57,9 @@ type TriggerSymbol struct {
 	Range      diagnostic.Range `json:"range"`
 }
 
-func Build(p project.Project, s schema.Schema) Index {
+func Build(p project.Project, s schema.Schema) (idx Index) {
 	parser := apexast.NewParser()
-	idx := Index{
+	idx = Index{
 		Project: ProjectInfo{
 			Root:             p.Root,
 			Namespace:        p.Namespace,
@@ -64,6 +67,15 @@ func Build(p project.Project, s schema.Schema) Index {
 		},
 		Objects: s.Objects,
 	}
+	defer func() {
+		if recovered := recover(); recovered != nil {
+			idx.Diagnostics = append(idx.Diagnostics, diagnostic.Diagnostic{
+				Severity: diagnostic.Error,
+				Code:     "OAERTYPE000",
+				Message:  fmt.Sprintf("internal type-index panic: %v", recovered),
+			})
+		}
+	}()
 	seenTypes := make(map[string]TypeSymbol)
 
 	for _, path := range p.ApexFiles {
@@ -84,14 +96,26 @@ func Build(p project.Project, s schema.Schema) Index {
 		for _, decl := range file.Declarations {
 			switch decl.Kind {
 			case apexast.DeclarationClass, apexast.DeclarationInterface, apexast.DeclarationEnum:
-				sym := typeSymbolFromDeclaration(path, decl)
-				key := strings.ToLower(sym.Name)
-				if previous, ok := seenTypes[key]; ok {
-					idx.Diagnostics = append(idx.Diagnostics, duplicateDiagnostic(sym, previous))
+				if source, err := os.ReadFile(path); err == nil {
+					for _, sym := range typeSymbolsFromDeclaration(path, decl, "", string(source)) {
+						key := strings.ToLower(sym.Name)
+						if previous, ok := seenTypes[key]; ok {
+							idx.Diagnostics = append(idx.Diagnostics, duplicateDiagnostic(sym, previous))
+						} else {
+							seenTypes[key] = sym
+						}
+						idx.Types = append(idx.Types, sym)
+					}
 				} else {
-					seenTypes[key] = sym
+					sym := typeSymbolFromDeclaration(path, decl, "")
+					key := strings.ToLower(sym.Name)
+					if previous, ok := seenTypes[key]; ok {
+						idx.Diagnostics = append(idx.Diagnostics, duplicateDiagnostic(sym, previous))
+					} else {
+						seenTypes[key] = sym
+					}
+					idx.Types = append(idx.Types, sym)
 				}
-				idx.Types = append(idx.Types, sym)
 			case apexast.DeclarationTrigger:
 				idx.Triggers = append(idx.Triggers, TriggerSymbol{
 					Name:       decl.Name,
@@ -122,10 +146,27 @@ func (idx Index) HasErrors() bool {
 	return false
 }
 
-func typeSymbolFromDeclaration(path string, decl apexast.Declaration) TypeSymbol {
+func typeSymbolsFromDeclaration(path string, decl apexast.Declaration, parent, source string) []TypeSymbol {
+	sym := typeSymbolFromDeclaration(path, decl, parent)
+	sym.SuperClass, sym.Interfaces = parseTypeInheritance(source, decl.Range)
+	out := []TypeSymbol{sym}
+	for _, member := range decl.Members {
+		switch member.Kind {
+		case apexast.DeclarationClass, apexast.DeclarationInterface, apexast.DeclarationEnum:
+			out = append(out, typeSymbolsFromDeclaration(path, member, sym.Name, source)...)
+		}
+	}
+	return out
+}
+
+func typeSymbolFromDeclaration(path string, decl apexast.Declaration, parent string) TypeSymbol {
+	name := decl.Name
+	if parent != "" {
+		name = parent + "." + decl.Name
+	}
 	sym := TypeSymbol{
 		Kind:      decl.Kind,
-		Name:      decl.Name,
+		Name:      name,
 		File:      path,
 		Modifiers: decl.Modifiers,
 		IsTest:    hasTestModifier(decl.Modifiers),
@@ -147,6 +188,41 @@ func typeSymbolFromDeclaration(path string, decl apexast.Declaration) TypeSymbol
 		})
 	}
 	return sym
+}
+
+func parseTypeInheritance(source string, r diagnostic.Range) (string, []string) {
+	if r.Start.Offset < 0 || r.End.Offset <= r.Start.Offset || r.End.Offset > len(source) {
+		return "", nil
+	}
+	text := source[r.Start.Offset:r.End.Offset]
+	open := strings.IndexByte(text, '{')
+	if open >= 0 {
+		text = text[:open]
+	}
+	fields := strings.FieldsFunc(text, func(r rune) bool {
+		return r == ' ' || r == '\t' || r == '\n' || r == '\r' || r == ','
+	})
+	var super string
+	var interfaces []string
+	for i := 0; i < len(fields); i++ {
+		switch strings.ToLower(fields[i]) {
+		case "extends":
+			if i+1 < len(fields) {
+				super = strings.TrimSpace(fields[i+1])
+				i++
+			}
+		case "implements":
+			for j := i + 1; j < len(fields); j++ {
+				token := strings.TrimSpace(fields[j])
+				if token == "" {
+					continue
+				}
+				interfaces = append(interfaces, token)
+			}
+			return super, interfaces
+		}
+	}
+	return super, interfaces
 }
 
 func hasTestModifier(modifiers []string) bool {

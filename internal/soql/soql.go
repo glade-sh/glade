@@ -40,10 +40,11 @@ func Parse(input string) (Query, error) {
 }
 
 func Execute(org storage.OrgState, query Query) (Result, error) {
-	object, ok := org.Objects[query.Object]
+	objectName, ok := storage.ResolveObjectName(org, query.Object)
 	if !ok {
 		return Result{}, fmt.Errorf("soql: unknown object %s", query.Object)
 	}
+	object := org.Objects[objectName]
 	if len(query.Fields) == 0 {
 		return Result{}, fmt.Errorf("soql: SELECT requires at least one field")
 	}
@@ -57,8 +58,9 @@ func Execute(org storage.OrgState, query Query) (Result, error) {
 	records := make([]storage.Record, 0, len(ids))
 	for _, idText := range ids {
 		record := object.Records[storage.ID(idText)]
-		if matches(record, query.Where) {
-			records = append(records, projectRecord(org, record, query.Fields))
+		record.Object = objectName
+		if matches(org, object.Definition, record, query.Where) {
+			records = append(records, projectRecord(org, object.Definition, record, query.Fields))
 		}
 	}
 	if query.OrderBy != "" {
@@ -98,11 +100,11 @@ func ParseAndExecute(org storage.OrgState, input string) (Result, error) {
 	return Execute(org, query)
 }
 
-func matches(record storage.Record, condition *Condition) bool {
+func matches(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, condition *Condition) bool {
 	if condition == nil {
 		return true
 	}
-	left, ok := recordValue(record, condition.Field)
+	left, ok := recordValue(org, definition, record, condition.Field)
 	if !ok {
 		left = storage.NullValue()
 	}
@@ -116,7 +118,7 @@ func matches(record storage.Record, condition *Condition) bool {
 	}
 }
 
-func projectRecord(org storage.OrgState, record storage.Record, fields []string) storage.Record {
+func projectRecord(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, fields []string) storage.Record {
 	out := storage.Record{
 		ID:            record.ID,
 		Object:        record.Object,
@@ -135,11 +137,15 @@ func projectRecord(org storage.OrgState, record storage.Record, fields []string)
 			}
 			continue
 		}
-		if record.ExplicitNulls[field] {
+		canonicalField, ok := storage.ResolveFieldName(definition, org.Namespace, field)
+		if !ok {
+			canonicalField = field
+		}
+		if record.ExplicitNulls[canonicalField] {
 			out.ExplicitNulls[field] = true
 			continue
 		}
-		if value, ok := record.Fields[field]; ok {
+		if value, ok := record.Fields[canonicalField]; ok {
 			out.Fields[field] = value.Clone()
 		}
 	}
@@ -159,20 +165,21 @@ func relationshipValue(org storage.OrgState, record storage.Record, field string
 		if relation.ParentRelationship != parts[0] {
 			continue
 		}
-		parentID, ok := recordValue(record, relation.Field)
+		parentID, ok := recordValue(org, object.Definition, record, relation.Field)
 		if !ok || parentID.Kind == storage.ValueNull {
 			return storage.NullValue(), true
 		}
 		for _, parentObjectName := range relation.ParentObjects {
-			parentObject, ok := org.Objects[parentObjectName]
+			canonicalParent, ok := storage.ResolveObjectName(org, parentObjectName)
 			if !ok {
 				continue
 			}
+			parentObject := org.Objects[canonicalParent]
 			parent, ok := parentObject.Records[idFromValue(parentID)]
 			if !ok {
 				continue
 			}
-			value, ok := recordValue(parent, parts[1])
+			value, ok := recordValue(org, parentObject.Definition, parent, parts[1])
 			if !ok {
 				return storage.NullValue(), true
 			}
@@ -192,14 +199,18 @@ func idFromValue(value storage.Value) storage.ID {
 	return ""
 }
 
-func recordValue(record storage.Record, field string) (storage.Value, bool) {
+func recordValue(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, field string) (storage.Value, bool) {
 	if field == "Id" {
 		return storage.IDValue(record.ID), true
 	}
-	if record.ExplicitNulls[field] {
+	canonicalField, ok := storage.ResolveFieldName(definition, org.Namespace, field)
+	if !ok {
+		canonicalField = field
+	}
+	if record.ExplicitNulls[canonicalField] {
 		return storage.NullValue(), true
 	}
-	value, ok := record.Fields[field]
+	value, ok := record.Fields[canonicalField]
 	return value, ok
 }
 

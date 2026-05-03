@@ -17,8 +17,9 @@ and composed by the CLI.
 - `internal/schema`: Metadata API custom object and field model.
 - `internal/typesys`: first symbol index for declarations, members, triggers,
   and schema objects.
-- `internal/sema`: first semantic pass for known-type catalogs and declaration
-  type-reference diagnostics.
+- `internal/sema`: semantic analysis for known-type catalogs, declaration and
+  member references, method-body checks, overload matching, visibility,
+  namespace/schema aliases, and stable diagnostics for the supported subset.
 - `internal/ir`: compact executable representation for VM-supported Apex
   statements and expressions.
 - `internal/vm`: interpreter for the supported Apex subset, including
@@ -28,8 +29,8 @@ and composed by the CLI.
   trace/debug snapshots.
 - `internal/apextest` and `internal/testreport`: Apex test discovery,
   project class/trigger compilation, `@TestSetup`, per-test org isolation,
-  static reset, `startTest`/`stopTest`, `runAs`, Queueable drain basics, and
-  console/JSON/JUnit reporting.
+  static reset, `startTest`/`stopTest`, `runAs`, Queueable/Future/Batch/
+  Scheduled draining, async job records, and console/JSON/JUnit reporting.
 - `internal/sobject`: runtime SObject value and schema describe helpers.
 - `internal/storage`: org/object/record model, fixture envelope, deterministic
   IDs, cloneable transaction snapshots, fixture alias/reference resolution,

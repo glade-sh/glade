@@ -2,6 +2,7 @@ package vm
 
 import (
 	"bytes"
+	"errors"
 	"strings"
 	"testing"
 )
@@ -39,6 +40,49 @@ System.assertEquals(6, x);
 	}
 }
 
+func TestExecCoercesNumericVariablesAndCollections(t *testing.T) {
+	program, err := CompileAnonymous(`
+Decimal total = 1;
+total = 2;
+System.assertEquals(2.5, total + 0.5);
+List<Decimal> totals = new List<Decimal>();
+totals.add(1);
+System.assertEquals(1.25, totals.get(0) + 0.25);
+Map<String,Decimal> byName = new Map<String,Decimal>();
+byName.put('one', 1);
+System.assertEquals(1.75, byName.get('one') + 0.75);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecRejectsInvalidCoercions(t *testing.T) {
+	tests := []struct {
+		name string
+		body string
+	}{
+		{"decimal to integer assignment", "Integer count = 1.5;"},
+		{"string to boolean assignment", "Boolean ready = 'true';"},
+		{"decimal list item", "List<Integer> counts = new List<Integer>(); counts.add(1.5);"},
+		{"integer map key", "Map<String,Integer> counts = new Map<String,Integer>(); counts.put(1, 2);"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			program, err := CompileAnonymous(tt.body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := Execute(program, nil); err == nil {
+				t.Fatalf("expected coercion error")
+			}
+		})
+	}
+}
+
 func TestExecAssertFailure(t *testing.T) {
 	program, err := CompileAnonymous("System.assertEquals(3, 1 + 1);")
 	if err != nil {
@@ -46,6 +90,23 @@ func TestExecAssertFailure(t *testing.T) {
 	}
 	if _, err := Execute(program, nil); err == nil {
 		t.Fatal("expected assertion failure")
+	}
+}
+
+func TestExecRuntimeErrorStackUsesStatementSourcePosition(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(3, 1 + 1);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = Execute(program, nil)
+	var runtimeErr *RuntimeError
+	if !errors.As(err, &runtimeErr) {
+		t.Fatalf("err = %#v", err)
+	}
+	if len(runtimeErr.Stack) == 0 || runtimeErr.Stack[0].Line != 2 || runtimeErr.Stack[0].Column != 1 {
+		t.Fatalf("stack = %#v", runtimeErr.Stack)
 	}
 }
 
@@ -82,6 +143,9 @@ System.assert(counts.containsKey('a'));
 	}
 	if first.Args["sourceOffset"] == 0 {
 		t.Fatalf("trace missing source offset: %#v", first)
+	}
+	if first.Args["line"] != 2 || first.Args["column"] != 1 {
+		t.Fatalf("trace source position = %#v", first.Args)
 	}
 }
 
@@ -125,6 +189,124 @@ System.assertEquals('four', label);
 	}
 }
 
+func TestExecSwitchBreakOnlyExitsSwitchAndContinueReachesLoop(t *testing.T) {
+	program, err := CompileAnonymous(`
+Integer seen = 0;
+Integer afterSwitch = 0;
+for (Integer i = 0; i < 4; i++) {
+	switch on i {
+		when 0 {
+			seen = seen + 1;
+			break;
+		}
+		when 1 {
+			continue;
+		}
+		when else {
+			seen = seen + 10;
+		}
+	}
+	afterSwitch++;
+}
+System.assertEquals(21, seen);
+System.assertEquals(3, afterSwitch);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecFinallyPreservesAndOverridesLoopSignals(t *testing.T) {
+	program, err := CompileAnonymous(`
+Integer cleaned = 0;
+Integer seen = 0;
+for (Integer i = 0; i < 4; i++) {
+	try {
+		if (i == 1) {
+			continue;
+		}
+		if (i == 2) {
+			break;
+		}
+		seen++;
+	} finally {
+		cleaned++;
+	}
+}
+System.assertEquals(1, seen);
+System.assertEquals(3, cleaned);
+Integer overridden = 0;
+while (overridden < 1) {
+	try {
+		break;
+	} finally {
+		overridden++;
+		continue;
+	}
+}
+System.assertEquals(1, overridden);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecEnhancedForBreakContinueAndFinallyThrowOverride(t *testing.T) {
+	throwingReturn, err := CompileAnonymous(`
+try {
+	return 7;
+} finally {
+	throw new DmlException('finally wins');
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+List<Integer> values = new List<Integer>{1, 2, 3, 4};
+Integer total = 0;
+Integer cleaned = 0;
+for (Integer value : values) {
+	try {
+		if (value == 2) {
+			continue;
+		}
+		if (value == 4) {
+			break;
+		}
+		total = total + value;
+	} finally {
+		cleaned++;
+	}
+}
+String message = '';
+try {
+	Util.throwingReturn();
+} catch (DmlException e) {
+	message = e.getMessage();
+}
+System.assertEquals(4, total);
+System.assertEquals(4, cleaned);
+System.assertEquals('finally wins', message);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterMethod(Method{Name: "Util.throwingReturn", ReturnType: "Integer", Program: throwingReturn}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecTryCatchFinallyThrow(t *testing.T) {
 	program, err := CompileAnonymous(`
 Integer cleaned = 0;
@@ -158,6 +340,181 @@ try {
 	message = e.getMessage();
 }
 System.assertEquals('boom', message);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecFinallyRunsOnReturnAndCanOverrideReturn(t *testing.T) {
+	var stdout strings.Builder
+	firstProgram, err := CompileAnonymous(`
+try {
+	return 1;
+} finally {
+	System.debug('clean');
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	secondProgram, err := CompileAnonymous(`
+try {
+	return 1;
+} finally {
+	return 3;
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+System.assertEquals(1, Util.first());
+System.assertEquals(3, Util.second());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(&stdout)
+	if err := machine.RegisterMethod(Method{Name: "Util.first", ReturnType: "Integer", Program: firstProgram}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterMethod(Method{Name: "Util.second", ReturnType: "Integer", Program: secondProgram}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+	if stdout.String() != "clean\n" {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
+func TestExecFinallyRunsBeforeUncaughtThrow(t *testing.T) {
+	var stdout strings.Builder
+	throwProgram, err := CompileAnonymous(`
+try {
+	throw new MyException('boom');
+} finally {
+	System.debug('clean');
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+try {
+	Util.thrower();
+} catch (MyException e) {
+	System.assertEquals('boom', e.getMessage());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(&stdout)
+	if err := machine.RegisterMethod(Method{Name: "Util.thrower", ReturnType: "void", Program: throwProgram}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+	if stdout.String() != "clean\n" {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
+func TestExecCatchInterfaceExceptionType(t *testing.T) {
+	program, err := CompileAnonymous(`
+String caught = 'no';
+try {
+	throw new MyException();
+} catch (Marker e) {
+	caught = 'yes';
+}
+System.assertEquals('yes', caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Marker"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "MyException", Interfaces: []string{"Marker"}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecExceptionHierarchyMultipleCatchAndMetadata(t *testing.T) {
+	program, err := CompileAnonymous(`
+String caught = '';
+try {
+	throw new QueryException('bad query');
+} catch (DmlException e) {
+	caught = 'wrong';
+} catch (System.QueryException e) {
+	caught = e.getTypeName() + ':' + e.getMessage();
+	System.assert(e.getLineNumber() > 0);
+	String trace = e.getStackTraceString();
+	System.assert(trace != '');
+}
+Exception base = new DmlException('blocked');
+System.assertEquals('DmlException', base.getTypeName());
+System.assertEquals('QueryException:bad query', caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecRethrowPreservesOriginalExceptionStack(t *testing.T) {
+	throwProgram, err := CompileAnonymous(`
+throw new DmlException('boom');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+String stack = '';
+try {
+	try {
+		Util.thrower();
+	} catch (Exception e) {
+		throw;
+	}
+} catch (DmlException e) {
+	stack = e.getStackTraceString();
+}
+System.assert(stack.contains('Util.thrower'));
+System.assert(!stack.contains('rethrow outside catch block'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterMethod(Method{Name: "Util.thrower", ReturnType: "void", Program: throwProgram}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDecimalArithmetic(t *testing.T) {
+	program, err := CompileAnonymous(`
+Decimal total = 1.5 + 2;
+System.assertEquals('3.5', '' + total);
+System.assert(total > 3);
 `)
 	if err != nil {
 		t.Fatal(err)

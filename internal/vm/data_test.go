@@ -57,6 +57,42 @@ System.assertEquals('Acme', row.Name);
 	}
 }
 
+func TestExecDMLCoercesAndRejectsFieldValues(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account a = new Account(Name = 'Acme');
+a.AnnualRevenue = 42;
+insert a;
+Account row = [SELECT Id, AnnualRevenue FROM Account WHERE Id = :a.Id];
+System.assertEquals(42.5, row.AnnualRevenue + 0.5);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Account"].Definition.Fields["AnnualRevenue"] = storage.Field{APIName: "AnnualRevenue", Type: storage.FieldDecimal}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+
+	badProgram, err := CompileAnonymous(`
+Account a = new Account(Name = 'Acme');
+a.AnnualRevenue = 'forty-two';
+insert a;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine = New(nil)
+	org = testDataOrg()
+	org.Objects["Account"].Definition.Fields["AnnualRevenue"] = storage.Field{APIName: "AnnualRevenue", Type: storage.FieldDecimal}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(badProgram); err == nil {
+		t.Fatalf("expected field coercion error")
+	}
+}
+
 func TestExecSOQLParentRelationshipProjection(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account a = new Account(Name = 'Acme');
@@ -84,6 +120,44 @@ System.assertEquals('Acme', row.Account.Name);
 				ParentObjects:      []string{"Account"},
 				ParentRelationship: "Account",
 			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecNamespacedCustomObjectAndFieldAliases(t *testing.T) {
+	program, err := CompileAnonymous(`
+pkg__Thing__c item = new pkg__Thing__c(pkg__Name__c = 'Acme');
+System.assertEquals('Acme', item.pkg__Name__c);
+item.put('pkg__Name__c', 'Changed');
+System.assertEquals('Changed', item.get('pkg__Name__c'));
+insert item;
+List<pkg__Thing__c> rows = [SELECT Id, pkg__Name__c FROM pkg__Thing__c WHERE pkg__Name__c = 'Changed'];
+System.assertEquals(1, rows.size());
+pkg__Thing__c row = rows.get(0);
+System.assertEquals('Changed', row.pkg__Name__c);
+row.pkg__Name__c = 'Updated';
+update row;
+List<pkg__Thing__c> updated = [SELECT Id FROM pkg__Thing__c WHERE pkg__Name__c = 'Updated'];
+System.assertEquals(1, updated.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Namespace = "pkg"
+	org.Objects["Thing__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Thing__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"Name__c": {APIName: "Name__c", Type: storage.FieldString},
+			},
 		},
 		Records: make(map[storage.ID]storage.Record),
 	}

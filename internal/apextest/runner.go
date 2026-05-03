@@ -70,12 +70,15 @@ func Run(index typesys.Index, opts Options) testreport.Run {
 	triggers, triggerErrors := compileProjectTriggers(index)
 	org := orgFromIndex(index)
 	suites := make(map[string][]testreport.Case)
+	setupOrgs := make(map[string]storage.OrgState)
+	setupRunErrors := make(map[string]error)
 	order := make([]string, 0)
 	for _, testCase := range cases {
 		if _, ok := suites[testCase.ClassName]; !ok {
 			order = append(order, testCase.ClassName)
+			setupOrgs[testCase.ClassName], setupRunErrors[testCase.ClassName] = prepareTestSetupOrg(testCase.ClassName, methods, classes, setups[testCase.ClassName], setupErrors[testCase.ClassName], triggers, triggerErrors, org, opts)
 		}
-		suites[testCase.ClassName] = append(suites[testCase.ClassName], runCase(testCase, methods, classes, setups[testCase.ClassName], setupErrors[testCase.ClassName], triggers, triggerErrors, org, opts))
+		suites[testCase.ClassName] = append(suites[testCase.ClassName], runCase(testCase, methods, classes, setupRunErrors[testCase.ClassName], triggers, triggerErrors, setupOrgs[testCase.ClassName], opts))
 	}
 
 	run := testreport.Run{Name: "oaer test"}
@@ -85,7 +88,39 @@ func Run(index typesys.Index, opts Options) testreport.Run {
 	return run
 }
 
-func runCase(testCase TestCase, methods map[string]vm.Method, classes []vm.Class, setups []vm.Method, setupErr error, triggers []vm.Trigger, triggerErrors []error, org storage.OrgState, opts Options) testreport.Case {
+func prepareTestSetupOrg(className string, methods map[string]vm.Method, classes []vm.Class, setups []vm.Method, setupErr error, triggers []vm.Trigger, triggerErrors []error, org storage.OrgState, opts Options) (storage.OrgState, error) {
+	setupOrg := org.Clone()
+	if setupErr != nil {
+		return setupOrg, setupErr
+	}
+	if len(triggerErrors) > 0 {
+		return setupOrg, triggerErrors[0]
+	}
+	if len(setups) == 0 {
+		return setupOrg, nil
+	}
+	machine := vm.New(nil)
+	if opts.LimitMode != "" {
+		machine.SetLimitMode(opts.LimitMode)
+	}
+	machine.SetOrg(&setupOrg)
+	machine.EnableTestContext()
+	if err := registerRuntime(machine, methods, classes, setups, triggers); err != nil {
+		return setupOrg, err
+	}
+	for _, setup := range setups {
+		program, err := vm.CompileAnonymous(setup.Name + "();")
+		if err != nil {
+			return setupOrg, err
+		}
+		if _, err := machine.Execute(program); err != nil {
+			return setupOrg, err
+		}
+	}
+	return setupOrg, nil
+}
+
+func runCase(testCase TestCase, methods map[string]vm.Method, classes []vm.Class, setupErr error, triggers []vm.Trigger, triggerErrors []error, org storage.OrgState, opts Options) testreport.Case {
 	out := testreport.Case{
 		ClassName:  testCase.ClassName,
 		MethodName: testCase.MethodName,
@@ -118,33 +153,10 @@ func runCase(testCase TestCase, methods map[string]vm.Method, classes []vm.Class
 		machine.SetLimitMode(opts.LimitMode)
 	}
 	machine.SetOrg(&org)
-	for _, class := range classes {
-		if err := machine.RegisterClass(class); err != nil {
-			out.Status = testreport.StatusUnsupported
-			out.Problem = problem("UnsupportedFeature", err.Error(), testCase)
-			return out
-		}
-	}
-	for _, trigger := range triggers {
-		if err := machine.RegisterTrigger(trigger); err != nil {
-			out.Status = testreport.StatusUnsupported
-			out.Problem = problem("UnsupportedFeature", err.Error(), testCase)
-			return out
-		}
-	}
-	for _, setup := range setups {
-		if err := machine.RegisterMethod(setup); err != nil {
-			out.Status = testreport.StatusUnsupported
-			out.Problem = problem("UnsupportedFeature", err.Error(), testCase)
-			return out
-		}
-	}
-	for _, method := range methods {
-		if err := machine.RegisterMethod(method); err != nil {
-			out.Status = testreport.StatusUnsupported
-			out.Problem = problem("UnsupportedFeature", err.Error(), testCase)
-			return out
-		}
+	if err := registerRuntime(machine, methods, classes, nil, triggers); err != nil {
+		out.Status = testreport.StatusUnsupported
+		out.Problem = problem("UnsupportedFeature", err.Error(), testCase)
+		return out
 	}
 	if err := machine.RegisterMethod(testMethod); err != nil {
 		out.Status = testreport.StatusUnsupported
@@ -154,19 +166,6 @@ func runCase(testCase TestCase, methods map[string]vm.Method, classes []vm.Class
 	org = org.Clone()
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
-	for _, setup := range setups {
-		program, err := vm.CompileAnonymous(setup.Name + "();")
-		if err != nil {
-			out.Status = testreport.StatusUnsupported
-			out.Problem = problem("UnsupportedFeature", err.Error(), testCase)
-			return out
-		}
-		if _, err := machine.Execute(program); err != nil {
-			out.Status = testreport.StatusFail
-			out.Problem = problemFromError(err, testCase)
-			return out
-		}
-	}
 	if err := machine.ResetStatics(); err != nil {
 		out.Status = testreport.StatusFail
 		out.Problem = problemFromError(err, testCase)
@@ -186,9 +185,34 @@ func runCase(testCase TestCase, methods map[string]vm.Method, classes []vm.Class
 	return out
 }
 
+func registerRuntime(machine *vm.VM, methods map[string]vm.Method, classes []vm.Class, setups []vm.Method, triggers []vm.Trigger) error {
+	for _, class := range classes {
+		if err := machine.RegisterClass(class); err != nil {
+			return err
+		}
+	}
+	for _, trigger := range triggers {
+		if err := machine.RegisterTrigger(trigger); err != nil {
+			return err
+		}
+	}
+	for _, setup := range setups {
+		if err := machine.RegisterMethod(setup); err != nil {
+			return err
+		}
+	}
+	for _, method := range methods {
+		if err := machine.RegisterMethod(method); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func compileProjectClasses(index typesys.Index, methods map[string]vm.Method) []vm.Class {
 	var out []vm.Class
 	sources := make(map[string]string)
+	knownTypes := knownTypeNames(index.Types)
 	for _, typ := range index.Types {
 		if typ.Kind != apexast.DeclarationClass && typ.Kind != apexast.DeclarationInterface && typ.Kind != apexast.DeclarationEnum {
 			continue
@@ -206,13 +230,16 @@ func compileProjectClasses(index typesys.Index, methods map[string]vm.Method) []
 			Name:         typ.Name,
 			Namespace:    index.Project.Namespace,
 			Access:       accessModifier(typ.Modifiers),
+			IsAbstract:   hasModifier(typ.Modifiers, "abstract"),
+			IsInterface:  typ.Kind == apexast.DeclarationInterface,
+			IsTest:       typ.IsTest,
 			Fields:       make(map[string]vm.Field),
 			StaticFields: make(map[string]vm.Field),
 			Methods:      make(map[string]vm.Method),
 		}
 		typeSource, _ := extractSourceRange(source, typ.Range)
-		class.SuperClass = parseExtends(typeSource)
-		class.Interfaces = parseImplements(typeSource)
+		class.SuperClass = qualifyNestedTypeName(typ.Name, parseExtends(typeSource), knownTypes)
+		class.Interfaces = qualifyNestedTypeNames(typ.Name, parseImplements(typeSource), knownTypes)
 		if typ.Kind == apexast.DeclarationEnum {
 			class.EnumValues = parseEnumValues(typeSource)
 		}
@@ -234,7 +261,13 @@ func compileProjectClasses(index typesys.Index, methods map[string]vm.Method) []
 				if member.Kind == apexast.DeclarationProperty {
 					attachPropertyAccessors(&field, typ.Name, typ.File, member, source)
 				}
-				if value, ok := compileFieldInitializer(member.Type, member.Range, source); ok {
+				if initializer, ok := compileFieldInitializerMethod(typ.Name, field.Name, field.Static, typ.File, member.Range, source); ok {
+					if field.Static {
+						class.StaticInitializers = append(class.StaticInitializers, initializer)
+					} else {
+						class.InstanceInitializers = append(class.InstanceInitializers, initializer)
+					}
+				} else if value, ok := compileFieldInitializer(member.Type, member.Range, source); ok {
 					field.Value = value
 					field.InitialValue = value
 				}
@@ -264,6 +297,39 @@ func compileProjectClasses(index typesys.Index, methods map[string]vm.Method) []
 		out = append(out, class)
 	}
 	return out
+}
+
+func knownTypeNames(types []typesys.TypeSymbol) map[string]bool {
+	out := make(map[string]bool, len(types))
+	for _, typ := range types {
+		out[typ.Name] = true
+	}
+	return out
+}
+
+func qualifyNestedTypeNames(owner string, names []string, known map[string]bool) []string {
+	out := make([]string, 0, len(names))
+	for _, name := range names {
+		out = append(out, qualifyNestedTypeName(owner, name, known))
+	}
+	return out
+}
+
+func qualifyNestedTypeName(owner, name string, known map[string]bool) string {
+	if name == "" || known[name] || strings.Contains(name, ".") {
+		return name
+	}
+	for {
+		dot := strings.LastIndex(owner, ".")
+		if dot < 0 {
+			return name
+		}
+		owner = owner[:dot]
+		candidate := owner + "." + name
+		if known[candidate] {
+			return candidate
+		}
+	}
 }
 
 func attachPropertyAccessors(field *vm.Field, className, file string, member typesys.MemberSymbol, source string) {
@@ -389,6 +455,7 @@ func compileProjectTriggers(index typesys.Index) ([]vm.Trigger, []error) {
 
 func orgFromIndex(index typesys.Index) storage.OrgState {
 	org := storage.NewOrgState()
+	org.Namespace = index.Project.Namespace
 	registry := sobject.BuildDescribeRegistry(schemaFromIndex(index))
 	for name, describe := range registry.Objects {
 		org.Objects[name] = storage.ObjectState{
@@ -544,16 +611,10 @@ func extractSourceRange(source string, r diagnostic.Range) (string, error) {
 }
 
 func compileFieldInitializer(typeName string, r diagnostic.Range, source string) (vm.Value, bool) {
-	fieldSource, err := extractSourceRange(source, r)
-	if err != nil {
-		return vm.Null, false
-	}
-	eq := strings.IndexByte(fieldSource, '=')
-	if eq < 0 {
+	expr, ok := fieldInitializerExpr(r, source)
+	if !ok {
 		return vm.Value{}, false
 	}
-	expr := strings.TrimSpace(fieldSource[eq+1:])
-	expr = strings.TrimRight(expr, ";,")
 	if expr == "" {
 		return vm.Value{}, false
 	}
@@ -568,6 +629,45 @@ func compileFieldInitializer(typeName string, r diagnostic.Range, source string)
 	}
 	value, ok := result.Vars["__field"]
 	return value, ok
+}
+
+func compileFieldInitializerMethod(className, fieldName string, static bool, file string, r diagnostic.Range, source string) (vm.Method, bool) {
+	expr, ok := fieldInitializerExpr(r, source)
+	if !ok || expr == "" {
+		return vm.Method{}, false
+	}
+	program, err := vm.CompileAnonymous(fieldName + " = " + expr + ";")
+	if err != nil {
+		return vm.Method{}, false
+	}
+	name := className + ".<field_init>." + fieldName
+	if static {
+		name = className + ".<static_field_init>." + fieldName
+	}
+	return vm.Method{
+		Name:       name,
+		ReturnType: "void",
+		Program:    program,
+		ClassName:  className,
+		IsStatic:   static,
+		File:       file,
+		Line:       r.Start.Line,
+		Column:     r.Start.Column,
+	}, true
+}
+
+func fieldInitializerExpr(r diagnostic.Range, source string) (string, bool) {
+	fieldSource, err := extractSourceRange(source, r)
+	if err != nil {
+		return "", false
+	}
+	eq := strings.IndexByte(fieldSource, '=')
+	if eq < 0 {
+		return "", false
+	}
+	expr := strings.TrimSpace(fieldSource[eq+1:])
+	expr = strings.TrimRight(expr, ";,")
+	return strings.TrimSpace(expr), true
 }
 
 func methodShortName(name string) string {
@@ -752,11 +852,25 @@ func extractMethodBody(source string, r diagnostic.Range) (string, error) {
 		case '}':
 			depth--
 			if depth == 0 {
-				return text[open+1 : i], nil
+				bodyStart := start + open + 1
+				return sourcePositionPrefix(source[:bodyStart]) + text[open+1:i], nil
 			}
 		}
 	}
 	return "", fmt.Errorf("test method body is incomplete")
+}
+
+func sourcePositionPrefix(source string) string {
+	var b strings.Builder
+	b.Grow(len(source))
+	for _, r := range source {
+		if r == '\n' || r == '\r' {
+			b.WriteRune(r)
+			continue
+		}
+		b.WriteByte(' ')
+	}
+	return b.String()
 }
 
 func skipApexString(source string, start int) int {

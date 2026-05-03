@@ -1,0 +1,49 @@
+{
+  "name": "async-test-semantics",
+  "source": [
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/classes/FutureWorker.cls",
+      "content": "public class FutureWorker { @future public static void mark() { insert new Account(Name = 'future'); } }"
+    },
+    {
+      "path": "force-app/main/classes/BatchWorker.cls",
+      "content": "public class BatchWorker { public List<Integer> start(Object bc) { return new List<Integer>{1, 2}; } public void execute(Object bc, List<Integer> scope) { for (Integer value : scope) { insert new Account(Name = 'batch-' + value); } } public void finish(Object bc) { insert new Account(Name = 'batch-finish'); } }"
+    },
+    {
+      "path": "force-app/main/classes/ScheduledWorker.cls",
+      "content": "public class ScheduledWorker { public void execute(Object sc) { insert new Account(Name = 'scheduled'); } }"
+    },
+    {
+      "path": "force-app/main/classes/FirstQueue.cls",
+      "content": "public class FirstQueue { public void execute(Object qc) { insert new Account(Name = 'queue-1'); System.enqueueJob(new SecondQueue()); } }"
+    },
+    {
+      "path": "force-app/main/classes/SecondQueue.cls",
+      "content": "public class SecondQueue { public void execute(Object qc) { insert new Account(Name = 'queue-2'); } }"
+    },
+    {
+      "path": "force-app/main/classes/AsyncFixtureTest.cls",
+      "content": "@isTest private class AsyncFixtureTest { @isTest static void drainsAsync() { Test.startTest(); FutureWorker.mark(); Database.executeBatch(new BatchWorker(), 1); System.schedule('nightly', '0 0 0 * * ?', new ScheduledWorker()); System.enqueueJob(new FirstQueue()); Test.stopTest(); Integer rows = [SELECT COUNT() FROM Account]; System.assertEquals(7, rows); List<AsyncApexJob> jobs = [SELECT Id, Status FROM AsyncApexJob]; System.assertEquals(5, jobs.size()); List<CronTrigger> crons = [SELECT Id, State FROM CronTrigger]; System.assertEquals(1, crons.size()); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "errors": 0,
+      "failed": 0,
+      "ok": true,
+      "passed": 1,
+      "total": 1
+    }
+  }
+}

@@ -78,7 +78,7 @@ func TestWriteKnownGapsMarkdown(t *testing.T) {
 		"Generated from `internal/capability`.",
 		"Required incomplete:",
 		"### `apex.sema.body`: Method-body semantic analysis",
-		"- Status: `unsupported`",
+		"### `release.packaging`: Installable release binaries, checksums, docs",
 	} {
 		if !strings.Contains(text, want) {
 			t.Fatalf("known gaps output missing %q: %q", want, text)

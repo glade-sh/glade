@@ -10,8 +10,8 @@ import (
 
 func TestAnalyzeRanksTraceEvents(t *testing.T) {
 	doc := trace.NewDocument([]trace.Event{
-		trace.Instant("apex.statement.expr", "apex.statement", 1, map[string]any{"sourceOffset": 10}),
-		trace.Instant("apex.statement.expr", "apex.statement", 2, map[string]any{"sourceOffset": 20}),
+		trace.Instant("apex.statement.expr", "apex.statement", 1, map[string]any{"sourceOffset": 10, "line": 2, "column": 3}),
+		trace.Instant("apex.statement.expr", "apex.statement", 2, map[string]any{"sourceOffset": 20, "line": 3, "column": 5}),
 		trace.Instant("apex.statement.declare", "apex.statement", 0, map[string]any{"sourceOffset": 1}),
 	})
 
@@ -24,6 +24,9 @@ func TestAnalyzeRanksTraceEvents(t *testing.T) {
 	}
 	if got := report.Hot[0].SourceOffsets; len(got) != 2 || got[0] != 10 || got[1] != 20 {
 		t.Fatalf("offsets = %#v", got)
+	}
+	if got := report.Hot[0].SourceRanges; len(got) != 2 || got[0].Line != 2 || got[1].Column != 5 {
+		t.Fatalf("ranges = %#v", got)
 	}
 }
 

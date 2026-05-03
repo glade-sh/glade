@@ -2,6 +2,7 @@ package ir
 
 type Program struct {
 	Instructions []Instruction `json:"instructions"`
+	Source       string        `json:"source,omitempty"`
 }
 
 type Instruction struct {
@@ -15,9 +16,17 @@ type Instruction struct {
 	Then       []Instruction `json:"then,omitempty"`
 	Else       []Instruction `json:"else,omitempty"`
 	Catch      []Instruction `json:"catch,omitempty"`
+	Catches    []CatchClause `json:"catches,omitempty"`
 	Finally    []Instruction `json:"finally,omitempty"`
 	Cases      []SwitchCase  `json:"cases,omitempty"`
 	Pos        int           `json:"pos,omitempty"`
+}
+
+type CatchClause struct {
+	Types []string      `json:"types,omitempty"`
+	Name  string        `json:"name,omitempty"`
+	Body  []Instruction `json:"body,omitempty"`
+	Pos   int           `json:"pos,omitempty"`
 }
 
 type Op string

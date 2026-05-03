@@ -18,12 +18,19 @@ type Report struct {
 }
 
 type Entry struct {
-	Name          string `json:"name"`
-	Category      string `json:"category,omitempty"`
-	Count         int    `json:"count"`
-	FirstTS       int64  `json:"firstTs"`
-	LastTS        int64  `json:"lastTs"`
-	SourceOffsets []int  `json:"sourceOffsets,omitempty"`
+	Name          string  `json:"name"`
+	Category      string  `json:"category,omitempty"`
+	Count         int     `json:"count"`
+	FirstTS       int64   `json:"firstTs"`
+	LastTS        int64   `json:"lastTs"`
+	SourceOffsets []int   `json:"sourceOffsets,omitempty"`
+	SourceRanges  []Range `json:"sourceRanges,omitempty"`
+}
+
+type Range struct {
+	Offset int `json:"offset"`
+	Line   int `json:"line"`
+	Column int `json:"column"`
 }
 
 type LimitAttribution struct {
@@ -57,11 +64,21 @@ func Analyze(doc trace.Document) Report {
 		if offset, ok := intArg(event.Args["sourceOffset"]); ok && !containsInt(entry.SourceOffsets, offset) {
 			entry.SourceOffsets = append(entry.SourceOffsets, offset)
 		}
+		if offset, ok := intArg(event.Args["sourceOffset"]); ok {
+			line, hasLine := intArg(event.Args["line"])
+			column, hasColumn := intArg(event.Args["column"])
+			if hasLine && hasColumn && !containsRange(entry.SourceRanges, offset, line, column) {
+				entry.SourceRanges = append(entry.SourceRanges, Range{Offset: offset, Line: line, Column: column})
+			}
+		}
 	}
 
 	report := Report{Format: doc.Format, Events: len(doc.TraceEvents), Hot: make([]Entry, 0, len(byKey)), Categories: make(map[string]int)}
 	for _, entry := range byKey {
 		sort.Ints(entry.SourceOffsets)
+		sort.Slice(entry.SourceRanges, func(i, j int) bool {
+			return entry.SourceRanges[i].Offset < entry.SourceRanges[j].Offset
+		})
 		report.Hot = append(report.Hot, *entry)
 	}
 	for _, event := range doc.TraceEvents {
@@ -145,6 +162,15 @@ func intArg(value any) (int, bool) {
 func containsInt(values []int, needle int) bool {
 	for _, value := range values {
 		if value == needle {
+			return true
+		}
+	}
+	return false
+}
+
+func containsRange(values []Range, offset, line, column int) bool {
+	for _, value := range values {
+		if value.Offset == offset && value.Line == line && value.Column == column {
 			return true
 		}
 	}

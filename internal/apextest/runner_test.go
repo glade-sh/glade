@@ -257,6 +257,46 @@ private class InitCounterTest {
 	}
 }
 
+func TestRunExecutesFieldInitializerExpressionsInSourceOrder(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/InitOrder.cls"), `
+public class InitOrder {
+  public static Integer seed = 2;
+  public static Integer doubled = seed * 2;
+  static {
+    seed = doubled + 1;
+  }
+
+  public Integer first = seed + 1;
+  public Integer second = first + 1;
+  {
+    second = second + 1;
+  }
+
+  public Integer score() {
+    return second;
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/InitOrderTest.cls"), `
+@isTest
+private class InitOrderTest {
+  @isTest static void fieldInitializersRunInOrder() {
+    System.assertEquals(5, InitOrder.seed);
+    System.assertEquals(4, InitOrder.doubled);
+    InitOrder ordered = new InitOrder();
+    System.assertEquals(8, ordered.score());
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v run=%#v", got, run)
+	}
+}
+
 func TestRunExecutesConstructorChaining(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -424,6 +464,103 @@ private class MoodTest {
 	}
 }
 
+func TestRunExecutesNestedClassMethod(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/Outer.cls"), `
+public class Outer {
+  public class Inner {
+    public static Integer count = 1;
+    public static String staticLabel() {
+      return 'static-inner';
+    }
+    public String label() {
+      return 'inner';
+    }
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/OuterTest.cls"), `
+@isTest
+private class OuterTest {
+  @isTest static void nestedClassRuns() {
+    Outer.Inner inner = new Outer.Inner();
+    System.assertEquals('inner', inner.label());
+    System.assertEquals('static-inner', Outer.Inner.staticLabel());
+    Outer.Inner.count = 3;
+    System.assertEquals(3, Outer.Inner.count);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v run=%#v", got, run)
+	}
+}
+
+func TestRunExecutesNestedTypesWithConstructorsInterfacesEnumsAndIdentity(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/Outer.cls"), `
+public class Outer {
+  public static Integer seed = 2;
+  public interface Named {
+    String name();
+  }
+  public class Inner {
+    public Integer value;
+    public Inner(Integer input) {
+      value = input + Outer.seed;
+    }
+    public String label() {
+      return 'inner-' + value;
+    }
+  }
+  public class NamedImpl implements Named {
+    public String name() {
+      return 'nested-iface';
+    }
+  }
+  public static Inner makeInner(Integer input) {
+    Inner made = new Inner(input);
+    return made;
+  }
+  public enum Choice {
+    One,
+    Two
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/OuterTypesTest.cls"), `
+@isTest
+private class OuterTypesTest {
+  @isTest static void nestedTypesRun() {
+    Outer.Inner first = new Outer.Inner(3);
+    Outer.Inner alias = first;
+    Outer.Inner second = new Outer.Inner(3);
+    System.assertEquals(5, first.value);
+    System.assertEquals('inner-5', first.label());
+    System.assert(first == alias);
+    System.assert(first != second);
+    Outer.Named named = new Outer.NamedImpl();
+    System.assertEquals('nested-iface', named.name());
+    Outer.Inner made = Outer.makeInner(4);
+    System.assertEquals(6, made.value);
+    System.assertEquals('Two', Outer.Choice.Two.name());
+    System.assertEquals(1, Outer.Choice.Two.ordinal());
+    List<Outer.Choice> choices = Outer.Choice.values();
+    System.assertEquals(2, choices.size());
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v run=%#v", got, run)
+	}
+}
+
 func TestRunExecutesTestSetupAndResetsStatics(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -452,7 +589,7 @@ private class SetupStateTest {
 
 	run := Run(loadTestIndex(t, root), Options{})
 	if got := run.Summary(); got.Total != 2 || got.Passed != 2 {
-		t.Fatalf("summary = %#v run=%#v", got, run)
+		t.Fatalf("summary = %#v cases=%#v", got, run.Suites[0].Cases)
 	}
 }
 
@@ -491,7 +628,59 @@ private class IsolationTest {
 
 	run := Run(loadTestIndex(t, root), Options{})
 	if got := run.Summary(); got.Total != 2 || got.Passed != 2 {
-		t.Fatalf("summary = %#v run=%#v", got, run)
+		t.Fatalf("summary = %#v cases=%#v", got, run.Suites[0].Cases)
+	}
+}
+
+func TestRunClonesTestSetupDataBetweenMethods(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/Account.object-meta.xml"), `
+<CustomObject>
+  <label>Account</label>
+  <pluralLabel>Accounts</pluralLabel>
+  <sharingModel>ReadWrite</sharingModel>
+</CustomObject>
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/fields/Name.field-meta.xml"), `
+<CustomField>
+  <fullName>Name</fullName>
+  <label>Name</label>
+  <type>Text</type>
+</CustomField>
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/SetupDataTest.cls"), `
+@isTest
+private class SetupDataTest {
+  @TestSetup static void seed() {
+    insert new Account(Name = 'Seed');
+  }
+
+  @isTest static void canMutateSetupDataInOwnTransaction() {
+    List<Account> rows = [SELECT Id, Name FROM Account WHERE Name = 'Seed'];
+    System.assertEquals(1, rows.size());
+    Account row = rows.get(0);
+    row.Name = 'Changed';
+    update row;
+    insert new Account(Name = 'Extra');
+    Integer total = [SELECT COUNT() FROM Account];
+    System.assertEquals(2, total);
+  }
+
+  @isTest static void seesFreshSetupSnapshot() {
+    Integer seedRows = [SELECT COUNT() FROM Account WHERE Name = 'Seed'];
+    Integer changedRows = [SELECT COUNT() FROM Account WHERE Name = 'Changed'];
+    Integer extraRows = [SELECT COUNT() FROM Account WHERE Name = 'Extra'];
+    System.assertEquals(1, seedRows);
+    System.assertEquals(0, changedRows);
+    System.assertEquals(0, extraRows);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 2 || got.Passed != 2 {
+		t.Fatalf("summary = %#v cases=%#v", got, run.Suites[0].Cases)
 	}
 }
 
@@ -516,7 +705,8 @@ private class MarkJobTest {
   @isTest static void stopTestDrainsQueue() {
     Test.startTest();
     System.enqueueJob(new MarkJob());
-    System.assertEquals(0, AsyncMarker.ran);
+    AsyncMarker.ran = 41;
+    System.assertEquals(41, AsyncMarker.ran);
     Test.stopTest();
     System.assertEquals(1, AsyncMarker.ran);
   }
@@ -529,6 +719,121 @@ private class MarkJobTest {
 	}
 }
 
+func TestRunDrainsFutureBatchScheduleAndChainedQueueables(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/Account.object-meta.xml"), `
+<CustomObject>
+  <label>Account</label>
+  <pluralLabel>Accounts</pluralLabel>
+  <sharingModel>ReadWrite</sharingModel>
+</CustomObject>
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/fields/Name.field-meta.xml"), `
+<CustomField>
+  <fullName>Name</fullName>
+  <label>Name</label>
+  <type>Text</type>
+</CustomField>
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/AsyncState.cls"), `
+public class AsyncState {
+  public static Integer futureRan = 0;
+  public static Integer batchSum = 0;
+  public static Integer batchFinish = 0;
+  public static Integer scheduledRan = 0;
+  public static Integer queueRan = 0;
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/FutureWorker.cls"), `
+public class FutureWorker {
+  @future public static void mark(Integer amount) {
+    AsyncState.futureRan = amount;
+    insert new Account(Name = 'future');
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/CountingBatch.cls"), `
+public class CountingBatch {
+  public List<Integer> start(Object bc) {
+    return new List<Integer>{1, 2, 3};
+  }
+  public void execute(Object bc, List<Integer> scope) {
+    for (Integer value : scope) {
+      AsyncState.batchSum = AsyncState.batchSum + value;
+      insert new Account(Name = 'batch-' + value);
+    }
+  }
+  public void finish(Object bc) {
+    AsyncState.batchFinish = 1;
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ScheduledWorker.cls"), `
+public class ScheduledWorker {
+  public void execute(Object sc) {
+    AsyncState.scheduledRan = 1;
+    insert new Account(Name = 'scheduled');
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/FirstQueue.cls"), `
+public class FirstQueue {
+  public void execute(Object qc) {
+    AsyncState.queueRan = AsyncState.queueRan + 1;
+    insert new Account(Name = 'queue-1');
+    System.enqueueJob(new SecondQueue());
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/SecondQueue.cls"), `
+public class SecondQueue {
+  public void execute(Object qc) {
+    AsyncState.queueRan = AsyncState.queueRan + 1;
+    insert new Account(Name = 'queue-2');
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/AsyncSemanticsTest.cls"), `
+@isTest
+private class AsyncSemanticsTest {
+  @isTest static void drainsSupportedAsyncWork() {
+    Test.startTest();
+    FutureWorker.mark(7);
+    String batchId = Database.executeBatch(new CountingBatch(), 2);
+    String scheduleId = System.schedule('nightly', '0 0 0 * * ?', new ScheduledWorker());
+    String queueId = System.enqueueJob(new FirstQueue());
+    System.assertNotEquals('', batchId);
+    System.assertNotEquals('', scheduleId);
+    System.assertNotEquals('', queueId);
+    System.assertEquals(0, AsyncState.futureRan);
+    System.assertEquals(0, AsyncState.batchSum);
+    System.assertEquals(0, AsyncState.scheduledRan);
+    System.assertEquals(0, AsyncState.queueRan);
+    Integer beforeRows = [SELECT COUNT() FROM Account];
+    System.assertEquals(0, beforeRows);
+    Test.stopTest();
+    Integer afterRows = [SELECT COUNT() FROM Account];
+    System.assertEquals(7, afterRows);
+    List<AsyncApexJob> jobs = [SELECT Id, Status, JobType FROM AsyncApexJob];
+    System.assertEquals(5, jobs.size());
+    List<CronTrigger> crons = [SELECT Id, State FROM CronTrigger];
+    System.assertEquals(1, crons.size());
+    CronTrigger cron = crons.get(0);
+    System.assertEquals('Complete', cron.State);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		if run.Suites[0].Cases[0].Problem != nil {
+			t.Logf("problem=%#v", *run.Suites[0].Cases[0].Problem)
+		}
+		t.Fatalf("summary = %#v cases=%#v", got, run.Suites[0].Cases)
+	}
+}
+
 func TestRunAsSetsUserContextForBlock(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -537,8 +842,10 @@ func TestRunAsSetsUserContextForBlock(t *testing.T) {
 private class RunAsTest {
   @isTest static void scopesCurrentUser() {
     System.assertEquals('system', UserInfo.getUserId());
-    System.runAs('user-a') {
+    System.runAs(new User(Id = 'user-a', ProfileId = 'profile-a', Username = 'user-a@example.test')) {
       System.assertEquals('user-a', UserInfo.getUserId());
+      System.assertEquals('profile-a', UserInfo.getProfileId());
+      System.assertEquals('user-a@example.test', UserInfo.getUserName());
     }
     System.assertEquals('system', UserInfo.getUserId());
   }
@@ -572,7 +879,7 @@ private class StackTraceTest {
 	if problem == nil || problem.Type != "System.AssertException" {
 		t.Fatalf("problem = %#v", problem)
 	}
-	if len(problem.Stack) == 0 || problem.Stack[0].File != testFile || problem.Stack[0].Line == 0 {
+	if len(problem.Stack) == 0 || problem.Stack[0].File != testFile || problem.Stack[0].Line != 5 || problem.Stack[0].Column != 5 {
 		t.Fatalf("stack = %#v", problem.Stack)
 	}
 }

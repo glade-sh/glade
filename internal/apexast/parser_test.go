@@ -197,8 +197,12 @@ func TestParseSyntaxError(t *testing.T) {
 	if len(file.Diagnostics) == 0 {
 		t.Fatal("expected syntax diagnostic")
 	}
-	if file.Diagnostics[0].Range.Start.Line == 0 {
+	got := file.Diagnostics[0].Range
+	if got.Start.Line == 0 || got.Start.Column == 0 || got.Start.Offset == 0 {
 		t.Fatalf("diagnostic missing range: %#v", file.Diagnostics[0])
+	}
+	if got.End.Offset < got.Start.Offset {
+		t.Fatalf("diagnostic range went backwards: %#v", got)
 	}
 }
 

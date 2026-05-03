@@ -70,6 +70,38 @@ func TestBuildIndexKeepsMethodParameters(t *testing.T) {
 	}
 }
 
+func TestBuildIndexPromotesNestedTypes(t *testing.T) {
+	root := t.TempDir()
+	classPath := filepath.Join(root, "Outer.cls")
+	writeFile(t, classPath, `
+public class Outer {
+  public class Inner {
+    public String label() { return 'inner'; }
+  }
+  public interface Marker {
+    void mark();
+  }
+}
+`)
+
+	idx := Build(project.Project{Root: root, ApexFiles: []string{classPath}}, schema.Schema{})
+	if idx.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", idx.Diagnostics)
+	}
+	types := map[string]TypeSymbol{}
+	for _, typ := range idx.Types {
+		types[typ.Name] = typ
+	}
+	for _, name := range []string{"Outer", "Outer.Inner", "Outer.Marker"} {
+		if _, ok := types[name]; !ok {
+			t.Fatalf("missing nested type %s in %#v", name, idx.Types)
+		}
+	}
+	if len(types["Outer.Inner"].Members) != 1 || types["Outer.Inner"].Members[0].Name != "label" {
+		t.Fatalf("inner members = %#v", types["Outer.Inner"].Members)
+	}
+}
+
 func writeFile(t *testing.T, path, content string) {
 	t.Helper()
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {

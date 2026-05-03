@@ -1,0 +1,19 @@
+{
+  "name": "unsupported-parse-diagnostic",
+  "source": [
+    {
+      "path": "classes/Broken.cls",
+      "content": "public class Broken { public void run( {"
+    }
+  ],
+  "command": {
+    "kind": "parse"
+  },
+  "expected": {
+    "result": {
+      "diagnostics": 2,
+      "files": 1,
+      "ok": false
+    }
+  }
+}

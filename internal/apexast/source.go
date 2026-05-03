@@ -10,6 +10,7 @@ import (
 
 type LineMap struct {
 	starts []int
+	length int
 }
 
 func NewLineMap(source string) LineMap {
@@ -19,12 +20,15 @@ func NewLineMap(source string) LineMap {
 			starts = append(starts, i+1)
 		}
 	}
-	return LineMap{starts: starts}
+	return LineMap{starts: starts, length: len(source)}
 }
 
 func (m LineMap) Position(offset int) diagnostic.Position {
 	if offset < 0 {
 		offset = 0
+	}
+	if offset > m.length {
+		offset = m.length
 	}
 	line := 0
 	for line+1 < len(m.starts) && m.starts[line+1] <= offset {

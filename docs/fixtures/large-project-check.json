@@ -1,0 +1,48 @@
+{
+  "name": "large-project-check",
+  "source": [
+    {
+      "path": "classes/DomainRecord.cls",
+      "content": "public virtual class DomainRecord { public String name; public virtual String label() { return name; } }"
+    },
+    {
+      "path": "classes/NamedRecord.cls",
+      "content": "public interface NamedRecord { String label(); }"
+    },
+    {
+      "path": "classes/AccountRecord.cls",
+      "content": "public class AccountRecord extends DomainRecord implements NamedRecord { public override String label() { return 'Account:' + name; } }"
+    },
+    {
+      "path": "classes/RecordFactory.cls",
+      "content": "public class RecordFactory { public static AccountRecord account(String name) { AccountRecord record = new AccountRecord(); record.name = name; return record; } }"
+    },
+    {
+      "path": "classes/RecordSelector.cls",
+      "content": "public class RecordSelector { public NamedRecord first() { return RecordFactory.account('Acme'); } }"
+    },
+    {
+      "path": "classes/RecordService.cls",
+      "content": "public class RecordService { public String summarize() { NamedRecord record = new RecordSelector().first(); return record.label(); } }"
+    },
+    {
+      "path": "classes/RecordJob.cls",
+      "content": "public class RecordJob { public static String run() { return new RecordService().summarize(); } }"
+    },
+    {
+      "path": "classes/RecordServiceTest.cls",
+      "content": "@isTest private class RecordServiceTest { @isTest static void summarizes() { System.assertEquals('Account:Acme', RecordJob.run()); } }"
+    }
+  ],
+  "command": {
+    "kind": "check"
+  },
+  "expected": {
+    "result": {
+      "diagnostics": 0,
+      "files": 8,
+      "ok": true,
+      "types": 8
+    }
+  }
+}

@@ -91,20 +91,20 @@ internal/
   sema/          semantic analysis and diagnostics
   ir/            lowered executable representation
   vm/            interpreter, stack frames, heap, exceptions, debugger hooks
-  platform/      Apex standard library and Salesforce platform APIs
   schema/        metadata model, custom object/field/relationship registry
+  sobject/       runtime SObject values and describe helpers
   soql/          parser, binder, optimizer bridge, executor
   storage/       SObject persistence, transactions, fixture import/export
   dml/           DML pipeline, validation, triggers, workflow-like hooks
-  test/          Apex test discovery, isolation, scheduler, JSON/JUnit results
-  async/         Queueable/Future/Batch/Scheduled execution
-  limits/        governor counters and enforcement
+  apextest/      Apex test discovery, isolation, async drain, JSON/JUnit results
+  testreport/    console, JSON, and JUnit report models
   trace/         Chrome Trace Event output
   profile/       native trace aggregation and JSON/Markdown reports
   dap/           Debug Adapter Protocol server
   lsp/           Language Server Protocol server
   server/        local Salesforce-compatible API
   compat/        black-box compatibility suites
+  capability/    machine-readable MVP matrix and generated docs
 ```
 
 ## Parser Strategy
@@ -264,17 +264,15 @@ Exit: compatibility dashboard drives issue priority.
 
 ## Current Next Steps
 
-1. Deepen runtime fidelity around instance/class execution, properties,
-   initializer blocks, overload dispatch, inner classes, enums, namespaces, and
-   Salesforce-exact exception behavior.
-2. Expand Apex test semantics with broader async draining, exact transaction
-   rollback behavior, richer auth/profile behavior, and file/line assertion
-   fidelity.
-3. Expand SOQL/DML/trigger compatibility for child subqueries, broader
+1. Expand SOQL/DML/trigger compatibility for child subqueries, broader
    aggregates, complex predicates, external-ID upsert, `addError`, validation
    rules, and bulk ordering.
-4. Add live debugger pause hooks and breakpoint-driven execution control on top
+2. Improve SObject describe fidelity, system fields, record type information,
+   permission semantics, and large-fixture performance.
+3. Add live debugger pause hooks and breakpoint-driven execution control on top
    of the current DAP snapshot sessions.
+4. Complete LSP definition/references/semantic tokens and native watcher
+   backends without weakening full-project correctness.
 5. Grow Salesforce black-box compatibility fixtures and keep
    `oaer compat mvp` as the release gate.
 
@@ -294,9 +292,8 @@ Exit: compatibility dashboard drives issue priority.
 Keep:
 
 - trace parser/report ideas from `internal/trace` and `internal/profile`
-- smoke categorization concepts from `internal/smoke`
 - transform lexer tests as useful Apex lexical edge cases
-- project config detection from `internal/smoke/config.go`
+- project config detection from `internal/config`
 
 Replace or keep replaced:
 

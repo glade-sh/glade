@@ -1,5 +1,7 @@
 package storage
 
+import "strings"
+
 const FixtureVersion = "oaer.storage.v1"
 
 type OrgState struct {
@@ -191,6 +193,46 @@ func NewOrgState() OrgState {
 		Objects:     make(map[string]ObjectState),
 		IDSequences: make(map[string]uint64),
 	}
+}
+
+func StripNamespaceToken(namespace, name string) string {
+	if namespace == "" || name == "" {
+		return name
+	}
+	prefix := namespace + "__"
+	if strings.HasPrefix(name, prefix) {
+		return strings.TrimPrefix(name, prefix)
+	}
+	return name
+}
+
+func ResolveObjectName(org OrgState, name string) (string, bool) {
+	if _, ok := org.Objects[name]; ok {
+		return name, true
+	}
+	stripped := StripNamespaceToken(org.Namespace, name)
+	if stripped != name {
+		if _, ok := org.Objects[stripped]; ok {
+			return stripped, true
+		}
+	}
+	return "", false
+}
+
+func ResolveFieldName(definition ObjectDefinition, namespace, name string) (string, bool) {
+	if name == "Id" {
+		return name, true
+	}
+	if _, ok := definition.Fields[name]; ok {
+		return name, true
+	}
+	stripped := StripNamespaceToken(namespace, name)
+	if stripped != name {
+		if _, ok := definition.Fields[stripped]; ok {
+			return stripped, true
+		}
+	}
+	return "", false
 }
 
 func (r Record) Clone() Record {
