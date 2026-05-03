@@ -883,6 +883,17 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return Null, fmt.Errorf("Database.query expects query String")
 		}
 		return vm.executeSOQL(args[0].Text, result)
+	case "Database.queryWithBinds":
+		if len(args) != 2 && len(args) != 3 {
+			return Null, fmt.Errorf("Database.queryWithBinds expects query String, bind Map, and optional AccessLevel")
+		}
+		if args[0].Kind != ValueString || args[1].Kind != ValueMap {
+			return Null, fmt.Errorf("Database.queryWithBinds expects query String and bind Map")
+		}
+		if len(args) == 3 && (args[2].Kind != ValueObject || args[2].Type != "AccessLevel") {
+			return Null, fmt.Errorf("Database.queryWithBinds expects AccessLevel")
+		}
+		return vm.executeSOQLWithBindMap(args[0].Text, args[1], result)
 	case "Database.countQuery":
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("Database.countQuery expects query String")
@@ -1558,6 +1569,16 @@ func (vm *VM) executeSOQL(raw string, execResult *Result) (Value, error) {
 	return List(values...), nil
 }
 
+func (vm *VM) executeSOQLWithBindMap(raw string, binds Value, execResult *Result) (Value, error) {
+	values, err := vm.executeSOQLRowsWithExpander(raw, execResult, func(query string) (string, error) {
+		return vm.expandSOQLBindsFromMap(query, binds)
+	})
+	if err != nil {
+		return Null, err
+	}
+	return List(values...), nil
+}
+
 func (vm *VM) executeSOQLForType(raw, typeName string, result *Result) (Value, error) {
 	value, err := vm.executeSOQL(raw, result)
 	if err != nil {
@@ -1581,13 +1602,17 @@ func (vm *VM) executeSOQLForType(raw, typeName string, result *Result) (Value, e
 }
 
 func (vm *VM) executeSOQLRows(raw string, execResult *Result) ([]Value, error) {
+	return vm.executeSOQLRowsWithExpander(raw, execResult, vm.expandSOQLBinds)
+}
+
+func (vm *VM) executeSOQLRowsWithExpander(raw string, execResult *Result, expand func(string) (string, error)) ([]Value, error) {
 	if vm.Org == nil {
 		return nil, fmt.Errorf("SOQL requires org state")
 	}
 	if err := vm.incrementLimit("queries", 1); err != nil {
 		return nil, err
 	}
-	queryText, err := vm.expandSOQLBinds(raw)
+	queryText, err := expand(raw)
 	if err != nil {
 		return nil, newExceptionError("QueryException", err.Error())
 	}
@@ -1624,6 +1649,26 @@ func aggregateCount(value Value) (Value, bool) {
 }
 
 func (vm *VM) expandSOQLBinds(raw string) (string, error) {
+	return vm.expandSOQLBindsWith(raw, vm.lookup)
+}
+
+func (vm *VM) expandSOQLBindsFromMap(raw string, binds Value) (string, error) {
+	if binds.Kind != ValueMap {
+		return "", fmt.Errorf("queryWithBinds bind values must be a Map")
+	}
+	return vm.expandSOQLBindsWith(raw, func(name string) (Value, error) {
+		if strings.Contains(name, ".") {
+			return Null, fmt.Errorf("queryWithBinds does not support dotted bind path %q", name)
+		}
+		value, ok := binds.Map[mapKey(String(name))]
+		if !ok {
+			return Null, fmt.Errorf("missing bind value %q", name)
+		}
+		return value, nil
+	})
+}
+
+func (vm *VM) expandSOQLBindsWith(raw string, lookup func(string) (Value, error)) (string, error) {
 	var out strings.Builder
 	for i := 0; i < len(raw); {
 		if raw[i] == '\'' {
@@ -1718,7 +1763,7 @@ func (vm *VM) expandSOQLBinds(raw string) (string, error) {
 			}
 			break
 		}
-		value, err := vm.lookup(name.String())
+		value, err := lookup(name.String())
 		if err != nil {
 			return "", err
 		}
@@ -3061,6 +3106,10 @@ func approxValueSize(value Value) int {
 func (vm *VM) lookup(name string) (Value, error) {
 	if value, ok := vm.Globals[name]; ok {
 		return value, nil
+	}
+	switch name {
+	case "AccessLevel.USER_MODE", "AccessLevel.SYSTEM_MODE":
+		return Value{Kind: ValueObject, Type: "AccessLevel", Text: strings.TrimPrefix(name, "AccessLevel.")}, nil
 	}
 	if strings.HasSuffix(name, ".class") {
 		className := strings.TrimSuffix(name, ".class")

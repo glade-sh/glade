@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/open-aer/oaer/internal/storage"
@@ -264,6 +265,59 @@ System.assert(caught);
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecDatabaseQueryWithBinds(t *testing.T) {
+	program, err := CompileAnonymous(`
+insert new Account(Name = 'Acme', Rating = 'Hot');
+insert new Account(Name = 'Beta', Rating = 'Warm');
+Map<String,Object> binds = new Map<String,Object>();
+binds.put('wanted', 'Acme');
+List<Account> rows = Database.queryWithBinds('SELECT Id, Name FROM Account WHERE Name = :wanted', binds);
+System.assertEquals(1, rows.size());
+Account row = rows.get(0);
+System.assertEquals('Acme', row.Name);
+List<String> ratings = new List<String>{'Hot', 'Warm'};
+binds.put('ratings', ratings);
+rows = Database.queryWithBinds('SELECT Id FROM Account WHERE Rating IN :ratings ORDER BY Name', binds, AccessLevel.USER_MODE);
+System.assertEquals(2, rows.size());
+Boolean caught = false;
+try {
+    Database.queryWithBinds('SELECT Id FROM Account WHERE Name = :missing', binds);
+} catch (QueryException qe) {
+    caught = true;
+    String message = qe.getMessage();
+    System.assert(message.contains('missing'));
+}
+System.assert(caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Rating"] = storage.Field{APIName: "Rating", Type: storage.FieldString}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+
+	badProgram, err := CompileAnonymous(`
+Map<String,Object> binds = new Map<String,Object>();
+binds.put('wanted', 'Acme');
+Database.queryWithBinds('SELECT Id FROM Account WHERE Name = :wanted', binds, 'USER_MODE');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine = New(nil)
+	org = testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(badProgram); err == nil || !strings.Contains(err.Error(), "AccessLevel") {
+		t.Fatalf("expected AccessLevel error, got %v", err)
 	}
 }
 

@@ -91,6 +91,8 @@ Release engineering:
 - Improved `Database.query` dynamic SOQL binds for operator-adjacent binds,
   dotted bind paths, collection binds, date-literal colons, and catchable
   `QueryException` parse errors.
+- Added `Database.queryWithBinds` support for map-provided scalar and collection
+  binds, including catchable missing-bind errors.
 - Added DML fidelity for implicit external-ID upsert, unique-field checks,
   lookup reference validation, ID/object mismatch errors, soft delete visibility,
   and undelete restoration.
