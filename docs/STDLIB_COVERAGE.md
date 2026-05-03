@@ -104,14 +104,33 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Schema | `DescribeSObjectResult` | `partial` | Common object metadata, fields, record types, and child relationships. |
 | Schema | `Schema.describeSObjects` | `partial` | Object names and SObjectType tokens for local schema. |
 | Schema | `Schema.getGlobalDescribe` | `partial` | Local schema-backed describe map. |
+| String | `String.abbreviate` | `supported` | Apache-style abbreviation for one- and two-argument forms. |
+| String | `String.charAt` | `supported` | Rune-indexed one-character String. |
+| String | `String.codePointAt` | `supported` | Rune-indexed Unicode code point. |
+| String | `String.codePointBefore` | `supported` | Rune-indexed previous Unicode code point. |
+| String | `String.codePointCount` | `supported` | Counts runes between validated indexes. |
+| String | `String.commonPrefix` | `supported` | Returns the shared rune prefix for two strings. |
 | String | `String.contains` | `supported` | UTF-8 string contains. |
 | String | `String.containsAny` | `supported` | Rune membership. |
 | String | `String.containsNone` | `supported` | Rune exclusion. |
 | String | `String.containsOnly` | `supported` | Rune allow-list. |
 | String | `String.containsWhitespace` | `supported` | Unicode whitespace. |
 | String | `String.countMatches` | `supported` | Non-overlapping literal substring count. |
+| String | `String.difference` | `supported` | Returns the differing suffix from the comparison string. |
 | String | `String.endsWith` | `supported` | UTF-8 string suffix. |
 | String | `String.equalsIgnoreCase` | `supported` | Unicode simple fold. |
+| String | `String.escapeCsv` | `supported` | RFC4180-style quoting and doubled quotes for local strings. |
+| String | `String.escapeEcmaScript` | `partial` | JavaScript-style backslash escaping for common deterministic cases. |
+| String | `String.escapeHtml4` | `partial` | Go HTML entity escaping for deterministic core entities. |
+| String | `String.escapeJava` | `partial` | Java-style backslash and Unicode escaping for deterministic core cases. |
+| String | `String.escapeSingleQuotes` | `supported` | Escapes single quotes with backslashes. |
+| String | `String.escapeUnicode` | `partial` | Escapes non-ASCII and control runes as UTF-16 Unicode escapes. |
+| String | `String.escapeXml` | `partial` | Escapes XML core entities; XML version-specific validity is not modeled. |
+| String | `String.format` | `partial` | Deterministic {0}-style list substitution; full MessageFormat locale behavior is not modeled. |
+| String | `String.fromCharArray` | `supported` | Builds a string from valid Unicode code point integers. |
+| String | `String.getChars` | `supported` | Returns Unicode code point integers for each rune. |
+| String | `String.getCommonPrefix` | `supported` | Returns the shared rune prefix for a list of strings. |
+| String | `String.getLevenshteinDistance` | `supported` | Rune-based edit distance. |
 | String | `String.hashCode` | `supported` | Java-compatible UTF-16 code-unit string hash for local values. |
 | String | `String.indexOf` | `supported` | UTF-8 byte index behavior from Go strings. |
 | String | `String.isAllLowerCase` | `supported` | All letters lowercase; non-letters ignored. |
@@ -120,6 +139,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | String | `String.isAlphaSpace` | `supported` | Unicode letters and space characters. |
 | String | `String.isAlphanumeric` | `supported` | Unicode letters and decimal digits. |
 | String | `String.isAlphanumericSpace` | `supported` | Unicode letters, decimal digits, and space characters. |
+| String | `String.isAsciiPrintable` | `supported` | Checks ASCII printable range 0x20 through 0x7E. |
 | String | `String.isBlank` | `supported` | Null and whitespace. |
 | String | `String.isNotBlank` | `supported` | Null and whitespace. |
 | String | `String.isNumeric` | `supported` | Unicode decimal digits. |
@@ -132,11 +152,19 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | String | `String.replaceAll` | `partial` | Go regexp-backed replacement. |
 | String | `String.replaceFirst` | `partial` | Go regexp-backed first replacement. |
 | String | `String.split` | `partial` | Go regexp-backed split with Apex limit shape. |
+| String | `String.splitByCharacterType` | `supported` | Splits on coarse Unicode upper/lower/digit/space/other groups. |
+| String | `String.splitByCharacterTypeCamelCase` | `supported` | Splits character types with camel-case upper-to-lower adjustment. |
 | String | `String.startsWith` | `supported` | UTF-8 string prefix. |
 | String | `String.substring` | `supported` | Rune-indexed substring. |
 | String | `String.toLowerCase` | `supported` | Go Unicode lowercasing. |
 | String | `String.toUpperCase` | `supported` | Go Unicode uppercasing. |
 | String | `String.trim` | `supported` | Unicode whitespace trim. |
+| String | `String.unescapeCsv` | `supported` | Unquotes doubled-quote CSV fields. |
+| String | `String.unescapeEcmaScript` | `partial` | Unescapes common JavaScript-style backslash and Unicode escapes. |
+| String | `String.unescapeHtml4` | `partial` | Go HTML entity unescaping for deterministic core entities. |
+| String | `String.unescapeJava` | `partial` | Unescapes common Java-style backslash and Unicode escapes. |
+| String | `String.unescapeUnicode` | `partial` | Unescapes UTF-16 Unicode escape sequences. |
+| String | `String.unescapeXml` | `partial` | Unescapes XML core entities. |
 | String | `String.valueOf` | `supported` | Local value string conversion. |
 | System | `System.assert` | `supported` | Assertion failure returns runtime error. |
 | System | `System.assertEquals` | `supported` | Assertion failure returns runtime error. |

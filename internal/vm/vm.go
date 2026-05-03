@@ -1063,7 +1063,7 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return value, nil
 		}
 		return Null, unsupportedCallError(callee)
-	case "String.isBlank", "String.isNotBlank", "String.isEmpty", "String.isNotEmpty", "String.valueOf", "String.join":
+	case "String.isBlank", "String.isNotBlank", "String.isEmpty", "String.isNotEmpty", "String.valueOf", "String.join", "String.format", "String.getCommonPrefix", "String.getLevenshteinDistance", "String.fromCharArray", "String.escapeSingleQuotes":
 		return stringStatic(callee, args)
 	case "Integer.valueOf", "Long.valueOf", "Decimal.valueOf", "Double.valueOf":
 		return numericStatic(callee, args)

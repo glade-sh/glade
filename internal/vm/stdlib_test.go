@@ -172,6 +172,116 @@ abc.replaceAll('[', 'x');`)
 	}
 }
 
+func TestExecStringStdlibCompletionMethods(t *testing.T) {
+	program, err := CompileAnonymous(`
+String csv = 'a,"b",c';
+System.assertEquals('"a,""b"",c"', csv.escapeCsv());
+String escapedCsv = csv.escapeCsv();
+System.assertEquals(csv, escapedCsv.unescapeCsv());
+String html = '<tag attr=''x''>&';
+System.assertEquals('&lt;tag attr=&#39;x&#39;&gt;&amp;', html.escapeHtml4());
+String escapedHtml = html.escapeHtml4();
+System.assertEquals(html, escapedHtml.unescapeHtml4());
+System.assertEquals('&lt;tag attr=&apos;x&apos;&gt;&amp;', html.escapeXml());
+String escapedXml = html.escapeXml();
+System.assertEquals(html, escapedXml.unescapeXml());
+String slash = 'a/b';
+System.assertEquals('a\/b', slash.escapeEcmaScript());
+String escapedSlash = slash.escapeEcmaScript();
+System.assertEquals(slash, escapedSlash.unescapeEcmaScript());
+String quoted = 'He said "hi"';
+System.assertEquals('He said \"hi\"', quoted.escapeJava());
+String escapedQuoted = quoted.escapeJava();
+System.assertEquals(quoted, escapedQuoted.unescapeJava());
+String omega = 'AΩ';
+System.assertEquals('A\u03A9', omega.escapeUnicode());
+String escapedOmega = omega.escapeUnicode();
+System.assertEquals(omega, escapedOmega.unescapeUnicode());
+System.assertEquals('Bob\''s', String.escapeSingleQuotes('Bob''s'));
+List<String> formatArgs = new List<String>();
+formatArgs.add('Ada');
+formatArgs.add('Lovelace');
+System.assertEquals('Hello Ada Lovelace', String.format('Hello {0} {1}', formatArgs));
+String alphabet = 'abcdefghijklmnopqrstuvwxyz';
+System.assertEquals('abcdefg...', alphabet.abbreviate(10));
+System.assertEquals('...ijklmn...', alphabet.abbreviate(8, 12));
+String machine = 'i am a machine';
+System.assertEquals('robot', machine.difference('i am a robot'));
+String interstate = 'interstate';
+System.assertEquals('interst', interstate.commonPrefix('interstellar'));
+List<String> prefixes = new List<String>();
+prefixes.add('flower');
+prefixes.add('flow');
+prefixes.add('flight');
+System.assertEquals('fl', String.getCommonPrefix(prefixes));
+String kitten = 'kitten';
+System.assertEquals(3, kitten.getLevenshteinDistance('sitting'));
+System.assertEquals(3, String.getLevenshteinDistance('kitten', 'sitting'));
+String chars = 'AΩ';
+System.assertEquals('A', chars.charAt(0));
+System.assertEquals(937, chars.codePointAt(1));
+System.assertEquals(65, chars.codePointBefore(1));
+System.assertEquals(2, chars.codePointCount(0, 2));
+List<Integer> charCodes = chars.getChars();
+System.assertEquals(2, charCodes.size());
+System.assertEquals(65, charCodes.get(0));
+System.assertEquals(937, charCodes.get(1));
+System.assertEquals(chars, String.fromCharArray(charCodes));
+String printable = 'AZ 19~';
+String nonPrintable = 'Snow Ω';
+System.assert(printable.isAsciiPrintable());
+System.assert(!nonPrintable.isAsciiPrintable());
+String typeSource = 'ab12 CD';
+List<String> splitType = typeSource.splitByCharacterType();
+System.assertEquals(4, splitType.size());
+System.assertEquals('ab', splitType.get(0));
+System.assertEquals('12', splitType.get(1));
+System.assertEquals(' ', splitType.get(2));
+System.assertEquals('CD', splitType.get(3));
+String camelSource = 'HTTPServer42';
+List<String> camel = camelSource.splitByCharacterTypeCamelCase();
+System.assertEquals(3, camel.size());
+System.assertEquals('HTTP', camel.get(0));
+System.assertEquals('Server', camel.get(1));
+System.assertEquals('42', camel.get(2));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestStringStdlibCompletionRejectsBadArguments(t *testing.T) {
+	tests := []struct {
+		method string
+		args   []Value
+	}{
+		{method: "escapeCsv", args: []Value{String("x")}},
+		{method: "abbreviate", args: []Value{Int(3)}},
+		{method: "charAt", args: []Value{Int(-1)}},
+		{method: "codePointAt", args: []Value{Int(9)}},
+		{method: "codePointBefore", args: []Value{Int(0)}},
+		{method: "codePointCount", args: []Value{Int(1), Int(0)}},
+		{method: "splitByCharacterType", args: []Value{String("x")}},
+	}
+	for _, tc := range tests {
+		if _, handled, err := callStringMember(String("abc"), tc.method, tc.args); !handled || err == nil {
+			t.Fatalf("%s expected handled error, handled=%v err=%v", tc.method, handled, err)
+		}
+	}
+	if _, err := stringStatic("String.format", []Value{String("{0}"), String("x")}); err == nil {
+		t.Fatal("String.format expected bad argument error")
+	}
+	if _, err := stringStatic("String.fromCharArray", []Value{List(String("x"))}); err == nil {
+		t.Fatal("String.fromCharArray expected bad argument error")
+	}
+	if _, _, err := callStringMember(String(`\u00ZZ`), "unescapeUnicode", nil); err == nil {
+		t.Fatal("String.unescapeUnicode expected bad escape error")
+	}
+}
+
 func TestStringStdlibMoreRejectsBadArgumentShapes(t *testing.T) {
 	tests := []struct {
 		method string
