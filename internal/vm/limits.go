@@ -18,6 +18,11 @@ type Limits struct {
 	CPUTimeMS     int `json:"cpuTimeMs"`
 	Callouts      int `json:"callouts"`
 	AsyncJobs     int `json:"asyncJobs"`
+	FutureCalls   int `json:"futureCalls"`
+	QueueableJobs int `json:"queueableJobs"`
+	BatchJobs     int `json:"batchJobs"`
+	ScheduledJobs int `json:"scheduledJobs"`
+	EmailInvokes  int `json:"emailInvocations"`
 }
 
 type LimitCaps struct {
@@ -29,6 +34,11 @@ type LimitCaps struct {
 	CPUTimeMS     int `json:"cpuTimeMs"`
 	Callouts      int `json:"callouts"`
 	AsyncJobs     int `json:"asyncJobs"`
+	FutureCalls   int `json:"futureCalls"`
+	QueueableJobs int `json:"queueableJobs"`
+	BatchJobs     int `json:"batchJobs"`
+	ScheduledJobs int `json:"scheduledJobs"`
+	EmailInvokes  int `json:"emailInvocations"`
 }
 
 type LimitViolation struct {
@@ -47,6 +57,11 @@ func defaultLimitCaps() LimitCaps {
 		CPUTimeMS:     10000,
 		Callouts:      100,
 		AsyncJobs:     50,
+		FutureCalls:   50,
+		QueueableJobs: 50,
+		BatchJobs:     5,
+		ScheduledJobs: 100,
+		EmailInvokes:  10,
 	}
 }
 
@@ -89,6 +104,21 @@ func (vm *VM) incrementLimit(name string, delta int) error {
 	case "asyncJobs":
 		vm.limits.AsyncJobs += delta
 		return vm.checkLimit(name, vm.limits.AsyncJobs, vm.limitCaps.AsyncJobs)
+	case "futureCalls":
+		vm.limits.FutureCalls += delta
+		return vm.checkLimit(name, vm.limits.FutureCalls, vm.limitCaps.FutureCalls)
+	case "queueableJobs":
+		vm.limits.QueueableJobs += delta
+		return vm.checkLimit(name, vm.limits.QueueableJobs, vm.limitCaps.QueueableJobs)
+	case "batchJobs":
+		vm.limits.BatchJobs += delta
+		return vm.checkLimit(name, vm.limits.BatchJobs, vm.limitCaps.BatchJobs)
+	case "scheduledJobs":
+		vm.limits.ScheduledJobs += delta
+		return vm.checkLimit(name, vm.limits.ScheduledJobs, vm.limitCaps.ScheduledJobs)
+	case "emailInvocations":
+		vm.limits.EmailInvokes += delta
+		return vm.checkLimit(name, vm.limits.EmailInvokes, vm.limitCaps.EmailInvokes)
 	default:
 		return fmt.Errorf("unknown limit %q", name)
 	}
@@ -140,10 +170,22 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 		return Int(int64(vm.limits.Callouts)), true
 	case "getLimitCallouts":
 		return Int(int64(vm.limitCaps.Callouts)), true
-	case "getQueueableJobs", "getFutureCalls":
+	case "getAsyncJobs":
 		return Int(int64(vm.limits.AsyncJobs)), true
-	case "getLimitQueueableJobs", "getLimitFutureCalls":
+	case "getLimitAsyncJobs":
 		return Int(int64(vm.limitCaps.AsyncJobs)), true
+	case "getQueueableJobs":
+		return Int(int64(vm.limits.QueueableJobs)), true
+	case "getLimitQueueableJobs":
+		return Int(int64(vm.limitCaps.QueueableJobs)), true
+	case "getFutureCalls":
+		return Int(int64(vm.limits.FutureCalls)), true
+	case "getLimitFutureCalls":
+		return Int(int64(vm.limitCaps.FutureCalls)), true
+	case "getEmailInvocations":
+		return Int(int64(vm.limits.EmailInvokes)), true
+	case "getLimitEmailInvocations":
+		return Int(int64(vm.limitCaps.EmailInvokes)), true
 	default:
 		return Null, false
 	}

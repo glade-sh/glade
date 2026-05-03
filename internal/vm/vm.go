@@ -904,7 +904,8 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		"Limits.getDmlStatements", "Limits.getLimitDmlStatements", "Limits.getDmlRows", "Limits.getLimitDmlRows",
 		"Limits.getHeapSize", "Limits.getLimitHeapSize", "Limits.getCpuTime", "Limits.getLimitCpuTime",
 		"Limits.getCallouts", "Limits.getLimitCallouts", "Limits.getQueueableJobs", "Limits.getLimitQueueableJobs",
-		"Limits.getFutureCalls", "Limits.getLimitFutureCalls":
+		"Limits.getFutureCalls", "Limits.getLimitFutureCalls", "Limits.getAsyncJobs", "Limits.getLimitAsyncJobs",
+		"Limits.getEmailInvocations", "Limits.getLimitEmailInvocations":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
@@ -1027,6 +1028,9 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		if len(args) != 1 {
 			return Null, fmt.Errorf("Messaging.sendEmail expects messages")
 		}
+		if err := vm.incrementLimit("emailInvocations", 1); err != nil {
+			return Null, err
+		}
 		return List(Object("Messaging.SendEmailResult")), nil
 	case "ApexPages.hasMessages":
 		if len(args) != 0 {
@@ -1141,6 +1145,9 @@ func (vm *VM) enqueueFuture(method Method, args []Value) (Value, error) {
 	if err := vm.incrementLimit("asyncJobs", 1); err != nil {
 		return Null, err
 	}
+	if err := vm.incrementLimit("futureCalls", 1); err != nil {
+		return Null, err
+	}
 	job := AsyncJob{
 		ID:     vm.nextAsyncJobID(),
 		Kind:   "Future",
@@ -1206,6 +1213,9 @@ func (vm *VM) enqueueJob(args []Value) (Value, error) {
 	if err := vm.incrementLimit("asyncJobs", 1); err != nil {
 		return Null, err
 	}
+	if err := vm.incrementLimit("queueableJobs", 1); err != nil {
+		return Null, err
+	}
 	if vm.testContext.Draining && vm.testContext.ChainEnqueued {
 		return Null, fmt.Errorf("Queueable chaining limit exceeded")
 	}
@@ -1241,6 +1251,9 @@ func (vm *VM) executeBatch(args []Value) (Value, error) {
 	if err := vm.incrementLimit("asyncJobs", 1); err != nil {
 		return Null, err
 	}
+	if err := vm.incrementLimit("batchJobs", 1); err != nil {
+		return Null, err
+	}
 	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "BatchApex", Object: args[0], BatchSize: batchSize}
 	vm.testContext.AsyncJobs = append(vm.testContext.AsyncJobs, job)
 	vm.recordAsyncJob(job, "Queued", "")
@@ -1255,6 +1268,9 @@ func (vm *VM) scheduleJob(args []Value) (Value, error) {
 		return String("08e000000000001"), nil
 	}
 	if err := vm.incrementLimit("asyncJobs", 1); err != nil {
+		return Null, err
+	}
+	if err := vm.incrementLimit("scheduledJobs", 1); err != nil {
 		return Null, err
 	}
 	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "ScheduledApex", Object: args[2], Name: args[0].Text, Cron: args[1].Text}

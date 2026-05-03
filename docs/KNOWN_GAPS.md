@@ -75,7 +75,7 @@ The MVP target is `full-featured aer-parity MVP`. This document lists required c
 ### `limits.core`: Governor counters and strict/permissive enforcement
 
 - Status: `partial`
-- Gap: The VM now tracks SOQL queries/rows, DML statements/rows, approximate heap, statement-count CPU, callouts, and async jobs. Limits.* exposes current and max counters, Test.startTest/Test.stopTest reset and restore test windows, permissive mode records violations, strict mode raises System.LimitException, and oaer exec/test accept --limit-mode. Exact Salesforce accounting and configurable per-test caps remain incomplete.
+- Gap: The VM now tracks SOQL queries/rows, DML statements/rows, approximate heap, statement-count CPU, callouts, aggregate async jobs, future calls, queueable jobs, batch jobs, scheduled jobs, and email invocations. Limits.* exposes current and max counters for supported SOQL, DML, heap, CPU, callout, aggregate async, future, queueable, and email counters, Test.startTest/Test.stopTest reset and restore test windows, permissive mode records violations, strict mode raises System.LimitException, and oaer exec/test accept --limit-mode. Exact Salesforce accounting and configurable per-test caps remain incomplete.
 
 ## Local API server
 
@@ -101,7 +101,7 @@ The MVP target is `full-featured aer-parity MVP`. This document lists required c
 ### `stdlib.core`: Core System/String/Date/Datetime/JSON/Math APIs
 
 - Status: `partial`
-- Gap: Assertions, debug, collections, selected String methods, Limits counters, Date/Datetime/Time basics, Decimal literals/arithmetic/storage conversion, Math integer helpers, JSON serialize/deserializeUntyped, EncodingUtil, Crypto SHA-256, Schema global describe basics, SObject field describe basics with picklist entries, SObject record type describe maps/lists with common RecordTypeInfo methods, UserInfo user/profile identity in test context, FeatureManagement user permission-list checks, Messaging, ApexPages, and HttpResponse-shaped callout mocks now exist for the supported VM subset.
+- Gap: Assertions, debug, collections, selected String methods, Limits counters including future, queueable, and email getters, Date/Datetime/Time basics, Decimal literals/arithmetic/storage conversion, Math integer helpers, JSON serialize/deserializeUntyped, EncodingUtil, Crypto SHA-256, Schema global describe basics, SObject field describe basics with picklist entries, SObject record type describe maps/lists with common RecordTypeInfo methods, UserInfo user/profile identity in test context, FeatureManagement user permission-list checks, Messaging, ApexPages, and HttpResponse-shaped callout mocks now exist for the supported VM subset.
 
 ### `vm.control-flow`: Control flow and exceptions
 

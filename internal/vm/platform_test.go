@@ -98,6 +98,49 @@ System.assertEquals(2, Limits.getDmlStatements());
 	}
 }
 
+func TestExecPlatformLimitCounters(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(0, Limits.getEmailInvocations());
+System.assertEquals(10, Limits.getLimitEmailInvocations());
+Messaging.sendEmail(new List<String>{'hello'});
+System.assertEquals(1, Limits.getEmailInvocations());
+
+System.assertEquals(0, Limits.getAsyncJobs());
+System.assertEquals(50, Limits.getLimitAsyncJobs());
+System.assertEquals(0, Limits.getFutureCalls());
+System.assertEquals(0, Limits.getQueueableJobs());
+FutureWorker.mark();
+System.enqueueJob(new QueueWorker());
+System.assertEquals(2, Limits.getAsyncJobs());
+System.assertEquals(1, Limits.getFutureCalls());
+System.assertEquals(1, Limits.getQueueableJobs());
+
+Database.executeBatch(new BatchWorker(), 1);
+System.schedule('nightly', '0 0 0 * * ?', new ScheduledWorker());
+System.assertEquals(4, Limits.getAsyncJobs());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	for _, class := range []Class{{Name: "FutureWorker"}, {Name: "QueueWorker"}, {Name: "BatchWorker"}, {Name: "ScheduledWorker"}} {
+		if err := machine.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := machine.RegisterMethod(Method{Name: "FutureWorker.mark", ClassName: "FutureWorker", IsStatic: true, Modifiers: []string{"future"}}); err != nil {
+		t.Fatal(err)
+	}
+	result, err := machine.Execute(program)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Limits.FutureCalls != 1 || result.Limits.QueueableJobs != 1 || result.Limits.BatchJobs != 1 || result.Limits.ScheduledJobs != 1 || result.Limits.EmailInvokes != 1 {
+		t.Fatalf("limits = %#v", result.Limits)
+	}
+}
+
 func TestExecRunAsUserObjectScopesUserInfo(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.runAs(new User(Id = '005-user-a', ProfileId = '00e-profile-a', Username = 'user-a@example.test')) {

@@ -346,8 +346,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     all-or-none rollback.
   - [x] Support field-level `someRecord.Field__c.addError(...)` with
     `Database.Error.getFields()` attribution.
-  - **Limitation**: Richer multi-error ordering and advanced overload parity
-    remain incomplete.
+  - [x] Preserve multiple addError calls as multiple `Database.Error` entries.
+  - **Limitation**: Advanced addError overload parity remains incomplete.
 - [ ] Add trigger fixtures covering insert/update/delete/upsert/undelete,
   all-or-none failures, partial success, recursion, and bulk batches.
   - [x] Add compatibility fixture coverage for failed-first bulk insert partial
@@ -366,6 +366,10 @@ a Salesforce-shaped local API server without silently wrong behavior.
   deterministic.
 - [ ] Complete callout, email, async, queueable, future, batch, and scheduled
   counters.
+  - [x] Track separate future, queueable, batch, scheduled, and email invocation
+    counters while preserving the aggregate async job counter.
+  - [x] Expose supported public `Limits` getters for aggregate async jobs,
+    future calls, queueable jobs, and email invocations with max values.
 - [ ] Add configurable strict/permissive limit modes for CLI, tests, server,
   and compatibility fixtures.
 - [ ] Complete `System`, `Test`, `Database`, `Schema`, `Limits`, and `JSON`

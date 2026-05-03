@@ -106,6 +106,9 @@ Release engineering:
   error shaping and `Database.Error.getFields()` attribution.
 - Preserved multiple `addError` calls per row as multiple `Database.Error`
   entries on DML result objects.
+- Split governor counters for future calls, queueable jobs, batch jobs,
+  scheduled jobs, and email invocations while keeping the aggregate async job
+  counter.
 - Tightened trigger context shape with `Trigger.isExecuting`, operation flags,
   `Trigger.size`, nullable unavailable contexts, and `Trigger.newMap`/
   `Trigger.oldMap` coverage for update and delete triggers.
