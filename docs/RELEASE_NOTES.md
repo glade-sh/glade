@@ -114,6 +114,8 @@ Release engineering:
 - Added `Database.getQueryLocator(String)` for supported SOQL and batch start
   scopes.
 - Added basic `Type.forName(...)` and `Type.newInstance()` factory support.
+- Added `Database.setSavepoint()` and `Database.rollback(...)` for local
+  org-state snapshots.
 - Added SOQL `ALL ROWS` support for querying soft-deleted records.
 - Added SOQL `WITH SECURITY_ENFORCED`, `WITH USER_MODE`, and
   `WITH SYSTEM_MODE` parsing as local security-mode markers.

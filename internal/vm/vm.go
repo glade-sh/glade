@@ -49,6 +49,9 @@ type VM struct {
 	currentStatement callFrame
 	hasStatement     bool
 	triggerDepth     int
+	savepoints       map[string]storage.OrgState
+	savepointOrder   map[string]int
+	nextSavepoint    int
 }
 
 const maxTriggerDepth = 16
@@ -140,6 +143,8 @@ func New(stdout io.Writer) *VM {
 		limitCaps:       defaultLimitCaps(),
 		limitMode:       LimitModePermissive,
 		fakeNow:         time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC),
+		savepoints:      make(map[string]storage.OrgState),
+		savepointOrder:  make(map[string]int),
 	}
 }
 
@@ -929,6 +934,51 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		locator := Object("Database.QueryLocator")
 		locator.Fields["Records"] = value
 		return locator, nil
+	case "Database.setSavepoint":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Database.setSavepoint expects 0 arguments")
+		}
+		if vm.Org == nil {
+			return Null, fmt.Errorf("Database.setSavepoint requires org storage")
+		}
+		if err := vm.incrementLimit("dmlStatements", 1); err != nil {
+			return Null, err
+		}
+		vm.nextSavepoint++
+		id := fmt.Sprintf("sp-%d", vm.nextSavepoint)
+		vm.savepoints[id] = vm.Org.Clone()
+		vm.savepointOrder[id] = vm.nextSavepoint
+		savepoint := Object("System.Savepoint")
+		savepoint.Fields["Id"] = String(id)
+		return savepoint, nil
+	case "Database.rollback":
+		if len(args) != 1 || args[0].Kind != ValueObject || args[0].Type != "System.Savepoint" {
+			return Null, fmt.Errorf("Database.rollback expects Savepoint")
+		}
+		if vm.Org == nil {
+			return Null, fmt.Errorf("Database.rollback requires org storage")
+		}
+		idValue, ok := args[0].Fields["Id"]
+		if !ok || idValue.Kind != ValueString {
+			return Null, fmt.Errorf("Database.rollback received invalid Savepoint")
+		}
+		snapshot, ok := vm.savepoints[idValue.Text]
+		if !ok {
+			return Null, fmt.Errorf("Database.rollback received invalid Savepoint")
+		}
+		targetOrder := vm.savepointOrder[idValue.Text]
+		if err := vm.incrementLimit("dmlStatements", 1); err != nil {
+			return Null, err
+		}
+		restored := snapshot.Clone()
+		*vm.Org = restored
+		for id, order := range vm.savepointOrder {
+			if order > targetOrder {
+				delete(vm.savepoints, id)
+				delete(vm.savepointOrder, id)
+			}
+		}
+		return Null, nil
 	case "Database.upsert", "Database.undelete":
 		return vm.executeDatabaseDML(strings.TrimPrefix(callee, "Database."), args, result)
 	case "Database.insert", "Database.update", "Database.delete":

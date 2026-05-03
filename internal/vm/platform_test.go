@@ -286,6 +286,49 @@ System.assertEquals('pkg.Thing', namespaced.getName());
 	}
 }
 
+func TestExecDatabaseSavepointRollback(t *testing.T) {
+	program, err := CompileAnonymous(`
+insert new Account(Name = 'before');
+System.Savepoint sp = Database.setSavepoint();
+insert new Account(Name = 'after');
+Integer beforeRollback = [SELECT COUNT() FROM Account];
+System.assertEquals(2, beforeRollback);
+Database.rollback(sp);
+Integer afterRollback = [SELECT COUNT() FROM Account];
+System.assertEquals(1, afterRollback);
+System.assertEquals(4, Limits.getDmlStatements());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecRollbackInvalidatesLaterSavepoints(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.Savepoint first = Database.setSavepoint();
+insert new Account(Name = 'one');
+System.Savepoint second = Database.setSavepoint();
+insert new Account(Name = 'two');
+Database.rollback(first);
+Database.rollback(second);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), "invalid Savepoint") {
+		t.Fatalf("err = %v", err)
+	}
+}
+
 func TestExecStandardPricebookIdRequiresTestContext(t *testing.T) {
 	program, err := CompileAnonymous(`
 String pricebookId = Test.getStandardPricebookId();

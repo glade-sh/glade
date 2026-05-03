@@ -426,6 +426,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Add `Database.getQueryLocator(String)` for supported SOQL and batch
     start scopes.
   - [x] Add basic `Type.forName(...)` and `Type.newInstance()` factory support.
+  - [x] Add `Database.setSavepoint()` and `Database.rollback(...)` for local
+    org-state snapshots.
 - [ ] Complete common `String`, `Pattern`, `Matcher`, `Date`, `Datetime`,
   `Time`, `Math`, `Decimal`, `EncodingUtil`, and `Crypto` behavior.
 - [ ] Complete HTTP/callout mock behavior: request/response types,
