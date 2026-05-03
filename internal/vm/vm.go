@@ -1560,11 +1560,11 @@ func (vm *VM) executeSOQLRows(raw string, execResult *Result) ([]Value, error) {
 	}
 	queryText, err := vm.expandSOQLBinds(raw)
 	if err != nil {
-		return nil, err
+		return nil, newExceptionError("QueryException", err.Error())
 	}
 	result, err := soql.ParseAndExecuteAt(*vm.Org, queryText, vm.fakeNow)
 	if err != nil {
-		return nil, err
+		return nil, newExceptionError("QueryException", err.Error())
 	}
 	if err := vm.incrementLimit("queryRows", result.Rows); err != nil {
 		return nil, err
@@ -1595,41 +1595,122 @@ func aggregateCount(value Value) (Value, bool) {
 }
 
 func (vm *VM) expandSOQLBinds(raw string) (string, error) {
-	tokens := strings.Fields(raw)
-	out := make([]string, 0, len(tokens))
-	for i := 0; i < len(tokens); i++ {
-		token := tokens[i]
-		if token == ":" && i+1 < len(tokens) {
-			if len(out) > 0 && isSOQLDateLiteralPrefix(out[len(out)-1]) {
-				out[len(out)-1] = out[len(out)-1] + ":" + tokens[i+1]
-				i++
-				continue
-			}
-			nameParts := []string{tokens[i+1]}
+	var out strings.Builder
+	for i := 0; i < len(raw); {
+		if raw[i] == '\'' {
+			out.WriteByte(raw[i])
 			i++
-			for i+2 < len(tokens) && tokens[i+1] == "." {
-				nameParts = append(nameParts, tokens[i+2])
-				i += 2
+			for i < len(raw) {
+				out.WriteByte(raw[i])
+				if raw[i] == '\'' {
+					if i+1 < len(raw) && raw[i+1] == '\'' {
+						i++
+						out.WriteByte(raw[i])
+						i++
+						continue
+					}
+					i++
+					break
+				}
+				i++
 			}
-			token = ":" + strings.Join(nameParts, ".")
-		}
-		if !strings.HasPrefix(token, ":") {
-			out = append(out, token)
 			continue
 		}
-		name := strings.TrimPrefix(token, ":")
-		value, err := vm.lookup(name)
+		if raw[i] != ':' {
+			out.WriteByte(raw[i])
+			i++
+			continue
+		}
+		valueStart := i + 1
+		for valueStart < len(raw) && (raw[valueStart] == ' ' || raw[valueStart] == '\t' || raw[valueStart] == '\n' || raw[valueStart] == '\r') {
+			valueStart++
+		}
+		if isSOQLDateLiteralBind(raw, i) {
+			trimmed := strings.TrimRight(out.String(), " \t\n\r")
+			if len(trimmed) != out.Len() {
+				out.Reset()
+				out.WriteString(trimmed)
+			}
+			out.WriteByte(':')
+			i++
+			if valueStart < len(raw) && valueStart != i && raw[valueStart] >= '0' && raw[valueStart] <= '9' {
+				for valueStart < len(raw) && raw[valueStart] >= '0' && raw[valueStart] <= '9' {
+					out.WriteByte(raw[valueStart])
+					valueStart++
+				}
+				i = valueStart
+			}
+			continue
+		}
+		if valueStart >= len(raw) || !isIdentStart(raw[valueStart]) {
+			out.WriteByte(raw[i])
+			i++
+			continue
+		}
+		nameStart := valueStart
+		j := nameStart
+		var name strings.Builder
+		for j < len(raw) {
+			if isIdentPart(raw[j]) {
+				name.WriteByte(raw[j])
+				j++
+				continue
+			}
+			dot := j
+			for dot < len(raw) && (raw[dot] == ' ' || raw[dot] == '\t' || raw[dot] == '\n' || raw[dot] == '\r') {
+				dot++
+			}
+			if dot < len(raw) && raw[dot] == '.' {
+				next := dot + 1
+				for next < len(raw) && (raw[next] == ' ' || raw[next] == '\t' || raw[next] == '\n' || raw[next] == '\r') {
+					next++
+				}
+				if next < len(raw) && isIdentStart(raw[next]) {
+					name.WriteByte('.')
+					j = next
+					name.WriteByte(raw[j])
+					j++
+					for j < len(raw) && isIdentPart(raw[j]) {
+						name.WriteByte(raw[j])
+						j++
+					}
+					continue
+				}
+			}
+			if raw[j] == '.' && j+1 < len(raw) && isIdentStart(raw[j+1]) {
+				name.WriteByte('.')
+				name.WriteByte(raw[j+1])
+				j += 2
+				for j < len(raw) && isIdentPart(raw[j]) {
+					name.WriteByte(raw[j])
+					j++
+				}
+				continue
+			}
+			break
+		}
+		value, err := vm.lookup(name.String())
 		if err != nil {
 			return "", err
 		}
-		out = append(out, soqlLiteral(value))
+		out.WriteString(soqlLiteral(value))
+		i = j
 	}
-	return strings.Join(out, " "), nil
+	return out.String(), nil
 }
 
-func isSOQLDateLiteralPrefix(token string) bool {
-	switch strings.ToUpper(token) {
-	case "LAST_N_DAYS", "NEXT_N_DAYS":
+func isSOQLDateLiteralBind(raw string, colon int) bool {
+	start := colon - 1
+	for start >= 0 && (raw[start] == ' ' || raw[start] == '\t' || raw[start] == '\n' || raw[start] == '\r') {
+		start--
+	}
+	end := start + 1
+	for start >= 0 && (raw[start] == '_' || raw[start] >= 'A' && raw[start] <= 'Z' || raw[start] >= 'a' && raw[start] <= 'z') {
+		start--
+	}
+	prefix := strings.ToUpper(raw[start+1 : end])
+	switch prefix {
+	case "LAST_N_DAYS", "NEXT_N_DAYS", "N_DAYS_AGO", "LAST_N_WEEKS", "NEXT_N_WEEKS", "LAST_N_MONTHS", "NEXT_N_MONTHS", "LAST_N_YEARS", "NEXT_N_YEARS":
 		return true
 	default:
 		return false
@@ -2300,6 +2381,25 @@ func soqlLiteral(value Value) string {
 			return "true"
 		}
 		return "false"
+	case ValueList:
+		items := make([]string, 0, len(value.List))
+		for _, item := range value.List {
+			items = append(items, soqlLiteral(item))
+		}
+		return "(" + strings.Join(items, ", ") + ")"
+	case ValueSet:
+		items := make([]string, 0, len(value.Set))
+		for _, item := range value.Set {
+			items = append(items, soqlLiteral(item))
+		}
+		return "(" + strings.Join(items, ", ") + ")"
+	case ValueObject:
+		if value.Type == "Date" || value.Type == "Datetime" || value.Type == "Time" {
+			if raw, ok := value.Fields["value"]; ok && raw.Kind == ValueString {
+				return "'" + strings.ReplaceAll(raw.Text, "'", "''") + "'"
+			}
+		}
+		return "'" + strings.ReplaceAll(value.String(), "'", "''") + "'"
 	default:
 		return "'" + strings.ReplaceAll(value.String(), "'", "''") + "'"
 	}

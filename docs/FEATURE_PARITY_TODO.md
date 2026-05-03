@@ -249,6 +249,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     escapes inside SOQL literals may still have edge cases.
 - [ ] Complete dynamic SOQL binding and runtime parse/error behavior for
   `Database.query`.
+  - [x] Support dynamic binds beside operators, dotted bind paths, collection
+    binds, date literal colons, and catchable `QueryException` parse errors.
 - [x] Add relationship child subqueries.
   - [x] Support child relationship query projection with metadata-driven
     relationship names, child filters, ordering, limits, and VM list row shape.

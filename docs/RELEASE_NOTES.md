@@ -74,6 +74,9 @@ Release engineering:
   `WITH SYSTEM_MODE` parsing as local security-mode markers.
 - Added baseline SOQL `TYPEOF` relationship projection for parent lookup
   branches.
+- Improved `Database.query` dynamic SOQL binds for operator-adjacent binds,
+  dotted bind paths, collection binds, date-literal colons, and catchable
+  `QueryException` parse errors.
 - Added DML fidelity for implicit external-ID upsert, unique-field checks,
   lookup reference validation, ID/object mismatch errors, soft delete visibility,
   and undelete restoration.

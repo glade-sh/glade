@@ -57,6 +57,47 @@ System.assertEquals('Acme', row.Name);
 	}
 }
 
+func TestExecDynamicSOQLBindsAndQueryException(t *testing.T) {
+	program, err := CompileAnonymous(`
+insert new Account(Name = 'Acme', RenewalDate__c = Date.today());
+insert new Account(Name = 'Beta', RenewalDate__c = Date.today());
+String wanted = 'Acme';
+List<Account> rows = Database.query('SELECT Id, Name FROM Account WHERE Name=:wanted');
+System.assertEquals(1, rows.size());
+Account first = rows.get(0);
+System.assertEquals('Acme', first.Name);
+List<String> names = new List<String>{'Acme', 'Beta'};
+rows = Database.query('SELECT Id FROM Account WHERE Name IN :names ORDER BY Name');
+System.assertEquals(2, rows.size());
+Account probe = new Account(Name = 'Beta');
+rows = Database.query('SELECT Id FROM Account WHERE Name = :probe.Name');
+System.assertEquals(1, rows.size());
+rows = Database.query('SELECT Id FROM Account WHERE RenewalDate__c = LAST_N_DAYS:2');
+System.assertEquals(2, rows.size());
+Boolean caught = false;
+try {
+    Database.query('SELECT FROM Account');
+} catch (QueryException qe) {
+    caught = true;
+    String message = qe.getMessage();
+    System.assert(message != null);
+}
+System.assert(caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["RenewalDate__c"] = storage.Field{APIName: "RenewalDate__c", Type: storage.FieldDate}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSOQLOrderByDesc(t *testing.T) {
 	program, err := CompileAnonymous(`
 insert new Account(Name = 'Acme', Rating = 'Hot');
