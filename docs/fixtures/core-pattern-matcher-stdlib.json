@@ -1,0 +1,77 @@
+{
+  "name": "core-pattern-matcher-stdlib",
+  "evidence": [
+    {
+      "symbol": "Pattern.compile",
+      "kind": "exec",
+      "notes": "Public Pattern docs; local implementation uses Go regexp syntax."
+    },
+    {
+      "symbol": "Pattern.matches",
+      "kind": "exec",
+      "notes": "Whole-input match backed by Go regexp."
+    },
+    {
+      "symbol": "Pattern.pattern",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Pattern.matcher",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Matcher.find",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Matcher.matches",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Matcher.lookingAt",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Matcher.group",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Matcher.groupCount",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Matcher.start",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Matcher.end",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Matcher.replaceAll",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Matcher.replaceFirst",
+      "kind": "exec"
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Pattern p = Pattern.compile('([A-Z]+)([0-9]+)?');\nSystem.assertEquals('([A-Z]+)([0-9]+)?', p.pattern());\nMatcher m = p.matcher('abc DEF42 ghi XYZ');\nSystem.assertEquals(2, m.groupCount());\nSystem.assert(m.find());\nSystem.assertEquals('DEF42', m.group());\nSystem.assertEquals('DEF42', m.group(0));\nSystem.assertEquals('DEF', m.group(1));\nSystem.assertEquals('42', m.group(2));\nSystem.assertEquals(4, m.start());\nSystem.assertEquals(9, m.end());\nSystem.assertEquals(4, m.start(1));\nSystem.assertEquals(7, m.end(1));\nSystem.assert(m.find());\nSystem.assertEquals('XYZ', m.group(1));\nSystem.assertEquals(null, m.group(2));\nSystem.assertEquals(-1, m.start(2));\nSystem.assertEquals(-1, m.end(2));\nPattern headPattern = Pattern.compile('[A-Z]+');\nMatcher head = headPattern.matcher('ABC def');\nSystem.assert(head.lookingAt());\nSystem.assertEquals('ABC', head.group());\nPattern lowerHeadPattern = Pattern.compile('[A-Z]+');\nMatcher lowerHead = lowerHeadPattern.matcher('abc DEF');\nSystem.assert(!lowerHead.lookingAt());\nPattern fullPattern = Pattern.compile('[A-Z]+');\nMatcher full = fullPattern.matcher('ABC');\nSystem.assert(full.matches());\nSystem.assertEquals('ABC', full.group());\nPattern notFullPattern = Pattern.compile('[A-Z]+');\nMatcher notFull = notFullPattern.matcher('ABC def');\nSystem.assert(!notFull.matches());\nSystem.assert(Pattern.matches('[0-9]+', '12345'));\nPattern aStarB = Pattern.compile('a*b');\nMatcher replaceAllMatcher = aStarB.matcher('aabxyzaabxyzabxyzb');\nSystem.assertEquals('-xyz-xyz-xyz-', replaceAllMatcher.replaceAll('-'));\nPattern dog = Pattern.compile('dog');\nMatcher replaceFirstMatcher = dog.matcher('zzzdogzzzdogzzz');\nSystem.assertEquals('zzzcatzzzdogzzz', replaceFirstMatcher.replaceFirst('cat'));\nPattern captures = Pattern.compile('([A-Z]+)([0-9]+)');\nMatcher captureReplace = captures.matcher('A1 B22');\nSystem.assertEquals('1-A 22-B', captureReplace.replaceAll('$2-$1'));\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Pattern p = Pattern.compile('([A-Z]+)([0-9]+)?');\nSystem.assertEquals('([A-Z]+)([0-9]+)?', p.pattern());\nMatcher m = p.matcher('abc DEF42 ghi XYZ');\nSystem.assertEquals(2, m.groupCount());\nSystem.assert(m.find());\nSystem.assertEquals('DEF42', m.group());\nSystem.assertEquals('DEF42', m.group(0));\nSystem.assertEquals('DEF', m.group(1));\nSystem.assertEquals('42', m.group(2));\nSystem.assertEquals(4, m.start());\nSystem.assertEquals(9, m.end());\nSystem.assertEquals(4, m.start(1));\nSystem.assertEquals(7, m.end(1));\nSystem.assert(m.find());\nSystem.assertEquals('XYZ', m.group(1));\nSystem.assertEquals(null, m.group(2));\nSystem.assertEquals(-1, m.start(2));\nSystem.assertEquals(-1, m.end(2));\nPattern headPattern = Pattern.compile('[A-Z]+');\nMatcher head = headPattern.matcher('ABC def');\nSystem.assert(head.lookingAt());\nSystem.assertEquals('ABC', head.group());\nPattern lowerHeadPattern = Pattern.compile('[A-Z]+');\nMatcher lowerHead = lowerHeadPattern.matcher('abc DEF');\nSystem.assert(!lowerHead.lookingAt());\nPattern fullPattern = Pattern.compile('[A-Z]+');\nMatcher full = fullPattern.matcher('ABC');\nSystem.assert(full.matches());\nSystem.assertEquals('ABC', full.group());\nPattern notFullPattern = Pattern.compile('[A-Z]+');\nMatcher notFull = notFullPattern.matcher('ABC def');\nSystem.assert(!notFull.matches());\nSystem.assert(Pattern.matches('[0-9]+', '12345'));\nPattern aStarB = Pattern.compile('a*b');\nMatcher replaceAllMatcher = aStarB.matcher('aabxyzaabxyzabxyzb');\nSystem.assertEquals('-xyz-xyz-xyz-', replaceAllMatcher.replaceAll('-'));\nPattern dog = Pattern.compile('dog');\nMatcher replaceFirstMatcher = dog.matcher('zzzdogzzzdogzzz');\nSystem.assertEquals('zzzcatzzzdogzzz', replaceFirstMatcher.replaceFirst('cat'));\nPattern captures = Pattern.compile('([A-Z]+)([0-9]+)');\nMatcher captureReplace = captures.matcher('A1 B22');\nSystem.assertEquals('1-A 22-B', captureReplace.replaceAll('$2-$1'));\n"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}
