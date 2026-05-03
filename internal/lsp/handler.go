@@ -9,6 +9,7 @@ import (
 	"github.com/open-aer/oaer/internal/diagnostic"
 	"github.com/open-aer/oaer/internal/schema"
 	"github.com/open-aer/oaer/internal/sema"
+	"github.com/open-aer/oaer/internal/testreport"
 	"github.com/open-aer/oaer/internal/typesys"
 )
 
@@ -92,7 +93,7 @@ func (h *Handler) DidClose(params DidCloseTextDocumentParams) []Notification {
 	return []Notification{{
 		JSONRPC: "2.0",
 		Method:  "textDocument/publishDiagnostics",
-		Params:  BuildPublishDiagnostics(params.TextDocument.URI, nil),
+		Params:  BuildPublishDiagnostics(params.TextDocument.URI, h.diagnosticsForDocument(params.TextDocument.URI)),
 	}}
 }
 
@@ -146,6 +147,63 @@ func (h *Handler) PublishDiagnostics(diagnostics []diagnostic.Diagnostic) []Noti
 		})
 	}
 	return notifications
+}
+
+func (h *Handler) PublishTestDiagnostics(run testreport.Run) []Notification {
+	return h.PublishDiagnostics(TestDiagnostics(run))
+}
+
+func TestDiagnostics(run testreport.Run) []diagnostic.Diagnostic {
+	var diagnostics []diagnostic.Diagnostic
+	for _, suite := range run.Suites {
+		for _, testCase := range suite.Cases {
+			if testCase.Status == testreport.StatusPass || testCase.Status == testreport.StatusSkipped || testCase.Problem == nil {
+				continue
+			}
+			frame := firstProblemFrame(testCase.Problem.Stack)
+			if frame.File == "" {
+				continue
+			}
+			message := testCase.Problem.Message
+			if message == "" {
+				message = string(testCase.Status)
+			}
+			name := testCase.ClassName
+			if testCase.MethodName != "" {
+				name += "." + testCase.MethodName
+			}
+			if name != "" {
+				message = name + ": " + message
+			}
+			diag := diagnostic.Diagnostic{
+				Severity: diagnostic.Error,
+				Code:     "OAERTEST001",
+				Message:  message,
+				File:     frame.File,
+			}
+			if frame.Line > 0 {
+				start := diagnostic.Position{Line: frame.Line, Column: frame.Column}
+				if start.Column <= 0 {
+					start.Column = 1
+				}
+				diag.Range = &diagnostic.Range{
+					Start: start,
+					End:   diagnostic.Position{Line: start.Line, Column: start.Column + 1},
+				}
+			}
+			diagnostics = append(diagnostics, diag)
+		}
+	}
+	return diagnostics
+}
+
+func firstProblemFrame(frames []testreport.StackFrame) testreport.StackFrame {
+	for _, frame := range frames {
+		if frame.File != "" {
+			return frame
+		}
+	}
+	return testreport.StackFrame{}
 }
 
 func BuildPublishDiagnostics(uri DocumentURI, diagnostics []diagnostic.Diagnostic) PublishDiagnosticsParams {

@@ -565,7 +565,11 @@ a Salesforce-shaped local API server without silently wrong behavior.
     definitions from cursor words to Apex/schema symbols, scan project/open
     buffers for references, build workspace edits for rename, and include
     members, schema fields, and Apex keywords in completion.
-- [ ] Make LSP diagnostics match `oaer check` and test results consistently.
+- [x] Make LSP diagnostics match `oaer check` and test results consistently.
+  - [x] Publish project sema/type diagnostics through the same diagnostic model
+    used by `oaer check`, overlay open-buffer parse diagnostics while editing,
+    restore project diagnostics on close, and expose test-result diagnostics
+    from failure stack frames.
 - [ ] Add native OS watcher backends for `oaer test --watch`.
 - [ ] Add incremental re-indexing and affected-test dependency graph updates.
 - [ ] Add in-flight VM/test cancellation for watch reruns.

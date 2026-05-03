@@ -66,6 +66,9 @@ Release engineering:
 - Added LSP semantic tokens, definition, references, prepare-rename/rename
   workspace edits, and richer completion for Apex members, schema fields, and
   keywords.
+- Aligned LSP diagnostics with the shared `oaer check` diagnostic model,
+  restored project diagnostics when edited buffers close, and added test-result
+  diagnostics from failure stack frames.
 - Added parser diagnostic-count fixtures plus type-index and sema panic recovery
   diagnostics for malformed project inputs.
 - Added method/constructor parameter type diagnostics and expanded VM exception

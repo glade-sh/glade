@@ -132,9 +132,10 @@ parity work.
 clients to start that command from the workspace root and treat `*.cls` and
 `*.trigger` files as Apex. The current server provides initialize/shutdown,
 incremental text document sync, open-buffer parse diagnostics, project
-diagnostics, document and workspace symbols, semantic tokens, definition,
-references, rename, hover, and completion for Apex symbols, schema fields, and
-keywords from the project index.
+diagnostics shaped like `oaer check`, test-result diagnostics from stack frames,
+document and workspace symbols, semantic tokens, definition, references, rename,
+hover, and completion for Apex symbols, schema fields, and keywords from the
+project index.
 
 ```json
 {

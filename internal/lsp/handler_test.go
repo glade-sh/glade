@@ -10,6 +10,7 @@ import (
 	"github.com/open-aer/oaer/internal/apexast"
 	"github.com/open-aer/oaer/internal/diagnostic"
 	"github.com/open-aer/oaer/internal/schema"
+	"github.com/open-aer/oaer/internal/testreport"
 	"github.com/open-aer/oaer/internal/typesys"
 )
 
@@ -118,6 +119,67 @@ func TestTextDocumentSyncPublishesOverlayDiagnostics(t *testing.T) {
 	closeNotifications := handler.DidClose(DidCloseTextDocumentParams{TextDocument: TextDocumentIdentifier{URI: uri}})
 	if got := diagnosticsCount(t, closeNotifications); got != 0 {
 		t.Fatalf("close diagnostics = %d", got)
+	}
+}
+
+func TestDidCloseRestoresProjectDiagnostics(t *testing.T) {
+	idx := sampleIndex(t)
+	file := idx.Types[0].File
+	idx.Diagnostics = append(idx.Diagnostics, diagnostic.Diagnostic{
+		Severity: diagnostic.Error,
+		Code:     "OAERCHECK",
+		Message:  "check diagnostic",
+		File:     file,
+		Range: &diagnostic.Range{
+			Start: diagnostic.Position{Line: 1, Column: 1},
+			End:   diagnostic.Position{Line: 1, Column: 2},
+		},
+	})
+	handler := NewHandler(idx)
+	uri := uriFromPath(file)
+	handler.DidOpen(DidOpenTextDocumentParams{TextDocument: TextDocumentItem{
+		URI:  uri,
+		Text: "public class InvoiceService {}\n",
+	}})
+	notifications := handler.DidClose(DidCloseTextDocumentParams{TextDocument: TextDocumentIdentifier{URI: uri}})
+	if got := diagnosticsCount(t, notifications); got != 1 {
+		t.Fatalf("close diagnostics = %d", got)
+	}
+}
+
+func TestPublishTestDiagnosticsUsesProblemStackFrames(t *testing.T) {
+	file := filepath.Join(t.TempDir(), "InvoiceServiceTest.cls")
+	handler := NewHandler(sampleIndex(t))
+	notifications := handler.PublishTestDiagnostics(testreport.Run{Suites: []testreport.Suite{{
+		Name: "InvoiceServiceTest",
+		Cases: []testreport.Case{{
+			ClassName:  "InvoiceServiceTest",
+			MethodName: "fails",
+			Status:     testreport.StatusFail,
+			Problem: &testreport.Problem{
+				Message: "Expected 1, got 2",
+				Stack: []testreport.StackFrame{{
+					Symbol: "InvoiceServiceTest.fails",
+					File:   file,
+					Line:   7,
+					Column: 5,
+				}},
+			},
+		}},
+	}}})
+	if len(notifications) != 1 {
+		t.Fatalf("notifications = %#v", notifications)
+	}
+	payload, ok := notifications[0].Params.(PublishDiagnosticsParams)
+	if !ok {
+		t.Fatalf("params type = %T", notifications[0].Params)
+	}
+	if len(payload.Diagnostics) != 1 {
+		t.Fatalf("diagnostics = %#v", payload.Diagnostics)
+	}
+	diag := payload.Diagnostics[0]
+	if diag.Code != "OAERTEST001" || diag.Range.Start.Line != 6 || !strings.Contains(diag.Message, "InvoiceServiceTest.fails") {
+		t.Fatalf("diagnostic = %#v", diag)
 	}
 }
 
