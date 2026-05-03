@@ -536,8 +536,13 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Convert DAP breakpoints into VM debug breakpoints and add a DAP
     execution helper that runs to the first live breakpoint before the statement
     executes.
-- [ ] Complete DAP stepping: step in, step over, step out, pause, continue, and
+- [x] Complete DAP stepping: step in, step over, step out, pause, continue, and
   disconnect semantics.
+  - [x] Add a live DAP session that blocks a VM goroutine at pauses and releases
+    it through continue, pause, disconnect, step-in, step-over, and step-out
+    commands.
+  - [x] Use stack depth so step-over skips method bodies, step-in enters method
+    bodies, and step-out returns to the caller frame.
 - [ ] Complete DAP scopes and variable rendering for SObjects, user objects,
   statics, collections, exceptions, and trigger context.
 - [ ] Complete watch expression evaluation against VM context.

@@ -28,6 +28,8 @@ const (
 	CommandVariables         = "variables"
 	CommandContinue          = "continue"
 	CommandNext              = "next"
+	CommandStepIn            = "stepIn"
+	CommandStepOut           = "stepOut"
 	CommandPause             = "pause"
 	CommandEvaluate          = "evaluate"
 	CommandDisconnect        = "disconnect"

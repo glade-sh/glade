@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/open-aer/oaer/internal/ir"
 	"github.com/open-aer/oaer/internal/vm"
@@ -13,12 +14,15 @@ import (
 const localsReference = 1
 
 type Handler struct {
+	stateMu     sync.Mutex
+	seqMu       sync.Mutex
 	snapshot    Snapshot
 	seq         int
 	breakpoints map[string][]Breakpoint
 	varRefs     map[int]vm.Value
 	varRefKeys  map[string]int
 	nextVarRef  int
+	live        *LiveSession
 }
 
 func NewHandler(snapshot Snapshot) *Handler {
@@ -40,7 +44,8 @@ func (h *Handler) Handle(request Request) []any {
 	case CommandConfigurationDone:
 		return []any{h.success(request, nil)}
 	case CommandThreads:
-		return []any{h.success(request, map[string]any{"threads": h.snapshot.normalizedThreads()})}
+		threads := h.normalizedThreads()
+		return []any{h.success(request, map[string]any{"threads": threads})}
 	case CommandStackTrace:
 		return []any{h.handleStackTrace(request)}
 	case CommandScopes:
@@ -50,12 +55,33 @@ func (h *Handler) Handle(request Request) []any {
 	case CommandEvaluate:
 		return []any{h.handleEvaluate(request)}
 	case CommandContinue:
+		if live := h.liveSession(); live != nil {
+			live.Continue()
+		}
 		return []any{h.success(request, map[string]any{"allThreadsContinued": true})}
-	case CommandNext:
+	case CommandNext, CommandStepIn, CommandStepOut:
+		if live := h.liveSession(); live != nil {
+			switch request.Command {
+			case CommandStepIn:
+				live.StepIn()
+			case CommandStepOut:
+				live.StepOut()
+			default:
+				live.StepOver()
+			}
+			return []any{h.success(request, nil)}
+		}
 		return h.withStoppedEvent(request, "step")
 	case CommandPause:
+		if live := h.liveSession(); live != nil {
+			live.Pause()
+			return []any{h.success(request, nil)}
+		}
 		return h.withStoppedEvent(request, "pause")
 	case CommandDisconnect:
+		if live := h.liveSession(); live != nil {
+			live.Disconnect()
+		}
 		return []any{h.success(request, nil), h.event("terminated", nil)}
 	default:
 		return []any{h.failure(request, fmt.Sprintf("unsupported command %q", request.Command))}
@@ -69,14 +95,17 @@ func (h *Handler) handleEvaluate(request Request) Response {
 	if err := request.DecodeArguments(&args); err != nil {
 		return h.failure(request, err.Error())
 	}
+	h.stateMu.Lock()
 	value, ok := lookupSnapshotValue(h.snapshot.Vars, args.Expression)
 	if !ok {
+		h.stateMu.Unlock()
 		return h.failure(request, fmt.Sprintf("unknown expression %q", args.Expression))
 	}
 	ref := 0
 	if len(childValues(value)) > 0 {
-		ref = h.variableReference("eval."+args.Expression, value)
+		ref = h.variableReferenceLocked("eval."+args.Expression, value)
 	}
+	h.stateMu.Unlock()
 	return h.success(request, map[string]any{
 		"result":             value.String(),
 		"type":               string(value.Kind),
@@ -120,12 +149,16 @@ func (h *Handler) handleSetBreakpoints(request Request) Response {
 			})
 		}
 	}
+	h.stateMu.Lock()
 	h.breakpoints[path] = points
+	h.stateMu.Unlock()
 	return h.success(request, map[string]any{"breakpoints": points})
 }
 
 func (h *Handler) DebugHooks(onPause func(vm.DebugPause) vm.DebugAction) vm.DebugHooks {
 	points := make([]vm.DebugBreakpoint, 0)
+	h.stateMu.Lock()
+	defer h.stateMu.Unlock()
 	for path, breakpoints := range h.breakpoints {
 		for _, breakpoint := range breakpoints {
 			if !breakpoint.Verified {
@@ -167,11 +200,16 @@ func (h *Handler) ExecuteToBreakpoint(machine *vm.VM, program ir.Program) (vm.Re
 }
 
 func (h *Handler) ApplyPause(pause vm.DebugPause) Event {
+	h.stateMu.Lock()
 	h.snapshot = Snapshot{
 		Threads: []Thread{{ID: 1, Name: "main"}},
 		Frames:  stackFramesFromPause(pause),
 		Vars:    pause.Vars,
 	}
+	h.varRefs = make(map[int]vm.Value)
+	h.varRefKeys = make(map[string]int)
+	h.nextVarRef = 2
+	h.stateMu.Unlock()
 	reason := string(pause.Reason)
 	if reason == "" {
 		reason = "pause"
@@ -225,7 +263,7 @@ func (h *Handler) handleStackTrace(request Request) Response {
 	if err := request.DecodeArguments(&args); err != nil {
 		return h.failure(request, err.Error())
 	}
-	frames := h.snapshot.normalizedFrames()
+	frames := h.normalizedFrames()
 	start := args.StartFrame
 	if start < 0 {
 		start = 0
@@ -250,11 +288,14 @@ func (h *Handler) handleScopes(request Request) Response {
 	if err := request.DecodeArguments(&args); err != nil {
 		return h.failure(request, err.Error())
 	}
+	h.stateMu.Lock()
+	varCount := len(h.snapshot.Vars)
+	h.stateMu.Unlock()
 	return h.success(request, map[string]any{"scopes": []Scope{{
 		Name:               "Locals",
 		VariablesReference: localsReference,
 		Expensive:          false,
-		NamedVariables:     len(h.snapshot.Vars),
+		NamedVariables:     varCount,
 	}}})
 }
 
@@ -268,13 +309,16 @@ func (h *Handler) handleVariables(request Request) Response {
 		return h.failure(request, err.Error())
 	}
 	var variables []Variable
+	h.stateMu.Lock()
 	if args.VariablesReference == localsReference {
-		variables = h.variablesFromSnapshot()
+		variables = h.variablesFromSnapshotLocked()
 	} else if value, ok := h.varRefs[args.VariablesReference]; ok {
-		variables = h.variablesFromNamedValues(fmt.Sprintf("ref:%d", args.VariablesReference), childValues(value))
+		variables = h.variablesFromNamedValuesLocked(fmt.Sprintf("ref:%d", args.VariablesReference), childValues(value))
 	} else {
+		h.stateMu.Unlock()
 		return h.failure(request, fmt.Sprintf("unknown variablesReference %d", args.VariablesReference))
 	}
+	h.stateMu.Unlock()
 	variables = sliceVariables(variables, args.Start, args.Count)
 	return h.success(request, map[string]any{"variables": variables})
 }
@@ -341,27 +385,53 @@ func (h *Handler) event(name string, body any) Event {
 }
 
 func (h *Handler) nextSeq() int {
+	h.seqMu.Lock()
+	defer h.seqMu.Unlock()
 	h.seq++
 	return h.seq
 }
 
-func (h *Handler) variablesFromSnapshot() []Variable {
-	return h.variablesFromNamedValues("locals", namedValuesFromMap(h.snapshot.Vars))
+func (h *Handler) normalizedThreads() []Thread {
+	h.stateMu.Lock()
+	defer h.stateMu.Unlock()
+	return h.snapshot.normalizedThreads()
 }
 
-func (h *Handler) variablesFromNamedValues(prefix string, values []namedValue) []Variable {
+func (h *Handler) normalizedFrames() []StackFrame {
+	h.stateMu.Lock()
+	defer h.stateMu.Unlock()
+	return h.snapshot.normalizedFrames()
+}
+
+func (h *Handler) liveSession() *LiveSession {
+	h.stateMu.Lock()
+	defer h.stateMu.Unlock()
+	return h.live
+}
+
+func (h *Handler) setLiveSession(session *LiveSession) {
+	h.stateMu.Lock()
+	defer h.stateMu.Unlock()
+	h.live = session
+}
+
+func (h *Handler) variablesFromSnapshotLocked() []Variable {
+	return h.variablesFromNamedValuesLocked("locals", namedValuesFromMap(h.snapshot.Vars))
+}
+
+func (h *Handler) variablesFromNamedValuesLocked(prefix string, values []namedValue) []Variable {
 	variables := make([]Variable, 0, len(values))
 	for _, value := range values {
 		ref := 0
 		if len(childValues(value.value)) > 0 {
-			ref = h.variableReference(prefix+"."+value.name, value.value)
+			ref = h.variableReferenceLocked(prefix+"."+value.name, value.value)
 		}
 		variables = append(variables, variableFromValue(value.name, value.value, ref))
 	}
 	return variables
 }
 
-func (h *Handler) variableReference(key string, value vm.Value) int {
+func (h *Handler) variableReferenceLocked(key string, value vm.Value) int {
 	if ref, ok := h.varRefKeys[key]; ok {
 		h.varRefs[ref] = value
 		return ref

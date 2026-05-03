@@ -93,9 +93,6 @@ func (vm *VM) maybePauseForDebug(inst ir.Instruction) error {
 }
 
 func (vm *VM) debugPauseReason() (DebugPauseReason, bool) {
-	if vm.debugHooks.Step {
-		return DebugPauseStep, true
-	}
 	for _, breakpoint := range vm.debugHooks.Breakpoints {
 		if breakpoint.Line <= 0 || breakpoint.Line != vm.currentStatement.Line {
 			continue
@@ -107,6 +104,9 @@ func (vm *VM) debugPauseReason() (DebugPauseReason, bool) {
 			continue
 		}
 		return DebugPauseBreakpoint, true
+	}
+	if vm.debugHooks.Step {
+		return DebugPauseStep, true
 	}
 	return "", false
 }

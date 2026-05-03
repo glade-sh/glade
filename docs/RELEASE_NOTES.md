@@ -55,6 +55,8 @@ Release engineering:
   round-trips, bulk DML partial results, and describe-heavy VM execution.
 - Added VM debug pause hooks and DAP breakpoint execution plumbing so DAP can
   stop live execution at stable statement source locations with stack and locals.
+- Added live DAP session controls for continue, pause, disconnect, and
+  stack-depth step-in/step-over/step-out behavior.
 - Added parser diagnostic-count fixtures plus type-index and sema panic recovery
   diagnostics for malformed project inputs.
 - Added method/constructor parameter type diagnostics and expanded VM exception

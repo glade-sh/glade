@@ -1,0 +1,186 @@
+package dap
+
+import (
+	"sync"
+
+	"github.com/open-aer/oaer/internal/ir"
+	"github.com/open-aer/oaer/internal/vm"
+)
+
+type LiveSession struct {
+	handler *Handler
+	control chan liveControl
+	paused  chan vm.DebugPause
+	done    chan error
+
+	mu             sync.Mutex
+	mode           liveMode
+	pauseRequested bool
+	disconnect     bool
+	stepDepth      int
+}
+
+type liveMode string
+
+const (
+	liveModeContinue liveMode = "continue"
+	liveModeStepIn   liveMode = "stepIn"
+	liveModeStepOver liveMode = "stepOver"
+	liveModeStepOut  liveMode = "stepOut"
+)
+
+type liveControl string
+
+const (
+	liveControlContinue   liveControl = "continue"
+	liveControlStepIn     liveControl = "stepIn"
+	liveControlStepOver   liveControl = "stepOver"
+	liveControlStepOut    liveControl = "stepOut"
+	liveControlPause      liveControl = "pause"
+	liveControlDisconnect liveControl = "disconnect"
+)
+
+func (h *Handler) StartLiveSession(machine *vm.VM, program ir.Program) *LiveSession {
+	session := &LiveSession{
+		handler: h,
+		control: make(chan liveControl),
+		paused:  make(chan vm.DebugPause, 1),
+		done:    make(chan error, 1),
+		mode:    liveModeContinue,
+	}
+	h.setLiveSession(session)
+	hooks := h.DebugHooks(session.onPause)
+	hooks.Step = true
+	machine.SetDebugHooks(hooks)
+	go func() {
+		_, err := machine.Execute(program)
+		session.done <- err
+	}()
+	return session
+}
+
+func (s *LiveSession) Continue() {
+	s.send(liveControlContinue)
+}
+
+func (s *LiveSession) StepIn() {
+	s.send(liveControlStepIn)
+}
+
+func (s *LiveSession) StepOver() {
+	s.send(liveControlStepOver)
+}
+
+func (s *LiveSession) StepOut() {
+	s.send(liveControlStepOut)
+}
+
+func (s *LiveSession) Pause() {
+	s.mu.Lock()
+	s.pauseRequested = true
+	s.mu.Unlock()
+}
+
+func (s *LiveSession) Disconnect() {
+	s.mu.Lock()
+	s.disconnect = true
+	s.mu.Unlock()
+	s.send(liveControlDisconnect)
+}
+
+func (s *LiveSession) WaitPaused() vm.DebugPause {
+	return <-s.paused
+}
+
+func (s *LiveSession) Done() <-chan error {
+	return s.done
+}
+
+func (s *LiveSession) onPause(pause vm.DebugPause) vm.DebugAction {
+	if s.shouldDisconnect() {
+		return vm.DebugActionStop
+	}
+	if !s.shouldStop(pause) {
+		return vm.DebugActionContinue
+	}
+	s.handler.ApplyPause(pause)
+	select {
+	case s.paused <- pause:
+	default:
+	}
+	for {
+		switch <-s.control {
+		case liveControlContinue:
+			s.setMode(liveModeContinue, false)
+			return vm.DebugActionContinue
+		case liveControlStepIn:
+			s.setStepMode(liveModeStepIn, len(pause.Stack))
+			return vm.DebugActionContinue
+		case liveControlStepOver:
+			s.setStepMode(liveModeStepOver, len(pause.Stack))
+			return vm.DebugActionContinue
+		case liveControlStepOut:
+			depth := len(pause.Stack) - 1
+			if depth < 0 {
+				depth = 0
+			}
+			s.setStepMode(liveModeStepOut, depth)
+			return vm.DebugActionContinue
+		case liveControlPause:
+			s.setMode(liveModeStepIn, true)
+		case liveControlDisconnect:
+			return vm.DebugActionStop
+		}
+	}
+}
+
+func (s *LiveSession) shouldDisconnect() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.disconnect
+}
+
+func (s *LiveSession) shouldStop(pause vm.DebugPause) bool {
+	if pause.Reason == vm.DebugPauseBreakpoint {
+		return true
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.pauseRequested {
+		s.pauseRequested = false
+		return true
+	}
+	switch s.mode {
+	case liveModeStepIn:
+		s.mode = liveModeContinue
+		return true
+	case liveModeStepOver, liveModeStepOut:
+		if len(pause.Stack) <= s.stepDepth {
+			s.mode = liveModeContinue
+			return true
+		}
+	}
+	return false
+}
+
+func (s *LiveSession) setMode(mode liveMode, pauseRequested bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.mode = mode
+	s.pauseRequested = pauseRequested
+}
+
+func (s *LiveSession) setStepMode(mode liveMode, depth int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.mode = mode
+	s.pauseRequested = false
+	s.stepDepth = depth
+}
+
+func (s *LiveSession) send(control liveControl) {
+	select {
+	case s.control <- control:
+	default:
+	}
+}
