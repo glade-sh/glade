@@ -182,6 +182,14 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 		return Int(int64(vm.limits.FutureCalls)), true
 	case "getLimitFutureCalls":
 		return Int(int64(vm.limitCaps.FutureCalls)), true
+	case "getBatchJobs":
+		return Int(int64(vm.limits.BatchJobs)), true
+	case "getLimitBatchJobs":
+		return Int(int64(vm.limitCaps.BatchJobs)), true
+	case "getScheduledJobs":
+		return Int(int64(vm.limits.ScheduledJobs)), true
+	case "getLimitScheduledJobs":
+		return Int(int64(vm.limitCaps.ScheduledJobs)), true
 	case "getEmailInvocations":
 		return Int(int64(vm.limits.EmailInvokes)), true
 	case "getLimitEmailInvocations":

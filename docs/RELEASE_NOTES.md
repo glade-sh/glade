@@ -103,6 +103,8 @@ Release engineering:
 - Recompute deterministic live heap usage after VM statements so mutated
   collections update `Limits.getHeapSize()`.
 - Add deterministic SOQL and DML row-work costs to CPU limit accounting.
+- Added `Limits.getBatchJobs`, `getLimitBatchJobs`, `getScheduledJobs`, and
+  `getLimitScheduledJobs`.
 - Added SOQL `ALL ROWS` support for querying soft-deleted records.
 - Added SOQL `WITH SECURITY_ENFORCED`, `WITH USER_MODE`, and
   `WITH SYSTEM_MODE` parsing as local security-mode markers.

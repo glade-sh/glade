@@ -404,12 +404,14 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Add deterministic SOQL and DML row-work costs on top of per-statement
     CPU accounting.
   - **Limitation**: Wall-clock Salesforce CPU parity remains unsupported.
-- [ ] Complete callout, email, async, queueable, future, batch, and scheduled
+- [x] Complete callout, email, async, queueable, future, batch, and scheduled
   counters.
   - [x] Track separate future, queueable, batch, scheduled, and email invocation
     counters while preserving the aggregate async job counter.
   - [x] Expose supported public `Limits` getters for aggregate async jobs,
     future calls, queueable jobs, and email invocations with max values.
+  - [x] Expose supported public `Limits` getters for batch and scheduled jobs
+    with max values.
 - [ ] Add configurable strict/permissive limit modes for CLI, tests, server,
   and compatibility fixtures.
 - [ ] Complete `System`, `Test`, `Database`, `Schema`, `Limits`, and `JSON`

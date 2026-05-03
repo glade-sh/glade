@@ -229,6 +229,10 @@ System.assertEquals(0, Limits.getAsyncJobs());
 System.assertEquals(50, Limits.getLimitAsyncJobs());
 System.assertEquals(0, Limits.getFutureCalls());
 System.assertEquals(0, Limits.getQueueableJobs());
+System.assertEquals(0, Limits.getBatchJobs());
+System.assertEquals(5, Limits.getLimitBatchJobs());
+System.assertEquals(0, Limits.getScheduledJobs());
+System.assertEquals(100, Limits.getLimitScheduledJobs());
 FutureWorker.mark();
 System.enqueueJob(new QueueWorker());
 System.assertEquals(2, Limits.getAsyncJobs());
@@ -238,6 +242,8 @@ System.assertEquals(1, Limits.getQueueableJobs());
 Database.executeBatch(new BatchWorker(), 1);
 System.schedule('nightly', '0 0 0 * * ?', new ScheduledWorker());
 System.assertEquals(4, Limits.getAsyncJobs());
+System.assertEquals(1, Limits.getBatchJobs());
+System.assertEquals(1, Limits.getScheduledJobs());
 `)
 	if err != nil {
 		t.Fatal(err)
