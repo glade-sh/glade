@@ -96,6 +96,8 @@ Release engineering:
   without invoking before-undelete triggers.
 - Added common `addError(message, escapeHtml)` overload handling and field
   addError support for unset schema fields.
+- Split Apex upsert trigger execution into supported insert and update trigger
+  contexts and added fixture coverage for upsert/undelete trigger paths.
 - Added SOQL `ALL ROWS` support for querying soft-deleted records.
 - Added SOQL `WITH SECURITY_ENFORCED`, `WITH USER_MODE`, and
   `WITH SYSTEM_MODE` parsing as local security-mode markers.

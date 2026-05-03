@@ -142,6 +142,22 @@
       "content": "trigger AccountAfterUndeleteContext on Account (after undelete) { System.assert(Trigger.isExecuting); System.assert(Trigger.isAfter); System.assert(Trigger.isUndelete); System.assertEquals(1, Trigger.size); System.assertEquals(null, Trigger.old); System.assertEquals(null, Trigger.oldMap); Account newer = Trigger.new.get(0); System.assert(Trigger.newMap.containsKey(newer.Id)); }"
     },
     {
+      "path": "force-app/main/classes/AccountUpsertBeforeInsert.trigger",
+      "content": "trigger AccountUpsertBeforeInsert on Account (before insert) { for (Account a : Trigger.new) { if (a.get('External_Key__c') == 'upsert-new') { System.assert(Trigger.isInsert); a.Rating = 'upsert-before-insert'; } } }"
+    },
+    {
+      "path": "force-app/main/classes/AccountUpsertAfterInsert.trigger",
+      "content": "trigger AccountUpsertAfterInsert on Account (after insert) { for (Account a : Trigger.new) { if (a.get('External_Key__c') == 'upsert-new') { System.assert(Trigger.isAfter); System.assert(Trigger.isInsert); insert new Contact(LastName = 'upsert-insert-fired'); } } }"
+    },
+    {
+      "path": "force-app/main/classes/AccountUpsertBeforeUpdate.trigger",
+      "content": "trigger AccountUpsertBeforeUpdate on Account (before update) { for (Account a : Trigger.new) { if (a.get('External_Key__c') == 'UPSERT-EXISTING') { System.assert(Trigger.isUpdate); Account older = Trigger.oldMap.get(a.Id); System.assertEquals('Upsert Existing', older.Name); a.Rating = 'upsert-before-update'; } } }"
+    },
+    {
+      "path": "force-app/main/classes/AccountUpsertAfterUpdate.trigger",
+      "content": "trigger AccountUpsertAfterUpdate on Account (after update) { for (Account a : Trigger.new) { if (a.get('External_Key__c') == 'UPSERT-EXISTING') { System.assert(Trigger.isAfter); System.assert(Trigger.isUpdate); insert new Contact(LastName = 'upsert-update-fired'); } } }"
+    },
+    {
       "path": "force-app/main/classes/MergeTriggerFidelityTest.cls",
       "content": "@isTest private class MergeTriggerFidelityTest { @isTest static void mergeFiresUpdateAndDeleteTriggers() { Account master = new Account(Name = 'Merge Master For Triggers'); insert master; Account duplicate = new Account(Name = 'Merge Duplicate For Triggers'); insert duplicate; Account mergeMaster = new Account(Id = master.Id, Name = 'Merged Name'); Object result = Database.merge(mergeMaster, duplicate, false); System.assert(result.isSuccess()); Account row = [SELECT Id, Name, Rating FROM Account WHERE Id = :master.Id]; System.assertEquals('Merged Name', row.Name); System.assertEquals('merge-before-update', row.Rating); List<Contact> updateMarkers = [SELECT Id FROM Contact WHERE LastName = 'merge-update-fired']; System.assertEquals(1, updateMarkers.size()); List<Contact> deleteMarkers = [SELECT Id FROM Contact WHERE LastName = 'merge-delete-fired']; System.assertEquals(1, deleteMarkers.size()); Account blockedMaster = new Account(Name = 'Blocked Merge Master'); insert blockedMaster; Account blockedDuplicate = new Account(Name = 'Blocked Merge Duplicate'); insert blockedDuplicate; Account blockedUpdate = new Account(Id = blockedMaster.Id, Name = 'Blocked Applied'); Object blockedResult = Database.merge(blockedUpdate, blockedDuplicate, false); System.assert(!blockedResult.isSuccess()); List<Object> blockedErrors = blockedResult.getErrors(); System.assertEquals(1, blockedErrors.size()); Object blockedError = blockedErrors.get(0); System.assertEquals('blocked duplicate merge', blockedError.getMessage()); List<Account> blockedRows = [SELECT Id FROM Account WHERE Id = :blockedDuplicate.Id]; System.assertEquals(1, blockedRows.size()); } }"
     },
@@ -172,6 +188,10 @@
     {
       "path": "force-app/main/classes/UndeleteTriggerFidelityTest.cls",
       "content": "@isTest private class UndeleteTriggerFidelityTest { @isTest static void afterUndeleteContextRuns() { Account a = new Account(Name = 'Undelete Me'); insert a; delete a; undelete a; System.assert(!a.IsDeleted); } }"
+    },
+    {
+      "path": "force-app/main/classes/UpsertTriggerFidelityTest.cls",
+      "content": "@isTest private class UpsertTriggerFidelityTest { @isTest static void upsertFiresInsertAndUpdateTriggers() { Account existing = new Account(Name = 'Upsert Existing', External_Key__c = 'upsert-existing'); insert existing; Account inserted = new Account(Name = 'Upsert Inserted', External_Key__c = 'upsert-new'); Account updated = new Account(Name = 'Upsert Updated', External_Key__c = 'UPSERT-EXISTING'); upsert new List<Account>{inserted, updated} External_Key__c; Account insertedRow = [SELECT Id, Rating FROM Account WHERE External_Key__c = 'upsert-new']; System.assertEquals('upsert-before-insert', insertedRow.Rating); Account updatedRow = [SELECT Id, Name, Rating FROM Account WHERE Id = :existing.Id]; System.assertEquals('Upsert Updated', updatedRow.Name); System.assertEquals('upsert-before-update', updatedRow.Rating); List<Contact> insertMarkers = [SELECT Id FROM Contact WHERE LastName = 'upsert-insert-fired']; System.assertEquals(1, insertMarkers.size()); List<Contact> updateMarkers = [SELECT Id FROM Contact WHERE LastName = 'upsert-update-fired']; System.assertEquals(1, updateMarkers.size()); } }"
     },
     {
       "path": "force-app/main/classes/DataFidelityTest.cls",
@@ -214,8 +234,8 @@
       "errors": 0,
       "failed": 0,
       "ok": true,
-      "passed": 23,
-      "total": 23
+      "passed": 24,
+      "total": 24
     }
   }
 }

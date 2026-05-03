@@ -376,11 +376,13 @@ a Salesforce-shaped local API server without silently wrong behavior.
     unset-but-valid SObject fields.
   - **Limitation**: UI rendering details for escaped addError text remain
     outside the local runtime.
-- [ ] Add trigger fixtures covering insert/update/delete/upsert/undelete,
+- [x] Add trigger fixtures covering insert/update/delete/upsert/undelete,
   all-or-none failures, partial success, recursion, and bulk batches.
   - [x] Add compatibility fixture coverage for failed-first bulk insert partial
     success, before-trigger mutation, and after-trigger execution.
   - [x] Add compatibility fixture coverage for recursive trigger limit rollback.
+  - [x] Add compatibility fixture coverage for upsert insert/update trigger
+    contexts and after-undelete trigger context.
 
 ## 5. Governor Limits And Platform APIs
 

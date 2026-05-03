@@ -2191,6 +2191,9 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 	if err := vm.checkMixedDML(records); err != nil {
 		return nil, err
 	}
+	if op == "upsert" {
+		return vm.applyUpsertDML(records, targets, allOrNone, externalIDField, result)
+	}
 	if result != nil {
 		result.Trace = append(result.Trace, trace.Instant("apex.dml."+op, "apex.dml", int64(len(result.Trace)), map[string]any{
 			"operation": op,
@@ -2289,6 +2292,158 @@ func successfulDMLInputs(records, before []storage.Record, results []dml.Result)
 		filteredResults = append(filteredResults, results[i])
 	}
 	return filteredRecords, filteredBefore, filteredResults
+}
+
+func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNone bool, externalIDField string, result *Result) ([]dml.Result, error) {
+	if result != nil {
+		result.Trace = append(result.Trace, trace.Instant("apex.dml.upsert", "apex.dml", int64(len(result.Trace)), map[string]any{
+			"operation": "upsert",
+			"rows":      len(records),
+		}))
+	}
+	backup := vm.Org.Clone()
+	kinds := make([]string, len(records))
+	before := make([]storage.Record, len(records))
+	for i, record := range records {
+		kind, old, err := vm.classifyUpsert(record, externalIDField)
+		if err != nil {
+			return nil, err
+		}
+		kinds[i] = kind
+		before[i] = old
+		if kind == "update" && records[i].ID == "" && old.ID != "" {
+			records[i].ID = old.ID
+		}
+	}
+	beforeFailures := make([]dml.Result, len(records))
+	for _, kind := range []string{"insert", "update"} {
+		groupRecords, groupBefore, indices := groupedDMLInputs(records, before, kinds, kind)
+		failures, err := vm.runTriggers(triggerTimingBefore, kind, groupRecords, groupBefore, result)
+		if err != nil {
+			*vm.Org = backup
+			return nil, err
+		}
+		for groupIndex, failure := range failures {
+			if groupIndex < len(indices) && !failure.Success && failure.Error != "" {
+				beforeFailures[indices[groupIndex]] = failure
+			}
+		}
+		for groupIndex, index := range indices {
+			if groupIndex < len(groupRecords) {
+				records[index] = groupRecords[groupIndex]
+			}
+		}
+	}
+	if hasDMLFailures(beforeFailures) {
+		if allOrNone {
+			*vm.Org = backup
+			return beforeFailures, nil
+		}
+		records, before, targets, kinds = filterUpsertInputs(records, before, targets, kinds, beforeFailures)
+		if len(records) == 0 {
+			return beforeFailures, nil
+		}
+	}
+	engine := vm.newDMLEngine()
+	var engineResults []dml.Result
+	if externalIDField != "" {
+		engineResults = engine.UpsertWithExternalID(records, externalIDField)
+	} else {
+		engineResults = engine.Upsert(records)
+	}
+	results := engineResults
+	if hasDMLFailures(beforeFailures) {
+		results = mergeDMLResults(beforeFailures, engineResults)
+	}
+	if allOrNone {
+		for _, dmlResult := range results {
+			if !dmlResult.Success {
+				*vm.Org = backup
+				return results, nil
+			}
+		}
+	}
+	for i, dmlResult := range engineResults {
+		if dmlResult.Success && i < len(targets) && targets[i] != nil {
+			vm.populateDMLResultFields(targets[i], engineResults[i:i+1])
+		}
+	}
+	for _, kind := range []string{"insert", "update"} {
+		groupRecords, groupBefore, groupResults, _ := successfulGroupedDMLInputs(records, before, engineResults, kinds, kind)
+		afterRecords, err := vm.afterRecords(kind, groupRecords, groupResults)
+		if err != nil {
+			if allOrNone {
+				*vm.Org = backup
+			}
+			return results, err
+		}
+		if _, err := vm.runTriggers(triggerTimingAfter, kind, afterRecords, groupBefore, result); err != nil {
+			if allOrNone {
+				*vm.Org = backup
+			}
+			return nil, err
+		}
+	}
+	return results, nil
+}
+
+func groupedDMLInputs(records, before []storage.Record, kinds []string, want string) ([]storage.Record, []storage.Record, []int) {
+	groupRecords := make([]storage.Record, 0, len(records))
+	groupBefore := make([]storage.Record, 0, len(before))
+	indices := make([]int, 0, len(records))
+	for i, kind := range kinds {
+		if kind != want {
+			continue
+		}
+		groupRecords = append(groupRecords, records[i])
+		if i < len(before) {
+			groupBefore = append(groupBefore, before[i])
+		}
+		indices = append(indices, i)
+	}
+	return groupRecords, groupBefore, indices
+}
+
+func successfulGroupedDMLInputs(records, before []storage.Record, results []dml.Result, kinds []string, want string) ([]storage.Record, []storage.Record, []dml.Result, []int) {
+	groupRecords := make([]storage.Record, 0, len(records))
+	groupBefore := make([]storage.Record, 0, len(before))
+	groupResults := make([]dml.Result, 0, len(results))
+	indices := make([]int, 0, len(records))
+	for i, kind := range kinds {
+		if kind != want || i >= len(results) || !results[i].Success {
+			continue
+		}
+		groupRecords = append(groupRecords, records[i])
+		if i < len(before) {
+			groupBefore = append(groupBefore, before[i])
+		}
+		groupResults = append(groupResults, results[i])
+		indices = append(indices, i)
+	}
+	return groupRecords, groupBefore, groupResults, indices
+}
+
+func filterUpsertInputs(records, before []storage.Record, targets []*Value, kinds []string, failures []dml.Result) ([]storage.Record, []storage.Record, []*Value, []string) {
+	filteredRecords := make([]storage.Record, 0, len(records))
+	filteredBefore := make([]storage.Record, 0, len(before))
+	filteredTargets := make([]*Value, 0, len(targets))
+	filteredKinds := make([]string, 0, len(kinds))
+	for i, record := range records {
+		if i < len(failures) && !failures[i].Success && failures[i].Error != "" {
+			continue
+		}
+		filteredRecords = append(filteredRecords, record)
+		if i < len(before) {
+			filteredBefore = append(filteredBefore, before[i])
+		}
+		if i < len(targets) {
+			filteredTargets = append(filteredTargets, targets[i])
+		}
+		if i < len(kinds) {
+			filteredKinds = append(filteredKinds, kinds[i])
+		}
+	}
+	return filteredRecords, filteredBefore, filteredTargets, filteredKinds
 }
 
 func (vm *VM) checkMixedDML(records []storage.Record) error {
@@ -2632,6 +2787,87 @@ func (vm *VM) oldRecords(op string, records []storage.Record) ([]storage.Record,
 		out = append(out, old.Clone())
 	}
 	return out, nil
+}
+
+func (vm *VM) classifyUpsert(record storage.Record, externalIDField string) (string, storage.Record, error) {
+	objectName := record.Object
+	if canonical, ok := storage.ResolveObjectName(*vm.Org, record.Object); ok {
+		objectName = canonical
+	}
+	object, ok := vm.Org.Objects[objectName]
+	if !ok {
+		return "", storage.Record{}, fmt.Errorf("dml: unknown object %s", record.Object)
+	}
+	if record.ID != "" {
+		old, ok := object.Records[record.ID]
+		if ok && !old.System.IsDeleted {
+			return "update", old.Clone(), nil
+		}
+		return "update", storage.Record{ID: record.ID, Object: objectName}, nil
+	}
+	fieldName, value, ok := upsertMatchField(object.Definition, vm.Org.Namespace, record, externalIDField)
+	if !ok {
+		return "insert", storage.Record{Object: objectName}, nil
+	}
+	for _, stored := range object.Records {
+		if stored.System.IsDeleted {
+			continue
+		}
+		if storedValue, exists := stored.Fields[fieldName]; exists && storageValuesEqualForVM(object.Definition.Fields[fieldName], storedValue, value) {
+			return "update", stored.Clone(), nil
+		}
+	}
+	return "insert", storage.Record{Object: objectName}, nil
+}
+
+func upsertMatchField(definition storage.ObjectDefinition, namespace string, record storage.Record, externalIDField string) (string, storage.Value, bool) {
+	if externalIDField != "" {
+		fieldName := externalIDField
+		if canonical, ok := storage.ResolveFieldName(definition, namespace, fieldName); ok {
+			fieldName = canonical
+		}
+		value, ok := record.Fields[fieldName]
+		return fieldName, value, ok && value.Kind != storage.ValueNull
+	}
+	for name, field := range definition.Fields {
+		if !field.ExternalID {
+			continue
+		}
+		value, ok := record.Fields[name]
+		if ok && value.Kind != storage.ValueNull {
+			return name, value, true
+		}
+	}
+	return "", storage.Value{}, false
+}
+
+func storageValuesEqualForVM(field storage.Field, left, right storage.Value) bool {
+	if left.Kind == storage.ValueString && right.Kind == storage.ValueString && !field.CaseSensitive {
+		return strings.EqualFold(left.String, right.String)
+	}
+	if left.Kind != right.Kind {
+		if left.Kind == storage.ValueID && right.Kind == storage.ValueString {
+			return string(left.ID) == right.String
+		}
+		if left.Kind == storage.ValueString && right.Kind == storage.ValueID {
+			return left.String == string(right.ID)
+		}
+		return false
+	}
+	switch left.Kind {
+	case storage.ValueNull:
+		return true
+	case storage.ValueString, storage.ValueDate, storage.ValueDateTime, storage.ValueDecimal:
+		return left.String == right.String
+	case storage.ValueInteger:
+		return left.Integer == right.Integer
+	case storage.ValueBoolean:
+		return left.Boolean == right.Boolean
+	case storage.ValueID:
+		return left.ID == right.ID
+	default:
+		return false
+	}
 }
 
 func (vm *VM) afterRecords(op string, records []storage.Record, results []dml.Result) ([]storage.Record, error) {

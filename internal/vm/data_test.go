@@ -1390,6 +1390,102 @@ System.assert(!a.IsDeleted);
 	}
 }
 
+func TestExecUpsertFiresInsertAndUpdateTriggers(t *testing.T) {
+	beforeInsert, err := CompileAnonymous(`
+for (Account a : Trigger.new) {
+	System.assert(Trigger.isInsert);
+	if (a.External_Key__c == 'ext-2') {
+		a.Rating = 'before-insert';
+	}
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	afterInsert, err := CompileAnonymous(`
+for (Account a : Trigger.new) {
+	System.assert(Trigger.isAfter);
+	System.assert(Trigger.isInsert);
+	if (a.External_Key__c == 'ext-2') {
+		insert new Contact(LastName = 'upsert-insert');
+	}
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	beforeUpdate, err := CompileAnonymous(`
+for (Account a : Trigger.new) {
+	System.assert(Trigger.isUpdate);
+	Account oldAccount = Trigger.oldMap.get(a.Id);
+	System.assertEquals('Existing', oldAccount.Name);
+	a.Rating = 'before-update';
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	afterUpdate, err := CompileAnonymous(`
+for (Account a : Trigger.new) {
+	System.assert(Trigger.isAfter);
+	System.assert(Trigger.isUpdate);
+	insert new Contact(LastName = 'upsert-update');
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Account existing = new Account(Name = 'Existing', External_Key__c = 'ext-1');
+insert existing;
+Account inserted = new Account(Name = 'Inserted', External_Key__c = 'ext-2');
+Account updated = new Account(Name = 'Updated', External_Key__c = 'EXT-1');
+upsert new List<Account>{inserted, updated} External_Key__c;
+Account insertedRow = [SELECT Id, Rating FROM Account WHERE External_Key__c = 'ext-2'];
+System.assertEquals('before-insert', insertedRow.Rating);
+Account updatedRow = [SELECT Id, Name, Rating FROM Account WHERE Id = :existing.Id];
+System.assertEquals('Updated', updatedRow.Name);
+System.assertEquals('before-update', updatedRow.Rating);
+List<Contact> insertMarkers = [SELECT Id FROM Contact WHERE LastName = 'upsert-insert'];
+System.assertEquals(1, insertMarkers.size());
+List<Contact> updateMarkers = [SELECT Id FROM Contact WHERE LastName = 'upsert-update'];
+System.assertEquals(1, updateMarkers.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["External_Key__c"] = storage.Field{APIName: "External_Key__c", Type: storage.FieldString, ExternalID: true, Unique: true}
+	account.Definition.Fields["Rating"] = storage.Field{APIName: "Rating", Type: storage.FieldString}
+	org.Objects["Account"] = account
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Contact",
+			KeyPrefix: "003",
+			Fields: map[string]storage.Field{
+				"LastName": {APIName: "LastName", Type: storage.FieldString},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine.SetOrg(&org)
+	for _, trigger := range []Trigger{
+		{Name: "AccountBeforeInsertUpsert", Object: "Account", Timing: triggerTimingBefore, Operation: "insert", Program: beforeInsert},
+		{Name: "AccountAfterInsertUpsert", Object: "Account", Timing: triggerTimingAfter, Operation: "insert", Program: afterInsert},
+		{Name: "AccountBeforeUpdateUpsert", Object: "Account", Timing: triggerTimingBefore, Operation: "update", Program: beforeUpdate},
+		{Name: "AccountAfterUpdateUpsert", Object: "Account", Timing: triggerTimingAfter, Operation: "update", Program: afterUpdate},
+	} {
+		if err := machine.RegisterTrigger(trigger); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecTriggerBulkPartialSuccessKeepsRowAlignment(t *testing.T) {
 	beforeInsert, err := CompileAnonymous(`
 System.assert(Trigger.isExecuting);
