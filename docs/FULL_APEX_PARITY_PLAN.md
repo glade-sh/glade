@@ -86,7 +86,9 @@ Current progress:
 - String: runtime support now covers case-insensitive contains/prefix/suffix,
   equality/comparison, capitalization, padding/centering, left/right/mid,
   reverse, substring-before/after variants, remove variants, whitespace
-  normalization, repeat overloads, `String.isEmpty`, and `String.isNotEmpty`.
+  normalization, repeat overloads, `String.isEmpty`, `String.isNotEmpty`,
+  regex-backed `replaceAll`/`replaceFirst`/`split` limit behavior, character
+  category predicates, and `containsAny`/`containsOnly`/`containsNone`.
 - Numbers: runtime support now covers `Integer.valueOf`, `Long.valueOf`,
   `Decimal.valueOf`, `Double.valueOf`, integer/decimal conversion helpers,
   simple numeric `format`, `Decimal.abs`, `Decimal.pow`, and `Math.mod`,
@@ -102,6 +104,7 @@ Current progress:
 - Fixtures:
   - `docs/fixtures/core-collection-stdlib.json`
   - `docs/fixtures/core-string-stdlib.json`
+  - `docs/fixtures/core-string-more-stdlib.json`
   - `docs/fixtures/core-numeric-stdlib.json`
   - `docs/fixtures/core-datetime-stdlib.json`
   - `docs/fixtures/core-json-stdlib.json`
@@ -115,9 +118,8 @@ Remaining cuts:
      the front end.
 
 2. String completion
-   - Regex-backed methods: `replaceAll`, `replaceFirst`, split limit behavior.
-   - Character/category predicates: alpha, numeric, alphanumeric, whitespace,
-     printable, case checks, contains-only/none/any.
+   - Character/category predicates still remaining: printable and the split-by-
+     character-type helpers.
    - Escaping/unescaping: CSV, HTML, XML, Java, EcmaScript, Unicode, and single
      quote behavior.
    - Formatting and distance helpers: `format`, abbreviate, common prefix,

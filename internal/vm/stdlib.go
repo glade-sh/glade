@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode"
 	"unicode/utf8"
 )
 
@@ -134,6 +135,35 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 			return Null, true, err
 		}
 		return Bool(strings.Contains(strings.ToLower(receiver.Text), strings.ToLower(needle))), true, nil
+	case "containsAny":
+		chars, err := stringArg("String.containsAny", args)
+		if err != nil {
+			return Null, true, err
+		}
+		return Bool(stringContainsAny(receiver.Text, chars)), true, nil
+	case "containsOnly":
+		chars, err := stringArg("String.containsOnly", args)
+		if err != nil {
+			return Null, true, err
+		}
+		return Bool(stringContainsOnly(receiver.Text, chars)), true, nil
+	case "containsNone":
+		chars, err := stringArg("String.containsNone", args)
+		if err != nil {
+			return Null, true, err
+		}
+		return Bool(!stringContainsAny(receiver.Text, chars)), true, nil
+	case "containsWhitespace":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("String.containsWhitespace expects 0 arguments")
+		}
+		return Bool(strings.IndexFunc(receiver.Text, unicode.IsSpace) >= 0), true, nil
+	case "countMatches":
+		needle, err := stringArg("String.countMatches", args)
+		if err != nil {
+			return Null, true, err
+		}
+		return Int(int64(countStringMatches(receiver.Text, needle))), true, nil
 	case "startsWith":
 		prefix, err := stringArg("String.startsWith", args)
 		if err != nil {
@@ -200,6 +230,18 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 			return Null, true, fmt.Errorf("String.replace expects target and replacement Strings")
 		}
 		return String(strings.ReplaceAll(receiver.Text, args[0].Text, args[1].Text)), true, nil
+	case "replaceAll":
+		replaced, err := stringRegexReplace("String.replaceAll", receiver.Text, args, true)
+		if err != nil {
+			return Null, true, err
+		}
+		return String(replaced), true, nil
+	case "replaceFirst":
+		replaced, err := stringRegexReplace("String.replaceFirst", receiver.Text, args, false)
+		if err != nil {
+			return Null, true, err
+		}
+		return String(replaced), true, nil
 	case "remove":
 		needle, err := stringArg("String.remove", args)
 		if err != nil {
@@ -237,11 +279,10 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 		}
 		return receiver, true, nil
 	case "split":
-		separator, err := stringArg("String.split", args)
+		parts, err := stringRegexSplit(receiver.Text, args)
 		if err != nil {
 			return Null, true, err
 		}
-		parts := strings.Split(receiver.Text, separator)
 		out := make([]Value, 0, len(parts))
 		for _, part := range parts {
 			out = append(out, String(part))
@@ -372,6 +413,51 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 			return Null, true, fmt.Errorf("String.normalizeSpace expects 0 arguments")
 		}
 		return String(strings.Join(strings.Fields(receiver.Text), " ")), true, nil
+	case "isWhitespace":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("String.isWhitespace expects 0 arguments")
+		}
+		return Bool(stringAllRunes(receiver.Text, unicode.IsSpace, true)), true, nil
+	case "isAlpha":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("String.isAlpha expects 0 arguments")
+		}
+		return Bool(stringAllRunes(receiver.Text, unicode.IsLetter, false)), true, nil
+	case "isAlphaSpace":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("String.isAlphaSpace expects 0 arguments")
+		}
+		return Bool(stringAllRunes(receiver.Text, func(r rune) bool { return unicode.IsLetter(r) || r == ' ' }, true)), true, nil
+	case "isAlphanumeric":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("String.isAlphanumeric expects 0 arguments")
+		}
+		return Bool(stringAllRunes(receiver.Text, func(r rune) bool { return unicode.IsLetter(r) || unicode.IsDigit(r) }, false)), true, nil
+	case "isAlphanumericSpace":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("String.isAlphanumericSpace expects 0 arguments")
+		}
+		return Bool(stringAllRunes(receiver.Text, func(r rune) bool { return unicode.IsLetter(r) || unicode.IsDigit(r) || r == ' ' }, true)), true, nil
+	case "isNumeric":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("String.isNumeric expects 0 arguments")
+		}
+		return Bool(stringAllRunes(receiver.Text, unicode.IsDigit, false)), true, nil
+	case "isNumericSpace":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("String.isNumericSpace expects 0 arguments")
+		}
+		return Bool(stringAllRunes(receiver.Text, func(r rune) bool { return unicode.IsDigit(r) || r == ' ' }, true)), true, nil
+	case "isAllLowerCase":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("String.isAllLowerCase expects 0 arguments")
+		}
+		return Bool(stringAllLetters(receiver.Text, unicode.IsLower)), true, nil
+	case "isAllUpperCase":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("String.isAllUpperCase expects 0 arguments")
+		}
+		return Bool(stringAllLetters(receiver.Text, unicode.IsUpper)), true, nil
 	case "repeat":
 		if len(args) == 1 && args[0].Kind == ValueInt {
 			if args[0].Int < 0 {
@@ -702,6 +788,114 @@ func dropLastRunes(text string, count int) string {
 		return ""
 	}
 	return string(runes[:len(runes)-count])
+}
+
+func stringContainsAny(text, chars string) bool {
+	for _, r := range text {
+		if strings.ContainsRune(chars, r) {
+			return true
+		}
+	}
+	return false
+}
+
+func stringContainsOnly(text, chars string) bool {
+	for _, r := range text {
+		if !strings.ContainsRune(chars, r) {
+			return false
+		}
+	}
+	return true
+}
+
+func countStringMatches(text, needle string) int {
+	if needle == "" {
+		return 0
+	}
+	count := 0
+	for start := 0; ; {
+		i := strings.Index(text[start:], needle)
+		if i < 0 {
+			return count
+		}
+		count++
+		start += i + len(needle)
+	}
+}
+
+func stringAllRunes(text string, pred func(rune) bool, emptyValue bool) bool {
+	if text == "" {
+		return emptyValue
+	}
+	for _, r := range text {
+		if !pred(r) {
+			return false
+		}
+	}
+	return true
+}
+
+func stringAllLetters(text string, pred func(rune) bool) bool {
+	hasLetter := false
+	for _, r := range text {
+		if !unicode.IsLetter(r) {
+			continue
+		}
+		hasLetter = true
+		if !pred(r) {
+			return false
+		}
+	}
+	return hasLetter
+}
+
+func stringRegexReplace(name, text string, args []Value, all bool) (string, error) {
+	if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+		return "", fmt.Errorf("%s expects regex and replacement Strings", name)
+	}
+	re, err := regexp.Compile(args[0].Text)
+	if err != nil {
+		return "", err
+	}
+	if all {
+		return re.ReplaceAllString(text, args[1].Text), nil
+	}
+	loc := re.FindStringIndex(text)
+	if loc == nil {
+		return text, nil
+	}
+	return text[:loc[0]] + re.ReplaceAllString(text[loc[0]:loc[1]], args[1].Text) + text[loc[1]:], nil
+}
+
+func stringRegexSplit(text string, args []Value) ([]string, error) {
+	if len(args) != 1 && len(args) != 2 {
+		return nil, fmt.Errorf("String.split expects regex String and optional Integer limit")
+	}
+	if args[0].Kind != ValueString || (len(args) == 2 && args[1].Kind != ValueInt) {
+		return nil, fmt.Errorf("String.split expects regex String and optional Integer limit")
+	}
+	re, err := regexp.Compile(args[0].Text)
+	if err != nil {
+		return nil, err
+	}
+	limit := int64(0)
+	if len(args) == 2 {
+		limit = args[1].Int
+	}
+	if limit > 0 {
+		maxParts := int64(len(text) + 1)
+		if limit > maxParts {
+			limit = maxParts
+		}
+		return re.Split(text, int(limit)), nil
+	}
+	parts := re.Split(text, -1)
+	if limit == 0 {
+		for len(parts) > 0 && parts[len(parts)-1] == "" {
+			parts = parts[:len(parts)-1]
+		}
+	}
+	return parts, nil
 }
 
 func transformFirstRune(text string, transform func(string) string) string {
