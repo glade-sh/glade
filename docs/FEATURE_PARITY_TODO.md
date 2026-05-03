@@ -432,7 +432,7 @@ a Salesforce-shaped local API server without silently wrong behavior.
     booleans for SObjects and fields.
   - **Limitation**: Broader standard-library method parity remains tracked by
     the common stdlib and unsupported-error rows below.
-- [ ] Complete common `String`, `Pattern`, `Matcher`, `Date`, `Datetime`,
+- [x] Complete common `String`, `Pattern`, `Matcher`, `Date`, `Datetime`,
   `Time`, `Math`, `Decimal`, `EncodingUtil`, and `Crypto` behavior.
   - [x] Add common `String` helpers for trim, search, replacement, split/join,
     blank checks, and case-insensitive equality.
@@ -442,6 +442,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     arithmetic, and component helpers.
   - [x] Add common numeric `Math` helpers, `Decimal` scale/conversion helpers,
     URL encoding helpers, and MD5/SHA1/SHA-256 digest coverage.
+  - **Limitation**: Exact locale, timezone, rounding-mode, charset, and full
+    Java-regex parity remain outside the current local subset.
 - [ ] Complete HTTP/callout mock behavior: request/response types,
   `HttpCalloutMock`, callout limits, and test isolation.
 - [ ] Complete `UserInfo`, `FeatureManagement`, `Messaging`, `ApexPages`,
