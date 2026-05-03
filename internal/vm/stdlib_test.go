@@ -360,6 +360,7 @@ System.assertEquals(accountName.hashCode(), accountType.hashCode());
 Id valid = Id.valueOf('001B000001DVM9t');
 Id same = Id.valueOf('001B000001DVM9t', false);
 Id restored = Id.valueOf('001b000001dvm9tIAH', true);
+Id restoredLowerChecksum = Id.valueOf('001b000001dvm9tiah', true);
 System.assert(valid.equals(same));
 System.assertEquals('001B000001DVM9t', valid.toString());
 System.assertEquals('001B000001DVM9t', valid.to15());
@@ -368,6 +369,7 @@ Id longId = Id.valueOf('001B000001DVM9tIAH');
 System.assertEquals('001B000001DVM9t', longId.to15());
 System.assertEquals('001B000001DVM9tIAH', longId.to18());
 System.assertEquals('001B000001DVM9tIAH', restored.toString());
+System.assertEquals('001B000001DVM9tIAH', restoredLowerChecksum.toString());
 
 String text = 'trail';
 System.assert(text.equals('trail'));

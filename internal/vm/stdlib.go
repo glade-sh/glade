@@ -1967,9 +1967,10 @@ func restoreApexIDCasing(text string) (string, error) {
 	if len(text) != 18 {
 		return text, nil
 	}
+	checksum := strings.ToUpper(text[15:])
 	out := []byte(strings.ToLower(text[:15]))
 	for chunk := 0; chunk < 3; chunk++ {
-		mask, ok := apexIDChecksumMask(text[15+chunk])
+		mask, ok := apexIDChecksumMask(checksum[chunk])
 		if !ok {
 			return "", fmt.Errorf("System.StringException: Invalid id: %s", text)
 		}
@@ -1980,7 +1981,7 @@ func restoreApexIDCasing(text string) (string, error) {
 			}
 		}
 	}
-	return string(out) + text[15:], nil
+	return string(out) + checksum, nil
 }
 
 func apexIDChecksumMask(ch byte) (int, bool) {
