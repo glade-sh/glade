@@ -61,7 +61,8 @@ and composed by the CLI.
 - `internal/compat`: compatibility fixture schema, fixture evidence metadata,
   parse/check/exec/test/DB fixture execution, and catalog evidence reports.
 - `internal/capability`: machine-readable feature matrix and MVP readiness
-  gate, plus the docs-driven Apex support catalog.
+  gate, plus the docs-driven Apex support catalog and product namespace typed
+  stub reports.
 
 ## Runtime Pipeline
 
@@ -76,8 +77,9 @@ and composed by the CLI.
 7. Surface the same runtime through CLI execution, tests, watch mode, LSP/DAP
    snapshots, profile analysis, compatibility checks, and the local API server.
 8. Record diagnostics, traces, profiles, test reports, storage fixtures, server
-   responses, documentation inventories, capability catalogs, fixture evidence,
-   and compatibility results in stable machine-readable formats.
+   responses, documentation inventories, capability catalogs, product namespace
+   stub reports, fixture evidence, and compatibility results in stable
+   machine-readable formats.
 
 ## Design Constraints
 

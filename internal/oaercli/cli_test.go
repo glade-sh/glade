@@ -368,6 +368,71 @@ The feed body.
 	}
 }
 
+func TestRunCompatProductNamespacesOutputAndCheck(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "apex_connectapi_output_FeedElement.md"), `# FeedElement
+
+## Properties
+### body
+The feed body.
+`)
+	writeTestFile(t, filepath.Join(root, "apex_class_Metadata_DeployContainer.md"), `# DeployContainer Class
+
+## Methods
+### addMetadata(metadata)
+Adds metadata.
+`)
+	dir := t.TempDir()
+	inventoryPath := filepath.Join(dir, "inventory.json")
+	catalogPath := filepath.Join(dir, "catalog.json")
+	reportPath := filepath.Join(dir, "product-namespaces.json")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "docs-inventory", "--source", root, "--output", inventoryPath}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("inventory exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "catalog", "--inventory", inventoryPath, "--output", catalogPath}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("catalog exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "product-namespaces", "--catalog", catalogPath, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("product namespaces exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	for _, want := range []string{
+		`"namespace": "ConnectApi"`,
+		`"namespace": "Metadata"`,
+		`"target": "typed-stub"`,
+		`"executionPolicy": "return deterministic unsupported diagnostics until a local model is chosen"`,
+	} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("product namespaces stdout missing %q: %q", want, stdout.String())
+		}
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "product-namespaces", "--catalog", catalogPath, "--output", reportPath}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("product namespaces output exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "product-namespaces", "--catalog", catalogPath, "--check", reportPath}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("product namespaces check exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "up to date") {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
 func TestRunCompatEvidenceJSON(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "apex_methods_system_string.md"), `# String Class
