@@ -1112,7 +1112,6 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
 		return platformScalar("Datetime", vm.fakeNow.Format(time.RFC3339)), nil
-	case "Datetime.newInstance", "Datetime.newInstanceGmt":
 	case "System.currentTimeMillis":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("System.currentTimeMillis expects 0 arguments")
