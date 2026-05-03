@@ -438,6 +438,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     blank checks, and case-insensitive equality.
   - [x] Add `Pattern.compile`, `Pattern.matches`, and basic `Matcher`
     `find`/`matches`/`group` behavior.
+  - [x] Add common `Date`, `Datetime`, and `Time` factories, parsing,
+    arithmetic, and component helpers.
 - [ ] Complete HTTP/callout mock behavior: request/response types,
   `HttpCalloutMock`, callout limits, and test isolation.
 - [ ] Complete `UserInfo`, `FeatureManagement`, `Messaging`, `ApexPages`,

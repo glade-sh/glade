@@ -119,6 +119,8 @@ Release engineering:
 - Added `Schema.describeSObjects(...)` basics plus local SObject/field describe
   access booleans.
 - Added common `String` helpers and `Pattern`/`Matcher` regex basics.
+- Added common `Date`, `Datetime`, and `Time` factories, parsing, arithmetic,
+  and component helpers.
 - Added SOQL `ALL ROWS` support for querying soft-deleted records.
 - Added SOQL `WITH SECURITY_ENFORCED`, `WITH USER_MODE`, and
   `WITH SYSTEM_MODE` parsing as local security-mode markers.

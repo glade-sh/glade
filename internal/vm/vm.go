@@ -1018,12 +1018,47 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		if len(args) != 3 || args[0].Kind != ValueInt || args[1].Kind != ValueInt || args[2].Kind != ValueInt {
 			return Null, fmt.Errorf("Date.newInstance expects year, month, day integers")
 		}
+		if err := validateDateParts(int(args[0].Int), int(args[1].Int), int(args[2].Int)); err != nil {
+			return Null, err
+		}
 		return platformScalar("Date", fmt.Sprintf("%04d-%02d-%02d", args[0].Int, args[1].Int, args[2].Int)), nil
+	case "Date.valueOf":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("Date.valueOf expects String")
+		}
+		date, err := time.Parse("2006-01-02", args[0].Text)
+		if err != nil {
+			return Null, err
+		}
+		return platformScalar("Date", date.Format("2006-01-02")), nil
 	case "Datetime.now", "System.now":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
 		return platformScalar("Datetime", vm.fakeNow.Format(time.RFC3339)), nil
+	case "Datetime.newInstance":
+		if len(args) != 6 || args[0].Kind != ValueInt || args[1].Kind != ValueInt || args[2].Kind != ValueInt || args[3].Kind != ValueInt || args[4].Kind != ValueInt || args[5].Kind != ValueInt {
+			return Null, fmt.Errorf("Datetime.newInstance expects year, month, day, hour, minute, second integers")
+		}
+		year, month, day := int(args[0].Int), int(args[1].Int), int(args[2].Int)
+		hour, minute, second := int(args[3].Int), int(args[4].Int), int(args[5].Int)
+		if err := validateDateParts(year, month, day); err != nil {
+			return Null, err
+		}
+		if err := validateTimeParts(hour, minute, second); err != nil {
+			return Null, err
+		}
+		value := time.Date(year, time.Month(month), day, hour, minute, second, 0, time.UTC)
+		return platformScalar("Datetime", value.Format(time.RFC3339)), nil
+	case "Datetime.valueOf":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("Datetime.valueOf expects String")
+		}
+		value, err := parseDatetimeText(args[0].Text)
+		if err != nil {
+			return Null, err
+		}
+		return platformScalar("Datetime", value.Format(time.RFC3339)), nil
 	case "System.isRunningTest", "Test.isRunningTest":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
@@ -1065,7 +1100,24 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		if len(args) < 3 || len(args) > 4 {
 			return Null, fmt.Errorf("Time.newInstance expects hour, minute, second[, millisecond]")
 		}
+		for i := 0; i < len(args); i++ {
+			if args[i].Kind != ValueInt {
+				return Null, fmt.Errorf("Time.newInstance expects integer parts")
+			}
+		}
+		if err := validateTimeParts(int(args[0].Int), int(args[1].Int), int(args[2].Int)); err != nil {
+			return Null, err
+		}
 		return platformScalar("Time", fmt.Sprintf("%02d:%02d:%02d", args[0].Int, args[1].Int, args[2].Int)), nil
+	case "Time.valueOf":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("Time.valueOf expects String")
+		}
+		parsed, err := parseTimeText(args[0].Text)
+		if err != nil {
+			return Null, err
+		}
+		return platformScalar("Time", parsed), nil
 	case "Blob.valueOf":
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("Blob.valueOf expects String")
@@ -3285,6 +3337,39 @@ func platformScalar(typeName, value string) Value {
 	out := Object(typeName)
 	out.Fields["value"] = String(value)
 	return out
+}
+
+func parseDatetimeText(text string) (time.Time, error) {
+	for _, layout := range []string{time.RFC3339, "2006-01-02 15:04:05", "2006-01-02T15:04:05"} {
+		if value, err := time.Parse(layout, text); err == nil {
+			return value, nil
+		}
+	}
+	return time.Time{}, fmt.Errorf("unsupported Datetime value %q", text)
+}
+
+func validateDateParts(year, month, day int) error {
+	value := time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
+	if value.Year() != year || int(value.Month()) != month || value.Day() != day {
+		return fmt.Errorf("invalid Date parts: year=%d month=%d day=%d", year, month, day)
+	}
+	return nil
+}
+
+func validateTimeParts(hour, minute, second int) error {
+	if hour < 0 || hour > 23 || minute < 0 || minute > 59 || second < 0 || second > 59 {
+		return fmt.Errorf("invalid Time parts: hour=%d minute=%d second=%d", hour, minute, second)
+	}
+	return nil
+}
+
+func parseTimeText(text string) (string, error) {
+	for _, layout := range []string{"15:04:05.000", "15:04:05"} {
+		if value, err := time.Parse(layout, text); err == nil {
+			return value.Format("15:04:05"), nil
+		}
+	}
+	return "", fmt.Errorf("unsupported Time value %q", text)
 }
 
 func assertMessage(base string, extra []Value) string {
@@ -5831,15 +5916,24 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Date.%s expects 0 arguments", method)
 			}
 			return String(receiver.Fields["value"].String()), receiver, false, true, nil
-		case "addDays":
+		case "addDays", "addMonths", "addYears":
 			if len(args) != 1 || args[0].Kind != ValueInt {
-				return Null, receiver, false, true, fmt.Errorf("Date.addDays expects Integer")
+				return Null, receiver, false, true, fmt.Errorf("Date.%s expects Integer", method)
 			}
 			date, err := time.Parse("2006-01-02", receiver.Fields["value"].String())
 			if err != nil {
 				return Null, receiver, false, true, err
 			}
-			return platformScalar("Date", date.AddDate(0, 0, int(args[0].Int)).Format("2006-01-02")), receiver, false, true, nil
+			years, months, days := 0, 0, 0
+			switch method {
+			case "addDays":
+				days = int(args[0].Int)
+			case "addMonths":
+				months = int(args[0].Int)
+			case "addYears":
+				years = int(args[0].Int)
+			}
+			return platformScalar("Date", date.AddDate(years, months, days).Format("2006-01-02")), receiver, false, true, nil
 		case "daysBetween":
 			if len(args) != 1 || args[0].Kind != ValueObject || args[0].Type != "Date" {
 				return Null, receiver, false, true, fmt.Errorf("Date.daysBetween expects Date")
@@ -5886,15 +5980,30 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, err
 			}
 			return platformScalar("Date", t.Format("2006-01-02")), receiver, false, true, nil
-		case "addDays":
+		case "addDays", "addMonths", "addYears", "addHours", "addMinutes", "addSeconds":
 			if len(args) != 1 || args[0].Kind != ValueInt {
-				return Null, receiver, false, true, fmt.Errorf("Datetime.addDays expects Integer")
+				return Null, receiver, false, true, fmt.Errorf("Datetime.%s expects Integer", method)
 			}
 			t, err := time.Parse(time.RFC3339, receiver.Fields["value"].String())
 			if err != nil {
 				return Null, receiver, false, true, err
 			}
-			return platformScalar("Datetime", t.AddDate(0, 0, int(args[0].Int)).Format(time.RFC3339)), receiver, false, true, nil
+			amount := int(args[0].Int)
+			switch method {
+			case "addDays":
+				t = t.AddDate(0, 0, amount)
+			case "addMonths":
+				t = t.AddDate(0, amount, 0)
+			case "addYears":
+				t = t.AddDate(amount, 0, 0)
+			case "addHours":
+				t = t.Add(time.Duration(amount) * time.Hour)
+			case "addMinutes":
+				t = t.Add(time.Duration(amount) * time.Minute)
+			case "addSeconds":
+				t = t.Add(time.Duration(amount) * time.Second)
+			}
+			return platformScalar("Datetime", t.Format(time.RFC3339)), receiver, false, true, nil
 		}
 	case "Time", "Blob":
 		switch method {
@@ -5903,6 +6012,25 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("%s.%s expects 0 arguments", receiver.Type, method)
 			}
 			return String(receiver.Fields["value"].String()), receiver, false, true, nil
+		case "hour", "minute", "second":
+			if receiver.Type != "Time" {
+				return Null, receiver, false, false, nil
+			}
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Time.%s expects 0 arguments", method)
+			}
+			parsed, err := time.Parse("15:04:05", receiver.Fields["value"].String())
+			if err != nil {
+				return Null, receiver, false, true, err
+			}
+			switch method {
+			case "hour":
+				return Int(int64(parsed.Hour())), receiver, false, true, nil
+			case "minute":
+				return Int(int64(parsed.Minute())), receiver, false, true, nil
+			default:
+				return Int(int64(parsed.Second())), receiver, false, true, nil
+			}
 		}
 	case "Database.SaveResult":
 		switch method {

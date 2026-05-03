@@ -503,11 +503,35 @@ System.assertEquals(5, d.month());
 System.assertEquals(2, d.day());
 Date later = d.addDays(3);
 System.assertEquals(3, d.daysBetween(later));
+Date nextMonth = d.addMonths(1);
+System.assertEquals('2026-06-02', nextMonth.format());
+Date nextYear = d.addYears(1);
+System.assertEquals('2027-05-02', nextYear.format());
+Date parsedDate = Date.valueOf('2026-05-04');
+System.assertEquals(2, d.daysBetween(parsedDate));
 Datetime dt = Datetime.now();
 String dtText = dt.format();
 System.assert(dtText.startsWith('2026-05-02T12:00:00'));
 Date dtDate = dt.date();
 System.assertEquals('2026-05-02', dtDate.format());
+Datetime made = Datetime.newInstance(2026, 5, 2, 1, 2, 3);
+System.assertEquals('2026-05-02T01:02:03Z', made.format());
+Datetime madePlusHour = made.addHours(1);
+System.assertEquals('2026-05-02T02:02:03Z', madePlusHour.format());
+Datetime madePlusMinutes = made.addMinutes(2);
+System.assertEquals('2026-05-02T01:04:03Z', madePlusMinutes.format());
+Datetime madePlusSeconds = made.addSeconds(3);
+System.assertEquals('2026-05-02T01:02:06Z', madePlusSeconds.format());
+Datetime madePlusDay = made.addDays(1);
+System.assertEquals('2026-05-03T01:02:03Z', madePlusDay.format());
+Datetime parsedDt = Datetime.valueOf('2026-05-02 01:02:03');
+String madeText = made.format();
+String parsedDtText = parsedDt.format();
+System.assertEquals(madeText, parsedDtText);
+Time tm = Time.valueOf('01:02:03');
+System.assertEquals(1, tm.hour());
+System.assertEquals(2, tm.minute());
+System.assertEquals(3, tm.second());
 String encoded = EncodingUtil.base64Encode(Blob.valueOf('abc'));
 System.assertEquals('YWJj', encoded);
 Blob decoded = EncodingUtil.base64Decode(encoded);
@@ -537,6 +561,23 @@ System.assert(!ApexPages.hasMessages());
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecDateTimeConstructorsRejectInvalidParts(t *testing.T) {
+	for _, source := range []string{
+		`Date bad = Date.newInstance(2026, 13, 2);`,
+		`Datetime bad = Datetime.newInstance(2026, 5, 32, 1, 2, 3);`,
+		`Time bad = Time.newInstance(25, 0, 0);`,
+	} {
+		program, err := CompileAnonymous(source)
+		if err != nil {
+			t.Fatal(err)
+		}
+		machine := New(nil)
+		if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), "invalid") {
+			t.Fatalf("source %q err = %v", source, err)
+		}
 	}
 }
 
