@@ -399,8 +399,11 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Recompute deterministic live heap usage after statements so mutated
     locals and collections are reflected in `Limits.getHeapSize()`.
   - **Limitation**: Byte-exact Salesforce heap accounting remains unsupported.
-- [ ] Improve CPU accounting beyond statement counts while keeping runs
+- [x] Improve CPU accounting beyond statement counts while keeping runs
   deterministic.
+  - [x] Add deterministic SOQL and DML row-work costs on top of per-statement
+    CPU accounting.
+  - **Limitation**: Wall-clock Salesforce CPU parity remains unsupported.
 - [ ] Complete callout, email, async, queueable, future, batch, and scheduled
   counters.
   - [x] Track separate future, queueable, batch, scheduled, and email invocation

@@ -1632,7 +1632,11 @@ func (vm *VM) executeSOQLRowsWithExpander(raw string, execResult *Result, expand
 	if err != nil {
 		return nil, newExceptionError("QueryException", err.Error())
 	}
-	if err := vm.incrementLimit("queryRows", soqlLimitRows(result)); err != nil {
+	limitRows := soqlLimitRows(result)
+	if err := vm.incrementLimit("queryRows", limitRows); err != nil {
+		return nil, err
+	}
+	if err := vm.incrementLimit("cpuTime", limitRows); err != nil {
 		return nil, err
 	}
 	values := make([]Value, 0, len(result.Records))
@@ -1960,6 +1964,9 @@ func (vm *VM) executeDatabaseMerge(args []Value, result *Result) (Value, error) 
 	if err := vm.incrementLimit("dmlRows", len(recordsForChecks)); err != nil {
 		return Null, err
 	}
+	if err := vm.incrementLimit("cpuTime", len(recordsForChecks)); err != nil {
+		return Null, err
+	}
 	if err := vm.checkMixedDML(recordsForChecks); err != nil {
 		return Null, err
 	}
@@ -2212,6 +2219,9 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 		dmlRows += vm.cascadeDeleteRowCount(records)
 	}
 	if err := vm.incrementLimit("dmlRows", dmlRows); err != nil {
+		return nil, err
+	}
+	if err := vm.incrementLimit("cpuTime", dmlRows); err != nil {
 		return nil, err
 	}
 	if err := vm.checkMixedDML(records); err != nil {

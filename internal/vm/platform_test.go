@@ -139,6 +139,32 @@ System.assert(after > before);
 	}
 }
 
+func TestExecCPULimitAccountsForSOQLAndDMLRows(t *testing.T) {
+	program, err := CompileAnonymous(`
+Integer start = Limits.getCpuTime();
+List<Account> rows = new List<Account>{
+	new Account(Name = 'A'),
+	new Account(Name = 'B'),
+	new Account(Name = 'C')
+};
+insert rows;
+Integer afterDml = Limits.getCpuTime();
+System.assert(afterDml >= start + 3);
+List<Account> queried = [SELECT Id FROM Account];
+Integer afterQuery = Limits.getCpuTime();
+System.assert(afterQuery >= afterDml + 3);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecStrictLimitModeFails(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<Account> rows = [SELECT Id FROM Account];
