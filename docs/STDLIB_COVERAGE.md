@@ -11,7 +11,11 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | ApexPages | `ApexPages.currentPage` | `supported` | Returns a deterministic local PageReference. |
 | ApexPages | `ApexPages.getMessages` | `supported` | Returns VM-local page messages. |
 | ApexPages | `ApexPages.hasMessages` | `supported` | Checks VM-local page messages. |
-| Crypto | `Crypto.generateDigest` | `partial` | MD5, SHA1, and SHA-256. |
+| Blob | `Blob.size` | `supported` | Returns local Blob byte length. |
+| Blob | `Blob.toString` | `supported` | Returns the local Blob bytes as a string. |
+| Blob | `Blob.valueOf` | `supported` | Stores the string bytes in a local Blob value. |
+| Crypto | `Crypto.generateDigest` | `supported` | MD5, SHA1, SHA-256, SHA-512, and SHA3-256/384/512. |
+| Crypto | `Crypto.generateMac` | `supported` | HMAC MD5, SHA1, SHA256, and SHA512 with local Blob keys. |
 | Database | `Database.delete` | `supported` | DML pipeline with result/error shapes for supported SObjects. |
 | Database | `Database.getQueryLocator` | `partial` | Supported SOQL only; executes eagerly for local batch scopes. |
 | Database | `Database.insert` | `supported` | DML pipeline with result/error shapes for supported SObjects. |

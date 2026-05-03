@@ -2,14 +2,18 @@ package vm
 
 import (
 	"context"
+	"crypto/hmac"
 	"crypto/md5"
 	"crypto/sha1"
 	"crypto/sha256"
+	"crypto/sha3"
+	"crypto/sha512"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"hash"
 	"io"
 	"math"
 	"net/url"
@@ -1208,6 +1212,15 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return Null, err
 		}
 		return platformScalar("Blob", string(decoded)), nil
+	case "EncodingUtil.convertFromHex":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("EncodingUtil.convertFromHex expects String")
+		}
+		decoded, err := hex.DecodeString(args[0].Text)
+		if err != nil {
+			return Null, fmt.Errorf("EncodingUtil.convertFromHex invalid hexadecimal string: %w", err)
+		}
+		return platformScalar("Blob", string(decoded)), nil
 	case "EncodingUtil.convertToHex":
 		blob, err := blobStringArg("EncodingUtil.convertToHex", args)
 		if err != nil {
@@ -1241,6 +1254,23 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return Null, err
 		}
 		return platformScalar("Blob", string(digest)), nil
+	case "Crypto.generateMac":
+		if len(args) != 3 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("Crypto.generateMac expects algorithm, input Blob, and privateKey Blob")
+		}
+		input, err := blobStringArg("Crypto.generateMac input", args[1:2])
+		if err != nil {
+			return Null, err
+		}
+		key, err := blobStringArg("Crypto.generateMac privateKey", args[2:])
+		if err != nil {
+			return Null, err
+		}
+		mac, err := generateMac(args[0].Text, []byte(input), []byte(key))
+		if err != nil {
+			return Null, err
+		}
+		return platformScalar("Blob", string(mac)), nil
 	case "JSON.createGenerator":
 		if len(args) != 1 || args[0].Kind != ValueBool {
 			return Null, fmt.Errorf("JSON.createGenerator expects Boolean")
@@ -3646,9 +3676,42 @@ func generateDigest(algorithm string, data []byte) ([]byte, error) {
 	case "SHA256":
 		sum := sha256.Sum256(data)
 		return sum[:], nil
+	case "SHA512":
+		sum := sha512.Sum512(data)
+		return sum[:], nil
+	case "SHA3256":
+		sum := sha3.Sum256(data)
+		return sum[:], nil
+	case "SHA3384":
+		sum := sha3.Sum384(data)
+		return sum[:], nil
+	case "SHA3512":
+		sum := sha3.Sum512(data)
+		return sum[:], nil
 	default:
 		return nil, fmt.Errorf("unsupported digest algorithm %q", algorithm)
 	}
+}
+
+func generateMac(algorithm string, input, privateKey []byte) ([]byte, error) {
+	normalized := strings.ToUpper(strings.ReplaceAll(algorithm, "-", ""))
+	var mac hash.Hash
+	switch normalized {
+	case "HMACMD5":
+		mac = hmac.New(md5.New, privateKey)
+	case "HMACSHA1":
+		mac = hmac.New(sha1.New, privateKey)
+	case "HMACSHA256":
+		mac = hmac.New(sha256.New, privateKey)
+	case "HMACSHA512":
+		mac = hmac.New(sha512.New, privateKey)
+	default:
+		return nil, fmt.Errorf("unsupported MAC algorithm %q", algorithm)
+	}
+	if _, err := mac.Write(input); err != nil {
+		return nil, err
+	}
+	return mac.Sum(nil), nil
 }
 
 func mathUnary(callee string, args []Value) (Value, error) {
@@ -6671,6 +6734,14 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("%s.%s expects 0 arguments", receiver.Type, method)
 			}
 			return String(receiver.Fields["value"].String()), receiver, false, true, nil
+		case "size":
+			if receiver.Type != "Blob" {
+				return Null, receiver, false, false, nil
+			}
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Blob.size expects 0 arguments")
+			}
+			return Int(int64(len([]byte(receiver.Fields["value"].String())))), receiver, false, true, nil
 		case "hour", "minute", "second":
 			if receiver.Type != "Time" {
 				return Null, receiver, false, false, nil

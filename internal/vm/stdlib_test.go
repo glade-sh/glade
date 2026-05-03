@@ -190,6 +190,67 @@ func TestStringStdlibMoreRejectsBadArgumentShapes(t *testing.T) {
 	}
 }
 
+func TestExecBlobEncodingCryptoStdlib(t *testing.T) {
+	program, err := CompileAnonymous(`
+Blob hello = Blob.valueOf('hello');
+System.assertEquals('hello', hello.toString());
+System.assertEquals(5, hello.size());
+System.assertEquals('68656c6c6f', EncodingUtil.convertToHex(hello));
+Blob decodedHex = EncodingUtil.convertFromHex('68656C6C6F');
+System.assertEquals('hello', decodedHex.toString());
+System.assertEquals('aGVsbG8=', EncodingUtil.base64Encode(hello));
+Blob decodedBase64 = EncodingUtil.base64Decode('aGVsbG8=');
+System.assertEquals('hello', decodedBase64.toString());
+Blob md5 = Crypto.generateDigest('MD5', hello);
+Blob sha1 = Crypto.generateDigest('SHA1', hello);
+Blob sha256 = Crypto.generateDigest('SHA-256', hello);
+Blob sha512 = Crypto.generateDigest('SHA-512', hello);
+Blob sha3 = Crypto.generateDigest('SHA3-256', hello);
+System.assertEquals('5d41402abc4b2a76b9719d911017c592', EncodingUtil.convertToHex(md5));
+System.assertEquals('aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d', EncodingUtil.convertToHex(sha1));
+System.assertEquals('2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824', EncodingUtil.convertToHex(sha256));
+System.assertEquals('9b71d224bd62f3785d96d46ad3ea3d73319bfbc2890caadae2dff72519673ca72323c3d99ba5c11d7c7acc6e14b8c5da0c4663475c2e5c3adef46f73bcdec043', EncodingUtil.convertToHex(sha512));
+System.assertEquals('3338be694f50c5f338814986cdf0686453a888b84f424d792af4b9202398f392', EncodingUtil.convertToHex(sha3));
+Blob message = Blob.valueOf('message');
+Blob key = Blob.valueOf('key');
+Blob hmacMD5 = Crypto.generateMac('hmacMD5', message, key);
+Blob hmacSHA1 = Crypto.generateMac('hmacSHA1', message, key);
+Blob hmacSHA256 = Crypto.generateMac('HmacSHA256', message, key);
+Blob hmacSHA512 = Crypto.generateMac('hmacSHA512', message, key);
+System.assertEquals('4e4748e62b463521f6775fbf921234b5', EncodingUtil.convertToHex(hmacMD5));
+System.assertEquals('2088df74d5f2146b48146caf4965377e9d0be3a4', EncodingUtil.convertToHex(hmacSHA1));
+System.assertEquals('6e9ef29b75fffc5b7abae527d58fdadb2fe42e7219011976917343065f58ed4a', EncodingUtil.convertToHex(hmacSHA256));
+System.assertEquals('e477384d7ca229dd1426e64b63ebf2d36ebd6d7e669a6735424e72ea6c01d3f8b56eb39c36d8232f5427999b8d1a3f9cd1128fc69f4d75b434216810fa367e98', EncodingUtil.convertToHex(hmacSHA512));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestBlobEncodingCryptoStdlibRejectsBadInputs(t *testing.T) {
+	tests := []string{
+		"Blob b = Blob.valueOf('abc'); b.size(1);",
+		"EncodingUtil.base64Decode('not base64');",
+		"EncodingUtil.convertFromHex('abc');",
+		"EncodingUtil.convertFromHex('zz');",
+		"Crypto.generateDigest('SHA-999', Blob.valueOf('x'));",
+		"Crypto.generateMac('hmacSHA999', Blob.valueOf('x'), Blob.valueOf('key'));",
+		"Crypto.generateMac('hmacSHA256', Blob.valueOf('x'), 'key');",
+	}
+	for _, source := range tests {
+		program, err := CompileAnonymous(source)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := Execute(program, nil); err == nil {
+			t.Fatalf("expected error for %s", source)
+		}
+	}
+}
+
 func TestExecNumericStdlibExpansion(t *testing.T) {
 	program, err := CompileAnonymous(`
 Integer i = Integer.valueOf('42');
