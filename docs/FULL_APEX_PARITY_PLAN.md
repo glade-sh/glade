@@ -94,11 +94,17 @@ Current progress:
 - Date/Datetime: runtime support now covers deterministic local `Date` calendar
   arithmetic and component getters, month-start/month-end helpers, and
   UTC-modeled `Datetime` date arithmetic plus date/time component getters.
+- JSON: runtime support now covers `JSON.createGenerator(Boolean)` and a
+  deterministic `JSONGenerator` slice for object/array boundaries, field names,
+  string/number/Boolean/null scalar writers, field writer overloads,
+  `getAsString`, `close`, and `isClosed`, with explicit errors for invalid
+  write order.
 - Fixtures:
   - `docs/fixtures/core-collection-stdlib.json`
   - `docs/fixtures/core-string-stdlib.json`
   - `docs/fixtures/core-numeric-stdlib.json`
   - `docs/fixtures/core-datetime-stdlib.json`
+  - `docs/fixtures/core-json-stdlib.json`
 
 Remaining cuts:
 
@@ -137,8 +143,10 @@ Remaining cuts:
      operations.
 
 6. JSON
-   - `JSONParser`, `JSONGenerator`, streaming tokens, typed deserialize,
-     strict deserialize, untyped behavior, class/SObject mapping, suppress-null
+   - Complete remaining `JSONGenerator` methods such as object/date/time/id/blob
+     writers and exact Salesforce exception shapes.
+   - Add `JSONParser`, streaming tokens, typed deserialize, strict deserialize,
+     untyped edge behavior, class/SObject mapping, additional suppress-null
      overloads, and stable error shapes.
 
 7. System, exceptions, Type, and reflection

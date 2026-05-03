@@ -1,0 +1,372 @@
+package vm
+
+import (
+	"encoding/json"
+	"fmt"
+	"math"
+	"strconv"
+	"strings"
+)
+
+func newJSONGenerator(pretty bool) Value {
+	gen := Object("JSONGenerator")
+	gen.Fields["pretty"] = Bool(pretty)
+	gen.Fields["closed"] = Bool(false)
+	gen.Fields["rootWritten"] = Bool(false)
+	gen.Fields["out"] = String("")
+	gen.Fields["stack"] = List()
+	return gen
+}
+
+func callJSONGeneratorMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	if receiver.Type != "JSONGenerator" {
+		return Null, receiver, false, false, nil
+	}
+	switch method {
+	case "writeStartObject":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeStartObject expects 0 arguments")
+		}
+		return jsonGeneratorWriteContainer(receiver, "object")
+	case "writeEndObject":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeEndObject expects 0 arguments")
+		}
+		return jsonGeneratorEndContainer(receiver, "object")
+	case "writeStartArray":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeStartArray expects 0 arguments")
+		}
+		return jsonGeneratorWriteContainer(receiver, "array")
+	case "writeEndArray":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeEndArray expects 0 arguments")
+		}
+		return jsonGeneratorEndContainer(receiver, "array")
+	case "writeFieldName":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeFieldName expects String")
+		}
+		updated, err := jsonGeneratorWriteFieldName(receiver, args[0].Text)
+		return Null, updated, true, true, err
+	case "writeString":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeString expects String")
+		}
+		return jsonGeneratorWriteScalar(receiver, args[0])
+	case "writeStringField":
+		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeStringField expects String field name and String value")
+		}
+		return jsonGeneratorWriteField(receiver, args[0].Text, args[1])
+	case "writeNumber":
+		if len(args) != 1 || !jsonGeneratorIsNumber(args[0]) {
+			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeNumber expects numeric value")
+		}
+		return jsonGeneratorWriteScalar(receiver, args[0])
+	case "writeNumberField":
+		if len(args) != 2 || args[0].Kind != ValueString || !jsonGeneratorIsNumber(args[1]) {
+			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeNumberField expects String field name and numeric value")
+		}
+		return jsonGeneratorWriteField(receiver, args[0].Text, args[1])
+	case "writeBoolean":
+		if len(args) != 1 || args[0].Kind != ValueBool {
+			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeBoolean expects Boolean")
+		}
+		return jsonGeneratorWriteScalar(receiver, args[0])
+	case "writeBooleanField":
+		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueBool {
+			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeBooleanField expects String field name and Boolean value")
+		}
+		return jsonGeneratorWriteField(receiver, args[0].Text, args[1])
+	case "writeNull":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeNull expects 0 arguments")
+		}
+		return jsonGeneratorWriteScalar(receiver, Null)
+	case "writeNullField":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeNullField expects String field name")
+		}
+		return jsonGeneratorWriteField(receiver, args[0].Text, Null)
+	case "getAsString":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.getAsString expects 0 arguments")
+		}
+		updated, err := jsonGeneratorClose(receiver)
+		if err != nil {
+			return Null, updated, true, true, err
+		}
+		return jsonGeneratorStringField(updated, "out"), updated, true, true, nil
+	case "close":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.close expects 0 arguments")
+		}
+		updated, err := jsonGeneratorClose(receiver)
+		return Null, updated, true, true, err
+	case "isClosed":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("JSONGenerator.isClosed expects 0 arguments")
+		}
+		return jsonGeneratorBoolField(receiver, "closed"), receiver, false, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
+func jsonGeneratorWriteContainer(receiver Value, kind string) (Value, Value, bool, bool, error) {
+	if err := jsonGeneratorEnsureOpen(receiver); err != nil {
+		return Null, receiver, false, true, err
+	}
+	updated, err := jsonGeneratorBeforeValue(receiver)
+	if err != nil {
+		return Null, updated, true, true, err
+	}
+	if kind == "object" {
+		jsonGeneratorAppend(&updated, "{")
+	} else {
+		jsonGeneratorAppend(&updated, "[")
+	}
+	stack := jsonGeneratorStack(updated)
+	frame := Object("JSONGenerator.Frame")
+	frame.Fields["kind"] = String(kind)
+	frame.Fields["count"] = Int(0)
+	frame.Fields["expectingField"] = Bool(kind == "object")
+	frame.Fields["pendingField"] = String("")
+	stack.List = append(stack.List, frame)
+	updated.Fields["stack"] = stack
+	return Null, updated, true, true, nil
+}
+
+func jsonGeneratorEndContainer(receiver Value, kind string) (Value, Value, bool, bool, error) {
+	if err := jsonGeneratorEnsureOpen(receiver); err != nil {
+		return Null, receiver, false, true, err
+	}
+	stack := jsonGeneratorStack(receiver)
+	if len(stack.List) == 0 {
+		return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeEnd%s has no open %s", jsonGeneratorContainerName(kind), kind)
+	}
+	frame := stack.List[len(stack.List)-1]
+	if jsonGeneratorStringField(frame, "kind").Text != kind {
+		return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeEnd%s called while %s is open", jsonGeneratorContainerName(kind), jsonGeneratorStringField(frame, "kind").Text)
+	}
+	if kind == "object" && !jsonGeneratorBoolField(frame, "expectingField").Bool {
+		return Null, receiver, false, true, fmt.Errorf("JSONGenerator object field is missing a value")
+	}
+	updated := receiver
+	if jsonGeneratorIntField(frame, "count").Int > 0 && jsonGeneratorPretty(receiver) {
+		jsonGeneratorAppend(&updated, "\n"+strings.Repeat("  ", len(stack.List)-1))
+	}
+	if kind == "object" {
+		jsonGeneratorAppend(&updated, "}")
+	} else {
+		jsonGeneratorAppend(&updated, "]")
+	}
+	stack.List = stack.List[:len(stack.List)-1]
+	updated.Fields["stack"] = stack
+	return Null, updated, true, true, nil
+}
+
+func jsonGeneratorContainerName(kind string) string {
+	switch kind {
+	case "object":
+		return "Object"
+	case "array":
+		return "Array"
+	default:
+		return kind
+	}
+}
+
+func jsonGeneratorWriteField(receiver Value, name string, value Value) (Value, Value, bool, bool, error) {
+	updated, err := jsonGeneratorWriteFieldName(receiver, name)
+	if err != nil {
+		return Null, updated, true, true, err
+	}
+	return jsonGeneratorWriteScalar(updated, value)
+}
+
+func jsonGeneratorWriteFieldName(receiver Value, name string) (Value, error) {
+	if err := jsonGeneratorEnsureOpen(receiver); err != nil {
+		return receiver, err
+	}
+	stack := jsonGeneratorStack(receiver)
+	if len(stack.List) == 0 {
+		return receiver, fmt.Errorf("JSONGenerator.writeFieldName requires an open object")
+	}
+	frame := stack.List[len(stack.List)-1]
+	if jsonGeneratorStringField(frame, "kind").Text != "object" {
+		return receiver, fmt.Errorf("JSONGenerator.writeFieldName requires an open object")
+	}
+	if !jsonGeneratorBoolField(frame, "expectingField").Bool {
+		return receiver, fmt.Errorf("JSONGenerator field %q is missing a value", jsonGeneratorStringField(frame, "pendingField").Text)
+	}
+	updated := receiver
+	count := jsonGeneratorIntField(frame, "count").Int
+	if count > 0 {
+		jsonGeneratorAppend(&updated, ",")
+	}
+	if jsonGeneratorPretty(updated) {
+		jsonGeneratorAppend(&updated, "\n"+strings.Repeat("  ", len(stack.List)))
+	}
+	jsonGeneratorAppend(&updated, jsonGeneratorQuote(name))
+	if jsonGeneratorPretty(updated) {
+		jsonGeneratorAppend(&updated, ": ")
+	} else {
+		jsonGeneratorAppend(&updated, ":")
+	}
+	frame.Fields["expectingField"] = Bool(false)
+	frame.Fields["pendingField"] = String(name)
+	stack.List[len(stack.List)-1] = frame
+	updated.Fields["stack"] = stack
+	return updated, nil
+}
+
+func jsonGeneratorWriteScalar(receiver Value, value Value) (Value, Value, bool, bool, error) {
+	if err := jsonGeneratorEnsureOpen(receiver); err != nil {
+		return Null, receiver, false, true, err
+	}
+	updated, err := jsonGeneratorBeforeValue(receiver)
+	if err != nil {
+		return Null, updated, true, true, err
+	}
+	rendered, err := jsonGeneratorRenderScalar(value)
+	if err != nil {
+		return Null, updated, true, true, err
+	}
+	jsonGeneratorAppend(&updated, rendered)
+	return Null, updated, true, true, nil
+}
+
+func jsonGeneratorBeforeValue(receiver Value) (Value, error) {
+	updated := receiver
+	stack := jsonGeneratorStack(updated)
+	if len(stack.List) == 0 {
+		if jsonGeneratorBoolField(updated, "rootWritten").Bool {
+			return updated, fmt.Errorf("JSONGenerator root value already written")
+		}
+		updated.Fields["rootWritten"] = Bool(true)
+		return updated, nil
+	}
+	frame := stack.List[len(stack.List)-1]
+	switch jsonGeneratorStringField(frame, "kind").Text {
+	case "array":
+		count := jsonGeneratorIntField(frame, "count").Int
+		if count > 0 {
+			jsonGeneratorAppend(&updated, ",")
+		}
+		if jsonGeneratorPretty(updated) {
+			jsonGeneratorAppend(&updated, "\n"+strings.Repeat("  ", len(stack.List)))
+		}
+		frame.Fields["count"] = Int(count + 1)
+		stack.List[len(stack.List)-1] = frame
+		updated.Fields["stack"] = stack
+		return updated, nil
+	case "object":
+		if jsonGeneratorBoolField(frame, "expectingField").Bool {
+			return updated, fmt.Errorf("JSONGenerator object value requires writeFieldName first")
+		}
+		frame.Fields["count"] = Int(jsonGeneratorIntField(frame, "count").Int + 1)
+		frame.Fields["expectingField"] = Bool(true)
+		frame.Fields["pendingField"] = String("")
+		stack.List[len(stack.List)-1] = frame
+		updated.Fields["stack"] = stack
+		return updated, nil
+	default:
+		return updated, fmt.Errorf("JSONGenerator has invalid internal frame")
+	}
+}
+
+func jsonGeneratorClose(receiver Value) (Value, error) {
+	updated := receiver
+	if jsonGeneratorBoolField(updated, "closed").Bool {
+		return updated, nil
+	}
+	if stack := jsonGeneratorStack(updated); len(stack.List) != 0 {
+		return updated, fmt.Errorf("JSONGenerator cannot close with open JSON containers")
+	}
+	if !jsonGeneratorBoolField(updated, "rootWritten").Bool {
+		return updated, fmt.Errorf("JSONGenerator cannot close before writing a root value")
+	}
+	updated.Fields["closed"] = Bool(true)
+	return updated, nil
+}
+
+func jsonGeneratorEnsureOpen(receiver Value) error {
+	if jsonGeneratorBoolField(receiver, "closed").Bool {
+		return fmt.Errorf("JSONGenerator is closed")
+	}
+	return nil
+}
+
+func jsonGeneratorRenderScalar(value Value) (string, error) {
+	switch value.Kind {
+	case ValueNull:
+		return "null", nil
+	case ValueString:
+		return jsonGeneratorQuote(value.Text), nil
+	case ValueBool:
+		if value.Bool {
+			return "true", nil
+		}
+		return "false", nil
+	case ValueInt:
+		return strconv.FormatInt(value.Int, 10), nil
+	case ValueDecimal:
+		if math.IsNaN(value.Decimal) || math.IsInf(value.Decimal, 0) {
+			return "", fmt.Errorf("JSONGenerator.writeNumber cannot write non-finite number")
+		}
+		return strconv.FormatFloat(value.Decimal, 'f', -1, 64), nil
+	default:
+		return "", fmt.Errorf("JSONGenerator scalar writer does not support %s", value.Kind)
+	}
+}
+
+func jsonGeneratorQuote(text string) string {
+	data, err := json.Marshal(text)
+	if err != nil {
+		return "\"\""
+	}
+	return string(data)
+}
+
+func jsonGeneratorAppend(receiver *Value, text string) {
+	current := jsonGeneratorStringField(*receiver, "out").Text
+	receiver.Fields["out"] = String(current + text)
+}
+
+func jsonGeneratorStack(receiver Value) Value {
+	if stack, ok := receiver.Fields["stack"]; ok && stack.Kind == ValueList {
+		return stack
+	}
+	return List()
+}
+
+func jsonGeneratorPretty(receiver Value) bool {
+	return jsonGeneratorBoolField(receiver, "pretty").Bool
+}
+
+func jsonGeneratorStringField(receiver Value, field string) Value {
+	if value, ok := receiver.Fields[field]; ok && value.Kind == ValueString {
+		return value
+	}
+	return String("")
+}
+
+func jsonGeneratorBoolField(receiver Value, field string) Value {
+	if value, ok := receiver.Fields[field]; ok && value.Kind == ValueBool {
+		return value
+	}
+	return Bool(false)
+}
+
+func jsonGeneratorIntField(receiver Value, field string) Value {
+	if value, ok := receiver.Fields[field]; ok && value.Kind == ValueInt {
+		return value
+	}
+	return Int(0)
+}
+
+func jsonGeneratorIsNumber(value Value) bool {
+	return value.Kind == ValueInt || value.Kind == ValueDecimal
+}

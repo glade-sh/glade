@@ -1241,6 +1241,11 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return Null, err
 		}
 		return platformScalar("Blob", string(digest)), nil
+	case "JSON.createGenerator":
+		if len(args) != 1 || args[0].Kind != ValueBool {
+			return Null, fmt.Errorf("JSON.createGenerator expects Boolean")
+		}
+		return newJSONGenerator(args[0].Bool), nil
 	case "JSON.serialize":
 		if len(args) != 1 && len(args) != 2 {
 			return Null, fmt.Errorf("JSON.serialize expects 1 or 2 arguments")
@@ -6385,6 +6390,8 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		}
 	}
 	switch receiver.Type {
+	case "JSONGenerator":
+		return callJSONGeneratorMember(receiver, method, args)
 	case "Schema.SObjectType":
 		if method == "getDescribe" {
 			if len(args) != 0 {

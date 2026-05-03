@@ -1,0 +1,87 @@
+{
+  "name": "core-json-stdlib",
+  "evidence": [
+    {
+      "symbol": "JSON.createGenerator",
+      "kind": "exec"
+    },
+    {
+      "symbol": "JSONGenerator.writeStartObject",
+      "kind": "exec"
+    },
+    {
+      "symbol": "JSONGenerator.writeEndObject",
+      "kind": "exec"
+    },
+    {
+      "symbol": "JSONGenerator.writeStartArray",
+      "kind": "exec"
+    },
+    {
+      "symbol": "JSONGenerator.writeEndArray",
+      "kind": "exec"
+    },
+    {
+      "symbol": "JSONGenerator.writeFieldName",
+      "kind": "exec"
+    },
+    {
+      "symbol": "JSONGenerator.writeString",
+      "kind": "exec"
+    },
+    {
+      "symbol": "JSONGenerator.writeStringField",
+      "kind": "exec"
+    },
+    {
+      "symbol": "JSONGenerator.writeNumber",
+      "kind": "exec"
+    },
+    {
+      "symbol": "JSONGenerator.writeBoolean",
+      "kind": "exec"
+    },
+    {
+      "symbol": "JSONGenerator.writeNull",
+      "kind": "exec"
+    },
+    {
+      "symbol": "JSONGenerator.writeNumberField",
+      "kind": "exec"
+    },
+    {
+      "symbol": "JSONGenerator.writeBooleanField",
+      "kind": "exec"
+    },
+    {
+      "symbol": "JSONGenerator.writeNullField",
+      "kind": "exec"
+    },
+    {
+      "symbol": "JSONGenerator.getAsString",
+      "kind": "exec"
+    },
+    {
+      "symbol": "JSONGenerator.isClosed",
+      "kind": "exec"
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "JSONGenerator gen = JSON.createGenerator(false);\ngen.writeStartObject();\ngen.writeStringField('name', 'Acme');\ngen.writeNumberField('n', 7);\ngen.writeBooleanField('ok', true);\ngen.writeNullField('missing');\ngen.writeFieldName('items');\ngen.writeStartArray();\ngen.writeString('x');\ngen.writeNumber(2);\ngen.writeBoolean(false);\ngen.writeNull();\ngen.writeEndArray();\ngen.writeEndObject();\nSystem.assertEquals('{\"name\":\"Acme\",\"n\":7,\"ok\":true,\"missing\":null,\"items\":[\"x\",2,false,null]}', gen.getAsString());\nSystem.assert(gen.isClosed());\nJSONGenerator pretty = JSON.createGenerator(true);\npretty.writeStartObject();\npretty.writeStringField('name', 'Acme');\npretty.writeBooleanField('ok', true);\npretty.writeEndObject();\nString prettyText = pretty.getAsString();\nSystem.assert(prettyText.contains('  \"name\": \"Acme\"'));\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "JSONGenerator gen = JSON.createGenerator(false);\ngen.writeStartObject();\ngen.writeStringField('name', 'Acme');\ngen.writeNumberField('n', 7);\ngen.writeBooleanField('ok', true);\ngen.writeNullField('missing');\ngen.writeFieldName('items');\ngen.writeStartArray();\ngen.writeString('x');\ngen.writeNumber(2);\ngen.writeBoolean(false);\ngen.writeNull();\ngen.writeEndArray();\ngen.writeEndObject();\nSystem.assertEquals('{\"name\":\"Acme\",\"n\":7,\"ok\":true,\"missing\":null,\"items\":[\"x\",2,false,null]}', gen.getAsString());\nSystem.assert(gen.isClosed());\nJSONGenerator pretty = JSON.createGenerator(true);\npretty.writeStartObject();\npretty.writeStringField('name', 'Acme');\npretty.writeBooleanField('ok', true);\npretty.writeEndObject();\nString prettyText = pretty.getAsString();\nSystem.assert(prettyText.contains('  \"name\": \"Acme\"'));\n"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}
