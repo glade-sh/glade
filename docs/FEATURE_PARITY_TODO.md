@@ -243,8 +243,10 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Populate and expose common system fields (`CreatedDate`, `CreatedById`,
     `LastModifiedDate`, `LastModifiedById`, `SystemModstamp`, `OwnerId`, and
     `IsDeleted`) on DML-mutated and SOQL-projected SObjects.
-- [ ] Complete schema describe objects, field describes, record type info,
+- [x] Complete schema describe objects, field describes, record type info,
   picklists, relationship metadata, and common describe-heavy code paths.
+  - [x] Support `SObjectType.getDescribe`, `DescribeSObjectResult.fields.getMap`,
+    and child relationship describe basics.
   - [x] Load Metadata API picklist values and expose `SObjectField.getDescribe`
     with common field metadata plus `getPicklistValues` entries.
   - [x] Load Metadata API record type files and expose

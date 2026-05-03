@@ -152,6 +152,61 @@ System.assert(!consumer.isDefaultRecordTypeMapping());
 	}
 }
 
+func TestExecDescribeFieldsMapFromSObjectType(t *testing.T) {
+	program, err := CompileAnonymous(`
+Object accountType = Account.SObjectType;
+Object accountDescribe = accountType.getDescribe();
+Object fieldsToken = accountDescribe.fields;
+Map<String,Object> fields = fieldsToken.getMap();
+System.assert(fields.containsKey('Name'));
+Object nameField = fields.get('Name');
+Object nameDescribe = nameField.getDescribe();
+System.assertEquals('Name', nameDescribe.getName());
+System.assertEquals('string', nameDescribe.getType());
+Object schemaType = Schema.SObjectType.Account;
+Object schemaDescribe = schemaType.getDescribe();
+System.assertEquals('Account', schemaDescribe.getName());
+List<Object> childRelationships = schemaDescribe.getChildRelationships();
+System.assertEquals(1, childRelationships.size());
+Object contacts = childRelationships.get(0);
+System.assertEquals('Contacts', contacts.getRelationshipName());
+Object childField = contacts.getField();
+Object childFieldDescribe = childField.getDescribe();
+System.assertEquals('AccountId', childFieldDescribe.getName());
+Object childType = contacts.getChildSObject();
+Object childDescribe = childType.getDescribe();
+System.assertEquals('Contact', childDescribe.getName());
+System.assert(contacts.isCascadeDelete());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Contact",
+			KeyPrefix: "003",
+			Fields: map[string]storage.Field{
+				"LastName":  {APIName: "LastName", Type: storage.FieldString},
+				"AccountId": {APIName: "AccountId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Account"},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "AccountId",
+				ParentObjects:      []string{"Account"},
+				ParentRelationship: "Account",
+				ChildRelationship:  "Contacts",
+				CascadeDelete:      true,
+			}},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSOQLCountAndSingleSObjectAssignment(t *testing.T) {
 	program, err := CompileAnonymous(`
 insert new Account(Name = 'Acme');

@@ -54,6 +54,8 @@ Release engineering:
 - Added Metadata API record type loading and baseline
   `Schema.DescribeSObjectResult` record type describe maps/lists with common
   `Schema.RecordTypeInfo` methods and deterministic local `012` IDs.
+- Added `SObjectType.getDescribe`, `DescribeSObjectResult.fields.getMap`, and
+  child relationship describe basics for describe-heavy code paths.
 - Expanded data-fidelity coverage for SOQL complex predicates, numeric
   comparison semantics, `Database.Error` result shapes, and
   `Database.UpsertResult.isCreated()`.

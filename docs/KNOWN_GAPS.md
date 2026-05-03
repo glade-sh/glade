@@ -36,7 +36,7 @@ The MVP target is `full-featured aer-parity MVP`. This document lists required c
 ### `sobject.apex`: Apex-integrated SObject construction and field access
 
 - Status: `partial`
-- Gap: Apex now supports schema-backed new Account(Name='Acme'), typed field access, dotted assignment, get/put with previous-value return, isSet, clear, getPopulatedFieldsAsMap including explicit nulls, common system fields after DML and SOQL projection, field describe basics with picklist values, record type describe maps/lists with deterministic local IDs and common RecordTypeInfo methods, object-level and field-level addError, multi-error hasErrors/getErrors and DML result shaping, Id propagation after DML, parent relationship projection access, and VM/storage record conversion. Permissions, complete typed describe APIs, and broader system field parity remain incomplete.
+- Gap: Apex now supports schema-backed new Account(Name='Acme'), typed field access, dotted assignment, get/put with previous-value return, isSet, clear, getPopulatedFieldsAsMap including explicit nulls, common system fields after DML and SOQL projection, SObjectType getDescribe, fields.getMap, field describe basics with picklist values, record type describe maps/lists with deterministic local IDs and common RecordTypeInfo methods, child relationship describe basics, object-level and field-level addError, multi-error hasErrors/getErrors and DML result shaping, Id propagation after DML, parent relationship projection access, and VM/storage record conversion. Permissions, complete typed describe APIs, and broader system field parity remain incomplete.
 
 ### `soql.apex`: Static and dynamic SOQL from Apex
 
@@ -101,7 +101,7 @@ The MVP target is `full-featured aer-parity MVP`. This document lists required c
 ### `stdlib.core`: Core System/String/Date/Datetime/JSON/Math APIs
 
 - Status: `partial`
-- Gap: Assertions, debug, collections, selected String methods, Limits counters including future, queueable, and email getters, Date/Datetime/Time basics, Decimal literals/arithmetic/storage conversion, Math integer helpers, JSON serialize/deserializeUntyped, EncodingUtil, Crypto SHA-256, Schema global describe basics, SObject field describe basics with picklist entries, SObject record type describe maps/lists with common RecordTypeInfo methods, UserInfo user/profile identity in test context, FeatureManagement user permission-list checks, Messaging, ApexPages, and HttpResponse-shaped callout mocks now exist for the supported VM subset.
+- Gap: Assertions, debug, collections, selected String methods, Limits counters including future, queueable, and email getters, Date/Datetime/Time basics, Decimal literals/arithmetic/storage conversion, Math integer helpers, JSON serialize/deserializeUntyped, EncodingUtil, Crypto SHA-256, Schema global describe basics, SObjectType getDescribe, SObject fields.getMap, SObject field describe basics with picklist entries, SObject record type describe maps/lists with common RecordTypeInfo methods, child relationship describe basics, UserInfo user/profile identity in test context, FeatureManagement user permission-list checks, Messaging, ApexPages, and HttpResponse-shaped callout mocks now exist for the supported VM subset.
 
 ### `vm.control-flow`: Control flow and exceptions
 

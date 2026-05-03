@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -2888,6 +2889,43 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 	desc.Fields["name"] = String(name)
 	desc.Fields["label"] = String(definition.Label)
 	desc.Fields["keyPrefix"] = String(definition.KeyPrefix)
+	fieldsMap := Map()
+	fieldNames := make([]string, 0, len(definition.Fields))
+	for fieldName := range definition.Fields {
+		fieldNames = append(fieldNames, fieldName)
+	}
+	sort.Strings(fieldNames)
+	for _, fieldName := range fieldNames {
+		field := definition.Fields[fieldName]
+		fieldsMap.Map[mapKey(String(field.APIName))] = sObjectFieldToken(name, field.APIName)
+	}
+	fields := Object("Schema.SObjectFieldMap")
+	fields.Fields["map"] = fieldsMap
+	desc.Fields["fields"] = fields
+	childRelationships := make([]Value, 0)
+	if vm.Org != nil {
+		childObjects := make([]string, 0, len(vm.Org.Objects))
+		for childName := range vm.Org.Objects {
+			childObjects = append(childObjects, childName)
+		}
+		sort.Strings(childObjects)
+		for _, childName := range childObjects {
+			childDefinition := vm.Org.Objects[childName].Definition
+			relationships := append([]storage.Relationship(nil), childDefinition.Relations...)
+			sort.Slice(relationships, func(i, j int) bool {
+				if relationships[i].ChildRelationship == relationships[j].ChildRelationship {
+					return relationships[i].Field < relationships[j].Field
+				}
+				return relationships[i].ChildRelationship < relationships[j].ChildRelationship
+			})
+			for _, relationship := range relationships {
+				if relationshipTargetsObject(relationship, name) {
+					childRelationships = append(childRelationships, childRelationshipValue(childName, relationship))
+				}
+			}
+		}
+	}
+	desc.Fields["childRelationships"] = List(childRelationships...)
 	recordTypes := make([]Value, 0, len(definition.RecordTypes))
 	byName := Map()
 	byDeveloperName := Map()
@@ -2905,6 +2943,27 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 	desc.Fields["recordTypeInfosByName"] = byName
 	desc.Fields["recordTypeInfosByDeveloperName"] = byDeveloperName
 	return desc
+}
+
+func relationshipTargetsObject(relationship storage.Relationship, objectName string) bool {
+	for _, parent := range relationship.ParentObjects {
+		if strings.EqualFold(parent, objectName) {
+			return true
+		}
+	}
+	return false
+}
+
+func childRelationshipValue(childObject string, relationship storage.Relationship) Value {
+	value := Object("Schema.ChildRelationship")
+	value.Fields["relationshipName"] = String(relationship.ChildRelationship)
+	value.Fields["field"] = sObjectFieldToken(childObject, relationship.Field)
+	childType := Object("Schema.SObjectType")
+	childType.Fields["object"] = String(childObject)
+	value.Fields["childSObject"] = childType
+	value.Fields["cascadeDelete"] = Bool(relationship.CascadeDelete)
+	value.Fields["restrictedDelete"] = Bool(relationship.RestrictedDelete)
+	return value
 }
 
 func recordTypeInfoValue(recordType storage.RecordTypeInfo) Value {
@@ -3015,6 +3074,9 @@ func (vm *VM) lookup(name string) (Value, error) {
 		if root, ok := vm.Globals[parts[0]]; ok {
 			return vm.lookupPath(root, parts[1:])
 		}
+		if token, ok := vm.lookupSObjectTypeToken(parts); ok {
+			return token, nil
+		}
 		if token, ok := vm.lookupSObjectFieldToken(parts); ok {
 			return token, nil
 		}
@@ -3064,6 +3126,28 @@ func (vm *VM) lookup(name string) (Value, error) {
 	return Null, fmt.Errorf("unknown variable %q", name)
 }
 
+func (vm *VM) lookupSObjectTypeToken(parts []string) (Value, bool) {
+	if vm.Org == nil {
+		return Null, false
+	}
+	var objectName string
+	switch {
+	case len(parts) == 2 && strings.EqualFold(parts[1], "SObjectType"):
+		objectName = parts[0]
+	case len(parts) == 3 && strings.EqualFold(parts[0], "Schema") && strings.EqualFold(parts[1], "SObjectType"):
+		objectName = parts[2]
+	default:
+		return Null, false
+	}
+	canonical, ok := storage.ResolveObjectName(*vm.Org, objectName)
+	if !ok {
+		return Null, false
+	}
+	token := Object("Schema.SObjectType")
+	token.Fields["object"] = String(canonical)
+	return token, true
+}
+
 func (vm *VM) lookupSObjectFieldToken(parts []string) (Value, bool) {
 	if vm.Org == nil || len(parts) < 2 {
 		return Null, false
@@ -3086,10 +3170,14 @@ func (vm *VM) lookupSObjectFieldToken(parts []string) (Value, bool) {
 	if !ok {
 		return Null, false
 	}
+	return sObjectFieldToken(objectName, canonical), true
+}
+
+func sObjectFieldToken(objectName, fieldName string) Value {
 	token := Object("Schema.SObjectField")
 	token.Fields["object"] = String(objectName)
-	token.Fields["field"] = String(canonical)
-	return token, true
+	token.Fields["field"] = String(fieldName)
+	return token
 }
 
 func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
@@ -4978,6 +5066,31 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		}
 	}
 	switch receiver.Type {
+	case "Schema.SObjectType":
+		if method == "getDescribe" {
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectType.getDescribe expects 0 arguments")
+			}
+			objectValue, ok := receiver.Fields["object"]
+			if !ok || objectValue.Kind != ValueString {
+				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectType token missing object")
+			}
+			if vm.Org == nil {
+				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectType.getDescribe requires org state")
+			}
+			objectName, ok := storage.ResolveObjectName(*vm.Org, objectValue.Text)
+			if !ok {
+				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectType.getDescribe unknown object %s", objectValue.Text)
+			}
+			return vm.describeSObjectValue(objectName, vm.Org.Objects[objectName].Definition), receiver, false, true, nil
+		}
+	case "Schema.SObjectFieldMap":
+		if method == "getMap" {
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectFieldMap.getMap expects 0 arguments")
+			}
+			return receiver.Fields["map"], receiver, false, true, nil
+		}
 	case "Schema.SObjectField":
 		if method == "getDescribe" {
 			if len(args) != 0 {
@@ -5290,6 +5403,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.getRecordTypeInfosByDeveloperName expects 0 arguments")
 			}
 			return receiver.Fields["recordTypeInfosByDeveloperName"], receiver, false, true, nil
+		case "getChildRelationships":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.getChildRelationships expects 0 arguments")
+			}
+			return receiver.Fields["childRelationships"], receiver, false, true, nil
 		}
 	case "Schema.RecordTypeInfo":
 		switch method {
@@ -5323,6 +5441,34 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.RecordTypeInfo.isActive expects 0 arguments")
 			}
 			return receiver.Fields["active"], receiver, false, true, nil
+		}
+	case "Schema.ChildRelationship":
+		switch method {
+		case "getRelationshipName":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.ChildRelationship.getRelationshipName expects 0 arguments")
+			}
+			return receiver.Fields["relationshipName"], receiver, false, true, nil
+		case "getField":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.ChildRelationship.getField expects 0 arguments")
+			}
+			return receiver.Fields["field"], receiver, false, true, nil
+		case "getChildSObject":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.ChildRelationship.getChildSObject expects 0 arguments")
+			}
+			return receiver.Fields["childSObject"], receiver, false, true, nil
+		case "isCascadeDelete":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.ChildRelationship.isCascadeDelete expects 0 arguments")
+			}
+			return receiver.Fields["cascadeDelete"], receiver, false, true, nil
+		case "isRestrictedDelete":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.ChildRelationship.isRestrictedDelete expects 0 arguments")
+			}
+			return receiver.Fields["restrictedDelete"], receiver, false, true, nil
 		}
 	case "HttpRequest":
 		switch method {
