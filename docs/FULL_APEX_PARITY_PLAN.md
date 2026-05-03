@@ -119,6 +119,11 @@ Current progress:
   string forms, constructor-backed zero-arg `Type.newInstance` for registered
   classes, lightweight `Id.valueOf` validation and `to15`, deterministic URL
   parsing accessors, and primitive `Object` equality/hash/string behavior.
+- System/exceptions/Type hardening: runtime support now covers deterministic
+  `System.today`, `System.now`, `System.currentTimeMillis`, `System.debug`
+  LoggingLevel dispatch, core exception metadata/string helpers, and local
+  `Type.isAssignableFrom` for registered classes/interfaces and built-in
+  exception hierarchy checks.
 - String completion: runtime support now covers deterministic CSV, HTML4, XML,
   Java, EcmaScript, Unicode, and single-quote escaping/unescaping helpers;
   `{0}`-style `String.format`; abbreviation; common prefix and difference
@@ -134,6 +139,7 @@ Current progress:
   - `docs/fixtures/core-json-stdlib.json`
   - `docs/fixtures/core-blob-crypto-stdlib.json`
   - `docs/fixtures/core-type-id-url-stdlib.json`
+  - `docs/fixtures/core-system-exceptions-stdlib.json`
 
 Remaining cuts:
 
@@ -180,9 +186,15 @@ Remaining cuts:
      suppress-null overloads, and stable error shapes.
 
 7. System, exceptions, Type, and reflection
-   - Assert overloads and messages, debug/log levels, current-time helpers,
-     exception classes, Type assignability, namespace behavior, and broader
-     reflection edge cases.
+   - Newly covered slice: deterministic current-time helpers, debug
+     LoggingLevel dispatch, exception message/type/line/stack/toString helpers,
+     and local Type assignability for class/interface and built-in exception
+     hierarchy checks.
+   - Remaining gaps: exact assert failure message parity, full logging
+     framework behavior, complete exception class matrix and stack formatting,
+     Type namespace/package lookup behavior, null/unknown Type.forName edge
+     behavior, generic/reflection edge cases, and cloud/org-context helpers that
+     need stable unsupported diagnostics or a local model.
 
 8. Pattern and Matcher
    - Fixture-backed Go `regexp` slice covers compile/matches/pattern,

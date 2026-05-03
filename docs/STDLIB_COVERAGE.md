@@ -70,6 +70,11 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | EncodingUtil | `EncodingUtil.convertToHex` | `supported` | Blob-shaped local value. |
 | EncodingUtil | `EncodingUtil.urlDecode` | `partial` | Uses query unescape; charset validation is not modeled. |
 | EncodingUtil | `EncodingUtil.urlEncode` | `partial` | Uses query escape; charset validation is not modeled. |
+| Exception | `Exception.getLineNumber` | `partial` | Returns deterministic local throw-site line metadata when available; otherwise 0. |
+| Exception | `Exception.getMessage` | `supported` | Returns the local exception message. |
+| Exception | `Exception.getStackTraceString` | `partial` | Returns the local VM stack trace captured at throw time when available. |
+| Exception | `Exception.getTypeName` | `supported` | Returns the local exception type name without System namespace prefix. |
+| Exception | `Exception.toString` | `partial` | Returns System-prefixed built-in exception text for local exception values. |
 | FeatureManagement | `FeatureManagement.checkPermission` | `partial` | Checks local runAs permission-list state. |
 | HTTP | `Http.send` | `partial` | Mock-first local callouts; real network transport unsupported. |
 | HTTP | `HttpRequest` | `partial` | Endpoint, method, headers, timeout, body, and blob body accessors. |
@@ -223,7 +228,11 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | String | `String.valueOf` | `supported` | Local value string conversion. |
 | System | `System.assert` | `supported` | Assertion failure returns runtime error. |
 | System | `System.assertEquals` | `supported` | Assertion failure returns runtime error. |
-| System | `System.debug` | `supported` | Collected in result debug output. |
+| System | `System.assertNotEquals` | `supported` | Assertion failure returns runtime error. |
+| System | `System.currentTimeMillis` | `partial` | Returns deterministic VM-clock epoch milliseconds. |
+| System | `System.debug` | `supported` | One-argument and LoggingLevel overloads are collected in result debug output. |
+| System | `System.now` | `partial` | Returns deterministic VM-clock Datetime. |
+| System | `System.today` | `partial` | Returns deterministic VM-clock Date. |
 | Test | `Test.getStandardPricebookId` | `partial` | Deterministic test-context-only ID. |
 | Test | `Test.isRunningTest` | `supported` | Reflects local test context. |
 | Test | `Test.setMock` | `partial` | HttpCalloutMock support for local tests. |
@@ -247,6 +256,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Type | `Type.forName` | `partial` | Local class/type token lookup. |
 | Type | `Type.getName` | `supported` | Returns local type token name. |
 | Type | `Type.hashCode` | `supported` | Matches the local String.hashCode of the type name. |
+| Type | `Type.isAssignableFrom` | `partial` | Uses the local class/interface and built-in exception hierarchy. |
 | Type | `Type.newInstance` | `partial` | Constructs local values and dispatches zero-arg constructors for registered classes; broader reflection is incomplete. |
 | Type | `Type.toString` | `supported` | Returns the local type token name. |
 | URL | `URL` | `partial` | Constructors for deterministic URL specs and protocol/host/file forms. |

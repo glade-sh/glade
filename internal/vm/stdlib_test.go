@@ -401,6 +401,95 @@ System.assertEquals(8443, detailed.getPort());
 	}
 }
 
+func TestExecCoreSystemTimeAndDebugStdlib(t *testing.T) {
+	program, err := CompileAnonymous(`
+Date today = System.today();
+System.assertEquals('2026-05-02', today.format(), 'System.today should use the VM clock');
+Datetime now = System.now();
+System.assertEquals('2026-05-02T12:00:00Z', now.format());
+System.assertEquals(1777723200000, System.currentTimeMillis());
+System.debug(LoggingLevel.INFO, 'logged with level');
+System.debug('logged without level');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := Execute(program, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := len(result.Debug), 2; got != want {
+		t.Fatalf("debug lines = %d, want %d: %#v", got, want, result.Debug)
+	}
+	if result.Debug[0] != "logged with level" || result.Debug[1] != "logged without level" {
+		t.Fatalf("debug lines = %#v", result.Debug)
+	}
+}
+
+func TestExecCoreExceptionStdlibMethods(t *testing.T) {
+	program, err := CompileAnonymous(`
+Exception constructed = new DmlException('blocked');
+System.assertEquals('blocked', constructed.getMessage());
+System.assertEquals('DmlException', constructed.getTypeName());
+System.assertEquals(0, constructed.getLineNumber());
+System.assertEquals('', constructed.getStackTraceString());
+System.assertEquals('System.DmlException: blocked', constructed.toString());
+Exception noMessage = new DmlException();
+System.assertEquals(null, noMessage.getMessage());
+
+String caught = '';
+try {
+	throw new QueryException('bad query');
+} catch (Exception e) {
+	caught = e.getTypeName() + ':' + e.getMessage();
+	System.assert(e.getLineNumber() > 0, 'caught exceptions should carry a line number');
+	String stackTrace = e.getStackTraceString();
+	System.assert(stackTrace != '', 'caught exceptions should carry a stack trace');
+	System.assertEquals('System.QueryException: bad query', e.toString());
+}
+System.assertEquals('QueryException:bad query', caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecTypeIsAssignableFrom(t *testing.T) {
+	program, err := CompileAnonymous(`
+Type exceptionType = Type.forName('Exception');
+Type dmlType = Type.forName('DmlException');
+System.assert(exceptionType.isAssignableFrom(dmlType));
+System.assert(!dmlType.isAssignableFrom(exceptionType));
+
+Type markerType = Type.forName('Marker');
+Type childType = Type.forName('Child');
+Type parentType = Type.forName('Parent');
+System.assert(markerType.isAssignableFrom(childType));
+System.assert(parentType.isAssignableFrom(childType));
+System.assert(!childType.isAssignableFrom(parentType));
+System.assert(childType.isAssignableFrom(childType));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Marker", IsInterface: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "Parent"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "Child", SuperClass: "Parent", Interfaces: []string{"Marker"}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestBlobEncodingCryptoStdlibRejectsBadInputs(t *testing.T) {
 	tests := []string{
 		"Blob b = Blob.valueOf('abc'); b.size(1);",

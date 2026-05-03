@@ -947,10 +947,17 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		}
 		return Null, nil
 	case "System.debug":
-		if len(args) != 1 {
-			return Null, fmt.Errorf("System.debug expects 1 argument")
+		if len(args) != 1 && len(args) != 2 {
+			return Null, fmt.Errorf("System.debug expects message or logging level and message")
 		}
-		line, err := vm.displayString(args[0], result)
+		messageArg := args[0]
+		if len(args) == 2 {
+			if !isLoggingLevelValue(args[0]) {
+				return Null, fmt.Errorf("System.debug expects LoggingLevel as first argument")
+			}
+			messageArg = args[1]
+		}
+		line, err := vm.displayString(messageArg, result)
 		if err != nil {
 			return Null, err
 		}
@@ -1077,9 +1084,9 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		return mathUnary(callee, args)
 	case "Math.max", "Math.min", "Math.mod", "Math.pow":
 		return mathBinary(callee, args)
-	case "Date.today":
+	case "Date.today", "System.today":
 		if len(args) != 0 {
-			return Null, fmt.Errorf("Date.today expects 0 arguments")
+			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
 		return platformScalar("Date", vm.fakeNow.Format("2006-01-02")), nil
 	case "Date.newInstance":
@@ -1104,6 +1111,12 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
 		return platformScalar("Datetime", vm.fakeNow.Format(time.RFC3339)), nil
+	case "Datetime.newInstance", "Datetime.newInstanceGmt":
+	case "System.currentTimeMillis":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("System.currentTimeMillis expects 0 arguments")
+		}
+		return Int(vm.fakeNow.UnixMilli()), nil
 	case "Datetime.newInstance", "Datetime.newInstanceGmt":
 		if len(args) != 3 && len(args) != 6 {
 			return Null, fmt.Errorf("%s expects year, month, day[, hour, minute, second] integers", callee)
@@ -4290,6 +4303,12 @@ func (vm *VM) lookup(name string) (Value, error) {
 	case "AccessLevel.USER_MODE", "AccessLevel.SYSTEM_MODE":
 		return Value{Kind: ValueObject, Type: "AccessLevel", Text: strings.TrimPrefix(name, "AccessLevel.")}, nil
 	}
+	if strings.HasPrefix(name, "LoggingLevel.") {
+		level := strings.TrimPrefix(name, "LoggingLevel.")
+		if isLoggingLevelName(level) {
+			return Value{Kind: ValueObject, Type: "LoggingLevel", Text: level}, nil
+		}
+	}
 	if strings.HasPrefix(name, "JSONToken.") {
 		tokenName := strings.TrimPrefix(name, "JSONToken.")
 		switch tokenName {
@@ -5557,6 +5576,45 @@ func exceptionTypeName(typeName string) string {
 	return typeName
 }
 
+func exceptionToString(value Value) string {
+	typeName := exceptionTypeName(value.Type)
+	if typeName == "" {
+		typeName = "Exception"
+	}
+	message := ""
+	if raw, ok := value.Fields["message"]; ok && raw.Kind == ValueString {
+		message = raw.Text
+	}
+	prefix := "System." + typeName
+	if message == "" {
+		return prefix
+	}
+	return prefix + ": " + message
+}
+
+func typeValueName(value Value) string {
+	if raw, ok := value.Fields["value"]; ok && raw.Kind == ValueString {
+		return raw.Text
+	}
+	return value.Text
+}
+
+func isLoggingLevelName(level string) bool {
+	switch level {
+	case "NONE", "ERROR", "WARN", "INFO", "DEBUG", "FINE", "FINER", "FINEST":
+		return true
+	default:
+		return false
+	}
+}
+
+func isLoggingLevelValue(value Value) bool {
+	if value.Kind != ValueObject || value.Type != "LoggingLevel" {
+		return false
+	}
+	return isLoggingLevelName(value.Text)
+}
+
 func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 	if value.Kind == ValueObject {
 		if strings.EqualFold(typeName, "Object") || vm.typeMatches(value.Type, typeName, make(map[string]bool)) {
@@ -6751,7 +6809,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if message, ok := receiver.Fields["message"]; ok {
 				return message, receiver, false, true, nil
 			}
-			return String(receiver.String()), receiver, false, true, nil
+			return Null, receiver, false, true, nil
 		case "getTypeName":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("%s.getTypeName expects 0 arguments", receiver.Type)
@@ -6773,6 +6831,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return stack, receiver, false, true, nil
 			}
 			return String(""), receiver, false, true, nil
+		case "toString":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("%s.toString expects 0 arguments", receiver.Type)
+			}
+			return String(exceptionToString(receiver)), receiver, false, true, nil
 		}
 	}
 	switch receiver.Type {
@@ -7296,12 +7359,17 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Type.newInstance expects 0 arguments")
 			}
-			typeName := receiver.Text
-			if value, ok := receiver.Fields["value"]; ok && value.Kind == ValueString {
-				typeName = value.Text
-			}
+			typeName := typeValueName(receiver)
 			value, err := vm.constructValue(typeName, nil, nil, result)
 			return value, receiver, false, true, err
+		}
+		if method == "isAssignableFrom" {
+			if len(args) != 1 || args[0].Kind != ValueObject || args[0].Type != "Type" {
+				return Null, receiver, false, true, fmt.Errorf("Type.isAssignableFrom expects Type")
+			}
+			target := typeValueName(receiver)
+			source := typeValueName(args[0])
+			return Bool(vm.typeMatches(source, target, make(map[string]bool))), receiver, false, true, nil
 		}
 	case "Schema.DescribeSObjectResult":
 		switch method {
