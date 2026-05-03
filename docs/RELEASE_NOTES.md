@@ -104,6 +104,8 @@ Release engineering:
 - Added object-level and field-level `SObject.addError`, `hasErrors`, and
   `getErrors` handling in before-trigger DML, including row-level `SaveResult`
   error shaping and `Database.Error.getFields()` attribution.
+- Preserved multiple `addError` calls per row as multiple `Database.Error`
+  entries on DML result objects.
 - Tightened trigger context shape with `Trigger.isExecuting`, operation flags,
   `Trigger.size`, nullable unavailable contexts, and `Trigger.newMap`/
   `Trigger.oldMap` coverage for update and delete triggers.

@@ -22,7 +22,14 @@ type Result struct {
 	Error      string     `json:"error,omitempty"`
 	StatusCode string     `json:"statusCode,omitempty"`
 	Fields     []string   `json:"fields,omitempty"`
+	Errors     []Error    `json:"errors,omitempty"`
 	Created    bool       `json:"created,omitempty"`
+}
+
+type Error struct {
+	Message    string   `json:"message"`
+	StatusCode string   `json:"statusCode,omitempty"`
+	Fields     []string `json:"fields,omitempty"`
 }
 
 func NewEngine(org *storage.OrgState) Engine {
@@ -730,7 +737,7 @@ func dmlErrorf(code string, fields []string, format string, args ...any) error {
 func resultFromError(id storage.ID, err error) Result {
 	var typed dmlError
 	if errors.As(err, &typed) {
-		return Result{ID: id, Success: false, Error: typed.message, StatusCode: typed.code, Fields: append([]string(nil), typed.fields...)}
+		return failedResult(id, typed.message, typed.code, typed.fields)
 	}
 	msg := err.Error()
 	code := "FIELD_CUSTOM_VALIDATION_EXCEPTION"
@@ -754,7 +761,23 @@ func resultFromError(id storage.ID, err error) Result {
 	case contains(msg, "does not exist"):
 		code = "ENTITY_IS_DELETED"
 	}
-	return Result{ID: id, Success: false, Error: msg, StatusCode: code, Fields: fields}
+	return failedResult(id, msg, code, fields)
+}
+
+func failedResult(id storage.ID, message, statusCode string, fields []string) Result {
+	copiedFields := append([]string(nil), fields...)
+	return Result{
+		ID:         id,
+		Success:    false,
+		Error:      message,
+		StatusCode: statusCode,
+		Fields:     copiedFields,
+		Errors: []Error{{
+			Message:    message,
+			StatusCode: statusCode,
+			Fields:     append([]string(nil), copiedFields...),
+		}},
+	}
 }
 
 func extractField(msg string) []string {

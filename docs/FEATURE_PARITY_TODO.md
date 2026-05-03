@@ -312,6 +312,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
 - [x] Improve `Database.insert/update/delete/upsert/undelete` result fidelity
   with structured `Database.Error` objects carrying `statusCode`, `message`, and
   `fields` arrays; add `Database.UpsertResult.isCreated()`.
+  - [x] Preserve multiple object-level and field-level `addError` calls as
+    multiple `Database.Error` entries on `SaveResult`/`MergeResult`.
   - [x] Cascade soft-delete child records from relationship metadata.
   - **Limitation**: Full merge loser relationship result details and full
     undelete edge-case parity remain incomplete.

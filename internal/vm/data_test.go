@@ -783,6 +783,66 @@ System.assertEquals(1, survivors.size(), 'partial insert should keep only unbloc
 	}
 }
 
+func TestExecMultipleAddErrorsProduceMultipleDatabaseErrors(t *testing.T) {
+	triggerProgram, err := CompileAnonymous(`
+for (Account a : Trigger.new) {
+	if (a.Name == 'Multi Block') {
+		a.addError('blocked at record');
+		a.Name.addError('blocked at name');
+		a.Rating.addError('blocked at rating');
+	}
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Account blocked = new Account(Name = 'Multi Block', Rating = 'Hot');
+List<Object> results = Database.insert(new List<Account>{blocked}, false);
+Object result = results.get(0);
+System.assert(!result.isSuccess());
+List<Object> errors = result.getErrors();
+System.assertEquals(3, errors.size());
+Object recordError = errors.get(0);
+System.assertEquals('blocked at record', recordError.getMessage());
+List<Object> recordFields = recordError.getFields();
+System.assertEquals(0, recordFields.size());
+Object nameError = errors.get(1);
+System.assertEquals('blocked at name', nameError.getMessage());
+List<Object> nameFields = nameError.getFields();
+System.assertEquals(1, nameFields.size());
+System.assertEquals('Name', nameFields.get(0));
+Object ratingError = errors.get(2);
+System.assertEquals('blocked at rating', ratingError.getMessage());
+List<Object> ratingFields = ratingError.getFields();
+System.assertEquals(1, ratingFields.size());
+System.assertEquals('Rating', ratingFields.get(0));
+List<Account> survivors = [SELECT Id FROM Account WHERE Name = 'Multi Block'];
+System.assertEquals(0, survivors.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Rating"] = storage.Field{APIName: "Rating", Type: storage.FieldString}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "AccountBeforeInsertMultiAddError",
+		Object:    "Account",
+		Timing:    triggerTimingBefore,
+		Operation: "insert",
+		Program:   triggerProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecTriggerContextMapsAndOperationFlags(t *testing.T) {
 	updateTrigger, err := CompileAnonymous(`
 System.assert(Trigger.isExecuting);

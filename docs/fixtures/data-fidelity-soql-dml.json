@@ -63,7 +63,7 @@
     },
     {
       "path": "force-app/main/classes/AccountAddError.trigger",
-      "content": "trigger AccountAddError on Account (before insert) { for (Account a : Trigger.new) { if (a.get('Name') == 'Block') { a.Name.addError('blocked by trigger'); } } }"
+      "content": "trigger AccountAddError on Account (before insert) { for (Account a : Trigger.new) { if (a.get('Name') == 'Block') { a.Name.addError('blocked by trigger'); } if (a.get('Name') == 'Multi Block') { a.addError('blocked at record'); a.Name.addError('blocked at name'); a.Rating.addError('blocked at rating'); } } }"
     },
     {
       "path": "force-app/main/classes/AccountBeforeUpdateContext.trigger",
@@ -76,6 +76,10 @@
     {
       "path": "force-app/main/classes/TriggerAddErrorTest.cls",
       "content": "@isTest private class TriggerAddErrorTest { @isTest static void triggerAddErrorShapesDmlResults() { Account ok = new Account(Name = 'Acme'); Account blocked = new Account(Name = 'Block'); List<Account> records = new List<Account>{ok, blocked}; List<Object> results = Database.insert(records, false); System.assertEquals(2, results.size()); Object first = results.get(0); Object second = results.get(1); System.assert(first.isSuccess()); System.assert(!second.isSuccess()); List<Object> errors = second.getErrors(); System.assertEquals(1, errors.size()); Object err = errors.get(0); System.assertEquals('FIELD_CUSTOM_VALIDATION_EXCEPTION', err.getStatusCode()); System.assertEquals('blocked by trigger', err.getMessage()); List<Object> fields = err.getFields(); System.assertEquals(1, fields.size()); System.assertEquals('Name', fields.get(0)); List<Account> survivors = [SELECT Id FROM Account]; System.assertEquals(1, survivors.size()); } }"
+    },
+    {
+      "path": "force-app/main/classes/TriggerMultiErrorTest.cls",
+      "content": "@isTest private class TriggerMultiErrorTest { @isTest static void triggerAddErrorKeepsAllDatabaseErrors() { Account blocked = new Account(Name = 'Multi Block', Rating = 'Hot'); List<Object> results = Database.insert(new List<Account>{blocked}, false); Object result = results.get(0); System.assert(!result.isSuccess()); List<Object> errors = result.getErrors(); System.assertEquals(3, errors.size()); Object recordError = errors.get(0); System.assertEquals('blocked at record', recordError.getMessage()); List<Object> recordFields = recordError.getFields(); System.assertEquals(0, recordFields.size()); Object nameError = errors.get(1); System.assertEquals('blocked at name', nameError.getMessage()); List<Object> nameFields = nameError.getFields(); System.assertEquals(1, nameFields.size()); System.assertEquals('Name', nameFields.get(0)); Object ratingError = errors.get(2); System.assertEquals('blocked at rating', ratingError.getMessage()); List<Object> ratingFields = ratingError.getFields(); System.assertEquals(1, ratingFields.size()); System.assertEquals('Rating', ratingFields.get(0)); List<Account> rows = [SELECT Id FROM Account WHERE Name = 'Multi Block']; System.assertEquals(0, rows.size()); } }"
     },
     {
       "path": "force-app/main/classes/TriggerContextFidelityTest.cls",
@@ -166,8 +170,8 @@
       "errors": 0,
       "failed": 0,
       "ok": true,
-      "passed": 16,
-      "total": 16
+      "passed": 17,
+      "total": 17
     }
   }
 }

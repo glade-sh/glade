@@ -1832,23 +1832,7 @@ func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value
 		if op == "upsert" {
 			row.Fields["created"] = Bool(dmlResult.Created)
 		}
-		errorsList := List()
-		if dmlResult.Error != "" {
-			errValue := Object("Database.Error")
-			errValue.Fields["message"] = String(dmlResult.Error)
-			code := dmlResult.StatusCode
-			if code == "" {
-				code = "FIELD_CUSTOM_VALIDATION_EXCEPTION"
-			}
-			errValue.Fields["statusCode"] = String(code)
-			fieldsList := List()
-			for _, f := range dmlResult.Fields {
-				fieldsList.List = append(fieldsList.List, String(f))
-			}
-			errValue.Fields["fields"] = fieldsList
-			errorsList = List(errValue)
-		}
-		row.Fields["errors"] = errorsList
+		row.Fields["errors"] = databaseErrorsList(dmlResult)
 		values = append(values, row)
 	}
 	if args[0].Kind == ValueList {
@@ -2011,23 +1995,7 @@ func (vm *VM) mergeResultValue(listInput bool, duplicates []storage.Record, resu
 		}
 		row.Fields["mergedRecordIds"] = mergedIDs
 		row.Fields["updatedRelatedIds"] = List()
-		errorsList := List()
-		if dmlResult.Error != "" {
-			errValue := Object("Database.Error")
-			errValue.Fields["message"] = String(dmlResult.Error)
-			code := dmlResult.StatusCode
-			if code == "" {
-				code = "FIELD_CUSTOM_VALIDATION_EXCEPTION"
-			}
-			errValue.Fields["statusCode"] = String(code)
-			fieldsList := List()
-			for _, f := range dmlResult.Fields {
-				fieldsList.List = append(fieldsList.List, String(f))
-			}
-			errValue.Fields["fields"] = fieldsList
-			errorsList = List(errValue)
-		}
-		row.Fields["errors"] = errorsList
+		row.Fields["errors"] = databaseErrorsList(dmlResult)
 		values = append(values, row)
 	}
 	if listInput {
@@ -2136,9 +2104,11 @@ func mergeDMLFailuresInPlace(target, source []dml.Result) {
 			target[i] = failure
 			continue
 		}
+		combinedErrors := append(dmlResultErrors(target[i]), dmlResultErrors(failure)...)
 		target[i].Error += "; " + failure.Error
 		target[i].StatusCode = failure.StatusCode
 		target[i].Fields = append(target[i].Fields, failure.Fields...)
+		target[i].Errors = combinedErrors
 	}
 }
 
@@ -4821,25 +4791,86 @@ func dmlResultsFromSObjectErrors(records []storage.Record, values []Value) []dml
 		if len(errors) == 0 {
 			continue
 		}
-		message := "record blocked by addError"
-		statusCode := "FIELD_CUSTOM_VALIDATION_EXCEPTION"
-		var fields []string
-		if first := errors[0]; first.Kind == ValueObject {
-			if value, ok := first.Fields["message"]; ok {
-				message = value.String()
+		dmlErrors := make([]dml.Error, 0, len(errors))
+		messages := make([]string, 0, len(errors))
+		aggregateFields := make([]string, 0, len(errors))
+		for _, errValue := range errors {
+			dmlError := dml.Error{
+				Message:    "record blocked by addError",
+				StatusCode: "FIELD_CUSTOM_VALIDATION_EXCEPTION",
 			}
-			if value, ok := first.Fields["statusCode"]; ok {
-				statusCode = value.String()
-			}
-			if value, ok := first.Fields["fields"]; ok && value.Kind == ValueList {
-				for _, field := range value.List {
-					fields = append(fields, field.String())
+			if errValue.Kind == ValueObject {
+				if value, ok := errValue.Fields["message"]; ok {
+					dmlError.Message = value.String()
+				}
+				if value, ok := errValue.Fields["statusCode"]; ok {
+					dmlError.StatusCode = value.String()
+				}
+				if value, ok := errValue.Fields["fields"]; ok && value.Kind == ValueList {
+					for _, field := range value.List {
+						dmlError.Fields = append(dmlError.Fields, field.String())
+					}
 				}
 			}
+			messages = append(messages, dmlError.Message)
+			aggregateFields = append(aggregateFields, dmlError.Fields...)
+			dmlErrors = append(dmlErrors, dmlError)
 		}
-		results[i] = dml.Result{ID: records[i].ID, Success: false, Error: message, StatusCode: statusCode, Fields: fields}
+		results[i] = dml.Result{
+			ID:         records[i].ID,
+			Success:    false,
+			Error:      strings.Join(messages, "; "),
+			StatusCode: dmlErrors[0].StatusCode,
+			Fields:     aggregateFields,
+			Errors:     dmlErrors,
+		}
 	}
 	return results
+}
+
+func databaseErrorsList(result dml.Result) Value {
+	errors := dmlResultErrors(result)
+	values := make([]Value, 0, len(errors))
+	for _, err := range errors {
+		values = append(values, databaseErrorValue(err))
+	}
+	return List(values...)
+}
+
+func dmlResultErrors(result dml.Result) []dml.Error {
+	if len(result.Errors) > 0 {
+		out := make([]dml.Error, len(result.Errors))
+		copy(out, result.Errors)
+		return out
+	}
+	if result.Error == "" {
+		return nil
+	}
+	code := result.StatusCode
+	if code == "" {
+		code = "FIELD_CUSTOM_VALIDATION_EXCEPTION"
+	}
+	return []dml.Error{{
+		Message:    result.Error,
+		StatusCode: code,
+		Fields:     append([]string(nil), result.Fields...),
+	}}
+}
+
+func databaseErrorValue(err dml.Error) Value {
+	value := Object("Database.Error")
+	value.Fields["message"] = String(err.Message)
+	code := err.StatusCode
+	if code == "" {
+		code = "FIELD_CUSTOM_VALIDATION_EXCEPTION"
+	}
+	value.Fields["statusCode"] = String(code)
+	fields := List()
+	for _, field := range err.Fields {
+		fields.List = append(fields.List, String(field))
+	}
+	value.Fields["fields"] = fields
+	return value
 }
 
 func (vm *VM) resolveSObjectFieldName(typeName, field string) string {
