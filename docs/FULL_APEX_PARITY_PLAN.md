@@ -96,12 +96,13 @@ Current progress:
 - Numbers: runtime support now covers `Integer.valueOf`, `Long.valueOf`,
   `Decimal.valueOf`, `Double.valueOf`, integer/decimal conversion helpers,
   simple numeric `format`, `Integer`/`Long` min/max constants, `Decimal.abs`,
-  `Decimal.pow`, parse and integer-conversion overflow errors, `Math.E`,
-  `Math.PI`, `Math.abs`, `Math.ceil`, `Math.floor`, `Math.max`, `Math.min`,
-  `Math.mod`, `Math.pow`, `Math.round`, `Math.roundToLong`, `Math.signum`,
-  `Math.sqrt`, and deterministic trig/log/exp helpers (`acos`, `asin`, `atan`,
-  `atan2`, `cos`, `sin`, `tan`, `exp`, `log`, `log10`) for finite pinned
-  domains.
+  finite `Decimal.pow`, `Decimal.setScale`/`Decimal.round` for the documented
+  local `RoundingMode` subset, parse and integer-conversion overflow errors,
+  `Math.E`, `Math.PI`, `Math.abs`, `Math.ceil`, `Math.floor`, `Math.max`,
+  `Math.min`, `Math.mod`, finite `Math.pow`, `Math.round`,
+  `Math.roundToLong`, `Math.signum`, `Math.sqrt`, and deterministic
+  trig/log/exp helpers (`acos`, `asin`, `atan`, `atan2`, `cos`, `sin`, `tan`,
+  `exp`, `log`, `log10`) for finite pinned domains.
 - Date/Datetime: runtime support now covers deterministic local `Date` calendar
   arithmetic and component getters, month-start/month-end helpers, and
   UTC-modeled `Datetime` date arithmetic plus date/time component getters,
@@ -178,10 +179,11 @@ Remaining cuts:
 3. Numeric classes
    - Complete locale-aware `Integer`, `Long`, `Double`, and `Decimal`
      formatting; full 32-bit-vs-64-bit Integer/Long overflow parity; Decimal
-     rounding modes; and exact Decimal scale semantics.
+     rounding behavior beyond the local scale 0-15 subset; and exact Decimal
+     scale semantics.
    - Pin remaining edge behavior for numeric NaN/infinity/domain cases before
      widening deterministic `Math` parity beyond the currently covered finite
-     slice.
+     slice and explicit domain errors.
 
 4. Date and time classes
    - Remaining work: full locale-aware formatting beyond the pinned English

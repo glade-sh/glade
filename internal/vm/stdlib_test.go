@@ -740,6 +740,27 @@ System.assertEquals(12.5, d.doubleValue());
 System.assertEquals(12.5, d.abs());
 System.assertEquals(156.25, d.pow(2));
 System.assertEquals('12.5', d.format());
+Decimal halfTie = Decimal.valueOf('1.25');
+Decimal halfEvenUp = Decimal.valueOf('1.35');
+Decimal negativeHalfTie = Decimal.valueOf('-1.25');
+Decimal positiveRoundUp = Decimal.valueOf('1.21');
+Decimal positiveRoundDown = Decimal.valueOf('1.29');
+Decimal negativeDirected = Decimal.valueOf('-1.21');
+Decimal roundEvenDown = Decimal.valueOf('12.5');
+Decimal roundEvenUp = Decimal.valueOf('13.5');
+Decimal roundUnneeded = Decimal.valueOf('12.0');
+System.assertEquals(1.3, halfTie.setScale(1, RoundingMode.valueOf('HALF_UP')));
+System.assertEquals(1.2, halfTie.setScale(1, RoundingMode.valueOf('HALF_DOWN')));
+System.assertEquals(1.2, halfTie.setScale(1, RoundingMode.valueOf('HALF_EVEN')));
+System.assertEquals(1.4, halfEvenUp.setScale(1, RoundingMode.valueOf('HALF_EVEN')));
+System.assertEquals(-1.2, negativeHalfTie.setScale(1, RoundingMode.valueOf('HALF_DOWN')));
+System.assertEquals(1.3, positiveRoundUp.setScale(1, RoundingMode.valueOf('UP')));
+System.assertEquals(1.2, positiveRoundDown.setScale(1, RoundingMode.valueOf('DOWN')));
+System.assertEquals(-1.2, negativeDirected.setScale(1, RoundingMode.valueOf('CEILING')));
+System.assertEquals(-1.3, negativeDirected.setScale(1, RoundingMode.valueOf('FLOOR')));
+System.assertEquals(12, roundEvenDown.round(RoundingMode.valueOf('HALF_EVEN')));
+System.assertEquals(14, roundEvenUp.round(RoundingMode.valueOf('HALF_EVEN')));
+System.assertEquals(12, roundUnneeded.round(RoundingMode.valueOf('UNNECESSARY')));
 System.assertEquals(1, Math.signum(12.5));
 System.assertEquals(-1, Math.signum(-4));
 System.assertEquals(0, Math.signum(0));
@@ -785,12 +806,19 @@ func TestExecNumericStdlibRejectsInvalidInputs(t *testing.T) {
 		"Long.valueOf('9223372036854775808');",
 		"Decimal.valueOf('1e309');",
 		"Double.valueOf('NaN');",
+		"Double.valueOf('Infinity');",
 		"Decimal d = Decimal.valueOf('3000000000');\nd.intValue();",
+		"Decimal d = Decimal.valueOf('1.25');\nd.setScale(16);",
+		"Decimal d = Decimal.valueOf('1.25');\nd.setScale(1, LoggingLevel.ERROR);",
+		"Decimal d = Decimal.valueOf('1.25');\nd.round(RoundingMode.valueOf('UNNECESSARY'));",
+		"RoundingMode.valueOf('HALF_CEILING');",
 		"Math.acos(2);",
 		"Math.asin(-2);",
+		"Math.sqrt(-1);",
 		"Math.log(0);",
 		"Math.log10(-1);",
 		"Math.exp(1000);",
+		"Math.pow(10, 1000);",
 	}
 	for _, source := range tests {
 		program, err := CompileAnonymous(source)
