@@ -78,11 +78,19 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Messaging | `Messaging.SingleEmailMessage` | `partial` | Common setters only; no delivery transport. |
 | Messaging | `Messaging.sendEmail` | `partial` | Returns local SendEmailResult and increments email limits. |
 | PageReference | `PageReference` | `partial` | Constructor, URL, redirect, parameters, headers, and string conversion basics. |
-| Pattern | `Matcher.find` | `partial` | Go regexp-backed matching. |
-| Pattern | `Matcher.group` | `partial` | Latest matched group only. |
-| Pattern | `Matcher.matches` | `partial` | Go regexp-backed matching. |
-| Pattern | `Pattern.compile` | `partial` | Go regexp syntax. |
+| Pattern | `Matcher.end` | `partial` | Go regexp-backed group end positions. |
+| Pattern | `Matcher.find` | `partial` | Go regexp-backed matching with captured groups. |
+| Pattern | `Matcher.group` | `partial` | Go regexp-backed group access. |
+| Pattern | `Matcher.groupCount` | `partial` | Capturing group count from Go regexp. |
+| Pattern | `Matcher.lookingAt` | `partial` | Beginning-of-input Go regexp match. |
+| Pattern | `Matcher.matches` | `partial` | Whole-input Go regexp match. |
+| Pattern | `Matcher.replaceAll` | `partial` | Go regexp-backed replacement with capture references. |
+| Pattern | `Matcher.replaceFirst` | `partial` | Go regexp-backed first replacement with capture references. |
+| Pattern | `Matcher.start` | `partial` | Go regexp-backed group start positions. |
+| Pattern | `Pattern.compile` | `partial` | Go regexp syntax, not full Java Pattern syntax. |
+| Pattern | `Pattern.matcher` | `partial` | Creates a Go regexp-backed Matcher. |
 | Pattern | `Pattern.matches` | `partial` | Whole-string Go regexp match. |
+| Pattern | `Pattern.pattern` | `partial` | Returns stored Go regexp source. |
 | Schema | `DescribeFieldResult` | `partial` | Common field metadata and access booleans. |
 | Schema | `DescribeSObjectResult` | `partial` | Common object metadata, fields, record types, and child relationships. |
 | Schema | `Schema.describeSObjects` | `partial` | Object names and SObjectType tokens for local schema. |

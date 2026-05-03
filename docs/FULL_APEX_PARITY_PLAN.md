@@ -157,8 +157,12 @@ Remaining cuts:
      string forms, namespace behavior, and constructor dispatch.
 
 8. Pattern and Matcher
-   - Group extraction, find/matches state, replacement methods, region-like
-     behavior where Apex exposes it, and stable regex errors.
+   - Fixture-backed Go `regexp` slice covers compile/matches/pattern,
+     find/matches/lookingAt, group/groupCount/start/end, and basic replacement
+     methods.
+   - Remaining gap: Apex uses Java Pattern syntax; local support is Go
+     `regexp`, so Java-only constructs and region/bounds/reset APIs still need
+     explicit compatibility work.
 
 9. Id, URL, and primitive object behavior
    - Id validation, key prefix behavior, conversion, equality, object

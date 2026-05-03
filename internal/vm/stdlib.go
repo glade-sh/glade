@@ -584,7 +584,7 @@ func patternCompile(args []Value) (Value, error) {
 		return Null, fmt.Errorf("Pattern.compile expects regex String")
 	}
 	if _, err := regexp.Compile(args[0].Text); err != nil {
-		return Null, err
+		return Null, fmt.Errorf("Pattern.compile invalid regex: %w", err)
 	}
 	pattern := Object("Pattern")
 	pattern.Fields["source"] = args[0]
@@ -597,69 +597,164 @@ func patternMatches(args []Value) (Value, error) {
 	}
 	matched, err := regexp.MatchString("^(?:"+args[0].Text+")$", args[1].Text)
 	if err != nil {
-		return Null, err
+		return Null, fmt.Errorf("Pattern.matches invalid regex: %w", err)
 	}
 	return Bool(matched), nil
 }
 
 func callPatternMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
-	if method != "matcher" {
+	switch method {
+	case "matcher":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("Pattern.matcher expects input String")
+		}
+		if _, ok := receiver.Fields["source"]; !ok {
+			return Null, receiver, false, true, fmt.Errorf("Pattern missing source")
+		}
+		matcher := Object("Matcher")
+		matcher.Fields["source"] = receiver.Fields["source"]
+		matcher.Fields["input"] = args[0]
+		matcherClearMatch(matcher)
+		matcher.Fields["index"] = Int(0)
+		return matcher, receiver, false, true, nil
+	case "pattern":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Pattern.pattern expects 0 arguments")
+		}
+		source, ok := receiver.Fields["source"]
+		if !ok || source.Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("Pattern missing source")
+		}
+		return source, receiver, false, true, nil
+	default:
 		return Null, receiver, false, false, nil
 	}
-	if len(args) != 1 || args[0].Kind != ValueString {
-		return Null, receiver, false, true, fmt.Errorf("Pattern.matcher expects input String")
-	}
-	matcher := Object("Matcher")
-	matcher.Fields["source"] = receiver.Fields["source"]
-	matcher.Fields["input"] = args[0]
-	matcher.Fields["index"] = Int(0)
-	matcher.Fields["group"] = Null
-	return matcher, receiver, false, true, nil
 }
 
 func callMatcherMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
-	if len(args) != 0 {
-		return Null, receiver, false, true, fmt.Errorf("Matcher.%s expects 0 arguments", method)
-	}
 	source, input, err := matcherSourceInput(receiver)
 	if err != nil {
 		return Null, receiver, false, true, err
 	}
 	re, err := regexp.Compile(source)
 	if err != nil {
-		return Null, receiver, false, true, err
+		return Null, receiver, false, true, fmt.Errorf("Matcher invalid regex: %w", err)
 	}
 	switch method {
 	case "matches":
-		return Bool(re.MatchString(input) && re.FindString(input) == input), receiver, false, true, nil
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Matcher.matches expects 0 arguments")
+		}
+		anchored, err := regexp.Compile("^(?:" + source + ")$")
+		if err != nil {
+			return Null, receiver, false, true, fmt.Errorf("Matcher.matches invalid regex: %w", err)
+		}
+		indices := anchored.FindStringSubmatchIndex(input)
+		if indices == nil {
+			matcherClearMatch(receiver)
+			return Bool(false), receiver, true, true, nil
+		}
+		matcherSaveMatch(receiver, indices)
+		receiver.Fields["index"] = Int(int64(len(input)))
+		return Bool(true), receiver, true, true, nil
+	case "lookingAt":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Matcher.lookingAt expects 0 arguments")
+		}
+		anchored, err := regexp.Compile("^(?:" + source + ")")
+		if err != nil {
+			return Null, receiver, false, true, fmt.Errorf("Matcher.lookingAt invalid regex: %w", err)
+		}
+		indices := anchored.FindStringSubmatchIndex(input)
+		if indices == nil {
+			matcherClearMatch(receiver)
+			return Bool(false), receiver, true, true, nil
+		}
+		matcherSaveMatch(receiver, indices)
+		receiver.Fields["index"] = Int(int64(indices[1]))
+		return Bool(true), receiver, true, true, nil
 	case "find":
+		if len(args) != 0 && (len(args) != 1 || args[0].Kind != ValueInt) {
+			return Null, receiver, false, true, fmt.Errorf("Matcher.find expects optional Integer start")
+		}
 		start := 0
-		if index, ok := receiver.Fields["index"]; ok && index.Kind == ValueInt {
+		if len(args) == 1 {
+			start = int(args[0].Int)
+		} else if index, ok := receiver.Fields["index"]; ok && index.Kind == ValueInt {
 			start = int(index.Int)
 		}
 		if start < 0 {
-			start = 0
+			return Null, receiver, false, true, fmt.Errorf("Matcher.find start must be non-negative")
 		}
 		if start > len(input) {
-			start = len(input)
+			return Null, receiver, false, true, fmt.Errorf("Matcher.find start out of range")
 		}
-		loc := re.FindStringIndex(input[start:])
-		if loc == nil {
-			receiver.Fields["group"] = Null
+		indices := re.FindStringSubmatchIndex(input[start:])
+		if indices == nil {
+			matcherClearMatch(receiver)
 			receiver.Fields["index"] = Int(int64(len(input) + 1))
 			return Bool(false), receiver, true, true, nil
 		}
-		matchStart := start + loc[0]
-		matchEnd := start + loc[1]
-		receiver.Fields["group"] = String(input[matchStart:matchEnd])
-		receiver.Fields["index"] = Int(int64(matchEnd))
+		for i := range indices {
+			if indices[i] >= 0 {
+				indices[i] += start
+			}
+		}
+		matcherSaveMatch(receiver, indices)
+		next := indices[1]
+		if indices[0] == indices[1] {
+			next = nextRegexSearchIndex(input, next)
+		}
+		receiver.Fields["index"] = Int(int64(next))
 		return Bool(true), receiver, true, true, nil
 	case "group":
-		group, ok := receiver.Fields["group"]
-		if !ok || group.Kind == ValueNull {
-			return Null, receiver, false, true, fmt.Errorf("Matcher.group called before a successful find")
+		groupIndex, err := matcherOptionalGroupIndex("Matcher.group", args)
+		if err != nil {
+			return Null, receiver, false, true, err
 		}
-		return group, receiver, false, true, nil
+		group, err := matcherGroupValue(receiver, input, groupIndex)
+		return group, receiver, false, true, err
+	case "groupCount":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Matcher.groupCount expects 0 arguments")
+		}
+		return Int(int64(re.NumSubexp())), receiver, false, true, nil
+	case "start":
+		groupIndex, err := matcherOptionalGroupIndex("Matcher.start", args)
+		if err != nil {
+			return Null, receiver, false, true, err
+		}
+		start, _, err := matcherGroupBounds(receiver, input, groupIndex)
+		if err != nil {
+			return Null, receiver, false, true, err
+		}
+		return Int(int64(start)), receiver, false, true, nil
+	case "end":
+		groupIndex, err := matcherOptionalGroupIndex("Matcher.end", args)
+		if err != nil {
+			return Null, receiver, false, true, err
+		}
+		_, end, err := matcherGroupBounds(receiver, input, groupIndex)
+		if err != nil {
+			return Null, receiver, false, true, err
+		}
+		return Int(int64(end)), receiver, false, true, nil
+	case "replaceAll":
+		replaced, err := matcherReplace("Matcher.replaceAll", re, input, args, true)
+		if err != nil {
+			return Null, receiver, false, true, err
+		}
+		matcherClearMatch(receiver)
+		receiver.Fields["index"] = Int(0)
+		return String(replaced), receiver, true, true, nil
+	case "replaceFirst":
+		replaced, err := matcherReplace("Matcher.replaceFirst", re, input, args, false)
+		if err != nil {
+			return Null, receiver, false, true, err
+		}
+		matcherClearMatch(receiver)
+		receiver.Fields["index"] = Int(0)
+		return String(replaced), receiver, true, true, nil
 	default:
 		return Null, receiver, false, false, nil
 	}
@@ -675,6 +770,97 @@ func matcherSourceInput(receiver Value) (string, string, error) {
 		return "", "", fmt.Errorf("Matcher missing input")
 	}
 	return source.Text, input.Text, nil
+}
+
+func matcherClearMatch(matcher Value) {
+	matcher.Fields["groups"] = Null
+}
+
+func matcherSaveMatch(matcher Value, indices []int) {
+	groups := make([]Value, 0, len(indices))
+	for _, index := range indices {
+		groups = append(groups, Int(int64(index)))
+	}
+	matcher.Fields["groups"] = List(groups...)
+}
+
+func matcherOptionalGroupIndex(name string, args []Value) (int, error) {
+	if len(args) == 0 {
+		return 0, nil
+	}
+	if len(args) != 1 || args[0].Kind != ValueInt {
+		return 0, fmt.Errorf("%s expects optional Integer groupIndex", name)
+	}
+	if args[0].Int < 0 {
+		return 0, fmt.Errorf("%s groupIndex must be non-negative", name)
+	}
+	return int(args[0].Int), nil
+}
+
+func matcherGroupValue(matcher Value, input string, groupIndex int) (Value, error) {
+	start, end, err := matcherGroupByteBounds(matcher, groupIndex)
+	if err != nil {
+		return Null, err
+	}
+	if start < 0 || end < 0 {
+		return Null, nil
+	}
+	return String(input[start:end]), nil
+}
+
+func matcherGroupBounds(matcher Value, input string, groupIndex int) (int, int, error) {
+	start, end, err := matcherGroupByteBounds(matcher, groupIndex)
+	if err != nil {
+		return 0, 0, err
+	}
+	if start < 0 || end < 0 {
+		return -1, -1, nil
+	}
+	return utf8.RuneCountInString(input[:start]), utf8.RuneCountInString(input[:end]), nil
+}
+
+func matcherGroupByteBounds(matcher Value, groupIndex int) (int, int, error) {
+	groups, ok := matcher.Fields["groups"]
+	if !ok || groups.Kind != ValueList {
+		return 0, 0, fmt.Errorf("Matcher group access called before a successful match")
+	}
+	offset := groupIndex * 2
+	if offset+1 >= len(groups.List) {
+		return 0, 0, fmt.Errorf("Matcher groupIndex out of range")
+	}
+	startValue := groups.List[offset]
+	endValue := groups.List[offset+1]
+	if startValue.Kind != ValueInt || endValue.Kind != ValueInt {
+		return 0, 0, fmt.Errorf("Matcher stored invalid group state")
+	}
+	return int(startValue.Int), int(endValue.Int), nil
+}
+
+func matcherReplace(name string, re *regexp.Regexp, input string, args []Value, all bool) (string, error) {
+	if len(args) != 1 || args[0].Kind != ValueString {
+		return "", fmt.Errorf("%s expects replacement String", name)
+	}
+	if all {
+		return re.ReplaceAllString(input, args[0].Text), nil
+	}
+	indices := re.FindStringSubmatchIndex(input)
+	if indices == nil {
+		return input, nil
+	}
+	var expanded []byte
+	expanded = re.ExpandString(expanded, args[0].Text, input, indices)
+	return input[:indices[0]] + string(expanded) + input[indices[1]:], nil
+}
+
+func nextRegexSearchIndex(input string, index int) int {
+	if index >= len(input) {
+		return len(input) + 1
+	}
+	_, size := utf8.DecodeRuneInString(input[index:])
+	if size <= 0 {
+		return index + 1
+	}
+	return index + size
 }
 
 func callListStdlibMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
