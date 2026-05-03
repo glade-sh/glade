@@ -53,7 +53,7 @@ The MVP target is `full-featured aer-parity MVP`. This document lists required c
 ### `dap.command`: VS Code debug flow through oaer test/exec --debug
 
 - Status: `partial`
-- Gap: DAP content-length transport, setBreakpoints, continue/pause/next/stepIn/stepOut/disconnect, stackTrace with trace-provided line/column positions, scopes, variables, evaluate, VM debug pause hooks, live statement breakpoint stops with stack/locals/static snapshots, stack-depth live stepping, and Locals/Statics/Trigger scopes with object, SObject, exception, and collection children are wired. Full IDE launch/run integration still uses oaer exec/test --debug snapshot sessions while richer live adapter orchestration remains incomplete.
+- Gap: DAP content-length transport, setBreakpoints, continue/pause/next/stepIn/stepOut/disconnect, stackTrace with trace-provided line/column positions, scopes, variables, evaluate, VM debug pause hooks, live statement breakpoint stops with stack/locals/static snapshots, stack-depth live stepping, Locals/Statics/Trigger scopes with object, SObject, exception, and collection children, and paused-context watch expressions for locals, fields, statics, Trigger values, list/set indexes, and map keys are wired. Full IDE launch/run integration still uses oaer exec/test --debug snapshot sessions while richer live adapter orchestration remains incomplete.
 
 ### `lsp.command`: oaer lsp core editor features
 

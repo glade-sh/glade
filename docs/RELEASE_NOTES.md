@@ -59,6 +59,8 @@ Release engineering:
   stack-depth step-in/step-over/step-out behavior.
 - Expanded DAP scopes and variable rendering with Locals, Statics, and Trigger
   scopes plus object, SObject, exception, and nested collection children.
+- Added paused-context DAP watch expression evaluation for locals, object fields,
+  static fields, Trigger values, list/set indexes, map keys, and nested paths.
 - Added parser diagnostic-count fixtures plus type-index and sema panic recovery
   diagnostics for malformed project inputs.
 - Added method/constructor parameter type diagnostics and expanded VM exception

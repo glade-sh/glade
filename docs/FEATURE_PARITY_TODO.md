@@ -548,7 +548,11 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Split DAP variables into Locals, Statics, and Trigger scopes, render
     object/SObject/exception fields as named child variables, preserve nested
     collection children, and expose static class fields from live VM pauses.
-- [ ] Complete watch expression evaluation against VM context.
+- [x] Complete watch expression evaluation against VM context.
+  - [x] Evaluate paused-context watch expressions for locals, dotted object
+    fields, static fields, `Trigger.*` context values, trigger shorthand roots,
+    list/set numeric indexes, map string keys, and nested combinations without
+    re-running VM code.
 - [x] Add VS Code launch/task examples and editor documentation.
 - [ ] Expand `oaer lsp` with incremental document sync.
 - [ ] Add LSP semantic tokens, definition, references, rename, and richer

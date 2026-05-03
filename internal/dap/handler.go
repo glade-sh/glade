@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -101,7 +102,7 @@ func (h *Handler) handleEvaluate(request Request) Response {
 		return h.failure(request, err.Error())
 	}
 	h.stateMu.Lock()
-	value, ok := lookupSnapshotValue(h.snapshot.Vars, h.snapshot.Statics, args.Expression)
+	value, ok := evaluateSnapshotExpression(h.snapshot.Vars, h.snapshot.Statics, args.Expression)
 	if !ok {
 		h.stateMu.Unlock()
 		return h.failure(request, fmt.Sprintf("unknown expression %q", args.Expression))
@@ -523,7 +524,7 @@ func sliceVariables(variables []Variable, start, count int) []Variable {
 	return variables[start:end]
 }
 
-func lookupSnapshotValue(vars, statics map[string]vm.Value, expression string) (vm.Value, bool) {
+func evaluateSnapshotExpression(vars, statics map[string]vm.Value, expression string) (vm.Value, bool) {
 	expression = strings.TrimSpace(expression)
 	if expression == "" {
 		return vm.Null, false
@@ -531,29 +532,150 @@ func lookupSnapshotValue(vars, statics map[string]vm.Value, expression string) (
 	if value, ok := vars[expression]; ok {
 		return value, true
 	}
-	parts := strings.Split(expression, ".")
-	if len(parts) > 1 {
-		if value, ok := lookupValuePath(statics[parts[0]], parts[1:]); ok {
-			return value, true
+	steps, ok := parseWatchExpression(expression)
+	if !ok || len(steps) == 0 {
+		return vm.Null, false
+	}
+	current, consumed, ok := expressionRootValue(vars, statics, steps)
+	if !ok {
+		if value, triggerConsumed, found := triggerRootValue(vars, steps); found {
+			current = value
+			consumed = triggerConsumed
+			ok = true
 		}
 	}
-	current, ok := vars[parts[0]]
 	if !ok {
 		return vm.Null, false
 	}
-	return lookupValuePath(current, parts[1:])
+	return evaluateWatchSteps(current, steps[consumed:])
 }
 
-func lookupValuePath(current vm.Value, parts []string) (vm.Value, bool) {
-	for _, part := range parts {
-		if current.Kind != vm.ValueObject {
+type watchStep struct {
+	name     string
+	index    string
+	hasIndex bool
+}
+
+func parseWatchExpression(expression string) ([]watchStep, bool) {
+	var steps []watchStep
+	for len(expression) > 0 {
+		if expression[0] == '.' {
+			return nil, false
+		}
+		nameEnd := 0
+		for nameEnd < len(expression) && expression[nameEnd] != '.' && expression[nameEnd] != '[' {
+			nameEnd++
+		}
+		if nameEnd == 0 {
+			return nil, false
+		}
+		name := strings.TrimSpace(expression[:nameEnd])
+		if name == "" {
+			return nil, false
+		}
+		steps = append(steps, watchStep{name: name})
+		expression = expression[nameEnd:]
+		for strings.HasPrefix(expression, "[") {
+			close := strings.IndexByte(expression, ']')
+			if close < 0 {
+				return nil, false
+			}
+			index := strings.TrimSpace(expression[1:close])
+			if index == "" {
+				return nil, false
+			}
+			if len(index) >= 2 {
+				if (index[0] == '\'' && index[len(index)-1] == '\'') || (index[0] == '"' && index[len(index)-1] == '"') {
+					index = index[1 : len(index)-1]
+				}
+			}
+			steps = append(steps, watchStep{index: index, hasIndex: true})
+			expression = expression[close+1:]
+		}
+		if expression == "" {
+			break
+		}
+		if !strings.HasPrefix(expression, ".") {
+			return nil, false
+		}
+		expression = expression[1:]
+	}
+	return steps, len(steps) > 0
+}
+
+func expressionRootValue(vars, statics map[string]vm.Value, steps []watchStep) (vm.Value, int, bool) {
+	names := make([]string, 0, len(steps))
+	for _, step := range steps {
+		if step.hasIndex {
+			break
+		}
+		names = append(names, step.name)
+	}
+	for count := len(names); count > 0; count-- {
+		root := strings.Join(names[:count], ".")
+		if value, ok := vars[root]; ok {
+			return value, count, true
+		}
+		if value, ok := statics[root]; ok {
+			return value, count, true
+		}
+	}
+	return vm.Null, 0, false
+}
+
+func triggerRootValue(vars map[string]vm.Value, steps []watchStep) (vm.Value, int, bool) {
+	if len(steps) == 0 || steps[0].hasIndex {
+		return vm.Null, 0, false
+	}
+	root := "Trigger." + steps[0].name
+	value, ok := vars[root]
+	return value, 1, ok
+}
+
+func evaluateWatchSteps(current vm.Value, steps []watchStep) (vm.Value, bool) {
+	for _, step := range steps {
+		if step.name != "" {
+			if current.Kind != vm.ValueObject {
+				return vm.Null, false
+			}
+			next, ok := current.Fields[step.name]
+			if !ok {
+				return vm.Null, false
+			}
+			current = next
+		}
+		if step.hasIndex {
+			next, ok := indexedValue(current, step.index)
+			if !ok {
+				return vm.Null, false
+			}
+			current = next
+		}
+	}
+	return current, true
+}
+
+func indexedValue(value vm.Value, index string) (vm.Value, bool) {
+	switch value.Kind {
+	case vm.ValueList:
+		i, err := strconv.Atoi(index)
+		if err != nil || i < 0 || i >= len(value.List) {
 			return vm.Null, false
 		}
-		next, ok := current.Fields[part]
+		return value.List[i], true
+	case vm.ValueSet:
+		i, err := strconv.Atoi(index)
+		if err != nil || i < 0 || i >= len(value.Set) {
+			return vm.Null, false
+		}
+		return value.Set[i], true
+	case vm.ValueMap:
+		next, ok := value.Map[index]
 		if !ok {
 			return vm.Null, false
 		}
-		current = next
+		return next, true
+	default:
+		return vm.Null, false
 	}
-	return current, true
 }

@@ -310,6 +310,65 @@ func TestHandlerRichScopesAndObjectVariables(t *testing.T) {
 	}
 }
 
+func TestHandlerEvaluateWatchExpressions(t *testing.T) {
+	account := vm.Object("Account")
+	account.Fields["Name"] = vm.String("Acme")
+	settings := vm.Object("Settings")
+	settings.Fields["Rows"] = vm.List(vm.List(vm.String("nested")))
+	h := NewHandler(Snapshot{
+		Vars: map[string]vm.Value{
+			"account":     account,
+			"names":       vm.List(vm.String("Acme"), vm.String("Global Media")),
+			"scores":      vm.Map(),
+			"Trigger.new": vm.List(account),
+		},
+		Statics: map[string]vm.Value{
+			"Settings": settings,
+		},
+	})
+	h.snapshot.Vars["scores"].Map["north"] = vm.Int(7)
+
+	cases := []struct {
+		expression string
+		result     string
+		valueType  string
+	}{
+		{expression: "account.Name", result: "Acme", valueType: string(vm.ValueString)},
+		{expression: "names[1]", result: "Global Media", valueType: string(vm.ValueString)},
+		{expression: "scores['north']", result: "7", valueType: string(vm.ValueInt)},
+		{expression: "Trigger.new[0].Name", result: "Acme", valueType: string(vm.ValueString)},
+		{expression: "new[0].Name", result: "Acme", valueType: string(vm.ValueString)},
+		{expression: "Settings.Rows[0][0]", result: "nested", valueType: string(vm.ValueString)},
+	}
+	for i, tc := range cases {
+		t.Run(tc.expression, func(t *testing.T) {
+			evaluated := h.Handle(request(i+1, CommandEvaluate, map[string]any{"expression": tc.expression}))
+			response := evaluated[0].(Response)
+			if !response.Success {
+				t.Fatalf("evaluate failed: %#v", response)
+			}
+			var body struct {
+				Result string `json:"result"`
+				Type   string `json:"type"`
+			}
+			decodeBody(t, response, &body)
+			if body.Result != tc.result || body.Type != tc.valueType {
+				t.Fatalf("%s = %#v", tc.expression, body)
+			}
+		})
+	}
+
+	for _, expression := range []string{"names[9]", "scores[]", "account.Missing", "names[zero]"} {
+		t.Run("bad "+expression, func(t *testing.T) {
+			evaluated := h.Handle(request(20, CommandEvaluate, map[string]any{"expression": expression}))
+			response := evaluated[0].(Response)
+			if response.Success {
+				t.Fatalf("expected failure for %s: %#v", expression, response)
+			}
+		})
+	}
+}
+
 func TestHandlerExecuteToBreakpointStopsBeforeStatement(t *testing.T) {
 	h := NewHandler(Snapshot{})
 	h.Handle(request(1, CommandSetBreakpoints, map[string]any{
