@@ -34,22 +34,31 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Date | `Date.newInstance` | `supported` | Validates date parts. |
 | Date | `Date.toEndOfMonth` | `supported` | Returns last day of the Date value's month. |
 | Date | `Date.toStartOfMonth` | `supported` | Returns first day of the Date value's month. |
+| Date | `Date.today` | `partial` | Deterministic VM clock date in UTC. |
 | Date | `Date.valueOf` | `supported` | Parses supported date strings. |
 | Date | `Date.year` | `supported` | Returns Gregorian year. |
 | Datetime | `Datetime.addDays` | `partial` | UTC-local arithmetic; no user timezone or DST model. |
 | Datetime | `Datetime.addHours` | `partial` | UTC-local arithmetic. |
+| Datetime | `Datetime.addMilliseconds` | `partial` | UTC-local arithmetic. |
 | Datetime | `Datetime.addMinutes` | `partial` | UTC-local arithmetic. |
 | Datetime | `Datetime.addMonths` | `partial` | UTC-local arithmetic with month-end clamp; no user timezone or DST model. |
 | Datetime | `Datetime.addSeconds` | `partial` | UTC-local arithmetic. |
 | Datetime | `Datetime.addYears` | `partial` | UTC-local arithmetic with leap-day clamp; no user timezone or DST model. |
 | Datetime | `Datetime.date` | `partial` | Returns UTC-modeled Date component; no user timezone model. |
+| Datetime | `Datetime.dateGmt` | `supported` | Returns the UTC Date component. |
 | Datetime | `Datetime.day` | `partial` | UTC-modeled component getter. |
+| Datetime | `Datetime.formatGmt` | `partial` | Returns the deterministic UTC scalar string; locale patterns are not modeled. |
 | Datetime | `Datetime.hour` | `partial` | UTC-modeled component getter. |
+| Datetime | `Datetime.millisecond` | `partial` | UTC-modeled component getter. |
 | Datetime | `Datetime.minute` | `partial` | UTC-modeled component getter. |
 | Datetime | `Datetime.month` | `partial` | UTC-modeled component getter. |
 | Datetime | `Datetime.newInstance` | `supported` | Validates date and time parts. |
+| Datetime | `Datetime.newInstanceGmt` | `supported` | Constructs a UTC-modeled Datetime. |
+| Datetime | `Datetime.now` | `partial` | Deterministic VM clock timestamp in UTC. |
 | Datetime | `Datetime.second` | `partial` | UTC-modeled component getter. |
+| Datetime | `Datetime.timeGmt` | `supported` | Returns the UTC Time component. |
 | Datetime | `Datetime.valueOf` | `supported` | Parses supported datetime strings. |
+| Datetime | `Datetime.valueOfGmt` | `supported` | Parses supported UTC datetime strings. |
 | Datetime | `Datetime.year` | `partial` | UTC-modeled component getter. |
 | Decimal | `Decimal.doubleValue` | `supported` | Returns local Decimal value. |
 | Decimal | `Decimal.intValue` | `supported` | Truncates to integer. |
@@ -220,11 +229,20 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Test | `Test.setMock` | `partial` | HttpCalloutMock support for local tests. |
 | Test | `Test.startTest` | `partial` | Governor-window reset/restore for supported counters. |
 | Test | `Test.stopTest` | `partial` | Drains supported async work. |
+| Time | `Time.addHours` | `supported` | Local time arithmetic with 24-hour wrap. |
+| Time | `Time.addMilliseconds` | `supported` | Local time arithmetic with 24-hour wrap. |
+| Time | `Time.addMinutes` | `supported` | Local time arithmetic with 24-hour wrap. |
+| Time | `Time.addSeconds` | `supported` | Local time arithmetic with 24-hour wrap. |
 | Time | `Time.hour` | `supported` | Local time component. |
+| Time | `Time.millisecond` | `supported` | Local time component. |
 | Time | `Time.minute` | `supported` | Local time component. |
-| Time | `Time.newInstance` | `supported` | Validates time parts. |
+| Time | `Time.newInstance` | `supported` | Validates time parts including optional millisecond. |
 | Time | `Time.second` | `supported` | Local time component. |
-| Time | `Time.valueOf` | `supported` | Parses supported time strings. |
+| Time | `Time.valueOf` | `supported` | Parses supported time strings with optional milliseconds. |
+| TimeZone | `TimeZone.getDisplayName` | `partial` | Returns deterministic ID text for UTC and fixed GMT offsets only. |
+| TimeZone | `TimeZone.getID` | `partial` | Returns canonical UTC or fixed GMT offset ID. |
+| TimeZone | `TimeZone.getOffset` | `partial` | Returns fixed offset milliseconds; named zones and DST are unsupported. |
+| TimeZone | `TimeZone.getTimeZone` | `partial` | Supports UTC/GMT and fixed GMT/UTC offsets; named zones and DST are unsupported. |
 | Type | `Type.equals` | `supported` | Compares local Type tokens by type name. |
 | Type | `Type.forName` | `partial` | Local class/type token lookup. |
 | Type | `Type.getName` | `supported` | Returns local type token name. |

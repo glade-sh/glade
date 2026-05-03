@@ -749,6 +749,68 @@ System.assertEquals(sameStamp, stamp);
 	}
 }
 
+func TestExecTimeDatetimeGmtAndTimeZoneMethods(t *testing.T) {
+	program, err := CompileAnonymous(`
+Date today = Date.today();
+System.assertEquals('2026-05-02', today.format());
+
+Datetime nowStamp = Datetime.now();
+System.assertEquals('2026-05-02T12:00:00Z', nowStamp.formatGmt());
+Datetime gmt = Datetime.newInstanceGmt(2024, 2, 29, 23, 59, 58);
+Date gmtDate = gmt.dateGmt();
+System.assertEquals('2024-02-29', gmtDate.format());
+System.assertEquals(Time.newInstance(23, 59, 58, 0), gmt.timeGmt());
+Datetime parsedGmt = Datetime.valueOfGmt('2024-02-29 23:59:58');
+System.assertEquals('2024-02-29T23:59:58Z', parsedGmt.formatGmt());
+Datetime fractionalGmt = Datetime.valueOfGmt('2024-02-29T23:59:58.250Z');
+Datetime plusMillis = fractionalGmt.addMilliseconds(750);
+System.assertEquals('2024-02-29T23:59:59Z', plusMillis.formatGmt());
+System.assertEquals(0, plusMillis.millisecond());
+
+Time clock = Time.newInstance(23, 59, 58, 250);
+System.assertEquals(23, clock.hour());
+System.assertEquals(59, clock.minute());
+System.assertEquals(58, clock.second());
+System.assertEquals(250, clock.millisecond());
+Time plusSeconds = clock.addSeconds(2);
+System.assertEquals('00:00:00.250', plusSeconds.format());
+Time plusMilliseconds = clock.addMilliseconds(750);
+System.assertEquals('23:59:59', plusMilliseconds.format());
+Time plusHours = clock.addHours(1);
+System.assertEquals('00:59:58.250', plusHours.format());
+Time plusMinutes = clock.addMinutes(-1);
+System.assertEquals('23:58:58.250', plusMinutes.format());
+System.assertEquals(Time.newInstance(12, 34, 56, 789), Time.valueOf('12:34:56.789'));
+
+TimeZone utc = TimeZone.getTimeZone('UTC');
+System.assertEquals('UTC', utc.getID());
+System.assertEquals('UTC', utc.getDisplayName());
+System.assertEquals(0, utc.getOffset(gmt));
+TimeZone offset = TimeZone.getTimeZone('GMT+05:30');
+System.assertEquals('GMT+05:30', offset.getID());
+System.assertEquals(19800000, offset.getOffset(gmt));
+TimeZone west = TimeZone.getTimeZone('UTC-02:00');
+System.assertEquals('GMT-02:00', west.getID());
+System.assertEquals(-7200000, west.getOffset(gmt));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecTimeZoneRejectsUnsupportedZones(t *testing.T) {
+	program, err := CompileAnonymous(`TimeZone tz = TimeZone.getTimeZone('America/Los_Angeles');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err == nil || !strings.Contains(err.Error(), "unsupported call") {
+		t.Fatalf("err = %v, want unsupported call", err)
+	}
+}
+
 func TestExecDatabaseSaveResultMethods(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account good = new Account(Name = 'Acme');
