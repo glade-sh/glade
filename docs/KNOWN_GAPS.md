@@ -58,7 +58,7 @@ The MVP target is `full-featured aer-parity MVP`. This document lists required c
 ### `lsp.command`: oaer lsp core editor features
 
 - Status: `partial`
-- Gap: oaer lsp now runs a stdio LSP transport with initialize, diagnostics, document/workspace symbols, hover, and completion. Definition, references, semantic tokens, and incremental document sync remain incomplete.
+- Gap: oaer lsp now runs a stdio LSP transport with initialize, diagnostics, incremental text document sync through didOpen/didChange/didClose overlays, document/workspace symbols, hover, and completion. Definition, references, semantic tokens, richer completion, and full check-parity diagnostics remain incomplete.
 
 ### `profile.native`: Native trace/profile reports
 

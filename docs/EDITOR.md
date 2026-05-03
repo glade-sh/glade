@@ -2,8 +2,8 @@
 
 `oaer` exposes editor-facing entry points through normal CLI commands. The
 current baseline is useful for local Apex development, but it is still a
-preview: DAP sessions are snapshot based, LSP uses full-project indexing at
-startup, and watch mode uses polling.
+preview: DAP has live VM pause/step primitives, LSP uses full-project indexing
+at startup with open-buffer overlays, and watch mode uses polling.
 
 ## VS Code Tasks
 
@@ -121,15 +121,17 @@ stdio adapter and register an `oaer-apex` debug type. Use this
 ```
 
 The current DAP server supports initialize, breakpoints, continue, pause, next,
-stack trace, scopes, variables, evaluate, and disconnect against execution
-snapshots. Live VM suspension, breakpoint-driven execution, and step-in/step-out
-are still tracked as parity work.
+step-in, step-out, stack trace, scopes, variables, evaluate, watch expressions,
+and disconnect. Live VM pause hooks can stop before statements at breakpoints
+and step through method calls; full IDE launch orchestration is still tracked as
+parity work.
 
 ## LSP Wiring
 
 `oaer lsp --project <root>` runs an LSP server over stdio. Configure editor
 clients to start that command from the workspace root and treat `*.cls` and
 `*.trigger` files as Apex. The current server provides initialize/shutdown,
+incremental text document sync, open-buffer parse diagnostics, project
 diagnostics, document and workspace symbols, hover, and top-level completion
 from the project index.
 
@@ -164,4 +166,3 @@ oaer test --project . --json
 oaer test --project . --junit reports/oaer-junit.xml
 oaer check --project . --json
 ```
-

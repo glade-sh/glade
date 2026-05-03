@@ -967,10 +967,11 @@ Effort: L.
 
 Current status as of 2026-05-02: complete for the Phase 14 baseline.
 `internal/lsp` implements stdio JSON-RPC/LSP transport through `oaer lsp` plus
-request handling for initialize/shutdown, diagnostics payloads, document
-symbols, workspace symbols, hover, and top-level Apex/SObject completion from
-the existing project index. Semantic tokens, definition, references, rename,
-and incremental text synchronization remain incomplete.
+request handling for initialize/shutdown, diagnostics payloads, incremental text
+document sync with open-buffer overlays, document symbols, workspace symbols,
+hover, and top-level Apex/SObject completion from the existing project index.
+Semantic tokens, definition, references, rename, richer completion, diagnostics
+parity with `oaer check`, and large-project behavior remain incomplete.
 
 ### Deliverables
 

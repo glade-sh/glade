@@ -31,6 +31,18 @@ type TextDocumentIdentifier struct {
 	URI DocumentURI `json:"uri"`
 }
 
+type TextDocumentItem struct {
+	URI        DocumentURI `json:"uri"`
+	LanguageID string      `json:"languageId,omitempty"`
+	Version    int         `json:"version,omitempty"`
+	Text       string      `json:"text"`
+}
+
+type VersionedTextDocumentIdentifier struct {
+	URI     DocumentURI `json:"uri"`
+	Version int         `json:"version,omitempty"`
+}
+
 type InitializeParams struct {
 	RootURI string `json:"rootUri,omitempty"`
 }
@@ -69,6 +81,25 @@ type Diagnostic struct {
 	Code     string `json:"code,omitempty"`
 	Source   string `json:"source,omitempty"`
 	Message  string `json:"message"`
+}
+
+type DidOpenTextDocumentParams struct {
+	TextDocument TextDocumentItem `json:"textDocument"`
+}
+
+type DidChangeTextDocumentParams struct {
+	TextDocument   VersionedTextDocumentIdentifier  `json:"textDocument"`
+	ContentChanges []TextDocumentContentChangeEvent `json:"contentChanges"`
+}
+
+type DidCloseTextDocumentParams struct {
+	TextDocument TextDocumentIdentifier `json:"textDocument"`
+}
+
+type TextDocumentContentChangeEvent struct {
+	Range       *Range `json:"range,omitempty"`
+	RangeLength *int   `json:"rangeLength,omitempty"`
+	Text        string `json:"text"`
 }
 
 type DocumentSymbolParams struct {
@@ -134,7 +165,8 @@ type Notification struct {
 }
 
 const (
-	textDocumentSyncFull = 1
+	textDocumentSyncFull        = 1
+	textDocumentSyncIncremental = 2
 
 	diagnosticSeverityError       = 1
 	diagnosticSeverityWarning     = 2

@@ -61,6 +61,8 @@ Release engineering:
   scopes plus object, SObject, exception, and nested collection children.
 - Added paused-context DAP watch expression evaluation for locals, object fields,
   static fields, Trigger values, list/set indexes, map keys, and nested paths.
+- Added LSP `didOpen`/`didChange`/`didClose` document overlays with incremental
+  text edits and publishDiagnostics updates for open-buffer parse diagnostics.
 - Added parser diagnostic-count fixtures plus type-index and sema panic recovery
   diagnostics for malformed project inputs.
 - Added method/constructor parameter type diagnostics and expanded VM exception

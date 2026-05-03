@@ -85,6 +85,141 @@ func TestBuildPublishDiagnosticsConvertsRanges(t *testing.T) {
 	}
 }
 
+func TestTextDocumentSyncPublishesOverlayDiagnostics(t *testing.T) {
+	handler := NewHandler(sampleIndex(t))
+	uri := uriFromPath(filepath.Join(t.TempDir(), "Draft.cls"))
+	open := handler.DidOpen(DidOpenTextDocumentParams{TextDocument: TextDocumentItem{
+		URI:     uri,
+		Version: 1,
+		Text:    "public class Draft {\n",
+	}})
+	if got := diagnosticsCount(t, open); got == 0 {
+		t.Fatalf("open diagnostics = %d", got)
+	}
+
+	notifications, err := handler.DidChange(DidChangeTextDocumentParams{
+		TextDocument: VersionedTextDocumentIdentifier{URI: uri, Version: 2},
+		ContentChanges: []TextDocumentContentChangeEvent{{
+			Range: &Range{
+				Start: Position{Line: 1, Character: 0},
+				End:   Position{Line: 1, Character: 0},
+			},
+			Text: "}\n",
+		}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := diagnosticsCount(t, notifications); got != 0 {
+		t.Fatalf("change diagnostics = %d", got)
+	}
+
+	closeNotifications := handler.DidClose(DidCloseTextDocumentParams{TextDocument: TextDocumentIdentifier{URI: uri}})
+	if got := diagnosticsCount(t, closeNotifications); got != 0 {
+		t.Fatalf("close diagnostics = %d", got)
+	}
+}
+
+func TestHandleJSONDocumentNotificationReturnsDiagnosticsNotification(t *testing.T) {
+	handler := NewHandler(sampleIndex(t))
+	uri := uriFromPath(filepath.Join(t.TempDir(), "Draft.cls"))
+	data, err := handler.HandleJSON(mustJSON(t, map[string]any{
+		"jsonrpc": "2.0",
+		"method":  "textDocument/didOpen",
+		"params": map[string]any{
+			"textDocument": map[string]any{
+				"uri":     uri,
+				"version": 1,
+				"text":    "public class Draft {\n",
+			},
+		},
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var notification Notification
+	if err := json.Unmarshal(data, &notification); err != nil {
+		t.Fatal(err)
+	}
+	if notification.Method != "textDocument/publishDiagnostics" {
+		t.Fatalf("notification = %#v", notification)
+	}
+}
+
+func TestTextDocumentChangeRejectsInvalidRange(t *testing.T) {
+	handler := NewHandler(sampleIndex(t))
+	uri := uriFromPath(filepath.Join(t.TempDir(), "Draft.cls"))
+	handler.DidOpen(DidOpenTextDocumentParams{TextDocument: TextDocumentItem{URI: uri, Text: "public class Draft {}\n"}})
+	_, err := handler.DidChange(DidChangeTextDocumentParams{
+		TextDocument: VersionedTextDocumentIdentifier{URI: uri, Version: 2},
+		ContentChanges: []TextDocumentContentChangeEvent{{
+			Range: &Range{
+				Start: Position{Line: 9, Character: 0},
+				End:   Position{Line: 9, Character: 1},
+			},
+			Text: "x",
+		}},
+	})
+	if err == nil {
+		t.Fatal("expected invalid range error")
+	}
+}
+
+func TestTextDocumentChangeUsesUTF16Positions(t *testing.T) {
+	changed, err := applyTextChange("public class Draft { String s = 'Hi 😀 x'; }\n", TextDocumentContentChangeEvent{
+		Range: &Range{
+			Start: Position{Line: 0, Character: 39},
+			End:   Position{Line: 0, Character: 40},
+		},
+		Text: "y",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(changed, "Hi 😀 y") {
+		t.Fatalf("changed = %q", changed)
+	}
+	_, err = applyTextChange("Hi 😀 x\n", TextDocumentContentChangeEvent{
+		Range: &Range{
+			Start: Position{Line: 0, Character: 4},
+			End:   Position{Line: 0, Character: 4},
+		},
+		Text: "bad",
+	})
+	if err == nil {
+		t.Fatal("expected surrogate-pair split error")
+	}
+}
+
+func TestTextDocumentChangeHandlesCRLFAndCRLineEndings(t *testing.T) {
+	changed, err := applyTextChange("line1\r\nline2", TextDocumentContentChangeEvent{
+		Range: &Range{
+			Start: Position{Line: 1, Character: 0},
+			End:   Position{Line: 1, Character: 5},
+		},
+		Text: "done",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if changed != "line1\r\ndone" {
+		t.Fatalf("changed = %q", changed)
+	}
+	changed, err = applyTextChange("line1\rline2", TextDocumentContentChangeEvent{
+		Range: &Range{
+			Start: Position{Line: 1, Character: 0},
+			End:   Position{Line: 1, Character: 5},
+		},
+		Text: "done",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if changed != "line1\rdone" {
+		t.Fatalf("changed = %q", changed)
+	}
+}
+
 func TestDocumentSymbolsFromIndexFile(t *testing.T) {
 	idx := sampleIndex(t)
 	symbols := NewHandler(idx).DocumentSymbols(uriFromPath(idx.Types[0].File))
@@ -246,4 +381,25 @@ func sampleIndex(t *testing.T) typesys.Index {
 			},
 		},
 	}
+}
+
+func diagnosticsCount(t *testing.T, notifications []Notification) int {
+	t.Helper()
+	if len(notifications) != 1 {
+		t.Fatalf("notifications = %#v", notifications)
+	}
+	payload, ok := notifications[0].Params.(PublishDiagnosticsParams)
+	if !ok {
+		t.Fatalf("params type = %T", notifications[0].Params)
+	}
+	return len(payload.Diagnostics)
+}
+
+func mustJSON(t *testing.T, value any) []byte {
+	t.Helper()
+	data, err := json.Marshal(value)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return data
 }

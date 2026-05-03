@@ -40,7 +40,13 @@ func (h *Handler) HandleJSON(data []byte) ([]byte, error) {
 		return json.Marshal(resp)
 	}
 	if len(req.ID) == 0 {
-		_, _ = h.handle(req.Method, req.Params)
+		result, rpcErr := h.handle(req.Method, req.Params)
+		if rpcErr != nil {
+			return nil, nil
+		}
+		if notifications, ok := result.([]Notification); ok && len(notifications) == 1 {
+			return json.Marshal(notifications[0])
+		}
 		return nil, nil
 	}
 	return json.Marshal(h.HandleRequest(req))
@@ -67,6 +73,28 @@ func (h *Handler) handle(method string, params json.RawMessage) (any, *ResponseE
 	case "shutdown":
 		h.shutdown = true
 		return nil, nil
+	case "textDocument/didOpen":
+		var p DidOpenTextDocumentParams
+		if err := decodeParams(params, &p); err != nil {
+			return nil, invalidParams(err)
+		}
+		return h.DidOpen(p), nil
+	case "textDocument/didChange":
+		var p DidChangeTextDocumentParams
+		if err := decodeParams(params, &p); err != nil {
+			return nil, invalidParams(err)
+		}
+		notifications, err := h.DidChange(p)
+		if err != nil {
+			return nil, invalidParams(err)
+		}
+		return notifications, nil
+	case "textDocument/didClose":
+		var p DidCloseTextDocumentParams
+		if err := decodeParams(params, &p); err != nil {
+			return nil, invalidParams(err)
+		}
+		return h.DidClose(p), nil
 	case "textDocument/documentSymbol":
 		var p DocumentSymbolParams
 		if err := decodeParams(params, &p); err != nil {

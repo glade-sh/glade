@@ -554,7 +554,10 @@ a Salesforce-shaped local API server without silently wrong behavior.
     list/set numeric indexes, map string keys, and nested combinations without
     re-running VM code.
 - [x] Add VS Code launch/task examples and editor documentation.
-- [ ] Expand `oaer lsp` with incremental document sync.
+- [x] Expand `oaer lsp` with incremental document sync.
+  - [x] Handle `textDocument/didOpen`, `didChange`, and `didClose`, apply
+    full-document or ranged incremental text edits to in-memory overlays, publish
+    parse diagnostics from open buffers, and clear diagnostics on close.
 - [ ] Add LSP semantic tokens, definition, references, rename, and richer
   completion.
 - [ ] Make LSP diagnostics match `oaer check` and test results consistently.

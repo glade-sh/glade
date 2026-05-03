@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/open-aer/oaer/internal/apexast"
 	"github.com/open-aer/oaer/internal/diagnostic"
 	"github.com/open-aer/oaer/internal/schema"
 	"github.com/open-aer/oaer/internal/sema"
@@ -12,15 +13,24 @@ import (
 )
 
 type Handler struct {
-	index    typesys.Index
-	analysis sema.Result
-	shutdown bool
+	index     typesys.Index
+	analysis  sema.Result
+	documents map[DocumentURI]openDocument
+	shutdown  bool
+}
+
+type openDocument struct {
+	URI     DocumentURI
+	Path    string
+	Version int
+	Text    string
 }
 
 func NewHandler(index typesys.Index) *Handler {
 	return &Handler{
-		index:    index,
-		analysis: sema.Analyze(index),
+		index:     index,
+		analysis:  sema.Analyze(index),
+		documents: make(map[DocumentURI]openDocument),
 	}
 }
 
@@ -31,7 +41,7 @@ func (h *Handler) Shutdown() bool {
 func (h *Handler) Initialize(_ InitializeParams) InitializeResult {
 	return InitializeResult{
 		Capabilities: ServerCapabilities{
-			TextDocumentSync:        textDocumentSyncFull,
+			TextDocumentSync:        textDocumentSyncIncremental,
 			DocumentSymbolProvider:  true,
 			WorkspaceSymbolProvider: true,
 			HoverProvider:           true,
@@ -42,6 +52,69 @@ func (h *Handler) Initialize(_ InitializeParams) InitializeResult {
 		},
 		ServerInfo: &ServerInfo{Name: "oaer"},
 	}
+}
+
+func (h *Handler) DidOpen(params DidOpenTextDocumentParams) []Notification {
+	uri := params.TextDocument.URI
+	doc := openDocument{
+		URI:     uri,
+		Path:    pathFromURI(uri),
+		Version: params.TextDocument.Version,
+		Text:    params.TextDocument.Text,
+	}
+	h.documents[uri] = doc
+	return h.documentDiagnostics(doc)
+}
+
+func (h *Handler) DidChange(params DidChangeTextDocumentParams) ([]Notification, error) {
+	doc, ok := h.documents[params.TextDocument.URI]
+	if !ok {
+		doc = openDocument{URI: params.TextDocument.URI, Path: pathFromURI(params.TextDocument.URI)}
+	}
+	doc.Version = params.TextDocument.Version
+	for _, change := range params.ContentChanges {
+		next, err := applyTextChange(doc.Text, change)
+		if err != nil {
+			return nil, err
+		}
+		doc.Text = next
+	}
+	h.documents[doc.URI] = doc
+	return h.documentDiagnostics(doc), nil
+}
+
+func (h *Handler) DidClose(params DidCloseTextDocumentParams) []Notification {
+	delete(h.documents, params.TextDocument.URI)
+	return []Notification{{
+		JSONRPC: "2.0",
+		Method:  "textDocument/publishDiagnostics",
+		Params:  BuildPublishDiagnostics(params.TextDocument.URI, nil),
+	}}
+}
+
+func (h *Handler) documentDiagnostics(doc openDocument) []Notification {
+	parser := apexast.NewParser()
+	file := parser.ParseSource(doc.Path, doc.Text)
+	diagnostics := file.Diagnostics
+	if len(diagnostics) == 0 {
+		diagnostics = h.diagnosticsForDocument(doc.URI)
+	}
+	return []Notification{{
+		JSONRPC: "2.0",
+		Method:  "textDocument/publishDiagnostics",
+		Params:  BuildPublishDiagnostics(doc.URI, diagnostics),
+	}}
+}
+
+func (h *Handler) diagnosticsForDocument(uri DocumentURI) []diagnostic.Diagnostic {
+	path := pathFromURI(uri)
+	var diagnostics []diagnostic.Diagnostic
+	for _, diag := range h.analysis.Diagnostics {
+		if diag.File != "" && (sameDocument(path, diag.File) || sameDocument(string(uri), diag.File)) {
+			diagnostics = append(diagnostics, diag)
+		}
+	}
+	return diagnostics
 }
 
 func (h *Handler) PublishDiagnostics(diagnostics []diagnostic.Diagnostic) []Notification {
