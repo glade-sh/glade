@@ -11,7 +11,12 @@ import (
 	"github.com/open-aer/oaer/internal/vm"
 )
 
-const localsReference = 1
+const (
+	localsReference  = 1
+	staticsReference = 2
+	triggerReference = 3
+	firstVarRef      = 4
+)
 
 type Handler struct {
 	stateMu     sync.Mutex
@@ -31,7 +36,7 @@ func NewHandler(snapshot Snapshot) *Handler {
 		breakpoints: make(map[string][]Breakpoint),
 		varRefs:     make(map[int]vm.Value),
 		varRefKeys:  make(map[string]int),
-		nextVarRef:  2,
+		nextVarRef:  firstVarRef,
 	}
 }
 
@@ -96,7 +101,7 @@ func (h *Handler) handleEvaluate(request Request) Response {
 		return h.failure(request, err.Error())
 	}
 	h.stateMu.Lock()
-	value, ok := lookupSnapshotValue(h.snapshot.Vars, args.Expression)
+	value, ok := lookupSnapshotValue(h.snapshot.Vars, h.snapshot.Statics, args.Expression)
 	if !ok {
 		h.stateMu.Unlock()
 		return h.failure(request, fmt.Sprintf("unknown expression %q", args.Expression))
@@ -205,10 +210,11 @@ func (h *Handler) ApplyPause(pause vm.DebugPause) Event {
 		Threads: []Thread{{ID: 1, Name: "main"}},
 		Frames:  stackFramesFromPause(pause),
 		Vars:    pause.Vars,
+		Statics: pause.Statics,
 	}
 	h.varRefs = make(map[int]vm.Value)
 	h.varRefKeys = make(map[string]int)
-	h.nextVarRef = 2
+	h.nextVarRef = firstVarRef
 	h.stateMu.Unlock()
 	reason := string(pause.Reason)
 	if reason == "" {
@@ -289,14 +295,9 @@ func (h *Handler) handleScopes(request Request) Response {
 		return h.failure(request, err.Error())
 	}
 	h.stateMu.Lock()
-	varCount := len(h.snapshot.Vars)
+	scopes := h.scopesLocked()
 	h.stateMu.Unlock()
-	return h.success(request, map[string]any{"scopes": []Scope{{
-		Name:               "Locals",
-		VariablesReference: localsReference,
-		Expensive:          false,
-		NamedVariables:     varCount,
-	}}})
+	return h.success(request, map[string]any{"scopes": scopes})
 }
 
 func (h *Handler) handleVariables(request Request) Response {
@@ -311,7 +312,11 @@ func (h *Handler) handleVariables(request Request) Response {
 	var variables []Variable
 	h.stateMu.Lock()
 	if args.VariablesReference == localsReference {
-		variables = h.variablesFromSnapshotLocked()
+		variables = h.variablesFromNamedValuesLocked("locals", h.localsLocked())
+	} else if args.VariablesReference == staticsReference {
+		variables = h.variablesFromNamedValuesLocked("statics", namedValuesFromMap(h.snapshot.Statics))
+	} else if args.VariablesReference == triggerReference {
+		variables = h.variablesFromNamedValuesLocked("trigger", h.triggerContextLocked())
 	} else if value, ok := h.varRefs[args.VariablesReference]; ok {
 		variables = h.variablesFromNamedValuesLocked(fmt.Sprintf("ref:%d", args.VariablesReference), childValues(value))
 	} else {
@@ -415,8 +420,52 @@ func (h *Handler) setLiveSession(session *LiveSession) {
 	h.live = session
 }
 
-func (h *Handler) variablesFromSnapshotLocked() []Variable {
-	return h.variablesFromNamedValuesLocked("locals", namedValuesFromMap(h.snapshot.Vars))
+func (h *Handler) scopesLocked() []Scope {
+	scopes := []Scope{{
+		Name:               "Locals",
+		VariablesReference: localsReference,
+		Expensive:          false,
+		NamedVariables:     len(h.localsLocked()),
+	}}
+	if len(h.snapshot.Statics) > 0 {
+		scopes = append(scopes, Scope{
+			Name:               "Statics",
+			VariablesReference: staticsReference,
+			Expensive:          false,
+			NamedVariables:     len(h.snapshot.Statics),
+		})
+	}
+	if triggerValues := h.triggerContextLocked(); len(triggerValues) > 0 {
+		scopes = append(scopes, Scope{
+			Name:               "Trigger",
+			VariablesReference: triggerReference,
+			Expensive:          false,
+			NamedVariables:     len(triggerValues),
+		})
+	}
+	return scopes
+}
+
+func (h *Handler) localsLocked() []namedValue {
+	values := make(map[string]vm.Value, len(h.snapshot.Vars))
+	for name, value := range h.snapshot.Vars {
+		if strings.HasPrefix(name, "Trigger.") {
+			continue
+		}
+		values[name] = value
+	}
+	return namedValuesFromMap(values)
+}
+
+func (h *Handler) triggerContextLocked() []namedValue {
+	values := make(map[string]vm.Value)
+	for name, value := range h.snapshot.Vars {
+		if !strings.HasPrefix(name, "Trigger.") {
+			continue
+		}
+		values[strings.TrimPrefix(name, "Trigger.")] = value
+	}
+	return namedValuesFromMap(values)
 }
 
 func (h *Handler) variablesFromNamedValuesLocked(prefix string, values []namedValue) []Variable {
@@ -474,7 +523,7 @@ func sliceVariables(variables []Variable, start, count int) []Variable {
 	return variables[start:end]
 }
 
-func lookupSnapshotValue(vars map[string]vm.Value, expression string) (vm.Value, bool) {
+func lookupSnapshotValue(vars, statics map[string]vm.Value, expression string) (vm.Value, bool) {
 	expression = strings.TrimSpace(expression)
 	if expression == "" {
 		return vm.Null, false
@@ -483,11 +532,20 @@ func lookupSnapshotValue(vars map[string]vm.Value, expression string) (vm.Value,
 		return value, true
 	}
 	parts := strings.Split(expression, ".")
+	if len(parts) > 1 {
+		if value, ok := lookupValuePath(statics[parts[0]], parts[1:]); ok {
+			return value, true
+		}
+	}
 	current, ok := vars[parts[0]]
 	if !ok {
 		return vm.Null, false
 	}
-	for _, part := range parts[1:] {
+	return lookupValuePath(current, parts[1:])
+}
+
+func lookupValuePath(current vm.Value, parts []string) (vm.Value, bool) {
+	for _, part := range parts {
 		if current.Kind != vm.ValueObject {
 			return vm.Null, false
 		}

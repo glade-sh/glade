@@ -217,6 +217,99 @@ func TestHandlerDebugHooksAndApplyPause(t *testing.T) {
 	}
 }
 
+func TestHandlerRichScopesAndObjectVariables(t *testing.T) {
+	account := vm.Object("Account")
+	account.Fields["Id"] = vm.String("001000000000001")
+	account.Fields["Name"] = vm.String("Acme")
+	err := vm.Object("System.DmlException")
+	err.Fields["message"] = vm.String("bad row")
+	settings := vm.Object("Settings")
+	settings.Fields["Enabled"] = vm.Bool(true)
+	h := NewHandler(Snapshot{
+		Vars: map[string]vm.Value{
+			"account":             account,
+			"caught":              err,
+			"names":               vm.List(vm.String("Acme")),
+			"Trigger.new":         vm.List(account),
+			"Trigger.isExecuting": vm.Bool(true),
+			"Trigger.size":        vm.Int(1),
+		},
+		Statics: map[string]vm.Value{
+			"Settings": settings,
+		},
+	})
+
+	scopes := h.Handle(request(1, CommandScopes, map[string]any{"frameId": 1}))
+	var scopesBody struct {
+		Scopes []Scope `json:"scopes"`
+	}
+	decodeBody(t, scopes[0].(Response), &scopesBody)
+	if names := scopeNames(scopesBody.Scopes); names != "Locals,Statics,Trigger" {
+		t.Fatalf("scopes = %s (%#v)", names, scopesBody.Scopes)
+	}
+
+	locals := h.Handle(request(2, CommandVariables, map[string]any{"variablesReference": localsReference}))
+	var localsBody struct {
+		Variables []Variable `json:"variables"`
+	}
+	decodeBody(t, locals[0].(Response), &localsBody)
+	if names := variableNames(localsBody.Variables); names != "account,caught,names" {
+		t.Fatalf("locals = %s (%#v)", names, localsBody.Variables)
+	}
+	accountVar := findVariable(t, localsBody.Variables, "account")
+	if accountVar.NamedVariables != 2 || accountVar.VariablesReference == 0 {
+		t.Fatalf("account variable = %#v", accountVar)
+	}
+	accountChildren := h.Handle(request(3, CommandVariables, map[string]any{"variablesReference": accountVar.VariablesReference}))
+	var accountBody struct {
+		Variables []Variable `json:"variables"`
+	}
+	decodeBody(t, accountChildren[0].(Response), &accountBody)
+	if names := variableNames(accountBody.Variables); names != "Id,Name" {
+		t.Fatalf("account fields = %s (%#v)", names, accountBody.Variables)
+	}
+	if findVariable(t, accountBody.Variables, "Name").Value != "Acme" {
+		t.Fatalf("account fields = %#v", accountBody.Variables)
+	}
+	if caught := findVariable(t, localsBody.Variables, "caught"); caught.Value != "bad row" || caught.NamedVariables != 1 {
+		t.Fatalf("caught = %#v", caught)
+	}
+
+	statics := h.Handle(request(4, CommandVariables, map[string]any{"variablesReference": staticsReference}))
+	var staticsBody struct {
+		Variables []Variable `json:"variables"`
+	}
+	decodeBody(t, statics[0].(Response), &staticsBody)
+	settingsVar := findVariable(t, staticsBody.Variables, "Settings")
+	settingsChildren := h.Handle(request(5, CommandVariables, map[string]any{"variablesReference": settingsVar.VariablesReference}))
+	var settingsBody struct {
+		Variables []Variable `json:"variables"`
+	}
+	decodeBody(t, settingsChildren[0].(Response), &settingsBody)
+	if got := findVariable(t, settingsBody.Variables, "Enabled"); got.Value != "true" {
+		t.Fatalf("settings children = %#v", settingsBody.Variables)
+	}
+
+	trigger := h.Handle(request(6, CommandVariables, map[string]any{"variablesReference": triggerReference}))
+	var triggerBody struct {
+		Variables []Variable `json:"variables"`
+	}
+	decodeBody(t, trigger[0].(Response), &triggerBody)
+	if names := variableNames(triggerBody.Variables); names != "isExecuting,new,size" {
+		t.Fatalf("trigger = %s (%#v)", names, triggerBody.Variables)
+	}
+
+	evaluated := h.Handle(request(7, CommandEvaluate, map[string]any{"expression": "Settings.Enabled"}))
+	var evalBody struct {
+		Result string `json:"result"`
+		Type   string `json:"type"`
+	}
+	decodeBody(t, evaluated[0].(Response), &evalBody)
+	if evalBody.Result != "true" || evalBody.Type != string(vm.ValueBool) {
+		t.Fatalf("evaluate static = %#v", evalBody)
+	}
+}
+
 func TestHandlerExecuteToBreakpointStopsBeforeStatement(t *testing.T) {
 	h := NewHandler(Snapshot{})
 	h.Handle(request(1, CommandSetBreakpoints, map[string]any{
@@ -294,6 +387,17 @@ func variableNames(variables []Variable) string {
 			out += ","
 		}
 		out += variable.Name
+	}
+	return out
+}
+
+func scopeNames(scopes []Scope) string {
+	out := ""
+	for i, scope := range scopes {
+		if i > 0 {
+			out += ","
+		}
+		out += scope.Name
 	}
 	return out
 }

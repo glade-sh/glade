@@ -57,6 +57,8 @@ Release engineering:
   stop live execution at stable statement source locations with stack and locals.
 - Added live DAP session controls for continue, pause, disconnect, and
   stack-depth step-in/step-over/step-out behavior.
+- Expanded DAP scopes and variable rendering with Locals, Statics, and Trigger
+  scopes plus object, SObject, exception, and nested collection children.
 - Added parser diagnostic-count fixtures plus type-index and sema panic recovery
   diagnostics for malformed project inputs.
 - Added method/constructor parameter type diagnostics and expanded VM exception

@@ -543,8 +543,11 @@ a Salesforce-shaped local API server without silently wrong behavior.
     commands.
   - [x] Use stack depth so step-over skips method bodies, step-in enters method
     bodies, and step-out returns to the caller frame.
-- [ ] Complete DAP scopes and variable rendering for SObjects, user objects,
+- [x] Complete DAP scopes and variable rendering for SObjects, user objects,
   statics, collections, exceptions, and trigger context.
+  - [x] Split DAP variables into Locals, Statics, and Trigger scopes, render
+    object/SObject/exception fields as named child variables, preserve nested
+    collection children, and expose static class fields from live VM pauses.
 - [ ] Complete watch expression evaluation against VM context.
 - [x] Add VS Code launch/task examples and editor documentation.
 - [ ] Expand `oaer lsp` with incremental document sync.

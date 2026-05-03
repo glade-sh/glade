@@ -115,6 +115,7 @@ type Snapshot struct {
 	Frames  []StackFrame
 	Trace   []trace.Event
 	Vars    map[string]vm.Value
+	Statics map[string]vm.Value
 }
 
 type namedValue struct {
@@ -234,6 +235,8 @@ func variableFromValue(name string, value vm.Value, ref int) Variable {
 		out.IndexedVariables = len(value.Set)
 	case vm.ValueMap:
 		out.NamedVariables = len(value.Map)
+	case vm.ValueObject:
+		out.NamedVariables = len(value.Fields)
 	}
 	return out
 }
@@ -270,6 +273,17 @@ func childValues(value vm.Value) []namedValue {
 		out := make([]namedValue, 0, len(keys))
 		for _, key := range keys {
 			out = append(out, namedValue{name: key, value: value.Map[key]})
+		}
+		return out
+	case vm.ValueObject:
+		keys := make([]string, 0, len(value.Fields))
+		for key := range value.Fields {
+			keys = append(keys, key)
+		}
+		sort.Strings(keys)
+		out := make([]namedValue, 0, len(keys))
+		for _, key := range keys {
+			out = append(out, namedValue{name: key, value: value.Fields[key]})
 		}
 		return out
 	default:

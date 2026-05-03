@@ -40,6 +40,7 @@ type DebugPause struct {
 	Location DebugLocation
 	Stack    []StackFrame
 	Vars     map[string]Value
+	Statics  map[string]Value
 }
 
 type DebugHooks struct {
@@ -81,6 +82,7 @@ func (vm *VM) maybePauseForDebug(inst ir.Instruction) error {
 		Location: location,
 		Stack:    stackFrames(vm.rawStackFrames()),
 		Vars:     cloneValues(vm.Globals),
+		Statics:  vm.debugStaticValues(),
 	}
 	action := DebugActionContinue
 	if vm.debugHooks.OnPause != nil {
@@ -121,6 +123,30 @@ func debugFileMatches(breakpointFile, statementFile string) bool {
 		return true
 	}
 	return strings.HasSuffix(statementFile, "/"+breakpointFile) || strings.HasSuffix(breakpointFile, "/"+statementFile)
+}
+
+func (vm *VM) debugStaticValues() map[string]Value {
+	out := make(map[string]Value)
+	for className, class := range vm.Classes {
+		fields := orderedFieldNames(class.StaticFields, class.StaticFieldOrder)
+		if len(fields) == 0 {
+			continue
+		}
+		value := Object(class.Name)
+		if value.Type == "" {
+			value.Type = className
+		}
+		for _, fieldName := range fields {
+			field := class.StaticFields[fieldName]
+			fieldValue := field.Value
+			if fieldValue.Kind == "" {
+				fieldValue = defaultValue(field.Type, field.Value)
+			}
+			value.Fields[fieldName] = cloneValue(fieldValue)
+		}
+		out[className] = value
+	}
+	return out
 }
 
 func cloneValues(in map[string]Value) map[string]Value {
