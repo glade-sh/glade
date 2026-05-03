@@ -434,6 +434,8 @@ System.assertEquals('DmlException', constructed.getTypeName());
 System.assertEquals(0, constructed.getLineNumber());
 System.assertEquals('', constructed.getStackTraceString());
 System.assertEquals('System.DmlException: blocked', constructed.toString());
+Exception noMessage = new DmlException();
+System.assertEquals(null, noMessage.getMessage());
 
 String caught = '';
 try {

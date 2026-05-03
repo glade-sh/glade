@@ -6690,7 +6690,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if message, ok := receiver.Fields["message"]; ok {
 				return message, receiver, false, true, nil
 			}
-			return String(receiver.String()), receiver, false, true, nil
+			return Null, receiver, false, true, nil
 		case "getTypeName":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("%s.getTypeName expects 0 arguments", receiver.Type)
