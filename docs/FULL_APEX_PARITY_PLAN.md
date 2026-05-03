@@ -105,6 +105,10 @@ Current progress:
   `Blob.valueOf`, `Blob.toString`, `Blob.size`, Base64 encode/decode,
   hex encode/decode, digest generation for the documented MD5/SHA1/SHA2/SHA3
   slice, and HMAC generation for documented local algorithms.
+- Type/Id/URL/Object: runtime support now covers `Type` equality, hash and
+  string forms, constructor-backed zero-arg `Type.newInstance` for registered
+  classes, lightweight `Id.valueOf` validation and `to15`, deterministic URL
+  parsing accessors, and primitive `Object` equality/hash/string behavior.
 - Fixtures:
   - `docs/fixtures/core-collection-stdlib.json`
   - `docs/fixtures/core-string-stdlib.json`
@@ -113,6 +117,7 @@ Current progress:
   - `docs/fixtures/core-datetime-stdlib.json`
   - `docs/fixtures/core-json-stdlib.json`
   - `docs/fixtures/core-blob-crypto-stdlib.json`
+  - `docs/fixtures/core-type-id-url-stdlib.json`
 
 Remaining cuts:
 
@@ -158,8 +163,8 @@ Remaining cuts:
 
 7. System, exceptions, Type, and reflection
    - Assert overloads and messages, debug/log levels, current-time helpers,
-     exception classes, `Type.newInstance`, assignability, equality, hashCode,
-     string forms, namespace behavior, and constructor dispatch.
+     exception classes, Type assignability, namespace behavior, and broader
+     reflection edge cases.
 
 8. Pattern and Matcher
    - Fixture-backed Go `regexp` slice covers compile/matches/pattern,
@@ -170,8 +175,9 @@ Remaining cuts:
      explicit compatibility work.
 
 9. Id, URL, and primitive object behavior
-   - Id validation, key prefix behavior, conversion, equality, object
-     `toString`, `equals`, and `hashCode` behavior expected by Apex code.
+   - Id key prefix and `getSObjectType` behavior, full checksum validation, URL
+     request-context/cloud-only helpers, and exact object `toString` versioned
+     output for user classes.
 
 Exit criteria:
 

@@ -1,0 +1,108 @@
+{
+  "name": "core-type-id-url-stdlib",
+  "evidence": [
+    {
+      "symbol": "Type.equals",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Type.getName",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Type.hashCode",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Type.toString",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Type.newInstance",
+      "kind": "exec",
+      "notes": "Fixture covers local no-argument object construction; registered-class constructor dispatch is covered by VM unit tests."
+    },
+    {
+      "symbol": "Id.valueOf",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Id.to15",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Object.equals",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Object.hashCode",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Object.toString",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.hashCode",
+      "kind": "exec"
+    },
+    {
+      "symbol": "URL.getAuthority",
+      "kind": "exec"
+    },
+    {
+      "symbol": "URL.getDefaultPort",
+      "kind": "exec"
+    },
+    {
+      "symbol": "URL.getFile",
+      "kind": "exec"
+    },
+    {
+      "symbol": "URL.getHost",
+      "kind": "exec"
+    },
+    {
+      "symbol": "URL.getPath",
+      "kind": "exec"
+    },
+    {
+      "symbol": "URL.getPort",
+      "kind": "exec"
+    },
+    {
+      "symbol": "URL.getProtocol",
+      "kind": "exec"
+    },
+    {
+      "symbol": "URL.getQuery",
+      "kind": "exec"
+    },
+    {
+      "symbol": "URL.getRef",
+      "kind": "exec"
+    },
+    {
+      "symbol": "URL.toExternalForm",
+      "kind": "exec"
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Type accountType = Type.forName('Account');\nType sameType = Type.forName('Account');\nType contactType = Type.forName('Contact');\nString accountName = 'Account';\nSystem.assertEquals('Account', accountType.getName());\nSystem.assertEquals('Account', accountType.toString());\nSystem.assert(accountType.equals(sameType));\nSystem.assert(!accountType.equals(contactType));\nSystem.assertEquals(accountName.hashCode(), accountType.hashCode());\nAccount account = accountType.newInstance();\naccount.Name = 'Acme';\nSystem.assertEquals('Acme', account.Name);\nId valid = Id.valueOf('001B000001DVM9t');\nId same = Id.valueOf('001B000001DVM9t', false);\nId restored = Id.valueOf('001b000001dvm9tIAH', true);\nId longId = Id.valueOf('001B000001DVM9tIAH');\nSystem.assert(valid.equals(same));\nSystem.assertEquals('001B000001DVM9t', valid.toString());\nSystem.assertEquals('001B000001DVM9t', valid.to15());\nSystem.assertEquals('001B000001DVM9t', longId.to15());\nSystem.assertEquals('001B000001DVM9tIAH', restored.toString());\nString text = 'trail';\nString sameText = 'trail';\nSystem.assert(text.equals(sameText));\nSystem.assertEquals('trail', text.toString());\nSystem.assertEquals(sameText.hashCode(), text.hashCode());\nInteger count = 7;\nSystem.assert(count.equals(7));\nSystem.assertEquals('7', count.toString());\nURL base = URL.getOrgDomainUrl();\nSystem.assertEquals('https://local.oaer.example', base.toExternalForm());\nSystem.assertEquals('https', base.getProtocol());\nSystem.assertEquals('local.oaer.example', base.getHost());\nSystem.assertEquals(443, base.getDefaultPort());\nURL detailed = new URL('https://example.test:8443/apex/Page?id=001#top');\nSystem.assertEquals('example.test', detailed.getHost());\nSystem.assertEquals('example.test:8443', detailed.getAuthority());\nSystem.assertEquals('/apex/Page', detailed.getPath());\nSystem.assertEquals('id=001', detailed.getQuery());\nSystem.assertEquals('top', detailed.getRef());\nSystem.assertEquals('/apex/Page?id=001', detailed.getFile());\nSystem.assertEquals(8443, detailed.getPort());\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Type accountType = Type.forName('Account');\nType sameType = Type.forName('Account');\nType contactType = Type.forName('Contact');\nString accountName = 'Account';\nSystem.assertEquals('Account', accountType.getName());\nSystem.assertEquals('Account', accountType.toString());\nSystem.assert(accountType.equals(sameType));\nSystem.assert(!accountType.equals(contactType));\nSystem.assertEquals(accountName.hashCode(), accountType.hashCode());\nAccount account = accountType.newInstance();\naccount.Name = 'Acme';\nSystem.assertEquals('Acme', account.Name);\nId valid = Id.valueOf('001B000001DVM9t');\nId same = Id.valueOf('001B000001DVM9t', false);\nId restored = Id.valueOf('001b000001dvm9tIAH', true);\nId longId = Id.valueOf('001B000001DVM9tIAH');\nSystem.assert(valid.equals(same));\nSystem.assertEquals('001B000001DVM9t', valid.toString());\nSystem.assertEquals('001B000001DVM9t', valid.to15());\nSystem.assertEquals('001B000001DVM9t', longId.to15());\nSystem.assertEquals('001B000001DVM9tIAH', restored.toString());\nString text = 'trail';\nString sameText = 'trail';\nSystem.assert(text.equals(sameText));\nSystem.assertEquals('trail', text.toString());\nSystem.assertEquals(sameText.hashCode(), text.hashCode());\nInteger count = 7;\nSystem.assert(count.equals(7));\nSystem.assertEquals('7', count.toString());\nURL base = URL.getOrgDomainUrl();\nSystem.assertEquals('https://local.oaer.example', base.toExternalForm());\nSystem.assertEquals('https', base.getProtocol());\nSystem.assertEquals('local.oaer.example', base.getHost());\nSystem.assertEquals(443, base.getDefaultPort());\nURL detailed = new URL('https://example.test:8443/apex/Page?id=001#top');\nSystem.assertEquals('example.test', detailed.getHost());\nSystem.assertEquals('example.test:8443', detailed.getAuthority());\nSystem.assertEquals('/apex/Page', detailed.getPath());\nSystem.assertEquals('id=001', detailed.getQuery());\nSystem.assertEquals('top', detailed.getRef());\nSystem.assertEquals('/apex/Page?id=001', detailed.getFile());\nSystem.assertEquals(8443, detailed.getPort());\n"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

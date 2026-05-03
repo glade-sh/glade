@@ -230,6 +230,64 @@ System.assertEquals('e477384d7ca229dd1426e64b63ebf2d36ebd6d7e669a6735424e72ea6c0
 	}
 }
 
+func TestExecCoreTypeIDURLObjectStdlib(t *testing.T) {
+	program, err := CompileAnonymous(`
+Type accountType = Type.forName('Account');
+Type accountTypeAgain = Type.forName('Account');
+Type contactType = Type.forName('Contact');
+String accountName = 'Account';
+System.assertEquals('Account', accountType.getName());
+System.assertEquals('Account', accountType.toString());
+System.assert(accountType.equals(accountTypeAgain));
+System.assert(!accountType.equals(contactType));
+System.assertEquals(accountName.hashCode(), accountType.hashCode());
+
+Id valid = Id.valueOf('001B000001DVM9t');
+Id same = Id.valueOf('001B000001DVM9t', false);
+Id restored = Id.valueOf('001b000001dvm9tIAH', true);
+System.assert(valid.equals(same));
+System.assertEquals('001B000001DVM9t', valid.toString());
+System.assertEquals('001B000001DVM9t', valid.to15());
+Id longId = Id.valueOf('001B000001DVM9tIAH');
+System.assertEquals('001B000001DVM9t', longId.to15());
+System.assertEquals('001B000001DVM9tIAH', restored.toString());
+
+String text = 'trail';
+System.assert(text.equals('trail'));
+System.assert(!text.equals('ridge'));
+System.assertEquals('trail', text.toString());
+String sameText = 'trail';
+System.assertEquals(sameText.hashCode(), text.hashCode());
+Integer count = 7;
+System.assert(count.equals(7));
+System.assertEquals('7', count.toString());
+
+URL base = URL.getOrgDomainUrl();
+System.assertEquals('https://local.oaer.example', base.toExternalForm());
+System.assertEquals('https', base.getProtocol());
+System.assertEquals('local.oaer.example', base.getHost());
+System.assertEquals(443, base.getDefaultPort());
+System.assertEquals(-1, base.getPort());
+URL detailed = new URL('https://example.test:8443/apex/Page?id=001#top');
+URL detailedAgain = new URL('https://example.test:8443/apex/Page?id=001#top');
+System.assert(detailed.equals(detailedAgain));
+System.assertEquals(detailed.hashCode(), detailedAgain.hashCode());
+System.assertEquals('example.test', detailed.getHost());
+System.assertEquals('example.test:8443', detailed.getAuthority());
+System.assertEquals('/apex/Page', detailed.getPath());
+System.assertEquals('id=001', detailed.getQuery());
+System.assertEquals('top', detailed.getRef());
+System.assertEquals('/apex/Page?id=001', detailed.getFile());
+System.assertEquals(8443, detailed.getPort());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestBlobEncodingCryptoStdlibRejectsBadInputs(t *testing.T) {
 	tests := []string{
 		"Blob b = Blob.valueOf('abc'); b.size(1);",
@@ -239,6 +297,54 @@ func TestBlobEncodingCryptoStdlibRejectsBadInputs(t *testing.T) {
 		"Crypto.generateDigest('SHA-999', Blob.valueOf('x'));",
 		"Crypto.generateMac('hmacSHA999', Blob.valueOf('x'), Blob.valueOf('key'));",
 		"Crypto.generateMac('hmacSHA256', Blob.valueOf('x'), 'key');",
+	}
+	for _, source := range tests {
+		program, err := CompileAnonymous(source)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := Execute(program, nil); err == nil {
+			t.Fatalf("expected error for %s", source)
+		}
+	}
+}
+
+func TestExecTypeNewInstanceRunsZeroArgConstructor(t *testing.T) {
+	constructorProgram, err := CompileAnonymous(`this.Name = 'built';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Type thingType = Type.forName('Thing');
+Thing thing = thingType.newInstance();
+System.assertEquals('built', thing.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Thing",
+		Fields: map[string]Field{
+			"Name": {Name: "Name", Type: "String"},
+		},
+		FieldOrder: []string{"Name"},
+		Constructors: []Method{
+			{Name: "Thing.<init>", ClassName: "Thing", Program: constructorProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCoreIDValueOfRejectsInvalidAndRestoreCasing(t *testing.T) {
+	tests := []string{
+		`Id.valueOf('short');`,
+		`Id.valueOf('001B000001DVM9!');`,
+		`Id.valueOf('001B000001DVM9t999', true);`,
 	}
 	for _, source := range tests {
 		program, err := CompileAnonymous(source)
