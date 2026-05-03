@@ -1620,7 +1620,7 @@ func (vm *VM) executeSOQLRowsWithExpander(raw string, execResult *Result, expand
 	if err != nil {
 		return nil, newExceptionError("QueryException", err.Error())
 	}
-	if err := vm.incrementLimit("queryRows", result.Rows); err != nil {
+	if err := vm.incrementLimit("queryRows", soqlLimitRows(result)); err != nil {
 		return nil, err
 	}
 	values := make([]Value, 0, len(result.Records))
@@ -1634,6 +1634,16 @@ func (vm *VM) executeSOQLRowsWithExpander(raw string, execResult *Result, expand
 		}))
 	}
 	return values, nil
+}
+
+func soqlLimitRows(result soql.Result) int {
+	rows := len(result.Records)
+	for _, record := range result.Records {
+		for _, children := range record.Children {
+			rows += len(children)
+		}
+	}
+	return rows
 }
 
 func aggregateCount(value Value) (Value, bool) {

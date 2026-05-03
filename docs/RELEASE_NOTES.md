@@ -98,6 +98,7 @@ Release engineering:
   addError support for unset schema fields.
 - Split Apex upsert trigger execution into supported insert and update trigger
   contexts and added fixture coverage for upsert/undelete trigger paths.
+- Count projected child relationship rows in SOQL governor row counters.
 - Added SOQL `ALL ROWS` support for querying soft-deleted records.
 - Added SOQL `WITH SECURITY_ENFORCED`, `WITH USER_MODE`, and
   `WITH SYSTEM_MODE` parsing as local security-mode markers.

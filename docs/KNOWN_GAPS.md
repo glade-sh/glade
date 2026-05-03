@@ -75,7 +75,7 @@ The MVP target is `full-featured aer-parity MVP`. This document lists required c
 ### `limits.core`: Governor counters and strict/permissive enforcement
 
 - Status: `partial`
-- Gap: The VM now tracks SOQL queries/rows, DML statements/rows, approximate heap, statement-count CPU, callouts, aggregate async jobs, future calls, queueable jobs, batch jobs, scheduled jobs, and email invocations. Limits.* exposes current and max counters for supported SOQL, DML, heap, CPU, callout, aggregate async, future, queueable, and email counters, Test.startTest/Test.stopTest reset and restore test windows, permissive mode records violations, strict mode raises System.LimitException, and oaer exec/test accept --limit-mode. Exact Salesforce accounting and configurable per-test caps remain incomplete.
+- Gap: The VM now tracks SOQL queries/rows including projected child relationship rows, DML statements/rows, approximate heap, statement-count CPU, callouts, aggregate async jobs, future calls, queueable jobs, batch jobs, scheduled jobs, and email invocations. Limits.* exposes current and max counters for supported SOQL, DML, heap, CPU, callout, aggregate async, future, queueable, and email counters, Test.startTest/Test.stopTest reset and restore test windows, permissive mode records violations, strict mode raises System.LimitException, and oaer exec/test accept --limit-mode. Exact Salesforce accounting and configurable per-test caps remain incomplete.
 
 ## Local API server
 

@@ -45,6 +45,44 @@ System.assert(Limits.getCpuTime() > 0);
 	}
 }
 
+func TestExecSOQLLimitRowsCountsChildSubqueryRows(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account a = new Account(Name = 'Acme');
+insert a;
+insert new Contact(LastName = 'One', AccountId = a.Id);
+insert new Contact(LastName = 'Two', AccountId = a.Id);
+List<Account> rows = [SELECT Id, (SELECT Id FROM Contacts) FROM Account WHERE Id = :a.Id];
+System.assertEquals(1, Limits.getQueries());
+System.assertEquals(3, Limits.getQueryRows());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Contact",
+			KeyPrefix: "003",
+			Fields: map[string]storage.Field{
+				"LastName":  {APIName: "LastName", Type: storage.FieldString},
+				"AccountId": {APIName: "AccountId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Account"},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "AccountId",
+				ParentObjects:      []string{"Account"},
+				ParentRelationship: "Account",
+				ChildRelationship:  "Contacts",
+			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecStrictLimitModeFails(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<Account> rows = [SELECT Id FROM Account];

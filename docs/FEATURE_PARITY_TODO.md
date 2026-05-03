@@ -386,8 +386,10 @@ a Salesforce-shaped local API server without silently wrong behavior.
 
 ## 5. Governor Limits And Platform APIs
 
-- [ ] Make SOQL query and row counters Salesforce-compatible for supported
+- [x] Make SOQL query and row counters Salesforce-compatible for supported
   query paths.
+  - [x] Count projected child relationship rows toward `Limits.getQueryRows()`
+    while preserving one query count for the parent SOQL statement.
 - [ ] Make DML statement and row counters Salesforce-compatible for supported
   DML paths.
 - [ ] Improve heap size approximation and expose predictable diagnostics for
