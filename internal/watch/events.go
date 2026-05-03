@@ -5,6 +5,8 @@ import "time"
 type EventType string
 
 const (
+	WatchEventSchemaVersion = 1
+
 	EventWatchStarted   EventType = "watch.started"
 	EventChanges        EventType = "watch.changes"
 	EventTestsSelected  EventType = "watch.tests_selected"
@@ -15,43 +17,49 @@ const (
 )
 
 type WatchStartedEvent struct {
-	Event  EventType      `json:"event"`
-	Time   time.Time      `json:"time"`
-	Config ConfigSnapshot `json:"config"`
+	SchemaVersion int            `json:"schemaVersion"`
+	Event         EventType      `json:"event"`
+	Time          time.Time      `json:"time"`
+	Config        ConfigSnapshot `json:"config"`
 }
 
 type ChangesEvent struct {
-	Event   EventType `json:"event"`
-	Time    time.Time `json:"time"`
-	Changes []Change  `json:"changes"`
+	SchemaVersion int       `json:"schemaVersion"`
+	Event         EventType `json:"event"`
+	Time          time.Time `json:"time"`
+	Changes       []Change  `json:"changes"`
 }
 
 type DebouncedEvent struct {
-	Event   EventType     `json:"event"`
-	Time    time.Time     `json:"time"`
-	Delay   time.Duration `json:"-"`
-	DelayMS int64         `json:"delayMs"`
-	Changes []Change      `json:"changes"`
+	SchemaVersion int           `json:"schemaVersion"`
+	Event         EventType     `json:"event"`
+	Time          time.Time     `json:"time"`
+	Delay         time.Duration `json:"-"`
+	DelayMS       int64         `json:"delayMs"`
+	Changes       []Change      `json:"changes"`
 }
 
 type TestsSelectedEvent struct {
-	Event     EventType     `json:"event"`
-	Time      time.Time     `json:"time"`
-	Selection TestSelection `json:"selection"`
+	SchemaVersion int           `json:"schemaVersion"`
+	Event         EventType     `json:"event"`
+	Time          time.Time     `json:"time"`
+	Selection     TestSelection `json:"selection"`
 }
 
 type RunStartedEvent struct {
-	Event       EventType `json:"event"`
-	Time        time.Time `json:"time"`
-	TestClasses []string  `json:"testClasses,omitempty"`
-	RunID       int       `json:"runId,omitempty"`
+	SchemaVersion int       `json:"schemaVersion"`
+	Event         EventType `json:"event"`
+	Time          time.Time `json:"time"`
+	RunID         int       `json:"runId"`
+	TestClasses   []string  `json:"testClasses"`
 }
 
 type RunFinishedEvent struct {
-	Event   EventType  `json:"event"`
-	Time    time.Time  `json:"time"`
-	RunID   int        `json:"runId,omitempty"`
-	Summary RunSummary `json:"summary"`
+	SchemaVersion int        `json:"schemaVersion"`
+	Event         EventType  `json:"event"`
+	Time          time.Time  `json:"time"`
+	RunID         int        `json:"runId"`
+	Summary       RunSummary `json:"summary"`
 }
 
 type RunSummary struct {
@@ -64,52 +72,80 @@ type RunSummary struct {
 }
 
 type ErrorEvent struct {
-	Event   EventType `json:"event"`
-	Time    time.Time `json:"time"`
-	Message string    `json:"message"`
-	Path    string    `json:"path,omitempty"`
+	SchemaVersion int       `json:"schemaVersion"`
+	Event         EventType `json:"event"`
+	Time          time.Time `json:"time"`
+	Message       string    `json:"message"`
+	Path          string    `json:"path,omitempty"`
 }
 
 func NewWatchStartedEvent(now time.Time, cfg Config) WatchStartedEvent {
 	return WatchStartedEvent{
-		Event:  EventWatchStarted,
-		Time:   now,
-		Config: cfg.Snapshot(),
+		SchemaVersion: WatchEventSchemaVersion,
+		Event:         EventWatchStarted,
+		Time:          now,
+		Config:        cfg.Snapshot(),
 	}
 }
 
 func NewChangesEvent(now time.Time, changes []Change) ChangesEvent {
 	return ChangesEvent{
-		Event:   EventChanges,
-		Time:    now,
-		Changes: changes,
+		SchemaVersion: WatchEventSchemaVersion,
+		Event:         EventChanges,
+		Time:          now,
+		Changes:       changes,
 	}
 }
 
 func NewDebouncedEvent(now time.Time, cfg Config, changes []Change) DebouncedEvent {
 	delay := cfg.Normalized().Debounce
 	return DebouncedEvent{
-		Event:   EventWatchDebounced,
-		Time:    now,
-		Delay:   delay,
-		DelayMS: delay.Milliseconds(),
-		Changes: changes,
+		SchemaVersion: WatchEventSchemaVersion,
+		Event:         EventWatchDebounced,
+		Time:          now,
+		Delay:         delay,
+		DelayMS:       delay.Milliseconds(),
+		Changes:       changes,
 	}
 }
 
 func NewTestsSelectedEvent(now time.Time, selection TestSelection) TestsSelectedEvent {
 	return TestsSelectedEvent{
-		Event:     EventTestsSelected,
-		Time:      now,
-		Selection: selection,
+		SchemaVersion: WatchEventSchemaVersion,
+		Event:         EventTestsSelected,
+		Time:          now,
+		Selection:     selection,
+	}
+}
+
+func NewRunStartedEvent(now time.Time, runID int, testClasses []string) RunStartedEvent {
+	classes := make([]string, len(testClasses))
+	copy(classes, testClasses)
+	return RunStartedEvent{
+		SchemaVersion: WatchEventSchemaVersion,
+		Event:         EventRunStarted,
+		Time:          now,
+		RunID:         runID,
+		TestClasses:   classes,
+	}
+}
+
+func NewRunFinishedEvent(now time.Time, runID int, summary RunSummary) RunFinishedEvent {
+	return RunFinishedEvent{
+		SchemaVersion: WatchEventSchemaVersion,
+		Event:         EventRunFinished,
+		Time:          now,
+		RunID:         runID,
+		Summary:       summary,
 	}
 }
 
 func NewErrorEvent(now time.Time, message, path string) ErrorEvent {
 	return ErrorEvent{
-		Event:   EventWatchError,
-		Time:    now,
-		Message: message,
-		Path:    path,
+		SchemaVersion: WatchEventSchemaVersion,
+		Event:         EventWatchError,
+		Time:          now,
+		Message:       message,
+		Path:          path,
 	}
 }

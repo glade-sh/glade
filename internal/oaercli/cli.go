@@ -711,7 +711,7 @@ func runWatchTests(ctx context.Context, root string, index typesys.Index, opts a
 	activeRunID := runID
 	cancelRun, runDone := startWatchRun(ctx, index, opts, initialSelection, runID)
 	defer cancelRun()
-	if err := writeJSONLine(w, watch.RunStartedEvent{Event: watch.EventRunStarted, Time: time.Now().UTC(), RunID: runID}); err != nil {
+	if err := writeJSONLine(w, watch.NewRunStartedEvent(time.Now().UTC(), runID, nil)); err != nil {
 		return result, err
 	}
 	if once {
@@ -720,7 +720,7 @@ func runWatchTests(ctx context.Context, root string, index typesys.Index, opts a
 			return result, ctx.Err()
 		case finished := <-runDone:
 			result = finished.Result
-			if err := writeJSONLine(w, watch.RunFinishedEvent{Event: watch.EventRunFinished, Time: time.Now().UTC(), RunID: finished.RunID, Summary: watchSummary(result)}); err != nil {
+			if err := writeJSONLine(w, watch.NewRunFinishedEvent(time.Now().UTC(), finished.RunID, watchSummary(result))); err != nil {
 				return result, err
 			}
 			return result, nil
@@ -737,7 +737,7 @@ func runWatchTests(ctx context.Context, root string, index typesys.Index, opts a
 			}
 			result = finished.Result
 			runDone = nil
-			if err := writeJSONLine(w, watch.RunFinishedEvent{Event: watch.EventRunFinished, Time: time.Now().UTC(), RunID: finished.RunID, Summary: watchSummary(result)}); err != nil {
+			if err := writeJSONLine(w, watch.NewRunFinishedEvent(time.Now().UTC(), finished.RunID, watchSummary(result))); err != nil {
 				return result, err
 			}
 		case err, ok := <-watcher.Errors():
@@ -771,7 +771,7 @@ func runWatchTests(ctx context.Context, root string, index typesys.Index, opts a
 			runID++
 			activeRunID = runID
 			cancelRun, runDone = startWatchRun(ctx, index, opts, selection, runID)
-			if err := writeJSONLine(w, watch.RunStartedEvent{Event: watch.EventRunStarted, Time: time.Now().UTC(), RunID: runID, TestClasses: selection.TestClasses}); err != nil {
+			if err := writeJSONLine(w, watch.NewRunStartedEvent(time.Now().UTC(), runID, selection.TestClasses)); err != nil {
 				return result, err
 			}
 		}

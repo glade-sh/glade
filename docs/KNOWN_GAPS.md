@@ -68,7 +68,7 @@ The MVP target is `full-featured aer-parity MVP`. This document lists required c
 ### `watch.command`: oaer test --watch affected-test loop
 
 - Status: `partial`
-- Gap: oaer test --watch now supports fsnotify native watching with recursive directory registration, automatic polling fallback, explicit --watch-backend auto|native|poll selection, debounce, JSON event stream with backend and run IDs, incremental Apex-only type-index updates, dependency-graph affected-test selection, cancellable in-flight VM/test reruns, and stale run-result suppression. Stable editor-facing stream schemas remain incomplete.
+- Gap: oaer test --watch now supports fsnotify native watching with recursive directory registration, automatic polling fallback, explicit --watch-backend auto|native|poll selection, debounce, versioned newline-delimited JSON events with stable run IDs and test class arrays, incremental Apex-only type-index updates, dependency-graph affected-test selection, cancellable in-flight VM/test reruns, and stale run-result suppression. Profile/trace-driven watch reports remain incomplete.
 
 ## Limits
 

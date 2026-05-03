@@ -928,9 +928,10 @@ modtime and size, diffs changes, emits stable JSON event structs, and performs
 conservative affected-test selection from the symbol index. `oaer test
 --watch` supports native `fsnotify` watching with polling fallback, debounce,
 incremental Apex-only re-indexing, dependency-graph affected-test selection,
-reruns, JSON event stream with backend/run IDs, cancellable in-flight VM/test
-executions, and stale result suppression; `--watch-once` is available for
-deterministic tests. Stable editor-facing stream schemas remain incomplete.
+reruns, versioned newline-delimited JSON events with backend/run IDs,
+cancellable in-flight VM/test executions, and stale result suppression;
+`--watch-once` is available for deterministic tests. Profile/trace-driven watch
+reports remain incomplete.
 
 ### Deliverables
 

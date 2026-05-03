@@ -76,6 +76,8 @@ Release engineering:
   affected-test selection before falling back to all tests for broad changes.
 - Added cancellable watch reruns by threading context cancellation through the
   Apex test runner and VM instruction loop, with stale run-result suppression.
+- Stabilized watch newline-delimited JSON events with `schemaVersion: 1`,
+  persistent run IDs, and stable `testClasses` array output for run-start events.
 - Added parser diagnostic-count fixtures plus type-index and sema panic recovery
   diagnostics for malformed project inputs.
 - Added method/constructor parameter type diagnostics and expanded VM exception

@@ -585,7 +585,10 @@ a Salesforce-shaped local API server without silently wrong behavior.
     instruction loop, run watch test executions asynchronously, cancel stale
     in-flight runs when a newer rerun starts, and suppress late results from
     canceled runs by run ID.
-- [ ] Stabilize watch JSON stream for editor/test UI consumers.
+- [x] Stabilize watch JSON stream for editor/test UI consumers.
+  - [x] Add `schemaVersion: 1` to each newline-delimited watch event, keep
+    `runId` present on run events, emit `testClasses` as a stable array on
+    `watch.run_started`, and cover the wire shape with exact JSON tests.
 - [ ] Expand profile/trace events for SOQL, DML, describe, callouts, limits,
   methods, triggers, and async.
 - [ ] Add native reports that fully replace apexrr-style analysis for local

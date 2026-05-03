@@ -157,6 +157,9 @@ oaer lsp --project . --diagnostics-once
 ## Watch And Reports
 
 Watch mode emits newline-delimited JSON events for editor and test UI consumers.
+Every watch event includes `schemaVersion: 1`, `event`, and `time`. Run events
+always include `runId`; `watch.run_started` always includes `testClasses` as an
+array, empty for the initial all-test run.
 
 ```bash
 oaer test --project . --watch --debounce 750ms --watch-backend auto
