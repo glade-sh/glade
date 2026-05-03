@@ -1007,10 +1007,27 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		sum := sha256.Sum256([]byte(blob))
 		return platformScalar("Blob", string(sum[:])), nil
 	case "JSON.serialize":
-		if len(args) != 1 {
-			return Null, fmt.Errorf("JSON.serialize expects 1 argument")
+		if len(args) != 1 && len(args) != 2 {
+			return Null, fmt.Errorf("JSON.serialize expects 1 or 2 arguments")
 		}
-		data, err := json.Marshal(jsonFromValue(args[0]))
+		suppressNulls, err := jsonSuppressNulls("JSON.serialize", args[1:])
+		if err != nil {
+			return Null, err
+		}
+		data, err := json.Marshal(jsonFromValue(args[0], suppressNulls))
+		if err != nil {
+			return Null, err
+		}
+		return String(string(data)), nil
+	case "JSON.serializePretty":
+		if len(args) != 1 && len(args) != 2 {
+			return Null, fmt.Errorf("JSON.serializePretty expects 1 or 2 arguments")
+		}
+		suppressNulls, err := jsonSuppressNulls("JSON.serializePretty", args[1:])
+		if err != nil {
+			return Null, err
+		}
+		data, err := json.MarshalIndent(jsonFromValue(args[0], suppressNulls), "", "  ")
 		if err != nil {
 			return Null, err
 		}
@@ -1024,16 +1041,16 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return Null, err
 		}
 		return valueFromJSON(decoded), nil
-	case "JSON.deserialize":
+	case "JSON.deserialize", "JSON.deserializeStrict":
 		if len(args) != 2 || args[0].Kind != ValueString {
-			return Null, fmt.Errorf("JSON.deserialize expects String and Type")
+			return Null, fmt.Errorf("%s expects String and Type", callee)
 		}
 		var decoded any
 		if err := json.Unmarshal([]byte(args[0].Text), &decoded); err != nil {
 			return Null, err
 		}
 		if args[1].Kind == ValueObject && args[1].Type == "Type" {
-			return typedValueFromJSON(args[1].Text, decoded), nil
+			return vm.typedValueFromJSON(args[1].Text, decoded, callee == "JSON.deserializeStrict")
 		}
 		return valueFromJSON(decoded), nil
 	case "Schema.getGlobalDescribe":
@@ -3191,7 +3208,17 @@ func mathBinary(callee string, args []Value) (Value, error) {
 	}
 }
 
-func jsonFromValue(value Value) any {
+func jsonSuppressNulls(callee string, args []Value) (bool, error) {
+	if len(args) == 0 {
+		return false, nil
+	}
+	if len(args) != 1 || args[0].Kind != ValueBool {
+		return false, fmt.Errorf("%s expects suppressApexObjectNulls Boolean", callee)
+	}
+	return args[0].Bool, nil
+}
+
+func jsonFromValue(value Value, suppressObjectNulls bool) any {
 	switch value.Kind {
 	case ValueNull:
 		return nil
@@ -3204,19 +3231,22 @@ func jsonFromValue(value Value) any {
 	case ValueList:
 		out := make([]any, 0, len(value.List))
 		for _, item := range value.List {
-			out = append(out, jsonFromValue(item))
+			out = append(out, jsonFromValue(item, suppressObjectNulls))
 		}
 		return out
 	case ValueSet:
 		out := make([]any, 0, len(value.Set))
 		for _, item := range value.Set {
-			out = append(out, jsonFromValue(item))
+			out = append(out, jsonFromValue(item, suppressObjectNulls))
 		}
 		return out
 	case ValueMap:
 		out := make(map[string]any, len(value.Map))
 		for key, item := range value.Map {
-			out[key] = jsonFromValue(item)
+			if item.Kind == ValueNull {
+				continue
+			}
+			out[key] = jsonFromValue(item, suppressObjectNulls)
 		}
 		return out
 	case ValueObject:
@@ -3229,7 +3259,10 @@ func jsonFromValue(value Value) any {
 			out["attributes"] = attributes
 		}
 		for field, item := range value.Fields {
-			out[field] = jsonFromValue(item)
+			if suppressObjectNulls && item.Kind == ValueNull {
+				continue
+			}
+			out[field] = jsonFromValue(item, suppressObjectNulls)
 		}
 		return out
 	default:
@@ -3267,11 +3300,22 @@ func valueFromJSON(raw any) Value {
 	}
 }
 
-func typedValueFromJSON(typeName string, raw any) Value {
+func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, error) {
 	obj := Object(typeName)
 	fields, ok := raw.(map[string]any)
 	if !ok {
-		return valueFromJSON(raw)
+		return valueFromJSON(raw), nil
+	}
+	if strict {
+		allowed := vm.jsonAllowedFields(typeName)
+		for key := range fields {
+			if key == "attributes" {
+				continue
+			}
+			if _, ok := allowed[key]; !ok {
+				return Null, fmt.Errorf("JSON.deserializeStrict found unknown field %q for %s", key, typeName)
+			}
+		}
 	}
 	for key, item := range fields {
 		if key == "attributes" {
@@ -3279,7 +3323,26 @@ func typedValueFromJSON(typeName string, raw any) Value {
 		}
 		obj.Fields[key] = valueFromJSON(item)
 	}
-	return obj
+	return obj, nil
+}
+
+func (vm *VM) jsonAllowedFields(typeName string) map[string]struct{} {
+	allowed := map[string]struct{}{
+		"Id": struct{}{},
+	}
+	if vm.Org != nil {
+		if object, ok := vm.Org.Objects[typeName]; ok {
+			for name := range object.Definition.Fields {
+				allowed[name] = struct{}{}
+			}
+		}
+	}
+	if class, ok := vm.Classes[typeName]; ok {
+		for name := range class.Fields {
+			allowed[name] = struct{}{}
+		}
+	}
+	return allowed
 }
 
 func (vm *VM) schemaGlobalDescribe() Value {

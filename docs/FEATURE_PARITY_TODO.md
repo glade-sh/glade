@@ -419,6 +419,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Add `limitMode` support for compatibility exec/test fixtures.
 - [ ] Complete `System`, `Test`, `Database`, `Schema`, `Limits`, and `JSON`
   APIs used by enterprise tests.
+  - [x] Add common JSON overloads for `serialize(value, suppressApexObjectNulls)`,
+    `serializePretty`, and `deserializeStrict`.
 - [ ] Complete common `String`, `Pattern`, `Matcher`, `Date`, `Datetime`,
   `Time`, `Math`, `Decimal`, `EncodingUtil`, and `Crypto` behavior.
 - [ ] Complete HTTP/callout mock behavior: request/response types,

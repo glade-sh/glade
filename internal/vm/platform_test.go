@@ -191,6 +191,49 @@ List<Account> rows = [SELECT Id FROM Account];
 	}
 }
 
+func TestExecJSONCommonSerializeOverloads(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account a = new Account(Name = 'Acme', Phone = null);
+String compact = JSON.serialize(a, true);
+System.assert(compact.contains('"Name":"Acme"'));
+System.assert(!compact.contains('Phone'));
+Map<String,Object> values = new Map<String,Object>();
+values.put('kept', 'yes');
+values.put('dropped', null);
+String mapJSON = JSON.serialize(values);
+System.assert(mapJSON.contains('kept'));
+System.assert(!mapJSON.contains('dropped'));
+String pretty = JSON.serializePretty(a);
+System.assert(pretty.contains('  "Name"'));
+Account decoded = JSON.deserializeStrict('{"Name":"Acme"}', Account.class);
+System.assertEquals('Acme', decoded.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecJSONDeserializeStrictRejectsUnknownFields(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account decoded = JSON.deserializeStrict('{"Name":"Acme","NoSuchField__c":"x"}', Account.class);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), "unknown field") {
+		t.Fatalf("err = %v", err)
+	}
+}
+
 func TestExecStartStopRestoresOuterLimitWindow(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account beforeStart = new Account(Name = 'Before');
