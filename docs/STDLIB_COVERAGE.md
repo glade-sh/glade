@@ -73,16 +73,32 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Schema | `Schema.describeSObjects` | `partial` | Object names and SObjectType tokens for local schema. |
 | Schema | `Schema.getGlobalDescribe` | `partial` | Local schema-backed describe map. |
 | String | `String.contains` | `supported` | UTF-8 string contains. |
+| String | `String.containsAny` | `supported` | Rune membership. |
+| String | `String.containsNone` | `supported` | Rune exclusion. |
+| String | `String.containsOnly` | `supported` | Rune allow-list. |
+| String | `String.containsWhitespace` | `supported` | Unicode whitespace. |
+| String | `String.countMatches` | `supported` | Non-overlapping literal substring count. |
 | String | `String.endsWith` | `supported` | UTF-8 string suffix. |
 | String | `String.equalsIgnoreCase` | `supported` | Unicode simple fold. |
 | String | `String.indexOf` | `supported` | UTF-8 byte index behavior from Go strings. |
+| String | `String.isAllLowerCase` | `supported` | All letters lowercase; non-letters ignored. |
+| String | `String.isAllUpperCase` | `supported` | All letters uppercase; non-letters ignored. |
+| String | `String.isAlpha` | `supported` | Unicode letters. |
+| String | `String.isAlphaSpace` | `supported` | Unicode letters and space characters. |
+| String | `String.isAlphanumeric` | `supported` | Unicode letters and decimal digits. |
+| String | `String.isAlphanumericSpace` | `supported` | Unicode letters, decimal digits, and space characters. |
 | String | `String.isBlank` | `supported` | Null and whitespace. |
 | String | `String.isNotBlank` | `supported` | Null and whitespace. |
+| String | `String.isNumeric` | `supported` | Unicode decimal digits. |
+| String | `String.isNumericSpace` | `supported` | Unicode decimal digits and space characters. |
+| String | `String.isWhitespace` | `supported` | Unicode whitespace; empty string is true. |
 | String | `String.join` | `supported` | List values and separator. |
 | String | `String.lastIndexOf` | `supported` | UTF-8 byte index behavior from Go strings. |
 | String | `String.length` | `supported` | Counts runes. |
 | String | `String.replace` | `supported` | Literal replacement. |
-| String | `String.split` | `partial` | Literal separator, not full Java regex split. |
+| String | `String.replaceAll` | `partial` | Go regexp-backed replacement. |
+| String | `String.replaceFirst` | `partial` | Go regexp-backed first replacement. |
+| String | `String.split` | `partial` | Go regexp-backed split with Apex limit shape. |
 | String | `String.startsWith` | `supported` | UTF-8 string prefix. |
 | String | `String.substring` | `supported` | Rune-indexed substring. |
 | String | `String.toLowerCase` | `supported` | Go Unicode lowercasing. |

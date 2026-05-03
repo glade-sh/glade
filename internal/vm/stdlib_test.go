@@ -65,6 +65,131 @@ System.assert(String.isNotEmpty('x'));
 	}
 }
 
+func TestExecStringStdlibMoreMethods(t *testing.T) {
+	program, err := CompileAnonymous(`
+String letters = 'a b c 5 xyz';
+System.assertEquals('1 1 1 5 111', letters.replaceAll('[a-zA-Z]', '1'));
+String lettersFirst = 'a b c 11 xyz';
+System.assertEquals('a b c 11 2z', lettersFirst.replaceFirst('[a-zA-Z]{2}', '2'));
+String splitSource = 'boo:and:moo';
+List<String> limitTwo = splitSource.split(':', 2);
+System.assertEquals(2, limitTwo.size());
+System.assertEquals('boo', limitTwo.get(0));
+System.assertEquals('and:moo', limitTwo.get(1));
+List<String> limitFive = splitSource.split('o', 5);
+System.assertEquals(5, limitFive.size());
+System.assertEquals('b', limitFive.get(0));
+System.assertEquals('', limitFive.get(1));
+System.assertEquals(':and:m', limitFive.get(2));
+System.assertEquals('', limitFive.get(3));
+System.assertEquals('', limitFive.get(4));
+List<String> limitZero = splitSource.split('o', 0);
+System.assertEquals(3, limitZero.size());
+System.assertEquals(':and:m', limitZero.get(2));
+List<String> limitNegative = splitSource.split('o', -2);
+System.assertEquals(5, limitNegative.size());
+System.assertEquals('', limitNegative.get(4));
+String helloJaneSpace = 'Hello Jane';
+System.assert(helloJaneSpace.containsWhitespace());
+String helloJane = 'HelloJane';
+System.assert(!helloJane.containsWhitespace());
+String helloHello = 'Hello Hello';
+System.assertEquals(2, helloHello.countMatches('Hello'));
+String aaa = 'aaa';
+System.assertEquals(0, aaa.countMatches(''));
+String hello = 'hello';
+System.assert(hello.containsAny('hx'));
+System.assert(!hello.containsAny('xz'));
+String abcde = 'abcde';
+System.assert(abcde.containsNone('fg'));
+System.assert(!abcde.containsNone('df'));
+String abba = 'abba';
+System.assert(abba.containsOnly('abcd'));
+String abbaXyz = 'abba xyz';
+System.assert(!abbaXyz.containsOnly('abcd'));
+String oneSpace = ' ';
+System.assert(oneSpace.isWhitespace());
+String empty = '';
+System.assert(empty.isWhitespace());
+String sil80 = 'SIL80';
+System.assert(!sil80.isWhitespace());
+String alphaAccent = 'abcÉ';
+System.assert(alphaAccent.isAlpha());
+String alphaDigits = 'abc 21';
+System.assert(!alphaDigits.isAlpha());
+String alphaSpace = 'aA Bb';
+System.assert(alphaSpace.isAlphaSpace());
+String alphaDollar = 'aA$Bb';
+System.assert(!alphaDollar.isAlphaSpace());
+String abc021 = 'abc021';
+System.assert(abc021.isAlphanumeric());
+String romanNumeral = 'Ⅻ';
+System.assert(!romanNumeral.isAlphanumeric());
+String ae86 = 'AE 86';
+System.assert(ae86.isAlphanumericSpace());
+String alphaDollarDigits = 'aA$12';
+System.assert(!alphaDollarDigits.isAlphanumericSpace());
+String digits = '1234567890';
+System.assert(digits.isNumeric());
+String decimalPoint = '1.2';
+System.assert(!decimalPoint.isNumeric());
+String numericSpace = '1 2 3';
+System.assert(numericSpace.isNumericSpace());
+	String mixedCars = 'FD3S FC3S';
+	System.assert(!mixedCars.isNumericSpace());
+	System.assert(abcde.isAllLowerCase());
+String lowerWithDigits = 'abc 123!';
+System.assert(lowerWithDigits.isAllLowerCase());
+	String abcDe = 'abcDe';
+	System.assert(!abcDe.isAllLowerCase());
+System.assert(!digits.isAllLowerCase());
+System.assert(!empty.isAllLowerCase());
+	String ABCDE = 'ABCDE';
+	System.assert(ABCDE.isAllUpperCase());
+String upperWithDigits = 'ABC 123!';
+System.assert(upperWithDigits.isAllUpperCase());
+	String ABCdE = 'ABCdE';
+	System.assert(!ABCdE.isAllUpperCase());
+System.assert(!digits.isAllUpperCase());
+System.assert(!empty.isAllUpperCase());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStringStdlibMoreRejectsBadRegex(t *testing.T) {
+	program, err := CompileAnonymous(`String abc = 'abc';
+abc.replaceAll('[', 'x');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err == nil {
+		t.Fatal("expected invalid regex error")
+	}
+}
+
+func TestStringStdlibMoreRejectsBadArgumentShapes(t *testing.T) {
+	tests := []struct {
+		method string
+		args   []Value
+	}{
+		{method: "replaceAll", args: []Value{String("[a]"), Int(1)}},
+		{method: "replaceFirst", args: []Value{String("[a]")}},
+		{method: "split", args: []Value{String(","), String("2")}},
+		{method: "containsWhitespace", args: []Value{String("x")}},
+		{method: "isAlpha", args: []Value{String("x")}},
+	}
+	for _, tc := range tests {
+		if _, handled, err := callStringMember(String("abc"), tc.method, tc.args); !handled || err == nil {
+			t.Fatalf("%s expected handled error, handled=%v err=%v", tc.method, handled, err)
+		}
+	}
+}
+
 func TestExecNumericStdlibExpansion(t *testing.T) {
 	program, err := CompileAnonymous(`
 Integer i = Integer.valueOf('42');
