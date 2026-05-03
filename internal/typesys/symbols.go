@@ -3,6 +3,7 @@ package typesys
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -137,6 +138,81 @@ func Build(p project.Project, s schema.Schema) (idx Index) {
 	return idx
 }
 
+func UpdateApexFiles(previous Index, changedPaths, deletedPaths []string) (idx Index) {
+	parser := apexast.NewParser()
+	idx = Index{
+		Project: previous.Project,
+		Objects: previous.Objects,
+	}
+	deleted := pathSet(deletedPaths)
+	changed := pathSet(changedPaths)
+	seenTypes := make(map[string]TypeSymbol)
+	for _, typ := range previous.Types {
+		if deleted[cleanFilePath(typ.File)] || changed[cleanFilePath(typ.File)] {
+			continue
+		}
+		key := strings.ToLower(typ.Name)
+		seenTypes[key] = typ
+		idx.Types = append(idx.Types, typ)
+	}
+	for _, trigger := range previous.Triggers {
+		if deleted[cleanFilePath(trigger.File)] || changed[cleanFilePath(trigger.File)] {
+			continue
+		}
+		idx.Triggers = append(idx.Triggers, trigger)
+	}
+	for _, path := range changedPaths {
+		file, err := parser.ParseFile(path)
+		if err != nil {
+			idx.Diagnostics = append(idx.Diagnostics, diagnostic.Diagnostic{
+				Severity: diagnostic.Error,
+				Code:     "OAERTYPE000",
+				Message:  err.Error(),
+				File:     path,
+			})
+			continue
+		}
+		idx.Diagnostics = append(idx.Diagnostics, file.Diagnostics...)
+		if len(file.Diagnostics) > 0 {
+			continue
+		}
+		source, sourceErr := os.ReadFile(path)
+		for _, decl := range file.Declarations {
+			switch decl.Kind {
+			case apexast.DeclarationClass, apexast.DeclarationInterface, apexast.DeclarationEnum:
+				symbols := []TypeSymbol{typeSymbolFromDeclaration(path, decl, "")}
+				if sourceErr == nil {
+					symbols = typeSymbolsFromDeclaration(path, decl, "", string(source))
+				}
+				for _, sym := range symbols {
+					key := strings.ToLower(sym.Name)
+					if previous, ok := seenTypes[key]; ok {
+						idx.Diagnostics = append(idx.Diagnostics, duplicateDiagnostic(sym, previous))
+					} else {
+						seenTypes[key] = sym
+					}
+					idx.Types = append(idx.Types, sym)
+				}
+			case apexast.DeclarationTrigger:
+				idx.Triggers = append(idx.Triggers, TriggerSymbol{
+					Name:       decl.Name,
+					ObjectName: decl.ObjectName,
+					Events:     decl.Events,
+					File:       path,
+					Range:      decl.Range,
+				})
+			}
+		}
+	}
+	sort.Slice(idx.Types, func(i, j int) bool {
+		return idx.Types[i].Name < idx.Types[j].Name
+	})
+	sort.Slice(idx.Triggers, func(i, j int) bool {
+		return idx.Triggers[i].Name < idx.Triggers[j].Name
+	})
+	return idx
+}
+
 func (idx Index) HasErrors() bool {
 	for _, diag := range idx.Diagnostics {
 		if diag.Severity == diagnostic.Error {
@@ -144,6 +220,22 @@ func (idx Index) HasErrors() bool {
 		}
 	}
 	return false
+}
+
+func pathSet(paths []string) map[string]bool {
+	out := make(map[string]bool, len(paths))
+	for _, path := range paths {
+		out[cleanFilePath(path)] = true
+	}
+	return out
+}
+
+func cleanFilePath(path string) string {
+	abs, err := filepath.Abs(path)
+	if err == nil {
+		path = abs
+	}
+	return filepath.Clean(path)
 }
 
 func typeSymbolsFromDeclaration(path string, decl apexast.Declaration, parent, source string) []TypeSymbol {

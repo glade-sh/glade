@@ -102,6 +102,40 @@ public class Outer {
 	}
 }
 
+func TestUpdateApexFilesReplacesChangedSymbolsAndDropsDeleted(t *testing.T) {
+	root := t.TempDir()
+	first := filepath.Join(root, "First.cls")
+	second := filepath.Join(root, "Second.cls")
+	trigger := filepath.Join(root, "SecondTrigger.trigger")
+	writeFile(t, first, "public class First {}")
+	writeFile(t, second, "public class Second { public void oldName() {} }")
+	writeFile(t, trigger, "trigger SecondTrigger on Account (before insert) {}")
+	idx := Build(project.Project{Root: root, ApexFiles: []string{first, second, trigger}}, schema.Schema{})
+	if idx.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", idx.Diagnostics)
+	}
+
+	writeFile(t, second, "public class Second { public void newName() {} }")
+	updated := UpdateApexFiles(idx, []string{second}, []string{trigger})
+	if updated.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", updated.Diagnostics)
+	}
+	if len(updated.Triggers) != 0 {
+		t.Fatalf("triggers = %#v", updated.Triggers)
+	}
+	types := map[string]TypeSymbol{}
+	for _, typ := range updated.Types {
+		types[typ.Name] = typ
+	}
+	if _, ok := types["First"]; !ok {
+		t.Fatalf("missing retained type: %#v", updated.Types)
+	}
+	secondType := types["Second"]
+	if len(secondType.Members) != 1 || secondType.Members[0].Name != "newName" {
+		t.Fatalf("second type = %#v", secondType)
+	}
+}
+
 func writeFile(t *testing.T, path, content string) {
 	t.Helper()
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {

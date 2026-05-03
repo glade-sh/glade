@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/open-aer/oaer/internal/watch"
 )
 
 func TestRunVersion(t *testing.T) {
@@ -774,6 +776,35 @@ private class SampleTest {
 	}
 	if !strings.Contains(stdout.String(), `"event":"watch.started"`) || !strings.Contains(stdout.String(), `"event":"watch.run_finished"`) {
 		t.Fatalf("watch stdout = %q", stdout.String())
+	}
+}
+
+func TestWatchIndexUpdateUsesIncrementalForApexOnlyChanges(t *testing.T) {
+	root := t.TempDir()
+	classPath := filepath.Join(root, "Sample.cls")
+	triggerPath := filepath.Join(root, "SampleTrigger.trigger")
+	writeTestFile(t, classPath, "public class Sample { public void oldName() {} }")
+	writeTestFile(t, triggerPath, "trigger SampleTrigger on Account (before insert) {}")
+	index, err := loadIndex(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	writeTestFile(t, classPath, "public class Sample { public void newName() {} }")
+
+	updated, err := updateWatchIndex(root, index, []watch.Change{{
+		Path: classPath,
+		Op:   watch.ChangeModified,
+		Kind: watch.FileKindApexClass,
+		Name: "Sample",
+	}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(updated.Triggers) != 1 {
+		t.Fatalf("triggers = %#v", updated.Triggers)
+	}
+	if len(updated.Types) != 1 || len(updated.Types[0].Members) != 1 || updated.Types[0].Members[0].Name != "newName" {
+		t.Fatalf("types = %#v", updated.Types)
 	}
 }
 

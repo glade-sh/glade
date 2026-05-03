@@ -45,6 +45,36 @@ func TestSelectAffectedTestsProductionClassFallsBackToAllTests(t *testing.T) {
 	}
 }
 
+func TestSelectAffectedTestsUsesDependencyGraph(t *testing.T) {
+	root := t.TempDir()
+	index := testIndex(root)
+	writeWatchFile(t, filepath.Join(root, "InvoiceServiceTest.cls"), `
+@IsTest private class InvoiceServiceTest {
+  @isTest static void coversService() {
+    InvoiceService svc = new InvoiceService();
+  }
+}
+`)
+	writeWatchFile(t, filepath.Join(root, "OtherTest.cls"), `
+@IsTest private class OtherTest {
+  @isTest static void unrelated() {
+    System.assert(true);
+  }
+}
+`)
+
+	selection := SelectAffectedTests(index, []Change{{
+		Path: filepath.Join(root, "InvoiceService.cls"),
+		Op:   ChangeModified,
+		Kind: FileKindApexClass,
+		Name: "InvoiceService",
+	}})
+
+	if selection.Mode != SelectionDirect || len(selection.TestClasses) != 1 || selection.TestClasses[0] != "InvoiceServiceTest" {
+		t.Fatalf("selection = %#v", selection)
+	}
+}
+
 func TestSelectAffectedTestsTriggerAndSchemaFallBackToAllTests(t *testing.T) {
 	root := t.TempDir()
 	index := testIndex(root)

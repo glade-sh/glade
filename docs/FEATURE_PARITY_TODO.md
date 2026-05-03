@@ -575,7 +575,11 @@ a Salesforce-shaped local API server without silently wrong behavior.
     automatic fallback to polling in `auto` mode, explicit
     `--watch-backend auto|native|poll` selection, backend reporting in
     `watch.started`, and polling/native backend tests.
-- [ ] Add incremental re-indexing and affected-test dependency graph updates.
+- [x] Add incremental re-indexing and affected-test dependency graph updates.
+  - [x] Reuse the existing type index for Apex-only watch changes by replacing
+    changed/deleted class and trigger symbols, fall back to full reload for
+    schema metadata, and build a source-scanned dependency graph so production
+    class changes select dependent tests before falling back to all tests.
 - [ ] Add in-flight VM/test cancellation for watch reruns.
 - [ ] Stabilize watch JSON stream for editor/test UI consumers.
 - [ ] Expand profile/trace events for SOQL, DML, describe, callouts, limits,

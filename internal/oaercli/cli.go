@@ -735,7 +735,7 @@ func runWatchTests(ctx context.Context, root string, index typesys.Index, opts a
 			if err := writeJSONLine(w, watch.NewDebouncedEvent(time.Now().UTC(), cfg, changes)); err != nil {
 				return result, err
 			}
-			index, err = loadIndex(root)
+			index, err = updateWatchIndex(root, index, changes)
 			if err != nil {
 				_ = writeJSONLine(w, watch.NewErrorEvent(time.Now().UTC(), err.Error(), root))
 				continue
@@ -757,6 +757,37 @@ func runWatchTests(ctx context.Context, root string, index typesys.Index, opts a
 			}
 		}
 	}
+}
+
+func updateWatchIndex(root string, index typesys.Index, changes []watch.Change) (typesys.Index, error) {
+	if !canIncrementalIndex(changes) {
+		return loadIndex(root)
+	}
+	var changed []string
+	var deleted []string
+	for _, change := range changes {
+		switch change.Op {
+		case watch.ChangeDeleted:
+			deleted = append(deleted, change.Path)
+		default:
+			changed = append(changed, change.Path)
+		}
+	}
+	return typesys.UpdateApexFiles(index, changed, deleted), nil
+}
+
+func canIncrementalIndex(changes []watch.Change) bool {
+	if len(changes) == 0 {
+		return false
+	}
+	for _, change := range changes {
+		switch change.Kind {
+		case watch.FileKindApexClass, watch.FileKindApexTrigger:
+		default:
+			return false
+		}
+	}
+	return true
 }
 
 func parseWatchBackend(value string) (watch.Backend, error) {

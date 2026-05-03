@@ -72,6 +72,8 @@ Release engineering:
 - Added `oaer test --watch --watch-backend auto|native|poll` with `fsnotify`
   native watching, polling fallback, backend reporting, and run IDs in watch
   JSON events.
+- Added Apex-only incremental watch re-indexing and dependency-graph
+  affected-test selection before falling back to all tests for broad changes.
 - Added parser diagnostic-count fixtures plus type-index and sema panic recovery
   diagnostics for malformed project inputs.
 - Added method/constructor parameter type diagnostics and expanded VM exception

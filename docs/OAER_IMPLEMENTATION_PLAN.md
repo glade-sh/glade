@@ -927,9 +927,10 @@ Current status as of 2026-05-02: complete for the Phase 13 baseline.
 modtime and size, diffs changes, emits stable JSON event structs, and performs
 conservative affected-test selection from the symbol index. `oaer test
 --watch` supports native `fsnotify` watching with polling fallback, debounce,
+incremental Apex-only re-indexing, dependency-graph affected-test selection,
 reruns, JSON event stream with backend/run IDs, and context cancellation;
-`--watch-once` is available for deterministic tests. Incremental re-indexing and
-in-flight VM cancellation remain incomplete.
+`--watch-once` is available for deterministic tests. In-flight VM cancellation
+remains incomplete.
 
 ### Deliverables
 
