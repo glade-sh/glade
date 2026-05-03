@@ -63,20 +63,45 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 		}
 		return Decimal(math.Abs(receiver.Decimal)), receiver, false, true, nil
 	case "setScale":
-		if len(args) != 1 || args[0].Kind != ValueInt {
-			return Null, receiver, false, true, fmt.Errorf("Decimal.setScale expects Integer")
+		if len(args) != 1 && len(args) != 2 {
+			return Null, receiver, false, true, fmt.Errorf("Decimal.setScale expects scale and optional RoundingMode")
 		}
-		scale := int(args[0].Int)
-		if scale < 0 {
+		if args[0].Kind != ValueInt {
+			return Null, receiver, false, true, fmt.Errorf("Decimal.setScale expects Integer scale")
+		}
+		if args[0].Int < 0 {
 			return Null, receiver, false, true, fmt.Errorf("Decimal.setScale expects non-negative scale")
 		}
-		factor := math.Pow10(scale)
-		return Decimal(math.Round(receiver.Decimal*factor) / factor), receiver, false, true, nil
-	case "round":
-		if len(args) != 0 {
-			return Null, receiver, false, true, fmt.Errorf("Decimal.round expects 0 arguments")
+		mode := "HALF_UP"
+		if len(args) == 2 {
+			parsedMode, err := decimalRoundingMode(args[1])
+			if err != nil {
+				return Null, receiver, false, true, err
+			}
+			mode = parsedMode
 		}
-		rounded, err := int64FromFloat("Decimal.round", math.Round(receiver.Decimal))
+		rounded, err := roundDecimalToScale("Decimal.setScale", receiver.Decimal, args[0].Int, mode)
+		if err != nil {
+			return Null, receiver, false, true, err
+		}
+		return Decimal(rounded), receiver, false, true, nil
+	case "round":
+		if len(args) > 1 {
+			return Null, receiver, false, true, fmt.Errorf("Decimal.round expects optional RoundingMode")
+		}
+		mode := "HALF_UP"
+		if len(args) == 1 {
+			parsedMode, err := decimalRoundingMode(args[0])
+			if err != nil {
+				return Null, receiver, false, true, err
+			}
+			mode = parsedMode
+		}
+		roundedDecimal, err := roundDecimalToScale("Decimal.round", receiver.Decimal, 0, mode)
+		if err != nil {
+			return Null, receiver, false, true, err
+		}
+		rounded, err := int64FromFloat("Decimal.round", roundedDecimal)
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
@@ -108,7 +133,11 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 		if len(args) != 1 || args[0].Kind != ValueInt {
 			return Null, receiver, false, true, fmt.Errorf("Decimal.pow expects Integer")
 		}
-		return Decimal(math.Pow(receiver.Decimal, float64(args[0].Int))), receiver, false, true, nil
+		value := math.Pow(receiver.Decimal, float64(args[0].Int))
+		if math.IsInf(value, 0) || math.IsNaN(value) {
+			return Null, receiver, false, true, fmt.Errorf("Decimal.pow result must be finite")
+		}
+		return Decimal(value), receiver, false, true, nil
 	case "format":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Decimal.format expects 0 arguments")
@@ -117,6 +146,83 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 	default:
 		return Null, receiver, false, false, nil
 	}
+}
+
+func decimalRoundingMode(value Value) (string, error) {
+	if value.Kind != ValueObject || value.Type != "RoundingMode" {
+		return "", fmt.Errorf("Decimal rounding expects RoundingMode")
+	}
+	switch value.Text {
+	case "UP", "DOWN", "CEILING", "FLOOR", "HALF_UP", "HALF_DOWN", "HALF_EVEN", "UNNECESSARY":
+		return value.Text, nil
+	default:
+		return "", fmt.Errorf("unsupported Decimal rounding mode %q", value.Text)
+	}
+}
+
+func roundDecimalToScale(callee string, value float64, scaleValue int64, mode string) (float64, error) {
+	const maxLocalScale int64 = 15
+	if math.IsInf(value, 0) || math.IsNaN(value) {
+		return 0, fmt.Errorf("%s value must be finite", callee)
+	}
+	if scaleValue > maxLocalScale {
+		return 0, fmt.Errorf("%s scale greater than %d is not supported by the local decimal model", callee, maxLocalScale)
+	}
+	factor := math.Pow10(int(scaleValue))
+	scaled := value * factor
+	if math.IsInf(scaled, 0) || math.IsNaN(scaled) {
+		return 0, fmt.Errorf("%s scaled value must be finite", callee)
+	}
+	rounded, err := roundScaledDecimal(callee, scaled, mode)
+	if err != nil {
+		return 0, err
+	}
+	return rounded / factor, nil
+}
+
+func roundScaledDecimal(callee string, value float64, mode string) (float64, error) {
+	switch mode {
+	case "UP":
+		if value < 0 {
+			return math.Floor(value), nil
+		}
+		return math.Ceil(value), nil
+	case "DOWN":
+		return math.Trunc(value), nil
+	case "CEILING":
+		return math.Ceil(value), nil
+	case "FLOOR":
+		return math.Floor(value), nil
+	case "HALF_UP":
+		return math.Round(value), nil
+	case "HALF_EVEN":
+		return math.RoundToEven(value), nil
+	case "HALF_DOWN":
+		truncated := math.Trunc(value)
+		fraction := math.Abs(value - truncated)
+		if math.Abs(fraction-0.5) <= 1e-12 {
+			return truncated, nil
+		}
+		return math.Round(value), nil
+	case "UNNECESSARY":
+		if value != math.Trunc(value) {
+			return 0, fmt.Errorf("%s rounding necessary for RoundingMode.UNNECESSARY", callee)
+		}
+		return value, nil
+	default:
+		return 0, fmt.Errorf("unsupported Decimal rounding mode %q", mode)
+	}
+}
+
+func roundingModeStatic(args []Value) (Value, error) {
+	if len(args) != 1 || args[0].Kind != ValueString {
+		return Null, fmt.Errorf("RoundingMode.valueOf expects String")
+	}
+	mode := strings.TrimSpace(args[0].Text)
+	if !isDecimalRoundingModeName(mode) {
+		return Null, fmt.Errorf("unsupported Decimal rounding mode %q", mode)
+	}
+	return Value{Kind: ValueObject, Type: "RoundingMode", Text: mode}, nil
 }
 
 func callStringMember(receiver Value, method string, args []Value) (Value, bool, error) {

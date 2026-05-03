@@ -1075,6 +1075,8 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		return stringStatic(callee, args)
 	case "Integer.valueOf", "Long.valueOf", "Decimal.valueOf", "Double.valueOf":
 		return numericStatic(callee, args)
+	case "RoundingMode.valueOf":
+		return roundingModeStatic(args)
 	case "Id.valueOf":
 		return idStatic(callee, args)
 	case "Pattern.compile":
@@ -3970,7 +3972,10 @@ func mathUnary(callee string, args []Value) (Value, error) {
 			return Int(0), nil
 		}
 	case "Math.sqrt":
-		return Decimal(math.Sqrt(n)), nil
+		if n < 0 {
+			return Null, fmt.Errorf("Math.sqrt argument out of domain")
+		}
+		return finiteDecimalResult(callee, math.Sqrt(n))
 	case "Math.acos":
 		if n < -1 || n > 1 {
 			return Null, fmt.Errorf("Math.acos argument out of domain")
@@ -4032,7 +4037,7 @@ func mathBinary(callee string, args []Value) (Value, error) {
 		}
 		return Decimal(math.Mod(left, right)), nil
 	case "Math.pow":
-		return Decimal(math.Pow(left, right)), nil
+		return finiteDecimalResult(callee, math.Pow(left, right))
 	case "Math.atan2":
 		return finiteDecimalResult(callee, math.Atan2(left, right))
 	default:
@@ -4410,6 +4415,12 @@ func (vm *VM) lookup(name string) (Value, error) {
 	case "AccessLevel.USER_MODE", "AccessLevel.SYSTEM_MODE":
 		return Value{Kind: ValueObject, Type: "AccessLevel", Text: strings.TrimPrefix(name, "AccessLevel.")}, nil
 	}
+	if strings.HasPrefix(name, "RoundingMode.") {
+		mode := strings.TrimPrefix(name, "RoundingMode.")
+		if isDecimalRoundingModeName(mode) {
+			return Value{Kind: ValueObject, Type: "RoundingMode", Text: mode}, nil
+		}
+	}
 	if strings.HasPrefix(name, "LoggingLevel.") {
 		level := strings.TrimPrefix(name, "LoggingLevel.")
 		if isLoggingLevelName(level) {
@@ -4493,6 +4504,15 @@ func (vm *VM) lookup(name string) (Value, error) {
 		}
 	}
 	return Null, fmt.Errorf("unknown variable %q", name)
+}
+
+func isDecimalRoundingModeName(name string) bool {
+	switch name {
+	case "UP", "DOWN", "CEILING", "FLOOR", "HALF_UP", "HALF_DOWN", "HALF_EVEN", "UNNECESSARY":
+		return true
+	default:
+		return false
+	}
 }
 
 func (vm *VM) lookupSObjectTypeToken(parts []string) (Value, bool) {

@@ -67,9 +67,9 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Decimal | `Decimal.format` | `partial` | Simple deterministic numeric formatting; locale grouping is not modeled. |
 | Decimal | `Decimal.intValue` | `supported` | Truncates to 32-bit Integer with overflow checks. |
 | Decimal | `Decimal.longValue` | `supported` | Truncates to local Long representation with overflow checks. |
-| Decimal | `Decimal.pow` | `supported` | Power with Integer exponent for local Decimal values. |
-| Decimal | `Decimal.round` | `partial` | Uses Go round-half-away behavior. |
-| Decimal | `Decimal.setScale` | `partial` | Non-negative scale only; advanced rounding modes not modeled. |
+| Decimal | `Decimal.pow` | `supported` | Power with Integer exponent for finite local Decimal results. |
+| Decimal | `Decimal.round` | `partial` | Default half-up plus local RoundingMode subset; exact Decimal scale parity is not modeled. |
+| Decimal | `Decimal.setScale` | `partial` | Supports local scale 0-15 with UP, DOWN, CEILING, FLOOR, HALF_UP, HALF_DOWN, HALF_EVEN, and UNNECESSARY. |
 | Decimal | `Decimal.valueOf` | `supported` | Parses finite decimal strings and numeric values. |
 | Double | `Double.valueOf` | `supported` | Parses finite decimal strings and numeric values into the local numeric representation. |
 | EncodingUtil | `EncodingUtil.base64Decode` | `supported` | Blob-shaped local value. |
@@ -187,6 +187,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Pattern | `Pattern.matches` | `partial` | Whole-string Go regexp match. |
 | Pattern | `Pattern.pattern` | `partial` | Returns stored Go regexp source. |
 | Pattern | `Pattern.split` | `partial` | Go regexp-backed split with local limit semantics. |
+| RoundingMode | `RoundingMode.valueOf` | `partial` | Constructs supported local Decimal rounding-mode tokens by exact name. |
 | Schema | `DescribeFieldResult` | `partial` | Common field metadata and access booleans. |
 | Schema | `DescribeSObjectResult` | `partial` | Common object metadata, fields, record types, and child relationships. |
 | Schema | `Schema.describeSObjects` | `partial` | Object names and SObjectType tokens for local schema. |
