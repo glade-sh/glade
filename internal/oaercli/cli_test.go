@@ -163,6 +163,54 @@ func TestRunCompatGapsOutputAndCheck(t *testing.T) {
 	}
 }
 
+func TestRunCompatStdlib(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "stdlib"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "# Standard Library Coverage") || !strings.Contains(stdout.String(), "`String.trim`") {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
+func TestRunCompatStdlibJSON(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "stdlib", "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), `"api": "String.trim"`) || !strings.Contains(stdout.String(), `"status": "supported"`) {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
+func TestRunCompatStdlibOutputAndCheck(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "stdlib.md")
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "stdlib", "--output", path}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("output exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	content, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(content), "# Standard Library Coverage") {
+		t.Fatalf("stdlib file = %q", string(content))
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "stdlib", "--check", path}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("check exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "up to date") {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
 func TestRunParseJSON(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "Hello.cls")

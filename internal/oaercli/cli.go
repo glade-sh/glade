@@ -1181,7 +1181,7 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 		return err
 	}
 	if len(args) == 0 {
-		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | dashboard|gaps [--output <path>|--check <path>]")
+		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json")
 	}
 	switch args[0] {
 	case "matrix", "mvp":
@@ -1190,12 +1190,14 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 		return runCompatDashboard(args[1:], w)
 	case "gaps":
 		return runCompatGaps(args[1:], w)
+	case "stdlib":
+		return runCompatStdlib(args[1:], w)
 	case "validate", "run":
 		if len(args) < 2 {
 			return errors.New("usage: oaer compat validate|run <fixture.json...>")
 		}
 	default:
-		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | dashboard|gaps [--output <path>|--check <path>]")
+		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json")
 	}
 
 	for _, path := range args[1:] {
@@ -1254,7 +1256,32 @@ func runCompatGaps(args []string, w io.Writer) error {
 	return runCompatGeneratedMarkdown(args, w, "gaps", "known gaps", capability.WriteKnownGapsMarkdown)
 }
 
+func runCompatStdlib(args []string, w io.Writer) error {
+	jsonOut := false
+	filtered := make([]string, 0, len(args))
+	for _, arg := range args {
+		if arg == "--json" {
+			jsonOut = true
+			continue
+		}
+		filtered = append(filtered, arg)
+	}
+	if jsonOut {
+		if len(filtered) != 0 {
+			return errors.New("usage: oaer compat stdlib [--json|--output <path>|--check <path>]")
+		}
+		return capability.WriteStdlibJSON(w)
+	}
+	return runCompatStaticMarkdown(filtered, w, "stdlib", "standard library coverage", capability.WriteStdlibMarkdown)
+}
+
 func runCompatGeneratedMarkdown(args []string, w io.Writer, command, label string, write func(io.Writer, capability.Report) error) error {
+	return runCompatStaticMarkdown(args, w, command, label, func(w io.Writer) error {
+		return write(w, capability.MVPReport())
+	})
+}
+
+func runCompatStaticMarkdown(args []string, w io.Writer, command, label string, write func(io.Writer) error) error {
 	outputPath := ""
 	checkPath := ""
 	for i := 0; i < len(args); i++ {
@@ -1280,7 +1307,7 @@ func runCompatGeneratedMarkdown(args []string, w io.Writer, command, label strin
 	}
 
 	var buf strings.Builder
-	if err := write(&buf, capability.MVPReport()); err != nil {
+	if err := write(&buf); err != nil {
 		return err
 	}
 	content := buf.String()

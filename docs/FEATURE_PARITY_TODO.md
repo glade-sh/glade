@@ -464,7 +464,10 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Return typed `UnsupportedFeature` runtime errors for unimplemented
     VM/stdlib calls while preserving fixture-compatible message text.
   - [x] Keep ordinary runtime errors out of unsupported-feature classification.
-- [ ] Generate and publish a standard-library coverage matrix.
+- [x] Generate and publish a standard-library coverage matrix.
+  - [x] Add `oaer compat stdlib` with Markdown, JSON, output, and drift-check
+    modes backed by `internal/capability`.
+  - [x] Publish generated coverage at `docs/STDLIB_COVERAGE.md`.
 
 ## 6. Storage, Fixtures, And Persistence
 

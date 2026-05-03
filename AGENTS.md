@@ -104,7 +104,7 @@ Run locally:
 ./oaer profile analyze <trace.json> [--json]
 ./oaer server [--addr <host:port>] [--db <path>] [--project <root>]
 ./oaer db seed|reset|export|inspect --db <path> [--project <root>] [--json] [fixture.json]
-./oaer compat mvp|matrix|dashboard|gaps|validate|run ...
+./oaer compat mvp|matrix|dashboard|gaps|stdlib|validate|run ...
 ```
 
 ## Testing
@@ -147,6 +147,7 @@ go test -run '^$' -bench . ./internal/apexast ./internal/typesys ./internal/sema
 go run ./cmd/oaer compat mvp --json
 go run ./cmd/oaer compat dashboard --check docs/COMPATIBILITY_DASHBOARD.md
 go run ./cmd/oaer compat gaps --check docs/KNOWN_GAPS.md
+go run ./cmd/oaer compat stdlib --check docs/STDLIB_COVERAGE.md
 scripts/smoke.sh
 ```
 
@@ -179,6 +180,7 @@ startup, and compat commands.
 ```bash
 go run ./cmd/oaer compat dashboard --output docs/COMPATIBILITY_DASHBOARD.md
 go run ./cmd/oaer compat gaps --output docs/KNOWN_GAPS.md
+go run ./cmd/oaer compat stdlib --output docs/STDLIB_COVERAGE.md
 ```
 
 - Do not introduce proprietary AER internals as implementation sources.
@@ -204,8 +206,8 @@ generated docs are in sync.
 
 - `docs/ARCHITECTURE.md` — current package map and runtime pipeline.
 - `docs/COMPATIBILITY.md` — human-readable feature status.
-- `docs/COMPATIBILITY_DASHBOARD.md` and `docs/KNOWN_GAPS.md` — generated from
-  `internal/capability`.
+- `docs/COMPATIBILITY_DASHBOARD.md`, `docs/KNOWN_GAPS.md`, and
+  `docs/STDLIB_COVERAGE.md` — generated from `internal/capability`.
 - `docs/FEATURE_PARITY_TODO.md` — remaining parity work.
 - `docs/OAER_IMPLEMENTATION_PLAN.md` and `docs/OPEN_AER_PLAN.md` — roadmap and
   historical context; keep stale package names out of these files.

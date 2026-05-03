@@ -28,6 +28,7 @@ oaer compat mvp --require-ready
 oaer compat matrix --json
 oaer compat dashboard --output docs/COMPATIBILITY_DASHBOARD.md
 oaer compat gaps --output docs/KNOWN_GAPS.md
+oaer compat stdlib --output docs/STDLIB_COVERAGE.md
 ```
 
 The source of truth for required MVP capabilities is `internal/capability`.
@@ -35,8 +36,10 @@ The generated public dashboard is checked in at
 [`docs/COMPATIBILITY_DASHBOARD.md`](COMPATIBILITY_DASHBOARD.md). The generated
 known-gaps document is checked in at [`docs/KNOWN_GAPS.md`](KNOWN_GAPS.md). CI
 prints the machine-readable MVP gate and verifies that both generated documents
-match the capability source. Use `oaer compat mvp --require-ready` for release
-promotion checks that must fail while the target is not ready.
+match the capability source. The generated standard-library coverage matrix is
+checked in at [`docs/STDLIB_COVERAGE.md`](STDLIB_COVERAGE.md). Use
+`oaer compat mvp --require-ready` for release promotion checks that must fail
+while the target is not ready.
 
 Release installation and artifact verification are documented in
 [`docs/INSTALL.md`](INSTALL.md).
@@ -53,7 +56,7 @@ in [`docs/RELEASE_POLICY.md`](RELEASE_POLICY.md), with ongoing notes in
 | CLI surface | partial | `version`, `help`, `doctor`, `parse`, `inspect`, `schema`, `check`, `exec`, `test`, `profile analyze`, `server`, `db`, `lsp`, and `compat` exist. Several commands are still partial because their underlying runtime fidelity is partial. |
 | Project config | partial | Minimal `oaer.yml` discovery exists. |
 | Diagnostics | partial | Shared diagnostic shape exists. |
-| Compatibility fixtures | partial | JSON schema model exists; `oaer compat validate/run` executes parse, check, exec, test, and DB lifecycle fixtures, including malformed-parse diagnostics, storage seed/export/reset/inspect coverage, and enterprise-style multi-class parse/index/check coverage; `oaer compat matrix` and `oaer compat mvp` expose machine-readable capability status. Broader Salesforce black-box fixtures remain incomplete. |
+| Compatibility fixtures | partial | JSON schema model exists; `oaer compat validate/run` executes parse, check, exec, test, and DB lifecycle fixtures, including malformed-parse diagnostics, storage seed/export/reset/inspect coverage, and enterprise-style multi-class parse/index/check coverage; `oaer compat matrix`, `oaer compat mvp`, and `oaer compat stdlib` expose machine-readable capability and standard-library status. Broader Salesforce black-box fixtures remain incomplete. |
 | Parser | partial | `oaer parse` handles both example projects, including Apex methods named `void`; declaration walking and source utilities exist. |
 | Project loader | partial | SFDX package directories and Apex/object/field/record type files are discovered. |
 | Schema loader | partial | Custom object, custom field, picklist, and record type metadata are loaded. |
