@@ -183,6 +183,72 @@ Integer n = parser.getIntegerValue();
 	}
 }
 
+func TestExecJSONGeneratorWritesRawValues(t *testing.T) {
+	program, err := CompileAnonymous(`
+JSONGenerator gen = JSON.createGenerator(false);
+gen.writeStartObject();
+gen.writeRawField('config', '{"enabled":true,"nums":[1,2]}');
+gen.writeFieldName('items');
+gen.writeStartArray();
+gen.writeString('first');
+gen.writeRawValue('{"raw":true}');
+gen.writeRaw('[false,null]');
+gen.writeEndArray();
+gen.writeEndObject();
+System.assertEquals('{"config":{"enabled":true,"nums":[1,2]},"items":["first",{"raw":true},[false,null]]}', gen.getAsString());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecJSONGeneratorRejectsInvalidRawValue(t *testing.T) {
+	program, err := CompileAnonymous(`
+JSONGenerator gen = JSON.createGenerator(false);
+gen.writeStartArray();
+gen.writeRawValue('{bad');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), "expects valid raw JSON value") {
+		t.Fatalf("err = %v", err)
+	}
+}
+
+func TestExecJSONParserClearCurrentTokenAndNumericAccessors(t *testing.T) {
+	program, err := CompileAnonymous(`
+JSONParser parser = JSON.createParser('{"whole":12,"fraction":1.25}');
+System.assertEquals(null, parser.getCurrentName());
+System.assertEquals(JSONToken.START_OBJECT, parser.nextToken());
+System.assertEquals(null, parser.getCurrentName());
+System.assertEquals(JSONToken.FIELD_NAME, parser.nextToken());
+System.assertEquals('whole', parser.getCurrentName());
+System.assertEquals(JSONToken.VALUE_NUMBER_INT, parser.nextValue());
+System.assertEquals('whole', parser.getCurrentName());
+System.assertEquals(12, parser.getLongValue());
+parser.clearCurrentToken();
+System.assertEquals(null, parser.getCurrentToken());
+System.assertEquals(null, parser.getCurrentName());
+System.assertEquals(JSONToken.FIELD_NAME, parser.nextToken());
+System.assertEquals(JSONToken.VALUE_NUMBER_FLOAT, parser.nextValue());
+System.assertEquals(1.25, parser.getDoubleValue());
+System.assertEquals(1.25, parser.getDecimalValue());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecJSONGeneratorWritesPlatformAndObjectValues(t *testing.T) {
 	program, err := CompileAnonymous(`
 JSONGenerator gen = JSON.createGenerator(false);
