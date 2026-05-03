@@ -105,6 +105,20 @@ func TestRunCheckFixture(t *testing.T) {
 	}
 }
 
+func TestRunStorageDBLifecycleFixture(t *testing.T) {
+	fixture, err := LoadFile("../../docs/fixtures/storage-db-lifecycle.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := Run(fixture)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.OK {
+		t.Fatalf("result = %#v", result)
+	}
+}
+
 func TestRunExecFixture(t *testing.T) {
 	fixture := Fixture{
 		Name:    "exec-smoke",

@@ -512,11 +512,13 @@ a Salesforce-shaped local API server without silently wrong behavior.
     preparation, server fixture/reset endpoints, and restart persistence checks.
   - [x] Document operational checks for saved mutations and rollback-on-failure
     commit boundaries.
-- [ ] Add import/export compatibility tests for `oaer db seed/reset/export/
+- [x] Add import/export compatibility tests for `oaer db seed/reset/export/
   inspect`.
   - [x] Add a DB lifecycle compatibility fixture that seeds SQLite storage,
     inspects schema/data counts, exports the fixture shape, and verifies reset
     behavior.
+  - [x] Re-import the exported fixture during compatibility execution and assert
+    imported record, user, profile, and Account counts.
 - [ ] Add fixture schemas for enterprise selector/service/domain test suites.
 
 ## 7. Developer Experience

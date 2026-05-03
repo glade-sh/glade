@@ -201,6 +201,11 @@ func runDBFixture(fixture Fixture) (RunResult, error) {
 		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
 	}
 	exported := storage.FixtureFromOrg(org)
+	imported := storage.NewOrgState()
+	if err := storage.ApplyFixture(&imported, exported); err != nil {
+		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+	}
+	importedSummary := storage.InspectOrg("", imported)
 	if err := store.Reset(org); err != nil {
 		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
 	}
@@ -209,17 +214,21 @@ func runDBFixture(fixture Fixture) (RunResult, error) {
 		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
 	}
 	payload := map[string]any{
-		"ok":                true,
-		"schemaVersion":     seedSummary.SchemaVersion,
-		"seedRecords":       seedSummary.Records,
-		"resetRecords":      resetSummary.Records,
-		"seedAccountRows":   seedSummary.ByObject["Account"],
-		"resetAccountRows":  resetSummary.ByObject["Account"],
-		"users":             seedSummary.Users,
-		"profiles":          seedSummary.Profiles,
-		"permissions":       seedSummary.Permissions,
-		"exportedObjects":   len(exported.Objects),
-		"exportedSequences": len(exported.IDSequences),
+		"ok":                  true,
+		"schemaVersion":       seedSummary.SchemaVersion,
+		"seedRecords":         seedSummary.Records,
+		"resetRecords":        resetSummary.Records,
+		"seedAccountRows":     seedSummary.ByObject["Account"],
+		"resetAccountRows":    resetSummary.ByObject["Account"],
+		"users":               seedSummary.Users,
+		"profiles":            seedSummary.Profiles,
+		"permissions":         seedSummary.Permissions,
+		"exportedObjects":     len(exported.Objects),
+		"exportedSequences":   len(exported.IDSequences),
+		"importedRecords":     importedSummary.Records,
+		"importedUsers":       importedSummary.Users,
+		"importedProfiles":    importedSummary.Profiles,
+		"importedAccountRows": importedSummary.ByObject["Account"],
 	}
 	return compareResult(fixture, payload, "")
 }

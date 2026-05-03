@@ -17,6 +17,10 @@
     "result": {
       "exportedObjects": 8,
       "exportedSequences": 7,
+      "importedAccountRows": 1,
+      "importedProfiles": 1,
+      "importedRecords": 7,
+      "importedUsers": 1,
       "ok": true,
       "permissions": 2,
       "profiles": 1,
