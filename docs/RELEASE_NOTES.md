@@ -51,6 +51,8 @@ Release engineering:
 - Added enterprise trigger-heavy, describe-heavy, namespace-heavy, and
   package-style compatibility fixtures, with SFDX namespace/package-directory
   support in schema-aware check fixtures.
+- Added bounded stress tests for large type-index builds, SQLite fixture
+  round-trips, bulk DML partial results, and describe-heavy VM execution.
 - Added parser diagnostic-count fixtures plus type-index and sema panic recovery
   diagnostics for malformed project inputs.
 - Added method/constructor parameter type diagnostics and expanded VM exception

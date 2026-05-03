@@ -593,8 +593,11 @@ a Salesforce-shaped local API server without silently wrong behavior.
   test runner, watcher, LSP, DAP, fixture loading, and server routes.
 - [x] Add benchmarks for parser, project indexing, sema, tests, SOQL, DML,
   triggers, storage seed/export, server routes, LSP, and watch mode.
-- [ ] Add stress tests for large projects, large fixtures, bulk DML, and
+- [x] Add stress tests for large projects, large fixtures, bulk DML, and
   describe-heavy execution.
+  - [x] Add bounded normal-suite stress tests for large type-index builds,
+    SQLite fixture round-trips, bulk DML partial results, and repeated describe
+    execution.
 - [x] Add release binaries for supported platforms.
 - [x] Add checksums and signed or verifiable release artifacts.
 - [x] Add install docs for Homebrew/manual/CI usage.
