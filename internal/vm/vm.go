@@ -55,6 +55,7 @@ type VM struct {
 	savepoints       map[string]storage.OrgState
 	savepointOrder   map[string]int
 	nextSavepoint    int
+	pageMessages     []Value
 }
 
 const maxTriggerDepth = 16
@@ -1261,17 +1262,39 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		if err := vm.incrementLimit("emailInvocations", 1); err != nil {
 			return Null, err
 		}
-		return List(Object("Messaging.SendEmailResult")), nil
+		result := Object("Messaging.SendEmailResult")
+		result.Fields["success"] = Bool(true)
+		result.Fields["errors"] = List()
+		return List(result), nil
 	case "ApexPages.hasMessages":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("ApexPages.hasMessages expects 0 arguments")
 		}
-		return Bool(false), nil
+		return Bool(len(vm.pageMessages) > 0), nil
 	case "ApexPages.addMessage":
 		if len(args) != 1 {
 			return Null, fmt.Errorf("ApexPages.addMessage expects 1 argument")
 		}
+		vm.pageMessages = append(vm.pageMessages, args[0])
 		return Null, nil
+	case "ApexPages.getMessages":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("ApexPages.getMessages expects 0 arguments")
+		}
+		return List(vm.pageMessages...), nil
+	case "ApexPages.currentPage":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("ApexPages.currentPage expects 0 arguments")
+		}
+		page := Object("PageReference")
+		page.Fields["url"] = String("/apex/current")
+		page.Fields["parameters"] = Map()
+		return page, nil
+	case "URL.getSalesforceBaseUrl", "URL.getOrgDomainUrl":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("%s expects 0 arguments", callee)
+		}
+		return platformScalar("URL", "https://local.oaer.example"), nil
 	case "Test.setMock":
 		if len(args) != 2 {
 			return Null, fmt.Errorf("Test.setMock expects mock type and mock instance")
@@ -1314,6 +1337,26 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return String(userInfoField(vm.testContext.CurrentUser, "Username", userInfoField(vm.testContext.CurrentUser, "Id", "system"))), nil
 		}
 		return String("system"), nil
+	case "UserInfo.getOrganizationId":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("UserInfo.getOrganizationId expects 0 arguments")
+		}
+		return String("00D000000000001"), nil
+	case "UserInfo.getSessionId":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("UserInfo.getSessionId expects 0 arguments")
+		}
+		return String(""), nil
+	case "UserInfo.getLocale", "UserInfo.getLanguage":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("%s expects 0 arguments", callee)
+		}
+		return String("en_US"), nil
+	case "UserInfo.getTimeZone":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("UserInfo.getTimeZone expects 0 arguments")
+		}
+		return String("UTC"), nil
 	default:
 		return Null, fmt.Errorf("unsupported call %q", callee)
 	}
@@ -4384,6 +4427,33 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 		}
 		return object, nil
 	}
+	switch typeName {
+	case "PageReference":
+		if len(args) > 1 || len(namedArgs) != 0 {
+			return Null, fmt.Errorf("PageReference constructor expects optional URL String")
+		}
+		page := Object("PageReference")
+		page.Fields["url"] = String("")
+		if len(args) == 1 {
+			if args[0].Kind != ValueString {
+				return Null, fmt.Errorf("PageReference constructor expects URL String")
+			}
+			page.Fields["url"] = args[0]
+		}
+		page.Fields["parameters"] = Map()
+		return page, nil
+	case "ApexPages.Message":
+		if len(args) < 2 || len(args) > 3 {
+			return Null, fmt.Errorf("ApexPages.Message constructor expects severity, summary[, detail]")
+		}
+		message := Object("ApexPages.Message")
+		message.Fields["severity"] = args[0]
+		message.Fields["summary"] = args[1]
+		if len(args) == 3 {
+			message.Fields["detail"] = args[2]
+		}
+		return message, nil
+	}
 	objectType := typeName
 	var definition storage.ObjectDefinition
 	if vm.Org != nil {
@@ -6527,6 +6597,101 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				}
 			}
 			return response, receiver, false, true, nil
+		}
+	case "Messaging.SendEmailResult":
+		switch method {
+		case "isSuccess":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Messaging.SendEmailResult.isSuccess expects 0 arguments")
+			}
+			if value, ok := receiver.Fields["success"]; ok {
+				return value, receiver, false, true, nil
+			}
+			return Bool(true), receiver, false, true, nil
+		case "getErrors":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Messaging.SendEmailResult.getErrors expects 0 arguments")
+			}
+			if value, ok := receiver.Fields["errors"]; ok {
+				return value, receiver, false, true, nil
+			}
+			return List(), receiver, false, true, nil
+		}
+	case "Messaging.SingleEmailMessage":
+		switch method {
+		case "setToAddresses":
+			if len(args) != 1 || args[0].Kind != ValueList {
+				return Null, receiver, false, true, fmt.Errorf("Messaging.SingleEmailMessage.setToAddresses expects List")
+			}
+			receiver.Fields["toAddresses"] = args[0]
+			return Null, receiver, true, true, nil
+		case "setSubject":
+			if len(args) != 1 || args[0].Kind != ValueString {
+				return Null, receiver, false, true, fmt.Errorf("Messaging.SingleEmailMessage.setSubject expects String")
+			}
+			receiver.Fields["subject"] = args[0]
+			return Null, receiver, true, true, nil
+		case "setPlainTextBody":
+			if len(args) != 1 || args[0].Kind != ValueString {
+				return Null, receiver, false, true, fmt.Errorf("Messaging.SingleEmailMessage.setPlainTextBody expects String")
+			}
+			receiver.Fields["plainTextBody"] = args[0]
+			return Null, receiver, true, true, nil
+		}
+	case "ApexPages.Message":
+		switch method {
+		case "getSummary":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("ApexPages.Message.getSummary expects 0 arguments")
+			}
+			return receiver.Fields["summary"], receiver, false, true, nil
+		case "getDetail":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("ApexPages.Message.getDetail expects 0 arguments")
+			}
+			if value, ok := receiver.Fields["detail"]; ok {
+				return value, receiver, false, true, nil
+			}
+			return receiver.Fields["summary"], receiver, false, true, nil
+		}
+	case "PageReference":
+		switch method {
+		case "getUrl":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("PageReference.getUrl expects 0 arguments")
+			}
+			return receiver.Fields["url"], receiver, false, true, nil
+		case "setRedirect":
+			if len(args) != 1 || args[0].Kind != ValueBool {
+				return Null, receiver, false, true, fmt.Errorf("PageReference.setRedirect expects Boolean")
+			}
+			receiver.Fields["redirect"] = args[0]
+			return Null, receiver, true, true, nil
+		case "getRedirect":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("PageReference.getRedirect expects 0 arguments")
+			}
+			if value, ok := receiver.Fields["redirect"]; ok {
+				return value, receiver, false, true, nil
+			}
+			return Bool(false), receiver, false, true, nil
+		case "getParameters":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("PageReference.getParameters expects 0 arguments")
+			}
+			if value, ok := receiver.Fields["parameters"]; ok {
+				return value, receiver, false, true, nil
+			}
+			params := Map()
+			receiver.Fields["parameters"] = params
+			return params, receiver, true, true, nil
+		}
+	case "URL":
+		if method == "toExternalForm" || method == "toString" {
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("URL.%s expects 0 arguments", method)
+			}
+			return receiver.Fields["value"], receiver, false, true, nil
 		}
 	}
 	return Null, receiver, false, false, nil

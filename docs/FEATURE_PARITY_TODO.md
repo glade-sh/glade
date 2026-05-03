@@ -452,6 +452,11 @@ a Salesforce-shaped local API server without silently wrong behavior.
     callout transport is intentionally not modeled.
 - [ ] Complete `UserInfo`, `FeatureManagement`, `Messaging`, `ApexPages`,
   `URL`, and `PageReference` basics.
+  - [x] Add common `UserInfo` org/session/locale/timezone getters.
+  - [x] Add `Messaging.SingleEmailMessage` setters and structured
+    `SendEmailResult` basics.
+  - [x] Add `ApexPages` message storage, current page, `PageReference`, and
+    deterministic org `URL` basics.
 - [ ] Add stable unsupported-feature errors for every unimplemented standard
   library method.
 - [ ] Generate and publish a standard-library coverage matrix.

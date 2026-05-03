@@ -424,6 +424,10 @@ System.runAs(new User(Id = '005-user-a', ProfileId = '00e-profile-a', Username =
   System.assertEquals('005-user-a', UserInfo.getUserId());
   System.assertEquals('00e-profile-a', UserInfo.getProfileId());
   System.assertEquals('user-a@example.test', UserInfo.getUserName());
+  System.assertEquals('00D000000000001', UserInfo.getOrganizationId());
+  System.assertEquals('', UserInfo.getSessionId());
+  System.assertEquals('en_US', UserInfo.getLocale());
+  System.assertEquals('UTC', UserInfo.getTimeZone());
 }
 System.assertEquals('system', UserInfo.getUserId());
 System.runAs(new User(Id = '005-user-b', Permissions = new List<String>{'CanRunLocal'})) {
@@ -436,6 +440,49 @@ System.runAs(new User(Id = '005-user-b', Permissions = new List<String>{'CanRunL
 	}
 	machine := New(nil)
 	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMessagingApexPagesAndURLBasics(t *testing.T) {
+	program, err := CompileAnonymous(`
+Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage();
+email.setToAddresses(new List<String>{'user@example.test'});
+email.setSubject('Hello');
+email.setPlainTextBody('Body');
+List<Object> results = Messaging.sendEmail(new List<Object>{email});
+Object sendResult = results.get(0);
+System.assert(sendResult.isSuccess());
+List<Object> sendErrors = sendResult.getErrors();
+System.assertEquals(0, sendErrors.size());
+System.assert(!ApexPages.hasMessages());
+ApexPages.Message message = new ApexPages.Message('ERROR', 'Summary', 'Detail');
+ApexPages.addMessage(message);
+System.assert(ApexPages.hasMessages());
+List<Object> messages = ApexPages.getMessages();
+Object firstMessage = messages.get(0);
+System.assertEquals('Summary', firstMessage.getSummary());
+System.assertEquals('Detail', firstMessage.getDetail());
+PageReference page = new PageReference('/apex/TestPage');
+System.assertEquals('/apex/TestPage', page.getUrl());
+page.setRedirect(true);
+System.assert(page.getRedirect());
+Map<String,Object> params = page.getParameters();
+params.put('id', '001');
+Map<String,Object> paramsAgain = page.getParameters();
+System.assertEquals('001', paramsAgain.get('id'));
+PageReference current = ApexPages.currentPage();
+System.assertEquals('/apex/current', current.getUrl());
+URL base = URL.getSalesforceBaseUrl();
+System.assertEquals('https://local.oaer.example', base.toExternalForm());
+URL orgUrl = URL.getOrgDomainUrl();
+System.assertEquals('https://local.oaer.example', orgUrl.toString());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}

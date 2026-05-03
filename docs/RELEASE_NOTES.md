@@ -125,6 +125,8 @@ Release engineering:
   MD5/SHA1/SHA-256 `Crypto.generateDigest` behavior.
 - Expanded `HttpRequest`/`HttpResponse` mock shapes with endpoint, method,
   headers, timeout, status, and body/blob accessors.
+- Added `UserInfo`, `Messaging`, `ApexPages`, `URL`, and `PageReference`
+  platform API basics.
 - Added SOQL `ALL ROWS` support for querying soft-deleted records.
 - Added SOQL `WITH SECURITY_ENFORCED`, `WITH USER_MODE`, and
   `WITH SYSTEM_MODE` parsing as local security-mode markers.
