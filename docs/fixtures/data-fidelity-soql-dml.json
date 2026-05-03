@@ -79,7 +79,7 @@
     },
     {
       "path": "force-app/main/classes/AccountAddError.trigger",
-      "content": "trigger AccountAddError on Account (before insert) { for (Account a : Trigger.new) { if (a.get('Name') == 'Block') { a.Name.addError('blocked by trigger'); } if (a.get('Name') == 'Multi Block') { a.addError('blocked at record'); a.Name.addError('blocked at name'); a.Rating.addError('blocked at rating'); } } }"
+      "content": "trigger AccountAddError on Account (before insert) { for (Account a : Trigger.new) { if (a.get('Name') == 'Block') { a.Name.addError('blocked by trigger'); } if (a.get('Name') == 'Multi Block') { a.addError('blocked at record'); a.Name.addError('blocked at name'); a.Rating.addError('blocked at rating'); } if (a.get('Name') == 'Overload Block') { a.addError('object overload', false); a.Rating.addError('unset field overload', true); } } }"
     },
     {
       "path": "force-app/main/classes/AccountBeforeUpdateContext.trigger",
@@ -166,6 +166,10 @@
       "content": "@isTest private class ValidationRuleFidelityTest { @isTest static void metadataValidationRuleBlocksDml() { Account blocked = new Account(Name = 'Rule Block'); Object result = Database.insert(blocked, false); System.assert(!result.isSuccess()); List<Object> errors = result.getErrors(); System.assertEquals(1, errors.size()); Object err = errors.get(0); System.assertEquals('FIELD_CUSTOM_VALIDATION_EXCEPTION', err.getStatusCode()); System.assertEquals('blocked by validation rule', err.getMessage()); List<Object> fields = err.getFields(); System.assertEquals(1, fields.size()); System.assertEquals('Name', fields.get(0)); } }"
     },
     {
+      "path": "force-app/main/classes/AddErrorOverloadFidelityTest.cls",
+      "content": "@isTest private class AddErrorOverloadFidelityTest { @isTest static void addErrorSupportsOptionalEscapeAndUnsetFields() { Account blocked = new Account(Name = 'Overload Block'); Object result = Database.insert(blocked, false); System.assert(!result.isSuccess()); List<Object> errors = result.getErrors(); System.assertEquals(2, errors.size()); Object objectError = errors.get(0); System.assertEquals('object overload', objectError.getMessage()); Object fieldError = errors.get(1); System.assertEquals('unset field overload', fieldError.getMessage()); List<Object> fields = fieldError.getFields(); System.assertEquals(1, fields.size()); System.assertEquals('Rating', fields.get(0)); } }"
+    },
+    {
       "path": "force-app/main/classes/UndeleteTriggerFidelityTest.cls",
       "content": "@isTest private class UndeleteTriggerFidelityTest { @isTest static void afterUndeleteContextRuns() { Account a = new Account(Name = 'Undelete Me'); insert a; delete a; undelete a; System.assert(!a.IsDeleted); } }"
     },
@@ -210,8 +214,8 @@
       "errors": 0,
       "failed": 0,
       "ok": true,
-      "passed": 22,
-      "total": 22
+      "passed": 23,
+      "total": 23
     }
   }
 }

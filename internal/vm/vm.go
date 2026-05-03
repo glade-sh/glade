@@ -4655,24 +4655,17 @@ func (vm *VM) callSObjectFieldAddError(path []string, args []Value) (Value, bool
 	if len(path) != 2 {
 		return Null, false, nil
 	}
-	if len(args) != 1 {
-		return Null, true, fmt.Errorf("SObject field addError expects message")
-	}
 	root, ok := vm.Globals[path[0]]
 	if !ok || root.Kind != ValueObject || !vm.isSObjectType(root.Type) {
 		return Null, false, nil
 	}
 	field := vm.resolveSObjectFieldName(root.Type, path[1])
-	if _, ok := root.Fields[field]; !ok {
-		if _, ok := root.Fields[path[1]]; !ok {
-			return Null, false, nil
-		}
+	if !vm.sObjectFieldExists(root.Type, field) {
+		return Null, false, nil
 	}
-	message := args[0].String()
-	if args[0].Kind == ValueObject {
-		if value, ok := args[0].Fields["message"]; ok {
-			message = value.String()
-		}
+	message, err := sObjectAddErrorMessage(args, "SObject field addError")
+	if err != nil {
+		return Null, true, err
 	}
 	addSObjectError(&root, message, []string{field})
 	vm.Globals[path[0]] = root
@@ -4835,6 +4828,37 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 	return Null, true, fmt.Errorf("unsupported call %q", receiverName+"."+method)
 }
 
+func sObjectAddErrorMessage(args []Value, name string) (string, error) {
+	if len(args) != 1 && len(args) != 2 {
+		return "", fmt.Errorf("%s expects message and optional escapeHtml", name)
+	}
+	if len(args) == 2 && args[1].Kind != ValueBool {
+		return "", fmt.Errorf("%s escapeHtml expects Boolean", name)
+	}
+	message := args[0].String()
+	if args[0].Kind == ValueObject {
+		if value, ok := args[0].Fields["message"]; ok {
+			message = value.String()
+		}
+	}
+	return message, nil
+}
+
+func (vm *VM) sObjectFieldExists(typeName, field string) bool {
+	if vm.Org == nil {
+		return true
+	}
+	objectName, ok := storage.ResolveObjectName(*vm.Org, typeName)
+	if !ok {
+		return true
+	}
+	if field == "Id" {
+		return true
+	}
+	_, ok = storage.ResolveFieldName(vm.Org.Objects[objectName].Definition, vm.Org.Namespace, field)
+	return ok
+}
+
 func (vm *VM) storeReceiver(receiverName string, value Value) error {
 	if strings.Contains(receiverName, ".") {
 		return vm.assign(receiverName, value)
@@ -4854,14 +4878,9 @@ func (vm *VM) isSObjectType(typeName string) bool {
 func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Value, bool, error) {
 	switch method {
 	case "addError":
-		if len(args) != 1 {
-			return Null, true, fmt.Errorf("SObject.addError expects message")
-		}
-		message := args[0].String()
-		if args[0].Kind == ValueObject {
-			if value, ok := args[0].Fields["message"]; ok {
-				message = value.String()
-			}
+		message, err := sObjectAddErrorMessage(args, "SObject.addError")
+		if err != nil {
+			return Null, true, err
 		}
 		addSObjectError(&receiver, message, nil)
 		return Null, true, nil

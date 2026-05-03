@@ -94,6 +94,8 @@ Release engineering:
   structured validation errors.
 - Corrected undelete trigger execution so supported after-undelete contexts run
   without invoking before-undelete triggers.
+- Added common `addError(message, escapeHtml)` overload handling and field
+  addError support for unset schema fields.
 - Added SOQL `ALL ROWS` support for querying soft-deleted records.
 - Added SOQL `WITH SECURITY_ENFORCED`, `WITH USER_MODE`, and
   `WITH SYSTEM_MODE` parsing as local security-mode markers.

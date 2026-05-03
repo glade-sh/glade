@@ -365,14 +365,17 @@ a Salesforce-shaped local API server without silently wrong behavior.
     before-undelete invocation.
   - **Limitation**: Complete platform trigger ordering across all automation
     types remains outside the local trigger runtime.
-- [ ] Implement `addError` behavior on SObjects and fields.
+- [x] Implement `addError` behavior on SObjects and fields.
   - [x] Support object-level `SObject.addError`, `hasErrors`, and `getErrors`
     in before-trigger DML with row-level `SaveResult` error shaping and
     all-or-none rollback.
   - [x] Support field-level `someRecord.Field__c.addError(...)` with
     `Database.Error.getFields()` attribution.
   - [x] Preserve multiple addError calls as multiple `Database.Error` entries.
-  - **Limitation**: Advanced addError overload parity remains incomplete.
+  - [x] Support common optional `escapeHtml` overloads and field `addError` on
+    unset-but-valid SObject fields.
+  - **Limitation**: UI rendering details for escaped addError text remain
+    outside the local runtime.
 - [ ] Add trigger fixtures covering insert/update/delete/upsert/undelete,
   all-or-none failures, partial success, recursion, and bulk batches.
   - [x] Add compatibility fixture coverage for failed-first bulk insert partial

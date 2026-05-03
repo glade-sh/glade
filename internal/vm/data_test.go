@@ -1070,6 +1070,57 @@ System.assertEquals(0, survivors.size());
 	}
 }
 
+func TestExecAddErrorOverloadsAndUnsetField(t *testing.T) {
+	triggerProgram, err := CompileAnonymous(`
+for (Account a : Trigger.new) {
+	if (a.Name == 'Overload Block') {
+		a.addError('object overload', false);
+		a.Rating.addError('unset field overload', true);
+	}
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Account blocked = new Account(Name = 'Overload Block');
+Object result = Database.insert(blocked, false);
+System.assert(!result.isSuccess());
+List<Object> errors = result.getErrors();
+System.assertEquals(2, errors.size());
+Object objectError = errors.get(0);
+System.assertEquals('object overload', objectError.getMessage());
+List<Object> objectFields = objectError.getFields();
+System.assertEquals(0, objectFields.size());
+Object fieldError = errors.get(1);
+System.assertEquals('unset field overload', fieldError.getMessage());
+List<Object> fieldFields = fieldError.getFields();
+System.assertEquals(1, fieldFields.size());
+System.assertEquals('Rating', fieldFields.get(0));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Rating"] = storage.Field{APIName: "Rating", Type: storage.FieldString}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "AccountBeforeInsertAddErrorOverload",
+		Object:    "Account",
+		Timing:    triggerTimingBefore,
+		Operation: "insert",
+		Program:   triggerProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecPartialDeleteAfterTriggerSeesOnlySuccessfulRows(t *testing.T) {
 	triggerProgram, err := CompileAnonymous(`
 for (Account oldAccount : Trigger.old) {
