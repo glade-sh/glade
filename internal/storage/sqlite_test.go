@@ -71,3 +71,39 @@ func TestSQLiteStoreAppliesMigrations(t *testing.T) {
 		}
 	}
 }
+
+func TestSQLiteStoreSavesAndLoadsLargeFixture(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "oaer.db")
+	store, err := OpenSQLite(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+
+	org := benchmarkFixtureOrg()
+	fixture := benchmarkFixture(1500)
+	if err := ApplyFixture(&org, fixture); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.Save(org); err != nil {
+		t.Fatal(err)
+	}
+	loaded, err := store.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	account := loaded.Objects["Account"]
+	if len(account.Records) != 1500 {
+		t.Fatalf("loaded Account records = %d, want 1500", len(account.Records))
+	}
+	foundLast := false
+	for _, record := range account.Records {
+		if record.Fields["Name"].String == "Account 1499" {
+			foundLast = true
+			break
+		}
+	}
+	if !foundLast {
+		t.Fatalf("missing last generated Account record")
+	}
+}

@@ -24,6 +24,8 @@ Release engineering:
   calls while preserving fixture-compatible message text.
 - Added `oaer compat stdlib` plus generated `docs/STDLIB_COVERAGE.md` coverage
   for supported and partial standard-library/platform APIs.
+- Tuned SQLite fixture persistence with transaction-scoped prepared inserts,
+  storage pragmas, and large-fixture save/load coverage.
 - Added `check` compatibility fixture execution and an enterprise-style
   multi-class fixture covering parse/index/check behavior.
 - Added parser diagnostic-count fixtures plus type-index and sema panic recovery

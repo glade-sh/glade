@@ -193,11 +193,16 @@ func (s *SQLiteStore) Save(org OrgState) error {
 		"apiVersion": org.APIVersion,
 		"namespace":  org.Namespace,
 	}
+	metaStmt, err := tx.Prepare(`insert into org_meta(key, value) values(?, ?)`)
+	if err != nil {
+		return err
+	}
+	defer metaStmt.Close()
 	for key, value := range meta {
 		if value == "" {
 			continue
 		}
-		if _, err := tx.Exec(`insert into org_meta(key, value) values(?, ?)`, key, value); err != nil {
+		if _, err := metaStmt.Exec(key, value); err != nil {
 			return err
 		}
 	}
@@ -206,13 +211,23 @@ func (s *SQLiteStore) Save(org OrgState) error {
 		names = append(names, name)
 	}
 	sort.Strings(names)
+	defStmt, err := tx.Prepare(`insert into object_definitions(name, definition_json) values(?, ?)`)
+	if err != nil {
+		return err
+	}
+	defer defStmt.Close()
+	recordStmt, err := tx.Prepare(`insert into records(object_name, id, record_json) values(?, ?, ?)`)
+	if err != nil {
+		return err
+	}
+	defer recordStmt.Close()
 	for _, name := range names {
 		object := org.Objects[name]
 		raw, err := json.Marshal(object.Definition)
 		if err != nil {
 			return err
 		}
-		if _, err := tx.Exec(`insert into object_definitions(name, definition_json) values(?, ?)`, name, raw); err != nil {
+		if _, err := defStmt.Exec(name, raw); err != nil {
 			return err
 		}
 		ids := make([]string, 0, len(object.Records))
@@ -226,13 +241,18 @@ func (s *SQLiteStore) Save(org OrgState) error {
 			if err != nil {
 				return err
 			}
-			if _, err := tx.Exec(`insert into records(object_name, id, record_json) values(?, ?, ?)`, name, idText, raw); err != nil {
+			if _, err := recordStmt.Exec(name, idText, raw); err != nil {
 				return err
 			}
 		}
 	}
+	seqStmt, err := tx.Prepare(`insert into id_sequences(object_name, sequence) values(?, ?)`)
+	if err != nil {
+		return err
+	}
+	defer seqStmt.Close()
 	for objectName, sequence := range org.IDSequences {
-		if _, err := tx.Exec(`insert into id_sequences(object_name, sequence) values(?, ?)`, objectName, sequence); err != nil {
+		if _, err := seqStmt.Exec(objectName, sequence); err != nil {
 			return err
 		}
 	}
@@ -279,6 +299,15 @@ func InspectOrg(path string, org OrgState) InspectSummary {
 func (s *SQLiteStore) init() error {
 	if _, err := s.db.Exec(`pragma foreign_keys = on`); err != nil {
 		return err
+	}
+	for _, stmt := range []string{
+		`pragma busy_timeout = 5000`,
+		`pragma synchronous = normal`,
+		`pragma temp_store = memory`,
+	} {
+		if _, err := s.db.Exec(stmt); err != nil {
+			return err
+		}
 	}
 	version, err := s.SchemaVersion()
 	if err != nil {

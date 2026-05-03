@@ -31,7 +31,7 @@ The MVP target is `full-featured aer-parity MVP`. This document lists required c
 ### `fixtures.persistence`: Seed/export/reset local fixtures with persistence
 
 - Status: `partial`
-- Gap: SQLite-backed org storage now persists object definitions, records, ID sequences, schema migrations/versioning, fixture seed/export/reset/inspect, alias and relationship reference resolution, deterministic users/profiles/permissions, DB lifecycle compatibility coverage, server persistence, and fixture/reset endpoints. Large-fixture performance tuning and richer permission semantics remain incomplete.
+- Gap: SQLite-backed org storage now persists object definitions, records, ID sequences, schema migrations/versioning, fixture seed/export/reset/inspect, alias and relationship reference resolution, deterministic users/profiles/permissions, DB lifecycle compatibility coverage, server persistence, fixture/reset endpoints, transaction-scoped prepared inserts, storage performance pragmas, and large-fixture save/load coverage. Richer permission semantics remain incomplete.
 
 ### `sobject.apex`: Apex-integrated SObject construction and field access
 
