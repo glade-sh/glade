@@ -26,6 +26,10 @@ Release engineering:
   for supported and partial standard-library/platform APIs.
 - Tuned SQLite fixture persistence with transaction-scoped prepared inserts,
   storage pragmas, and large-fixture save/load coverage.
+- Strengthened server transaction boundaries so mutating REST, fixture/reset,
+  composite, and Tooling executeAnonymous requests commit cloned org state only
+  after successful execution and persistence, with serialized request handling
+  to avoid concurrent lost updates.
 - Added `check` compatibility fixture execution and an enterprise-style
   multi-class fixture covering parse/index/check behavior.
 - Added parser diagnostic-count fixtures plus type-index and sema panic recovery

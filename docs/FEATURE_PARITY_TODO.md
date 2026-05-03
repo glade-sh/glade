@@ -479,8 +479,14 @@ a Salesforce-shaped local API server without silently wrong behavior.
 - [x] Add migrations/versioning for persistent databases.
   - [x] Add a SQLite migration runner backed by `PRAGMA user_version`, record
     applied migrations, and expose schema version in DB inspection summaries.
-- [ ] Add stronger transaction boundaries across CLI tests, server requests,
+- [x] Add stronger transaction boundaries across CLI tests, server requests,
   DML failures, triggers, and async drains.
+  - [x] Run mutating server requests against cloned org state and commit only
+    after successful execution and persistence.
+  - [x] Roll back Tooling `executeAnonymous` mutations on runtime errors and
+    REST mutations on persistence failures.
+  - [x] Serialize server request handling to prevent concurrent clone/commit
+    lost updates.
 - [ ] Complete fixture alias resolution for polymorphic and relationship-heavy
   data.
 - [ ] Expand deterministic platform data for users, profiles, roles,

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/open-aer/oaer/internal/dml"
 	"github.com/open-aer/oaer/internal/soql"
@@ -14,6 +15,7 @@ import (
 )
 
 type Server struct {
+	mu    sync.Mutex
 	Org   *storage.OrgState
 	Store interface {
 		Save(storage.OrgState) error
@@ -31,6 +33,8 @@ func NewWithStore(org *storage.OrgState, store interface{ Save(storage.OrgState)
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	w.Header().Set("Content-Type", "application/json")
 	parts := splitPath(r.URL.Path)
 	if len(parts) == 3 && parts[0] == "services" && parts[1] == "oauth2" && parts[2] == "userinfo" {
@@ -137,10 +141,11 @@ func (s *Server) handleObject(w http.ResponseWriter, r *http.Request, parts []st
 			writeError(w, http.StatusBadRequest, "JSON_PARSER_ERROR", err.Error())
 			return
 		}
-		engine := dml.NewEngine(s.Org)
+		next := s.Org.Clone()
+		engine := dml.NewEngine(&next)
 		result := engine.Insert([]storage.Record{record})[0]
 		if result.Success {
-			if err := s.persist(); err != nil {
+			if err := s.commitOrg(next); err != nil {
 				writeError(w, http.StatusInternalServerError, "SERVER_ERROR", err.Error())
 				return
 			}
@@ -173,20 +178,22 @@ func (s *Server) handleRecord(w http.ResponseWriter, r *http.Request, objectName
 			writeError(w, http.StatusBadRequest, "JSON_PARSER_ERROR", err.Error())
 			return
 		}
-		engine := dml.NewEngine(s.Org)
+		next := s.Org.Clone()
+		engine := dml.NewEngine(&next)
 		result := engine.Update([]storage.Record{record})[0]
 		if result.Success {
-			if err := s.persist(); err != nil {
+			if err := s.commitOrg(next); err != nil {
 				writeError(w, http.StatusInternalServerError, "SERVER_ERROR", err.Error())
 				return
 			}
 		}
 		writeDMLResult(w, http.StatusNoContent, result)
 	case http.MethodDelete:
-		engine := dml.NewEngine(s.Org)
+		next := s.Org.Clone()
+		engine := dml.NewEngine(&next)
 		result := engine.Delete([]storage.Record{{Object: objectName, ID: id}})[0]
 		if result.Success {
-			if err := s.persist(); err != nil {
+			if err := s.commitOrg(next); err != nil {
 				writeError(w, http.StatusInternalServerError, "SERVER_ERROR", err.Error())
 				return
 			}
@@ -200,8 +207,9 @@ func (s *Server) handleRecord(w http.ResponseWriter, r *http.Request, objectName
 func (s *Server) handleOAER(w http.ResponseWriter, r *http.Request, parts []string) {
 	switch {
 	case len(parts) == 1 && parts[0] == "reset" && r.Method == http.MethodPost:
-		storage.ResetData(s.Org)
-		if err := s.persist(); err != nil {
+		next := s.Org.Clone()
+		storage.ResetData(&next)
+		if err := s.commitOrg(next); err != nil {
 			writeError(w, http.StatusInternalServerError, "SERVER_ERROR", err.Error())
 			return
 		}
@@ -214,11 +222,12 @@ func (s *Server) handleOAER(w http.ResponseWriter, r *http.Request, parts []stri
 			writeError(w, http.StatusBadRequest, "JSON_PARSER_ERROR", err.Error())
 			return
 		}
-		if err := storage.ApplyFixture(s.Org, fixture); err != nil {
+		next := s.Org.Clone()
+		if err := storage.ApplyFixture(&next, fixture); err != nil {
 			writeError(w, http.StatusBadRequest, "INVALID_FIXTURE", err.Error())
 			return
 		}
-		if err := s.persist(); err != nil {
+		if err := s.commitOrg(next); err != nil {
 			writeError(w, http.StatusInternalServerError, "SERVER_ERROR", err.Error())
 			return
 		}
@@ -278,8 +287,9 @@ func (s *Server) handleExecuteAnonymous(w http.ResponseWriter, r *http.Request) 
 		writeJSON(w, http.StatusOK, executeAnonymousFailure(false, err.Error(), nil))
 		return
 	}
+	next := s.Org.Clone()
 	machine := vm.New(nil)
-	machine.SetOrg(s.Org)
+	machine.SetOrg(&next)
 	if s.LimitMode != "" {
 		machine.SetLimitMode(s.LimitMode)
 	}
@@ -291,7 +301,7 @@ func (s *Server) handleExecuteAnonymous(w http.ResponseWriter, r *http.Request) 
 		writeJSON(w, http.StatusOK, executeAnonymousFailure(true, err.Error(), result.Debug))
 		return
 	}
-	if err := s.persist(); err != nil {
+	if err := s.commitOrg(next); err != nil {
 		writeError(w, http.StatusInternalServerError, "SERVER_ERROR", err.Error())
 		return
 	}
@@ -358,8 +368,8 @@ func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, parts [
 			}
 			records = append(records, record)
 		}
-		engine := dml.NewEngine(s.Org)
-		backup := s.Org.Clone()
+		next := s.Org.Clone()
+		engine := dml.NewEngine(&next)
 		results := engine.Insert(records)
 		hasFailure := false
 		hasSuccess := false
@@ -371,12 +381,11 @@ func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, parts [
 			}
 		}
 		if body.AllOrNone && hasFailure {
-			*s.Org = backup
 			writeJSON(w, http.StatusBadRequest, compositeResults(results))
 			return
 		}
 		if hasSuccess {
-			if err := s.persist(); err != nil {
+			if err := s.commitOrg(next); err != nil {
 				writeError(w, http.StatusInternalServerError, "SERVER_ERROR", err.Error())
 				return
 			}
@@ -387,11 +396,19 @@ func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, parts [
 	writeError(w, http.StatusNotFound, "NOT_FOUND", "unknown composite endpoint")
 }
 
-func (s *Server) persist() error {
+func (s *Server) commitOrg(org storage.OrgState) error {
+	if err := s.persistOrg(org); err != nil {
+		return err
+	}
+	*s.Org = org
+	return nil
+}
+
+func (s *Server) persistOrg(org storage.OrgState) error {
 	if s.Store == nil {
 		return nil
 	}
-	return s.Store.Save(*s.Org)
+	return s.Store.Save(org)
 }
 
 func (s *Server) handleQuery(w http.ResponseWriter, r *http.Request) {

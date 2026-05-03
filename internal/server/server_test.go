@@ -3,9 +3,11 @@ package server
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/open-aer/oaer/internal/storage"
@@ -201,6 +203,74 @@ func TestToolingExecuteAnonymousUsesServerLimitMode(t *testing.T) {
 	}
 }
 
+func TestServerRollsBackFailedRequestTransactions(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	exec := httptest.NewRecorder()
+	handler.ServeHTTP(exec, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/tooling/executeAnonymous", strings.NewReader(`{"anonymousBody":"insert new Account(Name = 'Transient'); System.assert(false);"}`)))
+	if exec.Code != http.StatusOK || !bytes.Contains(exec.Body.Bytes(), []byte(`"success":false`)) {
+		t.Fatalf("executeAnonymous status = %d body=%s", exec.Code, exec.Body.String())
+	}
+	if len(org.Objects["Account"].Records) != 0 {
+		t.Fatalf("executeAnonymous rollback left records = %#v", org.Objects["Account"].Records)
+	}
+
+	store := &failingStore{}
+	handler = NewWithStore(&org, store)
+	create := httptest.NewRecorder()
+	handler.ServeHTTP(create, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/sobjects/Account", strings.NewReader(`{"Name":"PersistFail"}`)))
+	if create.Code != http.StatusInternalServerError {
+		t.Fatalf("create status = %d body=%s", create.Code, create.Body.String())
+	}
+	if len(org.Objects["Account"].Records) != 0 {
+		t.Fatalf("persist failure rollback left records = %#v", org.Objects["Account"].Records)
+	}
+}
+
+func TestServerSerializesConcurrentMutations(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+	const requests = 8
+	var wg sync.WaitGroup
+	ids := make(chan storage.ID, requests)
+	for i := 0; i < requests; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			create := httptest.NewRecorder()
+			handler.ServeHTTP(create, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/sobjects/Account", strings.NewReader(`{"Name":"Concurrent"}`)))
+			if create.Code != http.StatusCreated {
+				t.Errorf("create status = %d body=%s", create.Code, create.Body.String())
+				return
+			}
+			var payload struct {
+				ID storage.ID `json:"id"`
+			}
+			if err := json.Unmarshal(create.Body.Bytes(), &payload); err != nil {
+				t.Errorf("decode create body: %v", err)
+				return
+			}
+			ids <- payload.ID
+		}()
+	}
+	wg.Wait()
+	close(ids)
+	seen := make(map[storage.ID]bool)
+	for id := range ids {
+		if seen[id] {
+			t.Fatalf("duplicate id %s", id)
+		}
+		seen[id] = true
+	}
+	if len(seen) != requests {
+		t.Fatalf("created ids = %d, want %d", len(seen), requests)
+	}
+	if len(org.Objects["Account"].Records) != requests {
+		t.Fatalf("stored records = %d, want %d", len(org.Objects["Account"].Records), requests)
+	}
+}
+
 func TestSalesforceErrorShape(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
@@ -228,6 +298,12 @@ func (s *memoryStore) Save(org storage.OrgState) error {
 	s.saves++
 	s.last = org.Clone()
 	return nil
+}
+
+type failingStore struct{}
+
+func (s *failingStore) Save(storage.OrgState) error {
+	return errors.New("store failed")
 }
 
 func testOrg() storage.OrgState {
