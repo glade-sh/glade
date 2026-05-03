@@ -1118,6 +1118,11 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return Null, fmt.Errorf("System.currentTimeMillis expects 0 arguments")
 		}
 		return Int(vm.fakeNow.UnixMilli()), nil
+	case "System.isBatch", "System.isFuture", "System.isQueueable", "System.isScheduled":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("%s expects 0 arguments", callee)
+		}
+		return Bool(false), nil
 	case "Datetime.newInstance", "Datetime.newInstanceGmt":
 		if len(args) != 3 && len(args) != 6 {
 			return Null, fmt.Errorf("%s expects year, month, day[, hour, minute, second] integers", callee)
@@ -1149,6 +1154,8 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return Null, err
 		}
 		return platformScalar("Datetime", formatPlatformDatetime(value)), nil
+	case "LoggingLevel.values":
+		return loggingLevelValues(args)
 	case "System.isRunningTest", "Test.isRunningTest":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
@@ -1158,26 +1165,29 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		if len(args) != 1 && len(args) != 2 {
 			return Null, fmt.Errorf("Type.forName expects type name or namespace and type name")
 		}
-		typeName := ""
 		if len(args) == 1 {
+			if args[0].Kind == ValueNull {
+				return Null, nil
+			}
 			if args[0].Kind != ValueString {
 				return Null, fmt.Errorf("Type.forName expects String")
 			}
-			typeName = args[0].Text
-		} else {
-			if args[0].Kind != ValueString && args[0].Kind != ValueNull {
-				return Null, fmt.Errorf("Type.forName expects namespace String or null")
-			}
-			if args[1].Kind != ValueString {
-				return Null, fmt.Errorf("Type.forName expects type name String")
-			}
-			if args[0].Kind == ValueString && args[0].Text != "" {
-				typeName = args[0].Text + "." + args[1].Text
-			} else {
-				typeName = args[1].Text
-			}
+			return vm.typeForName("", args[0].Text), nil
 		}
-		return platformScalar("Type", typeName), nil
+		if args[0].Kind != ValueString && args[0].Kind != ValueNull {
+			return Null, fmt.Errorf("Type.forName expects namespace String or null")
+		}
+		if args[1].Kind == ValueNull {
+			return Null, nil
+		}
+		if args[1].Kind != ValueString {
+			return Null, fmt.Errorf("Type.forName expects type name String")
+		}
+		namespace := ""
+		if args[0].Kind == ValueString {
+			namespace = args[0].Text
+		}
+		return vm.typeForName(namespace, args[1].Text), nil
 	case "Test.getStandardPricebookId":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Test.getStandardPricebookId expects 0 arguments")
@@ -4900,6 +4910,45 @@ func (vm *VM) splitClassMember(name string) (string, string, bool) {
 	return "", "", false
 }
 
+func (vm *VM) typeForName(namespace, name string) Value {
+	if name == "" {
+		return Null
+	}
+	if namespace != "" {
+		return platformScalar("Type", namespace+"."+name)
+	}
+	if resolved, ok := vm.resolveClassName(name); ok {
+		return platformScalar("Type", resolved)
+	}
+	if vm.Org != nil {
+		if canonical, ok := storage.ResolveObjectName(*vm.Org, name); ok {
+			return platformScalar("Type", canonical)
+		}
+	}
+	if isBuiltinTypeName(name) || isCommonSObjectTypeName(name) {
+		return platformScalar("Type", name)
+	}
+	return Null
+}
+
+func isBuiltinTypeName(name string) bool {
+	switch name {
+	case "Object", "String", "Boolean", "Integer", "Long", "Decimal", "Double", "Date", "Datetime", "Time", "TimeZone", "Blob", "Id", "Type", "URL", "PageReference", "LoggingLevel":
+		return true
+	default:
+		return isExceptionType(name)
+	}
+}
+
+func isCommonSObjectTypeName(name string) bool {
+	for _, objectName := range standardSObjectPrefixes {
+		if name == objectName {
+			return true
+		}
+	}
+	return false
+}
+
 func (vm *VM) resolveClassName(typeName string) (string, bool) {
 	if class, ok := vm.Classes[typeName]; ok {
 		return class.Name, true
@@ -5762,13 +5811,15 @@ func typeValueName(value Value) string {
 	return value.Text
 }
 
+var loggingLevelNames = []string{"NONE", "ERROR", "WARN", "INFO", "DEBUG", "FINE", "FINER", "FINEST"}
+
 func isLoggingLevelName(level string) bool {
-	switch level {
-	case "NONE", "ERROR", "WARN", "INFO", "DEBUG", "FINE", "FINER", "FINEST":
-		return true
-	default:
-		return false
+	for _, name := range loggingLevelNames {
+		if level == name {
+			return true
+		}
 	}
+	return false
 }
 
 func isLoggingLevelValue(value Value) bool {
@@ -6181,6 +6232,9 @@ func methodHasModifier(modifiers []string, expected string) bool {
 func (vm *VM) displayString(value Value, result *Result) (string, error) {
 	if value.Kind != ValueObject {
 		return value.String(), nil
+	}
+	if value.Type == "LoggingLevel" && isLoggingLevelName(value.Text) {
+		return value.Text, nil
 	}
 	target, ok, ambiguous := vm.resolveInstanceMethodForArgs(value.Type, "toString", nil)
 	if ambiguous {
@@ -6980,7 +7034,27 @@ func (vm *VM) resolveSObjectFieldName(typeName, field string) string {
 	return storage.StripNamespaceToken(vm.Org.Namespace, field)
 }
 
+func loggingLevelValues(args []Value) (Value, error) {
+	if len(args) != 0 {
+		return Null, fmt.Errorf("LoggingLevel.values expects 0 arguments")
+	}
+	values := make([]Value, 0, len(loggingLevelNames))
+	for i, name := range loggingLevelNames {
+		value := Value{Kind: ValueObject, Type: "LoggingLevel", Text: name}
+		value.Fields = map[string]Value{"ordinal": Int(int64(i))}
+		values = append(values, value)
+	}
+	return List(values...), nil
+}
+
 func (vm *VM) callEnumStaticMember(typeName, method string, args []Value) (Value, bool, error) {
+	if typeName == "LoggingLevel" {
+		if method != "values" {
+			return Null, false, nil
+		}
+		value, err := loggingLevelValues(args)
+		return value, true, err
+	}
 	class, ok := vm.Classes[typeName]
 	if !ok || len(class.EnumValues) == 0 || method != "values" {
 		return Null, false, nil
@@ -6998,6 +7072,24 @@ func (vm *VM) callEnumStaticMember(typeName, method string, args []Value) (Value
 }
 
 func (vm *VM) callEnumMember(receiver Value, method string, args []Value) (Value, bool, error) {
+	if receiver.Type == "LoggingLevel" {
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("LoggingLevel.%s expects 0 arguments", method)
+		}
+		switch method {
+		case "name", "toString":
+			return String(receiver.Text), true, nil
+		case "ordinal":
+			for i, name := range loggingLevelNames {
+				if name == receiver.Text {
+					return Int(int64(i)), true, nil
+				}
+			}
+			return Int(-1), true, nil
+		default:
+			return Null, false, nil
+		}
+	}
 	class, ok := vm.Classes[receiver.Type]
 	if !ok || len(class.EnumValues) == 0 {
 		return Null, false, nil

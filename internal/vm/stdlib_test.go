@@ -656,6 +656,89 @@ System.assertEquals('built', thing.Name);
 	}
 }
 
+func TestExecCoreSystemContextHelpersReturnFalse(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(false, System.isBatch());
+System.assertEquals(false, System.isFuture());
+System.assertEquals(false, System.isQueueable());
+System.assertEquals(false, System.isScheduled());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecLoggingLevelEnumEdges(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals('INFO', LoggingLevel.INFO.name());
+System.assertEquals('INFO', LoggingLevel.INFO.toString());
+System.assertEquals(3, LoggingLevel.INFO.ordinal());
+List<LoggingLevel> levels = LoggingLevel.values();
+System.assertEquals(8, levels.size());
+LoggingLevel firstLevel = levels.get(0);
+LoggingLevel lastLevel = levels.get(7);
+System.assertEquals('NONE', firstLevel.name());
+System.assertEquals('FINEST', lastLevel.name());
+System.debug(LoggingLevel.ERROR, LoggingLevel.WARN);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := Execute(program, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := result.Debug; len(got) != 1 || got[0] != "WARN" {
+		t.Fatalf("debug lines = %#v, want %#v", got, []string{"WARN"})
+	}
+}
+
+func TestExecTypeForNameNullAndUnknownEdges(t *testing.T) {
+	program, err := CompileAnonymous(`
+Type nullName = Type.forName(null);
+System.assertEquals(null, nullName);
+Type blankName = Type.forName('');
+System.assertEquals(null, blankName);
+Type unknown = Type.forName('DefinitelyMissing');
+System.assertEquals(null, unknown);
+Type unknownWithNullNamespace = Type.forName(null, 'DefinitelyMissing');
+System.assertEquals(null, unknownWithNullNamespace);
+Type accountWithNullNamespace = Type.forName(null, 'Account');
+System.assertEquals('Account', accountWithNullNamespace.getName());
+Type stringType = Type.forName('String');
+System.assertEquals('String', stringType.getName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCoreSystemReflectionEdgesRejectBadInputs(t *testing.T) {
+	tests := []string{
+		`System.isBatch(true);`,
+		`LoggingLevel.values('x');`,
+		`LoggingLevel.INFO.name('x');`,
+		`Type.forName(1);`,
+		`Type.forName(1, 'Account');`,
+		`Type.forName(null, 1);`,
+	}
+	for _, source := range tests {
+		program, err := CompileAnonymous(source)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := Execute(program, nil); err == nil {
+			t.Fatalf("expected error for %s", source)
+		}
+	}
+}
+
 func TestCoreIDValueOfRejectsInvalidAndRestoreCasing(t *testing.T) {
 	tests := []string{
 		`Id.valueOf('short');`,

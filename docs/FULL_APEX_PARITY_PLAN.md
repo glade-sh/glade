@@ -134,8 +134,11 @@ Current progress:
   equality/hash/string behavior.
 - System/exceptions/Type hardening: runtime support now covers deterministic
   `System.today`, `System.now`, `System.currentTimeMillis`, `System.debug`
-  LoggingLevel dispatch, core exception metadata/string helpers, and local
-  `Type.isAssignableFrom` for registered classes/interfaces and built-in
+  LoggingLevel dispatch, built-in `LoggingLevel` enum value helpers, local
+  false-valued async context probes (`System.isBatch`, `System.isFuture`,
+  `System.isQueueable`, `System.isScheduled`), core exception
+  metadata/string helpers, null/blank/unknown local `Type.forName` edges, and
+  local `Type.isAssignableFrom` for registered classes/interfaces and built-in
   exception hierarchy checks.
 - String completion: runtime support now covers deterministic CSV, HTML4, XML,
   Java, EcmaScript, Unicode, and single-quote escaping/unescaping helpers;
@@ -206,14 +209,16 @@ Remaining cuts:
 
 7. System, exceptions, Type, and reflection
    - Newly covered slice: deterministic current-time helpers, debug
-     LoggingLevel dispatch, exception message/type/line/stack/toString helpers,
-     and local Type assignability for class/interface and built-in exception
-     hierarchy checks.
+     LoggingLevel dispatch, built-in LoggingLevel values/name/ordinal/toString,
+     local false-valued async context probes, exception
+     message/type/line/stack/toString helpers, null/blank/unknown local
+     Type.forName edges, and local Type assignability for class/interface and
+     built-in exception hierarchy checks.
    - Remaining gaps: exact assert failure message parity, full logging
-     framework behavior, complete exception class matrix and stack formatting,
-     Type namespace/package lookup behavior, null/unknown Type.forName edge
-     behavior, generic/reflection edge cases, and cloud/org-context helpers that
-     need stable unsupported diagnostics or a local model.
+     framework behavior beyond collected debug lines and enum values, complete
+     exception class matrix and stack formatting, Type namespace/package lookup
+     behavior, generic/reflection edge cases, and broader cloud/org-context
+     helpers that need stable unsupported diagnostics or a local model.
 
 8. Pattern and Matcher
    - Fixture-backed Go `regexp` slice covers compile/matches/pattern,
@@ -231,7 +236,7 @@ Remaining cuts:
    - Remaining gaps: broader/versioned key-prefix catalog behavior, URL
      request-context/cloud-only helpers beyond explicit unsupported diagnostics,
      exact object `toString` versioned output for user classes, Type
-     null/unknown/package lookup edge cases, and broader reflection behavior.
+     package lookup edge cases, and broader reflection behavior.
 
 Exit criteria:
 
