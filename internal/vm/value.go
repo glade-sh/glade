@@ -2,6 +2,7 @@ package vm
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 )
 
@@ -92,7 +93,7 @@ func (v Value) String() string {
 	case ValueSet:
 		return "Set" + valuesString(v.Set)
 	case ValueMap:
-		return fmt.Sprintf("Map(size=%d)", len(v.Map))
+		return mapString(v.Map)
 	case ValueObject:
 		if message, ok := v.Fields["message"]; ok && message.Kind == ValueString {
 			return message.Text
@@ -143,7 +144,8 @@ func (v Value) Equal(other Value) bool {
 			return false
 		}
 		for key, value := range v.Map {
-			if !value.Equal(other.Map[key]) {
+			otherValue, ok := other.Map[key]
+			if !ok || !value.Equal(otherValue) {
 				return false
 			}
 		}
@@ -197,4 +199,25 @@ func valuesString(values []Value) string {
 		out += value.String()
 	}
 	return out + "]"
+}
+
+func mapString(values map[string]Value) string {
+	keys := sortedMapKeys(values)
+	out := "Map{"
+	for i, key := range keys {
+		if i > 0 {
+			out += ", "
+		}
+		out += valueFromMapKey(key).String() + "=" + values[key].String()
+	}
+	return out + "}"
+}
+
+func sortedMapKeys(values map[string]Value) []string {
+	keys := make([]string, 0, len(values))
+	for key := range values {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return keys
 }

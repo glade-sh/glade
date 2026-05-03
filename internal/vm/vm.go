@@ -4649,14 +4649,41 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 		if len(namedArgs) > 0 {
 			return Null, fmt.Errorf("List constructor does not accept named fields")
 		}
+		if len(args) == 1 && (args[0].Kind == ValueList || args[0].Kind == ValueSet) {
+			value := List(append([]Value(nil), collectionMembers(args[0])...)...)
+			return vm.coerceAssignable(typeName, value)
+		}
 		return vm.coerceAssignable(typeName, List(args...))
 	case strings.HasPrefix(typeName, "Set<"):
 		if len(namedArgs) > 0 {
 			return Null, fmt.Errorf("Set constructor does not accept named fields")
 		}
+		if len(args) == 1 && (args[0].Kind == ValueList || args[0].Kind == ValueSet) {
+			value := Set(collectionMembers(args[0])...)
+			return vm.coerceAssignable(typeName, value)
+		}
 		return vm.coerceAssignable(typeName, Set(args...))
 	case strings.HasPrefix(typeName, "Map<"):
-		if len(args) != 0 || len(namedArgs) != 0 {
+		if len(namedArgs) != 0 {
+			return Null, fmt.Errorf("Map constructor does not accept named fields")
+		}
+		if len(args) == 1 && args[0].Kind == ValueMap {
+			value := Map()
+			value.Type = typeName
+			for rawKey, item := range args[0].Map {
+				keyValue := valueFromMapKey(rawKey)
+				key, coerced, err := vm.coerceMapEntry(typeName, keyValue, item)
+				if err != nil {
+					return Null, fmt.Errorf("Map constructor: %w", err)
+				}
+				value.Map[mapKey(key)] = coerced
+			}
+			return value, nil
+		}
+		if len(args) == 1 && args[0].Kind == ValueList {
+			return Null, unsupportedCallError("Map constructor from SObject list")
+		}
+		if len(args) != 0 {
 			return Null, fmt.Errorf("Map constructor does not accept positional values")
 		}
 		value := Map()
@@ -5483,6 +5510,62 @@ func collectionMembers(value Value) []Value {
 	}
 }
 
+func sortComparableValues(values []Value) error {
+	for _, value := range values {
+		switch value.Kind {
+		case ValueInt, ValueDecimal, ValueString, ValueBool:
+		default:
+			return fmt.Errorf("List.sort supports only primitive comparable values")
+		}
+	}
+	sort.SliceStable(values, func(i, j int) bool {
+		left, right := values[i], values[j]
+		if collectionNumericKind(left.Kind) && collectionNumericKind(right.Kind) {
+			return collectionNumericValue(left) < collectionNumericValue(right)
+		}
+		if left.Kind != right.Kind {
+			return collectionSortKindRank(left.Kind) < collectionSortKindRank(right.Kind)
+		}
+		switch left.Kind {
+		case ValueInt:
+			return left.Int < right.Int
+		case ValueDecimal:
+			return left.Decimal < right.Decimal
+		case ValueString:
+			return left.Text < right.Text
+		case ValueBool:
+			return !left.Bool && right.Bool
+		default:
+			return false
+		}
+	})
+	return nil
+}
+
+func collectionNumericKind(kind ValueKind) bool {
+	return kind == ValueInt || kind == ValueDecimal
+}
+
+func collectionNumericValue(value Value) float64 {
+	if value.Kind == ValueInt {
+		return float64(value.Int)
+	}
+	return value.Decimal
+}
+
+func collectionSortKindRank(kind ValueKind) int {
+	switch kind {
+	case ValueBool:
+		return 0
+	case ValueInt, ValueDecimal:
+		return 1
+	case ValueString:
+		return 2
+	default:
+		return 3
+	}
+}
+
 func valueFromMapKey(key string) Value {
 	kind, text, ok := strings.Cut(key, ":")
 	if !ok {
@@ -5933,6 +6016,31 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 				}
 			}
 			return Int(-1), true, nil
+		case "clone":
+			if len(args) != 0 {
+				return Null, true, fmt.Errorf("List.clone expects 0 arguments")
+			}
+			cloned := receiver
+			cloned.List = append([]Value(nil), receiver.List...)
+			return cloned, true, nil
+		case "deepClone":
+			if len(args) != 0 {
+				return Null, true, unsupportedCallError("List.deepClone with preserve options")
+			}
+			return cloneValue(receiver), true, nil
+		case "sort":
+			if len(args) != 0 {
+				return Null, true, fmt.Errorf("List.sort expects 0 arguments")
+			}
+			sorted := append([]Value(nil), receiver.List...)
+			if err := sortComparableValues(sorted); err != nil {
+				return Null, true, err
+			}
+			receiver.List = sorted
+			if err := vm.storeReceiver(receiverName, receiver); err != nil {
+				return Null, true, err
+			}
+			return Null, true, nil
 		case "remove":
 			if len(args) != 1 || args[0].Kind != ValueInt {
 				return Null, true, fmt.Errorf("List.remove expects integer index")
@@ -6080,6 +6188,18 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 				}
 			}
 			return Bool(changed), true, nil
+		case "clone":
+			if len(args) != 0 {
+				return Null, true, fmt.Errorf("Set.clone expects 0 arguments")
+			}
+			cloned := receiver
+			cloned.Set = append([]Value(nil), receiver.Set...)
+			return cloned, true, nil
+		case "deepClone":
+			if len(args) != 0 {
+				return Null, true, unsupportedCallError("Set.deepClone with preserve options")
+			}
+			return cloneValue(receiver), true, nil
 		}
 	case ValueMap:
 		switch method {
@@ -6146,7 +6266,7 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 				return Null, true, fmt.Errorf("Map.keySet expects 0 arguments")
 			}
 			out := Set()
-			for rawKey := range receiver.Map {
+			for _, rawKey := range sortedMapKeys(receiver.Map) {
 				out.Set = append(out.Set, valueFromMapKey(rawKey))
 			}
 			if keyType, _, ok := mapTypeArgs(receiver.Type); ok {
@@ -6158,8 +6278,8 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 				return Null, true, fmt.Errorf("Map.values expects 0 arguments")
 			}
 			out := List()
-			for _, value := range receiver.Map {
-				out.List = append(out.List, value)
+			for _, key := range sortedMapKeys(receiver.Map) {
+				out.List = append(out.List, receiver.Map[key])
 			}
 			if _, valueType, ok := mapTypeArgs(receiver.Type); ok {
 				out.Type = "List<" + valueType + ">"
@@ -6170,6 +6290,21 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 				return Null, true, fmt.Errorf("Map.size expects 0 arguments")
 			}
 			return Int(int64(len(receiver.Map))), true, nil
+		case "clone":
+			if len(args) != 0 {
+				return Null, true, fmt.Errorf("Map.clone expects 0 arguments")
+			}
+			cloned := receiver
+			cloned.Map = make(map[string]Value, len(receiver.Map))
+			for key, value := range receiver.Map {
+				cloned.Map[key] = value
+			}
+			return cloned, true, nil
+		case "deepClone":
+			if len(args) != 0 {
+				return Null, true, unsupportedCallError("Map.deepClone with preserve options")
+			}
+			return cloneValue(receiver), true, nil
 		}
 	}
 	return Null, true, unsupportedCallError(receiverName + "." + method)
