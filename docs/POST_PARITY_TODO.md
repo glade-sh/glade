@@ -14,6 +14,14 @@ adds named credential and remote site metadata resolution. Parity covers custom
 metadata symbols and storage; this document adds legacy `.md` source loading,
 large metadata fixtures, and Apex `Metadata.*` deployment behavior.
 
+When auditing or planning behavior, prefer public Salesforce documentation,
+public grammars, owned fixtures, and black-box compatibility tests. A local
+public-docs mirror may be available at:
+`/Users/matt/Downloads/Kimi_Agent_Salesforce Docs Scraper/salesforce-docs`.
+Use it as a reference index for Salesforce behavior and API shapes; do not copy
+documentation text into source or treat it as an implementation substitute for
+compatibility fixtures.
+
 Post-parity starts with one job: run local Apex tests for large old projects.
 That means supporting enough of the older Salesforce surfaces that tests can
 load metadata, execute Apex controllers and services, and observe the same data
@@ -51,7 +59,7 @@ The motivating audit targets are large old projects:
 
 ## Suggested Completion Order
 
-1. Test-impact inventory: make the post-parity scanner report unsupported
+1. Test-impact inventory: make the general project gap scanner report unsupported
    metadata and platform APIs that can block `oaer test`, especially
    Visualforce/Aura/LWC Apex controllers, Workflow, Flow, Process Builder,
    labels, email templates, site context, metadata APIs, endpoint metadata,
@@ -74,6 +82,78 @@ The motivating audit targets are large old projects:
 7. Local UI/API running: after local tests pass, add optional Visualforce,
    Aura, LWC, Experience Cloud, email rendering, and local server execution
    surfaces for interactive or integration-style running.
+
+## Critical Path For Full Local Test Running
+
+This is the shortest path to running broad legacy-project Apex tests after the
+initial parity todo is complete. It is based on `oaer inspect gaps` output from
+`example-projects/src-nmb-nu-develop` and `example-projects/src-nmb-nc-develop`.
+
+The highest-count blockers are not the same as the safest implementation order.
+Load and resolve metadata first. Execute side effects only after the metadata
+and controller contracts have a solid place to stand.
+
+1. Keep the project gap scanner current.
+   - [x] Detect the major unsupported surfaces in both audited legacy projects.
+   - [x] Report blockers by capability, stage, file, line, symbol, examples, and
+     top-blocker count.
+   - [ ] Cross-check scanner capability names and API-shape assumptions against
+     the local Salesforce docs mirror where available.
+   - [ ] Add scanner baselines that keep the top blockers stable as project
+     support improves.
+   - [ ] Wire scanner output into a local-test readiness view.
+2. Load the metadata needed before tests can resolve code.
+   - [ ] Legacy Metadata API source format: `.object`, `.md`, `.labels`,
+     `.layout`, `.profile`, `.permissionset`, `.tab`, `.workflow`, `.flow`,
+     `.resource`, `.namedCredential`, and `.remoteSite`.
+   - [ ] Legacy custom metadata records and large custom metadata fixture sets.
+   - [ ] Custom labels and translations.
+   - [ ] Static resources, content assets, and deterministic resource URLs.
+   - [ ] UI presentation metadata needed by describe/controller tests: layouts,
+     tabs, profiles, permission sets, web links, quick actions, value sets, and
+     flexipages.
+   - [ ] Named credential and remote site metadata as endpoint configuration, not
+     callout execution.
+3. Resolve test-facing UI controller contracts without running a browser.
+   - [ ] Visualforce page metadata, `Page.*`, `PageReference`, page parameters,
+     `ApexPages` messages, standard controllers, controller extensions, and
+     component attribute bindings.
+   - [ ] Aura bundle-to-Apex controller discovery.
+   - [ ] LWC `@salesforce/apex`, `@wire`, `@salesforce/label`,
+     `@salesforce/resourceUrl`, `@salesforce/schema`, and local `c/...` import
+     discovery.
+   - [ ] Wrapper serialization shapes used by Aura/LWC controller tests.
+4. Add platform context and platform API contracts used by tests.
+   - [ ] `System.Callable`, `System.StubProvider`, and `Test.createStub`.
+   - [ ] Site, Network, Community, and guest/current-site context, including
+     `$Site.Template`.
+   - [ ] `Auth.*` namespace methods used by tests.
+   - [ ] `ConnectApi.Organization.getSettings()` and Platform Cache basics.
+   - [ ] Endpoint resolution from named credentials and remote site settings.
+5. Add data and messaging side effects beyond core SObject/DML/SOQL parity.
+   - [ ] `Attachment`, `Document`, `ContentVersion`, `ContentDocument`, and
+     `ContentDocumentLink` binary-body behavior.
+   - [ ] Email templates, merge context, captured email side effects, and email
+     limit accounting.
+6. Execute declarative automation in the test transaction.
+   - [ ] Workflow Rule criteria, field updates, email alerts, recursive
+     save-order behavior, and rollback.
+   - [ ] Record-triggered/autolaunched Flow and Process Builder-style metadata
+     that mutates records or calls `@InvocableMethod`.
+   - [ ] Trace events for Workflow/Flow decisions and side effects.
+7. Prove the whole local-test path with enterprise fixtures.
+   - [ ] Fixture projects modeled after both audited legacy projects.
+   - [ ] Compatibility tests for trigger/service/domain tests that depend on
+     Visualforce controllers, custom metadata, labels, resources, sites,
+     platform APIs, files, email, Workflow, and Flow.
+   - [ ] A readiness gate for claiming "legacy-project-test-ready."
+
+Current scanner top blockers:
+
+| Project | Top blockers |
+| --- | --- |
+| `src-nmb-nu-develop` | Visualforce controller tests: 2,575 findings across 345 files; legacy custom metadata: 2,220 across 198 files; labels: 928 across 238 files; UI metadata: 815 across 559 files; LWC: 357 across 316 files; Aura: 218 across 218 files; files/binary content: 182 across 49 files; resources/`URLFOR`: 131 across 89 files; Apex Metadata API: 102 across 11 files; Workflow: 101 across 101 files. |
+| `src-nmb-nc-develop` | Visualforce controller tests: 4,859 findings across 909 files; legacy custom metadata: 4,196 across 1,410 files; labels: 1,438 across 477 files; UI metadata: 657 across 103 files; files/binary content: 343 across 46 files; site/community context: 283 across 90 files; resources/`URLFOR`: 208 across 75 files; LWC: 159 across 143 files; Visualforce components: 133 across 133 files; Auth namespace: 93 across 25 files. |
 
 ## Local Test Running Boundary
 
@@ -158,38 +238,43 @@ simulating a browser.
 
 ## 1. Project Audit And Gap Reporting
 
-- [ ] Add a project scanner for post-parity surfaces:
-  - [ ] Visualforce pages, components, controllers, extensions, `Page.*`
+First implementation: `oaer inspect gaps [--project <root>] [--json]` scans
+projects read-only and reports unsupported or not-yet-aligned surfaces by
+capability, stage, metadata type, file, line, symbol, examples, and top
+blockers. The scanner is general-purpose so it can evaluate any Salesforce
+project against `oaer` support, not just post-parity work.
+
+- [x] Add a project gap scanner for unsupported or not-yet-aligned surfaces:
+  - [x] Visualforce pages, components, controllers, extensions, `Page.*`
     references, and `$Label`/`$ObjectType` expressions.
-  - [ ] Aura bundles, `@AuraEnabled` controller methods, component attributes,
+  - [x] Aura bundles, `@AuraEnabled` controller methods, component attributes,
     events, design files, and JavaScript controller/helper references.
-  - [ ] Workflow Rules, field updates, email alerts, outbound messages, tasks,
+  - [x] Workflow Rules, field updates, email alerts, outbound messages, tasks,
     and rule criteria.
-  - [ ] Flow metadata, process types, invocable actions, variables, decisions,
+  - [x] Flow metadata, process types, invocable actions, variables, decisions,
     assignments, and record operations.
-  - [ ] Custom labels, translations, email templates, layouts, tabs, web links,
+  - [x] Custom labels, translations, email templates, layouts, tabs, web links,
     quick actions, global value sets, profiles, permission sets, sites,
     networks, remote site settings, named credentials, static resources, and
     content assets.
-  - [ ] Legacy Metadata API-format source files such as `.object`, `.md`,
+  - [x] Legacy Metadata API-format source files such as `.object`, `.md`,
     `.resource`, `.labels`, `.layout`, `.profile`, `.permissionset`, `.tab`,
     `.workflow`, `.flow`, and `.namedCredential`.
-  - [ ] Platform namespaces and APIs used by Apex: `Metadata`, `ConnectApi`,
+  - [x] Platform namespaces and APIs used by Apex: `Metadata`, `ConnectApi`,
     `Cache`, `Site`, `System.Callable`, `Test.createStub`, `Auth`, and
     endpoint configuration.
-- [ ] Emit stable unsupported-feature diagnostics with file, line, metadata type,
+- [x] Emit stable unsupported-feature diagnostics with file, line, metadata type,
   symbol, and suggested capability ID.
-- [ ] Add JSON output for scanners so editor, CI, and dashboard tooling can rank
+- [x] Add JSON output for scanners so editor, CI, and dashboard tooling can rank
   gaps.
-- [ ] Add a "top blockers" report that combines unsupported feature count,
-  number of affected tests/classes, and metadata dependencies.
-- [ ] Add fixture snapshots from `example-projects/src-nmb-nu-develop` and
-  `example-projects/src-nmb-nc-develop` that keep counts stable without
-  requiring proprietary behavior as an implementation source.
-- [ ] Add a post-parity dashboard generated from capability metadata and project
-  scan results.
-- [ ] Add gap docs that separate "cannot parse/load", "cannot resolve", "cannot
-  execute", and "cannot render" failures.
+- [x] Add a "top blockers" report that combines unsupported feature count,
+  affected files, metadata types, and examples.
+- [x] Add scanner fixtures modeled after `example-projects/src-nmb-nu-develop`
+  and `example-projects/src-nmb-nc-develop` surfaces without requiring
+  proprietary behavior as an implementation source.
+- [x] Add a text summary generated from project scan results.
+- [x] Add gap output that separates load, resolve, and execute blockers; reserve
+  render blockers for Part II local-running scans.
 
 ## 2. Visualforce Test Controller Support
 

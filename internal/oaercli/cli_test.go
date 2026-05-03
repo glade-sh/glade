@@ -196,6 +196,56 @@ func TestRunInspectSymbolsJSON(t *testing.T) {
 	}
 }
 
+func TestRunInspectGapsJSON(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/pages/Edit.page"), `<apex:page controller="EditController"><apex:stylesheet value="{!URLFOR($Resource.Resources, 'site.css')}"/></apex:page>`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/lwc/cart/cart.js"), `import save from '@salesforce/apex/CartController.save';`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/workflows/Account.workflow-meta.xml"), `<Workflow/>`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"inspect", "gaps", "--project", root, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	out := stdout.String()
+	if !strings.Contains(out, `"capability": "visualforce.controller-test"`) ||
+		!strings.Contains(out, `"capability": "lwc.controller-test"`) ||
+		!strings.Contains(out, `"capability": "workflow.save-order"`) ||
+		!strings.Contains(out, `"topBlockers"`) {
+		t.Fatalf("stdout did not include project gap findings: %q", out)
+	}
+}
+
+func TestRunInspectGapsText(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "src/pages/Edit.page"), `<apex:page controller="EditController"/>`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"inspect", "gaps", "--project", root}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	out := stdout.String()
+	if !strings.Contains(out, "testBlockingFindings:") || !strings.Contains(out, "visualforce.controller-test") {
+		t.Fatalf("stdout did not include text report: %q", out)
+	}
+}
+
+func TestRunInspectGapsLegacyAlias(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "src/pages/Edit.page"), `<apex:page controller="EditController"/>`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"inspect", "post-parity", "--project", root}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "visualforce.controller-test") {
+		t.Fatalf("stdout did not include alias report: %q", stdout.String())
+	}
+}
+
 func TestRunSchemaLoad(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)

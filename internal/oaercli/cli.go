@@ -24,6 +24,7 @@ import (
 	"github.com/open-aer/oaer/internal/lsp"
 	"github.com/open-aer/oaer/internal/profile"
 	"github.com/open-aer/oaer/internal/project"
+	"github.com/open-aer/oaer/internal/projectscan"
 	oaerschema "github.com/open-aer/oaer/internal/schema"
 	"github.com/open-aer/oaer/internal/sema"
 	"github.com/open-aer/oaer/internal/server"
@@ -167,7 +168,7 @@ Commands:
   version   Print the oaer version.
   doctor    Print environment and project configuration status.
   parse     Parse Apex source files.
-  inspect   Inspect indexed project symbols.
+  inspect   Inspect indexed project symbols and unsupported project gaps.
   schema    Load local Salesforce metadata schema.
   check     Run semantic checks over a project.
   exec      Execute anonymous Apex.
@@ -286,8 +287,28 @@ func runInspect(ctx context.Context, args []string, w io.Writer) (typesys.Index,
 	if err := ctx.Err(); err != nil {
 		return typesys.Index{}, err
 	}
-	if len(args) == 0 || args[0] != "symbols" {
-		return typesys.Index{}, errors.New("usage: oaer inspect symbols [--project <root>] [--json]")
+	if len(args) == 0 {
+		return typesys.Index{}, errors.New("usage: oaer inspect symbols|gaps [--project <root>] [--json]")
+	}
+	if args[0] == "gaps" || args[0] == "post-parity" {
+		root, jsonOut, err := parseProjectFlags(args[1:])
+		if err != nil {
+			return typesys.Index{}, err
+		}
+		report, err := projectscan.Scan(root)
+		if err != nil {
+			return typesys.Index{}, err
+		}
+		if jsonOut {
+			enc := json.NewEncoder(w)
+			enc.SetIndent("", "  ")
+			return typesys.Index{}, enc.Encode(report)
+		}
+		writeProjectGapInspectText(w, report)
+		return typesys.Index{}, nil
+	}
+	if args[0] != "symbols" {
+		return typesys.Index{}, errors.New("usage: oaer inspect symbols|gaps [--project <root>] [--json]")
 	}
 
 	root, jsonOut, err := parseProjectFlags(args[1:])
@@ -344,6 +365,37 @@ func runInspect(ctx context.Context, args []string, w io.Writer) (typesys.Index,
 		fmt.Fprintln(w)
 	}
 	return index, nil
+}
+
+func writeProjectGapInspectText(w io.Writer, report projectscan.Report) {
+	fmt.Fprintf(w, "project: %s\n", report.Project)
+	fmt.Fprintf(w, "filesScanned: %d\n", report.Summary.FilesScanned)
+	fmt.Fprintf(w, "surfaces: %d\n", report.Summary.Surfaces)
+	fmt.Fprintf(w, "findings: %d\n", report.Summary.Findings)
+	fmt.Fprintf(w, "testBlockingFindings: %d\n", report.Summary.TestBlockingFindings)
+	if len(report.TopBlockers) > 0 {
+		fmt.Fprintln(w, "topBlockers:")
+		for _, blocker := range report.TopBlockers {
+			fmt.Fprintf(w, "  %s: %d findings across %d files\n", blocker.Capability, blocker.Count, blocker.AffectedFiles)
+		}
+	}
+	if len(report.Surfaces) > 0 {
+		fmt.Fprintln(w, "surfaces:")
+		for _, surface := range report.Surfaces {
+			fmt.Fprintf(w, "  %s [%s/%s]: %d findings across %d files\n", surface.Capability, surface.Stage, surface.Status, surface.Count, surface.AffectedFiles)
+			for _, example := range surface.Examples {
+				if example.Line > 0 {
+					fmt.Fprintf(w, "    - %s:%d", example.File, example.Line)
+				} else {
+					fmt.Fprintf(w, "    - %s", example.File)
+				}
+				if example.Symbol != "" {
+					fmt.Fprintf(w, " %s", example.Symbol)
+				}
+				fmt.Fprintln(w)
+			}
+		}
+	}
 }
 
 func runSchema(ctx context.Context, args []string, w io.Writer) error {
