@@ -149,10 +149,27 @@ func (v Value) Equal(other Value) bool {
 		}
 		return true
 	case ValueObject:
+		if platformScalarObject(v.Type) {
+			value, ok := v.Fields["value"]
+			otherValue, otherOK := other.Fields["value"]
+			if !ok || !otherOK {
+				return false
+			}
+			return v.Type == other.Type && value.Equal(otherValue)
+		}
 		if v.Text != "" || other.Text != "" {
 			return v.Type == other.Type && v.Text == other.Text
 		}
 		return v.Type == other.Type && fmt.Sprintf("%p", v.Fields) == fmt.Sprintf("%p", other.Fields)
+	default:
+		return false
+	}
+}
+
+func platformScalarObject(typeName string) bool {
+	switch typeName {
+	case "Blob", "Date", "Datetime", "Time", "Type":
+		return true
 	default:
 		return false
 	}

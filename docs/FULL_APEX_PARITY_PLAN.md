@@ -91,10 +91,14 @@ Current progress:
   `Decimal.valueOf`, `Double.valueOf`, integer/decimal conversion helpers,
   simple numeric `format`, `Decimal.abs`, `Decimal.pow`, and `Math.mod`,
   `Math.signum`, and `Math.roundToLong`.
+- Date/Datetime: runtime support now covers deterministic local `Date` calendar
+  arithmetic and component getters, month-start/month-end helpers, and
+  UTC-modeled `Datetime` date arithmetic plus date/time component getters.
 - Fixtures:
   - `docs/fixtures/core-collection-stdlib.json`
   - `docs/fixtures/core-string-stdlib.json`
   - `docs/fixtures/core-numeric-stdlib.json`
+  - `docs/fixtures/core-datetime-stdlib.json`
 
 Remaining cuts:
 
@@ -120,9 +124,9 @@ Remaining cuts:
    - Add remaining deterministic `Math` constants and methods.
 
 4. Date and time classes
-   - `Date`, `Datetime`, `Time`, and `TimeZone` component getters, add methods,
-     parsing, formatting, GMT/local variants, date arithmetic, month-end
-     behavior, timezone offsets, and DST behavior where public behavior is known.
+   - Remaining work: locale/timezone formatting, GMT/local variants, `Time`
+     completion, `TimeZone`, unsupported static helpers, timezone offsets, and
+     DST behavior where public behavior is known.
 
 5. Blob, EncodingUtil, and Crypto
    - Blob conversion and charset behavior.

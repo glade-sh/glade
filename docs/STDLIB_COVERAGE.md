@@ -21,17 +21,32 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Database | `Database.undelete` | `partial` | Soft-delete restoration for supported local records. |
 | Database | `Database.update` | `supported` | DML pipeline with result/error shapes for supported SObjects. |
 | Database | `Database.upsert` | `partial` | Schema-backed external-ID matching for supported local records. |
-| Date | `Date.addMonths` | `partial` | Local Gregorian arithmetic; exact Salesforce edge-case parity incomplete. |
-| Date | `Date.addYears` | `partial` | Local Gregorian arithmetic; exact Salesforce edge-case parity incomplete. |
+| Date | `Date.addDays` | `supported` | Local Gregorian date arithmetic. |
+| Date | `Date.addMonths` | `partial` | Local Gregorian arithmetic with month-end clamp; full Salesforce edge-case parity incomplete. |
+| Date | `Date.addYears` | `partial` | Local Gregorian arithmetic with leap-day clamp; full Salesforce edge-case parity incomplete. |
+| Date | `Date.day` | `supported` | Returns Gregorian day of month. |
+| Date | `Date.daysBetween` | `supported` | Returns whole calendar days between local Date values. |
+| Date | `Date.month` | `supported` | Returns Gregorian month number. |
 | Date | `Date.newInstance` | `supported` | Validates date parts. |
+| Date | `Date.toEndOfMonth` | `supported` | Returns last day of the Date value's month. |
+| Date | `Date.toStartOfMonth` | `supported` | Returns first day of the Date value's month. |
 | Date | `Date.valueOf` | `supported` | Parses supported date strings. |
+| Date | `Date.year` | `supported` | Returns Gregorian year. |
+| Datetime | `Datetime.addDays` | `partial` | UTC-local arithmetic; no user timezone or DST model. |
 | Datetime | `Datetime.addHours` | `partial` | UTC-local arithmetic. |
 | Datetime | `Datetime.addMinutes` | `partial` | UTC-local arithmetic. |
-| Datetime | `Datetime.addMonths` | `partial` | UTC-local arithmetic. |
+| Datetime | `Datetime.addMonths` | `partial` | UTC-local arithmetic with month-end clamp; no user timezone or DST model. |
 | Datetime | `Datetime.addSeconds` | `partial` | UTC-local arithmetic. |
-| Datetime | `Datetime.addYears` | `partial` | UTC-local arithmetic. |
+| Datetime | `Datetime.addYears` | `partial` | UTC-local arithmetic with leap-day clamp; no user timezone or DST model. |
+| Datetime | `Datetime.date` | `partial` | Returns UTC-modeled Date component; no user timezone model. |
+| Datetime | `Datetime.day` | `partial` | UTC-modeled component getter. |
+| Datetime | `Datetime.hour` | `partial` | UTC-modeled component getter. |
+| Datetime | `Datetime.minute` | `partial` | UTC-modeled component getter. |
+| Datetime | `Datetime.month` | `partial` | UTC-modeled component getter. |
 | Datetime | `Datetime.newInstance` | `supported` | Validates date and time parts. |
+| Datetime | `Datetime.second` | `partial` | UTC-modeled component getter. |
 | Datetime | `Datetime.valueOf` | `supported` | Parses supported datetime strings. |
+| Datetime | `Datetime.year` | `partial` | UTC-modeled component getter. |
 | Decimal | `Decimal.doubleValue` | `supported` | Returns local Decimal value. |
 | Decimal | `Decimal.intValue` | `supported` | Truncates to integer. |
 | Decimal | `Decimal.round` | `partial` | Uses Go round-half-away behavior. |
