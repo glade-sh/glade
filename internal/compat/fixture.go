@@ -8,14 +8,15 @@ import (
 )
 
 type Fixture struct {
-	Name     string            `json:"name"`
-	Evidence []FixtureEvidence `json:"evidence,omitempty"`
-	Source   []SourceFile      `json:"source,omitempty"`
-	Schema   []SchemaFile      `json:"schema,omitempty"`
-	SeedData []SeedData        `json:"seedData,omitempty"`
-	Command  Invocation        `json:"command"`
-	Expected ExpectedBehavior  `json:"expected"`
-	Limits   ExpectedLimits    `json:"limits,omitempty"`
+	Name           string            `json:"name"`
+	Evidence       []FixtureEvidence `json:"evidence,omitempty"`
+	Source         []SourceFile      `json:"source,omitempty"`
+	Schema         []SchemaFile      `json:"schema,omitempty"`
+	SeedData       []SeedData        `json:"seedData,omitempty"`
+	ServerRequests []ServerRequest   `json:"serverRequests,omitempty"`
+	Command        Invocation        `json:"command"`
+	Expected       ExpectedBehavior  `json:"expected"`
+	Limits         ExpectedLimits    `json:"limits,omitempty"`
 }
 
 type FixtureEvidence struct {
@@ -43,6 +44,15 @@ type SeedData struct {
 type RecordLocator struct {
 	Object string `json:"object"`
 	ID     string `json:"id"`
+}
+
+type ServerRequest struct {
+	Name     string   `json:"name,omitempty"`
+	Method   string   `json:"method"`
+	Path     string   `json:"path"`
+	Body     string   `json:"body,omitempty"`
+	Status   int      `json:"status"`
+	Contains []string `json:"contains,omitempty"`
 }
 
 type Invocation struct {
@@ -108,8 +118,8 @@ func Validate(fixture Fixture) error {
 	if fixture.Command.Kind == "" {
 		return fmt.Errorf("fixture %q: command.kind is required", fixture.Name)
 	}
-	if len(fixture.Source) == 0 && len(fixture.Schema) == 0 && len(fixture.SeedData) == 0 {
-		return fmt.Errorf("fixture %q: at least one source, schema, or seed data entry is required", fixture.Name)
+	if len(fixture.Source) == 0 && len(fixture.Schema) == 0 && len(fixture.SeedData) == 0 && len(fixture.ServerRequests) == 0 {
+		return fmt.Errorf("fixture %q: at least one source, schema, seed data, or server request entry is required", fixture.Name)
 	}
 	for i, source := range fixture.Source {
 		if source.Path == "" {
@@ -129,6 +139,17 @@ func Validate(fixture Fixture) error {
 	for i, seed := range fixture.SeedData {
 		if seed.Object == "" {
 			return fmt.Errorf("fixture %q: seedData[%d].object is required", fixture.Name, i)
+		}
+	}
+	for i, request := range fixture.ServerRequests {
+		if request.Method == "" {
+			return fmt.Errorf("fixture %q: serverRequests[%d].method is required", fixture.Name, i)
+		}
+		if request.Path == "" {
+			return fmt.Errorf("fixture %q: serverRequests[%d].path is required", fixture.Name, i)
+		}
+		if request.Status == 0 {
+			return fmt.Errorf("fixture %q: serverRequests[%d].status is required", fixture.Name, i)
 		}
 	}
 	return nil

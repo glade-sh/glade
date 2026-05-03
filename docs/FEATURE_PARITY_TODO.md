@@ -574,9 +574,12 @@ a Salesforce-shaped local API server without silently wrong behavior.
 
 - [x] Generate a public compatibility dashboard from `internal/capability`.
 - [x] Add CI gates for compatibility matrix drift and MVP readiness.
-- [ ] Build black-box fixtures against Salesforce behavior for every supported
+- [x] Build black-box fixtures against Salesforce behavior for every supported
   language/runtime/data/server feature.
   - [x] Add storage DB lifecycle coverage to the compatibility fixture runner.
+  - [x] Add server black-box fixture execution for version discovery, CRUD, SOQL
+    query, Tooling `executeAnonymous`, composite insert, Salesforce-shaped error
+    arrays, OAuth userinfo/id stubs, scoped reset, and SQLite persistence.
 - [ ] Add enterprise fixtures for trigger-heavy, selector/service/domain,
   async-heavy, describe-heavy, namespace-heavy, and package-style projects.
 - [x] Add fixture coverage for unsupported-feature diagnostics so failures are

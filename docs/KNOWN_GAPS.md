@@ -82,14 +82,14 @@ The MVP target is `full-featured aer-parity MVP`. This document lists required c
 ### `server.local-api`: Salesforce-shaped local API with CRUD/query/executeAnonymous
 
 - Status: `partial`
-- Gap: CRUD/query/queryAll, describe/recent, limits, OAuth userinfo/id stubs, Tooling executeAnonymous, composite sObject insert, normal REST JSON payloads, Salesforce-shaped error arrays, SQLite persistence, and fixture/scoped reset endpoints are wired. Full auth, Tooling object coverage, Composite Graph, Bulk API, and broader REST resources remain incomplete.
+- Gap: CRUD/query/queryAll, describe/recent, limits, OAuth userinfo/id stubs, Tooling executeAnonymous, composite sObject insert, normal REST JSON payloads, Salesforce-shaped error arrays, SQLite persistence, and fixture/scoped reset endpoints are wired with black-box compatibility coverage. Full auth, Tooling object coverage, Composite Graph, Bulk API, and broader REST resources remain incomplete.
 
 ## Release
 
 ### `compat.dashboard`: Generated compatibility dashboard and CI gate
 
 - Status: `partial`
-- Gap: The MVP gate, JSON matrix, generated Markdown dashboard, CI drift check, and parse/check/exec/test/DB lifecycle fixture runner exist, including schema-aware enterprise check fixtures. Compatibility fixtures still need expansion before this can be supported.
+- Gap: The MVP gate, JSON matrix, generated Markdown dashboard, CI drift check, and parse/check/exec/test/DB/server lifecycle fixture runner exist, including schema-aware enterprise check fixtures and server black-box fixtures. Compatibility fixtures still need expansion before this can be supported.
 
 ### `release.packaging`: Installable release binaries, checksums, docs
 

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -15,6 +16,7 @@ import (
 	"github.com/open-aer/oaer/internal/project"
 	"github.com/open-aer/oaer/internal/schema"
 	"github.com/open-aer/oaer/internal/sema"
+	"github.com/open-aer/oaer/internal/server"
 	"github.com/open-aer/oaer/internal/storage"
 	"github.com/open-aer/oaer/internal/typesys"
 	"github.com/open-aer/oaer/internal/vm"
@@ -45,6 +47,8 @@ func Run(fixture Fixture) (RunResult, error) {
 		return runTestFixture(fixture)
 	case "db":
 		return runDBFixture(fixture)
+	case "server":
+		return runServerFixture(fixture)
 	default:
 		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, fmt.Errorf("unsupported fixture command kind %q", fixture.Command.Kind)
 	}
@@ -283,6 +287,85 @@ func runDBFixture(fixture Fixture) (RunResult, error) {
 		"importedAccountRows": importedSummary.ByObject["Account"],
 	}
 	return compareResult(fixture, payload, "")
+}
+
+func runServerFixture(fixture Fixture) (RunResult, error) {
+	if len(fixture.ServerRequests) == 0 {
+		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, fmt.Errorf("server fixture requires serverRequests")
+	}
+	root, err := os.MkdirTemp("", "oaer-compat-server-*")
+	if err != nil {
+		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+	}
+	defer os.RemoveAll(root)
+	store, err := storage.OpenSQLite(filepath.Join(root, "oaer.db"))
+	if err != nil {
+		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+	}
+	defer store.Close()
+
+	org := serverFixtureOrg()
+	if len(fixture.SeedData) > 0 {
+		if err := storage.ApplyFixture(&org, storageFixture(fixture)); err != nil {
+			return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+		}
+	}
+	if err := store.Save(org); err != nil {
+		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+	}
+	handler := server.NewWithStore(&org, store)
+	statuses := make([]int, 0, len(fixture.ServerRequests))
+	for i, step := range fixture.ServerRequests {
+		req := httptest.NewRequest(step.Method, step.Path, strings.NewReader(step.Body))
+		if step.Body != "" {
+			req.Header.Set("Content-Type", "application/json")
+		}
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
+		statuses = append(statuses, rec.Code)
+		if rec.Code != step.Status {
+			return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, fmt.Errorf("fixture %q server request %d %q status mismatch: expected %d, got %d body=%s", fixture.Name, i, step.Name, step.Status, rec.Code, rec.Body.String())
+		}
+		for _, want := range step.Contains {
+			if !strings.Contains(rec.Body.String(), want) {
+				return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, fmt.Errorf("fixture %q server request %d %q body missing %q: %s", fixture.Name, i, step.Name, want, rec.Body.String())
+			}
+		}
+	}
+	persisted, err := store.Load()
+	if err != nil {
+		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+	}
+	summary := storage.InspectOrg("", persisted)
+	payload := map[string]any{
+		"ok":                true,
+		"requests":          len(fixture.ServerRequests),
+		"statuses":          statuses,
+		"persistedObjects":  summary.Objects,
+		"persistedRecords":  summary.Records,
+		"persistedAccounts": summary.ByObject["Account"],
+		"users":             summary.Users,
+		"profiles":          summary.Profiles,
+		"permissions":       summary.Permissions,
+	}
+	return compareResult(fixture, payload, "")
+}
+
+func serverFixtureOrg() storage.OrgState {
+	org := storage.NewOrgState()
+	org.APIVersion = "61.0"
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Account",
+			KeyPrefix: "001",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	storage.EnsureDeterministicPlatformData(&org)
+	return org
 }
 
 func storageFixture(fixture Fixture) storage.Fixture {

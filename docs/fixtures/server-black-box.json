@@ -1,0 +1,95 @@
+{
+  "name": "server-black-box",
+  "serverRequests": [
+    {
+      "name": "versions",
+      "method": "GET",
+      "path": "/services/data",
+      "status": 200,
+      "contains": ["v61.0"]
+    },
+    {
+      "name": "userinfo",
+      "method": "GET",
+      "path": "/services/oauth2/userinfo",
+      "status": 200,
+      "contains": ["preferred_username"]
+    },
+    {
+      "name": "identity",
+      "method": "GET",
+      "path": "/id/00D000000000001/005000000000001",
+      "status": 200,
+      "contains": ["user_id", "organization_id"]
+    },
+    {
+      "name": "create-account",
+      "method": "POST",
+      "path": "/services/data/v61.0/sobjects/Account",
+      "body": "{\"Name\":\"Acme\"}",
+      "status": 201,
+      "contains": ["\"success\":true", "001000000000001"]
+    },
+    {
+      "name": "query-account",
+      "method": "GET",
+      "path": "/services/data/v61.0/query?q=SELECT%20Id,%20Name%20FROM%20Account%20WHERE%20Name%20=%20'Acme'",
+      "status": 200,
+      "contains": ["\"totalSize\":1", "Acme"]
+    },
+    {
+      "name": "execute-anonymous",
+      "method": "POST",
+      "path": "/services/data/v61.0/tooling/executeAnonymous",
+      "body": "{\"anonymousBody\":\"insert new Account(Name = 'From Apex'); System.debug('ok');\"}",
+      "status": 200,
+      "contains": ["\"success\":true", "ok"]
+    },
+    {
+      "name": "composite-insert",
+      "method": "POST",
+      "path": "/services/data/v61.0/composite/sobjects",
+      "body": "{\"allOrNone\":true,\"records\":[{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Composite\"}]}",
+      "status": 200,
+      "contains": ["\"success\":true"]
+    },
+    {
+      "name": "error-shape",
+      "method": "GET",
+      "path": "/services/data/v61.0/sobjects/Missing__c/describe",
+      "status": 404,
+      "contains": ["errorCode", "NOT_FOUND"]
+    },
+    {
+      "name": "scoped-reset",
+      "method": "POST",
+      "path": "/services/data/v61.0/oaer/reset/data",
+      "status": 200,
+      "contains": ["\"scopes\":[\"data\"]"]
+    },
+    {
+      "name": "persist-after-reset",
+      "method": "POST",
+      "path": "/services/data/v61.0/sobjects/Account",
+      "body": "{\"Name\":\"Persisted\"}",
+      "status": 201,
+      "contains": ["\"success\":true", "001000000000001"]
+    }
+  ],
+  "command": {
+    "kind": "server"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "persistedAccounts": 1,
+      "persistedObjects": 8,
+      "persistedRecords": 8,
+      "permissions": 2,
+      "profiles": 1,
+      "requests": 10,
+      "statuses": [200, 200, 200, 201, 200, 200, 200, 404, 200, 201],
+      "users": 1
+    }
+  }
+}

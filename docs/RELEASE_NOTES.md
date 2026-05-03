@@ -45,6 +45,9 @@ Release engineering:
 - Added `check` compatibility fixture execution, schema-aware check fixtures,
   and enterprise-style multi-class selector/service/domain fixtures covering
   parse/index/check behavior.
+- Added server black-box compatibility fixtures for version discovery, CRUD,
+  SOQL query, Tooling `executeAnonymous`, composite insert, Salesforce-shaped
+  errors, OAuth userinfo/id stubs, scoped reset, and SQLite persistence.
 - Added parser diagnostic-count fixtures plus type-index and sema panic recovery
   diagnostics for malformed project inputs.
 - Added method/constructor parameter type diagnostics and expanded VM exception
