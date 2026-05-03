@@ -918,6 +918,17 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return count, nil
 		}
 		return Int(int64(len(value.List))), nil
+	case "Database.getQueryLocator":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("Database.getQueryLocator expects query String")
+		}
+		value, err := vm.executeSOQL(args[0].Text, result)
+		if err != nil {
+			return Null, err
+		}
+		locator := Object("Database.QueryLocator")
+		locator.Fields["Records"] = value
+		return locator, nil
 	case "Database.upsert", "Database.undelete":
 		return vm.executeDatabaseDML(strings.TrimPrefix(callee, "Database."), args, result)
 	case "Database.insert", "Database.update", "Database.delete":
@@ -1399,6 +1410,11 @@ func (vm *VM) runBatchJob(job AsyncJob, result *Result) error {
 		}
 		if value.Kind == ValueList {
 			scope = append(scope, value.List...)
+		}
+		if value.Kind == ValueObject && value.Type == "Database.QueryLocator" {
+			if records, ok := value.Fields["Records"]; ok && records.Kind == ValueList {
+				scope = append(scope, records.List...)
+			}
 		}
 	}
 	if execute, ok := vm.resolveInstanceMethod(job.Object.Type, "execute"); ok {

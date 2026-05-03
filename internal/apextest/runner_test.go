@@ -834,6 +834,59 @@ private class AsyncSemanticsTest {
 	}
 }
 
+func TestRunBatchStartCanReturnQueryLocator(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/Account.object-meta.xml"), `
+<CustomObject>
+  <fullName>Account</fullName>
+  <label>Account</label>
+  <pluralLabel>Accounts</pluralLabel>
+  <nameField><type>Text</type><label>Name</label></nameField>
+</CustomObject>
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/fields/Name.field-meta.xml"), `
+<CustomField>
+  <fullName>Name</fullName>
+  <label>Name</label>
+  <type>Text</type>
+</CustomField>
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/LocatorBatch.cls"), `
+public class LocatorBatch {
+  public Database.QueryLocator start(Object bc) {
+    return Database.getQueryLocator('SELECT Id, Name FROM Account');
+  }
+  public void execute(Object bc, List<Account> scope) {
+    for (Account row : scope) {
+      insert new Account(Name = 'processed-' + row.Name);
+    }
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/LocatorBatchTest.cls"), `
+@isTest
+private class LocatorBatchTest {
+  @isTest static void drainsQueryLocatorScope() {
+    insert new Account(Name = 'seed');
+    Test.startTest();
+    Database.executeBatch(new LocatorBatch(), 200);
+    Test.stopTest();
+    Integer processed = [SELECT COUNT() FROM Account WHERE Name LIKE 'processed%'];
+    System.assertEquals(1, processed);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		if run.Suites[0].Cases[0].Problem != nil {
+			t.Logf("problem=%#v", *run.Suites[0].Cases[0].Problem)
+		}
+		t.Fatalf("summary = %#v cases=%#v", got, run.Suites[0].Cases)
+	}
+}
+
 func TestRunAsSetsUserContextForBlock(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)

@@ -249,6 +249,24 @@ System.assertEquals('01s000000000001', Test.getStandardPricebookId());
 	}
 }
 
+func TestExecDatabaseGetQueryLocator(t *testing.T) {
+	program, err := CompileAnonymous(`
+insert new Account(Name = 'Acme');
+Object locator = Database.getQueryLocator('SELECT Id, Name FROM Account');
+System.assertEquals(1, Limits.getQueries());
+System.assertEquals(1, Limits.getQueryRows());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecStandardPricebookIdRequiresTestContext(t *testing.T) {
 	program, err := CompileAnonymous(`
 String pricebookId = Test.getStandardPricebookId();

@@ -111,6 +111,8 @@ Release engineering:
   `serializePretty`, and `deserializeStrict`.
 - Added common `Test.isRunningTest()` and deterministic
   `Test.getStandardPricebookId()` platform API support.
+- Added `Database.getQueryLocator(String)` for supported SOQL and batch start
+  scopes.
 - Added SOQL `ALL ROWS` support for querying soft-deleted records.
 - Added SOQL `WITH SECURITY_ENFORCED`, `WITH USER_MODE`, and
   `WITH SYSTEM_MODE` parsing as local security-mode markers.
