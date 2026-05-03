@@ -1063,6 +1063,8 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		return stringStatic(callee, args)
 	case "Integer.valueOf", "Long.valueOf", "Decimal.valueOf", "Double.valueOf":
 		return numericStatic(callee, args)
+	case "Id.valueOf":
+		return idStatic(callee, args)
 	case "Pattern.compile":
 		return patternCompile(args)
 	case "Pattern.matches":
@@ -3523,6 +3525,17 @@ func platformScalarText(value Value, typeName string) (string, error) {
 	return raw.Text, nil
 }
 
+func defaultURLPort(scheme string) int64 {
+	switch strings.ToLower(scheme) {
+	case "http":
+		return 80
+	case "https":
+		return 443
+	default:
+		return -1
+	}
+}
+
 func parsePlatformDate(value Value) (time.Time, error) {
 	text, err := platformScalarText(value, "Date")
 	if err != nil {
@@ -4646,6 +4659,36 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 			message.Fields["detail"] = args[2]
 		}
 		return message, nil
+	case "URL":
+		if len(namedArgs) != 0 {
+			return Null, fmt.Errorf("URL constructor does not accept named fields")
+		}
+		var raw string
+		switch len(args) {
+		case 1:
+			if args[0].Kind != ValueString {
+				return Null, fmt.Errorf("URL constructor expects String")
+			}
+			raw = args[0].Text
+		case 3, 4:
+			if args[0].Kind != ValueString || args[1].Kind != ValueString || args[len(args)-1].Kind != ValueString {
+				return Null, fmt.Errorf("URL constructor expects protocol, host, [port,] file")
+			}
+			protocol, host, file := args[0].Text, args[1].Text, args[len(args)-1].Text
+			if len(args) == 4 {
+				if args[2].Kind != ValueInt {
+					return Null, fmt.Errorf("URL constructor port expects Integer")
+				}
+				host = fmt.Sprintf("%s:%d", host, args[2].Int)
+			}
+			raw = protocol + "://" + host + file
+		default:
+			return Null, fmt.Errorf("URL constructor expects spec or protocol, host, [port,] file")
+		}
+		if _, err := url.Parse(raw); err != nil {
+			return Null, err
+		}
+		return platformScalar("URL", raw), nil
 	}
 	objectType := typeName
 	var definition storage.ObjectDefinition
@@ -5688,6 +5731,11 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 	if receiver.Kind == ValueNull {
 		return Null, true, newExceptionError("NullPointerException", "Attempt to de-reference a null object")
 	}
+	if receiverType := vm.VarTypes[receiverName]; strings.EqualFold(receiverType, "Id") {
+		if value, handled, err := callIdMember(receiver, method, args); handled || err != nil {
+			return value, true, err
+		}
+	}
 	if value, updated, mutated, ok, err := callStdlibMember(receiver, method, args); ok || err != nil {
 		if mutated {
 			if err := vm.storeReceiver(receiverName, updated); err != nil {
@@ -5695,6 +5743,11 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			}
 		}
 		return value, true, err
+	}
+	if receiver.Kind != ValueObject {
+		if value, handled, err := callObjectMember(receiver, method, args); handled || err != nil {
+			return value, true, err
+		}
 	}
 	if receiver.Kind == ValueObject {
 		if value, handled, err := vm.callEnumMember(receiver, method, args); handled || err != nil {
@@ -5723,8 +5776,8 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			return Null, true, fmt.Errorf("ambiguous overload for call %q", receiverName+"."+method)
 		}
 		if !ok {
-			if method == "toString" && len(args) == 0 {
-				return String(receiver.String()), true, nil
+			if value, handled, err := callObjectMember(receiver, method, args); handled || err != nil {
+				return value, true, err
 			}
 			return Null, true, unsupportedCallError(receiverName + "." + method)
 		}
@@ -6795,14 +6848,26 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			return String(receiver.String()), receiver, false, true, nil
 		}
 	case "Type":
-		if method == "getName" {
+		if method == "getName" || method == "toString" {
 			if len(args) != 0 {
-				return Null, receiver, false, true, fmt.Errorf("Type.getName expects 0 arguments")
+				return Null, receiver, false, true, fmt.Errorf("Type.%s expects 0 arguments", method)
 			}
 			if value, ok := receiver.Fields["value"]; ok && value.Kind == ValueString {
 				return value, receiver, false, true, nil
 			}
 			return String(receiver.Text), receiver, false, true, nil
+		}
+		if method == "equals" {
+			if len(args) != 1 {
+				return Null, receiver, false, true, fmt.Errorf("Type.equals expects 1 argument")
+			}
+			return Bool(receiver.Equal(args[0])), receiver, false, true, nil
+		}
+		if method == "hashCode" {
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Type.hashCode expects 0 arguments")
+			}
+			return Int(int64(valueHashCode(receiver))), receiver, false, true, nil
 		}
 		if method == "newInstance" {
 			if len(args) != 0 {
@@ -6812,7 +6877,8 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if value, ok := receiver.Fields["value"]; ok && value.Kind == ValueString {
 				typeName = value.Text
 			}
-			return Object(typeName), receiver, false, true, nil
+			value, err := vm.constructValue(typeName, nil, nil, result)
+			return value, receiver, false, true, err
 		}
 	case "Schema.DescribeSObjectResult":
 		switch method {
@@ -7194,6 +7260,52 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("URL.%s expects 0 arguments", method)
 			}
 			return receiver.Fields["value"], receiver, false, true, nil
+		}
+		if method == "getProtocol" || method == "getHost" || method == "getAuthority" ||
+			method == "getPath" || method == "getQuery" || method == "getRef" ||
+			method == "getFile" || method == "getPort" || method == "getDefaultPort" {
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("URL.%s expects 0 arguments", method)
+			}
+			raw, err := platformScalarText(receiver, "URL")
+			if err != nil {
+				return Null, receiver, false, true, err
+			}
+			parsed, err := url.Parse(raw)
+			if err != nil {
+				return Null, receiver, false, true, err
+			}
+			switch method {
+			case "getProtocol":
+				return String(parsed.Scheme), receiver, false, true, nil
+			case "getHost":
+				return String(parsed.Hostname()), receiver, false, true, nil
+			case "getAuthority":
+				return String(parsed.Host), receiver, false, true, nil
+			case "getPath":
+				return String(parsed.Path), receiver, false, true, nil
+			case "getQuery":
+				return String(parsed.RawQuery), receiver, false, true, nil
+			case "getRef":
+				return String(parsed.Fragment), receiver, false, true, nil
+			case "getFile":
+				file := parsed.Path
+				if parsed.RawQuery != "" {
+					file += "?" + parsed.RawQuery
+				}
+				return String(file), receiver, false, true, nil
+			case "getPort":
+				if parsed.Port() == "" {
+					return Int(-1), receiver, false, true, nil
+				}
+				port, err := strconv.ParseInt(parsed.Port(), 10, 64)
+				if err != nil {
+					return Null, receiver, false, true, err
+				}
+				return Int(port), receiver, false, true, nil
+			case "getDefaultPort":
+				return Int(defaultURLPort(parsed.Scheme)), receiver, false, true, nil
+			}
 		}
 	}
 	return Null, receiver, false, false, nil

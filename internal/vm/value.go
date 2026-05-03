@@ -168,7 +168,7 @@ func (v Value) Equal(other Value) bool {
 
 func platformScalarObject(typeName string) bool {
 	switch typeName {
-	case "Blob", "Date", "Datetime", "Time", "Type":
+	case "Blob", "Date", "Datetime", "Id", "Time", "Type", "URL":
 		return true
 	default:
 		return false

@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"math"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"unicode"
+	"unicode/utf16"
 	"unicode/utf8"
 )
 
@@ -1005,4 +1007,197 @@ func substring(text string, args []Value) (Value, bool, error) {
 		return Null, true, fmt.Errorf("String substring start index exceeds end index")
 	}
 	return String(string(runes[start:end])), true, nil
+}
+
+func callObjectMember(receiver Value, method string, args []Value) (Value, bool, error) {
+	switch method {
+	case "toString":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("Object.toString expects 0 arguments")
+		}
+		return String(receiver.String()), true, nil
+	case "equals":
+		if len(args) != 1 {
+			return Null, true, fmt.Errorf("Object.equals expects 1 argument")
+		}
+		return Bool(receiver.Equal(args[0])), true, nil
+	case "hashCode":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("Object.hashCode expects 0 arguments")
+		}
+		return Int(int64(valueHashCode(receiver))), true, nil
+	default:
+		return Null, false, nil
+	}
+}
+
+func javaStringHashCode(text string) int32 {
+	var hash int32
+	for _, unit := range utf16.Encode([]rune(text)) {
+		hash = 31*hash + int32(unit)
+	}
+	return hash
+}
+
+func valueHashCode(value Value) int32 {
+	switch value.Kind {
+	case ValueNull:
+		return 0
+	case ValueInt:
+		return int32(value.Int ^ (value.Int >> 32))
+	case ValueDecimal:
+		return javaStringHashCode(strconv.FormatFloat(value.Decimal, 'f', -1, 64))
+	case ValueBool:
+		if value.Bool {
+			return 1231
+		}
+		return 1237
+	case ValueString:
+		return javaStringHashCode(value.Text)
+	case ValueList:
+		hash := int32(1)
+		for _, item := range value.List {
+			hash = 31*hash + valueHashCode(item)
+		}
+		return hash
+	case ValueSet:
+		parts := make([]int, 0, len(value.Set))
+		for _, item := range value.Set {
+			parts = append(parts, int(valueHashCode(item)))
+		}
+		sort.Ints(parts)
+		var hash int32
+		for _, part := range parts {
+			hash += int32(part)
+		}
+		return hash
+	case ValueMap:
+		keys := make([]string, 0, len(value.Map))
+		for key := range value.Map {
+			keys = append(keys, key)
+		}
+		sort.Strings(keys)
+		var hash int32
+		for _, key := range keys {
+			hash += javaStringHashCode(key) ^ valueHashCode(value.Map[key])
+		}
+		return hash
+	case ValueObject:
+		if value.Type == "Type" {
+			if typeName, ok := platformScalarValue(value); ok {
+				return javaStringHashCode(typeName)
+			}
+		}
+		if platformScalarObject(value.Type) {
+			if text, ok := platformScalarValue(value); ok {
+				return javaStringHashCode(value.Type + ":" + text)
+			}
+		}
+		return javaStringHashCode(fmt.Sprintf("%p", value.Fields))
+	default:
+		return javaStringHashCode(value.String())
+	}
+}
+
+func platformScalarValue(value Value) (string, bool) {
+	raw, ok := value.Fields["value"]
+	if !ok || raw.Kind != ValueString {
+		return "", false
+	}
+	return raw.Text, true
+}
+
+func callIdMember(receiver Value, method string, args []Value) (Value, bool, error) {
+	if receiver.Kind != ValueString {
+		return Null, false, nil
+	}
+	switch method {
+	case "to15":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("Id.to15 expects 0 arguments")
+		}
+		if err := validateApexID(receiver.Text); err != nil {
+			return Null, true, err
+		}
+		if len(receiver.Text) == 15 {
+			return String(receiver.Text), true, nil
+		}
+		return String(receiver.Text[:15]), true, nil
+	default:
+		return Null, false, nil
+	}
+}
+
+func validateApexID(text string) error {
+	if len(text) != 15 && len(text) != 18 {
+		return fmt.Errorf("System.StringException: Invalid id: %s", text)
+	}
+	for _, r := range text {
+		if !((r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9')) {
+			return fmt.Errorf("System.StringException: Invalid id: %s", text)
+		}
+	}
+	return nil
+}
+
+func idStatic(callee string, args []Value) (Value, error) {
+	if callee != "Id.valueOf" {
+		return Null, unsupportedCallError(callee)
+	}
+	if len(args) != 1 && len(args) != 2 {
+		return Null, fmt.Errorf("Id.valueOf expects String[, Boolean]")
+	}
+	if args[0].Kind != ValueString {
+		return Null, fmt.Errorf("Id.valueOf expects String")
+	}
+	if len(args) == 2 {
+		if args[1].Kind != ValueBool {
+			return Null, fmt.Errorf("Id.valueOf restoreCasing expects Boolean")
+		}
+		if args[1].Bool {
+			restored, err := restoreApexIDCasing(args[0].Text)
+			if err != nil {
+				return Null, err
+			}
+			return String(restored), nil
+		}
+	}
+	if err := validateApexID(args[0].Text); err != nil {
+		return Null, err
+	}
+	return String(args[0].Text), nil
+}
+
+func restoreApexIDCasing(text string) (string, error) {
+	if err := validateApexID(text); err != nil {
+		return "", err
+	}
+	if len(text) != 18 {
+		return text, nil
+	}
+	out := []byte(strings.ToLower(text[:15]))
+	for chunk := 0; chunk < 3; chunk++ {
+		mask, ok := apexIDChecksumMask(text[15+chunk])
+		if !ok {
+			return "", fmt.Errorf("System.StringException: Invalid id: %s", text)
+		}
+		for bit := 0; bit < 5; bit++ {
+			idx := chunk*5 + bit
+			if mask&(1<<bit) != 0 && out[idx] >= 'a' && out[idx] <= 'z' {
+				out[idx] -= 'a' - 'A'
+			}
+		}
+	}
+	return string(out) + text[15:], nil
+}
+
+func apexIDChecksumMask(ch byte) (int, bool) {
+	switch {
+	case ch >= 'A' && ch <= 'Z':
+		return int(ch - 'A'), true
+	case ch >= '0' && ch <= '5':
+		return int(ch-'0') + 26, true
+	default:
+		return 0, false
+	}
 }

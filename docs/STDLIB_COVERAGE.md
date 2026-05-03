@@ -61,6 +61,8 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | HTTP | `Http.send` | `partial` | Mock-first local callouts; real network transport unsupported. |
 | HTTP | `HttpRequest` | `partial` | Endpoint, method, headers, timeout, body, and blob body accessors. |
 | HTTP | `HttpResponse` | `partial` | Status, status code, headers, body, and blob body accessors. |
+| Id | `Id.to15` | `supported` | Converts validated 18-character IDs to their 15-character prefix. |
+| Id | `Id.valueOf` | `supported` | Validates 15- and 18-character alphanumeric IDs and restores 18-character casing from checksum suffixes. |
 | JSON | `JSON.deserialize` | `partial` | SObject, class, collection, and primitive shapes for supported subset. |
 | JSON | `JSON.deserializeStrict` | `partial` | Rejects unknown fields for supported schema/class targets. |
 | JSON | `JSON.deserializeUntyped` | `partial` | Maps JSON into local primitive/list/map values. |
@@ -77,6 +79,9 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Math | `Math.sqrt` | `supported` | Numeric values. |
 | Messaging | `Messaging.SingleEmailMessage` | `partial` | Common setters only; no delivery transport. |
 | Messaging | `Messaging.sendEmail` | `partial` | Returns local SendEmailResult and increments email limits. |
+| Object | `Object.equals` | `supported` | Uses local value equality for primitives, collections, platform scalars, and object identity. |
+| Object | `Object.hashCode` | `supported` | Deterministic within local value equality; object identity hashes are request-local. |
+| Object | `Object.toString` | `supported` | Returns local string forms for primitives, collections, platform scalars, and objects. |
 | PageReference | `PageReference` | `partial` | Constructor, URL, redirect, parameters, headers, and string conversion basics. |
 | Pattern | `Matcher.find` | `partial` | Go regexp-backed matching. |
 | Pattern | `Matcher.group` | `partial` | Latest matched group only. |
@@ -95,6 +100,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | String | `String.countMatches` | `supported` | Non-overlapping literal substring count. |
 | String | `String.endsWith` | `supported` | UTF-8 string suffix. |
 | String | `String.equalsIgnoreCase` | `supported` | Unicode simple fold. |
+| String | `String.hashCode` | `supported` | Java-compatible UTF-16 code-unit string hash for local values. |
 | String | `String.indexOf` | `supported` | UTF-8 byte index behavior from Go strings. |
 | String | `String.isAllLowerCase` | `supported` | All letters lowercase; non-letters ignored. |
 | String | `String.isAllUpperCase` | `supported` | All letters uppercase; non-letters ignored. |
@@ -133,11 +139,25 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Time | `Time.newInstance` | `supported` | Validates time parts. |
 | Time | `Time.second` | `supported` | Local time component. |
 | Time | `Time.valueOf` | `supported` | Parses supported time strings. |
+| Type | `Type.equals` | `supported` | Compares local Type tokens by type name. |
 | Type | `Type.forName` | `partial` | Local class/type token lookup. |
 | Type | `Type.getName` | `supported` | Returns local type token name. |
-| Type | `Type.newInstance` | `partial` | Constructs local object values without constructor dispatch parity. |
+| Type | `Type.hashCode` | `supported` | Matches the local String.hashCode of the type name. |
+| Type | `Type.newInstance` | `partial` | Constructs local values and dispatches zero-arg constructors for registered classes; broader reflection is incomplete. |
+| Type | `Type.toString` | `supported` | Returns the local type token name. |
+| URL | `URL` | `partial` | Constructors for deterministic URL specs and protocol/host/file forms. |
+| URL | `URL.getAuthority` | `supported` | Returns parsed authority for local URL values. |
+| URL | `URL.getDefaultPort` | `supported` | Returns HTTP/HTTPS defaults or -1. |
+| URL | `URL.getFile` | `supported` | Returns path plus query for local URL values. |
+| URL | `URL.getHost` | `supported` | Returns parsed hostname for local URL values. |
 | URL | `URL.getOrgDomainUrl` | `partial` | Deterministic local org URL. |
+| URL | `URL.getPath` | `supported` | Returns parsed path for local URL values. |
+| URL | `URL.getPort` | `supported` | Returns explicit port or -1. |
+| URL | `URL.getProtocol` | `supported` | Returns parsed scheme for local URL values. |
+| URL | `URL.getQuery` | `supported` | Returns parsed query for local URL values. |
+| URL | `URL.getRef` | `supported` | Returns parsed fragment for local URL values. |
 | URL | `URL.getSalesforceBaseUrl` | `partial` | Deterministic local base URL. |
+| URL | `URL.toExternalForm` | `supported` | Returns the stored local URL string. |
 | Unsupported | `unimplemented platform/stdlib calls` | `supported` | Typed UnsupportedFeature errors with stable message text. |
 | UserInfo | `UserInfo.getLanguage` | `partial` | Deterministic local value. |
 | UserInfo | `UserInfo.getLocale` | `partial` | Deterministic local value. |
