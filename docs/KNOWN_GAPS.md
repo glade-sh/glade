@@ -14,7 +14,7 @@ The MVP target is `full-featured aer-parity MVP`. This document lists required c
 ### `apex.parser.project-scale`: Parse and index large SFDX projects
 
 - Status: `partial`
-- Gap: Parser and symbol baselines exist, including qualified nested type symbols, stable malformed-parse diagnostics, type-index/sema panic recovery diagnostics, and an enterprise-style multi-class check fixture. Broader real-repository scale and method-body model fidelity are incomplete.
+- Gap: Parser and symbol baselines exist, including qualified nested type symbols, stable malformed-parse diagnostics, type-index/sema panic recovery diagnostics, an enterprise-style multi-class check fixture, and selector/service/domain check fixtures with object metadata schemas. Broader real-repository scale and method-body model fidelity are incomplete.
 
 ### `apex.sema.body`: Method-body semantic analysis
 
@@ -89,7 +89,7 @@ The MVP target is `full-featured aer-parity MVP`. This document lists required c
 ### `compat.dashboard`: Generated compatibility dashboard and CI gate
 
 - Status: `partial`
-- Gap: The MVP gate, JSON matrix, generated Markdown dashboard, CI drift check, and parse/check/exec/test/DB lifecycle fixture runner exist. Compatibility fixtures still need expansion before this can be supported.
+- Gap: The MVP gate, JSON matrix, generated Markdown dashboard, CI drift check, and parse/check/exec/test/DB lifecycle fixture runner exist, including schema-aware enterprise check fixtures. Compatibility fixtures still need expansion before this can be supported.
 
 ### `release.packaging`: Installable release binaries, checksums, docs
 

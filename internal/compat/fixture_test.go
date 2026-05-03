@@ -11,6 +11,10 @@ import (
 func TestFixtureJSONRoundTrip(t *testing.T) {
 	in := Fixture{
 		Name: "parser-smoke",
+		Schema: []SchemaFile{{
+			Path:    "force-app/main/default/objects/Account/Account.object-meta.xml",
+			Content: "<CustomObject><label>Account</label></CustomObject>",
+		}},
 		Source: []SourceFile{{
 			Path:    "classes/Hello.cls",
 			Content: "public class Hello {}",
@@ -30,7 +34,7 @@ func TestFixtureJSONRoundTrip(t *testing.T) {
 	if err := json.Unmarshal(data, &out); err != nil {
 		t.Fatal(err)
 	}
-	if out.Name != in.Name || out.Command.Kind != "parse" || out.Command.LimitMode != "strict" {
+	if out.Name != in.Name || out.Command.Kind != "parse" || out.Command.LimitMode != "strict" || out.Schema[0].Content != in.Schema[0].Content {
 		t.Fatalf("unexpected fixture after round trip: %#v", out)
 	}
 }
@@ -83,6 +87,17 @@ func TestRunParseFixture(t *testing.T) {
 	}
 }
 
+func TestRunCheckFixtureRejectsEscapingPath(t *testing.T) {
+	fixture := Fixture{
+		Name:    "escaping-check",
+		Source:  []SourceFile{{Path: "../Hello.cls", Content: "public class Hello {}"}},
+		Command: Invocation{Kind: "check"},
+	}
+	if _, err := Run(fixture); err == nil {
+		t.Fatal("expected escaping fixture path to fail")
+	}
+}
+
 func TestRunCheckFixture(t *testing.T) {
 	fixture := Fixture{
 		Name: "check-smoke",
@@ -107,6 +122,20 @@ func TestRunCheckFixture(t *testing.T) {
 
 func TestRunStorageDBLifecycleFixture(t *testing.T) {
 	fixture, err := LoadFile("../../docs/fixtures/storage-db-lifecycle.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := Run(fixture)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.OK {
+		t.Fatalf("result = %#v", result)
+	}
+}
+
+func TestRunEnterpriseSelectorServiceDomainFixture(t *testing.T) {
+	fixture, err := LoadFile("../../docs/fixtures/enterprise-selector-service-domain.json")
 	if err != nil {
 		t.Fatal(err)
 	}

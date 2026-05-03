@@ -71,25 +71,46 @@ func runCheckFixture(fixture Fixture) (RunResult, error) {
 	}
 	defer os.RemoveAll(root)
 
-	apexFiles := make([]string, 0, len(fixture.Source))
-	for _, source := range fixture.Source {
-		path := filepath.Join(root, filepath.Clean(source.Path))
-		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+	if err := writeFixtureFiles(root, fixture); err != nil {
+		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+	}
+	var apexFiles []string
+	sch := schema.Schema{}
+	if len(fixture.Schema) > 0 {
+		if err := writeSFDXProject(root); err != nil {
 			return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
 		}
-		if err := os.WriteFile(path, []byte(source.Content), 0o644); err != nil {
+		proj, err := project.Load(root)
+		if err != nil {
 			return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
 		}
-		apexFiles = append(apexFiles, path)
+		loaded, err := schema.LoadProject(proj)
+		if err != nil {
+			return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+		}
+		apexFiles = proj.ApexFiles
+		sch = loaded
+	} else {
+		apexFiles = make([]string, 0, len(fixture.Source))
+		for _, source := range fixture.Source {
+			path, err := fixturePath(root, source.Path)
+			if err != nil {
+				return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+			}
+			apexFiles = append(apexFiles, path)
+		}
 	}
 
-	index := typesys.Build(project.Project{Root: root, ApexFiles: apexFiles}, schema.Schema{})
+	index := typesys.Build(project.Project{Root: root, ApexFiles: apexFiles}, sch)
 	result := sema.Analyze(index)
 	payload := map[string]any{
 		"ok":          !result.HasErrors(),
 		"files":       len(apexFiles),
 		"types":       result.Summary.Types,
 		"diagnostics": result.Summary.Diagnostics,
+	}
+	if len(fixture.Schema) > 0 {
+		payload["schemaObjects"] = len(sch.Objects)
 	}
 	return compareResult(fixture, payload, "")
 }
@@ -125,17 +146,11 @@ func runTestFixture(fixture Fixture) (RunResult, error) {
 		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
 	}
 	defer os.RemoveAll(root)
-	if err := os.WriteFile(filepath.Join(root, "sfdx-project.json"), []byte(`{"packageDirectories":[{"path":"force-app","default":true}]}`), 0o644); err != nil {
+	if err := writeSFDXProject(root); err != nil {
 		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
 	}
-	for _, source := range fixture.Source {
-		path := filepath.Join(root, filepath.Clean(source.Path))
-		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-			return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
-		}
-		if err := os.WriteFile(path, []byte(source.Content), 0o644); err != nil {
-			return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
-		}
+	if err := writeFixtureFiles(root, fixture); err != nil {
+		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
 	}
 	proj, err := project.Load(root)
 	if err != nil {
@@ -163,6 +178,43 @@ func runTestFixture(fixture Fixture) (RunResult, error) {
 		"errors": summary.Errors,
 	}
 	return compareResult(fixture, payload, "")
+}
+
+func writeSFDXProject(root string) error {
+	return os.WriteFile(filepath.Join(root, "sfdx-project.json"), []byte(`{"packageDirectories":[{"path":"force-app","default":true}]}`), 0o644)
+}
+
+func writeFixtureFiles(root string, fixture Fixture) error {
+	for _, source := range fixture.Source {
+		if err := writeFixtureFile(root, source.Path, source.Content); err != nil {
+			return err
+		}
+	}
+	for _, schema := range fixture.Schema {
+		if err := writeFixtureFile(root, schema.Path, schema.Content); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func writeFixtureFile(root, relativePath, content string) error {
+	path, err := fixturePath(root, relativePath)
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+	return os.WriteFile(path, []byte(content), 0o644)
+}
+
+func fixturePath(root, relativePath string) (string, error) {
+	clean := filepath.Clean(relativePath)
+	if clean == "." || filepath.IsAbs(clean) || clean == ".." || strings.HasPrefix(clean, ".."+string(filepath.Separator)) {
+		return "", fmt.Errorf("fixture path %q must stay inside project root", relativePath)
+	}
+	return filepath.Join(root, clean), nil
 }
 
 func fixtureLimitMode(raw string) (vm.LimitMode, error) {

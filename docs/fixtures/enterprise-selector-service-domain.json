@@ -1,0 +1,71 @@
+{
+  "name": "enterprise-selector-service-domain",
+  "schema": [
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type><required>true</required></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Rating.field-meta.xml",
+      "content": "<CustomField><fullName>Rating</fullName><label>Rating</label><type>Picklist</type><valueSet><valueSetDefinition><value><fullName>Hot</fullName><label>Hot</label><default>true</default></value><value><fullName>Warm</fullName><label>Warm</label></value></valueSetDefinition></valueSet></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/recordTypes/Business.recordType-meta.xml",
+      "content": "<RecordType><fullName>Business</fullName><label>Business</label><active>true</active><default>true</default></RecordType>"
+    },
+    {
+      "path": "force-app/main/default/objects/Contact/Contact.object-meta.xml",
+      "content": "<CustomObject><label>Contact</label><pluralLabel>Contacts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Contact/fields/LastName.field-meta.xml",
+      "content": "<CustomField><fullName>LastName</fullName><label>Last Name</label><type>Text</type><required>true</required></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Contact/fields/AccountId.field-meta.xml",
+      "content": "<CustomField><fullName>AccountId</fullName><label>Account</label><type>Lookup</type><referenceTo>Account</referenceTo><relationshipName>Account</relationshipName><childRelationshipName>Contacts</childRelationshipName></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Invoice__c/Invoice__c.object-meta.xml",
+      "content": "<CustomObject><label>Invoice</label><pluralLabel>Invoices</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Invoice__c/fields/Account__c.field-meta.xml",
+      "content": "<CustomField><fullName>Account__c</fullName><label>Account</label><type>Lookup</type><referenceTo>Account</referenceTo><relationshipName>Account</relationshipName><childRelationshipName>Invoices</childRelationshipName></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Invoice__c/fields/Status__c.field-meta.xml",
+      "content": "<CustomField><fullName>Status__c</fullName><label>Status</label><type>Picklist</type><valueSet><valueSetDefinition><value><fullName>Draft</fullName><label>Draft</label><default>true</default></value><value><fullName>Posted</fullName><label>Posted</label></value></valueSetDefinition></valueSet></CustomField>"
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/classes/EnterpriseAccountSelector.cls",
+      "content": "public class EnterpriseAccountSelector { public List<Account> selectBusinessAccounts() { return new List<Account>(); } public List<Contact> selectContactsByAccount(Set<Id> accountIds) { return new List<Contact>(); } public List<Invoice__c> selectInvoices(Set<Id> accountIds) { return new List<Invoice__c>(); } }"
+    },
+    {
+      "path": "force-app/main/default/classes/EnterpriseAccountDomain.cls",
+      "content": "public class EnterpriseAccountDomain { private List<Account> records; public EnterpriseAccountDomain(List<Account> records) { this.records = records; } public Integer size() { return 0; } public List<Account> values() { return records; } }"
+    },
+    {
+      "path": "force-app/main/default/classes/EnterpriseAccountService.cls",
+      "content": "public class EnterpriseAccountService { private EnterpriseAccountSelector selector; public EnterpriseAccountService() { this.selector = new EnterpriseAccountSelector(); } public Integer countBusinessAccounts() { EnterpriseAccountDomain domain = new EnterpriseAccountDomain(selector.selectBusinessAccounts()); return domain.size(); } public List<Invoice__c> invoicesFor(Set<Id> accountIds) { return selector.selectInvoices(accountIds); } }"
+    }
+  ],
+  "command": {
+    "kind": "check"
+  },
+  "expected": {
+    "result": {
+      "diagnostics": 0,
+      "files": 3,
+      "ok": true,
+      "schemaObjects": 3,
+      "types": 3
+    }
+  }
+}

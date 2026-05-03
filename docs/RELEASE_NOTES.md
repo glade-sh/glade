@@ -42,8 +42,9 @@ Release engineering:
   and operational checks for saved mutations and rollback-on-failure behavior.
 - Expanded DB lifecycle compatibility coverage to re-import exported fixtures and
   assert restored record, user, profile, and Account counts.
-- Added `check` compatibility fixture execution and an enterprise-style
-  multi-class fixture covering parse/index/check behavior.
+- Added `check` compatibility fixture execution, schema-aware check fixtures,
+  and enterprise-style multi-class selector/service/domain fixtures covering
+  parse/index/check behavior.
 - Added parser diagnostic-count fixtures plus type-index and sema panic recovery
   diagnostics for malformed project inputs.
 - Added method/constructor parameter type diagnostics and expanded VM exception

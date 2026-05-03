@@ -519,7 +519,11 @@ a Salesforce-shaped local API server without silently wrong behavior.
     behavior.
   - [x] Re-import the exported fixture during compatibility execution and assert
     imported record, user, profile, and Account counts.
-- [ ] Add fixture schemas for enterprise selector/service/domain test suites.
+- [x] Add fixture schemas for enterprise selector/service/domain test suites.
+  - [x] Extend compatibility `check` fixtures to write schema metadata files,
+    load project schema, and report schema object counts.
+  - [x] Add an enterprise selector/service/domain fixture with Account, Contact,
+    and custom Invoice metadata.
 
 ## 7. Developer Experience
 

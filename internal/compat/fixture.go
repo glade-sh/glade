@@ -30,8 +30,8 @@ type SourceFile struct {
 }
 
 type SchemaFile struct {
-	Path    string          `json:"path"`
-	Content json.RawMessage `json:"content,omitempty"`
+	Path    string `json:"path"`
+	Content string `json:"content,omitempty"`
 }
 
 type SeedData struct {
