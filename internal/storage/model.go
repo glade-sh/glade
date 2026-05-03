@@ -93,6 +93,8 @@ type SystemFields struct {
 	CreatedDate      string `json:"createdDate,omitempty"`
 	LastModifiedByID ID     `json:"lastModifiedById,omitempty"`
 	LastModifiedDate string `json:"lastModifiedDate,omitempty"`
+	SystemModstamp   string `json:"systemModstamp,omitempty"`
+	OwnerID          ID     `json:"ownerId,omitempty"`
 	IsDeleted        bool   `json:"isDeleted,omitempty"`
 }
 

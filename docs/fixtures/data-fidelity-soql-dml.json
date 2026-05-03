@@ -120,6 +120,10 @@
     {
       "path": "force-app/main/classes/DateLiteralFidelityTest.cls",
       "content": "@isTest private class DateLiteralFidelityTest { @isTest static void dateLiteralsFilterRows() { insert new Account(Name = 'Today', RenewalDate__c = Date.today()); Date oldDate = Date.today(); oldDate = oldDate.addDays(-2); insert new Account(Name = 'Old', RenewalDate__c = oldDate); List<Account> todayRows = [SELECT Id FROM Account WHERE RenewalDate__c = TODAY]; System.assertEquals(1, todayRows.size()); List<Account> recentRows = [SELECT Id FROM Account WHERE RenewalDate__c = LAST_N_DAYS:2]; System.assertEquals(2, recentRows.size()); } }"
+    },
+    {
+      "path": "force-app/main/classes/SystemFieldFidelityTest.cls",
+      "content": "@isTest private class SystemFieldFidelityTest { @isTest static void systemFieldsAreAvailableOnSObjects() { Account a = new Account(Name = 'System Fields'); insert a; System.assert(a.CreatedDate != null); System.assert(a.LastModifiedDate != null); System.assert(a.SystemModstamp != null); System.assert(a.CreatedById != null); System.assert(a.LastModifiedById != null); System.assert(a.OwnerId != null); System.assert(!a.IsDeleted); Account row = [SELECT Id, CreatedDate, CreatedById, LastModifiedDate, LastModifiedById, SystemModstamp, OwnerId, IsDeleted FROM Account WHERE Id = :a.Id]; System.assert(row.CreatedDate != null); System.assert(row.LastModifiedDate != null); System.assert(row.SystemModstamp != null); System.assert(row.CreatedById != null); System.assert(row.LastModifiedById != null); System.assert(row.OwnerId != null); System.assert(!row.IsDeleted); delete row; System.assert(row.IsDeleted); Account deletedRow = [SELECT Id, IsDeleted, SystemModstamp FROM Account WHERE Id = :a.Id ALL ROWS]; System.assert(deletedRow.IsDeleted); System.assert(deletedRow.SystemModstamp != null); } }"
     }
   ],
   "command": {
@@ -130,8 +134,8 @@
       "errors": 0,
       "failed": 0,
       "ok": true,
-      "passed": 12,
-      "total": 12
+      "passed": 13,
+      "total": 13
     }
   }
 }

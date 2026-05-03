@@ -3,6 +3,7 @@ package dml
 import (
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/open-aer/oaer/internal/storage"
 )
@@ -10,6 +11,7 @@ import (
 func TestInsertUpdateDelete(t *testing.T) {
 	org := testOrg()
 	engine := NewEngine(&org)
+	engine.Now = func() time.Time { return time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC) }
 
 	insert := engine.Insert([]storage.Record{{
 		Object: "Account",
@@ -20,7 +22,12 @@ func TestInsertUpdateDelete(t *testing.T) {
 	if !insert[0].Success || insert[0].ID != "001000000000001" {
 		t.Fatalf("insert = %#v", insert)
 	}
+	stored := org.Objects["Account"].Records[insert[0].ID]
+	if stored.System.CreatedDate != "2026-05-02T12:00:00Z" || stored.System.SystemModstamp == "" || stored.System.OwnerID == "" {
+		t.Fatalf("system fields after insert = %#v", stored.System)
+	}
 
+	engine.Now = func() time.Time { return time.Date(2026, 5, 2, 12, 5, 0, 0, time.UTC) }
 	update := engine.Update([]storage.Record{{
 		ID:     insert[0].ID,
 		Object: "Account",
@@ -34,13 +41,20 @@ func TestInsertUpdateDelete(t *testing.T) {
 	if got := org.Objects["Account"].Records[insert[0].ID].Fields["Name"].String; got != "Changed" {
 		t.Fatalf("updated name = %q", got)
 	}
+	if got := org.Objects["Account"].Records[insert[0].ID].System.LastModifiedDate; got != "2026-05-02T12:05:00Z" {
+		t.Fatalf("last modified after update = %q", got)
+	}
 
+	engine.Now = func() time.Time { return time.Date(2026, 5, 2, 12, 10, 0, 0, time.UTC) }
 	deleteResult := engine.Delete([]storage.Record{{ID: insert[0].ID, Object: "Account"}})
 	if !deleteResult[0].Success {
 		t.Fatalf("delete = %#v", deleteResult)
 	}
 	if !org.Objects["Account"].Records[insert[0].ID].System.IsDeleted {
 		t.Fatalf("record was not soft deleted: %#v", org.Objects["Account"].Records[insert[0].ID])
+	}
+	if got := org.Objects["Account"].Records[insert[0].ID].System.SystemModstamp; got != "2026-05-02T12:10:00Z" {
+		t.Fatalf("system modstamp after delete = %q", got)
 	}
 }
 

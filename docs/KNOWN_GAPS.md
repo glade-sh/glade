@@ -26,7 +26,7 @@ The MVP target is `full-featured aer-parity MVP`. This document lists required c
 ### `dml.apex`: Apex DML statements and Database methods
 
 - Status: `partial`
-- Gap: Apex insert/update/delete/upsert/undelete/merge syntax and Database.insert/update/delete/upsert/undelete/merge allOrNone paths now call the DML engine, return SaveResult/UpsertResult/MergeResult objects with statusCode, message, fields arrays, isCreated, merged record IDs, set Ids, roll back allOrNone failures, soft-delete and undelete records, match implicit and explicit external-ID upserts, reject ID/object mismatches, enforce unique fields, validate lookup references, reparent lookups on merge, fire supported merge update/delete trigger hooks, and cascade soft-delete children from relationship metadata. Trigger context includes operation flags, size, new/old lists, nullable unavailable contexts, and newMap/oldMap for supported operations. Validation-rule formulas, full merge loser relationship result details, and full Salesforce status-code parity remain incomplete.
+- Gap: Apex insert/update/delete/upsert/undelete/merge syntax and Database.insert/update/delete/upsert/undelete/merge allOrNone paths now call the DML engine, return SaveResult/UpsertResult/MergeResult objects with statusCode, message, fields arrays, isCreated, merged record IDs, set Ids, stamp common system fields, roll back allOrNone failures, soft-delete and undelete records, match implicit and explicit external-ID upserts, reject ID/object mismatches, enforce unique fields, validate lookup references, reparent lookups on merge, fire supported merge update/delete trigger hooks, and cascade soft-delete children from relationship metadata. Trigger context includes operation flags, size, new/old lists, nullable unavailable contexts, and newMap/oldMap for supported operations. Validation-rule formulas, full merge loser relationship result details, and full Salesforce status-code parity remain incomplete.
 
 ### `fixtures.persistence`: Seed/export/reset local fixtures with persistence
 
@@ -36,7 +36,7 @@ The MVP target is `full-featured aer-parity MVP`. This document lists required c
 ### `sobject.apex`: Apex-integrated SObject construction and field access
 
 - Status: `partial`
-- Gap: Apex now supports schema-backed new Account(Name='Acme'), typed field access, dotted assignment, get/put with previous-value return, isSet, clear, getPopulatedFieldsAsMap including explicit nulls, field describe basics with picklist values, object-level and field-level addError, hasErrors/getErrors, Id propagation after DML, parent relationship projection access, and VM/storage record conversion. Record types, permissions, complete typed describe APIs, and broader SObject system fields remain incomplete.
+- Gap: Apex now supports schema-backed new Account(Name='Acme'), typed field access, dotted assignment, get/put with previous-value return, isSet, clear, getPopulatedFieldsAsMap including explicit nulls, common system fields after DML and SOQL projection, field describe basics with picklist values, object-level and field-level addError, hasErrors/getErrors, Id propagation after DML, parent relationship projection access, and VM/storage record conversion. Record types, permissions, complete typed describe APIs, and broader system field parity remain incomplete.
 
 ### `soql.apex`: Static and dynamic SOQL from Apex
 

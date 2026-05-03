@@ -240,6 +240,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
   behavior, explicit null behavior, and system fields.
   - [x] Support `SObject.put` previous-value returns, `isSet`, `clear`, and
     `getPopulatedFieldsAsMap` with explicit-null field tracking.
+  - [x] Populate and expose common system fields (`CreatedDate`, `CreatedById`,
+    `LastModifiedDate`, `LastModifiedById`, `SystemModstamp`, `OwnerId`, and
+    `IsDeleted`) on DML-mutated and SOQL-projected SObjects.
 - [ ] Complete schema describe objects, field describes, record type info,
   picklists, relationship metadata, and common describe-heavy code paths.
   - [x] Load Metadata API picklist values and expose `SObjectField.getDescribe`

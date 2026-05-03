@@ -4,13 +4,16 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/open-aer/oaer/internal/storage"
 )
 
 type Engine struct {
-	Org *storage.OrgState
-	IDs storage.IDGenerator
+	Org    *storage.OrgState
+	IDs    storage.IDGenerator
+	Now    func() time.Time
+	UserID storage.ID
 }
 
 type Result struct {
@@ -31,7 +34,22 @@ func NewEngine(org *storage.OrgState) Engine {
 	}
 	ids := storage.NewIDGenerator(prefixes)
 	ids.Sequences = copySequences(org.IDSequences)
-	return Engine{Org: org, IDs: ids}
+	return Engine{Org: org, IDs: ids, Now: func() time.Time { return time.Now().UTC() }, UserID: "005000000000001"}
+}
+
+func (e Engine) systemTimestamp() string {
+	now := time.Now().UTC()
+	if e.Now != nil {
+		now = e.Now().UTC()
+	}
+	return now.Format(time.RFC3339)
+}
+
+func (e Engine) systemUserID() storage.ID {
+	if e.UserID != "" {
+		return e.UserID
+	}
+	return "005000000000001"
 }
 
 func (e *Engine) Insert(records []storage.Record) []Result {
@@ -119,7 +137,11 @@ func (e *Engine) Undelete(records []storage.Record) []Result {
 			results[i] = resultFromError(record.ID, fmt.Errorf("dml: record %s does not exist", record.ID))
 			continue
 		}
+		stamp := e.systemTimestamp()
 		stored.System.IsDeleted = false
+		stored.System.LastModifiedDate = stamp
+		stored.System.SystemModstamp = stamp
+		stored.System.LastModifiedByID = e.systemUserID()
 		object.Records[record.ID] = stored
 		e.Org.Objects[objectName] = object
 		results[i] = Result{ID: record.ID, Success: true}
@@ -177,7 +199,11 @@ func (e *Engine) Merge(master storage.Record, duplicates []storage.Record) []Res
 			continue
 		}
 		e.reparentLookups(objectName, duplicate.ID, master.ID)
+		stamp := e.systemTimestamp()
 		storedDuplicate.System.IsDeleted = true
+		storedDuplicate.System.LastModifiedDate = stamp
+		storedDuplicate.System.SystemModstamp = stamp
+		storedDuplicate.System.LastModifiedByID = e.systemUserID()
 		object.Records[duplicate.ID] = storedDuplicate
 		e.Org.Objects[objectName] = object
 		results[i] = Result{ID: master.ID, Success: true}
@@ -255,6 +281,26 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 	if _, exists := object.Records[record.ID]; exists {
 		return "", fmt.Errorf("dml: duplicate id %s", record.ID)
 	}
+	stamp := e.systemTimestamp()
+	userID := e.systemUserID()
+	if record.System.CreatedDate == "" {
+		record.System.CreatedDate = stamp
+	}
+	if record.System.LastModifiedDate == "" {
+		record.System.LastModifiedDate = stamp
+	}
+	if record.System.SystemModstamp == "" {
+		record.System.SystemModstamp = stamp
+	}
+	if record.System.CreatedByID == "" {
+		record.System.CreatedByID = userID
+	}
+	if record.System.LastModifiedByID == "" {
+		record.System.LastModifiedByID = userID
+	}
+	if record.System.OwnerID == "" {
+		record.System.OwnerID = userID
+	}
 	if object.Records == nil {
 		object.Records = make(map[storage.ID]storage.Record)
 	}
@@ -300,6 +346,7 @@ func (e *Engine) updateOne(record storage.Record) error {
 	if existing.ExplicitNulls == nil {
 		existing.ExplicitNulls = make(map[string]bool)
 	}
+	stamp := e.systemTimestamp()
 	for field, value := range record.Fields {
 		existing.Fields[field] = value.Clone()
 		delete(existing.ExplicitNulls, field)
@@ -310,6 +357,9 @@ func (e *Engine) updateOne(record storage.Record) error {
 			existing.ExplicitNulls[field] = true
 		}
 	}
+	existing.System.LastModifiedDate = stamp
+	existing.System.SystemModstamp = stamp
+	existing.System.LastModifiedByID = e.systemUserID()
 	object.Records[record.ID] = existing
 	e.Org.Objects[objectName] = object
 	return nil
@@ -356,7 +406,11 @@ func (e *Engine) deleteRecord(objectName string, id storage.ID, seen map[string]
 	if err := e.validateDeleteReferences(objectName, id); err != nil {
 		return err
 	}
+	stamp := e.systemTimestamp()
 	stored.System.IsDeleted = true
+	stored.System.LastModifiedDate = stamp
+	stored.System.SystemModstamp = stamp
+	stored.System.LastModifiedByID = e.systemUserID()
 	object.Records[id] = stored
 	e.Org.Objects[objectName] = object
 	return e.cascadeDeleteChildren(objectName, id, seen)

@@ -487,6 +487,45 @@ System.assertEquals('Acme', row.Account.Parent.Name);
 	}
 }
 
+func TestExecSObjectSystemFields(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account a = new Account(Name = 'System Fields');
+insert a;
+System.assert(a.CreatedDate != null);
+System.assert(a.LastModifiedDate != null);
+System.assert(a.SystemModstamp != null);
+System.assertEquals('005000000000001', a.CreatedById);
+System.assertEquals('005000000000001', a.LastModifiedById);
+System.assertEquals('005000000000001', a.OwnerId);
+System.assert(!a.IsDeleted);
+System.assertEquals('2026-05-02T12:00:00Z', a.CreatedDate.format());
+a.Name = 'System Fields Updated';
+update a;
+System.assert(a.LastModifiedDate != null);
+Account row = [SELECT Id, CreatedDate, CreatedById, LastModifiedDate, LastModifiedById, SystemModstamp, OwnerId, IsDeleted FROM Account WHERE Id = :a.Id];
+System.assertEquals('2026-05-02T12:00:00Z', row.CreatedDate.format());
+System.assertEquals('005000000000001', row.CreatedById);
+System.assertEquals('005000000000001', row.LastModifiedById);
+System.assertEquals('005000000000001', row.OwnerId);
+System.assert(!row.IsDeleted);
+delete row;
+System.assert(row.IsDeleted);
+Account deletedRow = [SELECT Id, IsDeleted, LastModifiedDate, SystemModstamp FROM Account WHERE Id = :a.Id ALL ROWS];
+System.assert(deletedRow.IsDeleted);
+System.assert(deletedRow.LastModifiedDate != null);
+System.assert(deletedRow.SystemModstamp != null);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSOQLChildRelationshipSubquery(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account a = new Account(Name = 'Acme');

@@ -143,6 +143,15 @@ func (vm *VM) SetOrg(org *storage.OrgState) {
 	vm.Org = org
 }
 
+func (vm *VM) newDMLEngine() dml.Engine {
+	engine := dml.NewEngine(vm.Org)
+	engine.Now = func() time.Time { return vm.fakeNow }
+	if vm.testContext != nil && vm.testContext.CurrentUser.Kind == ValueString && vm.testContext.CurrentUser.Text != "" {
+		engine.UserID = storage.ID(vm.testContext.CurrentUser.Text)
+	}
+	return engine
+}
+
 func (vm *VM) RegisterTrigger(trigger Trigger) error {
 	if trigger.Object == "" {
 		return fmt.Errorf("trigger object is required")
@@ -1767,7 +1776,7 @@ func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, result
 		}
 	}
 	if expr.Kind == ir.ExprVariable {
-		applyDMLIDs(&value, results)
+		vm.populateDMLResultFields(&value, results)
 		if err := vm.assign(expr.Name, value); err != nil {
 			return err
 		}
@@ -1927,7 +1936,7 @@ func (vm *VM) executeDatabaseMerge(args []Value, result *Result) (Value, error) 
 			return vm.mergeResultValue(args[1].Kind == ValueList, duplicates, beforeDeleteFailures), nil
 		}
 	}
-	engine := dml.NewEngine(vm.Org)
+	engine := vm.newDMLEngine()
 	results := engine.Merge(master[0], mergeDuplicates)
 	if hasDMLFailures(beforeDeleteFailures) {
 		results = mergeDMLResults(beforeDeleteFailures, results)
@@ -2043,18 +2052,31 @@ func (vm *VM) externalIDFieldName(value Value) (string, error) {
 	return "", fmt.Errorf("Database.upsert external id field expects Schema.SObjectField")
 }
 
-func applyDMLIDs(value *Value, results []dml.Result) {
+func (vm *VM) populateDMLResultFields(value *Value, results []dml.Result) {
 	if value.Kind == ValueList {
 		for i := range value.List {
 			if i >= len(results) || !results[i].Success {
 				continue
 			}
-			value.List[i].Fields["Id"] = String(string(results[i].ID))
+			vm.populateDMLResultFields(&value.List[i], results[i:i+1])
 		}
 		return
 	}
 	if len(results) > 0 && results[0].Success && value.Kind == ValueObject {
-		value.Fields["Id"] = String(string(results[0].ID))
+		id := results[0].ID
+		value.Fields["Id"] = String(string(id))
+		if vm.Org == nil || id == "" {
+			return
+		}
+		objectName, ok := storage.ResolveObjectName(*vm.Org, value.Type)
+		if !ok {
+			return
+		}
+		record, ok := vm.Org.Objects[objectName].Records[id]
+		if !ok {
+			return
+		}
+		putSystemFields(*value, record.System)
 	}
 }
 
@@ -2160,7 +2182,7 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 			return beforeFailures, nil
 		}
 	}
-	engine := dml.NewEngine(vm.Org)
+	engine := vm.newDMLEngine()
 	var results []dml.Result
 	switch op {
 	case "insert":
@@ -2193,7 +2215,7 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 	}
 	for i, dmlResult := range results {
 		if dmlResult.Success && i < len(targets) && targets[i] != nil {
-			targets[i].Fields["Id"] = String(string(dmlResult.ID))
+			vm.populateDMLResultFields(targets[i], results[i:i+1])
 		}
 	}
 	afterRecords, err := vm.afterRecords(op, records, results)
@@ -2298,6 +2320,9 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 			}
 			continue
 		}
+		if isSObjectSystemField(field) {
+			continue
+		}
 		canonicalField := field
 		if definition.APIName != "" {
 			if resolved, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, field); ok {
@@ -2342,7 +2367,39 @@ func vmValueFromRecord(record storage.Record) Value {
 			value.Fields[field] = Null
 		}
 	}
+	putSystemFields(value, record.System)
 	return value
+}
+
+func isSObjectSystemField(field string) bool {
+	switch field {
+	case "CreatedDate", "CreatedById", "LastModifiedDate", "LastModifiedById", "SystemModstamp", "OwnerId", "IsDeleted":
+		return true
+	default:
+		return false
+	}
+}
+
+func putSystemFields(value Value, fields storage.SystemFields) {
+	if fields.CreatedDate != "" {
+		value.Fields["CreatedDate"] = platformScalar("Datetime", fields.CreatedDate)
+	}
+	if fields.CreatedByID != "" {
+		value.Fields["CreatedById"] = String(string(fields.CreatedByID))
+	}
+	if fields.LastModifiedDate != "" {
+		value.Fields["LastModifiedDate"] = platformScalar("Datetime", fields.LastModifiedDate)
+	}
+	if fields.LastModifiedByID != "" {
+		value.Fields["LastModifiedById"] = String(string(fields.LastModifiedByID))
+	}
+	if fields.SystemModstamp != "" {
+		value.Fields["SystemModstamp"] = platformScalar("Datetime", fields.SystemModstamp)
+	}
+	if fields.OwnerID != "" {
+		value.Fields["OwnerId"] = String(string(fields.OwnerID))
+	}
+	value.Fields["IsDeleted"] = Bool(fields.IsDeleted)
 }
 
 func putVMFieldPath(root Value, field string, fieldValue Value) {

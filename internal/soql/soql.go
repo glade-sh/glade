@@ -844,6 +844,14 @@ func recordValue(org storage.OrgState, definition storage.ObjectDefinition, reco
 		if record.System.LastModifiedByID != "" {
 			return storage.IDValue(record.System.LastModifiedByID), true
 		}
+	case "SystemModstamp":
+		if record.System.SystemModstamp != "" {
+			return storage.DateTimeValue(record.System.SystemModstamp), true
+		}
+	case "OwnerId":
+		if record.System.OwnerID != "" {
+			return storage.IDValue(record.System.OwnerID), true
+		}
 	case "IsDeleted":
 		return storage.BooleanValue(record.System.IsDeleted), true
 	}

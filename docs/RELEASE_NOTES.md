@@ -46,6 +46,9 @@ Release engineering:
   SOQL projection/where clauses.
 - Added SObject field-shape helpers for `put` previous-value returns, `isSet`,
   `clear`, and `getPopulatedFieldsAsMap` with explicit-null fields.
+- Added common SObject system fields after DML and SOQL projection, including
+  created/modified timestamps, user IDs, owner ID, system modstamp, and delete
+  state.
 - Added Metadata API picklist value loading and baseline
   `Schema.SObjectField.getDescribe().getPicklistValues()` support.
 - Expanded data-fidelity coverage for SOQL complex predicates, numeric
