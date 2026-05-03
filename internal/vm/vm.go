@@ -2202,6 +2202,7 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 	default:
 		return nil, fmt.Errorf("unsupported DML operation %s", op)
 	}
+	engineResults := results
 	if hasDMLFailures(beforeFailures) {
 		results = mergeDMLResults(beforeFailures, results)
 	}
@@ -2213,12 +2214,12 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 			}
 		}
 	}
-	for i, dmlResult := range results {
+	for i, dmlResult := range engineResults {
 		if dmlResult.Success && i < len(targets) && targets[i] != nil {
-			vm.populateDMLResultFields(targets[i], results[i:i+1])
+			vm.populateDMLResultFields(targets[i], engineResults[i:i+1])
 		}
 	}
-	afterRecords, err := vm.afterRecords(op, records, results)
+	afterRecords, err := vm.afterRecords(op, records, engineResults)
 	if err != nil {
 		if allOrNone {
 			*vm.Org = backup

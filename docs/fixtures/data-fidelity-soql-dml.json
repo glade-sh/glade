@@ -74,6 +74,18 @@
       "content": "@isTest private class TriggerContextFidelityTest { @isTest static void updateAndDeleteContextMaps() { Account a = new Account(Name = 'Before'); insert a; a.Name = 'After'; update a; Account updated = [SELECT Id, Name, Rating FROM Account WHERE Id = :a.Id]; System.assertEquals('After!', updated.Name); System.assertEquals('Warm', updated.Rating); delete updated; } }"
     },
     {
+      "path": "force-app/main/classes/AccountBulkBeforeInsert.trigger",
+      "content": "trigger AccountBulkBeforeInsert on Account (before insert) { if (Trigger.size == 3) { for (Account a : Trigger.new) { if (a.get('Name') == 'Bulk Block') { a.Name.addError('blocked by bulk trigger'); } else if (a.get('Name') == 'Bulk First' || a.get('Name') == 'Bulk Second') { a.Rating = 'Bulk'; } } } }"
+    },
+    {
+      "path": "force-app/main/classes/AccountBulkAfterInsert.trigger",
+      "content": "trigger AccountBulkAfterInsert on Account (after insert) { for (Account a : Trigger.new) { if (a.get('Name') == 'Bulk First' || a.get('Name') == 'Bulk Second') { insert new Contact(LastName = 'after-' + a.Name); } } }"
+    },
+    {
+      "path": "force-app/main/classes/TriggerBulkFidelityTest.cls",
+      "content": "@isTest private class TriggerBulkFidelityTest { @isTest static void failedFirstBulkInsertKeepsResultAlignment() { Account blocked = new Account(Name = 'Bulk Block'); Account first = new Account(Name = 'Bulk First'); Account second = new Account(Name = 'Bulk Second'); List<Account> records = new List<Account>{blocked, first, second}; List<Object> results = Database.insert(records, false); System.assertEquals(3, results.size()); Object r0 = results.get(0); Object r1 = results.get(1); Object r2 = results.get(2); System.assert(!r0.isSuccess()); System.assert(r1.isSuccess()); System.assert(r2.isSuccess()); System.assertEquals(null, blocked.get('Id')); System.assert(first.get('Id') != null); System.assert(second.get('Id') != null); List<Account> rows = [SELECT Id, Name, Rating FROM Account WHERE Name IN ('Bulk First', 'Bulk Second') ORDER BY Name]; System.assertEquals(2, rows.size()); Account row0 = rows.get(0); Account row1 = rows.get(1); System.assertEquals('Bulk First', row0.Name); System.assertEquals('Bulk', row0.Rating); System.assertEquals('Bulk Second', row1.Name); System.assertEquals('Bulk', row1.Rating); List<Contact> markers = [SELECT Id FROM Contact WHERE LastName IN ('after-Bulk First', 'after-Bulk Second')]; System.assertEquals(2, markers.size()); } }"
+    },
+    {
       "path": "force-app/main/classes/AccountMergeBeforeUpdate.trigger",
       "content": "trigger AccountMergeBeforeUpdate on Account (before update) { Account newer = Trigger.new.get(0); if (newer.get('Name') == 'Merged Name') { System.assert(Trigger.isExecuting); System.assert(Trigger.isBefore); System.assert(Trigger.isUpdate); Account older = Trigger.oldMap.get(newer.Id); System.assertEquals('Merge Master For Triggers', older.Name); newer.Rating = 'merge-before-update'; } }"
     },
@@ -134,8 +146,8 @@
       "errors": 0,
       "failed": 0,
       "ok": true,
-      "passed": 13,
-      "total": 13
+      "passed": 14,
+      "total": 14
     }
   }
 }

@@ -814,6 +814,98 @@ delete updated;
 	}
 }
 
+func TestExecTriggerBulkPartialSuccessKeepsRowAlignment(t *testing.T) {
+	beforeInsert, err := CompileAnonymous(`
+System.assert(Trigger.isExecuting);
+System.assert(Trigger.isBefore);
+System.assert(Trigger.isInsert);
+System.assertEquals(3, Trigger.size);
+System.assertEquals(null, Trigger.old);
+System.assertEquals(null, Trigger.newMap);
+for (Account a : Trigger.new) {
+	if (a.Name == 'Block') {
+		a.Name.addError('blocked by bulk trigger');
+	} else {
+		a.Rating = 'Bulk';
+	}
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	afterInsert, err := CompileAnonymous(`
+System.assert(Trigger.isExecuting);
+System.assert(Trigger.isAfter);
+System.assert(Trigger.isInsert);
+System.assertEquals(2, Trigger.size);
+Account firstNew = Trigger.new.get(0);
+System.assert(Trigger.newMap.containsKey(firstNew.Id));
+for (Account a : Trigger.new) {
+	insert new Contact(LastName = 'after-' + a.Name);
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Account blocked = new Account(Name = 'Block');
+Account first = new Account(Name = 'First');
+Account second = new Account(Name = 'Second');
+List<Account> records = new List<Account>{blocked, first, second};
+List<Object> results = Database.insert(records, false);
+System.assertEquals(3, results.size());
+Object r0 = results.get(0);
+Object r1 = results.get(1);
+Object r2 = results.get(2);
+System.assert(!r0.isSuccess());
+System.assert(r1.isSuccess());
+System.assert(r2.isSuccess());
+System.assertEquals(null, blocked.get('Id'));
+System.assert(first.get('Id') != null);
+System.assert(second.get('Id') != null);
+List<Account> rows = [SELECT Id, Name, Rating FROM Account ORDER BY Name];
+System.assertEquals(2, rows.size());
+Account row0 = rows.get(0);
+Account row1 = rows.get(1);
+System.assertEquals('First', row0.Name);
+System.assertEquals('Bulk', row0.Rating);
+System.assertEquals('Second', row1.Name);
+System.assertEquals('Bulk', row1.Rating);
+List<Contact> markers = [SELECT Id FROM Contact WHERE LastName IN ('after-First', 'after-Second')];
+System.assertEquals(2, markers.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Rating"] = storage.Field{APIName: "Rating", Type: storage.FieldString}
+	org.Objects["Account"] = account
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Contact",
+			KeyPrefix: "003",
+			Fields: map[string]storage.Field{
+				"LastName": {APIName: "LastName", Type: storage.FieldString},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine.SetOrg(&org)
+	for _, trigger := range []Trigger{
+		{Name: "AccountBulkBeforeInsert", Object: "Account", Timing: triggerTimingBefore, Operation: "insert", Program: beforeInsert},
+		{Name: "AccountBulkAfterInsert", Object: "Account", Timing: triggerTimingAfter, Operation: "insert", Program: afterInsert},
+	} {
+		if err := machine.RegisterTrigger(trigger); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecMergeInvokesUpdateAndDeleteTriggers(t *testing.T) {
 	beforeUpdate, err := CompileAnonymous(`
 System.assert(Trigger.isExecuting);
