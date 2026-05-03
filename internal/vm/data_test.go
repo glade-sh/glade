@@ -74,6 +74,44 @@ System.assert(!a.isSet('Id'), 'clear should unset Id');
 	}
 }
 
+func TestExecDescribePicklistValues(t *testing.T) {
+	program, err := CompileAnonymous(`
+Object describe = Account.Rating.getDescribe();
+System.assertEquals('Rating', describe.getName());
+System.assertEquals('picklist', describe.getType());
+List<Object> values = describe.getPicklistValues();
+System.assertEquals(2, values.size());
+Object hot = values.get(0);
+System.assertEquals('Hot', hot.getValue());
+System.assertEquals('Hot Label', hot.getLabel());
+System.assert(hot.isDefaultValue());
+System.assert(hot.isActive());
+Object cold = values.get(1);
+System.assertEquals('Cold', cold.getValue());
+System.assert(!cold.isDefaultValue());
+System.assert(!cold.isActive());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Rating"] = storage.Field{
+		APIName: "Rating",
+		Type:    storage.FieldPicklist,
+		PicklistValues: []storage.PicklistValue{
+			{Value: "Hot", Label: "Hot Label", Default: true, Active: true},
+			{Value: "Cold", Label: "Cold", Active: false},
+		},
+	}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSOQLCountAndSingleSObjectAssignment(t *testing.T) {
 	program, err := CompileAnonymous(`
 insert new Account(Name = 'Acme');

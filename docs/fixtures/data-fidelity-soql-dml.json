@@ -11,7 +11,7 @@
     },
     {
       "path": "force-app/main/default/objects/Account/fields/Rating.field-meta.xml",
-      "content": "<CustomField><fullName>Rating</fullName><label>Rating</label><type>Picklist</type></CustomField>"
+      "content": "<CustomField><fullName>Rating</fullName><label>Rating</label><type>Picklist</type><valueSet><valueSetDefinition><value><fullName>Hot</fullName><label>Hot Label</label><default>true</default></value><value><fullName>Warm</fullName><label>Warm</label></value><value><fullName>Cold</fullName><isActive>false</isActive></value></valueSetDefinition></valueSet></CustomField>"
     },
     {
       "path": "force-app/main/default/objects/Account/fields/AnnualRevenue.field-meta.xml",
@@ -86,6 +86,10 @@
       "content": "@isTest private class SObjectFieldShapeTest { @isTest static void explicitNullAndPopulatedFields() { Account a = new Account(); System.assert(!a.isSet('Name')); System.assertEquals(null, a.get('Name')); Object previous = a.put('Name', 'Acme'); System.assertEquals(null, previous); System.assert(a.isSet('Name')); previous = a.put('Name', 'Changed'); System.assertEquals('Acme', previous); a.put('Rating', null); System.assert(a.isSet('Rating')); Map<String,Object> populated = a.getPopulatedFieldsAsMap(); System.assertEquals(2, populated.size()); System.assert(populated.containsKey('Name')); System.assert(populated.containsKey('Rating')); insert a; System.assert(a.isSet('Id')); a.clear(); System.assert(!a.isSet('Name')); System.assert(!a.isSet('Id')); } }"
     },
     {
+      "path": "force-app/main/classes/DescribePicklistFidelityTest.cls",
+      "content": "@isTest private class DescribePicklistFidelityTest { @isTest static void picklistDescribeValues() { Object describe = Account.Rating.getDescribe(); System.assertEquals('Rating', describe.getName()); System.assertEquals('picklist', describe.getType()); List<Object> values = describe.getPicklistValues(); System.assertEquals(3, values.size()); Object hot = values.get(0); System.assertEquals('Hot', hot.getValue()); System.assertEquals('Hot Label', hot.getLabel()); System.assert(hot.isDefaultValue()); System.assert(hot.isActive()); Object cold = values.get(2); System.assertEquals('Cold', cold.getValue()); System.assert(!cold.isDefaultValue()); System.assert(!cold.isActive()); } }"
+    },
+    {
       "path": "force-app/main/classes/DateLiteralFidelityTest.cls",
       "content": "@isTest private class DateLiteralFidelityTest { @isTest static void dateLiteralsFilterRows() { insert new Account(Name = 'Today', RenewalDate__c = Date.today()); Date oldDate = Date.today(); oldDate = oldDate.addDays(-2); insert new Account(Name = 'Old', RenewalDate__c = oldDate); List<Account> todayRows = [SELECT Id FROM Account WHERE RenewalDate__c = TODAY]; System.assertEquals(1, todayRows.size()); List<Account> recentRows = [SELECT Id FROM Account WHERE RenewalDate__c = LAST_N_DAYS:2]; System.assertEquals(2, recentRows.size()); } }"
     }
@@ -98,8 +102,8 @@
       "errors": 0,
       "failed": 0,
       "ok": true,
-      "passed": 9,
-      "total": 9
+      "passed": 10,
+      "total": 10
     }
   }
 }

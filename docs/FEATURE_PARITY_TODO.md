@@ -242,6 +242,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     `getPopulatedFieldsAsMap` with explicit-null field tracking.
 - [ ] Complete schema describe objects, field describes, record type info,
   picklists, relationship metadata, and common describe-heavy code paths.
+  - [x] Load Metadata API picklist values and expose `SObjectField.getDescribe`
+    with common field metadata plus `getPicklistValues` entries.
 - [x] Expand static SOQL parsing/execution with `AND`/`OR`, `IN`/`NOT IN`,
   `LIKE`, comparison operators, `NOT`, and parenthesized conditions.
   - **Limitation**: Apex compiler does not support chained method calls

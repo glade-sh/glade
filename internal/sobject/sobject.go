@@ -100,16 +100,17 @@ type DescribeSObjectResult struct {
 }
 
 type DescribeFieldResult struct {
-	Name                  string            `json:"name"`
-	Type                  storage.FieldType `json:"type"`
-	Label                 string            `json:"label,omitempty"`
-	ReferenceTo           []string          `json:"referenceTo,omitempty"`
-	RelationshipName      string            `json:"relationshipName,omitempty"`
-	ChildRelationshipName string            `json:"childRelationshipName,omitempty"`
-	DeleteConstraint      string            `json:"deleteConstraint,omitempty"`
-	Required              bool              `json:"required,omitempty"`
-	ExternalID            bool              `json:"externalId,omitempty"`
-	Unique                bool              `json:"unique,omitempty"`
+	Name                  string                  `json:"name"`
+	Type                  storage.FieldType       `json:"type"`
+	Label                 string                  `json:"label,omitempty"`
+	ReferenceTo           []string                `json:"referenceTo,omitempty"`
+	RelationshipName      string                  `json:"relationshipName,omitempty"`
+	ChildRelationshipName string                  `json:"childRelationshipName,omitempty"`
+	DeleteConstraint      string                  `json:"deleteConstraint,omitempty"`
+	Required              bool                    `json:"required,omitempty"`
+	ExternalID            bool                    `json:"externalId,omitempty"`
+	Unique                bool                    `json:"unique,omitempty"`
+	PicklistValues        []storage.PicklistValue `json:"picklistValues,omitempty"`
 }
 
 func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
@@ -139,6 +140,7 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 				Required:              field.Required,
 				ExternalID:            field.ExternalID,
 				Unique:                field.Unique,
+				PicklistValues:        storagePicklistValues(field.PicklistValues),
 			}
 			if field.ReferenceTo != "" {
 				describe.Relationships = append(describe.Relationships, storage.Relationship{
@@ -178,6 +180,7 @@ func (d DescribeSObjectResult) Clone() DescribeSObjectResult {
 		out.Fields = make(map[string]DescribeFieldResult, len(d.Fields))
 		for name, field := range d.Fields {
 			field.ReferenceTo = append([]string(nil), field.ReferenceTo...)
+			field.PicklistValues = append([]storage.PicklistValue(nil), field.PicklistValues...)
 			out.Fields[name] = field
 		}
 	}
@@ -206,9 +209,23 @@ func ToObjectDefinition(describe DescribeSObjectResult) storage.ObjectDefinition
 			Unique:           field.Unique,
 			ReferenceTo:      append([]string(nil), field.ReferenceTo...),
 			RelationshipName: field.RelationshipName,
+			PicklistValues:   append([]storage.PicklistValue(nil), field.PicklistValues...),
 		}
 	}
 	return definition
+}
+
+func storagePicklistValues(values []schema.PicklistValue) []storage.PicklistValue {
+	out := make([]storage.PicklistValue, 0, len(values))
+	for _, value := range values {
+		out = append(out, storage.PicklistValue{
+			Value:   value.FullName,
+			Label:   value.Label,
+			Default: value.Default,
+			Active:  value.Active,
+		})
+	}
+	return out
 }
 
 func cloneValues(in map[string]storage.Value) map[string]storage.Value {
@@ -250,8 +267,10 @@ func referenceTargets(raw string) []string {
 
 func storageFieldType(raw string) storage.FieldType {
 	switch raw {
-	case "Text", "TextArea", "LongTextArea", "Email", "Phone", "Url", "Picklist", "MultiselectPicklist":
+	case "Text", "TextArea", "LongTextArea", "Email", "Phone", "Url":
 		return storage.FieldString
+	case "Picklist", "MultiselectPicklist":
+		return storage.FieldPicklist
 	case "Checkbox":
 		return storage.FieldBoolean
 	case "Number", "Currency", "Percent":

@@ -32,14 +32,22 @@ type ObjectDefinition struct {
 }
 
 type Field struct {
-	APIName          string    `json:"apiName"`
-	Type             FieldType `json:"type"`
-	Required         bool      `json:"required,omitempty"`
-	ExternalID       bool      `json:"externalId,omitempty"`
-	Unique           bool      `json:"unique,omitempty"`
-	CaseSensitive    bool      `json:"caseSensitive,omitempty"`
-	ReferenceTo      []string  `json:"referenceTo,omitempty"`
-	RelationshipName string    `json:"relationshipName,omitempty"`
+	APIName          string          `json:"apiName"`
+	Type             FieldType       `json:"type"`
+	Required         bool            `json:"required,omitempty"`
+	ExternalID       bool            `json:"externalId,omitempty"`
+	Unique           bool            `json:"unique,omitempty"`
+	CaseSensitive    bool            `json:"caseSensitive,omitempty"`
+	ReferenceTo      []string        `json:"referenceTo,omitempty"`
+	RelationshipName string          `json:"relationshipName,omitempty"`
+	PicklistValues   []PicklistValue `json:"picklistValues,omitempty"`
+}
+
+type PicklistValue struct {
+	Value   string `json:"value"`
+	Label   string `json:"label,omitempty"`
+	Default bool   `json:"default,omitempty"`
+	Active  bool   `json:"active,omitempty"`
 }
 
 type FieldType string

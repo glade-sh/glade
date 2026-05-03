@@ -34,6 +34,7 @@ func TestBuildDescribeRegistry(t *testing.T) {
 		Fields: []schema.Field{
 			{Name: "Name", Type: "Text", Required: true},
 			{Name: "Account__c", Type: "Lookup", ReferenceTo: "Account", RelationshipName: "Account__r", ChildRelationshipName: "Widgets__r", DeleteConstraint: "Cascade"},
+			{Name: "Rating__c", Type: "Picklist", PicklistValues: []schema.PicklistValue{{FullName: "Hot", Label: "Hot", Default: true, Active: true}}},
 		},
 	}}})
 
@@ -56,8 +57,14 @@ func TestBuildDescribeRegistry(t *testing.T) {
 	if got := describe.Relationships[0].ChildRelationship; got != "Widgets__r" {
 		t.Fatalf("child relationship = %q", got)
 	}
+	if got := describe.Fields["Rating__c"].PicklistValues; len(got) != 1 || got[0].Value != "Hot" || !got[0].Default {
+		t.Fatalf("picklist values = %#v", got)
+	}
 	definition := ToObjectDefinition(describe)
 	if definition.Fields["Account__c"].Type != storage.FieldReference {
 		t.Fatalf("definition = %#v", definition)
+	}
+	if got := definition.Fields["Rating__c"].PicklistValues; len(got) != 1 || got[0].Value != "Hot" {
+		t.Fatalf("definition picklist values = %#v", got)
 	}
 }

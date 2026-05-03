@@ -2733,6 +2733,50 @@ func (vm *VM) schemaGlobalDescribe() Value {
 	return out
 }
 
+func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
+	if vm.Org == nil {
+		return Null, fmt.Errorf("Schema field describe requires org state")
+	}
+	objectName, ok := storage.ResolveObjectName(*vm.Org, objectName)
+	if !ok {
+		return Null, fmt.Errorf("Schema field describe unknown object %s", objectName)
+	}
+	definition := vm.Org.Objects[objectName].Definition
+	fieldName, ok = storage.ResolveFieldName(definition, vm.Org.Namespace, fieldName)
+	if !ok {
+		return Null, fmt.Errorf("Schema field describe unknown field %s.%s", objectName, fieldName)
+	}
+	field := definition.Fields[fieldName]
+	desc := Object("Schema.DescribeFieldResult")
+	desc.Fields["name"] = String(field.APIName)
+	desc.Fields["label"] = String(field.APIName)
+	desc.Fields["type"] = String(string(field.Type))
+	desc.Fields["nillable"] = Bool(!field.Required)
+	desc.Fields["externalId"] = Bool(field.ExternalID)
+	desc.Fields["unique"] = Bool(field.Unique)
+	desc.Fields["relationshipName"] = String(field.RelationshipName)
+	references := make([]Value, 0, len(field.ReferenceTo))
+	for _, target := range field.ReferenceTo {
+		references = append(references, String(target))
+	}
+	desc.Fields["referenceTo"] = List(references...)
+	picklistValues := make([]Value, 0, len(field.PicklistValues))
+	for _, value := range field.PicklistValues {
+		entry := Object("Schema.PicklistEntry")
+		entry.Fields["value"] = String(value.Value)
+		label := value.Label
+		if label == "" {
+			label = value.Value
+		}
+		entry.Fields["label"] = String(label)
+		entry.Fields["default"] = Bool(value.Default)
+		entry.Fields["active"] = Bool(value.Active)
+		picklistValues = append(picklistValues, entry)
+	}
+	desc.Fields["picklistValues"] = List(picklistValues...)
+	return desc, nil
+}
+
 func approxValueSize(value Value) int {
 	switch value.Kind {
 	case ValueNull:
@@ -4688,6 +4732,96 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		}
 	}
 	switch receiver.Type {
+	case "Schema.SObjectField":
+		if method == "getDescribe" {
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectField.getDescribe expects 0 arguments")
+			}
+			objectValue, ok := receiver.Fields["object"]
+			if !ok || objectValue.Kind != ValueString {
+				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectField token missing object")
+			}
+			fieldValue, ok := receiver.Fields["field"]
+			if !ok || fieldValue.Kind != ValueString {
+				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectField token missing field")
+			}
+			describe, err := vm.describeFieldValue(objectValue.Text, fieldValue.Text)
+			if err != nil {
+				return Null, receiver, false, true, err
+			}
+			return describe, receiver, false, true, nil
+		}
+	case "Schema.DescribeFieldResult":
+		switch method {
+		case "getName":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getName expects 0 arguments")
+			}
+			return receiver.Fields["name"], receiver, false, true, nil
+		case "getLabel":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getLabel expects 0 arguments")
+			}
+			return receiver.Fields["label"], receiver, false, true, nil
+		case "getType":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getType expects 0 arguments")
+			}
+			return receiver.Fields["type"], receiver, false, true, nil
+		case "isNillable":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.isNillable expects 0 arguments")
+			}
+			return receiver.Fields["nillable"], receiver, false, true, nil
+		case "isExternalId":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.isExternalId expects 0 arguments")
+			}
+			return receiver.Fields["externalId"], receiver, false, true, nil
+		case "isUnique":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.isUnique expects 0 arguments")
+			}
+			return receiver.Fields["unique"], receiver, false, true, nil
+		case "getReferenceTo":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getReferenceTo expects 0 arguments")
+			}
+			return receiver.Fields["referenceTo"], receiver, false, true, nil
+		case "getRelationshipName":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getRelationshipName expects 0 arguments")
+			}
+			return receiver.Fields["relationshipName"], receiver, false, true, nil
+		case "getPicklistValues":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getPicklistValues expects 0 arguments")
+			}
+			return receiver.Fields["picklistValues"], receiver, false, true, nil
+		}
+	case "Schema.PicklistEntry":
+		switch method {
+		case "getValue":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.PicklistEntry.getValue expects 0 arguments")
+			}
+			return receiver.Fields["value"], receiver, false, true, nil
+		case "getLabel":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.PicklistEntry.getLabel expects 0 arguments")
+			}
+			return receiver.Fields["label"], receiver, false, true, nil
+		case "isDefaultValue":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.PicklistEntry.isDefaultValue expects 0 arguments")
+			}
+			return receiver.Fields["default"], receiver, false, true, nil
+		case "isActive":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.PicklistEntry.isActive expects 0 arguments")
+			}
+			return receiver.Fields["active"], receiver, false, true, nil
+		}
 	case "Date":
 		switch method {
 		case "format", "toString":

@@ -36,7 +36,7 @@ The MVP target is `full-featured aer-parity MVP`. This document lists required c
 ### `sobject.apex`: Apex-integrated SObject construction and field access
 
 - Status: `partial`
-- Gap: Apex now supports schema-backed new Account(Name='Acme'), typed field access, dotted assignment, get/put with previous-value return, isSet, clear, getPopulatedFieldsAsMap including explicit nulls, object-level and field-level addError, hasErrors/getErrors, Id propagation after DML, parent relationship projection access, and VM/storage record conversion. Typed describe APIs and broader SObject system fields remain incomplete.
+- Gap: Apex now supports schema-backed new Account(Name='Acme'), typed field access, dotted assignment, get/put with previous-value return, isSet, clear, getPopulatedFieldsAsMap including explicit nulls, field describe basics with picklist values, object-level and field-level addError, hasErrors/getErrors, Id propagation after DML, parent relationship projection access, and VM/storage record conversion. Record types, permissions, complete typed describe APIs, and broader SObject system fields remain incomplete.
 
 ### `soql.apex`: Static and dynamic SOQL from Apex
 
@@ -101,7 +101,7 @@ The MVP target is `full-featured aer-parity MVP`. This document lists required c
 ### `stdlib.core`: Core System/String/Date/Datetime/JSON/Math APIs
 
 - Status: `partial`
-- Gap: Assertions, debug, collections, selected String methods, Limits counters, Date/Datetime/Time basics, Decimal literals/arithmetic/storage conversion, Math integer helpers, JSON serialize/deserializeUntyped, EncodingUtil, Crypto SHA-256, Schema global describe basics, UserInfo user/profile identity in test context, FeatureManagement user permission-list checks, Messaging, ApexPages, and HttpResponse-shaped callout mocks now exist for the supported VM subset.
+- Gap: Assertions, debug, collections, selected String methods, Limits counters, Date/Datetime/Time basics, Decimal literals/arithmetic/storage conversion, Math integer helpers, JSON serialize/deserializeUntyped, EncodingUtil, Crypto SHA-256, Schema global describe basics, SObject field describe basics with picklist entries, UserInfo user/profile identity in test context, FeatureManagement user permission-list checks, Messaging, ApexPages, and HttpResponse-shaped callout mocks now exist for the supported VM subset.
 
 ### `vm.control-flow`: Control flow and exceptions
 

@@ -23,16 +23,24 @@ type Object struct {
 }
 
 type Field struct {
-	Name                  string `json:"name"`
-	Label                 string `json:"label,omitempty"`
-	Type                  string `json:"type,omitempty"`
-	ReferenceTo           string `json:"referenceTo,omitempty"`
-	RelationshipName      string `json:"relationshipName,omitempty"`
-	ChildRelationshipName string `json:"childRelationshipName,omitempty"`
-	DeleteConstraint      string `json:"deleteConstraint,omitempty"`
-	Required              bool   `json:"required,omitempty"`
-	ExternalID            bool   `json:"externalId,omitempty"`
-	Unique                bool   `json:"unique,omitempty"`
+	Name                  string          `json:"name"`
+	Label                 string          `json:"label,omitempty"`
+	Type                  string          `json:"type,omitempty"`
+	ReferenceTo           string          `json:"referenceTo,omitempty"`
+	RelationshipName      string          `json:"relationshipName,omitempty"`
+	ChildRelationshipName string          `json:"childRelationshipName,omitempty"`
+	DeleteConstraint      string          `json:"deleteConstraint,omitempty"`
+	Required              bool            `json:"required,omitempty"`
+	ExternalID            bool            `json:"externalId,omitempty"`
+	Unique                bool            `json:"unique,omitempty"`
+	PicklistValues        []PicklistValue `json:"picklistValues,omitempty"`
+}
+
+type PicklistValue struct {
+	FullName string `json:"fullName"`
+	Label    string `json:"label,omitempty"`
+	Default  bool   `json:"default,omitempty"`
+	Active   bool   `json:"active,omitempty"`
 }
 
 type customObjectXML struct {
@@ -43,17 +51,33 @@ type customObjectXML struct {
 }
 
 type customFieldXML struct {
-	XMLName               xml.Name `xml:"CustomField"`
-	FullName              string   `xml:"fullName"`
-	Label                 string   `xml:"label"`
-	Type                  string   `xml:"type"`
-	ReferenceTo           string   `xml:"referenceTo"`
-	RelationshipName      string   `xml:"relationshipName"`
-	ChildRelationshipName string   `xml:"childRelationshipName"`
-	DeleteConstraint      string   `xml:"deleteConstraint"`
-	Required              bool     `xml:"required"`
-	ExternalID            bool     `xml:"externalId"`
-	Unique                bool     `xml:"unique"`
+	XMLName               xml.Name    `xml:"CustomField"`
+	FullName              string      `xml:"fullName"`
+	Label                 string      `xml:"label"`
+	Type                  string      `xml:"type"`
+	ReferenceTo           string      `xml:"referenceTo"`
+	RelationshipName      string      `xml:"relationshipName"`
+	ChildRelationshipName string      `xml:"childRelationshipName"`
+	DeleteConstraint      string      `xml:"deleteConstraint"`
+	Required              bool        `xml:"required"`
+	ExternalID            bool        `xml:"externalId"`
+	Unique                bool        `xml:"unique"`
+	ValueSet              valueSetXML `xml:"valueSet"`
+}
+
+type valueSetXML struct {
+	Definition valueSetDefinitionXML `xml:"valueSetDefinition"`
+}
+
+type valueSetDefinitionXML struct {
+	Values []picklistValueXML `xml:"value"`
+}
+
+type picklistValueXML struct {
+	FullName string `xml:"fullName"`
+	Label    string `xml:"label"`
+	Default  bool   `xml:"default"`
+	IsActive *bool  `xml:"isActive"`
 }
 
 func LoadProject(p project.Project) (Schema, error) {
@@ -138,7 +162,24 @@ func loadField(path string) (Field, error) {
 		Required:              raw.Required,
 		ExternalID:            raw.ExternalID,
 		Unique:                raw.Unique,
+		PicklistValues:        picklistValues(raw.ValueSet.Definition.Values),
 	}, nil
+}
+
+func picklistValues(values []picklistValueXML) []PicklistValue {
+	out := make([]PicklistValue, 0, len(values))
+	for _, value := range values {
+		active := true
+		if value.IsActive != nil {
+			active = *value.IsActive
+		}
+		label := value.Label
+		if label == "" {
+			label = value.FullName
+		}
+		out = append(out, PicklistValue{FullName: value.FullName, Label: label, Default: value.Default, Active: active})
+	}
+	return out
 }
 
 func objectNameFromFieldPath(path string) string {
