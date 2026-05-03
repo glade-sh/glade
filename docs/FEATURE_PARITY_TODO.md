@@ -444,10 +444,12 @@ a Salesforce-shaped local API server without silently wrong behavior.
     URL encoding helpers, and MD5/SHA1/SHA-256 digest coverage.
   - **Limitation**: Exact locale, timezone, rounding-mode, charset, and full
     Java-regex parity remain outside the current local subset.
-- [ ] Complete HTTP/callout mock behavior: request/response types,
+- [x] Complete HTTP/callout mock behavior: request/response types,
   `HttpCalloutMock`, callout limits, and test isolation.
   - [x] Add common `HttpRequest`/`HttpResponse` endpoint, method, header,
     timeout, status, and body/blob accessors.
+  - **Limitation**: Local execution remains mock-first; real outbound network
+    callout transport is intentionally not modeled.
 - [ ] Complete `UserInfo`, `FeatureManagement`, `Messaging`, `ApexPages`,
   `URL`, and `PageReference` basics.
 - [ ] Add stable unsupported-feature errors for every unimplemented standard
