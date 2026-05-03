@@ -303,7 +303,7 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Support baseline `TYPEOF` relationship projection for parent lookup
     branches.
   - **Limitation**: Formula-adjacent predicate behavior remains incomplete.
-- [ ] Add SOQL features commonly used by real projects: security enforcement,
+- [x] Add SOQL features commonly used by real projects: security enforcement,
   lock contention behavior, and advanced query row shape fidelity.
   - [x] Validate projected fields for `WITH SECURITY_ENFORCED`, `WITH USER_MODE`,
     and `WITH SYSTEM_MODE` queries and return catchable `QueryException`s for
@@ -312,6 +312,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     queried SObjects with `attributes.type` and `attributes.url`.
   - [x] Return catchable `QueryException`s when `FOR UPDATE` hits an already
     locked local row.
+  - **Limitation**: Security enforcement is local projection validation rather
+    than full CRUD/FLS/sharing enforcement.
 - [x] Wire SQLite planning or indexed execution where needed without changing
   Salesforce-visible behavior.
   - [x] Rebuild runtime index sets from object index definitions and use
