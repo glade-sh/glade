@@ -1151,6 +1151,26 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return Null, fmt.Errorf("Schema.getGlobalDescribe expects 0 arguments")
 		}
 		return vm.schemaGlobalDescribe(), nil
+	case "Schema.describeSObjects":
+		if len(args) != 1 || args[0].Kind != ValueList {
+			return Null, fmt.Errorf("Schema.describeSObjects expects List")
+		}
+		if vm.Org == nil {
+			return Null, fmt.Errorf("Schema.describeSObjects requires org state")
+		}
+		describes := make([]Value, 0, len(args[0].List))
+		for _, item := range args[0].List {
+			objectName, err := vm.schemaDescribeObjectName(item)
+			if err != nil {
+				return Null, err
+			}
+			resolved, ok := storage.ResolveObjectName(*vm.Org, objectName)
+			if !ok {
+				return Null, fmt.Errorf("Schema.describeSObjects unknown object %s", objectName)
+			}
+			describes = append(describes, vm.describeSObjectValue(resolved, vm.Org.Objects[resolved].Definition))
+		}
+		return List(describes...), nil
 	case "FeatureManagement.checkPermission":
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("FeatureManagement.checkPermission expects String")
@@ -3455,6 +3475,20 @@ func (vm *VM) schemaGlobalDescribe() Value {
 	return out
 }
 
+func (vm *VM) schemaDescribeObjectName(value Value) (string, error) {
+	if value.Kind == ValueString {
+		return value.Text, nil
+	}
+	if value.Kind == ValueObject && value.Type == "Schema.SObjectType" {
+		objectValue, ok := value.Fields["object"]
+		if !ok || objectValue.Kind != ValueString {
+			return "", fmt.Errorf("Schema.SObjectType token missing object")
+		}
+		return objectValue.Text, nil
+	}
+	return "", fmt.Errorf("Schema.describeSObjects expects object names or SObjectType tokens")
+}
+
 func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinition) Value {
 	desc := Object("Schema.DescribeSObjectResult")
 	desc.Fields["name"] = String(name)
@@ -5751,6 +5785,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getPicklistValues expects 0 arguments")
 			}
 			return receiver.Fields["picklistValues"], receiver, false, true, nil
+		case "isAccessible", "isCreateable", "isUpdateable":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.%s expects 0 arguments", method)
+			}
+			return Bool(true), receiver, false, true, nil
 		}
 	case "Schema.PicklistEntry":
 		switch method {
@@ -6015,6 +6054,17 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.getChildRelationships expects 0 arguments")
 			}
 			return receiver.Fields["childRelationships"], receiver, false, true, nil
+		case "isAccessible", "isCreateable", "isUpdateable", "isDeletable", "isQueryable", "isSearchable":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.%s expects 0 arguments", method)
+			}
+			return Bool(true), receiver, false, true, nil
+		case "isCustom":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.isCustom expects 0 arguments")
+			}
+			name, _ := receiver.Fields["name"]
+			return Bool(name.Kind == ValueString && strings.HasSuffix(name.Text, "__c")), receiver, false, true, nil
 		}
 	case "Schema.RecordTypeInfo":
 		switch method {

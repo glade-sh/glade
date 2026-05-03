@@ -428,6 +428,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Add basic `Type.forName(...)` and `Type.newInstance()` factory support.
   - [x] Add `Database.setSavepoint()` and `Database.rollback(...)` for local
     org-state snapshots.
+  - [x] Add `Schema.describeSObjects(...)` basics plus local describe access
+    booleans for SObjects and fields.
 - [ ] Complete common `String`, `Pattern`, `Matcher`, `Date`, `Datetime`,
   `Time`, `Math`, `Decimal`, `EncodingUtil`, and `Crypto` behavior.
 - [ ] Complete HTTP/callout mock behavior: request/response types,
