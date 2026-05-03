@@ -332,6 +332,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Preserve bulk partial-success result alignment when before triggers
     filter failed rows before DML, including after-trigger execution for
     successful rows.
+  - [x] Enforce a deterministic trigger recursion depth guard with catchable
+    `DmlException` rollback.
 - [ ] Implement `addError` behavior on SObjects and fields.
   - [x] Support object-level `SObject.addError`, `hasErrors`, and `getErrors`
     in before-trigger DML with row-level `SaveResult` error shaping and
@@ -344,6 +346,7 @@ a Salesforce-shaped local API server without silently wrong behavior.
   all-or-none failures, partial success, recursion, and bulk batches.
   - [x] Add compatibility fixture coverage for failed-first bulk insert partial
     success, before-trigger mutation, and after-trigger execution.
+  - [x] Add compatibility fixture coverage for recursive trigger limit rollback.
 
 ## 5. Governor Limits And Platform APIs
 

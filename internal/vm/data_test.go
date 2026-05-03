@@ -906,6 +906,48 @@ System.assertEquals(2, markers.size());
 	}
 }
 
+func TestExecTriggerRecursionLimit(t *testing.T) {
+	triggerProgram, err := CompileAnonymous(`
+for (Account a : Trigger.new) {
+	insert new Account(Name = 'Recursive');
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Boolean caught = false;
+try {
+	insert new Account(Name = 'Root');
+} catch (DmlException e) {
+	caught = true;
+	String message = e.getMessage();
+	System.assert(message.contains('maximum trigger depth'));
+}
+System.assert(caught);
+List<Account> rows = [SELECT Id FROM Account];
+System.assertEquals(0, rows.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "AccountRecursiveBeforeInsert",
+		Object:    "Account",
+		Timing:    triggerTimingBefore,
+		Operation: "insert",
+		Program:   triggerProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecMergeInvokesUpdateAndDeleteTriggers(t *testing.T) {
 	beforeUpdate, err := CompileAnonymous(`
 System.assert(Trigger.isExecuting);

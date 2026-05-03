@@ -47,7 +47,10 @@ type VM struct {
 	activeExceptions []activeException
 	currentStatement callFrame
 	hasStatement     bool
+	triggerDepth     int
 }
+
+const maxTriggerDepth = 16
 
 type Result struct {
 	Debug           []string         `json:"debug,omitempty"`
@@ -2610,11 +2613,24 @@ func (vm *VM) runTriggers(timing, op string, records, oldRecords []storage.Recor
 		return nil, nil
 	}
 	object := records[0].Object
-	failures := make([]dml.Result, len(records))
+	triggers := make([]Trigger, 0, len(vm.Triggers[object]))
 	for _, trigger := range vm.Triggers[object] {
-		if trigger.Timing != timing || trigger.Operation != op {
-			continue
+		if trigger.Timing == timing && trigger.Operation == op {
+			triggers = append(triggers, trigger)
 		}
+	}
+	if len(triggers) == 0 {
+		return nil, nil
+	}
+	if vm.triggerDepth >= maxTriggerDepth {
+		return nil, newExceptionError("DmlException", fmt.Sprintf("maximum trigger depth exceeded (%d)", maxTriggerDepth))
+	}
+	vm.triggerDepth++
+	defer func() {
+		vm.triggerDepth--
+	}()
+	failures := make([]dml.Result, len(records))
+	for _, trigger := range triggers {
 		triggerFailures, err := vm.runTrigger(trigger, records, oldRecords, result)
 		if err != nil {
 			return nil, err

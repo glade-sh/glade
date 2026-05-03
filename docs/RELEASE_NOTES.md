@@ -106,6 +106,8 @@ Release engineering:
   `Trigger.oldMap` coverage for update and delete triggers.
 - Preserved DML result alignment for bulk partial-success trigger flows where
   before-trigger `addError` filters failed rows before after triggers run.
+- Added deterministic trigger recursion guard rollback with catchable
+  `DmlException`.
 - Preserved source ranges through parser syntax diagnostics, compiled project
   method/trigger bodies, VM statement traces, runtime/test failure stacks, DAP
   stack frames, and profile source ranges.
