@@ -236,7 +236,7 @@ a Salesforce-shaped local API server without silently wrong behavior.
 
 ## 4. SObjects, SOQL, DML, And Triggers
 
-- [ ] Complete typed SObject field access, dynamic `get`/`put`, absent-field
+- [x] Complete typed SObject field access, dynamic `get`/`put`, absent-field
   behavior, explicit null behavior, and system fields.
   - [x] Support `SObject.put` previous-value returns, `isSet`, `clear`, and
     `getPopulatedFieldsAsMap` with explicit-null field tracking.
