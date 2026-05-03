@@ -412,8 +412,11 @@ a Salesforce-shaped local API server without silently wrong behavior.
     future calls, queueable jobs, and email invocations with max values.
   - [x] Expose supported public `Limits` getters for batch and scheduled jobs
     with max values.
-- [ ] Add configurable strict/permissive limit modes for CLI, tests, server,
+- [x] Add configurable strict/permissive limit modes for CLI, tests, server,
   and compatibility fixtures.
+  - [x] Wire `--limit-mode` through `oaer exec`, `oaer test`, and `oaer server`
+    Tooling `executeAnonymous`.
+  - [x] Add `limitMode` support for compatibility exec/test fixtures.
 - [ ] Complete `System`, `Test`, `Database`, `Schema`, `Limits`, and `JSON`
   APIs used by enterprise tests.
 - [ ] Complete common `String`, `Pattern`, `Matcher`, `Date`, `Datetime`,

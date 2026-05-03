@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/open-aer/oaer/internal/storage"
+	"github.com/open-aer/oaer/internal/vm"
 )
 
 func TestSObjectCRUDAndQuery(t *testing.T) {
@@ -170,6 +171,33 @@ func TestToolingExecuteAnonymousAndCompositeSObjects(t *testing.T) {
 }`)))
 	if composite.Code != http.StatusOK || !bytes.Contains(composite.Body.Bytes(), []byte(`"success":true`)) {
 		t.Fatalf("composite status = %d body=%s", composite.Code, composite.Body.String())
+	}
+}
+
+func TestToolingExecuteAnonymousUsesServerLimitMode(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+	handler.LimitMode = vm.LimitModeStrict
+	handler.LimitCaps = vm.LimitCaps{
+		Queries:       100,
+		QueryRows:     50000,
+		DMLStatements: 150,
+		DMLRows:       10000,
+		HeapSize:      6000000,
+		CPUTimeMS:     0,
+		FutureCalls:   50,
+		QueueableJobs: 50,
+		BatchJobs:     5,
+		ScheduledJobs: 100,
+		AsyncJobs:     50,
+		EmailInvokes:  10,
+		Callouts:      100,
+	}
+
+	exec := httptest.NewRecorder()
+	handler.ServeHTTP(exec, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/tooling/executeAnonymous", strings.NewReader(`{"anonymousBody":"System.debug('limited');"}`)))
+	if exec.Code != http.StatusOK || !bytes.Contains(exec.Body.Bytes(), []byte(`"success":false`)) || !bytes.Contains(exec.Body.Bytes(), []byte(`System.LimitException`)) {
+		t.Fatalf("executeAnonymous status = %d body=%s", exec.Code, exec.Body.String())
 	}
 }
 

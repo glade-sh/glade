@@ -105,6 +105,8 @@ Release engineering:
 - Add deterministic SOQL and DML row-work costs to CPU limit accounting.
 - Added `Limits.getBatchJobs`, `getLimitBatchJobs`, `getScheduledJobs`, and
   `getLimitScheduledJobs`.
+- Added strict/permissive limit-mode selection to `oaer server` Tooling
+  `executeAnonymous` and compatibility exec/test fixtures.
 - Added SOQL `ALL ROWS` support for querying soft-deleted records.
 - Added SOQL `WITH SECURITY_ENFORCED`, `WITH USER_MODE`, and
   `WITH SYSTEM_MODE` parsing as local security-mode markers.

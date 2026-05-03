@@ -102,7 +102,15 @@ func runExecFixture(fixture Fixture) (RunResult, error) {
 		return compareError(fixture, err)
 	}
 	var stdout bytes.Buffer
-	result, err := vm.Execute(program, &stdout)
+	machine := vm.New(&stdout)
+	if fixture.Command.LimitMode != "" {
+		mode, err := fixtureLimitMode(fixture.Command.LimitMode)
+		if err != nil {
+			return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+		}
+		machine.SetLimitMode(mode)
+	}
+	result, err := machine.Execute(program)
 	if err != nil {
 		return compareError(fixture, err)
 	}
@@ -136,7 +144,15 @@ func runTestFixture(fixture Fixture) (RunResult, error) {
 	if err != nil {
 		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
 	}
-	run := apextest.Run(typesys.Build(proj, sch), apextest.Options{})
+	opts := apextest.Options{}
+	if fixture.Command.LimitMode != "" {
+		mode, err := fixtureLimitMode(fixture.Command.LimitMode)
+		if err != nil {
+			return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+		}
+		opts.LimitMode = mode
+	}
+	run := apextest.Run(typesys.Build(proj, sch), opts)
 	summary := run.Summary()
 	payload := map[string]any{
 		"ok":     summary.Total > 0 && summary.Failed == 0 && summary.Errors == 0,
@@ -146,6 +162,17 @@ func runTestFixture(fixture Fixture) (RunResult, error) {
 		"errors": summary.Errors,
 	}
 	return compareResult(fixture, payload, "")
+}
+
+func fixtureLimitMode(raw string) (vm.LimitMode, error) {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "", "permissive":
+		return vm.LimitModePermissive, nil
+	case "strict":
+		return vm.LimitModeStrict, nil
+	default:
+		return "", fmt.Errorf("unsupported limit mode %q", raw)
+	}
 }
 
 func runDBFixture(fixture Fixture) (RunResult, error) {

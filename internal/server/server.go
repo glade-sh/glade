@@ -18,6 +18,8 @@ type Server struct {
 	Store interface {
 		Save(storage.OrgState) error
 	}
+	LimitMode vm.LimitMode
+	LimitCaps vm.LimitCaps
 }
 
 func New(org *storage.OrgState) *Server {
@@ -278,6 +280,12 @@ func (s *Server) handleExecuteAnonymous(w http.ResponseWriter, r *http.Request) 
 	}
 	machine := vm.New(nil)
 	machine.SetOrg(s.Org)
+	if s.LimitMode != "" {
+		machine.SetLimitMode(s.LimitMode)
+	}
+	if s.LimitCaps != (vm.LimitCaps{}) {
+		machine.SetLimitCaps(s.LimitCaps)
+	}
 	result, err := machine.Execute(program)
 	if err != nil {
 		writeJSON(w, http.StatusOK, executeAnonymousFailure(true, err.Error(), result.Debug))

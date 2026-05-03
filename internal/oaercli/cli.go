@@ -732,7 +732,7 @@ func writeJUnitFile(path string, result testreport.Run) error {
 }
 
 func parseLimitMode(raw string) (vm.LimitMode, error) {
-	switch strings.ToLower(raw) {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
 	case "", "permissive":
 		return vm.LimitModePermissive, nil
 	case "strict":
@@ -824,6 +824,7 @@ func runServer(ctx context.Context, args []string, w io.Writer) error {
 	addr := "127.0.0.1:8080"
 	dbPath := ""
 	root := "."
+	limitMode := vm.LimitMode("")
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--addr":
@@ -844,6 +845,16 @@ func runServer(ctx context.Context, args []string, w io.Writer) error {
 			}
 			root = args[i+1]
 			i++
+		case "--limit-mode":
+			if i+1 >= len(args) {
+				return errors.New("--limit-mode requires a value")
+			}
+			mode, err := parseLimitMode(args[i+1])
+			if err != nil {
+				return err
+			}
+			limitMode = mode
+			i++
 		default:
 			return fmt.Errorf("unknown flag %q", args[i])
 		}
@@ -861,6 +872,11 @@ func runServer(ctx context.Context, args []string, w io.Writer) error {
 	} else {
 		org = storageBaseline()
 		handler = server.New(&org)
+	}
+	if limitMode != "" {
+		if srv, ok := handler.(*server.Server); ok {
+			srv.LimitMode = limitMode
+		}
 	}
 	fmt.Fprintf(w, "oaer server: %s\n", server.URL(addr))
 	return http.ListenAndServe(addr, handler)

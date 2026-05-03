@@ -39,8 +39,9 @@ type RecordLocator struct {
 }
 
 type Invocation struct {
-	Kind string   `json:"kind"`
-	Args []string `json:"args,omitempty"`
+	Kind      string   `json:"kind"`
+	Args      []string `json:"args,omitempty"`
+	LimitMode string   `json:"limitMode,omitempty"`
 }
 
 type ExpectedBehavior struct {

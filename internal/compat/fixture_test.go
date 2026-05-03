@@ -12,7 +12,7 @@ func TestFixtureJSONRoundTrip(t *testing.T) {
 			Path:    "classes/Hello.cls",
 			Content: "public class Hello {}",
 		}},
-		Command: Invocation{Kind: "parse", Args: []string{"classes/Hello.cls"}},
+		Command: Invocation{Kind: "parse", Args: []string{"classes/Hello.cls"}, LimitMode: "strict"},
 		Expected: ExpectedBehavior{
 			Result: json.RawMessage(`{"ok":true}`),
 		},
@@ -27,8 +27,27 @@ func TestFixtureJSONRoundTrip(t *testing.T) {
 	if err := json.Unmarshal(data, &out); err != nil {
 		t.Fatal(err)
 	}
-	if out.Name != in.Name || out.Command.Kind != "parse" {
+	if out.Name != in.Name || out.Command.Kind != "parse" || out.Command.LimitMode != "strict" {
 		t.Fatalf("unexpected fixture after round trip: %#v", out)
+	}
+}
+
+func TestRunExecFixtureWithLimitMode(t *testing.T) {
+	fixture := Fixture{
+		Name:    "exec-strict-smoke",
+		Source:  []SourceFile{{Path: "anonymous.apex", Content: "System.debug('hello');"}},
+		Command: Invocation{Kind: "exec", Args: []string{"System.debug('hello');"}, LimitMode: "strict"},
+		Expected: ExpectedBehavior{
+			Stdout: "hello\n",
+			Result: json.RawMessage(`{"debug":["hello"],"ok":true}`),
+		},
+	}
+	result, err := Run(fixture)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.OK {
+		t.Fatalf("result = %#v", result)
 	}
 }
 
