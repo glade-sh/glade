@@ -234,6 +234,34 @@ Account decoded = JSON.deserializeStrict('{"Name":"Acme","NoSuchField__c":"x"}',
 	}
 }
 
+func TestExecCommonTestPlatformAPIs(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assert(Test.isRunningTest());
+System.assertEquals('01s000000000001', Test.getStandardPricebookId());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStandardPricebookIdRequiresTestContext(t *testing.T) {
+	program, err := CompileAnonymous(`
+String pricebookId = Test.getStandardPricebookId();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), "only available in test context") {
+		t.Fatalf("err = %v", err)
+	}
+}
+
 func TestExecStartStopRestoresOuterLimitWindow(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account beforeStart = new Account(Name = 'Before');

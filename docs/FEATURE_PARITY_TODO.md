@@ -421,6 +421,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
   APIs used by enterprise tests.
   - [x] Add common JSON overloads for `serialize(value, suppressApexObjectNulls)`,
     `serializePretty`, and `deserializeStrict`.
+  - [x] Add common `Test.isRunningTest()` and deterministic
+    `Test.getStandardPricebookId()` support.
 - [ ] Complete common `String`, `Pattern`, `Matcher`, `Date`, `Datetime`,
   `Time`, `Math`, `Decimal`, `EncodingUtil`, and `Crypto` behavior.
 - [ ] Complete HTTP/callout mock behavior: request/response types,

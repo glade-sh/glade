@@ -957,11 +957,19 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
 		return platformScalar("Datetime", vm.fakeNow.Format(time.RFC3339)), nil
-	case "System.isRunningTest":
+	case "System.isRunningTest", "Test.isRunningTest":
 		if len(args) != 0 {
-			return Null, fmt.Errorf("System.isRunningTest expects 0 arguments")
+			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
 		return Bool(vm.testContext != nil), nil
+	case "Test.getStandardPricebookId":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Test.getStandardPricebookId expects 0 arguments")
+		}
+		if vm.testContext == nil {
+			return Null, fmt.Errorf("Test.getStandardPricebookId is only available in test context")
+		}
+		return String("01s000000000001"), nil
 	case "Time.newInstance":
 		if len(args) < 3 || len(args) > 4 {
 			return Null, fmt.Errorf("Time.newInstance expects hour, minute, second[, millisecond]")
