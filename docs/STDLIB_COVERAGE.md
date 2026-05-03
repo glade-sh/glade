@@ -226,6 +226,8 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | String | `String.getLevenshteinDistance` | `supported` | Rune-based edit distance. |
 | String | `String.hashCode` | `supported` | Java-compatible UTF-16 code-unit string hash for local values. |
 | String | `String.indexOf` | `supported` | UTF-8 byte index behavior from Go strings. |
+| String | `String.indexOfAny` | `supported` | Returns the first rune index whose character appears in the search set. |
+| String | `String.indexOfAnyBut` | `supported` | Returns the first rune index whose character is outside the search set. |
 | String | `String.isAllLowerCase` | `supported` | All letters lowercase; non-letters ignored. |
 | String | `String.isAllUpperCase` | `supported` | All letters uppercase; non-letters ignored. |
 | String | `String.isAlpha` | `supported` | Unicode letters. |
@@ -240,15 +242,30 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | String | `String.isWhitespace` | `supported` | Unicode whitespace; empty string is true. |
 | String | `String.join` | `supported` | List values and separator. |
 | String | `String.lastIndexOf` | `supported` | UTF-8 byte index behavior from Go strings. |
+| String | `String.lastIndexOfAny` | `supported` | Returns the last rune index whose character appears in the search set. |
+| String | `String.lastOrdinalIndexOf` | `supported` | Finds the nth occurrence from the end using rune indexes. |
 | String | `String.length` | `supported` | Counts runes. |
+| String | `String.ordinalIndexOf` | `supported` | Finds the nth occurrence from the start using rune indexes. |
+| String | `String.overlay` | `supported` | Overlays text between clamped rune indexes. |
+| String | `String.removeIgnoreCase` | `supported` | Literal non-overlapping removal with rune-wise case folding. |
 | String | `String.replace` | `supported` | Literal replacement. |
 | String | `String.replaceAll` | `partial` | Go regexp-backed replacement. |
 | String | `String.replaceFirst` | `partial` | Go regexp-backed first replacement. |
+| String | `String.replaceIgnoreCase` | `supported` | Literal non-overlapping replacement with rune-wise case folding. |
+| String | `String.replaceOnce` | `supported` | First literal replacement only. |
+| String | `String.rotate` | `supported` | Rune-based rotation; positive shifts rotate right. |
 | String | `String.split` | `partial` | Go regexp-backed split with Apex limit shape. |
 | String | `String.splitByCharacterType` | `supported` | Splits on coarse Unicode upper/lower/digit/space/other groups. |
 | String | `String.splitByCharacterTypeCamelCase` | `supported` | Splits character types with camel-case upper-to-lower adjustment. |
 | String | `String.startsWith` | `supported` | UTF-8 string prefix. |
+| String | `String.strip` | `supported` | Strips Unicode whitespace or a supplied rune set from both ends. |
+| String | `String.stripAll` | `supported` | Strips each string in a list with optional strip-character set. |
+| String | `String.stripEnd` | `supported` | Strips Unicode whitespace or a supplied rune set from the end. |
+| String | `String.stripStart` | `supported` | Strips Unicode whitespace or a supplied rune set from the start. |
+| String | `String.stripToEmpty` | `supported` | Strips whitespace and returns an empty string for all-blank values. |
+| String | `String.stripToNull` | `supported` | Strips whitespace and returns null for all-blank values. |
 | String | `String.substring` | `supported` | Rune-indexed substring. |
+| String | `String.swapCase` | `supported` | Unicode upper/lower rune case swap. |
 | String | `String.toLowerCase` | `supported` | Go Unicode lowercasing. |
 | String | `String.toUpperCase` | `supported` | Go Unicode uppercasing. |
 | String | `String.trim` | `supported` | Unicode whitespace trim. |

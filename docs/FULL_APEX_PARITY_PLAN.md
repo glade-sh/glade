@@ -139,7 +139,9 @@ Current progress:
   Java, EcmaScript, Unicode, and single-quote escaping/unescaping helpers;
   `{0}`-style `String.format`; abbreviation; common prefix and difference
   helpers; Levenshtein distance; rune/code-point and char-array helpers; ASCII
-  printable checks; and split-by-character-type helpers.
+  printable checks; split-by-character-type helpers; index-of-any and
+  ordinal-index helpers; overlay, rotate, swapCase, strip variants; static
+  `stripAll`; and additional literal remove/replace edge helpers.
 - Fixtures:
   - `docs/fixtures/core-collection-stdlib.json`
   - `docs/fixtures/core-string-stdlib.json`
@@ -163,8 +165,8 @@ Remaining cuts:
 
 2. String completion
    - Remaining StringUtils-style methods not yet pinned by owned fixtures:
-     index-of-any/index-of-any-but, overlay, rotate, swapCase, strip variants,
-     ordinal index helpers, and additional remove/replace edge cases.
+     additional remove/replace overloads and null-heavy edge cases beyond the
+     deterministic literal helper slice now covered.
    - Version-specific XML 1.0/1.1 validity, full HTML3/HTML4 named entity
      coverage, full Java/EcmaScript parity, and MessageFormat quoting remain
      partial until public behavior is pinned.
