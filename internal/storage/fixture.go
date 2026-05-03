@@ -34,6 +34,11 @@ type FixtureRecord struct {
 	ExplicitNulls []string          `json:"explicitNulls,omitempty"`
 }
 
+type fixtureAlias struct {
+	Object string
+	ID     ID
+}
+
 func NewFixture() Fixture {
 	return Fixture{Version: FixtureVersion}
 }
@@ -119,10 +124,11 @@ func ApplyFixture(org *OrgState, fixture Fixture) error {
 	if fixture.Org.Namespace != "" {
 		org.Namespace = fixture.Org.Namespace
 	}
-	aliases := make(map[string]ID)
+	aliases := make(map[string]fixtureAlias)
+	assignedIDs := make([][]ID, len(fixture.Objects))
 	generator := NewIDGenerator(prefixesForOrg(*org))
 	generator.Sequences = copySequences(org.IDSequences)
-	for _, objectFixture := range fixture.Objects {
+	for objectIndex, objectFixture := range fixture.Objects {
 		object, ok := org.Objects[objectFixture.Name]
 		if !ok {
 			object = ObjectState{
@@ -137,8 +143,10 @@ func ApplyFixture(org *OrgState, fixture Fixture) error {
 		}
 		if object.Records == nil {
 			object.Records = make(map[ID]Record)
+			org.Objects[objectFixture.Name] = object
 		}
-		for _, fixtureRecord := range objectFixture.Records {
+		assignedIDs[objectIndex] = make([]ID, len(objectFixture.Records))
+		for i, fixtureRecord := range objectFixture.Records {
 			id := fixtureRecord.ID
 			if id == "" {
 				next, err := generator.Next(objectFixture.Name)
@@ -150,33 +158,26 @@ func ApplyFixture(org *OrgState, fixture Fixture) error {
 			if err := ValidateID(id); err != nil {
 				return err
 			}
+			assignedIDs[objectIndex][i] = id
 			if fixtureRecord.Alias != "" {
-				aliases[fixtureRecord.Alias] = id
-				aliases[objectFixture.Name+"."+fixtureRecord.Alias] = id
+				entry := fixtureAlias{Object: objectFixture.Name, ID: id}
+				if _, ok := aliases[fixtureRecord.Alias]; ok {
+					aliases[fixtureRecord.Alias] = fixtureAlias{Object: "", ID: ""}
+				} else {
+					aliases[fixtureRecord.Alias] = entry
+				}
+				aliases[objectFixture.Name+"."+fixtureRecord.Alias] = entry
 			}
 		}
 	}
-	for _, objectFixture := range fixture.Objects {
+	for objectIndex, objectFixture := range fixture.Objects {
 		object := org.Objects[objectFixture.Name]
-		for _, fixtureRecord := range objectFixture.Records {
+		for i, fixtureRecord := range objectFixture.Records {
 			record := Record{
-				ID:            fixtureRecord.ID,
+				ID:            assignedIDs[objectIndex][i],
 				Object:        objectFixture.Name,
 				Fields:        cloneValues(fixtureRecord.Fields),
 				ExplicitNulls: make(map[string]bool),
-			}
-			if record.ID == "" {
-				record.ID = aliases[fixtureRecord.Alias]
-				if record.ID == "" {
-					record.ID = aliases[objectFixture.Name+"."+fixtureRecord.Alias]
-				}
-			}
-			if record.ID == "" {
-				next, err := generator.Next(objectFixture.Name)
-				if err != nil {
-					return err
-				}
-				record.ID = next
 			}
 			for _, field := range fixtureRecord.ExplicitNulls {
 				record.ExplicitNulls[field] = true
@@ -186,16 +187,19 @@ func ApplyFixture(org *OrgState, fixture Fixture) error {
 				if record.Fields == nil {
 					record.Fields = make(map[string]Value)
 				}
-				id, ok := aliases[alias]
-				if !ok && strings.Contains(alias, ".") {
-					id = aliases[alias]
-					ok = id != ""
+				entry, err := resolveFixtureAlias(aliases, alias, objectFixture.Name, field)
+				if err != nil {
+					return err
 				}
+				fieldName, ok := ResolveFieldName(object.Definition, org.Namespace, field)
 				if !ok {
-					return fmt.Errorf("storage: unknown fixture alias %q for %s.%s", alias, objectFixture.Name, field)
+					fieldName = field
 				}
-				record.Fields[field] = IDValue(id)
-				delete(record.ExplicitNulls, field)
+				if err := validateFixtureReference(*org, objectFixture.Name, object.Definition, fieldName, entry); err != nil {
+					return err
+				}
+				record.Fields[fieldName] = IDValue(entry.ID)
+				delete(record.ExplicitNulls, fieldName)
 			}
 			object.Records[record.ID] = record.Clone()
 		}
@@ -208,6 +212,43 @@ func ApplyFixture(org *OrgState, fixture Fixture) error {
 	}
 	org.IDSequences = copySequences(generator.Sequences)
 	return nil
+}
+
+func resolveFixtureAlias(aliases map[string]fixtureAlias, alias, objectName, field string) (fixtureAlias, error) {
+	entry, ok := aliases[alias]
+	if !ok {
+		return fixtureAlias{}, fmt.Errorf("storage: unknown fixture alias %q for %s.%s", alias, objectName, field)
+	}
+	if entry.ID == "" {
+		return fixtureAlias{}, fmt.Errorf("storage: ambiguous fixture alias %q for %s.%s; qualify as Object.alias", alias, objectName, field)
+	}
+	return entry, nil
+}
+
+func validateFixtureReference(org OrgState, objectName string, definition ObjectDefinition, fieldName string, alias fixtureAlias) error {
+	field, ok := definition.Fields[fieldName]
+	if !ok || field.Type == FieldAny {
+		return nil
+	}
+	if field.Type != FieldReference {
+		return fmt.Errorf("storage: %s.%s is %s, not reference", objectName, fieldName, field.Type)
+	}
+	if len(field.ReferenceTo) == 0 || containsString(field.ReferenceTo, alias.Object) {
+		return nil
+	}
+	if resolved, ok := ResolveObjectName(org, alias.Object); ok && containsString(field.ReferenceTo, resolved) {
+		return nil
+	}
+	return fmt.Errorf("storage: fixture alias %q cannot populate %s.%s; expected %s", alias.Object, objectName, fieldName, strings.Join(field.ReferenceTo, ", "))
+}
+
+func containsString(values []string, want string) bool {
+	for _, value := range values {
+		if value == want {
+			return true
+		}
+	}
+	return false
 }
 
 func EnsureDeterministicPlatformData(org *OrgState) {

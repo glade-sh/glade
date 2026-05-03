@@ -30,6 +30,9 @@ Release engineering:
   composite, and Tooling executeAnonymous requests commit cloned org state only
   after successful execution and persistence, with serialized request handling
   to avoid concurrent lost updates.
+- Completed fixture alias resolution with object-qualified aliases,
+  relationship target validation, and ambiguity checks for relationship-heavy
+  seed data.
 - Added `check` compatibility fixture execution and an enterprise-style
   multi-class fixture covering parse/index/check behavior.
 - Added parser diagnostic-count fixtures plus type-index and sema panic recovery

@@ -487,8 +487,11 @@ a Salesforce-shaped local API server without silently wrong behavior.
     REST mutations on persistence failures.
   - [x] Serialize server request handling to prevent concurrent clone/commit
     lost updates.
-- [ ] Complete fixture alias resolution for polymorphic and relationship-heavy
+- [x] Complete fixture alias resolution for polymorphic and relationship-heavy
   data.
+  - [x] Track fixture aliases with object type and generated ID for every record.
+  - [x] Support qualified `Object.alias` refs and reject ambiguous short aliases.
+  - [x] Validate `fieldRefs` against reference field target metadata.
 - [ ] Expand deterministic platform data for users, profiles, roles,
   permission sets, permission assignments, record types, and org settings.
 - [ ] Add fixture reset endpoints that can reset data, users, platform state,
