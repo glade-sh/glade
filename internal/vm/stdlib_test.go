@@ -250,6 +250,41 @@ System.assertEquals(3, camel.size());
 System.assertEquals('HTTP', camel.get(0));
 System.assertEquals('Server', camel.get(1));
 System.assertEquals('42', camel.get(2));
+String edge = 'abΩcdΩef';
+System.assertEquals(1, edge.indexOfAny('bΩ'));
+System.assertEquals(2, edge.indexOfAny('Ω'));
+System.assertEquals(7, edge.lastIndexOfAny('Ωf'));
+System.assertEquals(4, edge.indexOfAnyBut('abΩc'));
+String repeated = 'one fish two fish red fish';
+System.assertEquals(13, repeated.ordinalIndexOf('fish', 2));
+System.assertEquals(9, repeated.lastOrdinalIndexOf('two', 1));
+System.assertEquals(-1, repeated.ordinalIndexOf('fish', 0));
+String overlaySource = 'abcdef';
+System.assertEquals('abZZef', overlaySource.overlay('ZZ', 2, 4));
+System.assertEquals('XXabcdef', overlaySource.overlay('XX', -2, 0));
+System.assertEquals('cdefab', overlaySource.rotate(-2));
+System.assertEquals('efabcd', overlaySource.rotate(2));
+String mixed = 'The Ω42';
+System.assertEquals('tHE ω42', mixed.swapCase());
+String stripSource = '  abc  ';
+System.assertEquals('abc', stripSource.strip());
+System.assertEquals('abc  ', stripSource.stripStart());
+System.assertEquals('  abc', stripSource.stripEnd());
+String blankStrip = '   ';
+System.assertEquals(null, blankStrip.stripToNull());
+System.assertEquals('', blankStrip.stripToEmpty());
+String yxy = 'xyabczy';
+System.assertEquals('abc', yxy.strip('xyz'));
+List<String> stripItems = new List<String>();
+stripItems.add('  one  ');
+stripItems.add('  two');
+List<String> strippedItems = String.stripAll(stripItems);
+System.assertEquals('one', strippedItems.get(0));
+System.assertEquals('two', strippedItems.get(1));
+String caseSource = 'Force FORCE force';
+System.assertEquals('Force force', caseSource.replaceOnce('FORCE ', ''));
+System.assertEquals('Cloud Cloud Cloud', caseSource.replaceIgnoreCase('force', 'Cloud'));
+System.assertEquals('  ', caseSource.removeIgnoreCase('force'));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -271,6 +306,13 @@ func TestStringStdlibCompletionRejectsBadArguments(t *testing.T) {
 		{method: "codePointBefore", args: []Value{Int(0)}},
 		{method: "codePointCount", args: []Value{Int(1), Int(0)}},
 		{method: "splitByCharacterType", args: []Value{String("x")}},
+		{method: "overlay", args: []Value{String("x"), Int(0)}},
+		{method: "rotate", args: []Value{String("1")}},
+		{method: "swapCase", args: []Value{String("x")}},
+		{method: "strip", args: []Value{Int(1)}},
+		{method: "stripToNull", args: []Value{String("x")}},
+		{method: "stripToEmpty", args: []Value{String("x")}},
+		{method: "ordinalIndexOf", args: []Value{String("a")}},
 	}
 	for _, tc := range tests {
 		if _, handled, err := callStringMember(String("abc"), tc.method, tc.args); !handled || err == nil {
@@ -282,6 +324,9 @@ func TestStringStdlibCompletionRejectsBadArguments(t *testing.T) {
 	}
 	if _, err := stringStatic("String.fromCharArray", []Value{List(String("x"))}); err == nil {
 		t.Fatal("String.fromCharArray expected bad argument error")
+	}
+	if _, err := stringStatic("String.stripAll", []Value{List(Int(1))}); err == nil {
+		t.Fatal("String.stripAll expected bad argument error")
 	}
 	if _, _, err := callStringMember(String(`\u00ZZ`), "unescapeUnicode", nil); err == nil {
 		t.Fatal("String.unescapeUnicode expected bad escape error")

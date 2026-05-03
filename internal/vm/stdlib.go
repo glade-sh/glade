@@ -156,6 +156,24 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 			return Null, true, err
 		}
 		return Bool(!stringContainsAny(receiver.Text, chars)), true, nil
+	case "indexOfAny":
+		chars, err := stringArg("String.indexOfAny", args)
+		if err != nil {
+			return Null, true, err
+		}
+		return Int(int64(stringIndexOfAny(receiver.Text, chars))), true, nil
+	case "indexOfAnyBut":
+		chars, err := stringArg("String.indexOfAnyBut", args)
+		if err != nil {
+			return Null, true, err
+		}
+		return Int(int64(stringIndexOfAnyBut(receiver.Text, chars))), true, nil
+	case "lastIndexOfAny":
+		chars, err := stringArg("String.lastIndexOfAny", args)
+		if err != nil {
+			return Null, true, err
+		}
+		return Int(int64(stringLastIndexOfAny(receiver.Text, chars))), true, nil
 	case "containsWhitespace":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("String.containsWhitespace expects 0 arguments")
@@ -300,11 +318,33 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 			return Null, true, err
 		}
 		return Int(int64(strings.LastIndex(receiver.Text, needle))), true, nil
+	case "ordinalIndexOf":
+		needle, ordinal, err := stringStringIntArgs("String.ordinalIndexOf", args)
+		if err != nil {
+			return Null, true, err
+		}
+		return Int(int64(stringOrdinalIndexOf(receiver.Text, needle, ordinal, false))), true, nil
+	case "lastOrdinalIndexOf":
+		needle, ordinal, err := stringStringIntArgs("String.lastOrdinalIndexOf", args)
+		if err != nil {
+			return Null, true, err
+		}
+		return Int(int64(stringOrdinalIndexOf(receiver.Text, needle, ordinal, true))), true, nil
 	case "replace":
 		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
 			return Null, true, fmt.Errorf("String.replace expects target and replacement Strings")
 		}
 		return String(strings.ReplaceAll(receiver.Text, args[0].Text, args[1].Text)), true, nil
+	case "replaceOnce":
+		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+			return Null, true, fmt.Errorf("String.replaceOnce expects target and replacement Strings")
+		}
+		return String(stringReplaceLiteral(receiver.Text, args[0].Text, args[1].Text, false, true)), true, nil
+	case "replaceIgnoreCase":
+		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+			return Null, true, fmt.Errorf("String.replaceIgnoreCase expects target and replacement Strings")
+		}
+		return String(stringReplaceLiteral(receiver.Text, args[0].Text, args[1].Text, true, false)), true, nil
 	case "replaceAll":
 		replaced, err := stringRegexReplace("String.replaceAll", receiver.Text, args, true)
 		if err != nil {
@@ -323,6 +363,12 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 			return Null, true, err
 		}
 		return String(strings.ReplaceAll(receiver.Text, needle, "")), true, nil
+	case "removeIgnoreCase":
+		needle, err := stringArg("String.removeIgnoreCase", args)
+		if err != nil {
+			return Null, true, err
+		}
+		return String(stringReplaceLiteral(receiver.Text, needle, "", true, false)), true, nil
 	case "removeStart":
 		prefix, err := stringArg("String.removeStart", args)
 		if err != nil {
@@ -487,6 +533,23 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 			runes[i], runes[j] = runes[j], runes[i]
 		}
 		return String(string(runes)), true, nil
+	case "overlay":
+		overlay, start, end, err := stringStringTwoIntArgs("String.overlay", args)
+		if err != nil {
+			return Null, true, err
+		}
+		return String(stringOverlay(receiver.Text, overlay, start, end)), true, nil
+	case "rotate":
+		shift, err := stringIntArg("String.rotate", args)
+		if err != nil {
+			return Null, true, err
+		}
+		return String(stringRotate(receiver.Text, shift)), true, nil
+	case "swapCase":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("String.swapCase expects 0 arguments")
+		}
+		return String(stringSwapCase(receiver.Text)), true, nil
 	case "abbreviate":
 		abbreviated, err := stringAbbreviate(receiver.Text, args)
 		if err != nil {
@@ -566,6 +629,45 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 			return Null, true, fmt.Errorf("String.deleteWhitespace expects 0 arguments")
 		}
 		return String(strings.Join(strings.Fields(receiver.Text), "")), true, nil
+	case "strip":
+		stripped, err := stringStrip(receiver.Text, args, stripBoth)
+		if err != nil {
+			return Null, true, err
+		}
+		return String(stripped), true, nil
+	case "stripStart":
+		stripped, err := stringStrip(receiver.Text, args, stripStart)
+		if err != nil {
+			return Null, true, err
+		}
+		return String(stripped), true, nil
+	case "stripEnd":
+		stripped, err := stringStrip(receiver.Text, args, stripEnd)
+		if err != nil {
+			return Null, true, err
+		}
+		return String(stripped), true, nil
+	case "stripToNull":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("String.stripToNull expects 0 arguments")
+		}
+		stripped, err := stringStrip(receiver.Text, args, stripBoth)
+		if err != nil {
+			return Null, true, err
+		}
+		if stripped == "" {
+			return Null, true, nil
+		}
+		return String(stripped), true, nil
+	case "stripToEmpty":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("String.stripToEmpty expects 0 arguments")
+		}
+		stripped, err := stringStrip(receiver.Text, args, stripBoth)
+		if err != nil {
+			return Null, true, err
+		}
+		return String(stripped), true, nil
 	case "normalizeSpace":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("String.normalizeSpace expects 0 arguments")
@@ -700,6 +802,8 @@ func stringStatic(callee string, args []Value) (Value, error) {
 			return Null, fmt.Errorf("String.getLevenshteinDistance expects two Strings")
 		}
 		return Int(int64(levenshteinDistance(args[0].Text, args[1].Text))), nil
+	case "String.stripAll":
+		return stringStaticStripAll(args)
 	case "String.fromCharArray":
 		if len(args) != 1 || args[0].Kind != ValueList {
 			return Null, fmt.Errorf("String.fromCharArray expects List<Integer>")
@@ -1254,6 +1358,20 @@ func stringTwoIntArgs(name string, args []Value) (int, int, error) {
 	return int(args[0].Int), int(args[1].Int), nil
 }
 
+func stringStringIntArgs(name string, args []Value) (string, int, error) {
+	if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueInt {
+		return "", 0, fmt.Errorf("%s expects String and Integer arguments", name)
+	}
+	return args[0].Text, int(args[1].Int), nil
+}
+
+func stringStringTwoIntArgs(name string, args []Value) (string, int, int, error) {
+	if len(args) != 3 || args[0].Kind != ValueString || args[1].Kind != ValueInt || args[2].Kind != ValueInt {
+		return "", 0, 0, fmt.Errorf("%s expects String and two Integer arguments", name)
+	}
+	return args[0].Text, int(args[1].Int), int(args[2].Int), nil
+}
+
 func dropFirstRunes(text string, count int) string {
 	if count <= 0 {
 		return text
@@ -1292,6 +1410,46 @@ func stringContainsOnly(text, chars string) bool {
 		}
 	}
 	return true
+}
+
+func stringIndexOfAny(text, chars string) int {
+	if text == "" || chars == "" {
+		return -1
+	}
+	for i, r := range []rune(text) {
+		if strings.ContainsRune(chars, r) {
+			return i
+		}
+	}
+	return -1
+}
+
+func stringIndexOfAnyBut(text, chars string) int {
+	if text == "" {
+		return -1
+	}
+	if chars == "" {
+		return 0
+	}
+	for i, r := range []rune(text) {
+		if !strings.ContainsRune(chars, r) {
+			return i
+		}
+	}
+	return -1
+}
+
+func stringLastIndexOfAny(text, chars string) int {
+	if text == "" || chars == "" {
+		return -1
+	}
+	runes := []rune(text)
+	for i := len(runes) - 1; i >= 0; i-- {
+		if strings.ContainsRune(chars, runes[i]) {
+			return i
+		}
+	}
+	return -1
 }
 
 func countStringMatches(text, needle string) int {
@@ -1333,6 +1491,211 @@ func stringAllLetters(text string, pred func(rune) bool) bool {
 		}
 	}
 	return hasLetter
+}
+
+func stringOrdinalIndexOf(text, needle string, ordinal int, last bool) int {
+	if ordinal <= 0 || needle == "" {
+		return -1
+	}
+	textRunes := []rune(text)
+	needleRunes := []rune(needle)
+	if len(needleRunes) > len(textRunes) {
+		return -1
+	}
+	seen := 0
+	if last {
+		for i := len(textRunes) - len(needleRunes); i >= 0; i-- {
+			if runesEqual(textRunes[i:i+len(needleRunes)], needleRunes) {
+				seen++
+				if seen == ordinal {
+					return i
+				}
+			}
+		}
+		return -1
+	}
+	for i := 0; i <= len(textRunes)-len(needleRunes); i++ {
+		if runesEqual(textRunes[i:i+len(needleRunes)], needleRunes) {
+			seen++
+			if seen == ordinal {
+				return i
+			}
+		}
+	}
+	return -1
+}
+
+func runesEqual(left, right []rune) bool {
+	if len(left) != len(right) {
+		return false
+	}
+	for i := range left {
+		if left[i] != right[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func stringReplaceLiteral(text, target, replacement string, ignoreCase, once bool) string {
+	if target == "" {
+		return text
+	}
+	textRunes := []rune(text)
+	targetRunes := []rune(target)
+	if len(targetRunes) > len(textRunes) {
+		return text
+	}
+	var b strings.Builder
+	matched := false
+	for i := 0; i < len(textRunes); {
+		if (!once || !matched) && i <= len(textRunes)-len(targetRunes) && runeWindowMatches(textRunes[i:i+len(targetRunes)], targetRunes, ignoreCase) {
+			b.WriteString(replacement)
+			i += len(targetRunes)
+			matched = true
+			continue
+		}
+		b.WriteRune(textRunes[i])
+		i++
+	}
+	return b.String()
+}
+
+func runeWindowMatches(window, target []rune, ignoreCase bool) bool {
+	if len(window) != len(target) {
+		return false
+	}
+	for i := range window {
+		if ignoreCase {
+			if !strings.EqualFold(string(window[i]), string(target[i])) {
+				return false
+			}
+			continue
+		}
+		if window[i] != target[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func stringOverlay(text, overlay string, start, end int) string {
+	runes := []rune(text)
+	if start < 0 {
+		start = 0
+	}
+	if end < 0 {
+		end = 0
+	}
+	if start > len(runes) {
+		start = len(runes)
+	}
+	if end > len(runes) {
+		end = len(runes)
+	}
+	if start > end {
+		start, end = end, start
+	}
+	return string(runes[:start]) + overlay + string(runes[end:])
+}
+
+func stringRotate(text string, shift int) string {
+	runes := []rune(text)
+	if len(runes) == 0 {
+		return text
+	}
+	offset := shift % len(runes)
+	if offset < 0 {
+		offset += len(runes)
+	}
+	if offset == 0 {
+		return text
+	}
+	split := len(runes) - offset
+	return string(runes[split:]) + string(runes[:split])
+}
+
+func stringSwapCase(text string) string {
+	var b strings.Builder
+	for _, r := range text {
+		switch {
+		case unicode.IsUpper(r):
+			b.WriteString(strings.ToLower(string(r)))
+		case unicode.IsLower(r):
+			b.WriteString(strings.ToUpper(string(r)))
+		default:
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
+}
+
+type stringStripMode int
+
+const (
+	stripBoth stringStripMode = iota
+	stripStart
+	stripEnd
+)
+
+func stringStrip(text string, args []Value, mode stringStripMode) (string, error) {
+	if len(args) > 1 || (len(args) == 1 && args[0].Kind != ValueString) {
+		return "", fmt.Errorf("String strip expects optional stripChars String")
+	}
+	if len(args) == 0 {
+		return stripByPredicate(text, mode, unicode.IsSpace), nil
+	}
+	chars := args[0].Text
+	if chars == "" {
+		return text, nil
+	}
+	return stripByPredicate(text, mode, func(r rune) bool { return strings.ContainsRune(chars, r) }), nil
+}
+
+func stripByPredicate(text string, mode stringStripMode, pred func(rune) bool) string {
+	runes := []rune(text)
+	start := 0
+	end := len(runes)
+	if mode == stripBoth || mode == stripStart {
+		for start < end && pred(runes[start]) {
+			start++
+		}
+	}
+	if mode == stripBoth || mode == stripEnd {
+		for end > start && pred(runes[end-1]) {
+			end--
+		}
+	}
+	return string(runes[start:end])
+}
+
+func stringStaticStripAll(args []Value) (Value, error) {
+	if len(args) != 1 && len(args) != 2 {
+		return Null, fmt.Errorf("String.stripAll expects List<String> and optional stripChars String")
+	}
+	if args[0].Kind != ValueList || (len(args) == 2 && args[1].Kind != ValueString) {
+		return Null, fmt.Errorf("String.stripAll expects List<String> and optional stripChars String")
+	}
+	stripArgs := []Value{}
+	if len(args) == 2 {
+		stripArgs = []Value{args[1]}
+	}
+	out := make([]Value, 0, len(args[0].List))
+	for _, item := range args[0].List {
+		if item.Kind == ValueNull {
+			out = append(out, Null)
+			continue
+		}
+		if item.Kind != ValueString {
+			return Null, fmt.Errorf("String.stripAll expects List<String>")
+		}
+		stripped, err := stringStrip(item.Text, stripArgs, stripBoth)
+		if err != nil {
+			return Null, err
+		}
+		out = append(out, String(stripped))
+	}
+	return List(out...), nil
 }
 
 func stringRegexReplace(name, text string, args []Value, all bool) (string, error) {
