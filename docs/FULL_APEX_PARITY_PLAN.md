@@ -93,8 +93,13 @@ Current progress:
   category predicates, and `containsAny`/`containsOnly`/`containsNone`.
 - Numbers: runtime support now covers `Integer.valueOf`, `Long.valueOf`,
   `Decimal.valueOf`, `Double.valueOf`, integer/decimal conversion helpers,
-  simple numeric `format`, `Decimal.abs`, `Decimal.pow`, and `Math.mod`,
-  `Math.signum`, and `Math.roundToLong`.
+  simple numeric `format`, `Integer`/`Long` min/max constants, `Decimal.abs`,
+  `Decimal.pow`, parse and integer-conversion overflow errors, `Math.E`,
+  `Math.PI`, `Math.abs`, `Math.ceil`, `Math.floor`, `Math.max`, `Math.min`,
+  `Math.mod`, `Math.pow`, `Math.round`, `Math.roundToLong`, `Math.signum`,
+  `Math.sqrt`, and deterministic trig/log/exp helpers (`acos`, `asin`, `atan`,
+  `atan2`, `cos`, `sin`, `tan`, `exp`, `log`, `log10`) for finite pinned
+  domains.
 - Date/Datetime: runtime support now covers deterministic local `Date` calendar
   arithmetic and component getters, month-start/month-end helpers, and
   UTC-modeled `Datetime` date arithmetic plus date/time component getters.
@@ -149,9 +154,12 @@ Remaining cuts:
    - Locale overloads only after behavior is pinned to public expectations.
 
 3. Numeric classes
-   - Complete `Integer`, `Long`, `Double`, and `Decimal` formatting, min/max
-     constants, overflow behavior, rounding modes, and exact scale semantics.
-   - Add remaining deterministic `Math` constants and methods.
+   - Complete locale-aware `Integer`, `Long`, `Double`, and `Decimal`
+     formatting; full 32-bit-vs-64-bit Integer/Long overflow parity; Decimal
+     rounding modes; and exact Decimal scale semantics.
+   - Pin remaining edge behavior for numeric NaN/infinity/domain cases before
+     widening deterministic `Math` parity beyond the currently covered finite
+     slice.
 
 4. Date and time classes
    - Remaining work: locale/timezone formatting, GMT/local variants, `Time`

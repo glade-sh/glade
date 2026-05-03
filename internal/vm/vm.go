@@ -1073,9 +1073,10 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		return patternCompile(args)
 	case "Pattern.matches":
 		return patternMatches(args)
-	case "Math.abs", "Math.floor", "Math.ceil", "Math.round", "Math.roundToLong", "Math.signum", "Math.sqrt":
+	case "Math.abs", "Math.floor", "Math.ceil", "Math.round", "Math.roundToLong", "Math.signum", "Math.sqrt",
+		"Math.acos", "Math.asin", "Math.atan", "Math.cos", "Math.sin", "Math.tan", "Math.exp", "Math.log", "Math.log10":
 		return mathUnary(callee, args)
-	case "Math.max", "Math.min", "Math.mod", "Math.pow":
+	case "Math.max", "Math.min", "Math.mod", "Math.pow", "Math.atan2":
 		return mathBinary(callee, args)
 	case "Date.today":
 		if len(args) != 0 {
@@ -3772,6 +3773,36 @@ func mathUnary(callee string, args []Value) (Value, error) {
 		}
 	case "Math.sqrt":
 		return Decimal(math.Sqrt(n)), nil
+	case "Math.acos":
+		if n < -1 || n > 1 {
+			return Null, fmt.Errorf("Math.acos argument out of domain")
+		}
+		return finiteDecimalResult(callee, math.Acos(n))
+	case "Math.asin":
+		if n < -1 || n > 1 {
+			return Null, fmt.Errorf("Math.asin argument out of domain")
+		}
+		return finiteDecimalResult(callee, math.Asin(n))
+	case "Math.atan":
+		return finiteDecimalResult(callee, math.Atan(n))
+	case "Math.cos":
+		return finiteDecimalResult(callee, math.Cos(n))
+	case "Math.sin":
+		return finiteDecimalResult(callee, math.Sin(n))
+	case "Math.tan":
+		return finiteDecimalResult(callee, math.Tan(n))
+	case "Math.exp":
+		return finiteDecimalResult(callee, math.Exp(n))
+	case "Math.log":
+		if n <= 0 {
+			return Null, fmt.Errorf("Math.log argument out of domain")
+		}
+		return finiteDecimalResult(callee, math.Log(n))
+	case "Math.log10":
+		if n <= 0 {
+			return Null, fmt.Errorf("Math.log10 argument out of domain")
+		}
+		return finiteDecimalResult(callee, math.Log10(n))
 	default:
 		return Null, unsupportedCallError(callee)
 	}
@@ -3804,9 +3835,18 @@ func mathBinary(callee string, args []Value) (Value, error) {
 		return Decimal(math.Mod(left, right)), nil
 	case "Math.pow":
 		return Decimal(math.Pow(left, right)), nil
+	case "Math.atan2":
+		return finiteDecimalResult(callee, math.Atan2(left, right))
 	default:
 		return Null, unsupportedCallError(callee)
 	}
+}
+
+func finiteDecimalResult(callee string, value float64) (Value, error) {
+	if math.IsInf(value, 0) || math.IsNaN(value) {
+		return Null, fmt.Errorf("%s result must be finite", callee)
+	}
+	return Decimal(value), nil
 }
 
 func isMathNumeric(value Value) bool {
@@ -4197,7 +4237,15 @@ func (vm *VM) lookup(name string) (Value, error) {
 		if token, ok := vm.lookupSObjectFieldToken(parts); ok {
 			return token, nil
 		}
+		if len(parts) == 2 {
+			if value, ok := builtinStaticField(parts[0], parts[1]); ok {
+				return value, nil
+			}
+		}
 		if className, memberName, ok := vm.splitClassMember(name); ok {
+			if value, ok := builtinStaticField(className, memberName); ok {
+				return value, nil
+			}
 			if field, owner, ok := vm.lookupStaticField(className, memberName); ok {
 				if err := vm.checkMemberAccess(owner, field.Access, owner+"."+memberName); err != nil {
 					return Null, err
@@ -4489,6 +4537,33 @@ func (vm *VM) lookupStaticField(typeName, fieldName string) (Field, string, bool
 		typeName = class.SuperClass
 	}
 	return Field{}, "", false
+}
+
+func builtinStaticField(typeName, fieldName string) (Value, bool) {
+	switch typeName {
+	case "Math":
+		switch fieldName {
+		case "E":
+			return Decimal(math.E), true
+		case "PI":
+			return Decimal(math.Pi), true
+		}
+	case "Integer":
+		switch fieldName {
+		case "MAX_VALUE":
+			return Int(math.MaxInt32), true
+		case "MIN_VALUE":
+			return Int(math.MinInt32), true
+		}
+	case "Long":
+		switch fieldName {
+		case "MAX_VALUE":
+			return Int(math.MaxInt64), true
+		case "MIN_VALUE":
+			return Int(math.MinInt64), true
+		}
+	}
+	return Null, false
 }
 
 func (vm *VM) checkMemberAccess(ownerClass, access, member string, modifierSets ...[]string) error {
