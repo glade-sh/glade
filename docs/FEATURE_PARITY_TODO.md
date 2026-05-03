@@ -417,7 +417,7 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Wire `--limit-mode` through `oaer exec`, `oaer test`, and `oaer server`
     Tooling `executeAnonymous`.
   - [x] Add `limitMode` support for compatibility exec/test fixtures.
-- [ ] Complete `System`, `Test`, `Database`, `Schema`, `Limits`, and `JSON`
+- [x] Complete `System`, `Test`, `Database`, `Schema`, `Limits`, and `JSON`
   APIs used by enterprise tests.
   - [x] Add common JSON overloads for `serialize(value, suppressApexObjectNulls)`,
     `serializePretty`, and `deserializeStrict`.
@@ -430,6 +430,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     org-state snapshots.
   - [x] Add `Schema.describeSObjects(...)` basics plus local describe access
     booleans for SObjects and fields.
+  - **Limitation**: Broader standard-library method parity remains tracked by
+    the common stdlib and unsupported-error rows below.
 - [ ] Complete common `String`, `Pattern`, `Matcher`, `Date`, `Datetime`,
   `Time`, `Math`, `Decimal`, `EncodingUtil`, and `Crypto` behavior.
 - [ ] Complete HTTP/callout mock behavior: request/response types,
