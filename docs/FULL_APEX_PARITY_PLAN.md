@@ -122,8 +122,10 @@ Current progress:
   slice, and HMAC generation for documented local algorithms.
 - Type/Id/URL/Object: runtime support now covers `Type` equality, hash and
   string forms, constructor-backed zero-arg `Type.newInstance` for registered
-  classes, lightweight `Id.valueOf` validation and `to15`, deterministic URL
-  parsing accessors, and primitive `Object` equality/hash/string behavior.
+  classes, strict 18-character `Id.valueOf` checksum validation, `to15`,
+  `to18`, bounded `Id.getSObjectType` key-prefix tokens, deterministic URL
+  parsing accessors, context/spec URL resolution, and primitive `Object`
+  equality/hash/string behavior.
 - System/exceptions/Type hardening: runtime support now covers deterministic
   `System.today`, `System.now`, `System.currentTimeMillis`, `System.debug`
   LoggingLevel dispatch, core exception metadata/string helpers, and local
@@ -213,9 +215,13 @@ Remaining cuts:
      explicit compatibility work.
 
 9. Id, URL, and primitive object behavior
-   - Id key prefix and `getSObjectType` behavior, full checksum validation, URL
-     request-context/cloud-only helpers, and exact object `toString` versioned
-     output for user classes.
+   - Landed slice: strict 18-character Id checksum validation, `Id.to18`,
+     bounded local/common key-prefix `Id.getSObjectType`, context/spec URL
+     constructor resolution, and stable unsupported `URL.getCurrentRequestUrl`.
+   - Remaining gaps: broader/versioned key-prefix catalog behavior, URL
+     request-context/cloud-only helpers beyond explicit unsupported diagnostics,
+     exact object `toString` versioned output for user classes, Type
+     null/unknown/package lookup edge cases, and broader reflection behavior.
 
 Exit criteria:
 

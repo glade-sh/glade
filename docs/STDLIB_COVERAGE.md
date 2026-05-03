@@ -85,8 +85,10 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | HTTP | `Http.send` | `partial` | Mock-first local callouts; real network transport unsupported. |
 | HTTP | `HttpRequest` | `partial` | Endpoint, method, headers, timeout, body, and blob body accessors. |
 | HTTP | `HttpResponse` | `partial` | Status, status code, headers, body, and blob body accessors. |
+| Id | `Id.getSObjectType` | `partial` | Resolves local schema key prefixes and a bounded common standard prefix table to Schema.SObjectType tokens. |
 | Id | `Id.to15` | `supported` | Converts validated 18-character IDs to their 15-character prefix. |
-| Id | `Id.valueOf` | `supported` | Validates 15- and 18-character alphanumeric IDs and restores 18-character casing from checksum suffixes. |
+| Id | `Id.to18` | `supported` | Adds or preserves the documented 3-character checksum for validated IDs. |
+| Id | `Id.valueOf` | `supported` | Validates 15-character IDs and strict 18-character checksum suffixes; restoreCasing rebuilds casing from checksum suffixes. |
 | Integer | `Integer.MAX_VALUE` | `supported` | Exposes the public 32-bit Integer maximum constant. |
 | Integer | `Integer.MIN_VALUE` | `supported` | Exposes the public 32-bit Integer minimum constant. |
 | Integer | `Integer.doubleValue` | `supported` | Converts local Integer values to the local numeric representation. |
@@ -288,7 +290,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Type | `Type.isAssignableFrom` | `partial` | Uses the local class/interface and built-in exception hierarchy. |
 | Type | `Type.newInstance` | `partial` | Constructs local values and dispatches zero-arg constructors for registered classes; broader reflection is incomplete. |
 | Type | `Type.toString` | `supported` | Returns the local type token name. |
-| URL | `URL` | `partial` | Constructors for deterministic URL specs and protocol/host/file forms. |
+| URL | `URL` | `partial` | Constructors for deterministic URL specs, context/spec resolution, and protocol/host/file forms. |
 | URL | `URL.getAuthority` | `supported` | Returns parsed authority for local URL values. |
 | URL | `URL.getDefaultPort` | `supported` | Returns HTTP/HTTPS defaults or -1. |
 | URL | `URL.getFile` | `supported` | Returns path plus query for local URL values. |
