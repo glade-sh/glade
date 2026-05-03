@@ -1,0 +1,31 @@
+{
+  "name": "storage-db-lifecycle",
+  "seedData": [
+    {
+      "object": "Account",
+      "records": [
+        {
+          "Name": "Acme"
+        }
+      ]
+    }
+  ],
+  "command": {
+    "kind": "db"
+  },
+  "expected": {
+    "result": {
+      "exportedObjects": 5,
+      "exportedSequences": 5,
+      "ok": true,
+      "permissions": 2,
+      "profiles": 1,
+      "resetAccountRows": 0,
+      "resetRecords": 4,
+      "schemaVersion": 1,
+      "seedAccountRows": 1,
+      "seedRecords": 5,
+      "users": 1
+    }
+  }
+}

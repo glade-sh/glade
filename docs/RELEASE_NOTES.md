@@ -118,6 +118,8 @@ Release engineering:
   `DmlException`.
 - Added SQLite schema migrations/versioning for persistent org databases and
   exposed the schema version in DB inspection summaries.
+- Added a storage DB lifecycle compatibility fixture covering SQLite seed,
+  inspect, export, and reset behavior.
 - Preserved source ranges through parser syntax diagnostics, compiled project
   method/trigger bodies, VM statement traces, runtime/test failure stacks, DAP
   stack frames, and profile source ranges.

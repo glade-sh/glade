@@ -401,6 +401,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
 - [ ] Add persistent server database lifecycle docs and operational checks.
 - [ ] Add import/export compatibility tests for `oaer db seed/reset/export/
   inspect`.
+  - [x] Add a DB lifecycle compatibility fixture that seeds SQLite storage,
+    inspects schema/data counts, exports the fixture shape, and verifies reset
+    behavior.
 - [ ] Add fixture schemas for enterprise selector/service/domain test suites.
 
 ## 7. Developer Experience
@@ -454,6 +457,7 @@ a Salesforce-shaped local API server without silently wrong behavior.
 - [x] Add CI gates for compatibility matrix drift and MVP readiness.
 - [ ] Build black-box fixtures against Salesforce behavior for every supported
   language/runtime/data/server feature.
+  - [x] Add storage DB lifecycle coverage to the compatibility fixture runner.
 - [ ] Add enterprise fixtures for trigger-heavy, selector/service/domain,
   async-heavy, describe-heavy, namespace-heavy, and package-style projects.
 - [x] Add fixture coverage for unsupported-feature diagnostics so failures are

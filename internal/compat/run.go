@@ -14,6 +14,7 @@ import (
 	"github.com/open-aer/oaer/internal/project"
 	"github.com/open-aer/oaer/internal/schema"
 	"github.com/open-aer/oaer/internal/sema"
+	"github.com/open-aer/oaer/internal/storage"
 	"github.com/open-aer/oaer/internal/typesys"
 	"github.com/open-aer/oaer/internal/vm"
 )
@@ -41,6 +42,8 @@ func Run(fixture Fixture) (RunResult, error) {
 		return runExecFixture(fixture)
 	case "test":
 		return runTestFixture(fixture)
+	case "db":
+		return runDBFixture(fixture)
 	default:
 		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, fmt.Errorf("unsupported fixture command kind %q", fixture.Command.Kind)
 	}
@@ -143,6 +146,88 @@ func runTestFixture(fixture Fixture) (RunResult, error) {
 		"errors": summary.Errors,
 	}
 	return compareResult(fixture, payload, "")
+}
+
+func runDBFixture(fixture Fixture) (RunResult, error) {
+	root, err := os.MkdirTemp("", "oaer-compat-db-*")
+	if err != nil {
+		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+	}
+	defer os.RemoveAll(root)
+	store, err := storage.OpenSQLite(filepath.Join(root, "oaer.db"))
+	if err != nil {
+		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+	}
+	defer store.Close()
+
+	org := storage.NewOrgState()
+	storage.EnsureDeterministicPlatformData(&org)
+	if err := storage.ApplyFixture(&org, storageFixture(fixture)); err != nil {
+		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+	}
+	if err := store.Save(org); err != nil {
+		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+	}
+	seedSummary, err := store.Inspect("")
+	if err != nil {
+		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+	}
+	exported := storage.FixtureFromOrg(org)
+	if err := store.Reset(org); err != nil {
+		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+	}
+	resetSummary, err := store.Inspect("")
+	if err != nil {
+		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+	}
+	payload := map[string]any{
+		"ok":                true,
+		"schemaVersion":     seedSummary.SchemaVersion,
+		"seedRecords":       seedSummary.Records,
+		"resetRecords":      resetSummary.Records,
+		"seedAccountRows":   seedSummary.ByObject["Account"],
+		"resetAccountRows":  resetSummary.ByObject["Account"],
+		"users":             seedSummary.Users,
+		"profiles":          seedSummary.Profiles,
+		"permissions":       seedSummary.Permissions,
+		"exportedObjects":   len(exported.Objects),
+		"exportedSequences": len(exported.IDSequences),
+	}
+	return compareResult(fixture, payload, "")
+}
+
+func storageFixture(fixture Fixture) storage.Fixture {
+	out := storage.NewFixture()
+	for _, seed := range fixture.SeedData {
+		object := storage.FixtureObject{Name: seed.Object}
+		for _, record := range seed.Records {
+			fields := make(map[string]storage.Value, len(record))
+			for field, raw := range record {
+				fields[field] = storageValue(raw)
+			}
+			object.Records = append(object.Records, storage.FixtureRecord{Fields: fields})
+		}
+		out.Objects = append(out.Objects, object)
+	}
+	return out
+}
+
+func storageValue(raw any) storage.Value {
+	switch value := raw.(type) {
+	case nil:
+		return storage.NullValue()
+	case string:
+		return storage.StringValue(value)
+	case bool:
+		return storage.BooleanValue(value)
+	case float64:
+		if value == float64(int64(value)) {
+			return storage.IntegerValue(int64(value))
+		}
+		return storage.DecimalValue(fmt.Sprintf("%g", value))
+	default:
+		return storage.StringValue(fmt.Sprint(value))
+	}
 }
 
 func compareError(fixture Fixture, runErr error) (RunResult, error) {
