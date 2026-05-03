@@ -8,6 +8,7 @@ import (
 	"crypto/sha256"
 	"crypto/sha3"
 	"crypto/sha512"
+	"crypto/subtle"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -1258,10 +1259,16 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
 			return Null, fmt.Errorf("EncodingUtil.urlEncode expects String and charset")
 		}
+		if err := requireUTF8Charset("EncodingUtil.urlEncode", args[1].Text); err != nil {
+			return Null, err
+		}
 		return String(url.QueryEscape(args[0].Text)), nil
 	case "EncodingUtil.urlDecode":
 		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
 			return Null, fmt.Errorf("EncodingUtil.urlDecode expects String and charset")
+		}
+		if err := requireUTF8Charset("EncodingUtil.urlDecode", args[1].Text); err != nil {
+			return Null, err
 		}
 		decoded, err := url.QueryUnescape(args[0].Text)
 		if err != nil {
@@ -1298,6 +1305,22 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return Null, err
 		}
 		return platformScalar("Blob", string(mac)), nil
+	case "Crypto.areEqualConstantTime":
+		if len(args) != 2 {
+			return Null, fmt.Errorf("Crypto.areEqualConstantTime expects left Blob and right Blob")
+		}
+		left, err := blobStringArg("Crypto.areEqualConstantTime left", args[:1])
+		if err != nil {
+			return Null, err
+		}
+		right, err := blobStringArg("Crypto.areEqualConstantTime right", args[1:])
+		if err != nil {
+			return Null, err
+		}
+		return Bool(subtle.ConstantTimeCompare([]byte(left), []byte(right)) == 1), nil
+	case "Crypto.encrypt", "Crypto.decrypt", "Crypto.encryptWithManagedIV", "Crypto.decryptWithManagedIV",
+		"Crypto.sign", "Crypto.signWithCertificate", "Crypto.verify", "Crypto.verifyWithCertificate":
+		return Null, unsupportedCallError(callee + " local deterministic key, certificate, and encryption surfaces")
 	case "JSON.createGenerator":
 		if len(args) != 1 || args[0].Kind != ValueBool {
 			return Null, fmt.Errorf("JSON.createGenerator expects Boolean")
@@ -3811,6 +3834,16 @@ func blobStringArg(name string, args []Value) (string, error) {
 		return "", fmt.Errorf("%s expects Blob", name)
 	}
 	return args[0].Fields["value"].String(), nil
+}
+
+func requireUTF8Charset(name, charset string) error {
+	normalized := strings.ToLower(strings.ReplaceAll(strings.TrimSpace(charset), "_", "-"))
+	switch normalized {
+	case "utf-8", "utf8":
+		return nil
+	default:
+		return fmt.Errorf("%s unsupported charset %q", name, charset)
+	}
 }
 
 func generateDigest(algorithm string, data []byte) ([]byte, error) {
