@@ -38,6 +38,17 @@ Build from source:
 - run: oaer compat mvp
 ```
 
+If your CI job has access to the scraped public Apex docs corpus, set
+`OAER_APEX_DOCS_SOURCE` and run the docs support gate. The gate regenerates the
+docs inventory, capability catalog, and fixture evidence report, then fails if
+fixture evidence points at a symbol missing from the catalog.
+
+```yaml
+- run: scripts/apex-docs-support-gate.sh
+  env:
+    OAER_APEX_DOCS_SOURCE: /path/to/salesforce-docs/apex
+```
+
 Use a release artifact:
 
 ```yaml

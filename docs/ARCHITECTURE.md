@@ -9,6 +9,8 @@ and composed by the CLI.
 - `internal/oaercli`: command routing and user-facing CLI behavior.
 - `internal/apexast`: parser adapter and stable source model over the public
   `apexfmt` ANTLR parser.
+- `internal/apexdocs`: public Apex documentation inventory extraction, diffing,
+  and stable JSON generation for the broad support catalog.
 - `internal/config`: `oaer.yml` discovery and parsing.
 - `internal/diagnostic`: shared diagnostic model for parser, semantic analysis,
   runtime, and CLI.
@@ -56,10 +58,10 @@ and composed by the CLI.
   query/queryAll, describe/recent, limits, identity/userinfo stubs, Tooling
   `executeAnonymous`, composite sObject insert, fixture/reset endpoints, and
   optional SQLite-backed persistence.
-- `internal/compat`: compatibility fixture schema and parse/check/exec/test/DB
-  fixture execution.
+- `internal/compat`: compatibility fixture schema, fixture evidence metadata,
+  parse/check/exec/test/DB fixture execution, and catalog evidence reports.
 - `internal/capability`: machine-readable feature matrix and MVP readiness
-  gate.
+  gate, plus the docs-driven Apex support catalog.
 
 ## Runtime Pipeline
 
@@ -74,7 +76,8 @@ and composed by the CLI.
 7. Surface the same runtime through CLI execution, tests, watch mode, LSP/DAP
    snapshots, profile analysis, compatibility checks, and the local API server.
 8. Record diagnostics, traces, profiles, test reports, storage fixtures, server
-   responses, and compatibility results in stable machine-readable formats.
+   responses, documentation inventories, capability catalogs, fixture evidence,
+   and compatibility results in stable machine-readable formats.
 
 ## Design Constraints
 

@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/open-aer/oaer/internal/apexast"
+	"github.com/open-aer/oaer/internal/apexdocs"
 	"github.com/open-aer/oaer/internal/apextest"
 	"github.com/open-aer/oaer/internal/capability"
 	"github.com/open-aer/oaer/internal/compat"
@@ -1181,7 +1182,7 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 		return err
 	}
 	if len(args) == 0 {
-		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json")
+		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]")
 	}
 	switch args[0] {
 	case "matrix", "mvp":
@@ -1192,12 +1193,18 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 		return runCompatGaps(args[1:], w)
 	case "stdlib":
 		return runCompatStdlib(args[1:], w)
+	case "docs-inventory":
+		return runCompatDocsInventory(args[1:], w)
+	case "catalog":
+		return runCompatCatalog(args[1:], w)
+	case "evidence":
+		return runCompatEvidence(args[1:], w)
 	case "validate", "run":
 		if len(args) < 2 {
 			return errors.New("usage: oaer compat validate|run <fixture.json...>")
 		}
 	default:
-		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json")
+		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]")
 	}
 
 	for _, path := range args[1:] {
@@ -1273,6 +1280,283 @@ func runCompatStdlib(args []string, w io.Writer) error {
 		return capability.WriteStdlibJSON(w)
 	}
 	return runCompatStaticMarkdown(filtered, w, "stdlib", "standard library coverage", capability.WriteStdlibMarkdown)
+}
+
+func runCompatDocsInventory(args []string, w io.Writer) error {
+	source := ""
+	outputPath := ""
+	checkPath := ""
+	diffPath := ""
+	jsonOut := false
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--source":
+			i++
+			if i >= len(args) {
+				return errors.New("usage: oaer compat docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>]")
+			}
+			source = args[i]
+		case "--json":
+			jsonOut = true
+		case "--output":
+			i++
+			if i >= len(args) {
+				return errors.New("usage: oaer compat docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>]")
+			}
+			outputPath = args[i]
+		case "--check":
+			i++
+			if i >= len(args) {
+				return errors.New("usage: oaer compat docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>]")
+			}
+			checkPath = args[i]
+		case "--diff":
+			i++
+			if i >= len(args) {
+				return errors.New("usage: oaer compat docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>]")
+			}
+			diffPath = args[i]
+		default:
+			return fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	if source == "" {
+		return errors.New("usage: oaer compat docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>]")
+	}
+	requested := 0
+	for _, set := range []bool{jsonOut, outputPath != "", checkPath != "", diffPath != ""} {
+		if set {
+			requested++
+		}
+	}
+	if requested > 1 {
+		return errors.New("use only one of --json, --output, --check, or --diff")
+	}
+
+	inv, err := apexdocs.BuildInventory(source)
+	if err != nil {
+		return err
+	}
+
+	switch {
+	case jsonOut:
+		return apexdocs.WriteJSON(w, inv)
+	case outputPath != "":
+		var buf strings.Builder
+		if err := apexdocs.WriteJSON(&buf, inv); err != nil {
+			return err
+		}
+		return os.WriteFile(outputPath, []byte(buf.String()), 0o644)
+	case checkPath != "":
+		var buf strings.Builder
+		if err := apexdocs.WriteJSON(&buf, inv); err != nil {
+			return err
+		}
+		existing, err := os.ReadFile(checkPath)
+		if err != nil {
+			return err
+		}
+		if string(existing) != buf.String() {
+			return fmt.Errorf("docs inventory drift: run `oaer compat docs-inventory --source %s --output %s`", source, checkPath)
+		}
+		fmt.Fprintf(w, "%s: up to date\n", checkPath)
+		return nil
+	case diffPath != "":
+		oldInv, err := apexdocs.ReadInventory(diffPath)
+		if err != nil {
+			return err
+		}
+		diff := apexdocs.DiffInventories(oldInv, inv)
+		return apexdocs.WriteDiffJSON(w, diff)
+	default:
+		writeDocsInventorySummary(w, inv)
+		return nil
+	}
+}
+
+func writeDocsInventorySummary(w io.Writer, inv apexdocs.Inventory) {
+	fmt.Fprintf(w, "schemaVersion: %d\n", inv.SchemaVersion)
+	fmt.Fprintf(w, "documents: %d\n", inv.TotalFiles)
+	fmt.Fprintf(w, "members: %d\n", inv.TotalMembers)
+	fmt.Fprintf(w, "namespaces: %d\n", len(inv.Namespaces))
+	if len(inv.Namespaces) == 0 {
+		return
+	}
+	fmt.Fprintln(w, "namespace summary:")
+	for _, summary := range inv.Namespaces {
+		fmt.Fprintf(w, "  %s: documents=%d members=%d", summary.Namespace, summary.Documents, summary.Members)
+		if summary.Classes > 0 {
+			fmt.Fprintf(w, " classes=%d", summary.Classes)
+		}
+		if summary.Interfaces > 0 {
+			fmt.Fprintf(w, " interfaces=%d", summary.Interfaces)
+		}
+		if summary.Enums > 0 {
+			fmt.Fprintf(w, " enums=%d", summary.Enums)
+		}
+		if summary.Inputs > 0 {
+			fmt.Fprintf(w, " inputs=%d", summary.Inputs)
+		}
+		if summary.Outputs > 0 {
+			fmt.Fprintf(w, " outputs=%d", summary.Outputs)
+		}
+		fmt.Fprintln(w)
+	}
+}
+
+func runCompatCatalog(args []string, w io.Writer) error {
+	inventoryPath := ""
+	outputPath := ""
+	checkPath := ""
+	jsonOut := false
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--inventory":
+			i++
+			if i >= len(args) {
+				return errors.New("usage: oaer compat catalog --inventory <path> [--json|--output <path>|--check <path>]")
+			}
+			inventoryPath = args[i]
+		case "--json":
+			jsonOut = true
+		case "--output":
+			i++
+			if i >= len(args) {
+				return errors.New("usage: oaer compat catalog --inventory <path> [--json|--output <path>|--check <path>]")
+			}
+			outputPath = args[i]
+		case "--check":
+			i++
+			if i >= len(args) {
+				return errors.New("usage: oaer compat catalog --inventory <path> [--json|--output <path>|--check <path>]")
+			}
+			checkPath = args[i]
+		default:
+			return fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	if inventoryPath == "" {
+		return errors.New("usage: oaer compat catalog --inventory <path> [--json|--output <path>|--check <path>]")
+	}
+	requested := 0
+	for _, set := range []bool{jsonOut, outputPath != "", checkPath != ""} {
+		if set {
+			requested++
+		}
+	}
+	if requested > 1 {
+		return errors.New("use only one of --json, --output, or --check")
+	}
+	inv, err := apexdocs.ReadInventory(inventoryPath)
+	if err != nil {
+		return err
+	}
+	catalog := capability.BuildCatalog(inv)
+	switch {
+	case jsonOut:
+		return capability.WriteCatalogJSON(w, catalog)
+	case outputPath != "":
+		var buf strings.Builder
+		if err := capability.WriteCatalogJSON(&buf, catalog); err != nil {
+			return err
+		}
+		return os.WriteFile(outputPath, []byte(buf.String()), 0o644)
+	case checkPath != "":
+		var buf strings.Builder
+		if err := capability.WriteCatalogJSON(&buf, catalog); err != nil {
+			return err
+		}
+		existing, err := os.ReadFile(checkPath)
+		if err != nil {
+			return err
+		}
+		if string(existing) != buf.String() {
+			return fmt.Errorf("capability catalog drift: run `oaer compat catalog --inventory %s --output %s`", inventoryPath, checkPath)
+		}
+		fmt.Fprintf(w, "%s: up to date\n", checkPath)
+		return nil
+	default:
+		writeCatalogSummary(w, catalog)
+		return nil
+	}
+}
+
+func writeCatalogSummary(w io.Writer, catalog capability.Catalog) {
+	fmt.Fprintf(w, "schemaVersion: %d\n", catalog.SchemaVersion)
+	fmt.Fprintf(w, "sourceDocuments: %d\n", catalog.SourceDocuments)
+	fmt.Fprintf(w, "sourceMembers: %d\n", catalog.SourceMembers)
+	fmt.Fprintf(w, "entries: %d\n", len(catalog.Entries))
+	if len(catalog.Summary) == 0 {
+		return
+	}
+	fmt.Fprintln(w, "summary:")
+	for _, summary := range catalog.Summary {
+		fmt.Fprintf(w, "  %s [%s/%s]: entries=%d documents=%d members=%d\n", summary.Area, summary.Target, summary.Status, summary.Entries, summary.Documents, summary.Members)
+	}
+}
+
+func runCompatEvidence(args []string, w io.Writer) error {
+	catalogPath := ""
+	jsonOut := false
+	fixturePaths := make([]string, 0, len(args))
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--catalog":
+			i++
+			if i >= len(args) {
+				return errors.New("usage: oaer compat evidence --catalog <path> <fixture.json...> [--json]")
+			}
+			catalogPath = args[i]
+		case "--json":
+			jsonOut = true
+		default:
+			fixturePaths = append(fixturePaths, args[i])
+		}
+	}
+	if catalogPath == "" || len(fixturePaths) == 0 {
+		return errors.New("usage: oaer compat evidence --catalog <path> <fixture.json...> [--json]")
+	}
+	catalog, err := capability.ReadCatalog(catalogPath)
+	if err != nil {
+		return err
+	}
+	fixtures := make([]compat.Fixture, 0, len(fixturePaths))
+	for _, path := range fixturePaths {
+		fixture, err := compat.LoadFile(path)
+		if err != nil {
+			return err
+		}
+		if err := compat.Validate(fixture); err != nil {
+			return err
+		}
+		fixtures = append(fixtures, fixture)
+	}
+	report := compat.BuildEvidenceReport(catalog, fixtures)
+	if jsonOut {
+		return compat.WriteEvidenceJSON(w, report)
+	}
+	writeEvidenceSummary(w, report)
+	return nil
+}
+
+func writeEvidenceSummary(w io.Writer, report compat.EvidenceReport) {
+	fmt.Fprintf(w, "catalogEntries: %d\n", report.CatalogEntries)
+	fmt.Fprintf(w, "fixtures: %d\n", report.Fixtures)
+	fmt.Fprintf(w, "evidence: %d\n", report.Evidence)
+	fmt.Fprintf(w, "covered: %d\n", len(report.Covered))
+	fmt.Fprintf(w, "unmatchedEvidence: %d\n", len(report.UnmatchedEvidence))
+	fmt.Fprintf(w, "ungatedPromoted: %d\n", len(report.UngatedPromoted))
+	if len(report.Summary) == 0 {
+		return
+	}
+	fmt.Fprintln(w, "summary:")
+	for _, summary := range report.Summary {
+		fmt.Fprintf(w, "  %s [%s/%s]: covered=%d entries=%d", summary.Area, summary.Target, summary.Status, summary.Covered, summary.Entries)
+		if summary.Ungated > 0 {
+			fmt.Fprintf(w, " ungated=%d", summary.Ungated)
+		}
+		fmt.Fprintln(w)
+	}
 }
 
 func runCompatGeneratedMarkdown(args []string, w io.Writer, command, label string, write func(io.Writer, capability.Report) error) error {

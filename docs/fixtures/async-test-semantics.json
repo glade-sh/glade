@@ -1,5 +1,35 @@
 {
   "name": "async-test-semantics",
+  "evidence": [
+    {
+      "symbol": "Test.startTest",
+      "kind": "test"
+    },
+    {
+      "symbol": "Test.stopTest",
+      "kind": "test"
+    },
+    {
+      "symbol": "Limits.getFutureCalls",
+      "kind": "test"
+    },
+    {
+      "symbol": "Limits.getQueueableJobs",
+      "kind": "test"
+    },
+    {
+      "symbol": "System.enqueueJob",
+      "kind": "test"
+    },
+    {
+      "symbol": "Messaging.sendEmail",
+      "kind": "test"
+    },
+    {
+      "symbol": "Database.executeBatch",
+      "kind": "test"
+    }
+  ],
   "source": [
     {
       "path": "force-app/main/default/objects/Account/Account.object-meta.xml",

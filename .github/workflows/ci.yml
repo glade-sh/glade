@@ -17,5 +17,6 @@ jobs:
       - run: go run ./cmd/oaer compat mvp --json
       - run: go run ./cmd/oaer compat dashboard --check docs/COMPATIBILITY_DASHBOARD.md
       - run: go run ./cmd/oaer compat gaps --check docs/KNOWN_GAPS.md
+      - run: scripts/apex-docs-support-gate.sh
       - run: scripts/smoke.sh
       - run: go test -race ./...

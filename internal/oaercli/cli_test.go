@@ -211,6 +211,213 @@ func TestRunCompatStdlibOutputAndCheck(t *testing.T) {
 	}
 }
 
+func TestRunCompatDocsInventoryJSON(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "apex_methods_system_string.md"), `# String Class
+
+## Namespace
+[System](./apex_namespace_System.md)
+
+## String Methods
+### trim()
+Removes leading and trailing white space.
+`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "docs-inventory", "--source", root, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	for _, want := range []string{
+		`"schemaVersion": 1`,
+		`"sourcePath": "apex_methods_system_string.md"`,
+		`"namespace": "System"`,
+		`"signature": "trim()"`,
+	} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("stdout missing %q: %q", want, stdout.String())
+		}
+	}
+}
+
+func TestRunCompatDocsInventoryOutputCheckAndDiff(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "apex_methods_system_list.md"), `# List Class
+
+## List Methods
+### add(listElement)
+Adds an element.
+`)
+	path := filepath.Join(t.TempDir(), "apex-docs-inventory.json")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "docs-inventory", "--source", root, "--output", path}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("output exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	content, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(content), `"name": "List"`) {
+		t.Fatalf("inventory file = %q", string(content))
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "docs-inventory", "--source", root, "--check", path}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("check exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "up to date") {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+
+	writeTestFile(t, filepath.Join(root, "apex_methods_system_map.md"), `# Map Class
+
+## Map Methods
+### clear()
+Clears the map.
+`)
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "docs-inventory", "--source", root, "--diff", path}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("diff exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), `"addedDocuments"`) || !strings.Contains(stdout.String(), "apex_methods_system_map.md") {
+		t.Fatalf("diff stdout = %q", stdout.String())
+	}
+}
+
+func TestRunCompatCatalogJSON(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "apex_methods_system_string.md"), `# String Class
+
+## String Methods
+### trim()
+Removes leading and trailing white space.
+`)
+	inventoryPath := filepath.Join(t.TempDir(), "inventory.json")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "docs-inventory", "--source", root, "--output", inventoryPath}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("inventory exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "catalog", "--inventory", inventoryPath, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("catalog exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	for _, want := range []string{
+		`"schemaVersion": 1`,
+		`"area": "Core stdlib"`,
+		`"symbol": "String.trim"`,
+		`"target": "executable-parity"`,
+		`"status": "supported"`,
+	} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("catalog stdout missing %q: %q", want, stdout.String())
+		}
+	}
+}
+
+func TestRunCompatCatalogOutputAndCheck(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "apex_connectapi_output_FeedElement.md"), `# FeedElement
+
+## Properties
+### body
+The feed body.
+`)
+	dir := t.TempDir()
+	inventoryPath := filepath.Join(dir, "inventory.json")
+	catalogPath := filepath.Join(dir, "catalog.json")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "docs-inventory", "--source", root, "--output", inventoryPath}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("inventory exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "catalog", "--inventory", inventoryPath, "--output", catalogPath}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("catalog output exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	content, err := os.ReadFile(catalogPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(content), `"target": "typed-stub"`) {
+		t.Fatalf("catalog file = %q", string(content))
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "catalog", "--inventory", inventoryPath, "--check", catalogPath}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("catalog check exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "up to date") {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
+func TestRunCompatEvidenceJSON(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "apex_methods_system_string.md"), `# String Class
+
+## String Methods
+### trim()
+Removes leading and trailing white space.
+`)
+	dir := t.TempDir()
+	inventoryPath := filepath.Join(dir, "inventory.json")
+	catalogPath := filepath.Join(dir, "catalog.json")
+	fixturePath := filepath.Join(dir, "fixture.json")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "docs-inventory", "--source", root, "--output", inventoryPath}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("inventory exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "catalog", "--inventory", inventoryPath, "--output", catalogPath}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("catalog exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	writeTestFile(t, fixturePath, `{
+  "name": "string-evidence",
+  "evidence": [{"symbol": "String.trim", "kind": "exec"}],
+  "source": [{"path": "anonymous.apex", "content": "System.debug('x');"}],
+  "command": {"kind": "exec", "args": ["System.debug('x');"]},
+  "expected": {"stdout": "x\n", "result": {"debug": ["x"], "ok": true}}
+}`)
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "evidence", "--catalog", catalogPath, fixturePath, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("evidence exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	for _, want := range []string{
+		`"fixtures": 1`,
+		`"evidence": 1`,
+		`"symbol": "String.trim"`,
+		`"covered"`,
+	} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("evidence stdout missing %q: %q", want, stdout.String())
+		}
+	}
+}
+
 func TestRunParseJSON(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "Hello.cls")

@@ -8,13 +8,20 @@ import (
 )
 
 type Fixture struct {
-	Name     string           `json:"name"`
-	Source   []SourceFile     `json:"source,omitempty"`
-	Schema   []SchemaFile     `json:"schema,omitempty"`
-	SeedData []SeedData       `json:"seedData,omitempty"`
-	Command  Invocation       `json:"command"`
-	Expected ExpectedBehavior `json:"expected"`
-	Limits   ExpectedLimits   `json:"limits,omitempty"`
+	Name     string            `json:"name"`
+	Evidence []FixtureEvidence `json:"evidence,omitempty"`
+	Source   []SourceFile      `json:"source,omitempty"`
+	Schema   []SchemaFile      `json:"schema,omitempty"`
+	SeedData []SeedData        `json:"seedData,omitempty"`
+	Command  Invocation        `json:"command"`
+	Expected ExpectedBehavior  `json:"expected"`
+	Limits   ExpectedLimits    `json:"limits,omitempty"`
+}
+
+type FixtureEvidence struct {
+	Symbol string `json:"symbol"`
+	Kind   string `json:"kind,omitempty"`
+	Notes  string `json:"notes,omitempty"`
 }
 
 type SourceFile struct {
@@ -107,6 +114,11 @@ func Validate(fixture Fixture) error {
 	for i, source := range fixture.Source {
 		if source.Path == "" {
 			return fmt.Errorf("fixture %q: source[%d].path is required", fixture.Name, i)
+		}
+	}
+	for i, evidence := range fixture.Evidence {
+		if evidence.Symbol == "" {
+			return fmt.Errorf("fixture %q: evidence[%d].symbol is required", fixture.Name, i)
 		}
 	}
 	for i, schema := range fixture.Schema {

@@ -119,5 +119,6 @@ grep -q '"ready": false' "${TMP}/compat-matrix.json"
 "${OAER}" compat dashboard --check docs/COMPATIBILITY_DASHBOARD.md
 "${OAER}" compat gaps --check docs/KNOWN_GAPS.md
 "${OAER}" compat stdlib --check docs/STDLIB_COVERAGE.md
+OAER_BIN="${OAER}" scripts/apex-docs-support-gate.sh
 
 echo "smoke: ok"

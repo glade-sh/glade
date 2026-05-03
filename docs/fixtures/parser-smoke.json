@@ -1,5 +1,12 @@
 {
   "name": "parser-smoke",
+  "evidence": [
+    {
+      "symbol": "System.debug",
+      "kind": "parse",
+      "notes": "Parses a class method body containing a public System call."
+    }
+  ],
   "source": [
     {
       "path": "classes/Hello.cls",
