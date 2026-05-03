@@ -97,7 +97,12 @@ Current progress:
   `Math.signum`, and `Math.roundToLong`.
 - Date/Datetime: runtime support now covers deterministic local `Date` calendar
   arithmetic and component getters, month-start/month-end helpers, and
-  UTC-modeled `Datetime` date arithmetic plus date/time component getters.
+  UTC-modeled `Datetime` date arithmetic plus date/time component getters,
+  deterministic VM-clock `Date.today`/`Datetime.now`, GMT construction/parsing
+  and component helpers, and millisecond arithmetic.
+- Time/TimeZone: runtime support now covers `Time` construction/parsing,
+  component getters including milliseconds, wraparound arithmetic, and a
+  deterministic `TimeZone` slice for UTC/GMT plus fixed GMT/UTC offsets.
 - JSON: runtime support now covers `JSON.createGenerator(Boolean)`,
   `JSON.createParser(String)`, and deterministic `JSONGenerator`/`JSONParser`
   slices. Generator coverage includes object/array boundaries, field names,
@@ -154,9 +159,9 @@ Remaining cuts:
    - Add remaining deterministic `Math` constants and methods.
 
 4. Date and time classes
-   - Remaining work: locale/timezone formatting, GMT/local variants, `Time`
-     completion, `TimeZone`, unsupported static helpers, timezone offsets, and
-     DST behavior where public behavior is known.
+   - Remaining work: locale-aware formatting, user-local timezone variants
+     beyond the UTC model, named `TimeZone` IDs, timezone database offsets, DST
+     behavior where public behavior is known, and unsupported static helpers.
 
 5. Blob, EncodingUtil, and Crypto
    - Blob conversion and charset behavior.

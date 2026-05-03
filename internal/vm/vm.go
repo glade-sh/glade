@@ -1104,13 +1104,13 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
 		return platformScalar("Datetime", vm.fakeNow.Format(time.RFC3339)), nil
-	case "Datetime.newInstance":
+	case "Datetime.newInstance", "Datetime.newInstanceGmt":
 		if len(args) != 3 && len(args) != 6 {
-			return Null, fmt.Errorf("Datetime.newInstance expects year, month, day[, hour, minute, second] integers")
+			return Null, fmt.Errorf("%s expects year, month, day[, hour, minute, second] integers", callee)
 		}
 		for i := 0; i < len(args); i++ {
 			if args[i].Kind != ValueInt {
-				return Null, fmt.Errorf("Datetime.newInstance expects integer parts")
+				return Null, fmt.Errorf("%s expects integer parts", callee)
 			}
 		}
 		year, month, day := int(args[0].Int), int(args[1].Int), int(args[2].Int)
@@ -1125,16 +1125,16 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return Null, err
 		}
 		value := time.Date(year, time.Month(month), day, hour, minute, second, 0, time.UTC)
-		return platformScalar("Datetime", value.Format(time.RFC3339)), nil
-	case "Datetime.valueOf":
+		return platformScalar("Datetime", formatPlatformDatetime(value)), nil
+	case "Datetime.valueOf", "Datetime.valueOfGmt":
 		if len(args) != 1 || args[0].Kind != ValueString {
-			return Null, fmt.Errorf("Datetime.valueOf expects String")
+			return Null, fmt.Errorf("%s expects String", callee)
 		}
 		value, err := parseDatetimeText(args[0].Text)
 		if err != nil {
 			return Null, err
 		}
-		return platformScalar("Datetime", value.Format(time.RFC3339)), nil
+		return platformScalar("Datetime", formatPlatformDatetime(value)), nil
 	case "System.isRunningTest", "Test.isRunningTest":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
@@ -1184,7 +1184,14 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		if err := validateTimeParts(int(args[0].Int), int(args[1].Int), int(args[2].Int)); err != nil {
 			return Null, err
 		}
-		return platformScalar("Time", fmt.Sprintf("%02d:%02d:%02d", args[0].Int, args[1].Int, args[2].Int)), nil
+		millisecond := 0
+		if len(args) == 4 {
+			if args[3].Int < 0 || args[3].Int > 999 {
+				return Null, fmt.Errorf("invalid Time millisecond: %d", args[3].Int)
+			}
+			millisecond = int(args[3].Int)
+		}
+		return platformScalar("Time", formatPlatformTime(int(args[0].Int), int(args[1].Int), int(args[2].Int), millisecond)), nil
 	case "Time.valueOf":
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("Time.valueOf expects String")
@@ -1194,6 +1201,11 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return Null, err
 		}
 		return platformScalar("Time", parsed), nil
+	case "TimeZone.getTimeZone":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("TimeZone.getTimeZone expects String")
+		}
+		return fixedTimeZone(args[0].Text)
 	case "Blob.valueOf":
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("Blob.valueOf expects String")
@@ -3588,7 +3600,7 @@ func parsePlatformDatetime(value Value) (time.Time, error) {
 	if err != nil {
 		return time.Time{}, err
 	}
-	parsed, err := time.Parse(time.RFC3339, text)
+	parsed, err := parseDatetimeText(text)
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -3616,12 +3628,16 @@ func daysInMonth(year int, month time.Month) int {
 }
 
 func parseDatetimeText(text string) (time.Time, error) {
-	for _, layout := range []string{time.RFC3339, "2006-01-02 15:04:05", "2006-01-02T15:04:05"} {
+	for _, layout := range []string{time.RFC3339Nano, "2006-01-02 15:04:05.000", "2006-01-02 15:04:05", "2006-01-02T15:04:05.000", "2006-01-02T15:04:05"} {
 		if value, err := time.Parse(layout, text); err == nil {
 			return value, nil
 		}
 	}
 	return time.Time{}, fmt.Errorf("unsupported Datetime value %q", text)
+}
+
+func formatPlatformDatetime(value time.Time) string {
+	return value.UTC().Format(time.RFC3339Nano)
 }
 
 func validateDateParts(year, month, day int) error {
@@ -3642,10 +3658,112 @@ func validateTimeParts(hour, minute, second int) error {
 func parseTimeText(text string) (string, error) {
 	for _, layout := range []string{"15:04:05.000", "15:04:05"} {
 		if value, err := time.Parse(layout, text); err == nil {
-			return value.Format("15:04:05"), nil
+			return formatPlatformTime(value.Hour(), value.Minute(), value.Second(), value.Nanosecond()/int(time.Millisecond)), nil
 		}
 	}
 	return "", fmt.Errorf("unsupported Time value %q", text)
+}
+
+func parsePlatformTime(value Value) (time.Duration, error) {
+	text, err := platformScalarText(value, "Time")
+	if err != nil {
+		return 0, err
+	}
+	parsed, err := parseTimeText(text)
+	if err != nil {
+		return 0, err
+	}
+	t, err := time.Parse("15:04:05.000", ensureTimeMillis(parsed))
+	if err != nil {
+		return 0, err
+	}
+	return time.Duration(t.Hour())*time.Hour +
+		time.Duration(t.Minute())*time.Minute +
+		time.Duration(t.Second())*time.Second +
+		time.Duration(t.Nanosecond()), nil
+}
+
+func ensureTimeMillis(text string) string {
+	if strings.Contains(text, ".") {
+		return text
+	}
+	return text + ".000"
+}
+
+func formatPlatformTime(hour, minute, second, millisecond int) string {
+	base := fmt.Sprintf("%02d:%02d:%02d", hour, minute, second)
+	if millisecond == 0 {
+		return base
+	}
+	return fmt.Sprintf("%s.%03d", base, millisecond)
+}
+
+func platformTimeFromDuration(value time.Duration) Value {
+	day := 24 * time.Hour
+	value %= day
+	if value < 0 {
+		value += day
+	}
+	hour := int(value / time.Hour)
+	value %= time.Hour
+	minute := int(value / time.Minute)
+	value %= time.Minute
+	second := int(value / time.Second)
+	value %= time.Second
+	millisecond := int(value / time.Millisecond)
+	return platformScalar("Time", formatPlatformTime(hour, minute, second, millisecond))
+}
+
+func fixedTimeZone(id string) (Value, error) {
+	canonical, offset, ok := parseFixedTimeZoneID(id)
+	if !ok {
+		return Null, unsupportedCallError("TimeZone.getTimeZone " + id)
+	}
+	out := Object("TimeZone")
+	out.Fields["id"] = String(canonical)
+	out.Fields["offsetMillis"] = Int(int64(offset / time.Millisecond))
+	return out, nil
+}
+
+func parseFixedTimeZoneID(id string) (string, time.Duration, bool) {
+	trimmed := strings.TrimSpace(id)
+	upper := strings.ToUpper(trimmed)
+	switch upper {
+	case "UTC", "GMT", "ETC/UTC", "Z":
+		return "UTC", 0, true
+	}
+	if !strings.HasPrefix(upper, "GMT+") && !strings.HasPrefix(upper, "GMT-") && !strings.HasPrefix(upper, "UTC+") && !strings.HasPrefix(upper, "UTC-") {
+		return "", 0, false
+	}
+	prefix := upper[:3]
+	signText := upper[3:4]
+	rest := upper[4:]
+	if prefix == "UTC" {
+		rest = upper[4:]
+	}
+	parts := strings.Split(rest, ":")
+	if len(parts) > 2 || parts[0] == "" {
+		return "", 0, false
+	}
+	hours, err := strconv.Atoi(parts[0])
+	if err != nil {
+		return "", 0, false
+	}
+	minutes := 0
+	if len(parts) == 2 {
+		minutes, err = strconv.Atoi(parts[1])
+		if err != nil {
+			return "", 0, false
+		}
+	}
+	if hours > 23 || minutes > 59 {
+		return "", 0, false
+	}
+	offset := time.Duration(hours)*time.Hour + time.Duration(minutes)*time.Minute
+	if signText == "-" {
+		offset = -offset
+	}
+	return fmt.Sprintf("GMT%s%02d:%02d", signText, hours, minutes), offset, true
 }
 
 func httpSetHeader(receiver Value, name string, value Value) {
@@ -6869,7 +6987,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		}
 	case "Datetime":
 		switch method {
-		case "format", "toString":
+		case "format", "formatGmt", "toString":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Datetime.%s expects 0 arguments", method)
 			}
@@ -6878,16 +6996,25 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, err
 			}
 			return String(text), receiver, false, true, nil
-		case "date":
+		case "date", "dateGmt":
 			if len(args) != 0 {
-				return Null, receiver, false, true, fmt.Errorf("Datetime.date expects 0 arguments")
+				return Null, receiver, false, true, fmt.Errorf("Datetime.%s expects 0 arguments", method)
 			}
 			t, err := parsePlatformDatetime(receiver)
 			if err != nil {
 				return Null, receiver, false, true, err
 			}
 			return platformScalar("Date", t.Format("2006-01-02")), receiver, false, true, nil
-		case "addDays", "addMonths", "addYears", "addHours", "addMinutes", "addSeconds":
+		case "time", "timeGmt":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Datetime.%s expects 0 arguments", method)
+			}
+			t, err := parsePlatformDatetime(receiver)
+			if err != nil {
+				return Null, receiver, false, true, err
+			}
+			return platformScalar("Time", formatPlatformTime(t.Hour(), t.Minute(), t.Second(), t.Nanosecond()/int(time.Millisecond))), receiver, false, true, nil
+		case "addDays", "addMonths", "addYears", "addHours", "addMinutes", "addSeconds", "addMilliseconds":
 			if len(args) != 1 || args[0].Kind != ValueInt {
 				return Null, receiver, false, true, fmt.Errorf("Datetime.%s expects Integer", method)
 			}
@@ -6909,9 +7036,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				t = t.Add(time.Duration(amount) * time.Minute)
 			case "addSeconds":
 				t = t.Add(time.Duration(amount) * time.Second)
+			case "addMilliseconds":
+				t = t.Add(time.Duration(amount) * time.Millisecond)
 			}
-			return platformScalar("Datetime", t.Format(time.RFC3339)), receiver, false, true, nil
-		case "year", "month", "day", "hour", "minute", "second":
+			return platformScalar("Datetime", formatPlatformDatetime(t)), receiver, false, true, nil
+		case "year", "month", "day", "hour", "minute", "second", "millisecond":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Datetime.%s expects 0 arguments", method)
 			}
@@ -6930,8 +7059,10 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Int(int64(t.Hour())), receiver, false, true, nil
 			case "minute":
 				return Int(int64(t.Minute())), receiver, false, true, nil
-			default:
+			case "second":
 				return Int(int64(t.Second())), receiver, false, true, nil
+			default:
+				return Int(int64(t.Nanosecond() / int(time.Millisecond))), receiver, false, true, nil
 			}
 		}
 	case "Time", "Blob":
@@ -6949,25 +7080,69 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Blob.size expects 0 arguments")
 			}
 			return Int(int64(len([]byte(receiver.Fields["value"].String())))), receiver, false, true, nil
-		case "hour", "minute", "second":
+		case "hour", "minute", "second", "millisecond":
 			if receiver.Type != "Time" {
 				return Null, receiver, false, false, nil
 			}
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Time.%s expects 0 arguments", method)
 			}
-			parsed, err := time.Parse("15:04:05", receiver.Fields["value"].String())
+			duration, err := parsePlatformTime(receiver)
 			if err != nil {
 				return Null, receiver, false, true, err
 			}
+			parsed := time.Date(0, 1, 1, 0, 0, 0, 0, time.UTC).Add(duration)
 			switch method {
 			case "hour":
 				return Int(int64(parsed.Hour())), receiver, false, true, nil
 			case "minute":
 				return Int(int64(parsed.Minute())), receiver, false, true, nil
-			default:
+			case "second":
 				return Int(int64(parsed.Second())), receiver, false, true, nil
+			default:
+				return Int(int64(parsed.Nanosecond() / int(time.Millisecond))), receiver, false, true, nil
 			}
+		case "addHours", "addMinutes", "addSeconds", "addMilliseconds":
+			if receiver.Type != "Time" {
+				return Null, receiver, false, false, nil
+			}
+			if len(args) != 1 || args[0].Kind != ValueInt {
+				return Null, receiver, false, true, fmt.Errorf("Time.%s expects Integer", method)
+			}
+			duration, err := parsePlatformTime(receiver)
+			if err != nil {
+				return Null, receiver, false, true, err
+			}
+			amount := time.Duration(args[0].Int)
+			switch method {
+			case "addHours":
+				duration += amount * time.Hour
+			case "addMinutes":
+				duration += amount * time.Minute
+			case "addSeconds":
+				duration += amount * time.Second
+			case "addMilliseconds":
+				duration += amount * time.Millisecond
+			}
+			return platformTimeFromDuration(duration), receiver, false, true, nil
+		}
+	case "TimeZone":
+		switch method {
+		case "getID":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("TimeZone.getID expects 0 arguments")
+			}
+			return receiver.Fields["id"], receiver, false, true, nil
+		case "getDisplayName":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("TimeZone.getDisplayName expects 0 arguments")
+			}
+			return receiver.Fields["id"], receiver, false, true, nil
+		case "getOffset":
+			if len(args) != 1 || args[0].Kind != ValueObject || args[0].Type != "Datetime" {
+				return Null, receiver, false, true, fmt.Errorf("TimeZone.getOffset expects Datetime")
+			}
+			return receiver.Fields["offsetMillis"], receiver, false, true, nil
 		}
 	case "Id":
 		switch method {
