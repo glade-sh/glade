@@ -6386,6 +6386,60 @@ func collectionMembers(value Value) []Value {
 	}
 }
 
+func collectionIterator(value Value) Value {
+	snapshot := List(append([]Value(nil), collectionMembers(value)...)...)
+	iterator := Object(collectionIteratorType(value.Type))
+	iterator.Fields["__values"] = snapshot
+	iterator.Fields["__index"] = Int(0)
+	return iterator
+}
+
+func collectionIteratorType(collectionType string) string {
+	if elementType, ok := collectionElementType(collectionType); ok {
+		return "Iterator<" + elementType + ">"
+	}
+	return "Iterator"
+}
+
+func isIteratorValue(value Value) bool {
+	return value.Kind == ValueObject && (value.Type == "Iterator" || strings.HasPrefix(value.Type, "Iterator<"))
+}
+
+func callIteratorMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	values, ok := receiver.Fields["__values"]
+	if !ok || values.Kind != ValueList {
+		return Null, receiver, false, true, fmt.Errorf("Iterator missing snapshot")
+	}
+	indexValue, ok := receiver.Fields["__index"]
+	if !ok || indexValue.Kind != ValueInt {
+		return Null, receiver, false, true, fmt.Errorf("Iterator missing index")
+	}
+	index := int(indexValue.Int)
+	switch method {
+	case "hasNext":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Iterator.hasNext expects 0 arguments")
+		}
+		return Bool(index < len(values.List)), receiver, false, true, nil
+	case "next":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Iterator.next expects 0 arguments")
+		}
+		if index >= len(values.List) {
+			return Null, receiver, false, true, newExceptionError("NoSuchElementException", "Iterator has no more elements")
+		}
+		receiver.Fields["__index"] = Int(int64(index + 1))
+		return values.List[index], receiver, true, true, nil
+	case "remove":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Iterator.remove expects 0 arguments")
+		}
+		return Null, receiver, false, true, unsupportedCallError("Iterator.remove")
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
 func sortComparableValues(values []Value) error {
 	for _, value := range values {
 		switch value.Kind {
@@ -6912,6 +6966,11 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 				return Null, true, unsupportedCallError("List.deepClone with preserve options")
 			}
 			return cloneValue(receiver), true, nil
+		case "iterator":
+			if len(args) != 0 {
+				return Null, true, fmt.Errorf("List.iterator expects 0 arguments")
+			}
+			return collectionIterator(receiver), true, nil
 		case "sort":
 			if len(args) != 0 {
 				return Null, true, fmt.Errorf("List.sort expects 0 arguments")
@@ -7084,6 +7143,11 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 				return Null, true, unsupportedCallError("Set.deepClone with preserve options")
 			}
 			return cloneValue(receiver), true, nil
+		case "iterator":
+			if len(args) != 0 {
+				return Null, true, fmt.Errorf("Set.iterator expects 0 arguments")
+			}
+			return collectionIterator(receiver), true, nil
 		}
 	case ValueMap:
 		switch method {
@@ -7593,6 +7657,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			return String(exceptionToString(receiver)), receiver, false, true, nil
 		}
+	}
+	if isIteratorValue(receiver) {
+		return callIteratorMember(receiver, method, args)
 	}
 	switch receiver.Type {
 	case "JSONGenerator":

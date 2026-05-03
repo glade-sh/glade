@@ -82,11 +82,12 @@ Current progress:
 
 - Collections: runtime support now covers indexed and bulk `List<T>` mutation,
   collection copy constructors, `clone`, no-argument local `deepClone`,
-  primitive `List.sort`, common `Set<T>` bulk operations, deterministic
-  `Map<K,V>` key/value views, previous-value, `putAll`, `containsValue`,
-  `toString`, equality, clear/isEmpty/remove behavior, null membership edges,
-  and bounded `Map<Id,SObject>` construction/`putAll(List<SObject>)` for rows
-  with non-null unique Ids.
+  primitive `List.sort`, snapshot `List<T>`/`Set<T>` iterators with
+  `hasNext`/`next`, stable unsupported `Iterator.remove`, common `Set<T>`
+  bulk operations, deterministic `Map<K,V>` key/value views, previous-value,
+  `putAll`, `containsValue`, `toString`, equality, clear/isEmpty/remove
+  behavior, null membership edges, and bounded `Map<Id,SObject>`
+  construction/`putAll(List<SObject>)` for rows with non-null unique Ids.
 - String: runtime support now covers case-insensitive contains/prefix/suffix,
   equality/comparison, capitalization, padding/centering, left/right/mid,
   reverse, substring-before/after variants, remove variants, whitespace

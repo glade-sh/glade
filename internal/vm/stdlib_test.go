@@ -1137,6 +1137,78 @@ func TestCollectionStdlibMoreRejectsUnsupportedSortValues(t *testing.T) {
 	}
 }
 
+func TestExecCollectionStdlibIterators(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Integer> xs = new List<Integer>{1, 2, 3};
+Iterator<Integer> it = xs.iterator();
+System.assert(it.hasNext());
+System.assertEquals(1, it.next());
+System.assertEquals(2, it.next());
+xs.add(4);
+System.assertEquals(3, it.next());
+System.assert(!it.hasNext());
+
+Set<String> names = new Set<String>{'b', 'a'};
+Iterator<String> nameIt = names.iterator();
+System.assert(nameIt.hasNext());
+System.assertEquals('b', nameIt.next());
+System.assertEquals('a', nameIt.next());
+System.assert(!nameIt.hasNext());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecCollectionStdlibIteratorErrors(t *testing.T) {
+	tests := []struct {
+		name string
+		body string
+		want string
+	}{
+		{
+			name: "next exhausted",
+			body: "List<Integer> xs = new List<Integer>(); Iterator<Integer> it = xs.iterator(); it.next();",
+			want: "NoSuchElementException: Iterator has no more elements",
+		},
+		{
+			name: "remove unsupported",
+			body: "List<Integer> xs = new List<Integer>{1}; Iterator<Integer> it = xs.iterator(); it.remove();",
+			want: "unsupported call \"Iterator.remove\"",
+		},
+		{
+			name: "object sort unsupported",
+			body: "List<Account> accounts = new List<Account>{new Account(Name = 'Acme')}; accounts.sort();",
+			want: "List.sort supports only primitive comparable values",
+		},
+		{
+			name: "set deepClone options unsupported",
+			body: "Set<Account> accounts = new Set<Account>{new Account(Id = '001B000001DVM9tIAH')}; accounts.deepClone(true);",
+			want: "unsupported call \"Set.deepClone with preserve options\"",
+		},
+		{
+			name: "map deepClone options unsupported",
+			body: "Map<Id, Account> accounts = new Map<Id, Account>(); accounts.deepClone(true, true, true);",
+			want: "unsupported call \"Map.deepClone with preserve options\"",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			program, err := CompileAnonymous(tt.body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = Execute(program, nil)
+			if err == nil || !strings.Contains(err.Error(), tt.want) {
+				t.Fatalf("err = %v, want %q", err, tt.want)
+			}
+		})
+	}
+}
+
 func TestExecCollectionStdlibNullAndSObjectMapEdges(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<String> words = new List<String>{null, 'a', null};
@@ -1204,6 +1276,16 @@ func TestExecCollectionStdlibRejectsSObjectMapEdgeErrors(t *testing.T) {
 			name: "duplicate Id",
 			body: "Account a = new Account(Id = '001B000001DVM9tIAH'); List<Account> accounts = new List<Account>{a, a}; Map<Id, Account> byId = new Map<Id, Account>(accounts);",
 			want: "duplicate Id at index 1",
+		},
+		{
+			name: "null SObject row",
+			body: "List<Account> accounts = new List<Account>{null}; Map<Id, Account> byId = new Map<Id, Account>(accounts);",
+			want: "requires non-null SObject at index 0",
+		},
+		{
+			name: "wrong SObject value type",
+			body: "List<Account> accounts = new List<Account>{new Account(Id = '001B000001DVM9tIAH')}; Map<Id, Contact> byId = new Map<Id, Contact>(accounts);",
+			want: "value at index 0: cannot assign Account to Contact",
 		},
 		{
 			name: "putAll duplicate Id",
