@@ -450,13 +450,15 @@ a Salesforce-shaped local API server without silently wrong behavior.
     timeout, status, and body/blob accessors.
   - **Limitation**: Local execution remains mock-first; real outbound network
     callout transport is intentionally not modeled.
-- [ ] Complete `UserInfo`, `FeatureManagement`, `Messaging`, `ApexPages`,
+- [x] Complete `UserInfo`, `FeatureManagement`, `Messaging`, `ApexPages`,
   `URL`, and `PageReference` basics.
   - [x] Add common `UserInfo` org/session/locale/timezone getters.
   - [x] Add `Messaging.SingleEmailMessage` setters and structured
     `SendEmailResult` basics.
   - [x] Add `ApexPages` message storage, current page, `PageReference`, and
     deterministic org `URL` basics.
+  - **Limitation**: Full Visualforce navigation/rendering and production session
+    semantics remain outside the local VM subset.
 - [ ] Add stable unsupported-feature errors for every unimplemented standard
   library method.
 - [ ] Generate and publish a standard-library coverage matrix.
