@@ -87,7 +87,14 @@ func (e *RuntimeError) Error() string {
 	if e.Type == "" {
 		return e.Message
 	}
+	if e.Type == "UnsupportedFeature" {
+		return e.Message
+	}
 	return e.Type + ": " + e.Message
+}
+
+func unsupportedCallError(callee string) error {
+	return &RuntimeError{Type: "UnsupportedFeature", Message: fmt.Sprintf("unsupported call %q", callee)}
 }
 
 type callFrame struct {
@@ -1002,7 +1009,7 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		if value, ok := vm.limitValue(strings.TrimPrefix(callee, "Limits.")); ok {
 			return value, nil
 		}
-		return Null, fmt.Errorf("unsupported call %q", callee)
+		return Null, unsupportedCallError(callee)
 	case "String.isBlank", "String.isNotBlank", "String.valueOf", "String.join":
 		return stringStatic(callee, args)
 	case "Pattern.compile":
@@ -1358,7 +1365,7 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		}
 		return String("UTC"), nil
 	default:
-		return Null, fmt.Errorf("unsupported call %q", callee)
+		return Null, unsupportedCallError(callee)
 	}
 }
 
@@ -3509,7 +3516,7 @@ func mathUnary(callee string, args []Value) (Value, error) {
 	case "Math.sqrt":
 		return Decimal(math.Sqrt(n)), nil
 	default:
-		return Null, fmt.Errorf("unsupported call %q", callee)
+		return Null, unsupportedCallError(callee)
 	}
 }
 
@@ -3533,7 +3540,7 @@ func mathBinary(callee string, args []Value) (Value, error) {
 	case "Math.pow":
 		return Decimal(math.Pow(left, right)), nil
 	default:
-		return Null, fmt.Errorf("unsupported call %q", callee)
+		return Null, unsupportedCallError(callee)
 	}
 }
 
@@ -5402,7 +5409,7 @@ func (vm *VM) callMember(callee string, args []Value, result *Result) (Value, bo
 			return Null, true, fmt.Errorf("ambiguous overload for call %q", callee)
 		}
 		if !ok {
-			return Null, true, fmt.Errorf("unsupported call %q", callee)
+			return Null, true, unsupportedCallError(callee)
 		}
 		if err := vm.checkMemberAccess(target.ClassName, target.Access, target.Name, target.Modifiers); err != nil {
 			return Null, true, err
@@ -5498,7 +5505,7 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			if method == "toString" && len(args) == 0 {
 				return String(receiver.String()), true, nil
 			}
-			return Null, true, fmt.Errorf("unsupported call %q", receiverName+"."+method)
+			return Null, true, unsupportedCallError(receiverName + "." + method)
 		}
 		if err := vm.checkMemberAccess(target.ClassName, target.Access, target.Name, target.Modifiers); err != nil {
 			return Null, true, err
@@ -5609,7 +5616,7 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			return Int(int64(len(receiver.Map))), true, nil
 		}
 	}
-	return Null, true, fmt.Errorf("unsupported call %q", receiverName+"."+method)
+	return Null, true, unsupportedCallError(receiverName + "." + method)
 }
 
 func sObjectAddErrorMessage(args []Value, name string) (string, error) {

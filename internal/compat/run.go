@@ -3,6 +3,7 @@ package compat
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -290,8 +291,10 @@ func compareError(fixture Fixture, runErr error) (RunResult, error) {
 func classifyError(err error) ExpectedError {
 	message := err.Error()
 	errorType := "Error"
-	if strings.Contains(strings.ToLower(message), "unsupported") {
-		errorType = "UnsupportedFeature"
+	var runtimeErr *vm.RuntimeError
+	if errors.As(err, &runtimeErr) && runtimeErr.Type != "" {
+		errorType = runtimeErr.Type
+		message = runtimeErr.Message
 	}
 	return ExpectedError{Type: errorType, Message: message}
 }

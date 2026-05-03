@@ -459,8 +459,11 @@ a Salesforce-shaped local API server without silently wrong behavior.
     deterministic org `URL` basics.
   - **Limitation**: Full Visualforce navigation/rendering and production session
     semantics remain outside the local VM subset.
-- [ ] Add stable unsupported-feature errors for every unimplemented standard
+- [x] Add stable unsupported-feature errors for every unimplemented standard
   library method.
+  - [x] Return typed `UnsupportedFeature` runtime errors for unimplemented
+    VM/stdlib calls while preserving fixture-compatible message text.
+  - [x] Keep ordinary runtime errors out of unsupported-feature classification.
 - [ ] Generate and publish a standard-library coverage matrix.
 
 ## 6. Storage, Fixtures, And Persistence

@@ -2,7 +2,10 @@ package compat
 
 import (
 	"encoding/json"
+	"errors"
 	"testing"
+
+	"github.com/open-aer/oaer/internal/vm"
 )
 
 func TestFixtureJSONRoundTrip(t *testing.T) {
@@ -139,5 +142,16 @@ func TestRunUnsupportedExecFixtureMatchesExpectedError(t *testing.T) {
 	}
 	if !result.OK || result.Error == nil || result.Error.Type != "UnsupportedFeature" {
 		t.Fatalf("result = %#v", result)
+	}
+}
+
+func TestClassifyErrorUsesRuntimeErrorTypeOnly(t *testing.T) {
+	unsupported := classifyError(&vm.RuntimeError{Type: "UnsupportedFeature", Message: `unsupported call "System.nope"`})
+	if unsupported.Type != "UnsupportedFeature" || unsupported.Message != `unsupported call "System.nope"` {
+		t.Fatalf("unsupported = %#v", unsupported)
+	}
+	ordinary := classifyError(errors.New("unsupported internal shape"))
+	if ordinary.Type != "Error" || ordinary.Message != "unsupported internal shape" {
+		t.Fatalf("ordinary = %#v", ordinary)
 	}
 }

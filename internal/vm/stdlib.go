@@ -165,7 +165,7 @@ func stringStatic(callee string, args []Value) (Value, error) {
 		}
 		return String(strings.Join(parts, args[1].Text)), nil
 	default:
-		return Null, fmt.Errorf("unsupported call %q", callee)
+		return Null, unsupportedCallError(callee)
 	}
 }
 

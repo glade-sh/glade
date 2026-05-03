@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
@@ -42,6 +43,47 @@ System.assert(Limits.getCpuTime() > 0);
 	}
 	if len(result.LimitViolations) == 0 || result.LimitViolations[0].Name != "queries" {
 		t.Fatalf("violations = %#v", result.LimitViolations)
+	}
+}
+
+func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
+	cases := []struct {
+		name string
+		src  string
+		want string
+	}{
+		{
+			name: "static",
+			src:  `System.nope();`,
+			want: `unsupported call "System.nope"`,
+		},
+		{
+			name: "instance",
+			src:  `String s = 'abc'; s.nope();`,
+			want: `unsupported call "s.nope"`,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			program, err := CompileAnonymous(tc.src)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = New(nil).Execute(program)
+			if err == nil {
+				t.Fatal("expected unsupported feature error")
+			}
+			var runtimeErr *RuntimeError
+			if !errors.As(err, &runtimeErr) {
+				t.Fatalf("error type = %T, want *RuntimeError", err)
+			}
+			if runtimeErr.Type != "UnsupportedFeature" {
+				t.Fatalf("runtime error type = %q, want UnsupportedFeature", runtimeErr.Type)
+			}
+			if runtimeErr.Message != tc.want || err.Error() != tc.want {
+				t.Fatalf("error = (%q, %q), want %q", runtimeErr.Message, err.Error(), tc.want)
+			}
+		})
 	}
 }
 

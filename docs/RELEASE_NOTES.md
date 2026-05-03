@@ -20,6 +20,8 @@ Release engineering:
   for machine-readable MVP readiness.
 - Added compatibility fixture support and smoke coverage for expected
   unsupported-feature diagnostics.
+- Added typed `UnsupportedFeature` VM errors for unimplemented stdlib/platform
+  calls while preserving fixture-compatible message text.
 - Added `check` compatibility fixture execution and an enterprise-style
   multi-class fixture covering parse/index/check behavior.
 - Added parser diagnostic-count fixtures plus type-index and sema panic recovery
