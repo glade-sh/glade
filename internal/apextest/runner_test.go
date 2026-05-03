@@ -1,6 +1,7 @@
 package apextest
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -32,6 +33,29 @@ private class MathTest {
 	summary := run.Summary()
 	if summary.Total != 1 || summary.Passed != 1 {
 		t.Fatalf("summary = %#v", summary)
+	}
+}
+
+func TestRunContextReportsCanceledCases(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/CanceledTest.cls"), `
+@isTest
+private class CanceledTest {
+  @isTest static void stops() {
+    System.assert(true);
+  }
+}
+`)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	run := RunContext(ctx, loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Unsupported != 1 {
+		t.Fatalf("summary = %#v", got)
+	}
+	if run.Suites[0].Cases[0].Problem.Type != "Canceled" {
+		t.Fatalf("case = %#v", run.Suites[0].Cases[0])
 	}
 }
 

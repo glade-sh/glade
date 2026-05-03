@@ -580,7 +580,11 @@ a Salesforce-shaped local API server without silently wrong behavior.
     changed/deleted class and trigger symbols, fall back to full reload for
     schema metadata, and build a source-scanned dependency graph so production
     class changes select dependent tests before falling back to all tests.
-- [ ] Add in-flight VM/test cancellation for watch reruns.
+- [x] Add in-flight VM/test cancellation for watch reruns.
+  - [x] Thread context cancellation through the Apex test runner and VM
+    instruction loop, run watch test executions asynchronously, cancel stale
+    in-flight runs when a newer rerun starts, and suppress late results from
+    canceled runs by run ID.
 - [ ] Stabilize watch JSON stream for editor/test UI consumers.
 - [ ] Expand profile/trace events for SOQL, DML, describe, callouts, limits,
   methods, triggers, and async.

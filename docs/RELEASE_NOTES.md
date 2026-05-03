@@ -74,6 +74,8 @@ Release engineering:
   JSON events.
 - Added Apex-only incremental watch re-indexing and dependency-graph
   affected-test selection before falling back to all tests for broad changes.
+- Added cancellable watch reruns by threading context cancellation through the
+  Apex test runner and VM instruction loop, with stale run-result suppression.
 - Added parser diagnostic-count fixtures plus type-index and sema panic recovery
   diagnostics for malformed project inputs.
 - Added method/constructor parameter type diagnostics and expanded VM exception

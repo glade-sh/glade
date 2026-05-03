@@ -705,21 +705,41 @@ func runWatchTests(ctx context.Context, root string, index typesys.Index, opts a
 	if err := writeJSONLine(w, watch.NewWatchStartedEvent(time.Now().UTC(), cfg)); err != nil {
 		return testreport.Run{}, err
 	}
-	result := runSelectedTests(index, opts, watch.TestSelection{Mode: watch.SelectionAll, TestClasses: nil, Reason: "initial watch run"})
 	runID := 1
+	result := testreport.Run{Name: "oaer test"}
+	initialSelection := watch.TestSelection{Mode: watch.SelectionAll, TestClasses: nil, Reason: "initial watch run"}
+	activeRunID := runID
+	cancelRun, runDone := startWatchRun(ctx, index, opts, initialSelection, runID)
+	defer cancelRun()
 	if err := writeJSONLine(w, watch.RunStartedEvent{Event: watch.EventRunStarted, Time: time.Now().UTC(), RunID: runID}); err != nil {
 		return result, err
 	}
-	if err := writeJSONLine(w, watch.RunFinishedEvent{Event: watch.EventRunFinished, Time: time.Now().UTC(), RunID: runID, Summary: watchSummary(result)}); err != nil {
-		return result, err
-	}
 	if once {
-		return result, nil
+		select {
+		case <-ctx.Done():
+			return result, ctx.Err()
+		case finished := <-runDone:
+			result = finished.Result
+			if err := writeJSONLine(w, watch.RunFinishedEvent{Event: watch.EventRunFinished, Time: time.Now().UTC(), RunID: finished.RunID, Summary: watchSummary(result)}); err != nil {
+				return result, err
+			}
+			return result, nil
+		}
 	}
 	for {
 		select {
 		case <-ctx.Done():
+			cancelRun()
 			return result, ctx.Err()
+		case finished := <-runDone:
+			if finished.RunID != activeRunID {
+				continue
+			}
+			result = finished.Result
+			runDone = nil
+			if err := writeJSONLine(w, watch.RunFinishedEvent{Event: watch.EventRunFinished, Time: time.Now().UTC(), RunID: finished.RunID, Summary: watchSummary(result)}); err != nil {
+				return result, err
+			}
 		case err, ok := <-watcher.Errors():
 			if !ok {
 				return result, nil
@@ -747,16 +767,32 @@ func runWatchTests(ctx context.Context, root string, index typesys.Index, opts a
 			if selection.Mode == watch.SelectionNone {
 				continue
 			}
-			result = runSelectedTests(index, opts, selection)
+			cancelRun()
 			runID++
+			activeRunID = runID
+			cancelRun, runDone = startWatchRun(ctx, index, opts, selection, runID)
 			if err := writeJSONLine(w, watch.RunStartedEvent{Event: watch.EventRunStarted, Time: time.Now().UTC(), RunID: runID, TestClasses: selection.TestClasses}); err != nil {
-				return result, err
-			}
-			if err := writeJSONLine(w, watch.RunFinishedEvent{Event: watch.EventRunFinished, Time: time.Now().UTC(), RunID: runID, Summary: watchSummary(result)}); err != nil {
 				return result, err
 			}
 		}
 	}
+}
+
+type watchRunResult struct {
+	RunID  int
+	Result testreport.Run
+}
+
+func startWatchRun(ctx context.Context, index typesys.Index, opts apextest.Options, selection watch.TestSelection, runID int) (context.CancelFunc, <-chan watchRunResult) {
+	runCtx, cancel := context.WithCancel(ctx)
+	done := make(chan watchRunResult, 1)
+	go func() {
+		done <- watchRunResult{
+			RunID:  runID,
+			Result: runSelectedTestsContext(runCtx, index, opts, selection),
+		}
+	}()
+	return cancel, done
 }
 
 func updateWatchIndex(root string, index typesys.Index, changes []watch.Change) (typesys.Index, error) {
@@ -804,10 +840,14 @@ func parseWatchBackend(value string) (watch.Backend, error) {
 }
 
 func runSelectedTests(index typesys.Index, opts apextest.Options, selection watch.TestSelection) testreport.Run {
+	return runSelectedTestsContext(context.Background(), index, opts, selection)
+}
+
+func runSelectedTestsContext(ctx context.Context, index typesys.Index, opts apextest.Options, selection watch.TestSelection) testreport.Run {
 	if selection.Mode == watch.SelectionDirect && len(selection.TestClasses) == 1 {
 		opts.Filter = selection.TestClasses[0]
 	}
-	return apextest.Run(index, opts)
+	return apextest.RunContext(ctx, index, opts)
 }
 
 func watchSummary(result testreport.Run) watch.RunSummary {

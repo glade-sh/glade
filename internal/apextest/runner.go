@@ -1,6 +1,7 @@
 package apextest
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -63,6 +64,10 @@ func Discover(index typesys.Index, opts Options) []TestCase {
 }
 
 func Run(index typesys.Index, opts Options) testreport.Run {
+	return RunContext(context.Background(), index, opts)
+}
+
+func RunContext(ctx context.Context, index typesys.Index, opts Options) testreport.Run {
 	cases := Discover(index, opts)
 	methods := compileProjectMethods(index)
 	classes := compileProjectClasses(index, methods)
@@ -74,11 +79,18 @@ func Run(index typesys.Index, opts Options) testreport.Run {
 	setupRunErrors := make(map[string]error)
 	order := make([]string, 0)
 	for _, testCase := range cases {
+		if err := ctx.Err(); err != nil {
+			if _, ok := suites[testCase.ClassName]; !ok {
+				order = append(order, testCase.ClassName)
+			}
+			suites[testCase.ClassName] = append(suites[testCase.ClassName], canceledCase(testCase, err))
+			continue
+		}
 		if _, ok := suites[testCase.ClassName]; !ok {
 			order = append(order, testCase.ClassName)
-			setupOrgs[testCase.ClassName], setupRunErrors[testCase.ClassName] = prepareTestSetupOrg(testCase.ClassName, methods, classes, setups[testCase.ClassName], setupErrors[testCase.ClassName], triggers, triggerErrors, org, opts)
+			setupOrgs[testCase.ClassName], setupRunErrors[testCase.ClassName] = prepareTestSetupOrg(ctx, testCase.ClassName, methods, classes, setups[testCase.ClassName], setupErrors[testCase.ClassName], triggers, triggerErrors, org, opts)
 		}
-		suites[testCase.ClassName] = append(suites[testCase.ClassName], runCase(testCase, methods, classes, setupRunErrors[testCase.ClassName], triggers, triggerErrors, setupOrgs[testCase.ClassName], opts))
+		suites[testCase.ClassName] = append(suites[testCase.ClassName], runCase(ctx, testCase, methods, classes, setupRunErrors[testCase.ClassName], triggers, triggerErrors, setupOrgs[testCase.ClassName], opts))
 	}
 
 	run := testreport.Run{Name: "oaer test"}
@@ -88,8 +100,11 @@ func Run(index typesys.Index, opts Options) testreport.Run {
 	return run
 }
 
-func prepareTestSetupOrg(className string, methods map[string]vm.Method, classes []vm.Class, setups []vm.Method, setupErr error, triggers []vm.Trigger, triggerErrors []error, org storage.OrgState, opts Options) (storage.OrgState, error) {
+func prepareTestSetupOrg(ctx context.Context, className string, methods map[string]vm.Method, classes []vm.Class, setups []vm.Method, setupErr error, triggers []vm.Trigger, triggerErrors []error, org storage.OrgState, opts Options) (storage.OrgState, error) {
 	setupOrg := org.Clone()
+	if err := ctx.Err(); err != nil {
+		return setupOrg, err
+	}
 	if setupErr != nil {
 		return setupOrg, setupErr
 	}
@@ -104,11 +119,15 @@ func prepareTestSetupOrg(className string, methods map[string]vm.Method, classes
 		machine.SetLimitMode(opts.LimitMode)
 	}
 	machine.SetOrg(&setupOrg)
+	machine.SetContext(ctx)
 	machine.EnableTestContext()
 	if err := registerRuntime(machine, methods, classes, setups, triggers); err != nil {
 		return setupOrg, err
 	}
 	for _, setup := range setups {
+		if err := ctx.Err(); err != nil {
+			return setupOrg, err
+		}
 		program, err := vm.CompileAnonymous(setup.Name + "();")
 		if err != nil {
 			return setupOrg, err
@@ -120,7 +139,10 @@ func prepareTestSetupOrg(className string, methods map[string]vm.Method, classes
 	return setupOrg, nil
 }
 
-func runCase(testCase TestCase, methods map[string]vm.Method, classes []vm.Class, setupErr error, triggers []vm.Trigger, triggerErrors []error, org storage.OrgState, opts Options) testreport.Case {
+func runCase(ctx context.Context, testCase TestCase, methods map[string]vm.Method, classes []vm.Class, setupErr error, triggers []vm.Trigger, triggerErrors []error, org storage.OrgState, opts Options) testreport.Case {
+	if err := ctx.Err(); err != nil {
+		return canceledCase(testCase, err)
+	}
 	out := testreport.Case{
 		ClassName:  testCase.ClassName,
 		MethodName: testCase.MethodName,
@@ -153,6 +175,7 @@ func runCase(testCase TestCase, methods map[string]vm.Method, classes []vm.Class
 		machine.SetLimitMode(opts.LimitMode)
 	}
 	machine.SetOrg(&org)
+	machine.SetContext(ctx)
 	if err := registerRuntime(machine, methods, classes, nil, triggers); err != nil {
 		out.Status = testreport.StatusUnsupported
 		out.Problem = problem("UnsupportedFeature", err.Error(), testCase)
@@ -183,6 +206,15 @@ func runCase(testCase TestCase, methods map[string]vm.Method, classes []vm.Class
 		return out
 	}
 	return out
+}
+
+func canceledCase(testCase TestCase, err error) testreport.Case {
+	return testreport.Case{
+		ClassName:  testCase.ClassName,
+		MethodName: testCase.MethodName,
+		Status:     testreport.StatusUnsupported,
+		Problem:    problem("Canceled", err.Error(), testCase),
+	}
 }
 
 func registerRuntime(machine *vm.VM, methods map[string]vm.Method, classes []vm.Class, setups []vm.Method, triggers []vm.Trigger) error {

@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"context"
 	"crypto/md5"
 	"crypto/sha1"
 	"crypto/sha256"
@@ -58,6 +59,7 @@ type VM struct {
 	pageMessages     []Value
 	debugHooks       DebugHooks
 	hasDebugHooks    bool
+	ctx              context.Context
 }
 
 const maxTriggerDepth = 16
@@ -158,6 +160,7 @@ func New(stdout io.Writer) *VM {
 		fakeNow:         time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC),
 		savepoints:      make(map[string]storage.OrgState),
 		savepointOrder:  make(map[string]int),
+		ctx:             context.Background(),
 	}
 }
 
@@ -168,6 +171,13 @@ func (vm *VM) SetOrg(org *storage.OrgState) {
 func (vm *VM) SetDebugHooks(hooks DebugHooks) {
 	vm.debugHooks = hooks
 	vm.hasDebugHooks = true
+}
+
+func (vm *VM) SetContext(ctx context.Context) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	vm.ctx = ctx
 }
 
 func (vm *VM) newDMLEngine() dml.Engine {
@@ -282,6 +292,9 @@ func (e *apexThrowError) Error() string {
 
 func (vm *VM) executeProgram(program ir.Program, result *Result) (execOutcome, error) {
 	for seq, inst := range program.Instructions {
+		if err := vm.ctx.Err(); err != nil {
+			return execOutcome{}, err
+		}
 		if err := vm.incrementLimit("cpuTime", 1); err != nil {
 			return execOutcome{}, err
 		}

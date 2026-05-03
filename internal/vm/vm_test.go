@@ -2,6 +2,7 @@ package vm
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"strings"
 	"testing"
@@ -14,6 +15,20 @@ func TestExecAssertEquals(t *testing.T) {
 	}
 	if _, err := Execute(program, nil); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecuteStopsWhenContextCanceled(t *testing.T) {
+	program, err := CompileAnonymous("System.assert(true);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	machine := New(nil)
+	machine.SetContext(ctx)
+	if _, err := machine.Execute(program); !errors.Is(err, context.Canceled) {
+		t.Fatalf("err = %v, want context.Canceled", err)
 	}
 }
 
