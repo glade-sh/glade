@@ -14,6 +14,10 @@
       "content": "<CustomField><fullName>Rating</fullName><label>Rating</label><type>Picklist</type><valueSet><valueSetDefinition><value><fullName>Hot</fullName><label>Hot Label</label><default>true</default></value><value><fullName>Warm</fullName><label>Warm</label></value><value><fullName>Cold</fullName><isActive>false</isActive></value></valueSetDefinition></valueSet></CustomField>"
     },
     {
+      "path": "force-app/main/default/objects/Account/fields/ParentId.field-meta.xml",
+      "content": "<CustomField><fullName>ParentId</fullName><label>Parent Account</label><type>Lookup</type><referenceTo>Account</referenceTo><relationshipName>Parent</relationshipName><childRelationshipName>ChildAccounts</childRelationshipName></CustomField>"
+    },
+    {
       "path": "force-app/main/default/objects/Account/fields/AnnualRevenue.field-meta.xml",
       "content": "<CustomField><fullName>AnnualRevenue</fullName><label>Annual Revenue</label><type>Number</type></CustomField>"
     },
@@ -90,6 +94,10 @@
       "content": "@isTest private class DescribePicklistFidelityTest { @isTest static void picklistDescribeValues() { Object describe = Account.Rating.getDescribe(); System.assertEquals('Rating', describe.getName()); System.assertEquals('picklist', describe.getType()); List<Object> values = describe.getPicklistValues(); System.assertEquals(3, values.size()); Object hot = values.get(0); System.assertEquals('Hot', hot.getValue()); System.assertEquals('Hot Label', hot.getLabel()); System.assert(hot.isDefaultValue()); System.assert(hot.isActive()); Object cold = values.get(2); System.assertEquals('Cold', cold.getValue()); System.assert(!cold.isDefaultValue()); System.assert(!cold.isActive()); } }"
     },
     {
+      "path": "force-app/main/classes/ParentRelationshipFidelityTest.cls",
+      "content": "@isTest private class ParentRelationshipFidelityTest { @isTest static void multiHopParentRelationshipProjectionAndFilter() { Account parent = new Account(Name = 'Parent'); insert parent; Account child = new Account(Name = 'Child', ParentId = parent.Id); insert child; Contact contact = new Contact(LastName = 'Smith', AccountId = child.Id); insert contact; Contact row = [SELECT Id, Account.Name, Account.Parent.Name FROM Contact WHERE Account.Parent.Name = 'Parent']; System.assertEquals('Child', row.Account.Name); System.assertEquals('Parent', row.Account.Parent.Name); } }"
+    },
+    {
       "path": "force-app/main/classes/DateLiteralFidelityTest.cls",
       "content": "@isTest private class DateLiteralFidelityTest { @isTest static void dateLiteralsFilterRows() { insert new Account(Name = 'Today', RenewalDate__c = Date.today()); Date oldDate = Date.today(); oldDate = oldDate.addDays(-2); insert new Account(Name = 'Old', RenewalDate__c = oldDate); List<Account> todayRows = [SELECT Id FROM Account WHERE RenewalDate__c = TODAY]; System.assertEquals(1, todayRows.size()); List<Account> recentRows = [SELECT Id FROM Account WHERE RenewalDate__c = LAST_N_DAYS:2]; System.assertEquals(2, recentRows.size()); } }"
     }
@@ -102,8 +110,8 @@
       "errors": 0,
       "failed": 0,
       "ok": true,
-      "passed": 10,
-      "total": 10
+      "passed": 11,
+      "total": 11
     }
   }
 }

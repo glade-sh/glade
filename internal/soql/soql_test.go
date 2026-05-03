@@ -461,12 +461,28 @@ func TestExecuteAllRowsIncludesDeletedRecords(t *testing.T) {
 func TestExecuteProjectsParentRelationshipField(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Account",
+			Relations: []storage.Relationship{{
+				Field:              "ParentId",
+				ParentObjects:      []string{"Account"},
+				ParentRelationship: "Parent",
+			}},
+		},
 		Records: map[storage.ID]storage.Record{
 			"001000000000001": {
 				ID:     "001000000000001",
 				Object: "Account",
 				Fields: map[string]storage.Value{
 					"Name": storage.StringValue("Acme"),
+				},
+			},
+			"001000000000002": {
+				ID:     "001000000000002",
+				Object: "Account",
+				Fields: map[string]storage.Value{
+					"Name":     storage.StringValue("Child"),
+					"ParentId": storage.IDValue("001000000000001"),
 				},
 			},
 		},
@@ -488,15 +504,35 @@ func TestExecuteProjectsParentRelationshipField(t *testing.T) {
 					"AccountId": storage.IDValue("001000000000001"),
 				},
 			},
+			"003000000000002": {
+				ID:     "003000000000002",
+				Object: "Contact",
+				Fields: map[string]storage.Value{
+					"AccountId": storage.IDValue("001000000000002"),
+				},
+			},
 		},
 	}
 
-	result, err := ParseAndExecute(org, "SELECT Id, Account.Name FROM Contact")
+	result, err := ParseAndExecute(org, "SELECT Id, Account.Name FROM Contact WHERE Account.Name = 'Acme'")
 	if err != nil {
 		t.Fatal(err)
 	}
+	if result.Rows != 1 {
+		t.Fatalf("rows = %d records=%#v", result.Rows, result.Records)
+	}
 	if got := result.Records[0].Fields["Account.Name"].String; got != "Acme" {
 		t.Fatalf("Account.Name = %q", got)
+	}
+	result, err = ParseAndExecute(org, "SELECT Id, Account.Parent.Name FROM Contact WHERE Account.Parent.Name = 'Acme'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 || result.Records[0].ID != "003000000000002" {
+		t.Fatalf("multi-hop rows = %#v", result.Records)
+	}
+	if got := result.Records[0].Fields["Account.Parent.Name"].String; got != "Acme" {
+		t.Fatalf("Account.Parent.Name = %q", got)
 	}
 }
 

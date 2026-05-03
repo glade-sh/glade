@@ -448,16 +448,23 @@ func TestExecSOQLParentRelationshipProjection(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account a = new Account(Name = 'Acme');
 insert a;
-Contact c = new Contact(AccountId = a.Id, LastName = 'Smith');
+Account child = new Account(Name = 'Child', ParentId = a.Id);
+insert child;
+Contact c = new Contact(AccountId = child.Id, LastName = 'Smith');
 insert c;
-Contact row = [SELECT Id, Account.Name FROM Contact WHERE Id = :c.Id];
-System.assertEquals('Acme', row.Account.Name);
+Contact row = [SELECT Id, Account.Name, Account.Parent.Name FROM Contact WHERE Account.Parent.Name = 'Acme'];
+System.assertEquals('Child', row.Account.Name);
+System.assertEquals('Acme', row.Account.Parent.Name);
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	machine := New(nil)
 	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["ParentId"] = storage.Field{APIName: "ParentId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Parent"}
+	account.Definition.Relations = append(account.Definition.Relations, storage.Relationship{Field: "ParentId", ParentObjects: []string{"Account"}, ParentRelationship: "Parent"})
+	org.Objects["Account"] = account
 	org.Objects["Contact"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
 			APIName:   "Contact",

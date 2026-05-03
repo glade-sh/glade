@@ -78,6 +78,8 @@ Release engineering:
   `WITH SYSTEM_MODE` parsing as local security-mode markers.
 - Added baseline SOQL `TYPEOF` relationship projection for parent lookup
   branches.
+- Added multi-hop SOQL parent relationship projection and filtering with nested
+  VM SObject row shape.
 - Improved `Database.query` dynamic SOQL binds for operator-adjacent binds,
   dotted bind paths, collection binds, date-literal colons, and catchable
   `QueryException` parse errors.

@@ -799,6 +799,7 @@ func relationshipValue(org storage.OrgState, record storage.Record, field string
 			if !ok || parent.System.IsDeleted {
 				continue
 			}
+			parent.Object = canonicalParent
 			value, ok := recordValue(org, parentObject.Definition, parent, parts[1])
 			if !ok {
 				return storage.NullValue(), true
@@ -822,6 +823,9 @@ func idFromValue(value storage.Value) storage.ID {
 func recordValue(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, field string) (storage.Value, bool) {
 	if field == "Id" {
 		return storage.IDValue(record.ID), true
+	}
+	if strings.Contains(field, ".") {
+		return relationshipValue(org, record, field)
 	}
 	switch field {
 	case "CreatedDate":

@@ -260,6 +260,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     relationship names, child filters, ordering, limits, and VM list row shape.
 - [ ] Expand parent relationship traversal and polymorphic relationship
   behavior.
+  - [x] Support multi-hop parent relationship fields and filters, including VM
+    nested SObject row projection.
 - [x] Add aggregates: `COUNT`, `COUNT(field)`, `COUNT_DISTINCT`, `SUM`, `MIN`,
   `MAX`, `AVG`, `GROUP BY`, `ROLLUP`, `CUBE`, and `HAVING`.
   - [x] Support no-`GROUP BY` `COUNT()`, `COUNT(field)`, `COUNT_DISTINCT`,
