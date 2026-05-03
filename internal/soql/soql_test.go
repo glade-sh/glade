@@ -351,6 +351,19 @@ func TestExecuteFiltersProjectsAndOrders(t *testing.T) {
 		t.Fatalf("for update did not mark rows locked: %#v", result.Records)
 	}
 
+	locked := org.Objects["Account"].Records["001000000000001"]
+	locked.System.Locked = true
+	org.Objects["Account"].Records["001000000000001"] = locked
+	_, err = ParseAndExecute(org, "SELECT Id FROM Account WHERE Id = '001000000000001' FOR UPDATE")
+	if err == nil || !strings.Contains(err.Error(), "unable to lock row 001000000000001") {
+		t.Fatalf("expected lock error, got %v", err)
+	}
+
+	_, err = ParseAndExecute(org, "SELECT COUNT(Id) FROM Account FOR UPDATE")
+	if err == nil || !strings.Contains(err.Error(), "FOR UPDATE is not supported with aggregate queries") {
+		t.Fatalf("expected aggregate for update error, got %v", err)
+	}
+
 	result, err = ParseAndExecute(org, "SELECT Id, Name FROM Account WHERE Active = true WITH USER_MODE ORDER BY Name")
 	if err != nil {
 		t.Fatal(err)

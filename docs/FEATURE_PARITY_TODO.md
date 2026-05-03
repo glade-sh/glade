@@ -310,6 +310,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     unavailable fields.
   - [x] Mark `FOR UPDATE` result records with a local lock marker and serialize
     queried SObjects with `attributes.type` and `attributes.url`.
+  - [x] Return catchable `QueryException`s when `FOR UPDATE` hits an already
+    locked local row.
 - [x] Wire SQLite planning or indexed execution where needed without changing
   Salesforce-visible behavior.
   - [x] Rebuild runtime index sets from object index definitions and use

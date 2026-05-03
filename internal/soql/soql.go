@@ -108,6 +108,9 @@ func Execute(org storage.OrgState, query Query) (Result, error) {
 	if len(query.ChildQueries) > 0 && len(query.Aggregates) > 0 {
 		return Result{}, fmt.Errorf("soql: child relationship subqueries are not supported in aggregate queries")
 	}
+	if query.ForUpdate && len(query.Aggregates) > 0 {
+		return Result{}, fmt.Errorf("soql: FOR UPDATE is not supported with aggregate queries")
+	}
 	if query.Where != nil {
 		condition, err := resolveSubqueries(org, *query.Where)
 		if err != nil {
@@ -158,6 +161,9 @@ func Execute(org storage.OrgState, query Query) (Result, error) {
 	matchedRecords = applyWindow(matchedRecords, query.Offset, query.Limit)
 	records := make([]storage.Record, 0, len(matchedRecords))
 	for _, record := range matchedRecords {
+		if query.ForUpdate && record.System.Locked {
+			return Result{}, fmt.Errorf("soql: unable to lock row %s", record.ID)
+		}
 		projected, err := projectRecord(org, object.Definition, record, query.Fields, query.ChildQueries, query.Typeofs)
 		if err != nil {
 			return Result{}, err

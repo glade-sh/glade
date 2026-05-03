@@ -86,6 +86,8 @@ Release engineering:
   SObjects with IDs.
 - Added runtime index rebuilds from object definitions and SOQL candidate
   selection for single-field equality indexes.
+- Added catchable SOQL `FOR UPDATE` lock-contention errors for rows already
+  marked locked in local org state.
 - Added SOQL `ALL ROWS` support for querying soft-deleted records.
 - Added SOQL `WITH SECURITY_ENFORCED`, `WITH USER_MODE`, and
   `WITH SYSTEM_MODE` parsing as local security-mode markers.

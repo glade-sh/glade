@@ -484,6 +484,39 @@ System.assert(caught);
 	}
 }
 
+func TestExecSOQLForUpdateLockContentionIsCatchable(t *testing.T) {
+	program, err := CompileAnonymous(`
+Boolean caught = false;
+try {
+    List<Account> rows = [SELECT Id FROM Account WHERE Id = '001000000000001' FOR UPDATE];
+} catch (QueryException qe) {
+    caught = true;
+    String message = qe.getMessage();
+    System.assert(message.contains('unable to lock row 001000000000001'));
+}
+System.assert(caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Records["001000000000001"] = storage.Record{
+		ID:     "001000000000001",
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name": storage.StringValue("Locked"),
+		},
+		System: storage.SystemFields{Locked: true},
+	}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSOQLRowJSONAttributesURL(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account a = new Account(Name = 'Acme');
