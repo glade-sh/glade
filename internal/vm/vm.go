@@ -2195,7 +2195,11 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 	if err := vm.incrementLimit("dmlStatements", 1); err != nil {
 		return nil, err
 	}
-	if err := vm.incrementLimit("dmlRows", len(records)); err != nil {
+	dmlRows := len(records)
+	if op == "delete" {
+		dmlRows += vm.cascadeDeleteRowCount(records)
+	}
+	if err := vm.incrementLimit("dmlRows", dmlRows); err != nil {
 		return nil, err
 	}
 	if err := vm.checkMixedDML(records); err != nil {
@@ -2877,6 +2881,73 @@ func storageValuesEqualForVM(field storage.Field, left, right storage.Value) boo
 		return left.ID == right.ID
 	default:
 		return false
+	}
+}
+
+func (vm *VM) cascadeDeleteRowCount(records []storage.Record) int {
+	if vm.Org == nil {
+		return 0
+	}
+	total := 0
+	seen := make(map[string]bool)
+	for _, record := range records {
+		objectName := record.Object
+		if canonical, ok := storage.ResolveObjectName(*vm.Org, record.Object); ok {
+			objectName = canonical
+		}
+		total += vm.cascadeDeleteRowCountFrom(objectName, record.ID, seen)
+	}
+	return total
+}
+
+func (vm *VM) cascadeDeleteRowCountFrom(objectName string, id storage.ID, seen map[string]bool) int {
+	if id == "" {
+		return 0
+	}
+	key := objectName + ":" + string(id)
+	if seen[key] {
+		return 0
+	}
+	seen[key] = true
+	total := 0
+	for childObjectName, childObject := range vm.Org.Objects {
+		for _, relation := range childObject.Definition.Relations {
+			if !relation.CascadeDelete || !stringSliceContains(relation.ParentObjects, objectName) {
+				continue
+			}
+			for childID, child := range childObject.Records {
+				if child.System.IsDeleted {
+					continue
+				}
+				value, ok := child.Fields[relation.Field]
+				if !ok || storageIDFromValue(value) != id {
+					continue
+				}
+				total++
+				total += vm.cascadeDeleteRowCountFrom(childObjectName, childID, seen)
+			}
+		}
+	}
+	return total
+}
+
+func stringSliceContains(values []string, want string) bool {
+	for _, value := range values {
+		if value == want {
+			return true
+		}
+	}
+	return false
+}
+
+func storageIDFromValue(value storage.Value) storage.ID {
+	switch value.Kind {
+	case storage.ValueID:
+		return value.ID
+	case storage.ValueString:
+		return storage.ID(value.String)
+	default:
+		return ""
 	}
 }
 

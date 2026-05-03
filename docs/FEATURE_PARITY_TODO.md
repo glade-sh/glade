@@ -390,8 +390,10 @@ a Salesforce-shaped local API server without silently wrong behavior.
   query paths.
   - [x] Count projected child relationship rows toward `Limits.getQueryRows()`
     while preserving one query count for the parent SOQL statement.
-- [ ] Make DML statement and row counters Salesforce-compatible for supported
+- [x] Make DML statement and row counters Salesforce-compatible for supported
   DML paths.
+  - [x] Count cascade-deleted child records toward `Limits.getDmlRows()` for
+    supported relationship metadata.
 - [ ] Improve heap size approximation and expose predictable diagnostics for
   unsupported heap fidelity.
 - [ ] Improve CPU accounting beyond statement counts while keeping runs
