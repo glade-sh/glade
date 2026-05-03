@@ -53,6 +53,9 @@ func TestAnalyzeAttributesExpandedRuntimeEvents(t *testing.T) {
 	if report.Categories["apex.trigger"] != 1 || report.Categories["apex.describe"] != 1 {
 		t.Fatalf("categories = %#v", report.Categories)
 	}
+	if len(report.SOQL) != 1 || len(report.DML) != 1 || len(report.Triggers) != 1 || len(report.Describe) != 1 || len(report.Callouts) != 1 || len(report.Async) != 1 || len(report.Platform) != 2 {
+		t.Fatalf("report sections = %#v", report)
+	}
 	if report.Limits.SOQLQueries != 1 || report.Limits.SOQLRows != 3 || report.Limits.DML != 1 || report.Limits.DMLRows != 2 {
 		t.Fatalf("data limits = %#v", report.Limits)
 	}
@@ -65,12 +68,29 @@ func TestAnalyzeAttributesExpandedRuntimeEvents(t *testing.T) {
 }
 
 func TestWriteMarkdown(t *testing.T) {
-	report := Report{Events: 1, Hot: []Entry{{Name: "apex.statement.expr", Category: "apex.statement", Count: 1, SourceOffsets: []int{5}}}}
+	report := Analyze(trace.NewDocument([]trace.Event{
+		trace.Instant("apex.statement.expr", "apex.statement", 1, map[string]any{"sourceOffset": 5}),
+		trace.Instant("apex.method.Work.run", "apex.method", 2, nil),
+		trace.Instant("apex.soql", "apex.soql", 3, map[string]any{"rows": 4}),
+		trace.Instant("apex.limits", "apex.limits", 4, map[string]any{"cpuTimeMs": 7, "heapSize": 64}),
+	}))
 	var out bytes.Buffer
 	if err := WriteMarkdown(&out, report); err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(out.String(), "| 1 | `apex.statement.expr` | `apex.statement` | 1 | [5] |") {
+	markdown := out.String()
+	if !strings.Contains(markdown, "## Runtime summary") || !strings.Contains(markdown, "CPU: 7 ms") || !strings.Contains(markdown, "Heap: 64 bytes") {
+		t.Fatalf("markdown summary = %q", markdown)
+	}
+	for _, section := range []string{"## Categories", "## Hot events", "## Statements", "## Methods", "## SOQL", "## Platform"} {
+		if !strings.Contains(markdown, section) {
+			t.Fatalf("markdown missing %s: %q", section, markdown)
+		}
+	}
+	if !strings.Contains(markdown, "| 4 | `apex.statement.expr` | `apex.statement` | 1 | [5] |\n\n## Statements") {
+		t.Fatalf("markdown sections not separated = %q", markdown)
+	}
+	if !strings.Contains(markdown, "| 1 | `apex.statement.expr` | `apex.statement` | 1 | [5] |") {
 		t.Fatalf("markdown = %q", out.String())
 	}
 }

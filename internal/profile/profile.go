@@ -15,6 +15,15 @@ type Report struct {
 	Hot        []Entry          `json:"hot"`
 	Categories map[string]int   `json:"categories,omitempty"`
 	Limits     LimitAttribution `json:"limits,omitempty"`
+	Statements []Entry          `json:"statements,omitempty"`
+	Methods    []Entry          `json:"methods,omitempty"`
+	SOQL       []Entry          `json:"soql,omitempty"`
+	DML        []Entry          `json:"dml,omitempty"`
+	Triggers   []Entry          `json:"triggers,omitempty"`
+	Describe   []Entry          `json:"describe,omitempty"`
+	Callouts   []Entry          `json:"callouts,omitempty"`
+	Async      []Entry          `json:"async,omitempty"`
+	Platform   []Entry          `json:"platform,omitempty"`
 }
 
 type Entry struct {
@@ -159,6 +168,15 @@ func Analyze(doc trace.Document) Report {
 		}
 		return report.Hot[i].Name < report.Hot[j].Name
 	})
+	report.Statements = entriesForCategory(report.Hot, "apex.statement")
+	report.Methods = entriesForCategory(report.Hot, "apex.method")
+	report.SOQL = entriesForCategory(report.Hot, "apex.soql")
+	report.DML = entriesForCategory(report.Hot, "apex.dml")
+	report.Triggers = entriesForCategory(report.Hot, "apex.trigger")
+	report.Describe = entriesForCategory(report.Hot, "apex.describe")
+	report.Callouts = entriesForCategory(report.Hot, "apex.callout")
+	report.Async = entriesForCategory(report.Hot, "apex.async")
+	report.Platform = append(entriesForCategory(report.Hot, "apex.email"), entriesForCategory(report.Hot, "apex.limits")...)
 	return report
 }
 
@@ -183,7 +201,72 @@ func WriteMarkdown(w io.Writer, report Report) error {
 	if _, err := fmt.Fprintf(w, "# oaer profile\n\nEvents: %d\n\n", report.Events); err != nil {
 		return err
 	}
-	if _, err := fmt.Fprintf(w, "SOQL: %d queries / %d rows\n\nDML: %d statements / %d rows\n\nCallouts: %d\n\nAsync: %d jobs\n\nEmail: %d invocations\n\n", report.Limits.SOQLQueries, report.Limits.SOQLRows, report.Limits.DML, report.Limits.DMLRows, report.Limits.Callouts, report.Limits.AsyncJobs, report.Limits.EmailInvocations); err != nil {
+	if _, err := fmt.Fprintf(w, "## Runtime summary\n\nSOQL: %d queries / %d rows\n\nDML: %d statements / %d rows\n\nCallouts: %d\n\nAsync: %d jobs\n\nEmail: %d invocations\n\nCPU: %d ms\n\nHeap: %d bytes\n\n", report.Limits.SOQLQueries, report.Limits.SOQLRows, report.Limits.DML, report.Limits.DMLRows, report.Limits.Callouts, report.Limits.AsyncJobs, report.Limits.EmailInvocations, report.Limits.CPUTimeMS, report.Limits.HeapSize); err != nil {
+		return err
+	}
+	if err := writeCategorySummary(w, report.Categories); err != nil {
+		return err
+	}
+	if err := writeEntriesSection(w, "Hot events", report.Hot); err != nil {
+		return err
+	}
+	sections := []struct {
+		title   string
+		entries []Entry
+	}{
+		{"Statements", report.Statements},
+		{"Methods", report.Methods},
+		{"SOQL", report.SOQL},
+		{"DML", report.DML},
+		{"Triggers", report.Triggers},
+		{"Describe", report.Describe},
+		{"Callouts", report.Callouts},
+		{"Async", report.Async},
+		{"Platform", report.Platform},
+	}
+	for _, section := range sections {
+		if err := writeEntriesSection(w, section.title, section.entries); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func writeCategorySummary(w io.Writer, categories map[string]int) error {
+	if len(categories) == 0 {
+		return nil
+	}
+	keys := make([]string, 0, len(categories))
+	for key := range categories {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	if _, err := fmt.Fprintln(w, "## Categories"); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(w); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(w, "| Category | Count |"); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(w, "| --- | ---: |"); err != nil {
+		return err
+	}
+	for _, key := range keys {
+		if _, err := fmt.Fprintf(w, "| `%s` | %d |\n", key, categories[key]); err != nil {
+			return err
+		}
+	}
+	_, err := fmt.Fprintln(w)
+	return err
+}
+
+func writeEntriesSection(w io.Writer, title string, entries []Entry) error {
+	if len(entries) == 0 {
+		return nil
+	}
+	if _, err := fmt.Fprintf(w, "## %s\n\n", title); err != nil {
 		return err
 	}
 	if _, err := fmt.Fprintln(w, "| Rank | Event | Category | Count | Source offsets |"); err != nil {
@@ -192,12 +275,23 @@ func WriteMarkdown(w io.Writer, report Report) error {
 	if _, err := fmt.Fprintln(w, "| --- | --- | --- | ---: | --- |"); err != nil {
 		return err
 	}
-	for i, entry := range report.Hot {
+	for i, entry := range entries {
 		if _, err := fmt.Fprintf(w, "| %d | `%s` | `%s` | %d | %v |\n", i+1, entry.Name, entry.Category, entry.Count, entry.SourceOffsets); err != nil {
 			return err
 		}
 	}
-	return nil
+	_, err := fmt.Fprintln(w)
+	return err
+}
+
+func entriesForCategory(entries []Entry, category string) []Entry {
+	var out []Entry
+	for _, entry := range entries {
+		if entry.Category == category {
+			out = append(out, entry)
+		}
+	}
+	return out
 }
 
 func maxInt(a, b int) int {

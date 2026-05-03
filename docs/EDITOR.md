@@ -172,3 +172,14 @@ oaer test --project . --json
 oaer test --project . --junit reports/oaer-junit.xml
 oaer check --project . --json
 ```
+
+Trace analysis stays native to `oaer`:
+
+```bash
+oaer exec --trace reports/trace.json 'System.debug(1);'
+oaer profile analyze reports/trace.json
+oaer profile analyze reports/trace.json --json
+```
+
+The Markdown and JSON reports include hot events, category counts, runtime
+sections, and governor/resource summaries.

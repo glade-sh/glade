@@ -879,11 +879,11 @@ Effort: M-L.
 Current status as of 2026-05-02: complete for the Phase 12 baseline. `oaer exec
 --trace` writes Chrome Trace Event JSON, and `internal/profile` plus `oaer
 profile analyze` aggregate native trace events into ranked JSON or Markdown
-reports with statement, method, SOQL, DML, describe, callout, email, async,
-trigger, and limit-summary categories plus SOQL/DML row deltas and
-platform/resource counter attribution. No external apexrr dependency is used.
-pprof output, wall-clock attribution, and richer statement metadata remain
-incomplete.
+reports with hot-event, category, and runtime-section views for statement,
+method, SOQL, DML, describe, callout, email, async, trigger, and limit-summary
+activity plus SOQL/DML row deltas and platform/resource counter attribution. No
+external apexrr dependency is used. pprof output, wall-clock attribution, and
+richer statement metadata remain incomplete.
 
 ### Implementation Tasks
 

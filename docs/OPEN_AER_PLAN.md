@@ -45,7 +45,8 @@ we can add an `aer`-compatible command alias if the community wants it.
 - `oaer db seed|reset|export|inspect`: manage local SObject persistence.
 - `oaer exec --trace <path>`: write Chrome Trace Event output.
 - `oaer profile analyze <trace.json>`: produce native JSON or Markdown trace
-  analysis. pprof-compatible CPU output remains future work.
+  reports with hot events, categories, runtime sections, and governor/resource
+  summaries. pprof-compatible CPU output remains future work.
 
 ### Runtime Fidelity Targets
 

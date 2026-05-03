@@ -595,8 +595,12 @@ a Salesforce-shaped local API server without silently wrong behavior.
     callout, email, async enqueue/run, trigger invocation, and final governor
     limit summary events, and expand profile attribution for platform/resource
     counters.
-- [ ] Add native reports that fully replace apexrr-style analysis for local
+- [x] Add native reports that fully replace apexrr-style analysis for local
   runtime data.
+  - [x] Extend `oaer profile analyze` JSON and Markdown output with native
+    runtime sections for hot events, categories, statements, methods, SOQL, DML,
+    triggers, describe, callouts, async, platform events, and governor/resource
+    summary counters.
 
 ## 8. Local API Server
 

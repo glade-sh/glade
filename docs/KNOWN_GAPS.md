@@ -63,7 +63,7 @@ The MVP target is `full-featured aer-parity MVP`. This document lists required c
 ### `profile.native`: Native trace/profile reports
 
 - Status: `partial`
-- Gap: Trace/profile reports aggregate statements, methods, SOQL, DML, describe, callout, email, async enqueue/run, trigger, and limit-summary events with source offsets, statement line/column ranges, event categories, SOQL/DML row deltas, and platform/resource counter attribution. pprof-compatible CPU output and per-statement wall-clock timing remain incomplete.
+- Gap: Trace/profile reports aggregate statements, methods, SOQL, DML, describe, callout, email, async enqueue/run, trigger, and limit-summary events into native JSON/Markdown reports with hot-event, category, runtime-section, SOQL/DML row-delta, and platform/resource counter attribution. pprof-compatible CPU output and per-statement wall-clock timing remain incomplete.
 
 ### `watch.command`: oaer test --watch affected-test loop
 

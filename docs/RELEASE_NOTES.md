@@ -81,6 +81,9 @@ Release engineering:
 - Expanded native trace/profile events across describe, callout, email, async,
   trigger, and final limit-summary activity, with profile attribution for the
   added platform/resource counters.
+- Expanded `oaer profile analyze` native JSON/Markdown reports with hot-event,
+  category, runtime-section, and governor/resource summary views so local
+  runtime analysis no longer depends on apexrr-style external reporting.
 - Added parser diagnostic-count fixtures plus type-index and sema panic recovery
   diagnostics for malformed project inputs.
 - Added method/constructor parameter type diagnostics and expanded VM exception
