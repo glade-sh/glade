@@ -53,6 +53,8 @@ Release engineering:
   support in schema-aware check fixtures.
 - Added bounded stress tests for large type-index builds, SQLite fixture
   round-trips, bulk DML partial results, and describe-heavy VM execution.
+- Added VM debug pause hooks and DAP breakpoint execution plumbing so DAP can
+  stop live execution at stable statement source locations with stack and locals.
 - Added parser diagnostic-count fixtures plus type-index and sema panic recovery
   diagnostics for malformed project inputs.
 - Added method/constructor parameter type diagnostics and expanded VM exception

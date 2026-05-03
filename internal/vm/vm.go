@@ -56,6 +56,8 @@ type VM struct {
 	savepointOrder   map[string]int
 	nextSavepoint    int
 	pageMessages     []Value
+	debugHooks       DebugHooks
+	hasDebugHooks    bool
 }
 
 const maxTriggerDepth = 16
@@ -161,6 +163,11 @@ func New(stdout io.Writer) *VM {
 
 func (vm *VM) SetOrg(org *storage.OrgState) {
 	vm.Org = org
+}
+
+func (vm *VM) SetDebugHooks(hooks DebugHooks) {
+	vm.debugHooks = hooks
+	vm.hasDebugHooks = true
 }
 
 func (vm *VM) newDMLEngine() dml.Engine {
@@ -280,6 +287,9 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (execOutcome, e
 		}
 		result.Trace = append(result.Trace, statementTraceEvent(seq, inst, program.Source))
 		vm.setCurrentStatement(inst, program.Source)
+		if err := vm.maybePauseForDebug(inst); err != nil {
+			return execOutcome{}, err
+		}
 		switch inst.Op {
 		case ir.OpDeclare:
 			value := Null

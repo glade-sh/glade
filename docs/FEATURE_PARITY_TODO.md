@@ -527,9 +527,15 @@ a Salesforce-shaped local API server without silently wrong behavior.
 
 ## 7. Developer Experience
 
-- [ ] Add true live VM pause hooks for DAP at stable source locations.
-- [ ] Make breakpoints drive execution rather than only serving debug
+- [x] Add true live VM pause hooks for DAP at stable source locations.
+  - [x] Add VM debug hooks that pause on statement line/column locations,
+    expose stack/locals snapshots, support step pauses, and allow stop/continue
+    actions.
+- [x] Make breakpoints drive execution rather than only serving debug
   snapshots.
+  - [x] Convert DAP breakpoints into VM debug breakpoints and add a DAP
+    execution helper that runs to the first live breakpoint before the statement
+    executes.
 - [ ] Complete DAP stepping: step in, step over, step out, pause, continue, and
   disconnect semantics.
 - [ ] Complete DAP scopes and variable rendering for SObjects, user objects,

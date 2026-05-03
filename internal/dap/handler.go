@@ -1,9 +1,12 @@
 package dap
 
 import (
+	"errors"
 	"fmt"
+	"path/filepath"
 	"strings"
 
+	"github.com/open-aer/oaer/internal/ir"
 	"github.com/open-aer/oaer/internal/vm"
 )
 
@@ -119,6 +122,99 @@ func (h *Handler) handleSetBreakpoints(request Request) Response {
 	}
 	h.breakpoints[path] = points
 	return h.success(request, map[string]any{"breakpoints": points})
+}
+
+func (h *Handler) DebugHooks(onPause func(vm.DebugPause) vm.DebugAction) vm.DebugHooks {
+	points := make([]vm.DebugBreakpoint, 0)
+	for path, breakpoints := range h.breakpoints {
+		for _, breakpoint := range breakpoints {
+			if !breakpoint.Verified {
+				continue
+			}
+			file := path
+			if file == "" && breakpoint.Source != nil {
+				file = breakpoint.Source.Path
+				if file == "" {
+					file = breakpoint.Source.Name
+				}
+			}
+			points = append(points, vm.DebugBreakpoint{
+				File:   file,
+				Line:   breakpoint.Line,
+				Column: breakpoint.Column,
+			})
+		}
+	}
+	return vm.DebugHooks{Breakpoints: points, OnPause: onPause}
+}
+
+func (h *Handler) ExecuteToBreakpoint(machine *vm.VM, program ir.Program) (vm.Result, []Event, error) {
+	var events []Event
+	hooks := h.DebugHooks(func(pause vm.DebugPause) vm.DebugAction {
+		events = append(events, h.ApplyPause(pause))
+		return vm.DebugActionStop
+	})
+	machine.SetDebugHooks(hooks)
+	result, err := machine.Execute(program)
+	if err != nil {
+		var stop *vm.DebugStopError
+		if !errors.As(err, &stop) {
+			return result, events, err
+		}
+		return result, events, nil
+	}
+	return result, events, nil
+}
+
+func (h *Handler) ApplyPause(pause vm.DebugPause) Event {
+	h.snapshot = Snapshot{
+		Threads: []Thread{{ID: 1, Name: "main"}},
+		Frames:  stackFramesFromPause(pause),
+		Vars:    pause.Vars,
+	}
+	reason := string(pause.Reason)
+	if reason == "" {
+		reason = "pause"
+	}
+	return h.event("stopped", map[string]any{
+		"reason":            reason,
+		"threadId":          1,
+		"allThreadsStopped": true,
+	})
+}
+
+func stackFramesFromPause(pause vm.DebugPause) []StackFrame {
+	if len(pause.Stack) == 0 {
+		return []StackFrame{stackFrameFromDebugLocation(1, pause.Location)}
+	}
+	frames := make([]StackFrame, 0, len(pause.Stack))
+	for i, frame := range pause.Stack {
+		frames = append(frames, StackFrame{
+			ID:     i + 1,
+			Name:   frame.Symbol,
+			Source: sourceFromFile(frame.File),
+			Line:   frame.Line,
+			Column: frame.Column,
+		})
+	}
+	return frames
+}
+
+func stackFrameFromDebugLocation(id int, location vm.DebugLocation) StackFrame {
+	return StackFrame{
+		ID:     id,
+		Name:   location.Symbol,
+		Source: sourceFromFile(location.File),
+		Line:   location.Line,
+		Column: location.Column,
+	}
+}
+
+func sourceFromFile(file string) *Source {
+	if file == "" {
+		return &Source{Name: "anonymous.apex"}
+	}
+	return &Source{Name: filepath.Base(file), Path: file}
 }
 
 func (h *Handler) handleStackTrace(request Request) Response {

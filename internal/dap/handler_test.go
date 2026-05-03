@@ -169,6 +169,88 @@ func TestHandlerBreakpointsTraceScopesAndVariables(t *testing.T) {
 	}
 }
 
+func TestHandlerDebugHooksAndApplyPause(t *testing.T) {
+	h := NewHandler(Snapshot{})
+	h.Handle(request(1, CommandSetBreakpoints, map[string]any{
+		"source": map[string]any{
+			"name": "anonymous.apex",
+		},
+		"breakpoints": []map[string]any{{"line": 2}, {"line": 0}},
+	}))
+	var pauses []vm.DebugPause
+	hooks := h.DebugHooks(func(pause vm.DebugPause) vm.DebugAction {
+		pauses = append(pauses, pause)
+		h.ApplyPause(pause)
+		return vm.DebugActionContinue
+	})
+	if len(hooks.Breakpoints) != 1 || hooks.Breakpoints[0].Line != 2 {
+		t.Fatalf("hooks = %#v", hooks.Breakpoints)
+	}
+	program, err := vm.CompileAnonymous("Integer x = 1;\nx = x + 1;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := vm.New(nil)
+	machine.SetDebugHooks(hooks)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+	if len(pauses) != 1 || pauses[0].Location.Line != 2 {
+		t.Fatalf("pauses = %#v", pauses)
+	}
+
+	stack := h.Handle(request(2, CommandStackTrace, nil))
+	var stackBody struct {
+		StackFrames []StackFrame `json:"stackFrames"`
+	}
+	decodeBody(t, stack[0].(Response), &stackBody)
+	if len(stackBody.StackFrames) == 0 || stackBody.StackFrames[0].Line != 2 {
+		t.Fatalf("stack = %#v", stackBody.StackFrames)
+	}
+	vars := h.Handle(request(3, CommandVariables, map[string]any{"variablesReference": 1}))
+	var varsBody struct {
+		Variables []Variable `json:"variables"`
+	}
+	decodeBody(t, vars[0].(Response), &varsBody)
+	if findVariable(t, varsBody.Variables, "x").Value != "1" {
+		t.Fatalf("vars = %#v", varsBody.Variables)
+	}
+}
+
+func TestHandlerExecuteToBreakpointStopsBeforeStatement(t *testing.T) {
+	h := NewHandler(Snapshot{})
+	h.Handle(request(1, CommandSetBreakpoints, map[string]any{
+		"source": map[string]any{"name": "anonymous.apex"},
+		"breakpoints": []map[string]any{
+			{"line": 2},
+		},
+	}))
+	program, err := vm.CompileAnonymous("Integer x = 1;\nx = x + 1;\nSystem.debug(x);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := vm.New(nil)
+	_, events, err := h.ExecuteToBreakpoint(machine, program)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(events) != 1 {
+		t.Fatalf("events = %#v", events)
+	}
+	if got := machine.Globals["x"]; got.Kind != vm.ValueInt || got.Int != 1 {
+		t.Fatalf("x after breakpoint = %#v", got)
+	}
+
+	stack := h.Handle(request(2, CommandStackTrace, nil))
+	var stackBody struct {
+		StackFrames []StackFrame `json:"stackFrames"`
+	}
+	decodeBody(t, stack[0].(Response), &stackBody)
+	if len(stackBody.StackFrames) == 0 || stackBody.StackFrames[0].Line != 2 {
+		t.Fatalf("stack = %#v", stackBody.StackFrames)
+	}
+}
+
 func TestHandlerUnsupportedCommandReturnsFailure(t *testing.T) {
 	messages := NewHandler(Snapshot{}).Handle(request(1, "launch", nil))
 	response := messages[0].(Response)
