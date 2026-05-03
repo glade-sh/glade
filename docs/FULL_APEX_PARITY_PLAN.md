@@ -149,6 +149,7 @@ Current progress:
   - `docs/fixtures/core-datetime-stdlib.json`
   - `docs/fixtures/core-json-stdlib.json`
   - `docs/fixtures/core-blob-crypto-stdlib.json`
+  - `docs/fixtures/core-pattern-matcher-stdlib.json`
   - `docs/fixtures/core-type-id-url-stdlib.json`
   - `docs/fixtures/core-system-exceptions-stdlib.json`
 
@@ -214,11 +215,12 @@ Remaining cuts:
 
 8. Pattern and Matcher
    - Fixture-backed Go `regexp` slice covers compile/matches/pattern,
-     find/matches/lookingAt, group/groupCount/start/end, and basic replacement
-     methods.
+     split, find/matches/lookingAt, group/groupCount/start/end, reset, local
+     anchoring/transparent bounds flags, and basic replacement methods.
    - Remaining gap: Apex uses Java Pattern syntax; local support is Go
-     `regexp`, so Java-only constructs and region/bounds/reset APIs still need
-     explicit compatibility work.
+     `regexp`, so broader Java-only constructs, region APIs, exact bounds-region
+     interaction, and full Java replacement semantics still need explicit
+     compatibility work.
 
 9. Id, URL, and primitive object behavior
    - Landed slice: strict 18-character Id checksum validation, `Id.to18`,

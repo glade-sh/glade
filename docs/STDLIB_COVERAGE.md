@@ -171,15 +171,21 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Pattern | `Matcher.find` | `partial` | Go regexp-backed matching with captured groups. |
 | Pattern | `Matcher.group` | `partial` | Go regexp-backed group access. |
 | Pattern | `Matcher.groupCount` | `partial` | Capturing group count from Go regexp. |
+| Pattern | `Matcher.hasAnchoringBounds` | `partial` | Local bounds flag defaults to true; no region API modeled yet. |
+| Pattern | `Matcher.hasTransparentBounds` | `partial` | Local bounds flag defaults to false; no region API modeled yet. |
 | Pattern | `Matcher.lookingAt` | `partial` | Beginning-of-input Go regexp match. |
 | Pattern | `Matcher.matches` | `partial` | Whole-input Go regexp match. |
 | Pattern | `Matcher.replaceAll` | `partial` | Go regexp-backed replacement with capture references. |
 | Pattern | `Matcher.replaceFirst` | `partial` | Go regexp-backed first replacement with capture references. |
+| Pattern | `Matcher.reset` | `partial` | Clears local match state and optionally replaces input; no region API modeled yet. |
 | Pattern | `Matcher.start` | `partial` | Go regexp-backed group start positions. |
+| Pattern | `Matcher.useAnchoringBounds` | `partial` | Stores local bounds flag; no region API modeled yet. |
+| Pattern | `Matcher.useTransparentBounds` | `partial` | Stores local bounds flag; no region API modeled yet. |
 | Pattern | `Pattern.compile` | `partial` | Go regexp syntax, not full Java Pattern syntax. |
 | Pattern | `Pattern.matcher` | `partial` | Creates a Go regexp-backed Matcher. |
 | Pattern | `Pattern.matches` | `partial` | Whole-string Go regexp match. |
 | Pattern | `Pattern.pattern` | `partial` | Returns stored Go regexp source. |
+| Pattern | `Pattern.split` | `partial` | Go regexp-backed split with local limit semantics. |
 | Schema | `DescribeFieldResult` | `partial` | Common field metadata and access booleans. |
 | Schema | `DescribeSObjectResult` | `partial` | Common object metadata, fields, record types, and child relationships. |
 | Schema | `Schema.describeSObjects` | `partial` | Object names and SObjectType tokens for local schema. |
