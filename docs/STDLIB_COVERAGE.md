@@ -79,10 +79,12 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | EncodingUtil | `EncodingUtil.convertToHex` | `supported` | Blob-shaped local value. |
 | EncodingUtil | `EncodingUtil.urlDecode` | `partial` | Uses query unescape with UTF-8/utf8 charset validation only. |
 | EncodingUtil | `EncodingUtil.urlEncode` | `partial` | Uses query escape with UTF-8/utf8 charset validation only. |
+| Exception | `Exception.getCause` | `partial` | Returns the locally initialized cause value; repeat/self-cause platform edge rules are not modeled. |
 | Exception | `Exception.getLineNumber` | `partial` | Returns deterministic local throw-site line metadata when available; otherwise 0. |
 | Exception | `Exception.getMessage` | `supported` | Returns the local exception message. |
 | Exception | `Exception.getStackTraceString` | `partial` | Returns the local VM stack trace captured at throw time when available. |
 | Exception | `Exception.getTypeName` | `supported` | Returns the local exception type name without System namespace prefix. |
+| Exception | `Exception.initCause` | `partial` | Stores a local Exception cause or null for later getCause calls. |
 | Exception | `Exception.toString` | `partial` | Returns System-prefixed built-in exception text for local exception values. |
 | FeatureManagement | `FeatureManagement.checkPermission` | `partial` | Checks local runAs permission-list state. |
 | HTTP | `Http.send` | `partial` | Mock-first local callouts; real network transport unsupported. |
@@ -289,11 +291,11 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | String | `String.unescapeUnicode` | `partial` | Unescapes UTF-16 Unicode escape sequences. |
 | String | `String.unescapeXml` | `partial` | Unescapes XML core entities. |
 | String | `String.valueOf` | `supported` | Local value string conversion. |
-| System | `System.assert` | `supported` | Assertion failure returns runtime error. |
-| System | `System.assertEquals` | `supported` | Assertion failure returns runtime error. |
-| System | `System.assertNotEquals` | `supported` | Assertion failure returns runtime error. |
+| System | `System.assert` | `supported` | Assertion failure returns runtime error; Object message values use local toString. |
+| System | `System.assertEquals` | `supported` | Assertion failure returns runtime error with deterministic local expected/actual text and Object message toString. |
+| System | `System.assertNotEquals` | `supported` | Assertion failure returns runtime error with deterministic local value text and Object message toString. |
 | System | `System.currentTimeMillis` | `partial` | Returns deterministic VM-clock epoch milliseconds. |
-| System | `System.debug` | `supported` | One-argument and LoggingLevel overloads are collected in result debug output. |
+| System | `System.debug` | `supported` | One-argument and LoggingLevel overloads are collected in result debug output; null and modeled Exception values use deterministic string forms. |
 | System | `System.isBatch` | `partial` | Returns false in the local non-async VM context. |
 | System | `System.isFuture` | `partial` | Returns false in the local non-async VM context. |
 | System | `System.isQueueable` | `partial` | Returns false in the local non-async VM context. |

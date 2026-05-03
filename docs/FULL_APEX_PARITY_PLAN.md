@@ -140,9 +140,10 @@ Current progress:
   LoggingLevel dispatch, built-in `LoggingLevel` enum value helpers, local
   false-valued async context probes (`System.isBatch`, `System.isFuture`,
   `System.isQueueable`, `System.isScheduled`), core exception
-  metadata/string helpers, null/blank/unknown local `Type.forName` edges, and
-  local `Type.isAssignableFrom` for registered classes/interfaces and built-in
-  exception hierarchy checks.
+  metadata/string/cause helpers, assertion Object-message string conversion,
+  deterministic null/exception debug formatting, null/blank/unknown local
+  `Type.forName` edges, and local `Type.isAssignableFrom` for registered
+  classes/interfaces and built-in exception hierarchy checks.
 - String completion: runtime support now covers deterministic CSV, HTML4, XML,
   Java, EcmaScript, Unicode, and single-quote escaping/unescaping helpers;
   `{0}`-style `String.format`; abbreviation; common prefix and difference

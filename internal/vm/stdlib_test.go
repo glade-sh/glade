@@ -530,6 +530,77 @@ System.assertEquals('QueryException:bad query', caught);
 	}
 }
 
+func TestExecCoreExceptionCauseStdlibMethods(t *testing.T) {
+	program, err := CompileAnonymous(`
+Exception outer = new DmlException('outer');
+System.assertEquals(null, outer.getCause());
+Exception cause = new QueryException('root cause');
+outer.initCause(cause);
+Exception recovered = outer.getCause();
+System.assertEquals('QueryException', recovered.getTypeName());
+System.assertEquals('root cause', recovered.getMessage());
+outer.initCause(null);
+System.assertEquals(null, outer.getCause());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSystemAssertFailureMessagesUseObjectToString(t *testing.T) {
+	program, err := CompileAnonymous(`System.assert(false, Message.value());`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	messageProgram, err := CompileAnonymous(`return new Message();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	toStringProgram, err := CompileAnonymous(`return 'custom object message';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Message",
+		Methods: map[string]Method{
+			"value":    {Name: "Message.value", ClassName: "Message", IsStatic: true, ReturnType: "Message", Program: messageProgram},
+			"toString": {Name: "Message.toString", ClassName: "Message", ReturnType: "String", Program: toStringProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	_, err = machine.Execute(program)
+	var runtimeErr *RuntimeError
+	if !errors.As(err, &runtimeErr) {
+		t.Fatalf("error type = %T, want *RuntimeError", err)
+	}
+	if runtimeErr.Type != "System.AssertException" || runtimeErr.Message != "assertion failed: custom object message" {
+		t.Fatalf("runtime error = (%q, %q)", runtimeErr.Type, runtimeErr.Message)
+	}
+}
+
+func TestExecSystemDebugNullAndExceptionFormatting(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.debug(null);
+System.debug(new DmlException('blocked'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := Execute(program, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"null", "System.DmlException: blocked"}
+	if len(result.Debug) != len(want) || result.Debug[0] != want[0] || result.Debug[1] != want[1] {
+		t.Fatalf("debug lines = %#v, want %#v", result.Debug, want)
+	}
+}
+
 func TestExecTypeIsAssignableFrom(t *testing.T) {
 	program, err := CompileAnonymous(`
 Type exceptionType = Type.forName('Exception');
