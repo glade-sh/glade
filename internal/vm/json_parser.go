@@ -151,7 +151,7 @@ func callJSONParserMember(receiver Value, method string, args []Value) (Value, V
 		if err := validateApexID(text); err != nil {
 			return Null, receiver, false, true, err
 		}
-		return String(text), receiver, false, true, nil
+		return platformScalar("Id", text), receiver, false, true, nil
 	case "getBlobValue":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("JSONParser.getBlobValue expects 0 arguments")

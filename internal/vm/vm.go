@@ -6834,6 +6834,29 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Int(int64(parsed.Second())), receiver, false, true, nil
 			}
 		}
+	case "Id":
+		switch method {
+		case "toString":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Id.toString expects 0 arguments")
+			}
+			return receiver.Fields["value"], receiver, false, true, nil
+		case "to15":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Id.to15 expects 0 arguments")
+			}
+			text, err := platformScalarText(receiver, "Id")
+			if err != nil {
+				return Null, receiver, false, true, err
+			}
+			if err := validateApexID(text); err != nil {
+				return Null, receiver, false, true, err
+			}
+			if len(text) == 15 {
+				return String(text), receiver, false, true, nil
+			}
+			return String(text[:15]), receiver, false, true, nil
+		}
 	case "Database.SaveResult":
 		switch method {
 		case "isSuccess":
