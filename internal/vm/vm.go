@@ -1059,15 +1059,17 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return value, nil
 		}
 		return Null, unsupportedCallError(callee)
-	case "String.isBlank", "String.isNotBlank", "String.valueOf", "String.join":
+	case "String.isBlank", "String.isNotBlank", "String.isEmpty", "String.isNotEmpty", "String.valueOf", "String.join":
 		return stringStatic(callee, args)
+	case "Integer.valueOf", "Long.valueOf", "Decimal.valueOf", "Double.valueOf":
+		return numericStatic(callee, args)
 	case "Pattern.compile":
 		return patternCompile(args)
 	case "Pattern.matches":
 		return patternMatches(args)
-	case "Math.abs", "Math.floor", "Math.ceil", "Math.round", "Math.sqrt":
+	case "Math.abs", "Math.floor", "Math.ceil", "Math.round", "Math.roundToLong", "Math.signum", "Math.sqrt":
 		return mathUnary(callee, args)
-	case "Math.max", "Math.min", "Math.pow":
+	case "Math.max", "Math.min", "Math.mod", "Math.pow":
 		return mathBinary(callee, args)
 	case "Date.today":
 		if len(args) != 0 {
@@ -3604,6 +3606,21 @@ func mathUnary(callee string, args []Value) (Value, error) {
 		default:
 			return Decimal(math.Round(n)), nil
 		}
+	case "Math.roundToLong":
+		rounded, err := int64FromFloat("Math.roundToLong", math.Round(n))
+		if err != nil {
+			return Null, err
+		}
+		return Int(rounded), nil
+	case "Math.signum":
+		switch {
+		case n > 0:
+			return Int(1), nil
+		case n < 0:
+			return Int(-1), nil
+		default:
+			return Int(0), nil
+		}
 	case "Math.sqrt":
 		return Decimal(math.Sqrt(n)), nil
 	default:
@@ -3628,6 +3645,14 @@ func mathBinary(callee string, args []Value) (Value, error) {
 			return Int(int64(math.Min(left, right))), nil
 		}
 		return Decimal(math.Min(left, right)), nil
+	case "Math.mod":
+		if right == 0 {
+			return Null, fmt.Errorf("Math.mod divisor cannot be zero")
+		}
+		if args[0].Kind == ValueInt && args[1].Kind == ValueInt {
+			return Int(args[0].Int % args[1].Int), nil
+		}
+		return Decimal(math.Mod(left, right)), nil
 	case "Math.pow":
 		return Decimal(math.Pow(left, right)), nil
 	default:
@@ -3716,7 +3741,9 @@ func valueFromJSON(raw any) Value {
 		return Bool(v)
 	case float64:
 		if math.Trunc(v) == v {
-			return Int(int64(v))
+			if converted, err := int64FromFloat("JSON number", v); err == nil {
+				return Int(converted)
+			}
 		}
 		return Decimal(v)
 	case string:
@@ -5271,6 +5298,41 @@ func (vm *VM) coerceMapEntry(mapType string, key, value Value) (Value, Value, er
 	return coercedKey, coercedValue, nil
 }
 
+func collectionMembers(value Value) []Value {
+	switch value.Kind {
+	case ValueList:
+		return value.List
+	case ValueSet:
+		return value.Set
+	default:
+		return nil
+	}
+}
+
+func valueFromMapKey(key string) Value {
+	kind, text, ok := strings.Cut(key, ":")
+	if !ok {
+		return String(key)
+	}
+	switch ValueKind(kind) {
+	case ValueInt:
+		var parsed int64
+		if _, err := fmt.Sscan(text, &parsed); err == nil {
+			return Int(parsed)
+		}
+	case ValueDecimal:
+		var parsed float64
+		if _, err := fmt.Sscan(text, &parsed); err == nil {
+			return Decimal(parsed)
+		}
+	case ValueBool:
+		return Bool(strings.EqualFold(text, "true"))
+	case ValueString:
+		return String(text)
+	}
+	return String(text)
+}
+
 func (vm *VM) runtimeError(thrown Value) error {
 	return runtimeError(thrown, vm.callStack)
 }
@@ -5609,18 +5671,55 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 	case ValueList:
 		switch method {
 		case "add":
-			if len(args) != 1 {
-				return Null, true, fmt.Errorf("List.add expects 1 argument")
+			if len(args) != 1 && len(args) != 2 {
+				return Null, true, fmt.Errorf("List.add expects 1 or 2 arguments")
 			}
-			item, err := vm.coerceCollectionElement(receiver.Type, args[0])
+			valueArg := args[0]
+			insertAt := -1
+			if len(args) == 2 {
+				if args[0].Kind != ValueInt {
+					return Null, true, fmt.Errorf("List.add index expects Integer")
+				}
+				insertAt = int(args[0].Int)
+				if insertAt < 0 || insertAt > len(receiver.List) {
+					return Null, true, fmt.Errorf("List index out of bounds: %d", insertAt)
+				}
+				valueArg = args[1]
+			}
+			item, err := vm.coerceCollectionElement(receiver.Type, valueArg)
 			if err != nil {
 				return Null, true, fmt.Errorf("List.add: %w", err)
 			}
-			receiver.List = append(receiver.List, item)
+			if insertAt >= 0 {
+				receiver.List = append(receiver.List, Null)
+				copy(receiver.List[insertAt+1:], receiver.List[insertAt:])
+				receiver.List[insertAt] = item
+			} else {
+				receiver.List = append(receiver.List, item)
+			}
 			if err := vm.storeReceiver(receiverName, receiver); err != nil {
 				return Null, true, err
 			}
+			if insertAt >= 0 {
+				return Null, true, nil
+			}
 			return Bool(true), true, nil
+		case "addAll":
+			if len(args) != 1 || (args[0].Kind != ValueList && args[0].Kind != ValueSet) {
+				return Null, true, fmt.Errorf("List.addAll expects List or Set")
+			}
+			values := collectionMembers(args[0])
+			for _, value := range values {
+				item, err := vm.coerceCollectionElement(receiver.Type, value)
+				if err != nil {
+					return Null, true, fmt.Errorf("List.addAll: %w", err)
+				}
+				receiver.List = append(receiver.List, item)
+			}
+			if err := vm.storeReceiver(receiverName, receiver); err != nil {
+				return Null, true, err
+			}
+			return Null, true, nil
 		case "size":
 			if len(args) != 0 {
 				return Null, true, fmt.Errorf("List.size expects 0 arguments")
@@ -5640,6 +5739,47 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 				return Null, true, fmt.Errorf("List.contains expects 1 argument")
 			}
 			return Bool(containsValue(receiver.List, args[0])), true, nil
+		case "indexOf":
+			if len(args) != 1 {
+				return Null, true, fmt.Errorf("List.indexOf expects 1 argument")
+			}
+			for i, value := range receiver.List {
+				if value.Equal(args[0]) {
+					return Int(int64(i)), true, nil
+				}
+			}
+			return Int(-1), true, nil
+		case "remove":
+			if len(args) != 1 || args[0].Kind != ValueInt {
+				return Null, true, fmt.Errorf("List.remove expects integer index")
+			}
+			i := int(args[0].Int)
+			if i < 0 || i >= len(receiver.List) {
+				return Null, true, fmt.Errorf("List index out of bounds: %d", i)
+			}
+			removed := receiver.List[i]
+			receiver.List = append(receiver.List[:i], receiver.List[i+1:]...)
+			if err := vm.storeReceiver(receiverName, receiver); err != nil {
+				return Null, true, err
+			}
+			return removed, true, nil
+		case "set":
+			if len(args) != 2 || args[0].Kind != ValueInt {
+				return Null, true, fmt.Errorf("List.set expects integer index and value")
+			}
+			i := int(args[0].Int)
+			if i < 0 || i >= len(receiver.List) {
+				return Null, true, fmt.Errorf("List index out of bounds: %d", i)
+			}
+			item, err := vm.coerceCollectionElement(receiver.Type, args[1])
+			if err != nil {
+				return Null, true, fmt.Errorf("List.set: %w", err)
+			}
+			receiver.List[i] = item
+			if err := vm.storeReceiver(receiverName, receiver); err != nil {
+				return Null, true, err
+			}
+			return Null, true, nil
 		}
 	case ValueSet:
 		switch method {
@@ -5659,6 +5799,27 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 				return Bool(true), true, nil
 			}
 			return Bool(false), true, nil
+		case "addAll":
+			if len(args) != 1 || (args[0].Kind != ValueList && args[0].Kind != ValueSet) {
+				return Null, true, fmt.Errorf("Set.addAll expects List or Set")
+			}
+			changed := false
+			for _, value := range collectionMembers(args[0]) {
+				item, err := vm.coerceCollectionElement(receiver.Type, value)
+				if err != nil {
+					return Null, true, fmt.Errorf("Set.addAll: %w", err)
+				}
+				if !containsValue(receiver.Set, item) {
+					receiver.Set = append(receiver.Set, item)
+					changed = true
+				}
+			}
+			if changed {
+				if err := vm.storeReceiver(receiverName, receiver); err != nil {
+					return Null, true, err
+				}
+			}
+			return Bool(changed), true, nil
 		case "size":
 			if len(args) != 0 {
 				return Null, true, fmt.Errorf("Set.size expects 0 arguments")
@@ -5669,6 +5830,72 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 				return Null, true, fmt.Errorf("Set.contains expects 1 argument")
 			}
 			return Bool(containsValue(receiver.Set, args[0])), true, nil
+		case "containsAll":
+			if len(args) != 1 || (args[0].Kind != ValueList && args[0].Kind != ValueSet) {
+				return Null, true, fmt.Errorf("Set.containsAll expects List or Set")
+			}
+			for _, value := range collectionMembers(args[0]) {
+				if !containsValue(receiver.Set, value) {
+					return Bool(false), true, nil
+				}
+			}
+			return Bool(true), true, nil
+		case "remove":
+			if len(args) != 1 {
+				return Null, true, fmt.Errorf("Set.remove expects 1 argument")
+			}
+			for i, value := range receiver.Set {
+				if value.Equal(args[0]) {
+					receiver.Set = append(receiver.Set[:i], receiver.Set[i+1:]...)
+					if err := vm.storeReceiver(receiverName, receiver); err != nil {
+						return Null, true, err
+					}
+					return Bool(true), true, nil
+				}
+			}
+			return Bool(false), true, nil
+		case "removeAll":
+			if len(args) != 1 || (args[0].Kind != ValueList && args[0].Kind != ValueSet) {
+				return Null, true, fmt.Errorf("Set.removeAll expects List or Set")
+			}
+			changed := false
+			out := receiver.Set[:0]
+			remove := collectionMembers(args[0])
+			for _, value := range receiver.Set {
+				if containsValue(remove, value) {
+					changed = true
+					continue
+				}
+				out = append(out, value)
+			}
+			receiver.Set = out
+			if changed {
+				if err := vm.storeReceiver(receiverName, receiver); err != nil {
+					return Null, true, err
+				}
+			}
+			return Bool(changed), true, nil
+		case "retainAll":
+			if len(args) != 1 || (args[0].Kind != ValueList && args[0].Kind != ValueSet) {
+				return Null, true, fmt.Errorf("Set.retainAll expects List or Set")
+			}
+			changed := false
+			keep := collectionMembers(args[0])
+			out := receiver.Set[:0]
+			for _, value := range receiver.Set {
+				if containsValue(keep, value) {
+					out = append(out, value)
+					continue
+				}
+				changed = true
+			}
+			receiver.Set = out
+			if changed {
+				if err := vm.storeReceiver(receiverName, receiver); err != nil {
+					return Null, true, err
+				}
+			}
+			return Bool(changed), true, nil
 		}
 	case ValueMap:
 		switch method {
@@ -5680,7 +5907,27 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			if err != nil {
 				return Null, true, fmt.Errorf("Map.put: %w", err)
 			}
+			previous := Null
+			if existing, ok := receiver.Map[mapKey(key)]; ok {
+				previous = existing
+			}
 			receiver.Map[mapKey(key)] = item
+			if err := vm.storeReceiver(receiverName, receiver); err != nil {
+				return Null, true, err
+			}
+			return previous, true, nil
+		case "putAll":
+			if len(args) != 1 || args[0].Kind != ValueMap {
+				return Null, true, fmt.Errorf("Map.putAll expects Map")
+			}
+			for rawKey, value := range args[0].Map {
+				keyValue := valueFromMapKey(rawKey)
+				key, item, err := vm.coerceMapEntry(receiver.Type, keyValue, value)
+				if err != nil {
+					return Null, true, fmt.Errorf("Map.putAll: %w", err)
+				}
+				receiver.Map[mapKey(key)] = item
+			}
 			if err := vm.storeReceiver(receiverName, receiver); err != nil {
 				return Null, true, err
 			}
@@ -5700,6 +5947,40 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			}
 			_, ok := receiver.Map[mapKey(args[0])]
 			return Bool(ok), true, nil
+		case "containsValue":
+			if len(args) != 1 {
+				return Null, true, fmt.Errorf("Map.containsValue expects 1 argument")
+			}
+			for _, value := range receiver.Map {
+				if value.Equal(args[0]) {
+					return Bool(true), true, nil
+				}
+			}
+			return Bool(false), true, nil
+		case "keySet":
+			if len(args) != 0 {
+				return Null, true, fmt.Errorf("Map.keySet expects 0 arguments")
+			}
+			out := Set()
+			for rawKey := range receiver.Map {
+				out.Set = append(out.Set, valueFromMapKey(rawKey))
+			}
+			if keyType, _, ok := mapTypeArgs(receiver.Type); ok {
+				out.Type = "Set<" + keyType + ">"
+			}
+			return out, true, nil
+		case "values":
+			if len(args) != 0 {
+				return Null, true, fmt.Errorf("Map.values expects 0 arguments")
+			}
+			out := List()
+			for _, value := range receiver.Map {
+				out.List = append(out.List, value)
+			}
+			if _, valueType, ok := mapTypeArgs(receiver.Type); ok {
+				out.Type = "List<" + valueType + ">"
+			}
+			return out, true, nil
 		case "size":
 			if len(args) != 0 {
 				return Null, true, fmt.Errorf("Map.size expects 0 arguments")

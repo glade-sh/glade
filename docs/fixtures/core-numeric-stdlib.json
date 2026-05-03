@@ -1,0 +1,38 @@
+{
+  "name": "core-numeric-stdlib",
+  "evidence": [
+    {"symbol": "Integer.valueOf", "kind": "exec"},
+    {"symbol": "Integer.format", "kind": "exec"},
+    {"symbol": "Integer.doubleValue", "kind": "exec"},
+    {"symbol": "Long.valueOf", "kind": "exec"},
+    {"symbol": "Decimal.valueOf", "kind": "exec"},
+    {"symbol": "Decimal.abs", "kind": "exec"},
+    {"symbol": "Decimal.intValue", "kind": "exec"},
+    {"symbol": "Decimal.longValue", "kind": "exec"},
+    {"symbol": "Decimal.doubleValue", "kind": "exec"},
+    {"symbol": "Decimal.pow", "kind": "exec"},
+    {"symbol": "Decimal.format", "kind": "exec"},
+    {"symbol": "Double.valueOf", "kind": "exec"},
+    {"symbol": "Math.mod", "kind": "exec"},
+    {"symbol": "Math.roundToLong", "kind": "exec"},
+    {"symbol": "Math.signum", "kind": "exec"}
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Integer i = Integer.valueOf('42');\nLong l = Long.valueOf('9001');\nDecimal d = Decimal.valueOf('12.5');\nDouble x = Double.valueOf('2.25');\nSystem.assertEquals(42, i);\nSystem.assertEquals(9001, l);\nSystem.assertEquals(12.5, d);\nSystem.assertEquals(2.25, x);\nSystem.assertEquals('42', i.format());\nSystem.assertEquals(42.0, i.doubleValue());\nSystem.assertEquals(12, d.intValue());\nSystem.assertEquals(12, d.longValue());\nSystem.assertEquals(12.5, d.doubleValue());\nSystem.assertEquals(12.5, d.abs());\nSystem.assertEquals(156.25, d.pow(2));\nSystem.assertEquals('12.5', d.format());\nSystem.assertEquals(1, Math.signum(12.5));\nSystem.assertEquals(-1, Math.signum(-4));\nSystem.assertEquals(0, Math.signum(0));\nSystem.assertEquals(1, Math.mod(10, 3));\nSystem.assertEquals(2.5, Math.mod(12.5, 5));\nSystem.assertEquals(13, Math.roundToLong(12.5));\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Integer i = Integer.valueOf('42');\nLong l = Long.valueOf('9001');\nDecimal d = Decimal.valueOf('12.5');\nDouble x = Double.valueOf('2.25');\nSystem.assertEquals(42, i);\nSystem.assertEquals(9001, l);\nSystem.assertEquals(12.5, d);\nSystem.assertEquals(2.25, x);\nSystem.assertEquals('42', i.format());\nSystem.assertEquals(42.0, i.doubleValue());\nSystem.assertEquals(12, d.intValue());\nSystem.assertEquals(12, d.longValue());\nSystem.assertEquals(12.5, d.doubleValue());\nSystem.assertEquals(12.5, d.abs());\nSystem.assertEquals(156.25, d.pow(2));\nSystem.assertEquals('12.5', d.format());\nSystem.assertEquals(1, Math.signum(12.5));\nSystem.assertEquals(-1, Math.signum(-4));\nSystem.assertEquals(0, Math.signum(0));\nSystem.assertEquals(1, Math.mod(10, 3));\nSystem.assertEquals(2.5, Math.mod(12.5, 5));\nSystem.assertEquals(13, Math.roundToLong(12.5));\n"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

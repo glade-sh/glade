@@ -1,0 +1,38 @@
+{
+  "name": "core-collection-stdlib",
+  "evidence": [
+    {"symbol": "List.add", "kind": "exec"},
+    {"symbol": "List.addAll", "kind": "exec"},
+    {"symbol": "List.remove", "kind": "exec"},
+    {"symbol": "List.set", "kind": "exec"},
+    {"symbol": "List.indexOf", "kind": "exec"},
+    {"symbol": "Set.addAll", "kind": "exec"},
+    {"symbol": "Set.containsAll", "kind": "exec"},
+    {"symbol": "Set.remove", "kind": "exec"},
+    {"symbol": "Set.removeAll", "kind": "exec"},
+    {"symbol": "Set.retainAll", "kind": "exec"},
+    {"symbol": "Map.put", "kind": "exec"},
+    {"symbol": "Map.putAll", "kind": "exec"},
+    {"symbol": "Map.containsValue", "kind": "exec"},
+    {"symbol": "Map.keySet", "kind": "exec"},
+    {"symbol": "Map.values", "kind": "exec"}
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "List<Integer> xs = new List<Integer>{1, 2};\nxs.add(3);\nxs.add(1, 9);\nSystem.assertEquals(4, xs.size());\nSystem.assertEquals(9, xs.get(1));\nSystem.assertEquals(1, xs.indexOf(9));\nSystem.assertEquals(-1, xs.indexOf(99));\nSystem.assertEquals(9, xs.remove(1));\nxs.set(0, 7);\nxs.addAll(new List<Integer>{8, 9});\nSystem.assertEquals(7, xs.get(0));\nSystem.assertEquals(9, xs.get(xs.size() - 1));\nSet<String> names = new Set<String>{'a'};\nSystem.assert(names.add('b'));\nSystem.assert(!names.add('b'));\nSystem.assert(names.containsAll(new List<String>{'a', 'b'}));\nSystem.assert(names.remove('a'));\nSystem.assert(!names.contains('a'));\nSystem.assert(names.addAll(new List<String>{'c', 'd'}));\nSystem.assert(names.removeAll(new Set<String>{'b'}));\nSystem.assert(names.retainAll(new List<String>{'c'}));\nSystem.assertEquals(1, names.size());\nMap<String,Integer> counts = new Map<String,Integer>();\nSystem.assertEquals(null, counts.put('a', 1));\nSystem.assertEquals(1, counts.put('a', 2));\nSystem.assert(counts.containsValue(2));\nSet<String> keys = counts.keySet();\nSystem.assert(keys.contains('a'));\nList<Integer> vals = counts.values();\nSystem.assert(vals.contains(2));\nMap<String,Integer> moreCounts = new Map<String,Integer>();\nmoreCounts.put('b', 3);\ncounts.putAll(moreCounts);\nSystem.assertEquals(3, counts.get('b'));\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "List<Integer> xs = new List<Integer>{1, 2};\nxs.add(3);\nxs.add(1, 9);\nSystem.assertEquals(4, xs.size());\nSystem.assertEquals(9, xs.get(1));\nSystem.assertEquals(1, xs.indexOf(9));\nSystem.assertEquals(-1, xs.indexOf(99));\nSystem.assertEquals(9, xs.remove(1));\nxs.set(0, 7);\nxs.addAll(new List<Integer>{8, 9});\nSystem.assertEquals(7, xs.get(0));\nSystem.assertEquals(9, xs.get(xs.size() - 1));\nSet<String> names = new Set<String>{'a'};\nSystem.assert(names.add('b'));\nSystem.assert(!names.add('b'));\nSystem.assert(names.containsAll(new List<String>{'a', 'b'}));\nSystem.assert(names.remove('a'));\nSystem.assert(!names.contains('a'));\nSystem.assert(names.addAll(new List<String>{'c', 'd'}));\nSystem.assert(names.removeAll(new Set<String>{'b'}));\nSystem.assert(names.retainAll(new List<String>{'c'}));\nSystem.assertEquals(1, names.size());\nMap<String,Integer> counts = new Map<String,Integer>();\nSystem.assertEquals(null, counts.put('a', 1));\nSystem.assertEquals(1, counts.put('a', 2));\nSystem.assert(counts.containsValue(2));\nSet<String> keys = counts.keySet();\nSystem.assert(keys.contains('a'));\nList<Integer> vals = counts.values();\nSystem.assert(vals.contains(2));\nMap<String,Integer> moreCounts = new Map<String,Integer>();\nmoreCounts.put('b', 3);\ncounts.putAll(moreCounts);\nSystem.assertEquals(3, counts.get('b'));\n"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}
