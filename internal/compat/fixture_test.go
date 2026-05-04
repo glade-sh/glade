@@ -177,6 +177,49 @@ func TestRunExecFixtureWithLimitMode(t *testing.T) {
 	}
 }
 
+func TestRunExecFixtureRegistersSourceDTOClasses(t *testing.T) {
+	fixture := Fixture{
+		Name: "exec-source-dto",
+		Source: []SourceFile{
+			{Path: "force-app/main/default/classes/JsonDTOBase.cls", Content: "public class JsonDTOBase { public String ExternalId; }"},
+			{Path: "force-app/main/default/classes/JsonDTOAddress.cls", Content: "public class JsonDTOAddress { public String City { get; set; } public Integer Zip; }"},
+			{Path: "force-app/main/default/classes/JsonDTO.cls", Content: "public class JsonDTO extends JsonDTOBase { public String Name { get; set; } public JsonDTOAddress Primary; public List<JsonDTOAddress> Addresses; public Set<String> Tags; public Map<String, Integer> Scores; public String Missing; }"},
+			{Path: "anonymous.apex", Content: "JsonDTO dto = JSON.deserialize('{\"ExternalId\":\"E-7\",\"Name\":\"Ada\",\"Primary\":{\"City\":\"Delta\",\"Zip\":99501},\"Addresses\":[{\"City\":\"Port\",\"Zip\":1}],\"Tags\":[\"north\",\"north\",\"south\"],\"Scores\":{\"trail\":10}}', JsonDTO.class);"},
+		},
+		Command: Invocation{Kind: "exec", Args: []string{`
+JsonDTO dto = JSON.deserialize('{"ExternalId":"E-7","Name":"Ada","Primary":{"City":"Delta","Zip":99501},"Addresses":[{"City":"Port","Zip":1}],"Tags":["north","north","south"],"Scores":{"trail":10}}', JsonDTO.class);
+System.assertEquals('E-7', dto.ExternalId);
+System.assertEquals('Delta', dto.Primary.City);
+JsonDTOAddress first = dto.Addresses.get(0);
+System.assertEquals('Port', first.City);
+System.assertEquals(2, dto.Tags.size());
+System.assertEquals(10, dto.Scores.get('trail'));
+System.assertEquals(null, dto.Missing);
+Boolean strictCaught = false;
+try {
+  JsonDTO bad = JSON.deserializeStrict('{"Name":"Ada","Primary":{"City":"Delta","Extra":"nope"}}', JsonDTO.class);
+} catch (JSONException e) {
+  strictCaught = e.getMessage().contains('unknown field "Extra"');
+}
+System.assert(strictCaught);
+String roundtrip = JSON.serialize(dto, true);
+System.assert(roundtrip.contains('"ExternalId":"E-7"'));
+System.assert(roundtrip.contains('"Primary"'));
+System.assert(!roundtrip.contains('"Missing"'));
+`}},
+		Expected: ExpectedBehavior{
+			Result: json.RawMessage(`{"debug":null,"ok":true}`),
+		},
+	}
+	result, err := Run(fixture)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.OK {
+		t.Fatalf("result = %#v", result)
+	}
+}
+
 func TestRunUnsupportedExecFixtureMatchesExpectedError(t *testing.T) {
 	fixture := Fixture{
 		Name:    "unsupported-exec-call",

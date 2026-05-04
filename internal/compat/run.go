@@ -153,12 +153,106 @@ func runExecFixture(fixture Fixture) (RunResult, error) {
 		}
 		machine.SetLimitMode(mode)
 	}
+	if len(fixture.Source) > 0 {
+		if err := registerFixtureSourceClasses(machine, fixture); err != nil {
+			return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+		}
+	}
 	result, err := machine.Execute(program)
 	if err != nil {
 		return compareError(fixture, err)
 	}
 	payload := map[string]any{"ok": true, "debug": result.Debug}
 	return compareResult(fixture, payload, stdout.String())
+}
+
+func registerFixtureSourceClasses(machine *vm.VM, fixture Fixture) error {
+	root, err := os.MkdirTemp("", "oaer-compat-exec-source-*")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(root)
+	if err := writeSFDXProject(root, fixture.Project); err != nil {
+		return err
+	}
+	if err := writeFixtureFiles(root, fixture); err != nil {
+		return err
+	}
+	proj, err := project.Load(root)
+	if err != nil {
+		return err
+	}
+	loadedSchema := schema.Schema{}
+	if len(fixture.Schema) > 0 {
+		loadedSchema, err = schema.LoadProject(proj)
+		if err != nil {
+			return err
+		}
+	}
+	index := typesys.Build(proj, loadedSchema)
+	if index.HasErrors() {
+		if len(index.Diagnostics) > 0 {
+			return fmt.Errorf("exec fixture %q source registration failed: %s", fixture.Name, index.Diagnostics[0].Message)
+		}
+		return fmt.Errorf("exec fixture %q source registration failed", fixture.Name)
+	}
+	for _, typ := range index.Types {
+		if typ.Kind != apexast.DeclarationClass && typ.Kind != apexast.DeclarationInterface && typ.Kind != apexast.DeclarationEnum {
+			continue
+		}
+		class := vm.Class{
+			Name:         typ.Name,
+			SuperClass:   typ.SuperClass,
+			Interfaces:   typ.Interfaces,
+			Fields:       make(map[string]vm.Field),
+			StaticFields: make(map[string]vm.Field),
+			IsInterface:  typ.Kind == apexast.DeclarationInterface,
+			IsTest:       typ.IsTest,
+			Access:       fixtureAccess(typ.Modifiers),
+		}
+		for _, member := range typ.Members {
+			if member.Kind != apexast.DeclarationField && member.Kind != apexast.DeclarationProperty {
+				continue
+			}
+			field := vm.Field{
+				Name:     member.Name,
+				Type:     member.Type,
+				Access:   fixtureAccess(member.Modifiers),
+				Property: member.Kind == apexast.DeclarationProperty,
+				Static:   fixtureHasModifier(member.Modifiers, "static"),
+			}
+			if field.Static {
+				class.StaticFields[field.Name] = field
+				class.StaticFieldOrder = append(class.StaticFieldOrder, field.Name)
+			} else {
+				class.Fields[field.Name] = field
+				class.FieldOrder = append(class.FieldOrder, field.Name)
+			}
+		}
+		if err := machine.RegisterClass(class); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func fixtureAccess(modifiers []string) string {
+	for _, modifier := range modifiers {
+		switch strings.ToLower(modifier) {
+		case "public", "private", "protected", "global":
+			return strings.ToLower(modifier)
+		}
+	}
+	return ""
+}
+
+func fixtureHasModifier(modifiers []string, want string) bool {
+	for _, modifier := range modifiers {
+		if strings.EqualFold(modifier, want) {
+			return true
+		}
+	}
+	return false
 }
 
 func orgFromFixture(fixture Fixture) (storage.OrgState, error) {

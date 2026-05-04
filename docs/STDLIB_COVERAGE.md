@@ -127,8 +127,8 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Iterator | `Iterator.remove` | `unsupported` | Returns an explicit unsupported error; mutating collection iterators are not modeled. |
 | JSON | `JSON.createGenerator` | `supported` | Creates deterministic local JSONGenerator instances. |
 | JSON | `JSON.createParser` | `partial` | Creates deterministic local JSONParser token streams and throws catchable JSONException for malformed JSON input. |
-| JSON | `JSON.deserialize` | `partial` | Primitive, platform scalar, List, Set, nested Map<String,Object/value>, SObject, and registered class shapes for the supported local subset; catchable mapping errors for mismatched typed shapes and stable unsupported errors for unknown object targets. |
-| JSON | `JSON.deserializeStrict` | `partial` | Rejects duplicate object fields and throws catchable JSONException for unknown fields on supported schema/class targets, including inherited class fields; otherwise shares the bounded typed local mapping subset. |
+| JSON | `JSON.deserialize` | `supported` | Primitive, platform scalar, List, Set, nested Map<String,Object/value>, SObject, and registered or fixture source-backed Apex class shapes; catchable mapping errors for mismatched typed shapes and stable unsupported errors for unknown object targets. |
+| JSON | `JSON.deserializeStrict` | `supported` | Rejects duplicate object fields and throws catchable JSONException for unknown fields on supported schema/class targets, including inherited and nested source-backed class fields. |
 | JSON | `JSON.deserializeUntyped` | `partial` | Maps JSON into local primitive/list/map values with deterministic null and number handling. |
 | JSON | `JSON.serialize` | `partial` | Includes suppressApexObjectNulls overload for supported object fields; map/list nulls are preserved for supported values. |
 | JSON | `JSON.serializePretty` | `partial` | Pretty output for supported values with object-field null suppression and map/list null preservation. |
