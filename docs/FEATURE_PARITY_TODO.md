@@ -1017,6 +1017,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
     reject invalid load/export mode parameters with Salesforce-shaped
     `INVALID_FIXTURE` errors, and persist replacement commits through the shared
     store boundary.
+  - [x] Validate reset request bodies even when path or query scopes are present,
+    reject unknown fields and trailing JSON with Salesforce-shaped
+    `INVALID_RESET` errors, and merge body/query scopes deterministically.
 - [ ] Add black-box server compatibility fixtures for CRUD, query,
   executeAnonymous, composite, errors, auth stubs, and persistence.
   - [x] Cover SObject object-resource metadata and unknown-object resource
@@ -1074,6 +1077,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Cover `oaer/fixture` replace-mode load, export-mode validation, bad load
     mode validation, and post-replace data reset persistence in the server
     black-box fixture.
+  - [x] Cover persistent DB restart after fixture replace, export-after-restart,
+    and reset body validation edges in the server black-box fixture.
 
 ## 9. Compatibility, Hardening, And Release
 

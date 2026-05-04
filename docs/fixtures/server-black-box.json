@@ -231,6 +231,65 @@
       ]
     },
     {
+      "name": "oaer-fixture-export-after-restart",
+      "method": "GET",
+      "path": "/services/data/v61.0/oaer/fixture",
+      "restart": true,
+      "status": 200,
+      "contains": [
+        "Fixture Replace",
+        "ada@example.test"
+      ],
+      "notContains": [
+        "Persisted"
+      ]
+    },
+    {
+      "name": "oaer-reset-path-malformed-body",
+      "method": "POST",
+      "path": "/services/data/v61.0/oaer/reset/data",
+      "body": "{",
+      "status": 400,
+      "contains": [
+        "INVALID_RESET",
+        "unexpected EOF"
+      ]
+    },
+    {
+      "name": "oaer-reset-query-unknown-body-field",
+      "method": "POST",
+      "path": "/services/data/v61.0/oaer/reset?scope=data",
+      "body": "{\"unknown\":[\"data\"]}",
+      "status": 400,
+      "contains": [
+        "INVALID_RESET",
+        "unknown field \\\"unknown\\\""
+      ]
+    },
+    {
+      "name": "oaer-reset-multiple-json-body",
+      "method": "POST",
+      "path": "/services/data/v61.0/oaer/reset",
+      "body": "{\"scope\":\"data\"} {\"scope\":\"users\"}",
+      "status": 400,
+      "contains": [
+        "INVALID_RESET",
+        "reset body must contain a single JSON object"
+      ]
+    },
+    {
+      "name": "oaer-reset-combines-query-and-body-scopes",
+      "method": "POST",
+      "path": "/services/data/v61.0/oaer/reset?scope=limits",
+      "body": "{\"scope\":\"data\",\"scopes\":[\"async\"]}",
+      "status": 200,
+      "contains": [
+        "\"scopes\":[\"limits\",\"async\",\"data\"]",
+        "\"noOpScopes\":[\"limits\",\"async\"]",
+        "\"Account\":0"
+      ]
+    },
+    {
       "name": "oaer-reset-data-after-fixture-replace",
       "method": "POST",
       "path": "/services/data/v61.0/oaer/reset/data",
@@ -2148,7 +2207,7 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 193,
+      "requests": 198,
       "statuses": [
         200,
         200,
@@ -2167,6 +2226,11 @@
         400,
         400,
         200,
+        200,
+        200,
+        400,
+        400,
+        400,
         200,
         200,
         200,
