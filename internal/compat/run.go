@@ -576,9 +576,10 @@ func serverFixtureOrg() storage.OrgState {
 			APIName:   "Account",
 			KeyPrefix: "001",
 			Fields: map[string]storage.Field{
-				"Name":           {APIName: "Name", Type: storage.FieldString},
+				"Name":           {APIName: "Name", Type: storage.FieldString, Required: true},
 				"Description":    {APIName: "Description", Type: storage.FieldString},
 				"External_Id__c": {APIName: "External_Id__c", Type: storage.FieldString, ExternalID: true, Unique: true},
+				"Formula__c":     {APIName: "Formula__c", Type: storage.FieldCalculated},
 			},
 		},
 		Records: make(map[storage.ID]storage.Record),

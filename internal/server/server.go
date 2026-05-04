@@ -497,6 +497,10 @@ func (s *Server) externalIDRoute(w http.ResponseWriter, objectName, externalIDFi
 		writeSalesforceError(w, errInvalidField, fmt.Sprintf("field %s.%s is not an external id", resolvedObjectName, fieldName))
 		return storage.ObjectState{}, "", "", storage.Field{}, storage.Value{}, false
 	}
+	if strings.TrimSpace(externalIDValue) == "" {
+		writeSalesforceError(w, errRequiredFieldMissing, "external id value is required")
+		return storage.ObjectState{}, "", "", storage.Field{}, storage.Value{}, false
+	}
 	value, err := externalIDValueFromPath(field, externalIDValue)
 	if err != nil {
 		writeSalesforceError(w, errInvalidField, err.Error())
@@ -524,6 +528,11 @@ func (s *Server) handleRecord(w http.ResponseWriter, r *http.Request, version st
 		}
 		writeJSON(w, http.StatusOK, recordPayloadWithProjection(record, version, objectName, id, projection, projected))
 	case http.MethodPatch:
+		stored, ok := object.Records[id]
+		if !ok || stored.System.IsDeleted {
+			writeSalesforceError(w, errUnknownRecord)
+			return
+		}
 		record, err := decodeRecord(r, objectName, id)
 		if err != nil {
 			writeSalesforceError(w, errMalformedJSON, err.Error())
@@ -2130,7 +2139,7 @@ func storageValueFromJSON(value any) storage.Value {
 
 func writeDMLResult(w http.ResponseWriter, status int, result dml.Result) {
 	if !result.Success {
-		writeSalesforceError(w, errDMLFailure, result.Error)
+		writeDMLFailure(w, result)
 		return
 	}
 	if status == http.StatusNoContent {
@@ -2142,7 +2151,7 @@ func writeDMLResult(w http.ResponseWriter, status int, result dml.Result) {
 
 func writeExternalIDUpsertResult(w http.ResponseWriter, result dml.Result) {
 	if !result.Success {
-		writeSalesforceError(w, errDMLFailure, result.Error)
+		writeDMLFailure(w, result)
 		return
 	}
 	if !result.Created {
@@ -2150,6 +2159,26 @@ func writeExternalIDUpsertResult(w http.ResponseWriter, result dml.Result) {
 		return
 	}
 	writeJSON(w, http.StatusCreated, map[string]any{"id": result.ID, "success": true, "errors": []string{}, "created": true})
+}
+
+func writeDMLFailure(w http.ResponseWriter, result dml.Result) {
+	if len(result.Errors) == 0 {
+		writeSalesforceError(w, errDMLFailure, result.Error)
+		return
+	}
+	errors := make([]salesforceError, 0, len(result.Errors))
+	for _, err := range result.Errors {
+		code := err.StatusCode
+		if code == "" {
+			code = salesforceErrorCode(errDMLFailure)
+		}
+		message := err.Message
+		if message == "" {
+			message = result.Error
+		}
+		errors = append(errors, salesforceError{ErrorCode: code, Message: message})
+	}
+	writeJSON(w, http.StatusBadRequest, errors)
 }
 
 func writeJSON(w http.ResponseWriter, status int, value any) {
@@ -2593,7 +2622,7 @@ func writeExternalIDLookupResult(w http.ResponseWriter, objectName, fieldName st
 	case 0:
 		writeSalesforceError(w, errUnknownRecord)
 	default:
-		writeSalesforceError(w, errDMLFailure, fmt.Sprintf("external id %s.%s matched multiple records", objectName, fieldName))
+		writeSalesforceError(w, errDuplicateValue, fmt.Sprintf("external id %s.%s matched multiple records", objectName, fieldName))
 	}
 	return false
 }

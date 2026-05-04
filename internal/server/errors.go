@@ -31,6 +31,7 @@ const (
 	errDMLFailure           serverErrorKind = "dml_failure"
 	errStoreFailure         serverErrorKind = "store_failure"
 	errRequiredFieldMissing serverErrorKind = "required_field_missing"
+	errDuplicateValue       serverErrorKind = "duplicate_value"
 )
 
 type serverErrorSpec struct {
@@ -58,6 +59,7 @@ var serverErrorSpecs = map[serverErrorKind]serverErrorSpec{
 	errDMLFailure:           {status: http.StatusBadRequest, code: "DML_EXCEPTION", message: "DML operation failed"},
 	errStoreFailure:         {status: http.StatusInternalServerError, code: "SERVER_ERROR", message: "store failure"},
 	errRequiredFieldMissing: {status: http.StatusBadRequest, code: "REQUIRED_FIELD_MISSING", message: "required field missing"},
+	errDuplicateValue:       {status: http.StatusBadRequest, code: "DUPLICATE_VALUE", message: "duplicate value"},
 }
 
 func writeSalesforceError(w http.ResponseWriter, kind serverErrorKind, message ...string) {

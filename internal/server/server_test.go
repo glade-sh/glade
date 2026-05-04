@@ -583,6 +583,10 @@ func TestSObjectCRUDMissingAndDeletedEdges(t *testing.T) {
 	handler.ServeHTTP(missingGet, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/001000000000999", nil))
 	assertSalesforceError(t, missingGet, http.StatusNotFound, "NOT_FOUND", "record not found")
 
+	missingPatch := httptest.NewRecorder()
+	handler.ServeHTTP(missingPatch, httptest.NewRequest(http.MethodPatch, "/services/data/v61.0/sobjects/Account/001000000000999", strings.NewReader(`{"Name":"Missing"}`)))
+	assertSalesforceError(t, missingPatch, http.StatusNotFound, "NOT_FOUND", "record not found")
+
 	missingDelete := httptest.NewRecorder()
 	handler.ServeHTTP(missingDelete, httptest.NewRequest(http.MethodDelete, "/services/data/v61.0/sobjects/Account/001000000000999", nil))
 	assertSalesforceError(t, missingDelete, http.StatusNotFound, "NOT_FOUND", "record not found")
@@ -608,6 +612,14 @@ func TestSObjectCRUDMissingAndDeletedEdges(t *testing.T) {
 	handler.ServeHTTP(getDeleted, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/"+string(created.ID), nil))
 	assertSalesforceError(t, getDeleted, http.StatusNotFound, "NOT_FOUND", "record not found")
 
+	patchDeleted := httptest.NewRecorder()
+	handler.ServeHTTP(patchDeleted, httptest.NewRequest(http.MethodPatch, "/services/data/v61.0/sobjects/Account/"+string(created.ID), strings.NewReader(`{"Name":"Deleted"}`)))
+	assertSalesforceError(t, patchDeleted, http.StatusNotFound, "NOT_FOUND", "record not found")
+
+	deleteDeleted := httptest.NewRecorder()
+	handler.ServeHTTP(deleteDeleted, httptest.NewRequest(http.MethodDelete, "/services/data/v61.0/sobjects/Account/"+string(created.ID), nil))
+	assertSalesforceError(t, deleteDeleted, http.StatusNotFound, "NOT_FOUND", "record not found")
+
 	recent := httptest.NewRecorder()
 	handler.ServeHTTP(recent, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/recent", nil))
 	if recent.Code != http.StatusOK {
@@ -625,6 +637,101 @@ func TestSObjectCRUDMissingAndDeletedEdges(t *testing.T) {
 	if bytes.Contains(allRecent.Body.Bytes(), []byte(`To Delete`)) || bytes.Contains(allRecent.Body.Bytes(), []byte(created.ID)) {
 		t.Fatalf("aggregate recent exposed deleted record: %s", allRecent.Body.String())
 	}
+}
+
+func TestSObjectCRUDValidationErrorsUseDMLStatusCodes(t *testing.T) {
+	tests := []struct {
+		name       string
+		method     string
+		path       string
+		body       string
+		before     func(*storage.OrgState)
+		wantStatus int
+		wantCode   string
+		wantField  string
+	}{
+		{
+			name:       "create missing required field",
+			method:     http.MethodPost,
+			path:       "/services/data/v61.0/sobjects/Account",
+			body:       `{}`,
+			wantStatus: http.StatusBadRequest,
+			wantCode:   "REQUIRED_FIELD_MISSING",
+			wantField:  "Name",
+		},
+		{
+			name:       "create unknown field",
+			method:     http.MethodPost,
+			path:       "/services/data/v61.0/sobjects/Account",
+			body:       `{"Name":"Acme","Nope__c":"bad"}`,
+			wantStatus: http.StatusBadRequest,
+			wantCode:   "INVALID_FIELD_FOR_INSERT_UPDATE",
+			wantField:  "Nope__c",
+		},
+		{
+			name:       "patch unknown field",
+			method:     http.MethodPatch,
+			path:       "/services/data/v61.0/sobjects/Account/001000000000001",
+			body:       `{"Nope__c":"bad"}`,
+			before:     func(org *storage.OrgState) { addAccountForTest(org, "001000000000001", "Acme") },
+			wantStatus: http.StatusBadRequest,
+			wantCode:   "INVALID_FIELD_FOR_INSERT_UPDATE",
+			wantField:  "Nope__c",
+		},
+		{
+			name:       "patch calculated field",
+			method:     http.MethodPatch,
+			path:       "/services/data/v61.0/sobjects/Account/001000000000001",
+			body:       `{"Formula__c":"blocked"}`,
+			before:     func(org *storage.OrgState) { addAccountForTest(org, "001000000000001", "Acme") },
+			wantStatus: http.StatusBadRequest,
+			wantCode:   "INVALID_FIELD_FOR_INSERT_UPDATE",
+			wantField:  "Formula__c",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			org := testOrg()
+			if tt.before != nil {
+				tt.before(&org)
+			}
+			handler := New(&org)
+			rec := httptest.NewRecorder()
+			handler.ServeHTTP(rec, httptest.NewRequest(tt.method, tt.path, strings.NewReader(tt.body)))
+			assertSalesforceError(t, rec, tt.wantStatus, tt.wantCode, tt.wantField)
+		})
+	}
+}
+
+func TestSObjectExternalIDNullBlankAndDuplicateEdges(t *testing.T) {
+	t.Run("path blank external id is required", func(t *testing.T) {
+		org := testOrg()
+		handler := New(&org)
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPatch, "/services/data/v61.0/sobjects/Account/External_Id__c/%20", strings.NewReader(`{"Name":"Blank"}`)))
+		assertSalesforceError(t, rec, http.StatusBadRequest, "REQUIRED_FIELD_MISSING", "external id value is required")
+	})
+
+	t.Run("body null external id mismatches path", func(t *testing.T) {
+		org := testOrg()
+		handler := New(&org)
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPatch, "/services/data/v61.0/sobjects/Account/External_Id__c/EXT-1", strings.NewReader(`{"Name":"Null","External_Id__c":null}`)))
+		assertSalesforceError(t, rec, http.StatusBadRequest, "DML_EXCEPTION", "does not match path value")
+	})
+
+	t.Run("duplicate external id lookup is stable duplicate value", func(t *testing.T) {
+		org := testOrg()
+		object := org.Objects["Account"]
+		object.Records["001000000000001"] = storage.Record{ID: "001000000000001", Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("A"), "External_Id__c": storage.StringValue("DUP")}}
+		object.Records["001000000000002"] = storage.Record{ID: "001000000000002", Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("B"), "External_Id__c": storage.StringValue("dup")}}
+		org.Objects["Account"] = object
+		handler := New(&org)
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/External_Id__c/DUP", nil))
+		assertSalesforceError(t, rec, http.StatusBadRequest, "DUPLICATE_VALUE", "matched multiple records")
+	})
 }
 
 func TestRecentResourcesHonorLimitQuery(t *testing.T) {
@@ -4100,7 +4207,7 @@ func TestSalesforceErrorResponses(t *testing.T) {
 			path:          "/services/data/v61.0/sobjects/Account",
 			body:          `{}`,
 			wantStatus:    http.StatusBadRequest,
-			wantCode:      "DML_EXCEPTION",
+			wantCode:      "REQUIRED_FIELD_MISSING",
 			wantMessageIn: "Name",
 		},
 		{
@@ -4185,6 +4292,7 @@ func testOrg() storage.OrgState {
 				"Name":           {APIName: "Name", Type: storage.FieldString, Required: true},
 				"Description":    {APIName: "Description", Type: storage.FieldString},
 				"External_Id__c": {APIName: "External_Id__c", Type: storage.FieldString, ExternalID: true, Unique: true},
+				"Formula__c":     {APIName: "Formula__c", Type: storage.FieldCalculated},
 			},
 		},
 		Records: make(map[storage.ID]storage.Record),
