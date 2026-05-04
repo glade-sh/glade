@@ -173,6 +173,38 @@ func TestExecuteGroupedAggregateQueries(t *testing.T) {
 	}
 }
 
+func TestExecuteValidatesAggregateHavingAndAliases(t *testing.T) {
+	org := aggregateTestOrg()
+
+	result, err := ParseAndExecute(org, "SELECT Rating, COUNT(Id) accountCount, SUM(AnnualRevenue) totalRevenue FROM Account GROUP BY Rating HAVING Rating = 'Hot' AND totalRevenue > 100")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 || result.Records[0].Fields["Rating"].String != "Hot" {
+		t.Fatalf("valid HAVING result = %#v", result)
+	}
+
+	cases := []struct {
+		query string
+		want  string
+	}{
+		{query: "SELECT Rating, COUNT(Id) accountCount FROM Account GROUP BY Rating HAVING Missing__c = 'x'", want: "Missing__c"},
+		{query: "SELECT Rating, COUNT(Id) accountCount FROM Account GROUP BY Rating HAVING Name = 'Acme'", want: "must be grouped or aggregated"},
+		{query: "SELECT Rating, COUNT(Id) accountCount FROM Account GROUP BY Rating HAVING SUM(Missing__c) > 0", want: "Missing__c"},
+		{query: "SELECT Rating, COUNT(Id) accountCount FROM Account GROUP BY Rating HAVING SUM(AnnualRevenue) > 100", want: "must be selected or aliased"},
+		{query: "SELECT SUM(Name) bad FROM Account", want: "SUM requires numeric field Name"},
+		{query: "SELECT SUM(Id) bad FROM Account", want: "SUM requires numeric field Id"},
+		{query: "SELECT Rating, COUNT(Id) Rating FROM Account GROUP BY Rating", want: "conflicts with grouped field"},
+		{query: "SELECT COUNT(Id) sameAlias, SUM(AnnualRevenue) sameAlias FROM Account", want: "duplicate aggregate alias"},
+		{query: "SELECT COUNT(Id) expr0 FROM Account", want: "conflicts with generated aggregate field"},
+	}
+	for _, tc := range cases {
+		if _, err := ParseAndExecute(org, tc.query); err == nil || !strings.Contains(err.Error(), tc.want) {
+			t.Fatalf("expected %q for %q, got %v", tc.want, tc.query, err)
+		}
+	}
+}
+
 func TestExecuteDateLiteralPredicates(t *testing.T) {
 	org := aggregateTestOrg()
 	account := org.Objects["Account"]

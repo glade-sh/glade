@@ -305,8 +305,10 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Support `FIELDS(ALL)`, `FIELDS(STANDARD)`, and `FIELDS(CUSTOM)` field
     projection expansion.
   - [x] Validate schema-backed SOQL field references across `SELECT`, `WHERE`,
-    `ORDER BY`, aggregate ordering, child subqueries, and parent relationship
-    paths before execution.
+    `HAVING`, `ORDER BY`, aggregate ordering, child subqueries, and parent
+    relationship paths before execution.
+  - [x] Validate aggregate aliases, grouped-field consistency, and numeric
+    field requirements before aggregate execution.
   - [x] Parse and execute `FOR UPDATE` as a local lock marker.
   - [x] Support `ALL ROWS` queries that include soft-deleted records.
   - [x] Parse and execute `WITH SECURITY_ENFORCED`, `WITH USER_MODE`, and

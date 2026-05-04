@@ -964,6 +964,54 @@ System.assertEquals(2, cubeRows.size());
 	}
 }
 
+func TestExecSOQLAggregateValidationQueryExceptions(t *testing.T) {
+	program, err := CompileAnonymous(`
+insert new Account(Name = 'Acme', AnnualRevenue = 100, Rating = 'Hot');
+insert new Account(Name = 'Beta', AnnualRevenue = 250, Rating = 'Warm');
+Boolean caughtHaving = false;
+try {
+    Database.query('SELECT Rating, COUNT(Id) accountCount FROM Account GROUP BY Rating HAVING Missing__c = ''x''');
+} catch (QueryException qe) {
+    caughtHaving = qe.getMessage().contains('Missing__c');
+}
+System.assert(caughtHaving);
+Boolean caughtUngrouped = false;
+try {
+    Database.query('SELECT Rating, COUNT(Id) accountCount FROM Account GROUP BY Rating HAVING Name = ''Acme''');
+} catch (QueryException qe) {
+    caughtUngrouped = qe.getMessage().contains('must be grouped or aggregated');
+}
+System.assert(caughtUngrouped);
+Boolean caughtAggregateField = false;
+try {
+    Database.query('SELECT SUM(Name) bad FROM Account');
+} catch (QueryException qe) {
+    caughtAggregateField = qe.getMessage().contains('SUM requires numeric field Name');
+}
+System.assert(caughtAggregateField);
+Boolean caughtAlias = false;
+try {
+    Database.query('SELECT Rating, COUNT(Id) Rating FROM Account GROUP BY Rating');
+} catch (QueryException qe) {
+    caughtAlias = qe.getMessage().contains('conflicts with grouped field');
+}
+System.assert(caughtAlias);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["AnnualRevenue"] = storage.Field{APIName: "AnnualRevenue", Type: storage.FieldDecimal}
+	account.Definition.Fields["Rating"] = storage.Field{APIName: "Rating", Type: storage.FieldString}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSOQLDateLiterals(t *testing.T) {
 	program, err := CompileAnonymous(`
 insert new Account(Name = 'Today', RenewalDate__c = Date.today());
