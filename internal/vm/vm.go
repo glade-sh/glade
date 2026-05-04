@@ -8630,6 +8630,13 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		}
 	case "System.FinalizerContext", "FinalizerContext":
 		return Null, receiver, false, true, unsupportedCallError(receiver.Type + "." + method + " local queueable finalizers")
+	case "AsyncOptions":
+		switch method {
+		case "getDuplicateSignature", "setDuplicateSignature",
+			"getMaximumQueueableStackDepth", "setMaximumQueueableStackDepth",
+			"getMinimumQueueableDelayInMinutes", "setMinimumQueueableDelayInMinutes":
+			return Null, receiver, false, true, unsupportedCallError("AsyncOptions." + method + " local async options surface")
+		}
 	case "JSONGenerator":
 		return callJSONGeneratorMember(receiver, method, args)
 	case "JSONParser":

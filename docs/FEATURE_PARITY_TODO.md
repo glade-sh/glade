@@ -233,6 +233,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
   async-heavy, describe-heavy, and namespace-heavy projects.
 - [x] Add an async-heavy compatibility test fixture that covers future, batch,
   schedule, chained Queueable, `AsyncApexJob`, and `CronTrigger` behavior.
+- [x] Pin unsupported `AsyncOptions` mutator/accessor calls with typed
+  diagnostics and black-box fixture coverage.
 
 ## 4. SObjects, SOQL, DML, And Triggers
 
