@@ -961,7 +961,7 @@
       "name": "composite-graph-unsupported",
       "method": "POST",
       "path": "/services/data/v61.0/composite/graph",
-      "body": "{}",
+      "body": "{\"graphs\":[{\"graphId\":\"GraphOne\",\"compositeRequest\":[{\"method\":\"GET\",\"url\":\"/services/data/v61.0/limits\",\"referenceId\":\"LimitsRef\"}]}]}",
       "status": 501,
       "contains": [
         "UNSUPPORTED_FEATURE",
@@ -972,7 +972,7 @@
       "name": "composite-generic-unsupported",
       "method": "POST",
       "path": "/services/data/v61.0/composite",
-      "body": "{\"compositeRequest\":[]}",
+      "body": "{\"compositeRequest\":[{\"method\":\"GET\",\"url\":\"/services/data/v61.0/limits\",\"referenceId\":\"LimitsRef\"}]}",
       "status": 501,
       "contains": [
         "UNSUPPORTED_FEATURE",
@@ -1045,6 +1045,94 @@
       "contains": [
         "JSON_PARSER_ERROR",
         "unexpected EOF"
+      ]
+    },
+    {
+      "name": "composite-batch-unsupported",
+      "method": "POST",
+      "path": "/services/data/v61.0/composite/batch",
+      "body": "{\"batchRequests\":[{\"method\":\"GET\",\"url\":\"/services/data/v61.0/limits\"}]}",
+      "status": 501,
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Composite batch"
+      ]
+    },
+    {
+      "name": "composite-tree-unsupported",
+      "method": "POST",
+      "path": "/services/data/v61.0/composite/tree/Account",
+      "body": "{\"records\":[{\"attributes\":{\"referenceId\":\"AccountRef\"},\"Name\":\"Tree Acme\"}]}",
+      "status": 501,
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Composite tree"
+      ]
+    },
+    {
+      "name": "composite-generic-missing-reference",
+      "method": "POST",
+      "path": "/services/data/v61.0/composite",
+      "body": "{\"compositeRequest\":[{\"method\":\"GET\",\"url\":\"/services/data/v61.0/limits\"}]}",
+      "status": 400,
+      "contains": [
+        "REQUIRED_FIELD_MISSING",
+        "compositeRequest[0].referenceId is required"
+      ]
+    },
+    {
+      "name": "composite-batch-missing-url",
+      "method": "POST",
+      "path": "/services/data/v61.0/composite/batch",
+      "body": "{\"batchRequests\":[{\"method\":\"GET\"}]}",
+      "status": 400,
+      "contains": [
+        "REQUIRED_FIELD_MISSING",
+        "batchRequests[0].url is required"
+      ]
+    },
+    {
+      "name": "composite-tree-missing-reference",
+      "method": "POST",
+      "path": "/services/data/v61.0/composite/tree/Account",
+      "body": "{\"records\":[{\"attributes\":{},\"Name\":\"Tree Acme\"}]}",
+      "status": 400,
+      "contains": [
+        "REQUIRED_FIELD_MISSING",
+        "records[0].attributes.referenceId is required"
+      ]
+    },
+    {
+      "name": "composite-tree-missing-object",
+      "method": "POST",
+      "path": "/services/data/v61.0/composite/tree",
+      "body": "{\"records\":[{\"attributes\":{\"referenceId\":\"AccountRef\"},\"Name\":\"Tree Acme\"}]}",
+      "status": 400,
+      "contains": [
+        "REQUIRED_FIELD_MISSING",
+        "object name is required"
+      ]
+    },
+    {
+      "name": "composite-graph-missing-graphs",
+      "method": "POST",
+      "path": "/services/data/v61.0/composite/graph",
+      "body": "{}",
+      "status": 400,
+      "contains": [
+        "REQUIRED_FIELD_MISSING",
+        "graphs is required"
+      ]
+    },
+    {
+      "name": "composite-graph-missing-subrequests",
+      "method": "POST",
+      "path": "/services/data/v61.0/composite/graph",
+      "body": "{\"graphs\":[{\"graphId\":\"GraphOne\"}]}",
+      "status": 400,
+      "contains": [
+        "REQUIRED_FIELD_MISSING",
+        "graphs[0].compositeRequest is required"
       ]
     },
     {
@@ -1539,7 +1627,7 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 137,
+      "requests": 145,
       "statuses": [
         200,
         200,
@@ -1630,6 +1718,14 @@
         200,
         200,
         200,
+        400,
+        400,
+        501,
+        501,
+        400,
+        400,
+        400,
+        400,
         400,
         400,
         400,
