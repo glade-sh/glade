@@ -970,15 +970,27 @@ func TestExecURLCurrentRequestUrlUnsupported(t *testing.T) {
 func TestExecNumericStdlibExpansion(t *testing.T) {
 	program, err := CompileAnonymous(`
 Integer i = Integer.valueOf('42');
+Integer signed = Integer.valueOf('  +42 ');
 Long l = Long.valueOf('9001');
+Long minLong = Long.valueOf(' -9223372036854775808 ');
+Long maxLong = Long.valueOf('+9223372036854775807');
 Decimal d = Decimal.valueOf('12.5');
+Decimal negativeDecimal = Decimal.valueOf(' -0.125 ');
 Double x = Double.valueOf('2.25');
+Double signedDouble = Double.valueOf(' +6.25 ');
 Decimal bigLong = Decimal.valueOf('3000000000');
 System.assertEquals(42, i);
+System.assertEquals(42, signed);
 System.assertEquals(9001, l);
+System.assertEquals(Long.MIN_VALUE, minLong);
+System.assertEquals(Long.MAX_VALUE, maxLong);
 System.assertEquals(12.5, d);
+System.assertEquals(-0.125, negativeDecimal);
 System.assertEquals(2.25, x);
+System.assertEquals(6.25, signedDouble);
 System.assertEquals('42', i.format());
+System.assertEquals('9001', l.format());
+System.assertEquals('2.25', x.format());
 System.assertEquals(42.0, i.doubleValue());
 System.assertEquals(12, d.intValue());
 System.assertEquals(12, d.longValue());
@@ -1049,16 +1061,24 @@ System.assert(Math.abs(Math.log10(1000) - 3) < 0.000000000001);
 func TestExecNumericStdlibRejectsInvalidInputs(t *testing.T) {
 	tests := []string{
 		"Integer.valueOf('not an integer');",
+		"Integer.valueOf('  ');",
+		"Integer.valueOf('42.0');",
 		"Integer.valueOf('2147483648');",
+		"Long.valueOf('9x');",
 		"Long.valueOf('9223372036854775808');",
+		"Decimal.valueOf('NaN');",
+		"Decimal.valueOf('-Infinity');",
 		"Decimal.valueOf('1e309');",
 		"Double.valueOf('NaN');",
 		"Double.valueOf('Infinity');",
+		"Double.valueOf('1,234.5');",
 		"Decimal d = Decimal.valueOf('3000000000');\nd.intValue();",
 		"Decimal d = Decimal.valueOf('1.25');\nd.setScale(16);",
 		"Decimal d = Decimal.valueOf('1.25');\nd.setScale(1, LoggingLevel.ERROR);",
 		"Decimal d = Decimal.valueOf('1.25');\nd.round(RoundingMode.valueOf('UNNECESSARY'));",
 		"RoundingMode.valueOf('HALF_CEILING');",
+		"RoundingMode.valueOf(' HALF_UP ');",
+		"Decimal d = Decimal.valueOf('1e308') * Decimal.valueOf('1e308');",
 		"Math.acos(2);",
 		"Math.asin(-2);",
 		"Math.sqrt(-1);",
@@ -1085,6 +1105,12 @@ func TestExecNumericStdlibRejectsIntegerOverflow(t *testing.T) {
 		"Decimal d = Decimal.valueOf('99999999999999999999999.5');\nd.longValue();",
 		"Decimal d = Decimal.valueOf('99999999999999999999999.5');\nd.round();",
 		"Decimal d = Decimal.valueOf('99999999999999999999999.5');\nMath.roundToLong(d);",
+		"Long.MAX_VALUE + 1;",
+		"Long.MIN_VALUE - 1;",
+		"Long.MAX_VALUE * 2;",
+		"-Long.MIN_VALUE;",
+		"Long.MIN_VALUE / -1;",
+		"Math.abs(Long.MIN_VALUE);",
 	}
 	for _, source := range tests {
 		program, err := CompileAnonymous(source)
@@ -1093,6 +1119,32 @@ func TestExecNumericStdlibRejectsIntegerOverflow(t *testing.T) {
 		}
 		if _, err := Execute(program, nil); err == nil {
 			t.Fatalf("expected overflow error for %s", source)
+		}
+	}
+}
+
+func TestExecNumericFormatOverloadsAreUnsupported(t *testing.T) {
+	tests := []string{
+		"Integer i = 7;\ni.format('en_US');",
+		"Long l = 7;\nl.format('en_US');",
+		"Decimal d = 7.25;\nd.format('en_US');",
+		"Double d = 7.25;\nd.format('en_US');",
+	}
+	for _, source := range tests {
+		program, err := CompileAnonymous(source)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = Execute(program, nil)
+		if err == nil {
+			t.Fatalf("expected unsupported numeric format overload error for %s", source)
+		}
+		var runtimeErr *RuntimeError
+		if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" {
+			t.Fatalf("expected UnsupportedFeature for %s, got %T %v", source, err, err)
+		}
+		if !strings.Contains(runtimeErr.Message, "numeric format locale/pattern overloads") {
+			t.Fatalf("error message = %q", runtimeErr.Message)
 		}
 	}
 }

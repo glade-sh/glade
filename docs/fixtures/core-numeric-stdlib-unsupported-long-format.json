@@ -1,0 +1,28 @@
+{
+  "name": "core-numeric-stdlib-unsupported-long-format",
+  "evidence": [
+    {
+      "symbol": "Long.format",
+      "kind": "exec",
+      "notes": "Locale/pattern numeric format overloads are not locally modeled and return a typed unsupported diagnostic."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Long l = 7;\nl.format('en_US');"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Long l = 7;\nl.format('en_US');"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"numeric format locale/pattern overloads\""
+    }
+  }
+}

@@ -95,10 +95,12 @@ Current progress:
   regex-backed `replaceAll`/`replaceFirst`/`split` limit behavior, character
   category predicates, and `containsAny`/`containsOnly`/`containsNone`.
 - Numbers: runtime support now covers `Integer.valueOf`, `Long.valueOf`,
-  `Decimal.valueOf`, `Double.valueOf`, integer/decimal conversion helpers,
-  simple numeric `format`, `Integer`/`Long` min/max constants, `Decimal.abs`,
-  finite `Decimal.pow`, `Decimal.setScale`/`Decimal.round` for the documented
-  local `RoundingMode` subset, parse and integer-conversion overflow errors,
+  `Decimal.valueOf`, `Double.valueOf` including trimmed signed strings,
+  integer/decimal conversion helpers, simple finite numeric `format` with
+  explicit unsupported diagnostics for locale/pattern overloads,
+  `Integer`/`Long` min/max constants, `Decimal.abs`, finite `Decimal.pow`,
+  `Decimal.setScale`/`Decimal.round` for exact-name local `RoundingMode`
+  values, parse, integer-conversion, and local finite-overflow errors,
   `Math.E`, `Math.PI`, `Math.abs`, `Math.ceil`, `Math.floor`, `Math.max`,
   `Math.min`, `Math.mod`, finite `Math.pow`, `Math.round`,
   `Math.roundToLong`, `Math.signum`, `Math.sqrt`, and deterministic
@@ -165,9 +167,15 @@ Current progress:
   - `docs/fixtures/core-string-stdlib.json`
   - `docs/fixtures/core-string-more-stdlib.json`
   - `docs/fixtures/core-string-completion-stdlib.json`
-  - `docs/fixtures/core-string-entity-edge-stdlib.json`
-  - `docs/fixtures/core-numeric-stdlib.json`
-  - `docs/fixtures/core-datetime-stdlib.json`
+   - `docs/fixtures/core-string-entity-edge-stdlib.json`
+   - `docs/fixtures/core-numeric-stdlib.json`
+   - `docs/fixtures/core-numeric-stdlib-unsupported-format.json`
+   - `docs/fixtures/core-numeric-stdlib-unsupported-long-format.json`
+   - `docs/fixtures/core-numeric-stdlib-unsupported-decimal-format.json`
+   - `docs/fixtures/core-numeric-stdlib-unsupported-double-format.json`
+   - `docs/fixtures/core-numeric-stdlib-invalid-finite.json`
+   - `docs/fixtures/core-numeric-stdlib-invalid-rounding-mode.json`
+   - `docs/fixtures/core-datetime-stdlib.json`
   - `docs/fixtures/core-json-stdlib.json`
   - `docs/fixtures/core-blob-crypto-stdlib.json`
   - `docs/fixtures/core-blob-crypto-invalid-base64.json`
@@ -198,12 +206,13 @@ Remaining cuts:
 
 3. Numeric classes
    - Complete locale-aware `Integer`, `Long`, `Double`, and `Decimal`
-     formatting; full 32-bit-vs-64-bit Integer/Long overflow parity; Decimal
-     rounding behavior beyond the local scale 0-15 subset; and exact Decimal
-     scale semantics.
+     formatting remains unsupported beyond typed diagnostics for local format
+     overload calls; full 32-bit-vs-64-bit Integer/Long overflow parity;
+     Decimal rounding behavior beyond the local scale 0-15 subset; and exact
+     Decimal scale semantics.
    - Pin remaining edge behavior for numeric NaN/infinity/domain cases before
      widening deterministic `Math` parity beyond the currently covered finite
-     slice and explicit domain errors.
+     slice, finite-overflow checks, and explicit domain errors.
 
 4. Date and time classes
    - Remaining work: full locale-aware formatting beyond the pinned English
