@@ -1,0 +1,36 @@
+{
+  "name": "data-dml-row-action-error-details",
+  "evidence": [
+    {
+      "symbol": "Database.emptyRecycleBin error details",
+      "kind": "test",
+      "notes": "Active rows rejected by emptyRecycleBin return ENTITY_IS_NOT_IN_RECYCLE_BIN through the result and Database.Error accessors."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type><required>true</required></CustomField>"
+    },
+    {
+      "path": "force-app/main/classes/DataDmlRowActionErrorDetailsTest.cls",
+      "content": "@isTest private class DataDmlRowActionErrorDetailsTest { @isTest static void emptyRecycleBinActiveRowsExposeDatabaseErrors() { Account active = new Account(Name = 'Active'); insert active; Database.EmptyRecycleBinResult result = Database.emptyRecycleBin(active, false); System.assert(!result.isSuccess()); System.assertEquals(active.Id, result.getId()); System.assertEquals(1, result.getErrors().size()); Object error = result.getErrors().get(0); System.assertEquals('ENTITY_IS_NOT_IN_RECYCLE_BIN', error.getStatusCode()); System.assert(error.getMessage().contains('not in the recycle bin')); System.assertEquals(0, error.getFields().size()); System.assertEquals(0, error.getExtendedErrorDetails().size()); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

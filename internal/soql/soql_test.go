@@ -183,6 +183,35 @@ func TestExecuteValidatesAggregateHavingAndAliases(t *testing.T) {
 	if result.Rows != 1 || result.Records[0].Fields["Rating"].String != "Hot" {
 		t.Fatalf("valid HAVING result = %#v", result)
 	}
+	result, err = ParseAndExecute(org, "SELECT Rating, COUNT(Id) accountCount FROM Account GROUP BY Rating HAVING SUM(AnnualRevenue) > 300")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 || result.Records[0].Fields["Rating"].String != "Hot" {
+		t.Fatalf("unselected aggregate HAVING result = %#v", result)
+	}
+	if _, ok := result.Records[0].Fields["expr1"]; ok {
+		t.Fatalf("unselected aggregate leaked expr1 field: %#v", result.Records[0].Fields)
+	}
+	for field := range result.Records[0].Fields {
+		if strings.Contains(field, "havingAggregate") {
+			t.Fatalf("unselected aggregate leaked hidden field %q: %#v", field, result.Records[0].Fields)
+		}
+	}
+	result, err = ParseAndExecute(org, "SELECT Rating FROM Account GROUP BY Rating HAVING SUM(AnnualRevenue) > 300")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 || len(result.Records[0].Fields) != 1 || result.Records[0].Fields["Rating"].String != "Hot" {
+		t.Fatalf("grouped field with unselected aggregate HAVING result = %#v", result)
+	}
+	result, err = ParseAndExecute(org, "SELECT Rating FROM Account GROUP BY Rating HAVING SUM(AnnualRevenue) > 300 AND SUM(AnnualRevenue) < 500")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 || len(result.Records[0].Fields) != 1 || result.Records[0].Fields["Rating"].String != "Hot" {
+		t.Fatalf("deduped unselected aggregate HAVING result = %#v", result)
+	}
 
 	cases := []struct {
 		query string
@@ -191,7 +220,6 @@ func TestExecuteValidatesAggregateHavingAndAliases(t *testing.T) {
 		{query: "SELECT Rating, COUNT(Id) accountCount FROM Account GROUP BY Rating HAVING Missing__c = 'x'", want: "Missing__c"},
 		{query: "SELECT Rating, COUNT(Id) accountCount FROM Account GROUP BY Rating HAVING Name = 'Acme'", want: "must be grouped or aggregated"},
 		{query: "SELECT Rating, COUNT(Id) accountCount FROM Account GROUP BY Rating HAVING SUM(Missing__c) > 0", want: "Missing__c"},
-		{query: "SELECT Rating, COUNT(Id) accountCount FROM Account GROUP BY Rating HAVING SUM(AnnualRevenue) > 100", want: "must be selected or aliased"},
 		{query: "SELECT SUM(Name) bad FROM Account", want: "SUM requires numeric field Name"},
 		{query: "SELECT SUM(Id) bad FROM Account", want: "SUM requires numeric field Id"},
 		{query: "SELECT Rating, COUNT(Id) Rating FROM Account GROUP BY Rating", want: "conflicts with grouped field"},

@@ -189,12 +189,7 @@ func (e *Engine) EmptyRecycleBin(records []storage.Record) []Result {
 			continue
 		}
 		if !stored.System.IsDeleted {
-			results[i] = Result{
-				ID:         record.ID,
-				Success:    false,
-				Error:      fmt.Sprintf("dml: record %s is not in the recycle bin", record.ID),
-				StatusCode: "ENTITY_IS_NOT_IN_RECYCLE_BIN",
-			}
+			results[i] = failedResult(record.ID, fmt.Sprintf("dml: record %s is not in the recycle bin", record.ID), "ENTITY_IS_NOT_IN_RECYCLE_BIN", nil)
 			continue
 		}
 		delete(object.Records, record.ID)
