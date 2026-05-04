@@ -1,0 +1,28 @@
+{
+  "name": "core-json-generator-field-name-in-array",
+  "evidence": [
+    {
+      "symbol": "JSONGenerator.writeFieldName",
+      "kind": "exec",
+      "notes": "Field names inside arrays raise a catchable JSONException and leave the generator usable for array values."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "JSONGenerator gen = JSON.createGenerator(false);\ngen.writeStartArray();\nBoolean caught = false;\ntry {\n    gen.writeFieldName('bad');\n} catch (JSONException e) {\n    caught = true;\n    System.assertEquals('JSONException', e.getTypeName());\n    System.assert(e.getMessage().contains('writeFieldName cannot be called inside an array'));\n}\nSystem.assert(caught);\ngen.writeString('ok');\ngen.writeEndArray();\nSystem.assertEquals('[\"ok\"]', gen.getAsString());"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "JSONGenerator gen = JSON.createGenerator(false);\ngen.writeStartArray();\nBoolean caught = false;\ntry {\n    gen.writeFieldName('bad');\n} catch (JSONException e) {\n    caught = true;\n    System.assertEquals('JSONException', e.getTypeName());\n    System.assert(e.getMessage().contains('writeFieldName cannot be called inside an array'));\n}\nSystem.assert(caught);\ngen.writeString('ok');\ngen.writeEndArray();\nSystem.assertEquals('[\"ok\"]', gen.getAsString());"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}
