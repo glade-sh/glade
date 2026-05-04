@@ -400,6 +400,8 @@ func TestSObjectResourceShape(t *testing.T) {
 func TestRequestedAPIVersionAppearsInSObjectURLs(t *testing.T) {
 	org := testOrg()
 	addAccountForTest(&org, "001000000000001", "Acme")
+	addAccountForTest(&org, "001000000000002", "Beta")
+	addAccountForTest(&org, "001000000000003", "Gamma")
 	handler := New(&org)
 
 	sobjects := httptest.NewRecorder()
@@ -453,6 +455,30 @@ func TestRequestedAPIVersionAppearsInSObjectURLs(t *testing.T) {
 	}
 	if !bytes.Contains(recent.Body.Bytes(), []byte(`/services/data/v60.0/sobjects/Account/001000000000001`)) || bytes.Contains(recent.Body.Bytes(), []byte(`/services/data/v61.0/sobjects/Account/001000000000001`)) {
 		t.Fatalf("recent versioned URLs = %s", recent.Body.String())
+	}
+
+	globalRecent := httptest.NewRecorder()
+	handler.ServeHTTP(globalRecent, httptest.NewRequest(http.MethodGet, "/services/data/v60.0/recent", nil))
+	if globalRecent.Code != http.StatusOK {
+		t.Fatalf("global recent status = %d body=%s", globalRecent.Code, globalRecent.Body.String())
+	}
+	if !bytes.Contains(globalRecent.Body.Bytes(), []byte(`/services/data/v60.0/sobjects/Account/001000000000001`)) || bytes.Contains(globalRecent.Body.Bytes(), []byte(`/services/data/v61.0/sobjects/Account/001000000000001`)) {
+		t.Fatalf("global recent versioned URLs = %s", globalRecent.Body.String())
+	}
+
+	query := httptest.NewRecorder()
+	handler.ServeHTTP(query, httptest.NewRequest(http.MethodGet, "/services/data/v60.0/query?q=SELECT%20Id%20FROM%20Account&batchSize=2", nil))
+	if query.Code != http.StatusOK {
+		t.Fatalf("query status = %d body=%s", query.Code, query.Body.String())
+	}
+	var queryPayload struct {
+		NextRecordsURL string `json:"nextRecordsUrl"`
+	}
+	if err := json.Unmarshal(query.Body.Bytes(), &queryPayload); err != nil {
+		t.Fatal(err)
+	}
+	if queryPayload.NextRecordsURL != "/services/data/v60.0/query/oaerql000001-2" {
+		t.Fatalf("query nextRecordsUrl = %q", queryPayload.NextRecordsURL)
 	}
 }
 
