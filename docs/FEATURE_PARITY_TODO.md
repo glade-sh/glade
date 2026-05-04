@@ -175,6 +175,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
 - [x] Normalize `System.*Exception` names against unqualified Apex catch types.
 - [x] Preserve original throw stacks across catch/rethrow and expose
   `getTypeName`, `getLineNumber`, and `getStackTraceString`.
+- [x] Fence `Exception.initCause`/`getCause` with one-shot local cause storage,
+  receiver return, null-cause preservation, and catchable repeat/self-cause
+  errors.
 - [x] Complete control-flow edge cases for loops, `switch`, `break`,
   `continue`, `return`, `finally`, and exception unwinding.
 - [x] Cover `finally` execution across return, return override, and uncaught
@@ -608,6 +611,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     `SendEmailResult` basics.
   - [x] Add `ApexPages` message storage, current page, `PageReference`, and
     deterministic org `URL` basics.
+  - [x] Cover `URL` authority user-info parsing and bounded FTP default-port
+    accessor behavior.
   - **Limitation**: Full Visualforce navigation/rendering and production session
     semantics remain outside the local VM subset; `PageReference.getContent`,
     `PageReference.getContentAsPDF`, and `URL.getCurrentRequestUrl` now return

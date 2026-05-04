@@ -840,6 +840,11 @@ System.assertEquals('id=001', detailed.getQuery());
 System.assertEquals('top', detailed.getRef());
 System.assertEquals('/apex/Page?id=001', detailed.getFile());
 System.assertEquals(8443, detailed.getPort());
+URL userInfo = new URL('https://user:pass@example.test/path');
+System.assertEquals('user:pass@example.test', userInfo.getAuthority());
+System.assertEquals('example.test', userInfo.getHost());
+URL ftp = new URL('ftp://files.example.test/pub/readme.txt');
+System.assertEquals(21, ftp.getDefaultPort());
 URL protocolHost = new URL('https', 'example.test', '/trail');
 System.assertEquals('https://example.test/trail', protocolHost.toExternalForm());
 URL protocolHostPort = new URL('https', 'example.test', 8443, '/ridge');
@@ -916,12 +921,45 @@ func TestExecCoreExceptionCauseStdlibMethods(t *testing.T) {
 Exception outer = new DmlException('outer');
 System.assertEquals(null, outer.getCause());
 Exception cause = new QueryException('root cause');
-outer.initCause(cause);
+Exception returned = outer.initCause(cause);
+System.assert(outer.equals(returned));
 Exception recovered = outer.getCause();
 System.assertEquals('QueryException', recovered.getTypeName());
 System.assertEquals('root cause', recovered.getMessage());
-outer.initCause(null);
-System.assertEquals(null, outer.getCause());
+
+Boolean repeatCaught = false;
+try {
+	outer.initCause(null);
+} catch (Exception e) {
+	repeatCaught = true;
+	System.assertEquals('IllegalStateException', e.getTypeName());
+	System.assertEquals('Can''t overwrite cause', e.getMessage());
+}
+System.assert(repeatCaught, 'repeat initCause should throw');
+System.assertEquals('root cause', outer.getCause().getMessage());
+
+Exception nullable = new DmlException('nullable');
+nullable.initCause(null);
+System.assertEquals(null, nullable.getCause());
+Boolean nullRepeatCaught = false;
+try {
+	nullable.initCause(cause);
+} catch (Exception e) {
+	nullRepeatCaught = true;
+	System.assertEquals('IllegalStateException', e.getTypeName());
+}
+System.assert(nullRepeatCaught, 'null cause initialization should count');
+
+Exception self = new DmlException('self');
+Boolean selfCaught = false;
+try {
+	self.initCause(self);
+} catch (Exception e) {
+	selfCaught = true;
+	System.assertEquals('IllegalArgumentException', e.getTypeName());
+	System.assertEquals('Self-causation not permitted', e.getMessage());
+}
+System.assert(selfCaught, 'self cause should throw');
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -939,6 +977,8 @@ func TestExecCoreBuiltinExceptionMatrix(t *testing.T) {
 		"DmlException",
 		"EmailException",
 		"ExternalObjectException",
+		"IllegalArgumentException",
+		"IllegalStateException",
 		"InvalidParameterValueException",
 		"JSONException",
 		"LimitException",
