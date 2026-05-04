@@ -624,6 +624,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     entries instead of leaking internal storage definitions.
   - [x] Return flat record GET payloads with `attributes.type`, `attributes.url`,
     and `Id` instead of leaking internal storage value wrappers.
+  - [x] Return REST and Tooling query rows as SObject-shaped payloads with
+    `attributes`, `Id`, and flat fields instead of internal storage records.
   - [x] Add explicit full-layout unsupported responses and an empty compact
     layouts stub for local tooling probes.
   - [x] Return explicit unsupported default-values responses and malformed-ID

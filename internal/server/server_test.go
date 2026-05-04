@@ -14,6 +14,25 @@ import (
 	"github.com/open-aer/oaer/internal/vm"
 )
 
+func assertQueryRecordShape(t *testing.T, record map[string]any, objectName, id, url string) {
+	t.Helper()
+	attrs, ok := record["attributes"].(map[string]any)
+	if !ok {
+		t.Fatalf("record attributes missing or wrong type: %#v", record)
+	}
+	if attrs["type"] != objectName || attrs["url"] != url {
+		t.Fatalf("record attributes = %#v", attrs)
+	}
+	if record["Id"] != id {
+		t.Fatalf("record Id = %#v", record["Id"])
+	}
+	for _, internal := range []string{"fields", "system", "children", "object", "id", "explicitNulls"} {
+		if _, ok := record[internal]; ok {
+			t.Fatalf("record leaked internal %q field: %#v", internal, record)
+		}
+	}
+}
+
 func TestSObjectCRUDAndQuery(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
@@ -74,7 +93,7 @@ func TestQueryPaginationNoBatchSizePreservesFullResult(t *testing.T) {
 	var payload struct {
 		TotalSize      int              `json:"totalSize"`
 		Done           bool             `json:"done"`
-		Records        []storage.Record `json:"records"`
+		Records        []map[string]any `json:"records"`
 		NextRecordsURL string           `json:"nextRecordsUrl"`
 	}
 	if err := json.Unmarshal(recorder.Body.Bytes(), &payload); err != nil {
@@ -83,6 +102,7 @@ func TestQueryPaginationNoBatchSizePreservesFullResult(t *testing.T) {
 	if payload.TotalSize != 3 || !payload.Done || len(payload.Records) != 3 || payload.NextRecordsURL != "" {
 		t.Fatalf("payload = %#v", payload)
 	}
+	assertQueryRecordShape(t, payload.Records[0], "Account", "001000000000001", "/services/data/v61.0/sobjects/Account/001000000000001")
 }
 
 func TestQueryPaginationFirstAndNextPage(t *testing.T) {
@@ -100,7 +120,7 @@ func TestQueryPaginationFirstAndNextPage(t *testing.T) {
 	var firstPayload struct {
 		TotalSize      int              `json:"totalSize"`
 		Done           bool             `json:"done"`
-		Records        []storage.Record `json:"records"`
+		Records        []map[string]any `json:"records"`
 		NextRecordsURL string           `json:"nextRecordsUrl"`
 	}
 	if err := json.Unmarshal(first.Body.Bytes(), &firstPayload); err != nil {
@@ -112,6 +132,7 @@ func TestQueryPaginationFirstAndNextPage(t *testing.T) {
 	if firstPayload.NextRecordsURL != "/services/data/v61.0/query/oaerql000001-2" {
 		t.Fatalf("nextRecordsUrl = %q", firstPayload.NextRecordsURL)
 	}
+	assertQueryRecordShape(t, firstPayload.Records[0], "Account", "001000000000001", "/services/data/v61.0/sobjects/Account/001000000000001")
 
 	next := httptest.NewRecorder()
 	handler.ServeHTTP(next, httptest.NewRequest(http.MethodGet, firstPayload.NextRecordsURL, nil))
@@ -121,7 +142,7 @@ func TestQueryPaginationFirstAndNextPage(t *testing.T) {
 	var nextPayload struct {
 		TotalSize      int              `json:"totalSize"`
 		Done           bool             `json:"done"`
-		Records        []storage.Record `json:"records"`
+		Records        []map[string]any `json:"records"`
 		NextRecordsURL string           `json:"nextRecordsUrl"`
 	}
 	if err := json.Unmarshal(next.Body.Bytes(), &nextPayload); err != nil {
@@ -130,9 +151,10 @@ func TestQueryPaginationFirstAndNextPage(t *testing.T) {
 	if nextPayload.TotalSize != 3 || !nextPayload.Done || len(nextPayload.Records) != 1 || nextPayload.NextRecordsURL != "" {
 		t.Fatalf("next payload = %#v", nextPayload)
 	}
-	if nextPayload.Records[0].ID != "001000000000003" {
+	if nextPayload.Records[0]["Id"] != "001000000000003" {
 		t.Fatalf("next record = %#v", nextPayload.Records[0])
 	}
+	assertQueryRecordShape(t, nextPayload.Records[0], "Account", "001000000000003", "/services/data/v61.0/sobjects/Account/001000000000003")
 }
 
 func TestQueryPaginationInvalidBatchSize(t *testing.T) {
@@ -770,6 +792,16 @@ func TestToolingQueryStillDelegatesToSOQL(t *testing.T) {
 		if !bytes.Contains(rec.Body.Bytes(), []byte(`"totalSize":1`)) || !bytes.Contains(rec.Body.Bytes(), []byte(`Tooling Query`)) {
 			t.Fatalf("%s body = %s", path, rec.Body.String())
 		}
+		var payload struct {
+			Records []map[string]any `json:"records"`
+		}
+		if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
+			t.Fatal(err)
+		}
+		if len(payload.Records) != 1 || payload.Records[0]["Name"] != "Tooling Query" {
+			t.Fatalf("%s records = %#v", path, payload.Records)
+		}
+		assertQueryRecordShape(t, payload.Records[0], "Account", "001000000000001", "/services/data/v61.0/sobjects/Account/001000000000001")
 	}
 }
 
