@@ -635,6 +635,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
     `StaticResource`), test-run orchestration endpoints, and coverage probes
     instead of falling through to unknown tooling routes.
 - [ ] Add more REST resources used by local integrations and editor tooling.
+  - [x] Return stable unsupported errors for common unmodeled top-level REST
+    namespaces such as Connect, Chatter, Analytics, Wave, Metadata, Support,
+    Process, Actions, and Apps.
 - [ ] Add Composite API coverage beyond baseline sObject insert, including
   all-or-none rollback and reference ID behavior.
   - [x] Return stable unsupported errors for generic composite subrequest
@@ -661,6 +664,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     unsupported route shapes in the server black-box fixture.
   - [x] Cover generic composite unsupported route shape in the server black-box
     fixture.
+  - [x] Cover common top-level REST namespace unsupported route shapes in the
+    server black-box fixture.
 
 ## 9. Compatibility, Hardening, And Release
 

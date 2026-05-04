@@ -581,6 +581,38 @@ func TestBulkAPIJobsReturnStableUnsupportedErrors(t *testing.T) {
 	}
 }
 
+func TestCommonRESTNamespaceStubsReturnStableUnsupportedErrors(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+	for _, tc := range []struct {
+		method  string
+		path    string
+		message string
+	}{
+		{method: http.MethodGet, path: "/services/data/v61.0/connect", message: "Connect REST namespace"},
+		{method: http.MethodGet, path: "/services/data/v61.0/chatter/feed-elements", message: "Chatter REST namespace"},
+		{method: http.MethodGet, path: "/services/data/v61.0/analytics/reports", message: "Analytics REST namespace"},
+		{method: http.MethodGet, path: "/services/data/v61.0/wave", message: "Wave REST namespace"},
+		{method: http.MethodPost, path: "/services/data/v61.0/metadata", message: "Metadata REST namespace"},
+		{method: http.MethodGet, path: "/services/data/v61.0/support", message: "Support REST namespace"},
+		{method: http.MethodPost, path: "/services/data/v61.0/process/approvals", message: "Process REST namespace"},
+		{method: http.MethodPatch, path: "/services/data/v61.0/actions/standard/emailSimple", message: "Actions REST namespace"},
+		{method: http.MethodDelete, path: "/services/data/v61.0/apps", message: "Apps REST namespace"},
+	} {
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, httptest.NewRequest(tc.method, tc.path, strings.NewReader(`{}`)))
+		if rec.Code != http.StatusNotImplemented {
+			t.Fatalf("%s %s status = %d body=%s", tc.method, tc.path, rec.Code, rec.Body.String())
+		}
+		if rec.Header().Get("Allow") != "" {
+			t.Fatalf("%s %s unexpected Allow = %q", tc.method, tc.path, rec.Header().Get("Allow"))
+		}
+		if !bytes.Contains(rec.Body.Bytes(), []byte(`"errorCode":"UNSUPPORTED_FEATURE"`)) || !bytes.Contains(rec.Body.Bytes(), []byte(tc.message)) {
+			t.Fatalf("%s %s unsupported shape = %s", tc.method, tc.path, rec.Body.String())
+		}
+	}
+}
+
 func TestApexRestDispatchReturnsStableUnsupportedError(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)

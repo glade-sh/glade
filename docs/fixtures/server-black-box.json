@@ -181,6 +181,28 @@
       "contains": ["UNSUPPORTED_FEATURE", "Search/SOSL"]
     },
     {
+      "name": "connect-namespace-unsupported",
+      "method": "GET",
+      "path": "/services/data/v61.0/connect",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "Connect REST namespace"]
+    },
+    {
+      "name": "actions-namespace-unsupported",
+      "method": "POST",
+      "path": "/services/data/v61.0/actions/standard/emailSimple",
+      "body": "{}",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "Actions REST namespace"]
+    },
+    {
+      "name": "metadata-namespace-unsupported",
+      "method": "GET",
+      "path": "/services/data/v61.0/metadata",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "Metadata REST namespace"]
+    },
+    {
       "name": "tooling-sobjects-unsupported",
       "method": "GET",
       "path": "/services/data/v61.0/tooling/sobjects",
@@ -288,8 +310,8 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 35,
-      "statuses": [200, 200, 200, 200, 200, 200, 201, 200, 200, 200, 501, 200, 200, 200, 200, 200, 200, 200, 400, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 404, 404, 200, 200, 201],
+      "requests": 38,
+      "statuses": [200, 200, 200, 200, 200, 200, 201, 200, 200, 200, 501, 200, 200, 200, 200, 200, 200, 200, 400, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 404, 404, 200, 200, 201],
       "users": 2
     }
   }
