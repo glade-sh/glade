@@ -39,14 +39,26 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	parts := splitPath(r.URL.Path)
 	if len(parts) == 3 && parts[0] == "services" && parts[1] == "oauth2" && parts[2] == "userinfo" {
+		if r.Method != http.MethodGet {
+			writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
+			return
+		}
 		writeJSON(w, http.StatusOK, s.userInfoPayload(r))
 		return
 	}
 	if len(parts) == 3 && parts[0] == "id" {
+		if r.Method != http.MethodGet {
+			writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
+			return
+		}
 		writeJSON(w, http.StatusOK, s.identityPayload(r))
 		return
 	}
 	if len(parts) == 2 && parts[0] == "services" && parts[1] == "data" {
+		if r.Method != http.MethodGet {
+			writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
+			return
+		}
 		writeJSON(w, http.StatusOK, []map[string]string{{"version": "v61.0", "url": "/services/data/v61.0"}})
 		return
 	}
@@ -56,6 +68,10 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	rest := parts[3:]
 	if len(parts) == 3 {
+		if r.Method != http.MethodGet {
+			writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
+			return
+		}
 		writeJSON(w, http.StatusOK, map[string]string{
 			"sobjects": "/services/data/" + parts[2] + "/sobjects",
 			"query":    "/services/data/" + parts[2] + "/query",
@@ -574,7 +590,15 @@ func storageValueFromJSON(value any) storage.Value {
 
 func writeDMLResult(w http.ResponseWriter, status int, result dml.Result) {
 	if !result.Success {
-		writeError(w, http.StatusBadRequest, "DML_EXCEPTION", result.Error)
+		code := result.StatusCode
+		if code == "" {
+			code = "DML_EXCEPTION"
+		}
+		writeAPIError(w, http.StatusBadRequest, apiError{
+			ErrorCode: code,
+			Message:   result.Error,
+			Fields:    result.Fields,
+		})
 		return
 	}
 	if status == http.StatusNoContent {
@@ -589,8 +613,22 @@ func writeJSON(w http.ResponseWriter, status int, value any) {
 	_ = json.NewEncoder(w).Encode(value)
 }
 
+type apiError struct {
+	ErrorCode string   `json:"errorCode"`
+	Message   string   `json:"message"`
+	Fields    []string `json:"fields,omitempty"`
+}
+
 func writeError(w http.ResponseWriter, status int, code, message string) {
-	writeJSON(w, status, []map[string]string{{"errorCode": code, "message": message}})
+	writeAPIError(w, status, apiError{ErrorCode: code, Message: message})
+}
+
+func writeAPIError(w http.ResponseWriter, status int, err apiError) {
+	writeAPIErrors(w, status, []apiError{err})
+}
+
+func writeAPIErrors(w http.ResponseWriter, status int, errors []apiError) {
+	writeJSON(w, status, errors)
 }
 
 func (s *Server) currentUserID() storage.ID {
@@ -689,12 +727,26 @@ func recentPayload(object storage.ObjectState) []map[string]any {
 	return out
 }
 
+type compositeError struct {
+	StatusCode string   `json:"statusCode"`
+	Message    string   `json:"message"`
+	Fields     []string `json:"fields,omitempty"`
+}
+
 func compositeResults(results []dml.Result) []map[string]any {
 	out := make([]map[string]any, 0, len(results))
 	for _, result := range results {
-		row := map[string]any{"id": result.ID, "success": result.Success, "errors": []map[string]string{}}
+		row := map[string]any{"id": result.ID, "success": result.Success, "errors": []compositeError{}}
 		if !result.Success {
-			row["errors"] = []map[string]string{{"statusCode": "DML_EXCEPTION", "message": result.Error}}
+			code := result.StatusCode
+			if code == "" {
+				code = "DML_EXCEPTION"
+			}
+			row["errors"] = []compositeError{{
+				StatusCode: code,
+				Message:    result.Error,
+				Fields:     result.Fields,
+			}}
 		}
 		out = append(out, row)
 	}

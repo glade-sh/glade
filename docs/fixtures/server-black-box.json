@@ -61,6 +61,36 @@
       "contains": ["errorCode", "NOT_FOUND"]
     },
     {
+      "name": "method-not-allowed-shape",
+      "method": "POST",
+      "path": "/services/data",
+      "status": 405,
+      "contains": ["errorCode", "METHOD_NOT_ALLOWED"]
+    },
+    {
+      "name": "malformed-query-shape",
+      "method": "GET",
+      "path": "/services/data/v61.0/query?q=SELECT%20FROM",
+      "status": 400,
+      "contains": ["errorCode", "MALFORMED_QUERY"]
+    },
+    {
+      "name": "dml-field-error-shape",
+      "method": "POST",
+      "path": "/services/data/v61.0/sobjects/Account",
+      "body": "{}",
+      "status": 400,
+      "contains": ["errorCode", "REQUIRED_FIELD_MISSING", "\"fields\":[\"Name\"]"]
+    },
+    {
+      "name": "composite-field-error-shape",
+      "method": "POST",
+      "path": "/services/data/v61.0/composite/sobjects",
+      "body": "{\"allOrNone\":true,\"records\":[{\"attributes\":{\"type\":\"Account\"}}]}",
+      "status": 400,
+      "contains": ["statusCode", "REQUIRED_FIELD_MISSING", "\"fields\":[\"Name\"]"]
+    },
+    {
       "name": "scoped-reset",
       "method": "POST",
       "path": "/services/data/v61.0/oaer/reset/data",
@@ -87,8 +117,8 @@
       "persistedRecords": 8,
       "permissions": 2,
       "profiles": 1,
-      "requests": 10,
-      "statuses": [200, 200, 200, 201, 200, 200, 200, 404, 200, 201],
+      "requests": 14,
+      "statuses": [200, 200, 200, 201, 200, 200, 200, 404, 405, 400, 400, 400, 200, 201],
       "users": 1
     }
   }

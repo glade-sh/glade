@@ -360,18 +360,148 @@ func TestSalesforceErrorShape(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
 
+	cases := []struct {
+		name       string
+		method     string
+		path       string
+		body       string
+		status     int
+		errorCode  string
+		wantField  string
+		wantPhrase string
+	}{
+		{
+			name:      "unknown object",
+			method:    http.MethodGet,
+			path:      "/services/data/v61.0/sobjects/Missing__c",
+			status:    http.StatusNotFound,
+			errorCode: "NOT_FOUND",
+		},
+		{
+			name:      "missing record",
+			method:    http.MethodGet,
+			path:      "/services/data/v61.0/sobjects/Account/001000000000999",
+			status:    http.StatusNotFound,
+			errorCode: "NOT_FOUND",
+		},
+		{
+			name:      "malformed json",
+			method:    http.MethodPost,
+			path:      "/services/data/v61.0/sobjects/Account",
+			body:      "{",
+			status:    http.StatusBadRequest,
+			errorCode: "JSON_PARSER_ERROR",
+		},
+		{
+			name:      "method mismatch",
+			method:    http.MethodPost,
+			path:      "/services/data",
+			status:    http.StatusMethodNotAllowed,
+			errorCode: "METHOD_NOT_ALLOWED",
+		},
+		{
+			name:      "malformed query",
+			method:    http.MethodGet,
+			path:      "/services/data/v61.0/query?q=SELECT%20FROM",
+			status:    http.StatusBadRequest,
+			errorCode: "MALFORMED_QUERY",
+		},
+		{
+			name:      "unsupported route",
+			method:    http.MethodGet,
+			path:      "/services/data/v61.0/nope",
+			status:    http.StatusNotFound,
+			errorCode: "NOT_FOUND",
+		},
+		{
+			name:       "dml missing required field",
+			method:     http.MethodPost,
+			path:       "/services/data/v61.0/sobjects/Account",
+			body:       "{}",
+			status:     http.StatusBadRequest,
+			errorCode:  "REQUIRED_FIELD_MISSING",
+			wantField:  "Name",
+			wantPhrase: "missing required field",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			res := httptest.NewRecorder()
+			handler.ServeHTTP(res, httptest.NewRequest(tc.method, tc.path, strings.NewReader(tc.body)))
+			if res.Code != tc.status {
+				t.Fatalf("status = %d body=%s", res.Code, res.Body.String())
+			}
+			errors := decodeServerErrors(t, res)
+			if len(errors) != 1 || errors[0].ErrorCode != tc.errorCode || errors[0].Message == "" {
+				t.Fatalf("errors = %#v", errors)
+			}
+			if tc.wantPhrase != "" && !strings.Contains(errors[0].Message, tc.wantPhrase) {
+				t.Fatalf("message = %q, want phrase %q", errors[0].Message, tc.wantPhrase)
+			}
+			if tc.wantField != "" && !containsString(errors[0].Fields, tc.wantField) {
+				t.Fatalf("fields = %#v, want %q", errors[0].Fields, tc.wantField)
+			}
+		})
+	}
+}
+
+func TestCompositeSObjectErrorsUseDMLStatusAndFields(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
 	res := httptest.NewRecorder()
-	handler.ServeHTTP(res, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Missing__c", nil))
-	if res.Code != http.StatusNotFound {
+	handler.ServeHTTP(res, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/composite/sobjects", strings.NewReader(`{
+  "allOrNone": true,
+  "records": [
+    {"attributes":{"type":"Account"}}
+  ]
+}`)))
+	if res.Code != http.StatusBadRequest {
 		t.Fatalf("status = %d body=%s", res.Code, res.Body.String())
 	}
-	var errors []map[string]string
+	var rows []struct {
+		Success bool `json:"success"`
+		Errors  []struct {
+			StatusCode string   `json:"statusCode"`
+			Message    string   `json:"message"`
+			Fields     []string `json:"fields,omitempty"`
+		} `json:"errors"`
+	}
+	if err := json.Unmarshal(res.Body.Bytes(), &rows); err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 1 || rows[0].Success || len(rows[0].Errors) != 1 {
+		t.Fatalf("rows = %#v", rows)
+	}
+	errPayload := rows[0].Errors[0]
+	if errPayload.StatusCode != "REQUIRED_FIELD_MISSING" || errPayload.Message == "" || !containsString(errPayload.Fields, "Name") {
+		t.Fatalf("error payload = %#v", errPayload)
+	}
+}
+
+type serverErrorPayload struct {
+	ErrorCode string   `json:"errorCode"`
+	Message   string   `json:"message"`
+	Fields    []string `json:"fields,omitempty"`
+}
+
+func decodeServerErrors(t *testing.T, res *httptest.ResponseRecorder) []serverErrorPayload {
+	t.Helper()
+	var errors []serverErrorPayload
 	if err := json.Unmarshal(res.Body.Bytes(), &errors); err != nil {
 		t.Fatal(err)
 	}
-	if len(errors) != 1 || errors[0]["errorCode"] != "NOT_FOUND" || errors[0]["message"] == "" {
-		t.Fatalf("errors = %#v", errors)
+	return errors
+}
+
+func containsString(values []string, want string) bool {
+	for _, value := range values {
+		if value == want {
+			return true
+		}
 	}
+	return false
 }
 
 type memoryStore struct {

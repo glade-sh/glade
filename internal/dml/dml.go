@@ -554,9 +554,9 @@ func validateRequired(definition storage.ObjectDefinition, record storage.Record
 			continue
 		}
 		if record.ExplicitNulls[name] {
-			return fmt.Errorf("dml: required field %s.%s is null", record.Object, name)
+			return dmlErrorf("REQUIRED_FIELD_MISSING", []string{name}, "dml: required field %s.%s is null", record.Object, name)
 		}
-		return fmt.Errorf("dml: missing required field %s.%s", record.Object, name)
+		return dmlErrorf("REQUIRED_FIELD_MISSING", []string{name}, "dml: missing required field %s.%s", record.Object, name)
 	}
 	return nil
 }

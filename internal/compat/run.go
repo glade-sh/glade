@@ -396,7 +396,7 @@ func serverFixtureOrg() storage.OrgState {
 			APIName:   "Account",
 			KeyPrefix: "001",
 			Fields: map[string]storage.Field{
-				"Name": {APIName: "Name", Type: storage.FieldString},
+				"Name": {APIName: "Name", Type: storage.FieldString, Required: true},
 			},
 		},
 		Records: make(map[storage.ID]storage.Record),
