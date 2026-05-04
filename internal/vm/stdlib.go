@@ -182,7 +182,7 @@ func roundDecimalToScale(callee string, value float64, scaleValue int64, mode st
 		return 0, err
 	}
 	if scaleValue > maxLocalScale {
-		return 0, fmt.Errorf("%s scale greater than %d is not supported by the local decimal model", callee, maxLocalScale)
+		return 0, unsupportedCallError(fmt.Sprintf("%s scale greater than %d is not supported by the local decimal model", callee, maxLocalScale))
 	}
 	factor := math.Pow10(int(scaleValue))
 	scaled := value * factor
