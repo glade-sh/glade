@@ -199,22 +199,22 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | PageReference | `PageReference` | `partial` | Constructor, URL, redirect, parameters, headers, and string conversion basics. |
 | Pattern | `Matcher.appendReplacement/appendTail` | `unsupported` | Java StringBuffer append-position semantics return explicit unsupported errors. |
 | Pattern | `Matcher.end` | `partial` | Go regexp-backed group end positions. |
-| Pattern | `Matcher.find` | `partial` | Go regexp-backed matching with captured groups. |
+| Pattern | `Matcher.find` | `partial` | Go regexp-backed matching with captured groups, region bounds, find(start) reset behavior, and local anchoring/transparent bound handling. |
 | Pattern | `Matcher.group` | `partial` | Go regexp-backed group access. |
 | Pattern | `Matcher.groupCount` | `partial` | Capturing group count from Go regexp. |
-| Pattern | `Matcher.hasAnchoringBounds` | `partial` | Local bounds flag defaults to true; exact region-anchor interaction remains partial. |
-| Pattern | `Matcher.hasTransparentBounds` | `partial` | Local bounds flag defaults to false; exact transparent-bound matching remains partial. |
-| Pattern | `Matcher.lookingAt` | `partial` | Beginning-of-input Go regexp match. |
-| Pattern | `Matcher.matches` | `partial` | Whole-input Go regexp match. |
-| Pattern | `Matcher.region` | `partial` | Bounds matching to a local rune-indexed region; exact Java anchoring/transparent bounds interaction remains partial. |
+| Pattern | `Matcher.hasAnchoringBounds` | `partial` | Local bounds flag defaults to true and drives region-vs-input anchor handling for Go-regexp matches. |
+| Pattern | `Matcher.hasTransparentBounds` | `partial` | Local bounds flag defaults to false and drives opaque-vs-full-input word-boundary handling for Go-regexp matches. |
+| Pattern | `Matcher.lookingAt` | `partial` | Beginning-of-region Go regexp match with local anchoring/transparent bounds. |
+| Pattern | `Matcher.matches` | `partial` | Whole-region Go regexp match with local anchoring/transparent bounds. |
+| Pattern | `Matcher.region` | `partial` | Bounds matching to a local rune-indexed region, including anchored-region and transparent word-boundary cases. |
 | Pattern | `Matcher.regionStart/regionEnd` | `partial` | Returns local rune-indexed region bounds. |
 | Pattern | `Matcher.replaceAll` | `partial` | Go regexp-backed replacement with region bounds, Java-style numeric capture parsing, escaped dollar/backslash handling, and named replacement references pinned unsupported. |
 | Pattern | `Matcher.replaceFirst` | `partial` | Go regexp-backed first replacement with region bounds, Java-style numeric capture parsing, escaped dollar/backslash handling, and named replacement references pinned unsupported. |
 | Pattern | `Matcher.reset` | `partial` | Clears local match state, resets the region to full input, and optionally replaces input. |
 | Pattern | `Matcher.start` | `partial` | Go regexp-backed group start positions. |
-| Pattern | `Matcher.useAnchoringBounds` | `partial` | Stores local bounds flag; exact region-anchor interaction remains partial. |
+| Pattern | `Matcher.useAnchoringBounds` | `partial` | Stores local bounds flag and toggles whether ^/$ bind to region edges or full input edges. |
 | Pattern | `Matcher.usePattern` | `partial` | Swaps the local Go regexp Pattern and resets search state within the current region. |
-| Pattern | `Matcher.useTransparentBounds` | `partial` | Stores local bounds flag; exact transparent-bound matching remains partial. |
+| Pattern | `Matcher.useTransparentBounds` | `partial` | Stores local bounds flag and toggles whether word-boundary checks use opaque region edges or full input context. |
 | Pattern | `Pattern.compile` | `partial` | Go regexp syntax with stable UnsupportedFeature diagnostics for pinned Java-only regex features including lookaround, backreferences, named groups, possessive quantifiers, atomic groups, quote escapes, and previous-match boundaries. |
 | Pattern | `Pattern.matcher` | `partial` | Creates a Go regexp-backed Matcher. |
 | Pattern | `Pattern.matches` | `partial` | Whole-string Go regexp match with the same pinned Java-only syntax diagnostics as Pattern.compile. |
