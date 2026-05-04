@@ -617,6 +617,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
     unsupported errors for unmodeled jobs.
 - [ ] Expand SObject REST resources: describe, layout-adjacent metadata where
   useful, recent, query, queryAll, and record CRUD edge cases.
+  - [x] Return Salesforce-like object resource metadata for
+    `/sobjects/{Object}` with stable describe/recent URLs and common `urls`
+    entries instead of leaking internal storage definitions.
   - [x] Return flat record GET payloads with `attributes.type`, `attributes.url`,
     and `Id` instead of leaking internal storage value wrappers.
   - [x] Add explicit full-layout unsupported responses and an empty compact
@@ -646,6 +649,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     and async queues become persisted server state.
 - [ ] Add black-box server compatibility fixtures for CRUD, query,
   executeAnonymous, composite, errors, auth stubs, and persistence.
+  - [x] Cover SObject object-resource metadata and unknown-object resource
+    errors in the server black-box fixture.
   - [x] Cover Tooling and Bulk unsupported route shapes in the server black-box
     fixture.
   - [x] Cover generic composite unsupported route shape in the server black-box

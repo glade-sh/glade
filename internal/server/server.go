@@ -196,7 +196,7 @@ func (s *Server) handleObject(w http.ResponseWriter, r *http.Request, parts []st
 			writeSalesforceError(w, errUnknownObject)
 			return
 		}
-		writeJSON(w, http.StatusOK, object.Definition)
+		writeJSON(w, http.StatusOK, objectResourcePayload(object.Definition))
 	case len(parts) == 1 && r.Method == http.MethodPost:
 		record, err := decodeRecord(r, objectName, "")
 		if err != nil {
@@ -1062,6 +1062,36 @@ func compactLayoutsPayload(def storage.ObjectDefinition) map[string]any {
 		"defaultCompactLayoutId": nil,
 		"objectType":             def.APIName,
 		"message":                "Compact layout metadata is not modeled; returning an empty local stub.",
+	}
+}
+
+func objectResourcePayload(def storage.ObjectDefinition) map[string]any {
+	name := def.APIName
+	label := def.Label
+	if label == "" {
+		label = name
+	}
+	base := "/services/data/v61.0/sobjects/" + name
+	describe := base + "/describe"
+	recent := base + "/recent"
+	return map[string]any{
+		"name":           name,
+		"label":          label,
+		"keyPrefix":      def.KeyPrefix,
+		"custom":         strings.HasSuffix(name, "__c"),
+		"objectDescribe": describe,
+		"recentItems":    recent,
+		"describe":       describe,
+		"url":            base,
+		"urls": map[string]string{
+			"rowTemplate":    base + "/{ID}",
+			"defaultValues":  base + "/defaultValues?recordTypeId&fields",
+			"describe":       describe,
+			"recent":         recent,
+			"items":          base,
+			"layouts":        describe + "/layouts",
+			"compactLayouts": base + "/compactLayouts",
+		},
 	}
 }
 

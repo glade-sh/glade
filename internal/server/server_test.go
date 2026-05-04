@@ -343,6 +343,60 @@ func TestDescribeEndpoints(t *testing.T) {
 	}
 }
 
+func TestSObjectResourceShape(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("object resource status = %d body=%s", rec.Code, rec.Body.String())
+	}
+
+	var payload struct {
+		Name           string            `json:"name"`
+		Label          string            `json:"label"`
+		KeyPrefix      string            `json:"keyPrefix"`
+		Custom         bool              `json:"custom"`
+		ObjectDescribe string            `json:"objectDescribe"`
+		RecentItems    string            `json:"recentItems"`
+		Describe       string            `json:"describe"`
+		URL            string            `json:"url"`
+		URLs           map[string]string `json:"urls"`
+		Fields         any               `json:"fields"`
+		Records        any               `json:"records"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
+		t.Fatal(err)
+	}
+	if payload.Name != "Account" || payload.Label != "Account" || payload.KeyPrefix != "001" || payload.Custom {
+		t.Fatalf("object identity payload = %#v", payload)
+	}
+	if payload.ObjectDescribe != "/services/data/v61.0/sobjects/Account/describe" ||
+		payload.RecentItems != "/services/data/v61.0/sobjects/Account/recent" ||
+		payload.Describe != payload.ObjectDescribe ||
+		payload.URL != "/services/data/v61.0/sobjects/Account" {
+		t.Fatalf("object URL payload = %#v", payload)
+	}
+	wantURLs := map[string]string{
+		"rowTemplate":    "/services/data/v61.0/sobjects/Account/{ID}",
+		"defaultValues":  "/services/data/v61.0/sobjects/Account/defaultValues?recordTypeId&fields",
+		"describe":       "/services/data/v61.0/sobjects/Account/describe",
+		"recent":         "/services/data/v61.0/sobjects/Account/recent",
+		"items":          "/services/data/v61.0/sobjects/Account",
+		"layouts":        "/services/data/v61.0/sobjects/Account/describe/layouts",
+		"compactLayouts": "/services/data/v61.0/sobjects/Account/compactLayouts",
+	}
+	for name, url := range wantURLs {
+		if payload.URLs[name] != url {
+			t.Fatalf("urls[%s] = %q, want %q; payload=%#v", name, payload.URLs[name], url, payload)
+		}
+	}
+	if payload.Fields != nil || payload.Records != nil {
+		t.Fatalf("object resource leaked internal fields/records: %#v", payload)
+	}
+}
+
 func TestResourceDiscoveryIncludesStableServerEndpoints(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
@@ -1180,6 +1234,14 @@ func TestSalesforceErrorResponses(t *testing.T) {
 			wantStatus: http.StatusMethodNotAllowed,
 			wantCode:   "METHOD_NOT_ALLOWED",
 			wantAllow:  http.MethodGet + ", " + http.MethodPost,
+		},
+		{
+			name:          "unknown object resource",
+			method:        http.MethodGet,
+			path:          "/services/data/v61.0/sobjects/Missing__c",
+			wantStatus:    http.StatusNotFound,
+			wantCode:      "NOT_FOUND",
+			wantMessageIn: "unknown object",
 		},
 		{
 			name:       "record method not allowed",

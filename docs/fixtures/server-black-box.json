@@ -66,6 +66,13 @@
       "status": 201,
       "contains": ["\"success\":true", "001000000000001"]
     },
+    {
+      "name": "object-resource-shape",
+      "method": "GET",
+      "path": "/services/data/v61.0/sobjects/Account",
+      "status": 200,
+      "contains": ["\"name\":\"Account\"", "\"keyPrefix\":\"001\"", "\"objectDescribe\":\"/services/data/v61.0/sobjects/Account/describe\"", "\"recentItems\":\"/services/data/v61.0/sobjects/Account/recent\"", "\"rowTemplate\":\"/services/data/v61.0/sobjects/Account/{ID}\"", "\"compactLayouts\":\"/services/data/v61.0/sobjects/Account/compactLayouts\""]
+    },
 
     {
       "name": "get-account-rest-shape",
@@ -204,6 +211,13 @@
       "contains": ["errorCode", "NOT_FOUND"]
     },
     {
+      "name": "unknown-object-resource-shape",
+      "method": "GET",
+      "path": "/services/data/v61.0/sobjects/Missing__c",
+      "status": 404,
+      "contains": ["errorCode", "NOT_FOUND", "unknown object"]
+    },
+    {
       "name": "scoped-reset",
       "method": "POST",
       "path": "/services/data/v61.0/oaer/reset/data",
@@ -237,8 +251,8 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 28,
-      "statuses": [200, 200, 200, 200, 200, 200, 201, 200, 200, 501, 200, 200, 200, 200, 200, 200, 200, 400, 501, 501, 501, 501, 501, 501, 404, 200, 200, 201],
+      "requests": 30,
+      "statuses": [200, 200, 200, 200, 200, 200, 201, 200, 200, 200, 501, 200, 200, 200, 200, 200, 200, 200, 400, 501, 501, 501, 501, 501, 501, 404, 404, 200, 200, 201],
       "users": 2
     }
   }
