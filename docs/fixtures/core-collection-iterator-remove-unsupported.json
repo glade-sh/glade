@@ -1,0 +1,28 @@
+{
+  "name": "core-collection-iterator-remove-unsupported",
+  "evidence": [
+    {
+      "symbol": "Iterator.remove",
+      "kind": "exec",
+      "notes": "Mutating collection iterators are not modeled; remove returns a stable UnsupportedFeature diagnostic."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "List<Integer> xs = new List<Integer>{1};\nIterator<Integer> it = xs.iterator();\nit.remove();"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "List<Integer> xs = new List<Integer>{1};\nIterator<Integer> it = xs.iterator();\nit.remove();"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"Iterator.remove\""
+    }
+  }
+}

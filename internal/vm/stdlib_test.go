@@ -1189,6 +1189,26 @@ func TestBlobEncodingCryptoStdlibUnsupportedCryptoSurfaces(t *testing.T) {
 			want: `unsupported call "Crypto.decryptWithManagedIV local deterministic key, certificate, and encryption surfaces"`,
 		},
 		{
+			name: "decrypt",
+			src:  "Crypto.decrypt('AES128', Blob.valueOf('key'), Blob.valueOf('data'));",
+			want: `unsupported call "Crypto.decrypt local deterministic key, certificate, and encryption surfaces"`,
+		},
+		{
+			name: "encryptWithManagedIV",
+			src:  "Crypto.encryptWithManagedIV('AES128', Blob.valueOf('key'), Blob.valueOf('data'));",
+			want: `unsupported call "Crypto.encryptWithManagedIV local deterministic key, certificate, and encryption surfaces"`,
+		},
+		{
+			name: "sign",
+			src:  "Crypto.sign('RSA-SHA256', Blob.valueOf('data'), Blob.valueOf('key'));",
+			want: `unsupported call "Crypto.sign local deterministic key, certificate, and encryption surfaces"`,
+		},
+		{
+			name: "verify",
+			src:  "Crypto.verify('RSA-SHA256', Blob.valueOf('data'), Blob.valueOf('sig'), Blob.valueOf('key'));",
+			want: `unsupported call "Crypto.verify local deterministic key, certificate, and encryption surfaces"`,
+		},
+		{
 			name: "signWithCertificate",
 			src:  "Crypto.signWithCertificate('RSA-SHA256', Blob.valueOf('data'), 'cert');",
 			want: `unsupported call "Crypto.signWithCertificate local deterministic key, certificate, and encryption surfaces"`,
