@@ -554,12 +554,12 @@
       "contains": ["UNSUPPORTED_FEATURE", "Connect REST namespace"]
     },
     {
-      "name": "actions-namespace-unsupported",
+      "name": "actions-namespace-method-not-allowed",
       "method": "POST",
-      "path": "/services/data/v61.0/actions/standard/emailSimple",
+      "path": "/services/data/v61.0/actions",
       "body": "{}",
-      "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "Actions REST namespace"]
+      "status": 405,
+      "contains": ["METHOD_NOT_ALLOWED", "method not allowed"]
     },
     {
       "name": "appmenu-namespace-unsupported",
@@ -570,11 +570,18 @@
     },
     {
       "name": "quickactions-namespace-unsupported",
-      "method": "POST",
+      "method": "GET",
       "path": "/services/data/v61.0/quickActions/Account/NewTask",
-      "body": "{}",
       "status": 501,
       "contains": ["UNSUPPORTED_FEATURE", "QuickActions REST namespace"]
+    },
+    {
+      "name": "metadata-namespace-method-not-allowed",
+      "method": "PATCH",
+      "path": "/services/data/v61.0/metadata/deployRequest/0Af000000000001",
+      "body": "{}",
+      "status": 405,
+      "contains": ["METHOD_NOT_ALLOWED", "method not allowed"]
     },
     {
       "name": "metadata-namespace-unsupported",
@@ -811,8 +818,8 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 104,
-      "statuses": [200, 200, 405, 405, 200, 200, 200, 200, 405, 501, 501, 501, 501, 200, 405, 201, 200, 200, 200, 200, 200, 400, 200, 501, 501, 501, 501, 405, 404, 501, 501, 501, 501, 405, 404, 400, 200, 501, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 400, 200, 200, 201, 204, 200, 201, 204, 200, 200, 204, 400, 501, 501, 200, 200, 200, 200, 501, 405, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 405, 501, 501, 405, 501, 405, 501, 501, 405, 501, 501, 501, 404, 404, 200, 200, 201],
+      "requests": 105,
+      "statuses": [200, 200, 405, 405, 200, 200, 200, 200, 405, 501, 501, 501, 501, 200, 405, 201, 200, 200, 200, 200, 200, 400, 200, 501, 501, 501, 501, 405, 404, 501, 501, 501, 501, 405, 404, 400, 200, 501, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 400, 200, 200, 201, 204, 200, 201, 204, 200, 200, 204, 400, 501, 501, 200, 200, 200, 200, 501, 405, 501, 405, 501, 501, 405, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 405, 501, 501, 405, 501, 405, 501, 501, 405, 501, 501, 501, 404, 404, 200, 200, 201],
       "users": 2
     }
   }

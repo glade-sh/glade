@@ -171,6 +171,10 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.handleOAER(w, r, rest[1:])
 	case len(rest) >= 1:
 		if message, ok := unsupportedRESTNamespaceMessage(rest[0]); ok {
+			if r.Method != http.MethodGet {
+				writeMethodNotAllowed(w, http.MethodGet)
+				return
+			}
 			writeSalesforceError(w, errUnsupportedFeature, message)
 			return
 		}
