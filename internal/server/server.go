@@ -98,6 +98,13 @@ type oaerResetPayload struct {
 	Summary    storage.InspectSummary `json:"summary"`
 }
 
+type fixtureLoadMode string
+
+const (
+	fixtureLoadModeMerge   fixtureLoadMode = "merge"
+	fixtureLoadModeReplace fixtureLoadMode = "replace"
+)
+
 type oaerDiscoveryPayload struct {
 	LocalOnly bool              `json:"localOnly"`
 	URLs      map[string]string `json:"urls"`
@@ -582,8 +589,17 @@ func (s *Server) handleOAER(w http.ResponseWriter, r *http.Request, parts []stri
 			ResetScopes: resetScopeSupport(),
 		})
 	case len(parts) == 1 && parts[0] == "fixture" && r.Method == http.MethodGet:
+		if err := validateFixtureExportRequest(r); err != nil {
+			writeSalesforceError(w, errInvalidFixture, err.Error())
+			return
+		}
 		writeJSON(w, http.StatusOK, storage.FixtureFromOrg(*s.Org))
 	case len(parts) == 1 && parts[0] == "fixture" && r.Method == http.MethodPost:
+		mode, err := requestedFixtureLoadMode(r)
+		if err != nil {
+			writeSalesforceError(w, errInvalidFixture, err.Error())
+			return
+		}
 		fixture, err := storage.ReadFixture(r.Body)
 		if err != nil {
 			var versionErr storage.UnsupportedFixtureVersionError
@@ -595,6 +611,9 @@ func (s *Server) handleOAER(w http.ResponseWriter, r *http.Request, parts []stri
 			return
 		}
 		next := s.Org.Clone()
+		if mode == fixtureLoadModeReplace {
+			storage.ResetData(&next)
+		}
 		if err := storage.ApplyFixture(&next, fixture); err != nil {
 			writeSalesforceError(w, errInvalidFixture, err.Error())
 			return
@@ -603,7 +622,7 @@ func (s *Server) handleOAER(w http.ResponseWriter, r *http.Request, parts []stri
 			writeSalesforceError(w, errStoreFailure, err.Error())
 			return
 		}
-		writeJSON(w, http.StatusOK, map[string]any{"success": true, "summary": storage.InspectOrg("", *s.Org)})
+		writeJSON(w, http.StatusOK, map[string]any{"success": true, "mode": mode, "summary": storage.InspectOrg("", *s.Org)})
 	case len(parts) == 0:
 		writeMethodNotAllowed(w, http.MethodGet)
 	case len(parts) >= 1 && parts[0] == "reset":
@@ -615,6 +634,32 @@ func (s *Server) handleOAER(w http.ResponseWriter, r *http.Request, parts []stri
 	default:
 		writeSalesforceError(w, errUnknownOAER)
 	}
+}
+
+func requestedFixtureLoadMode(r *http.Request) (fixtureLoadMode, error) {
+	values, ok := r.URL.Query()["mode"]
+	if !ok {
+		return fixtureLoadModeMerge, nil
+	}
+	if len(values) != 1 {
+		return "", fmt.Errorf("fixture load mode must be specified once")
+	}
+	mode := strings.ToLower(strings.TrimSpace(values[0]))
+	switch mode {
+	case "", "merge":
+		return fixtureLoadModeMerge, nil
+	case "replace":
+		return fixtureLoadModeReplace, nil
+	default:
+		return "", fmt.Errorf("unknown fixture load mode %q; supported modes are merge and replace", values[0])
+	}
+}
+
+func validateFixtureExportRequest(r *http.Request) error {
+	if _, ok := r.URL.Query()["mode"]; ok {
+		return fmt.Errorf("fixture export does not accept load mode; omit mode or POST the fixture with mode=merge or mode=replace")
+	}
+	return nil
 }
 
 func oaerDiscovery(version string) oaerDiscoveryPayload {

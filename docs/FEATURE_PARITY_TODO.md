@@ -993,9 +993,13 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Add local-only `oaer/state` and `oaer/inspect` summaries with supported
     reset scope metadata.
   - [x] Report `limits` and `async` reset scopes as accepted no-ops until limit
-    and async queues become persisted server state.
+     and async queues become persisted server state.
   - [x] Classify unsupported fixture versions as `INVALID_FIXTURE` while keeping
-    malformed JSON on the fixture load route as `JSON_PARSER_ERROR`.
+     malformed JSON on the fixture load route as `JSON_PARSER_ERROR`.
+  - [x] Add fixture load `mode=replace` for deterministic state replacement,
+    reject invalid load/export mode parameters with Salesforce-shaped
+    `INVALID_FIXTURE` errors, and persist replacement commits through the shared
+    store boundary.
 - [ ] Add black-box server compatibility fixtures for CRUD, query,
   executeAnonymous, composite, errors, auth stubs, and persistence.
   - [x] Cover SObject object-resource metadata and unknown-object resource
@@ -1049,7 +1053,10 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Cover Metadata REST root discovery plus read/retrieve unsupported stubs
     and retrieve body/method boundaries in the server black-box fixture.
   - [x] Cover local `oaer` root discovery, method boundaries, and invalid fixture
-    version errors in the server black-box fixture.
+     version errors in the server black-box fixture.
+  - [x] Cover `oaer/fixture` replace-mode load, export-mode validation, bad load
+    mode validation, and post-replace data reset persistence in the server
+    black-box fixture.
 
 ## 9. Compatibility, Hardening, And Release
 
