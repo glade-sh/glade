@@ -116,8 +116,8 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Exception | `Exception.toString` | `supported` | Returns System-prefixed local exception type and message text. |
 | FeatureManagement | `FeatureManagement.checkPermission` | `supported` | Checks local current-user and runAs permission-list state. |
 | HTTP | `Http.send` | `partial` | Mock-first local callouts with request validation and callout accounting; real network transport remains explicitly unsupported. |
-| HTTP | `HttpRequest` | `partial` | Endpoint, method, compressed flag, deterministic case-insensitive headers/header keys, timeout validation/defaults, body, and blob body accessors; client-certificate and static-resource callout surfaces remain explicit unsupported seams. |
-| HTTP | `HttpResponse` | `partial` | Status, status code, deterministic case-insensitive headers/header keys, body, and blob body accessors for local mock responses. |
+| HTTP | `HttpRequest` | `partial` | Deterministic constructor defaults plus endpoint, method, compressed flag, case-insensitive headers/header keys, timeout validation/defaults, body, and blob body accessors; client-certificate and static-resource callout surfaces remain explicit unsupported seams. |
+| HTTP | `HttpResponse` | `partial` | Deterministic constructor defaults plus status, status code, case-insensitive headers/header keys, body, and blob body accessors for local mock responses. |
 | Id | `Id.getSObjectType` | `partial` | Resolves local schema key prefixes and a bounded common standard prefix table to Schema.SObjectType tokens; unknown shape-valid or unmodeled platform prefixes return a stable StringException rather than guessing. |
 | Id | `Id.to15` | `supported` | Converts validated 18-character IDs to their 15-character prefix. |
 | Id | `Id.to18` | `supported` | Adds or preserves the documented 3-character checksum for validated IDs. |
@@ -204,13 +204,14 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Math | `Math.sin` | `supported` | Finite deterministic result for numeric values. |
 | Math | `Math.sqrt` | `supported` | Numeric values. |
 | Math | `Math.tan` | `supported` | Finite deterministic result for numeric values. |
+| Messaging | `Messaging.MassEmailMessage` | `partial` | Common target, whatId, template, description, opt-out, and activity setters populate the local mass-message shape; no delivery transport. |
 | Messaging | `Messaging.SendEmailResult` | `partial` | Local success result exposes isSuccess and getErrors getters. |
 | Messaging | `Messaging.SingleEmailMessage` | `partial` | Common address, body, threading, template-reference, activity, signature, opt-out, priority, BCC sender, and attachment setters populate the local message shape; no delivery transport. |
-| Messaging | `Messaging.sendEmail` | `partial` | List overloads, including Boolean allOrNothing, return one local SendEmailResult per message and increment email limits; transport/template APIs and SendEmailOptions surfaces return explicit unsupported diagnostics. |
+| Messaging | `Messaging.sendEmail` | `partial` | Single and mass message list overloads, including Boolean allOrNothing, return one local SendEmailResult per message and increment email limits; transport/template APIs and SendEmailOptions surfaces return explicit unsupported diagnostics. |
 | Object | `Object.equals` | `supported` | Uses local value equality for primitives, collections, platform scalars, and object identity. |
 | Object | `Object.hashCode` | `supported` | Deterministic within local value equality; object identity hashes are request-local. |
 | Object | `Object.toString` | `supported` | Returns local string forms for primitives, collections, platform scalars, and objects. |
-| PageReference | `PageReference` | `partial` | Constructor, URL, redirect, parameters, headers, and string conversion basics; Visualforce rendering and PDF content remain explicit UnsupportedFeature seams. |
+| PageReference | `PageReference` | `partial` | Constructor defaults, URL, redirect, typed local parameters and headers, and string conversion basics; Visualforce rendering and PDF content remain explicit UnsupportedFeature seams. |
 | Pattern | `Matcher.appendReplacement/appendTail` | `unsupported` | Java StringBuffer append-position semantics return explicit unsupported errors. |
 | Pattern | `Matcher.end` | `supported` | Local Go-regexp group end positions, including -1 for optional unmatched groups and stable invalid-group errors. |
 | Pattern | `Matcher.find` | `supported` | Local Go-regexp matching with captured groups, region bounds, find(start) reset behavior, anchoring/transparent bound handling, and compiled flag state. |

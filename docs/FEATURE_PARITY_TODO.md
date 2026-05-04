@@ -664,6 +664,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
   `HttpCalloutMock`, callout limits, and test isolation.
   - [x] Add common `HttpRequest`/`HttpResponse` endpoint, method, header,
     timeout, status, and body/blob accessors.
+  - [x] Add deterministic constructor defaults for local `HttpRequest` and
+    `HttpResponse` shapes, including empty body/header maps and default OK
+    responses without real transport.
   - [x] Add local compressed-flag and deterministic header-key coverage for
     mock-only request/response shapes.
   - [x] Fence client-certificate callout setters with stable UnsupportedFeature
@@ -675,18 +678,20 @@ a Salesforce-shaped local API server without silently wrong behavior.
   `URL`, and `PageReference` basics.
   - [x] Add common `UserInfo` org/session/locale/timezone getters, including
     `TimeZoneSidKey` handoff for the modeled UTC/fixed-offset/named-zone slice.
-  - [x] Add `Messaging.SingleEmailMessage` setters and structured
-    `SendEmailResult` basics.
+  - [x] Add `Messaging.SingleEmailMessage` and `Messaging.MassEmailMessage`
+    setters plus structured `SendEmailResult` basics.
   - [x] Expand message-shape setters for address, body, threading, template
     reference, activity, signature, opt-out, priority, BCC sender, and attachment
     fields while keeping delivery/template transport and richer send options
     fenced unsupported.
-  - [x] Return one local `Messaging.SendEmailResult` per input message and
-    support the Boolean `allOrNothing` overload without modeling transport;
-    `Messaging.SendEmailOptions` remains an explicit UnsupportedFeature seam.
+  - [x] Return one local `Messaging.SendEmailResult` per single or mass input
+    message and support the Boolean `allOrNothing` overload without modeling
+    transport; `Messaging.SendEmailOptions` remains an explicit UnsupportedFeature
+    seam.
   - [x] Add `ApexPages` message storage, stable current page,
-    `Test.setCurrentPage`, `ApexPages.Severity`, `PageReference`, REST context
-    null/re-lazy response lifecycle, and deterministic org `URL` basics.
+    `Test.setCurrentPage`, `ApexPages.Severity`, `PageReference` typed local
+    parameter/header maps, REST context null/re-lazy response lifecycle, and
+    deterministic org `URL` basics.
   - [x] Cover `URL` authority user-info parsing and bounded FTP default-port
     accessor behavior.
   - **Limitation**: Full Visualforce navigation/rendering and production session
