@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -92,7 +93,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	w.Header().Set("Content-Type", "application/json")
-	parts := splitPath(r.URL.Path)
+	parts := splitPath(r.URL.EscapedPath())
 	if len(parts) >= 2 && parts[0] == "services" && parts[1] == "oauth2" {
 		s.handleOAuth(w, r, parts[2:])
 		return
@@ -328,9 +329,96 @@ func (s *Server) handleObject(w http.ResponseWriter, r *http.Request, version st
 			return
 		}
 		s.handleRecord(w, r, version, objectName, id)
+	case len(parts) == 3:
+		s.handleExternalIDRecord(w, r, version, objectName, parts[1], parts[2])
 	default:
 		writeSalesforceError(w, errUnknownSObject)
 	}
+}
+
+func (s *Server) handleExternalIDRecord(w http.ResponseWriter, r *http.Request, version string, objectName, externalIDField, externalIDValue string) {
+	object, objectName, fieldName, field, value, ok := s.externalIDRoute(w, objectName, externalIDField, externalIDValue)
+	if !ok {
+		return
+	}
+	switch r.Method {
+	case http.MethodGet:
+		record, id, matches := findExternalIDRecord(object, fieldName, field, value)
+		if !writeExternalIDLookupResult(w, objectName, fieldName, matches) {
+			return
+		}
+		writeJSON(w, http.StatusOK, recordPayload(record, version, objectName, id))
+	case http.MethodPatch:
+		record, err := decodeRecord(r, objectName, "")
+		if err != nil {
+			writeSalesforceError(w, errMalformedJSON, err.Error())
+			return
+		}
+		if existing, ok := record.Fields[fieldName]; ok {
+			if !storageValuesEqual(field, existing, value) {
+				writeSalesforceError(w, errDMLFailure, fmt.Sprintf("external id field %s value does not match path value", fieldName))
+				return
+			}
+		} else if record.ExplicitNulls[fieldName] {
+			writeSalesforceError(w, errDMLFailure, fmt.Sprintf("external id field %s value does not match path value", fieldName))
+			return
+		} else {
+			record.Fields[fieldName] = value
+		}
+		delete(record.ExplicitNulls, fieldName)
+		next := s.Org.Clone()
+		engine := dml.NewEngine(&next)
+		result := engine.UpsertWithExternalID([]storage.Record{record}, fieldName)[0]
+		if result.Success {
+			if err := s.commitOrg(next); err != nil {
+				writeSalesforceError(w, errStoreFailure, err.Error())
+				return
+			}
+		}
+		writeExternalIDUpsertResult(w, result)
+	case http.MethodDelete:
+		_, id, matches := findExternalIDRecord(object, fieldName, field, value)
+		if !writeExternalIDLookupResult(w, objectName, fieldName, matches) {
+			return
+		}
+		next := s.Org.Clone()
+		engine := dml.NewEngine(&next)
+		result := engine.Delete([]storage.Record{{Object: objectName, ID: id}})[0]
+		if result.Success {
+			if err := s.commitOrg(next); err != nil {
+				writeSalesforceError(w, errStoreFailure, err.Error())
+				return
+			}
+		}
+		writeDMLResult(w, http.StatusNoContent, result)
+	default:
+		writeMethodNotAllowed(w, http.MethodGet, http.MethodPatch, http.MethodDelete)
+	}
+}
+
+func (s *Server) externalIDRoute(w http.ResponseWriter, objectName, externalIDField, externalIDValue string) (storage.ObjectState, string, string, storage.Field, storage.Value, bool) {
+	resolvedObjectName, ok := storage.ResolveObjectName(*s.Org, objectName)
+	if !ok {
+		writeSalesforceError(w, errUnknownObject)
+		return storage.ObjectState{}, "", "", storage.Field{}, storage.Value{}, false
+	}
+	object := s.Org.Objects[resolvedObjectName]
+	fieldName, ok := storage.ResolveFieldName(object.Definition, s.Org.Namespace, externalIDField)
+	if !ok {
+		writeSalesforceError(w, errInvalidField, fmt.Sprintf("external id field %s.%s does not exist", resolvedObjectName, externalIDField))
+		return storage.ObjectState{}, "", "", storage.Field{}, storage.Value{}, false
+	}
+	field, ok := object.Definition.Fields[fieldName]
+	if !ok || !field.ExternalID {
+		writeSalesforceError(w, errInvalidField, fmt.Sprintf("field %s.%s is not an external id", resolvedObjectName, fieldName))
+		return storage.ObjectState{}, "", "", storage.Field{}, storage.Value{}, false
+	}
+	value, err := externalIDValueFromPath(field, externalIDValue)
+	if err != nil {
+		writeSalesforceError(w, errInvalidField, err.Error())
+		return storage.ObjectState{}, "", "", storage.Field{}, storage.Value{}, false
+	}
+	return object, resolvedObjectName, fieldName, field, value, true
 }
 
 func (s *Server) handleRecord(w http.ResponseWriter, r *http.Request, version string, objectName string, id storage.ID) {
@@ -1135,6 +1223,18 @@ func writeDMLResult(w http.ResponseWriter, status int, result dml.Result) {
 	writeJSON(w, status, map[string]any{"id": result.ID, "success": true, "errors": []string{}})
 }
 
+func writeExternalIDUpsertResult(w http.ResponseWriter, result dml.Result) {
+	if !result.Success {
+		writeSalesforceError(w, errDMLFailure, result.Error)
+		return
+	}
+	if !result.Created {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+	writeJSON(w, http.StatusCreated, map[string]any{"id": result.ID, "success": true, "errors": []string{}, "created": true})
+}
+
 func writeJSON(w http.ResponseWriter, status int, value any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
@@ -1480,6 +1580,108 @@ func objectResourcePayload(def storage.ObjectDefinition, version string) map[str
 			"layouts":        describe + "/layouts",
 			"compactLayouts": base + "/compactLayouts",
 		},
+	}
+}
+
+func findExternalIDRecord(object storage.ObjectState, fieldName string, field storage.Field, value storage.Value) (storage.Record, storage.ID, int) {
+	matches := make([]storage.ID, 0, 1)
+	for id, record := range object.Records {
+		if record.System.IsDeleted {
+			continue
+		}
+		storedValue, ok := record.Fields[fieldName]
+		if !ok || !storageValuesEqual(field, storedValue, value) {
+			continue
+		}
+		matches = append(matches, id)
+	}
+	if len(matches) != 1 {
+		return storage.Record{}, "", len(matches)
+	}
+	id := matches[0]
+	record := object.Records[id]
+	if record.ID == "" {
+		record.ID = id
+	}
+	if record.Object == "" {
+		record.Object = object.Definition.APIName
+	}
+	return record, id, 1
+}
+
+func writeExternalIDLookupResult(w http.ResponseWriter, objectName, fieldName string, matches int) bool {
+	switch matches {
+	case 1:
+		return true
+	case 0:
+		writeSalesforceError(w, errUnknownRecord)
+	default:
+		writeSalesforceError(w, errDMLFailure, fmt.Sprintf("external id %s.%s matched multiple records", objectName, fieldName))
+	}
+	return false
+}
+
+func externalIDValueFromPath(field storage.Field, raw string) (storage.Value, error) {
+	switch field.Type {
+	case storage.FieldID, storage.FieldReference:
+		return storage.IDValue(storage.ID(raw)), nil
+	case storage.FieldInteger:
+		value, err := strconv.ParseInt(raw, 10, 64)
+		if err != nil {
+			return storage.Value{}, fmt.Errorf("invalid external id integer value %q", raw)
+		}
+		return storage.IntegerValue(value), nil
+	case storage.FieldBoolean:
+		value, err := strconv.ParseBool(raw)
+		if err != nil {
+			return storage.Value{}, fmt.Errorf("invalid external id boolean value %q", raw)
+		}
+		return storage.BooleanValue(value), nil
+	case storage.FieldDecimal:
+		return storage.DecimalValue(raw), nil
+	case storage.FieldDate:
+		return storage.DateValue(raw), nil
+	case storage.FieldDateTime:
+		return storage.DateTimeValue(raw), nil
+	default:
+		return storage.StringValue(raw), nil
+	}
+}
+
+func storageValuesEqual(field storage.Field, left, right storage.Value) bool {
+	if left.Kind == storage.ValueString && right.Kind == storage.ValueString && !field.CaseSensitive {
+		return strings.EqualFold(left.String, right.String)
+	}
+	if left.Kind != right.Kind {
+		if left.Kind == storage.ValueID && right.Kind == storage.ValueString {
+			if !field.CaseSensitive {
+				return strings.EqualFold(string(left.ID), right.String)
+			}
+			return string(left.ID) == right.String
+		}
+		if left.Kind == storage.ValueString && right.Kind == storage.ValueID {
+			if !field.CaseSensitive {
+				return strings.EqualFold(left.String, string(right.ID))
+			}
+			return left.String == string(right.ID)
+		}
+		return false
+	}
+	switch left.Kind {
+	case storage.ValueNull:
+		return true
+	case storage.ValueString, storage.ValueDate, storage.ValueDateTime:
+		return left.String == right.String
+	case storage.ValueDecimal:
+		return left.Decimal == right.Decimal
+	case storage.ValueInteger:
+		return left.Integer == right.Integer
+	case storage.ValueBoolean:
+		return left.Boolean == right.Boolean
+	case storage.ValueID:
+		return left.ID == right.ID
+	default:
+		return false
 	}
 }
 
@@ -1836,7 +2038,11 @@ func splitPath(path string) []string {
 	out := raw[:0]
 	for _, part := range raw {
 		if part != "" {
-			out = append(out, part)
+			unescaped, err := url.PathUnescape(part)
+			if err != nil {
+				unescaped = part
+			}
+			out = append(out, unescaped)
 		}
 	}
 	return out

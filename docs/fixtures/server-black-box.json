@@ -313,6 +313,42 @@
       "contains": ["\"deletedRecords\":[{\"id\":\"001000000000006\"", "\"deletedDate\"", "\"earliestDateAvailable\"", "\"latestDateCovered\""]
     },
     {
+      "name": "external-id-upsert-create",
+      "method": "PATCH",
+      "path": "/services/data/v61.0/sobjects/Account/External_Id__c/BB-EXT-1",
+      "body": "{\"Name\":\"External Black Box\"}",
+      "status": 201,
+      "contains": [
+        "\"success\":true",
+        "\"created\":true",
+        "001000000000007"
+      ]
+    },
+    {
+      "name": "external-id-upsert-update",
+      "method": "PATCH",
+      "path": "/services/data/v61.0/sobjects/Account/External_Id__c/BB-EXT-1",
+      "body": "{\"Name\":\"External Black Box Updated\",\"External_Id__c\":\"BB-EXT-1\"}",
+      "status": 204
+    },
+    {
+      "name": "external-id-get",
+      "method": "GET",
+      "path": "/services/data/v60.0/sobjects/Account/External_Id__c/BB-EXT-1",
+      "status": 200,
+      "contains": [
+        "\"attributes\":{\"type\":\"Account\",\"url\":\"/services/data/v60.0/sobjects/Account/001000000000007\"}",
+        "\"External_Id__c\":\"BB-EXT-1\"",
+        "External Black Box Updated"
+      ]
+    },
+    {
+      "name": "external-id-delete",
+      "method": "DELETE",
+      "path": "/services/data/v61.0/sobjects/Account/External_Id__c/BB-EXT-1",
+      "status": 204
+    },
+    {
       "name": "composite-all-or-none-rollback",
       "method": "POST",
       "path": "/services/data/v61.0/composite/sobjects",
@@ -600,8 +636,8 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 77,
-      "statuses": [200, 200, 405, 405, 200, 200, 200, 200, 405, 501, 501, 501, 501, 200, 405, 201, 200, 200, 200, 200, 200, 501, 501, 400, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 201, 204, 200, 400, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 404, 404, 200, 200, 201],
+      "requests": 81,
+      "statuses": [200, 200, 405, 405, 200, 200, 200, 200, 405, 501, 501, 501, 501, 200, 405, 201, 200, 200, 200, 200, 200, 501, 501, 400, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 201, 204, 200, 201, 204, 200, 204, 400, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 404, 404, 200, 200, 201],
       "users": 2
     }
   }

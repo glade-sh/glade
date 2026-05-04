@@ -641,6 +641,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     start/end bounds, and Salesforce-shaped malformed-date errors.
   - [x] Cover missing/deleted record GET, missing DELETE, null PATCH, and method
     `Allow` headers in server tests.
+  - [x] Add conservative external-ID SObject GET, PATCH upsert, and DELETE
+    routes backed by local DML upsert/delete behavior.
 - [ ] Expand Tooling API coverage beyond `executeAnonymous` and query
   delegation.
   - [x] Return stable unsupported errors for common Tooling sObject discovery,
@@ -717,6 +719,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     black-box fixture.
   - [x] Cover representative `/limits` payload keys in the server black-box
     fixture.
+  - [x] Cover REST SObject external-ID create, update, get, and delete in the
+    server black-box fixture.
 
 ## 9. Compatibility, Hardening, And Release
 
