@@ -1656,7 +1656,7 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		if len(args) != 0 {
 			return Null, fmt.Errorf("UserInfo.getTimeZone expects 0 arguments")
 		}
-		return String("UTC"), nil
+		return fixedTimeZone(vm.currentUserTimeZoneID())
 	default:
 		return Null, unsupportedCallError(callee)
 	}
@@ -1876,6 +1876,10 @@ func (vm *VM) currentUserInfoField(field, fallback string) string {
 		return userInfoField(vm.executionUser, field, fallback)
 	}
 	return fallback
+}
+
+func (vm *VM) currentUserTimeZoneID() string {
+	return vm.currentUserInfoField("TimeZoneSidKey", "UTC")
 }
 
 func userHasPermission(user Value, permission string) bool {
@@ -9090,6 +9094,13 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, err
 			}
 			if len(args) == 0 {
+				if method == "format" {
+					_, _, local, _, ok := resolveTimeZoneForInstant(vm.currentUserTimeZoneID(), t)
+					if !ok {
+						return Null, receiver, false, true, unsupportedCallError("Datetime.format timezone " + vm.currentUserTimeZoneID())
+					}
+					return String(local.Format(time.RFC3339Nano)), receiver, false, true, nil
+				}
 				return String(formatPlatformDatetime(t)), receiver, false, true, nil
 			}
 			if method == "toString" {
@@ -9104,13 +9115,17 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			tzID := "UTC"
 			zoneLabel := "UTC"
 			offset := time.Duration(0)
-			if method == "format" && len(args) == 2 {
-				if args[1].Kind != ValueString {
-					return Null, receiver, false, true, fmt.Errorf("Datetime.format expects timezone String")
+			if method == "format" {
+				formatTimeZoneID := vm.currentUserTimeZoneID()
+				if len(args) == 2 {
+					if args[1].Kind != ValueString {
+						return Null, receiver, false, true, fmt.Errorf("Datetime.format expects timezone String")
+					}
+					formatTimeZoneID = args[1].Text
 				}
-				canonical, parsedOffset, local, label, ok := resolveTimeZoneForInstant(args[1].Text, t)
+				canonical, parsedOffset, local, label, ok := resolveTimeZoneForInstant(formatTimeZoneID, t)
 				if !ok {
-					return Null, receiver, false, true, unsupportedCallError("Datetime.format timezone " + args[1].Text)
+					return Null, receiver, false, true, unsupportedCallError("Datetime.format timezone " + formatTimeZoneID)
 				}
 				tzID = canonical
 				offset = parsedOffset

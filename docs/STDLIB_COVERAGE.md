@@ -62,7 +62,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Datetime | `Datetime.date` | `partial` | Returns UTC-modeled Date component; no user timezone model. |
 | Datetime | `Datetime.dateGmt` | `supported` | Returns the UTC Date component. |
 | Datetime | `Datetime.day` | `partial` | UTC-modeled component getter. |
-| Datetime | `Datetime.format` | `partial` | Deterministic UTC/fixed-offset Java-pattern slice plus America/Los_Angeles DST formatting; user locale and user timezone are unsupported. |
+| Datetime | `Datetime.format` | `partial` | Deterministic UTC/fixed-offset Java-pattern slice plus America/Los_Angeles DST formatting; format(pattern) and format() use the current user timezone for the modeled UTC/America/Los_Angeles slice; user locale is unsupported. |
 | Datetime | `Datetime.formatGmt` | `partial` | Deterministic UTC Java-pattern slice with stable token errors; locale patterns are not modeled beyond pinned English names. |
 | Datetime | `Datetime.hour` | `partial` | UTC-modeled component getter. |
 | Datetime | `Datetime.millisecond` | `partial` | UTC-modeled component getter. |
@@ -399,6 +399,6 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | UserInfo | `UserInfo.getOrganizationId` | `partial` | Local org identity. |
 | UserInfo | `UserInfo.getProfileId` | `partial` | Current runAs/server/default user. |
 | UserInfo | `UserInfo.getSessionId` | `partial` | Empty local session value. |
-| UserInfo | `UserInfo.getTimeZone` | `partial` | Deterministic UTC value. |
+| UserInfo | `UserInfo.getTimeZone` | `partial` | Returns a TimeZone object for the current user TimeZoneSidKey in the modeled UTC/America/Los_Angeles slice. |
 | UserInfo | `UserInfo.getUserEmail` | `partial` | Current runAs/server/default user. |
 | UserInfo | `UserInfo.getUserId` | `partial` | Current runAs/server/default user. |

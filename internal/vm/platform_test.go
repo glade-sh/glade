@@ -994,7 +994,9 @@ System.runAs(new User(Id = '005-user-a', ProfileId = '00e-profile-a', Username =
   System.assertEquals('00D000000000001', UserInfo.getOrganizationId());
   System.assertEquals('', UserInfo.getSessionId());
   System.assertEquals('en_US', UserInfo.getLocale());
-  System.assertEquals('UTC', UserInfo.getTimeZone());
+  TimeZone tz = UserInfo.getTimeZone();
+  System.assertEquals('UTC', tz.getID());
+  System.assertEquals('UTC', tz.getDisplayName());
 }
 System.assertEquals('system', UserInfo.getUserId());
 System.runAs(new User(Id = '005-user-b', FirstName = 'Ada', LastName = 'Trail', Name = 'Ada Trail', Email = 'ada@example.test', Permissions = new List<String>{'CanRunLocal'})) {
@@ -1011,6 +1013,35 @@ System.runAs(new User(Id = '005-user-b', FirstName = 'Ada', LastName = 'Trail', 
 	}
 	machine := New(nil)
 	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecCurrentUserTimeZoneScopesUserInfoAndDatetimeFormat(t *testing.T) {
+	program, err := CompileAnonymous(`
+Datetime winter = Datetime.valueOfGmt('2024-02-29T23:05:06Z');
+Datetime summer = Datetime.valueOfGmt('2024-07-01T12:00:00Z');
+TimeZone tz = UserInfo.getTimeZone();
+System.assertEquals('America/Los_Angeles', tz.getID());
+System.assertEquals('America/Los_Angeles', tz.getDisplayName());
+System.assertEquals(-28800000, tz.getOffset(winter));
+System.assertEquals(-25200000, tz.getOffset(summer));
+System.assertEquals('2024-02-29 15:05:06 -0800 PST', winter.format('yyyy-MM-dd HH:mm:ss Z z'));
+System.assertEquals('2024-07-01 05:00:00 -0700 PDT', summer.format('yyyy-MM-dd HH:mm:ss Z z'));
+System.assertEquals('2024-02-29T15:05:06-08:00', winter.format());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.SetCurrentUser(storage.Record{
+		ID:     "005-local-user",
+		Object: "User",
+		Fields: map[string]storage.Value{
+			"TimeZoneSidKey": storage.StringValue("America/Los_Angeles"),
+		},
+	})
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
