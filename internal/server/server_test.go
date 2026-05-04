@@ -76,6 +76,61 @@ func TestDescribeEndpoints(t *testing.T) {
 	}
 }
 
+func TestResourceDiscoveryIncludesStableServerEndpoints(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/data/v61.0", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("discovery status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var payload map[string]string
+	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]string{
+		"composite": "/services/data/v61.0/composite",
+		"limits":    "/services/data/v61.0/limits",
+		"oaer":      "/services/data/v61.0/oaer",
+		"query":     "/services/data/v61.0/query",
+		"queryAll":  "/services/data/v61.0/queryAll",
+		"recent":    "/services/data/v61.0/recent",
+		"search":    "/services/data/v61.0/search",
+		"sobjects":  "/services/data/v61.0/sobjects",
+		"tooling":   "/services/data/v61.0/tooling",
+	}
+	for name, url := range want {
+		if payload[name] != url {
+			t.Fatalf("discovery[%s] = %q, want %q; payload=%#v", name, payload[name], url, payload)
+		}
+	}
+}
+
+func TestUnsupportedDiscoveryNamespacesReturnStableErrors(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+	for _, path := range []string{
+		"/services/data/v61.0/search?q=FIND%20%7BAcme%7D",
+		"/services/data/v61.0/composite/batch",
+		"/services/data/v61.0/composite/tree/Account",
+		"/services/data/v61.0/composite/graph",
+	} {
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, path, strings.NewReader(`{}`)))
+		if path == "/services/data/v61.0/search?q=FIND%20%7BAcme%7D" {
+			rec = httptest.NewRecorder()
+			handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+		}
+		if rec.Code != http.StatusNotImplemented {
+			t.Fatalf("%s status = %d body=%s", path, rec.Code, rec.Body.String())
+		}
+		if !bytes.Contains(rec.Body.Bytes(), []byte(`"errorCode":"UNSUPPORTED_FEATURE"`)) {
+			t.Fatalf("%s unsupported shape = %s", path, rec.Body.String())
+		}
+	}
+}
+
 func TestApexRestDispatchReturnsStableUnsupportedError(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
@@ -272,6 +327,58 @@ func TestToolingExecuteAnonymousAndCompositeSObjects(t *testing.T) {
 }`)))
 	if composite.Code != http.StatusOK || !bytes.Contains(composite.Body.Bytes(), []byte(`"success":true`)) {
 		t.Fatalf("composite status = %d body=%s", composite.Code, composite.Body.String())
+	}
+}
+
+func TestCompositeSObjectsEchoesReferenceIDAndPreservesOrder(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	composite := httptest.NewRecorder()
+	handler.ServeHTTP(composite, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/composite/sobjects", strings.NewReader(`{
+  "records": [
+    {"attributes":{"type":"Account","referenceId":"first"},"Name":"First"},
+    {"attributes":{"type":"Account","referenceId":"second"},"Name":"Second"}
+  ]
+}`)))
+	if composite.Code != http.StatusOK {
+		t.Fatalf("composite status = %d body=%s", composite.Code, composite.Body.String())
+	}
+	var results []map[string]any
+	if err := json.Unmarshal(composite.Body.Bytes(), &results); err != nil {
+		t.Fatal(err)
+	}
+	if len(results) != 2 {
+		t.Fatalf("results = %#v", results)
+	}
+	if results[0]["referenceId"] != "first" || results[0]["id"] != "001000000000001" {
+		t.Fatalf("first result = %#v", results[0])
+	}
+	if results[1]["referenceId"] != "second" || results[1]["id"] != "001000000000002" {
+		t.Fatalf("second result = %#v", results[1])
+	}
+}
+
+func TestCompositeSObjectsAllOrNoneRollsBackSuccessfulRows(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	composite := httptest.NewRecorder()
+	handler.ServeHTTP(composite, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/composite/sobjects", strings.NewReader(`{
+  "allOrNone": true,
+  "records": [
+    {"attributes":{"type":"Account","referenceId":"good"},"Name":"Good"},
+    {"attributes":{"type":"Account","referenceId":"bad"}}
+  ]
+}`)))
+	if composite.Code != http.StatusBadRequest {
+		t.Fatalf("composite status = %d body=%s", composite.Code, composite.Body.String())
+	}
+	if got := len(org.Objects["Account"].Records); got != 0 {
+		t.Fatalf("allOrNone rollback left records = %d", got)
+	}
+	if !bytes.Contains(composite.Body.Bytes(), []byte(`"referenceId":"good"`)) || !bytes.Contains(composite.Body.Bytes(), []byte(`"referenceId":"bad"`)) {
+		t.Fatalf("composite reference ids missing: %s", composite.Body.String())
 	}
 }
 

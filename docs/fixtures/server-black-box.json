@@ -9,6 +9,13 @@
       "contains": ["v61.0"]
     },
     {
+      "name": "resource-discovery",
+      "method": "GET",
+      "path": "/services/data/v61.0",
+      "status": 200,
+      "contains": ["\"composite\":\"/services/data/v61.0/composite\"", "\"recent\":\"/services/data/v61.0/recent\"", "\"search\":\"/services/data/v61.0/search\""]
+    },
+    {
       "name": "userinfo",
       "method": "GET",
       "path": "/services/oauth2/userinfo",
@@ -54,6 +61,37 @@
       "contains": ["\"success\":true"]
     },
     {
+      "name": "composite-reference-id",
+      "method": "POST",
+      "path": "/services/data/v61.0/composite/sobjects",
+      "body": "{\"records\":[{\"attributes\":{\"type\":\"Account\",\"referenceId\":\"first\"},\"Name\":\"First\"},{\"attributes\":{\"type\":\"Account\",\"referenceId\":\"second\"},\"Name\":\"Second\"}]}",
+      "status": 200,
+      "contains": ["\"referenceId\":\"first\"", "\"referenceId\":\"second\"", "001000000000004", "001000000000005"]
+    },
+    {
+      "name": "composite-all-or-none-rollback",
+      "method": "POST",
+      "path": "/services/data/v61.0/composite/sobjects",
+      "body": "{\"allOrNone\":true,\"records\":[{\"attributes\":{\"type\":\"Account\",\"referenceId\":\"rolledBack\"},\"Name\":\"Rolled Back\"},{\"attributes\":{\"type\":\"Missing__c\",\"referenceId\":\"bad\"},\"Name\":\"Bad\"}]}",
+      "status": 400,
+      "contains": ["\"referenceId\":\"rolledBack\"", "\"referenceId\":\"bad\"", "DML_EXCEPTION"]
+    },
+    {
+      "name": "composite-graph-unsupported",
+      "method": "POST",
+      "path": "/services/data/v61.0/composite/graph",
+      "body": "{}",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "Composite graph"]
+    },
+    {
+      "name": "search-unsupported",
+      "method": "GET",
+      "path": "/services/data/v61.0/search?q=FIND%20%7BAcme%7D",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "Search/SOSL"]
+    },
+    {
       "name": "error-shape",
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Missing__c/describe",
@@ -87,8 +125,8 @@
       "persistedRecords": 8,
       "permissions": 2,
       "profiles": 1,
-      "requests": 10,
-      "statuses": [200, 200, 200, 201, 200, 200, 200, 404, 200, 201],
+      "requests": 15,
+      "statuses": [200, 200, 200, 200, 201, 200, 200, 200, 200, 400, 501, 501, 404, 200, 201],
       "users": 1
     }
   }
