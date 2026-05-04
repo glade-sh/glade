@@ -1,0 +1,33 @@
+{
+  "name": "core-encoding-url-charset-stdlib",
+  "evidence": [
+    {
+      "symbol": "EncodingUtil.urlEncode",
+      "kind": "exec",
+      "notes": "Covers bounded UTF-8 and ISO-8859-1 URL charset behavior."
+    },
+    {
+      "symbol": "EncodingUtil.urlDecode",
+      "kind": "exec",
+      "notes": "Covers bounded UTF-8 and ISO-8859-1 URL charset behavior."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "String utf = EncodingUtil.urlEncode('A B+Ω', 'UTF-8');\nSystem.assertEquals('A+B%2B%CE%A9', utf);\nSystem.assertEquals('A B+Ω', EncodingUtil.urlDecode(utf, 'utf8'));\nString latin = EncodingUtil.urlEncode('café trail', 'ISO-8859-1');\nSystem.assertEquals('caf%E9+trail', latin);\nSystem.assertEquals('café trail', EncodingUtil.urlDecode(latin, 'latin1'));\nSystem.assertEquals('café trail', EncodingUtil.urlDecode('caf%E9+trail', ' ISO_8859_1 '));\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "String utf = EncodingUtil.urlEncode('A B+Ω', 'UTF-8');\nSystem.assertEquals('A+B%2B%CE%A9', utf);\nSystem.assertEquals('A B+Ω', EncodingUtil.urlDecode(utf, 'utf8'));\nString latin = EncodingUtil.urlEncode('café trail', 'ISO-8859-1');\nSystem.assertEquals('caf%E9+trail', latin);\nSystem.assertEquals('café trail', EncodingUtil.urlDecode(latin, 'latin1'));\nSystem.assertEquals('café trail', EncodingUtil.urlDecode('caf%E9+trail', ' ISO_8859_1 '));\n"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

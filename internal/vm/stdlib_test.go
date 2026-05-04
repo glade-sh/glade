@@ -709,6 +709,8 @@ System.assertEquals('A+B%2B%CE%A9', urlEncoded);
 System.assertEquals('A B+Ω', EncodingUtil.urlDecode(urlEncoded, 'utf8'));
 System.assertEquals('%C3%85+trail', EncodingUtil.urlEncode('Å trail', ' UTF_8 '));
 System.assertEquals('Å trail', EncodingUtil.urlDecode('%C3%85+trail', 'Utf-8'));
+System.assertEquals('caf%E9+trail', EncodingUtil.urlEncode('café trail', 'ISO-8859-1'));
+System.assertEquals('café trail', EncodingUtil.urlDecode('caf%E9+trail', 'latin1'));
 Blob md5 = Crypto.generateDigest('MD5', hello);
 Blob sha1 = Crypto.generateDigest('SHA1', hello);
 Blob sha256 = Crypto.generateDigest('SHA-256', hello);
@@ -1151,7 +1153,8 @@ func TestBlobEncodingCryptoStdlibRejectsBadInputs(t *testing.T) {
 		{source: "EncodingUtil.convertFromHex('abc');", want: "EncodingUtil.convertFromHex invalid hexadecimal string"},
 		{source: "EncodingUtil.convertFromHex('zz');", want: "EncodingUtil.convertFromHex invalid hexadecimal string"},
 		{source: "Blob bad = EncodingUtil.convertFromHex('80'); bad.toString();", want: "Blob.toString invalid UTF-8 data"},
-		{source: "EncodingUtil.urlEncode('x', 'ISO-8859-1');", want: `unsupported call "EncodingUtil.urlEncode charset \"ISO-8859-1\""`},
+		{source: "EncodingUtil.urlEncode('Ω', 'ISO-8859-1');", want: `EncodingUtil.urlEncode charset "ISO-8859-1" cannot encode U+03A9`},
+		{source: "EncodingUtil.urlEncode('x', 'UTF-16');", want: `unsupported call "EncodingUtil.urlEncode charset \"UTF-16\""`},
 		{source: "EncodingUtil.urlDecode('%zz', 'UTF-8');", want: "invalid URL escape"},
 		{source: "Crypto.areEqualConstantTime(Blob.valueOf('x'), 'x');", want: "Crypto.areEqualConstantTime right expects Blob"},
 		{source: "Crypto.generateDigest('SHA-999', Blob.valueOf('x'));", want: `unsupported digest algorithm "SHA-999"`},

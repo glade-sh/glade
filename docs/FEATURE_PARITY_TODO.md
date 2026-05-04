@@ -553,7 +553,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Fence locale-sensitive `Datetime.format` pattern tokens with typed
     unsupported diagnostics instead of localized output claims.
   - [x] Add common numeric `Math` helpers, `Decimal` scale/conversion helpers,
-    URL encoding helpers, and MD5/SHA1/SHA-256 digest coverage.
+    URL encoding helpers, including bounded UTF-8 and ISO-8859-1 charset
+    fixtures, and MD5/SHA1/SHA-256 digest coverage.
   - **Limitation**: Exact locale, broad timezone, rounding-mode, charset, and
     full Java-regex parity remain outside the current local subset. The current
     named-zone slice is limited to deterministic `America/Los_Angeles`,
