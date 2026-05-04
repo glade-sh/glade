@@ -370,21 +370,102 @@ func TestServerSerializesConcurrentMutations(t *testing.T) {
 	}
 }
 
-func TestSalesforceErrorShape(t *testing.T) {
-	org := testOrg()
-	handler := New(&org)
+func TestSalesforceErrorResponses(t *testing.T) {
+	tests := []struct {
+		name          string
+		method        string
+		path          string
+		body          string
+		store         interface{ Save(storage.OrgState) error }
+		wantStatus    int
+		wantCode      string
+		wantAllow     string
+		wantMessageIn string
+	}{
+		{
+			name:       "unknown route",
+			method:     http.MethodGet,
+			path:       "/services/data/v61.0/nope",
+			wantStatus: http.StatusNotFound,
+			wantCode:   "NOT_FOUND",
+		},
+		{
+			name:       "method not allowed",
+			method:     http.MethodPost,
+			path:       "/services/data/v61.0/limits",
+			wantStatus: http.StatusMethodNotAllowed,
+			wantCode:   "METHOD_NOT_ALLOWED",
+			wantAllow:  http.MethodGet,
+		},
+		{
+			name:          "invalid json",
+			method:        http.MethodPost,
+			path:          "/services/data/v61.0/sobjects/Account",
+			body:          `{"Name":`,
+			wantStatus:    http.StatusBadRequest,
+			wantCode:      "JSON_PARSER_ERROR",
+			wantMessageIn: "unexpected EOF",
+		},
+		{
+			name:          "malformed query",
+			method:        http.MethodGet,
+			path:          "/services/data/v61.0/query?q=SELECT%20FROM",
+			wantStatus:    http.StatusBadRequest,
+			wantCode:      "MALFORMED_QUERY",
+			wantMessageIn: "expected",
+		},
+		{
+			name:          "dml required field",
+			method:        http.MethodPost,
+			path:          "/services/data/v61.0/sobjects/Account",
+			body:          `{}`,
+			wantStatus:    http.StatusBadRequest,
+			wantCode:      "DML_EXCEPTION",
+			wantMessageIn: "Name",
+		},
+		{
+			name:          "store failure",
+			method:        http.MethodPost,
+			path:          "/services/data/v61.0/sobjects/Account",
+			body:          `{"Name":"PersistFail"}`,
+			store:         &failingStore{},
+			wantStatus:    http.StatusInternalServerError,
+			wantCode:      "SERVER_ERROR",
+			wantMessageIn: "store failed",
+		},
+	}
 
-	res := httptest.NewRecorder()
-	handler.ServeHTTP(res, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Missing__c", nil))
-	if res.Code != http.StatusNotFound {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			org := testOrg()
+			handler := NewWithStore(&org, tt.store)
+			res := httptest.NewRecorder()
+			handler.ServeHTTP(res, httptest.NewRequest(tt.method, tt.path, strings.NewReader(tt.body)))
+			assertSalesforceError(t, res, tt.wantStatus, tt.wantCode, tt.wantMessageIn)
+			if tt.wantAllow != "" && res.Header().Get("Allow") != tt.wantAllow {
+				t.Fatalf("Allow = %q, want %q", res.Header().Get("Allow"), tt.wantAllow)
+			}
+		})
+	}
+}
+
+func assertSalesforceError(t *testing.T, res *httptest.ResponseRecorder, status int, code, messageContains string) {
+	t.Helper()
+	if res.Code != status {
 		t.Fatalf("status = %d body=%s", res.Code, res.Body.String())
 	}
-	var errors []map[string]string
+	if got := res.Header().Get("Content-Type"); !strings.HasPrefix(got, "application/json") {
+		t.Fatalf("Content-Type = %q", got)
+	}
+	var errors []salesforceError
 	if err := json.Unmarshal(res.Body.Bytes(), &errors); err != nil {
 		t.Fatal(err)
 	}
-	if len(errors) != 1 || errors[0]["errorCode"] != "NOT_FOUND" || errors[0]["message"] == "" {
+	if len(errors) != 1 || errors[0].ErrorCode != code || errors[0].Message == "" {
 		t.Fatalf("errors = %#v", errors)
+	}
+	if messageContains != "" && !strings.Contains(errors[0].Message, messageContains) {
+		t.Fatalf("message = %q, want to contain %q", errors[0].Message, messageContains)
 	}
 }
 
