@@ -733,10 +733,13 @@ func (s *Server) handleCompositeSObjects(w http.ResponseWriter, r *http.Request,
 	switch r.Method {
 	case http.MethodPost:
 		writeSalesforceError(w, errUnsupportedFeature, "Composite sObject typed collection routes are not implemented in the local server")
+		return
 	case http.MethodPatch:
 		writeSalesforceError(w, errUnsupportedFeature, "Composite sObject collection upsert routes are not implemented in the local server")
+		return
 	case http.MethodDelete:
 		writeSalesforceError(w, errUnsupportedFeature, "Composite sObject collection delete routes are not implemented in the local server")
+		return
 	default:
 		writeMethodNotAllowed(w, http.MethodPost, http.MethodPatch, http.MethodDelete)
 		return

@@ -1256,6 +1256,12 @@ func TestCompositeNamespaceUnsupportedStubs(t *testing.T) {
 			body:          `{"allOrNone":true,"records":[]}`,
 			wantMessageIn: "Composite sObject collection upsert routes",
 		},
+		{
+			name:          "composite sobject typed collection delete",
+			method:        http.MethodDelete,
+			path:          "/services/data/v61.0/composite/sobjects/Account",
+			wantMessageIn: "Composite sObject collection delete routes",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
