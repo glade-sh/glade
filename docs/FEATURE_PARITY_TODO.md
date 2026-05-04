@@ -457,6 +457,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     `ndash`, `hellip`, `bull`, `ldquo`, `rdquo`, `lsquo`, `rsquo`, `cent`,
     `pound`, `yen`, `sect`, `para`, `middot`) while leaving remaining unknown
     names unchanged.
+  - [x] Add XML-version escape handling for `String.escapeXml10/11` control
+    ranges, including invalid-code-point removal and numeric control escapes.
   - [x] Add `Pattern.compile`, `Pattern.matches`, and basic `Matcher`
     `find`/`matches`/`group` behavior.
   - [x] Add common `Date`, `Datetime`, and `Time` factories, parsing,

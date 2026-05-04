@@ -334,11 +334,21 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 			return Null, true, fmt.Errorf("String.%s expects 0 arguments", method)
 		}
 		return String(unescapeHTMLEntities(receiver.Text)), true, nil
-	case "escapeXml", "escapeXml10", "escapeXml11":
+	case "escapeXml":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("String.%s expects 0 arguments", method)
 		}
 		return String(escapeXML(receiver.Text)), true, nil
+	case "escapeXml10":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("String.%s expects 0 arguments", method)
+		}
+		return String(escapeXML10(receiver.Text)), true, nil
+	case "escapeXml11":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("String.%s expects 0 arguments", method)
+		}
+		return String(escapeXML11(receiver.Text)), true, nil
 	case "unescapeXml", "unescapeXml10", "unescapeXml11":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("String.%s expects 0 arguments", method)
@@ -2172,6 +2182,72 @@ func escapeXML(text string) string {
 		"'", "&apos;",
 	)
 	return replacer.Replace(text)
+}
+
+func escapeXML10(text string) string {
+	var b strings.Builder
+	for _, r := range text {
+		if !validXML10Rune(r) {
+			continue
+		}
+		if (r >= 0x7f && r <= 0x84) || (r >= 0x86 && r <= 0x9f) {
+			writeNumericEntity(&b, r)
+			continue
+		}
+		writeEscapedXMLRune(&b, r)
+	}
+	return b.String()
+}
+
+func escapeXML11(text string) string {
+	var b strings.Builder
+	for _, r := range text {
+		if !validXML11Rune(r) {
+			continue
+		}
+		if (r >= 0x1 && r <= 0x8) || (r >= 0xb && r <= 0xc) || (r >= 0xe && r <= 0x1f) || (r >= 0x7f && r <= 0x84) || (r >= 0x86 && r <= 0x9f) {
+			writeNumericEntity(&b, r)
+			continue
+		}
+		writeEscapedXMLRune(&b, r)
+	}
+	return b.String()
+}
+
+func validXML10Rune(r rune) bool {
+	return r == 0x9 || r == 0xa || r == 0xd ||
+		(r >= 0x20 && r <= 0xd7ff) ||
+		(r >= 0xe000 && r <= 0xfffd) ||
+		(r >= 0x10000 && r <= 0x10ffff)
+}
+
+func validXML11Rune(r rune) bool {
+	return (r >= 0x1 && r <= 0xd7ff) ||
+		(r >= 0xe000 && r <= 0xfffd) ||
+		(r >= 0x10000 && r <= 0x10ffff)
+}
+
+func writeEscapedXMLRune(b *strings.Builder, r rune) {
+	switch r {
+	case '&':
+		b.WriteString("&amp;")
+	case '<':
+		b.WriteString("&lt;")
+	case '>':
+		b.WriteString("&gt;")
+	case '"':
+		b.WriteString("&quot;")
+	case '\'':
+		b.WriteString("&apos;")
+	default:
+		b.WriteRune(r)
+	}
+}
+
+func writeNumericEntity(b *strings.Builder, r rune) {
+	b.WriteString("&#")
+	b.WriteString(strconv.FormatInt(int64(r), 10))
+	b.WriteByte(';')
 }
 
 func unescapeHTMLEntities(text string) string {
