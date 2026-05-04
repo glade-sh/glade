@@ -425,6 +425,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
   APIs used by enterprise tests.
   - [x] Add common JSON overloads for `serialize(value, suppressApexObjectNulls)`,
     `serializePretty`, and `deserializeStrict`.
+  - [x] Reject duplicate object fields in `JSON.deserializeStrict` before typed
+    mapping.
   - [x] Map JSON.deserialize SObject fields through local schema field types for
     Date, Datetime, numeric, Boolean, Id, and reference edges.
   - [x] Add common `Test.isRunningTest()` and deterministic
