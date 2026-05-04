@@ -313,7 +313,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
   lock contention behavior, and advanced query row shape fidelity.
   - [x] Validate projected fields for `WITH SECURITY_ENFORCED`, `WITH USER_MODE`,
     and `WITH SYSTEM_MODE` queries and return catchable `QueryException`s for
-    unavailable fields.
+    unavailable fields, including parent relationship projections that are not
+    present on every configured parent target.
   - [x] Mark `FOR UPDATE` result records with a local lock marker and serialize
     queried SObjects with `attributes.type` and `attributes.url`.
   - [x] Return catchable `QueryException`s when `FOR UPDATE` hits an already

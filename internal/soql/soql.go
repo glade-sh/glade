@@ -865,16 +865,19 @@ func projectionFieldKnown(org storage.OrgState, definition storage.ObjectDefinit
 			if relation.ParentRelationship != parts[0] {
 				continue
 			}
+			if len(relation.ParentObjects) == 0 {
+				return false
+			}
 			for _, parentName := range relation.ParentObjects {
 				canonical, ok := storage.ResolveObjectName(org, parentName)
 				if !ok {
-					continue
+					return false
 				}
-				if projectionFieldKnown(org, org.Objects[canonical].Definition, parts[1]) {
-					return true
+				if !projectionFieldKnown(org, org.Objects[canonical].Definition, parts[1]) {
+					return false
 				}
 			}
-			return false
+			return true
 		}
 		return false
 	}

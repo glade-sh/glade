@@ -170,6 +170,20 @@ func TestRunServerBlackBoxFixture(t *testing.T) {
 	}
 }
 
+func TestRunDataPlatformSOQLSecurityProjectionFixture(t *testing.T) {
+	fixture, err := LoadFile("../../docs/fixtures/data-platform-soql-security-projection.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := Run(fixture)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.OK {
+		t.Fatalf("result = %#v", result)
+	}
+}
+
 func TestRunEnterpriseSectionNineFixtures(t *testing.T) {
 	for _, path := range []string{
 		"../../docs/fixtures/enterprise-trigger-heavy.json",

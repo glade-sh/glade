@@ -610,6 +610,59 @@ System.assert(caught);
 	}
 }
 
+func TestExecSOQLSecurityRelationshipProjectionRequiresAllParentTargets(t *testing.T) {
+	program, err := CompileAnonymous(`
+Boolean caught = false;
+try {
+    Database.query('SELECT Id, What.Secret__c FROM Task WITH SECURITY_ENFORCED');
+} catch (QueryException qe) {
+    caught = true;
+    String message = qe.getMessage();
+    System.assert(message.contains('What.Secret__c'));
+    System.assert(message.contains('SECURITY_ENFORCED'));
+}
+System.assert(caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Secret__c"] = storage.Field{APIName: "Secret__c", Type: storage.FieldString}
+	org.Objects["Account"] = account
+	org.Objects["Opportunity"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Opportunity",
+			KeyPrefix: "006",
+			Fields: map[string]storage.Field{
+				"Amount": {APIName: "Amount", Type: storage.FieldDecimal},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	org.Objects["Task"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Task",
+			KeyPrefix: "00T",
+			Fields: map[string]storage.Field{
+				"WhatId": {APIName: "WhatId", Type: storage.FieldReference, ReferenceTo: []string{"Account", "Opportunity"}, RelationshipName: "What"},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "WhatId",
+				ParentObjects:      []string{"Account", "Opportunity"},
+				ParentRelationship: "What",
+				Polymorphic:        true,
+			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSOQLForUpdateLockContentionIsCatchable(t *testing.T) {
 	program, err := CompileAnonymous(`
 Boolean caught = false;
