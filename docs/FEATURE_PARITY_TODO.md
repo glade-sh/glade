@@ -794,6 +794,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     all-or-none rollback.
   - [x] Add conservative typed Composite sObject collection retrieve with ID
     selection and field projection handling.
+  - [x] Pin Composite edge envelopes for malformed generic/batch payloads,
+    missing `records`, malformed `attributes`, and per-row DML error arrays.
 - [ ] Add Bulk API approximations if needed by local integration tests.
   - [x] Add explicit Bulk API v2 query and ingest job stubs with Salesforce-shaped
     unsupported errors instead of fake job success.
@@ -804,6 +806,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
     shapes while preserving explicit unsupported responses for allowed methods.
   - [x] Return a conservative Bulk Jobs root discovery payload for query and
     ingest families while keeping job execution unsupported.
+  - [x] Pin Bulk API v2 job-result route bodies and method boundaries for query
+    result locators plus ingest successful, failed, and unprocessed records while
+    keeping real Bulk processing unsupported.
 - [ ] Ensure anonymous Apex runs against the same persistent server database,
   transaction boundaries, user context, and limits.
   - [x] Add black-box server fixture evidence that Tooling

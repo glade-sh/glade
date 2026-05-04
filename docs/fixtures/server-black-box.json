@@ -20,28 +20,57 @@
       "method": "GET",
       "path": "/services/data",
       "status": 200,
-      "contains": ["\"version\":\"61.0\"", "\"label\":\"Summer '24\"", "\"url\":\"/services/data/v61.0\""]
+      "contains": [
+        "\"version\":\"61.0\"",
+        "\"label\":\"Summer '24\"",
+        "\"url\":\"/services/data/v61.0\""
+      ]
     },
     {
       "name": "versions-trailing-slash",
       "method": "GET",
       "path": "/services/data/",
       "status": 200,
-      "contains": ["\"version\":\"61.0\"", "\"label\":\"Summer '24\"", "\"url\":\"/services/data/v61.0\""]
+      "contains": [
+        "\"version\":\"61.0\"",
+        "\"label\":\"Summer '24\"",
+        "\"url\":\"/services/data/v61.0\""
+      ]
     },
     {
       "name": "resource-discovery",
       "method": "GET",
       "path": "/services/data/v61.0",
       "status": 200,
-      "contains": ["\"actions\":\"/services/data/v61.0/actions\"", "\"analytics\":\"/services/data/v61.0/analytics\"", "\"appMenu\":\"/services/data/v61.0/appMenu\"", "\"apps\":\"/services/data/v61.0/apps\"", "\"chatter\":\"/services/data/v61.0/chatter\"", "\"composite\":\"/services/data/v61.0/composite\"", "\"connect\":\"/services/data/v61.0/connect\"", "\"jobs\":\"/services/data/v61.0/jobs\"", "\"metadata\":\"/services/data/v61.0/metadata\"", "\"process\":\"/services/data/v61.0/process\"", "\"quickActions\":\"/services/data/v61.0/quickActions\"", "\"recent\":\"/services/data/v61.0/recent\"", "\"search\":\"/services/data/v61.0/search\"", "\"support\":\"/services/data/v61.0/support\"", "\"tabs\":\"/services/data/v61.0/tabs\"", "\"theme\":\"/services/data/v61.0/theme\"", "\"wave\":\"/services/data/v61.0/wave\""]
+      "contains": [
+        "\"actions\":\"/services/data/v61.0/actions\"",
+        "\"analytics\":\"/services/data/v61.0/analytics\"",
+        "\"appMenu\":\"/services/data/v61.0/appMenu\"",
+        "\"apps\":\"/services/data/v61.0/apps\"",
+        "\"chatter\":\"/services/data/v61.0/chatter\"",
+        "\"composite\":\"/services/data/v61.0/composite\"",
+        "\"connect\":\"/services/data/v61.0/connect\"",
+        "\"jobs\":\"/services/data/v61.0/jobs\"",
+        "\"metadata\":\"/services/data/v61.0/metadata\"",
+        "\"process\":\"/services/data/v61.0/process\"",
+        "\"quickActions\":\"/services/data/v61.0/quickActions\"",
+        "\"recent\":\"/services/data/v61.0/recent\"",
+        "\"search\":\"/services/data/v61.0/search\"",
+        "\"support\":\"/services/data/v61.0/support\"",
+        "\"tabs\":\"/services/data/v61.0/tabs\"",
+        "\"theme\":\"/services/data/v61.0/theme\"",
+        "\"wave\":\"/services/data/v61.0/wave\""
+      ]
     },
     {
       "name": "jobs-discovery",
       "method": "GET",
       "path": "/services/data/v61.0/jobs",
       "status": 200,
-      "contains": ["\"query\":\"/services/data/v61.0/jobs/query\"", "\"ingest\":\"/services/data/v61.0/jobs/ingest\""]
+      "contains": [
+        "\"query\":\"/services/data/v61.0/jobs/query\"",
+        "\"ingest\":\"/services/data/v61.0/jobs/ingest\""
+      ]
     },
     {
       "name": "jobs-discovery-method-not-allowed",
@@ -49,14 +78,21 @@
       "path": "/services/data/v61.0/jobs",
       "body": "{}",
       "status": 405,
-      "contains": ["METHOD_NOT_ALLOWED", "method not allowed"]
+      "contains": [
+        "METHOD_NOT_ALLOWED",
+        "method not allowed"
+      ]
     },
     {
       "name": "tooling-discovery",
       "method": "GET",
       "path": "/services/data/v61.0/tooling",
       "status": 200,
-      "contains": ["\"executeAnonymous\":\"/services/data/v61.0/tooling/executeAnonymous\"", "\"runTestsSynchronous\":\"/services/data/v61.0/tooling/runTestsSynchronous\"", "\"sobjects\":\"/services/data/v61.0/tooling/sobjects\""]
+      "contains": [
+        "\"executeAnonymous\":\"/services/data/v61.0/tooling/executeAnonymous\"",
+        "\"runTestsSynchronous\":\"/services/data/v61.0/tooling/runTestsSynchronous\"",
+        "\"sobjects\":\"/services/data/v61.0/tooling/sobjects\""
+      ]
     },
     {
       "name": "tooling-discovery-method-not-allowed",
@@ -64,65 +100,105 @@
       "path": "/services/data/v61.0/tooling",
       "body": "{}",
       "status": 405,
-      "contains": ["METHOD_NOT_ALLOWED", "method not allowed"]
+      "contains": [
+        "METHOD_NOT_ALLOWED",
+        "method not allowed"
+      ]
     },
     {
       "name": "versions-method-not-allowed",
       "method": "POST",
       "path": "/services/data",
       "status": 405,
-      "contains": ["METHOD_NOT_ALLOWED", "method not allowed"]
+      "contains": [
+        "METHOD_NOT_ALLOWED",
+        "method not allowed"
+      ]
     },
     {
       "name": "resource-discovery-method-not-allowed",
       "method": "POST",
       "path": "/services/data/v61.0",
       "status": 405,
-      "contains": ["METHOD_NOT_ALLOWED", "method not allowed"]
+      "contains": [
+        "METHOD_NOT_ALLOWED",
+        "method not allowed"
+      ]
     },
     {
       "name": "limits-payload",
       "method": "GET",
       "path": "/services/data/v61.0/limits",
       "status": 200,
-      "contains": ["\"DailyApiRequests\":{\"Max\":15000,\"Remaining\":15000}", "\"DailyBulkV2QueryJobs\":{\"Max\":10000,\"Remaining\":10000}", "\"DataStorageMB\":{\"Max\":512,\"Remaining\":512}", "\"StreamingApiConcurrentClients\":{\"Max\":20,\"Remaining\":20}"]
+      "contains": [
+        "\"DailyApiRequests\":{\"Max\":15000,\"Remaining\":15000}",
+        "\"DailyBulkV2QueryJobs\":{\"Max\":10000,\"Remaining\":10000}",
+        "\"DataStorageMB\":{\"Max\":512,\"Remaining\":512}",
+        "\"StreamingApiConcurrentClients\":{\"Max\":20,\"Remaining\":20}"
+      ]
     },
     {
       "name": "oaer-state",
       "method": "GET",
       "path": "/services/data/v61.0/oaer/state",
       "status": 200,
-      "contains": ["\"localOnly\":true", "\"resetScopes\"", "\"name\":\"limits\"", "\"noOp\":true", "\"users\":2"]
+      "contains": [
+        "\"localOnly\":true",
+        "\"resetScopes\"",
+        "\"name\":\"limits\"",
+        "\"noOp\":true",
+        "\"users\":2"
+      ]
     },
     {
       "name": "userinfo",
       "method": "GET",
       "path": "/services/oauth2/userinfo",
       "status": 200,
-      "contains": ["preferred_username"]
+      "contains": [
+        "preferred_username"
+      ]
     },
     {
       "name": "userinfo-local-bearer-user",
       "method": "GET",
       "path": "/services/oauth2/userinfo",
-      "headers": {"Authorization": "Bearer 005000000000002"},
+      "headers": {
+        "Authorization": "Bearer 005000000000002"
+      },
       "status": 200,
-      "contains": ["005000000000002", "ada@example.test", "ada.alias@example.test", "Ada Trail"]
+      "contains": [
+        "005000000000002",
+        "ada@example.test",
+        "ada.alias@example.test",
+        "Ada Trail"
+      ]
     },
     {
       "name": "userinfo-openid-local-shape",
       "method": "GET",
       "path": "/services/oauth2/userinfo",
-      "headers": {"Authorization": "Bearer 005000000000002"},
+      "headers": {
+        "Authorization": "Bearer 005000000000002"
+      },
       "status": 200,
-      "contains": ["\"email_verified\":true", "\"zoneinfo\":\"UTC\"", "\"locale\":\"en_US\"", "\"profile\":", "\"urls\":"]
+      "contains": [
+        "\"email_verified\":true",
+        "\"zoneinfo\":\"UTC\"",
+        "\"locale\":\"en_US\"",
+        "\"profile\":",
+        "\"urls\":"
+      ]
     },
     {
       "name": "userinfo-method-not-allowed",
       "method": "POST",
       "path": "/services/oauth2/userinfo",
       "status": 405,
-      "contains": ["METHOD_NOT_ALLOWED", "method not allowed"]
+      "contains": [
+        "METHOD_NOT_ALLOWED",
+        "method not allowed"
+      ]
     },
     {
       "name": "oauth-token-unsupported",
@@ -130,7 +206,10 @@
       "path": "/services/oauth2/token",
       "body": "grant_type=password",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "Full OAuth flows and token issuance are not implemented"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Full OAuth flows and token issuance are not implemented"
+      ]
     },
     {
       "name": "oauth-revoke-unsupported",
@@ -138,7 +217,10 @@
       "path": "/services/oauth2/revoke",
       "body": "token=local",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "Full OAuth flows and token issuance are not implemented"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Full OAuth flows and token issuance are not implemented"
+      ]
     },
     {
       "name": "oauth-introspect-unsupported",
@@ -146,35 +228,52 @@
       "path": "/services/oauth2/introspect",
       "body": "token=local",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "Full OAuth flows and token issuance are not implemented"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Full OAuth flows and token issuance are not implemented"
+      ]
     },
     {
       "name": "oauth-authorize-unsupported",
       "method": "GET",
       "path": "/services/oauth2/authorize?response_type=code&client_id=local&redirect_uri=http://localhost/callback",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "Full OAuth flows and token issuance are not implemented"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Full OAuth flows and token issuance are not implemented"
+      ]
     },
     {
       "name": "identity",
       "method": "GET",
       "path": "/id/00D000000000001/005000000000001",
       "status": 200,
-      "contains": ["user_id", "organization_id"]
+      "contains": [
+        "user_id",
+        "organization_id"
+      ]
     },
     {
       "name": "identity-urls-shape",
       "method": "GET",
       "path": "/id/00D000000000001/005000000000002",
       "status": 200,
-      "contains": ["\"urls\":", "\"enterprise\":", "\"sobjects\":", "\"rest\":"]
+      "contains": [
+        "\"urls\":",
+        "\"enterprise\":",
+        "\"sobjects\":",
+        "\"rest\":"
+      ]
     },
     {
       "name": "identity-method-not-allowed",
       "method": "POST",
       "path": "/id/00D000000000001/005000000000001",
       "status": 405,
-      "contains": ["METHOD_NOT_ALLOWED", "method not allowed"]
+      "contains": [
+        "METHOD_NOT_ALLOWED",
+        "method not allowed"
+      ]
     },
     {
       "name": "create-account",
@@ -182,235 +281,368 @@
       "path": "/services/data/v61.0/sobjects/Account",
       "body": "{\"Name\":\"Acme\"}",
       "status": 201,
-      "contains": ["\"success\":true", "001000000000001"]
+      "contains": [
+        "\"success\":true",
+        "001000000000001"
+      ]
     },
     {
       "name": "sobject-updated-happy",
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Account/updated",
       "status": 200,
-      "contains": ["\"ids\":[\"001000000000001\"]", "\"latestDateCovered\""]
+      "contains": [
+        "\"ids\":[\"001000000000001\"]",
+        "\"latestDateCovered\""
+      ]
     },
     {
       "name": "object-resource-shape",
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Account",
       "status": 200,
-      "contains": ["\"name\":\"Account\"", "\"keyPrefix\":\"001\"", "\"objectDescribe\":\"/services/data/v61.0/sobjects/Account/describe\"", "\"recentItems\":\"/services/data/v61.0/sobjects/Account/recent\"", "\"rowTemplate\":\"/services/data/v61.0/sobjects/Account/{ID}\"", "\"approvalLayouts\":\"/services/data/v61.0/sobjects/Account/describe/approvalLayouts\"", "\"compactLayouts\":\"/services/data/v61.0/sobjects/Account/compactLayouts\"", "\"namedLayouts\":\"/services/data/v61.0/sobjects/Account/namedLayouts/{LAYOUT_NAME}\"", "\"quickActions\":\"/services/data/v61.0/sobjects/Account/quickActions\"", "\"listviews\":\"/services/data/v61.0/sobjects/Account/listviews\""]
+      "contains": [
+        "\"name\":\"Account\"",
+        "\"keyPrefix\":\"001\"",
+        "\"objectDescribe\":\"/services/data/v61.0/sobjects/Account/describe\"",
+        "\"recentItems\":\"/services/data/v61.0/sobjects/Account/recent\"",
+        "\"rowTemplate\":\"/services/data/v61.0/sobjects/Account/{ID}\"",
+        "\"approvalLayouts\":\"/services/data/v61.0/sobjects/Account/describe/approvalLayouts\"",
+        "\"compactLayouts\":\"/services/data/v61.0/sobjects/Account/compactLayouts\"",
+        "\"namedLayouts\":\"/services/data/v61.0/sobjects/Account/namedLayouts/{LAYOUT_NAME}\"",
+        "\"quickActions\":\"/services/data/v61.0/sobjects/Account/quickActions\"",
+        "\"listviews\":\"/services/data/v61.0/sobjects/Account/listviews\""
+      ]
     },
-
     {
       "name": "sobject-describe-common-shape",
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Account/describe",
       "status": 200,
-      "contains": ["\"name\":\"Account\"", "\"labelPlural\"", "\"searchable\":true", "\"recordTypeInfos\"", "\"childRelationships\"", "\"picklistValues\""]
+      "contains": [
+        "\"name\":\"Account\"",
+        "\"labelPlural\"",
+        "\"searchable\":true",
+        "\"recordTypeInfos\"",
+        "\"childRelationships\"",
+        "\"picklistValues\""
+      ]
     },
     {
       "name": "get-account-rest-shape",
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Account/001000000000001",
       "status": 200,
-      "contains": ["\"attributes\":{\"type\":\"Account\",\"url\":\"/services/data/v61.0/sobjects/Account/001000000000001\"}", "\"Id\":\"001000000000001\"", "\"Name\":\"Acme\""]
+      "contains": [
+        "\"attributes\":{\"type\":\"Account\",\"url\":\"/services/data/v61.0/sobjects/Account/001000000000001\"}",
+        "\"Id\":\"001000000000001\"",
+        "\"Name\":\"Acme\""
+      ]
     },
     {
       "name": "get-account-rest-field-projection",
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Account/001000000000001?fields=Name,Description",
       "status": 200,
-      "contains": ["\"attributes\":{\"type\":\"Account\",\"url\":\"/services/data/v61.0/sobjects/Account/001000000000001\"}", "\"Id\":\"001000000000001\"", "\"Name\":\"Acme\"", "\"Description\":null"],
-      "notContains": ["\"External_Id__c\"", "\"fields\":", "\"system\":"]
+      "contains": [
+        "\"attributes\":{\"type\":\"Account\",\"url\":\"/services/data/v61.0/sobjects/Account/001000000000001\"}",
+        "\"Id\":\"001000000000001\"",
+        "\"Name\":\"Acme\"",
+        "\"Description\":null"
+      ],
+      "notContains": [
+        "\"External_Id__c\"",
+        "\"fields\":",
+        "\"system\":"
+      ]
     },
     {
       "name": "get-account-rest-field-projection-invalid-field",
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Account/001000000000001?fields=Name,Nope__c",
       "status": 400,
-      "contains": ["INVALID_FIELD", "Nope__c"]
+      "contains": [
+        "INVALID_FIELD",
+        "Nope__c"
+      ]
     },
     {
       "name": "compact-layouts-stub",
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Account/compactLayouts",
       "status": 200,
-      "contains": ["\"objectType\":\"Account\"", "\"compactLayouts\":[]", "empty local stub"]
+      "contains": [
+        "\"objectType\":\"Account\"",
+        "\"compactLayouts\":[]",
+        "empty local stub"
+      ]
     },
     {
       "name": "compact-layouts-describe-alias-stub",
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Account/describe/compactLayouts",
       "status": 200,
-      "contains": ["\"objectType\":\"Account\"", "\"compactLayouts\":[]", "empty local stub"]
+      "contains": [
+        "\"objectType\":\"Account\"",
+        "\"compactLayouts\":[]",
+        "empty local stub"
+      ]
     },
     {
       "name": "compact-layouts-record-type-alias-stub",
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Account/describe/compactLayouts/012000000000001",
       "status": 200,
-      "contains": ["\"objectType\":\"Account\"", "\"compactLayouts\":[]", "empty local stub"]
+      "contains": [
+        "\"objectType\":\"Account\"",
+        "\"compactLayouts\":[]",
+        "empty local stub"
+      ]
     },
     {
       "name": "compact-layouts-describe-alias-method-not-allowed",
       "method": "POST",
       "path": "/services/data/v61.0/sobjects/Account/describe/compactLayouts",
       "status": 405,
-      "contains": ["METHOD_NOT_ALLOWED", "method not allowed"]
+      "contains": [
+        "METHOD_NOT_ALLOWED",
+        "method not allowed"
+      ]
     },
     {
       "name": "compact-layouts-record-type-alias-unknown-object",
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Missing__c/describe/compactLayouts/012000000000001",
       "status": 404,
-      "contains": ["NOT_FOUND", "unknown object"]
+      "contains": [
+        "NOT_FOUND",
+        "unknown object"
+      ]
     },
     {
       "name": "layouts-unsupported",
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Account/layouts",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "layout"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "layout"
+      ]
     },
     {
       "name": "approval-layouts-unsupported",
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Account/describe/approvalLayouts",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "layout-adjacent metadata"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "layout-adjacent metadata"
+      ]
     },
     {
       "name": "named-layouts-unsupported",
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Account/describe/namedLayouts",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "layout-adjacent metadata"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "layout-adjacent metadata"
+      ]
     },
     {
       "name": "named-layout-unsupported",
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Account/namedLayouts/Account%20Layout",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "layout-adjacent metadata"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "layout-adjacent metadata"
+      ]
     },
     {
       "name": "approval-layouts-method-not-allowed",
       "method": "POST",
       "path": "/services/data/v61.0/sobjects/Account/describe/approvalLayouts",
       "status": 405,
-      "contains": ["METHOD_NOT_ALLOWED", "method not allowed"]
+      "contains": [
+        "METHOD_NOT_ALLOWED",
+        "method not allowed"
+      ]
     },
     {
       "name": "approval-layouts-unknown-object",
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Missing__c/describe/approvalLayouts",
       "status": 404,
-      "contains": ["NOT_FOUND", "unknown object"]
+      "contains": [
+        "NOT_FOUND",
+        "unknown object"
+      ]
     },
     {
       "name": "default-values-unsupported",
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Account/defaultValues?recordTypeId&fields",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "default value metadata"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "default value metadata"
+      ]
     },
     {
       "name": "sobject-quick-actions-unsupported",
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Account/quickActions",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "quick action metadata"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "quick action metadata"
+      ]
     },
     {
       "name": "sobject-quick-action-unsupported",
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Account/quickActions/NewTask",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "quick action metadata"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "quick action metadata"
+      ]
     },
     {
       "name": "sobject-quick-action-default-values-unsupported",
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Account/quickActions/NewTask/defaultValues",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "quick action metadata"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "quick action metadata"
+      ]
     },
     {
       "name": "sobject-quick-actions-method-not-allowed",
       "method": "POST",
       "path": "/services/data/v61.0/sobjects/Account/quickActions",
       "status": 405,
-      "contains": ["METHOD_NOT_ALLOWED", "method not allowed"]
+      "contains": [
+        "METHOD_NOT_ALLOWED",
+        "method not allowed"
+      ]
     },
     {
       "name": "sobject-quick-actions-unknown-object",
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Missing__c/quickActions",
       "status": 404,
-      "contains": ["NOT_FOUND", "unknown object"]
+      "contains": [
+        "NOT_FOUND",
+        "unknown object"
+      ]
     },
     {
       "name": "listviews-empty-stub",
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Account/listviews",
       "status": 200,
-      "contains": ["\"done\":true", "\"size\":0", "\"listviews\":[]", "\"objectType\":\"Account\"", "empty local stub"]
+      "contains": [
+        "\"done\":true",
+        "\"size\":0",
+        "\"listviews\":[]",
+        "\"objectType\":\"Account\"",
+        "empty local stub"
+      ]
     },
     {
       "name": "listview-describe-unsupported",
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Account/listviews/00B000000000001/describe",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "list view describe and result execution"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "list view describe and result execution"
+      ]
     },
     {
       "name": "listview-results-unsupported",
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Account/listviews/00B000000000001/results",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "list view describe and result execution"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "list view describe and result execution"
+      ]
     },
     {
       "name": "listviews-method-not-allowed",
       "method": "POST",
       "path": "/services/data/v61.0/sobjects/Account/listviews",
       "status": 405,
-      "contains": ["METHOD_NOT_ALLOWED", "method not allowed"]
+      "contains": [
+        "METHOD_NOT_ALLOWED",
+        "method not allowed"
+      ]
     },
     {
       "name": "listviews-unknown-object",
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Missing__c/listviews",
       "status": 404,
-      "contains": ["NOT_FOUND", "unknown object"]
+      "contains": [
+        "NOT_FOUND",
+        "unknown object"
+      ]
     },
     {
       "name": "row-template-placeholder-malformed",
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Account/%7BID%7D",
       "status": 400,
-      "contains": ["MALFORMED_ID", "rowTemplate placeholder"]
+      "contains": [
+        "MALFORMED_ID",
+        "rowTemplate placeholder"
+      ]
     },
     {
       "name": "query-account",
       "method": "GET",
       "path": "/services/data/v61.0/query?q=SELECT%20Id,%20Name%20FROM%20Account%20WHERE%20Name%20=%20'Acme'",
       "status": 200,
-      "contains": ["\"totalSize\":1", "\"attributes\":{\"type\":\"Account\",\"url\":\"/services/data/v61.0/sobjects/Account/001000000000001\"}", "\"Id\":\"001000000000001\"", "\"Name\":\"Acme\""],
-      "notContains": ["\"fields\":", "\"system\":"]
+      "contains": [
+        "\"totalSize\":1",
+        "\"attributes\":{\"type\":\"Account\",\"url\":\"/services/data/v61.0/sobjects/Account/001000000000001\"}",
+        "\"Id\":\"001000000000001\"",
+        "\"Name\":\"Acme\""
+      ],
+      "notContains": [
+        "\"fields\":",
+        "\"system\":"
+      ]
     },
     {
       "name": "query-explain-unsupported",
       "method": "GET",
       "path": "/services/data/v61.0/query?explain=SELECT%20Id%20FROM%20Account",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "SOQL query plan explain is not implemented in the local server"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "SOQL query plan explain is not implemented in the local server"
+      ]
     },
     {
       "name": "tooling-queryall-account",
       "method": "GET",
       "path": "/services/data/v61.0/tooling/queryAll?q=SELECT%20Id,%20Name%20FROM%20Account%20WHERE%20Name%20=%20'Acme'",
       "status": 200,
-      "contains": ["\"totalSize\":1", "\"attributes\":{\"type\":\"Account\",\"url\":\"/services/data/v61.0/sobjects/Account/001000000000001\"}", "\"Id\":\"001000000000001\"", "\"Name\":\"Acme\""],
-      "notContains": ["\"fields\":", "\"system\":"]
+      "contains": [
+        "\"totalSize\":1",
+        "\"attributes\":{\"type\":\"Account\",\"url\":\"/services/data/v61.0/sobjects/Account/001000000000001\"}",
+        "\"Id\":\"001000000000001\"",
+        "\"Name\":\"Acme\""
+      ],
+      "notContains": [
+        "\"fields\":",
+        "\"system\":"
+      ]
     },
     {
       "name": "execute-anonymous",
@@ -418,23 +650,34 @@
       "path": "/services/data/v61.0/tooling/executeAnonymous",
       "body": "{\"anonymousBody\":\"insert new Account(Name = 'From Apex'); System.debug('ok');\"}",
       "status": 200,
-      "contains": ["\"success\":true", "ok"]
+      "contains": [
+        "\"success\":true",
+        "ok"
+      ]
     },
     {
       "name": "execute-anonymous-form-body",
       "method": "POST",
       "path": "/services/data/v61.0/tooling/executeAnonymous",
-      "headers": {"Content-Type": "application/x-www-form-urlencoded"},
+      "headers": {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
       "body": "anonymousBody=System.debug%28%27form%20ok%27%29%3B",
       "status": 200,
-      "contains": ["\"success\":true", "form ok"]
+      "contains": [
+        "\"success\":true",
+        "form ok"
+      ]
     },
     {
       "name": "execute-anonymous-persisted-query",
       "method": "GET",
       "path": "/services/data/v61.0/query?q=SELECT%20Id,%20Name%20FROM%20Account%20WHERE%20Name%20=%20'From%20Apex'",
       "status": 200,
-      "contains": ["\"totalSize\":1", "From Apex"]
+      "contains": [
+        "\"totalSize\":1",
+        "From Apex"
+      ]
     },
     {
       "name": "execute-anonymous-runtime-error-rolls-back",
@@ -442,15 +685,21 @@
       "path": "/services/data/v61.0/tooling/executeAnonymous",
       "body": "{\"anonymousBody\":\"insert new Account(Name = 'Transient'); System.assert(false);\"}",
       "status": 200,
-      "contains": ["\"success\":false"]
+      "contains": [
+        "\"success\":false"
+      ]
     },
     {
       "name": "execute-anonymous-rollback-query",
       "method": "GET",
       "path": "/services/data/v61.0/query?q=SELECT%20Id,%20Name%20FROM%20Account%20WHERE%20Name%20=%20'Transient'",
       "status": 200,
-      "contains": ["\"totalSize\":0"],
-      "notContains": ["Transient"]
+      "contains": [
+        "\"totalSize\":0"
+      ],
+      "notContains": [
+        "Transient"
+      ]
     },
     {
       "name": "execute-anonymous-strict-limit",
@@ -458,24 +707,36 @@
       "path": "/services/data/v61.0/tooling/executeAnonymous",
       "body": "{\"anonymousBody\":\"for (Integer i = 0; i < 151; i++) { insert new Account(Name = 'Limit Edge'); }\"}",
       "status": 200,
-      "contains": ["\"success\":false", "System.LimitException", "Too many dmlStatements"]
+      "contains": [
+        "\"success\":false",
+        "System.LimitException",
+        "Too many dmlStatements"
+      ]
     },
     {
       "name": "execute-anonymous-strict-limit-rollback-query",
       "method": "GET",
       "path": "/services/data/v61.0/query?q=SELECT%20Id,%20Name%20FROM%20Account%20WHERE%20Name%20=%20'Limit%20Edge'",
       "status": 200,
-      "contains": ["\"totalSize\":0"],
-      "notContains": ["Limit Edge"]
+      "contains": [
+        "\"totalSize\":0"
+      ],
+      "notContains": [
+        "Limit Edge"
+      ]
     },
     {
       "name": "execute-anonymous-bearer-userinfo",
       "method": "POST",
       "path": "/services/data/v61.0/tooling/executeAnonymous",
-      "headers": {"Authorization": "Bearer 005000000000002"},
+      "headers": {
+        "Authorization": "Bearer 005000000000002"
+      },
       "body": "{\"anonymousBody\":\"System.assertEquals('005000000000002', UserInfo.getUserId()); System.assertEquals('ada@example.test', UserInfo.getUserName()); System.assertEquals('ada.alias@example.test', UserInfo.getUserEmail());\"}",
       "status": 200,
-      "contains": ["\"success\":true"]
+      "contains": [
+        "\"success\":true"
+      ]
     },
     {
       "name": "composite-insert",
@@ -483,7 +744,9 @@
       "path": "/services/data/v61.0/composite/sobjects",
       "body": "{\"allOrNone\":true,\"records\":[{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Composite\"}]}",
       "status": 200,
-      "contains": ["\"success\":true"]
+      "contains": [
+        "\"success\":true"
+      ]
     },
     {
       "name": "composite-reference-id",
@@ -491,71 +754,115 @@
       "path": "/services/data/v61.0/composite/sobjects",
       "body": "{\"records\":[{\"attributes\":{\"type\":\"Account\",\"referenceId\":\"first\"},\"Name\":\"First\"},{\"attributes\":{\"type\":\"Account\",\"referenceId\":\"second\"},\"Name\":\"Second\"}]}",
       "status": 200,
-      "contains": ["\"referenceId\":\"first\"", "\"referenceId\":\"second\"", "001000000000004", "001000000000005"]
+      "contains": [
+        "\"referenceId\":\"first\"",
+        "\"referenceId\":\"second\"",
+        "001000000000004",
+        "001000000000005"
+      ]
     },
     {
       "name": "composite-sobjects-retrieve-projection",
       "method": "GET",
       "path": "/services/data/v61.0/composite/sobjects/Account?ids=001000000000004,001000000000005&fields=Name",
       "status": 200,
-      "contains": ["\"records\":[", "\"attributes\":{\"type\":\"Account\",\"url\":\"/services/data/v61.0/sobjects/Account/001000000000004\"}", "\"Id\":\"001000000000004\"", "\"Name\":\"First\"", "\"Id\":\"001000000000005\"", "\"Name\":\"Second\""],
-      "notContains": ["\"External_Id__c\""]
+      "contains": [
+        "\"records\":[",
+        "\"attributes\":{\"type\":\"Account\",\"url\":\"/services/data/v61.0/sobjects/Account/001000000000004\"}",
+        "\"Id\":\"001000000000004\"",
+        "\"Name\":\"First\"",
+        "\"Id\":\"001000000000005\"",
+        "\"Name\":\"Second\""
+      ],
+      "notContains": [
+        "\"External_Id__c\""
+      ]
     },
     {
       "name": "composite-sobjects-retrieve-missing-ids",
       "method": "GET",
       "path": "/services/data/v61.0/composite/sobjects/Account",
       "status": 400,
-      "contains": ["REQUIRED_FIELD_MISSING", "ids query parameter is required"]
+      "contains": [
+        "REQUIRED_FIELD_MISSING",
+        "ids query parameter is required"
+      ]
     },
     {
       "name": "query-pagination-first-page",
       "method": "GET",
       "path": "/services/data/v61.0/query?q=SELECT%20Id,%20Name%20FROM%20Account&batchSize=2",
       "status": 200,
-      "contains": ["\"totalSize\":5", "\"done\":false", "\"nextRecordsUrl\":\"/services/data/v61.0/query/oaerql000001-2\""]
+      "contains": [
+        "\"totalSize\":5",
+        "\"done\":false",
+        "\"nextRecordsUrl\":\"/services/data/v61.0/query/oaerql000001-2\""
+      ]
     },
     {
       "name": "query-pagination-query-more",
       "method": "GET",
       "path": "/services/data/v61.0/query/oaerql000001-2",
       "status": 200,
-      "contains": ["\"totalSize\":5", "\"done\":false", "\"nextRecordsUrl\":\"/services/data/v61.0/query/oaerql000001-4\""]
+      "contains": [
+        "\"totalSize\":5",
+        "\"done\":false",
+        "\"nextRecordsUrl\":\"/services/data/v61.0/query/oaerql000001-4\""
+      ]
     },
     {
       "name": "tooling-query-pagination-first-page",
       "method": "GET",
       "path": "/services/data/v61.0/tooling/query?q=SELECT%20Id,%20Name%20FROM%20Account&batchSize=2",
       "status": 200,
-      "contains": ["\"totalSize\":5", "\"done\":false", "\"nextRecordsUrl\":\"/services/data/v61.0/tooling/query/oaerql000002-2\""]
+      "contains": [
+        "\"totalSize\":5",
+        "\"done\":false",
+        "\"nextRecordsUrl\":\"/services/data/v61.0/tooling/query/oaerql000002-2\""
+      ]
     },
     {
       "name": "tooling-query-pagination-method-not-allowed",
       "method": "POST",
       "path": "/services/data/v61.0/tooling/query/oaerql000002-2",
       "status": 405,
-      "contains": ["METHOD_NOT_ALLOWED", "method not allowed"]
+      "contains": [
+        "METHOD_NOT_ALLOWED",
+        "method not allowed"
+      ]
     },
     {
       "name": "tooling-query-pagination-query-more",
       "method": "GET",
       "path": "/services/data/v61.0/tooling/query/oaerql000002-2",
       "status": 200,
-      "contains": ["\"totalSize\":5", "\"done\":false", "\"nextRecordsUrl\":\"/services/data/v61.0/tooling/query/oaerql000002-4\""]
+      "contains": [
+        "\"totalSize\":5",
+        "\"done\":false",
+        "\"nextRecordsUrl\":\"/services/data/v61.0/tooling/query/oaerql000002-4\""
+      ]
     },
     {
       "name": "tooling-queryall-pagination-first-page",
       "method": "GET",
       "path": "/services/data/v61.0/tooling/queryAll?q=SELECT%20Id,%20Name%20FROM%20Account&batchSize=2",
       "status": 200,
-      "contains": ["\"totalSize\":5", "\"done\":false", "\"nextRecordsUrl\":\"/services/data/v61.0/tooling/query/oaerql000003-2\""]
+      "contains": [
+        "\"totalSize\":5",
+        "\"done\":false",
+        "\"nextRecordsUrl\":\"/services/data/v61.0/tooling/query/oaerql000003-2\""
+      ]
     },
     {
       "name": "tooling-queryall-pagination-query-more",
       "method": "GET",
       "path": "/services/data/v61.0/tooling/query/oaerql000003-2",
       "status": 200,
-      "contains": ["\"totalSize\":5", "\"done\":false", "\"nextRecordsUrl\":\"/services/data/v61.0/tooling/query/oaerql000003-4\""]
+      "contains": [
+        "\"totalSize\":5",
+        "\"done\":false",
+        "\"nextRecordsUrl\":\"/services/data/v61.0/tooling/query/oaerql000003-4\""
+      ]
     },
     {
       "name": "create-account-for-delete-log",
@@ -563,7 +870,10 @@
       "path": "/services/data/v61.0/sobjects/Account",
       "body": "{\"Name\":\"Delete Log\"}",
       "status": 201,
-      "contains": ["\"success\":true", "001000000000006"]
+      "contains": [
+        "\"success\":true",
+        "001000000000006"
+      ]
     },
     {
       "name": "delete-account-for-delete-log",
@@ -576,7 +886,12 @@
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Account/deleted",
       "status": 200,
-      "contains": ["\"deletedRecords\":[{\"id\":\"001000000000006\"", "\"deletedDate\"", "\"earliestDateAvailable\"", "\"latestDateCovered\""]
+      "contains": [
+        "\"deletedRecords\":[{\"id\":\"001000000000006\"",
+        "\"deletedDate\"",
+        "\"earliestDateAvailable\"",
+        "\"latestDateCovered\""
+      ]
     },
     {
       "name": "external-id-upsert-create",
@@ -618,7 +933,11 @@
         "\"Id\":\"001000000000007\"",
         "External Black Box Updated"
       ],
-      "notContains": ["\"External_Id__c\"", "\"fields\":", "\"system\":"]
+      "notContains": [
+        "\"External_Id__c\"",
+        "\"fields\":",
+        "\"system\":"
+      ]
     },
     {
       "name": "external-id-delete",
@@ -632,7 +951,11 @@
       "path": "/services/data/v61.0/composite/sobjects",
       "body": "{\"allOrNone\":true,\"records\":[{\"attributes\":{\"type\":\"Account\",\"referenceId\":\"rolledBack\"},\"Name\":\"Rolled Back\"},{\"attributes\":{\"type\":\"Missing__c\",\"referenceId\":\"bad\"},\"Name\":\"Bad\"}]}",
       "status": 400,
-      "contains": ["\"referenceId\":\"rolledBack\"", "\"referenceId\":\"bad\"", "DML_EXCEPTION"]
+      "contains": [
+        "\"referenceId\":\"rolledBack\"",
+        "\"referenceId\":\"bad\"",
+        "INVALID_TYPE"
+      ]
     },
     {
       "name": "composite-graph-unsupported",
@@ -640,7 +963,10 @@
       "path": "/services/data/v61.0/composite/graph",
       "body": "{}",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "Composite graph"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Composite graph"
+      ]
     },
     {
       "name": "composite-generic-unsupported",
@@ -648,7 +974,10 @@
       "path": "/services/data/v61.0/composite",
       "body": "{\"compositeRequest\":[]}",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "Generic Composite REST subrequest orchestration"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Generic Composite REST subrequest orchestration"
+      ]
     },
     {
       "name": "composite-sobjects-update",
@@ -656,14 +985,21 @@
       "path": "/services/data/v61.0/composite/sobjects",
       "body": "{\"allOrNone\":true,\"records\":[{\"attributes\":{\"type\":\"Account\",\"referenceId\":\"updated\"},\"Id\":\"001000000000004\",\"Name\":\"Composite Updated\"}]}",
       "status": 200,
-      "contains": ["\"referenceId\":\"updated\"", "\"id\":\"001000000000004\"", "\"success\":true"]
+      "contains": [
+        "\"referenceId\":\"updated\"",
+        "\"id\":\"001000000000004\"",
+        "\"success\":true"
+      ]
     },
     {
       "name": "composite-sobjects-delete",
       "method": "DELETE",
       "path": "/services/data/v61.0/composite/sobjects?ids=001000000000005&allOrNone=true",
       "status": 200,
-      "contains": ["\"id\":\"001000000000005\"", "\"success\":true"]
+      "contains": [
+        "\"id\":\"001000000000005\"",
+        "\"success\":true"
+      ]
     },
     {
       "name": "composite-sobjects-typed-upsert-create",
@@ -671,7 +1007,11 @@
       "path": "/services/data/v61.0/composite/sobjects/Account/External_Id__c",
       "body": "{\"records\":[{\"attributes\":{\"referenceId\":\"upsertCreate\"},\"Name\":\"Upsert Created\",\"External_Id__c\":\"fixture-ext-1\"}]}",
       "status": 200,
-      "contains": ["\"referenceId\":\"upsertCreate\"", "\"success\":true", "\"created\":true"]
+      "contains": [
+        "\"referenceId\":\"upsertCreate\"",
+        "\"success\":true",
+        "\"created\":true"
+      ]
     },
     {
       "name": "composite-sobjects-typed-upsert-update",
@@ -679,14 +1019,76 @@
       "path": "/services/data/v61.0/composite/sobjects/Account/External_Id__c",
       "body": "{\"records\":[{\"attributes\":{\"referenceId\":\"upsertUpdate\"},\"Name\":\"Upsert Updated\",\"External_Id__c\":\"FIXTURE-EXT-1\"}]}",
       "status": 200,
-      "contains": ["\"referenceId\":\"upsertUpdate\"", "\"success\":true", "\"created\":false"]
+      "contains": [
+        "\"referenceId\":\"upsertUpdate\"",
+        "\"success\":true",
+        "\"created\":false"
+      ]
+    },
+    {
+      "name": "composite-generic-malformed-json",
+      "method": "POST",
+      "path": "/services/data/v61.0/composite",
+      "body": "{\"compositeRequest\":",
+      "status": 400,
+      "contains": [
+        "JSON_PARSER_ERROR",
+        "unexpected EOF"
+      ]
+    },
+    {
+      "name": "composite-batch-malformed-json",
+      "method": "POST",
+      "path": "/services/data/v61.0/composite/batch",
+      "body": "{\"batchRequests\":",
+      "status": 400,
+      "contains": [
+        "JSON_PARSER_ERROR",
+        "unexpected EOF"
+      ]
+    },
+    {
+      "name": "composite-sobjects-missing-records",
+      "method": "POST",
+      "path": "/services/data/v61.0/composite/sobjects",
+      "body": "{\"allOrNone\":true}",
+      "status": 400,
+      "contains": [
+        "REQUIRED_FIELD_MISSING",
+        "records is required"
+      ]
+    },
+    {
+      "name": "composite-sobjects-malformed-attributes",
+      "method": "POST",
+      "path": "/services/data/v61.0/composite/sobjects",
+      "body": "{\"records\":[{\"attributes\":\"Account\",\"Name\":\"Bad\"}]}",
+      "status": 400,
+      "contains": [
+        "JSON_PARSER_ERROR",
+        "attributes must be a JSON object"
+      ]
+    },
+    {
+      "name": "composite-sobjects-typed-upsert-missing-records",
+      "method": "PATCH",
+      "path": "/services/data/v61.0/composite/sobjects/Account/External_Id__c",
+      "body": "{}",
+      "status": 400,
+      "contains": [
+        "REQUIRED_FIELD_MISSING",
+        "records is required"
+      ]
     },
     {
       "name": "search-unsupported",
       "method": "GET",
       "path": "/services/data/v61.0/search?q=FIND%20%7BAcme%7D",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "Search/SOSL"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Search/SOSL"
+      ]
     },
     {
       "name": "search-method-not-allowed",
@@ -694,14 +1096,20 @@
       "path": "/services/data/v61.0/search?q=FIND%20%7BAcme%7D",
       "body": "{}",
       "status": 405,
-      "contains": ["METHOD_NOT_ALLOWED", "method not allowed"]
+      "contains": [
+        "METHOD_NOT_ALLOWED",
+        "method not allowed"
+      ]
     },
     {
       "name": "connect-namespace-unsupported",
       "method": "GET",
       "path": "/services/data/v61.0/connect",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "Connect REST namespace"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Connect REST namespace"
+      ]
     },
     {
       "name": "actions-namespace-method-not-allowed",
@@ -709,21 +1117,30 @@
       "path": "/services/data/v61.0/actions",
       "body": "{}",
       "status": 405,
-      "contains": ["METHOD_NOT_ALLOWED", "method not allowed"]
+      "contains": [
+        "METHOD_NOT_ALLOWED",
+        "method not allowed"
+      ]
     },
     {
       "name": "appmenu-namespace-unsupported",
       "method": "GET",
       "path": "/services/data/v61.0/appMenu",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "AppMenu REST namespace"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "AppMenu REST namespace"
+      ]
     },
     {
       "name": "quickactions-namespace-unsupported",
       "method": "GET",
       "path": "/services/data/v61.0/quickActions/Account/NewTask",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "QuickActions REST namespace"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "QuickActions REST namespace"
+      ]
     },
     {
       "name": "metadata-namespace-method-not-allowed",
@@ -731,35 +1148,50 @@
       "path": "/services/data/v61.0/metadata/deployRequest/0Af000000000001",
       "body": "{}",
       "status": 405,
-      "contains": ["METHOD_NOT_ALLOWED", "method not allowed"]
+      "contains": [
+        "METHOD_NOT_ALLOWED",
+        "method not allowed"
+      ]
     },
     {
       "name": "metadata-namespace-unsupported",
       "method": "GET",
       "path": "/services/data/v61.0/metadata",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "Metadata REST namespace"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Metadata REST namespace"
+      ]
     },
     {
       "name": "tooling-sobjects-unsupported",
       "method": "GET",
       "path": "/services/data/v61.0/tooling/sobjects",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "Tooling sObject discovery"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Tooling sObject discovery"
+      ]
     },
     {
       "name": "tooling-apexclass-collection-unsupported",
       "method": "GET",
       "path": "/services/data/v61.0/tooling/sobjects/ApexClass",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "Tooling ApexClass object collection"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Tooling ApexClass object collection"
+      ]
     },
     {
       "name": "tooling-apexclass-record-unsupported",
       "method": "GET",
       "path": "/services/data/v61.0/tooling/sobjects/ApexClass/01p000000000001",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "Tooling ApexClass object record"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Tooling ApexClass object record"
+      ]
     },
     {
       "name": "tooling-apextrigger-record-unsupported",
@@ -767,14 +1199,20 @@
       "path": "/services/data/v61.0/tooling/sobjects/ApexTrigger/01q000000000001",
       "body": "{}",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "Tooling ApexTrigger object record"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Tooling ApexTrigger object record"
+      ]
     },
     {
       "name": "tooling-apexlog-collection-unsupported",
       "method": "GET",
       "path": "/services/data/v61.0/tooling/sobjects/ApexLog",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "Tooling ApexLog object collection"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Tooling ApexLog object collection"
+      ]
     },
     {
       "name": "tooling-traceflag-collection-unsupported",
@@ -782,14 +1220,20 @@
       "path": "/services/data/v61.0/tooling/sobjects/TraceFlag",
       "body": "{}",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "Tooling TraceFlag object collection"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Tooling TraceFlag object collection"
+      ]
     },
     {
       "name": "tooling-apextestresult-record-unsupported",
       "method": "GET",
       "path": "/services/data/v61.0/tooling/sobjects/ApexTestResult/07M000000000001",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "Tooling ApexTestResult object record"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Tooling ApexTestResult object record"
+      ]
     },
     {
       "name": "tooling-metadata-container-record-unsupported",
@@ -797,21 +1241,30 @@
       "path": "/services/data/v61.0/tooling/sobjects/MetadataContainer/1dc000000000001",
       "body": "{}",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "Tooling MetadataContainer object record"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Tooling MetadataContainer object record"
+      ]
     },
     {
       "name": "tooling-apextestrunresult-collection-unsupported",
       "method": "GET",
       "path": "/services/data/v61.0/tooling/sobjects/ApexTestRunResult",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "Tooling ApexTestRunResult object collection"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Tooling ApexTestRunResult object collection"
+      ]
     },
     {
       "name": "tooling-apextestsuite-record-unsupported",
       "method": "GET",
       "path": "/services/data/v61.0/tooling/sobjects/ApexTestSuite/05F000000000001",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "Tooling ApexTestSuite object record"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Tooling ApexTestSuite object record"
+      ]
     },
     {
       "name": "tooling-run-tests-sync-unsupported",
@@ -819,21 +1272,30 @@
       "path": "/services/data/v61.0/tooling/runTestsSynchronous",
       "body": "{}",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "Tooling runTestsSynchronous"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Tooling runTestsSynchronous"
+      ]
     },
     {
       "name": "tooling-coverage-unsupported",
       "method": "GET",
       "path": "/services/data/v61.0/tooling/coverage",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "Tooling ApexCodeCoverage"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Tooling ApexCodeCoverage"
+      ]
     },
     {
       "name": "tooling-search-unsupported",
       "method": "GET",
       "path": "/services/data/v61.0/tooling/search?q=FIND%20%7BAcme%7D",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "Tooling search is not implemented"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Tooling search is not implemented"
+      ]
     },
     {
       "name": "bulk-query-unsupported",
@@ -841,14 +1303,20 @@
       "path": "/services/data/v61.0/jobs/query",
       "body": "{\"operation\":\"query\",\"query\":\"SELECT Id FROM Account\"}",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "Bulk API v2 query jobs"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Bulk API v2 query jobs"
+      ]
     },
     {
       "name": "bulk-jobs-discovery",
       "method": "GET",
       "path": "/services/data/v61.0/jobs",
       "status": 200,
-      "contains": ["\"query\":\"/services/data/v61.0/jobs/query\"", "\"ingest\":\"/services/data/v61.0/jobs/ingest\""]
+      "contains": [
+        "\"query\":\"/services/data/v61.0/jobs/query\"",
+        "\"ingest\":\"/services/data/v61.0/jobs/ingest\""
+      ]
     },
     {
       "name": "bulk-query-method-not-allowed",
@@ -856,21 +1324,30 @@
       "path": "/services/data/v61.0/jobs/query",
       "body": "{}",
       "status": 405,
-      "contains": ["METHOD_NOT_ALLOWED", "method not allowed"]
+      "contains": [
+        "METHOD_NOT_ALLOWED",
+        "method not allowed"
+      ]
     },
     {
       "name": "bulk-query-job-record-unsupported",
       "method": "GET",
       "path": "/services/data/v61.0/jobs/query/750000000000001",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "Bulk API v2 query job records"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Bulk API v2 query job records"
+      ]
     },
     {
       "name": "bulk-query-results-unsupported",
       "method": "GET",
       "path": "/services/data/v61.0/jobs/query/750000000000001/results",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "Bulk API v2 query job results"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Bulk API v2 query job results"
+      ]
     },
     {
       "name": "bulk-query-results-method-not-allowed",
@@ -878,7 +1355,10 @@
       "path": "/services/data/v61.0/jobs/query/750000000000001/results",
       "body": "{}",
       "status": 405,
-      "contains": ["METHOD_NOT_ALLOWED", "method not allowed"]
+      "contains": [
+        "METHOD_NOT_ALLOWED",
+        "method not allowed"
+      ]
     },
     {
       "name": "bulk-ingest-unsupported",
@@ -886,7 +1366,10 @@
       "path": "/services/data/v61.0/jobs/ingest",
       "body": "{}",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "Bulk API v2 ingest jobs"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Bulk API v2 ingest jobs"
+      ]
     },
     {
       "name": "bulk-ingest-method-not-allowed",
@@ -894,7 +1377,10 @@
       "path": "/services/data/v61.0/jobs/ingest",
       "body": "{}",
       "status": 405,
-      "contains": ["METHOD_NOT_ALLOWED", "method not allowed"]
+      "contains": [
+        "METHOD_NOT_ALLOWED",
+        "method not allowed"
+      ]
     },
     {
       "name": "bulk-ingest-job-record-unsupported",
@@ -902,7 +1388,10 @@
       "path": "/services/data/v61.0/jobs/ingest/750000000000001",
       "body": "{\"state\":\"UploadComplete\"}",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "Bulk API v2 ingest job records"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Bulk API v2 ingest job records"
+      ]
     },
     {
       "name": "bulk-ingest-batches-unsupported",
@@ -910,63 +1399,121 @@
       "path": "/services/data/v61.0/jobs/ingest/750000000000001/batches",
       "body": "Name\nAcme",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "Bulk API v2 ingest job batches"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Bulk API v2 ingest job batches"
+      ]
     },
     {
       "name": "bulk-ingest-batches-put-only-method-not-allowed",
       "method": "GET",
       "path": "/services/data/v61.0/jobs/ingest/750000000000001/batches",
       "status": 405,
-      "contains": ["METHOD_NOT_ALLOWED", "method not allowed"]
+      "contains": [
+        "METHOD_NOT_ALLOWED",
+        "method not allowed"
+      ]
     },
     {
       "name": "bulk-ingest-successful-results-unsupported",
       "method": "GET",
       "path": "/services/data/v61.0/jobs/ingest/750000000000001/successfulResults",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "Bulk API v2 ingest successful results"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Bulk API v2 ingest successful results"
+      ]
     },
     {
       "name": "bulk-ingest-failed-results-unsupported",
       "method": "GET",
       "path": "/services/data/v61.0/jobs/ingest/750000000000001/failedResults",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "Bulk API v2 ingest failed results"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Bulk API v2 ingest failed results"
+      ]
     },
     {
       "name": "bulk-ingest-unprocessed-records-unsupported",
       "method": "GET",
       "path": "/services/data/v61.0/jobs/ingest/750000000000001/unprocessedrecords",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "Bulk API v2 ingest unprocessed records"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Bulk API v2 ingest unprocessed records"
+      ]
+    },
+    {
+      "name": "bulk-query-results-locator-unsupported",
+      "method": "GET",
+      "path": "/services/data/v61.0/jobs/query/750000000000001/results?locator=abc&maxRecords=2",
+      "status": 501,
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Bulk API v2 query job results"
+      ]
+    },
+    {
+      "name": "bulk-query-unknown-result-subroute",
+      "method": "GET",
+      "path": "/services/data/v61.0/jobs/query/750000000000001/failedResults",
+      "status": 404,
+      "contains": [
+        "NOT_FOUND",
+        "unknown endpoint"
+      ]
+    },
+    {
+      "name": "bulk-ingest-result-method-not-allowed",
+      "method": "POST",
+      "path": "/services/data/v61.0/jobs/ingest/750000000000001/failedResults",
+      "body": "{}",
+      "status": 405,
+      "contains": [
+        "METHOD_NOT_ALLOWED",
+        "method not allowed"
+      ]
     },
     {
       "name": "error-shape",
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Missing__c/describe",
       "status": 404,
-      "contains": ["errorCode", "NOT_FOUND"]
+      "contains": [
+        "errorCode",
+        "NOT_FOUND"
+      ]
     },
     {
       "name": "unknown-object-resource-shape",
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Missing__c",
       "status": 404,
-      "contains": ["errorCode", "NOT_FOUND", "unknown object"]
+      "contains": [
+        "errorCode",
+        "NOT_FOUND",
+        "unknown object"
+      ]
     },
     {
       "name": "scoped-reset",
       "method": "POST",
       "path": "/services/data/v61.0/oaer/reset/data",
       "status": 200,
-      "contains": ["\"scopes\":[\"data\"]"]
+      "contains": [
+        "\"scopes\":[\"data\"]"
+      ]
     },
     {
       "name": "noop-reset",
       "method": "POST",
       "path": "/services/data/v61.0/oaer/reset?scope=limits,async",
       "status": 200,
-      "contains": ["\"scopes\":[\"limits\",\"async\"]", "\"noOpScopes\":[\"limits\",\"async\"]"]
+      "contains": [
+        "\"scopes\":[\"limits\",\"async\"]",
+        "\"noOpScopes\":[\"limits\",\"async\"]"
+      ]
     },
     {
       "name": "persist-after-reset",
@@ -974,7 +1521,10 @@
       "path": "/services/data/v61.0/sobjects/Account",
       "body": "{\"Name\":\"Persisted\"}",
       "status": 201,
-      "contains": ["\"success\":true", "001000000000001"]
+      "contains": [
+        "\"success\":true",
+        "001000000000001"
+      ]
     }
   ],
   "command": {
@@ -989,8 +1539,146 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 129,
-      "statuses": [200, 200, 200, 200, 405, 200, 405, 405, 405, 200, 200, 200, 200, 200, 405, 501, 501, 501, 501, 200, 200, 405, 201, 200, 200, 200, 200, 200, 400, 200, 200, 200, 405, 404, 501, 501, 501, 501, 405, 404, 501, 501, 501, 501, 405, 404, 200, 501, 501, 405, 404, 400, 200, 501, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 400, 200, 200, 200, 405, 200, 200, 200, 201, 204, 200, 201, 204, 200, 200, 204, 400, 501, 501, 200, 200, 200, 200, 501, 405, 501, 405, 501, 501, 405, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 200, 405, 501, 501, 405, 501, 405, 501, 501, 405, 501, 501, 501, 404, 404, 200, 200, 201],
+      "requests": 137,
+      "statuses": [
+        200,
+        200,
+        200,
+        200,
+        405,
+        200,
+        405,
+        405,
+        405,
+        200,
+        200,
+        200,
+        200,
+        200,
+        405,
+        501,
+        501,
+        501,
+        501,
+        200,
+        200,
+        405,
+        201,
+        200,
+        200,
+        200,
+        200,
+        200,
+        400,
+        200,
+        200,
+        200,
+        405,
+        404,
+        501,
+        501,
+        501,
+        501,
+        405,
+        404,
+        501,
+        501,
+        501,
+        501,
+        405,
+        404,
+        200,
+        501,
+        501,
+        405,
+        404,
+        400,
+        200,
+        501,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        400,
+        200,
+        200,
+        200,
+        405,
+        200,
+        200,
+        200,
+        201,
+        204,
+        200,
+        201,
+        204,
+        200,
+        200,
+        204,
+        400,
+        501,
+        501,
+        200,
+        200,
+        200,
+        200,
+        400,
+        400,
+        400,
+        400,
+        400,
+        501,
+        405,
+        501,
+        405,
+        501,
+        501,
+        405,
+        501,
+        501,
+        501,
+        501,
+        501,
+        501,
+        501,
+        501,
+        501,
+        501,
+        501,
+        501,
+        501,
+        501,
+        501,
+        200,
+        405,
+        501,
+        501,
+        405,
+        501,
+        405,
+        501,
+        501,
+        405,
+        501,
+        501,
+        501,
+        501,
+        404,
+        405,
+        404,
+        404,
+        200,
+        200,
+        201
+      ],
       "users": 2
     }
   }
