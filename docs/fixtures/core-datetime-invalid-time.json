@@ -1,0 +1,28 @@
+{
+  "name": "core-datetime-invalid-time",
+  "evidence": [
+    {
+      "symbol": "Time.valueOf",
+      "kind": "exec",
+      "notes": "Invalid Time.valueOf text returns a stable ordinary error."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Time.valueOf('24:00:00');"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Time.valueOf('24:00:00');"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "Error",
+      "message": "unsupported Time value \"24:00:00\""
+    }
+  }
+}

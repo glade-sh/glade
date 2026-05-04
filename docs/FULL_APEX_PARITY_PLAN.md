@@ -109,11 +109,14 @@ Current progress:
   UTC-modeled `Datetime` date arithmetic plus date/time component getters,
   deterministic VM-clock `Date.today`/`Datetime.now`, GMT construction/parsing
   and component helpers, millisecond arithmetic, deterministic `Datetime`
-  `format`/`formatGmt` Java-pattern slices for UTC and fixed offsets, and
-  explicit unsupported diagnostics for named timezone formatting.
+  `format`/`formatGmt` Java-pattern slices for UTC and fixed offsets, stable
+  invalid parse/pattern diagnostics, and explicit unsupported diagnostics for
+  named timezone formatting.
 - Time/TimeZone: runtime support now covers `Time` construction/parsing,
   component getters including milliseconds, wraparound arithmetic, and a
-  deterministic `TimeZone` slice for UTC/GMT plus fixed GMT/UTC offsets.
+  deterministic `TimeZone` slice for UTC/GMT plus fixed GMT/UTC offsets through
+  the local `+14:00` edge with named-zone, invalid-ID, DST, and locale overloads
+  reported as unsupported.
 - JSON: runtime support now covers `JSON.createGenerator(Boolean)`,
   `JSON.createParser(String)`, and deterministic `JSONGenerator`/`JSONParser`
   slices. Generator coverage includes object/array boundaries, field names,
@@ -168,6 +171,13 @@ Current progress:
   - `docs/fixtures/core-string-entity-edge-stdlib.json`
   - `docs/fixtures/core-numeric-stdlib.json`
   - `docs/fixtures/core-datetime-stdlib.json`
+  - `docs/fixtures/core-datetime-invalid-date.json`
+  - `docs/fixtures/core-datetime-invalid-datetime.json`
+  - `docs/fixtures/core-datetime-invalid-time.json`
+  - `docs/fixtures/core-datetime-format-unsupported-token.json`
+  - `docs/fixtures/core-datetime-format-unsupported-timezone.json`
+  - `docs/fixtures/core-timezone-unsupported-named-zone.json`
+  - `docs/fixtures/core-timezone-unsupported-display-overload.json`
   - `docs/fixtures/core-json-stdlib.json`
   - `docs/fixtures/core-blob-crypto-stdlib.json`
   - `docs/fixtures/core-blob-crypto-invalid-base64.json`
@@ -211,6 +221,11 @@ Remaining cuts:
      model, named `TimeZone` IDs, timezone database offsets, DST behavior where
      public behavior is known, `Date`/`Time` pattern overloads if public
      behavior is pinned, and unsupported static helpers.
+   - Newly pinned edge coverage: strict invalid Date/Datetime/Time parsing,
+     year 1-9999 component bounds, fixed-offset TimeZone IDs through `±14:00`,
+     unsupported named timezone IDs, unsupported DST/locale display-name
+     overloads, stable Datetime format token errors, and unsupported named-zone
+     formatting errors.
 
 5. Blob, EncodingUtil, and Crypto
    - Newly covered slice: invalid Base64 and odd/invalid hex errors,

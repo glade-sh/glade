@@ -33,11 +33,11 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Date | `Date.day` | `supported` | Returns Gregorian day of month. |
 | Date | `Date.daysBetween` | `supported` | Returns whole calendar days between local Date values. |
 | Date | `Date.month` | `supported` | Returns Gregorian month number. |
-| Date | `Date.newInstance` | `supported` | Validates date parts. |
+| Date | `Date.newInstance` | `supported` | Validates date parts in the local year 1-9999 Gregorian slice. |
 | Date | `Date.toEndOfMonth` | `supported` | Returns last day of the Date value's month. |
 | Date | `Date.toStartOfMonth` | `supported` | Returns first day of the Date value's month. |
 | Date | `Date.today` | `partial` | Deterministic VM clock date in UTC. |
-| Date | `Date.valueOf` | `supported` | Parses supported date strings. |
+| Date | `Date.valueOf` | `supported` | Parses strict yyyy-MM-dd strings plus yyyy-MM-dd time forms into local Date values with stable invalid-input errors. |
 | Date | `Date.year` | `supported` | Returns Gregorian year. |
 | Datetime | `Datetime.addDays` | `partial` | UTC-local arithmetic; no user timezone or DST model. |
 | Datetime | `Datetime.addHours` | `partial` | UTC-local arithmetic. |
@@ -49,19 +49,19 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Datetime | `Datetime.date` | `partial` | Returns UTC-modeled Date component; no user timezone model. |
 | Datetime | `Datetime.dateGmt` | `supported` | Returns the UTC Date component. |
 | Datetime | `Datetime.day` | `partial` | UTC-modeled component getter. |
-| Datetime | `Datetime.format` | `partial` | Deterministic UTC/fixed-offset Java-pattern slice; named zones, DST, user locale, and user timezone are unsupported. |
-| Datetime | `Datetime.formatGmt` | `partial` | Deterministic UTC Java-pattern slice; locale patterns are not modeled beyond pinned English names. |
+| Datetime | `Datetime.format` | `partial` | Deterministic UTC/fixed-offset Java-pattern slice with stable token errors; named zones, DST, user locale, and user timezone are unsupported. |
+| Datetime | `Datetime.formatGmt` | `partial` | Deterministic UTC Java-pattern slice with stable token errors; locale patterns are not modeled beyond pinned English names. |
 | Datetime | `Datetime.hour` | `partial` | UTC-modeled component getter. |
 | Datetime | `Datetime.millisecond` | `partial` | UTC-modeled component getter. |
 | Datetime | `Datetime.minute` | `partial` | UTC-modeled component getter. |
 | Datetime | `Datetime.month` | `partial` | UTC-modeled component getter. |
-| Datetime | `Datetime.newInstance` | `supported` | Validates date and time parts. |
+| Datetime | `Datetime.newInstance` | `supported` | Validates date and time parts in the local year 1-9999 UTC-modeled slice. |
 | Datetime | `Datetime.newInstanceGmt` | `supported` | Constructs a UTC-modeled Datetime. |
 | Datetime | `Datetime.now` | `partial` | Deterministic VM clock timestamp in UTC. |
 | Datetime | `Datetime.second` | `partial` | UTC-modeled component getter. |
 | Datetime | `Datetime.timeGmt` | `supported` | Returns the UTC Time component. |
-| Datetime | `Datetime.valueOf` | `supported` | Parses supported datetime strings. |
-| Datetime | `Datetime.valueOfGmt` | `supported` | Parses supported UTC datetime strings. |
+| Datetime | `Datetime.valueOf` | `supported` | Parses supported strict datetime strings with stable invalid-input errors. |
+| Datetime | `Datetime.valueOfGmt` | `supported` | Parses supported strict UTC/RFC3339 datetime strings with stable invalid-input errors. |
 | Datetime | `Datetime.year` | `partial` | UTC-modeled component getter. |
 | Decimal | `Decimal.abs` | `supported` | Absolute value for local Decimal values. |
 | Decimal | `Decimal.doubleValue` | `supported` | Returns local Decimal value. |
@@ -336,11 +336,11 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Time | `Time.minute` | `supported` | Local time component. |
 | Time | `Time.newInstance` | `supported` | Validates time parts including optional millisecond. |
 | Time | `Time.second` | `supported` | Local time component. |
-| Time | `Time.valueOf` | `supported` | Parses supported time strings with optional milliseconds. |
-| TimeZone | `TimeZone.getDisplayName` | `partial` | Returns deterministic ID text for UTC and fixed GMT offsets only. |
+| Time | `Time.valueOf` | `supported` | Parses strict HH:mm:ss and HH:mm:ss.SSS strings with stable invalid-input errors. |
+| TimeZone | `TimeZone.getDisplayName` | `partial` | Returns deterministic ID text for UTC and fixed GMT offsets only; DST/locale overloads are unsupported. |
 | TimeZone | `TimeZone.getID` | `partial` | Returns canonical UTC or fixed GMT offset ID. |
-| TimeZone | `TimeZone.getOffset` | `partial` | Returns fixed offset milliseconds; named zones and DST are unsupported. |
-| TimeZone | `TimeZone.getTimeZone` | `partial` | Supports UTC/GMT and fixed GMT/UTC offsets; named zones and DST are unsupported. |
+| TimeZone | `TimeZone.getOffset` | `partial` | Returns fixed offset milliseconds for the deterministic offset slice; named zones and DST are unsupported. |
+| TimeZone | `TimeZone.getTimeZone` | `partial` | Supports UTC/GMT and fixed GMT/UTC offsets through ±14:00; named zones, trimmed/invalid IDs, and DST are unsupported. |
 | Type | `Type.equals` | `supported` | Compares local Type tokens by type name. |
 | Type | `Type.forName` | `partial` | Local class/type token lookup, common local SObjects, built-in and generic collection type strings, and null for null/blank/unknown local names. |
 | Type | `Type.getName` | `supported` | Returns local type token name. |
