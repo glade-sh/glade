@@ -176,6 +176,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.handleTooling(w, r, parts[2], rest[1:])
 	case len(rest) >= 1 && rest[0] == "jobs":
 		s.handleBulkJobs(w, r, parts[2], rest[1:])
+	case len(rest) >= 1 && rest[0] == "metadata":
+		writeUnsupportedMetadataREST(w, r, rest[1:])
 	case len(rest) >= 1 && rest[0] == "composite":
 		s.handleComposite(w, r, parts[2], rest[1:])
 	case len(rest) >= 1 && rest[0] == "oaer":
@@ -932,6 +934,44 @@ func decodeOptionalJSONObject(w http.ResponseWriter, r *http.Request) (map[strin
 		body = map[string]json.RawMessage{}
 	}
 	return body, true
+}
+
+func writeUnsupportedMetadataREST(w http.ResponseWriter, r *http.Request, parts []string) {
+	switch {
+	case len(parts) == 0:
+		if !methodAllowed(r, http.MethodGet) {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
+		writeSalesforceError(w, errUnsupportedFeature, "Metadata REST namespace is not implemented in the local server")
+	case len(parts) == 1 && parts[0] == "deployRequest":
+		if !methodAllowed(r, http.MethodPost) {
+			writeMethodNotAllowed(w, http.MethodPost)
+			return
+		}
+		if _, ok := decodeOptionalJSONObject(w, r); !ok {
+			return
+		}
+		writeSalesforceError(w, errUnsupportedFeature, "Metadata REST deploy requests are not implemented in the local server; use source files and oaer check/test for local validation")
+	case len(parts) == 2 && parts[0] == "deployRequest":
+		if !methodAllowed(r, http.MethodGet) {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
+		writeSalesforceError(w, errUnsupportedFeature, "Metadata REST deploy status is not implemented in the local server; no deploy jobs are created locally")
+	case len(parts) == 3 && parts[0] == "deployRequest" && (parts[2] == "results" || parts[2] == "deployDetails"):
+		if !methodAllowed(r, http.MethodGet) {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
+		resource := "results"
+		if parts[2] == "deployDetails" {
+			resource = "details"
+		}
+		writeSalesforceError(w, errUnsupportedFeature, "Metadata REST deploy "+resource+" retrieval is not implemented in the local server; no deploy jobs are created locally")
+	default:
+		writeSalesforceError(w, errUnknownEndpoint)
+	}
 }
 
 func (s *Server) handleBulkJobs(w http.ResponseWriter, r *http.Request, version string, parts []string) {

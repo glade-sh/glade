@@ -2003,6 +2003,109 @@ func TestCommonRESTNamespaceStubsReturnStableUnsupportedErrors(t *testing.T) {
 	}
 }
 
+func TestMetadataRESTDeployRoutesReturnExplicitUnsupportedBoundaries(t *testing.T) {
+	tests := []struct {
+		name          string
+		method        string
+		path          string
+		body          string
+		wantStatus    int
+		wantCode      string
+		wantAllow     string
+		wantMessageIn string
+	}{
+		{
+			name:          "root unsupported",
+			method:        http.MethodGet,
+			path:          "/services/data/v61.0/metadata",
+			wantStatus:    http.StatusNotImplemented,
+			wantCode:      "UNSUPPORTED_FEATURE",
+			wantMessageIn: "Metadata REST namespace",
+		},
+		{
+			name:          "deploy create unsupported",
+			method:        http.MethodPost,
+			path:          "/services/data/v61.0/metadata/deployRequest",
+			body:          `{"deployOptions":{"checkOnly":true}}`,
+			wantStatus:    http.StatusNotImplemented,
+			wantCode:      "UNSUPPORTED_FEATURE",
+			wantMessageIn: "Metadata REST deploy requests",
+		},
+		{
+			name:          "deploy create malformed json",
+			method:        http.MethodPost,
+			path:          "/services/data/v61.0/metadata/deployRequest",
+			body:          `{"deployOptions":`,
+			wantStatus:    http.StatusBadRequest,
+			wantCode:      "JSON_PARSER_ERROR",
+			wantMessageIn: "unexpected EOF",
+		},
+		{
+			name:          "deploy create method boundary",
+			method:        http.MethodGet,
+			path:          "/services/data/v61.0/metadata/deployRequest",
+			wantStatus:    http.StatusMethodNotAllowed,
+			wantCode:      "METHOD_NOT_ALLOWED",
+			wantAllow:     http.MethodPost,
+			wantMessageIn: "method not allowed",
+		},
+		{
+			name:          "deploy status unsupported",
+			method:        http.MethodGet,
+			path:          "/services/data/v61.0/metadata/deployRequest/0Af000000000001",
+			wantStatus:    http.StatusNotImplemented,
+			wantCode:      "UNSUPPORTED_FEATURE",
+			wantMessageIn: "Metadata REST deploy status",
+		},
+		{
+			name:          "deploy results unsupported",
+			method:        http.MethodGet,
+			path:          "/services/data/v61.0/metadata/deployRequest/0Af000000000001/results",
+			wantStatus:    http.StatusNotImplemented,
+			wantCode:      "UNSUPPORTED_FEATURE",
+			wantMessageIn: "Metadata REST deploy results retrieval",
+		},
+		{
+			name:          "deploy details unsupported",
+			method:        http.MethodGet,
+			path:          "/services/data/v61.0/metadata/deployRequest/0Af000000000001/deployDetails",
+			wantStatus:    http.StatusNotImplemented,
+			wantCode:      "UNSUPPORTED_FEATURE",
+			wantMessageIn: "Metadata REST deploy details retrieval",
+		},
+		{
+			name:          "deploy results method boundary",
+			method:        http.MethodPost,
+			path:          "/services/data/v61.0/metadata/deployRequest/0Af000000000001/results",
+			body:          `{}`,
+			wantStatus:    http.StatusMethodNotAllowed,
+			wantCode:      "METHOD_NOT_ALLOWED",
+			wantAllow:     http.MethodGet,
+			wantMessageIn: "method not allowed",
+		},
+		{
+			name:       "unknown metadata endpoint",
+			method:     http.MethodGet,
+			path:       "/services/data/v61.0/metadata/unknown",
+			wantStatus: http.StatusNotFound,
+			wantCode:   "NOT_FOUND",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			org := testOrg()
+			handler := New(&org)
+			rec := httptest.NewRecorder()
+			handler.ServeHTTP(rec, httptest.NewRequest(tt.method, tt.path, strings.NewReader(tt.body)))
+			assertSalesforceError(t, rec, tt.wantStatus, tt.wantCode, tt.wantMessageIn)
+			if got := rec.Header().Get("Allow"); got != tt.wantAllow {
+				t.Fatalf("Allow = %q, want %q", got, tt.wantAllow)
+			}
+		})
+	}
+}
+
 func TestApexRestDispatchReturnsStableUnsupportedError(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
