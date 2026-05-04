@@ -643,6 +643,66 @@ System.assertEquals(0, results.get(0).getErrors().size());
 	}
 }
 
+func TestExecMessagingSendEmailLocalOverloadsAndLimitAccounting(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(0, Limits.getEmailInvocations());
+List<Messaging.SendEmailResult> emptyResults = Messaging.sendEmail(new List<Messaging.SingleEmailMessage>());
+System.assertEquals(1, Limits.getEmailInvocations());
+System.assertEquals(0, emptyResults.size());
+
+Messaging.SingleEmailMessage single = new Messaging.SingleEmailMessage();
+single.setToAddresses(new List<String>{'single@example.test'});
+Messaging.MassEmailMessage mass = new Messaging.MassEmailMessage();
+mass.setTargetObjectIds(new List<String>{'003000000000001'});
+mass.setTemplateId('00X000000000001');
+List<Messaging.SendEmailResult> mixedResults = Messaging.sendEmail(new List<Object>{single, mass}, true);
+System.assertEquals(2, Limits.getEmailInvocations());
+System.assertEquals(2, mixedResults.size());
+System.assert(mixedResults.get(0).isSuccess());
+System.assert(mixedResults.get(1).isSuccess());
+System.assertEquals(0, mixedResults.get(0).getErrors().size());
+System.assertEquals(0, mixedResults.get(1).getErrors().size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+
+	cases := []struct {
+		name string
+		src  string
+		want string
+	}{
+		{
+			name: "invalid second argument",
+			src:  `Messaging.sendEmail(new List<Messaging.SingleEmailMessage>(), 'not boolean');`,
+			want: `unsupported call "Messaging.sendEmail send options overloads"`,
+		},
+		{
+			name: "non-message item",
+			src:  `Messaging.sendEmail(new List<Object>{new Messaging.SingleEmailMessage(), 'hello'});`,
+			want: `Messaging.sendEmail expects SingleEmailMessage or MassEmailMessage list items`,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			program, err := CompileAnonymous(tc.src)
+			if err != nil {
+				t.Fatal(err)
+			}
+			result, err := New(nil).Execute(program)
+			if err == nil || err.Error() != tc.want {
+				t.Fatalf("err = %v, want %q", err, tc.want)
+			}
+			if result.Limits.EmailInvokes != 0 {
+				t.Fatalf("email invocations = %d, want 0", result.Limits.EmailInvokes)
+			}
+		})
+	}
+}
+
 func TestExecHttpResponseAndSendEmailResultDefaults(t *testing.T) {
 	program, err := CompileAnonymous(`
 HttpResponse response = new HttpResponse();

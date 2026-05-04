@@ -702,10 +702,12 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Return one local `Messaging.SendEmailResult` per single or mass input
     message and support the Boolean `allOrNothing` overload without modeling
     transport; `Messaging.SendEmailOptions` remains an explicit UnsupportedFeature
-    seam.
+    surface.
   - [x] Promote `Messaging.SendEmailResult` constructor/getter defaults and
     validate `Messaging.sendEmail` list items so non-email payloads fail before
     incrementing limits.
+  - [x] Split `Messaging.sendEmail` stdlib coverage into a supported local result
+    model row and explicit unsupported transport/template/send-options rows.
   - [x] Add `ApexPages` message storage, stable current page,
     `Test.setCurrentPage`, `ApexPages.Severity`, supported `PageReference` typed local
     parameter/header/string URL model, supported REST context null/re-lazy response lifecycle, and
