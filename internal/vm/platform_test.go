@@ -488,6 +488,24 @@ System.assertEquals('text/html', blank.getHeaders().get('Accept'));
 func TestExecMessagingResultAndUnsupportedEdges(t *testing.T) {
 	program, err := CompileAnonymous(`
 Messaging.SingleEmailMessage msg = new Messaging.SingleEmailMessage();
+System.assertEquals(0, msg.getToAddresses().size());
+System.assertEquals(0, msg.getCcAddresses().size());
+System.assertEquals(0, msg.getBccAddresses().size());
+System.assertEquals(0, msg.getFileAttachments().size());
+System.assertEquals(0, msg.getEntityAttachments().size());
+System.assertEquals(0, msg.getDocumentAttachments().size());
+System.assertEquals(0, msg.getTargetObjectIds().size());
+System.assertEquals(null, msg.getSubject());
+System.assertEquals(null, msg.getHtmlBody());
+System.assertEquals(null, msg.getPlainTextBody());
+System.assertEquals(null, msg.getTemplateId());
+System.assertEquals(null, msg.getTargetObjectId());
+System.assertEquals(null, msg.getWhatId());
+System.assertEquals(false, msg.getSaveAsActivity());
+System.assertEquals(false, msg.getTreatBodiesAsTemplate());
+System.assertEquals(false, msg.getTreatTargetObjectAsRecipient());
+System.assertEquals(false, msg.getUseSignature());
+System.assertEquals(false, msg.getBccSender());
 msg.setToAddresses(new List<String>{'trail@example.test'});
 msg.setCcAddresses(new List<String>{'copy@example.test'});
 msg.setBccAddresses(new List<String>{'blind@example.test'});
@@ -514,6 +532,32 @@ msg.setOptOutPolicy('FILTER');
 msg.setEmailPriority('High');
 msg.setBccSender(true);
 msg.setFileAttachments(new List<Object>{});
+System.assertEquals('trail@example.test', msg.getToAddresses().get(0));
+System.assertEquals('copy@example.test', msg.getCcAddresses().get(0));
+System.assertEquals('blind@example.test', msg.getBccAddresses().get(0));
+System.assertEquals('Trail', msg.getSubject());
+System.assertEquals('Body', msg.getPlainTextBody());
+System.assertEquals('<p>Body</p>', msg.getHtmlBody());
+System.assertEquals('reply@example.test', msg.getReplyTo());
+System.assertEquals('Trail Sender', msg.getSenderDisplayName());
+System.assertEquals('UTF-8', msg.getCharset());
+System.assertEquals('<message@example.test>', msg.getInReplyTo());
+System.assertEquals('<root@example.test>', msg.getReferences());
+System.assertEquals('0D2000000000001', msg.getOrgWideEmailAddressId());
+System.assertEquals('003000000000001', msg.getTargetObjectId());
+System.assertEquals('00X000000000001', msg.getTemplateId());
+System.assertEquals('001000000000001', msg.getWhatId());
+System.assertEquals(false, msg.getSaveAsActivity());
+System.assertEquals(false, msg.getTreatBodiesAsTemplate());
+System.assertEquals(false, msg.getTreatTargetObjectAsRecipient());
+System.assertEquals(false, msg.getUseSignature());
+System.assertEquals('015000000000001', msg.getEntityAttachments().get(0));
+System.assertEquals('015000000000002', msg.getDocumentAttachments().get(0));
+System.assertEquals('003000000000002', msg.getTargetObjectIds().get(0));
+System.assertEquals('FILTER', msg.getOptOutPolicy());
+System.assertEquals('High', msg.getEmailPriority());
+System.assertEquals(true, msg.getBccSender());
+System.assertEquals(0, msg.getFileAttachments().size());
 Messaging.SingleEmailMessage second = new Messaging.SingleEmailMessage();
 second.setToAddresses(new List<String>{'second@example.test'});
 List<Messaging.SendEmailResult> results = Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{msg, second}, false);
@@ -571,6 +615,11 @@ System.assertEquals(0, results.get(0).getErrors().size());
 			src:  `Messaging.SingleEmailMessage msg = new Messaging.SingleEmailMessage(); msg.setHtmlBody(7);`,
 			want: `Messaging.SingleEmailMessage.setHtmlBody expects String`,
 		},
+		{
+			name: "getter-arity",
+			src:  `Messaging.SingleEmailMessage msg = new Messaging.SingleEmailMessage(); msg.getSubject('extra');`,
+			want: `Messaging.SingleEmailMessage.getSubject expects 0 arguments`,
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -623,12 +672,25 @@ System.assertEquals(0, ApexPages.getMessages().size());
 func TestExecMessagingMassEmailLocalShape(t *testing.T) {
 	program, err := CompileAnonymous(`
 Messaging.MassEmailMessage mass = new Messaging.MassEmailMessage();
+System.assertEquals(0, mass.getTargetObjectIds().size());
+System.assertEquals(0, mass.getWhatIds().size());
+System.assertEquals(null, mass.getTemplateId());
+System.assertEquals(null, mass.getDescription());
+System.assertEquals(null, mass.getOptOutPolicy());
+System.assertEquals(false, mass.getSaveAsActivity());
 mass.setTargetObjectIds(new List<String>{'003000000000001', '003000000000002'});
 mass.setWhatIds(new List<String>{'001000000000001'});
 mass.setTemplateId('00X000000000001');
 mass.setDescription('Trail mass email');
 mass.setOptOutPolicy('FILTER');
 mass.setSaveAsActivity(false);
+System.assertEquals('003000000000001', mass.getTargetObjectIds().get(0));
+System.assertEquals('003000000000002', mass.getTargetObjectIds().get(1));
+System.assertEquals('001000000000001', mass.getWhatIds().get(0));
+System.assertEquals('00X000000000001', mass.getTemplateId());
+System.assertEquals('Trail mass email', mass.getDescription());
+System.assertEquals('FILTER', mass.getOptOutPolicy());
+System.assertEquals(false, mass.getSaveAsActivity());
 List<Messaging.SendEmailResult> results = Messaging.sendEmail(new List<Messaging.MassEmailMessage>{mass});
 System.assertEquals(1, Limits.getEmailInvocations());
 System.assertEquals(1, results.size());
@@ -640,6 +702,14 @@ System.assertEquals(0, results.get(0).getErrors().size());
 	}
 	if _, err := New(nil).Execute(program); err != nil {
 		t.Fatal(err)
+	}
+
+	program, err = CompileAnonymous(`Messaging.MassEmailMessage mass = new Messaging.MassEmailMessage(); mass.getTemplateId('extra');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err == nil || err.Error() != "Messaging.MassEmailMessage.getTemplateId expects 0 arguments" {
+		t.Fatalf("err = %v", err)
 	}
 }
 
