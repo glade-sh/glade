@@ -404,6 +404,9 @@ func runServerFixture(fixture Fixture) (RunResult, error) {
 		if step.Body != "" {
 			req.Header.Set("Content-Type", "application/json")
 		}
+		for name, value := range step.Headers {
+			req.Header.Set(name, value)
+		}
 		rec := httptest.NewRecorder()
 		handler.ServeHTTP(rec, req)
 		statuses = append(statuses, rec.Code)

@@ -605,6 +605,11 @@ a Salesforce-shaped local API server without silently wrong behavior.
 ## 8. Local API Server
 
 - [ ] Complete auth/user context stubs enough for local integrations.
+  - [x] Make identity/userinfo choose deterministic local users via
+    `X-OAER-User-Id`, `Authorization: Bearer <userId>`, default platform user,
+    and lexicographic fallback without enforcing auth globally.
+  - [ ] Thread selected server user context into Tooling executeAnonymous
+    without enabling Apex test-only context.
 - [ ] Expand Salesforce-like error response shapes and status codes.
 - [ ] Complete `/services/data` resource discovery for commonly used REST
   resources.

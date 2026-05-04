@@ -43,7 +43,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if len(parts) == 3 && parts[0] == "id" {
-		writeJSON(w, http.StatusOK, s.identityPayload(r))
+		writeJSON(w, http.StatusOK, s.identityPayload(r, storage.ID(parts[2])))
 		return
 	}
 	if len(parts) == 2 && parts[0] == "services" && parts[1] == "data" {
@@ -75,7 +75,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case len(rest) == 1 && rest[0] == "recent":
 		s.handleRecent(w, r)
 	case len(rest) == 1 && rest[0] == "search":
-		writeError(w, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", "Search/SOSL is not implemented in the local server")
+		writeSalesforceError(w, errUnsupportedFeature, "Search/SOSL is not implemented in the local server")
 	case len(rest) == 1 && rest[0] == "limits":
 		s.handleLimits(w, r)
 	case len(rest) >= 1 && rest[0] == "tooling":
@@ -116,7 +116,7 @@ func (s *Server) handleSObjects(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleRecent(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
+		writeMethodNotAllowed(w, http.MethodGet)
 		return
 	}
 	writeJSON(w, http.StatusOK, recentAllPayload(*s.Org))
@@ -498,7 +498,7 @@ func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, parts [
 		return
 	}
 	if len(parts) >= 1 && (parts[0] == "batch" || parts[0] == "tree" || parts[0] == "graph") {
-		writeError(w, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", "Composite "+parts[0]+" is not implemented in the local server")
+		writeSalesforceError(w, errUnsupportedFeature, "Composite "+parts[0]+" is not implemented in the local server")
 		return
 	}
 	if len(parts) == 1 && parts[0] == "sobjects" {
@@ -623,49 +623,144 @@ func writeJSON(w http.ResponseWriter, status int, value any) {
 	_ = json.NewEncoder(w).Encode(value)
 }
 
+const defaultLocalUserID = storage.ID("005000000000001")
+
 func (s *Server) currentUserID() storage.ID {
-	if user := s.currentUser(); user.ID != "" {
+	if user := s.currentUser(nil, ""); user.ID != "" {
 		return user.ID
 	}
-	return "005000000000001"
+	return defaultLocalUserID
 }
 
-func (s *Server) currentUser() storage.Record {
+func (s *Server) currentUser(r *http.Request, pathUserID storage.ID) storage.Record {
 	object := s.Org.Objects["User"]
-	for _, record := range object.Records {
+	if r != nil {
+		if record, ok := userRecord(object, selectedUserID(r, pathUserID)); ok {
+			return record
+		}
+	}
+	if record, ok := userRecord(object, defaultLocalUserID); ok {
 		return record
 	}
-	return storage.Record{ID: "005000000000001", Object: "User", Fields: map[string]storage.Value{"Username": storage.StringValue("system@example.invalid")}}
+	ids := make([]string, 0, len(object.Records))
+	for id := range object.Records {
+		ids = append(ids, string(id))
+	}
+	sort.Strings(ids)
+	for _, id := range ids {
+		if record, ok := userRecord(object, storage.ID(id)); ok {
+			return record
+		}
+	}
+	return storage.Record{ID: defaultLocalUserID, Object: "User", Fields: map[string]storage.Value{"Username": storage.StringValue("system@example.invalid")}}
 }
 
-func (s *Server) identityPayload(r *http.Request) map[string]any {
-	user := s.currentUser()
-	username := "system@example.invalid"
-	if value, ok := user.Fields["Username"]; ok && value.Kind == storage.ValueString {
-		username = value.String
+func selectedUserID(r *http.Request, pathUserID storage.ID) storage.ID {
+	if value := strings.TrimSpace(r.Header.Get("X-OAER-User-Id")); value != "" {
+		return storage.ID(value)
+	}
+	if value := bearerUserID(r.Header.Get("Authorization")); value != "" {
+		return value
+	}
+	return pathUserID
+}
+
+func bearerUserID(header string) storage.ID {
+	parts := strings.Fields(header)
+	if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
+		return ""
+	}
+	return storage.ID(parts[1])
+}
+
+func userRecord(object storage.ObjectState, id storage.ID) (storage.Record, bool) {
+	if id == "" {
+		return storage.Record{}, false
+	}
+	record, ok := object.Records[id]
+	if !ok {
+		return storage.Record{}, false
+	}
+	if record.ID == "" {
+		record.ID = id
+	}
+	if record.Object == "" {
+		record.Object = "User"
+	}
+	if record.Fields == nil {
+		record.Fields = map[string]storage.Value{}
+	}
+	return record, true
+}
+
+func (s *Server) identityPayload(r *http.Request, pathUserID storage.ID) map[string]any {
+	user := s.currentUser(r, pathUserID)
+	username := userString(user, "Username", "system@example.invalid")
+	displayName := userDisplayName(user, username)
+	userType := strings.ToUpper(userString(user, "UserType", "STANDARD"))
+	active := true
+	if value, ok := user.Fields["IsActive"]; ok && value.Kind == storage.ValueBoolean {
+		active = value.Boolean
 	}
 	base := "http://" + r.Host
+	orgID := nonEmpty(s.Org.OrgID, "00D000000000001")
 	return map[string]any{
-		"id":              base + "/id/" + nonEmpty(s.Org.OrgID, "00D000000000001") + "/" + string(user.ID),
-		"organization_id": nonEmpty(s.Org.OrgID, "00D000000000001"),
+		"id":              base + "/id/" + orgID + "/" + string(user.ID),
+		"organization_id": orgID,
 		"user_id":         user.ID,
 		"username":        username,
-		"display_name":    username,
-		"active":          true,
-		"user_type":       "STANDARD",
+		"display_name":    displayName,
+		"active":          active,
+		"user_type":       userType,
 	}
 }
 
 func (s *Server) userInfoPayload(r *http.Request) map[string]any {
-	identity := s.identityPayload(r)
+	user := s.currentUser(r, "")
+	identity := s.identityPayload(r, user.ID)
+	username := userString(user, "Username", "system@example.invalid")
 	return map[string]any{
 		"sub":                identity["user_id"],
 		"user_id":            identity["user_id"],
 		"organization_id":    identity["organization_id"],
 		"preferred_username": identity["username"],
 		"name":               identity["display_name"],
-		"email":              identity["username"],
+		"email":              userString(user, "Email", username),
 	}
+}
+
+func userString(user storage.Record, field, fallback string) string {
+	value, ok := user.Fields[field]
+	if !ok {
+		return fallback
+	}
+	switch value.Kind {
+	case storage.ValueString, storage.ValueDate, storage.ValueDateTime:
+		if value.String != "" {
+			return value.String
+		}
+	case storage.ValueDecimal:
+		if value.Decimal != "" {
+			return value.Decimal
+		}
+	case storage.ValueID:
+		if value.ID != "" {
+			return string(value.ID)
+		}
+	}
+	return fallback
+}
+
+func userDisplayName(user storage.Record, username string) string {
+	if name := userString(user, "Name", ""); name != "" {
+		return name
+	}
+	first := userString(user, "FirstName", "")
+	last := userString(user, "LastName", "")
+	if full := strings.TrimSpace(first + " " + last); full != "" {
+		return full
+	}
+	return username
 }
 
 func describePayload(def storage.ObjectDefinition) map[string]any {
