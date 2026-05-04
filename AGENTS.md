@@ -173,6 +173,21 @@ startup, and compat commands.
 
 ## Working Rules
 
+- Current priority, as of 2026-05-03, is Section 8 Local API Server parity and
+  integration gates. The detailed execution plan lives in the active Copilot
+  session plan, but the durable direction is: finish server/API surfaces and
+  compatibility gates before taking on unrelated parser or stdlib depth.
+- Deep core stdlib parity is being developed in separate worktrees. Do not
+  duplicate that work on main. Keep mainline changes focused on integration
+  readiness, server/API behavior, fixtures, capability notes, and generated
+  docs unless a server task needs a small runtime hook.
+- The `data-platform-search-edges` worktree contains a small orthogonal
+  Search/SOSL unsupported-diagnostic slice that can be ported without pulling
+  the full stdlib branch. Port only that slice if needed.
+- Keep the parser cutover out of MVP/server work. The parser proof-of-concept
+  uses a local `github.com/open-aer/apex-parser` replacement and belongs to the
+  cutover documented in `docs/APEX_PARSER_CUTOVER.md`, not incidental feature
+  work.
 - When moving a capability from `partial` to `supported`, add compatibility
   coverage first.
 - Update generated docs after capability changes:
@@ -185,6 +200,34 @@ go run ./cmd/oaer compat stdlib --output docs/STDLIB_COVERAGE.md
 
 - Do not introduce proprietary AER internals as implementation sources.
 - Do not check in `.DS_Store`, `/bin/`, `/dist/`, or `coverage.out`.
+- Do not stage or commit the built `oaer` binary unless the user explicitly asks
+  for a binary update.
+
+### Server/API Parity Work Order
+
+Use this order for Section 8 server/API work unless a later checked-in plan says
+otherwise:
+
+1. Establish a clean baseline with generated-doc checks and focused
+   `internal/server`, `internal/storage`, and `internal/oaercli` tests.
+2. Port Search/SOSL unsupported diagnostics, if still absent, without importing
+   broad stdlib changes.
+3. Centralize Salesforce-shaped server error arrays and status-code mapping.
+4. Add deterministic local auth and user-context stubs without claiming full
+   OAuth security.
+5. Harden mutating request transactions so CRUD, Tooling executeAnonymous,
+   Composite, fixture load, reset, persistence, and rollback all use one
+   clone/execute/persist/commit discipline.
+6. Expand resource discovery, SObject REST response shapes, Tooling stubs, and
+   Composite behavior in small covered slices.
+7. Add black-box server compatibility fixtures before changing capability
+   status or checking off parity tasks.
+8. Reconcile `docs/FEATURE_PARITY_TODO.md`, `internal/capability`, generated
+   docs, and release notes before each phase commit.
+
+Treat unsupported large surfaces, such as full Composite Graph or Bulk API, as
+explicit unsupported responses until fixtures prove local behavior. A clean
+unsupported answer is better than a shallow fake.
 
 ## MVP Gate and Capability System
 
