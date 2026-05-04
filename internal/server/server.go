@@ -90,7 +90,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	switch {
 	case len(rest) == 1 && rest[0] == "sobjects":
-		s.handleSObjects(w, r)
+		s.handleSObjects(w, r, parts[2])
 	case len(rest) >= 2 && rest[0] == "sobjects":
 		s.handleObject(w, r, parts[2], rest[1:])
 	case len(rest) == 1 && rest[0] == "query":
@@ -110,7 +110,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) handleSObjects(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleSObjects(w http.ResponseWriter, r *http.Request, version string) {
 	if r.Method != http.MethodGet {
 		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
 		return
@@ -127,9 +127,9 @@ func (s *Server) handleSObjects(w http.ResponseWriter, r *http.Request) {
 			"name":        name,
 			"label":       object.Definition.Label,
 			"keyPrefix":   object.Definition.KeyPrefix,
-			"url":         "/services/data/v61.0/sobjects/" + name,
-			"describe":    "/services/data/v61.0/sobjects/" + name + "/describe",
-			"recentItems": "/services/data/v61.0/sobjects/" + name + "/recent",
+			"url":         "/services/data/" + version + "/sobjects/" + name,
+			"describe":    "/services/data/" + version + "/sobjects/" + name + "/describe",
+			"recentItems": "/services/data/" + version + "/sobjects/" + name + "/recent",
 		})
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"sobjects": objects})

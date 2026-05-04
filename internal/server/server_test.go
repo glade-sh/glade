@@ -150,6 +150,12 @@ func TestResourceDiscoveryEndpoints(t *testing.T) {
 	if versioned.Code != http.StatusOK || !bytes.Contains(versioned.Body.Bytes(), []byte(`/services/data/v62.0/tooling/executeAnonymous`)) {
 		t.Fatalf("versioned tooling status = %d body=%s", versioned.Code, versioned.Body.String())
 	}
+
+	versionedSObjects := httptest.NewRecorder()
+	handler.ServeHTTP(versionedSObjects, httptest.NewRequest(http.MethodGet, "/services/data/v62.0/sobjects", nil))
+	if versionedSObjects.Code != http.StatusOK || !bytes.Contains(versionedSObjects.Body.Bytes(), []byte(`/services/data/v62.0/sobjects/Account/describe`)) {
+		t.Fatalf("versioned sobjects status = %d body=%s", versionedSObjects.Code, versionedSObjects.Body.String())
+	}
 }
 
 func TestOAERFixtureAndResetEndpointsPersist(t *testing.T) {

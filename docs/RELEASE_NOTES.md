@@ -45,9 +45,13 @@ Release engineering:
 - Added `check` compatibility fixture execution, schema-aware check fixtures,
   and enterprise-style multi-class selector/service/domain fixtures covering
   parse/index/check behavior.
-- Added server black-box compatibility fixtures for version discovery, CRUD,
-  SOQL query, Tooling `executeAnonymous`, composite insert, Salesforce-shaped
-  errors, OAuth userinfo/id stubs, scoped reset, and SQLite persistence.
+- Added server black-box compatibility fixtures for version/resource discovery,
+  OAuth userinfo/id stubs, REST-shaped SObject CRUD/describe/recent/query/
+  queryAll, Tooling `executeAnonymous` success/failure/rollback and unsupported
+  Tooling object errors, Composite sObject reference IDs/partial success/
+  all-or-none rollback, explicit unsupported Composite batch responses,
+  Salesforce-shaped errors, OAER fixture seed/export/reset, and SQLite
+  persistence.
 - Added enterprise trigger-heavy, describe-heavy, namespace-heavy, and
   package-style compatibility fixtures, with SFDX namespace/package-directory
   support in schema-aware check fixtures.

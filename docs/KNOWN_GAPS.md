@@ -82,7 +82,7 @@ The MVP target is `full-featured aer-parity MVP`. This document lists required c
 ### `server.local-api`: Salesforce-shaped local API with CRUD/query/executeAnonymous
 
 - Status: `partial`
-- Gap: CRUD/query/queryAll, describe/recent, limits, OAuth userinfo/id stubs, Tooling executeAnonymous, composite sObject insert, normal REST JSON payloads, Salesforce-shaped error arrays, SQLite persistence, and fixture/scoped reset endpoints are wired with black-box compatibility coverage. Full auth, Tooling object coverage, Composite Graph, Bulk API, and broader REST resources remain incomplete.
+- Gap: Version/root discovery, SObject CRUD with normal REST JSON payloads and explicit nulls, describe/recent, query/queryAll with REST-shaped attributes and soft-deleted row visibility, limits, OAuth userinfo/id stubs with local user selection, Tooling executeAnonymous GET/POST success and failure shapes, supported local-object Tooling queries, Composite sObject insert with referenceId/partial success/allOrNone rollback, Salesforce-shaped error arrays, SQLite persistence, and OAER fixture/scoped reset endpoints are wired with black-box compatibility coverage. Full auth, unmodeled Tooling objects, Composite batch/Graph, Bulk API, layout metadata, and broader REST resources remain incomplete or explicitly unsupported.
 
 ## Release
 

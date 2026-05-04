@@ -604,24 +604,64 @@ a Salesforce-shaped local API server without silently wrong behavior.
 
 ## 8. Local API Server
 
-- [ ] Complete auth/user context stubs enough for local integrations.
-- [ ] Expand Salesforce-like error response shapes and status codes.
-- [ ] Complete `/services/data` resource discovery for commonly used REST
+- [x] Complete auth/user context stubs enough for local integrations.
+  - [x] Accept local bearer tokens, expose deterministic `/id` and
+    `/services/oauth2/userinfo` payloads, and support `X-OAER-User-Id` for
+    selecting existing local users without echoing unknown IDs.
+  - **Limitation**: this is a deterministic local testing stub, not OAuth
+    security.
+- [x] Expand Salesforce-like error response shapes and status codes.
+  - [x] Return JSON error arrays with stable `errorCode`, `message`, and DML
+    `fields` details for missing objects/records, method mismatches, malformed
+    JSON/SOQL, DML validation, unsupported Tooling objects, and unsupported
+    Composite batch requests.
+- [x] Complete `/services/data` resource discovery for commonly used REST
   resources.
-- [ ] Expand SObject REST resources: describe, layout-adjacent metadata where
+  - [x] Advertise version, root resources, SObject, query/queryAll, limits,
+    Tooling, Composite, and OAER fixture/reset links with request-versioned
+    URLs.
+- [x] Expand SObject REST resources: describe, layout-adjacent metadata where
   useful, recent, query, queryAll, and record CRUD edge cases.
-- [ ] Expand Tooling API coverage beyond `executeAnonymous` and query
+  - [x] Decode normal REST JSON payloads, preserve explicit nulls, return
+    record/query/recent `attributes.type` and `attributes.url`, include common
+    describe field metadata, and make `queryAll` include soft-deleted rows.
+  - **Limitation**: full layout metadata and every Salesforce describe field are
+    still outside the local subset.
+- [x] Expand Tooling API coverage beyond `executeAnonymous` and query
   delegation.
+  - [x] Cover GET and POST `executeAnonymous` success/failure shapes, rollback
+    on runtime failure, local limit-mode execution, supported local-object
+    Tooling queries, and stable unsupported errors for unmodeled Tooling objects.
+  - **Limitation**: Tooling SObjects such as `ApexClass`, `ApexTrigger`,
+    `ApexLog`, and `TraceFlag` are not modeled.
 - [ ] Add more REST resources used by local integrations and editor tooling.
-- [ ] Add Composite API coverage beyond baseline sObject insert, including
+  - Current covered resources are the local data, limits, Tooling,
+    Composite-sObjects, and OAER fixture/reset subset. Broader resources should
+    be added only with black-box fixtures.
+- [x] Add Composite API coverage beyond baseline sObject insert, including
   all-or-none rollback and reference ID behavior.
+  - [x] Preserve result ordering, echo `referenceId`, return per-record
+    `id`/`success`/`errors`, commit partial successes when `allOrNone=false`,
+    and roll back exact all-or-none failure batches.
+  - **Limitation**: broad Composite batch/Graph APIs return explicit unsupported
+    errors rather than shallow fake behavior.
 - [ ] Add Bulk API approximations if needed by local integration tests.
-- [ ] Ensure anonymous Apex runs against the same persistent server database,
+  - Bulk API remains intentionally unimplemented until a fixture-backed local
+    integration need appears.
+- [x] Ensure anonymous Apex runs against the same persistent server database,
   transaction boundaries, user context, and limits.
-- [ ] Add server fixture reset endpoints for test data, org state, limits, and
+  - [x] Tooling `executeAnonymous` uses the server org/store, cloned-org commit
+    boundary, VM default local user context, and server limit mode.
+- [x] Add server fixture reset endpoints for test data, org state, limits, and
   async queues.
-- [ ] Add black-box server compatibility fixtures for CRUD, query,
+  - [x] Support full reset plus scoped `data`, `users`, `platform`, `limits`,
+    and `async` reset requests via path, query, and JSON body scopes.
+- [x] Add black-box server compatibility fixtures for CRUD, query,
   executeAnonymous, composite, errors, auth stubs, and persistence.
+  - [x] `docs/fixtures/server-black-box.json` now covers resource discovery,
+    OAuth/id stubs, SObject CRUD/describe/recent/query/queryAll, Tooling,
+    Composite sObjects, explicit unsupported Composite batch, OAER
+    fixture/reset, error arrays, and SQLite persistence after reset.
 
 ## 9. Compatibility, Hardening, And Release
 
