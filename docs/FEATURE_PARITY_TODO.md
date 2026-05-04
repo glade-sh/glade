@@ -879,11 +879,16 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Return Tooling `query`/`queryAll` pagination continuations under
     `/tooling/query/{locator}` with GET-only queryMore method boundaries.
   - [x] Return a conservative Tooling root discovery payload and pin Apex test
-    run/suite Tooling records as explicit unsupported local stubs.
+     run/suite Tooling records as explicit unsupported local stubs.
   - [x] Fence Tooling metadata/test orchestration write probes with JSON body
-    validation, read-only Apex test result method boundaries, Apex test queue
-    required-field errors, and explicit unsupported responses for container and
-    test-run route families.
+     validation, read-only Apex test result method boundaries, Apex test queue
+     required-field errors, and explicit unsupported responses for container and
+     test-run route families.
+  - [x] Fence Tooling deploy-chain member objects (`ContainerMember`,
+    `ApexClassMember`, `ApexTriggerMember`, `ApexPageMember`,
+    `ApexComponentMember`, and `StaticResourceMember`) with explicit unsupported
+    collection/record responses plus JSON and `MetadataContainerId` validation
+    instead of silently accepting local deploy writes.
 - [ ] Add more REST resources used by local integrations and editor tooling.
   - [x] Return a deterministic, conservative `/limits` payload with common
     Salesforce limit names and stable `Max`/`Remaining` fields for local client
@@ -924,10 +929,13 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Harden Bulk API v2 method boundaries for common query and ingest route
     shapes while preserving explicit unsupported responses for allowed methods.
   - [x] Return a conservative Bulk Jobs root discovery payload for query and
-    ingest families while keeping job execution unsupported.
+     ingest families while keeping job execution unsupported.
   - [x] Pin Bulk API v2 job-result route bodies and method boundaries for query
-    result locators plus ingest successful, failed, and unprocessed records while
-    keeping real Bulk processing unsupported.
+     result locators plus ingest successful, failed, and unprocessed records while
+     keeping real Bulk processing unsupported.
+  - [x] Validate Bulk API v2 query/ingest job create and update JSON bodies
+    before returning explicit unsupported responses, preserving method
+    boundaries and avoiding fake Bulk state changes.
 - [ ] Ensure anonymous Apex runs against the same persistent server database,
   transaction boundaries, user context, and limits.
   - [x] Add black-box server fixture evidence that Tooling
@@ -985,8 +993,11 @@ a Salesforce-shaped local API server without silently wrong behavior.
     empty list-view collection stubs, and Apex test Tooling record stubs in the
     server black-box fixture.
   - [x] Cover grouped Tooling metadata container, container async request, Apex
-    test queue/result, query method, and run-tests orchestration boundaries in
-    the server black-box fixture.
+     test queue/result, query method, and run-tests orchestration boundaries in
+     the server black-box fixture.
+  - [x] Cover OAuth method boundaries, Tooling deploy-chain member object stubs,
+    and Bulk query/ingest mutator body validation in the server black-box
+    fixture.
 
 ## 9. Compatibility, Hardening, And Release
 

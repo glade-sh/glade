@@ -802,6 +802,12 @@ func isToolingMetadataObject(name string) bool {
 		"ApexPage",
 		"ApexComponent",
 		"StaticResource",
+		"ContainerMember",
+		"ApexClassMember",
+		"ApexTriggerMember",
+		"ApexPageMember",
+		"ApexComponentMember",
+		"StaticResourceMember",
 		"ApexLog",
 		"TraceFlag",
 		"DebugLevel",
@@ -876,7 +882,27 @@ func validateToolingMetadataRequest(w http.ResponseWriter, r *http.Request, obje
 			return false
 		}
 	}
+	if isToolingDeployMemberObject(objectName) && scope == "object collection" && r.Method == http.MethodPost {
+		if _, ok := body["MetadataContainerId"]; !ok {
+			writeSalesforceError(w, errRequiredFieldMissing, objectName+".MetadataContainerId is required")
+			return false
+		}
+	}
 	return true
+}
+
+func isToolingDeployMemberObject(name string) bool {
+	switch name {
+	case "ContainerMember",
+		"ApexClassMember",
+		"ApexTriggerMember",
+		"ApexPageMember",
+		"ApexComponentMember",
+		"StaticResourceMember":
+		return true
+	default:
+		return false
+	}
 }
 
 func writeUnsupportedToolingTestRun(w http.ResponseWriter, r *http.Request, endpoint string) {
@@ -934,11 +960,21 @@ func writeUnsupportedBulkQueryJob(w http.ResponseWriter, r *http.Request, parts 
 			writeMethodNotAllowed(w, http.MethodGet, http.MethodPost)
 			return
 		}
+		if r.Method == http.MethodPost {
+			if _, ok := decodeOptionalJSONObject(w, r); !ok {
+				return
+			}
+		}
 		writeSalesforceError(w, errUnsupportedFeature, "Bulk API v2 query jobs are not implemented in the local server")
 	case len(parts) == 1:
 		if !methodAllowed(r, http.MethodGet, http.MethodPatch, http.MethodDelete) {
 			writeMethodNotAllowed(w, http.MethodGet, http.MethodPatch, http.MethodDelete)
 			return
+		}
+		if r.Method == http.MethodPatch {
+			if _, ok := decodeOptionalJSONObject(w, r); !ok {
+				return
+			}
 		}
 		writeSalesforceError(w, errUnsupportedFeature, "Bulk API v2 query job records are not implemented in the local server")
 	case len(parts) == 2 && parts[1] == "results":
@@ -959,11 +995,21 @@ func writeUnsupportedBulkIngestJob(w http.ResponseWriter, r *http.Request, parts
 			writeMethodNotAllowed(w, http.MethodGet, http.MethodPost)
 			return
 		}
+		if r.Method == http.MethodPost {
+			if _, ok := decodeOptionalJSONObject(w, r); !ok {
+				return
+			}
+		}
 		writeSalesforceError(w, errUnsupportedFeature, "Bulk API v2 ingest jobs are not implemented in the local server")
 	case len(parts) == 1:
 		if !methodAllowed(r, http.MethodGet, http.MethodPatch, http.MethodDelete) {
 			writeMethodNotAllowed(w, http.MethodGet, http.MethodPatch, http.MethodDelete)
 			return
+		}
+		if r.Method == http.MethodPatch {
+			if _, ok := decodeOptionalJSONObject(w, r); !ok {
+				return
+			}
 		}
 		writeSalesforceError(w, errUnsupportedFeature, "Bulk API v2 ingest job records are not implemented in the local server")
 	case len(parts) == 2 && parts[1] == "batches":

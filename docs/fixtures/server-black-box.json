@@ -1723,6 +1723,145 @@
         "\"success\":true",
         "001000000000001"
       ]
+    },
+    {
+      "name": "oauth-token-method-not-allowed",
+      "method": "GET",
+      "path": "/services/oauth2/token",
+      "status": 405,
+      "contains": [
+        "METHOD_NOT_ALLOWED",
+        "method not allowed"
+      ]
+    },
+    {
+      "name": "oauth-revoke-method-not-allowed",
+      "method": "GET",
+      "path": "/services/oauth2/revoke",
+      "status": 405,
+      "contains": [
+        "METHOD_NOT_ALLOWED",
+        "method not allowed"
+      ]
+    },
+    {
+      "name": "oauth-introspect-method-not-allowed",
+      "method": "GET",
+      "path": "/services/oauth2/introspect",
+      "status": 405,
+      "contains": [
+        "METHOD_NOT_ALLOWED",
+        "method not allowed"
+      ]
+    },
+    {
+      "name": "oauth-authorize-method-not-allowed",
+      "method": "POST",
+      "path": "/services/oauth2/authorize",
+      "body": "{}",
+      "status": 405,
+      "contains": [
+        "METHOD_NOT_ALLOWED",
+        "method not allowed"
+      ]
+    },
+    {
+      "name": "tooling-containermember-collection-unsupported",
+      "method": "GET",
+      "path": "/services/data/v61.0/tooling/sobjects/ContainerMember",
+      "status": 501,
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Tooling ContainerMember object collection"
+      ]
+    },
+    {
+      "name": "tooling-apexclassmember-create-unsupported",
+      "method": "POST",
+      "path": "/services/data/v61.0/tooling/sobjects/ApexClassMember",
+      "body": "{\"MetadataContainerId\":\"1dc000000000001\",\"ContentEntityId\":\"01p000000000001\",\"Body\":\"public class LocalClass {}\"}",
+      "status": 501,
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Tooling ApexClassMember object collection"
+      ]
+    },
+    {
+      "name": "tooling-containermember-missing-container",
+      "method": "POST",
+      "path": "/services/data/v61.0/tooling/sobjects/ContainerMember",
+      "body": "{\"ContentEntityId\":\"01p000000000001\"}",
+      "status": 400,
+      "contains": [
+        "REQUIRED_FIELD_MISSING",
+        "ContainerMember.MetadataContainerId is required"
+      ]
+    },
+    {
+      "name": "tooling-apextriggermember-malformed-json",
+      "method": "POST",
+      "path": "/services/data/v61.0/tooling/sobjects/ApexTriggerMember",
+      "body": "{\"MetadataContainerId\":",
+      "status": 400,
+      "contains": [
+        "JSON_PARSER_ERROR",
+        "unexpected EOF"
+      ]
+    },
+    {
+      "name": "tooling-apexpagemember-record-unsupported",
+      "method": "PATCH",
+      "path": "/services/data/v61.0/tooling/sobjects/ApexPageMember/066000000000001",
+      "body": "{\"Body\":\"<apex:page/>\"}",
+      "status": 501,
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Tooling ApexPageMember object record"
+      ]
+    },
+    {
+      "name": "bulk-query-create-malformed-json",
+      "method": "POST",
+      "path": "/services/data/v61.0/jobs/query",
+      "body": "{\"operation\":",
+      "status": 400,
+      "contains": [
+        "JSON_PARSER_ERROR",
+        "unexpected EOF"
+      ]
+    },
+    {
+      "name": "bulk-query-job-patch-malformed-json",
+      "method": "PATCH",
+      "path": "/services/data/v61.0/jobs/query/750000000000001",
+      "body": "{\"state\":",
+      "status": 400,
+      "contains": [
+        "JSON_PARSER_ERROR",
+        "unexpected EOF"
+      ]
+    },
+    {
+      "name": "bulk-ingest-create-malformed-json",
+      "method": "POST",
+      "path": "/services/data/v61.0/jobs/ingest",
+      "body": "{\"operation\":",
+      "status": 400,
+      "contains": [
+        "JSON_PARSER_ERROR",
+        "unexpected EOF"
+      ]
+    },
+    {
+      "name": "bulk-ingest-job-patch-malformed-json",
+      "method": "PATCH",
+      "path": "/services/data/v61.0/jobs/ingest/750000000000001",
+      "body": "{\"state\":",
+      "status": 400,
+      "contains": [
+        "JSON_PARSER_ERROR",
+        "unexpected EOF"
+      ]
     }
   ],
   "command": {
@@ -1737,7 +1876,7 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 155,
+      "requests": 168,
       "statuses": [
         200,
         200,
@@ -1893,7 +2032,20 @@
         404,
         200,
         200,
-        201
+        201,
+        405,
+        405,
+        405,
+        405,
+        501,
+        501,
+        400,
+        400,
+        501,
+        400,
+        400,
+        400,
+        400
       ],
       "users": 2
     }

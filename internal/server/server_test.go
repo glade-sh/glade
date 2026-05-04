@@ -1598,6 +1598,9 @@ func TestToolingCommonRoutesReturnStableUnsupportedErrors(t *testing.T) {
 		{method: http.MethodPost, path: "/services/data/v61.0/tooling/sobjects/TraceFlag", message: "Tooling TraceFlag object collection"},
 		{method: http.MethodGet, path: "/services/data/v61.0/tooling/sobjects/ApexTestResult/07M000000000001", message: "Tooling ApexTestResult object record"},
 		{method: http.MethodPatch, path: "/services/data/v61.0/tooling/sobjects/ContainerAsyncRequest/1dr000000000001", message: "Tooling ContainerAsyncRequest object record"},
+		{method: http.MethodGet, path: "/services/data/v61.0/tooling/sobjects/ContainerMember", message: "Tooling ContainerMember object collection"},
+		{method: http.MethodGet, path: "/services/data/v61.0/tooling/sobjects/ApexClassMember", message: "Tooling ApexClassMember object collection"},
+		{method: http.MethodPatch, path: "/services/data/v61.0/tooling/sobjects/ApexTriggerMember/01q000000000001", message: "Tooling ApexTriggerMember object record"},
 		{method: http.MethodGet, path: "/services/data/v61.0/tooling/sobjects/ApexTestRunResult", message: "Tooling ApexTestRunResult object collection"},
 		{method: http.MethodGet, path: "/services/data/v61.0/tooling/sobjects/ApexTestSuite/05F000000000001", message: "Tooling ApexTestSuite object record"},
 		{method: http.MethodPost, path: "/services/data/v61.0/tooling/runTestsAsynchronous", message: "Tooling runTestsAsynchronous"},
@@ -1639,6 +1642,27 @@ func TestToolingTestOrchestrationStubsValidateBodies(t *testing.T) {
 	malformedRunTests := httptest.NewRecorder()
 	handler.ServeHTTP(malformedRunTests, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/tooling/runTestsSynchronous", strings.NewReader(`{"tests":`)))
 	assertSalesforceError(t, malformedRunTests, http.StatusBadRequest, "JSON_PARSER_ERROR", "unexpected EOF")
+}
+
+func TestToolingDeployChainMemberStubsValidateBodies(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	member := httptest.NewRecorder()
+	handler.ServeHTTP(member, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/tooling/sobjects/ApexClassMember", strings.NewReader(`{"MetadataContainerId":"1dc000000000001","ContentEntityId":"01p000000000001","Body":"public class LocalClass {}"}`)))
+	assertSalesforceError(t, member, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", "Tooling ApexClassMember object collection")
+
+	missingContainer := httptest.NewRecorder()
+	handler.ServeHTTP(missingContainer, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/tooling/sobjects/ContainerMember", strings.NewReader(`{"ContentEntityId":"01p000000000001"}`)))
+	assertSalesforceError(t, missingContainer, http.StatusBadRequest, "REQUIRED_FIELD_MISSING", "ContainerMember.MetadataContainerId is required")
+
+	malformedMember := httptest.NewRecorder()
+	handler.ServeHTTP(malformedMember, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/tooling/sobjects/ApexTriggerMember", strings.NewReader(`{"MetadataContainerId":`)))
+	assertSalesforceError(t, malformedMember, http.StatusBadRequest, "JSON_PARSER_ERROR", "unexpected EOF")
+
+	record := httptest.NewRecorder()
+	handler.ServeHTTP(record, httptest.NewRequest(http.MethodPatch, "/services/data/v61.0/tooling/sobjects/ApexPageMember/066000000000001", strings.NewReader(`{"Body":"<apex:page/>"}`)))
+	assertSalesforceError(t, record, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", "Tooling ApexPageMember object record")
 }
 
 func TestToolingQueryStillDelegatesToSOQL(t *testing.T) {
@@ -1911,6 +1935,32 @@ func TestBulkAPIJobsRejectDisallowedMethodsWithAllowHeader(t *testing.T) {
 			if !bytes.Contains(rec.Body.Bytes(), []byte(`"errorCode":"METHOD_NOT_ALLOWED"`)) {
 				t.Fatalf("%s %s method shape = %s", tc.method, tc.path, rec.Body.String())
 			}
+		})
+	}
+}
+
+func TestBulkAPIJobMutatorsValidateJSONBodiesBeforeUnsupported(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	for _, tc := range []struct {
+		name   string
+		method string
+		path   string
+	}{
+		{name: "query create", method: http.MethodPost, path: "/services/data/v61.0/jobs/query"},
+		{name: "query update", method: http.MethodPatch, path: "/services/data/v61.0/jobs/query/750000000000001"},
+		{name: "ingest create", method: http.MethodPost, path: "/services/data/v61.0/jobs/ingest"},
+		{name: "ingest update", method: http.MethodPatch, path: "/services/data/v61.0/jobs/ingest/750000000000001"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			malformed := httptest.NewRecorder()
+			handler.ServeHTTP(malformed, httptest.NewRequest(tc.method, tc.path, strings.NewReader(`{"operation":`)))
+			assertSalesforceError(t, malformed, http.StatusBadRequest, "JSON_PARSER_ERROR", "unexpected EOF")
+
+			wellFormed := httptest.NewRecorder()
+			handler.ServeHTTP(wellFormed, httptest.NewRequest(tc.method, tc.path, strings.NewReader(`{"operation":"query"}`)))
+			assertSalesforceError(t, wellFormed, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", "Bulk API v2")
 		})
 	}
 }
