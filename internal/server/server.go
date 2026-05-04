@@ -893,6 +893,10 @@ func (s *Server) handleCompositeSObjects(w http.ResponseWriter, r *http.Request,
 		writeSalesforceError(w, errUnsupportedFeature, "Composite sObject typed collection routes are not implemented in the local server")
 		return
 	case http.MethodPatch:
+		if len(parts) == 3 {
+			s.handleCompositeSObjectTypedUpsert(w, r, parts[1], parts[2])
+			return
+		}
 		writeSalesforceError(w, errUnsupportedFeature, "Composite sObject collection upsert routes are not implemented in the local server")
 		return
 	case http.MethodDelete:
@@ -902,6 +906,81 @@ func (s *Server) handleCompositeSObjects(w http.ResponseWriter, r *http.Request,
 		writeMethodNotAllowed(w, http.MethodPost, http.MethodPatch, http.MethodDelete)
 		return
 	}
+}
+
+func (s *Server) handleCompositeSObjectTypedUpsert(w http.ResponseWriter, r *http.Request, objectName string, externalIDField string) {
+	objectName, ok := storage.ResolveObjectName(*s.Org, objectName)
+	if !ok {
+		writeSalesforceError(w, errUnknownObject, "unknown object "+objectName)
+		return
+	}
+	object := s.Org.Objects[objectName]
+	fieldName := externalIDField
+	if canonical, ok := storage.ResolveFieldName(object.Definition, s.Org.Namespace, externalIDField); ok {
+		fieldName = canonical
+	}
+	field, ok := object.Definition.Fields[fieldName]
+	if !ok {
+		writeSalesforceError(w, errInvalidField, "unknown external id field "+objectName+"."+externalIDField)
+		return
+	}
+	if !field.ExternalID {
+		writeSalesforceError(w, errInvalidField, "field "+objectName+"."+fieldName+" is not an external id")
+		return
+	}
+
+	var body struct {
+		AllOrNone bool                         `json:"allOrNone"`
+		Records   []map[string]json.RawMessage `json:"records"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		writeSalesforceError(w, errMalformedJSON, err.Error())
+		return
+	}
+	records := make([]storage.Record, 0, len(body.Records))
+	referenceIDs := make([]string, 0, len(body.Records))
+	for _, raw := range body.Records {
+		referenceID := ""
+		if attrsRaw, ok := raw["attributes"]; ok {
+			var attrs struct {
+				ReferenceID string `json:"referenceId"`
+			}
+			_ = json.Unmarshal(attrsRaw, &attrs)
+			referenceID = attrs.ReferenceID
+			delete(raw, "attributes")
+		}
+		record, err := recordFromRawFields(objectName, "", raw)
+		if err != nil {
+			writeSalesforceError(w, errMalformedJSON, err.Error())
+			return
+		}
+		records = append(records, record)
+		referenceIDs = append(referenceIDs, referenceID)
+	}
+
+	next := s.Org.Clone()
+	engine := dml.NewEngine(&next)
+	results := engine.UpsertWithExternalID(records, fieldName)
+	hasFailure := false
+	hasSuccess := false
+	for _, result := range results {
+		if result.Success {
+			hasSuccess = true
+		} else {
+			hasFailure = true
+		}
+	}
+	if body.AllOrNone && hasFailure {
+		writeJSON(w, http.StatusBadRequest, compositeUpsertResults(results, referenceIDs))
+		return
+	}
+	if hasSuccess {
+		if err := s.commitOrg(next); err != nil {
+			writeSalesforceError(w, errStoreFailure, err.Error())
+			return
+		}
+	}
+	writeJSON(w, http.StatusOK, compositeUpsertResults(results, referenceIDs))
 }
 
 func (s *Server) commitOrg(org storage.OrgState) error {
@@ -1822,6 +1901,47 @@ func compositeResults(results []dml.Result, referenceIDs []string) []map[string]
 		out = append(out, row)
 	}
 	return out
+}
+
+func compositeUpsertResults(results []dml.Result, referenceIDs []string) []map[string]any {
+	return compositeResultRows(results, referenceIDs, true)
+}
+
+func compositeResultRows(results []dml.Result, referenceIDs []string, includeCreated bool) []map[string]any {
+	out := make([]map[string]any, 0, len(results))
+	for i, result := range results {
+		row := map[string]any{"id": result.ID, "success": result.Success, "errors": []map[string]any{}}
+		if includeCreated {
+			row["created"] = result.Created
+		}
+		if i < len(referenceIDs) && referenceIDs[i] != "" {
+			row["referenceId"] = referenceIDs[i]
+		}
+		if !result.Success {
+			row["errors"] = compositeErrorRows(result)
+		}
+		out = append(out, row)
+	}
+	return out
+}
+
+func compositeErrorRows(result dml.Result) []map[string]any {
+	if len(result.Errors) == 0 {
+		statusCode := result.StatusCode
+		if statusCode == "" {
+			statusCode = salesforceErrorCode(errDMLFailure)
+		}
+		return []map[string]any{{"statusCode": statusCode, "message": result.Error, "fields": result.Fields}}
+	}
+	errors := make([]map[string]any, 0, len(result.Errors))
+	for _, err := range result.Errors {
+		statusCode := err.StatusCode
+		if statusCode == "" {
+			statusCode = salesforceErrorCode(errDMLFailure)
+		}
+		errors = append(errors, map[string]any{"statusCode": statusCode, "message": err.Message, "fields": err.Fields})
+	}
+	return errors
 }
 
 func nonEmpty(value, fallback string) string {

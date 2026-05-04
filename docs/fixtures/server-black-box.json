@@ -352,12 +352,20 @@
       "contains": ["UNSUPPORTED_FEATURE", "Composite sObject collection delete"]
     },
     {
-      "name": "composite-sobjects-upsert-unsupported",
+      "name": "composite-sobjects-typed-upsert-create",
       "method": "PATCH",
       "path": "/services/data/v61.0/composite/sobjects/Account/External_Id__c",
-      "body": "{\"allOrNone\":true,\"records\":[]}",
-      "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "Composite sObject collection upsert routes"]
+      "body": "{\"records\":[{\"attributes\":{\"referenceId\":\"upsertCreate\"},\"Name\":\"Upsert Created\",\"External_Id__c\":\"fixture-ext-1\"}]}",
+      "status": 200,
+      "contains": ["\"referenceId\":\"upsertCreate\"", "\"success\":true", "\"created\":true"]
+    },
+    {
+      "name": "composite-sobjects-typed-upsert-update",
+      "method": "PATCH",
+      "path": "/services/data/v61.0/composite/sobjects/Account/External_Id__c",
+      "body": "{\"records\":[{\"attributes\":{\"referenceId\":\"upsertUpdate\"},\"Name\":\"Upsert Updated\",\"External_Id__c\":\"FIXTURE-EXT-1\"}]}",
+      "status": 200,
+      "contains": ["\"referenceId\":\"upsertUpdate\"", "\"success\":true", "\"created\":false"]
     },
     {
       "name": "search-unsupported",
@@ -600,8 +608,8 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 77,
-      "statuses": [200, 200, 405, 405, 200, 200, 200, 200, 405, 501, 501, 501, 501, 200, 405, 201, 200, 200, 200, 200, 200, 501, 501, 400, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 201, 204, 200, 400, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 404, 404, 200, 200, 201],
+      "requests": 78,
+      "statuses": [200, 200, 405, 405, 200, 200, 200, 200, 405, 501, 501, 501, 501, 200, 405, 201, 200, 200, 200, 200, 200, 501, 501, 400, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 201, 204, 200, 400, 501, 501, 501, 501, 200, 200, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 404, 404, 200, 200, 201],
       "users": 2
     }
   }
