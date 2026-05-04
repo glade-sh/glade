@@ -289,6 +289,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     `SUM`, `MIN`, `MAX`, and `AVG` with `AggregateResult.exprN` fields.
   - [x] Support `GROUP BY`, `HAVING` on aggregate expressions, grouped field
     projection, and grouped result ordering/limits for aggregate rows.
+  - [x] Allow `HAVING` to filter on unselected aggregate expressions without
+    leaking hidden aggregate values into `AggregateResult` rows.
   - [x] Support aggregate aliases on `AggregateResult` rows while preserving
     `exprN` fields.
   - [x] Support `ROLLUP`, `CUBE`, and `GROUPING(field)` subtotal metadata.
@@ -362,6 +364,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Cascade soft-delete child records from relationship metadata.
   - [x] Return `ENTITY_IS_NOT_DELETED` SaveResult details when undeleting active
     records.
+  - [x] Return `ENTITY_IS_NOT_IN_RECYCLE_BIN` EmptyRecycleBinResult error details
+    when emptying active rows.
   - [x] Preserve `Database.undelete(..., false)` mixed-row result alignment for
     deleted, active, missing, and ID/object-mismatched rows, with `allOrNone`
     rollback on later undelete failures.

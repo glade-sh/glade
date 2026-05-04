@@ -12,24 +12,25 @@ import (
 )
 
 type Query struct {
-	Fields       []string
-	ChildQueries []ChildQuery
-	Typeofs      []TypeofSpec
-	Object       string
-	Where        *Condition
-	Having       *Condition
-	OrderBy      string
-	OrderDesc    bool
-	Order        []OrderSpec
-	Limit        int
-	Offset       int
-	Count        bool
-	ForUpdate    bool
-	AllRows      bool
-	SecurityMode string
-	Aggregates   []Aggregate
-	GroupBy      []string
-	GroupMode    string
+	Fields           []string
+	ChildQueries     []ChildQuery
+	Typeofs          []TypeofSpec
+	Object           string
+	Where            *Condition
+	Having           *Condition
+	OrderBy          string
+	OrderDesc        bool
+	Order            []OrderSpec
+	Limit            int
+	Offset           int
+	Count            bool
+	ForUpdate        bool
+	AllRows          bool
+	SecurityMode     string
+	Aggregates       []Aggregate
+	HavingAggregates []Aggregate
+	GroupBy          []string
+	GroupMode        string
 }
 
 type OrderSpec struct {
@@ -136,10 +137,10 @@ func Execute(org storage.OrgState, query Query) (Result, error) {
 	if err := validateQueryReferences(org, object.Definition, query, query.SecurityMode); err != nil {
 		return Result{}, err
 	}
-	if len(query.ChildQueries) > 0 && len(query.Aggregates) > 0 {
+	if len(query.ChildQueries) > 0 && queryHasAggregates(query) {
 		return Result{}, unsupportedSOQLErrorf("child relationship subqueries are not supported in aggregate queries")
 	}
-	if query.ForUpdate && len(query.Aggregates) > 0 {
+	if query.ForUpdate && queryHasAggregates(query) {
 		return Result{}, unsupportedSOQLErrorf("FOR UPDATE is not supported with aggregate queries")
 	}
 	if query.Where != nil {
@@ -171,7 +172,7 @@ func Execute(org storage.OrgState, query Query) (Result, error) {
 			matchedRecords = append(matchedRecords, record)
 		}
 	}
-	if len(query.Aggregates) > 0 {
+	if queryHasAggregates(query) {
 		records, err := aggregateRecords(org, object.Definition, matchedRecords, query)
 		if err != nil {
 			return Result{}, err
@@ -251,10 +252,14 @@ func aggregateRecords(org storage.OrgState, definition storage.ObjectDefinition,
 		if err != nil {
 			return nil, err
 		}
+		if err := addHiddenAggregateFields(fields, org, definition, records, query.HavingAggregates, nil); err != nil {
+			return nil, err
+		}
 		record := storage.Record{Object: "AggregateResult", Fields: fields}
 		if query.Having != nil && !matches(org, storage.ObjectDefinition{}, record, query.Having) {
 			return nil, nil
 		}
+		removeHiddenAggregateFields(record.Fields, query.HavingAggregates)
 		return []storage.Record{record}, nil
 	}
 
@@ -311,10 +316,14 @@ func aggregateRecords(org storage.OrgState, definition storage.ObjectDefinition,
 		for field, value := range aggregateFields {
 			fields[field] = value
 		}
+		if err := addHiddenAggregateFields(fields, org, definition, group.records, query.HavingAggregates, group.grouping); err != nil {
+			return nil, err
+		}
 		record := storage.Record{Object: "AggregateResult", Fields: fields}
 		if query.Having != nil && !matches(org, storage.ObjectDefinition{}, record, query.Having) {
 			continue
 		}
+		removeHiddenAggregateFields(record.Fields, query.HavingAggregates)
 		out = append(out, record)
 	}
 	return out, nil
@@ -367,19 +376,9 @@ func aggregateRecordValue(record storage.Record, field string) storage.Value {
 func aggregateFields(org storage.OrgState, definition storage.ObjectDefinition, records []storage.Record, aggregates []Aggregate, grouping map[string]bool) (map[string]storage.Value, error) {
 	fields := make(map[string]storage.Value, len(aggregates)*2)
 	for i, aggregate := range aggregates {
-		var value storage.Value
-		var err error
-		if aggregate.Func == "GROUPING" {
-			if grouping[aggregate.Field] {
-				value = storage.IntegerValue(1)
-			} else {
-				value = storage.IntegerValue(0)
-			}
-		} else {
-			value, err = aggregateValue(org, definition, records, aggregate)
-			if err != nil {
-				return nil, err
-			}
+		value, err := aggregateResultValue(org, definition, records, aggregate, grouping)
+		if err != nil {
+			return nil, err
 		}
 		fields[fmt.Sprintf("expr%d", i)] = value
 		if aggregate.Alias != "" {
@@ -387,6 +386,38 @@ func aggregateFields(org storage.OrgState, definition storage.ObjectDefinition, 
 		}
 	}
 	return fields, nil
+}
+
+func addHiddenAggregateFields(fields map[string]storage.Value, org storage.OrgState, definition storage.ObjectDefinition, records []storage.Record, aggregates []Aggregate, grouping map[string]bool) error {
+	for _, aggregate := range aggregates {
+		if aggregate.Alias == "" {
+			continue
+		}
+		value, err := aggregateResultValue(org, definition, records, aggregate, grouping)
+		if err != nil {
+			return err
+		}
+		fields[aggregate.Alias] = value
+	}
+	return nil
+}
+
+func removeHiddenAggregateFields(fields map[string]storage.Value, aggregates []Aggregate) {
+	for _, aggregate := range aggregates {
+		if aggregate.Alias != "" {
+			delete(fields, aggregate.Alias)
+		}
+	}
+}
+
+func aggregateResultValue(org storage.OrgState, definition storage.ObjectDefinition, records []storage.Record, aggregate Aggregate, grouping map[string]bool) (storage.Value, error) {
+	if aggregate.Func == "GROUPING" {
+		if grouping[aggregate.Field] {
+			return storage.IntegerValue(1), nil
+		}
+		return storage.IntegerValue(0), nil
+	}
+	return aggregateValue(org, definition, records, aggregate)
 }
 
 func aggregateValue(org storage.OrgState, definition storage.ObjectDefinition, records []storage.Record, aggregate Aggregate) (storage.Value, error) {
@@ -835,6 +866,11 @@ func validateQueryReferences(org storage.OrgState, definition storage.ObjectDefi
 			return err
 		}
 	}
+	for _, aggregate := range query.HavingAggregates {
+		if err := validateAggregateReference(org, definition, aggregate, mode); err != nil {
+			return err
+		}
+	}
 	for _, field := range query.GroupBy {
 		if err := validateFieldReference(org, definition, field, mode); err != nil {
 			return err
@@ -1143,6 +1179,11 @@ func aggregateOrderFieldKnown(query Query, field string) bool {
 	}
 	for i, aggregate := range query.Aggregates {
 		if field == fmt.Sprintf("expr%d", i) || (aggregate.Alias != "" && field == aggregate.Alias) {
+			return true
+		}
+	}
+	for _, aggregate := range query.HavingAggregates {
+		if aggregate.Alias != "" && field == aggregate.Alias {
 			return true
 		}
 	}
@@ -1659,7 +1700,7 @@ func (p *parser) parseQuery() (Query, error) {
 			if err != nil {
 				return Query{}, err
 			}
-			condition = rewriteConditionAggregates(condition, aggregateExprMap(q.Aggregates))
+			condition = rewriteHavingAggregates(condition, &q)
 			q.Having = &condition
 		case p.matchWord("ORDER"):
 			if !p.matchWord("BY") {
@@ -1939,7 +1980,7 @@ func aggregateSpecs(fields []string) ([]Aggregate, error) {
 }
 
 func validateAggregateQuery(query Query) error {
-	if len(query.Aggregates) == 0 {
+	if len(query.Aggregates) == 0 && len(query.HavingAggregates) == 0 {
 		if len(query.GroupBy) > 0 || query.Having != nil {
 			return fmt.Errorf("soql: GROUP BY and HAVING require aggregate fields")
 		}
@@ -1996,16 +2037,53 @@ func validateAggregateAliases(query Query) error {
 func aggregateExprMap(aggregates []Aggregate) map[string]string {
 	out := make(map[string]string, len(aggregates))
 	for i, aggregate := range aggregates {
-		field := aggregate.Func + "(" + aggregate.Field + ")"
-		if aggregate.Field == "" {
-			field = aggregate.Func + "()"
-		}
-		out[field] = fmt.Sprintf("expr%d", i)
+		out[aggregateExpression(aggregate)] = fmt.Sprintf("expr%d", i)
 		if aggregate.Alias != "" {
 			out[aggregate.Alias] = aggregate.Alias
 		}
 	}
 	return out
+}
+
+func aggregateExpression(aggregate Aggregate) string {
+	if aggregate.Field == "" {
+		return aggregate.Func + "()"
+	}
+	return aggregate.Func + "(" + aggregate.Field + ")"
+}
+
+func rewriteHavingAggregates(condition Condition, query *Query) Condition {
+	condition = rewriteConditionAggregates(condition, aggregateExprMap(query.Aggregates))
+	hidden := make(map[string]string, len(query.HavingAggregates))
+	for _, aggregate := range query.HavingAggregates {
+		if aggregate.Alias != "" {
+			hidden[aggregateExpression(aggregate)] = aggregate.Alias
+		}
+	}
+	return rewriteUnselectedHavingAggregates(condition, &query.HavingAggregates, hidden)
+}
+
+func rewriteUnselectedHavingAggregates(condition Condition, aggregates *[]Aggregate, aliases map[string]string) Condition {
+	if condition.Field != "" {
+		if aggregate, ok, err := parseAggregateField(condition.Field); err == nil && ok {
+			expression := aggregateExpression(aggregate)
+			alias, ok := aliases[expression]
+			if !ok {
+				alias = fmt.Sprintf("\x00havingAggregate%d", len(*aggregates))
+				aggregate.Alias = alias
+				*aggregates = append(*aggregates, aggregate)
+				aliases[expression] = alias
+			}
+			condition.Field = alias
+		}
+	}
+	for i := range condition.And {
+		condition.And[i] = rewriteUnselectedHavingAggregates(condition.And[i], aggregates, aliases)
+	}
+	for i := range condition.Or {
+		condition.Or[i] = rewriteUnselectedHavingAggregates(condition.Or[i], aggregates, aliases)
+	}
+	return condition
 }
 
 func rewriteConditionAggregates(condition Condition, aliases map[string]string) Condition {

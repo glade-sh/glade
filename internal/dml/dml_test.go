@@ -227,6 +227,9 @@ func TestEmptyRecycleBinRemovesDeletedRecords(t *testing.T) {
 	if notDeleted[0].Success || notDeleted[0].StatusCode != "ENTITY_IS_NOT_IN_RECYCLE_BIN" {
 		t.Fatalf("not deleted emptyRecycleBin = %#v", notDeleted)
 	}
+	if len(notDeleted[0].Errors) != 1 || notDeleted[0].Errors[0].StatusCode != "ENTITY_IS_NOT_IN_RECYCLE_BIN" {
+		t.Fatalf("not deleted emptyRecycleBin errors = %#v", notDeleted[0].Errors)
+	}
 	deleted := engine.Delete([]storage.Record{{ID: insert[0].ID, Object: "Account"}})
 	if !deleted[0].Success {
 		t.Fatalf("delete = %#v", deleted)
