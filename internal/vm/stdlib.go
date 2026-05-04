@@ -2179,13 +2179,25 @@ func unescapeHTMLEntities(text string) string {
 }
 
 var htmlNamedEntityReplacements = map[string]string{
-	"nbsp":  "\u00a0",
-	"copy":  "\u00a9",
-	"reg":   "\u00ae",
-	"trade": "\u2122",
-	"euro":  "\u20ac",
-	"ndash": "\u2013",
-	"mdash": "\u2014",
+	"nbsp":   "\u00a0",
+	"copy":   "\u00a9",
+	"reg":    "\u00ae",
+	"trade":  "\u2122",
+	"euro":   "\u20ac",
+	"ndash":  "\u2013",
+	"mdash":  "\u2014",
+	"hellip": "\u2026",
+	"bull":   "\u2022",
+	"ldquo":  "\u201c",
+	"rdquo":  "\u201d",
+	"lsquo":  "\u2018",
+	"rsquo":  "\u2019",
+	"cent":   "\u00a2",
+	"pound":  "\u00a3",
+	"yen":    "\u00a5",
+	"sect":   "\u00a7",
+	"para":   "\u00b6",
+	"middot": "\u00b7",
 }
 
 func unescapeXMLEntities(text string) string {
