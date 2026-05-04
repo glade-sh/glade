@@ -694,7 +694,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Add common `UserInfo` org/session/locale/timezone getters, including
     `TimeZoneSidKey` handoff for the modeled UTC/fixed-offset/named-zone slice.
   - [x] Add `Messaging.SingleEmailMessage` and `Messaging.MassEmailMessage`
-    setters plus structured `SendEmailResult` basics.
+    deterministic local defaults, setter/getter storage, and structured
+    `SendEmailResult` basics.
   - [x] Expand message-shape setters for address, body, threading, template
     reference, activity, signature, opt-out, priority, BCC sender, and attachment
     fields while keeping delivery/template transport and richer send options
@@ -702,7 +703,7 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Return one local `Messaging.SendEmailResult` per single or mass input
     message and support the Boolean `allOrNothing` overload without modeling
     transport; `Messaging.SendEmailOptions` remains an explicit UnsupportedFeature
-    seam.
+    surface.
   - [x] Promote `Messaging.SendEmailResult` constructor/getter defaults and
     validate `Messaging.sendEmail` list items so non-email payloads fail before
     incrementing limits.

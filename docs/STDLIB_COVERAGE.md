@@ -206,9 +206,10 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Math | `Math.sin` | `supported` | Finite deterministic result for numeric values. |
 | Math | `Math.sqrt` | `supported` | Numeric values. |
 | Math | `Math.tan` | `supported` | Finite deterministic result for numeric values. |
-| Messaging | `Messaging.MassEmailMessage` | `partial` | Common target, whatId, template, description, opt-out, and activity setters populate the local mass-message shape; no delivery transport. |
+| Messaging | `Messaging email delivery, templates, and capacity APIs` | `unsupported` | Real delivery, template rendering, capacity reservation, push notifications, sendEmailMessage, and sendEmail options remain fixture-backed UnsupportedFeature surfaces. |
+| Messaging | `Messaging.MassEmailMessage` | `supported` | Local value object has deterministic defaults plus common target, whatId, template, description, opt-out, and activity setter/getter storage; no delivery transport is attempted. |
 | Messaging | `Messaging.SendEmailResult` | `supported` | Local success result has deterministic constructor defaults and exposes isSuccess and getErrors getters. |
-| Messaging | `Messaging.SingleEmailMessage` | `partial` | Common address, body, threading, template-reference, activity, signature, opt-out, priority, BCC sender, and attachment setters populate the local message shape; no delivery transport. |
+| Messaging | `Messaging.SingleEmailMessage` | `supported` | Local value object has deterministic defaults plus common address, body, threading, template-reference, activity, signature, opt-out, priority, BCC sender, and attachment setter/getter storage; no delivery transport is attempted. |
 | Messaging | `Messaging.sendEmail` | `partial` | Single and mass message list overloads, including Boolean allOrNothing, validate local message items, return one local SendEmailResult per message, and increment email limits; transport/template APIs and SendEmailOptions surfaces return explicit unsupported diagnostics. |
 | Object | `Object.equals` | `supported` | Uses local value equality for primitives, collections, platform scalars, and object identity. |
 | Object | `Object.hashCode` | `supported` | Deterministic within local value equality; object identity hashes are request-local. |

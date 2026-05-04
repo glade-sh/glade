@@ -6881,6 +6881,42 @@ func newSendEmailResult() Value {
 	return result
 }
 
+func newSingleEmailMessage() Value {
+	message := Object("Messaging.SingleEmailMessage")
+	for _, field := range []string{
+		"toAddresses", "ccAddresses", "bccAddresses", "fileAttachments",
+		"entityAttachments", "documentAttachments", "targetObjectIds",
+	} {
+		message.Fields[field] = List()
+	}
+	for _, field := range []string{
+		"subject", "plainTextBody", "htmlBody", "replyTo", "senderDisplayName",
+		"charset", "inReplyTo", "references", "orgWideEmailAddressId",
+		"targetObjectId", "templateId", "whatId", "optOutPolicy", "emailPriority",
+	} {
+		message.Fields[field] = Null
+	}
+	for _, field := range []string{
+		"saveAsActivity", "treatBodiesAsTemplate", "treatTargetObjectAsRecipient",
+		"useSignature", "bccSender",
+	} {
+		message.Fields[field] = Bool(false)
+	}
+	return message
+}
+
+func newMassEmailMessage() Value {
+	message := Object("Messaging.MassEmailMessage")
+	for _, field := range []string{"targetObjectIds", "whatIds"} {
+		message.Fields[field] = List()
+	}
+	for _, field := range []string{"templateId", "description", "optOutPolicy"} {
+		message.Fields[field] = Null
+	}
+	message.Fields["saveAsActivity"] = Bool(false)
+	return message
+}
+
 func isLocalEmailMessage(value Value) bool {
 	return value.Kind == ValueObject && (value.Type == "Messaging.SingleEmailMessage" || value.Type == "Messaging.MassEmailMessage")
 }
@@ -7124,7 +7160,17 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 			return Null, fmt.Errorf("Messaging.SendEmailResult constructor expects 0 arguments")
 		}
 		return newSendEmailResult(), nil
-	case "Messaging.SingleEmailMessage", "Messaging.MassEmailMessage", "Messaging.SendEmailOptions":
+	case "Messaging.SingleEmailMessage":
+		if len(args) != 0 || len(namedArgs) != 0 {
+			return Null, fmt.Errorf("%s constructor expects 0 arguments", typeName)
+		}
+		return newSingleEmailMessage(), nil
+	case "Messaging.MassEmailMessage":
+		if len(args) != 0 || len(namedArgs) != 0 {
+			return Null, fmt.Errorf("%s constructor expects 0 arguments", typeName)
+		}
+		return newMassEmailMessage(), nil
+	case "Messaging.SendEmailOptions":
 		if len(args) != 0 || len(namedArgs) != 0 {
 			return Null, fmt.Errorf("%s constructor expects 0 arguments", typeName)
 		}
@@ -10842,6 +10888,15 @@ func callSingleEmailMessageMember(receiver Value, method string, args []Value) (
 		}
 		receiver.Fields[emailMessageFieldName(method)] = args[0]
 		return Null, receiver, true, true, nil
+	case "getToAddresses", "getCcAddresses", "getBccAddresses", "getFileAttachments", "getEntityAttachments", "getDocumentAttachments", "getTargetObjectIds",
+		"getSubject", "getPlainTextBody", "getHtmlBody", "getReplyTo", "getSenderDisplayName",
+		"getCharset", "getInReplyTo", "getReferences", "getOrgWideEmailAddressId",
+		"getTargetObjectId", "getTemplateId", "getWhatId", "getOptOutPolicy", "getEmailPriority",
+		"getSaveAsActivity", "getTreatBodiesAsTemplate", "getTreatTargetObjectAsRecipient", "getUseSignature", "getBccSender":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Messaging.SingleEmailMessage.%s expects 0 arguments", method)
+		}
+		return receiver.Fields[emailMessageFieldName(method)], receiver, false, true, nil
 	default:
 		return Null, receiver, false, false, nil
 	}
@@ -10867,12 +10922,21 @@ func callMassEmailMessageMember(receiver Value, method string, args []Value) (Va
 		}
 		receiver.Fields[emailMessageFieldName(method)] = args[0]
 		return Null, receiver, true, true, nil
+	case "getTargetObjectIds", "getWhatIds", "getTemplateId", "getDescription", "getOptOutPolicy", "getSaveAsActivity":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Messaging.MassEmailMessage.%s expects 0 arguments", method)
+		}
+		return receiver.Fields[emailMessageFieldName(method)], receiver, false, true, nil
 	default:
 		return Null, receiver, false, false, nil
 	}
 }
 
 func emailMessageFieldName(method string) string {
+	if strings.HasPrefix(method, "get") && len(method) > len("get") {
+		field := strings.TrimPrefix(method, "get")
+		return strings.ToLower(field[:1]) + field[1:]
+	}
 	if !strings.HasPrefix(method, "set") || len(method) <= len("set") {
 		return method
 	}

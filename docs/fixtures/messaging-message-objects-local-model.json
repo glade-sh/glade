@@ -1,0 +1,33 @@
+{
+  "name": "messaging-message-objects-local-model",
+  "evidence": [
+    {
+      "symbol": "Messaging.SingleEmailMessage",
+      "kind": "test",
+      "notes": "SingleEmailMessage has deterministic local defaults and stores supported scalar, list, attachment, template-reference, and boolean setter/getter values without attempting delivery."
+    },
+    {
+      "symbol": "Messaging.MassEmailMessage",
+      "kind": "test",
+      "notes": "MassEmailMessage has deterministic local defaults and stores supported target, whatId, template, description, opt-out, and activity setter/getter values without attempting delivery."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/classes/MessagingMessageObjectsLocalModelFixtureTest.cls",
+      "content": "@isTest private class MessagingMessageObjectsLocalModelFixtureTest { @isTest static void localMessageObjects() { Messaging.SingleEmailMessage single = new Messaging.SingleEmailMessage(); System.assertEquals(0, single.getToAddresses().size()); System.assertEquals(0, single.getFileAttachments().size()); System.assertEquals(null, single.getSubject()); System.assertEquals(null, single.getTemplateId()); System.assertEquals(false, single.getUseSignature()); single.setToAddresses(new List<String>{'to@example.test'}); single.setCcAddresses(new List<String>{'cc@example.test'}); single.setBccAddresses(new List<String>{'bcc@example.test'}); single.setSubject('Subject'); single.setPlainTextBody('Plain'); single.setHtmlBody('<p>Plain</p>'); single.setReplyTo('reply@example.test'); single.setSenderDisplayName('Sender'); single.setCharset('UTF-8'); single.setInReplyTo('<child@example.test>'); single.setReferences('<root@example.test>'); single.setOrgWideEmailAddressId('0D2000000000001'); single.setTargetObjectId('003000000000001'); single.setTemplateId('00X000000000001'); single.setWhatId('001000000000001'); single.setSaveAsActivity(false); single.setTreatBodiesAsTemplate(false); single.setTreatTargetObjectAsRecipient(false); single.setUseSignature(false); single.setEntityAttachments(new List<String>{'015000000000001'}); single.setDocumentAttachments(new List<String>{'015000000000002'}); single.setTargetObjectIds(new List<String>{'003000000000002'}); single.setOptOutPolicy('FILTER'); single.setEmailPriority('High'); single.setBccSender(true); single.setFileAttachments(new List<Object>{}); System.assertEquals('to@example.test', single.getToAddresses().get(0)); System.assertEquals('cc@example.test', single.getCcAddresses().get(0)); System.assertEquals('bcc@example.test', single.getBccAddresses().get(0)); System.assertEquals('Subject', single.getSubject()); System.assertEquals('Plain', single.getPlainTextBody()); System.assertEquals('<p>Plain</p>', single.getHtmlBody()); System.assertEquals('reply@example.test', single.getReplyTo()); System.assertEquals('Sender', single.getSenderDisplayName()); System.assertEquals('UTF-8', single.getCharset()); System.assertEquals('<child@example.test>', single.getInReplyTo()); System.assertEquals('<root@example.test>', single.getReferences()); System.assertEquals('0D2000000000001', single.getOrgWideEmailAddressId()); System.assertEquals('003000000000001', single.getTargetObjectId()); System.assertEquals('00X000000000001', single.getTemplateId()); System.assertEquals('001000000000001', single.getWhatId()); System.assertEquals(false, single.getSaveAsActivity()); System.assertEquals(false, single.getTreatBodiesAsTemplate()); System.assertEquals(false, single.getTreatTargetObjectAsRecipient()); System.assertEquals(false, single.getUseSignature()); System.assertEquals('015000000000001', single.getEntityAttachments().get(0)); System.assertEquals('015000000000002', single.getDocumentAttachments().get(0)); System.assertEquals('003000000000002', single.getTargetObjectIds().get(0)); System.assertEquals('FILTER', single.getOptOutPolicy()); System.assertEquals('High', single.getEmailPriority()); System.assertEquals(true, single.getBccSender()); System.assertEquals(0, single.getFileAttachments().size()); Messaging.MassEmailMessage mass = new Messaging.MassEmailMessage(); System.assertEquals(0, mass.getTargetObjectIds().size()); System.assertEquals(0, mass.getWhatIds().size()); System.assertEquals(null, mass.getTemplateId()); System.assertEquals(false, mass.getSaveAsActivity()); mass.setTargetObjectIds(new List<String>{'003000000000010', '003000000000011'}); mass.setWhatIds(new List<String>{'001000000000010'}); mass.setTemplateId('00X000000000010'); mass.setDescription('Trail mass email'); mass.setOptOutPolicy('FILTER'); mass.setSaveAsActivity(false); System.assertEquals('003000000000010', mass.getTargetObjectIds().get(0)); System.assertEquals('003000000000011', mass.getTargetObjectIds().get(1)); System.assertEquals('001000000000010', mass.getWhatIds().get(0)); System.assertEquals('00X000000000010', mass.getTemplateId()); System.assertEquals('Trail mass email', mass.getDescription()); System.assertEquals('FILTER', mass.getOptOutPolicy()); System.assertEquals(false, mass.getSaveAsActivity()); List<Messaging.SendEmailResult> results = Messaging.sendEmail(new List<Object>{single, mass}, false); System.assertEquals(2, results.size()); System.assert(results.get(0).isSuccess()); System.assert(results.get(1).isSuccess()); System.assertEquals(1, Limits.getEmailInvocations()); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}
