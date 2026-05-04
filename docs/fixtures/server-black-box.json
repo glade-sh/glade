@@ -96,6 +96,20 @@
       "contains": ["UNSUPPORTED_FEATURE", "layout metadata"]
     },
     {
+      "name": "default-values-unsupported",
+      "method": "GET",
+      "path": "/services/data/v61.0/sobjects/Account/defaultValues?recordTypeId&fields",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "default value metadata"]
+    },
+    {
+      "name": "row-template-placeholder-malformed",
+      "method": "GET",
+      "path": "/services/data/v61.0/sobjects/Account/%7BID%7D",
+      "status": 400,
+      "contains": ["MALFORMED_ID", "rowTemplate placeholder"]
+    },
+    {
       "name": "query-account",
       "method": "GET",
       "path": "/services/data/v61.0/query?q=SELECT%20Id,%20Name%20FROM%20Account%20WHERE%20Name%20=%20'Acme'",
@@ -310,8 +324,8 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 38,
-      "statuses": [200, 200, 200, 200, 200, 200, 201, 200, 200, 200, 501, 200, 200, 200, 200, 200, 200, 200, 400, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 404, 404, 200, 200, 201],
+      "requests": 40,
+      "statuses": [200, 200, 200, 200, 200, 200, 201, 200, 200, 200, 501, 501, 400, 200, 200, 200, 200, 200, 200, 200, 400, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 404, 404, 200, 200, 201],
       "users": 2
     }
   }

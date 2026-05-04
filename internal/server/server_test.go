@@ -326,6 +326,31 @@ func TestSObjectLayoutMetadataEdges(t *testing.T) {
 	}
 }
 
+func TestAdvertisedSObjectURLStubs(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	for _, path := range []string{
+		"/services/data/v61.0/sobjects/Account/defaultValues",
+		"/services/data/v61.0/sobjects/Account/defaultValues?recordTypeId&fields",
+	} {
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+		assertSalesforceError(t, rec, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", "default value metadata")
+	}
+
+	postDefaultValues := httptest.NewRecorder()
+	handler.ServeHTTP(postDefaultValues, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/sobjects/Account/defaultValues", nil))
+	assertSalesforceError(t, postDefaultValues, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
+	if got := postDefaultValues.Header().Get("Allow"); got != http.MethodGet {
+		t.Fatalf("Allow = %q, want %q", got, http.MethodGet)
+	}
+
+	rowTemplate := httptest.NewRecorder()
+	handler.ServeHTTP(rowTemplate, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/%7BID%7D", nil))
+	assertSalesforceError(t, rowTemplate, http.StatusBadRequest, "MALFORMED_ID", "rowTemplate placeholder")
+}
+
 func TestDescribeEndpoints(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)

@@ -23,6 +23,7 @@ const (
 	errMethodNotAllowed     serverErrorKind = "method_not_allowed"
 	errMalformedJSON        serverErrorKind = "malformed_json"
 	errMalformedQuery       serverErrorKind = "malformed_query"
+	errMalformedID          serverErrorKind = "malformed_id"
 	errInvalidReset         serverErrorKind = "invalid_reset"
 	errInvalidFixture       serverErrorKind = "invalid_fixture"
 	errUnsupportedFeature   serverErrorKind = "unsupported_feature"
@@ -48,6 +49,7 @@ var serverErrorSpecs = map[serverErrorKind]serverErrorSpec{
 	errMethodNotAllowed:     {status: http.StatusMethodNotAllowed, code: "METHOD_NOT_ALLOWED", message: "method not allowed"},
 	errMalformedJSON:        {status: http.StatusBadRequest, code: "JSON_PARSER_ERROR", message: "malformed JSON"},
 	errMalformedQuery:       {status: http.StatusBadRequest, code: "MALFORMED_QUERY", message: "malformed query"},
+	errMalformedID:          {status: http.StatusBadRequest, code: "MALFORMED_ID", message: "malformed id"},
 	errInvalidReset:         {status: http.StatusBadRequest, code: "INVALID_RESET", message: "invalid reset"},
 	errInvalidFixture:       {status: http.StatusBadRequest, code: "INVALID_FIXTURE", message: "invalid fixture"},
 	errUnsupportedFeature:   {status: http.StatusNotImplemented, code: "UNSUPPORTED_FEATURE", message: "unsupported feature"},
