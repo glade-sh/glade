@@ -3311,6 +3311,7 @@ var builtinTypes = []string{
 
 var platformTypes = []string{
 	"Account",
+	"AccessLevel",
 	"AggregateResult",
 	"ApexPages",
 	"AsyncApexJob",
@@ -3325,7 +3326,14 @@ var platformTypes = []string{
 	"Component.Apex.outputPanel",
 	"CronTrigger",
 	"Database",
+	"Database.DeleteResult",
+	"Database.DMLOptions",
+	"Database.Error",
+	"Database.MergeResult",
 	"Database.QueryLocator",
+	"Database.SaveResult",
+	"Database.UndeleteResult",
+	"Database.UpsertResult",
 	"DescribeSObjectResult",
 	"Dom",
 	"Dom.Document",

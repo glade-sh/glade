@@ -1,0 +1,28 @@
+{
+  "name": "data-platform-database-dml-unsupported-accesslevel",
+  "evidence": [
+    {
+      "symbol": "Database.insert",
+      "kind": "exec",
+      "notes": "AccessLevel DML overloads return a stable UnsupportedFeature diagnostic instead of falling through to local DML."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Database.insert(new Account(Name = 'Acme'), true, AccessLevel.USER_MODE);"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Database.insert(new Account(Name = 'Acme'), true, AccessLevel.USER_MODE);"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"Database.insert AccessLevel overload\""
+    }
+  }
+}

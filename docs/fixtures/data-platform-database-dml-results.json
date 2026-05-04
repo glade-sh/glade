@@ -1,0 +1,46 @@
+{
+  "name": "data-platform-database-dml-results",
+  "evidence": [
+    {
+      "symbol": "Database.delete",
+      "kind": "test",
+      "notes": "Single-record Database.delete returns a DeleteResult-shaped local object with id, success, and errors accessors."
+    },
+    {
+      "symbol": "Database.undelete",
+      "kind": "test",
+      "notes": "Single-record Database.undelete returns an UndeleteResult-shaped local object with id, success, and errors accessors."
+    },
+    {
+      "symbol": "Database.insert",
+      "kind": "test",
+      "notes": "allOrNone=true failures throw DmlException and roll back prior successful rows in the operation."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type><required>true</required></CustomField>"
+    },
+    {
+      "path": "force-app/main/classes/DatabaseDmlResultEdgeTest.cls",
+      "content": "@isTest private class DatabaseDmlResultEdgeTest { @isTest static void deleteAndUndeleteExposeResults() { Account a = new Account(Name = 'Acme'); insert a; Database.DeleteResult deleted = Database.delete(a, false); System.assert(deleted.isSuccess()); System.assertEquals(a.Id, deleted.getId()); System.assertEquals(0, deleted.getErrors().size()); Database.UndeleteResult restored = Database.undelete(a, false); System.assert(restored.isSuccess()); System.assertEquals(a.Id, restored.getId()); System.assertEquals(0, restored.getErrors().size()); } @isTest static void allOrNoneTrueThrowsAndRollsBack() { Account good = new Account(Name = 'Acme'); Account bad = new Account(Bogus__c = 'nope'); List<Account> records = new List<Account>{good, bad}; Boolean caught = false; try { Database.insert(records, true); } catch (DmlException e) { caught = true; System.assert(e.getMessage().contains('Database.insert failed')); System.assert(e.getMessage().contains('unknown field')); } System.assert(caught); List<Account> rows = [SELECT Id FROM Account]; System.assertEquals(0, rows.size()); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 2,
+      "passed": 2,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

@@ -1028,6 +1028,79 @@ System.assert(!upsertUpdate.isCreated());
 	}
 }
 
+func TestExecDatabaseDeleteAndUndeleteResultTypes(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account a = new Account(Name = 'Acme');
+insert a;
+Database.DeleteResult deleted = Database.delete(a, false);
+System.assert(deleted.isSuccess());
+System.assertEquals(a.Id, deleted.getId());
+System.assertEquals(0, deleted.getErrors().size());
+Database.UndeleteResult restored = Database.undelete(a, false);
+System.assert(restored.isSuccess());
+System.assertEquals(a.Id, restored.getId());
+System.assertEquals(0, restored.getErrors().size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+	if got := machine.Globals["deleted"].Type; got != "Database.DeleteResult" {
+		t.Fatalf("deleted result type = %q, want Database.DeleteResult", got)
+	}
+	if got := machine.Globals["restored"].Type; got != "Database.UndeleteResult" {
+		t.Fatalf("undelete result type = %q, want Database.UndeleteResult", got)
+	}
+}
+
+func TestExecDatabaseAllOrNoneTrueThrowsAndRollsBack(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account good = new Account(Name = 'Acme');
+Account bad = new Account(Bogus__c = 'nope');
+List<Account> records = new List<Account>{good, bad};
+Boolean caught = false;
+try {
+	Database.insert(records, true);
+} catch (DmlException e) {
+	caught = true;
+	System.assert(e.getMessage().contains('Database.insert failed'));
+	System.assert(e.getMessage().contains('unknown field'));
+}
+System.assert(caught);
+List<Account> rows = [SELECT Id FROM Account];
+System.assertEquals(0, rows.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDatabaseAccessLevelOverloadUnsupported(t *testing.T) {
+	program, err := CompileAnonymous(`Database.insert(new Account(Name = 'Acme'), true, AccessLevel.USER_MODE);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	_, err = machine.Execute(program)
+	var runtimeErr *RuntimeError
+	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != `unsupported call "Database.insert AccessLevel overload"` {
+		t.Fatalf("err = %#v, want UnsupportedFeature AccessLevel overload", err)
+	}
+}
+
 func TestExecHttpCalloutMockBasics(t *testing.T) {
 	program, err := CompileAnonymous(`
 Test.setMock('HttpCalloutMock', new MockResponse(body = 'ok', statusCode = 201));
