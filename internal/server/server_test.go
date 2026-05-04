@@ -444,6 +444,101 @@ func TestOAERScopedResetEndpoints(t *testing.T) {
 	if !bytes.Contains(resetUsers.Body.Bytes(), []byte(`"scopes":["users","limits","async"]`)) {
 		t.Fatalf("reset users response missing scopes: %s", resetUsers.Body.String())
 	}
+	var usersPayload struct {
+		NoOpScopes []string `json:"noOpScopes"`
+	}
+	if err := json.Unmarshal(resetUsers.Body.Bytes(), &usersPayload); err != nil {
+		t.Fatal(err)
+	}
+	if got, want := strings.Join(usersPayload.NoOpScopes, ","), "limits,async"; got != want {
+		t.Fatalf("no-op scopes = %q, want %q", got, want)
+	}
+}
+
+func TestOAERStateEndpointReportsSummaryAndResetSupport(t *testing.T) {
+	org := testOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	org.Objects["Account"].Records["001000000000001"] = storage.Record{
+		ID:     "001000000000001",
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Id":   storage.StringValue("001000000000001"),
+			"Name": storage.StringValue("Acme"),
+		},
+	}
+	handler := New(&org)
+
+	state := httptest.NewRecorder()
+	handler.ServeHTTP(state, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/oaer/state", nil))
+	if state.Code != http.StatusOK {
+		t.Fatalf("state status = %d body=%s", state.Code, state.Body.String())
+	}
+	var payload struct {
+		LocalOnly   bool                   `json:"localOnly"`
+		Summary     storage.InspectSummary `json:"summary"`
+		ResetScopes []resetScopeInfo       `json:"resetScopes"`
+	}
+	if err := json.Unmarshal(state.Body.Bytes(), &payload); err != nil {
+		t.Fatal(err)
+	}
+	if !payload.LocalOnly || payload.Summary.ByObject["Account"] != 1 || payload.Summary.Users != 1 {
+		t.Fatalf("state payload = %#v", payload)
+	}
+	if len(payload.ResetScopes) != 6 {
+		t.Fatalf("reset scope support = %#v", payload.ResetScopes)
+	}
+	for _, scope := range payload.ResetScopes {
+		if (scope.Name == "limits" || scope.Name == "async") && !scope.NoOp {
+			t.Fatalf("scope %q should report no-op: %#v", scope.Name, payload.ResetScopes)
+		}
+	}
+	inspect := httptest.NewRecorder()
+	handler.ServeHTTP(inspect, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/oaer/inspect", nil))
+	if inspect.Code != http.StatusOK || !bytes.Contains(inspect.Body.Bytes(), []byte(`"resetScopes"`)) {
+		t.Fatalf("inspect status = %d body=%s", inspect.Code, inspect.Body.String())
+	}
+}
+
+func TestOAERResetScopesPreserveAndClearExpectedState(t *testing.T) {
+	tests := []struct {
+		name         string
+		scope        string
+		wantAccounts int
+		wantUsers    int
+		wantProfiles int
+		wantNoOps    string
+	}{
+		{name: "data", scope: "data", wantAccounts: 0, wantUsers: 2, wantProfiles: 1},
+		{name: "users", scope: "users", wantAccounts: 1, wantUsers: 1, wantProfiles: 1},
+		{name: "platform", scope: "platform", wantAccounts: 1, wantUsers: 1, wantProfiles: 1},
+		{name: "all", scope: "all", wantAccounts: 0, wantUsers: 1, wantProfiles: 1},
+		{name: "limits async", scope: "limits,async", wantAccounts: 1, wantUsers: 2, wantProfiles: 1, wantNoOps: "limits,async"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			org := resetScopeTestOrg()
+			handler := New(&org)
+
+			reset := httptest.NewRecorder()
+			handler.ServeHTTP(reset, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/oaer/reset?scope="+tt.scope, nil))
+			if reset.Code != http.StatusOK {
+				t.Fatalf("reset status = %d body=%s", reset.Code, reset.Body.String())
+			}
+			summary := storage.InspectOrg("", org)
+			if summary.ByObject["Account"] != tt.wantAccounts || summary.Users != tt.wantUsers || summary.Profiles != tt.wantProfiles {
+				t.Fatalf("summary = %#v", summary)
+			}
+			var payload struct {
+				NoOpScopes []string `json:"noOpScopes"`
+			}
+			if err := json.Unmarshal(reset.Body.Bytes(), &payload); err != nil {
+				t.Fatal(err)
+			}
+			if got := strings.Join(payload.NoOpScopes, ","); got != tt.wantNoOps {
+				t.Fatalf("no-op scopes = %q, want %q", got, tt.wantNoOps)
+			}
+		})
+	}
 }
 
 func TestOAERScopedResetRejectsUnknownScope(t *testing.T) {
@@ -483,6 +578,35 @@ func TestOAERScopedResetDeduplicatesAndAllWins(t *testing.T) {
 	if got := len(org.Objects["User"].Records); got != 1 {
 		t.Fatalf("user records after reset = %d", got)
 	}
+}
+
+func TestOAERFixtureAndResetDoNotMutateOrgOnStoreFailure(t *testing.T) {
+	t.Run("fixture", func(t *testing.T) {
+		org := testOrg()
+		handler := NewWithStore(&org, &failingStore{})
+
+		seed := httptest.NewRecorder()
+		handler.ServeHTTP(seed, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/oaer/fixture", strings.NewReader(`{
+  "version":"oaer.storage.v1",
+  "objects":[{"name":"Account","records":[{"alias":"acme","fields":{"Name":{"kind":"string","string":"Acme"}}}]}]
+}`)))
+		assertSalesforceError(t, seed, http.StatusInternalServerError, "SERVER_ERROR", "store failed")
+		if got := len(org.Objects["Account"].Records); got != 0 {
+			t.Fatalf("account records after failed fixture load = %d", got)
+		}
+	})
+	t.Run("reset", func(t *testing.T) {
+		org := resetScopeTestOrg()
+		handler := NewWithStore(&org, &failingStore{})
+
+		reset := httptest.NewRecorder()
+		handler.ServeHTTP(reset, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/oaer/reset/data", nil))
+		assertSalesforceError(t, reset, http.StatusInternalServerError, "SERVER_ERROR", "store failed")
+		summary := storage.InspectOrg("", org)
+		if summary.ByObject["Account"] != 1 || summary.Users != 2 {
+			t.Fatalf("summary after failed reset = %#v", summary)
+		}
+	})
 }
 
 func TestIdentityLimitsDescribeRecentAndNormalRESTPayloads(t *testing.T) {
@@ -1018,6 +1142,34 @@ func testOrg() storage.OrgState {
 		},
 		Records: make(map[storage.ID]storage.Record),
 	}
+	return org
+}
+
+func resetScopeTestOrg() storage.OrgState {
+	org := testOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	org.Objects["Account"].Records["001000000000001"] = storage.Record{
+		ID:     "001000000000001",
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Id":   storage.StringValue("001000000000001"),
+			"Name": storage.StringValue("Acme"),
+		},
+	}
+	userObject := org.Objects["User"]
+	userObject.Records["005000000000999"] = storage.Record{
+		ID:     "005000000000999",
+		Object: "User",
+		Fields: map[string]storage.Value{
+			"Id":       storage.StringValue("005000000000999"),
+			"Username": storage.StringValue("extra@example.test"),
+			"Alias":    storage.StringValue("extra"),
+			"Email":    storage.StringValue("extra@example.test"),
+			"IsActive": storage.BooleanValue(true),
+			"UserType": storage.StringValue("Standard"),
+		},
+	}
+	org.Objects["User"] = userObject
 	return org
 }
 
