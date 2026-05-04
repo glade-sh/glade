@@ -132,6 +132,17 @@ func (s *Server) handleObject(w http.ResponseWriter, r *http.Request, parts []st
 			return
 		}
 		writeJSON(w, http.StatusOK, describePayload(object.Definition))
+	case isObjectMetadataRoute(parts) && r.Method == http.MethodGet:
+		object, ok := s.Org.Objects[objectName]
+		if !ok {
+			writeSalesforceError(w, errUnknownObject)
+			return
+		}
+		if isCompactLayoutsRoute(parts) {
+			writeJSON(w, http.StatusOK, compactLayoutsPayload(object.Definition))
+			return
+		}
+		writeSalesforceError(w, errUnsupportedFeature, "Full SObject layout metadata is not modeled in the local server; use describe fields and compactLayouts stub data instead")
 	case len(parts) == 2 && parts[1] == "recent" && r.Method == http.MethodGet:
 		object, ok := s.Org.Objects[objectName]
 		if !ok {
@@ -166,6 +177,8 @@ func (s *Server) handleObject(w http.ResponseWriter, r *http.Request, parts []st
 		writeMethodNotAllowed(w, http.MethodGet)
 	case len(parts) == 2 && parts[1] == "recent":
 		writeMethodNotAllowed(w, http.MethodGet)
+	case isObjectMetadataRoute(parts):
+		writeMethodNotAllowed(w, http.MethodGet)
 	case len(parts) == 1:
 		writeMethodNotAllowed(w, http.MethodGet, http.MethodPost)
 	case len(parts) == 2:
@@ -184,11 +197,11 @@ func (s *Server) handleRecord(w http.ResponseWriter, r *http.Request, objectName
 	switch r.Method {
 	case http.MethodGet:
 		record, ok := object.Records[id]
-		if !ok {
+		if !ok || record.System.IsDeleted {
 			writeSalesforceError(w, errUnknownRecord)
 			return
 		}
-		writeJSON(w, http.StatusOK, record)
+		writeJSON(w, http.StatusOK, recordPayload(record, objectName, id))
 	case http.MethodPatch:
 		record, err := decodeRecord(r, objectName, id)
 		if err != nil {
@@ -206,6 +219,11 @@ func (s *Server) handleRecord(w http.ResponseWriter, r *http.Request, objectName
 		}
 		writeDMLResult(w, http.StatusNoContent, result)
 	case http.MethodDelete:
+		stored, ok := object.Records[id]
+		if !ok || stored.System.IsDeleted {
+			writeSalesforceError(w, errUnknownRecord)
+			return
+		}
 		next := s.Org.Clone()
 		engine := dml.NewEngine(&next)
 		result := engine.Delete([]storage.Record{{Object: objectName, ID: id}})[0]
@@ -764,6 +782,17 @@ func userDisplayName(user storage.Record, username string) string {
 	return username
 }
 
+func isObjectMetadataRoute(parts []string) bool {
+	if len(parts) == 2 {
+		return parts[1] == "layouts" || parts[1] == "compactLayouts"
+	}
+	return len(parts) == 3 && parts[1] == "describe" && parts[2] == "layouts"
+}
+
+func isCompactLayoutsRoute(parts []string) bool {
+	return len(parts) == 2 && parts[1] == "compactLayouts"
+}
+
 func describePayload(def storage.ObjectDefinition) map[string]any {
 	fields := make([]map[string]any, 0, len(def.Fields))
 	names := make([]string, 0, len(def.Fields))
@@ -794,9 +823,86 @@ func describePayload(def storage.ObjectDefinition) map[string]any {
 	}
 }
 
+func compactLayoutsPayload(def storage.ObjectDefinition) map[string]any {
+	return map[string]any{
+		"compactLayouts":         []map[string]any{},
+		"defaultCompactLayoutId": nil,
+		"objectType":             def.APIName,
+		"message":                "Compact layout metadata is not modeled; returning an empty local stub.",
+	}
+}
+
+func recordPayload(record storage.Record, objectName string, id storage.ID) map[string]any {
+	if record.Object != "" {
+		objectName = record.Object
+	}
+	if record.ID != "" {
+		id = record.ID
+	}
+	out := map[string]any{
+		"attributes": map[string]any{
+			"type": objectName,
+			"url":  "/services/data/v61.0/sobjects/" + objectName + "/" + string(id),
+		},
+		"Id": string(id),
+	}
+	fieldNames := make([]string, 0, len(record.Fields)+len(record.ExplicitNulls))
+	seen := make(map[string]bool, len(record.Fields)+len(record.ExplicitNulls))
+	for name := range record.Fields {
+		if name == "Id" || name == "attributes" {
+			continue
+		}
+		fieldNames = append(fieldNames, name)
+		seen[name] = true
+	}
+	for name, isNull := range record.ExplicitNulls {
+		if !isNull || name == "Id" || name == "attributes" || seen[name] {
+			continue
+		}
+		fieldNames = append(fieldNames, name)
+	}
+	sort.Strings(fieldNames)
+	for _, name := range fieldNames {
+		if value, ok := record.Fields[name]; ok {
+			out[name] = storageValueJSON(value)
+			continue
+		}
+		out[name] = nil
+	}
+	return out
+}
+
+func storageValueJSON(value storage.Value) any {
+	switch value.Kind {
+	case storage.ValueNull:
+		return nil
+	case storage.ValueString, storage.ValueDate, storage.ValueDateTime:
+		return value.String
+	case storage.ValueInteger:
+		return value.Integer
+	case storage.ValueBoolean:
+		return value.Boolean
+	case storage.ValueDecimal:
+		return value.Decimal
+	case storage.ValueID:
+		return string(value.ID)
+	case storage.ValueList:
+		items := make([]any, 0, len(value.List))
+		for _, item := range value.List {
+			items = append(items, storageValueJSON(item))
+		}
+		return items
+	default:
+		return nil
+	}
+}
+
 func recentPayload(object storage.ObjectState) []map[string]any {
 	ids := make([]string, 0, len(object.Records))
-	for id := range object.Records {
+	for id, record := range object.Records {
+		if record.System.IsDeleted {
+			continue
+		}
 		ids = append(ids, string(id))
 	}
 	sort.Sort(sort.Reverse(sort.StringSlice(ids)))
@@ -810,7 +916,11 @@ func recentPayload(object storage.ObjectState) []map[string]any {
 		if value, ok := record.Fields["Name"]; ok {
 			name = value.String
 		}
-		out = append(out, map[string]any{"Id": id, "Name": name, "attributes": map[string]any{"type": record.Object}})
+		objectName := record.Object
+		if objectName == "" {
+			objectName = object.Definition.APIName
+		}
+		out = append(out, map[string]any{"Id": id, "Name": name, "attributes": map[string]any{"type": objectName, "url": "/services/data/v61.0/sobjects/" + objectName + "/" + id}})
 	}
 	return out
 }

@@ -59,6 +59,149 @@ func TestSObjectCRUDAndQuery(t *testing.T) {
 	}
 }
 
+func TestSObjectRecordGetShapeAndNullPatch(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	create := httptest.NewRecorder()
+	handler.ServeHTTP(create, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/sobjects/Account", strings.NewReader(`{"Name":"Acme","Description":"Old"}`)))
+	if create.Code != http.StatusCreated {
+		t.Fatalf("create status = %d body=%s", create.Code, create.Body.String())
+	}
+	var created struct {
+		ID storage.ID `json:"id"`
+	}
+	if err := json.Unmarshal(create.Body.Bytes(), &created); err != nil {
+		t.Fatal(err)
+	}
+
+	get := httptest.NewRecorder()
+	handler.ServeHTTP(get, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/"+string(created.ID), nil))
+	if get.Code != http.StatusOK {
+		t.Fatalf("get status = %d body=%s", get.Code, get.Body.String())
+	}
+	var payload map[string]any
+	if err := json.Unmarshal(get.Body.Bytes(), &payload); err != nil {
+		t.Fatal(err)
+	}
+	attrs, ok := payload["attributes"].(map[string]any)
+	if !ok {
+		t.Fatalf("attributes missing from %#v", payload)
+	}
+	if attrs["type"] != "Account" || attrs["url"] != "/services/data/v61.0/sobjects/Account/"+string(created.ID) {
+		t.Fatalf("attributes = %#v", attrs)
+	}
+	if payload["Id"] != string(created.ID) || payload["Name"] != "Acme" || payload["Description"] != "Old" {
+		t.Fatalf("record payload = %#v", payload)
+	}
+	if _, ok := payload["fields"]; ok {
+		t.Fatalf("record payload exposed storage fields wrapper: %#v", payload)
+	}
+
+	patch := httptest.NewRecorder()
+	handler.ServeHTTP(patch, httptest.NewRequest(http.MethodPatch, "/services/data/v61.0/sobjects/Account/"+string(created.ID), strings.NewReader(`{"Description":null}`)))
+	if patch.Code != http.StatusNoContent {
+		t.Fatalf("patch status = %d body=%s", patch.Code, patch.Body.String())
+	}
+	stored := org.Objects["Account"].Records[created.ID]
+	if _, ok := stored.Fields["Description"]; ok || !stored.ExplicitNulls["Description"] {
+		t.Fatalf("stored null state = fields %#v explicitNulls %#v", stored.Fields, stored.ExplicitNulls)
+	}
+
+	get = httptest.NewRecorder()
+	handler.ServeHTTP(get, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/"+string(created.ID), nil))
+	if err := json.Unmarshal(get.Body.Bytes(), &payload); err != nil {
+		t.Fatal(err)
+	}
+	if value, ok := payload["Description"]; !ok || value != nil {
+		t.Fatalf("Description after null patch = %#v in %#v", value, payload)
+	}
+}
+
+func TestSObjectCRUDMissingAndDeletedEdges(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	missingGet := httptest.NewRecorder()
+	handler.ServeHTTP(missingGet, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/001000000000999", nil))
+	assertSalesforceError(t, missingGet, http.StatusNotFound, "NOT_FOUND", "record not found")
+
+	missingDelete := httptest.NewRecorder()
+	handler.ServeHTTP(missingDelete, httptest.NewRequest(http.MethodDelete, "/services/data/v61.0/sobjects/Account/001000000000999", nil))
+	assertSalesforceError(t, missingDelete, http.StatusNotFound, "NOT_FOUND", "record not found")
+
+	create := httptest.NewRecorder()
+	handler.ServeHTTP(create, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/sobjects/Account", strings.NewReader(`{"Name":"To Delete"}`)))
+	if create.Code != http.StatusCreated {
+		t.Fatalf("create status = %d body=%s", create.Code, create.Body.String())
+	}
+	var created struct {
+		ID storage.ID `json:"id"`
+	}
+	if err := json.Unmarshal(create.Body.Bytes(), &created); err != nil {
+		t.Fatal(err)
+	}
+
+	del := httptest.NewRecorder()
+	handler.ServeHTTP(del, httptest.NewRequest(http.MethodDelete, "/services/data/v61.0/sobjects/Account/"+string(created.ID), nil))
+	if del.Code != http.StatusNoContent {
+		t.Fatalf("delete status = %d body=%s", del.Code, del.Body.String())
+	}
+	getDeleted := httptest.NewRecorder()
+	handler.ServeHTTP(getDeleted, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/"+string(created.ID), nil))
+	assertSalesforceError(t, getDeleted, http.StatusNotFound, "NOT_FOUND", "record not found")
+
+	recent := httptest.NewRecorder()
+	handler.ServeHTTP(recent, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/recent", nil))
+	if recent.Code != http.StatusOK {
+		t.Fatalf("recent status = %d body=%s", recent.Code, recent.Body.String())
+	}
+	if bytes.Contains(recent.Body.Bytes(), []byte(`To Delete`)) || bytes.Contains(recent.Body.Bytes(), []byte(created.ID)) {
+		t.Fatalf("recent exposed deleted record: %s", recent.Body.String())
+	}
+
+	allRecent := httptest.NewRecorder()
+	handler.ServeHTTP(allRecent, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/recent", nil))
+	if allRecent.Code != http.StatusOK {
+		t.Fatalf("all recent status = %d body=%s", allRecent.Code, allRecent.Body.String())
+	}
+	if bytes.Contains(allRecent.Body.Bytes(), []byte(`To Delete`)) || bytes.Contains(allRecent.Body.Bytes(), []byte(created.ID)) {
+		t.Fatalf("aggregate recent exposed deleted record: %s", allRecent.Body.String())
+	}
+}
+
+func TestSObjectLayoutMetadataEdges(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	for _, path := range []string{
+		"/services/data/v61.0/sobjects/Account/layouts",
+		"/services/data/v61.0/sobjects/Account/describe/layouts",
+	} {
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+		assertSalesforceError(t, rec, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", "layout metadata")
+	}
+
+	compact := httptest.NewRecorder()
+	handler.ServeHTTP(compact, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/compactLayouts", nil))
+	if compact.Code != http.StatusOK {
+		t.Fatalf("compact status = %d body=%s", compact.Code, compact.Body.String())
+	}
+	var payload struct {
+		ObjectType             string           `json:"objectType"`
+		CompactLayouts         []map[string]any `json:"compactLayouts"`
+		DefaultCompactLayoutID *string          `json:"defaultCompactLayoutId"`
+		Message                string           `json:"message"`
+	}
+	if err := json.Unmarshal(compact.Body.Bytes(), &payload); err != nil {
+		t.Fatal(err)
+	}
+	if payload.ObjectType != "Account" || len(payload.CompactLayouts) != 0 || payload.DefaultCompactLayoutID != nil || !strings.Contains(payload.Message, "empty local stub") {
+		t.Fatalf("compact payload = %#v", payload)
+	}
+}
+
 func TestDescribeEndpoints(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
@@ -671,6 +814,30 @@ func TestSalesforceErrorResponses(t *testing.T) {
 			wantAllow:  http.MethodGet,
 		},
 		{
+			name:       "object method not allowed",
+			method:     http.MethodPut,
+			path:       "/services/data/v61.0/sobjects/Account",
+			wantStatus: http.StatusMethodNotAllowed,
+			wantCode:   "METHOD_NOT_ALLOWED",
+			wantAllow:  http.MethodGet + ", " + http.MethodPost,
+		},
+		{
+			name:       "record method not allowed",
+			method:     http.MethodPost,
+			path:       "/services/data/v61.0/sobjects/Account/001000000000001",
+			wantStatus: http.StatusMethodNotAllowed,
+			wantCode:   "METHOD_NOT_ALLOWED",
+			wantAllow:  http.MethodGet + ", " + http.MethodPatch + ", " + http.MethodDelete,
+		},
+		{
+			name:       "metadata method not allowed",
+			method:     http.MethodPost,
+			path:       "/services/data/v61.0/sobjects/Account/compactLayouts",
+			wantStatus: http.StatusMethodNotAllowed,
+			wantCode:   "METHOD_NOT_ALLOWED",
+			wantAllow:  http.MethodGet,
+		},
+		{
 			name:          "invalid json",
 			method:        http.MethodPost,
 			path:          "/services/data/v61.0/sobjects/Account",
@@ -766,7 +933,8 @@ func testOrg() storage.OrgState {
 			APIName:   "Account",
 			KeyPrefix: "001",
 			Fields: map[string]storage.Field{
-				"Name": {APIName: "Name", Type: storage.FieldString, Required: true},
+				"Name":        {APIName: "Name", Type: storage.FieldString, Required: true},
+				"Description": {APIName: "Description", Type: storage.FieldString},
 			},
 		},
 		Records: make(map[storage.ID]storage.Record),
