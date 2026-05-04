@@ -51,11 +51,11 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if len(parts) >= 2 && parts[0] == "services" && parts[1] == "apexrest" {
-		writeError(w, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", "Apex @RestResource dispatch is not implemented in the local server")
+		writeSalesforceError(w, errUnsupportedFeature, "Apex @RestResource dispatch is not implemented in the local server")
 		return
 	}
 	if len(parts) < 3 || parts[0] != "services" || parts[1] != "data" {
-		writeError(w, http.StatusNotFound, "NOT_FOUND", "unknown endpoint")
+		writeSalesforceError(w, errUnknownEndpoint)
 		return
 	}
 	rest := parts[3:]
@@ -87,13 +87,13 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case len(rest) >= 1 && rest[0] == "oaer":
 		s.handleOAER(w, r, rest[1:])
 	default:
-		writeError(w, http.StatusNotFound, "NOT_FOUND", "unknown endpoint")
+		writeSalesforceError(w, errUnknownEndpoint)
 	}
 }
 
 func (s *Server) handleSObjects(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
+		writeMethodNotAllowed(w, http.MethodGet)
 		return
 	}
 	objects := make([]map[string]string, 0, len(s.Org.Objects))
@@ -122,28 +122,28 @@ func (s *Server) handleObject(w http.ResponseWriter, r *http.Request, parts []st
 	case len(parts) == 2 && parts[1] == "describe" && r.Method == http.MethodGet:
 		object, ok := s.Org.Objects[objectName]
 		if !ok {
-			writeError(w, http.StatusNotFound, "NOT_FOUND", "unknown object")
+			writeSalesforceError(w, errUnknownObject)
 			return
 		}
 		writeJSON(w, http.StatusOK, describePayload(object.Definition))
 	case len(parts) == 2 && parts[1] == "recent" && r.Method == http.MethodGet:
 		object, ok := s.Org.Objects[objectName]
 		if !ok {
-			writeError(w, http.StatusNotFound, "NOT_FOUND", "unknown object")
+			writeSalesforceError(w, errUnknownObject)
 			return
 		}
 		writeJSON(w, http.StatusOK, recentPayload(object))
 	case len(parts) == 1 && r.Method == http.MethodGet:
 		object, ok := s.Org.Objects[objectName]
 		if !ok {
-			writeError(w, http.StatusNotFound, "NOT_FOUND", "unknown object")
+			writeSalesforceError(w, errUnknownObject)
 			return
 		}
 		writeJSON(w, http.StatusOK, object.Definition)
 	case len(parts) == 1 && r.Method == http.MethodPost:
 		record, err := decodeRecord(r, objectName, "")
 		if err != nil {
-			writeError(w, http.StatusBadRequest, "JSON_PARSER_ERROR", err.Error())
+			writeSalesforceError(w, errMalformedJSON, err.Error())
 			return
 		}
 		next := s.Org.Clone()
@@ -151,36 +151,42 @@ func (s *Server) handleObject(w http.ResponseWriter, r *http.Request, parts []st
 		result := engine.Insert([]storage.Record{record})[0]
 		if result.Success {
 			if err := s.commitOrg(next); err != nil {
-				writeError(w, http.StatusInternalServerError, "SERVER_ERROR", err.Error())
+				writeSalesforceError(w, errStoreFailure, err.Error())
 				return
 			}
 		}
 		writeDMLResult(w, http.StatusCreated, result)
+	case len(parts) == 2 && parts[1] == "describe":
+		writeMethodNotAllowed(w, http.MethodGet)
+	case len(parts) == 2 && parts[1] == "recent":
+		writeMethodNotAllowed(w, http.MethodGet)
+	case len(parts) == 1:
+		writeMethodNotAllowed(w, http.MethodGet, http.MethodPost)
 	case len(parts) == 2:
 		s.handleRecord(w, r, objectName, storage.ID(parts[1]))
 	default:
-		writeError(w, http.StatusNotFound, "NOT_FOUND", "unknown sobject endpoint")
+		writeSalesforceError(w, errUnknownSObject)
 	}
 }
 
 func (s *Server) handleRecord(w http.ResponseWriter, r *http.Request, objectName string, id storage.ID) {
 	object, ok := s.Org.Objects[objectName]
 	if !ok {
-		writeError(w, http.StatusNotFound, "NOT_FOUND", "unknown object")
+		writeSalesforceError(w, errUnknownObject)
 		return
 	}
 	switch r.Method {
 	case http.MethodGet:
 		record, ok := object.Records[id]
 		if !ok {
-			writeError(w, http.StatusNotFound, "NOT_FOUND", "record not found")
+			writeSalesforceError(w, errUnknownRecord)
 			return
 		}
 		writeJSON(w, http.StatusOK, record)
 	case http.MethodPatch:
 		record, err := decodeRecord(r, objectName, id)
 		if err != nil {
-			writeError(w, http.StatusBadRequest, "JSON_PARSER_ERROR", err.Error())
+			writeSalesforceError(w, errMalformedJSON, err.Error())
 			return
 		}
 		next := s.Org.Clone()
@@ -188,7 +194,7 @@ func (s *Server) handleRecord(w http.ResponseWriter, r *http.Request, objectName
 		result := engine.Update([]storage.Record{record})[0]
 		if result.Success {
 			if err := s.commitOrg(next); err != nil {
-				writeError(w, http.StatusInternalServerError, "SERVER_ERROR", err.Error())
+				writeSalesforceError(w, errStoreFailure, err.Error())
 				return
 			}
 		}
@@ -199,13 +205,13 @@ func (s *Server) handleRecord(w http.ResponseWriter, r *http.Request, objectName
 		result := engine.Delete([]storage.Record{{Object: objectName, ID: id}})[0]
 		if result.Success {
 			if err := s.commitOrg(next); err != nil {
-				writeError(w, http.StatusInternalServerError, "SERVER_ERROR", err.Error())
+				writeSalesforceError(w, errStoreFailure, err.Error())
 				return
 			}
 		}
 		writeDMLResult(w, http.StatusNoContent, result)
 	default:
-		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
+		writeMethodNotAllowed(w, http.MethodGet, http.MethodPatch, http.MethodDelete)
 	}
 }
 
@@ -214,13 +220,13 @@ func (s *Server) handleOAER(w http.ResponseWriter, r *http.Request, parts []stri
 	case len(parts) >= 1 && parts[0] == "reset" && r.Method == http.MethodPost:
 		scopes, err := resetScopes(r, parts[1:])
 		if err != nil {
-			writeError(w, http.StatusBadRequest, "INVALID_RESET", err.Error())
+			writeSalesforceError(w, errInvalidReset, err.Error())
 			return
 		}
 		next := s.Org.Clone()
 		applyResetScopes(&next, scopes)
 		if err := s.commitOrg(next); err != nil {
-			writeError(w, http.StatusInternalServerError, "SERVER_ERROR", err.Error())
+			writeSalesforceError(w, errStoreFailure, err.Error())
 			return
 		}
 		writeJSON(w, http.StatusOK, map[string]any{"success": true, "scopes": scopes, "summary": storage.InspectOrg("", *s.Org)})
@@ -229,21 +235,25 @@ func (s *Server) handleOAER(w http.ResponseWriter, r *http.Request, parts []stri
 	case len(parts) == 1 && parts[0] == "fixture" && r.Method == http.MethodPost:
 		fixture, err := storage.ReadFixture(r.Body)
 		if err != nil {
-			writeError(w, http.StatusBadRequest, "JSON_PARSER_ERROR", err.Error())
+			writeSalesforceError(w, errMalformedJSON, err.Error())
 			return
 		}
 		next := s.Org.Clone()
 		if err := storage.ApplyFixture(&next, fixture); err != nil {
-			writeError(w, http.StatusBadRequest, "INVALID_FIXTURE", err.Error())
+			writeSalesforceError(w, errInvalidFixture, err.Error())
 			return
 		}
 		if err := s.commitOrg(next); err != nil {
-			writeError(w, http.StatusInternalServerError, "SERVER_ERROR", err.Error())
+			writeSalesforceError(w, errStoreFailure, err.Error())
 			return
 		}
 		writeJSON(w, http.StatusOK, map[string]any{"success": true, "summary": storage.InspectOrg("", *s.Org)})
+	case len(parts) >= 1 && parts[0] == "reset":
+		writeMethodNotAllowed(w, http.MethodPost)
+	case len(parts) == 1 && parts[0] == "fixture":
+		writeMethodNotAllowed(w, http.MethodGet, http.MethodPost)
 	default:
-		writeError(w, http.StatusNotFound, "NOT_FOUND", "unknown oaer endpoint")
+		writeSalesforceError(w, errUnknownOAER)
 	}
 }
 
@@ -322,7 +332,7 @@ func applyResetScopes(org *storage.OrgState, scopes []string) {
 
 func (s *Server) handleLimits(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
+		writeMethodNotAllowed(w, http.MethodGet)
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
@@ -339,13 +349,13 @@ func (s *Server) handleTooling(w http.ResponseWriter, r *http.Request, parts []s
 	case len(parts) == 1 && parts[0] == "query":
 		s.handleQuery(w, r)
 	default:
-		writeError(w, http.StatusNotFound, "NOT_FOUND", "unknown tooling endpoint")
+		writeSalesforceError(w, errUnknownTooling)
 	}
 }
 
 func (s *Server) handleExecuteAnonymous(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet && r.Method != http.MethodPost {
-		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
+		writeMethodNotAllowed(w, http.MethodGet, http.MethodPost)
 		return
 	}
 	source := r.URL.Query().Get("anonymousBody")
@@ -385,7 +395,7 @@ func (s *Server) handleExecuteAnonymous(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	if err := s.commitOrg(next); err != nil {
-		writeError(w, http.StatusInternalServerError, "SERVER_ERROR", err.Error())
+		writeSalesforceError(w, errStoreFailure, err.Error())
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
@@ -426,7 +436,7 @@ func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, parts [
 			Records   []map[string]json.RawMessage `json:"records"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			writeError(w, http.StatusBadRequest, "JSON_PARSER_ERROR", err.Error())
+			writeSalesforceError(w, errMalformedJSON, err.Error())
 			return
 		}
 		records := make([]storage.Record, 0, len(body.Records))
@@ -441,12 +451,12 @@ func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, parts [
 				delete(raw, "attributes")
 			}
 			if objectName == "" {
-				writeError(w, http.StatusBadRequest, "REQUIRED_FIELD_MISSING", "attributes.type is required")
+				writeSalesforceError(w, errRequiredFieldMissing, "attributes.type is required")
 				return
 			}
 			record, err := recordFromRawFields(objectName, "", raw)
 			if err != nil {
-				writeError(w, http.StatusBadRequest, "JSON_PARSER_ERROR", err.Error())
+				writeSalesforceError(w, errMalformedJSON, err.Error())
 				return
 			}
 			records = append(records, record)
@@ -469,14 +479,18 @@ func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, parts [
 		}
 		if hasSuccess {
 			if err := s.commitOrg(next); err != nil {
-				writeError(w, http.StatusInternalServerError, "SERVER_ERROR", err.Error())
+				writeSalesforceError(w, errStoreFailure, err.Error())
 				return
 			}
 		}
 		writeJSON(w, http.StatusOK, compositeResults(results))
 		return
 	}
-	writeError(w, http.StatusNotFound, "NOT_FOUND", "unknown composite endpoint")
+	if len(parts) == 1 && parts[0] == "sobjects" {
+		writeMethodNotAllowed(w, http.MethodPost)
+		return
+	}
+	writeSalesforceError(w, errUnknownComposite)
 }
 
 func (s *Server) commitOrg(org storage.OrgState) error {
@@ -496,12 +510,12 @@ func (s *Server) persistOrg(org storage.OrgState) error {
 
 func (s *Server) handleQuery(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
+		writeMethodNotAllowed(w, http.MethodGet)
 		return
 	}
 	result, err := soql.ParseAndExecute(*s.Org, r.URL.Query().Get("q"))
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "MALFORMED_QUERY", err.Error())
+		writeSalesforceError(w, errMalformedQuery, err.Error())
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
@@ -578,7 +592,7 @@ func storageValueFromJSON(value any) storage.Value {
 
 func writeDMLResult(w http.ResponseWriter, status int, result dml.Result) {
 	if !result.Success {
-		writeError(w, http.StatusBadRequest, "DML_EXCEPTION", result.Error)
+		writeSalesforceError(w, errDMLFailure, result.Error)
 		return
 	}
 	if status == http.StatusNoContent {
@@ -589,12 +603,9 @@ func writeDMLResult(w http.ResponseWriter, status int, result dml.Result) {
 }
 
 func writeJSON(w http.ResponseWriter, status int, value any) {
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(value)
-}
-
-func writeError(w http.ResponseWriter, status int, code, message string) {
-	writeJSON(w, status, []map[string]string{{"errorCode": code, "message": message}})
 }
 
 func (s *Server) currentUserID() storage.ID {
@@ -698,7 +709,7 @@ func compositeResults(results []dml.Result) []map[string]any {
 	for _, result := range results {
 		row := map[string]any{"id": result.ID, "success": result.Success, "errors": []map[string]string{}}
 		if !result.Success {
-			row["errors"] = []map[string]string{{"statusCode": "DML_EXCEPTION", "message": result.Error}}
+			row["errors"] = []map[string]string{{"statusCode": salesforceErrorCode(errDMLFailure), "message": result.Error}}
 		}
 		out = append(out, row)
 	}
