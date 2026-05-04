@@ -1,0 +1,28 @@
+{
+  "name": "test-helper-unsupported-create-stub",
+  "evidence": [
+    {
+      "symbol": "Test.createStub",
+      "kind": "exec",
+      "notes": "Stable UnsupportedFeature diagnostic"
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/classes/FixtureAnchor.cls",
+      "content": "public class FixtureAnchor {}"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Test.createStub(Account.class, null);"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"Test.createStub local stub API\""
+    }
+  }
+}

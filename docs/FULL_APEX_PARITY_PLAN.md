@@ -378,6 +378,10 @@ Cuts:
    - `Test.startTest`, `Test.stopTest`, `runAs`-adjacent behavior, setup
      methods, mock lifecycle, fixed search results, page-message clearing,
      permission-set calculation, stubs, and isolation windows.
+   - Current local slice: `Test.clearApexPageMessages`, `Test.isRunningTest`,
+     deterministic standard pricebook IDs, and `HttpCalloutMock` lifecycle have
+     fixture coverage; dynamic stub and fixed-search APIs return explicit
+     unsupported diagnostics until local search/stub models exist.
 
 2. Async
    - Future, Queueable, Batchable, Schedulable, finalizers, AsyncOptions,

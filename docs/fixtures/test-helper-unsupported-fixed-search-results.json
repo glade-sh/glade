@@ -1,0 +1,28 @@
+{
+  "name": "test-helper-unsupported-fixed-search-results",
+  "evidence": [
+    {
+      "symbol": "Test.setFixedSearchResults",
+      "kind": "exec",
+      "notes": "Stable UnsupportedFeature diagnostic"
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/classes/FixtureAnchor.cls",
+      "content": "public class FixtureAnchor {}"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Test.setFixedSearchResults(new List<String>{'001000000000001'});"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"Test.setFixedSearchResults local SOSL fixed search results\""
+    }
+  }
+}
