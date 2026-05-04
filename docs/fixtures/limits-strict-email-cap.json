@@ -1,0 +1,13 @@
+{
+  "name": "limits-strict-email-cap",
+  "evidence": [
+    {"symbol": "Messaging.sendEmail", "kind": "exec"},
+    {"symbol": "Limits.getEmailInvocations", "kind": "exec"},
+    {"symbol": "System.LimitException", "kind": "exec"}
+  ],
+  "source": [
+    {"path": "anonymous.apex", "content": "for (Integer i = 0; i < 11; i++) { Messaging.sendEmail(new List<String>{'hello'}); }"}
+  ],
+  "command": {"kind": "exec", "limitMode": "strict", "args": ["for (Integer i = 0; i < 11; i++) { Messaging.sendEmail(new List<String>{'hello'}); }"]},
+  "expected": {"error": {"type": "System.LimitException", "message": "Too many emailInvocations: 11 out of 10"}}
+}

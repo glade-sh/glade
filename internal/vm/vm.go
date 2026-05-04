@@ -927,6 +927,12 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 	if strings.HasPrefix(callee, "Search.") {
 		return Null, unsupportedCallError(callee + " local search/SOSL surface")
 	}
+	if strings.HasPrefix(callee, "Limits.") && unsupportedLimitGetter(strings.TrimPrefix(callee, "Limits.")) {
+		if len(args) != 0 {
+			return Null, fmt.Errorf("%s expects 0 arguments", callee)
+		}
+		return Null, unsupportedCallError(callee)
+	}
 	switch callee {
 	case "System.assert":
 		if len(args) != 1 && len(args) != 2 {

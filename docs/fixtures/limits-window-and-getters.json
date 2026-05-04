@@ -1,0 +1,47 @@
+{
+  "name": "limits-window-and-getters",
+  "evidence": [
+    {"symbol": "Limits.getQueries", "kind": "test"},
+    {"symbol": "Limits.getLimitQueries", "kind": "test"},
+    {"symbol": "Limits.getDmlStatements", "kind": "test"},
+    {"symbol": "Limits.getLimitDmlStatements", "kind": "test"},
+    {"symbol": "Limits.getDmlRows", "kind": "test"},
+    {"symbol": "Limits.getLimitDmlRows", "kind": "test"},
+    {"symbol": "Limits.getHeapSize", "kind": "test"},
+    {"symbol": "Limits.getLimitHeapSize", "kind": "test"},
+    {"symbol": "Limits.getCpuTime", "kind": "test"},
+    {"symbol": "Limits.getLimitCpuTime", "kind": "test"},
+    {"symbol": "Limits.getCallouts", "kind": "test"},
+    {"symbol": "Limits.getLimitCallouts", "kind": "test"},
+    {"symbol": "Limits.getAsyncJobs", "kind": "test"},
+    {"symbol": "Limits.getLimitAsyncJobs", "kind": "test"},
+    {"symbol": "Limits.getFutureCalls", "kind": "test"},
+    {"symbol": "Limits.getLimitFutureCalls", "kind": "test"},
+    {"symbol": "Limits.getQueueableJobs", "kind": "test"},
+    {"symbol": "Limits.getLimitQueueableJobs", "kind": "test"},
+    {"symbol": "Limits.getBatchJobs", "kind": "test"},
+    {"symbol": "Limits.getLimitBatchJobs", "kind": "test"},
+    {"symbol": "Limits.getScheduledJobs", "kind": "test"},
+    {"symbol": "Limits.getLimitScheduledJobs", "kind": "test"},
+    {"symbol": "Limits.getEmailInvocations", "kind": "test"},
+    {"symbol": "Limits.getLimitEmailInvocations", "kind": "test"},
+    {"symbol": "Test.startTest", "kind": "test"},
+    {"symbol": "Test.stopTest", "kind": "test"}
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/classes/LimitsWindowFixtureTest.cls",
+      "content": "@isTest private class LimitsWindowFixtureTest { @isTest static void restoresParentWindowAndReportsGetters() { insert new Account(Name = 'parent'); System.assertEquals(1, Limits.getDmlStatements()); System.assertEquals(150, Limits.getLimitDmlStatements()); System.assertEquals(1, Limits.getDmlRows()); System.assertEquals(10000, Limits.getLimitDmlRows()); System.assertEquals(0, Limits.getQueries()); System.assertEquals(100, Limits.getLimitQueries()); System.assertEquals(0, Limits.getQueryRows()); System.assertEquals(50000, Limits.getLimitQueryRows()); System.assert(Limits.getHeapSize() >= 0); System.assertEquals(6291456, Limits.getLimitHeapSize()); System.assert(Limits.getCpuTime() > 0); System.assertEquals(10000, Limits.getLimitCpuTime()); System.assertEquals(0, Limits.getCallouts()); System.assertEquals(100, Limits.getLimitCallouts()); System.assertEquals(0, Limits.getAsyncJobs()); System.assertEquals(50, Limits.getLimitAsyncJobs()); System.assertEquals(0, Limits.getFutureCalls()); System.assertEquals(50, Limits.getLimitFutureCalls()); System.assertEquals(0, Limits.getQueueableJobs()); System.assertEquals(50, Limits.getLimitQueueableJobs()); System.assertEquals(0, Limits.getBatchJobs()); System.assertEquals(5, Limits.getLimitBatchJobs()); System.assertEquals(0, Limits.getScheduledJobs()); System.assertEquals(100, Limits.getLimitScheduledJobs()); System.assertEquals(0, Limits.getEmailInvocations()); System.assertEquals(10, Limits.getLimitEmailInvocations()); Test.startTest(); insert new Account(Name = 'child'); Messaging.sendEmail(new List<String>{'hello'}); System.assertEquals(1, Limits.getDmlStatements()); System.assertEquals(1, Limits.getEmailInvocations()); Test.stopTest(); System.assertEquals(1, Limits.getDmlStatements()); System.assertEquals(0, Limits.getEmailInvocations()); } }"
+    }
+  ],
+  "command": {"kind": "test"},
+  "expected": {"result": {"errors": 0, "failed": 0, "ok": true, "passed": 1, "total": 1}}
+}

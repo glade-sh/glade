@@ -114,7 +114,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | JSON | `JSONGenerator` | `partial` | Object/array boundaries, field names, scalar string/number/Boolean/null, Date/Datetime/Time/Id/Blob, Object and validated raw value writers, getAsString, close, isClosed, and stable invalid-order errors. |
 | JSON | `JSONParser` | `partial` | Token navigation, current token/name/text, integer/long/decimal/double/Boolean/date/datetime/time/id/blob accessors, nextValue, skipChildren current-name state, and clearCurrentToken for deterministic local JSON. |
 | JSON | `JSONToken` | `partial` | Common parser token constants for object, array, field, string, number, Boolean, and null tokens. |
-| Limits | `Limits.get*` | `partial` | SOQL, DML, heap, CPU, async, callout, and email counters. |
+| Limits | `Limits.get*` | `partial` | SOQL, DML, heap, CPU, async, callout, and email counters; unmodeled documented getters return explicit unsupported diagnostics. |
 | List | `List.add` | `supported` | Adds typed local values, including indexed insertion. |
 | List | `List.addAll` | `supported` | Appends typed values from local List or Set values. |
 | List | `List.clear` | `supported` | Removes all local list elements. |

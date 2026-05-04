@@ -388,6 +388,15 @@ Cuts:
    - All documented getters, separate sync/async/test windows, configurable org
      caps, exact failure types, and deterministic accounting for local runtime
      work.
+   - Landed slice: supported `Limits.*` getter fixtures now cover SOQL, DML,
+     heap, CPU, callout, async, future, queueable, batch, scheduled, and email
+     counters; unmodeled documented getters return stable `UnsupportedFeature`
+     diagnostics; `Test.startTest`/`Test.stopTest` preserve parent counters and
+     permissive violations; strict async/email cap failures use
+     `System.LimitException`.
+   - Remaining gaps: exact Salesforce accounting, aggregate/SOSL/query-locator
+     row counters, mobile push and publish-immediate DML counters, separate
+     production async windows, and configurable per-test caps.
 
 Exit criteria:
 

@@ -213,7 +213,7 @@ var stdlibEntries = []StdlibEntry{
 	{Area: "Integer", API: "Integer.doubleValue", Status: StatusSupported, Notes: "Converts local Integer values to the local numeric representation."},
 	{Area: "Integer", API: "Integer.format", Status: StatusPartial, Notes: "Simple deterministic base-10 formatting; locale and pattern overloads return explicit unsupported errors."},
 	{Area: "Integer", API: "Integer.valueOf", Status: StatusSupported, Notes: "Parses integer strings and numeric values with 32-bit overflow checks, including trimmed signed strings."},
-	{Area: "Limits", API: "Limits.get*", Status: StatusPartial, Notes: "SOQL, DML, heap, CPU, async, callout, and email counters."},
+	{Area: "Limits", API: "Limits.get*", Status: StatusPartial, Notes: "SOQL, DML, heap, CPU, async, callout, and email counters; unmodeled documented getters return explicit unsupported diagnostics."},
 	{Area: "Long", API: "Long.MAX_VALUE", Status: StatusSupported, Notes: "Exposes the public 64-bit Long maximum constant."},
 	{Area: "Long", API: "Long.MIN_VALUE", Status: StatusSupported, Notes: "Exposes the public 64-bit Long minimum constant."},
 	{Area: "Long", API: "Long.format", Status: StatusPartial, Notes: "Simple deterministic base-10 formatting; locale and pattern overloads return explicit unsupported errors."},
