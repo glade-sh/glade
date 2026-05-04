@@ -811,6 +811,9 @@ func fieldsFunctionMode(field string) (string, bool) {
 }
 
 func validateSecurityProjection(org storage.OrgState, definition storage.ObjectDefinition, query Query) error {
+	if err := validateSecurityRelationshipPredicates(org, definition, query.Where, query.SecurityMode); err != nil {
+		return err
+	}
 	for _, field := range query.Fields {
 		if !projectionFieldKnown(org, definition, field) {
 			return fmt.Errorf("soql: field %s is not available in %s mode", field, query.SecurityMode)
@@ -851,6 +854,31 @@ func validateSecurityProjection(org storage.OrgState, definition storage.ObjectD
 		if err := validateSecurityProjection(org, child.Definition, nested); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+func validateSecurityRelationshipPredicates(org storage.OrgState, definition storage.ObjectDefinition, condition *Condition, mode string) error {
+	if condition == nil {
+		return nil
+	}
+	if condition.Not {
+		nested := *condition
+		nested.Not = false
+		return validateSecurityRelationshipPredicates(org, definition, &nested, mode)
+	}
+	for i := range condition.And {
+		if err := validateSecurityRelationshipPredicates(org, definition, &condition.And[i], mode); err != nil {
+			return err
+		}
+	}
+	for i := range condition.Or {
+		if err := validateSecurityRelationshipPredicates(org, definition, &condition.Or[i], mode); err != nil {
+			return err
+		}
+	}
+	if condition.Field != "" && strings.Contains(condition.Field, ".") && !projectionFieldKnown(org, definition, condition.Field) {
+		return fmt.Errorf("soql: field %s is not available in %s mode", condition.Field, mode)
 	}
 	return nil
 }
