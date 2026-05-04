@@ -1,0 +1,53 @@
+{
+  "name": "core-string-regex-escape-followup-stdlib",
+  "evidence": [
+    {
+      "symbol": "String.replaceAll",
+      "kind": "exec",
+      "notes": "String regex replacement uses Java-style numeric capture parsing for the local Go-regexp subset."
+    },
+    {
+      "symbol": "String.replaceFirst",
+      "kind": "exec",
+      "notes": "Escaped dollar replacement text stays literal."
+    },
+    {
+      "symbol": "String.split",
+      "kind": "exec",
+      "notes": "Limit 0 trims trailing empties, negative keeps them, and limit 1 returns the original input."
+    },
+    {
+      "symbol": "Pattern.split",
+      "kind": "exec",
+      "notes": "Pattern split shares the same local limit handling."
+    },
+    {
+      "symbol": "String.unescapeJava",
+      "kind": "exec",
+      "notes": "Octal and UTF-16 Unicode escape sequences are decoded."
+    },
+    {
+      "symbol": "String.unescapeEcmaScript",
+      "kind": "exec",
+      "notes": "Escaped slash is decoded."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "String source = 'A1 B22 C333';\nSystem.assertEquals('A0 B0 C0', source.replaceAll('([A-Z]+)([0-9]+)', '$10'));\nSystem.assertEquals('$1 B22 C333', source.replaceFirst('([A-Z]+)([0-9]+)', '\\$1'));\nString splitSource = ':boo:';\nList<String> defaultSplit = splitSource.split(':');\nSystem.assertEquals(2, defaultSplit.size());\nSystem.assertEquals('', defaultSplit.get(0));\nSystem.assertEquals('boo', defaultSplit.get(1));\nList<String> keepTrailing = splitSource.split(':', -1);\nSystem.assertEquals(3, keepTrailing.size());\nSystem.assertEquals('', keepTrailing.get(2));\nList<String> noSplit = splitSource.split(':', 1);\nSystem.assertEquals(1, noSplit.size());\nSystem.assertEquals(':boo:', noSplit.get(0));\nPattern colon = Pattern.compile(':');\nList<String> patternKeepTrailing = colon.split(splitSource, -1);\nSystem.assertEquals(3, patternKeepTrailing.size());\nSystem.assertEquals('boo', patternKeepTrailing.get(1));\nString escapedJava = '\\141\\040\\u03A9';\nString unescapedJava = escapedJava.unescapeJava();\nSystem.assertEquals('a ', unescapedJava.substring(0, 2));\nSystem.assertEquals(937, unescapedJava.codePointAt(2));\nString escapedEcma = '\\/';\nSystem.assertEquals('/', escapedEcma.unescapeEcmaScript());\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "String source = 'A1 B22 C333';\nSystem.assertEquals('A0 B0 C0', source.replaceAll('([A-Z]+)([0-9]+)', '$10'));\nSystem.assertEquals('$1 B22 C333', source.replaceFirst('([A-Z]+)([0-9]+)', '\\$1'));\nString splitSource = ':boo:';\nList<String> defaultSplit = splitSource.split(':');\nSystem.assertEquals(2, defaultSplit.size());\nSystem.assertEquals('', defaultSplit.get(0));\nSystem.assertEquals('boo', defaultSplit.get(1));\nList<String> keepTrailing = splitSource.split(':', -1);\nSystem.assertEquals(3, keepTrailing.size());\nSystem.assertEquals('', keepTrailing.get(2));\nList<String> noSplit = splitSource.split(':', 1);\nSystem.assertEquals(1, noSplit.size());\nSystem.assertEquals(':boo:', noSplit.get(0));\nPattern colon = Pattern.compile(':');\nList<String> patternKeepTrailing = colon.split(splitSource, -1);\nSystem.assertEquals(3, patternKeepTrailing.size());\nSystem.assertEquals('boo', patternKeepTrailing.get(1));\nString escapedJava = '\\141\\040\\u03A9';\nString unescapedJava = escapedJava.unescapeJava();\nSystem.assertEquals('a ', unescapedJava.substring(0, 2));\nSystem.assertEquals(937, unescapedJava.codePointAt(2));\nString escapedEcma = '\\/';\nSystem.assertEquals('/', escapedEcma.unescapeEcmaScript());\n"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

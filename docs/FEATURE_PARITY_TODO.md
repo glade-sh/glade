@@ -512,6 +512,10 @@ a Salesforce-shaped local API server without silently wrong behavior.
     lookaround, backreferences, named groups, possessive quantifiers, atomic
     groups, regex quote escapes, previous-match boundaries, and named
     replacement references return stable unsupported diagnostics.
+  - [x] Tighten String regex and escape follow-up parity: `replaceAll` and
+    `replaceFirst` now share Matcher replacement parsing, `split`/`Pattern.split`
+    pin Java-only regex diagnostics, and Java/EcmaScript unescape handles octal
+    escapes in addition to UTF-16 Unicode escapes.
   - [x] Add common `Date`, `Datetime`, and `Time` factories, parsing,
     arithmetic, and component helpers.
   - [x] Add common numeric `Math` helpers, `Decimal` scale/conversion helpers,
