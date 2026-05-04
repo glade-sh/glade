@@ -368,6 +368,8 @@ List<String> formatArgs = new List<String>();
 formatArgs.add('Ada');
 formatArgs.add('Lovelace');
 System.assertEquals('Hello Ada Lovelace', String.format('Hello {0} {1}', formatArgs));
+System.assertEquals('Use {0} then Ada', String.format('Use ''{0}'' then {0}', formatArgs));
+System.assertEquals('Lovelace/Ada/Lovelace/{2}', String.format('{1}/{0}/{1}/{2}', formatArgs));
 String alphabet = 'abcdefghijklmnopqrstuvwxyz';
 System.assertEquals('abcdefg...', alphabet.abbreviate(10));
 System.assertEquals('...ijklmn...', alphabet.abbreviate(8, 12));
@@ -680,6 +682,12 @@ func TestStringStdlibCompletionRejectsBadArguments(t *testing.T) {
 	}
 	if _, err := stringStatic("String.format", []Value{String("{0}"), String("x")}); err == nil {
 		t.Fatal("String.format expected bad argument error")
+	}
+	if _, err := stringStatic("String.format", []Value{String("{0,number,#.00}"), List(Int(42))}); err == nil || !strings.Contains(err.Error(), "MessageFormat typed format elements") {
+		t.Fatalf("String.format expected typed format unsupported error, got %v", err)
+	}
+	if _, err := stringStatic("String.format", []Value{String("{0"), List(Int(42))}); err == nil || !strings.Contains(err.Error(), "unmatched") {
+		t.Fatalf("String.format expected unmatched brace error, got %v", err)
 	}
 	if _, err := stringStatic("String.fromCharArray", []Value{List(String("x"))}); err == nil {
 		t.Fatal("String.fromCharArray expected bad argument error")
