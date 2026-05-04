@@ -714,6 +714,39 @@ func TestCompositeSObjectsAllOrNoneRollsBackSuccessfulRows(t *testing.T) {
 	}
 }
 
+func TestCompositeNamespaceUnsupportedStubs(t *testing.T) {
+	tests := []struct {
+		name          string
+		method        string
+		path          string
+		body          string
+		wantMessageIn string
+	}{
+		{
+			name:          "generic composite subrequests",
+			method:        http.MethodPost,
+			path:          "/services/data/v61.0/composite",
+			body:          `{"compositeRequest":[]}`,
+			wantMessageIn: "Generic Composite REST subrequest orchestration",
+		},
+		{
+			name:          "composite discovery",
+			method:        http.MethodGet,
+			path:          "/services/data/v61.0/composite",
+			wantMessageIn: "Composite namespace discovery",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			org := testOrg()
+			handler := New(&org)
+			rec := httptest.NewRecorder()
+			handler.ServeHTTP(rec, httptest.NewRequest(tt.method, tt.path, strings.NewReader(tt.body)))
+			assertSalesforceError(t, rec, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", tt.wantMessageIn)
+		})
+	}
+}
+
 func TestToolingExecuteAnonymousUsesServerLimitMode(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
@@ -915,6 +948,22 @@ func TestSalesforceErrorResponses(t *testing.T) {
 			wantStatus: http.StatusMethodNotAllowed,
 			wantCode:   "METHOD_NOT_ALLOWED",
 			wantAllow:  http.MethodGet,
+		},
+		{
+			name:       "composite root method not allowed",
+			method:     http.MethodDelete,
+			path:       "/services/data/v61.0/composite",
+			wantStatus: http.StatusMethodNotAllowed,
+			wantCode:   "METHOD_NOT_ALLOWED",
+			wantAllow:  http.MethodGet + ", " + http.MethodPost,
+		},
+		{
+			name:       "composite sobjects method not allowed",
+			method:     http.MethodGet,
+			path:       "/services/data/v61.0/composite/sobjects",
+			wantStatus: http.StatusMethodNotAllowed,
+			wantCode:   "METHOD_NOT_ALLOWED",
+			wantAllow:  http.MethodPost,
 		},
 		{
 			name:          "invalid json",

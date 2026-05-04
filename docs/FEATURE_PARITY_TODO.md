@@ -630,6 +630,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
 - [ ] Add more REST resources used by local integrations and editor tooling.
 - [ ] Add Composite API coverage beyond baseline sObject insert, including
   all-or-none rollback and reference ID behavior.
+  - [x] Return stable unsupported errors for generic composite subrequest
+    orchestration, batch, tree, and graph routes instead of fake composite
+    success.
 - [ ] Add Bulk API approximations if needed by local integration tests.
   - [x] Add explicit Bulk API v2 query and ingest job stubs with Salesforce-shaped
     unsupported errors instead of fake job success.
@@ -640,6 +643,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
 - [ ] Add black-box server compatibility fixtures for CRUD, query,
   executeAnonymous, composite, errors, auth stubs, and persistence.
   - [x] Cover Tooling and Bulk unsupported route shapes in the server black-box
+    fixture.
+  - [x] Cover generic composite unsupported route shape in the server black-box
     fixture.
 
 ## 9. Compatibility, Hardening, And Release
