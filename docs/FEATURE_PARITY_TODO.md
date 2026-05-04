@@ -341,8 +341,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Cascade soft-delete child records from relationship metadata.
   - [x] Return `ENTITY_IS_NOT_DELETED` SaveResult details when undeleting active
     records.
-  - **Limitation**: Remaining merge loser edge details and undelete edge-case
-    parity remain incomplete.
+  - [x] Carry merge loser IDs from the DML engine into
+    `MergeResult.getMergedRecordIds()`, including partial-success list results.
+  - **Limitation**: Remaining undelete edge-case parity remains incomplete.
   - **Limitation**: The VM `Database.Error` shape covers the most common status
     codes; full Salesforce status-code parity is not yet complete.
 - [x] Complete external-ID upsert and ID/object mismatch behavior.

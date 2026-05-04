@@ -34,7 +34,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Database | `Database.getQueryLocator` | `partial` | Supported SOQL only; executes eagerly for local batch scopes and exposes getQuery()/iterator() over the local snapshot. |
 | Database | `Database.insert` | `supported` | DML pipeline with result/error shapes for supported SObjects. |
 | Database | `Database.lock / Database.unlock` | `partial` | Toggles local storage row lock state and returns LockResult/UnlockResult-shaped objects; ownership, wait timing, and transaction-scoped lock release are not modeled. |
-| Database | `Database.merge` | `partial` | Local merge behavior for supported account/contact-style data. |
+| Database | `Database.merge` | `partial` | Local merge behavior for supported account/contact-style data, including MergeResult merged and updated-related ID accessors. |
 | Database | `Database.rollback` | `partial` | Local org-state savepoint rollback; no external side effects. |
 | Database | `Database.setSavepoint` | `partial` | Local org-state snapshots with later-savepoint invalidation. |
 | Database | `Database.undelete` | `partial` | Soft-delete restoration for supported local records with ENTITY_IS_NOT_DELETED SaveResult errors for active rows. |

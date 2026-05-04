@@ -3152,14 +3152,14 @@ func (vm *VM) executeDatabaseMerge(args []Value, result *Result) (Value, error) 
 
 func (vm *VM) mergeResultValue(listInput bool, duplicates []storage.Record, results []dml.Result) Value {
 	values := make([]Value, 0, len(results))
-	for i, dmlResult := range results {
+	for _, dmlResult := range results {
 		row := Object("Database.MergeResult")
 		row.Fields["success"] = Bool(dmlResult.Success)
 		row.Fields["id"] = databaseResultIDValue(dmlResult.ID)
 		row.Fields["error"] = String(dmlResult.Error)
 		mergedIDs := List()
-		if dmlResult.Success && i < len(duplicates) {
-			mergedIDs.List = append(mergedIDs.List, String(string(duplicates[i].ID)))
+		for _, id := range dmlResult.MergedRecordIDs {
+			mergedIDs.List = append(mergedIDs.List, String(string(id)))
 		}
 		row.Fields["mergedRecordIds"] = mergedIDs
 		updatedRelatedIDs := List()

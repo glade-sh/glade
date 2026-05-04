@@ -25,6 +25,7 @@ type Result struct {
 	Fields            []string     `json:"fields,omitempty"`
 	Errors            []Error      `json:"errors,omitempty"`
 	Created           bool         `json:"created,omitempty"`
+	MergedRecordIDs   []storage.ID `json:"mergedRecordIds,omitempty"`
 	UpdatedRelatedIDs []storage.ID `json:"updatedRelatedIds,omitempty"`
 }
 
@@ -264,7 +265,7 @@ func (e *Engine) Merge(master storage.Record, duplicates []storage.Record) []Res
 		storedDuplicate.System.LastModifiedByID = e.systemUserID()
 		object.Records[duplicate.ID] = storedDuplicate
 		e.Org.Objects[objectName] = object
-		results[i] = Result{ID: master.ID, Success: true, UpdatedRelatedIDs: updatedRelatedIDs}
+		results[i] = Result{ID: master.ID, Success: true, MergedRecordIDs: []storage.ID{duplicate.ID}, UpdatedRelatedIDs: updatedRelatedIDs}
 	}
 	return results
 }

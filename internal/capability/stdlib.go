@@ -135,7 +135,7 @@ var stdlibEntries = []StdlibEntry{
 	{Area: "Database", API: "Database.getQueryLocator", Status: StatusPartial, Notes: "Supported SOQL only; executes eagerly for local batch scopes and exposes getQuery()/iterator() over the local snapshot."},
 	{Area: "Database", API: "Database.insert", Status: StatusSupported, Notes: "DML pipeline with result/error shapes for supported SObjects."},
 	{Area: "Database", API: "Database.lock / Database.unlock", Status: StatusPartial, Notes: "Toggles local storage row lock state and returns LockResult/UnlockResult-shaped objects; ownership, wait timing, and transaction-scoped lock release are not modeled."},
-	{Area: "Database", API: "Database.merge", Status: StatusPartial, Notes: "Local merge behavior for supported account/contact-style data."},
+	{Area: "Database", API: "Database.merge", Status: StatusPartial, Notes: "Local merge behavior for supported account/contact-style data, including MergeResult merged and updated-related ID accessors."},
 	{Area: "Database", API: "Database.rollback", Status: StatusPartial, Notes: "Local org-state savepoint rollback; no external side effects."},
 	{Area: "Database", API: "Database.setSavepoint", Status: StatusPartial, Notes: "Local org-state snapshots with later-savepoint invalidation."},
 	{Area: "Database", API: "Database.undelete", Status: StatusPartial, Notes: "Soft-delete restoration for supported local records with ENTITY_IS_NOT_DELETED SaveResult errors for active rows."},
