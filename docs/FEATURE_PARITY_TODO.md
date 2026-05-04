@@ -531,6 +531,12 @@ a Salesforce-shaped local API server without silently wrong behavior.
     `replaceFirst` now share Matcher replacement parsing, `split`/`Pattern.split`
     pin Java-only regex diagnostics, and Java/EcmaScript unescape handles octal
     escapes in addition to UTF-16 Unicode escapes.
+  - [x] Close the Pattern/Matcher state and split boundary slice: failed
+    `matches`/`lookingAt` paths clear stale groups, optional unmatched groups
+    return `null`/`-1`, invalid group indexes have stable errors, Java
+    `appendReplacement`/`appendTail` remain explicitly unsupported, and
+    nullable split delimiters are fenced because Java zero-width trailing-piece
+    behavior is not safe to claim on Go regexp.
   - [x] Add common `Date`, `Datetime`, and `Time` factories, parsing,
     arithmetic, and component helpers.
   - [x] Add common numeric `Math` helpers, `Decimal` scale/conversion helpers,

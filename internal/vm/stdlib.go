@@ -2303,6 +2303,9 @@ func splitRegex(name, pattern, text string, limit int64) ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%s invalid regex: %w", name, err)
 	}
+	if re.MatchString("") {
+		return nil, unsupportedCallError(name + " regexes that can match empty strings")
+	}
 	if limit > 0 {
 		maxParts := int64(len(text) + 1)
 		if limit > maxParts {

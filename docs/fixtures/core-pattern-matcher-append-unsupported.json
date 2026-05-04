@@ -1,0 +1,28 @@
+{
+  "name": "core-pattern-matcher-append-unsupported",
+  "evidence": [
+    {
+      "symbol": "Matcher.appendReplacement/appendTail",
+      "kind": "unsupported",
+      "notes": "Java StringBuffer append-position APIs stay fenced with a typed unsupported error."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Pattern p = Pattern.compile('[A-Z]+');\nMatcher m = p.matcher('ABC');\nm.appendTail('');\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Pattern p = Pattern.compile('[A-Z]+');\nMatcher m = p.matcher('ABC');\nm.appendTail('');\n"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"Matcher.appendTail requires Java StringBuffer append semantics\""
+    }
+  }
+}
