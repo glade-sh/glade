@@ -72,6 +72,9 @@ func TestBuildDescribeRegistry(t *testing.T) {
 	if definition.Fields["Account__c"].Type != storage.FieldReference {
 		t.Fatalf("definition = %#v", definition)
 	}
+	if got := definition.Fields["Account__c"].Label; got != "Account__c" {
+		t.Fatalf("definition field label = %q", got)
+	}
 	if got := definition.Fields["Rating__c"].PicklistValues; len(got) != 1 || got[0].Value != "Hot" {
 		t.Fatalf("definition picklist values = %#v", got)
 	}

@@ -145,7 +145,7 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 			describe.Fields[field.Name] = DescribeFieldResult{
 				Name:                  field.Name,
 				Type:                  storageFieldType(field.Type),
-				Label:                 field.Label,
+				Label:                 labelOrName(field.Label, field.Name),
 				ReferenceTo:           referenceTargets(field.ReferenceTo),
 				RelationshipName:      field.RelationshipName,
 				ChildRelationshipName: field.ChildRelationshipName,
@@ -246,6 +246,7 @@ func ToObjectDefinition(describe DescribeSObjectResult) storage.ObjectDefinition
 	for name, field := range describe.Fields {
 		definition.Fields[name] = storage.Field{
 			APIName:          field.Name,
+			Label:            labelOrName(field.Label, field.Name),
 			Type:             field.Type,
 			Required:         field.Required,
 			ExternalID:       field.ExternalID,
@@ -323,6 +324,13 @@ func referenceTargets(raw []string) []string {
 		}
 	}
 	return out
+}
+
+func labelOrName(label, name string) string {
+	if label != "" {
+		return label
+	}
+	return name
 }
 
 func storageFieldType(raw string) storage.FieldType {

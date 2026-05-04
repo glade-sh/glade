@@ -1,0 +1,48 @@
+{
+  "name": "data-platform-schema-describe-edges",
+  "evidence": [
+    {"symbol": "Schema.DescribeSObjectResult.getLabelPlural", "kind": "test"},
+    {"symbol": "Schema.DescribeSObjectResult.getFields", "kind": "test"},
+    {"symbol": "Schema.DescribeFieldResult.getLabel", "kind": "test"},
+    {"symbol": "Schema.DescribeFieldResult.getReferenceTo", "kind": "test"},
+    {"symbol": "Schema.RecordTypeInfo", "kind": "test"},
+    {"symbol": "Schema.ChildRelationship", "kind": "test"},
+    {"symbol": "Schema.PicklistEntry", "kind": "test"}
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/recordTypes/Business.recordType-meta.xml",
+      "content": "<RecordType><fullName>Business</fullName><label>Business Account</label><active>true</active><default>true</default></RecordType>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Account Name</label><type>Text</type><required>true</required></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Rating.field-meta.xml",
+      "content": "<CustomField><fullName>Rating</fullName><label>Rating</label><type>Picklist</type><valueSet><valueSetDefinition><value><fullName>Hot</fullName><label>Hot Label</label><default>true</default></value><value><fullName>Cold</fullName><label>Cold</label><isActive>false</isActive></value></valueSetDefinition></valueSet></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Contact/Contact.object-meta.xml",
+      "content": "<CustomObject><label>Contact</label><pluralLabel>Contacts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Contact/fields/LastName.field-meta.xml",
+      "content": "<CustomField><fullName>LastName</fullName><label>Last Name</label><type>Text</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Contact/fields/AccountId.field-meta.xml",
+      "content": "<CustomField><fullName>AccountId</fullName><label>Account</label><type>Lookup</type><referenceTo>Account</referenceTo><relationshipName>Account</relationshipName><childRelationshipName>Contacts</childRelationshipName><deleteConstraint>Cascade</deleteConstraint></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/classes/SchemaDescribeEdgesFixtureTest.cls",
+      "content": "@isTest private class SchemaDescribeEdgesFixtureTest { @isTest static void describesLocalMetadataEdges() { Object accountDescribe = Account.SObjectType.getDescribe(); System.assertEquals('Account', accountDescribe.getLabel()); System.assertEquals('Accounts', accountDescribe.getLabelPlural()); System.assertEquals('001', accountDescribe.getKeyPrefix()); Map<String,Object> fields = accountDescribe.getFields().getMap(); System.assert(fields.containsKey('Name')); Object nameDescribe = Account.Name.getDescribe(); System.assertEquals('Account Name', nameDescribe.getLabel()); System.assertEquals('string', nameDescribe.getType()); System.assert(!nameDescribe.isNillable()); Object contactField = Contact.AccountId.getDescribe(); System.assertEquals('Account', contactField.getRelationshipName()); List<Object> refs = contactField.getReferenceTo(); System.assertEquals(1, refs.size()); System.assertEquals('Account', refs.get(0).getDescribe().getName()); List<Object> values = Account.Rating.getDescribe().getPicklistValues(); System.assertEquals('Hot Label', values.get(0).getLabel()); System.assert(values.get(0).isDefaultValue()); System.assert(!values.get(1).isActive()); Object rt = accountDescribe.getRecordTypeInfosByDeveloperName().get('Business'); System.assertEquals('Business Account', rt.getName()); List<Object> childRelationships = accountDescribe.getChildRelationships(); System.assertEquals(1, childRelationships.size()); System.assertEquals('Contacts', childRelationships.get(0).getRelationshipName()); System.assert(childRelationships.get(0).isCascadeDelete()); } }"
+    }
+  ],
+  "command": {"kind": "test"},
+  "expected": {"result": {"ok": true, "total": 1, "passed": 1, "failed": 0, "errors": 0}}
+}
