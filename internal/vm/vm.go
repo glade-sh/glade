@@ -5275,7 +5275,7 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 				continue
 			}
 			if _, ok := allowed[key]; !ok {
-				return Null, fmt.Errorf("JSON.deserializeStrict found unknown field %q for %s", key, typeName)
+				return Null, newExceptionError("JSONException", fmt.Sprintf("JSON.deserializeStrict found unknown field %q for %s", key, typeName))
 			}
 		}
 	}

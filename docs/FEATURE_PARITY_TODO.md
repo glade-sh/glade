@@ -430,6 +430,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     `serializePretty`, and `deserializeStrict`.
   - [x] Reject duplicate object fields in `JSON.deserializeStrict` before typed
     mapping.
+  - [x] Reject unknown SObject fields in `JSON.deserializeStrict` with catchable
+    `JSONException` while preserving non-strict `JSON.deserialize` behavior.
   - [x] Map JSON.deserialize SObject fields through local schema field types for
     Date, Datetime, numeric, Boolean, Id, and reference edges.
   - [x] Add common `Test.isRunningTest()` and deterministic

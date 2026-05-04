@@ -1,0 +1,38 @@
+{
+  "name": "core-json-strict-sobject-unknown-field",
+  "evidence": [
+    {
+      "symbol": "JSON.deserializeStrict",
+      "kind": "exec",
+      "notes": "Strict SObject mapping rejects unknown schema fields with catchable JSONException while non-strict deserialize still succeeds."
+    }
+  ],
+  "schema": [
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type></CustomField>"
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Boolean caught = false;\ntry {\n    Account decoded = JSON.deserializeStrict('{\"Name\":\"Acme\",\"NoSuchField__c\":\"x\"}', Account.class);\n} catch (JSONException e) {\n    caught = true;\n    System.assert(e.getMessage().contains('unknown field \"NoSuchField__c\"'));\n    System.assert(e.getMessage().contains('Account'));\n}\nSystem.assert(caught);\nAccount decodedOk = JSON.deserialize('{\"Name\":\"Acme\",\"NoSuchField__c\":\"x\"}', Account.class);\nSystem.assertEquals('Acme', decodedOk.Name);"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Boolean caught = false;\ntry {\n    Account decoded = JSON.deserializeStrict('{\"Name\":\"Acme\",\"NoSuchField__c\":\"x\"}', Account.class);\n} catch (JSONException e) {\n    caught = true;\n    System.assert(e.getMessage().contains('unknown field \"NoSuchField__c\"'));\n    System.assert(e.getMessage().contains('Account'));\n}\nSystem.assert(caught);\nAccount decodedOk = JSON.deserialize('{\"Name\":\"Acme\",\"NoSuchField__c\":\"x\"}', Account.class);\nSystem.assertEquals('Acme', decodedOk.Name);"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}
