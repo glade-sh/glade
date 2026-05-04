@@ -1,0 +1,37 @@
+{
+  "name": "test-setmock-type-token-and-unsupported",
+  "evidence": [
+    {
+      "symbol": "Test.setMock(HttpCalloutMock.class, ...)",
+      "kind": "test",
+      "notes": "Type-token HttpCalloutMock registration works in local test context."
+    },
+    {
+      "symbol": "Test.setMock non-HTTP mock",
+      "kind": "unit",
+      "notes": "Other mock interfaces remain explicit UnsupportedFeature fences."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/classes/FixtureMockResponse.cls",
+      "content": "public class FixtureMockResponse implements HttpCalloutMock { public HttpResponse respond(HttpRequest req) { HttpResponse res = new HttpResponse(); res.setStatusCode(203); res.setBody('token'); return res; } }"
+    },
+    {
+      "path": "force-app/main/classes/TestSetMockTypeTokenFixtureTest.cls",
+      "content": "@isTest private class TestSetMockTypeTokenFixtureTest { @isTest static void typeTokenMock() { Test.setMock(HttpCalloutMock.class, new FixtureMockResponse()); HttpRequest req = new HttpRequest(); req.setEndpoint('https://example.test'); req.setMethod('GET'); HttpResponse res = new Http().send(req); System.assertEquals(203, res.getStatusCode()); System.assertEquals('token', res.getBody()); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

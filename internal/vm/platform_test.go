@@ -488,6 +488,8 @@ msg.setEntityAttachments(new List<String>{'015000000000001'});
 msg.setDocumentAttachments(new List<String>{'015000000000002'});
 msg.setTargetObjectIds(new List<String>{'003000000000002'});
 msg.setOptOutPolicy('FILTER');
+msg.setEmailPriority('High');
+msg.setBccSender(true);
 msg.setFileAttachments(new List<Object>{});
 Messaging.SingleEmailMessage second = new Messaging.SingleEmailMessage();
 second.setToAddresses(new List<String>{'second@example.test'});
@@ -525,6 +527,11 @@ System.assertEquals(0, results.get(0).getErrors().size());
 			name: "template surface",
 			src:  `Messaging.renderStoredEmailTemplate('00X000000000001', '003000000000001', '001000000000001');`,
 			want: `unsupported call "Messaging.renderStoredEmailTemplate local messaging transport/template surface"`,
+		},
+		{
+			name: "send-options method",
+			src:  `Messaging.SendEmailOptions opts = new Messaging.SendEmailOptions(); opts.setTriggerUserEmail(true);`,
+			want: `unsupported call "Messaging.SendEmailOptions.setTriggerUserEmail local messaging send-options surface"`,
 		},
 		{
 			name: "setter-type",
@@ -596,6 +603,18 @@ func TestExecTestSetMockRequiresTestContext(t *testing.T) {
 		t.Fatal(err)
 	}
 	if _, err := New(nil).Execute(program); err == nil || !strings.Contains(err.Error(), "Test.setMock is only available in test context") {
+		t.Fatalf("err = %v", err)
+	}
+}
+
+func TestExecTestSetMockAcceptsTypeTokenForHttpMock(t *testing.T) {
+	program, err := CompileAnonymous(`Test.setMock(HttpCalloutMock.class, new MockResponse());`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err = machine.Execute(program); err != nil {
 		t.Fatalf("err = %v", err)
 	}
 }
@@ -2403,6 +2422,8 @@ req.setHeader('X-Test', 'first');
 req.setHeader('x-test', 'second');
 System.assertEquals('second', req.getHeader('X-TEST'));
 System.assertEquals(null, req.getHeader('Missing'));
+req.setBodyAsBlob(Blob.valueOf('blob-body'));
+System.assertEquals('blob-body', req.getBodyAsBlob().toString());
 req.setTimeout(120000);
 System.assertEquals(120000, req.getTimeout());
 `)
