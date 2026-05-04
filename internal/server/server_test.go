@@ -598,13 +598,48 @@ func TestToolingQueryStillDelegatesToSOQL(t *testing.T) {
 	addAccountForTest(&org, "001000000000001", "Tooling Query")
 	handler := New(&org)
 
-	rec := httptest.NewRecorder()
-	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/tooling/query?q=SELECT%20Id,%20Name%20FROM%20Account%20WHERE%20Name%20=%20'Tooling%20Query'", nil))
-	if rec.Code != http.StatusOK {
-		t.Fatalf("tooling query status = %d body=%s", rec.Code, rec.Body.String())
+	for _, path := range []string{
+		"/services/data/v61.0/tooling/query?q=SELECT%20Id,%20Name%20FROM%20Account%20WHERE%20Name%20=%20'Tooling%20Query'",
+		"/services/data/v61.0/tooling/queryAll?q=SELECT%20Id,%20Name%20FROM%20Account%20WHERE%20Name%20=%20'Tooling%20Query'",
+	} {
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("%s status = %d body=%s", path, rec.Code, rec.Body.String())
+		}
+		if !bytes.Contains(rec.Body.Bytes(), []byte(`"totalSize":1`)) || !bytes.Contains(rec.Body.Bytes(), []byte(`Tooling Query`)) {
+			t.Fatalf("%s body = %s", path, rec.Body.String())
+		}
 	}
-	if !bytes.Contains(rec.Body.Bytes(), []byte(`"totalSize":1`)) || !bytes.Contains(rec.Body.Bytes(), []byte(`Tooling Query`)) {
-		t.Fatalf("tooling query body = %s", rec.Body.String())
+}
+
+func TestToolingQueryAllUsesRequestedVersionForPagination(t *testing.T) {
+	org := testOrg()
+	addAccountForTest(&org, "001000000000001", "Tooling Page 1")
+	addAccountForTest(&org, "001000000000002", "Tooling Page 2")
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/data/v62.0/tooling/queryAll?q=SELECT%20Id,%20Name%20FROM%20Account&batchSize=1", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("tooling queryAll pagination status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if !bytes.Contains(rec.Body.Bytes(), []byte(`"done":false`)) || !bytes.Contains(rec.Body.Bytes(), []byte(`"nextRecordsUrl":"/services/data/v62.0/query/oaerql000001-1"`)) {
+		t.Fatalf("tooling queryAll pagination body = %s", rec.Body.String())
+	}
+}
+
+func TestToolingSearchReturnsStableUnsupportedError(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/tooling/search?q=FIND%20%7BAcme%7D", nil))
+	if rec.Code != http.StatusNotImplemented {
+		t.Fatalf("tooling search status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if !bytes.Contains(rec.Body.Bytes(), []byte(`"errorCode":"UNSUPPORTED_FEATURE"`)) || !bytes.Contains(rec.Body.Bytes(), []byte(`Tooling search is not implemented`)) {
+		t.Fatalf("tooling search shape = %s", rec.Body.String())
 	}
 }
 
@@ -626,19 +661,28 @@ func TestToolingCommonRoutesMethodHandling(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
 
-	rec := httptest.NewRecorder()
-	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/tooling/completions", nil))
-	if rec.Code != http.StatusMethodNotAllowed {
-		t.Fatalf("tooling completions method status = %d body=%s", rec.Code, rec.Body.String())
-	}
-	if got := rec.Header().Get("Allow"); got != http.MethodGet {
-		t.Fatalf("tooling completions Allow = %q", got)
-	}
-	if !bytes.Contains(rec.Body.Bytes(), []byte(`"errorCode":"METHOD_NOT_ALLOWED"`)) {
-		t.Fatalf("tooling completions method shape = %s", rec.Body.String())
+	for _, tc := range []struct {
+		name string
+		path string
+	}{
+		{name: "tooling completions", path: "/services/data/v61.0/tooling/completions"},
+		{name: "tooling queryAll", path: "/services/data/v61.0/tooling/queryAll"},
+		{name: "tooling search", path: "/services/data/v61.0/tooling/search"},
+	} {
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, tc.path, nil))
+		if rec.Code != http.StatusMethodNotAllowed {
+			t.Fatalf("%s method status = %d body=%s", tc.name, rec.Code, rec.Body.String())
+		}
+		if got := rec.Header().Get("Allow"); got != http.MethodGet {
+			t.Fatalf("%s Allow = %q", tc.name, got)
+		}
+		if !bytes.Contains(rec.Body.Bytes(), []byte(`"errorCode":"METHOD_NOT_ALLOWED"`)) {
+			t.Fatalf("%s method shape = %s", tc.name, rec.Body.String())
+		}
 	}
 
-	rec = httptest.NewRecorder()
+	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPut, "/services/data/v61.0/tooling/sobjects/ApexClass/01p000000000001", nil))
 	if rec.Code != http.StatusMethodNotAllowed {
 		t.Fatalf("tooling metadata record method status = %d body=%s", rec.Code, rec.Body.String())
