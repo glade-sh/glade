@@ -224,8 +224,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
   test modes.
 - [x] Complete broader `System.runAs` permission, sharing, and mixed-DML
   enforcement for supported modes.
-- [x] Scope `FeatureManagement.checkPermission` to supported `runAs` user
-  permission lists, enforce mixed-DML guards, and pin local tests to
+- [x] Scope `FeatureManagement.checkPermission` to supported current user and
+  `runAs` user permission lists, enforce mixed-DML guards, and pin local tests to
   system-sharing mode.
 - [x] Implement `@future` execution and stopTest drain behavior.
 - [x] Implement Batchable execution, batch chunking, finish behavior, and
@@ -652,7 +652,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     delivery/template transport fenced unsupported.
   - [x] Return one local `Messaging.SendEmailResult` per input message and
     support the Boolean `allOrNothing` overload without modeling transport.
-  - [x] Add `ApexPages` message storage, current page, `PageReference`, and
+  - [x] Add `ApexPages` message storage, stable current page,
+    `Test.setCurrentPage`, `ApexPages.Severity`, `PageReference`, and
     deterministic org `URL` basics.
   - [x] Cover `URL` authority user-info parsing and bounded FTP default-port
     accessor behavior.

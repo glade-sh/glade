@@ -3315,6 +3315,7 @@ var platformTypes = []string{
 	"AggregateResult",
 	"ApexPages",
 	"ApexPages.Message",
+	"ApexPages.Severity",
 	"Auth",
 	"Auth.SessionManagement",
 	"AsyncApexJob",

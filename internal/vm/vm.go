@@ -65,6 +65,7 @@ type VM struct {
 	savepointOrder   map[string]int
 	nextSavepoint    int
 	pageMessages     []Value
+	currentPage      Value
 	restRequest      Value
 	restResponse     Value
 	debugHooks       DebugHooks
@@ -1285,6 +1286,8 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		return platformScalar("Datetime", formatPlatformDatetime(value)), nil
 	case "LoggingLevel.values":
 		return loggingLevelValues(args)
+	case "ApexPages.Severity.values":
+		return apexPagesSeverityValues(args)
 	case "RoundingMode.values":
 		return roundingModeValues(args)
 	case "System.isRunningTest", "Test.isRunningTest":
@@ -1557,6 +1560,9 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		if vm.testContext != nil && userHasPermission(vm.testContext.CurrentUser, args[0].Text) {
 			return Bool(true), nil
 		}
+		if userHasPermission(vm.executionUser, args[0].Text) {
+			return Bool(true), nil
+		}
 		return Bool(false), nil
 	case "Messaging.sendEmail":
 		if len(args) == 0 {
@@ -1612,11 +1618,19 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		if len(args) != 0 {
 			return Null, fmt.Errorf("ApexPages.currentPage expects 0 arguments")
 		}
-		page := Object("PageReference")
-		page.Fields["url"] = String("/apex/current")
-		page.Fields["parameters"] = Map()
-		page.Fields["headers"] = Map()
-		return page, nil
+		if vm.currentPage.Kind == "" {
+			vm.currentPage = newPageReference("/apex/current")
+		}
+		return vm.currentPage, nil
+	case "Test.setCurrentPage":
+		if len(args) != 1 || args[0].Kind != ValueObject || args[0].Type != "PageReference" {
+			return Null, fmt.Errorf("Test.setCurrentPage expects PageReference")
+		}
+		if err := vm.requireTestContext("Test.setCurrentPage"); err != nil {
+			return Null, err
+		}
+		vm.currentPage = args[0]
+		return Null, nil
 	case "Messaging.reserveSingleEmailCapacity", "Messaging.reserveMassEmailCapacity",
 		"Messaging.renderEmailTemplate", "Messaging.renderStoredEmailTemplate",
 		"Messaging.sendEmailMessage", "Messaging.sendPushNotification":
@@ -6109,6 +6123,9 @@ func (vm *VM) lookup(name string) (Value, error) {
 			}
 		}
 	}
+	if value, ok := apexPagesSeverityStaticValue(name); ok {
+		return value, nil
+	}
 	if strings.HasSuffix(name, ".class") {
 		className := strings.TrimSuffix(name, ".class")
 		if resolved, ok := vm.resolveClassName(className); ok {
@@ -6667,7 +6684,7 @@ func isBuiltinTypeName(name string) bool {
 		return true
 	}
 	switch name {
-	case "Object", "String", "Boolean", "Integer", "Long", "Decimal", "Double", "Date", "Datetime", "Time", "TimeZone", "Blob", "Id", "Type", "URL", "PageReference", "LoggingLevel", "RestContext", "RestRequest", "RestResponse":
+	case "Object", "String", "Boolean", "Integer", "Long", "Decimal", "Double", "Date", "Datetime", "Time", "TimeZone", "Blob", "Id", "Type", "URL", "PageReference", "LoggingLevel", "ApexPages.Severity", "RestContext", "RestRequest", "RestResponse":
 		return true
 	default:
 		return false
@@ -6753,6 +6770,14 @@ func newRestRequest() Value {
 	request.Fields["params"] = typedMap("Map<String,String>")
 	request.Fields["requestBody"] = Null
 	return request
+}
+
+func newPageReference(rawURL string) Value {
+	page := Object("PageReference")
+	page.Fields["url"] = String(rawURL)
+	page.Fields["parameters"] = Map()
+	page.Fields["headers"] = Map()
+	return page
 }
 
 func newRestResponse() Value {
@@ -6952,17 +6977,14 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 		if len(args) > 1 || len(namedArgs) != 0 {
 			return Null, fmt.Errorf("PageReference constructor expects optional URL String")
 		}
-		page := Object("PageReference")
-		page.Fields["url"] = String("")
+		rawURL := ""
 		if len(args) == 1 {
 			if args[0].Kind != ValueString {
 				return Null, fmt.Errorf("PageReference constructor expects URL String")
 			}
-			page.Fields["url"] = args[0]
+			rawURL = args[0].Text
 		}
-		page.Fields["parameters"] = Map()
-		page.Fields["headers"] = Map()
-		return page, nil
+		return newPageReference(rawURL), nil
 	case "ApexPages.Message":
 		if len(args) < 2 || len(args) > 3 {
 			return Null, fmt.Errorf("ApexPages.Message constructor expects severity, summary[, detail]")
@@ -7760,6 +7782,7 @@ func typeValueName(value Value) string {
 }
 
 var loggingLevelNames = []string{"NONE", "ERROR", "WARN", "INFO", "DEBUG", "FINE", "FINER", "FINEST"}
+var apexPagesSeverityNames = []string{"CONFIRM", "INFO", "WARNING", "ERROR", "FATAL"}
 
 func isLoggingLevelName(level string) bool {
 	for _, name := range loggingLevelNames {
@@ -9098,6 +9121,32 @@ func (vm *VM) resolveSObjectFieldName(typeName, field string) string {
 	return storage.StripNamespaceToken(vm.Org.Namespace, field)
 }
 
+func apexPagesSeverityStaticValue(name string) (Value, bool) {
+	if !strings.HasPrefix(name, "ApexPages.Severity.") {
+		return Null, false
+	}
+	severity := strings.TrimPrefix(name, "ApexPages.Severity.")
+	for i, candidate := range apexPagesSeverityNames {
+		if severity == candidate {
+			return Value{Kind: ValueObject, Type: "ApexPages.Severity", Text: severity, Fields: map[string]Value{"ordinal": Int(int64(i))}}, true
+		}
+	}
+	return Null, false
+}
+
+func apexPagesSeverityValues(args []Value) (Value, error) {
+	if len(args) != 0 {
+		return Null, fmt.Errorf("ApexPages.Severity.values expects 0 arguments")
+	}
+	values := make([]Value, 0, len(apexPagesSeverityNames))
+	for i, name := range apexPagesSeverityNames {
+		value := Value{Kind: ValueObject, Type: "ApexPages.Severity", Text: name}
+		value.Fields = map[string]Value{"ordinal": Int(int64(i))}
+		values = append(values, value)
+	}
+	return List(values...), nil
+}
+
 func loggingLevelValues(args []Value) (Value, error) {
 	if len(args) != 0 {
 		return Null, fmt.Errorf("LoggingLevel.values expects 0 arguments")
@@ -9174,41 +9223,14 @@ func (vm *VM) callEnumMember(receiver Value, method string, args []Value) (Value
 			return Null, false, nil
 		}
 	}
+	if receiver.Type == "ApexPages.Severity" {
+		return callNamedEnumMember("ApexPages.Severity", apexPagesSeverityNames, receiver, method, args)
+	}
 	if receiver.Type == "LoggingLevel" {
-		if len(args) != 0 {
-			return Null, true, fmt.Errorf("LoggingLevel.%s expects 0 arguments", method)
-		}
-		switch method {
-		case "name", "toString":
-			return String(receiver.Text), true, nil
-		case "ordinal":
-			for i, name := range loggingLevelNames {
-				if name == receiver.Text {
-					return Int(int64(i)), true, nil
-				}
-			}
-			return Int(-1), true, nil
-		default:
-			return Null, false, nil
-		}
+		return callNamedEnumMember("LoggingLevel", loggingLevelNames, receiver, method, args)
 	}
 	if receiver.Type == "RoundingMode" {
-		if len(args) != 0 {
-			return Null, true, fmt.Errorf("RoundingMode.%s expects 0 arguments", method)
-		}
-		switch method {
-		case "name", "toString":
-			return String(receiver.Text), true, nil
-		case "ordinal":
-			for i, name := range roundingModeNames {
-				if name == receiver.Text {
-					return Int(int64(i)), true, nil
-				}
-			}
-			return Int(-1), true, nil
-		default:
-			return Null, false, nil
-		}
+		return callNamedEnumMember("RoundingMode", roundingModeNames, receiver, method, args)
 	}
 	class, ok := vm.Classes[receiver.Type]
 	if !ok || len(class.EnumValues) == 0 {
@@ -9222,6 +9244,25 @@ func (vm *VM) callEnumMember(receiver Value, method string, args []Value) (Value
 		return String(receiver.Text), true, nil
 	case "ordinal":
 		for i, name := range class.EnumValues {
+			if name == receiver.Text {
+				return Int(int64(i)), true, nil
+			}
+		}
+		return Int(-1), true, nil
+	default:
+		return Null, false, nil
+	}
+}
+
+func callNamedEnumMember(typeName string, names []string, receiver Value, method string, args []Value) (Value, bool, error) {
+	if len(args) != 0 {
+		return Null, true, fmt.Errorf("%s.%s expects 0 arguments", typeName, method)
+	}
+	switch method {
+	case "name", "toString":
+		return String(receiver.Text), true, nil
+	case "ordinal":
+		for i, name := range names {
 			if name == receiver.Text {
 				return Int(int64(i)), true, nil
 			}

@@ -377,6 +377,57 @@ Account decoded = JSON.deserializeStrict('{"Name":"Acme","NoSuchField__c":"x"}',
 	}
 }
 
+func TestExecApexPagesCurrentPageAndSeverityEdges(t *testing.T) {
+	program, err := CompileAnonymous(`
+PageReference before = ApexPages.currentPage();
+before.getParameters().put('before', 'yes');
+System.assertEquals('yes', ApexPages.currentPage().getParameters().get('before'));
+PageReference replacement = new PageReference('/apex/Replaced');
+replacement.getHeaders().put('X-Local', 'true');
+Test.setCurrentPage(replacement);
+System.assertEquals('/apex/Replaced', ApexPages.currentPage().getUrl());
+System.assertEquals('true', ApexPages.currentPage().getHeaders().get('X-Local'));
+ApexPages.Severity severity = ApexPages.Severity.ERROR;
+System.assertEquals('ERROR', severity.name());
+System.assertEquals('ERROR', severity.toString());
+System.assertEquals(3, severity.ordinal());
+System.assertEquals(5, ApexPages.Severity.values().size());
+ApexPages.Message message = new ApexPages.Message(severity, 'Summary', 'Detail');
+System.assertEquals(ApexPages.Severity.ERROR, message.getSeverity());
+System.assertEquals('Summary', message.getSummary());
+System.assertEquals('Detail', message.getDetail());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecFeatureManagementUsesExecutionUserPermissions(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assert(FeatureManagement.checkPermission('CanRunLocal'));
+System.assert(!FeatureManagement.checkPermission('OtherPermission'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.SetCurrentUser(storage.Record{
+		Object: "User",
+		ID:     "005-user-b",
+		Fields: map[string]storage.Value{
+			"Permissions": {Kind: storage.ValueString, String: "CanRunLocal"},
+		},
+	})
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecApexPagesPageReferenceAndMessagesEdges(t *testing.T) {
 	program, err := CompileAnonymous(`
 PageReference page = new PageReference('/apex/Trail');
