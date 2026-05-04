@@ -2,6 +2,7 @@ package vm
 
 import (
 	"errors"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -54,6 +55,41 @@ System.assertEquals('zzzcatzzzdogzzz', replaceFirstMatcher.replaceFirst('cat'));
 Pattern captures = Pattern.compile('([A-Z]+)([0-9]+)');
 Matcher captureReplace = captures.matcher('A1 B22');
 System.assertEquals('1-A 22-B', captureReplace.replaceAll('$2-$1'));
+
+Pattern regionWords = Pattern.compile('[A-Z]+');
+Matcher regionMatcher = regionWords.matcher('aa ABC bb DEF cc');
+System.assertEquals(0, regionMatcher.regionStart());
+System.assertEquals(16, regionMatcher.regionEnd());
+regionMatcher.region(3, 10);
+System.assertEquals(3, regionMatcher.regionStart());
+System.assertEquals(10, regionMatcher.regionEnd());
+System.assert(regionMatcher.find());
+System.assertEquals('ABC', regionMatcher.group());
+System.assertEquals(3, regionMatcher.start());
+System.assertEquals(6, regionMatcher.end());
+System.assert(!regionMatcher.find());
+regionMatcher.reset();
+System.assertEquals(0, regionMatcher.regionStart());
+System.assertEquals(16, regionMatcher.regionEnd());
+regionMatcher.region(10, 13);
+System.assert(regionMatcher.matches());
+System.assertEquals('DEF', regionMatcher.group());
+System.assertEquals(10, regionMatcher.start());
+System.assertEquals(13, regionMatcher.end());
+	Matcher regionReplace = regionWords.matcher('aa ABC bb DEF cc');
+	regionReplace.region(3, 10);
+	System.assertEquals('aa x bb DEF cc', regionReplace.replaceFirst('x'));
+	System.assertEquals('aa x bb DEF cc', regionReplace.replaceAll('x'));
+	System.assert(regionReplace.find());
+	System.assertEquals('ABC', regionReplace.group());
+	System.assertEquals(3, regionReplace.start());
+	System.assertEquals(6, regionReplace.end());
+	Pattern digits = Pattern.compile('[0-9]+');
+regionMatcher.usePattern(digits);
+regionMatcher.reset('aa 123 bb ABC');
+regionMatcher.region(3, 9);
+System.assert(regionMatcher.find());
+System.assertEquals('123', regionMatcher.group());
 
 Pattern comma = Pattern.compile(',');
 List<String> splitDefault = comma.split('a,b,,');
@@ -178,10 +214,102 @@ func TestMatcherStdlibRejectsBadArgumentShapes(t *testing.T) {
 		{method: "hasTransparentBounds", args: []Value{Int(1)}},
 		{method: "useAnchoringBounds", args: []Value{String("false")}},
 		{method: "useTransparentBounds", args: []Value{String("true")}},
+		{method: "region", args: []Value{Int(0)}},
+		{method: "regionStart", args: []Value{Int(0)}},
+		{method: "regionEnd", args: []Value{Int(0)}},
+		{method: "usePattern", args: []Value{String("[0-9]+")}},
 	}
 	for _, tc := range tests {
 		if _, _, _, handled, err := callMatcherMember(matcher, tc.method, tc.args); !handled || err == nil {
 			t.Fatalf("%s expected handled error, handled=%v err=%v", tc.method, handled, err)
 		}
+	}
+}
+
+func TestMatcherRegionRejectsInvalidBounds(t *testing.T) {
+	tests := []struct {
+		name   string
+		source string
+		want   string
+	}{
+		{
+			name: "negative",
+			source: `
+Pattern p = Pattern.compile('[A-Z]+');
+Matcher m = p.matcher('ABC');
+m.region(-1, 2);
+`,
+			want: "bounds must be non-negative",
+		},
+		{
+			name: "reversed",
+			source: `
+Pattern p = Pattern.compile('[A-Z]+');
+Matcher m = p.matcher('ABC');
+m.region(2, 1);
+`,
+			want: "start must be less than or equal to end",
+		},
+		{
+			name: "tooLong",
+			source: `
+Pattern p = Pattern.compile('[A-Z]+');
+Matcher m = p.matcher('ABC');
+m.region(0, 4);
+`,
+			want: "end out of range",
+		},
+		{
+			name: "findStartOutsideRegion",
+			source: `
+Pattern p = Pattern.compile('[A-Z]+');
+Matcher m = p.matcher('ABC DEF');
+m.region(4, 7);
+m.find(0);
+`,
+			want: "start out of region",
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			program, err := CompileAnonymous(tc.source)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), tc.want) {
+				t.Fatalf("expected %q error, got %v", tc.want, err)
+			}
+		})
+	}
+}
+
+func TestMatcherAppendReplacementUnsupported(t *testing.T) {
+	for _, method := range []string{"appendReplacement", "appendTail"} {
+		matcher := Object("Matcher")
+		matcher.Fields["source"] = String("[A-Z]+")
+		matcher.Fields["input"] = String("ABC")
+		_, _, _, handled, err := callMatcherMember(matcher, method, []Value{String(""), String("x")})
+		if !handled || err == nil || !strings.Contains(err.Error(), "StringBuffer append semantics") {
+			t.Fatalf("expected %s unsupported error, handled=%v err=%v", method, handled, err)
+		}
+		var runtimeErr *RuntimeError
+		if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" {
+			t.Fatalf("expected UnsupportedFeature runtime error, got %T %v", err, err)
+		}
+	}
+}
+
+func TestJavaReplacementEscapesDollar(t *testing.T) {
+	converted := javaReplacementToGoTemplate(`\$1`)
+	if converted != `$$1` {
+		t.Fatalf("expected Go literal-dollar template, got %q", converted)
+	}
+	re := regexp.MustCompile(`([A-Z]+)([0-9]+)`)
+	got, err := matcherReplace("Matcher.replaceAll", re, "A1 B22", matcherRegionBounds{endRune: 6, endByte: 6}, []Value{String(`\$1`)}, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != "$1 $1" {
+		t.Fatalf("expected escaped dollar replacement, got %q", got)
 	}
 }
