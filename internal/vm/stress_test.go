@@ -10,7 +10,8 @@ import (
 func TestStressDescribeHeavyExecution(t *testing.T) {
 	var source string
 	source += "Map<String,Object> describes = Schema.getGlobalDescribe();\n"
-	source += "Object accountDescribe = describes.get('Account');\n"
+	source += "Object accountType = describes.get('Account');\n"
+	source += "Object accountDescribe = accountType.getDescribe();\n"
 	for i := 0; i < 80; i++ {
 		source += fmt.Sprintf("Map<String,Object> fields%d = accountDescribe.fields.getMap();\n", i)
 		source += fmt.Sprintf("System.assert(fields%d.containsKey('Name'));\n", i)

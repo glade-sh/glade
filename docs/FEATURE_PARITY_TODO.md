@@ -261,6 +261,10 @@ a Salesforce-shaped local API server without silently wrong behavior.
     `DescribeSObjectResult.getRecordTypeInfos`,
     `getRecordTypeInfosByName`, `getRecordTypeInfosByDeveloperName`, and common
     `RecordTypeInfo` methods with deterministic local record type IDs.
+  - [x] Return SObjectType tokens from `Schema.getGlobalDescribe()` and accept
+    both object names and tokens in `Schema.describeSObjects(...)`.
+  - [x] Fence unmodeled field sets and dependent picklist controller metadata
+    with stable `UnsupportedFeature` diagnostics.
 - [x] Expand static SOQL parsing/execution with `AND`/`OR`, `IN`/`NOT IN`,
   `LIKE`, comparison operators, `NOT`, and parenthesized conditions.
   - **Limitation**: Apex compiler does not support chained method calls
@@ -499,8 +503,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Add basic `Type.forName(...)` and `Type.newInstance()` factory support.
   - [x] Add `Database.setSavepoint()` and `Database.rollback(...)` for local
     org-state snapshots.
-  - [x] Add `Schema.describeSObjects(...)` basics plus local describe access
-    booleans for SObjects and fields.
+  - [x] Add `Schema.getGlobalDescribe()` / `Schema.describeSObjects(...)`
+    token-shaped local describe behavior plus local describe access booleans for
+    SObjects and fields.
   - **Limitation**: Broader standard-library method parity remains tracked by
     the common stdlib and unsupported-error rows below.
 - [x] Complete common `String`, `Pattern`, `Matcher`, `Date`, `Datetime`,
