@@ -307,6 +307,20 @@ func TestRunJSONGeneratorFieldNameInArrayFixture(t *testing.T) {
 	}
 }
 
+func TestRunJSONGeneratorEndArrayInObjectFixture(t *testing.T) {
+	fixture, err := LoadFile("../../docs/fixtures/core-json-generator-end-array-in-object.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := Run(fixture)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.OK {
+		t.Fatalf("result = %#v", result)
+	}
+}
+
 func TestRunLimitsDMLDocumentedCasingFixture(t *testing.T) {
 	fixture, err := LoadFile("../../docs/fixtures/limits-dml-documented-casing.json")
 	if err != nil {
