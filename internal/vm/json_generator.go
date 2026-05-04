@@ -281,7 +281,7 @@ func jsonGeneratorWriteFieldName(receiver Value, name string) (Value, error) {
 	}
 	frame := stack.List[len(stack.List)-1]
 	if jsonGeneratorStringField(frame, "kind").Text != "object" {
-		return receiver, fmt.Errorf("JSONGenerator.writeFieldName requires an open object")
+		return receiver, newExceptionError("JSONException", "JSONGenerator.writeFieldName cannot be called inside an array")
 	}
 	if !jsonGeneratorBoolField(frame, "expectingField").Bool {
 		return receiver, fmt.Errorf("JSONGenerator field %q is missing a value", jsonGeneratorStringField(frame, "pendingField").Text)
