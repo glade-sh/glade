@@ -635,6 +635,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     of treating query-plan probes as malformed or normal SOQL execution.
   - [x] Add explicit full-layout unsupported responses and an empty compact
     layouts stub for local tooling probes.
+  - [x] Cover common compact layout describe aliases with the same conservative
+    empty local stub.
   - [x] Add explicit approval-layout and named-layout unsupported responses with
     advertised object resource URLs.
   - [x] Return explicit unsupported default-values responses and malformed-ID
@@ -753,8 +755,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
     Composite sObject retrieve, search/Bulk method boundaries, SObject
     list-view stubs, recent `limit=`, Apex REST stubs, and
     executeAnonymous form-body behavior in the server black-box fixture.
-  - [x] Cover SObject approval/named layout stubs, object-scoped quick action
-    stubs, and REST namespace method boundaries in the server black-box fixture.
+  - [x] Cover SObject approval/named layout stubs, compact layout describe
+    aliases, object-scoped quick action stubs, and REST namespace method
+    boundaries in the server black-box fixture.
 
 ## 9. Compatibility, Hardening, And Release
 

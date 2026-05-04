@@ -1821,13 +1821,18 @@ func isObjectMetadataRoute(parts []string) bool {
 		return parts[1] == "layouts" || parts[1] == "compactLayouts"
 	}
 	if len(parts) == 3 && parts[1] == "describe" {
-		return parts[2] == "layouts" || parts[2] == "approvalLayouts" || parts[2] == "namedLayouts"
+		return parts[2] == "layouts" || parts[2] == "approvalLayouts" || parts[2] == "namedLayouts" || parts[2] == "compactLayouts"
+	}
+	if len(parts) == 4 && parts[1] == "describe" && parts[2] == "compactLayouts" {
+		return parts[3] != ""
 	}
 	return len(parts) == 3 && parts[1] == "namedLayouts"
 }
 
 func isCompactLayoutsRoute(parts []string) bool {
-	return len(parts) == 2 && parts[1] == "compactLayouts"
+	return (len(parts) == 2 && parts[1] == "compactLayouts") ||
+		(len(parts) == 3 && parts[1] == "describe" && parts[2] == "compactLayouts") ||
+		(len(parts) == 4 && parts[1] == "describe" && parts[2] == "compactLayouts" && parts[3] != "")
 }
 
 func describePayload(def storage.ObjectDefinition, org *storage.OrgState) map[string]any {

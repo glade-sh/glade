@@ -863,22 +863,60 @@ func TestSObjectCompactLayoutsStub(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
 
-	compact := httptest.NewRecorder()
-	handler.ServeHTTP(compact, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/compactLayouts", nil))
-	if compact.Code != http.StatusOK {
-		t.Fatalf("compact status = %d body=%s", compact.Code, compact.Body.String())
+	for _, path := range []string{
+		"/services/data/v61.0/sobjects/Account/compactLayouts",
+		"/services/data/v61.0/sobjects/Account/describe/compactLayouts",
+		"/services/data/v61.0/sobjects/Account/describe/compactLayouts/012000000000001",
+	} {
+		compact := httptest.NewRecorder()
+		handler.ServeHTTP(compact, httptest.NewRequest(http.MethodGet, path, nil))
+		if compact.Code != http.StatusOK {
+			t.Fatalf("%s compact status = %d body=%s", path, compact.Code, compact.Body.String())
+		}
+		var payload struct {
+			ObjectType             string           `json:"objectType"`
+			CompactLayouts         []map[string]any `json:"compactLayouts"`
+			DefaultCompactLayoutID *string          `json:"defaultCompactLayoutId"`
+			Message                string           `json:"message"`
+		}
+		if err := json.Unmarshal(compact.Body.Bytes(), &payload); err != nil {
+			t.Fatal(err)
+		}
+		if payload.ObjectType != "Account" || len(payload.CompactLayouts) != 0 || payload.DefaultCompactLayoutID != nil || !strings.Contains(payload.Message, "empty local stub") {
+			t.Fatalf("%s compact payload = %#v", path, payload)
+		}
 	}
-	var payload struct {
-		ObjectType             string           `json:"objectType"`
-		CompactLayouts         []map[string]any `json:"compactLayouts"`
-		DefaultCompactLayoutID *string          `json:"defaultCompactLayoutId"`
-		Message                string           `json:"message"`
+
+	method := httptest.NewRecorder()
+	handler.ServeHTTP(method, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/sobjects/Account/describe/compactLayouts/012000000000001", nil))
+	assertSalesforceError(t, method, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
+	if got := method.Header().Get("Allow"); got != http.MethodGet {
+		t.Fatalf("Allow = %q, want %q", got, http.MethodGet)
 	}
-	if err := json.Unmarshal(compact.Body.Bytes(), &payload); err != nil {
-		t.Fatal(err)
-	}
-	if payload.ObjectType != "Account" || len(payload.CompactLayouts) != 0 || payload.DefaultCompactLayoutID != nil || !strings.Contains(payload.Message, "empty local stub") {
-		t.Fatalf("compact payload = %#v", payload)
+
+	unknown := httptest.NewRecorder()
+	handler.ServeHTTP(unknown, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Missing__c/describe/compactLayouts", nil))
+	assertSalesforceError(t, unknown, http.StatusNotFound, "NOT_FOUND", "unknown object")
+
+	unknown = httptest.NewRecorder()
+	handler.ServeHTTP(unknown, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Missing__c/describe/compactLayouts/012000000000001", nil))
+	assertSalesforceError(t, unknown, http.StatusNotFound, "NOT_FOUND", "unknown object")
+}
+
+func TestSObjectCompactLayoutDescribeMethodBoundary(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	for _, path := range []string{
+		"/services/data/v61.0/sobjects/Account/describe/compactLayouts",
+		"/services/data/v61.0/sobjects/Account/describe/compactLayouts/012000000000001",
+	} {
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, path, nil))
+		assertSalesforceError(t, rec, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
+		if got := rec.Header().Get("Allow"); got != http.MethodGet {
+			t.Fatalf("%s Allow = %q, want %q", path, got, http.MethodGet)
+		}
 	}
 }
 
