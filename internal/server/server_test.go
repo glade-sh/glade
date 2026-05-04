@@ -78,6 +78,131 @@ func TestSObjectCRUDAndQuery(t *testing.T) {
 	}
 }
 
+func TestSObjectExternalIDRoutesCRUD(t *testing.T) {
+	org := testOrg()
+	addExternalIDFieldForTest(&org)
+	handler := New(&org)
+
+	create := httptest.NewRecorder()
+	handler.ServeHTTP(create, httptest.NewRequest(http.MethodPatch, "/services/data/v61.0/sobjects/Account/External_Id__c/EXT-1", strings.NewReader(`{"Name":"Trail","Description":null}`)))
+	if create.Code != http.StatusCreated {
+		t.Fatalf("external id create status = %d body=%s", create.Code, create.Body.String())
+	}
+	var created struct {
+		ID      storage.ID `json:"id"`
+		Success bool       `json:"success"`
+		Created bool       `json:"created"`
+	}
+	if err := json.Unmarshal(create.Body.Bytes(), &created); err != nil {
+		t.Fatal(err)
+	}
+	if created.ID != "001000000000001" || !created.Success || !created.Created {
+		t.Fatalf("external id create payload = %#v", created)
+	}
+
+	get := httptest.NewRecorder()
+	handler.ServeHTTP(get, httptest.NewRequest(http.MethodGet, "/services/data/v60.0/sobjects/Account/External_Id__c/EXT-1", nil))
+	if get.Code != http.StatusOK {
+		t.Fatalf("external id get status = %d body=%s", get.Code, get.Body.String())
+	}
+	var payload map[string]any
+	if err := json.Unmarshal(get.Body.Bytes(), &payload); err != nil {
+		t.Fatal(err)
+	}
+	attrs, ok := payload["attributes"].(map[string]any)
+	if !ok || attrs["url"] != "/services/data/v60.0/sobjects/Account/001000000000001" {
+		t.Fatalf("external id record attributes = %#v", payload["attributes"])
+	}
+	if payload["Id"] != "001000000000001" || payload["External_Id__c"] != "EXT-1" || payload["Description"] != nil {
+		t.Fatalf("external id get payload = %#v", payload)
+	}
+
+	update := httptest.NewRecorder()
+	handler.ServeHTTP(update, httptest.NewRequest(http.MethodPatch, "/services/data/v61.0/sobjects/Account/External_Id__c/EXT-1", strings.NewReader(`{"Name":"Trail Updated","External_Id__c":"EXT-1","Description":null}`)))
+	if update.Code != http.StatusNoContent {
+		t.Fatalf("external id update status = %d body=%s", update.Code, update.Body.String())
+	}
+
+	updatedGet := httptest.NewRecorder()
+	handler.ServeHTTP(updatedGet, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/External_Id__c/EXT-1", nil))
+	if updatedGet.Code != http.StatusOK || !bytes.Contains(updatedGet.Body.Bytes(), []byte(`"Trail Updated"`)) || !bytes.Contains(updatedGet.Body.Bytes(), []byte(`"Description":null`)) {
+		t.Fatalf("external id updated get status = %d body=%s", updatedGet.Code, updatedGet.Body.String())
+	}
+
+	del := httptest.NewRecorder()
+	handler.ServeHTTP(del, httptest.NewRequest(http.MethodDelete, "/services/data/v61.0/sobjects/Account/External_Id__c/EXT-1", nil))
+	if del.Code != http.StatusNoContent {
+		t.Fatalf("external id delete status = %d body=%s", del.Code, del.Body.String())
+	}
+
+	missing := httptest.NewRecorder()
+	handler.ServeHTTP(missing, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/External_Id__c/EXT-1", nil))
+	if missing.Code != http.StatusNotFound || !bytes.Contains(missing.Body.Bytes(), []byte(`"errorCode":"NOT_FOUND"`)) {
+		t.Fatalf("external id missing status = %d body=%s", missing.Code, missing.Body.String())
+	}
+}
+
+func TestSObjectExternalIDRoutesRejectNonExternalFieldsAndMethods(t *testing.T) {
+	org := testOrg()
+	addExternalIDFieldForTest(&org)
+	handler := New(&org)
+
+	for _, path := range []string{
+		"/services/data/v61.0/sobjects/Account/Name/Acme",
+		"/services/data/v61.0/sobjects/Account/Missing_Key__c/Acme",
+	} {
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+		if rec.Code != http.StatusBadRequest || !bytes.Contains(rec.Body.Bytes(), []byte(`"errorCode":"INVALID_FIELD"`)) {
+			t.Fatalf("%s status = %d body=%s", path, rec.Code, rec.Body.String())
+		}
+	}
+
+	method := httptest.NewRecorder()
+	handler.ServeHTTP(method, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/sobjects/Account/External_Id__c/EXT-1", strings.NewReader(`{}`)))
+	if method.Code != http.StatusMethodNotAllowed {
+		t.Fatalf("external id method status = %d body=%s", method.Code, method.Body.String())
+	}
+	if got := method.Header().Get("Allow"); got != "GET, PATCH, DELETE" {
+		t.Fatalf("external id method Allow = %q", got)
+	}
+	if !bytes.Contains(method.Body.Bytes(), []byte(`"errorCode":"METHOD_NOT_ALLOWED"`)) {
+		t.Fatalf("external id method shape = %s", method.Body.String())
+	}
+}
+
+func TestSObjectExternalIDRoutesHandleEscapedPathSegments(t *testing.T) {
+	org := testOrg()
+	addExternalIDFieldForTest(&org)
+	handler := New(&org)
+
+	create := httptest.NewRecorder()
+	handler.ServeHTTP(create, httptest.NewRequest(http.MethodPatch, "/services/data/v61.0/sobjects/Account/External_Id__c/DEPT%2F001", strings.NewReader(`{"Name":"Slash Trail"}`)))
+	if create.Code != http.StatusCreated {
+		t.Fatalf("external id escaped create status = %d body=%s", create.Code, create.Body.String())
+	}
+
+	get := httptest.NewRecorder()
+	handler.ServeHTTP(get, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/External_Id__c/DEPT%2F001", nil))
+	if get.Code != http.StatusOK {
+		t.Fatalf("external id escaped get status = %d body=%s", get.Code, get.Body.String())
+	}
+	if !bytes.Contains(get.Body.Bytes(), []byte(`"External_Id__c":"DEPT/001"`)) || !bytes.Contains(get.Body.Bytes(), []byte(`"Slash Trail"`)) {
+		t.Fatalf("external id escaped get body = %s", get.Body.String())
+	}
+}
+
+func TestStorageValuesEqualCaseInsensitiveIDStringCoercion(t *testing.T) {
+	field := storage.Field{Type: storage.FieldID, CaseSensitive: false}
+	if !storageValuesEqual(field, storage.IDValue("ABC001"), storage.StringValue("abc001")) {
+		t.Fatal("case-insensitive ID/string external ID comparison failed")
+	}
+	field.CaseSensitive = true
+	if storageValuesEqual(field, storage.IDValue("ABC001"), storage.StringValue("abc001")) {
+		t.Fatal("case-sensitive ID/string external ID comparison matched")
+	}
+}
+
 func TestQueryPaginationNoBatchSizePreservesFullResult(t *testing.T) {
 	org := testOrg()
 	addAccountForTest(&org, "001000000000001", "A")
@@ -2125,6 +2250,12 @@ func testOrg() storage.OrgState {
 		Records: make(map[storage.ID]storage.Record),
 	}
 	return org
+}
+
+func addExternalIDFieldForTest(org *storage.OrgState) {
+	object := org.Objects["Account"]
+	object.Definition.Fields["External_Id__c"] = storage.Field{APIName: "External_Id__c", Type: storage.FieldString, ExternalID: true, Unique: true}
+	org.Objects["Account"] = object
 }
 
 func addAccountForTest(org *storage.OrgState, id storage.ID, name string) {
