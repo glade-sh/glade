@@ -647,6 +647,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Return stable unsupported errors for generic composite subrequest
     orchestration, batch, tree, and graph routes instead of fake composite
     success.
+  - [x] Return stable unsupported or method-not-allowed responses for common
+    unmodeled Composite sObject update, delete, typed collection, and upsert
+    route boundaries while keeping baseline collection insert modeled.
 - [ ] Add Bulk API approximations if needed by local integration tests.
   - [x] Add explicit Bulk API v2 query and ingest job stubs with Salesforce-shaped
     unsupported errors instead of fake job success.
@@ -677,6 +680,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     unsupported route shapes in the server black-box fixture.
   - [x] Cover generic composite unsupported route shape in the server black-box
     fixture.
+  - [x] Cover common Composite sObject update/upsert unsupported route shapes in
+    the server black-box fixture.
   - [x] Cover common top-level REST namespace unsupported route shapes in the
     server black-box fixture.
   - [x] Cover Tooling `executeAnonymous` persistence, rollback, selected bearer
