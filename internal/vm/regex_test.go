@@ -369,6 +369,94 @@ m.group();
 	}
 }
 
+func TestMatcherFailedMatchesClearPreviousMatch(t *testing.T) {
+	program, err := CompileAnonymous(`
+Pattern p = Pattern.compile('[A-Z]+');
+Matcher m = p.matcher('ABC def');
+System.assert(m.find());
+System.assertEquals('ABC', m.group());
+System.assert(!m.matches());
+m.group();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), "before a successful match") {
+		t.Fatalf("expected matches() failure to clear stale match, got %v", err)
+	}
+}
+
+func TestMatcherFailedLookingAtClearsPreviousMatch(t *testing.T) {
+	program, err := CompileAnonymous(`
+Pattern p = Pattern.compile('[A-Z]+');
+Matcher m = p.matcher('ABC def');
+System.assert(m.find());
+System.assertEquals('ABC', m.group());
+m.reset('abc DEF');
+System.assert(!m.lookingAt());
+m.start();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), "before a successful match") {
+		t.Fatalf("expected lookingAt() failure to clear stale match, got %v", err)
+	}
+}
+
+func TestMatcherGroupIndexErrorsAndOptionalGroups(t *testing.T) {
+	program, err := CompileAnonymous(`
+Pattern p = Pattern.compile('([A-Z]+)([0-9]+)?');
+Matcher m = p.matcher('ABC');
+System.assert(m.matches());
+System.assertEquals(null, m.group(2));
+System.assertEquals(-1, m.start(2));
+System.assertEquals(-1, m.end(2));
+m.group(3);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), "Matcher groupIndex out of range") {
+		t.Fatalf("expected invalid group index error, got %v", err)
+	}
+}
+
+func TestRegexSplitRejectsNullablePatterns(t *testing.T) {
+	tests := []struct {
+		name   string
+		source string
+		want   string
+	}{
+		{
+			name:   "stringEmptyPattern",
+			source: `String source = 'abc'; source.split('', -1);`,
+			want:   `String.split regexes that can match empty strings`,
+		},
+		{
+			name:   "patternNullableDelimiter",
+			source: `Pattern p = Pattern.compile('a*'); p.split('ab cd', -1);`,
+			want:   `Pattern.split regexes that can match empty strings`,
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			program, err := CompileAnonymous(tc.source)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = Execute(program, nil)
+			if err == nil || !strings.Contains(err.Error(), tc.want) {
+				t.Fatalf("expected %q error, got %v", tc.want, err)
+			}
+			var runtimeErr *RuntimeError
+			if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" {
+				t.Fatalf("expected UnsupportedFeature runtime error, got %T %v", err, err)
+			}
+		})
+	}
+}
+
 func TestMatcherAppendReplacementUnsupported(t *testing.T) {
 	for _, method := range []string{"appendReplacement", "appendTail"} {
 		matcher := Object("Matcher")

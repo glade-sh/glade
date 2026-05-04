@@ -639,34 +639,21 @@ func TestStringRegexReplacementSplitAndUnsupportedEdges(t *testing.T) {
 	}
 }
 
-func TestStringRegexSplitZeroWidthEdges(t *testing.T) {
-	split, handled, err := callStringMember(String("abc"), "split", []Value{String(""), Int(-1)})
-	if err != nil || !handled || split.Kind != ValueList || len(split.List) != 4 || split.List[0].Text != "a" || split.List[1].Text != "b" || split.List[2].Text != "c" || split.List[3].Text != "" {
-		t.Fatalf("empty regex split = %#v handled=%v err=%v", split, handled, err)
+func TestStringRegexSplitRejectsNullableEdges(t *testing.T) {
+	var runtimeErr *RuntimeError
+	for _, pattern := range []string{"", `\b`, "^"} {
+		_, _, err := callStringMember(String("abc"), "split", []Value{String(pattern), Int(-1)})
+		if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || !strings.Contains(runtimeErr.Message, "String.split regexes that can match empty strings") {
+			t.Fatalf("split %q err = %#v", pattern, err)
+		}
 	}
-	split, handled, err = callStringMember(String("abc"), "split", []Value{String(""), Int(0)})
-	if err != nil || !handled || split.Kind != ValueList || len(split.List) != 3 || split.List[0].Text != "a" || split.List[2].Text != "c" {
-		t.Fatalf("empty regex split trim = %#v handled=%v err=%v", split, handled, err)
-	}
-	split, handled, err = callStringMember(String("abc"), "split", []Value{String(""), Int(2)})
-	if err != nil || !handled || split.Kind != ValueList || len(split.List) != 2 || split.List[0].Text != "a" || split.List[1].Text != "bc" {
-		t.Fatalf("empty regex split limit = %#v handled=%v err=%v", split, handled, err)
-	}
-	split, handled, err = callStringMember(String("abc"), "split", []Value{String(`\b`), Int(-1)})
-	if err != nil || !handled || split.Kind != ValueList || len(split.List) != 2 || split.List[0].Text != "abc" || split.List[1].Text != "" {
-		t.Fatalf("word-boundary split = %#v handled=%v err=%v", split, handled, err)
-	}
-	split, handled, err = callStringMember(String(""), "split", []Value{String("x")})
+	split, handled, err := callStringMember(String(""), "split", []Value{String("x")})
 	if err != nil || !handled || split.Kind != ValueList || len(split.List) != 1 || split.List[0].Text != "" {
 		t.Fatalf("empty no-match split = %#v handled=%v err=%v", split, handled, err)
 	}
-	split, handled, err = callStringMember(String("abc"), "split", []Value{String("^")})
-	if err != nil || !handled || split.Kind != ValueList || len(split.List) != 1 || split.List[0].Text != "abc" {
-		t.Fatalf("start-anchor split = %#v handled=%v err=%v", split, handled, err)
-	}
-	parts, err := splitRegex("Pattern.split", "", "Ωb", -1)
-	if err != nil || len(parts) != 3 || parts[0] != "Ω" || parts[1] != "b" || parts[2] != "" {
-		t.Fatalf("Pattern.split empty regex = %#v err=%v", parts, err)
+	_, err = splitRegex("Pattern.split", "", "Ωb", -1)
+	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || !strings.Contains(runtimeErr.Message, "Pattern.split regexes that can match empty strings") {
+		t.Fatalf("Pattern.split empty regex err = %#v", err)
 	}
 }
 

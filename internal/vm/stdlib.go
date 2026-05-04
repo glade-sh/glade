@@ -2303,38 +2303,32 @@ func splitRegex(name, pattern, text string, limit int64) ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%s invalid regex: %w", name, err)
 	}
+	if splitRegexCanMatchEmpty(pattern, re) {
+		return nil, unsupportedCallError(name + " regexes that can match empty strings")
+	}
+	if !re.MatchString(text) {
+		return []string{text}, nil
+	}
 	if limit == 1 {
 		return []string{text}, nil
 	}
-	matches := re.FindAllStringIndex(text, -1)
-	parts := make([]string, 0, len(matches)+1)
-	index := 0
-	splitApplied := false
-	for _, match := range matches {
-		start, end := match[0], match[1]
-		if limit > 0 && int64(len(parts)) == limit-1 {
-			break
-		}
-		if index == 0 && start == 0 && end == 0 {
-			continue
-		}
-		parts = append(parts, text[index:start])
-		index = end
-		splitApplied = true
-	}
-	if !splitApplied {
-		return []string{text}, nil
-	}
-	parts = append(parts, text[index:])
 	if limit > 0 {
-		return parts, nil
+		return re.Split(text, int(limit)), nil
 	}
+	parts := re.Split(text, -1)
 	if limit == 0 {
 		for len(parts) > 0 && parts[len(parts)-1] == "" {
 			parts = parts[:len(parts)-1]
 		}
 	}
 	return parts, nil
+}
+
+func splitRegexCanMatchEmpty(pattern string, re *regexp.Regexp) bool {
+	if re.MatchString("") {
+		return true
+	}
+	return pattern == "^" || pattern == "$" || strings.Contains(pattern, `\b`)
 }
 
 func patternSplit(source string, args []Value) ([]string, error) {
