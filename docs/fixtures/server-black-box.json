@@ -191,6 +191,34 @@
       "contains": ["\"objectType\":\"Account\"", "\"compactLayouts\":[]", "empty local stub"]
     },
     {
+      "name": "compact-layouts-describe-alias-stub",
+      "method": "GET",
+      "path": "/services/data/v61.0/sobjects/Account/describe/compactLayouts",
+      "status": 200,
+      "contains": ["\"objectType\":\"Account\"", "\"compactLayouts\":[]", "empty local stub"]
+    },
+    {
+      "name": "compact-layouts-record-type-alias-stub",
+      "method": "GET",
+      "path": "/services/data/v61.0/sobjects/Account/describe/compactLayouts/012000000000001",
+      "status": 200,
+      "contains": ["\"objectType\":\"Account\"", "\"compactLayouts\":[]", "empty local stub"]
+    },
+    {
+      "name": "compact-layouts-describe-alias-method-not-allowed",
+      "method": "POST",
+      "path": "/services/data/v61.0/sobjects/Account/describe/compactLayouts",
+      "status": 405,
+      "contains": ["METHOD_NOT_ALLOWED", "method not allowed"]
+    },
+    {
+      "name": "compact-layouts-record-type-alias-unknown-object",
+      "method": "GET",
+      "path": "/services/data/v61.0/sobjects/Missing__c/describe/compactLayouts/012000000000001",
+      "status": 404,
+      "contains": ["NOT_FOUND", "unknown object"]
+    },
+    {
       "name": "layouts-unsupported",
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Account/layouts",
@@ -860,8 +888,8 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 111,
-      "statuses": [200, 200, 200, 405, 405, 200, 200, 200, 200, 405, 501, 501, 501, 501, 200, 405, 201, 200, 200, 200, 200, 200, 400, 200, 501, 501, 501, 501, 405, 404, 501, 501, 501, 501, 405, 404, 501, 501, 501, 405, 404, 400, 200, 501, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 400, 200, 200, 201, 204, 200, 201, 204, 200, 200, 204, 400, 501, 501, 200, 200, 200, 200, 501, 405, 501, 405, 501, 501, 405, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 405, 501, 501, 405, 501, 405, 501, 501, 405, 501, 501, 501, 404, 404, 200, 200, 201],
+      "requests": 115,
+      "statuses": [200, 200, 200, 405, 405, 200, 200, 200, 200, 405, 501, 501, 501, 501, 200, 405, 201, 200, 200, 200, 200, 200, 400, 200, 200, 200, 405, 404, 501, 501, 501, 501, 405, 404, 501, 501, 501, 501, 405, 404, 501, 501, 501, 405, 404, 400, 200, 501, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 400, 200, 200, 201, 204, 200, 201, 204, 200, 200, 204, 400, 501, 501, 200, 200, 200, 200, 501, 405, 501, 405, 501, 501, 405, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 405, 501, 501, 405, 501, 405, 501, 501, 405, 501, 501, 501, 404, 404, 200, 200, 201],
       "users": 2
     }
   }
