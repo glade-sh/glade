@@ -917,6 +917,10 @@ a Salesforce-shaped local API server without silently wrong behavior.
     and `Id` instead of leaking internal storage value wrappers.
   - [x] Return REST and Tooling query rows as SObject-shaped payloads with
     `attributes`, `Id`, and flat fields instead of internal storage records.
+  - [x] Apply REST and Tooling `queryAll` through local `ALL ROWS`, default
+    query pagination to the local 2000-row cap, snapshot queryMore rows in
+    memory, and return stable unknown/expired locator errors for unsupported
+    durable query locator edges.
   - [x] Return explicit unsupported SOQL query-plan `explain` responses instead
     of treating query-plan probes as malformed or normal SOQL execution.
   - [x] Add explicit full-layout unsupported responses and an empty compact
@@ -1071,6 +1075,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
     fixture.
   - [x] Cover Tooling `query`/`queryAll` pagination continuations and GET-only
     queryMore boundaries in the server black-box fixture.
+  - [x] Cover REST query/queryAll batch-size boundaries, queryMore final-page
+    expiry, malformed/expired locators, method boundaries, and soft-deleted
+    `queryAll` visibility in the server black-box fixture.
   - [x] Cover generic composite unsupported route shape in the server black-box
     fixture.
   - [x] Cover Composite sObject collection update/delete, typed Composite

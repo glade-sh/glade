@@ -469,7 +469,7 @@ func TestQueryPaginationFirstAndNextPage(t *testing.T) {
 }
 
 func TestQueryPaginationInvalidBatchSize(t *testing.T) {
-	tests := []string{"0", "-1", "abc", "2001"}
+	tests := []string{"", "0", "-1", "abc", "2001"}
 	for _, batchSize := range tests {
 		t.Run(batchSize, func(t *testing.T) {
 			org := testOrg()
@@ -485,6 +485,112 @@ func TestQueryPaginationInvalidBatchSize(t *testing.T) {
 	}
 }
 
+func TestQueryPaginationDefaultBatchSizeBoundary(t *testing.T) {
+	org := testOrg()
+	for i := 1; i <= maxQueryBatchSize+1; i++ {
+		addAccountForTest(&org, storage.ID(fmt.Sprintf("001%012d", i)), fmt.Sprintf("Account %04d", i))
+	}
+	handler := New(&org)
+
+	recorder := httptest.NewRecorder()
+	handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/query?q=SELECT%20Id,%20Name%20FROM%20Account", nil))
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("query status = %d body=%s", recorder.Code, recorder.Body.String())
+	}
+	var payload struct {
+		TotalSize      int              `json:"totalSize"`
+		Done           bool             `json:"done"`
+		Records        []map[string]any `json:"records"`
+		NextRecordsURL string           `json:"nextRecordsUrl"`
+	}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &payload); err != nil {
+		t.Fatal(err)
+	}
+	if payload.TotalSize != maxQueryBatchSize+1 || payload.Done || len(payload.Records) != maxQueryBatchSize {
+		t.Fatalf("default batch payload = total=%d done=%v records=%d body=%s", payload.TotalSize, payload.Done, len(payload.Records), recorder.Body.String())
+	}
+	if payload.NextRecordsURL != "/services/data/v61.0/query/oaerql000001-2000" {
+		t.Fatalf("nextRecordsUrl = %q", payload.NextRecordsURL)
+	}
+}
+
+func TestQueryPaginationMaxExplicitBatchSizeBoundary(t *testing.T) {
+	org := testOrg()
+	for i := 1; i <= maxQueryBatchSize+1; i++ {
+		addAccountForTest(&org, storage.ID(fmt.Sprintf("001%012d", i)), fmt.Sprintf("Account %04d", i))
+	}
+	handler := New(&org)
+
+	recorder := httptest.NewRecorder()
+	handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/query?q=SELECT%20Id%20FROM%20Account&batchSize=2000", nil))
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("query status = %d body=%s", recorder.Code, recorder.Body.String())
+	}
+	if !bytes.Contains(recorder.Body.Bytes(), []byte(`"totalSize":2001`)) || !bytes.Contains(recorder.Body.Bytes(), []byte(`"done":false`)) || !bytes.Contains(recorder.Body.Bytes(), []byte(`"nextRecordsUrl":"/services/data/v61.0/query/oaerql000001-2000"`)) {
+		t.Fatalf("max explicit batch payload = %s", recorder.Body.String())
+	}
+}
+
+func TestQueryAllIncludesSoftDeletedRows(t *testing.T) {
+	org := testOrg()
+	addAccountForTest(&org, "001000000000001", "Active")
+	addAccountForTest(&org, "001000000000002", "Deleted")
+	object := org.Objects["Account"]
+	deleted := object.Records["001000000000002"]
+	deleted.System.IsDeleted = true
+	object.Records["001000000000002"] = deleted
+	org.Objects["Account"] = object
+	handler := New(&org)
+
+	query := httptest.NewRecorder()
+	handler.ServeHTTP(query, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/query?q=SELECT%20Id,%20Name,%20IsDeleted%20FROM%20Account", nil))
+	if query.Code != http.StatusOK {
+		t.Fatalf("query status = %d body=%s", query.Code, query.Body.String())
+	}
+	if bytes.Contains(query.Body.Bytes(), []byte(`"Name":"Deleted"`)) {
+		t.Fatalf("query exposed deleted record: %s", query.Body.String())
+	}
+
+	queryAll := httptest.NewRecorder()
+	handler.ServeHTTP(queryAll, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/queryAll?q=SELECT%20Id,%20Name,%20IsDeleted%20FROM%20Account", nil))
+	if queryAll.Code != http.StatusOK {
+		t.Fatalf("queryAll status = %d body=%s", queryAll.Code, queryAll.Body.String())
+	}
+	if !bytes.Contains(queryAll.Body.Bytes(), []byte(`"totalSize":2`)) || !bytes.Contains(queryAll.Body.Bytes(), []byte(`"Name":"Deleted"`)) || !bytes.Contains(queryAll.Body.Bytes(), []byte(`"IsDeleted":true`)) {
+		t.Fatalf("queryAll did not expose deleted row: %s", queryAll.Body.String())
+	}
+}
+
+func TestQueryMoreRowsRemainSnapshotAfterOrgMutation(t *testing.T) {
+	org := testOrg()
+	addAccountForTest(&org, "001000000000001", "A")
+	addAccountForTest(&org, "001000000000002", "B")
+	addAccountForTest(&org, "001000000000003", "C")
+	handler := New(&org)
+
+	first := httptest.NewRecorder()
+	handler.ServeHTTP(first, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/query?q=SELECT%20Id,%20Name%20FROM%20Account&batchSize=2", nil))
+	if first.Code != http.StatusOK {
+		t.Fatalf("first status = %d body=%s", first.Code, first.Body.String())
+	}
+
+	object := org.Objects["Account"]
+	mutated := object.Records["001000000000003"]
+	mutated.Fields["Name"] = storage.StringValue("Mutated")
+	mutated.System.IsDeleted = true
+	object.Records["001000000000003"] = mutated
+	org.Objects["Account"] = object
+
+	next := httptest.NewRecorder()
+	handler.ServeHTTP(next, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/query/oaerql000001-2", nil))
+	if next.Code != http.StatusOK {
+		t.Fatalf("next status = %d body=%s", next.Code, next.Body.String())
+	}
+	if !bytes.Contains(next.Body.Bytes(), []byte(`"Name":"C"`)) || bytes.Contains(next.Body.Bytes(), []byte(`"Name":"Mutated"`)) {
+		t.Fatalf("queryMore did not use snapshotted rows: %s", next.Body.String())
+	}
+}
+
 func TestQueryMoreUnknownLocator(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
@@ -493,6 +599,54 @@ func TestQueryMoreUnknownLocator(t *testing.T) {
 	handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/query/oaerql999999-2", nil))
 	if recorder.Code != http.StatusNotFound || !bytes.Contains(recorder.Body.Bytes(), []byte("NOT_FOUND")) {
 		t.Fatalf("status = %d body=%s", recorder.Code, recorder.Body.String())
+	}
+}
+
+func TestQueryMoreMalformedAndExpiredLocators(t *testing.T) {
+	org := testOrg()
+	addAccountForTest(&org, "001000000000001", "A")
+	addAccountForTest(&org, "001000000000002", "B")
+	handler := New(&org)
+
+	for _, token := range []string{"not-a-locator", "oaerql000001-x", "oaerql000001--1"} {
+		t.Run("malformed "+token, func(t *testing.T) {
+			recorder := httptest.NewRecorder()
+			handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/query/"+token, nil))
+			if recorder.Code != http.StatusNotFound || !bytes.Contains(recorder.Body.Bytes(), []byte("query locator not found or expired")) {
+				t.Fatalf("status = %d body=%s", recorder.Code, recorder.Body.String())
+			}
+		})
+	}
+
+	for i := 0; i < maxQueryLocators+1; i++ {
+		recorder := httptest.NewRecorder()
+		handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/query?q=SELECT%20Id%20FROM%20Account&batchSize=1", nil))
+		if recorder.Code != http.StatusOK {
+			t.Fatalf("locator seed %d status = %d body=%s", i, recorder.Code, recorder.Body.String())
+		}
+	}
+	expired := httptest.NewRecorder()
+	handler.ServeHTTP(expired, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/query/oaerql000001-1", nil))
+	if expired.Code != http.StatusNotFound || !bytes.Contains(expired.Body.Bytes(), []byte("query locator not found or expired")) {
+		t.Fatalf("expired status = %d body=%s", expired.Code, expired.Body.String())
+	}
+}
+
+func TestQueryMoreMethodBoundary(t *testing.T) {
+	org := testOrg()
+	addAccountForTest(&org, "001000000000001", "A")
+	addAccountForTest(&org, "001000000000002", "B")
+	handler := New(&org)
+
+	first := httptest.NewRecorder()
+	handler.ServeHTTP(first, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/query?q=SELECT%20Id%20FROM%20Account&batchSize=1", nil))
+	if first.Code != http.StatusOK {
+		t.Fatalf("first status = %d body=%s", first.Code, first.Body.String())
+	}
+	recorder := httptest.NewRecorder()
+	handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodPatch, "/services/data/v61.0/query/oaerql000001-1", nil))
+	if recorder.Code != http.StatusMethodNotAllowed || recorder.Header().Get("Allow") != http.MethodGet {
+		t.Fatalf("method boundary status=%d allow=%q body=%s", recorder.Code, recorder.Header().Get("Allow"), recorder.Body.String())
 	}
 }
 

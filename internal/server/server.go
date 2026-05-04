@@ -170,11 +170,11 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case len(rest) >= 2 && rest[0] == "sobjects":
 		s.handleObject(w, r, parts[2], rest[1:])
 	case len(rest) == 1 && rest[0] == "query":
-		s.handleQuery(w, r, parts[2], "query")
+		s.handleQuery(w, r, parts[2], "query", false)
 	case len(rest) == 2 && rest[0] == "query":
 		s.handleQueryMore(w, r, rest[1])
 	case len(rest) == 1 && rest[0] == "queryAll":
-		s.handleQuery(w, r, parts[2], "query")
+		s.handleQuery(w, r, parts[2], "query", true)
 	case len(rest) == 1 && rest[0] == "recent":
 		s.handleRecent(w, r, parts[2])
 	case len(rest) == 1 && rest[0] == "search":
@@ -864,8 +864,10 @@ func (s *Server) handleTooling(w http.ResponseWriter, r *http.Request, version s
 		writeJSON(w, http.StatusOK, toolingDiscoveryPayload(version))
 	case len(parts) == 1 && parts[0] == "executeAnonymous":
 		s.handleExecuteAnonymous(w, r)
-	case len(parts) == 1 && (parts[0] == "query" || parts[0] == "queryAll"):
-		s.handleQuery(w, r, version, "tooling/query")
+	case len(parts) == 1 && parts[0] == "query":
+		s.handleQuery(w, r, version, "tooling/query", false)
+	case len(parts) == 1 && parts[0] == "queryAll":
+		s.handleQuery(w, r, version, "tooling/query", true)
 	case len(parts) == 2 && parts[0] == "query":
 		s.handleQueryMore(w, r, parts[1])
 	case len(parts) == 1 && parts[0] == "search":
@@ -1928,7 +1930,7 @@ func (s *Server) persistOrg(org storage.OrgState) error {
 	return s.Store.Save(org)
 }
 
-func (s *Server) handleQuery(w http.ResponseWriter, r *http.Request, version string, nextPath string) {
+func (s *Server) handleQuery(w http.ResponseWriter, r *http.Request, version string, nextPath string, allRows bool) {
 	if r.Method != http.MethodGet {
 		writeMethodNotAllowed(w, http.MethodGet)
 		return
@@ -1937,7 +1939,20 @@ func (s *Server) handleQuery(w http.ResponseWriter, r *http.Request, version str
 		writeSalesforceError(w, errUnsupportedFeature, "SOQL query plan explain is not implemented in the local server")
 		return
 	}
-	result, err := soql.ParseAndExecute(*s.Org, r.URL.Query().Get("q"))
+	queryText := r.URL.Query().Get("q")
+	var result soql.Result
+	var err error
+	if allRows {
+		query, parseErr := soql.Parse(queryText)
+		if parseErr == nil {
+			query.AllRows = true
+			result, err = soql.Execute(*s.Org, query)
+		} else {
+			err = parseErr
+		}
+	} else {
+		result, err = soql.ParseAndExecute(*s.Org, queryText)
+	}
 	if err != nil {
 		writeSalesforceError(w, errMalformedQuery, err.Error())
 		return
@@ -1953,7 +1968,7 @@ func (s *Server) handleQuery(w http.ResponseWriter, r *http.Request, version str
 	}
 	locator := s.storeQueryLocator(queryLocatorState{
 		totalSize: result.Rows,
-		records:   append([]storage.Record(nil), result.Records...),
+		records:   cloneQueryRecords(result.Records),
 		batchSize: batchSize,
 		version:   version,
 		nextPath:  nextPath,
@@ -1999,9 +2014,13 @@ func (s *Server) handleQueryMore(w http.ResponseWriter, r *http.Request, token s
 }
 
 func queryBatchSize(r *http.Request) (int, bool, bool) {
-	raw := r.URL.Query().Get("batchSize")
-	if raw == "" {
-		return 0, false, true
+	values, exists := r.URL.Query()["batchSize"]
+	if !exists {
+		return maxQueryBatchSize, true, true
+	}
+	raw := ""
+	if len(values) > 0 {
+		raw = values[0]
 	}
 	size, err := strconv.Atoi(raw)
 	if err != nil || size <= 0 || size > maxQueryBatchSize {
@@ -2032,6 +2051,62 @@ func queryRecordsPayload(records []storage.Record, version string) []map[string]
 		out = append(out, row)
 	}
 	return out
+}
+
+func cloneQueryRecords(records []storage.Record) []storage.Record {
+	if records == nil {
+		return nil
+	}
+	cloned := make([]storage.Record, len(records))
+	for i, record := range records {
+		cloned[i] = cloneQueryRecord(record)
+	}
+	return cloned
+}
+
+func cloneQueryRecord(record storage.Record) storage.Record {
+	record.Fields = cloneStorageValues(record.Fields)
+	record.ExplicitNulls = cloneBoolMap(record.ExplicitNulls)
+	if record.Children != nil {
+		children := make(map[string][]storage.Record, len(record.Children))
+		for relationship, records := range record.Children {
+			children[relationship] = cloneQueryRecords(records)
+		}
+		record.Children = children
+	}
+	return record
+}
+
+func cloneStorageValues(values map[string]storage.Value) map[string]storage.Value {
+	if values == nil {
+		return nil
+	}
+	cloned := make(map[string]storage.Value, len(values))
+	for name, value := range values {
+		cloned[name] = cloneStorageValue(value)
+	}
+	return cloned
+}
+
+func cloneStorageValue(value storage.Value) storage.Value {
+	if value.List != nil {
+		value.List = append([]storage.Value(nil), value.List...)
+		for i, item := range value.List {
+			value.List[i] = cloneStorageValue(item)
+		}
+	}
+	return value
+}
+
+func cloneBoolMap(values map[string]bool) map[string]bool {
+	if values == nil {
+		return nil
+	}
+	cloned := make(map[string]bool, len(values))
+	for key, value := range values {
+		cloned[key] = value
+	}
+	return cloned
 }
 
 func (s *Server) storeQueryLocator(state queryLocatorState) string {
