@@ -187,6 +187,61 @@
       ]
     },
     {
+      "name": "oaer-fixture-export-rejects-mode",
+      "method": "GET",
+      "path": "/services/data/v61.0/oaer/fixture?mode=replace",
+      "status": 400,
+      "contains": [
+        "INVALID_FIXTURE",
+        "fixture export does not accept load mode"
+      ]
+    },
+    {
+      "name": "oaer-fixture-load-rejects-unknown-mode",
+      "method": "POST",
+      "path": "/services/data/v61.0/oaer/fixture?mode=clobber",
+      "body": "{\"version\":\"oaer.storage.v1\",\"objects\":[]}",
+      "status": 400,
+      "contains": [
+        "INVALID_FIXTURE",
+        "unknown fixture load mode"
+      ]
+    },
+    {
+      "name": "oaer-fixture-replace-mode",
+      "method": "POST",
+      "path": "/services/data/v61.0/oaer/fixture?mode=replace",
+      "body": "{\"version\":\"oaer.storage.v1\",\"objects\":[{\"name\":\"Account\",\"records\":[{\"id\":\"001000000000901\",\"fields\":{\"Name\":{\"kind\":\"string\",\"string\":\"Fixture Replace\"}}}]},{\"name\":\"User\",\"records\":[{\"id\":\"005000000000002\",\"fields\":{\"Username\":{\"kind\":\"string\",\"string\":\"ada@example.test\"},\"Email\":{\"kind\":\"string\",\"string\":\"ada.alias@example.test\"},\"Name\":{\"kind\":\"string\",\"string\":\"Ada Trail\"},\"IsActive\":{\"kind\":\"boolean\",\"boolean\":true},\"UserType\":{\"kind\":\"string\",\"string\":\"Standard\"}}}]}]}",
+      "status": 200,
+      "contains": [
+        "\"success\":true",
+        "\"mode\":\"replace\"",
+        "\"Account\":1",
+        "\"users\":2"
+      ]
+    },
+    {
+      "name": "oaer-fixture-export-after-replace",
+      "method": "GET",
+      "path": "/services/data/v61.0/oaer/fixture",
+      "status": 200,
+      "contains": [
+        "Fixture Replace",
+        "ada@example.test"
+      ]
+    },
+    {
+      "name": "oaer-reset-data-after-fixture-replace",
+      "method": "POST",
+      "path": "/services/data/v61.0/oaer/reset/data",
+      "status": 200,
+      "contains": [
+        "\"scopes\":[\"data\"]",
+        "\"Account\":0",
+        "\"users\":2"
+      ]
+    },
+    {
       "name": "userinfo",
       "method": "GET",
       "path": "/services/oauth2/userinfo",
@@ -2093,7 +2148,7 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 188,
+      "requests": 193,
       "statuses": [
         200,
         200,
@@ -2109,6 +2164,11 @@
         200,
         405,
         400,
+        400,
+        400,
+        200,
+        200,
+        200,
         200,
         200,
         200,

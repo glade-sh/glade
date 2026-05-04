@@ -2350,6 +2350,83 @@ func TestOAERFixtureUnsupportedVersionIsInvalidFixture(t *testing.T) {
 	}
 }
 
+func TestOAERFixtureReplaceModeClearsPreviousDataAndPersists(t *testing.T) {
+	org := testOrg()
+	addAccountForTest(&org, "001000000000001", "Old")
+	storage.EnsureDeterministicPlatformData(&org)
+	store := &memoryStore{}
+	handler := NewWithStore(&org, store)
+
+	replace := httptest.NewRecorder()
+	handler.ServeHTTP(replace, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/oaer/fixture?mode=replace", strings.NewReader(`{
+  "version":"oaer.storage.v1",
+  "objects":[{"name":"Account","records":[{"id":"001000000000901","fields":{"Name":{"kind":"string","string":"New"}}}]}]
+}`)))
+	if replace.Code != http.StatusOK {
+		t.Fatalf("replace status = %d body=%s", replace.Code, replace.Body.String())
+	}
+	if !bytes.Contains(replace.Body.Bytes(), []byte(`"mode":"replace"`)) {
+		t.Fatalf("replace response missing mode: %s", replace.Body.String())
+	}
+	accounts := org.Objects["Account"].Records
+	if len(accounts) != 1 {
+		t.Fatalf("accounts after replace = %#v", accounts)
+	}
+	if _, ok := accounts["001000000000001"]; ok {
+		t.Fatalf("old account survived replace: %#v", accounts)
+	}
+	if got := accounts["001000000000901"].Fields["Name"].String; got != "New" {
+		t.Fatalf("replacement account name = %q", got)
+	}
+	if store.saves != 1 || len(store.last.Objects["Account"].Records) != 1 {
+		t.Fatalf("store after replace = %#v saves=%d", store.last, store.saves)
+	}
+}
+
+func TestOAERFixtureModeValidationUsesSalesforceErrorsAndDoesNotMutate(t *testing.T) {
+	org := testOrg()
+	addAccountForTest(&org, "001000000000001", "Old")
+	handler := New(&org)
+
+	for _, tt := range []struct {
+		name    string
+		method  string
+		path    string
+		body    string
+		message string
+	}{
+		{
+			name:    "export rejects load mode",
+			method:  http.MethodGet,
+			path:    "/services/data/v61.0/oaer/fixture?mode=replace",
+			message: "fixture export does not accept load mode",
+		},
+		{
+			name:    "load rejects unknown mode",
+			method:  http.MethodPost,
+			path:    "/services/data/v61.0/oaer/fixture?mode=clobber",
+			body:    `{"version":"oaer.storage.v1","objects":[]}`,
+			message: "unknown fixture load mode",
+		},
+		{
+			name:    "load rejects duplicate mode",
+			method:  http.MethodPost,
+			path:    "/services/data/v61.0/oaer/fixture?mode=replace&mode=merge",
+			body:    `{"version":"oaer.storage.v1","objects":[]}`,
+			message: "fixture load mode must be specified once",
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			handler.ServeHTTP(rec, httptest.NewRequest(tt.method, tt.path, strings.NewReader(tt.body)))
+			assertSalesforceError(t, rec, http.StatusBadRequest, "INVALID_FIXTURE", tt.message)
+			if got := len(org.Objects["Account"].Records); got != 1 {
+				t.Fatalf("account records after rejected fixture request = %d", got)
+			}
+		})
+	}
+}
+
 func TestOAERScopedResetEndpoints(t *testing.T) {
 	org := testOrg()
 	storage.EnsureDeterministicPlatformData(&org)
