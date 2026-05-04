@@ -85,12 +85,12 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Datetime | `Datetime.yearGmt` | `supported` | Returns the UTC year component. |
 | Decimal | `Decimal.abs` | `supported` | Absolute value for local Decimal values. |
 | Decimal | `Decimal.doubleValue` | `supported` | Returns local Decimal value. |
-| Decimal | `Decimal.format` | `partial` | Simple deterministic finite numeric formatting; locale and pattern overloads return explicit unsupported errors. |
+| Decimal | `Decimal.format` | `partial` | Simple deterministic finite numeric formatting; current-user locale grouping and localized decimal separators are not modeled, and overloads return explicit unsupported errors. |
 | Decimal | `Decimal.intValue` | `supported` | Truncates to 32-bit Integer with overflow checks. |
 | Decimal | `Decimal.longValue` | `supported` | Truncates to local Long representation with overflow checks. |
 | Decimal | `Decimal.pow` | `supported` | Power with Integer exponent for finite local Decimal results. |
-| Decimal | `Decimal.round` | `partial` | Default half-up plus local RoundingMode subset; exact Decimal scale parity is not modeled. |
-| Decimal | `Decimal.setScale` | `partial` | Supports local scale 0-15 with UP, DOWN, CEILING, FLOOR, HALF_UP, HALF_DOWN, HALF_EVEN, and UNNECESSARY. |
+| Decimal | `Decimal.round` | `partial` | Default half-up plus all local RoundingMode values; exact arbitrary-precision Decimal scale parity is not modeled. |
+| Decimal | `Decimal.setScale` | `partial` | Supports local scale 0-15 with UP, DOWN, CEILING, FLOOR, HALF_UP, HALF_DOWN, HALF_EVEN, and UNNECESSARY; arbitrary-precision scale parity remains out of scope. |
 | Decimal | `Decimal.valueOf` | `supported` | Parses finite decimal strings and numeric values, including trimmed signed strings. |
 | Double | `Double.format` | `partial` | Simple deterministic finite numeric formatting; locale and pattern overloads return explicit unsupported errors. |
 | Double | `Double.valueOf` | `supported` | Parses finite decimal strings and numeric values into the local numeric representation, including trimmed signed strings. |
@@ -120,7 +120,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Integer | `Integer.MAX_VALUE` | `supported` | Exposes the public 32-bit Integer maximum constant. |
 | Integer | `Integer.MIN_VALUE` | `supported` | Exposes the public 32-bit Integer minimum constant. |
 | Integer | `Integer.doubleValue` | `supported` | Converts local Integer values to the local numeric representation. |
-| Integer | `Integer.format` | `partial` | Simple deterministic base-10 formatting; locale and pattern overloads return explicit unsupported errors. |
+| Integer | `Integer.format` | `partial` | Simple deterministic base-10 formatting; current-user locale grouping is not modeled, and overloads return explicit unsupported errors. |
 | Integer | `Integer.valueOf` | `supported` | Parses integer strings and numeric values with 32-bit overflow checks, including trimmed signed strings. |
 | Iterator | `Iterator.hasNext` | `supported` | Checks remaining elements in a local collection snapshot. |
 | Iterator | `Iterator.next` | `supported` | Returns the next element from a local collection snapshot and raises NoSuchElementException when exhausted. |
@@ -135,7 +135,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | JSON | `JSONGenerator` | `supported` | Object/array boundaries, field names, scalar string/number/Boolean/null, Date/Datetime/Time/Id/Blob, Object and validated raw value writers, getAsString, close, isClosed, and catchable JSONException for invalid nesting, pending fields, repeated roots, raw-value errors, and writes after close. |
 | JSON | `JSONParser` | `supported` | Token navigation, current token/name/text, integer/long/decimal/double/Boolean/date/datetime/time/id/blob accessors, nextValue, skipChildren current-name state, clearCurrentToken, and catchable JSONException for wrong-token or malformed-input errors. |
 | JSON | `JSONToken` | `supported` | Common parser token constants for object, array, field, string, number, Boolean, and null tokens. |
-| Limits | `Limits.get*` | `partial` | SOQL, DML, heap, CPU, async, callout, and email counters; unmodeled documented getters return explicit unsupported diagnostics. |
+| Limits | `Limits.get*` | `partial` | SOQL, DML, heap, CPU, callout, future, queueable, batch, scheduled, aggregate async, and email counters are modeled; aggregate query, SOSL, query-locator, mobile push, find-similar, savepoint rollback, and publish-immediate getters return explicit unsupported diagnostics. |
 | List | `List.add` | `supported` | Adds typed local values, including indexed insertion. |
 | List | `List.addAll` | `supported` | Appends typed values from local List or Set values. |
 | List | `List.clear` | `supported` | Removes all local list elements. |
@@ -157,7 +157,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | LoggingLevel | `LoggingLevel.values` | `supported` | Returns NONE, ERROR, WARN, INFO, DEBUG, FINE, FINER, FINEST in deterministic order. |
 | Long | `Long.MAX_VALUE` | `supported` | Exposes the public 64-bit Long maximum constant. |
 | Long | `Long.MIN_VALUE` | `supported` | Exposes the public 64-bit Long minimum constant. |
-| Long | `Long.format` | `partial` | Simple deterministic base-10 formatting; locale and pattern overloads return explicit unsupported errors. |
+| Long | `Long.format` | `partial` | Simple deterministic base-10 formatting; current-user locale grouping is not modeled, and overloads return explicit unsupported errors. |
 | Long | `Long.valueOf` | `supported` | Parses integer strings and numeric values with overflow checks, including trimmed signed strings. |
 | Map | `Map.clear` | `supported` | Removes all local map entries. |
 | Map | `Map.clone` | `supported` | Copies the local map container; values keep local identity. |
@@ -232,7 +232,11 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | REST | `@RestResource local server dispatch` | `unsupported` | Custom Apex REST dispatch returns a stable unsupported error from the local server. |
 | REST | `RestContext.request / RestContext.response` | `partial` | VM-local static slots support RestRequest assignment and lazy RestResponse creation; no platform request lifecycle dispatch is modeled. |
 | REST | `RestRequest / RestResponse object shapes` | `partial` | Local request/response objects expose URI/path/method/address, params, headers, Blob body, status, and add/get helper methods covered by compatibility fixtures; broader platform lifecycle remains unsupported. |
-| RoundingMode | `RoundingMode.valueOf` | `partial` | Constructs supported local Decimal rounding-mode tokens by exact name. |
+| RoundingMode | `RoundingMode.name` | `supported` | Returns deterministic built-in enum member text for Decimal rounding modes. |
+| RoundingMode | `RoundingMode.ordinal` | `supported` | Returns deterministic built-in enum order for UP, DOWN, CEILING, FLOOR, HALF_UP, HALF_DOWN, HALF_EVEN, and UNNECESSARY. |
+| RoundingMode | `RoundingMode.toString` | `supported` | Returns deterministic built-in enum member text for Decimal rounding modes. |
+| RoundingMode | `RoundingMode.valueOf` | `supported` | Constructs built-in Decimal rounding-mode enum tokens by exact name with stable invalid-name errors. |
+| RoundingMode | `RoundingMode.values` | `supported` | Returns UP, DOWN, CEILING, FLOOR, HALF_UP, HALF_DOWN, HALF_EVEN, and UNNECESSARY in deterministic order. |
 | Schema | `DescribeFieldResult` | `partial` | Common field metadata, reference/picklist entries, and access booleans; dependent picklist controller metadata is explicitly unsupported. |
 | Schema | `DescribeSObjectResult` | `partial` | Common object metadata, fields, record types, and child relationships; field sets are explicitly unsupported. |
 | Schema | `Schema.describeSObjects` | `supported` | Fixture-backed local schema object-name and SObjectType-token lists return DescribeSObjectResult values. |

@@ -1285,6 +1285,8 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		return platformScalar("Datetime", formatPlatformDatetime(value)), nil
 	case "LoggingLevel.values":
 		return loggingLevelValues(args)
+	case "RoundingMode.values":
+		return roundingModeValues(args)
 	case "System.isRunningTest", "Test.isRunningTest":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
@@ -6152,13 +6154,15 @@ func (vm *VM) lookup(name string) (Value, error) {
 	return Null, fmt.Errorf("unknown variable %q", name)
 }
 
+var roundingModeNames = []string{"UP", "DOWN", "CEILING", "FLOOR", "HALF_UP", "HALF_DOWN", "HALF_EVEN", "UNNECESSARY"}
+
 func isDecimalRoundingModeName(name string) bool {
-	switch name {
-	case "UP", "DOWN", "CEILING", "FLOOR", "HALF_UP", "HALF_DOWN", "HALF_EVEN", "UNNECESSARY":
-		return true
-	default:
-		return false
+	for _, candidate := range roundingModeNames {
+		if name == candidate {
+			return true
+		}
 	}
+	return false
 }
 
 func (vm *VM) lookupSObjectTypeToken(parts []string) (Value, bool) {
@@ -8181,6 +8185,9 @@ func (vm *VM) displayString(value Value, result *Result) (string, error) {
 	if value.Type == "LoggingLevel" && isLoggingLevelName(value.Text) {
 		return value.Text, nil
 	}
+	if value.Type == "RoundingMode" && isDecimalRoundingModeName(value.Text) {
+		return value.Text, nil
+	}
 	if isExceptionType(value.Type) {
 		return exceptionToString(value), nil
 	}
@@ -9059,6 +9066,13 @@ func (vm *VM) callEnumStaticMember(typeName, method string, args []Value) (Value
 		value, err := loggingLevelValues(args)
 		return value, true, err
 	}
+	if typeName == "RoundingMode" {
+		if method != "values" {
+			return Null, false, nil
+		}
+		value, err := roundingModeValues(args)
+		return value, true, err
+	}
 	class, ok := vm.Classes[typeName]
 	if !ok || len(class.EnumValues) == 0 || method != "values" {
 		return Null, false, nil
@@ -9073,6 +9087,19 @@ func (vm *VM) callEnumStaticMember(typeName, method string, args []Value) (Value
 		values = append(values, value)
 	}
 	return List(values...), true, nil
+}
+
+func roundingModeValues(args []Value) (Value, error) {
+	if len(args) != 0 {
+		return Null, fmt.Errorf("RoundingMode.values expects 0 arguments")
+	}
+	values := make([]Value, 0, len(roundingModeNames))
+	for i, name := range roundingModeNames {
+		value := Value{Kind: ValueObject, Type: "RoundingMode", Text: name}
+		value.Fields = map[string]Value{"ordinal": Int(int64(i))}
+		values = append(values, value)
+	}
+	return List(values...), nil
 }
 
 func (vm *VM) callEnumMember(receiver Value, method string, args []Value) (Value, bool, error) {
@@ -9103,6 +9130,24 @@ func (vm *VM) callEnumMember(receiver Value, method string, args []Value) (Value
 			return String(receiver.Text), true, nil
 		case "ordinal":
 			for i, name := range loggingLevelNames {
+				if name == receiver.Text {
+					return Int(int64(i)), true, nil
+				}
+			}
+			return Int(-1), true, nil
+		default:
+			return Null, false, nil
+		}
+	}
+	if receiver.Type == "RoundingMode" {
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("RoundingMode.%s expects 0 arguments", method)
+		}
+		switch method {
+		case "name", "toString":
+			return String(receiver.Text), true, nil
+		case "ordinal":
+			for i, name := range roundingModeNames {
 				if name == receiver.Text {
 					return Int(int64(i)), true, nil
 				}

@@ -1633,6 +1633,14 @@ System.assertEquals(-1.3, negativeDirected.setScale(1, RoundingMode.valueOf('FLO
 System.assertEquals(12, roundEvenDown.round(RoundingMode.valueOf('HALF_EVEN')));
 System.assertEquals(14, roundEvenUp.round(RoundingMode.valueOf('HALF_EVEN')));
 System.assertEquals(12, roundUnneeded.round(RoundingMode.valueOf('UNNECESSARY')));
+System.assertEquals('HALF_UP', RoundingMode.HALF_UP.name());
+System.assertEquals('HALF_UP', RoundingMode.valueOf('HALF_UP').toString());
+System.assertEquals(0, RoundingMode.UP.ordinal());
+System.assertEquals(7, RoundingMode.UNNECESSARY.ordinal());
+List<RoundingMode> roundingModes = RoundingMode.values();
+System.assertEquals(8, roundingModes.size());
+System.assertEquals('UP', roundingModes.get(0).name());
+System.assertEquals('UNNECESSARY', roundingModes.get(7).name());
 System.assertEquals(1, Math.signum(12.5));
 System.assertEquals(-1, Math.signum(-4));
 System.assertEquals(0, Math.signum(0));
@@ -1691,6 +1699,8 @@ func TestExecNumericStdlibRejectsInvalidInputs(t *testing.T) {
 		"Decimal d = Decimal.valueOf('1.25');\nd.round(RoundingMode.valueOf('UNNECESSARY'));",
 		"RoundingMode.valueOf('HALF_CEILING');",
 		"RoundingMode.valueOf(' HALF_UP ');",
+		"RoundingMode.values('HALF_UP');",
+		"RoundingMode.UP.name('extra');",
 		"Decimal d = Decimal.valueOf('1e308') * Decimal.valueOf('1e308');",
 		"Math.acos(2);",
 		"Math.asin(-2);",
