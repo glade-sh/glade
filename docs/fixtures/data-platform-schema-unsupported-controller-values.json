@@ -1,0 +1,38 @@
+{
+  "name": "data-platform-schema-unsupported-controller-values",
+  "evidence": [
+    {
+      "symbol": "Schema.DescribeFieldResult.getControllerValues",
+      "kind": "exec",
+      "notes": "Dependent picklist controller value metadata returns a stable UnsupportedFeature diagnostic."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Account.Rating.getDescribe().getControllerValues();"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Account.Rating.getDescribe().getControllerValues();"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"Schema.DescribeFieldResult.getControllerValues dependent picklist controller metadata\""
+    }
+  },
+  "schema": [
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Rating.field-meta.xml",
+      "content": "<CustomField><fullName>Rating</fullName><label>Rating</label><type>Picklist</type><valueSet><valueSetDefinition><value><fullName>Hot</fullName><label>Hot</label><default>true</default></value></valueSetDefinition></valueSet></CustomField>"
+    }
+  ]
+}

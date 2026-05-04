@@ -2510,6 +2510,33 @@ func TestExecCustomDataStaticRecordsAreReadOnly(t *testing.T) {
 	}
 }
 
+func TestExecHierarchyCustomSettingStaticsUnsupported(t *testing.T) {
+	cases := []struct {
+		name   string
+		source string
+		want   string
+	}{
+		{"getInstance", "Hierarchy_Setting__c.getInstance();", `unsupported call "Hierarchy_Setting__c.getInstance hierarchy custom setting merge behavior"`},
+		{"getAll", "Hierarchy_Setting__c.getAll();", `unsupported call "Hierarchy_Setting__c.getAll hierarchy custom setting merge behavior"`},
+		{"getOrgDefaults", "Hierarchy_Setting__c.getOrgDefaults();", `unsupported call "Hierarchy_Setting__c.getOrgDefaults hierarchy custom setting merge behavior"`},
+		{"getValues", "Hierarchy_Setting__c.getValues('005000000000001');", `unsupported call "Hierarchy_Setting__c.getValues hierarchy custom setting merge behavior"`},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			program, err := CompileAnonymous(tc.source)
+			if err != nil {
+				t.Fatal(err)
+			}
+			machine := New(nil)
+			org := customDataOrg()
+			machine.SetOrg(&org)
+			if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), tc.want) {
+				t.Fatalf("error = %v, want %q", err, tc.want)
+			}
+		})
+	}
+}
+
 func TestCustomDataRecordSortingUsesIDTieBreaker(t *testing.T) {
 	definition := storage.ObjectDefinition{
 		APIName:  "Local_Setting__c",
@@ -2555,6 +2582,23 @@ func customDataOrg() storage.OrgState {
 				"NamespacePrefix":  storage.StringValue("pkg"),
 				"QualifiedApiName": storage.StringValue("pkg__Default"),
 				"Enabled__c":       storage.BooleanValue(true),
+			}},
+		},
+	}
+	org.Objects["Hierarchy_Setting__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Hierarchy_Setting__c",
+			KeyPrefix: "a02",
+			Metadata:  map[string]string{"kind": "customSetting", "customSettingsType": "Hierarchy"},
+			Fields: map[string]storage.Field{
+				"SetupOwnerId": {APIName: "SetupOwnerId", Type: storage.FieldString},
+				"Enabled__c":   {APIName: "Enabled__c", Type: storage.FieldBoolean},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a02000000000001": {ID: "a02000000000001", Object: "Hierarchy_Setting__c", Fields: map[string]storage.Value{
+				"SetupOwnerId": storage.StringValue("00D000000000001"),
+				"Enabled__c":   storage.BooleanValue(true),
 			}},
 		},
 	}
