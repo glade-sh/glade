@@ -1,0 +1,7 @@
+{
+  "name": "integration-messaging-unsupported",
+  "evidence": [{"symbol": "Messaging.renderStoredEmailTemplate", "kind": "exec", "notes": "Messaging template/transport APIs outside the local sendEmail result model return UnsupportedFeature diagnostics."}],
+  "source": [{"path": "anonymous.apex", "content": "Messaging.renderStoredEmailTemplate('00X000000000001', '003000000000001', '001000000000001');"}],
+  "command": {"kind": "exec", "args": ["Messaging.renderStoredEmailTemplate('00X000000000001', '003000000000001', '001000000000001');"]},
+  "expected": {"error": {"type": "UnsupportedFeature", "message": "unsupported call \"Messaging.renderStoredEmailTemplate local messaging transport/template surface\""}}
+}

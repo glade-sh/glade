@@ -25,7 +25,7 @@ smaller task, or a public-doc behavior decision changes.
 | 2. Core stdlib runtime | In progress | Collection runtime fixture and String runtime fixture are implemented in the `core-stdlib` worktree. |
 | 3. Data platform runtime | Not started | Pending. |
 | 4. Tests, async, and limits | Not started | Pending; depends on core stdlib and data runtime. |
-| 5. Integration, security, UI, events | Not started | Pending; can start stubs after core stdlib advances. |
+| 5. Integration, security, UI, events | In progress | UI/security/messaging fixture slice covers PageReference, ApexPages.Message, UserInfo, FeatureManagement, Messaging result edges, and explicit unsupported diagnostics for Auth, EventBus, QuickAction, Canvas, and Continuation. |
 | 6. Product namespace typed stubs | Complete foundation | Product namespace report covers typed-stub planning for 70 public-doc namespaces. |
 | 7. Product namespace local models | Not started | Pending namespace-by-namespace support decisions. |
 | 8. MVP/readiness hardening | Not started | Pending broader phase completion. |
@@ -421,7 +421,8 @@ Cuts:
 
 1. HTTP and callouts
    - HttpRequest, HttpResponse, Http, callout mocks, static-resource mocks,
-     Continuation, timeout/error shapes, and callout limits.
+     timeout/error shapes, and callout limits. Continuation currently returns
+     explicit unsupported diagnostics.
 
 2. REST
    - RestContext, RestRequest, RestResponse, annotation dispatch, local server
@@ -431,15 +432,23 @@ Cuts:
    - UserInfo, FeatureManagement, permission fixtures, Auth token classes as
      typed stubs or local token models, and permission checks wired into data
      operations.
+   - Current slice covers deterministic UserInfo getters, local runAs
+     permission-list checks, and UnsupportedFeature diagnostics for Auth
+     token/session APIs.
 
 4. UI and messaging
    - ApexPages, PageReference, QuickAction, Messaging email/push, and
      Visualforce-adjacent state without claiming renderer lifecycle parity.
+   - Current slice covers PageReference URL/redirect/parameters/headers,
+     ApexPages message getters, local Messaging.SendEmailResult getters, and
+     UnsupportedFeature diagnostics for QuickAction and unmodeled Messaging
+     transport/template APIs.
 
 5. Events
    - EventBus and platform events as local publish/subscribe records with trigger
      dispatch if the runtime model can support it; otherwise typed stubs with
      explicit unsupported diagnostics.
+   - Current slice pins EventBus.publish as an explicit unsupported diagnostic.
 
 Exit criteria:
 

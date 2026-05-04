@@ -72,6 +72,31 @@ func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 			src:  `Object rows = [FIND 'Acme' IN ALL FIELDS RETURNING Account(Id)];`,
 			want: `unsupported call "SOSL/FIND local search surface"`,
 		},
+		{
+			name: "auth token api",
+			src:  `Auth.SessionManagement.getCurrentSession();`,
+			want: `unsupported call "Auth.SessionManagement.getCurrentSession local authentication token/cloud API surface"`,
+		},
+		{
+			name: "event bus publish",
+			src:  `EventBus.publish(new Account(Name = 'Acme'));`,
+			want: `unsupported call "EventBus.publish local platform event publish surface"`,
+		},
+		{
+			name: "quick action ui",
+			src:  `QuickAction.performQuickAction(null);`,
+			want: `unsupported call "QuickAction.performQuickAction local quick action UI surface"`,
+		},
+		{
+			name: "canvas integration",
+			src:  `Canvas.EnvironmentContext.getParameters();`,
+			want: `unsupported call "Canvas.EnvironmentContext.getParameters local canvas app integration surface"`,
+		},
+		{
+			name: "continuation static",
+			src:  `Continuation.getResponse('request-one');`,
+			want: `unsupported call "Continuation.getResponse local continuation callout surface"`,
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -283,6 +308,95 @@ Account decoded = JSON.deserializeStrict('{"Name":"Acme","NoSuchField__c":"x"}',
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), "unknown field") {
 		t.Fatalf("err = %v", err)
+	}
+}
+
+func TestExecApexPagesPageReferenceAndMessagesEdges(t *testing.T) {
+	program, err := CompileAnonymous(`
+PageReference page = new PageReference('/apex/Trail');
+System.assertEquals('/apex/Trail', page.getUrl());
+System.assertEquals(false, page.getRedirect());
+page.setRedirect(true);
+System.assertEquals(true, page.getRedirect());
+page.getParameters().put('id', '001B000001DVM9t');
+page.getHeaders().put('X-Test', 'yes');
+System.assertEquals('001B000001DVM9t', page.getParameters().get('id'));
+System.assertEquals('yes', page.getHeaders().get('X-Test'));
+PageReference current = ApexPages.currentPage();
+System.assertEquals('/apex/current', current.getUrl());
+current.getHeaders().put('Accept', 'text/html');
+System.assertEquals('text/html', current.getHeaders().get('Accept'));
+ApexPages.Message withDetail = new ApexPages.Message('ERROR', 'Summary', 'Detail');
+System.assertEquals('ERROR', withDetail.getSeverity());
+System.assertEquals('Summary', withDetail.getSummary());
+System.assertEquals('Detail', withDetail.getDetail());
+ApexPages.Message withoutDetail = new ApexPages.Message('INFO', 'Only summary');
+System.assertEquals('Only summary', withoutDetail.getDetail());
+ApexPages.addMessage(withDetail);
+System.assert(ApexPages.hasMessages());
+System.assertEquals(1, ApexPages.getMessages().size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMessagingResultAndUnsupportedEdges(t *testing.T) {
+	program, err := CompileAnonymous(`
+Messaging.SingleEmailMessage msg = new Messaging.SingleEmailMessage();
+msg.setToAddresses(new List<String>{'trail@example.test'});
+msg.setSubject('Trail');
+msg.setPlainTextBody('Body');
+List<Messaging.SendEmailResult> results = Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{msg});
+System.assertEquals(1, Limits.getEmailInvocations());
+System.assertEquals(1, results.size());
+System.assert(results.get(0).isSuccess());
+System.assertEquals(0, results.get(0).getErrors().size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+
+	cases := []struct {
+		name string
+		src  string
+		want string
+	}{
+		{
+			name: "non-list",
+			src:  `Messaging.sendEmail('not a list');`,
+			want: `Messaging.sendEmail expects List`,
+		},
+		{
+			name: "all-or-nothing overload",
+			src:  `Messaging.sendEmail(new List<Messaging.SingleEmailMessage>(), true);`,
+			want: `unsupported call "Messaging.sendEmail allOrNothing/options overloads"`,
+		},
+		{
+			name: "template surface",
+			src:  `Messaging.renderStoredEmailTemplate('00X000000000001', '003000000000001', '001000000000001');`,
+			want: `unsupported call "Messaging.renderStoredEmailTemplate local messaging transport/template surface"`,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			program, err := CompileAnonymous(tc.src)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = New(nil).Execute(program)
+			if err == nil || err.Error() != tc.want {
+				t.Fatalf("err = %v, want %q", err, tc.want)
+			}
+		})
 	}
 }
 
@@ -760,13 +874,21 @@ System.runAs(new User(Id = '005-user-a', ProfileId = '00e-profile-a', Username =
   System.assertEquals('005-user-a', UserInfo.getUserId());
   System.assertEquals('00e-profile-a', UserInfo.getProfileId());
   System.assertEquals('user-a@example.test', UserInfo.getUserName());
+  System.assertEquals('System User', UserInfo.getName());
+  System.assertEquals('System', UserInfo.getFirstName());
+  System.assertEquals('User', UserInfo.getLastName());
+  System.assertEquals('system@example.invalid', UserInfo.getUserEmail());
   System.assertEquals('00D000000000001', UserInfo.getOrganizationId());
   System.assertEquals('', UserInfo.getSessionId());
   System.assertEquals('en_US', UserInfo.getLocale());
   System.assertEquals('UTC', UserInfo.getTimeZone());
 }
 System.assertEquals('system', UserInfo.getUserId());
-System.runAs(new User(Id = '005-user-b', Permissions = new List<String>{'CanRunLocal'})) {
+System.runAs(new User(Id = '005-user-b', FirstName = 'Ada', LastName = 'Trail', Name = 'Ada Trail', Email = 'ada@example.test', Permissions = new List<String>{'CanRunLocal'})) {
+  System.assertEquals('Ada Trail', UserInfo.getName());
+  System.assertEquals('Ada', UserInfo.getFirstName());
+  System.assertEquals('Trail', UserInfo.getLastName());
+  System.assertEquals('ada@example.test', UserInfo.getUserEmail());
   System.assert(FeatureManagement.checkPermission('CanRunLocal'));
   System.assert(!FeatureManagement.checkPermission('OtherPermission'));
 }

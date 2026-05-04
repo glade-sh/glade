@@ -1,0 +1,7 @@
+{
+  "name": "integration-eventbus-unsupported",
+  "evidence": [{"symbol": "EventBus.publish", "kind": "exec", "notes": "Platform event publish is not modeled locally."}],
+  "source": [{"path": "anonymous.apex", "content": "EventBus.publish(new Account(Name = 'Acme'));"}],
+  "command": {"kind": "exec", "args": ["EventBus.publish(new Account(Name = 'Acme'));"]},
+  "expected": {"error": {"type": "UnsupportedFeature", "message": "unsupported call \"EventBus.publish local platform event publish surface\""}}
+}

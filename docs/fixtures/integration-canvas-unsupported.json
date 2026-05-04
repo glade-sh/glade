@@ -1,0 +1,7 @@
+{
+  "name": "integration-canvas-unsupported",
+  "evidence": [{"symbol": "Canvas.EnvironmentContext.getParameters", "kind": "exec", "notes": "Canvas app integration APIs return UnsupportedFeature diagnostics."}],
+  "source": [{"path": "anonymous.apex", "content": "Canvas.EnvironmentContext.getParameters();"}],
+  "command": {"kind": "exec", "args": ["Canvas.EnvironmentContext.getParameters();"]},
+  "expected": {"error": {"type": "UnsupportedFeature", "message": "unsupported call \"Canvas.EnvironmentContext.getParameters local canvas app integration surface\""}}
+}

@@ -1,0 +1,27 @@
+{
+  "name": "integration-ui-security-stdlib",
+  "evidence": [
+    {"symbol": "PageReference.getUrl", "kind": "test"},
+    {"symbol": "PageReference.getRedirect/setRedirect", "kind": "test"},
+    {"symbol": "PageReference.getParameters", "kind": "test"},
+    {"symbol": "PageReference.getHeaders", "kind": "test"},
+    {"symbol": "ApexPages.currentPage", "kind": "test"},
+    {"symbol": "ApexPages.Message.getSeverity", "kind": "test"},
+    {"symbol": "ApexPages.Message.getSummary", "kind": "test"},
+    {"symbol": "ApexPages.Message.getDetail", "kind": "test"},
+    {"symbol": "ApexPages.addMessage/getMessages/hasMessages", "kind": "test"},
+    {"symbol": "Messaging.SingleEmailMessage", "kind": "test"},
+    {"symbol": "Messaging.SendEmailResult", "kind": "test"},
+    {"symbol": "Messaging.sendEmail", "kind": "test"},
+    {"symbol": "UserInfo deterministic getters", "kind": "test"},
+    {"symbol": "FeatureManagement.checkPermission", "kind": "test"}
+  ],
+  "source": [
+    {
+      "path": "force-app/main/classes/IntegrationUISecurityFixtureTest.cls",
+      "content": "@isTest private class IntegrationUISecurityFixtureTest { @isTest static void uiSecurityMessagingSlice() { PageReference page = new PageReference('/apex/Trail'); System.assertEquals('/apex/Trail', page.getUrl()); System.assertEquals(false, page.getRedirect()); page.setRedirect(true); System.assertEquals(true, page.getRedirect()); page.getParameters().put('id', '001B000001DVM9t'); page.getHeaders().put('X-Test', 'yes'); System.assertEquals('001B000001DVM9t', page.getParameters().get('id')); System.assertEquals('yes', page.getHeaders().get('X-Test')); PageReference current = ApexPages.currentPage(); System.assertEquals('/apex/current', current.getUrl()); ApexPages.Message message = new ApexPages.Message('ERROR', 'Summary', 'Detail'); System.assertEquals('ERROR', message.getSeverity()); System.assertEquals('Summary', message.getSummary()); System.assertEquals('Detail', message.getDetail()); ApexPages.addMessage(message); System.assert(ApexPages.hasMessages()); System.assertEquals(1, ApexPages.getMessages().size()); Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage(); email.setToAddresses(new List<String>{'trail@example.test'}); email.setSubject('Trail'); email.setPlainTextBody('Body'); List<Messaging.SendEmailResult> results = Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{email}); System.assertEquals(1, Limits.getEmailInvocations()); System.assertEquals(1, results.size()); System.assert(results.get(0).isSuccess()); System.assertEquals(0, results.get(0).getErrors().size()); System.runAs(new User(Id = '005-user-a', Username = 'ada@example.test', FirstName = 'Ada', LastName = 'Trail', Name = 'Ada Trail', Email = 'ada@example.test', Permissions = new List<String>{'CanRunLocal'})) { System.assertEquals('005-user-a', UserInfo.getUserId()); System.assertEquals('ada@example.test', UserInfo.getUserName()); System.assertEquals('Ada Trail', UserInfo.getName()); System.assertEquals('Ada', UserInfo.getFirstName()); System.assertEquals('Trail', UserInfo.getLastName()); System.assertEquals('ada@example.test', UserInfo.getUserEmail()); System.assert(FeatureManagement.checkPermission('CanRunLocal')); System.assert(!FeatureManagement.checkPermission('OtherPermission')); } } }"
+    }
+  ],
+  "command": {"kind": "test"},
+  "expected": {"result": {"errors": 0, "failed": 0, "ok": true, "passed": 1, "total": 1}}
+}
