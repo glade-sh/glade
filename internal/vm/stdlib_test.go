@@ -2082,6 +2082,36 @@ Account originalMapped = byId.get(acme.Id);
 Account clonedMapped = clonedById.get(acme.Id);
 System.assertEquals('Acme', originalMapped.Name);
 System.assertEquals('Mapped Clone', clonedMapped.Name);
+
+Set<Account> originalSet = new Set<Account>{acme};
+Set<Account> clonedSet = originalSet.deepClone();
+Iterator<Account> clonedIt = clonedSet.iterator();
+Account clonedFromSet = clonedIt.next();
+clonedFromSet.Name = 'Set Clone';
+Iterator<Account> originalIt = originalSet.iterator();
+Account originalFromSet = originalIt.next();
+System.assertEquals('Acme', originalFromSet.Name);
+System.assertEquals('Set Clone', clonedFromSet.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecCollectionStdlibSmallRowsCloseout(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Boolean> flags = new List<Boolean>{true, false, true};
+flags.sort();
+System.assertEquals(false, flags.get(0));
+System.assertEquals(true, flags.get(2));
+
+Map<String,Object> shape = new Map<String,Object>();
+shape.put('b', new List<Integer>{2, 3});
+shape.put('a', null);
+System.assertEquals('Map{a=null, b=List[2, 3]}', shape.toString());
 `)
 	if err != nil {
 		t.Fatal(err)

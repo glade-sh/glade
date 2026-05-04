@@ -608,6 +608,11 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Promote `RoundingMode.valueOf` and built-in enum helpers (`values`,
     `name`, `ordinal`, and `toString`) with fixture-backed exact-name and
     deterministic-order coverage.
+  - [x] Close small collection/exception/type stdlib rows: local
+    `List`/`Map`/`Set` no-arg deepClone, primitive `List.sort`, deterministic
+    `Map.toString`, caught exception line/stack metadata, built-in exception
+    tokens, and `Type.forName`/`Type.newInstance` reflection fences now have
+    fixture-backed capability coverage.
   - **Limitation**: Exact locale, broad timezone, arbitrary-precision decimal
     scale, charset, and full Java-regex parity remain outside the current local
     subset. The current named-zone slice is limited to deterministic
