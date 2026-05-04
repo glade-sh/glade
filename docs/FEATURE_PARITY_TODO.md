@@ -926,6 +926,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Fence Metadata REST deploy request, deploy status, results, and details
     probes with explicit unsupported responses plus JSON and method-boundary
     validation instead of creating fake deploy jobs.
+  - [x] Return conservative Metadata REST root discovery plus explicit unsupported
+    read/retrieve stubs for describeMetadata, listMetadata, components, retrieve
+    request status/results, JSON validation, and method boundaries.
 - [ ] Add Composite API coverage beyond baseline sObject insert, including
   all-or-none rollback, reference ID behavior, and conservative local
   collection update/delete mutators.
@@ -1024,6 +1027,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     fixture.
   - [x] Cover Metadata REST deploy request, deploy status, results, details,
     malformed JSON, and method-boundary fences in the server black-box fixture.
+  - [x] Cover Metadata REST root discovery plus read/retrieve unsupported stubs
+    and retrieve body/method boundaries in the server black-box fixture.
 
 ## 9. Compatibility, Hardening, And Release
 

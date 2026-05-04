@@ -1977,7 +1977,6 @@ func TestCommonRESTNamespaceStubsReturnStableUnsupportedErrors(t *testing.T) {
 		{method: http.MethodGet, path: "/services/data/v61.0/chatter/feed-elements", message: "Chatter REST namespace"},
 		{method: http.MethodGet, path: "/services/data/v61.0/analytics/reports", message: "Analytics REST namespace"},
 		{method: http.MethodGet, path: "/services/data/v61.0/wave", message: "Wave REST namespace"},
-		{method: http.MethodGet, path: "/services/data/v61.0/metadata", message: "Metadata REST namespace"},
 		{method: http.MethodGet, path: "/services/data/v61.0/support", message: "Support REST namespace"},
 		{method: http.MethodGet, path: "/services/data/v61.0/process/approvals", message: "Process REST namespace"},
 		{method: http.MethodGet, path: "/services/data/v61.0/actions/standard/emailSimple", message: "Actions REST namespace"},
@@ -2003,7 +2002,68 @@ func TestCommonRESTNamespaceStubsReturnStableUnsupportedErrors(t *testing.T) {
 	}
 }
 
-func TestMetadataRESTDeployRoutesReturnExplicitUnsupportedBoundaries(t *testing.T) {
+func TestMetadataRESTDiscoveryAndReadStubs(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	root := httptest.NewRecorder()
+	handler.ServeHTTP(root, httptest.NewRequest(http.MethodGet, "/services/data/v60.0/metadata", nil))
+	if root.Code != http.StatusOK {
+		t.Fatalf("metadata discovery status = %d body=%s", root.Code, root.Body.String())
+	}
+	var discovery map[string]string
+	if err := json.Unmarshal(root.Body.Bytes(), &discovery); err != nil {
+		t.Fatal(err)
+	}
+	base := "/services/data/v60.0/metadata"
+	for key, want := range map[string]string{
+		"components":       base + "/components",
+		"deployRequest":    base + "/deployRequest",
+		"describe":         base + "/describe",
+		"describeMetadata": base + "/describeMetadata",
+		"listMetadata":     base + "/listMetadata",
+		"retrieveRequest":  base + "/retrieveRequest",
+	} {
+		if discovery[key] != want {
+			t.Fatalf("metadata discovery[%s] = %q, want %q; payload=%#v", key, discovery[key], want, discovery)
+		}
+	}
+
+	rootPost := httptest.NewRecorder()
+	handler.ServeHTTP(rootPost, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/metadata", strings.NewReader(`{}`)))
+	assertSalesforceError(t, rootPost, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
+	if got := rootPost.Header().Get("Allow"); got != http.MethodGet {
+		t.Fatalf("metadata root Allow = %q", got)
+	}
+
+	for _, tc := range []struct {
+		name    string
+		path    string
+		message string
+	}{
+		{name: "describe", path: "/services/data/v61.0/metadata/describe", message: "Metadata REST describeMetadata"},
+		{name: "describeMetadata", path: "/services/data/v61.0/metadata/describeMetadata", message: "Metadata REST describeMetadata"},
+		{name: "listMetadata", path: "/services/data/v61.0/metadata/listMetadata", message: "Metadata REST listMetadata"},
+		{name: "components", path: "/services/data/v61.0/metadata/components", message: "Metadata REST component discovery"},
+		{name: "component type", path: "/services/data/v61.0/metadata/components/ApexClass", message: "Metadata REST component read and discovery"},
+		{name: "component full name", path: "/services/data/v61.0/metadata/components/ApexClass/TrailService", message: "Metadata REST component read and discovery"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, tc.path, nil))
+			assertSalesforceError(t, rec, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", tc.message)
+
+			method := httptest.NewRecorder()
+			handler.ServeHTTP(method, httptest.NewRequest(http.MethodPost, tc.path, strings.NewReader(`{}`)))
+			assertSalesforceError(t, method, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
+			if got := method.Header().Get("Allow"); got != http.MethodGet {
+				t.Fatalf("%s Allow = %q", tc.path, got)
+			}
+		})
+	}
+}
+
+func TestMetadataRESTRetrieveRoutesReturnExplicitUnsupportedBoundaries(t *testing.T) {
 	tests := []struct {
 		name          string
 		method        string
@@ -2015,13 +2075,85 @@ func TestMetadataRESTDeployRoutesReturnExplicitUnsupportedBoundaries(t *testing.
 		wantMessageIn string
 	}{
 		{
-			name:          "root unsupported",
-			method:        http.MethodGet,
-			path:          "/services/data/v61.0/metadata",
+			name:          "retrieve create unsupported",
+			method:        http.MethodPost,
+			path:          "/services/data/v61.0/metadata/retrieveRequest",
+			body:          `{"packageNames":["unpackaged"]}`,
 			wantStatus:    http.StatusNotImplemented,
 			wantCode:      "UNSUPPORTED_FEATURE",
-			wantMessageIn: "Metadata REST namespace",
+			wantMessageIn: "Metadata REST retrieve requests",
 		},
+		{
+			name:          "retrieve create malformed json",
+			method:        http.MethodPost,
+			path:          "/services/data/v61.0/metadata/retrieveRequest",
+			body:          `{"packageNames":`,
+			wantStatus:    http.StatusBadRequest,
+			wantCode:      "JSON_PARSER_ERROR",
+			wantMessageIn: "unexpected EOF",
+		},
+		{
+			name:          "retrieve create method boundary",
+			method:        http.MethodGet,
+			path:          "/services/data/v61.0/metadata/retrieveRequest",
+			wantStatus:    http.StatusMethodNotAllowed,
+			wantCode:      "METHOD_NOT_ALLOWED",
+			wantAllow:     http.MethodPost,
+			wantMessageIn: "method not allowed",
+		},
+		{
+			name:          "retrieve status unsupported",
+			method:        http.MethodGet,
+			path:          "/services/data/v61.0/metadata/retrieveRequest/0Ar000000000001",
+			wantStatus:    http.StatusNotImplemented,
+			wantCode:      "UNSUPPORTED_FEATURE",
+			wantMessageIn: "Metadata REST retrieve status",
+		},
+		{
+			name:          "retrieve results unsupported",
+			method:        http.MethodGet,
+			path:          "/services/data/v61.0/metadata/retrieveRequest/0Ar000000000001/results",
+			wantStatus:    http.StatusNotImplemented,
+			wantCode:      "UNSUPPORTED_FEATURE",
+			wantMessageIn: "Metadata REST retrieve results",
+		},
+		{
+			name:          "retrieve results method boundary",
+			method:        http.MethodPost,
+			path:          "/services/data/v61.0/metadata/retrieveRequest/0Ar000000000001/results",
+			body:          `{}`,
+			wantStatus:    http.StatusMethodNotAllowed,
+			wantCode:      "METHOD_NOT_ALLOWED",
+			wantAllow:     http.MethodGet,
+			wantMessageIn: "method not allowed",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			org := testOrg()
+			handler := New(&org)
+			rec := httptest.NewRecorder()
+			handler.ServeHTTP(rec, httptest.NewRequest(tt.method, tt.path, strings.NewReader(tt.body)))
+			assertSalesforceError(t, rec, tt.wantStatus, tt.wantCode, tt.wantMessageIn)
+			if got := rec.Header().Get("Allow"); got != tt.wantAllow {
+				t.Fatalf("Allow = %q, want %q", got, tt.wantAllow)
+			}
+		})
+	}
+}
+
+func TestMetadataRESTDeployRoutesReturnExplicitUnsupportedBoundaries(t *testing.T) {
+	tests := []struct {
+		name          string
+		method        string
+		path          string
+		body          string
+		wantStatus    int
+		wantCode      string
+		wantAllow     string
+		wantMessageIn string
+	}{
 		{
 			name:          "deploy create unsupported",
 			method:        http.MethodPost,
