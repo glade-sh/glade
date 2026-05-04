@@ -11,6 +11,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | ApexPages | `ApexPages.currentPage` | `supported` | Returns a deterministic local PageReference. |
 | ApexPages | `ApexPages.getMessages` | `supported` | Returns VM-local page messages. |
 | ApexPages | `ApexPages.hasMessages` | `supported` | Checks VM-local page messages. |
+| Approval | `Approval process APIs` | `unsupported` | Approval.process and approval lock helpers return explicit UnsupportedFeature diagnostics; approval workflow side effects are not locally modeled. |
 | Async | `AsyncApexJob / CronTrigger local records` | `partial` | Test-context enqueue/drain creates deterministic local AsyncApexJob rows and CronTrigger rows for supported future, queueable, batch, and scheduled jobs; broader platform lifecycle fields are not modeled. |
 | Async | `AsyncInfo / AsyncOptions / finalizers` | `unsupported` | Queueable stack metadata, AsyncOptions enqueue overloads, and queueable finalizers return explicit UnsupportedFeature diagnostics. |
 | Async | `BatchableContext.getJobId` | `partial` | Returns the deterministic local AsyncApexJob Id while supported batch start/execute/finish methods drain under Test.stopTest. |
@@ -26,9 +27,12 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Crypto | `Crypto.encrypt/decrypt/sign/verify` | `unsupported` | Org key, certificate, encryption, and random key-generation surfaces return explicit unsupported errors. |
 | Crypto | `Crypto.generateDigest` | `supported` | MD5, SHA1, SHA-256, SHA-512, SHA3-256/384/512, with conservative algorithm normalization. |
 | Crypto | `Crypto.generateMac` | `supported` | HMAC MD5, SHA1, SHA256, and SHA512 with local Blob keys and conservative algorithm normalization. |
+| Database | `Database.convertLead` | `unsupported` | Lead conversion returns an explicit UnsupportedFeature diagnostic until local lead/account/contact/opportunity side effects are modeled. |
 | Database | `Database.delete` | `supported` | DML pipeline with result/error shapes for supported SObjects. |
+| Database | `Database.emptyRecycleBin` | `partial` | Permanently removes already-deleted local rows and returns EmptyRecycleBinResult-shaped objects; retention policy and related platform recycle-bin behavior are not modeled. |
 | Database | `Database.getQueryLocator` | `partial` | Supported SOQL only; executes eagerly for local batch scopes. |
 | Database | `Database.insert` | `supported` | DML pipeline with result/error shapes for supported SObjects. |
+| Database | `Database.lock / Database.unlock` | `partial` | Toggles local storage row lock state and returns LockResult/UnlockResult-shaped objects; ownership, wait timing, and transaction-scoped lock release are not modeled. |
 | Database | `Database.merge` | `partial` | Local merge behavior for supported account/contact-style data. |
 | Database | `Database.rollback` | `partial` | Local org-state savepoint rollback; no external side effects. |
 | Database | `Database.setSavepoint` | `partial` | Local org-state snapshots with later-savepoint invalidation. |
@@ -215,10 +219,10 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Pattern | `Pattern.matches` | `partial` | Whole-string Go regexp match. |
 | Pattern | `Pattern.pattern` | `partial` | Returns stored Go regexp source. |
 | Pattern | `Pattern.split` | `partial` | Go regexp-backed split with local limit semantics. |
+| QuickAction | `QuickAction namespace` | `unsupported` | Quick action UI calls return explicit UnsupportedFeature diagnostics. |
 | REST | `@RestResource local server dispatch` | `unsupported` | Custom Apex REST dispatch returns a stable unsupported error from the local server. |
 | REST | `RestContext.request / RestContext.response` | `partial` | VM-local static slots support RestRequest assignment and lazy RestResponse creation; no platform request lifecycle dispatch is modeled. |
 | REST | `RestRequest / RestResponse object shapes` | `partial` | Local request/response objects expose URI/path/method/address, params, headers, Blob body, status, and add/get helper methods covered by compatibility fixtures; broader platform lifecycle remains unsupported. |
-| QuickAction | `QuickAction namespace` | `unsupported` | Quick action UI calls return explicit UnsupportedFeature diagnostics. |
 | RoundingMode | `RoundingMode.valueOf` | `partial` | Constructs supported local Decimal rounding-mode tokens by exact name. |
 | Schema | `DescribeFieldResult` | `partial` | Common field metadata and access booleans. |
 | Schema | `DescribeSObjectResult` | `partial` | Common object metadata, fields, record types, and child relationships. |

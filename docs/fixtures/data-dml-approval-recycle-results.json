@@ -1,0 +1,41 @@
+{
+  "name": "data-dml-approval-recycle-results",
+  "evidence": [
+    {
+      "symbol": "Database.emptyRecycleBin",
+      "kind": "test",
+      "notes": "Already-deleted local rows can be permanently removed and return an EmptyRecycleBinResult-shaped object."
+    },
+    {
+      "symbol": "Database.lock / Database.unlock",
+      "kind": "test",
+      "notes": "Local row lock calls return LockResult/UnlockResult-shaped objects with id, success, and errors accessors."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type><required>true</required></CustomField>"
+    },
+    {
+      "path": "force-app/main/classes/DatabaseApprovalRecycleEdgeTest.cls",
+      "content": "@isTest private class DatabaseApprovalRecycleEdgeTest { @isTest static void emptyRecycleBinRemovesDeletedRow() { Account a = new Account(Name = 'Acme'); insert a; delete a; Database.EmptyRecycleBinResult result = Database.emptyRecycleBin(a, false); System.assert(result.isSuccess()); System.assertEquals(a.Id, result.getId()); System.assertEquals(0, result.getErrors().size()); List<Account> rows = [SELECT Id FROM Account WHERE Id = :a.Id ALL ROWS]; System.assertEquals(0, rows.size()); } @isTest static void lockAndUnlockExposeResults() { Account a = new Account(Name = 'Acme'); insert a; Database.LockResult locked = Database.lock(a, false); System.assert(locked.isSuccess()); System.assertEquals(a.Id, locked.getId()); System.assertEquals(0, locked.getErrors().size()); Database.UnlockResult unlocked = Database.unlock(a, false); System.assert(unlocked.isSuccess()); System.assertEquals(a.Id, unlocked.getId()); System.assertEquals(0, unlocked.getErrors().size()); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 2,
+      "passed": 2,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

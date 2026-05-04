@@ -101,6 +101,63 @@ func TestWithTransactionRollsBackOnError(t *testing.T) {
 	}
 }
 
+func TestEmptyRecycleBinRemovesDeletedRecords(t *testing.T) {
+	org := testOrg()
+	engine := NewEngine(&org)
+	insert := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name": storage.StringValue("Acme"),
+		},
+	}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert)
+	}
+	notDeleted := engine.EmptyRecycleBin([]storage.Record{{ID: insert[0].ID, Object: "Account"}})
+	if notDeleted[0].Success || notDeleted[0].StatusCode != "ENTITY_IS_NOT_IN_RECYCLE_BIN" {
+		t.Fatalf("not deleted emptyRecycleBin = %#v", notDeleted)
+	}
+	deleted := engine.Delete([]storage.Record{{ID: insert[0].ID, Object: "Account"}})
+	if !deleted[0].Success {
+		t.Fatalf("delete = %#v", deleted)
+	}
+	emptied := engine.EmptyRecycleBin([]storage.Record{{ID: insert[0].ID, Object: "Account"}})
+	if !emptied[0].Success || emptied[0].ID != insert[0].ID {
+		t.Fatalf("emptyRecycleBin = %#v", emptied)
+	}
+	if _, ok := org.Objects["Account"].Records[insert[0].ID]; ok {
+		t.Fatalf("record remained after emptyRecycleBin: %#v", org.Objects["Account"].Records[insert[0].ID])
+	}
+}
+
+func TestLockAndUnlockToggleSystemLock(t *testing.T) {
+	org := testOrg()
+	engine := NewEngine(&org)
+	insert := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name": storage.StringValue("Acme"),
+		},
+	}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert)
+	}
+	locked := engine.Lock([]storage.Record{{ID: insert[0].ID, Object: "Account"}})
+	if !locked[0].Success || locked[0].ID != insert[0].ID {
+		t.Fatalf("lock = %#v", locked)
+	}
+	if !org.Objects["Account"].Records[insert[0].ID].System.Locked {
+		t.Fatalf("record was not locked: %#v", org.Objects["Account"].Records[insert[0].ID])
+	}
+	unlocked := engine.Unlock([]storage.Record{{ID: insert[0].ID, Object: "Account"}})
+	if !unlocked[0].Success || unlocked[0].ID != insert[0].ID {
+		t.Fatalf("unlock = %#v", unlocked)
+	}
+	if org.Objects["Account"].Records[insert[0].ID].System.Locked {
+		t.Fatalf("record remained locked: %#v", org.Objects["Account"].Records[insert[0].ID])
+	}
+}
+
 func TestUpsertByExternalIDAndUniqueValidation(t *testing.T) {
 	org := testOrg()
 	account := org.Objects["Account"]

@@ -156,6 +156,51 @@ func (e *Engine) Undelete(records []storage.Record) []Result {
 	return results
 }
 
+func (e *Engine) EmptyRecycleBin(records []storage.Record) []Result {
+	results := make([]Result, len(records))
+	for i, record := range records {
+		if record.ID == "" {
+			results[i] = Result{Success: false, Error: "dml: emptyRecycleBin requires id", StatusCode: "MISSING_ARGUMENT", Fields: []string{"Id"}}
+			continue
+		}
+		object, objectName, err := e.object(record.Object)
+		if err != nil {
+			results[i] = resultFromError(record.ID, err)
+			continue
+		}
+		if err := e.validateObjectID(object.Definition, record); err != nil {
+			results[i] = resultFromError(record.ID, err)
+			continue
+		}
+		stored, ok := object.Records[record.ID]
+		if !ok {
+			results[i] = resultFromError(record.ID, fmt.Errorf("dml: record %s does not exist", record.ID))
+			continue
+		}
+		if !stored.System.IsDeleted {
+			results[i] = Result{
+				ID:         record.ID,
+				Success:    false,
+				Error:      fmt.Sprintf("dml: record %s is not in the recycle bin", record.ID),
+				StatusCode: "ENTITY_IS_NOT_IN_RECYCLE_BIN",
+			}
+			continue
+		}
+		delete(object.Records, record.ID)
+		e.Org.Objects[objectName] = object
+		results[i] = Result{ID: record.ID, Success: true}
+	}
+	return results
+}
+
+func (e *Engine) Lock(records []storage.Record) []Result {
+	return e.setLock(records, true)
+}
+
+func (e *Engine) Unlock(records []storage.Record) []Result {
+	return e.setLock(records, false)
+}
+
 func (e *Engine) Merge(master storage.Record, duplicates []storage.Record) []Result {
 	results := make([]Result, len(duplicates))
 	object, objectName, err := e.object(master.Object)
@@ -214,6 +259,39 @@ func (e *Engine) Merge(master storage.Record, duplicates []storage.Record) []Res
 		object.Records[duplicate.ID] = storedDuplicate
 		e.Org.Objects[objectName] = object
 		results[i] = Result{ID: master.ID, Success: true}
+	}
+	return results
+}
+
+func (e *Engine) setLock(records []storage.Record, locked bool) []Result {
+	results := make([]Result, len(records))
+	op := "lock"
+	if !locked {
+		op = "unlock"
+	}
+	for i, record := range records {
+		if record.ID == "" {
+			results[i] = Result{Success: false, Error: "dml: " + op + " requires id", StatusCode: "MISSING_ARGUMENT", Fields: []string{"Id"}}
+			continue
+		}
+		object, objectName, err := e.object(record.Object)
+		if err != nil {
+			results[i] = resultFromError(record.ID, err)
+			continue
+		}
+		if err := e.validateObjectID(object.Definition, record); err != nil {
+			results[i] = resultFromError(record.ID, err)
+			continue
+		}
+		stored, ok := object.Records[record.ID]
+		if !ok || stored.System.IsDeleted {
+			results[i] = resultFromError(record.ID, fmt.Errorf("dml: record %s does not exist", record.ID))
+			continue
+		}
+		stored.System.Locked = locked
+		object.Records[record.ID] = stored
+		e.Org.Objects[objectName] = object
+		results[i] = Result{ID: record.ID, Success: true}
 	}
 	return results
 }
