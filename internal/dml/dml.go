@@ -642,13 +642,21 @@ func validateFields(definition storage.ObjectDefinition, namespace string, recor
 		if field == "Id" {
 			continue
 		}
-		if _, ok := storage.ResolveFieldName(definition, namespace, field); !ok {
+		canonical, ok := storage.ResolveFieldName(definition, namespace, field)
+		if !ok {
 			return fmt.Errorf("dml: unknown field %s.%s", record.Object, field)
+		}
+		if definition.Fields[canonical].Type == storage.FieldCalculated {
+			return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{canonical}, "dml: field %s.%s is not writeable", record.Object, canonical)
 		}
 	}
 	for field := range record.ExplicitNulls {
-		if _, ok := storage.ResolveFieldName(definition, namespace, field); !ok {
+		canonical, ok := storage.ResolveFieldName(definition, namespace, field)
+		if !ok {
 			return fmt.Errorf("dml: unknown field %s.%s", record.Object, field)
+		}
+		if definition.Fields[canonical].Type == storage.FieldCalculated {
+			return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{canonical}, "dml: field %s.%s is not writeable", record.Object, canonical)
 		}
 	}
 	return nil

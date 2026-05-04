@@ -36,6 +36,7 @@ type Field struct {
 	Required              bool            `json:"required,omitempty"`
 	ExternalID            bool            `json:"externalId,omitempty"`
 	Unique                bool            `json:"unique,omitempty"`
+	Formula               string          `json:"formula,omitempty"`
 	PicklistValues        []PicklistValue `json:"picklistValues,omitempty"`
 }
 
@@ -82,6 +83,7 @@ type customFieldXML struct {
 	Required              bool        `xml:"required"`
 	ExternalID            bool        `xml:"externalId"`
 	Unique                bool        `xml:"unique"`
+	Formula               string      `xml:"formula"`
 	ValueSet              valueSetXML `xml:"valueSet"`
 }
 
@@ -293,6 +295,7 @@ func loadField(path string) (Field, error) {
 		Required:              raw.Required,
 		ExternalID:            raw.ExternalID,
 		Unique:                raw.Unique,
+		Formula:               strings.TrimSpace(raw.Formula),
 		PicklistValues:        picklistValues(raw.ValueSet.Definition.Values),
 	}, nil
 }

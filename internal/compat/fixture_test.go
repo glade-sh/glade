@@ -216,6 +216,7 @@ func TestRunDataPlatformSOQLSecurityProjectionFixture(t *testing.T) {
 	for _, path := range []string{
 		"../../docs/fixtures/data-platform-soql-security-projection.json",
 		"../../docs/fixtures/data-platform-soql-security-relationship-where.json",
+		"../../docs/fixtures/data-platform-dml-calculated-field-readonly.json",
 	} {
 		fixture, err := LoadFile(path)
 		if err != nil {
