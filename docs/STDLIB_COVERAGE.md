@@ -118,8 +118,10 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | FeatureManagement | `FeatureManagement.checkPermission` | `supported` | Checks local current-user and runAs permission-list state. |
 | HTTP | `Http.send local mock callouts` | `supported` | Fixture-backed local HttpCalloutMock execution with request validation, callout accounting, trace events, HttpResponse return validation, and no real transport. |
 | HTTP | `Http.send real network transport` | `unsupported` | Outbound HTTP transport remains explicitly unsupported; valid requests without a registered local mock return UnsupportedFeature after callout accounting. |
-| HTTP | `HttpRequest` | `partial` | Deterministic constructor defaults plus endpoint, method, compressed flag, case-insensitive headers/header keys, timeout validation/defaults, body, and blob body accessors; client-certificate and static-resource callout surfaces remain explicit unsupported seams. |
+| HTTP | `HttpRequest` | `supported` | Deterministic local value object with constructor defaults, endpoint and method validation, compressed flag, case-insensitive headers/header keys, timeout validation/defaults, and body/blob body accessors. |
+| HTTP | `HttpRequest client certificates` | `unsupported` | Client-certificate setters return explicit UnsupportedFeature diagnostics because local callout certificate material is not modeled. |
 | HTTP | `HttpResponse` | `supported` | Deterministic constructor defaults plus status, status code, case-insensitive headers/header keys, body, and blob body accessors for local mock responses. |
+| HTTP | `StaticResourceCalloutMock` | `unsupported` | Static-resource callout mock constructors and methods return explicit UnsupportedFeature diagnostics; no local static-resource transport replay is modeled. |
 | Id | `Id.getSObjectType local prefixes` | `supported` | Resolves local schema key prefixes and the modeled standard prefix table to Schema.SObjectType tokens. |
 | Id | `Id.getSObjectType unmodeled prefixes` | `unsupported` | Unknown shape-valid or unmodeled platform prefixes return a stable StringException rather than guessed object types. |
 | Id | `Id.to15` | `supported` | Converts validated 18-character IDs to their 15-character prefix. |

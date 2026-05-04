@@ -686,6 +686,10 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Promote the local `HttpResponse` value object shape: constructor
     defaults, status/status-code, body/blob, and case-insensitive header helpers
     are covered without needing transport.
+  - [x] Promote the local `HttpRequest` value object shape: constructor
+    defaults, endpoint/method validation, timeout bounds, compressed flag,
+    case-insensitive headers/header keys, body/blob interactions, and empty
+    value behavior are covered without needing transport.
   - [x] Fence client-certificate callout setters with stable UnsupportedFeature
     diagnostics; local cert material and static-resource callout mocks are not
     modeled.

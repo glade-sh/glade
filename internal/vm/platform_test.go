@@ -2506,6 +2506,7 @@ HttpRequest req = new HttpRequest();
 System.assertEquals('', req.getEndpoint());
 System.assertEquals('', req.getMethod());
 System.assertEquals('', req.getBody());
+System.assertEquals('', req.getBodyAsBlob().toString());
 System.assertEquals(0, req.getHeaderKeys().size());
 System.assertEquals(false, req.getCompressed());
 System.assertEquals(10000, req.getTimeout());
@@ -2514,10 +2515,23 @@ req.setMethod('post');
 System.assertEquals('POST', req.getMethod());
 req.setHeader('X-Test', 'first');
 req.setHeader('x-test', 'second');
+req.setHeader('Accept', 'application/json');
 System.assertEquals('second', req.getHeader('X-TEST'));
 System.assertEquals(null, req.getHeader('Missing'));
+System.assertEquals(2, req.getHeaderKeys().size());
+System.assertEquals('accept', req.getHeaderKeys().get(0));
+System.assertEquals('x-test', req.getHeaderKeys().get(1));
+req.setBody('');
+System.assertEquals('', req.getBody());
+System.assertEquals('', req.getBodyAsBlob().toString());
+req.setBody('text-body');
+System.assertEquals('746578742d626f6479', EncodingUtil.convertToHex(req.getBodyAsBlob()));
 req.setBodyAsBlob(Blob.valueOf('blob-body'));
+System.assertEquals('blob-body', req.getBody());
 System.assertEquals('blob-body', req.getBodyAsBlob().toString());
+req.setBodyAsBlob(Blob.valueOf(''));
+System.assertEquals('', req.getBody());
+System.assertEquals('', EncodingUtil.convertToHex(req.getBodyAsBlob()));
 req.setTimeout(120000);
 System.assertEquals(120000, req.getTimeout());
 `)
@@ -2572,6 +2586,16 @@ func TestExecHttpRequestRejectsInvalidEdges(t *testing.T) {
 			name: "timeout-high",
 			src:  `HttpRequest req = new HttpRequest(); req.setTimeout(120001);`,
 			want: "HttpRequest timeout must be between 1 and 120000 milliseconds",
+		},
+		{
+			name: "endpoint-empty",
+			src:  `HttpRequest req = new HttpRequest(); req.setEndpoint('');`,
+			want: "HttpRequest endpoint is required",
+		},
+		{
+			name: "callout-empty",
+			src:  `HttpRequest req = new HttpRequest(); req.setEndpoint('callout:');`,
+			want: "HttpRequest endpoint named credential is required",
 		},
 		{
 			name: "send-missing-method",
