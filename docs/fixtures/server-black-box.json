@@ -235,11 +235,49 @@
       "contains": ["statusCode", "REQUIRED_FIELD_MISSING", "\"fields\":[\"Name\"]"]
     },
     {
+      "name": "oaer-fixture-seed",
+      "method": "POST",
+      "path": "/services/data/v61.0/oaer/fixture",
+      "body": "{\"version\":\"oaer.storage.v1\",\"objects\":[{\"name\":\"Account\",\"records\":[{\"alias\":\"fixture\",\"fields\":{\"Name\":{\"kind\":\"string\",\"string\":\"Fixture Seed\"}}}]}]}",
+      "status": 200,
+      "contains": ["\"success\":true", "\"Account\""]
+    },
+    {
+      "name": "oaer-fixture-export",
+      "method": "GET",
+      "path": "/services/data/v61.0/oaer/fixture",
+      "status": 200,
+      "contains": ["\"version\":\"oaer.storage.v1\"", "Fixture Seed"]
+    },
+    {
+      "name": "scoped-reset-users-limits-async",
+      "method": "POST",
+      "path": "/services/data/v61.0/oaer/reset",
+      "body": "{\"scopes\":[\"users\",\"limits\",\"async\"]}",
+      "status": 200,
+      "contains": ["\"scopes\":[\"users\",\"limits\",\"async\"]", "\"success\":true"]
+    },
+    {
+      "name": "scoped-reset-platform",
+      "method": "POST",
+      "path": "/services/data/v61.0/oaer/reset",
+      "body": "{\"scopes\":[\"platform\"]}",
+      "status": 200,
+      "contains": ["\"scopes\":[\"platform\"]", "\"success\":true"]
+    },
+    {
       "name": "scoped-reset",
       "method": "POST",
       "path": "/services/data/v61.0/oaer/reset/data",
       "status": 200,
       "contains": ["\"scopes\":[\"data\"]"]
+    },
+    {
+      "name": "default-reset",
+      "method": "POST",
+      "path": "/services/data/v61.0/oaer/reset",
+      "status": 200,
+      "contains": ["\"scopes\":[\"all\"]", "\"success\":true"]
     },
     {
       "name": "persist-after-reset",
@@ -261,8 +299,8 @@
       "persistedRecords": 8,
       "permissions": 2,
       "profiles": 1,
-      "requests": 34,
-      "statuses": [200, 200, 200, 200, 200, 200, 200, 201, 200, 200, 204, 200, 200, 200, 204, 200, 200, 200, 200, 200, 400, 200, 200, 200, 400, 200, 400, 404, 405, 400, 400, 400, 200, 201],
+      "requests": 39,
+      "statuses": [200, 200, 200, 200, 200, 200, 200, 201, 200, 200, 204, 200, 200, 200, 204, 200, 200, 200, 200, 200, 400, 200, 200, 200, 400, 200, 400, 404, 405, 400, 400, 400, 200, 200, 200, 200, 200, 200, 201],
       "users": 1
     }
   }
