@@ -113,9 +113,9 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	switch {
 	case len(rest) == 1 && rest[0] == "sobjects":
-		s.handleSObjects(w, r)
+		s.handleSObjects(w, r, parts[2])
 	case len(rest) >= 2 && rest[0] == "sobjects":
-		s.handleObject(w, r, rest[1:])
+		s.handleObject(w, r, parts[2], rest[1:])
 	case len(rest) == 1 && rest[0] == "query":
 		s.handleQuery(w, r, parts[2])
 	case len(rest) == 2 && rest[0] == "query":
@@ -123,7 +123,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case len(rest) == 1 && rest[0] == "queryAll":
 		s.handleQuery(w, r, parts[2])
 	case len(rest) == 1 && rest[0] == "recent":
-		s.handleRecent(w, r)
+		s.handleRecent(w, r, parts[2])
 	case len(rest) == 1 && rest[0] == "search":
 		writeSalesforceError(w, errUnsupportedFeature, "Search/SOSL is not implemented in the local server")
 	case len(rest) == 1 && rest[0] == "limits":
@@ -147,11 +147,12 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) handleSObjects(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleSObjects(w http.ResponseWriter, r *http.Request, version string) {
 	if r.Method != http.MethodGet {
 		writeMethodNotAllowed(w, http.MethodGet)
 		return
 	}
+	base := "/services/data/" + version + "/sobjects/"
 	objects := make([]map[string]string, 0, len(s.Org.Objects))
 	names := make([]string, 0, len(s.Org.Objects))
 	for name := range s.Org.Objects {
@@ -164,23 +165,23 @@ func (s *Server) handleSObjects(w http.ResponseWriter, r *http.Request) {
 			"name":        name,
 			"label":       object.Definition.Label,
 			"keyPrefix":   object.Definition.KeyPrefix,
-			"url":         "/services/data/v61.0/sobjects/" + name,
-			"describe":    "/services/data/v61.0/sobjects/" + name + "/describe",
-			"recentItems": "/services/data/v61.0/sobjects/" + name + "/recent",
+			"url":         base + name,
+			"describe":    base + name + "/describe",
+			"recentItems": base + name + "/recent",
 		})
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"sobjects": objects})
 }
 
-func (s *Server) handleRecent(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleRecent(w http.ResponseWriter, r *http.Request, version string) {
 	if r.Method != http.MethodGet {
 		writeMethodNotAllowed(w, http.MethodGet)
 		return
 	}
-	writeJSON(w, http.StatusOK, recentAllPayload(*s.Org))
+	writeJSON(w, http.StatusOK, recentAllPayload(*s.Org, version))
 }
 
-func (s *Server) handleObject(w http.ResponseWriter, r *http.Request, parts []string) {
+func (s *Server) handleObject(w http.ResponseWriter, r *http.Request, version string, parts []string) {
 	objectName := parts[0]
 	switch {
 	case len(parts) == 2 && parts[1] == "describe" && r.Method == http.MethodGet:
@@ -207,14 +208,14 @@ func (s *Server) handleObject(w http.ResponseWriter, r *http.Request, parts []st
 			writeSalesforceError(w, errUnknownObject)
 			return
 		}
-		writeJSON(w, http.StatusOK, recentPayload(object))
+		writeJSON(w, http.StatusOK, recentPayload(object, version))
 	case len(parts) == 1 && r.Method == http.MethodGet:
 		object, ok := s.Org.Objects[objectName]
 		if !ok {
 			writeSalesforceError(w, errUnknownObject)
 			return
 		}
-		writeJSON(w, http.StatusOK, objectResourcePayload(object.Definition))
+		writeJSON(w, http.StatusOK, objectResourcePayload(object.Definition, version))
 	case len(parts) == 1 && r.Method == http.MethodPost:
 		record, err := decodeRecord(r, objectName, "")
 		if err != nil {
@@ -240,13 +241,13 @@ func (s *Server) handleObject(w http.ResponseWriter, r *http.Request, parts []st
 	case len(parts) == 1:
 		writeMethodNotAllowed(w, http.MethodGet, http.MethodPost)
 	case len(parts) == 2:
-		s.handleRecord(w, r, objectName, storage.ID(parts[1]))
+		s.handleRecord(w, r, version, objectName, storage.ID(parts[1]))
 	default:
 		writeSalesforceError(w, errUnknownSObject)
 	}
 }
 
-func (s *Server) handleRecord(w http.ResponseWriter, r *http.Request, objectName string, id storage.ID) {
+func (s *Server) handleRecord(w http.ResponseWriter, r *http.Request, version string, objectName string, id storage.ID) {
 	object, ok := s.Org.Objects[objectName]
 	if !ok {
 		writeSalesforceError(w, errUnknownObject)
@@ -259,7 +260,7 @@ func (s *Server) handleRecord(w http.ResponseWriter, r *http.Request, objectName
 			writeSalesforceError(w, errUnknownRecord)
 			return
 		}
-		writeJSON(w, http.StatusOK, recordPayload(record, objectName, id))
+		writeJSON(w, http.StatusOK, recordPayload(record, version, objectName, id))
 	case http.MethodPatch:
 		record, err := decodeRecord(r, objectName, id)
 		if err != nil {
@@ -1118,13 +1119,13 @@ func compactLayoutsPayload(def storage.ObjectDefinition) map[string]any {
 	}
 }
 
-func objectResourcePayload(def storage.ObjectDefinition) map[string]any {
+func objectResourcePayload(def storage.ObjectDefinition, version string) map[string]any {
 	name := def.APIName
 	label := def.Label
 	if label == "" {
 		label = name
 	}
-	base := "/services/data/v61.0/sobjects/" + name
+	base := "/services/data/" + version + "/sobjects/" + name
 	describe := base + "/describe"
 	recent := base + "/recent"
 	return map[string]any{
@@ -1148,7 +1149,7 @@ func objectResourcePayload(def storage.ObjectDefinition) map[string]any {
 	}
 }
 
-func recordPayload(record storage.Record, objectName string, id storage.ID) map[string]any {
+func recordPayload(record storage.Record, version string, objectName string, id storage.ID) map[string]any {
 	if record.Object != "" {
 		objectName = record.Object
 	}
@@ -1158,7 +1159,7 @@ func recordPayload(record storage.Record, objectName string, id storage.ID) map[
 	out := map[string]any{
 		"attributes": map[string]any{
 			"type": objectName,
-			"url":  "/services/data/v61.0/sobjects/" + objectName + "/" + string(id),
+			"url":  "/services/data/" + version + "/sobjects/" + objectName + "/" + string(id),
 		},
 		"Id": string(id),
 	}
@@ -1213,7 +1214,7 @@ func storageValueJSON(value storage.Value) any {
 	}
 }
 
-func recentPayload(object storage.ObjectState) []map[string]any {
+func recentPayload(object storage.ObjectState, version string) []map[string]any {
 	ids := make([]string, 0, len(object.Records))
 	for id, record := range object.Records {
 		if record.System.IsDeleted {
@@ -1236,15 +1237,15 @@ func recentPayload(object storage.ObjectState) []map[string]any {
 		if objectName == "" {
 			objectName = object.Definition.APIName
 		}
-		out = append(out, map[string]any{"Id": id, "Name": name, "attributes": map[string]any{"type": objectName, "url": "/services/data/v61.0/sobjects/" + objectName + "/" + id}})
+		out = append(out, map[string]any{"Id": id, "Name": name, "attributes": map[string]any{"type": objectName, "url": "/services/data/" + version + "/sobjects/" + objectName + "/" + id}})
 	}
 	return out
 }
 
-func recentAllPayload(org storage.OrgState) []map[string]any {
+func recentAllPayload(org storage.OrgState, version string) []map[string]any {
 	out := make([]map[string]any, 0)
 	for _, object := range org.Objects {
-		out = append(out, recentPayload(object)...)
+		out = append(out, recentPayload(object, version)...)
 	}
 	sort.Slice(out, func(i, j int) bool {
 		left, _ := out[i]["Id"].(string)
