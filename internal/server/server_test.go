@@ -1590,13 +1590,41 @@ func TestApexRestDispatchReturnsStableUnsupportedError(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
 
-	rec := httptest.NewRecorder()
-	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/services/apexrest/widgets/42", strings.NewReader(`{"name":"Acme"}`)))
-	if rec.Code != http.StatusNotImplemented {
-		t.Fatalf("apexrest status = %d body=%s", rec.Code, rec.Body.String())
+	for _, path := range []string{"/services/apexrest", "/services/apexrest/widgets/42"} {
+		for _, method := range []string{http.MethodGet, http.MethodPost, http.MethodPatch, http.MethodPut, http.MethodDelete} {
+			t.Run(method+" "+path, func(t *testing.T) {
+				rec := httptest.NewRecorder()
+				handler.ServeHTTP(rec, httptest.NewRequest(method, path, strings.NewReader(`{"name":"Acme"}`)))
+				assertSalesforceError(t, rec, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", "Apex @RestResource dispatch is not implemented in the local server")
+				if rec.Header().Get("Allow") != "" {
+					t.Fatalf("unexpected Allow = %q", rec.Header().Get("Allow"))
+				}
+			})
+		}
 	}
-	if !bytes.Contains(rec.Body.Bytes(), []byte(`"errorCode":"UNSUPPORTED_FEATURE"`)) || !bytes.Contains(rec.Body.Bytes(), []byte(`RestResource dispatch`)) {
-		t.Fatalf("apexrest unsupported shape = %s", rec.Body.String())
+}
+
+func TestApexRestDispatchRejectsUnsupportedMethodsWithAllowHeader(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodOptions, "/services/apexrest/widgets/42", nil))
+	assertSalesforceError(t, rec, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
+	if got, want := rec.Header().Get("Allow"), "GET, POST, PATCH, PUT, DELETE"; got != want {
+		t.Fatalf("Allow = %q, want %q", got, want)
+	}
+}
+
+func TestApexRestNearbyUnknownEndpointUnchanged(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/apexrestish/widgets/42", nil))
+	assertSalesforceError(t, rec, http.StatusNotFound, "NOT_FOUND", "unknown endpoint")
+	if rec.Header().Get("Allow") != "" {
+		t.Fatalf("unexpected Allow = %q", rec.Header().Get("Allow"))
 	}
 }
 
