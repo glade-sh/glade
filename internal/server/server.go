@@ -491,6 +491,10 @@ func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, version
 		})
 		return
 	}
+	if len(parts) == 0 && r.Method == http.MethodPost {
+		writeError(w, http.StatusBadRequest, "UNSUPPORTED_COMPOSITE", "Composite batch subrequests are not supported by the local server")
+		return
+	}
 	if len(parts) == 0 {
 		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
 		return
@@ -505,6 +509,7 @@ func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, version
 			return
 		}
 		records := make([]storage.Record, 0, len(body.Records))
+		referenceIDs := make([]string, 0, len(body.Records))
 		for _, raw := range body.Records {
 			objectName := ""
 			if attrsRaw, ok := raw["attributes"]; ok {
@@ -514,6 +519,11 @@ func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, version
 				_ = json.Unmarshal(attrsRaw, &attrs)
 				objectName = attrs.Type
 				delete(raw, "attributes")
+			}
+			referenceID := ""
+			if refRaw, ok := raw["referenceId"]; ok {
+				_ = json.Unmarshal(refRaw, &referenceID)
+				delete(raw, "referenceId")
 			}
 			if objectName == "" {
 				writeError(w, http.StatusBadRequest, "REQUIRED_FIELD_MISSING", "attributes.type is required")
@@ -525,6 +535,7 @@ func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, version
 				return
 			}
 			records = append(records, record)
+			referenceIDs = append(referenceIDs, referenceID)
 		}
 		var results []dml.Result
 		hasFailure := false
@@ -548,10 +559,10 @@ func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, version
 			return
 		}
 		if body.AllOrNone && hasFailure {
-			writeJSON(w, http.StatusBadRequest, compositeResults(results))
+			writeJSON(w, http.StatusBadRequest, compositeResults(results, referenceIDs))
 			return
 		}
-		writeJSON(w, http.StatusOK, compositeResults(results))
+		writeJSON(w, http.StatusOK, compositeResults(results, referenceIDs))
 		return
 	}
 	writeError(w, http.StatusNotFound, "NOT_FOUND", "unknown composite endpoint")
@@ -991,10 +1002,13 @@ type compositeError struct {
 	Fields     []string `json:"fields,omitempty"`
 }
 
-func compositeResults(results []dml.Result) []map[string]any {
+func compositeResults(results []dml.Result, referenceIDs []string) []map[string]any {
 	out := make([]map[string]any, 0, len(results))
-	for _, result := range results {
+	for i, result := range results {
 		row := map[string]any{"id": result.ID, "success": result.Success, "errors": []compositeError{}}
+		if i < len(referenceIDs) && referenceIDs[i] != "" {
+			row["referenceId"] = referenceIDs[i]
+		}
 		if !result.Success {
 			code := result.StatusCode
 			if code == "" {

@@ -167,6 +167,37 @@
       "contains": ["\"success\":true"]
     },
     {
+      "name": "composite-partial-reference-ids",
+      "method": "POST",
+      "path": "/services/data/v61.0/composite/sobjects",
+      "body": "{\"allOrNone\":false,\"records\":[{\"attributes\":{\"type\":\"Account\"},\"referenceId\":\"good\",\"Name\":\"Composite Partial\"},{\"attributes\":{\"type\":\"Account\"},\"referenceId\":\"bad\"}]}",
+      "status": 200,
+      "contains": ["\"referenceId\":\"good\"", "\"referenceId\":\"bad\"", "\"success\":false", "REQUIRED_FIELD_MISSING"]
+    },
+    {
+      "name": "composite-all-or-none-rollback",
+      "method": "POST",
+      "path": "/services/data/v61.0/composite/sobjects",
+      "body": "{\"allOrNone\":true,\"records\":[{\"attributes\":{\"type\":\"Account\"},\"referenceId\":\"rolled\",\"Name\":\"Composite Rolled Back\"},{\"attributes\":{\"type\":\"Account\"},\"referenceId\":\"bad-rolled\"}]}",
+      "status": 400,
+      "contains": ["\"referenceId\":\"rolled\"", "\"referenceId\":\"bad-rolled\"", "REQUIRED_FIELD_MISSING"]
+    },
+    {
+      "name": "composite-all-or-none-rollback-proof",
+      "method": "GET",
+      "path": "/services/data/v61.0/query?q=SELECT%20Id%20FROM%20Account%20WHERE%20Name%20=%20'Composite%20Rolled%20Back'",
+      "status": 200,
+      "contains": ["\"totalSize\":0"]
+    },
+    {
+      "name": "composite-batch-unsupported",
+      "method": "POST",
+      "path": "/services/data/v61.0/composite",
+      "body": "{\"compositeRequest\":[]}",
+      "status": 400,
+      "contains": ["errorCode", "UNSUPPORTED_COMPOSITE"]
+    },
+    {
       "name": "error-shape",
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Missing__c/describe",
@@ -230,8 +261,8 @@
       "persistedRecords": 8,
       "permissions": 2,
       "profiles": 1,
-      "requests": 30,
-      "statuses": [200, 200, 200, 200, 200, 200, 200, 201, 200, 200, 204, 200, 200, 200, 204, 200, 200, 200, 200, 200, 400, 200, 200, 404, 405, 400, 400, 400, 200, 201],
+      "requests": 34,
+      "statuses": [200, 200, 200, 200, 200, 200, 200, 201, 200, 200, 204, 200, 200, 200, 204, 200, 200, 200, 200, 200, 400, 200, 200, 200, 400, 200, 400, 404, 405, 400, 400, 400, 200, 201],
       "users": 1
     }
   }

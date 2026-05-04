@@ -135,7 +135,7 @@ func TestResourceDiscoveryEndpoints(t *testing.T) {
 		})
 	}
 
-	for _, path := range []string{"/services/data/v61.0/tooling", "/services/data/v61.0/composite", "/services/data/v61.0/oaer"} {
+	for _, path := range []string{"/services/data/v61.0/tooling", "/services/data/v61.0/oaer"} {
 		t.Run(path+" method", func(t *testing.T) {
 			res := httptest.NewRecorder()
 			handler.ServeHTTP(res, httptest.NewRequest(http.MethodPost, path, nil))
@@ -974,6 +974,83 @@ func TestCompositeSObjectErrorsUseDMLStatusAndFields(t *testing.T) {
 	errPayload := rows[0].Errors[0]
 	if errPayload.StatusCode != "REQUIRED_FIELD_MISSING" || errPayload.Message == "" || !containsString(errPayload.Fields, "Name") {
 		t.Fatalf("error payload = %#v", errPayload)
+	}
+}
+
+func TestCompositeSObjectsPartialSuccessReferenceIdsAndRollback(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	partial := httptest.NewRecorder()
+	handler.ServeHTTP(partial, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/composite/sobjects", strings.NewReader(`{
+  "allOrNone": false,
+  "records": [
+    {"attributes":{"type":"Account"},"referenceId":"first","Name":"Composite One"},
+    {"attributes":{"type":"Account"},"referenceId":"missing-name"}
+  ]
+}`)))
+	if partial.Code != http.StatusOK {
+		t.Fatalf("partial status = %d body=%s", partial.Code, partial.Body.String())
+	}
+	var partialRows []map[string]any
+	if err := json.Unmarshal(partial.Body.Bytes(), &partialRows); err != nil {
+		t.Fatal(err)
+	}
+	if len(partialRows) != 2 {
+		t.Fatalf("partial rows = %#v", partialRows)
+	}
+	if partialRows[0]["referenceId"] != "first" || partialRows[0]["success"] != true || partialRows[1]["referenceId"] != "missing-name" || partialRows[1]["success"] != false {
+		t.Fatalf("partial rows = %#v", partialRows)
+	}
+	if len(org.Objects["Account"].Records) != 1 {
+		t.Fatalf("partial success records = %#v", org.Objects["Account"].Records)
+	}
+
+	rollback := httptest.NewRecorder()
+	handler.ServeHTTP(rollback, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/composite/sobjects", strings.NewReader(`{
+  "allOrNone": true,
+  "records": [
+    {"attributes":{"type":"Account"},"referenceId":"rolled","Name":"Rolled Back"},
+    {"attributes":{"type":"Account"},"referenceId":"bad"}
+  ]
+}`)))
+	if rollback.Code != http.StatusBadRequest {
+		t.Fatalf("rollback status = %d body=%s", rollback.Code, rollback.Body.String())
+	}
+	var rollbackRows []map[string]any
+	if err := json.Unmarshal(rollback.Body.Bytes(), &rollbackRows); err != nil {
+		t.Fatal(err)
+	}
+	if len(rollbackRows) != 2 || rollbackRows[0]["referenceId"] != "rolled" || rollbackRows[1]["referenceId"] != "bad" {
+		t.Fatalf("rollback rows = %#v", rollbackRows)
+	}
+	if len(org.Objects["Account"].Records) != 1 {
+		t.Fatalf("allOrNone rollback leaked records = %#v", org.Objects["Account"].Records)
+	}
+
+	missingType := httptest.NewRecorder()
+	handler.ServeHTTP(missingType, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/composite/sobjects", strings.NewReader(`{"records":[{"Name":"No Type"}]}`)))
+	if missingType.Code != http.StatusBadRequest {
+		t.Fatalf("missing type status = %d body=%s", missingType.Code, missingType.Body.String())
+	}
+	missingTypeErrors := decodeServerErrors(t, missingType)
+	if len(missingTypeErrors) != 1 || missingTypeErrors[0].ErrorCode != "REQUIRED_FIELD_MISSING" {
+		t.Fatalf("missing type errors = %#v", missingTypeErrors)
+	}
+}
+
+func TestCompositeBatchEndpointIsExplicitlyUnsupported(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	res := httptest.NewRecorder()
+	handler.ServeHTTP(res, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/composite", strings.NewReader(`{"compositeRequest":[]}`)))
+	if res.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d body=%s", res.Code, res.Body.String())
+	}
+	errors := decodeServerErrors(t, res)
+	if len(errors) != 1 || errors[0].ErrorCode != "UNSUPPORTED_COMPOSITE" {
+		t.Fatalf("errors = %#v", errors)
 	}
 }
 
