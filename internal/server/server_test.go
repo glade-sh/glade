@@ -456,19 +456,45 @@ func TestUnsupportedDiscoveryNamespacesReturnStableErrors(t *testing.T) {
 func TestToolingCommonRoutesReturnStableUnsupportedErrors(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
-	for _, path := range []string{
-		"/services/data/v61.0/tooling/sobjects",
-		"/services/data/v61.0/tooling/sobjects/ApexClass/describe",
-		"/services/data/v61.0/tooling/completions",
+	for _, tc := range []struct {
+		method  string
+		path    string
+		message string
+	}{
+		{method: http.MethodGet, path: "/services/data/v61.0/tooling/sobjects", message: "Tooling sObject discovery"},
+		{method: http.MethodGet, path: "/services/data/v61.0/tooling/sobjects/ApexClass/describe", message: "Tooling sObject describe"},
+		{method: http.MethodGet, path: "/services/data/v61.0/tooling/sobjects/ApexClass", message: "Tooling ApexClass object collection"},
+		{method: http.MethodPost, path: "/services/data/v61.0/tooling/sobjects/ApexClass", message: "Tooling ApexClass object collection"},
+		{method: http.MethodGet, path: "/services/data/v61.0/tooling/sobjects/ApexClass/01p000000000001", message: "Tooling ApexClass object record"},
+		{method: http.MethodPatch, path: "/services/data/v61.0/tooling/sobjects/ApexTrigger/01q000000000001", message: "Tooling ApexTrigger object record"},
+		{method: http.MethodPost, path: "/services/data/v61.0/tooling/runTestsAsynchronous", message: "Tooling runTestsAsynchronous"},
+		{method: http.MethodPost, path: "/services/data/v61.0/tooling/runTestsSynchronous", message: "Tooling runTestsSynchronous"},
+		{method: http.MethodGet, path: "/services/data/v61.0/tooling/coverage", message: "Tooling ApexCodeCoverage"},
+		{method: http.MethodGet, path: "/services/data/v61.0/tooling/completions", message: "Tooling completions"},
 	} {
 		rec := httptest.NewRecorder()
-		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+		handler.ServeHTTP(rec, httptest.NewRequest(tc.method, tc.path, nil))
 		if rec.Code != http.StatusNotImplemented {
-			t.Fatalf("%s status = %d body=%s", path, rec.Code, rec.Body.String())
+			t.Fatalf("%s %s status = %d body=%s", tc.method, tc.path, rec.Code, rec.Body.String())
 		}
-		if !bytes.Contains(rec.Body.Bytes(), []byte(`"errorCode":"UNSUPPORTED_FEATURE"`)) || !bytes.Contains(rec.Body.Bytes(), []byte(`Tooling`)) {
-			t.Fatalf("%s unsupported shape = %s", path, rec.Body.String())
+		if !bytes.Contains(rec.Body.Bytes(), []byte(`"errorCode":"UNSUPPORTED_FEATURE"`)) || !bytes.Contains(rec.Body.Bytes(), []byte(tc.message)) {
+			t.Fatalf("%s %s unsupported shape = %s", tc.method, tc.path, rec.Body.String())
 		}
+	}
+}
+
+func TestToolingQueryStillDelegatesToSOQL(t *testing.T) {
+	org := testOrg()
+	addAccountForTest(&org, "001000000000001", "Tooling Query")
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/tooling/query?q=SELECT%20Id,%20Name%20FROM%20Account%20WHERE%20Name%20=%20'Tooling%20Query'", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("tooling query status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if !bytes.Contains(rec.Body.Bytes(), []byte(`"totalSize":1`)) || !bytes.Contains(rec.Body.Bytes(), []byte(`Tooling Query`)) {
+		t.Fatalf("tooling query body = %s", rec.Body.String())
 	}
 }
 
@@ -500,6 +526,30 @@ func TestToolingCommonRoutesMethodHandling(t *testing.T) {
 	}
 	if !bytes.Contains(rec.Body.Bytes(), []byte(`"errorCode":"METHOD_NOT_ALLOWED"`)) {
 		t.Fatalf("tooling completions method shape = %s", rec.Body.String())
+	}
+
+	rec = httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPut, "/services/data/v61.0/tooling/sobjects/ApexClass/01p000000000001", nil))
+	if rec.Code != http.StatusMethodNotAllowed {
+		t.Fatalf("tooling metadata record method status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if got := rec.Header().Get("Allow"); got != "GET, PATCH, DELETE" {
+		t.Fatalf("tooling metadata record Allow = %q", got)
+	}
+	if !bytes.Contains(rec.Body.Bytes(), []byte(`"errorCode":"METHOD_NOT_ALLOWED"`)) {
+		t.Fatalf("tooling metadata record method shape = %s", rec.Body.String())
+	}
+
+	rec = httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/tooling/runTestsSynchronous", nil))
+	if rec.Code != http.StatusMethodNotAllowed {
+		t.Fatalf("tooling runTestsSynchronous method status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if got := rec.Header().Get("Allow"); got != http.MethodPost {
+		t.Fatalf("tooling runTestsSynchronous Allow = %q", got)
+	}
+	if !bytes.Contains(rec.Body.Bytes(), []byte(`"errorCode":"METHOD_NOT_ALLOWED"`)) {
+		t.Fatalf("tooling runTestsSynchronous method shape = %s", rec.Body.String())
 	}
 }
 
