@@ -906,75 +906,18 @@ func (s *Server) handleCompositeSObjects(w http.ResponseWriter, r *http.Request,
 	if len(parts) == 1 {
 		switch r.Method {
 		case http.MethodPost:
+			s.handleCompositeSObjectInsert(w, r)
+			return
 		case http.MethodPatch:
-			writeSalesforceError(w, errUnsupportedFeature, "Composite sObject collection update is not implemented in the local server")
+			s.handleCompositeSObjectUpdate(w, r)
 			return
 		case http.MethodDelete:
-			writeSalesforceError(w, errUnsupportedFeature, "Composite sObject collection delete is not implemented in the local server")
+			s.handleCompositeSObjectDelete(w, r)
 			return
 		default:
 			writeMethodNotAllowed(w, http.MethodPost, http.MethodPatch, http.MethodDelete)
 			return
 		}
-		var body struct {
-			AllOrNone bool                         `json:"allOrNone"`
-			Records   []map[string]json.RawMessage `json:"records"`
-		}
-		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			writeSalesforceError(w, errMalformedJSON, err.Error())
-			return
-		}
-		records := make([]storage.Record, 0, len(body.Records))
-		referenceIDs := make([]string, 0, len(body.Records))
-		for _, raw := range body.Records {
-			objectName := ""
-			referenceID := ""
-			if attrsRaw, ok := raw["attributes"]; ok {
-				var attrs struct {
-					Type        string `json:"type"`
-					ReferenceID string `json:"referenceId"`
-				}
-				_ = json.Unmarshal(attrsRaw, &attrs)
-				objectName = attrs.Type
-				referenceID = attrs.ReferenceID
-				delete(raw, "attributes")
-			}
-			if objectName == "" {
-				writeSalesforceError(w, errRequiredFieldMissing, "attributes.type is required")
-				return
-			}
-			record, err := recordFromRawFields(objectName, "", raw)
-			if err != nil {
-				writeSalesforceError(w, errMalformedJSON, err.Error())
-				return
-			}
-			records = append(records, record)
-			referenceIDs = append(referenceIDs, referenceID)
-		}
-		next := s.Org.Clone()
-		engine := dml.NewEngine(&next)
-		results := engine.Insert(records)
-		hasFailure := false
-		hasSuccess := false
-		for _, result := range results {
-			if !result.Success {
-				hasFailure = true
-			} else {
-				hasSuccess = true
-			}
-		}
-		if body.AllOrNone && hasFailure {
-			writeJSON(w, http.StatusBadRequest, compositeResults(results, referenceIDs))
-			return
-		}
-		if hasSuccess {
-			if err := s.commitOrg(next); err != nil {
-				writeSalesforceError(w, errStoreFailure, err.Error())
-				return
-			}
-		}
-		writeJSON(w, http.StatusOK, compositeResults(results, referenceIDs))
-		return
 	}
 	switch r.Method {
 	case http.MethodPost:
@@ -990,6 +933,172 @@ func (s *Server) handleCompositeSObjects(w http.ResponseWriter, r *http.Request,
 		writeMethodNotAllowed(w, http.MethodPost, http.MethodPatch, http.MethodDelete)
 		return
 	}
+}
+
+func (s *Server) handleCompositeSObjectInsert(w http.ResponseWriter, r *http.Request) {
+	body, ok := decodeCompositeSObjectBody(w, r, false)
+	if !ok {
+		return
+	}
+	next := s.Org.Clone()
+	engine := dml.NewEngine(&next)
+	results := engine.Insert(body.Records)
+	s.writeCompositeMutationResults(w, next, body.AllOrNone, results, body.ReferenceIDs)
+}
+
+func (s *Server) handleCompositeSObjectUpdate(w http.ResponseWriter, r *http.Request) {
+	body, ok := decodeCompositeSObjectBody(w, r, true)
+	if !ok {
+		return
+	}
+	next := s.Org.Clone()
+	engine := dml.NewEngine(&next)
+	results := engine.Update(body.Records)
+	s.writeCompositeMutationResults(w, next, body.AllOrNone, results, body.ReferenceIDs)
+}
+
+func (s *Server) handleCompositeSObjectDelete(w http.ResponseWriter, r *http.Request) {
+	idsParam := strings.TrimSpace(r.URL.Query().Get("ids"))
+	if idsParam == "" {
+		writeSalesforceError(w, errRequiredFieldMissing, "ids query parameter is required for local Composite sObject collection delete")
+		return
+	}
+	allOrNone := strings.EqualFold(r.URL.Query().Get("allOrNone"), "true")
+	ids := strings.Split(idsParam, ",")
+	records := make([]storage.Record, 0, len(ids))
+	for _, rawID := range ids {
+		id := storage.ID(strings.TrimSpace(rawID))
+		if id == "" {
+			writeSalesforceError(w, errMalformedID, "ids query parameter contains an empty record id")
+			return
+		}
+		objectName := s.objectNameForRecordID(id)
+		records = append(records, storage.Record{Object: objectName, ID: id})
+	}
+	next := s.Org.Clone()
+	engine := dml.NewEngine(&next)
+	results := engine.Delete(records)
+	s.writeCompositeMutationResults(w, next, allOrNone, results, nil)
+}
+
+func (s *Server) writeCompositeMutationResults(w http.ResponseWriter, next storage.OrgState, allOrNone bool, results []dml.Result, referenceIDs []string) {
+	hasFailure := false
+	hasSuccess := false
+	for _, result := range results {
+		if !result.Success {
+			hasFailure = true
+		} else {
+			hasSuccess = true
+		}
+	}
+	if allOrNone && hasFailure {
+		writeJSON(w, http.StatusBadRequest, compositeResults(results, referenceIDs))
+		return
+	}
+	if hasSuccess {
+		if err := s.commitOrg(next); err != nil {
+			writeSalesforceError(w, errStoreFailure, err.Error())
+			return
+		}
+	}
+	writeJSON(w, http.StatusOK, compositeResults(results, referenceIDs))
+}
+
+type compositeSObjectBody struct {
+	AllOrNone    bool
+	Records      []storage.Record
+	ReferenceIDs []string
+}
+
+func decodeCompositeSObjectBody(w http.ResponseWriter, r *http.Request, requireID bool) (compositeSObjectBody, bool) {
+	var rawBody struct {
+		AllOrNone bool                         `json:"allOrNone"`
+		Records   []map[string]json.RawMessage `json:"records"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&rawBody); err != nil {
+		writeSalesforceError(w, errMalformedJSON, err.Error())
+		return compositeSObjectBody{}, false
+	}
+	body := compositeSObjectBody{AllOrNone: rawBody.AllOrNone, Records: make([]storage.Record, 0, len(rawBody.Records)), ReferenceIDs: make([]string, 0, len(rawBody.Records))}
+	for _, raw := range rawBody.Records {
+		objectName := ""
+		referenceID := ""
+		if attrsRaw, ok := raw["attributes"]; ok {
+			var attrs struct {
+				Type        string `json:"type"`
+				ReferenceID string `json:"referenceId"`
+			}
+			_ = json.Unmarshal(attrsRaw, &attrs)
+			objectName = attrs.Type
+			referenceID = attrs.ReferenceID
+			delete(raw, "attributes")
+		}
+		if objectName == "" {
+			writeSalesforceError(w, errRequiredFieldMissing, "attributes.type is required")
+			return compositeSObjectBody{}, false
+		}
+		var id storage.ID
+		if requireID {
+			var err error
+			id, err = idFromRawRecord(raw)
+			if err != nil {
+				writeSalesforceError(w, errMalformedJSON, err.Error())
+				return compositeSObjectBody{}, false
+			}
+			if id == "" {
+				writeSalesforceError(w, errRequiredFieldMissing, "Id is required")
+				return compositeSObjectBody{}, false
+			}
+		}
+		record, err := recordFromRawFields(objectName, id, raw)
+		if err != nil {
+			writeSalesforceError(w, errMalformedJSON, err.Error())
+			return compositeSObjectBody{}, false
+		}
+		body.Records = append(body.Records, record)
+		body.ReferenceIDs = append(body.ReferenceIDs, referenceID)
+	}
+	return body, true
+}
+
+func idFromRawRecord(raw map[string]json.RawMessage) (storage.ID, error) {
+	for _, name := range []string{"Id", "id"} {
+		rawID, ok := raw[name]
+		if !ok {
+			continue
+		}
+		var id string
+		if err := json.Unmarshal(rawID, &id); err != nil {
+			return "", fmt.Errorf("%s: %w", name, err)
+		}
+		delete(raw, "Id")
+		delete(raw, "id")
+		return storage.ID(id), nil
+	}
+	return "", nil
+}
+
+func (s *Server) objectNameForRecordID(id storage.ID) string {
+	for objectName, object := range s.Org.Objects {
+		if stored, ok := object.Records[id]; ok && !stored.System.IsDeleted {
+			return objectName
+		}
+	}
+	prefix := ""
+	if len(id) >= 3 {
+		prefix = string(id[:3])
+	}
+	match := ""
+	for objectName, object := range s.Org.Objects {
+		if object.Definition.KeyPrefix != prefix {
+			continue
+		}
+		if match != "" {
+			return ""
+		}
+		match = objectName
+	}
+	return match
 }
 
 func (s *Server) commitOrg(org storage.OrgState) error {
@@ -1162,7 +1271,7 @@ func recordFromRawFields(objectName string, id storage.ID, raw map[string]json.R
 		ExplicitNulls: make(map[string]bool),
 	}
 	for name, rawValue := range raw {
-		if name == "Id" || name == "attributes" {
+		if name == "Id" || name == "id" || name == "attributes" {
 			continue
 		}
 		value, err := decodeStorageValue(rawValue)

@@ -373,19 +373,19 @@
       "contains": ["UNSUPPORTED_FEATURE", "Generic Composite REST subrequest orchestration"]
     },
     {
-      "name": "composite-sobjects-update-unsupported",
+      "name": "composite-sobjects-update",
       "method": "PATCH",
       "path": "/services/data/v61.0/composite/sobjects",
-      "body": "{\"allOrNone\":true,\"records\":[]}",
-      "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "Composite sObject collection update"]
+      "body": "{\"allOrNone\":true,\"records\":[{\"attributes\":{\"type\":\"Account\",\"referenceId\":\"updated\"},\"Id\":\"001000000000004\",\"Name\":\"Composite Updated\"}]}",
+      "status": 200,
+      "contains": ["\"referenceId\":\"updated\"", "\"id\":\"001000000000004\"", "\"success\":true"]
     },
     {
-      "name": "composite-sobjects-delete-unsupported",
+      "name": "composite-sobjects-delete",
       "method": "DELETE",
-      "path": "/services/data/v61.0/composite/sobjects",
-      "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "Composite sObject collection delete"]
+      "path": "/services/data/v61.0/composite/sobjects?ids=001000000000005&allOrNone=true",
+      "status": 200,
+      "contains": ["\"id\":\"001000000000005\"", "\"success\":true"]
     },
     {
       "name": "composite-sobjects-upsert-unsupported",
@@ -637,7 +637,7 @@
       "permissions": 2,
       "profiles": 1,
       "requests": 81,
-      "statuses": [200, 200, 405, 405, 200, 200, 200, 200, 405, 501, 501, 501, 501, 200, 405, 201, 200, 200, 200, 200, 200, 501, 501, 400, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 201, 204, 200, 201, 204, 200, 204, 400, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 404, 404, 200, 200, 201],
+      "statuses": [200, 200, 405, 405, 200, 200, 200, 200, 405, 501, 501, 501, 501, 200, 405, 201, 200, 200, 200, 200, 200, 501, 501, 400, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 201, 204, 200, 201, 204, 200, 204, 400, 501, 501, 200, 200, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 404, 404, 200, 200, 201],
       "users": 2
     }
   }
