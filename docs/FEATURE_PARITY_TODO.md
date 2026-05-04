@@ -371,7 +371,10 @@ a Salesforce-shaped local API server without silently wrong behavior.
     rollback on later undelete failures.
   - [x] Carry merge loser IDs from the DML engine into
     `MergeResult.getMergedRecordIds()`, including partial-success list results.
-  - **Limitation**: Broader undelete edge-case parity remains incomplete.
+  - [x] Promote remaining local-model Database row-action coverage for
+    `emptyRecycleBin`, `lock`/`unlock`, `merge`, `undelete`, `upsert`,
+    `getQueryLocator`, `setSavepoint`, and `rollback` with fixture-backed
+    result/accessor behavior and precise platform-lifecycle fences.
   - **Limitation**: The VM `Database.Error` shape covers the most common status
     codes; full Salesforce status-code parity is not yet complete.
 - [x] Complete external-ID upsert and ID/object mismatch behavior.
@@ -498,7 +501,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     start scopes.
   - [x] Add basic `Type.forName(...)` and `Type.newInstance()` factory support.
   - [x] Add `Database.setSavepoint()` and `Database.rollback(...)` for local
-    org-state snapshots.
+    org-state snapshots, with compatibility coverage for selected-snapshot
+    restore and VM unit coverage for later-savepoint invalidation.
   - [x] Add `Schema.describeSObjects(...)` basics plus local describe access
     booleans for SObjects and fields.
   - **Limitation**: Broader standard-library method parity remains tracked by

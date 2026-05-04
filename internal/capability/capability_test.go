@@ -85,3 +85,17 @@ func TestWriteKnownGapsMarkdown(t *testing.T) {
 		}
 	}
 }
+
+func TestDatabaseStdlibRowsAreLocallyPromotedOrFenced(t *testing.T) {
+	for _, entry := range StdlibMatrix() {
+		if entry.Area != "Database" {
+			continue
+		}
+		if entry.Status == StatusPartial {
+			t.Fatalf("Database stdlib row %s remains partial: %s", entry.API, entry.Notes)
+		}
+		if entry.Status == StatusSupported && entry.Notes == "" {
+			t.Fatalf("Database stdlib row %s needs local-model notes", entry.API)
+		}
+	}
+}
