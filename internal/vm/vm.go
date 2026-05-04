@@ -6401,6 +6401,27 @@ func builtinStaticField(typeName, fieldName string) (Value, bool) {
 		case "MIN_VALUE":
 			return Int(math.MinInt64), true
 		}
+	case "Pattern":
+		switch fieldName {
+		case "UNIX_LINES":
+			return Int(patternFlagUnixLines), true
+		case "CASE_INSENSITIVE":
+			return Int(patternFlagCaseInsensitive), true
+		case "COMMENTS":
+			return Int(patternFlagComments), true
+		case "MULTILINE":
+			return Int(patternFlagMultiline), true
+		case "LITERAL":
+			return Int(patternFlagLiteral), true
+		case "DOTALL":
+			return Int(patternFlagDotall), true
+		case "UNICODE_CASE":
+			return Int(patternFlagUnicodeCase), true
+		case "CANON_EQ":
+			return Int(patternFlagCanonEq), true
+		case "UNICODE_CHARACTER_CLASS":
+			return Int(patternFlagUnicodeCharacterClass), true
+		}
 	}
 	return Null, false
 }

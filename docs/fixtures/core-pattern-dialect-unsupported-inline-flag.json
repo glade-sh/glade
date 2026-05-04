@@ -1,0 +1,28 @@
+{
+  "name": "core-pattern-dialect-unsupported-inline-flag",
+  "evidence": [
+    {
+      "symbol": "Pattern.compile",
+      "kind": "exec",
+      "notes": "Java COMMENTS inline flag is outside the local Go-regexp inline flag subset and returns a typed unsupported diagnostic."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Pattern.compile('(?x)a b');"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Pattern.compile('(?x)a b');"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"Pattern.compile Java regex inline flags\""
+    }
+  }
+}

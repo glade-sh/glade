@@ -1064,18 +1064,42 @@ func int32FromFloat(name string, value float64) (int32, error) {
 	return int32(value), nil
 }
 
+const (
+	patternFlagUnixLines             int64 = 1
+	patternFlagCaseInsensitive       int64 = 2
+	patternFlagComments              int64 = 4
+	patternFlagMultiline             int64 = 8
+	patternFlagLiteral               int64 = 16
+	patternFlagDotall                int64 = 32
+	patternFlagUnicodeCase           int64 = 64
+	patternFlagCanonEq               int64 = 128
+	patternFlagUnicodeCharacterClass int64 = 256
+)
+
+const patternSupportedFlags = patternFlagCaseInsensitive | patternFlagMultiline | patternFlagLiteral | patternFlagDotall | patternFlagUnicodeCase
+
 func patternCompile(args []Value) (Value, error) {
-	if len(args) != 1 || args[0].Kind != ValueString {
-		return Null, fmt.Errorf("Pattern.compile expects regex String")
+	if len(args) != 1 && len(args) != 2 {
+		return Null, fmt.Errorf("Pattern.compile expects regex String and optional Integer flags")
 	}
-	if feature := unsupportedJavaRegexFeature(args[0].Text); feature != "" {
-		return Null, unsupportedCallError("Pattern.compile " + feature)
+	if args[0].Kind != ValueString || (len(args) == 2 && args[1].Kind != ValueInt) {
+		return Null, fmt.Errorf("Pattern.compile expects regex String and optional Integer flags")
 	}
-	if _, err := regexp.Compile(args[0].Text); err != nil {
+	flags := int64(0)
+	if len(args) == 2 {
+		flags = args[1].Int
+	}
+	regexpSource, err := compilePatternSource("Pattern.compile", args[0].Text, flags)
+	if err != nil {
+		return Null, err
+	}
+	if _, err := regexp.Compile(regexpSource); err != nil {
 		return Null, fmt.Errorf("Pattern.compile invalid regex: %w", err)
 	}
 	pattern := Object("Pattern")
 	pattern.Fields["source"] = args[0]
+	pattern.Fields["regexpSource"] = String(regexpSource)
+	pattern.Fields["flags"] = Int(flags)
 	return pattern, nil
 }
 
@@ -1100,17 +1124,97 @@ func patternQuote(args []Value) (Value, error) {
 	return String(regexp.QuoteMeta(args[0].Text)), nil
 }
 
+func compilePatternSource(callee, source string, flags int64) (string, error) {
+	if flags < 0 {
+		return "", unsupportedCallError(callee + " negative regex flags")
+	}
+	if unsupported := flags &^ patternSupportedFlags; unsupported != 0 {
+		return "", unsupportedCallError(callee + " " + unsupportedPatternFlagsFeature(unsupported))
+	}
+	regexpSource := source
+	if flags&patternFlagLiteral != 0 {
+		regexpSource = regexp.QuoteMeta(source)
+	} else if feature := unsupportedJavaRegexFeature(source); feature != "" {
+		return "", unsupportedCallError(callee + " " + feature)
+	}
+	prefix := patternFlagPrefix(flags)
+	if prefix == "" {
+		return regexpSource, nil
+	}
+	return prefix + regexpSource, nil
+}
+
+func patternFlagPrefix(flags int64) string {
+	var enabled strings.Builder
+	if flags&patternFlagCaseInsensitive != 0 {
+		enabled.WriteByte('i')
+	}
+	if flags&patternFlagMultiline != 0 {
+		enabled.WriteByte('m')
+	}
+	if flags&patternFlagDotall != 0 {
+		enabled.WriteByte('s')
+	}
+	if enabled.Len() == 0 {
+		return ""
+	}
+	return "(?" + enabled.String() + ")"
+}
+
+func unsupportedPatternFlagsFeature(flags int64) string {
+	names := []string{}
+	if flags&patternFlagUnixLines != 0 {
+		names = append(names, "UNIX_LINES")
+	}
+	if flags&patternFlagComments != 0 {
+		names = append(names, "COMMENTS")
+	}
+	if flags&patternFlagCanonEq != 0 {
+		names = append(names, "CANON_EQ")
+	}
+	if flags&patternFlagUnicodeCharacterClass != 0 {
+		names = append(names, "UNICODE_CHARACTER_CLASS")
+	}
+	known := patternFlagUnixLines | patternFlagComments | patternFlagCanonEq | patternFlagUnicodeCharacterClass
+	if unknown := flags &^ (patternSupportedFlags | known); unknown != 0 {
+		names = append(names, fmt.Sprintf("unknown flags 0x%x", unknown))
+	}
+	if len(names) == 0 {
+		return "unsupported regex flags"
+	}
+	return "unsupported regex flags " + strings.Join(names, ",")
+}
+
+func patternRegexpSource(pattern Value) (string, error) {
+	if regexpSource, ok := pattern.Fields["regexpSource"]; ok {
+		if regexpSource.Kind != ValueString {
+			return "", fmt.Errorf("Pattern stored invalid regex source")
+		}
+		return regexpSource.Text, nil
+	}
+	source, ok := pattern.Fields["source"]
+	if !ok || source.Kind != ValueString {
+		return "", fmt.Errorf("Pattern missing source")
+	}
+	return source.Text, nil
+}
+
 func callPatternMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
 	switch method {
 	case "matcher":
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, receiver, false, true, fmt.Errorf("Pattern.matcher expects input String")
 		}
-		if _, ok := receiver.Fields["source"]; !ok {
-			return Null, receiver, false, true, fmt.Errorf("Pattern missing source")
+		regexpSource, err := patternRegexpSource(receiver)
+		if err != nil {
+			return Null, receiver, false, true, err
 		}
 		matcher := Object("Matcher")
-		matcher.Fields["source"] = receiver.Fields["source"]
+		matcher.Fields["source"] = String(regexpSource)
+		matcher.Fields["patternSource"] = receiver.Fields["source"]
+		if flags, ok := receiver.Fields["flags"]; ok {
+			matcher.Fields["flags"] = flags
+		}
 		matcher.Fields["input"] = args[0]
 		matcherClearMatch(matcher)
 		matcher.Fields["index"] = Int(0)
@@ -1134,7 +1238,11 @@ func callPatternMember(receiver Value, method string, args []Value) (Value, Valu
 		if !ok || source.Kind != ValueString {
 			return Null, receiver, false, true, fmt.Errorf("Pattern missing source")
 		}
-		parts, err := patternSplit(source.Text, args)
+		regexpSource, err := patternRegexpSource(receiver)
+		if err != nil {
+			return Null, receiver, false, true, err
+		}
+		parts, err := patternSplit(regexpSource, args)
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
@@ -1354,10 +1462,20 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		if !ok || source.Kind != ValueString {
 			return Null, receiver, false, true, fmt.Errorf("Matcher.usePattern Pattern missing source")
 		}
-		if _, err := regexp.Compile(source.Text); err != nil {
+		regexpSource, err := patternRegexpSource(args[0])
+		if err != nil {
+			return Null, receiver, false, true, err
+		}
+		if _, err := regexp.Compile(regexpSource); err != nil {
 			return Null, receiver, false, true, fmt.Errorf("Matcher.usePattern invalid regex: %w", err)
 		}
-		receiver.Fields["source"] = source
+		receiver.Fields["source"] = String(regexpSource)
+		receiver.Fields["patternSource"] = source
+		if flags, ok := args[0].Fields["flags"]; ok {
+			receiver.Fields["flags"] = flags
+		} else {
+			delete(receiver.Fields, "flags")
+		}
 		matcherClearMatch(receiver)
 		region, err := matcherRegion(receiver, input)
 		if err != nil {
@@ -2364,6 +2482,15 @@ func unsupportedJavaRegexFeature(source string) string {
 				if next == 'G' {
 					return "Java regex previous-match boundary"
 				}
+				if (next == 'p' || next == 'P') && i+2 < len(source) && source[i+2] == '{' {
+					end := strings.IndexByte(source[i+3:], '}')
+					if end >= 0 {
+						className := source[i+3 : i+3+end]
+						if javaOnlyUnicodeClass(className) {
+							return "Java regex Unicode character classes"
+						}
+					}
+				}
 				i++
 			}
 		case '[':
@@ -2383,10 +2510,18 @@ func unsupportedJavaRegexFeature(source string) string {
 					return "Java regex lookbehind"
 				}
 				return "Java regex named groups"
+			case 'P':
+				if i+3 < len(source) && source[i+3] == '<' {
+					return "Java regex named groups"
+				}
 			case '=', '!':
 				return "Java regex lookahead"
 			case '>':
 				return "Java regex atomic groups"
+			default:
+				if unsupportedInlineJavaRegexFlags(source[i+2:]) {
+					return "Java regex inline flags"
+				}
 			}
 		case '*', '+', '?', '}':
 			if !inClass && i+1 < len(source) && source[i+1] == '+' {
@@ -2395,6 +2530,29 @@ func unsupportedJavaRegexFeature(source string) string {
 		}
 	}
 	return ""
+}
+
+func javaOnlyUnicodeClass(className string) bool {
+	lower := strings.ToLower(className)
+	return strings.HasPrefix(lower, "java") || strings.HasPrefix(className, "Is") || strings.HasPrefix(className, "In")
+}
+
+func unsupportedInlineJavaRegexFlags(suffix string) bool {
+	sawFlag := false
+	for i := 0; i < len(suffix); i++ {
+		switch suffix[i] {
+		case 'i', 'm', 's', '-':
+			sawFlag = true
+			continue
+		case 'd', 'u', 'x', 'U':
+			return true
+		case ':', ')':
+			return false
+		default:
+			return false
+		}
+	}
+	return sawFlag
 }
 
 func stringList(parts []string) Value {
