@@ -158,7 +158,7 @@ func Execute(org storage.OrgState, query Query) (Result, error) {
 		query.Having = &condition
 	}
 
-	ids := candidateRecordIDs(object, query.Where)
+	ids := candidateRecordIDs(object, query.Where, query.AllRows)
 	sort.Strings(ids)
 
 	matchedRecords := make([]storage.Record, 0, len(ids))
@@ -208,8 +208,8 @@ func Execute(org storage.OrgState, query Query) (Result, error) {
 	return Result{Records: records, Rows: len(records)}, nil
 }
 
-func candidateRecordIDs(object storage.ObjectState, where *Condition) []string {
-	if ids, ok := indexedCandidateIDs(object, where); ok {
+func candidateRecordIDs(object storage.ObjectState, where *Condition, allRows bool) []string {
+	if ids, ok := indexedCandidateIDs(object, where, allRows); ok {
 		out := make([]string, 0, len(ids))
 		for _, id := range ids {
 			out = append(out, string(id))
@@ -223,8 +223,8 @@ func candidateRecordIDs(object storage.ObjectState, where *Condition) []string {
 	return out
 }
 
-func indexedCandidateIDs(object storage.ObjectState, where *Condition) ([]storage.ID, bool) {
-	if where == nil || where.Not || len(where.And) != 0 || len(where.Or) != 0 || where.Range || where.Subquery != nil || where.Op != "=" {
+func indexedCandidateIDs(object storage.ObjectState, where *Condition, allRows bool) ([]storage.ID, bool) {
+	if allRows || where == nil || where.Not || len(where.And) != 0 || len(where.Or) != 0 || where.Range || where.Subquery != nil || where.Op != "=" {
 		return nil, false
 	}
 	if strings.Contains(where.Field, ".") {

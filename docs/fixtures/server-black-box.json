@@ -1212,6 +1212,82 @@
       ]
     },
     {
+      "name": "query-pagination-final-page",
+      "method": "GET",
+      "path": "/services/data/v61.0/query/oaerql000001-4",
+      "status": 200,
+      "contains": [
+        "\"totalSize\":5",
+        "\"done\":true"
+      ],
+      "notContains": [
+        "\"nextRecordsUrl\""
+      ]
+    },
+    {
+      "name": "query-pagination-expired-locator",
+      "method": "GET",
+      "path": "/services/data/v61.0/query/oaerql000001-4",
+      "status": 404,
+      "contains": [
+        "NOT_FOUND",
+        "query locator not found or expired"
+      ]
+    },
+    {
+      "name": "query-pagination-malformed-locator",
+      "method": "GET",
+      "path": "/services/data/v61.0/query/not-a-locator",
+      "status": 404,
+      "contains": [
+        "NOT_FOUND",
+        "query locator not found or expired"
+      ]
+    },
+    {
+      "name": "query-pagination-method-not-allowed",
+      "method": "PATCH",
+      "path": "/services/data/v61.0/query/oaerql000001-4",
+      "status": 405,
+      "contains": [
+        "METHOD_NOT_ALLOWED",
+        "method not allowed"
+      ]
+    },
+    {
+      "name": "query-batch-size-empty",
+      "method": "GET",
+      "path": "/services/data/v61.0/query?q=SELECT%20Id%20FROM%20Account&batchSize=",
+      "status": 400,
+      "contains": [
+        "MALFORMED_QUERY",
+        "batchSize must be a positive integer no greater than 2000"
+      ]
+    },
+    {
+      "name": "query-batch-size-too-large",
+      "method": "GET",
+      "path": "/services/data/v61.0/query?q=SELECT%20Id%20FROM%20Account&batchSize=2001",
+      "status": 400,
+      "contains": [
+        "MALFORMED_QUERY",
+        "batchSize must be a positive integer no greater than 2000"
+      ]
+    },
+    {
+      "name": "query-default-batch-size-small-result",
+      "method": "GET",
+      "path": "/services/data/v61.0/query?q=SELECT%20Id,%20Name%20FROM%20Account",
+      "status": 200,
+      "contains": [
+        "\"totalSize\":5",
+        "\"done\":true"
+      ],
+      "notContains": [
+        "\"nextRecordsUrl\""
+      ]
+    },
+    {
       "name": "create-account-for-delete-log",
       "method": "POST",
       "path": "/services/data/v61.0/sobjects/Account",
@@ -1248,6 +1324,28 @@
         "\"deletedDate\"",
         "\"earliestDateAvailable\"",
         "\"latestDateCovered\""
+      ]
+    },
+    {
+      "name": "query-excludes-soft-deleted-record",
+      "method": "GET",
+      "path": "/services/data/v61.0/query?q=SELECT%20Id,%20Name,%20IsDeleted%20FROM%20Account%20WHERE%20Name%20=%20'Delete%20Log'",
+      "status": 200,
+      "contains": [
+        "\"totalSize\":0",
+        "\"done\":true",
+        "\"records\":[]"
+      ]
+    },
+    {
+      "name": "queryall-includes-soft-deleted-record",
+      "method": "GET",
+      "path": "/services/data/v61.0/queryAll?q=SELECT%20Id,%20Name,%20IsDeleted%20FROM%20Account%20WHERE%20Name%20=%20'Delete%20Log'",
+      "status": 200,
+      "contains": [
+        "\"totalSize\":1",
+        "\"Name\":\"Delete Log\"",
+        "\"IsDeleted\":true"
       ]
     },
     {
@@ -1343,6 +1441,71 @@
       "contains": [
         "NOT_FOUND",
         "record not found"
+      ]
+    },
+    {
+      "name": "composite-sobjects-typed-upsert-partial-failure",
+      "method": "PATCH",
+      "path": "/services/data/v61.0/composite/sobjects/Account/External_Id__c",
+      "body": "{\"records\":[{\"attributes\":{\"referenceId\":\"upsertGood\"},\"Name\":\"Upsert Partial\",\"External_Id__c\":\"fixture-ext-2\"},{\"attributes\":{\"referenceId\":\"upsertBad\"},\"Name\":\"Bad\",\"External_Id__c\":\"fixture-ext-3\",\"Nope__c\":\"bad\"}]}",
+      "status": 200,
+      "contains": [
+        "\"referenceId\":\"upsertGood\"",
+        "\"referenceId\":\"upsertBad\"",
+        "\"success\":true",
+        "\"success\":false",
+        "\"created\":true",
+        "INVALID_FIELD_FOR_INSERT_UPDATE",
+        "unknown field Account.Nope__c"
+      ]
+    },
+    {
+      "name": "composite-sobjects-update-partial-failure",
+      "method": "PATCH",
+      "path": "/services/data/v61.0/composite/sobjects",
+      "body": "{\"records\":[{\"attributes\":{\"type\":\"Account\",\"referenceId\":\"updateGood\"},\"Id\":\"001000000000008\",\"Description\":\"Composite partial update\"},{\"attributes\":{\"type\":\"Account\",\"referenceId\":\"updateBad\"},\"Id\":\"001000000000999\",\"Name\":\"Missing\"}]}",
+      "status": 200,
+      "contains": [
+        "\"referenceId\":\"updateGood\"",
+        "\"referenceId\":\"updateBad\"",
+        "\"success\":true",
+        "\"success\":false",
+        "ENTITY_IS_DELETED"
+      ]
+    },
+    {
+      "name": "composite-sobjects-delete-partial-failure",
+      "method": "DELETE",
+      "path": "/services/data/v61.0/composite/sobjects?ids=001000000000008,001000000000999&allOrNone=false",
+      "status": 200,
+      "contains": [
+        "\"id\":\"001000000000008\"",
+        "\"id\":\"001000000000999\"",
+        "\"success\":true",
+        "\"success\":false",
+        "ENTITY_IS_DELETED"
+      ]
+    },
+    {
+      "name": "composite-sobjects-typed-upsert-malformed-reference",
+      "method": "PATCH",
+      "path": "/services/data/v61.0/composite/sobjects/Account/External_Id__c",
+      "body": "{\"records\":[{\"attributes\":{\"referenceId\":42},\"Name\":\"Bad\",\"External_Id__c\":\"fixture-ext-bad\"}]}",
+      "status": 400,
+      "contains": [
+        "JSON_PARSER_ERROR",
+        "records[0].attributes.referenceId must be a string"
+      ]
+    },
+    {
+      "name": "composite-sobjects-malformed-reference",
+      "method": "POST",
+      "path": "/services/data/v61.0/composite/sobjects",
+      "body": "{\"records\":[{\"attributes\":{\"type\":\"Account\",\"referenceId\":42},\"Name\":\"Bad\"}]}",
+      "status": 400,
+      "contains": [
+        "JSON_PARSER_ERROR",
+        "records[0].attributes.referenceId must be a string"
       ]
     },
     {
@@ -2443,169 +2606,6 @@
         "JSON_PARSER_ERROR",
         "unexpected EOF"
       ]
-    },
-    {
-      "name": "query-pagination-final-page",
-      "method": "GET",
-      "path": "/services/data/v61.0/query/oaerql000001-4",
-      "status": 200,
-      "contains": [
-        "\"totalSize\":5",
-        "\"done\":true"
-      ],
-      "notContains": [
-        "\"nextRecordsUrl\""
-      ]
-    },
-    {
-      "name": "query-pagination-expired-locator",
-      "method": "GET",
-      "path": "/services/data/v61.0/query/oaerql000001-4",
-      "status": 404,
-      "contains": [
-        "NOT_FOUND",
-        "query locator not found or expired"
-      ]
-    },
-    {
-      "name": "query-pagination-malformed-locator",
-      "method": "GET",
-      "path": "/services/data/v61.0/query/not-a-locator",
-      "status": 404,
-      "contains": [
-        "NOT_FOUND",
-        "query locator not found or expired"
-      ]
-    },
-    {
-      "name": "query-pagination-method-not-allowed",
-      "method": "PATCH",
-      "path": "/services/data/v61.0/query/oaerql000001-4",
-      "status": 405,
-      "contains": [
-        "METHOD_NOT_ALLOWED",
-        "method not allowed"
-      ]
-    },
-    {
-      "name": "query-batch-size-empty",
-      "method": "GET",
-      "path": "/services/data/v61.0/query?q=SELECT%20Id%20FROM%20Account&batchSize=",
-      "status": 400,
-      "contains": [
-        "MALFORMED_QUERY",
-        "batchSize must be a positive integer no greater than 2000"
-      ]
-    },
-    {
-      "name": "query-batch-size-too-large",
-      "method": "GET",
-      "path": "/services/data/v61.0/query?q=SELECT%20Id%20FROM%20Account&batchSize=2001",
-      "status": 400,
-      "contains": [
-        "MALFORMED_QUERY",
-        "batchSize must be a positive integer no greater than 2000"
-      ]
-    },
-    {
-      "name": "query-default-batch-size-small-result",
-      "method": "GET",
-      "path": "/services/data/v61.0/query?q=SELECT%20Id,%20Name%20FROM%20Account",
-      "status": 200,
-      "contains": [
-        "\"totalSize\":5",
-        "\"done\":true"
-      ],
-      "notContains": [
-        "\"nextRecordsUrl\""
-      ]
-    },
-    {
-      "name": "query-excludes-soft-deleted-record",
-      "method": "GET",
-      "path": "/services/data/v61.0/query?q=SELECT%20Id,%20Name,%20IsDeleted%20FROM%20Account%20WHERE%20Name%20=%20'Delete%20Log'",
-      "status": 200,
-      "contains": [
-        "\"totalSize\":0",
-        "\"done\":true",
-        "\"records\":[]"
-      ]
-    },
-    {
-      "name": "queryall-includes-soft-deleted-record",
-      "method": "GET",
-      "path": "/services/data/v61.0/queryAll?q=SELECT%20Id,%20Name,%20IsDeleted%20FROM%20Account%20WHERE%20Name%20=%20'Delete%20Log'",
-      "status": 200,
-      "contains": [
-        "\"totalSize\":1",
-        "\"Name\":\"Delete Log\"",
-        "\"IsDeleted\":true"
-      ]
-    },
-    {
-      "name": "composite-sobjects-update-partial-failure",
-      "method": "PATCH",
-      "path": "/services/data/v61.0/composite/sobjects",
-      "body": "{\"records\":[{\"attributes\":{\"type\":\"Account\",\"referenceId\":\"updateGood\"},\"Id\":\"001000000000004\",\"Description\":\"Composite partial update\"},{\"attributes\":{\"type\":\"Account\",\"referenceId\":\"updateBad\"},\"Id\":\"001000000000999\",\"Name\":\"Missing\"}]}",
-      "status": 200,
-      "contains": [
-        "\"referenceId\":\"updateGood\"",
-        "\"referenceId\":\"updateBad\"",
-        "\"success\":true",
-        "\"success\":false",
-        "ENTITY_IS_DELETED"
-      ]
-    },
-    {
-      "name": "composite-sobjects-delete-partial-failure",
-      "method": "DELETE",
-      "path": "/services/data/v61.0/composite/sobjects?ids=001000000000004,001000000000999&allOrNone=false",
-      "status": 200,
-      "contains": [
-        "\"id\":\"001000000000004\"",
-        "\"id\":\"001000000000999\"",
-        "\"success\":true",
-        "\"success\":false",
-        "ENTITY_IS_DELETED"
-      ]
-    },
-    {
-      "name": "composite-sobjects-typed-upsert-partial-failure",
-      "method": "PATCH",
-      "path": "/services/data/v61.0/composite/sobjects/Account/External_Id__c",
-      "body": "{\"records\":[{\"attributes\":{\"referenceId\":\"upsertGood\"},\"Name\":\"Upsert Partial\",\"External_Id__c\":\"fixture-ext-2\"},{\"attributes\":{\"referenceId\":\"upsertBad\"},\"Name\":\"Bad\",\"External_Id__c\":\"fixture-ext-3\",\"Nope__c\":\"bad\"}]}",
-      "status": 200,
-      "contains": [
-        "\"referenceId\":\"upsertGood\"",
-        "\"referenceId\":\"upsertBad\"",
-        "\"success\":true",
-        "\"success\":false",
-        "\"created\":true",
-        "INVALID_FIELD_FOR_INSERT_UPDATE",
-        "unknown field Account.Nope__c"
-      ]
-    },
-    {
-      "name": "composite-sobjects-typed-upsert-malformed-reference",
-      "method": "PATCH",
-      "path": "/services/data/v61.0/composite/sobjects/Account/External_Id__c",
-      "body": "{\"records\":[{\"attributes\":{\"referenceId\":42},\"Name\":\"Bad\",\"External_Id__c\":\"fixture-ext-bad\"}]}",
-      "status": 400,
-      "contains": [
-        "JSON_PARSER_ERROR",
-        "records[0].attributes.referenceId must be a string"
-      ]
-    },
-    {
-      "name": "composite-sobjects-malformed-reference",
-      "method": "POST",
-      "path": "/services/data/v61.0/composite/sobjects",
-      "body": "{\"records\":[{\"attributes\":{\"type\":\"Account\",\"referenceId\":42},\"Name\":\"Bad\"}]}",
-      "status": 400,
-      "contains": [
-        "JSON_PARSER_ERROR",
-        "records[0].attributes.referenceId must be a string"
-      ]
     }
   ],
   "command": {
@@ -2725,10 +2725,19 @@
         200,
         200,
         200,
+        200,
+        404,
+        404,
+        405,
+        400,
+        400,
+        200,
         201,
         204,
         404,
         200,
+        200,
+        200,
         400,
         400,
         201,
@@ -2738,6 +2747,11 @@
         200,
         204,
         404,
+        200,
+        200,
+        200,
+        400,
+        400,
         400,
         501,
         501,
@@ -2839,20 +2853,6 @@
         501,
         400,
         400,
-        400,
-        400,
-        200,
-        404,
-        404,
-        405,
-        400,
-        400,
-        200,
-        200,
-        200,
-        200,
-        200,
-        200,
         400,
         400
       ],
