@@ -985,6 +985,91 @@ private class AsyncContextIdsTest {
 	}
 }
 
+func TestRunAsyncContextFlagsReflectLocalDrainKind(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/Account.object-meta.xml"), `<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/fields/Name.field-meta.xml"), `<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type></CustomField>`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/FlagFuture.cls"), `
+public class FlagFuture {
+  @future public static void run() {
+    System.assertEquals(true, System.isFuture());
+    System.assertEquals(false, System.isBatch());
+    System.assertEquals(false, System.isQueueable());
+    System.assertEquals(false, System.isScheduled());
+    insert new Account(Name = 'future');
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/FlagQueue.cls"), `
+public class FlagQueue {
+  public void execute(QueueableContext qc) {
+    System.assertEquals(false, System.isFuture());
+    System.assertEquals(false, System.isBatch());
+    System.assertEquals(true, System.isQueueable());
+    System.assertEquals(false, System.isScheduled());
+    insert new Account(Name = 'queueable');
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/FlagBatch.cls"), `
+public class FlagBatch {
+  public List<Integer> start(Database.BatchableContext bc) {
+    System.assertEquals(true, System.isBatch());
+    System.assertEquals(false, System.isFuture());
+    System.assertEquals(false, System.isQueueable());
+    System.assertEquals(false, System.isScheduled());
+    return new List<Integer>{1};
+  }
+  public void execute(Database.BatchableContext bc, List<Integer> scope) {
+    System.assertEquals(true, System.isBatch());
+    insert new Account(Name = 'batch');
+  }
+  public void finish(Database.BatchableContext bc) {
+    System.assertEquals(true, System.isBatch());
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/FlagSchedule.cls"), `
+public class FlagSchedule {
+  public void execute(SchedulableContext sc) {
+    System.assertEquals(false, System.isFuture());
+    System.assertEquals(false, System.isBatch());
+    System.assertEquals(false, System.isQueueable());
+    System.assertEquals(true, System.isScheduled());
+    insert new Account(Name = 'scheduled');
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/AsyncFlagTest.cls"), `
+@isTest
+private class AsyncFlagTest {
+  @isTest static void localDrainReportsAsyncContext() {
+    System.assertEquals(false, System.isFuture());
+    System.assertEquals(false, System.isBatch());
+    System.assertEquals(false, System.isQueueable());
+    System.assertEquals(false, System.isScheduled());
+    Test.startTest();
+    FlagFuture.run();
+    System.enqueueJob(new FlagQueue());
+    Database.executeBatch(new FlagBatch(), 1);
+    System.schedule('nightly', '0 0 0 * * ?', new FlagSchedule());
+    Test.stopTest();
+    Integer rows = [SELECT COUNT() FROM Account];
+    System.assertEquals(4, rows);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		if len(run.Suites) > 0 && len(run.Suites[0].Cases) > 0 && run.Suites[0].Cases[0].Problem != nil {
+			t.Logf("problem=%#v", *run.Suites[0].Cases[0].Problem)
+		}
+		t.Fatalf("summary = %#v cases=%#v", got, run.Suites[0].Cases)
+	}
+}
+
 func TestRunAsSetsUserContextForBlock(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
