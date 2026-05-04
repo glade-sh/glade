@@ -386,16 +386,8 @@ func (s *Server) handleBulkJobs(w http.ResponseWriter, r *http.Request, parts []
 	}
 	switch parts[0] {
 	case "query":
-		if r.Method != http.MethodGet && r.Method != http.MethodPost {
-			writeMethodNotAllowed(w, http.MethodGet, http.MethodPost)
-			return
-		}
 		writeSalesforceError(w, errUnsupportedFeature, "Bulk API v2 query jobs are not implemented in the local server")
 	case "ingest":
-		if r.Method != http.MethodGet && r.Method != http.MethodPost {
-			writeMethodNotAllowed(w, http.MethodGet, http.MethodPost)
-			return
-		}
 		writeSalesforceError(w, errUnsupportedFeature, "Bulk API v2 ingest jobs are not implemented in the local server")
 	default:
 		writeSalesforceError(w, errUnknownEndpoint)

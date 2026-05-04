@@ -192,8 +192,12 @@ func TestBulkAPIJobsReturnStableUnsupportedErrors(t *testing.T) {
 	}{
 		{method: http.MethodGet, path: "/services/data/v61.0/jobs/query", message: "Bulk API v2 query jobs"},
 		{method: http.MethodPost, path: "/services/data/v61.0/jobs/query", message: "Bulk API v2 query jobs"},
+		{method: http.MethodPatch, path: "/services/data/v61.0/jobs/query", message: "Bulk API v2 query jobs"},
+		{method: http.MethodDelete, path: "/services/data/v61.0/jobs/query/750000000000001", message: "Bulk API v2 query jobs"},
 		{method: http.MethodGet, path: "/services/data/v61.0/jobs/ingest", message: "Bulk API v2 ingest jobs"},
 		{method: http.MethodPost, path: "/services/data/v61.0/jobs/ingest", message: "Bulk API v2 ingest jobs"},
+		{method: http.MethodPatch, path: "/services/data/v61.0/jobs/ingest", message: "Bulk API v2 ingest jobs"},
+		{method: http.MethodDelete, path: "/services/data/v61.0/jobs/ingest/750000000000001", message: "Bulk API v2 ingest jobs"},
 	} {
 		rec := httptest.NewRecorder()
 		handler.ServeHTTP(rec, httptest.NewRequest(tc.method, tc.path, strings.NewReader(`{}`)))
@@ -203,23 +207,6 @@ func TestBulkAPIJobsReturnStableUnsupportedErrors(t *testing.T) {
 		if !bytes.Contains(rec.Body.Bytes(), []byte(`"errorCode":"UNSUPPORTED_FEATURE"`)) || !bytes.Contains(rec.Body.Bytes(), []byte(tc.message)) {
 			t.Fatalf("%s %s unsupported shape = %s", tc.method, tc.path, rec.Body.String())
 		}
-	}
-}
-
-func TestBulkAPIJobsMethodHandling(t *testing.T) {
-	org := testOrg()
-	handler := New(&org)
-
-	rec := httptest.NewRecorder()
-	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPatch, "/services/data/v61.0/jobs/query", nil))
-	if rec.Code != http.StatusMethodNotAllowed {
-		t.Fatalf("bulk query method status = %d body=%s", rec.Code, rec.Body.String())
-	}
-	if got := rec.Header().Get("Allow"); got != "GET, POST" {
-		t.Fatalf("bulk query Allow = %q", got)
-	}
-	if !bytes.Contains(rec.Body.Bytes(), []byte(`"errorCode":"METHOD_NOT_ALLOWED"`)) {
-		t.Fatalf("bulk query method shape = %s", rec.Body.String())
 	}
 }
 
