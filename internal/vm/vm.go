@@ -50,6 +50,7 @@ type VM struct {
 	currentClass     string
 	currentMethod    Method
 	testContext      *TestContext
+	executionUser    Value
 	limits           Limits
 	limitCaps        LimitCaps
 	limitMode        LimitMode
@@ -176,6 +177,23 @@ func (vm *VM) SetOrg(org *storage.OrgState) {
 	vm.Org = org
 }
 
+func (vm *VM) SetCurrentUser(record storage.Record) {
+	if record.ID == "" {
+		record.ID = storageIDFromValue(record.Fields["Id"])
+	}
+	if record.Object == "" {
+		record.Object = "User"
+	}
+	if record.Fields == nil {
+		record.Fields = make(map[string]storage.Value)
+	}
+	if record.ID == "" && len(record.Fields) == 0 {
+		vm.executionUser = Null
+		return
+	}
+	vm.executionUser = vmValueFromRecord(record)
+}
+
 func (vm *VM) SetDebugHooks(hooks DebugHooks) {
 	vm.debugHooks = hooks
 	vm.hasDebugHooks = true
@@ -191,8 +209,8 @@ func (vm *VM) SetContext(ctx context.Context) {
 func (vm *VM) newDMLEngine() dml.Engine {
 	engine := dml.NewEngine(vm.Org)
 	engine.Now = func() time.Time { return vm.fakeNow }
-	if vm.testContext != nil && vm.testContext.CurrentUser.Kind == ValueString && vm.testContext.CurrentUser.Text != "" {
-		engine.UserID = storage.ID(vm.testContext.CurrentUser.Text)
+	if userID := vm.currentUserInfoField("Id", ""); userID != "" {
+		engine.UserID = storage.ID(userID)
 	}
 	return engine
 }
@@ -1585,58 +1603,37 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		if len(args) != 0 {
 			return Null, fmt.Errorf("UserInfo.getUserId expects 0 arguments")
 		}
-		if vm.testContext != nil {
-			return String(userInfoField(vm.testContext.CurrentUser, "Id", "system")), nil
-		}
-		return String("system"), nil
+		return String(vm.currentUserInfoField("Id", "system")), nil
 	case "UserInfo.getProfileId":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("UserInfo.getProfileId expects 0 arguments")
 		}
-		if vm.testContext != nil {
-			return String(userInfoField(vm.testContext.CurrentUser, "ProfileId", "")), nil
-		}
-		return String(""), nil
+		return String(vm.currentUserInfoField("ProfileId", "")), nil
 	case "UserInfo.getUserName":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("UserInfo.getUserName expects 0 arguments")
 		}
-		if vm.testContext != nil {
-			return String(userInfoField(vm.testContext.CurrentUser, "Username", userInfoField(vm.testContext.CurrentUser, "Id", "system"))), nil
-		}
-		return String("system"), nil
+		return String(vm.currentUserInfoField("Username", vm.currentUserInfoField("Id", "system"))), nil
 	case "UserInfo.getName":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("UserInfo.getName expects 0 arguments")
 		}
-		if vm.testContext != nil {
-			return String(userInfoField(vm.testContext.CurrentUser, "Name", "System User")), nil
-		}
-		return String("System User"), nil
+		return String(vm.currentUserInfoField("Name", "System User")), nil
 	case "UserInfo.getFirstName":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("UserInfo.getFirstName expects 0 arguments")
 		}
-		if vm.testContext != nil {
-			return String(userInfoField(vm.testContext.CurrentUser, "FirstName", "System")), nil
-		}
-		return String("System"), nil
+		return String(vm.currentUserInfoField("FirstName", "System")), nil
 	case "UserInfo.getLastName":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("UserInfo.getLastName expects 0 arguments")
 		}
-		if vm.testContext != nil {
-			return String(userInfoField(vm.testContext.CurrentUser, "LastName", "User")), nil
-		}
-		return String("User"), nil
+		return String(vm.currentUserInfoField("LastName", "User")), nil
 	case "UserInfo.getUserEmail":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("UserInfo.getUserEmail expects 0 arguments")
 		}
-		if vm.testContext != nil {
-			return String(userInfoField(vm.testContext.CurrentUser, "Email", "system@example.invalid")), nil
-		}
-		return String("system@example.invalid"), nil
+		return String(vm.currentUserInfoField("Email", "system@example.invalid")), nil
 	case "UserInfo.getOrganizationId":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("UserInfo.getOrganizationId expects 0 arguments")
@@ -1864,6 +1861,16 @@ func userInfoField(user Value, field, fallback string) string {
 			return fallback
 		}
 		return user.Text
+	}
+	return fallback
+}
+
+func (vm *VM) currentUserInfoField(field, fallback string) string {
+	if vm.testContext != nil {
+		return userInfoField(vm.testContext.CurrentUser, field, fallback)
+	}
+	if vm.executionUser.Kind != "" && vm.executionUser.Kind != ValueNull {
+		return userInfoField(vm.executionUser, field, fallback)
 	}
 	return fallback
 }

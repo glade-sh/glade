@@ -389,6 +389,7 @@ func (s *Server) handleExecuteAnonymous(w http.ResponseWriter, r *http.Request) 
 	next := s.Org.Clone()
 	machine := vm.New(nil)
 	machine.SetOrg(&next)
+	machine.SetCurrentUser(s.currentUser(r, ""))
 	if s.LimitMode != "" {
 		machine.SetLimitMode(s.LimitMode)
 	}

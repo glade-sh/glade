@@ -909,6 +909,38 @@ System.runAs(new User(Id = '005-user-b', FirstName = 'Ada', LastName = 'Trail', 
 	}
 }
 
+func TestExecLocalCurrentUserContextDoesNotEnableRunAs(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals('005-local-user', UserInfo.getUserId());
+System.assertEquals('local@example.test', UserInfo.getUserName());
+System.assertEquals('local-email@example.test', UserInfo.getUserEmail());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.SetCurrentUser(storage.Record{
+		ID:     "005-local-user",
+		Object: "User",
+		Fields: map[string]storage.Value{
+			"Username": storage.StringValue("local@example.test"),
+			"Email":    storage.StringValue("local-email@example.test"),
+		},
+	})
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+
+	runAsProgram, err := CompileAnonymous(`System.runAs(new User(Id = '005-other')) { System.assert(true); }`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = machine.Execute(runAsProgram)
+	if err == nil || !strings.Contains(err.Error(), "System.runAs is only available in test context") {
+		t.Fatalf("runAs err = %v", err)
+	}
+}
+
 func TestExecMessagingApexPagesAndURLBasics(t *testing.T) {
 	program, err := CompileAnonymous(`
 Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage();

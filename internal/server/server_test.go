@@ -544,6 +544,62 @@ func TestServerRollsBackFailedRequestTransactions(t *testing.T) {
 	}
 }
 
+func TestExecuteAnonymousUsesHeaderUserContext(t *testing.T) {
+	org := testOrg()
+	userID := storage.ID("005000000000777")
+	addUser(&org, userID, "trail@example.test", "trail-email@example.test", "Trail User")
+	handler := New(&org)
+
+	payload, err := json.Marshal(map[string]string{"anonymousBody": `
+System.assertEquals('005000000000777', UserInfo.getUserId());
+System.assertEquals('trail@example.test', UserInfo.getUserName());
+System.assertEquals('trail-email@example.test', UserInfo.getUserEmail());
+insert new Account(Name = 'Header User');
+`})
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := httptest.NewRequest(http.MethodPost, "/services/data/v61.0/tooling/executeAnonymous", strings.NewReader(string(payload)))
+	req.Header.Set("X-OAER-User-Id", string(userID))
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK || !bytes.Contains(rec.Body.Bytes(), []byte(`"success":true`)) {
+		t.Fatalf("executeAnonymous status = %d body=%s", rec.Code, rec.Body.String())
+	}
+
+	if len(org.Objects["Account"].Records) != 1 {
+		t.Fatalf("account records = %d, want 1", len(org.Objects["Account"].Records))
+	}
+	for _, record := range org.Objects["Account"].Records {
+		if record.System.CreatedByID != userID || record.System.OwnerID != userID {
+			t.Fatalf("system user fields = %#v, want CreatedById/OwnerId %s", record.System, userID)
+		}
+	}
+}
+
+func TestExecuteAnonymousUsesBearerUserContext(t *testing.T) {
+	org := testOrg()
+	userID := storage.ID("005000000000778")
+	addUser(&org, userID, "bearer@example.test", "bearer-email@example.test", "Bearer User")
+	handler := New(&org)
+
+	payload, err := json.Marshal(map[string]string{"anonymousBody": `
+System.assertEquals('005000000000778', UserInfo.getUserId());
+System.assertEquals('bearer@example.test', UserInfo.getUserName());
+System.assertEquals('bearer-email@example.test', UserInfo.getUserEmail());
+`})
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := httptest.NewRequest(http.MethodPost, "/services/data/v61.0/tooling/executeAnonymous", strings.NewReader(string(payload)))
+	req.Header.Set("Authorization", "Bearer "+string(userID))
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK || !bytes.Contains(rec.Body.Bytes(), []byte(`"success":true`)) {
+		t.Fatalf("executeAnonymous status = %d body=%s", rec.Code, rec.Body.String())
+	}
+}
+
 func TestServerSerializesConcurrentMutations(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)

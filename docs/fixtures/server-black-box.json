@@ -75,6 +75,15 @@
       "contains": ["\"success\":true", "ok"]
     },
     {
+      "name": "execute-anonymous-bearer-userinfo",
+      "method": "POST",
+      "path": "/services/data/v61.0/tooling/executeAnonymous",
+      "headers": {"Authorization": "Bearer 005000000000002"},
+      "body": "{\"anonymousBody\":\"System.assertEquals('005000000000002', UserInfo.getUserId()); System.assertEquals('ada@example.test', UserInfo.getUserName()); System.assertEquals('ada.alias@example.test', UserInfo.getUserEmail());\"}",
+      "status": 200,
+      "contains": ["\"success\":true"]
+    },
+    {
       "name": "composite-insert",
       "method": "POST",
       "path": "/services/data/v61.0/composite/sobjects",
@@ -147,8 +156,8 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 16,
-      "statuses": [200, 200, 200, 200, 200, 201, 200, 200, 200, 200, 400, 501, 501, 404, 200, 201],
+      "requests": 17,
+      "statuses": [200, 200, 200, 200, 200, 201, 200, 200, 200, 200, 200, 400, 501, 501, 404, 200, 201],
       "users": 2
     }
   }
