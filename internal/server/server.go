@@ -92,11 +92,11 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case len(rest) == 1 && rest[0] == "sobjects":
 		s.handleSObjects(w, r)
 	case len(rest) >= 2 && rest[0] == "sobjects":
-		s.handleObject(w, r, rest[1:])
+		s.handleObject(w, r, parts[2], rest[1:])
 	case len(rest) == 1 && rest[0] == "query":
-		s.handleQuery(w, r)
+		s.handleQuery(w, r, parts[2], false)
 	case len(rest) == 1 && rest[0] == "queryAll":
-		s.handleQuery(w, r)
+		s.handleQuery(w, r, parts[2], true)
 	case len(rest) == 1 && rest[0] == "limits":
 		s.handleLimits(w, r)
 	case len(rest) >= 1 && rest[0] == "tooling":
@@ -135,7 +135,7 @@ func (s *Server) handleSObjects(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"sobjects": objects})
 }
 
-func (s *Server) handleObject(w http.ResponseWriter, r *http.Request, parts []string) {
+func (s *Server) handleObject(w http.ResponseWriter, r *http.Request, version string, parts []string) {
 	objectName := parts[0]
 	switch {
 	case len(parts) == 2 && parts[1] == "describe" && r.Method == http.MethodGet:
@@ -151,7 +151,7 @@ func (s *Server) handleObject(w http.ResponseWriter, r *http.Request, parts []st
 			writeError(w, http.StatusNotFound, "NOT_FOUND", "unknown object")
 			return
 		}
-		writeJSON(w, http.StatusOK, recentPayload(object))
+		writeJSON(w, http.StatusOK, recentPayload(version, objectName, object))
 	case len(parts) == 1 && r.Method == http.MethodGet:
 		object, ok := s.Org.Objects[objectName]
 		if !ok {
@@ -177,13 +177,13 @@ func (s *Server) handleObject(w http.ResponseWriter, r *http.Request, parts []st
 		}
 		writeDMLResult(w, http.StatusCreated, result)
 	case len(parts) == 2:
-		s.handleRecord(w, r, objectName, storage.ID(parts[1]))
+		s.handleRecord(w, r, version, objectName, storage.ID(parts[1]))
 	default:
 		writeError(w, http.StatusNotFound, "NOT_FOUND", "unknown sobject endpoint")
 	}
 }
 
-func (s *Server) handleRecord(w http.ResponseWriter, r *http.Request, objectName string, id storage.ID) {
+func (s *Server) handleRecord(w http.ResponseWriter, r *http.Request, version, objectName string, id storage.ID) {
 	object, ok := s.Org.Objects[objectName]
 	if !ok {
 		writeError(w, http.StatusNotFound, "NOT_FOUND", "unknown object")
@@ -196,7 +196,7 @@ func (s *Server) handleRecord(w http.ResponseWriter, r *http.Request, objectName
 			writeError(w, http.StatusNotFound, "NOT_FOUND", "record not found")
 			return
 		}
-		writeJSON(w, http.StatusOK, record)
+		writeJSON(w, http.StatusOK, restRecordPayload(version, objectName, record))
 	case http.MethodPatch:
 		record, err := decodeRecord(r, objectName, id)
 		if err != nil {
@@ -377,7 +377,7 @@ func (s *Server) handleTooling(w http.ResponseWriter, r *http.Request, version s
 	case len(parts) == 1 && parts[0] == "executeAnonymous":
 		s.handleExecuteAnonymous(w, r)
 	case len(parts) == 1 && parts[0] == "query":
-		s.handleQuery(w, r)
+		s.handleQuery(w, r, version, false)
 	default:
 		writeError(w, http.StatusNotFound, "NOT_FOUND", "unknown tooling endpoint")
 	}
@@ -559,12 +559,20 @@ func (s *Server) persistOrg(org storage.OrgState) error {
 	return s.Store.Save(org)
 }
 
-func (s *Server) handleQuery(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleQuery(w http.ResponseWriter, r *http.Request, version string, allRows bool) {
 	if r.Method != http.MethodGet {
 		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
 		return
 	}
-	result, err := soql.ParseAndExecute(*s.Org, r.URL.Query().Get("q"))
+	query, err := soql.Parse(r.URL.Query().Get("q"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "MALFORMED_QUERY", err.Error())
+		return
+	}
+	if allRows {
+		query.AllRows = true
+	}
+	result, err := soql.Execute(*s.Org, query)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "MALFORMED_QUERY", err.Error())
 		return
@@ -572,7 +580,7 @@ func (s *Server) handleQuery(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{
 		"totalSize": result.Rows,
 		"done":      true,
-		"records":   result.Records,
+		"records":   restRecordPayloads(version, result.Records),
 	})
 }
 
@@ -614,7 +622,9 @@ func decodeStorageValue(raw json.RawMessage) (storage.Value, error) {
 		return value, nil
 	}
 	var anyValue any
-	if err := json.Unmarshal(raw, &anyValue); err != nil {
+	decoder := json.NewDecoder(strings.NewReader(string(raw)))
+	decoder.UseNumber()
+	if err := decoder.Decode(&anyValue); err != nil {
 		return storage.Value{}, err
 	}
 	return storageValueFromJSON(anyValue), nil
@@ -628,8 +638,14 @@ func storageValueFromJSON(value any) storage.Value {
 		return storage.StringValue(v)
 	case bool:
 		return storage.BooleanValue(v)
-	case float64:
-		return storage.IntegerValue(int64(v))
+	case json.Number:
+		text := v.String()
+		if !strings.ContainsAny(text, ".eE") {
+			if integer, err := v.Int64(); err == nil {
+				return storage.IntegerValue(integer)
+			}
+		}
+		return storage.DecimalValue(text)
 	case []any:
 		values := make([]storage.Value, 0, len(v))
 		for _, item := range v {
@@ -638,6 +654,117 @@ func storageValueFromJSON(value any) storage.Value {
 		return storage.ListValue(values...)
 	default:
 		return storage.StringValue(fmt.Sprintf("%v", v))
+	}
+}
+
+func restRecordPayloads(version string, records []storage.Record) []map[string]any {
+	out := make([]map[string]any, 0, len(records))
+	for _, record := range records {
+		out = append(out, restRecordPayload(version, record.Object, record))
+	}
+	return out
+}
+
+func restRecordPayload(version, objectName string, record storage.Record) map[string]any {
+	if objectName == "" {
+		objectName = record.Object
+	}
+	out := map[string]any{
+		"attributes": recordAttributes(version, objectName, record.ID),
+		"Id":         string(record.ID),
+	}
+	names := make([]string, 0, len(record.Fields)+len(record.ExplicitNulls))
+	seen := make(map[string]bool, len(record.Fields)+len(record.ExplicitNulls))
+	for name := range record.Fields {
+		if !seen[name] {
+			names = append(names, name)
+			seen[name] = true
+		}
+	}
+	for name := range record.ExplicitNulls {
+		if !seen[name] {
+			names = append(names, name)
+			seen[name] = true
+		}
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		if record.ExplicitNulls[name] {
+			out[name] = nil
+			continue
+		}
+		out[name] = restStorageValue(record.Fields[name])
+	}
+	childNames := make([]string, 0, len(record.Children))
+	for name := range record.Children {
+		childNames = append(childNames, name)
+	}
+	sort.Strings(childNames)
+	for _, name := range childNames {
+		children := restRecordPayloads(version, record.Children[name])
+		out[name] = map[string]any{
+			"totalSize": len(children),
+			"done":      true,
+			"records":   children,
+		}
+	}
+	if record.System.CreatedByID != "" {
+		out["CreatedById"] = string(record.System.CreatedByID)
+	}
+	if record.System.CreatedDate != "" {
+		out["CreatedDate"] = record.System.CreatedDate
+	}
+	if record.System.LastModifiedByID != "" {
+		out["LastModifiedById"] = string(record.System.LastModifiedByID)
+	}
+	if record.System.LastModifiedDate != "" {
+		out["LastModifiedDate"] = record.System.LastModifiedDate
+	}
+	if record.System.OwnerID != "" {
+		out["OwnerId"] = string(record.System.OwnerID)
+	}
+	if record.System.IsDeleted {
+		out["IsDeleted"] = true
+	}
+	return out
+}
+
+func recordAttributes(version, objectName string, id storage.ID) map[string]any {
+	return map[string]any{
+		"type": objectName,
+		"url":  "/services/data/" + version + "/sobjects/" + objectName + "/" + string(id),
+	}
+}
+
+func restStorageValue(value storage.Value) any {
+	switch value.Kind {
+	case storage.ValueNull:
+		return nil
+	case storage.ValueString:
+		return value.String
+	case storage.ValueID:
+		return string(value.ID)
+	case storage.ValueInteger:
+		return value.Integer
+	case storage.ValueDecimal:
+		return value.Decimal
+	case storage.ValueBoolean:
+		return value.Boolean
+	case storage.ValueDate:
+		return value.String
+	case storage.ValueDateTime:
+		return value.String
+	case storage.ValueList:
+		out := make([]any, 0, len(value.List))
+		for _, item := range value.List {
+			out = append(out, restStorageValue(item))
+		}
+		return out
+	default:
+		if value.String != "" {
+			return value.String
+		}
+		return nil
 	}
 }
 
@@ -780,8 +907,14 @@ func describePayload(def storage.ObjectDefinition) map[string]any {
 			"label":            field.APIName,
 			"type":             string(field.Type),
 			"nillable":         !field.Required,
+			"createable":       true,
+			"updateable":       true,
 			"referenceTo":      field.ReferenceTo,
 			"relationshipName": field.RelationshipName,
+			"picklistValues":   field.PicklistValues,
+			"length":           fieldLength(field),
+			"externalId":       field.ExternalID,
+			"unique":           field.Unique,
 		})
 	}
 	return map[string]any{
@@ -796,7 +929,16 @@ func describePayload(def storage.ObjectDefinition) map[string]any {
 	}
 }
 
-func recentPayload(object storage.ObjectState) []map[string]any {
+func fieldLength(field storage.Field) int {
+	switch field.Type {
+	case storage.FieldString, storage.FieldPicklist, storage.FieldID, storage.FieldReference:
+		return 255
+	default:
+		return 0
+	}
+}
+
+func recentPayload(version, objectName string, object storage.ObjectState) []map[string]any {
 	ids := make([]string, 0, len(object.Records))
 	for id := range object.Records {
 		ids = append(ids, string(id))
@@ -812,7 +954,7 @@ func recentPayload(object storage.ObjectState) []map[string]any {
 		if value, ok := record.Fields["Name"]; ok {
 			name = value.String
 		}
-		out = append(out, map[string]any{"Id": id, "Name": name, "attributes": map[string]any{"type": record.Object}})
+		out = append(out, map[string]any{"Id": id, "Name": name, "attributes": recordAttributes(version, objectName, storage.ID(id))})
 	}
 	return out
 }

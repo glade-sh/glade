@@ -312,6 +312,192 @@ func TestIdentityLimitsDescribeRecentAndNormalRESTPayloads(t *testing.T) {
 	}
 }
 
+func TestSObjectRESTResponseShapes(t *testing.T) {
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Active__c"] = storage.Field{APIName: "Active__c", Type: storage.FieldBoolean}
+	account.Definition.Fields["Score__c"] = storage.Field{APIName: "Score__c", Type: storage.FieldInteger}
+	account.Definition.Fields["Amount__c"] = storage.Field{APIName: "Amount__c", Type: storage.FieldDecimal}
+	account.Definition.Fields["Tags__c"] = storage.Field{APIName: "Tags__c", Type: storage.FieldAny}
+	account.Definition.Fields["Rating__c"] = storage.Field{
+		APIName: "Rating__c",
+		Type:    storage.FieldPicklist,
+		PicklistValues: []storage.PicklistValue{
+			{Value: "Hot", Label: "Hot", Active: true, Default: true},
+		},
+	}
+	account.Definition.Fields["External_Key__c"] = storage.Field{APIName: "External_Key__c", Type: storage.FieldString, ExternalID: true, Unique: true}
+	org.Objects["Account"] = account
+	handler := New(&org)
+
+	create := httptest.NewRecorder()
+	handler.ServeHTTP(create, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/sobjects/Account", strings.NewReader(`{
+  "attributes":{"type":"Ignored"},
+  "Name":"Acme",
+  "Active__c":true,
+  "Score__c":7,
+  "Amount__c":12.75,
+  "Tags__c":["a","b"],
+  "Rating__c":"Hot",
+  "External_Key__c":"ext-1"
+}`)))
+	if create.Code != http.StatusCreated {
+		t.Fatalf("create status = %d body=%s", create.Code, create.Body.String())
+	}
+
+	patch := httptest.NewRecorder()
+	handler.ServeHTTP(patch, httptest.NewRequest(http.MethodPatch, "/services/data/v61.0/sobjects/Account/001000000000001", strings.NewReader(`{"Name":null}`)))
+	if patch.Code != http.StatusNoContent {
+		t.Fatalf("patch status = %d body=%s", patch.Code, patch.Body.String())
+	}
+
+	get := httptest.NewRecorder()
+	handler.ServeHTTP(get, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/001000000000001", nil))
+	if get.Code != http.StatusOK {
+		t.Fatalf("get status = %d body=%s", get.Code, get.Body.String())
+	}
+	var record map[string]any
+	if err := json.Unmarshal(get.Body.Bytes(), &record); err != nil {
+		t.Fatal(err)
+	}
+	attrs, ok := record["attributes"].(map[string]any)
+	if !ok || attrs["type"] != "Account" || attrs["url"] != "/services/data/v61.0/sobjects/Account/001000000000001" {
+		t.Fatalf("record attributes = %#v body=%s", record["attributes"], get.Body.String())
+	}
+	if record["Id"] != "001000000000001" || record["Name"] != nil || record["Active__c"] != true || record["Score__c"].(float64) != 7 || record["Amount__c"] != "12.75" {
+		t.Fatalf("record payload = %#v", record)
+	}
+	if tags, ok := record["Tags__c"].([]any); !ok || len(tags) != 2 {
+		t.Fatalf("Tags__c = %#v", record["Tags__c"])
+	}
+
+	query := httptest.NewRecorder()
+	handler.ServeHTTP(query, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/query?q=SELECT%20Id,%20Name,%20Active__c%20FROM%20Account", nil))
+	if query.Code != http.StatusOK {
+		t.Fatalf("query status = %d body=%s", query.Code, query.Body.String())
+	}
+	var queryPayload struct {
+		Records []map[string]any `json:"records"`
+	}
+	if err := json.Unmarshal(query.Body.Bytes(), &queryPayload); err != nil {
+		t.Fatal(err)
+	}
+	if len(queryPayload.Records) != 1 {
+		t.Fatalf("query payload = %#v", queryPayload)
+	}
+	queryAttrs, ok := queryPayload.Records[0]["attributes"].(map[string]any)
+	if !ok || queryAttrs["type"] != "Account" || queryAttrs["url"] != "/services/data/v61.0/sobjects/Account/001000000000001" {
+		t.Fatalf("query attributes = %#v", queryPayload.Records[0]["attributes"])
+	}
+
+	recent := httptest.NewRecorder()
+	handler.ServeHTTP(recent, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/recent", nil))
+	if recent.Code != http.StatusOK {
+		t.Fatalf("recent status = %d body=%s", recent.Code, recent.Body.String())
+	}
+	var recentRows []map[string]any
+	if err := json.Unmarshal(recent.Body.Bytes(), &recentRows); err != nil {
+		t.Fatal(err)
+	}
+	if len(recentRows) != 1 {
+		t.Fatalf("recent rows = %#v", recentRows)
+	}
+	recentAttrs, ok := recentRows[0]["attributes"].(map[string]any)
+	if !ok || recentAttrs["type"] != "Account" || recentAttrs["url"] != "/services/data/v61.0/sobjects/Account/001000000000001" {
+		t.Fatalf("recent attributes = %#v", recentRows[0]["attributes"])
+	}
+
+	describe := httptest.NewRecorder()
+	handler.ServeHTTP(describe, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/describe", nil))
+	if describe.Code != http.StatusOK {
+		t.Fatalf("describe status = %d body=%s", describe.Code, describe.Body.String())
+	}
+	var describePayload struct {
+		Fields []map[string]any `json:"fields"`
+	}
+	if err := json.Unmarshal(describe.Body.Bytes(), &describePayload); err != nil {
+		t.Fatal(err)
+	}
+	fields := map[string]map[string]any{}
+	for _, field := range describePayload.Fields {
+		fields[field["name"].(string)] = field
+	}
+	if fields["Name"]["createable"] != true || fields["Name"]["updateable"] != true || fields["Name"]["length"].(float64) == 0 {
+		t.Fatalf("Name field metadata = %#v", fields["Name"])
+	}
+	if fields["External_Key__c"]["externalId"] != true || fields["External_Key__c"]["unique"] != true {
+		t.Fatalf("External_Key__c metadata = %#v", fields["External_Key__c"])
+	}
+	if picklist, ok := fields["Rating__c"]["picklistValues"].([]any); !ok || len(picklist) != 1 {
+		t.Fatalf("Rating__c metadata = %#v", fields["Rating__c"])
+	}
+
+	account = org.Objects["Account"]
+	deletedID := storage.ID("001000000000099")
+	account.Records[deletedID] = storage.Record{
+		ID:     deletedID,
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name": storage.StringValue("Deleted"),
+		},
+		System: storage.SystemFields{IsDeleted: true},
+	}
+	org.Objects["Account"] = account
+
+	queryDefault := httptest.NewRecorder()
+	handler.ServeHTTP(queryDefault, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/query?q=SELECT%20Id,%20Name%20FROM%20Account", nil))
+	if queryDefault.Code != http.StatusOK || bytes.Contains(queryDefault.Body.Bytes(), []byte(`Deleted`)) {
+		t.Fatalf("query default status = %d body=%s", queryDefault.Code, queryDefault.Body.String())
+	}
+
+	queryAll := httptest.NewRecorder()
+	handler.ServeHTTP(queryAll, httptest.NewRequest(http.MethodGet, "/services/data/v62.0/queryAll?q=SELECT%20Id,%20Name%20FROM%20Account%20WHERE%20Id%20!=%20'ALL%20ROWS%20Cafe'", nil))
+	if queryAll.Code != http.StatusOK || !bytes.Contains(queryAll.Body.Bytes(), []byte(`Deleted`)) || !bytes.Contains(queryAll.Body.Bytes(), []byte(`/services/data/v62.0/sobjects/Account/001000000000099`)) {
+		t.Fatalf("queryAll status = %d body=%s", queryAll.Code, queryAll.Body.String())
+	}
+}
+
+func TestSOQLChildRelationshipRESTShape(t *testing.T) {
+	org := testOrgWithAccount("001000000000001", "Acme")
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Contact",
+			KeyPrefix: "003",
+			Fields: map[string]storage.Field{
+				"AccountId": {APIName: "AccountId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Account"},
+				"LastName":  {APIName: "LastName", Type: storage.FieldString, Required: true},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "AccountId",
+				ParentObjects:      []string{"Account"},
+				ParentRelationship: "Account",
+				ChildRelationship:  "Contacts",
+			}},
+		},
+		Records: map[storage.ID]storage.Record{
+			"003000000000001": {
+				ID:     "003000000000001",
+				Object: "Contact",
+				Fields: map[string]storage.Value{
+					"AccountId": storage.IDValue("001000000000001"),
+					"LastName":  storage.StringValue("Alpha"),
+				},
+			},
+		},
+	}
+	storage.RebuildIndexes(&org)
+	handler := New(&org)
+
+	query := httptest.NewRecorder()
+	handler.ServeHTTP(query, httptest.NewRequest(http.MethodGet, "/services/data/v62.0/query?q=SELECT%20Id,%20(SELECT%20Id,%20LastName%20FROM%20Contacts)%20FROM%20Account", nil))
+	if query.Code != http.StatusOK {
+		t.Fatalf("query status = %d body=%s", query.Code, query.Body.String())
+	}
+	if !bytes.Contains(query.Body.Bytes(), []byte(`"Contacts"`)) || !bytes.Contains(query.Body.Bytes(), []byte(`/services/data/v62.0/sobjects/Contact/003000000000001`)) || !bytes.Contains(query.Body.Bytes(), []byte(`"LastName":"Alpha"`)) {
+		t.Fatalf("query body missing child relationship REST shape: %s", query.Body.String())
+	}
+}
+
 func TestLocalAuthUserSelectionAndDMLStamping(t *testing.T) {
 	org := testOrg()
 	storage.EnsureDeterministicPlatformData(&org)
