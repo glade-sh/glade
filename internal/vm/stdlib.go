@@ -1248,7 +1248,7 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 			return Null, receiver, false, true, err
 		}
 		matcherClearMatch(receiver)
-		receiver.Fields["index"] = Int(0)
+		receiver.Fields["index"] = Int(int64(region.startByte))
 		return String(replaced), receiver, true, true, nil
 	case "replaceFirst":
 		region, err := matcherRegion(receiver, input)
@@ -1260,7 +1260,7 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 			return Null, receiver, false, true, err
 		}
 		matcherClearMatch(receiver)
-		receiver.Fields["index"] = Int(0)
+		receiver.Fields["index"] = Int(int64(region.startByte))
 		return String(replaced), receiver, true, true, nil
 	case "reset":
 		if len(args) != 0 && (len(args) != 1 || args[0].Kind != ValueString) {
