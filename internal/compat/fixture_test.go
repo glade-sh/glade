@@ -3,6 +3,8 @@ package compat
 import (
 	"encoding/json"
 	"errors"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/open-aer/oaer/internal/vm"
@@ -47,78 +49,31 @@ func TestFixtureJSONRoundTrip(t *testing.T) {
 	}
 }
 
-func TestRunExecFixtureWithLimitMode(t *testing.T) {
-	fixture := Fixture{
-		Name:    "exec-strict-smoke",
-		Source:  []SourceFile{{Path: "anonymous.apex", Content: "System.debug('hello');"}},
-		Command: Invocation{Kind: "exec", Args: []string{"System.debug('hello');"}, LimitMode: "strict"},
-		Expected: ExpectedBehavior{
-			Stdout: "hello\n",
-			Result: json.RawMessage(`{"debug":["hello"],"ok":true}`),
-		},
-	}
-	result, err := Run(fixture)
+func TestRunDocumentedFixtures(t *testing.T) {
+	paths, err := filepath.Glob("../../docs/fixtures/*.json")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !result.OK {
-		t.Fatalf("result = %#v", result)
+	if len(paths) == 0 {
+		t.Fatal("no documented fixtures matched ../../docs/fixtures/*.json")
 	}
-}
 
-func TestRunStringCSVStdlibFixture(t *testing.T) {
-	fixture, err := LoadFile("../../docs/fixtures/core-string-csv-stdlib.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	result, err := Run(fixture)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !result.OK {
-		t.Fatalf("result = %#v", result)
-	}
-}
-
-func TestRunStringXMLUnescapeInvalidNumericStdlibFixture(t *testing.T) {
-	fixture, err := LoadFile("../../docs/fixtures/core-string-xml-unescape-invalid-numeric-stdlib.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	result, err := Run(fixture)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !result.OK {
-		t.Fatalf("result = %#v", result)
-	}
-}
-
-func TestRunDatetimeTimeZoneNewYorkFixture(t *testing.T) {
-	fixture, err := LoadFile("../../docs/fixtures/core-datetime-timezone-new-york.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	result, err := Run(fixture)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !result.OK {
-		t.Fatalf("result = %#v", result)
-	}
-}
-
-func TestRunPatternQuoteStdlibFixture(t *testing.T) {
-	fixture, err := LoadFile("../../docs/fixtures/core-pattern-quote-stdlib.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	result, err := Run(fixture)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !result.OK {
-		t.Fatalf("result = %#v", result)
+	for _, path := range paths {
+		path := path
+		name := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
+		t.Run(name, func(t *testing.T) {
+			fixture, err := LoadFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			result, err := Run(fixture)
+			if err != nil {
+				t.Fatalf("%s: %v", path, err)
+			}
+			if !result.OK {
+				t.Fatalf("%s result = %#v", path, result)
+			}
+		})
 	}
 }
 
@@ -184,111 +139,6 @@ func TestRunCheckFixture(t *testing.T) {
 	}
 }
 
-func TestRunStorageDBLifecycleFixture(t *testing.T) {
-	fixture, err := LoadFile("../../docs/fixtures/storage-db-lifecycle.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	result, err := Run(fixture)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !result.OK {
-		t.Fatalf("result = %#v", result)
-	}
-}
-
-func TestRunEnterpriseSelectorServiceDomainFixture(t *testing.T) {
-	fixture, err := LoadFile("../../docs/fixtures/enterprise-selector-service-domain.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	result, err := Run(fixture)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !result.OK {
-		t.Fatalf("result = %#v", result)
-	}
-}
-
-func TestRunServerBlackBoxFixture(t *testing.T) {
-	fixture, err := LoadFile("../../docs/fixtures/server-black-box.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	result, err := Run(fixture)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !result.OK {
-		t.Fatalf("result = %#v", result)
-	}
-}
-
-func TestRunDataPlatformSOQLSecurityProjectionFixture(t *testing.T) {
-	for _, path := range []string{
-		"../../docs/fixtures/data-platform-soql-security-projection.json",
-		"../../docs/fixtures/data-platform-soql-security-relationship-where.json",
-		"../../docs/fixtures/data-platform-dml-calculated-field-readonly.json",
-	} {
-		fixture, err := LoadFile(path)
-		if err != nil {
-			t.Fatal(err)
-		}
-		result, err := Run(fixture)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if !result.OK {
-			t.Fatalf("%s result = %#v", path, result)
-		}
-	}
-}
-
-func TestRunEnterpriseSectionNineFixtures(t *testing.T) {
-	for _, path := range []string{
-		"../../docs/fixtures/enterprise-trigger-heavy.json",
-		"../../docs/fixtures/enterprise-describe-heavy.json",
-		"../../docs/fixtures/enterprise-namespace-package.json",
-	} {
-		fixture, err := LoadFile(path)
-		if err != nil {
-			t.Fatal(err)
-		}
-		result, err := Run(fixture)
-		if err != nil {
-			t.Fatalf("%s: %v", path, err)
-		}
-		if !result.OK {
-			t.Fatalf("%s result = %#v", path, result)
-		}
-	}
-}
-
-func TestRunAsyncContextEdgeFixtures(t *testing.T) {
-	for _, path := range []string{
-		"../../docs/fixtures/async-context-job-record-edges.json",
-		"../../docs/fixtures/async-unsupported-context-edges.json",
-		"../../docs/fixtures/async-finalizer-unsupported.json",
-		"../../docs/fixtures/async-execute-batch-scope-validation.json",
-		"../../docs/fixtures/async-abort-job-edges.json",
-		"../../docs/fixtures/async-schedule-batch-unsupported.json",
-	} {
-		fixture, err := LoadFile(path)
-		if err != nil {
-			t.Fatal(err)
-		}
-		result, err := Run(fixture)
-		if err != nil {
-			t.Fatalf("%s: %v", path, err)
-		}
-		if !result.OK {
-			t.Fatalf("%s result = %#v", path, result)
-		}
-	}
-}
-
 func TestRunExecFixture(t *testing.T) {
 	fixture := Fixture{
 		Name:    "exec-smoke",
@@ -308,80 +158,15 @@ func TestRunExecFixture(t *testing.T) {
 	}
 }
 
-func TestRunJSONStrictUnknownFieldFixture(t *testing.T) {
-	fixture, err := LoadFile("../../docs/fixtures/core-json-strict-sobject-unknown-field.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	result, err := Run(fixture)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !result.OK {
-		t.Fatalf("result = %#v", result)
-	}
-}
-
-func TestRunJSONGeneratorFieldNameInArrayFixture(t *testing.T) {
-	fixture, err := LoadFile("../../docs/fixtures/core-json-generator-field-name-in-array.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	result, err := Run(fixture)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !result.OK {
-		t.Fatalf("result = %#v", result)
-	}
-}
-
-func TestRunJSONGeneratorEndArrayInObjectFixture(t *testing.T) {
-	fixture, err := LoadFile("../../docs/fixtures/core-json-generator-end-array-in-object.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	result, err := Run(fixture)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !result.OK {
-		t.Fatalf("result = %#v", result)
-	}
-}
-
-func TestRunLimitsDMLDocumentedCasingFixture(t *testing.T) {
-	fixture, err := LoadFile("../../docs/fixtures/limits-dml-documented-casing.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	result, err := Run(fixture)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !result.OK {
-		t.Fatalf("result = %#v", result)
-	}
-}
-
-func TestRunJSONGeneratorEndObjectInArrayFixture(t *testing.T) {
-	fixture, err := LoadFile("../../docs/fixtures/core-json-generator-end-object-in-array.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	result, err := Run(fixture)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !result.OK {
-		t.Fatalf("result = %#v", result)
-	}
-}
-
-func TestRunJSONGeneratorWriteAfterCloseFixture(t *testing.T) {
-	fixture, err := LoadFile("../../docs/fixtures/core-json-generator-write-after-close.json")
-	if err != nil {
-		t.Fatal(err)
+func TestRunExecFixtureWithLimitMode(t *testing.T) {
+	fixture := Fixture{
+		Name:    "exec-strict-smoke",
+		Source:  []SourceFile{{Path: "anonymous.apex", Content: "System.debug('hello');"}},
+		Command: Invocation{Kind: "exec", Args: []string{"System.debug('hello');"}, LimitMode: "strict"},
+		Expected: ExpectedBehavior{
+			Stdout: "hello\n",
+			Result: json.RawMessage(`{"debug":["hello"],"ok":true}`),
+		},
 	}
 	result, err := Run(fixture)
 	if err != nil {
