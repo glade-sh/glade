@@ -304,19 +304,25 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Support explicit `NULLS FIRST` and `NULLS LAST` ordering modifiers.
   - [x] Support `FIELDS(ALL)`, `FIELDS(STANDARD)`, and `FIELDS(CUSTOM)` field
     projection expansion.
+  - [x] Validate schema-backed SOQL field references across `SELECT`, `WHERE`,
+    `ORDER BY`, aggregate ordering, child subqueries, and parent relationship
+    paths before execution.
   - [x] Parse and execute `FOR UPDATE` as a local lock marker.
   - [x] Support `ALL ROWS` queries that include soft-deleted records.
   - [x] Parse and execute `WITH SECURITY_ENFORCED`, `WITH USER_MODE`, and
     `WITH SYSTEM_MODE` as local security-mode markers.
   - [x] Support baseline `TYPEOF` relationship projection for parent lookup
     branches.
-  - **Limitation**: Formula-adjacent predicate behavior remains incomplete.
+  - [x] Treat formula-backed calculated fields as query-readable local record
+    fields while leaving formula evaluation out of scope.
+  - **Limitation**: Full formula expression evaluation remains incomplete.
 - [x] Add SOQL features commonly used by real projects: security enforcement,
   lock contention behavior, and advanced query row shape fidelity.
-  - [x] Validate projected fields and parent relationship `WHERE` fields for
-    `WITH SECURITY_ENFORCED`, `WITH USER_MODE`, and `WITH SYSTEM_MODE` queries
-    and return catchable `QueryException`s for unavailable fields, including
-    relationship fields that are not present on every configured parent target.
+  - [x] Validate projected fields, predicates, ordering fields, and parent
+    relationship paths for `WITH SECURITY_ENFORCED`, `WITH USER_MODE`, and
+    `WITH SYSTEM_MODE` queries and return catchable `QueryException`s for
+    unavailable fields, including relationship fields that are not present on
+    every configured parent target.
   - [x] Mark `FOR UPDATE` result records with a local lock marker and serialize
     queried SObjects with `attributes.type` and `attributes.url`.
   - [x] Return catchable `QueryException`s when `FOR UPDATE` hits an already
