@@ -261,6 +261,16 @@ func (s *Server) handleObject(w http.ResponseWriter, r *http.Request, version st
 			return
 		}
 		writeSalesforceError(w, errUnsupportedFeature, "SObject default value metadata is not modeled in the local server; create records with explicit field values instead")
+	case isListViewsRoute(parts):
+		if _, ok := s.Org.Objects[objectName]; !ok {
+			writeSalesforceError(w, errUnknownObject)
+			return
+		}
+		if r.Method != http.MethodGet {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
+		writeSalesforceError(w, errUnsupportedFeature, "SObject list view metadata and result execution are not modeled in the local server")
 	case len(parts) == 2 && parts[1] == "recent" && r.Method == http.MethodGet:
 		object, ok := s.Org.Objects[objectName]
 		if !ok {
@@ -1679,6 +1689,13 @@ func isDefaultValuesRoute(parts []string) bool {
 	return len(parts) == 2 && parts[1] == "defaultValues"
 }
 
+func isListViewsRoute(parts []string) bool {
+	if len(parts) == 2 {
+		return parts[1] == "listviews"
+	}
+	return len(parts) == 4 && parts[1] == "listviews" && (parts[3] == "describe" || parts[3] == "results")
+}
+
 func isRowTemplatePlaceholder(id storage.ID) bool {
 	text := string(id)
 	return strings.Contains(text, "{") || strings.Contains(text, "}")
@@ -1873,6 +1890,7 @@ func objectResourcePayload(def storage.ObjectDefinition, version string) map[str
 			"items":          base,
 			"layouts":        describe + "/layouts",
 			"compactLayouts": base + "/compactLayouts",
+			"listviews":      base + "/listviews",
 		},
 	}
 }

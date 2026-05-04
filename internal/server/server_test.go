@@ -782,6 +782,38 @@ func TestAdvertisedSObjectURLStubs(t *testing.T) {
 	assertSalesforceError(t, rowTemplate, http.StatusBadRequest, "MALFORMED_ID", "rowTemplate placeholder")
 }
 
+func TestSObjectListViewRoutes(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	for _, path := range []string{
+		"/services/data/v61.0/sobjects/Account/listviews",
+		"/services/data/v61.0/sobjects/Account/listviews/00B000000000001/describe",
+		"/services/data/v61.0/sobjects/Account/listviews/00B000000000001/results",
+	} {
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+		assertSalesforceError(t, rec, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", "list view metadata")
+	}
+
+	for _, path := range []string{
+		"/services/data/v61.0/sobjects/Account/listviews",
+		"/services/data/v61.0/sobjects/Account/listviews/00B000000000001/describe",
+		"/services/data/v61.0/sobjects/Account/listviews/00B000000000001/results",
+	} {
+		method := httptest.NewRecorder()
+		handler.ServeHTTP(method, httptest.NewRequest(http.MethodPost, path, nil))
+		assertSalesforceError(t, method, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
+		if got := method.Header().Get("Allow"); got != http.MethodGet {
+			t.Fatalf("%s Allow = %q, want %q", path, got, http.MethodGet)
+		}
+	}
+
+	unknown := httptest.NewRecorder()
+	handler.ServeHTTP(unknown, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Missing__c/listviews", nil))
+	assertSalesforceError(t, unknown, http.StatusNotFound, "NOT_FOUND", "unknown object")
+}
+
 func TestDescribeEndpoints(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
@@ -870,6 +902,7 @@ func TestSObjectResourceShape(t *testing.T) {
 		"items":          "/services/data/v61.0/sobjects/Account",
 		"layouts":        "/services/data/v61.0/sobjects/Account/describe/layouts",
 		"compactLayouts": "/services/data/v61.0/sobjects/Account/compactLayouts",
+		"listviews":      "/services/data/v61.0/sobjects/Account/listviews",
 	}
 	for name, url := range wantURLs {
 		if payload.URLs[name] != url {
