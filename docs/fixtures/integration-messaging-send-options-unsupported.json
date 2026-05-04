@@ -1,0 +1,33 @@
+{
+  "name": "integration-messaging-send-options-unsupported",
+  "evidence": [
+    {
+      "symbol": "Messaging.SendEmailOptions",
+      "kind": "exec",
+      "notes": "Local send-options object behavior is not modeled."
+    },
+    {
+      "symbol": "Messaging.sendEmail options overload",
+      "kind": "exec",
+      "notes": "The local sendEmail result model supports Boolean allOrNothing only; richer send options return UnsupportedFeature."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Messaging.SendEmailOptions opts = new Messaging.SendEmailOptions(); opts.setTriggerUserEmail(true);"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Messaging.SendEmailOptions opts = new Messaging.SendEmailOptions(); opts.setTriggerUserEmail(true);"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"Messaging.SendEmailOptions.setTriggerUserEmail local messaging send-options surface\""
+    }
+  }
+}

@@ -147,6 +147,27 @@ System.assert(RestContext.response.getHeaderKeys().contains('location'));
 	}
 }
 
+func TestExecRestContextLifecycleEdges(t *testing.T) {
+	program, err := CompileAnonymous(`
+RestContext.request = null;
+System.assertEquals(null, RestContext.request);
+RestContext.response = null;
+System.assertEquals(200, RestContext.response.statusCode);
+RestContext.response.addHeader('X-Lifecycle', 'rebuilt');
+System.assertEquals('rebuilt', RestContext.response.getHeader('x-lifecycle'));
+RestResponse replacement = new RestResponse();
+replacement.statusCode = 204;
+RestContext.response = replacement;
+System.assertEquals(204, RestContext.response.statusCode);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecRestContextRejectsWrongStaticTypes(t *testing.T) {
 	program, err := CompileAnonymous(`RestContext.request = new RestResponse();`)
 	if err != nil {

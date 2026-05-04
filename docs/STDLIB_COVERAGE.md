@@ -203,8 +203,8 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Math | `Math.sqrt` | `supported` | Numeric values. |
 | Math | `Math.tan` | `supported` | Finite deterministic result for numeric values. |
 | Messaging | `Messaging.SendEmailResult` | `partial` | Local success result exposes isSuccess and getErrors getters. |
-| Messaging | `Messaging.SingleEmailMessage` | `partial` | Common address, body, threading, template-reference, activity, signature, opt-out, and attachment setters populate the local message shape; no delivery transport. |
-| Messaging | `Messaging.sendEmail` | `partial` | List overloads, including Boolean allOrNothing, return one local SendEmailResult per message and increment email limits; transport/template and richer send-options surfaces remain unsupported. |
+| Messaging | `Messaging.SingleEmailMessage` | `partial` | Common address, body, threading, template-reference, activity, signature, opt-out, priority, BCC sender, and attachment setters populate the local message shape; no delivery transport. |
+| Messaging | `Messaging.sendEmail` | `partial` | List overloads, including Boolean allOrNothing, return one local SendEmailResult per message and increment email limits; transport/template APIs and SendEmailOptions surfaces return explicit unsupported diagnostics. |
 | Object | `Object.equals` | `supported` | Uses local value equality for primitives, collections, platform scalars, and object identity. |
 | Object | `Object.hashCode` | `supported` | Deterministic within local value equality; object identity hashes are request-local. |
 | Object | `Object.toString` | `supported` | Returns local string forms for primitives, collections, platform scalars, and objects. |
@@ -236,7 +236,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Pattern | `PatternSyntaxException` | `supported` | Invalid local regex syntax throws a catchable PatternSyntaxException with getDescription, getIndex, getPattern, getMessage, and exception hierarchy behavior. |
 | QuickAction | `QuickAction namespace` | `unsupported` | Quick action UI execution and discovery calls return fixture-backed UnsupportedFeature diagnostics. |
 | REST | `@RestResource local server dispatch` | `unsupported` | Custom Apex REST dispatch returns a stable unsupported error from the local server. |
-| REST | `RestContext.request / RestContext.response` | `partial` | VM-local static slots support RestRequest assignment and lazy RestResponse creation; no platform request lifecycle dispatch is modeled. |
+| REST | `RestContext.request / RestContext.response` | `partial` | VM-local static slots support RestRequest assignment, null clearing, and lazy RestResponse creation after reset; no platform request lifecycle dispatch is modeled. |
 | REST | `RestRequest / RestResponse object shapes` | `partial` | Local request/response objects expose URI/path/method/address, params, deterministic key helpers, case-insensitive headers/getHeader helpers, Blob body, and status covered by compatibility fixtures; broader Apex REST dispatch lifecycle remains unsupported. |
 | RoundingMode | `RoundingMode.name` | `supported` | Returns deterministic built-in enum member text for Decimal rounding modes. |
 | RoundingMode | `RoundingMode.ordinal` | `supported` | Returns deterministic built-in enum order for UP, DOWN, CEILING, FLOOR, HALF_UP, HALF_DOWN, HALF_EVEN, and UNNECESSARY. |
@@ -391,7 +391,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Test | `Test.isRunningTest` | `supported` | Reflects local test context. |
 | Test | `Test.setCurrentPage` | `supported` | Sets the VM-local ApexPages current PageReference in test context. |
 | Test | `Test.setFixedSearchResults` | `unsupported` | Fixed SOSL search results are deferred with the local search surface; calls return explicit UnsupportedFeature diagnostics. |
-| Test | `Test.setMock` | `partial` | HttpCalloutMock support for local tests; other mock interfaces return explicit unsupported diagnostics. |
+| Test | `Test.setMock` | `partial` | String and Type-token HttpCalloutMock support for local tests; other mock interfaces return explicit unsupported diagnostics. |
 | Test | `Test.startTest` | `supported` | Resets the local inner governor window once per test method and preserves the outer counter window. |
 | Test | `Test.stopTest` | `supported` | Drains supported local async work once per test method and restores the outer governor window. |
 | Time | `Time.addHours` | `supported` | Local time arithmetic with 24-hour wrap. |

@@ -666,13 +666,15 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Add `Messaging.SingleEmailMessage` setters and structured
     `SendEmailResult` basics.
   - [x] Expand message-shape setters for address, body, threading, template
-    reference, activity, signature, opt-out, and attachment fields while keeping
-    delivery/template transport fenced unsupported.
+    reference, activity, signature, opt-out, priority, BCC sender, and attachment
+    fields while keeping delivery/template transport and richer send options
+    fenced unsupported.
   - [x] Return one local `Messaging.SendEmailResult` per input message and
-    support the Boolean `allOrNothing` overload without modeling transport.
+    support the Boolean `allOrNothing` overload without modeling transport;
+    `Messaging.SendEmailOptions` remains an explicit UnsupportedFeature seam.
   - [x] Add `ApexPages` message storage, stable current page,
-    `Test.setCurrentPage`, `ApexPages.Severity`, `PageReference`, and
-    deterministic org `URL` basics.
+    `Test.setCurrentPage`, `ApexPages.Severity`, `PageReference`, REST context
+    null/re-lazy response lifecycle, and deterministic org `URL` basics.
   - [x] Cover `URL` authority user-info parsing and bounded FTP default-port
     accessor behavior.
   - **Limitation**: Full Visualforce navigation/rendering and production session
@@ -688,7 +690,7 @@ a Salesforce-shaped local API server without silently wrong behavior.
     Continuation, EventBus publish variants, QuickAction UI actions,
     Search/SOSL, Test stub/search helpers, and Crypto key/cert/random APIs.
   - [x] Add fixture evidence for remaining unsupported rows, including
-    Approval lock helpers, AsyncOptions/finalizers, Auth JWT/session calls,
+    Messaging send-options, Approval lock helpers, AsyncOptions/finalizers, Auth JWT/session calls,
     Canvas lifecycle calls, Continuation request/response calls,
     EventBus after-commit publish, QuickAction discovery, Crypto
     encrypt/decrypt/sign/verify, and `Iterator.remove`, so unsupported stdlib

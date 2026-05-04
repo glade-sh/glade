@@ -6847,7 +6847,7 @@ func (vm *VM) lookupRestContextField(name string) (Value, bool, error) {
 		}
 		return vm.restRequest, true, nil
 	case "RestContext.response":
-		if vm.restResponse.Kind == "" {
+		if vm.restResponse.Kind == "" || vm.restResponse.Kind == ValueNull {
 			vm.restResponse = newRestResponse()
 		}
 		return vm.restResponse, true, nil
@@ -10543,19 +10543,21 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			return Null, receiver, true, true, nil
 		case "setSubject", "setPlainTextBody", "setHtmlBody", "setReplyTo", "setSenderDisplayName",
 			"setCharset", "setInReplyTo", "setReferences", "setOrgWideEmailAddressId",
-			"setTargetObjectId", "setTemplateId", "setWhatId", "setOptOutPolicy":
+			"setTargetObjectId", "setTemplateId", "setWhatId", "setOptOutPolicy", "setEmailPriority":
 			if len(args) != 1 || args[0].Kind != ValueString {
 				return Null, receiver, false, true, fmt.Errorf("Messaging.SingleEmailMessage.%s expects String", method)
 			}
 			receiver.Fields[singleEmailMessageFieldName(method)] = args[0]
 			return Null, receiver, true, true, nil
-		case "setSaveAsActivity", "setTreatBodiesAsTemplate", "setTreatTargetObjectAsRecipient", "setUseSignature":
+		case "setSaveAsActivity", "setTreatBodiesAsTemplate", "setTreatTargetObjectAsRecipient", "setUseSignature", "setBccSender":
 			if len(args) != 1 || args[0].Kind != ValueBool {
 				return Null, receiver, false, true, fmt.Errorf("Messaging.SingleEmailMessage.%s expects Boolean", method)
 			}
 			receiver.Fields[singleEmailMessageFieldName(method)] = args[0]
 			return Null, receiver, true, true, nil
 		}
+	case "Messaging.SendEmailOptions":
+		return Null, receiver, false, true, unsupportedCallError("Messaging.SendEmailOptions." + method + " local messaging send-options surface")
 	case "ApexPages.Message":
 		switch method {
 		case "getSeverity":
