@@ -50,6 +50,10 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, []map[string]string{{"version": "v61.0", "url": "/services/data/v61.0"}})
 		return
 	}
+	if len(parts) >= 2 && parts[0] == "services" && parts[1] == "apexrest" {
+		writeError(w, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", "Apex @RestResource dispatch is not implemented in the local server")
+		return
+	}
 	if len(parts) < 3 || parts[0] != "services" || parts[1] != "data" {
 		writeError(w, http.StatusNotFound, "NOT_FOUND", "unknown endpoint")
 		return

@@ -71,6 +71,66 @@ System.assert(String.isNotEmpty('x'));
 	}
 }
 
+func TestExecRestContextRequestAndResponseShapes(t *testing.T) {
+	program, err := CompileAnonymous(`
+RestRequest req = new RestRequest();
+req.requestURI = '/services/apexrest/widgets/42?expand=true';
+req.resourcePath = '/widgets/42';
+req.httpMethod = 'PATCH';
+req.remoteAddress = '127.0.0.1';
+req.requestBody = Blob.valueOf('{"name":"Acme"}');
+req.addHeader('Content-Type', 'application/json');
+req.addParameter('expand', 'true');
+RestContext.request = req;
+
+System.assertEquals('/services/apexrest/widgets/42?expand=true', RestContext.request.requestURI);
+System.assertEquals('/widgets/42', RestContext.request.resourcePath);
+System.assertEquals('PATCH', RestContext.request.httpMethod);
+System.assertEquals('127.0.0.1', RestContext.request.remoteAddress);
+System.assertEquals('{"name":"Acme"}', RestContext.request.requestBody.toString());
+System.assertEquals('application/json', RestContext.request.getHeader('content-type'));
+System.assertEquals('true', RestContext.request.getParameter('expand'));
+
+RestContext.response.statusCode = 201;
+RestContext.response.responseBody = Blob.valueOf('created');
+RestContext.response.addHeader('Location', '/services/apexrest/widgets/42');
+System.assertEquals(201, RestContext.response.statusCode);
+System.assertEquals('created', RestContext.response.responseBody.toString());
+System.assertEquals('/services/apexrest/widgets/42', RestContext.response.headers.get('Location'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecRestContextRejectsWrongStaticTypes(t *testing.T) {
+	program, err := CompileAnonymous(`RestContext.request = new RestResponse();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), "RestContext.request expects RestRequest") {
+		t.Fatalf("expected RestContext type error, got %v", err)
+	}
+}
+
+func TestExecRestContextNestedNullDereference(t *testing.T) {
+	program, err := CompileAnonymous(`
+RestContext.request = null;
+System.debug(RestContext.request.requestURI);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = Execute(program, nil)
+	var runtimeErr *RuntimeError
+	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "NullPointerException" {
+		t.Fatalf("err = %#v, want NullPointerException", err)
+	}
+}
+
 func TestExecStringStdlibMoreMethods(t *testing.T) {
 	program, err := CompileAnonymous(`
 String letters = 'a b c 5 xyz';

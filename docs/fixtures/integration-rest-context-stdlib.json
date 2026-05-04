@@ -1,0 +1,27 @@
+{
+  "name": "integration-rest-context-stdlib",
+  "evidence": [
+    {"symbol": "RestContext.request", "kind": "exec", "notes": "VM-local static request slot accepts RestRequest or null."},
+    {"symbol": "RestContext.response", "kind": "exec", "notes": "VM-local static response slot lazily creates a RestResponse."},
+    {"symbol": "RestRequest", "kind": "exec", "notes": "Local object shape covers requestURI, resourcePath, httpMethod, remoteAddress, headers, params, and requestBody."},
+    {"symbol": "RestResponse", "kind": "exec", "notes": "Local object shape covers statusCode, headers, and responseBody."}
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "RestRequest req = new RestRequest();\nreq.requestURI = '/services/apexrest/widgets/42?expand=true';\nreq.resourcePath = '/widgets/42';\nreq.httpMethod = 'PATCH';\nreq.remoteAddress = '127.0.0.1';\nreq.requestBody = Blob.valueOf('{\"name\":\"Acme\"}');\nreq.addHeader('Content-Type', 'application/json');\nreq.addParameter('expand', 'true');\nRestContext.request = req;\nSystem.assertEquals('/services/apexrest/widgets/42?expand=true', RestContext.request.requestURI);\nSystem.assertEquals('/widgets/42', RestContext.request.resourcePath);\nSystem.assertEquals('PATCH', RestContext.request.httpMethod);\nSystem.assertEquals('127.0.0.1', RestContext.request.remoteAddress);\nSystem.assertEquals('{\"name\":\"Acme\"}', RestContext.request.requestBody.toString());\nSystem.assertEquals('application/json', RestContext.request.getHeader('content-type'));\nSystem.assertEquals('true', RestContext.request.getParameter('expand'));\nRestContext.response.statusCode = 201;\nRestContext.response.responseBody = Blob.valueOf('created');\nRestContext.response.addHeader('Location', '/services/apexrest/widgets/42');\nSystem.assertEquals(201, RestContext.response.statusCode);\nSystem.assertEquals('created', RestContext.response.responseBody.toString());\nSystem.assertEquals('/services/apexrest/widgets/42', RestContext.response.headers.get('Location'));\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "RestRequest req = new RestRequest();\nreq.requestURI = '/services/apexrest/widgets/42?expand=true';\nreq.resourcePath = '/widgets/42';\nreq.httpMethod = 'PATCH';\nreq.remoteAddress = '127.0.0.1';\nreq.requestBody = Blob.valueOf('{\"name\":\"Acme\"}');\nreq.addHeader('Content-Type', 'application/json');\nreq.addParameter('expand', 'true');\nRestContext.request = req;\nSystem.assertEquals('/services/apexrest/widgets/42?expand=true', RestContext.request.requestURI);\nSystem.assertEquals('/widgets/42', RestContext.request.resourcePath);\nSystem.assertEquals('PATCH', RestContext.request.httpMethod);\nSystem.assertEquals('127.0.0.1', RestContext.request.remoteAddress);\nSystem.assertEquals('{\"name\":\"Acme\"}', RestContext.request.requestBody.toString());\nSystem.assertEquals('application/json', RestContext.request.getHeader('content-type'));\nSystem.assertEquals('true', RestContext.request.getParameter('expand'));\nRestContext.response.statusCode = 201;\nRestContext.response.responseBody = Blob.valueOf('created');\nRestContext.response.addHeader('Location', '/services/apexrest/widgets/42');\nSystem.assertEquals(201, RestContext.response.statusCode);\nSystem.assertEquals('created', RestContext.response.responseBody.toString());\nSystem.assertEquals('/services/apexrest/widgets/42', RestContext.response.headers.get('Location'));\n"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

@@ -63,6 +63,8 @@ type VM struct {
 	savepointOrder   map[string]int
 	nextSavepoint    int
 	pageMessages     []Value
+	restRequest      Value
+	restResponse     Value
 	debugHooks       DebugHooks
 	hasDebugHooks    bool
 	ctx              context.Context
@@ -5073,6 +5075,9 @@ func (vm *VM) lookup(name string) (Value, error) {
 	if value, ok := vm.Globals[name]; ok {
 		return value, nil
 	}
+	if value, ok, err := vm.lookupRestContextField(name); ok || err != nil {
+		return value, err
+	}
 	switch name {
 	case "AccessLevel.USER_MODE", "AccessLevel.SYSTEM_MODE":
 		return Value{Kind: ValueObject, Type: "AccessLevel", Text: strings.TrimPrefix(name, "AccessLevel.")}, nil
@@ -5277,6 +5282,9 @@ func (vm *VM) assign(name string, value Value) error {
 		}
 		vm.Globals[name] = value
 		return nil
+	}
+	if ok, err := vm.assignRestContextField(name, value); ok || err != nil {
+		return err
 	}
 	parts := strings.Split(name, ".")
 	if len(parts) > 1 {
@@ -5608,7 +5616,7 @@ func isBuiltinTypeName(name string) bool {
 		return true
 	}
 	switch name {
-	case "Object", "String", "Boolean", "Integer", "Long", "Decimal", "Double", "Date", "Datetime", "Time", "TimeZone", "Blob", "Id", "Type", "URL", "PageReference", "LoggingLevel":
+	case "Object", "String", "Boolean", "Integer", "Long", "Decimal", "Double", "Date", "Datetime", "Time", "TimeZone", "Blob", "Id", "Type", "URL", "PageReference", "LoggingLevel", "RestContext", "RestRequest", "RestResponse":
 		return true
 	default:
 		return false
@@ -5682,6 +5690,101 @@ func (vm *VM) storeClassAliases(class Class) {
 
 func resultForLookup() *Result {
 	return &Result{TraceFormat: trace.FormatChromeTraceEvent}
+}
+
+func newRestRequest() Value {
+	request := Object("RestRequest")
+	request.Fields["requestURI"] = String("")
+	request.Fields["resourcePath"] = String("")
+	request.Fields["httpMethod"] = String("")
+	request.Fields["remoteAddress"] = String("")
+	request.Fields["headers"] = typedMap("Map<String,String>")
+	request.Fields["params"] = typedMap("Map<String,String>")
+	request.Fields["requestBody"] = Null
+	return request
+}
+
+func newRestResponse() Value {
+	response := Object("RestResponse")
+	response.Fields["statusCode"] = Int(200)
+	response.Fields["headers"] = typedMap("Map<String,String>")
+	response.Fields["responseBody"] = Null
+	return response
+}
+
+func typedMap(typeName string) Value {
+	value := Map()
+	value.Type = typeName
+	return value
+}
+
+func (vm *VM) lookupRestContextField(name string) (Value, bool, error) {
+	switch name {
+	case "RestContext.request":
+		if vm.restRequest.Kind == "" {
+			return Null, true, nil
+		}
+		return vm.restRequest, true, nil
+	case "RestContext.response":
+		if vm.restResponse.Kind == "" {
+			vm.restResponse = newRestResponse()
+		}
+		return vm.restResponse, true, nil
+	default:
+		for _, root := range []string{"RestContext.request", "RestContext.response"} {
+			if strings.HasPrefix(name, root+".") {
+				value, _, err := vm.lookupRestContextField(root)
+				if err != nil {
+					return Null, true, err
+				}
+				out, err := vm.lookupPath(value, strings.Split(strings.TrimPrefix(name, root+"."), "."))
+				if err != nil {
+					return Null, true, err
+				}
+				return out, true, nil
+			}
+		}
+		return Null, false, nil
+	}
+}
+
+func (vm *VM) assignRestContextField(name string, value Value) (bool, error) {
+	switch name {
+	case "RestContext.request":
+		if value.Kind != ValueNull && (value.Kind != ValueObject || value.Type != "RestRequest") {
+			return true, fmt.Errorf("RestContext.request expects RestRequest")
+		}
+		vm.restRequest = value
+		return true, nil
+	case "RestContext.response":
+		if value.Kind != ValueNull && (value.Kind != ValueObject || value.Type != "RestResponse") {
+			return true, fmt.Errorf("RestContext.response expects RestResponse")
+		}
+		vm.restResponse = value
+		return true, nil
+	default:
+		for _, root := range []string{"RestContext.request", "RestContext.response"} {
+			if strings.HasPrefix(name, root+".") {
+				current, _, err := vm.lookupRestContextField(root)
+				if err != nil {
+					return true, err
+				}
+				if current.Kind == ValueNull {
+					return true, newExceptionError("NullPointerException", "Attempt to de-reference a null object")
+				}
+				if err := vm.assignPath(current, strings.Split(strings.TrimPrefix(name, root+"."), "."), value); err != nil {
+					return true, err
+				}
+				if root == "RestContext.request" {
+					vm.restRequest = current
+				} else {
+					vm.restResponse = current
+				}
+				return true, nil
+			}
+		}
+		return false, nil
+	}
 }
 
 func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string]Value, result *Result) (Value, error) {
@@ -5772,6 +5875,24 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 		return object, nil
 	}
 	switch typeName {
+	case "RestRequest":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("RestRequest constructor expects 0 arguments")
+		}
+		request := newRestRequest()
+		for field, value := range namedArgs {
+			request.Fields[field] = value
+		}
+		return request, nil
+	case "RestResponse":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("RestResponse constructor expects 0 arguments")
+		}
+		response := newRestResponse()
+		for field, value := range namedArgs {
+			response.Fields[field] = value
+		}
+		return response, nil
 	case "PageReference":
 		if len(args) > 1 || len(namedArgs) != 0 {
 			return Null, fmt.Errorf("PageReference constructor expects optional URL String")
@@ -8024,6 +8145,10 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		return callJSONGeneratorMember(receiver, method, args)
 	case "JSONParser":
 		return callJSONParserMember(receiver, method, args)
+	case "RestRequest":
+		return callRestRequestMember(receiver, method, args)
+	case "RestResponse":
+		return callRestResponseMember(receiver, method, args)
 	case "Schema.SObjectType":
 		if method == "getDescribe" {
 			if len(args) != 0 {
@@ -9038,4 +9163,72 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		}
 	}
 	return Null, receiver, false, false, nil
+}
+
+func callRestRequestMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	switch method {
+	case "addHeader":
+		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("RestRequest.addHeader expects name and value Strings")
+		}
+		restMapPut(&receiver, "headers", args[0].Text, args[1])
+		return Null, receiver, true, true, nil
+	case "getHeader":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("RestRequest.getHeader expects name String")
+		}
+		return restMapGet(receiver, "headers", args[0].Text), receiver, false, true, nil
+	case "addParameter", "addParam":
+		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("RestRequest.%s expects name and value Strings", method)
+		}
+		restMapPut(&receiver, "params", args[0].Text, args[1])
+		return Null, receiver, true, true, nil
+	case "getParameter", "getParam":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("RestRequest.%s expects name String", method)
+		}
+		return restMapGet(receiver, "params", args[0].Text), receiver, false, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
+func callRestResponseMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	switch method {
+	case "addHeader":
+		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("RestResponse.addHeader expects name and value Strings")
+		}
+		restMapPut(&receiver, "headers", args[0].Text, args[1])
+		return Null, receiver, true, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
+func restMapPut(receiver *Value, field, key string, value Value) {
+	current := receiver.Fields[field]
+	if current.Kind != ValueMap {
+		current = typedMap("Map<String,String>")
+	}
+	current.Map[mapKey(String(key))] = value
+	receiver.Fields[field] = current
+}
+
+func restMapGet(receiver Value, field, key string) Value {
+	current := receiver.Fields[field]
+	if current.Kind != ValueMap {
+		return Null
+	}
+	if value, ok := current.Map[mapKey(String(key))]; ok {
+		return value
+	}
+	for rawKey, value := range current.Map {
+		decoded := valueFromMapKey(rawKey)
+		if decoded.Kind == ValueString && strings.EqualFold(decoded.Text, key) {
+			return value
+		}
+	}
+	return Null
 }

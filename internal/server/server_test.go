@@ -76,6 +76,20 @@ func TestDescribeEndpoints(t *testing.T) {
 	}
 }
 
+func TestApexRestDispatchReturnsStableUnsupportedError(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/services/apexrest/widgets/42", strings.NewReader(`{"name":"Acme"}`)))
+	if rec.Code != http.StatusNotImplemented {
+		t.Fatalf("apexrest status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if !bytes.Contains(rec.Body.Bytes(), []byte(`"errorCode":"UNSUPPORTED_FEATURE"`)) || !bytes.Contains(rec.Body.Bytes(), []byte(`RestResource dispatch`)) {
+		t.Fatalf("apexrest unsupported shape = %s", rec.Body.String())
+	}
+}
+
 func TestOAERFixtureAndResetEndpointsPersist(t *testing.T) {
 	org := testOrg()
 	store := &memoryStore{}
