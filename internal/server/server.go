@@ -42,6 +42,25 @@ const (
 	maxQueryLocators  = 32
 )
 
+type resetScopeInfo struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	NoOp        bool   `json:"noOp"`
+}
+
+type oaerStatePayload struct {
+	LocalOnly   bool                   `json:"localOnly"`
+	Summary     storage.InspectSummary `json:"summary"`
+	ResetScopes []resetScopeInfo       `json:"resetScopes"`
+}
+
+type oaerResetPayload struct {
+	Success    bool                   `json:"success"`
+	Scopes     []string               `json:"scopes"`
+	NoOpScopes []string               `json:"noOpScopes,omitempty"`
+	Summary    storage.InspectSummary `json:"summary"`
+}
+
 func New(org *storage.OrgState) *Server {
 	return &Server{Org: org}
 }
@@ -274,7 +293,18 @@ func (s *Server) handleOAER(w http.ResponseWriter, r *http.Request, parts []stri
 			writeSalesforceError(w, errStoreFailure, err.Error())
 			return
 		}
-		writeJSON(w, http.StatusOK, map[string]any{"success": true, "scopes": scopes, "summary": storage.InspectOrg("", *s.Org)})
+		writeJSON(w, http.StatusOK, oaerResetPayload{
+			Success:    true,
+			Scopes:     scopes,
+			NoOpScopes: noOpResetScopes(scopes),
+			Summary:    storage.InspectOrg("", *s.Org),
+		})
+	case len(parts) == 1 && (parts[0] == "state" || parts[0] == "inspect") && r.Method == http.MethodGet:
+		writeJSON(w, http.StatusOK, oaerStatePayload{
+			LocalOnly:   true,
+			Summary:     storage.InspectOrg("", *s.Org),
+			ResetScopes: resetScopeSupport(),
+		})
 	case len(parts) == 1 && parts[0] == "fixture" && r.Method == http.MethodGet:
 		writeJSON(w, http.StatusOK, storage.FixtureFromOrg(*s.Org))
 	case len(parts) == 1 && parts[0] == "fixture" && r.Method == http.MethodPost:
@@ -295,11 +325,35 @@ func (s *Server) handleOAER(w http.ResponseWriter, r *http.Request, parts []stri
 		writeJSON(w, http.StatusOK, map[string]any{"success": true, "summary": storage.InspectOrg("", *s.Org)})
 	case len(parts) >= 1 && parts[0] == "reset":
 		writeMethodNotAllowed(w, http.MethodPost)
+	case len(parts) == 1 && (parts[0] == "state" || parts[0] == "inspect"):
+		writeMethodNotAllowed(w, http.MethodGet)
 	case len(parts) == 1 && parts[0] == "fixture":
 		writeMethodNotAllowed(w, http.MethodGet, http.MethodPost)
 	default:
 		writeSalesforceError(w, errUnknownOAER)
 	}
+}
+
+func resetScopeSupport() []resetScopeInfo {
+	return []resetScopeInfo{
+		{Name: "all", Description: "clear local data and restore deterministic platform records"},
+		{Name: "data", Description: "clear non-platform object records and ID sequences"},
+		{Name: "users", Description: "restore deterministic local users and related platform records"},
+		{Name: "platform", Description: "restore deterministic local platform records"},
+		{Name: "limits", Description: "accepted for compatibility; governor limits are per VM and have no persisted queue", NoOp: true},
+		{Name: "async", Description: "accepted for compatibility; async jobs are not persisted by the local server", NoOp: true},
+	}
+}
+
+func noOpResetScopes(scopes []string) []string {
+	noOps := make([]string, 0, len(scopes))
+	for _, scope := range scopes {
+		switch scope {
+		case "limits", "async":
+			noOps = append(noOps, scope)
+		}
+	}
+	return noOps
 }
 
 func resetScopes(r *http.Request, pathScopes []string) ([]string, error) {

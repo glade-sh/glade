@@ -30,6 +30,13 @@
       "contains": ["\"composite\":\"/services/data/v61.0/composite\"", "\"jobs\":\"/services/data/v61.0/jobs\"", "\"recent\":\"/services/data/v61.0/recent\"", "\"search\":\"/services/data/v61.0/search\""]
     },
     {
+      "name": "oaer-state",
+      "method": "GET",
+      "path": "/services/data/v61.0/oaer/state",
+      "status": 200,
+      "contains": ["\"localOnly\":true", "\"resetScopes\"", "\"name\":\"limits\"", "\"noOp\":true", "\"users\":2"]
+    },
+    {
       "name": "userinfo",
       "method": "GET",
       "path": "/services/oauth2/userinfo",
@@ -204,6 +211,13 @@
       "contains": ["\"scopes\":[\"data\"]"]
     },
     {
+      "name": "noop-reset",
+      "method": "POST",
+      "path": "/services/data/v61.0/oaer/reset?scope=limits,async",
+      "status": 200,
+      "contains": ["\"scopes\":[\"limits\",\"async\"]", "\"noOpScopes\":[\"limits\",\"async\"]"]
+    },
+    {
       "name": "persist-after-reset",
       "method": "POST",
       "path": "/services/data/v61.0/sobjects/Account",
@@ -223,8 +237,8 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 26,
-      "statuses": [200, 200, 200, 200, 200, 201, 200, 200, 501, 200, 200, 200, 200, 200, 200, 200, 400, 501, 501, 501, 501, 501, 501, 404, 200, 201],
+      "requests": 28,
+      "statuses": [200, 200, 200, 200, 200, 200, 201, 200, 200, 501, 200, 200, 200, 200, 200, 200, 200, 400, 501, 501, 501, 501, 501, 501, 404, 200, 200, 201],
       "users": 2
     }
   }

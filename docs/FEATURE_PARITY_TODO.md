@@ -640,6 +640,10 @@ a Salesforce-shaped local API server without silently wrong behavior.
   transaction boundaries, user context, and limits.
 - [ ] Add server fixture reset endpoints for test data, org state, limits, and
   async queues.
+  - [x] Add local-only `oaer/state` and `oaer/inspect` summaries with supported
+    reset scope metadata.
+  - [x] Report `limits` and `async` reset scopes as accepted no-ops until limit
+    and async queues become persisted server state.
 - [ ] Add black-box server compatibility fixtures for CRUD, query,
   executeAnonymous, composite, errors, auth stubs, and persistence.
   - [x] Cover Tooling and Bulk unsupported route shapes in the server black-box
@@ -656,7 +660,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Add storage DB lifecycle coverage to the compatibility fixture runner.
   - [x] Add server black-box fixture execution for version discovery, CRUD, SOQL
     query, Tooling `executeAnonymous`, composite insert, Salesforce-shaped error
-    arrays, OAuth userinfo/id stubs, scoped reset, and SQLite persistence.
+    arrays, OAuth userinfo/id stubs, scoped reset/state, no-op reset reporting,
+    and SQLite persistence.
 - [x] Add enterprise fixtures for trigger-heavy, selector/service/domain,
   async-heavy, describe-heavy, namespace-heavy, and package-style projects.
   - [x] Add trigger-heavy and describe-heavy test fixtures.
