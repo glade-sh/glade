@@ -286,7 +286,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | String | `String.fromCharArray` | `supported` | Builds a string from valid Unicode code point integers. |
 | String | `String.getChars` | `supported` | Returns Unicode code point integers for each rune. |
 | String | `String.getCommonPrefix` | `supported` | Returns the shared rune prefix for a list of strings. |
-| String | `String.getLevenshteinDistance` | `supported` | Rune-based edit distance. |
+| String | `String.getLevenshteinDistance` | `supported` | Rune-based edit distance, including threshold overloads that return -1 when exceeded. |
 | String | `String.hashCode` | `supported` | Java-compatible UTF-16 code-unit string hash for local values. |
 | String | `String.indexOf` | `supported` | Rune-indexed literal search with optional start position and empty-search edge handling. |
 | String | `String.indexOfAny` | `supported` | Returns the first rune index whose character appears in the search set. |
@@ -354,8 +354,8 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | String | `String.trim` | `supported` | Unicode whitespace trim. |
 | String | `String.unescapeCsv` | `supported` | Unquotes one doubled-quote CSV field; plain strings are unchanged. |
 | String | `String.unescapeEcmaScript` | `partial` | Unescapes common JavaScript-style backslash, octal, and UTF-16 Unicode escapes. |
-| String | `String.unescapeHtml3` | `partial` | Unescapes core HTML entities, selected high-use HTML 3/4 named entities, and numeric references; remaining unknown named entities stay unchanged. |
-| String | `String.unescapeHtml4` | `partial` | Unescapes core HTML entities, selected high-use HTML 3/4 named entities, and numeric references; remaining unknown named entities stay unchanged. |
+| String | `String.unescapeHtml3` | `partial` | Unescapes core HTML entities, selected high-use Greek/symbol/arrow named entities, and numeric references; HTML apos and remaining unknown named entities stay unchanged. |
+| String | `String.unescapeHtml4` | `partial` | Unescapes core HTML entities, selected high-use Greek/symbol/arrow named entities, and numeric references; HTML apos and remaining unknown named entities stay unchanged. |
 | String | `String.unescapeJava` | `partial` | Unescapes common Java-style backslash, octal, and UTF-16 Unicode escapes. |
 | String | `String.unescapeUnicode` | `partial` | Unescapes UTF-16 Unicode escape sequences. |
 | String | `String.unescapeXml` | `partial` | Unescapes XML core entities and valid numeric references; malformed, null, out-of-range, and surrogate numeric entities stay unchanged. |

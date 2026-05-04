@@ -711,11 +711,11 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 		}
 		return String(commonPrefix([]string{receiver.Text, other})), true, nil
 	case "getLevenshteinDistance":
-		other, err := stringArg("String.getLevenshteinDistance", args)
+		distance, err := stringLevenshteinDistance("String.getLevenshteinDistance", receiver.Text, args)
 		if err != nil {
 			return Null, true, err
 		}
-		return Int(int64(levenshteinDistance(receiver.Text, other))), true, nil
+		return Int(int64(distance)), true, nil
 	case "splitByCharacterType":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("String.splitByCharacterType expects 0 arguments")
@@ -942,10 +942,17 @@ func stringStatic(callee string, args []Value) (Value, error) {
 		}
 		return String(commonPrefix(texts)), nil
 	case "String.getLevenshteinDistance":
-		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
-			return Null, fmt.Errorf("String.getLevenshteinDistance expects two Strings")
+		if len(args) != 2 && len(args) != 3 {
+			return Null, fmt.Errorf("String.getLevenshteinDistance expects two Strings and optional threshold")
 		}
-		return Int(int64(levenshteinDistance(args[0].Text, args[1].Text))), nil
+		if args[0].Kind != ValueString {
+			return Null, fmt.Errorf("String.getLevenshteinDistance expects left String")
+		}
+		distance, err := stringLevenshteinDistance("String.getLevenshteinDistance", args[0].Text, args[1:])
+		if err != nil {
+			return Null, err
+		}
+		return Int(int64(distance)), nil
 	case "String.stripAll":
 		return stringStaticStripAll(args)
 	case "String.fromCharArray":
@@ -2531,6 +2538,13 @@ var htmlNamedEntityReplacements = map[string]string{
 	"sect":   "\u00a7",
 	"para":   "\u00b6",
 	"middot": "\u00b7",
+	"Alpha":  "Α",
+	"beta":   "β",
+	"Omega":  "Ω",
+	"sum":    "∑",
+	"rArr":   "⇒",
+	"spades": "♠",
+	"loz":    "◊",
 }
 
 func unescapeXMLEntities(text string) string {
@@ -2859,9 +2873,36 @@ func commonPrefix(texts []string) string {
 	return string(prefix)
 }
 
+func stringLevenshteinDistance(name, left string, args []Value) (int, error) {
+	if len(args) != 1 && len(args) != 2 {
+		return 0, fmt.Errorf("%s expects target String and optional threshold", name)
+	}
+	if args[0].Kind != ValueString {
+		return 0, fmt.Errorf("%s expects target String", name)
+	}
+	if len(args) == 1 {
+		return levenshteinDistance(left, args[0].Text), nil
+	}
+	if args[1].Kind != ValueInt {
+		return 0, fmt.Errorf("%s expects Integer threshold", name)
+	}
+	threshold := int(args[1].Int)
+	if threshold < 0 {
+		return 0, fmt.Errorf("%s threshold must be non-negative", name)
+	}
+	return levenshteinDistanceThreshold(left, args[0].Text, threshold), nil
+}
+
 func levenshteinDistance(left, right string) int {
+	return levenshteinDistanceThreshold(left, right, -1)
+}
+
+func levenshteinDistanceThreshold(left, right string, threshold int) int {
 	a := []rune(left)
 	b := []rune(right)
+	if threshold >= 0 && absInt(len(a)-len(b)) > threshold {
+		return -1
+	}
 	prev := make([]int, len(b)+1)
 	for j := range prev {
 		prev[j] = j
@@ -2878,7 +2919,18 @@ func levenshteinDistance(left, right string) int {
 		}
 		prev = curr
 	}
-	return prev[len(b)]
+	distance := prev[len(b)]
+	if threshold >= 0 && distance > threshold {
+		return -1
+	}
+	return distance
+}
+
+func absInt(value int) int {
+	if value < 0 {
+		return -value
+	}
+	return value
 }
 
 func minInt(values ...int) int {

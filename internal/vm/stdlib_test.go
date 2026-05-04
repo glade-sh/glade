@@ -553,6 +553,35 @@ System.assertEquals('&lt;a attr=&apos;q&apos;&gt;&amp;&quot;', xmlMarkup.escapeX
 	}
 }
 
+func TestExecStringEntityAndLevenshteinFamilyCloseout(t *testing.T) {
+	program, err := CompileAnonymous(`
+String named = '&Alpha;&beta;&Omega;&spades;&loz;&rArr;&sum;';
+String unescaped = named.unescapeHtml4();
+System.assertEquals(7, unescaped.length());
+System.assertEquals(913, unescaped.codePointAt(0));
+System.assertEquals(946, unescaped.codePointAt(1));
+System.assertEquals(937, unescaped.codePointAt(2));
+System.assertEquals(9824, unescaped.codePointAt(3));
+System.assertEquals(9674, unescaped.codePointAt(4));
+System.assertEquals(8658, unescaped.codePointAt(5));
+System.assertEquals(8721, unescaped.codePointAt(6));
+System.assertEquals('&notarealentity;&apos;', '&notarealentity;&apos;'.unescapeHtml4());
+String gumbo = 'gumbo';
+System.assertEquals(2, gumbo.getLevenshteinDistance('gambol'));
+System.assertEquals(2, gumbo.getLevenshteinDistance('gambol', 2));
+System.assertEquals(-1, gumbo.getLevenshteinDistance('gambol', 1));
+System.assertEquals(3, String.getLevenshteinDistance('kitten', 'sitting', 3));
+System.assertEquals(-1, String.getLevenshteinDistance('kitten', 'sitting', 2));
+System.assertEquals(1, 'café'.getLevenshteinDistance('cafe', 1));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestStringStdlibCompletionRejectsBadArguments(t *testing.T) {
 	tests := []struct {
 		method string
@@ -577,6 +606,7 @@ func TestStringStdlibCompletionRejectsBadArguments(t *testing.T) {
 		{method: "remove", args: []Value{Null}},
 		{method: "escapeHtml4", args: []Value{Null}},
 		{method: "unescapeXml", args: []Value{Null}},
+		{method: "getLevenshteinDistance", args: []Value{String("x"), Int(-1)}},
 	}
 	for _, tc := range tests {
 		if _, handled, err := callStringMember(String("abc"), tc.method, tc.args); !handled || err == nil {
@@ -591,6 +621,9 @@ func TestStringStdlibCompletionRejectsBadArguments(t *testing.T) {
 	}
 	if _, err := stringStatic("String.stripAll", []Value{List(Int(1))}); err == nil {
 		t.Fatal("String.stripAll expected bad argument error")
+	}
+	if _, err := stringStatic("String.getLevenshteinDistance", []Value{String("a"), String("b"), Int(-1)}); err == nil {
+		t.Fatal("String.getLevenshteinDistance expected bad threshold error")
 	}
 	if _, _, err := callStringMember(String(`\u00ZZ`), "unescapeUnicode", nil); err == nil {
 		t.Fatal("String.unescapeUnicode expected bad escape error")

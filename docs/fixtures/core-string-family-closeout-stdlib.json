@@ -1,0 +1,33 @@
+{
+  "name": "core-string-family-closeout-stdlib",
+  "evidence": [
+    {
+      "symbol": "String.unescapeHtml4",
+      "kind": "exec",
+      "notes": "Named Greek, symbol, and arrow entities decode through the local named-entity table while unknown names and HTML apos stay unchanged."
+    },
+    {
+      "symbol": "String.getLevenshteinDistance",
+      "kind": "exec",
+      "notes": "Instance and static threshold overloads return the distance when within threshold and -1 when over it."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "String named = '&Alpha;&beta;&Omega;&spades;&loz;&rArr;&sum;';\nString unescaped = named.unescapeHtml4();\nSystem.assertEquals(7, unescaped.length());\nSystem.assertEquals(913, unescaped.codePointAt(0));\nSystem.assertEquals(946, unescaped.codePointAt(1));\nSystem.assertEquals(937, unescaped.codePointAt(2));\nSystem.assertEquals(9824, unescaped.codePointAt(3));\nSystem.assertEquals(9674, unescaped.codePointAt(4));\nSystem.assertEquals(8658, unescaped.codePointAt(5));\nSystem.assertEquals(8721, unescaped.codePointAt(6));\nSystem.assertEquals('&notarealentity;&apos;', '&notarealentity;&apos;'.unescapeHtml4());\nString gumbo = 'gumbo';\nSystem.assertEquals(2, gumbo.getLevenshteinDistance('gambol'));\nSystem.assertEquals(2, gumbo.getLevenshteinDistance('gambol', 2));\nSystem.assertEquals(-1, gumbo.getLevenshteinDistance('gambol', 1));\nSystem.assertEquals(3, String.getLevenshteinDistance('kitten', 'sitting', 3));\nSystem.assertEquals(-1, String.getLevenshteinDistance('kitten', 'sitting', 2));\nSystem.assertEquals(1, 'caf\u00e9'.getLevenshteinDistance('cafe', 1));\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "String named = '&Alpha;&beta;&Omega;&spades;&loz;&rArr;&sum;';\nString unescaped = named.unescapeHtml4();\nSystem.assertEquals(7, unescaped.length());\nSystem.assertEquals(913, unescaped.codePointAt(0));\nSystem.assertEquals(946, unescaped.codePointAt(1));\nSystem.assertEquals(937, unescaped.codePointAt(2));\nSystem.assertEquals(9824, unescaped.codePointAt(3));\nSystem.assertEquals(9674, unescaped.codePointAt(4));\nSystem.assertEquals(8658, unescaped.codePointAt(5));\nSystem.assertEquals(8721, unescaped.codePointAt(6));\nSystem.assertEquals('&notarealentity;&apos;', '&notarealentity;&apos;'.unescapeHtml4());\nString gumbo = 'gumbo';\nSystem.assertEquals(2, gumbo.getLevenshteinDistance('gambol'));\nSystem.assertEquals(2, gumbo.getLevenshteinDistance('gambol', 2));\nSystem.assertEquals(-1, gumbo.getLevenshteinDistance('gambol', 1));\nSystem.assertEquals(3, String.getLevenshteinDistance('kitten', 'sitting', 3));\nSystem.assertEquals(-1, String.getLevenshteinDistance('kitten', 'sitting', 2));\nSystem.assertEquals(1, 'caf\u00e9'.getLevenshteinDistance('cafe', 1));\n"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}
