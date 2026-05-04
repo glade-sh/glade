@@ -78,6 +78,31 @@ func TestSObjectCRUDAndQuery(t *testing.T) {
 	}
 }
 
+func TestQueryExplainReturnsUnsupportedFeature(t *testing.T) {
+	org := testOrg()
+	addAccountForTest(&org, "001000000000001", "Acme")
+	handler := New(&org)
+
+	for _, path := range []string{
+		"/services/data/v61.0/query?explain=SELECT%20Id%20FROM%20Account",
+		"/services/data/v61.0/query?explain=",
+	} {
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+		assertSalesforceError(t, rec, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", "SOQL query plan explain is not implemented in the local server")
+	}
+
+	normal := httptest.NewRecorder()
+	handler.ServeHTTP(normal, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/query?q=SELECT%20Id,%20Name%20FROM%20Account%20WHERE%20Name%20=%20'Acme'", nil))
+	if normal.Code != http.StatusOK || !bytes.Contains(normal.Body.Bytes(), []byte(`"totalSize":1`)) || !bytes.Contains(normal.Body.Bytes(), []byte(`"Name":"Acme"`)) {
+		t.Fatalf("normal query status = %d body=%s", normal.Code, normal.Body.String())
+	}
+
+	wrongMethod := httptest.NewRecorder()
+	handler.ServeHTTP(wrongMethod, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/query?explain=SELECT%20Id%20FROM%20Account", nil))
+	assertSalesforceError(t, wrongMethod, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
+}
+
 func TestSObjectExternalIDRoutesCRUD(t *testing.T) {
 	org := testOrg()
 	addExternalIDFieldForTest(&org)
