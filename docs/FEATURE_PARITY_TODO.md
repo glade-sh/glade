@@ -669,6 +669,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     tooling routes.
   - [x] Delegate Tooling `queryAll` through the SOQL query handler and return
     explicit unsupported errors for Tooling search probes.
+  - [x] Return Tooling `query`/`queryAll` pagination continuations under
+    `/tooling/query/{locator}` with GET-only queryMore method boundaries.
 - [ ] Add more REST resources used by local integrations and editor tooling.
   - [x] Return a deterministic, conservative `/limits` payload with common
     Salesforce limit names and stable `Max`/`Remaining` fields for local client
@@ -734,6 +736,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     fixture.
   - [x] Cover Tooling `queryAll` SOQL delegation in the server black-box
     fixture.
+  - [x] Cover Tooling `query`/`queryAll` pagination continuations and GET-only
+    queryMore boundaries in the server black-box fixture.
   - [x] Cover generic composite unsupported route shape in the server black-box
     fixture.
   - [x] Cover Composite sObject collection update/delete and typed Composite

@@ -38,6 +38,7 @@ type queryLocatorState struct {
 	records   []storage.Record
 	batchSize int
 	version   string
+	nextPath  string
 }
 
 const (
@@ -146,11 +147,11 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case len(rest) >= 2 && rest[0] == "sobjects":
 		s.handleObject(w, r, parts[2], rest[1:])
 	case len(rest) == 1 && rest[0] == "query":
-		s.handleQuery(w, r, parts[2])
+		s.handleQuery(w, r, parts[2], "query")
 	case len(rest) == 2 && rest[0] == "query":
 		s.handleQueryMore(w, r, rest[1])
 	case len(rest) == 1 && rest[0] == "queryAll":
-		s.handleQuery(w, r, parts[2])
+		s.handleQuery(w, r, parts[2], "query")
 	case len(rest) == 1 && rest[0] == "recent":
 		s.handleRecent(w, r, parts[2])
 	case len(rest) == 1 && rest[0] == "search":
@@ -729,7 +730,9 @@ func (s *Server) handleTooling(w http.ResponseWriter, r *http.Request, version s
 	case len(parts) == 1 && parts[0] == "executeAnonymous":
 		s.handleExecuteAnonymous(w, r)
 	case len(parts) == 1 && (parts[0] == "query" || parts[0] == "queryAll"):
-		s.handleQuery(w, r, version)
+		s.handleQuery(w, r, version, "tooling/query")
+	case len(parts) == 2 && parts[0] == "query":
+		s.handleQueryMore(w, r, parts[1])
 	case len(parts) == 1 && parts[0] == "search":
 		if r.Method != http.MethodGet {
 			writeMethodNotAllowed(w, http.MethodGet)
@@ -1412,7 +1415,7 @@ func (s *Server) persistOrg(org storage.OrgState) error {
 	return s.Store.Save(org)
 }
 
-func (s *Server) handleQuery(w http.ResponseWriter, r *http.Request, version string) {
+func (s *Server) handleQuery(w http.ResponseWriter, r *http.Request, version string, nextPath string) {
 	if r.Method != http.MethodGet {
 		writeMethodNotAllowed(w, http.MethodGet)
 		return
@@ -1440,8 +1443,9 @@ func (s *Server) handleQuery(w http.ResponseWriter, r *http.Request, version str
 		records:   append([]storage.Record(nil), result.Records...),
 		batchSize: batchSize,
 		version:   version,
+		nextPath:  nextPath,
 	})
-	writeJSON(w, http.StatusOK, queryResultPayload(result.Rows, false, result.Records[:batchSize], version, queryNextURL(version, locator, batchSize)))
+	writeJSON(w, http.StatusOK, queryResultPayload(result.Rows, false, result.Records[:batchSize], version, queryNextURL(version, nextPath, locator, batchSize)))
 }
 
 func (s *Server) handleQueryMore(w http.ResponseWriter, r *http.Request, token string) {
@@ -1472,7 +1476,11 @@ func (s *Server) handleQueryMore(w http.ResponseWriter, r *http.Request, token s
 	if done {
 		s.deleteQueryLocator(locator)
 	} else {
-		nextURL = queryNextURL(state.version, locator, end)
+		nextPath := state.nextPath
+		if nextPath == "" {
+			nextPath = "query"
+		}
+		nextURL = queryNextURL(state.version, nextPath, locator, end)
 	}
 	writeJSON(w, http.StatusOK, queryResultPayload(state.totalSize, done, state.records[offset:end], state.version, nextURL))
 }
@@ -1539,8 +1547,11 @@ func (s *Server) deleteQueryLocator(locator string) {
 	}
 }
 
-func queryNextURL(version, locator string, offset int) string {
-	return fmt.Sprintf("/services/data/%s/query/%s-%d", version, locator, offset)
+func queryNextURL(version, nextPath, locator string, offset int) string {
+	if nextPath == "" {
+		nextPath = "query"
+	}
+	return fmt.Sprintf("/services/data/%s/%s/%s-%d", version, nextPath, locator, offset)
 }
 
 func parseQueryLocatorToken(token string) (string, int, bool) {

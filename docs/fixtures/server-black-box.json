@@ -443,6 +443,41 @@
       "contains": ["\"totalSize\":5", "\"done\":false", "\"nextRecordsUrl\":\"/services/data/v61.0/query/oaerql000001-4\""]
     },
     {
+      "name": "tooling-query-pagination-first-page",
+      "method": "GET",
+      "path": "/services/data/v61.0/tooling/query?q=SELECT%20Id,%20Name%20FROM%20Account&batchSize=2",
+      "status": 200,
+      "contains": ["\"totalSize\":5", "\"done\":false", "\"nextRecordsUrl\":\"/services/data/v61.0/tooling/query/oaerql000002-2\""]
+    },
+    {
+      "name": "tooling-query-pagination-method-not-allowed",
+      "method": "POST",
+      "path": "/services/data/v61.0/tooling/query/oaerql000002-2",
+      "status": 405,
+      "contains": ["METHOD_NOT_ALLOWED", "method not allowed"]
+    },
+    {
+      "name": "tooling-query-pagination-query-more",
+      "method": "GET",
+      "path": "/services/data/v61.0/tooling/query/oaerql000002-2",
+      "status": 200,
+      "contains": ["\"totalSize\":5", "\"done\":false", "\"nextRecordsUrl\":\"/services/data/v61.0/tooling/query/oaerql000002-4\""]
+    },
+    {
+      "name": "tooling-queryall-pagination-first-page",
+      "method": "GET",
+      "path": "/services/data/v61.0/tooling/queryAll?q=SELECT%20Id,%20Name%20FROM%20Account&batchSize=2",
+      "status": 200,
+      "contains": ["\"totalSize\":5", "\"done\":false", "\"nextRecordsUrl\":\"/services/data/v61.0/tooling/query/oaerql000003-2\""]
+    },
+    {
+      "name": "tooling-queryall-pagination-query-more",
+      "method": "GET",
+      "path": "/services/data/v61.0/tooling/query/oaerql000003-2",
+      "status": 200,
+      "contains": ["\"totalSize\":5", "\"done\":false", "\"nextRecordsUrl\":\"/services/data/v61.0/tooling/query/oaerql000003-4\""]
+    },
+    {
       "name": "create-account-for-delete-log",
       "method": "POST",
       "path": "/services/data/v61.0/sobjects/Account",
@@ -853,8 +888,8 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 110,
-      "statuses": [200, 200, 405, 405, 200, 200, 200, 200, 405, 501, 501, 501, 501, 200, 405, 201, 200, 200, 200, 200, 200, 400, 200, 501, 501, 501, 501, 405, 404, 501, 501, 501, 501, 405, 404, 501, 501, 501, 405, 404, 400, 200, 501, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 400, 200, 200, 201, 204, 200, 201, 204, 200, 200, 204, 400, 501, 501, 200, 200, 200, 200, 501, 405, 501, 405, 501, 501, 405, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 405, 501, 501, 405, 501, 405, 501, 501, 405, 501, 501, 501, 404, 404, 200, 200, 201],
+      "requests": 115,
+      "statuses": [200, 200, 405, 405, 200, 200, 200, 200, 405, 501, 501, 501, 501, 200, 405, 201, 200, 200, 200, 200, 200, 400, 200, 501, 501, 501, 501, 405, 404, 501, 501, 501, 501, 405, 404, 501, 501, 501, 405, 404, 400, 200, 501, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 400, 200, 200, 200, 405, 200, 200, 200, 201, 204, 200, 201, 204, 200, 200, 204, 400, 501, 501, 200, 200, 200, 200, 501, 405, 501, 405, 501, 501, 405, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 405, 501, 501, 405, 501, 405, 501, 501, 405, 501, 501, 501, 404, 404, 200, 200, 201],
       "users": 2
     }
   }

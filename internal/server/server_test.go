@@ -1436,19 +1436,62 @@ func TestToolingQueryStillDelegatesToSOQL(t *testing.T) {
 	}
 }
 
-func TestToolingQueryAllUsesRequestedVersionForPagination(t *testing.T) {
-	org := testOrg()
-	addAccountForTest(&org, "001000000000001", "Tooling Page 1")
-	addAccountForTest(&org, "001000000000002", "Tooling Page 2")
-	handler := New(&org)
+func TestToolingQueryContinuationUsesToolingPath(t *testing.T) {
+	for _, endpoint := range []string{"query", "queryAll"} {
+		t.Run(endpoint, func(t *testing.T) {
+			org := testOrg()
+			addAccountForTest(&org, "001000000000001", "Tooling Page 1")
+			addAccountForTest(&org, "001000000000002", "Tooling Page 2")
+			handler := New(&org)
 
-	rec := httptest.NewRecorder()
-	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/data/v62.0/tooling/queryAll?q=SELECT%20Id,%20Name%20FROM%20Account&batchSize=1", nil))
-	if rec.Code != http.StatusOK {
-		t.Fatalf("tooling queryAll pagination status = %d body=%s", rec.Code, rec.Body.String())
-	}
-	if !bytes.Contains(rec.Body.Bytes(), []byte(`"done":false`)) || !bytes.Contains(rec.Body.Bytes(), []byte(`"nextRecordsUrl":"/services/data/v62.0/query/oaerql000001-1"`)) {
-		t.Fatalf("tooling queryAll pagination body = %s", rec.Body.String())
+			rec := httptest.NewRecorder()
+			handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/data/v62.0/tooling/"+endpoint+"?q=SELECT%20Id,%20Name%20FROM%20Account&batchSize=1", nil))
+			if rec.Code != http.StatusOK {
+				t.Fatalf("tooling %s pagination status = %d body=%s", endpoint, rec.Code, rec.Body.String())
+			}
+			var firstPayload struct {
+				TotalSize      int                      `json:"totalSize"`
+				Done           bool                     `json:"done"`
+				NextRecordsURL string                   `json:"nextRecordsUrl"`
+				Records        []map[string]interface{} `json:"records"`
+			}
+			if err := json.Unmarshal(rec.Body.Bytes(), &firstPayload); err != nil {
+				t.Fatal(err)
+			}
+			if firstPayload.TotalSize != 2 || firstPayload.Done || len(firstPayload.Records) != 1 {
+				t.Fatalf("tooling %s first payload = %#v", endpoint, firstPayload)
+			}
+			if firstPayload.NextRecordsURL != "/services/data/v62.0/tooling/query/oaerql000001-1" {
+				t.Fatalf("tooling %s nextRecordsUrl = %q", endpoint, firstPayload.NextRecordsURL)
+			}
+
+			disallowed := httptest.NewRecorder()
+			handler.ServeHTTP(disallowed, httptest.NewRequest(http.MethodPost, firstPayload.NextRecordsURL, nil))
+			if disallowed.Code != http.StatusMethodNotAllowed || disallowed.Header().Get("Allow") != http.MethodGet {
+				t.Fatalf("tooling %s queryMore method boundary status=%d allow=%q body=%s", endpoint, disallowed.Code, disallowed.Header().Get("Allow"), disallowed.Body.String())
+			}
+
+			continuation := httptest.NewRecorder()
+			handler.ServeHTTP(continuation, httptest.NewRequest(http.MethodGet, firstPayload.NextRecordsURL, nil))
+			if continuation.Code != http.StatusOK {
+				t.Fatalf("tooling %s queryMore status = %d body=%s", endpoint, continuation.Code, continuation.Body.String())
+			}
+			var nextPayload struct {
+				TotalSize      int                      `json:"totalSize"`
+				Done           bool                     `json:"done"`
+				NextRecordsURL string                   `json:"nextRecordsUrl"`
+				Records        []map[string]interface{} `json:"records"`
+			}
+			if err := json.Unmarshal(continuation.Body.Bytes(), &nextPayload); err != nil {
+				t.Fatal(err)
+			}
+			if nextPayload.TotalSize != 2 || !nextPayload.Done || nextPayload.NextRecordsURL != "" || len(nextPayload.Records) != 1 {
+				t.Fatalf("tooling %s continuation payload = %#v", endpoint, nextPayload)
+			}
+			if !bytes.Contains(continuation.Body.Bytes(), []byte(`"Name":"Tooling Page 2"`)) {
+				t.Fatalf("tooling %s continuation body = %s", endpoint, continuation.Body.String())
+			}
+		})
 	}
 }
 
