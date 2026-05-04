@@ -4948,11 +4948,17 @@ func validateHttpRequest(request Value) error {
 	if !ok || endpoint.Kind != ValueString {
 		return fmt.Errorf("HttpRequest endpoint is required before Http.send")
 	}
+	if strings.TrimSpace(endpoint.Text) == "" {
+		return fmt.Errorf("HttpRequest endpoint is required before Http.send")
+	}
 	if err := validateHttpEndpoint(endpoint.Text); err != nil {
 		return err
 	}
 	method, ok := request.Fields["method"]
 	if !ok || method.Kind != ValueString {
+		return fmt.Errorf("HttpRequest method is required before Http.send")
+	}
+	if strings.TrimSpace(method.Text) == "" {
 		return fmt.Errorf("HttpRequest method is required before Http.send")
 	}
 	if _, err := normalizeHttpMethod(method.Text); err != nil {
@@ -6820,9 +6826,29 @@ func newRestRequest() Value {
 func newPageReference(rawURL string) Value {
 	page := Object("PageReference")
 	page.Fields["url"] = String(rawURL)
-	page.Fields["parameters"] = Map()
-	page.Fields["headers"] = Map()
+	page.Fields["parameters"] = typedMap("Map<String,String>")
+	page.Fields["headers"] = typedMap("Map<String,String>")
 	return page
+}
+
+func newHttpRequest() Value {
+	request := Object("HttpRequest")
+	request.Fields["endpoint"] = String("")
+	request.Fields["method"] = String("")
+	request.Fields["headers"] = typedMap("Map<String,String>")
+	request.Fields["body"] = String("")
+	request.Fields["compressed"] = Bool(false)
+	request.Fields["timeout"] = Int(defaultHttpTimeoutMillis)
+	return request
+}
+
+func newHttpResponse() Value {
+	response := Object("HttpResponse")
+	response.Fields["statusCode"] = Int(200)
+	response.Fields["status"] = String("OK")
+	response.Fields["headers"] = typedMap("Map<String,String>")
+	response.Fields["body"] = String("")
+	return response
 }
 
 func newRestResponse() Value {
@@ -6996,6 +7022,24 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 		return object, nil
 	}
 	switch typeName {
+	case "HttpRequest":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("HttpRequest constructor expects 0 arguments")
+		}
+		request := newHttpRequest()
+		for field, value := range namedArgs {
+			request.Fields[field] = value
+		}
+		return request, nil
+	case "HttpResponse":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("HttpResponse constructor expects 0 arguments")
+		}
+		response := newHttpResponse()
+		for field, value := range namedArgs {
+			response.Fields[field] = value
+		}
+		return response, nil
 	case "RestRequest":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("RestRequest constructor expects 0 arguments")
@@ -10490,9 +10534,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, err
 			}
 			appendTrace(result, "apex.callout.http", "apex.callout", map[string]any{"operation": "Http.send"})
-			response := Object("HttpResponse")
-			response.Fields["statusCode"] = Int(200)
-			response.Fields["body"] = String("")
+			response := newHttpResponse()
 			if vm.testContext != nil && vm.testContext.HTTPMock.Kind == ValueObject {
 				if target, ok := vm.resolveInstanceMethod(vm.testContext.HTTPMock.Type, "respond"); ok {
 					value, err := vm.callMethodWithReceiver(target, vm.testContext.HTTPMock, []Value{args[0]}, &Result{})
@@ -10534,28 +10576,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			return List(), receiver, false, true, nil
 		}
 	case "Messaging.SingleEmailMessage":
-		switch method {
-		case "setToAddresses", "setCcAddresses", "setBccAddresses", "setFileAttachments", "setEntityAttachments", "setDocumentAttachments", "setTargetObjectIds":
-			if len(args) != 1 || args[0].Kind != ValueList {
-				return Null, receiver, false, true, fmt.Errorf("Messaging.SingleEmailMessage.%s expects List", method)
-			}
-			receiver.Fields[singleEmailMessageFieldName(method)] = args[0]
-			return Null, receiver, true, true, nil
-		case "setSubject", "setPlainTextBody", "setHtmlBody", "setReplyTo", "setSenderDisplayName",
-			"setCharset", "setInReplyTo", "setReferences", "setOrgWideEmailAddressId",
-			"setTargetObjectId", "setTemplateId", "setWhatId", "setOptOutPolicy", "setEmailPriority":
-			if len(args) != 1 || args[0].Kind != ValueString {
-				return Null, receiver, false, true, fmt.Errorf("Messaging.SingleEmailMessage.%s expects String", method)
-			}
-			receiver.Fields[singleEmailMessageFieldName(method)] = args[0]
-			return Null, receiver, true, true, nil
-		case "setSaveAsActivity", "setTreatBodiesAsTemplate", "setTreatTargetObjectAsRecipient", "setUseSignature", "setBccSender":
-			if len(args) != 1 || args[0].Kind != ValueBool {
-				return Null, receiver, false, true, fmt.Errorf("Messaging.SingleEmailMessage.%s expects Boolean", method)
-			}
-			receiver.Fields[singleEmailMessageFieldName(method)] = args[0]
-			return Null, receiver, true, true, nil
-		}
+		return callSingleEmailMessageMember(receiver, method, args)
+	case "Messaging.MassEmailMessage":
+		return callMassEmailMessageMember(receiver, method, args)
 	case "Messaging.SendEmailOptions":
 		return Null, receiver, false, true, unsupportedCallError("Messaging.SendEmailOptions." + method + " local messaging send-options surface")
 	case "ApexPages.Message":
@@ -10616,7 +10639,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if value, ok := receiver.Fields["parameters"]; ok {
 				return value, receiver, false, true, nil
 			}
-			params := Map()
+			params := typedMap("Map<String,String>")
 			receiver.Fields["parameters"] = params
 			return params, receiver, true, true, nil
 		case "getHeaders":
@@ -10626,7 +10649,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if value, ok := receiver.Fields["headers"]; ok {
 				return value, receiver, false, true, nil
 			}
-			headers := Map()
+			headers := typedMap("Map<String,String>")
 			receiver.Fields["headers"] = headers
 			return headers, receiver, true, true, nil
 		}
@@ -10753,7 +10776,59 @@ func callRestResponseMember(receiver Value, method string, args []Value) (Value,
 	}
 }
 
-func singleEmailMessageFieldName(method string) string {
+func callSingleEmailMessageMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	switch method {
+	case "setToAddresses", "setCcAddresses", "setBccAddresses", "setFileAttachments", "setEntityAttachments", "setDocumentAttachments", "setTargetObjectIds":
+		if len(args) != 1 || args[0].Kind != ValueList {
+			return Null, receiver, false, true, fmt.Errorf("Messaging.SingleEmailMessage.%s expects List", method)
+		}
+		receiver.Fields[emailMessageFieldName(method)] = args[0]
+		return Null, receiver, true, true, nil
+	case "setSubject", "setPlainTextBody", "setHtmlBody", "setReplyTo", "setSenderDisplayName",
+		"setCharset", "setInReplyTo", "setReferences", "setOrgWideEmailAddressId",
+		"setTargetObjectId", "setTemplateId", "setWhatId", "setOptOutPolicy", "setEmailPriority":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("Messaging.SingleEmailMessage.%s expects String", method)
+		}
+		receiver.Fields[emailMessageFieldName(method)] = args[0]
+		return Null, receiver, true, true, nil
+	case "setSaveAsActivity", "setTreatBodiesAsTemplate", "setTreatTargetObjectAsRecipient", "setUseSignature", "setBccSender":
+		if len(args) != 1 || args[0].Kind != ValueBool {
+			return Null, receiver, false, true, fmt.Errorf("Messaging.SingleEmailMessage.%s expects Boolean", method)
+		}
+		receiver.Fields[emailMessageFieldName(method)] = args[0]
+		return Null, receiver, true, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
+func callMassEmailMessageMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	switch method {
+	case "setTargetObjectIds", "setWhatIds":
+		if len(args) != 1 || args[0].Kind != ValueList {
+			return Null, receiver, false, true, fmt.Errorf("Messaging.MassEmailMessage.%s expects List", method)
+		}
+		receiver.Fields[emailMessageFieldName(method)] = args[0]
+		return Null, receiver, true, true, nil
+	case "setTemplateId", "setDescription", "setOptOutPolicy":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("Messaging.MassEmailMessage.%s expects String", method)
+		}
+		receiver.Fields[emailMessageFieldName(method)] = args[0]
+		return Null, receiver, true, true, nil
+	case "setSaveAsActivity":
+		if len(args) != 1 || args[0].Kind != ValueBool {
+			return Null, receiver, false, true, fmt.Errorf("Messaging.MassEmailMessage.%s expects Boolean", method)
+		}
+		receiver.Fields[emailMessageFieldName(method)] = args[0]
+		return Null, receiver, true, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
+func emailMessageFieldName(method string) string {
 	if !strings.HasPrefix(method, "set") || len(method) <= len("set") {
 		return method
 	}

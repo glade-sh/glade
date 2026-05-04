@@ -462,6 +462,25 @@ System.assertEquals(1, ApexPages.getMessages().size());
 	}
 }
 
+func TestExecPageReferenceLocalMapsStartTypedAndMutable(t *testing.T) {
+	program, err := CompileAnonymous(`
+PageReference blank = new PageReference();
+System.assertEquals('', blank.getUrl());
+System.assertEquals(0, blank.getParameters().size());
+System.assertEquals(0, blank.getHeaders().size());
+blank.getParameters().put('id', '001B000001DVM9t');
+blank.getHeaders().put('Accept', 'text/html');
+System.assertEquals('001B000001DVM9t', blank.getParameters().get('id'));
+System.assertEquals('text/html', blank.getHeaders().get('Accept'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecMessagingResultAndUnsupportedEdges(t *testing.T) {
 	program, err := CompileAnonymous(`
 Messaging.SingleEmailMessage msg = new Messaging.SingleEmailMessage();
@@ -583,6 +602,29 @@ System.assertEquals(0, ApexPages.getMessages().size());
 	machine := New(nil)
 	machine.EnableTestContext()
 	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMessagingMassEmailLocalShape(t *testing.T) {
+	program, err := CompileAnonymous(`
+Messaging.MassEmailMessage mass = new Messaging.MassEmailMessage();
+mass.setTargetObjectIds(new List<String>{'003000000000001', '003000000000002'});
+mass.setWhatIds(new List<String>{'001000000000001'});
+mass.setTemplateId('00X000000000001');
+mass.setDescription('Trail mass email');
+mass.setOptOutPolicy('FILTER');
+mass.setSaveAsActivity(false);
+List<Messaging.SendEmailResult> results = Messaging.sendEmail(new List<Messaging.MassEmailMessage>{mass});
+System.assertEquals(1, Limits.getEmailInvocations());
+System.assertEquals(1, results.size());
+System.assert(results.get(0).isSuccess());
+System.assertEquals(0, results.get(0).getErrors().size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -2414,6 +2456,11 @@ System.assertEquals(1, Limits.getCallouts());
 func TestExecHttpRequestValidationAndHeaderEdges(t *testing.T) {
 	program, err := CompileAnonymous(`
 HttpRequest req = new HttpRequest();
+System.assertEquals('', req.getEndpoint());
+System.assertEquals('', req.getMethod());
+System.assertEquals('', req.getBody());
+System.assertEquals(0, req.getHeaderKeys().size());
+System.assertEquals(false, req.getCompressed());
 System.assertEquals(10000, req.getTimeout());
 req.setEndpoint('callout:NamedCredential/path');
 req.setMethod('post');
@@ -2426,6 +2473,24 @@ req.setBodyAsBlob(Blob.valueOf('blob-body'));
 System.assertEquals('blob-body', req.getBodyAsBlob().toString());
 req.setTimeout(120000);
 System.assertEquals(120000, req.getTimeout());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecHttpResponseConstructorDefaults(t *testing.T) {
+	program, err := CompileAnonymous(`
+HttpResponse res = new HttpResponse();
+System.assertEquals(200, res.getStatusCode());
+System.assertEquals('OK', res.getStatus());
+System.assertEquals('', res.getBody());
+System.assertEquals(0, res.getHeaderKeys().size());
+res.setBodyAsBlob(Blob.valueOf('response-body'));
+System.assertEquals('response-body', res.getBodyAsBlob().toString());
 `)
 	if err != nil {
 		t.Fatal(err)
