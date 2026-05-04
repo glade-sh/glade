@@ -812,6 +812,9 @@ func fieldsFunctionMode(field string) (string, bool) {
 }
 
 func validateQueryReferences(org storage.OrgState, definition storage.ObjectDefinition, query Query, mode string) error {
+	if err := validateAggregateAliases(query); err != nil {
+		return err
+	}
 	for _, field := range query.Fields {
 		aggregate, ok, err := parseAggregateField(field)
 		if err != nil {
@@ -838,6 +841,9 @@ func validateQueryReferences(org storage.OrgState, definition storage.ObjectDefi
 		}
 	}
 	if err := validateConditionReferences(org, definition, query.Where, mode); err != nil {
+		return err
+	}
+	if err := validateHavingReferences(org, definition, query, mode); err != nil {
 		return err
 	}
 	for _, spec := range query.Order {
@@ -883,7 +889,131 @@ func validateAggregateReference(org storage.OrgState, definition storage.ObjectD
 	if aggregate.Field == "" || aggregate.Field == "*" {
 		return nil
 	}
-	return validateFieldReference(org, definition, aggregate.Field, mode)
+	if err := validateFieldReference(org, definition, aggregate.Field, mode); err != nil {
+		return err
+	}
+	if (aggregate.Func == "SUM" || aggregate.Func == "AVG") && !aggregateFieldMayBeNumeric(org, definition, aggregate.Field) {
+		return fmt.Errorf("soql: %s requires numeric field %s", aggregate.Func, aggregate.Field)
+	}
+	return nil
+}
+
+func aggregateFieldMayBeNumeric(org storage.OrgState, definition storage.ObjectDefinition, field string) bool {
+	if field == "" || field == "*" {
+		return true
+	}
+	fields, ok := fieldDefinitionsForReference(org, definition, field)
+	if !ok || len(fields) == 0 {
+		return true
+	}
+	for _, field := range fields {
+		switch field.Type {
+		case storage.FieldAny, storage.FieldInteger, storage.FieldDecimal, storage.FieldCalculated:
+			continue
+		default:
+			return false
+		}
+	}
+	return true
+}
+
+func fieldDefinitionsForReference(org storage.OrgState, definition storage.ObjectDefinition, field string) ([]storage.Field, bool) {
+	if field == "Id" {
+		return []storage.Field{{APIName: "Id", Type: storage.FieldID}}, true
+	}
+	if systemField, ok := systemFieldDefinition(field); ok {
+		return []storage.Field{systemField}, true
+	}
+	if strings.Contains(field, ".") {
+		parts := strings.SplitN(field, ".", 2)
+		for _, relation := range definition.Relations {
+			if relation.ParentRelationship != parts[0] {
+				continue
+			}
+			if len(relation.ParentObjects) == 0 {
+				return nil, false
+			}
+			var out []storage.Field
+			for _, parentName := range relation.ParentObjects {
+				canonical, ok := storage.ResolveObjectName(org, parentName)
+				if !ok {
+					return nil, false
+				}
+				fields, ok := fieldDefinitionsForReference(org, org.Objects[canonical].Definition, parts[1])
+				if !ok {
+					return nil, false
+				}
+				out = append(out, fields...)
+			}
+			return out, len(out) > 0
+		}
+		return nil, false
+	}
+	canonicalField, ok := storage.ResolveFieldName(definition, org.Namespace, field)
+	if !ok {
+		return nil, false
+	}
+	return []storage.Field{definition.Fields[canonicalField]}, true
+}
+
+func systemFieldDefinition(field string) (storage.Field, bool) {
+	switch field {
+	case "CreatedDate", "LastModifiedDate", "SystemModstamp":
+		return storage.Field{APIName: field, Type: storage.FieldDateTime}, true
+	case "CreatedById", "LastModifiedById", "OwnerId":
+		return storage.Field{APIName: field, Type: storage.FieldID}, true
+	case "IsDeleted":
+		return storage.Field{APIName: field, Type: storage.FieldBoolean}, true
+	default:
+		return storage.Field{}, false
+	}
+}
+
+func validateHavingReferences(org storage.OrgState, definition storage.ObjectDefinition, query Query, mode string) error {
+	if query.Having == nil {
+		return nil
+	}
+	return validateAggregateConditionReferences(org, definition, query, *query.Having, mode)
+}
+
+func validateAggregateConditionReferences(org storage.OrgState, definition storage.ObjectDefinition, query Query, condition Condition, mode string) error {
+	if condition.Not {
+		condition.Not = false
+		return validateAggregateConditionReferences(org, definition, query, condition, mode)
+	}
+	for i := range condition.And {
+		if err := validateAggregateConditionReferences(org, definition, query, condition.And[i], mode); err != nil {
+			return err
+		}
+	}
+	for i := range condition.Or {
+		if err := validateAggregateConditionReferences(org, definition, query, condition.Or[i], mode); err != nil {
+			return err
+		}
+	}
+	if condition.Field == "" {
+		return nil
+	}
+	if aggregateOrderFieldKnown(query, condition.Field) {
+		return nil
+	}
+	aggregate, ok, err := parseAggregateField(condition.Field)
+	if err != nil {
+		return err
+	}
+	if ok {
+		if err := validateAggregateReference(org, definition, aggregate, mode); err != nil {
+			return err
+		}
+		return fmt.Errorf("soql: HAVING aggregate field %s must be selected or aliased", condition.Field)
+	}
+	if containsName(query.GroupBy, condition.Field) {
+		return validateFieldReference(org, definition, condition.Field, mode)
+	}
+	if fieldKnown(org, definition, condition.Field) {
+		return fmt.Errorf("soql: HAVING field %s must be grouped or aggregated", condition.Field)
+	}
+	return fieldUnavailableError(condition.Field, mode)
 }
 
 func validateConditionReferences(org storage.OrgState, definition storage.ObjectDefinition, condition *Condition, mode string) error {
@@ -1833,6 +1963,31 @@ func validateAggregateQuery(query Query) error {
 		}
 		if !containsName(query.GroupBy, field) {
 			return fmt.Errorf("soql: field %s must be grouped or aggregated", field)
+		}
+	}
+	return nil
+}
+
+func validateAggregateAliases(query Query) error {
+	seen := map[string]bool{}
+	for _, aggregate := range query.Aggregates {
+		if aggregate.Alias == "" {
+			continue
+		}
+		aliasKey := strings.ToLower(aggregate.Alias)
+		if seen[aliasKey] {
+			return fmt.Errorf("soql: duplicate aggregate alias %s", aggregate.Alias)
+		}
+		seen[aliasKey] = true
+		for exprIndex := range query.Aggregates {
+			if strings.EqualFold(aggregate.Alias, fmt.Sprintf("expr%d", exprIndex)) {
+				return fmt.Errorf("soql: aggregate alias %s conflicts with generated aggregate field", aggregate.Alias)
+			}
+		}
+		for _, groupField := range query.GroupBy {
+			if strings.EqualFold(aggregate.Alias, groupField) {
+				return fmt.Errorf("soql: aggregate alias %s conflicts with grouped field %s", aggregate.Alias, groupField)
+			}
 		}
 	}
 	return nil
