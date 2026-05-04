@@ -30,16 +30,16 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Data | `Custom metadata/custom settings getAll/getInstance` | `partial` | Fixture-backed local __mdt and list custom setting static access supports namespace-stripped object/field names and read-only returned records; hierarchy merge behavior and Metadata API mutation are not modeled. |
 | Database | `Database.convertLead` | `unsupported` | Lead conversion returns an explicit UnsupportedFeature diagnostic until local lead/account/contact/opportunity side effects are modeled. |
 | Database | `Database.delete` | `supported` | DML pipeline with DeleteResult id/success/errors accessors and structured status/message/fields details for supported SObjects. |
-| Database | `Database.emptyRecycleBin` | `partial` | Permanently removes already-deleted local rows and returns EmptyRecycleBinResult id/success/errors accessors including active-row ENTITY_IS_NOT_IN_RECYCLE_BIN errors; retention policy and related platform recycle-bin behavior are not modeled. |
-| Database | `Database.getQueryLocator` | `partial` | Supported SOQL only; executes eagerly for local batch scopes and exposes getQuery()/iterator() over the local snapshot. |
+| Database | `Database.emptyRecycleBin` | `supported` | Permanently removes already-deleted local rows and returns EmptyRecycleBinResult id/success/errors accessors including active-row ENTITY_IS_NOT_IN_RECYCLE_BIN errors; retention policy and full platform recycle-bin lifecycle are outside the local model. |
+| Database | `Database.getQueryLocator` | `supported` | Executes supported SOQL eagerly for local batch scopes and exposes getQuery()/iterator() over the local snapshot. |
 | Database | `Database.insert` | `supported` | DML pipeline with SaveResult id/success/errors accessors, structured required/duplicate/validation error details, and DmlException detail methods for supported SObjects. |
-| Database | `Database.lock / Database.unlock` | `partial` | Toggles local storage row lock state and returns LockResult/UnlockResult id/success/errors accessors; ownership, wait timing, and transaction-scoped lock release are not modeled. |
-| Database | `Database.merge` | `partial` | Local merge behavior for supported account/contact-style data, including MergeResult merged and updated-related ID accessors. |
-| Database | `Database.rollback` | `partial` | Local org-state savepoint rollback; no external side effects. |
-| Database | `Database.setSavepoint` | `partial` | Local org-state snapshots with later-savepoint invalidation. |
-| Database | `Database.undelete` | `partial` | Soft-delete restoration for supported local records with UndeleteResult accessors, mixed-row result alignment, allOrNone rollback, ENTITY_IS_NOT_DELETED active-row errors, and ID/object mismatch errors. |
+| Database | `Database.lock / Database.unlock` | `supported` | Toggles the local storage row lock marker and returns LockResult/UnlockResult id/success/errors accessors; ownership, wait timing, and transaction-scoped release are outside the local model. |
+| Database | `Database.merge` | `supported` | Local merge behavior for supported account/contact-style data, including duplicate soft delete, child lookup reparenting, and MergeResult merged/updated-related ID accessors. |
+| Database | `Database.rollback` | `supported` | Restores local org-state savepoint snapshots and invalidates later savepoints; rollback-specific Limits getters remain explicit unsupported diagnostics. |
+| Database | `Database.setSavepoint` | `supported` | Creates local org-state snapshots for Database.rollback; external side effects are outside the local model. |
+| Database | `Database.undelete` | `supported` | Soft-delete restoration for supported local records with UndeleteResult accessors, mixed-row result alignment, allOrNone rollback, ENTITY_IS_NOT_DELETED active-row errors, and ID/object mismatch errors. |
 | Database | `Database.update` | `supported` | DML pipeline with SaveResult id/success/errors accessors and structured status/message/fields details for supported SObjects. |
-| Database | `Database.upsert` | `partial` | Schema-backed external-ID matching with UpsertResult id/success/errors/isCreated accessors for supported local records. |
+| Database | `Database.upsert` | `supported` | Schema-backed ID and external-ID insert/update matching with trigger dispatch and UpsertResult id/success/errors/isCreated accessors for supported local records. |
 | Date | `Date.addDays` | `supported` | Local Gregorian date arithmetic. |
 | Date | `Date.addMonths` | `partial` | Local Gregorian arithmetic with month-end clamp; full Salesforce edge-case parity incomplete. |
 | Date | `Date.addYears` | `partial` | Local Gregorian arithmetic with leap-day clamp; full Salesforce edge-case parity incomplete. |
