@@ -1,0 +1,28 @@
+{
+  "name": "core-system-debug-invalid-overload",
+  "evidence": [
+    {
+      "symbol": "System.debug",
+      "kind": "exec",
+      "notes": "Invalid two-argument overloads require a LoggingLevel first argument."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "System.debug('INFO', 'message');"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "System.debug('INFO', 'message');"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "Error",
+      "message": "System.debug expects LoggingLevel as first argument"
+    }
+  }
+}

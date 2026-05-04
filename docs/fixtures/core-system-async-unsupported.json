@@ -1,0 +1,28 @@
+{
+  "name": "core-system-async-unsupported",
+  "evidence": [
+    {
+      "symbol": "System.abortJob",
+      "kind": "exec",
+      "notes": "Async scheduling helpers return explicit unsupported diagnostics in the local VM."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "System.abortJob('707000000000001');"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "System.abortJob('707000000000001');"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"System.abortJob local async scheduling surface\""
+    }
+  }
+}
