@@ -60,13 +60,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	rest := parts[3:]
 	if len(parts) == 3 {
-		writeJSON(w, http.StatusOK, map[string]string{
-			"sobjects": "/services/data/" + parts[2] + "/sobjects",
-			"query":    "/services/data/" + parts[2] + "/query",
-			"queryAll": "/services/data/" + parts[2] + "/queryAll",
-			"tooling":  "/services/data/" + parts[2] + "/tooling",
-			"limits":   "/services/data/" + parts[2] + "/limits",
-		})
+		writeJSON(w, http.StatusOK, resourceDiscoveryPayload(parts[2]))
 		return
 	}
 	switch {
@@ -78,6 +72,10 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.handleQuery(w, r)
 	case len(rest) == 1 && rest[0] == "queryAll":
 		s.handleQuery(w, r)
+	case len(rest) == 1 && rest[0] == "recent":
+		s.handleRecent(w, r)
+	case len(rest) == 1 && rest[0] == "search":
+		writeError(w, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", "Search/SOSL is not implemented in the local server")
 	case len(rest) == 1 && rest[0] == "limits":
 		s.handleLimits(w, r)
 	case len(rest) >= 1 && rest[0] == "tooling":
@@ -114,6 +112,14 @@ func (s *Server) handleSObjects(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"sobjects": objects})
+}
+
+func (s *Server) handleRecent(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
+		return
+	}
+	writeJSON(w, http.StatusOK, recentAllPayload(*s.Org))
 }
 
 func (s *Server) handleObject(w http.ResponseWriter, r *http.Request, parts []string) {
@@ -440,14 +446,18 @@ func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, parts [
 			return
 		}
 		records := make([]storage.Record, 0, len(body.Records))
+		referenceIDs := make([]string, 0, len(body.Records))
 		for _, raw := range body.Records {
 			objectName := ""
+			referenceID := ""
 			if attrsRaw, ok := raw["attributes"]; ok {
 				var attrs struct {
-					Type string `json:"type"`
+					Type        string `json:"type"`
+					ReferenceID string `json:"referenceId"`
 				}
 				_ = json.Unmarshal(attrsRaw, &attrs)
 				objectName = attrs.Type
+				referenceID = attrs.ReferenceID
 				delete(raw, "attributes")
 			}
 			if objectName == "" {
@@ -460,6 +470,7 @@ func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, parts [
 				return
 			}
 			records = append(records, record)
+			referenceIDs = append(referenceIDs, referenceID)
 		}
 		next := s.Org.Clone()
 		engine := dml.NewEngine(&next)
@@ -474,7 +485,7 @@ func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, parts [
 			}
 		}
 		if body.AllOrNone && hasFailure {
-			writeJSON(w, http.StatusBadRequest, compositeResults(results))
+			writeJSON(w, http.StatusBadRequest, compositeResults(results, referenceIDs))
 			return
 		}
 		if hasSuccess {
@@ -483,7 +494,11 @@ func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, parts [
 				return
 			}
 		}
-		writeJSON(w, http.StatusOK, compositeResults(results))
+		writeJSON(w, http.StatusOK, compositeResults(results, referenceIDs))
+		return
+	}
+	if len(parts) >= 1 && (parts[0] == "batch" || parts[0] == "tree" || parts[0] == "graph") {
+		writeError(w, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", "Composite "+parts[0]+" is not implemented in the local server")
 		return
 	}
 	if len(parts) == 1 && parts[0] == "sobjects" {
@@ -704,10 +719,44 @@ func recentPayload(object storage.ObjectState) []map[string]any {
 	return out
 }
 
-func compositeResults(results []dml.Result) []map[string]any {
+func recentAllPayload(org storage.OrgState) []map[string]any {
+	out := make([]map[string]any, 0)
+	for _, object := range org.Objects {
+		out = append(out, recentPayload(object)...)
+	}
+	sort.Slice(out, func(i, j int) bool {
+		left, _ := out[i]["Id"].(string)
+		right, _ := out[j]["Id"].(string)
+		return left > right
+	})
+	if len(out) > 25 {
+		out = out[:25]
+	}
+	return out
+}
+
+func resourceDiscoveryPayload(version string) map[string]string {
+	base := "/services/data/" + version
+	return map[string]string{
+		"composite": base + "/composite",
+		"limits":    base + "/limits",
+		"oaer":      base + "/oaer",
+		"query":     base + "/query",
+		"queryAll":  base + "/queryAll",
+		"recent":    base + "/recent",
+		"search":    base + "/search",
+		"sobjects":  base + "/sobjects",
+		"tooling":   base + "/tooling",
+	}
+}
+
+func compositeResults(results []dml.Result, referenceIDs []string) []map[string]any {
 	out := make([]map[string]any, 0, len(results))
-	for _, result := range results {
+	for i, result := range results {
 		row := map[string]any{"id": result.ID, "success": result.Success, "errors": []map[string]string{}}
+		if i < len(referenceIDs) && referenceIDs[i] != "" {
+			row["referenceId"] = referenceIDs[i]
+		}
 		if !result.Success {
 			row["errors"] = []map[string]string{{"statusCode": salesforceErrorCode(errDMLFailure), "message": result.Error}}
 		}
