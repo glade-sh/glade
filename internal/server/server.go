@@ -231,7 +231,12 @@ func (s *Server) handleRecent(w http.ResponseWriter, r *http.Request, version st
 		writeMethodNotAllowed(w, http.MethodGet)
 		return
 	}
-	writeJSON(w, http.StatusOK, recentAllPayload(*s.Org, version))
+	limit, err := recentLimit(r)
+	if err != nil {
+		writeSalesforceError(w, errMalformedQuery, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, recentAllPayload(*s.Org, version, limit))
 }
 
 func (s *Server) handleObject(w http.ResponseWriter, r *http.Request, version string, parts []string) {
@@ -277,7 +282,12 @@ func (s *Server) handleObject(w http.ResponseWriter, r *http.Request, version st
 			writeSalesforceError(w, errUnknownObject)
 			return
 		}
-		writeJSON(w, http.StatusOK, recentPayload(object, version))
+		limit, err := recentLimit(r)
+		if err != nil {
+			writeSalesforceError(w, errMalformedQuery, err.Error())
+			return
+		}
+		writeJSON(w, http.StatusOK, recentPayload(object, version, limit))
 	case len(parts) == 2 && (parts[1] == "updated" || parts[1] == "deleted"):
 		object, ok := s.Org.Objects[objectName]
 		if !ok {
@@ -2164,7 +2174,24 @@ func storageValueJSON(value storage.Value) any {
 	}
 }
 
-func recentPayload(object storage.ObjectState, version string) []map[string]any {
+const (
+	defaultRecentLimit = 25
+	maxRecentLimit     = 200
+)
+
+func recentLimit(r *http.Request) (int, error) {
+	raw := r.URL.Query().Get("limit")
+	if raw == "" {
+		return defaultRecentLimit, nil
+	}
+	limit, err := strconv.Atoi(raw)
+	if err != nil || limit <= 0 || limit > maxRecentLimit {
+		return 0, fmt.Errorf("limit must be a positive integer no greater than 200")
+	}
+	return limit, nil
+}
+
+func recentPayload(object storage.ObjectState, version string, limit int) []map[string]any {
 	ids := make([]string, 0, len(object.Records))
 	for id, record := range object.Records {
 		if record.System.IsDeleted {
@@ -2173,8 +2200,8 @@ func recentPayload(object storage.ObjectState, version string) []map[string]any 
 		ids = append(ids, string(id))
 	}
 	sort.Sort(sort.Reverse(sort.StringSlice(ids)))
-	if len(ids) > 25 {
-		ids = ids[:25]
+	if len(ids) > limit {
+		ids = ids[:limit]
 	}
 	out := make([]map[string]any, 0, len(ids))
 	for _, id := range ids {
@@ -2372,18 +2399,18 @@ func parseRESTTimestamp(value string) (time.Time, error) {
 	return time.Time{}, fmt.Errorf("malformed date")
 }
 
-func recentAllPayload(org storage.OrgState, version string) []map[string]any {
+func recentAllPayload(org storage.OrgState, version string, limit int) []map[string]any {
 	out := make([]map[string]any, 0)
 	for _, object := range org.Objects {
-		out = append(out, recentPayload(object, version)...)
+		out = append(out, recentPayload(object, version, limit)...)
 	}
 	sort.Slice(out, func(i, j int) bool {
 		left, _ := out[i]["Id"].(string)
 		right, _ := out[j]["Id"].(string)
 		return left > right
 	})
-	if len(out) > 25 {
-		out = out[:25]
+	if len(out) > limit {
+		out = out[:limit]
 	}
 	return out
 }
