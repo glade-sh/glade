@@ -1116,6 +1116,31 @@ System.assertEquals('2024-07-01T08:00:00-04:00', summer.format());
 	if _, err := easternMachine.Execute(easternProgram); err != nil {
 		t.Fatal(err)
 	}
+
+	denverProgram, err := CompileAnonymous(`
+Datetime winter = Datetime.valueOfGmt('2024-02-29T23:05:06Z');
+Datetime summer = Datetime.valueOfGmt('2024-07-01T12:00:00Z');
+TimeZone mountain = UserInfo.getTimeZone();
+System.assertEquals('America/Denver', mountain.getID());
+System.assertEquals(-25200000, mountain.getOffset(winter));
+System.assertEquals(-21600000, mountain.getOffset(summer));
+System.assertEquals('2024-02-29 16:05:06 -0700 MST', winter.format('yyyy-MM-dd HH:mm:ss Z z'));
+System.assertEquals('2024-07-01T06:00:00-06:00', summer.format());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	denverMachine := New(nil)
+	denverMachine.SetCurrentUser(storage.Record{
+		ID:     "005-denver-user",
+		Object: "User",
+		Fields: map[string]storage.Value{
+			"TimeZoneSidKey": storage.StringValue("America/Denver"),
+		},
+	})
+	if _, err := denverMachine.Execute(denverProgram); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestExecLocalCurrentUserContextDoesNotEnableRunAs(t *testing.T) {
@@ -1462,6 +1487,36 @@ System.assertEquals('America/New_York', eastern.getID());
 System.assertEquals('America/New_York', eastern.getDisplayName());
 System.assertEquals(-18000000, eastern.getOffset(gmt));
 System.assertEquals(-14400000, eastern.getOffset(summerNoon));
+TimeZone central = TimeZone.getTimeZone('America/Chicago');
+System.assertEquals('America/Chicago', central.getID());
+System.assertEquals('America/Chicago', central.getDisplayName());
+System.assertEquals(-21600000, central.getOffset(gmt));
+System.assertEquals(-18000000, central.getOffset(summerNoon));
+TimeZone mountain = TimeZone.getTimeZone('America/Denver');
+System.assertEquals('America/Denver', mountain.getID());
+System.assertEquals('America/Denver', mountain.getDisplayName());
+System.assertEquals(-25200000, mountain.getOffset(gmt));
+System.assertEquals(-21600000, mountain.getOffset(summerNoon));
+TimeZone london = TimeZone.getTimeZone('Europe/London');
+System.assertEquals('Europe/London', london.getID());
+System.assertEquals('Europe/London', london.getDisplayName());
+System.assertEquals(0, london.getOffset(gmt));
+System.assertEquals(3600000, london.getOffset(summerNoon));
+TimeZone berlin = TimeZone.getTimeZone('Europe/Berlin');
+System.assertEquals('Europe/Berlin', berlin.getID());
+System.assertEquals('Europe/Berlin', berlin.getDisplayName());
+System.assertEquals(3600000, berlin.getOffset(gmt));
+System.assertEquals(7200000, berlin.getOffset(summerNoon));
+TimeZone tokyo = TimeZone.getTimeZone('Asia/Tokyo');
+System.assertEquals('Asia/Tokyo', tokyo.getID());
+System.assertEquals('Asia/Tokyo', tokyo.getDisplayName());
+System.assertEquals(32400000, tokyo.getOffset(gmt));
+System.assertEquals(32400000, tokyo.getOffset(summerNoon));
+TimeZone sydney = TimeZone.getTimeZone('Australia/Sydney');
+System.assertEquals('Australia/Sydney', sydney.getID());
+System.assertEquals('Australia/Sydney', sydney.getDisplayName());
+System.assertEquals(39600000, sydney.getOffset(gmt));
+System.assertEquals(36000000, sydney.getOffset(summerNoon));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1484,6 +1539,49 @@ Datetime summer = Datetime.valueOfGmt('2024-07-01T12:00:00Z');
 System.assertEquals('2024-07-01 05:00:00 -0700 PDT', summer.format('yyyy-MM-dd HH:mm:ss Z z', 'America/Los_Angeles'));
 System.assertEquals('2024-02-29 18:05:06 -0500 EST', stamp.format('yyyy-MM-dd HH:mm:ss Z z', 'America/New_York'));
 System.assertEquals('2024-07-01 08:00:00 -0400 EDT', summer.format('yyyy-MM-dd HH:mm:ss Z z', 'America/New_York'));
+System.assertEquals('2024-02-29 17:05:06 -0600 CST', stamp.format('yyyy-MM-dd HH:mm:ss Z z', 'America/Chicago'));
+System.assertEquals('2024-07-01 07:00:00 -0500 CDT', summer.format('yyyy-MM-dd HH:mm:ss Z z', 'America/Chicago'));
+System.assertEquals('2024-02-29 16:05:06 -0700 MST', stamp.format('yyyy-MM-dd HH:mm:ss Z z', 'America/Denver'));
+System.assertEquals('2024-07-01 06:00:00 -0600 MDT', summer.format('yyyy-MM-dd HH:mm:ss Z z', 'America/Denver'));
+System.assertEquals('2024-02-29 23:05:06 +0000 GMT', stamp.format('yyyy-MM-dd HH:mm:ss Z z', 'Europe/London'));
+System.assertEquals('2024-07-01 13:00:00 +0100 BST', summer.format('yyyy-MM-dd HH:mm:ss Z z', 'Europe/London'));
+System.assertEquals('2024-03-01 00:05:06 +0100 CET', stamp.format('yyyy-MM-dd HH:mm:ss Z z', 'Europe/Berlin'));
+System.assertEquals('2024-07-01 14:00:00 +0200 CEST', summer.format('yyyy-MM-dd HH:mm:ss Z z', 'Europe/Berlin'));
+System.assertEquals('2024-03-01 08:05:06 +0900 JST', stamp.format('yyyy-MM-dd HH:mm:ss Z z', 'Asia/Tokyo'));
+System.assertEquals('2024-07-01 21:00:00 +0900 JST', summer.format('yyyy-MM-dd HH:mm:ss Z z', 'Asia/Tokyo'));
+System.assertEquals('2024-03-01 10:05:06 +1100 AEDT', stamp.format('yyyy-MM-dd HH:mm:ss Z z', 'Australia/Sydney'));
+System.assertEquals('2024-07-01 22:00:00 +1000 AEST', summer.format('yyyy-MM-dd HH:mm:ss Z z', 'Australia/Sydney'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecNamedTimeZoneDSTBoundaries(t *testing.T) {
+	program, err := CompileAnonymous(`
+TimeZone central = TimeZone.getTimeZone('America/Chicago');
+System.assertEquals(-21600000, central.getOffset(Datetime.valueOfGmt('2024-03-10T07:59:59Z')));
+System.assertEquals(-18000000, central.getOffset(Datetime.valueOfGmt('2024-03-10T08:00:00Z')));
+System.assertEquals(-18000000, central.getOffset(Datetime.valueOfGmt('2024-11-03T06:59:59Z')));
+System.assertEquals(-21600000, central.getOffset(Datetime.valueOfGmt('2024-11-03T07:00:00Z')));
+
+TimeZone london = TimeZone.getTimeZone('Europe/London');
+System.assertEquals(0, london.getOffset(Datetime.valueOfGmt('2024-03-31T00:59:59Z')));
+System.assertEquals(3600000, london.getOffset(Datetime.valueOfGmt('2024-03-31T01:00:00Z')));
+System.assertEquals(3600000, london.getOffset(Datetime.valueOfGmt('2024-10-27T00:59:59Z')));
+System.assertEquals(0, london.getOffset(Datetime.valueOfGmt('2024-10-27T01:00:00Z')));
+
+TimeZone sydney = TimeZone.getTimeZone('Australia/Sydney');
+System.assertEquals(39600000, sydney.getOffset(Datetime.valueOfGmt('2024-04-06T15:59:59Z')));
+System.assertEquals(36000000, sydney.getOffset(Datetime.valueOfGmt('2024-04-06T16:00:00Z')));
+System.assertEquals(36000000, sydney.getOffset(Datetime.valueOfGmt('2024-10-05T15:59:59Z')));
+System.assertEquals(39600000, sydney.getOffset(Datetime.valueOfGmt('2024-10-05T16:00:00Z')));
+
+Datetime stamp = Datetime.valueOfGmt('2024-03-31T01:00:00Z');
+System.assertEquals('2024-03-31 02:00:00 +0100 BST', stamp.format('yyyy-MM-dd HH:mm:ss Z z', 'Europe/London'));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1501,7 +1599,7 @@ func TestExecDatetimePatternFormattingRejectsUnsupportedEdges(t *testing.T) {
 	}{
 		{
 			name: "unknown named timezone",
-			src:  `Datetime stamp = Datetime.now(); stamp.format('yyyy-MM-dd', 'America/Denver');`,
+			src:  `Datetime stamp = Datetime.now(); stamp.format('yyyy-MM-dd', 'America/Phoenix');`,
 			want: "unsupported call",
 		},
 		{

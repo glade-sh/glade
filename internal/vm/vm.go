@@ -4597,7 +4597,8 @@ func fixedTimeZone(id string) (Value, error) {
 			return Null, unsupportedCallError("TimeZone.getTimeZone " + id)
 		}
 		canonical = id
-		locationName = location.String()
+		offset = location.standardOffset
+		locationName = location.id
 	} else if canonical == "UTC" {
 		locationName = "UTC"
 	}
@@ -4608,32 +4609,44 @@ func fixedTimeZone(id string) (Value, error) {
 	return out, nil
 }
 
-func supportedNamedTimeZone(id string) (*time.Location, bool) {
-	switch id {
-	case "America/Los_Angeles", "America/New_York":
-		location, err := time.LoadLocation(id)
-		if err != nil {
-			return nil, false
-		}
-		return location, true
-	default:
-		return nil, false
-	}
+type modeledTimeZone struct {
+	id             string
+	standardOffset time.Duration
+	daylightOffset time.Duration
+	standardLabel  string
+	daylightLabel  string
+	daylightRule   string
+}
+
+var supportedNamedTimeZones = map[string]modeledTimeZone{
+	"America/Los_Angeles": {id: "America/Los_Angeles", standardOffset: -8 * time.Hour, daylightOffset: -7 * time.Hour, standardLabel: "PST", daylightLabel: "PDT", daylightRule: "us"},
+	"America/New_York":    {id: "America/New_York", standardOffset: -5 * time.Hour, daylightOffset: -4 * time.Hour, standardLabel: "EST", daylightLabel: "EDT", daylightRule: "us"},
+	"America/Chicago":     {id: "America/Chicago", standardOffset: -6 * time.Hour, daylightOffset: -5 * time.Hour, standardLabel: "CST", daylightLabel: "CDT", daylightRule: "us"},
+	"America/Denver":      {id: "America/Denver", standardOffset: -7 * time.Hour, daylightOffset: -6 * time.Hour, standardLabel: "MST", daylightLabel: "MDT", daylightRule: "us"},
+	"Europe/London":       {id: "Europe/London", standardOffset: 0, daylightOffset: time.Hour, standardLabel: "GMT", daylightLabel: "BST", daylightRule: "europe"},
+	"Europe/Berlin":       {id: "Europe/Berlin", standardOffset: time.Hour, daylightOffset: 2 * time.Hour, standardLabel: "CET", daylightLabel: "CEST", daylightRule: "europe"},
+	"Asia/Tokyo":          {id: "Asia/Tokyo", standardOffset: 9 * time.Hour, standardLabel: "JST"},
+	"Australia/Sydney":    {id: "Australia/Sydney", standardOffset: 10 * time.Hour, daylightOffset: 11 * time.Hour, standardLabel: "AEST", daylightLabel: "AEDT", daylightRule: "sydney"},
+}
+
+func supportedNamedTimeZone(id string) (modeledTimeZone, bool) {
+	location, ok := supportedNamedTimeZones[id]
+	return location, ok
 }
 
 func resolveTimeZoneForInstant(id string, instant time.Time) (string, time.Duration, time.Time, string, bool) {
 	canonical, offset, ok := parseFixedTimeZoneID(id)
 	if ok {
-		local := instant.UTC().Add(offset)
+		local := instant.UTC().In(time.FixedZone(canonical, int(offset/time.Second)))
 		return canonical, offset, local, canonical, true
 	}
 	location, ok := supportedNamedTimeZone(id)
 	if !ok {
 		return "", 0, time.Time{}, "", false
 	}
-	local := instant.UTC().In(location)
-	label, seconds := local.Zone()
-	return id, time.Duration(seconds) * time.Second, local, label, true
+	offset, label := location.offsetAt(instant)
+	local := instant.UTC().In(time.FixedZone(label, int(offset/time.Second)))
+	return id, offset, local, label, true
 }
 
 func timeZoneOffsetMillis(receiver Value, instant time.Time) (Value, error) {
@@ -4643,14 +4656,57 @@ func timeZoneOffsetMillis(receiver Value, instant time.Time) (Value, error) {
 		if !ok {
 			return Null, unsupportedCallError("TimeZone.getOffset " + locationValue.Text)
 		}
-		_, seconds := instant.UTC().In(location).Zone()
-		return Int(int64(seconds * 1000)), nil
+		offset, _ := location.offsetAt(instant)
+		return Int(int64(offset / time.Millisecond)), nil
 	}
 	offsetValue := receiver.Fields["offsetMillis"]
 	if offsetValue.Kind != ValueInt {
 		return Null, fmt.Errorf("TimeZone offset is missing")
 	}
 	return offsetValue, nil
+}
+
+func (zone modeledTimeZone) offsetAt(instant time.Time) (time.Duration, string) {
+	if zone.daylightRule == "" || !zone.isDaylight(instant.UTC()) {
+		return zone.standardOffset, zone.standardLabel
+	}
+	return zone.daylightOffset, zone.daylightLabel
+}
+
+func (zone modeledTimeZone) isDaylight(instant time.Time) bool {
+	year := instant.Year()
+	switch zone.daylightRule {
+	case "us":
+		start := localRuleTransitionUTC(year, time.March, nthWeekdayOfMonth(year, time.March, time.Sunday, 2), 2, zone.standardOffset)
+		end := localRuleTransitionUTC(year, time.November, nthWeekdayOfMonth(year, time.November, time.Sunday, 1), 2, zone.daylightOffset)
+		return !instant.Before(start) && instant.Before(end)
+	case "europe":
+		start := time.Date(year, time.March, lastWeekdayOfMonth(year, time.March, time.Sunday), 1, 0, 0, 0, time.UTC)
+		end := time.Date(year, time.October, lastWeekdayOfMonth(year, time.October, time.Sunday), 1, 0, 0, 0, time.UTC)
+		return !instant.Before(start) && instant.Before(end)
+	case "sydney":
+		start := localRuleTransitionUTC(year, time.October, nthWeekdayOfMonth(year, time.October, time.Sunday, 1), 2, zone.standardOffset)
+		end := localRuleTransitionUTC(year, time.April, nthWeekdayOfMonth(year, time.April, time.Sunday, 1), 3, zone.daylightOffset)
+		return !instant.Before(start) || instant.Before(end)
+	default:
+		return false
+	}
+}
+
+func localRuleTransitionUTC(year int, month time.Month, day, hour int, offsetBefore time.Duration) time.Time {
+	return time.Date(year, month, day, hour, 0, 0, 0, time.UTC).Add(-offsetBefore)
+}
+
+func nthWeekdayOfMonth(year int, month time.Month, weekday time.Weekday, n int) int {
+	first := time.Date(year, month, 1, 0, 0, 0, 0, time.UTC)
+	delta := (int(weekday) - int(first.Weekday()) + 7) % 7
+	return 1 + delta + 7*(n-1)
+}
+
+func lastWeekdayOfMonth(year int, month time.Month, weekday time.Weekday) int {
+	last := time.Date(year, month+1, 0, 0, 0, 0, 0, time.UTC)
+	delta := (int(last.Weekday()) - int(weekday) + 7) % 7
+	return last.Day() - delta
 }
 
 func parseFixedTimeZoneID(id string) (string, time.Duration, bool) {
