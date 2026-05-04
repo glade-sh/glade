@@ -838,6 +838,10 @@ a Salesforce-shaped local API server without silently wrong behavior.
     `/tooling/query/{locator}` with GET-only queryMore method boundaries.
   - [x] Return a conservative Tooling root discovery payload and pin Apex test
     run/suite Tooling records as explicit unsupported local stubs.
+  - [x] Fence Tooling metadata/test orchestration write probes with JSON body
+    validation, read-only Apex test result method boundaries, Apex test queue
+    required-field errors, and explicit unsupported responses for container and
+    test-run route families.
 - [ ] Add more REST resources used by local integrations and editor tooling.
   - [x] Return a deterministic, conservative `/limits` payload with common
     Salesforce limit names and stable `Max`/`Remaining` fields for local client
@@ -938,6 +942,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Cover Tooling/Bulk root discovery, conservative OpenID identity shapes,
     empty list-view collection stubs, and Apex test Tooling record stubs in the
     server black-box fixture.
+  - [x] Cover grouped Tooling metadata container, container async request, Apex
+    test queue/result, query method, and run-tests orchestration boundaries in
+    the server black-box fixture.
 
 ## 9. Compatibility, Hardening, And Release
 

@@ -1616,6 +1616,31 @@ func TestToolingCommonRoutesReturnStableUnsupportedErrors(t *testing.T) {
 	}
 }
 
+func TestToolingTestOrchestrationStubsValidateBodies(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	queue := httptest.NewRecorder()
+	handler.ServeHTTP(queue, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/tooling/sobjects/ApexTestQueueItem", strings.NewReader(`{"ApexClassId":"01p000000000001"}`)))
+	assertSalesforceError(t, queue, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", "Tooling ApexTestQueueItem object collection")
+
+	missingClass := httptest.NewRecorder()
+	handler.ServeHTTP(missingClass, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/tooling/sobjects/ApexTestQueueItem", strings.NewReader(`{}`)))
+	assertSalesforceError(t, missingClass, http.StatusBadRequest, "REQUIRED_FIELD_MISSING", "ApexTestQueueItem.ApexClassId is required")
+
+	malformedQueue := httptest.NewRecorder()
+	handler.ServeHTTP(malformedQueue, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/tooling/sobjects/ApexTestQueueItem", strings.NewReader(`{"ApexClassId":`)))
+	assertSalesforceError(t, malformedQueue, http.StatusBadRequest, "JSON_PARSER_ERROR", "unexpected EOF")
+
+	runTests := httptest.NewRecorder()
+	handler.ServeHTTP(runTests, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/tooling/runTestsAsynchronous", strings.NewReader(`{"tests":[{"classId":"01p000000000001","testMethods":["testOne"]}]}`)))
+	assertSalesforceError(t, runTests, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", "Tooling runTestsAsynchronous")
+
+	malformedRunTests := httptest.NewRecorder()
+	handler.ServeHTTP(malformedRunTests, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/tooling/runTestsSynchronous", strings.NewReader(`{"tests":`)))
+	assertSalesforceError(t, malformedRunTests, http.StatusBadRequest, "JSON_PARSER_ERROR", "unexpected EOF")
+}
+
 func TestToolingQueryStillDelegatesToSOQL(t *testing.T) {
 	org := testOrg()
 	addAccountForTest(&org, "001000000000001", "Tooling Query")
@@ -1780,11 +1805,35 @@ func TestToolingCommonRoutesMethodHandling(t *testing.T) {
 	if rec.Code != http.StatusMethodNotAllowed {
 		t.Fatalf("tooling ApexLog collection method status = %d body=%s", rec.Code, rec.Body.String())
 	}
-	if got := rec.Header().Get("Allow"); got != "GET, POST" {
+	if got := rec.Header().Get("Allow"); got != http.MethodGet {
 		t.Fatalf("tooling ApexLog collection Allow = %q", got)
 	}
 	if !bytes.Contains(rec.Body.Bytes(), []byte(`"errorCode":"METHOD_NOT_ALLOWED"`)) {
 		t.Fatalf("tooling ApexLog collection method shape = %s", rec.Body.String())
+	}
+
+	rec = httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/tooling/sobjects/ApexTestResult", strings.NewReader(`{}`)))
+	if rec.Code != http.StatusMethodNotAllowed {
+		t.Fatalf("tooling ApexTestResult collection method status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if got := rec.Header().Get("Allow"); got != http.MethodGet {
+		t.Fatalf("tooling ApexTestResult collection Allow = %q", got)
+	}
+	if !bytes.Contains(rec.Body.Bytes(), []byte(`"errorCode":"METHOD_NOT_ALLOWED"`)) {
+		t.Fatalf("tooling ApexTestResult collection method shape = %s", rec.Body.String())
+	}
+
+	rec = httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPatch, "/services/data/v61.0/tooling/sobjects/ApexTestResult/07M000000000001", strings.NewReader(`{}`)))
+	if rec.Code != http.StatusMethodNotAllowed {
+		t.Fatalf("tooling ApexTestResult record method status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if got := rec.Header().Get("Allow"); got != http.MethodGet {
+		t.Fatalf("tooling ApexTestResult record Allow = %q", got)
+	}
+	if !bytes.Contains(rec.Body.Bytes(), []byte(`"errorCode":"METHOD_NOT_ALLOWED"`)) {
+		t.Fatalf("tooling ApexTestResult record method shape = %s", rec.Body.String())
 	}
 
 	rec = httptest.NewRecorder()

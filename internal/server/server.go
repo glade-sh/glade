@@ -773,9 +773,9 @@ func (s *Server) handleTooling(w http.ResponseWriter, r *http.Request, version s
 		}
 		writeSalesforceError(w, errUnsupportedFeature, "Tooling sObject describe for "+parts[1]+" is not implemented in the local server")
 	case len(parts) == 2 && parts[0] == "sobjects" && isToolingMetadataObject(parts[1]):
-		writeUnsupportedToolingMetadata(w, r, parts[1], "object collection", http.MethodGet, http.MethodPost)
+		writeUnsupportedToolingMetadata(w, r, parts[1], "object collection", toolingCollectionMethods(parts[1])...)
 	case len(parts) >= 3 && parts[0] == "sobjects" && isToolingMetadataObject(parts[1]):
-		writeUnsupportedToolingMetadata(w, r, parts[1], "object record", http.MethodGet, http.MethodPatch, http.MethodDelete)
+		writeUnsupportedToolingMetadata(w, r, parts[1], "object record", toolingRecordMethods(parts[1])...)
 	case len(parts) == 1 && parts[0] == "completions":
 		if r.Method != http.MethodGet {
 			writeMethodNotAllowed(w, http.MethodGet)
@@ -783,11 +783,7 @@ func (s *Server) handleTooling(w http.ResponseWriter, r *http.Request, version s
 		}
 		writeSalesforceError(w, errUnsupportedFeature, "Tooling completions are not implemented in the local server")
 	case len(parts) == 1 && (parts[0] == "runTestsAsynchronous" || parts[0] == "runTestsSynchronous"):
-		if r.Method != http.MethodPost {
-			writeMethodNotAllowed(w, http.MethodPost)
-			return
-		}
-		writeSalesforceError(w, errUnsupportedFeature, "Tooling "+parts[0]+" is not implemented in the local server; use oaer test for local Apex test execution")
+		writeUnsupportedToolingTestRun(w, r, parts[0])
 	case len(parts) == 1 && parts[0] == "coverage":
 		if r.Method != http.MethodGet {
 			writeMethodNotAllowed(w, http.MethodGet)
@@ -825,14 +821,91 @@ func isToolingMetadataObject(name string) bool {
 	}
 }
 
+func toolingCollectionMethods(objectName string) []string {
+	if isToolingReadOnlyObject(objectName) {
+		return []string{http.MethodGet}
+	}
+	return []string{http.MethodGet, http.MethodPost}
+}
+
+func toolingRecordMethods(objectName string) []string {
+	if isToolingReadOnlyObject(objectName) {
+		return []string{http.MethodGet}
+	}
+	return []string{http.MethodGet, http.MethodPatch, http.MethodDelete}
+}
+
+func isToolingReadOnlyObject(name string) bool {
+	switch name {
+	case "ApexLog",
+		"ApexTestResult",
+		"ApexCodeCoverage",
+		"ApexCodeCoverageAggregate",
+		"ApexOrgWideCoverage",
+		"ApexTestRunResult":
+		return true
+	default:
+		return false
+	}
+}
+
 func writeUnsupportedToolingMetadata(w http.ResponseWriter, r *http.Request, objectName, scope string, allowed ...string) {
 	for _, method := range allowed {
 		if r.Method == method {
+			if !validateToolingMetadataRequest(w, r, objectName, scope) {
+				return
+			}
 			writeSalesforceError(w, errUnsupportedFeature, "Tooling "+objectName+" "+scope+" access is not implemented in the local server")
 			return
 		}
 	}
 	writeMethodNotAllowed(w, allowed...)
+}
+
+func validateToolingMetadataRequest(w http.ResponseWriter, r *http.Request, objectName, scope string) bool {
+	if r.Method != http.MethodPost && r.Method != http.MethodPatch && r.Method != http.MethodDelete {
+		return true
+	}
+	body, ok := decodeOptionalJSONObject(w, r)
+	if !ok {
+		return false
+	}
+	if objectName == "ApexTestQueueItem" && scope == "object collection" && r.Method == http.MethodPost {
+		if _, ok := body["ApexClassId"]; !ok {
+			writeSalesforceError(w, errRequiredFieldMissing, "ApexTestQueueItem.ApexClassId is required")
+			return false
+		}
+	}
+	return true
+}
+
+func writeUnsupportedToolingTestRun(w http.ResponseWriter, r *http.Request, endpoint string) {
+	if r.Method != http.MethodPost {
+		writeMethodNotAllowed(w, http.MethodPost)
+		return
+	}
+	if _, ok := decodeOptionalJSONObject(w, r); !ok {
+		return
+	}
+	writeSalesforceError(w, errUnsupportedFeature, "Tooling "+endpoint+" is not implemented in the local server; use oaer test for local Apex test execution")
+}
+
+func decodeOptionalJSONObject(w http.ResponseWriter, r *http.Request) (map[string]json.RawMessage, bool) {
+	if r.Body == nil || r.Body == http.NoBody {
+		return map[string]json.RawMessage{}, true
+	}
+	var body map[string]json.RawMessage
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		if err == io.EOF {
+			return map[string]json.RawMessage{}, true
+		}
+		writeSalesforceError(w, errMalformedJSON, err.Error())
+		return nil, false
+	}
+	if body == nil {
+		body = map[string]json.RawMessage{}
+	}
+	return body, true
 }
 
 func (s *Server) handleBulkJobs(w http.ResponseWriter, r *http.Request, version string, parts []string) {
