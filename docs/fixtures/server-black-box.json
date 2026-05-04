@@ -1104,6 +1104,7 @@
       "contains": [
         "\"referenceId\":\"rolledBack\"",
         "\"referenceId\":\"bad\"",
+        "ALL_OR_NONE_OPERATION_ROLLED_BACK",
         "INVALID_TYPE"
       ]
     },
@@ -1142,6 +1143,20 @@
       ]
     },
     {
+      "name": "composite-sobjects-update-partial-failure",
+      "method": "PATCH",
+      "path": "/services/data/v61.0/composite/sobjects",
+      "body": "{\"records\":[{\"attributes\":{\"type\":\"Account\",\"referenceId\":\"updateGood\"},\"Id\":\"001000000000004\",\"Description\":\"Composite partial update\"},{\"attributes\":{\"type\":\"Account\",\"referenceId\":\"updateBad\"},\"Id\":\"001000000000999\",\"Name\":\"Missing\"}]}",
+      "status": 200,
+      "contains": [
+        "\"referenceId\":\"updateGood\"",
+        "\"referenceId\":\"updateBad\"",
+        "\"success\":true",
+        "\"success\":false",
+        "ENTITY_IS_DELETED"
+      ]
+    },
+    {
       "name": "composite-sobjects-delete",
       "method": "DELETE",
       "path": "/services/data/v61.0/composite/sobjects?ids=001000000000005&allOrNone=true",
@@ -1149,6 +1164,19 @@
       "contains": [
         "\"id\":\"001000000000005\"",
         "\"success\":true"
+      ]
+    },
+    {
+      "name": "composite-sobjects-delete-partial-failure",
+      "method": "DELETE",
+      "path": "/services/data/v61.0/composite/sobjects?ids=001000000000004,001000000000999&allOrNone=false",
+      "status": 200,
+      "contains": [
+        "\"id\":\"001000000000004\"",
+        "\"id\":\"001000000000999\"",
+        "\"success\":true",
+        "\"success\":false",
+        "ENTITY_IS_DELETED"
       ]
     },
     {
@@ -1173,6 +1201,33 @@
         "\"referenceId\":\"upsertUpdate\"",
         "\"success\":true",
         "\"created\":false"
+      ]
+    },
+    {
+      "name": "composite-sobjects-typed-upsert-partial-failure",
+      "method": "PATCH",
+      "path": "/services/data/v61.0/composite/sobjects/Account/External_Id__c",
+      "body": "{\"records\":[{\"attributes\":{\"referenceId\":\"upsertGood\"},\"Name\":\"Upsert Partial\",\"External_Id__c\":\"fixture-ext-2\"},{\"attributes\":{\"referenceId\":\"upsertBad\"},\"Name\":\"Bad\",\"External_Id__c\":\"fixture-ext-3\",\"Nope__c\":\"bad\"}]}",
+      "status": 200,
+      "contains": [
+        "\"referenceId\":\"upsertGood\"",
+        "\"referenceId\":\"upsertBad\"",
+        "\"success\":true",
+        "\"success\":false",
+        "\"created\":true",
+        "INVALID_FIELD_FOR_INSERT_UPDATE",
+        "unknown field Account.Nope__c"
+      ]
+    },
+    {
+      "name": "composite-sobjects-typed-upsert-malformed-reference",
+      "method": "PATCH",
+      "path": "/services/data/v61.0/composite/sobjects/Account/External_Id__c",
+      "body": "{\"records\":[{\"attributes\":{\"referenceId\":42},\"Name\":\"Bad\",\"External_Id__c\":\"fixture-ext-bad\"}]}",
+      "status": 400,
+      "contains": [
+        "JSON_PARSER_ERROR",
+        "records[0].attributes.referenceId must be a string"
       ]
     },
     {
@@ -1305,6 +1360,17 @@
       "contains": [
         "JSON_PARSER_ERROR",
         "attributes must be a JSON object"
+      ]
+    },
+    {
+      "name": "composite-sobjects-malformed-reference",
+      "method": "POST",
+      "path": "/services/data/v61.0/composite/sobjects",
+      "body": "{\"records\":[{\"attributes\":{\"type\":\"Account\",\"referenceId\":42},\"Name\":\"Bad\"}]}",
+      "status": 400,
+      "contains": [
+        "JSON_PARSER_ERROR",
+        "records[0].attributes.referenceId must be a string"
       ]
     },
     {
@@ -2207,7 +2273,7 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 198,
+      "requests": 203,
       "statuses": [
         200,
         200,
@@ -2311,10 +2377,15 @@
         200,
         200,
         200,
+        200,
+        200,
+        200,
+        400,
         400,
         400,
         501,
         501,
+        400,
         400,
         400,
         400,
