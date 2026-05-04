@@ -233,10 +233,10 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | REST | `RestContext.request / RestContext.response` | `partial` | VM-local static slots support RestRequest assignment and lazy RestResponse creation; no platform request lifecycle dispatch is modeled. |
 | REST | `RestRequest / RestResponse object shapes` | `partial` | Local request/response objects expose URI/path/method/address, params, headers, Blob body, status, and add/get helper methods covered by compatibility fixtures; broader platform lifecycle remains unsupported. |
 | RoundingMode | `RoundingMode.valueOf` | `partial` | Constructs supported local Decimal rounding-mode tokens by exact name. |
-| Schema | `DescribeFieldResult` | `partial` | Common field metadata and access booleans. |
-| Schema | `DescribeSObjectResult` | `partial` | Common object metadata, fields, record types, and child relationships. |
-| Schema | `Schema.describeSObjects` | `partial` | Object names and SObjectType tokens for local schema. |
-| Schema | `Schema.getGlobalDescribe` | `partial` | Local schema-backed describe map. |
+| Schema | `DescribeFieldResult` | `partial` | Common field metadata, reference/picklist entries, and access booleans; dependent picklist controller metadata is explicitly unsupported. |
+| Schema | `DescribeSObjectResult` | `partial` | Common object metadata, fields, record types, and child relationships; field sets are explicitly unsupported. |
+| Schema | `Schema.describeSObjects` | `supported` | Fixture-backed local schema object-name and SObjectType-token lists return DescribeSObjectResult values. |
+| Schema | `Schema.getGlobalDescribe` | `supported` | Fixture-backed local schema map returns SObjectType tokens keyed by object API name. |
 | Search | `Search.* / SOSL FIND` | `unsupported` | Cloud search and SOSL execution are not locally modeled; calls return explicit UnsupportedFeature diagnostics. |
 | Set | `Set.add` | `supported` | Adds typed local values and reports whether the Set changed. |
 | Set | `Set.addAll` | `supported` | Adds typed values from local List or Set values. |

@@ -117,7 +117,9 @@ System.assert(!cold.isActive());
 func TestExecDescribeRecordTypeInfos(t *testing.T) {
 	program, err := CompileAnonymous(`
 Map<String,Object> describes = Schema.getGlobalDescribe();
-Object accountDescribe = describes.get('Account');
+Object accountType = describes.get('Account');
+Object accountDescribe = accountType.getDescribe();
+System.assertEquals('Account', accountDescribe.getName());
 List<Object> infos = accountDescribe.getRecordTypeInfos();
 System.assertEquals(2, infos.size());
 Map<String,Object> byName = accountDescribe.getRecordTypeInfosByName();
@@ -148,6 +150,31 @@ System.assert(!consumer.isDefaultRecordTypeMapping());
 		{ID: "012000000000002", DeveloperName: "Consumer", Name: "Consumer Account", Active: false, Available: false},
 	}
 	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecGlobalDescribeReturnsSObjectTypeTokens(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String,Object> describes = Schema.getGlobalDescribe();
+System.assert(describes.containsKey('Account'));
+Object accountType = describes.get('Account');
+Object accountDescribe = accountType.getDescribe();
+System.assertEquals('Account', accountDescribe.getName());
+List<String> names = new List<String>{'Account'};
+List<Object> byName = Schema.describeSObjects(names);
+System.assertEquals('Account', byName.get(0).getName());
+List<Object> tokens = new List<Object>{accountType};
+List<Object> byToken = Schema.describeSObjects(tokens);
+System.assertEquals('Account', byToken.get(0).getName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)

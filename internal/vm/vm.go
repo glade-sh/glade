@@ -5840,9 +5840,13 @@ func (vm *VM) schemaGlobalDescribe() Value {
 	if vm.Org == nil {
 		return out
 	}
-	for name, object := range vm.Org.Objects {
-		desc := vm.describeSObjectValue(name, object.Definition)
-		out.Map[mapKey(String(name))] = desc
+	names := make([]string, 0, len(vm.Org.Objects))
+	for name := range vm.Org.Objects {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		out.Map[mapKey(String(name))] = sObjectTypeToken(name)
 	}
 	return out
 }
@@ -5937,9 +5941,7 @@ func childRelationshipValue(childObject string, relationship storage.Relationshi
 	value := Object("Schema.ChildRelationship")
 	value.Fields["relationshipName"] = String(relationship.ChildRelationship)
 	value.Fields["field"] = sObjectFieldToken(childObject, relationship.Field)
-	childType := Object("Schema.SObjectType")
-	childType.Fields["object"] = String(childObject)
-	value.Fields["childSObject"] = childType
+	value.Fields["childSObject"] = sObjectTypeToken(childObject)
 	value.Fields["cascadeDelete"] = Bool(relationship.CascadeDelete)
 	value.Fields["restrictedDelete"] = Bool(relationship.RestrictedDelete)
 	return value
@@ -5988,9 +5990,7 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 	}
 	references := make([]Value, 0, len(field.ReferenceTo))
 	for _, target := range field.ReferenceTo {
-		token := Object("Schema.SObjectType")
-		token.Fields["object"] = String(target)
-		references = append(references, token)
+		references = append(references, sObjectTypeToken(target))
 	}
 	desc.Fields["referenceTo"] = List(references...)
 	picklistValues := make([]Value, 0, len(field.PicklistValues))
@@ -6176,9 +6176,7 @@ func (vm *VM) lookupSObjectTypeToken(parts []string) (Value, bool) {
 	if !ok {
 		return Null, false
 	}
-	token := Object("Schema.SObjectType")
-	token.Fields["object"] = String(canonical)
-	return token, true
+	return sObjectTypeToken(canonical), true
 }
 
 func (vm *VM) lookupSObjectFieldToken(parts []string) (Value, bool) {
@@ -6204,6 +6202,12 @@ func (vm *VM) lookupSObjectFieldToken(parts []string) (Value, bool) {
 		return Null, false
 	}
 	return sObjectFieldToken(objectName, canonical), true
+}
+
+func sObjectTypeToken(objectName string) Value {
+	token := Object("Schema.SObjectType")
+	token.Fields["object"] = String(objectName)
+	return token
 }
 
 func sObjectFieldToken(objectName, fieldName string) Value {
