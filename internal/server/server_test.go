@@ -1958,6 +1958,154 @@ func TestCompositeSObjectsDeleteAllOrNoneRollsBackMissingRecord(t *testing.T) {
 	}
 }
 
+func TestCompositeSObjectTypedRetrieveReturnsRecords(t *testing.T) {
+	org := testOrg()
+	addAccountForTest(&org, "001000000000001", "One")
+	addAccountForTest(&org, "001000000000002", "Two")
+	object := org.Objects["Account"]
+	first := object.Records["001000000000001"]
+	first.Fields["Description"] = storage.StringValue("First description")
+	object.Records["001000000000001"] = first
+	second := object.Records["001000000000002"]
+	second.Fields["External_Id__c"] = storage.StringValue("ext-two")
+	object.Records["001000000000002"] = second
+	org.Objects["Account"] = object
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/composite/sobjects/Account?ids=001000000000001,001000000000002", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("retrieve status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var payload struct {
+		Records []map[string]any `json:"records"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
+		t.Fatal(err)
+	}
+	if len(payload.Records) != 2 {
+		t.Fatalf("records = %#v", payload.Records)
+	}
+	if payload.Records[0]["Id"] != "001000000000001" || payload.Records[0]["Name"] != "One" || payload.Records[0]["Description"] != "First description" {
+		t.Fatalf("first record = %#v", payload.Records[0])
+	}
+	if payload.Records[1]["Id"] != "001000000000002" || payload.Records[1]["External_Id__c"] != "ext-two" {
+		t.Fatalf("second record = %#v", payload.Records[1])
+	}
+}
+
+func TestCompositeSObjectTypedRetrieveProjectsFields(t *testing.T) {
+	org := testOrg()
+	addAccountForTest(&org, "001000000000001", "Projected")
+	object := org.Objects["Account"]
+	record := object.Records["001000000000001"]
+	record.Fields["Description"] = storage.StringValue("Shown")
+	record.Fields["External_Id__c"] = storage.StringValue("hidden")
+	object.Records["001000000000001"] = record
+	org.Objects["Account"] = object
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/data/v60.0/composite/sobjects/Account?ids=001000000000001&fields=Name,Description", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("retrieve status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var payload struct {
+		Records []map[string]any `json:"records"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
+		t.Fatal(err)
+	}
+	if len(payload.Records) != 1 {
+		t.Fatalf("records = %#v", payload.Records)
+	}
+	row := payload.Records[0]
+	if row["Id"] != "001000000000001" || row["Name"] != "Projected" || row["Description"] != "Shown" {
+		t.Fatalf("projected row = %#v", row)
+	}
+	if _, ok := row["External_Id__c"]; ok {
+		t.Fatalf("projection included External_Id__c: %#v", row)
+	}
+	attrs, ok := row["attributes"].(map[string]any)
+	if !ok || attrs["url"] != "/services/data/v60.0/sobjects/Account/001000000000001" {
+		t.Fatalf("attributes = %#v", row["attributes"])
+	}
+}
+
+func TestCompositeSObjectTypedRetrieveValidatesRequest(t *testing.T) {
+	tests := []struct {
+		name       string
+		path       string
+		wantStatus int
+		wantCode   string
+	}{
+		{
+			name:       "missing ids",
+			path:       "/services/data/v61.0/composite/sobjects/Account",
+			wantStatus: http.StatusBadRequest,
+			wantCode:   "REQUIRED_FIELD_MISSING",
+		},
+		{
+			name:       "empty id",
+			path:       "/services/data/v61.0/composite/sobjects/Account?ids=001000000000001,",
+			wantStatus: http.StatusBadRequest,
+			wantCode:   "MALFORMED_ID",
+		},
+		{
+			name:       "unknown field",
+			path:       "/services/data/v61.0/composite/sobjects/Account?ids=001000000000001&fields=Nope__c",
+			wantStatus: http.StatusBadRequest,
+			wantCode:   "INVALID_FIELD",
+		},
+		{
+			name:       "missing record",
+			path:       "/services/data/v61.0/composite/sobjects/Account?ids=001000000000999&fields=Name",
+			wantStatus: http.StatusNotFound,
+			wantCode:   "NOT_FOUND",
+		},
+		{
+			name:       "deleted record",
+			path:       "/services/data/v61.0/composite/sobjects/Account?ids=001000000000002&fields=Name",
+			wantStatus: http.StatusNotFound,
+			wantCode:   "NOT_FOUND",
+		},
+		{
+			name:       "unknown object",
+			path:       "/services/data/v61.0/composite/sobjects/Missing__c?ids=a00000000000001",
+			wantStatus: http.StatusNotFound,
+			wantCode:   "NOT_FOUND",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			org := testOrg()
+			addAccountForTest(&org, "001000000000001", "One")
+			addAccountForTest(&org, "001000000000002", "Deleted")
+			object := org.Objects["Account"]
+			deleted := object.Records["001000000000002"]
+			deleted.System.IsDeleted = true
+			object.Records["001000000000002"] = deleted
+			org.Objects["Account"] = object
+			handler := New(&org)
+			rec := httptest.NewRecorder()
+			handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, tt.path, nil))
+			assertSalesforceError(t, rec, tt.wantStatus, tt.wantCode, "")
+		})
+	}
+}
+
+func TestCompositeSObjectTypedRetrieveSkipsBlankFieldsParameter(t *testing.T) {
+	org := testOrg()
+	addAccountForTest(&org, "001000000000001", "Full")
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/composite/sobjects/Account?ids=001000000000001&fields=%20", nil))
+	if rec.Code != http.StatusOK || !bytes.Contains(rec.Body.Bytes(), []byte(`"Name":"Full"`)) {
+		t.Fatalf("retrieve status = %d body=%s", rec.Code, rec.Body.String())
+	}
+}
+
 func TestCompositeSObjectTypedUpsertCreatesAndUpdates(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
@@ -2340,11 +2488,11 @@ func TestSalesforceErrorResponses(t *testing.T) {
 		},
 		{
 			name:       "composite sobjects child method not allowed",
-			method:     http.MethodGet,
+			method:     http.MethodPut,
 			path:       "/services/data/v61.0/composite/sobjects/Account/External_Id__c",
 			wantStatus: http.StatusMethodNotAllowed,
 			wantCode:   "METHOD_NOT_ALLOWED",
-			wantAllow:  http.MethodPost + ", " + http.MethodPatch + ", " + http.MethodDelete,
+			wantAllow:  http.MethodGet + ", " + http.MethodPost + ", " + http.MethodPatch + ", " + http.MethodDelete,
 		},
 		{
 			name:          "invalid json",
