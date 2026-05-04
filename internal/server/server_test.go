@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -2383,6 +2384,52 @@ func TestOAERFixtureReplaceModeClearsPreviousDataAndPersists(t *testing.T) {
 	}
 }
 
+func TestOAERFixtureReplacePersistsAcrossSQLiteRestartAndExport(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "oaer.db")
+	store, err := storage.OpenSQLite(dbPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testOrg()
+	addAccountForTest(&org, "001000000000001", "Old")
+	handler := NewWithStore(&org, store)
+
+	replace := httptest.NewRecorder()
+	handler.ServeHTTP(replace, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/oaer/fixture?mode=replace", strings.NewReader(`{
+  "version":"oaer.storage.v1",
+  "objects":[{"name":"Account","records":[{"id":"001000000000901","fields":{"Name":{"kind":"string","string":"Restart New"}}}]}]
+}`)))
+	if replace.Code != http.StatusOK {
+		t.Fatalf("replace status = %d body=%s", replace.Code, replace.Body.String())
+	}
+	if err := store.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	restartedStore, err := storage.OpenSQLite(dbPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer restartedStore.Close()
+	restartedOrg, err := restartedStore.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	restarted := NewWithStore(&restartedOrg, restartedStore)
+
+	exported := httptest.NewRecorder()
+	restarted.ServeHTTP(exported, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/oaer/fixture", nil))
+	if exported.Code != http.StatusOK {
+		t.Fatalf("export status = %d body=%s", exported.Code, exported.Body.String())
+	}
+	if !bytes.Contains(exported.Body.Bytes(), []byte("Restart New")) {
+		t.Fatalf("restart export missing replacement record: %s", exported.Body.String())
+	}
+	if bytes.Contains(exported.Body.Bytes(), []byte("Old")) {
+		t.Fatalf("restart export retained replaced record: %s", exported.Body.String())
+	}
+}
+
 func TestOAERFixtureModeValidationUsesSalesforceErrorsAndDoesNotMutate(t *testing.T) {
 	org := testOrg()
 	addAccountForTest(&org, "001000000000001", "Old")
@@ -2424,6 +2471,68 @@ func TestOAERFixtureModeValidationUsesSalesforceErrorsAndDoesNotMutate(t *testin
 				t.Fatalf("account records after rejected fixture request = %d", got)
 			}
 		})
+	}
+}
+
+func TestOAERResetBodyValidationUsesSalesforceErrorsAndDoesNotMutate(t *testing.T) {
+	for _, tt := range []struct {
+		name    string
+		path    string
+		body    string
+		message string
+	}{
+		{
+			name:    "path scope still validates malformed body",
+			path:    "/services/data/v61.0/oaer/reset/data",
+			body:    `{`,
+			message: "unexpected EOF",
+		},
+		{
+			name:    "query scope still validates unknown body fields",
+			path:    "/services/data/v61.0/oaer/reset?scope=data",
+			body:    `{"unknown":["data"]}`,
+			message: `unknown field "unknown"`,
+		},
+		{
+			name:    "rejects multiple JSON values",
+			path:    "/services/data/v61.0/oaer/reset",
+			body:    `{"scope":"data"} {"scope":"users"}`,
+			message: "reset body must contain a single JSON object",
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			org := testOrg()
+			addAccountForTest(&org, "001000000000001", "Old")
+			handler := New(&org)
+
+			rec := httptest.NewRecorder()
+			handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, tt.path, strings.NewReader(tt.body)))
+			assertSalesforceError(t, rec, http.StatusBadRequest, "INVALID_RESET", tt.message)
+			if got := len(org.Objects["Account"].Records); got != 1 {
+				t.Fatalf("account records after rejected reset = %d", got)
+			}
+		})
+	}
+}
+
+func TestOAERResetBodyCombinesWithQueryScopes(t *testing.T) {
+	org := testOrg()
+	addAccountForTest(&org, "001000000000001", "Old")
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/oaer/reset?scope=limits", strings.NewReader(`{"scope":"data","scopes":["async"]}`)))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("reset status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if got := len(org.Objects["Account"].Records); got != 0 {
+		t.Fatalf("account records after reset = %d", got)
+	}
+	if !bytes.Contains(rec.Body.Bytes(), []byte(`"scopes":["limits","async","data"]`)) {
+		t.Fatalf("combined scopes response = %s", rec.Body.String())
+	}
+	if !bytes.Contains(rec.Body.Bytes(), []byte(`"noOpScopes":["limits","async"]`)) {
+		t.Fatalf("combined no-op scopes response = %s", rec.Body.String())
 	}
 }
 

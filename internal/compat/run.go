@@ -471,16 +471,19 @@ func runServerFixture(fixture Fixture) (RunResult, error) {
 	if len(fixture.ServerRequests) == 0 {
 		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, fmt.Errorf("server fixture requires serverRequests")
 	}
-	root, err := os.MkdirTemp("", "oaer-compat-server-*")
+	root, err := os.MkdirTemp(".", ".oaer-compat-server-*")
 	if err != nil {
 		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
 	}
 	defer os.RemoveAll(root)
-	store, err := storage.OpenSQLite(filepath.Join(root, "oaer.db"))
+	dbPath := filepath.Join(root, "oaer.db")
+	store, err := storage.OpenSQLite(dbPath)
 	if err != nil {
 		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
 	}
-	defer store.Close()
+	defer func() {
+		_ = store.Close()
+	}()
 
 	org := serverFixtureOrg()
 	if len(fixture.SeedData) > 0 {
@@ -501,6 +504,27 @@ func runServerFixture(fixture Fixture) (RunResult, error) {
 	}
 	statuses := make([]int, 0, len(fixture.ServerRequests))
 	for i, step := range fixture.ServerRequests {
+		if step.Restart {
+			if err := store.Close(); err != nil {
+				return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+			}
+			store, err = storage.OpenSQLite(dbPath)
+			if err != nil {
+				return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+			}
+			restartedOrg, err := store.Load()
+			if err != nil {
+				return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+			}
+			handler = server.NewWithStore(&restartedOrg, store)
+			if fixture.Command.LimitMode != "" {
+				mode, err := fixtureLimitMode(fixture.Command.LimitMode)
+				if err != nil {
+					return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+				}
+				handler.LimitMode = mode
+			}
+		}
 		req := httptest.NewRequest(step.Method, step.Path, strings.NewReader(step.Body))
 		if step.Body != "" {
 			req.Header.Set("Content-Type", "application/json")

@@ -714,19 +714,11 @@ func resetScopes(r *http.Request, pathScopes []string) ([]string, error) {
 			}
 		}
 	}
-	if len(scopes) == 0 && r.Body != nil {
-		var body struct {
-			Scopes []string `json:"scopes"`
-			Scope  string   `json:"scope"`
-		}
-		if err := json.NewDecoder(r.Body).Decode(&body); err != nil && err != io.EOF {
-			return nil, err
-		}
-		scopes = append(scopes, body.Scopes...)
-		if body.Scope != "" {
-			scopes = append(scopes, body.Scope)
-		}
+	bodyScopes, err := resetBodyScopes(r)
+	if err != nil {
+		return nil, err
 	}
+	scopes = append(scopes, bodyScopes...)
 	if len(scopes) == 0 {
 		scopes = []string{"all"}
 	}
@@ -753,6 +745,36 @@ func resetScopes(r *http.Request, pathScopes []string) ([]string, error) {
 		return []string{"all"}, nil
 	}
 	return normalized, nil
+}
+
+func resetBodyScopes(r *http.Request) ([]string, error) {
+	if r.Body == nil || r.Body == http.NoBody {
+		return nil, nil
+	}
+	var body struct {
+		Scopes []string `json:"scopes"`
+		Scope  string   `json:"scope"`
+	}
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&body); err != nil {
+		if errors.Is(err, io.EOF) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	var extra any
+	if err := decoder.Decode(&extra); err != nil {
+		if errors.Is(err, io.EOF) {
+			scopes := append([]string(nil), body.Scopes...)
+			if body.Scope != "" {
+				scopes = append(scopes, body.Scope)
+			}
+			return scopes, nil
+		}
+		return nil, err
+	}
+	return nil, fmt.Errorf("reset body must contain a single JSON object")
 }
 
 func applyResetScopes(org *storage.OrgState, scopes []string) {

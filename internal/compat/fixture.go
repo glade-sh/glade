@@ -67,6 +67,7 @@ type ServerRequest struct {
 	Status      int               `json:"status"`
 	Contains    []string          `json:"contains,omitempty"`
 	NotContains []string          `json:"notContains,omitempty"`
+	Restart     bool              `json:"restart,omitempty"`
 }
 
 type Invocation struct {
