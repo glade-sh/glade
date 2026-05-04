@@ -42,6 +42,8 @@ const (
 	maxQueryLocators  = 32
 )
 
+const localOAuthUnsupportedMessage = "Full OAuth flows and token issuance are not implemented by the local server; use deterministic local user stubs via /services/oauth2/userinfo, /id/{org}/{user}, X-OAER-User-Id, or Authorization: Bearer <userId>"
+
 type resetScopeInfo struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
@@ -86,8 +88,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer s.mu.Unlock()
 	w.Header().Set("Content-Type", "application/json")
 	parts := splitPath(r.URL.Path)
-	if len(parts) == 3 && parts[0] == "services" && parts[1] == "oauth2" && parts[2] == "userinfo" {
-		writeJSON(w, http.StatusOK, s.userInfoPayload(r))
+	if len(parts) >= 2 && parts[0] == "services" && parts[1] == "oauth2" {
+		s.handleOAuth(w, r, parts[2:])
 		return
 	}
 	if len(parts) == 3 && parts[0] == "id" {
@@ -142,6 +144,31 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		writeSalesforceError(w, errUnknownEndpoint)
+	default:
+		writeSalesforceError(w, errUnknownEndpoint)
+	}
+}
+
+func (s *Server) handleOAuth(w http.ResponseWriter, r *http.Request, parts []string) {
+	if len(parts) != 1 {
+		writeSalesforceError(w, errUnknownEndpoint)
+		return
+	}
+	switch parts[0] {
+	case "userinfo":
+		writeJSON(w, http.StatusOK, s.userInfoPayload(r))
+	case "token", "revoke", "introspect":
+		if r.Method != http.MethodPost {
+			writeMethodNotAllowed(w, http.MethodPost)
+			return
+		}
+		writeSalesforceError(w, errUnsupportedFeature, localOAuthUnsupportedMessage)
+	case "authorize":
+		if r.Method != http.MethodGet {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
+		writeSalesforceError(w, errUnsupportedFeature, localOAuthUnsupportedMessage)
 	default:
 		writeSalesforceError(w, errUnknownEndpoint)
 	}

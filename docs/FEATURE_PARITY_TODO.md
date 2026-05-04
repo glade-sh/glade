@@ -640,6 +640,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Return stable unsupported errors for common unmodeled top-level REST
     namespaces such as Connect, Chatter, Analytics, Wave, Metadata, Support,
     Process, Actions, and Apps.
+  - [x] Return stable unsupported errors for common OAuth token, revoke,
+    introspect, and authorize probes without issuing local tokens.
 - [ ] Add Composite API coverage beyond baseline sObject insert, including
   all-or-none rollback and reference ID behavior.
   - [x] Return stable unsupported errors for generic composite subrequest
@@ -674,6 +676,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     server black-box fixture.
   - [x] Cover Tooling `executeAnonymous` persistence, rollback, selected bearer
     user, and strict-limit edges in the server black-box fixture.
+  - [x] Cover common OAuth unsupported auth-stub route shapes in the server
+    black-box fixture.
 
 ## 9. Compatibility, Hardening, And Release
 

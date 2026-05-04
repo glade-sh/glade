@@ -52,6 +52,37 @@
       "contains": ["005000000000002", "ada@example.test", "ada.alias@example.test", "Ada Trail"]
     },
     {
+      "name": "oauth-token-unsupported",
+      "method": "POST",
+      "path": "/services/oauth2/token",
+      "body": "grant_type=password",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "Full OAuth flows and token issuance are not implemented"]
+    },
+    {
+      "name": "oauth-revoke-unsupported",
+      "method": "POST",
+      "path": "/services/oauth2/revoke",
+      "body": "token=local",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "Full OAuth flows and token issuance are not implemented"]
+    },
+    {
+      "name": "oauth-introspect-unsupported",
+      "method": "POST",
+      "path": "/services/oauth2/introspect",
+      "body": "token=local",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "Full OAuth flows and token issuance are not implemented"]
+    },
+    {
+      "name": "oauth-authorize-unsupported",
+      "method": "GET",
+      "path": "/services/oauth2/authorize?response_type=code&client_id=local&redirect_uri=http://localhost/callback",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "Full OAuth flows and token issuance are not implemented"]
+    },
+    {
       "name": "identity",
       "method": "GET",
       "path": "/id/00D000000000001/005000000000001",
@@ -364,8 +395,8 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 45,
-      "statuses": [200, 200, 200, 200, 200, 200, 201, 200, 200, 200, 501, 501, 400, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 400, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 404, 404, 200, 200, 201],
+      "requests": 49,
+      "statuses": [200, 200, 200, 200, 200, 501, 501, 501, 501, 200, 201, 200, 200, 200, 501, 501, 400, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 400, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 404, 404, 200, 200, 201],
       "users": 2
     }
   }
