@@ -1,0 +1,28 @@
+{
+  "name": "core-timezone-display-daylight-flag",
+  "evidence": [
+    {
+      "symbol": "TimeZone.getDisplayName",
+      "kind": "exec",
+      "notes": "The daylight Boolean overload returns deterministic abbreviations for modeled named zones and canonical IDs for UTC/fixed offsets; locale/style overloads remain unsupported."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "TimeZone pacific = TimeZone.getTimeZone('America/Los_Angeles');\nSystem.assertEquals('America/Los_Angeles', pacific.getDisplayName());\nSystem.assertEquals('PST', pacific.getDisplayName(false));\nSystem.assertEquals('PDT', pacific.getDisplayName(true));\nTimeZone tokyo = TimeZone.getTimeZone('Asia/Tokyo');\nSystem.assertEquals('JST', tokyo.getDisplayName(false));\nSystem.assertEquals('JST', tokyo.getDisplayName(true));\nTimeZone fixedZone = TimeZone.getTimeZone('GMT+05:30');\nSystem.assertEquals('GMT+05:30', fixedZone.getDisplayName(true));"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "TimeZone pacific = TimeZone.getTimeZone('America/Los_Angeles');\nSystem.assertEquals('America/Los_Angeles', pacific.getDisplayName());\nSystem.assertEquals('PST', pacific.getDisplayName(false));\nSystem.assertEquals('PDT', pacific.getDisplayName(true));\nTimeZone tokyo = TimeZone.getTimeZone('Asia/Tokyo');\nSystem.assertEquals('JST', tokyo.getDisplayName(false));\nSystem.assertEquals('JST', tokyo.getDisplayName(true));\nTimeZone fixedZone = TimeZone.getTimeZone('GMT+05:30');\nSystem.assertEquals('GMT+05:30', fixedZone.getDisplayName(true));"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

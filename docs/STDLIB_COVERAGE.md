@@ -59,23 +59,30 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Datetime | `Datetime.addMonths` | `partial` | UTC-local arithmetic with month-end clamp; no user timezone or DST model. |
 | Datetime | `Datetime.addSeconds` | `partial` | UTC-local arithmetic. |
 | Datetime | `Datetime.addYears` | `partial` | UTC-local arithmetic with leap-day clamp; no user timezone or DST model. |
-| Datetime | `Datetime.date` | `partial` | Returns UTC-modeled Date component; no user timezone model. |
+| Datetime | `Datetime.date` | `partial` | Returns Date component in the current user timezone for UTC, fixed offsets, and the modeled named-zone slice. |
 | Datetime | `Datetime.dateGmt` | `supported` | Returns the UTC Date component. |
-| Datetime | `Datetime.day` | `partial` | UTC-modeled component getter. |
+| Datetime | `Datetime.day` | `partial` | Current-user timezone component getter for UTC, fixed offsets, and the modeled named-zone slice; dayGmt stays UTC. |
+| Datetime | `Datetime.dayGmt` | `supported` | Returns the UTC day component. |
 | Datetime | `Datetime.format` | `partial` | Deterministic UTC/fixed-offset Java-pattern slice plus modeled named-zone DST formatting for America/Los_Angeles, America/New_York, America/Chicago, America/Denver, Europe/London, Europe/Berlin, Asia/Tokyo, and Australia/Sydney; format(pattern) and format() use the current user timezone inside that slice; user locale is unsupported. |
 | Datetime | `Datetime.formatGmt` | `partial` | Deterministic UTC Java-pattern slice with stable token errors; locale patterns are not modeled beyond pinned English names. |
-| Datetime | `Datetime.hour` | `partial` | UTC-modeled component getter. |
-| Datetime | `Datetime.millisecond` | `partial` | UTC-modeled component getter. |
-| Datetime | `Datetime.minute` | `partial` | UTC-modeled component getter. |
-| Datetime | `Datetime.month` | `partial` | UTC-modeled component getter. |
-| Datetime | `Datetime.newInstance` | `supported` | Validates date and time parts in the local year 1-9999 UTC-modeled slice. |
-| Datetime | `Datetime.newInstanceGmt` | `supported` | Constructs a UTC-modeled Datetime. |
+| Datetime | `Datetime.hour` | `partial` | Current-user timezone component getter for UTC, fixed offsets, and the modeled named-zone slice; hourGmt stays UTC. |
+| Datetime | `Datetime.hourGmt` | `supported` | Returns the UTC hour component. |
+| Datetime | `Datetime.millisecond` | `partial` | Millisecond component getter. |
+| Datetime | `Datetime.minute` | `partial` | Current-user timezone component getter for UTC, fixed offsets, and the modeled named-zone slice; minuteGmt stays UTC. |
+| Datetime | `Datetime.minuteGmt` | `supported` | Returns the UTC minute component. |
+| Datetime | `Datetime.month` | `partial` | Current-user timezone component getter for UTC, fixed offsets, and the modeled named-zone slice; monthGmt stays UTC. |
+| Datetime | `Datetime.monthGmt` | `supported` | Returns the UTC month component. |
+| Datetime | `Datetime.newInstance` | `supported` | Validates integer and Date+Time parts, constructing through the current user timezone for UTC, fixed offsets, and the modeled named-zone slice with deterministic DST gap/overlap handling. |
+| Datetime | `Datetime.newInstanceGmt` | `supported` | Constructs a UTC Datetime from integer or Date+Time parts. |
 | Datetime | `Datetime.now` | `partial` | Deterministic VM clock timestamp in UTC. |
-| Datetime | `Datetime.second` | `partial` | UTC-modeled component getter. |
+| Datetime | `Datetime.second` | `partial` | Current-user timezone component getter for UTC, fixed offsets, and the modeled named-zone slice; secondGmt stays UTC. |
+| Datetime | `Datetime.secondGmt` | `supported` | Returns the UTC second component. |
+| Datetime | `Datetime.time` | `partial` | Returns Time component in the current user timezone for UTC, fixed offsets, and the modeled named-zone slice. |
 | Datetime | `Datetime.timeGmt` | `supported` | Returns the UTC Time component. |
 | Datetime | `Datetime.valueOf` | `supported` | Parses supported strict datetime strings with stable invalid-input errors. |
 | Datetime | `Datetime.valueOfGmt` | `supported` | Parses supported strict UTC/RFC3339 datetime strings with stable invalid-input errors. |
-| Datetime | `Datetime.year` | `partial` | UTC-modeled component getter. |
+| Datetime | `Datetime.year` | `partial` | Current-user timezone component getter for UTC, fixed offsets, and the modeled named-zone slice; yearGmt stays UTC. |
+| Datetime | `Datetime.yearGmt` | `supported` | Returns the UTC year component. |
 | Decimal | `Decimal.abs` | `supported` | Absolute value for local Decimal values. |
 | Decimal | `Decimal.doubleValue` | `supported` | Returns local Decimal value. |
 | Decimal | `Decimal.format` | `partial` | Simple deterministic finite numeric formatting; locale and pattern overloads return explicit unsupported errors. |
@@ -386,7 +393,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Time | `Time.newInstance` | `supported` | Validates time parts including optional millisecond. |
 | Time | `Time.second` | `supported` | Local time component. |
 | Time | `Time.valueOf` | `supported` | Parses strict HH:mm:ss and HH:mm:ss.SSS strings with stable invalid-input errors. |
-| TimeZone | `TimeZone.getDisplayName` | `partial` | Returns deterministic ID text for UTC, fixed GMT offsets, and the modeled named-zone table; DST/locale overloads are unsupported. |
+| TimeZone | `TimeZone.getDisplayName` | `partial` | Returns deterministic ID text for UTC, fixed GMT offsets, and the modeled named-zone table; the daylight Boolean overload returns modeled abbreviations, while locale/style overloads remain unsupported. |
 | TimeZone | `TimeZone.getID` | `partial` | Returns canonical UTC, fixed GMT offset ID, or a modeled named-zone ID. |
 | TimeZone | `TimeZone.getOffset` | `partial` | Returns fixed offset milliseconds for the deterministic offset slice and modeled DST decisions for US, Europe, and Sydney rules; other named zones are unsupported. |
 | TimeZone | `TimeZone.getTimeZone` | `partial` | Supports UTC/GMT, fixed GMT/UTC offsets through ±14:00, and America/Los_Angeles, America/New_York, America/Chicago, America/Denver, Europe/London, Europe/Berlin, Asia/Tokyo, and Australia/Sydney; other named zones and trimmed/invalid IDs are unsupported. |
