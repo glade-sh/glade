@@ -259,7 +259,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | String | `String.difference` | `supported` | Returns the differing suffix from the comparison string. |
 | String | `String.endsWith` | `supported` | UTF-8 string suffix. |
 | String | `String.equalsIgnoreCase` | `supported` | Unicode simple fold. |
-| String | `String.escapeCsv` | `supported` | RFC4180-style quoting and doubled quotes for local strings. |
+| String | `String.escapeCsv` | `supported` | One-field RFC4180-style quoting for comma, quote, CR, and LF; doubles embedded quotes. |
 | String | `String.escapeEcmaScript` | `partial` | JavaScript-style backslash escaping for common deterministic cases. |
 | String | `String.escapeHtml3` | `partial` | Deterministic core HTML entity escaping only; full named-entity coverage is not modeled. |
 | String | `String.escapeHtml4` | `partial` | Deterministic core HTML entity escaping only; full named-entity coverage is not modeled. |
@@ -324,7 +324,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | String | `String.toLowerCase` | `supported` | Go Unicode lowercasing. |
 | String | `String.toUpperCase` | `supported` | Go Unicode uppercasing. |
 | String | `String.trim` | `supported` | Unicode whitespace trim. |
-| String | `String.unescapeCsv` | `supported` | Unquotes doubled-quote CSV fields. |
+| String | `String.unescapeCsv` | `supported` | Unquotes one doubled-quote CSV field; plain strings are unchanged. |
 | String | `String.unescapeEcmaScript` | `partial` | Unescapes common JavaScript-style backslash and Unicode escapes. |
 | String | `String.unescapeHtml3` | `partial` | Unescapes core HTML entities, selected high-use HTML 3/4 named entities, and numeric references; remaining unknown named entities stay unchanged. |
 | String | `String.unescapeHtml4` | `partial` | Unescapes core HTML entities, selected high-use HTML 3/4 named entities, and numeric references; remaining unknown named entities stay unchanged. |

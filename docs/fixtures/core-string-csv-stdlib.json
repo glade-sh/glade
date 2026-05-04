@@ -1,0 +1,33 @@
+{
+  "name": "core-string-csv-stdlib",
+  "evidence": [
+    {
+      "symbol": "String.escapeCsv",
+      "kind": "exec",
+      "notes": "One-field CSV escaping covers plain, comma, quote, CR, and LF inputs."
+    },
+    {
+      "symbol": "String.unescapeCsv",
+      "kind": "exec",
+      "notes": "One-field CSV unescaping covers doubled quotes and plain no-op inputs."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "String plain = 'plain';\nSystem.assertEquals('plain', plain.escapeCsv());\nSystem.assertEquals('plain', plain.unescapeCsv());\nString comma = 'left,right';\nSystem.assertEquals('\"left,right\"', comma.escapeCsv());\nString quoted = 'He said \"hi\"';\nSystem.assertEquals('\"He said \"\"hi\"\"\"', quoted.escapeCsv());\nSystem.assertEquals(quoted, quoted.escapeCsv().unescapeCsv());\nSystem.assertEquals('a\"b', '\"a\"\"b\"'.unescapeCsv());\nList<Integer> crlfCodes = new List<Integer>();\ncrlfCodes.add(13);\ncrlfCodes.add(10);\nString crlf = String.fromCharArray(crlfCodes);\nString lineBreak = 'line1' + crlf + 'line2';\nSystem.assertEquals('\"' + lineBreak + '\"', lineBreak.escapeCsv());\nSystem.assertEquals(lineBreak, lineBreak.escapeCsv().unescapeCsv());\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "String plain = 'plain';\nSystem.assertEquals('plain', plain.escapeCsv());\nSystem.assertEquals('plain', plain.unescapeCsv());\nString comma = 'left,right';\nSystem.assertEquals('\"left,right\"', comma.escapeCsv());\nString quoted = 'He said \"hi\"';\nSystem.assertEquals('\"He said \"\"hi\"\"\"', quoted.escapeCsv());\nSystem.assertEquals(quoted, quoted.escapeCsv().unescapeCsv());\nSystem.assertEquals('a\"b', '\"a\"\"b\"'.unescapeCsv());\nList<Integer> crlfCodes = new List<Integer>();\ncrlfCodes.add(13);\ncrlfCodes.add(10);\nString crlf = String.fromCharArray(crlfCodes);\nString lineBreak = 'line1' + crlf + 'line2';\nSystem.assertEquals('\"' + lineBreak + '\"', lineBreak.escapeCsv());\nSystem.assertEquals(lineBreak, lineBreak.escapeCsv().unescapeCsv());\n"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

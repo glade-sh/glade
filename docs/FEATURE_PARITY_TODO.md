@@ -461,6 +461,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
   `Time`, `Math`, `Decimal`, `EncodingUtil`, and `Crypto` behavior.
   - [x] Add common `String` helpers for trim, search, replacement, split/join,
     blank checks, and case-insensitive equality.
+  - [x] Pin one-field `String.escapeCsv`/`unescapeCsv` behavior for plain,
+    comma, quote, doubled-quote, CR, and LF values.
   - [x] Add deterministic `String.unescapeHtml3/4` coverage for selected
     high-use named entities (`nbsp`, `copy`, `reg`, `trade`, `euro`, `mdash`,
     `ndash`, `hellip`, `bull`, `ldquo`, `rdquo`, `lsquo`, `rsquo`, `cent`,

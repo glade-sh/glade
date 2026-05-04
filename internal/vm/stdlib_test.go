@@ -227,6 +227,33 @@ System.assert(!empty.isAllUpperCase());
 	}
 }
 
+func TestExecStringCSVFieldEscapingEdges(t *testing.T) {
+	program, err := CompileAnonymous(`
+String plain = 'plain';
+System.assertEquals('plain', plain.escapeCsv());
+System.assertEquals('plain', plain.unescapeCsv());
+String comma = 'left,right';
+System.assertEquals('"left,right"', comma.escapeCsv());
+String quoted = 'He said "hi"';
+System.assertEquals('"He said ""hi"""', quoted.escapeCsv());
+System.assertEquals(quoted, quoted.escapeCsv().unescapeCsv());
+System.assertEquals('a"b', '"a""b"'.unescapeCsv());
+List<Integer> crlfCodes = new List<Integer>();
+crlfCodes.add(13);
+crlfCodes.add(10);
+String crlf = String.fromCharArray(crlfCodes);
+String lineBreak = 'line1' + crlf + 'line2';
+System.assertEquals('"' + lineBreak + '"', lineBreak.escapeCsv());
+System.assertEquals(lineBreak, lineBreak.escapeCsv().unescapeCsv());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecStringStdlibMoreRejectsBadRegex(t *testing.T) {
 	program, err := CompileAnonymous(`String abc = 'abc';
 abc.replaceAll('[', 'x');`)
