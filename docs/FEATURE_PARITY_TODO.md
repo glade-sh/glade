@@ -681,6 +681,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
     responses without real transport.
   - [x] Add local compressed-flag and deterministic header-key coverage for
     mock-only request/response shapes.
+  - [x] Promote the local `HttpResponse` value object shape: constructor
+    defaults, status/status-code, body/blob, and case-insensitive header helpers
+    are covered without needing transport.
   - [x] Fence client-certificate callout setters with stable UnsupportedFeature
     diagnostics; local cert material and static-resource callout mocks are not
     modeled.
@@ -700,6 +703,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
     message and support the Boolean `allOrNothing` overload without modeling
     transport; `Messaging.SendEmailOptions` remains an explicit UnsupportedFeature
     seam.
+  - [x] Promote `Messaging.SendEmailResult` constructor/getter defaults and
+    validate `Messaging.sendEmail` list items so non-email payloads fail before
+    incrementing limits.
   - [x] Add `ApexPages` message storage, stable current page,
     `Test.setCurrentPage`, `ApexPages.Severity`, supported `PageReference` typed local
     parameter/header/string URL model, supported REST context null/re-lazy response lifecycle, and

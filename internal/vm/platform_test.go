@@ -552,6 +552,16 @@ System.assertEquals(0, results.get(0).getErrors().size());
 			want: `unsupported call "Messaging.renderStoredEmailTemplate local messaging transport/template surface"`,
 		},
 		{
+			name: "reserve capacity surface",
+			src:  `Messaging.reserveMassEmailCapacity(1);`,
+			want: `unsupported call "Messaging.reserveMassEmailCapacity local messaging transport/template surface"`,
+		},
+		{
+			name: "push notification surface",
+			src:  `Messaging.sendPushNotification(new List<String>{'005000000000001'}, 'payload');`,
+			want: `unsupported call "Messaging.sendPushNotification local messaging transport/template surface"`,
+		},
+		{
 			name: "send-options method",
 			src:  `Messaging.SendEmailOptions opts = new Messaging.SendEmailOptions(); opts.setTriggerUserEmail(true);`,
 			want: `unsupported call "Messaging.SendEmailOptions.setTriggerUserEmail local messaging send-options surface"`,
@@ -630,6 +640,37 @@ System.assertEquals(0, results.get(0).getErrors().size());
 	}
 	if _, err := New(nil).Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecHttpResponseAndSendEmailResultDefaults(t *testing.T) {
+	program, err := CompileAnonymous(`
+HttpResponse response = new HttpResponse();
+System.assertEquals(200, response.getStatusCode());
+System.assertEquals('OK', response.getStatus());
+System.assertEquals('', response.getBody());
+System.assertEquals(0, response.getHeaderKeys().size());
+System.assertEquals(null, response.getHeader('missing'));
+
+Messaging.SendEmailResult result = new Messaging.SendEmailResult();
+System.assert(result.isSuccess());
+System.assertEquals(0, result.getErrors().size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMessagingSendEmailRejectsNonMessageItems(t *testing.T) {
+	program, err := CompileAnonymous(`Messaging.sendEmail(new List<String>{'hello'});`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err == nil || err.Error() != "Messaging.sendEmail expects SingleEmailMessage or MassEmailMessage list items" {
+		t.Fatalf("err = %v", err)
 	}
 }
 
@@ -998,7 +1039,9 @@ func TestExecPlatformLimitCounters(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals(0, Limits.getEmailInvocations());
 System.assertEquals(10, Limits.getLimitEmailInvocations());
-Messaging.sendEmail(new List<String>{'hello'});
+Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage();
+email.setToAddresses(new List<String>{'hello@example.test'});
+Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{email});
 System.assertEquals(1, Limits.getEmailInvocations());
 
 System.assertEquals(0, Limits.getAsyncJobs());

@@ -1577,16 +1577,18 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		if len(args) == 2 && args[1].Kind != ValueBool {
 			return Null, unsupportedCallError("Messaging.sendEmail send options overloads")
 		}
+		for _, message := range args[0].List {
+			if !isLocalEmailMessage(message) {
+				return Null, fmt.Errorf("Messaging.sendEmail expects SingleEmailMessage or MassEmailMessage list items")
+			}
+		}
 		if err := vm.incrementLimit("emailInvocations", 1); err != nil {
 			return Null, err
 		}
 		appendTrace(result, "apex.email.send", "apex.email", map[string]any{"messages": len(args[0].List)})
 		results := make([]Value, 0, len(args[0].List))
 		for range args[0].List {
-			item := Object("Messaging.SendEmailResult")
-			item.Fields["success"] = Bool(true)
-			item.Fields["errors"] = List()
-			results = append(results, item)
+			results = append(results, newSendEmailResult())
 		}
 		return List(results...), nil
 	case "ApexPages.hasMessages":
@@ -6872,6 +6874,17 @@ func newHttpResponse() Value {
 	return response
 }
 
+func newSendEmailResult() Value {
+	result := Object("Messaging.SendEmailResult")
+	result.Fields["success"] = Bool(true)
+	result.Fields["errors"] = List()
+	return result
+}
+
+func isLocalEmailMessage(value Value) bool {
+	return value.Kind == ValueObject && (value.Type == "Messaging.SingleEmailMessage" || value.Type == "Messaging.MassEmailMessage")
+}
+
 func newRestResponse() Value {
 	response := Object("RestResponse")
 	response.Fields["statusCode"] = Int(200)
@@ -7106,6 +7119,16 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 			message.Fields["detail"] = args[2]
 		}
 		return message, nil
+	case "Messaging.SendEmailResult":
+		if len(args) != 0 || len(namedArgs) != 0 {
+			return Null, fmt.Errorf("Messaging.SendEmailResult constructor expects 0 arguments")
+		}
+		return newSendEmailResult(), nil
+	case "Messaging.SingleEmailMessage", "Messaging.MassEmailMessage", "Messaging.SendEmailOptions":
+		if len(args) != 0 || len(namedArgs) != 0 {
+			return Null, fmt.Errorf("%s constructor expects 0 arguments", typeName)
+		}
+		return Object(typeName), nil
 	case "URL":
 		if len(namedArgs) != 0 {
 			return Null, fmt.Errorf("URL constructor does not accept named fields")
