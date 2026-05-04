@@ -82,7 +82,7 @@ var stdlibEntries = []StdlibEntry{
 	{Area: "List", API: "List.remove", Status: StatusSupported, Notes: "Indexed removal returns the removed value."},
 	{Area: "List", API: "List.set", Status: StatusSupported, Notes: "Indexed replacement with typed value coercion."},
 	{Area: "List", API: "List.size", Status: StatusSupported, Notes: "Returns local list length."},
-	{Area: "List", API: "List.sort", Status: StatusPartial, Notes: "Deterministic sort for local primitive comparable values only."},
+	{Area: "List", API: "List.sort", Status: StatusPartial, Notes: "Deterministic sort for local primitive comparable values; object/Comparable sorting returns an explicit unsupported error."},
 	{Area: "LoggingLevel", API: "LoggingLevel.name", Status: StatusSupported, Notes: "Returns deterministic built-in enum member text."},
 	{Area: "LoggingLevel", API: "LoggingLevel.ordinal", Status: StatusSupported, Notes: "Returns deterministic built-in enum order for the local logging level set."},
 	{Area: "LoggingLevel", API: "LoggingLevel.toString", Status: StatusSupported, Notes: "Returns deterministic built-in enum member text."},

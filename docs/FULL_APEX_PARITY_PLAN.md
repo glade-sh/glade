@@ -86,7 +86,9 @@ Current progress:
   `hasNext`/`next`, stable unsupported `Iterator.remove`, common `Set<T>`
   bulk operations, deterministic `Map<K,V>` key/value views, previous-value,
   `putAll`, `containsValue`, `toString`, equality, clear/isEmpty/remove
-  behavior, null membership edges, and bounded `Map<Id,SObject>`
+  behavior, null membership edges, recursive no-argument SObject deepClone
+  coverage, typed unsupported diagnostics for preserve-option deepClone and
+  object/Comparable sort gaps, and bounded `Map<Id,SObject>`
   construction/`putAll(List<SObject>)` for rows with non-null unique Ids.
 - String: runtime support now covers case-insensitive contains/prefix/suffix,
   equality/comparison, capitalization, padding/centering, left/right/mid,
@@ -169,6 +171,11 @@ Current progress:
   unchanged.
 - Fixtures:
   - `docs/fixtures/core-collection-stdlib.json`
+  - `docs/fixtures/core-collection-stdlib-sobject-deepclone.json`
+  - `docs/fixtures/core-collection-stdlib-unsupported-list-deepclone-options.json`
+  - `docs/fixtures/core-collection-stdlib-unsupported-set-deepclone-options.json`
+  - `docs/fixtures/core-collection-stdlib-unsupported-map-deepclone-options.json`
+  - `docs/fixtures/core-collection-stdlib-unsupported-sort-object.json`
   - `docs/fixtures/core-string-stdlib.json`
   - `docs/fixtures/core-string-more-stdlib.json`
   - `docs/fixtures/core-string-completion-stdlib.json`

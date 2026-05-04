@@ -1,0 +1,28 @@
+{
+  "name": "core-collection-stdlib-unsupported-sort-object",
+  "evidence": [
+    {
+      "symbol": "List.sort",
+      "kind": "exec",
+      "notes": "Non-primitive comparable/object sorting returns a typed unsupported diagnostic."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "List<Account> accounts = new List<Account>{new Account(Name = 'Acme')};\naccounts.sort();"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "List<Account> accounts = new List<Account>{new Account(Name = 'Acme')};\naccounts.sort();"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"List.sort for non-primitive comparable values\""
+    }
+  }
+}

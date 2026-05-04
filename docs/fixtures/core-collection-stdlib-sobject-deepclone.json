@@ -1,0 +1,33 @@
+{
+  "name": "core-collection-stdlib-sobject-deepclone",
+  "evidence": [
+    {
+      "symbol": "List.deepClone",
+      "kind": "exec",
+      "notes": "No-arg deepClone recursively copies SObject elements."
+    },
+    {
+      "symbol": "Map.deepClone",
+      "kind": "exec",
+      "notes": "No-arg deepClone recursively copies SObject map values."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Account acme = new Account(Id = '001B000001DVM9tIAH', Name = 'Acme');\nAccount beta = new Account(Id = '001B000001DVM9uIAH', Name = 'Beta');\nList<Account> accounts = new List<Account>{acme, beta};\nList<Account> clonedAccounts = accounts.deepClone();\nAccount clonedAcme = clonedAccounts.get(0);\nclonedAcme.Name = 'Clone';\nAccount originalAcme = accounts.get(0);\nAccount clonedAcmeAgain = clonedAccounts.get(0);\nSystem.assertEquals('Acme', originalAcme.Name);\nSystem.assertEquals('Clone', clonedAcmeAgain.Name);\nMap<Id, Account> byId = new Map<Id, Account>(accounts);\nMap<Id, Account> clonedById = byId.deepClone();\nAccount fromClone = clonedById.get(acme.Id);\nfromClone.Name = 'Mapped Clone';\nAccount originalMapped = byId.get(acme.Id);\nAccount clonedMapped = clonedById.get(acme.Id);\nSystem.assertEquals('Acme', originalMapped.Name);\nSystem.assertEquals('Mapped Clone', clonedMapped.Name);\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Account acme = new Account(Id = '001B000001DVM9tIAH', Name = 'Acme');\nAccount beta = new Account(Id = '001B000001DVM9uIAH', Name = 'Beta');\nList<Account> accounts = new List<Account>{acme, beta};\nList<Account> clonedAccounts = accounts.deepClone();\nAccount clonedAcme = clonedAccounts.get(0);\nclonedAcme.Name = 'Clone';\nAccount originalAcme = accounts.get(0);\nAccount clonedAcmeAgain = clonedAccounts.get(0);\nSystem.assertEquals('Acme', originalAcme.Name);\nSystem.assertEquals('Clone', clonedAcmeAgain.Name);\nMap<Id, Account> byId = new Map<Id, Account>(accounts);\nMap<Id, Account> clonedById = byId.deepClone();\nAccount fromClone = clonedById.get(acme.Id);\nfromClone.Name = 'Mapped Clone';\nAccount originalMapped = byId.get(acme.Id);\nAccount clonedMapped = clonedById.get(acme.Id);\nSystem.assertEquals('Acme', originalMapped.Name);\nSystem.assertEquals('Mapped Clone', clonedMapped.Name);\n"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

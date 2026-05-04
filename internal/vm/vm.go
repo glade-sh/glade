@@ -6545,7 +6545,7 @@ func sortComparableValues(values []Value) error {
 		switch value.Kind {
 		case ValueInt, ValueDecimal, ValueString, ValueBool:
 		default:
-			return fmt.Errorf("List.sort supports only primitive comparable values")
+			return unsupportedCallError("List.sort for non-primitive comparable values")
 		}
 	}
 	sort.SliceStable(values, func(i, j int) bool {

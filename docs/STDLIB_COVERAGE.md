@@ -128,7 +128,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | List | `List.remove` | `supported` | Indexed removal returns the removed value. |
 | List | `List.set` | `supported` | Indexed replacement with typed value coercion. |
 | List | `List.size` | `supported` | Returns local list length. |
-| List | `List.sort` | `partial` | Deterministic sort for local primitive comparable values only. |
+| List | `List.sort` | `partial` | Deterministic sort for local primitive comparable values; object/Comparable sorting returns an explicit unsupported error. |
 | LoggingLevel | `LoggingLevel.name` | `supported` | Returns deterministic built-in enum member text. |
 | LoggingLevel | `LoggingLevel.ordinal` | `supported` | Returns deterministic built-in enum order for the local logging level set. |
 | LoggingLevel | `LoggingLevel.toString` | `supported` | Returns deterministic built-in enum member text. |
