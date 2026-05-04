@@ -1314,6 +1314,116 @@
       ]
     },
     {
+      "name": "tooling-query-post-method-not-allowed",
+      "method": "POST",
+      "path": "/services/data/v61.0/tooling/query?q=SELECT%20Id%20FROM%20Account",
+      "body": "{}",
+      "status": 405,
+      "contains": [
+        "METHOD_NOT_ALLOWED",
+        "method not allowed"
+      ]
+    },
+    {
+      "name": "tooling-metadata-container-create-unsupported",
+      "method": "POST",
+      "path": "/services/data/v61.0/tooling/sobjects/MetadataContainer",
+      "body": "{\"Name\":\"LocalContainer\"}",
+      "status": 501,
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Tooling MetadataContainer object collection"
+      ]
+    },
+    {
+      "name": "tooling-containerasyncrequest-create-unsupported",
+      "method": "POST",
+      "path": "/services/data/v61.0/tooling/sobjects/ContainerAsyncRequest",
+      "body": "{\"MetadataContainerId\":\"1dc000000000001\",\"IsCheckOnly\":true}",
+      "status": 501,
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Tooling ContainerAsyncRequest object collection"
+      ]
+    },
+    {
+      "name": "tooling-apextestqueueitem-create-unsupported",
+      "method": "POST",
+      "path": "/services/data/v61.0/tooling/sobjects/ApexTestQueueItem",
+      "body": "{\"ApexClassId\":\"01p000000000001\"}",
+      "status": 501,
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Tooling ApexTestQueueItem object collection"
+      ]
+    },
+    {
+      "name": "tooling-apextestqueueitem-missing-class",
+      "method": "POST",
+      "path": "/services/data/v61.0/tooling/sobjects/ApexTestQueueItem",
+      "body": "{}",
+      "status": 400,
+      "contains": [
+        "REQUIRED_FIELD_MISSING",
+        "ApexTestQueueItem.ApexClassId is required"
+      ]
+    },
+    {
+      "name": "tooling-apextestqueueitem-malformed-json",
+      "method": "POST",
+      "path": "/services/data/v61.0/tooling/sobjects/ApexTestQueueItem",
+      "body": "{\"ApexClassId\":",
+      "status": 400,
+      "contains": [
+        "JSON_PARSER_ERROR",
+        "unexpected EOF"
+      ]
+    },
+    {
+      "name": "tooling-apextestresult-collection-readonly-method-not-allowed",
+      "method": "POST",
+      "path": "/services/data/v61.0/tooling/sobjects/ApexTestResult",
+      "body": "{}",
+      "status": 405,
+      "contains": [
+        "METHOD_NOT_ALLOWED",
+        "method not allowed"
+      ]
+    },
+    {
+      "name": "tooling-apextestresult-record-readonly-method-not-allowed",
+      "method": "PATCH",
+      "path": "/services/data/v61.0/tooling/sobjects/ApexTestResult/07M000000000001",
+      "body": "{}",
+      "status": 405,
+      "contains": [
+        "METHOD_NOT_ALLOWED",
+        "method not allowed"
+      ]
+    },
+    {
+      "name": "tooling-run-tests-async-unsupported",
+      "method": "POST",
+      "path": "/services/data/v61.0/tooling/runTestsAsynchronous",
+      "body": "{\"tests\":[{\"classId\":\"01p000000000001\",\"testMethods\":[\"testOne\"]}]}",
+      "status": 501,
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Tooling runTestsAsynchronous"
+      ]
+    },
+    {
+      "name": "tooling-run-tests-sync-malformed-json",
+      "method": "POST",
+      "path": "/services/data/v61.0/tooling/runTestsSynchronous",
+      "body": "{\"tests\":",
+      "status": 400,
+      "contains": [
+        "JSON_PARSER_ERROR",
+        "unexpected EOF"
+      ]
+    },
+    {
       "name": "tooling-apextestresult-record-unsupported",
       "method": "GET",
       "path": "/services/data/v61.0/tooling/sobjects/ApexTestResult/07M000000000001",
@@ -1627,7 +1737,7 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 145,
+      "requests": 155,
       "statuses": [
         200,
         200,
@@ -1745,6 +1855,16 @@
         501,
         501,
         501,
+        405,
+        501,
+        501,
+        501,
+        400,
+        400,
+        405,
+        405,
+        501,
+        400,
         501,
         501,
         501,
