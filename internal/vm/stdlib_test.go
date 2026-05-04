@@ -365,6 +365,9 @@ System.assertEquals('', empty.toString());
 System.assertEquals('', EncodingUtil.convertToHex(empty));
 Blob emptyHex = EncodingUtil.convertFromHex('');
 System.assertEquals(0, emptyHex.size());
+Blob binary = EncodingUtil.convertFromHex('00FF7f');
+System.assertEquals(3, binary.size());
+System.assertEquals('00ff7f', EncodingUtil.convertToHex(binary));
 System.assertEquals('aGVsbG8=', EncodingUtil.base64Encode(hello));
 Blob decodedBase64 = EncodingUtil.base64Decode('aGVsbG8=');
 System.assertEquals('hello', decodedBase64.toString());
@@ -374,25 +377,31 @@ System.assertEquals(0, emptyBase64.size());
 String urlEncoded = EncodingUtil.urlEncode('A B+Ω', 'UTF-8');
 System.assertEquals('A+B%2B%CE%A9', urlEncoded);
 System.assertEquals('A B+Ω', EncodingUtil.urlDecode(urlEncoded, 'utf8'));
+System.assertEquals('%C3%85+trail', EncodingUtil.urlEncode('Å trail', ' UTF_8 '));
+System.assertEquals('Å trail', EncodingUtil.urlDecode('%C3%85+trail', 'Utf-8'));
 Blob md5 = Crypto.generateDigest('MD5', hello);
 Blob sha1 = Crypto.generateDigest('SHA1', hello);
 Blob sha256 = Crypto.generateDigest('SHA-256', hello);
 Blob sha512 = Crypto.generateDigest('SHA-512', hello);
 Blob sha3 = Crypto.generateDigest('SHA3-256', hello);
+Blob normalizedSha512 = Crypto.generateDigest(' sha_512 ', hello);
 System.assertEquals('5d41402abc4b2a76b9719d911017c592', EncodingUtil.convertToHex(md5));
 System.assertEquals('aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d', EncodingUtil.convertToHex(sha1));
 System.assertEquals('2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824', EncodingUtil.convertToHex(sha256));
 System.assertEquals('9b71d224bd62f3785d96d46ad3ea3d73319bfbc2890caadae2dff72519673ca72323c3d99ba5c11d7c7acc6e14b8c5da0c4663475c2e5c3adef46f73bcdec043', EncodingUtil.convertToHex(sha512));
 System.assertEquals('3338be694f50c5f338814986cdf0686453a888b84f424d792af4b9202398f392', EncodingUtil.convertToHex(sha3));
+System.assertEquals(EncodingUtil.convertToHex(sha512), EncodingUtil.convertToHex(normalizedSha512));
 Blob message = Blob.valueOf('message');
 Blob key = Blob.valueOf('key');
 Blob hmacMD5 = Crypto.generateMac('hmacMD5', message, key);
 Blob hmacSHA1 = Crypto.generateMac('hmacSHA1', message, key);
 Blob hmacSHA256 = Crypto.generateMac('HmacSHA256', message, key);
 Blob hmacSHA512 = Crypto.generateMac('hmacSHA512', message, key);
+Blob normalizedHmacSHA256 = Crypto.generateMac(' HMAC-SHA256 ', message, key);
 System.assertEquals('4e4748e62b463521f6775fbf921234b5', EncodingUtil.convertToHex(hmacMD5));
 System.assertEquals('2088df74d5f2146b48146caf4965377e9d0be3a4', EncodingUtil.convertToHex(hmacSHA1));
 System.assertEquals('6e9ef29b75fffc5b7abae527d58fdadb2fe42e7219011976917343065f58ed4a', EncodingUtil.convertToHex(hmacSHA256));
+System.assertEquals(EncodingUtil.convertToHex(hmacSHA256), EncodingUtil.convertToHex(normalizedHmacSHA256));
 System.assertEquals('e477384d7ca229dd1426e64b63ebf2d36ebd6d7e669a6735424e72ea6c01d3f8b56eb39c36d8232f5427999b8d1a3f9cd1128fc69f4d75b434216810fa367e98', EncodingUtil.convertToHex(hmacSHA512));
 System.assert(Crypto.areEqualConstantTime(hello, Blob.valueOf('hello')));
 System.assert(!Crypto.areEqualConstantTime(hello, Blob.valueOf('hullo')));
@@ -635,25 +644,32 @@ System.assert(childType.isAssignableFrom(childType));
 }
 
 func TestBlobEncodingCryptoStdlibRejectsBadInputs(t *testing.T) {
-	tests := []string{
-		"Blob b = Blob.valueOf('abc'); b.size(1);",
-		"EncodingUtil.base64Decode('not base64');",
-		"EncodingUtil.convertFromHex('abc');",
-		"EncodingUtil.convertFromHex('zz');",
-		"EncodingUtil.urlEncode('x', 'ISO-8859-1');",
-		"EncodingUtil.urlDecode('%zz', 'UTF-8');",
-		"Crypto.areEqualConstantTime(Blob.valueOf('x'), 'x');",
-		"Crypto.generateDigest('SHA-999', Blob.valueOf('x'));",
-		"Crypto.generateMac('hmacSHA999', Blob.valueOf('x'), Blob.valueOf('key'));",
-		"Crypto.generateMac('hmacSHA256', Blob.valueOf('x'), 'key');",
+	tests := []struct {
+		source string
+		want   string
+	}{
+		{source: "Blob b = Blob.valueOf('abc'); b.size(1);", want: "Blob.size expects 0 arguments"},
+		{source: "EncodingUtil.base64Decode('not base64');", want: "EncodingUtil.base64Decode invalid base64 string"},
+		{source: "EncodingUtil.convertFromHex('abc');", want: "EncodingUtil.convertFromHex invalid hexadecimal string"},
+		{source: "EncodingUtil.convertFromHex('zz');", want: "EncodingUtil.convertFromHex invalid hexadecimal string"},
+		{source: "Blob bad = EncodingUtil.convertFromHex('80'); bad.toString();", want: "Blob.toString invalid UTF-8 data"},
+		{source: "EncodingUtil.urlEncode('x', 'ISO-8859-1');", want: `unsupported call "EncodingUtil.urlEncode charset \"ISO-8859-1\""`},
+		{source: "EncodingUtil.urlDecode('%zz', 'UTF-8');", want: "invalid URL escape"},
+		{source: "Crypto.areEqualConstantTime(Blob.valueOf('x'), 'x');", want: "Crypto.areEqualConstantTime right expects Blob"},
+		{source: "Crypto.generateDigest('SHA-999', Blob.valueOf('x'));", want: `unsupported digest algorithm "SHA-999"`},
+		{source: "Crypto.generateMac('hmacSHA999', Blob.valueOf('x'), Blob.valueOf('key'));", want: `unsupported MAC algorithm "hmacSHA999"`},
+		{source: "Crypto.generateMac('hmacSHA256', Blob.valueOf('x'), 'key');", want: "Crypto.generateMac privateKey expects Blob"},
 	}
-	for _, source := range tests {
+	for _, tc := range tests {
+		source := tc.source
 		program, err := CompileAnonymous(source)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if _, err := Execute(program, nil); err == nil {
 			t.Fatalf("expected error for %s", source)
+		} else if !strings.Contains(err.Error(), tc.want) {
+			t.Fatalf("error for %s = %q, want substring %q", source, err.Error(), tc.want)
 		}
 	}
 }
@@ -670,9 +686,34 @@ func TestBlobEncodingCryptoStdlibUnsupportedCryptoSurfaces(t *testing.T) {
 			want: `unsupported call "Crypto.encrypt local deterministic key, certificate, and encryption surfaces"`,
 		},
 		{
+			name: "decryptWithManagedIV",
+			src:  "Crypto.decryptWithManagedIV('AES128', Blob.valueOf('key'), Blob.valueOf('data'));",
+			want: `unsupported call "Crypto.decryptWithManagedIV local deterministic key, certificate, and encryption surfaces"`,
+		},
+		{
 			name: "signWithCertificate",
 			src:  "Crypto.signWithCertificate('RSA-SHA256', Blob.valueOf('data'), 'cert');",
 			want: `unsupported call "Crypto.signWithCertificate local deterministic key, certificate, and encryption surfaces"`,
+		},
+		{
+			name: "verifyWithCertificate",
+			src:  "Crypto.verifyWithCertificate('RSA-SHA256', Blob.valueOf('data'), Blob.valueOf('sig'), 'cert');",
+			want: `unsupported call "Crypto.verifyWithCertificate local deterministic key, certificate, and encryption surfaces"`,
+		},
+		{
+			name: "generateAESKey",
+			src:  "Crypto.generateAESKey(128);",
+			want: `unsupported call "Crypto.generateAESKey local deterministic random/key generation surface"`,
+		},
+		{
+			name: "getRandomInteger",
+			src:  "Crypto.getRandomInteger();",
+			want: `unsupported call "Crypto.getRandomInteger local deterministic random/key generation surface"`,
+		},
+		{
+			name: "getRandomLong",
+			src:  "Crypto.getRandomLong();",
+			want: `unsupported call "Crypto.getRandomLong local deterministic random/key generation surface"`,
 		},
 	}
 	for _, tc := range tests {

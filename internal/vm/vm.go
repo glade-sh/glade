@@ -22,6 +22,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/open-aer/oaer/internal/dml"
 	"github.com/open-aer/oaer/internal/ir"
@@ -1261,7 +1262,7 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		}
 		decoded, err := base64.StdEncoding.DecodeString(args[0].Text)
 		if err != nil {
-			return Null, err
+			return Null, fmt.Errorf("EncodingUtil.base64Decode invalid base64 string: %w", err)
 		}
 		return platformScalar("Blob", string(decoded)), nil
 	case "EncodingUtil.convertFromHex":
@@ -1345,6 +1346,8 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 	case "Crypto.encrypt", "Crypto.decrypt", "Crypto.encryptWithManagedIV", "Crypto.decryptWithManagedIV",
 		"Crypto.sign", "Crypto.signWithCertificate", "Crypto.verify", "Crypto.verifyWithCertificate":
 		return Null, unsupportedCallError(callee + " local deterministic key, certificate, and encryption surfaces")
+	case "Crypto.generateAESKey", "Crypto.getRandomInteger", "Crypto.getRandomLong":
+		return Null, unsupportedCallError(callee + " local deterministic random/key generation surface")
 	case "JSON.createGenerator":
 		if len(args) != 1 || args[0].Kind != ValueBool {
 			return Null, fmt.Errorf("JSON.createGenerator expects Boolean")
@@ -4043,12 +4046,19 @@ func requireUTF8Charset(name, charset string) error {
 	case "utf-8", "utf8":
 		return nil
 	default:
-		return fmt.Errorf("%s unsupported charset %q", name, charset)
+		return unsupportedCallError(fmt.Sprintf("%s charset %q", name, charset))
 	}
 }
 
+func normalizeCryptoAlgorithm(algorithm string) string {
+	normalized := strings.ToUpper(strings.TrimSpace(algorithm))
+	normalized = strings.ReplaceAll(normalized, "-", "")
+	normalized = strings.ReplaceAll(normalized, "_", "")
+	return normalized
+}
+
 func generateDigest(algorithm string, data []byte) ([]byte, error) {
-	normalized := strings.ToUpper(strings.ReplaceAll(algorithm, "-", ""))
+	normalized := normalizeCryptoAlgorithm(algorithm)
 	switch normalized {
 	case "MD5":
 		sum := md5.Sum(data)
@@ -4077,7 +4087,7 @@ func generateDigest(algorithm string, data []byte) ([]byte, error) {
 }
 
 func generateMac(algorithm string, input, privateKey []byte) ([]byte, error) {
-	normalized := strings.ToUpper(strings.ReplaceAll(algorithm, "-", ""))
+	normalized := normalizeCryptoAlgorithm(algorithm)
 	var mac hash.Hash
 	switch normalized {
 	case "HMACMD5":
@@ -7983,7 +7993,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("%s.%s expects 0 arguments", receiver.Type, method)
 			}
-			return String(receiver.Fields["value"].String()), receiver, false, true, nil
+			text := receiver.Fields["value"].String()
+			if receiver.Type == "Blob" && method == "toString" && !utf8.ValidString(text) {
+				return Null, receiver, false, true, fmt.Errorf("Blob.toString invalid UTF-8 data")
+			}
+			return String(text), receiver, false, true, nil
 		case "size":
 			if receiver.Type != "Blob" {
 				return Null, receiver, false, false, nil
