@@ -426,6 +426,10 @@ Cuts:
 2. REST
    - RestContext, RestRequest, RestResponse, annotation dispatch, local server
      integration, request/response property parity, and JSON body behavior.
+   - Current fixture-backed slice: VM-local RestContext request/response slots,
+     RestRequest/RestResponse object shapes for headers, params, URI/path,
+     status, and Blob bodies, plus stable unsupported local-server
+     `@RestResource` dispatch errors.
 
 3. Security and Auth
    - UserInfo, FeatureManagement, permission fixtures, Auth token classes as
