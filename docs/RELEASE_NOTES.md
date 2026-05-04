@@ -118,6 +118,9 @@ Release engineering:
   `Schema.RecordTypeInfo` methods and deterministic local `012` IDs.
 - Added `SObjectType.getDescribe`, `DescribeSObjectResult.fields.getMap`, and
   child relationship describe basics for describe-heavy code paths.
+- Fixed local `Messaging.sendEmail` result shaping so multi-message sends return
+  one `SendEmailResult` per input message, with the Boolean overload covered by
+  compatibility fixtures.
 - Expanded data-fidelity coverage for SOQL complex predicates, numeric
   comparison semantics, `Database.Error` result shapes, and
   `Database.UpsertResult.isCreated()`.
