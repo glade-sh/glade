@@ -1770,7 +1770,7 @@ func matcherReplace(name string, re *regexp.Regexp, input string, region matcher
 	if len(args) != 1 || args[0].Kind != ValueString {
 		return "", fmt.Errorf("%s expects replacement String", name)
 	}
-	replacement, err := javaReplacementToGoTemplate(args[0].Text, re.NumSubexp())
+	replacement, err := javaReplacementToGoTemplate(name, args[0].Text, re.NumSubexp())
 	if err != nil {
 		return "", fmt.Errorf("%s %w", name, err)
 	}
@@ -1787,7 +1787,7 @@ func matcherReplace(name string, re *regexp.Regexp, input string, region matcher
 	return input[:region.startByte+indices[0]] + string(expanded) + input[region.startByte+indices[1]:], nil
 }
 
-func javaReplacementToGoTemplate(replacement string, groupCount int) (string, error) {
+func javaReplacementToGoTemplate(callee, replacement string, groupCount int) (string, error) {
 	var out strings.Builder
 	for i := 0; i < len(replacement); i++ {
 		ch := replacement[i]
@@ -1811,7 +1811,7 @@ func javaReplacementToGoTemplate(replacement string, groupCount int) (string, er
 			}
 			next := replacement[i+1]
 			if next == '{' {
-				return "", unsupportedCallError("Matcher replacement named group references")
+				return "", unsupportedCallError(callee + " replacement named group references")
 			}
 			if next < '0' || next > '9' {
 				return "", fmt.Errorf("replacement invalid group reference")
@@ -2400,7 +2400,7 @@ func stringRegexReplace(name, text string, args []Value, all bool) (string, erro
 	if err != nil {
 		return "", fmt.Errorf("%s invalid regex: %w", name, err)
 	}
-	replacement, err := javaReplacementToGoTemplate(args[1].Text, re.NumSubexp())
+	replacement, err := javaReplacementToGoTemplate(name, args[1].Text, re.NumSubexp())
 	if err != nil {
 		return "", fmt.Errorf("%s %w", name, err)
 	}
@@ -2514,6 +2514,10 @@ func unsupportedJavaRegexFeature(source string) string {
 			inClass = true
 		case ']':
 			inClass = false
+		case '&':
+			if inClass && i+1 < len(source) && source[i+1] == '&' {
+				return "Java regex character-class intersections"
+			}
 		case '(':
 			if inClass {
 				continue
