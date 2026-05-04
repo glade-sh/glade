@@ -4607,14 +4607,16 @@ func fixedTimeZone(id string) (Value, error) {
 }
 
 func supportedNamedTimeZone(id string) (*time.Location, bool) {
-	if id != "America/Los_Angeles" {
+	switch id {
+	case "America/Los_Angeles", "America/New_York":
+		location, err := time.LoadLocation(id)
+		if err != nil {
+			return nil, false
+		}
+		return location, true
+	default:
 		return nil, false
 	}
-	location, err := time.LoadLocation(id)
-	if err != nil {
-		return nil, false
-	}
-	return location, true
 }
 
 func resolveTimeZoneForInstant(id string, instant time.Time) (string, time.Duration, time.Time, string, bool) {

@@ -1091,6 +1091,31 @@ System.assertEquals('2024-02-29T15:05:06-08:00', winter.format());
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
+
+	easternProgram, err := CompileAnonymous(`
+Datetime winter = Datetime.valueOfGmt('2024-02-29T23:05:06Z');
+Datetime summer = Datetime.valueOfGmt('2024-07-01T12:00:00Z');
+TimeZone eastern = UserInfo.getTimeZone();
+System.assertEquals('America/New_York', eastern.getID());
+System.assertEquals(-18000000, eastern.getOffset(winter));
+System.assertEquals(-14400000, eastern.getOffset(summer));
+System.assertEquals('2024-02-29 18:05:06 -0500 EST', winter.format('yyyy-MM-dd HH:mm:ss Z z'));
+System.assertEquals('2024-07-01T08:00:00-04:00', summer.format());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	easternMachine := New(nil)
+	easternMachine.SetCurrentUser(storage.Record{
+		ID:     "005-eastern-user",
+		Object: "User",
+		Fields: map[string]storage.Value{
+			"TimeZoneSidKey": storage.StringValue("America/New_York"),
+		},
+	})
+	if _, err := easternMachine.Execute(easternProgram); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestExecLocalCurrentUserContextDoesNotEnableRunAs(t *testing.T) {
@@ -1432,6 +1457,11 @@ System.assertEquals('America/Los_Angeles', pacific.getDisplayName());
 System.assertEquals(-28800000, pacific.getOffset(gmt));
 Datetime summerNoon = Datetime.valueOfGmt('2024-07-01T12:00:00Z');
 System.assertEquals(-25200000, pacific.getOffset(summerNoon));
+TimeZone eastern = TimeZone.getTimeZone('America/New_York');
+System.assertEquals('America/New_York', eastern.getID());
+System.assertEquals('America/New_York', eastern.getDisplayName());
+System.assertEquals(-18000000, eastern.getOffset(gmt));
+System.assertEquals(-14400000, eastern.getOffset(summerNoon));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1452,6 +1482,8 @@ System.assertEquals('2024-03-01 13:05:06 +1400 GMT+14:00', stamp.format('yyyy-MM
 System.assertEquals('2024-02-29 15:05:06 -0800 PST', stamp.format('yyyy-MM-dd HH:mm:ss Z z', 'America/Los_Angeles'));
 Datetime summer = Datetime.valueOfGmt('2024-07-01T12:00:00Z');
 System.assertEquals('2024-07-01 05:00:00 -0700 PDT', summer.format('yyyy-MM-dd HH:mm:ss Z z', 'America/Los_Angeles'));
+System.assertEquals('2024-02-29 18:05:06 -0500 EST', stamp.format('yyyy-MM-dd HH:mm:ss Z z', 'America/New_York'));
+System.assertEquals('2024-07-01 08:00:00 -0400 EDT', summer.format('yyyy-MM-dd HH:mm:ss Z z', 'America/New_York'));
 `)
 	if err != nil {
 		t.Fatal(err)

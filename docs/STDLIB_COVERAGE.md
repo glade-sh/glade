@@ -62,7 +62,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Datetime | `Datetime.date` | `partial` | Returns UTC-modeled Date component; no user timezone model. |
 | Datetime | `Datetime.dateGmt` | `supported` | Returns the UTC Date component. |
 | Datetime | `Datetime.day` | `partial` | UTC-modeled component getter. |
-| Datetime | `Datetime.format` | `partial` | Deterministic UTC/fixed-offset Java-pattern slice plus America/Los_Angeles DST formatting; format(pattern) and format() use the current user timezone for the modeled UTC/America/Los_Angeles slice; user locale is unsupported. |
+| Datetime | `Datetime.format` | `partial` | Deterministic UTC/fixed-offset Java-pattern slice plus America/Los_Angeles and America/New_York DST formatting; format(pattern) and format() use the current user timezone for the modeled UTC/America/Los_Angeles/America/New_York slice; user locale is unsupported. |
 | Datetime | `Datetime.formatGmt` | `partial` | Deterministic UTC Java-pattern slice with stable token errors; locale patterns are not modeled beyond pinned English names. |
 | Datetime | `Datetime.hour` | `partial` | UTC-modeled component getter. |
 | Datetime | `Datetime.millisecond` | `partial` | UTC-modeled component getter. |
@@ -365,10 +365,10 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Time | `Time.newInstance` | `supported` | Validates time parts including optional millisecond. |
 | Time | `Time.second` | `supported` | Local time component. |
 | Time | `Time.valueOf` | `supported` | Parses strict HH:mm:ss and HH:mm:ss.SSS strings with stable invalid-input errors. |
-| TimeZone | `TimeZone.getDisplayName` | `partial` | Returns deterministic ID text for UTC, fixed GMT offsets, and America/Los_Angeles; DST/locale overloads are unsupported. |
-| TimeZone | `TimeZone.getID` | `partial` | Returns canonical UTC, fixed GMT offset ID, or the supported America/Los_Angeles named zone. |
-| TimeZone | `TimeZone.getOffset` | `partial` | Returns fixed offset milliseconds for the deterministic offset slice and America/Los_Angeles DST decisions; other named zones are unsupported. |
-| TimeZone | `TimeZone.getTimeZone` | `partial` | Supports UTC/GMT, fixed GMT/UTC offsets through ±14:00, and America/Los_Angeles; other named zones and trimmed/invalid IDs are unsupported. |
+| TimeZone | `TimeZone.getDisplayName` | `partial` | Returns deterministic ID text for UTC, fixed GMT offsets, America/Los_Angeles, and America/New_York; DST/locale overloads are unsupported. |
+| TimeZone | `TimeZone.getID` | `partial` | Returns canonical UTC, fixed GMT offset ID, or the supported America/Los_Angeles and America/New_York named zones. |
+| TimeZone | `TimeZone.getOffset` | `partial` | Returns fixed offset milliseconds for the deterministic offset slice and America/Los_Angeles and America/New_York DST decisions; other named zones are unsupported. |
+| TimeZone | `TimeZone.getTimeZone` | `partial` | Supports UTC/GMT, fixed GMT/UTC offsets through ±14:00, and America/Los_Angeles/America/New_York; other named zones and trimmed/invalid IDs are unsupported. |
 | Type | `Type.equals` | `supported` | Compares local Type tokens by type name. |
 | Type | `Type.forName` | `partial` | Local class/type token lookup, common local SObjects, built-in and generic collection type strings, and null for null/blank/unknown local names. |
 | Type | `Type.getName` | `supported` | Returns local type token name. |
@@ -399,6 +399,6 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | UserInfo | `UserInfo.getOrganizationId` | `partial` | Local org identity. |
 | UserInfo | `UserInfo.getProfileId` | `partial` | Current runAs/server/default user. |
 | UserInfo | `UserInfo.getSessionId` | `partial` | Empty local session value. |
-| UserInfo | `UserInfo.getTimeZone` | `partial` | Returns a TimeZone object for the current user TimeZoneSidKey in the modeled UTC/America/Los_Angeles slice. |
+| UserInfo | `UserInfo.getTimeZone` | `partial` | Returns a TimeZone object for the current user TimeZoneSidKey in the modeled UTC/America/Los_Angeles/America/New_York slice. |
 | UserInfo | `UserInfo.getUserEmail` | `partial` | Current runAs/server/default user. |
 | UserInfo | `UserInfo.getUserId` | `partial` | Current runAs/server/default user. |
