@@ -539,6 +539,12 @@ a Salesforce-shaped local API server without silently wrong behavior.
     behavior is not safe to claim on Go regexp.
   - [x] Add common `Date`, `Datetime`, and `Time` factories, parsing,
     arithmetic, and component helpers.
+  - [x] Promote deterministic `Datetime` pure-duration arithmetic and local
+    component getters for the modeled current-user timezone slice.
+  - [x] Promote `UserInfo` identity, locale, and language getters for the
+    current runAs/server/default local user context.
+  - [x] Fence locale-sensitive `Datetime.format` pattern tokens with typed
+    unsupported diagnostics instead of localized output claims.
   - [x] Add common numeric `Math` helpers, `Decimal` scale/conversion helpers,
     URL encoding helpers, and MD5/SHA1/SHA-256 digest coverage.
   - **Limitation**: Exact locale, broad timezone, rounding-mode, charset, and
@@ -547,8 +553,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
     `America/New_York`, `America/Chicago`, `America/Denver`, `Europe/London`,
     `Europe/Berlin`, `Asia/Tokyo`, and `Australia/Sydney` formatting, offsets,
     current-user timezone formatting, local `Datetime.newInstance`
-    construction, local component getters, and deterministic DST gap/overlap
-    choices.
+    construction, local component getters, `UserInfo` LocaleSidKey and
+    LanguageLocaleKey reads, and deterministic DST gap/overlap choices. Locale
+    values are surfaced, not applied to formatting.
 - [x] Complete HTTP/callout mock behavior: request/response types,
   `HttpCalloutMock`, callout limits, and test isolation.
   - [x] Add common `HttpRequest`/`HttpResponse` endpoint, method, header,

@@ -1064,7 +1064,7 @@ func TestExecAsyncUnsupportedEdgesAreTyped(t *testing.T) {
 
 func TestExecRunAsUserObjectScopesUserInfo(t *testing.T) {
 	program, err := CompileAnonymous(`
-System.runAs(new User(Id = '005-user-a', ProfileId = '00e-profile-a', Username = 'user-a@example.test')) {
+System.runAs(new User(Id = '005-user-a', ProfileId = '00e-profile-a', Username = 'user-a@example.test', LocaleSidKey = 'de_DE', LanguageLocaleKey = 'fr')) {
   System.assertEquals('005-user-a', UserInfo.getUserId());
   System.assertEquals('00e-profile-a', UserInfo.getProfileId());
   System.assertEquals('user-a@example.test', UserInfo.getUserName());
@@ -1074,7 +1074,8 @@ System.runAs(new User(Id = '005-user-a', ProfileId = '00e-profile-a', Username =
   System.assertEquals('system@example.invalid', UserInfo.getUserEmail());
   System.assertEquals('00D000000000001', UserInfo.getOrganizationId());
   System.assertEquals('', UserInfo.getSessionId());
-  System.assertEquals('en_US', UserInfo.getLocale());
+  System.assertEquals('de_DE', UserInfo.getLocale());
+  System.assertEquals('fr', UserInfo.getLanguage());
   TimeZone tz = UserInfo.getTimeZone();
   System.assertEquals('UTC', tz.getID());
   System.assertEquals('UTC', tz.getDisplayName());
@@ -1259,6 +1260,8 @@ func TestExecLocalCurrentUserContextDoesNotEnableRunAs(t *testing.T) {
 System.assertEquals('005-local-user', UserInfo.getUserId());
 System.assertEquals('local@example.test', UserInfo.getUserName());
 System.assertEquals('local-email@example.test', UserInfo.getUserEmail());
+System.assertEquals('es_MX', UserInfo.getLocale());
+System.assertEquals('es', UserInfo.getLanguage());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1268,8 +1271,10 @@ System.assertEquals('local-email@example.test', UserInfo.getUserEmail());
 		ID:     "005-local-user",
 		Object: "User",
 		Fields: map[string]storage.Value{
-			"Username": storage.StringValue("local@example.test"),
-			"Email":    storage.StringValue("local-email@example.test"),
+			"Username":          storage.StringValue("local@example.test"),
+			"Email":             storage.StringValue("local-email@example.test"),
+			"LocaleSidKey":      storage.StringValue("es_MX"),
+			"LanguageLocaleKey": storage.StringValue("es"),
 		},
 	})
 	if _, err := machine.Execute(program); err != nil {
@@ -1731,6 +1736,11 @@ func TestExecDatetimePatternFormattingRejectsUnsupportedEdges(t *testing.T) {
 			name: "unterminated literal",
 			src:  `Datetime stamp = Datetime.now(); stamp.formatGmt('yyyy-MM-dd''T');`,
 			want: "unterminated quoted literal",
+		},
+		{
+			name: "locale dependent pattern token",
+			src:  `Datetime stamp = Datetime.now(); stamp.formatGmt('LLLL');`,
+			want: `unsupported call "Datetime.format locale-dependent pattern token \"LLLL\""`,
 		},
 	}
 	for _, tc := range cases {

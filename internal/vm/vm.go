@@ -1686,11 +1686,16 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return Null, fmt.Errorf("UserInfo.getSessionId expects 0 arguments")
 		}
 		return String(""), nil
-	case "UserInfo.getLocale", "UserInfo.getLanguage":
+	case "UserInfo.getLocale":
 		if len(args) != 0 {
-			return Null, fmt.Errorf("%s expects 0 arguments", callee)
+			return Null, fmt.Errorf("UserInfo.getLocale expects 0 arguments")
 		}
-		return String("en_US"), nil
+		return String(vm.currentUserInfoField("LocaleSidKey", "en_US")), nil
+	case "UserInfo.getLanguage":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("UserInfo.getLanguage expects 0 arguments")
+		}
+		return String(vm.currentUserInfoField("LanguageLocaleKey", "en_US")), nil
 	case "UserInfo.getTimeZone":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("UserInfo.getTimeZone expects 0 arguments")
@@ -4547,6 +4552,8 @@ func formatApexDatetimeToken(value time.Time, token, zoneID, zoneLabel string, o
 			return name, nil
 		}
 		return name[:3], nil
+	case 'G', 'L', 'c', 'e':
+		return "", unsupportedCallError(fmt.Sprintf("Datetime.format locale-dependent pattern token %q", token))
 	case 'Z':
 		return formatRFC822Offset(offset), nil
 	case 'z':
