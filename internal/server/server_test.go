@@ -294,6 +294,142 @@ func TestSObjectCRUDMissingAndDeletedEdges(t *testing.T) {
 	}
 }
 
+func TestSObjectUpdatedResourceReturnsNonDeletedIDs(t *testing.T) {
+	org := testOrg()
+	object := org.Objects["Account"]
+	object.Records["001000000000001"] = storage.Record{
+		ID:     "001000000000001",
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Old")},
+		System: storage.SystemFields{CreatedDate: "2026-05-01T00:00:00Z"},
+	}
+	object.Records["001000000000002"] = storage.Record{
+		ID:     "001000000000002",
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("New")},
+		System: storage.SystemFields{LastModifiedDate: "2026-05-02T00:00:00Z"},
+	}
+	object.Records["001000000000003"] = storage.Record{
+		ID:     "001000000000003",
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Deleted")},
+		System: storage.SystemFields{LastModifiedDate: "2026-05-03T00:00:00Z", IsDeleted: true},
+	}
+	org.Objects["Account"] = object
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/updated?start=2026-05-01T12:00:00Z&end=2026-05-02T12:00:00Z", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("updated status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var payload struct {
+		LatestDateCovered string   `json:"latestDateCovered"`
+		IDs               []string `json:"ids"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
+		t.Fatal(err)
+	}
+	if payload.LatestDateCovered != "2026-05-02T00:00:00Z" || len(payload.IDs) != 1 || payload.IDs[0] != "001000000000002" {
+		t.Fatalf("updated payload = %#v body=%s", payload, rec.Body.String())
+	}
+
+	endBoundary := httptest.NewRecorder()
+	handler.ServeHTTP(endBoundary, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/updated?start=2026-05-01T00:00:00Z&end=2026-05-02T00:00:00Z", nil))
+	if endBoundary.Code != http.StatusOK {
+		t.Fatalf("updated end-boundary status = %d body=%s", endBoundary.Code, endBoundary.Body.String())
+	}
+	if bytes.Contains(endBoundary.Body.Bytes(), []byte("001000000000002")) {
+		t.Fatalf("updated end boundary included exclusive end record: %s", endBoundary.Body.String())
+	}
+
+	emptyWindow := httptest.NewRecorder()
+	handler.ServeHTTP(emptyWindow, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/updated?start=2026-05-02T00:00:00Z&end=2026-05-02T00:00:00Z", nil))
+	if emptyWindow.Code != http.StatusOK {
+		t.Fatalf("updated empty-window status = %d body=%s", emptyWindow.Code, emptyWindow.Body.String())
+	}
+	if !bytes.Contains(emptyWindow.Body.Bytes(), []byte(`"ids":[]`)) {
+		t.Fatalf("updated start=end window returned ids: %s", emptyWindow.Body.String())
+	}
+
+	trailing := httptest.NewRecorder()
+	handler.ServeHTTP(trailing, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/updated/", nil))
+	if trailing.Code != http.StatusOK || !bytes.Contains(trailing.Body.Bytes(), []byte("001000000000001")) || !bytes.Contains(trailing.Body.Bytes(), []byte("001000000000002")) || bytes.Contains(trailing.Body.Bytes(), []byte("001000000000003")) {
+		t.Fatalf("updated trailing status = %d body=%s", trailing.Code, trailing.Body.String())
+	}
+}
+
+func TestSObjectDeletedResourceAfterDelete(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	create := httptest.NewRecorder()
+	handler.ServeHTTP(create, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/sobjects/Account", strings.NewReader(`{"Name":"Soft Gone"}`)))
+	if create.Code != http.StatusCreated {
+		t.Fatalf("create status = %d body=%s", create.Code, create.Body.String())
+	}
+	var created struct {
+		ID storage.ID `json:"id"`
+	}
+	if err := json.Unmarshal(create.Body.Bytes(), &created); err != nil {
+		t.Fatal(err)
+	}
+
+	del := httptest.NewRecorder()
+	handler.ServeHTTP(del, httptest.NewRequest(http.MethodDelete, "/services/data/v61.0/sobjects/Account/"+string(created.ID), nil))
+	if del.Code != http.StatusNoContent {
+		t.Fatalf("delete status = %d body=%s", del.Code, del.Body.String())
+	}
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/deleted/", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("deleted status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var payload struct {
+		EarliestDateAvailable string `json:"earliestDateAvailable"`
+		LatestDateCovered     string `json:"latestDateCovered"`
+		DeletedRecords        []struct {
+			ID          string `json:"id"`
+			DeletedDate string `json:"deletedDate"`
+		} `json:"deletedRecords"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
+		t.Fatal(err)
+	}
+	if payload.EarliestDateAvailable == "" || payload.LatestDateCovered == "" || len(payload.DeletedRecords) != 1 {
+		t.Fatalf("deleted payload = %#v body=%s", payload, rec.Body.String())
+	}
+	if payload.DeletedRecords[0].ID != string(created.ID) || payload.DeletedRecords[0].DeletedDate == "" {
+		t.Fatalf("deleted record = %#v body=%s", payload.DeletedRecords[0], rec.Body.String())
+	}
+}
+
+func TestSObjectUpdatedDeletedResourceErrorsAndMethods(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	unknown := httptest.NewRecorder()
+	handler.ServeHTTP(unknown, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Missing__c/updated", nil))
+	assertSalesforceError(t, unknown, http.StatusNotFound, "NOT_FOUND", "unknown object")
+
+	malformed := httptest.NewRecorder()
+	handler.ServeHTTP(malformed, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/updated?start=not-a-date", nil))
+	assertSalesforceError(t, malformed, http.StatusBadRequest, "MALFORMED_QUERY", "malformed start date")
+
+	for _, path := range []string{
+		"/services/data/v61.0/sobjects/Account/updated",
+		"/services/data/v61.0/sobjects/Account/deleted",
+	} {
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, path, nil))
+		assertSalesforceError(t, rec, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
+		if got := rec.Header().Get("Allow"); got != http.MethodGet {
+			t.Fatalf("%s Allow = %q", path, got)
+		}
+	}
+}
+
 func TestSObjectLayoutMetadataEdges(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
@@ -408,6 +544,8 @@ func TestSObjectResourceShape(t *testing.T) {
 		"defaultValues":  "/services/data/v61.0/sobjects/Account/defaultValues?recordTypeId&fields",
 		"describe":       "/services/data/v61.0/sobjects/Account/describe",
 		"recent":         "/services/data/v61.0/sobjects/Account/recent",
+		"updated":        "/services/data/v61.0/sobjects/Account/updated",
+		"deleted":        "/services/data/v61.0/sobjects/Account/deleted",
 		"items":          "/services/data/v61.0/sobjects/Account",
 		"layouts":        "/services/data/v61.0/sobjects/Account/describe/layouts",
 		"compactLayouts": "/services/data/v61.0/sobjects/Account/compactLayouts",

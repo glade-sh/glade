@@ -105,6 +105,13 @@
       "contains": ["\"success\":true", "001000000000001"]
     },
     {
+      "name": "sobject-updated-happy",
+      "method": "GET",
+      "path": "/services/data/v61.0/sobjects/Account/updated",
+      "status": 200,
+      "contains": ["\"ids\":[\"001000000000001\"]", "\"latestDateCovered\""]
+    },
+    {
       "name": "object-resource-shape",
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Account",
@@ -246,6 +253,27 @@
       "path": "/services/data/v61.0/query/oaerql000001-2",
       "status": 200,
       "contains": ["\"totalSize\":5", "\"done\":false", "\"nextRecordsUrl\":\"/services/data/v61.0/query/oaerql000001-4\""]
+    },
+    {
+      "name": "create-account-for-delete-log",
+      "method": "POST",
+      "path": "/services/data/v61.0/sobjects/Account",
+      "body": "{\"Name\":\"Delete Log\"}",
+      "status": 201,
+      "contains": ["\"success\":true", "001000000000006"]
+    },
+    {
+      "name": "delete-account-for-delete-log",
+      "method": "DELETE",
+      "path": "/services/data/v61.0/sobjects/Account/001000000000006",
+      "status": 204
+    },
+    {
+      "name": "sobject-deleted-happy",
+      "method": "GET",
+      "path": "/services/data/v61.0/sobjects/Account/deleted",
+      "status": 200,
+      "contains": ["\"deletedRecords\":[{\"id\":\"001000000000006\"", "\"deletedDate\"", "\"earliestDateAvailable\"", "\"latestDateCovered\""]
     },
     {
       "name": "composite-all-or-none-rollback",
@@ -535,8 +563,8 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 68,
-      "statuses": [200, 200, 200, 200, 200, 200, 501, 501, 501, 501, 200, 201, 200, 200, 200, 501, 501, 400, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 400, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 404, 404, 200, 200, 201],
+      "requests": 72,
+      "statuses": [200, 200, 200, 200, 200, 200, 501, 501, 501, 501, 200, 201, 200, 200, 200, 200, 501, 501, 400, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 201, 204, 200, 400, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 404, 404, 200, 200, 201],
       "users": 2
     }
   }
