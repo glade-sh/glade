@@ -6,9 +6,9 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 
 | Area | API | Status | Notes |
 | --- | --- | --- | --- |
-| ApexPages | `ApexPages.Message` | `partial` | Constructor plus severity, summary, and detail getters; no Visualforce rendering lifecycle. |
+| ApexPages | `ApexPages.Message` | `supported` | Constructor plus severity, summary, and detail getters, including local ApexPages.Severity enum values. |
 | ApexPages | `ApexPages.addMessage` | `supported` | Stores page messages on the VM instance. |
-| ApexPages | `ApexPages.currentPage` | `supported` | Returns a deterministic local PageReference. |
+| ApexPages | `ApexPages.currentPage` | `supported` | Returns a stable VM-local PageReference; Test.setCurrentPage can replace it in test context. |
 | ApexPages | `ApexPages.getMessages` | `supported` | Returns VM-local page messages. |
 | ApexPages | `ApexPages.hasMessages` | `supported` | Checks VM-local page messages. |
 | Approval | `Approval process APIs` | `unsupported` | Approval namespace process, request, and lock helpers return fixture-backed UnsupportedFeature diagnostics; approval workflow side effects are not locally modeled. |
@@ -109,7 +109,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Exception | `Exception.getTypeName` | `supported` | Returns the local exception type name without System namespace prefix, including System-prefixed constructed values. |
 | Exception | `Exception.initCause` | `supported` | Stores one local Exception cause or null, returns the receiver, and throws catchable local exceptions for repeat initialization or self-causation. |
 | Exception | `Exception.toString` | `supported` | Returns System-prefixed local exception type and message text. |
-| FeatureManagement | `FeatureManagement.checkPermission` | `partial` | Checks local runAs permission-list state. |
+| FeatureManagement | `FeatureManagement.checkPermission` | `supported` | Checks local current-user and runAs permission-list state. |
 | HTTP | `Http.send` | `partial` | Mock-first local callouts with request validation and callout accounting; real network transport remains explicitly unsupported. |
 | HTTP | `HttpRequest` | `partial` | Endpoint, method, compressed flag, deterministic case-insensitive headers/header keys, timeout validation/defaults, body, and blob body accessors; client-certificate and static-resource callout surfaces remain explicit unsupported seams. |
 | HTTP | `HttpResponse` | `partial` | Status, status code, deterministic case-insensitive headers/header keys, body, and blob body accessors for local mock responses. |
@@ -384,6 +384,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Test | `Test.createStub` | `unsupported` | Dynamic stub creation is not locally modeled; calls return explicit UnsupportedFeature diagnostics. |
 | Test | `Test.getStandardPricebookId` | `supported` | Returns the deterministic local standard pricebook Id in test context and errors outside test context. |
 | Test | `Test.isRunningTest` | `supported` | Reflects local test context. |
+| Test | `Test.setCurrentPage` | `supported` | Sets the VM-local ApexPages current PageReference in test context. |
 | Test | `Test.setFixedSearchResults` | `unsupported` | Fixed SOSL search results are deferred with the local search surface; calls return explicit UnsupportedFeature diagnostics. |
 | Test | `Test.setMock` | `partial` | HttpCalloutMock support for local tests; other mock interfaces return explicit unsupported diagnostics. |
 | Test | `Test.startTest` | `supported` | Resets the local inner governor window once per test method and preserves the outer counter window. |
