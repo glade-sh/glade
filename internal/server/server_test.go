@@ -1364,20 +1364,16 @@ func TestBulkAPIJobsReturnStableUnsupportedErrors(t *testing.T) {
 	}{
 		{method: http.MethodGet, path: "/services/data/v61.0/jobs/query", message: "Bulk API v2 query jobs"},
 		{method: http.MethodPost, path: "/services/data/v61.0/jobs/query", message: "Bulk API v2 query jobs"},
-		{method: http.MethodPatch, path: "/services/data/v61.0/jobs/query", message: "Bulk API v2 query jobs"},
 		{method: http.MethodGet, path: "/services/data/v61.0/jobs/query/750000000000001", message: "Bulk API v2 query job records"},
 		{method: http.MethodPatch, path: "/services/data/v61.0/jobs/query/750000000000001", message: "Bulk API v2 query job records"},
 		{method: http.MethodDelete, path: "/services/data/v61.0/jobs/query/750000000000001", message: "Bulk API v2 query job records"},
 		{method: http.MethodGet, path: "/services/data/v61.0/jobs/query/750000000000001/results", message: "Bulk API v2 query job results"},
-		{method: http.MethodPost, path: "/services/data/v61.0/jobs/query/750000000000001/results", message: "Bulk API v2 query job results"},
 		{method: http.MethodGet, path: "/services/data/v61.0/jobs/ingest", message: "Bulk API v2 ingest jobs"},
 		{method: http.MethodPost, path: "/services/data/v61.0/jobs/ingest", message: "Bulk API v2 ingest jobs"},
-		{method: http.MethodPatch, path: "/services/data/v61.0/jobs/ingest", message: "Bulk API v2 ingest jobs"},
 		{method: http.MethodGet, path: "/services/data/v61.0/jobs/ingest/750000000000001", message: "Bulk API v2 ingest job records"},
 		{method: http.MethodPatch, path: "/services/data/v61.0/jobs/ingest/750000000000001", message: "Bulk API v2 ingest job records"},
 		{method: http.MethodDelete, path: "/services/data/v61.0/jobs/ingest/750000000000001", message: "Bulk API v2 ingest job records"},
 		{method: http.MethodPut, path: "/services/data/v61.0/jobs/ingest/750000000000001/batches", message: "Bulk API v2 ingest job batches"},
-		{method: http.MethodGet, path: "/services/data/v61.0/jobs/ingest/750000000000001/batches", message: "Bulk API v2 ingest job batches"},
 		{method: http.MethodGet, path: "/services/data/v61.0/jobs/ingest/750000000000001/successfulResults", message: "Bulk API v2 ingest successful results"},
 		{method: http.MethodGet, path: "/services/data/v61.0/jobs/ingest/750000000000001/failedResults", message: "Bulk API v2 ingest failed results"},
 		{method: http.MethodGet, path: "/services/data/v61.0/jobs/ingest/750000000000001/unprocessedrecords", message: "Bulk API v2 ingest unprocessed records"},
@@ -1390,6 +1386,37 @@ func TestBulkAPIJobsReturnStableUnsupportedErrors(t *testing.T) {
 		if !bytes.Contains(rec.Body.Bytes(), []byte(`"errorCode":"UNSUPPORTED_FEATURE"`)) || !bytes.Contains(rec.Body.Bytes(), []byte(tc.message)) {
 			t.Fatalf("%s %s unsupported shape = %s", tc.method, tc.path, rec.Body.String())
 		}
+	}
+}
+
+func TestBulkAPIJobsRejectDisallowedMethodsWithAllowHeader(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+	for _, tc := range []struct {
+		name   string
+		method string
+		path   string
+		allow  string
+	}{
+		{name: "query collection rejects patch", method: http.MethodPatch, path: "/services/data/v61.0/jobs/query", allow: "GET, POST"},
+		{name: "query results reject post", method: http.MethodPost, path: "/services/data/v61.0/jobs/query/750000000000001/results", allow: "GET"},
+		{name: "ingest collection rejects patch", method: http.MethodPatch, path: "/services/data/v61.0/jobs/ingest", allow: "GET, POST"},
+		{name: "ingest batches are put-only", method: http.MethodGet, path: "/services/data/v61.0/jobs/ingest/750000000000001/batches", allow: "PUT"},
+		{name: "ingest failed results reject delete", method: http.MethodDelete, path: "/services/data/v61.0/jobs/ingest/750000000000001/failedResults", allow: "GET"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			handler.ServeHTTP(rec, httptest.NewRequest(tc.method, tc.path, strings.NewReader(`{}`)))
+			if rec.Code != http.StatusMethodNotAllowed {
+				t.Fatalf("%s %s status = %d body=%s", tc.method, tc.path, rec.Code, rec.Body.String())
+			}
+			if got := rec.Header().Get("Allow"); got != tc.allow {
+				t.Fatalf("%s %s Allow = %q, want %q", tc.method, tc.path, got, tc.allow)
+			}
+			if !bytes.Contains(rec.Body.Bytes(), []byte(`"errorCode":"METHOD_NOT_ALLOWED"`)) {
+				t.Fatalf("%s %s method shape = %s", tc.method, tc.path, rec.Body.String())
+			}
+		})
 	}
 }
 
