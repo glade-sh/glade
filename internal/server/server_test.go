@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"sync"
 	"testing"
@@ -2641,6 +2642,77 @@ func TestToolingExecuteAnonymousUsesServerLimitMode(t *testing.T) {
 	handler.ServeHTTP(exec, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/tooling/executeAnonymous", strings.NewReader(`{"anonymousBody":"System.debug('limited');"}`)))
 	if exec.Code != http.StatusOK || !bytes.Contains(exec.Body.Bytes(), []byte(`"success":false`)) || !bytes.Contains(exec.Body.Bytes(), []byte(`System.LimitException`)) {
 		t.Fatalf("executeAnonymous status = %d body=%s", exec.Code, exec.Body.String())
+	}
+}
+
+func TestToolingExecuteAnonymousAcceptsFormAnonymousBody(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+	form := url.Values{"anonymousBody": {"System.debug('form body');"}}
+	req := httptest.NewRequest(http.MethodPost, "/services/data/v61.0/tooling/executeAnonymous", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK || !bytes.Contains(rec.Body.Bytes(), []byte(`"success":true`)) || !bytes.Contains(rec.Body.Bytes(), []byte("form body")) {
+		t.Fatalf("executeAnonymous form status = %d body=%s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestToolingExecuteAnonymousAcceptsFormSourceFallback(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+	form := url.Values{"source": {"System.debug('form source');"}}
+	req := httptest.NewRequest(http.MethodPost, "/services/data/v61.0/tooling/executeAnonymous", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK || !bytes.Contains(rec.Body.Bytes(), []byte(`"success":true`)) || !bytes.Contains(rec.Body.Bytes(), []byte("form source")) {
+		t.Fatalf("executeAnonymous form source status = %d body=%s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestToolingExecuteAnonymousMalformedJSONReportsCompileProblem(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+	req := httptest.NewRequest(http.MethodPost, "/services/data/v61.0/tooling/executeAnonymous", strings.NewReader(`{`))
+	req.Header.Set("Content-Type", "application/json")
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+	body := rec.Body.Bytes()
+	if rec.Code != http.StatusOK ||
+		!bytes.Contains(body, []byte(`"success":false`)) ||
+		!bytes.Contains(body, []byte(`"compiled":false`)) ||
+		!bytes.Contains(body, []byte(`"compileProblem":"unexpected`)) ||
+		bytes.Contains(body, []byte("anonymousBody is required")) {
+		t.Fatalf("executeAnonymous malformed JSON status = %d body=%s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestToolingExecuteAnonymousStillAcceptsGetAnonymousBody(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+	query := url.Values{"anonymousBody": {"System.debug('get body');"}}
+	req := httptest.NewRequest(http.MethodGet, "/services/data/v61.0/tooling/executeAnonymous?"+query.Encode(), nil)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK || !bytes.Contains(rec.Body.Bytes(), []byte(`"success":true`)) || !bytes.Contains(rec.Body.Bytes(), []byte("get body")) {
+		t.Fatalf("executeAnonymous GET status = %d body=%s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestToolingExecuteAnonymousStillAcceptsJSONWithoutContentType(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+	req := httptest.NewRequest(http.MethodPost, "/services/data/v61.0/tooling/executeAnonymous", strings.NewReader(`{"anonymousBody":"System.debug('json body');"}`))
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK || !bytes.Contains(rec.Body.Bytes(), []byte(`"success":true`)) || !bytes.Contains(rec.Body.Bytes(), []byte("json body")) {
+		t.Fatalf("executeAnonymous JSON without content type status = %d body=%s", rec.Code, rec.Body.String())
 	}
 }
 

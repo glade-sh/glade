@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"mime"
 	"net/http"
 	"net/url"
 	"sort"
@@ -889,16 +890,12 @@ func (s *Server) handleExecuteAnonymous(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	source := r.URL.Query().Get("anonymousBody")
-	if source == "" {
-		var body struct {
-			AnonymousBody string `json:"anonymousBody"`
-			Source        string `json:"source"`
-		}
-		if err := json.NewDecoder(r.Body).Decode(&body); err == nil {
-			source = body.AnonymousBody
-			if source == "" {
-				source = body.Source
-			}
+	if source == "" && r.Method == http.MethodPost {
+		var err error
+		source, err = executeAnonymousBodySource(r)
+		if err != nil {
+			writeJSON(w, http.StatusOK, executeAnonymousFailure(false, err.Error(), nil))
+			return
 		}
 	}
 	if source == "" {
@@ -939,6 +936,80 @@ func (s *Server) handleExecuteAnonymous(w http.ResponseWriter, r *http.Request) 
 		"column":              -1,
 		"logs":                strings.Join(result.Debug, "\n"),
 	})
+}
+
+func executeAnonymousBodySource(r *http.Request) (string, error) {
+	contentType := requestContentType(r)
+	switch contentType {
+	case "application/json":
+		return executeAnonymousJSONSource(r)
+	case "application/x-www-form-urlencoded":
+		return executeAnonymousFormSource(r), nil
+	default:
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			return "", nil
+		}
+		if source := executeAnonymousFormEncodedSource(string(body)); source != "" {
+			return source, nil
+		}
+		source, err := executeAnonymousJSONBytesSource(body)
+		if err != nil {
+			return "", nil
+		}
+		return source, nil
+	}
+}
+
+func requestContentType(r *http.Request) string {
+	contentType, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
+	if err != nil {
+		return ""
+	}
+	return strings.ToLower(contentType)
+}
+
+func executeAnonymousJSONSource(r *http.Request) (string, error) {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		return "", err
+	}
+	return executeAnonymousJSONBytesSource(body)
+}
+
+func executeAnonymousJSONBytesSource(body []byte) (string, error) {
+	var payload struct {
+		AnonymousBody string `json:"anonymousBody"`
+		Source        string `json:"source"`
+	}
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return "", err
+	}
+	if payload.AnonymousBody != "" {
+		return payload.AnonymousBody, nil
+	}
+	return payload.Source, nil
+}
+
+func executeAnonymousFormSource(r *http.Request) string {
+	if err := r.ParseForm(); err != nil {
+		return ""
+	}
+	if source := r.PostForm.Get("anonymousBody"); source != "" {
+		return source
+	}
+	return r.PostForm.Get("source")
+}
+
+func executeAnonymousFormEncodedSource(body string) string {
+	form, err := url.ParseQuery(body)
+	if err != nil {
+		return ""
+	}
+	if source := form.Get("anonymousBody"); source != "" {
+		return source
+	}
+	return form.Get("source")
 }
 
 func executeAnonymousFailure(compiled bool, message string, logs []string) map[string]any {
