@@ -57,7 +57,7 @@ func WriteStdlibMarkdown(w io.Writer) error {
 
 var stdlibEntries = []StdlibEntry{
 	{Area: "Async", API: "AsyncApexJob / CronTrigger local records", Status: StatusPartial, Notes: "Test-context enqueue/drain creates deterministic local AsyncApexJob rows and CronTrigger rows for supported future, queueable, batch, and scheduled jobs; broader platform lifecycle fields are not modeled."},
-	{Area: "Async", API: "AsyncInfo / AsyncOptions / finalizers", Status: StatusUnsupported, Notes: "Queueable stack metadata, AsyncOptions mutators/accessors and enqueue overloads, and queueable finalizers return explicit UnsupportedFeature diagnostics."},
+	{Area: "Async", API: "AsyncInfo / AsyncOptions / finalizers", Status: StatusUnsupported, Notes: "Queueable stack metadata, AsyncOptions mutators/accessors and enqueue overloads, System.attachFinalizer, and FinalizerContext getters return explicit UnsupportedFeature diagnostics."},
 	{Area: "Async", API: "BatchableContext.getJobId", Status: StatusPartial, Notes: "Returns the deterministic local AsyncApexJob Id while supported batch start/execute/finish methods drain under Test.stopTest."},
 	{Area: "Async", API: "QueueableContext.getJobId", Status: StatusPartial, Notes: "Returns the deterministic local AsyncApexJob Id while supported queueables drain under Test.stopTest."},
 	{Area: "Async", API: "SchedulableContext.getTriggerId", Status: StatusPartial, Notes: "Returns the deterministic local CronTrigger Id while supported scheduled jobs drain under Test.stopTest."},

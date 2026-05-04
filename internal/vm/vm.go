@@ -8846,7 +8846,10 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			return String(""), receiver, false, true, nil
 		}
 	case "System.FinalizerContext", "FinalizerContext":
-		return Null, receiver, false, true, unsupportedCallError(receiver.Type + "." + method + " local queueable finalizers")
+		switch method {
+		case "getAsyncApexJobId", "getRequestId", "getResult", "getException":
+			return Null, receiver, false, true, unsupportedCallError(receiver.Type + "." + method + " local queueable finalizers")
+		}
 	case "AsyncOptions":
 		switch method {
 		case "getDuplicateSignature", "setDuplicateSignature",

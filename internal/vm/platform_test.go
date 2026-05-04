@@ -946,6 +946,16 @@ func TestExecAsyncUnsupportedEdgesAreTyped(t *testing.T) {
 			want: `unsupported call "System.attachFinalizer local queueable finalizers"`,
 		},
 		{
+			name: "finalizer context job id",
+			src:  `FinalizerContext fc = new FinalizerContext(); fc.getAsyncApexJobId();`,
+			want: `unsupported call "FinalizerContext.getAsyncApexJobId local queueable finalizers"`,
+		},
+		{
+			name: "finalizer context result",
+			src:  `System.FinalizerContext fc = new System.FinalizerContext(); fc.getResult();`,
+			want: `unsupported call "System.FinalizerContext.getResult local queueable finalizers"`,
+		},
+		{
 			name: "schedule batch",
 			src:  `Database.scheduleBatch(null, 'nightly', 1, 200);`,
 			want: `unsupported call "Database.scheduleBatch local async scheduling surface"`,
