@@ -48,6 +48,18 @@ type resetScopeInfo struct {
 	NoOp        bool   `json:"noOp"`
 }
 
+var unsupportedRESTNamespaces = map[string]string{
+	"actions":   "Actions",
+	"analytics": "Analytics",
+	"apps":      "Apps",
+	"chatter":   "Chatter",
+	"connect":   "Connect",
+	"metadata":  "Metadata",
+	"process":   "Process",
+	"support":   "Support",
+	"wave":      "Wave",
+}
+
 type oaerStatePayload struct {
 	LocalOnly   bool                   `json:"localOnly"`
 	Summary     storage.InspectSummary `json:"summary"`
@@ -124,6 +136,12 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.handleComposite(w, r, rest[1:])
 	case len(rest) >= 1 && rest[0] == "oaer":
 		s.handleOAER(w, r, rest[1:])
+	case len(rest) >= 1:
+		if message, ok := unsupportedRESTNamespaceMessage(rest[0]); ok {
+			writeSalesforceError(w, errUnsupportedFeature, message)
+			return
+		}
+		writeSalesforceError(w, errUnknownEndpoint)
 	default:
 		writeSalesforceError(w, errUnknownEndpoint)
 	}
@@ -1188,6 +1206,14 @@ func resourceDiscoveryPayload(version string) map[string]string {
 		"sobjects":  base + "/sobjects",
 		"tooling":   base + "/tooling",
 	}
+}
+
+func unsupportedRESTNamespaceMessage(namespace string) (string, bool) {
+	display, ok := unsupportedRESTNamespaces[namespace]
+	if !ok {
+		return "", false
+	}
+	return display + " REST namespace is not implemented in the local server", true
 }
 
 func compositeResults(results []dml.Result, referenceIDs []string) []map[string]any {
