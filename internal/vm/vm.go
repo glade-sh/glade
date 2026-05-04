@@ -2371,6 +2371,9 @@ func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value
 	if len(args) == 0 || len(args) > 3 {
 		return Null, fmt.Errorf("Database.%s expects records, optional external id field, and optional allOrNone", op)
 	}
+	if err := unsupportedDatabaseDMLOverload(op, args); err != nil {
+		return Null, err
+	}
 	allOrNone := true
 	externalIDField := ""
 	if len(args) >= 2 {
@@ -2399,15 +2402,15 @@ func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value
 	if err != nil {
 		return Null, err
 	}
+	if allOrNone && hasDMLFailures(results) {
+		return Null, databaseDMLException(op, results)
+	}
 	values := make([]Value, 0, len(results))
 	for _, dmlResult := range results {
-		resultType := "Database.SaveResult"
-		if op == "upsert" {
-			resultType = "Database.UpsertResult"
-		}
+		resultType := databaseDMLResultType(op)
 		row := Object(resultType)
 		row.Fields["success"] = Bool(dmlResult.Success)
-		row.Fields["id"] = String(string(dmlResult.ID))
+		row.Fields["id"] = databaseResultIDValue(dmlResult.ID)
 		row.Fields["error"] = String(dmlResult.Error)
 		if op == "upsert" {
 			row.Fields["created"] = Bool(dmlResult.Created)
@@ -2422,6 +2425,55 @@ func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value
 		return Null, nil
 	}
 	return values[0], nil
+}
+
+func unsupportedDatabaseDMLOverload(op string, args []Value) error {
+	for _, arg := range args[1:] {
+		if arg.Kind != ValueObject {
+			continue
+		}
+		switch arg.Type {
+		case "AccessLevel":
+			return unsupportedCallError("Database." + op + " AccessLevel overload")
+		case "Database.DMLOptions", "DMLOptions":
+			return unsupportedCallError("Database." + op + " DMLOptions overload")
+		}
+	}
+	return nil
+}
+
+func databaseDMLResultType(op string) string {
+	switch op {
+	case "delete":
+		return "Database.DeleteResult"
+	case "undelete":
+		return "Database.UndeleteResult"
+	case "upsert":
+		return "Database.UpsertResult"
+	default:
+		return "Database.SaveResult"
+	}
+}
+
+func databaseResultIDValue(id storage.ID) Value {
+	if id == "" {
+		return Null
+	}
+	return String(string(id))
+}
+
+func databaseDMLException(op string, results []dml.Result) error {
+	message := "DML operation failed"
+	if op != "" {
+		message = "Database." + op + " failed"
+	}
+	for _, result := range results {
+		if !result.Success && result.Error != "" {
+			message += ": " + result.Error
+			break
+		}
+	}
+	return newExceptionError("DmlException", message)
 }
 
 func (vm *VM) executeDatabaseMerge(args []Value, result *Result) (Value, error) {
@@ -2487,6 +2539,9 @@ func (vm *VM) executeDatabaseMerge(args []Value, result *Result) (Value, error) 
 		for i := range results {
 			results[i] = failure
 		}
+		if allOrNone {
+			return Null, databaseDMLException("merge", results)
+		}
 		return vm.mergeResultValue(args[1].Kind == ValueList, duplicates, results), nil
 	}
 	beforeDeleteFailures, err := vm.runTriggers(triggerTimingBefore, "delete", duplicates, duplicateBefore, result)
@@ -2499,7 +2554,7 @@ func (vm *VM) executeDatabaseMerge(args []Value, result *Result) (Value, error) 
 	if hasDMLFailures(beforeDeleteFailures) {
 		if allOrNone {
 			*vm.Org = backup
-			return vm.mergeResultValue(args[1].Kind == ValueList, duplicates, beforeDeleteFailures), nil
+			return Null, databaseDMLException("merge", beforeDeleteFailures)
 		}
 		mergeDuplicates, mergeDuplicateBefore, _ = filterDMLInputs(duplicates, duplicateBefore, nil, beforeDeleteFailures)
 		if len(mergeDuplicates) == 0 {
@@ -2520,6 +2575,9 @@ func (vm *VM) executeDatabaseMerge(args []Value, result *Result) (Value, error) 
 				break
 			}
 		}
+	}
+	if allOrNone && hasDMLFailures(results) {
+		return Null, databaseDMLException("merge", results)
 	}
 	successfulDuplicates := make([]storage.Record, 0, len(duplicates))
 	successfulDuplicateBefore := make([]storage.Record, 0, len(mergeDuplicateBefore))
@@ -2570,7 +2628,7 @@ func (vm *VM) mergeResultValue(listInput bool, duplicates []storage.Record, resu
 	for i, dmlResult := range results {
 		row := Object("Database.MergeResult")
 		row.Fields["success"] = Bool(dmlResult.Success)
-		row.Fields["id"] = String(string(dmlResult.ID))
+		row.Fields["id"] = databaseResultIDValue(dmlResult.ID)
 		row.Fields["error"] = String(dmlResult.Error)
 		mergedIDs := List()
 		if dmlResult.Success && i < len(duplicates) {
@@ -8234,21 +8292,21 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			return String(text[:15]), receiver, false, true, nil
 		}
-	case "Database.SaveResult":
+	case "Database.SaveResult", "Database.DeleteResult", "Database.UndeleteResult":
 		switch method {
 		case "isSuccess":
 			if len(args) != 0 {
-				return Null, receiver, false, true, fmt.Errorf("Database.SaveResult.isSuccess expects 0 arguments")
+				return Null, receiver, false, true, fmt.Errorf("%s.isSuccess expects 0 arguments", receiver.Type)
 			}
 			return receiver.Fields["success"], receiver, false, true, nil
 		case "getId":
 			if len(args) != 0 {
-				return Null, receiver, false, true, fmt.Errorf("Database.SaveResult.getId expects 0 arguments")
+				return Null, receiver, false, true, fmt.Errorf("%s.getId expects 0 arguments", receiver.Type)
 			}
 			return receiver.Fields["id"], receiver, false, true, nil
 		case "getErrors":
 			if len(args) != 0 {
-				return Null, receiver, false, true, fmt.Errorf("Database.SaveResult.getErrors expects 0 arguments")
+				return Null, receiver, false, true, fmt.Errorf("%s.getErrors expects 0 arguments", receiver.Type)
 			}
 			return receiver.Fields["errors"], receiver, false, true, nil
 		}
