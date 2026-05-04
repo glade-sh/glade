@@ -23,7 +23,7 @@ smaller task, or a public-doc behavior decision changes.
 | 0. Governance and catalog | Complete | Docs inventory, catalog, evidence reports, docs gate, and product namespace report are implemented. |
 | 1. Front-end parity foundation | Complete | Generic collections, enhanced-for typing, expression typing, annotations, static access, and front-end fixtures are implemented in the `front-end-parity` worktree. |
 | 2. Core stdlib runtime | In progress | Collection runtime fixture and String runtime fixture are implemented in the `core-stdlib` worktree. |
-| 3. Data platform runtime | Not started | Pending. |
+| 3. Data platform runtime | In progress | Custom metadata/list custom setting fixture-backed `getAll`/`getInstance` slice covers namespace-stripped object/field access and read-only returned rows. |
 | 4. Tests, async, and limits | Not started | Pending; depends on core stdlib and data runtime. |
 | 5. Integration, security, UI, events | In progress | UI/security/messaging fixture slice covers PageReference, ApexPages.Message, UserInfo, FeatureManagement, Messaging result edges, and explicit unsupported diagnostics for Auth, EventBus, QuickAction, Canvas, and Continuation. |
 | 6. Product namespace typed stubs | Complete foundation | Product namespace report covers typed-stub planning for 70 public-doc namespaces. |
@@ -361,6 +361,11 @@ Cuts:
 5. Custom metadata and settings
    - `getAll`, `getInstance`, fixture seeding, namespace behavior, read-only
      semantics, and test isolation.
+   - Current local slice: fixture-backed `__mdt` and list custom setting
+     `getAll`/`getInstance` support deterministic local records, package
+     namespace stripping for object and field names, and stable read-only
+     diagnostics for returned rows. Hierarchy custom setting merge behavior and
+     Metadata API mutation remain gaps.
 
 Exit criteria:
 

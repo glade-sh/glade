@@ -1,0 +1,73 @@
+{
+  "name": "data-custom-setting-readonly",
+  "evidence": [
+    {
+      "symbol": "CustomSetting read-only records",
+      "kind": "black-box",
+      "notes": "getInstance returns a read-only local custom setting record and mutation fails with a stable diagnostic."
+    }
+  ],
+  "project": {
+    "namespace": "pkg",
+    "sourceApiVersion": "61.0",
+    "packageDirectories": [
+      {
+        "path": "force-app",
+        "default": true
+      }
+    ]
+  },
+  "schema": [
+    {
+      "path": "force-app/main/default/objects/Feature__mdt/Feature__mdt.object-meta.xml",
+      "content": "<CustomObject><label>Feature</label><pluralLabel>Features</pluralLabel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Feature__mdt/fields/Enabled__c.field-meta.xml",
+      "content": "<CustomField><fullName>Enabled__c</fullName><label>Enabled</label><type>Checkbox</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Local_Setting__c/Local_Setting__c.object-meta.xml",
+      "content": "<CustomObject><label>Local Setting</label><pluralLabel>Local Settings</pluralLabel><customSettingsType>List</customSettingsType></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Local_Setting__c/fields/Enabled__c.field-meta.xml",
+      "content": "<CustomField><fullName>Enabled__c</fullName><label>Enabled</label><type>Checkbox</type></CustomField>"
+    }
+  ],
+  "seedData": [
+    {
+      "object": "Feature__mdt",
+      "records": [
+        {
+          "DeveloperName": "Default",
+          "MasterLabel": "Default Label",
+          "NamespacePrefix": "pkg",
+          "QualifiedApiName": "pkg__Default",
+          "Enabled__c": true
+        }
+      ]
+    },
+    {
+      "object": "Local_Setting__c",
+      "records": [
+        {
+          "Name": "Default",
+          "Enabled__c": false
+        }
+      ]
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Local_Setting__c setting = Local_Setting__c.getInstance('Default'); setting.put('Enabled__c', true);"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "Error",
+      "message": "cannot modify read-only custom setting"
+    }
+  }
+}

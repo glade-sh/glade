@@ -15,13 +15,14 @@ type Schema struct {
 }
 
 type Object struct {
-	Name            string           `json:"name"`
-	Label           string           `json:"label,omitempty"`
-	PluralLabel     string           `json:"pluralLabel,omitempty"`
-	SharingModel    string           `json:"sharingModel,omitempty"`
-	Fields          []Field          `json:"fields,omitempty"`
-	RecordTypes     []RecordType     `json:"recordTypes,omitempty"`
-	ValidationRules []ValidationRule `json:"validationRules,omitempty"`
+	Name               string           `json:"name"`
+	Label              string           `json:"label,omitempty"`
+	PluralLabel        string           `json:"pluralLabel,omitempty"`
+	SharingModel       string           `json:"sharingModel,omitempty"`
+	CustomSettingsType string           `json:"customSettingsType,omitempty"`
+	Fields             []Field          `json:"fields,omitempty"`
+	RecordTypes        []RecordType     `json:"recordTypes,omitempty"`
+	ValidationRules    []ValidationRule `json:"validationRules,omitempty"`
 }
 
 type Field struct {
@@ -62,10 +63,11 @@ type ValidationRule struct {
 }
 
 type customObjectXML struct {
-	XMLName      xml.Name `xml:"CustomObject"`
-	Label        string   `xml:"label"`
-	PluralLabel  string   `xml:"pluralLabel"`
-	SharingModel string   `xml:"sharingModel"`
+	XMLName            xml.Name `xml:"CustomObject"`
+	Label              string   `xml:"label"`
+	PluralLabel        string   `xml:"pluralLabel"`
+	SharingModel       string   `xml:"sharingModel"`
+	CustomSettingsType string   `xml:"customSettingsType"`
 }
 
 type customFieldXML struct {
@@ -259,10 +261,11 @@ func loadObject(path string) (Object, error) {
 		return Object{}, err
 	}
 	return Object{
-		Name:         trimMetadataSuffix(filepath.Base(path), ".object-meta.xml"),
-		Label:        raw.Label,
-		PluralLabel:  raw.PluralLabel,
-		SharingModel: raw.SharingModel,
+		Name:               trimMetadataSuffix(filepath.Base(path), ".object-meta.xml"),
+		Label:              raw.Label,
+		PluralLabel:        raw.PluralLabel,
+		SharingModel:       raw.SharingModel,
+		CustomSettingsType: strings.TrimSpace(raw.CustomSettingsType),
 	}, nil
 }
 

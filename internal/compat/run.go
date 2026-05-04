@@ -17,6 +17,7 @@ import (
 	"github.com/open-aer/oaer/internal/schema"
 	"github.com/open-aer/oaer/internal/sema"
 	"github.com/open-aer/oaer/internal/server"
+	"github.com/open-aer/oaer/internal/sobject"
 	"github.com/open-aer/oaer/internal/storage"
 	"github.com/open-aer/oaer/internal/typesys"
 	"github.com/open-aer/oaer/internal/vm"
@@ -138,6 +139,13 @@ func runExecFixture(fixture Fixture) (RunResult, error) {
 	}
 	var stdout bytes.Buffer
 	machine := vm.New(&stdout)
+	if len(fixture.Schema) > 0 || len(fixture.SeedData) > 0 || fixture.Project.Namespace != "" {
+		org, err := orgFromFixture(fixture)
+		if err != nil {
+			return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+		}
+		machine.SetOrg(&org)
+	}
 	if fixture.Command.LimitMode != "" {
 		mode, err := fixtureLimitMode(fixture.Command.LimitMode)
 		if err != nil {
@@ -151,6 +159,45 @@ func runExecFixture(fixture Fixture) (RunResult, error) {
 	}
 	payload := map[string]any{"ok": true, "debug": result.Debug}
 	return compareResult(fixture, payload, stdout.String())
+}
+
+func orgFromFixture(fixture Fixture) (storage.OrgState, error) {
+	root, err := os.MkdirTemp("", "oaer-compat-exec-*")
+	if err != nil {
+		return storage.OrgState{}, err
+	}
+	defer os.RemoveAll(root)
+	if err := writeSFDXProject(root, fixture.Project); err != nil {
+		return storage.OrgState{}, err
+	}
+	if err := writeFixtureFiles(root, fixture); err != nil {
+		return storage.OrgState{}, err
+	}
+	proj, err := project.Load(root)
+	if err != nil {
+		return storage.OrgState{}, err
+	}
+	loadedSchema, err := schema.LoadProject(proj)
+	if err != nil {
+		return storage.OrgState{}, err
+	}
+	org := storage.NewOrgState()
+	org.APIVersion = proj.SourceAPIVersion
+	org.Namespace = proj.Namespace
+	registry := sobject.BuildDescribeRegistry(loadedSchema)
+	for name, describe := range registry.Objects {
+		org.Objects[name] = storage.ObjectState{
+			Definition: sobject.ToObjectDefinition(describe),
+			Records:    make(map[storage.ID]storage.Record),
+		}
+	}
+	storage.EnsureDeterministicPlatformData(&org)
+	if len(fixture.SeedData) > 0 {
+		if err := storage.ApplyFixture(&org, storageFixture(fixture)); err != nil {
+			return storage.OrgState{}, err
+		}
+	}
+	return org, nil
 }
 
 func runTestFixture(fixture Fixture) (RunResult, error) {

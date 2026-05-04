@@ -95,6 +95,7 @@ type DescribeSObjectResult struct {
 	Label           string                         `json:"label,omitempty"`
 	PluralLabel     string                         `json:"pluralLabel,omitempty"`
 	KeyPrefix       string                         `json:"keyPrefix,omitempty"`
+	Metadata        map[string]string              `json:"metadata,omitempty"`
 	Fields          map[string]DescribeFieldResult `json:"fields,omitempty"`
 	Relationships   []storage.Relationship         `json:"relationships,omitempty"`
 	RecordTypes     []DescribeRecordTypeInfo       `json:"recordTypes,omitempty"`
@@ -140,6 +141,18 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 			PluralLabel: object.PluralLabel,
 			KeyPrefix:   prefixes[object.Name],
 			Fields:      make(map[string]DescribeFieldResult, len(object.Fields)),
+		}
+		if strings.HasSuffix(object.Name, "__mdt") {
+			ensureDescribeField(describe.Fields, "DeveloperName", "Text", "Developer Name")
+			ensureDescribeField(describe.Fields, "MasterLabel", "Text", "Master Label")
+			ensureDescribeField(describe.Fields, "NamespacePrefix", "Text", "Namespace Prefix")
+			ensureDescribeField(describe.Fields, "QualifiedApiName", "Text", "Qualified API Name")
+			describe.Metadata = map[string]string{"kind": "customMetadata"}
+		}
+		if object.CustomSettingsType != "" {
+			ensureDescribeField(describe.Fields, "Name", "Text", "Name")
+			ensureDescribeField(describe.Fields, "SetupOwnerId", "Text", "Setup Owner ID")
+			describe.Metadata = map[string]string{"kind": "customSetting", "customSettingsType": object.CustomSettingsType}
 		}
 		for _, field := range object.Fields {
 			describe.Fields[field.Name] = DescribeFieldResult{
@@ -229,6 +242,12 @@ func (d DescribeSObjectResult) Clone() DescribeSObjectResult {
 	}
 	out.RecordTypes = append([]DescribeRecordTypeInfo(nil), d.RecordTypes...)
 	out.ValidationRules = append([]storage.ValidationRule(nil), d.ValidationRules...)
+	if d.Metadata != nil {
+		out.Metadata = make(map[string]string, len(d.Metadata))
+		for key, value := range d.Metadata {
+			out.Metadata[key] = value
+		}
+	}
 	return out
 }
 
@@ -242,6 +261,12 @@ func ToObjectDefinition(describe DescribeSObjectResult) storage.ObjectDefinition
 		Relations:       append([]storage.Relationship(nil), describe.Relationships...),
 		RecordTypes:     make([]storage.RecordTypeInfo, 0, len(describe.RecordTypes)),
 		ValidationRules: append([]storage.ValidationRule(nil), describe.ValidationRules...),
+	}
+	if describe.Metadata != nil {
+		definition.Metadata = make(map[string]string, len(describe.Metadata))
+		for key, value := range describe.Metadata {
+			definition.Metadata[key] = value
+		}
 	}
 	for name, field := range describe.Fields {
 		definition.Fields[name] = storage.Field{
@@ -268,6 +293,13 @@ func ToObjectDefinition(describe DescribeSObjectResult) storage.ObjectDefinition
 		})
 	}
 	return definition
+}
+
+func ensureDescribeField(fields map[string]DescribeFieldResult, name, typ, label string) {
+	if _, ok := fields[name]; ok {
+		return
+	}
+	fields[name] = DescribeFieldResult{Name: name, Type: storageFieldType(typ), Label: label}
 }
 
 func storagePicklistValues(values []schema.PicklistValue) []storage.PicklistValue {

@@ -2,6 +2,7 @@ package dml
 
 import (
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -394,4 +395,34 @@ func testOrg() storage.OrgState {
 		Records: make(map[storage.ID]storage.Record),
 	}
 	return org
+}
+
+func TestCustomMetadataDMLIsReadOnly(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Feature__mdt"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Feature__mdt",
+			KeyPrefix: "a00",
+			Metadata:  map[string]string{"kind": "customMetadata"},
+			Fields: map[string]storage.Field{
+				"DeveloperName": {APIName: "DeveloperName", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a00000000000001": {ID: "a00000000000001", Object: "Feature__mdt", Fields: map[string]storage.Value{"DeveloperName": storage.StringValue("Default")}},
+		},
+	}
+	engine := NewEngine(&org)
+	insert := engine.Insert([]storage.Record{{Object: "Feature__mdt", Fields: map[string]storage.Value{"DeveloperName": storage.StringValue("Other")}}})
+	if insert[0].Success || insert[0].StatusCode != "INVALID_TYPE" || !strings.Contains(insert[0].Error, "read-only") {
+		t.Fatalf("insert = %#v", insert[0])
+	}
+	update := engine.Update([]storage.Record{{ID: "a00000000000001", Object: "Feature__mdt", Fields: map[string]storage.Value{"DeveloperName": storage.StringValue("Changed")}}})
+	if update[0].Success || update[0].StatusCode != "INVALID_TYPE" || !strings.Contains(update[0].Error, "read-only") {
+		t.Fatalf("update = %#v", update[0])
+	}
+	deleteResult := engine.Delete([]storage.Record{{ID: "a00000000000001", Object: "Feature__mdt"}})
+	if deleteResult[0].Success || deleteResult[0].StatusCode != "INVALID_TYPE" || !strings.Contains(deleteResult[0].Error, "read-only") {
+		t.Fatalf("delete = %#v", deleteResult[0])
+	}
 }
