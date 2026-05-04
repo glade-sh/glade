@@ -172,6 +172,11 @@ func TestExecPatternRejectsJavaOnlyRegex(t *testing.T) {
 		{name: "possessiveQuantifier", source: `Pattern.compile('a++');`, message: "Java regex possessive quantifiers"},
 		{name: "quoteEscape", source: `Pattern.compile('\Qabc\E');`, message: "Java regex quote escapes"},
 		{name: "previousMatchBoundary", source: `Pattern.compile('\Gabc');`, message: "Java regex previous-match boundary"},
+		{name: "pythonNamedGroup", source: `Pattern.compile('(?P<word>a)');`, message: "Java regex named groups"},
+		{name: "unicodeJavaClass", source: `Pattern.compile('\p{javaLowerCase}+');`, message: "Java regex Unicode character classes"},
+		{name: "unicodeIsClass", source: `Pattern.compile('\p{IsAlphabetic}+');`, message: "Java regex Unicode character classes"},
+		{name: "inlineCommentsFlag", source: `Pattern.compile('(?x)a b');`, message: "Java regex inline flags"},
+		{name: "inlineUnicodeFlag", source: `Pattern.compile('(?U)\w+');`, message: "Java regex inline flags"},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -182,6 +187,76 @@ func TestExecPatternRejectsJavaOnlyRegex(t *testing.T) {
 			_, err = Execute(program, nil)
 			if err == nil || !strings.Contains(err.Error(), tc.message) {
 				t.Fatalf("expected %q error, got %v", tc.message, err)
+			}
+			var runtimeErr *RuntimeError
+			if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" {
+				t.Fatalf("expected UnsupportedFeature runtime error, got %T %v", err, err)
+			}
+		})
+	}
+}
+
+func TestExecPatternFlagsSubset(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(2, Pattern.CASE_INSENSITIVE);
+System.assertEquals(8, Pattern.MULTILINE);
+System.assertEquals(16, Pattern.LITERAL);
+System.assertEquals(32, Pattern.DOTALL);
+System.assertEquals(64, Pattern.UNICODE_CASE);
+
+Pattern inline = Pattern.compile('(?i)abc');
+System.assert(inline.matcher('ABC').matches());
+
+String dotallInput = String.fromCharArray(new List<Integer>{65,10,66});
+Pattern flags = Pattern.compile('a.b', Pattern.CASE_INSENSITIVE + Pattern.DOTALL + Pattern.UNICODE_CASE);
+Matcher flagsMatcher = flags.matcher(dotallInput);
+System.assert(flagsMatcher.find());
+System.assertEquals(dotallInput, flagsMatcher.group());
+String multilineInput = String.fromCharArray(new List<Integer>{120,120,10,65,66,67,10,121,121});
+Pattern multiline = Pattern.compile('^abc$', Pattern.CASE_INSENSITIVE + Pattern.MULTILINE);
+Matcher multilineMatcher = multiline.matcher(multilineInput);
+System.assert(multilineMatcher.find());
+System.assertEquals('ABC', multilineMatcher.group());
+
+Pattern literal = Pattern.compile('a.b', Pattern.LITERAL);
+System.assertEquals('a.b', literal.pattern());
+Matcher literalMatcher = literal.matcher('xx a.b axb 9');
+System.assert(literalMatcher.find());
+System.assertEquals('a.b', literalMatcher.group());
+literalMatcher.usePattern(Pattern.compile('[0-9]+'));
+System.assert(literalMatcher.find());
+System.assertEquals('9', literalMatcher.group());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecPatternCompileRejectsUnsupportedFlags(t *testing.T) {
+	tests := []struct {
+		name   string
+		source string
+		want   string
+	}{
+		{name: "comments", source: `Pattern.compile('a b', Pattern.COMMENTS);`, want: "unsupported regex flags COMMENTS"},
+		{name: "unixLines", source: `Pattern.compile('^a$', Pattern.UNIX_LINES);`, want: "unsupported regex flags UNIX_LINES"},
+		{name: "canonEq", source: `Pattern.compile('a', Pattern.CANON_EQ);`, want: "unsupported regex flags CANON_EQ"},
+		{name: "unicodeCharacterClass", source: `Pattern.compile('\w+', Pattern.UNICODE_CHARACTER_CLASS);`, want: "unsupported regex flags UNICODE_CHARACTER_CLASS"},
+		{name: "unknown", source: `Pattern.compile('a', 1024);`, want: "unsupported regex flags unknown flags 0x400"},
+		{name: "negative", source: `Pattern.compile('a', -1);`, want: "negative regex flags"},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			program, err := CompileAnonymous(tc.source)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = Execute(program, nil)
+			if err == nil || !strings.Contains(err.Error(), tc.want) {
+				t.Fatalf("expected %q error, got %v", tc.want, err)
 			}
 			var runtimeErr *RuntimeError
 			if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" {

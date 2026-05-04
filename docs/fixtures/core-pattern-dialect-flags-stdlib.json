@@ -1,0 +1,53 @@
+{
+  "name": "core-pattern-dialect-flags-stdlib",
+  "evidence": [
+    {
+      "symbol": "Pattern.compile",
+      "kind": "exec",
+      "notes": "Covers the local supported flag subset: CASE_INSENSITIVE, MULTILINE, DOTALL, UNICODE_CASE as a no-op companion, LITERAL, and supported inline i/m/s flags."
+    },
+    {
+      "symbol": "Pattern.pattern",
+      "kind": "exec",
+      "notes": "Pattern.pattern returns the original source even when Pattern.LITERAL compiles through a quoted local regex."
+    },
+    {
+      "symbol": "Matcher.find",
+      "kind": "exec",
+      "notes": "Find honors compiled local flag state carried from Pattern.compile(regex, flags)."
+    },
+    {
+      "symbol": "Matcher.matches",
+      "kind": "exec",
+      "notes": "Matches honors inline case-insensitive flags in the supported local regex subset."
+    },
+    {
+      "symbol": "Matcher.group",
+      "kind": "exec",
+      "notes": "Group returns matches from flagged and literal Pattern sources."
+    },
+    {
+      "symbol": "Matcher.usePattern",
+      "kind": "exec",
+      "notes": "usePattern swaps to another compiled local Pattern after a flagged/literal source."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "System.assertEquals(2, Pattern.CASE_INSENSITIVE);\nSystem.assertEquals(8, Pattern.MULTILINE);\nSystem.assertEquals(16, Pattern.LITERAL);\nSystem.assertEquals(32, Pattern.DOTALL);\nSystem.assertEquals(64, Pattern.UNICODE_CASE);\nPattern inline = Pattern.compile('(?i)abc');\nSystem.assert(inline.matcher('ABC').matches());\nString dotallInput = String.fromCharArray(new List<Integer>{65,10,66});\nPattern flags = Pattern.compile('a.b', Pattern.CASE_INSENSITIVE + Pattern.DOTALL + Pattern.UNICODE_CASE);\nMatcher flagsMatcher = flags.matcher(dotallInput);\nSystem.assert(flagsMatcher.find());\nSystem.assertEquals(dotallInput, flagsMatcher.group());\nString multilineInput = String.fromCharArray(new List<Integer>{120,120,10,65,66,67,10,121,121});\nPattern multiline = Pattern.compile('^abc$', Pattern.CASE_INSENSITIVE + Pattern.MULTILINE);\nMatcher multilineMatcher = multiline.matcher(multilineInput);\nSystem.assert(multilineMatcher.find());\nSystem.assertEquals('ABC', multilineMatcher.group());\nPattern literal = Pattern.compile('a.b', Pattern.LITERAL);\nSystem.assertEquals('a.b', literal.pattern());\nMatcher literalMatcher = literal.matcher('xx a.b axb 9');\nSystem.assert(literalMatcher.find());\nSystem.assertEquals('a.b', literalMatcher.group());\nliteralMatcher.usePattern(Pattern.compile('[0-9]+'));\nSystem.assert(literalMatcher.find());\nSystem.assertEquals('9', literalMatcher.group());\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "System.assertEquals(2, Pattern.CASE_INSENSITIVE);\nSystem.assertEquals(8, Pattern.MULTILINE);\nSystem.assertEquals(16, Pattern.LITERAL);\nSystem.assertEquals(32, Pattern.DOTALL);\nSystem.assertEquals(64, Pattern.UNICODE_CASE);\nPattern inline = Pattern.compile('(?i)abc');\nSystem.assert(inline.matcher('ABC').matches());\nString dotallInput = String.fromCharArray(new List<Integer>{65,10,66});\nPattern flags = Pattern.compile('a.b', Pattern.CASE_INSENSITIVE + Pattern.DOTALL + Pattern.UNICODE_CASE);\nMatcher flagsMatcher = flags.matcher(dotallInput);\nSystem.assert(flagsMatcher.find());\nSystem.assertEquals(dotallInput, flagsMatcher.group());\nString multilineInput = String.fromCharArray(new List<Integer>{120,120,10,65,66,67,10,121,121});\nPattern multiline = Pattern.compile('^abc$', Pattern.CASE_INSENSITIVE + Pattern.MULTILINE);\nMatcher multilineMatcher = multiline.matcher(multilineInput);\nSystem.assert(multilineMatcher.find());\nSystem.assertEquals('ABC', multilineMatcher.group());\nPattern literal = Pattern.compile('a.b', Pattern.LITERAL);\nSystem.assertEquals('a.b', literal.pattern());\nMatcher literalMatcher = literal.matcher('xx a.b axb 9');\nSystem.assert(literalMatcher.find());\nSystem.assertEquals('a.b', literalMatcher.group());\nliteralMatcher.usePattern(Pattern.compile('[0-9]+'));\nSystem.assert(literalMatcher.find());\nSystem.assertEquals('9', literalMatcher.group());\n"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

@@ -544,6 +544,13 @@ a Salesforce-shaped local API server without silently wrong behavior.
     `appendReplacement`/`appendTail` remain explicitly unsupported, and
     nullable split delimiters are fenced because Java zero-width trailing-piece
     behavior is not safe to claim on Go regexp.
+  - [x] Tighten Pattern/Matcher regex dialect boundaries: `Pattern.compile`
+    now accepts a coherent local flag subset (`CASE_INSENSITIVE`, `MULTILINE`,
+    `DOTALL`, `LITERAL`, with `UNICODE_CASE` as a local no-op companion), keeps
+    `Pattern.pattern()` on the original source, carries compiled flag/literal
+    state through `matcher`, `split`, and `usePattern`, and fences Java-only
+    flag constants, Java-only inline flags, Python-style named groups, and
+    Java Unicode character-class names with stable unsupported diagnostics.
   - [x] Add common `Date`, `Datetime`, and `Time` factories, parsing,
     arithmetic, and component helpers.
   - [x] Promote deterministic `Datetime` pure-duration arithmetic and local
