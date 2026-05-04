@@ -224,8 +224,12 @@ func jsonGeneratorEndContainer(receiver Value, kind string) (Value, Value, bool,
 		return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeEnd%s has no open %s", jsonGeneratorContainerName(kind), kind)
 	}
 	frame := stack.List[len(stack.List)-1]
-	if jsonGeneratorStringField(frame, "kind").Text != kind {
-		return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeEnd%s called while %s is open", jsonGeneratorContainerName(kind), jsonGeneratorStringField(frame, "kind").Text)
+	openKind := jsonGeneratorStringField(frame, "kind").Text
+	if openKind != kind {
+		if kind == "object" && openKind == "array" {
+			return Null, receiver, false, true, newExceptionError("JSONException", "JSONGenerator.writeEndObject cannot be called inside an array")
+		}
+		return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeEnd%s called while %s is open", jsonGeneratorContainerName(kind), openKind)
 	}
 	if kind == "object" && !jsonGeneratorBoolField(frame, "expectingField").Bool {
 		return Null, receiver, false, true, fmt.Errorf("JSONGenerator object field is missing a value")

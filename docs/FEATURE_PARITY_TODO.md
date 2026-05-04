@@ -444,6 +444,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     Date, Datetime, numeric, Boolean, Id, and reference edges.
   - [x] Reject `JSONGenerator.writeFieldName(...)` inside arrays with catchable
     `JSONException` while preserving array writes after the failed call.
+  - [x] Reject `JSONGenerator.writeEndObject()` inside arrays with catchable
+    `JSONException` while preserving array writes after the failed call.
   - [x] Add common `Test.isRunningTest()` and deterministic
     `Test.getStandardPricebookId()` support.
   - [x] Add `Database.getQueryLocator(String)` for supported SOQL and batch
