@@ -1,0 +1,28 @@
+{
+  "name": "async-finalizer-unsupported",
+  "evidence": [
+    {
+      "symbol": "FinalizerContext.getAsyncApexJobId",
+      "kind": "exec",
+      "notes": "Queueable finalizer callbacks are not modeled; context getters return a typed unsupported diagnostic."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "FinalizerContext fc = new FinalizerContext(); String jobId = fc.getAsyncApexJobId();"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "FinalizerContext fc = new FinalizerContext(); String jobId = fc.getAsyncApexJobId();"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"FinalizerContext.getAsyncApexJobId local queueable finalizers\""
+    }
+  }
+}

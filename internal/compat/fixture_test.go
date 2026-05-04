@@ -194,6 +194,7 @@ func TestRunAsyncContextEdgeFixtures(t *testing.T) {
 	for _, path := range []string{
 		"../../docs/fixtures/async-context-job-record-edges.json",
 		"../../docs/fixtures/async-unsupported-context-edges.json",
+		"../../docs/fixtures/async-finalizer-unsupported.json",
 		"../../docs/fixtures/async-execute-batch-scope-validation.json",
 		"../../docs/fixtures/async-abort-job-edges.json",
 		"../../docs/fixtures/async-schedule-batch-unsupported.json",
