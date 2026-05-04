@@ -1,0 +1,28 @@
+{
+  "name": "core-numeric-roundingmode-enum",
+  "evidence": [
+    {"symbol": "RoundingMode.valueOf", "kind": "exec", "notes": "Exact-name lookup returns a local enum token that supports name, ordinal, and toString."},
+    {"symbol": "RoundingMode.values", "kind": "exec", "notes": "Returns the eight Decimal rounding modes in deterministic Apex order."},
+    {"symbol": "RoundingMode.name", "kind": "exec"},
+    {"symbol": "RoundingMode.ordinal", "kind": "exec"},
+    {"symbol": "RoundingMode.toString", "kind": "exec"}
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "System.assertEquals('HALF_UP', RoundingMode.valueOf('HALF_UP').name());\nSystem.assertEquals('HALF_UP', RoundingMode.HALF_UP.toString());\nSystem.assertEquals(0, RoundingMode.UP.ordinal());\nSystem.assertEquals(7, RoundingMode.UNNECESSARY.ordinal());\nList<RoundingMode> modes = RoundingMode.values();\nSystem.assertEquals(8, modes.size());\nSystem.assertEquals('UP', modes.get(0).name());\nSystem.assertEquals('UNNECESSARY', modes.get(7).name());"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "System.assertEquals('HALF_UP', RoundingMode.valueOf('HALF_UP').name());\nSystem.assertEquals('HALF_UP', RoundingMode.HALF_UP.toString());\nSystem.assertEquals(0, RoundingMode.UP.ordinal());\nSystem.assertEquals(7, RoundingMode.UNNECESSARY.ordinal());\nList<RoundingMode> modes = RoundingMode.values();\nSystem.assertEquals(8, modes.size());\nSystem.assertEquals('UP', modes.get(0).name());\nSystem.assertEquals('UNNECESSARY', modes.get(7).name());"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}
