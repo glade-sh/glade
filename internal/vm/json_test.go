@@ -286,6 +286,34 @@ gen.writeNull();
 	}
 }
 
+func TestExecJSONGeneratorWriteAfterGetAsStringIsCatchableJSONException(t *testing.T) {
+	program, err := CompileAnonymous(`
+JSONGenerator gen = JSON.createGenerator(false);
+gen.writeStartArray();
+gen.writeString('done');
+gen.writeEndArray();
+System.assertEquals('["done"]', gen.getAsString());
+System.assert(gen.isClosed());
+Boolean caught = false;
+try {
+	gen.writeNull();
+} catch (JSONException e) {
+	caught = true;
+	System.assertEquals('JSONException', e.getTypeName());
+	System.assert(e.getMessage().contains('JSONGenerator is closed'));
+}
+System.assert(caught);
+System.assert(gen.isClosed());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecJSONParserNavigatesTokensAndAccessors(t *testing.T) {
 	program, err := CompileAnonymous(`
 JSONParser parser = JSON.createParser('{"name":"Acme","n":7,"ratio":1.5,"ok":true,"missing":null,"items":["x",2]}');

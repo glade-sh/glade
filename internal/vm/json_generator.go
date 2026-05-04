@@ -451,7 +451,7 @@ func jsonGeneratorClose(receiver Value) (Value, error) {
 
 func jsonGeneratorEnsureOpen(receiver Value) error {
 	if jsonGeneratorBoolField(receiver, "closed").Bool {
-		return fmt.Errorf("JSONGenerator is closed")
+		return newExceptionError("JSONException", "JSONGenerator is closed")
 	}
 	return nil
 }
