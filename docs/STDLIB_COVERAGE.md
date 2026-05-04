@@ -85,21 +85,24 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Datetime | `Datetime.yearGmt` | `supported` | Returns the UTC year component. |
 | Decimal | `Decimal.abs` | `supported` | Absolute value for local Decimal values. |
 | Decimal | `Decimal.doubleValue` | `supported` | Returns local Decimal value. |
-| Decimal | `Decimal.format` | `partial` | Simple deterministic finite numeric formatting; current-user locale grouping and localized decimal separators are not modeled, and overloads return explicit unsupported errors. |
+| Decimal | `Decimal.format()` | `supported` | Formats finite local Decimal values with deterministic base-10 output and no locale grouping. |
 | Decimal | `Decimal.intValue` | `supported` | Truncates to 32-bit Integer with overflow checks. |
 | Decimal | `Decimal.longValue` | `supported` | Truncates to local Long representation with overflow checks. |
 | Decimal | `Decimal.pow` | `supported` | Power with Integer exponent for finite local Decimal results. |
 | Decimal | `Decimal.round` | `partial` | Default half-up plus all local RoundingMode values; exact arbitrary-precision Decimal scale parity is not modeled. |
 | Decimal | `Decimal.setScale` | `partial` | Supports local finite scale 0-15 with UP, DOWN, CEILING, FLOOR, HALF_UP, HALF_DOWN, HALF_EVEN, and UNNECESSARY; larger arbitrary-precision scales return UnsupportedFeature. |
 | Decimal | `Decimal.valueOf` | `supported` | Parses finite decimal strings and numeric values, including trimmed signed strings. |
-| Double | `Double.format` | `partial` | Simple deterministic finite numeric formatting; locale and pattern overloads return explicit unsupported errors. |
+| Decimal | `Decimal/Double.format overloads` | `unsupported` | Locale, grouping, and pattern overloads return explicit UnsupportedFeature diagnostics; localized numeric formatting is not modeled. |
+| Double | `Double.format()` | `supported` | Formats finite local Double values with deterministic base-10 output using the local numeric representation. |
 | Double | `Double.valueOf` | `supported` | Parses finite decimal strings and numeric values into the local numeric representation, including trimmed signed strings. |
 | EncodingUtil | `EncodingUtil.base64Decode` | `supported` | Blob-shaped local value with stable invalid-input errors. |
 | EncodingUtil | `EncodingUtil.base64Encode` | `supported` | Blob-shaped local value. |
 | EncodingUtil | `EncodingUtil.convertFromHex` | `supported` | Blob-shaped local value with stable odd-length and invalid-input errors. |
 | EncodingUtil | `EncodingUtil.convertToHex` | `supported` | Blob-shaped local value. |
-| EncodingUtil | `EncodingUtil.urlDecode` | `partial` | Uses query unescape for bounded UTF-8, US-ASCII, and ISO-8859-1 charset aliases; other charsets return UnsupportedFeature. |
-| EncodingUtil | `EncodingUtil.urlEncode` | `partial` | Uses query escape for bounded UTF-8, US-ASCII, and ISO-8859-1 charset aliases; unencodable code points and other charsets are fenced explicitly. |
+| EncodingUtil | `EncodingUtil.urlDecode UTF-8/ASCII/Latin-1` | `supported` | Decodes application/x-www-form-urlencoded text for bounded UTF-8, US-ASCII, and ISO-8859-1 charset aliases with stable invalid-byte errors. |
+| EncodingUtil | `EncodingUtil.urlDecode other charsets` | `unsupported` | Charsets outside the local UTF-8, US-ASCII, and ISO-8859-1 slice return explicit UnsupportedFeature diagnostics. |
+| EncodingUtil | `EncodingUtil.urlEncode UTF-8/ASCII/Latin-1` | `supported` | Encodes application/x-www-form-urlencoded text for bounded UTF-8, US-ASCII, and ISO-8859-1 charset aliases with stable unencodable-code-point errors. |
+| EncodingUtil | `EncodingUtil.urlEncode other charsets` | `unsupported` | Charsets outside the local UTF-8, US-ASCII, and ISO-8859-1 slice return explicit UnsupportedFeature diagnostics. |
 | EventBus | `EventBus.publish` | `unsupported` | Platform event publish and after-commit publish calls return fixture-backed UnsupportedFeature diagnostics. |
 | Exception | `Built-in exception types` | `supported` | Known public built-in exception tokens construct message-bearing local exceptions, assign to Exception, and resolve through Type.forName/isAssignableFrom; unknown exception tokens return null from Type.forName. |
 | Exception | `Exception.getCause` | `supported` | Returns the locally initialized cause value after one-shot initCause, including null causes. |
@@ -120,8 +123,9 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Integer | `Integer.MAX_VALUE` | `supported` | Exposes the public 32-bit Integer maximum constant. |
 | Integer | `Integer.MIN_VALUE` | `supported` | Exposes the public 32-bit Integer minimum constant. |
 | Integer | `Integer.doubleValue` | `supported` | Converts local Integer values to the local numeric representation. |
-| Integer | `Integer.format` | `partial` | Simple deterministic base-10 formatting; current-user locale grouping is not modeled, and overloads return explicit unsupported errors. |
+| Integer | `Integer.format()` | `supported` | Formats local Integer values with deterministic base-10 output and no locale grouping. |
 | Integer | `Integer.valueOf` | `supported` | Parses integer strings and numeric values with 32-bit overflow checks, including trimmed signed strings. |
+| Integer | `Integer/Long.format overloads` | `unsupported` | Locale, grouping, and pattern overloads return explicit UnsupportedFeature diagnostics; localized numeric formatting is not modeled. |
 | Iterator | `Iterator.hasNext` | `supported` | Checks remaining elements in a local collection snapshot. |
 | Iterator | `Iterator.next` | `supported` | Returns the next element from a local collection snapshot and raises NoSuchElementException when exhausted. |
 | Iterator | `Iterator.remove` | `unsupported` | Returns an explicit UnsupportedFeature diagnostic; mutating collection iterators are not modeled. |
@@ -135,7 +139,8 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | JSON | `JSONGenerator` | `supported` | Object/array boundaries, field names, scalar string/number/Boolean/null, Date/Datetime/Time/Id/Blob, Object and validated raw value writers, getAsString, close, isClosed, and catchable JSONException for invalid nesting, pending fields, repeated roots, raw-value errors, and writes after close. |
 | JSON | `JSONParser` | `supported` | Token navigation, current token/name/text, integer/long/decimal/double/Boolean/date/datetime/time/id/blob accessors, nextValue, skipChildren current-name state, clearCurrentToken, and catchable JSONException for wrong-token or malformed-input errors. |
 | JSON | `JSONToken` | `supported` | Common parser token constants for object, array, field, string, number, Boolean, and null tokens. |
-| Limits | `Limits.get*` | `partial` | SOQL, DML, heap, CPU, callout, future, queueable, batch, scheduled, aggregate async, and email counters are modeled; aggregate query, SOSL, query-locator, mobile push, find-similar, savepoint rollback, and publish-immediate getters return explicit unsupported diagnostics. |
+| Limits | `Limits modeled getters` | `supported` | SOQL, DML, heap, CPU, callout, future, queueable, batch, scheduled, aggregate async, and email counters plus limits are modeled for the local runtime. |
+| Limits | `Limits unmodeled getters` | `unsupported` | Aggregate query, SOSL, query-locator, mobile push, find-similar, savepoint rollback, and publish-immediate getters return explicit UnsupportedFeature diagnostics. |
 | List | `List.add` | `supported` | Adds typed local values, including indexed insertion. |
 | List | `List.addAll` | `supported` | Appends typed values from local List or Set values. |
 | List | `List.clear` | `supported` | Removes all local list elements. |
@@ -157,7 +162,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | LoggingLevel | `LoggingLevel.values` | `supported` | Returns NONE, ERROR, WARN, INFO, DEBUG, FINE, FINER, FINEST in deterministic order. |
 | Long | `Long.MAX_VALUE` | `supported` | Exposes the public 64-bit Long maximum constant. |
 | Long | `Long.MIN_VALUE` | `supported` | Exposes the public 64-bit Long minimum constant. |
-| Long | `Long.format` | `partial` | Simple deterministic base-10 formatting; current-user locale grouping is not modeled, and overloads return explicit unsupported errors. |
+| Long | `Long.format()` | `supported` | Formats local Long values with deterministic base-10 output and no locale grouping. |
 | Long | `Long.valueOf` | `supported` | Parses integer strings and numeric values with overflow checks, including trimmed signed strings. |
 | Map | `Map.clear` | `supported` | Removes all local map entries. |
 | Map | `Map.clone` | `supported` | Copies the local map container; values keep local identity. |

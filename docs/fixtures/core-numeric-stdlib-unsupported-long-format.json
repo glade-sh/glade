@@ -2,7 +2,7 @@
   "name": "core-numeric-stdlib-unsupported-long-format",
   "evidence": [
     {
-      "symbol": "Long.format",
+      "symbol": "Integer/Long.format overloads",
       "kind": "exec",
       "notes": "Locale/pattern numeric format overloads are not locally modeled and return a typed unsupported diagnostic."
     }
@@ -22,7 +22,7 @@
   "expected": {
     "error": {
       "type": "UnsupportedFeature",
-      "message": "unsupported call \"numeric format locale/pattern overloads\""
+      "message": "unsupported call \"Integer/Long.format locale/pattern overloads\""
     }
   }
 }

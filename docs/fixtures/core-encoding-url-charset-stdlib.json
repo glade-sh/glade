@@ -2,12 +2,12 @@
   "name": "core-encoding-url-charset-stdlib",
   "evidence": [
     {
-      "symbol": "EncodingUtil.urlEncode",
+      "symbol": "EncodingUtil.urlEncode UTF-8/ASCII/Latin-1",
       "kind": "exec",
       "notes": "Covers bounded UTF-8 and ISO-8859-1 URL charset behavior."
     },
     {
-      "symbol": "EncodingUtil.urlDecode",
+      "symbol": "EncodingUtil.urlDecode UTF-8/ASCII/Latin-1",
       "kind": "exec",
       "notes": "Covers bounded UTF-8 and ISO-8859-1 URL charset behavior."
     }

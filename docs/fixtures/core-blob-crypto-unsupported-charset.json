@@ -2,7 +2,7 @@
   "name": "core-blob-crypto-unsupported-charset",
   "evidence": [
     {
-      "symbol": "EncodingUtil.urlEncode",
+      "symbol": "EncodingUtil.urlEncode other charsets",
       "kind": "exec",
       "notes": "Unsupported URL charsets outside the bounded UTF-8/ISO-8859-1 slice return a typed unsupported diagnostic."
     }

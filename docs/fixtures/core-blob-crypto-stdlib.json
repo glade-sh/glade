@@ -37,12 +37,12 @@
       "notes": "Mixed-case input, empty input, and non-UTF-8 bytes without string conversion."
     },
     {
-      "symbol": "EncodingUtil.urlEncode",
+      "symbol": "EncodingUtil.urlEncode UTF-8/ASCII/Latin-1",
       "kind": "exec",
       "notes": "UTF-8/utf8/UTF_8 charset validation slice."
     },
     {
-      "symbol": "EncodingUtil.urlDecode",
+      "symbol": "EncodingUtil.urlDecode UTF-8/ASCII/Latin-1",
       "kind": "exec",
       "notes": "UTF-8/utf8/UTF_8 charset validation slice."
     },

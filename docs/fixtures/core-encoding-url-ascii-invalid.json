@@ -2,7 +2,7 @@
   "name": "core-encoding-url-ascii-invalid",
   "evidence": [
     {
-      "symbol": "EncodingUtil.urlEncode",
+      "symbol": "EncodingUtil.urlEncode UTF-8/ASCII/Latin-1",
       "kind": "exec",
       "notes": "US-ASCII URL encoding rejects non-ASCII code points instead of silently replacing them."
     }
