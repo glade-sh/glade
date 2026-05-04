@@ -391,14 +391,14 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | URL | `URL.getSalesforceBaseUrl` | `partial` | Deterministic local base URL. |
 | URL | `URL.toExternalForm` | `supported` | Returns the stored local URL string. |
 | Unsupported | `unimplemented platform/stdlib calls` | `supported` | Typed UnsupportedFeature errors with stable message text. |
-| UserInfo | `UserInfo.getFirstName` | `partial` | Current runAs/default user. |
+| UserInfo | `UserInfo.getFirstName` | `partial` | Current runAs/server/default user. |
 | UserInfo | `UserInfo.getLanguage` | `partial` | Deterministic local value. |
-| UserInfo | `UserInfo.getLastName` | `partial` | Current runAs/default user. |
+| UserInfo | `UserInfo.getLastName` | `partial` | Current runAs/server/default user. |
 | UserInfo | `UserInfo.getLocale` | `partial` | Deterministic local value. |
-| UserInfo | `UserInfo.getName` | `partial` | Current runAs/default user. |
+| UserInfo | `UserInfo.getName` | `partial` | Current runAs/server/default user. |
 | UserInfo | `UserInfo.getOrganizationId` | `partial` | Local org identity. |
-| UserInfo | `UserInfo.getProfileId` | `partial` | Current runAs/default user. |
+| UserInfo | `UserInfo.getProfileId` | `partial` | Current runAs/server/default user. |
 | UserInfo | `UserInfo.getSessionId` | `partial` | Empty local session value. |
 | UserInfo | `UserInfo.getTimeZone` | `partial` | Deterministic UTC value. |
-| UserInfo | `UserInfo.getUserEmail` | `partial` | Current runAs/default user. |
-| UserInfo | `UserInfo.getUserId` | `partial` | Current runAs/default user. |
+| UserInfo | `UserInfo.getUserEmail` | `partial` | Current runAs/server/default user. |
+| UserInfo | `UserInfo.getUserId` | `partial` | Current runAs/server/default user. |
