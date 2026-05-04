@@ -859,6 +859,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     routes that return deterministic unsupported errors.
   - [x] Return conservative discovery payloads for advertised Tooling and Bulk
     Jobs roots instead of falling through to unknown routes.
+  - [x] Return local-only `oaer` root discovery for state, inspect, fixture, and
+    reset routes advertised by `/services/data/{version}`.
 - [ ] Expand SObject REST resources: describe, layout-adjacent metadata where
   useful, recent, query, queryAll, and record CRUD edge cases.
   - [x] Return Salesforce-like object resource metadata for
@@ -992,6 +994,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     reset scope metadata.
   - [x] Report `limits` and `async` reset scopes as accepted no-ops until limit
     and async queues become persisted server state.
+  - [x] Classify unsupported fixture versions as `INVALID_FIXTURE` while keeping
+    malformed JSON on the fixture load route as `JSON_PARSER_ERROR`.
 - [ ] Add black-box server compatibility fixtures for CRUD, query,
   executeAnonymous, composite, errors, auth stubs, and persistence.
   - [x] Cover SObject object-resource metadata and unknown-object resource
@@ -1044,6 +1048,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     malformed JSON, and method-boundary fences in the server black-box fixture.
   - [x] Cover Metadata REST root discovery plus read/retrieve unsupported stubs
     and retrieve body/method boundaries in the server black-box fixture.
+  - [x] Cover local `oaer` root discovery, method boundaries, and invalid fixture
+    version errors in the server black-box fixture.
 
 ## 9. Compatibility, Hardening, And Release
 

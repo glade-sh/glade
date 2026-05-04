@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"errors"
 	"strings"
 	"testing"
 )
@@ -29,6 +30,17 @@ func TestApplyFixtureResolvesAliasesAndRelationshipRefs(t *testing.T) {
 		if got := contact.Fields["AccountId"].ID; got != accountID {
 			t.Fatalf("AccountId = %q, want %q", got, accountID)
 		}
+	}
+}
+
+func TestReadFixtureReportsUnsupportedVersionAsTypedError(t *testing.T) {
+	_, err := ReadFixture(strings.NewReader(`{"version":"oaer.storage.v0"}`))
+	var versionErr UnsupportedFixtureVersionError
+	if !errors.As(err, &versionErr) {
+		t.Fatalf("error = %T %v, want UnsupportedFixtureVersionError", err, err)
+	}
+	if versionErr.Version != "oaer.storage.v0" {
+		t.Fatalf("version = %q", versionErr.Version)
 	}
 }
 

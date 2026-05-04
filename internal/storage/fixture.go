@@ -40,6 +40,14 @@ type fixtureAlias struct {
 	ID     ID
 }
 
+type UnsupportedFixtureVersionError struct {
+	Version string
+}
+
+func (e UnsupportedFixtureVersionError) Error() string {
+	return fmt.Sprintf("storage: unsupported fixture version %q", e.Version)
+}
+
 func NewFixture() Fixture {
 	return Fixture{Version: FixtureVersion}
 }
@@ -53,7 +61,7 @@ func ReadFixture(r io.Reader) (Fixture, error) {
 		fixture.Version = FixtureVersion
 	}
 	if fixture.Version != FixtureVersion {
-		return Fixture{}, fmt.Errorf("storage: unsupported fixture version %q", fixture.Version)
+		return Fixture{}, UnsupportedFixtureVersionError{Version: fixture.Version}
 	}
 	return fixture, nil
 }

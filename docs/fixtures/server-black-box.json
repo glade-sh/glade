@@ -52,6 +52,7 @@
         "\"connect\":\"/services/data/v61.0/connect\"",
         "\"jobs\":\"/services/data/v61.0/jobs\"",
         "\"metadata\":\"/services/data/v61.0/metadata\"",
+        "\"oaer\":\"/services/data/v61.0/oaer\"",
         "\"process\":\"/services/data/v61.0/process\"",
         "\"quickActions\":\"/services/data/v61.0/quickActions\"",
         "\"recent\":\"/services/data/v61.0/recent\"",
@@ -148,6 +149,41 @@
         "\"name\":\"limits\"",
         "\"noOp\":true",
         "\"users\":2"
+      ]
+    },
+    {
+      "name": "oaer-discovery",
+      "method": "GET",
+      "path": "/services/data/v61.0/oaer",
+      "status": 200,
+      "contains": [
+        "\"localOnly\":true",
+        "\"fixture\":\"/services/data/v61.0/oaer/fixture\"",
+        "\"inspect\":\"/services/data/v61.0/oaer/inspect\"",
+        "\"reset\":\"/services/data/v61.0/oaer/reset\"",
+        "\"state\":\"/services/data/v61.0/oaer/state\""
+      ]
+    },
+    {
+      "name": "oaer-discovery-method-not-allowed",
+      "method": "POST",
+      "path": "/services/data/v61.0/oaer",
+      "body": "{}",
+      "status": 405,
+      "contains": [
+        "METHOD_NOT_ALLOWED",
+        "method not allowed"
+      ]
+    },
+    {
+      "name": "oaer-fixture-invalid-version",
+      "method": "POST",
+      "path": "/services/data/v61.0/oaer/fixture",
+      "body": "{\"version\":\"oaer.storage.v0\"}",
+      "status": 400,
+      "contains": [
+        "INVALID_FIXTURE",
+        "unsupported fixture version"
       ]
     },
     {
@@ -2057,7 +2093,7 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 185,
+      "requests": 188,
       "statuses": [
         200,
         200,
@@ -2070,6 +2106,9 @@
         405,
         200,
         200,
+        200,
+        405,
+        400,
         200,
         200,
         200,

@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"mime"
@@ -95,6 +96,11 @@ type oaerResetPayload struct {
 	Scopes     []string               `json:"scopes"`
 	NoOpScopes []string               `json:"noOpScopes,omitempty"`
 	Summary    storage.InspectSummary `json:"summary"`
+}
+
+type oaerDiscoveryPayload struct {
+	LocalOnly bool              `json:"localOnly"`
+	URLs      map[string]string `json:"urls"`
 }
 
 func New(org *storage.OrgState) *Server {
@@ -549,6 +555,8 @@ func (s *Server) handleRecord(w http.ResponseWriter, r *http.Request, version st
 
 func (s *Server) handleOAER(w http.ResponseWriter, r *http.Request, parts []string) {
 	switch {
+	case len(parts) == 0 && r.Method == http.MethodGet:
+		writeJSON(w, http.StatusOK, oaerDiscovery(versionFromRequest(r)))
 	case len(parts) >= 1 && parts[0] == "reset" && r.Method == http.MethodPost:
 		scopes, err := resetScopes(r, parts[1:])
 		if err != nil {
@@ -578,6 +586,11 @@ func (s *Server) handleOAER(w http.ResponseWriter, r *http.Request, parts []stri
 	case len(parts) == 1 && parts[0] == "fixture" && r.Method == http.MethodPost:
 		fixture, err := storage.ReadFixture(r.Body)
 		if err != nil {
+			var versionErr storage.UnsupportedFixtureVersionError
+			if errors.As(err, &versionErr) {
+				writeSalesforceError(w, errInvalidFixture, err.Error())
+				return
+			}
 			writeSalesforceError(w, errMalformedJSON, err.Error())
 			return
 		}
@@ -591,6 +604,8 @@ func (s *Server) handleOAER(w http.ResponseWriter, r *http.Request, parts []stri
 			return
 		}
 		writeJSON(w, http.StatusOK, map[string]any{"success": true, "summary": storage.InspectOrg("", *s.Org)})
+	case len(parts) == 0:
+		writeMethodNotAllowed(w, http.MethodGet)
 	case len(parts) >= 1 && parts[0] == "reset":
 		writeMethodNotAllowed(w, http.MethodPost)
 	case len(parts) == 1 && (parts[0] == "state" || parts[0] == "inspect"):
@@ -600,6 +615,27 @@ func (s *Server) handleOAER(w http.ResponseWriter, r *http.Request, parts []stri
 	default:
 		writeSalesforceError(w, errUnknownOAER)
 	}
+}
+
+func oaerDiscovery(version string) oaerDiscoveryPayload {
+	base := "/services/data/" + version + "/oaer"
+	return oaerDiscoveryPayload{
+		LocalOnly: true,
+		URLs: map[string]string{
+			"fixture": base + "/fixture",
+			"inspect": base + "/inspect",
+			"reset":   base + "/reset",
+			"state":   base + "/state",
+		},
+	}
+}
+
+func versionFromRequest(r *http.Request) string {
+	parts := splitPath(r.URL.EscapedPath())
+	if len(parts) >= 3 && parts[0] == "services" && parts[1] == "data" {
+		return parts[2]
+	}
+	return localAPIVersions[0].Version
 }
 
 func resetScopeSupport() []resetScopeInfo {

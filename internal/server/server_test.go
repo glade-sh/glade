@@ -2313,6 +2313,43 @@ func TestOAERFixtureAndResetEndpointsPersist(t *testing.T) {
 	}
 }
 
+func TestOAERRootDiscoveryAdvertisesLocalStateRoutes(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/oaer", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var payload oaerDiscoveryPayload
+	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
+		t.Fatal(err)
+	}
+	if !payload.LocalOnly || payload.URLs["state"] != "/services/data/v61.0/oaer/state" || payload.URLs["fixture"] != "/services/data/v61.0/oaer/fixture" || payload.URLs["reset"] != "/services/data/v61.0/oaer/reset" {
+		t.Fatalf("discovery payload = %#v", payload)
+	}
+
+	post := httptest.NewRecorder()
+	handler.ServeHTTP(post, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/oaer", strings.NewReader(`{}`)))
+	assertSalesforceError(t, post, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
+	if got, want := post.Header().Get("Allow"), "GET"; got != want {
+		t.Fatalf("Allow = %q, want %q", got, want)
+	}
+}
+
+func TestOAERFixtureUnsupportedVersionIsInvalidFixture(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/oaer/fixture", strings.NewReader(`{"version":"oaer.storage.v0"}`)))
+	assertSalesforceError(t, rec, http.StatusBadRequest, "INVALID_FIXTURE", "unsupported fixture version")
+	if got := len(org.Objects["Account"].Records); got != 0 {
+		t.Fatalf("account records after rejected fixture load = %d", got)
+	}
+}
+
 func TestOAERScopedResetEndpoints(t *testing.T) {
 	org := testOrg()
 	storage.EnsureDeterministicPlatformData(&org)
