@@ -1,0 +1,28 @@
+{
+  "name": "core-datetime-format-named-zones",
+  "evidence": [
+    {
+      "symbol": "Datetime.format",
+      "kind": "exec",
+      "notes": "Datetime.format(pattern, timezone) uses deterministic local offsets and abbreviations for the modeled named-zone table."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Datetime stamp = Datetime.valueOfGmt('2024-02-29T23:05:06Z');\nDatetime summer = Datetime.valueOfGmt('2024-07-01T12:00:00Z');\nSystem.assertEquals('2024-02-29 17:05:06 -0600 CST', stamp.format('yyyy-MM-dd HH:mm:ss Z z', 'America/Chicago'));\nSystem.assertEquals('2024-07-01 06:00:00 -0600 MDT', summer.format('yyyy-MM-dd HH:mm:ss Z z', 'America/Denver'));\nSystem.assertEquals('2024-07-01 13:00:00 +0100 BST', summer.format('yyyy-MM-dd HH:mm:ss Z z', 'Europe/London'));\nSystem.assertEquals('2024-03-01 00:05:06 +0100 CET', stamp.format('yyyy-MM-dd HH:mm:ss Z z', 'Europe/Berlin'));\nSystem.assertEquals('2024-03-01 08:05:06 +0900 JST', stamp.format('yyyy-MM-dd HH:mm:ss Z z', 'Asia/Tokyo'));\nSystem.assertEquals('2024-03-01 10:05:06 +1100 AEDT', stamp.format('yyyy-MM-dd HH:mm:ss Z z', 'Australia/Sydney'));"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Datetime stamp = Datetime.valueOfGmt('2024-02-29T23:05:06Z');\nDatetime summer = Datetime.valueOfGmt('2024-07-01T12:00:00Z');\nSystem.assertEquals('2024-02-29 17:05:06 -0600 CST', stamp.format('yyyy-MM-dd HH:mm:ss Z z', 'America/Chicago'));\nSystem.assertEquals('2024-07-01 06:00:00 -0600 MDT', summer.format('yyyy-MM-dd HH:mm:ss Z z', 'America/Denver'));\nSystem.assertEquals('2024-07-01 13:00:00 +0100 BST', summer.format('yyyy-MM-dd HH:mm:ss Z z', 'Europe/London'));\nSystem.assertEquals('2024-03-01 00:05:06 +0100 CET', stamp.format('yyyy-MM-dd HH:mm:ss Z z', 'Europe/Berlin'));\nSystem.assertEquals('2024-03-01 08:05:06 +0900 JST', stamp.format('yyyy-MM-dd HH:mm:ss Z z', 'Asia/Tokyo'));\nSystem.assertEquals('2024-03-01 10:05:06 +1100 AEDT', stamp.format('yyyy-MM-dd HH:mm:ss Z z', 'Australia/Sydney'));"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}
