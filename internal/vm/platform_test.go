@@ -844,6 +844,16 @@ func TestExecAsyncUnsupportedEdgesAreTyped(t *testing.T) {
 			want: `unsupported call "System.enqueueJob AsyncOptions overload"`,
 		},
 		{
+			name: "async options getter",
+			src:  `AsyncOptions opts = new AsyncOptions(); opts.getMaximumQueueableStackDepth();`,
+			want: `unsupported call "AsyncOptions.getMaximumQueueableStackDepth local async options surface"`,
+		},
+		{
+			name: "async options setter",
+			src:  `AsyncOptions opts = new AsyncOptions(); opts.setMinimumQueueableDelayInMinutes(1);`,
+			want: `unsupported call "AsyncOptions.setMinimumQueueableDelayInMinutes local async options surface"`,
+		},
+		{
 			name: "async info",
 			src:  `AsyncInfo.getCurrentQueueableStackDepth();`,
 			want: `unsupported call "AsyncInfo.getCurrentQueueableStackDepth local async info surface"`,
