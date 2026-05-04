@@ -636,8 +636,12 @@ a Salesforce-shaped local API server without silently wrong behavior.
     Tooling sObject describe, and Tooling completions routes.
   - [x] Return stable unsupported errors for common Tooling metadata object
     probes (`ApexClass`, `ApexTrigger`, `ApexPage`, `ApexComponent`,
-    `StaticResource`), test-run orchestration endpoints, and coverage probes
-    instead of falling through to unknown tooling routes.
+    `StaticResource`), debugger/log/test sObject probes (`ApexLog`,
+    `TraceFlag`, `DebugLevel`, `ApexTestQueueItem`, `ApexTestResult`,
+    `ApexCodeCoverage`, `ApexCodeCoverageAggregate`, `ApexOrgWideCoverage`,
+    `ContainerAsyncRequest`, `MetadataContainer`), test-run orchestration
+    endpoints, and coverage probes instead of falling through to unknown
+    tooling routes.
   - [x] Delegate Tooling `queryAll` through the SOQL query handler and return
     explicit unsupported errors for Tooling search probes.
 - [ ] Add more REST resources used by local integrations and editor tooling.
@@ -683,8 +687,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
     fixture.
   - [x] Cover common Bulk API v2 job subroute unsupported shapes in the server
     black-box fixture.
-  - [x] Cover common Tooling metadata object, test-run, coverage, and search
-    unsupported route shapes in the server black-box fixture.
+  - [x] Cover common Tooling metadata/debugger/log/test object, test-run,
+    coverage, and search unsupported route shapes in the server black-box
+    fixture.
   - [x] Cover Tooling `queryAll` SOQL delegation in the server black-box
     fixture.
   - [x] Cover generic composite unsupported route shape in the server black-box

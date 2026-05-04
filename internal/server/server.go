@@ -590,7 +590,21 @@ func (s *Server) handleTooling(w http.ResponseWriter, r *http.Request, version s
 
 func isToolingMetadataObject(name string) bool {
 	switch name {
-	case "ApexClass", "ApexTrigger", "ApexPage", "ApexComponent", "StaticResource":
+	case "ApexClass",
+		"ApexTrigger",
+		"ApexPage",
+		"ApexComponent",
+		"StaticResource",
+		"ApexLog",
+		"TraceFlag",
+		"DebugLevel",
+		"ApexTestQueueItem",
+		"ApexTestResult",
+		"ApexCodeCoverage",
+		"ApexCodeCoverageAggregate",
+		"ApexOrgWideCoverage",
+		"ContainerAsyncRequest",
+		"MetadataContainer":
 		return true
 	default:
 		return false

@@ -368,6 +368,36 @@
       "contains": ["UNSUPPORTED_FEATURE", "Tooling ApexTrigger object record"]
     },
     {
+      "name": "tooling-apexlog-collection-unsupported",
+      "method": "GET",
+      "path": "/services/data/v61.0/tooling/sobjects/ApexLog",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "Tooling ApexLog object collection"]
+    },
+    {
+      "name": "tooling-traceflag-collection-unsupported",
+      "method": "POST",
+      "path": "/services/data/v61.0/tooling/sobjects/TraceFlag",
+      "body": "{}",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "Tooling TraceFlag object collection"]
+    },
+    {
+      "name": "tooling-apextestresult-record-unsupported",
+      "method": "GET",
+      "path": "/services/data/v61.0/tooling/sobjects/ApexTestResult/07M000000000001",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "Tooling ApexTestResult object record"]
+    },
+    {
+      "name": "tooling-metadata-container-record-unsupported",
+      "method": "PATCH",
+      "path": "/services/data/v61.0/tooling/sobjects/MetadataContainer/1dc000000000001",
+      "body": "{}",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "Tooling MetadataContainer object record"]
+    },
+    {
       "name": "tooling-run-tests-sync-unsupported",
       "method": "POST",
       "path": "/services/data/v61.0/tooling/runTestsSynchronous",
@@ -505,8 +535,8 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 64,
-      "statuses": [200, 200, 200, 200, 200, 200, 501, 501, 501, 501, 200, 201, 200, 200, 200, 501, 501, 400, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 400, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 404, 404, 200, 200, 201],
+      "requests": 68,
+      "statuses": [200, 200, 200, 200, 200, 200, 501, 501, 501, 501, 200, 201, 200, 200, 200, 501, 501, 400, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 400, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 404, 404, 200, 200, 201],
       "users": 2
     }
   }
