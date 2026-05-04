@@ -357,6 +357,9 @@ Cuts:
    - Full grammar coverage, binds, relationship queries, polymorphic fields,
      aggregate functions, date literals, query locators, cursors, lock/security
      clauses, and permission-aware behavior.
+   - Landed slice: aggregate alias/HAVING fixtures, month and quarter date
+     literal windows, and eager `Database.QueryLocator.getQuery()`/`iterator()`
+     are covered for the local runtime.
 
 5. Custom metadata and settings
    - `getAll`, `getInstance`, fixture seeding, namespace behavior, read-only

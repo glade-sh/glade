@@ -129,7 +129,7 @@ var stdlibEntries = []StdlibEntry{
 	{Area: "REST", API: "RestRequest / RestResponse object shapes", Status: StatusPartial, Notes: "Local request/response objects expose URI/path/method/address, params, headers, Blob body, status, and add/get helper methods covered by compatibility fixtures; broader platform lifecycle remains unsupported."},
 	{Area: "REST", API: "@RestResource local server dispatch", Status: StatusUnsupported, Notes: "Custom Apex REST dispatch returns a stable unsupported error from the local server."},
 	{Area: "Database", API: "Database.delete", Status: StatusSupported, Notes: "DML pipeline with result/error shapes for supported SObjects."},
-	{Area: "Database", API: "Database.getQueryLocator", Status: StatusPartial, Notes: "Supported SOQL only; executes eagerly for local batch scopes."},
+	{Area: "Database", API: "Database.getQueryLocator", Status: StatusPartial, Notes: "Supported SOQL only; executes eagerly for local batch scopes and exposes getQuery()/iterator() over the local snapshot."},
 	{Area: "Database", API: "Database.insert", Status: StatusSupported, Notes: "DML pipeline with result/error shapes for supported SObjects."},
 	{Area: "Database", API: "Database.merge", Status: StatusPartial, Notes: "Local merge behavior for supported account/contact-style data."},
 	{Area: "Database", API: "Database.rollback", Status: StatusPartial, Notes: "Local org-state savepoint rollback; no external side effects."},

@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
@@ -781,10 +782,16 @@ insert new Account(Name = 'Today', RenewalDate__c = Date.today());
 Date oldDate = Date.today();
 oldDate = oldDate.addDays(-2);
 insert new Account(Name = 'Old', RenewalDate__c = oldDate);
+Date priorMonth = Date.newInstance(2026, 4, 15);
+insert new Account(Name = 'Prior Month', RenewalDate__c = priorMonth);
 List<Account> todayRows = [SELECT Id FROM Account WHERE RenewalDate__c = TODAY];
 System.assertEquals(1, todayRows.size(), 'TODAY should match Date.today row');
 List<Account> recentRows = [SELECT Id FROM Account WHERE RenewalDate__c = LAST_N_DAYS:2];
 System.assertEquals(2, recentRows.size(), 'LAST_N_DAYS should include today and prior rows');
+List<Account> monthRows = [SELECT Id FROM Account WHERE RenewalDate__c = LAST_N_MONTHS:1];
+System.assertEquals(2, monthRows.size(), 'LAST_N_MONTHS should cover the complete prior month');
+List<Account> quarterRows = [SELECT Id FROM Account WHERE RenewalDate__c = THIS_QUARTER];
+System.assertEquals(3, quarterRows.size(), 'THIS_QUARTER should cover the current quarter');
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -797,6 +804,23 @@ System.assertEquals(2, recentRows.size(), 'LAST_N_DAYS should include today and 
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecSOQLUnsupportedDateLiteralDiagnostic(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Account> rows = [SELECT Id FROM Account WHERE CreatedDate = THIS_WEEK];
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	_, err = machine.Execute(program)
+	var runtimeErr *RuntimeError
+	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != "soql: date literal THIS_WEEK is not supported" {
+		t.Fatalf("err = %#v", err)
 	}
 }
 

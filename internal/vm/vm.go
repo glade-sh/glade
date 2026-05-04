@@ -1048,6 +1048,7 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		}
 		locator := Object("Database.QueryLocator")
 		locator.Fields["Records"] = value
+		locator.Fields["Query"] = String(args[0].Text)
 		return locator, nil
 	case "Database.setSavepoint":
 		if len(args) != 0 {
@@ -2307,6 +2308,10 @@ func (vm *VM) executeSOQLRowsWithExpander(raw string, execResult *Result, expand
 	}
 	result, err := soql.ParseAndExecuteAt(*vm.Org, queryText, vm.fakeNow)
 	if err != nil {
+		var unsupported *soql.UnsupportedFeatureError
+		if errors.As(err, &unsupported) {
+			return nil, &RuntimeError{Type: "UnsupportedFeature", Message: unsupported.Message}
+		}
 		return nil, newExceptionError("QueryException", err.Error())
 	}
 	limitRows := soqlLimitRows(result)
@@ -7001,7 +7006,7 @@ func collectionIteratorType(collectionType string) string {
 }
 
 func isIteratorValue(value Value) bool {
-	return value.Kind == ValueObject && (value.Type == "Iterator" || strings.HasPrefix(value.Type, "Iterator<"))
+	return value.Kind == ValueObject && (value.Type == "Iterator" || strings.HasPrefix(value.Type, "Iterator<") || value.Type == "Database.QueryLocatorIterator")
 }
 
 func callIteratorMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
@@ -8264,6 +8269,29 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		return callIteratorMember(receiver, method, args)
 	}
 	switch receiver.Type {
+	case "Database.QueryLocator":
+		switch method {
+		case "getQuery":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Database.QueryLocator.getQuery expects 0 arguments")
+			}
+			if query, ok := receiver.Fields["Query"]; ok && query.Kind == ValueString {
+				return query, receiver, false, true, nil
+			}
+			return String(""), receiver, false, true, nil
+		case "iterator":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Database.QueryLocator.iterator expects 0 arguments")
+			}
+			records, ok := receiver.Fields["Records"]
+			if !ok || records.Kind != ValueList {
+				return Null, receiver, false, true, fmt.Errorf("Database.QueryLocator missing records")
+			}
+			iterator := Object("Database.QueryLocatorIterator")
+			iterator.Fields["__values"] = List(append([]Value(nil), records.List...)...)
+			iterator.Fields["__index"] = Int(0)
+			return iterator, receiver, false, true, nil
+		}
 	case "QueueableContext", "BatchableContext", "Database.BatchableContext":
 		if method == "getJobId" {
 			if len(args) != 0 {
