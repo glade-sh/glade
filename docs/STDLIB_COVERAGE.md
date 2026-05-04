@@ -80,6 +80,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | EncodingUtil | `EncodingUtil.convertToHex` | `supported` | Blob-shaped local value. |
 | EncodingUtil | `EncodingUtil.urlDecode` | `partial` | Uses query unescape with UTF-8/utf8/UTF_8 charset validation only; other charsets return UnsupportedFeature. |
 | EncodingUtil | `EncodingUtil.urlEncode` | `partial` | Uses query escape with UTF-8/utf8/UTF_8 charset validation only; other charsets return UnsupportedFeature. |
+| Exception | `Built-in exception types` | `partial` | Known public built-in exception tokens construct message-bearing local exceptions and assign to Exception; exact platform class catalog, line numbers, and stack text remain partial. |
 | Exception | `Exception.getCause` | `partial` | Returns the locally initialized cause value; repeat/self-cause platform edge rules are not modeled. |
 | Exception | `Exception.getLineNumber` | `partial` | Returns deterministic local throw-site line metadata when available; otherwise 0. |
 | Exception | `Exception.getMessage` | `supported` | Returns the local exception message. |
@@ -313,11 +314,12 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | String | `String.unescapeXml10` | `partial` | Alias of local XML core/numeric entity unescaping; XML 1.0 validity is not modeled. |
 | String | `String.unescapeXml11` | `partial` | Alias of local XML core/numeric entity unescaping; XML 1.1 validity is not modeled. |
 | String | `String.valueOf` | `supported` | Local value string conversion. |
-| System | `System.assert` | `supported` | Assertion failure returns runtime error; Object message values use local toString. |
-| System | `System.assertEquals` | `supported` | Assertion failure returns runtime error with deterministic local expected/actual text and Object message toString. |
-| System | `System.assertNotEquals` | `supported` | Assertion failure returns runtime error with deterministic local value text and Object message toString. |
+| System | `System.assert` | `supported` | Assertion failure returns runtime error; Object and null message values use deterministic local string conversion. |
+| System | `System.assertEquals` | `supported` | Assertion failure returns runtime error with deterministic local expected/actual text and Object/null message conversion. |
+| System | `System.assertNotEquals` | `supported` | Assertion failure returns runtime error with deterministic local value text and Object/null message conversion. |
+| System | `System.asyncScheduling` | `unsupported` | System.abortJob and scheduleBatch return explicit unsupported diagnostics; broader local async lifecycle control is not modeled. |
 | System | `System.currentTimeMillis` | `partial` | Returns deterministic VM-clock epoch milliseconds. |
-| System | `System.debug` | `supported` | One-argument and LoggingLevel overloads are collected in result debug output; null and modeled Exception values use deterministic string forms. |
+| System | `System.debug` | `supported` | One-argument and LoggingLevel overloads are collected in result debug output; null, LoggingLevel, and modeled Exception values use deterministic string forms; log framework text parity is not claimed. |
 | System | `System.isBatch` | `partial` | Returns false in the local non-async VM context. |
 | System | `System.isFuture` | `partial` | Returns false in the local non-async VM context. |
 | System | `System.isQueueable` | `partial` | Returns false in the local non-async VM context. |

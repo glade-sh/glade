@@ -1154,6 +1154,8 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
 		return Bool(false), nil
+	case "System.abortJob", "System.scheduleBatch":
+		return Null, unsupportedCallError(callee + " local async scheduling surface")
 	case "Datetime.newInstance", "Datetime.newInstanceGmt":
 		if len(args) != 3 && len(args) != 6 {
 			return Null, fmt.Errorf("%s expects year, month, day[, hour, minute, second] integers", callee)
@@ -5417,11 +5419,14 @@ func (vm *VM) typeForName(namespace, name string) Value {
 }
 
 func isBuiltinTypeName(name string) bool {
+	if isBuiltinExceptionType(exceptionTypeName(name)) {
+		return true
+	}
 	switch name {
 	case "Object", "String", "Boolean", "Integer", "Long", "Decimal", "Double", "Date", "Datetime", "Time", "TimeZone", "Blob", "Id", "Type", "URL", "PageReference", "LoggingLevel":
 		return true
 	default:
-		return isExceptionType(name)
+		return false
 	}
 }
 
@@ -5727,7 +5732,7 @@ func (vm *VM) runInstanceInitializers(class Class, object Value, result *Result)
 
 func isExceptionType(typeName string) bool {
 	typeName = exceptionTypeName(typeName)
-	return typeName == "Exception" || strings.HasSuffix(typeName, "Exception")
+	return isBuiltinExceptionType(typeName) || strings.HasSuffix(typeName, "Exception")
 }
 
 func typeNewInstanceAllowsDottedBuiltin(typeName string) bool {
@@ -6302,19 +6307,50 @@ func builtinExceptionTypeMatches(typeName, target string) bool {
 }
 
 func builtinExceptionParent(typeName string) string {
-	switch typeName {
-	case "Exception":
-		return "Object"
-	case "DmlException", "QueryException", "NullPointerException", "AssertException", "LimitException",
-		"CalloutException", "ListException", "MathException", "StringException", "TypeException",
-		"JSONException", "SObjectException", "SecurityException", "VisualforceException":
-		return "Exception"
-	default:
-		if strings.HasSuffix(typeName, "Exception") {
-			return "Exception"
-		}
-		return ""
+	typeName = exceptionTypeName(typeName)
+	if parent, ok := builtinExceptionParents[typeName]; ok {
+		return parent
 	}
+	if strings.HasSuffix(typeName, "Exception") {
+		return "Exception"
+	}
+	return ""
+}
+
+func isBuiltinExceptionType(typeName string) bool {
+	typeName = exceptionTypeName(typeName)
+	_, ok := builtinExceptionParents[typeName]
+	return ok
+}
+
+var builtinExceptionParents = map[string]string{
+	"Exception": "Object",
+
+	"AssertException":                 "Exception",
+	"AsyncException":                  "Exception",
+	"CalloutException":                "Exception",
+	"DmlException":                    "Exception",
+	"EmailException":                  "Exception",
+	"ExternalObjectException":         "Exception",
+	"InvalidParameterValueException":  "Exception",
+	"JSONException":                   "Exception",
+	"LimitException":                  "Exception",
+	"ListException":                   "Exception",
+	"MathException":                   "Exception",
+	"NoAccessException":               "Exception",
+	"NoDataFoundException":            "Exception",
+	"NoSuchElementException":          "Exception",
+	"NullPointerException":            "Exception",
+	"QueryException":                  "Exception",
+	"RequiredFeatureMissingException": "Exception",
+	"SearchException":                 "Exception",
+	"SecurityException":               "Exception",
+	"SerializationException":          "Exception",
+	"SObjectException":                "Exception",
+	"StringException":                 "Exception",
+	"TypeException":                   "Exception",
+	"VisualforceException":            "Exception",
+	"XmlException":                    "Exception",
 }
 
 func exceptionTypeName(typeName string) string {

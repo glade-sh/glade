@@ -618,6 +618,167 @@ System.assertEquals(null, outer.getCause());
 	}
 }
 
+func TestExecCoreBuiltinExceptionMatrix(t *testing.T) {
+	exceptionNames := []string{
+		"AssertException",
+		"AsyncException",
+		"CalloutException",
+		"DmlException",
+		"EmailException",
+		"ExternalObjectException",
+		"InvalidParameterValueException",
+		"JSONException",
+		"LimitException",
+		"ListException",
+		"MathException",
+		"NoAccessException",
+		"NoDataFoundException",
+		"NoSuchElementException",
+		"NullPointerException",
+		"QueryException",
+		"RequiredFeatureMissingException",
+		"SearchException",
+		"SecurityException",
+		"SerializationException",
+		"SObjectException",
+		"StringException",
+		"TypeException",
+		"VisualforceException",
+		"XmlException",
+	}
+	var source strings.Builder
+	source.WriteString("Type exceptionType = Type.forName('Exception');\n")
+	source.WriteString("System.assertEquals(null, Type.forName('ImaginaryException'));\n")
+	for i, name := range exceptionNames {
+		source.WriteString("Type t")
+		source.WriteString(string(rune('A' + i/26)))
+		source.WriteString(string(rune('A' + i%26)))
+		source.WriteString(" = Type.forName('")
+		source.WriteString(name)
+		source.WriteString("');\n")
+		source.WriteString("System.assert(t")
+		source.WriteString(string(rune('A' + i/26)))
+		source.WriteString(string(rune('A' + i%26)))
+		source.WriteString(" != null, '")
+		source.WriteString(name)
+		source.WriteString(" Type.forName should resolve');\n")
+		source.WriteString("System.assert(exceptionType.isAssignableFrom(t")
+		source.WriteString(string(rune('A' + i/26)))
+		source.WriteString(string(rune('A' + i%26)))
+		source.WriteString("), '")
+		source.WriteString(name)
+		source.WriteString(" should extend Exception');\n")
+		source.WriteString("Exception e")
+		source.WriteString(string(rune('A' + i/26)))
+		source.WriteString(string(rune('A' + i%26)))
+		source.WriteString(" = new ")
+		source.WriteString(name)
+		source.WriteString("('")
+		source.WriteString(name)
+		source.WriteString(" message');\n")
+		source.WriteString("System.assertEquals('")
+		source.WriteString(name)
+		source.WriteString("', e")
+		source.WriteString(string(rune('A' + i/26)))
+		source.WriteString(string(rune('A' + i%26)))
+		source.WriteString(".getTypeName());\n")
+		source.WriteString("System.assertEquals('System.")
+		source.WriteString(name)
+		source.WriteString(": ")
+		source.WriteString(name)
+		source.WriteString(" message', e")
+		source.WriteString(string(rune('A' + i/26)))
+		source.WriteString(string(rune('A' + i%26)))
+		source.WriteString(".toString());\n")
+	}
+	program, err := CompileAnonymous(source.String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSystemAssertFailureMessageEdges(t *testing.T) {
+	tests := []struct {
+		name   string
+		source string
+		want   string
+	}{
+		{
+			name:   "assert null message",
+			source: "System.assert(false, null);",
+			want:   "assertion failed: null",
+		},
+		{
+			name:   "assertEquals null message",
+			source: "System.assertEquals('left', 'right', null);",
+			want:   "expected <left>, actual <right>: null",
+		},
+		{
+			name:   "assertNotEquals exception message",
+			source: "System.assertNotEquals('same', 'same', new DmlException('duplicate'));",
+			want:   "values should not be equal: <same>: System.DmlException: duplicate",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			program, err := CompileAnonymous(tt.source)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = Execute(program, nil)
+			var runtimeErr *RuntimeError
+			if !errors.As(err, &runtimeErr) {
+				t.Fatalf("error type = %T, want *RuntimeError", err)
+			}
+			if runtimeErr.Type != "System.AssertException" || runtimeErr.Message != tt.want {
+				t.Fatalf("runtime error = (%q, %q), want (System.AssertException, %q)", runtimeErr.Type, runtimeErr.Message, tt.want)
+			}
+		})
+	}
+}
+
+func TestExecSystemDebugArityTypeAndUnsupportedAsyncDiagnostics(t *testing.T) {
+	tests := []struct {
+		name   string
+		source string
+		want   string
+	}{
+		{
+			name:   "missing message",
+			source: "System.debug();",
+			want:   "System.debug expects message or logging level and message",
+		},
+		{
+			name:   "bad first argument",
+			source: "System.debug('INFO', 'message');",
+			want:   "System.debug expects LoggingLevel as first argument",
+		},
+		{
+			name:   "unsupported abortJob",
+			source: "System.abortJob('707000000000001');",
+			want:   "unsupported call \"System.abortJob local async scheduling surface\"",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			program, err := CompileAnonymous(tt.source)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = Execute(program, nil)
+			if err == nil {
+				t.Fatal("expected error")
+			}
+			if got := err.Error(); got != tt.want {
+				t.Fatalf("error = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestExecSystemAssertFailureMessagesUseObjectToString(t *testing.T) {
 	program, err := CompileAnonymous(`System.assert(false, Message.value());`)
 	if err != nil {

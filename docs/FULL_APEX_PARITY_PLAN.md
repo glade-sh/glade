@@ -212,6 +212,11 @@ Current progress:
   - `docs/fixtures/core-pattern-matcher-stdlib.json`
   - `docs/fixtures/core-type-id-url-stdlib.json`
   - `docs/fixtures/core-system-exceptions-stdlib.json`
+  - `docs/fixtures/core-system-assert-null-message.json`
+  - `docs/fixtures/core-system-assert-message-edges.json`
+  - `docs/fixtures/core-system-assertnot-message-edge.json`
+  - `docs/fixtures/core-system-debug-invalid-overload.json`
+  - `docs/fixtures/core-system-async-unsupported.json`
 
 Remaining cuts:
 
@@ -282,17 +287,20 @@ Remaining cuts:
      the current `serialize`/`serializePretty` Boolean overload slice.
 
 7. System, exceptions, Type, and reflection
-   - Newly covered slice: deterministic current-time helpers, debug
-     LoggingLevel dispatch, built-in LoggingLevel values/name/ordinal/toString,
-     local false-valued async context probes, exception
-     message/type/line/stack/toString helpers, null/blank/unknown local
-     Type.forName edges, and local Type assignability for class/interface and
-     built-in exception hierarchy checks.
-   - Remaining gaps: exact assert failure message parity, full logging
-     framework behavior beyond collected debug lines and enum values, complete
-     exception class matrix and stack formatting, Type namespace/package lookup
-     behavior, generic/reflection edge cases, and broader cloud/org-context
-     helpers that need stable unsupported diagnostics or a local model.
+    - Newly covered slice: deterministic current-time helpers, debug
+      LoggingLevel dispatch, built-in LoggingLevel values/name/ordinal/toString,
+      local false-valued async context probes, exception
+      message/type/line/stack/toString helpers, null/blank/unknown local
+      Type.forName edges, known built-in exception type construction and
+      assignability, assertion message conversion edges, debug overload
+      diagnostics, and explicit unsupported diagnostics for unmodeled local async
+      lifecycle controls.
+    - Remaining gaps: exact assert failure message parity beyond pinned local
+      strings, full logging framework behavior beyond collected debug lines and
+      enum values, complete platform exception catalog/stack formatting parity,
+      Type namespace/package lookup behavior, generic/reflection edge cases, and
+      broader cloud/org-context helpers that need stable unsupported diagnostics
+      or a local model.
 
 8. Pattern and Matcher
    - Fixture-backed Go `regexp` slice covers compile/matches/pattern,
