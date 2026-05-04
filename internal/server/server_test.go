@@ -59,6 +59,130 @@ func TestSObjectCRUDAndQuery(t *testing.T) {
 	}
 }
 
+func TestQueryPaginationNoBatchSizePreservesFullResult(t *testing.T) {
+	org := testOrg()
+	addAccountForTest(&org, "001000000000001", "A")
+	addAccountForTest(&org, "001000000000002", "B")
+	addAccountForTest(&org, "001000000000003", "C")
+	handler := New(&org)
+
+	recorder := httptest.NewRecorder()
+	handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/query?q=SELECT%20Id,%20Name%20FROM%20Account", nil))
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("query status = %d body=%s", recorder.Code, recorder.Body.String())
+	}
+	var payload struct {
+		TotalSize      int              `json:"totalSize"`
+		Done           bool             `json:"done"`
+		Records        []storage.Record `json:"records"`
+		NextRecordsURL string           `json:"nextRecordsUrl"`
+	}
+	if err := json.Unmarshal(recorder.Body.Bytes(), &payload); err != nil {
+		t.Fatal(err)
+	}
+	if payload.TotalSize != 3 || !payload.Done || len(payload.Records) != 3 || payload.NextRecordsURL != "" {
+		t.Fatalf("payload = %#v", payload)
+	}
+}
+
+func TestQueryPaginationFirstAndNextPage(t *testing.T) {
+	org := testOrg()
+	addAccountForTest(&org, "001000000000001", "A")
+	addAccountForTest(&org, "001000000000002", "B")
+	addAccountForTest(&org, "001000000000003", "C")
+	handler := New(&org)
+
+	first := httptest.NewRecorder()
+	handler.ServeHTTP(first, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/query?q=SELECT%20Id,%20Name%20FROM%20Account&batchSize=2", nil))
+	if first.Code != http.StatusOK {
+		t.Fatalf("first status = %d body=%s", first.Code, first.Body.String())
+	}
+	var firstPayload struct {
+		TotalSize      int              `json:"totalSize"`
+		Done           bool             `json:"done"`
+		Records        []storage.Record `json:"records"`
+		NextRecordsURL string           `json:"nextRecordsUrl"`
+	}
+	if err := json.Unmarshal(first.Body.Bytes(), &firstPayload); err != nil {
+		t.Fatal(err)
+	}
+	if firstPayload.TotalSize != 3 || firstPayload.Done || len(firstPayload.Records) != 2 {
+		t.Fatalf("first payload = %#v", firstPayload)
+	}
+	if firstPayload.NextRecordsURL != "/services/data/v61.0/query/oaerql000001-2" {
+		t.Fatalf("nextRecordsUrl = %q", firstPayload.NextRecordsURL)
+	}
+
+	next := httptest.NewRecorder()
+	handler.ServeHTTP(next, httptest.NewRequest(http.MethodGet, firstPayload.NextRecordsURL, nil))
+	if next.Code != http.StatusOK {
+		t.Fatalf("next status = %d body=%s", next.Code, next.Body.String())
+	}
+	var nextPayload struct {
+		TotalSize      int              `json:"totalSize"`
+		Done           bool             `json:"done"`
+		Records        []storage.Record `json:"records"`
+		NextRecordsURL string           `json:"nextRecordsUrl"`
+	}
+	if err := json.Unmarshal(next.Body.Bytes(), &nextPayload); err != nil {
+		t.Fatal(err)
+	}
+	if nextPayload.TotalSize != 3 || !nextPayload.Done || len(nextPayload.Records) != 1 || nextPayload.NextRecordsURL != "" {
+		t.Fatalf("next payload = %#v", nextPayload)
+	}
+	if nextPayload.Records[0].ID != "001000000000003" {
+		t.Fatalf("next record = %#v", nextPayload.Records[0])
+	}
+}
+
+func TestQueryPaginationInvalidBatchSize(t *testing.T) {
+	tests := []string{"0", "-1", "abc", "2001"}
+	for _, batchSize := range tests {
+		t.Run(batchSize, func(t *testing.T) {
+			org := testOrg()
+			addAccountForTest(&org, "001000000000001", "A")
+			handler := New(&org)
+
+			recorder := httptest.NewRecorder()
+			handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/query?q=SELECT%20Id%20FROM%20Account&batchSize="+batchSize, nil))
+			if recorder.Code != http.StatusBadRequest || !bytes.Contains(recorder.Body.Bytes(), []byte("MALFORMED_QUERY")) {
+				t.Fatalf("status = %d body=%s", recorder.Code, recorder.Body.String())
+			}
+		})
+	}
+}
+
+func TestQueryMoreUnknownLocator(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	recorder := httptest.NewRecorder()
+	handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/query/oaerql999999-2", nil))
+	if recorder.Code != http.StatusNotFound || !bytes.Contains(recorder.Body.Bytes(), []byte("NOT_FOUND")) {
+		t.Fatalf("status = %d body=%s", recorder.Code, recorder.Body.String())
+	}
+}
+
+func TestQueryMoreRejectsOffsetAtEnd(t *testing.T) {
+	org := testOrg()
+	addAccountForTest(&org, "001000000000001", "A")
+	addAccountForTest(&org, "001000000000002", "B")
+	addAccountForTest(&org, "001000000000003", "C")
+	handler := New(&org)
+
+	first := httptest.NewRecorder()
+	handler.ServeHTTP(first, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/query?q=SELECT%20Id%20FROM%20Account&batchSize=2", nil))
+	if first.Code != http.StatusOK {
+		t.Fatalf("first status = %d body=%s", first.Code, first.Body.String())
+	}
+
+	recorder := httptest.NewRecorder()
+	handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/query/oaerql000001-3", nil))
+	if recorder.Code != http.StatusNotFound || !bytes.Contains(recorder.Body.Bytes(), []byte("NOT_FOUND")) {
+		t.Fatalf("status = %d body=%s", recorder.Code, recorder.Body.String())
+	}
+}
+
 func TestSObjectRecordGetShapeAndNullPatch(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
@@ -1068,6 +1192,18 @@ func testOrg() storage.OrgState {
 		Records: make(map[storage.ID]storage.Record),
 	}
 	return org
+}
+
+func addAccountForTest(org *storage.OrgState, id storage.ID, name string) {
+	object := org.Objects["Account"]
+	object.Records[id] = storage.Record{
+		ID:     id,
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name": storage.StringValue(name),
+		},
+	}
+	org.Objects["Account"] = object
 }
 
 func addUser(org *storage.OrgState, id storage.ID, username, email, name string) {
