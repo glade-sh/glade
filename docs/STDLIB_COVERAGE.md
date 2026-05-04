@@ -12,12 +12,12 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | ApexPages | `ApexPages.getMessages` | `supported` | Returns VM-local page messages. |
 | ApexPages | `ApexPages.hasMessages` | `supported` | Checks VM-local page messages. |
 | Blob | `Blob.size` | `supported` | Returns local Blob byte length. |
-| Blob | `Blob.toString` | `supported` | Returns the local Blob bytes as a string. |
+| Blob | `Blob.toString` | `supported` | Returns UTF-8 local Blob bytes as a string and rejects invalid UTF-8 data. |
 | Blob | `Blob.valueOf` | `supported` | Stores the string bytes in a local Blob value. |
 | Crypto | `Crypto.areEqualConstantTime` | `supported` | Constant-time local Blob equality comparison. |
-| Crypto | `Crypto.encrypt/decrypt/sign/verify` | `unsupported` | Org key, certificate, and encryption surfaces return explicit unsupported errors. |
-| Crypto | `Crypto.generateDigest` | `supported` | MD5, SHA1, SHA-256, SHA-512, and SHA3-256/384/512. |
-| Crypto | `Crypto.generateMac` | `supported` | HMAC MD5, SHA1, SHA256, and SHA512 with local Blob keys. |
+| Crypto | `Crypto.encrypt/decrypt/sign/verify` | `unsupported` | Org key, certificate, encryption, and random key-generation surfaces return explicit unsupported errors. |
+| Crypto | `Crypto.generateDigest` | `supported` | MD5, SHA1, SHA-256, SHA-512, SHA3-256/384/512, with conservative algorithm normalization. |
+| Crypto | `Crypto.generateMac` | `supported` | HMAC MD5, SHA1, SHA256, and SHA512 with local Blob keys and conservative algorithm normalization. |
 | Database | `Database.delete` | `supported` | DML pipeline with result/error shapes for supported SObjects. |
 | Database | `Database.getQueryLocator` | `partial` | Supported SOQL only; executes eagerly for local batch scopes. |
 | Database | `Database.insert` | `supported` | DML pipeline with result/error shapes for supported SObjects. |
@@ -73,12 +73,12 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Decimal | `Decimal.setScale` | `partial` | Supports local scale 0-15 with UP, DOWN, CEILING, FLOOR, HALF_UP, HALF_DOWN, HALF_EVEN, and UNNECESSARY. |
 | Decimal | `Decimal.valueOf` | `supported` | Parses finite decimal strings and numeric values. |
 | Double | `Double.valueOf` | `supported` | Parses finite decimal strings and numeric values into the local numeric representation. |
-| EncodingUtil | `EncodingUtil.base64Decode` | `supported` | Blob-shaped local value. |
+| EncodingUtil | `EncodingUtil.base64Decode` | `supported` | Blob-shaped local value with stable invalid-input errors. |
 | EncodingUtil | `EncodingUtil.base64Encode` | `supported` | Blob-shaped local value. |
-| EncodingUtil | `EncodingUtil.convertFromHex` | `supported` | Blob-shaped local value. |
+| EncodingUtil | `EncodingUtil.convertFromHex` | `supported` | Blob-shaped local value with stable odd-length and invalid-input errors. |
 | EncodingUtil | `EncodingUtil.convertToHex` | `supported` | Blob-shaped local value. |
-| EncodingUtil | `EncodingUtil.urlDecode` | `partial` | Uses query unescape with UTF-8/utf8 charset validation only. |
-| EncodingUtil | `EncodingUtil.urlEncode` | `partial` | Uses query escape with UTF-8/utf8 charset validation only. |
+| EncodingUtil | `EncodingUtil.urlDecode` | `partial` | Uses query unescape with UTF-8/utf8/UTF_8 charset validation only; other charsets return UnsupportedFeature. |
+| EncodingUtil | `EncodingUtil.urlEncode` | `partial` | Uses query escape with UTF-8/utf8/UTF_8 charset validation only; other charsets return UnsupportedFeature. |
 | Exception | `Exception.getCause` | `partial` | Returns the locally initialized cause value; repeat/self-cause platform edge rules are not modeled. |
 | Exception | `Exception.getLineNumber` | `partial` | Returns deterministic local throw-site line metadata when available; otherwise 0. |
 | Exception | `Exception.getMessage` | `supported` | Returns the local exception message. |

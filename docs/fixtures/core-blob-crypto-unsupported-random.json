@@ -1,0 +1,28 @@
+{
+  "name": "core-blob-crypto-unsupported-random",
+  "evidence": [
+    {
+      "symbol": "Crypto.generateAESKey",
+      "kind": "exec",
+      "notes": "Local deterministic random/key generation is not modeled."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Crypto.generateAESKey(128);"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Crypto.generateAESKey(128);"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"Crypto.generateAESKey local deterministic random/key generation surface\""
+    }
+  }
+}

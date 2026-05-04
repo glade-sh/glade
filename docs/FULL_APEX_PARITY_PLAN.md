@@ -129,11 +129,13 @@ Current progress:
   supported SObject/class targets, and stable typed shape errors.
 - Blob/Encoding/Crypto: runtime support now covers deterministic local
   `Blob.valueOf`, `Blob.toString`, `Blob.size`, Base64 encode/decode,
-  hex encode/decode, empty Blob/encoding edge cases, URL encode/decode for the
-  UTF-8/utf8 charset slice, digest generation for the documented
-  MD5/SHA1/SHA2/SHA3 slice, HMAC generation for documented local algorithms,
+  hex encode/decode, empty Blob/encoding edge cases, invalid Base64/hex and
+  non-UTF-8 Blob string errors, URL encode/decode for the UTF-8/utf8/UTF_8
+  charset slice with typed unsupported diagnostics for other charsets, digest
+  generation for the documented MD5/SHA1/SHA2/SHA3 slice, HMAC generation for
+  documented local algorithms with conservative algorithm normalization,
   `Crypto.areEqualConstantTime`, and explicit unsupported errors for local
-  key/certificate/encryption surfaces.
+  key/certificate/encryption/random key-generation surfaces.
 - Type/Id/URL/Object: runtime support now covers `Type` equality, hash and
   string forms, constructor-backed zero-arg `Type.newInstance` for registered
   classes, strict 18-character `Id.valueOf` checksum validation, `to15`,
@@ -165,6 +167,11 @@ Current progress:
   - `docs/fixtures/core-datetime-stdlib.json`
   - `docs/fixtures/core-json-stdlib.json`
   - `docs/fixtures/core-blob-crypto-stdlib.json`
+  - `docs/fixtures/core-blob-crypto-invalid-base64.json`
+  - `docs/fixtures/core-blob-crypto-invalid-hex.json`
+  - `docs/fixtures/core-blob-crypto-invalid-utf8.json`
+  - `docs/fixtures/core-blob-crypto-unsupported-charset.json`
+  - `docs/fixtures/core-blob-crypto-unsupported-random.json`
   - `docs/fixtures/core-pattern-matcher-stdlib.json`
   - `docs/fixtures/core-type-id-url-stdlib.json`
   - `docs/fixtures/core-system-exceptions-stdlib.json`
@@ -202,7 +209,11 @@ Remaining cuts:
      behavior is pinned, and unsupported static helpers.
 
 5. Blob, EncodingUtil, and Crypto
-   - Blob conversion and charset behavior.
+   - Newly covered slice: invalid Base64 and odd/invalid hex errors,
+     non-UTF-8 `Blob.toString` rejection, UTF-8 charset aliases for URL
+     encode/decode, typed unsupported diagnostics for non-UTF-8 URL charsets,
+     conservative digest/HMAC algorithm normalization, and stable unsupported
+     diagnostics for random AES key generation.
    - Remaining Base64, hex, and URL encoding edge cases beyond the pinned
      empty, casing, invalid-input, and UTF-8 URL charset slice.
    - Digests, HMAC, signatures, and encryption surfaces where local deterministic

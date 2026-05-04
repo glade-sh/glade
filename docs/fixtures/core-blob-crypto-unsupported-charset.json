@@ -1,0 +1,28 @@
+{
+  "name": "core-blob-crypto-unsupported-charset",
+  "evidence": [
+    {
+      "symbol": "EncodingUtil.urlEncode",
+      "kind": "exec",
+      "notes": "Unsupported non-UTF-8 charset returns a typed unsupported diagnostic."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "EncodingUtil.urlEncode('x', 'ISO-8859-1');"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "EncodingUtil.urlEncode('x', 'ISO-8859-1');"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"EncodingUtil.urlEncode charset \\\"ISO-8859-1\\\"\""
+    }
+  }
+}

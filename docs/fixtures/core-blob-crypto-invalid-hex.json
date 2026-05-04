@@ -1,0 +1,28 @@
+{
+  "name": "core-blob-crypto-invalid-hex",
+  "evidence": [
+    {
+      "symbol": "EncodingUtil.convertFromHex",
+      "kind": "exec",
+      "notes": "Odd-length hex input returns a stable local error."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "EncodingUtil.convertFromHex('abc');"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "EncodingUtil.convertFromHex('abc');"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "Error",
+      "message": "EncodingUtil.convertFromHex invalid hexadecimal string"
+    }
+  }
+}
