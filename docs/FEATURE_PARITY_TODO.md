@@ -513,10 +513,12 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Pin one-field `String.escapeCsv`/`unescapeCsv` behavior for plain,
     comma, quote, doubled-quote, CR, and LF values.
   - [x] Add deterministic `String.unescapeHtml3/4` coverage for selected
-    high-use named entities (`nbsp`, `copy`, `reg`, `trade`, `euro`, `mdash`,
-    `ndash`, `hellip`, `bull`, `ldquo`, `rdquo`, `lsquo`, `rsquo`, `cent`,
-    `pound`, `yen`, `sect`, `para`, `middot`) while leaving remaining unknown
-    names unchanged.
+    high-use named entities, then broaden the pinned slice with Greek, symbol,
+    and arrow entities while leaving `&apos;` and remaining unknown names
+    unchanged.
+  - [x] Add `String.getLevenshteinDistance` threshold overload coverage for
+    instance and static calls, returning `-1` when the edit distance exceeds the
+    non-negative threshold.
   - [x] Add XML-version escape handling for `String.escapeXml10/11` control
     ranges, including invalid-code-point removal and numeric control escapes.
   - [x] Preserve malformed, null, out-of-range, and surrogate numeric entities in
