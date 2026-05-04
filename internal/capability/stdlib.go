@@ -387,7 +387,7 @@ var stdlibEntries = []StdlibEntry{
 	{Area: "System", API: "System.assert", Status: StatusSupported, Notes: "Assertion failure returns runtime error; Object and null message values use deterministic local string conversion."},
 	{Area: "System", API: "System.assertEquals", Status: StatusSupported, Notes: "Assertion failure returns runtime error with deterministic local expected/actual text and Object/null message conversion."},
 	{Area: "System", API: "System.assertNotEquals", Status: StatusSupported, Notes: "Assertion failure returns runtime error with deterministic local value text and Object/null message conversion."},
-	{Area: "System", API: "System.asyncScheduling", Status: StatusUnsupported, Notes: "System.abortJob and scheduleBatch return explicit unsupported diagnostics; broader local async lifecycle control is not modeled."},
+	{Area: "System", API: "System.asyncScheduling", Status: StatusPartial, Notes: "System.abortJob removes queued local Queueable and Schedulable jobs before Test.stopTest; completed and unknown aborts plus scheduleBatch return explicit unsupported diagnostics. Broader async lifecycle control is not modeled."},
 	{Area: "System", API: "System.currentTimeMillis", Status: StatusPartial, Notes: "Returns deterministic VM-clock epoch milliseconds."},
 	{Area: "System", API: "System.debug", Status: StatusSupported, Notes: "One-argument and LoggingLevel overloads are collected in result debug output; null, LoggingLevel, and modeled Exception values use deterministic string forms; log framework text parity is not claimed."},
 	{Area: "System", API: "System.isBatch", Status: StatusPartial, Notes: "Returns false in the local non-async VM context."},

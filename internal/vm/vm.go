@@ -1203,7 +1203,9 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
 		return Bool(false), nil
-	case "System.abortJob", "System.scheduleBatch":
+	case "System.abortJob":
+		return vm.abortJob(args)
+	case "Database.scheduleBatch", "System.scheduleBatch":
 		return Null, unsupportedCallError(callee + " local async scheduling surface")
 	case "System.attachFinalizer":
 		return Null, unsupportedCallError("System.attachFinalizer local queueable finalizers")
@@ -2116,6 +2118,53 @@ func (vm *VM) scheduleJob(args []Value, result *Result) (Value, error) {
 		"name":  job.Name,
 	})
 	return String(cronTriggerID(job.ID)), nil
+}
+
+func (vm *VM) abortJob(args []Value) (Value, error) {
+	if len(args) != 1 {
+		return Null, fmt.Errorf("System.abortJob expects job Id")
+	}
+	if args[0].Kind != ValueString {
+		return Null, fmt.Errorf("System.abortJob expects String job Id")
+	}
+	if vm.testContext == nil {
+		return Null, unsupportedCallError("System.abortJob local async scheduling surface")
+	}
+	jobID := args[0].Text
+	for i, job := range vm.testContext.AsyncJobs {
+		if job.ID != jobID && cronTriggerID(job.ID) != jobID {
+			continue
+		}
+		vm.testContext.AsyncJobs = append(vm.testContext.AsyncJobs[:i], vm.testContext.AsyncJobs[i+1:]...)
+		vm.recordAsyncJob(job, "Aborted", "")
+		if job.Kind == "ScheduledApex" {
+			vm.recordCronTrigger(job, "Deleted")
+		}
+		return Null, nil
+	}
+	if vm.asyncJobRecordStatus(jobID) != "" {
+		return Null, unsupportedCallError("System.abortJob completed local async records")
+	}
+	return Null, unsupportedCallError("System.abortJob unknown local async records")
+}
+
+func (vm *VM) asyncJobRecordStatus(jobID string) string {
+	if vm.Org == nil {
+		return ""
+	}
+	vm.ensureAsyncObjects()
+	if strings.HasPrefix(jobID, "08e") {
+		jobID = strings.Replace(jobID, "08e", "707", 1)
+	}
+	object := vm.Org.Objects["AsyncApexJob"]
+	record, ok := object.Records[storage.ID(jobID)]
+	if !ok {
+		return ""
+	}
+	if status, ok := record.Fields["Status"]; ok && status.Kind == storage.ValueString {
+		return status.String
+	}
+	return ""
 }
 
 func (vm *VM) drainAsync(result *Result) error {

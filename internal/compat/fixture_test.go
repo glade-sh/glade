@@ -195,6 +195,8 @@ func TestRunAsyncContextEdgeFixtures(t *testing.T) {
 		"../../docs/fixtures/async-context-job-record-edges.json",
 		"../../docs/fixtures/async-unsupported-context-edges.json",
 		"../../docs/fixtures/async-execute-batch-scope-validation.json",
+		"../../docs/fixtures/async-abort-job-edges.json",
+		"../../docs/fixtures/async-schedule-batch-unsupported.json",
 	} {
 		fixture, err := LoadFile(path)
 		if err != nil {
