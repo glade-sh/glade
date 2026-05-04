@@ -46,6 +46,10 @@ const (
 
 const localOAuthUnsupportedMessage = "Full OAuth flows and token issuance are not implemented by the local server; use deterministic local user stubs via /services/oauth2/userinfo, /id/{org}/{user}, X-OAER-User-Id, or Authorization: Bearer <userId>"
 
+const apexRestUnsupportedMessage = "Apex @RestResource dispatch is not implemented in the local server"
+
+var apexRestAllowedMethods = []string{http.MethodGet, http.MethodPost, http.MethodPatch, http.MethodPut, http.MethodDelete}
+
 type resetScopeInfo struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
@@ -115,7 +119,11 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if len(parts) >= 2 && parts[0] == "services" && parts[1] == "apexrest" {
-		writeSalesforceError(w, errUnsupportedFeature, "Apex @RestResource dispatch is not implemented in the local server")
+		if !methodAllowed(r, apexRestAllowedMethods...) {
+			writeMethodNotAllowed(w, apexRestAllowedMethods...)
+			return
+		}
+		writeSalesforceError(w, errUnsupportedFeature, apexRestUnsupportedMessage)
 		return
 	}
 	if len(parts) < 3 || parts[0] != "services" || parts[1] != "data" {
