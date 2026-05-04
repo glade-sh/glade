@@ -98,8 +98,8 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | EncodingUtil | `EncodingUtil.base64Encode` | `supported` | Blob-shaped local value. |
 | EncodingUtil | `EncodingUtil.convertFromHex` | `supported` | Blob-shaped local value with stable odd-length and invalid-input errors. |
 | EncodingUtil | `EncodingUtil.convertToHex` | `supported` | Blob-shaped local value. |
-| EncodingUtil | `EncodingUtil.urlDecode` | `partial` | Uses query unescape with UTF-8/utf8/UTF_8 charset validation only; other charsets return UnsupportedFeature. |
-| EncodingUtil | `EncodingUtil.urlEncode` | `partial` | Uses query escape with UTF-8/utf8/UTF_8 charset validation only; other charsets return UnsupportedFeature. |
+| EncodingUtil | `EncodingUtil.urlDecode` | `partial` | Uses query unescape for bounded UTF-8 and ISO-8859-1 charset aliases; other charsets return UnsupportedFeature. |
+| EncodingUtil | `EncodingUtil.urlEncode` | `partial` | Uses query escape for bounded UTF-8 and ISO-8859-1 charset aliases; other charsets return UnsupportedFeature. |
 | EventBus | `EventBus.publish` | `unsupported` | Platform event publish and after-commit publish calls return explicit UnsupportedFeature diagnostics. |
 | Exception | `Built-in exception types` | `partial` | Known public built-in exception tokens construct message-bearing local exceptions and assign to Exception; exact platform class catalog, line numbers, and stack text remain partial. |
 | Exception | `Exception.getCause` | `partial` | Returns the locally initialized cause value; repeat/self-cause platform edge rules are not modeled. |
