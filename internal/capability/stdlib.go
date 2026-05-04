@@ -122,6 +122,7 @@ var stdlibEntries = []StdlibEntry{
 	{Area: "Schema", API: "Schema.getGlobalDescribe", Status: StatusPartial, Notes: "Local schema-backed describe map."},
 	{Area: "Schema", API: "DescribeFieldResult", Status: StatusPartial, Notes: "Common field metadata and access booleans."},
 	{Area: "Schema", API: "DescribeSObjectResult", Status: StatusPartial, Notes: "Common object metadata, fields, record types, and child relationships."},
+	{Area: "Search", API: "Search.* / SOSL FIND", Status: StatusUnsupported, Notes: "Cloud search and SOSL execution are not locally modeled; calls return explicit UnsupportedFeature diagnostics."},
 	{Area: "String", API: "String.contains", Status: StatusSupported, Notes: "UTF-8 string contains."},
 	{Area: "String", API: "String.endsWith", Status: StatusSupported, Notes: "UTF-8 string suffix."},
 	{Area: "String", API: "String.equalsIgnoreCase", Status: StatusSupported, Notes: "Unicode simple fold."},

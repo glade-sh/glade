@@ -11,6 +11,7 @@ import (
 	"github.com/open-aer/oaer/internal/apexast"
 	"github.com/open-aer/oaer/internal/diagnostic"
 	"github.com/open-aer/oaer/internal/ir"
+	"github.com/open-aer/oaer/internal/soql"
 	"github.com/open-aer/oaer/internal/typesys"
 	"github.com/open-aer/oaer/internal/vm"
 )
@@ -621,7 +622,7 @@ func dedupeBodyDiagnostics(diagnostics []diagnostic.Diagnostic) []diagnostic.Dia
 		key := ""
 		if diag.Range != nil {
 			switch diag.Code {
-			case "OAERSEMA006", "OAERSEMA008", "OAERSEMA009", "OAERSEMA010", "OAERSEMA011", "OAERSEMA015", "OAERSEMA018", "OAERSEMA019", "OAERSEMA020", "OAERSEMA022", "OAERSEMA023", "OAERSEMA024", "OAERSEMA025", "OAERSEMA026", "OAERSEMA027":
+			case "OAERSEMA006", "OAERSEMA008", "OAERSEMA009", "OAERSEMA010", "OAERSEMA011", "OAERSEMA015", "OAERSEMA018", "OAERSEMA019", "OAERSEMA020", "OAERSEMA022", "OAERSEMA023", "OAERSEMA024", "OAERSEMA025", "OAERSEMA026", "OAERSEMA027", "OAERSEMA028":
 				key = fmt.Sprintf("%s:%s:%d", diag.File, diag.Code, diag.Range.Start.Line)
 			}
 		}
@@ -920,6 +921,9 @@ func (a *Analyzer) checkIRExprVariables(typ typesys.TypeSymbol, member typesys.M
 			})
 		}
 	case ir.ExprCall:
+		if strings.HasPrefix(expr.Callee, "Search.") {
+			return []diagnostic.Diagnostic{unsupportedLocalFeatureDiagnostic(typ, member, expr.Callee+" local search/SOSL surface", bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source)}
+		}
 		for _, arg := range expr.Args {
 			diagnostics = append(diagnostics, a.checkIRExprVariables(typ, member, arg, scope, pos, bodyOffset, source, model, constructability)...)
 		}
@@ -937,6 +941,10 @@ func (a *Analyzer) checkIRExprVariables(typ typesys.TypeSymbol, member typesys.M
 		}
 		if expr.Right != nil {
 			diagnostics = append(diagnostics, a.checkIRExprVariables(typ, member, *expr.Right, scope, pos, bodyOffset, source, model, constructability)...)
+		}
+	case ir.ExprSOQL:
+		if soql.IsSOSLFind(expr.Value) {
+			return []diagnostic.Diagnostic{unsupportedLocalFeatureDiagnostic(typ, member, "SOSL/FIND local search surface", bodyOffset+pos, bodyOffset+pos+max(1, len("FIND")), source)}
 		}
 	}
 	return diagnostics
@@ -1930,6 +1938,16 @@ func staticAccessDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol,
 		Severity: diagnostic.Error,
 		Code:     "OAERSEMA027",
 		Message:  fmt.Sprintf("%s %q has invalid static access for %q: %s", member.Kind, member.Name, callee, detail),
+		File:     typ.File,
+		Range:    semaRange(source, start, end),
+	}
+}
+
+func unsupportedLocalFeatureDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol, feature string, start, end int, source string) diagnostic.Diagnostic {
+	return diagnostic.Diagnostic{
+		Severity: diagnostic.Error,
+		Code:     "OAERSEMA028",
+		Message:  fmt.Sprintf("%s %q uses unsupported local feature %q", member.Kind, member.Name, feature),
 		File:     typ.File,
 		Range:    semaRange(source, start, end),
 	}

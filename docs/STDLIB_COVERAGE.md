@@ -72,6 +72,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Schema | `DescribeSObjectResult` | `partial` | Common object metadata, fields, record types, and child relationships. |
 | Schema | `Schema.describeSObjects` | `partial` | Object names and SObjectType tokens for local schema. |
 | Schema | `Schema.getGlobalDescribe` | `partial` | Local schema-backed describe map. |
+| Search | `Search.* / SOSL FIND` | `unsupported` | Cloud search and SOSL execution are not locally modeled; calls return explicit UnsupportedFeature diagnostics. |
 | String | `String.contains` | `supported` | UTF-8 string contains. |
 | String | `String.endsWith` | `supported` | UTF-8 string suffix. |
 | String | `String.equalsIgnoreCase` | `supported` | Unicode simple fold. |

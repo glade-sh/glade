@@ -1,0 +1,28 @@
+{
+  "name": "data-platform-search-unsupported-api",
+  "evidence": [
+    {
+      "symbol": "Search.find",
+      "kind": "test",
+      "notes": "Cloud search is not locally modeled; the VM returns a stable UnsupportedFeature diagnostic."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Search.find('FIND {Acme} IN ALL FIELDS RETURNING Account(Id)');"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Search.find('FIND {Acme} IN ALL FIELDS RETURNING Account(Id)');"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"Search.find local search/SOSL surface\""
+    }
+  }
+}
