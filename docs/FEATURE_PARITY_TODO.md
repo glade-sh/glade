@@ -583,6 +583,10 @@ a Salesforce-shaped local API server without silently wrong behavior.
     component getters for the modeled current-user timezone slice.
   - [x] Promote `UserInfo` identity, locale, and language getters for the
     current runAs/server/default local user context.
+  - [x] Promote the deterministic local-model `Date`, `Datetime`, `TimeZone`,
+    and `UserInfo.getTimeZone` cleanup rows: UTC VM clock `today/now`, local
+    Gregorian and UTC Datetime clamp arithmetic, UTC/current-user formatting,
+    supported fixed/named zone IDs, display names, and offsets.
   - [x] Fence locale-sensitive `Datetime.format` pattern tokens with typed
     unsupported diagnostics instead of localized output claims.
   - [x] Add common numeric `Math` helpers, `Decimal` scale/conversion helpers,
@@ -599,8 +603,10 @@ a Salesforce-shaped local API server without silently wrong behavior.
     `Europe/Berlin`, `Asia/Tokyo`, and `Australia/Sydney` formatting, offsets,
     current-user timezone formatting, local `Datetime.newInstance`
     construction, local component getters, `UserInfo` LocaleSidKey and
-    LanguageLocaleKey reads, and deterministic DST gap/overlap choices. Locale
-    values are surfaced, not applied to formatting.
+    LanguageLocaleKey reads, `UserInfo.getTimeZone`, and deterministic DST
+    gap/overlap choices. Locale values are surfaced, not applied to formatting.
+    Unknown timezone IDs and locale/style formatting overloads return
+    `UnsupportedFeature`.
 - [x] Complete HTTP/callout mock behavior: request/response types,
   `HttpCalloutMock`, callout limits, and test isolation.
   - [x] Add common `HttpRequest`/`HttpResponse` endpoint, method, header,

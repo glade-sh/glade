@@ -99,3 +99,33 @@ func TestDatabaseStdlibRowsAreLocallyPromotedOrFenced(t *testing.T) {
 		}
 	}
 }
+
+func TestDateDatetimeTimeZoneRowsAreLocallyPromotedOrFenced(t *testing.T) {
+	watched := map[string]bool{
+		"Date.addMonths":          true,
+		"Date.addYears":           true,
+		"Date.today":              true,
+		"Datetime.addDays":        true,
+		"Datetime.addMonths":      true,
+		"Datetime.addYears":       true,
+		"Datetime.format":         true,
+		"Datetime.formatGmt":      true,
+		"Datetime.now":            true,
+		"TimeZone.getDisplayName": true,
+		"TimeZone.getID":          true,
+		"TimeZone.getOffset":      true,
+		"TimeZone.getTimeZone":    true,
+		"UserInfo.getTimeZone":    true,
+	}
+	for _, entry := range StdlibMatrix() {
+		if !watched[entry.API] {
+			continue
+		}
+		if entry.Status != StatusSupported {
+			t.Fatalf("%s remains %s: %s", entry.API, entry.Status, entry.Notes)
+		}
+		if entry.Notes == "" {
+			t.Fatalf("%s needs local-model notes", entry.API)
+		}
+	}
+}

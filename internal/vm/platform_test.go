@@ -1501,9 +1501,14 @@ func TestExecDateDatetimeDeterministicInstanceMethods(t *testing.T) {
 Date leap = Date.newInstance(2024, 1, 31);
 Date nextMonth = leap.addMonths(1);
 System.assertEquals('2024-02-29', nextMonth.format());
+Date marchEnd = Date.newInstance(2024, 3, 31);
+Date previousMonth = marchEnd.addMonths(-1);
+System.assertEquals('2024-02-29', previousMonth.format());
 Date leapDay = Date.newInstance(2024, 2, 29);
 Date nextYear = leapDay.addYears(1);
 System.assertEquals('2025-02-28', nextYear.format());
+Date previousYear = leapDay.addYears(-1);
+System.assertEquals('2023-02-28', previousYear.format());
 System.assertEquals(31, leap.day());
 System.assertEquals(1, leap.month());
 System.assertEquals(2024, leap.year());
@@ -1521,6 +1526,13 @@ System.assertEquals(expectedNextDay, nextDay);
 Datetime stamp = Datetime.newInstance(2024, 1, 31, 23, 58, 59);
 Datetime stampNextMonth = stamp.addMonths(1);
 System.assertEquals('2024-02-29T23:58:59Z', stampNextMonth.format());
+Datetime stampPreviousMonth = stamp.addMonths(-1);
+System.assertEquals('2023-12-31T23:58:59Z', stampPreviousMonth.format());
+Datetime leapStamp = Datetime.newInstance(2024, 2, 29, 1, 2, 3);
+Datetime leapStampNextYear = leapStamp.addYears(1);
+System.assertEquals('2025-02-28T01:02:03Z', leapStampNextYear.format());
+Datetime leapStampPreviousYear = leapStamp.addYears(-1);
+System.assertEquals('2023-02-28T01:02:03Z', leapStampPreviousYear.format());
 Datetime plusHour = stamp.addHours(1);
 Datetime plusMinutes = plusHour.addMinutes(2);
 Datetime plusSeconds = plusMinutes.addSeconds(3);
@@ -1544,6 +1556,26 @@ System.assertEquals(sameStamp, stamp);
 	}
 	if _, err := New(nil).Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecUserInfoGetTimeZoneRejectsUnsupportedCurrentUserZone(t *testing.T) {
+	program, err := CompileAnonymous(`TimeZone zone = UserInfo.getTimeZone();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.SetCurrentUser(storage.Record{
+		ID:     "005-phoenix-user",
+		Object: "User",
+		Fields: map[string]storage.Value{
+			"TimeZoneSidKey": storage.StringValue("America/Phoenix"),
+		},
+	})
+	_, err = machine.Execute(program)
+	var runtimeErr *RuntimeError
+	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != `unsupported call "TimeZone.getTimeZone America/Phoenix"` {
+		t.Fatalf("err = %#v, want UnsupportedFeature for unsupported current user timezone", err)
 	}
 }
 
