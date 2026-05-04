@@ -196,7 +196,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Object | `Object.equals` | `supported` | Uses local value equality for primitives, collections, platform scalars, and object identity. |
 | Object | `Object.hashCode` | `supported` | Deterministic within local value equality; object identity hashes are request-local. |
 | Object | `Object.toString` | `supported` | Returns local string forms for primitives, collections, platform scalars, and objects. |
-| PageReference | `PageReference` | `partial` | Constructor, URL, redirect, parameters, headers, and string conversion basics. |
+| PageReference | `PageReference` | `partial` | Constructor, URL, redirect, parameters, headers, and string conversion basics; Visualforce rendering and PDF content remain explicit UnsupportedFeature seams. |
 | Pattern | `Matcher.appendReplacement/appendTail` | `unsupported` | Java StringBuffer append-position semantics return explicit unsupported errors. |
 | Pattern | `Matcher.end` | `partial` | Go regexp-backed group end positions. |
 | Pattern | `Matcher.find` | `partial` | Go regexp-backed matching with captured groups. |
@@ -399,7 +399,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Type | `Type.toString` | `supported` | Returns the local type token name. |
 | URL | `URL` | `partial` | Constructors for deterministic absolute URL specs, context/spec resolution, and protocol/host/file forms with stable malformed input errors. |
 | URL | `URL.getAuthority` | `supported` | Returns parsed authority for local URL values. |
-| URL | `URL.getCurrentRequestUrl` | `unsupported` | Cloud request context is not modeled; returns an explicit unsupported error. |
+| URL | `URL.getCurrentRequestUrl` | `unsupported` | Cloud request context is not modeled; returns an explicit unsupported current-request URL error. |
 | URL | `URL.getDefaultPort` | `supported` | Returns HTTP/HTTPS defaults or -1. |
 | URL | `URL.getFile` | `supported` | Returns path plus query for local URL values. |
 | URL | `URL.getHost` | `supported` | Returns parsed hostname for local URL values. |

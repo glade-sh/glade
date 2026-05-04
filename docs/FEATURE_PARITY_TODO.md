@@ -537,7 +537,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Add `ApexPages` message storage, current page, `PageReference`, and
     deterministic org `URL` basics.
   - **Limitation**: Full Visualforce navigation/rendering and production session
-    semantics remain outside the local VM subset.
+    semantics remain outside the local VM subset; `PageReference.getContent`,
+    `PageReference.getContentAsPDF`, and `URL.getCurrentRequestUrl` now return
+    typed unsupported errors instead of modeling cloud request/page rendering.
 - [x] Add stable unsupported-feature errors for every unimplemented standard
   library method.
   - [x] Return typed `UnsupportedFeature` runtime errors for unimplemented
