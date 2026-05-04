@@ -1722,6 +1722,117 @@ func TestCompositeSObjectsAllOrNoneRollsBackSuccessfulRows(t *testing.T) {
 	}
 }
 
+func TestCompositeSObjectsUpdateSuccess(t *testing.T) {
+	org := testOrg()
+	addAccountForTest(&org, "001000000000001", "Before One")
+	addAccountForTest(&org, "001000000000002", "Before Two")
+	handler := New(&org)
+
+	composite := httptest.NewRecorder()
+	handler.ServeHTTP(composite, httptest.NewRequest(http.MethodPatch, "/services/data/v61.0/composite/sobjects", strings.NewReader(`{
+  "records": [
+    {"attributes":{"type":"Account","referenceId":"upper"},"Id":"001000000000001","Name":"After One"},
+    {"attributes":{"type":"Account","referenceId":"lower"},"id":"001000000000002","Description":"Second description"}
+  ]
+}`)))
+	if composite.Code != http.StatusOK {
+		t.Fatalf("composite status = %d body=%s", composite.Code, composite.Body.String())
+	}
+	if got := org.Objects["Account"].Records["001000000000001"].Fields["Name"].String; got != "After One" {
+		t.Fatalf("updated name = %q", got)
+	}
+	if got := org.Objects["Account"].Records["001000000000002"].Fields["Description"].String; got != "Second description" {
+		t.Fatalf("updated description = %q", got)
+	}
+	if !bytes.Contains(composite.Body.Bytes(), []byte(`"referenceId":"upper"`)) || !bytes.Contains(composite.Body.Bytes(), []byte(`"referenceId":"lower"`)) {
+		t.Fatalf("reference ids missing: %s", composite.Body.String())
+	}
+}
+
+func TestCompositeSObjectsUpdateIgnoresDuplicateIDCaseFields(t *testing.T) {
+	org := testOrg()
+	addAccountForTest(&org, "001000000000001", "Before")
+	handler := New(&org)
+
+	composite := httptest.NewRecorder()
+	handler.ServeHTTP(composite, httptest.NewRequest(http.MethodPatch, "/services/data/v61.0/composite/sobjects", strings.NewReader(`{
+  "records": [
+    {"attributes":{"type":"Account"},"Id":"001000000000001","id":"001000000000999","Name":"After"}
+  ]
+}`)))
+	if composite.Code != http.StatusOK {
+		t.Fatalf("composite status = %d body=%s", composite.Code, composite.Body.String())
+	}
+	if got := org.Objects["Account"].Records["001000000000001"].Fields["Name"].String; got != "After" {
+		t.Fatalf("updated name = %q", got)
+	}
+	if bytes.Contains(composite.Body.Bytes(), []byte("unknown field Account.id")) {
+		t.Fatalf("lowercase id leaked into field validation: %s", composite.Body.String())
+	}
+}
+
+func TestCompositeSObjectsUpdateAllOrNoneRollsBack(t *testing.T) {
+	org := testOrg()
+	addAccountForTest(&org, "001000000000001", "Before")
+	handler := New(&org)
+
+	composite := httptest.NewRecorder()
+	handler.ServeHTTP(composite, httptest.NewRequest(http.MethodPatch, "/services/data/v61.0/composite/sobjects", strings.NewReader(`{
+  "allOrNone": true,
+  "records": [
+    {"attributes":{"type":"Account","referenceId":"good"},"Id":"001000000000001","Name":"After"},
+    {"attributes":{"type":"Missing__c","referenceId":"bad"},"Id":"001000000000999","Name":"Bad"}
+  ]
+}`)))
+	if composite.Code != http.StatusBadRequest {
+		t.Fatalf("composite status = %d body=%s", composite.Code, composite.Body.String())
+	}
+	if got := org.Objects["Account"].Records["001000000000001"].Fields["Name"].String; got != "Before" {
+		t.Fatalf("allOrNone rollback changed name = %q", got)
+	}
+	if !bytes.Contains(composite.Body.Bytes(), []byte(`"referenceId":"good"`)) || !bytes.Contains(composite.Body.Bytes(), []byte(`"referenceId":"bad"`)) {
+		t.Fatalf("reference ids missing: %s", composite.Body.String())
+	}
+}
+
+func TestCompositeSObjectsDeleteSuccessLocatesObjectsByID(t *testing.T) {
+	org := testOrg()
+	addAccountForTest(&org, "001000000000001", "Delete One")
+	addAccountForTest(&org, "001000000000002", "Delete Two")
+	handler := New(&org)
+
+	composite := httptest.NewRecorder()
+	handler.ServeHTTP(composite, httptest.NewRequest(http.MethodDelete, "/services/data/v61.0/composite/sobjects?ids=001000000000001,001000000000002&allOrNone=true", nil))
+	if composite.Code != http.StatusOK {
+		t.Fatalf("composite status = %d body=%s", composite.Code, composite.Body.String())
+	}
+	if !org.Objects["Account"].Records["001000000000001"].System.IsDeleted || !org.Objects["Account"].Records["001000000000002"].System.IsDeleted {
+		t.Fatalf("records were not soft deleted: %#v", org.Objects["Account"].Records)
+	}
+	if !bytes.Contains(composite.Body.Bytes(), []byte(`"id":"001000000000001"`)) || !bytes.Contains(composite.Body.Bytes(), []byte(`"success":true`)) {
+		t.Fatalf("delete result shape = %s", composite.Body.String())
+	}
+}
+
+func TestCompositeSObjectsDeleteAllOrNoneRollsBackMissingRecord(t *testing.T) {
+	org := testOrg()
+	addAccountForTest(&org, "001000000000001", "Keep One")
+	addAccountForTest(&org, "001000000000002", "Keep Two")
+	handler := New(&org)
+
+	composite := httptest.NewRecorder()
+	handler.ServeHTTP(composite, httptest.NewRequest(http.MethodDelete, "/services/data/v61.0/composite/sobjects?ids=001000000000001,001000000000999&allOrNone=true", nil))
+	if composite.Code != http.StatusBadRequest {
+		t.Fatalf("composite status = %d body=%s", composite.Code, composite.Body.String())
+	}
+	if org.Objects["Account"].Records["001000000000001"].System.IsDeleted || org.Objects["Account"].Records["001000000000002"].System.IsDeleted {
+		t.Fatalf("allOrNone rollback soft deleted records: %#v", org.Objects["Account"].Records)
+	}
+	if !bytes.Contains(composite.Body.Bytes(), []byte(`"id":"001000000000999"`)) || !bytes.Contains(composite.Body.Bytes(), []byte(`DML_EXCEPTION`)) {
+		t.Fatalf("missing delete result shape = %s", composite.Body.String())
+	}
+}
+
 func TestCompositeNamespaceUnsupportedStubs(t *testing.T) {
 	tests := []struct {
 		name          string
@@ -1742,19 +1853,6 @@ func TestCompositeNamespaceUnsupportedStubs(t *testing.T) {
 			method:        http.MethodGet,
 			path:          "/services/data/v61.0/composite",
 			wantMessageIn: "Composite namespace discovery",
-		},
-		{
-			name:          "composite sobject collection update",
-			method:        http.MethodPatch,
-			path:          "/services/data/v61.0/composite/sobjects",
-			body:          `{"allOrNone":true,"records":[]}`,
-			wantMessageIn: "Composite sObject collection update",
-		},
-		{
-			name:          "composite sobject collection delete",
-			method:        http.MethodDelete,
-			path:          "/services/data/v61.0/composite/sobjects",
-			wantMessageIn: "Composite sObject collection delete",
 		},
 		{
 			name:          "composite sobject typed collection",

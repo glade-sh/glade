@@ -665,13 +665,15 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Return stable unsupported errors for common OAuth token, revoke,
     introspect, and authorize probes without issuing local tokens.
 - [ ] Add Composite API coverage beyond baseline sObject insert, including
-  all-or-none rollback and reference ID behavior.
+  all-or-none rollback, reference ID behavior, and conservative local
+  collection update/delete mutators.
   - [x] Return stable unsupported errors for generic composite subrequest
     orchestration, batch, tree, and graph routes instead of fake composite
     success.
-  - [x] Return stable unsupported or method-not-allowed responses for common
-    unmodeled Composite sObject update, delete, typed collection, and upsert
-    route boundaries while keeping baseline collection insert modeled.
+  - [x] Model conservative Composite sObject collection update/delete with DML
+    Update/Delete, allOrNone rollback, reference IDs for update, and ID-located
+    delete query parameters; keep typed collection and upsert route boundaries
+    explicitly unsupported.
 - [ ] Add Bulk API approximations if needed by local integration tests.
   - [x] Add explicit Bulk API v2 query and ingest job stubs with Salesforce-shaped
     unsupported errors instead of fake job success.
@@ -707,8 +709,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     fixture.
   - [x] Cover generic composite unsupported route shape in the server black-box
     fixture.
-  - [x] Cover common Composite sObject update/upsert unsupported route shapes in
-    the server black-box fixture.
+  - [x] Cover Composite sObject collection update/delete plus the remaining
+    upsert unsupported route shape in the server black-box fixture.
   - [x] Cover common top-level REST namespace unsupported route shapes, including
     utility AppMenu and QuickActions probes, in the server black-box fixture.
   - [x] Cover Tooling `executeAnonymous` persistence, rollback, selected bearer
