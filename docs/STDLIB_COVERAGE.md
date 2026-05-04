@@ -326,8 +326,8 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | String | `String.trim` | `supported` | Unicode whitespace trim. |
 | String | `String.unescapeCsv` | `supported` | Unquotes doubled-quote CSV fields. |
 | String | `String.unescapeEcmaScript` | `partial` | Unescapes common JavaScript-style backslash and Unicode escapes. |
-| String | `String.unescapeHtml3` | `partial` | Unescapes core HTML entities, selected high-use named entities, and numeric references; remaining unknown named entities stay unchanged. |
-| String | `String.unescapeHtml4` | `partial` | Unescapes core HTML entities, selected high-use named entities, and numeric references; remaining unknown named entities stay unchanged. |
+| String | `String.unescapeHtml3` | `partial` | Unescapes core HTML entities, selected high-use HTML 3/4 named entities, and numeric references; remaining unknown named entities stay unchanged. |
+| String | `String.unescapeHtml4` | `partial` | Unescapes core HTML entities, selected high-use HTML 3/4 named entities, and numeric references; remaining unknown named entities stay unchanged. |
 | String | `String.unescapeJava` | `partial` | Unescapes common Java-style backslash and Unicode escapes. |
 | String | `String.unescapeUnicode` | `partial` | Unescapes UTF-16 Unicode escape sequences. |
 | String | `String.unescapeXml` | `partial` | Unescapes XML core entities and numeric references; XML version-specific validity is not modeled. |
