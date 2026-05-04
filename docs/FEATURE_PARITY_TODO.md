@@ -837,8 +837,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
     all-or-none rollback.
   - [x] Add conservative typed Composite sObject collection retrieve with ID
     selection and field projection handling.
-  - [x] Pin Composite edge envelopes for malformed generic/batch payloads,
-    missing `records`, malformed `attributes`, and per-row DML error arrays.
+  - [x] Pin Composite edge envelopes for generic, batch, tree, and graph
+    payload validation; malformed generic/batch payloads; missing `records`;
+    malformed `attributes`; and per-row DML error arrays.
 - [ ] Add Bulk API approximations if needed by local integration tests.
   - [x] Add explicit Bulk API v2 query and ingest job stubs with Salesforce-shaped
     unsupported errors instead of fake job success.
@@ -885,9 +886,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
     queryMore boundaries in the server black-box fixture.
   - [x] Cover generic composite unsupported route shape in the server black-box
     fixture.
-  - [x] Cover Composite sObject collection update/delete and typed Composite
-    sObject external-ID upsert create/update behavior in the server black-box
-    fixture.
+  - [x] Cover Composite sObject collection update/delete, typed Composite
+    sObject external-ID upsert create/update behavior, and generic/batch/tree/graph
+    envelope validation in the server black-box fixture.
   - [x] Cover common top-level REST namespace unsupported route shapes, including
     utility AppMenu and QuickActions probes, in the server black-box fixture.
   - [x] Cover Tooling `executeAnonymous` persistence, rollback, selected bearer

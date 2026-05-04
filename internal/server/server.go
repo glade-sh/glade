@@ -931,6 +931,125 @@ func requireWellFormedJSONBody(w http.ResponseWriter, r *http.Request) bool {
 	return true
 }
 
+type compositeSubrequestEnvelope struct {
+	Method      string `json:"method"`
+	URL         string `json:"url"`
+	ReferenceID string `json:"referenceId"`
+}
+
+func requireCompositeRequestEnvelope(w http.ResponseWriter, r *http.Request) bool {
+	var body struct {
+		CompositeRequest *[]compositeSubrequestEnvelope `json:"compositeRequest"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		writeSalesforceError(w, errMalformedJSON, err.Error())
+		return false
+	}
+	if body.CompositeRequest == nil || len(*body.CompositeRequest) == 0 {
+		writeSalesforceError(w, errRequiredFieldMissing, "compositeRequest is required and must contain at least one subrequest")
+		return false
+	}
+	return validateCompositeSubrequests(w, *body.CompositeRequest, "compositeRequest", true)
+}
+
+func requireCompositeBatchEnvelope(w http.ResponseWriter, r *http.Request) bool {
+	var body struct {
+		BatchRequests *[]compositeSubrequestEnvelope `json:"batchRequests"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		writeSalesforceError(w, errMalformedJSON, err.Error())
+		return false
+	}
+	if body.BatchRequests == nil || len(*body.BatchRequests) == 0 {
+		writeSalesforceError(w, errRequiredFieldMissing, "batchRequests is required and must contain at least one subrequest")
+		return false
+	}
+	return validateCompositeSubrequests(w, *body.BatchRequests, "batchRequests", false)
+}
+
+func requireCompositeTreeEnvelope(w http.ResponseWriter, r *http.Request) bool {
+	var body struct {
+		Records *[]map[string]json.RawMessage `json:"records"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		writeSalesforceError(w, errMalformedJSON, err.Error())
+		return false
+	}
+	if body.Records == nil || len(*body.Records) == 0 {
+		writeSalesforceError(w, errRequiredFieldMissing, "records is required and must contain at least one tree record")
+		return false
+	}
+	for i, record := range *body.Records {
+		attrsRaw, ok := record["attributes"]
+		if !ok {
+			writeSalesforceError(w, errRequiredFieldMissing, fmt.Sprintf("records[%d].attributes.referenceId is required", i))
+			return false
+		}
+		var attrs struct {
+			ReferenceID string `json:"referenceId"`
+		}
+		if err := json.Unmarshal(attrsRaw, &attrs); err != nil {
+			writeSalesforceError(w, errMalformedJSON, "attributes must be a JSON object")
+			return false
+		}
+		if strings.TrimSpace(attrs.ReferenceID) == "" {
+			writeSalesforceError(w, errRequiredFieldMissing, fmt.Sprintf("records[%d].attributes.referenceId is required", i))
+			return false
+		}
+	}
+	return true
+}
+
+func requireCompositeGraphEnvelope(w http.ResponseWriter, r *http.Request) bool {
+	var body struct {
+		Graphs *[]struct {
+			GraphID          string                         `json:"graphId"`
+			CompositeRequest *[]compositeSubrequestEnvelope `json:"compositeRequest"`
+		} `json:"graphs"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		writeSalesforceError(w, errMalformedJSON, err.Error())
+		return false
+	}
+	if body.Graphs == nil || len(*body.Graphs) == 0 {
+		writeSalesforceError(w, errRequiredFieldMissing, "graphs is required and must contain at least one graph")
+		return false
+	}
+	for i, graph := range *body.Graphs {
+		if strings.TrimSpace(graph.GraphID) == "" {
+			writeSalesforceError(w, errRequiredFieldMissing, fmt.Sprintf("graphs[%d].graphId is required", i))
+			return false
+		}
+		if graph.CompositeRequest == nil || len(*graph.CompositeRequest) == 0 {
+			writeSalesforceError(w, errRequiredFieldMissing, fmt.Sprintf("graphs[%d].compositeRequest is required and must contain at least one subrequest", i))
+			return false
+		}
+		if !validateCompositeSubrequests(w, *graph.CompositeRequest, fmt.Sprintf("graphs[%d].compositeRequest", i), true) {
+			return false
+		}
+	}
+	return true
+}
+
+func validateCompositeSubrequests(w http.ResponseWriter, requests []compositeSubrequestEnvelope, field string, requireReferenceID bool) bool {
+	for i, request := range requests {
+		prefix := fmt.Sprintf("%s[%d]", field, i)
+		if strings.TrimSpace(request.Method) == "" {
+			writeSalesforceError(w, errRequiredFieldMissing, prefix+".method is required")
+			return false
+		}
+		if strings.TrimSpace(request.URL) == "" {
+			writeSalesforceError(w, errRequiredFieldMissing, prefix+".url is required")
+			return false
+		}
+		if requireReferenceID && strings.TrimSpace(request.ReferenceID) == "" {
+			writeSalesforceError(w, errRequiredFieldMissing, prefix+".referenceId is required")
+			return false
+		}
+	}
+	return true
+}
+
 func methodAllowed(r *http.Request, allowed ...string) bool {
 	for _, method := range allowed {
 		if r.Method == method {
@@ -1093,7 +1212,7 @@ func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, version
 		case http.MethodGet:
 			writeSalesforceError(w, errUnsupportedFeature, "Composite namespace discovery is not implemented in the local server; generic REST subrequest orchestration is not modeled")
 		case http.MethodPost:
-			if !requireWellFormedJSONBody(w, r) {
+			if !requireCompositeRequestEnvelope(w, r) {
 				return
 			}
 			writeSalesforceError(w, errUnsupportedFeature, "Generic Composite REST subrequest orchestration is not implemented in the local server")
@@ -1106,15 +1225,41 @@ func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, version
 		s.handleCompositeSObjects(w, r, version, parts)
 		return
 	}
-	if len(parts) >= 1 && (parts[0] == "batch" || parts[0] == "tree" || parts[0] == "graph") {
+	if len(parts) >= 1 && parts[0] == "batch" {
 		if r.Method != http.MethodPost {
 			writeMethodNotAllowed(w, http.MethodPost)
 			return
 		}
-		if !requireWellFormedJSONBody(w, r) {
+		if !requireCompositeBatchEnvelope(w, r) {
 			return
 		}
-		writeSalesforceError(w, errUnsupportedFeature, "Composite "+parts[0]+" is not implemented in the local server")
+		writeSalesforceError(w, errUnsupportedFeature, "Composite batch is not implemented in the local server")
+		return
+	}
+	if len(parts) >= 1 && parts[0] == "tree" {
+		if r.Method != http.MethodPost {
+			writeMethodNotAllowed(w, http.MethodPost)
+			return
+		}
+		if len(parts) < 2 || strings.TrimSpace(parts[1]) == "" {
+			writeSalesforceError(w, errRequiredFieldMissing, "object name is required for Composite tree")
+			return
+		}
+		if !requireCompositeTreeEnvelope(w, r) {
+			return
+		}
+		writeSalesforceError(w, errUnsupportedFeature, "Composite tree is not implemented in the local server")
+		return
+	}
+	if len(parts) >= 1 && parts[0] == "graph" {
+		if r.Method != http.MethodPost {
+			writeMethodNotAllowed(w, http.MethodPost)
+			return
+		}
+		if !requireCompositeGraphEnvelope(w, r) {
+			return
+		}
+		writeSalesforceError(w, errUnsupportedFeature, "Composite graph is not implemented in the local server")
 		return
 	}
 	writeSalesforceError(w, errUnknownComposite)

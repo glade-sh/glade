@@ -1417,19 +1417,92 @@ func TestResourceDiscoveryIncludesStableServerEndpoints(t *testing.T) {
 func TestUnsupportedDiscoveryNamespacesReturnStableErrors(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
-	for _, path := range []string{
-		"/services/data/v61.0/composite/batch",
-		"/services/data/v61.0/composite/tree/Account",
-		"/services/data/v61.0/composite/graph",
+	for _, tc := range []struct {
+		path string
+		body string
+	}{
+		{
+			path: "/services/data/v61.0/composite/batch",
+			body: `{"batchRequests":[{"method":"GET","url":"/services/data/v61.0/limits"}]}`,
+		},
+		{
+			path: "/services/data/v61.0/composite/tree/Account",
+			body: `{"records":[{"attributes":{"referenceId":"AccountRef"},"Name":"Acme"}]}`,
+		},
+		{
+			path: "/services/data/v61.0/composite/graph",
+			body: `{"graphs":[{"graphId":"GraphOne","compositeRequest":[{"method":"GET","url":"/services/data/v61.0/limits","referenceId":"LimitsRef"}]}]}`,
+		},
 	} {
 		rec := httptest.NewRecorder()
-		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, path, strings.NewReader(`{}`)))
+		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, tc.path, strings.NewReader(tc.body)))
 		if rec.Code != http.StatusNotImplemented {
-			t.Fatalf("%s status = %d body=%s", path, rec.Code, rec.Body.String())
+			t.Fatalf("%s status = %d body=%s", tc.path, rec.Code, rec.Body.String())
 		}
 		if !bytes.Contains(rec.Body.Bytes(), []byte(`"errorCode":"UNSUPPORTED_FEATURE"`)) {
-			t.Fatalf("%s unsupported shape = %s", path, rec.Body.String())
+			t.Fatalf("%s unsupported shape = %s", tc.path, rec.Body.String())
 		}
+	}
+}
+
+func TestCompositeGenericRouteFamiliesValidateEnvelopesBeforeUnsupported(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	for _, tc := range []struct {
+		name    string
+		path    string
+		body    string
+		message string
+	}{
+		{
+			name:    "generic missing compositeRequest",
+			path:    "/services/data/v61.0/composite",
+			body:    `{}`,
+			message: "compositeRequest is required",
+		},
+		{
+			name:    "generic missing reference id",
+			path:    "/services/data/v61.0/composite",
+			body:    `{"compositeRequest":[{"method":"GET","url":"/services/data/v61.0/limits"}]}`,
+			message: "compositeRequest[0].referenceId is required",
+		},
+		{
+			name:    "batch missing url",
+			path:    "/services/data/v61.0/composite/batch",
+			body:    `{"batchRequests":[{"method":"GET"}]}`,
+			message: "batchRequests[0].url is required",
+		},
+		{
+			name:    "tree missing record reference",
+			path:    "/services/data/v61.0/composite/tree/Account",
+			body:    `{"records":[{"attributes":{},"Name":"Acme"}]}`,
+			message: "records[0].attributes.referenceId is required",
+		},
+		{
+			name:    "tree missing object",
+			path:    "/services/data/v61.0/composite/tree",
+			body:    `{"records":[{"attributes":{"referenceId":"AccountRef"},"Name":"Acme"}]}`,
+			message: "object name is required",
+		},
+		{
+			name:    "graph missing graph id",
+			path:    "/services/data/v61.0/composite/graph",
+			body:    `{"graphs":[{"compositeRequest":[{"method":"GET","url":"/services/data/v61.0/limits","referenceId":"LimitsRef"}]}]}`,
+			message: "graphs[0].graphId is required",
+		},
+		{
+			name:    "graph missing subrequest",
+			path:    "/services/data/v61.0/composite/graph",
+			body:    `{"graphs":[{"graphId":"GraphOne"}]}`,
+			message: "graphs[0].compositeRequest is required",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, tc.path, strings.NewReader(tc.body)))
+			assertSalesforceError(t, rec, http.StatusBadRequest, "REQUIRED_FIELD_MISSING", tc.message)
+		})
 	}
 }
 
@@ -2969,7 +3042,7 @@ func TestCompositeNamespaceUnsupportedStubs(t *testing.T) {
 			name:          "generic composite subrequests",
 			method:        http.MethodPost,
 			path:          "/services/data/v61.0/composite",
-			body:          `{"compositeRequest":[]}`,
+			body:          `{"compositeRequest":[{"method":"GET","url":"/services/data/v61.0/limits","referenceId":"LimitsRef"}]}`,
 			wantMessageIn: "Generic Composite REST subrequest orchestration",
 		},
 		{
