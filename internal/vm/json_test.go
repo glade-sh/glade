@@ -144,6 +144,30 @@ System.assertEquals('["ok"]', gen.getAsString());
 	}
 }
 
+func TestExecJSONGeneratorRejectsEndArrayInObjectAsJSONException(t *testing.T) {
+	program, err := CompileAnonymous(`
+JSONGenerator gen = JSON.createGenerator(false);
+gen.writeStartObject();
+String caught = '';
+try {
+	gen.writeEndArray();
+} catch (JSONException e) {
+	caught = e.getTypeName() + ':' + e.getMessage();
+}
+System.assert(caught.contains('JSONException:JSONGenerator.writeEndArray cannot be called inside an object'));
+gen.writeStringField('ok', 'yes');
+gen.writeEndObject();
+System.assertEquals('{"ok":"yes"}', gen.getAsString());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecJSONGeneratorUnhandledEndObjectInArrayHasJSONExceptionType(t *testing.T) {
 	program, err := CompileAnonymous(`
 JSONGenerator gen = JSON.createGenerator(false);
@@ -163,6 +187,29 @@ gen.writeEndObject();
 		t.Fatalf("type = %q, want JSONException", runtimeErr.Type)
 	}
 	if !strings.Contains(runtimeErr.Message, "JSONGenerator.writeEndObject cannot be called inside an array") {
+		t.Fatalf("message = %q", runtimeErr.Message)
+	}
+}
+
+func TestExecJSONGeneratorUnhandledEndArrayInObjectHasJSONExceptionType(t *testing.T) {
+	program, err := CompileAnonymous(`
+JSONGenerator gen = JSON.createGenerator(false);
+gen.writeStartObject();
+gen.writeEndArray();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	_, err = machine.Execute(program)
+	var runtimeErr *RuntimeError
+	if !errors.As(err, &runtimeErr) {
+		t.Fatalf("err = %#v, want RuntimeError", err)
+	}
+	if runtimeErr.Type != "JSONException" {
+		t.Fatalf("type = %q, want JSONException", runtimeErr.Type)
+	}
+	if !strings.Contains(runtimeErr.Message, "JSONGenerator.writeEndArray cannot be called inside an object") {
 		t.Fatalf("message = %q", runtimeErr.Message)
 	}
 }

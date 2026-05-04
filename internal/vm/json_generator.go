@@ -229,6 +229,9 @@ func jsonGeneratorEndContainer(receiver Value, kind string) (Value, Value, bool,
 		if kind == "object" && openKind == "array" {
 			return Null, receiver, false, true, newExceptionError("JSONException", "JSONGenerator.writeEndObject cannot be called inside an array")
 		}
+		if kind == "array" && openKind == "object" {
+			return Null, receiver, false, true, newExceptionError("JSONException", "JSONGenerator.writeEndArray cannot be called inside an object")
+		}
 		return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeEnd%s called while %s is open", jsonGeneratorContainerName(kind), openKind)
 	}
 	if kind == "object" && !jsonGeneratorBoolField(frame, "expectingField").Bool {
