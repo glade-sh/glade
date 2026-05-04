@@ -3,6 +3,7 @@ package dml
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -17,13 +18,14 @@ type Engine struct {
 }
 
 type Result struct {
-	ID         storage.ID `json:"id,omitempty"`
-	Success    bool       `json:"success"`
-	Error      string     `json:"error,omitempty"`
-	StatusCode string     `json:"statusCode,omitempty"`
-	Fields     []string   `json:"fields,omitempty"`
-	Errors     []Error    `json:"errors,omitempty"`
-	Created    bool       `json:"created,omitempty"`
+	ID                storage.ID   `json:"id,omitempty"`
+	Success           bool         `json:"success"`
+	Error             string       `json:"error,omitempty"`
+	StatusCode        string       `json:"statusCode,omitempty"`
+	Fields            []string     `json:"fields,omitempty"`
+	Errors            []Error      `json:"errors,omitempty"`
+	Created           bool         `json:"created,omitempty"`
+	UpdatedRelatedIDs []storage.ID `json:"updatedRelatedIds,omitempty"`
 }
 
 type Error struct {
@@ -254,7 +256,7 @@ func (e *Engine) Merge(master storage.Record, duplicates []storage.Record) []Res
 			results[i] = resultFromError(duplicate.ID, fmt.Errorf("dml: merge duplicate %s does not exist", duplicate.ID))
 			continue
 		}
-		e.reparentLookups(objectName, duplicate.ID, master.ID)
+		updatedRelatedIDs := e.reparentLookups(objectName, duplicate.ID, master.ID)
 		stamp := e.systemTimestamp()
 		storedDuplicate.System.IsDeleted = true
 		storedDuplicate.System.LastModifiedDate = stamp
@@ -262,7 +264,7 @@ func (e *Engine) Merge(master storage.Record, duplicates []storage.Record) []Res
 		storedDuplicate.System.LastModifiedByID = e.systemUserID()
 		object.Records[duplicate.ID] = storedDuplicate
 		e.Org.Objects[objectName] = object
-		results[i] = Result{ID: master.ID, Success: true}
+		results[i] = Result{ID: master.ID, Success: true, UpdatedRelatedIDs: updatedRelatedIDs}
 	}
 	return results
 }
@@ -300,7 +302,8 @@ func (e *Engine) setLock(records []storage.Record, locked bool) []Result {
 	return results
 }
 
-func (e *Engine) reparentLookups(parentObject string, oldID, newID storage.ID) {
+func (e *Engine) reparentLookups(parentObject string, oldID, newID storage.ID) []storage.ID {
+	seen := make(map[storage.ID]struct{})
 	for childObjectName, childObject := range e.Org.Objects {
 		changed := false
 		for _, relation := range childObject.Definition.Relations {
@@ -314,6 +317,7 @@ func (e *Engine) reparentLookups(parentObject string, oldID, newID storage.ID) {
 				}
 				record.Fields[relation.Field] = storage.IDValue(newID)
 				childObject.Records[id] = record
+				seen[id] = struct{}{}
 				changed = true
 			}
 		}
@@ -321,6 +325,12 @@ func (e *Engine) reparentLookups(parentObject string, oldID, newID storage.ID) {
 			e.Org.Objects[childObjectName] = childObject
 		}
 	}
+	ids := make([]storage.ID, 0, len(seen))
+	for id := range seen {
+		ids = append(ids, id)
+	}
+	sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
+	return ids
 }
 
 func (e *Engine) WithTransaction(fn func(*Engine) error) error {
