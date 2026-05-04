@@ -1200,6 +1200,10 @@ func (s *Server) handleQuery(w http.ResponseWriter, r *http.Request, version str
 		writeMethodNotAllowed(w, http.MethodGet)
 		return
 	}
+	if _, ok := r.URL.Query()["explain"]; ok {
+		writeSalesforceError(w, errUnsupportedFeature, "SOQL query plan explain is not implemented in the local server")
+		return
+	}
 	result, err := soql.ParseAndExecute(*s.Org, r.URL.Query().Get("q"))
 	if err != nil {
 		writeSalesforceError(w, errMalformedQuery, err.Error())
