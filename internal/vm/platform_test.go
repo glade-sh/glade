@@ -1178,6 +1178,82 @@ System.assertEquals('2024-07-01T06:00:00-06:00', summer.format());
 	}
 }
 
+func TestExecDatetimeLocalConstructionAndComponentsUseCurrentUserTimeZone(t *testing.T) {
+	program, err := CompileAnonymous(`
+Datetime winterLocal = Datetime.newInstance(2024, 2, 29, 23, 5, 6);
+System.assertEquals('2024-03-01T07:05:06Z', winterLocal.formatGmt());
+System.assertEquals('2024-02-29T23:05:06-08:00', winterLocal.format());
+System.assertEquals('2024-02-29', winterLocal.date().format());
+System.assertEquals('2024-03-01', winterLocal.dateGmt().format());
+System.assertEquals(Time.newInstance(23, 5, 6, 0), winterLocal.time());
+System.assertEquals(Time.newInstance(7, 5, 6, 0), winterLocal.timeGmt());
+System.assertEquals(2024, winterLocal.year());
+System.assertEquals(2, winterLocal.month());
+System.assertEquals(29, winterLocal.day());
+System.assertEquals(23, winterLocal.hour());
+System.assertEquals(5, winterLocal.minute());
+System.assertEquals(6, winterLocal.second());
+System.assertEquals(2024, winterLocal.yearGmt());
+System.assertEquals(3, winterLocal.monthGmt());
+System.assertEquals(1, winterLocal.dayGmt());
+System.assertEquals(7, winterLocal.hourGmt());
+System.assertEquals(5, winterLocal.minuteGmt());
+System.assertEquals(6, winterLocal.secondGmt());
+
+Datetime fromDateTime = Datetime.newInstance(Date.newInstance(2024, 7, 1), Time.newInstance(5, 30, 0, 250));
+System.assertEquals('2024-07-01T12:30:00.25Z', fromDateTime.formatGmt());
+System.assertEquals('2024-07-01T05:30:00.25-07:00', fromDateTime.format());
+Datetime fromDateTimeGmt = Datetime.newInstanceGmt(Date.newInstance(2024, 7, 1), Time.newInstance(5, 30, 0, 250));
+System.assertEquals('2024-07-01T05:30:00.25Z', fromDateTimeGmt.formatGmt());
+
+Datetime gap = Datetime.newInstance(2024, 3, 10, 2, 30, 0);
+System.assertEquals('2024-03-10T10:30:00Z', gap.formatGmt());
+System.assertEquals('2024-03-10T03:30:00-07:00', gap.format());
+System.assertEquals(3, gap.hour());
+System.assertEquals(10, gap.hourGmt());
+
+Datetime overlap = Datetime.newInstance(2024, 11, 3, 1, 30, 0);
+System.assertEquals('2024-11-03T08:30:00Z', overlap.formatGmt());
+System.assertEquals('2024-11-03T01:30:00-07:00', overlap.format());
+System.assertEquals(1, overlap.hour());
+System.assertEquals(8, overlap.hourGmt());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.SetCurrentUser(storage.Record{
+		ID:     "005-pacific-user",
+		Object: "User",
+		Fields: map[string]storage.Value{
+			"TimeZoneSidKey": storage.StringValue("America/Los_Angeles"),
+		},
+	})
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDatetimeLocalConstructionUsesRunAsTimeZone(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.runAs(new User(Id = '005-ny-user', TimeZoneSidKey = 'America/New_York')) {
+    Datetime stamp = Datetime.newInstance(Date.newInstance(2024, 7, 1), Time.newInstance(8, 0, 0, 0));
+    System.assertEquals('2024-07-01T12:00:00Z', stamp.formatGmt());
+    System.assertEquals(8, stamp.hour());
+    System.assertEquals(12, stamp.hourGmt());
+    System.assertEquals('2024-07-01', stamp.date().format());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecLocalCurrentUserContextDoesNotEnableRunAs(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals('005-local-user', UserInfo.getUserId());
@@ -1514,6 +1590,8 @@ System.assertEquals(50400000, edge.getOffset(gmt));
 TimeZone pacific = TimeZone.getTimeZone('America/Los_Angeles');
 System.assertEquals('America/Los_Angeles', pacific.getID());
 System.assertEquals('America/Los_Angeles', pacific.getDisplayName());
+System.assertEquals('PST', pacific.getDisplayName(false));
+System.assertEquals('PDT', pacific.getDisplayName(true));
 System.assertEquals(-28800000, pacific.getOffset(gmt));
 Datetime summerNoon = Datetime.valueOfGmt('2024-07-01T12:00:00Z');
 System.assertEquals(-25200000, pacific.getOffset(summerNoon));
@@ -1545,6 +1623,8 @@ System.assertEquals(7200000, berlin.getOffset(summerNoon));
 TimeZone tokyo = TimeZone.getTimeZone('Asia/Tokyo');
 System.assertEquals('Asia/Tokyo', tokyo.getID());
 System.assertEquals('Asia/Tokyo', tokyo.getDisplayName());
+System.assertEquals('JST', tokyo.getDisplayName(false));
+System.assertEquals('JST', tokyo.getDisplayName(true));
 System.assertEquals(32400000, tokyo.getOffset(gmt));
 System.assertEquals(32400000, tokyo.getOffset(summerNoon));
 TimeZone sydney = TimeZone.getTimeZone('Australia/Sydney');
@@ -1707,9 +1787,9 @@ func TestExecTimeZoneRejectsUnsupportedZones(t *testing.T) {
 			want: `unsupported call "TimeZone.getTimeZone GMT+14:01"`,
 		},
 		{
-			name: "display overload",
-			src:  `TimeZone tz = TimeZone.getTimeZone('UTC'); tz.getDisplayName(true);`,
-			want: `unsupported call "TimeZone.getDisplayName DST/locale overloads"`,
+			name: "display locale overload",
+			src:  `TimeZone tz = TimeZone.getTimeZone('UTC'); tz.getDisplayName(true, 0);`,
+			want: `unsupported call "TimeZone.getDisplayName locale/style overloads"`,
 		},
 	}
 	for _, tc := range cases {

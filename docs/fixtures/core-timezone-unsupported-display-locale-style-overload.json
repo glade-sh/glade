@@ -1,0 +1,28 @@
+{
+  "name": "core-timezone-unsupported-display-locale-style-overload",
+  "evidence": [
+    {
+      "symbol": "TimeZone.getDisplayName",
+      "kind": "exec",
+      "notes": "Locale/style display-name overloads return a typed unsupported diagnostic; the daylight Boolean overload is modeled."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "TimeZone tz = TimeZone.getTimeZone('UTC'); tz.getDisplayName(true, 0);"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "TimeZone tz = TimeZone.getTimeZone('UTC'); tz.getDisplayName(true, 0);"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"TimeZone.getDisplayName locale/style overloads\""
+    }
+  }
+}

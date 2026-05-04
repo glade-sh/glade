@@ -534,7 +534,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
     named-zone slice is limited to deterministic `America/Los_Angeles`,
     `America/New_York`, `America/Chicago`, `America/Denver`, `Europe/London`,
     `Europe/Berlin`, `Asia/Tokyo`, and `Australia/Sydney` formatting, offsets,
-    and current-user timezone formatting.
+    current-user timezone formatting, local `Datetime.newInstance`
+    construction, local component getters, and deterministic DST gap/overlap
+    choices.
 - [x] Complete HTTP/callout mock behavior: request/response types,
   `HttpCalloutMock`, callout limits, and test isolation.
   - [x] Add common `HttpRequest`/`HttpResponse` endpoint, method, header,

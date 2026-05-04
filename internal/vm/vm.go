@@ -1216,6 +1216,35 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		"AsyncInfo.getMinimumQueueableDelayInMinutes", "AsyncInfo.hasMaxStackDepth":
 		return Null, unsupportedCallError(callee + " local async info surface")
 	case "Datetime.newInstance", "Datetime.newInstanceGmt":
+		if len(args) == 2 {
+			if args[0].Kind != ValueObject || args[0].Type != "Date" || args[1].Kind != ValueObject || args[1].Type != "Time" {
+				return Null, fmt.Errorf("%s expects Date and Time", callee)
+			}
+			date, err := parsePlatformDate(args[0])
+			if err != nil {
+				return Null, err
+			}
+			clock, err := parsePlatformTime(args[1])
+			if err != nil {
+				return Null, err
+			}
+			hour := int(clock / time.Hour)
+			clock %= time.Hour
+			minute := int(clock / time.Minute)
+			clock %= time.Minute
+			second := int(clock / time.Second)
+			clock %= time.Second
+			millisecond := int(clock / time.Millisecond)
+			zoneID := "UTC"
+			if callee == "Datetime.newInstance" {
+				zoneID = vm.currentUserTimeZoneID()
+			}
+			value, err := datetimeFromLocalParts(date.Year(), int(date.Month()), date.Day(), hour, minute, second, millisecond, zoneID)
+			if err != nil {
+				return Null, err
+			}
+			return platformScalar("Datetime", formatPlatformDatetime(value)), nil
+		}
 		if len(args) != 3 && len(args) != 6 {
 			return Null, fmt.Errorf("%s expects year, month, day[, hour, minute, second] integers", callee)
 		}
@@ -1235,7 +1264,14 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		if err := validateTimeParts(hour, minute, second); err != nil {
 			return Null, err
 		}
-		value := time.Date(year, time.Month(month), day, hour, minute, second, 0, time.UTC)
+		zoneID := "UTC"
+		if callee == "Datetime.newInstance" {
+			zoneID = vm.currentUserTimeZoneID()
+		}
+		value, err := datetimeFromLocalParts(year, month, day, hour, minute, second, 0, zoneID)
+		if err != nil {
+			return Null, err
+		}
 		return platformScalar("Datetime", formatPlatformDatetime(value)), nil
 	case "Datetime.valueOf", "Datetime.valueOfGmt":
 		if len(args) != 1 || args[0].Kind != ValueString {
@@ -4346,6 +4382,18 @@ func parsePlatformDatetime(value Value) (time.Time, error) {
 	return parsed.UTC(), nil
 }
 
+func datetimeFromLocalParts(year, month, day, hour, minute, second, millisecond int, zoneID string) (time.Time, error) {
+	canonical, offset, ok := parseFixedTimeZoneID(zoneID)
+	if ok {
+		return time.Date(year, time.Month(month), day, hour, minute, second, millisecond*int(time.Millisecond), time.FixedZone(canonical, int(offset/time.Second))).UTC(), nil
+	}
+	zone, ok := supportedNamedTimeZone(zoneID)
+	if !ok {
+		return time.Time{}, unsupportedCallError("Datetime.newInstance timezone " + zoneID)
+	}
+	return zone.instantFromLocal(year, time.Month(month), day, hour, minute, second, millisecond), nil
+}
+
 func addMonthsClamped(value time.Time, months int) time.Time {
 	year, month, day := value.Date()
 	monthIndex := year*12 + int(month) - 1 + months
@@ -4690,11 +4738,45 @@ func timeZoneOffsetMillis(receiver Value, instant time.Time) (Value, error) {
 	return offsetValue, nil
 }
 
+func timeZoneDisplayName(receiver Value, daylight bool) Value {
+	locationValue := receiver.Fields["location"]
+	if locationValue.Kind == ValueString && locationValue.Text != "" && locationValue.Text != "UTC" {
+		if location, ok := supportedNamedTimeZone(locationValue.Text); ok {
+			if daylight && location.daylightLabel != "" {
+				return String(location.daylightLabel)
+			}
+			return String(location.standardLabel)
+		}
+	}
+	return receiver.Fields["id"]
+}
+
 func (zone modeledTimeZone) offsetAt(instant time.Time) (time.Duration, string) {
 	if zone.daylightRule == "" || !zone.isDaylight(instant.UTC()) {
 		return zone.standardOffset, zone.standardLabel
 	}
 	return zone.daylightOffset, zone.daylightLabel
+}
+
+func (zone modeledTimeZone) instantFromLocal(year int, month time.Month, day, hour, minute, second, millisecond int) time.Time {
+	local := time.Date(year, month, day, hour, minute, second, millisecond*int(time.Millisecond), time.UTC)
+	offsets := []time.Duration{zone.standardOffset}
+	if zone.daylightRule != "" && zone.daylightOffset != zone.standardOffset {
+		offsets = append(offsets, zone.daylightOffset)
+	}
+	var matches []time.Time
+	for _, offset := range offsets {
+		candidate := local.Add(-offset)
+		actualOffset, _ := zone.offsetAt(candidate)
+		if candidate.Add(actualOffset).Equal(local) {
+			matches = append(matches, candidate.UTC())
+		}
+	}
+	if len(matches) > 0 {
+		sort.Slice(matches, func(i, j int) bool { return matches[i].Before(matches[j]) })
+		return matches[0]
+	}
+	return local.Add(-zone.standardOffset).UTC()
 }
 
 func (zone modeledTimeZone) isDaylight(instant time.Time) bool {
@@ -9326,6 +9408,15 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if err != nil {
 				return Null, receiver, false, true, err
 			}
+			if method == "date" {
+				_, _, local, _, ok := resolveTimeZoneForInstant(vm.currentUserTimeZoneID(), t)
+				if !ok {
+					return Null, receiver, false, true, unsupportedCallError("Datetime.date timezone " + vm.currentUserTimeZoneID())
+				}
+				t = local
+			} else {
+				t = t.UTC()
+			}
 			return platformScalar("Date", t.Format("2006-01-02")), receiver, false, true, nil
 		case "time", "timeGmt":
 			if len(args) != 0 {
@@ -9334,6 +9425,15 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			t, err := parsePlatformDatetime(receiver)
 			if err != nil {
 				return Null, receiver, false, true, err
+			}
+			if method == "time" {
+				_, _, local, _, ok := resolveTimeZoneForInstant(vm.currentUserTimeZoneID(), t)
+				if !ok {
+					return Null, receiver, false, true, unsupportedCallError("Datetime.time timezone " + vm.currentUserTimeZoneID())
+				}
+				t = local
+			} else {
+				t = t.UTC()
 			}
 			return platformScalar("Time", formatPlatformTime(t.Hour(), t.Minute(), t.Second(), t.Nanosecond()/int(time.Millisecond))), receiver, false, true, nil
 		case "addDays", "addMonths", "addYears", "addHours", "addMinutes", "addSeconds", "addMilliseconds":
@@ -9362,13 +9462,24 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				t = t.Add(time.Duration(amount) * time.Millisecond)
 			}
 			return platformScalar("Datetime", formatPlatformDatetime(t)), receiver, false, true, nil
-		case "year", "month", "day", "hour", "minute", "second", "millisecond":
+		case "year", "month", "day", "hour", "minute", "second", "millisecond",
+			"yearGmt", "monthGmt", "dayGmt", "hourGmt", "minuteGmt", "secondGmt":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Datetime.%s expects 0 arguments", method)
 			}
 			t, err := parsePlatformDatetime(receiver)
 			if err != nil {
 				return Null, receiver, false, true, err
+			}
+			if strings.HasSuffix(method, "Gmt") {
+				t = t.UTC()
+				method = strings.TrimSuffix(method, "Gmt")
+			} else {
+				_, _, local, _, ok := resolveTimeZoneForInstant(vm.currentUserTimeZoneID(), t)
+				if !ok {
+					return Null, receiver, false, true, unsupportedCallError("Datetime." + method + " timezone " + vm.currentUserTimeZoneID())
+				}
+				t = local
 			}
 			switch method {
 			case "year":
@@ -9460,10 +9571,13 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			return receiver.Fields["id"], receiver, false, true, nil
 		case "getDisplayName":
-			if len(args) != 0 {
-				return Null, receiver, false, true, unsupportedCallError("TimeZone.getDisplayName DST/locale overloads")
+			if len(args) == 0 {
+				return receiver.Fields["id"], receiver, false, true, nil
 			}
-			return receiver.Fields["id"], receiver, false, true, nil
+			if len(args) == 1 && args[0].Kind == ValueBool {
+				return timeZoneDisplayName(receiver, args[0].Bool), receiver, false, true, nil
+			}
+			return Null, receiver, false, true, unsupportedCallError("TimeZone.getDisplayName locale/style overloads")
 		case "getOffset":
 			if len(args) != 1 || args[0].Kind != ValueObject || args[0].Type != "Datetime" {
 				return Null, receiver, false, true, fmt.Errorf("TimeZone.getOffset expects Datetime")
