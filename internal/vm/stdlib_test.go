@@ -582,6 +582,54 @@ System.assertEquals(1, 'café'.getLevenshteinDistance('cafe', 1));
 	}
 }
 
+func TestExecStringFinalFamilyEdges(t *testing.T) {
+	program, err := CompileAnonymous(`
+String raw = String.fromCharArray(new List<Integer>{8, 9, 10, 12, 13, 34, 39, 47, 92, 937, 128512});
+System.assertEquals(raw, raw.escapeJava().unescapeJava());
+System.assertEquals(raw, raw.escapeEcmaScript().unescapeEcmaScript());
+String unicodeRaw = String.fromCharArray(new List<Integer>{8, 9, 10, 12, 13, 34, 39, 47, 937, 128512});
+System.assertEquals(unicodeRaw, unicodeRaw.escapeUnicode().unescapeUnicode());
+System.assertEquals('/', '/'.escapeJava());
+System.assertEquals('\/', '/'.escapeEcmaScript());
+
+String face = String.fromCharArray(new List<Integer>{128512});
+System.assertEquals(1, face.length());
+System.assertEquals(128512, face.codePointAt(0));
+System.assertEquals(128512, face.codePointBefore(1));
+System.assertEquals(1, face.codePointCount(0, 1));
+List<Integer> faceChars = face.getChars();
+System.assertEquals(1, faceChars.size());
+System.assertEquals(128512, faceChars.get(0));
+
+System.assertEquals('abc...', 'abcdefg'.abbreviate(6));
+System.assertEquals('...mnopq...', 'abcdefghijklmnopqrstuvwxyz'.abbreviate(12, 11));
+System.assertEquals('abXXef', 'abcdef'.overlay('XX', 4, 2));
+System.assertEquals('abcdefZZ', 'abcdef'.overlay('ZZ', 99, 100));
+System.assertEquals('aZ 9ω', 'Az 9Ω'.swapCase());
+
+String xml10Boundary = String.fromCharArray(new List<Integer>{9, 10, 13, 31, 32, 55295, 57344, 65533, 128512});
+String xml10Escaped = xml10Boundary.escapeXml10();
+System.assertEquals(8, xml10Escaped.length());
+System.assertEquals(9, xml10Escaped.codePointAt(0));
+System.assertEquals(32, xml10Escaped.codePointAt(3));
+System.assertEquals(55295, xml10Escaped.codePointAt(4));
+System.assertEquals(128512, xml10Escaped.codePointAt(7));
+String xml11Boundary = String.fromCharArray(new List<Integer>{0, 1, 8, 9, 10, 13, 31, 32});
+String xml11Escaped = xml11Boundary.escapeXml11();
+System.assertEquals(0, xml11Escaped.indexOf('&#1;'));
+System.assertEquals(4, xml11Escaped.indexOf('&#8;'));
+String tabChar = String.fromCharArray(new List<Integer>{9});
+System.assertEquals(8, xml11Escaped.indexOf(tabChar));
+System.assertEquals(11, xml11Escaped.indexOf('&#31;'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestStringStdlibCompletionRejectsBadArguments(t *testing.T) {
 	tests := []struct {
 		method string
@@ -711,6 +759,9 @@ func TestStringEscapeJavaLikeOctalAndUnicodeEdges(t *testing.T) {
 	}
 	if want := `/'"\`; unescaped != want {
 		t.Fatalf("unescapeEcmaScript-like = %q, want %q", unescaped, want)
+	}
+	if got, want := escapeUnicode("A\x00Ω😀"), `A\u0000\u03A9\uD83D\uDE00`; got != want {
+		t.Fatalf("escapeUnicode = %q, want %q", got, want)
 	}
 }
 

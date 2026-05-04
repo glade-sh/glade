@@ -273,16 +273,16 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | String | `String.equals` | `supported` | Exact local string equality. |
 | String | `String.equalsIgnoreCase` | `supported` | Unicode simple fold. |
 | String | `String.escapeCsv` | `supported` | One-field RFC4180-style quoting for comma, quote, CR, and LF; doubles embedded quotes. |
-| String | `String.escapeEcmaScript` | `partial` | JavaScript-style backslash, quote, slash, control, and UTF-16 Unicode escaping for deterministic cases. |
-| String | `String.escapeHtml3` | `partial` | Deterministic core HTML entity escaping only; full named-entity coverage is not modeled. |
-| String | `String.escapeHtml4` | `partial` | Deterministic core HTML entity escaping only; full named-entity coverage is not modeled. |
-| String | `String.escapeJava` | `partial` | Java-style backslash, quote, control, and UTF-16 Unicode escaping for deterministic cases. |
+| String | `String.escapeEcmaScript` | `supported` | JavaScript-style backslash, quote, slash, control, and UTF-16 Unicode escaping for local string values. |
+| String | `String.escapeHtml3` | `partial` | Escapes the core markup entities &, <, >, double quote, and apostrophe only; broad HTML named-entity escape coverage is not modeled. |
+| String | `String.escapeHtml4` | `partial` | Escapes the core markup entities &, <, >, double quote, and apostrophe only; broad HTML named-entity escape coverage is not modeled. |
+| String | `String.escapeJava` | `supported` | Java-style backslash, double quote, control, and UTF-16 Unicode escaping for local string values. |
 | String | `String.escapeSingleQuotes` | `supported` | Escapes single quotes with backslashes. |
-| String | `String.escapeUnicode` | `partial` | Escapes non-ASCII and control runes as UTF-16 Unicode escapes. |
-| String | `String.escapeXml` | `partial` | Escapes XML core entities; XML version-specific validity is not modeled. |
-| String | `String.escapeXml10` | `partial` | Escapes XML core entities, drops XML 1.0-invalid code points, and numeric-escapes restricted control ranges. |
-| String | `String.escapeXml11` | `partial` | Escapes XML core entities, drops XML 1.1-invalid nulls, and numeric-escapes restricted control ranges. |
-| String | `String.format` | `partial` | Deterministic {0}-style list substitution; full MessageFormat locale behavior is not modeled. |
+| String | `String.escapeUnicode` | `supported` | Escapes non-ASCII and control runes as UTF-16 Unicode escape sequences. |
+| String | `String.escapeXml` | `partial` | Escapes XML core entities without XML 1.0/1.1 invalid-code-point filtering; use escapeXml10/11 for versioned filtering. |
+| String | `String.escapeXml10` | `supported` | Escapes XML core entities, drops XML 1.0-invalid code points, and numeric-escapes restricted control ranges. |
+| String | `String.escapeXml11` | `supported` | Escapes XML core entities, drops XML 1.1-invalid nulls, and numeric-escapes restricted control ranges. |
+| String | `String.format` | `partial` | Deterministic {0}-style List substitution only; MessageFormat choice/date/number patterns and locale behavior are not modeled. |
 | String | `String.fromCharArray` | `supported` | Builds a string from valid Unicode code point integers. |
 | String | `String.getChars` | `supported` | Returns Unicode code point integers for each rune. |
 | String | `String.getCommonPrefix` | `supported` | Returns the shared rune prefix for a list of strings. |
@@ -323,15 +323,15 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | String | `String.removeStartIgnoreCase` | `supported` | Removes a literal prefix with rune-wise case folding when present. |
 | String | `String.repeat` | `supported` | Repeats a string with optional separator and non-negative count. |
 | String | `String.replace` | `supported` | Literal replacement; empty targets are a no-op. |
-| String | `String.replaceAll` | `partial` | Go regexp-backed replacement with Java-style numeric capture parsing, escaped dollar/backslash handling, and pinned unsupported Java-only regex diagnostics including Java-only inline flags and Unicode classes. |
-| String | `String.replaceFirst` | `partial` | Go regexp-backed first replacement with Java-style numeric capture parsing, escaped dollar/backslash handling, and pinned unsupported Java-only regex diagnostics including Java-only inline flags and Unicode classes. |
+| String | `String.replaceAll` | `partial` | Go regexp-backed replacement with Java-style numeric capture parsing; Java-only regex features such as lookaround, backreferences, possessive quantifiers, named groups, and Unicode classes are explicitly unsupported. |
+| String | `String.replaceFirst` | `partial` | Go regexp-backed first replacement with Java-style numeric capture parsing; Java-only regex features such as lookaround, backreferences, possessive quantifiers, named groups, and Unicode classes are explicitly unsupported. |
 | String | `String.replaceIgnoreCase` | `supported` | Literal non-overlapping replacement with rune-wise case folding. |
 | String | `String.replaceOnce` | `supported` | First literal replacement only. |
 | String | `String.reverse` | `supported` | Reverses rune order. |
 | String | `String.right` | `supported` | Returns the rightmost requested rune count, clamped to string length. |
 | String | `String.rightPad` | `supported` | Pads on the right to a requested rune width with space or supplied pad text. |
 | String | `String.rotate` | `supported` | Rune-based rotation; positive shifts rotate right. |
-| String | `String.split` | `partial` | Go regexp-backed split with Apex limit shape, pinned unsupported Java-only regex diagnostics including Java-only inline flags and Unicode classes, and nullable delimiter regexes fenced unsupported. |
+| String | `String.split` | `partial` | Go regexp-backed split with Apex limit shape; nullable regexes and Java-only regex features such as lookaround, backreferences, possessive quantifiers, named groups, and Unicode classes are explicitly unsupported. |
 | String | `String.splitByCharacterType` | `supported` | Splits on coarse Unicode upper/lower/digit/space/other groups. |
 | String | `String.splitByCharacterTypeCamelCase` | `supported` | Splits character types with camel-case upper-to-lower adjustment. |
 | String | `String.startsWith` | `supported` | UTF-8 string prefix. |
@@ -353,14 +353,14 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | String | `String.toUpperCase` | `supported` | Go Unicode uppercasing. |
 | String | `String.trim` | `supported` | Unicode whitespace trim. |
 | String | `String.unescapeCsv` | `supported` | Unquotes one doubled-quote CSV field; plain strings are unchanged. |
-| String | `String.unescapeEcmaScript` | `partial` | Unescapes common JavaScript-style backslash, octal, and UTF-16 Unicode escapes. |
-| String | `String.unescapeHtml3` | `partial` | Unescapes core HTML entities, selected high-use Greek/symbol/arrow named entities, and numeric references; HTML apos and remaining unknown named entities stay unchanged. |
-| String | `String.unescapeHtml4` | `partial` | Unescapes core HTML entities, selected high-use Greek/symbol/arrow named entities, and numeric references; HTML apos and remaining unknown named entities stay unchanged. |
-| String | `String.unescapeJava` | `partial` | Unescapes common Java-style backslash, octal, and UTF-16 Unicode escapes. |
-| String | `String.unescapeUnicode` | `partial` | Unescapes UTF-16 Unicode escape sequences. |
-| String | `String.unescapeXml` | `partial` | Unescapes XML core entities and valid numeric references; malformed, null, out-of-range, and surrogate numeric entities stay unchanged. |
-| String | `String.unescapeXml10` | `partial` | Alias of local XML core/numeric entity unescaping; malformed, null, out-of-range, and surrogate numeric entities stay unchanged. |
-| String | `String.unescapeXml11` | `partial` | Alias of local XML core/numeric entity unescaping; malformed, null, out-of-range, and surrogate numeric entities stay unchanged. |
+| String | `String.unescapeEcmaScript` | `supported` | Unescapes JavaScript-style backslash, octal, slash, quote, and UTF-16 Unicode escape sequences. |
+| String | `String.unescapeHtml3` | `partial` | Unescapes core HTML entities, numeric references, and a pinned high-use named-entity table; HTML apos and unlisted names stay unchanged. |
+| String | `String.unescapeHtml4` | `partial` | Unescapes core HTML entities, numeric references, and a pinned high-use named-entity table; HTML apos and unlisted names stay unchanged. |
+| String | `String.unescapeJava` | `supported` | Unescapes Java-style backslash, octal, quote, slash, and UTF-16 Unicode escape sequences. |
+| String | `String.unescapeUnicode` | `supported` | Unescapes UTF-16 Unicode escape sequences, including surrogate-pair sequences. |
+| String | `String.unescapeXml` | `partial` | Unescapes XML core entities and valid numeric references; version-specific XML 1.0/1.1 validity filtering is not modeled. |
+| String | `String.unescapeXml10` | `partial` | Alias of local XML core/numeric entity unescaping; XML 1.0 entity validity filtering is not modeled. |
+| String | `String.unescapeXml11` | `partial` | Alias of local XML core/numeric entity unescaping; XML 1.1 entity validity filtering is not modeled. |
 | String | `String.valueOf` | `supported` | Local value string conversion. |
 | System | `System.assert` | `supported` | Assertion failure returns runtime error; Object and null message values use deterministic local string conversion. |
 | System | `System.assertEquals` | `supported` | Assertion failure returns runtime error with deterministic local expected/actual text and Object/null message conversion. |
