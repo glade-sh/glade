@@ -537,8 +537,14 @@ func (s *Server) handleTooling(w http.ResponseWriter, r *http.Request, version s
 	switch {
 	case len(parts) == 1 && parts[0] == "executeAnonymous":
 		s.handleExecuteAnonymous(w, r)
-	case len(parts) == 1 && parts[0] == "query":
+	case len(parts) == 1 && (parts[0] == "query" || parts[0] == "queryAll"):
 		s.handleQuery(w, r, version)
+	case len(parts) == 1 && parts[0] == "search":
+		if r.Method != http.MethodGet {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
+		writeSalesforceError(w, errUnsupportedFeature, "Tooling search is not implemented in the local server")
 	case len(parts) == 1 && parts[0] == "sobjects":
 		if r.Method != http.MethodGet {
 			writeMethodNotAllowed(w, http.MethodGet)

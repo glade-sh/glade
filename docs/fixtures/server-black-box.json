@@ -155,6 +155,13 @@
       "contains": ["\"totalSize\":1", "Acme"]
     },
     {
+      "name": "tooling-queryall-account",
+      "method": "GET",
+      "path": "/services/data/v61.0/tooling/queryAll?q=SELECT%20Id,%20Name%20FROM%20Account%20WHERE%20Name%20=%20'Acme'",
+      "status": 200,
+      "contains": ["\"totalSize\":1", "Acme"]
+    },
+    {
       "name": "execute-anonymous",
       "method": "POST",
       "path": "/services/data/v61.0/tooling/executeAnonymous",
@@ -361,6 +368,13 @@
       "contains": ["UNSUPPORTED_FEATURE", "Tooling ApexCodeCoverage"]
     },
     {
+      "name": "tooling-search-unsupported",
+      "method": "GET",
+      "path": "/services/data/v61.0/tooling/search?q=FIND%20%7BAcme%7D",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "Tooling search is not implemented"]
+    },
+    {
       "name": "bulk-query-unsupported",
       "method": "POST",
       "path": "/services/data/v61.0/jobs/query",
@@ -476,8 +490,8 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 60,
-      "statuses": [200, 200, 200, 200, 200, 200, 501, 501, 501, 501, 200, 201, 200, 200, 200, 501, 501, 400, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 400, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 404, 404, 200, 200, 201],
+      "requests": 62,
+      "statuses": [200, 200, 200, 200, 200, 200, 501, 501, 501, 501, 200, 201, 200, 200, 200, 501, 501, 400, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 400, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 404, 404, 200, 200, 201],
       "users": 2
     }
   }
