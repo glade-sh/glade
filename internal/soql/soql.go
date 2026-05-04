@@ -133,10 +133,8 @@ func Execute(org storage.OrgState, query Query) (Result, error) {
 		return Result{}, err
 	}
 	query.Fields = fields
-	if query.SecurityMode != "" {
-		if err := validateSecurityProjection(org, object.Definition, query); err != nil {
-			return Result{}, err
-		}
+	if err := validateQueryReferences(org, object.Definition, query, query.SecurityMode); err != nil {
+		return Result{}, err
 	}
 	if len(query.ChildQueries) > 0 && len(query.Aggregates) > 0 {
 		return Result{}, unsupportedSOQLErrorf("child relationship subqueries are not supported in aggregate queries")
@@ -690,6 +688,9 @@ func executeChildRelationshipQuery(org storage.OrgState, parentDefinition storag
 		return nil, err
 	}
 	query.Fields = fields
+	if err := validateQueryReferences(org, childObject.Definition, query, query.SecurityMode); err != nil {
+		return nil, err
+	}
 	if query.Where != nil {
 		condition, err := resolveSubqueries(org, *query.Where)
 		if err != nil {
@@ -810,38 +811,58 @@ func fieldsFunctionMode(field string) (string, bool) {
 	return strings.TrimSpace(upper[len("FIELDS(") : len(upper)-1]), true
 }
 
-func validateSecurityProjection(org storage.OrgState, definition storage.ObjectDefinition, query Query) error {
-	if err := validateSecurityRelationshipPredicates(org, definition, query.Where, query.SecurityMode); err != nil {
-		return err
-	}
+func validateQueryReferences(org storage.OrgState, definition storage.ObjectDefinition, query Query, mode string) error {
 	for _, field := range query.Fields {
-		if !projectionFieldKnown(org, definition, field) {
-			return fmt.Errorf("soql: field %s is not available in %s mode", field, query.SecurityMode)
+		aggregate, ok, err := parseAggregateField(field)
+		if err != nil {
+			return err
+		}
+		if ok {
+			if err := validateAggregateReference(org, definition, aggregate, mode); err != nil {
+				return err
+			}
+			continue
+		}
+		if err := validateFieldReference(org, definition, field, mode); err != nil {
+			return err
 		}
 	}
 	for _, aggregate := range query.Aggregates {
-		if aggregate.Field != "" && aggregate.Field != "*" && !projectionFieldKnown(org, definition, aggregate.Field) {
-			return fmt.Errorf("soql: field %s is not available in %s mode", aggregate.Field, query.SecurityMode)
+		if err := validateAggregateReference(org, definition, aggregate, mode); err != nil {
+			return err
+		}
+	}
+	for _, field := range query.GroupBy {
+		if err := validateFieldReference(org, definition, field, mode); err != nil {
+			return err
+		}
+	}
+	if err := validateConditionReferences(org, definition, query.Where, mode); err != nil {
+		return err
+	}
+	for _, spec := range query.Order {
+		if queryHasAggregates(query) {
+			if aggregateOrderFieldKnown(query, spec.Field) {
+				continue
+			}
+			if !fieldKnown(org, definition, spec.Field) {
+				return fieldUnavailableError(spec.Field, mode)
+			}
+			return fmt.Errorf("soql: aggregate ORDER BY field %s must be grouped or aggregated", spec.Field)
+		}
+		if err := validateFieldReference(org, definition, spec.Field, mode); err != nil {
+			return err
 		}
 	}
 	for _, spec := range query.Typeofs {
-		for typeName, fields := range spec.When {
-			parentName, ok := storage.ResolveObjectName(org, typeName)
-			if !ok {
-				return fmt.Errorf("soql: unknown TYPEOF target %s in %s mode", typeName, query.SecurityMode)
-			}
-			parent := org.Objects[parentName]
-			for _, field := range fields {
-				if !projectionFieldKnown(org, parent.Definition, field) {
-					return fmt.Errorf("soql: field %s.%s is not available in %s mode", typeName, field, query.SecurityMode)
-				}
-			}
+		if err := validateTypeofReference(org, definition, spec, mode); err != nil {
+			return err
 		}
 	}
 	for _, childQuery := range query.ChildQueries {
 		childName, _, ok := childRelationship(org, definition, childQuery.Relationship)
 		if !ok {
-			return fmt.Errorf("soql: unknown child relationship %s in %s mode", childQuery.Relationship, query.SecurityMode)
+			return childRelationshipUnavailableError(childQuery.Relationship, mode)
 		}
 		child := org.Objects[childName]
 		childFields, err := expandFieldsFunctions(child.Definition, childQuery.Query.Fields)
@@ -850,41 +871,102 @@ func validateSecurityProjection(org storage.OrgState, definition storage.ObjectD
 		}
 		nested := childQuery.Query
 		nested.Fields = childFields
-		nested.SecurityMode = query.SecurityMode
-		if err := validateSecurityProjection(org, child.Definition, nested); err != nil {
+		nested.SecurityMode = mode
+		if err := validateQueryReferences(org, child.Definition, nested, mode); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func validateSecurityRelationshipPredicates(org storage.OrgState, definition storage.ObjectDefinition, condition *Condition, mode string) error {
+func validateAggregateReference(org storage.OrgState, definition storage.ObjectDefinition, aggregate Aggregate, mode string) error {
+	if aggregate.Field == "" || aggregate.Field == "*" {
+		return nil
+	}
+	return validateFieldReference(org, definition, aggregate.Field, mode)
+}
+
+func validateConditionReferences(org storage.OrgState, definition storage.ObjectDefinition, condition *Condition, mode string) error {
 	if condition == nil {
 		return nil
 	}
 	if condition.Not {
 		nested := *condition
 		nested.Not = false
-		return validateSecurityRelationshipPredicates(org, definition, &nested, mode)
+		return validateConditionReferences(org, definition, &nested, mode)
 	}
 	for i := range condition.And {
-		if err := validateSecurityRelationshipPredicates(org, definition, &condition.And[i], mode); err != nil {
+		if err := validateConditionReferences(org, definition, &condition.And[i], mode); err != nil {
 			return err
 		}
 	}
 	for i := range condition.Or {
-		if err := validateSecurityRelationshipPredicates(org, definition, &condition.Or[i], mode); err != nil {
+		if err := validateConditionReferences(org, definition, &condition.Or[i], mode); err != nil {
 			return err
 		}
 	}
-	if condition.Field != "" && strings.Contains(condition.Field, ".") && !projectionFieldKnown(org, definition, condition.Field) {
-		return fmt.Errorf("soql: field %s is not available in %s mode", condition.Field, mode)
+	if condition.Field != "" {
+		if err := validateFieldReference(org, definition, condition.Field, mode); err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
-func projectionFieldKnown(org storage.OrgState, definition storage.ObjectDefinition, field string) bool {
+func validateTypeofReference(org storage.OrgState, definition storage.ObjectDefinition, spec TypeofSpec, mode string) error {
+	allowedTargets := map[string]bool{}
+	relationshipKnown := false
+	for _, relation := range definition.Relations {
+		if relation.ParentRelationship != spec.Relationship {
+			continue
+		}
+		relationshipKnown = true
+		for _, parentName := range relation.ParentObjects {
+			canonical, ok := storage.ResolveObjectName(org, parentName)
+			if ok {
+				allowedTargets[canonical] = true
+			}
+		}
+	}
+	if !relationshipKnown {
+		return fieldUnavailableError(spec.Relationship, mode)
+	}
+	for typeName, fields := range spec.When {
+		parentName, ok := storage.ResolveObjectName(org, typeName)
+		if !ok || !allowedTargets[parentName] {
+			return typeofTargetUnavailableError(typeName, mode)
+		}
+		parent := org.Objects[parentName]
+		for _, field := range fields {
+			if err := validateFieldReference(org, parent.Definition, field, mode); err != nil {
+				return fieldUnavailableError(typeName+"."+field, mode)
+			}
+		}
+	}
+	for _, field := range spec.Else {
+		if err := validateFieldReference(org, definition, spec.Relationship+"."+field, mode); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func validateFieldReference(org storage.OrgState, definition storage.ObjectDefinition, field string, mode string) error {
+	if fieldKnownForMode(org, definition, field, mode != "") {
+		return nil
+	}
+	return fieldUnavailableError(field, mode)
+}
+
+func fieldKnown(org storage.OrgState, definition storage.ObjectDefinition, field string) bool {
+	return fieldKnownForMode(org, definition, field, false)
+}
+
+func fieldKnownForMode(org storage.OrgState, definition storage.ObjectDefinition, field string, requireAllParents bool) bool {
 	if field == "Id" || isSystemField(field) {
+		return true
+	}
+	if len(definition.Fields) == 0 && !strings.Contains(field, ".") {
 		return true
 	}
 	if strings.Contains(field, ".") {
@@ -896,21 +978,66 @@ func projectionFieldKnown(org storage.OrgState, definition storage.ObjectDefinit
 			if len(relation.ParentObjects) == 0 {
 				return false
 			}
+			found := false
 			for _, parentName := range relation.ParentObjects {
 				canonical, ok := storage.ResolveObjectName(org, parentName)
 				if !ok {
 					return false
 				}
-				if !projectionFieldKnown(org, org.Objects[canonical].Definition, parts[1]) {
+				if fieldKnownForMode(org, org.Objects[canonical].Definition, parts[1], requireAllParents) {
+					if !requireAllParents {
+						return true
+					}
+					found = true
+					continue
+				}
+				if requireAllParents {
 					return false
 				}
 			}
-			return true
+			return found
 		}
 		return false
 	}
 	_, ok := storage.ResolveFieldName(definition, org.Namespace, field)
 	return ok
+}
+
+func queryHasAggregates(query Query) bool {
+	return len(query.Aggregates) > 0 || len(query.GroupBy) > 0 || query.Having != nil
+}
+
+func aggregateOrderFieldKnown(query Query, field string) bool {
+	if containsName(query.GroupBy, field) {
+		return true
+	}
+	for i, aggregate := range query.Aggregates {
+		if field == fmt.Sprintf("expr%d", i) || (aggregate.Alias != "" && field == aggregate.Alias) {
+			return true
+		}
+	}
+	return false
+}
+
+func fieldUnavailableError(field, mode string) error {
+	if mode != "" {
+		return fmt.Errorf("soql: field %s is not available in %s mode", field, mode)
+	}
+	return fmt.Errorf("soql: unknown field %s", field)
+}
+
+func childRelationshipUnavailableError(relationship, mode string) error {
+	if mode != "" {
+		return fmt.Errorf("soql: unknown child relationship %s in %s mode", relationship, mode)
+	}
+	return fmt.Errorf("soql: unknown child relationship %s", relationship)
+}
+
+func typeofTargetUnavailableError(typeName, mode string) error {
+	if mode != "" {
+		return fmt.Errorf("soql: unknown TYPEOF target %s in %s mode", typeName, mode)
+	}
+	return fmt.Errorf("soql: unknown TYPEOF target %s", typeName)
 }
 
 func isSystemField(field string) bool {

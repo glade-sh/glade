@@ -788,6 +788,81 @@ func TestExecuteSecurityRelationshipWhereRequiresAllParentTargets(t *testing.T) 
 	}
 }
 
+func TestExecuteValidatesReferencesAcrossClauses(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Account",
+			Fields: map[string]storage.Field{
+				"Name":     {APIName: "Name", Type: storage.FieldString},
+				"Active":   {APIName: "Active", Type: storage.FieldBoolean},
+				"Score__c": {APIName: "Score__c", Type: storage.FieldCalculated},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"001000000000001": {ID: "001000000000001", Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("Low"), "Active": storage.BooleanValue(true), "Score__c": storage.IntegerValue(1)}},
+			"001000000000002": {ID: "001000000000002", Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("High"), "Active": storage.BooleanValue(true), "Score__c": storage.IntegerValue(5)}},
+		},
+	}
+
+	cases := []string{
+		"SELECT Missing__c FROM Account",
+		"SELECT Id FROM Account WHERE Missing__c = 'x'",
+		"SELECT Id FROM Account ORDER BY Missing__c",
+		"SELECT COUNT(Id) total FROM Account GROUP BY Active ORDER BY Name",
+	}
+	for _, query := range cases {
+		if _, err := ParseAndExecute(org, query); err == nil || !strings.Contains(err.Error(), "Missing__c") && !strings.Contains(err.Error(), "must be grouped or aggregated") {
+			t.Fatalf("expected validation error for %q, got %v", query, err)
+		}
+	}
+
+	result, err := ParseAndExecute(org, "SELECT Id, Name, Score__c FROM Account WHERE Score__c > 1 WITH USER_MODE ORDER BY Score__c DESC")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 || result.Records[0].Fields["Name"].String != "High" || result.Records[0].Fields["Score__c"].Integer != 5 {
+		t.Fatalf("calculated field result = %#v", result)
+	}
+}
+
+func TestExecuteValidatesRelationshipReferencesAcrossClauses(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Account", Fields: map[string]storage.Field{"Secret__c": {APIName: "Secret__c", Type: storage.FieldString}}},
+		Records:    make(map[storage.ID]storage.Record),
+	}
+	org.Objects["Opportunity"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Opportunity", Fields: map[string]storage.Field{"Amount": {APIName: "Amount", Type: storage.FieldDecimal}}},
+		Records:    make(map[storage.ID]storage.Record),
+	}
+	org.Objects["Task"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Task",
+			Fields: map[string]storage.Field{
+				"WhatId": {APIName: "WhatId", Type: storage.FieldReference, ReferenceTo: []string{"Account", "Opportunity"}, RelationshipName: "What"},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "WhatId",
+				ParentObjects:      []string{"Account", "Opportunity"},
+				ParentRelationship: "What",
+				Polymorphic:        true,
+			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+
+	for _, query := range []string{
+		"SELECT Id, What.Missing__c FROM Task",
+		"SELECT Id FROM Task WHERE What.Missing__c = 'hidden'",
+		"SELECT Id FROM Task ORDER BY What.Missing__c",
+	} {
+		if _, err := ParseAndExecute(org, query); err == nil || !strings.Contains(err.Error(), "What.Missing__c") {
+			t.Fatalf("expected relationship validation error for %q, got %v", query, err)
+		}
+	}
+}
+
 func TestExecuteProjectsChildRelationshipSubquery(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Objects["Account"] = storage.ObjectState{

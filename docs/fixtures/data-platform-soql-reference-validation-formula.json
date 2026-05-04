@@ -1,0 +1,82 @@
+{
+  "name": "data-platform-soql-reference-validation-formula",
+  "evidence": [
+    {
+      "symbol": "SOQL field reference validation",
+      "kind": "test",
+      "notes": "Local SOQL validates SELECT, WHERE, ORDER BY, and polymorphic relationship paths before execution."
+    },
+    {
+      "symbol": "SOQL calculated fields",
+      "kind": "test",
+      "notes": "Formula-backed calculated fields are query-readable from local record state while DML writes remain rejected by the DML layer."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "List<Account> rows = [SELECT Name, Score__c FROM Account WHERE Score__c >= 2 WITH USER_MODE ORDER BY Score__c DESC LIMIT 1]; System.assertEquals(1, rows.size()); Account first = rows.get(0); System.assertEquals('High', first.Name); Object score = first.get('Score__c'); System.assertEquals(5, score); Boolean orderCaught = false; try { Database.query('SELECT Id FROM Account ORDER BY Missing__c'); } catch (QueryException qe) { orderCaught = qe.getMessage().contains('Missing__c'); } System.assert(orderCaught); Boolean relationshipCaught = false; try { Database.query('SELECT Id FROM Task WHERE What.Missing__c = ''hidden'''); } catch (QueryException qe) { relationshipCaught = qe.getMessage().contains('What.Missing__c'); } System.assert(relationshipCaught);"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "List<Account> rows = [SELECT Name, Score__c FROM Account WHERE Score__c >= 2 WITH USER_MODE ORDER BY Score__c DESC LIMIT 1]; System.assertEquals(1, rows.size()); Account first = rows.get(0); System.assertEquals('High', first.Name); Object score = first.get('Score__c'); System.assertEquals(5, score); Boolean orderCaught = false; try { Database.query('SELECT Id FROM Account ORDER BY Missing__c'); } catch (QueryException qe) { orderCaught = qe.getMessage().contains('Missing__c'); } System.assert(orderCaught); Boolean relationshipCaught = false; try { Database.query('SELECT Id FROM Task WHERE What.Missing__c = ''hidden'''); } catch (QueryException qe) { relationshipCaught = qe.getMessage().contains('What.Missing__c'); } System.assert(relationshipCaught);"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  },
+  "schema": [
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Secret__c.field-meta.xml",
+      "content": "<CustomField><fullName>Secret__c</fullName><label>Secret</label><type>Text</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Score__c.field-meta.xml",
+      "content": "<CustomField><fullName>Score__c</fullName><label>Score</label><type>Number</type><formula>5</formula></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Opportunity/Opportunity.object-meta.xml",
+      "content": "<CustomObject><label>Opportunity</label><pluralLabel>Opportunities</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Opportunity/fields/Amount.field-meta.xml",
+      "content": "<CustomField><fullName>Amount</fullName><label>Amount</label><type>Number</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Task/Task.object-meta.xml",
+      "content": "<CustomObject><label>Task</label><pluralLabel>Tasks</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Task/fields/WhatId.field-meta.xml",
+      "content": "<CustomField><fullName>WhatId</fullName><label>Related To</label><type>Lookup</type><referenceTo>Account</referenceTo><referenceTo>Opportunity</referenceTo><relationshipName>What</relationshipName></CustomField>"
+    }
+  ],
+  "seedData": [
+    {
+      "object": "Account",
+      "records": [
+        {
+          "Name": "Low",
+          "Score__c": 1
+        },
+        {
+          "Name": "High",
+          "Score__c": 5
+        }
+      ]
+    }
+  ]
+}
