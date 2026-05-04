@@ -138,7 +138,7 @@ var stdlibEntries = []StdlibEntry{
 	{Area: "Database", API: "Database.merge", Status: StatusPartial, Notes: "Local merge behavior for supported account/contact-style data, including MergeResult merged and updated-related ID accessors."},
 	{Area: "Database", API: "Database.rollback", Status: StatusPartial, Notes: "Local org-state savepoint rollback; no external side effects."},
 	{Area: "Database", API: "Database.setSavepoint", Status: StatusPartial, Notes: "Local org-state snapshots with later-savepoint invalidation."},
-	{Area: "Database", API: "Database.undelete", Status: StatusPartial, Notes: "Soft-delete restoration for supported local records with ENTITY_IS_NOT_DELETED SaveResult errors for active rows."},
+	{Area: "Database", API: "Database.undelete", Status: StatusPartial, Notes: "Soft-delete restoration for supported local records with mixed-row result alignment, allOrNone rollback, ENTITY_IS_NOT_DELETED active-row errors, and ID/object mismatch errors."},
 	{Area: "Database", API: "Database.update", Status: StatusSupported, Notes: "DML pipeline with result/error shapes for supported SObjects."},
 	{Area: "Database", API: "Database.upsert", Status: StatusPartial, Notes: "Schema-backed external-ID matching for supported local records."},
 	{Area: "Data", API: "Custom metadata/custom settings getAll/getInstance", Status: StatusPartial, Notes: "Fixture-backed local __mdt and list custom setting static access supports namespace-stripped object/field names and read-only returned records; hierarchy merge behavior and Metadata API mutation are not modeled."},

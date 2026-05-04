@@ -156,6 +156,57 @@ func TestUndeleteRejectsActiveRecords(t *testing.T) {
 	}
 }
 
+func TestUndeleteMixedRowsKeepResultAlignment(t *testing.T) {
+	org := testOrg()
+	engine := NewEngine(&org)
+	insert := engine.Insert([]storage.Record{
+		{
+			Object: "Account",
+			Fields: map[string]storage.Value{"Name": storage.StringValue("Deleted")},
+		},
+		{
+			Object: "Account",
+			Fields: map[string]storage.Value{"Name": storage.StringValue("Active")},
+		},
+	})
+	if len(insert) != 2 || !insert[0].Success || !insert[1].Success {
+		t.Fatalf("insert = %#v", insert)
+	}
+	deletedID := insert[0].ID
+	activeID := insert[1].ID
+	if deleted := engine.Delete([]storage.Record{{ID: deletedID, Object: "Account"}}); !deleted[0].Success {
+		t.Fatalf("delete = %#v", deleted)
+	}
+
+	results := engine.Undelete([]storage.Record{
+		{ID: deletedID, Object: "Account"},
+		{ID: activeID, Object: "Account"},
+		{ID: "001999999999999", Object: "Account"},
+		{ID: "003000000000001", Object: "Account"},
+	})
+	if len(results) != 4 {
+		t.Fatalf("results len = %d, want 4: %#v", len(results), results)
+	}
+	if !results[0].Success || results[0].ID != deletedID {
+		t.Fatalf("deleted row result = %#v", results[0])
+	}
+	if results[1].Success || results[1].ID != activeID || results[1].StatusCode != "ENTITY_IS_NOT_DELETED" {
+		t.Fatalf("active row result = %#v", results[1])
+	}
+	if results[2].Success || results[2].ID != "001999999999999" || results[2].StatusCode != "ENTITY_IS_DELETED" {
+		t.Fatalf("missing row result = %#v", results[2])
+	}
+	if results[3].Success || results[3].ID != "003000000000001" || results[3].StatusCode != "INVALID_FIELD" {
+		t.Fatalf("mismatched id result = %#v", results[3])
+	}
+	if org.Objects["Account"].Records[deletedID].System.IsDeleted {
+		t.Fatalf("deleted row did not undelete")
+	}
+	if org.Objects["Account"].Records[activeID].System.IsDeleted {
+		t.Fatalf("active row changed")
+	}
+}
+
 func TestLockAndUnlockToggleSystemLock(t *testing.T) {
 	org := testOrg()
 	engine := NewEngine(&org)
