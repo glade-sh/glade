@@ -648,6 +648,10 @@ a Salesforce-shaped local API server without silently wrong behavior.
     unsupported errors instead of fake job success.
 - [ ] Ensure anonymous Apex runs against the same persistent server database,
   transaction boundaries, user context, and limits.
+  - [x] Add black-box server fixture evidence that Tooling
+    `executeAnonymous` commits successful DML into queryable persistent server
+    state, rolls back runtime-error and strict-limit mutations, honors selected
+    bearer user context, and accepts fixture-level strict limit mode.
 - [ ] Add server fixture reset endpoints for test data, org state, limits, and
   async queues.
   - [x] Add local-only `oaer/state` and `oaer/inspect` summaries with supported
@@ -666,6 +670,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     fixture.
   - [x] Cover common top-level REST namespace unsupported route shapes in the
     server black-box fixture.
+  - [x] Cover Tooling `executeAnonymous` persistence, rollback, selected bearer
+    user, and strict-limit edges in the server black-box fixture.
 
 ## 9. Compatibility, Hardening, And Release
 

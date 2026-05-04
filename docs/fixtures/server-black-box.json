@@ -111,6 +111,45 @@
       "contains": ["\"success\":true", "ok"]
     },
     {
+      "name": "execute-anonymous-persisted-query",
+      "method": "GET",
+      "path": "/services/data/v61.0/query?q=SELECT%20Id,%20Name%20FROM%20Account%20WHERE%20Name%20=%20'From%20Apex'",
+      "status": 200,
+      "contains": ["\"totalSize\":1", "From Apex"]
+    },
+    {
+      "name": "execute-anonymous-runtime-error-rolls-back",
+      "method": "POST",
+      "path": "/services/data/v61.0/tooling/executeAnonymous",
+      "body": "{\"anonymousBody\":\"insert new Account(Name = 'Transient'); System.assert(false);\"}",
+      "status": 200,
+      "contains": ["\"success\":false"]
+    },
+    {
+      "name": "execute-anonymous-rollback-query",
+      "method": "GET",
+      "path": "/services/data/v61.0/query?q=SELECT%20Id,%20Name%20FROM%20Account%20WHERE%20Name%20=%20'Transient'",
+      "status": 200,
+      "contains": ["\"totalSize\":0"],
+      "notContains": ["Transient"]
+    },
+    {
+      "name": "execute-anonymous-strict-limit",
+      "method": "POST",
+      "path": "/services/data/v61.0/tooling/executeAnonymous",
+      "body": "{\"anonymousBody\":\"for (Integer i = 0; i < 151; i++) { insert new Account(Name = 'Limit Edge'); }\"}",
+      "status": 200,
+      "contains": ["\"success\":false", "System.LimitException", "Too many dmlStatements"]
+    },
+    {
+      "name": "execute-anonymous-strict-limit-rollback-query",
+      "method": "GET",
+      "path": "/services/data/v61.0/query?q=SELECT%20Id,%20Name%20FROM%20Account%20WHERE%20Name%20=%20'Limit%20Edge'",
+      "status": 200,
+      "contains": ["\"totalSize\":0"],
+      "notContains": ["Limit Edge"]
+    },
+    {
       "name": "execute-anonymous-bearer-userinfo",
       "method": "POST",
       "path": "/services/data/v61.0/tooling/executeAnonymous",
@@ -300,7 +339,8 @@
     }
   ],
   "command": {
-    "kind": "server"
+    "kind": "server",
+    "limitMode": "strict"
   },
   "expected": {
     "result": {
@@ -310,8 +350,8 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 38,
-      "statuses": [200, 200, 200, 200, 200, 200, 201, 200, 200, 200, 501, 200, 200, 200, 200, 200, 200, 200, 400, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 404, 404, 200, 200, 201],
+      "requests": 43,
+      "statuses": [200, 200, 200, 200, 200, 200, 201, 200, 200, 200, 501, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 400, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 404, 404, 200, 200, 201],
       "users": 2
     }
   }

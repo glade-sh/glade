@@ -59,13 +59,14 @@ type RecordLocator struct {
 }
 
 type ServerRequest struct {
-	Name     string            `json:"name,omitempty"`
-	Method   string            `json:"method"`
-	Path     string            `json:"path"`
-	Headers  map[string]string `json:"headers,omitempty"`
-	Body     string            `json:"body,omitempty"`
-	Status   int               `json:"status"`
-	Contains []string          `json:"contains,omitempty"`
+	Name        string            `json:"name,omitempty"`
+	Method      string            `json:"method"`
+	Path        string            `json:"path"`
+	Headers     map[string]string `json:"headers,omitempty"`
+	Body        string            `json:"body,omitempty"`
+	Status      int               `json:"status"`
+	Contains    []string          `json:"contains,omitempty"`
+	NotContains []string          `json:"notContains,omitempty"`
 }
 
 type Invocation struct {
