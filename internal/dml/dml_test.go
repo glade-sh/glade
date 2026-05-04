@@ -67,6 +67,12 @@ func TestInsertValidatesRequiredAndUnknownFields(t *testing.T) {
 	if missing[0].Success || missing[0].Error == "" {
 		t.Fatalf("missing required result = %#v", missing)
 	}
+	if missing[0].StatusCode != "REQUIRED_FIELD_MISSING" || len(missing[0].Fields) != 1 || missing[0].Fields[0] != "Name" {
+		t.Fatalf("missing required detail = %#v", missing[0])
+	}
+	if len(missing[0].Errors) != 1 || missing[0].Errors[0].StatusCode != "REQUIRED_FIELD_MISSING" || missing[0].Errors[0].Fields[0] != "Name" {
+		t.Fatalf("missing required errors = %#v", missing[0].Errors)
+	}
 	unknown := engine.Insert([]storage.Record{{
 		Object: "Account",
 		Fields: map[string]storage.Value{
@@ -76,6 +82,74 @@ func TestInsertValidatesRequiredAndUnknownFields(t *testing.T) {
 	}})
 	if unknown[0].Success || unknown[0].Error == "" {
 		t.Fatalf("unknown field result = %#v", unknown)
+	}
+}
+
+func TestDatabaseErrorDetailsForRequiredDuplicateAndValidationFailures(t *testing.T) {
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Code__c"] = storage.Field{APIName: "Code__c", Type: storage.FieldString, Unique: true}
+	account.Definition.ValidationRules = []storage.ValidationRule{{
+		Name:                  "BlockBadName",
+		Active:                true,
+		ErrorConditionFormula: `Name = "Blocked"`,
+		ErrorMessage:          "blocked by validation rule",
+		ErrorDisplayField:     "Name",
+	}}
+	org.Objects["Account"] = account
+	engine := NewEngine(&org)
+
+	existing := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":    storage.StringValue("Acme"),
+			"Code__c": storage.StringValue("A"),
+		},
+	}})
+	if !existing[0].Success {
+		t.Fatalf("existing insert = %#v", existing)
+	}
+	duplicateValue := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":    storage.StringValue("Other"),
+			"Code__c": storage.StringValue("a"),
+		},
+	}})
+	assertDMLErrorDetail(t, duplicateValue[0], "DUPLICATE_VALUE", "Code__c")
+
+	duplicateID := engine.Insert([]storage.Record{{
+		ID:     existing[0].ID,
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name": storage.StringValue("Same Id"),
+		},
+	}})
+	assertDMLErrorDetail(t, duplicateID[0], "DUPLICATE_VALUE", "Id")
+
+	blocked := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name": storage.StringValue("Blocked"),
+		},
+	}})
+	assertDMLErrorDetail(t, blocked[0], "FIELD_CUSTOM_VALIDATION_EXCEPTION", "Name")
+}
+
+func assertDMLErrorDetail(t *testing.T, result Result, statusCode, field string) {
+	t.Helper()
+	if result.Success || result.StatusCode != statusCode {
+		t.Fatalf("result = %#v, want status %s", result, statusCode)
+	}
+	if len(result.Fields) != 1 || result.Fields[0] != field {
+		t.Fatalf("result fields = %#v, want %s", result.Fields, field)
+	}
+	if len(result.Errors) != 1 {
+		t.Fatalf("errors = %#v, want one", result.Errors)
+	}
+	err := result.Errors[0]
+	if err.StatusCode != statusCode || len(err.Fields) != 1 || err.Fields[0] != field || err.Message == "" {
+		t.Fatalf("error detail = %#v, want %s on %s", err, statusCode, field)
 	}
 }
 

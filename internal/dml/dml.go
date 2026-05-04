@@ -389,7 +389,7 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 		return "", err
 	}
 	if _, exists := object.Records[record.ID]; exists {
-		return "", fmt.Errorf("dml: duplicate id %s", record.ID)
+		return "", dmlErrorf("DUPLICATE_VALUE", []string{"Id"}, "dml: duplicate id %s", record.ID)
 	}
 	stamp := e.systemTimestamp()
 	userID := e.systemUserID()
@@ -671,9 +671,9 @@ func validateRequired(definition storage.ObjectDefinition, record storage.Record
 			continue
 		}
 		if record.ExplicitNulls[name] {
-			return fmt.Errorf("dml: required field %s.%s is null", record.Object, name)
+			return dmlErrorf("REQUIRED_FIELD_MISSING", []string{name}, "dml: required field %s.%s is null", record.Object, name)
 		}
-		return fmt.Errorf("dml: missing required field %s.%s", record.Object, name)
+		return dmlErrorf("REQUIRED_FIELD_MISSING", []string{name}, "dml: missing required field %s.%s", record.Object, name)
 	}
 	return nil
 }
@@ -1007,6 +1007,7 @@ func resultFromError(id storage.ID, err error) Result {
 		fields = extractField(msg)
 	case contains(msg, "duplicate id"):
 		code = "DUPLICATE_VALUE"
+		fields = []string{"Id"}
 	case contains(msg, "deleted"):
 		code = "ENTITY_IS_DELETED"
 	case contains(msg, "update requires id") || contains(msg, "delete requires id") || contains(msg, "undelete requires id"):
