@@ -271,8 +271,10 @@ a Salesforce-shaped local API server without silently wrong behavior.
     `RecordTypeInfo` methods with deterministic local record type IDs.
   - [x] Return SObjectType tokens from `Schema.getGlobalDescribe()` and accept
     both object names and tokens in `Schema.describeSObjects(...)`.
+  - [x] Promote local `DescribeFieldResult` and `DescribeSObjectResult` rows for
+    the supported storage/schema model.
   - [x] Fence unmodeled field sets and dependent picklist controller metadata
-    with stable `UnsupportedFeature` diagnostics.
+    with stable `UnsupportedFeature` diagnostics and separate unsupported rows.
 - [x] Expand static SOQL parsing/execution with `AND`/`OR`, `IN`/`NOT IN`,
   `LIKE`, comparison operators, `NOT`, and parenthesized conditions.
   - **Limitation**: Apex compiler does not support chained method calls
@@ -485,6 +487,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Promote `Test.getStandardPricebookId`, `Test.startTest`, and
     `Test.stopTest` for the supported local test/drain model; keep broader mock
     surfaces partial or unsupported with typed diagnostics.
+  - [x] Promote fixture-backed custom metadata and list custom setting
+    `getAll/getInstance`; fence hierarchy custom setting merge behavior as an
+    explicit unsupported data seam.
   - [x] Add common JSON overloads for `serialize(value, suppressApexObjectNulls)`,
     `serializePretty`, and `deserializeStrict`.
   - [x] Reject duplicate object fields in `JSON.deserializeStrict` before typed

@@ -1763,6 +1763,9 @@ func (vm *VM) callCustomDataStaticMember(typeName, method string, args []Value) 
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("%s.getAll expects 0 arguments", typeName)
 		}
+		if err := unsupportedHierarchyCustomSettingStatic(definition, typeName, method); err != nil {
+			return Null, true, err
+		}
 		out := Map()
 		out.Type = "Map<String," + objectName + ">"
 		object := vm.Org.Objects[objectName]
@@ -1785,14 +1788,32 @@ func (vm *VM) callCustomDataStaticMember(typeName, method string, args []Value) 
 		}
 		return out, true, nil
 	case "getInstance":
+		if err := unsupportedHierarchyCustomSettingStatic(definition, typeName, method); err != nil {
+			return Null, true, err
+		}
 		record, found, err := vm.customDataGetInstance(objectName, definition, kind, args)
 		if err != nil || !found {
 			return Null, true, err
 		}
 		return vm.readOnlyCustomDataValue(record, kind), true, nil
+	case "getOrgDefaults", "getValues":
+		if err := unsupportedHierarchyCustomSettingStatic(definition, typeName, method); err != nil {
+			return Null, true, err
+		}
+		return Null, true, unsupportedCallError(typeName + "." + method)
 	default:
 		return Null, false, nil
 	}
+}
+
+func unsupportedHierarchyCustomSettingStatic(definition storage.ObjectDefinition, typeName, method string) error {
+	if !storage.IsCustomSettingDefinition(definition) {
+		return nil
+	}
+	if strings.EqualFold(definition.Metadata["customSettingsType"], "Hierarchy") {
+		return unsupportedCallError(typeName + "." + method + " hierarchy custom setting merge behavior")
+	}
+	return nil
 }
 
 func (vm *VM) customDataObject(typeName string) (string, storage.ObjectDefinition, string, bool) {

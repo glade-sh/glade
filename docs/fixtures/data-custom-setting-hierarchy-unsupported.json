@@ -1,0 +1,43 @@
+{
+  "name": "data-custom-setting-hierarchy-unsupported",
+  "evidence": [
+    {
+      "symbol": "HierarchyCustomSetting.getOrgDefaults",
+      "kind": "exec",
+      "notes": "Hierarchy custom setting merge behavior is not modeled locally and returns a stable UnsupportedFeature diagnostic."
+    }
+  ],
+  "schema": [
+    {
+      "path": "force-app/main/default/objects/Hierarchy_Setting__c/Hierarchy_Setting__c.object-meta.xml",
+      "content": "<CustomObject><label>Hierarchy Setting</label><pluralLabel>Hierarchy Settings</pluralLabel><customSettingsType>Hierarchy</customSettingsType></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Hierarchy_Setting__c/fields/Enabled__c.field-meta.xml",
+      "content": "<CustomField><fullName>Enabled__c</fullName><label>Enabled</label><type>Checkbox</type></CustomField>"
+    }
+  ],
+  "seedData": [
+    {
+      "object": "Hierarchy_Setting__c",
+      "records": [
+        {
+          "SetupOwnerId": "00D000000000001",
+          "Enabled__c": true
+        }
+      ]
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Hierarchy_Setting__c.getOrgDefaults();"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"Hierarchy_Setting__c.getOrgDefaults hierarchy custom setting merge behavior\""
+    }
+  }
+}

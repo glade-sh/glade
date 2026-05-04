@@ -27,7 +27,9 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Crypto | `Crypto.encrypt/decrypt/sign/verify` | `unsupported` | Encrypt/decrypt, managed-IV variants, signing, verification, org key, keystore, certificate, and random key-generation surfaces return explicit UnsupportedFeature diagnostics; no fake local key material is modeled. |
 | Crypto | `Crypto.generateDigest` | `supported` | MD5, SHA1, SHA-256, SHA-512, SHA3-256/384/512, with conservative algorithm normalization. |
 | Crypto | `Crypto.generateMac` | `supported` | HMAC MD5, SHA1, SHA256, and SHA512 with local Blob keys and conservative algorithm normalization. |
-| Data | `Custom metadata/custom settings getAll/getInstance` | `partial` | Fixture-backed local __mdt and list custom setting static access supports namespace-stripped object/field names and read-only returned records; hierarchy merge behavior and Metadata API mutation are not modeled. |
+| Data | `Custom metadata/list custom setting getAll/getInstance` | `supported` | Fixture-backed local __mdt and list custom setting static access supports namespace-stripped object/field names and read-only returned records. |
+| Data | `Hierarchy custom setting merge behavior` | `unsupported` | Hierarchy custom setting static accessors return fixture-backed UnsupportedFeature diagnostics until org/profile/user merge behavior is modeled. |
+| Data | `Metadata mutation for custom metadata/settings` | `unsupported` | Local custom metadata and custom setting static rows are read-only; Metadata API mutation is outside the local runtime model. |
 | Database | `Database.convertLead` | `unsupported` | Lead conversion returns an explicit UnsupportedFeature diagnostic until local lead/account/contact/opportunity side effects are modeled. |
 | Database | `Database.delete` | `supported` | DML pipeline with DeleteResult id/success/errors accessors and structured status/message/fields details for supported SObjects. |
 | Database | `Database.emptyRecycleBin` | `supported` | Permanently removes already-deleted local rows and returns EmptyRecycleBinResult id/success/errors accessors including active-row ENTITY_IS_NOT_IN_RECYCLE_BIN errors; retention policy and full platform recycle-bin lifecycle are outside the local model. |
@@ -243,8 +245,10 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | RoundingMode | `RoundingMode.toString` | `supported` | Returns deterministic built-in enum member text for Decimal rounding modes. |
 | RoundingMode | `RoundingMode.valueOf` | `supported` | Constructs built-in Decimal rounding-mode enum tokens by exact name with stable invalid-name errors. |
 | RoundingMode | `RoundingMode.values` | `supported` | Returns UP, DOWN, CEILING, FLOOR, HALF_UP, HALF_DOWN, HALF_EVEN, and UNNECESSARY in deterministic order. |
-| Schema | `DescribeFieldResult` | `partial` | Common field metadata, reference/picklist entries, and access booleans; dependent picklist controller metadata is explicitly unsupported. |
-| Schema | `DescribeSObjectResult` | `partial` | Common object metadata, fields, record types, and child relationships; field sets are explicitly unsupported. |
+| Schema | `DescribeFieldResult` | `supported` | Fixture-backed local field metadata covers names, labels, types, nillable/external-id/unique flags, reference targets, relationship names, picklist entries, and access booleans. |
+| Schema | `DescribeFieldResult dependent picklist metadata` | `unsupported` | getController/getControllerValues return fixture-backed UnsupportedFeature diagnostics until dependent picklist controller metadata is modeled. |
+| Schema | `DescribeSObjectResult` | `supported` | Fixture-backed local object metadata covers names, labels, key prefixes, fields, record types, child relationships, and common access booleans. |
+| Schema | `DescribeSObjectResult field sets` | `unsupported` | fieldSets.getMap returns a fixture-backed UnsupportedFeature diagnostic until local field set metadata is modeled. |
 | Schema | `Schema.describeSObjects` | `supported` | Fixture-backed local schema object-name and SObjectType-token lists return DescribeSObjectResult values. |
 | Schema | `Schema.getGlobalDescribe` | `supported` | Fixture-backed local schema map returns SObjectType tokens keyed by object API name. |
 | Search | `Search.* / SOSL FIND` | `unsupported` | Cloud search and SOSL execution are not locally modeled; calls return explicit UnsupportedFeature diagnostics. |
