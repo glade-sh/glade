@@ -46,6 +46,27 @@ System.assert(Limits.getCpuTime() > 0);
 	}
 }
 
+func TestExecLimitsDMLDocumentedCasingAliases(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(0, Limits.getDMLStatements());
+System.assertEquals(150, Limits.getLimitDMLStatements());
+System.assertEquals(0, Limits.getDMLRows());
+System.assertEquals(10000, Limits.getLimitDMLRows());
+insert new Account(Name = 'Acme');
+System.assertEquals(1, Limits.getDMLStatements());
+System.assertEquals(1, Limits.getDMLRows());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 	cases := []struct {
 		name string

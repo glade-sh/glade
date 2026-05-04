@@ -408,6 +408,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
   DML paths.
   - [x] Count cascade-deleted child records toward `Limits.getDmlRows()` for
     supported relationship metadata.
+  - [x] Accept documented `Limits.getDML*` getter casing aliases backed by the
+    same tracked DML statement and row counters.
 - [x] Improve heap size approximation and expose predictable diagnostics for
   unsupported heap fidelity.
   - [x] Recompute deterministic live heap usage after statements so mutated

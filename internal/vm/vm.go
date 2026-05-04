@@ -1137,6 +1137,7 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		return vm.executeDatabaseMerge(args, result)
 	case "Limits.getQueries", "Limits.getLimitQueries", "Limits.getQueryRows", "Limits.getLimitQueryRows",
 		"Limits.getDmlStatements", "Limits.getLimitDmlStatements", "Limits.getDmlRows", "Limits.getLimitDmlRows",
+		"Limits.getDMLStatements", "Limits.getLimitDMLStatements", "Limits.getDMLRows", "Limits.getLimitDMLRows",
 		"Limits.getHeapSize", "Limits.getLimitHeapSize", "Limits.getCpuTime", "Limits.getLimitCpuTime",
 		"Limits.getCallouts", "Limits.getLimitCallouts", "Limits.getQueueableJobs", "Limits.getLimitQueueableJobs",
 		"Limits.getFutureCalls", "Limits.getLimitFutureCalls", "Limits.getAsyncJobs", "Limits.getLimitAsyncJobs",
