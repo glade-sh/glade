@@ -260,6 +260,20 @@ func TestRunJSONGeneratorFieldNameInArrayFixture(t *testing.T) {
 	}
 }
 
+func TestRunJSONGeneratorEndObjectInArrayFixture(t *testing.T) {
+	fixture, err := LoadFile("../../docs/fixtures/core-json-generator-end-object-in-array.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := Run(fixture)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.OK {
+		t.Fatalf("result = %#v", result)
+	}
+}
+
 func TestRunUnsupportedExecFixtureMatchesExpectedError(t *testing.T) {
 	fixture := Fixture{
 		Name:    "unsupported-exec-call",
