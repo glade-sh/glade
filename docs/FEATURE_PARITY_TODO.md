@@ -628,6 +628,10 @@ a Salesforce-shaped local API server without silently wrong behavior.
     layouts stub for local tooling probes.
   - [x] Return explicit unsupported default-values responses and malformed-ID
     errors for literal row-template placeholders advertised by SObject resources.
+  - [x] Add conservative `/sobjects/{Object}/updated` and
+    `/sobjects/{Object}/deleted` resources backed by local record system
+    timestamps, soft-delete flags, deterministic ID ordering, optional
+    start/end bounds, and Salesforce-shaped malformed-date errors.
   - [x] Cover missing/deleted record GET, missing DELETE, null PATCH, and method
     `Allow` headers in server tests.
 - [ ] Expand Tooling API coverage beyond `executeAnonymous` and query
@@ -679,6 +683,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
   executeAnonymous, composite, errors, auth stubs, and persistence.
   - [x] Cover SObject object-resource metadata and unknown-object resource
     errors in the server black-box fixture.
+  - [x] Cover SObject updated/deleted resource happy paths in the server
+    black-box fixture.
   - [x] Cover Tooling and Bulk unsupported route shapes in the server black-box
     fixture.
   - [x] Cover common Bulk API v2 job subroute unsupported shapes in the server

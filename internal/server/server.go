@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/open-aer/oaer/internal/dml"
 	"github.com/open-aer/oaer/internal/soql"
@@ -242,6 +243,31 @@ func (s *Server) handleObject(w http.ResponseWriter, r *http.Request, version st
 			return
 		}
 		writeJSON(w, http.StatusOK, recentPayload(object, version))
+	case len(parts) == 2 && (parts[1] == "updated" || parts[1] == "deleted"):
+		object, ok := s.Org.Objects[objectName]
+		if !ok {
+			writeSalesforceError(w, errUnknownObject)
+			return
+		}
+		if r.Method != http.MethodGet {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
+		if parts[1] == "updated" {
+			payload, err := updatedPayload(object, r)
+			if err != nil {
+				writeSalesforceError(w, errMalformedQuery, err.Error())
+				return
+			}
+			writeJSON(w, http.StatusOK, payload)
+			return
+		}
+		payload, err := deletedPayload(object, r)
+		if err != nil {
+			writeSalesforceError(w, errMalformedQuery, err.Error())
+			return
+		}
+		writeJSON(w, http.StatusOK, payload)
 	case len(parts) == 1 && r.Method == http.MethodGet:
 		object, ok := s.Org.Objects[objectName]
 		if !ok {
@@ -1291,6 +1317,8 @@ func objectResourcePayload(def storage.ObjectDefinition, version string) map[str
 			"defaultValues":  base + "/defaultValues?recordTypeId&fields",
 			"describe":       describe,
 			"recent":         recent,
+			"updated":        base + "/updated",
+			"deleted":        base + "/deleted",
 			"items":          base,
 			"layouts":        describe + "/layouts",
 			"compactLayouts": base + "/compactLayouts",
@@ -1389,6 +1417,186 @@ func recentPayload(object storage.ObjectState, version string) []map[string]any 
 		out = append(out, map[string]any{"Id": id, "Name": name, "attributes": map[string]any{"type": objectName, "url": "/services/data/" + version + "/sobjects/" + objectName + "/" + id}})
 	}
 	return out
+}
+
+type updatedResourcePayload struct {
+	LatestDateCovered string   `json:"latestDateCovered"`
+	IDs               []string `json:"ids"`
+}
+
+type deletedResourcePayload struct {
+	EarliestDateAvailable string                 `json:"earliestDateAvailable"`
+	LatestDateCovered     string                 `json:"latestDateCovered"`
+	DeletedRecords        []deletedResourceEntry `json:"deletedRecords"`
+}
+
+type deletedResourceEntry struct {
+	ID          string `json:"id"`
+	DeletedDate string `json:"deletedDate"`
+}
+
+func updatedPayload(object storage.ObjectState, r *http.Request) (updatedResourcePayload, error) {
+	bounds, err := queryDateBounds(r)
+	if err != nil {
+		return updatedResourcePayload{}, err
+	}
+	ids := make([]string, 0, len(object.Records))
+	latest := ""
+	for id, record := range object.Records {
+		if record.System.IsDeleted {
+			continue
+		}
+		stamp := recordChangeTimestamp(record.System)
+		if stamp == "" || !timestampInBounds(stamp, bounds) {
+			continue
+		}
+		ids = append(ids, string(id))
+		if compareTimestamps(stamp, latest) > 0 {
+			latest = stamp
+		}
+	}
+	sort.Strings(ids)
+	return updatedResourcePayload{LatestDateCovered: latest, IDs: ids}, nil
+}
+
+func deletedPayload(object storage.ObjectState, r *http.Request) (deletedResourcePayload, error) {
+	bounds, err := queryDateBounds(r)
+	if err != nil {
+		return deletedResourcePayload{}, err
+	}
+	ids := make([]string, 0, len(object.Records))
+	deletedDates := make(map[string]string, len(object.Records))
+	earliest := ""
+	latest := ""
+	for id, record := range object.Records {
+		if !record.System.IsDeleted {
+			continue
+		}
+		stamp := recordChangeTimestamp(record.System)
+		if stamp == "" || !timestampInBounds(stamp, bounds) {
+			continue
+		}
+		stringID := string(id)
+		ids = append(ids, stringID)
+		deletedDates[stringID] = stamp
+		if earliest == "" || compareTimestamps(stamp, earliest) < 0 {
+			earliest = stamp
+		}
+		if compareTimestamps(stamp, latest) > 0 {
+			latest = stamp
+		}
+	}
+	sort.Strings(ids)
+	records := make([]deletedResourceEntry, 0, len(ids))
+	for _, id := range ids {
+		records = append(records, deletedResourceEntry{ID: id, DeletedDate: deletedDates[id]})
+	}
+	return deletedResourcePayload{EarliestDateAvailable: earliest, LatestDateCovered: latest, DeletedRecords: records}, nil
+}
+
+type dateBounds struct {
+	hasStart bool
+	start    time.Time
+	hasEnd   bool
+	end      time.Time
+}
+
+func queryDateBounds(r *http.Request) (dateBounds, error) {
+	query := r.URL.Query()
+	var bounds dateBounds
+	if raw := firstQueryValue(query, "start", "startDate"); raw != "" {
+		start, err := parseRESTTimestamp(raw)
+		if err != nil {
+			return bounds, fmt.Errorf("malformed start date %q", raw)
+		}
+		bounds.hasStart = true
+		bounds.start = start
+	}
+	if raw := firstQueryValue(query, "end", "endDate"); raw != "" {
+		end, err := parseRESTTimestamp(raw)
+		if err != nil {
+			return bounds, fmt.Errorf("malformed end date %q", raw)
+		}
+		bounds.hasEnd = true
+		bounds.end = end
+	}
+	return bounds, nil
+}
+
+func firstQueryValue(query map[string][]string, names ...string) string {
+	for _, name := range names {
+		for _, value := range query[name] {
+			if value != "" {
+				return value
+			}
+		}
+	}
+	return ""
+}
+
+func recordChangeTimestamp(system storage.SystemFields) string {
+	if system.LastModifiedDate != "" {
+		return system.LastModifiedDate
+	}
+	if system.SystemModstamp != "" {
+		return system.SystemModstamp
+	}
+	return system.CreatedDate
+}
+
+func timestampInBounds(stamp string, bounds dateBounds) bool {
+	if !bounds.hasStart && !bounds.hasEnd {
+		return true
+	}
+	parsed, err := parseRESTTimestamp(stamp)
+	if err != nil {
+		return false
+	}
+	if bounds.hasStart && parsed.Before(bounds.start) {
+		return false
+	}
+	if bounds.hasEnd && !parsed.Before(bounds.end) {
+		return false
+	}
+	return true
+}
+
+func compareTimestamps(left, right string) int {
+	if right == "" {
+		if left == "" {
+			return 0
+		}
+		return 1
+	}
+	leftTime, leftErr := parseRESTTimestamp(left)
+	rightTime, rightErr := parseRESTTimestamp(right)
+	if leftErr == nil && rightErr == nil {
+		switch {
+		case leftTime.Before(rightTime):
+			return -1
+		case leftTime.After(rightTime):
+			return 1
+		default:
+			return 0
+		}
+	}
+	return strings.Compare(left, right)
+}
+
+func parseRESTTimestamp(value string) (time.Time, error) {
+	layouts := []string{
+		time.RFC3339Nano,
+		"2006-01-02T15:04:05.000-0700",
+		"2006-01-02T15:04:05.000Z0700",
+		"2006-01-02T15:04:05-0700",
+		"2006-01-02T15:04:05Z0700",
+	}
+	for _, layout := range layouts {
+		if parsed, err := time.Parse(layout, value); err == nil {
+			return parsed, nil
+		}
+	}
+	return time.Time{}, fmt.Errorf("malformed date")
 }
 
 func recentAllPayload(org storage.OrgState, version string) []map[string]any {
