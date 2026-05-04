@@ -631,6 +631,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
     timeout, status, and body/blob accessors.
   - [x] Add local compressed-flag and deterministic header-key coverage for
     mock-only request/response shapes.
+  - [x] Fence client-certificate callout setters with stable UnsupportedFeature
+    diagnostics; local cert material and static-resource callout mocks are not
+    modeled.
   - **Limitation**: Local execution remains mock-first; real outbound network
     callout transport is intentionally not modeled.
 - [x] Complete `UserInfo`, `FeatureManagement`, `Messaging`, `ApexPages`,
@@ -640,8 +643,10 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Add `Messaging.SingleEmailMessage` setters and structured
     `SendEmailResult` basics.
   - [x] Expand message-shape setters for address, body, threading, template
-    reference, activity, signature, and attachment fields while keeping
+    reference, activity, signature, opt-out, and attachment fields while keeping
     delivery/template transport fenced unsupported.
+  - [x] Return one local `Messaging.SendEmailResult` per input message and
+    support the Boolean `allOrNothing` overload without modeling transport.
   - [x] Add `ApexPages` message storage, current page, `PageReference`, and
     deterministic org `URL` basics.
   - [x] Cover `URL` authority user-info parsing and bounded FTP default-port

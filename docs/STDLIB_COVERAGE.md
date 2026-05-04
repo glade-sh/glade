@@ -111,7 +111,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Exception | `Exception.toString` | `supported` | Returns System-prefixed local exception type and message text. |
 | FeatureManagement | `FeatureManagement.checkPermission` | `partial` | Checks local runAs permission-list state. |
 | HTTP | `Http.send` | `partial` | Mock-first local callouts with request validation and callout accounting; real network transport remains explicitly unsupported. |
-| HTTP | `HttpRequest` | `partial` | Endpoint, method, compressed flag, deterministic case-insensitive headers/header keys, timeout validation/defaults, body, and blob body accessors; transport-only certificate/resource surfaces remain fenced. |
+| HTTP | `HttpRequest` | `partial` | Endpoint, method, compressed flag, deterministic case-insensitive headers/header keys, timeout validation/defaults, body, and blob body accessors; client-certificate and static-resource callout surfaces remain explicit unsupported seams. |
 | HTTP | `HttpResponse` | `partial` | Status, status code, deterministic case-insensitive headers/header keys, body, and blob body accessors for local mock responses. |
 | Id | `Id.getSObjectType` | `partial` | Resolves local schema key prefixes and a bounded common standard prefix table to Schema.SObjectType tokens; unknown shape-valid prefixes return a stable error. |
 | Id | `Id.to15` | `supported` | Converts validated 18-character IDs to their 15-character prefix. |
@@ -198,8 +198,8 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Math | `Math.sqrt` | `supported` | Numeric values. |
 | Math | `Math.tan` | `supported` | Finite deterministic result for numeric values. |
 | Messaging | `Messaging.SendEmailResult` | `partial` | Local success result exposes isSuccess and getErrors getters. |
-| Messaging | `Messaging.SingleEmailMessage` | `partial` | Common address, body, threading, template-reference, activity, signature, and attachment setters populate the local message shape; no delivery transport. |
-| Messaging | `Messaging.sendEmail` | `partial` | Single-list overload returns local SendEmailResult and increments email limits; transport/options/template surfaces are unsupported. |
+| Messaging | `Messaging.SingleEmailMessage` | `partial` | Common address, body, threading, template-reference, activity, signature, opt-out, and attachment setters populate the local message shape; no delivery transport. |
+| Messaging | `Messaging.sendEmail` | `partial` | List overloads, including Boolean allOrNothing, return one local SendEmailResult per message and increment email limits; transport/template and richer send-options surfaces remain unsupported. |
 | Object | `Object.equals` | `supported` | Uses local value equality for primitives, collections, platform scalars, and object identity. |
 | Object | `Object.hashCode` | `supported` | Deterministic within local value equality; object identity hashes are request-local. |
 | Object | `Object.toString` | `supported` | Returns local string forms for primitives, collections, platform scalars, and objects. |
@@ -232,7 +232,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | QuickAction | `QuickAction namespace` | `unsupported` | Quick action UI execution and discovery calls return fixture-backed UnsupportedFeature diagnostics. |
 | REST | `@RestResource local server dispatch` | `unsupported` | Custom Apex REST dispatch returns a stable unsupported error from the local server. |
 | REST | `RestContext.request / RestContext.response` | `partial` | VM-local static slots support RestRequest assignment and lazy RestResponse creation; no platform request lifecycle dispatch is modeled. |
-| REST | `RestRequest / RestResponse object shapes` | `partial` | Local request/response objects expose URI/path/method/address, params, case-insensitive headers/getHeader helpers, Blob body, and status covered by compatibility fixtures; broader Apex REST dispatch lifecycle remains unsupported. |
+| REST | `RestRequest / RestResponse object shapes` | `partial` | Local request/response objects expose URI/path/method/address, params, deterministic key helpers, case-insensitive headers/getHeader helpers, Blob body, and status covered by compatibility fixtures; broader Apex REST dispatch lifecycle remains unsupported. |
 | RoundingMode | `RoundingMode.name` | `supported` | Returns deterministic built-in enum member text for Decimal rounding modes. |
 | RoundingMode | `RoundingMode.ordinal` | `supported` | Returns deterministic built-in enum order for UP, DOWN, CEILING, FLOOR, HALF_UP, HALF_DOWN, HALF_EVEN, and UNNECESSARY. |
 | RoundingMode | `RoundingMode.toString` | `supported` | Returns deterministic built-in enum member text for Decimal rounding modes. |

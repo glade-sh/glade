@@ -434,11 +434,17 @@ msg.setTreatBodiesAsTemplate(false);
 msg.setTreatTargetObjectAsRecipient(false);
 msg.setUseSignature(false);
 msg.setEntityAttachments(new List<String>{'015000000000001'});
+msg.setDocumentAttachments(new List<String>{'015000000000002'});
+msg.setTargetObjectIds(new List<String>{'003000000000002'});
+msg.setOptOutPolicy('FILTER');
 msg.setFileAttachments(new List<Object>{});
-List<Messaging.SendEmailResult> results = Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{msg});
+Messaging.SingleEmailMessage second = new Messaging.SingleEmailMessage();
+second.setToAddresses(new List<String>{'second@example.test'});
+List<Messaging.SendEmailResult> results = Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{msg, second}, false);
 System.assertEquals(1, Limits.getEmailInvocations());
-System.assertEquals(1, results.size());
+System.assertEquals(2, results.size());
 System.assert(results.get(0).isSuccess());
+System.assert(results.get(1).isSuccess());
 System.assertEquals(0, results.get(0).getErrors().size());
 `)
 	if err != nil {
@@ -460,9 +466,9 @@ System.assertEquals(0, results.get(0).getErrors().size());
 			want: `Messaging.sendEmail expects List`,
 		},
 		{
-			name: "all-or-nothing overload",
-			src:  `Messaging.sendEmail(new List<Messaging.SingleEmailMessage>(), true);`,
-			want: `unsupported call "Messaging.sendEmail allOrNothing/options overloads"`,
+			name: "send-options overload",
+			src:  `Messaging.sendEmail(new List<Messaging.SingleEmailMessage>(), 'options');`,
+			want: `unsupported call "Messaging.sendEmail send options overloads"`,
 		},
 		{
 			name: "template surface",
@@ -2444,6 +2450,16 @@ func TestExecUnsupportedHttpCalloutSurfacesHaveStableShape(t *testing.T) {
 			name: "continuation-constructor",
 			src:  `Continuation cont = new Continuation(60);`,
 			want: `unsupported call "Continuation constructor local continuation callout surface"`,
+		},
+		{
+			name: "client-certificate-name",
+			src:  `HttpRequest req = new HttpRequest(); req.setClientCertificateName('LocalCert');`,
+			want: `unsupported call "HttpRequest.setClientCertificateName local client certificate callout surface"`,
+		},
+		{
+			name: "client-certificate-material",
+			src:  `HttpRequest req = new HttpRequest(); req.setClientCertificate('cert', 'password');`,
+			want: `unsupported call "HttpRequest.setClientCertificate local client certificate callout surface"`,
 		},
 	}
 	for _, tc := range cases {
