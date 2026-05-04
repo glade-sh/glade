@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -586,6 +587,100 @@ func TestSObjectCRUDMissingAndDeletedEdges(t *testing.T) {
 	}
 	if bytes.Contains(allRecent.Body.Bytes(), []byte(`To Delete`)) || bytes.Contains(allRecent.Body.Bytes(), []byte(created.ID)) {
 		t.Fatalf("aggregate recent exposed deleted record: %s", allRecent.Body.String())
+	}
+}
+
+func TestRecentResourcesHonorLimitQuery(t *testing.T) {
+	org := testOrg()
+	for i := 1; i <= 3; i++ {
+		addAccountForTest(&org, storage.ID(fmt.Sprintf("001000000000%03d", i)), fmt.Sprintf("Account %d", i))
+	}
+	handler := New(&org)
+
+	objectRecent := httptest.NewRecorder()
+	handler.ServeHTTP(objectRecent, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/recent?limit=2", nil))
+	if objectRecent.Code != http.StatusOK {
+		t.Fatalf("object recent status = %d body=%s", objectRecent.Code, objectRecent.Body.String())
+	}
+	objectItems := decodeRecentItems(t, objectRecent)
+	if len(objectItems) != 2 || objectItems[0]["Id"] != "001000000000003" || objectItems[1]["Id"] != "001000000000002" {
+		t.Fatalf("object recent items = %#v", objectItems)
+	}
+
+	globalRecent := httptest.NewRecorder()
+	handler.ServeHTTP(globalRecent, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/recent?limit=1", nil))
+	if globalRecent.Code != http.StatusOK {
+		t.Fatalf("global recent status = %d body=%s", globalRecent.Code, globalRecent.Body.String())
+	}
+	globalItems := decodeRecentItems(t, globalRecent)
+	if len(globalItems) != 1 || globalItems[0]["Id"] != "001000000000003" {
+		t.Fatalf("global recent items = %#v", globalItems)
+	}
+}
+
+func TestRecentResourcesUseDefaultLimitForAbsentAndBlank(t *testing.T) {
+	org := testOrg()
+	for i := 1; i <= 26; i++ {
+		addAccountForTest(&org, storage.ID(fmt.Sprintf("001000000000%03d", i)), fmt.Sprintf("Account %d", i))
+	}
+	handler := New(&org)
+
+	for _, path := range []string{
+		"/services/data/v61.0/sobjects/Account/recent",
+		"/services/data/v61.0/sobjects/Account/recent?limit=",
+	} {
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("recent status for %s = %d body=%s", path, rec.Code, rec.Body.String())
+		}
+		items := decodeRecentItems(t, rec)
+		if len(items) != 25 || items[0]["Id"] != "001000000000026" || items[24]["Id"] != "001000000000002" {
+			t.Fatalf("recent items for %s = len %d %#v", path, len(items), items)
+		}
+	}
+}
+
+func TestRecentResourcesRejectMalformedLimit(t *testing.T) {
+	org := testOrg()
+	addAccountForTest(&org, "001000000000001", "Acme")
+	handler := New(&org)
+
+	for _, raw := range []string{"0", "-1", "abc", "1.5"} {
+		path := "/services/data/v61.0/sobjects/Account/recent?limit=" + raw
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+		assertSalesforceError(t, rec, http.StatusBadRequest, "MALFORMED_QUERY", "limit must be a positive integer no greater than 200")
+	}
+}
+
+func TestRecentResourcesRejectTooLargeLimit(t *testing.T) {
+	org := testOrg()
+	addAccountForTest(&org, "001000000000001", "Acme")
+	handler := New(&org)
+
+	for _, path := range []string{
+		"/services/data/v61.0/recent?limit=201",
+		"/services/data/v61.0/sobjects/Account/recent?limit=201",
+	} {
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+		assertSalesforceError(t, rec, http.StatusBadRequest, "MALFORMED_QUERY", "limit must be a positive integer no greater than 200")
+	}
+}
+
+func TestRecentResourcesMethodHandlingIgnoresLimit(t *testing.T) {
+	org := testOrg()
+	addAccountForTest(&org, "001000000000001", "Acme")
+	handler := New(&org)
+
+	for _, path := range []string{
+		"/services/data/v61.0/recent?limit=1",
+		"/services/data/v61.0/sobjects/Account/recent?limit=1",
+	} {
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, path, nil))
+		assertSalesforceError(t, rec, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
 	}
 }
 
@@ -2778,6 +2873,15 @@ func TestSalesforceErrorResponses(t *testing.T) {
 			}
 		})
 	}
+}
+
+func decodeRecentItems(t *testing.T, res *httptest.ResponseRecorder) []map[string]any {
+	t.Helper()
+	var items []map[string]any
+	if err := json.Unmarshal(res.Body.Bytes(), &items); err != nil {
+		t.Fatal(err)
+	}
+	return items
 }
 
 func assertSalesforceError(t *testing.T, res *httptest.ResponseRecorder, status int, code, messageContains string) {
