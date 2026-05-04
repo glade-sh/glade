@@ -472,6 +472,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
     catchable `JSONException` mapping failures.
   - [x] Map registered Apex class JSON fields through inherited field metadata,
     nested object/list/map/set field types, and default missing field slots.
+  - [x] Register source-backed Apex DTO classes for auto-discovered exec
+    fixtures so typed JSON deserialize/strict and serialize roundtrips cover
+    inherited fields, properties, nested DTO collections, and missing defaults.
   - [x] Reject `JSONGenerator.writeFieldName(...)` inside arrays with catchable
     `JSONException` while preserving array writes after the failed call.
   - [x] Reject `JSONGenerator.writeEndObject()` inside arrays with catchable

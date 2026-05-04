@@ -1,0 +1,50 @@
+{
+  "name": "core-json-source-dto-roundtrip",
+  "evidence": [
+    {
+      "symbol": "JSON.deserialize",
+      "kind": "exec",
+      "notes": "Source-backed Apex DTO classes are registered for exec fixtures and typed deserialization maps inherited fields, properties, nested DTO lists, sets, maps, and missing defaults."
+    },
+    {
+      "symbol": "JSON.deserializeStrict",
+      "kind": "exec",
+      "notes": "Strict source-backed DTO deserialization rejects unknown nested DTO fields with catchable JSONException."
+    },
+    {
+      "symbol": "JSON.serialize",
+      "kind": "exec",
+      "notes": "Source-backed DTO deserialize/serialize roundtrip preserves nested fields and suppresses Apex object null fields when requested."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/classes/JsonDTOBase.cls",
+      "content": "public class JsonDTOBase { public String ExternalId; }"
+    },
+    {
+      "path": "force-app/main/default/classes/JsonDTOAddress.cls",
+      "content": "public class JsonDTOAddress { public String City { get; set; } public Integer Zip; }"
+    },
+    {
+      "path": "force-app/main/default/classes/JsonDTO.cls",
+      "content": "public class JsonDTO extends JsonDTOBase { public String Name { get; set; } public JsonDTOAddress Primary; public List<JsonDTOAddress> Addresses; public Set<String> Tags; public Map<String, Integer> Scores; public String Missing; }"
+    },
+    {
+      "path": "anonymous.apex",
+      "content": "JsonDTO dto = JSON.deserialize('{\"ExternalId\":\"E-7\",\"Name\":\"Ada\",\"Primary\":{\"City\":\"Delta\",\"Zip\":99501},\"Addresses\":[{\"City\":\"Port\",\"Zip\":1}],\"Tags\":[\"north\",\"north\",\"south\"],\"Scores\":{\"trail\":10}}', JsonDTO.class);\nSystem.assertEquals('E-7', dto.ExternalId);\nSystem.assertEquals('Ada', dto.Name);\nSystem.assertEquals('Delta', dto.Primary.City);\nSystem.assertEquals(1, dto.Addresses.size());\nJsonDTOAddress first = dto.Addresses.get(0);\nSystem.assertEquals('Port', first.City);\nSystem.assertEquals(2, dto.Tags.size());\nSystem.assert(dto.Tags.contains('north'));\nSystem.assert(dto.Tags.contains('south'));\nSystem.assertEquals(10, dto.Scores.get('trail'));\nSystem.assertEquals(null, dto.Missing);\nBoolean strictCaught = false;\ntry {\n  JsonDTO bad = JSON.deserializeStrict('{\"Name\":\"Ada\",\"Primary\":{\"City\":\"Delta\",\"Extra\":\"nope\"}}', JsonDTO.class);\n} catch (JSONException e) {\n  strictCaught = e.getMessage().contains('unknown field \"Extra\"');\n}\nSystem.assert(strictCaught);\nString roundtrip = JSON.serialize(dto, true);\nSystem.assert(roundtrip.contains('\"ExternalId\":\"E-7\"'));\nSystem.assert(roundtrip.contains('\"Primary\"'));\nSystem.assert(roundtrip.contains('\"Addresses\"'));\nSystem.assert(!roundtrip.contains('\"Missing\"'));"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "JsonDTO dto = JSON.deserialize('{\"ExternalId\":\"E-7\",\"Name\":\"Ada\",\"Primary\":{\"City\":\"Delta\",\"Zip\":99501},\"Addresses\":[{\"City\":\"Port\",\"Zip\":1}],\"Tags\":[\"north\",\"north\",\"south\"],\"Scores\":{\"trail\":10}}', JsonDTO.class);\nSystem.assertEquals('E-7', dto.ExternalId);\nSystem.assertEquals('Ada', dto.Name);\nSystem.assertEquals('Delta', dto.Primary.City);\nSystem.assertEquals(1, dto.Addresses.size());\nJsonDTOAddress first = dto.Addresses.get(0);\nSystem.assertEquals('Port', first.City);\nSystem.assertEquals(2, dto.Tags.size());\nSystem.assert(dto.Tags.contains('north'));\nSystem.assert(dto.Tags.contains('south'));\nSystem.assertEquals(10, dto.Scores.get('trail'));\nSystem.assertEquals(null, dto.Missing);\nBoolean strictCaught = false;\ntry {\n  JsonDTO bad = JSON.deserializeStrict('{\"Name\":\"Ada\",\"Primary\":{\"City\":\"Delta\",\"Extra\":\"nope\"}}', JsonDTO.class);\n} catch (JSONException e) {\n  strictCaught = e.getMessage().contains('unknown field \"Extra\"');\n}\nSystem.assert(strictCaught);\nString roundtrip = JSON.serialize(dto, true);\nSystem.assert(roundtrip.contains('\"ExternalId\":\"E-7\"'));\nSystem.assert(roundtrip.contains('\"Primary\"'));\nSystem.assert(roundtrip.contains('\"Addresses\"'));\nSystem.assert(!roundtrip.contains('\"Missing\"'));"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}
