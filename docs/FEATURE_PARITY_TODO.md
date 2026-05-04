@@ -436,6 +436,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
   `Time`, `Math`, `Decimal`, `EncodingUtil`, and `Crypto` behavior.
   - [x] Add common `String` helpers for trim, search, replacement, split/join,
     blank checks, and case-insensitive equality.
+  - [x] Add deterministic `String.unescapeHtml3/4` coverage for selected
+    high-use named entities (`nbsp`, `copy`, `reg`, `trade`, `euro`, `mdash`,
+    `ndash`) while leaving remaining unknown names unchanged.
   - [x] Add `Pattern.compile`, `Pattern.matches`, and basic `Matcher`
     `find`/`matches`/`group` behavior.
   - [x] Add common `Date`, `Datetime`, and `Time` factories, parsing,

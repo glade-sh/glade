@@ -171,8 +171,8 @@ Current progress:
   printable checks; split-by-character-type helpers; index-of-any and
   ordinal-index helpers; overlay, rotate, swapCase, strip variants; static
   `stripAll`; additional literal remove/replace edge helpers; and pinned
-  deterministic core HTML/XML entity edges with unknown named entities left
-  unchanged.
+  deterministic core HTML/XML entity edges, selected high-use HTML named
+  entities, and remaining unknown named entities left unchanged.
 - Fixtures:
   - `docs/fixtures/core-collection-stdlib.json`
   - `docs/fixtures/core-collection-stdlib-sobject-deepclone.json`
