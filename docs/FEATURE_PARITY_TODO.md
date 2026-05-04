@@ -624,6 +624,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     and `Id` instead of leaking internal storage value wrappers.
   - [x] Add explicit full-layout unsupported responses and an empty compact
     layouts stub for local tooling probes.
+  - [x] Return explicit unsupported default-values responses and malformed-ID
+    errors for literal row-template placeholders advertised by SObject resources.
   - [x] Cover missing/deleted record GET, missing DELETE, null PATCH, and method
     `Allow` headers in server tests.
 - [ ] Expand Tooling API coverage beyond `executeAnonymous` and query

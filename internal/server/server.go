@@ -202,6 +202,12 @@ func (s *Server) handleObject(w http.ResponseWriter, r *http.Request, version st
 			return
 		}
 		writeSalesforceError(w, errUnsupportedFeature, "Full SObject layout metadata is not modeled in the local server; use describe fields and compactLayouts stub data instead")
+	case isDefaultValuesRoute(parts) && r.Method == http.MethodGet:
+		if _, ok := s.Org.Objects[objectName]; !ok {
+			writeSalesforceError(w, errUnknownObject)
+			return
+		}
+		writeSalesforceError(w, errUnsupportedFeature, "SObject default value metadata is not modeled in the local server; create records with explicit field values instead")
 	case len(parts) == 2 && parts[1] == "recent" && r.Method == http.MethodGet:
 		object, ok := s.Org.Objects[objectName]
 		if !ok {
@@ -236,12 +242,19 @@ func (s *Server) handleObject(w http.ResponseWriter, r *http.Request, version st
 		writeMethodNotAllowed(w, http.MethodGet)
 	case len(parts) == 2 && parts[1] == "recent":
 		writeMethodNotAllowed(w, http.MethodGet)
+	case isDefaultValuesRoute(parts):
+		writeMethodNotAllowed(w, http.MethodGet)
 	case isObjectMetadataRoute(parts):
 		writeMethodNotAllowed(w, http.MethodGet)
 	case len(parts) == 1:
 		writeMethodNotAllowed(w, http.MethodGet, http.MethodPost)
 	case len(parts) == 2:
-		s.handleRecord(w, r, version, objectName, storage.ID(parts[1]))
+		id := storage.ID(parts[1])
+		if isRowTemplatePlaceholder(id) {
+			writeSalesforceError(w, errMalformedID, "rowTemplate placeholder {ID} is not a record id; replace it with a 15- or 18-character record id")
+			return
+		}
+		s.handleRecord(w, r, version, objectName, id)
 	default:
 		writeSalesforceError(w, errUnknownSObject)
 	}
@@ -1067,6 +1080,15 @@ func userDisplayName(user storage.Record, username string) string {
 		return full
 	}
 	return username
+}
+
+func isDefaultValuesRoute(parts []string) bool {
+	return len(parts) == 2 && parts[1] == "defaultValues"
+}
+
+func isRowTemplatePlaceholder(id storage.ID) bool {
+	text := string(id)
+	return strings.Contains(text, "{") || strings.Contains(text, "}")
 }
 
 func isObjectMetadataRoute(parts []string) bool {
