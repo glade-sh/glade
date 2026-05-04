@@ -1560,7 +1560,10 @@ func matcherReplace(name string, re *regexp.Regexp, input string, region matcher
 	if len(args) != 1 || args[0].Kind != ValueString {
 		return "", fmt.Errorf("%s expects replacement String", name)
 	}
-	replacement := javaReplacementToGoTemplate(args[0].Text)
+	replacement, err := javaReplacementToGoTemplate(args[0].Text, re.NumSubexp())
+	if err != nil {
+		return "", fmt.Errorf("%s %w", name, err)
+	}
 	regionText := input[region.startByte:region.endByte]
 	if all {
 		return input[:region.startByte] + re.ReplaceAllString(regionText, replacement) + input[region.endByte:], nil
@@ -1574,26 +1577,60 @@ func matcherReplace(name string, re *regexp.Regexp, input string, region matcher
 	return input[:region.startByte+indices[0]] + string(expanded) + input[region.startByte+indices[1]:], nil
 }
 
-func javaReplacementToGoTemplate(replacement string) string {
+func javaReplacementToGoTemplate(replacement string, groupCount int) (string, error) {
 	var out strings.Builder
 	for i := 0; i < len(replacement); i++ {
 		ch := replacement[i]
-		if ch == '\\' && i+1 < len(replacement) {
+		if ch == '\\' {
+			if i+1 >= len(replacement) {
+				return "", fmt.Errorf("replacement trailing escape")
+			}
 			next := replacement[i+1]
 			if next == '$' {
 				out.WriteString("$$")
 				i++
 				continue
 			}
-			if next == '\\' {
-				out.WriteByte(next)
-				i++
-				continue
+			out.WriteByte(next)
+			i++
+			continue
+		}
+		if ch == '$' {
+			if i+1 >= len(replacement) {
+				return "", fmt.Errorf("replacement missing group reference after $")
 			}
+			next := replacement[i+1]
+			if next == '{' {
+				return "", unsupportedCallError("Matcher replacement named group references")
+			}
+			if next < '0' || next > '9' {
+				return "", fmt.Errorf("replacement invalid group reference")
+			}
+			group := int(next - '0')
+			if group > groupCount {
+				return "", fmt.Errorf("replacement groupIndex out of range")
+			}
+			i += 1
+			for i+1 < len(replacement) {
+				next = replacement[i+1]
+				if next < '0' || next > '9' {
+					break
+				}
+				candidate := group*10 + int(next-'0')
+				if candidate > groupCount {
+					break
+				}
+				group = candidate
+				i++
+			}
+			out.WriteString("${")
+			out.WriteString(strconv.Itoa(group))
+			out.WriteByte('}')
+			continue
 		}
 		out.WriteByte(ch)
 	}
-	return out.String()
+	return out.String(), nil
 }
 
 func nextRegexSearchIndex(input string, index int) int {
@@ -2116,6 +2153,7 @@ func patternSplit(source string, args []Value) ([]string, error) {
 }
 
 func unsupportedJavaRegexFeature(source string) string {
+	inClass := false
 	for i := 0; i < len(source); i++ {
 		switch source[i] {
 		case '\\':
@@ -2127,9 +2165,22 @@ func unsupportedJavaRegexFeature(source string) string {
 				if next == 'k' {
 					return "Java regex named backreferences"
 				}
+				if next == 'Q' || next == 'E' {
+					return "Java regex quote escapes"
+				}
+				if next == 'G' {
+					return "Java regex previous-match boundary"
+				}
 				i++
 			}
+		case '[':
+			inClass = true
+		case ']':
+			inClass = false
 		case '(':
+			if inClass {
+				continue
+			}
 			if i+2 >= len(source) || source[i+1] != '?' {
 				continue
 			}
@@ -2141,6 +2192,12 @@ func unsupportedJavaRegexFeature(source string) string {
 				return "Java regex named groups"
 			case '=', '!':
 				return "Java regex lookahead"
+			case '>':
+				return "Java regex atomic groups"
+			}
+		case '*', '+', '?', '}':
+			if !inClass && i+1 < len(source) && source[i+1] == '+' {
+				return "Java regex possessive quantifiers"
 			}
 		}
 	}

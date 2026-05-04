@@ -489,6 +489,11 @@ a Salesforce-shaped local API server without silently wrong behavior.
     `find`/`matches`/`group` behavior.
   - [x] Add `Pattern.quote` for local Go-regexp literal matching of common
     metacharacters.
+  - [x] Tighten Pattern/Matcher parity boundaries: replacement now follows
+    Java-style numeric group parsing for the local Go-regexp subset, while
+    lookaround, backreferences, named groups, possessive quantifiers, atomic
+    groups, regex quote escapes, previous-match boundaries, and named
+    replacement references return stable unsupported diagnostics.
   - [x] Add common `Date`, `Datetime`, and `Time` factories, parsing,
     arithmetic, and component helpers.
   - [x] Add common numeric `Math` helpers, `Decimal` scale/conversion helpers,
