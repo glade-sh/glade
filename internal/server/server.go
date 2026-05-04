@@ -38,12 +38,17 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer s.mu.Unlock()
 	w.Header().Set("Content-Type", "application/json")
 	parts := splitPath(r.URL.Path)
+	requestUser, err := s.currentUserForRequest(r)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_USER", err.Error())
+		return
+	}
 	if len(parts) == 3 && parts[0] == "services" && parts[1] == "oauth2" && parts[2] == "userinfo" {
 		if r.Method != http.MethodGet {
 			writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
 			return
 		}
-		writeJSON(w, http.StatusOK, s.userInfoPayload(r))
+		writeJSON(w, http.StatusOK, s.userInfoPayload(r, requestUser))
 		return
 	}
 	if len(parts) == 3 && parts[0] == "id" {
@@ -51,7 +56,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
 			return
 		}
-		writeJSON(w, http.StatusOK, s.identityPayload(r))
+		writeJSON(w, http.StatusOK, s.identityPayload(r, requestUser))
 		return
 	}
 	if len(parts) == 2 && parts[0] == "services" && parts[1] == "data" {
@@ -160,6 +165,7 @@ func (s *Server) handleObject(w http.ResponseWriter, r *http.Request, parts []st
 		}
 		next := s.Org.Clone()
 		engine := dml.NewEngine(&next)
+		engine.UserID = s.currentUserIDForRequest(r)
 		result := engine.Insert([]storage.Record{record})[0]
 		if result.Success {
 			if err := s.commitOrg(next); err != nil {
@@ -197,6 +203,7 @@ func (s *Server) handleRecord(w http.ResponseWriter, r *http.Request, objectName
 		}
 		next := s.Org.Clone()
 		engine := dml.NewEngine(&next)
+		engine.UserID = s.currentUserIDForRequest(r)
 		result := engine.Update([]storage.Record{record})[0]
 		if result.Success {
 			if err := s.commitOrg(next); err != nil {
@@ -208,6 +215,7 @@ func (s *Server) handleRecord(w http.ResponseWriter, r *http.Request, objectName
 	case http.MethodDelete:
 		next := s.Org.Clone()
 		engine := dml.NewEngine(&next)
+		engine.UserID = s.currentUserIDForRequest(r)
 		result := engine.Delete([]storage.Record{{Object: objectName, ID: id}})[0]
 		if result.Success {
 			if err := s.commitOrg(next); err != nil {
@@ -465,6 +473,7 @@ func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, parts [
 		}
 		next := s.Org.Clone()
 		engine := dml.NewEngine(&next)
+		engine.UserID = s.currentUserIDForRequest(r)
 		results := engine.Insert(records)
 		hasFailure := false
 		hasSuccess := false
@@ -631,8 +640,8 @@ func writeAPIErrors(w http.ResponseWriter, status int, errors []apiError) {
 	writeJSON(w, status, errors)
 }
 
-func (s *Server) currentUserID() storage.ID {
-	if user := s.currentUser(); user.ID != "" {
+func (s *Server) currentUserIDForRequest(r *http.Request) storage.ID {
+	if user, err := s.currentUserForRequest(r); err == nil && user.ID != "" {
 		return user.ID
 	}
 	return "005000000000001"
@@ -640,17 +649,53 @@ func (s *Server) currentUserID() storage.ID {
 
 func (s *Server) currentUser() storage.Record {
 	object := s.Org.Objects["User"]
-	for _, record := range object.Records {
+	if record, ok := object.Records["005000000000001"]; ok {
+		record.ID = "005000000000001"
+		return record
+	}
+	ids := make([]string, 0, len(object.Records))
+	for id := range object.Records {
+		ids = append(ids, string(id))
+	}
+	sort.Strings(ids)
+	for _, id := range ids {
+		record := object.Records[storage.ID(id)]
+		record.ID = storage.ID(id)
 		return record
 	}
 	return storage.Record{ID: "005000000000001", Object: "User", Fields: map[string]storage.Value{"Username": storage.StringValue("system@example.invalid")}}
 }
 
-func (s *Server) identityPayload(r *http.Request) map[string]any {
-	user := s.currentUser()
+func (s *Server) currentUserForRequest(r *http.Request) (storage.Record, error) {
+	requested := strings.TrimSpace(r.Header.Get("X-OAER-User-Id"))
+	if requested == "" {
+		return s.currentUser(), nil
+	}
+	userObject := s.Org.Objects["User"]
+	record, ok := userObject.Records[storage.ID(requested)]
+	if !ok {
+		return storage.Record{}, fmt.Errorf("unknown local user")
+	}
+	record.ID = storage.ID(requested)
+	return record, nil
+}
+
+func (s *Server) identityPayload(r *http.Request, user storage.Record) map[string]any {
 	username := "system@example.invalid"
 	if value, ok := user.Fields["Username"]; ok && value.Kind == storage.ValueString {
 		username = value.String
+	}
+	displayName := username
+	if value, ok := user.Fields["Name"]; ok && value.Kind == storage.ValueString && value.String != "" {
+		displayName = value.String
+	}
+	active := true
+	if value, ok := user.Fields["IsActive"]; ok && value.Kind == storage.ValueBoolean {
+		active = value.Boolean
+	}
+	userType := "STANDARD"
+	if value, ok := user.Fields["UserType"]; ok && value.Kind == storage.ValueString && value.String != "" {
+		userType = strings.ToUpper(value.String)
 	}
 	base := "http://" + r.Host
 	return map[string]any{
@@ -658,14 +703,14 @@ func (s *Server) identityPayload(r *http.Request) map[string]any {
 		"organization_id": nonEmpty(s.Org.OrgID, "00D000000000001"),
 		"user_id":         user.ID,
 		"username":        username,
-		"display_name":    username,
-		"active":          true,
-		"user_type":       "STANDARD",
+		"display_name":    displayName,
+		"active":          active,
+		"user_type":       userType,
 	}
 }
 
-func (s *Server) userInfoPayload(r *http.Request) map[string]any {
-	identity := s.identityPayload(r)
+func (s *Server) userInfoPayload(r *http.Request, user storage.Record) map[string]any {
+	identity := s.identityPayload(r, user)
 	return map[string]any{
 		"sub":                identity["user_id"],
 		"user_id":            identity["user_id"],
@@ -673,6 +718,7 @@ func (s *Server) userInfoPayload(r *http.Request) map[string]any {
 		"preferred_username": identity["username"],
 		"name":               identity["display_name"],
 		"email":              identity["username"],
+		"active":             identity["active"],
 	}
 }
 

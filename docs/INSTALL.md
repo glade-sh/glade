@@ -102,6 +102,14 @@ Use `oaer db inspect --json` before and after mutating server requests as the
 basic operational check. Counts should change after successful mutations and
 stay fixed after failed mutations.
 
+The local API server accepts missing `Authorization` headers and local
+`Authorization: Bearer ...` values without validating OAuth tokens. Use the
+`X-OAER-User-Id` header only to select an existing local `User` record for test
+requests. Direct REST DML uses that local user for system field stamping;
+Tooling `executeAnonymous` still uses the VM's local default user context. Do
+not expose `oaer server` to untrusted networks without an authenticating reverse
+proxy.
+
 ## Homebrew
 
 Homebrew distribution is not published yet. A future tap formula should use the

@@ -236,6 +236,90 @@ func TestIdentityLimitsDescribeRecentAndNormalRESTPayloads(t *testing.T) {
 	}
 }
 
+func TestLocalAuthUserSelectionAndDMLStamping(t *testing.T) {
+	org := testOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	addTestUser(&org, "005000000000222", "local-user@example.test")
+	handler := New(&org)
+
+	bearer := httptest.NewRecorder()
+	bearerReq := httptest.NewRequest(http.MethodGet, "/services/oauth2/userinfo", nil)
+	bearerReq.Header.Set("Authorization", "Bearer any-local-token")
+	handler.ServeHTTP(bearer, bearerReq)
+	if bearer.Code != http.StatusOK || !bytes.Contains(bearer.Body.Bytes(), []byte(`"user_id":"005000000000001"`)) || !bytes.Contains(bearer.Body.Bytes(), []byte(`"active":true`)) {
+		t.Fatalf("bearer userinfo status = %d body=%s", bearer.Code, bearer.Body.String())
+	}
+
+	selected := httptest.NewRecorder()
+	selectedReq := httptest.NewRequest(http.MethodGet, "/id/00D000000000001/005000000000222", nil)
+	selectedReq.Header.Set("X-OAER-User-Id", "005000000000222")
+	handler.ServeHTTP(selected, selectedReq)
+	if selected.Code != http.StatusOK || !bytes.Contains(selected.Body.Bytes(), []byte(`"user_id":"005000000000222"`)) || !bytes.Contains(selected.Body.Bytes(), []byte(`local-user@example.test`)) {
+		t.Fatalf("selected identity status = %d body=%s", selected.Code, selected.Body.String())
+	}
+
+	unknown := httptest.NewRecorder()
+	unknownReq := httptest.NewRequest(http.MethodGet, "/services/oauth2/userinfo", nil)
+	unknownReq.Header.Set("X-OAER-User-Id", "005000000009999")
+	handler.ServeHTTP(unknown, unknownReq)
+	if unknown.Code != http.StatusBadRequest {
+		t.Fatalf("unknown user status = %d body=%s", unknown.Code, unknown.Body.String())
+	}
+	errors := decodeServerErrors(t, unknown)
+	if len(errors) != 1 || errors[0].ErrorCode != "INVALID_USER" {
+		t.Fatalf("unknown user errors = %#v", errors)
+	}
+	if strings.Contains(errors[0].Message, "005000000009999") {
+		t.Fatalf("invalid user message leaked requested id: %#v", errors)
+	}
+
+	create := httptest.NewRecorder()
+	createReq := httptest.NewRequest(http.MethodPost, "/services/data/v61.0/sobjects/Account", strings.NewReader(`{"Name":"Stamped"}`))
+	createReq.Header.Set("X-OAER-User-Id", "005000000000222")
+	handler.ServeHTTP(create, createReq)
+	if create.Code != http.StatusCreated {
+		t.Fatalf("create status = %d body=%s", create.Code, create.Body.String())
+	}
+	record := org.Objects["Account"].Records["001000000000001"]
+	if record.System.CreatedByID != "005000000000222" || record.System.LastModifiedByID != "005000000000222" || record.System.OwnerID != "005000000000222" {
+		t.Fatalf("system fields = %#v", record.System)
+	}
+
+	composite := httptest.NewRecorder()
+	compositeReq := httptest.NewRequest(http.MethodPost, "/services/data/v61.0/composite/sobjects", strings.NewReader(`{
+  "allOrNone": true,
+  "records": [
+    {"attributes":{"type":"Account"},"Name":"Composite Stamped"}
+  ]
+}`))
+	compositeReq.Header.Set("X-OAER-User-Id", "005000000000222")
+	handler.ServeHTTP(composite, compositeReq)
+	if composite.Code != http.StatusOK {
+		t.Fatalf("composite status = %d body=%s", composite.Code, composite.Body.String())
+	}
+	compositeRecord := org.Objects["Account"].Records["001000000000002"]
+	if compositeRecord.System.CreatedByID != "005000000000222" || compositeRecord.System.LastModifiedByID != "005000000000222" || compositeRecord.System.OwnerID != "005000000000222" {
+		t.Fatalf("composite system fields = %#v", compositeRecord.System)
+	}
+}
+
+func TestCurrentUserFallsBackToSortedLocalUser(t *testing.T) {
+	org := testOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	userObject := org.Objects["User"]
+	delete(userObject.Records, "005000000000001")
+	org.Objects["User"] = userObject
+	addTestUser(&org, "005000000000333", "z-local@example.test")
+	addTestUser(&org, "005000000000222", "a-local@example.test")
+	handler := New(&org)
+
+	res := httptest.NewRecorder()
+	handler.ServeHTTP(res, httptest.NewRequest(http.MethodGet, "/services/oauth2/userinfo", nil))
+	if res.Code != http.StatusOK || !bytes.Contains(res.Body.Bytes(), []byte(`"user_id":"005000000000222"`)) {
+		t.Fatalf("fallback userinfo status = %d body=%s", res.Code, res.Body.String())
+	}
+}
+
 func TestToolingExecuteAnonymousAndCompositeSObjects(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
@@ -534,4 +618,23 @@ func testOrg() storage.OrgState {
 		Records: make(map[storage.ID]storage.Record),
 	}
 	return org
+}
+
+func addTestUser(org *storage.OrgState, id storage.ID, username string) {
+	userObject := org.Objects["User"]
+	if userObject.Records == nil {
+		userObject.Records = make(map[storage.ID]storage.Record)
+	}
+	userObject.Records[id] = storage.Record{
+		ID:     id,
+		Object: "User",
+		Fields: map[string]storage.Value{
+			"Username": storage.StringValue(username),
+			"Email":    storage.StringValue(username),
+			"Alias":    storage.StringValue("local"),
+			"IsActive": storage.BooleanValue(true),
+			"UserType": storage.StringValue("Standard"),
+		},
+	}
+	org.Objects["User"] = userObject
 }
