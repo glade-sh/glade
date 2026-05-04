@@ -490,7 +490,22 @@ func executeAnonymousFailure(compiled bool, message string, logs []string) map[s
 }
 
 func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, parts []string) {
-	if len(parts) == 1 && parts[0] == "sobjects" && r.Method == http.MethodPost {
+	if len(parts) == 0 {
+		switch r.Method {
+		case http.MethodGet:
+			writeSalesforceError(w, errUnsupportedFeature, "Composite namespace discovery is not implemented in the local server; generic REST subrequest orchestration is not modeled")
+		case http.MethodPost:
+			writeSalesforceError(w, errUnsupportedFeature, "Generic Composite REST subrequest orchestration is not implemented in the local server")
+		default:
+			writeMethodNotAllowed(w, http.MethodGet, http.MethodPost)
+		}
+		return
+	}
+	if len(parts) == 1 && parts[0] == "sobjects" {
+		if r.Method != http.MethodPost {
+			writeMethodNotAllowed(w, http.MethodPost)
+			return
+		}
 		var body struct {
 			AllOrNone bool                         `json:"allOrNone"`
 			Records   []map[string]json.RawMessage `json:"records"`
@@ -552,11 +567,11 @@ func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, parts [
 		return
 	}
 	if len(parts) >= 1 && (parts[0] == "batch" || parts[0] == "tree" || parts[0] == "graph") {
+		if r.Method != http.MethodPost {
+			writeMethodNotAllowed(w, http.MethodPost)
+			return
+		}
 		writeSalesforceError(w, errUnsupportedFeature, "Composite "+parts[0]+" is not implemented in the local server")
-		return
-	}
-	if len(parts) == 1 && parts[0] == "sobjects" {
-		writeMethodNotAllowed(w, http.MethodPost)
 		return
 	}
 	writeSalesforceError(w, errUnknownComposite)

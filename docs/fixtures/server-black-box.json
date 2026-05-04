@@ -138,6 +138,14 @@
       "contains": ["UNSUPPORTED_FEATURE", "Composite graph"]
     },
     {
+      "name": "composite-generic-unsupported",
+      "method": "POST",
+      "path": "/services/data/v61.0/composite",
+      "body": "{\"compositeRequest\":[]}",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "Generic Composite REST subrequest orchestration"]
+    },
+    {
       "name": "search-unsupported",
       "method": "GET",
       "path": "/services/data/v61.0/search?q=FIND%20%7BAcme%7D",
@@ -201,8 +209,8 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 23,
-      "statuses": [200, 200, 200, 200, 200, 201, 200, 200, 501, 200, 200, 200, 200, 200, 400, 501, 501, 501, 501, 501, 404, 200, 201],
+      "requests": 24,
+      "statuses": [200, 200, 200, 200, 200, 201, 200, 200, 501, 200, 200, 200, 200, 200, 400, 501, 501, 501, 501, 501, 501, 404, 200, 201],
       "users": 2
     }
   }
