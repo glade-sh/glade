@@ -1,0 +1,28 @@
+{
+  "name": "core-string-format-messageformat-unsupported",
+  "evidence": [
+    {
+      "symbol": "String.format",
+      "kind": "unsupported",
+      "notes": "Typed MessageFormat number/date/time/choice format elements stay fenced with a typed unsupported error."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "String.format('{0,number,#.00}', new List<Object>{42});\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "String.format('{0,number,#.00}', new List<Object>{42});\n"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"String.format MessageFormat typed format elements\""
+    }
+  }
+}

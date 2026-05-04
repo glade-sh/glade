@@ -222,7 +222,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Pattern | `Matcher.useAnchoringBounds` | `supported` | Stores the local bounds flag and toggles whether ^/$ bind to region edges or full input edges. |
 | Pattern | `Matcher.usePattern` | `supported` | Swaps the local Go-regexp Pattern, including compiled flag/literal state, and resets search state within the current region. |
 | Pattern | `Matcher.useTransparentBounds` | `supported` | Stores the local bounds flag and toggles whether word-boundary checks use opaque region edges or full input context. |
-| Pattern | `Pattern.compile` | `partial` | Go regexp syntax with supported CASE_INSENSITIVE, MULTILINE, DOTALL, LITERAL, and UNICODE_CASE flag handling plus stable UnsupportedFeature diagnostics for pinned Java-only regex features including lookaround, backreferences, named groups, possessive quantifiers, atomic groups, quote escapes, previous-match boundaries, Java-only inline flags, unsupported flag constants, Java Unicode character classes, and class intersections. |
+| Pattern | `Pattern.compile` | `partial` | Go regexp syntax with supported CASE_INSENSITIVE, MULTILINE, DOTALL, LITERAL, and UNICODE_CASE flag handling plus stable UnsupportedFeature diagnostics for pinned Java-only regex features including lookaround, backreferences, named groups, possessive quantifiers, atomic groups, quote escapes, previous-match boundaries, Java-only inline flags, unsupported flag constants, Java Unicode character classes, class intersections, linebreak/grapheme escapes, and horizontal/vertical whitespace classes. |
 | Pattern | `Pattern.matcher` | `supported` | Creates a Matcher for the compiled local Go-regexp Pattern. |
 | Pattern | `Pattern.matches` | `supported` | Whole-string local Go-regexp match with pinned UnsupportedFeature diagnostics for Java-only syntax. |
 | Pattern | `Pattern.pattern` | `supported` | Returns original regex source, including for locally quoted Pattern.LITERAL compilation. |
@@ -287,7 +287,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | String | `String.escapeXml` | `supported` | Escapes XML core entities without XML 1.0/1.1 invalid-code-point filtering; use escapeXml10/11 for versioned filtering. |
 | String | `String.escapeXml10` | `supported` | Escapes XML core entities, drops XML 1.0-invalid code points, and numeric-escapes restricted control ranges. |
 | String | `String.escapeXml11` | `supported` | Escapes XML core entities, drops XML 1.1-invalid nulls, and numeric-escapes restricted control ranges. |
-| String | `String.format` | `partial` | Deterministic {0}-style List substitution only; MessageFormat choice/date/number patterns and locale behavior are not modeled. |
+| String | `String.format` | `supported` | Deterministic MessageFormat subset for numeric List placeholders, repeated and missing arguments, and apostrophe quoting; typed number/date/time/choice and locale-sensitive format elements return explicit UnsupportedFeature diagnostics. |
 | String | `String.fromCharArray` | `supported` | Builds a string from valid Unicode code point integers. |
 | String | `String.getChars` | `supported` | Returns Unicode code point integers for each rune. |
 | String | `String.getCommonPrefix` | `supported` | Returns the shared rune prefix for a list of strings. |

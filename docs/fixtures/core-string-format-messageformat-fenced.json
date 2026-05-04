@@ -1,0 +1,28 @@
+{
+  "name": "core-string-format-messageformat-fenced",
+  "evidence": [
+    {
+      "symbol": "String.format",
+      "kind": "exec",
+      "notes": "Deterministic MessageFormat subset covers numeric placeholders, repeated/out-of-range arguments, and apostrophe quoting."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "List<String> args = new List<String>{'Ada', 'Lovelace'};\nSystem.assertEquals('Hello Ada Lovelace', String.format('Hello {0} {1}', args));\nSystem.assertEquals('Use {0} then Ada', String.format('Use ''{0}'' then {0}', args));\nSystem.assertEquals('Lovelace/Ada/Lovelace/{2}', String.format('{1}/{0}/{1}/{2}', args));\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "List<String> args = new List<String>{'Ada', 'Lovelace'};\nSystem.assertEquals('Hello Ada Lovelace', String.format('Hello {0} {1}', args));\nSystem.assertEquals('Use {0} then Ada', String.format('Use ''{0}'' then {0}', args));\nSystem.assertEquals('Lovelace/Ada/Lovelace/{2}', String.format('{1}/{0}/{1}/{2}', args));\n"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

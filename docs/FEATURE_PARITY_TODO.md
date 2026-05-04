@@ -600,6 +600,13 @@ a Salesforce-shaped local API server without silently wrong behavior.
     fixture-backed local core entity behavior, pinned HTML named-entity tables,
     XML 1.0/1.1 numeric-reference filtering, and explicit notes that broad
     HTML named-entity expansion remains outside the local model.
+  - [x] Close the final deterministic `String.format` row: numeric
+    MessageFormat-style List placeholders, repeated/missing arguments, and
+    apostrophe quoting are fixture-backed, while typed number/date/time/choice
+    and locale-sensitive format elements return stable `UnsupportedFeature`
+    diagnostics. Keep `Pattern.compile` partial on the Go-regexp dialect, with
+    extra fences for Java linebreak, grapheme, and horizontal/vertical
+    whitespace regex escapes.
   - [x] Add common `Date`, `Datetime`, and `Time` factories, parsing,
     arithmetic, and component helpers.
   - [x] Promote deterministic `Datetime` pure-duration arithmetic and local

@@ -938,7 +938,11 @@ func stringStatic(callee string, args []Value) (Value, error) {
 		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueList {
 			return Null, fmt.Errorf("String.format expects format String and List arguments")
 		}
-		return String(formatString(args[0].Text, args[1].List)), nil
+		formatted, err := formatString(args[0].Text, args[1].List)
+		if err != nil {
+			return Null, err
+		}
+		return String(formatted), nil
 	case "String.getCommonPrefix":
 		if len(args) != 1 || args[0].Kind != ValueList {
 			return Null, fmt.Errorf("String.getCommonPrefix expects List argument")
@@ -2509,6 +2513,15 @@ func unsupportedJavaRegexFeature(source string) string {
 				if next == 'G' {
 					return "Java regex previous-match boundary"
 				}
+				if next == 'R' {
+					return "Java regex linebreak matcher"
+				}
+				if next == 'X' {
+					return "Java regex grapheme matcher"
+				}
+				if next == 'h' || next == 'H' || next == 'v' || next == 'V' {
+					return "Java regex horizontal/vertical whitespace classes"
+				}
 				if (next == 'p' || next == 'P') && i+2 < len(source) && source[i+2] == '{' {
 					end := strings.IndexByte(source[i+3:], '}')
 					if end >= 0 {
@@ -2983,15 +2996,62 @@ func unescapeJavaLike(name, text string) (string, error) {
 	return string(out), nil
 }
 
-func formatString(pattern string, args []Value) string {
-	return regexp.MustCompile(`\{([0-9]+)\}`).ReplaceAllStringFunc(pattern, func(match string) string {
-		inner := match[1 : len(match)-1]
-		index, err := strconv.Atoi(inner)
-		if err != nil || index < 0 || index >= len(args) {
-			return match
+func formatString(pattern string, args []Value) (string, error) {
+	var out strings.Builder
+	inQuote := false
+	for i := 0; i < len(pattern); i++ {
+		switch pattern[i] {
+		case '\'':
+			if i+1 < len(pattern) && pattern[i+1] == '\'' {
+				out.WriteByte('\'')
+				i++
+				continue
+			}
+			inQuote = !inQuote
+		case '{':
+			if inQuote {
+				out.WriteByte(pattern[i])
+				continue
+			}
+			end := strings.IndexByte(pattern[i+1:], '}')
+			if end < 0 {
+				return "", fmt.Errorf("String.format unmatched '{' in format pattern")
+			}
+			token := strings.TrimSpace(pattern[i+1 : i+1+end])
+			replacement, err := formatStringToken(token, args)
+			if err != nil {
+				return "", err
+			}
+			out.WriteString(replacement)
+			i += end + 1
+		case '}':
+			if inQuote {
+				out.WriteByte(pattern[i])
+				continue
+			}
+			return "", fmt.Errorf("String.format unmatched '}' in format pattern")
+		default:
+			out.WriteByte(pattern[i])
 		}
-		return args[index].String()
-	})
+	}
+	return out.String(), nil
+}
+
+func formatStringToken(token string, args []Value) (string, error) {
+	if token == "" {
+		return "", fmt.Errorf("String.format empty argument index")
+	}
+	if strings.Contains(token, ",") {
+		return "", unsupportedCallError("String.format MessageFormat typed format elements")
+	}
+	index, err := strconv.Atoi(token)
+	if err != nil || index < 0 {
+		return "", fmt.Errorf("String.format invalid argument index %q", token)
+	}
+	if index >= len(args) {
+		return "{" + token + "}", nil
+	}
+	return args[index].String(), nil
 }
 
 func stringAbbreviate(text string, args []Value) (string, error) {
