@@ -4112,9 +4112,15 @@ func mathUnary(callee string, args []Value) (Value, error) {
 		return Null, fmt.Errorf("%s expects numeric argument", callee)
 	}
 	n := numericFloat(args[0])
+	if math.IsInf(n, 0) || math.IsNaN(n) {
+		return Null, fmt.Errorf("%s argument must be finite", callee)
+	}
 	switch callee {
 	case "Math.abs":
 		if args[0].Kind == ValueInt {
+			if args[0].Int == math.MinInt64 {
+				return Null, fmt.Errorf("Math.abs integer overflow")
+			}
 			if args[0].Int < 0 {
 				return Int(-args[0].Int), nil
 			}
@@ -4191,6 +4197,9 @@ func mathBinary(callee string, args []Value) (Value, error) {
 	}
 	left := numericFloat(args[0])
 	right := numericFloat(args[1])
+	if math.IsInf(left, 0) || math.IsNaN(left) || math.IsInf(right, 0) || math.IsNaN(right) {
+		return Null, fmt.Errorf("%s arguments must be finite", callee)
+	}
 	switch callee {
 	case "Math.max":
 		if args[0].Kind == ValueInt && args[1].Kind == ValueInt {

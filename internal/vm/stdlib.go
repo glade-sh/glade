@@ -41,7 +41,7 @@ func callIntegerMember(receiver Value, method string, args []Value) (Value, Valu
 	switch method {
 	case "format":
 		if len(args) != 0 {
-			return Null, receiver, false, true, fmt.Errorf("Integer.format expects 0 arguments")
+			return Null, receiver, false, true, unsupportedCallError("numeric format locale/pattern overloads")
 		}
 		return String(strconv.FormatInt(receiver.Int, 10)), receiver, false, true, nil
 	case "intValue", "longValue":
@@ -64,6 +64,9 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 	case "abs":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Decimal.abs expects 0 arguments")
+		}
+		if err := ensureFiniteDecimal("Decimal.abs", receiver.Decimal); err != nil {
+			return Null, receiver, false, true, err
 		}
 		return Decimal(math.Abs(receiver.Decimal)), receiver, false, true, nil
 	case "setScale":
@@ -132,10 +135,16 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Decimal.doubleValue expects 0 arguments")
 		}
+		if err := ensureFiniteDecimal("Decimal.doubleValue", receiver.Decimal); err != nil {
+			return Null, receiver, false, true, err
+		}
 		return receiver, receiver, false, true, nil
 	case "pow":
 		if len(args) != 1 || args[0].Kind != ValueInt {
 			return Null, receiver, false, true, fmt.Errorf("Decimal.pow expects Integer")
+		}
+		if err := ensureFiniteDecimal("Decimal.pow", receiver.Decimal); err != nil {
+			return Null, receiver, false, true, err
 		}
 		value := math.Pow(receiver.Decimal, float64(args[0].Int))
 		if math.IsInf(value, 0) || math.IsNaN(value) {
@@ -144,7 +153,10 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 		return Decimal(value), receiver, false, true, nil
 	case "format":
 		if len(args) != 0 {
-			return Null, receiver, false, true, fmt.Errorf("Decimal.format expects 0 arguments")
+			return Null, receiver, false, true, unsupportedCallError("numeric format locale/pattern overloads")
+		}
+		if err := ensureFiniteDecimal("Decimal.format", receiver.Decimal); err != nil {
+			return Null, receiver, false, true, err
 		}
 		return String(strconv.FormatFloat(receiver.Decimal, 'f', -1, 64)), receiver, false, true, nil
 	default:
@@ -166,8 +178,8 @@ func decimalRoundingMode(value Value) (string, error) {
 
 func roundDecimalToScale(callee string, value float64, scaleValue int64, mode string) (float64, error) {
 	const maxLocalScale int64 = 15
-	if math.IsInf(value, 0) || math.IsNaN(value) {
-		return 0, fmt.Errorf("%s value must be finite", callee)
+	if err := ensureFiniteDecimal(callee, value); err != nil {
+		return 0, err
 	}
 	if scaleValue > maxLocalScale {
 		return 0, fmt.Errorf("%s scale greater than %d is not supported by the local decimal model", callee, maxLocalScale)
@@ -182,6 +194,13 @@ func roundDecimalToScale(callee string, value float64, scaleValue int64, mode st
 		return 0, err
 	}
 	return rounded / factor, nil
+}
+
+func ensureFiniteDecimal(callee string, value float64) error {
+	if math.IsInf(value, 0) || math.IsNaN(value) {
+		return fmt.Errorf("%s value must be finite", callee)
+	}
+	return nil
 }
 
 func roundScaledDecimal(callee string, value float64, mode string) (float64, error) {
@@ -222,7 +241,7 @@ func roundingModeStatic(args []Value) (Value, error) {
 	if len(args) != 1 || args[0].Kind != ValueString {
 		return Null, fmt.Errorf("RoundingMode.valueOf expects String")
 	}
-	mode := strings.TrimSpace(args[0].Text)
+	mode := args[0].Text
 	if !isDecimalRoundingModeName(mode) {
 		return Null, fmt.Errorf("unsupported Decimal rounding mode %q", mode)
 	}

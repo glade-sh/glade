@@ -2,6 +2,7 @@ package vm
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 )
@@ -46,6 +47,9 @@ func evalUnary(op string, value Value) (Value, error) {
 		}
 		if value.Kind != ValueInt {
 			return Null, fmt.Errorf("operator - requires numeric value, got %s", value.Kind)
+		}
+		if value.Int == math.MinInt64 {
+			return Null, fmt.Errorf("integer unary - overflow")
 		}
 		return Int(-value.Int), nil
 	default:
@@ -137,6 +141,9 @@ func intBinary(op string, left, right Value, fn func(int64, int64) int64) (Value
 	if left.Kind != ValueInt || right.Kind != ValueInt {
 		return Null, fmt.Errorf("operator %s requires Integer operands", op)
 	}
+	if err := checkIntBinaryOverflow(op, left.Int, right.Int); err != nil {
+		return Null, err
+	}
 	return Int(fn(left.Int, right.Int)), nil
 }
 
@@ -144,7 +151,43 @@ func decimalBinary(op string, left, right Value, fn func(float64, float64) float
 	if !isNumeric(left) || !isNumeric(right) {
 		return Null, fmt.Errorf("operator %s requires numeric operands", op)
 	}
-	return Decimal(fn(decimalOf(left), decimalOf(right))), nil
+	result := fn(decimalOf(left), decimalOf(right))
+	if math.IsInf(result, 0) || math.IsNaN(result) {
+		return Null, fmt.Errorf("operator %s result must be finite", op)
+	}
+	return Decimal(result), nil
+}
+
+func checkIntBinaryOverflow(op string, left, right int64) error {
+	switch op {
+	case "+":
+		if (right > 0 && left > math.MaxInt64-right) || (right < 0 && left < math.MinInt64-right) {
+			return fmt.Errorf("operator + integer overflow")
+		}
+	case "-":
+		if (right < 0 && left > math.MaxInt64+right) || (right > 0 && left < math.MinInt64+right) {
+			return fmt.Errorf("operator - integer overflow")
+		}
+	case "*":
+		if left != 0 && right != 0 {
+			if left == math.MinInt64 && right == -1 || right == math.MinInt64 && left == -1 {
+				return fmt.Errorf("operator * integer overflow")
+			}
+			product := left * right
+			if product/right != left {
+				return fmt.Errorf("operator * integer overflow")
+			}
+		}
+	case "/":
+		if left == math.MinInt64 && right == -1 {
+			return fmt.Errorf("operator / integer overflow")
+		}
+	case "%":
+		if left == math.MinInt64 && right == -1 {
+			return fmt.Errorf("operator %% integer overflow")
+		}
+	}
+	return nil
 }
 
 func isNumeric(value Value) bool {

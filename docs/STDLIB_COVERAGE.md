@@ -65,14 +65,15 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Datetime | `Datetime.year` | `partial` | UTC-modeled component getter. |
 | Decimal | `Decimal.abs` | `supported` | Absolute value for local Decimal values. |
 | Decimal | `Decimal.doubleValue` | `supported` | Returns local Decimal value. |
-| Decimal | `Decimal.format` | `partial` | Simple deterministic numeric formatting; locale grouping is not modeled. |
+| Decimal | `Decimal.format` | `partial` | Simple deterministic finite numeric formatting; locale and pattern overloads return explicit unsupported errors. |
 | Decimal | `Decimal.intValue` | `supported` | Truncates to 32-bit Integer with overflow checks. |
 | Decimal | `Decimal.longValue` | `supported` | Truncates to local Long representation with overflow checks. |
 | Decimal | `Decimal.pow` | `supported` | Power with Integer exponent for finite local Decimal results. |
 | Decimal | `Decimal.round` | `partial` | Default half-up plus local RoundingMode subset; exact Decimal scale parity is not modeled. |
 | Decimal | `Decimal.setScale` | `partial` | Supports local scale 0-15 with UP, DOWN, CEILING, FLOOR, HALF_UP, HALF_DOWN, HALF_EVEN, and UNNECESSARY. |
-| Decimal | `Decimal.valueOf` | `supported` | Parses finite decimal strings and numeric values. |
-| Double | `Double.valueOf` | `supported` | Parses finite decimal strings and numeric values into the local numeric representation. |
+| Decimal | `Decimal.valueOf` | `supported` | Parses finite decimal strings and numeric values, including trimmed signed strings. |
+| Double | `Double.format` | `partial` | Simple deterministic finite numeric formatting; locale and pattern overloads return explicit unsupported errors. |
+| Double | `Double.valueOf` | `supported` | Parses finite decimal strings and numeric values into the local numeric representation, including trimmed signed strings. |
 | EncodingUtil | `EncodingUtil.base64Decode` | `supported` | Blob-shaped local value with stable invalid-input errors. |
 | EncodingUtil | `EncodingUtil.base64Encode` | `supported` | Blob-shaped local value. |
 | EncodingUtil | `EncodingUtil.convertFromHex` | `supported` | Blob-shaped local value with stable odd-length and invalid-input errors. |
@@ -97,8 +98,8 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Integer | `Integer.MAX_VALUE` | `supported` | Exposes the public 32-bit Integer maximum constant. |
 | Integer | `Integer.MIN_VALUE` | `supported` | Exposes the public 32-bit Integer minimum constant. |
 | Integer | `Integer.doubleValue` | `supported` | Converts local Integer values to the local numeric representation. |
-| Integer | `Integer.format` | `partial` | Simple deterministic base-10 formatting; locale grouping is not modeled. |
-| Integer | `Integer.valueOf` | `supported` | Parses integer strings and numeric values with 32-bit overflow checks. |
+| Integer | `Integer.format` | `partial` | Simple deterministic base-10 formatting; locale and pattern overloads return explicit unsupported errors. |
+| Integer | `Integer.valueOf` | `supported` | Parses integer strings and numeric values with 32-bit overflow checks, including trimmed signed strings. |
 | Iterator | `Iterator.hasNext` | `supported` | Checks remaining elements in a local collection snapshot. |
 | Iterator | `Iterator.next` | `supported` | Returns the next element from a local collection snapshot and raises NoSuchElementException when exhausted. |
 | Iterator | `Iterator.remove` | `unsupported` | Returns an explicit unsupported error; mutating collection iterators are not modeled. |
@@ -134,7 +135,8 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | LoggingLevel | `LoggingLevel.values` | `supported` | Returns NONE, ERROR, WARN, INFO, DEBUG, FINE, FINER, FINEST in deterministic order. |
 | Long | `Long.MAX_VALUE` | `supported` | Exposes the public 64-bit Long maximum constant. |
 | Long | `Long.MIN_VALUE` | `supported` | Exposes the public 64-bit Long minimum constant. |
-| Long | `Long.valueOf` | `supported` | Parses integer strings and numeric values with overflow checks. |
+| Long | `Long.format` | `partial` | Simple deterministic base-10 formatting; locale and pattern overloads return explicit unsupported errors. |
+| Long | `Long.valueOf` | `supported` | Parses integer strings and numeric values with overflow checks, including trimmed signed strings. |
 | Map | `Map.clear` | `supported` | Removes all local map entries. |
 | Map | `Map.clone` | `supported` | Copies the local map container; values keep local identity. |
 | Map | `Map.containsKey` | `supported` | Checks local keys, including null keys, using deterministic key encoding. |
