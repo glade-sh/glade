@@ -121,7 +121,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | JSON | `JSON.createGenerator` | `supported` | Creates deterministic local JSONGenerator instances. |
 | JSON | `JSON.createParser` | `partial` | Creates deterministic local JSONParser token streams for valid JSON strings. |
 | JSON | `JSON.deserialize` | `partial` | Primitive, platform scalar, List, Map<String,Object/value>, SObject, and class shapes for the supported local subset; stable mapping errors for mismatched typed shapes and unsupported local object targets. |
-| JSON | `JSON.deserializeStrict` | `partial` | Rejects unknown fields for supported schema/class targets; otherwise shares the bounded typed local mapping subset. |
+| JSON | `JSON.deserializeStrict` | `partial` | Rejects duplicate object fields and unknown fields for supported schema/class targets; otherwise shares the bounded typed local mapping subset. |
 | JSON | `JSON.deserializeUntyped` | `partial` | Maps JSON into local primitive/list/map values with deterministic null and number handling. |
 | JSON | `JSON.serialize` | `partial` | Includes suppressApexObjectNulls overload for supported object fields; map/list nulls are preserved for supported values. |
 | JSON | `JSON.serializePretty` | `partial` | Pretty output for supported values with object-field null suppression and map/list null preservation. |

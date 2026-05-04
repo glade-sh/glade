@@ -407,6 +407,37 @@ System.assertEquals('001B000001DVM9t', parent.toString());
 	}
 }
 
+func TestExecJSONDeserializeStrictRejectsDuplicateFields(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account decoded = JSON.deserializeStrict('{"Name":"First","Name":"Second"}', Account.class);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), `duplicate field "Name"`) {
+		t.Fatalf("err = %v", err)
+	}
+}
+
+func TestExecJSONDeserializeAllowsDuplicateFieldsOutsideStrict(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account decoded = JSON.deserialize('{"Name":"First","Name":"Second"}', Account.class);
+System.assertEquals('Second', decoded.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecJSONDeserializeTypedRejectsMismatchedShapes(t *testing.T) {
 	program, err := CompileAnonymous(`
 Object n = JSON.deserialize('"not-a-number"', Integer.class);

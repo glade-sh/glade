@@ -1469,12 +1469,13 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		if len(args) != 2 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("%s expects String and Type", callee)
 		}
-		decoded, err := decodeJSONValue(args[0].Text)
+		strict := callee == "JSON.deserializeStrict"
+		decoded, err := decodeJSONValueForDeserialize(args[0].Text, strict)
 		if err != nil {
 			return Null, err
 		}
 		if args[1].Kind == ValueObject && args[1].Type == "Type" {
-			return vm.typedValueFromJSON(typeValueName(args[1]), decoded, callee == "JSON.deserializeStrict")
+			return vm.typedValueFromJSON(typeValueName(args[1]), decoded, strict)
 		}
 		return valueFromJSON(decoded), nil
 	case "Schema.getGlobalDescribe":
@@ -5044,6 +5045,76 @@ func decodeJSONValue(text string) (any, error) {
 		return nil, err
 	}
 	return decoded, nil
+}
+
+func decodeJSONValueForDeserialize(text string, strict bool) (any, error) {
+	if strict {
+		if err := validateJSONNoDuplicateObjectFields(text); err != nil {
+			return nil, err
+		}
+	}
+	return decodeJSONValue(text)
+}
+
+func validateJSONNoDuplicateObjectFields(text string) error {
+	decoder := json.NewDecoder(strings.NewReader(text))
+	decoder.UseNumber()
+	return validateJSONValueNoDuplicateObjectFields(decoder)
+}
+
+func validateJSONValueNoDuplicateObjectFields(decoder *json.Decoder) error {
+	token, err := decoder.Token()
+	if err != nil {
+		return err
+	}
+	delim, ok := token.(json.Delim)
+	if !ok {
+		return nil
+	}
+	switch delim {
+	case '{':
+		seen := map[string]struct{}{}
+		for decoder.More() {
+			keyToken, err := decoder.Token()
+			if err != nil {
+				return err
+			}
+			key, ok := keyToken.(string)
+			if !ok {
+				return fmt.Errorf("JSON.deserializeStrict expected object field name")
+			}
+			if _, exists := seen[key]; exists {
+				return fmt.Errorf("JSON.deserializeStrict found duplicate field %q", key)
+			}
+			seen[key] = struct{}{}
+			if err := validateJSONValueNoDuplicateObjectFields(decoder); err != nil {
+				return err
+			}
+		}
+		end, err := decoder.Token()
+		if err != nil {
+			return err
+		}
+		if end != json.Delim('}') {
+			return fmt.Errorf("JSON.deserializeStrict expected object end")
+		}
+	case '[':
+		for decoder.More() {
+			if err := validateJSONValueNoDuplicateObjectFields(decoder); err != nil {
+				return err
+			}
+		}
+		end, err := decoder.Token()
+		if err != nil {
+			return err
+		}
+		if end != json.Delim(']') {
+			return fmt.Errorf("JSON.deserializeStrict expected array end")
+		}
+	default:
+		return fmt.Errorf("JSON.deserializeStrict found unexpected delimiter %q", delim)
+	}
+	return nil
 }
 
 func valueFromJSON(raw any) Value {
