@@ -53,35 +53,35 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Date | `Date.valueOf` | `supported` | Parses strict yyyy-MM-dd strings plus yyyy-MM-dd time forms into local Date values with stable invalid-input errors. |
 | Date | `Date.year` | `supported` | Returns Gregorian year. |
 | Datetime | `Datetime.addDays` | `partial` | UTC-local arithmetic; no user timezone or DST model. |
-| Datetime | `Datetime.addHours` | `partial` | UTC-local arithmetic. |
-| Datetime | `Datetime.addMilliseconds` | `partial` | UTC-local arithmetic. |
-| Datetime | `Datetime.addMinutes` | `partial` | UTC-local arithmetic. |
+| Datetime | `Datetime.addHours` | `supported` | Adds whole hours to the UTC instant. |
+| Datetime | `Datetime.addMilliseconds` | `supported` | Adds whole milliseconds to the UTC instant. |
+| Datetime | `Datetime.addMinutes` | `supported` | Adds whole minutes to the UTC instant. |
 | Datetime | `Datetime.addMonths` | `partial` | UTC-local arithmetic with month-end clamp; no user timezone or DST model. |
-| Datetime | `Datetime.addSeconds` | `partial` | UTC-local arithmetic. |
+| Datetime | `Datetime.addSeconds` | `supported` | Adds whole seconds to the UTC instant. |
 | Datetime | `Datetime.addYears` | `partial` | UTC-local arithmetic with leap-day clamp; no user timezone or DST model. |
-| Datetime | `Datetime.date` | `partial` | Returns Date component in the current user timezone for UTC, fixed offsets, and the modeled named-zone slice. |
+| Datetime | `Datetime.date` | `supported` | Returns Date component in the deterministic current-user timezone slice: UTC, fixed offsets, and modeled named zones; unsupported user zones return typed diagnostics. |
 | Datetime | `Datetime.dateGmt` | `supported` | Returns the UTC Date component. |
-| Datetime | `Datetime.day` | `partial` | Current-user timezone component getter for UTC, fixed offsets, and the modeled named-zone slice; dayGmt stays UTC. |
+| Datetime | `Datetime.day` | `supported` | Current-user timezone component getter for UTC, fixed offsets, and modeled named zones; unsupported user zones return typed diagnostics. |
 | Datetime | `Datetime.dayGmt` | `supported` | Returns the UTC day component. |
-| Datetime | `Datetime.format` | `partial` | Deterministic UTC/fixed-offset Java-pattern slice plus modeled named-zone DST formatting for America/Los_Angeles, America/New_York, America/Chicago, America/Denver, Europe/London, Europe/Berlin, Asia/Tokyo, and Australia/Sydney; format(pattern) and format() use the current user timezone inside that slice; user locale is unsupported. |
-| Datetime | `Datetime.formatGmt` | `partial` | Deterministic UTC Java-pattern slice with stable token errors; locale patterns are not modeled beyond pinned English names. |
-| Datetime | `Datetime.hour` | `partial` | Current-user timezone component getter for UTC, fixed offsets, and the modeled named-zone slice; hourGmt stays UTC. |
+| Datetime | `Datetime.format` | `partial` | Deterministic UTC/fixed-offset Java-pattern slice plus modeled named-zone DST formatting for America/Los_Angeles, America/New_York, America/Chicago, America/Denver, Europe/London, Europe/Berlin, Asia/Tokyo, and Australia/Sydney; format(pattern) and format() use the current user timezone inside that slice; locale-dependent pattern tokens return UnsupportedFeature. |
+| Datetime | `Datetime.formatGmt` | `partial` | Deterministic UTC Java-pattern slice with stable token errors; locale-dependent pattern tokens return UnsupportedFeature rather than localized text. |
+| Datetime | `Datetime.hour` | `supported` | Current-user timezone component getter for UTC, fixed offsets, and modeled named zones; unsupported user zones return typed diagnostics. |
 | Datetime | `Datetime.hourGmt` | `supported` | Returns the UTC hour component. |
-| Datetime | `Datetime.millisecond` | `partial` | Millisecond component getter. |
-| Datetime | `Datetime.minute` | `partial` | Current-user timezone component getter for UTC, fixed offsets, and the modeled named-zone slice; minuteGmt stays UTC. |
+| Datetime | `Datetime.millisecond` | `supported` | Returns the millisecond component of the Datetime instant. |
+| Datetime | `Datetime.minute` | `supported` | Current-user timezone component getter for UTC, fixed offsets, and modeled named zones; unsupported user zones return typed diagnostics. |
 | Datetime | `Datetime.minuteGmt` | `supported` | Returns the UTC minute component. |
-| Datetime | `Datetime.month` | `partial` | Current-user timezone component getter for UTC, fixed offsets, and the modeled named-zone slice; monthGmt stays UTC. |
+| Datetime | `Datetime.month` | `supported` | Current-user timezone component getter for UTC, fixed offsets, and modeled named zones; unsupported user zones return typed diagnostics. |
 | Datetime | `Datetime.monthGmt` | `supported` | Returns the UTC month component. |
 | Datetime | `Datetime.newInstance` | `supported` | Validates integer and Date+Time parts, constructing through the current user timezone for UTC, fixed offsets, and the modeled named-zone slice with deterministic DST gap/overlap handling. |
 | Datetime | `Datetime.newInstanceGmt` | `supported` | Constructs a UTC Datetime from integer or Date+Time parts. |
 | Datetime | `Datetime.now` | `partial` | Deterministic VM clock timestamp in UTC. |
-| Datetime | `Datetime.second` | `partial` | Current-user timezone component getter for UTC, fixed offsets, and the modeled named-zone slice; secondGmt stays UTC. |
+| Datetime | `Datetime.second` | `supported` | Current-user timezone component getter for UTC, fixed offsets, and modeled named zones; unsupported user zones return typed diagnostics. |
 | Datetime | `Datetime.secondGmt` | `supported` | Returns the UTC second component. |
-| Datetime | `Datetime.time` | `partial` | Returns Time component in the current user timezone for UTC, fixed offsets, and the modeled named-zone slice. |
+| Datetime | `Datetime.time` | `supported` | Returns Time component in the deterministic current-user timezone slice: UTC, fixed offsets, and modeled named zones; unsupported user zones return typed diagnostics. |
 | Datetime | `Datetime.timeGmt` | `supported` | Returns the UTC Time component. |
 | Datetime | `Datetime.valueOf` | `supported` | Parses supported strict datetime strings with stable invalid-input errors. |
 | Datetime | `Datetime.valueOfGmt` | `supported` | Parses supported strict UTC/RFC3339 datetime strings with stable invalid-input errors. |
-| Datetime | `Datetime.year` | `partial` | Current-user timezone component getter for UTC, fixed offsets, and the modeled named-zone slice; yearGmt stays UTC. |
+| Datetime | `Datetime.year` | `supported` | Current-user timezone component getter for UTC, fixed offsets, and modeled named zones; unsupported user zones return typed diagnostics. |
 | Datetime | `Datetime.yearGmt` | `supported` | Returns the UTC year component. |
 | Decimal | `Decimal.abs` | `supported` | Absolute value for local Decimal values. |
 | Decimal | `Decimal.doubleValue` | `supported` | Returns local Decimal value. |
@@ -419,14 +419,15 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | URL | `URL.getSalesforceBaseUrl` | `partial` | Deterministic local base URL. |
 | URL | `URL.toExternalForm` | `supported` | Returns the stored local URL string. |
 | Unsupported | `unimplemented platform/stdlib calls` | `supported` | Typed UnsupportedFeature errors with stable message text. |
-| UserInfo | `UserInfo.getFirstName` | `partial` | Current runAs/server/default user. |
-| UserInfo | `UserInfo.getLanguage` | `partial` | Deterministic local value. |
-| UserInfo | `UserInfo.getLastName` | `partial` | Current runAs/server/default user. |
-| UserInfo | `UserInfo.getLocale` | `partial` | Deterministic local value. |
-| UserInfo | `UserInfo.getName` | `partial` | Current runAs/server/default user. |
-| UserInfo | `UserInfo.getOrganizationId` | `partial` | Local org identity. |
-| UserInfo | `UserInfo.getProfileId` | `partial` | Current runAs/server/default user. |
-| UserInfo | `UserInfo.getSessionId` | `partial` | Empty local session value. |
+| UserInfo | `UserInfo.getFirstName` | `supported` | Returns the current runAs, server, or default local user FirstName with deterministic fallback. |
+| UserInfo | `UserInfo.getLanguage` | `supported` | Returns the current runAs/server user LanguageLocaleKey or deterministic en_US default; it does not enable locale-sensitive formatting. |
+| UserInfo | `UserInfo.getLastName` | `supported` | Returns the current runAs, server, or default local user LastName with deterministic fallback. |
+| UserInfo | `UserInfo.getLocale` | `supported` | Returns the current runAs/server user LocaleSidKey or deterministic en_US default; it does not enable locale-sensitive formatting. |
+| UserInfo | `UserInfo.getName` | `supported` | Returns the current runAs, server, or default local user Name with deterministic fallback. |
+| UserInfo | `UserInfo.getOrganizationId` | `supported` | Returns the deterministic local org ID. |
+| UserInfo | `UserInfo.getProfileId` | `supported` | Returns the current runAs, server, or default local user ProfileId with deterministic fallback. |
+| UserInfo | `UserInfo.getSessionId` | `supported` | Returns the deterministic empty local session ID. |
 | UserInfo | `UserInfo.getTimeZone` | `partial` | Returns a TimeZone object for the current user TimeZoneSidKey in the modeled UTC/fixed-offset/named-zone slice; broader Salesforce zone and locale behavior is unsupported. |
-| UserInfo | `UserInfo.getUserEmail` | `partial` | Current runAs/server/default user. |
-| UserInfo | `UserInfo.getUserId` | `partial` | Current runAs/server/default user. |
+| UserInfo | `UserInfo.getUserEmail` | `supported` | Returns the current runAs, server, or default local user Email with deterministic fallback. |
+| UserInfo | `UserInfo.getUserId` | `supported` | Returns the current runAs, server, or default local user ID with deterministic fallback. |
+| UserInfo | `UserInfo.getUserName` | `supported` | Returns the current runAs, server, or default local user Username, falling back to the user ID. |
