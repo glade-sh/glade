@@ -90,7 +90,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Decimal | `Decimal.longValue` | `supported` | Truncates to local Long representation with overflow checks. |
 | Decimal | `Decimal.pow` | `supported` | Power with Integer exponent for finite local Decimal results. |
 | Decimal | `Decimal.round` | `partial` | Default half-up plus all local RoundingMode values; exact arbitrary-precision Decimal scale parity is not modeled. |
-| Decimal | `Decimal.setScale` | `partial` | Supports local scale 0-15 with UP, DOWN, CEILING, FLOOR, HALF_UP, HALF_DOWN, HALF_EVEN, and UNNECESSARY; arbitrary-precision scale parity remains out of scope. |
+| Decimal | `Decimal.setScale` | `partial` | Supports local finite scale 0-15 with UP, DOWN, CEILING, FLOOR, HALF_UP, HALF_DOWN, HALF_EVEN, and UNNECESSARY; larger arbitrary-precision scales return UnsupportedFeature. |
 | Decimal | `Decimal.valueOf` | `supported` | Parses finite decimal strings and numeric values, including trimmed signed strings. |
 | Double | `Double.format` | `partial` | Simple deterministic finite numeric formatting; locale and pattern overloads return explicit unsupported errors. |
 | Double | `Double.valueOf` | `supported` | Parses finite decimal strings and numeric values into the local numeric representation, including trimmed signed strings. |
@@ -98,8 +98,8 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | EncodingUtil | `EncodingUtil.base64Encode` | `supported` | Blob-shaped local value. |
 | EncodingUtil | `EncodingUtil.convertFromHex` | `supported` | Blob-shaped local value with stable odd-length and invalid-input errors. |
 | EncodingUtil | `EncodingUtil.convertToHex` | `supported` | Blob-shaped local value. |
-| EncodingUtil | `EncodingUtil.urlDecode` | `partial` | Uses query unescape for bounded UTF-8 and ISO-8859-1 charset aliases; other charsets return UnsupportedFeature. |
-| EncodingUtil | `EncodingUtil.urlEncode` | `partial` | Uses query escape for bounded UTF-8 and ISO-8859-1 charset aliases; other charsets return UnsupportedFeature. |
+| EncodingUtil | `EncodingUtil.urlDecode` | `partial` | Uses query unescape for bounded UTF-8, US-ASCII, and ISO-8859-1 charset aliases; other charsets return UnsupportedFeature. |
+| EncodingUtil | `EncodingUtil.urlEncode` | `partial` | Uses query escape for bounded UTF-8, US-ASCII, and ISO-8859-1 charset aliases; unencodable code points and other charsets are fenced explicitly. |
 | EventBus | `EventBus.publish` | `unsupported` | Platform event publish and after-commit publish calls return fixture-backed UnsupportedFeature diagnostics. |
 | Exception | `Built-in exception types` | `supported` | Known public built-in exception tokens construct message-bearing local exceptions, assign to Exception, and resolve through Type.forName/isAssignableFrom; unknown exception tokens return null from Type.forName. |
 | Exception | `Exception.getCause` | `supported` | Returns the locally initialized cause value after one-shot initCause, including null causes. |

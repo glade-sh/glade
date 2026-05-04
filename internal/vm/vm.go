@@ -5058,6 +5058,8 @@ func urlEncodeWithCharset(name, text, charset string) (string, error) {
 	switch normalizeURLCharset(charset) {
 	case "utf-8":
 		return url.QueryEscape(text), nil
+	case "us-ascii":
+		return urlEncodeASCII(name, text)
 	case "iso-8859-1":
 		return urlEncodeLatin1(name, text)
 	default:
@@ -5069,6 +5071,8 @@ func urlDecodeWithCharset(name, text, charset string) (string, error) {
 	switch normalizeURLCharset(charset) {
 	case "utf-8":
 		return url.QueryUnescape(text)
+	case "us-ascii":
+		return urlDecodeASCII(name, text)
 	case "iso-8859-1":
 		return urlDecodeLatin1(text)
 	default:
@@ -5081,11 +5085,24 @@ func normalizeURLCharset(charset string) string {
 	switch normalized {
 	case "utf-8", "utf8":
 		return "utf-8"
+	case "us-ascii", "usascii", "ascii":
+		return "us-ascii"
 	case "iso-8859-1", "iso8859-1", "iso-88591", "iso88591", "latin1", "latin-1":
 		return "iso-8859-1"
 	default:
 		return normalized
 	}
+}
+
+func urlEncodeASCII(name, text string) (string, error) {
+	var out strings.Builder
+	for _, r := range text {
+		if r > 0x7f {
+			return "", fmt.Errorf("%s charset \"US-ASCII\" cannot encode U+%04X", name, r)
+		}
+		writeURLEncodedByte(&out, byte(r))
+	}
+	return out.String(), nil
 }
 
 func urlEncodeLatin1(name, text string) (string, error) {
@@ -5094,48 +5111,76 @@ func urlEncodeLatin1(name, text string) (string, error) {
 		if r > 0xff {
 			return "", fmt.Errorf("%s charset \"ISO-8859-1\" cannot encode U+%04X", name, r)
 		}
-		b := byte(r)
-		switch {
-		case b == ' ':
-			out.WriteByte('+')
-		case (b >= 'A' && b <= 'Z') || (b >= 'a' && b <= 'z') || (b >= '0' && b <= '9') || b == '-' || b == '_' || b == '.' || b == '*':
-			out.WriteByte(b)
-		default:
-			const hexDigits = "0123456789ABCDEF"
-			out.WriteByte('%')
-			out.WriteByte(hexDigits[b>>4])
-			out.WriteByte(hexDigits[b&0x0f])
-		}
+		writeURLEncodedByte(&out, byte(r))
 	}
 	return out.String(), nil
 }
 
+func writeURLEncodedByte(out *strings.Builder, b byte) {
+	switch {
+	case b == ' ':
+		out.WriteByte('+')
+	case (b >= 'A' && b <= 'Z') || (b >= 'a' && b <= 'z') || (b >= '0' && b <= '9') || b == '-' || b == '_' || b == '.' || b == '*':
+		out.WriteByte(b)
+	default:
+		const hexDigits = "0123456789ABCDEF"
+		out.WriteByte('%')
+		out.WriteByte(hexDigits[b>>4])
+		out.WriteByte(hexDigits[b&0x0f])
+	}
+}
+
+func urlDecodeASCII(name, text string) (string, error) {
+	decoded, err := urlDecodeBytes(text)
+	if err != nil {
+		return "", err
+	}
+	for _, b := range decoded {
+		if b > 0x7f {
+			return "", fmt.Errorf("%s charset \"US-ASCII\" cannot decode byte 0x%02X", name, b)
+		}
+	}
+	return string(decoded), nil
+}
+
 func urlDecodeLatin1(text string) (string, error) {
+	decoded, err := urlDecodeBytes(text)
+	if err != nil {
+		return "", err
+	}
 	var out strings.Builder
+	for _, b := range decoded {
+		out.WriteRune(rune(b))
+	}
+	return out.String(), nil
+}
+
+func urlDecodeBytes(text string) ([]byte, error) {
+	out := make([]byte, 0, len(text))
 	for i := 0; i < len(text); i++ {
 		ch := text[i]
 		switch ch {
 		case '+':
-			out.WriteByte(' ')
+			out = append(out, ' ')
 		case '%':
 			if i+2 >= len(text) {
-				return "", fmt.Errorf("invalid URL escape %q", text[i:])
+				return nil, fmt.Errorf("invalid URL escape %q", text[i:])
 			}
 			hi, ok := fromHex(text[i+1])
 			if !ok {
-				return "", fmt.Errorf("invalid URL escape %q", text[i:i+3])
+				return nil, fmt.Errorf("invalid URL escape %q", text[i:i+3])
 			}
 			lo, ok := fromHex(text[i+2])
 			if !ok {
-				return "", fmt.Errorf("invalid URL escape %q", text[i:i+3])
+				return nil, fmt.Errorf("invalid URL escape %q", text[i:i+3])
 			}
-			out.WriteRune(rune(hi<<4 | lo))
+			out = append(out, hi<<4|lo)
 			i += 2
 		default:
-			out.WriteByte(ch)
+			out = append(out, ch)
 		}
 	}
-	return out.String(), nil
+	return out, nil
 }
 
 func fromHex(ch byte) (byte, bool) {

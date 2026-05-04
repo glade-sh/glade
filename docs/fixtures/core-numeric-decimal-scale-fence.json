@@ -1,0 +1,28 @@
+{
+  "name": "core-numeric-decimal-scale-fence",
+  "evidence": [
+    {
+      "symbol": "Decimal.setScale",
+      "kind": "exec",
+      "notes": "Arbitrary-precision Decimal scales beyond the local finite model are fenced with UnsupportedFeature."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Decimal d = Decimal.valueOf('1.25');\nd.setScale(16);"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Decimal d = Decimal.valueOf('1.25');\nd.setScale(16);"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"Decimal.setScale scale greater than 15 is not supported by the local decimal model\""
+    }
+  }
+}

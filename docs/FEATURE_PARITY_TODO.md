@@ -608,8 +608,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Fence locale-sensitive `Datetime.format` pattern tokens with typed
     unsupported diagnostics instead of localized output claims.
   - [x] Add common numeric `Math` helpers, `Decimal` scale/conversion helpers,
-    URL encoding helpers, including bounded UTF-8 and ISO-8859-1 charset
-    fixtures, and MD5/SHA1/SHA-256 digest coverage.
+    URL encoding helpers, including bounded UTF-8, US-ASCII, and ISO-8859-1
+    charset fixtures, and MD5/SHA1/SHA-256 digest coverage.
   - [x] Promote `RoundingMode.valueOf` and built-in enum helpers (`values`,
     `name`, `ordinal`, and `toString`) with fixture-backed exact-name and
     deterministic-order coverage.
@@ -619,8 +619,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     tokens, and `Type.forName`/`Type.newInstance` reflection fences now have
     fixture-backed capability coverage.
   - **Limitation**: Exact locale, broad timezone, arbitrary-precision decimal
-    scale, charset, and full Java-regex parity remain outside the current local
-    subset. The current named-zone slice is limited to deterministic
+    scale, broad charset, and full Java-regex parity remain outside the current
+    local subset. The current named-zone slice is limited to deterministic
     `America/Los_Angeles`,
     `America/New_York`, `America/Chicago`, `America/Denver`, `Europe/London`,
     `Europe/Berlin`, `Asia/Tokyo`, and `Australia/Sydney` formatting, offsets,

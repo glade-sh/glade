@@ -1,0 +1,33 @@
+{
+  "name": "core-encoding-url-ascii-charset-stdlib",
+  "evidence": [
+    {
+      "symbol": "EncodingUtil.urlEncode",
+      "kind": "exec",
+      "notes": "Covers bounded US-ASCII URL charset aliases and byte escaping."
+    },
+    {
+      "symbol": "EncodingUtil.urlDecode",
+      "kind": "exec",
+      "notes": "Covers bounded US-ASCII URL charset aliases and byte decoding."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "String encoded = EncodingUtil.urlEncode('A+B trail*', 'US_ASCII');\nSystem.assertEquals('A%2BB+trail*', encoded);\nSystem.assertEquals('A+B trail*', EncodingUtil.urlDecode(encoded, 'ascii'));\nSystem.assertEquals('~', EncodingUtil.urlDecode('%7E', ' us-ascii '));\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "String encoded = EncodingUtil.urlEncode('A+B trail*', 'US_ASCII');\nSystem.assertEquals('A%2BB+trail*', encoded);\nSystem.assertEquals('A+B trail*', EncodingUtil.urlDecode(encoded, 'ascii'));\nSystem.assertEquals('~', EncodingUtil.urlDecode('%7E', ' us-ascii '));\n"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}
