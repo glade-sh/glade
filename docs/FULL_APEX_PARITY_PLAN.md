@@ -199,7 +199,7 @@ Current progress:
   - `docs/fixtures/core-datetime-invalid-datetime.json`
   - `docs/fixtures/core-datetime-invalid-time.json`
   - `docs/fixtures/core-datetime-format-unsupported-token.json`
-  - `docs/fixtures/core-datetime-format-unsupported-timezone.json`
+  - `docs/fixtures/core-datetime-format-named-timezone.json`
   - `docs/fixtures/core-timezone-unsupported-named-zone.json`
   - `docs/fixtures/core-timezone-unsupported-display-overload.json`
   - `docs/fixtures/core-json-stdlib.json`

@@ -442,8 +442,10 @@ a Salesforce-shaped local API server without silently wrong behavior.
     arithmetic, and component helpers.
   - [x] Add common numeric `Math` helpers, `Decimal` scale/conversion helpers,
     URL encoding helpers, and MD5/SHA1/SHA-256 digest coverage.
-  - **Limitation**: Exact locale, timezone, rounding-mode, charset, and full
-    Java-regex parity remain outside the current local subset.
+  - **Limitation**: Exact locale, broad timezone, rounding-mode, charset, and
+    full Java-regex parity remain outside the current local subset. The current
+    named-zone slice is limited to deterministic `America/Los_Angeles` DST
+    formatting and offsets.
 - [x] Complete HTTP/callout mock behavior: request/response types,
   `HttpCalloutMock`, callout limits, and test isolation.
   - [x] Add common `HttpRequest`/`HttpResponse` endpoint, method, header,

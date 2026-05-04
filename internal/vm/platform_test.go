@@ -1242,6 +1242,12 @@ System.assertEquals(-7200000, west.getOffset(gmt));
 TimeZone edge = TimeZone.getTimeZone('GMT+14:00');
 System.assertEquals('GMT+14:00', edge.getDisplayName());
 System.assertEquals(50400000, edge.getOffset(gmt));
+TimeZone pacific = TimeZone.getTimeZone('America/Los_Angeles');
+System.assertEquals('America/Los_Angeles', pacific.getID());
+System.assertEquals('America/Los_Angeles', pacific.getDisplayName());
+System.assertEquals(-28800000, pacific.getOffset(gmt));
+Datetime summerNoon = Datetime.valueOfGmt('2024-07-01T12:00:00Z');
+System.assertEquals(-25200000, pacific.getOffset(summerNoon));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1259,6 +1265,9 @@ System.assertEquals('Thu, Feb 29 2024 11:05 PM', stamp.formatGmt('EEE, MMM d yyy
 System.assertEquals('2024-03-01 04:35:06.250 +0530 GMT+05:30', stamp.format('yyyy-MM-dd HH:mm:ss.SSS Z z', 'GMT+05:30'));
 System.assertEquals('2024-02-29T21:05:06', stamp.format('yyyy-MM-dd''T''HH:mm:ss', 'UTC-02:00'));
 System.assertEquals('2024-03-01 13:05:06 +1400 GMT+14:00', stamp.format('yyyy-MM-dd HH:mm:ss Z z', 'GMT+14:00'));
+System.assertEquals('2024-02-29 15:05:06 -0800 PST', stamp.format('yyyy-MM-dd HH:mm:ss Z z', 'America/Los_Angeles'));
+Datetime summer = Datetime.valueOfGmt('2024-07-01T12:00:00Z');
+System.assertEquals('2024-07-01 05:00:00 -0700 PDT', summer.format('yyyy-MM-dd HH:mm:ss Z z', 'America/Los_Angeles'));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1275,8 +1284,8 @@ func TestExecDatetimePatternFormattingRejectsUnsupportedEdges(t *testing.T) {
 		want string
 	}{
 		{
-			name: "named timezone",
-			src:  `Datetime stamp = Datetime.now(); stamp.format('yyyy-MM-dd', 'America/Los_Angeles');`,
+			name: "unknown named timezone",
+			src:  `Datetime stamp = Datetime.now(); stamp.format('yyyy-MM-dd', 'America/Denver');`,
 			want: "unsupported call",
 		},
 		{
@@ -1333,11 +1342,6 @@ func TestExecTimeZoneRejectsUnsupportedZones(t *testing.T) {
 		src  string
 		want string
 	}{
-		{
-			name: "named zone",
-			src:  `TimeZone tz = TimeZone.getTimeZone('America/Los_Angeles');`,
-			want: `unsupported call "TimeZone.getTimeZone America/Los_Angeles"`,
-		},
 		{
 			name: "trimmed ID",
 			src:  `TimeZone tz = TimeZone.getTimeZone(' UTC');`,
