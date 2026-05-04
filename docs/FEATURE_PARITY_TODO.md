@@ -630,6 +630,13 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Promote `RoundingMode.valueOf` and built-in enum helpers (`values`,
     `name`, `ordinal`, and `toString`) with fixture-backed exact-name and
     deterministic-order coverage.
+  - [x] Promote local Decimal `round()` and `setScale(...)` by using
+    deterministic base-10 tie handling for the finite local Decimal model, while
+    keeping scales above 15 fenced with `UnsupportedFeature`.
+  - [x] Sharpen `Id.getSObjectType()` parity boundaries: local schema prefixes
+    and the bounded common standard prefix table return SObjectType tokens;
+    unknown or unmodeled shape-valid prefixes return stable `StringException`
+    diagnostics instead of guessed object types.
   - [x] Close small collection/exception/type stdlib rows: local
     `List`/`Map`/`Set` no-arg deepClone, primitive `List.sort`, deterministic
     `Map.toString`, caught exception line/stack metadata, built-in exception

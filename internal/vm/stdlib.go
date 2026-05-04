@@ -3,6 +3,7 @@ package vm
 import (
 	"fmt"
 	"math"
+	"math/big"
 	"regexp"
 	"sort"
 	"strconv"
@@ -184,16 +185,11 @@ func roundDecimalToScale(callee string, value float64, scaleValue int64, mode st
 	if scaleValue > maxLocalScale {
 		return 0, unsupportedCallError(fmt.Sprintf("%s scale greater than %d is not supported by the local decimal model", callee, maxLocalScale))
 	}
-	factor := math.Pow10(int(scaleValue))
-	scaled := value * factor
-	if math.IsInf(scaled, 0) || math.IsNaN(scaled) {
-		return 0, fmt.Errorf("%s scaled value must be finite", callee)
-	}
-	rounded, err := roundScaledDecimal(callee, scaled, mode)
+	rounded, err := roundLocalDecimalStringToScale(callee, value, scaleValue, mode)
 	if err != nil {
 		return 0, err
 	}
-	return rounded / factor, nil
+	return rounded, nil
 }
 
 func ensureFiniteDecimal(callee string, value float64) error {
@@ -203,37 +199,72 @@ func ensureFiniteDecimal(callee string, value float64) error {
 	return nil
 }
 
-func roundScaledDecimal(callee string, value float64, mode string) (float64, error) {
+func roundLocalDecimalStringToScale(callee string, value float64, scaleValue int64, mode string) (float64, error) {
+	rat := new(big.Rat)
+	if _, ok := rat.SetString(strconv.FormatFloat(value, 'f', -1, 64)); !ok {
+		return 0, fmt.Errorf("%s value cannot be represented by local decimal model", callee)
+	}
+	factor := new(big.Int).Exp(big.NewInt(10), big.NewInt(scaleValue), nil)
+	scaled := new(big.Rat).Mul(rat, new(big.Rat).SetInt(factor))
+	rounded, err := roundScaledRat(callee, scaled, mode)
+	if err != nil {
+		return 0, err
+	}
+	resultRat := new(big.Rat).SetFrac(rounded, factor)
+	result, _ := resultRat.Float64()
+	if math.IsInf(result, 0) || math.IsNaN(result) {
+		return 0, fmt.Errorf("%s rounded value must be finite", callee)
+	}
+	return result, nil
+}
+
+func roundScaledRat(callee string, value *big.Rat, mode string) (*big.Int, error) {
+	num := value.Num()
+	den := value.Denom()
+	q := new(big.Int).Quo(num, den)
+	remainder := new(big.Int).Sub(num, new(big.Int).Mul(new(big.Int).Set(q), den))
+	if remainder.Sign() == 0 {
+		return q, nil
+	}
+	sign := num.Sign()
+	absRem := new(big.Int).Abs(remainder)
+	twiceRem := new(big.Int).Lsh(new(big.Int).Set(absRem), 1)
+	cmpHalf := twiceRem.Cmp(den)
+	step := big.NewInt(int64(sign))
 	switch mode {
 	case "UP":
-		if value < 0 {
-			return math.Floor(value), nil
-		}
-		return math.Ceil(value), nil
+		return q.Add(q, step), nil
 	case "DOWN":
-		return math.Trunc(value), nil
+		return q, nil
 	case "CEILING":
-		return math.Ceil(value), nil
+		if sign > 0 {
+			return q.Add(q, big.NewInt(1)), nil
+		}
+		return q, nil
 	case "FLOOR":
-		return math.Floor(value), nil
+		if sign < 0 {
+			return q.Sub(q, big.NewInt(1)), nil
+		}
+		return q, nil
 	case "HALF_UP":
-		return math.Round(value), nil
-	case "HALF_EVEN":
-		return math.RoundToEven(value), nil
+		if cmpHalf >= 0 {
+			return q.Add(q, step), nil
+		}
+		return q, nil
 	case "HALF_DOWN":
-		truncated := math.Trunc(value)
-		fraction := math.Abs(value - truncated)
-		if math.Abs(fraction-0.5) <= 1e-12 {
-			return truncated, nil
+		if cmpHalf > 0 {
+			return q.Add(q, step), nil
 		}
-		return math.Round(value), nil
+		return q, nil
+	case "HALF_EVEN":
+		if cmpHalf > 0 || (cmpHalf == 0 && q.Bit(0) == 1) {
+			return q.Add(q, step), nil
+		}
+		return q, nil
 	case "UNNECESSARY":
-		if value != math.Trunc(value) {
-			return 0, fmt.Errorf("%s rounding necessary for RoundingMode.UNNECESSARY", callee)
-		}
-		return value, nil
+		return nil, fmt.Errorf("%s rounding necessary for RoundingMode.UNNECESSARY", callee)
 	default:
-		return 0, fmt.Errorf("unsupported Decimal rounding mode %q", mode)
+		return nil, fmt.Errorf("unsupported Decimal rounding mode %q", mode)
 	}
 }
 
