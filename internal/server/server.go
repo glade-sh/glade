@@ -488,16 +488,49 @@ func applyResetScopes(org *storage.OrgState, scopes []string) {
 	}
 }
 
+type localAPILimit struct {
+	Max       int `json:"Max"`
+	Remaining int `json:"Remaining"`
+}
+
+func localAPILimitValue(max int) localAPILimit {
+	return localAPILimit{Max: max, Remaining: max}
+}
+
+// localAPILimits is a deterministic compatibility payload, not live org accounting.
+var localAPILimits = map[string]localAPILimit{
+	"ConcurrentAsyncGetReportInstances":           localAPILimitValue(200),
+	"ConcurrentSyncReportRuns":                    localAPILimitValue(20),
+	"DailyApiRequests":                            localAPILimitValue(15000),
+	"DailyAsyncApexExecutions":                    localAPILimitValue(250000),
+	"DailyBulkApiBatches":                         localAPILimitValue(15000),
+	"DailyBulkV2IngestJobs":                       localAPILimitValue(10000),
+	"DailyBulkV2QueryJobs":                        localAPILimitValue(10000),
+	"DailyDurableGenericStreamingApiEvents":       localAPILimitValue(10000),
+	"DailyStreamingApiEvents":                     localAPILimitValue(10000),
+	"DataStorageMB":                               localAPILimitValue(512),
+	"FileStorageMB":                               localAPILimitValue(512),
+	"HourlyAsyncReportRuns":                       localAPILimitValue(1200),
+	"HourlyDashboardRefreshes":                    localAPILimitValue(200),
+	"HourlyDashboardResults":                      localAPILimitValue(5000),
+	"HourlyDashboardStatuses":                     localAPILimitValue(1000),
+	"HourlyLongTermIdMapping":                     localAPILimitValue(100000),
+	"HourlyODataCallout":                          localAPILimitValue(1000),
+	"HourlyPublishedPlatformEvents":               localAPILimitValue(100000),
+	"HourlyPublishedStandardVolumePlatformEvents": localAPILimitValue(100000),
+	"MassEmail":                                   localAPILimitValue(5000),
+	"Package2VersionCreates":                      localAPILimitValue(6),
+	"PermissionSets":                              localAPILimitValue(1000),
+	"SingleEmail":                                 localAPILimitValue(5000),
+	"StreamingApiConcurrentClients":               localAPILimitValue(20),
+}
+
 func (s *Server) handleLimits(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		writeMethodNotAllowed(w, http.MethodGet)
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{
-		"DailyApiRequests":                  map[string]int{"Max": 15000, "Remaining": 15000},
-		"DailyAsyncApexExecutions":          map[string]int{"Max": 250000, "Remaining": 250000},
-		"ConcurrentAsyncGetReportInstances": map[string]int{"Max": 200, "Remaining": 200},
-	})
+	writeJSON(w, http.StatusOK, localAPILimits)
 }
 
 func (s *Server) handleTooling(w http.ResponseWriter, r *http.Request, version string, parts []string) {
