@@ -1414,18 +1414,25 @@ func executeAnonymousBodySource(r *http.Request) (string, error) {
 	case "application/json":
 		return executeAnonymousJSONSource(r)
 	case "application/x-www-form-urlencoded":
-		return executeAnonymousFormSource(r), nil
+		return executeAnonymousFormSource(r)
 	default:
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
+			return "", err
+		}
+		if len(strings.TrimSpace(string(body))) == 0 {
 			return "", nil
 		}
-		if source := executeAnonymousFormEncodedSource(string(body)); source != "" {
+		source, formErr := executeAnonymousFormEncodedSource(string(body))
+		if source != "" {
 			return source, nil
 		}
-		source, err := executeAnonymousJSONBytesSource(body)
+		source, err = executeAnonymousJSONBytesSource(body)
 		if err != nil {
-			return "", nil
+			if formErr != nil {
+				return "", formErr
+			}
+			return "", err
 		}
 		return source, nil
 	}
@@ -1461,25 +1468,25 @@ func executeAnonymousJSONBytesSource(body []byte) (string, error) {
 	return payload.Source, nil
 }
 
-func executeAnonymousFormSource(r *http.Request) string {
+func executeAnonymousFormSource(r *http.Request) (string, error) {
 	if err := r.ParseForm(); err != nil {
-		return ""
+		return "", err
 	}
 	if source := r.PostForm.Get("anonymousBody"); source != "" {
-		return source
+		return source, nil
 	}
-	return r.PostForm.Get("source")
+	return r.PostForm.Get("source"), nil
 }
 
-func executeAnonymousFormEncodedSource(body string) string {
+func executeAnonymousFormEncodedSource(body string) (string, error) {
 	form, err := url.ParseQuery(body)
 	if err != nil {
-		return ""
+		return "", err
 	}
 	if source := form.Get("anonymousBody"); source != "" {
-		return source
+		return source, nil
 	}
-	return form.Get("source")
+	return form.Get("source"), nil
 }
 
 func executeAnonymousFailure(compiled bool, message string, logs []string) map[string]any {

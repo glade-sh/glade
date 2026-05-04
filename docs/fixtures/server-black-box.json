@@ -830,13 +830,115 @@
       ]
     },
     {
+      "name": "execute-anonymous-second-call-updates-persisted",
+      "method": "POST",
+      "path": "/services/data/v61.0/tooling/executeAnonymous",
+      "body": "{\"anonymousBody\":\"List<Account> rows = [SELECT Id, Name FROM Account WHERE Name = 'From Apex']; System.assertEquals(1, rows.size()); Account row = rows.get(0); row.Name = 'From Apex Updated'; update row;\"}",
+      "status": 200,
+      "contains": [
+        "\"compiled\":true",
+        "\"success\":true"
+      ]
+    },
+    {
+      "name": "execute-anonymous-second-call-query",
+      "method": "GET",
+      "path": "/services/data/v61.0/query?q=SELECT%20Id,%20Name%20FROM%20Account%20WHERE%20Name%20=%20'From%20Apex%20Updated'",
+      "status": 200,
+      "contains": [
+        "\"totalSize\":1",
+        "From Apex Updated"
+      ]
+    },
+    {
+      "name": "execute-anonymous-get-query-string",
+      "method": "GET",
+      "path": "/services/data/v61.0/tooling/executeAnonymous?anonymousBody=System.debug%28%27query%20body%27%29%3B",
+      "status": 200,
+      "contains": [
+        "\"compiled\":true",
+        "\"success\":true",
+        "query body"
+      ]
+    },
+    {
+      "name": "execute-anonymous-compile-error-shape",
+      "method": "POST",
+      "path": "/services/data/v61.0/tooling/executeAnonymous",
+      "body": "{\"anonymousBody\":\"Account a = ; insert new Account(Name = 'Compile Fixture');\"}",
+      "status": 200,
+      "contains": [
+        "\"compiled\":false",
+        "\"success\":false",
+        "\"compileProblem\":",
+        "\"exceptionMessage\":null"
+      ]
+    },
+    {
+      "name": "execute-anonymous-missing-body",
+      "method": "POST",
+      "path": "/services/data/v61.0/tooling/executeAnonymous",
+      "body": "{}",
+      "status": 200,
+      "contains": [
+        "\"compiled\":false",
+        "\"success\":false",
+        "anonymousBody is required"
+      ]
+    },
+    {
+      "name": "execute-anonymous-malformed-json",
+      "method": "POST",
+      "path": "/services/data/v61.0/tooling/executeAnonymous",
+      "body": "{\"anonymousBody\":",
+      "status": 200,
+      "contains": [
+        "\"compiled\":false",
+        "\"success\":false",
+        "\"compileProblem\":\"unexpected end of JSON input\""
+      ]
+    },
+    {
+      "name": "execute-anonymous-malformed-form",
+      "method": "POST",
+      "path": "/services/data/v61.0/tooling/executeAnonymous",
+      "headers": {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      "body": "anonymousBody=%ZZ",
+      "status": 200,
+      "contains": [
+        "\"compiled\":false",
+        "\"success\":false",
+        "invalid URL escape"
+      ]
+    },
+    {
+      "name": "execute-anonymous-malformed-body",
+      "method": "POST",
+      "path": "/services/data/v61.0/tooling/executeAnonymous",
+      "headers": {
+        "Content-Type": "text/plain"
+      },
+      "body": "anonymousBody=%ZZ",
+      "status": 200,
+      "contains": [
+        "\"compiled\":false",
+        "\"success\":false",
+        "invalid URL escape"
+      ]
+    },
+    {
       "name": "execute-anonymous-runtime-error-rolls-back",
       "method": "POST",
       "path": "/services/data/v61.0/tooling/executeAnonymous",
       "body": "{\"anonymousBody\":\"insert new Account(Name = 'Transient'); System.assert(false);\"}",
       "status": 200,
       "contains": [
-        "\"success\":false"
+        "\"compiled\":true",
+        "\"success\":false",
+        "\"compileProblem\":null",
+        "\"exceptionMessage\":"
       ]
     },
     {
@@ -858,6 +960,7 @@
       "body": "{\"anonymousBody\":\"for (Integer i = 0; i < 151; i++) { insert new Account(Name = 'Limit Edge'); }\"}",
       "status": 200,
       "contains": [
+        "\"compiled\":true",
         "\"success\":false",
         "System.LimitException",
         "Too many dmlStatements"
@@ -886,6 +989,34 @@
       "status": 200,
       "contains": [
         "\"success\":true"
+      ]
+    },
+    {
+      "name": "execute-anonymous-bearer-userinfo-later",
+      "method": "GET",
+      "path": "/services/oauth2/userinfo",
+      "headers": {
+        "Authorization": "Bearer 005000000000002"
+      },
+      "status": 200,
+      "contains": [
+        "\"user_id\":\"005000000000002\"",
+        "\"preferred_username\":\"ada@example.test\"",
+        "\"email\":\"ada.alias@example.test\""
+      ]
+    },
+    {
+      "name": "execute-anonymous-bearer-identity-later",
+      "method": "GET",
+      "path": "/id/00D000000000001/005000000000002",
+      "headers": {
+        "Authorization": "Bearer 005000000000002"
+      },
+      "status": 200,
+      "contains": [
+        "\"user_id\":\"005000000000002\"",
+        "\"username\":\"ada@example.test\"",
+        "\"active\":true"
       ]
     },
     {
@@ -2207,7 +2338,7 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 198,
+      "requests": 208,
       "statuses": [
         200,
         200,
@@ -2276,6 +2407,16 @@
         400,
         200,
         501,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
         200,
         200,
         200,

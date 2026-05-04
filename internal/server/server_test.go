@@ -3706,6 +3706,87 @@ func TestToolingExecuteAnonymousMalformedJSONReportsCompileProblem(t *testing.T)
 	}
 }
 
+func TestToolingExecuteAnonymousValidatesBodyEdges(t *testing.T) {
+	tests := []struct {
+		name     string
+		method   string
+		path     string
+		body     string
+		content  string
+		contains []string
+	}{
+		{
+			name:    "missing GET body",
+			method:  http.MethodGet,
+			path:    "/services/data/v61.0/tooling/executeAnonymous",
+			content: "",
+			contains: []string{
+				`"compiled":false`,
+				`"success":false`,
+				"anonymousBody is required",
+			},
+		},
+		{
+			name:    "missing JSON field",
+			method:  http.MethodPost,
+			path:    "/services/data/v61.0/tooling/executeAnonymous",
+			body:    `{}`,
+			content: "application/json",
+			contains: []string{
+				`"compiled":false`,
+				`"success":false`,
+				"anonymousBody is required",
+			},
+		},
+		{
+			name:    "malformed form",
+			method:  http.MethodPost,
+			path:    "/services/data/v61.0/tooling/executeAnonymous",
+			body:    "anonymousBody=%ZZ",
+			content: "application/x-www-form-urlencoded",
+			contains: []string{
+				`"compiled":false`,
+				`"success":false`,
+				"invalid URL escape",
+			},
+		},
+		{
+			name:   "malformed body without content type",
+			method: http.MethodPost,
+			path:   "/services/data/v61.0/tooling/executeAnonymous",
+			body:   "anonymousBody=%ZZ",
+			contains: []string{
+				`"compiled":false`,
+				`"success":false`,
+				"invalid URL escape",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			org := testOrg()
+			handler := New(&org)
+			req := httptest.NewRequest(tt.method, tt.path, strings.NewReader(tt.body))
+			if tt.content != "" {
+				req.Header.Set("Content-Type", tt.content)
+			}
+			rec := httptest.NewRecorder()
+			handler.ServeHTTP(rec, req)
+			if rec.Code != http.StatusOK {
+				t.Fatalf("executeAnonymous status = %d body=%s", rec.Code, rec.Body.String())
+			}
+			for _, want := range tt.contains {
+				if !bytes.Contains(rec.Body.Bytes(), []byte(want)) {
+					t.Fatalf("executeAnonymous body missing %q: %s", want, rec.Body.String())
+				}
+			}
+			if got := len(org.Objects["Account"].Records); got != 0 {
+				t.Fatalf("validation failure committed %d records", got)
+			}
+		})
+	}
+}
+
 func TestToolingExecuteAnonymousStillAcceptsGetAnonymousBody(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
@@ -3728,6 +3809,151 @@ func TestToolingExecuteAnonymousStillAcceptsJSONWithoutContentType(t *testing.T)
 	handler.ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK || !bytes.Contains(rec.Body.Bytes(), []byte(`"success":true`)) || !bytes.Contains(rec.Body.Bytes(), []byte("json body")) {
 		t.Fatalf("executeAnonymous JSON without content type status = %d body=%s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestToolingExecuteAnonymousPersistsAcrossSQLiteBackedCalls(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "oaer.db")
+	store, err := storage.OpenSQLite(dbPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testOrg()
+	userID := storage.ID("005000000000779")
+	addUser(&org, userID, "sqlite@example.test", "sqlite-email@example.test", "SQLite User")
+	handler := NewWithStore(&org, store)
+
+	first := httptest.NewRecorder()
+	firstReq := httptest.NewRequest(http.MethodPost, "/services/data/v61.0/tooling/executeAnonymous", strings.NewReader(`{"anonymousBody":"insert new Account(Name = 'SQLite One');"}`))
+	firstReq.Header.Set("Authorization", "Bearer "+string(userID))
+	handler.ServeHTTP(first, firstReq)
+	if first.Code != http.StatusOK || !bytes.Contains(first.Body.Bytes(), []byte(`"success":true`)) {
+		t.Fatalf("first executeAnonymous status = %d body=%s", first.Code, first.Body.String())
+	}
+	if err := store.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	restartedStore, err := storage.OpenSQLite(dbPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer restartedStore.Close()
+	restartedOrg, err := restartedStore.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	restarted := NewWithStore(&restartedOrg, restartedStore)
+
+	secondBody := `{
+  "anonymousBody": "List<Account> rows = [SELECT Id, Name, CreatedById, OwnerId FROM Account WHERE Name = 'SQLite One']; System.assertEquals(1, rows.size()); Account row = rows.get(0); System.assertEquals('005000000000779', row.CreatedById); System.assertEquals('005000000000779', row.OwnerId); row.Name = 'SQLite Two'; update row;"
+}`
+	second := httptest.NewRecorder()
+	restarted.ServeHTTP(second, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/tooling/executeAnonymous", strings.NewReader(secondBody)))
+	if second.Code != http.StatusOK || !bytes.Contains(second.Body.Bytes(), []byte(`"success":true`)) {
+		t.Fatalf("second executeAnonymous status = %d body=%s", second.Code, second.Body.String())
+	}
+
+	query := httptest.NewRecorder()
+	restarted.ServeHTTP(query, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/query?q=SELECT%20Id,%20Name%20FROM%20Account%20WHERE%20Name%20=%20'SQLite%20Two'", nil))
+	if query.Code != http.StatusOK || !bytes.Contains(query.Body.Bytes(), []byte(`"totalSize":1`)) || !bytes.Contains(query.Body.Bytes(), []byte("SQLite Two")) {
+		t.Fatalf("query after restart status = %d body=%s", query.Code, query.Body.String())
+	}
+
+	identityReq := httptest.NewRequest(http.MethodGet, "/services/oauth2/userinfo", nil)
+	identityReq.Header.Set("Authorization", "Bearer "+string(userID))
+	identity := httptest.NewRecorder()
+	restarted.ServeHTTP(identity, identityReq)
+	if identity.Code != http.StatusOK || !bytes.Contains(identity.Body.Bytes(), []byte(`"user_id":"005000000000779"`)) || !bytes.Contains(identity.Body.Bytes(), []byte(`"preferred_username":"sqlite@example.test"`)) {
+		t.Fatalf("userinfo after executeAnonymous status = %d body=%s", identity.Code, identity.Body.String())
+	}
+}
+
+func TestToolingExecuteAnonymousFailureShapesDoNotCommit(t *testing.T) {
+	tests := []struct {
+		name       string
+		body       string
+		limitMode  vm.LimitMode
+		limitCaps  vm.LimitCaps
+		want       []string
+		notCreated string
+	}{
+		{
+			name: "compile error",
+			body: `{"anonymousBody":"Account a = ; insert new Account(Name = 'Compile Edge');"}`,
+			want: []string{
+				`"compiled":false`,
+				`"success":false`,
+				`"exceptionMessage":null`,
+				`"compileProblem":`,
+			},
+			notCreated: "Compile Edge",
+		},
+		{
+			name: "runtime error",
+			body: `{"anonymousBody":"insert new Account(Name = 'Runtime Edge'); System.debug('before runtime'); System.assert(false);"}`,
+			want: []string{
+				`"compiled":true`,
+				`"success":false`,
+				`"compileProblem":null`,
+				`"exceptionMessage":`,
+				"before runtime",
+			},
+			notCreated: "Runtime Edge",
+		},
+		{
+			name:      "strict limit",
+			body:      `{"anonymousBody":"for (Integer i = 0; i < 151; i++) { insert new Account(Name = 'Limit Rollback'); }"}`,
+			limitMode: vm.LimitModeStrict,
+			limitCaps: vm.LimitCaps{
+				Queries:       100,
+				QueryRows:     50000,
+				DMLStatements: 150,
+				DMLRows:       10000,
+				HeapSize:      6000000,
+				CPUTimeMS:     10000,
+				FutureCalls:   50,
+				QueueableJobs: 50,
+				BatchJobs:     5,
+				ScheduledJobs: 100,
+				AsyncJobs:     50,
+				EmailInvokes:  10,
+				Callouts:      100,
+			},
+			want: []string{
+				`"compiled":true`,
+				`"success":false`,
+				`"compileProblem":null`,
+				"System.LimitException",
+				"Too many dmlStatements",
+			},
+			notCreated: "Limit Rollback",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			org := testOrg()
+			handler := New(&org)
+			if tt.limitMode != "" {
+				handler.LimitMode = tt.limitMode
+				handler.LimitCaps = tt.limitCaps
+			}
+			rec := httptest.NewRecorder()
+			handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/tooling/executeAnonymous", strings.NewReader(tt.body)))
+			if rec.Code != http.StatusOK {
+				t.Fatalf("executeAnonymous status = %d body=%s", rec.Code, rec.Body.String())
+			}
+			for _, want := range tt.want {
+				if !bytes.Contains(rec.Body.Bytes(), []byte(want)) {
+					t.Fatalf("executeAnonymous body missing %q: %s", want, rec.Body.String())
+				}
+			}
+			for _, record := range org.Objects["Account"].Records {
+				if record.Fields["Name"].String == tt.notCreated {
+					t.Fatalf("%s committed failed record %#v", tt.name, record)
+				}
+			}
+		})
 	}
 }
 
