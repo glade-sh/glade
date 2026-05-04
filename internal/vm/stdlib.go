@@ -1074,6 +1074,8 @@ func callPatternMember(receiver Value, method string, args []Value) (Value, Valu
 		matcher.Fields["input"] = args[0]
 		matcherClearMatch(matcher)
 		matcher.Fields["index"] = Int(0)
+		matcher.Fields["regionStart"] = Int(0)
+		matcher.Fields["regionEnd"] = Int(int64(utf8.RuneCountInString(args[0].Text)))
 		return matcher, receiver, false, true, nil
 	case "pattern":
 		if len(args) != 0 {
@@ -1120,31 +1122,41 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Matcher.matches expects 0 arguments")
 		}
+		region, err := matcherRegion(receiver, input)
+		if err != nil {
+			return Null, receiver, false, true, err
+		}
 		anchored, err := regexp.Compile("^(?:" + source + ")$")
 		if err != nil {
 			return Null, receiver, false, true, fmt.Errorf("Matcher.matches invalid regex: %w", err)
 		}
-		indices := anchored.FindStringSubmatchIndex(input)
+		indices := anchored.FindStringSubmatchIndex(input[region.startByte:region.endByte])
 		if indices == nil {
 			matcherClearMatch(receiver)
 			return Bool(false), receiver, true, true, nil
 		}
+		offsetRegexIndices(indices, region.startByte)
 		matcherSaveMatch(receiver, indices)
-		receiver.Fields["index"] = Int(int64(len(input)))
+		receiver.Fields["index"] = Int(int64(region.endByte))
 		return Bool(true), receiver, true, true, nil
 	case "lookingAt":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Matcher.lookingAt expects 0 arguments")
 		}
+		region, err := matcherRegion(receiver, input)
+		if err != nil {
+			return Null, receiver, false, true, err
+		}
 		anchored, err := regexp.Compile("^(?:" + source + ")")
 		if err != nil {
 			return Null, receiver, false, true, fmt.Errorf("Matcher.lookingAt invalid regex: %w", err)
 		}
-		indices := anchored.FindStringSubmatchIndex(input)
+		indices := anchored.FindStringSubmatchIndex(input[region.startByte:region.endByte])
 		if indices == nil {
 			matcherClearMatch(receiver)
 			return Bool(false), receiver, true, true, nil
 		}
+		offsetRegexIndices(indices, region.startByte)
 		matcherSaveMatch(receiver, indices)
 		receiver.Fields["index"] = Int(int64(indices[1]))
 		return Bool(true), receiver, true, true, nil
@@ -1152,33 +1164,45 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		if len(args) != 0 && (len(args) != 1 || args[0].Kind != ValueInt) {
 			return Null, receiver, false, true, fmt.Errorf("Matcher.find expects optional Integer start")
 		}
-		start := 0
+		region, err := matcherRegion(receiver, input)
+		if err != nil {
+			return Null, receiver, false, true, err
+		}
+		startByte := region.startByte
 		if len(args) == 1 {
-			start = int(args[0].Int)
+			startRune := int(args[0].Int)
+			if startRune < region.startRune || startRune > region.endRune {
+				return Null, receiver, false, true, fmt.Errorf("Matcher.find start out of region")
+			}
+			startByte, err = byteIndexForRuneIndex(input, startRune)
+			if err != nil {
+				return Null, receiver, false, true, fmt.Errorf("Matcher.find %w", err)
+			}
 		} else if index, ok := receiver.Fields["index"]; ok && index.Kind == ValueInt {
-			start = int(index.Int)
+			startByte = int(index.Int)
 		}
-		if start < 0 {
-			return Null, receiver, false, true, fmt.Errorf("Matcher.find start must be non-negative")
+		if startByte < region.startByte {
+			return Null, receiver, false, true, fmt.Errorf("Matcher.find start before region")
 		}
-		if start > len(input) {
-			return Null, receiver, false, true, fmt.Errorf("Matcher.find start out of range")
-		}
-		indices := re.FindStringSubmatchIndex(input[start:])
-		if indices == nil {
+		if startByte > region.endByte {
 			matcherClearMatch(receiver)
-			receiver.Fields["index"] = Int(int64(len(input) + 1))
+			receiver.Fields["index"] = Int(int64(region.endByte + 1))
 			return Bool(false), receiver, true, true, nil
 		}
-		for i := range indices {
-			if indices[i] >= 0 {
-				indices[i] += start
-			}
+		indices := re.FindStringSubmatchIndex(input[startByte:region.endByte])
+		if indices == nil {
+			matcherClearMatch(receiver)
+			receiver.Fields["index"] = Int(int64(region.endByte + 1))
+			return Bool(false), receiver, true, true, nil
 		}
+		offsetRegexIndices(indices, startByte)
 		matcherSaveMatch(receiver, indices)
 		next := indices[1]
 		if indices[0] == indices[1] {
 			next = nextRegexSearchIndex(input, next)
+		}
+		if next > region.endByte {
+			next = region.endByte + 1
 		}
 		receiver.Fields["index"] = Int(int64(next))
 		return Bool(true), receiver, true, true, nil
@@ -1215,7 +1239,11 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		}
 		return Int(int64(end)), receiver, false, true, nil
 	case "replaceAll":
-		replaced, err := matcherReplace("Matcher.replaceAll", re, input, args, true)
+		region, err := matcherRegion(receiver, input)
+		if err != nil {
+			return Null, receiver, false, true, err
+		}
+		replaced, err := matcherReplace("Matcher.replaceAll", re, input, region, args, true)
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
@@ -1223,7 +1251,11 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		receiver.Fields["index"] = Int(0)
 		return String(replaced), receiver, true, true, nil
 	case "replaceFirst":
-		replaced, err := matcherReplace("Matcher.replaceFirst", re, input, args, false)
+		region, err := matcherRegion(receiver, input)
+		if err != nil {
+			return Null, receiver, false, true, err
+		}
+		replaced, err := matcherReplace("Matcher.replaceFirst", re, input, region, args, false)
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
@@ -1239,7 +1271,63 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		}
 		matcherClearMatch(receiver)
 		receiver.Fields["index"] = Int(0)
+		input := receiver.Fields["input"]
+		receiver.Fields["regionStart"] = Int(0)
+		receiver.Fields["regionEnd"] = Int(int64(utf8.RuneCountInString(input.Text)))
 		return receiver, receiver, true, true, nil
+	case "region":
+		if len(args) != 2 || args[0].Kind != ValueInt || args[1].Kind != ValueInt {
+			return Null, receiver, false, true, fmt.Errorf("Matcher.region expects start and end Integers")
+		}
+		start, end := int(args[0].Int), int(args[1].Int)
+		if err := validateMatcherRegion(input, start, end); err != nil {
+			return Null, receiver, false, true, err
+		}
+		startByte, _ := byteIndexForRuneIndex(input, start)
+		receiver.Fields["regionStart"] = args[0]
+		receiver.Fields["regionEnd"] = args[1]
+		matcherClearMatch(receiver)
+		receiver.Fields["index"] = Int(int64(startByte))
+		return receiver, receiver, true, true, nil
+	case "regionStart":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Matcher.regionStart expects 0 arguments")
+		}
+		region, err := matcherRegion(receiver, input)
+		if err != nil {
+			return Null, receiver, false, true, err
+		}
+		return Int(int64(region.startRune)), receiver, false, true, nil
+	case "regionEnd":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Matcher.regionEnd expects 0 arguments")
+		}
+		region, err := matcherRegion(receiver, input)
+		if err != nil {
+			return Null, receiver, false, true, err
+		}
+		return Int(int64(region.endRune)), receiver, false, true, nil
+	case "usePattern":
+		if len(args) != 1 || args[0].Kind != ValueObject || args[0].Type != "Pattern" {
+			return Null, receiver, false, true, fmt.Errorf("Matcher.usePattern expects Pattern")
+		}
+		source, ok := args[0].Fields["source"]
+		if !ok || source.Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("Matcher.usePattern Pattern missing source")
+		}
+		if _, err := regexp.Compile(source.Text); err != nil {
+			return Null, receiver, false, true, fmt.Errorf("Matcher.usePattern invalid regex: %w", err)
+		}
+		receiver.Fields["source"] = source
+		matcherClearMatch(receiver)
+		region, err := matcherRegion(receiver, input)
+		if err != nil {
+			return Null, receiver, false, true, err
+		}
+		receiver.Fields["index"] = Int(int64(region.startByte))
+		return receiver, receiver, true, true, nil
+	case "appendReplacement", "appendTail":
+		return Null, receiver, false, true, unsupportedCallError("Matcher." + method + " requires Java StringBuffer append semantics")
 	case "hasAnchoringBounds":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Matcher.hasAnchoringBounds expects 0 arguments")
@@ -1299,6 +1387,85 @@ func matcherBoolField(matcher Value, name string, defaultValue bool) bool {
 	return value.Bool
 }
 
+type matcherRegionBounds struct {
+	startRune int
+	endRune   int
+	startByte int
+	endByte   int
+}
+
+func matcherRegion(matcher Value, input string) (matcherRegionBounds, error) {
+	inputRunes := utf8.RuneCountInString(input)
+	start := 0
+	end := inputRunes
+	if value, ok := matcher.Fields["regionStart"]; ok {
+		if value.Kind != ValueInt {
+			return matcherRegionBounds{}, fmt.Errorf("Matcher stored invalid region start")
+		}
+		start = int(value.Int)
+	}
+	if value, ok := matcher.Fields["regionEnd"]; ok {
+		if value.Kind != ValueInt {
+			return matcherRegionBounds{}, fmt.Errorf("Matcher stored invalid region end")
+		}
+		end = int(value.Int)
+	}
+	if err := validateMatcherRegion(input, start, end); err != nil {
+		return matcherRegionBounds{}, err
+	}
+	startByte, err := byteIndexForRuneIndex(input, start)
+	if err != nil {
+		return matcherRegionBounds{}, err
+	}
+	endByte, err := byteIndexForRuneIndex(input, end)
+	if err != nil {
+		return matcherRegionBounds{}, err
+	}
+	return matcherRegionBounds{startRune: start, endRune: end, startByte: startByte, endByte: endByte}, nil
+}
+
+func validateMatcherRegion(input string, start, end int) error {
+	inputRunes := utf8.RuneCountInString(input)
+	if start < 0 || end < 0 {
+		return fmt.Errorf("Matcher.region bounds must be non-negative")
+	}
+	if start > end {
+		return fmt.Errorf("Matcher.region start must be less than or equal to end")
+	}
+	if end > inputRunes {
+		return fmt.Errorf("Matcher.region end out of range")
+	}
+	return nil
+}
+
+func byteIndexForRuneIndex(input string, runeIndex int) (int, error) {
+	if runeIndex < 0 {
+		return 0, fmt.Errorf("rune index must be non-negative")
+	}
+	if runeIndex == 0 {
+		return 0, nil
+	}
+	count := 0
+	for byteIndex := range input {
+		if count == runeIndex {
+			return byteIndex, nil
+		}
+		count++
+	}
+	if count == runeIndex {
+		return len(input), nil
+	}
+	return 0, fmt.Errorf("rune index out of range")
+}
+
+func offsetRegexIndices(indices []int, offset int) {
+	for i := range indices {
+		if indices[i] >= 0 {
+			indices[i] += offset
+		}
+	}
+}
+
 func matcherOptionalGroupIndex(name string, args []Value) (int, error) {
 	if len(args) == 0 {
 		return 0, nil
@@ -1351,20 +1518,44 @@ func matcherGroupByteBounds(matcher Value, groupIndex int) (int, int, error) {
 	return int(startValue.Int), int(endValue.Int), nil
 }
 
-func matcherReplace(name string, re *regexp.Regexp, input string, args []Value, all bool) (string, error) {
+func matcherReplace(name string, re *regexp.Regexp, input string, region matcherRegionBounds, args []Value, all bool) (string, error) {
 	if len(args) != 1 || args[0].Kind != ValueString {
 		return "", fmt.Errorf("%s expects replacement String", name)
 	}
+	replacement := javaReplacementToGoTemplate(args[0].Text)
+	regionText := input[region.startByte:region.endByte]
 	if all {
-		return re.ReplaceAllString(input, args[0].Text), nil
+		return input[:region.startByte] + re.ReplaceAllString(regionText, replacement) + input[region.endByte:], nil
 	}
-	indices := re.FindStringSubmatchIndex(input)
+	indices := re.FindStringSubmatchIndex(regionText)
 	if indices == nil {
 		return input, nil
 	}
 	var expanded []byte
-	expanded = re.ExpandString(expanded, args[0].Text, input, indices)
-	return input[:indices[0]] + string(expanded) + input[indices[1]:], nil
+	expanded = re.ExpandString(expanded, replacement, regionText, indices)
+	return input[:region.startByte+indices[0]] + string(expanded) + input[region.startByte+indices[1]:], nil
+}
+
+func javaReplacementToGoTemplate(replacement string) string {
+	var out strings.Builder
+	for i := 0; i < len(replacement); i++ {
+		ch := replacement[i]
+		if ch == '\\' && i+1 < len(replacement) {
+			next := replacement[i+1]
+			if next == '$' {
+				out.WriteString("$$")
+				i++
+				continue
+			}
+			if next == '\\' {
+				out.WriteByte(next)
+				i++
+				continue
+			}
+		}
+		out.WriteByte(ch)
+	}
+	return out.String()
 }
 
 func nextRegexSearchIndex(input string, index int) int {

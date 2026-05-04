@@ -240,11 +240,15 @@ Remaining cuts:
 8. Pattern and Matcher
    - Fixture-backed Go `regexp` slice covers compile/matches/pattern,
      split, find/matches/lookingAt, group/groupCount/start/end, reset, local
-     anchoring/transparent bounds flags, and basic replacement methods.
+     anchoring/transparent bounds flags, bounded region/regionStart/regionEnd,
+     usePattern, and basic replacement methods. Region-aware replaceAll and
+     replaceFirst preserve text outside the local region, and escaped-dollar
+     replacement handling has deterministic unit coverage.
    - Remaining gap: Apex uses Java Pattern syntax; local support is Go
-     `regexp`, so broader Java-only constructs, region APIs, exact bounds-region
-     interaction, and full Java replacement semantics still need explicit
-     compatibility work.
+     `regexp`, so broader Java-only constructs, exact bounds-region
+     interaction, appendReplacement/appendTail StringBuffer behavior, and full
+     Java replacement semantics still need explicit compatibility work or remain
+     explicit unsupported diagnostics.
 
 9. Id, URL, and primitive object behavior
    - Landed slice: strict 18-character Id checksum validation, `Id.to18`,
