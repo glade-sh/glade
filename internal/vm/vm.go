@@ -3112,7 +3112,11 @@ func (vm *VM) mergeResultValue(listInput bool, duplicates []storage.Record, resu
 			mergedIDs.List = append(mergedIDs.List, String(string(duplicates[i].ID)))
 		}
 		row.Fields["mergedRecordIds"] = mergedIDs
-		row.Fields["updatedRelatedIds"] = List()
+		updatedRelatedIDs := List()
+		for _, id := range dmlResult.UpdatedRelatedIDs {
+			updatedRelatedIDs.List = append(updatedRelatedIDs.List, String(string(id)))
+		}
+		row.Fields["updatedRelatedIds"] = updatedRelatedIDs
 		row.Fields["errors"] = databaseErrorsList(dmlResult)
 		values = append(values, row)
 	}

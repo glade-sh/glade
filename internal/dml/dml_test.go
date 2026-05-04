@@ -408,6 +408,9 @@ func TestMergeSoftDeletesDuplicateAndReparentsChildren(t *testing.T) {
 	if len(merge) != 1 || !merge[0].Success || merge[0].ID != master[0].ID {
 		t.Fatalf("merge = %#v", merge)
 	}
+	if len(merge[0].UpdatedRelatedIDs) != 1 || merge[0].UpdatedRelatedIDs[0] != child[0].ID {
+		t.Fatalf("merge updated related ids = %#v, want %s", merge[0].UpdatedRelatedIDs, child[0].ID)
+	}
 	if !org.Objects["Account"].Records[duplicate[0].ID].System.IsDeleted {
 		t.Fatalf("duplicate was not soft deleted")
 	}
