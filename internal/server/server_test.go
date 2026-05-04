@@ -591,6 +591,10 @@ func TestToolingCommonRoutesReturnStableUnsupportedErrors(t *testing.T) {
 		{method: http.MethodPost, path: "/services/data/v61.0/tooling/sobjects/ApexClass", message: "Tooling ApexClass object collection"},
 		{method: http.MethodGet, path: "/services/data/v61.0/tooling/sobjects/ApexClass/01p000000000001", message: "Tooling ApexClass object record"},
 		{method: http.MethodPatch, path: "/services/data/v61.0/tooling/sobjects/ApexTrigger/01q000000000001", message: "Tooling ApexTrigger object record"},
+		{method: http.MethodGet, path: "/services/data/v61.0/tooling/sobjects/ApexLog", message: "Tooling ApexLog object collection"},
+		{method: http.MethodPost, path: "/services/data/v61.0/tooling/sobjects/TraceFlag", message: "Tooling TraceFlag object collection"},
+		{method: http.MethodGet, path: "/services/data/v61.0/tooling/sobjects/ApexTestResult/07M000000000001", message: "Tooling ApexTestResult object record"},
+		{method: http.MethodPatch, path: "/services/data/v61.0/tooling/sobjects/ContainerAsyncRequest/1dr000000000001", message: "Tooling ContainerAsyncRequest object record"},
 		{method: http.MethodPost, path: "/services/data/v61.0/tooling/runTestsAsynchronous", message: "Tooling runTestsAsynchronous"},
 		{method: http.MethodPost, path: "/services/data/v61.0/tooling/runTestsSynchronous", message: "Tooling runTestsSynchronous"},
 		{method: http.MethodGet, path: "/services/data/v61.0/tooling/coverage", message: "Tooling ApexCodeCoverage"},
@@ -661,13 +665,18 @@ func TestToolingUnknownRouteStillReturnsNotFound(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
 
-	rec := httptest.NewRecorder()
-	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/tooling/not-a-real-route", nil))
-	if rec.Code != http.StatusNotFound {
-		t.Fatalf("unknown tooling status = %d body=%s", rec.Code, rec.Body.String())
-	}
-	if !bytes.Contains(rec.Body.Bytes(), []byte(`"errorCode":"NOT_FOUND"`)) {
-		t.Fatalf("unknown tooling shape = %s", rec.Body.String())
+	for _, path := range []string{
+		"/services/data/v61.0/tooling/not-a-real-route",
+		"/services/data/v61.0/tooling/sobjects/NoSuchToolingObject",
+	} {
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+		if rec.Code != http.StatusNotFound {
+			t.Fatalf("%s unknown tooling status = %d body=%s", path, rec.Code, rec.Body.String())
+		}
+		if !bytes.Contains(rec.Body.Bytes(), []byte(`"errorCode":"NOT_FOUND"`)) {
+			t.Fatalf("%s unknown tooling shape = %s", path, rec.Body.String())
+		}
 	}
 }
 
@@ -706,6 +715,18 @@ func TestToolingCommonRoutesMethodHandling(t *testing.T) {
 	}
 	if !bytes.Contains(rec.Body.Bytes(), []byte(`"errorCode":"METHOD_NOT_ALLOWED"`)) {
 		t.Fatalf("tooling metadata record method shape = %s", rec.Body.String())
+	}
+
+	rec = httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPut, "/services/data/v61.0/tooling/sobjects/ApexLog", nil))
+	if rec.Code != http.StatusMethodNotAllowed {
+		t.Fatalf("tooling ApexLog collection method status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if got := rec.Header().Get("Allow"); got != "GET, POST" {
+		t.Fatalf("tooling ApexLog collection Allow = %q", got)
+	}
+	if !bytes.Contains(rec.Body.Bytes(), []byte(`"errorCode":"METHOD_NOT_ALLOWED"`)) {
+		t.Fatalf("tooling ApexLog collection method shape = %s", rec.Body.String())
 	}
 
 	rec = httptest.NewRecorder()
