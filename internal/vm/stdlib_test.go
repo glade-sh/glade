@@ -1355,8 +1355,12 @@ System.assertEquals(8, deepCounts.get('b'));
 func TestCollectionStdlibMoreRejectsUnsupportedSortValues(t *testing.T) {
 	values := []Value{Map()}
 	err := sortComparableValues(values)
-	if err == nil || !strings.Contains(err.Error(), "List.sort supports only primitive comparable values") {
-		t.Fatalf("err = %v, want primitive comparable sort error", err)
+	var runtimeErr *RuntimeError
+	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" {
+		t.Fatalf("err = %T %v, want UnsupportedFeature", err, err)
+	}
+	if !strings.Contains(runtimeErr.Message, "List.sort for non-primitive comparable values") {
+		t.Fatalf("error message = %q", runtimeErr.Message)
 	}
 }
 
@@ -1405,7 +1409,7 @@ func TestExecCollectionStdlibIteratorErrors(t *testing.T) {
 		{
 			name: "object sort unsupported",
 			body: "List<Account> accounts = new List<Account>{new Account(Name = 'Acme')}; accounts.sort();",
-			want: "List.sort supports only primitive comparable values",
+			want: "unsupported call \"List.sort for non-primitive comparable values\"",
 		},
 		{
 			name: "set deepClone options unsupported",
@@ -1429,6 +1433,53 @@ func TestExecCollectionStdlibIteratorErrors(t *testing.T) {
 				t.Fatalf("err = %v, want %q", err, tt.want)
 			}
 		})
+	}
+}
+
+func TestExecCollectionStdlibDeepCloneNestedSObjects(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account acme = new Account(Id = '001B000001DVM9tIAH', Name = 'Acme');
+Account beta = new Account(Id = '001B000001DVM9uIAH', Name = 'Beta');
+List<Account> accounts = new List<Account>{acme, beta};
+List<Account> clonedAccounts = accounts.deepClone();
+Account clonedAcme = clonedAccounts.get(0);
+clonedAcme.Name = 'Clone';
+Account originalAcme = accounts.get(0);
+Account clonedAcmeAgain = clonedAccounts.get(0);
+System.assertEquals('Acme', originalAcme.Name);
+System.assertEquals('Clone', clonedAcmeAgain.Name);
+
+Map<Id, Account> byId = new Map<Id, Account>(accounts);
+Map<Id, Account> clonedById = byId.deepClone();
+Account fromClone = clonedById.get(acme.Id);
+fromClone.Name = 'Mapped Clone';
+Account originalMapped = byId.get(acme.Id);
+Account clonedMapped = clonedById.get(acme.Id);
+System.assertEquals('Acme', originalMapped.Name);
+System.assertEquals('Mapped Clone', clonedMapped.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCollectionStdlibCloneValueNestedCollections(t *testing.T) {
+	account := Object("Account")
+	account.Fields["Name"] = String("Acme")
+	nested := List(Map())
+	nested.List[0].Map["accounts"] = List(account)
+
+	cloned := cloneValue(nested)
+	cloned.List[0].Map["accounts"].List[0].Fields["Name"] = String("Clone")
+
+	if got := nested.List[0].Map["accounts"].List[0].Fields["Name"].Text; got != "Acme" {
+		t.Fatalf("original nested SObject name = %q, want Acme", got)
+	}
+	if got := cloned.List[0].Map["accounts"].List[0].Fields["Name"].Text; got != "Clone" {
+		t.Fatalf("cloned nested SObject name = %q, want Clone", got)
 	}
 }
 

@@ -1,0 +1,28 @@
+{
+  "name": "core-collection-stdlib-unsupported-set-deepclone-options",
+  "evidence": [
+    {
+      "symbol": "Set.deepClone",
+      "kind": "exec",
+      "notes": "SObject preserve-option overloads return a typed unsupported diagnostic."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Set<Account> accounts = new Set<Account>{new Account(Id = '001B000001DVM9tIAH')};\naccounts.deepClone(true);"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Set<Account> accounts = new Set<Account>{new Account(Id = '001B000001DVM9tIAH')};\naccounts.deepClone(true);"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"Set.deepClone with preserve options\""
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "name": "core-collection-stdlib-unsupported-map-deepclone-options",
+  "evidence": [
+    {
+      "symbol": "Map.deepClone",
+      "kind": "exec",
+      "notes": "SObject preserve-option overloads return a typed unsupported diagnostic."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Map<Id, Account> accounts = new Map<Id, Account>();\naccounts.deepClone(true, true, true);"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Map<Id, Account> accounts = new Map<Id, Account>();\naccounts.deepClone(true, true, true);"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"Map.deepClone with preserve options\""
+    }
+  }
+}
