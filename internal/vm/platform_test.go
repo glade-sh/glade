@@ -1481,6 +1481,10 @@ func TestExecDatabaseDeleteAndUndeleteResultTypes(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account a = new Account(Name = 'Acme');
 insert a;
+Database.UndeleteResult active = Database.undelete(a, false);
+System.assert(!active.isSuccess());
+System.assertEquals(a.Id, active.getId());
+System.assertEquals('ENTITY_IS_NOT_DELETED', active.getErrors().get(0).getStatusCode());
 Database.DeleteResult deleted = Database.delete(a, false);
 System.assert(deleted.isSuccess());
 System.assertEquals(a.Id, deleted.getId());
@@ -1501,6 +1505,9 @@ System.assertEquals(0, restored.getErrors().size());
 	}
 	if got := machine.Globals["deleted"].Type; got != "Database.DeleteResult" {
 		t.Fatalf("deleted result type = %q, want Database.DeleteResult", got)
+	}
+	if got := machine.Globals["active"].Type; got != "Database.UndeleteResult" {
+		t.Fatalf("active result type = %q, want Database.UndeleteResult", got)
 	}
 	if got := machine.Globals["restored"].Type; got != "Database.UndeleteResult" {
 		t.Fatalf("undelete result type = %q, want Database.UndeleteResult", got)
