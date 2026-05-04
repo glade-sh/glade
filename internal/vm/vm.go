@@ -1118,7 +1118,7 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("Date.valueOf expects String")
 		}
-		date, err := time.Parse("2006-01-02", args[0].Text)
+		date, err := parseDateText(args[0].Text)
 		if err != nil {
 			return Null, err
 		}
@@ -3686,7 +3686,7 @@ func parsePlatformDate(value Value) (time.Time, error) {
 	if err != nil {
 		return time.Time{}, err
 	}
-	date, err := time.Parse("2006-01-02", text)
+	date, err := parseDateText(text)
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -3728,10 +3728,25 @@ func daysInMonth(year int, month time.Month) int {
 func parseDatetimeText(text string) (time.Time, error) {
 	for _, layout := range []string{time.RFC3339Nano, "2006-01-02 15:04:05.000", "2006-01-02 15:04:05", "2006-01-02T15:04:05.000", "2006-01-02T15:04:05"} {
 		if value, err := time.Parse(layout, text); err == nil {
+			if err := validateDateParts(value.Year(), int(value.Month()), value.Day()); err != nil {
+				return time.Time{}, err
+			}
 			return value, nil
 		}
 	}
 	return time.Time{}, fmt.Errorf("unsupported Datetime value %q", text)
+}
+
+func parseDateText(text string) (time.Time, error) {
+	for _, layout := range []string{"2006-01-02", "2006-01-02 15:04:05", "2006-01-02T15:04:05"} {
+		if value, err := time.Parse(layout, text); err == nil {
+			if err := validateDateParts(value.Year(), int(value.Month()), value.Day()); err != nil {
+				return time.Time{}, err
+			}
+			return time.Date(value.Year(), value.Month(), value.Day(), 0, 0, 0, 0, time.UTC), nil
+		}
+	}
+	return time.Time{}, fmt.Errorf("unsupported Date value %q", text)
 }
 
 func formatPlatformDatetime(value time.Time) string {
@@ -3824,6 +3839,9 @@ func formatApexDatetimeToken(value time.Time, token, zoneID string, offset time.
 	case 's':
 		return formatPaddedDateNumber(value.Second(), count), nil
 	case 'S':
+		if count > 3 {
+			return "", fmt.Errorf("Datetime.format unsupported pattern token %q", token)
+		}
 		millisecond := value.Nanosecond() / int(time.Millisecond)
 		if count <= 1 {
 			return strconv.Itoa(millisecond), nil
@@ -3877,6 +3895,9 @@ func maxInt(left, right int) int {
 }
 
 func validateDateParts(year, month, day int) error {
+	if year < 1 || year > 9999 {
+		return fmt.Errorf("invalid Date parts: year=%d month=%d day=%d", year, month, day)
+	}
 	value := time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
 	if value.Year() != year || int(value.Month()) != month || value.Day() != day {
 		return fmt.Errorf("invalid Date parts: year=%d month=%d day=%d", year, month, day)
@@ -3963,6 +3984,9 @@ func fixedTimeZone(id string) (Value, error) {
 
 func parseFixedTimeZoneID(id string) (string, time.Duration, bool) {
 	trimmed := strings.TrimSpace(id)
+	if trimmed != id {
+		return "", 0, false
+	}
 	upper := strings.ToUpper(trimmed)
 	switch upper {
 	case "UTC", "GMT", "ETC/UTC", "Z":
@@ -3981,18 +4005,24 @@ func parseFixedTimeZoneID(id string) (string, time.Duration, bool) {
 	if len(parts) > 2 || parts[0] == "" {
 		return "", 0, false
 	}
+	if len(parts[0]) > 2 || !allASCIIDigits(parts[0]) {
+		return "", 0, false
+	}
 	hours, err := strconv.Atoi(parts[0])
 	if err != nil {
 		return "", 0, false
 	}
 	minutes := 0
 	if len(parts) == 2 {
+		if len(parts[1]) != 2 || !allASCIIDigits(parts[1]) {
+			return "", 0, false
+		}
 		minutes, err = strconv.Atoi(parts[1])
 		if err != nil {
 			return "", 0, false
 		}
 	}
-	if hours > 23 || minutes > 59 {
+	if hours > 14 || minutes > 59 || (hours == 14 && minutes != 0) {
 		return "", 0, false
 	}
 	offset := time.Duration(hours)*time.Hour + time.Duration(minutes)*time.Minute
@@ -4000,6 +4030,15 @@ func parseFixedTimeZoneID(id string) (string, time.Duration, bool) {
 		offset = -offset
 	}
 	return fmt.Sprintf("GMT%s%02d:%02d", signText, hours, minutes), offset, true
+}
+
+func allASCIIDigits(text string) bool {
+	for i := 0; i < len(text); i++ {
+		if text[i] < '0' || text[i] > '9' {
+			return false
+		}
+	}
+	return text != ""
 }
 
 func httpSetHeader(receiver Value, name string, value Value) {
@@ -8070,7 +8109,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			return receiver.Fields["id"], receiver, false, true, nil
 		case "getDisplayName":
 			if len(args) != 0 {
-				return Null, receiver, false, true, fmt.Errorf("TimeZone.getDisplayName expects 0 arguments")
+				return Null, receiver, false, true, unsupportedCallError("TimeZone.getDisplayName DST/locale overloads")
 			}
 			return receiver.Fields["id"], receiver, false, true, nil
 		case "getOffset":
