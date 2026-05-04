@@ -4,7 +4,7 @@
     {
       "symbol": "JSON.deserialize",
       "kind": "exec",
-      "notes": "Typed SObject field mapping uses local schema field types for Date, Number, Checkbox, and Lookup JSON values."
+      "notes": "Typed SObject field mapping uses local schema field types for Date, DateTime, Number, Checkbox, Id, and Lookup JSON values."
     }
   ],
   "schema": [
@@ -25,6 +25,14 @@
       "content": "<CustomField><fullName>AnnualRevenue</fullName><label>Annual Revenue</label><type>Number</type></CustomField>"
     },
     {
+      "path": "force-app/main/default/objects/Account/fields/LastSeen__c.field-meta.xml",
+      "content": "<CustomField><fullName>LastSeen__c</fullName><label>Last Seen</label><type>DateTime</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Score__c.field-meta.xml",
+      "content": "<CustomField><fullName>Score__c</fullName><label>Score</label><type>Number</type></CustomField>"
+    },
+    {
       "path": "force-app/main/default/objects/Account/fields/Active__c.field-meta.xml",
       "content": "<CustomField><fullName>Active__c</fullName><label>Active</label><type>Checkbox</type></CustomField>"
     },
@@ -36,13 +44,13 @@
   "source": [
     {
       "path": "anonymous.apex",
-      "content": "Account decoded = JSON.deserialize('{\"Name\":\"Acme\",\"RenewalDate__c\":\"2024-02-29\",\"AnnualRevenue\":12.5,\"Active__c\":true,\"ParentId\":\"001B000001DVM9t\"}', Account.class);\nDate renewal = decoded.RenewalDate__c;\nSystem.assertEquals(Date.newInstance(2024, 2, 29), renewal);\nDecimal revenue = decoded.AnnualRevenue;\nSystem.assertEquals(12.5, revenue);\nBoolean active = decoded.Active__c;\nSystem.assertEquals(true, active);\nId parent = decoded.ParentId;\nSystem.assertEquals('001B000001DVM9t', parent.toString());"
+      "content": "Account decoded = JSON.deserialize('{\"Name\":\"Acme\",\"RenewalDate__c\":\"2024-02-29\",\"AnnualRevenue\":12.5,\"LastSeen__c\":\"2024-02-29T12:34:56Z\",\"Score__c\":7,\"Active__c\":true,\"ParentId\":\"001B000001DVM9t\"}', Account.class);\nDate renewal = decoded.RenewalDate__c;\nSystem.assertEquals(Date.newInstance(2024, 2, 29), renewal);\nDecimal revenue = decoded.AnnualRevenue;\nSystem.assertEquals(12.5, revenue);\nDatetime lastSeen = decoded.LastSeen__c;\nSystem.assertEquals(Datetime.newInstance(2024, 2, 29, 12, 34, 56), lastSeen);\nDecimal score = decoded.Score__c;\nSystem.assertEquals(Decimal.valueOf('7'), score);\nBoolean active = decoded.Active__c;\nSystem.assertEquals(true, active);\nId parent = decoded.ParentId;\nSystem.assertEquals('001B000001DVM9t', parent.toString());"
     }
   ],
   "command": {
     "kind": "exec",
     "args": [
-      "Account decoded = JSON.deserialize('{\"Name\":\"Acme\",\"RenewalDate__c\":\"2024-02-29\",\"AnnualRevenue\":12.5,\"Active__c\":true,\"ParentId\":\"001B000001DVM9t\"}', Account.class);\nDate renewal = decoded.RenewalDate__c;\nSystem.assertEquals(Date.newInstance(2024, 2, 29), renewal);\nDecimal revenue = decoded.AnnualRevenue;\nSystem.assertEquals(12.5, revenue);\nBoolean active = decoded.Active__c;\nSystem.assertEquals(true, active);\nId parent = decoded.ParentId;\nSystem.assertEquals('001B000001DVM9t', parent.toString());"
+      "Account decoded = JSON.deserialize('{\"Name\":\"Acme\",\"RenewalDate__c\":\"2024-02-29\",\"AnnualRevenue\":12.5,\"LastSeen__c\":\"2024-02-29T12:34:56Z\",\"Score__c\":7,\"Active__c\":true,\"ParentId\":\"001B000001DVM9t\"}', Account.class);\nDate renewal = decoded.RenewalDate__c;\nSystem.assertEquals(Date.newInstance(2024, 2, 29), renewal);\nDecimal revenue = decoded.AnnualRevenue;\nSystem.assertEquals(12.5, revenue);\nDatetime lastSeen = decoded.LastSeen__c;\nSystem.assertEquals(Datetime.newInstance(2024, 2, 29, 12, 34, 56), lastSeen);\nDecimal score = decoded.Score__c;\nSystem.assertEquals(Decimal.valueOf('7'), score);\nBoolean active = decoded.Active__c;\nSystem.assertEquals(true, active);\nId parent = decoded.ParentId;\nSystem.assertEquals('001B000001DVM9t', parent.toString());"
     ]
   },
   "expected": {
