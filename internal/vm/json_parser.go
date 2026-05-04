@@ -497,6 +497,20 @@ func jsonParserTokenStringField(token Value, field string) string {
 	return ""
 }
 
+var jsonTokenNames = []string{
+	"START_OBJECT",
+	"END_OBJECT",
+	"START_ARRAY",
+	"END_ARRAY",
+	"FIELD_NAME",
+	"VALUE_STRING",
+	"VALUE_NUMBER_INT",
+	"VALUE_NUMBER_FLOAT",
+	"VALUE_TRUE",
+	"VALUE_FALSE",
+	"VALUE_NULL",
+}
+
 func jsonTokenValue(name string) Value {
 	return Value{Kind: ValueObject, Type: "JSONToken", Text: name}
 }

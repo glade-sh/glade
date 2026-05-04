@@ -492,6 +492,10 @@ a Salesforce-shaped local API server without silently wrong behavior.
     calls to catchable `JSONException` without corrupting recoverable state.
   - [x] Normalize `JSONParser` malformed input and wrong-token accessor failures
     to catchable `JSONException` while preserving parser position.
+  - [x] Promote remaining JSON parser/generator/untyped/pretty stdlib rows after
+    fixture-backed coverage for `JSON.deserializeUntyped`, `JSON.serialize`,
+    `JSON.serializePretty`, `JSON.createParser`, `JSONParser`, `JSONGenerator`,
+    and `JSONToken`.
   - [x] Add common `Test.isRunningTest()` and deterministic
     `Test.getStandardPricebookId()` support.
   - [x] Add `Database.getQueryLocator(String)` for supported SOQL and batch
