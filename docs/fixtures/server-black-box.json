@@ -6,7 +6,35 @@
       "method": "GET",
       "path": "/services/data",
       "status": 200,
-      "contains": ["v61.0"]
+      "contains": ["OAER Local API v61.0", "\"version\":\"61.0\"", "/services/data/v61.0"]
+    },
+    {
+      "name": "resource-root",
+      "method": "GET",
+      "path": "/services/data/v61.0",
+      "status": 200,
+      "contains": ["sobjects", "queryAll", "tooling", "composite", "oaer"]
+    },
+    {
+      "name": "tooling-root",
+      "method": "GET",
+      "path": "/services/data/v61.0/tooling",
+      "status": 200,
+      "contains": ["executeAnonymous", "query"]
+    },
+    {
+      "name": "composite-root",
+      "method": "GET",
+      "path": "/services/data/v61.0/composite",
+      "status": 200,
+      "contains": ["sobjects"]
+    },
+    {
+      "name": "oaer-root",
+      "method": "GET",
+      "path": "/services/data/v61.0/oaer",
+      "status": 200,
+      "contains": ["fixture", "reset"]
     },
     {
       "name": "userinfo",
@@ -117,8 +145,8 @@
       "persistedRecords": 8,
       "permissions": 2,
       "profiles": 1,
-      "requests": 14,
-      "statuses": [200, 200, 200, 201, 200, 200, 200, 404, 405, 400, 400, 400, 200, 201],
+      "requests": 18,
+      "statuses": [200, 200, 200, 200, 200, 200, 200, 201, 200, 200, 200, 404, 405, 400, 400, 400, 200, 201],
       "users": 1
     }
   }

@@ -64,7 +64,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
 			return
 		}
-		writeJSON(w, http.StatusOK, []map[string]string{{"version": "v61.0", "url": "/services/data/v61.0"}})
+		writeJSON(w, http.StatusOK, []map[string]string{{"label": "OAER Local API v61.0", "version": "61.0", "url": "/services/data/v61.0"}})
 		return
 	}
 	if len(parts) < 3 || parts[0] != "services" || parts[1] != "data" {
@@ -78,11 +78,13 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		writeJSON(w, http.StatusOK, map[string]string{
-			"sobjects": "/services/data/" + parts[2] + "/sobjects",
-			"query":    "/services/data/" + parts[2] + "/query",
-			"queryAll": "/services/data/" + parts[2] + "/queryAll",
-			"tooling":  "/services/data/" + parts[2] + "/tooling",
-			"limits":   "/services/data/" + parts[2] + "/limits",
+			"sobjects":  "/services/data/" + parts[2] + "/sobjects",
+			"query":     "/services/data/" + parts[2] + "/query",
+			"queryAll":  "/services/data/" + parts[2] + "/queryAll",
+			"tooling":   "/services/data/" + parts[2] + "/tooling",
+			"limits":    "/services/data/" + parts[2] + "/limits",
+			"composite": "/services/data/" + parts[2] + "/composite",
+			"oaer":      "/services/data/" + parts[2] + "/oaer",
 		})
 		return
 	}
@@ -98,11 +100,11 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case len(rest) == 1 && rest[0] == "limits":
 		s.handleLimits(w, r)
 	case len(rest) >= 1 && rest[0] == "tooling":
-		s.handleTooling(w, r, rest[1:])
+		s.handleTooling(w, r, parts[2], rest[1:])
 	case len(rest) >= 1 && rest[0] == "composite":
-		s.handleComposite(w, r, rest[1:])
+		s.handleComposite(w, r, parts[2], rest[1:])
 	case len(rest) >= 1 && rest[0] == "oaer":
-		s.handleOAER(w, r, rest[1:])
+		s.handleOAER(w, r, parts[2], rest[1:])
 	default:
 		writeError(w, http.StatusNotFound, "NOT_FOUND", "unknown endpoint")
 	}
@@ -229,8 +231,15 @@ func (s *Server) handleRecord(w http.ResponseWriter, r *http.Request, objectName
 	}
 }
 
-func (s *Server) handleOAER(w http.ResponseWriter, r *http.Request, parts []string) {
+func (s *Server) handleOAER(w http.ResponseWriter, r *http.Request, version string, parts []string) {
 	switch {
+	case len(parts) == 0 && r.Method == http.MethodGet:
+		writeJSON(w, http.StatusOK, map[string]string{
+			"fixture": "/services/data/" + version + "/oaer/fixture",
+			"reset":   "/services/data/" + version + "/oaer/reset",
+		})
+	case len(parts) == 0:
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
 	case len(parts) >= 1 && parts[0] == "reset" && r.Method == http.MethodPost:
 		scopes, err := resetScopes(r, parts[1:])
 		if err != nil {
@@ -356,8 +365,15 @@ func (s *Server) handleLimits(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (s *Server) handleTooling(w http.ResponseWriter, r *http.Request, parts []string) {
+func (s *Server) handleTooling(w http.ResponseWriter, r *http.Request, version string, parts []string) {
 	switch {
+	case len(parts) == 0 && r.Method == http.MethodGet:
+		writeJSON(w, http.StatusOK, map[string]string{
+			"executeAnonymous": "/services/data/" + version + "/tooling/executeAnonymous",
+			"query":            "/services/data/" + version + "/tooling/query",
+		})
+	case len(parts) == 0:
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
 	case len(parts) == 1 && parts[0] == "executeAnonymous":
 		s.handleExecuteAnonymous(w, r)
 	case len(parts) == 1 && parts[0] == "query":
@@ -446,7 +462,17 @@ func executeAnonymousFailure(compiled bool, message string, logs []string) map[s
 	return payload
 }
 
-func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, parts []string) {
+func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, version string, parts []string) {
+	if len(parts) == 0 && r.Method == http.MethodGet {
+		writeJSON(w, http.StatusOK, map[string]string{
+			"sobjects": "/services/data/" + version + "/composite/sobjects",
+		})
+		return
+	}
+	if len(parts) == 0 {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
+		return
+	}
 	if len(parts) == 1 && parts[0] == "sobjects" && r.Method == http.MethodPost {
 		var body struct {
 			AllOrNone bool                         `json:"allOrNone"`

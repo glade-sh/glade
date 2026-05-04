@@ -65,7 +65,7 @@ func TestDescribeEndpoints(t *testing.T) {
 
 	list := httptest.NewRecorder()
 	handler.ServeHTTP(list, httptest.NewRequest(http.MethodGet, "/services/data", nil))
-	if list.Code != http.StatusOK || !bytes.Contains(list.Body.Bytes(), []byte(`"v61.0"`)) {
+	if list.Code != http.StatusOK || !bytes.Contains(list.Body.Bytes(), []byte(`/services/data/v61.0`)) {
 		t.Fatalf("versions status = %d body=%s", list.Code, list.Body.String())
 	}
 
@@ -73,6 +73,82 @@ func TestDescribeEndpoints(t *testing.T) {
 	handler.ServeHTTP(sobjects, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects", nil))
 	if sobjects.Code != http.StatusOK || !bytes.Contains(sobjects.Body.Bytes(), []byte(`"Account"`)) {
 		t.Fatalf("sobjects status = %d body=%s", sobjects.Code, sobjects.Body.String())
+	}
+}
+
+func TestResourceDiscoveryEndpoints(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	versions := httptest.NewRecorder()
+	handler.ServeHTTP(versions, httptest.NewRequest(http.MethodGet, "/services/data", nil))
+	if versions.Code != http.StatusOK {
+		t.Fatalf("versions status = %d body=%s", versions.Code, versions.Body.String())
+	}
+	var versionRows []map[string]string
+	if err := json.Unmarshal(versions.Body.Bytes(), &versionRows); err != nil {
+		t.Fatal(err)
+	}
+	if len(versionRows) != 1 || versionRows[0]["version"] != "61.0" || versionRows[0]["label"] == "" || versionRows[0]["url"] != "/services/data/v61.0" {
+		t.Fatalf("versions = %#v", versionRows)
+	}
+
+	root := httptest.NewRecorder()
+	handler.ServeHTTP(root, httptest.NewRequest(http.MethodGet, "/services/data/v61.0", nil))
+	if root.Code != http.StatusOK {
+		t.Fatalf("root status = %d body=%s", root.Code, root.Body.String())
+	}
+	var resources map[string]string
+	if err := json.Unmarshal(root.Body.Bytes(), &resources); err != nil {
+		t.Fatal(err)
+	}
+	for _, key := range []string{"sobjects", "query", "queryAll", "tooling", "limits", "composite", "oaer"} {
+		if resources[key] == "" {
+			t.Fatalf("resource %q missing from %#v", key, resources)
+		}
+	}
+
+	cases := []struct {
+		path string
+		keys []string
+	}{
+		{path: "/services/data/v61.0/tooling", keys: []string{"executeAnonymous", "query"}},
+		{path: "/services/data/v61.0/composite", keys: []string{"sobjects"}},
+		{path: "/services/data/v61.0/oaer", keys: []string{"fixture", "reset"}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.path, func(t *testing.T) {
+			res := httptest.NewRecorder()
+			handler.ServeHTTP(res, httptest.NewRequest(http.MethodGet, tc.path, nil))
+			if res.Code != http.StatusOK {
+				t.Fatalf("%s status = %d body=%s", tc.path, res.Code, res.Body.String())
+			}
+			var payload map[string]string
+			if err := json.Unmarshal(res.Body.Bytes(), &payload); err != nil {
+				t.Fatal(err)
+			}
+			for _, key := range tc.keys {
+				if payload[key] == "" {
+					t.Fatalf("%s missing %q in %#v", tc.path, key, payload)
+				}
+			}
+		})
+	}
+
+	for _, path := range []string{"/services/data/v61.0/tooling", "/services/data/v61.0/composite", "/services/data/v61.0/oaer"} {
+		t.Run(path+" method", func(t *testing.T) {
+			res := httptest.NewRecorder()
+			handler.ServeHTTP(res, httptest.NewRequest(http.MethodPost, path, nil))
+			if res.Code != http.StatusMethodNotAllowed {
+				t.Fatalf("%s status = %d body=%s", path, res.Code, res.Body.String())
+			}
+		})
+	}
+
+	versioned := httptest.NewRecorder()
+	handler.ServeHTTP(versioned, httptest.NewRequest(http.MethodGet, "/services/data/v62.0/tooling", nil))
+	if versioned.Code != http.StatusOK || !bytes.Contains(versioned.Body.Bytes(), []byte(`/services/data/v62.0/tooling/executeAnonymous`)) {
+		t.Fatalf("versioned tooling status = %d body=%s", versioned.Code, versioned.Body.String())
 	}
 }
 
