@@ -131,6 +131,31 @@ func TestEmptyRecycleBinRemovesDeletedRecords(t *testing.T) {
 	}
 }
 
+func TestUndeleteRejectsActiveRecords(t *testing.T) {
+	org := testOrg()
+	engine := NewEngine(&org)
+	insert := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name": storage.StringValue("Acme"),
+		},
+	}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert)
+	}
+
+	active := engine.Undelete([]storage.Record{{ID: insert[0].ID, Object: "Account"}})
+	if active[0].Success || active[0].StatusCode != "ENTITY_IS_NOT_DELETED" {
+		t.Fatalf("active undelete = %#v", active)
+	}
+	if len(active[0].Errors) != 1 || active[0].Errors[0].StatusCode != "ENTITY_IS_NOT_DELETED" {
+		t.Fatalf("active undelete errors = %#v", active[0].Errors)
+	}
+	if org.Objects["Account"].Records[insert[0].ID].System.IsDeleted {
+		t.Fatalf("active record changed after failed undelete")
+	}
+}
+
 func TestLockAndUnlockToggleSystemLock(t *testing.T) {
 	org := testOrg()
 	engine := NewEngine(&org)

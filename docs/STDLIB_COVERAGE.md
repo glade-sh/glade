@@ -37,7 +37,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Database | `Database.merge` | `partial` | Local merge behavior for supported account/contact-style data. |
 | Database | `Database.rollback` | `partial` | Local org-state savepoint rollback; no external side effects. |
 | Database | `Database.setSavepoint` | `partial` | Local org-state snapshots with later-savepoint invalidation. |
-| Database | `Database.undelete` | `partial` | Soft-delete restoration for supported local records. |
+| Database | `Database.undelete` | `partial` | Soft-delete restoration for supported local records with ENTITY_IS_NOT_DELETED SaveResult errors for active rows. |
 | Database | `Database.update` | `supported` | DML pipeline with result/error shapes for supported SObjects. |
 | Database | `Database.upsert` | `partial` | Schema-backed external-ID matching for supported local records. |
 | Date | `Date.addDays` | `supported` | Local Gregorian date arithmetic. |

@@ -144,6 +144,10 @@ func (e *Engine) Undelete(records []storage.Record) []Result {
 			results[i] = resultFromError(record.ID, fmt.Errorf("dml: record %s does not exist", record.ID))
 			continue
 		}
+		if !stored.System.IsDeleted {
+			results[i] = failedResult(record.ID, fmt.Sprintf("dml: record %s is not deleted", record.ID), "ENTITY_IS_NOT_DELETED", nil)
+			continue
+		}
 		stamp := e.systemTimestamp()
 		stored.System.IsDeleted = false
 		stored.System.LastModifiedDate = stamp
