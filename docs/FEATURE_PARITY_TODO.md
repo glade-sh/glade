@@ -178,6 +178,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
 - [x] Fence `Exception.initCause`/`getCause` with one-shot local cause storage,
   receiver return, null-cause preservation, and catchable repeat/self-cause
   errors.
+- [x] Normalize `System.*Exception` display methods so `getTypeName` strips the
+  namespace and `toString` keeps Salesforce-shaped `System.Type: message` text.
 - [x] Complete control-flow edge cases for loops, `switch`, `break`,
   `continue`, `return`, `finally`, and exception unwinding.
 - [x] Cover `finally` execution across return, return override, and uncaught
@@ -518,7 +520,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
     `Test.getStandardPricebookId()` support.
   - [x] Add `Database.getQueryLocator(String)` for supported SOQL and batch
     start scopes.
-  - [x] Add basic `Type.forName(...)` and `Type.newInstance()` factory support.
+  - [x] Add basic `Type.forName(...)` and `Type.newInstance()` factory support,
+    including System namespace built-in lookup edges and explicit unsupported
+    fences for uninstantiable built-in Type tokens.
   - [x] Add `Database.setSavepoint()` and `Database.rollback(...)` for local
     org-state snapshots, with compatibility coverage for selected-snapshot
     restore and VM unit coverage for later-savepoint invalidation.

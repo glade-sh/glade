@@ -6622,7 +6622,20 @@ func (vm *VM) splitClassMember(name string) (string, string, bool) {
 }
 
 func (vm *VM) typeForName(namespace, name string) Value {
-	if name == "" {
+	if strings.TrimSpace(name) == "" {
+		return Null
+	}
+	if strings.HasPrefix(name, "System.") {
+		systemName := strings.TrimPrefix(name, "System.")
+		if isBuiltinTypeName(systemName) {
+			return platformScalar("Type", "System."+systemName)
+		}
+	}
+	if strings.TrimSpace(namespace) == "System" {
+		systemName := strings.TrimPrefix(name, "System.")
+		if isBuiltinTypeName(systemName) {
+			return platformScalar("Type", "System."+systemName)
+		}
 		return Null
 	}
 	if namespace != "" {
@@ -7081,6 +7094,18 @@ func typeNewInstanceAllowsDottedBuiltin(typeName string) bool {
 	return isExceptionType(typeName) ||
 		strings.HasPrefix(typeName, "Schema.") ||
 		typeName == "ApexPages.Message"
+}
+
+func typeNewInstanceUnsupportedBuiltin(typeName string) (string, bool) {
+	canonical := strings.TrimPrefix(typeName, "System.")
+	switch canonical {
+	case "Object", "String", "Boolean", "Integer", "Long", "Decimal", "Double",
+		"Date", "Datetime", "Time", "TimeZone", "Blob", "Id", "Type", "URL",
+		"LoggingLevel", "RestContext":
+		return canonical, true
+	default:
+		return "", false
+	}
 }
 
 func (vm *VM) initializeFields(object *Value, typeName string) {
@@ -9319,7 +9344,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("%s.getTypeName expects 0 arguments", receiver.Type)
 			}
-			return String(receiver.Type), receiver, false, true, nil
+			return String(exceptionTypeName(receiver.Type)), receiver, false, true, nil
 		case "getLineNumber":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("%s.getLineNumber expects 0 arguments", receiver.Type)
@@ -10033,6 +10058,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Type.newInstance expects 0 arguments")
 			}
 			typeName := typeValueName(receiver)
+			if unsupported, ok := typeNewInstanceUnsupportedBuiltin(typeName); ok {
+				return Null, receiver, false, true, unsupportedCallError("Type.newInstance uninstantiable built-in " + unsupported)
+			}
 			if strings.Contains(typeName, ".") {
 				if _, ok := vm.resolveClassName(typeName); !ok && !typeNewInstanceAllowsDottedBuiltin(typeName) {
 					return Null, receiver, false, true, unsupportedCallError("Type.newInstance namespace/package reflection for " + typeName)
