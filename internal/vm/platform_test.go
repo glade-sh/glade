@@ -1683,6 +1683,181 @@ System.assert(!upsertUpdate.isCreated());
 	}
 }
 
+func TestExecDatabaseResultAccessorsAcrossLocalDML(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account base = new Account(Name = 'Base');
+Database.SaveResult inserted = Database.insert(base, false);
+System.assert(inserted.isSuccess());
+System.assertNotEquals(null, inserted.getId());
+System.assertEquals(0, inserted.getErrors().size());
+
+Database.SaveResult badInsert = Database.insert(new Account(Bogus__c = 'nope'), false);
+System.assert(!badInsert.isSuccess());
+System.assertEquals(null, badInsert.getId());
+Object badInsertError = badInsert.getErrors().get(0);
+System.assertEquals('INVALID_FIELD_FOR_INSERT_UPDATE', badInsertError.getStatusCode());
+System.assert(badInsertError.getMessage().contains('unknown field'));
+System.assertEquals('Bogus__c', badInsertError.getFields().get(0));
+System.assertEquals(0, badInsertError.getExtendedErrorDetails().size());
+
+Database.SaveResult updated = Database.update(new Account(Id = inserted.getId(), Name = 'Changed'), false);
+System.assert(updated.isSuccess());
+System.assertEquals(inserted.getId(), updated.getId());
+
+Account formulaWrite = new Account(Id = inserted.getId());
+formulaWrite.put('Score__c', null);
+Database.SaveResult badUpdate = Database.update(formulaWrite, false);
+System.assert(!badUpdate.isSuccess());
+Object badUpdateError = badUpdate.getErrors().get(0);
+System.assertEquals('INVALID_FIELD_FOR_INSERT_UPDATE', badUpdateError.getStatusCode());
+System.assertEquals('Score__c', badUpdateError.getFields().get(0));
+
+Account upsertNew = new Account(Name = 'Upsert New', External_Key__c = 'ext-1');
+Database.UpsertResult upsertCreated = Database.upsert(upsertNew, false);
+System.assert(upsertCreated.isSuccess());
+System.assert(upsertCreated.isCreated());
+Account upsertExisting = new Account(External_Key__c = 'EXT-1', Name = 'Upsert Changed');
+Database.UpsertResult upsertUpdated = Database.upsert(upsertExisting, false);
+System.assert(upsertUpdated.isSuccess());
+System.assert(!upsertUpdated.isCreated());
+System.assertEquals(upsertCreated.getId(), upsertUpdated.getId());
+System.assertEquals(0, upsertUpdated.getErrors().size());
+
+Account master = new Account(Name = 'Master');
+insert master;
+Account duplicate = new Account(Name = 'Duplicate');
+insert duplicate;
+Contact child = new Contact(LastName = 'Child', AccountId = duplicate.Id);
+insert child;
+Database.MergeResult merged = Database.merge(master, duplicate, false);
+System.assert(merged.isSuccess());
+System.assertEquals(master.Id, merged.getId());
+System.assertEquals(duplicate.Id, merged.getMergedRecordIds().get(0));
+System.assertEquals(child.Id, merged.getUpdatedRelatedIds().get(0));
+System.assertEquals(0, merged.getErrors().size());
+
+Database.UndeleteResult activeUndelete = Database.undelete(base, false);
+System.assert(!activeUndelete.isSuccess());
+System.assertEquals(inserted.getId(), activeUndelete.getId());
+System.assertEquals('ENTITY_IS_NOT_DELETED', activeUndelete.getErrors().get(0).getStatusCode());
+
+Account recycle = new Account(Name = 'Recycle');
+insert recycle;
+Database.DeleteResult deleted = Database.delete(recycle, false);
+System.assert(deleted.isSuccess());
+System.assertEquals(recycle.Id, deleted.getId());
+System.assertEquals(0, deleted.getErrors().size());
+Database.UndeleteResult restored = Database.undelete(recycle, false);
+System.assert(restored.isSuccess());
+System.assertEquals(recycle.Id, restored.getId());
+Database.delete(recycle, false);
+Database.EmptyRecycleBinResult emptied = Database.emptyRecycleBin(recycle, false);
+System.assert(emptied.isSuccess());
+System.assertEquals(recycle.Id, emptied.getId());
+System.assertEquals(0, [SELECT Id FROM Account WHERE Id = :recycle.Id ALL ROWS].size());
+
+Account lockRow = new Account(Name = 'Lock');
+insert lockRow;
+Database.LockResult locked = Database.lock(lockRow, false);
+System.assert(locked.isSuccess());
+System.assertEquals(lockRow.Id, locked.getId());
+System.assertEquals(0, locked.getErrors().size());
+Database.UnlockResult unlocked = Database.unlock(lockRow, false);
+System.assert(unlocked.isSuccess());
+System.assertEquals(lockRow.Id, unlocked.getId());
+System.assertEquals(0, unlocked.getErrors().size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["External_Key__c"] = storage.Field{APIName: "External_Key__c", Type: storage.FieldString, ExternalID: true, Unique: true}
+	account.Definition.Fields["Score__c"] = storage.Field{APIName: "Score__c", Type: storage.FieldCalculated}
+	org.Objects["Account"] = account
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Contact",
+			KeyPrefix: "003",
+			Fields: map[string]storage.Field{
+				"LastName":  {APIName: "LastName", Type: storage.FieldString},
+				"AccountId": {APIName: "AccountId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}},
+			},
+			Relations: []storage.Relationship{{
+				Field:         "AccountId",
+				ParentObjects: []string{"Account"},
+			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDatabaseRecordActionAllOrNoneRollsBackResults(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account lockRollback = new Account(Name = 'Lock Rollback');
+insert lockRollback;
+Account missing = new Account(Id = '001999999999999');
+Boolean lockCaught = false;
+try {
+	Database.lock(new List<Account>{lockRollback, missing}, true);
+} catch (DmlException e) {
+	lockCaught = true;
+	System.assert(e.getMessage().contains('Database.lock failed'));
+}
+System.assert(lockCaught);
+
+Account unlockRollback = new Account(Name = 'Unlock Rollback');
+insert unlockRollback;
+Database.lock(unlockRollback, false);
+Boolean unlockCaught = false;
+try {
+	Database.unlock(new List<Account>{unlockRollback, missing}, true);
+} catch (DmlException e) {
+	unlockCaught = true;
+	System.assert(e.getMessage().contains('Database.unlock failed'));
+}
+System.assert(unlockCaught);
+
+Account recycleRollback = new Account(Name = 'Recycle Rollback');
+insert recycleRollback;
+delete recycleRollback;
+Boolean emptyCaught = false;
+try {
+	Database.emptyRecycleBin(new List<Account>{recycleRollback, missing}, true);
+} catch (DmlException e) {
+	emptyCaught = true;
+	System.assert(e.getMessage().contains('Database.emptyRecycleBin failed'));
+}
+System.assert(emptyCaught);
+List<Account> recycleRows = [SELECT Id, IsDeleted FROM Account WHERE Id = :recycleRollback.Id ALL ROWS];
+System.assertEquals(1, recycleRows.size());
+Account recycleRow = recycleRows.get(0);
+System.assert(recycleRow.IsDeleted);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+	lockID := storage.ID(machine.Globals["lockRollback"].Fields["Id"].Text)
+	if org.Objects["Account"].Records[lockID].System.Locked {
+		t.Fatalf("Database.lock allOrNone rollback left %s locked", lockID)
+	}
+	unlockID := storage.ID(machine.Globals["unlockRollback"].Fields["Id"].Text)
+	if !org.Objects["Account"].Records[unlockID].System.Locked {
+		t.Fatalf("Database.unlock allOrNone rollback left %s unlocked", unlockID)
+	}
+}
+
 func TestExecDatabaseDeleteAndUndeleteResultTypes(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account a = new Account(Name = 'Acme');

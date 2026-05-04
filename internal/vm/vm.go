@@ -8656,6 +8656,7 @@ func databaseErrorValue(err dml.Error) Value {
 		fields.List = append(fields.List, String(field))
 	}
 	value.Fields["fields"] = fields
+	value.Fields["extendedErrorDetails"] = List()
 	return value
 }
 
@@ -9417,6 +9418,14 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			if fields, ok := receiver.Fields["fields"]; ok {
 				return fields, receiver, false, true, nil
+			}
+			return List(), receiver, false, true, nil
+		case "getExtendedErrorDetails":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Database.Error.getExtendedErrorDetails expects 0 arguments")
+			}
+			if details, ok := receiver.Fields["extendedErrorDetails"]; ok {
+				return details, receiver, false, true, nil
 			}
 			return List(), receiver, false, true, nil
 		}
