@@ -12,7 +12,7 @@
       "notes": "Status, header case, body, and blob body edges"
     },
     {
-      "symbol": "Http.send",
+      "symbol": "Http.send local mock callouts",
       "kind": "test",
       "notes": "Mock-first callout path and callout limit accounting"
     },
