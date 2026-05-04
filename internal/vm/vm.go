@@ -56,6 +56,7 @@ type VM struct {
 	limitMode        LimitMode
 	limitViolations  []LimitViolation
 	fakeNow          time.Time
+	currentAsyncKind string
 	activeExceptions []activeException
 	currentStatement callFrame
 	hasStatement     bool
@@ -1205,7 +1206,7 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
-		return Bool(false), nil
+		return Bool(vm.isAsyncKind(callee)), nil
 	case "System.abortJob":
 		return vm.abortJob(args)
 	case "Database.scheduleBatch", "System.scheduleBatch":
@@ -2251,7 +2252,9 @@ func (vm *VM) drainAsync(result *Result) error {
 func (vm *VM) runAsyncJob(job AsyncJob, result *Result) error {
 	switch job.Kind {
 	case "Future":
-		_, err := vm.callMethod(job.Method, job.Args, result)
+		_, err := vm.withAsyncKind("Future", func() (Value, error) {
+			return vm.callMethod(job.Method, job.Args, result)
+		})
 		return err
 	case "Queueable":
 		target, ok := vm.resolveInstanceMethod(job.Object.Type, "execute")
@@ -2262,10 +2265,15 @@ func (vm *VM) runAsyncJob(job AsyncJob, result *Result) error {
 		if len(target.Params) == 0 {
 			args = nil
 		}
-		_, err := vm.callMethodWithReceiver(target, job.Object, args, result)
+		_, err := vm.withAsyncKind("Queueable", func() (Value, error) {
+			return vm.callMethodWithReceiver(target, job.Object, args, result)
+		})
 		return err
 	case "BatchApex":
-		return vm.runBatchJob(job, result)
+		_, err := vm.withAsyncKind("BatchApex", func() (Value, error) {
+			return Null, vm.runBatchJob(job, result)
+		})
+		return err
 	case "ScheduledApex":
 		target, ok := vm.resolveInstanceMethod(job.Object.Type, "execute")
 		if !ok {
@@ -2275,11 +2283,37 @@ func (vm *VM) runAsyncJob(job AsyncJob, result *Result) error {
 		if len(target.Params) == 0 {
 			args = nil
 		}
-		_, err := vm.callMethodWithReceiver(target, job.Object, args, result)
+		_, err := vm.withAsyncKind("ScheduledApex", func() (Value, error) {
+			return vm.callMethodWithReceiver(target, job.Object, args, result)
+		})
 		vm.recordCronTrigger(job, "Complete")
 		return err
 	default:
 		return fmt.Errorf("unsupported async job kind %s", job.Kind)
+	}
+}
+
+func (vm *VM) withAsyncKind(kind string, run func() (Value, error)) (Value, error) {
+	previous := vm.currentAsyncKind
+	vm.currentAsyncKind = kind
+	defer func() {
+		vm.currentAsyncKind = previous
+	}()
+	return run()
+}
+
+func (vm *VM) isAsyncKind(callee string) bool {
+	switch callee {
+	case "System.isBatch":
+		return vm.currentAsyncKind == "BatchApex"
+	case "System.isFuture":
+		return vm.currentAsyncKind == "Future"
+	case "System.isQueueable":
+		return vm.currentAsyncKind == "Queueable"
+	case "System.isScheduled":
+		return vm.currentAsyncKind == "ScheduledApex"
+	default:
+		return false
 	}
 }
 

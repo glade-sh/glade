@@ -241,6 +241,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
   typed diagnostics and black-box fixture coverage.
 - [x] Support local `System.abortJob` for queued Queueable/Scheduled test jobs
   before `Test.stopTest`, with typed diagnostics for completed/unknown aborts.
+- [x] Reflect local async drain kind through `System.isFuture`,
+  `System.isQueueable`, `System.isBatch`, and `System.isScheduled` while keeping
+  finalizers and AsyncInfo fenced as unsupported surfaces.
 
 ## 4. SObjects, SOQL, DML, And Triggers
 
@@ -463,6 +466,11 @@ a Salesforce-shaped local API server without silently wrong behavior.
     diagnostics until platform event publish accounting and caps are modeled.
 - [x] Complete `System`, `Test`, `Database`, `Schema`, `Limits`, and `JSON`
   APIs used by enterprise tests.
+  - [x] Promote deterministic System clock helpers and local async context flags
+    with compatibility fixture evidence.
+  - [x] Promote `Test.getStandardPricebookId`, `Test.startTest`, and
+    `Test.stopTest` for the supported local test/drain model; keep broader mock
+    surfaces partial or unsupported with typed diagnostics.
   - [x] Add common JSON overloads for `serialize(value, suppressApexObjectNulls)`,
     `serializePretty`, and `deserializeStrict`.
   - [x] Reject duplicate object fields in `JSON.deserializeStrict` before typed

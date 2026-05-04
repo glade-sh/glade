@@ -1,0 +1,67 @@
+{
+  "name": "async-local-context-flags",
+  "evidence": [
+    {
+      "symbol": "System.isFuture",
+      "kind": "test",
+      "notes": "True inside a drained @future job and false outside other local async contexts."
+    },
+    {
+      "symbol": "System.isQueueable",
+      "kind": "test",
+      "notes": "True inside a drained Queueable execute method and false outside other local async contexts."
+    },
+    {
+      "symbol": "System.isBatch",
+      "kind": "test",
+      "notes": "True during local Batchable start, execute, and finish drain phases."
+    },
+    {
+      "symbol": "System.isScheduled",
+      "kind": "test",
+      "notes": "True inside a drained Schedulable execute method and false outside other local async contexts."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/classes/FlagFuture.cls",
+      "content": "public class FlagFuture { @future public static void run() { System.assertEquals(true, System.isFuture()); System.assertEquals(false, System.isBatch()); System.assertEquals(false, System.isQueueable()); System.assertEquals(false, System.isScheduled()); insert new Account(Name = 'future'); } }"
+    },
+    {
+      "path": "force-app/main/classes/FlagQueue.cls",
+      "content": "public class FlagQueue { public void execute(QueueableContext qc) { System.assertEquals(false, System.isFuture()); System.assertEquals(false, System.isBatch()); System.assertEquals(true, System.isQueueable()); System.assertEquals(false, System.isScheduled()); insert new Account(Name = 'queueable'); } }"
+    },
+    {
+      "path": "force-app/main/classes/FlagBatch.cls",
+      "content": "public class FlagBatch { public List<Integer> start(Database.BatchableContext bc) { System.assertEquals(true, System.isBatch()); System.assertEquals(false, System.isFuture()); System.assertEquals(false, System.isQueueable()); System.assertEquals(false, System.isScheduled()); return new List<Integer>{1}; } public void execute(Database.BatchableContext bc, List<Integer> scope) { System.assertEquals(true, System.isBatch()); insert new Account(Name = 'batch'); } public void finish(Database.BatchableContext bc) { System.assertEquals(true, System.isBatch()); } }"
+    },
+    {
+      "path": "force-app/main/classes/FlagSchedule.cls",
+      "content": "public class FlagSchedule { public void execute(SchedulableContext sc) { System.assertEquals(false, System.isFuture()); System.assertEquals(false, System.isBatch()); System.assertEquals(false, System.isQueueable()); System.assertEquals(true, System.isScheduled()); insert new Account(Name = 'scheduled'); } }"
+    },
+    {
+      "path": "force-app/main/classes/AsyncFlagTest.cls",
+      "content": "@isTest private class AsyncFlagTest { @isTest static void localDrainReportsAsyncContext() { System.assertEquals(false, System.isFuture()); System.assertEquals(false, System.isBatch()); System.assertEquals(false, System.isQueueable()); System.assertEquals(false, System.isScheduled()); Test.startTest(); FlagFuture.run(); System.enqueueJob(new FlagQueue()); Database.executeBatch(new FlagBatch(), 1); System.schedule('nightly', '0 0 0 * * ?', new FlagSchedule()); Test.stopTest(); Integer rows = [SELECT COUNT() FROM Account]; System.assertEquals(4, rows); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "errors": 0,
+      "failed": 0,
+      "ok": true,
+      "passed": 1,
+      "total": 1
+    }
+  }
+}

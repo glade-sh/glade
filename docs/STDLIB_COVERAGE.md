@@ -14,9 +14,9 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Approval | `Approval process APIs` | `unsupported` | Approval namespace process, request, and lock helpers return explicit UnsupportedFeature diagnostics; approval workflow side effects are not locally modeled. |
 | Async | `AsyncApexJob / CronTrigger local records` | `partial` | Test-context enqueue/drain creates deterministic local AsyncApexJob rows and CronTrigger rows for supported future, queueable, batch, and scheduled jobs; broader platform lifecycle fields are not modeled. |
 | Async | `AsyncInfo / AsyncOptions / finalizers` | `unsupported` | Queueable stack metadata, AsyncOptions mutators/accessors and enqueue overloads, System.attachFinalizer, and FinalizerContext getters return explicit UnsupportedFeature diagnostics. |
-| Async | `BatchableContext.getJobId` | `partial` | Returns the deterministic local AsyncApexJob Id while supported batch start/execute/finish methods drain under Test.stopTest. |
-| Async | `QueueableContext.getJobId` | `partial` | Returns the deterministic local AsyncApexJob Id while supported queueables drain under Test.stopTest. |
-| Async | `SchedulableContext.getTriggerId` | `partial` | Returns the deterministic local CronTrigger Id while supported scheduled jobs drain under Test.stopTest. |
+| Async | `BatchableContext.getJobId` | `supported` | Returns the deterministic local AsyncApexJob Id during supported batch start, execute, and finish drain phases. |
+| Async | `QueueableContext.getJobId` | `supported` | Returns the deterministic local AsyncApexJob Id during supported queueable Test.stopTest drain. |
+| Async | `SchedulableContext.getTriggerId` | `supported` | Returns the deterministic local CronTrigger Id during supported scheduled Test.stopTest drain. |
 | Auth | `token/cloud APIs` | `unsupported` | Auth namespace token, session, JWT, OAuth, and cloud calls return explicit UnsupportedFeature diagnostics. |
 | Blob | `Blob.size` | `supported` | Returns local Blob byte length. |
 | Blob | `Blob.toString` | `supported` | Returns UTF-8 local Blob bytes as a string and rejects invalid UTF-8 data. |
@@ -366,23 +366,23 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | System | `System.assertEquals` | `supported` | Assertion failure returns runtime error with deterministic local expected/actual text and Object/null message conversion. |
 | System | `System.assertNotEquals` | `supported` | Assertion failure returns runtime error with deterministic local value text and Object/null message conversion. |
 | System | `System.asyncScheduling` | `partial` | System.abortJob removes queued local Queueable and Schedulable jobs before Test.stopTest; completed and unknown aborts plus scheduleBatch return explicit unsupported diagnostics. Broader async lifecycle control is not modeled. |
-| System | `System.currentTimeMillis` | `partial` | Returns deterministic VM-clock epoch milliseconds. |
+| System | `System.currentTimeMillis` | `supported` | Returns deterministic VM-clock epoch milliseconds. |
 | System | `System.debug` | `supported` | One-argument and LoggingLevel overloads are collected in result debug output; null, LoggingLevel, and modeled Exception values use deterministic string forms; log framework text parity is not claimed. |
-| System | `System.isBatch` | `partial` | Returns false in the local non-async VM context. |
-| System | `System.isFuture` | `partial` | Returns false in the local non-async VM context. |
-| System | `System.isQueueable` | `partial` | Returns false in the local non-async VM context. |
-| System | `System.isScheduled` | `partial` | Returns false in the local non-async VM context. |
-| System | `System.now` | `partial` | Returns deterministic VM-clock Datetime. |
-| System | `System.today` | `partial` | Returns deterministic VM-clock Date. |
+| System | `System.isBatch` | `supported` | Reflects the local batch drain context and returns false outside batch execution. |
+| System | `System.isFuture` | `supported` | Reflects the local future drain context and returns false outside future execution. |
+| System | `System.isQueueable` | `supported` | Reflects the local queueable drain context and returns false outside queueable execution. |
+| System | `System.isScheduled` | `supported` | Reflects the local scheduled drain context and returns false outside scheduled execution. |
+| System | `System.now` | `supported` | Returns deterministic VM-clock Datetime. |
+| System | `System.today` | `supported` | Returns deterministic VM-clock Date. |
 | Test | `Test.clearApexPageMessages` | `supported` | Clears VM-local ApexPages messages in test context. |
 | Test | `Test.createSoqlStub` | `unsupported` | SOQL stub creation is not locally modeled; calls return explicit UnsupportedFeature diagnostics. |
 | Test | `Test.createStub` | `unsupported` | Dynamic stub creation is not locally modeled; calls return explicit UnsupportedFeature diagnostics. |
-| Test | `Test.getStandardPricebookId` | `partial` | Deterministic test-context-only ID. |
+| Test | `Test.getStandardPricebookId` | `supported` | Returns the deterministic local standard pricebook Id in test context and errors outside test context. |
 | Test | `Test.isRunningTest` | `supported` | Reflects local test context. |
 | Test | `Test.setFixedSearchResults` | `unsupported` | Fixed SOSL search results are deferred with the local search surface; calls return explicit UnsupportedFeature diagnostics. |
 | Test | `Test.setMock` | `partial` | HttpCalloutMock support for local tests; other mock interfaces return explicit unsupported diagnostics. |
-| Test | `Test.startTest` | `partial` | Governor-window reset/restore for supported counters. |
-| Test | `Test.stopTest` | `partial` | Drains supported async work. |
+| Test | `Test.startTest` | `supported` | Resets the local inner governor window once per test method and preserves the outer counter window. |
+| Test | `Test.stopTest` | `supported` | Drains supported local async work once per test method and restores the outer governor window. |
 | Time | `Time.addHours` | `supported` | Local time arithmetic with 24-hour wrap. |
 | Time | `Time.addMilliseconds` | `supported` | Local time arithmetic with 24-hour wrap. |
 | Time | `Time.addMinutes` | `supported` | Local time arithmetic with 24-hour wrap. |
