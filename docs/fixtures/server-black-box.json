@@ -162,6 +162,21 @@
       "contains": ["\"attributes\":{\"type\":\"Account\",\"url\":\"/services/data/v61.0/sobjects/Account/001000000000001\"}", "\"Id\":\"001000000000001\"", "\"Name\":\"Acme\""]
     },
     {
+      "name": "get-account-rest-field-projection",
+      "method": "GET",
+      "path": "/services/data/v61.0/sobjects/Account/001000000000001?fields=Name,Description",
+      "status": 200,
+      "contains": ["\"attributes\":{\"type\":\"Account\",\"url\":\"/services/data/v61.0/sobjects/Account/001000000000001\"}", "\"Id\":\"001000000000001\"", "\"Name\":\"Acme\"", "\"Description\":null"],
+      "notContains": ["\"External_Id__c\"", "\"fields\":", "\"system\":"]
+    },
+    {
+      "name": "get-account-rest-field-projection-invalid-field",
+      "method": "GET",
+      "path": "/services/data/v61.0/sobjects/Account/001000000000001?fields=Name,Nope__c",
+      "status": 400,
+      "contains": ["INVALID_FIELD", "Nope__c"]
+    },
+    {
       "name": "compact-layouts-stub",
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Account/compactLayouts",
@@ -348,6 +363,18 @@
         "\"External_Id__c\":\"BB-EXT-1\"",
         "External Black Box Updated"
       ]
+    },
+    {
+      "name": "external-id-get-field-projection",
+      "method": "GET",
+      "path": "/services/data/v60.0/sobjects/Account/External_Id__c/BB-EXT-1?fields=Name",
+      "status": 200,
+      "contains": [
+        "\"attributes\":{\"type\":\"Account\",\"url\":\"/services/data/v60.0/sobjects/Account/001000000000007\"}",
+        "\"Id\":\"001000000000007\"",
+        "External Black Box Updated"
+      ],
+      "notContains": ["\"External_Id__c\"", "\"fields\":", "\"system\":"]
     },
     {
       "name": "external-id-delete",
@@ -651,8 +678,8 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 83,
-      "statuses": [200, 200, 405, 405, 200, 200, 200, 200, 405, 501, 501, 501, 501, 200, 405, 201, 200, 200, 200, 200, 200, 501, 501, 400, 200, 501, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 201, 204, 200, 201, 204, 200, 204, 400, 501, 501, 200, 200, 200, 200, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 404, 404, 200, 200, 201],
+      "requests": 86,
+      "statuses": [200, 200, 405, 405, 200, 200, 200, 200, 405, 501, 501, 501, 501, 200, 405, 201, 200, 200, 200, 200, 200, 400, 200, 501, 501, 400, 200, 501, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 201, 204, 200, 201, 204, 200, 200, 204, 400, 501, 501, 200, 200, 200, 200, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 404, 404, 200, 200, 201],
       "users": 2
     }
   }
