@@ -910,7 +910,15 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 	} else if ambiguous {
 		return Null, fmt.Errorf("ambiguous overload for call %q", callee)
 	}
+	if dot := strings.LastIndex(callee, "."); dot > 0 && dot < len(callee)-1 {
+		if value, handled, err := vm.callCustomDataStaticMember(callee[:dot], callee[dot+1:], args); handled || err != nil {
+			return value, err
+		}
+	}
 	if className, methodName, ok := vm.splitClassMember(callee); ok {
+		if value, handled, err := vm.callCustomDataStaticMember(className, methodName, args); handled || err != nil {
+			return value, err
+		}
 		if value, handled, err := vm.callEnumStaticMember(className, methodName, args); handled || err != nil {
 			return value, err
 		}
@@ -1663,6 +1671,176 @@ func unsupportedIntegrationSurface(callee string) (string, bool) {
 		}
 	}
 	return "", false
+}
+
+func (vm *VM) callCustomDataStaticMember(typeName, method string, args []Value) (Value, bool, error) {
+	objectName, definition, kind, ok := vm.customDataObject(typeName)
+	if !ok {
+		return Null, false, nil
+	}
+	switch method {
+	case "getAll":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("%s.getAll expects 0 arguments", typeName)
+		}
+		out := Map()
+		out.Type = "Map<String," + objectName + ">"
+		object := vm.Org.Objects[objectName]
+		records := make([]storage.Record, 0, len(object.Records))
+		for _, record := range object.Records {
+			if record.System.IsDeleted {
+				continue
+			}
+			records = append(records, record)
+		}
+		sort.Slice(records, func(i, j int) bool {
+			return customDataRecordLess(definition, kind, records[i], records[j], vm.Org.Namespace)
+		})
+		for _, record := range records {
+			key := customDataRecordKey(definition, kind, record, vm.Org.Namespace)
+			if key == "" {
+				continue
+			}
+			out.Map[mapKey(String(key))] = vm.readOnlyCustomDataValue(record, kind)
+		}
+		return out, true, nil
+	case "getInstance":
+		record, found, err := vm.customDataGetInstance(objectName, definition, kind, args)
+		if err != nil || !found {
+			return Null, true, err
+		}
+		return vm.readOnlyCustomDataValue(record, kind), true, nil
+	default:
+		return Null, false, nil
+	}
+}
+
+func (vm *VM) customDataObject(typeName string) (string, storage.ObjectDefinition, string, bool) {
+	if vm.Org == nil {
+		return "", storage.ObjectDefinition{}, "", false
+	}
+	objectName, ok := storage.ResolveObjectName(*vm.Org, typeName)
+	if !ok {
+		return "", storage.ObjectDefinition{}, "", false
+	}
+	definition := vm.Org.Objects[objectName].Definition
+	switch {
+	case storage.IsCustomMetadataDefinition(definition):
+		return objectName, definition, "custom metadata", true
+	case storage.IsCustomSettingDefinition(definition):
+		return objectName, definition, "custom setting", true
+	default:
+		return "", storage.ObjectDefinition{}, "", false
+	}
+}
+
+func (vm *VM) customDataGetInstance(objectName string, definition storage.ObjectDefinition, kind string, args []Value) (storage.Record, bool, error) {
+	object := vm.Org.Objects[objectName]
+	if len(args) == 0 {
+		if kind != "custom setting" {
+			return storage.Record{}, false, fmt.Errorf("%s.getInstance expects record name", objectName)
+		}
+		for _, record := range sortedCustomDataRecords(object.Records, definition, kind, vm.Org.Namespace) {
+			if record.System.IsDeleted {
+				continue
+			}
+			return record, true, nil
+		}
+		return storage.Record{}, false, nil
+	}
+	if len(args) != 1 || args[0].Kind != ValueString {
+		return storage.Record{}, false, fmt.Errorf("%s.getInstance expects optional String name", objectName)
+	}
+	wanted := args[0].Text
+	for _, record := range object.Records {
+		if record.System.IsDeleted {
+			continue
+		}
+		if customDataRecordMatches(definition, kind, record, wanted, vm.Org.Namespace) {
+			return record, true, nil
+		}
+	}
+	return storage.Record{}, false, nil
+}
+
+func sortedCustomDataRecords(records map[storage.ID]storage.Record, definition storage.ObjectDefinition, kind, namespace string) []storage.Record {
+	out := make([]storage.Record, 0, len(records))
+	for _, record := range records {
+		out = append(out, record)
+	}
+	sort.Slice(out, func(i, j int) bool {
+		return customDataRecordLess(definition, kind, out[i], out[j], namespace)
+	})
+	return out
+}
+
+func customDataRecordLess(definition storage.ObjectDefinition, kind string, left, right storage.Record, namespace string) bool {
+	leftKey := customDataRecordKey(definition, kind, left, namespace)
+	rightKey := customDataRecordKey(definition, kind, right, namespace)
+	if leftKey != rightKey {
+		return leftKey < rightKey
+	}
+	return string(left.ID) < string(right.ID)
+}
+
+func customDataRecordMatches(definition storage.ObjectDefinition, kind string, record storage.Record, wanted, namespace string) bool {
+	if string(record.ID) == wanted {
+		return true
+	}
+	for _, candidate := range customDataRecordNames(definition, kind, record, namespace) {
+		if strings.EqualFold(candidate, wanted) {
+			return true
+		}
+	}
+	return false
+}
+
+func customDataRecordKey(definition storage.ObjectDefinition, kind string, record storage.Record, namespace string) string {
+	names := customDataRecordNames(definition, kind, record, namespace)
+	if len(names) == 0 {
+		return ""
+	}
+	return names[0]
+}
+
+func customDataRecordNames(definition storage.ObjectDefinition, kind string, record storage.Record, namespace string) []string {
+	fieldOrder := []string{"Name"}
+	if kind == "custom metadata" {
+		fieldOrder = []string{"DeveloperName", "QualifiedApiName", "Name"}
+	}
+	var out []string
+	for _, field := range fieldOrder {
+		if value, ok := record.Fields[field]; ok && value.Kind == storage.ValueString && value.String != "" {
+			out = append(out, value.String)
+		}
+	}
+	if kind == "custom metadata" {
+		developerName := firstStringField(record, "DeveloperName", "Name")
+		prefix := firstStringField(record, "NamespacePrefix")
+		if developerName != "" && prefix != "" {
+			out = append(out, prefix+"__"+developerName)
+		}
+		if developerName != "" && prefix == "" && namespace != "" && strings.HasPrefix(definition.APIName, namespace+"__") {
+			out = append(out, namespace+"__"+developerName)
+		}
+	}
+	return out
+}
+
+func firstStringField(record storage.Record, names ...string) string {
+	for _, name := range names {
+		value, ok := record.Fields[name]
+		if ok && value.Kind == storage.ValueString {
+			return value.String
+		}
+	}
+	return ""
+}
+
+func (vm *VM) readOnlyCustomDataValue(record storage.Record, kind string) Value {
+	value := vmValueFromRecord(record)
+	value.Fields[sobjectReadOnlyField] = String(kind + " records returned by getAll/getInstance are read-only")
+	return value
 }
 
 func userInfoField(user Value, field, fallback string) string {
@@ -3280,6 +3458,9 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 	if value.Kind != ValueObject {
 		return storage.Record{}, fmt.Errorf("DML requires sObject value, got %s", value.Kind)
 	}
+	if reason, ok := sobjectReadOnlyReason(*value); ok {
+		return storage.Record{}, fmt.Errorf("DML cannot modify read-only %s", reason)
+	}
 	objectType := value.Type
 	var definition storage.ObjectDefinition
 	if vm.Org != nil {
@@ -3294,7 +3475,7 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 		ExplicitNulls: make(map[string]bool),
 	}
 	for field, fieldValue := range value.Fields {
-		if field == sobjectErrorsField {
+		if field == sobjectErrorsField || field == sobjectReadOnlyField {
 			continue
 		}
 		if field == "Id" {
@@ -5525,6 +5706,9 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 	}
 	if current.Kind != ValueObject {
 		return fmt.Errorf("cannot assign field %s on %s", fieldName, current.Kind)
+	}
+	if reason, ok := sobjectReadOnlyReason(current); ok {
+		return fmt.Errorf("cannot modify read-only %s", reason)
 	}
 	class := vm.Classes[current.Type]
 	if def, ok := class.Fields[fieldName]; ok {
@@ -7920,6 +8104,9 @@ func (vm *VM) isSObjectType(typeName string) bool {
 func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Value, bool, error) {
 	switch method {
 	case "addError":
+		if reason, ok := sobjectReadOnlyReason(receiver); ok {
+			return Null, true, fmt.Errorf("cannot modify read-only %s", reason)
+		}
 		message, err := sObjectAddErrorMessage(args, "SObject.addError")
 		if err != nil {
 			return Null, true, err
@@ -7950,6 +8137,9 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		if len(args) != 2 || args[0].Kind != ValueString {
 			return Null, true, fmt.Errorf("SObject.put expects field name String and value")
 		}
+		if reason, ok := sobjectReadOnlyReason(receiver); ok {
+			return Null, true, fmt.Errorf("cannot modify read-only %s", reason)
+		}
 		field := vm.resolveSObjectFieldName(receiver.Type, args[0].Text)
 		previous, ok := receiver.Fields[field]
 		if !ok {
@@ -7968,6 +8158,9 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("SObject.clear expects 0 arguments")
 		}
+		if reason, ok := sobjectReadOnlyReason(receiver); ok {
+			return Null, true, fmt.Errorf("cannot modify read-only %s", reason)
+		}
 		for field := range receiver.Fields {
 			delete(receiver.Fields, field)
 		}
@@ -7979,7 +8172,7 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		out := Map()
 		out.Type = "Map<String,Object>"
 		for field, value := range receiver.Fields {
-			if field == sobjectErrorsField {
+			if field == sobjectErrorsField || field == sobjectReadOnlyField {
 				continue
 			}
 			out.Map[mapKey(String(field))] = value
@@ -7990,7 +8183,21 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 	}
 }
 
-const sobjectErrorsField = "__oaer_errors"
+const (
+	sobjectErrorsField   = "__oaer_errors"
+	sobjectReadOnlyField = "__oaer_readonly"
+)
+
+func sobjectReadOnlyReason(value Value) (string, bool) {
+	if value.Kind != ValueObject {
+		return "", false
+	}
+	reason, ok := value.Fields[sobjectReadOnlyField]
+	if !ok || reason.Kind != ValueString || reason.Text == "" {
+		return "", false
+	}
+	return reason.Text, true
+}
 
 func addSObjectError(value *Value, message string, fields []string) {
 	if value.Fields == nil {

@@ -2033,3 +2033,124 @@ func testDataOrg() storage.OrgState {
 	}
 	return org
 }
+
+func TestExecCustomMetadataAndCustomSettingStatics(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String,Feature__mdt> allMetadata = Feature__mdt.getAll();
+System.assertEquals(1, allMetadata.size());
+Feature__mdt cfg = Feature__mdt.getInstance('pkg__Default');
+System.assertEquals('Default', cfg.DeveloperName);
+System.assert(cfg.pkg__Enabled__c);
+Feature__mdt byID = pkg__Feature__mdt.getInstance(cfg.Id);
+System.assertEquals('Default Label', byID.MasterLabel);
+Map<String,Local_Setting__c> allSettings = Local_Setting__c.getAll();
+System.assertEquals(1, allSettings.size());
+Local_Setting__c setting = Local_Setting__c.getInstance('Default');
+System.assertEquals('Default', setting.Name);
+System.assert(!setting.pkg__Enabled__c);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := customDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecCustomDataStaticRecordsAreReadOnly(t *testing.T) {
+	cases := []struct {
+		name   string
+		source string
+		want   string
+	}{
+		{"field assignment", "Feature__mdt cfg = Feature__mdt.getInstance('Default'); cfg.Enabled__c = false;", "cannot modify read-only custom metadata"},
+		{"put", "Local_Setting__c setting = Local_Setting__c.getInstance('Default'); setting.put('Enabled__c', true);", "cannot modify read-only custom setting"},
+		{"dml", "Feature__mdt cfg = Feature__mdt.getInstance('Default'); update cfg;", "DML cannot modify read-only custom metadata"},
+		{"field assignment without org resolution", "Ghost__mdt cfg = new Ghost__mdt(); cfg.__oaer_readonly = 'custom metadata'; cfg.Enabled__c = false;", "cannot modify read-only custom metadata"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			program, err := CompileAnonymous(tc.source)
+			if err != nil {
+				t.Fatal(err)
+			}
+			machine := New(nil)
+			org := customDataOrg()
+			machine.SetOrg(&org)
+			if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), tc.want) {
+				t.Fatalf("error = %v, want %q", err, tc.want)
+			}
+		})
+	}
+}
+
+func TestCustomDataRecordSortingUsesIDTieBreaker(t *testing.T) {
+	definition := storage.ObjectDefinition{
+		APIName:  "Local_Setting__c",
+		Metadata: map[string]string{"kind": "customSetting", "customSettingsType": "List"},
+		Fields: map[string]storage.Field{
+			"Name": {APIName: "Name", Type: storage.FieldString},
+		},
+	}
+	records := map[storage.ID]storage.Record{
+		"a01000000000002": {ID: "a01000000000002", Object: "Local_Setting__c"},
+		"a01000000000001": {ID: "a01000000000001", Object: "Local_Setting__c"},
+	}
+
+	sorted := sortedCustomDataRecords(records, definition, "custom setting", "")
+	if len(sorted) != 2 {
+		t.Fatalf("len(sorted) = %d, want 2", len(sorted))
+	}
+	if sorted[0].ID != "a01000000000001" || sorted[1].ID != "a01000000000002" {
+		t.Fatalf("sorted IDs = %q, %q; want ID order for equal keys", sorted[0].ID, sorted[1].ID)
+	}
+}
+
+func customDataOrg() storage.OrgState {
+	org := storage.NewOrgState()
+	org.Namespace = "pkg"
+	org.Objects["Feature__mdt"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Feature__mdt",
+			KeyPrefix: "a00",
+			Metadata:  map[string]string{"kind": "customMetadata"},
+			Fields: map[string]storage.Field{
+				"DeveloperName":    {APIName: "DeveloperName", Type: storage.FieldString},
+				"MasterLabel":      {APIName: "MasterLabel", Type: storage.FieldString},
+				"NamespacePrefix":  {APIName: "NamespacePrefix", Type: storage.FieldString},
+				"QualifiedApiName": {APIName: "QualifiedApiName", Type: storage.FieldString},
+				"Enabled__c":       {APIName: "Enabled__c", Type: storage.FieldBoolean},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a00000000000001": {ID: "a00000000000001", Object: "Feature__mdt", Fields: map[string]storage.Value{
+				"DeveloperName":    storage.StringValue("Default"),
+				"MasterLabel":      storage.StringValue("Default Label"),
+				"NamespacePrefix":  storage.StringValue("pkg"),
+				"QualifiedApiName": storage.StringValue("pkg__Default"),
+				"Enabled__c":       storage.BooleanValue(true),
+			}},
+		},
+	}
+	org.Objects["Local_Setting__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Local_Setting__c",
+			KeyPrefix: "a01",
+			Metadata:  map[string]string{"kind": "customSetting", "customSettingsType": "List"},
+			Fields: map[string]storage.Field{
+				"Name":       {APIName: "Name", Type: storage.FieldString},
+				"Enabled__c": {APIName: "Enabled__c", Type: storage.FieldBoolean},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a01000000000001": {ID: "a01000000000001", Object: "Local_Setting__c", Fields: map[string]storage.Value{
+				"Name":       storage.StringValue("Default"),
+				"Enabled__c": storage.BooleanValue(false),
+			}},
+		},
+	}
+	return org
+}

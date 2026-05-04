@@ -137,6 +137,7 @@ var stdlibEntries = []StdlibEntry{
 	{Area: "Database", API: "Database.undelete", Status: StatusPartial, Notes: "Soft-delete restoration for supported local records."},
 	{Area: "Database", API: "Database.update", Status: StatusSupported, Notes: "DML pipeline with result/error shapes for supported SObjects."},
 	{Area: "Database", API: "Database.upsert", Status: StatusPartial, Notes: "Schema-backed external-ID matching for supported local records."},
+	{Area: "Data", API: "Custom metadata/custom settings getAll/getInstance", Status: StatusPartial, Notes: "Fixture-backed local __mdt and list custom setting static access supports namespace-stripped object/field names and read-only returned records; hierarchy merge behavior and Metadata API mutation are not modeled."},
 	{Area: "Date", API: "Date.addDays", Status: StatusSupported, Notes: "Local Gregorian date arithmetic."},
 	{Area: "Date", API: "Date.addMonths", Status: StatusPartial, Notes: "Local Gregorian arithmetic with month-end clamp; full Salesforce edge-case parity incomplete."},
 	{Area: "Date", API: "Date.addYears", Status: StatusPartial, Notes: "Local Gregorian arithmetic with leap-day clamp; full Salesforce edge-case parity incomplete."},

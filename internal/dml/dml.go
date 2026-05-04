@@ -256,6 +256,9 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 	if err != nil {
 		return "", err
 	}
+	if storage.IsCustomMetadataDefinition(object.Definition) {
+		return "", customMetadataReadOnlyError(objectName)
+	}
 	record, err = canonicalizeRecord(e.Org.Namespace, object.Definition, objectName, record)
 	if err != nil {
 		return "", err
@@ -323,6 +326,9 @@ func (e *Engine) updateOne(record storage.Record) error {
 	object, objectName, err := e.object(record.Object)
 	if err != nil {
 		return err
+	}
+	if storage.IsCustomMetadataDefinition(object.Definition) {
+		return customMetadataReadOnlyError(objectName)
 	}
 	record, err = canonicalizeRecord(e.Org.Namespace, object.Definition, objectName, record)
 	if err != nil {
@@ -400,6 +406,9 @@ func (e *Engine) deleteOne(record storage.Record) error {
 	if err != nil {
 		return err
 	}
+	if storage.IsCustomMetadataDefinition(object.Definition) {
+		return customMetadataReadOnlyError(objectName)
+	}
 	if record.ID == "" {
 		return fmt.Errorf("dml: delete requires id")
 	}
@@ -450,6 +459,9 @@ func (e *Engine) upsertByExternalID(record storage.Record, externalIDField strin
 	object, objectName, err := e.object(record.Object)
 	if err != nil {
 		return "", false, err
+	}
+	if storage.IsCustomMetadataDefinition(object.Definition) {
+		return "", false, customMetadataReadOnlyError(objectName)
 	}
 	record, err = canonicalizeRecord(e.Org.Namespace, object.Definition, objectName, record)
 	if err != nil {
@@ -865,6 +877,10 @@ func (e dmlError) Error() string {
 
 func dmlErrorf(code string, fields []string, format string, args ...any) error {
 	return dmlError{code: code, fields: append([]string(nil), fields...), message: fmt.Sprintf(format, args...)}
+}
+
+func customMetadataReadOnlyError(objectName string) error {
+	return dmlErrorf("INVALID_TYPE", nil, "dml: custom metadata object %s is read-only", objectName)
 }
 
 func resultFromError(id storage.ID, err error) Result {

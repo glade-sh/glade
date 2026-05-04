@@ -268,6 +268,33 @@ func ResolveFieldName(definition ObjectDefinition, namespace, name string) (stri
 	return "", false
 }
 
+func IsCustomMetadataDefinition(definition ObjectDefinition) bool {
+	if definition.Metadata != nil && definition.Metadata["kind"] == "customMetadata" {
+		return true
+	}
+	return strings.HasSuffix(definition.APIName, "__mdt")
+}
+
+func IsCustomSettingDefinition(definition ObjectDefinition) bool {
+	return definition.Metadata != nil && definition.Metadata["kind"] == "customSetting"
+}
+
+func IsCustomMetadataObject(org OrgState, name string) bool {
+	objectName, ok := ResolveObjectName(org, name)
+	if !ok {
+		return strings.HasSuffix(StripNamespaceToken(org.Namespace, name), "__mdt")
+	}
+	return IsCustomMetadataDefinition(org.Objects[objectName].Definition)
+}
+
+func IsCustomSettingObject(org OrgState, name string) bool {
+	objectName, ok := ResolveObjectName(org, name)
+	if !ok {
+		return false
+	}
+	return IsCustomSettingDefinition(org.Objects[objectName].Definition)
+}
+
 func (r Record) Clone() Record {
 	out := r
 	if r.Fields != nil {
