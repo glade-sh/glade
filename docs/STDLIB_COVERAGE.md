@@ -106,9 +106,9 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Exception | `Exception.getLineNumber` | `partial` | Returns deterministic local throw-site line metadata when available; otherwise 0. |
 | Exception | `Exception.getMessage` | `supported` | Returns the local exception message. |
 | Exception | `Exception.getStackTraceString` | `partial` | Returns the local VM stack trace captured at throw time when available. |
-| Exception | `Exception.getTypeName` | `supported` | Returns the local exception type name without System namespace prefix. |
+| Exception | `Exception.getTypeName` | `supported` | Returns the local exception type name without System namespace prefix, including System-prefixed constructed values. |
 | Exception | `Exception.initCause` | `supported` | Stores one local Exception cause or null, returns the receiver, and throws catchable local exceptions for repeat initialization or self-causation. |
-| Exception | `Exception.toString` | `partial` | Returns System-prefixed built-in exception text for local exception values. |
+| Exception | `Exception.toString` | `supported` | Returns System-prefixed local exception type and message text. |
 | FeatureManagement | `FeatureManagement.checkPermission` | `partial` | Checks local runAs permission-list state. |
 | HTTP | `Http.send` | `partial` | Mock-first local callouts with request validation and callout accounting; real network transport unsupported. |
 | HTTP | `HttpRequest` | `partial` | Endpoint, method, case-insensitive headers, timeout validation/defaults, body, and blob body accessors. |
@@ -398,25 +398,25 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | TimeZone | `TimeZone.getOffset` | `partial` | Returns fixed offset milliseconds for the deterministic offset slice and modeled DST decisions for US, Europe, and Sydney rules; other named zones are unsupported. |
 | TimeZone | `TimeZone.getTimeZone` | `partial` | Supports UTC/GMT, fixed GMT/UTC offsets through ±14:00, and America/Los_Angeles, America/New_York, America/Chicago, America/Denver, Europe/London, Europe/Berlin, Asia/Tokyo, and Australia/Sydney; other named zones and trimmed/invalid IDs are unsupported. |
 | Type | `Type.equals` | `supported` | Compares local Type tokens by type name. |
-| Type | `Type.forName` | `partial` | Local class/type token lookup, common local SObjects, built-in and generic collection type strings, and null for null/blank/unknown local names. |
+| Type | `Type.forName` | `partial` | Local class/type token lookup, System namespace built-in tokens, common local SObjects, built-in and generic collection type strings, and null for null/blank/unknown local names. |
 | Type | `Type.getName` | `supported` | Returns local type token name. |
 | Type | `Type.hashCode` | `supported` | Matches the local String.hashCode of the type name. |
-| Type | `Type.isAssignableFrom` | `partial` | Uses the local class/interface and built-in exception hierarchy. |
-| Type | `Type.newInstance` | `partial` | Constructs local values and dispatches zero-arg constructors for registered classes; unbacked namespace/package tokens return explicit unsupported errors. |
+| Type | `Type.isAssignableFrom` | `supported` | Uses the local class/interface and built-in exception hierarchy. |
+| Type | `Type.newInstance` | `partial` | Constructs local values and dispatches zero-arg constructors for registered classes; uninstantiable built-ins and unbacked namespace/package tokens return explicit unsupported errors. |
 | Type | `Type.toString` | `supported` | Returns the local type token name. |
-| URL | `URL` | `partial` | Constructors for deterministic absolute URL specs, context/spec resolution, and protocol/host/file forms with stable malformed input errors. |
+| URL | `URL` | `supported` | Constructors for deterministic absolute URL specs, context/spec resolution, and protocol/host/file forms with stable malformed input errors. |
 | URL | `URL.getAuthority` | `supported` | Returns parsed authority for local URL values. |
 | URL | `URL.getCurrentRequestUrl` | `unsupported` | Cloud request context is not modeled; returns an explicit unsupported current-request URL error. |
 | URL | `URL.getDefaultPort` | `supported` | Returns HTTP/HTTPS/FTP defaults or -1. |
 | URL | `URL.getFile` | `supported` | Returns path plus query for local URL values. |
 | URL | `URL.getHost` | `supported` | Returns parsed hostname for local URL values. |
-| URL | `URL.getOrgDomainUrl` | `partial` | Deterministic local org URL. |
+| URL | `URL.getOrgDomainUrl` | `supported` | Returns the deterministic local org URL; request context is not modeled. |
 | URL | `URL.getPath` | `supported` | Returns parsed path for local URL values. |
 | URL | `URL.getPort` | `supported` | Returns explicit port or -1. |
 | URL | `URL.getProtocol` | `supported` | Returns parsed scheme for local URL values. |
 | URL | `URL.getQuery` | `supported` | Returns parsed query for local URL values. |
 | URL | `URL.getRef` | `supported` | Returns parsed fragment for local URL values. |
-| URL | `URL.getSalesforceBaseUrl` | `partial` | Deterministic local base URL. |
+| URL | `URL.getSalesforceBaseUrl` | `supported` | Returns the deterministic local base URL; request context is not modeled. |
 | URL | `URL.toExternalForm` | `supported` | Returns the stored local URL string. |
 | Unsupported | `unimplemented platform/stdlib calls` | `supported` | Typed UnsupportedFeature errors with stable message text. |
 | UserInfo | `UserInfo.getFirstName` | `supported` | Returns the current runAs, server, or default local user FirstName with deterministic fallback. |

@@ -895,6 +895,9 @@ System.assertEquals('', constructed.getStackTraceString());
 System.assertEquals('System.DmlException: blocked', constructed.toString());
 Exception noMessage = new DmlException();
 System.assertEquals(null, noMessage.getMessage());
+Exception systemPrefixed = new System.DmlException('system blocked');
+System.assertEquals('DmlException', systemPrefixed.getTypeName());
+System.assertEquals('System.DmlException: system blocked', systemPrefixed.toString());
 
 String caught = '';
 try {
@@ -1189,6 +1192,10 @@ Type exceptionType = Type.forName('Exception');
 Type dmlType = Type.forName('DmlException');
 System.assert(exceptionType.isAssignableFrom(dmlType));
 System.assert(!dmlType.isAssignableFrom(exceptionType));
+Type systemExceptionType = Type.forName('System', 'Exception');
+Type systemDmlType = Type.forName('System', 'DmlException');
+System.assert(systemExceptionType.isAssignableFrom(dmlType));
+System.assert(exceptionType.isAssignableFrom(systemDmlType));
 
 Type markerType = Type.forName('Marker');
 Type childType = Type.forName('Child');
@@ -1416,6 +1423,12 @@ Type accountWithNullNamespace = Type.forName(null, 'Account');
 System.assertEquals('Account', accountWithNullNamespace.getName());
 Type stringType = Type.forName('String');
 System.assertEquals('String', stringType.getName());
+System.assertEquals('System.String', Type.forName('System.String').getName());
+Type systemStringType = Type.forName('System', 'String');
+System.assertEquals('System.String', systemStringType.getName());
+System.assertEquals(null, Type.forName('System', 'DefinitelyMissing'));
+Type systemDmlType = Type.forName('System', 'DmlException');
+System.assertEquals('System.DmlException', systemDmlType.getName());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1554,6 +1567,21 @@ System.assertEquals('System.AssertException', exceptionValue.toString());
 	}
 	if _, err := Execute(program, nil); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecTypeNewInstanceRejectsUninstantiableBuiltins(t *testing.T) {
+	program, err := CompileAnonymous(`Type.forName('String').newInstance();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = Execute(program, nil)
+	var runtimeErr *RuntimeError
+	if !errors.As(err, &runtimeErr) {
+		t.Fatalf("error type = %T, want *RuntimeError", err)
+	}
+	if runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != `unsupported call "Type.newInstance uninstantiable built-in String"` {
+		t.Fatalf("runtime error = (%q, %q)", runtimeErr.Type, runtimeErr.Message)
 	}
 }
 
