@@ -1,0 +1,28 @@
+{
+  "name": "data-platform-sosl-find-unsupported",
+  "evidence": [
+    {
+      "symbol": "SOSL FIND",
+      "kind": "test",
+      "notes": "SOSL FIND syntax is detected before SOQL execution and reported as unsupported instead of pretending local search results."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Object rows = [FIND 'Acme' IN ALL FIELDS RETURNING Account(Id)];"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Object rows = [FIND 'Acme' IN ALL FIELDS RETURNING Account(Id)];"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"SOSL/FIND local search surface\""
+    }
+  }
+}

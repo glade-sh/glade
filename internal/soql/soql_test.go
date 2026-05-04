@@ -29,6 +29,23 @@ func TestParseCountQuery(t *testing.T) {
 	}
 }
 
+func TestIsSOSLFind(t *testing.T) {
+	cases := []struct {
+		input string
+		want  bool
+	}{
+		{input: "FIND {Acme} IN ALL FIELDS RETURNING Account(Id)", want: true},
+		{input: " \n\tfind 'Acme' IN ALL FIELDS", want: true},
+		{input: "SELECT Id FROM Account WHERE Name = 'Find Me'", want: false},
+		{input: "", want: false},
+	}
+	for _, tc := range cases {
+		if got := IsSOSLFind(tc.input); got != tc.want {
+			t.Fatalf("IsSOSLFind(%q) = %v, want %v", tc.input, got, tc.want)
+		}
+	}
+}
+
 func TestExecuteAggregateQueries(t *testing.T) {
 	org := aggregateTestOrg()
 

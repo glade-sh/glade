@@ -77,6 +77,27 @@ func Parse(input string) (Query, error) {
 	return ParseAt(input, time.Now().UTC())
 }
 
+func IsSOSLFind(input string) bool {
+	return firstQueryWord(input) == "FIND"
+}
+
+func firstQueryWord(input string) string {
+	input = strings.TrimLeft(input, " \t\r\n\f")
+	if input == "" {
+		return ""
+	}
+	end := 0
+	for end < len(input) {
+		ch := input[end]
+		if (ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || ch == '_' {
+			end++
+			continue
+		}
+		break
+	}
+	return strings.ToUpper(input[:end])
+}
+
 func ParseAt(input string, now time.Time) (Query, error) {
 	tokens, err := lex(input)
 	if err != nil {

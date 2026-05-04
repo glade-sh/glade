@@ -210,6 +210,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Schema | `DescribeSObjectResult` | `partial` | Common object metadata, fields, record types, and child relationships. |
 | Schema | `Schema.describeSObjects` | `partial` | Object names and SObjectType tokens for local schema. |
 | Schema | `Schema.getGlobalDescribe` | `partial` | Local schema-backed describe map. |
+| Search | `Search.* / SOSL FIND` | `unsupported` | Cloud search and SOSL execution are not locally modeled; calls return explicit UnsupportedFeature diagnostics. |
 | Set | `Set.add` | `supported` | Adds typed local values and reports whether the Set changed. |
 | Set | `Set.addAll` | `supported` | Adds typed values from local List or Set values. |
 | Set | `Set.clear` | `supported` | Removes all local set elements. |
