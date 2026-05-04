@@ -1418,6 +1418,132 @@ System.assertEquals(1, Limits.getCallouts());
 	}
 }
 
+func TestExecHttpRequestValidationAndHeaderEdges(t *testing.T) {
+	program, err := CompileAnonymous(`
+HttpRequest req = new HttpRequest();
+System.assertEquals(10000, req.getTimeout());
+req.setEndpoint('callout:NamedCredential/path');
+req.setMethod('post');
+System.assertEquals('POST', req.getMethod());
+req.setHeader('X-Test', 'first');
+req.setHeader('x-test', 'second');
+System.assertEquals('second', req.getHeader('X-TEST'));
+System.assertEquals(null, req.getHeader('Missing'));
+req.setTimeout(120000);
+System.assertEquals(120000, req.getTimeout());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecHttpRequestRejectsInvalidEdges(t *testing.T) {
+	cases := []struct {
+		name string
+		src  string
+		want string
+	}{
+		{
+			name: "endpoint-relative",
+			src:  `HttpRequest req = new HttpRequest(); req.setEndpoint('/relative');`,
+			want: "HttpRequest endpoint must be an absolute http, https, or callout URL",
+		},
+		{
+			name: "method",
+			src:  `HttpRequest req = new HttpRequest(); req.setMethod('CONNECT');`,
+			want: `HttpRequest method "CONNECT" is not supported`,
+		},
+		{
+			name: "timeout-low",
+			src:  `HttpRequest req = new HttpRequest(); req.setTimeout(0);`,
+			want: "HttpRequest timeout must be between 1 and 120000 milliseconds",
+		},
+		{
+			name: "timeout-high",
+			src:  `HttpRequest req = new HttpRequest(); req.setTimeout(120001);`,
+			want: "HttpRequest timeout must be between 1 and 120000 milliseconds",
+		},
+		{
+			name: "send-missing-method",
+			src:  `HttpRequest req = new HttpRequest(); req.setEndpoint('https://example.test'); Http h = new Http(); h.send(req);`,
+			want: "HttpRequest method is required before Http.send",
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			program, err := CompileAnonymous(tc.src)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = New(nil).Execute(program)
+			if err == nil || !strings.Contains(err.Error(), tc.want) {
+				t.Fatalf("err = %v, want %q", err, tc.want)
+			}
+		})
+	}
+}
+
+func TestExecHttpSendWithoutMockIsUnsupportedTransport(t *testing.T) {
+	program, err := CompileAnonymous(`
+HttpRequest req = new HttpRequest();
+req.setEndpoint('https://example.test');
+req.setMethod('GET');
+Http h = new Http();
+h.send(req);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := New(nil).Execute(program)
+	var runtimeErr *RuntimeError
+	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != `unsupported call "Http.send real network transport"` {
+		t.Fatalf("err = %#v, want UnsupportedFeature real transport", err)
+	}
+	if result.Limits.Callouts != 1 {
+		t.Fatalf("callouts = %d, want 1", result.Limits.Callouts)
+	}
+}
+
+func TestExecUnsupportedHttpCalloutSurfacesHaveStableShape(t *testing.T) {
+	cases := []struct {
+		name string
+		src  string
+		want string
+	}{
+		{
+			name: "static-resource-mock-constructor",
+			src:  `StaticResourceCalloutMock mock = new StaticResourceCalloutMock();`,
+			want: `unsupported call "StaticResourceCalloutMock local static resource callout mock surface"`,
+		},
+		{
+			name: "multi-static-resource-mock-constructor",
+			src:  `MultiStaticResourceCalloutMock mock = new MultiStaticResourceCalloutMock();`,
+			want: `unsupported call "MultiStaticResourceCalloutMock local static resource callout mock surface"`,
+		},
+		{
+			name: "continuation-constructor",
+			src:  `Continuation cont = new Continuation(60);`,
+			want: `unsupported call "Continuation local continuation callout surface"`,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			program, err := CompileAnonymous(tc.src)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = New(nil).Execute(program)
+			var runtimeErr *RuntimeError
+			if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != tc.want {
+				t.Fatalf("err = %#v, want %s", err, tc.want)
+			}
+		})
+	}
+}
+
 func TestExecHttpCalloutMockRespondMethod(t *testing.T) {
 	respondProgram, err := CompileAnonymous(`
 HttpResponse res = new HttpResponse();

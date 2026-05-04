@@ -421,7 +421,10 @@ Cuts:
 
 1. HTTP and callouts
    - HttpRequest, HttpResponse, Http, callout mocks, static-resource mocks,
-     Continuation, timeout/error shapes, and callout limits.
+     Continuation, timeout/error shapes, and callout limits. Current local slice
+     covers mock-first HttpCalloutMock send behavior, request/response accessor
+     edges, timeout validation, and stable unsupported diagnostics for real
+     network transport, static-resource mocks, and Continuation.
 
 2. REST
    - RestContext, RestRequest, RestResponse, annotation dispatch, local server

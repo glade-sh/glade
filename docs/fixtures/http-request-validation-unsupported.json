@@ -1,0 +1,28 @@
+{
+  "name": "http-request-validation-unsupported",
+  "evidence": [
+    {
+      "symbol": "HttpRequest.setTimeout",
+      "kind": "exec",
+      "notes": "Timeouts outside 1..120000 ms are rejected before send."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "HttpRequest req = new HttpRequest(); req.setTimeout(120001);"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "HttpRequest req = new HttpRequest(); req.setTimeout(120001);"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "Error",
+      "message": "HttpRequest timeout must be between 1 and 120000 milliseconds"
+    }
+  }
+}
