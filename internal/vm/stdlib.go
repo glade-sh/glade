@@ -349,11 +349,21 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 			return Null, true, fmt.Errorf("String.%s expects 0 arguments", method)
 		}
 		return String(escapeXML11(receiver.Text)), true, nil
-	case "unescapeXml", "unescapeXml10", "unescapeXml11":
+	case "unescapeXml":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("String.%s expects 0 arguments", method)
 		}
-		return String(unescapeXMLEntities(receiver.Text)), true, nil
+		return String(unescapeXMLEntities(receiver.Text, xmlEntityAny)), true, nil
+	case "unescapeXml10":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("String.%s expects 0 arguments", method)
+		}
+		return String(unescapeXMLEntities(receiver.Text, xmlEntity10)), true, nil
+	case "unescapeXml11":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("String.%s expects 0 arguments", method)
+		}
+		return String(unescapeXMLEntities(receiver.Text, xmlEntity11)), true, nil
 	case "escapeJava":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("String.escapeJava expects 0 arguments")
@@ -2687,7 +2697,7 @@ func writeNumericEntity(b *strings.Builder, r rune) {
 }
 
 func unescapeHTMLEntities(text string) string {
-	return unescapeCoreEntities(text, false)
+	return unescapeCoreEntities(text, false, xmlEntityAny)
 }
 
 var htmlNamedEntityReplacements = map[string]string{
@@ -2719,11 +2729,19 @@ var htmlNamedEntityReplacements = map[string]string{
 	"loz":    "◊",
 }
 
-func unescapeXMLEntities(text string) string {
-	return unescapeCoreEntities(text, true)
+type xmlEntityMode int
+
+const (
+	xmlEntityAny xmlEntityMode = iota
+	xmlEntity10
+	xmlEntity11
+)
+
+func unescapeXMLEntities(text string, mode xmlEntityMode) string {
+	return unescapeCoreEntities(text, true, mode)
 }
 
-func unescapeCoreEntities(text string, xml bool) string {
+func unescapeCoreEntities(text string, xml bool, mode xmlEntityMode) string {
 	if !strings.Contains(text, "&") {
 		return text
 	}
@@ -2743,7 +2761,7 @@ func unescapeCoreEntities(text string, xml bool) string {
 		}
 		semi += i
 		entity := text[i+1 : semi]
-		if replacement, ok := coreEntityReplacement(entity, xml); ok {
+		if replacement, ok := coreEntityReplacement(entity, xml, mode); ok {
 			b.WriteString(replacement)
 			i = semi + 1
 			continue
@@ -2754,7 +2772,7 @@ func unescapeCoreEntities(text string, xml bool) string {
 	return b.String()
 }
 
-func coreEntityReplacement(entity string, xml bool) (string, bool) {
+func coreEntityReplacement(entity string, xml bool, mode xmlEntityMode) (string, bool) {
 	switch entity {
 	case "lt":
 		return "<", true
@@ -2778,14 +2796,14 @@ func coreEntityReplacement(entity string, xml bool) (string, bool) {
 		}
 	}
 	if strings.HasPrefix(entity, "#") {
-		if r, ok := parseNumericEntity(entity[1:]); ok {
+		if r, ok := parseNumericEntity(entity[1:], mode); ok {
 			return string(r), true
 		}
 	}
 	return "", false
 }
 
-func parseNumericEntity(entity string) (rune, bool) {
+func parseNumericEntity(entity string, mode xmlEntityMode) (rune, bool) {
 	if entity == "" {
 		return 0, false
 	}
@@ -2805,7 +2823,18 @@ func parseNumericEntity(entity string) (rune, bool) {
 	if err != nil || value <= 0 || value > utf8.MaxRune || isUTF16Surrogate(rune(value)) {
 		return 0, false
 	}
-	return rune(value), true
+	r := rune(value)
+	switch mode {
+	case xmlEntity10:
+		if !validXML10Rune(r) {
+			return 0, false
+		}
+	case xmlEntity11:
+		if !validXML11Rune(r) {
+			return 0, false
+		}
+	}
+	return r, true
 }
 
 func validNumericEntityDigits(digits string, base int) bool {

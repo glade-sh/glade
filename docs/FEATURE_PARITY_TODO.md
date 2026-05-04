@@ -595,6 +595,11 @@ a Salesforce-shaped local API server without silently wrong behavior.
     replacement/split behavior to supported local Go-regexp rows while fencing
     named replacement references and Java character-class intersections as
     explicit `UnsupportedFeature` diagnostics.
+  - [x] Close final deterministic String markup/entity rows: promoted
+    `escapeHtml3/4`, `unescapeHtml3/4`, `escapeXml`, and `unescapeXml*` with
+    fixture-backed local core entity behavior, pinned HTML named-entity tables,
+    XML 1.0/1.1 numeric-reference filtering, and explicit notes that broad
+    HTML named-entity expansion remains outside the local model.
   - [x] Add common `Date`, `Datetime`, and `Time` factories, parsing,
     arithmetic, and component helpers.
   - [x] Promote deterministic `Datetime` pure-duration arithmetic and local
