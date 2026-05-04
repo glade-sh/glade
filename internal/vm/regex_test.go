@@ -138,13 +138,44 @@ System.assert(resetter.hasTransparentBounds());
 	}
 }
 
-func TestExecPatternCompileRejectsBadRegex(t *testing.T) {
-	program, err := CompileAnonymous(`Pattern.compile('[');`)
+func TestExecPatternCompileThrowsPatternSyntaxException(t *testing.T) {
+	program, err := CompileAnonymous(`
+try {
+	Pattern.compile('[');
+	System.assert(false);
+} catch (PatternSyntaxException e) {
+	System.assertEquals('[', e.getPattern());
+	System.assertEquals(-1, e.getIndex());
+	System.assert(e.getDescription().contains('missing closing ]'));
+	System.assert(e.getMessage().contains('missing closing ]'));
+	System.assertEquals('PatternSyntaxException', e.getTypeName());
+} catch (Exception e) {
+	System.assert(false);
+}
+`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), "Pattern.compile invalid regex") {
-		t.Fatalf("expected Pattern.compile invalid regex error, got %v", err)
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecPatternMatchesThrowsPatternSyntaxException(t *testing.T) {
+	program, err := CompileAnonymous(`
+try {
+	Pattern.matches('[', 'x');
+	System.assert(false);
+} catch (IllegalArgumentException e) {
+	System.assertEquals('PatternSyntaxException', e.getTypeName());
+	System.assert(e.getMessage().contains('missing closing ]'));
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
 	}
 }
 

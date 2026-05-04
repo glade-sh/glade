@@ -7665,6 +7665,7 @@ var builtinExceptionParents = map[string]string{
 	"NoDataFoundException":            "Exception",
 	"NoSuchElementException":          "Exception",
 	"NullPointerException":            "Exception",
+	"PatternSyntaxException":          "IllegalArgumentException",
 	"QueryException":                  "Exception",
 	"RequiredFeatureMissingException": "Exception",
 	"SearchException":                 "Exception",
@@ -9261,6 +9262,39 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			receiver.Fields["__causeInitialized"] = Bool(true)
 			receiver.Fields["__cause"] = args[0]
 			return receiver, receiver, true, true, nil
+		case "getDescription":
+			if exceptionTypeName(receiver.Type) != "PatternSyntaxException" {
+				break
+			}
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("%s.getDescription expects 0 arguments", receiver.Type)
+			}
+			if description, ok := receiver.Fields["description"]; ok {
+				return description, receiver, false, true, nil
+			}
+			return Null, receiver, false, true, nil
+		case "getIndex":
+			if exceptionTypeName(receiver.Type) != "PatternSyntaxException" {
+				break
+			}
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("%s.getIndex expects 0 arguments", receiver.Type)
+			}
+			if index, ok := receiver.Fields["index"]; ok {
+				return index, receiver, false, true, nil
+			}
+			return Int(-1), receiver, false, true, nil
+		case "getPattern":
+			if exceptionTypeName(receiver.Type) != "PatternSyntaxException" {
+				break
+			}
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("%s.getPattern expects 0 arguments", receiver.Type)
+			}
+			if pattern, ok := receiver.Fields["pattern"]; ok {
+				return pattern, receiver, false, true, nil
+			}
+			return Null, receiver, false, true, nil
 		case "getTypeName":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("%s.getTypeName expects 0 arguments", receiver.Type)

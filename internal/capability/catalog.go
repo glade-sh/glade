@@ -166,7 +166,7 @@ func isCoreStdlib(ns, name string) bool {
 	return stringIn(name, []string{
 		"Blob", "Boolean", "Date", "Datetime", "Decimal", "Double", "EncodingUtil", "Enum", "Exception",
 		"Id", "Integer", "JSON", "JSONGenerator", "JSONParser", "List", "Long", "Map", "Math", "Matcher",
-		"Object", "Pattern", "Set", "String", "System", "Time", "TimeZone", "Type", "URL", "Version",
+		"Object", "Pattern", "PatternSyntaxException", "Set", "String", "System", "Time", "TimeZone", "Type", "URL", "Version",
 	})
 }
 

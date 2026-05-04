@@ -3366,6 +3366,7 @@ var platformTypes = []string{
 	"OrgWideEmailAddress",
 	"Organization",
 	"PageReference",
+	"PatternSyntaxException",
 	"Pattern",
 	"PermissionSetAssignment",
 	"Profile",
