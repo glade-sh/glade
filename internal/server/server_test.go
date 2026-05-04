@@ -634,6 +634,79 @@ func TestToolingExecuteAnonymousUsesServerLimitMode(t *testing.T) {
 	}
 }
 
+func TestToolingExecuteAnonymousResponseShapes(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	getExec := httptest.NewRecorder()
+	handler.ServeHTTP(getExec, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/tooling/executeAnonymous?anonymousBody=System.debug%28%27from-get%27%29%3B", nil))
+	if getExec.Code != http.StatusOK {
+		t.Fatalf("GET executeAnonymous status = %d body=%s", getExec.Code, getExec.Body.String())
+	}
+	var success map[string]any
+	if err := json.Unmarshal(getExec.Body.Bytes(), &success); err != nil {
+		t.Fatal(err)
+	}
+	for _, key := range []string{"compiled", "success", "compileProblem", "exceptionMessage", "exceptionStackTrace", "line", "column", "logs"} {
+		if _, ok := success[key]; !ok {
+			t.Fatalf("GET executeAnonymous missing %q in %#v", key, success)
+		}
+	}
+	if success["compiled"] != true || success["success"] != true || !strings.Contains(success["logs"].(string), "from-get") {
+		t.Fatalf("GET executeAnonymous payload = %#v", success)
+	}
+
+	compileFailure := httptest.NewRecorder()
+	handler.ServeHTTP(compileFailure, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/tooling/executeAnonymous", strings.NewReader(`{"anonymousBody":"public class Nope {"}`)))
+	if compileFailure.Code != http.StatusOK {
+		t.Fatalf("compile failure status = %d body=%s", compileFailure.Code, compileFailure.Body.String())
+	}
+	var compilePayload map[string]any
+	if err := json.Unmarshal(compileFailure.Body.Bytes(), &compilePayload); err != nil {
+		t.Fatal(err)
+	}
+	if compilePayload["compiled"] != false || compilePayload["success"] != false || compilePayload["compileProblem"] == nil || compilePayload["exceptionMessage"] != nil {
+		t.Fatalf("compile failure payload = %#v", compilePayload)
+	}
+
+	runtimeFailure := httptest.NewRecorder()
+	handler.ServeHTTP(runtimeFailure, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/tooling/executeAnonymous", strings.NewReader(`{"anonymousBody":"insert new Account(Name = 'Rolled Back'); System.assert(false);"}`)))
+	if runtimeFailure.Code != http.StatusOK {
+		t.Fatalf("runtime failure status = %d body=%s", runtimeFailure.Code, runtimeFailure.Body.String())
+	}
+	var runtimePayload map[string]any
+	if err := json.Unmarshal(runtimeFailure.Body.Bytes(), &runtimePayload); err != nil {
+		t.Fatal(err)
+	}
+	if runtimePayload["compiled"] != true || runtimePayload["success"] != false || runtimePayload["compileProblem"] != nil || runtimePayload["exceptionMessage"] == nil {
+		t.Fatalf("runtime failure payload = %#v", runtimePayload)
+	}
+	if len(org.Objects["Account"].Records) != 0 {
+		t.Fatalf("runtime failure leaked records = %#v", org.Objects["Account"].Records)
+	}
+}
+
+func TestToolingQuerySupportedAndUnsupportedObjects(t *testing.T) {
+	org := testOrgWithAccount("001000000000001", "Acme")
+	handler := New(&org)
+
+	supported := httptest.NewRecorder()
+	handler.ServeHTTP(supported, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/tooling/query?q=SELECT%20Id,%20Name%20FROM%20Account", nil))
+	if supported.Code != http.StatusOK || !bytes.Contains(supported.Body.Bytes(), []byte(`"totalSize":1`)) || !bytes.Contains(supported.Body.Bytes(), []byte(`"attributes"`)) {
+		t.Fatalf("supported tooling query status = %d body=%s", supported.Code, supported.Body.String())
+	}
+
+	unsupported := httptest.NewRecorder()
+	handler.ServeHTTP(unsupported, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/tooling/query?q=SELECT%20Id%20FROM%20ApexClass", nil))
+	if unsupported.Code != http.StatusBadRequest {
+		t.Fatalf("unsupported tooling query status = %d body=%s", unsupported.Code, unsupported.Body.String())
+	}
+	errors := decodeServerErrors(t, unsupported)
+	if len(errors) != 1 || errors[0].ErrorCode != "UNSUPPORTED_TOOLING_OBJECT" || !strings.Contains(errors[0].Message, "ApexClass") {
+		t.Fatalf("unsupported tooling errors = %#v", errors)
+	}
+}
+
 func TestServerRollsBackFailedRequestTransactions(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)

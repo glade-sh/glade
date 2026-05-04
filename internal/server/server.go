@@ -377,10 +377,32 @@ func (s *Server) handleTooling(w http.ResponseWriter, r *http.Request, version s
 	case len(parts) == 1 && parts[0] == "executeAnonymous":
 		s.handleExecuteAnonymous(w, r)
 	case len(parts) == 1 && parts[0] == "query":
-		s.handleQuery(w, r, version, false)
+		s.handleToolingQuery(w, r, version)
 	default:
 		writeError(w, http.StatusNotFound, "NOT_FOUND", "unknown tooling endpoint")
 	}
+}
+
+func (s *Server) handleToolingQuery(w http.ResponseWriter, r *http.Request, version string) {
+	if r.Method != http.MethodGet {
+		writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
+		return
+	}
+	query, err := soql.Parse(r.URL.Query().Get("q"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "MALFORMED_QUERY", err.Error())
+		return
+	}
+	if _, ok := storage.ResolveObjectName(*s.Org, query.Object); !ok {
+		writeError(w, http.StatusBadRequest, "UNSUPPORTED_TOOLING_OBJECT", "Tooling object "+query.Object+" is not modeled by the local server")
+		return
+	}
+	result, err := soql.Execute(*s.Org, query)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "MALFORMED_QUERY", err.Error())
+		return
+	}
+	writeQueryResult(w, version, result)
 }
 
 func (s *Server) handleExecuteAnonymous(w http.ResponseWriter, r *http.Request) {
@@ -577,6 +599,10 @@ func (s *Server) handleQuery(w http.ResponseWriter, r *http.Request, version str
 		writeError(w, http.StatusBadRequest, "MALFORMED_QUERY", err.Error())
 		return
 	}
+	writeQueryResult(w, version, result)
+}
+
+func writeQueryResult(w http.ResponseWriter, version string, result soql.Result) {
 	writeJSON(w, http.StatusOK, map[string]any{
 		"totalSize": result.Rows,
 		"done":      true,
