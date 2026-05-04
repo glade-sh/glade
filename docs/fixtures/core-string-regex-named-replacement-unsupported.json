@@ -1,0 +1,28 @@
+{
+  "name": "core-string-regex-named-replacement-unsupported",
+  "evidence": [
+    {
+      "symbol": "String.replaceAll",
+      "kind": "unsupported",
+      "notes": "Named replacement references remain outside the local String regex replacement subset and return a typed unsupported diagnostic."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "String source = 'abc';\nsource.replaceAll('([a-z]+)', '${word}');\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "String source = 'abc';\nsource.replaceAll('([a-z]+)', '${word}');\n"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"String.replaceAll replacement named group references\""
+    }
+  }
+}

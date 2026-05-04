@@ -205,29 +205,29 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Object | `Object.toString` | `supported` | Returns local string forms for primitives, collections, platform scalars, and objects. |
 | PageReference | `PageReference` | `partial` | Constructor, URL, redirect, parameters, headers, and string conversion basics; Visualforce rendering and PDF content remain explicit UnsupportedFeature seams. |
 | Pattern | `Matcher.appendReplacement/appendTail` | `unsupported` | Java StringBuffer append-position semantics return explicit unsupported errors. |
-| Pattern | `Matcher.end` | `partial` | Go regexp-backed group end positions, including -1 for optional unmatched groups and stable invalid-group errors. |
-| Pattern | `Matcher.find` | `partial` | Go regexp-backed matching with captured groups, region bounds, find(start) reset behavior, local anchoring/transparent bound handling, and compiled flag state. |
-| Pattern | `Matcher.group` | `partial` | Go regexp-backed group access with stale match state cleared after failed find/matches/lookingAt calls. |
+| Pattern | `Matcher.end` | `supported` | Local Go-regexp group end positions, including -1 for optional unmatched groups and stable invalid-group errors. |
+| Pattern | `Matcher.find` | `supported` | Local Go-regexp matching with captured groups, region bounds, find(start) reset behavior, anchoring/transparent bound handling, and compiled flag state. |
+| Pattern | `Matcher.group` | `supported` | Local Go-regexp group access with stale match state cleared after failed find/matches/lookingAt calls. |
 | Pattern | `Matcher.groupCount` | `supported` | Capturing group count from the compiled local Go-regexp Pattern. |
 | Pattern | `Matcher.hasAnchoringBounds` | `supported` | Returns the local anchoring-bounds flag, defaulting to true. |
 | Pattern | `Matcher.hasTransparentBounds` | `supported` | Returns the local transparent-bounds flag, defaulting to false. |
-| Pattern | `Matcher.lookingAt` | `partial` | Beginning-of-region Go regexp match with local anchoring/transparent bounds. |
-| Pattern | `Matcher.matches` | `partial` | Whole-region Go regexp match with local anchoring/transparent bounds and supported inline i/m/s flags. |
-| Pattern | `Matcher.region` | `partial` | Bounds matching to a local rune-indexed region, including anchored-region and transparent word-boundary cases. |
+| Pattern | `Matcher.lookingAt` | `supported` | Beginning-of-region local Go-regexp match with anchoring/transparent bounds. |
+| Pattern | `Matcher.matches` | `supported` | Whole-region local Go-regexp match with anchoring/transparent bounds and supported inline i/m/s flags. |
+| Pattern | `Matcher.region` | `supported` | Bounds matching to a local rune-indexed region, including anchored-region and transparent word-boundary cases. |
 | Pattern | `Matcher.regionStart/regionEnd` | `supported` | Returns the Matcher local rune-indexed region bounds. |
-| Pattern | `Matcher.replaceAll` | `partial` | Go regexp-backed replacement with region bounds, Java-style numeric capture parsing, escaped dollar/backslash handling, and named replacement references pinned unsupported. |
-| Pattern | `Matcher.replaceFirst` | `partial` | Go regexp-backed first replacement with region bounds, Java-style numeric capture parsing, escaped dollar/backslash handling, and named replacement references pinned unsupported. |
-| Pattern | `Matcher.reset` | `partial` | Clears local match state, resets the region to full input, and optionally replaces input. |
-| Pattern | `Matcher.start` | `partial` | Go regexp-backed group start positions, including -1 for optional unmatched groups and stable invalid-group errors. |
+| Pattern | `Matcher.replaceAll` | `supported` | Local Go-regexp replacement with region bounds, Java-style numeric capture parsing, escaped dollar/backslash handling, and named replacement references pinned unsupported. |
+| Pattern | `Matcher.replaceFirst` | `supported` | Local Go-regexp first replacement with region bounds, Java-style numeric capture parsing, escaped dollar/backslash handling, and named replacement references pinned unsupported. |
+| Pattern | `Matcher.reset` | `supported` | Clears local match state, resets the region to full input, and optionally replaces input. |
+| Pattern | `Matcher.start` | `supported` | Local Go-regexp group start positions, including -1 for optional unmatched groups and stable invalid-group errors. |
 | Pattern | `Matcher.useAnchoringBounds` | `supported` | Stores the local bounds flag and toggles whether ^/$ bind to region edges or full input edges. |
 | Pattern | `Matcher.usePattern` | `supported` | Swaps the local Go-regexp Pattern, including compiled flag/literal state, and resets search state within the current region. |
 | Pattern | `Matcher.useTransparentBounds` | `supported` | Stores the local bounds flag and toggles whether word-boundary checks use opaque region edges or full input context. |
-| Pattern | `Pattern.compile` | `partial` | Go regexp syntax with supported CASE_INSENSITIVE, MULTILINE, DOTALL, LITERAL, and UNICODE_CASE flag handling plus stable UnsupportedFeature diagnostics for pinned Java-only regex features including lookaround, backreferences, named groups, possessive quantifiers, atomic groups, quote escapes, previous-match boundaries, Java-only inline flags, unsupported flag constants, and Java Unicode character classes. |
-| Pattern | `Pattern.matcher` | `partial` | Creates a Go regexp-backed Matcher. |
-| Pattern | `Pattern.matches` | `partial` | Whole-string Go regexp match with the same pinned Java-only syntax diagnostics as one-argument Pattern.compile. |
-| Pattern | `Pattern.pattern` | `partial` | Returns original regex source, including for locally quoted Pattern.LITERAL compilation. |
-| Pattern | `Pattern.quote` | `partial` | Returns a Go regexp-escaped literal pattern for local Pattern/Matcher use. |
-| Pattern | `Pattern.split` | `partial` | Go regexp-backed split with local limit semantics, compiled flag/literal state, pinned unsupported Java-only regex diagnostics, and nullable delimiter regexes fenced unsupported. |
+| Pattern | `Pattern.compile` | `partial` | Go regexp syntax with supported CASE_INSENSITIVE, MULTILINE, DOTALL, LITERAL, and UNICODE_CASE flag handling plus stable UnsupportedFeature diagnostics for pinned Java-only regex features including lookaround, backreferences, named groups, possessive quantifiers, atomic groups, quote escapes, previous-match boundaries, Java-only inline flags, unsupported flag constants, Java Unicode character classes, and class intersections. |
+| Pattern | `Pattern.matcher` | `supported` | Creates a Matcher for the compiled local Go-regexp Pattern. |
+| Pattern | `Pattern.matches` | `supported` | Whole-string local Go-regexp match with pinned UnsupportedFeature diagnostics for Java-only syntax. |
+| Pattern | `Pattern.pattern` | `supported` | Returns original regex source, including for locally quoted Pattern.LITERAL compilation. |
+| Pattern | `Pattern.quote` | `supported` | Returns a Go regexp-escaped literal pattern for local Pattern/Matcher use. |
+| Pattern | `Pattern.split` | `supported` | Local Go-regexp split with limit semantics, compiled flag/literal state, Java-only regex fences, and nullable delimiter regexes fenced unsupported. |
 | Pattern | `PatternSyntaxException` | `supported` | Invalid local regex syntax throws a catchable PatternSyntaxException with getDescription, getIndex, getPattern, getMessage, and exception hierarchy behavior. |
 | QuickAction | `QuickAction namespace` | `unsupported` | Quick action UI execution and discovery calls return fixture-backed UnsupportedFeature diagnostics. |
 | REST | `@RestResource local server dispatch` | `unsupported` | Custom Apex REST dispatch returns a stable unsupported error from the local server. |
@@ -328,15 +328,15 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | String | `String.removeStartIgnoreCase` | `supported` | Removes a literal prefix with rune-wise case folding when present. |
 | String | `String.repeat` | `supported` | Repeats a string with optional separator and non-negative count. |
 | String | `String.replace` | `supported` | Literal replacement; empty targets are a no-op. |
-| String | `String.replaceAll` | `partial` | Go regexp-backed replacement with Java-style numeric capture parsing; Java-only regex features such as lookaround, backreferences, possessive quantifiers, named groups, and Unicode classes are explicitly unsupported. |
-| String | `String.replaceFirst` | `partial` | Go regexp-backed first replacement with Java-style numeric capture parsing; Java-only regex features such as lookaround, backreferences, possessive quantifiers, named groups, and Unicode classes are explicitly unsupported. |
+| String | `String.replaceAll` | `supported` | Local Go-regexp replacement with Java-style numeric capture parsing; Java-only regex features and named replacement references are explicitly unsupported. |
+| String | `String.replaceFirst` | `supported` | Local Go-regexp first replacement with Java-style numeric capture parsing; Java-only regex features and named replacement references are explicitly unsupported. |
 | String | `String.replaceIgnoreCase` | `supported` | Literal non-overlapping replacement with rune-wise case folding. |
 | String | `String.replaceOnce` | `supported` | First literal replacement only. |
 | String | `String.reverse` | `supported` | Reverses rune order. |
 | String | `String.right` | `supported` | Returns the rightmost requested rune count, clamped to string length. |
 | String | `String.rightPad` | `supported` | Pads on the right to a requested rune width with space or supplied pad text. |
 | String | `String.rotate` | `supported` | Rune-based rotation; positive shifts rotate right. |
-| String | `String.split` | `partial` | Go regexp-backed split with Apex limit shape; nullable regexes and Java-only regex features such as lookaround, backreferences, possessive quantifiers, named groups, and Unicode classes are explicitly unsupported. |
+| String | `String.split` | `supported` | Local Go-regexp split with Apex limit shape; nullable regexes and Java-only regex features are explicitly unsupported. |
 | String | `String.splitByCharacterType` | `supported` | Splits on coarse Unicode upper/lower/digit/space/other groups. |
 | String | `String.splitByCharacterTypeCamelCase` | `supported` | Splits character types with camel-case upper-to-lower adjustment. |
 | String | `String.startsWith` | `supported` | UTF-8 string prefix. |

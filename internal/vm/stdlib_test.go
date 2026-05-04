@@ -724,6 +724,14 @@ func TestStringRegexReplacementSplitAndUnsupportedEdges(t *testing.T) {
 	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || !strings.Contains(runtimeErr.Message, "String.replaceAll Java regex lookahead") {
 		t.Fatalf("replaceAll unsupported err = %#v", err)
 	}
+	_, _, err = callStringMember(String("abc"), "replaceFirst", []Value{String("(?<word>[a-z]+)"), String("${word}")})
+	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || !strings.Contains(runtimeErr.Message, "String.replaceFirst Java regex named groups") {
+		t.Fatalf("replaceFirst named regex unsupported err = %#v", err)
+	}
+	_, _, err = callStringMember(String("abc"), "replaceAll", []Value{String("([a-z]+)"), String("${word}")})
+	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || !strings.Contains(runtimeErr.Message, "String.replaceAll replacement named group references") {
+		t.Fatalf("replaceAll named replacement unsupported err = %#v", err)
+	}
 	_, _, err = callStringMember(String("abc"), "split", []Value{String(`(.)\1`)})
 	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || !strings.Contains(runtimeErr.Message, "String.split Java regex backreferences") {
 		t.Fatalf("split unsupported err = %#v", err)

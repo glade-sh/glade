@@ -208,6 +208,7 @@ func TestExecPatternRejectsJavaOnlyRegex(t *testing.T) {
 		{name: "unicodeIsClass", source: `Pattern.compile('\p{IsAlphabetic}+');`, message: "Java regex Unicode character classes"},
 		{name: "inlineCommentsFlag", source: `Pattern.compile('(?x)a b');`, message: "Java regex inline flags"},
 		{name: "inlineUnicodeFlag", source: `Pattern.compile('(?U)\w+');`, message: "Java regex inline flags"},
+		{name: "classIntersection", source: `Pattern.compile('[a-z&&[^aeiou]]+');`, message: "Java regex character-class intersections"},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -580,7 +581,7 @@ func TestMatcherAppendReplacementUnsupported(t *testing.T) {
 }
 
 func TestJavaReplacementEscapesDollar(t *testing.T) {
-	converted, err := javaReplacementToGoTemplate(`\$1`, 1)
+	converted, err := javaReplacementToGoTemplate("Matcher.replaceAll", `\$1`, 1)
 	if err != nil {
 		t.Fatal(err)
 	}

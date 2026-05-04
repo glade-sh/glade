@@ -590,6 +590,11 @@ a Salesforce-shaped local API server without silently wrong behavior.
     combinations have fixture-backed unsupported diagnostics, and the pure
     Matcher state helpers (`groupCount`, bounds getters/setters,
     `regionStart`/`regionEnd`, and `usePattern`) are promoted with fixtures.
+  - [x] Close the Pattern/String regex local-dialect rows: promoted fixture-backed
+    Matcher state, region, replacement, quote, split, pattern, and String regex
+    replacement/split behavior to supported local Go-regexp rows while fencing
+    named replacement references and Java character-class intersections as
+    explicit `UnsupportedFeature` diagnostics.
   - [x] Add common `Date`, `Datetime`, and `Time` factories, parsing,
     arithmetic, and component helpers.
   - [x] Promote deterministic `Datetime` pure-duration arithmetic and local

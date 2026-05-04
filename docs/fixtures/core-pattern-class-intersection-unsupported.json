@@ -1,0 +1,28 @@
+{
+  "name": "core-pattern-class-intersection-unsupported",
+  "evidence": [
+    {
+      "symbol": "Pattern.compile",
+      "kind": "unsupported",
+      "notes": "Java character-class intersections/subtractions are not claimed on the Go-regexp backend and return a typed unsupported diagnostic."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Pattern.compile('[a-z&&[^aeiou]]+');\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Pattern.compile('[a-z&&[^aeiou]]+');\n"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"Pattern.compile Java regex character-class intersections\""
+    }
+  }
+}
