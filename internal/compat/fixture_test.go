@@ -185,16 +185,21 @@ func TestRunServerBlackBoxFixture(t *testing.T) {
 }
 
 func TestRunDataPlatformSOQLSecurityProjectionFixture(t *testing.T) {
-	fixture, err := LoadFile("../../docs/fixtures/data-platform-soql-security-projection.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	result, err := Run(fixture)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !result.OK {
-		t.Fatalf("result = %#v", result)
+	for _, path := range []string{
+		"../../docs/fixtures/data-platform-soql-security-projection.json",
+		"../../docs/fixtures/data-platform-soql-security-relationship-where.json",
+	} {
+		fixture, err := LoadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		result, err := Run(fixture)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !result.OK {
+			t.Fatalf("%s result = %#v", path, result)
+		}
 	}
 }
 
