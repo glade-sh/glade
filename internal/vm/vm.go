@@ -5117,9 +5117,50 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 				continue
 			}
 		}
+		if fieldType, ok := vm.jsonSObjectFieldType(typeName, key); ok {
+			value, err := vm.typedValueFromJSON(fieldType, item, strict)
+			if err != nil {
+				return Null, err
+			}
+			obj.Fields[vm.resolveSObjectFieldName(typeName, key)] = value
+			continue
+		}
 		obj.Fields[key] = valueFromJSON(item)
 	}
 	return obj, nil
+}
+
+func (vm *VM) jsonSObjectFieldType(typeName, fieldName string) (string, bool) {
+	if vm.Org == nil {
+		return "", false
+	}
+	objectName, ok := storage.ResolveObjectName(*vm.Org, typeName)
+	if !ok {
+		return "", false
+	}
+	fieldName = vm.resolveSObjectFieldName(typeName, fieldName)
+	field, ok := vm.Org.Objects[objectName].Definition.Fields[fieldName]
+	if !ok {
+		return "", false
+	}
+	switch field.Type {
+	case storage.FieldID, storage.FieldReference:
+		return "Id", true
+	case storage.FieldString, storage.FieldPicklist:
+		return "String", true
+	case storage.FieldBoolean:
+		return "Boolean", true
+	case storage.FieldInteger:
+		return "Integer", true
+	case storage.FieldDecimal:
+		return "Decimal", true
+	case storage.FieldDate:
+		return "Date", true
+	case storage.FieldDateTime:
+		return "Datetime", true
+	default:
+		return "", false
+	}
 }
 
 func (vm *VM) isJSONTypedObjectTarget(typeName string) bool {
