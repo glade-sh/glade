@@ -1,0 +1,28 @@
+{
+  "name": "async-options-setter-unsupported",
+  "evidence": [
+    {
+      "symbol": "AsyncOptions.setMinimumQueueableDelayInMinutes",
+      "kind": "exec",
+      "notes": "AsyncOptions mutators are fenced with the same unsupported surface as accessors; local queueable stack/delay metadata is not modeled."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "AsyncOptions opts = new AsyncOptions(); opts.setMinimumQueueableDelayInMinutes(1);"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "AsyncOptions opts = new AsyncOptions(); opts.setMinimumQueueableDelayInMinutes(1);"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"AsyncOptions.setMinimumQueueableDelayInMinutes local async options surface\""
+    }
+  }
+}

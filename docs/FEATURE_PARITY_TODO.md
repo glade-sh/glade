@@ -653,9 +653,13 @@ a Salesforce-shaped local API server without silently wrong behavior.
     Approval requests/locks, Auth token/JWT/OAuth/cloud APIs, Canvas,
     Continuation, EventBus publish variants, QuickAction UI actions,
     Search/SOSL, Test stub/search helpers, and Crypto key/cert/random APIs.
-  - [x] Add fixture evidence for Crypto encrypt/decrypt/sign/verify and
-    `Iterator.remove` fences so unsupported stdlib rows have stable diagnostics
-    without fake local key or mutating-iterator behavior.
+  - [x] Add fixture evidence for remaining unsupported rows, including
+    Approval lock helpers, AsyncOptions/finalizers, Auth JWT/session calls,
+    Canvas lifecycle calls, Continuation request/response calls,
+    EventBus after-commit publish, QuickAction discovery, Crypto
+    encrypt/decrypt/sign/verify, and `Iterator.remove`, so unsupported stdlib
+    rows have stable diagnostics without fake cloud, key, UI, callout, workflow,
+    or mutating-iterator behavior.
   - [x] Keep ordinary runtime errors out of unsupported-feature classification.
 - [x] Generate and publish a standard-library coverage matrix.
   - [x] Add `oaer compat stdlib` with Markdown, JSON, output, and drift-check

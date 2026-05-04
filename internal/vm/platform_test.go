@@ -99,6 +99,11 @@ func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 			want: `unsupported call "Approval.ProcessWorkitemRequest.setAction local approval process and lock surface"`,
 		},
 		{
+			name: "approval lock api",
+			src:  `Approval.lock(new Account(Name = 'Acme'));`,
+			want: `unsupported call "Approval.lock local approval process and lock surface"`,
+		},
+		{
 			name: "auth token api",
 			src:  `Auth.SessionManagement.getCurrentSession();`,
 			want: `unsupported call "Auth.SessionManagement.getCurrentSession local authentication token/cloud API surface"`,
@@ -142,6 +147,11 @@ func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 			name: "continuation static",
 			src:  `Continuation.getResponse('request-one');`,
 			want: `unsupported call "Continuation.getResponse local continuation callout surface"`,
+		},
+		{
+			name: "continuation add request",
+			src:  `Continuation.addHttpRequest(null, null);`,
+			want: `unsupported call "Continuation.addHttpRequest local continuation callout surface"`,
 		},
 		{
 			name: "crypto certificate api",
