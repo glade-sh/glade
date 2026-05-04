@@ -227,7 +227,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Pattern | `Pattern.matches` | `partial` | Whole-string Go regexp match with the same pinned Java-only syntax diagnostics as Pattern.compile. |
 | Pattern | `Pattern.pattern` | `partial` | Returns stored Go regexp source. |
 | Pattern | `Pattern.quote` | `partial` | Returns a Go regexp-escaped literal pattern for local Pattern/Matcher use. |
-| Pattern | `Pattern.split` | `partial` | Go regexp-backed split with local limit semantics and pinned unsupported Java-only regex diagnostics. |
+| Pattern | `Pattern.split` | `partial` | Go regexp-backed split with Java-style zero-width leading-empty handling, local limit semantics, and pinned unsupported Java-only regex diagnostics. |
 | QuickAction | `QuickAction namespace` | `unsupported` | Quick action UI calls return explicit UnsupportedFeature diagnostics. |
 | REST | `@RestResource local server dispatch` | `unsupported` | Custom Apex REST dispatch returns a stable unsupported error from the local server. |
 | REST | `RestContext.request / RestContext.response` | `partial` | VM-local static slots support RestRequest assignment and lazy RestResponse creation; no platform request lifecycle dispatch is modeled. |
@@ -331,7 +331,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | String | `String.right` | `supported` | Returns the rightmost requested rune count, clamped to string length. |
 | String | `String.rightPad` | `supported` | Pads on the right to a requested rune width with space or supplied pad text. |
 | String | `String.rotate` | `supported` | Rune-based rotation; positive shifts rotate right. |
-| String | `String.split` | `partial` | Go regexp-backed split with Apex limit shape and pinned unsupported Java-only regex diagnostics. |
+| String | `String.split` | `partial` | Go regexp-backed split with Apex limit shape, Java-style zero-width leading-empty handling, and pinned unsupported Java-only regex diagnostics. |
 | String | `String.splitByCharacterType` | `supported` | Splits on coarse Unicode upper/lower/digit/space/other groups. |
 | String | `String.splitByCharacterTypeCamelCase` | `supported` | Splits character types with camel-case upper-to-lower adjustment. |
 | String | `String.startsWith` | `supported` | UTF-8 string prefix. |

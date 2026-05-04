@@ -1,0 +1,33 @@
+{
+  "name": "core-string-zero-width-split-stdlib",
+  "evidence": [
+    {
+      "symbol": "String.split",
+      "kind": "exec",
+      "notes": "Zero-width regex split omits the synthetic leading empty element, trims trailing empties for limit 0, and honors positive and negative limits."
+    },
+    {
+      "symbol": "Pattern.split",
+      "kind": "exec",
+      "notes": "Pattern split shares the same zero-width and Unicode-rune boundary behavior."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "String letters = 'abc';\nList<String> keepEmpty = letters.split('', -1);\nSystem.assertEquals(4, keepEmpty.size());\nSystem.assertEquals('a', keepEmpty.get(0));\nSystem.assertEquals('b', keepEmpty.get(1));\nSystem.assertEquals('c', keepEmpty.get(2));\nSystem.assertEquals('', keepEmpty.get(3));\nList<String> trimTrailing = letters.split('');\nSystem.assertEquals(3, trimTrailing.size());\nSystem.assertEquals('a', trimTrailing.get(0));\nSystem.assertEquals('c', trimTrailing.get(2));\nList<String> limited = letters.split('', 2);\nSystem.assertEquals(2, limited.size());\nSystem.assertEquals('a', limited.get(0));\nSystem.assertEquals('bc', limited.get(1));\nList<String> noMatchEmpty = ''.split('x');\nSystem.assertEquals(1, noMatchEmpty.size());\nSystem.assertEquals('', noMatchEmpty.get(0));\nList<String> startAnchor = letters.split('^');\nSystem.assertEquals(1, startAnchor.size());\nSystem.assertEquals('abc', startAnchor.get(0));\nString word = 'abc';\nList<String> wordBoundaryKeep = word.split('\\b', -1);\nSystem.assertEquals(2, wordBoundaryKeep.size());\nSystem.assertEquals('abc', wordBoundaryKeep.get(0));\nSystem.assertEquals('', wordBoundaryKeep.get(1));\nList<String> wordBoundaryTrim = word.split('\\b');\nSystem.assertEquals(1, wordBoundaryTrim.size());\nSystem.assertEquals('abc', wordBoundaryTrim.get(0));\nPattern emptyPattern = Pattern.compile('');\nList<String> patternSplit = emptyPattern.split('Ωb', -1);\nSystem.assertEquals(3, patternSplit.size());\nSystem.assertEquals('Ω', patternSplit.get(0));\nSystem.assertEquals('b', patternSplit.get(1));\nSystem.assertEquals('', patternSplit.get(2));\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "String letters = 'abc';\nList<String> keepEmpty = letters.split('', -1);\nSystem.assertEquals(4, keepEmpty.size());\nSystem.assertEquals('a', keepEmpty.get(0));\nSystem.assertEquals('b', keepEmpty.get(1));\nSystem.assertEquals('c', keepEmpty.get(2));\nSystem.assertEquals('', keepEmpty.get(3));\nList<String> trimTrailing = letters.split('');\nSystem.assertEquals(3, trimTrailing.size());\nSystem.assertEquals('a', trimTrailing.get(0));\nSystem.assertEquals('c', trimTrailing.get(2));\nList<String> limited = letters.split('', 2);\nSystem.assertEquals(2, limited.size());\nSystem.assertEquals('a', limited.get(0));\nSystem.assertEquals('bc', limited.get(1));\nList<String> noMatchEmpty = ''.split('x');\nSystem.assertEquals(1, noMatchEmpty.size());\nSystem.assertEquals('', noMatchEmpty.get(0));\nList<String> startAnchor = letters.split('^');\nSystem.assertEquals(1, startAnchor.size());\nSystem.assertEquals('abc', startAnchor.get(0));\nString word = 'abc';\nList<String> wordBoundaryKeep = word.split('\\b', -1);\nSystem.assertEquals(2, wordBoundaryKeep.size());\nSystem.assertEquals('abc', wordBoundaryKeep.get(0));\nSystem.assertEquals('', wordBoundaryKeep.get(1));\nList<String> wordBoundaryTrim = word.split('\\b');\nSystem.assertEquals(1, wordBoundaryTrim.size());\nSystem.assertEquals('abc', wordBoundaryTrim.get(0));\nPattern emptyPattern = Pattern.compile('');\nList<String> patternSplit = emptyPattern.split('Ωb', -1);\nSystem.assertEquals(3, patternSplit.size());\nSystem.assertEquals('Ω', patternSplit.get(0));\nSystem.assertEquals('b', patternSplit.get(1));\nSystem.assertEquals('', patternSplit.get(2));\n"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}
