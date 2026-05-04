@@ -698,6 +698,16 @@ a Salesforce-shaped local API server without silently wrong behavior.
 - [x] Add upgrade/release notes and compatibility policy by API version.
 - [x] Add smoke tests that install the built binary and run parser, exec, test,
   db, server, lsp diagnostics, profile, and compat commands.
+- [x] Add deterministic replay bundles and a project readiness report for local
+  integration gates.
+  - [x] `oaer compat replay` loads directory bundles, runs ordered in-process
+    compat steps, emits stable JSON/text reports, rejects path escapes, and can
+    export redacted failure artifacts.
+  - [x] `oaer compat readiness --project <root>` reports parser, project,
+    schema, sema, stdlib, SOQL, DML, trigger, limit, storage, server, and unknown
+    blockers without mutating the project.
+  - [x] Add bounded replay smoke coverage for selector/service/domain and
+    server-backed bundles under `testdata/replay`.
 
 ## Beyond Parity
 
@@ -709,7 +719,7 @@ green.
   triggers, async, and validation behavior.
 - [ ] Fixture anonymizer for exporting useful local fixtures without leaking
   sensitive data.
-- [ ] Deterministic replay bundles containing source, metadata, fixtures,
+- [x] Deterministic replay bundles containing source, metadata, fixtures,
   clock, user context, limits mode, command, and trace data.
 - [ ] SARIF output for CI findings from parser, sema, compatibility, limits,
   and profiling checks.
@@ -723,5 +733,5 @@ green.
 - [ ] Per-statement optimization suggestions for SOQL/DML/describe-heavy Apex.
 - [ ] Replayable performance budgets for CI.
 - [ ] Optional alternate persistence backends for larger shared CI fixtures.
-- [ ] Rich compatibility reports that explain why a project is blocked and
+- [x] Rich compatibility reports that explain why a project is blocked and
   which unsupported features are highest impact.

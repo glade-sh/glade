@@ -52,6 +52,15 @@ Release engineering:
   all-or-none rollback, explicit unsupported Composite batch responses,
   Salesforce-shaped errors, OAER fixture seed/export/reset, and SQLite
   persistence.
+- Added `oaer compat replay` for deterministic directory replay bundles,
+  ordered in-process compat steps, JSON/text gate reports, checked expected
+  outputs, path-escape validation, and redacted artifact export.
+- Added `oaer compat readiness --project <root>` to report local project
+  blockers by parser, project, schema, sema, stdlib, SOQL, DML, trigger, limit,
+  storage, server, and unknown categories without mutating source or database
+  state.
+- Added bounded replay smoke bundles for selector/service/domain and
+  server-backed REST integration gates under `testdata/replay`.
 - Added enterprise trigger-heavy, describe-heavy, namespace-heavy, and
   package-style compatibility fixtures, with SFDX namespace/package-directory
   support in schema-aware check fixtures.

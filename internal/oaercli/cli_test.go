@@ -55,6 +55,58 @@ func TestRunCompatRun(t *testing.T) {
 	}
 }
 
+func TestRunCompatReplayJSON(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/Hello.cls"), "public class Hello {}")
+	writeTestFile(t, filepath.Join(root, "replay.json"), `{
+  "schemaVersion": 1,
+  "name": "cli-replay",
+  "steps": [{"name": "check", "kind": "check"}]
+}`)
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "replay", "--json", root}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), `"name": "cli-replay"`) || !strings.Contains(stdout.String(), `"ok": true`) {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
+func TestRunCompatReplayFailureExitsNonZero(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/Hello.cls"), "public class Hello { MissingType value; }")
+	writeTestFile(t, filepath.Join(root, "replay.json"), `{
+  "schemaVersion": 1,
+  "name": "cli-replay-fail",
+  "steps": [{"name": "check", "kind": "check"}]
+}`)
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "replay", root}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1; stdout=%q stderr=%q", code, stdout.String(), stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "Replay cli-replay-fail: blocked") || !strings.Contains(stderr.String(), "replay failed") {
+		t.Fatalf("stdout=%q stderr=%q", stdout.String(), stderr.String())
+	}
+}
+
+func TestRunCompatReadinessJSON(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/default/classes/Hello.cls"), "public class Hello { MissingType value; }")
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "readiness", "--project", root, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), `"ok": false`) || !strings.Contains(stdout.String(), `"category": "sema"`) {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
 func TestRunCompatMVP(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"compat", "mvp"}, &stdout, &stderr)

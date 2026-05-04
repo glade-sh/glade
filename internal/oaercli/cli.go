@@ -1281,7 +1281,7 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 		return err
 	}
 	if len(args) == 0 {
-		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | product-namespaces --catalog <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]")
+		return errors.New(compatUsage())
 	}
 	switch args[0] {
 	case "matrix", "mvp":
@@ -1300,12 +1300,16 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 		return runCompatProductNamespaces(args[1:], w)
 	case "evidence":
 		return runCompatEvidence(args[1:], w)
+	case "replay":
+		return runCompatReplay(args[1:], w)
+	case "readiness":
+		return runCompatReadiness(args[1:], w)
 	case "validate", "run":
 		if len(args) < 2 {
 			return errors.New("usage: oaer compat validate|run <fixture.json...>")
 		}
 	default:
-		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | product-namespaces --catalog <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]")
+		return errors.New(compatUsage())
 	}
 
 	for _, path := range args[1:] {
@@ -1326,6 +1330,100 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 		}
 		fmt.Fprintf(w, "%s: ok\n", path)
 	}
+	return nil
+}
+
+func compatUsage() string {
+	return "usage: oaer compat validate|run <fixture.json...> | replay [--json] [--artifacts <dir>] [--continue-on-error] <bundle...> | readiness --project <root> [--json] [--bundle-out <dir>] | matrix|mvp [--json] [--require-ready] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | product-namespaces --catalog <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]"
+}
+
+func runCompatReplay(args []string, w io.Writer) error {
+	jsonOut := false
+	opts := compat.ReplayOptions{CommandArgs: append([]string{"compat", "replay"}, args...)}
+	paths := make([]string, 0, len(args))
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--json":
+			jsonOut = true
+		case "--continue-on-error":
+			opts.ContinueOnError = true
+		case "--artifacts":
+			i++
+			if i >= len(args) {
+				return errors.New("usage: oaer compat replay [--json] [--artifacts <dir>] [--continue-on-error] <bundle...>")
+			}
+			opts.ArtifactsDir = args[i]
+		default:
+			if strings.HasPrefix(args[i], "-") {
+				return fmt.Errorf("unknown flag %q", args[i])
+			}
+			paths = append(paths, args[i])
+		}
+	}
+	if len(paths) == 0 {
+		return errors.New("usage: oaer compat replay [--json] [--artifacts <dir>] [--continue-on-error] <bundle...>")
+	}
+	report, err := compat.RunReplayBundles(paths, opts)
+	if err != nil {
+		return err
+	}
+	if jsonOut {
+		if len(report.Bundles) == 1 {
+			if err := compat.WriteReplayJSON(w, report.Bundles[0]); err != nil {
+				return err
+			}
+		} else if err := compat.WriteReplayJSON(w, report); err != nil {
+			return err
+		}
+	} else {
+		compat.WriteReplayText(w, report)
+	}
+	if !report.OK {
+		return fmt.Errorf("replay failed: %d bundle(s) blocked", report.Summary.Failed)
+	}
+	return nil
+}
+
+func runCompatReadiness(args []string, w io.Writer) error {
+	projectRoot := ""
+	bundleOut := ""
+	jsonOut := false
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--project":
+			i++
+			if i >= len(args) {
+				return errors.New("usage: oaer compat readiness --project <root> [--json] [--bundle-out <dir>]")
+			}
+			projectRoot = args[i]
+		case "--json":
+			jsonOut = true
+		case "--bundle-out":
+			i++
+			if i >= len(args) {
+				return errors.New("usage: oaer compat readiness --project <root> [--json] [--bundle-out <dir>]")
+			}
+			bundleOut = args[i]
+		default:
+			return fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	if projectRoot == "" {
+		return errors.New("usage: oaer compat readiness --project <root> [--json] [--bundle-out <dir>]")
+	}
+	report, err := compat.AnalyzeReadiness(projectRoot)
+	if err != nil {
+		return err
+	}
+	if bundleOut != "" {
+		if err := compat.BundleOutFromReadiness(bundleOut, projectRoot, report); err != nil {
+			return err
+		}
+	}
+	if jsonOut {
+		return compat.WriteReadinessJSON(w, report)
+	}
+	compat.WriteReadinessText(w, report)
 	return nil
 }
 
