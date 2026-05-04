@@ -1032,6 +1032,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
     bearer user context, and accepts fixture-level strict limit mode.
   - [x] Accept Tooling `executeAnonymous` form-encoded POST bodies while
     preserving JSON POST, query-string GET, and malformed JSON failure behavior.
+  - [x] Cover multiple SQLite-backed Tooling `executeAnonymous` calls sharing
+    persistent org state, including compile/runtime/limit failure shapes and
+    malformed/missing request-body validation.
 - [ ] Add server fixture reset endpoints for test data, org state, limits, and
   async queues.
   - [x] Add local-only `oaer/state` and `oaer/inspect` summaries with supported
