@@ -1015,6 +1015,82 @@
       ]
     },
     {
+      "name": "query-pagination-final-page",
+      "method": "GET",
+      "path": "/services/data/v61.0/query/oaerql000001-4",
+      "status": 200,
+      "contains": [
+        "\"totalSize\":5",
+        "\"done\":true"
+      ],
+      "notContains": [
+        "\"nextRecordsUrl\""
+      ]
+    },
+    {
+      "name": "query-pagination-expired-locator",
+      "method": "GET",
+      "path": "/services/data/v61.0/query/oaerql000001-4",
+      "status": 404,
+      "contains": [
+        "NOT_FOUND",
+        "query locator not found or expired"
+      ]
+    },
+    {
+      "name": "query-pagination-malformed-locator",
+      "method": "GET",
+      "path": "/services/data/v61.0/query/not-a-locator",
+      "status": 404,
+      "contains": [
+        "NOT_FOUND",
+        "query locator not found or expired"
+      ]
+    },
+    {
+      "name": "query-pagination-method-not-allowed",
+      "method": "PATCH",
+      "path": "/services/data/v61.0/query/oaerql000001-4",
+      "status": 405,
+      "contains": [
+        "METHOD_NOT_ALLOWED",
+        "method not allowed"
+      ]
+    },
+    {
+      "name": "query-batch-size-empty",
+      "method": "GET",
+      "path": "/services/data/v61.0/query?q=SELECT%20Id%20FROM%20Account&batchSize=",
+      "status": 400,
+      "contains": [
+        "MALFORMED_QUERY",
+        "batchSize must be a positive integer no greater than 2000"
+      ]
+    },
+    {
+      "name": "query-batch-size-too-large",
+      "method": "GET",
+      "path": "/services/data/v61.0/query?q=SELECT%20Id%20FROM%20Account&batchSize=2001",
+      "status": 400,
+      "contains": [
+        "MALFORMED_QUERY",
+        "batchSize must be a positive integer no greater than 2000"
+      ]
+    },
+    {
+      "name": "query-default-batch-size-small-result",
+      "method": "GET",
+      "path": "/services/data/v61.0/query?q=SELECT%20Id,%20Name%20FROM%20Account",
+      "status": 200,
+      "contains": [
+        "\"totalSize\":5",
+        "\"done\":true"
+      ],
+      "notContains": [
+        "\"nextRecordsUrl\""
+      ]
+    },
+    {
       "name": "create-account-for-delete-log",
       "method": "POST",
       "path": "/services/data/v61.0/sobjects/Account",
@@ -1041,6 +1117,28 @@
         "\"deletedDate\"",
         "\"earliestDateAvailable\"",
         "\"latestDateCovered\""
+      ]
+    },
+    {
+      "name": "query-excludes-soft-deleted-record",
+      "method": "GET",
+      "path": "/services/data/v61.0/query?q=SELECT%20Id,%20Name,%20IsDeleted%20FROM%20Account%20WHERE%20Name%20=%20'Delete%20Log'",
+      "status": 200,
+      "contains": [
+        "\"totalSize\":0",
+        "\"done\":true",
+        "\"records\":[]"
+      ]
+    },
+    {
+      "name": "queryall-includes-soft-deleted-record",
+      "method": "GET",
+      "path": "/services/data/v61.0/queryAll?q=SELECT%20Id,%20Name,%20IsDeleted%20FROM%20Account%20WHERE%20Name%20=%20'Delete%20Log'",
+      "status": 200,
+      "contains": [
+        "\"totalSize\":1",
+        "\"Name\":\"Delete Log\"",
+        "\"IsDeleted\":true"
       ]
     },
     {
@@ -2207,7 +2305,7 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 198,
+      "requests": 207,
       "statuses": [
         200,
         200,
@@ -2296,8 +2394,17 @@
         200,
         200,
         200,
+        200,
+        404,
+        404,
+        405,
+        400,
+        400,
+        200,
         201,
         204,
+        200,
+        200,
         200,
         201,
         204,
