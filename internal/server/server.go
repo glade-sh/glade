@@ -544,9 +544,41 @@ func (s *Server) handleBulkJobs(w http.ResponseWriter, r *http.Request, parts []
 	}
 	switch parts[0] {
 	case "query":
-		writeSalesforceError(w, errUnsupportedFeature, "Bulk API v2 query jobs are not implemented in the local server")
+		writeUnsupportedBulkQueryJob(w, parts[1:])
 	case "ingest":
+		writeUnsupportedBulkIngestJob(w, parts[1:])
+	default:
+		writeSalesforceError(w, errUnknownEndpoint)
+	}
+}
+
+func writeUnsupportedBulkQueryJob(w http.ResponseWriter, parts []string) {
+	switch {
+	case len(parts) == 0:
+		writeSalesforceError(w, errUnsupportedFeature, "Bulk API v2 query jobs are not implemented in the local server")
+	case len(parts) == 1:
+		writeSalesforceError(w, errUnsupportedFeature, "Bulk API v2 query job records are not implemented in the local server")
+	case len(parts) == 2 && parts[1] == "results":
+		writeSalesforceError(w, errUnsupportedFeature, "Bulk API v2 query job results are not implemented in the local server")
+	default:
+		writeSalesforceError(w, errUnknownEndpoint)
+	}
+}
+
+func writeUnsupportedBulkIngestJob(w http.ResponseWriter, parts []string) {
+	switch {
+	case len(parts) == 0:
 		writeSalesforceError(w, errUnsupportedFeature, "Bulk API v2 ingest jobs are not implemented in the local server")
+	case len(parts) == 1:
+		writeSalesforceError(w, errUnsupportedFeature, "Bulk API v2 ingest job records are not implemented in the local server")
+	case len(parts) == 2 && parts[1] == "batches":
+		writeSalesforceError(w, errUnsupportedFeature, "Bulk API v2 ingest job batches are not implemented in the local server")
+	case len(parts) == 2 && parts[1] == "successfulResults":
+		writeSalesforceError(w, errUnsupportedFeature, "Bulk API v2 ingest successful results are not implemented in the local server")
+	case len(parts) == 2 && parts[1] == "failedResults":
+		writeSalesforceError(w, errUnsupportedFeature, "Bulk API v2 ingest failed results are not implemented in the local server")
+	case len(parts) == 2 && parts[1] == "unprocessedrecords":
+		writeSalesforceError(w, errUnsupportedFeature, "Bulk API v2 ingest unprocessed records are not implemented in the local server")
 	default:
 		writeSalesforceError(w, errUnknownEndpoint)
 	}

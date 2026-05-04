@@ -648,6 +648,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
 - [ ] Add Bulk API approximations if needed by local integration tests.
   - [x] Add explicit Bulk API v2 query and ingest job stubs with Salesforce-shaped
     unsupported errors instead of fake job success.
+  - [x] Return deterministic unsupported responses for common Bulk API v2 job
+    record, results, batches, successfulResults, failedResults, and
+    unprocessedrecords probes.
 - [ ] Ensure anonymous Apex runs against the same persistent server database,
   transaction boundaries, user context, and limits.
   - [x] Add black-box server fixture evidence that Tooling
@@ -666,6 +669,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     errors in the server black-box fixture.
   - [x] Cover Tooling and Bulk unsupported route shapes in the server black-box
     fixture.
+  - [x] Cover common Bulk API v2 job subroute unsupported shapes in the server
+    black-box fixture.
   - [x] Cover common Tooling metadata object, test-run, and coverage
     unsupported route shapes in the server black-box fixture.
   - [x] Cover generic composite unsupported route shape in the server black-box
