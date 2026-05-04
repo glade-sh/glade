@@ -1315,6 +1315,7 @@ func TestBlobEncodingCryptoStdlibRejectsBadInputs(t *testing.T) {
 		{source: "EncodingUtil.urlEncode('é', 'US-ASCII');", want: `EncodingUtil.urlEncode charset "US-ASCII" cannot encode U+00E9`},
 		{source: "EncodingUtil.urlDecode('%E9', 'ASCII');", want: `EncodingUtil.urlDecode charset "US-ASCII" cannot decode byte 0xE9`},
 		{source: "EncodingUtil.urlEncode('x', 'UTF-16');", want: `unsupported call "EncodingUtil.urlEncode charset \"UTF-16\""`},
+		{source: "EncodingUtil.urlDecode('x', 'UTF-16');", want: `unsupported call "EncodingUtil.urlDecode charset \"UTF-16\""`},
 		{source: "EncodingUtil.urlDecode('%zz', 'UTF-8');", want: "invalid URL escape"},
 		{source: "Crypto.areEqualConstantTime(Blob.valueOf('x'), 'x');", want: "Crypto.areEqualConstantTime right expects Blob"},
 		{source: "Crypto.generateDigest('SHA-999', Blob.valueOf('x'));", want: `unsupported digest algorithm "SHA-999"`},
@@ -1866,27 +1867,30 @@ func TestExecNumericStdlibRejectsIntegerOverflow(t *testing.T) {
 }
 
 func TestExecNumericFormatOverloadsAreUnsupported(t *testing.T) {
-	tests := []string{
-		"Integer i = 7;\ni.format('en_US');",
-		"Long l = 7;\nl.format('en_US');",
-		"Decimal d = 7.25;\nd.format('en_US');",
-		"Double d = 7.25;\nd.format('en_US');",
+	tests := []struct {
+		source string
+		want   string
+	}{
+		{source: "Integer i = 7;\ni.format('en_US');", want: `unsupported call "Integer/Long.format locale/pattern overloads"`},
+		{source: "Long l = 7;\nl.format('en_US');", want: `unsupported call "Integer/Long.format locale/pattern overloads"`},
+		{source: "Decimal d = 7.25;\nd.format('en_US');", want: `unsupported call "Decimal/Double.format locale/pattern overloads"`},
+		{source: "Double d = 7.25;\nd.format('en_US');", want: `unsupported call "Decimal/Double.format locale/pattern overloads"`},
 	}
-	for _, source := range tests {
-		program, err := CompileAnonymous(source)
+	for _, tc := range tests {
+		program, err := CompileAnonymous(tc.source)
 		if err != nil {
 			t.Fatal(err)
 		}
 		_, err = Execute(program, nil)
 		if err == nil {
-			t.Fatalf("expected unsupported numeric format overload error for %s", source)
+			t.Fatalf("expected unsupported numeric format overload error for %s", tc.source)
 		}
 		var runtimeErr *RuntimeError
 		if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" {
-			t.Fatalf("expected UnsupportedFeature for %s, got %T %v", source, err, err)
+			t.Fatalf("expected UnsupportedFeature for %s, got %T %v", tc.source, err, err)
 		}
-		if !strings.Contains(runtimeErr.Message, "numeric format locale/pattern overloads") {
-			t.Fatalf("error message = %q", runtimeErr.Message)
+		if runtimeErr.Message != tc.want {
+			t.Fatalf("error message = %q, want %q", runtimeErr.Message, tc.want)
 		}
 	}
 }

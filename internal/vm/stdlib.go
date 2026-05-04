@@ -41,7 +41,7 @@ func callIntegerMember(receiver Value, method string, args []Value) (Value, Valu
 	switch method {
 	case "format":
 		if len(args) != 0 {
-			return Null, receiver, false, true, unsupportedCallError("numeric format locale/pattern overloads")
+			return Null, receiver, false, true, unsupportedCallError("Integer/Long.format locale/pattern overloads")
 		}
 		return String(strconv.FormatInt(receiver.Int, 10)), receiver, false, true, nil
 	case "intValue", "longValue":
@@ -153,7 +153,7 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 		return Decimal(value), receiver, false, true, nil
 	case "format":
 		if len(args) != 0 {
-			return Null, receiver, false, true, unsupportedCallError("numeric format locale/pattern overloads")
+			return Null, receiver, false, true, unsupportedCallError("Decimal/Double.format locale/pattern overloads")
 		}
 		if err := ensureFiniteDecimal("Decimal.format", receiver.Decimal); err != nil {
 			return Null, receiver, false, true, err

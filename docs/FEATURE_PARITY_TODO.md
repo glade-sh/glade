@@ -467,6 +467,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     future calls, queueable jobs, and email invocations with max values.
   - [x] Expose supported public `Limits` getters for batch and scheduled jobs
     with max values.
+  - [x] Split the broad `Limits.get*` capability row into fixture-backed modeled
+    getter support and explicit unsupported rows for unmodeled platform counters.
 - [x] Add configurable strict/permissive limit modes for CLI, tests, server,
   and compatibility fixtures.
   - [x] Wire `--limit-mode` through `oaer exec`, `oaer test`, and `oaer server`
@@ -615,6 +617,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Add common numeric `Math` helpers, `Decimal` scale/conversion helpers,
     URL encoding helpers, including bounded UTF-8, US-ASCII, and ISO-8859-1
     charset fixtures, and MD5/SHA1/SHA-256 digest coverage.
+  - [x] Split numeric no-arg `format()` rows from locale/pattern overload fences
+    and split `EncodingUtil` URL charset rows into bounded charset support and
+    explicit unsupported charset diagnostics.
   - [x] Promote `RoundingMode.valueOf` and built-in enum helpers (`values`,
     `name`, `ordinal`, and `toString`) with fixture-backed exact-name and
     deterministic-order coverage.
@@ -623,9 +628,10 @@ a Salesforce-shaped local API server without silently wrong behavior.
     `Map.toString`, caught exception line/stack metadata, built-in exception
     tokens, and `Type.forName`/`Type.newInstance` reflection fences now have
     fixture-backed capability coverage.
-  - **Limitation**: Exact locale, broad timezone, arbitrary-precision decimal
-    scale, broad charset, and full Java-regex parity remain outside the current
-    local subset. The current named-zone slice is limited to deterministic
+  - **Limitation**: Exact locale numeric formatting, broad timezone,
+    arbitrary-precision decimal scale, broad charset, and full Java-regex parity
+    remain outside the current local subset. The current named-zone slice is
+    limited to deterministic
     `America/Los_Angeles`,
     `America/New_York`, `America/Chicago`, `America/Denver`, `Europe/London`,
     `Europe/Berlin`, `Asia/Tokyo`, and `Australia/Sydney` formatting, offsets,

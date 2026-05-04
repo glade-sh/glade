@@ -6,7 +6,7 @@
       "kind": "exec"
     },
     {
-      "symbol": "Integer.format",
+      "symbol": "Integer.format()",
       "kind": "exec"
     },
     {
@@ -58,7 +58,7 @@
       "kind": "exec"
     },
     {
-      "symbol": "Decimal.format",
+      "symbol": "Decimal.format()",
       "kind": "exec"
     },
     {
@@ -170,11 +170,11 @@
       "kind": "exec"
     },
     {
-      "symbol": "Long.format",
+      "symbol": "Long.format()",
       "kind": "exec"
     },
     {
-      "symbol": "Double.format",
+      "symbol": "Double.format()",
       "kind": "exec"
     }
   ],
