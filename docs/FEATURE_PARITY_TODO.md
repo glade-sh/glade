@@ -432,6 +432,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Add `limitMode` support for compatibility exec/test fixtures.
   - [x] Pin savepoint rollback `Limits` getters as explicit unsupported
     diagnostics until rollback-specific accounting and caps are modeled.
+  - [x] Pin publish-immediate DML `Limits` getters as explicit unsupported
+    diagnostics until platform event publish accounting and caps are modeled.
 - [x] Complete `System`, `Test`, `Database`, `Schema`, `Limits`, and `JSON`
   APIs used by enterprise tests.
   - [x] Add common JSON overloads for `serialize(value, suppressApexObjectNulls)`,
