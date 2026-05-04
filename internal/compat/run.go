@@ -398,6 +398,13 @@ func runServerFixture(fixture Fixture) (RunResult, error) {
 		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
 	}
 	handler := server.NewWithStore(&org, store)
+	if fixture.Command.LimitMode != "" {
+		mode, err := fixtureLimitMode(fixture.Command.LimitMode)
+		if err != nil {
+			return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+		}
+		handler.LimitMode = mode
+	}
 	statuses := make([]int, 0, len(fixture.ServerRequests))
 	for i, step := range fixture.ServerRequests {
 		req := httptest.NewRequest(step.Method, step.Path, strings.NewReader(step.Body))
@@ -416,6 +423,11 @@ func runServerFixture(fixture Fixture) (RunResult, error) {
 		for _, want := range step.Contains {
 			if !strings.Contains(rec.Body.String(), want) {
 				return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, fmt.Errorf("fixture %q server request %d %q body missing %q: %s", fixture.Name, i, step.Name, want, rec.Body.String())
+			}
+		}
+		for _, blocked := range step.NotContains {
+			if strings.Contains(rec.Body.String(), blocked) {
+				return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, fmt.Errorf("fixture %q server request %d %q body unexpectedly contained %q: %s", fixture.Name, i, step.Name, blocked, rec.Body.String())
 			}
 		}
 	}
