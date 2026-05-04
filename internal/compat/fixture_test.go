@@ -190,6 +190,26 @@ func TestRunEnterpriseSectionNineFixtures(t *testing.T) {
 	}
 }
 
+func TestRunAsyncContextEdgeFixtures(t *testing.T) {
+	for _, path := range []string{
+		"../../docs/fixtures/async-context-job-record-edges.json",
+		"../../docs/fixtures/async-unsupported-context-edges.json",
+		"../../docs/fixtures/async-execute-batch-scope-validation.json",
+	} {
+		fixture, err := LoadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		result, err := Run(fixture)
+		if err != nil {
+			t.Fatalf("%s: %v", path, err)
+		}
+		if !result.OK {
+			t.Fatalf("%s result = %#v", path, result)
+		}
+	}
+}
+
 func TestRunExecFixture(t *testing.T) {
 	fixture := Fixture{
 		Name:    "exec-smoke",

@@ -383,6 +383,10 @@ Cuts:
    - Future, Queueable, Batchable, Schedulable, finalizers, AsyncOptions,
      AsyncInfo, flex queue behavior, AsyncApexJob and CronTrigger fields, and
      `stopTest` drain order.
+   - Covered local slices now include deterministic Queueable/Batchable job IDs,
+     Schedulable trigger IDs, selected AsyncApexJob/CronTrigger rows, batch
+     scope-size validation, and explicit unsupported diagnostics for unmodeled
+     AsyncInfo, AsyncOptions, and finalizer APIs.
 
 3. Limits
    - All documented getters, separate sync/async/test windows, configurable org

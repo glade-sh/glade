@@ -1,0 +1,13 @@
+{
+  "name": "async-execute-batch-scope-validation",
+  "evidence": [
+    {"symbol": "Database.executeBatch", "kind": "exec", "notes": "Scope size above the public 2000 maximum is rejected before enqueue."}
+  ],
+  "source": [
+    {"path": "anonymous.apex", "content": "Database.executeBatch(new BatchWorker(), 2001);"}
+  ],
+  "command": {"kind": "exec", "args": ["Database.executeBatch(new BatchWorker(), 2001);"]},
+  "expected": {
+    "error": {"type": "Error", "message": "Database.executeBatch scope size must be at most 2000"}
+  }
+}

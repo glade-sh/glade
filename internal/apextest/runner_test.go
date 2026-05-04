@@ -911,6 +911,80 @@ private class LocatorBatchTest {
 	}
 }
 
+func TestRunAsyncContextIdsAndJobFields(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/Account.object-meta.xml"), `<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/fields/Name.field-meta.xml"), `<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type></CustomField>`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ContextQueue.cls"), `
+public class ContextQueue {
+  public void execute(QueueableContext qc) {
+    insert new Account(Name = qc.getJobId());
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ContextBatch.cls"), `
+public class ContextBatch {
+  public List<Integer> start(Database.BatchableContext bc) {
+    return new List<Integer>{1, 2, 3};
+  }
+  public void execute(Database.BatchableContext bc, List<Integer> scope) {
+    insert new Account(Name = bc.getJobId());
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ContextSchedule.cls"), `
+public class ContextSchedule {
+  public void execute(SchedulableContext sc) {
+    insert new Account(Name = sc.getTriggerId());
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/AsyncContextIdsTest.cls"), `
+@isTest
+private class AsyncContextIdsTest {
+  @isTest static void contextsExposeDeterministicIds() {
+    Test.startTest();
+    String queueId = System.enqueueJob(new ContextQueue());
+    String batchId = Database.executeBatch(new ContextBatch(), 2);
+    String schedId = System.schedule('nightly', '0 0 0 * * ?', new ContextSchedule());
+    System.assertEquals('707000000000001', queueId);
+    System.assertEquals('707000000000002', batchId);
+    System.assertEquals('08e000000000003', schedId);
+    Test.stopTest();
+    Integer batchRows = [SELECT COUNT() FROM Account WHERE Name = '707000000000002'];
+    Integer queueRows = [SELECT COUNT() FROM Account WHERE Name = '707000000000001'];
+    Integer triggerRows = [SELECT COUNT() FROM Account WHERE Name = '08e000000000003'];
+    System.assertEquals(2, batchRows);
+    System.assertEquals(1, queueRows);
+    System.assertEquals(1, triggerRows);
+    List<AsyncApexJob> batches = [SELECT Id, Status, JobType, TotalJobItems, JobItemsProcessed, NumberOfErrors FROM AsyncApexJob WHERE Id = '707000000000002'];
+    System.assertEquals(1, batches.size());
+    AsyncApexJob batch = batches.get(0);
+    System.assertEquals('Completed', batch.Status);
+    System.assertEquals('BatchApex', batch.JobType);
+    System.assertEquals(2, batch.TotalJobItems);
+    System.assertEquals(2, batch.JobItemsProcessed);
+    System.assertEquals(0, batch.NumberOfErrors);
+    List<CronTrigger> crons = [SELECT Id, State, CronExpression, CronJobDetail FROM CronTrigger];
+    System.assertEquals(1, crons.size());
+    CronTrigger cron = crons.get(0);
+    System.assertEquals('Complete', cron.State);
+    System.assertEquals('0 0 0 * * ?', cron.CronExpression);
+    System.assertEquals('nightly', cron.CronJobDetail);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		if len(run.Suites) > 0 && len(run.Suites[0].Cases) > 0 && run.Suites[0].Cases[0].Problem != nil {
+			t.Logf("problem=%#v", *run.Suites[0].Cases[0].Problem)
+		}
+		t.Fatalf("summary = %#v cases=%#v", got, run.Suites[0].Cases)
+	}
+}
+
 func TestRunAsSetsUserContextForBlock(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
