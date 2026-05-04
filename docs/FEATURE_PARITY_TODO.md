@@ -465,6 +465,11 @@ a Salesforce-shaped local API server without silently wrong behavior.
     `JSONException` while preserving non-strict `JSON.deserialize` behavior.
   - [x] Map JSON.deserialize SObject fields through local schema field types for
     Date, Datetime, numeric, Boolean, Id, and reference edges.
+  - [x] Map `JSON.deserialize` typed `Set<T>` targets and nested
+    `List`/`Map`/`Set` collection graphs, including typed null elements and
+    catchable `JSONException` mapping failures.
+  - [x] Map registered Apex class JSON fields through inherited field metadata,
+    nested object/list/map/set field types, and default missing field slots.
   - [x] Reject `JSONGenerator.writeFieldName(...)` inside arrays with catchable
     `JSONException` while preserving array writes after the failed call.
   - [x] Reject `JSONGenerator.writeEndObject()` inside arrays with catchable

@@ -1,0 +1,28 @@
+{
+  "name": "core-json-typed-collections",
+  "evidence": [
+    {
+      "symbol": "JSON.deserialize",
+      "kind": "exec",
+      "notes": "Typed deserialization maps Set<T> arrays, nested List/Map/Set collection graphs, typed null elements, and catchable JSONException mapping failures."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Type nestedType = Type.forName('Map<String,List<Set<Integer>>>');\nMap<String,List<Set<Integer>>> nested = JSON.deserialize('{\"one\":[[1,2,2],[3,null]],\"empty\":[]}', nestedType);\nSystem.assertEquals(2, nested.get('one').size());\nSystem.assertEquals(2, nested.get('one').get(0).size());\nSystem.assert(nested.get('one').get(0).contains(1));\nSystem.assert(nested.get('one').get(0).contains(2));\nSystem.assert(nested.get('one').get(1).contains(3));\nSystem.assert(nested.get('one').get(1).contains(null));\nSystem.assertEquals(0, nested.get('empty').size());\nType setType = Type.forName('Set<String>');\nSet<String> tags = JSON.deserialize('[\"red\",\"blue\",\"red\",null]', setType);\nSystem.assertEquals(3, tags.size());\nSystem.assert(tags.contains('red'));\nSystem.assert(tags.contains('blue'));\nSystem.assert(tags.contains(null));\nBoolean caught = false;\ntry {\n  Type badMap = Type.forName('Map<String,Integer>');\n  Object value = JSON.deserialize('{\"bad\":\"not-a-number\"}', badMap);\n} catch (JSONException e) {\n  caught = e.getMessage().contains('JSON.deserialize cannot map JSON String to Integer');\n}\nSystem.assert(caught);"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Type nestedType = Type.forName('Map<String,List<Set<Integer>>>');\nMap<String,List<Set<Integer>>> nested = JSON.deserialize('{\"one\":[[1,2,2],[3,null]],\"empty\":[]}', nestedType);\nSystem.assertEquals(2, nested.get('one').size());\nSystem.assertEquals(2, nested.get('one').get(0).size());\nSystem.assert(nested.get('one').get(0).contains(1));\nSystem.assert(nested.get('one').get(0).contains(2));\nSystem.assert(nested.get('one').get(1).contains(3));\nSystem.assert(nested.get('one').get(1).contains(null));\nSystem.assertEquals(0, nested.get('empty').size());\nType setType = Type.forName('Set<String>');\nSet<String> tags = JSON.deserialize('[\"red\",\"blue\",\"red\",null]', setType);\nSystem.assertEquals(3, tags.size());\nSystem.assert(tags.contains('red'));\nSystem.assert(tags.contains('blue'));\nSystem.assert(tags.contains(null));\nBoolean caught = false;\ntry {\n  Type badMap = Type.forName('Map<String,Integer>');\n  Object value = JSON.deserialize('{\"bad\":\"not-a-number\"}', badMap);\n} catch (JSONException e) {\n  caught = e.getMessage().contains('JSON.deserialize cannot map JSON String to Integer');\n}\nSystem.assert(caught);"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

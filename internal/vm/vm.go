@@ -5323,6 +5323,25 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 		}
 		return out, nil
 	}
+	if strings.HasPrefix(typeName, "Set<") {
+		items, ok := raw.([]any)
+		if !ok {
+			return Null, jsonTypeMappingError(typeName, raw)
+		}
+		elementType, _ := collectionElementType(typeName)
+		out := Set()
+		out.Type = typeName
+		for _, item := range items {
+			value, err := vm.typedValueFromJSON(elementType, item, strict)
+			if err != nil {
+				return Null, err
+			}
+			if !containsValue(out.Set, value) {
+				out.Set = append(out.Set, value)
+			}
+		}
+		return out, nil
+	}
 	if strings.HasPrefix(typeName, "Map<") {
 		fields, ok := raw.(map[string]any)
 		if !ok {
@@ -5333,7 +5352,7 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 			return Null, jsonTypeMappingError(typeName, raw)
 		}
 		if keyType != "String" && keyType != "Object" {
-			return Null, fmt.Errorf("JSON.deserialize supports Map keys only for String/Object targets, got %s", keyType)
+			return Null, jsonDeserializeException("JSON.deserialize supports Map keys only for String/Object targets, got %s", keyType)
 		}
 		out := Map()
 		out.Type = typeName
@@ -5353,6 +5372,7 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 		return Null, unsupportedCallError("JSON.deserialize local class/SObject mapping for " + typeName)
 	}
 	obj := Object(typeName)
+	vm.initializeFields(&obj, typeName)
 	fields, ok := raw.(map[string]any)
 	if !ok {
 		return Null, jsonTypeMappingError(typeName, raw)
@@ -5372,15 +5392,13 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 		if key == "attributes" {
 			continue
 		}
-		if class, ok := vm.Classes[typeName]; ok {
-			if field, ok := class.Fields[key]; ok && field.Type != "" {
-				value, err := vm.typedValueFromJSON(field.Type, item, strict)
-				if err != nil {
-					return Null, err
-				}
-				obj.Fields[key] = value
-				continue
+		if field, _, ok := vm.lookupField(typeName, key); ok && field.Type != "" {
+			value, err := vm.typedValueFromJSON(field.Type, item, strict)
+			if err != nil {
+				return Null, err
 			}
+			obj.Fields[key] = value
+			continue
 		}
 		if fieldType, ok := vm.jsonSObjectFieldType(typeName, key); ok {
 			value, err := vm.typedValueFromJSON(fieldType, item, strict)
@@ -5475,7 +5493,7 @@ func typedScalarFromJSON(typeName string, raw any) (Value, bool, error) {
 			return Null, true, jsonTypeMappingError(typeName, raw)
 		}
 		if _, err := time.Parse("2006-01-02", text); err != nil {
-			return Null, true, fmt.Errorf("JSON.deserialize cannot parse Date %q", text)
+			return Null, true, jsonDeserializeException("JSON.deserialize cannot parse Date %q", text)
 		}
 		return platformScalar("Date", text), true, nil
 	case "Datetime":
@@ -5485,7 +5503,7 @@ func typedScalarFromJSON(typeName string, raw any) (Value, bool, error) {
 		}
 		value, err := parseDatetimeText(text)
 		if err != nil {
-			return Null, true, err
+			return Null, true, jsonDeserializeException("%s", err.Error())
 		}
 		return platformScalar("Datetime", value.UTC().Format(time.RFC3339)), true, nil
 	case "Time":
@@ -5495,7 +5513,7 @@ func typedScalarFromJSON(typeName string, raw any) (Value, bool, error) {
 		}
 		value, err := parseTimeText(text)
 		if err != nil {
-			return Null, true, err
+			return Null, true, jsonDeserializeException("%s", err.Error())
 		}
 		return platformScalar("Time", value), true, nil
 	case "Id":
@@ -5504,7 +5522,7 @@ func typedScalarFromJSON(typeName string, raw any) (Value, bool, error) {
 			return Null, true, jsonTypeMappingError(typeName, raw)
 		}
 		if err := validateApexID(text); err != nil {
-			return Null, true, err
+			return Null, true, jsonDeserializeException("%s", err.Error())
 		}
 		return platformScalar("Id", text), true, nil
 	case "Blob":
@@ -5514,7 +5532,7 @@ func typedScalarFromJSON(typeName string, raw any) (Value, bool, error) {
 		}
 		decoded, err := base64.StdEncoding.DecodeString(text)
 		if err != nil {
-			return Null, true, fmt.Errorf("JSON.deserialize cannot decode Blob base64: %w", err)
+			return Null, true, jsonDeserializeException("JSON.deserialize cannot decode Blob base64: %v", err)
 		}
 		return platformScalar("Blob", string(decoded)), true, nil
 	}
@@ -5559,7 +5577,11 @@ func jsonDecimalNumber(raw any) (float64, bool) {
 }
 
 func jsonTypeMappingError(typeName string, raw any) error {
-	return fmt.Errorf("JSON.deserialize cannot map JSON %s to %s", jsonRawKind(raw), typeName)
+	return jsonDeserializeException("JSON.deserialize cannot map JSON %s to %s", jsonRawKind(raw), typeName)
+}
+
+func jsonDeserializeException(format string, args ...any) error {
+	return newExceptionError("JSONException", fmt.Sprintf(format, args...))
 }
 
 func jsonRawKind(raw any) string {
@@ -5592,10 +5614,15 @@ func (vm *VM) jsonAllowedFields(typeName string) map[string]struct{} {
 			}
 		}
 	}
-	if class, ok := vm.Classes[typeName]; ok {
+	for className := typeName; className != ""; {
+		class, ok := vm.Classes[className]
+		if !ok {
+			break
+		}
 		for name := range class.Fields {
 			allowed[name] = struct{}{}
 		}
+		className = class.SuperClass
 	}
 	return allowed
 }
