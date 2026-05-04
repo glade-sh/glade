@@ -1166,16 +1166,14 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
-		anchored, err := regexp.Compile("^(?:" + source + ")$")
+		indices, err := matcherMatchIndices(receiver, source, input, region, matcherOpMatches)
 		if err != nil {
-			return Null, receiver, false, true, fmt.Errorf("Matcher.matches invalid regex: %w", err)
+			return Null, receiver, false, true, err
 		}
-		indices := anchored.FindStringSubmatchIndex(input[region.startByte:region.endByte])
 		if indices == nil {
 			matcherClearMatch(receiver)
 			return Bool(false), receiver, true, true, nil
 		}
-		offsetRegexIndices(indices, region.startByte)
 		matcherSaveMatch(receiver, indices)
 		receiver.Fields["index"] = Int(int64(region.endByte))
 		return Bool(true), receiver, true, true, nil
@@ -1187,16 +1185,14 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
-		anchored, err := regexp.Compile("^(?:" + source + ")")
+		indices, err := matcherMatchIndices(receiver, source, input, region, matcherOpLookingAt)
 		if err != nil {
-			return Null, receiver, false, true, fmt.Errorf("Matcher.lookingAt invalid regex: %w", err)
+			return Null, receiver, false, true, err
 		}
-		indices := anchored.FindStringSubmatchIndex(input[region.startByte:region.endByte])
 		if indices == nil {
 			matcherClearMatch(receiver)
 			return Bool(false), receiver, true, true, nil
 		}
-		offsetRegexIndices(indices, region.startByte)
 		matcherSaveMatch(receiver, indices)
 		receiver.Fields["index"] = Int(int64(indices[1]))
 		return Bool(true), receiver, true, true, nil
@@ -1218,6 +1214,7 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 			if err != nil {
 				return Null, receiver, false, true, fmt.Errorf("Matcher.find %w", err)
 			}
+			matcherClearMatch(receiver)
 		} else if index, ok := receiver.Fields["index"]; ok && index.Kind == ValueInt {
 			startByte = int(index.Int)
 		}
@@ -1229,13 +1226,15 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 			receiver.Fields["index"] = Int(int64(region.endByte + 1))
 			return Bool(false), receiver, true, true, nil
 		}
-		indices := re.FindStringSubmatchIndex(input[startByte:region.endByte])
+		indices, err := matcherFindIndices(receiver, re, input, region, startByte)
+		if err != nil {
+			return Null, receiver, false, true, err
+		}
 		if indices == nil {
 			matcherClearMatch(receiver)
 			receiver.Fields["index"] = Int(int64(region.endByte + 1))
 			return Bool(false), receiver, true, true, nil
 		}
-		offsetRegexIndices(indices, startByte)
 		matcherSaveMatch(receiver, indices)
 		next := indices[1]
 		if indices[0] == indices[1] {
@@ -1434,6 +1433,13 @@ type matcherRegionBounds struct {
 	endByte   int
 }
 
+type matcherOp int
+
+const (
+	matcherOpMatches matcherOp = iota
+	matcherOpLookingAt
+)
+
 func matcherRegion(matcher Value, input string) (matcherRegionBounds, error) {
 	inputRunes := utf8.RuneCountInString(input)
 	start := 0
@@ -1462,6 +1468,73 @@ func matcherRegion(matcher Value, input string) (matcherRegionBounds, error) {
 		return matcherRegionBounds{}, err
 	}
 	return matcherRegionBounds{startRune: start, endRune: end, startByte: startByte, endByte: endByte}, nil
+}
+
+func matcherUsesFullInputBounds(matcher Value) bool {
+	return !matcherBoolField(matcher, "anchoringBounds", true) || matcherBoolField(matcher, "transparentBounds", false)
+}
+
+func matcherMatchIndices(matcher Value, source, input string, region matcherRegionBounds, op matcherOp) ([]int, error) {
+	if !matcherUsesFullInputBounds(matcher) {
+		prefix := "^(?:"
+		suffix := ")"
+		name := "Matcher.lookingAt"
+		if op == matcherOpMatches {
+			suffix = ")$"
+			name = "Matcher.matches"
+		}
+		anchored, err := regexp.Compile(prefix + source + suffix)
+		if err != nil {
+			return nil, fmt.Errorf("%s invalid regex: %w", name, err)
+		}
+		indices := anchored.FindStringSubmatchIndex(input[region.startByte:region.endByte])
+		if indices != nil {
+			offsetRegexIndices(indices, region.startByte)
+		}
+		return indices, nil
+	}
+	re, err := regexp.Compile(source)
+	if err != nil {
+		return nil, fmt.Errorf("Matcher invalid regex: %w", err)
+	}
+	for _, indices := range re.FindAllStringSubmatchIndex(input, -1) {
+		if len(indices) < 2 || indices[0] < region.startByte {
+			continue
+		}
+		if indices[0] > region.startByte {
+			return nil, nil
+		}
+		if indices[1] > region.endByte {
+			return nil, nil
+		}
+		if op == matcherOpMatches && indices[1] != region.endByte {
+			return nil, nil
+		}
+		return indices, nil
+	}
+	return nil, nil
+}
+
+func matcherFindIndices(matcher Value, re *regexp.Regexp, input string, region matcherRegionBounds, startByte int) ([]int, error) {
+	if !matcherUsesFullInputBounds(matcher) {
+		indices := re.FindStringSubmatchIndex(input[startByte:region.endByte])
+		if indices != nil {
+			offsetRegexIndices(indices, startByte)
+		}
+		return indices, nil
+	}
+	for _, indices := range re.FindAllStringSubmatchIndex(input, -1) {
+		if len(indices) < 2 || indices[0] < startByte || indices[0] < region.startByte {
+			continue
+		}
+		if indices[0] > region.endByte {
+			return nil, nil
+		}
+		if indices[1] <= region.endByte {
+			return indices, nil
+		}
+	}
+	return nil, nil
 }
 
 func validateMatcherRegion(input string, start, end int) error {

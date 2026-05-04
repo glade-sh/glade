@@ -305,6 +305,70 @@ m.find(0);
 	}
 }
 
+func TestMatcherRegionAnchoringAndTransparentBounds(t *testing.T) {
+	program, err := CompileAnonymous(`
+Pattern head = Pattern.compile('^ABC');
+Matcher anchoredHead = head.matcher('xxABCyy');
+anchoredHead.region(2, 5);
+System.assert(anchoredHead.lookingAt());
+System.assert(anchoredHead.matches());
+anchoredHead.useAnchoringBounds(false);
+System.assert(!anchoredHead.lookingAt());
+System.assert(!anchoredHead.matches());
+
+Pattern tail = Pattern.compile('ABC$');
+Matcher anchoredTail = tail.matcher('xxABCyy');
+anchoredTail.region(2, 5);
+System.assert(anchoredTail.lookingAt());
+anchoredTail.useAnchoringBounds(false);
+System.assert(!anchoredTail.lookingAt());
+
+Pattern word = Pattern.compile('\bABC\b');
+Matcher opaque = word.matcher('xABC y');
+opaque.region(1, 4);
+System.assert(opaque.matches());
+opaque.reset();
+opaque.region(1, 4);
+System.assert(opaque.find());
+
+Matcher transparent = word.matcher('xABC y');
+transparent.region(1, 4);
+transparent.useTransparentBounds(true);
+System.assert(!transparent.matches());
+System.assert(!transparent.find());
+
+Matcher transparentAtRealBoundary = word.matcher('x ABC y');
+transparentAtRealBoundary.region(2, 5);
+transparentAtRealBoundary.useTransparentBounds(true);
+System.assert(transparentAtRealBoundary.matches());
+System.assertEquals(2, transparentAtRealBoundary.start());
+System.assertEquals(5, transparentAtRealBoundary.end());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestMatcherFindStartResetsPreviousMatch(t *testing.T) {
+	program, err := CompileAnonymous(`
+Pattern p = Pattern.compile('[A-Z]+');
+Matcher m = p.matcher('ABC def');
+System.assert(m.find());
+System.assertEquals('ABC', m.group());
+System.assert(!m.find(4));
+m.group();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), "before a successful match") {
+		t.Fatalf("expected find(start) to clear stale match, got %v", err)
+	}
+}
+
 func TestMatcherAppendReplacementUnsupported(t *testing.T) {
 	for _, method := range []string{"appendReplacement", "appendTail"} {
 		matcher := Object("Matcher")
