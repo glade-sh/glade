@@ -1,0 +1,166 @@
+{
+  "name": "platform-unsupported-surfaces",
+  "evidence": [
+    {
+      "symbol": "Approval.*",
+      "kind": "server",
+      "notes": "Approval process/request surfaces stay explicitly unsupported."
+    },
+    {
+      "symbol": "Auth.*",
+      "kind": "server",
+      "notes": "Auth token/JWT/OAuth/cloud surfaces stay explicitly unsupported."
+    },
+    {
+      "symbol": "Canvas.*",
+      "kind": "server",
+      "notes": "Canvas app integration surfaces stay explicitly unsupported."
+    },
+    {
+      "symbol": "Continuation.*",
+      "kind": "server",
+      "notes": "Continuation callback/request surfaces stay explicitly unsupported."
+    },
+    {
+      "symbol": "EventBus.*",
+      "kind": "server",
+      "notes": "Platform event publish surfaces stay explicitly unsupported."
+    },
+    {
+      "symbol": "QuickAction.*",
+      "kind": "server",
+      "notes": "Quick action UI surfaces stay explicitly unsupported."
+    },
+    {
+      "symbol": "Search.* / SOSL",
+      "kind": "server",
+      "notes": "Cloud search and SOSL stay explicitly unsupported."
+    },
+    {
+      "symbol": "Test stubs/search helpers",
+      "kind": "server",
+      "notes": "Dynamic stub and fixed search helper APIs stay explicitly unsupported."
+    },
+    {
+      "symbol": "Crypto key/cert APIs",
+      "kind": "server",
+      "notes": "Key, certificate, encryption, signing, and random surfaces stay explicitly unsupported."
+    }
+  ],
+  "serverRequests": [
+    {
+      "name": "approval-request-unsupported",
+      "method": "POST",
+      "path": "/services/data/v61.0/tooling/executeAnonymous",
+      "body": "{\"anonymousBody\": \"Approval.ProcessWorkitemRequest.setAction('Approve');\"}",
+      "status": 200,
+      "contains": [
+        "success\":false",
+        "unsupported call \\\"Approval.ProcessWorkitemRequest.setAction local approval process and lock surface\\\""
+      ]
+    },
+    {
+      "name": "auth-jwt-unsupported",
+      "method": "POST",
+      "path": "/services/data/v61.0/tooling/executeAnonymous",
+      "body": "{\"anonymousBody\": \"Auth.JWTUtil.validateJWTWithKeysEndpoint('token', 'https://example.invalid/keys');\"}",
+      "status": 200,
+      "contains": [
+        "success\":false",
+        "unsupported call \\\"Auth.JWTUtil.validateJWTWithKeysEndpoint local authentication token/cloud API surface\\\""
+      ]
+    },
+    {
+      "name": "canvas-lifecycle-unsupported",
+      "method": "POST",
+      "path": "/services/data/v61.0/tooling/executeAnonymous",
+      "body": "{\"anonymousBody\": \"Canvas.LifecycleHandler.onRender(null);\"}",
+      "status": 200,
+      "contains": [
+        "success\":false",
+        "unsupported call \\\"Canvas.LifecycleHandler.onRender local canvas app integration surface\\\""
+      ]
+    },
+    {
+      "name": "continuation-add-request-unsupported",
+      "method": "POST",
+      "path": "/services/data/v61.0/tooling/executeAnonymous",
+      "body": "{\"anonymousBody\": \"Continuation.addHttpRequest('request-one', null);\"}",
+      "status": 200,
+      "contains": [
+        "success\":false",
+        "unsupported call \\\"Continuation.addHttpRequest local continuation callout surface\\\""
+      ]
+    },
+    {
+      "name": "eventbus-after-commit-unsupported",
+      "method": "POST",
+      "path": "/services/data/v61.0/tooling/executeAnonymous",
+      "body": "{\"anonymousBody\": \"EventBus.publishAfterCommit(new List<Account>{new Account(Name = 'Acme')});\"}",
+      "status": 200,
+      "contains": [
+        "success\":false",
+        "unsupported call \\\"EventBus.publishAfterCommit local platform event publish surface\\\""
+      ]
+    },
+    {
+      "name": "quickaction-describe-unsupported",
+      "method": "POST",
+      "path": "/services/data/v61.0/tooling/executeAnonymous",
+      "body": "{\"anonymousBody\": \"QuickAction.describeAvailableActions('Account');\"}",
+      "status": 200,
+      "contains": [
+        "success\":false",
+        "unsupported call \\\"QuickAction.describeAvailableActions local quick action UI surface\\\""
+      ]
+    },
+    {
+      "name": "search-query-unsupported",
+      "method": "POST",
+      "path": "/services/data/v61.0/tooling/executeAnonymous",
+      "body": "{\"anonymousBody\": \"Search.query('FIND {Acme} IN ALL FIELDS RETURNING Account(Id)');\"}",
+      "status": 200,
+      "contains": [
+        "success\":false",
+        "unsupported call \\\"Search.query local search/SOSL surface\\\""
+      ]
+    },
+    {
+      "name": "test-create-stub-unsupported",
+      "method": "POST",
+      "path": "/services/data/v61.0/tooling/executeAnonymous",
+      "body": "{\"anonymousBody\": \"Test.createStub(Account.class, null);\"}",
+      "status": 200,
+      "contains": [
+        "success\":false",
+        "unsupported call \\\"Test.createStub local stub API\\\""
+      ]
+    },
+    {
+      "name": "crypto-certificate-unsupported",
+      "method": "POST",
+      "path": "/services/data/v61.0/tooling/executeAnonymous",
+      "body": "{\"anonymousBody\": \"Crypto.signWithCertificate('RSA-SHA256', Blob.valueOf('payload'), 'LocalCert');\"}",
+      "status": 200,
+      "contains": [
+        "success\":false",
+        "unsupported call \\\"Crypto.signWithCertificate local deterministic key, certificate, and encryption surfaces\\\""
+      ]
+    },
+    {
+      "name": "crypto-keystore-unsupported",
+      "method": "POST",
+      "path": "/services/data/v61.0/tooling/executeAnonymous",
+      "body": "{\"anonymousBody\": \"Crypto.getKeyStore('LocalKeys');\"}",
+      "status": 200,
+      "contains": [
+        "success\":false",
+        "unsupported call \\\"Crypto.getKeyStore local key, certificate, encryption, and random surfaces\\\""
+      ]
+    }
+  ],
+  "command": {
+    "kind": "server"
+  },
+  "expected": {}
+}

@@ -11,20 +11,20 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | ApexPages | `ApexPages.currentPage` | `supported` | Returns a deterministic local PageReference. |
 | ApexPages | `ApexPages.getMessages` | `supported` | Returns VM-local page messages. |
 | ApexPages | `ApexPages.hasMessages` | `supported` | Checks VM-local page messages. |
-| Approval | `Approval process APIs` | `unsupported` | Approval.process and approval lock helpers return explicit UnsupportedFeature diagnostics; approval workflow side effects are not locally modeled. |
+| Approval | `Approval process APIs` | `unsupported` | Approval namespace process, request, and lock helpers return explicit UnsupportedFeature diagnostics; approval workflow side effects are not locally modeled. |
 | Async | `AsyncApexJob / CronTrigger local records` | `partial` | Test-context enqueue/drain creates deterministic local AsyncApexJob rows and CronTrigger rows for supported future, queueable, batch, and scheduled jobs; broader platform lifecycle fields are not modeled. |
 | Async | `AsyncInfo / AsyncOptions / finalizers` | `unsupported` | Queueable stack metadata, AsyncOptions mutators/accessors and enqueue overloads, System.attachFinalizer, and FinalizerContext getters return explicit UnsupportedFeature diagnostics. |
 | Async | `BatchableContext.getJobId` | `partial` | Returns the deterministic local AsyncApexJob Id while supported batch start/execute/finish methods drain under Test.stopTest. |
 | Async | `QueueableContext.getJobId` | `partial` | Returns the deterministic local AsyncApexJob Id while supported queueables drain under Test.stopTest. |
 | Async | `SchedulableContext.getTriggerId` | `partial` | Returns the deterministic local CronTrigger Id while supported scheduled jobs drain under Test.stopTest. |
-| Auth | `token/cloud APIs` | `unsupported` | Auth namespace token and session/cloud calls return explicit UnsupportedFeature diagnostics. |
+| Auth | `token/cloud APIs` | `unsupported` | Auth namespace token, session, JWT, OAuth, and cloud calls return explicit UnsupportedFeature diagnostics. |
 | Blob | `Blob.size` | `supported` | Returns local Blob byte length. |
 | Blob | `Blob.toString` | `supported` | Returns UTF-8 local Blob bytes as a string and rejects invalid UTF-8 data. |
 | Blob | `Blob.valueOf` | `supported` | Stores the string bytes in a local Blob value. |
 | Canvas | `Canvas namespace` | `unsupported` | Canvas app integration calls return explicit UnsupportedFeature diagnostics. |
 | Continuation | `Continuation` | `unsupported` | Continuation construction and callback/response calls return explicit UnsupportedFeature diagnostics. |
 | Crypto | `Crypto.areEqualConstantTime` | `supported` | Constant-time local Blob equality comparison. |
-| Crypto | `Crypto.encrypt/decrypt/sign/verify` | `unsupported` | Org key, certificate, encryption, and random key-generation surfaces return explicit unsupported errors. |
+| Crypto | `Crypto.encrypt/decrypt/sign/verify` | `unsupported` | Org key, keystore, certificate, encryption, signing, verification, and random key-generation surfaces return explicit unsupported errors. |
 | Crypto | `Crypto.generateDigest` | `supported` | MD5, SHA1, SHA-256, SHA-512, SHA3-256/384/512, with conservative algorithm normalization. |
 | Crypto | `Crypto.generateMac` | `supported` | HMAC MD5, SHA1, SHA256, and SHA512 with local Blob keys and conservative algorithm normalization. |
 | Data | `Custom metadata/custom settings getAll/getInstance` | `partial` | Fixture-backed local __mdt and list custom setting static access supports namespace-stripped object/field names and read-only returned records; hierarchy merge behavior and Metadata API mutation are not modeled. |
@@ -93,7 +93,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | EncodingUtil | `EncodingUtil.convertToHex` | `supported` | Blob-shaped local value. |
 | EncodingUtil | `EncodingUtil.urlDecode` | `partial` | Uses query unescape with UTF-8/utf8/UTF_8 charset validation only; other charsets return UnsupportedFeature. |
 | EncodingUtil | `EncodingUtil.urlEncode` | `partial` | Uses query escape with UTF-8/utf8/UTF_8 charset validation only; other charsets return UnsupportedFeature. |
-| EventBus | `EventBus.publish` | `unsupported` | Platform event publish calls return explicit UnsupportedFeature diagnostics. |
+| EventBus | `EventBus.publish` | `unsupported` | Platform event publish and after-commit publish calls return explicit UnsupportedFeature diagnostics. |
 | Exception | `Built-in exception types` | `partial` | Known public built-in exception tokens construct message-bearing local exceptions and assign to Exception; exact platform class catalog, line numbers, and stack text remain partial. |
 | Exception | `Exception.getCause` | `partial` | Returns the locally initialized cause value; repeat/self-cause platform edge rules are not modeled. |
 | Exception | `Exception.getLineNumber` | `partial` | Returns deterministic local throw-site line metadata when available; otherwise 0. |
