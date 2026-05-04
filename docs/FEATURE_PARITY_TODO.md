@@ -674,8 +674,11 @@ a Salesforce-shaped local API server without silently wrong behavior.
     success.
   - [x] Model conservative Composite sObject collection update/delete with DML
     Update/Delete, allOrNone rollback, reference IDs for update, and ID-located
-    delete query parameters; keep typed collection and upsert route boundaries
-    explicitly unsupported.
+    delete query parameters.
+  - [x] Implement conservative typed Composite sObject upsert
+    `/composite/sobjects/{Object}/{ExternalIdField}` backed by local DML
+    external-ID upsert, with per-row results, reference IDs, created flags, and
+    all-or-none rollback.
 - [ ] Add Bulk API approximations if needed by local integration tests.
   - [x] Add explicit Bulk API v2 query and ingest job stubs with Salesforce-shaped
     unsupported errors instead of fake job success.
@@ -711,8 +714,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
     fixture.
   - [x] Cover generic composite unsupported route shape in the server black-box
     fixture.
-  - [x] Cover Composite sObject collection update/delete plus the remaining
-    upsert unsupported route shape in the server black-box fixture.
+  - [x] Cover Composite sObject collection update/delete and typed Composite
+    sObject external-ID upsert create/update behavior in the server black-box
+    fixture.
   - [x] Cover common top-level REST namespace unsupported route shapes, including
     utility AppMenu and QuickActions probes, in the server black-box fixture.
   - [x] Cover Tooling `executeAnonymous` persistence, rollback, selected bearer

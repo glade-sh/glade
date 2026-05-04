@@ -1958,6 +1958,114 @@ func TestCompositeSObjectsDeleteAllOrNoneRollsBackMissingRecord(t *testing.T) {
 	}
 }
 
+func TestCompositeSObjectTypedUpsertCreatesAndUpdates(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	create := httptest.NewRecorder()
+	handler.ServeHTTP(create, httptest.NewRequest(http.MethodPatch, "/services/data/v61.0/composite/sobjects/Account/External_Id__c", strings.NewReader(`{
+  "records": [
+    {"attributes":{"referenceId":"created"},"Name":"Created","External_Id__c":"ext-1"}
+  ]
+}`)))
+	if create.Code != http.StatusOK {
+		t.Fatalf("create status = %d body=%s", create.Code, create.Body.String())
+	}
+	var createResults []map[string]any
+	if err := json.Unmarshal(create.Body.Bytes(), &createResults); err != nil {
+		t.Fatal(err)
+	}
+	if len(createResults) != 1 || createResults[0]["success"] != true || createResults[0]["created"] != true || createResults[0]["referenceId"] != "created" {
+		t.Fatalf("create results = %#v", createResults)
+	}
+	id, _ := createResults[0]["id"].(string)
+	if id == "" {
+		t.Fatalf("created id missing: %#v", createResults[0])
+	}
+
+	update := httptest.NewRecorder()
+	handler.ServeHTTP(update, httptest.NewRequest(http.MethodPatch, "/services/data/v61.0/composite/sobjects/Account/External_Id__c", strings.NewReader(`{
+  "records": [
+    {"attributes":{"referenceId":"updated"},"Name":"Updated","External_Id__c":"EXT-1"}
+  ]
+}`)))
+	if update.Code != http.StatusOK {
+		t.Fatalf("update status = %d body=%s", update.Code, update.Body.String())
+	}
+	var updateResults []map[string]any
+	if err := json.Unmarshal(update.Body.Bytes(), &updateResults); err != nil {
+		t.Fatal(err)
+	}
+	if len(updateResults) != 1 || updateResults[0]["success"] != true || updateResults[0]["created"] != false || updateResults[0]["id"] != id || updateResults[0]["referenceId"] != "updated" {
+		t.Fatalf("update results = %#v", updateResults)
+	}
+	if got := org.Objects["Account"].Records[storage.ID(id)].Fields["Name"].String; got != "Updated" {
+		t.Fatalf("updated name = %q", got)
+	}
+}
+
+func TestCompositeSObjectTypedUpsertAllOrNoneRollsBack(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPatch, "/services/data/v61.0/composite/sobjects/Account/External_Id__c", strings.NewReader(`{
+  "allOrNone": true,
+  "records": [
+    {"attributes":{"referenceId":"good"},"Name":"Good","External_Id__c":"good-1"},
+    {"attributes":{"referenceId":"bad"},"External_Id__c":"bad-1"}
+  ]
+}`)))
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("upsert status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if got := len(org.Objects["Account"].Records); got != 0 {
+		t.Fatalf("allOrNone rollback left records = %d", got)
+	}
+	if !bytes.Contains(rec.Body.Bytes(), []byte(`"referenceId":"good"`)) || !bytes.Contains(rec.Body.Bytes(), []byte(`"referenceId":"bad"`)) || !bytes.Contains(rec.Body.Bytes(), []byte(`REQUIRED_FIELD_MISSING`)) {
+		t.Fatalf("upsert rollback body = %s", rec.Body.String())
+	}
+}
+
+func TestCompositeSObjectTypedUpsertMissingExternalIDReturnsRowError(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPatch, "/services/data/v61.0/composite/sobjects/Account/External_Id__c", strings.NewReader(`{
+  "records": [
+    {"attributes":{"referenceId":"missing"},"Name":"Missing External"}
+  ]
+}`)))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("missing external id status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if got := len(org.Objects["Account"].Records); got != 0 {
+		t.Fatalf("missing external id inserted records = %d", got)
+	}
+	if !bytes.Contains(rec.Body.Bytes(), []byte(`"success":false`)) || !bytes.Contains(rec.Body.Bytes(), []byte(`MISSING_ARGUMENT`)) || !bytes.Contains(rec.Body.Bytes(), []byte(`External_Id__c`)) {
+		t.Fatalf("missing external id body = %s", rec.Body.String())
+	}
+}
+
+func TestCompositeSObjectTypedUpsertRejectsNonExternalField(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPatch, "/services/data/v61.0/composite/sobjects/Account/Description", strings.NewReader(`{"records":[]}`)))
+	assertSalesforceError(t, rec, http.StatusBadRequest, "INVALID_FIELD", "not an external id")
+}
+
+func TestCompositeSObjectTypedUpsertRejectsUnknownExternalField(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPatch, "/services/data/v61.0/composite/sobjects/Account/Missing_Key__c", strings.NewReader(`{"records":[]}`)))
+	assertSalesforceError(t, rec, http.StatusBadRequest, "INVALID_FIELD", "unknown external id field")
+}
+
 func TestCompositeNamespaceUnsupportedStubs(t *testing.T) {
 	tests := []struct {
 		name          string
@@ -1985,13 +2093,6 @@ func TestCompositeNamespaceUnsupportedStubs(t *testing.T) {
 			path:          "/services/data/v61.0/composite/sobjects/Account",
 			body:          `{}`,
 			wantMessageIn: "Composite sObject typed collection routes",
-		},
-		{
-			name:          "composite sobject collection upsert",
-			method:        http.MethodPatch,
-			path:          "/services/data/v61.0/composite/sobjects/Account/External_Id__c",
-			body:          `{"allOrNone":true,"records":[]}`,
-			wantMessageIn: "Composite sObject collection upsert routes",
 		},
 		{
 			name:          "composite sobject typed collection delete",
@@ -2341,8 +2442,9 @@ func testOrg() storage.OrgState {
 			APIName:   "Account",
 			KeyPrefix: "001",
 			Fields: map[string]storage.Field{
-				"Name":        {APIName: "Name", Type: storage.FieldString, Required: true},
-				"Description": {APIName: "Description", Type: storage.FieldString},
+				"Name":           {APIName: "Name", Type: storage.FieldString, Required: true},
+				"Description":    {APIName: "Description", Type: storage.FieldString},
+				"External_Id__c": {APIName: "External_Id__c", Type: storage.FieldString, ExternalID: true, Unique: true},
 			},
 		},
 		Records: make(map[storage.ID]storage.Record),
