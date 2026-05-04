@@ -615,6 +615,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
   resources.
   - [x] Advertise the local Bulk jobs namespace while returning explicit
     unsupported errors for unmodeled jobs.
+  - [x] Advertise common unsupported top-level REST namespace links only for
+    routes that return deterministic unsupported errors.
 - [ ] Expand SObject REST resources: describe, layout-adjacent metadata where
   useful, recent, query, queryAll, and record CRUD edge cases.
   - [x] Return Salesforce-like object resource metadata for

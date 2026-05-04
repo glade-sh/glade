@@ -27,7 +27,7 @@
       "method": "GET",
       "path": "/services/data/v61.0",
       "status": 200,
-      "contains": ["\"composite\":\"/services/data/v61.0/composite\"", "\"jobs\":\"/services/data/v61.0/jobs\"", "\"recent\":\"/services/data/v61.0/recent\"", "\"search\":\"/services/data/v61.0/search\""]
+      "contains": ["\"actions\":\"/services/data/v61.0/actions\"", "\"analytics\":\"/services/data/v61.0/analytics\"", "\"apps\":\"/services/data/v61.0/apps\"", "\"chatter\":\"/services/data/v61.0/chatter\"", "\"composite\":\"/services/data/v61.0/composite\"", "\"connect\":\"/services/data/v61.0/connect\"", "\"jobs\":\"/services/data/v61.0/jobs\"", "\"metadata\":\"/services/data/v61.0/metadata\"", "\"process\":\"/services/data/v61.0/process\"", "\"recent\":\"/services/data/v61.0/recent\"", "\"search\":\"/services/data/v61.0/search\"", "\"support\":\"/services/data/v61.0/support\"", "\"wave\":\"/services/data/v61.0/wave\""]
     },
     {
       "name": "oaer-state",
