@@ -90,12 +90,12 @@ oaer db export --db .oaer/local-org.sqlite > exported-fixture.json
 ```
 
 The running server exposes fixture and reset endpoints under the REST version
-path. Full reset remains `POST /services/data/v61.0/oaer/reset`. Scoped resets
+path. Full reset remains `POST /services/data/v65.0/oaer/reset`. Scoped resets
 can target only data or platform state:
 
 ```bash
-curl -s -X POST http://127.0.0.1:8080/services/data/v61.0/oaer/reset/data
-curl -s -X POST 'http://127.0.0.1:8080/services/data/v61.0/oaer/reset?scope=users,limits,async'
+curl -s -X POST http://127.0.0.1:8080/services/data/v65.0/oaer/reset/data
+curl -s -X POST 'http://127.0.0.1:8080/services/data/v65.0/oaer/reset?scope=users,limits,async'
 ```
 
 Use `oaer db inspect --json` before and after mutating server requests as the

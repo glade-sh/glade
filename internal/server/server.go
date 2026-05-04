@@ -33,6 +33,15 @@ func NewWithStore(org *storage.OrgState, store interface{ Save(storage.OrgState)
 	return &Server{Org: org, Store: store}
 }
 
+func (s *Server) advertisedRESTAPIVersion() string {
+	if s != nil && s.Org != nil {
+		if v := strings.TrimSpace(s.Org.APIVersion); v != "" {
+			return storage.NormalizeRESTAPIVersion(v)
+		}
+	}
+	return storage.DefaultRESTAPIVersion
+}
+
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -64,7 +73,12 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
 			return
 		}
-		writeJSON(w, http.StatusOK, []map[string]string{{"label": "OAER Local API v61.0", "version": "61.0", "url": "/services/data/v61.0"}})
+		adv := s.advertisedRESTAPIVersion()
+		writeJSON(w, http.StatusOK, []map[string]string{{
+			"label":   "OAER Local API v" + adv,
+			"version": adv,
+			"url":     "/services/data/v" + adv,
+		}})
 		return
 	}
 	if len(parts) < 3 || parts[0] != "services" || parts[1] != "data" {

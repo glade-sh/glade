@@ -121,3 +121,32 @@ func TestCloneTransactionFrameDoesNotShareMutationSnapshots(t *testing.T) {
 		t.Fatalf("original after snapshot changed: %#v", frame.Mutations[0].After)
 	}
 }
+
+func TestNormalizeRESTAPIVersion(t *testing.T) {
+	cases := []struct {
+		in, want string
+	}{
+		{"65.0", "65.0"},
+		{" v62.3 ", "62.3"},
+		{"v59.5", "59.5"},
+		{"", ""},
+	}
+	for _, tc := range cases {
+		got := NormalizeRESTAPIVersion(tc.in)
+		if got != tc.want {
+			t.Fatalf("NormalizeRESTAPIVersion(%q)=%q want %q", tc.in, got, tc.want)
+		}
+	}
+}
+
+func TestEffectiveRESTAPIVersion(t *testing.T) {
+	if got := EffectiveRESTAPIVersion(""); got != DefaultRESTAPIVersion {
+		t.Fatalf("blank -> %q want %s", got, DefaultRESTAPIVersion)
+	}
+	if got := EffectiveRESTAPIVersion("   "); got != DefaultRESTAPIVersion {
+		t.Fatalf("whitespace-only -> %q want %s", got, DefaultRESTAPIVersion)
+	}
+	if got := EffectiveRESTAPIVersion("v70.0"); got != "70.0" {
+		t.Fatalf("explicit -> %q want 70.0", got)
+	}
+}

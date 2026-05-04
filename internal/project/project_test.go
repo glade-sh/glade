@@ -11,7 +11,7 @@ func TestLoadSFDXProject(t *testing.T) {
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{
   "packageDirectories": [{"path":"force-app","default":true}],
   "namespace": "NU",
-  "sourceApiVersion": "61.0"
+  "sourceApiVersion": "65.0"
 }`)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/Hello.cls"), "public class Hello {}")
 	writeFile(t, filepath.Join(root, "force-app/main/triggers/Hello.trigger"), "trigger Hello on Account (before insert) {}")
@@ -24,7 +24,7 @@ func TestLoadSFDXProject(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if p.Namespace != "NU" || p.SourceAPIVersion != "61.0" {
+	if p.Namespace != "NU" || p.SourceAPIVersion != "65.0" {
 		t.Fatalf("project metadata = %#v", p)
 	}
 	if len(p.ApexFiles) != 2 || len(p.ObjectFiles) != 1 || len(p.FieldFiles) != 1 || len(p.RecordTypeFiles) != 1 || len(p.ValidationRuleFiles) != 1 {

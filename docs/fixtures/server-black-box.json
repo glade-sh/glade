@@ -6,33 +6,33 @@
       "method": "GET",
       "path": "/services/data",
       "status": 200,
-      "contains": ["OAER Local API v61.0", "\"version\":\"61.0\"", "/services/data/v61.0"]
+      "contains": ["OAER Local API v65.0", "\"version\":\"65.0\"", "/services/data/v65.0"]
     },
     {
       "name": "resource-root",
       "method": "GET",
-      "path": "/services/data/v61.0",
+      "path": "/services/data/v65.0",
       "status": 200,
       "contains": ["sobjects", "queryAll", "tooling", "composite", "oaer"]
     },
     {
       "name": "tooling-root",
       "method": "GET",
-      "path": "/services/data/v61.0/tooling",
+      "path": "/services/data/v65.0/tooling",
       "status": 200,
       "contains": ["executeAnonymous", "query"]
     },
     {
       "name": "composite-root",
       "method": "GET",
-      "path": "/services/data/v61.0/composite",
+      "path": "/services/data/v65.0/composite",
       "status": 200,
       "contains": ["sobjects"]
     },
     {
       "name": "oaer-root",
       "method": "GET",
-      "path": "/services/data/v61.0/oaer",
+      "path": "/services/data/v65.0/oaer",
       "status": 200,
       "contains": ["fixture", "reset"]
     },
@@ -53,7 +53,7 @@
     {
       "name": "create-account",
       "method": "POST",
-      "path": "/services/data/v61.0/sobjects/Account",
+      "path": "/services/data/v65.0/sobjects/Account",
       "body": "{\"Name\":\"Acme\",\"Amount__c\":12.75}",
       "status": 201,
       "contains": ["\"success\":true", "001000000000001"]
@@ -61,49 +61,49 @@
     {
       "name": "query-account",
       "method": "GET",
-      "path": "/services/data/v61.0/query?q=SELECT%20Id,%20Name%20FROM%20Account%20WHERE%20Name%20=%20'Acme'",
+      "path": "/services/data/v65.0/query?q=SELECT%20Id,%20Name%20FROM%20Account%20WHERE%20Name%20=%20'Acme'",
       "status": 200,
-      "contains": ["\"totalSize\":1", "\"attributes\"", "\"url\":\"/services/data/v61.0/sobjects/Account/001000000000001\"", "Acme"]
+      "contains": ["\"totalSize\":1", "\"attributes\"", "\"url\":\"/services/data/v65.0/sobjects/Account/001000000000001\"", "Acme"]
     },
     {
       "name": "get-account",
       "method": "GET",
-      "path": "/services/data/v61.0/sobjects/Account/001000000000001",
+      "path": "/services/data/v65.0/sobjects/Account/001000000000001",
       "status": 200,
       "contains": ["\"attributes\"", "\"Id\":\"001000000000001\"", "\"Name\":\"Acme\"", "\"Amount__c\":\"12.75\""]
     },
     {
       "name": "null-account-name",
       "method": "PATCH",
-      "path": "/services/data/v61.0/sobjects/Account/001000000000001",
+      "path": "/services/data/v65.0/sobjects/Account/001000000000001",
       "body": "{\"Name\":null}",
       "status": 204
     },
     {
       "name": "get-account-null",
       "method": "GET",
-      "path": "/services/data/v61.0/sobjects/Account/001000000000001",
+      "path": "/services/data/v65.0/sobjects/Account/001000000000001",
       "status": 200,
       "contains": ["\"Name\":null", "\"attributes\""]
     },
     {
       "name": "describe-account-shape",
       "method": "GET",
-      "path": "/services/data/v61.0/sobjects/Account/describe",
+      "path": "/services/data/v65.0/sobjects/Account/describe",
       "status": 200,
       "contains": ["\"fields\"", "\"createable\":true", "\"updateable\":true", "\"length\""]
     },
     {
       "name": "recent-account-shape",
       "method": "GET",
-      "path": "/services/data/v61.0/sobjects/Account/recent",
+      "path": "/services/data/v65.0/sobjects/Account/recent",
       "status": 200,
-      "contains": ["\"attributes\"", "\"url\":\"/services/data/v61.0/sobjects/Account/001000000000001\""]
+      "contains": ["\"attributes\"", "\"url\":\"/services/data/v65.0/sobjects/Account/001000000000001\""]
     },
     {
       "name": "delete-account",
       "method": "DELETE",
-      "path": "/services/data/v61.0/sobjects/Account/001000000000001",
+      "path": "/services/data/v65.0/sobjects/Account/001000000000001",
       "status": 204
     },
     {
@@ -116,14 +116,14 @@
     {
       "name": "execute-anonymous-get",
       "method": "GET",
-      "path": "/services/data/v61.0/tooling/executeAnonymous?anonymousBody=System.debug%28%27from-get%27%29%3B",
+      "path": "/services/data/v65.0/tooling/executeAnonymous?anonymousBody=System.debug%28%27from-get%27%29%3B",
       "status": 200,
       "contains": ["\"compiled\":true", "\"success\":true", "from-get"]
     },
     {
       "name": "execute-anonymous-compile-failure",
       "method": "POST",
-      "path": "/services/data/v61.0/tooling/executeAnonymous",
+      "path": "/services/data/v65.0/tooling/executeAnonymous",
       "body": "{\"anonymousBody\":\"public class Nope {\"}",
       "status": 200,
       "contains": ["\"compiled\":false", "\"success\":false", "compileProblem"]
@@ -131,7 +131,7 @@
     {
       "name": "execute-anonymous-runtime-failure",
       "method": "POST",
-      "path": "/services/data/v61.0/tooling/executeAnonymous",
+      "path": "/services/data/v65.0/tooling/executeAnonymous",
       "body": "{\"anonymousBody\":\"insert new Account(Name = 'Rolled Back'); System.assert(false);\"}",
       "status": 200,
       "contains": ["\"compiled\":true", "\"success\":false", "exceptionMessage"]
@@ -139,21 +139,21 @@
     {
       "name": "execute-anonymous-runtime-rollback",
       "method": "GET",
-      "path": "/services/data/v61.0/query?q=SELECT%20Id%20FROM%20Account%20WHERE%20Name%20=%20'Rolled%20Back'",
+      "path": "/services/data/v65.0/query?q=SELECT%20Id%20FROM%20Account%20WHERE%20Name%20=%20'Rolled%20Back'",
       "status": 200,
       "contains": ["\"totalSize\":0"]
     },
     {
       "name": "tooling-query-unsupported-object",
       "method": "GET",
-      "path": "/services/data/v61.0/tooling/query?q=SELECT%20Id%20FROM%20ApexClass",
+      "path": "/services/data/v65.0/tooling/query?q=SELECT%20Id%20FROM%20ApexClass",
       "status": 400,
       "contains": ["errorCode", "UNSUPPORTED_TOOLING_OBJECT", "ApexClass"]
     },
     {
       "name": "execute-anonymous",
       "method": "POST",
-      "path": "/services/data/v61.0/tooling/executeAnonymous",
+      "path": "/services/data/v65.0/tooling/executeAnonymous",
       "body": "{\"anonymousBody\":\"insert new Account(Name = 'From Apex'); System.debug('ok');\"}",
       "status": 200,
       "contains": ["\"success\":true", "ok"]
@@ -161,7 +161,7 @@
     {
       "name": "composite-insert",
       "method": "POST",
-      "path": "/services/data/v61.0/composite/sobjects",
+      "path": "/services/data/v65.0/composite/sobjects",
       "body": "{\"allOrNone\":true,\"records\":[{\"attributes\":{\"type\":\"Account\"},\"Name\":\"Composite\"}]}",
       "status": 200,
       "contains": ["\"success\":true"]
@@ -169,7 +169,7 @@
     {
       "name": "composite-partial-reference-ids",
       "method": "POST",
-      "path": "/services/data/v61.0/composite/sobjects",
+      "path": "/services/data/v65.0/composite/sobjects",
       "body": "{\"allOrNone\":false,\"records\":[{\"attributes\":{\"type\":\"Account\"},\"referenceId\":\"good\",\"Name\":\"Composite Partial\"},{\"attributes\":{\"type\":\"Account\"},\"referenceId\":\"bad\"}]}",
       "status": 200,
       "contains": ["\"referenceId\":\"good\"", "\"referenceId\":\"bad\"", "\"success\":false", "REQUIRED_FIELD_MISSING"]
@@ -177,7 +177,7 @@
     {
       "name": "composite-all-or-none-rollback",
       "method": "POST",
-      "path": "/services/data/v61.0/composite/sobjects",
+      "path": "/services/data/v65.0/composite/sobjects",
       "body": "{\"allOrNone\":true,\"records\":[{\"attributes\":{\"type\":\"Account\"},\"referenceId\":\"rolled\",\"Name\":\"Composite Rolled Back\"},{\"attributes\":{\"type\":\"Account\"},\"referenceId\":\"bad-rolled\"}]}",
       "status": 400,
       "contains": ["\"referenceId\":\"rolled\"", "\"referenceId\":\"bad-rolled\"", "REQUIRED_FIELD_MISSING"]
@@ -185,14 +185,14 @@
     {
       "name": "composite-all-or-none-rollback-proof",
       "method": "GET",
-      "path": "/services/data/v61.0/query?q=SELECT%20Id%20FROM%20Account%20WHERE%20Name%20=%20'Composite%20Rolled%20Back'",
+      "path": "/services/data/v65.0/query?q=SELECT%20Id%20FROM%20Account%20WHERE%20Name%20=%20'Composite%20Rolled%20Back'",
       "status": 200,
       "contains": ["\"totalSize\":0"]
     },
     {
       "name": "composite-batch-unsupported",
       "method": "POST",
-      "path": "/services/data/v61.0/composite",
+      "path": "/services/data/v65.0/composite",
       "body": "{\"compositeRequest\":[]}",
       "status": 400,
       "contains": ["errorCode", "UNSUPPORTED_COMPOSITE"]
@@ -200,7 +200,7 @@
     {
       "name": "error-shape",
       "method": "GET",
-      "path": "/services/data/v61.0/sobjects/Missing__c/describe",
+      "path": "/services/data/v65.0/sobjects/Missing__c/describe",
       "status": 404,
       "contains": ["errorCode", "NOT_FOUND"]
     },
@@ -214,14 +214,14 @@
     {
       "name": "malformed-query-shape",
       "method": "GET",
-      "path": "/services/data/v61.0/query?q=SELECT%20FROM",
+      "path": "/services/data/v65.0/query?q=SELECT%20FROM",
       "status": 400,
       "contains": ["errorCode", "MALFORMED_QUERY"]
     },
     {
       "name": "dml-field-error-shape",
       "method": "POST",
-      "path": "/services/data/v61.0/sobjects/Account",
+      "path": "/services/data/v65.0/sobjects/Account",
       "body": "{}",
       "status": 400,
       "contains": ["errorCode", "REQUIRED_FIELD_MISSING", "\"fields\":[\"Name\"]"]
@@ -229,7 +229,7 @@
     {
       "name": "composite-field-error-shape",
       "method": "POST",
-      "path": "/services/data/v61.0/composite/sobjects",
+      "path": "/services/data/v65.0/composite/sobjects",
       "body": "{\"allOrNone\":true,\"records\":[{\"attributes\":{\"type\":\"Account\"}}]}",
       "status": 400,
       "contains": ["statusCode", "REQUIRED_FIELD_MISSING", "\"fields\":[\"Name\"]"]
@@ -237,7 +237,7 @@
     {
       "name": "oaer-fixture-seed",
       "method": "POST",
-      "path": "/services/data/v61.0/oaer/fixture",
+      "path": "/services/data/v65.0/oaer/fixture",
       "body": "{\"version\":\"oaer.storage.v1\",\"objects\":[{\"name\":\"Account\",\"records\":[{\"alias\":\"fixture\",\"fields\":{\"Name\":{\"kind\":\"string\",\"string\":\"Fixture Seed\"}}}]}]}",
       "status": 200,
       "contains": ["\"success\":true", "\"Account\""]
@@ -245,14 +245,14 @@
     {
       "name": "oaer-fixture-export",
       "method": "GET",
-      "path": "/services/data/v61.0/oaer/fixture",
+      "path": "/services/data/v65.0/oaer/fixture",
       "status": 200,
       "contains": ["\"version\":\"oaer.storage.v1\"", "Fixture Seed"]
     },
     {
       "name": "scoped-reset-users-limits-async",
       "method": "POST",
-      "path": "/services/data/v61.0/oaer/reset",
+      "path": "/services/data/v65.0/oaer/reset",
       "body": "{\"scopes\":[\"users\",\"limits\",\"async\"]}",
       "status": 200,
       "contains": ["\"scopes\":[\"users\",\"limits\",\"async\"]", "\"success\":true"]
@@ -260,7 +260,7 @@
     {
       "name": "scoped-reset-platform",
       "method": "POST",
-      "path": "/services/data/v61.0/oaer/reset",
+      "path": "/services/data/v65.0/oaer/reset",
       "body": "{\"scopes\":[\"platform\"]}",
       "status": 200,
       "contains": ["\"scopes\":[\"platform\"]", "\"success\":true"]
@@ -268,21 +268,21 @@
     {
       "name": "scoped-reset",
       "method": "POST",
-      "path": "/services/data/v61.0/oaer/reset/data",
+      "path": "/services/data/v65.0/oaer/reset/data",
       "status": 200,
       "contains": ["\"scopes\":[\"data\"]"]
     },
     {
       "name": "default-reset",
       "method": "POST",
-      "path": "/services/data/v61.0/oaer/reset",
+      "path": "/services/data/v65.0/oaer/reset",
       "status": 200,
       "contains": ["\"scopes\":[\"all\"]", "\"success\":true"]
     },
     {
       "name": "persist-after-reset",
       "method": "POST",
-      "path": "/services/data/v61.0/sobjects/Account",
+      "path": "/services/data/v65.0/sobjects/Account",
       "body": "{\"Name\":\"Persisted\"}",
       "status": 201,
       "contains": ["\"success\":true", "001000000000001"]

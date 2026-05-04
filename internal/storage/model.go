@@ -4,6 +4,26 @@ import "strings"
 
 const FixtureVersion = "oaer.storage.v1"
 
+// DefaultRESTAPIVersion is the REST API release string advertised by local HTTP
+// surfaces when [OrgState.APIVersion] is empty (no leading "v").
+const DefaultRESTAPIVersion = "65.0"
+
+// NormalizeRESTAPIVersion trims whitespace and strips an optional leading "v".
+func NormalizeRESTAPIVersion(s string) string {
+	s = strings.TrimSpace(s)
+	return strings.TrimPrefix(s, "v")
+}
+
+// EffectiveRESTAPIVersion returns the canonical REST API release (no leading "v")
+// for persisted org version s, or [DefaultRESTAPIVersion] when s is blank.
+func EffectiveRESTAPIVersion(s string) string {
+	v := NormalizeRESTAPIVersion(s)
+	if v != "" {
+		return v
+	}
+	return DefaultRESTAPIVersion
+}
+
 type OrgState struct {
 	OrgID        string                 `json:"orgId,omitempty"`
 	APIVersion   string                 `json:"apiVersion,omitempty"`

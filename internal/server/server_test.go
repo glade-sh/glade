@@ -20,7 +20,7 @@ func TestSObjectCRUDAndQuery(t *testing.T) {
 
 	body := `{"Name":{"kind":"string","string":"Acme"}}`
 	create := httptest.NewRecorder()
-	handler.ServeHTTP(create, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/sobjects/Account", strings.NewReader(body)))
+	handler.ServeHTTP(create, httptest.NewRequest(http.MethodPost, "/services/data/v65.0/sobjects/Account", strings.NewReader(body)))
 	if create.Code != http.StatusCreated {
 		t.Fatalf("create status = %d body=%s", create.Code, create.Body.String())
 	}
@@ -35,25 +35,25 @@ func TestSObjectCRUDAndQuery(t *testing.T) {
 	}
 
 	get := httptest.NewRecorder()
-	handler.ServeHTTP(get, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/"+string(created.ID), nil))
+	handler.ServeHTTP(get, httptest.NewRequest(http.MethodGet, "/services/data/v65.0/sobjects/Account/"+string(created.ID), nil))
 	if get.Code != http.StatusOK || !bytes.Contains(get.Body.Bytes(), []byte(`"Acme"`)) {
 		t.Fatalf("get status = %d body=%s", get.Code, get.Body.String())
 	}
 
 	patch := httptest.NewRecorder()
-	handler.ServeHTTP(patch, httptest.NewRequest(http.MethodPatch, "/services/data/v61.0/sobjects/Account/"+string(created.ID), strings.NewReader(`{"Name":{"kind":"string","string":"Changed"}}`)))
+	handler.ServeHTTP(patch, httptest.NewRequest(http.MethodPatch, "/services/data/v65.0/sobjects/Account/"+string(created.ID), strings.NewReader(`{"Name":{"kind":"string","string":"Changed"}}`)))
 	if patch.Code != http.StatusNoContent {
 		t.Fatalf("patch status = %d body=%s", patch.Code, patch.Body.String())
 	}
 
 	query := httptest.NewRecorder()
-	handler.ServeHTTP(query, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/query?q=SELECT%20Id,%20Name%20FROM%20Account%20WHERE%20Name%20=%20'Changed'", nil))
+	handler.ServeHTTP(query, httptest.NewRequest(http.MethodGet, "/services/data/v65.0/query?q=SELECT%20Id,%20Name%20FROM%20Account%20WHERE%20Name%20=%20'Changed'", nil))
 	if query.Code != http.StatusOK || !bytes.Contains(query.Body.Bytes(), []byte(`"totalSize":1`)) {
 		t.Fatalf("query status = %d body=%s", query.Code, query.Body.String())
 	}
 
 	del := httptest.NewRecorder()
-	handler.ServeHTTP(del, httptest.NewRequest(http.MethodDelete, "/services/data/v61.0/sobjects/Account/"+string(created.ID), nil))
+	handler.ServeHTTP(del, httptest.NewRequest(http.MethodDelete, "/services/data/v65.0/sobjects/Account/"+string(created.ID), nil))
 	if del.Code != http.StatusNoContent {
 		t.Fatalf("delete status = %d body=%s", del.Code, del.Body.String())
 	}
@@ -65,14 +65,40 @@ func TestDescribeEndpoints(t *testing.T) {
 
 	list := httptest.NewRecorder()
 	handler.ServeHTTP(list, httptest.NewRequest(http.MethodGet, "/services/data", nil))
-	if list.Code != http.StatusOK || !bytes.Contains(list.Body.Bytes(), []byte(`/services/data/v61.0`)) {
+	if list.Code != http.StatusOK || !bytes.Contains(list.Body.Bytes(), []byte(`/services/data/v65.0`)) {
 		t.Fatalf("versions status = %d body=%s", list.Code, list.Body.String())
 	}
 
 	sobjects := httptest.NewRecorder()
-	handler.ServeHTTP(sobjects, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects", nil))
+	handler.ServeHTTP(sobjects, httptest.NewRequest(http.MethodGet, "/services/data/v65.0/sobjects", nil))
 	if sobjects.Code != http.StatusOK || !bytes.Contains(sobjects.Body.Bytes(), []byte(`"Account"`)) {
 		t.Fatalf("sobjects status = %d body=%s", sobjects.Code, sobjects.Body.String())
+	}
+}
+
+func TestOlderRESTAPIVersionPathLeavesURLsMatchedToSegment(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects", nil))
+	if rec.Code != http.StatusOK || !bytes.Contains(rec.Body.Bytes(), []byte(`/services/data/v61.0/sobjects/Account/describe`)) {
+		t.Fatalf("passthrough paths status = %d body=%s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestAdvertisedVersionsReflectOrgAPISetting(t *testing.T) {
+	org := testOrg()
+	org.APIVersion = "  v59.0 "
+	handler := New(&org)
+
+	versions := httptest.NewRecorder()
+	handler.ServeHTTP(versions, httptest.NewRequest(http.MethodGet, "/services/data", nil))
+	var rows []map[string]string
+	if err := json.Unmarshal(versions.Body.Bytes(), &rows); err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 1 || rows[0]["version"] != "59.0" || rows[0]["url"] != "/services/data/v59.0" {
+		t.Fatalf("versions = %#v", rows)
 	}
 }
 
@@ -89,12 +115,12 @@ func TestResourceDiscoveryEndpoints(t *testing.T) {
 	if err := json.Unmarshal(versions.Body.Bytes(), &versionRows); err != nil {
 		t.Fatal(err)
 	}
-	if len(versionRows) != 1 || versionRows[0]["version"] != "61.0" || versionRows[0]["label"] == "" || versionRows[0]["url"] != "/services/data/v61.0" {
+	if len(versionRows) != 1 || versionRows[0]["version"] != "65.0" || versionRows[0]["label"] == "" || versionRows[0]["url"] != "/services/data/v65.0" {
 		t.Fatalf("versions = %#v", versionRows)
 	}
 
 	root := httptest.NewRecorder()
-	handler.ServeHTTP(root, httptest.NewRequest(http.MethodGet, "/services/data/v61.0", nil))
+	handler.ServeHTTP(root, httptest.NewRequest(http.MethodGet, "/services/data/v65.0", nil))
 	if root.Code != http.StatusOK {
 		t.Fatalf("root status = %d body=%s", root.Code, root.Body.String())
 	}
@@ -112,9 +138,9 @@ func TestResourceDiscoveryEndpoints(t *testing.T) {
 		path string
 		keys []string
 	}{
-		{path: "/services/data/v61.0/tooling", keys: []string{"executeAnonymous", "query"}},
-		{path: "/services/data/v61.0/composite", keys: []string{"sobjects"}},
-		{path: "/services/data/v61.0/oaer", keys: []string{"fixture", "reset"}},
+		{path: "/services/data/v65.0/tooling", keys: []string{"executeAnonymous", "query"}},
+		{path: "/services/data/v65.0/composite", keys: []string{"sobjects"}},
+		{path: "/services/data/v65.0/oaer", keys: []string{"fixture", "reset"}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.path, func(t *testing.T) {
@@ -135,7 +161,7 @@ func TestResourceDiscoveryEndpoints(t *testing.T) {
 		})
 	}
 
-	for _, path := range []string{"/services/data/v61.0/tooling", "/services/data/v61.0/oaer"} {
+	for _, path := range []string{"/services/data/v65.0/tooling", "/services/data/v65.0/oaer"} {
 		t.Run(path+" method", func(t *testing.T) {
 			res := httptest.NewRecorder()
 			handler.ServeHTTP(res, httptest.NewRequest(http.MethodPost, path, nil))
@@ -164,7 +190,7 @@ func TestOAERFixtureAndResetEndpointsPersist(t *testing.T) {
 	handler := NewWithStore(&org, store)
 
 	seed := httptest.NewRecorder()
-	handler.ServeHTTP(seed, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/oaer/fixture", strings.NewReader(`{
+	handler.ServeHTTP(seed, httptest.NewRequest(http.MethodPost, "/services/data/v65.0/oaer/fixture", strings.NewReader(`{
   "version":"oaer.storage.v1",
   "objects":[{"name":"Account","records":[{"alias":"acme","fields":{"Name":{"kind":"string","string":"Acme"}}}]}]
 }`)))
@@ -176,13 +202,13 @@ func TestOAERFixtureAndResetEndpointsPersist(t *testing.T) {
 	}
 
 	exported := httptest.NewRecorder()
-	handler.ServeHTTP(exported, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/oaer/fixture", nil))
+	handler.ServeHTTP(exported, httptest.NewRequest(http.MethodGet, "/services/data/v65.0/oaer/fixture", nil))
 	if exported.Code != http.StatusOK || !bytes.Contains(exported.Body.Bytes(), []byte(`"Acme"`)) {
 		t.Fatalf("export status = %d body=%s", exported.Code, exported.Body.String())
 	}
 
 	reset := httptest.NewRecorder()
-	handler.ServeHTTP(reset, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/oaer/reset", nil))
+	handler.ServeHTTP(reset, httptest.NewRequest(http.MethodPost, "/services/data/v65.0/oaer/reset", nil))
 	if reset.Code != http.StatusOK {
 		t.Fatalf("reset status = %d body=%s", reset.Code, reset.Body.String())
 	}
@@ -213,7 +239,7 @@ func TestOAERScopedResetEndpoints(t *testing.T) {
 	handler := New(&org)
 
 	resetData := httptest.NewRecorder()
-	handler.ServeHTTP(resetData, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/oaer/reset/data", nil))
+	handler.ServeHTTP(resetData, httptest.NewRequest(http.MethodPost, "/services/data/v65.0/oaer/reset/data", nil))
 	if resetData.Code != http.StatusOK {
 		t.Fatalf("reset data status = %d body=%s", resetData.Code, resetData.Body.String())
 	}
@@ -225,7 +251,7 @@ func TestOAERScopedResetEndpoints(t *testing.T) {
 	}
 
 	resetUsers := httptest.NewRecorder()
-	handler.ServeHTTP(resetUsers, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/oaer/reset", strings.NewReader(`{"scopes":["users","limits","async"]}`)))
+	handler.ServeHTTP(resetUsers, httptest.NewRequest(http.MethodPost, "/services/data/v65.0/oaer/reset", strings.NewReader(`{"scopes":["users","limits","async"]}`)))
 	if resetUsers.Code != http.StatusOK {
 		t.Fatalf("reset users status = %d body=%s", resetUsers.Code, resetUsers.Body.String())
 	}
@@ -242,7 +268,7 @@ func TestOAERScopedResetRejectsUnknownScope(t *testing.T) {
 	handler := New(&org)
 
 	reset := httptest.NewRecorder()
-	handler.ServeHTTP(reset, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/oaer/reset/nope", nil))
+	handler.ServeHTTP(reset, httptest.NewRequest(http.MethodPost, "/services/data/v65.0/oaer/reset/nope", nil))
 	if reset.Code != http.StatusBadRequest {
 		t.Fatalf("reset status = %d body=%s", reset.Code, reset.Body.String())
 	}
@@ -261,7 +287,7 @@ func TestOAERScopedResetDeduplicatesAndAllWins(t *testing.T) {
 	handler := New(&org)
 
 	reset := httptest.NewRecorder()
-	handler.ServeHTTP(reset, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/oaer/reset?scope=all,data,data", nil))
+	handler.ServeHTTP(reset, httptest.NewRequest(http.MethodPost, "/services/data/v65.0/oaer/reset?scope=all,data,data", nil))
 	if reset.Code != http.StatusOK {
 		t.Fatalf("reset status = %d body=%s", reset.Code, reset.Body.String())
 	}
@@ -282,7 +308,7 @@ func TestIdentityLimitsDescribeRecentAndNormalRESTPayloads(t *testing.T) {
 	handler := New(&org)
 
 	create := httptest.NewRecorder()
-	handler.ServeHTTP(create, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/sobjects/Account", strings.NewReader(`{"Name":"Acme"}`)))
+	handler.ServeHTTP(create, httptest.NewRequest(http.MethodPost, "/services/data/v65.0/sobjects/Account", strings.NewReader(`{"Name":"Acme"}`)))
 	if create.Code != http.StatusCreated {
 		t.Fatalf("create status = %d body=%s", create.Code, create.Body.String())
 	}
@@ -300,19 +326,19 @@ func TestIdentityLimitsDescribeRecentAndNormalRESTPayloads(t *testing.T) {
 	}
 
 	limits := httptest.NewRecorder()
-	handler.ServeHTTP(limits, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/limits", nil))
+	handler.ServeHTTP(limits, httptest.NewRequest(http.MethodGet, "/services/data/v65.0/limits", nil))
 	if limits.Code != http.StatusOK || !bytes.Contains(limits.Body.Bytes(), []byte(`DailyApiRequests`)) {
 		t.Fatalf("limits status = %d body=%s", limits.Code, limits.Body.String())
 	}
 
 	describe := httptest.NewRecorder()
-	handler.ServeHTTP(describe, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/describe", nil))
+	handler.ServeHTTP(describe, httptest.NewRequest(http.MethodGet, "/services/data/v65.0/sobjects/Account/describe", nil))
 	if describe.Code != http.StatusOK || !bytes.Contains(describe.Body.Bytes(), []byte(`"fields"`)) {
 		t.Fatalf("describe status = %d body=%s", describe.Code, describe.Body.String())
 	}
 
 	recent := httptest.NewRecorder()
-	handler.ServeHTTP(recent, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/recent", nil))
+	handler.ServeHTTP(recent, httptest.NewRequest(http.MethodGet, "/services/data/v65.0/sobjects/Account/recent", nil))
 	if recent.Code != http.StatusOK || !bytes.Contains(recent.Body.Bytes(), []byte(`"Acme"`)) {
 		t.Fatalf("recent status = %d body=%s", recent.Code, recent.Body.String())
 	}
@@ -337,7 +363,7 @@ func TestSObjectRESTResponseShapes(t *testing.T) {
 	handler := New(&org)
 
 	create := httptest.NewRecorder()
-	handler.ServeHTTP(create, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/sobjects/Account", strings.NewReader(`{
+	handler.ServeHTTP(create, httptest.NewRequest(http.MethodPost, "/services/data/v65.0/sobjects/Account", strings.NewReader(`{
   "attributes":{"type":"Ignored"},
   "Name":"Acme",
   "Active__c":true,
@@ -352,13 +378,13 @@ func TestSObjectRESTResponseShapes(t *testing.T) {
 	}
 
 	patch := httptest.NewRecorder()
-	handler.ServeHTTP(patch, httptest.NewRequest(http.MethodPatch, "/services/data/v61.0/sobjects/Account/001000000000001", strings.NewReader(`{"Name":null}`)))
+	handler.ServeHTTP(patch, httptest.NewRequest(http.MethodPatch, "/services/data/v65.0/sobjects/Account/001000000000001", strings.NewReader(`{"Name":null}`)))
 	if patch.Code != http.StatusNoContent {
 		t.Fatalf("patch status = %d body=%s", patch.Code, patch.Body.String())
 	}
 
 	get := httptest.NewRecorder()
-	handler.ServeHTTP(get, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/001000000000001", nil))
+	handler.ServeHTTP(get, httptest.NewRequest(http.MethodGet, "/services/data/v65.0/sobjects/Account/001000000000001", nil))
 	if get.Code != http.StatusOK {
 		t.Fatalf("get status = %d body=%s", get.Code, get.Body.String())
 	}
@@ -367,7 +393,7 @@ func TestSObjectRESTResponseShapes(t *testing.T) {
 		t.Fatal(err)
 	}
 	attrs, ok := record["attributes"].(map[string]any)
-	if !ok || attrs["type"] != "Account" || attrs["url"] != "/services/data/v61.0/sobjects/Account/001000000000001" {
+	if !ok || attrs["type"] != "Account" || attrs["url"] != "/services/data/v65.0/sobjects/Account/001000000000001" {
 		t.Fatalf("record attributes = %#v body=%s", record["attributes"], get.Body.String())
 	}
 	if record["Id"] != "001000000000001" || record["Name"] != nil || record["Active__c"] != true || record["Score__c"].(float64) != 7 || record["Amount__c"] != "12.75" {
@@ -378,7 +404,7 @@ func TestSObjectRESTResponseShapes(t *testing.T) {
 	}
 
 	query := httptest.NewRecorder()
-	handler.ServeHTTP(query, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/query?q=SELECT%20Id,%20Name,%20Active__c%20FROM%20Account", nil))
+	handler.ServeHTTP(query, httptest.NewRequest(http.MethodGet, "/services/data/v65.0/query?q=SELECT%20Id,%20Name,%20Active__c%20FROM%20Account", nil))
 	if query.Code != http.StatusOK {
 		t.Fatalf("query status = %d body=%s", query.Code, query.Body.String())
 	}
@@ -392,12 +418,12 @@ func TestSObjectRESTResponseShapes(t *testing.T) {
 		t.Fatalf("query payload = %#v", queryPayload)
 	}
 	queryAttrs, ok := queryPayload.Records[0]["attributes"].(map[string]any)
-	if !ok || queryAttrs["type"] != "Account" || queryAttrs["url"] != "/services/data/v61.0/sobjects/Account/001000000000001" {
+	if !ok || queryAttrs["type"] != "Account" || queryAttrs["url"] != "/services/data/v65.0/sobjects/Account/001000000000001" {
 		t.Fatalf("query attributes = %#v", queryPayload.Records[0]["attributes"])
 	}
 
 	recent := httptest.NewRecorder()
-	handler.ServeHTTP(recent, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/recent", nil))
+	handler.ServeHTTP(recent, httptest.NewRequest(http.MethodGet, "/services/data/v65.0/sobjects/Account/recent", nil))
 	if recent.Code != http.StatusOK {
 		t.Fatalf("recent status = %d body=%s", recent.Code, recent.Body.String())
 	}
@@ -409,12 +435,12 @@ func TestSObjectRESTResponseShapes(t *testing.T) {
 		t.Fatalf("recent rows = %#v", recentRows)
 	}
 	recentAttrs, ok := recentRows[0]["attributes"].(map[string]any)
-	if !ok || recentAttrs["type"] != "Account" || recentAttrs["url"] != "/services/data/v61.0/sobjects/Account/001000000000001" {
+	if !ok || recentAttrs["type"] != "Account" || recentAttrs["url"] != "/services/data/v65.0/sobjects/Account/001000000000001" {
 		t.Fatalf("recent attributes = %#v", recentRows[0]["attributes"])
 	}
 
 	describe := httptest.NewRecorder()
-	handler.ServeHTTP(describe, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/describe", nil))
+	handler.ServeHTTP(describe, httptest.NewRequest(http.MethodGet, "/services/data/v65.0/sobjects/Account/describe", nil))
 	if describe.Code != http.StatusOK {
 		t.Fatalf("describe status = %d body=%s", describe.Code, describe.Body.String())
 	}
@@ -451,7 +477,7 @@ func TestSObjectRESTResponseShapes(t *testing.T) {
 	org.Objects["Account"] = account
 
 	queryDefault := httptest.NewRecorder()
-	handler.ServeHTTP(queryDefault, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/query?q=SELECT%20Id,%20Name%20FROM%20Account", nil))
+	handler.ServeHTTP(queryDefault, httptest.NewRequest(http.MethodGet, "/services/data/v65.0/query?q=SELECT%20Id,%20Name%20FROM%20Account", nil))
 	if queryDefault.Code != http.StatusOK || bytes.Contains(queryDefault.Body.Bytes(), []byte(`Deleted`)) {
 		t.Fatalf("query default status = %d body=%s", queryDefault.Code, queryDefault.Body.String())
 	}
@@ -542,7 +568,7 @@ func TestLocalAuthUserSelectionAndDMLStamping(t *testing.T) {
 	}
 
 	create := httptest.NewRecorder()
-	createReq := httptest.NewRequest(http.MethodPost, "/services/data/v61.0/sobjects/Account", strings.NewReader(`{"Name":"Stamped"}`))
+	createReq := httptest.NewRequest(http.MethodPost, "/services/data/v65.0/sobjects/Account", strings.NewReader(`{"Name":"Stamped"}`))
 	createReq.Header.Set("X-OAER-User-Id", "005000000000222")
 	handler.ServeHTTP(create, createReq)
 	if create.Code != http.StatusCreated {
@@ -554,7 +580,7 @@ func TestLocalAuthUserSelectionAndDMLStamping(t *testing.T) {
 	}
 
 	composite := httptest.NewRecorder()
-	compositeReq := httptest.NewRequest(http.MethodPost, "/services/data/v61.0/composite/sobjects", strings.NewReader(`{
+	compositeReq := httptest.NewRequest(http.MethodPost, "/services/data/v65.0/composite/sobjects", strings.NewReader(`{
   "allOrNone": true,
   "records": [
     {"attributes":{"type":"Account"},"Name":"Composite Stamped"}
@@ -593,7 +619,7 @@ func TestToolingExecuteAnonymousAndCompositeSObjects(t *testing.T) {
 	handler := New(&org)
 
 	exec := httptest.NewRecorder()
-	handler.ServeHTTP(exec, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/tooling/executeAnonymous", strings.NewReader(`{"anonymousBody":"insert new Account(Name = 'From Apex'); System.debug('ok');"}`)))
+	handler.ServeHTTP(exec, httptest.NewRequest(http.MethodPost, "/services/data/v65.0/tooling/executeAnonymous", strings.NewReader(`{"anonymousBody":"insert new Account(Name = 'From Apex'); System.debug('ok');"}`)))
 	if exec.Code != http.StatusOK || !bytes.Contains(exec.Body.Bytes(), []byte(`"success":true`)) || !bytes.Contains(exec.Body.Bytes(), []byte(`"ok"`)) {
 		t.Fatalf("executeAnonymous status = %d body=%s", exec.Code, exec.Body.String())
 	}
@@ -602,7 +628,7 @@ func TestToolingExecuteAnonymousAndCompositeSObjects(t *testing.T) {
 	}
 
 	composite := httptest.NewRecorder()
-	handler.ServeHTTP(composite, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/composite/sobjects", strings.NewReader(`{
+	handler.ServeHTTP(composite, httptest.NewRequest(http.MethodPost, "/services/data/v65.0/composite/sobjects", strings.NewReader(`{
   "allOrNone": true,
   "records": [
     {"attributes":{"type":"Account"},"Name":"Composite"}
@@ -634,7 +660,7 @@ func TestToolingExecuteAnonymousUsesServerLimitMode(t *testing.T) {
 	}
 
 	exec := httptest.NewRecorder()
-	handler.ServeHTTP(exec, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/tooling/executeAnonymous", strings.NewReader(`{"anonymousBody":"System.debug('limited');"}`)))
+	handler.ServeHTTP(exec, httptest.NewRequest(http.MethodPost, "/services/data/v65.0/tooling/executeAnonymous", strings.NewReader(`{"anonymousBody":"System.debug('limited');"}`)))
 	if exec.Code != http.StatusOK || !bytes.Contains(exec.Body.Bytes(), []byte(`"success":false`)) || !bytes.Contains(exec.Body.Bytes(), []byte(`System.LimitException`)) {
 		t.Fatalf("executeAnonymous status = %d body=%s", exec.Code, exec.Body.String())
 	}
@@ -645,7 +671,7 @@ func TestToolingExecuteAnonymousResponseShapes(t *testing.T) {
 	handler := New(&org)
 
 	getExec := httptest.NewRecorder()
-	handler.ServeHTTP(getExec, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/tooling/executeAnonymous?anonymousBody=System.debug%28%27from-get%27%29%3B", nil))
+	handler.ServeHTTP(getExec, httptest.NewRequest(http.MethodGet, "/services/data/v65.0/tooling/executeAnonymous?anonymousBody=System.debug%28%27from-get%27%29%3B", nil))
 	if getExec.Code != http.StatusOK {
 		t.Fatalf("GET executeAnonymous status = %d body=%s", getExec.Code, getExec.Body.String())
 	}
@@ -663,7 +689,7 @@ func TestToolingExecuteAnonymousResponseShapes(t *testing.T) {
 	}
 
 	compileFailure := httptest.NewRecorder()
-	handler.ServeHTTP(compileFailure, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/tooling/executeAnonymous", strings.NewReader(`{"anonymousBody":"public class Nope {"}`)))
+	handler.ServeHTTP(compileFailure, httptest.NewRequest(http.MethodPost, "/services/data/v65.0/tooling/executeAnonymous", strings.NewReader(`{"anonymousBody":"public class Nope {"}`)))
 	if compileFailure.Code != http.StatusOK {
 		t.Fatalf("compile failure status = %d body=%s", compileFailure.Code, compileFailure.Body.String())
 	}
@@ -676,7 +702,7 @@ func TestToolingExecuteAnonymousResponseShapes(t *testing.T) {
 	}
 
 	runtimeFailure := httptest.NewRecorder()
-	handler.ServeHTTP(runtimeFailure, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/tooling/executeAnonymous", strings.NewReader(`{"anonymousBody":"insert new Account(Name = 'Rolled Back'); System.assert(false);"}`)))
+	handler.ServeHTTP(runtimeFailure, httptest.NewRequest(http.MethodPost, "/services/data/v65.0/tooling/executeAnonymous", strings.NewReader(`{"anonymousBody":"insert new Account(Name = 'Rolled Back'); System.assert(false);"}`)))
 	if runtimeFailure.Code != http.StatusOK {
 		t.Fatalf("runtime failure status = %d body=%s", runtimeFailure.Code, runtimeFailure.Body.String())
 	}
@@ -697,13 +723,13 @@ func TestToolingQuerySupportedAndUnsupportedObjects(t *testing.T) {
 	handler := New(&org)
 
 	supported := httptest.NewRecorder()
-	handler.ServeHTTP(supported, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/tooling/query?q=SELECT%20Id,%20Name%20FROM%20Account", nil))
+	handler.ServeHTTP(supported, httptest.NewRequest(http.MethodGet, "/services/data/v65.0/tooling/query?q=SELECT%20Id,%20Name%20FROM%20Account", nil))
 	if supported.Code != http.StatusOK || !bytes.Contains(supported.Body.Bytes(), []byte(`"totalSize":1`)) || !bytes.Contains(supported.Body.Bytes(), []byte(`"attributes"`)) {
 		t.Fatalf("supported tooling query status = %d body=%s", supported.Code, supported.Body.String())
 	}
 
 	unsupported := httptest.NewRecorder()
-	handler.ServeHTTP(unsupported, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/tooling/query?q=SELECT%20Id%20FROM%20ApexClass", nil))
+	handler.ServeHTTP(unsupported, httptest.NewRequest(http.MethodGet, "/services/data/v65.0/tooling/query?q=SELECT%20Id%20FROM%20ApexClass", nil))
 	if unsupported.Code != http.StatusBadRequest {
 		t.Fatalf("unsupported tooling query status = %d body=%s", unsupported.Code, unsupported.Body.String())
 	}
@@ -718,7 +744,7 @@ func TestServerRollsBackFailedRequestTransactions(t *testing.T) {
 	handler := New(&org)
 
 	exec := httptest.NewRecorder()
-	handler.ServeHTTP(exec, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/tooling/executeAnonymous", strings.NewReader(`{"anonymousBody":"insert new Account(Name = 'Transient'); System.assert(false);"}`)))
+	handler.ServeHTTP(exec, httptest.NewRequest(http.MethodPost, "/services/data/v65.0/tooling/executeAnonymous", strings.NewReader(`{"anonymousBody":"insert new Account(Name = 'Transient'); System.assert(false);"}`)))
 	if exec.Code != http.StatusOK || !bytes.Contains(exec.Body.Bytes(), []byte(`"success":false`)) {
 		t.Fatalf("executeAnonymous status = %d body=%s", exec.Code, exec.Body.String())
 	}
@@ -729,7 +755,7 @@ func TestServerRollsBackFailedRequestTransactions(t *testing.T) {
 	store := &failingStore{}
 	handler = NewWithStore(&org, store)
 	create := httptest.NewRecorder()
-	handler.ServeHTTP(create, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/sobjects/Account", strings.NewReader(`{"Name":"PersistFail"}`)))
+	handler.ServeHTTP(create, httptest.NewRequest(http.MethodPost, "/services/data/v65.0/sobjects/Account", strings.NewReader(`{"Name":"PersistFail"}`)))
 	if create.Code != http.StatusInternalServerError {
 		t.Fatalf("create status = %d body=%s", create.Code, create.Body.String())
 	}
@@ -743,7 +769,7 @@ func TestServerPersistFailuresDoNotLeakMutations(t *testing.T) {
 		org := testOrgWithAccount("001000000000001", "Original")
 		handler := NewWithStore(&org, &failingStore{})
 		res := httptest.NewRecorder()
-		handler.ServeHTTP(res, httptest.NewRequest(http.MethodPatch, "/services/data/v61.0/sobjects/Account/001000000000001", strings.NewReader(`{"Name":"Changed"}`)))
+		handler.ServeHTTP(res, httptest.NewRequest(http.MethodPatch, "/services/data/v65.0/sobjects/Account/001000000000001", strings.NewReader(`{"Name":"Changed"}`)))
 		if res.Code != http.StatusInternalServerError {
 			t.Fatalf("status = %d body=%s", res.Code, res.Body.String())
 		}
@@ -755,7 +781,7 @@ func TestServerPersistFailuresDoNotLeakMutations(t *testing.T) {
 		org := testOrgWithAccount("001000000000001", "Original")
 		handler := NewWithStore(&org, &failingStore{})
 		res := httptest.NewRecorder()
-		handler.ServeHTTP(res, httptest.NewRequest(http.MethodDelete, "/services/data/v61.0/sobjects/Account/001000000000001", nil))
+		handler.ServeHTTP(res, httptest.NewRequest(http.MethodDelete, "/services/data/v65.0/sobjects/Account/001000000000001", nil))
 		if res.Code != http.StatusInternalServerError {
 			t.Fatalf("status = %d body=%s", res.Code, res.Body.String())
 		}
@@ -767,7 +793,7 @@ func TestServerPersistFailuresDoNotLeakMutations(t *testing.T) {
 		org := testOrg()
 		handler := NewWithStore(&org, &failingStore{})
 		res := httptest.NewRecorder()
-		handler.ServeHTTP(res, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/tooling/executeAnonymous", strings.NewReader(`{"anonymousBody":"insert new Account(Name = 'Transient');"}`)))
+		handler.ServeHTTP(res, httptest.NewRequest(http.MethodPost, "/services/data/v65.0/tooling/executeAnonymous", strings.NewReader(`{"anonymousBody":"insert new Account(Name = 'Transient');"}`)))
 		if res.Code != http.StatusInternalServerError {
 			t.Fatalf("status = %d body=%s", res.Code, res.Body.String())
 		}
@@ -779,7 +805,7 @@ func TestServerPersistFailuresDoNotLeakMutations(t *testing.T) {
 		org := testOrg()
 		handler := NewWithStore(&org, &failingStore{})
 		res := httptest.NewRecorder()
-		handler.ServeHTTP(res, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/composite/sobjects", strings.NewReader(`{"records":[{"attributes":{"type":"Account"},"Name":"Transient"}]}`)))
+		handler.ServeHTTP(res, httptest.NewRequest(http.MethodPost, "/services/data/v65.0/composite/sobjects", strings.NewReader(`{"records":[{"attributes":{"type":"Account"},"Name":"Transient"}]}`)))
 		if res.Code != http.StatusInternalServerError {
 			t.Fatalf("status = %d body=%s", res.Code, res.Body.String())
 		}
@@ -791,7 +817,7 @@ func TestServerPersistFailuresDoNotLeakMutations(t *testing.T) {
 		org := testOrg()
 		handler := NewWithStore(&org, &failingStore{})
 		res := httptest.NewRecorder()
-		handler.ServeHTTP(res, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/oaer/fixture", strings.NewReader(`{
+		handler.ServeHTTP(res, httptest.NewRequest(http.MethodPost, "/services/data/v65.0/oaer/fixture", strings.NewReader(`{
   "version":"oaer.storage.v1",
   "objects":[{"name":"Account","records":[{"fields":{"Name":{"kind":"string","string":"Transient"}}}]}]
 }`)))
@@ -806,7 +832,7 @@ func TestServerPersistFailuresDoNotLeakMutations(t *testing.T) {
 		org := testOrgWithAccount("001000000000001", "Original")
 		handler := NewWithStore(&org, &failingStore{})
 		res := httptest.NewRecorder()
-		handler.ServeHTTP(res, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/oaer/reset/data", nil))
+		handler.ServeHTTP(res, httptest.NewRequest(http.MethodPost, "/services/data/v65.0/oaer/reset/data", nil))
 		if res.Code != http.StatusInternalServerError {
 			t.Fatalf("status = %d body=%s", res.Code, res.Body.String())
 		}
@@ -827,7 +853,7 @@ func TestServerSerializesConcurrentMutations(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			create := httptest.NewRecorder()
-			handler.ServeHTTP(create, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/sobjects/Account", strings.NewReader(`{"Name":"Concurrent"}`)))
+			handler.ServeHTTP(create, httptest.NewRequest(http.MethodPost, "/services/data/v65.0/sobjects/Account", strings.NewReader(`{"Name":"Concurrent"}`)))
 			if create.Code != http.StatusCreated {
 				t.Errorf("create status = %d body=%s", create.Code, create.Body.String())
 				return
@@ -876,21 +902,21 @@ func TestSalesforceErrorShape(t *testing.T) {
 		{
 			name:      "unknown object",
 			method:    http.MethodGet,
-			path:      "/services/data/v61.0/sobjects/Missing__c",
+			path:      "/services/data/v65.0/sobjects/Missing__c",
 			status:    http.StatusNotFound,
 			errorCode: "NOT_FOUND",
 		},
 		{
 			name:      "missing record",
 			method:    http.MethodGet,
-			path:      "/services/data/v61.0/sobjects/Account/001000000000999",
+			path:      "/services/data/v65.0/sobjects/Account/001000000000999",
 			status:    http.StatusNotFound,
 			errorCode: "NOT_FOUND",
 		},
 		{
 			name:      "malformed json",
 			method:    http.MethodPost,
-			path:      "/services/data/v61.0/sobjects/Account",
+			path:      "/services/data/v65.0/sobjects/Account",
 			body:      "{",
 			status:    http.StatusBadRequest,
 			errorCode: "JSON_PARSER_ERROR",
@@ -905,21 +931,21 @@ func TestSalesforceErrorShape(t *testing.T) {
 		{
 			name:      "malformed query",
 			method:    http.MethodGet,
-			path:      "/services/data/v61.0/query?q=SELECT%20FROM",
+			path:      "/services/data/v65.0/query?q=SELECT%20FROM",
 			status:    http.StatusBadRequest,
 			errorCode: "MALFORMED_QUERY",
 		},
 		{
 			name:      "unsupported route",
 			method:    http.MethodGet,
-			path:      "/services/data/v61.0/nope",
+			path:      "/services/data/v65.0/nope",
 			status:    http.StatusNotFound,
 			errorCode: "NOT_FOUND",
 		},
 		{
 			name:       "dml missing required field",
 			method:     http.MethodPost,
-			path:       "/services/data/v61.0/sobjects/Account",
+			path:       "/services/data/v65.0/sobjects/Account",
 			body:       "{}",
 			status:     http.StatusBadRequest,
 			errorCode:  "REQUIRED_FIELD_MISSING",
@@ -954,7 +980,7 @@ func TestCompositeSObjectErrorsUseDMLStatusAndFields(t *testing.T) {
 	handler := New(&org)
 
 	res := httptest.NewRecorder()
-	handler.ServeHTTP(res, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/composite/sobjects", strings.NewReader(`{
+	handler.ServeHTTP(res, httptest.NewRequest(http.MethodPost, "/services/data/v65.0/composite/sobjects", strings.NewReader(`{
   "allOrNone": true,
   "records": [
     {"attributes":{"type":"Account"}}
@@ -988,7 +1014,7 @@ func TestCompositeSObjectsPartialSuccessReferenceIdsAndRollback(t *testing.T) {
 	handler := New(&org)
 
 	partial := httptest.NewRecorder()
-	handler.ServeHTTP(partial, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/composite/sobjects", strings.NewReader(`{
+	handler.ServeHTTP(partial, httptest.NewRequest(http.MethodPost, "/services/data/v65.0/composite/sobjects", strings.NewReader(`{
   "allOrNone": false,
   "records": [
     {"attributes":{"type":"Account"},"referenceId":"first","Name":"Composite One"},
@@ -1013,7 +1039,7 @@ func TestCompositeSObjectsPartialSuccessReferenceIdsAndRollback(t *testing.T) {
 	}
 
 	rollback := httptest.NewRecorder()
-	handler.ServeHTTP(rollback, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/composite/sobjects", strings.NewReader(`{
+	handler.ServeHTTP(rollback, httptest.NewRequest(http.MethodPost, "/services/data/v65.0/composite/sobjects", strings.NewReader(`{
   "allOrNone": true,
   "records": [
     {"attributes":{"type":"Account"},"referenceId":"rolled","Name":"Rolled Back"},
@@ -1035,7 +1061,7 @@ func TestCompositeSObjectsPartialSuccessReferenceIdsAndRollback(t *testing.T) {
 	}
 
 	missingType := httptest.NewRecorder()
-	handler.ServeHTTP(missingType, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/composite/sobjects", strings.NewReader(`{"records":[{"Name":"No Type"}]}`)))
+	handler.ServeHTTP(missingType, httptest.NewRequest(http.MethodPost, "/services/data/v65.0/composite/sobjects", strings.NewReader(`{"records":[{"Name":"No Type"}]}`)))
 	if missingType.Code != http.StatusBadRequest {
 		t.Fatalf("missing type status = %d body=%s", missingType.Code, missingType.Body.String())
 	}
@@ -1050,7 +1076,7 @@ func TestCompositeBatchEndpointIsExplicitlyUnsupported(t *testing.T) {
 	handler := New(&org)
 
 	res := httptest.NewRecorder()
-	handler.ServeHTTP(res, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/composite", strings.NewReader(`{"compositeRequest":[]}`)))
+	handler.ServeHTTP(res, httptest.NewRequest(http.MethodPost, "/services/data/v65.0/composite", strings.NewReader(`{"compositeRequest":[]}`)))
 	if res.Code != http.StatusBadRequest {
 		t.Fatalf("status = %d body=%s", res.Code, res.Body.String())
 	}

@@ -18,7 +18,7 @@ Until that gate is green, releases must be described as preview builds.
 
 ## Salesforce API Versions
 
-The current default local API version is `v61.0`. Compatibility is tracked by
+The current default local API version is `v65.0`. Compatibility is tracked by
 the capability matrix, not by a blanket Salesforce API support claim.
 
 When behavior differs by Salesforce API version, add the version to the

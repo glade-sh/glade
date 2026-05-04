@@ -24,7 +24,7 @@ OAER="${TMP}/oaer"
 PROJECT="${TMP}/project"
 mkdir -p "${PROJECT}/force-app/main/classes"
 cat >"${PROJECT}/sfdx-project.json" <<'JSON'
-{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"61.0"}
+{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}
 JSON
 cat >"${PROJECT}/force-app/main/classes/Sample.cls" <<'APEX'
 public class Sample {
@@ -79,7 +79,7 @@ grep -q 'Account: 1' "${TMP}/db-inspect.out"
 LSP_PROJECT="${TMP}/lsp-project"
 mkdir -p "${LSP_PROJECT}/force-app/main/classes"
 cat >"${LSP_PROJECT}/sfdx-project.json" <<'JSON'
-{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"61.0"}
+{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"65.0"}
 JSON
 cat >"${LSP_PROJECT}/force-app/main/classes/Broken.cls" <<'APEX'
 public class Broken {
@@ -108,7 +108,7 @@ for _ in $(seq 1 50); do
   fi
   sleep 0.1
 done
-grep -q 'v61.0' "${TMP}/server-data.json"
+grep -q 'v65.0' "${TMP}/server-data.json"
 
 "${OAER}" compat mvp >"${TMP}/compat-mvp.out"
 grep -q 'MVP readiness: not ready' "${TMP}/compat-mvp.out"

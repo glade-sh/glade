@@ -390,7 +390,7 @@ func runServerFixture(fixture Fixture) (RunResult, error) {
 
 func serverFixtureOrg() storage.OrgState {
 	org := storage.NewOrgState()
-	org.APIVersion = "61.0"
+	org.APIVersion = storage.DefaultRESTAPIVersion
 	org.Objects["Account"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
 			APIName:   "Account",

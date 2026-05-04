@@ -1036,7 +1036,7 @@ func runServer(ctx context.Context, args []string, w io.Writer) error {
 
 func storageBaseline() storage.OrgState {
 	org := storage.NewOrgState()
-	org.APIVersion = "61.0"
+	org.APIVersion = storage.DefaultRESTAPIVersion
 	org.Objects["Account"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
 			APIName:   "Account",
