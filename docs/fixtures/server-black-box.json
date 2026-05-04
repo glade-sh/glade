@@ -1242,13 +1242,131 @@
       ]
     },
     {
-      "name": "metadata-namespace-unsupported",
+      "name": "metadata-root-discovery",
       "method": "GET",
       "path": "/services/data/v61.0/metadata",
+      "status": 200,
+      "contains": [
+        "\"components\":\"/services/data/v61.0/metadata/components\"",
+        "\"deployRequest\":\"/services/data/v61.0/metadata/deployRequest\"",
+        "\"describe\":\"/services/data/v61.0/metadata/describe\"",
+        "\"describeMetadata\":\"/services/data/v61.0/metadata/describeMetadata\"",
+        "\"listMetadata\":\"/services/data/v61.0/metadata/listMetadata\"",
+        "\"retrieveRequest\":\"/services/data/v61.0/metadata/retrieveRequest\""
+      ]
+    },
+    {
+      "name": "metadata-describe-unsupported",
+      "method": "GET",
+      "path": "/services/data/v61.0/metadata/describeMetadata",
       "status": 501,
       "contains": [
         "UNSUPPORTED_FEATURE",
-        "Metadata REST namespace"
+        "Metadata REST describeMetadata"
+      ]
+    },
+    {
+      "name": "metadata-listmetadata-unsupported",
+      "method": "GET",
+      "path": "/services/data/v61.0/metadata/listMetadata",
+      "status": 501,
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Metadata REST listMetadata"
+      ]
+    },
+    {
+      "name": "metadata-components-unsupported",
+      "method": "GET",
+      "path": "/services/data/v61.0/metadata/components",
+      "status": 501,
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Metadata REST component discovery"
+      ]
+    },
+    {
+      "name": "metadata-component-type-unsupported",
+      "method": "GET",
+      "path": "/services/data/v61.0/metadata/components/ApexClass",
+      "status": 501,
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Metadata REST component read and discovery"
+      ]
+    },
+    {
+      "name": "metadata-component-method-not-allowed",
+      "method": "POST",
+      "path": "/services/data/v61.0/metadata/components/ApexClass",
+      "body": "{}",
+      "status": 405,
+      "contains": [
+        "METHOD_NOT_ALLOWED",
+        "method not allowed"
+      ]
+    },
+    {
+      "name": "metadata-retrieve-create-unsupported",
+      "method": "POST",
+      "path": "/services/data/v61.0/metadata/retrieveRequest",
+      "body": "{\"packageNames\":[\"unpackaged\"]}",
+      "status": 501,
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Metadata REST retrieve requests"
+      ]
+    },
+    {
+      "name": "metadata-retrieve-create-malformed-json",
+      "method": "POST",
+      "path": "/services/data/v61.0/metadata/retrieveRequest",
+      "body": "{\"packageNames\":",
+      "status": 400,
+      "contains": [
+        "JSON_PARSER_ERROR",
+        "unexpected EOF"
+      ]
+    },
+    {
+      "name": "metadata-retrieve-create-method-not-allowed",
+      "method": "GET",
+      "path": "/services/data/v61.0/metadata/retrieveRequest",
+      "status": 405,
+      "contains": [
+        "METHOD_NOT_ALLOWED",
+        "method not allowed"
+      ]
+    },
+    {
+      "name": "metadata-retrieve-status-unsupported",
+      "method": "GET",
+      "path": "/services/data/v61.0/metadata/retrieveRequest/0Ar000000000001",
+      "status": 501,
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Metadata REST retrieve status"
+      ]
+    },
+    {
+      "name": "metadata-retrieve-results-unsupported",
+      "method": "GET",
+      "path": "/services/data/v61.0/metadata/retrieveRequest/0Ar000000000001/results",
+      "status": 501,
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Metadata REST retrieve results"
+      ]
+    },
+    {
+      "name": "metadata-retrieve-results-method-not-allowed",
+      "method": "POST",
+      "path": "/services/data/v61.0/metadata/retrieveRequest/0Ar000000000001/results",
+      "body": "{}",
+      "status": 405,
+      "contains": [
+        "METHOD_NOT_ALLOWED",
+        "method not allowed"
       ]
     },
     {
@@ -1939,7 +2057,7 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 174,
+      "requests": 185,
       "statuses": [
         200,
         200,
@@ -2050,7 +2168,18 @@
         501,
         501,
         405,
+        200,
         501,
+        501,
+        501,
+        501,
+        405,
+        501,
+        400,
+        405,
+        501,
+        501,
+        405,
         501,
         400,
         501,

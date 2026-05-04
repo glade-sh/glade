@@ -177,7 +177,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case len(rest) >= 1 && rest[0] == "jobs":
 		s.handleBulkJobs(w, r, parts[2], rest[1:])
 	case len(rest) >= 1 && rest[0] == "metadata":
-		writeUnsupportedMetadataREST(w, r, rest[1:])
+		writeUnsupportedMetadataREST(w, r, parts[2], rest[1:])
 	case len(rest) >= 1 && rest[0] == "composite":
 		s.handleComposite(w, r, parts[2], rest[1:])
 	case len(rest) >= 1 && rest[0] == "oaer":
@@ -936,14 +936,47 @@ func decodeOptionalJSONObject(w http.ResponseWriter, r *http.Request) (map[strin
 	return body, true
 }
 
-func writeUnsupportedMetadataREST(w http.ResponseWriter, r *http.Request, parts []string) {
+func writeUnsupportedMetadataREST(w http.ResponseWriter, r *http.Request, version string, parts []string) {
 	switch {
 	case len(parts) == 0:
 		if !methodAllowed(r, http.MethodGet) {
 			writeMethodNotAllowed(w, http.MethodGet)
 			return
 		}
-		writeSalesforceError(w, errUnsupportedFeature, "Metadata REST namespace is not implemented in the local server")
+		writeJSON(w, http.StatusOK, metadataRESTDiscoveryPayload(version))
+	case len(parts) == 1 && isMetadataReadDiscoveryRoute(parts[0]):
+		if !methodAllowed(r, http.MethodGet) {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
+		writeSalesforceError(w, errUnsupportedFeature, metadataReadDiscoveryUnsupportedMessage(parts[0]))
+	case len(parts) >= 2 && parts[0] == "components":
+		if !methodAllowed(r, http.MethodGet) {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
+		writeSalesforceError(w, errUnsupportedFeature, "Metadata REST component read and discovery are not implemented in the local server; use source files and oaer inspect/check for local metadata state")
+	case len(parts) == 1 && parts[0] == "retrieveRequest":
+		if !methodAllowed(r, http.MethodPost) {
+			writeMethodNotAllowed(w, http.MethodPost)
+			return
+		}
+		if _, ok := decodeOptionalJSONObject(w, r); !ok {
+			return
+		}
+		writeSalesforceError(w, errUnsupportedFeature, "Metadata REST retrieve requests are not implemented in the local server; no retrieve jobs are created locally")
+	case len(parts) == 2 && parts[0] == "retrieveRequest":
+		if !methodAllowed(r, http.MethodGet) {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
+		writeSalesforceError(w, errUnsupportedFeature, "Metadata REST retrieve status is not implemented in the local server; no retrieve jobs are created locally")
+	case len(parts) == 3 && parts[0] == "retrieveRequest" && parts[2] == "results":
+		if !methodAllowed(r, http.MethodGet) {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
+		writeSalesforceError(w, errUnsupportedFeature, "Metadata REST retrieve results are not implemented in the local server; no retrieve jobs are created locally")
 	case len(parts) == 1 && parts[0] == "deployRequest":
 		if !methodAllowed(r, http.MethodPost) {
 			writeMethodNotAllowed(w, http.MethodPost)
@@ -2945,6 +2978,40 @@ func toolingDiscoveryPayload(version string) map[string]string {
 		"runTestsSynchronous":  base + "/runTestsSynchronous",
 		"search":               base + "/search",
 		"sobjects":             base + "/sobjects",
+	}
+}
+
+func metadataRESTDiscoveryPayload(version string) map[string]string {
+	base := "/services/data/" + version + "/metadata"
+	return map[string]string{
+		"components":       base + "/components",
+		"deployRequest":    base + "/deployRequest",
+		"describe":         base + "/describe",
+		"describeMetadata": base + "/describeMetadata",
+		"listMetadata":     base + "/listMetadata",
+		"retrieveRequest":  base + "/retrieveRequest",
+	}
+}
+
+func isMetadataReadDiscoveryRoute(name string) bool {
+	switch name {
+	case "components", "describe", "describeMetadata", "listMetadata":
+		return true
+	default:
+		return false
+	}
+}
+
+func metadataReadDiscoveryUnsupportedMessage(name string) string {
+	switch name {
+	case "components":
+		return "Metadata REST component discovery is not implemented in the local server; use source files and oaer inspect/check for local metadata state"
+	case "describe", "describeMetadata":
+		return "Metadata REST describeMetadata is not implemented in the local server; use SObject describe and project metadata files for local shape information"
+	case "listMetadata":
+		return "Metadata REST listMetadata is not implemented in the local server; use source file discovery for local metadata listings"
+	default:
+		return "Metadata REST read/discovery is not implemented in the local server"
 	}
 }
 
