@@ -1559,23 +1559,30 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		}
 		return Bool(false), nil
 	case "Messaging.sendEmail":
-		if len(args) > 1 {
-			return Null, unsupportedCallError("Messaging.sendEmail allOrNothing/options overloads")
-		}
-		if len(args) != 1 {
+		if len(args) == 0 {
 			return Null, fmt.Errorf("Messaging.sendEmail expects messages")
+		}
+		if len(args) > 2 {
+			return Null, unsupportedCallError("Messaging.sendEmail send options overloads")
 		}
 		if args[0].Kind != ValueList {
 			return Null, fmt.Errorf("Messaging.sendEmail expects List")
+		}
+		if len(args) == 2 && args[1].Kind != ValueBool {
+			return Null, unsupportedCallError("Messaging.sendEmail send options overloads")
 		}
 		if err := vm.incrementLimit("emailInvocations", 1); err != nil {
 			return Null, err
 		}
 		appendTrace(result, "apex.email.send", "apex.email", map[string]any{"messages": len(args[0].List)})
-		result := Object("Messaging.SendEmailResult")
-		result.Fields["success"] = Bool(true)
-		result.Fields["errors"] = List()
-		return List(result), nil
+		results := make([]Value, 0, len(args[0].List))
+		for range args[0].List {
+			item := Object("Messaging.SendEmailResult")
+			item.Fields["success"] = Bool(true)
+			item.Fields["errors"] = List()
+			results = append(results, item)
+		}
+		return List(results...), nil
 	case "ApexPages.hasMessages":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("ApexPages.hasMessages expects 0 arguments")
@@ -10240,6 +10247,16 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			receiver.Fields["body"] = args[0].Fields["value"]
 			return Null, receiver, true, true, nil
+		case "setClientCertificateName":
+			if len(args) != 1 || args[0].Kind != ValueString {
+				return Null, receiver, false, true, fmt.Errorf("HttpRequest.setClientCertificateName expects String")
+			}
+			return Null, receiver, false, true, unsupportedCallError("HttpRequest.setClientCertificateName local client certificate callout surface")
+		case "setClientCertificate":
+			if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+				return Null, receiver, false, true, fmt.Errorf("HttpRequest.setClientCertificate expects certificate and password Strings")
+			}
+			return Null, receiver, false, true, unsupportedCallError("HttpRequest.setClientCertificate local client certificate callout surface")
 		case "setHeader":
 			if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
 				return Null, receiver, false, true, fmt.Errorf("HttpRequest.setHeader expects name and value Strings")
@@ -10432,7 +10449,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		}
 	case "Messaging.SingleEmailMessage":
 		switch method {
-		case "setToAddresses", "setCcAddresses", "setBccAddresses", "setFileAttachments", "setEntityAttachments":
+		case "setToAddresses", "setCcAddresses", "setBccAddresses", "setFileAttachments", "setEntityAttachments", "setDocumentAttachments", "setTargetObjectIds":
 			if len(args) != 1 || args[0].Kind != ValueList {
 				return Null, receiver, false, true, fmt.Errorf("Messaging.SingleEmailMessage.%s expects List", method)
 			}
@@ -10440,7 +10457,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			return Null, receiver, true, true, nil
 		case "setSubject", "setPlainTextBody", "setHtmlBody", "setReplyTo", "setSenderDisplayName",
 			"setCharset", "setInReplyTo", "setReferences", "setOrgWideEmailAddressId",
-			"setTargetObjectId", "setTemplateId", "setWhatId":
+			"setTargetObjectId", "setTemplateId", "setWhatId", "setOptOutPolicy":
 			if len(args) != 1 || args[0].Kind != ValueString {
 				return Null, receiver, false, true, fmt.Errorf("Messaging.SingleEmailMessage.%s expects String", method)
 			}
@@ -10592,24 +10609,34 @@ func callRestRequestMember(receiver Value, method string, args []Value) (Value, 
 		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
 			return Null, receiver, false, true, fmt.Errorf("RestRequest.addHeader expects name and value Strings")
 		}
-		restMapPut(&receiver, "headers", args[0].Text, args[1])
+		restMapPut(&receiver, "headers", args[0].Text, args[1], true)
 		return Null, receiver, true, true, nil
 	case "getHeader":
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, receiver, false, true, fmt.Errorf("RestRequest.getHeader expects name String")
 		}
 		return restMapGet(receiver, "headers", args[0].Text), receiver, false, true, nil
+	case "getHeaderKeys":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("RestRequest.getHeaderKeys expects 0 arguments")
+		}
+		return restMapKeys(receiver, "headers"), receiver, false, true, nil
 	case "addParameter", "addParam":
 		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
 			return Null, receiver, false, true, fmt.Errorf("RestRequest.%s expects name and value Strings", method)
 		}
-		restMapPut(&receiver, "params", args[0].Text, args[1])
+		restMapPut(&receiver, "params", args[0].Text, args[1], false)
 		return Null, receiver, true, true, nil
 	case "getParameter", "getParam":
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, receiver, false, true, fmt.Errorf("RestRequest.%s expects name String", method)
 		}
 		return restMapGet(receiver, "params", args[0].Text), receiver, false, true, nil
+	case "getParameterKeys", "getParamKeys":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("RestRequest.%s expects 0 arguments", method)
+		}
+		return restMapKeys(receiver, "params"), receiver, false, true, nil
 	default:
 		return Null, receiver, false, false, nil
 	}
@@ -10621,13 +10648,18 @@ func callRestResponseMember(receiver Value, method string, args []Value) (Value,
 		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
 			return Null, receiver, false, true, fmt.Errorf("RestResponse.addHeader expects name and value Strings")
 		}
-		restMapPut(&receiver, "headers", args[0].Text, args[1])
+		restMapPut(&receiver, "headers", args[0].Text, args[1], true)
 		return Null, receiver, true, true, nil
 	case "getHeader":
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, receiver, false, true, fmt.Errorf("RestResponse.getHeader expects name String")
 		}
 		return restMapGet(receiver, "headers", args[0].Text), receiver, false, true, nil
+	case "getHeaderKeys":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("RestResponse.getHeaderKeys expects 0 arguments")
+		}
+		return restMapKeys(receiver, "headers"), receiver, false, true, nil
 	default:
 		return Null, receiver, false, false, nil
 	}
@@ -10641,10 +10673,19 @@ func singleEmailMessageFieldName(method string) string {
 	return strings.ToLower(field[:1]) + field[1:]
 }
 
-func restMapPut(receiver *Value, field, key string, value Value) {
+func restMapPut(receiver *Value, field, key string, value Value, caseInsensitive bool) {
 	current := receiver.Fields[field]
 	if current.Kind != ValueMap {
 		current = typedMap("Map<String,String>")
+	}
+	if caseInsensitive {
+		for rawKey := range current.Map {
+			decoded := valueFromMapKey(rawKey)
+			if decoded.Kind == ValueString && strings.EqualFold(decoded.Text, key) {
+				delete(current.Map, rawKey)
+				break
+			}
+		}
 	}
 	current.Map[mapKey(String(key))] = value
 	receiver.Fields[field] = current
@@ -10665,4 +10706,24 @@ func restMapGet(receiver Value, field, key string) Value {
 		}
 	}
 	return Null
+}
+
+func restMapKeys(receiver Value, field string) Value {
+	current := receiver.Fields[field]
+	if current.Kind != ValueMap {
+		return List()
+	}
+	keys := make([]string, 0, len(current.Map))
+	for rawKey := range current.Map {
+		decoded := valueFromMapKey(rawKey)
+		if decoded.Kind == ValueString {
+			keys = append(keys, decoded.Text)
+		}
+	}
+	sort.Strings(keys)
+	out := make([]Value, 0, len(keys))
+	for _, key := range keys {
+		out = append(out, String(key))
+	}
+	return List(out...)
 }

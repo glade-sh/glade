@@ -60,6 +60,11 @@
       "symbol": "Http.send real transport",
       "kind": "server",
       "notes": "Real outbound HTTP transport stays explicitly unsupported outside test mocks."
+    },
+    {
+      "symbol": "HttpRequest client certificates",
+      "kind": "server",
+      "notes": "Client certificate callout surfaces stay explicitly unsupported; no local cert material is modeled."
     }
   ],
   "serverRequests": [
@@ -215,6 +220,17 @@
       "contains": [
         "success\":false",
         "unsupported call \\\"Http.send real network transport\\\""
+      ]
+    },
+    {
+      "name": "http-client-certificate-unsupported",
+      "method": "POST",
+      "path": "/services/data/v61.0/tooling/executeAnonymous",
+      "body": "{\"anonymousBody\": \"HttpRequest req = new HttpRequest(); req.setClientCertificateName('LocalCert');\"}",
+      "status": 200,
+      "contains": [
+        "success\":false",
+        "unsupported call \\\"HttpRequest.setClientCertificateName local client certificate callout surface\\\""
       ]
     }
   ],
