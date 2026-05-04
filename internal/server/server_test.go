@@ -150,6 +150,24 @@ func TestSObjectCRUDMissingAndDeletedEdges(t *testing.T) {
 	getDeleted := httptest.NewRecorder()
 	handler.ServeHTTP(getDeleted, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/"+string(created.ID), nil))
 	assertSalesforceError(t, getDeleted, http.StatusNotFound, "NOT_FOUND", "record not found")
+
+	recent := httptest.NewRecorder()
+	handler.ServeHTTP(recent, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/recent", nil))
+	if recent.Code != http.StatusOK {
+		t.Fatalf("recent status = %d body=%s", recent.Code, recent.Body.String())
+	}
+	if bytes.Contains(recent.Body.Bytes(), []byte(`To Delete`)) || bytes.Contains(recent.Body.Bytes(), []byte(created.ID)) {
+		t.Fatalf("recent exposed deleted record: %s", recent.Body.String())
+	}
+
+	allRecent := httptest.NewRecorder()
+	handler.ServeHTTP(allRecent, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/recent", nil))
+	if allRecent.Code != http.StatusOK {
+		t.Fatalf("all recent status = %d body=%s", allRecent.Code, allRecent.Body.String())
+	}
+	if bytes.Contains(allRecent.Body.Bytes(), []byte(`To Delete`)) || bytes.Contains(allRecent.Body.Bytes(), []byte(created.ID)) {
+		t.Fatalf("aggregate recent exposed deleted record: %s", allRecent.Body.String())
+	}
 }
 
 func TestSObjectLayoutMetadataEdges(t *testing.T) {

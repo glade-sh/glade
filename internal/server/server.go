@@ -898,7 +898,10 @@ func storageValueJSON(value storage.Value) any {
 
 func recentPayload(object storage.ObjectState) []map[string]any {
 	ids := make([]string, 0, len(object.Records))
-	for id := range object.Records {
+	for id, record := range object.Records {
+		if record.System.IsDeleted {
+			continue
+		}
 		ids = append(ids, string(id))
 	}
 	sort.Sort(sort.Reverse(sort.StringSlice(ids)))
