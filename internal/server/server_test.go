@@ -2466,6 +2466,107 @@ func TestCompositeSObjectsEchoesReferenceIDAndPreservesOrder(t *testing.T) {
 	}
 }
 
+func TestCompositeSObjectsValidatesEdgeEnvelopes(t *testing.T) {
+	tests := []struct {
+		name          string
+		method        string
+		path          string
+		body          string
+		wantStatus    int
+		wantCode      string
+		wantMessageIn string
+	}{
+		{
+			name:          "generic malformed",
+			method:        http.MethodPost,
+			path:          "/services/data/v61.0/composite",
+			body:          `{"compositeRequest":`,
+			wantStatus:    http.StatusBadRequest,
+			wantCode:      "JSON_PARSER_ERROR",
+			wantMessageIn: "unexpected EOF",
+		},
+		{
+			name:          "batch malformed",
+			method:        http.MethodPost,
+			path:          "/services/data/v61.0/composite/batch",
+			body:          `{"batchRequests":`,
+			wantStatus:    http.StatusBadRequest,
+			wantCode:      "JSON_PARSER_ERROR",
+			wantMessageIn: "unexpected EOF",
+		},
+		{
+			name:          "missing records",
+			method:        http.MethodPost,
+			path:          "/services/data/v61.0/composite/sobjects",
+			body:          `{"allOrNone":true}`,
+			wantStatus:    http.StatusBadRequest,
+			wantCode:      "REQUIRED_FIELD_MISSING",
+			wantMessageIn: "records is required",
+		},
+		{
+			name:          "empty records",
+			method:        http.MethodPatch,
+			path:          "/services/data/v61.0/composite/sobjects",
+			body:          `{"records":[]}`,
+			wantStatus:    http.StatusBadRequest,
+			wantCode:      "REQUIRED_FIELD_MISSING",
+			wantMessageIn: "records is required",
+		},
+		{
+			name:          "malformed attributes",
+			method:        http.MethodPost,
+			path:          "/services/data/v61.0/composite/sobjects",
+			body:          `{"records":[{"attributes":"Account","Name":"Bad"}]}`,
+			wantStatus:    http.StatusBadRequest,
+			wantCode:      "JSON_PARSER_ERROR",
+			wantMessageIn: "attributes must be a JSON object",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			org := testOrg()
+			handler := New(&org)
+			rec := httptest.NewRecorder()
+			handler.ServeHTTP(rec, httptest.NewRequest(tt.method, tt.path, strings.NewReader(tt.body)))
+			assertSalesforceError(t, rec, tt.wantStatus, tt.wantCode, tt.wantMessageIn)
+		})
+	}
+}
+
+func TestCompositeSObjectsPartialFailureCommitsSuccessWithRowError(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/composite/sobjects", strings.NewReader(`{
+  "records": [
+    {"attributes":{"type":"Account","referenceId":"good"},"Name":"Good"},
+    {"attributes":{"type":"Account","referenceId":"bad"}}
+  ]
+}`)))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("partial composite status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if got := len(org.Objects["Account"].Records); got != 1 {
+		t.Fatalf("partial composite committed records = %d", got)
+	}
+	var rows []map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &rows); err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 2 || rows[0]["success"] != true || rows[1]["success"] != false {
+		t.Fatalf("partial composite rows = %#v", rows)
+	}
+	errors, ok := rows[1]["errors"].([]any)
+	if !ok || len(errors) != 1 {
+		t.Fatalf("partial composite errors = %#v", rows[1]["errors"])
+	}
+	firstError, ok := errors[0].(map[string]any)
+	if !ok || firstError["statusCode"] != "REQUIRED_FIELD_MISSING" || !strings.Contains(firstError["message"].(string), "Account.Name") {
+		t.Fatalf("partial composite error row = %#v", firstError)
+	}
+}
+
 func TestCompositeSObjectsAllOrNoneRollsBackSuccessfulRows(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
@@ -2595,7 +2696,7 @@ func TestCompositeSObjectsDeleteAllOrNoneRollsBackMissingRecord(t *testing.T) {
 	if org.Objects["Account"].Records["001000000000001"].System.IsDeleted || org.Objects["Account"].Records["001000000000002"].System.IsDeleted {
 		t.Fatalf("allOrNone rollback soft deleted records: %#v", org.Objects["Account"].Records)
 	}
-	if !bytes.Contains(composite.Body.Bytes(), []byte(`"id":"001000000000999"`)) || !bytes.Contains(composite.Body.Bytes(), []byte(`DML_EXCEPTION`)) {
+	if !bytes.Contains(composite.Body.Bytes(), []byte(`"id":"001000000000999"`)) || !bytes.Contains(composite.Body.Bytes(), []byte(`ENTITY_IS_DELETED`)) {
 		t.Fatalf("missing delete result shape = %s", composite.Body.String())
 	}
 }
@@ -3183,6 +3284,80 @@ func TestUnsupportedRESTNamespaceMethodBoundary(t *testing.T) {
 			handler.ServeHTTP(res, httptest.NewRequest(tt.method, tt.path, nil))
 			assertSalesforceError(t, res, tt.wantStatus, tt.wantCode, tt.wantMessageIn)
 			if got := res.Header().Get("Allow"); got != tt.wantAllow {
+				t.Fatalf("Allow = %q, want %q", got, tt.wantAllow)
+			}
+		})
+	}
+}
+
+func TestBulkJobResultRoutesPinUnsupportedBodyShapes(t *testing.T) {
+	tests := []struct {
+		name          string
+		method        string
+		path          string
+		body          string
+		wantStatus    int
+		wantCode      string
+		wantAllow     string
+		wantMessageIn string
+	}{
+		{
+			name:          "query results with locator",
+			method:        http.MethodGet,
+			path:          "/services/data/v61.0/jobs/query/750000000000001/results?locator=abc&maxRecords=2",
+			wantStatus:    http.StatusNotImplemented,
+			wantCode:      "UNSUPPORTED_FEATURE",
+			wantMessageIn: "Bulk API v2 query job results",
+		},
+		{
+			name:       "query unknown result subroute",
+			method:     http.MethodGet,
+			path:       "/services/data/v61.0/jobs/query/750000000000001/failedResults",
+			wantStatus: http.StatusNotFound,
+			wantCode:   "NOT_FOUND",
+		},
+		{
+			name:          "ingest successful results",
+			method:        http.MethodGet,
+			path:          "/services/data/v61.0/jobs/ingest/750000000000001/successfulResults",
+			wantStatus:    http.StatusNotImplemented,
+			wantCode:      "UNSUPPORTED_FEATURE",
+			wantMessageIn: "Bulk API v2 ingest successful results",
+		},
+		{
+			name:          "ingest failed results",
+			method:        http.MethodGet,
+			path:          "/services/data/v61.0/jobs/ingest/750000000000001/failedResults",
+			wantStatus:    http.StatusNotImplemented,
+			wantCode:      "UNSUPPORTED_FEATURE",
+			wantMessageIn: "Bulk API v2 ingest failed results",
+		},
+		{
+			name:          "ingest unprocessed records lowercase",
+			method:        http.MethodGet,
+			path:          "/services/data/v61.0/jobs/ingest/750000000000001/unprocessedrecords",
+			wantStatus:    http.StatusNotImplemented,
+			wantCode:      "UNSUPPORTED_FEATURE",
+			wantMessageIn: "Bulk API v2 ingest unprocessed records",
+		},
+		{
+			name:       "ingest result method",
+			method:     http.MethodPost,
+			path:       "/services/data/v61.0/jobs/ingest/750000000000001/failedResults",
+			body:       `{}`,
+			wantStatus: http.StatusMethodNotAllowed,
+			wantCode:   "METHOD_NOT_ALLOWED",
+			wantAllow:  http.MethodGet,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			org := testOrg()
+			handler := New(&org)
+			rec := httptest.NewRecorder()
+			handler.ServeHTTP(rec, httptest.NewRequest(tt.method, tt.path, strings.NewReader(tt.body)))
+			assertSalesforceError(t, rec, tt.wantStatus, tt.wantCode, tt.wantMessageIn)
+			if got := rec.Header().Get("Allow"); got != tt.wantAllow {
 				t.Fatalf("Allow = %q, want %q", got, tt.wantAllow)
 			}
 		})

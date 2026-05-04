@@ -922,6 +922,15 @@ func writeUnsupportedBulkIngestJob(w http.ResponseWriter, r *http.Request, parts
 	}
 }
 
+func requireWellFormedJSONBody(w http.ResponseWriter, r *http.Request) bool {
+	var body any
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		writeSalesforceError(w, errMalformedJSON, err.Error())
+		return false
+	}
+	return true
+}
+
 func methodAllowed(r *http.Request, allowed ...string) bool {
 	for _, method := range allowed {
 		if r.Method == method {
@@ -1084,6 +1093,9 @@ func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, version
 		case http.MethodGet:
 			writeSalesforceError(w, errUnsupportedFeature, "Composite namespace discovery is not implemented in the local server; generic REST subrequest orchestration is not modeled")
 		case http.MethodPost:
+			if !requireWellFormedJSONBody(w, r) {
+				return
+			}
 			writeSalesforceError(w, errUnsupportedFeature, "Generic Composite REST subrequest orchestration is not implemented in the local server")
 		default:
 			writeMethodNotAllowed(w, http.MethodGet, http.MethodPost)
@@ -1097,6 +1109,9 @@ func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, version
 	if len(parts) >= 1 && (parts[0] == "batch" || parts[0] == "tree" || parts[0] == "graph") {
 		if r.Method != http.MethodPost {
 			writeMethodNotAllowed(w, http.MethodPost)
+			return
+		}
+		if !requireWellFormedJSONBody(w, r) {
 			return
 		}
 		writeSalesforceError(w, errUnsupportedFeature, "Composite "+parts[0]+" is not implemented in the local server")
@@ -1278,22 +1293,29 @@ func (s *Server) handleCompositeSObjectTypedUpsert(w http.ResponseWriter, r *htt
 	}
 
 	var body struct {
-		AllOrNone bool                         `json:"allOrNone"`
-		Records   []map[string]json.RawMessage `json:"records"`
+		AllOrNone bool                          `json:"allOrNone"`
+		Records   *[]map[string]json.RawMessage `json:"records"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		writeSalesforceError(w, errMalformedJSON, err.Error())
 		return
 	}
-	records := make([]storage.Record, 0, len(body.Records))
-	referenceIDs := make([]string, 0, len(body.Records))
-	for _, raw := range body.Records {
+	if body.Records == nil || len(*body.Records) == 0 {
+		writeSalesforceError(w, errRequiredFieldMissing, "records is required and must contain at least one row")
+		return
+	}
+	records := make([]storage.Record, 0, len(*body.Records))
+	referenceIDs := make([]string, 0, len(*body.Records))
+	for _, raw := range *body.Records {
 		referenceID := ""
 		if attrsRaw, ok := raw["attributes"]; ok {
 			var attrs struct {
 				ReferenceID string `json:"referenceId"`
 			}
-			_ = json.Unmarshal(attrsRaw, &attrs)
+			if err := json.Unmarshal(attrsRaw, &attrs); err != nil {
+				writeSalesforceError(w, errMalformedJSON, "attributes must be a JSON object")
+				return
+			}
 			referenceID = attrs.ReferenceID
 			delete(raw, "attributes")
 		}
@@ -1339,15 +1361,19 @@ type compositeSObjectBody struct {
 
 func decodeCompositeSObjectBody(w http.ResponseWriter, r *http.Request, requireID bool) (compositeSObjectBody, bool) {
 	var rawBody struct {
-		AllOrNone bool                         `json:"allOrNone"`
-		Records   []map[string]json.RawMessage `json:"records"`
+		AllOrNone bool                          `json:"allOrNone"`
+		Records   *[]map[string]json.RawMessage `json:"records"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&rawBody); err != nil {
 		writeSalesforceError(w, errMalformedJSON, err.Error())
 		return compositeSObjectBody{}, false
 	}
-	body := compositeSObjectBody{AllOrNone: rawBody.AllOrNone, Records: make([]storage.Record, 0, len(rawBody.Records)), ReferenceIDs: make([]string, 0, len(rawBody.Records))}
-	for _, raw := range rawBody.Records {
+	if rawBody.Records == nil || len(*rawBody.Records) == 0 {
+		writeSalesforceError(w, errRequiredFieldMissing, "records is required and must contain at least one row")
+		return compositeSObjectBody{}, false
+	}
+	body := compositeSObjectBody{AllOrNone: rawBody.AllOrNone, Records: make([]storage.Record, 0, len(*rawBody.Records)), ReferenceIDs: make([]string, 0, len(*rawBody.Records))}
+	for _, raw := range *rawBody.Records {
 		objectName := ""
 		referenceID := ""
 		if attrsRaw, ok := raw["attributes"]; ok {
@@ -1355,7 +1381,10 @@ func decodeCompositeSObjectBody(w http.ResponseWriter, r *http.Request, requireI
 				Type        string `json:"type"`
 				ReferenceID string `json:"referenceId"`
 			}
-			_ = json.Unmarshal(attrsRaw, &attrs)
+			if err := json.Unmarshal(attrsRaw, &attrs); err != nil {
+				writeSalesforceError(w, errMalformedJSON, "attributes must be a JSON object")
+				return compositeSObjectBody{}, false
+			}
 			objectName = attrs.Type
 			referenceID = attrs.ReferenceID
 			delete(raw, "attributes")
@@ -2667,18 +2696,7 @@ func unsupportedRESTNamespaceMessage(namespace string) (string, bool) {
 }
 
 func compositeResults(results []dml.Result, referenceIDs []string) []map[string]any {
-	out := make([]map[string]any, 0, len(results))
-	for i, result := range results {
-		row := map[string]any{"id": result.ID, "success": result.Success, "errors": []map[string]string{}}
-		if i < len(referenceIDs) && referenceIDs[i] != "" {
-			row["referenceId"] = referenceIDs[i]
-		}
-		if !result.Success {
-			row["errors"] = []map[string]string{{"statusCode": salesforceErrorCode(errDMLFailure), "message": result.Error}}
-		}
-		out = append(out, row)
-	}
-	return out
+	return compositeResultRows(results, referenceIDs, false)
 }
 
 func compositeUpsertResults(results []dml.Result, referenceIDs []string) []map[string]any {
