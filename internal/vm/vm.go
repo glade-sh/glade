@@ -5698,7 +5698,7 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 	if current.Kind != ValueObject {
 		return fmt.Errorf("cannot assign field %s on %s", fieldName, current.Kind)
 	}
-	if reason, ok := sobjectReadOnlyReason(current); ok && vm.isSObjectType(current.Type) {
+	if reason, ok := sobjectReadOnlyReason(current); ok {
 		return fmt.Errorf("cannot modify read-only %s", reason)
 	}
 	class := vm.Classes[current.Type]

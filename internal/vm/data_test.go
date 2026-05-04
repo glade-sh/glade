@@ -2069,6 +2069,7 @@ func TestExecCustomDataStaticRecordsAreReadOnly(t *testing.T) {
 		{"field assignment", "Feature__mdt cfg = Feature__mdt.getInstance('Default'); cfg.Enabled__c = false;", "cannot modify read-only custom metadata"},
 		{"put", "Local_Setting__c setting = Local_Setting__c.getInstance('Default'); setting.put('Enabled__c', true);", "cannot modify read-only custom setting"},
 		{"dml", "Feature__mdt cfg = Feature__mdt.getInstance('Default'); update cfg;", "DML cannot modify read-only custom metadata"},
+		{"field assignment without org resolution", "Ghost__mdt cfg = new Ghost__mdt(); cfg.__oaer_readonly = 'custom metadata'; cfg.Enabled__c = false;", "cannot modify read-only custom metadata"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
