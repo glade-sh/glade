@@ -1694,7 +1694,7 @@ func (vm *VM) callCustomDataStaticMember(typeName, method string, args []Value) 
 			records = append(records, record)
 		}
 		sort.Slice(records, func(i, j int) bool {
-			return customDataRecordKey(definition, kind, records[i], vm.Org.Namespace) < customDataRecordKey(definition, kind, records[j], vm.Org.Namespace)
+			return customDataRecordLess(definition, kind, records[i], records[j], vm.Org.Namespace)
 		})
 		for _, record := range records {
 			key := customDataRecordKey(definition, kind, record, vm.Org.Namespace)
@@ -1769,9 +1769,18 @@ func sortedCustomDataRecords(records map[storage.ID]storage.Record, definition s
 		out = append(out, record)
 	}
 	sort.Slice(out, func(i, j int) bool {
-		return customDataRecordKey(definition, kind, out[i], namespace) < customDataRecordKey(definition, kind, out[j], namespace)
+		return customDataRecordLess(definition, kind, out[i], out[j], namespace)
 	})
 	return out
+}
+
+func customDataRecordLess(definition storage.ObjectDefinition, kind string, left, right storage.Record, namespace string) bool {
+	leftKey := customDataRecordKey(definition, kind, left, namespace)
+	rightKey := customDataRecordKey(definition, kind, right, namespace)
+	if leftKey != rightKey {
+		return leftKey < rightKey
+	}
+	return string(left.ID) < string(right.ID)
 }
 
 func customDataRecordMatches(definition storage.ObjectDefinition, kind string, record storage.Record, wanted, namespace string) bool {

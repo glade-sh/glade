@@ -2087,6 +2087,28 @@ func TestExecCustomDataStaticRecordsAreReadOnly(t *testing.T) {
 	}
 }
 
+func TestCustomDataRecordSortingUsesIDTieBreaker(t *testing.T) {
+	definition := storage.ObjectDefinition{
+		APIName:  "Local_Setting__c",
+		Metadata: map[string]string{"kind": "customSetting", "customSettingsType": "List"},
+		Fields: map[string]storage.Field{
+			"Name": {APIName: "Name", Type: storage.FieldString},
+		},
+	}
+	records := map[storage.ID]storage.Record{
+		"a01000000000002": {ID: "a01000000000002", Object: "Local_Setting__c"},
+		"a01000000000001": {ID: "a01000000000001", Object: "Local_Setting__c"},
+	}
+
+	sorted := sortedCustomDataRecords(records, definition, "custom setting", "")
+	if len(sorted) != 2 {
+		t.Fatalf("len(sorted) = %d, want 2", len(sorted))
+	}
+	if sorted[0].ID != "a01000000000001" || sorted[1].ID != "a01000000000002" {
+		t.Fatalf("sorted IDs = %q, %q; want ID order for equal keys", sorted[0].ID, sorted[1].ID)
+	}
+}
+
 func customDataOrg() storage.OrgState {
 	org := storage.NewOrgState()
 	org.Namespace = "pkg"
