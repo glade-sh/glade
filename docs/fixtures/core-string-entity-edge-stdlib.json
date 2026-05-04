@@ -1,0 +1,91 @@
+{
+  "name": "core-string-entity-edge-stdlib",
+  "evidence": [
+    {
+      "symbol": "String.escapeHtml3",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.escapeHtml4",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.unescapeHtml3",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.unescapeHtml4",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.escapeXml",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.escapeXml10",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.escapeXml11",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.unescapeXml",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.unescapeXml10",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.unescapeXml11",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.replace",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.replaceOnce",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.replaceIgnoreCase",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.remove",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.isBlank",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.isNotBlank",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.escapeSingleQuotes",
+      "kind": "exec"
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "String htmlCore = '\"''<>&';\nSystem.assertEquals('&quot;&#39;&lt;&gt;&amp;', htmlCore.escapeHtml4());\nSystem.assertEquals('&quot;&#39;&lt;&gt;&amp;', htmlCore.escapeHtml3());\nString escapedHtmlCore = '&quot;&lt;&gt;&amp;';\nSystem.assertEquals('\"<>&', escapedHtmlCore.unescapeHtml4());\nString escapedHtmlDecimal = '&#39;';\nString htmlDecimal = escapedHtmlDecimal.unescapeHtml4();\nSystem.assertEquals(39, htmlDecimal.codePointAt(0));\nString escapedHtmlHex = '&#x27;';\nString htmlHex = escapedHtmlHex.unescapeHtml4();\nSystem.assertEquals(39, htmlHex.codePointAt(0));\nString unknownHtml = '&copy;&apos;';\nSystem.assertEquals('&copy;&apos;', unknownHtml.unescapeHtml4());\nSystem.assertEquals('&copy;&apos;', unknownHtml.unescapeHtml3());\nSystem.assertEquals('&quot;&apos;&lt;&gt;&amp;', htmlCore.escapeXml());\nSystem.assertEquals('&quot;&apos;&lt;&gt;&amp;', htmlCore.escapeXml10());\nSystem.assertEquals('&quot;&apos;&lt;&gt;&amp;', htmlCore.escapeXml11());\nSystem.assertEquals('\"<>&', escapedHtmlCore.unescapeXml());\nString escapedXmlApos = '&apos;';\nString xmlApos = escapedXmlApos.unescapeXml();\nSystem.assertEquals(39, xmlApos.codePointAt(0));\nString escapedXmlNumeric = '&#65;&#x41;';\nSystem.assertEquals('AA', escapedXmlNumeric.unescapeXml10());\nString replacementEntity = '&#xFFFD;';\nString replacementValue = replacementEntity.unescapeXml();\nSystem.assertEquals(65533, replacementValue.codePointAt(0));\nString malformedXml = '&#xZZ;&copy;';\nSystem.assertEquals('&#xZZ;&copy;', malformedXml.unescapeXml11());\nString replaceEmpty = 'abc';\nSystem.assertEquals('abc', replaceEmpty.replace('', 'x'));\nSystem.assertEquals('abc', replaceEmpty.replaceOnce('', 'x'));\nSystem.assertEquals('abc', replaceEmpty.replaceIgnoreCase('', 'x'));\nSystem.assertEquals('abc', replaceEmpty.remove(''));\nSystem.assert(String.isBlank(null));\nSystem.assert(!String.isNotBlank(null));\nSystem.assertEquals('', String.escapeSingleQuotes(''));\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "String htmlCore = '\"''<>&';\nSystem.assertEquals('&quot;&#39;&lt;&gt;&amp;', htmlCore.escapeHtml4());\nSystem.assertEquals('&quot;&#39;&lt;&gt;&amp;', htmlCore.escapeHtml3());\nString escapedHtmlCore = '&quot;&lt;&gt;&amp;';\nSystem.assertEquals('\"<>&', escapedHtmlCore.unescapeHtml4());\nString escapedHtmlDecimal = '&#39;';\nString htmlDecimal = escapedHtmlDecimal.unescapeHtml4();\nSystem.assertEquals(39, htmlDecimal.codePointAt(0));\nString escapedHtmlHex = '&#x27;';\nString htmlHex = escapedHtmlHex.unescapeHtml4();\nSystem.assertEquals(39, htmlHex.codePointAt(0));\nString unknownHtml = '&copy;&apos;';\nSystem.assertEquals('&copy;&apos;', unknownHtml.unescapeHtml4());\nSystem.assertEquals('&copy;&apos;', unknownHtml.unescapeHtml3());\nSystem.assertEquals('&quot;&apos;&lt;&gt;&amp;', htmlCore.escapeXml());\nSystem.assertEquals('&quot;&apos;&lt;&gt;&amp;', htmlCore.escapeXml10());\nSystem.assertEquals('&quot;&apos;&lt;&gt;&amp;', htmlCore.escapeXml11());\nSystem.assertEquals('\"<>&', escapedHtmlCore.unescapeXml());\nString escapedXmlApos = '&apos;';\nString xmlApos = escapedXmlApos.unescapeXml();\nSystem.assertEquals(39, xmlApos.codePointAt(0));\nString escapedXmlNumeric = '&#65;&#x41;';\nSystem.assertEquals('AA', escapedXmlNumeric.unescapeXml10());\nString replacementEntity = '&#xFFFD;';\nString replacementValue = replacementEntity.unescapeXml();\nSystem.assertEquals(65533, replacementValue.codePointAt(0));\nString malformedXml = '&#xZZ;&copy;';\nSystem.assertEquals('&#xZZ;&copy;', malformedXml.unescapeXml11());\nString replaceEmpty = 'abc';\nSystem.assertEquals('abc', replaceEmpty.replace('', 'x'));\nSystem.assertEquals('abc', replaceEmpty.replaceOnce('', 'x'));\nSystem.assertEquals('abc', replaceEmpty.replaceIgnoreCase('', 'x'));\nSystem.assertEquals('abc', replaceEmpty.remove(''));\nSystem.assert(String.isBlank(null));\nSystem.assert(!String.isNotBlank(null));\nSystem.assertEquals('', String.escapeSingleQuotes(''));\n"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

@@ -2,7 +2,6 @@ package vm
 
 import (
 	"fmt"
-	"html"
 	"math"
 	"regexp"
 	"sort"
@@ -310,12 +309,12 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("String.%s expects 0 arguments", method)
 		}
-		return String(html.EscapeString(receiver.Text)), true, nil
+		return String(escapeHTMLCore(receiver.Text)), true, nil
 	case "unescapeHtml3", "unescapeHtml4":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("String.%s expects 0 arguments", method)
 		}
-		return String(html.UnescapeString(receiver.Text)), true, nil
+		return String(unescapeHTMLEntities(receiver.Text)), true, nil
 	case "escapeXml", "escapeXml10", "escapeXml11":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("String.%s expects 0 arguments", method)
@@ -325,7 +324,7 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("String.%s expects 0 arguments", method)
 		}
-		return String(html.UnescapeString(receiver.Text)), true, nil
+		return String(unescapeXMLEntities(receiver.Text)), true, nil
 	case "escapeJava":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("String.escapeJava expects 0 arguments")
@@ -444,6 +443,9 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 	case "replace":
 		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
 			return Null, true, fmt.Errorf("String.replace expects target and replacement Strings")
+		}
+		if args[0].Text == "" {
+			return receiver, true, nil
 		}
 		return String(strings.ReplaceAll(receiver.Text, args[0].Text, args[1].Text)), true, nil
 	case "replaceOnce":
@@ -1940,6 +1942,17 @@ func unescapeCSV(text string) string {
 	return text
 }
 
+func escapeHTMLCore(text string) string {
+	replacer := strings.NewReplacer(
+		"&", "&amp;",
+		"<", "&lt;",
+		">", "&gt;",
+		`"`, "&quot;",
+		"'", "&#39;",
+	)
+	return replacer.Replace(text)
+}
+
 func escapeXML(text string) string {
 	replacer := strings.NewReplacer(
 		"&", "&amp;",
@@ -1949,6 +1962,91 @@ func escapeXML(text string) string {
 		"'", "&apos;",
 	)
 	return replacer.Replace(text)
+}
+
+func unescapeHTMLEntities(text string) string {
+	return unescapeCoreEntities(text, false)
+}
+
+func unescapeXMLEntities(text string) string {
+	return unescapeCoreEntities(text, true)
+}
+
+func unescapeCoreEntities(text string, xml bool) string {
+	if !strings.Contains(text, "&") {
+		return text
+	}
+	var b strings.Builder
+	for i := 0; i < len(text); {
+		if text[i] != '&' {
+			r, size := utf8.DecodeRuneInString(text[i:])
+			b.WriteRune(r)
+			i += size
+			continue
+		}
+		semi := strings.IndexByte(text[i:], ';')
+		if semi < 0 {
+			b.WriteByte(text[i])
+			i++
+			continue
+		}
+		semi += i
+		entity := text[i+1 : semi]
+		if replacement, ok := coreEntityReplacement(entity, xml); ok {
+			b.WriteString(replacement)
+			i = semi + 1
+			continue
+		}
+		b.WriteString(text[i : semi+1])
+		i = semi + 1
+	}
+	return b.String()
+}
+
+func coreEntityReplacement(entity string, xml bool) (string, bool) {
+	switch entity {
+	case "lt":
+		return "<", true
+	case "gt":
+		return ">", true
+	case "amp":
+		return "&", true
+	case "quot":
+		return `"`, true
+	case "apos":
+		if xml {
+			return "'", true
+		}
+		return "", false
+	case "#39":
+		return "'", true
+	}
+	if strings.HasPrefix(entity, "#") {
+		if r, ok := parseNumericEntity(entity[1:]); ok {
+			return string(r), true
+		}
+	}
+	return "", false
+}
+
+func parseNumericEntity(entity string) (rune, bool) {
+	if entity == "" {
+		return 0, false
+	}
+	base := 10
+	digits := entity
+	if strings.HasPrefix(entity, "x") || strings.HasPrefix(entity, "X") {
+		base = 16
+		digits = entity[1:]
+	}
+	if digits == "" {
+		return 0, false
+	}
+	value, err := strconv.ParseInt(digits, base, 32)
+	if err != nil || value < 0 || value > utf8.MaxRune {
+		return 0, false
+	}
+	return rune(value), true
 }
 
 func escapeJavaLike(text string, escapeSingleQuote, escapeSlash bool) string {
