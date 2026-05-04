@@ -330,9 +330,9 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | String | `String.unescapeHtml4` | `partial` | Unescapes core HTML entities, selected high-use HTML 3/4 named entities, and numeric references; remaining unknown named entities stay unchanged. |
 | String | `String.unescapeJava` | `partial` | Unescapes common Java-style backslash and Unicode escapes. |
 | String | `String.unescapeUnicode` | `partial` | Unescapes UTF-16 Unicode escape sequences. |
-| String | `String.unescapeXml` | `partial` | Unescapes XML core entities and numeric references; XML version-specific validity is not modeled. |
-| String | `String.unescapeXml10` | `partial` | Alias of local XML core/numeric entity unescaping; XML 1.0 validity is not modeled. |
-| String | `String.unescapeXml11` | `partial` | Alias of local XML core/numeric entity unescaping; XML 1.1 validity is not modeled. |
+| String | `String.unescapeXml` | `partial` | Unescapes XML core entities and valid numeric references; malformed, null, out-of-range, and surrogate numeric entities stay unchanged. |
+| String | `String.unescapeXml10` | `partial` | Alias of local XML core/numeric entity unescaping; malformed, null, out-of-range, and surrogate numeric entities stay unchanged. |
+| String | `String.unescapeXml11` | `partial` | Alias of local XML core/numeric entity unescaping; malformed, null, out-of-range, and surrogate numeric entities stay unchanged. |
 | String | `String.valueOf` | `supported` | Local value string conversion. |
 | System | `System.assert` | `supported` | Assertion failure returns runtime error; Object and null message values use deterministic local string conversion. |
 | System | `System.assertEquals` | `supported` | Assertion failure returns runtime error with deterministic local expected/actual text and Object/null message conversion. |
