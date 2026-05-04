@@ -300,6 +300,21 @@
       "contains": ["\"referenceId\":\"first\"", "\"referenceId\":\"second\"", "001000000000004", "001000000000005"]
     },
     {
+      "name": "composite-sobjects-retrieve-projection",
+      "method": "GET",
+      "path": "/services/data/v61.0/composite/sobjects/Account?ids=001000000000004,001000000000005&fields=Name",
+      "status": 200,
+      "contains": ["\"records\":[", "\"attributes\":{\"type\":\"Account\",\"url\":\"/services/data/v61.0/sobjects/Account/001000000000004\"}", "\"Id\":\"001000000000004\"", "\"Name\":\"First\"", "\"Id\":\"001000000000005\"", "\"Name\":\"Second\""],
+      "notContains": ["\"External_Id__c\""]
+    },
+    {
+      "name": "composite-sobjects-retrieve-missing-ids",
+      "method": "GET",
+      "path": "/services/data/v61.0/composite/sobjects/Account",
+      "status": 400,
+      "contains": ["REQUIRED_FIELD_MISSING", "ids query parameter is required"]
+    },
+    {
       "name": "query-pagination-first-page",
       "method": "GET",
       "path": "/services/data/v61.0/query?q=SELECT%20Id,%20Name%20FROM%20Account&batchSize=2",
@@ -678,8 +693,8 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 86,
-      "statuses": [200, 200, 405, 405, 200, 200, 200, 200, 405, 501, 501, 501, 501, 200, 405, 201, 200, 200, 200, 200, 200, 400, 200, 501, 501, 400, 200, 501, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 201, 204, 200, 201, 204, 200, 200, 204, 400, 501, 501, 200, 200, 200, 200, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 404, 404, 200, 200, 201],
+      "requests": 88,
+      "statuses": [200, 200, 405, 405, 200, 200, 200, 200, 405, 501, 501, 501, 501, 200, 405, 201, 200, 200, 200, 200, 200, 400, 200, 501, 501, 400, 200, 501, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 400, 200, 200, 201, 204, 200, 201, 204, 200, 200, 204, 400, 501, 501, 200, 200, 200, 200, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 404, 404, 200, 200, 201],
       "users": 2
     }
   }

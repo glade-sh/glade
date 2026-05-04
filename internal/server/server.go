@@ -153,7 +153,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case len(rest) >= 1 && rest[0] == "jobs":
 		s.handleBulkJobs(w, r, rest[1:])
 	case len(rest) >= 1 && rest[0] == "composite":
-		s.handleComposite(w, r, rest[1:])
+		s.handleComposite(w, r, parts[2], rest[1:])
 	case len(rest) >= 1 && rest[0] == "oaer":
 		s.handleOAER(w, r, rest[1:])
 	case len(rest) >= 1:
@@ -883,7 +883,7 @@ func executeAnonymousFailure(compiled bool, message string, logs []string) map[s
 	return payload
 }
 
-func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, parts []string) {
+func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, version string, parts []string) {
 	if len(parts) == 0 {
 		switch r.Method {
 		case http.MethodGet:
@@ -896,7 +896,7 @@ func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, parts [
 		return
 	}
 	if len(parts) >= 1 && parts[0] == "sobjects" {
-		s.handleCompositeSObjects(w, r, parts)
+		s.handleCompositeSObjects(w, r, version, parts)
 		return
 	}
 	if len(parts) >= 1 && (parts[0] == "batch" || parts[0] == "tree" || parts[0] == "graph") {
@@ -910,7 +910,7 @@ func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, parts [
 	writeSalesforceError(w, errUnknownComposite)
 }
 
-func (s *Server) handleCompositeSObjects(w http.ResponseWriter, r *http.Request, parts []string) {
+func (s *Server) handleCompositeSObjects(w http.ResponseWriter, r *http.Request, version string, parts []string) {
 	if len(parts) == 1 {
 		switch r.Method {
 		case http.MethodPost:
@@ -928,6 +928,13 @@ func (s *Server) handleCompositeSObjects(w http.ResponseWriter, r *http.Request,
 		}
 	}
 	switch r.Method {
+	case http.MethodGet:
+		if len(parts) == 2 {
+			s.handleCompositeSObjectTypedRetrieve(w, r, version, parts[1])
+			return
+		}
+		writeSalesforceError(w, errUnsupportedFeature, "Composite sObject typed retrieve routes beyond object collections are not implemented in the local server")
+		return
 	case http.MethodPost:
 		writeSalesforceError(w, errUnsupportedFeature, "Composite sObject typed collection routes are not implemented in the local server")
 		return
@@ -942,7 +949,7 @@ func (s *Server) handleCompositeSObjects(w http.ResponseWriter, r *http.Request,
 		writeSalesforceError(w, errUnsupportedFeature, "Composite sObject collection delete routes are not implemented in the local server")
 		return
 	default:
-		writeMethodNotAllowed(w, http.MethodPost, http.MethodPatch, http.MethodDelete)
+		writeMethodNotAllowed(w, http.MethodGet, http.MethodPost, http.MethodPatch, http.MethodDelete)
 		return
 	}
 }
@@ -1014,6 +1021,44 @@ func (s *Server) writeCompositeMutationResults(w http.ResponseWriter, next stora
 		}
 	}
 	writeJSON(w, http.StatusOK, compositeResults(results, referenceIDs))
+}
+
+func (s *Server) handleCompositeSObjectTypedRetrieve(w http.ResponseWriter, r *http.Request, version string, objectName string) {
+	resolvedObjectName, ok := storage.ResolveObjectName(*s.Org, objectName)
+	if !ok {
+		writeSalesforceError(w, errUnknownObject, "unknown object "+objectName)
+		return
+	}
+	object := s.Org.Objects[resolvedObjectName]
+	idsParam := strings.TrimSpace(r.URL.Query().Get("ids"))
+	if idsParam == "" {
+		writeSalesforceError(w, errRequiredFieldMissing, "ids query parameter is required for local Composite sObject collection retrieve")
+		return
+	}
+	ids := strings.Split(idsParam, ",")
+	records := make([]map[string]any, 0, len(ids))
+	fields, hasProjection, ok := compositeRetrieveFields(w, object.Definition, s.Org.Namespace, r.URL.Query().Get("fields"))
+	if !ok {
+		return
+	}
+	for _, rawID := range ids {
+		id := storage.ID(strings.TrimSpace(rawID))
+		if id == "" {
+			writeSalesforceError(w, errMalformedID, "ids query parameter contains an empty record id")
+			return
+		}
+		record, ok := object.Records[id]
+		if !ok || record.System.IsDeleted {
+			writeSalesforceError(w, errUnknownRecord, "record not found: "+string(id))
+			return
+		}
+		if hasProjection {
+			records = append(records, projectedRecordPayload(record, version, resolvedObjectName, id, fields))
+			continue
+		}
+		records = append(records, recordPayload(record, version, resolvedObjectName, id))
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"records": records})
 }
 
 func (s *Server) handleCompositeSObjectTypedUpsert(w http.ResponseWriter, r *http.Request, objectName string, externalIDField string) {
@@ -1962,6 +2007,62 @@ func recordPayloadWithProjection(record storage.Record, version string, objectNa
 	}
 	sort.Strings(fieldNames)
 	for _, name := range fieldNames {
+		if value, ok := record.Fields[name]; ok {
+			out[name] = storageValueJSON(value)
+			continue
+		}
+		out[name] = nil
+	}
+	return out
+}
+
+func compositeRetrieveFields(w http.ResponseWriter, definition storage.ObjectDefinition, namespace, rawFields string) ([]string, bool, bool) {
+	if strings.TrimSpace(rawFields) == "" {
+		return nil, false, true
+	}
+	parts := strings.Split(rawFields, ",")
+	fields := make([]string, 0, len(parts))
+	seen := make(map[string]bool, len(parts))
+	for _, raw := range parts {
+		name := strings.TrimSpace(raw)
+		if name == "" {
+			continue
+		}
+		canonical, ok := storage.ResolveFieldName(definition, namespace, name)
+		if !ok {
+			writeSalesforceError(w, errInvalidField, fmt.Sprintf("unknown field %s.%s", definition.APIName, name))
+			return nil, false, false
+		}
+		if seen[canonical] {
+			continue
+		}
+		seen[canonical] = true
+		fields = append(fields, canonical)
+	}
+	if len(fields) == 0 {
+		return nil, false, true
+	}
+	return fields, true, true
+}
+
+func projectedRecordPayload(record storage.Record, version string, objectName string, id storage.ID, fields []string) map[string]any {
+	if record.Object != "" {
+		objectName = record.Object
+	}
+	if record.ID != "" {
+		id = record.ID
+	}
+	out := map[string]any{
+		"attributes": map[string]any{
+			"type": objectName,
+			"url":  "/services/data/" + version + "/sobjects/" + objectName + "/" + string(id),
+		},
+		"Id": string(id),
+	}
+	for _, name := range fields {
+		if name == "Id" {
+			continue
+		}
 		if value, ok := record.Fields[name]; ok {
 			out[name] = storageValueJSON(value)
 			continue
