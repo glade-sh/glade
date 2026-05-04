@@ -661,6 +661,133 @@ System.assertEquals(null, counts.get('b'));
 	}
 }
 
+func TestExecJSONDeserializeTypedSetsAndNestedCollections(t *testing.T) {
+	program, err := CompileAnonymous(`
+Type setType = Type.forName('Set<String>');
+Set<String> tags = JSON.deserialize('["red","blue","red",null]', setType);
+System.assertEquals(3, tags.size());
+System.assert(tags.contains('red'));
+System.assert(tags.contains('blue'));
+System.assert(tags.contains(null));
+
+Type nestedType = Type.forName('Map<String,List<Set<Integer>>>');
+Map<String,List<Set<Integer>>> nested = JSON.deserialize('{"one":[[1,2,2],[3,null]],"empty":[]}', nestedType);
+System.assertEquals(2, nested.get('one').size());
+System.assertEquals(2, nested.get('one').get(0).size());
+System.assert(nested.get('one').get(0).contains(1));
+System.assert(nested.get('one').get(0).contains(2));
+System.assert(nested.get('one').get(1).contains(3));
+System.assert(nested.get('one').get(1).contains(null));
+System.assertEquals(0, nested.get('empty').size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecJSONDeserializeTypedApexClassNestedFields(t *testing.T) {
+	program, err := CompileAnonymous(`
+JsonPerson person = JSON.deserialize('{"ExternalId":"E-7","Name":"Ada","Primary":{"City":"Delta","Zip":99501},"Addresses":[{"City":"Port","Zip":1},{"City":"Lake","Zip":2}],"AddressBook":{"home":{"City":"Cabin","Zip":3}},"Tags":["north","north","south"],"Scores":{"math":9,"trail":10},"OptionalAddress":null}', JsonPerson.class);
+System.assertEquals('E-7', person.ExternalId);
+System.assertEquals('Ada', person.Name);
+System.assertEquals('Delta', person.Primary.City);
+System.assertEquals(99501, person.Primary.Zip);
+System.assertEquals(2, person.Addresses.size());
+JsonAddress lake = person.Addresses.get(1);
+System.assertEquals('Lake', lake.City);
+JsonAddress home = person.AddressBook.get('home');
+System.assertEquals('Cabin', home.City);
+System.assertEquals(2, person.Tags.size());
+System.assert(person.Tags.contains('north'));
+System.assert(person.Tags.contains('south'));
+System.assertEquals(10, person.Scores.get('trail'));
+System.assertEquals(null, person.OptionalAddress);
+System.assertEquals(null, person.Missing);
+
+Boolean strictCaught = false;
+try {
+	JsonPerson bad = JSON.deserializeStrict('{"ExternalId":"E-8","Nope":"x"}', JsonPerson.class);
+} catch (JSONException e) {
+	strictCaught = true;
+	System.assert(e.getMessage().contains('unknown field "Nope"'));
+}
+System.assert(strictCaught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "JsonBase",
+		Fields: map[string]Field{
+			"ExternalId": {Name: "ExternalId", Type: "String"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "JsonAddress",
+		Fields: map[string]Field{
+			"City": {Name: "City", Type: "String"},
+			"Zip":  {Name: "Zip", Type: "Integer"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "JsonPerson",
+		SuperClass: "JsonBase",
+		Fields: map[string]Field{
+			"Name":            {Name: "Name", Type: "String"},
+			"Primary":         {Name: "Primary", Type: "JsonAddress"},
+			"Addresses":       {Name: "Addresses", Type: "List<JsonAddress>"},
+			"AddressBook":     {Name: "AddressBook", Type: "Map<String,JsonAddress>"},
+			"Tags":            {Name: "Tags", Type: "Set<String>"},
+			"Scores":          {Name: "Scores", Type: "Map<String,Integer>"},
+			"OptionalAddress": {Name: "OptionalAddress", Type: "JsonAddress"},
+			"Missing":         {Name: "Missing", Type: "String"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecJSONDeserializeTypedMappingErrorsAreCatchable(t *testing.T) {
+	program, err := CompileAnonymous(`
+String caught = '';
+try {
+	Type mapType = Type.forName('Map<String,Integer>');
+	Object value = JSON.deserialize('{"bad":"not-a-number"}', mapType);
+} catch (JSONException e) {
+	caught = e.getMessage();
+}
+System.assert(caught.contains('JSON.deserialize cannot map JSON String to Integer'));
+
+String keyCaught = '';
+try {
+	Type mapType = Type.forName('Map<Integer,String>');
+	Object value = JSON.deserialize('{"1":"one"}', mapType);
+} catch (JSONException e) {
+	keyCaught = e.getMessage();
+}
+System.assert(keyCaught.contains('Map keys only for String/Object targets'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecJSONDeserializeSObjectUsesSchemaFieldTypes(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account decoded = JSON.deserialize('{"Name":"Acme","RenewalDate__c":"2024-02-29","AnnualRevenue":12.5,"LastSeen__c":"2024-02-29T12:34:56Z","Score__c":7,"Active__c":true,"ParentId":"001B000001DVM9t"}', Account.class);
