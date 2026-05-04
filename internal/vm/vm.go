@@ -929,6 +929,9 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 	if strings.HasPrefix(callee, "Search.") {
 		return Null, unsupportedCallError(callee + " local search/SOSL surface")
 	}
+	if reason, ok := unsupportedIntegrationSurface(callee); ok {
+		return Null, unsupportedCallError(callee + " " + reason)
+	}
 	if strings.HasPrefix(callee, "Limits.") && unsupportedLimitGetter(strings.TrimPrefix(callee, "Limits.")) {
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
@@ -1478,8 +1481,14 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		}
 		return Bool(false), nil
 	case "Messaging.sendEmail":
+		if len(args) > 1 {
+			return Null, unsupportedCallError("Messaging.sendEmail allOrNothing/options overloads")
+		}
 		if len(args) != 1 {
 			return Null, fmt.Errorf("Messaging.sendEmail expects messages")
+		}
+		if args[0].Kind != ValueList {
+			return Null, fmt.Errorf("Messaging.sendEmail expects List")
 		}
 		if err := vm.incrementLimit("emailInvocations", 1); err != nil {
 			return Null, err
@@ -1521,7 +1530,12 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		page := Object("PageReference")
 		page.Fields["url"] = String("/apex/current")
 		page.Fields["parameters"] = Map()
+		page.Fields["headers"] = Map()
 		return page, nil
+	case "Messaging.reserveSingleEmailCapacity", "Messaging.reserveMassEmailCapacity",
+		"Messaging.renderEmailTemplate", "Messaging.renderStoredEmailTemplate",
+		"Messaging.sendEmailMessage", "Messaging.sendPushNotification":
+		return Null, unsupportedCallError(callee + " local messaging transport/template surface")
 	case "URL.getSalesforceBaseUrl", "URL.getOrgDomainUrl":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
@@ -1574,6 +1588,38 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return String(userInfoField(vm.testContext.CurrentUser, "Username", userInfoField(vm.testContext.CurrentUser, "Id", "system"))), nil
 		}
 		return String("system"), nil
+	case "UserInfo.getName":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("UserInfo.getName expects 0 arguments")
+		}
+		if vm.testContext != nil {
+			return String(userInfoField(vm.testContext.CurrentUser, "Name", "System User")), nil
+		}
+		return String("System User"), nil
+	case "UserInfo.getFirstName":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("UserInfo.getFirstName expects 0 arguments")
+		}
+		if vm.testContext != nil {
+			return String(userInfoField(vm.testContext.CurrentUser, "FirstName", "System")), nil
+		}
+		return String("System"), nil
+	case "UserInfo.getLastName":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("UserInfo.getLastName expects 0 arguments")
+		}
+		if vm.testContext != nil {
+			return String(userInfoField(vm.testContext.CurrentUser, "LastName", "User")), nil
+		}
+		return String("User"), nil
+	case "UserInfo.getUserEmail":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("UserInfo.getUserEmail expects 0 arguments")
+		}
+		if vm.testContext != nil {
+			return String(userInfoField(vm.testContext.CurrentUser, "Email", "system@example.invalid")), nil
+		}
+		return String("system@example.invalid"), nil
 	case "UserInfo.getOrganizationId":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("UserInfo.getOrganizationId expects 0 arguments")
@@ -1597,6 +1643,26 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 	default:
 		return Null, unsupportedCallError(callee)
 	}
+}
+
+func unsupportedIntegrationSurface(callee string) (string, bool) {
+	for _, prefix := range []string{"Auth.", "EventBus.", "QuickAction.", "Canvas.", "Continuation."} {
+		if strings.HasPrefix(callee, prefix) {
+			switch prefix {
+			case "Auth.":
+				return "local authentication token/cloud API surface", true
+			case "EventBus.":
+				return "local platform event publish surface", true
+			case "QuickAction.":
+				return "local quick action UI surface", true
+			case "Canvas.":
+				return "local canvas app integration surface", true
+			case "Continuation.":
+				return "local continuation callout surface", true
+			}
+		}
+	}
+	return "", false
 }
 
 func userInfoField(user Value, field, fallback string) string {
@@ -5968,7 +6034,7 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 		}
 		return response, nil
 	case "Continuation":
-		return Null, unsupportedCallError("Continuation local continuation callout surface")
+		return Null, unsupportedCallError("Continuation constructor local continuation callout surface")
 	case "StaticResourceCalloutMock", "MultiStaticResourceCalloutMock":
 		return Null, unsupportedCallError(typeName + " local static resource callout mock surface")
 	case "PageReference":
@@ -5984,6 +6050,7 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 			page.Fields["url"] = args[0]
 		}
 		page.Fields["parameters"] = Map()
+		page.Fields["headers"] = Map()
 		return page, nil
 	case "ApexPages.Message":
 		if len(args) < 2 || len(args) > 3 {
@@ -9154,6 +9221,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		}
 	case "ApexPages.Message":
 		switch method {
+		case "getSeverity":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("ApexPages.Message.getSeverity expects 0 arguments")
+			}
+			return receiver.Fields["severity"], receiver, false, true, nil
 		case "getSummary":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("ApexPages.Message.getSummary expects 0 arguments")
@@ -9203,6 +9275,16 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			params := Map()
 			receiver.Fields["parameters"] = params
 			return params, receiver, true, true, nil
+		case "getHeaders":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("PageReference.getHeaders expects 0 arguments")
+			}
+			if value, ok := receiver.Fields["headers"]; ok {
+				return value, receiver, false, true, nil
+			}
+			headers := Map()
+			receiver.Fields["headers"] = headers
+			return headers, receiver, true, true, nil
 		}
 	case "URL":
 		if method == "toExternalForm" || method == "toString" {

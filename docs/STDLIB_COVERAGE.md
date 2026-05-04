@@ -6,7 +6,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 
 | Area | API | Status | Notes |
 | --- | --- | --- | --- |
-| ApexPages | `ApexPages.Message` | `partial` | Constructor and getters; no Visualforce rendering lifecycle. |
+| ApexPages | `ApexPages.Message` | `partial` | Constructor plus severity, summary, and detail getters; no Visualforce rendering lifecycle. |
 | ApexPages | `ApexPages.addMessage` | `supported` | Stores page messages on the VM instance. |
 | ApexPages | `ApexPages.currentPage` | `supported` | Returns a deterministic local PageReference. |
 | ApexPages | `ApexPages.getMessages` | `supported` | Returns VM-local page messages. |
@@ -16,9 +16,12 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Async | `BatchableContext.getJobId` | `partial` | Returns the deterministic local AsyncApexJob Id while supported batch start/execute/finish methods drain under Test.stopTest. |
 | Async | `QueueableContext.getJobId` | `partial` | Returns the deterministic local AsyncApexJob Id while supported queueables drain under Test.stopTest. |
 | Async | `SchedulableContext.getTriggerId` | `partial` | Returns the deterministic local CronTrigger Id while supported scheduled jobs drain under Test.stopTest. |
+| Auth | `token/cloud APIs` | `unsupported` | Auth namespace token and session/cloud calls return explicit UnsupportedFeature diagnostics. |
 | Blob | `Blob.size` | `supported` | Returns local Blob byte length. |
 | Blob | `Blob.toString` | `supported` | Returns UTF-8 local Blob bytes as a string and rejects invalid UTF-8 data. |
 | Blob | `Blob.valueOf` | `supported` | Stores the string bytes in a local Blob value. |
+| Canvas | `Canvas namespace` | `unsupported` | Canvas app integration calls return explicit UnsupportedFeature diagnostics. |
+| Continuation | `Continuation` | `unsupported` | Continuation construction and callback/response calls return explicit UnsupportedFeature diagnostics. |
 | Crypto | `Crypto.areEqualConstantTime` | `supported` | Constant-time local Blob equality comparison. |
 | Crypto | `Crypto.encrypt/decrypt/sign/verify` | `unsupported` | Org key, certificate, encryption, and random key-generation surfaces return explicit unsupported errors. |
 | Crypto | `Crypto.generateDigest` | `supported` | MD5, SHA1, SHA-256, SHA-512, SHA3-256/384/512, with conservative algorithm normalization. |
@@ -85,6 +88,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | EncodingUtil | `EncodingUtil.convertToHex` | `supported` | Blob-shaped local value. |
 | EncodingUtil | `EncodingUtil.urlDecode` | `partial` | Uses query unescape with UTF-8/utf8/UTF_8 charset validation only; other charsets return UnsupportedFeature. |
 | EncodingUtil | `EncodingUtil.urlEncode` | `partial` | Uses query escape with UTF-8/utf8/UTF_8 charset validation only; other charsets return UnsupportedFeature. |
+| EventBus | `EventBus.publish` | `unsupported` | Platform event publish calls return explicit UnsupportedFeature diagnostics. |
 | Exception | `Built-in exception types` | `partial` | Known public built-in exception tokens construct message-bearing local exceptions and assign to Exception; exact platform class catalog, line numbers, and stack text remain partial. |
 | Exception | `Exception.getCause` | `partial` | Returns the locally initialized cause value; repeat/self-cause platform edge rules are not modeled. |
 | Exception | `Exception.getLineNumber` | `partial` | Returns deterministic local throw-site line metadata when available; otherwise 0. |
@@ -181,8 +185,9 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Math | `Math.sin` | `supported` | Finite deterministic result for numeric values. |
 | Math | `Math.sqrt` | `supported` | Numeric values. |
 | Math | `Math.tan` | `supported` | Finite deterministic result for numeric values. |
+| Messaging | `Messaging.SendEmailResult` | `partial` | Local success result exposes isSuccess and getErrors getters. |
 | Messaging | `Messaging.SingleEmailMessage` | `partial` | Common setters only; no delivery transport. |
-| Messaging | `Messaging.sendEmail` | `partial` | Returns local SendEmailResult and increments email limits. |
+| Messaging | `Messaging.sendEmail` | `partial` | Single-list overload returns local SendEmailResult and increments email limits; transport/options/template surfaces are unsupported. |
 | Object | `Object.equals` | `supported` | Uses local value equality for primitives, collections, platform scalars, and object identity. |
 | Object | `Object.hashCode` | `supported` | Deterministic within local value equality; object identity hashes are request-local. |
 | Object | `Object.toString` | `supported` | Returns local string forms for primitives, collections, platform scalars, and objects. |
@@ -213,6 +218,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | REST | `@RestResource local server dispatch` | `unsupported` | Custom Apex REST dispatch returns a stable unsupported error from the local server. |
 | REST | `RestContext.request / RestContext.response` | `partial` | VM-local static slots support RestRequest assignment and lazy RestResponse creation; no platform request lifecycle dispatch is modeled. |
 | REST | `RestRequest / RestResponse object shapes` | `partial` | Local request/response objects expose URI/path/method/address, params, headers, Blob body, status, and add/get helper methods covered by compatibility fixtures; broader platform lifecycle remains unsupported. |
+| QuickAction | `QuickAction namespace` | `unsupported` | Quick action UI calls return explicit UnsupportedFeature diagnostics. |
 | RoundingMode | `RoundingMode.valueOf` | `partial` | Constructs supported local Decimal rounding-mode tokens by exact name. |
 | Schema | `DescribeFieldResult` | `partial` | Common field metadata and access booleans. |
 | Schema | `DescribeSObjectResult` | `partial` | Common object metadata, fields, record types, and child relationships. |
@@ -380,10 +386,14 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | URL | `URL.getSalesforceBaseUrl` | `partial` | Deterministic local base URL. |
 | URL | `URL.toExternalForm` | `supported` | Returns the stored local URL string. |
 | Unsupported | `unimplemented platform/stdlib calls` | `supported` | Typed UnsupportedFeature errors with stable message text. |
+| UserInfo | `UserInfo.getFirstName` | `partial` | Current runAs/default user. |
 | UserInfo | `UserInfo.getLanguage` | `partial` | Deterministic local value. |
+| UserInfo | `UserInfo.getLastName` | `partial` | Current runAs/default user. |
 | UserInfo | `UserInfo.getLocale` | `partial` | Deterministic local value. |
+| UserInfo | `UserInfo.getName` | `partial` | Current runAs/default user. |
 | UserInfo | `UserInfo.getOrganizationId` | `partial` | Local org identity. |
 | UserInfo | `UserInfo.getProfileId` | `partial` | Current runAs/default user. |
 | UserInfo | `UserInfo.getSessionId` | `partial` | Empty local session value. |
 | UserInfo | `UserInfo.getTimeZone` | `partial` | Deterministic UTC value. |
+| UserInfo | `UserInfo.getUserEmail` | `partial` | Current runAs/default user. |
 | UserInfo | `UserInfo.getUserId` | `partial` | Current runAs/default user. |

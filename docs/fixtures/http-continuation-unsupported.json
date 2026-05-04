@@ -22,7 +22,7 @@
   "expected": {
     "error": {
       "type": "UnsupportedFeature",
-      "message": "unsupported call \"Continuation local continuation callout surface\""
+      "message": "unsupported call \"Continuation constructor local continuation callout surface\""
     }
   }
 }

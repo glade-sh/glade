@@ -1,0 +1,7 @@
+{
+  "name": "integration-auth-unsupported",
+  "evidence": [{"symbol": "Auth.SessionManagement.getCurrentSession", "kind": "exec", "notes": "Auth token/session APIs return UnsupportedFeature diagnostics."}],
+  "source": [{"path": "anonymous.apex", "content": "Auth.SessionManagement.getCurrentSession();"}],
+  "command": {"kind": "exec", "args": ["Auth.SessionManagement.getCurrentSession();"]},
+  "expected": {"error": {"type": "UnsupportedFeature", "message": "unsupported call \"Auth.SessionManagement.getCurrentSession local authentication token/cloud API surface\""}}
+}
