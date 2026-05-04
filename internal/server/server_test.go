@@ -397,6 +397,84 @@ func TestServerRollsBackFailedRequestTransactions(t *testing.T) {
 	}
 }
 
+func TestServerPersistFailuresDoNotLeakMutations(t *testing.T) {
+	t.Run("update", func(t *testing.T) {
+		org := testOrgWithAccount("001000000000001", "Original")
+		handler := NewWithStore(&org, &failingStore{})
+		res := httptest.NewRecorder()
+		handler.ServeHTTP(res, httptest.NewRequest(http.MethodPatch, "/services/data/v61.0/sobjects/Account/001000000000001", strings.NewReader(`{"Name":"Changed"}`)))
+		if res.Code != http.StatusInternalServerError {
+			t.Fatalf("status = %d body=%s", res.Code, res.Body.String())
+		}
+		if got := org.Objects["Account"].Records["001000000000001"].Fields["Name"].String; got != "Original" {
+			t.Fatalf("record leaked update = %q", got)
+		}
+	})
+	t.Run("delete", func(t *testing.T) {
+		org := testOrgWithAccount("001000000000001", "Original")
+		handler := NewWithStore(&org, &failingStore{})
+		res := httptest.NewRecorder()
+		handler.ServeHTTP(res, httptest.NewRequest(http.MethodDelete, "/services/data/v61.0/sobjects/Account/001000000000001", nil))
+		if res.Code != http.StatusInternalServerError {
+			t.Fatalf("status = %d body=%s", res.Code, res.Body.String())
+		}
+		if org.Objects["Account"].Records["001000000000001"].System.IsDeleted {
+			t.Fatalf("record leaked delete = %#v", org.Objects["Account"].Records["001000000000001"])
+		}
+	})
+	t.Run("execute anonymous", func(t *testing.T) {
+		org := testOrg()
+		handler := NewWithStore(&org, &failingStore{})
+		res := httptest.NewRecorder()
+		handler.ServeHTTP(res, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/tooling/executeAnonymous", strings.NewReader(`{"anonymousBody":"insert new Account(Name = 'Transient');"}`)))
+		if res.Code != http.StatusInternalServerError {
+			t.Fatalf("status = %d body=%s", res.Code, res.Body.String())
+		}
+		if len(org.Objects["Account"].Records) != 0 {
+			t.Fatalf("executeAnonymous persist failure leaked records = %#v", org.Objects["Account"].Records)
+		}
+	})
+	t.Run("composite", func(t *testing.T) {
+		org := testOrg()
+		handler := NewWithStore(&org, &failingStore{})
+		res := httptest.NewRecorder()
+		handler.ServeHTTP(res, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/composite/sobjects", strings.NewReader(`{"records":[{"attributes":{"type":"Account"},"Name":"Transient"}]}`)))
+		if res.Code != http.StatusInternalServerError {
+			t.Fatalf("status = %d body=%s", res.Code, res.Body.String())
+		}
+		if len(org.Objects["Account"].Records) != 0 {
+			t.Fatalf("composite persist failure leaked records = %#v", org.Objects["Account"].Records)
+		}
+	})
+	t.Run("fixture", func(t *testing.T) {
+		org := testOrg()
+		handler := NewWithStore(&org, &failingStore{})
+		res := httptest.NewRecorder()
+		handler.ServeHTTP(res, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/oaer/fixture", strings.NewReader(`{
+  "version":"oaer.storage.v1",
+  "objects":[{"name":"Account","records":[{"fields":{"Name":{"kind":"string","string":"Transient"}}}]}]
+}`)))
+		if res.Code != http.StatusInternalServerError {
+			t.Fatalf("status = %d body=%s", res.Code, res.Body.String())
+		}
+		if len(org.Objects["Account"].Records) != 0 {
+			t.Fatalf("fixture persist failure leaked records = %#v", org.Objects["Account"].Records)
+		}
+	})
+	t.Run("reset", func(t *testing.T) {
+		org := testOrgWithAccount("001000000000001", "Original")
+		handler := NewWithStore(&org, &failingStore{})
+		res := httptest.NewRecorder()
+		handler.ServeHTTP(res, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/oaer/reset/data", nil))
+		if res.Code != http.StatusInternalServerError {
+			t.Fatalf("status = %d body=%s", res.Code, res.Body.String())
+		}
+		if got := len(org.Objects["Account"].Records); got != 1 {
+			t.Fatalf("reset persist failure leaked records = %d", got)
+		}
+	})
+}
+
 func TestServerSerializesConcurrentMutations(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
@@ -617,6 +695,20 @@ func testOrg() storage.OrgState {
 		},
 		Records: make(map[storage.ID]storage.Record),
 	}
+	return org
+}
+
+func testOrgWithAccount(id storage.ID, name string) storage.OrgState {
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Records[id] = storage.Record{
+		ID:     id,
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name": storage.StringValue(name),
+		},
+	}
+	org.Objects["Account"] = account
 	return org
 }
 

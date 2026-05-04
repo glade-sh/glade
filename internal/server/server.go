@@ -163,15 +163,15 @@ func (s *Server) handleObject(w http.ResponseWriter, r *http.Request, parts []st
 			writeError(w, http.StatusBadRequest, "JSON_PARSER_ERROR", err.Error())
 			return
 		}
-		next := s.Org.Clone()
-		engine := dml.NewEngine(&next)
-		engine.UserID = s.currentUserIDForRequest(r)
-		result := engine.Insert([]storage.Record{record})[0]
-		if result.Success {
-			if err := s.commitOrg(next); err != nil {
-				writeError(w, http.StatusInternalServerError, "SERVER_ERROR", err.Error())
-				return
-			}
+		var result dml.Result
+		if err := s.withOrgTransaction(func(next *storage.OrgState) (bool, error) {
+			engine := dml.NewEngine(next)
+			engine.UserID = s.currentUserIDForRequest(r)
+			result = engine.Insert([]storage.Record{record})[0]
+			return result.Success, nil
+		}); err != nil {
+			writeError(w, http.StatusInternalServerError, "SERVER_ERROR", err.Error())
+			return
 		}
 		writeDMLResult(w, http.StatusCreated, result)
 	case len(parts) == 2:
@@ -201,27 +201,27 @@ func (s *Server) handleRecord(w http.ResponseWriter, r *http.Request, objectName
 			writeError(w, http.StatusBadRequest, "JSON_PARSER_ERROR", err.Error())
 			return
 		}
-		next := s.Org.Clone()
-		engine := dml.NewEngine(&next)
-		engine.UserID = s.currentUserIDForRequest(r)
-		result := engine.Update([]storage.Record{record})[0]
-		if result.Success {
-			if err := s.commitOrg(next); err != nil {
-				writeError(w, http.StatusInternalServerError, "SERVER_ERROR", err.Error())
-				return
-			}
+		var result dml.Result
+		if err := s.withOrgTransaction(func(next *storage.OrgState) (bool, error) {
+			engine := dml.NewEngine(next)
+			engine.UserID = s.currentUserIDForRequest(r)
+			result = engine.Update([]storage.Record{record})[0]
+			return result.Success, nil
+		}); err != nil {
+			writeError(w, http.StatusInternalServerError, "SERVER_ERROR", err.Error())
+			return
 		}
 		writeDMLResult(w, http.StatusNoContent, result)
 	case http.MethodDelete:
-		next := s.Org.Clone()
-		engine := dml.NewEngine(&next)
-		engine.UserID = s.currentUserIDForRequest(r)
-		result := engine.Delete([]storage.Record{{Object: objectName, ID: id}})[0]
-		if result.Success {
-			if err := s.commitOrg(next); err != nil {
-				writeError(w, http.StatusInternalServerError, "SERVER_ERROR", err.Error())
-				return
-			}
+		var result dml.Result
+		if err := s.withOrgTransaction(func(next *storage.OrgState) (bool, error) {
+			engine := dml.NewEngine(next)
+			engine.UserID = s.currentUserIDForRequest(r)
+			result = engine.Delete([]storage.Record{{Object: objectName, ID: id}})[0]
+			return result.Success, nil
+		}); err != nil {
+			writeError(w, http.StatusInternalServerError, "SERVER_ERROR", err.Error())
+			return
 		}
 		writeDMLResult(w, http.StatusNoContent, result)
 	default:
@@ -237,9 +237,10 @@ func (s *Server) handleOAER(w http.ResponseWriter, r *http.Request, parts []stri
 			writeError(w, http.StatusBadRequest, "INVALID_RESET", err.Error())
 			return
 		}
-		next := s.Org.Clone()
-		applyResetScopes(&next, scopes)
-		if err := s.commitOrg(next); err != nil {
+		if err := s.withOrgTransaction(func(next *storage.OrgState) (bool, error) {
+			applyResetScopes(next, scopes)
+			return true, nil
+		}); err != nil {
 			writeError(w, http.StatusInternalServerError, "SERVER_ERROR", err.Error())
 			return
 		}
@@ -252,13 +253,16 @@ func (s *Server) handleOAER(w http.ResponseWriter, r *http.Request, parts []stri
 			writeError(w, http.StatusBadRequest, "JSON_PARSER_ERROR", err.Error())
 			return
 		}
-		next := s.Org.Clone()
-		if err := storage.ApplyFixture(&next, fixture); err != nil {
-			writeError(w, http.StatusBadRequest, "INVALID_FIXTURE", err.Error())
+		var fixtureErr error
+		if err := s.withOrgTransaction(func(next *storage.OrgState) (bool, error) {
+			fixtureErr = storage.ApplyFixture(next, fixture)
+			return fixtureErr == nil, nil
+		}); err != nil {
+			writeError(w, http.StatusInternalServerError, "SERVER_ERROR", err.Error())
 			return
 		}
-		if err := s.commitOrg(next); err != nil {
-			writeError(w, http.StatusInternalServerError, "SERVER_ERROR", err.Error())
+		if fixtureErr != nil {
+			writeError(w, http.StatusBadRequest, "INVALID_FIXTURE", fixtureErr.Error())
 			return
 		}
 		writeJSON(w, http.StatusOK, map[string]any{"success": true, "summary": storage.InspectOrg("", *s.Org)})
@@ -390,22 +394,25 @@ func (s *Server) handleExecuteAnonymous(w http.ResponseWriter, r *http.Request) 
 		writeJSON(w, http.StatusOK, executeAnonymousFailure(false, err.Error(), nil))
 		return
 	}
-	next := s.Org.Clone()
-	machine := vm.New(nil)
-	machine.SetOrg(&next)
-	if s.LimitMode != "" {
-		machine.SetLimitMode(s.LimitMode)
-	}
-	if s.LimitCaps != (vm.LimitCaps{}) {
-		machine.SetLimitCaps(s.LimitCaps)
-	}
-	result, err := machine.Execute(program)
-	if err != nil {
-		writeJSON(w, http.StatusOK, executeAnonymousFailure(true, err.Error(), result.Debug))
+	var result vm.Result
+	var runtimeErr error
+	if err := s.withOrgTransaction(func(next *storage.OrgState) (bool, error) {
+		machine := vm.New(nil)
+		machine.SetOrg(next)
+		if s.LimitMode != "" {
+			machine.SetLimitMode(s.LimitMode)
+		}
+		if s.LimitCaps != (vm.LimitCaps{}) {
+			machine.SetLimitCaps(s.LimitCaps)
+		}
+		result, runtimeErr = machine.Execute(program)
+		return runtimeErr == nil, nil
+	}); err != nil {
+		writeError(w, http.StatusInternalServerError, "SERVER_ERROR", err.Error())
 		return
 	}
-	if err := s.commitOrg(next); err != nil {
-		writeError(w, http.StatusInternalServerError, "SERVER_ERROR", err.Error())
+	if runtimeErr != nil {
+		writeJSON(w, http.StatusOK, executeAnonymousFailure(true, runtimeErr.Error(), result.Debug))
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
@@ -471,28 +478,30 @@ func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, parts [
 			}
 			records = append(records, record)
 		}
-		next := s.Org.Clone()
-		engine := dml.NewEngine(&next)
-		engine.UserID = s.currentUserIDForRequest(r)
-		results := engine.Insert(records)
+		var results []dml.Result
 		hasFailure := false
 		hasSuccess := false
-		for _, result := range results {
-			if !result.Success {
-				hasFailure = true
-			} else {
-				hasSuccess = true
+		if err := s.withOrgTransaction(func(next *storage.OrgState) (bool, error) {
+			engine := dml.NewEngine(next)
+			engine.UserID = s.currentUserIDForRequest(r)
+			results = engine.Insert(records)
+			hasFailure = false
+			hasSuccess = false
+			for _, result := range results {
+				if !result.Success {
+					hasFailure = true
+				} else {
+					hasSuccess = true
+				}
 			}
+			return hasSuccess && !(body.AllOrNone && hasFailure), nil
+		}); err != nil {
+			writeError(w, http.StatusInternalServerError, "SERVER_ERROR", err.Error())
+			return
 		}
 		if body.AllOrNone && hasFailure {
 			writeJSON(w, http.StatusBadRequest, compositeResults(results))
 			return
-		}
-		if hasSuccess {
-			if err := s.commitOrg(next); err != nil {
-				writeError(w, http.StatusInternalServerError, "SERVER_ERROR", err.Error())
-				return
-			}
 		}
 		writeJSON(w, http.StatusOK, compositeResults(results))
 		return
@@ -506,6 +515,15 @@ func (s *Server) commitOrg(org storage.OrgState) error {
 	}
 	*s.Org = org
 	return nil
+}
+
+func (s *Server) withOrgTransaction(fn func(next *storage.OrgState) (commit bool, err error)) error {
+	next := s.Org.Clone()
+	commit, err := fn(&next)
+	if err != nil || !commit {
+		return err
+	}
+	return s.commitOrg(next)
 }
 
 func (s *Server) persistOrg(org storage.OrgState) error {
