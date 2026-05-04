@@ -1,0 +1,39 @@
+{
+  "name": "integration-rest-page-final-local",
+  "evidence": [
+    {
+      "symbol": "RestContext.request / RestContext.response",
+      "kind": "test",
+      "notes": "VM-local static request/response slots support replacement, null clearing, and response re-lazy without platform dispatch."
+    },
+    {
+      "symbol": "RestRequest / RestResponse object shapes",
+      "kind": "test",
+      "notes": "Local headers and params rebuild after null map resets, preserve deterministic helper keys, and keep case-insensitive header lookup."
+    },
+    {
+      "symbol": "PageReference local model",
+      "kind": "test",
+      "notes": "URL, redirect, typed parameter/header maps, currentPage replacement, and String.valueOf/toString use the local URL without Visualforce rendering."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/classes/IntegrationRestPageFinalLocalTest.cls",
+      "content": "@isTest private class IntegrationRestPageFinalLocalTest { @isTest static void restLifecycleAndPageLocalModel() { RestContext.request = null; System.assertEquals(null, RestContext.request); RestContext.response = null; System.assertEquals(200, RestContext.response.statusCode); RestContext.response.headers = null; RestContext.response.addHeader('X-Rebuilt', 'response'); System.assertEquals('response', RestContext.response.getHeader('x-rebuilt')); RestRequest req = new RestRequest(); req.requestURI = '/services/apexrest/final/7?debug=true'; req.resourcePath = '/final/7'; req.httpMethod = 'POST'; req.remoteAddress = '192.0.2.10'; req.headers = null; req.addHeader('Content-Type', 'first'); req.addHeader('content-type', 'application/json'); req.params = null; req.addParameter('debug', 'true'); req.requestBody = Blob.valueOf('{\"ok\":true}'); RestContext.request = req; System.assertEquals('/services/apexrest/final/7?debug=true', RestContext.request.requestURI); System.assertEquals('/final/7', RestContext.request.resourcePath); System.assertEquals('POST', RestContext.request.httpMethod); System.assertEquals('192.0.2.10', RestContext.request.remoteAddress); System.assertEquals('{\"ok\":true}', RestContext.request.requestBody.toString()); System.assertEquals('application/json', RestContext.request.getHeader('CONTENT-TYPE')); System.assertEquals(1, RestContext.request.getHeaderKeys().size()); System.assert(RestContext.request.getHeaderKeys().contains('content-type')); System.assertEquals('true', RestContext.request.getParameter('debug')); System.assertEquals(1, RestContext.request.getParameterKeys().size()); RestResponse res = new RestResponse(); res.statusCode = 206; res.responseBody = Blob.valueOf('partial'); res.headers = null; res.addHeader('Location', '/services/apexrest/final/7'); RestContext.response = res; System.assertEquals(206, RestContext.response.statusCode); System.assertEquals('partial', RestContext.response.responseBody.toString()); System.assertEquals('/services/apexrest/final/7', RestContext.response.getHeader('location')); PageReference page = new PageReference('/apex/FinalPage?id=001B000001DVM9t'); page.setRedirect(true); page.getParameters().put('id', '001B000001DVM9t'); page.getHeaders().put('Accept', 'text/html'); System.assertEquals('/apex/FinalPage?id=001B000001DVM9t', page.getUrl()); System.assertEquals('/apex/FinalPage?id=001B000001DVM9t', page.toString()); System.assertEquals('/apex/FinalPage?id=001B000001DVM9t', String.valueOf(page)); System.assert(page.getRedirect()); System.assertEquals('001B000001DVM9t', page.getParameters().get('id')); System.assertEquals('text/html', page.getHeaders().get('Accept')); Test.setCurrentPage(page); System.assertEquals('/apex/FinalPage?id=001B000001DVM9t', ApexPages.currentPage().toString()); } }"
+    }
+  ],
+  "command": {
+    "kind": "test",
+    "args": []
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

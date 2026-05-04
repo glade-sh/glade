@@ -432,6 +432,8 @@ func TestExecApexPagesPageReferenceAndMessagesEdges(t *testing.T) {
 	program, err := CompileAnonymous(`
 PageReference page = new PageReference('/apex/Trail');
 System.assertEquals('/apex/Trail', page.getUrl());
+System.assertEquals('/apex/Trail', page.toString());
+System.assertEquals('/apex/Trail', String.valueOf(page));
 System.assertEquals(false, page.getRedirect());
 page.setRedirect(true);
 System.assertEquals(true, page.getRedirect());
@@ -466,6 +468,8 @@ func TestExecPageReferenceLocalMapsStartTypedAndMutable(t *testing.T) {
 	program, err := CompileAnonymous(`
 PageReference blank = new PageReference();
 System.assertEquals('', blank.getUrl());
+System.assertEquals('', blank.toString());
+System.assertEquals('', String.valueOf(blank));
 System.assertEquals(0, blank.getParameters().size());
 System.assertEquals(0, blank.getHeaders().size());
 blank.getParameters().put('id', '001B000001DVM9t');

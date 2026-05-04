@@ -115,18 +115,22 @@ req.addHeader('content-type', 'application/json');
 req.addParameter('expand', 'true');
 req.addParameter('sort', 'name');
 RestContext.request = req;
+req.headers = null;
+req.addHeader('X-Rebuilt', 'yes');
+req.params = null;
+req.addParameter('rebuilt', 'true');
 
 System.assertEquals('/services/apexrest/widgets/42?expand=true', RestContext.request.requestURI);
 System.assertEquals('/widgets/42', RestContext.request.resourcePath);
 System.assertEquals('PATCH', RestContext.request.httpMethod);
 System.assertEquals('127.0.0.1', RestContext.request.remoteAddress);
 System.assertEquals('{"name":"Acme"}', RestContext.request.requestBody.toString());
-System.assertEquals('application/json', RestContext.request.getHeader('CONTENT-TYPE'));
+System.assertEquals('yes', RestContext.request.getHeader('x-rebuilt'));
 System.assertEquals(1, RestContext.request.getHeaderKeys().size());
-System.assert(RestContext.request.getHeaderKeys().contains('content-type'));
-System.assertEquals('true', RestContext.request.getParameter('expand'));
-System.assertEquals(2, RestContext.request.getParameterKeys().size());
-System.assert(RestContext.request.getParameterKeys().contains('sort'));
+System.assert(RestContext.request.getHeaderKeys().contains('X-Rebuilt'));
+System.assertEquals('true', RestContext.request.getParameter('rebuilt'));
+System.assertEquals(1, RestContext.request.getParameterKeys().size());
+System.assert(RestContext.request.getParameterKeys().contains('rebuilt'));
 
 RestContext.response.statusCode = 201;
 RestContext.response.responseBody = Blob.valueOf('created');

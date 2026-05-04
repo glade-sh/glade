@@ -95,6 +95,12 @@ func (v Value) String() string {
 	case ValueMap:
 		return mapString(v.Map)
 	case ValueObject:
+		if v.Type == "PageReference" {
+			if rawURL, ok := v.Fields["url"]; ok && rawURL.Kind == ValueString {
+				return rawURL.Text
+			}
+			return ""
+		}
 		if message, ok := v.Fields["message"]; ok && message.Kind == ValueString {
 			return message.Text
 		}

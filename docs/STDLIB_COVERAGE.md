@@ -211,7 +211,8 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Object | `Object.equals` | `supported` | Uses local value equality for primitives, collections, platform scalars, and object identity. |
 | Object | `Object.hashCode` | `supported` | Deterministic within local value equality; object identity hashes are request-local. |
 | Object | `Object.toString` | `supported` | Returns local string forms for primitives, collections, platform scalars, and objects. |
-| PageReference | `PageReference` | `partial` | Constructor defaults, URL, redirect, typed local parameters and headers, and string conversion basics; Visualforce rendering and PDF content remain explicit UnsupportedFeature seams. |
+| PageReference | `PageReference` | `supported` | Constructor defaults, URL, redirect, typed local parameters and headers, currentPage/setCurrentPage storage, and URL-backed toString/String.valueOf are supported for the VM-local page model. |
+| PageReference | `Visualforce rendering and PDF content` | `unsupported` | PageReference.getContent and getContentAsPDF return fixture-backed UnsupportedFeature diagnostics; no Visualforce rendering or PDF service is faked. |
 | Pattern | `Matcher.appendReplacement/appendTail` | `unsupported` | Java StringBuffer append-position semantics return explicit unsupported errors. |
 | Pattern | `Matcher.end` | `supported` | Local Go-regexp group end positions, including -1 for optional unmatched groups and stable invalid-group errors. |
 | Pattern | `Matcher.find` | `supported` | Local Go-regexp matching with captured groups, region bounds, find(start) reset behavior, anchoring/transparent bound handling, and compiled flag state. |
@@ -239,8 +240,8 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Pattern | `PatternSyntaxException` | `supported` | Invalid local regex syntax throws a catchable PatternSyntaxException with getDescription, getIndex, getPattern, getMessage, and exception hierarchy behavior. |
 | QuickAction | `QuickAction namespace` | `unsupported` | Quick action UI execution and discovery calls return fixture-backed UnsupportedFeature diagnostics. |
 | REST | `@RestResource local server dispatch` | `unsupported` | Custom Apex REST dispatch returns a stable unsupported error from the local server. |
-| REST | `RestContext.request / RestContext.response` | `partial` | VM-local static slots support RestRequest assignment, null clearing, and lazy RestResponse creation after reset; no platform request lifecycle dispatch is modeled. |
-| REST | `RestRequest / RestResponse object shapes` | `partial` | Local request/response objects expose URI/path/method/address, params, deterministic key helpers, case-insensitive headers/getHeader helpers, Blob body, and status covered by compatibility fixtures; broader Apex REST dispatch lifecycle remains unsupported. |
+| REST | `RestContext.request / RestContext.response` | `supported` | VM-local static request/response slots support RestRequest/RestResponse assignment, null clearing, nested field access, and lazy RestResponse creation after reset; platform dispatch lifecycle remains explicitly out of scope. |
+| REST | `RestRequest / RestResponse object shapes` | `supported` | Local request/response objects expose URI/path/method/address, params, deterministic key helpers, case-insensitive headers/getHeader helpers, Blob body, status, null-map rebuilds, and compatibility-fixture coverage; broader Apex REST dispatch lifecycle remains unsupported. |
 | RoundingMode | `RoundingMode.name` | `supported` | Returns deterministic built-in enum member text for Decimal rounding modes. |
 | RoundingMode | `RoundingMode.ordinal` | `supported` | Returns deterministic built-in enum order for UP, DOWN, CEILING, FLOOR, HALF_UP, HALF_DOWN, HALF_EVEN, and UNNECESSARY. |
 | RoundingMode | `RoundingMode.toString` | `supported` | Returns deterministic built-in enum member text for Decimal rounding modes. |

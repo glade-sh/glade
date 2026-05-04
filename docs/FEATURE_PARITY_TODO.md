@@ -689,8 +689,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     transport; `Messaging.SendEmailOptions` remains an explicit UnsupportedFeature
     seam.
   - [x] Add `ApexPages` message storage, stable current page,
-    `Test.setCurrentPage`, `ApexPages.Severity`, `PageReference` typed local
-    parameter/header maps, REST context null/re-lazy response lifecycle, and
+    `Test.setCurrentPage`, `ApexPages.Severity`, supported `PageReference` typed local
+    parameter/header/string URL model, supported REST context null/re-lazy response lifecycle, and
     deterministic org `URL` basics.
   - [x] Cover `URL` authority user-info parsing and bounded FTP default-port
     accessor behavior.
