@@ -237,6 +237,102 @@ System.assert(contacts.isCascadeDelete());
 	}
 }
 
+func TestExecDescribeSchemaMetadataEdges(t *testing.T) {
+	program, err := CompileAnonymous(`
+Object accountDescribe = Account.SObjectType.getDescribe();
+System.assertEquals('Account', accountDescribe.getLabel());
+System.assertEquals('Accounts', accountDescribe.getLabelPlural());
+System.assertEquals('001', accountDescribe.getKeyPrefix());
+Object fieldsToken = accountDescribe.getFields();
+Map<String,Object> fields = fieldsToken.getMap();
+System.assert(fields.containsKey('Name'));
+Object contactFieldDescribe = Contact.AccountId.getDescribe();
+System.assertEquals('Account', contactFieldDescribe.getLabel());
+System.assertEquals('reference', contactFieldDescribe.getType());
+System.assert(contactFieldDescribe.isNillable());
+System.assert(contactFieldDescribe.isAccessible());
+System.assert(contactFieldDescribe.isCreateable());
+System.assert(contactFieldDescribe.isUpdateable());
+System.assertEquals('Account', contactFieldDescribe.getRelationshipName());
+List<Object> references = contactFieldDescribe.getReferenceTo();
+System.assertEquals(1, references.size());
+Object accountType = references.get(0);
+Object referencedDescribe = accountType.getDescribe();
+System.assertEquals('Account', referencedDescribe.getName());
+Object nameDescribe = Account.Name.getDescribe();
+System.assertEquals('Account Name', nameDescribe.getLabel());
+System.assertEquals(null, nameDescribe.getRelationshipName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Label = "Account"
+	account.Definition.PluralLabel = "Accounts"
+	account.Definition.Fields["Name"] = storage.Field{APIName: "Name", Label: "Account Name", Type: storage.FieldString, Required: true}
+	org.Objects["Account"] = account
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:     "Contact",
+			Label:       "Contact",
+			PluralLabel: "Contacts",
+			KeyPrefix:   "003",
+			Fields: map[string]storage.Field{
+				"LastName":  {APIName: "LastName", Label: "Last Name", Type: storage.FieldString},
+				"AccountId": {APIName: "AccountId", Label: "Account", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Account"},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDescribeUnsupportedMetadataEdges(t *testing.T) {
+	tests := []struct {
+		name   string
+		source string
+		want   string
+	}{
+		{
+			name: "field sets",
+			source: `
+Object accountDescribe = Account.SObjectType.getDescribe();
+Object fieldSets = accountDescribe.fieldSets;
+fieldSets.getMap();
+`,
+			want: `unsupported call "Schema.DescribeSObjectResult.fieldSets local field set metadata"`,
+		},
+		{
+			name:   "dependent picklist controller metadata",
+			source: `Account.Rating.getDescribe().getController();`,
+			want:   `unsupported call "Schema.DescribeFieldResult.getController dependent picklist controller metadata"`,
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			program, err := CompileAnonymous(tc.source)
+			if err != nil {
+				t.Fatal(err)
+			}
+			machine := New(nil)
+			org := testDataOrg()
+			account := org.Objects["Account"]
+			account.Definition.Fields["Rating"] = storage.Field{APIName: "Rating", Type: storage.FieldPicklist}
+			org.Objects["Account"] = account
+			machine.SetOrg(&org)
+			_, err = machine.Execute(program)
+			if err == nil || !strings.Contains(err.Error(), tc.want) {
+				t.Fatalf("err = %v, want %s", err, tc.want)
+			}
+		})
+	}
+}
+
 func TestExecSOQLCountAndSingleSObjectAssignment(t *testing.T) {
 	program, err := CompileAnonymous(`
 insert new Account(Name = 'Acme');

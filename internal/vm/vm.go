@@ -4781,6 +4781,7 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 	desc := Object("Schema.DescribeSObjectResult")
 	desc.Fields["name"] = String(name)
 	desc.Fields["label"] = String(definition.Label)
+	desc.Fields["labelPlural"] = String(definition.PluralLabel)
 	desc.Fields["keyPrefix"] = String(definition.KeyPrefix)
 	fieldsMap := Map()
 	fieldNames := make([]string, 0, len(definition.Fields))
@@ -4795,6 +4796,7 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 	fields := Object("Schema.SObjectFieldMap")
 	fields.Fields["map"] = fieldsMap
 	desc.Fields["fields"] = fields
+	desc.Fields["fieldSets"] = Object("Schema.FieldSetMapUnsupported")
 	childRelationships := make([]Value, 0)
 	if vm.Org != nil {
 		childObjects := make([]string, 0, len(vm.Org.Objects))
@@ -4886,15 +4888,25 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 	field := definition.Fields[fieldName]
 	desc := Object("Schema.DescribeFieldResult")
 	desc.Fields["name"] = String(field.APIName)
-	desc.Fields["label"] = String(field.APIName)
+	label := field.Label
+	if label == "" {
+		label = field.APIName
+	}
+	desc.Fields["label"] = String(label)
 	desc.Fields["type"] = String(string(field.Type))
 	desc.Fields["nillable"] = Bool(!field.Required)
 	desc.Fields["externalId"] = Bool(field.ExternalID)
 	desc.Fields["unique"] = Bool(field.Unique)
-	desc.Fields["relationshipName"] = String(field.RelationshipName)
+	if field.RelationshipName == "" {
+		desc.Fields["relationshipName"] = Null
+	} else {
+		desc.Fields["relationshipName"] = String(field.RelationshipName)
+	}
 	references := make([]Value, 0, len(field.ReferenceTo))
 	for _, target := range field.ReferenceTo {
-		references = append(references, String(target))
+		token := Object("Schema.SObjectType")
+		token.Fields["object"] = String(target)
+		references = append(references, token)
 	}
 	desc.Fields["referenceTo"] = List(references...)
 	picklistValues := make([]Value, 0, len(field.PicklistValues))
@@ -7985,6 +7997,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getPicklistValues expects 0 arguments")
 			}
 			return receiver.Fields["picklistValues"], receiver, false, true, nil
+		case "getController", "getControllerValues":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.%s expects 0 arguments", method)
+			}
+			return Null, receiver, false, true, unsupportedCallError("Schema.DescribeFieldResult." + method + " dependent picklist controller metadata")
 		case "isAccessible", "isCreateable", "isUpdateable":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.%s expects 0 arguments", method)
@@ -8013,6 +8030,13 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.PicklistEntry.isActive expects 0 arguments")
 			}
 			return receiver.Fields["active"], receiver, false, true, nil
+		}
+	case "Schema.FieldSetMapUnsupported":
+		if method == "getMap" {
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.FieldSetMap.getMap expects 0 arguments")
+			}
+			return Null, receiver, false, true, unsupportedCallError("Schema.DescribeSObjectResult.fieldSets local field set metadata")
 		}
 	case "Pattern":
 		return callPatternMember(receiver, method, args)
@@ -8459,11 +8483,21 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.getLabel expects 0 arguments")
 			}
 			return receiver.Fields["label"], receiver, false, true, nil
+		case "getLabelPlural":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.getLabelPlural expects 0 arguments")
+			}
+			return receiver.Fields["labelPlural"], receiver, false, true, nil
 		case "getKeyPrefix":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.getKeyPrefix expects 0 arguments")
 			}
 			return receiver.Fields["keyPrefix"], receiver, false, true, nil
+		case "getFields":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.getFields expects 0 arguments")
+			}
+			return receiver.Fields["fields"], receiver, false, true, nil
 		case "getRecordTypeInfos":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.getRecordTypeInfos expects 0 arguments")

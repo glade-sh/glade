@@ -35,6 +35,7 @@ type ObjectDefinition struct {
 
 type Field struct {
 	APIName          string          `json:"apiName"`
+	Label            string          `json:"label,omitempty"`
 	Type             FieldType       `json:"type"`
 	Required         bool            `json:"required,omitempty"`
 	ExternalID       bool            `json:"externalId,omitempty"`
