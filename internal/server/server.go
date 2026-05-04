@@ -639,7 +639,7 @@ func (s *Server) handleQueryMore(w http.ResponseWriter, r *http.Request, token s
 		writeSalesforceError(w, errUnknownEndpoint, "query locator not found or expired")
 		return
 	}
-	if offset < 0 || offset > len(state.records) {
+	if offset < 0 || offset >= len(state.records) {
 		writeSalesforceError(w, errUnknownEndpoint, "query locator not found or expired")
 		return
 	}

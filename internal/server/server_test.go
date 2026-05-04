@@ -163,6 +163,26 @@ func TestQueryMoreUnknownLocator(t *testing.T) {
 	}
 }
 
+func TestQueryMoreRejectsOffsetAtEnd(t *testing.T) {
+	org := testOrg()
+	addAccountForTest(&org, "001000000000001", "A")
+	addAccountForTest(&org, "001000000000002", "B")
+	addAccountForTest(&org, "001000000000003", "C")
+	handler := New(&org)
+
+	first := httptest.NewRecorder()
+	handler.ServeHTTP(first, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/query?q=SELECT%20Id%20FROM%20Account&batchSize=2", nil))
+	if first.Code != http.StatusOK {
+		t.Fatalf("first status = %d body=%s", first.Code, first.Body.String())
+	}
+
+	recorder := httptest.NewRecorder()
+	handler.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/query/oaerql000001-3", nil))
+	if recorder.Code != http.StatusNotFound || !bytes.Contains(recorder.Body.Bytes(), []byte("NOT_FOUND")) {
+		t.Fatalf("status = %d body=%s", recorder.Code, recorder.Body.String())
+	}
+}
+
 func TestSObjectRecordGetShapeAndNullPatch(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
