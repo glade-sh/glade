@@ -427,6 +427,39 @@ System.assertEquals('', String.escapeSingleQuotes(''));
 	}
 }
 
+func TestExecStringStdlibXMLVersionEscapes(t *testing.T) {
+	program, err := CompileAnonymous(`
+String xml10Invalid = String.fromCharArray(new List<Integer>{65, 1, 66, 0, 67});
+System.assertEquals('ABC', xml10Invalid.escapeXml10());
+String xml10Control = String.fromCharArray(new List<Integer>{65, 127, 66, 133, 67});
+String xml10Escaped = xml10Control.escapeXml10();
+System.assertEquals(65, xml10Escaped.codePointAt(0));
+System.assertEquals('&', xml10Escaped.charAt(1));
+System.assertEquals('#', xml10Escaped.charAt(2));
+System.assertEquals('B', xml10Escaped.charAt(7));
+System.assertEquals(133, xml10Escaped.codePointAt(8));
+String xml11Control = String.fromCharArray(new List<Integer>{65, 0, 1, 66, 31, 67, 133});
+String xml11Escaped = xml11Control.escapeXml11();
+System.assertEquals(65, xml11Escaped.codePointAt(0));
+System.assertEquals('&', xml11Escaped.charAt(1));
+System.assertEquals('#', xml11Escaped.charAt(2));
+System.assertEquals('B', xml11Escaped.charAt(5));
+System.assertEquals('&', xml11Escaped.charAt(6));
+System.assertEquals('#', xml11Escaped.charAt(7));
+System.assertEquals('C', xml11Escaped.charAt(11));
+System.assertEquals(133, xml11Escaped.codePointAt(12));
+String xmlMarkup = '<a attr=''q''>&"';
+System.assertEquals('&lt;a attr=&apos;q&apos;&gt;&amp;&quot;', xmlMarkup.escapeXml10());
+System.assertEquals('&lt;a attr=&apos;q&apos;&gt;&amp;&quot;', xmlMarkup.escapeXml11());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestStringStdlibCompletionRejectsBadArguments(t *testing.T) {
 	tests := []struct {
 		method string

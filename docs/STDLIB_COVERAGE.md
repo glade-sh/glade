@@ -267,8 +267,8 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | String | `String.escapeSingleQuotes` | `supported` | Escapes single quotes with backslashes. |
 | String | `String.escapeUnicode` | `partial` | Escapes non-ASCII and control runes as UTF-16 Unicode escapes. |
 | String | `String.escapeXml` | `partial` | Escapes XML core entities; XML version-specific validity is not modeled. |
-| String | `String.escapeXml10` | `partial` | Alias of local XML core entity escaping; XML 1.0 character validity is not modeled. |
-| String | `String.escapeXml11` | `partial` | Alias of local XML core entity escaping; XML 1.1 character validity is not modeled. |
+| String | `String.escapeXml10` | `partial` | Escapes XML core entities, drops XML 1.0-invalid code points, and numeric-escapes restricted control ranges. |
+| String | `String.escapeXml11` | `partial` | Escapes XML core entities, drops XML 1.1-invalid nulls, and numeric-escapes restricted control ranges. |
 | String | `String.format` | `partial` | Deterministic {0}-style list substitution; full MessageFormat locale behavior is not modeled. |
 | String | `String.fromCharArray` | `supported` | Builds a string from valid Unicode code point integers. |
 | String | `String.getChars` | `supported` | Returns Unicode code point integers for each rune. |
