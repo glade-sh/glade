@@ -1534,6 +1534,8 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		return vm.testSetMock(args)
 	case "Test.createStub", "Test.createSoqlStub":
 		return Null, unsupportedCallError(callee + " local stub API")
+	case "Continuation.addHttpRequest", "Continuation.getResponse":
+		return Null, unsupportedCallError(callee + " local continuation callout surface")
 	case "Test.setFixedSearchResults":
 		return Null, unsupportedCallError(callee + " local SOSL fixed search results")
 	case "Test.startTest":
@@ -4232,6 +4234,78 @@ func allASCIIDigits(text string) bool {
 	return text != ""
 }
 
+const (
+	defaultHttpTimeoutMillis int64 = 10000
+	maxHttpTimeoutMillis     int64 = 120000
+)
+
+func validateHttpRequest(request Value) error {
+	endpoint, ok := request.Fields["endpoint"]
+	if !ok || endpoint.Kind != ValueString {
+		return fmt.Errorf("HttpRequest endpoint is required before Http.send")
+	}
+	if err := validateHttpEndpoint(endpoint.Text); err != nil {
+		return err
+	}
+	method, ok := request.Fields["method"]
+	if !ok || method.Kind != ValueString {
+		return fmt.Errorf("HttpRequest method is required before Http.send")
+	}
+	if _, err := normalizeHttpMethod(method.Text); err != nil {
+		return err
+	}
+	if timeout, ok := request.Fields["timeout"]; ok {
+		if timeout.Kind != ValueInt {
+			return fmt.Errorf("HttpRequest timeout must be Integer")
+		}
+		return validateHttpTimeout(timeout.Int)
+	}
+	return nil
+}
+
+func validateHttpEndpoint(endpoint string) error {
+	trimmed := strings.TrimSpace(endpoint)
+	if trimmed == "" {
+		return fmt.Errorf("HttpRequest endpoint is required")
+	}
+	lower := strings.ToLower(trimmed)
+	if strings.HasPrefix(lower, "callout:") {
+		if strings.TrimSpace(trimmed[len("callout:"):]) == "" {
+			return fmt.Errorf("HttpRequest endpoint named credential is required")
+		}
+		return nil
+	}
+	parsed, err := url.Parse(trimmed)
+	if err != nil || parsed.Scheme == "" || parsed.Host == "" {
+		return fmt.Errorf("HttpRequest endpoint must be an absolute http, https, or callout URL")
+	}
+	if parsed.Scheme != "http" && parsed.Scheme != "https" {
+		return fmt.Errorf("HttpRequest endpoint must use http, https, or callout scheme")
+	}
+	return nil
+}
+
+func normalizeHttpMethod(method string) (string, error) {
+	trimmed := strings.TrimSpace(method)
+	if trimmed == "" {
+		return "", fmt.Errorf("HttpRequest method is required")
+	}
+	upper := strings.ToUpper(trimmed)
+	switch upper {
+	case "DELETE", "GET", "HEAD", "PATCH", "POST", "PUT", "TRACE":
+		return upper, nil
+	default:
+		return "", fmt.Errorf("HttpRequest method %q is not supported", method)
+	}
+}
+
+func validateHttpTimeout(timeout int64) error {
+	if timeout < 1 || timeout > maxHttpTimeoutMillis {
+		return fmt.Errorf("HttpRequest timeout must be between 1 and %d milliseconds", maxHttpTimeoutMillis)
+	}
+	return nil
+}
+
 func httpSetHeader(receiver Value, name string, value Value) {
 	headers, ok := receiver.Fields["headers"]
 	if !ok || headers.Kind != ValueMap {
@@ -5772,6 +5846,10 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 		return object, nil
 	}
 	switch typeName {
+	case "Continuation":
+		return Null, unsupportedCallError("Continuation local continuation callout surface")
+	case "StaticResourceCalloutMock", "MultiStaticResourceCalloutMock":
+		return Null, unsupportedCallError(typeName + " local static resource callout mock surface")
 	case "PageReference":
 		if len(args) > 1 || len(namedArgs) != 0 {
 			return Null, fmt.Errorf("PageReference constructor expects optional URL String")
@@ -8725,6 +8803,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 1 || args[0].Kind != ValueString {
 				return Null, receiver, false, true, fmt.Errorf("HttpRequest.setEndpoint expects String")
 			}
+			if err := validateHttpEndpoint(args[0].Text); err != nil {
+				return Null, receiver, false, true, err
+			}
 			receiver.Fields["endpoint"] = args[0]
 			return Null, receiver, true, true, nil
 		case "getEndpoint":
@@ -8736,7 +8817,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 1 || args[0].Kind != ValueString {
 				return Null, receiver, false, true, fmt.Errorf("HttpRequest.setMethod expects String")
 			}
-			receiver.Fields["method"] = args[0]
+			method, err := normalizeHttpMethod(args[0].Text)
+			if err != nil {
+				return Null, receiver, false, true, err
+			}
+			receiver.Fields["method"] = String(method)
 			return Null, receiver, true, true, nil
 		case "getMethod":
 			if len(args) != 0 {
@@ -8770,6 +8855,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 1 || args[0].Kind != ValueInt {
 				return Null, receiver, false, true, fmt.Errorf("HttpRequest.setTimeout expects Integer")
 			}
+			if err := validateHttpTimeout(args[0].Int); err != nil {
+				return Null, receiver, false, true, err
+			}
 			receiver.Fields["timeout"] = args[0]
 			return Null, receiver, true, true, nil
 		case "getTimeout":
@@ -8779,7 +8867,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if value, ok := receiver.Fields["timeout"]; ok {
 				return value, receiver, false, true, nil
 			}
-			return Int(0), receiver, false, true, nil
+			return Int(defaultHttpTimeoutMillis), receiver, false, true, nil
 		case "getBody":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("HttpRequest.getBody expects 0 arguments")
@@ -8868,6 +8956,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 1 || args[0].Kind != ValueObject || args[0].Type != "HttpRequest" {
 				return Null, receiver, false, true, fmt.Errorf("Http.send expects HttpRequest")
 			}
+			if err := validateHttpRequest(args[0]); err != nil {
+				return Null, receiver, false, true, err
+			}
 			if err := vm.incrementLimit("callouts", 1); err != nil {
 				return Null, receiver, false, true, err
 			}
@@ -8884,16 +8975,17 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 					if value.Kind == ValueObject && value.Type == "HttpResponse" {
 						return value, receiver, false, true, nil
 					}
-				} else {
-					if body, ok := vm.testContext.HTTPMock.Fields["body"]; ok {
-						response.Fields["body"] = body
-					}
-					if status, ok := vm.testContext.HTTPMock.Fields["statusCode"]; ok {
-						response.Fields["statusCode"] = status
-					}
+					return Null, receiver, false, true, fmt.Errorf("HttpCalloutMock.respond must return HttpResponse")
 				}
+				if body, ok := vm.testContext.HTTPMock.Fields["body"]; ok {
+					response.Fields["body"] = body
+				}
+				if status, ok := vm.testContext.HTTPMock.Fields["statusCode"]; ok {
+					response.Fields["statusCode"] = status
+				}
+				return response, receiver, false, true, nil
 			}
-			return response, receiver, false, true, nil
+			return Null, receiver, false, true, unsupportedCallError("Http.send real network transport")
 		}
 	case "Messaging.SendEmailResult":
 		switch method {
@@ -8951,6 +9043,10 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			return receiver.Fields["summary"], receiver, false, true, nil
 		}
+	case "Continuation":
+		return Null, receiver, false, true, unsupportedCallError("Continuation local continuation callout surface")
+	case "StaticResourceCalloutMock", "MultiStaticResourceCalloutMock":
+		return Null, receiver, false, true, unsupportedCallError(receiver.Type + " local static resource callout mock surface")
 	case "PageReference":
 		switch method {
 		case "getUrl":

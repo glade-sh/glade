@@ -1,0 +1,47 @@
+{
+  "name": "http-callout-mock-edges",
+  "evidence": [
+    {
+      "symbol": "HttpRequest",
+      "kind": "test",
+      "notes": "Endpoint, method, header case, timeout, body, and blob body edges"
+    },
+    {
+      "symbol": "HttpResponse",
+      "kind": "test",
+      "notes": "Status, header case, body, and blob body edges"
+    },
+    {
+      "symbol": "Http.send",
+      "kind": "test",
+      "notes": "Mock-first callout path and callout limit accounting"
+    },
+    {
+      "symbol": "Test.setMock",
+      "kind": "test",
+      "notes": "HttpCalloutMock local test-context behavior"
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/classes/MockResponse.cls",
+      "content": "public class MockResponse implements HttpCalloutMock { private String body; private Integer statusCode; public MockResponse(String body, Integer statusCode) { this.body = body; this.statusCode = statusCode; } public HttpResponse respond(HttpRequest req) { HttpResponse res = new HttpResponse(); if (body != null) { res.setBody(body); } if (statusCode != null) { res.setStatusCode(statusCode); } return res; } }"
+    },
+    {
+      "path": "force-app/main/classes/HttpCalloutEdgesFixtureTest.cls",
+      "content": "@isTest private class HttpCalloutEdgesFixtureTest { @isTest static void mockEdges() { Test.setMock('HttpCalloutMock', new MockResponse('mock-body', 207)); HttpRequest req = new HttpRequest(); System.assertEquals(10000, req.getTimeout()); req.setEndpoint('callout:NamedCredential/resource'); req.setMethod('post'); System.assertEquals('POST', req.getMethod()); req.setHeader('X-Test', 'first'); req.setHeader('x-test', 'second'); System.assertEquals('second', req.getHeader('X-TEST')); System.assertEquals(null, req.getHeader('missing')); req.setTimeout(120000); System.assertEquals(120000, req.getTimeout()); req.setBodyAsBlob(Blob.valueOf('request-body')); System.assertEquals('request-body', req.getBody()); System.assertEquals('726571756573742d626f6479', EncodingUtil.convertToHex(req.getBodyAsBlob())); Http h = new Http(); HttpResponse res = h.send(req); System.assertEquals(1, Limits.getCallouts()); System.assertEquals(207, res.getStatusCode()); System.assertEquals('mock-body', res.getBody()); res.setStatus('Multi-Status'); res.setHeader('Content-Type', 'text/plain'); System.assertEquals('Multi-Status', res.getStatus()); System.assertEquals('text/plain', res.getHeader('content-type')); res.setBodyAsBlob(Blob.valueOf('response-body')); System.assertEquals('response-body', res.getBody()); System.assertEquals('726573706f6e73652d626f6479', EncodingUtil.convertToHex(res.getBodyAsBlob())); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "errors": 0,
+      "failed": 0,
+      "ok": true,
+      "passed": 1,
+      "total": 1
+    }
+  }
+}

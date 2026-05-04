@@ -94,9 +94,9 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Exception | `Exception.initCause` | `partial` | Stores a local Exception cause or null for later getCause calls. |
 | Exception | `Exception.toString` | `partial` | Returns System-prefixed built-in exception text for local exception values. |
 | FeatureManagement | `FeatureManagement.checkPermission` | `partial` | Checks local runAs permission-list state. |
-| HTTP | `Http.send` | `partial` | Mock-first local callouts; real network transport unsupported. |
-| HTTP | `HttpRequest` | `partial` | Endpoint, method, headers, timeout, body, and blob body accessors. |
-| HTTP | `HttpResponse` | `partial` | Status, status code, headers, body, and blob body accessors. |
+| HTTP | `Http.send` | `partial` | Mock-first local callouts with request validation and callout accounting; real network transport unsupported. |
+| HTTP | `HttpRequest` | `partial` | Endpoint, method, case-insensitive headers, timeout validation/defaults, body, and blob body accessors. |
+| HTTP | `HttpResponse` | `partial` | Status, status code, case-insensitive headers, body, and blob body accessors. |
 | Id | `Id.getSObjectType` | `partial` | Resolves local schema key prefixes and a bounded common standard prefix table to Schema.SObjectType tokens; unknown shape-valid prefixes return a stable error. |
 | Id | `Id.to15` | `supported` | Converts validated 18-character IDs to their 15-character prefix. |
 | Id | `Id.to18` | `supported` | Adds or preserves the documented 3-character checksum for validated IDs. |
