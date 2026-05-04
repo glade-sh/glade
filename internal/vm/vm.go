@@ -5007,6 +5007,26 @@ func httpGetHeader(receiver Value, name string) Value {
 	return Null
 }
 
+func httpHeaderKeys(receiver Value) Value {
+	headers, ok := receiver.Fields["headers"]
+	if !ok || headers.Kind != ValueMap {
+		return List()
+	}
+	keys := make([]string, 0, len(headers.Map))
+	for rawKey := range headers.Map {
+		decoded := valueFromMapKey(rawKey)
+		if decoded.Kind == ValueString {
+			keys = append(keys, decoded.Text)
+		}
+	}
+	sort.Strings(keys)
+	out := make([]Value, 0, len(keys))
+	for _, key := range keys {
+		out = append(out, String(key))
+	}
+	return List(out...)
+}
+
 func (vm *VM) assertMessage(base string, extra []Value, result *Result) (string, error) {
 	if len(extra) == 0 {
 		return base, nil
@@ -10119,11 +10139,30 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			httpSetHeader(receiver, args[0].Text, args[1])
 			return Null, receiver, true, true, nil
+		case "getHeaderKeys":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("HttpRequest.getHeaderKeys expects 0 arguments")
+			}
+			return httpHeaderKeys(receiver), receiver, false, true, nil
 		case "getHeader":
 			if len(args) != 1 || args[0].Kind != ValueString {
 				return Null, receiver, false, true, fmt.Errorf("HttpRequest.getHeader expects name String")
 			}
 			return httpGetHeader(receiver, args[0].Text), receiver, false, true, nil
+		case "setCompressed":
+			if len(args) != 1 || args[0].Kind != ValueBool {
+				return Null, receiver, false, true, fmt.Errorf("HttpRequest.setCompressed expects Boolean")
+			}
+			receiver.Fields["compressed"] = args[0]
+			return Null, receiver, true, true, nil
+		case "getCompressed":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("HttpRequest.getCompressed expects 0 arguments")
+			}
+			if value, ok := receiver.Fields["compressed"]; ok {
+				return value, receiver, false, true, nil
+			}
+			return Bool(false), receiver, false, true, nil
 		case "setTimeout":
 			if len(args) != 1 || args[0].Kind != ValueInt {
 				return Null, receiver, false, true, fmt.Errorf("HttpRequest.setTimeout expects Integer")
@@ -10210,6 +10249,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			httpSetHeader(receiver, args[0].Text, args[1])
 			return Null, receiver, true, true, nil
+		case "getHeaderKeys":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("HttpResponse.getHeaderKeys expects 0 arguments")
+			}
+			return httpHeaderKeys(receiver), receiver, false, true, nil
 		case "getHeader":
 			if len(args) != 1 || args[0].Kind != ValueString {
 				return Null, receiver, false, true, fmt.Errorf("HttpResponse.getHeader expects name String")
@@ -10281,23 +10325,25 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		}
 	case "Messaging.SingleEmailMessage":
 		switch method {
-		case "setToAddresses":
+		case "setToAddresses", "setCcAddresses", "setBccAddresses", "setFileAttachments", "setEntityAttachments":
 			if len(args) != 1 || args[0].Kind != ValueList {
-				return Null, receiver, false, true, fmt.Errorf("Messaging.SingleEmailMessage.setToAddresses expects List")
+				return Null, receiver, false, true, fmt.Errorf("Messaging.SingleEmailMessage.%s expects List", method)
 			}
-			receiver.Fields["toAddresses"] = args[0]
+			receiver.Fields[singleEmailMessageFieldName(method)] = args[0]
 			return Null, receiver, true, true, nil
-		case "setSubject":
+		case "setSubject", "setPlainTextBody", "setHtmlBody", "setReplyTo", "setSenderDisplayName",
+			"setCharset", "setInReplyTo", "setReferences", "setOrgWideEmailAddressId",
+			"setTargetObjectId", "setTemplateId", "setWhatId":
 			if len(args) != 1 || args[0].Kind != ValueString {
-				return Null, receiver, false, true, fmt.Errorf("Messaging.SingleEmailMessage.setSubject expects String")
+				return Null, receiver, false, true, fmt.Errorf("Messaging.SingleEmailMessage.%s expects String", method)
 			}
-			receiver.Fields["subject"] = args[0]
+			receiver.Fields[singleEmailMessageFieldName(method)] = args[0]
 			return Null, receiver, true, true, nil
-		case "setPlainTextBody":
-			if len(args) != 1 || args[0].Kind != ValueString {
-				return Null, receiver, false, true, fmt.Errorf("Messaging.SingleEmailMessage.setPlainTextBody expects String")
+		case "setSaveAsActivity", "setTreatBodiesAsTemplate", "setTreatTargetObjectAsRecipient", "setUseSignature":
+			if len(args) != 1 || args[0].Kind != ValueBool {
+				return Null, receiver, false, true, fmt.Errorf("Messaging.SingleEmailMessage.%s expects Boolean", method)
 			}
-			receiver.Fields["plainTextBody"] = args[0]
+			receiver.Fields[singleEmailMessageFieldName(method)] = args[0]
 			return Null, receiver, true, true, nil
 		}
 	case "ApexPages.Message":
@@ -10470,9 +10516,22 @@ func callRestResponseMember(receiver Value, method string, args []Value) (Value,
 		}
 		restMapPut(&receiver, "headers", args[0].Text, args[1])
 		return Null, receiver, true, true, nil
+	case "getHeader":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("RestResponse.getHeader expects name String")
+		}
+		return restMapGet(receiver, "headers", args[0].Text), receiver, false, true, nil
 	default:
 		return Null, receiver, false, false, nil
 	}
+}
+
+func singleEmailMessageFieldName(method string) string {
+	if !strings.HasPrefix(method, "set") || len(method) <= len("set") {
+		return method
+	}
+	field := strings.TrimPrefix(method, "set")
+	return strings.ToLower(field[:1]) + field[1:]
 }
 
 func restMapPut(receiver *Value, field, key string, value Value) {

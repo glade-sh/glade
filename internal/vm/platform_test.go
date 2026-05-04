@@ -405,8 +405,26 @@ func TestExecMessagingResultAndUnsupportedEdges(t *testing.T) {
 	program, err := CompileAnonymous(`
 Messaging.SingleEmailMessage msg = new Messaging.SingleEmailMessage();
 msg.setToAddresses(new List<String>{'trail@example.test'});
+msg.setCcAddresses(new List<String>{'copy@example.test'});
+msg.setBccAddresses(new List<String>{'blind@example.test'});
 msg.setSubject('Trail');
 msg.setPlainTextBody('Body');
+msg.setHtmlBody('<p>Body</p>');
+msg.setReplyTo('reply@example.test');
+msg.setSenderDisplayName('Trail Sender');
+msg.setCharset('UTF-8');
+msg.setInReplyTo('<message@example.test>');
+msg.setReferences('<root@example.test>');
+msg.setOrgWideEmailAddressId('0D2000000000001');
+msg.setTargetObjectId('003000000000001');
+msg.setTemplateId('00X000000000001');
+msg.setWhatId('001000000000001');
+msg.setSaveAsActivity(false);
+msg.setTreatBodiesAsTemplate(false);
+msg.setTreatTargetObjectAsRecipient(false);
+msg.setUseSignature(false);
+msg.setEntityAttachments(new List<String>{'015000000000001'});
+msg.setFileAttachments(new List<Object>{});
 List<Messaging.SendEmailResult> results = Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{msg});
 System.assertEquals(1, Limits.getEmailInvocations());
 System.assertEquals(1, results.size());
@@ -440,6 +458,11 @@ System.assertEquals(0, results.get(0).getErrors().size());
 			name: "template surface",
 			src:  `Messaging.renderStoredEmailTemplate('00X000000000001', '003000000000001', '001000000000001');`,
 			want: `unsupported call "Messaging.renderStoredEmailTemplate local messaging transport/template surface"`,
+		},
+		{
+			name: "setter-type",
+			src:  `Messaging.SingleEmailMessage msg = new Messaging.SingleEmailMessage(); msg.setHtmlBody(7);`,
+			want: `Messaging.SingleEmailMessage.setHtmlBody expects String`,
 		},
 	}
 	for _, tc := range cases {
@@ -2233,9 +2256,14 @@ System.assertEquals('request-body', req.getBody());
 System.assertEquals('726571756573742d626f6479', EncodingUtil.convertToHex(requestBlob));
 req.setHeader('X-Test', 'yes');
 req.setTimeout(5000);
+System.assertEquals(false, req.getCompressed());
+req.setCompressed(true);
 System.assertEquals('https://example.test', req.getEndpoint());
 System.assertEquals('GET', req.getMethod());
 System.assertEquals('yes', req.getHeader('x-test'));
+System.assertEquals(true, req.getCompressed());
+System.assertEquals(1, req.getHeaderKeys().size());
+System.assert(req.getHeaderKeys().contains('x-test'));
 System.assertEquals(5000, req.getTimeout());
 Http h = new Http();
 HttpResponse res = h.send(req);
@@ -2245,6 +2273,8 @@ res.setStatus('Created');
 res.setHeader('Content-Type', 'text/plain');
 System.assertEquals('Created', res.getStatus());
 System.assertEquals('text/plain', res.getHeader('content-type'));
+System.assertEquals(1, res.getHeaderKeys().size());
+System.assert(res.getHeaderKeys().contains('content-type'));
 Blob bodyBlob = res.getBodyAsBlob();
 System.assertEquals('6f6b', EncodingUtil.convertToHex(bodyBlob));
 System.assertEquals(1, Limits.getCallouts());

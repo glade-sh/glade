@@ -128,6 +128,7 @@ RestContext.response.addHeader('Location', '/services/apexrest/widgets/42');
 System.assertEquals(201, RestContext.response.statusCode);
 System.assertEquals('created', RestContext.response.responseBody.toString());
 System.assertEquals('/services/apexrest/widgets/42', RestContext.response.headers.get('Location'));
+System.assertEquals('/services/apexrest/widgets/42', RestContext.response.getHeader('location'));
 `)
 	if err != nil {
 		t.Fatal(err)
