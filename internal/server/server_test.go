@@ -1229,6 +1229,33 @@ func TestCompositeNamespaceUnsupportedStubs(t *testing.T) {
 			path:          "/services/data/v61.0/composite",
 			wantMessageIn: "Composite namespace discovery",
 		},
+		{
+			name:          "composite sobject collection update",
+			method:        http.MethodPatch,
+			path:          "/services/data/v61.0/composite/sobjects",
+			body:          `{"allOrNone":true,"records":[]}`,
+			wantMessageIn: "Composite sObject collection update",
+		},
+		{
+			name:          "composite sobject collection delete",
+			method:        http.MethodDelete,
+			path:          "/services/data/v61.0/composite/sobjects",
+			wantMessageIn: "Composite sObject collection delete",
+		},
+		{
+			name:          "composite sobject typed collection",
+			method:        http.MethodPost,
+			path:          "/services/data/v61.0/composite/sobjects/Account",
+			body:          `{}`,
+			wantMessageIn: "Composite sObject typed collection routes",
+		},
+		{
+			name:          "composite sobject collection upsert",
+			method:        http.MethodPatch,
+			path:          "/services/data/v61.0/composite/sobjects/Account/External_Id__c",
+			body:          `{"allOrNone":true,"records":[]}`,
+			wantMessageIn: "Composite sObject collection upsert routes",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1465,7 +1492,15 @@ func TestSalesforceErrorResponses(t *testing.T) {
 			path:       "/services/data/v61.0/composite/sobjects",
 			wantStatus: http.StatusMethodNotAllowed,
 			wantCode:   "METHOD_NOT_ALLOWED",
-			wantAllow:  http.MethodPost,
+			wantAllow:  http.MethodPost + ", " + http.MethodPatch + ", " + http.MethodDelete,
+		},
+		{
+			name:       "composite sobjects child method not allowed",
+			method:     http.MethodGet,
+			path:       "/services/data/v61.0/composite/sobjects/Account/External_Id__c",
+			wantStatus: http.StatusMethodNotAllowed,
+			wantCode:   "METHOD_NOT_ALLOWED",
+			wantAllow:  http.MethodPost + ", " + http.MethodPatch + ", " + http.MethodDelete,
 		},
 		{
 			name:          "invalid json",

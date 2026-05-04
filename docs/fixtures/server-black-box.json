@@ -227,6 +227,29 @@
       "contains": ["UNSUPPORTED_FEATURE", "Generic Composite REST subrequest orchestration"]
     },
     {
+      "name": "composite-sobjects-update-unsupported",
+      "method": "PATCH",
+      "path": "/services/data/v61.0/composite/sobjects",
+      "body": "{\"allOrNone\":true,\"records\":[]}",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "Composite sObject collection update"]
+    },
+    {
+      "name": "composite-sobjects-delete-unsupported",
+      "method": "DELETE",
+      "path": "/services/data/v61.0/composite/sobjects",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "Composite sObject collection delete"]
+    },
+    {
+      "name": "composite-sobjects-upsert-unsupported",
+      "method": "PATCH",
+      "path": "/services/data/v61.0/composite/sobjects/Account/External_Id__c",
+      "body": "{\"allOrNone\":true,\"records\":[]}",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "Composite sObject collection upsert routes"]
+    },
+    {
       "name": "search-unsupported",
       "method": "GET",
       "path": "/services/data/v61.0/search?q=FIND%20%7BAcme%7D",
@@ -364,8 +387,8 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 45,
-      "statuses": [200, 200, 200, 200, 200, 200, 201, 200, 200, 200, 501, 501, 400, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 400, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 404, 404, 200, 200, 201],
+      "requests": 48,
+      "statuses": [200, 200, 200, 200, 200, 200, 201, 200, 200, 200, 501, 501, 400, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 400, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 404, 404, 200, 200, 201],
       "users": 2
     }
   }

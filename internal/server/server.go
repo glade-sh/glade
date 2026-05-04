@@ -641,9 +641,33 @@ func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, parts [
 		}
 		return
 	}
-	if len(parts) == 1 && parts[0] == "sobjects" {
+	if len(parts) >= 1 && parts[0] == "sobjects" {
+		s.handleCompositeSObjects(w, r, parts)
+		return
+	}
+	if len(parts) >= 1 && (parts[0] == "batch" || parts[0] == "tree" || parts[0] == "graph") {
 		if r.Method != http.MethodPost {
 			writeMethodNotAllowed(w, http.MethodPost)
+			return
+		}
+		writeSalesforceError(w, errUnsupportedFeature, "Composite "+parts[0]+" is not implemented in the local server")
+		return
+	}
+	writeSalesforceError(w, errUnknownComposite)
+}
+
+func (s *Server) handleCompositeSObjects(w http.ResponseWriter, r *http.Request, parts []string) {
+	if len(parts) == 1 {
+		switch r.Method {
+		case http.MethodPost:
+		case http.MethodPatch:
+			writeSalesforceError(w, errUnsupportedFeature, "Composite sObject collection update is not implemented in the local server")
+			return
+		case http.MethodDelete:
+			writeSalesforceError(w, errUnsupportedFeature, "Composite sObject collection delete is not implemented in the local server")
+			return
+		default:
+			writeMethodNotAllowed(w, http.MethodPost, http.MethodPatch, http.MethodDelete)
 			return
 		}
 		var body struct {
@@ -706,15 +730,17 @@ func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, parts [
 		writeJSON(w, http.StatusOK, compositeResults(results, referenceIDs))
 		return
 	}
-	if len(parts) >= 1 && (parts[0] == "batch" || parts[0] == "tree" || parts[0] == "graph") {
-		if r.Method != http.MethodPost {
-			writeMethodNotAllowed(w, http.MethodPost)
-			return
-		}
-		writeSalesforceError(w, errUnsupportedFeature, "Composite "+parts[0]+" is not implemented in the local server")
+	switch r.Method {
+	case http.MethodPost:
+		writeSalesforceError(w, errUnsupportedFeature, "Composite sObject typed collection routes are not implemented in the local server")
+	case http.MethodPatch:
+		writeSalesforceError(w, errUnsupportedFeature, "Composite sObject collection upsert routes are not implemented in the local server")
+	case http.MethodDelete:
+		writeSalesforceError(w, errUnsupportedFeature, "Composite sObject collection delete routes are not implemented in the local server")
+	default:
+		writeMethodNotAllowed(w, http.MethodPost, http.MethodPatch, http.MethodDelete)
 		return
 	}
-	writeSalesforceError(w, errUnknownComposite)
 }
 
 func (s *Server) commitOrg(org storage.OrgState) error {
