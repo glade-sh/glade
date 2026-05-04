@@ -275,6 +275,16 @@ func (s *Server) handleObject(w http.ResponseWriter, r *http.Request, version st
 			return
 		}
 		writeSalesforceError(w, errUnsupportedFeature, "SObject default value metadata is not modeled in the local server; create records with explicit field values instead")
+	case isQuickActionsRoute(parts):
+		if _, ok := s.Org.Objects[objectName]; !ok {
+			writeSalesforceError(w, errUnknownObject)
+			return
+		}
+		if r.Method != http.MethodGet {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
+		writeSalesforceError(w, errUnsupportedFeature, "SObject quick action metadata and default values are not modeled in the local server")
 	case isListViewsRoute(parts):
 		if _, ok := s.Org.Objects[objectName]; !ok {
 			writeSalesforceError(w, errUnknownObject)
@@ -1778,6 +1788,16 @@ func isDefaultValuesRoute(parts []string) bool {
 	return len(parts) == 2 && parts[1] == "defaultValues"
 }
 
+func isQuickActionsRoute(parts []string) bool {
+	if len(parts) == 2 {
+		return parts[1] == "quickActions"
+	}
+	if len(parts) == 3 {
+		return parts[1] == "quickActions"
+	}
+	return len(parts) == 4 && parts[1] == "quickActions" && parts[3] == "defaultValues"
+}
+
 func isListViewsRoute(parts []string) bool {
 	if len(parts) == 2 {
 		return parts[1] == "listviews"
@@ -1979,6 +1999,7 @@ func objectResourcePayload(def storage.ObjectDefinition, version string) map[str
 			"items":          base,
 			"layouts":        describe + "/layouts",
 			"compactLayouts": base + "/compactLayouts",
+			"quickActions":   base + "/quickActions",
 			"listviews":      base + "/listviews",
 		},
 	}

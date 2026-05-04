@@ -878,6 +878,38 @@ func TestAdvertisedSObjectURLStubs(t *testing.T) {
 	assertSalesforceError(t, rowTemplate, http.StatusBadRequest, "MALFORMED_ID", "rowTemplate placeholder")
 }
 
+func TestSObjectQuickActionRoutes(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	for _, path := range []string{
+		"/services/data/v61.0/sobjects/Account/quickActions",
+		"/services/data/v61.0/sobjects/Account/quickActions/NewTask",
+		"/services/data/v61.0/sobjects/Account/quickActions/NewTask/defaultValues",
+	} {
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+		assertSalesforceError(t, rec, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", "quick action metadata")
+	}
+
+	for _, path := range []string{
+		"/services/data/v61.0/sobjects/Account/quickActions",
+		"/services/data/v61.0/sobjects/Account/quickActions/NewTask",
+		"/services/data/v61.0/sobjects/Account/quickActions/NewTask/defaultValues",
+	} {
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, path, nil))
+		assertSalesforceError(t, rec, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
+		if got := rec.Header().Get("Allow"); got != http.MethodGet {
+			t.Fatalf("%s Allow = %q, want %q", path, got, http.MethodGet)
+		}
+	}
+
+	unknown := httptest.NewRecorder()
+	handler.ServeHTTP(unknown, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Missing__c/quickActions", nil))
+	assertSalesforceError(t, unknown, http.StatusNotFound, "NOT_FOUND", "unknown object")
+}
+
 func TestSObjectListViewRoutes(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
@@ -998,6 +1030,7 @@ func TestSObjectResourceShape(t *testing.T) {
 		"items":          "/services/data/v61.0/sobjects/Account",
 		"layouts":        "/services/data/v61.0/sobjects/Account/describe/layouts",
 		"compactLayouts": "/services/data/v61.0/sobjects/Account/compactLayouts",
+		"quickActions":   "/services/data/v61.0/sobjects/Account/quickActions",
 		"listviews":      "/services/data/v61.0/sobjects/Account/listviews",
 	}
 	for name, url := range wantURLs {

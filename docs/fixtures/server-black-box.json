@@ -144,7 +144,7 @@
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Account",
       "status": 200,
-      "contains": ["\"name\":\"Account\"", "\"keyPrefix\":\"001\"", "\"objectDescribe\":\"/services/data/v61.0/sobjects/Account/describe\"", "\"recentItems\":\"/services/data/v61.0/sobjects/Account/recent\"", "\"rowTemplate\":\"/services/data/v61.0/sobjects/Account/{ID}\"", "\"compactLayouts\":\"/services/data/v61.0/sobjects/Account/compactLayouts\"", "\"listviews\":\"/services/data/v61.0/sobjects/Account/listviews\""]
+      "contains": ["\"name\":\"Account\"", "\"keyPrefix\":\"001\"", "\"objectDescribe\":\"/services/data/v61.0/sobjects/Account/describe\"", "\"recentItems\":\"/services/data/v61.0/sobjects/Account/recent\"", "\"rowTemplate\":\"/services/data/v61.0/sobjects/Account/{ID}\"", "\"compactLayouts\":\"/services/data/v61.0/sobjects/Account/compactLayouts\"", "\"quickActions\":\"/services/data/v61.0/sobjects/Account/quickActions\"", "\"listviews\":\"/services/data/v61.0/sobjects/Account/listviews\""]
     },
 
     {
@@ -196,6 +196,41 @@
       "path": "/services/data/v61.0/sobjects/Account/defaultValues?recordTypeId&fields",
       "status": 501,
       "contains": ["UNSUPPORTED_FEATURE", "default value metadata"]
+    },
+    {
+      "name": "sobject-quick-actions-unsupported",
+      "method": "GET",
+      "path": "/services/data/v61.0/sobjects/Account/quickActions",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "quick action metadata"]
+    },
+    {
+      "name": "sobject-quick-action-unsupported",
+      "method": "GET",
+      "path": "/services/data/v61.0/sobjects/Account/quickActions/NewTask",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "quick action metadata"]
+    },
+    {
+      "name": "sobject-quick-action-default-values-unsupported",
+      "method": "GET",
+      "path": "/services/data/v61.0/sobjects/Account/quickActions/NewTask/defaultValues",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "quick action metadata"]
+    },
+    {
+      "name": "sobject-quick-actions-method-not-allowed",
+      "method": "POST",
+      "path": "/services/data/v61.0/sobjects/Account/quickActions",
+      "status": 405,
+      "contains": ["METHOD_NOT_ALLOWED", "method not allowed"]
+    },
+    {
+      "name": "sobject-quick-actions-unknown-object",
+      "method": "GET",
+      "path": "/services/data/v61.0/sobjects/Missing__c/quickActions",
+      "status": 404,
+      "contains": ["NOT_FOUND", "unknown object"]
     },
     {
       "name": "listviews-unsupported",
@@ -776,8 +811,8 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 99,
-      "statuses": [200, 200, 405, 405, 200, 200, 200, 200, 405, 501, 501, 501, 501, 200, 405, 201, 200, 200, 200, 200, 200, 400, 200, 501, 501, 501, 501, 501, 405, 404, 400, 200, 501, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 400, 200, 200, 201, 204, 200, 201, 204, 200, 200, 204, 400, 501, 501, 200, 200, 200, 200, 501, 405, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 405, 501, 501, 405, 501, 405, 501, 501, 405, 501, 501, 501, 404, 404, 200, 200, 201],
+      "requests": 104,
+      "statuses": [200, 200, 405, 405, 200, 200, 200, 200, 405, 501, 501, 501, 501, 200, 405, 201, 200, 200, 200, 200, 200, 400, 200, 501, 501, 501, 501, 501, 405, 404, 501, 501, 501, 405, 404, 400, 200, 501, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 400, 200, 200, 201, 204, 200, 201, 204, 200, 200, 204, 400, 501, 501, 200, 200, 200, 200, 501, 405, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 405, 501, 501, 405, 501, 405, 501, 501, 405, 501, 501, 501, 404, 404, 200, 200, 201],
       "users": 2
     }
   }
