@@ -1,0 +1,63 @@
+{
+  "name": "core-json-remaining-stdlib",
+  "evidence": [
+    {
+      "symbol": "JSON.deserializeUntyped",
+      "kind": "exec",
+      "notes": "Untyped parsing maps nested maps/lists, nulls, booleans, integral, decimal, and large numeric values, with malformed input as catchable JSONException."
+    },
+    {
+      "symbol": "JSON.deserializeStrict",
+      "kind": "exec",
+      "notes": "Duplicate-field strict errors are catchable JSONException values."
+    },
+    {
+      "symbol": "JSON.serialize",
+      "kind": "exec",
+      "notes": "Compact serialization preserves map/list nulls and deterministic ordering for supported values."
+    },
+    {
+      "symbol": "JSON.serializePretty",
+      "kind": "exec",
+      "notes": "Pretty serialization preserves map/list nulls and suppresses Apex object null fields when requested."
+    },
+    {
+      "symbol": "JSONGenerator",
+      "kind": "exec",
+      "notes": "Pretty object/raw writers close cleanly and expose deterministic output."
+    },
+    {
+      "symbol": "JSONParser",
+      "kind": "exec",
+      "notes": "Remaining parser id/blob/false/end/current-token edges match local token streams."
+    },
+    {
+      "symbol": "JSONToken",
+      "kind": "exec",
+      "notes": "Common JSONToken constants compare and stringify deterministically."
+    },
+    {
+      "symbol": "JSON.createParser",
+      "kind": "exec",
+      "notes": "Parser creation drives deterministic local token streams for nested arrays and objects."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Object root = JSON.deserializeUntyped('{\"name\":\"Acme\",\"ok\":true,\"missing\":null,\"whole\":12,\"big\":9223372036854775808,\"ratio\":1.25,\"items\":[1,\"two\",false,{\"inner\":null}]}');\nSystem.assertEquals('Acme', root.get('name'));\nSystem.assertEquals(true, root.get('ok'));\nSystem.assertEquals(null, root.get('missing'));\nSystem.assertEquals(12, root.get('whole'));\nSystem.assertEquals(9223372036854775808.0, root.get('big'));\nSystem.assertEquals(1.25, root.get('ratio'));\nObject items = root.get('items');\nSystem.assertEquals(4, items.size());\nSystem.assertEquals(1, items.get(0));\nSystem.assertEquals('two', items.get(1));\nSystem.assertEquals(false, items.get(2));\nSystem.assertEquals(null, items.get(3).get('inner'));\nString caught = '';\ntry {\n  JSON.deserializeUntyped('{\"broken\":');\n} catch (JSONException e) {\n  caught = e.getTypeName() + ':' + e.getMessage();\n}\nSystem.assert(caught.contains('JSONException:JSON.deserializeUntyped invalid JSON input'));\n\ncaught = '';\ntry {\n  Account decoded = JSON.deserializeStrict('{\"Name\":\"First\",\"Name\":\"Second\"}', Account.class);\n} catch (JSONException e) {\n  caught = e.getTypeName() + ':' + e.getMessage();\n}\nSystem.assert(caught.contains('JSONException:JSON.deserializeStrict found duplicate field \"Name\"'));\n\nMap<String,Object> serial = new Map<String,Object>();\nserial.put('name', 'Acme');\nserial.put('missing', null);\nList<Object> serialItems = new List<Object>();\nserialItems.add(1);\nserialItems.add(null);\nserial.put('items', serialItems);\nSystem.assertEquals('{\"items\":[1,null],\"missing\":null,\"name\":\"Acme\"}', JSON.serialize(serial, true));\nString pretty = JSON.serializePretty(serial, true);\nSystem.assert(pretty.contains('  \"items\": ['));\nSystem.assert(pretty.contains('    null'));\nSystem.assert(pretty.contains('  \"missing\": null'));\nSystem.assert(pretty.contains('  \"name\": \"Acme\"'));\nAccount account = new Account(Name = 'NoNull', Phone = null);\nSystem.assert(!JSON.serializePretty(account, true).contains('Phone'));\nSystem.assert(JSON.serializePretty(account, false).contains('\"Phone\": null'));\n\nJSONGenerator gen = JSON.createGenerator(true);\ngen.writeStartObject();\ngen.writeObjectField('root', serial);\ngen.writeRawField('raw', '{\"ok\":true}');\ngen.writeEndObject();\nString generated = gen.getAsString();\nSystem.assert(generated.contains('  \"root\": {\"items\":[1,null],\"missing\":null,\"name\":\"Acme\"}'));\nSystem.assert(generated.contains('\"raw\": {\"ok\":true}'));\nSystem.assert(gen.isClosed());\n\nJSONParser parser = JSON.createParser('[{\"id\":\"001B000001DVM9t\",\"blob\":\"YWJj\"},false]');\nSystem.assertEquals(JSONToken.START_ARRAY, parser.nextToken());\nSystem.assertEquals(JSONToken.START_OBJECT, parser.nextToken());\nSystem.assertEquals(JSONToken.FIELD_NAME, parser.nextToken());\nSystem.assertEquals('id', parser.getCurrentName());\nSystem.assertEquals(JSONToken.VALUE_STRING, parser.nextValue());\nSystem.assertEquals('001B000001DVM9t', parser.getIdValue().toString());\nSystem.assertEquals(JSONToken.FIELD_NAME, parser.nextToken());\nSystem.assertEquals('blob', parser.getCurrentName());\nSystem.assertEquals(JSONToken.VALUE_STRING, parser.nextValue());\nSystem.assertEquals('abc', parser.getBlobValue().toString());\nSystem.assertEquals(JSONToken.END_OBJECT, parser.nextToken());\nSystem.assertEquals(JSONToken.VALUE_FALSE, parser.nextToken());\nSystem.assertEquals(false, parser.getBooleanValue());\nSystem.assertEquals(JSONToken.END_ARRAY, parser.nextToken());\nSystem.assertEquals(null, parser.nextToken());\nSystem.assertEquals(null, parser.getCurrentToken());\nSystem.assertEquals(null, parser.getCurrentName());\nSystem.assertEquals('START_OBJECT', JSONToken.START_OBJECT.toString());\nSystem.assertEquals(JSONToken.VALUE_NUMBER_FLOAT, JSONToken.VALUE_NUMBER_FLOAT);\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Object root = JSON.deserializeUntyped('{\"name\":\"Acme\",\"ok\":true,\"missing\":null,\"whole\":12,\"big\":9223372036854775808,\"ratio\":1.25,\"items\":[1,\"two\",false,{\"inner\":null}]}');\nSystem.assertEquals('Acme', root.get('name'));\nSystem.assertEquals(true, root.get('ok'));\nSystem.assertEquals(null, root.get('missing'));\nSystem.assertEquals(12, root.get('whole'));\nSystem.assertEquals(9223372036854775808.0, root.get('big'));\nSystem.assertEquals(1.25, root.get('ratio'));\nObject items = root.get('items');\nSystem.assertEquals(4, items.size());\nSystem.assertEquals(1, items.get(0));\nSystem.assertEquals('two', items.get(1));\nSystem.assertEquals(false, items.get(2));\nSystem.assertEquals(null, items.get(3).get('inner'));\nString caught = '';\ntry {\n  JSON.deserializeUntyped('{\"broken\":');\n} catch (JSONException e) {\n  caught = e.getTypeName() + ':' + e.getMessage();\n}\nSystem.assert(caught.contains('JSONException:JSON.deserializeUntyped invalid JSON input'));\n\ncaught = '';\ntry {\n  Account decoded = JSON.deserializeStrict('{\"Name\":\"First\",\"Name\":\"Second\"}', Account.class);\n} catch (JSONException e) {\n  caught = e.getTypeName() + ':' + e.getMessage();\n}\nSystem.assert(caught.contains('JSONException:JSON.deserializeStrict found duplicate field \"Name\"'));\n\nMap<String,Object> serial = new Map<String,Object>();\nserial.put('name', 'Acme');\nserial.put('missing', null);\nList<Object> serialItems = new List<Object>();\nserialItems.add(1);\nserialItems.add(null);\nserial.put('items', serialItems);\nSystem.assertEquals('{\"items\":[1,null],\"missing\":null,\"name\":\"Acme\"}', JSON.serialize(serial, true));\nString pretty = JSON.serializePretty(serial, true);\nSystem.assert(pretty.contains('  \"items\": ['));\nSystem.assert(pretty.contains('    null'));\nSystem.assert(pretty.contains('  \"missing\": null'));\nSystem.assert(pretty.contains('  \"name\": \"Acme\"'));\nAccount account = new Account(Name = 'NoNull', Phone = null);\nSystem.assert(!JSON.serializePretty(account, true).contains('Phone'));\nSystem.assert(JSON.serializePretty(account, false).contains('\"Phone\": null'));\n\nJSONGenerator gen = JSON.createGenerator(true);\ngen.writeStartObject();\ngen.writeObjectField('root', serial);\ngen.writeRawField('raw', '{\"ok\":true}');\ngen.writeEndObject();\nString generated = gen.getAsString();\nSystem.assert(generated.contains('  \"root\": {\"items\":[1,null],\"missing\":null,\"name\":\"Acme\"}'));\nSystem.assert(generated.contains('\"raw\": {\"ok\":true}'));\nSystem.assert(gen.isClosed());\n\nJSONParser parser = JSON.createParser('[{\"id\":\"001B000001DVM9t\",\"blob\":\"YWJj\"},false]');\nSystem.assertEquals(JSONToken.START_ARRAY, parser.nextToken());\nSystem.assertEquals(JSONToken.START_OBJECT, parser.nextToken());\nSystem.assertEquals(JSONToken.FIELD_NAME, parser.nextToken());\nSystem.assertEquals('id', parser.getCurrentName());\nSystem.assertEquals(JSONToken.VALUE_STRING, parser.nextValue());\nSystem.assertEquals('001B000001DVM9t', parser.getIdValue().toString());\nSystem.assertEquals(JSONToken.FIELD_NAME, parser.nextToken());\nSystem.assertEquals('blob', parser.getCurrentName());\nSystem.assertEquals(JSONToken.VALUE_STRING, parser.nextValue());\nSystem.assertEquals('abc', parser.getBlobValue().toString());\nSystem.assertEquals(JSONToken.END_OBJECT, parser.nextToken());\nSystem.assertEquals(JSONToken.VALUE_FALSE, parser.nextToken());\nSystem.assertEquals(false, parser.getBooleanValue());\nSystem.assertEquals(JSONToken.END_ARRAY, parser.nextToken());\nSystem.assertEquals(null, parser.nextToken());\nSystem.assertEquals(null, parser.getCurrentToken());\nSystem.assertEquals(null, parser.getCurrentName());\nSystem.assertEquals('START_OBJECT', JSONToken.START_OBJECT.toString());\nSystem.assertEquals(JSONToken.VALUE_NUMBER_FLOAT, JSONToken.VALUE_NUMBER_FLOAT);\n"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

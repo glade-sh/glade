@@ -1502,7 +1502,7 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		}
 		decoded, err := decodeJSONValue(args[0].Text)
 		if err != nil {
-			return Null, err
+			return Null, jsonDeserializeException("JSON.deserializeUntyped invalid JSON input: %v", err)
 		}
 		return valueFromJSON(decoded), nil
 	case "JSON.deserialize", "JSON.deserializeStrict":
@@ -1512,7 +1512,7 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		strict := callee == "JSON.deserializeStrict"
 		decoded, err := decodeJSONValueForDeserialize(args[0].Text, strict)
 		if err != nil {
-			return Null, err
+			return Null, jsonDeserializeException("%s", err.Error())
 		}
 		if args[1].Kind == ValueObject && args[1].Type == "Type" {
 			return vm.typedValueFromJSON(typeValueName(args[1]), decoded, strict)
@@ -6072,9 +6072,10 @@ func (vm *VM) lookup(name string) (Value, error) {
 	}
 	if strings.HasPrefix(name, "JSONToken.") {
 		tokenName := strings.TrimPrefix(name, "JSONToken.")
-		switch tokenName {
-		case "START_OBJECT", "END_OBJECT", "START_ARRAY", "END_ARRAY", "FIELD_NAME", "VALUE_STRING", "VALUE_NUMBER_INT", "VALUE_NUMBER_FLOAT", "VALUE_TRUE", "VALUE_FALSE", "VALUE_NULL":
-			return jsonTokenValue(tokenName), nil
+		for _, jsonTokenName := range jsonTokenNames {
+			if tokenName == jsonTokenName {
+				return jsonTokenValue(tokenName), nil
+			}
 		}
 	}
 	if strings.HasSuffix(name, ".class") {
@@ -9067,6 +9068,24 @@ func (vm *VM) callEnumStaticMember(typeName, method string, args []Value) (Value
 }
 
 func (vm *VM) callEnumMember(receiver Value, method string, args []Value) (Value, bool, error) {
+	if receiver.Type == "JSONToken" {
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("JSONToken.%s expects 0 arguments", method)
+		}
+		switch method {
+		case "name", "toString":
+			return String(receiver.Text), true, nil
+		case "ordinal":
+			for i, name := range jsonTokenNames {
+				if name == receiver.Text {
+					return Int(int64(i)), true, nil
+				}
+			}
+			return Int(-1), true, nil
+		default:
+			return Null, false, nil
+		}
+	}
 	if receiver.Type == "LoggingLevel" {
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("LoggingLevel.%s expects 0 arguments", method)

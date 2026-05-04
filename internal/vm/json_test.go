@@ -958,6 +958,140 @@ Object value = JSON.deserialize('{"Name":"Acme"}', UnknownJsonShape.class);
 	}
 }
 
+func TestExecJSONDeserializeUntypedEdgesAndCatchableMalformedInput(t *testing.T) {
+	program, err := CompileAnonymous(`
+Object root = JSON.deserializeUntyped('{"name":"Acme","ok":true,"missing":null,"whole":12,"big":9223372036854775808,"ratio":1.25,"items":[1,"two",false,{"inner":null}]}');
+System.assertEquals('Acme', root.get('name'));
+System.assertEquals(true, root.get('ok'));
+System.assertEquals(null, root.get('missing'));
+System.assertEquals(12, root.get('whole'));
+System.assertEquals(9223372036854775808.0, root.get('big'));
+System.assertEquals(1.25, root.get('ratio'));
+Object items = root.get('items');
+System.assertEquals(4, items.size());
+System.assertEquals(1, items.get(0));
+System.assertEquals('two', items.get(1));
+System.assertEquals(false, items.get(2));
+System.assertEquals(null, items.get(3).get('inner'));
+String caught = '';
+try {
+	JSON.deserializeUntyped('{"broken":');
+} catch (JSONException e) {
+	caught = e.getTypeName() + ':' + e.getMessage();
+}
+System.assert(caught.contains('JSONException:JSON.deserializeUntyped invalid JSON input'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecJSONMalformedDeserializeErrorsAreCatchable(t *testing.T) {
+	program, err := CompileAnonymous(`
+String caught = '';
+try {
+	Account decoded = JSON.deserialize('{"Name":', Account.class);
+} catch (JSONException e) {
+	caught = e.getTypeName() + ':' + e.getMessage();
+}
+System.assert(caught.contains('JSONException:unexpected EOF'));
+caught = '';
+try {
+	Account decoded = JSON.deserializeStrict('{"Name":"First","Name":"Second"}', Account.class);
+} catch (JSONException e) {
+	caught = e.getTypeName() + ':' + e.getMessage();
+}
+System.assert(caught.contains('JSONException:JSON.deserializeStrict found duplicate field "Name"'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecJSONSerializePrettyAndGeneratorOutputEdges(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String,Object> root = new Map<String,Object>();
+root.put('name', 'Acme');
+root.put('missing', null);
+List<Object> items = new List<Object>();
+items.add(1);
+items.add(null);
+root.put('items', items);
+String compact = JSON.serialize(root, true);
+System.assertEquals('{"items":[1,null],"missing":null,"name":"Acme"}', compact);
+String pretty = JSON.serializePretty(root, true);
+System.assert(pretty.contains('  "items": ['));
+System.assert(pretty.contains('    1,'));
+System.assert(pretty.contains('    null'));
+System.assert(pretty.contains('  "missing": null'));
+System.assert(pretty.contains('  "name": "Acme"'));
+Account account = new Account(Name = 'NoNull', Phone = null);
+System.assert(!JSON.serializePretty(account, true).contains('Phone'));
+System.assert(JSON.serializePretty(account, false).contains('"Phone": null'));
+
+JSONGenerator gen = JSON.createGenerator(true);
+gen.writeStartObject();
+gen.writeObjectField('root', root);
+gen.writeRawField('raw', '{"ok":true}');
+gen.writeEndObject();
+String generated = gen.getAsString();
+System.assert(generated.contains('  "root": {"items":[1,null],"missing":null,"name":"Acme"}'));
+System.assert(generated.contains('"raw": {"ok":true}'));
+System.assert(gen.isClosed());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecJSONParserAndTokenRemainingEdges(t *testing.T) {
+	program, err := CompileAnonymous(`
+JSONParser parser = JSON.createParser('[{"id":"001B000001DVM9t","blob":"YWJj"},false]');
+System.assertEquals(JSONToken.START_ARRAY, parser.nextToken());
+System.assertEquals(JSONToken.START_OBJECT, parser.nextToken());
+System.assertEquals(JSONToken.FIELD_NAME, parser.nextToken());
+System.assertEquals('id', parser.getCurrentName());
+System.assertEquals(JSONToken.VALUE_STRING, parser.nextValue());
+System.assertEquals('001B000001DVM9t', parser.getIdValue().toString());
+System.assertEquals(JSONToken.FIELD_NAME, parser.nextToken());
+System.assertEquals('blob', parser.getCurrentName());
+System.assertEquals(JSONToken.VALUE_STRING, parser.nextValue());
+System.assertEquals('abc', parser.getBlobValue().toString());
+System.assertEquals(JSONToken.END_OBJECT, parser.nextToken());
+System.assertEquals(JSONToken.VALUE_FALSE, parser.nextToken());
+System.assertEquals(false, parser.getBooleanValue());
+System.assertEquals(JSONToken.END_ARRAY, parser.nextToken());
+System.assertEquals(null, parser.nextToken());
+System.assertEquals(null, parser.getCurrentToken());
+System.assertEquals(null, parser.getCurrentName());
+System.assertEquals('START_OBJECT', JSONToken.START_OBJECT.name());
+System.assertEquals('START_OBJECT', JSONToken.START_OBJECT.toString());
+System.assertEquals(0, JSONToken.START_OBJECT.ordinal());
+System.assertEquals(JSONToken.VALUE_NUMBER_FLOAT, JSONToken.VALUE_NUMBER_FLOAT);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecJSONGeneratorWritesPlatformAndObjectValues(t *testing.T) {
 	program, err := CompileAnonymous(`
 JSONGenerator gen = JSON.createGenerator(false);
