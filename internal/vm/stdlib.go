@@ -2178,6 +2178,16 @@ func unescapeHTMLEntities(text string) string {
 	return unescapeCoreEntities(text, false)
 }
 
+var htmlNamedEntityReplacements = map[string]string{
+	"nbsp":  "\u00a0",
+	"copy":  "\u00a9",
+	"reg":   "\u00ae",
+	"trade": "\u2122",
+	"euro":  "\u20ac",
+	"ndash": "\u2013",
+	"mdash": "\u2014",
+}
+
 func unescapeXMLEntities(text string) string {
 	return unescapeCoreEntities(text, true)
 }
@@ -2230,6 +2240,11 @@ func coreEntityReplacement(entity string, xml bool) (string, bool) {
 		return "", false
 	case "#39":
 		return "'", true
+	}
+	if !xml {
+		if replacement, ok := htmlNamedEntityReplacements[entity]; ok {
+			return replacement, true
+		}
 	}
 	if strings.HasPrefix(entity, "#") {
 		if r, ok := parseNumericEntity(entity[1:]); ok {
