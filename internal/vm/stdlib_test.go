@@ -1870,6 +1870,28 @@ func TestExecDecimalScaleFenceUnsupported(t *testing.T) {
 	}
 }
 
+func TestExecDecimalScaleUsesLocalDecimalStringTies(t *testing.T) {
+	program, err := CompileAnonymous(`
+Decimal nickel = Decimal.valueOf('1.005');
+Decimal bankersDown = Decimal.valueOf('2.685');
+Decimal bankersUp = Decimal.valueOf('2.675');
+Decimal negative = Decimal.valueOf('-1.005');
+System.assertEquals(1.01, nickel.setScale(2));
+System.assertEquals(1.00, nickel.setScale(2, RoundingMode.valueOf('HALF_DOWN')));
+System.assertEquals(2.68, bankersDown.setScale(2, RoundingMode.valueOf('HALF_EVEN')));
+System.assertEquals(2.68, bankersUp.setScale(2, RoundingMode.valueOf('HALF_EVEN')));
+System.assertEquals(-1.01, negative.setScale(2, RoundingMode.valueOf('HALF_UP')));
+System.assertEquals(3, Decimal.valueOf('2.5').round());
+System.assertEquals(-3, Decimal.valueOf('-2.5').round());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecNumericStdlibRejectsIntegerOverflow(t *testing.T) {
 	tests := []string{
 		"Decimal d = Decimal.valueOf('99999999999999999999999.5');\nInteger.valueOf(d);",

@@ -89,8 +89,8 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Decimal | `Decimal.intValue` | `supported` | Truncates to 32-bit Integer with overflow checks. |
 | Decimal | `Decimal.longValue` | `supported` | Truncates to local Long representation with overflow checks. |
 | Decimal | `Decimal.pow` | `supported` | Power with Integer exponent for finite local Decimal results. |
-| Decimal | `Decimal.round` | `partial` | Default half-up plus all local RoundingMode values; exact arbitrary-precision Decimal scale parity is not modeled. |
-| Decimal | `Decimal.setScale` | `partial` | Supports local finite scale 0-15 with UP, DOWN, CEILING, FLOOR, HALF_UP, HALF_DOWN, HALF_EVEN, and UNNECESSARY; larger arbitrary-precision scales return UnsupportedFeature. |
+| Decimal | `Decimal.round` | `supported` | Default half-up plus all local RoundingMode values for finite local Decimal values, using deterministic base-10 local value ties. |
+| Decimal | `Decimal.setScale` | `supported` | Supports finite local Decimal scale 0-15 with UP, DOWN, CEILING, FLOOR, HALF_UP, HALF_DOWN, HALF_EVEN, and UNNECESSARY; larger arbitrary-precision scales return UnsupportedFeature. |
 | Decimal | `Decimal.valueOf` | `supported` | Parses finite decimal strings and numeric values, including trimmed signed strings. |
 | Decimal | `Decimal/Double.format overloads` | `unsupported` | Locale, grouping, and pattern overloads return explicit UnsupportedFeature diagnostics; localized numeric formatting is not modeled. |
 | Double | `Double.format()` | `supported` | Formats finite local Double values with deterministic base-10 output using the local numeric representation. |
@@ -116,7 +116,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | HTTP | `Http.send` | `partial` | Mock-first local callouts with request validation and callout accounting; real network transport remains explicitly unsupported. |
 | HTTP | `HttpRequest` | `partial` | Endpoint, method, compressed flag, deterministic case-insensitive headers/header keys, timeout validation/defaults, body, and blob body accessors; client-certificate and static-resource callout surfaces remain explicit unsupported seams. |
 | HTTP | `HttpResponse` | `partial` | Status, status code, deterministic case-insensitive headers/header keys, body, and blob body accessors for local mock responses. |
-| Id | `Id.getSObjectType` | `partial` | Resolves local schema key prefixes and a bounded common standard prefix table to Schema.SObjectType tokens; unknown shape-valid prefixes return a stable error. |
+| Id | `Id.getSObjectType` | `partial` | Resolves local schema key prefixes and a bounded common standard prefix table to Schema.SObjectType tokens; unknown shape-valid or unmodeled platform prefixes return a stable StringException rather than guessing. |
 | Id | `Id.to15` | `supported` | Converts validated 18-character IDs to their 15-character prefix. |
 | Id | `Id.to18` | `supported` | Adds or preserves the documented 3-character checksum for validated IDs. |
 | Id | `Id.valueOf` | `supported` | Validates 15-character IDs and strict 18-character checksum suffixes; restoreCasing rebuilds casing from checksum suffixes. |
