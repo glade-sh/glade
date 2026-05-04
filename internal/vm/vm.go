@@ -1497,6 +1497,15 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return Null, fmt.Errorf("ApexPages.getMessages expects 0 arguments")
 		}
 		return List(vm.pageMessages...), nil
+	case "Test.clearApexPageMessages":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Test.clearApexPageMessages expects 0 arguments")
+		}
+		if err := vm.requireTestContext("Test.clearApexPageMessages"); err != nil {
+			return Null, err
+		}
+		vm.pageMessages = nil
+		return Null, nil
 	case "ApexPages.currentPage":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("ApexPages.currentPage expects 0 arguments")
@@ -1516,13 +1525,11 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		}
 		return Null, unsupportedCallError(callee)
 	case "Test.setMock":
-		if len(args) != 2 {
-			return Null, fmt.Errorf("Test.setMock expects mock type and mock instance")
-		}
-		if vm.testContext != nil {
-			vm.testContext.HTTPMock = args[1]
-		}
-		return Null, nil
+		return vm.testSetMock(args)
+	case "Test.createStub", "Test.createSoqlStub":
+		return Null, unsupportedCallError(callee + " local stub API")
+	case "Test.setFixedSearchResults":
+		return Null, unsupportedCallError(callee + " local SOSL fixed search results")
 	case "Test.startTest":
 		return vm.testStart()
 	case "Test.stopTest":
@@ -1663,6 +1670,46 @@ func (vm *VM) assertError(message string) error {
 		Message: message,
 		Stack:   vm.stackFrames(),
 	}
+}
+
+func (vm *VM) requireTestContext(callee string) error {
+	if vm.testContext == nil {
+		return fmt.Errorf("%s is only available in test context", callee)
+	}
+	return nil
+}
+
+func (vm *VM) testSetMock(args []Value) (Value, error) {
+	if len(args) != 2 {
+		return Null, fmt.Errorf("Test.setMock expects mock type and mock instance")
+	}
+	if err := vm.requireTestContext("Test.setMock"); err != nil {
+		return Null, err
+	}
+	mockType, ok := testMockTypeName(args[0])
+	if !ok {
+		return Null, fmt.Errorf("Test.setMock expects mock type")
+	}
+	if mockType != "HttpCalloutMock" {
+		return Null, unsupportedCallError("Test.setMock " + mockType + " mock surface")
+	}
+	vm.testContext.HTTPMock = args[1]
+	return Null, nil
+}
+
+func testMockTypeName(value Value) (string, bool) {
+	switch value.Kind {
+	case ValueString:
+		if value.Text == "" {
+			return "", false
+		}
+		return value.Text, true
+	case ValueObject:
+		if value.Type == "Type" && value.Text != "" {
+			return value.Text, true
+		}
+	}
+	return "", false
 }
 
 func (vm *VM) testStart() (Value, error) {

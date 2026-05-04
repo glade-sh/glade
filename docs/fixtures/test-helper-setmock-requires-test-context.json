@@ -1,0 +1,28 @@
+{
+  "name": "test-helper-setmock-requires-test-context",
+  "evidence": [
+    {
+      "symbol": "Test.setMock",
+      "kind": "exec",
+      "notes": "Test-context-only guard"
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/classes/FixtureAnchor.cls",
+      "content": "public class FixtureAnchor {}"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Test.setMock('HttpCalloutMock', new MockResponse());"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "Error",
+      "message": "Test.setMock is only available in test context"
+    }
+  }
+}

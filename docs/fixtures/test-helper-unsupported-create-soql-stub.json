@@ -1,0 +1,28 @@
+{
+  "name": "test-helper-unsupported-create-soql-stub",
+  "evidence": [
+    {
+      "symbol": "Test.createSoqlStub",
+      "kind": "exec",
+      "notes": "Stable UnsupportedFeature diagnostic"
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/classes/FixtureAnchor.cls",
+      "content": "public class FixtureAnchor {}"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Test.createSoqlStub(Account.class, 'SELECT Id FROM Account');"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"Test.createSoqlStub local stub API\""
+    }
+  }
+}

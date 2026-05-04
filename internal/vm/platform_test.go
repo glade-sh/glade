@@ -301,6 +301,96 @@ System.assertEquals('01s000000000001', Test.getStandardPricebookId());
 	}
 }
 
+func TestExecTestClearApexPageMessages(t *testing.T) {
+	program, err := CompileAnonymous(`
+ApexPages.addMessage(new ApexPages.Message('ERROR', 'Summary', 'Detail'));
+System.assert(ApexPages.hasMessages());
+System.assertEquals(1, ApexPages.getMessages().size());
+Test.clearApexPageMessages();
+System.assert(!ApexPages.hasMessages());
+System.assertEquals(0, ApexPages.getMessages().size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecTestClearApexPageMessagesRequiresTestContext(t *testing.T) {
+	program, err := CompileAnonymous(`Test.clearApexPageMessages();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err == nil || !strings.Contains(err.Error(), "Test.clearApexPageMessages is only available in test context") {
+		t.Fatalf("err = %v", err)
+	}
+}
+
+func TestExecTestSetMockRequiresTestContext(t *testing.T) {
+	program, err := CompileAnonymous(`Test.setMock('HttpCalloutMock', new MockResponse());`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err == nil || !strings.Contains(err.Error(), "Test.setMock is only available in test context") {
+		t.Fatalf("err = %v", err)
+	}
+}
+
+func TestExecTestSetMockRejectsUnsupportedMockType(t *testing.T) {
+	program, err := CompileAnonymous(`Test.setMock('WebServiceMock', new MockResponse());`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	_, err = machine.Execute(program)
+	var runtimeErr *RuntimeError
+	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != `unsupported call "Test.setMock WebServiceMock mock surface"` {
+		t.Fatalf("err = %#v, want UnsupportedFeature WebServiceMock", err)
+	}
+}
+
+func TestExecUnsupportedTestHelperAPIsHaveStableShape(t *testing.T) {
+	cases := []struct {
+		name string
+		src  string
+		want string
+	}{
+		{
+			name: "createStub",
+			src:  `Test.createStub(Account.class, null);`,
+			want: `unsupported call "Test.createStub local stub API"`,
+		},
+		{
+			name: "createSoqlStub",
+			src:  `Test.createSoqlStub(Account.class, 'SELECT Id FROM Account');`,
+			want: `unsupported call "Test.createSoqlStub local stub API"`,
+		},
+		{
+			name: "setFixedSearchResults",
+			src:  `Test.setFixedSearchResults(new List<String>{'001000000000001'});`,
+			want: `unsupported call "Test.setFixedSearchResults local SOSL fixed search results"`,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			program, err := CompileAnonymous(tc.src)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = New(nil).Execute(program)
+			var runtimeErr *RuntimeError
+			if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != tc.want || err.Error() != tc.want {
+				t.Fatalf("err = %#v, want %q", err, tc.want)
+			}
+		})
+	}
+}
+
 func TestExecDatabaseGetQueryLocator(t *testing.T) {
 	program, err := CompileAnonymous(`
 insert new Account(Name = 'Acme');

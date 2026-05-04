@@ -332,9 +332,13 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | System | `System.isScheduled` | `partial` | Returns false in the local non-async VM context. |
 | System | `System.now` | `partial` | Returns deterministic VM-clock Datetime. |
 | System | `System.today` | `partial` | Returns deterministic VM-clock Date. |
+| Test | `Test.clearApexPageMessages` | `supported` | Clears VM-local ApexPages messages in test context. |
+| Test | `Test.createSoqlStub` | `unsupported` | SOQL stub creation is not locally modeled; calls return explicit UnsupportedFeature diagnostics. |
+| Test | `Test.createStub` | `unsupported` | Dynamic stub creation is not locally modeled; calls return explicit UnsupportedFeature diagnostics. |
 | Test | `Test.getStandardPricebookId` | `partial` | Deterministic test-context-only ID. |
 | Test | `Test.isRunningTest` | `supported` | Reflects local test context. |
-| Test | `Test.setMock` | `partial` | HttpCalloutMock support for local tests. |
+| Test | `Test.setFixedSearchResults` | `unsupported` | Fixed SOSL search results are deferred with the local search surface; calls return explicit UnsupportedFeature diagnostics. |
+| Test | `Test.setMock` | `partial` | HttpCalloutMock support for local tests; other mock interfaces return explicit unsupported diagnostics. |
 | Test | `Test.startTest` | `partial` | Governor-window reset/restore for supported counters. |
 | Test | `Test.stopTest` | `partial` | Drains supported async work. |
 | Time | `Time.addHours` | `supported` | Local time arithmetic with 24-hour wrap. |

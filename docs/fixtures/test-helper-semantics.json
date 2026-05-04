@@ -1,0 +1,40 @@
+{
+  "name": "test-helper-semantics",
+  "evidence": [
+    {
+      "symbol": "Test.isRunningTest",
+      "kind": "test"
+    },
+    {
+      "symbol": "Test.getStandardPricebookId",
+      "kind": "test"
+    },
+    {
+      "symbol": "Test.clearApexPageMessages",
+      "kind": "test"
+    },
+    {
+      "symbol": "Test.setMock",
+      "kind": "test",
+      "notes": "HttpCalloutMock lifecycle in local test context"
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/classes/TestHelperFixtureTest.cls",
+      "content": "@isTest private class TestHelperFixtureTest { @isTest static void helpers() { System.assert(Test.isRunningTest()); System.assertEquals('01s000000000001', Test.getStandardPricebookId()); ApexPages.addMessage(new ApexPages.Message('ERROR', 'Summary', 'Detail')); System.assert(ApexPages.hasMessages()); System.assertEquals(1, ApexPages.getMessages().size()); Test.clearApexPageMessages(); System.assert(!ApexPages.hasMessages()); System.assertEquals(0, ApexPages.getMessages().size()); Test.setMock('HttpCalloutMock', new MockResponse(body = 'fixture', statusCode = 209)); HttpRequest req = new HttpRequest(); req.setEndpoint('https://example.test'); req.setMethod('GET'); Http h = new Http(); HttpResponse res = h.send(req); System.assertEquals(209, res.getStatusCode()); System.assertEquals('fixture', res.getBody()); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "errors": 0,
+      "failed": 0,
+      "ok": true,
+      "passed": 1,
+      "total": 1
+    }
+  }
+}
