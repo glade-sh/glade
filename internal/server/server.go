@@ -80,6 +80,8 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.handleLimits(w, r)
 	case len(rest) >= 1 && rest[0] == "tooling":
 		s.handleTooling(w, r, rest[1:])
+	case len(rest) >= 1 && rest[0] == "jobs":
+		s.handleBulkJobs(w, r, rest[1:])
 	case len(rest) >= 1 && rest[0] == "composite":
 		s.handleComposite(w, r, rest[1:])
 	case len(rest) >= 1 && rest[0] == "oaer":
@@ -354,8 +356,49 @@ func (s *Server) handleTooling(w http.ResponseWriter, r *http.Request, parts []s
 		s.handleExecuteAnonymous(w, r)
 	case len(parts) == 1 && parts[0] == "query":
 		s.handleQuery(w, r)
+	case len(parts) == 1 && parts[0] == "sobjects":
+		if r.Method != http.MethodGet {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
+		writeSalesforceError(w, errUnsupportedFeature, "Tooling sObject discovery is not implemented in the local server")
+	case len(parts) == 3 && parts[0] == "sobjects" && parts[2] == "describe":
+		if r.Method != http.MethodGet {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
+		writeSalesforceError(w, errUnsupportedFeature, "Tooling sObject describe for "+parts[1]+" is not implemented in the local server")
+	case len(parts) == 1 && parts[0] == "completions":
+		if r.Method != http.MethodGet {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
+		writeSalesforceError(w, errUnsupportedFeature, "Tooling completions are not implemented in the local server")
 	default:
 		writeSalesforceError(w, errUnknownTooling)
+	}
+}
+
+func (s *Server) handleBulkJobs(w http.ResponseWriter, r *http.Request, parts []string) {
+	if len(parts) < 1 {
+		writeSalesforceError(w, errUnknownEndpoint)
+		return
+	}
+	switch parts[0] {
+	case "query":
+		if r.Method != http.MethodGet && r.Method != http.MethodPost {
+			writeMethodNotAllowed(w, http.MethodGet, http.MethodPost)
+			return
+		}
+		writeSalesforceError(w, errUnsupportedFeature, "Bulk API v2 query jobs are not implemented in the local server")
+	case "ingest":
+		if r.Method != http.MethodGet && r.Method != http.MethodPost {
+			writeMethodNotAllowed(w, http.MethodGet, http.MethodPost)
+			return
+		}
+		writeSalesforceError(w, errUnsupportedFeature, "Bulk API v2 ingest jobs are not implemented in the local server")
+	default:
+		writeSalesforceError(w, errUnknownEndpoint)
 	}
 }
 
@@ -834,6 +877,7 @@ func resourceDiscoveryPayload(version string) map[string]string {
 	base := "/services/data/" + version
 	return map[string]string{
 		"composite": base + "/composite",
+		"jobs":      base + "/jobs",
 		"limits":    base + "/limits",
 		"oaer":      base + "/oaer",
 		"query":     base + "/query",

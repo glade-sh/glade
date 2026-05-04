@@ -27,7 +27,7 @@
       "method": "GET",
       "path": "/services/data/v61.0",
       "status": 200,
-      "contains": ["\"composite\":\"/services/data/v61.0/composite\"", "\"recent\":\"/services/data/v61.0/recent\"", "\"search\":\"/services/data/v61.0/search\""]
+      "contains": ["\"composite\":\"/services/data/v61.0/composite\"", "\"jobs\":\"/services/data/v61.0/jobs\"", "\"recent\":\"/services/data/v61.0/recent\"", "\"search\":\"/services/data/v61.0/search\""]
     },
     {
       "name": "userinfo",
@@ -114,6 +114,29 @@
       "contains": ["UNSUPPORTED_FEATURE", "Search/SOSL"]
     },
     {
+      "name": "tooling-sobjects-unsupported",
+      "method": "GET",
+      "path": "/services/data/v61.0/tooling/sobjects",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "Tooling sObject discovery"]
+    },
+    {
+      "name": "bulk-query-unsupported",
+      "method": "POST",
+      "path": "/services/data/v61.0/jobs/query",
+      "body": "{\"operation\":\"query\",\"query\":\"SELECT Id FROM Account\"}",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "Bulk API v2 query jobs"]
+    },
+    {
+      "name": "bulk-ingest-method-not-allowed",
+      "method": "PATCH",
+      "path": "/services/data/v61.0/jobs/ingest",
+      "body": "{}",
+      "status": 405,
+      "contains": ["METHOD_NOT_ALLOWED", "method not allowed"]
+    },
+    {
       "name": "error-shape",
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Missing__c/describe",
@@ -147,8 +170,8 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 16,
-      "statuses": [200, 200, 200, 200, 200, 201, 200, 200, 200, 200, 400, 501, 501, 404, 200, 201],
+      "requests": 19,
+      "statuses": [200, 200, 200, 200, 200, 201, 200, 200, 200, 200, 400, 501, 501, 501, 501, 405, 404, 200, 201],
       "users": 2
     }
   }
