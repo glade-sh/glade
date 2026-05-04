@@ -4,25 +4,25 @@
     {
       "symbol": "TimeZone.getTimeZone",
       "kind": "exec",
-      "notes": "Named timezone IDs and DST database behavior return a typed unsupported diagnostic."
+      "notes": "Named timezone IDs outside the deterministic America/Los_Angeles slice return a typed unsupported diagnostic."
     }
   ],
   "source": [
     {
       "path": "anonymous.apex",
-      "content": "TimeZone.getTimeZone('America/Los_Angeles');"
+      "content": "TimeZone.getTimeZone('America/Denver');"
     }
   ],
   "command": {
     "kind": "exec",
     "args": [
-      "TimeZone.getTimeZone('America/Los_Angeles');"
+      "TimeZone.getTimeZone('America/Denver');"
     ]
   },
   "expected": {
     "error": {
       "type": "UnsupportedFeature",
-      "message": "unsupported call \"TimeZone.getTimeZone America/Los_Angeles\""
+      "message": "unsupported call \"TimeZone.getTimeZone America/Denver\""
     }
   }
 }

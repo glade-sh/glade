@@ -4309,7 +4309,7 @@ func formatPlatformDatetime(value time.Time) string {
 	return value.UTC().Format(time.RFC3339Nano)
 }
 
-func formatApexDatetimePattern(value time.Time, pattern, zoneID string, offset time.Duration) (string, error) {
+func formatApexDatetimePattern(value time.Time, pattern, zoneID, zoneLabel string, offset time.Duration) (string, error) {
 	var b strings.Builder
 	for i := 0; i < len(pattern); {
 		ch := pattern[i]
@@ -4332,7 +4332,7 @@ func formatApexDatetimePattern(value time.Time, pattern, zoneID string, offset t
 			j++
 		}
 		token := pattern[i:j]
-		text, err := formatApexDatetimeToken(value, token, zoneID, offset)
+		text, err := formatApexDatetimeToken(value, token, zoneID, zoneLabel, offset)
 		if err != nil {
 			return "", err
 		}
@@ -4359,7 +4359,7 @@ func readApexDatePatternLiteral(pattern string, start int) (int, string, error) 
 	return 0, "", fmt.Errorf("Datetime.format unsupported unterminated quoted literal")
 }
 
-func formatApexDatetimeToken(value time.Time, token, zoneID string, offset time.Duration) (string, error) {
+func formatApexDatetimeToken(value time.Time, token, zoneID, zoneLabel string, offset time.Duration) (string, error) {
 	count := len(token)
 	switch token[0] {
 	case 'y':
@@ -4420,7 +4420,7 @@ func formatApexDatetimeToken(value time.Time, token, zoneID string, offset time.
 		if zoneID == "UTC" {
 			return "UTC", nil
 		}
-		return zoneID, nil
+		return zoneLabel, nil
 	default:
 		return "", fmt.Errorf("Datetime.format unsupported pattern token %q", token)
 	}
@@ -4529,13 +4529,65 @@ func platformTimeFromDuration(value time.Duration) Value {
 
 func fixedTimeZone(id string) (Value, error) {
 	canonical, offset, ok := parseFixedTimeZoneID(id)
+	locationName := ""
 	if !ok {
-		return Null, unsupportedCallError("TimeZone.getTimeZone " + id)
+		location, locationOK := supportedNamedTimeZone(id)
+		if !locationOK {
+			return Null, unsupportedCallError("TimeZone.getTimeZone " + id)
+		}
+		canonical = id
+		locationName = location.String()
+	} else if canonical == "UTC" {
+		locationName = "UTC"
 	}
 	out := Object("TimeZone")
 	out.Fields["id"] = String(canonical)
 	out.Fields["offsetMillis"] = Int(int64(offset / time.Millisecond))
+	out.Fields["location"] = String(locationName)
 	return out, nil
+}
+
+func supportedNamedTimeZone(id string) (*time.Location, bool) {
+	if id != "America/Los_Angeles" {
+		return nil, false
+	}
+	location, err := time.LoadLocation(id)
+	if err != nil {
+		return nil, false
+	}
+	return location, true
+}
+
+func resolveTimeZoneForInstant(id string, instant time.Time) (string, time.Duration, time.Time, string, bool) {
+	canonical, offset, ok := parseFixedTimeZoneID(id)
+	if ok {
+		local := instant.UTC().Add(offset)
+		return canonical, offset, local, canonical, true
+	}
+	location, ok := supportedNamedTimeZone(id)
+	if !ok {
+		return "", 0, time.Time{}, "", false
+	}
+	local := instant.UTC().In(location)
+	label, seconds := local.Zone()
+	return id, time.Duration(seconds) * time.Second, local, label, true
+}
+
+func timeZoneOffsetMillis(receiver Value, instant time.Time) (Value, error) {
+	locationValue := receiver.Fields["location"]
+	if locationValue.Kind == ValueString && locationValue.Text != "" && locationValue.Text != "UTC" {
+		location, ok := supportedNamedTimeZone(locationValue.Text)
+		if !ok {
+			return Null, unsupportedCallError("TimeZone.getOffset " + locationValue.Text)
+		}
+		_, seconds := instant.UTC().In(location).Zone()
+		return Int(int64(seconds * 1000)), nil
+	}
+	offsetValue := receiver.Fields["offsetMillis"]
+	if offsetValue.Kind != ValueInt {
+		return Null, fmt.Errorf("TimeZone offset is missing")
+	}
+	return offsetValue, nil
 }
 
 func parseFixedTimeZoneID(id string) (string, time.Duration, bool) {
@@ -8923,19 +8975,24 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Datetime.%s expects pattern String", method)
 			}
 			tzID := "UTC"
+			zoneLabel := "UTC"
 			offset := time.Duration(0)
 			if method == "format" && len(args) == 2 {
 				if args[1].Kind != ValueString {
 					return Null, receiver, false, true, fmt.Errorf("Datetime.format expects timezone String")
 				}
-				canonical, parsedOffset, ok := parseFixedTimeZoneID(args[1].Text)
+				canonical, parsedOffset, local, label, ok := resolveTimeZoneForInstant(args[1].Text, t)
 				if !ok {
 					return Null, receiver, false, true, unsupportedCallError("Datetime.format timezone " + args[1].Text)
 				}
 				tzID = canonical
 				offset = parsedOffset
+				zoneLabel = label
+				t = local
+			} else {
+				t = t.UTC()
 			}
-			formatted, err := formatApexDatetimePattern(t.Add(offset), args[0].Text, tzID, offset)
+			formatted, err := formatApexDatetimePattern(t, args[0].Text, tzID, zoneLabel, offset)
 			if err != nil {
 				return Null, receiver, false, true, err
 			}
@@ -9090,7 +9147,15 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 1 || args[0].Kind != ValueObject || args[0].Type != "Datetime" {
 				return Null, receiver, false, true, fmt.Errorf("TimeZone.getOffset expects Datetime")
 			}
-			return receiver.Fields["offsetMillis"], receiver, false, true, nil
+			instant, err := parsePlatformDatetime(args[0])
+			if err != nil {
+				return Null, receiver, false, true, err
+			}
+			offset, err := timeZoneOffsetMillis(receiver, instant)
+			if err != nil {
+				return Null, receiver, false, true, err
+			}
+			return offset, receiver, false, true, nil
 		}
 	case "Id":
 		switch method {
