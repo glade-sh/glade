@@ -117,8 +117,10 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Exception | `Exception.toString` | `supported` | Returns System-prefixed local exception type and message text. |
 | FeatureManagement | `FeatureManagement.checkPermission` | `supported` | Checks local current-user and runAs permission-list state. |
 | HTTP | `Http.send` | `partial` | Mock-first local callouts with request validation and callout accounting; real network transport remains explicitly unsupported. |
-| HTTP | `HttpRequest` | `partial` | Deterministic constructor defaults plus endpoint, method, compressed flag, case-insensitive headers/header keys, timeout validation/defaults, body, and blob body accessors; client-certificate and static-resource callout surfaces remain explicit unsupported seams. |
+| HTTP | `HttpRequest` | `supported` | Deterministic local value object with constructor defaults, endpoint and method validation, compressed flag, case-insensitive headers/header keys, timeout validation/defaults, and body/blob body accessors. |
+| HTTP | `HttpRequest client certificates` | `unsupported` | Client-certificate setters return explicit UnsupportedFeature diagnostics because local callout certificate material is not modeled. |
 | HTTP | `HttpResponse` | `supported` | Deterministic constructor defaults plus status, status code, case-insensitive headers/header keys, body, and blob body accessors for local mock responses. |
+| HTTP | `StaticResourceCalloutMock` | `unsupported` | Static-resource callout mock constructors and methods return explicit UnsupportedFeature diagnostics; no local static-resource transport replay is modeled. |
 | Id | `Id.getSObjectType local prefixes` | `supported` | Resolves local schema key prefixes and the modeled standard prefix table to Schema.SObjectType tokens. |
 | Id | `Id.getSObjectType unmodeled prefixes` | `unsupported` | Unknown shape-valid or unmodeled platform prefixes return a stable StringException rather than guessed object types. |
 | Id | `Id.to15` | `supported` | Converts validated 18-character IDs to their 15-character prefix. |
