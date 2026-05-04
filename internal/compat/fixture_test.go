@@ -231,6 +231,20 @@ func TestRunExecFixture(t *testing.T) {
 	}
 }
 
+func TestRunJSONStrictUnknownFieldFixture(t *testing.T) {
+	fixture, err := LoadFile("../../docs/fixtures/core-json-strict-sobject-unknown-field.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := Run(fixture)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.OK {
+		t.Fatalf("result = %#v", result)
+	}
+}
+
 func TestRunUnsupportedExecFixtureMatchesExpectedError(t *testing.T) {
 	fixture := Fixture{
 		Name:    "unsupported-exec-call",

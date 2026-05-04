@@ -438,6 +438,62 @@ System.assertEquals('Second', decoded.Name);
 	}
 }
 
+func TestExecJSONDeserializeStrictRejectsUnknownApexClassFieldsAsJSONException(t *testing.T) {
+	program, err := CompileAnonymous(`
+String caught = '';
+try {
+	Object decoded = JSON.deserializeStrict('{"Name":"Acme","Extra__c":"x"}', JsonDTO.class);
+} catch (JSONException e) {
+	caught = e.getMessage();
+}
+System.assert(caught.contains('unknown field "Extra__c"'));
+System.assert(caught.contains('JsonDTO'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "JsonDTO",
+		Fields: map[string]Field{
+			"Name": {Name: "Name", Type: "String"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecJSONDeserializeKeepsNonStrictApexClassUnknownFieldBehavior(t *testing.T) {
+	program, err := CompileAnonymous(`
+Object decoded = JSON.deserialize('{"Name":"Acme","Extra__c":"x"}', JsonDTO.class);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "JsonDTO",
+		Fields: map[string]Field{
+			"Name": {Name: "Name", Type: "String"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+	decoded := machine.Globals["decoded"]
+	if decoded.Type != "JsonDTO" {
+		t.Fatalf("decoded.Type = %q, want JsonDTO", decoded.Type)
+	}
+	if got := decoded.Fields["Extra__c"]; got.Kind != ValueString || got.Text != "x" {
+		t.Fatalf("Extra__c = %#v, want string x", got)
+	}
+}
+
 func TestExecJSONDeserializeTypedRejectsMismatchedShapes(t *testing.T) {
 	program, err := CompileAnonymous(`
 Object n = JSON.deserialize('"not-a-number"', Integer.class);
