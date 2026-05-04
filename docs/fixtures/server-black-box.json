@@ -30,6 +30,13 @@
       "contains": ["\"composite\":\"/services/data/v61.0/composite\"", "\"jobs\":\"/services/data/v61.0/jobs\"", "\"recent\":\"/services/data/v61.0/recent\"", "\"search\":\"/services/data/v61.0/search\""]
     },
     {
+      "name": "limits-payload",
+      "method": "GET",
+      "path": "/services/data/v61.0/limits",
+      "status": 200,
+      "contains": ["\"DailyApiRequests\":{\"Max\":15000,\"Remaining\":15000}", "\"DailyBulkV2QueryJobs\":{\"Max\":10000,\"Remaining\":10000}", "\"DataStorageMB\":{\"Max\":512,\"Remaining\":512}", "\"StreamingApiConcurrentClients\":{\"Max\":20,\"Remaining\":20}"]
+    },
+    {
       "name": "oaer-state",
       "method": "GET",
       "path": "/services/data/v61.0/oaer/state",
@@ -469,8 +476,8 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 59,
-      "statuses": [200, 200, 200, 200, 200, 501, 501, 501, 501, 200, 201, 200, 200, 200, 501, 501, 400, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 400, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 404, 404, 200, 200, 201],
+      "requests": 60,
+      "statuses": [200, 200, 200, 200, 200, 200, 501, 501, 501, 501, 200, 201, 200, 200, 200, 501, 501, 400, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 400, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 404, 404, 200, 200, 201],
       "users": 2
     }
   }

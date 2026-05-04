@@ -1032,6 +1032,61 @@ func TestIdentityLimitsDescribeRecentAndNormalRESTPayloads(t *testing.T) {
 	}
 }
 
+func TestLimitsPayloadIncludesCommonStableKeys(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	res := httptest.NewRecorder()
+	handler.ServeHTTP(res, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/limits", nil))
+	if res.Code != http.StatusOK {
+		t.Fatalf("limits status = %d body=%s", res.Code, res.Body.String())
+	}
+
+	var payload map[string]localAPILimit
+	if err := json.Unmarshal(res.Body.Bytes(), &payload); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, key := range []string{
+		"DailyApiRequests",
+		"DailyAsyncApexExecutions",
+		"ConcurrentAsyncGetReportInstances",
+		"ConcurrentSyncReportRuns",
+		"DailyBulkApiBatches",
+		"DailyBulkV2QueryJobs",
+		"DailyBulkV2IngestJobs",
+		"DailyDurableGenericStreamingApiEvents",
+		"DailyStreamingApiEvents",
+		"DataStorageMB",
+		"FileStorageMB",
+		"HourlyAsyncReportRuns",
+		"HourlyDashboardRefreshes",
+		"HourlyDashboardResults",
+		"HourlyDashboardStatuses",
+		"HourlyLongTermIdMapping",
+		"HourlyODataCallout",
+		"HourlyPublishedPlatformEvents",
+		"HourlyPublishedStandardVolumePlatformEvents",
+		"MassEmail",
+		"Package2VersionCreates",
+		"PermissionSets",
+		"SingleEmail",
+		"StreamingApiConcurrentClients",
+	} {
+		limit, ok := payload[key]
+		if !ok {
+			t.Fatalf("limits payload missing %s in %#v", key, payload)
+		}
+		if limit.Max <= 0 || limit.Remaining != limit.Max {
+			t.Fatalf("limit %s = %#v, want positive Max with Remaining == Max", key, limit)
+		}
+	}
+
+	if payload["DataStorageMB"].Max != 512 || payload["StreamingApiConcurrentClients"].Max != 20 {
+		t.Fatalf("representative limits changed: DataStorageMB=%#v StreamingApiConcurrentClients=%#v", payload["DataStorageMB"], payload["StreamingApiConcurrentClients"])
+	}
+}
+
 func TestLocalUserContextDefaultsToDeterministicUser(t *testing.T) {
 	org := testOrg()
 	storage.EnsureDeterministicPlatformData(&org)

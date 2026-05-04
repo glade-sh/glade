@@ -637,6 +637,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
     `StaticResource`), test-run orchestration endpoints, and coverage probes
     instead of falling through to unknown tooling routes.
 - [ ] Add more REST resources used by local integrations and editor tooling.
+  - [x] Return a deterministic, conservative `/limits` payload with common
+    Salesforce limit names and stable `Max`/`Remaining` fields for local client
+    probes without claiming live org accounting.
   - [x] Return stable unsupported errors for common unmodeled top-level REST
     namespaces such as Connect, Chatter, Analytics, Wave, Metadata, Support,
     Process, Actions, and Apps.
@@ -688,6 +691,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     user, and strict-limit edges in the server black-box fixture.
   - [x] Cover common OAuth unsupported auth-stub route shapes in the server
     black-box fixture.
+  - [x] Cover representative `/limits` payload keys in the server black-box
+    fixture.
 
 ## 9. Compatibility, Hardening, And Release
 
