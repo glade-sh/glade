@@ -1131,6 +1131,56 @@ func TestLocalUserContextUsesLexicographicUserWhenDefaultMissing(t *testing.T) {
 	}
 }
 
+func TestOAuthUnsupportedStubsAreExplicit(t *testing.T) {
+	org := testOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	handler := New(&org)
+
+	for _, tc := range []struct {
+		name   string
+		method string
+		path   string
+	}{
+		{name: "token", method: http.MethodPost, path: "/services/oauth2/token"},
+		{name: "revoke", method: http.MethodPost, path: "/services/oauth2/revoke"},
+		{name: "introspect", method: http.MethodPost, path: "/services/oauth2/introspect"},
+		{name: "authorize", method: http.MethodGet, path: "/services/oauth2/authorize?response_type=code&client_id=local&redirect_uri=http://localhost/callback"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			handler.ServeHTTP(rec, httptest.NewRequest(tc.method, tc.path, nil))
+			assertSalesforceError(t, rec, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", "Full OAuth flows and token issuance are not implemented")
+		})
+	}
+}
+
+func TestOAuthUnsupportedStubsMethodHandling(t *testing.T) {
+	org := testOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	handler := New(&org)
+
+	for _, tc := range []struct {
+		name        string
+		method      string
+		path        string
+		allowHeader string
+	}{
+		{name: "token-get", method: http.MethodGet, path: "/services/oauth2/token", allowHeader: http.MethodPost},
+		{name: "revoke-get", method: http.MethodGet, path: "/services/oauth2/revoke", allowHeader: http.MethodPost},
+		{name: "introspect-get", method: http.MethodGet, path: "/services/oauth2/introspect", allowHeader: http.MethodPost},
+		{name: "authorize-post", method: http.MethodPost, path: "/services/oauth2/authorize", allowHeader: http.MethodGet},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			handler.ServeHTTP(rec, httptest.NewRequest(tc.method, tc.path, nil))
+			assertSalesforceError(t, rec, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
+			if got := rec.Header().Get("Allow"); got != tc.allowHeader {
+				t.Fatalf("Allow = %q, want %q", got, tc.allowHeader)
+			}
+		})
+	}
+}
+
 func TestToolingExecuteAnonymousAndCompositeSObjects(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
