@@ -2128,6 +2128,39 @@ System.assertEquals(0, cascadeDeleted.size(), 'deleting parent should cascade so
 	}
 }
 
+func TestExecDatabaseMergeResultMergedRecordIdsForPartialList(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account master = new Account(Name = 'Master');
+insert master;
+Account duplicate = new Account(Name = 'Duplicate');
+insert duplicate;
+Account deletedDuplicate = new Account(Name = 'Deleted Duplicate');
+insert deletedDuplicate;
+delete deletedDuplicate;
+List<Account> duplicates = new List<Account>{duplicate, deletedDuplicate};
+List<Object> results = Database.merge(master, duplicates, false);
+System.assertEquals(2, results.size());
+Object success = results.get(0);
+Object failure = results.get(1);
+System.assert(success.isSuccess());
+List<Object> mergedIds = success.getMergedRecordIds();
+System.assertEquals(1, mergedIds.size());
+System.assertEquals(duplicate.Id, mergedIds.get(0));
+System.assert(!failure.isSuccess());
+System.assertEquals(0, failure.getMergedRecordIds().size());
+System.assertEquals('ENTITY_IS_DELETED', failure.getErrors().get(0).getStatusCode());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func testDataOrg() storage.OrgState {
 	org := storage.NewOrgState()
 	org.Objects["Account"] = storage.ObjectState{
