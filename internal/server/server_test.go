@@ -78,6 +78,129 @@ func TestSObjectCRUDAndQuery(t *testing.T) {
 	}
 }
 
+func TestSObjectRecordGETFieldProjection(t *testing.T) {
+	org := testOrg()
+	object := org.Objects["Account"]
+	object.Records["001000000000001"] = storage.Record{
+		ID:     "001000000000001",
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":           storage.StringValue("Trail"),
+			"Description":    storage.StringValue("Lake shore account"),
+			"External_Id__c": storage.StringValue("EXT-1"),
+		},
+	}
+	org.Objects["Account"] = object
+	handler := New(&org)
+
+	get := httptest.NewRecorder()
+	handler.ServeHTTP(get, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/001000000000001?fields=Name,Description", nil))
+	if get.Code != http.StatusOK {
+		t.Fatalf("projected get status = %d body=%s", get.Code, get.Body.String())
+	}
+	var payload map[string]any
+	if err := json.Unmarshal(get.Body.Bytes(), &payload); err != nil {
+		t.Fatal(err)
+	}
+	assertQueryRecordShape(t, payload, "Account", "001000000000001", "/services/data/v61.0/sobjects/Account/001000000000001")
+	if payload["Name"] != "Trail" || payload["Description"] != "Lake shore account" {
+		t.Fatalf("projected get payload = %#v", payload)
+	}
+	if _, ok := payload["External_Id__c"]; ok {
+		t.Fatalf("projected get leaked unrequested field: %#v", payload)
+	}
+	if len(payload) != 4 {
+		t.Fatalf("projected get field count = %d payload=%#v", len(payload), payload)
+	}
+}
+
+func TestSObjectExternalIDRecordGETFieldProjection(t *testing.T) {
+	org := testOrg()
+	object := org.Objects["Account"]
+	object.Records["001000000000001"] = storage.Record{
+		ID:     "001000000000001",
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":           storage.StringValue("Trail"),
+			"Description":    storage.StringValue("Lake shore account"),
+			"External_Id__c": storage.StringValue("EXT-1"),
+		},
+	}
+	org.Objects["Account"] = object
+	handler := New(&org)
+
+	get := httptest.NewRecorder()
+	handler.ServeHTTP(get, httptest.NewRequest(http.MethodGet, "/services/data/v60.0/sobjects/Account/External_Id__c/EXT-1?fields=Name", nil))
+	if get.Code != http.StatusOK {
+		t.Fatalf("projected external id get status = %d body=%s", get.Code, get.Body.String())
+	}
+	var payload map[string]any
+	if err := json.Unmarshal(get.Body.Bytes(), &payload); err != nil {
+		t.Fatal(err)
+	}
+	assertQueryRecordShape(t, payload, "Account", "001000000000001", "/services/data/v60.0/sobjects/Account/001000000000001")
+	if payload["Name"] != "Trail" {
+		t.Fatalf("projected external id get payload = %#v", payload)
+	}
+	for _, field := range []string{"Description", "External_Id__c"} {
+		if _, ok := payload[field]; ok {
+			t.Fatalf("projected external id get leaked %s: %#v", field, payload)
+		}
+	}
+	if len(payload) != 3 {
+		t.Fatalf("projected external id get field count = %d payload=%#v", len(payload), payload)
+	}
+}
+
+func TestSObjectRecordGETFieldProjectionRejectsUnknownField(t *testing.T) {
+	org := testOrg()
+	addAccountForTest(&org, "001000000000001", "Trail")
+	handler := New(&org)
+
+	get := httptest.NewRecorder()
+	handler.ServeHTTP(get, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/001000000000001?fields=Name,Nope__c", nil))
+	if get.Code != http.StatusBadRequest || !bytes.Contains(get.Body.Bytes(), []byte(`"errorCode":"INVALID_FIELD"`)) {
+		t.Fatalf("unknown projected field status = %d body=%s", get.Code, get.Body.String())
+	}
+}
+
+func TestSObjectRecordGETBlankFieldsPreservesFullPayload(t *testing.T) {
+	org := testOrg()
+	object := org.Objects["Account"]
+	object.Records["001000000000001"] = storage.Record{
+		ID:     "001000000000001",
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":           storage.StringValue("Trail"),
+			"External_Id__c": storage.StringValue("EXT-1"),
+		},
+		ExplicitNulls: map[string]bool{"Description": true},
+	}
+	org.Objects["Account"] = object
+	handler := New(&org)
+
+	for _, path := range []string{
+		"/services/data/v61.0/sobjects/Account/001000000000001",
+		"/services/data/v61.0/sobjects/Account/001000000000001?fields=%20%20",
+	} {
+		get := httptest.NewRecorder()
+		handler.ServeHTTP(get, httptest.NewRequest(http.MethodGet, path, nil))
+		if get.Code != http.StatusOK {
+			t.Fatalf("%s status = %d body=%s", path, get.Code, get.Body.String())
+		}
+		var payload map[string]any
+		if err := json.Unmarshal(get.Body.Bytes(), &payload); err != nil {
+			t.Fatal(err)
+		}
+		if payload["Name"] != "Trail" || payload["External_Id__c"] != "EXT-1" {
+			t.Fatalf("%s full payload = %#v", path, payload)
+		}
+		if value, ok := payload["Description"]; !ok || value != nil {
+			t.Fatalf("%s full payload Description = %#v ok=%v", path, value, ok)
+		}
+	}
+}
+
 func TestSObjectExternalIDRoutesCRUD(t *testing.T) {
 	org := testOrg()
 	addExternalIDFieldForTest(&org)

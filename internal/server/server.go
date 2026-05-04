@@ -343,11 +343,15 @@ func (s *Server) handleExternalIDRecord(w http.ResponseWriter, r *http.Request, 
 	}
 	switch r.Method {
 	case http.MethodGet:
+		projection, projected, ok := recordFieldProjectionFromRequest(w, r, object.Definition, s.Org.Namespace)
+		if !ok {
+			return
+		}
 		record, id, matches := findExternalIDRecord(object, fieldName, field, value)
 		if !writeExternalIDLookupResult(w, objectName, fieldName, matches) {
 			return
 		}
-		writeJSON(w, http.StatusOK, recordPayload(record, version, objectName, id))
+		writeJSON(w, http.StatusOK, recordPayloadWithProjection(record, version, objectName, id, projection, projected))
 	case http.MethodPatch:
 		record, err := decodeRecord(r, objectName, "")
 		if err != nil {
@@ -429,12 +433,16 @@ func (s *Server) handleRecord(w http.ResponseWriter, r *http.Request, version st
 	}
 	switch r.Method {
 	case http.MethodGet:
+		projection, projected, ok := recordFieldProjectionFromRequest(w, r, object.Definition, s.Org.Namespace)
+		if !ok {
+			return
+		}
 		record, ok := object.Records[id]
 		if !ok || record.System.IsDeleted {
 			writeSalesforceError(w, errUnknownRecord)
 			return
 		}
-		writeJSON(w, http.StatusOK, recordPayload(record, version, objectName, id))
+		writeJSON(w, http.StatusOK, recordPayloadWithProjection(record, version, objectName, id, projection, projected))
 	case http.MethodPatch:
 		record, err := decodeRecord(r, objectName, id)
 		if err != nil {
@@ -1874,6 +1882,39 @@ func storageValuesEqual(field storage.Field, left, right storage.Value) bool {
 }
 
 func recordPayload(record storage.Record, version string, objectName string, id storage.ID) map[string]any {
+	return recordPayloadWithProjection(record, version, objectName, id, nil, false)
+}
+
+func recordFieldProjectionFromRequest(w http.ResponseWriter, r *http.Request, definition storage.ObjectDefinition, namespace string) ([]string, bool, bool) {
+	raw := strings.TrimSpace(r.URL.Query().Get("fields"))
+	if raw == "" {
+		return nil, false, true
+	}
+	fields := make([]string, 0)
+	seen := make(map[string]bool)
+	for _, part := range strings.Split(raw, ",") {
+		requested := strings.TrimSpace(part)
+		if requested == "" {
+			continue
+		}
+		canonical, ok := storage.ResolveFieldName(definition, namespace, requested)
+		if !ok {
+			writeSalesforceError(w, errInvalidField, fmt.Sprintf("No such column %q on entity %q", requested, definition.APIName))
+			return nil, false, false
+		}
+		if seen[canonical] {
+			continue
+		}
+		seen[canonical] = true
+		fields = append(fields, canonical)
+	}
+	if len(fields) == 0 {
+		return nil, false, true
+	}
+	return fields, true, true
+}
+
+func recordPayloadWithProjection(record storage.Record, version string, objectName string, id storage.ID, projection []string, projected bool) map[string]any {
 	if record.Object != "" {
 		objectName = record.Object
 	}
@@ -1886,6 +1927,19 @@ func recordPayload(record storage.Record, version string, objectName string, id 
 			"url":  "/services/data/" + version + "/sobjects/" + objectName + "/" + string(id),
 		},
 		"Id": string(id),
+	}
+	if projected {
+		for _, name := range projection {
+			if name == "Id" {
+				continue
+			}
+			if value, ok := record.Fields[name]; ok {
+				out[name] = storageValueJSON(value)
+				continue
+			}
+			out[name] = nil
+		}
+		return out
 	}
 	fieldNames := make([]string, 0, len(record.Fields)+len(record.ExplicitNulls))
 	seen := make(map[string]bool, len(record.Fields)+len(record.ExplicitNulls))
