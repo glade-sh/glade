@@ -168,6 +168,10 @@ func TestExecPatternRejectsJavaOnlyRegex(t *testing.T) {
 		{name: "lookahead", source: `Pattern.matches('a(?=b)', 'ab');`, message: "Java regex lookahead"},
 		{name: "backreference", source: `Pattern.compile('(a)\1');`, message: "Java regex backreferences"},
 		{name: "namedGroup", source: `Pattern.compile('(?<word>a)');`, message: "Java regex named groups"},
+		{name: "atomicGroup", source: `Pattern.compile('(?>a)');`, message: "Java regex atomic groups"},
+		{name: "possessiveQuantifier", source: `Pattern.compile('a++');`, message: "Java regex possessive quantifiers"},
+		{name: "quoteEscape", source: `Pattern.compile('\Qabc\E');`, message: "Java regex quote escapes"},
+		{name: "previousMatchBoundary", source: `Pattern.compile('\Gabc');`, message: "Java regex previous-match boundary"},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -318,7 +322,10 @@ func TestMatcherAppendReplacementUnsupported(t *testing.T) {
 }
 
 func TestJavaReplacementEscapesDollar(t *testing.T) {
-	converted := javaReplacementToGoTemplate(`\$1`)
+	converted, err := javaReplacementToGoTemplate(`\$1`, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if converted != `$$1` {
 		t.Fatalf("expected Go literal-dollar template, got %q", converted)
 	}
@@ -329,5 +336,54 @@ func TestJavaReplacementEscapesDollar(t *testing.T) {
 	}
 	if got != "$1 $1" {
 		t.Fatalf("expected escaped dollar replacement, got %q", got)
+	}
+}
+
+func TestJavaReplacementGroupReferenceParsing(t *testing.T) {
+	re := regexp.MustCompile(`([A-Z]+)([0-9]+)`)
+	got, err := matcherReplace("Matcher.replaceAll", re, "A1 B22", matcherRegionBounds{endRune: 6, endByte: 6}, []Value{String(`$10`)}, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != "A0 B0" {
+		t.Fatalf("expected Java $10 fallback to group 1 plus literal 0, got %q", got)
+	}
+
+	got, err = matcherReplace("Matcher.replaceAll", re, "A1 B22", matcherRegionBounds{endRune: 6, endByte: 6}, []Value{String(`$2-$1`)}, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != "1-A 22-B" {
+		t.Fatalf("expected capture replacement, got %q", got)
+	}
+}
+
+func TestJavaReplacementRejectsUnsupportedReferences(t *testing.T) {
+	re := regexp.MustCompile(`([A-Z]+)`)
+	tests := []struct {
+		name        string
+		replacement string
+		want        string
+		unsupported bool
+	}{
+		{name: "missingDollarTarget", replacement: `$`, want: "missing group reference"},
+		{name: "badDollarTarget", replacement: `$x`, want: "invalid group reference"},
+		{name: "groupOutOfRange", replacement: `$2`, want: "groupIndex out of range"},
+		{name: "trailingEscape", replacement: `abc\`, want: "trailing escape"},
+		{name: "namedGroup", replacement: `${word}`, want: "named group references", unsupported: true},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := matcherReplace("Matcher.replaceAll", re, "ABC", matcherRegionBounds{endRune: 3, endByte: 3}, []Value{String(tc.replacement)}, true)
+			if err == nil || !strings.Contains(err.Error(), tc.want) {
+				t.Fatalf("expected %q error, got %v", tc.want, err)
+			}
+			if tc.unsupported {
+				var runtimeErr *RuntimeError
+				if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" {
+					t.Fatalf("expected UnsupportedFeature runtime error, got %T %v", err, err)
+				}
+			}
+		})
 	}
 }
