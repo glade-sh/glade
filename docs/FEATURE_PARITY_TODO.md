@@ -613,6 +613,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
 - [ ] Expand Salesforce-like error response shapes and status codes.
 - [ ] Complete `/services/data` resource discovery for commonly used REST
   resources.
+  - [x] Advertise the local Bulk jobs namespace while returning explicit
+    unsupported errors for unmodeled jobs.
 - [ ] Expand SObject REST resources: describe, layout-adjacent metadata where
   useful, recent, query, queryAll, and record CRUD edge cases.
   - [x] Return flat record GET payloads with `attributes.type`, `attributes.url`,
@@ -623,16 +625,22 @@ a Salesforce-shaped local API server without silently wrong behavior.
     `Allow` headers in server tests.
 - [ ] Expand Tooling API coverage beyond `executeAnonymous` and query
   delegation.
+  - [x] Return stable unsupported errors for common Tooling sObject discovery,
+    Tooling sObject describe, and Tooling completions routes.
 - [ ] Add more REST resources used by local integrations and editor tooling.
 - [ ] Add Composite API coverage beyond baseline sObject insert, including
   all-or-none rollback and reference ID behavior.
 - [ ] Add Bulk API approximations if needed by local integration tests.
+  - [x] Add explicit Bulk API v2 query and ingest job stubs with Salesforce-shaped
+    unsupported errors instead of fake job success.
 - [ ] Ensure anonymous Apex runs against the same persistent server database,
   transaction boundaries, user context, and limits.
 - [ ] Add server fixture reset endpoints for test data, org state, limits, and
   async queues.
 - [ ] Add black-box server compatibility fixtures for CRUD, query,
   executeAnonymous, composite, errors, auth stubs, and persistence.
+  - [x] Cover Tooling and Bulk unsupported route shapes in the server black-box
+    fixture.
 
 ## 9. Compatibility, Hardening, And Release
 

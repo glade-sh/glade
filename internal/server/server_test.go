@@ -234,6 +234,7 @@ func TestResourceDiscoveryIncludesStableServerEndpoints(t *testing.T) {
 	}
 	want := map[string]string{
 		"composite": "/services/data/v61.0/composite",
+		"jobs":      "/services/data/v61.0/jobs",
 		"limits":    "/services/data/v61.0/limits",
 		"oaer":      "/services/data/v61.0/oaer",
 		"query":     "/services/data/v61.0/query",
@@ -270,6 +271,84 @@ func TestUnsupportedDiscoveryNamespacesReturnStableErrors(t *testing.T) {
 		}
 		if !bytes.Contains(rec.Body.Bytes(), []byte(`"errorCode":"UNSUPPORTED_FEATURE"`)) {
 			t.Fatalf("%s unsupported shape = %s", path, rec.Body.String())
+		}
+	}
+}
+
+func TestToolingCommonRoutesReturnStableUnsupportedErrors(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+	for _, path := range []string{
+		"/services/data/v61.0/tooling/sobjects",
+		"/services/data/v61.0/tooling/sobjects/ApexClass/describe",
+		"/services/data/v61.0/tooling/completions",
+	} {
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+		if rec.Code != http.StatusNotImplemented {
+			t.Fatalf("%s status = %d body=%s", path, rec.Code, rec.Body.String())
+		}
+		if !bytes.Contains(rec.Body.Bytes(), []byte(`"errorCode":"UNSUPPORTED_FEATURE"`)) || !bytes.Contains(rec.Body.Bytes(), []byte(`Tooling`)) {
+			t.Fatalf("%s unsupported shape = %s", path, rec.Body.String())
+		}
+	}
+}
+
+func TestToolingUnknownRouteStillReturnsNotFound(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/tooling/not-a-real-route", nil))
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("unknown tooling status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if !bytes.Contains(rec.Body.Bytes(), []byte(`"errorCode":"NOT_FOUND"`)) {
+		t.Fatalf("unknown tooling shape = %s", rec.Body.String())
+	}
+}
+
+func TestToolingCommonRoutesMethodHandling(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/tooling/completions", nil))
+	if rec.Code != http.StatusMethodNotAllowed {
+		t.Fatalf("tooling completions method status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if got := rec.Header().Get("Allow"); got != http.MethodGet {
+		t.Fatalf("tooling completions Allow = %q", got)
+	}
+	if !bytes.Contains(rec.Body.Bytes(), []byte(`"errorCode":"METHOD_NOT_ALLOWED"`)) {
+		t.Fatalf("tooling completions method shape = %s", rec.Body.String())
+	}
+}
+
+func TestBulkAPIJobsReturnStableUnsupportedErrors(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+	for _, tc := range []struct {
+		method  string
+		path    string
+		message string
+	}{
+		{method: http.MethodGet, path: "/services/data/v61.0/jobs/query", message: "Bulk API v2 query jobs"},
+		{method: http.MethodPost, path: "/services/data/v61.0/jobs/query", message: "Bulk API v2 query jobs"},
+		{method: http.MethodPatch, path: "/services/data/v61.0/jobs/query", message: "Bulk API v2 query jobs"},
+		{method: http.MethodDelete, path: "/services/data/v61.0/jobs/query/750000000000001", message: "Bulk API v2 query jobs"},
+		{method: http.MethodGet, path: "/services/data/v61.0/jobs/ingest", message: "Bulk API v2 ingest jobs"},
+		{method: http.MethodPost, path: "/services/data/v61.0/jobs/ingest", message: "Bulk API v2 ingest jobs"},
+		{method: http.MethodPatch, path: "/services/data/v61.0/jobs/ingest", message: "Bulk API v2 ingest jobs"},
+		{method: http.MethodDelete, path: "/services/data/v61.0/jobs/ingest/750000000000001", message: "Bulk API v2 ingest jobs"},
+	} {
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, httptest.NewRequest(tc.method, tc.path, strings.NewReader(`{}`)))
+		if rec.Code != http.StatusNotImplemented {
+			t.Fatalf("%s %s status = %d body=%s", tc.method, tc.path, rec.Code, rec.Body.String())
+		}
+		if !bytes.Contains(rec.Body.Bytes(), []byte(`"errorCode":"UNSUPPORTED_FEATURE"`)) || !bytes.Contains(rec.Body.Bytes(), []byte(tc.message)) {
+			t.Fatalf("%s %s unsupported shape = %s", tc.method, tc.path, rec.Body.String())
 		}
 	}
 }
