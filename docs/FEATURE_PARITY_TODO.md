@@ -631,18 +631,26 @@ a Salesforce-shaped local API server without silently wrong behavior.
     and `Id` instead of leaking internal storage value wrappers.
   - [x] Return REST and Tooling query rows as SObject-shaped payloads with
     `attributes`, `Id`, and flat fields instead of internal storage records.
+  - [x] Return explicit unsupported SOQL query-plan `explain` responses instead
+    of treating query-plan probes as malformed or normal SOQL execution.
   - [x] Add explicit full-layout unsupported responses and an empty compact
     layouts stub for local tooling probes.
   - [x] Return explicit unsupported default-values responses and malformed-ID
     errors for literal row-template placeholders advertised by SObject resources.
+  - [x] Add explicit list-view unsupported responses and advertised list-view
+    object URLs for common `/listviews`, `/describe`, and `/results` probes.
   - [x] Add conservative `/sobjects/{Object}/updated` and
     `/sobjects/{Object}/deleted` resources backed by local record system
     timestamps, soft-delete flags, deterministic ID ordering, optional
     start/end bounds, and Salesforce-shaped malformed-date errors.
+  - [x] Add conservative `limit=` handling for global and object recent
+    resources, including default, malformed, and over-limit behavior.
   - [x] Cover missing/deleted record GET, missing DELETE, null PATCH, and method
     `Allow` headers in server tests.
   - [x] Add conservative external-ID SObject GET, PATCH upsert, and DELETE
     routes backed by local DML upsert/delete behavior.
+  - [x] Add REST record `fields=` projection on ID and external-ID GET routes
+    with field validation and blank-field preservation.
 - [ ] Expand Tooling API coverage beyond `executeAnonymous` and query
   delegation.
   - [x] Return stable unsupported errors for common Tooling sObject discovery,
@@ -666,6 +674,10 @@ a Salesforce-shaped local API server without silently wrong behavior.
     Process, Actions, Apps, AppMenu, Tabs, Theme, and QuickActions.
   - [x] Return stable unsupported errors for common OAuth token, revoke,
     introspect, and authorize probes without issuing local tokens.
+  - [x] Return explicit Apex REST unsupported stubs for common custom REST
+    endpoint methods and `METHOD_NOT_ALLOWED` for unsupported methods.
+  - [x] Harden REST Search/SOSL and common unsupported REST namespace methods so
+    non-GET probes receive deterministic `METHOD_NOT_ALLOWED` responses.
 - [ ] Add Composite API coverage beyond baseline sObject insert, including
   all-or-none rollback, reference ID behavior, and conservative local
   collection update/delete mutators.
@@ -679,18 +691,24 @@ a Salesforce-shaped local API server without silently wrong behavior.
     `/composite/sobjects/{Object}/{ExternalIdField}` backed by local DML
     external-ID upsert, with per-row results, reference IDs, created flags, and
     all-or-none rollback.
+  - [x] Add conservative typed Composite sObject collection retrieve with ID
+    selection and field projection handling.
 - [ ] Add Bulk API approximations if needed by local integration tests.
   - [x] Add explicit Bulk API v2 query and ingest job stubs with Salesforce-shaped
     unsupported errors instead of fake job success.
   - [x] Return deterministic unsupported responses for common Bulk API v2 job
     record, results, batches, successfulResults, failedResults, and
     unprocessedrecords probes.
+  - [x] Harden Bulk API v2 method boundaries for common query and ingest route
+    shapes while preserving explicit unsupported responses for allowed methods.
 - [ ] Ensure anonymous Apex runs against the same persistent server database,
   transaction boundaries, user context, and limits.
   - [x] Add black-box server fixture evidence that Tooling
     `executeAnonymous` commits successful DML into queryable persistent server
     state, rolls back runtime-error and strict-limit mutations, honors selected
     bearer user context, and accepts fixture-level strict limit mode.
+  - [x] Accept Tooling `executeAnonymous` form-encoded POST bodies while
+    preserving JSON POST, query-string GET, and malformed JSON failure behavior.
 - [ ] Add server fixture reset endpoints for test data, org state, limits, and
   async queues.
   - [x] Add local-only `oaer/state` and `oaer/inspect` summaries with supported
@@ -727,6 +745,10 @@ a Salesforce-shaped local API server without silently wrong behavior.
     fixture.
   - [x] Cover REST SObject external-ID create, update, get, and delete in the
     server black-box fixture.
+  - [x] Cover REST record field projection, SOQL query-plan unsupported probes,
+    Composite sObject retrieve, search/Bulk method boundaries, SObject
+    list-view stubs, recent `limit=`, Apex REST stubs, and
+    executeAnonymous form-body behavior in the server black-box fixture.
 
 ## 9. Compatibility, Hardening, And Release
 
