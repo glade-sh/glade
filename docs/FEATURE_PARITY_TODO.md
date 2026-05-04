@@ -615,6 +615,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
     for discovery, identity, and userinfo routes instead of accidental success.
 - [ ] Complete `/services/data` resource discovery for commonly used REST
   resources.
+  - [x] Return root API version discovery entries from `/services/data` and
+    `/services/data/` with Salesforce-shaped `version`, `label`, and `url`
+    fields.
   - [x] Advertise the local Bulk jobs namespace while returning explicit
     unsupported errors for unmodeled jobs.
   - [x] Advertise common unsupported top-level REST namespace links only for

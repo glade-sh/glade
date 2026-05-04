@@ -45,6 +45,16 @@ const (
 	maxQueryLocators  = 32
 )
 
+type apiVersionEntry struct {
+	Version string `json:"version"`
+	Label   string `json:"label"`
+	URL     string `json:"url"`
+}
+
+var localAPIVersions = []apiVersionEntry{
+	{Version: "61.0", Label: "Summer '24", URL: "/services/data/v61.0"},
+}
+
 const localOAuthUnsupportedMessage = "Full OAuth flows and token issuance are not implemented by the local server; use deterministic local user stubs via /services/oauth2/userinfo, /id/{org}/{user}, X-OAER-User-Id, or Authorization: Bearer <userId>"
 
 const apexRestUnsupportedMessage = "Apex @RestResource dispatch is not implemented in the local server"
@@ -116,7 +126,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			writeMethodNotAllowed(w, http.MethodGet)
 			return
 		}
-		writeJSON(w, http.StatusOK, []map[string]string{{"version": "v61.0", "url": "/services/data/v61.0"}})
+		writeJSON(w, http.StatusOK, apiVersionDiscoveryPayload())
 		return
 	}
 	if len(parts) >= 2 && parts[0] == "services" && parts[1] == "apexrest" {
@@ -2553,6 +2563,12 @@ func resourceDiscoveryPayload(version string) map[string]string {
 		"tooling":      base + "/tooling",
 		"wave":         base + "/wave",
 	}
+}
+
+func apiVersionDiscoveryPayload() []apiVersionEntry {
+	out := make([]apiVersionEntry, len(localAPIVersions))
+	copy(out, localAPIVersions)
+	return out
 }
 
 func unsupportedRESTNamespaceMessage(namespace string) (string, bool) {

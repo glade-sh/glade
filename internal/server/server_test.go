@@ -35,6 +35,41 @@ func assertQueryRecordShape(t *testing.T, record map[string]any, objectName, id,
 	}
 }
 
+func TestVersionDiscoveryRoot(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	for _, path := range []string{"/services/data", "/services/data/"} {
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("%s status = %d body=%s", path, rec.Code, rec.Body.String())
+		}
+		var versions []apiVersionEntry
+		if err := json.Unmarshal(rec.Body.Bytes(), &versions); err != nil {
+			t.Fatalf("%s unmarshal: %v body=%s", path, err, rec.Body.String())
+		}
+		if len(versions) != 1 {
+			t.Fatalf("%s versions = %#v", path, versions)
+		}
+		if versions[0].Version != "61.0" || versions[0].Label != "Summer '24" || versions[0].URL != "/services/data/v61.0" {
+			t.Fatalf("%s version entry = %#v", path, versions[0])
+		}
+	}
+}
+
+func TestVersionDiscoveryRootMethodNotAllowed(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/services/data", nil))
+	assertSalesforceError(t, rec, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
+	if rec.Header().Get("Allow") != http.MethodGet {
+		t.Fatalf("Allow = %q", rec.Header().Get("Allow"))
+	}
+}
+
 func TestSObjectCRUDAndQuery(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
@@ -977,7 +1012,7 @@ func TestDescribeEndpoints(t *testing.T) {
 
 	list := httptest.NewRecorder()
 	handler.ServeHTTP(list, httptest.NewRequest(http.MethodGet, "/services/data", nil))
-	if list.Code != http.StatusOK || !bytes.Contains(list.Body.Bytes(), []byte(`"v61.0"`)) {
+	if list.Code != http.StatusOK || !bytes.Contains(list.Body.Bytes(), []byte(`"url":"/services/data/v61.0"`)) {
 		t.Fatalf("versions status = %d body=%s", list.Code, list.Body.String())
 	}
 
