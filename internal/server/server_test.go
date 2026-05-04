@@ -3412,6 +3412,24 @@ func TestCompositeSObjectsValidatesEdgeEnvelopes(t *testing.T) {
 			wantCode:      "JSON_PARSER_ERROR",
 			wantMessageIn: "attributes must be a JSON object",
 		},
+		{
+			name:          "malformed reference id",
+			method:        http.MethodPost,
+			path:          "/services/data/v61.0/composite/sobjects",
+			body:          `{"records":[{"attributes":{"type":"Account","referenceId":7},"Name":"Bad"}]}`,
+			wantStatus:    http.StatusBadRequest,
+			wantCode:      "JSON_PARSER_ERROR",
+			wantMessageIn: "records[0].attributes.referenceId must be a string",
+		},
+		{
+			name:          "blank reference id",
+			method:        http.MethodPost,
+			path:          "/services/data/v61.0/composite/sobjects",
+			body:          `{"records":[{"attributes":{"type":"Account","referenceId":" "},"Name":"Bad"}]}`,
+			wantStatus:    http.StatusBadRequest,
+			wantCode:      "REQUIRED_FIELD_MISSING",
+			wantMessageIn: "records[0].attributes.referenceId is required when provided",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -3478,6 +3496,9 @@ func TestCompositeSObjectsAllOrNoneRollsBackSuccessfulRows(t *testing.T) {
 	}
 	if !bytes.Contains(composite.Body.Bytes(), []byte(`"referenceId":"good"`)) || !bytes.Contains(composite.Body.Bytes(), []byte(`"referenceId":"bad"`)) {
 		t.Fatalf("composite reference ids missing: %s", composite.Body.String())
+	}
+	if !bytes.Contains(composite.Body.Bytes(), []byte(`ALL_OR_NONE_OPERATION_ROLLED_BACK`)) {
+		t.Fatalf("rollback row error missing: %s", composite.Body.String())
 	}
 }
 
@@ -3552,6 +3573,37 @@ func TestCompositeSObjectsUpdateAllOrNoneRollsBack(t *testing.T) {
 	if !bytes.Contains(composite.Body.Bytes(), []byte(`"referenceId":"good"`)) || !bytes.Contains(composite.Body.Bytes(), []byte(`"referenceId":"bad"`)) {
 		t.Fatalf("reference ids missing: %s", composite.Body.String())
 	}
+	if !bytes.Contains(composite.Body.Bytes(), []byte(`ALL_OR_NONE_OPERATION_ROLLED_BACK`)) {
+		t.Fatalf("rollback row error missing: %s", composite.Body.String())
+	}
+}
+
+func TestCompositeSObjectsUpdatePartialFailureCommitsSuccessfulRows(t *testing.T) {
+	org := testOrg()
+	addAccountForTest(&org, "001000000000001", "Before")
+	handler := New(&org)
+
+	composite := httptest.NewRecorder()
+	handler.ServeHTTP(composite, httptest.NewRequest(http.MethodPatch, "/services/data/v61.0/composite/sobjects", strings.NewReader(`{
+  "allOrNone": false,
+  "records": [
+    {"attributes":{"type":"Account","referenceId":"good"},"Id":"001000000000001","Description":"After"},
+    {"attributes":{"type":"Account","referenceId":"bad"},"Id":"001000000000999","Name":"Bad"}
+  ]
+}`)))
+	if composite.Code != http.StatusOK {
+		t.Fatalf("composite status = %d body=%s", composite.Code, composite.Body.String())
+	}
+	if got := org.Objects["Account"].Records["001000000000001"].Fields["Description"].String; got != "After" {
+		t.Fatalf("partial update did not commit successful row = %q", got)
+	}
+	var rows []map[string]any
+	if err := json.Unmarshal(composite.Body.Bytes(), &rows); err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 2 || rows[0]["success"] != true || rows[1]["success"] != false || rows[0]["referenceId"] != "good" || rows[1]["referenceId"] != "bad" {
+		t.Fatalf("partial update rows = %#v", rows)
+	}
 }
 
 func TestCompositeSObjectsDeleteSuccessLocatesObjectsByID(t *testing.T) {
@@ -3589,6 +3641,32 @@ func TestCompositeSObjectsDeleteAllOrNoneRollsBackMissingRecord(t *testing.T) {
 	}
 	if !bytes.Contains(composite.Body.Bytes(), []byte(`"id":"001000000000999"`)) || !bytes.Contains(composite.Body.Bytes(), []byte(`ENTITY_IS_DELETED`)) {
 		t.Fatalf("missing delete result shape = %s", composite.Body.String())
+	}
+	if !bytes.Contains(composite.Body.Bytes(), []byte(`ALL_OR_NONE_OPERATION_ROLLED_BACK`)) {
+		t.Fatalf("rollback row error missing: %s", composite.Body.String())
+	}
+}
+
+func TestCompositeSObjectsDeletePartialFailureCommitsSuccessfulRows(t *testing.T) {
+	org := testOrg()
+	addAccountForTest(&org, "001000000000001", "Delete One")
+	addAccountForTest(&org, "001000000000002", "Keep Two")
+	handler := New(&org)
+
+	composite := httptest.NewRecorder()
+	handler.ServeHTTP(composite, httptest.NewRequest(http.MethodDelete, "/services/data/v61.0/composite/sobjects?ids=001000000000001,001000000000999&allOrNone=false", nil))
+	if composite.Code != http.StatusOK {
+		t.Fatalf("composite status = %d body=%s", composite.Code, composite.Body.String())
+	}
+	if !org.Objects["Account"].Records["001000000000001"].System.IsDeleted || org.Objects["Account"].Records["001000000000002"].System.IsDeleted {
+		t.Fatalf("partial delete state = %#v", org.Objects["Account"].Records)
+	}
+	var rows []map[string]any
+	if err := json.Unmarshal(composite.Body.Bytes(), &rows); err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 2 || rows[0]["success"] != true || rows[1]["success"] != false {
+		t.Fatalf("partial delete rows = %#v", rows)
 	}
 }
 
@@ -3659,6 +3737,9 @@ func TestCompositeSObjectTypedRetrieveProjectsFields(t *testing.T) {
 	}
 	if _, ok := row["External_Id__c"]; ok {
 		t.Fatalf("projection included External_Id__c: %#v", row)
+	}
+	if _, ok := row["Description"]; !ok {
+		t.Fatalf("projection omitted requested description: %#v", row)
 	}
 	attrs, ok := row["attributes"].(map[string]any)
 	if !ok || attrs["url"] != "/services/data/v60.0/sobjects/Account/001000000000001" {
@@ -3807,6 +3888,9 @@ func TestCompositeSObjectTypedUpsertAllOrNoneRollsBack(t *testing.T) {
 	if !bytes.Contains(rec.Body.Bytes(), []byte(`"referenceId":"good"`)) || !bytes.Contains(rec.Body.Bytes(), []byte(`"referenceId":"bad"`)) || !bytes.Contains(rec.Body.Bytes(), []byte(`REQUIRED_FIELD_MISSING`)) {
 		t.Fatalf("upsert rollback body = %s", rec.Body.String())
 	}
+	if !bytes.Contains(rec.Body.Bytes(), []byte(`ALL_OR_NONE_OPERATION_ROLLED_BACK`)) {
+		t.Fatalf("rollback row error missing: %s", rec.Body.String())
+	}
 }
 
 func TestCompositeSObjectTypedUpsertMissingExternalIDReturnsRowError(t *testing.T) {
@@ -3828,6 +3912,45 @@ func TestCompositeSObjectTypedUpsertMissingExternalIDReturnsRowError(t *testing.
 	if !bytes.Contains(rec.Body.Bytes(), []byte(`"success":false`)) || !bytes.Contains(rec.Body.Bytes(), []byte(`MISSING_ARGUMENT`)) || !bytes.Contains(rec.Body.Bytes(), []byte(`External_Id__c`)) {
 		t.Fatalf("missing external id body = %s", rec.Body.String())
 	}
+}
+
+func TestCompositeSObjectTypedUpsertPartialFailureCommitsSuccessfulRows(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPatch, "/services/data/v61.0/composite/sobjects/Account/External_Id__c", strings.NewReader(`{
+  "records": [
+    {"attributes":{"referenceId":"good"},"Name":"Good","External_Id__c":"good-1"},
+    {"attributes":{"referenceId":"bad"},"External_Id__c":"bad-1"}
+  ]
+}`)))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("upsert status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if got := len(org.Objects["Account"].Records); got != 1 {
+		t.Fatalf("partial upsert committed records = %d", got)
+	}
+	var rows []map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &rows); err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 2 || rows[0]["success"] != true || rows[1]["success"] != false || rows[0]["created"] != true || rows[1]["created"] != false {
+		t.Fatalf("partial upsert rows = %#v", rows)
+	}
+}
+
+func TestCompositeSObjectTypedUpsertRejectsMalformedAttributes(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPatch, "/services/data/v61.0/composite/sobjects/Account/External_Id__c", strings.NewReader(`{
+  "records": [
+    {"attributes":{"referenceId":42},"Name":"Bad","External_Id__c":"bad-1"}
+  ]
+}`)))
+	assertSalesforceError(t, rec, http.StatusBadRequest, "JSON_PARSER_ERROR", "records[0].attributes.referenceId must be a string")
 }
 
 func TestCompositeSObjectTypedUpsertRejectsNonExternalField(t *testing.T) {

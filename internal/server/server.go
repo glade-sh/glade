@@ -1679,7 +1679,7 @@ func (s *Server) writeCompositeMutationResults(w http.ResponseWriter, next stora
 		}
 	}
 	if allOrNone && hasFailure {
-		writeJSON(w, http.StatusBadRequest, compositeResults(results, referenceIDs))
+		writeJSON(w, http.StatusBadRequest, compositeResults(compositeAllOrNoneRollbackResults(results), referenceIDs))
 		return
 	}
 	if hasSuccess {
@@ -1764,14 +1764,11 @@ func (s *Server) handleCompositeSObjectTypedUpsert(w http.ResponseWriter, r *htt
 	}
 	records := make([]storage.Record, 0, len(*body.Records))
 	referenceIDs := make([]string, 0, len(*body.Records))
-	for _, raw := range *body.Records {
+	for i, raw := range *body.Records {
 		referenceID := ""
 		if attrsRaw, ok := raw["attributes"]; ok {
-			var attrs struct {
-				ReferenceID string `json:"referenceId"`
-			}
-			if err := json.Unmarshal(attrsRaw, &attrs); err != nil {
-				writeSalesforceError(w, errMalformedJSON, "attributes must be a JSON object")
+			attrs, ok := decodeCompositeSObjectAttributes(w, attrsRaw, i, false)
+			if !ok {
 				return
 			}
 			referenceID = attrs.ReferenceID
@@ -1799,7 +1796,7 @@ func (s *Server) handleCompositeSObjectTypedUpsert(w http.ResponseWriter, r *htt
 		}
 	}
 	if body.AllOrNone && hasFailure {
-		writeJSON(w, http.StatusBadRequest, compositeUpsertResults(results, referenceIDs))
+		writeJSON(w, http.StatusBadRequest, compositeUpsertResults(compositeAllOrNoneRollbackResults(results), referenceIDs))
 		return
 	}
 	if hasSuccess {
@@ -1831,16 +1828,12 @@ func decodeCompositeSObjectBody(w http.ResponseWriter, r *http.Request, requireI
 		return compositeSObjectBody{}, false
 	}
 	body := compositeSObjectBody{AllOrNone: rawBody.AllOrNone, Records: make([]storage.Record, 0, len(*rawBody.Records)), ReferenceIDs: make([]string, 0, len(*rawBody.Records))}
-	for _, raw := range *rawBody.Records {
+	for i, raw := range *rawBody.Records {
 		objectName := ""
 		referenceID := ""
 		if attrsRaw, ok := raw["attributes"]; ok {
-			var attrs struct {
-				Type        string `json:"type"`
-				ReferenceID string `json:"referenceId"`
-			}
-			if err := json.Unmarshal(attrsRaw, &attrs); err != nil {
-				writeSalesforceError(w, errMalformedJSON, "attributes must be a JSON object")
+			attrs, ok := decodeCompositeSObjectAttributes(w, attrsRaw, i, true)
+			if !ok {
 				return compositeSObjectBody{}, false
 			}
 			objectName = attrs.Type
@@ -1873,6 +1866,43 @@ func decodeCompositeSObjectBody(w http.ResponseWriter, r *http.Request, requireI
 		body.ReferenceIDs = append(body.ReferenceIDs, referenceID)
 	}
 	return body, true
+}
+
+type compositeSObjectAttributes struct {
+	Type        string
+	ReferenceID string
+}
+
+func decodeCompositeSObjectAttributes(w http.ResponseWriter, raw json.RawMessage, recordIndex int, requireType bool) (compositeSObjectAttributes, bool) {
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &fields); err != nil || fields == nil {
+		writeSalesforceError(w, errMalformedJSON, fmt.Sprintf("records[%d].attributes must be a JSON object", recordIndex))
+		return compositeSObjectAttributes{}, false
+	}
+	var attrs compositeSObjectAttributes
+	if rawType, ok := fields["type"]; ok {
+		if err := json.Unmarshal(rawType, &attrs.Type); err != nil {
+			writeSalesforceError(w, errMalformedJSON, fmt.Sprintf("records[%d].attributes.type must be a string", recordIndex))
+			return compositeSObjectAttributes{}, false
+		}
+		attrs.Type = strings.TrimSpace(attrs.Type)
+	}
+	if requireType && attrs.Type == "" {
+		writeSalesforceError(w, errRequiredFieldMissing, fmt.Sprintf("records[%d].attributes.type is required", recordIndex))
+		return compositeSObjectAttributes{}, false
+	}
+	if rawReferenceID, ok := fields["referenceId"]; ok {
+		if err := json.Unmarshal(rawReferenceID, &attrs.ReferenceID); err != nil {
+			writeSalesforceError(w, errMalformedJSON, fmt.Sprintf("records[%d].attributes.referenceId must be a string", recordIndex))
+			return compositeSObjectAttributes{}, false
+		}
+		attrs.ReferenceID = strings.TrimSpace(attrs.ReferenceID)
+		if attrs.ReferenceID == "" {
+			writeSalesforceError(w, errRequiredFieldMissing, fmt.Sprintf("records[%d].attributes.referenceId is required when provided", recordIndex))
+			return compositeSObjectAttributes{}, false
+		}
+	}
+	return attrs, true
 }
 
 func idFromRawRecord(raw map[string]json.RawMessage) (storage.ID, error) {
@@ -3286,6 +3316,25 @@ func compositeResults(results []dml.Result, referenceIDs []string) []map[string]
 
 func compositeUpsertResults(results []dml.Result, referenceIDs []string) []map[string]any {
 	return compositeResultRows(results, referenceIDs, true)
+}
+
+func compositeAllOrNoneRollbackResults(results []dml.Result) []dml.Result {
+	out := make([]dml.Result, len(results))
+	copy(out, results)
+	for i, result := range out {
+		if !result.Success {
+			continue
+		}
+		out[i].Success = false
+		out[i].StatusCode = "ALL_OR_NONE_OPERATION_ROLLED_BACK"
+		out[i].Error = "dml: operation rolled back because allOrNone request failed"
+		out[i].Errors = []dml.Error{{
+			StatusCode: "ALL_OR_NONE_OPERATION_ROLLED_BACK",
+			Message:    "dml: operation rolled back because allOrNone request failed",
+			Fields:     []string{},
+		}}
+	}
+	return out
 }
 
 func compositeResultRows(results []dml.Result, referenceIDs []string, includeCreated bool) []map[string]any {
