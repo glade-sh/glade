@@ -689,6 +689,8 @@ func TestExecUnsupportedLimitsGettersHaveStableShape(t *testing.T) {
 		"getLimitPublishImmediateDML",
 		"getQueryLocatorRows",
 		"getLimitQueryLocatorRows",
+		"getSavepointRollbacks",
+		"getLimitSavepointRollbacks",
 		"getSoslQueries",
 		"getLimitSoslQueries",
 	} {

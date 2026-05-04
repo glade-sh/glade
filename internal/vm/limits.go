@@ -206,6 +206,7 @@ func unsupportedLimitGetter(name string) bool {
 		"getMobilePushApexCalls", "getLimitMobilePushApexCalls",
 		"getPublishImmediateDML", "getLimitPublishImmediateDML",
 		"getQueryLocatorRows", "getLimitQueryLocatorRows",
+		"getSavepointRollbacks", "getLimitSavepointRollbacks",
 		"getSoslQueries", "getLimitSoslQueries":
 		return true
 	default:
