@@ -80,6 +80,20 @@ func TestRunStringCSVStdlibFixture(t *testing.T) {
 	}
 }
 
+func TestRunStringXMLUnescapeInvalidNumericStdlibFixture(t *testing.T) {
+	fixture, err := LoadFile("../../docs/fixtures/core-string-xml-unescape-invalid-numeric-stdlib.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := Run(fixture)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.OK {
+		t.Fatalf("result = %#v", result)
+	}
+}
+
 func TestValidateFixture(t *testing.T) {
 	fixture := Fixture{
 		Name:    "parser-smoke",

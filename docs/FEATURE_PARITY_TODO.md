@@ -473,6 +473,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     names unchanged.
   - [x] Add XML-version escape handling for `String.escapeXml10/11` control
     ranges, including invalid-code-point removal and numeric control escapes.
+  - [x] Preserve malformed, null, out-of-range, and surrogate numeric entities in
+    `String.unescapeXml*` while unescaping valid decimal and hex references.
   - [x] Add `Pattern.compile`, `Pattern.matches`, and basic `Matcher`
     `find`/`matches`/`group` behavior.
   - [x] Add common `Date`, `Datetime`, and `Time` factories, parsing,

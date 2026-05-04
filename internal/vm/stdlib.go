@@ -2355,11 +2355,34 @@ func parseNumericEntity(entity string) (rune, bool) {
 	if digits == "" {
 		return 0, false
 	}
+	if !validNumericEntityDigits(digits, base) {
+		return 0, false
+	}
 	value, err := strconv.ParseInt(digits, base, 32)
-	if err != nil || value < 0 || value > utf8.MaxRune {
+	if err != nil || value <= 0 || value > utf8.MaxRune || isUTF16Surrogate(rune(value)) {
 		return 0, false
 	}
 	return rune(value), true
+}
+
+func validNumericEntityDigits(digits string, base int) bool {
+	for _, r := range digits {
+		if base == 10 {
+			if r < '0' || r > '9' {
+				return false
+			}
+			continue
+		}
+		if (r >= '0' && r <= '9') || (r >= 'a' && r <= 'f') || (r >= 'A' && r <= 'F') {
+			continue
+		}
+		return false
+	}
+	return true
+}
+
+func isUTF16Surrogate(r rune) bool {
+	return r >= 0xd800 && r <= 0xdfff
 }
 
 func escapeJavaLike(text string, escapeSingleQuote, escapeSlash bool) string {
