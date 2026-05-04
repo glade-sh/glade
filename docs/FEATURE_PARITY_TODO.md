@@ -611,6 +611,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Thread selected server user context into Tooling executeAnonymous
     without enabling Apex test-only context.
 - [ ] Expand Salesforce-like error response shapes and status codes.
+  - [x] Return Salesforce-shaped `METHOD_NOT_ALLOWED` errors with `Allow: GET`
+    for discovery, identity, and userinfo routes instead of accidental success.
 - [ ] Complete `/services/data` resource discovery for commonly used REST
   resources.
   - [x] Advertise the local Bulk jobs namespace while returning explicit
