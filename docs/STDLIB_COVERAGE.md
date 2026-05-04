@@ -101,11 +101,11 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | EncodingUtil | `EncodingUtil.urlDecode` | `partial` | Uses query unescape for bounded UTF-8 and ISO-8859-1 charset aliases; other charsets return UnsupportedFeature. |
 | EncodingUtil | `EncodingUtil.urlEncode` | `partial` | Uses query escape for bounded UTF-8 and ISO-8859-1 charset aliases; other charsets return UnsupportedFeature. |
 | EventBus | `EventBus.publish` | `unsupported` | Platform event publish and after-commit publish calls return fixture-backed UnsupportedFeature diagnostics. |
-| Exception | `Built-in exception types` | `partial` | Known public built-in exception tokens, including initCause edge exceptions, construct message-bearing local exceptions and assign to Exception; exact platform class catalog, line numbers, and stack text remain partial. |
+| Exception | `Built-in exception types` | `supported` | Known public built-in exception tokens construct message-bearing local exceptions, assign to Exception, and resolve through Type.forName/isAssignableFrom; unknown exception tokens return null from Type.forName. |
 | Exception | `Exception.getCause` | `supported` | Returns the locally initialized cause value after one-shot initCause, including null causes. |
-| Exception | `Exception.getLineNumber` | `partial` | Returns deterministic local throw-site line metadata when available; otherwise 0. |
+| Exception | `Exception.getLineNumber` | `supported` | Returns deterministic local throw-site line metadata for caught/thrown exceptions and 0 for constructed-only values. |
 | Exception | `Exception.getMessage` | `supported` | Returns the local exception message. |
-| Exception | `Exception.getStackTraceString` | `partial` | Returns the local VM stack trace captured at throw time when available. |
+| Exception | `Exception.getStackTraceString` | `supported` | Returns the local VM stack trace captured at throw time and an empty string for constructed-only values. |
 | Exception | `Exception.getTypeName` | `supported` | Returns the local exception type name without System namespace prefix, including System-prefixed constructed values. |
 | Exception | `Exception.initCause` | `supported` | Stores one local Exception cause or null, returns the receiver, and throws catchable local exceptions for repeat initialization or self-causation. |
 | Exception | `Exception.toString` | `supported` | Returns System-prefixed local exception type and message text. |
@@ -142,7 +142,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | List | `List.clone` | `supported` | Copies the local list container; elements keep local value identity. |
 | List | `List.contains` | `supported` | Checks local values, including null, using local value equality. |
 | List | `List.copyConstructor` | `supported` | Copies values from a local List or Set constructor argument. |
-| List | `List.deepClone` | `partial` | No-argument local recursive clone; SObject preserve-option overloads are unsupported. |
+| List | `List.deepClone` | `supported` | No-argument local recursive clone for primitive, collection, and SObject graphs; SObject preserve-option overloads return explicit UnsupportedFeature diagnostics. |
 | List | `List.get` | `supported` | Indexed lookup with stable bounds errors. |
 | List | `List.indexOf` | `supported` | Local equality search, including null elements, with -1 for misses. |
 | List | `List.isEmpty` | `supported` | Checks local list length. |
@@ -150,7 +150,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | List | `List.remove` | `supported` | Indexed removal returns the removed value. |
 | List | `List.set` | `supported` | Indexed replacement with typed value coercion. |
 | List | `List.size` | `supported` | Returns local list length. |
-| List | `List.sort` | `partial` | Deterministic sort for local primitive comparable values; object/Comparable sorting returns an explicit unsupported error. |
+| List | `List.sort` | `supported` | Deterministic sort for local primitive comparable values; object/Comparable sorting returns an explicit UnsupportedFeature diagnostic. |
 | LoggingLevel | `LoggingLevel.name` | `supported` | Returns deterministic built-in enum member text. |
 | LoggingLevel | `LoggingLevel.ordinal` | `supported` | Returns deterministic built-in enum order for the local logging level set. |
 | LoggingLevel | `LoggingLevel.toString` | `supported` | Returns deterministic built-in enum member text. |
@@ -164,7 +164,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Map | `Map.containsKey` | `supported` | Checks local keys, including null keys, using deterministic key encoding. |
 | Map | `Map.containsValue` | `supported` | Checks local values, including null values, using local value equality. |
 | Map | `Map.copyConstructor` | `supported` | Copies entries from a local Map and supports Map<Id,SObject> construction from List<SObject> with non-null unique Ids. |
-| Map | `Map.deepClone` | `partial` | No-argument local recursive clone; SObject preserve-option overloads are unsupported. |
+| Map | `Map.deepClone` | `supported` | No-argument local recursive clone for primitive, collection, and SObject graphs; SObject preserve-option overloads return explicit UnsupportedFeature diagnostics. |
 | Map | `Map.get` | `supported` | Returns local value or null for missing keys. |
 | Map | `Map.isEmpty` | `supported` | Checks local map size. |
 | Map | `Map.keySet` | `supported` | Returns deterministic local key Set, preserving null keys. |
@@ -172,7 +172,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Map | `Map.putAll` | `supported` | Copies local entries from another Map or SObject rows into Map<Id,SObject> by non-null unique Id. |
 | Map | `Map.remove` | `supported` | Removes a key and returns its previous local value or null. |
 | Map | `Map.size` | `supported` | Returns local map size. |
-| Map | `Map.toString` | `partial` | Deterministic local entry string form; exact platform formatting may differ. |
+| Map | `Map.toString` | `supported` | Deterministic local entry string form for primitive, null, and nested collection values. |
 | Map | `Map.values` | `supported` | Returns deterministic local values List. |
 | Math | `Math.E` | `supported` | Euler's number from Go's deterministic math constant. |
 | Math | `Math.PI` | `supported` | Pi from Go's deterministic math constant. |
@@ -250,7 +250,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Set | `Set.contains` | `supported` | Checks local values, including null, using local value equality. |
 | Set | `Set.containsAll` | `supported` | Checks local List or Set membership. |
 | Set | `Set.copyConstructor` | `supported` | Copies unique values from a local List or Set constructor argument. |
-| Set | `Set.deepClone` | `partial` | No-argument local recursive clone; SObject preserve-option overloads are unsupported. |
+| Set | `Set.deepClone` | `supported` | No-argument local recursive clone for primitive, collection, and SObject graphs; SObject preserve-option overloads return explicit UnsupportedFeature diagnostics. |
 | Set | `Set.isEmpty` | `supported` | Checks local set length. |
 | Set | `Set.iterator` | `supported` | Returns a deterministic snapshot Iterator for local Set values. |
 | Set | `Set.remove` | `supported` | Removes a local value, including null, and reports whether the Set changed. |
@@ -403,11 +403,11 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | TimeZone | `TimeZone.getOffset` | `supported` | Returns fixed offset milliseconds for UTC/GMT offsets through ±14:00 and modeled DST decisions for the supported US, Europe, Tokyo, and Sydney named-zone slice; other named zones return UnsupportedFeature. |
 | TimeZone | `TimeZone.getTimeZone` | `supported` | Supports UTC/GMT, fixed GMT/UTC offsets through ±14:00, and America/Los_Angeles, America/New_York, America/Chicago, America/Denver, Europe/London, Europe/Berlin, Asia/Tokyo, and Australia/Sydney; other named zones and trimmed/invalid IDs return UnsupportedFeature. |
 | Type | `Type.equals` | `supported` | Compares local Type tokens by type name. |
-| Type | `Type.forName` | `partial` | Local class/type token lookup, System namespace built-in tokens, common local SObjects, built-in and generic collection type strings, and null for null/blank/unknown local names. |
+| Type | `Type.forName` | `supported` | Local class/type token lookup, System namespace built-in tokens, common local SObjects, built-in and generic collection type strings, null for null/blank/unknown local names, and package tokens for explicit reflection fences. |
 | Type | `Type.getName` | `supported` | Returns local type token name. |
 | Type | `Type.hashCode` | `supported` | Matches the local String.hashCode of the type name. |
 | Type | `Type.isAssignableFrom` | `supported` | Uses the local class/interface and built-in exception hierarchy. |
-| Type | `Type.newInstance` | `partial` | Constructs local values and dispatches zero-arg constructors for registered classes; uninstantiable built-ins and unbacked namespace/package tokens return explicit unsupported errors. |
+| Type | `Type.newInstance` | `supported` | Constructs local values and dispatches zero-arg constructors for registered classes; uninstantiable built-ins and unbacked namespace/package tokens return explicit UnsupportedFeature diagnostics. |
 | Type | `Type.toString` | `supported` | Returns the local type token name. |
 | URL | `URL` | `supported` | Constructors for deterministic absolute URL specs, context/spec resolution, and protocol/host/file forms with stable malformed input errors. |
 | URL | `URL.getAuthority` | `supported` | Returns parsed authority for local URL values. |
