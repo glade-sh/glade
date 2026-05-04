@@ -564,6 +564,10 @@ a Salesforce-shaped local API server without silently wrong behavior.
     `replaceFirst` now share Matcher replacement parsing, `split`/`Pattern.split`
     pin Java-only regex diagnostics, and Java/EcmaScript unescape handles octal
     escapes in addition to UTF-16 Unicode escapes.
+  - [x] Close String final-family rows: promote Java/EcmaScript/Unicode escape
+    and unescape plus XML 1.0/1.1 escaping after fixture coverage for controls,
+    BMP and supplementary code points, and fence remaining HTML, format, regex,
+    and XML unescape gaps with precise capability notes.
   - [x] Close the Pattern/Matcher state and split boundary slice: failed
     `matches`/`lookingAt` paths clear stale groups, optional unmatched groups
     return `null`/`-1`, invalid group indexes have stable errors, Java
