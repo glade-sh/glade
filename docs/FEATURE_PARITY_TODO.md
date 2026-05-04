@@ -361,6 +361,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
   behavior, and relationship constraints where representable locally.
   - [x] Enforce required/unknown fields, unique fields, lookup reference
     existence, and restricted-delete lookup constraints.
+  - [x] Reject DML writes and explicit nulls to formula-backed calculated fields
+    with `INVALID_FIELD_FOR_INSERT_UPDATE` result shaping.
   - [x] Load and enforce simple Metadata API validation rules with stable
     `FIELD_CUSTOM_VALIDATION_EXCEPTION` error shaping.
   - **Limitation**: Complex validation-rule formulas, owner/sharing side effects,

@@ -79,6 +79,41 @@ func TestInsertValidatesRequiredAndUnknownFields(t *testing.T) {
 	}
 }
 
+func TestDMLRejectsCalculatedFields(t *testing.T) {
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Score__c"] = storage.Field{APIName: "Score__c", Type: storage.FieldCalculated}
+	org.Objects["Account"] = account
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":     storage.StringValue("Acme"),
+			"Score__c": storage.DecimalValue("42"),
+		},
+	}})
+	if insert[0].Success || insert[0].StatusCode != "INVALID_FIELD_FOR_INSERT_UPDATE" || len(insert[0].Fields) != 1 || insert[0].Fields[0] != "Score__c" {
+		t.Fatalf("calculated insert = %#v", insert)
+	}
+
+	created := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")},
+	}})
+	if !created[0].Success {
+		t.Fatalf("insert = %#v", created)
+	}
+	update := engine.Update([]storage.Record{{
+		ID:            created[0].ID,
+		Object:        "Account",
+		ExplicitNulls: map[string]bool{"Score__c": true},
+	}})
+	if update[0].Success || update[0].StatusCode != "INVALID_FIELD_FOR_INSERT_UPDATE" || len(update[0].Errors) != 1 || update[0].Errors[0].Fields[0] != "Score__c" {
+		t.Fatalf("calculated update = %#v", update)
+	}
+}
+
 func TestWithTransactionRollsBackOnError(t *testing.T) {
 	org := testOrg()
 	engine := NewEngine(&org)

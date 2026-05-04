@@ -155,9 +155,13 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 			describe.Metadata = map[string]string{"kind": "customSetting", "customSettingsType": object.CustomSettingsType}
 		}
 		for _, field := range object.Fields {
+			fieldType := storageFieldType(field.Type)
+			if field.Formula != "" {
+				fieldType = storage.FieldCalculated
+			}
 			describe.Fields[field.Name] = DescribeFieldResult{
 				Name:                  field.Name,
-				Type:                  storageFieldType(field.Type),
+				Type:                  fieldType,
 				Label:                 labelOrName(field.Label, field.Name),
 				ReferenceTo:           referenceTargets(field.ReferenceTo),
 				RelationshipName:      field.RelationshipName,
@@ -383,6 +387,8 @@ func storageFieldType(raw string) storage.FieldType {
 		return storage.FieldReference
 	case "Id":
 		return storage.FieldID
+	case "Formula":
+		return storage.FieldCalculated
 	default:
 		return storage.FieldAny
 	}
