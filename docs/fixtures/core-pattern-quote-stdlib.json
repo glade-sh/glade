@@ -1,0 +1,43 @@
+{
+  "name": "core-pattern-quote-stdlib",
+  "evidence": [
+    {
+      "symbol": "Pattern.quote",
+      "kind": "exec",
+      "notes": "Local Pattern.quote returns Go regexp escaping so common regex metacharacters match literally with local Pattern/Matcher."
+    },
+    {
+      "symbol": "Pattern.matches",
+      "kind": "exec",
+      "notes": "Quoted literal matches the original metacharacter string as a whole input."
+    },
+    {
+      "symbol": "Pattern.compile",
+      "kind": "exec",
+      "notes": "Quoted literal can be compiled by the local Go-regexp-backed Pattern implementation."
+    },
+    {
+      "symbol": "Matcher.find",
+      "kind": "exec",
+      "notes": "Quoted literal finds the metacharacter string inside a larger input."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "String literal = 'a+b?(x)[1]';\nString quoted = Pattern.quote(literal);\nSystem.assert(Pattern.matches(quoted, literal));\nSystem.assert(!Pattern.matches(quoted, 'abx1'));\nMatcher literalMatcher = Pattern.compile(quoted).matcher('pre a+b?(x)[1] post');\nSystem.assert(literalMatcher.find());\nSystem.assertEquals(literal, literalMatcher.group());\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "String literal = 'a+b?(x)[1]';\nString quoted = Pattern.quote(literal);\nSystem.assert(Pattern.matches(quoted, literal));\nSystem.assert(!Pattern.matches(quoted, 'abx1'));\nMatcher literalMatcher = Pattern.compile(quoted).matcher('pre a+b?(x)[1] post');\nSystem.assert(literalMatcher.find());\nSystem.assertEquals(literal, literalMatcher.group());\n"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

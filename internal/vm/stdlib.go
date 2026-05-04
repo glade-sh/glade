@@ -1091,6 +1091,13 @@ func patternMatches(args []Value) (Value, error) {
 	return Bool(matched), nil
 }
 
+func patternQuote(args []Value) (Value, error) {
+	if len(args) != 1 || args[0].Kind != ValueString {
+		return Null, fmt.Errorf("Pattern.quote expects String")
+	}
+	return String(regexp.QuoteMeta(args[0].Text)), nil
+}
+
 func callPatternMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
 	switch method {
 	case "matcher":

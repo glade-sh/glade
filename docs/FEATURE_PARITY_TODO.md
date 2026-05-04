@@ -485,6 +485,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     `String.unescapeXml*` while unescaping valid decimal and hex references.
   - [x] Add `Pattern.compile`, `Pattern.matches`, and basic `Matcher`
     `find`/`matches`/`group` behavior.
+  - [x] Add `Pattern.quote` for local Go-regexp literal matching of common
+    metacharacters.
   - [x] Add common `Date`, `Datetime`, and `Time` factories, parsing,
     arithmetic, and component helpers.
   - [x] Add common numeric `Math` helpers, `Decimal` scale/conversion helpers,
