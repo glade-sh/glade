@@ -1,0 +1,48 @@
+{
+  "name": "core-blob-crypto-unsupported-encrypt-decrypt-sign-verify",
+  "evidence": [
+    {
+      "symbol": "Crypto.encrypt/decrypt/sign/verify",
+      "kind": "exec",
+      "notes": "Encryption, decryption, signing, verification, and managed-IV variants stay fenced behind typed unsupported diagnostics instead of fake local key behavior."
+    },
+    {
+      "symbol": "Crypto.encrypt",
+      "kind": "exec",
+      "notes": "Local encryption is not modeled."
+    },
+    {
+      "symbol": "Crypto.decrypt",
+      "kind": "exec",
+      "notes": "Local decryption is not modeled."
+    },
+    {
+      "symbol": "Crypto.sign",
+      "kind": "exec",
+      "notes": "Local signing is not modeled."
+    },
+    {
+      "symbol": "Crypto.verify",
+      "kind": "exec",
+      "notes": "Local signature verification is not modeled."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Crypto.encrypt('AES128', Blob.valueOf('key'), Blob.valueOf('data'));"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Crypto.encrypt('AES128', Blob.valueOf('key'), Blob.valueOf('data'));"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"Crypto.encrypt local deterministic key, certificate, and encryption surfaces\""
+    }
+  }
+}

@@ -24,7 +24,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Canvas | `Canvas namespace` | `unsupported` | Canvas app integration calls return explicit UnsupportedFeature diagnostics. |
 | Continuation | `Continuation` | `unsupported` | Continuation construction and callback/response calls return explicit UnsupportedFeature diagnostics. |
 | Crypto | `Crypto.areEqualConstantTime` | `supported` | Constant-time local Blob equality comparison. |
-| Crypto | `Crypto.encrypt/decrypt/sign/verify` | `unsupported` | Org key, keystore, certificate, encryption, signing, verification, and random key-generation surfaces return explicit unsupported errors. |
+| Crypto | `Crypto.encrypt/decrypt/sign/verify` | `unsupported` | Encrypt/decrypt, managed-IV variants, signing, verification, org key, keystore, certificate, and random key-generation surfaces return explicit UnsupportedFeature diagnostics; no fake local key material is modeled. |
 | Crypto | `Crypto.generateDigest` | `supported` | MD5, SHA1, SHA-256, SHA-512, SHA3-256/384/512, with conservative algorithm normalization. |
 | Crypto | `Crypto.generateMac` | `supported` | HMAC MD5, SHA1, SHA256, and SHA512 with local Blob keys and conservative algorithm normalization. |
 | Data | `Custom metadata/custom settings getAll/getInstance` | `partial` | Fixture-backed local __mdt and list custom setting static access supports namespace-stripped object/field names and read-only returned records; hierarchy merge behavior and Metadata API mutation are not modeled. |
@@ -124,7 +124,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Integer | `Integer.valueOf` | `supported` | Parses integer strings and numeric values with 32-bit overflow checks, including trimmed signed strings. |
 | Iterator | `Iterator.hasNext` | `supported` | Checks remaining elements in a local collection snapshot. |
 | Iterator | `Iterator.next` | `supported` | Returns the next element from a local collection snapshot and raises NoSuchElementException when exhausted. |
-| Iterator | `Iterator.remove` | `unsupported` | Returns an explicit unsupported error; mutating collection iterators are not modeled. |
+| Iterator | `Iterator.remove` | `unsupported` | Returns an explicit UnsupportedFeature diagnostic; mutating collection iterators are not modeled. |
 | JSON | `JSON.createGenerator` | `supported` | Creates deterministic local JSONGenerator instances. |
 | JSON | `JSON.createParser` | `partial` | Creates deterministic local JSONParser token streams and throws catchable JSONException for malformed JSON input. |
 | JSON | `JSON.deserialize` | `partial` | Primitive, platform scalar, List, Set, nested Map<String,Object/value>, SObject, and registered class shapes for the supported local subset; catchable mapping errors for mismatched typed shapes and stable unsupported errors for unknown object targets. |
