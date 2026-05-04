@@ -46,6 +46,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
   blockers.
 - [ ] Treat silent wrong behavior as a release blocker for any supported
   feature.
+- [x] Auto-register `docs/fixtures/*.json` in `internal/compat` tests so
+  parallel fixture additions no longer collide in one-off test functions.
 
 ## 1. Apex Front End
 
