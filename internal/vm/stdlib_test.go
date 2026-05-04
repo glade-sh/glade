@@ -116,6 +116,21 @@ func TestExecRestContextRejectsWrongStaticTypes(t *testing.T) {
 	}
 }
 
+func TestExecRestContextNestedNullDereference(t *testing.T) {
+	program, err := CompileAnonymous(`
+RestContext.request = null;
+System.debug(RestContext.request.requestURI);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = Execute(program, nil)
+	var runtimeErr *RuntimeError
+	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "NullPointerException" {
+		t.Fatalf("err = %#v, want NullPointerException", err)
+	}
+}
+
 func TestExecStringStdlibMoreMethods(t *testing.T) {
 	program, err := CompileAnonymous(`
 String letters = 'a b c 5 xyz';

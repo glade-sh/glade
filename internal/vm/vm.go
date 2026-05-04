@@ -5075,8 +5075,8 @@ func (vm *VM) lookup(name string) (Value, error) {
 	if value, ok := vm.Globals[name]; ok {
 		return value, nil
 	}
-	if value, ok := vm.lookupRestContextField(name); ok {
-		return value, nil
+	if value, ok, err := vm.lookupRestContextField(name); ok || err != nil {
+		return value, err
 	}
 	switch name {
 	case "AccessLevel.USER_MODE", "AccessLevel.SYSTEM_MODE":
@@ -5718,30 +5718,33 @@ func typedMap(typeName string) Value {
 	return value
 }
 
-func (vm *VM) lookupRestContextField(name string) (Value, bool) {
+func (vm *VM) lookupRestContextField(name string) (Value, bool, error) {
 	switch name {
 	case "RestContext.request":
 		if vm.restRequest.Kind == "" {
-			return Null, true
+			return Null, true, nil
 		}
-		return vm.restRequest, true
+		return vm.restRequest, true, nil
 	case "RestContext.response":
 		if vm.restResponse.Kind == "" {
 			vm.restResponse = newRestResponse()
 		}
-		return vm.restResponse, true
+		return vm.restResponse, true, nil
 	default:
 		for _, root := range []string{"RestContext.request", "RestContext.response"} {
 			if strings.HasPrefix(name, root+".") {
-				value, _ := vm.lookupRestContextField(root)
+				value, _, err := vm.lookupRestContextField(root)
+				if err != nil {
+					return Null, true, err
+				}
 				out, err := vm.lookupPath(value, strings.Split(strings.TrimPrefix(name, root+"."), "."))
 				if err != nil {
-					return Null, false
+					return Null, true, err
 				}
-				return out, true
+				return out, true, nil
 			}
 		}
-		return Null, false
+		return Null, false, nil
 	}
 }
 
@@ -5762,7 +5765,10 @@ func (vm *VM) assignRestContextField(name string, value Value) (bool, error) {
 	default:
 		for _, root := range []string{"RestContext.request", "RestContext.response"} {
 			if strings.HasPrefix(name, root+".") {
-				current, _ := vm.lookupRestContextField(root)
+				current, _, err := vm.lookupRestContextField(root)
+				if err != nil {
+					return true, err
+				}
 				if current.Kind == ValueNull {
 					return true, newExceptionError("NullPointerException", "Attempt to de-reference a null object")
 				}
