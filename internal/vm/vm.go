@@ -4356,6 +4356,8 @@ func defaultURLPort(scheme string) int64 {
 		return 80
 	case "https":
 		return 443
+	case "ftp":
+		return 21
 	default:
 		return -1
 	}
@@ -7588,6 +7590,8 @@ var builtinExceptionParents = map[string]string{
 	"DmlException":                    "Exception",
 	"EmailException":                  "Exception",
 	"ExternalObjectException":         "Exception",
+	"IllegalArgumentException":        "Exception",
+	"IllegalStateException":           "Exception",
 	"InvalidParameterValueException":  "Exception",
 	"JSONException":                   "Exception",
 	"LimitException":                  "Exception",
@@ -9125,8 +9129,15 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if args[0].Kind != ValueNull && (args[0].Kind != ValueObject || !isExceptionType(args[0].Type)) {
 				return Null, receiver, false, true, fmt.Errorf("%s.initCause expects Exception", receiver.Type)
 			}
+			if receiver.Equal(args[0]) {
+				return Null, receiver, false, true, newExceptionError("IllegalArgumentException", "Self-causation not permitted")
+			}
+			if initialized, ok := receiver.Fields["__causeInitialized"]; ok && initialized.Kind == ValueBool && initialized.Bool {
+				return Null, receiver, false, true, newExceptionError("IllegalStateException", "Can't overwrite cause")
+			}
+			receiver.Fields["__causeInitialized"] = Bool(true)
 			receiver.Fields["__cause"] = args[0]
-			return Null, receiver, true, true, nil
+			return receiver, receiver, true, true, nil
 		case "getTypeName":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("%s.getTypeName expects 0 arguments", receiver.Type)
@@ -10310,7 +10321,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			case "getHost":
 				return String(parsed.Hostname()), receiver, false, true, nil
 			case "getAuthority":
-				return String(parsed.Host), receiver, false, true, nil
+				authority := parsed.Host
+				if parsed.User != nil {
+					authority = parsed.User.String() + "@" + authority
+				}
+				return String(authority), receiver, false, true, nil
 			case "getPath":
 				return String(parsed.Path), receiver, false, true, nil
 			case "getQuery":

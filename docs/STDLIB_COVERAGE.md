@@ -101,13 +101,13 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | EncodingUtil | `EncodingUtil.urlDecode` | `partial` | Uses query unescape for bounded UTF-8 and ISO-8859-1 charset aliases; other charsets return UnsupportedFeature. |
 | EncodingUtil | `EncodingUtil.urlEncode` | `partial` | Uses query escape for bounded UTF-8 and ISO-8859-1 charset aliases; other charsets return UnsupportedFeature. |
 | EventBus | `EventBus.publish` | `unsupported` | Platform event publish and after-commit publish calls return explicit UnsupportedFeature diagnostics. |
-| Exception | `Built-in exception types` | `partial` | Known public built-in exception tokens construct message-bearing local exceptions and assign to Exception; exact platform class catalog, line numbers, and stack text remain partial. |
-| Exception | `Exception.getCause` | `partial` | Returns the locally initialized cause value; repeat/self-cause platform edge rules are not modeled. |
+| Exception | `Built-in exception types` | `partial` | Known public built-in exception tokens, including initCause edge exceptions, construct message-bearing local exceptions and assign to Exception; exact platform class catalog, line numbers, and stack text remain partial. |
+| Exception | `Exception.getCause` | `supported` | Returns the locally initialized cause value after one-shot initCause, including null causes. |
 | Exception | `Exception.getLineNumber` | `partial` | Returns deterministic local throw-site line metadata when available; otherwise 0. |
 | Exception | `Exception.getMessage` | `supported` | Returns the local exception message. |
 | Exception | `Exception.getStackTraceString` | `partial` | Returns the local VM stack trace captured at throw time when available. |
 | Exception | `Exception.getTypeName` | `supported` | Returns the local exception type name without System namespace prefix. |
-| Exception | `Exception.initCause` | `partial` | Stores a local Exception cause or null for later getCause calls. |
+| Exception | `Exception.initCause` | `supported` | Stores one local Exception cause or null, returns the receiver, and throws catchable local exceptions for repeat initialization or self-causation. |
 | Exception | `Exception.toString` | `partial` | Returns System-prefixed built-in exception text for local exception values. |
 | FeatureManagement | `FeatureManagement.checkPermission` | `partial` | Checks local runAs permission-list state. |
 | HTTP | `Http.send` | `partial` | Mock-first local callouts with request validation and callout accounting; real network transport unsupported. |
@@ -407,7 +407,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | URL | `URL` | `partial` | Constructors for deterministic absolute URL specs, context/spec resolution, and protocol/host/file forms with stable malformed input errors. |
 | URL | `URL.getAuthority` | `supported` | Returns parsed authority for local URL values. |
 | URL | `URL.getCurrentRequestUrl` | `unsupported` | Cloud request context is not modeled; returns an explicit unsupported current-request URL error. |
-| URL | `URL.getDefaultPort` | `supported` | Returns HTTP/HTTPS defaults or -1. |
+| URL | `URL.getDefaultPort` | `supported` | Returns HTTP/HTTPS/FTP defaults or -1. |
 | URL | `URL.getFile` | `supported` | Returns path plus query for local URL values. |
 | URL | `URL.getHost` | `supported` | Returns parsed hostname for local URL values. |
 | URL | `URL.getOrgDomainUrl` | `partial` | Deterministic local org URL. |
