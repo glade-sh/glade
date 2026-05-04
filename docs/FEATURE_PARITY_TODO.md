@@ -620,6 +620,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
   `HttpCalloutMock`, callout limits, and test isolation.
   - [x] Add common `HttpRequest`/`HttpResponse` endpoint, method, header,
     timeout, status, and body/blob accessors.
+  - [x] Add local compressed-flag and deterministic header-key coverage for
+    mock-only request/response shapes.
   - **Limitation**: Local execution remains mock-first; real outbound network
     callout transport is intentionally not modeled.
 - [x] Complete `UserInfo`, `FeatureManagement`, `Messaging`, `ApexPages`,
@@ -628,6 +630,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
     `TimeZoneSidKey` handoff for the modeled UTC/fixed-offset/named-zone slice.
   - [x] Add `Messaging.SingleEmailMessage` setters and structured
     `SendEmailResult` basics.
+  - [x] Expand message-shape setters for address, body, threading, template
+    reference, activity, signature, and attachment fields while keeping
+    delivery/template transport fenced unsupported.
   - [x] Add `ApexPages` message storage, current page, `PageReference`, and
     deterministic org `URL` basics.
   - [x] Cover `URL` authority user-info parsing and bounded FTP default-port
