@@ -303,7 +303,78 @@ try {
 	System.assert(e.getMessage().contains('JSONGenerator is closed'));
 }
 System.assert(caught);
+caught = false;
+try {
+	gen.writeRawValue('{bad');
+} catch (JSONException e) {
+	caught = true;
+	System.assertEquals('JSONException', e.getTypeName());
+	System.assert(e.getMessage().contains('JSONGenerator is closed'));
+}
+System.assert(caught);
 System.assert(gen.isClosed());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecJSONGeneratorStateErrorsAreCatchableAndRecoverable(t *testing.T) {
+	program, err := CompileAnonymous(`
+JSONGenerator objectGen = JSON.createGenerator(false);
+objectGen.writeStartObject();
+String caught = '';
+try {
+	objectGen.writeNull();
+} catch (JSONException e) {
+	caught = e.getTypeName() + ':' + e.getMessage();
+}
+System.assert(caught.contains('JSONException:JSONGenerator object value requires writeFieldName first'));
+objectGen.writeStringField('ok', 'yes');
+objectGen.writeEndObject();
+System.assertEquals('{"ok":"yes"}', objectGen.getAsString());
+
+JSONGenerator pendingGen = JSON.createGenerator(false);
+pendingGen.writeStartObject();
+pendingGen.writeFieldName('first');
+caught = '';
+try {
+	pendingGen.writeStringField('second', 'bad');
+} catch (JSONException e) {
+	caught = e.getTypeName() + ':' + e.getMessage();
+}
+System.assert(caught.contains('JSONException:JSONGenerator field "first" is missing a value'));
+pendingGen.writeString('fixed');
+pendingGen.writeEndObject();
+System.assertEquals('{"first":"fixed"}', pendingGen.getAsString());
+
+JSONGenerator rootGen = JSON.createGenerator(false);
+rootGen.writeObject(null);
+caught = '';
+try {
+	rootGen.writeObject('bad');
+} catch (JSONException e) {
+	caught = e.getTypeName() + ':' + e.getMessage();
+}
+System.assert(caught.contains('JSONException:JSONGenerator root value already written'));
+System.assertEquals('null', rootGen.getAsString());
+
+JSONGenerator endGen = JSON.createGenerator(false);
+caught = '';
+try {
+	endGen.writeEndArray();
+} catch (JSONException e) {
+	caught = e.getTypeName() + ':' + e.getMessage();
+}
+System.assert(caught.contains('JSONException:JSONGenerator.writeEndArray has no open array'));
+endGen.writeStartArray();
+endGen.writeNull();
+endGen.writeEndArray();
+System.assertEquals('[null]', endGen.getAsString());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -401,6 +472,55 @@ Integer n = parser.getIntegerValue();
 	machine := New(nil)
 	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), "requires VALUE_NUMBER_INT") {
 		t.Fatalf("err = %v", err)
+	}
+}
+
+func TestExecJSONParserErrorsAreCatchableAndStatePreserving(t *testing.T) {
+	program, err := CompileAnonymous(`
+String caught = '';
+try {
+	JSONParser bad = JSON.createParser('{"broken":');
+} catch (JSONException e) {
+	caught = e.getTypeName() + ':' + e.getMessage();
+}
+System.assert(caught.contains('JSONException:JSONParser invalid JSON input'));
+
+JSONParser parser = JSON.createParser('[null,true,"not-a-date"]');
+caught = '';
+try {
+	parser.getText();
+} catch (JSONException e) {
+	caught = e.getTypeName() + ':' + e.getMessage();
+}
+System.assert(caught.contains('JSONException:JSONParser.getText requires a current token'));
+System.assertEquals(JSONToken.START_ARRAY, parser.nextToken());
+System.assertEquals(JSONToken.VALUE_NULL, parser.nextToken());
+caught = '';
+try {
+	parser.getBooleanValue();
+} catch (JSONException e) {
+	caught = e.getTypeName() + ':' + e.getMessage();
+}
+System.assert(caught.contains('JSONException:JSONParser.getBooleanValue requires VALUE_TRUE or VALUE_FALSE'));
+System.assertEquals(JSONToken.VALUE_TRUE, parser.nextToken());
+System.assertEquals(true, parser.getBooleanValue());
+System.assertEquals(JSONToken.VALUE_STRING, parser.nextToken());
+caught = '';
+try {
+	parser.getDateValue();
+} catch (JSONException e) {
+	caught = e.getTypeName() + ':' + e.getMessage();
+}
+System.assert(caught.contains('JSONException:JSONParser.getDateValue cannot parse Date'));
+System.assertEquals(JSONToken.END_ARRAY, parser.nextToken());
+System.assertEquals(null, parser.nextToken());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 

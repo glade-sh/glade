@@ -221,7 +221,7 @@ func jsonGeneratorEndContainer(receiver Value, kind string) (Value, Value, bool,
 	}
 	stack := jsonGeneratorStack(receiver)
 	if len(stack.List) == 0 {
-		return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeEnd%s has no open %s", jsonGeneratorContainerName(kind), kind)
+		return Null, receiver, false, true, jsonGeneratorException("JSONGenerator.writeEnd%s has no open %s", jsonGeneratorContainerName(kind), kind)
 	}
 	frame := stack.List[len(stack.List)-1]
 	openKind := jsonGeneratorStringField(frame, "kind").Text
@@ -232,10 +232,10 @@ func jsonGeneratorEndContainer(receiver Value, kind string) (Value, Value, bool,
 		if kind == "array" && openKind == "object" {
 			return Null, receiver, false, true, newExceptionError("JSONException", "JSONGenerator.writeEndArray cannot be called inside an object")
 		}
-		return Null, receiver, false, true, fmt.Errorf("JSONGenerator.writeEnd%s called while %s is open", jsonGeneratorContainerName(kind), openKind)
+		return Null, receiver, false, true, jsonGeneratorException("JSONGenerator.writeEnd%s called while %s is open", jsonGeneratorContainerName(kind), openKind)
 	}
 	if kind == "object" && !jsonGeneratorBoolField(frame, "expectingField").Bool {
-		return Null, receiver, false, true, fmt.Errorf("JSONGenerator object field is missing a value")
+		return Null, receiver, false, true, jsonGeneratorException("JSONGenerator object field is missing a value")
 	}
 	updated := receiver
 	if jsonGeneratorIntField(frame, "count").Int > 0 && jsonGeneratorPretty(receiver) {
@@ -284,14 +284,14 @@ func jsonGeneratorWriteFieldName(receiver Value, name string) (Value, error) {
 	}
 	stack := jsonGeneratorStack(receiver)
 	if len(stack.List) == 0 {
-		return receiver, fmt.Errorf("JSONGenerator.writeFieldName requires an open object")
+		return receiver, jsonGeneratorException("JSONGenerator.writeFieldName requires an open object")
 	}
 	frame := stack.List[len(stack.List)-1]
 	if jsonGeneratorStringField(frame, "kind").Text != "object" {
 		return receiver, newExceptionError("JSONException", "JSONGenerator.writeFieldName cannot be called inside an array")
 	}
 	if !jsonGeneratorBoolField(frame, "expectingField").Bool {
-		return receiver, fmt.Errorf("JSONGenerator field %q is missing a value", jsonGeneratorStringField(frame, "pendingField").Text)
+		return receiver, jsonGeneratorException("JSONGenerator field %q is missing a value", jsonGeneratorStringField(frame, "pendingField").Text)
 	}
 	updated := receiver
 	count := jsonGeneratorIntField(frame, "count").Int
@@ -347,6 +347,9 @@ func jsonGeneratorWriteAny(receiver Value, value Value) (Value, Value, bool, boo
 }
 
 func jsonGeneratorWriteRawField(receiver Value, name, raw string) (Value, Value, bool, bool, error) {
+	if err := jsonGeneratorEnsureOpen(receiver); err != nil {
+		return Null, receiver, false, true, err
+	}
 	normalized, err := jsonGeneratorValidateRawValue(raw, "writeRawField")
 	if err != nil {
 		return Null, receiver, false, true, err
@@ -359,11 +362,11 @@ func jsonGeneratorWriteRawField(receiver Value, name, raw string) (Value, Value,
 }
 
 func jsonGeneratorWriteRawValue(receiver Value, raw, method string) (Value, Value, bool, bool, error) {
-	normalized, err := jsonGeneratorValidateRawValue(raw, method)
-	if err != nil {
+	if err := jsonGeneratorEnsureOpen(receiver); err != nil {
 		return Null, receiver, false, true, err
 	}
-	if err := jsonGeneratorEnsureOpen(receiver); err != nil {
+	normalized, err := jsonGeneratorValidateRawValue(raw, method)
+	if err != nil {
 		return Null, receiver, false, true, err
 	}
 	updated, err := jsonGeneratorBeforeValue(receiver)
@@ -377,20 +380,20 @@ func jsonGeneratorWriteRawValue(receiver Value, raw, method string) (Value, Valu
 func jsonGeneratorValidateRawValue(raw, method string) (string, error) {
 	normalized := strings.TrimSpace(raw)
 	if normalized == "" {
-		return "", fmt.Errorf("JSONGenerator.%s expects valid raw JSON value", method)
+		return "", jsonGeneratorException("JSONGenerator.%s expects valid raw JSON value", method)
 	}
 	decoder := json.NewDecoder(strings.NewReader(normalized))
 	decoder.UseNumber()
 	var decoded any
 	if err := decoder.Decode(&decoded); err != nil {
-		return "", fmt.Errorf("JSONGenerator.%s expects valid raw JSON value: %w", method, err)
+		return "", jsonGeneratorException("JSONGenerator.%s expects valid raw JSON value: %v", method, err)
 	}
 	var extra any
 	if err := decoder.Decode(&extra); err != io.EOF {
 		if err == nil {
-			return "", fmt.Errorf("JSONGenerator.%s expects one raw JSON value", method)
+			return "", jsonGeneratorException("JSONGenerator.%s expects one raw JSON value", method)
 		}
-		return "", fmt.Errorf("JSONGenerator.%s expects one raw JSON value: %w", method, err)
+		return "", jsonGeneratorException("JSONGenerator.%s expects one raw JSON value: %v", method, err)
 	}
 	return normalized, nil
 }
@@ -400,7 +403,7 @@ func jsonGeneratorBeforeValue(receiver Value) (Value, error) {
 	stack := jsonGeneratorStack(updated)
 	if len(stack.List) == 0 {
 		if jsonGeneratorBoolField(updated, "rootWritten").Bool {
-			return updated, fmt.Errorf("JSONGenerator root value already written")
+			return updated, jsonGeneratorException("JSONGenerator root value already written")
 		}
 		updated.Fields["rootWritten"] = Bool(true)
 		return updated, nil
@@ -421,7 +424,7 @@ func jsonGeneratorBeforeValue(receiver Value) (Value, error) {
 		return updated, nil
 	case "object":
 		if jsonGeneratorBoolField(frame, "expectingField").Bool {
-			return updated, fmt.Errorf("JSONGenerator object value requires writeFieldName first")
+			return updated, jsonGeneratorException("JSONGenerator object value requires writeFieldName first")
 		}
 		frame.Fields["count"] = Int(jsonGeneratorIntField(frame, "count").Int + 1)
 		frame.Fields["expectingField"] = Bool(true)
@@ -430,7 +433,7 @@ func jsonGeneratorBeforeValue(receiver Value) (Value, error) {
 		updated.Fields["stack"] = stack
 		return updated, nil
 	default:
-		return updated, fmt.Errorf("JSONGenerator has invalid internal frame")
+		return updated, jsonGeneratorException("JSONGenerator has invalid internal frame")
 	}
 }
 
@@ -440,10 +443,10 @@ func jsonGeneratorClose(receiver Value) (Value, error) {
 		return updated, nil
 	}
 	if stack := jsonGeneratorStack(updated); len(stack.List) != 0 {
-		return updated, fmt.Errorf("JSONGenerator cannot close with open JSON containers")
+		return updated, jsonGeneratorException("JSONGenerator cannot close with open JSON containers")
 	}
 	if !jsonGeneratorBoolField(updated, "rootWritten").Bool {
-		return updated, fmt.Errorf("JSONGenerator cannot close before writing a root value")
+		return updated, jsonGeneratorException("JSONGenerator cannot close before writing a root value")
 	}
 	updated.Fields["closed"] = Bool(true)
 	return updated, nil
@@ -471,7 +474,7 @@ func jsonGeneratorRenderScalar(value Value) (string, error) {
 		return strconv.FormatInt(value.Int, 10), nil
 	case ValueDecimal:
 		if math.IsNaN(value.Decimal) || math.IsInf(value.Decimal, 0) {
-			return "", fmt.Errorf("JSONGenerator.writeNumber cannot write non-finite number")
+			return "", jsonGeneratorException("JSONGenerator.writeNumber cannot write non-finite number")
 		}
 		return strconv.FormatFloat(value.Decimal, 'f', -1, 64), nil
 	case ValueObject:
@@ -482,10 +485,14 @@ func jsonGeneratorRenderScalar(value Value) (string, error) {
 			}
 			return string(data), nil
 		}
-		return "", fmt.Errorf("JSONGenerator scalar writer does not support %s", value.Type)
+		return "", jsonGeneratorException("JSONGenerator scalar writer does not support %s", value.Type)
 	default:
-		return "", fmt.Errorf("JSONGenerator scalar writer does not support %s", value.Kind)
+		return "", jsonGeneratorException("JSONGenerator scalar writer does not support %s", value.Kind)
 	}
+}
+
+func jsonGeneratorException(format string, args ...any) error {
+	return newExceptionError("JSONException", fmt.Sprintf(format, args...))
 }
 
 func jsonGeneratorRenderAny(value Value) (string, error) {
