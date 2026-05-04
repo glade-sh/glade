@@ -919,7 +919,7 @@ func (s *Server) handleQuery(w http.ResponseWriter, r *http.Request, version str
 		return
 	}
 	if !paginated || result.Rows <= batchSize {
-		writeJSON(w, http.StatusOK, queryResultPayload(result.Rows, true, result.Records, ""))
+		writeJSON(w, http.StatusOK, queryResultPayload(result.Rows, true, result.Records, version, ""))
 		return
 	}
 	locator := s.storeQueryLocator(queryLocatorState{
@@ -928,7 +928,7 @@ func (s *Server) handleQuery(w http.ResponseWriter, r *http.Request, version str
 		batchSize: batchSize,
 		version:   version,
 	})
-	writeJSON(w, http.StatusOK, queryResultPayload(result.Rows, false, result.Records[:batchSize], queryNextURL(version, locator, batchSize)))
+	writeJSON(w, http.StatusOK, queryResultPayload(result.Rows, false, result.Records[:batchSize], version, queryNextURL(version, locator, batchSize)))
 }
 
 func (s *Server) handleQueryMore(w http.ResponseWriter, r *http.Request, token string) {
@@ -961,7 +961,7 @@ func (s *Server) handleQueryMore(w http.ResponseWriter, r *http.Request, token s
 	} else {
 		nextURL = queryNextURL(state.version, locator, end)
 	}
-	writeJSON(w, http.StatusOK, queryResultPayload(state.totalSize, done, state.records[offset:end], nextURL))
+	writeJSON(w, http.StatusOK, queryResultPayload(state.totalSize, done, state.records[offset:end], state.version, nextURL))
 }
 
 func queryBatchSize(r *http.Request) (int, bool, bool) {
@@ -976,16 +976,28 @@ func queryBatchSize(r *http.Request) (int, bool, bool) {
 	return size, true, true
 }
 
-func queryResultPayload(totalSize int, done bool, records []storage.Record, nextURL string) map[string]any {
+func queryResultPayload(totalSize int, done bool, records []storage.Record, version string, nextURL string) map[string]any {
 	payload := map[string]any{
 		"totalSize": totalSize,
 		"done":      done,
-		"records":   records,
+		"records":   queryRecordsPayload(records, version),
 	}
 	if nextURL != "" {
 		payload["nextRecordsUrl"] = nextURL
 	}
 	return payload
+}
+
+func queryRecordsPayload(records []storage.Record, version string) []map[string]any {
+	out := make([]map[string]any, 0, len(records))
+	for _, record := range records {
+		row := recordPayload(record, version, record.Object, record.ID)
+		for relationship, children := range record.Children {
+			row[relationship] = queryResultPayload(len(children), true, children, version, "")
+		}
+		out = append(out, row)
+	}
+	return out
 }
 
 func (s *Server) storeQueryLocator(state queryLocatorState) string {
