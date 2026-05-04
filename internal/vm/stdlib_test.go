@@ -294,6 +294,53 @@ System.assertEquals('  ', caseSource.removeIgnoreCase('force'));
 	}
 }
 
+func TestExecStringStdlibEntityAndNullEdges(t *testing.T) {
+	program, err := CompileAnonymous(`
+String htmlCore = '"''<>&';
+System.assertEquals('&quot;&#39;&lt;&gt;&amp;', htmlCore.escapeHtml4());
+System.assertEquals('&quot;&#39;&lt;&gt;&amp;', htmlCore.escapeHtml3());
+String escapedHtmlCore = '&quot;&lt;&gt;&amp;';
+System.assertEquals('"<>&', escapedHtmlCore.unescapeHtml4());
+String escapedHtmlDecimal = '&#39;';
+String htmlDecimal = escapedHtmlDecimal.unescapeHtml4();
+System.assertEquals(39, htmlDecimal.codePointAt(0));
+String escapedHtmlHex = '&#x27;';
+String htmlHex = escapedHtmlHex.unescapeHtml4();
+System.assertEquals(39, htmlHex.codePointAt(0));
+String unknownHtml = '&copy;&apos;';
+System.assertEquals('&copy;&apos;', unknownHtml.unescapeHtml4());
+System.assertEquals('&copy;&apos;', unknownHtml.unescapeHtml3());
+System.assertEquals('&quot;&apos;&lt;&gt;&amp;', htmlCore.escapeXml());
+System.assertEquals('&quot;&apos;&lt;&gt;&amp;', htmlCore.escapeXml10());
+System.assertEquals('&quot;&apos;&lt;&gt;&amp;', htmlCore.escapeXml11());
+System.assertEquals('"<>&', escapedHtmlCore.unescapeXml());
+String escapedXmlApos = '&apos;';
+String xmlApos = escapedXmlApos.unescapeXml();
+System.assertEquals(39, xmlApos.codePointAt(0));
+String escapedXmlNumeric = '&#65;&#x41;';
+System.assertEquals('AA', escapedXmlNumeric.unescapeXml10());
+String replacementEntity = '&#xFFFD;';
+String replacementValue = replacementEntity.unescapeXml();
+System.assertEquals(65533, replacementValue.codePointAt(0));
+String malformedXml = '&#xZZ;&copy;';
+System.assertEquals('&#xZZ;&copy;', malformedXml.unescapeXml11());
+String replaceEmpty = 'abc';
+System.assertEquals('abc', replaceEmpty.replace('', 'x'));
+System.assertEquals('abc', replaceEmpty.replaceOnce('', 'x'));
+System.assertEquals('abc', replaceEmpty.replaceIgnoreCase('', 'x'));
+System.assertEquals('abc', replaceEmpty.remove(''));
+System.assert(String.isBlank(null));
+System.assert(!String.isNotBlank(null));
+System.assertEquals('', String.escapeSingleQuotes(''));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestStringStdlibCompletionRejectsBadArguments(t *testing.T) {
 	tests := []struct {
 		method string
@@ -313,6 +360,11 @@ func TestStringStdlibCompletionRejectsBadArguments(t *testing.T) {
 		{method: "stripToNull", args: []Value{String("x")}},
 		{method: "stripToEmpty", args: []Value{String("x")}},
 		{method: "ordinalIndexOf", args: []Value{String("a")}},
+		{method: "replace", args: []Value{Null, String("x")}},
+		{method: "replaceOnce", args: []Value{String("a"), Null}},
+		{method: "remove", args: []Value{Null}},
+		{method: "escapeHtml4", args: []Value{Null}},
+		{method: "unescapeXml", args: []Value{Null}},
 	}
 	for _, tc := range tests {
 		if _, handled, err := callStringMember(String("abc"), tc.method, tc.args); !handled || err == nil {

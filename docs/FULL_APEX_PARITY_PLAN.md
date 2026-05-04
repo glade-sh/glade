@@ -157,12 +157,15 @@ Current progress:
   helpers; Levenshtein distance; rune/code-point and char-array helpers; ASCII
   printable checks; split-by-character-type helpers; index-of-any and
   ordinal-index helpers; overlay, rotate, swapCase, strip variants; static
-  `stripAll`; and additional literal remove/replace edge helpers.
+  `stripAll`; additional literal remove/replace edge helpers; and pinned
+  deterministic core HTML/XML entity edges with unknown named entities left
+  unchanged.
 - Fixtures:
   - `docs/fixtures/core-collection-stdlib.json`
   - `docs/fixtures/core-string-stdlib.json`
   - `docs/fixtures/core-string-more-stdlib.json`
   - `docs/fixtures/core-string-completion-stdlib.json`
+  - `docs/fixtures/core-string-entity-edge-stdlib.json`
   - `docs/fixtures/core-numeric-stdlib.json`
   - `docs/fixtures/core-datetime-stdlib.json`
   - `docs/fixtures/core-json-stdlib.json`
@@ -185,11 +188,12 @@ Remaining cuts:
 
 2. String completion
    - Remaining StringUtils-style methods not yet pinned by owned fixtures:
-     additional remove/replace overloads and null-heavy edge cases beyond the
-     deterministic literal helper slice now covered.
+      additional remove/replace overloads and null-heavy edge cases beyond the
+      deterministic literal helper slice now covered.
    - Version-specific XML 1.0/1.1 validity, full HTML3/HTML4 named entity
-     coverage, full Java/EcmaScript parity, and MessageFormat quoting remain
-     partial until public behavior is pinned.
+      coverage beyond core/numeric entity references, full Java/EcmaScript
+      parity, and MessageFormat quoting remain partial until public behavior is
+      pinned.
    - Locale overloads only after behavior is pinned to public expectations.
 
 3. Numeric classes

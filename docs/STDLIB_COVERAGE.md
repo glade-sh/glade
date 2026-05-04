@@ -238,11 +238,14 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | String | `String.equalsIgnoreCase` | `supported` | Unicode simple fold. |
 | String | `String.escapeCsv` | `supported` | RFC4180-style quoting and doubled quotes for local strings. |
 | String | `String.escapeEcmaScript` | `partial` | JavaScript-style backslash escaping for common deterministic cases. |
-| String | `String.escapeHtml4` | `partial` | Go HTML entity escaping for deterministic core entities. |
+| String | `String.escapeHtml3` | `partial` | Deterministic core HTML entity escaping only; full named-entity coverage is not modeled. |
+| String | `String.escapeHtml4` | `partial` | Deterministic core HTML entity escaping only; full named-entity coverage is not modeled. |
 | String | `String.escapeJava` | `partial` | Java-style backslash and Unicode escaping for deterministic core cases. |
 | String | `String.escapeSingleQuotes` | `supported` | Escapes single quotes with backslashes. |
 | String | `String.escapeUnicode` | `partial` | Escapes non-ASCII and control runes as UTF-16 Unicode escapes. |
 | String | `String.escapeXml` | `partial` | Escapes XML core entities; XML version-specific validity is not modeled. |
+| String | `String.escapeXml10` | `partial` | Alias of local XML core entity escaping; XML 1.0 character validity is not modeled. |
+| String | `String.escapeXml11` | `partial` | Alias of local XML core entity escaping; XML 1.1 character validity is not modeled. |
 | String | `String.format` | `partial` | Deterministic {0}-style list substitution; full MessageFormat locale behavior is not modeled. |
 | String | `String.fromCharArray` | `supported` | Builds a string from valid Unicode code point integers. |
 | String | `String.getChars` | `supported` | Returns Unicode code point integers for each rune. |
@@ -271,8 +274,13 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | String | `String.length` | `supported` | Counts runes. |
 | String | `String.ordinalIndexOf` | `supported` | Finds the nth occurrence from the start using rune indexes. |
 | String | `String.overlay` | `supported` | Overlays text between clamped rune indexes. |
+| String | `String.remove` | `supported` | Literal non-overlapping removal; empty targets are a no-op. |
+| String | `String.removeEnd` | `supported` | Removes a literal suffix when present. |
+| String | `String.removeEndIgnoreCase` | `supported` | Removes a literal suffix with rune-wise case folding when present. |
 | String | `String.removeIgnoreCase` | `supported` | Literal non-overlapping removal with rune-wise case folding. |
-| String | `String.replace` | `supported` | Literal replacement. |
+| String | `String.removeStart` | `supported` | Removes a literal prefix when present. |
+| String | `String.removeStartIgnoreCase` | `supported` | Removes a literal prefix with rune-wise case folding when present. |
+| String | `String.replace` | `supported` | Literal replacement; empty targets are a no-op. |
 | String | `String.replaceAll` | `partial` | Go regexp-backed replacement. |
 | String | `String.replaceFirst` | `partial` | Go regexp-backed first replacement. |
 | String | `String.replaceIgnoreCase` | `supported` | Literal non-overlapping replacement with rune-wise case folding. |
@@ -295,10 +303,13 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | String | `String.trim` | `supported` | Unicode whitespace trim. |
 | String | `String.unescapeCsv` | `supported` | Unquotes doubled-quote CSV fields. |
 | String | `String.unescapeEcmaScript` | `partial` | Unescapes common JavaScript-style backslash and Unicode escapes. |
-| String | `String.unescapeHtml4` | `partial` | Go HTML entity unescaping for deterministic core entities. |
+| String | `String.unescapeHtml3` | `partial` | Unescapes deterministic core HTML entities and numeric references; unknown named entities stay unchanged. |
+| String | `String.unescapeHtml4` | `partial` | Unescapes deterministic core HTML entities and numeric references; unknown named entities stay unchanged. |
 | String | `String.unescapeJava` | `partial` | Unescapes common Java-style backslash and Unicode escapes. |
 | String | `String.unescapeUnicode` | `partial` | Unescapes UTF-16 Unicode escape sequences. |
-| String | `String.unescapeXml` | `partial` | Unescapes XML core entities. |
+| String | `String.unescapeXml` | `partial` | Unescapes XML core entities and numeric references; XML version-specific validity is not modeled. |
+| String | `String.unescapeXml10` | `partial` | Alias of local XML core/numeric entity unescaping; XML 1.0 validity is not modeled. |
+| String | `String.unescapeXml11` | `partial` | Alias of local XML core/numeric entity unescaping; XML 1.1 validity is not modeled. |
 | String | `String.valueOf` | `supported` | Local value string conversion. |
 | System | `System.assert` | `supported` | Assertion failure returns runtime error; Object message values use local toString. |
 | System | `System.assertEquals` | `supported` | Assertion failure returns runtime error with deterministic local expected/actual text and Object message toString. |
