@@ -1101,7 +1101,7 @@ func patternCompile(args []Value) (Value, error) {
 		return Null, err
 	}
 	if _, err := regexp.Compile(regexpSource); err != nil {
-		return Null, fmt.Errorf("Pattern.compile invalid regex: %w", err)
+		return Null, newPatternSyntaxExceptionError(args[0].Text, err)
 	}
 	pattern := Object("Pattern")
 	pattern.Fields["source"] = args[0]
@@ -1119,9 +1119,19 @@ func patternMatches(args []Value) (Value, error) {
 	}
 	matched, err := regexp.MatchString("^(?:"+args[0].Text+")$", args[1].Text)
 	if err != nil {
-		return Null, fmt.Errorf("Pattern.matches invalid regex: %w", err)
+		return Null, newPatternSyntaxExceptionError(args[0].Text, err)
 	}
 	return Bool(matched), nil
+}
+
+func newPatternSyntaxExceptionError(pattern string, err error) error {
+	description := err.Error()
+	value := Object("PatternSyntaxException")
+	value.Fields["message"] = String(description)
+	value.Fields["description"] = String(description)
+	value.Fields["pattern"] = String(pattern)
+	value.Fields["index"] = Int(-1)
+	return &apexThrowError{value: value}
 }
 
 func patternQuote(args []Value) (Value, error) {

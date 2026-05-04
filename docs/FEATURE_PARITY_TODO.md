@@ -577,6 +577,11 @@ a Salesforce-shaped local API server without silently wrong behavior.
     state through `matcher`, `split`, and `usePattern`, and fences Java-only
     flag constants, Java-only inline flags, Python-style named groups, and
     Java Unicode character-class names with stable unsupported diagnostics.
+  - [x] Close final Pattern/Matcher fence rows for the local Go-regexp subset:
+    invalid syntax now throws catchable `PatternSyntaxException`, Java-only flag
+    combinations have fixture-backed unsupported diagnostics, and the pure
+    Matcher state helpers (`groupCount`, bounds getters/setters,
+    `regionStart`/`regionEnd`, and `usePattern`) are promoted with fixtures.
   - [x] Add common `Date`, `Datetime`, and `Time` factories, parsing,
     arithmetic, and component helpers.
   - [x] Promote deterministic `Datetime` pure-duration arithmetic and local
