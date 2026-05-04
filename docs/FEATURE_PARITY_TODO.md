@@ -940,6 +940,10 @@ a Salesforce-shaped local API server without silently wrong behavior.
     resources, including default, malformed, and over-limit behavior.
   - [x] Cover missing/deleted record GET, missing DELETE, null PATCH, and method
     `Allow` headers in server tests.
+  - [x] Return precise Salesforce-shaped DML status codes for single-record REST
+    create/update failures, and pin missing/deleted PATCH, repeated DELETE,
+    read-only field, required field, invalid field, and external-ID blank/null/
+    duplicate edge behavior in server tests.
   - [x] Add conservative external-ID SObject GET, PATCH upsert, and DELETE
     routes backed by local DML upsert/delete behavior.
   - [x] Add REST record `fields=` projection on ID and external-ID GET routes
@@ -1082,6 +1086,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
     fixture.
   - [x] Cover REST SObject external-ID create, update, get, and delete in the
     server black-box fixture.
+  - [x] Cover REST SObject CRUD validation, repeated DELETE, missing PATCH, and
+    external-ID blank/null/duplicate edge shapes in the server black-box
+    fixture.
   - [x] Cover REST record field projection, SOQL query-plan unsupported probes,
     Composite sObject retrieve, search/Bulk method boundaries, SObject
     list-view stubs, recent `limit=`, Apex REST stubs, and

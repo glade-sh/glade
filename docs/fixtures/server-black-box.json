@@ -437,6 +437,39 @@
       ]
     },
     {
+      "name": "create-account-missing-required-name",
+      "method": "POST",
+      "path": "/services/data/v61.0/sobjects/Account",
+      "body": "{}",
+      "status": 400,
+      "contains": [
+        "REQUIRED_FIELD_MISSING",
+        "Name"
+      ]
+    },
+    {
+      "name": "create-account-invalid-field",
+      "method": "POST",
+      "path": "/services/data/v61.0/sobjects/Account",
+      "body": "{\"Name\":\"Bad Field\",\"Nope__c\":\"bad\"}",
+      "status": 400,
+      "contains": [
+        "INVALID_FIELD_FOR_INSERT_UPDATE",
+        "Nope__c"
+      ]
+    },
+    {
+      "name": "create-account-read-only-field",
+      "method": "POST",
+      "path": "/services/data/v61.0/sobjects/Account",
+      "body": "{\"Name\":\"Read Only\",\"Formula__c\":\"blocked\"}",
+      "status": 400,
+      "contains": [
+        "INVALID_FIELD_FOR_INSERT_UPDATE",
+        "Formula__c"
+      ]
+    },
+    {
       "name": "sobject-updated-happy",
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Account/updated",
@@ -487,6 +520,39 @@
         "\"attributes\":{\"type\":\"Account\",\"url\":\"/services/data/v61.0/sobjects/Account/001000000000001\"}",
         "\"Id\":\"001000000000001\"",
         "\"Name\":\"Acme\""
+      ]
+    },
+    {
+      "name": "patch-account-invalid-field",
+      "method": "PATCH",
+      "path": "/services/data/v61.0/sobjects/Account/001000000000001",
+      "body": "{\"Nope__c\":\"bad\"}",
+      "status": 400,
+      "contains": [
+        "INVALID_FIELD_FOR_INSERT_UPDATE",
+        "Nope__c"
+      ]
+    },
+    {
+      "name": "patch-account-read-only-field",
+      "method": "PATCH",
+      "path": "/services/data/v61.0/sobjects/Account/001000000000001",
+      "body": "{\"Formula__c\":\"blocked\"}",
+      "status": 400,
+      "contains": [
+        "INVALID_FIELD_FOR_INSERT_UPDATE",
+        "Formula__c"
+      ]
+    },
+    {
+      "name": "patch-account-missing-id",
+      "method": "PATCH",
+      "path": "/services/data/v61.0/sobjects/Account/001000000000999",
+      "body": "{\"Name\":\"Missing\"}",
+      "status": 404,
+      "contains": [
+        "NOT_FOUND",
+        "record not found"
       ]
     },
     {
@@ -1163,6 +1229,16 @@
       "status": 204
     },
     {
+      "name": "delete-account-for-delete-log-again",
+      "method": "DELETE",
+      "path": "/services/data/v61.0/sobjects/Account/001000000000006",
+      "status": 404,
+      "contains": [
+        "NOT_FOUND",
+        "record not found"
+      ]
+    },
+    {
       "name": "sobject-deleted-happy",
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Account/deleted",
@@ -1172,6 +1248,28 @@
         "\"deletedDate\"",
         "\"earliestDateAvailable\"",
         "\"latestDateCovered\""
+      ]
+    },
+    {
+      "name": "external-id-upsert-blank-value",
+      "method": "PATCH",
+      "path": "/services/data/v61.0/sobjects/Account/External_Id__c/%20",
+      "body": "{\"Name\":\"Blank External\"}",
+      "status": 400,
+      "contains": [
+        "REQUIRED_FIELD_MISSING",
+        "external id value is required"
+      ]
+    },
+    {
+      "name": "external-id-upsert-null-body-value",
+      "method": "PATCH",
+      "path": "/services/data/v61.0/sobjects/Account/External_Id__c/BB-EXT-NULL",
+      "body": "{\"Name\":\"Null External\",\"External_Id__c\":null}",
+      "status": 400,
+      "contains": [
+        "DML_EXCEPTION",
+        "does not match path value"
       ]
     },
     {
@@ -1205,6 +1303,17 @@
       ]
     },
     {
+      "name": "external-id-duplicate-create",
+      "method": "POST",
+      "path": "/services/data/v61.0/sobjects/Account",
+      "body": "{\"Name\":\"External Duplicate\",\"External_Id__c\":\"bb-ext-1\"}",
+      "status": 400,
+      "contains": [
+        "DUPLICATE_VALUE",
+        "External_Id__c"
+      ]
+    },
+    {
       "name": "external-id-get-field-projection",
       "method": "GET",
       "path": "/services/data/v60.0/sobjects/Account/External_Id__c/BB-EXT-1?fields=Name",
@@ -1225,6 +1334,16 @@
       "method": "DELETE",
       "path": "/services/data/v61.0/sobjects/Account/External_Id__c/BB-EXT-1",
       "status": 204
+    },
+    {
+      "name": "external-id-delete-again",
+      "method": "DELETE",
+      "path": "/services/data/v61.0/sobjects/Account/External_Id__c/BB-EXT-1",
+      "status": 404,
+      "contains": [
+        "NOT_FOUND",
+        "record not found"
+      ]
     },
     {
       "name": "composite-all-or-none-rollback",
@@ -2338,7 +2457,7 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 208,
+      "requests": 219,
       "statuses": [
         200,
         200,
@@ -2376,10 +2495,16 @@
         200,
         405,
         201,
+        400,
+        400,
+        400,
         200,
         200,
         200,
         200,
+        400,
+        400,
+        404,
         200,
         400,
         200,
@@ -2439,12 +2564,17 @@
         200,
         201,
         204,
+        404,
         200,
+        400,
+        400,
         201,
         204,
         200,
+        400,
         200,
         204,
+        404,
         400,
         501,
         501,
