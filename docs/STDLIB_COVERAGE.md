@@ -119,14 +119,14 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Iterator | `Iterator.next` | `supported` | Returns the next element from a local collection snapshot and raises NoSuchElementException when exhausted. |
 | Iterator | `Iterator.remove` | `unsupported` | Returns an explicit unsupported error; mutating collection iterators are not modeled. |
 | JSON | `JSON.createGenerator` | `supported` | Creates deterministic local JSONGenerator instances. |
-| JSON | `JSON.createParser` | `partial` | Creates deterministic local JSONParser token streams for valid JSON strings. |
+| JSON | `JSON.createParser` | `partial` | Creates deterministic local JSONParser token streams and throws catchable JSONException for malformed JSON input. |
 | JSON | `JSON.deserialize` | `partial` | Primitive, platform scalar, List, Map<String,Object/value>, SObject, and class shapes for the supported local subset; stable mapping errors for mismatched typed shapes and unsupported local object targets. |
 | JSON | `JSON.deserializeStrict` | `partial` | Rejects duplicate object fields and throws catchable JSONException for unknown fields on supported schema/class targets; otherwise shares the bounded typed local mapping subset. |
 | JSON | `JSON.deserializeUntyped` | `partial` | Maps JSON into local primitive/list/map values with deterministic null and number handling. |
 | JSON | `JSON.serialize` | `partial` | Includes suppressApexObjectNulls overload for supported object fields; map/list nulls are preserved for supported values. |
 | JSON | `JSON.serializePretty` | `partial` | Pretty output for supported values with object-field null suppression and map/list null preservation. |
-| JSON | `JSONGenerator` | `partial` | Object/array boundaries, field names, scalar string/number/Boolean/null, Date/Datetime/Time/Id/Blob, Object and validated raw value writers, getAsString, close, isClosed, stable invalid-order errors, and catchable JSONException for field names, object/array end mismatches inside containers, and writes after close. |
-| JSON | `JSONParser` | `partial` | Token navigation, current token/name/text, integer/long/decimal/double/Boolean/date/datetime/time/id/blob accessors, nextValue, skipChildren current-name state, and clearCurrentToken for deterministic local JSON. |
+| JSON | `JSONGenerator` | `partial` | Object/array boundaries, field names, scalar string/number/Boolean/null, Date/Datetime/Time/Id/Blob, Object and validated raw value writers, getAsString, close, isClosed, and catchable JSONException for invalid nesting, pending fields, repeated roots, raw-value errors, and writes after close. |
+| JSON | `JSONParser` | `partial` | Token navigation, current token/name/text, integer/long/decimal/double/Boolean/date/datetime/time/id/blob accessors, nextValue, skipChildren current-name state, clearCurrentToken, and catchable JSONException for wrong-token or malformed-input errors. |
 | JSON | `JSONToken` | `partial` | Common parser token constants for object, array, field, string, number, Boolean, and null tokens. |
 | Limits | `Limits.get*` | `partial` | SOQL, DML, heap, CPU, async, callout, and email counters; unmodeled documented getters return explicit unsupported diagnostics. |
 | List | `List.add` | `supported` | Adds typed local values, including indexed insertion. |

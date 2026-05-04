@@ -20,7 +20,7 @@ type jsonParserFrame struct {
 func newJSONParser(text string) (Value, error) {
 	tokens, err := jsonParserTokenize(text)
 	if err != nil {
-		return Null, err
+		return Null, jsonParserException("JSONParser invalid JSON input: %v", err)
 	}
 	parser := Object("JSONParser")
 	parser.Fields["tokens"] = List(tokens...)
@@ -113,7 +113,7 @@ func callJSONParserMember(receiver Value, method string, args []Value) (Value, V
 			return Null, receiver, false, true, err
 		}
 		if _, err := time.Parse("2006-01-02", text); err != nil {
-			return Null, receiver, false, true, fmt.Errorf("JSONParser.getDateValue cannot parse Date %q", text)
+			return Null, receiver, false, true, jsonParserException("JSONParser.getDateValue cannot parse Date %q", text)
 		}
 		return platformScalar("Date", text), receiver, false, true, nil
 	case "getDatetimeValue", "getDateTimeValue":
@@ -126,7 +126,7 @@ func callJSONParserMember(receiver Value, method string, args []Value) (Value, V
 		}
 		value, err := parseDatetimeText(text)
 		if err != nil {
-			return Null, receiver, false, true, err
+			return Null, receiver, false, true, jsonParserException("JSONParser.%s cannot parse Datetime %q: %v", method, text, err)
 		}
 		return platformScalar("Datetime", value.UTC().Format(time.RFC3339)), receiver, false, true, nil
 	case "getTimeValue":
@@ -139,7 +139,7 @@ func callJSONParserMember(receiver Value, method string, args []Value) (Value, V
 		}
 		value, err := parseTimeText(text)
 		if err != nil {
-			return Null, receiver, false, true, err
+			return Null, receiver, false, true, jsonParserException("JSONParser.getTimeValue cannot parse Time %q: %v", text, err)
 		}
 		return platformScalar("Time", value), receiver, false, true, nil
 	case "getIdValue":
@@ -151,7 +151,7 @@ func callJSONParserMember(receiver Value, method string, args []Value) (Value, V
 			return Null, receiver, false, true, err
 		}
 		if err := validateApexID(text); err != nil {
-			return Null, receiver, false, true, err
+			return Null, receiver, false, true, jsonParserException("JSONParser.getIdValue cannot parse Id %q: %v", text, err)
 		}
 		return platformScalar("Id", text), receiver, false, true, nil
 	case "getBlobValue":
@@ -164,7 +164,7 @@ func callJSONParserMember(receiver Value, method string, args []Value) (Value, V
 		}
 		decoded, err := base64.StdEncoding.DecodeString(text)
 		if err != nil {
-			return Null, receiver, false, true, fmt.Errorf("JSONParser.getBlobValue cannot decode base64: %w", err)
+			return Null, receiver, false, true, jsonParserException("JSONParser.getBlobValue cannot decode base64: %v", err)
 		}
 		return platformScalar("Blob", string(decoded)), receiver, false, true, nil
 	case "skipChildren":
@@ -366,7 +366,7 @@ func jsonParserSkipChildren(receiver Value) (Value, error) {
 			}
 		}
 	}
-	return receiver, fmt.Errorf("JSONParser.skipChildren could not find matching end token")
+	return receiver, jsonParserException("JSONParser.skipChildren could not find matching end token")
 }
 
 func jsonParserIntegerValue(receiver Value, method string) (Value, error) {
@@ -375,11 +375,11 @@ func jsonParserIntegerValue(receiver Value, method string) (Value, error) {
 		return Null, err
 	}
 	if jsonParserTokenKind(token) != "VALUE_NUMBER_INT" {
-		return Null, fmt.Errorf("JSONParser.%s requires VALUE_NUMBER_INT", method)
+		return Null, jsonParserException("JSONParser.%s requires VALUE_NUMBER_INT", method)
 	}
 	value, err := strconv.ParseInt(jsonParserTokenText(token), 10, 64)
 	if err != nil {
-		return Null, fmt.Errorf("JSONParser.%s cannot parse integer: %w", method, err)
+		return Null, jsonParserException("JSONParser.%s cannot parse integer: %v", method, err)
 	}
 	return Int(value), nil
 }
@@ -391,11 +391,11 @@ func jsonParserDecimalValue(receiver Value, method string) (Value, error) {
 	}
 	kind := jsonParserTokenKind(token)
 	if kind != "VALUE_NUMBER_INT" && kind != "VALUE_NUMBER_FLOAT" {
-		return Null, fmt.Errorf("JSONParser.%s requires numeric token", method)
+		return Null, jsonParserException("JSONParser.%s requires numeric token", method)
 	}
 	value, err := strconv.ParseFloat(jsonParserTokenText(token), 64)
 	if err != nil {
-		return Null, fmt.Errorf("JSONParser.%s cannot parse decimal: %w", method, err)
+		return Null, jsonParserException("JSONParser.%s cannot parse decimal: %v", method, err)
 	}
 	return Decimal(value), nil
 }
@@ -411,7 +411,7 @@ func jsonParserBooleanValue(receiver Value) (Value, error) {
 	case "VALUE_FALSE":
 		return Bool(false), nil
 	default:
-		return Null, fmt.Errorf("JSONParser.getBooleanValue requires VALUE_TRUE or VALUE_FALSE")
+		return Null, jsonParserException("JSONParser.getBooleanValue requires VALUE_TRUE or VALUE_FALSE")
 	}
 }
 
@@ -421,7 +421,7 @@ func jsonParserStringValue(receiver Value, method string) (string, error) {
 		return "", err
 	}
 	if jsonParserTokenKind(token) != "VALUE_STRING" {
-		return "", fmt.Errorf("JSONParser.%s requires VALUE_STRING", method)
+		return "", jsonParserException("JSONParser.%s requires VALUE_STRING", method)
 	}
 	return jsonParserTokenText(token), nil
 }
@@ -429,9 +429,13 @@ func jsonParserStringValue(receiver Value, method string) (string, error) {
 func jsonParserRequireCurrent(receiver Value, method string) (Value, error) {
 	token, ok := jsonParserCurrent(receiver)
 	if !ok {
-		return Null, fmt.Errorf("JSONParser.%s requires a current token", method)
+		return Null, jsonParserException("JSONParser.%s requires a current token", method)
 	}
 	return token, nil
+}
+
+func jsonParserException(format string, args ...any) error {
+	return newExceptionError("JSONException", fmt.Sprintf(format, args...))
 }
 
 func jsonParserCurrent(receiver Value) (Value, bool) {

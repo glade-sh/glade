@@ -459,6 +459,11 @@ a Salesforce-shaped local API server without silently wrong behavior.
     `JSONException` while preserving object writes after the failed call.
   - [x] Reject `JSONGenerator` writes after `getAsString()`/close with
     catchable `JSONException` while preserving the closed generator state.
+  - [x] Normalize `JSONGenerator` state-machine failures for missing field
+    names, pending fields, repeated roots, invalid raw values, and no-open-end
+    calls to catchable `JSONException` without corrupting recoverable state.
+  - [x] Normalize `JSONParser` malformed input and wrong-token accessor failures
+    to catchable `JSONException` while preserving parser position.
   - [x] Add common `Test.isRunningTest()` and deterministic
     `Test.getStandardPricebookId()` support.
   - [x] Add `Database.getQueryLocator(String)` for supported SOQL and batch
