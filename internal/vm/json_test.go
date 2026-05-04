@@ -4,6 +4,8 @@ import (
 	"errors"
 	"strings"
 	"testing"
+
+	"github.com/open-aer/oaer/internal/storage"
 )
 
 func TestExecJSONGeneratorWritesObjectsArraysAndScalars(t *testing.T) {
@@ -365,6 +367,41 @@ System.assertEquals(null, counts.get('b'));
 		t.Fatal(err)
 	}
 	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecJSONDeserializeSObjectUsesSchemaFieldTypes(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account decoded = JSON.deserialize('{"Name":"Acme","RenewalDate__c":"2024-02-29","AnnualRevenue":12.5,"LastSeen__c":"2024-02-29T12:34:56Z","Score__c":7,"Active__c":true,"ParentId":"001B000001DVM9t"}', Account.class);
+Date renewal = decoded.RenewalDate__c;
+System.assertEquals(Date.newInstance(2024, 2, 29), renewal);
+Decimal revenue = decoded.AnnualRevenue;
+System.assertEquals(12.5, revenue);
+Datetime lastSeen = decoded.LastSeen__c;
+System.assertEquals(Datetime.newInstance(2024, 2, 29, 12, 34, 56), lastSeen);
+Integer score = decoded.Score__c;
+System.assertEquals(7, score);
+Boolean active = decoded.Active__c;
+System.assertEquals(true, active);
+Id parent = decoded.ParentId;
+System.assertEquals('001B000001DVM9t', parent.toString());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["RenewalDate__c"] = storage.Field{APIName: "RenewalDate__c", Type: storage.FieldDate}
+	account.Definition.Fields["AnnualRevenue"] = storage.Field{APIName: "AnnualRevenue", Type: storage.FieldDecimal}
+	account.Definition.Fields["LastSeen__c"] = storage.Field{APIName: "LastSeen__c", Type: storage.FieldDateTime}
+	account.Definition.Fields["Score__c"] = storage.Field{APIName: "Score__c", Type: storage.FieldInteger}
+	account.Definition.Fields["Active__c"] = storage.Field{APIName: "Active__c", Type: storage.FieldBoolean}
+	account.Definition.Fields["ParentId"] = storage.Field{APIName: "ParentId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
