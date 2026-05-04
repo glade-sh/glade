@@ -62,6 +62,16 @@ func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 			src:  `String s = 'abc'; s.nope();`,
 			want: `unsupported call "s.nope"`,
 		},
+		{
+			name: "search api",
+			src:  `Search.find('FIND {Acme} IN ALL FIELDS RETURNING Account(Id)');`,
+			want: `unsupported call "Search.find local search/SOSL surface"`,
+		},
+		{
+			name: "inline sosl find",
+			src:  `Object rows = [FIND 'Acme' IN ALL FIELDS RETURNING Account(Id)];`,
+			want: `unsupported call "SOSL/FIND local search surface"`,
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

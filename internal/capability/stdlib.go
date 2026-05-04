@@ -116,6 +116,7 @@ var stdlibEntries = []StdlibEntry{
 	{Area: "Set", API: "Set.removeAll", Status: StatusSupported, Notes: "Removes local List or Set members."},
 	{Area: "Set", API: "Set.retainAll", Status: StatusSupported, Notes: "Retains only local List or Set members."},
 	{Area: "Set", API: "Set.size", Status: StatusSupported, Notes: "Returns local set length."},
+	{Area: "Search", API: "Search.* / SOSL FIND", Status: StatusUnsupported, Notes: "Cloud search and SOSL execution are not locally modeled; calls return explicit UnsupportedFeature diagnostics."},
 	{Area: "Database", API: "Database.delete", Status: StatusSupported, Notes: "DML pipeline with result/error shapes for supported SObjects."},
 	{Area: "Database", API: "Database.getQueryLocator", Status: StatusPartial, Notes: "Supported SOQL only; executes eagerly for local batch scopes."},
 	{Area: "Database", API: "Database.insert", Status: StatusSupported, Notes: "DML pipeline with result/error shapes for supported SObjects."},

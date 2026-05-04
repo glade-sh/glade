@@ -924,6 +924,9 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return Null, fmt.Errorf("ambiguous overload for call %q", callee)
 		}
 	}
+	if strings.HasPrefix(callee, "Search.") {
+		return Null, unsupportedCallError(callee + " local search/SOSL surface")
+	}
 	switch callee {
 	case "System.assert":
 		if len(args) != 1 && len(args) != 2 {
@@ -2110,6 +2113,9 @@ func (vm *VM) executeSOQLRows(raw string, execResult *Result) ([]Value, error) {
 }
 
 func (vm *VM) executeSOQLRowsWithExpander(raw string, execResult *Result, expand func(string) (string, error)) ([]Value, error) {
+	if soql.IsSOSLFind(raw) {
+		return nil, unsupportedCallError("SOSL/FIND local search surface")
+	}
 	if vm.Org == nil {
 		return nil, fmt.Errorf("SOQL requires org state")
 	}
@@ -2119,6 +2125,9 @@ func (vm *VM) executeSOQLRowsWithExpander(raw string, execResult *Result, expand
 	queryText, err := expand(raw)
 	if err != nil {
 		return nil, newExceptionError("QueryException", err.Error())
+	}
+	if soql.IsSOSLFind(queryText) {
+		return nil, unsupportedCallError("SOSL/FIND local search surface")
 	}
 	result, err := soql.ParseAndExecuteAt(*vm.Org, queryText, vm.fakeNow)
 	if err != nil {
