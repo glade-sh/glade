@@ -1,0 +1,17 @@
+{
+  "name": "async-unsupported-context-edges",
+  "evidence": [
+    {"symbol": "AsyncInfo.getCurrentQueueableStackDepth", "kind": "exec"},
+    {"symbol": "AsyncInfo", "kind": "unsupported", "notes": "Local queueable stack metadata is not modeled."}
+  ],
+  "source": [
+    {"path": "anonymous.apex", "content": "AsyncInfo.getCurrentQueueableStackDepth();"}
+  ],
+  "command": {"kind": "exec", "args": ["AsyncInfo.getCurrentQueueableStackDepth();"]},
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"AsyncInfo.getCurrentQueueableStackDepth local async info surface\""
+    }
+  }
+}

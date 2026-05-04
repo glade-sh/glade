@@ -479,6 +479,64 @@ System.assertEquals(1, Limits.getScheduledJobs());
 	}
 }
 
+func TestExecExecuteBatchRejectsScopeAbovePlatformMaximum(t *testing.T) {
+	program, err := CompileAnonymous(`Database.executeBatch(new BatchWorker(), 2001);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{Name: "BatchWorker"}); err != nil {
+		t.Fatal(err)
+	}
+	_, err = machine.Execute(program)
+	if err == nil || !strings.Contains(err.Error(), "scope size must be at most 2000") {
+		t.Fatalf("err = %v, want scope maximum", err)
+	}
+}
+
+func TestExecAsyncUnsupportedEdgesAreTyped(t *testing.T) {
+	cases := []struct {
+		name string
+		src  string
+		want string
+	}{
+		{
+			name: "enqueue async options",
+			src:  `System.enqueueJob(new QueueWorker(), new AsyncOptions());`,
+			want: `unsupported call "System.enqueueJob AsyncOptions overload"`,
+		},
+		{
+			name: "async info",
+			src:  `AsyncInfo.getCurrentQueueableStackDepth();`,
+			want: `unsupported call "AsyncInfo.getCurrentQueueableStackDepth local async info surface"`,
+		},
+		{
+			name: "finalizer",
+			src:  `System.attachFinalizer(new QueueWorker());`,
+			want: `unsupported call "System.attachFinalizer local queueable finalizers"`,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			program, err := CompileAnonymous(tc.src)
+			if err != nil {
+				t.Fatal(err)
+			}
+			machine := New(nil)
+			machine.EnableTestContext()
+			if err := machine.RegisterClass(Class{Name: "QueueWorker"}); err != nil {
+				t.Fatal(err)
+			}
+			_, err = machine.Execute(program)
+			var runtimeErr *RuntimeError
+			if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != tc.want {
+				t.Fatalf("err = %#v, want UnsupportedFeature %q", err, tc.want)
+			}
+		})
+	}
+}
+
 func TestExecRunAsUserObjectScopesUserInfo(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.runAs(new User(Id = '005-user-a', ProfileId = '00e-profile-a', Username = 'user-a@example.test')) {

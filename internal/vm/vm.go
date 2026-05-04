@@ -1159,6 +1159,11 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		return Bool(false), nil
 	case "System.abortJob", "System.scheduleBatch":
 		return Null, unsupportedCallError(callee + " local async scheduling surface")
+	case "System.attachFinalizer":
+		return Null, unsupportedCallError("System.attachFinalizer local queueable finalizers")
+	case "AsyncInfo.getCurrentQueueableStackDepth", "AsyncInfo.getMaximumQueueableStackDepth",
+		"AsyncInfo.getMinimumQueueableDelayInMinutes", "AsyncInfo.hasMaxStackDepth":
+		return Null, unsupportedCallError(callee + " local async info surface")
 	case "Datetime.newInstance", "Datetime.newInstanceGmt":
 		if len(args) != 3 && len(args) != 6 {
 			return Null, fmt.Errorf("%s expects year, month, day[, hour, minute, second] integers", callee)
@@ -1694,6 +1699,9 @@ func (vm *VM) testStop(result *Result) (Value, error) {
 }
 
 func (vm *VM) enqueueJob(args []Value, result *Result) (Value, error) {
+	if len(args) == 2 {
+		return Null, unsupportedCallError("System.enqueueJob AsyncOptions overload")
+	}
 	if len(args) != 1 {
 		return Null, fmt.Errorf("System.enqueueJob expects 1 argument")
 	}
@@ -1742,6 +1750,9 @@ func (vm *VM) executeBatch(args []Value, result *Result) (Value, error) {
 		if batchSize <= 0 {
 			return Null, fmt.Errorf("Database.executeBatch scope size must be positive")
 		}
+		if batchSize > 2000 {
+			return Null, fmt.Errorf("Database.executeBatch scope size must be at most 2000")
+		}
 	}
 	if vm.testContext == nil {
 		return String("707000000000001"), nil
@@ -1787,7 +1798,7 @@ func (vm *VM) scheduleJob(args []Value, result *Result) (Value, error) {
 		"class": args[2].Type,
 		"name":  job.Name,
 	})
-	return String(job.ID), nil
+	return String(cronTriggerID(job.ID)), nil
 }
 
 func (vm *VM) drainAsync(result *Result) error {
@@ -1829,7 +1840,7 @@ func (vm *VM) runAsyncJob(job AsyncJob, result *Result) error {
 		if !ok {
 			return fmt.Errorf("async job %s has no execute method", job.Object.Type)
 		}
-		args := []Value{Object("QueueableContext")}
+		args := []Value{asyncContext("QueueableContext", job.ID)}
 		if len(target.Params) == 0 {
 			args = nil
 		}
@@ -1842,7 +1853,7 @@ func (vm *VM) runAsyncJob(job AsyncJob, result *Result) error {
 		if !ok {
 			return fmt.Errorf("scheduled job %s has no execute method", job.Object.Type)
 		}
-		args := []Value{Object("SchedulableContext")}
+		args := []Value{schedulableContext(job.ID)}
 		if len(target.Params) == 0 {
 			args = nil
 		}
@@ -1857,7 +1868,7 @@ func (vm *VM) runAsyncJob(job AsyncJob, result *Result) error {
 func (vm *VM) runBatchJob(job AsyncJob, result *Result) error {
 	var scope []Value
 	if start, ok := vm.resolveInstanceMethod(job.Object.Type, "start"); ok {
-		value, err := vm.callMethodWithReceiver(start, job.Object, batchArgs(start, "Database.BatchableContext"), result)
+		value, err := vm.callMethodWithReceiver(start, job.Object, batchArgs(start, "Database.BatchableContext", job.ID), result)
 		if err != nil {
 			return err
 		}
@@ -1872,14 +1883,15 @@ func (vm *VM) runBatchJob(job AsyncJob, result *Result) error {
 	}
 	if execute, ok := vm.resolveInstanceMethod(job.Object.Type, "execute"); ok {
 		chunks := batchChunks(scope, job.BatchSize)
+		vm.recordAsyncJobTotals(job, len(chunks), 0, 0)
 		for _, chunk := range chunks {
-			if _, err := vm.callMethodWithReceiver(execute, job.Object, batchExecuteArgs(execute, chunk), result); err != nil {
+			if _, err := vm.callMethodWithReceiver(execute, job.Object, batchExecuteArgs(execute, chunk, job.ID), result); err != nil {
 				return err
 			}
 		}
 	}
 	if finish, ok := vm.resolveInstanceMethod(job.Object.Type, "finish"); ok {
-		if _, err := vm.callMethodWithReceiver(finish, job.Object, batchArgs(finish, "Database.BatchableContext"), result); err != nil {
+		if _, err := vm.callMethodWithReceiver(finish, job.Object, batchArgs(finish, "Database.BatchableContext", job.ID), result); err != nil {
 			return err
 		}
 	}
@@ -1904,22 +1916,42 @@ func batchChunks(values []Value, size int) [][]Value {
 	return chunks
 }
 
-func batchArgs(method Method, contextType string) []Value {
+func batchArgs(method Method, contextType, jobID string) []Value {
 	if len(method.Params) == 0 {
 		return nil
 	}
-	return []Value{Object(contextType)}
+	return []Value{asyncContext(contextType, jobID)}
 }
 
-func batchExecuteArgs(method Method, scope []Value) []Value {
+func batchExecuteArgs(method Method, scope []Value, jobID string) []Value {
 	switch len(method.Params) {
 	case 0:
 		return nil
 	case 1:
 		return []Value{List(scope...)}
 	default:
-		return []Value{Object("Database.BatchableContext"), List(scope...)}
+		return []Value{asyncContext("Database.BatchableContext", jobID), List(scope...)}
 	}
+}
+
+func asyncContext(typeName, jobID string) Value {
+	ctx := Object(typeName)
+	if jobID != "" {
+		ctx.Fields["JobId"] = String(jobID)
+	}
+	return ctx
+}
+
+func schedulableContext(jobID string) Value {
+	ctx := Object("SchedulableContext")
+	if jobID != "" {
+		ctx.Fields["TriggerId"] = String(cronTriggerID(jobID))
+	}
+	return ctx
+}
+
+func cronTriggerID(jobID string) string {
+	return strings.Replace(jobID, "707", "08e", 1)
 }
 
 func (vm *VM) nextAsyncJobID() string {
@@ -2013,7 +2045,11 @@ func (vm *VM) recordAsyncJob(job AsyncJob, status, detail string) {
 	record.Fields["JobType"] = storage.StringValue(job.Kind)
 	record.Fields["ApexClassName"] = storage.StringValue(asyncClassName(job))
 	record.Fields["MethodName"] = storage.StringValue(asyncMethodName(job))
-	record.Fields["TotalJobItems"] = storage.IntegerValue(int64(asyncTotalItems(job)))
+	if existing, ok := record.Fields["TotalJobItems"]; ok && existing.Kind == storage.ValueInteger && existing.Integer > 0 && job.Kind == "BatchApex" {
+		record.Fields["TotalJobItems"] = existing
+	} else {
+		record.Fields["TotalJobItems"] = storage.IntegerValue(int64(asyncTotalItems(job)))
+	}
 	if status == "Completed" {
 		record.Fields["JobItemsProcessed"] = record.Fields["TotalJobItems"]
 		record.Fields["NumberOfErrors"] = storage.IntegerValue(0)
@@ -2025,13 +2061,30 @@ func (vm *VM) recordAsyncJob(job AsyncJob, status, detail string) {
 	vm.Org.Objects["AsyncApexJob"] = object
 }
 
+func (vm *VM) recordAsyncJobTotals(job AsyncJob, total, processed, errors int) {
+	if vm.Org == nil {
+		return
+	}
+	vm.ensureAsyncObjects()
+	object := vm.Org.Objects["AsyncApexJob"]
+	record := object.Records[storage.ID(job.ID)]
+	if record.ID == "" {
+		record = storage.Record{ID: storage.ID(job.ID), Object: "AsyncApexJob", Fields: make(map[string]storage.Value)}
+	}
+	record.Fields["TotalJobItems"] = storage.IntegerValue(int64(total))
+	record.Fields["JobItemsProcessed"] = storage.IntegerValue(int64(processed))
+	record.Fields["NumberOfErrors"] = storage.IntegerValue(int64(errors))
+	object.Records[record.ID] = record
+	vm.Org.Objects["AsyncApexJob"] = object
+}
+
 func (vm *VM) recordCronTrigger(job AsyncJob, state string) {
 	if vm.Org == nil {
 		return
 	}
 	vm.ensureAsyncObjects()
 	object := vm.Org.Objects["CronTrigger"]
-	id := storage.ID(strings.Replace(job.ID, "707", "08e", 1))
+	id := storage.ID(cronTriggerID(job.ID))
 	record := object.Records[id]
 	if record.ID == "" {
 		record = storage.Record{ID: id, Object: "CronTrigger", Fields: make(map[string]storage.Value)}
@@ -7892,6 +7945,28 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		return callIteratorMember(receiver, method, args)
 	}
 	switch receiver.Type {
+	case "QueueableContext", "BatchableContext", "Database.BatchableContext":
+		if method == "getJobId" {
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("%s.getJobId expects 0 arguments", receiver.Type)
+			}
+			if jobID, ok := receiver.Fields["JobId"]; ok {
+				return jobID, receiver, false, true, nil
+			}
+			return String(""), receiver, false, true, nil
+		}
+	case "SchedulableContext":
+		if method == "getTriggerId" {
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("SchedulableContext.getTriggerId expects 0 arguments")
+			}
+			if triggerID, ok := receiver.Fields["TriggerId"]; ok {
+				return triggerID, receiver, false, true, nil
+			}
+			return String(""), receiver, false, true, nil
+		}
+	case "System.FinalizerContext", "FinalizerContext":
+		return Null, receiver, false, true, unsupportedCallError(receiver.Type + "." + method + " local queueable finalizers")
 	case "JSONGenerator":
 		return callJSONGeneratorMember(receiver, method, args)
 	case "JSONParser":

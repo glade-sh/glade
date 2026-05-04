@@ -1,0 +1,40 @@
+{
+  "name": "async-context-job-record-edges",
+  "evidence": [
+    {"symbol": "QueueableContext.getJobId", "kind": "test"},
+    {"symbol": "Database.BatchableContext.getJobId", "kind": "test"},
+    {"symbol": "SchedulableContext.getTriggerId", "kind": "test"},
+    {"symbol": "AsyncApexJob.TotalJobItems", "kind": "test"},
+    {"symbol": "CronTrigger.CronExpression", "kind": "test"}
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/classes/ContextQueue.cls",
+      "content": "public class ContextQueue { public void execute(QueueableContext qc) { insert new Account(Name = qc.getJobId()); } }"
+    },
+    {
+      "path": "force-app/main/classes/ContextBatch.cls",
+      "content": "public class ContextBatch { public List<Integer> start(Database.BatchableContext bc) { return new List<Integer>{1, 2, 3}; } public void execute(Database.BatchableContext bc, List<Integer> scope) { insert new Account(Name = bc.getJobId()); } }"
+    },
+    {
+      "path": "force-app/main/classes/ContextSchedule.cls",
+      "content": "public class ContextSchedule { public void execute(SchedulableContext sc) { insert new Account(Name = sc.getTriggerId()); } }"
+    },
+    {
+      "path": "force-app/main/classes/AsyncContextEdgesTest.cls",
+      "content": "@isTest private class AsyncContextEdgesTest { @isTest static void recordsContextIdsAndAsyncRows() { Test.startTest(); String queueId = System.enqueueJob(new ContextQueue()); String batchId = Database.executeBatch(new ContextBatch(), 2); String schedId = System.schedule('nightly', '0 0 0 * * ?', new ContextSchedule()); System.assertEquals('707000000000001', queueId); System.assertEquals('707000000000002', batchId); System.assertEquals('08e000000000003', schedId); Test.stopTest(); Integer queueRows = [SELECT COUNT() FROM Account WHERE Name = '707000000000001']; Integer batchRows = [SELECT COUNT() FROM Account WHERE Name = '707000000000002']; Integer triggerRows = [SELECT COUNT() FROM Account WHERE Name = '08e000000000003']; System.assertEquals(1, queueRows); System.assertEquals(2, batchRows); System.assertEquals(1, triggerRows); List<AsyncApexJob> batches = [SELECT Id, Status, JobType, TotalJobItems, JobItemsProcessed, NumberOfErrors FROM AsyncApexJob WHERE Id = '707000000000002']; System.assertEquals(1, batches.size()); AsyncApexJob batch = batches.get(0); System.assertEquals('Completed', batch.Status); System.assertEquals('BatchApex', batch.JobType); System.assertEquals(2, batch.TotalJobItems); System.assertEquals(2, batch.JobItemsProcessed); System.assertEquals(0, batch.NumberOfErrors); List<CronTrigger> crons = [SELECT Id, State, CronExpression, CronJobDetail FROM CronTrigger]; System.assertEquals(1, crons.size()); CronTrigger cron = crons.get(0); System.assertEquals('Complete', cron.State); System.assertEquals('0 0 0 * * ?', cron.CronExpression); System.assertEquals('nightly', cron.CronJobDetail); } }"
+    }
+  ],
+  "command": {"kind": "test"},
+  "expected": {
+    "result": {"errors": 0, "failed": 0, "ok": true, "passed": 1, "total": 1}
+  }
+}

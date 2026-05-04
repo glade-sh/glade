@@ -11,6 +11,11 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | ApexPages | `ApexPages.currentPage` | `supported` | Returns a deterministic local PageReference. |
 | ApexPages | `ApexPages.getMessages` | `supported` | Returns VM-local page messages. |
 | ApexPages | `ApexPages.hasMessages` | `supported` | Checks VM-local page messages. |
+| Async | `AsyncApexJob / CronTrigger local records` | `partial` | Test-context enqueue/drain creates deterministic local AsyncApexJob rows and CronTrigger rows for supported future, queueable, batch, and scheduled jobs; broader platform lifecycle fields are not modeled. |
+| Async | `AsyncInfo / AsyncOptions / finalizers` | `unsupported` | Queueable stack metadata, AsyncOptions enqueue overloads, and queueable finalizers return explicit UnsupportedFeature diagnostics. |
+| Async | `BatchableContext.getJobId` | `partial` | Returns the deterministic local AsyncApexJob Id while supported batch start/execute/finish methods drain under Test.stopTest. |
+| Async | `QueueableContext.getJobId` | `partial` | Returns the deterministic local AsyncApexJob Id while supported queueables drain under Test.stopTest. |
+| Async | `SchedulableContext.getTriggerId` | `partial` | Returns the deterministic local CronTrigger Id while supported scheduled jobs drain under Test.stopTest. |
 | Blob | `Blob.size` | `supported` | Returns local Blob byte length. |
 | Blob | `Blob.toString` | `supported` | Returns UTF-8 local Blob bytes as a string and rejects invalid UTF-8 data. |
 | Blob | `Blob.valueOf` | `supported` | Stores the string bytes in a local Blob value. |
