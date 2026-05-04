@@ -1,0 +1,28 @@
+{
+  "name": "async-schedule-batch-unsupported",
+  "evidence": [
+    {
+      "symbol": "Database.scheduleBatch",
+      "kind": "exec",
+      "notes": "scheduleBatch is pinned to a typed unsupported diagnostic instead of pretending to schedule deferred batch work."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Database.scheduleBatch(null, 'nightly', 1, 200);"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Database.scheduleBatch(null, 'nightly', 1, 200);"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"Database.scheduleBatch local async scheduling surface\""
+    }
+  }
+}

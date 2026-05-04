@@ -832,6 +832,88 @@ func TestExecExecuteBatchRejectsScopeAbovePlatformMaximum(t *testing.T) {
 	}
 }
 
+func TestExecAbortJobRemovesQueuedLocalJobs(t *testing.T) {
+	program, err := CompileAnonymous(`
+Test.startTest();
+String queueId = System.enqueueJob(new QueueWorker());
+String scheduleId = System.schedule('nightly', '0 0 0 * * ?', new ScheduledWorker());
+System.abortJob(queueId);
+System.abortJob(scheduleId);
+Test.stopTest();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	for _, class := range []Class{{Name: "QueueWorker"}, {Name: "ScheduledWorker"}} {
+		if err := machine.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+	jobs := org.Objects["AsyncApexJob"].Records
+	if len(jobs) != 2 {
+		t.Fatalf("AsyncApexJob records = %d, want 2", len(jobs))
+	}
+	for id, record := range jobs {
+		status := record.Fields["Status"]
+		if status.Kind != storage.ValueString || status.String != "Aborted" {
+			t.Fatalf("job %s status = %#v, want Aborted", id, status)
+		}
+	}
+	cron := org.Objects["CronTrigger"].Records[storage.ID("08e000000000002")]
+	if state := cron.Fields["State"]; state.Kind != storage.ValueString || state.String != "Deleted" {
+		t.Fatalf("cron state = %#v, want Deleted", state)
+	}
+}
+
+func TestExecAbortJobCompletedAndUnknownRecordsAreTypedUnsupported(t *testing.T) {
+	cases := []struct {
+		name string
+		src  string
+		want string
+	}{
+		{
+			name: "completed",
+			src:  `Test.startTest(); String id = System.enqueueJob(new QueueWorker()); Test.stopTest(); System.abortJob(id);`,
+			want: `unsupported call "System.abortJob completed local async records"`,
+		},
+		{
+			name: "unknown",
+			src:  `System.abortJob('707000000999999');`,
+			want: `unsupported call "System.abortJob unknown local async records"`,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			program, err := CompileAnonymous(tc.src)
+			if err != nil {
+				t.Fatal(err)
+			}
+			machine := New(nil)
+			org := storage.NewOrgState()
+			machine.SetOrg(&org)
+			machine.EnableTestContext()
+			if err := machine.RegisterClass(Class{Name: "QueueWorker"}); err != nil {
+				t.Fatal(err)
+			}
+			if err := machine.RegisterMethod(Method{Name: "QueueWorker.execute", ClassName: "QueueWorker"}); err != nil {
+				t.Fatal(err)
+			}
+			_, err = machine.Execute(program)
+			var runtimeErr *RuntimeError
+			if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != tc.want {
+				t.Fatalf("err = %#v, want UnsupportedFeature %q", err, tc.want)
+			}
+		})
+	}
+}
+
 func TestExecAsyncUnsupportedEdgesAreTyped(t *testing.T) {
 	cases := []struct {
 		name string
@@ -862,6 +944,11 @@ func TestExecAsyncUnsupportedEdgesAreTyped(t *testing.T) {
 			name: "finalizer",
 			src:  `System.attachFinalizer(new QueueWorker());`,
 			want: `unsupported call "System.attachFinalizer local queueable finalizers"`,
+		},
+		{
+			name: "schedule batch",
+			src:  `Database.scheduleBatch(null, 'nightly', 1, 200);`,
+			want: `unsupported call "Database.scheduleBatch local async scheduling surface"`,
 		},
 	}
 	for _, tc := range cases {

@@ -235,6 +235,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
   schedule, chained Queueable, `AsyncApexJob`, and `CronTrigger` behavior.
 - [x] Pin unsupported `AsyncOptions` mutator/accessor calls with typed
   diagnostics and black-box fixture coverage.
+- [x] Support local `System.abortJob` for queued Queueable/Scheduled test jobs
+  before `Test.stopTest`, with typed diagnostics for completed/unknown aborts.
 
 ## 4. SObjects, SOQL, DML, And Triggers
 

@@ -337,7 +337,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | System | `System.assert` | `supported` | Assertion failure returns runtime error; Object and null message values use deterministic local string conversion. |
 | System | `System.assertEquals` | `supported` | Assertion failure returns runtime error with deterministic local expected/actual text and Object/null message conversion. |
 | System | `System.assertNotEquals` | `supported` | Assertion failure returns runtime error with deterministic local value text and Object/null message conversion. |
-| System | `System.asyncScheduling` | `unsupported` | System.abortJob and scheduleBatch return explicit unsupported diagnostics; broader local async lifecycle control is not modeled. |
+| System | `System.asyncScheduling` | `partial` | System.abortJob removes queued local Queueable and Schedulable jobs before Test.stopTest; completed and unknown aborts plus scheduleBatch return explicit unsupported diagnostics. Broader async lifecycle control is not modeled. |
 | System | `System.currentTimeMillis` | `partial` | Returns deterministic VM-clock epoch milliseconds. |
 | System | `System.debug` | `supported` | One-argument and LoggingLevel overloads are collected in result debug output; null, LoggingLevel, and modeled Exception values use deterministic string forms; log framework text parity is not claimed. |
 | System | `System.isBatch` | `partial` | Returns false in the local non-async VM context. |
