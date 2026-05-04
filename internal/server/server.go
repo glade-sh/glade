@@ -175,7 +175,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case len(rest) >= 1 && rest[0] == "tooling":
 		s.handleTooling(w, r, parts[2], rest[1:])
 	case len(rest) >= 1 && rest[0] == "jobs":
-		s.handleBulkJobs(w, r, rest[1:])
+		s.handleBulkJobs(w, r, parts[2], rest[1:])
 	case len(rest) >= 1 && rest[0] == "composite":
 		s.handleComposite(w, r, parts[2], rest[1:])
 	case len(rest) >= 1 && rest[0] == "oaer":
@@ -305,7 +305,8 @@ func (s *Server) handleObject(w http.ResponseWriter, r *http.Request, version st
 		}
 		writeSalesforceError(w, errUnsupportedFeature, "SObject quick action metadata and default values are not modeled in the local server")
 	case isListViewsRoute(parts):
-		if _, ok := s.Org.Objects[objectName]; !ok {
+		object, ok := s.Org.Objects[objectName]
+		if !ok {
 			writeSalesforceError(w, errUnknownObject)
 			return
 		}
@@ -313,7 +314,11 @@ func (s *Server) handleObject(w http.ResponseWriter, r *http.Request, version st
 			writeMethodNotAllowed(w, http.MethodGet)
 			return
 		}
-		writeSalesforceError(w, errUnsupportedFeature, "SObject list view metadata and result execution are not modeled in the local server")
+		if isListViewCollectionRoute(parts) {
+			writeJSON(w, http.StatusOK, listViewsPayload(object.Definition, version))
+			return
+		}
+		writeSalesforceError(w, errUnsupportedFeature, "SObject list view describe and result execution are not modeled in the local server; collection discovery returns an empty local stub")
 	case len(parts) == 2 && parts[1] == "recent" && r.Method == http.MethodGet:
 		object, ok := s.Org.Objects[objectName]
 		if !ok {
@@ -737,6 +742,12 @@ func (s *Server) handleLimits(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleTooling(w http.ResponseWriter, r *http.Request, version string, parts []string) {
 	switch {
+	case len(parts) == 0:
+		if r.Method != http.MethodGet {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
+		writeJSON(w, http.StatusOK, toolingDiscoveryPayload(version))
 	case len(parts) == 1 && parts[0] == "executeAnonymous":
 		s.handleExecuteAnonymous(w, r)
 	case len(parts) == 1 && (parts[0] == "query" || parts[0] == "queryAll"):
@@ -804,7 +815,10 @@ func isToolingMetadataObject(name string) bool {
 		"ApexCodeCoverageAggregate",
 		"ApexOrgWideCoverage",
 		"ContainerAsyncRequest",
-		"MetadataContainer":
+		"MetadataContainer",
+		"ApexTestRunResult",
+		"ApexTestSuite",
+		"ApexTestSuiteMembership":
 		return true
 	default:
 		return false
@@ -821,9 +835,13 @@ func writeUnsupportedToolingMetadata(w http.ResponseWriter, r *http.Request, obj
 	writeMethodNotAllowed(w, allowed...)
 }
 
-func (s *Server) handleBulkJobs(w http.ResponseWriter, r *http.Request, parts []string) {
+func (s *Server) handleBulkJobs(w http.ResponseWriter, r *http.Request, version string, parts []string) {
 	if len(parts) < 1 {
-		writeSalesforceError(w, errUnknownEndpoint)
+		if r.Method != http.MethodGet {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
+		writeJSON(w, http.StatusOK, bulkJobsDiscoveryPayload(version))
 		return
 	}
 	switch parts[0] {
@@ -1752,14 +1770,25 @@ func (s *Server) identityPayload(r *http.Request, pathUserID storage.ID) map[str
 	}
 	base := "http://" + r.Host
 	orgID := nonEmpty(s.Org.OrgID, "00D000000000001")
+	userID := string(user.ID)
+	identityURL := base + "/id/" + orgID + "/" + userID
 	return map[string]any{
-		"id":              base + "/id/" + orgID + "/" + string(user.ID),
+		"id":              identityURL,
 		"organization_id": orgID,
 		"user_id":         user.ID,
 		"username":        username,
 		"display_name":    displayName,
 		"active":          active,
 		"user_type":       userType,
+		"urls": map[string]any{
+			"enterprise": base + "/services/Soap/c/61.0/" + orgID,
+			"metadata":   base + "/services/Soap/m/61.0/" + orgID,
+			"partner":    base + "/services/Soap/u/61.0/" + orgID,
+			"rest":       base + "/services/data/v61.0/",
+			"sobjects":   base + "/services/data/v61.0/sobjects/",
+			"search":     base + "/services/data/v61.0/search/",
+			"query":      base + "/services/data/v61.0/query/",
+		},
 	}
 }
 
@@ -1774,6 +1803,14 @@ func (s *Server) userInfoPayload(r *http.Request) map[string]any {
 		"preferred_username": identity["username"],
 		"name":               identity["display_name"],
 		"email":              userString(user, "Email", username),
+		"email_verified":     true,
+		"profile":            identity["id"],
+		"picture":            nil,
+		"website":            nil,
+		"zoneinfo":           "UTC",
+		"locale":             "en_US",
+		"updated_at":         nil,
+		"urls":               identity["urls"],
 	}
 }
 
@@ -1826,10 +1863,11 @@ func isQuickActionsRoute(parts []string) bool {
 }
 
 func isListViewsRoute(parts []string) bool {
-	if len(parts) == 2 {
-		return parts[1] == "listviews"
-	}
-	return len(parts) == 4 && parts[1] == "listviews" && (parts[3] == "describe" || parts[3] == "results")
+	return isListViewCollectionRoute(parts) || (len(parts) == 4 && parts[1] == "listviews" && (parts[3] == "describe" || parts[3] == "results"))
+}
+
+func isListViewCollectionRoute(parts []string) bool {
+	return len(parts) == 2 && parts[1] == "listviews"
 }
 
 func isRowTemplatePlaceholder(id storage.ID) bool {
@@ -1995,6 +2033,17 @@ func labelOrFallback(label, fallback string) string {
 		return label
 	}
 	return fallback
+}
+
+func listViewsPayload(def storage.ObjectDefinition, version string) map[string]any {
+	return map[string]any{
+		"done":       true,
+		"size":       0,
+		"listviews":  []map[string]any{},
+		"objectType": def.APIName,
+		"url":        "/services/data/" + version + "/sobjects/" + def.APIName + "/listviews",
+		"message":    "List view metadata is not modeled; returning an empty local stub.",
+	}
 }
 
 func compactLayoutsPayload(def storage.ObjectDefinition) map[string]any {
@@ -2550,6 +2599,28 @@ func recentAllPayload(org storage.OrgState, version string, limit int) []map[str
 		out = out[:limit]
 	}
 	return out
+}
+
+func toolingDiscoveryPayload(version string) map[string]string {
+	base := "/services/data/" + version + "/tooling"
+	return map[string]string{
+		"completions":          base + "/completions",
+		"executeAnonymous":     base + "/executeAnonymous",
+		"query":                base + "/query",
+		"queryAll":             base + "/queryAll",
+		"runTestsAsynchronous": base + "/runTestsAsynchronous",
+		"runTestsSynchronous":  base + "/runTestsSynchronous",
+		"search":               base + "/search",
+		"sobjects":             base + "/sobjects",
+	}
+}
+
+func bulkJobsDiscoveryPayload(version string) map[string]string {
+	base := "/services/data/" + version + "/jobs"
+	return map[string]string{
+		"query":  base + "/query",
+		"ingest": base + "/ingest",
+	}
 }
 
 func resourceDiscoveryPayload(version string) map[string]string {

@@ -37,6 +37,36 @@
       "contains": ["\"actions\":\"/services/data/v61.0/actions\"", "\"analytics\":\"/services/data/v61.0/analytics\"", "\"appMenu\":\"/services/data/v61.0/appMenu\"", "\"apps\":\"/services/data/v61.0/apps\"", "\"chatter\":\"/services/data/v61.0/chatter\"", "\"composite\":\"/services/data/v61.0/composite\"", "\"connect\":\"/services/data/v61.0/connect\"", "\"jobs\":\"/services/data/v61.0/jobs\"", "\"metadata\":\"/services/data/v61.0/metadata\"", "\"process\":\"/services/data/v61.0/process\"", "\"quickActions\":\"/services/data/v61.0/quickActions\"", "\"recent\":\"/services/data/v61.0/recent\"", "\"search\":\"/services/data/v61.0/search\"", "\"support\":\"/services/data/v61.0/support\"", "\"tabs\":\"/services/data/v61.0/tabs\"", "\"theme\":\"/services/data/v61.0/theme\"", "\"wave\":\"/services/data/v61.0/wave\""]
     },
     {
+      "name": "jobs-discovery",
+      "method": "GET",
+      "path": "/services/data/v61.0/jobs",
+      "status": 200,
+      "contains": ["\"query\":\"/services/data/v61.0/jobs/query\"", "\"ingest\":\"/services/data/v61.0/jobs/ingest\""]
+    },
+    {
+      "name": "jobs-discovery-method-not-allowed",
+      "method": "POST",
+      "path": "/services/data/v61.0/jobs",
+      "body": "{}",
+      "status": 405,
+      "contains": ["METHOD_NOT_ALLOWED", "method not allowed"]
+    },
+    {
+      "name": "tooling-discovery",
+      "method": "GET",
+      "path": "/services/data/v61.0/tooling",
+      "status": 200,
+      "contains": ["\"executeAnonymous\":\"/services/data/v61.0/tooling/executeAnonymous\"", "\"runTestsSynchronous\":\"/services/data/v61.0/tooling/runTestsSynchronous\"", "\"sobjects\":\"/services/data/v61.0/tooling/sobjects\""]
+    },
+    {
+      "name": "tooling-discovery-method-not-allowed",
+      "method": "POST",
+      "path": "/services/data/v61.0/tooling",
+      "body": "{}",
+      "status": 405,
+      "contains": ["METHOD_NOT_ALLOWED", "method not allowed"]
+    },
+    {
       "name": "versions-method-not-allowed",
       "method": "POST",
       "path": "/services/data",
@@ -78,6 +108,14 @@
       "headers": {"Authorization": "Bearer 005000000000002"},
       "status": 200,
       "contains": ["005000000000002", "ada@example.test", "ada.alias@example.test", "Ada Trail"]
+    },
+    {
+      "name": "userinfo-openid-local-shape",
+      "method": "GET",
+      "path": "/services/oauth2/userinfo",
+      "headers": {"Authorization": "Bearer 005000000000002"},
+      "status": 200,
+      "contains": ["\"email_verified\":true", "\"zoneinfo\":\"UTC\"", "\"locale\":\"en_US\"", "\"profile\":", "\"urls\":"]
     },
     {
       "name": "userinfo-method-not-allowed",
@@ -123,6 +161,13 @@
       "path": "/id/00D000000000001/005000000000001",
       "status": 200,
       "contains": ["user_id", "organization_id"]
+    },
+    {
+      "name": "identity-urls-shape",
+      "method": "GET",
+      "path": "/id/00D000000000001/005000000000002",
+      "status": 200,
+      "contains": ["\"urls\":", "\"enterprise\":", "\"sobjects\":", "\"rest\":"]
     },
     {
       "name": "identity-method-not-allowed",
@@ -303,25 +348,25 @@
       "contains": ["NOT_FOUND", "unknown object"]
     },
     {
-      "name": "listviews-unsupported",
+      "name": "listviews-empty-stub",
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Account/listviews",
-      "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "list view metadata"]
+      "status": 200,
+      "contains": ["\"done\":true", "\"size\":0", "\"listviews\":[]", "\"objectType\":\"Account\"", "empty local stub"]
     },
     {
       "name": "listview-describe-unsupported",
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Account/listviews/00B000000000001/describe",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "list view metadata"]
+      "contains": ["UNSUPPORTED_FEATURE", "list view describe and result execution"]
     },
     {
       "name": "listview-results-unsupported",
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Account/listviews/00B000000000001/results",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "list view metadata"]
+      "contains": ["UNSUPPORTED_FEATURE", "list view describe and result execution"]
     },
     {
       "name": "listviews-method-not-allowed",
@@ -755,6 +800,20 @@
       "contains": ["UNSUPPORTED_FEATURE", "Tooling MetadataContainer object record"]
     },
     {
+      "name": "tooling-apextestrunresult-collection-unsupported",
+      "method": "GET",
+      "path": "/services/data/v61.0/tooling/sobjects/ApexTestRunResult",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "Tooling ApexTestRunResult object collection"]
+    },
+    {
+      "name": "tooling-apextestsuite-record-unsupported",
+      "method": "GET",
+      "path": "/services/data/v61.0/tooling/sobjects/ApexTestSuite/05F000000000001",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "Tooling ApexTestSuite object record"]
+    },
+    {
       "name": "tooling-run-tests-sync-unsupported",
       "method": "POST",
       "path": "/services/data/v61.0/tooling/runTestsSynchronous",
@@ -783,6 +842,13 @@
       "body": "{\"operation\":\"query\",\"query\":\"SELECT Id FROM Account\"}",
       "status": 501,
       "contains": ["UNSUPPORTED_FEATURE", "Bulk API v2 query jobs"]
+    },
+    {
+      "name": "bulk-jobs-discovery",
+      "method": "GET",
+      "path": "/services/data/v61.0/jobs",
+      "status": 200,
+      "contains": ["\"query\":\"/services/data/v61.0/jobs/query\"", "\"ingest\":\"/services/data/v61.0/jobs/ingest\""]
     },
     {
       "name": "bulk-query-method-not-allowed",
@@ -923,8 +989,8 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 120,
-      "statuses": [200, 200, 200, 405, 405, 200, 200, 200, 200, 405, 501, 501, 501, 501, 200, 405, 201, 200, 200, 200, 200, 200, 400, 200, 200, 200, 405, 404, 501, 501, 501, 501, 405, 404, 501, 501, 501, 501, 405, 404, 501, 501, 501, 405, 404, 400, 200, 501, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 400, 200, 200, 200, 405, 200, 200, 200, 201, 204, 200, 201, 204, 200, 200, 204, 400, 501, 501, 200, 200, 200, 200, 501, 405, 501, 405, 501, 501, 405, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 405, 501, 501, 405, 501, 405, 501, 501, 405, 501, 501, 501, 404, 404, 200, 200, 201],
+      "requests": 129,
+      "statuses": [200, 200, 200, 200, 405, 200, 405, 405, 405, 200, 200, 200, 200, 200, 405, 501, 501, 501, 501, 200, 200, 405, 201, 200, 200, 200, 200, 200, 400, 200, 200, 200, 405, 404, 501, 501, 501, 501, 405, 404, 501, 501, 501, 501, 405, 404, 200, 501, 501, 405, 404, 400, 200, 501, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 400, 200, 200, 200, 405, 200, 200, 200, 201, 204, 200, 201, 204, 200, 200, 204, 400, 501, 501, 200, 200, 200, 200, 501, 405, 501, 405, 501, 501, 405, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 200, 405, 501, 501, 405, 501, 405, 501, 501, 405, 501, 501, 501, 404, 404, 200, 200, 201],
       "users": 2
     }
   }

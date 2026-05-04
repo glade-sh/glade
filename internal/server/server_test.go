@@ -1016,14 +1016,33 @@ func TestSObjectListViewRoutes(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
 
+	collection := httptest.NewRecorder()
+	handler.ServeHTTP(collection, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/listviews", nil))
+	if collection.Code != http.StatusOK {
+		t.Fatalf("listviews collection status = %d body=%s", collection.Code, collection.Body.String())
+	}
+	var payload struct {
+		Done      bool             `json:"done"`
+		Size      int              `json:"size"`
+		Listviews []map[string]any `json:"listviews"`
+		Object    string           `json:"objectType"`
+		URL       string           `json:"url"`
+		Message   string           `json:"message"`
+	}
+	if err := json.Unmarshal(collection.Body.Bytes(), &payload); err != nil {
+		t.Fatal(err)
+	}
+	if !payload.Done || payload.Size != 0 || len(payload.Listviews) != 0 || payload.Object != "Account" || payload.URL != "/services/data/v61.0/sobjects/Account/listviews" || !strings.Contains(payload.Message, "empty local stub") {
+		t.Fatalf("listviews payload = %#v", payload)
+	}
+
 	for _, path := range []string{
-		"/services/data/v61.0/sobjects/Account/listviews",
 		"/services/data/v61.0/sobjects/Account/listviews/00B000000000001/describe",
 		"/services/data/v61.0/sobjects/Account/listviews/00B000000000001/results",
 	} {
 		rec := httptest.NewRecorder()
 		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
-		assertSalesforceError(t, rec, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", "list view metadata")
+		assertSalesforceError(t, rec, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", "list view describe and result execution")
 	}
 
 	for _, path := range []string{
@@ -1445,6 +1464,49 @@ func TestRESTSearchRejectsNonGETMethod(t *testing.T) {
 	}
 }
 
+func TestToolingAndBulkJobsDiscoveryRoutes(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	tooling := httptest.NewRecorder()
+	handler.ServeHTTP(tooling, httptest.NewRequest(http.MethodGet, "/services/data/v60.0/tooling", nil))
+	if tooling.Code != http.StatusOK {
+		t.Fatalf("tooling discovery status = %d body=%s", tooling.Code, tooling.Body.String())
+	}
+	var toolingPayload map[string]string
+	if err := json.Unmarshal(tooling.Body.Bytes(), &toolingPayload); err != nil {
+		t.Fatal(err)
+	}
+	if toolingPayload["executeAnonymous"] != "/services/data/v60.0/tooling/executeAnonymous" || toolingPayload["sobjects"] != "/services/data/v60.0/tooling/sobjects" || toolingPayload["runTestsSynchronous"] != "/services/data/v60.0/tooling/runTestsSynchronous" {
+		t.Fatalf("tooling discovery payload = %#v", toolingPayload)
+	}
+	toolingPost := httptest.NewRecorder()
+	handler.ServeHTTP(toolingPost, httptest.NewRequest(http.MethodPost, "/services/data/v60.0/tooling", nil))
+	assertSalesforceError(t, toolingPost, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
+	if got := toolingPost.Header().Get("Allow"); got != http.MethodGet {
+		t.Fatalf("tooling Allow = %q", got)
+	}
+
+	jobs := httptest.NewRecorder()
+	handler.ServeHTTP(jobs, httptest.NewRequest(http.MethodGet, "/services/data/v60.0/jobs", nil))
+	if jobs.Code != http.StatusOK {
+		t.Fatalf("jobs discovery status = %d body=%s", jobs.Code, jobs.Body.String())
+	}
+	var jobsPayload map[string]string
+	if err := json.Unmarshal(jobs.Body.Bytes(), &jobsPayload); err != nil {
+		t.Fatal(err)
+	}
+	if jobsPayload["query"] != "/services/data/v60.0/jobs/query" || jobsPayload["ingest"] != "/services/data/v60.0/jobs/ingest" {
+		t.Fatalf("jobs discovery payload = %#v", jobsPayload)
+	}
+	jobsPost := httptest.NewRecorder()
+	handler.ServeHTTP(jobsPost, httptest.NewRequest(http.MethodPost, "/services/data/v60.0/jobs", nil))
+	assertSalesforceError(t, jobsPost, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
+	if got := jobsPost.Header().Get("Allow"); got != http.MethodGet {
+		t.Fatalf("jobs Allow = %q", got)
+	}
+}
+
 func TestToolingCommonRoutesReturnStableUnsupportedErrors(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
@@ -1463,6 +1525,8 @@ func TestToolingCommonRoutesReturnStableUnsupportedErrors(t *testing.T) {
 		{method: http.MethodPost, path: "/services/data/v61.0/tooling/sobjects/TraceFlag", message: "Tooling TraceFlag object collection"},
 		{method: http.MethodGet, path: "/services/data/v61.0/tooling/sobjects/ApexTestResult/07M000000000001", message: "Tooling ApexTestResult object record"},
 		{method: http.MethodPatch, path: "/services/data/v61.0/tooling/sobjects/ContainerAsyncRequest/1dr000000000001", message: "Tooling ContainerAsyncRequest object record"},
+		{method: http.MethodGet, path: "/services/data/v61.0/tooling/sobjects/ApexTestRunResult", message: "Tooling ApexTestRunResult object collection"},
+		{method: http.MethodGet, path: "/services/data/v61.0/tooling/sobjects/ApexTestSuite/05F000000000001", message: "Tooling ApexTestSuite object record"},
 		{method: http.MethodPost, path: "/services/data/v61.0/tooling/runTestsAsynchronous", message: "Tooling runTestsAsynchronous"},
 		{method: http.MethodPost, path: "/services/data/v61.0/tooling/runTestsSynchronous", message: "Tooling runTestsSynchronous"},
 		{method: http.MethodGet, path: "/services/data/v61.0/tooling/coverage", message: "Tooling ApexCodeCoverage"},
@@ -2255,6 +2319,46 @@ func TestLocalUserContextUsesLexicographicUserWhenDefaultMissing(t *testing.T) {
 	}
 	if payload["user_id"] != "005000000000100" || payload["preferred_username"] != "alpha@example.test" {
 		t.Fatalf("userinfo payload = %#v", payload)
+	}
+}
+
+func TestIdentityAndUserInfoExposeConservativeOpenIDShape(t *testing.T) {
+	org := testOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	addUser(&org, "005000000000123", "ada@example.test", "ada.alias@example.test", "Ada Trail")
+	handler := New(&org)
+
+	req := httptest.NewRequest(http.MethodGet, "/services/oauth2/userinfo", nil)
+	req.Header.Set("Authorization", "Bearer 005000000000123")
+	userinfo := httptest.NewRecorder()
+	handler.ServeHTTP(userinfo, req)
+	if userinfo.Code != http.StatusOK {
+		t.Fatalf("userinfo status = %d body=%s", userinfo.Code, userinfo.Body.String())
+	}
+	var userPayload map[string]any
+	if err := json.Unmarshal(userinfo.Body.Bytes(), &userPayload); err != nil {
+		t.Fatal(err)
+	}
+	if userPayload["sub"] != "005000000000123" || userPayload["profile"] == "" || userPayload["email_verified"] != true || userPayload["zoneinfo"] != "UTC" || userPayload["locale"] != "en_US" {
+		t.Fatalf("userinfo OpenID payload = %#v", userPayload)
+	}
+	if urls, ok := userPayload["urls"].(map[string]any); !ok || urls["rest"] == "" || urls["query"] == "" {
+		t.Fatalf("userinfo urls = %#v", userPayload["urls"])
+	}
+
+	identityReq := httptest.NewRequest(http.MethodGet, "/id/00D000000000001/005000000000123", nil)
+	identity := httptest.NewRecorder()
+	handler.ServeHTTP(identity, identityReq)
+	if identity.Code != http.StatusOK {
+		t.Fatalf("identity status = %d body=%s", identity.Code, identity.Body.String())
+	}
+	var identityPayload map[string]any
+	if err := json.Unmarshal(identity.Body.Bytes(), &identityPayload); err != nil {
+		t.Fatal(err)
+	}
+	urls, ok := identityPayload["urls"].(map[string]any)
+	if !ok || urls["enterprise"] == "" || urls["sobjects"] == "" || identityPayload["active"] != true {
+		t.Fatalf("identity payload = %#v", identityPayload)
 	}
 }
 

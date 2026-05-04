@@ -666,6 +666,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     and lexicographic fallback without enforcing auth globally.
   - [x] Thread selected server user context into Tooling executeAnonymous
     without enabling Apex test-only context.
+  - [x] Add conservative OpenID-style userinfo and identity URL shapes while
+    preserving deterministic local user selection and no token issuance.
 - [ ] Expand Salesforce-like error response shapes and status codes.
   - [x] Return Salesforce-shaped `METHOD_NOT_ALLOWED` errors with `Allow: GET`
     for discovery, identity, and userinfo routes instead of accidental success.
@@ -678,6 +680,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     unsupported errors for unmodeled jobs.
   - [x] Advertise common unsupported top-level REST namespace links only for
     routes that return deterministic unsupported errors.
+  - [x] Return conservative discovery payloads for advertised Tooling and Bulk
+    Jobs roots instead of falling through to unknown routes.
 - [ ] Expand SObject REST resources: describe, layout-adjacent metadata where
   useful, recent, query, queryAll, and record CRUD edge cases.
   - [x] Return Salesforce-like object resource metadata for
@@ -700,8 +704,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
     advertised object resource URLs.
   - [x] Return explicit unsupported default-values responses and malformed-ID
     errors for literal row-template placeholders advertised by SObject resources.
-  - [x] Add explicit list-view unsupported responses and advertised list-view
-    object URLs for common `/listviews`, `/describe`, and `/results` probes.
+  - [x] Add an empty list-view collection stub plus explicit unsupported
+    describe/results responses and advertised list-view object URLs for common
+    `/listviews`, `/describe`, and `/results` probes.
   - [x] Add explicit object-scoped quick action unsupported responses for
     collection, detail, and default-value probes with advertised object URLs.
   - [x] Add conservative `/sobjects/{Object}/updated` and
@@ -732,6 +737,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     explicit unsupported errors for Tooling search probes.
   - [x] Return Tooling `query`/`queryAll` pagination continuations under
     `/tooling/query/{locator}` with GET-only queryMore method boundaries.
+  - [x] Return a conservative Tooling root discovery payload and pin Apex test
+    run/suite Tooling records as explicit unsupported local stubs.
 - [ ] Add more REST resources used by local integrations and editor tooling.
   - [x] Return a deterministic, conservative `/limits` payload with common
     Salesforce limit names and stable `Max`/`Remaining` fields for local client
@@ -768,6 +775,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     unprocessedrecords probes.
   - [x] Harden Bulk API v2 method boundaries for common query and ingest route
     shapes while preserving explicit unsupported responses for allowed methods.
+  - [x] Return a conservative Bulk Jobs root discovery payload for query and
+    ingest families while keeping job execution unsupported.
 - [ ] Ensure anonymous Apex runs against the same persistent server database,
   transaction boundaries, user context, and limits.
   - [x] Add black-box server fixture evidence that Tooling
@@ -821,6 +830,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Cover SObject approval/named layout stubs, compact layout describe
     aliases, object-scoped quick action stubs, and REST namespace method
     boundaries in the server black-box fixture.
+  - [x] Cover Tooling/Bulk root discovery, conservative OpenID identity shapes,
+    empty list-view collection stubs, and Apex test Tooling record stubs in the
+    server black-box fixture.
 
 ## 9. Compatibility, Hardening, And Release
 
