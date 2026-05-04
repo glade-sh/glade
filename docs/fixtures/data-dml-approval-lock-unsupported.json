@@ -1,0 +1,28 @@
+{
+  "name": "data-dml-approval-lock-unsupported",
+  "evidence": [
+    {
+      "symbol": "Approval.lock",
+      "kind": "exec",
+      "notes": "Approval lock helpers are not locally modeled; the VM returns a stable UnsupportedFeature diagnostic instead of faking row workflow state."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Approval.lock(new Account(Name = 'Acme'));"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Approval.lock(new Account(Name = 'Acme'));"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"Approval.lock local approval process and lock surface\""
+    }
+  }
+}

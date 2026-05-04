@@ -11,18 +11,18 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | ApexPages | `ApexPages.currentPage` | `supported` | Returns a deterministic local PageReference. |
 | ApexPages | `ApexPages.getMessages` | `supported` | Returns VM-local page messages. |
 | ApexPages | `ApexPages.hasMessages` | `supported` | Checks VM-local page messages. |
-| Approval | `Approval process APIs` | `unsupported` | Approval namespace process, request, and lock helpers return explicit UnsupportedFeature diagnostics; approval workflow side effects are not locally modeled. |
+| Approval | `Approval process APIs` | `unsupported` | Approval namespace process, request, and lock helpers return fixture-backed UnsupportedFeature diagnostics; approval workflow side effects are not locally modeled. |
 | Async | `AsyncApexJob / CronTrigger local records` | `partial` | Test-context enqueue/drain creates deterministic local AsyncApexJob rows and CronTrigger rows for supported future, queueable, batch, and scheduled jobs; broader platform lifecycle fields are not modeled. |
-| Async | `AsyncInfo / AsyncOptions / finalizers` | `unsupported` | Queueable stack metadata, AsyncOptions mutators/accessors and enqueue overloads, System.attachFinalizer, and FinalizerContext getters return explicit UnsupportedFeature diagnostics. |
+| Async | `AsyncInfo / AsyncOptions / finalizers` | `unsupported` | Queueable stack metadata, AsyncOptions mutators/accessors and enqueue overloads, System.attachFinalizer, and FinalizerContext getters return fixture-backed UnsupportedFeature diagnostics. |
 | Async | `BatchableContext.getJobId` | `supported` | Returns the deterministic local AsyncApexJob Id during supported batch start, execute, and finish drain phases. |
 | Async | `QueueableContext.getJobId` | `supported` | Returns the deterministic local AsyncApexJob Id during supported queueable Test.stopTest drain. |
 | Async | `SchedulableContext.getTriggerId` | `supported` | Returns the deterministic local CronTrigger Id during supported scheduled Test.stopTest drain. |
-| Auth | `token/cloud APIs` | `unsupported` | Auth namespace token, session, JWT, OAuth, and cloud calls return explicit UnsupportedFeature diagnostics. |
+| Auth | `token/cloud APIs` | `unsupported` | Auth namespace session, JWT, OAuth, token, and cloud calls return fixture-backed UnsupportedFeature diagnostics. |
 | Blob | `Blob.size` | `supported` | Returns local Blob byte length. |
 | Blob | `Blob.toString` | `supported` | Returns UTF-8 local Blob bytes as a string and rejects invalid UTF-8 data. |
 | Blob | `Blob.valueOf` | `supported` | Stores the string bytes in a local Blob value. |
-| Canvas | `Canvas namespace` | `unsupported` | Canvas app integration calls return explicit UnsupportedFeature diagnostics. |
-| Continuation | `Continuation` | `unsupported` | Continuation construction and callback/response calls return explicit UnsupportedFeature diagnostics. |
+| Canvas | `Canvas namespace` | `unsupported` | Canvas app integration and lifecycle calls return fixture-backed UnsupportedFeature diagnostics. |
+| Continuation | `Continuation` | `unsupported` | Continuation construction, request registration, and response calls return fixture-backed UnsupportedFeature diagnostics. |
 | Crypto | `Crypto.areEqualConstantTime` | `supported` | Constant-time local Blob equality comparison. |
 | Crypto | `Crypto.encrypt/decrypt/sign/verify` | `unsupported` | Encrypt/decrypt, managed-IV variants, signing, verification, org key, keystore, certificate, and random key-generation surfaces return explicit UnsupportedFeature diagnostics; no fake local key material is modeled. |
 | Crypto | `Crypto.generateDigest` | `supported` | MD5, SHA1, SHA-256, SHA-512, SHA3-256/384/512, with conservative algorithm normalization. |
@@ -100,7 +100,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | EncodingUtil | `EncodingUtil.convertToHex` | `supported` | Blob-shaped local value. |
 | EncodingUtil | `EncodingUtil.urlDecode` | `partial` | Uses query unescape for bounded UTF-8 and ISO-8859-1 charset aliases; other charsets return UnsupportedFeature. |
 | EncodingUtil | `EncodingUtil.urlEncode` | `partial` | Uses query escape for bounded UTF-8 and ISO-8859-1 charset aliases; other charsets return UnsupportedFeature. |
-| EventBus | `EventBus.publish` | `unsupported` | Platform event publish and after-commit publish calls return explicit UnsupportedFeature diagnostics. |
+| EventBus | `EventBus.publish` | `unsupported` | Platform event publish and after-commit publish calls return fixture-backed UnsupportedFeature diagnostics. |
 | Exception | `Built-in exception types` | `partial` | Known public built-in exception tokens, including initCause edge exceptions, construct message-bearing local exceptions and assign to Exception; exact platform class catalog, line numbers, and stack text remain partial. |
 | Exception | `Exception.getCause` | `supported` | Returns the locally initialized cause value after one-shot initCause, including null causes. |
 | Exception | `Exception.getLineNumber` | `partial` | Returns deterministic local throw-site line metadata when available; otherwise 0. |
@@ -228,7 +228,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Pattern | `Pattern.pattern` | `partial` | Returns original regex source, including for locally quoted Pattern.LITERAL compilation. |
 | Pattern | `Pattern.quote` | `partial` | Returns a Go regexp-escaped literal pattern for local Pattern/Matcher use. |
 | Pattern | `Pattern.split` | `partial` | Go regexp-backed split with local limit semantics, compiled flag/literal state, pinned unsupported Java-only regex diagnostics, and nullable delimiter regexes fenced unsupported. |
-| QuickAction | `QuickAction namespace` | `unsupported` | Quick action UI calls return explicit UnsupportedFeature diagnostics. |
+| QuickAction | `QuickAction namespace` | `unsupported` | Quick action UI execution and discovery calls return fixture-backed UnsupportedFeature diagnostics. |
 | REST | `@RestResource local server dispatch` | `unsupported` | Custom Apex REST dispatch returns a stable unsupported error from the local server. |
 | REST | `RestContext.request / RestContext.response` | `partial` | VM-local static slots support RestRequest assignment and lazy RestResponse creation; no platform request lifecycle dispatch is modeled. |
 | REST | `RestRequest / RestResponse object shapes` | `partial` | Local request/response objects expose URI/path/method/address, params, headers, Blob body, status, and add/get helper methods covered by compatibility fixtures; broader platform lifecycle remains unsupported. |

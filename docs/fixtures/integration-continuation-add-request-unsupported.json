@@ -1,0 +1,28 @@
+{
+  "name": "integration-continuation-add-request-unsupported",
+  "evidence": [
+    {
+      "symbol": "Continuation.addHttpRequest",
+      "kind": "exec",
+      "notes": "Continuation request registration is cloud callout orchestration and remains a stable UnsupportedFeature diagnostic."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Continuation.addHttpRequest(null, null);"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Continuation.addHttpRequest(null, null);"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"Continuation.addHttpRequest local continuation callout surface\""
+    }
+  }
+}

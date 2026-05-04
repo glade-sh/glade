@@ -1,0 +1,28 @@
+{
+  "name": "integration-auth-jwt-unsupported",
+  "evidence": [
+    {
+      "symbol": "Auth.JWTUtil.validateJWTWithKeysEndpoint",
+      "kind": "exec",
+      "notes": "JWT/OAuth token validation is not modeled; Auth namespace cloud calls return stable UnsupportedFeature diagnostics."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Auth.JWTUtil.validateJWTWithKeysEndpoint('token', 'https://example.invalid/keys');"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Auth.JWTUtil.validateJWTWithKeysEndpoint('token', 'https://example.invalid/keys');"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"Auth.JWTUtil.validateJWTWithKeysEndpoint local authentication token/cloud API surface\""
+    }
+  }
+}
