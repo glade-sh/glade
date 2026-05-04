@@ -122,6 +122,20 @@
       "contains": ["\"referenceId\":\"first\"", "\"referenceId\":\"second\"", "001000000000004", "001000000000005"]
     },
     {
+      "name": "query-pagination-first-page",
+      "method": "GET",
+      "path": "/services/data/v61.0/query?q=SELECT%20Id,%20Name%20FROM%20Account&batchSize=2",
+      "status": 200,
+      "contains": ["\"totalSize\":5", "\"done\":false", "\"nextRecordsUrl\":\"/services/data/v61.0/query/oaerql000001-2\""]
+    },
+    {
+      "name": "query-pagination-query-more",
+      "method": "GET",
+      "path": "/services/data/v61.0/query/oaerql000001-2",
+      "status": 200,
+      "contains": ["\"totalSize\":5", "\"done\":false", "\"nextRecordsUrl\":\"/services/data/v61.0/query/oaerql000001-4\""]
+    },
+    {
       "name": "composite-all-or-none-rollback",
       "method": "POST",
       "path": "/services/data/v61.0/composite/sobjects",
@@ -201,8 +215,8 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 23,
-      "statuses": [200, 200, 200, 200, 200, 201, 200, 200, 501, 200, 200, 200, 200, 200, 400, 501, 501, 501, 501, 501, 404, 200, 201],
+      "requests": 25,
+      "statuses": [200, 200, 200, 200, 200, 201, 200, 200, 501, 200, 200, 200, 200, 200, 200, 200, 400, 501, 501, 501, 501, 501, 404, 200, 201],
       "users": 2
     }
   }

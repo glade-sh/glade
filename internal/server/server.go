@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -23,7 +24,23 @@ type Server struct {
 	}
 	LimitMode vm.LimitMode
 	LimitCaps vm.LimitCaps
+
+	queryLocators map[string]queryLocatorState
+	queryOrder    []string
+	nextQueryID   int
 }
+
+type queryLocatorState struct {
+	totalSize int
+	records   []storage.Record
+	batchSize int
+	version   string
+}
+
+const (
+	maxQueryBatchSize = 2000
+	maxQueryLocators  = 32
+)
 
 func New(org *storage.OrgState) *Server {
 	return &Server{Org: org}
@@ -69,9 +86,11 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case len(rest) >= 2 && rest[0] == "sobjects":
 		s.handleObject(w, r, rest[1:])
 	case len(rest) == 1 && rest[0] == "query":
-		s.handleQuery(w, r)
+		s.handleQuery(w, r, parts[2])
+	case len(rest) == 2 && rest[0] == "query":
+		s.handleQueryMore(w, r, rest[1])
 	case len(rest) == 1 && rest[0] == "queryAll":
-		s.handleQuery(w, r)
+		s.handleQuery(w, r, parts[2])
 	case len(rest) == 1 && rest[0] == "recent":
 		s.handleRecent(w, r)
 	case len(rest) == 1 && rest[0] == "search":
@@ -79,7 +98,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case len(rest) == 1 && rest[0] == "limits":
 		s.handleLimits(w, r)
 	case len(rest) >= 1 && rest[0] == "tooling":
-		s.handleTooling(w, r, rest[1:])
+		s.handleTooling(w, r, parts[2], rest[1:])
 	case len(rest) >= 1 && rest[0] == "jobs":
 		s.handleBulkJobs(w, r, rest[1:])
 	case len(rest) >= 1 && rest[0] == "composite":
@@ -368,12 +387,12 @@ func (s *Server) handleLimits(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (s *Server) handleTooling(w http.ResponseWriter, r *http.Request, parts []string) {
+func (s *Server) handleTooling(w http.ResponseWriter, r *http.Request, version string, parts []string) {
 	switch {
 	case len(parts) == 1 && parts[0] == "executeAnonymous":
 		s.handleExecuteAnonymous(w, r)
 	case len(parts) == 1 && parts[0] == "query":
-		s.handleQuery(w, r)
+		s.handleQuery(w, r, version)
 	case len(parts) == 1 && parts[0] == "sobjects":
 		if r.Method != http.MethodGet {
 			writeMethodNotAllowed(w, http.MethodGet)
@@ -577,7 +596,7 @@ func (s *Server) persistOrg(org storage.OrgState) error {
 	return s.Store.Save(org)
 }
 
-func (s *Server) handleQuery(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleQuery(w http.ResponseWriter, r *http.Request, version string) {
 	if r.Method != http.MethodGet {
 		writeMethodNotAllowed(w, http.MethodGet)
 		return
@@ -587,11 +606,121 @@ func (s *Server) handleQuery(w http.ResponseWriter, r *http.Request) {
 		writeSalesforceError(w, errMalformedQuery, err.Error())
 		return
 	}
-	writeJSON(w, http.StatusOK, map[string]any{
-		"totalSize": result.Rows,
-		"done":      true,
-		"records":   result.Records,
+	batchSize, paginated, ok := queryBatchSize(r)
+	if !ok {
+		writeSalesforceError(w, errMalformedQuery, "batchSize must be a positive integer no greater than 2000")
+		return
+	}
+	if !paginated || result.Rows <= batchSize {
+		writeJSON(w, http.StatusOK, queryResultPayload(result.Rows, true, result.Records, ""))
+		return
+	}
+	locator := s.storeQueryLocator(queryLocatorState{
+		totalSize: result.Rows,
+		records:   append([]storage.Record(nil), result.Records...),
+		batchSize: batchSize,
+		version:   version,
 	})
+	writeJSON(w, http.StatusOK, queryResultPayload(result.Rows, false, result.Records[:batchSize], queryNextURL(version, locator, batchSize)))
+}
+
+func (s *Server) handleQueryMore(w http.ResponseWriter, r *http.Request, token string) {
+	if r.Method != http.MethodGet {
+		writeMethodNotAllowed(w, http.MethodGet)
+		return
+	}
+	locator, offset, ok := parseQueryLocatorToken(token)
+	if !ok {
+		writeSalesforceError(w, errUnknownEndpoint, "query locator not found or expired")
+		return
+	}
+	state, ok := s.queryLocators[locator]
+	if !ok {
+		writeSalesforceError(w, errUnknownEndpoint, "query locator not found or expired")
+		return
+	}
+	if offset < 0 || offset > len(state.records) {
+		writeSalesforceError(w, errUnknownEndpoint, "query locator not found or expired")
+		return
+	}
+	end := offset + state.batchSize
+	if end > len(state.records) {
+		end = len(state.records)
+	}
+	done := end >= len(state.records)
+	nextURL := ""
+	if done {
+		s.deleteQueryLocator(locator)
+	} else {
+		nextURL = queryNextURL(state.version, locator, end)
+	}
+	writeJSON(w, http.StatusOK, queryResultPayload(state.totalSize, done, state.records[offset:end], nextURL))
+}
+
+func queryBatchSize(r *http.Request) (int, bool, bool) {
+	raw := r.URL.Query().Get("batchSize")
+	if raw == "" {
+		return 0, false, true
+	}
+	size, err := strconv.Atoi(raw)
+	if err != nil || size <= 0 || size > maxQueryBatchSize {
+		return 0, true, false
+	}
+	return size, true, true
+}
+
+func queryResultPayload(totalSize int, done bool, records []storage.Record, nextURL string) map[string]any {
+	payload := map[string]any{
+		"totalSize": totalSize,
+		"done":      done,
+		"records":   records,
+	}
+	if nextURL != "" {
+		payload["nextRecordsUrl"] = nextURL
+	}
+	return payload
+}
+
+func (s *Server) storeQueryLocator(state queryLocatorState) string {
+	if s.queryLocators == nil {
+		s.queryLocators = make(map[string]queryLocatorState)
+	}
+	s.nextQueryID++
+	locator := fmt.Sprintf("oaerql%06d", s.nextQueryID)
+	s.queryLocators[locator] = state
+	s.queryOrder = append(s.queryOrder, locator)
+	for len(s.queryOrder) > maxQueryLocators {
+		oldest := s.queryOrder[0]
+		s.queryOrder = s.queryOrder[1:]
+		delete(s.queryLocators, oldest)
+	}
+	return locator
+}
+
+func (s *Server) deleteQueryLocator(locator string) {
+	delete(s.queryLocators, locator)
+	for i, id := range s.queryOrder {
+		if id == locator {
+			s.queryOrder = append(s.queryOrder[:i], s.queryOrder[i+1:]...)
+			return
+		}
+	}
+}
+
+func queryNextURL(version, locator string, offset int) string {
+	return fmt.Sprintf("/services/data/%s/query/%s-%d", version, locator, offset)
+}
+
+func parseQueryLocatorToken(token string) (string, int, bool) {
+	idx := strings.LastIndex(token, "-")
+	if idx <= 0 || idx == len(token)-1 {
+		return "", 0, false
+	}
+	offset, err := strconv.Atoi(token[idx+1:])
+	if err != nil || offset < 0 {
+		return "", 0, false
+	}
+	return token[:idx], offset, true
 }
 
 func decodeRecord(r *http.Request, objectName string, id storage.ID) (storage.Record, error) {
