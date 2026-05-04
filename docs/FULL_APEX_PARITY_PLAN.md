@@ -144,9 +144,11 @@ Current progress:
 - Type/Id/URL/Object: runtime support now covers `Type` equality, hash and
   string forms, constructor-backed zero-arg `Type.newInstance` for registered
   classes, strict 18-character `Id.valueOf` checksum validation, `to15`,
-  `to18`, bounded `Id.getSObjectType` key-prefix tokens, deterministic URL
-  parsing accessors, context/spec URL resolution, and primitive `Object`
-  equality/hash/string behavior.
+  `to18`, bounded `Id.getSObjectType` key-prefix tokens with stable unknown
+  prefix errors, deterministic URL parsing accessors, context/spec URL
+  resolution, malformed URL constructor errors, explicit unsupported
+  request-context URL helpers, unbacked namespace/package `Type.newInstance`
+  diagnostics, and primitive `Object` equality/hash/string behavior.
 - System/exceptions/Type hardening: runtime support now covers deterministic
   `System.today`, `System.now`, `System.currentTimeMillis`, `System.debug`
   LoggingLevel dispatch, built-in `LoggingLevel` enum value helpers, local
@@ -291,8 +293,10 @@ Remaining cuts:
 
 9. Id, URL, and primitive object behavior
    - Landed slice: strict 18-character Id checksum validation, `Id.to18`,
-     bounded local/common key-prefix `Id.getSObjectType`, context/spec URL
-     constructor resolution, and stable unsupported `URL.getCurrentRequestUrl`.
+     bounded local/common key-prefix `Id.getSObjectType` with stable unknown
+     prefix errors, context/spec URL constructor resolution, malformed URL
+     constructor diagnostics, explicit unsupported request-context URL helpers,
+     and unbacked namespace/package `Type.newInstance` unsupported diagnostics.
    - Remaining gaps: broader/versioned key-prefix catalog behavior, URL
      request-context/cloud-only helpers beyond explicit unsupported diagnostics,
      exact object `toString` versioned output for user classes, Type

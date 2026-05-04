@@ -920,6 +920,9 @@ func (a *Analyzer) checkIRExprVariables(typ typesys.TypeSymbol, member typesys.M
 			})
 		}
 	case ir.ExprCall:
+		if expr.Left != nil {
+			diagnostics = append(diagnostics, a.checkIRExprVariables(typ, member, *expr.Left, scope, pos, bodyOffset, source, model, constructability)...)
+		}
 		for _, arg := range expr.Args {
 			diagnostics = append(diagnostics, a.checkIRExprVariables(typ, member, arg, scope, pos, bodyOffset, source, model, constructability)...)
 		}
@@ -958,7 +961,10 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 	}
 	receiverType := typ.Name
 	method := expr.Callee
-	if receiver, callee, ok := strings.Cut(expr.Callee, "."); ok {
+	if expr.Left != nil {
+		method = expr.Callee
+		receiverType = a.inferIRExprType(*expr.Left, scope, model, typ.Name)
+	} else if receiver, callee, ok := strings.Cut(expr.Callee, "."); ok {
 		method = callee
 		switch {
 		case strings.EqualFold(receiver, "this"):
@@ -1218,6 +1224,13 @@ func (a *Analyzer) inferIRExprType(expr ir.Expr, scope irSemaScope, model map[st
 	case ir.ExprCall:
 		if strings.HasPrefix(expr.Callee, "new:") {
 			return strings.TrimPrefix(expr.Callee, "new:")
+		}
+		if expr.Left != nil {
+			receiverType := a.inferIRExprType(*expr.Left, scope, model, currentType)
+			if receiverType == "" {
+				return ""
+			}
+			return semaResolvedIRCallReturnType(a, model, receiverType, expr.Callee, expr.Args, scope, currentType)
 		}
 		if receiver, method, ok := strings.Cut(expr.Callee, "."); ok {
 			receiverType := semaIRReceiverType(receiver, scope, model, currentType)

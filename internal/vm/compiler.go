@@ -789,8 +789,31 @@ func (p *parser) parseUnary() (ir.Expr, error) {
 		}
 		return ir.Expr{Kind: ir.ExprUnary, Operator: "-", Left: &expr}, nil
 	default:
-		return p.parsePrimary()
+		expr, err := p.parsePrimary()
+		if err != nil {
+			return ir.Expr{}, err
+		}
+		return p.parsePostfix(expr)
 	}
+}
+
+func (p *parser) parsePostfix(expr ir.Expr) (ir.Expr, error) {
+	for p.match(tokenSymbol, ".") {
+		method, err := p.expect(tokenIdent, "")
+		if err != nil {
+			return ir.Expr{}, err
+		}
+		if _, err := p.expect(tokenSymbol, "("); err != nil {
+			return ir.Expr{}, err
+		}
+		args, err := p.parseArguments()
+		if err != nil {
+			return ir.Expr{}, err
+		}
+		receiver := expr
+		expr = ir.Expr{Kind: ir.ExprCall, Callee: method.text, Args: args, Left: &receiver}
+	}
+	return expr, nil
 }
 
 func (p *parser) parsePrimary() (ir.Expr, error) {

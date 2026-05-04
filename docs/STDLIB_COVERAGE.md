@@ -91,7 +91,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | HTTP | `Http.send` | `partial` | Mock-first local callouts; real network transport unsupported. |
 | HTTP | `HttpRequest` | `partial` | Endpoint, method, headers, timeout, body, and blob body accessors. |
 | HTTP | `HttpResponse` | `partial` | Status, status code, headers, body, and blob body accessors. |
-| Id | `Id.getSObjectType` | `partial` | Resolves local schema key prefixes and a bounded common standard prefix table to Schema.SObjectType tokens. |
+| Id | `Id.getSObjectType` | `partial` | Resolves local schema key prefixes and a bounded common standard prefix table to Schema.SObjectType tokens; unknown shape-valid prefixes return a stable error. |
 | Id | `Id.to15` | `supported` | Converts validated 18-character IDs to their 15-character prefix. |
 | Id | `Id.to18` | `supported` | Adds or preserves the documented 3-character checksum for validated IDs. |
 | Id | `Id.valueOf` | `supported` | Validates 15-character IDs and strict 18-character checksum suffixes; restoreCasing rebuilds casing from checksum suffixes. |
@@ -348,10 +348,11 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Type | `Type.getName` | `supported` | Returns local type token name. |
 | Type | `Type.hashCode` | `supported` | Matches the local String.hashCode of the type name. |
 | Type | `Type.isAssignableFrom` | `partial` | Uses the local class/interface and built-in exception hierarchy. |
-| Type | `Type.newInstance` | `partial` | Constructs local values and dispatches zero-arg constructors for registered classes; broader reflection is incomplete. |
+| Type | `Type.newInstance` | `partial` | Constructs local values and dispatches zero-arg constructors for registered classes; unbacked namespace/package tokens return explicit unsupported errors. |
 | Type | `Type.toString` | `supported` | Returns the local type token name. |
-| URL | `URL` | `partial` | Constructors for deterministic URL specs, context/spec resolution, and protocol/host/file forms. |
+| URL | `URL` | `partial` | Constructors for deterministic absolute URL specs, context/spec resolution, and protocol/host/file forms with stable malformed input errors. |
 | URL | `URL.getAuthority` | `supported` | Returns parsed authority for local URL values. |
+| URL | `URL.getCurrentRequestUrl` | `unsupported` | Cloud request context is not modeled; returns an explicit unsupported error. |
 | URL | `URL.getDefaultPort` | `supported` | Returns HTTP/HTTPS defaults or -1. |
 | URL | `URL.getFile` | `supported` | Returns path plus query for local URL values. |
 | URL | `URL.getHost` | `supported` | Returns parsed hostname for local URL values. |

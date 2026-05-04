@@ -823,6 +823,15 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 		}
 		return evalBinary(expr.Operator, left, right)
 	case ir.ExprCall:
+		var receiver Value
+		hasReceiver := expr.Left != nil
+		if hasReceiver {
+			var err error
+			receiver, err = vm.eval(*expr.Left, result)
+			if err != nil {
+				return Null, err
+			}
+		}
 		args := make([]Value, 0, len(expr.Args))
 		for _, arg := range expr.Args {
 			value, err := vm.eval(arg, result)
@@ -838,6 +847,13 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 				return Null, err
 			}
 			namedArgs[arg.Name] = value
+		}
+		if hasReceiver {
+			value, handled, err := vm.callValueMember("", receiver, expr.Callee, args, result)
+			if handled || err != nil {
+				return value, err
+			}
+			return Null, unsupportedCallError(expr.Callee)
 		}
 		return vm.call(expr.Callee, args, namedArgs, result)
 	case ir.ExprSOQL:
@@ -5622,7 +5638,7 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 		default:
 			return Null, fmt.Errorf("URL constructor expects spec, context and spec, or protocol, host, [port,] file")
 		}
-		if _, err := url.Parse(raw); err != nil {
+		if err := validateURLConstructorValue(raw); err != nil {
 			return Null, err
 		}
 		return platformScalar("URL", raw), nil
@@ -5655,6 +5671,26 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 	return object, nil
 }
 
+func validateURLConstructorValue(raw string) error {
+	parsed, err := url.Parse(raw)
+	if err != nil {
+		return fmt.Errorf("URL constructor invalid URL: %w", err)
+	}
+	if parsed.Scheme == "" {
+		return fmt.Errorf("URL constructor invalid URL: missing protocol")
+	}
+	if parsed.Host == "" {
+		return fmt.Errorf("URL constructor invalid URL: missing host")
+	}
+	if port := parsed.Port(); port != "" {
+		value, err := strconv.ParseInt(port, 10, 64)
+		if err != nil || value < 0 || value > 65535 {
+			return fmt.Errorf("URL constructor invalid URL: invalid port")
+		}
+	}
+	return nil
+}
+
 func (vm *VM) runInstanceInitializers(class Class, object Value, result *Result) error {
 	if class.SuperClass != "" {
 		if superClass, ok := vm.Classes[class.SuperClass]; ok {
@@ -5680,6 +5716,12 @@ func (vm *VM) runInstanceInitializers(class Class, object Value, result *Result)
 func isExceptionType(typeName string) bool {
 	typeName = exceptionTypeName(typeName)
 	return typeName == "Exception" || strings.HasSuffix(typeName, "Exception")
+}
+
+func typeNewInstanceAllowsDottedBuiltin(typeName string) bool {
+	return isExceptionType(typeName) ||
+		strings.HasPrefix(typeName, "Schema.") ||
+		typeName == "ApexPages.Message"
 }
 
 func (vm *VM) initializeFields(object *Value, typeName string) {
@@ -7358,6 +7400,9 @@ func (vm *VM) sObjectFieldExists(typeName, field string) bool {
 }
 
 func (vm *VM) storeReceiver(receiverName string, value Value) error {
+	if receiverName == "" {
+		return nil
+	}
 	if strings.Contains(receiverName, ".") {
 		return vm.assign(receiverName, value)
 	}
@@ -8271,6 +8316,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Type.newInstance expects 0 arguments")
 			}
 			typeName := typeValueName(receiver)
+			if strings.Contains(typeName, ".") {
+				if _, ok := vm.resolveClassName(typeName); !ok && !typeNewInstanceAllowsDottedBuiltin(typeName) {
+					return Null, receiver, false, true, unsupportedCallError("Type.newInstance namespace/package reflection for " + typeName)
+				}
+			}
 			value, err := vm.constructValue(typeName, nil, nil, result)
 			return value, receiver, false, true, err
 		}
