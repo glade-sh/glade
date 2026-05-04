@@ -71,6 +71,37 @@ System.assert(String.isNotEmpty('x'));
 	}
 }
 
+func TestExecStringSearchIndexesAndBetween(t *testing.T) {
+	program, err := CompileAnonymous(`
+String text = 'café café';
+System.assertEquals(3, text.indexOf('é'));
+System.assertEquals(8, text.lastIndexOf('é'));
+System.assertEquals(5, text.indexOf('c', 2));
+System.assertEquals(0, text.indexOf('c', -10));
+System.assertEquals(-1, text.indexOf('c', 9));
+System.assertEquals(4, text.indexOf('', 4));
+System.assertEquals(9, text.indexOf('', 99));
+System.assertEquals(0, text.lastIndexOf('c', 4));
+System.assertEquals(5, text.lastIndexOf('c', 99));
+System.assertEquals(-1, text.lastIndexOf('c', -1));
+System.assertEquals(4, text.lastIndexOf('', 4));
+System.assertEquals(9, text.lastIndexOf('', 99));
+
+String wrapped = 'prefix [value] suffix';
+System.assertEquals('value', wrapped.substringBetween('[', ']'));
+System.assertEquals('value', '--value--'.substringBetween('--'));
+String missing = wrapped.substringBetween('<', '>');
+System.assertEquals(null, missing);
+System.assertEquals('', 'abc'.substringBetween(''));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecRestContextRequestAndResponseShapes(t *testing.T) {
 	program, err := CompileAnonymous(`
 RestRequest req = new RestRequest();

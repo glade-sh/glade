@@ -446,17 +446,17 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 		}
 		return String(transformFirstRune(receiver.Text, strings.ToLower)), true, nil
 	case "indexOf":
-		needle, err := stringArg("String.indexOf", args)
+		needle, start, err := stringSearchArgs("String.indexOf", args, 0)
 		if err != nil {
 			return Null, true, err
 		}
-		return Int(int64(strings.Index(receiver.Text, needle))), true, nil
+		return Int(int64(stringIndexOf(receiver.Text, needle, start))), true, nil
 	case "lastIndexOf":
-		needle, err := stringArg("String.lastIndexOf", args)
+		needle, start, err := stringSearchArgs("String.lastIndexOf", args, utf8.RuneCountInString(receiver.Text))
 		if err != nil {
 			return Null, true, err
 		}
-		return Int(int64(strings.LastIndex(receiver.Text, needle))), true, nil
+		return Int(int64(stringLastIndexOf(receiver.Text, needle, start))), true, nil
 	case "ordinalIndexOf":
 		needle, ordinal, err := stringStringIntArgs("String.ordinalIndexOf", args)
 		if err != nil {
@@ -766,6 +766,8 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 			return receiver, true, nil
 		}
 		return String(receiver.Text[:i]), true, nil
+	case "substringBetween":
+		return stringSubstringBetween(receiver.Text, args)
 	case "deleteWhitespace":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("String.deleteWhitespace expects 0 arguments")
@@ -1722,6 +1724,20 @@ func stringStringTwoIntArgs(name string, args []Value) (string, int, int, error)
 	return args[0].Text, int(args[1].Int), int(args[2].Int), nil
 }
 
+func stringSearchArgs(name string, args []Value, defaultStart int) (string, int, error) {
+	if len(args) != 1 && len(args) != 2 {
+		return "", 0, fmt.Errorf("%s expects String and optional Integer arguments", name)
+	}
+	if args[0].Kind != ValueString || (len(args) == 2 && args[1].Kind != ValueInt) {
+		return "", 0, fmt.Errorf("%s expects String and optional Integer arguments", name)
+	}
+	start := defaultStart
+	if len(args) == 2 {
+		start = int(args[1].Int)
+	}
+	return args[0].Text, start, nil
+}
+
 func dropFirstRunes(text string, count int) string {
 	if count <= 0 {
 		return text
@@ -1760,6 +1776,61 @@ func stringContainsOnly(text, chars string) bool {
 		}
 	}
 	return true
+}
+
+func stringIndexOf(text, needle string, start int) int {
+	textRunes := []rune(text)
+	needleRunes := []rune(needle)
+	if start < 0 {
+		start = 0
+	}
+	if start > len(textRunes) {
+		if len(needleRunes) == 0 {
+			return len(textRunes)
+		}
+		return -1
+	}
+	if len(needleRunes) == 0 {
+		return start
+	}
+	if len(needleRunes) > len(textRunes)-start {
+		return -1
+	}
+	for i := start; i <= len(textRunes)-len(needleRunes); i++ {
+		if runesEqual(textRunes[i:i+len(needleRunes)], needleRunes) {
+			return i
+		}
+	}
+	return -1
+}
+
+func stringLastIndexOf(text, needle string, start int) int {
+	textRunes := []rune(text)
+	needleRunes := []rune(needle)
+	if len(needleRunes) == 0 {
+		if start < 0 {
+			return -1
+		}
+		if start > len(textRunes) {
+			return len(textRunes)
+		}
+		return start
+	}
+	if len(needleRunes) > len(textRunes) {
+		return -1
+	}
+	if start > len(textRunes)-len(needleRunes) {
+		start = len(textRunes) - len(needleRunes)
+	}
+	if start < 0 {
+		return -1
+	}
+	for i := start; i >= 0; i-- {
+		if runesEqual(textRunes[i:i+len(needleRunes)], needleRunes) {
+			return i
+		}
+	}
+	return -1
 }
 
 func stringIndexOfAny(text, chars string) int {
@@ -1909,6 +1980,30 @@ func stringReplaceLiteral(text, target, replacement string, ignoreCase, once boo
 		i++
 	}
 	return b.String()
+}
+
+func stringSubstringBetween(text string, args []Value) (Value, bool, error) {
+	var open, close string
+	switch {
+	case len(args) == 1 && args[0].Kind == ValueString:
+		open = args[0].Text
+		close = args[0].Text
+	case len(args) == 2 && args[0].Kind == ValueString && args[1].Kind == ValueString:
+		open = args[0].Text
+		close = args[1].Text
+	default:
+		return Null, true, fmt.Errorf("String.substringBetween expects tag String or open and close Strings")
+	}
+	start := strings.Index(text, open)
+	if start < 0 {
+		return Null, true, nil
+	}
+	contentStart := start + len(open)
+	end := strings.Index(text[contentStart:], close)
+	if end < 0 {
+		return Null, true, nil
+	}
+	return String(text[contentStart : contentStart+end]), true, nil
 }
 
 func runeWindowMatches(window, target []rune, ignoreCase bool) bool {
