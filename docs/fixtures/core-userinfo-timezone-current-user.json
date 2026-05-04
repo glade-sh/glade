@@ -1,0 +1,28 @@
+{
+  "name": "core-userinfo-timezone-current-user",
+  "evidence": [
+    {
+      "symbol": "UserInfo.getTimeZone",
+      "kind": "exec",
+      "notes": "UserInfo.getTimeZone returns a TimeZone object; the default local user context remains deterministic UTC."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "TimeZone tz = UserInfo.getTimeZone();\nSystem.assertEquals('UTC', tz.getID());\nSystem.assertEquals('UTC', tz.getDisplayName());\nDatetime stamp = Datetime.valueOfGmt('2024-02-29T23:05:06Z');\nSystem.assertEquals(0, tz.getOffset(stamp));"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "TimeZone tz = UserInfo.getTimeZone();\nSystem.assertEquals('UTC', tz.getID());\nSystem.assertEquals('UTC', tz.getDisplayName());\nDatetime stamp = Datetime.valueOfGmt('2024-02-29T23:05:06Z');\nSystem.assertEquals(0, tz.getOffset(stamp));"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

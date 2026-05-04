@@ -164,7 +164,7 @@ var stdlibEntries = []StdlibEntry{
 	{Area: "Datetime", API: "Datetime.date", Status: StatusPartial, Notes: "Returns UTC-modeled Date component; no user timezone model."},
 	{Area: "Datetime", API: "Datetime.dateGmt", Status: StatusSupported, Notes: "Returns the UTC Date component."},
 	{Area: "Datetime", API: "Datetime.day", Status: StatusPartial, Notes: "UTC-modeled component getter."},
-	{Area: "Datetime", API: "Datetime.format", Status: StatusPartial, Notes: "Deterministic UTC/fixed-offset Java-pattern slice plus America/Los_Angeles DST formatting; user locale and user timezone are unsupported."},
+	{Area: "Datetime", API: "Datetime.format", Status: StatusPartial, Notes: "Deterministic UTC/fixed-offset Java-pattern slice plus America/Los_Angeles DST formatting; format(pattern) and format() use the current user timezone for the modeled UTC/America/Los_Angeles slice; user locale is unsupported."},
 	{Area: "Datetime", API: "Datetime.formatGmt", Status: StatusPartial, Notes: "Deterministic UTC Java-pattern slice with stable token errors; locale patterns are not modeled beyond pinned English names."},
 	{Area: "Datetime", API: "Datetime.hour", Status: StatusPartial, Notes: "UTC-modeled component getter."},
 	{Area: "Datetime", API: "Datetime.millisecond", Status: StatusPartial, Notes: "UTC-modeled component getter."},
@@ -449,7 +449,7 @@ var stdlibEntries = []StdlibEntry{
 	{Area: "UserInfo", API: "UserInfo.getOrganizationId", Status: StatusPartial, Notes: "Local org identity."},
 	{Area: "UserInfo", API: "UserInfo.getProfileId", Status: StatusPartial, Notes: "Current runAs/server/default user."},
 	{Area: "UserInfo", API: "UserInfo.getSessionId", Status: StatusPartial, Notes: "Empty local session value."},
-	{Area: "UserInfo", API: "UserInfo.getTimeZone", Status: StatusPartial, Notes: "Deterministic UTC value."},
+	{Area: "UserInfo", API: "UserInfo.getTimeZone", Status: StatusPartial, Notes: "Returns a TimeZone object for the current user TimeZoneSidKey in the modeled UTC/America/Los_Angeles slice."},
 	{Area: "UserInfo", API: "UserInfo.getUserEmail", Status: StatusPartial, Notes: "Current runAs/server/default user."},
 	{Area: "UserInfo", API: "UserInfo.getUserId", Status: StatusPartial, Notes: "Current runAs/server/default user."},
 }

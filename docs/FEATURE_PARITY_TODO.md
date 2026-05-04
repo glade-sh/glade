@@ -461,7 +461,7 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - **Limitation**: Exact locale, broad timezone, rounding-mode, charset, and
     full Java-regex parity remain outside the current local subset. The current
     named-zone slice is limited to deterministic `America/Los_Angeles` DST
-    formatting and offsets.
+    formatting, offsets, and current-user timezone formatting.
 - [x] Complete HTTP/callout mock behavior: request/response types,
   `HttpCalloutMock`, callout limits, and test isolation.
   - [x] Add common `HttpRequest`/`HttpResponse` endpoint, method, header,
@@ -470,7 +470,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     callout transport is intentionally not modeled.
 - [x] Complete `UserInfo`, `FeatureManagement`, `Messaging`, `ApexPages`,
   `URL`, and `PageReference` basics.
-  - [x] Add common `UserInfo` org/session/locale/timezone getters.
+  - [x] Add common `UserInfo` org/session/locale/timezone getters, including
+    `TimeZoneSidKey` handoff for the modeled UTC/America/Los_Angeles slice.
   - [x] Add `Messaging.SingleEmailMessage` setters and structured
     `SendEmailResult` basics.
   - [x] Add `ApexPages` message storage, current page, `PageReference`, and
