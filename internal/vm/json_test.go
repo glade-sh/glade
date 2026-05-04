@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"errors"
 	"strings"
 	"testing"
 )
@@ -90,6 +91,55 @@ gen.writeFieldName('lastName');
 	}()
 	if err == nil || !strings.Contains(err.Error(), `field "firstName" is missing a value`) {
 		t.Fatalf("err = %v", err)
+	}
+}
+
+func TestExecJSONGeneratorRejectsCloseAndClosedStateEdges(t *testing.T) {
+	tests := []struct {
+		name   string
+		source string
+		want   string
+	}{
+		{
+			name: "close with no root",
+			source: `
+JSONGenerator gen = JSON.createGenerator(false);
+gen.close();
+`,
+			want: "cannot close before writing a root value",
+		},
+		{
+			name: "close with open object",
+			source: `
+JSONGenerator gen = JSON.createGenerator(false);
+gen.writeStartObject();
+gen.close();
+`,
+			want: "cannot close with open JSON containers",
+		},
+		{
+			name: "write after close",
+			source: `
+JSONGenerator gen = JSON.createGenerator(false);
+gen.writeStartArray();
+gen.writeEndArray();
+gen.close();
+gen.writeNull();
+`,
+			want: "JSONGenerator is closed",
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			program, err := CompileAnonymous(tc.source)
+			if err != nil {
+				t.Fatal(err)
+			}
+			machine := New(nil)
+			if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), tc.want) {
+				t.Fatalf("err = %v, want %q", err, tc.want)
+			}
+		})
 	}
 }
 
@@ -249,6 +299,34 @@ System.assertEquals(1.25, parser.getDecimalValue());
 	}
 }
 
+func TestExecJSONParserClearAndSkipChildrenStateEdges(t *testing.T) {
+	program, err := CompileAnonymous(`
+JSONParser parser = JSON.createParser('{"outer":{"inner":1},"tail":2}');
+System.assertEquals(JSONToken.START_OBJECT, parser.nextToken());
+System.assertEquals(JSONToken.FIELD_NAME, parser.nextToken());
+System.assertEquals('outer', parser.getCurrentName());
+System.assertEquals(JSONToken.START_OBJECT, parser.nextValue());
+System.assertEquals('outer', parser.getCurrentName());
+parser.skipChildren();
+System.assertEquals(JSONToken.END_OBJECT, parser.getCurrentToken());
+System.assertEquals('outer', parser.getCurrentName());
+parser.clearCurrentToken();
+System.assertEquals(null, parser.getCurrentToken());
+System.assertEquals(null, parser.getCurrentName());
+System.assertEquals(JSONToken.FIELD_NAME, parser.nextToken());
+System.assertEquals('tail', parser.getCurrentName());
+System.assertEquals(JSONToken.VALUE_NUMBER_INT, parser.nextValue());
+System.assertEquals('tail', parser.getCurrentName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecJSONDeserializeTypedPrimitiveCollectionAndPlatformScalars(t *testing.T) {
 	program, err := CompileAnonymous(`
 Integer n = JSON.deserialize('7', Integer.class);
@@ -319,6 +397,27 @@ Object value = JSON.deserialize('{"1":"one"}', mapType);
 	}
 }
 
+func TestExecJSONDeserializeRejectsUnsupportedObjectTargets(t *testing.T) {
+	program, err := CompileAnonymous(`
+Object value = JSON.deserialize('{"Name":"Acme"}', UnknownJsonShape.class);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	err = func() error {
+		_, execErr := machine.Execute(program)
+		return execErr
+	}()
+	var runtimeErr *RuntimeError
+	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" {
+		t.Fatalf("err = %#v, want UnsupportedFeature", err)
+	}
+	if runtimeErr.Message != `unsupported call "JSON.deserialize local class/SObject mapping for UnknownJsonShape"` {
+		t.Fatalf("message = %q", runtimeErr.Message)
+	}
+}
+
 func TestExecJSONGeneratorWritesPlatformAndObjectValues(t *testing.T) {
 	program, err := CompileAnonymous(`
 JSONGenerator gen = JSON.createGenerator(false);
@@ -341,6 +440,41 @@ System.assert(text.contains('"id":"001B000001DVM9t"'));
 System.assert(text.contains('"blob":"YWJj"'));
 System.assert(text.contains('"nested"'));
 System.assert(text.contains('[true]'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecJSONSerializeSuppressNullEdgesAndNestedMaps(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String,Object> nested = new Map<String,Object>();
+nested.put('kept', 'yes');
+nested.put('missing', null);
+List<Object> items = new List<Object>();
+items.add(nested);
+items.add(null);
+Map<String,Object> root = new Map<String,Object>();
+root.put('items', items);
+String compact = JSON.serialize(root, true);
+System.assert(compact.contains('"items":[{'));
+System.assert(compact.contains('"kept":"yes"'));
+System.assert(compact.contains('"missing":null'));
+System.assert(compact.contains('},null]'));
+String pretty = JSON.serializePretty(root, true);
+System.assert(pretty.contains('  "items": ['));
+System.assert(pretty.contains('      "kept": "yes"'));
+System.assert(pretty.contains('      "missing": null'));
+Account account = new Account(Name = 'NoNull', Phone = null);
+String objectSuppressed = JSON.serialize(account, true);
+System.assert(objectSuppressed.contains('"Name":"NoNull"'));
+System.assert(!objectSuppressed.contains('Phone'));
+String objectIncluded = JSON.serialize(account, false);
+System.assert(objectIncluded.contains('"Phone":null'));
 `)
 	if err != nil {
 		t.Fatal(err)
