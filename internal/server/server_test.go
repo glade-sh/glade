@@ -250,6 +250,116 @@ func TestIdentityLimitsDescribeRecentAndNormalRESTPayloads(t *testing.T) {
 	}
 }
 
+func TestLocalUserContextDefaultsToDeterministicUser(t *testing.T) {
+	org := testOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	addUser(&org, "005000000000009", "other@example.test", "other@example.test", "Other User")
+	handler := New(&org)
+
+	userinfo := httptest.NewRecorder()
+	handler.ServeHTTP(userinfo, httptest.NewRequest(http.MethodGet, "/services/oauth2/userinfo", nil))
+	if userinfo.Code != http.StatusOK {
+		t.Fatalf("userinfo status = %d body=%s", userinfo.Code, userinfo.Body.String())
+	}
+	var payload map[string]any
+	if err := json.Unmarshal(userinfo.Body.Bytes(), &payload); err != nil {
+		t.Fatal(err)
+	}
+	if payload["user_id"] != "005000000000001" || payload["preferred_username"] != "system@example.invalid" {
+		t.Fatalf("userinfo payload = %#v", payload)
+	}
+}
+
+func TestLocalUserContextAuthorizationBearerSelectsUser(t *testing.T) {
+	org := testOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	addUser(&org, "005000000000123", "ada@example.test", "ada.alias@example.test", "Ada Trail")
+	handler := New(&org)
+
+	req := httptest.NewRequest(http.MethodGet, "/services/oauth2/userinfo", nil)
+	req.Header.Set("Authorization", "Bearer 005000000000123")
+	userinfo := httptest.NewRecorder()
+	handler.ServeHTTP(userinfo, req)
+	if userinfo.Code != http.StatusOK {
+		t.Fatalf("userinfo status = %d body=%s", userinfo.Code, userinfo.Body.String())
+	}
+	var payload map[string]any
+	if err := json.Unmarshal(userinfo.Body.Bytes(), &payload); err != nil {
+		t.Fatal(err)
+	}
+	if payload["user_id"] != "005000000000123" || payload["preferred_username"] != "ada@example.test" || payload["email"] != "ada.alias@example.test" || payload["name"] != "Ada Trail" {
+		t.Fatalf("userinfo payload = %#v", payload)
+	}
+}
+
+func TestLocalUserContextHeaderSelectsUserForIdentity(t *testing.T) {
+	org := testOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	addUser(&org, "005000000000123", "ada@example.test", "ada.alias@example.test", "Ada Trail")
+	handler := New(&org)
+
+	req := httptest.NewRequest(http.MethodGet, "/id/00D000000000001/005000000000001", nil)
+	req.Header.Set("X-OAER-User-Id", "005000000000123")
+	identity := httptest.NewRecorder()
+	handler.ServeHTTP(identity, req)
+	if identity.Code != http.StatusOK {
+		t.Fatalf("identity status = %d body=%s", identity.Code, identity.Body.String())
+	}
+	var payload map[string]any
+	if err := json.Unmarshal(identity.Body.Bytes(), &payload); err != nil {
+		t.Fatal(err)
+	}
+	if payload["user_id"] != "005000000000123" || payload["username"] != "ada@example.test" || payload["display_name"] != "Ada Trail" {
+		t.Fatalf("identity payload = %#v", payload)
+	}
+}
+
+func TestLocalUserContextUnknownHeaderFallsBackToDeterministicDefault(t *testing.T) {
+	org := testOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	addUser(&org, "005000000000123", "ada@example.test", "ada.alias@example.test", "Ada Trail")
+	handler := New(&org)
+
+	req := httptest.NewRequest(http.MethodGet, "/services/oauth2/userinfo", nil)
+	req.Header.Set("X-OAER-User-Id", "005999999999999")
+	userinfo := httptest.NewRecorder()
+	handler.ServeHTTP(userinfo, req)
+	if userinfo.Code != http.StatusOK {
+		t.Fatalf("userinfo status = %d body=%s", userinfo.Code, userinfo.Body.String())
+	}
+	var payload map[string]any
+	if err := json.Unmarshal(userinfo.Body.Bytes(), &payload); err != nil {
+		t.Fatal(err)
+	}
+	if payload["user_id"] != "005000000000001" {
+		t.Fatalf("userinfo payload = %#v", payload)
+	}
+}
+
+func TestLocalUserContextUsesLexicographicUserWhenDefaultMissing(t *testing.T) {
+	org := testOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	userObject := org.Objects["User"]
+	delete(userObject.Records, "005000000000001")
+	userObject.Records["005000000000200"] = userRecordForTest("005000000000200", "zulu@example.test", "zulu@example.test", "Zulu User")
+	userObject.Records["005000000000100"] = userRecordForTest("005000000000100", "alpha@example.test", "alpha@example.test", "Alpha User")
+	org.Objects["User"] = userObject
+	handler := New(&org)
+
+	userinfo := httptest.NewRecorder()
+	handler.ServeHTTP(userinfo, httptest.NewRequest(http.MethodGet, "/services/oauth2/userinfo", nil))
+	if userinfo.Code != http.StatusOK {
+		t.Fatalf("userinfo status = %d body=%s", userinfo.Code, userinfo.Body.String())
+	}
+	var payload map[string]any
+	if err := json.Unmarshal(userinfo.Body.Bytes(), &payload); err != nil {
+		t.Fatal(err)
+	}
+	if payload["user_id"] != "005000000000100" || payload["preferred_username"] != "alpha@example.test" {
+		t.Fatalf("userinfo payload = %#v", payload)
+	}
+}
+
 func TestToolingExecuteAnonymousAndCompositeSObjects(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
@@ -418,4 +528,25 @@ func testOrg() storage.OrgState {
 		Records: make(map[storage.ID]storage.Record),
 	}
 	return org
+}
+
+func addUser(org *storage.OrgState, id storage.ID, username, email, name string) {
+	storage.EnsureDeterministicPlatformData(org)
+	userObject := org.Objects["User"]
+	userObject.Records[id] = userRecordForTest(id, username, email, name)
+	org.Objects["User"] = userObject
+}
+
+func userRecordForTest(id storage.ID, username, email, name string) storage.Record {
+	return storage.Record{
+		ID:     id,
+		Object: "User",
+		Fields: map[string]storage.Value{
+			"Username": storage.StringValue(username),
+			"Email":    storage.StringValue(email),
+			"Name":     storage.StringValue(name),
+			"IsActive": storage.BooleanValue(true),
+			"UserType": storage.StringValue("Standard"),
+		},
+	}
 }
