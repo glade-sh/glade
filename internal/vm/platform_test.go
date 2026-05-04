@@ -511,6 +511,133 @@ System.assertEquals(2, Limits.getDmlStatements());
 	}
 }
 
+func TestExecStartStopRestoresOuterLimitViolations(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account beforeStart = new Account(Name = 'Before');
+insert beforeStart;
+System.assertEquals(1, Limits.getDmlStatements());
+Test.startTest();
+insert new Account(Name = 'Inside');
+System.assertEquals(1, Limits.getDmlStatements());
+Test.stopTest();
+System.assertEquals(1, Limits.getDmlStatements());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	machine.SetLimitCaps(LimitCaps{
+		Queries:       100,
+		QueryRows:     50000,
+		DMLStatements: 0,
+		DMLRows:       10000,
+		HeapSize:      6 * 1024 * 1024,
+		CPUTimeMS:     10000,
+		Callouts:      100,
+		AsyncJobs:     50,
+		FutureCalls:   50,
+		QueueableJobs: 50,
+		BatchJobs:     5,
+		ScheduledJobs: 100,
+		EmailInvokes:  10,
+	})
+	result, err := machine.Execute(program)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.LimitViolations) != 1 {
+		t.Fatalf("violations = %#v, want one restored parent violation", result.LimitViolations)
+	}
+	got := result.LimitViolations[0]
+	if got.Name != "dmlStatements" || got.Used != 1 || got.Limit != 0 {
+		t.Fatalf("violation = %#v, want restored parent dmlStatements 1/0", got)
+	}
+}
+
+func TestExecUnsupportedLimitsGettersHaveStableShape(t *testing.T) {
+	for _, getter := range []string{
+		"getAggregateQueries",
+		"getLimitAggregateQueries",
+		"getFindSimilarCalls",
+		"getLimitFindSimilarCalls",
+		"getMobilePushApexCalls",
+		"getLimitMobilePushApexCalls",
+		"getPublishImmediateDML",
+		"getLimitPublishImmediateDML",
+		"getQueryLocatorRows",
+		"getLimitQueryLocatorRows",
+		"getSoslQueries",
+		"getLimitSoslQueries",
+	} {
+		t.Run(getter, func(t *testing.T) {
+			program, err := CompileAnonymous("Integer used = Limits." + getter + "();")
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = New(nil).Execute(program)
+			if err == nil {
+				t.Fatal("expected unsupported feature error")
+			}
+			var runtimeErr *RuntimeError
+			if !errors.As(err, &runtimeErr) {
+				t.Fatalf("error type = %T, want *RuntimeError", err)
+			}
+			want := `unsupported call "Limits.` + getter + `"`
+			if runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != want || err.Error() != want {
+				t.Fatalf("error = (%q, %q, %q), want UnsupportedFeature %q", runtimeErr.Type, runtimeErr.Message, err.Error(), want)
+			}
+		})
+	}
+}
+
+func TestAsyncAndEmailCapsHaveStableStrictAndPermissiveShape(t *testing.T) {
+	cases := []struct {
+		name string
+		cap  func(*LimitCaps)
+	}{
+		{name: "futureCalls", cap: func(caps *LimitCaps) { caps.FutureCalls = 0 }},
+		{name: "queueableJobs", cap: func(caps *LimitCaps) { caps.QueueableJobs = 0 }},
+		{name: "batchJobs", cap: func(caps *LimitCaps) { caps.BatchJobs = 0 }},
+		{name: "scheduledJobs", cap: func(caps *LimitCaps) { caps.ScheduledJobs = 0 }},
+		{name: "emailInvocations", cap: func(caps *LimitCaps) { caps.EmailInvokes = 0 }},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name+"/strict", func(t *testing.T) {
+			machine := New(nil)
+			machine.SetLimitMode(LimitModeStrict)
+			caps := defaultLimitCaps()
+			tc.cap(&caps)
+			machine.SetLimitCaps(caps)
+			err := machine.incrementLimit(tc.name, 1)
+			if err == nil {
+				t.Fatal("expected strict limit error")
+			}
+			var runtimeErr *RuntimeError
+			if !errors.As(err, &runtimeErr) {
+				t.Fatalf("error type = %T, want *RuntimeError", err)
+			}
+			if runtimeErr.Type != "System.LimitException" || runtimeErr.Message != "Too many "+tc.name+": 1 out of 0" {
+				t.Fatalf("runtime error = %#v", runtimeErr)
+			}
+		})
+		t.Run(tc.name+"/permissive", func(t *testing.T) {
+			machine := New(nil)
+			caps := defaultLimitCaps()
+			tc.cap(&caps)
+			machine.SetLimitCaps(caps)
+			if err := machine.incrementLimit(tc.name, 1); err != nil {
+				t.Fatal(err)
+			}
+			if len(machine.limitViolations) != 1 || machine.limitViolations[0].Name != tc.name {
+				t.Fatalf("violations = %#v", machine.limitViolations)
+			}
+		})
+	}
+}
+
 func TestExecPlatformLimitCounters(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals(0, Limits.getEmailInvocations());

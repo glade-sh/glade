@@ -198,3 +198,17 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 		return Null, false
 	}
 }
+
+func unsupportedLimitGetter(name string) bool {
+	switch name {
+	case "getAggregateQueries", "getLimitAggregateQueries",
+		"getFindSimilarCalls", "getLimitFindSimilarCalls",
+		"getMobilePushApexCalls", "getLimitMobilePushApexCalls",
+		"getPublishImmediateDML", "getLimitPublishImmediateDML",
+		"getQueryLocatorRows", "getLimitQueryLocatorRows",
+		"getSoslQueries", "getLimitSoslQueries":
+		return true
+	default:
+		return false
+	}
+}
