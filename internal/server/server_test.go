@@ -1561,17 +1561,17 @@ func TestCommonRESTNamespaceStubsReturnStableUnsupportedErrors(t *testing.T) {
 		{method: http.MethodGet, path: "/services/data/v61.0/chatter/feed-elements", message: "Chatter REST namespace"},
 		{method: http.MethodGet, path: "/services/data/v61.0/analytics/reports", message: "Analytics REST namespace"},
 		{method: http.MethodGet, path: "/services/data/v61.0/wave", message: "Wave REST namespace"},
-		{method: http.MethodPost, path: "/services/data/v61.0/metadata", message: "Metadata REST namespace"},
+		{method: http.MethodGet, path: "/services/data/v61.0/metadata", message: "Metadata REST namespace"},
 		{method: http.MethodGet, path: "/services/data/v61.0/support", message: "Support REST namespace"},
-		{method: http.MethodPost, path: "/services/data/v61.0/process/approvals", message: "Process REST namespace"},
-		{method: http.MethodPatch, path: "/services/data/v61.0/actions/standard/emailSimple", message: "Actions REST namespace"},
-		{method: http.MethodDelete, path: "/services/data/v61.0/apps", message: "Apps REST namespace"},
+		{method: http.MethodGet, path: "/services/data/v61.0/process/approvals", message: "Process REST namespace"},
+		{method: http.MethodGet, path: "/services/data/v61.0/actions/standard/emailSimple", message: "Actions REST namespace"},
+		{method: http.MethodGet, path: "/services/data/v61.0/apps", message: "Apps REST namespace"},
 		{method: http.MethodGet, path: "/services/data/v61.0/appMenu", message: "AppMenu REST namespace"},
-		{method: http.MethodPost, path: "/services/data/v61.0/appMenu/AppSwitcher", message: "AppMenu REST namespace"},
+		{method: http.MethodGet, path: "/services/data/v61.0/appMenu/AppSwitcher", message: "AppMenu REST namespace"},
 		{method: http.MethodGet, path: "/services/data/v61.0/tabs", message: "Tabs REST namespace"},
-		{method: http.MethodPost, path: "/services/data/v61.0/theme/brand", message: "Theme REST namespace"},
+		{method: http.MethodGet, path: "/services/data/v61.0/theme/brand", message: "Theme REST namespace"},
 		{method: http.MethodGet, path: "/services/data/v61.0/quickActions", message: "QuickActions REST namespace"},
-		{method: http.MethodPatch, path: "/services/data/v61.0/quickActions/Account/NewTask", message: "QuickActions REST namespace"},
+		{method: http.MethodGet, path: "/services/data/v61.0/quickActions/Account/NewTask", message: "QuickActions REST namespace"},
 	} {
 		rec := httptest.NewRecorder()
 		handler.ServeHTTP(rec, httptest.NewRequest(tc.method, tc.path, strings.NewReader(`{}`)))
@@ -2837,6 +2837,71 @@ func TestServerSerializesConcurrentMutations(t *testing.T) {
 	}
 	if len(org.Objects["Account"].Records) != requests {
 		t.Fatalf("stored records = %d, want %d", len(org.Objects["Account"].Records), requests)
+	}
+}
+
+func TestUnsupportedRESTNamespaceMethodBoundary(t *testing.T) {
+	tests := []struct {
+		name          string
+		method        string
+		path          string
+		wantStatus    int
+		wantCode      string
+		wantAllow     string
+		wantMessageIn string
+	}{
+		{
+			name:          "get root remains unsupported",
+			method:        http.MethodGet,
+			path:          "/services/data/v61.0/connect",
+			wantStatus:    http.StatusNotImplemented,
+			wantCode:      "UNSUPPORTED_FEATURE",
+			wantMessageIn: "Connect REST namespace",
+		},
+		{
+			name:          "get subroute remains unsupported",
+			method:        http.MethodGet,
+			path:          "/services/data/v61.0/quickActions/Account/NewTask",
+			wantStatus:    http.StatusNotImplemented,
+			wantCode:      "UNSUPPORTED_FEATURE",
+			wantMessageIn: "QuickActions REST namespace",
+		},
+		{
+			name:       "post root method not allowed",
+			method:     http.MethodPost,
+			path:       "/services/data/v61.0/actions",
+			wantStatus: http.StatusMethodNotAllowed,
+			wantCode:   "METHOD_NOT_ALLOWED",
+			wantAllow:  http.MethodGet,
+		},
+		{
+			name:       "patch subroute method not allowed",
+			method:     http.MethodPatch,
+			path:       "/services/data/v61.0/metadata/deployRequest/0Af000000000001",
+			wantStatus: http.StatusMethodNotAllowed,
+			wantCode:   "METHOD_NOT_ALLOWED",
+			wantAllow:  http.MethodGet,
+		},
+		{
+			name:       "unknown namespace still not found",
+			method:     http.MethodPost,
+			path:       "/services/data/v61.0/notANamespace",
+			wantStatus: http.StatusNotFound,
+			wantCode:   "NOT_FOUND",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			org := testOrg()
+			handler := New(&org)
+			res := httptest.NewRecorder()
+			handler.ServeHTTP(res, httptest.NewRequest(tt.method, tt.path, nil))
+			assertSalesforceError(t, res, tt.wantStatus, tt.wantCode, tt.wantMessageIn)
+			if got := res.Header().Get("Allow"); got != tt.wantAllow {
+				t.Fatalf("Allow = %q, want %q", got, tt.wantAllow)
+			}
+		})
 	}
 }
 
