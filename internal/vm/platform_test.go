@@ -244,7 +244,7 @@ values.put('kept', 'yes');
 values.put('dropped', null);
 String mapJSON = JSON.serialize(values);
 System.assert(mapJSON.contains('kept'));
-System.assert(!mapJSON.contains('dropped'));
+System.assert(mapJSON.contains('"dropped":null'));
 String pretty = JSON.serializePretty(a);
 System.assert(pretty.contains('  "Name"'));
 Account decoded = JSON.deserializeStrict('{"Name":"Acme"}', Account.class);

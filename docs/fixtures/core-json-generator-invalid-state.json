@@ -1,0 +1,27 @@
+{
+  "name": "core-json-generator-invalid-state",
+  "evidence": [
+    {
+      "symbol": "JSONGenerator.close",
+      "kind": "exec",
+      "notes": "Invalid generator close with an open container returns a stable local diagnostic."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "JSONGenerator gen = JSON.createGenerator(false);\ngen.writeStartObject();\ngen.close();"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "JSONGenerator gen = JSON.createGenerator(false);\ngen.writeStartObject();\ngen.close();"
+    ]
+  },
+  "expected": {
+    "error": {
+      "message": "JSONGenerator cannot close with open JSON containers"
+    }
+  }
+}

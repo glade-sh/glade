@@ -128,10 +128,14 @@ Current progress:
   coverage includes token navigation, `JSONToken` constants, text/current-name
   accessors, integer/long/decimal/double, Boolean, Date, Datetime, Time, Id,
   and Blob accessors, `nextValue`, `skipChildren`, and `clearCurrentToken`.
+  Serialize coverage includes compact/pretty output for nested supported maps,
+  lists, and objects, with `suppressApexObjectNulls` limited to Apex object
+  fields while map/list nulls are preserved.
   Deserialize coverage includes deterministic untyped primitive/list/map/null
   mapping, typed primitive/platform scalar mapping, `List<T>` and
   `Map<String,T>` via local `Type` tokens, strict unknown-field rejection for
-  supported SObject/class targets, and stable typed shape errors.
+  supported SObject/class targets, stable typed shape errors, and typed
+  unsupported diagnostics for unregistered object mapping targets.
 - Blob/Encoding/Crypto: runtime support now covers deterministic local
   `Blob.valueOf`, `Blob.toString`, `Blob.size`, Base64 encode/decode,
   hex encode/decode, empty Blob/encoding edge cases, invalid Base64/hex and
@@ -171,6 +175,9 @@ Current progress:
   - `docs/fixtures/core-collection-stdlib.json`
   - `docs/fixtures/core-string-stdlib.json`
   - `docs/fixtures/core-string-more-stdlib.json`
+  - `docs/fixtures/core-json-stdlib.json`
+  - `docs/fixtures/core-json-generator-invalid-state.json`
+  - `docs/fixtures/core-json-unsupported-mapping.json`
   - `docs/fixtures/core-string-completion-stdlib.json`
   - `docs/fixtures/core-string-entity-edge-stdlib.json`
   - `docs/fixtures/core-numeric-stdlib.json`
@@ -256,12 +263,14 @@ Remaining cuts:
      exception shapes; raw writer support is limited to validated single-value
      raw JSON strings.
    - Extend `JSONParser` with full streaming edge behavior, parser recovery
-     semantics beyond the deterministic clear-current-token slice.
+     semantics beyond the deterministic clear-current-token and skip-children
+     current-name slices.
    - Extend `JSON.deserialize`/`deserializeStrict` beyond the bounded local
      typed primitive/platform scalar, `List<T>`, `Map<String,T>`, and supported
      class/SObject slices; remaining gaps include exact platform exception
      shapes, full class/SObject mapping parity, polymorphic mappings, and
-     unsupported Map key coercions.
+     unsupported Map key coercions. Unregistered object mapping targets now
+     return a typed unsupported diagnostic instead of invented parity.
    - Add any remaining suppress-null overloads and edge parity not covered by
      the current `serialize`/`serializePretty` Boolean overload slice.
 

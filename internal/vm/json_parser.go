@@ -14,6 +14,7 @@ type jsonParserFrame struct {
 	kind          string
 	expectingName bool
 	currentName   string
+	valueName     string
 }
 
 func newJSONParser(text string) (Value, error) {
@@ -209,26 +210,26 @@ func jsonParserTokenize(text string) ([]Value, error) {
 					return nil, err
 				}
 				tokens = append(tokens, jsonParserToken("START_OBJECT", "{", name, ""))
-				stack = append(stack, jsonParserFrame{kind: "object", expectingName: true, currentName: name})
+				stack = append(stack, jsonParserFrame{kind: "object", expectingName: true, currentName: name, valueName: name})
 			case '[':
 				name, err := jsonParserBeforeValue(&stack, &rootWritten)
 				if err != nil {
 					return nil, err
 				}
 				tokens = append(tokens, jsonParserToken("START_ARRAY", "[", name, ""))
-				stack = append(stack, jsonParserFrame{kind: "array", currentName: name})
+				stack = append(stack, jsonParserFrame{kind: "array", currentName: name, valueName: name})
 			case '}':
 				if len(stack) == 0 || stack[len(stack)-1].kind != "object" {
 					return nil, fmt.Errorf("JSONParser encountered unmatched object end")
 				}
-				name := stack[len(stack)-1].currentName
+				name := stack[len(stack)-1].valueName
 				stack = stack[:len(stack)-1]
 				tokens = append(tokens, jsonParserToken("END_OBJECT", "}", name, ""))
 			case ']':
 				if len(stack) == 0 || stack[len(stack)-1].kind != "array" {
 					return nil, fmt.Errorf("JSONParser encountered unmatched array end")
 				}
-				name := stack[len(stack)-1].currentName
+				name := stack[len(stack)-1].valueName
 				stack = stack[:len(stack)-1]
 				tokens = append(tokens, jsonParserToken("END_ARRAY", "]", name, ""))
 			}

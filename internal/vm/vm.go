@@ -4338,10 +4338,7 @@ func jsonFromValue(value Value, suppressObjectNulls bool) any {
 	case ValueMap:
 		out := make(map[string]any, len(value.Map))
 		for key, item := range value.Map {
-			if item.Kind == ValueNull {
-				continue
-			}
-			out[key] = jsonFromValue(item, suppressObjectNulls)
+			out[valueFromMapKey(key).String()] = jsonFromValue(item, suppressObjectNulls)
 		}
 		return out
 	case ValueObject:
@@ -4475,6 +4472,9 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 	if typeName == "Object" {
 		return valueFromJSON(raw), nil
 	}
+	if !vm.isJSONTypedObjectTarget(typeName) {
+		return Null, unsupportedCallError("JSON.deserialize local class/SObject mapping for " + typeName)
+	}
 	obj := Object(typeName)
 	fields, ok := raw.(map[string]any)
 	if !ok {
@@ -4508,6 +4508,18 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 		obj.Fields[key] = valueFromJSON(item)
 	}
 	return obj, nil
+}
+
+func (vm *VM) isJSONTypedObjectTarget(typeName string) bool {
+	if _, ok := vm.Classes[typeName]; ok {
+		return true
+	}
+	if vm.Org != nil {
+		if _, ok := vm.Org.Objects[typeName]; ok {
+			return true
+		}
+	}
+	return false
 }
 
 func typedScalarFromJSON(typeName string, raw any) (Value, bool, error) {
