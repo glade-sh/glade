@@ -766,44 +766,89 @@ func (s *Server) handleBulkJobs(w http.ResponseWriter, r *http.Request, parts []
 	}
 	switch parts[0] {
 	case "query":
-		writeUnsupportedBulkQueryJob(w, parts[1:])
+		writeUnsupportedBulkQueryJob(w, r, parts[1:])
 	case "ingest":
-		writeUnsupportedBulkIngestJob(w, parts[1:])
+		writeUnsupportedBulkIngestJob(w, r, parts[1:])
 	default:
 		writeSalesforceError(w, errUnknownEndpoint)
 	}
 }
 
-func writeUnsupportedBulkQueryJob(w http.ResponseWriter, parts []string) {
+func writeUnsupportedBulkQueryJob(w http.ResponseWriter, r *http.Request, parts []string) {
 	switch {
 	case len(parts) == 0:
+		if !methodAllowed(r, http.MethodGet, http.MethodPost) {
+			writeMethodNotAllowed(w, http.MethodGet, http.MethodPost)
+			return
+		}
 		writeSalesforceError(w, errUnsupportedFeature, "Bulk API v2 query jobs are not implemented in the local server")
 	case len(parts) == 1:
+		if !methodAllowed(r, http.MethodGet, http.MethodPatch, http.MethodDelete) {
+			writeMethodNotAllowed(w, http.MethodGet, http.MethodPatch, http.MethodDelete)
+			return
+		}
 		writeSalesforceError(w, errUnsupportedFeature, "Bulk API v2 query job records are not implemented in the local server")
 	case len(parts) == 2 && parts[1] == "results":
+		if !methodAllowed(r, http.MethodGet) {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
 		writeSalesforceError(w, errUnsupportedFeature, "Bulk API v2 query job results are not implemented in the local server")
 	default:
 		writeSalesforceError(w, errUnknownEndpoint)
 	}
 }
 
-func writeUnsupportedBulkIngestJob(w http.ResponseWriter, parts []string) {
+func writeUnsupportedBulkIngestJob(w http.ResponseWriter, r *http.Request, parts []string) {
 	switch {
 	case len(parts) == 0:
+		if !methodAllowed(r, http.MethodGet, http.MethodPost) {
+			writeMethodNotAllowed(w, http.MethodGet, http.MethodPost)
+			return
+		}
 		writeSalesforceError(w, errUnsupportedFeature, "Bulk API v2 ingest jobs are not implemented in the local server")
 	case len(parts) == 1:
+		if !methodAllowed(r, http.MethodGet, http.MethodPatch, http.MethodDelete) {
+			writeMethodNotAllowed(w, http.MethodGet, http.MethodPatch, http.MethodDelete)
+			return
+		}
 		writeSalesforceError(w, errUnsupportedFeature, "Bulk API v2 ingest job records are not implemented in the local server")
 	case len(parts) == 2 && parts[1] == "batches":
+		if !methodAllowed(r, http.MethodPut) {
+			writeMethodNotAllowed(w, http.MethodPut)
+			return
+		}
 		writeSalesforceError(w, errUnsupportedFeature, "Bulk API v2 ingest job batches are not implemented in the local server")
 	case len(parts) == 2 && parts[1] == "successfulResults":
+		if !methodAllowed(r, http.MethodGet) {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
 		writeSalesforceError(w, errUnsupportedFeature, "Bulk API v2 ingest successful results are not implemented in the local server")
 	case len(parts) == 2 && parts[1] == "failedResults":
+		if !methodAllowed(r, http.MethodGet) {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
 		writeSalesforceError(w, errUnsupportedFeature, "Bulk API v2 ingest failed results are not implemented in the local server")
 	case len(parts) == 2 && parts[1] == "unprocessedrecords":
+		if !methodAllowed(r, http.MethodGet) {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
 		writeSalesforceError(w, errUnsupportedFeature, "Bulk API v2 ingest unprocessed records are not implemented in the local server")
 	default:
 		writeSalesforceError(w, errUnknownEndpoint)
 	}
+}
+
+func methodAllowed(r *http.Request, allowed ...string) bool {
+	for _, method := range allowed {
+		if r.Method == method {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *Server) handleExecuteAnonymous(w http.ResponseWriter, r *http.Request) {
