@@ -1133,23 +1133,49 @@ func TestUnsupportedDiscoveryNamespacesReturnStableErrors(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
 	for _, path := range []string{
-		"/services/data/v61.0/search?q=FIND%20%7BAcme%7D",
 		"/services/data/v61.0/composite/batch",
 		"/services/data/v61.0/composite/tree/Account",
 		"/services/data/v61.0/composite/graph",
 	} {
 		rec := httptest.NewRecorder()
 		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, path, strings.NewReader(`{}`)))
-		if path == "/services/data/v61.0/search?q=FIND%20%7BAcme%7D" {
-			rec = httptest.NewRecorder()
-			handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
-		}
 		if rec.Code != http.StatusNotImplemented {
 			t.Fatalf("%s status = %d body=%s", path, rec.Code, rec.Body.String())
 		}
 		if !bytes.Contains(rec.Body.Bytes(), []byte(`"errorCode":"UNSUPPORTED_FEATURE"`)) {
 			t.Fatalf("%s unsupported shape = %s", path, rec.Body.String())
 		}
+	}
+}
+
+func TestRESTSearchReturnsStableUnsupportedError(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/search?q=FIND%20%7BAcme%7D", nil))
+	if rec.Code != http.StatusNotImplemented {
+		t.Fatalf("REST search status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if !bytes.Contains(rec.Body.Bytes(), []byte(`"errorCode":"UNSUPPORTED_FEATURE"`)) || !bytes.Contains(rec.Body.Bytes(), []byte(`Search/SOSL is not implemented`)) {
+		t.Fatalf("REST search shape = %s", rec.Body.String())
+	}
+}
+
+func TestRESTSearchRejectsNonGETMethod(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/search?q=FIND%20%7BAcme%7D", strings.NewReader(`{}`)))
+	if rec.Code != http.StatusMethodNotAllowed {
+		t.Fatalf("REST search method status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if got := rec.Header().Get("Allow"); got != http.MethodGet {
+		t.Fatalf("REST search Allow = %q", got)
+	}
+	if !bytes.Contains(rec.Body.Bytes(), []byte(`"errorCode":"METHOD_NOT_ALLOWED"`)) {
+		t.Fatalf("REST search method shape = %s", rec.Body.String())
 	}
 }
 

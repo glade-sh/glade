@@ -145,6 +145,10 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case len(rest) == 1 && rest[0] == "recent":
 		s.handleRecent(w, r, parts[2])
 	case len(rest) == 1 && rest[0] == "search":
+		if r.Method != http.MethodGet {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
 		writeSalesforceError(w, errUnsupportedFeature, "Search/SOSL is not implemented in the local server")
 	case len(rest) == 1 && rest[0] == "limits":
 		s.handleLimits(w, r)
