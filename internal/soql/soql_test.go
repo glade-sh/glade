@@ -714,6 +714,49 @@ func TestExecuteTypeofRelationshipProjection(t *testing.T) {
 	}
 }
 
+func TestExecuteSecurityModeRequiresRelationshipFieldOnAllParentTargets(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Account",
+			KeyPrefix: "001",
+			Fields: map[string]storage.Field{
+				"Secret__c": {APIName: "Secret__c", Type: storage.FieldString},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	org.Objects["Opportunity"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Opportunity",
+			KeyPrefix: "006",
+			Fields: map[string]storage.Field{
+				"Amount": {APIName: "Amount", Type: storage.FieldDecimal},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	org.Objects["Task"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Task",
+			Fields: map[string]storage.Field{
+				"WhatId": {APIName: "WhatId", Type: storage.FieldReference, ReferenceTo: []string{"Account", "Opportunity"}, RelationshipName: "What"},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "WhatId",
+				ParentObjects:      []string{"Account", "Opportunity"},
+				ParentRelationship: "What",
+				Polymorphic:        true,
+			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+
+	if _, err := ParseAndExecute(org, "SELECT Id, What.Secret__c FROM Task WITH SECURITY_ENFORCED"); err == nil || !strings.Contains(err.Error(), "What.Secret__c") {
+		t.Fatalf("expected relationship security projection error, got %v", err)
+	}
+}
+
 func TestExecuteProjectsChildRelationshipSubquery(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Objects["Account"] = storage.ObjectState{
