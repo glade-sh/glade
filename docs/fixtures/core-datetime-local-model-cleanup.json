@@ -1,0 +1,87 @@
+{
+  "name": "core-datetime-local-model-cleanup",
+  "evidence": [
+    {
+      "symbol": "Date.addMonths",
+      "kind": "exec",
+      "notes": "Covers deterministic month-end clamp for positive and negative local Gregorian deltas."
+    },
+    {
+      "symbol": "Date.addYears",
+      "kind": "exec",
+      "notes": "Covers deterministic leap-day clamp for positive and negative local Gregorian deltas."
+    },
+    {
+      "symbol": "Date.today",
+      "kind": "exec",
+      "notes": "Covers the deterministic UTC VM clock date."
+    },
+    {
+      "symbol": "Datetime.addDays",
+      "kind": "exec",
+      "notes": "Covers deterministic UTC calendar-day arithmetic."
+    },
+    {
+      "symbol": "Datetime.addMonths",
+      "kind": "exec",
+      "notes": "Covers deterministic UTC month arithmetic with negative deltas."
+    },
+    {
+      "symbol": "Datetime.addYears",
+      "kind": "exec",
+      "notes": "Covers deterministic UTC leap-day clamp for positive and negative deltas."
+    },
+    {
+      "symbol": "Datetime.now",
+      "kind": "exec",
+      "notes": "Covers the deterministic UTC VM clock timestamp."
+    },
+    {
+      "symbol": "Datetime.formatGmt",
+      "kind": "exec",
+      "notes": "Covers deterministic UTC pattern formatting with numeric and zone tokens."
+    },
+    {
+      "symbol": "Datetime.format",
+      "kind": "exec",
+      "notes": "Covers deterministic modeled named-zone formatting for America/New_York."
+    },
+    {
+      "symbol": "TimeZone.getTimeZone",
+      "kind": "exec",
+      "notes": "Covers fixed-offset and modeled Europe/Berlin zone construction."
+    },
+    {
+      "symbol": "TimeZone.getID",
+      "kind": "exec"
+    },
+    {
+      "symbol": "TimeZone.getDisplayName",
+      "kind": "exec",
+      "notes": "Covers deterministic ID display text plus daylight Boolean abbreviations."
+    },
+    {
+      "symbol": "TimeZone.getOffset",
+      "kind": "exec",
+      "notes": "Covers fixed-offset and modeled DST offset milliseconds."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Date leap = Date.newInstance(2024, 1, 31);\nSystem.assertEquals('2024-02-29', leap.addMonths(1).format());\nSystem.assertEquals('2023-12-31', leap.addMonths(-1).format());\nDate leapDay = Date.newInstance(2024, 2, 29);\nSystem.assertEquals('2025-02-28', leapDay.addYears(1).format());\nSystem.assertEquals('2023-02-28', leapDay.addYears(-1).format());\nSystem.assertEquals('2026-05-02', Date.today().format());\nDatetime stamp = Datetime.newInstanceGmt(2024, 2, 29, 23, 58, 59);\nSystem.assertEquals('2024-03-01T23:58:59Z', stamp.addDays(1).formatGmt());\nSystem.assertEquals('2024-01-29T23:58:59Z', stamp.addMonths(-1).formatGmt());\nSystem.assertEquals('2025-02-28T23:58:59Z', stamp.addYears(1).formatGmt());\nSystem.assertEquals('2023-02-28T23:58:59Z', stamp.addYears(-1).formatGmt());\nSystem.assertEquals('2026-05-02T12:00:00Z', Datetime.now().formatGmt());\nSystem.assertEquals('2024-02-29 23:58:59.000 +0000 UTC', stamp.formatGmt('yyyy-MM-dd HH:mm:ss.SSS Z z'));\nDatetime summer = Datetime.valueOfGmt('2024-07-01T12:00:00Z');\nSystem.assertEquals('2024-07-01 08:00:00 -0400 EDT', summer.format('yyyy-MM-dd HH:mm:ss Z z', 'America/New_York'));\nTimeZone fixed = TimeZone.getTimeZone('UTC-02:00');\nSystem.assertEquals('GMT-02:00', fixed.getID());\nSystem.assertEquals('GMT-02:00', fixed.getDisplayName());\nSystem.assertEquals(-7200000, fixed.getOffset(stamp));\nTimeZone berlin = TimeZone.getTimeZone('Europe/Berlin');\nSystem.assertEquals('Europe/Berlin', berlin.getID());\nSystem.assertEquals('Europe/Berlin', berlin.getDisplayName());\nSystem.assertEquals('CET', berlin.getDisplayName(false));\nSystem.assertEquals('CEST', berlin.getDisplayName(true));\nSystem.assertEquals(7200000, berlin.getOffset(summer));\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Date leap = Date.newInstance(2024, 1, 31);\nSystem.assertEquals('2024-02-29', leap.addMonths(1).format());\nSystem.assertEquals('2023-12-31', leap.addMonths(-1).format());\nDate leapDay = Date.newInstance(2024, 2, 29);\nSystem.assertEquals('2025-02-28', leapDay.addYears(1).format());\nSystem.assertEquals('2023-02-28', leapDay.addYears(-1).format());\nSystem.assertEquals('2026-05-02', Date.today().format());\nDatetime stamp = Datetime.newInstanceGmt(2024, 2, 29, 23, 58, 59);\nSystem.assertEquals('2024-03-01T23:58:59Z', stamp.addDays(1).formatGmt());\nSystem.assertEquals('2024-01-29T23:58:59Z', stamp.addMonths(-1).formatGmt());\nSystem.assertEquals('2025-02-28T23:58:59Z', stamp.addYears(1).formatGmt());\nSystem.assertEquals('2023-02-28T23:58:59Z', stamp.addYears(-1).formatGmt());\nSystem.assertEquals('2026-05-02T12:00:00Z', Datetime.now().formatGmt());\nSystem.assertEquals('2024-02-29 23:58:59.000 +0000 UTC', stamp.formatGmt('yyyy-MM-dd HH:mm:ss.SSS Z z'));\nDatetime summer = Datetime.valueOfGmt('2024-07-01T12:00:00Z');\nSystem.assertEquals('2024-07-01 08:00:00 -0400 EDT', summer.format('yyyy-MM-dd HH:mm:ss Z z', 'America/New_York'));\nTimeZone fixed = TimeZone.getTimeZone('UTC-02:00');\nSystem.assertEquals('GMT-02:00', fixed.getID());\nSystem.assertEquals('GMT-02:00', fixed.getDisplayName());\nSystem.assertEquals(-7200000, fixed.getOffset(stamp));\nTimeZone berlin = TimeZone.getTimeZone('Europe/Berlin');\nSystem.assertEquals('Europe/Berlin', berlin.getID());\nSystem.assertEquals('Europe/Berlin', berlin.getDisplayName());\nSystem.assertEquals('CET', berlin.getDisplayName(false));\nSystem.assertEquals('CEST', berlin.getDisplayName(true));\nSystem.assertEquals(7200000, berlin.getOffset(summer));\n"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}
