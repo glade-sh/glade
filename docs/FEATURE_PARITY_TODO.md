@@ -525,6 +525,10 @@ a Salesforce-shaped local API server without silently wrong behavior.
     `regionStart`/`regionEnd`, `reset`, `find(start)` stale-match clearing,
     anchoring bounds on `^`/`$`, and transparent bounds for Go-regexp
     word-boundary cases.
+  - [x] Tighten String regex and escape follow-up parity: `replaceAll` and
+    `replaceFirst` now share Matcher replacement parsing, `split`/`Pattern.split`
+    pin Java-only regex diagnostics, and Java/EcmaScript unescape handles octal
+    escapes in addition to UTF-16 Unicode escapes.
   - [x] Add common `Date`, `Datetime`, and `Time` factories, parsing,
     arithmetic, and component helpers.
   - [x] Add common numeric `Math` helpers, `Decimal` scale/conversion helpers,

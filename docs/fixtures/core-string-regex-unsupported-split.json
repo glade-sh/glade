@@ -1,0 +1,28 @@
+{
+  "name": "core-string-regex-unsupported-split",
+  "evidence": [
+    {
+      "symbol": "String.split",
+      "kind": "unsupported",
+      "notes": "Java backreferences remain outside the local Go-regexp-backed String split subset."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "String source = 'book';\nsource.split('(.)\\\\1');\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "String source = 'book';\nsource.split('(.)\\\\1');\n"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"String.split Java regex backreferences\""
+    }
+  }
+}

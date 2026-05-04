@@ -2257,18 +2257,28 @@ func stringRegexReplace(name, text string, args []Value, all bool) (string, erro
 	if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
 		return "", fmt.Errorf("%s expects regex and replacement Strings", name)
 	}
-	re, err := regexp.Compile(args[0].Text)
+	pattern := args[0].Text
+	if feature := unsupportedJavaRegexFeature(pattern); feature != "" {
+		return "", unsupportedCallError(name + " " + feature)
+	}
+	re, err := regexp.Compile(pattern)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("%s invalid regex: %w", name, err)
+	}
+	replacement, err := javaReplacementToGoTemplate(args[1].Text, re.NumSubexp())
+	if err != nil {
+		return "", fmt.Errorf("%s %w", name, err)
 	}
 	if all {
-		return re.ReplaceAllString(text, args[1].Text), nil
+		return re.ReplaceAllString(text, replacement), nil
 	}
-	loc := re.FindStringIndex(text)
-	if loc == nil {
+	indices := re.FindStringSubmatchIndex(text)
+	if indices == nil {
 		return text, nil
 	}
-	return text[:loc[0]] + re.ReplaceAllString(text[loc[0]:loc[1]], args[1].Text) + text[loc[1]:], nil
+	var expanded []byte
+	expanded = re.ExpandString(expanded, replacement, text, indices)
+	return text[:indices[0]] + string(expanded) + text[indices[1]:], nil
 }
 
 func stringRegexSplit(text string, args []Value) ([]string, error) {
@@ -2278,13 +2288,20 @@ func stringRegexSplit(text string, args []Value) ([]string, error) {
 	if args[0].Kind != ValueString || (len(args) == 2 && args[1].Kind != ValueInt) {
 		return nil, fmt.Errorf("String.split expects regex String and optional Integer limit")
 	}
-	re, err := regexp.Compile(args[0].Text)
-	if err != nil {
-		return nil, err
-	}
 	limit := int64(0)
 	if len(args) == 2 {
 		limit = args[1].Int
+	}
+	return splitRegex("String.split", args[0].Text, text, limit)
+}
+
+func splitRegex(name, pattern, text string, limit int64) ([]string, error) {
+	if feature := unsupportedJavaRegexFeature(pattern); feature != "" {
+		return nil, unsupportedCallError(name + " " + feature)
+	}
+	re, err := regexp.Compile(pattern)
+	if err != nil {
+		return nil, fmt.Errorf("%s invalid regex: %w", name, err)
 	}
 	if limit > 0 {
 		maxParts := int64(len(text) + 1)
@@ -2309,15 +2326,11 @@ func patternSplit(source string, args []Value) ([]string, error) {
 	if args[0].Kind != ValueString || (len(args) == 2 && args[1].Kind != ValueInt) {
 		return nil, fmt.Errorf("Pattern.split expects input String and optional Integer limit")
 	}
-	splitArgs := []Value{String(source)}
+	limit := int64(0)
 	if len(args) == 2 {
-		splitArgs = append(splitArgs, args[1])
+		limit = args[1].Int
 	}
-	parts, err := stringRegexSplit(args[0].Text, splitArgs)
-	if err != nil {
-		return nil, fmt.Errorf("Pattern.split invalid regex: %w", err)
-	}
-	return parts, nil
+	return splitRegex("Pattern.split", source, args[0].Text, limit)
 }
 
 func unsupportedJavaRegexFeature(source string) string {
@@ -2703,6 +2716,21 @@ func unescapeJavaLike(name, text string) (string, error) {
 			out = append(out, '\r')
 		case '"', '\'', '\\', '/':
 			out = append(out, rune(text[i]))
+		case '0', '1', '2', '3', '4', '5', '6', '7':
+			value := int(text[i] - '0')
+			maxDigits := 2
+			if text[i] > '3' {
+				maxDigits = 1
+			}
+			for digits := 0; digits < maxDigits && i+1 < len(text); digits++ {
+				next := text[i+1]
+				if next < '0' || next > '7' {
+					break
+				}
+				value = value*8 + int(next-'0')
+				i++
+			}
+			out = append(out, rune(value))
 		case 'u':
 			units := []uint16{}
 			for {

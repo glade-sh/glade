@@ -583,6 +583,54 @@ func TestStringStdlibMoreRejectsBadArgumentShapes(t *testing.T) {
 	}
 }
 
+func TestStringRegexReplacementSplitAndUnsupportedEdges(t *testing.T) {
+	replacedAll, handled, err := callStringMember(String("A1 B22 C333"), "replaceAll", []Value{String("([A-Z]+)([0-9]+)"), String("$10")})
+	if err != nil || !handled || replacedAll.Text != "A0 B0 C0" {
+		t.Fatalf("replaceAll = %#v handled=%v err=%v", replacedAll, handled, err)
+	}
+	replacedFirst, handled, err := callStringMember(String("A1 B22"), "replaceFirst", []Value{String("([A-Z]+)([0-9]+)"), String(`\$1`)})
+	if err != nil || !handled || replacedFirst.Text != "$1 B22" {
+		t.Fatalf("replaceFirst = %#v handled=%v err=%v", replacedFirst, handled, err)
+	}
+	split, handled, err := callStringMember(String(":boo:"), "split", []Value{String(":"), Int(-1)})
+	if err != nil || !handled || split.Kind != ValueList || len(split.List) != 3 || split.List[0].Text != "" || split.List[1].Text != "boo" || split.List[2].Text != "" {
+		t.Fatalf("split = %#v handled=%v err=%v", split, handled, err)
+	}
+	_, _, err = callStringMember(String("abc"), "replaceAll", []Value{String("(?=a)"), String("x")})
+	var runtimeErr *RuntimeError
+	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || !strings.Contains(runtimeErr.Message, "String.replaceAll Java regex lookahead") {
+		t.Fatalf("replaceAll unsupported err = %#v", err)
+	}
+	_, _, err = callStringMember(String("abc"), "split", []Value{String(`(.)\1`)})
+	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || !strings.Contains(runtimeErr.Message, "String.split Java regex backreferences") {
+		t.Fatalf("split unsupported err = %#v", err)
+	}
+}
+
+func TestStringEscapeJavaLikeOctalAndUnicodeEdges(t *testing.T) {
+	source := "\b\t\n\f\r\"'\\/Ω😀"
+	if got, want := escapeJavaLike(source, false, false), `\b\t\n\f\r\"'\\/\u03A9\uD83D\uDE00`; got != want {
+		t.Fatalf("escapeJavaLike = %q, want %q", got, want)
+	}
+	if got, want := escapeJavaLike(source, true, true), `\b\t\n\f\r\"\'\\\/\u03A9\uD83D\uDE00`; got != want {
+		t.Fatalf("escapeEcmaScript-like = %q, want %q", got, want)
+	}
+	unescaped, err := unescapeJavaLike("String.unescapeJava", `\141\040A\u03A9\uD83D\uDE00\0`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := "a AΩ😀\x00"; unescaped != want {
+		t.Fatalf("unescapeJavaLike = %q, want %q", unescaped, want)
+	}
+	unescaped, err = unescapeJavaLike("String.unescapeEcmaScript", `\/\'\"\\`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := `/'"\`; unescaped != want {
+		t.Fatalf("unescapeEcmaScript-like = %q, want %q", unescaped, want)
+	}
+}
+
 func TestExecBlobEncodingCryptoStdlib(t *testing.T) {
 	program, err := CompileAnonymous(`
 Blob hello = Blob.valueOf('hello');

@@ -1,0 +1,28 @@
+{
+  "name": "core-string-regex-unsupported-replace",
+  "evidence": [
+    {
+      "symbol": "String.replaceAll",
+      "kind": "unsupported",
+      "notes": "Java lookahead remains outside the local Go-regexp-backed String replacement subset."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "String source = 'abc';\nsource.replaceAll('(?=a)', 'x');\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "String source = 'abc';\nsource.replaceAll('(?=a)', 'x');\n"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"String.replaceAll Java regex lookahead\""
+    }
+  }
+}
