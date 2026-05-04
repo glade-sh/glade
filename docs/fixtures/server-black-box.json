@@ -59,6 +59,28 @@
       "status": 201,
       "contains": ["\"success\":true", "001000000000001"]
     },
+
+    {
+      "name": "get-account-rest-shape",
+      "method": "GET",
+      "path": "/services/data/v61.0/sobjects/Account/001000000000001",
+      "status": 200,
+      "contains": ["\"attributes\":{\"type\":\"Account\",\"url\":\"/services/data/v61.0/sobjects/Account/001000000000001\"}", "\"Id\":\"001000000000001\"", "\"Name\":\"Acme\""]
+    },
+    {
+      "name": "compact-layouts-stub",
+      "method": "GET",
+      "path": "/services/data/v61.0/sobjects/Account/compactLayouts",
+      "status": 200,
+      "contains": ["\"objectType\":\"Account\"", "\"compactLayouts\":[]", "empty local stub"]
+    },
+    {
+      "name": "layouts-unsupported",
+      "method": "GET",
+      "path": "/services/data/v61.0/sobjects/Account/layouts",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "layout metadata"]
+    },
     {
       "name": "query-account",
       "method": "GET",
@@ -147,8 +169,8 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 16,
-      "statuses": [200, 200, 200, 200, 200, 201, 200, 200, 200, 200, 400, 501, 501, 404, 200, 201],
+      "requests": 19,
+      "statuses": [200, 200, 200, 200, 200, 201, 200, 200, 501, 200, 200, 200, 200, 400, 501, 501, 404, 200, 201],
       "users": 2
     }
   }

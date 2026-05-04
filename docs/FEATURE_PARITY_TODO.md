@@ -615,6 +615,12 @@ a Salesforce-shaped local API server without silently wrong behavior.
   resources.
 - [ ] Expand SObject REST resources: describe, layout-adjacent metadata where
   useful, recent, query, queryAll, and record CRUD edge cases.
+  - [x] Return flat record GET payloads with `attributes.type`, `attributes.url`,
+    and `Id` instead of leaking internal storage value wrappers.
+  - [x] Add explicit full-layout unsupported responses and an empty compact
+    layouts stub for local tooling probes.
+  - [x] Cover missing/deleted record GET, missing DELETE, null PATCH, and method
+    `Allow` headers in server tests.
 - [ ] Expand Tooling API coverage beyond `executeAnonymous` and query
   delegation.
 - [ ] Add more REST resources used by local integrations and editor tooling.
