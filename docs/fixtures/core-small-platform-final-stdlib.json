@@ -1,0 +1,56 @@
+{
+  "name": "core-small-platform-final-stdlib",
+  "evidence": [
+    {
+      "symbol": "Id.getSObjectType local prefixes",
+      "kind": "test",
+      "notes": "Custom metadata-loaded object prefixes and modeled standard prefixes resolve to local SObjectType tokens."
+    },
+    {
+      "symbol": "Pattern.compile local regexp dialect",
+      "kind": "test",
+      "notes": "Supported local flags compile, carry Pattern.pattern source text, and drive Matcher behavior."
+    },
+    {
+      "symbol": "Pattern.compile Java regex dialect gaps",
+      "kind": "test",
+      "notes": "Java-only regex features remain covered by existing UnsupportedFeature fixtures."
+    },
+    {
+      "symbol": "System.abortJob queued local async",
+      "kind": "test",
+      "notes": "Queued local async aborts remain covered by async-abort-job-edges."
+    },
+    {
+      "symbol": "Test.setMock HttpCalloutMock",
+      "kind": "test",
+      "notes": "String and Type-token HttpCalloutMock registration remains covered by HTTP/Test fixtures."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/objects/Trail__c/Trail__c.object-meta.xml",
+      "content": "<CustomObject><label>Trail</label><pluralLabel>Trails</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Trail__c/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Trail Name</label><type>Text</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/classes/SmallPlatformFinalFixtureTest.cls",
+      "content": "@isTest private class SmallPlatformFinalFixtureTest { @isTest static void localRowsAndFencesArePinned() { Id accountId = Id.valueOf('001B000001DVM9t'); System.assertNotEquals(null, accountId.getSObjectType()); Id trailId = Id.valueOf('a00B000001DVM9t'); System.assertEquals('Trail__c', trailId.getSObjectType().getDescribe().getName()); Pattern p = Pattern.compile('a.b', Pattern.CASE_INSENSITIVE + Pattern.DOTALL + Pattern.UNICODE_CASE); System.assertEquals('a.b', p.pattern()); String input = String.fromCharArray(new List<Integer>{65,10,66}); System.assert(p.matcher(input).matches()); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "errors": 0,
+      "failed": 0,
+      "ok": true,
+      "passed": 1,
+      "total": 1
+    }
+  }
+}
