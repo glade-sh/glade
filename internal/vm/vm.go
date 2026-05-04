@@ -3012,7 +3012,26 @@ func databaseDMLException(op string, results []dml.Result) error {
 			break
 		}
 	}
-	return newExceptionError("DmlException", message)
+	value := Object("DmlException")
+	value.Fields["message"] = String(message)
+	value.Fields["__dmlErrors"] = dmlExceptionErrorDetails(results)
+	return &apexThrowError{value: value}
+}
+
+func dmlExceptionErrorDetails(results []dml.Result) Value {
+	details := List()
+	for index, result := range results {
+		if result.Success || result.Error == "" {
+			continue
+		}
+		for _, err := range dmlResultErrors(result) {
+			detail := databaseErrorValue(err)
+			detail.Fields["id"] = databaseResultIDValue(result.ID)
+			detail.Fields["index"] = Int(int64(index))
+			details.List = append(details.List, detail)
+		}
+	}
+	return details
 }
 
 func (vm *VM) executeDatabaseMerge(args []Value, result *Result) (Value, error) {
@@ -8721,6 +8740,25 @@ func databaseErrorValue(err dml.Error) Value {
 	return value
 }
 
+func dmlExceptionDetail(receiver Value, method string, args []Value) (Value, error) {
+	if len(args) != 1 || args[0].Kind != ValueInt {
+		return Null, fmt.Errorf("%s.%s expects Integer index", receiver.Type, method)
+	}
+	details, ok := receiver.Fields["__dmlErrors"]
+	if !ok || details.Kind != ValueList {
+		return Null, fmt.Errorf("%s.%s index out of bounds: %d", receiver.Type, method, args[0].Int)
+	}
+	index := int(args[0].Int)
+	if index < 0 || index >= len(details.List) {
+		return Null, fmt.Errorf("%s.%s index out of bounds: %d", receiver.Type, method, args[0].Int)
+	}
+	detail := details.List[index]
+	if detail.Kind != ValueObject {
+		return Null, fmt.Errorf("%s.%s detail is not available: %d", receiver.Type, method, args[0].Int)
+	}
+	return detail, nil
+}
+
 func (vm *VM) resolveSObjectFieldName(typeName, field string) string {
 	if vm.Org == nil {
 		return field
@@ -8824,6 +8862,53 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return message, receiver, false, true, nil
 			}
 			return Null, receiver, false, true, nil
+		case "getNumDml":
+			if exceptionTypeName(receiver.Type) != "DmlException" {
+				break
+			}
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("%s.getNumDml expects 0 arguments", receiver.Type)
+			}
+			details, _ := receiver.Fields["__dmlErrors"]
+			if details.Kind != ValueList {
+				return Int(0), receiver, false, true, nil
+			}
+			return Int(int64(len(details.List))), receiver, false, true, nil
+		case "getDmlMessage", "getDmlStatusCode", "getDmlFields", "getDmlId", "getDmlIndex":
+			if exceptionTypeName(receiver.Type) != "DmlException" {
+				break
+			}
+			detail, err := dmlExceptionDetail(receiver, method, args)
+			if err != nil {
+				return Null, receiver, false, true, err
+			}
+			switch method {
+			case "getDmlMessage":
+				if value, ok := detail.Fields["message"]; ok {
+					return value, receiver, false, true, nil
+				}
+				return String(""), receiver, false, true, nil
+			case "getDmlStatusCode":
+				if value, ok := detail.Fields["statusCode"]; ok {
+					return value, receiver, false, true, nil
+				}
+				return String("FIELD_CUSTOM_VALIDATION_EXCEPTION"), receiver, false, true, nil
+			case "getDmlFields":
+				if value, ok := detail.Fields["fields"]; ok {
+					return value, receiver, false, true, nil
+				}
+				return List(), receiver, false, true, nil
+			case "getDmlId":
+				if value, ok := detail.Fields["id"]; ok {
+					return value, receiver, false, true, nil
+				}
+				return Null, receiver, false, true, nil
+			case "getDmlIndex":
+				if value, ok := detail.Fields["index"]; ok {
+					return value, receiver, false, true, nil
+				}
+				return Int(-1), receiver, false, true, nil
+			}
 		case "getCause":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("%s.getCause expects 0 arguments", receiver.Type)

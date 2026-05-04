@@ -1277,6 +1277,69 @@ System.assertEquals(0, rows.size());
 	}
 }
 
+func TestExecDatabaseErrorDetailsAndDmlExceptionParity(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account existing = new Account(Name = 'Existing', Code__c = 'A');
+insert existing;
+
+Account missing = new Account(Code__c = 'M');
+Account duplicate = new Account(Name = 'Duplicate', Code__c = 'a');
+Account blocked = new Account(Name = 'Blocked', Code__c = 'B');
+List<Account> records = new List<Account>{missing, duplicate, blocked};
+
+List<Object> partial = Database.insert(records, false);
+System.assertEquals(3, partial.size());
+System.assertEquals('REQUIRED_FIELD_MISSING', partial.get(0).getErrors().get(0).getStatusCode());
+System.assertEquals('Name', partial.get(0).getErrors().get(0).getFields().get(0));
+System.assertEquals('DUPLICATE_VALUE', partial.get(1).getErrors().get(0).getStatusCode());
+System.assertEquals('Code__c', partial.get(1).getErrors().get(0).getFields().get(0));
+System.assertEquals('FIELD_CUSTOM_VALIDATION_EXCEPTION', partial.get(2).getErrors().get(0).getStatusCode());
+System.assertEquals('Name', partial.get(2).getErrors().get(0).getFields().get(0));
+
+Boolean caught = false;
+try {
+	Database.insert(records, true);
+} catch (DmlException e) {
+	caught = true;
+	System.assertEquals(3, e.getNumDml());
+	System.assertEquals(0, e.getDmlIndex(0));
+	System.assertEquals('REQUIRED_FIELD_MISSING', e.getDmlStatusCode(0));
+	System.assertEquals(partial.get(0).getErrors().get(0).getMessage(), e.getDmlMessage(0));
+	System.assertEquals(partial.get(0).getErrors().get(0).getFields().get(0), e.getDmlFields(0).get(0));
+	System.assertEquals(null, e.getDmlId(0));
+	System.assertEquals(1, e.getDmlIndex(1));
+	System.assertEquals('DUPLICATE_VALUE', e.getDmlStatusCode(1));
+	System.assertEquals('Code__c', e.getDmlFields(1).get(0));
+	System.assertEquals(2, e.getDmlIndex(2));
+	System.assertEquals('FIELD_CUSTOM_VALIDATION_EXCEPTION', e.getDmlStatusCode(2));
+	System.assertEquals('Name', e.getDmlFields(2).get(0));
+}
+System.assert(caught);
+List<Account> rows = [SELECT Id FROM Account WHERE Code__c IN ('M', 'B')];
+System.assertEquals(0, rows.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Name"] = storage.Field{APIName: "Name", Type: storage.FieldString, Required: true}
+	account.Definition.Fields["Code__c"] = storage.Field{APIName: "Code__c", Type: storage.FieldString, Unique: true}
+	account.Definition.ValidationRules = []storage.ValidationRule{{
+		Name:                  "BlockBadName",
+		Active:                true,
+		ErrorConditionFormula: `Name = "Blocked"`,
+		ErrorMessage:          "blocked by validation rule",
+		ErrorDisplayField:     "Name",
+	}}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDMLInvokesTriggersAndRollsBack(t *testing.T) {
 	triggerProgram, err := CompileAnonymous(`
 for (Account a : Trigger.new) {

@@ -353,6 +353,10 @@ a Salesforce-shaped local API server without silently wrong behavior.
     local `Database.Error` values.
   - [x] Preserve multiple object-level and field-level `addError` calls as
     multiple `Database.Error` entries on `SaveResult`/`MergeResult`.
+  - [x] Align locally modeled required-field, duplicate-value, and validation-rule
+    details across `Database.Error` accessors and `DmlException` detail methods
+    (`getNumDml`, `getDmlStatusCode`, `getDmlMessage`, `getDmlFields`,
+    `getDmlId`, and `getDmlIndex`) for all-or-none failures.
   - [x] Cascade soft-delete child records from relationship metadata.
   - [x] Return `ENTITY_IS_NOT_DELETED` SaveResult details when undeleting active
     records.
