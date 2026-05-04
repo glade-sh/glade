@@ -912,6 +912,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
     endpoint methods and `METHOD_NOT_ALLOWED` for unsupported methods.
   - [x] Harden REST Search/SOSL and common unsupported REST namespace methods so
     non-GET probes receive deterministic `METHOD_NOT_ALLOWED` responses.
+  - [x] Fence Metadata REST deploy request, deploy status, results, and details
+    probes with explicit unsupported responses plus JSON and method-boundary
+    validation instead of creating fake deploy jobs.
 - [ ] Add Composite API coverage beyond baseline sObject insert, including
   all-or-none rollback, reference ID behavior, and conservative local
   collection update/delete mutators.
@@ -1008,6 +1011,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Cover OAuth method boundaries, Tooling deploy-chain member object stubs,
     and Bulk query/ingest mutator body validation in the server black-box
     fixture.
+  - [x] Cover Metadata REST deploy request, deploy status, results, details,
+    malformed JSON, and method-boundary fences in the server black-box fixture.
 
 ## 9. Compatibility, Hardening, And Release
 

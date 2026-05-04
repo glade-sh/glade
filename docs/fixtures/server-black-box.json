@@ -1252,6 +1252,69 @@
       ]
     },
     {
+      "name": "metadata-deploy-create-unsupported",
+      "method": "POST",
+      "path": "/services/data/v61.0/metadata/deployRequest",
+      "body": "{\"deployOptions\":{\"checkOnly\":true}}",
+      "status": 501,
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Metadata REST deploy requests"
+      ]
+    },
+    {
+      "name": "metadata-deploy-create-malformed-json",
+      "method": "POST",
+      "path": "/services/data/v61.0/metadata/deployRequest",
+      "body": "{\"deployOptions\":",
+      "status": 400,
+      "contains": [
+        "JSON_PARSER_ERROR",
+        "unexpected EOF"
+      ]
+    },
+    {
+      "name": "metadata-deploy-status-unsupported",
+      "method": "GET",
+      "path": "/services/data/v61.0/metadata/deployRequest/0Af000000000001",
+      "status": 501,
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Metadata REST deploy status"
+      ]
+    },
+    {
+      "name": "metadata-deploy-results-unsupported",
+      "method": "GET",
+      "path": "/services/data/v61.0/metadata/deployRequest/0Af000000000001/results",
+      "status": 501,
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Metadata REST deploy results retrieval"
+      ]
+    },
+    {
+      "name": "metadata-deploy-details-unsupported",
+      "method": "GET",
+      "path": "/services/data/v61.0/metadata/deployRequest/0Af000000000001/deployDetails",
+      "status": 501,
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "Metadata REST deploy details retrieval"
+      ]
+    },
+    {
+      "name": "metadata-deploy-results-method-not-allowed",
+      "method": "POST",
+      "path": "/services/data/v61.0/metadata/deployRequest/0Af000000000001/results",
+      "body": "{}",
+      "status": 405,
+      "contains": [
+        "METHOD_NOT_ALLOWED",
+        "method not allowed"
+      ]
+    },
+    {
       "name": "tooling-sobjects-unsupported",
       "method": "GET",
       "path": "/services/data/v61.0/tooling/sobjects",
@@ -1876,7 +1939,7 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 168,
+      "requests": 174,
       "statuses": [
         200,
         200,
@@ -1988,6 +2051,12 @@
         501,
         405,
         501,
+        501,
+        400,
+        501,
+        501,
+        501,
+        405,
         501,
         501,
         501,
