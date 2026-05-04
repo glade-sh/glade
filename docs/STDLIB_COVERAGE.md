@@ -12,11 +12,12 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | ApexPages | `ApexPages.getMessages` | `supported` | Returns VM-local page messages. |
 | ApexPages | `ApexPages.hasMessages` | `supported` | Checks VM-local page messages. |
 | Approval | `Approval process APIs` | `unsupported` | Approval namespace process, request, and lock helpers return fixture-backed UnsupportedFeature diagnostics; approval workflow side effects are not locally modeled. |
-| Async | `AsyncApexJob / CronTrigger local records` | `partial` | Test-context enqueue/drain creates deterministic local AsyncApexJob rows and CronTrigger rows for supported future, queueable, batch, and scheduled jobs; broader platform lifecycle fields are not modeled. |
+| Async | `AsyncApexJob / CronTrigger local records` | `supported` | Test-context enqueue/drain creates deterministic local AsyncApexJob rows and CronTrigger rows for supported future, queueable, batch, and scheduled jobs in the local model. |
 | Async | `AsyncInfo / AsyncOptions / finalizers` | `unsupported` | Queueable stack metadata, AsyncOptions mutators/accessors and enqueue overloads, System.attachFinalizer, and FinalizerContext getters return fixture-backed UnsupportedFeature diagnostics. |
 | Async | `BatchableContext.getJobId` | `supported` | Returns the deterministic local AsyncApexJob Id during supported batch start, execute, and finish drain phases. |
 | Async | `QueueableContext.getJobId` | `supported` | Returns the deterministic local AsyncApexJob Id during supported queueable Test.stopTest drain. |
 | Async | `SchedulableContext.getTriggerId` | `supported` | Returns the deterministic local CronTrigger Id during supported scheduled Test.stopTest drain. |
+| Async | `platform async lifecycle controls` | `unsupported` | Completed or unknown abortJob targets, scheduleBatch deferral, broader cloud lifecycle fields, AsyncInfo, AsyncOptions, and finalizers return fixture-backed UnsupportedFeature diagnostics. |
 | Auth | `token/cloud APIs` | `unsupported` | Auth namespace session, JWT, OAuth, token, and cloud calls return fixture-backed UnsupportedFeature diagnostics. |
 | Blob | `Blob.size` | `supported` | Returns local Blob byte length. |
 | Blob | `Blob.toString` | `supported` | Returns UTF-8 local Blob bytes as a string and rejects invalid UTF-8 data. |
@@ -118,7 +119,8 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | HTTP | `Http.send` | `partial` | Mock-first local callouts with request validation and callout accounting; real network transport remains explicitly unsupported. |
 | HTTP | `HttpRequest` | `partial` | Deterministic constructor defaults plus endpoint, method, compressed flag, case-insensitive headers/header keys, timeout validation/defaults, body, and blob body accessors; client-certificate and static-resource callout surfaces remain explicit unsupported seams. |
 | HTTP | `HttpResponse` | `partial` | Deterministic constructor defaults plus status, status code, case-insensitive headers/header keys, body, and blob body accessors for local mock responses. |
-| Id | `Id.getSObjectType` | `partial` | Resolves local schema key prefixes and a bounded common standard prefix table to Schema.SObjectType tokens; unknown shape-valid or unmodeled platform prefixes return a stable StringException rather than guessing. |
+| Id | `Id.getSObjectType local prefixes` | `supported` | Resolves local schema key prefixes and the modeled standard prefix table to Schema.SObjectType tokens. |
+| Id | `Id.getSObjectType unmodeled prefixes` | `unsupported` | Unknown shape-valid or unmodeled platform prefixes return a stable StringException rather than guessed object types. |
 | Id | `Id.to15` | `supported` | Converts validated 18-character IDs to their 15-character prefix. |
 | Id | `Id.to18` | `supported` | Adds or preserves the documented 3-character checksum for validated IDs. |
 | Id | `Id.valueOf` | `supported` | Validates 15-character IDs and strict 18-character checksum suffixes; restoreCasing rebuilds casing from checksum suffixes. |
@@ -231,7 +233,8 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Pattern | `Matcher.useAnchoringBounds` | `supported` | Stores the local bounds flag and toggles whether ^/$ bind to region edges or full input edges. |
 | Pattern | `Matcher.usePattern` | `supported` | Swaps the local Go-regexp Pattern, including compiled flag/literal state, and resets search state within the current region. |
 | Pattern | `Matcher.useTransparentBounds` | `supported` | Stores the local bounds flag and toggles whether word-boundary checks use opaque region edges or full input context. |
-| Pattern | `Pattern.compile` | `partial` | Go regexp syntax with supported CASE_INSENSITIVE, MULTILINE, DOTALL, LITERAL, and UNICODE_CASE flag handling plus stable UnsupportedFeature diagnostics for pinned Java-only regex features including lookaround, backreferences, named groups, possessive quantifiers, atomic groups, quote escapes, previous-match boundaries, Java-only inline flags, unsupported flag constants, Java Unicode character classes, class intersections, linebreak/grapheme escapes, and horizontal/vertical whitespace classes. |
+| Pattern | `Pattern.compile Java regex dialect gaps` | `unsupported` | Java-only regex features, including lookaround, backreferences, named groups, possessive quantifiers, atomic groups, quote escapes, previous-match boundaries, Java-only inline flags, unsupported flag constants, Java Unicode character classes, class intersections, linebreak/grapheme escapes, and horizontal/vertical whitespace classes, return stable UnsupportedFeature diagnostics. |
+| Pattern | `Pattern.compile local regexp dialect` | `supported` | Go regexp syntax with supported CASE_INSENSITIVE, MULTILINE, DOTALL, LITERAL, and UNICODE_CASE flag handling for the local Pattern/Matcher model. |
 | Pattern | `Pattern.matcher` | `supported` | Creates a Matcher for the compiled local Go-regexp Pattern. |
 | Pattern | `Pattern.matches` | `supported` | Whole-string local Go-regexp match with pinned UnsupportedFeature diagnostics for Java-only syntax. |
 | Pattern | `Pattern.pattern` | `supported` | Returns original regex source, including for locally quoted Pattern.LITERAL compilation. |
@@ -378,10 +381,11 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | String | `String.unescapeXml10` | `supported` | Unescapes XML core entities and XML 1.0-valid numeric references while leaving XML 1.0-invalid references unchanged. |
 | String | `String.unescapeXml11` | `supported` | Unescapes XML core entities and XML 1.1-valid numeric references while leaving XML 1.1-invalid references unchanged. |
 | String | `String.valueOf` | `supported` | Local value string conversion. |
+| System | `System async lifecycle controls` | `unsupported` | Completed and unknown aborts plus scheduleBatch deferral return explicit unsupported diagnostics; broader async lifecycle control is not modeled. |
+| System | `System.abortJob queued local async` | `supported` | Removes queued local Queueable and Schedulable jobs before Test.stopTest and marks local AsyncApexJob/CronTrigger rows consistently. |
 | System | `System.assert` | `supported` | Assertion failure returns runtime error; Object and null message values use deterministic local string conversion. |
 | System | `System.assertEquals` | `supported` | Assertion failure returns runtime error with deterministic local expected/actual text and Object/null message conversion. |
 | System | `System.assertNotEquals` | `supported` | Assertion failure returns runtime error with deterministic local value text and Object/null message conversion. |
-| System | `System.asyncScheduling` | `partial` | System.abortJob removes queued local Queueable and Schedulable jobs before Test.stopTest; completed and unknown aborts plus scheduleBatch return explicit unsupported diagnostics. Broader async lifecycle control is not modeled. |
 | System | `System.currentTimeMillis` | `supported` | Returns deterministic VM-clock epoch milliseconds. |
 | System | `System.debug` | `supported` | One-argument and LoggingLevel overloads are collected in result debug output; null, LoggingLevel, and modeled Exception values use deterministic string forms; log framework text parity is not claimed. |
 | System | `System.isBatch` | `supported` | Reflects the local batch drain context and returns false outside batch execution. |
@@ -397,7 +401,8 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Test | `Test.isRunningTest` | `supported` | Reflects local test context. |
 | Test | `Test.setCurrentPage` | `supported` | Sets the VM-local ApexPages current PageReference in test context. |
 | Test | `Test.setFixedSearchResults` | `unsupported` | Fixed SOSL search results are deferred with the local search surface; calls return explicit UnsupportedFeature diagnostics. |
-| Test | `Test.setMock` | `partial` | String and Type-token HttpCalloutMock support for local tests; other mock interfaces return explicit unsupported diagnostics. |
+| Test | `Test.setMock HttpCalloutMock` | `supported` | String and Type-token HttpCalloutMock registrations route local test callouts to the supplied mock instance. |
+| Test | `Test.setMock non-HTTP mocks` | `unsupported` | Other mock interfaces return explicit unsupported diagnostics instead of fake local service behavior. |
 | Test | `Test.startTest` | `supported` | Resets the local inner governor window once per test method and preserves the outer counter window. |
 | Test | `Test.stopTest` | `supported` | Drains supported local async work once per test method and restores the outer governor window. |
 | Time | `Time.addHours` | `supported` | Local time arithmetic with 24-hour wrap. |

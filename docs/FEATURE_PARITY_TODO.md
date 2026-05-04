@@ -249,6 +249,10 @@ a Salesforce-shaped local API server without silently wrong behavior.
 - [x] Reflect local async drain kind through `System.isFuture`,
   `System.isQueueable`, `System.isBatch`, and `System.isScheduled` while keeping
   finalizers and AsyncInfo fenced as unsupported surfaces.
+- [x] Close the small-platform Async/System row split: local async job records
+  and queued-job aborts are supported for the test-drain model, while
+  scheduleBatch, completed/unknown aborts, broader lifecycle controls,
+  AsyncOptions, AsyncInfo, and finalizers remain unsupported fences.
 
 ## 4. SObjects, SOQL, DML, And Triggers
 
@@ -487,6 +491,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Promote `Test.getStandardPricebookId`, `Test.startTest`, and
     `Test.stopTest` for the supported local test/drain model; keep broader mock
     surfaces partial or unsupported with typed diagnostics.
+  - [x] Close the small-platform `Test.setMock` row split: local
+    `HttpCalloutMock` registration is supported, while non-HTTP mock interfaces
+    remain explicit unsupported fences.
   - [x] Promote fixture-backed custom metadata and list custom setting
     `getAll/getInstance`; fence hierarchy custom setting merge behavior as an
     explicit unsupported data seam.
@@ -611,9 +618,11 @@ a Salesforce-shaped local API server without silently wrong behavior.
     MessageFormat-style List placeholders, repeated/missing arguments, and
     apostrophe quoting are fixture-backed, while typed number/date/time/choice
     and locale-sensitive format elements return stable `UnsupportedFeature`
-    diagnostics. Keep `Pattern.compile` partial on the Go-regexp dialect, with
-    extra fences for Java linebreak, grapheme, and horizontal/vertical
-    whitespace regex escapes.
+    diagnostics.
+  - [x] Close the small-platform Pattern row split: `Pattern.compile` is
+    supported for the fixture-backed local Go-regexp dialect and Java-only
+    regex features stay fenced in explicit unsupported rows, including
+    linebreak, grapheme, and horizontal/vertical whitespace escapes.
   - [x] Add common `Date`, `Datetime`, and `Time` factories, parsing,
     arithmetic, and component helpers.
   - [x] Promote deterministic `Datetime` pure-duration arithmetic and local
@@ -642,6 +651,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
     and the bounded common standard prefix table return SObjectType tokens;
     unknown or unmodeled shape-valid prefixes return stable `StringException`
     diagnostics instead of guessed object types.
+  - [x] Close the small-platform Id row split: modeled local prefixes are
+    supported with unit and fixture evidence, while unmodeled prefixes remain a
+    documented unsupported fence.
   - [x] Close small collection/exception/type stdlib rows: local
     `List`/`Map`/`Set` no-arg deepClone, primitive `List.sort`, deterministic
     `Map.toString`, caught exception line/stack metadata, built-in exception

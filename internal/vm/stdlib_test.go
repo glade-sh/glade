@@ -1600,6 +1600,10 @@ Id contactId = Id.valueOf('003B000001DVM9tIAH');
 Object contactType = contactId.getSObjectType();
 Object contactDescribe = contactType.getDescribe();
 System.assertEquals('Contact', contactDescribe.getName());
+Id customId = Id.valueOf('a00B000001DVM9t');
+Object customType = customId.getSObjectType();
+Object customDescribe = customType.getDescribe();
+System.assertEquals('Trail__c', customDescribe.getName());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1612,6 +1616,16 @@ System.assertEquals('Contact', contactDescribe.getName());
 			KeyPrefix: "003",
 			Fields: map[string]storage.Field{
 				"LastName": {APIName: "LastName", Type: storage.FieldString},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	org.Objects["Trail__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Trail__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
 			},
 		},
 		Records: make(map[storage.ID]storage.Record),
