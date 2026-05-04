@@ -11,6 +11,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | ApexPages | `ApexPages.currentPage` | `supported` | Returns a deterministic local PageReference. |
 | ApexPages | `ApexPages.getMessages` | `supported` | Returns VM-local page messages. |
 | ApexPages | `ApexPages.hasMessages` | `supported` | Checks VM-local page messages. |
+| Approval | `Approval process APIs` | `unsupported` | Approval.process and approval lock helpers return explicit UnsupportedFeature diagnostics; approval workflow side effects are not locally modeled. |
 | Async | `AsyncApexJob / CronTrigger local records` | `partial` | Test-context enqueue/drain creates deterministic local AsyncApexJob rows and CronTrigger rows for supported future, queueable, batch, and scheduled jobs; broader platform lifecycle fields are not modeled. |
 | Async | `AsyncInfo / AsyncOptions / finalizers` | `unsupported` | Queueable stack metadata, AsyncOptions enqueue overloads, and queueable finalizers return explicit UnsupportedFeature diagnostics. |
 | Async | `BatchableContext.getJobId` | `partial` | Returns the deterministic local AsyncApexJob Id while supported batch start/execute/finish methods drain under Test.stopTest. |
@@ -27,9 +28,12 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Crypto | `Crypto.generateDigest` | `supported` | MD5, SHA1, SHA-256, SHA-512, SHA3-256/384/512, with conservative algorithm normalization. |
 | Crypto | `Crypto.generateMac` | `supported` | HMAC MD5, SHA1, SHA256, and SHA512 with local Blob keys and conservative algorithm normalization. |
 | Data | `Custom metadata/custom settings getAll/getInstance` | `partial` | Fixture-backed local __mdt and list custom setting static access supports namespace-stripped object/field names and read-only returned records; hierarchy merge behavior and Metadata API mutation are not modeled. |
+| Database | `Database.convertLead` | `unsupported` | Lead conversion returns an explicit UnsupportedFeature diagnostic until local lead/account/contact/opportunity side effects are modeled. |
 | Database | `Database.delete` | `supported` | DML pipeline with result/error shapes for supported SObjects. |
+| Database | `Database.emptyRecycleBin` | `partial` | Permanently removes already-deleted local rows and returns EmptyRecycleBinResult-shaped objects; retention policy and related platform recycle-bin behavior are not modeled. |
 | Database | `Database.getQueryLocator` | `partial` | Supported SOQL only; executes eagerly for local batch scopes. |
 | Database | `Database.insert` | `supported` | DML pipeline with result/error shapes for supported SObjects. |
+| Database | `Database.lock / Database.unlock` | `partial` | Toggles local storage row lock state and returns LockResult/UnlockResult-shaped objects; ownership, wait timing, and transaction-scoped lock release are not modeled. |
 | Database | `Database.merge` | `partial` | Local merge behavior for supported account/contact-style data. |
 | Database | `Database.rollback` | `partial` | Local org-state savepoint rollback; no external side effects. |
 | Database | `Database.setSavepoint` | `partial` | Local org-state snapshots with later-savepoint invalidation. |

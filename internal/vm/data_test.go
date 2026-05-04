@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
@@ -684,6 +685,88 @@ System.assert(row.IsDeleted);
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecDatabaseEmptyRecycleBinResult(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account a = new Account(Name = 'Acme');
+insert a;
+delete a;
+Database.EmptyRecycleBinResult result = Database.emptyRecycleBin(a, false);
+System.assert(result.isSuccess());
+System.assertEquals(a.Id, result.getId());
+System.assertEquals(0, result.getErrors().size());
+List<Account> rows = [SELECT Id FROM Account WHERE Id = :a.Id ALL ROWS];
+System.assertEquals(0, rows.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDatabaseLockUnlockResultShapes(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account a = new Account(Name = 'Acme');
+insert a;
+Database.LockResult locked = Database.lock(a, false);
+System.assert(locked.isSuccess());
+System.assertEquals(a.Id, locked.getId());
+System.assertEquals(0, locked.getErrors().size());
+Database.UnlockResult unlocked = Database.unlock(a, false);
+System.assert(unlocked.isSuccess());
+System.assertEquals(a.Id, unlocked.getId());
+System.assertEquals(0, unlocked.getErrors().size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecApprovalAndConvertLeadReturnUnsupportedFeature(t *testing.T) {
+	tests := []struct {
+		name    string
+		source  string
+		message string
+	}{
+		{
+			name:    "convertLead",
+			source:  "Database.convertLead(new Database.LeadConvert());",
+			message: `unsupported call "Database.convertLead local lead conversion surface"`,
+		},
+		{
+			name:    "approvalProcess",
+			source:  "Approval.process(null);",
+			message: `unsupported call "Approval.process local approval process and lock surface"`,
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			program, err := CompileAnonymous(tc.source)
+			if err != nil {
+				t.Fatal(err)
+			}
+			machine := New(nil)
+			org := testDataOrg()
+			machine.SetOrg(&org)
+			_, err = machine.Execute(program)
+			var runtimeErr *RuntimeError
+			if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != tc.message {
+				t.Fatalf("error = %#v, want UnsupportedFeature %q", err, tc.message)
+			}
+		})
 	}
 }
 

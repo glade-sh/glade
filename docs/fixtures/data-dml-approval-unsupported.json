@@ -1,0 +1,28 @@
+{
+  "name": "data-dml-approval-unsupported",
+  "evidence": [
+    {
+      "symbol": "Approval.process",
+      "kind": "exec",
+      "notes": "Approval process APIs return a stable UnsupportedFeature diagnostic instead of silently succeeding in the local runtime."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Approval.process(null);"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Approval.process(null);"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"Approval.process local approval process and lock surface\""
+    }
+  }
+}

@@ -1106,6 +1106,14 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		return vm.executeDatabaseDML(strings.TrimPrefix(callee, "Database."), args, result)
 	case "Database.insert", "Database.update", "Database.delete":
 		return vm.executeDatabaseDML(strings.TrimPrefix(callee, "Database."), args, result)
+	case "Database.emptyRecycleBin":
+		return vm.executeDatabaseRecordAction("emptyRecycleBin", args, result)
+	case "Database.lock", "Database.unlock":
+		return vm.executeDatabaseRecordAction(strings.TrimPrefix(callee, "Database."), args, result)
+	case "Database.convertLead":
+		return Null, unsupportedCallError("Database.convertLead local lead conversion surface")
+	case "Approval.process", "Approval.lock", "Approval.unlock", "Approval.isLocked":
+		return Null, unsupportedCallError(callee + " local approval process and lock surface")
 	case "Database.merge":
 		return vm.executeDatabaseMerge(args, result)
 	case "Limits.getQueries", "Limits.getLimitQueries", "Limits.getQueryRows", "Limits.getLimitQueryRows",
@@ -2790,6 +2798,87 @@ func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value
 	return values[0], nil
 }
 
+func (vm *VM) executeDatabaseRecordAction(op string, args []Value, result *Result) (Value, error) {
+	if len(args) == 0 || len(args) > 2 {
+		return Null, fmt.Errorf("Database.%s expects records and optional allOrNone", op)
+	}
+	allOrNone := true
+	if len(args) == 2 {
+		if args[1].Kind != ValueBool {
+			return Null, fmt.Errorf("Database.%s allOrNone expects Boolean", op)
+		}
+		allOrNone = args[1].Bool
+	}
+	results, err := vm.applyDatabaseRecordAction(op, args[0], allOrNone, result)
+	if err != nil {
+		return Null, err
+	}
+	if allOrNone && hasDMLFailures(results) {
+		return Null, databaseDMLException(op, results)
+	}
+	values := make([]Value, 0, len(results))
+	for _, dmlResult := range results {
+		row := Object(databaseRecordActionResultType(op))
+		row.Fields["success"] = Bool(dmlResult.Success)
+		row.Fields["id"] = databaseResultIDValue(dmlResult.ID)
+		row.Fields["error"] = String(dmlResult.Error)
+		row.Fields["errors"] = databaseErrorsList(dmlResult)
+		values = append(values, row)
+	}
+	if args[0].Kind == ValueList {
+		return List(values...), nil
+	}
+	if len(values) == 0 {
+		return Null, nil
+	}
+	return values[0], nil
+}
+
+func (vm *VM) applyDatabaseRecordAction(op string, value Value, allOrNone bool, result *Result) ([]dml.Result, error) {
+	if vm.Org == nil {
+		return nil, fmt.Errorf("DML requires org state")
+	}
+	records, _, err := vm.recordsFromValue(value)
+	if err != nil {
+		return nil, err
+	}
+	if err := vm.incrementLimit("dmlStatements", 1); err != nil {
+		return nil, err
+	}
+	if err := vm.incrementLimit("dmlRows", len(records)); err != nil {
+		return nil, err
+	}
+	if err := vm.incrementLimit("cpuTime", len(records)); err != nil {
+		return nil, err
+	}
+	if err := vm.checkMixedDML(records); err != nil {
+		return nil, err
+	}
+	if result != nil {
+		result.Trace = append(result.Trace, trace.Instant("apex.dml."+op, "apex.dml", int64(len(result.Trace)), map[string]any{
+			"operation": op,
+			"rows":      len(records),
+		}))
+	}
+	backup := vm.Org.Clone()
+	engine := vm.newDMLEngine()
+	var results []dml.Result
+	switch op {
+	case "emptyRecycleBin":
+		results = engine.EmptyRecycleBin(records)
+	case "lock":
+		results = engine.Lock(records)
+	case "unlock":
+		results = engine.Unlock(records)
+	default:
+		return nil, fmt.Errorf("unsupported Database.%s operation", op)
+	}
+	if allOrNone && hasDMLFailures(results) {
+		*vm.Org = backup
+	}
+	return results, nil
+}
+
 func unsupportedDatabaseDMLOverload(op string, args []Value) error {
 	for _, arg := range args[1:] {
 		if arg.Kind != ValueObject {
@@ -2813,6 +2902,19 @@ func databaseDMLResultType(op string) string {
 		return "Database.UndeleteResult"
 	case "upsert":
 		return "Database.UpsertResult"
+	default:
+		return "Database.SaveResult"
+	}
+}
+
+func databaseRecordActionResultType(op string) string {
+	switch op {
+	case "emptyRecycleBin":
+		return "Database.EmptyRecycleBinResult"
+	case "lock":
+		return "Database.LockResult"
+	case "unlock":
+		return "Database.UnlockResult"
 	default:
 		return "Database.SaveResult"
 	}
@@ -8930,7 +9032,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			return String(text[:15]), receiver, false, true, nil
 		}
-	case "Database.SaveResult", "Database.DeleteResult", "Database.UndeleteResult":
+	case "Database.SaveResult", "Database.DeleteResult", "Database.UndeleteResult", "Database.EmptyRecycleBinResult", "Database.LockResult", "Database.UnlockResult":
 		switch method {
 		case "isSuccess":
 			if len(args) != 0 {

@@ -352,6 +352,11 @@ Cuts:
    - Insert, update, upsert, delete, undelete, merge, empty recycle bin, result
      classes, all-or-none behavior, savepoints, rollback, DMLOptions, duplicate
      and validation results, status codes, and user/system mode flags.
+   - Landed slice: `Database.emptyRecycleBin` permanently removes already
+     deleted local rows; `Database.lock`/`Database.unlock` expose local result
+     shapes; `Approval.process` and `Database.convertLead` return stable
+     `UnsupportedFeature` diagnostics until workflow and lead-conversion side
+     effects are modeled.
 
 4. SOQL, SOSL, and Search
    - Full grammar coverage, binds, relationship queries, polymorphic fields,
