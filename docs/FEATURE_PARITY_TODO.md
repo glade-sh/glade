@@ -519,6 +519,10 @@ a Salesforce-shaped local API server without silently wrong behavior.
   library method.
   - [x] Return typed `UnsupportedFeature` runtime errors for unimplemented
     VM/stdlib calls while preserving fixture-compatible message text.
+  - [x] Pin broad platform namespace surfaces as unsupported rather than fake:
+    Approval requests/locks, Auth token/JWT/OAuth/cloud APIs, Canvas,
+    Continuation, EventBus publish variants, QuickAction UI actions,
+    Search/SOSL, Test stub/search helpers, and Crypto key/cert/random APIs.
   - [x] Keep ordinary runtime errors out of unsupported-feature classification.
 - [x] Generate and publish a standard-library coverage matrix.
   - [x] Add `oaer compat stdlib` with Markdown, JSON, output, and drift-check

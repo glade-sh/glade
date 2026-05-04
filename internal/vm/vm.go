@@ -1661,14 +1661,19 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		}
 		return fixedTimeZone(vm.currentUserTimeZoneID())
 	default:
+		if strings.HasPrefix(callee, "Crypto.") {
+			return Null, unsupportedCallError(callee + " local key, certificate, encryption, and random surfaces")
+		}
 		return Null, unsupportedCallError(callee)
 	}
 }
 
 func unsupportedIntegrationSurface(callee string) (string, bool) {
-	for _, prefix := range []string{"Auth.", "EventBus.", "QuickAction.", "Canvas.", "Continuation."} {
+	for _, prefix := range []string{"Approval.", "Auth.", "EventBus.", "QuickAction.", "Canvas.", "Continuation."} {
 		if strings.HasPrefix(callee, prefix) {
 			switch prefix {
+			case "Approval.":
+				return "local approval process and lock surface", true
 			case "Auth.":
 				return "local authentication token/cloud API surface", true
 			case "EventBus.":

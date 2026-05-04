@@ -94,9 +94,19 @@ func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 			want: `unsupported call "SOSL/FIND local search surface"`,
 		},
 		{
+			name: "approval process api",
+			src:  `Approval.ProcessWorkitemRequest.setAction('Approve');`,
+			want: `unsupported call "Approval.ProcessWorkitemRequest.setAction local approval process and lock surface"`,
+		},
+		{
 			name: "auth token api",
 			src:  `Auth.SessionManagement.getCurrentSession();`,
 			want: `unsupported call "Auth.SessionManagement.getCurrentSession local authentication token/cloud API surface"`,
+		},
+		{
+			name: "auth oauth api",
+			src:  `Auth.JWTUtil.validateJWTWithKeysEndpoint('token', 'https://example.invalid/keys');`,
+			want: `unsupported call "Auth.JWTUtil.validateJWTWithKeysEndpoint local authentication token/cloud API surface"`,
 		},
 		{
 			name: "event bus publish",
@@ -104,9 +114,19 @@ func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 			want: `unsupported call "EventBus.publish local platform event publish surface"`,
 		},
 		{
+			name: "event bus publish after commit",
+			src:  `EventBus.publishAfterCommit(new List<Account>{new Account(Name = 'Acme')});`,
+			want: `unsupported call "EventBus.publishAfterCommit local platform event publish surface"`,
+		},
+		{
 			name: "quick action ui",
 			src:  `QuickAction.performQuickAction(null);`,
 			want: `unsupported call "QuickAction.performQuickAction local quick action UI surface"`,
+		},
+		{
+			name: "quick action describe",
+			src:  `QuickAction.describeAvailableActions('Account');`,
+			want: `unsupported call "QuickAction.describeAvailableActions local quick action UI surface"`,
 		},
 		{
 			name: "canvas integration",
@@ -114,9 +134,24 @@ func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 			want: `unsupported call "Canvas.EnvironmentContext.getParameters local canvas app integration surface"`,
 		},
 		{
+			name: "canvas lifecycle",
+			src:  `Canvas.LifecycleHandler.onRender(null);`,
+			want: `unsupported call "Canvas.LifecycleHandler.onRender local canvas app integration surface"`,
+		},
+		{
 			name: "continuation static",
 			src:  `Continuation.getResponse('request-one');`,
 			want: `unsupported call "Continuation.getResponse local continuation callout surface"`,
+		},
+		{
+			name: "crypto certificate api",
+			src:  `Crypto.signWithCertificate('RSA-SHA256', Blob.valueOf('payload'), 'LocalCert');`,
+			want: `unsupported call "Crypto.signWithCertificate local deterministic key, certificate, and encryption surfaces"`,
+		},
+		{
+			name: "crypto key wrapper api",
+			src:  `Crypto.getKeyStore('LocalKeys');`,
+			want: `unsupported call "Crypto.getKeyStore local key, certificate, encryption, and random surfaces"`,
 		},
 	}
 	for _, tc := range cases {
