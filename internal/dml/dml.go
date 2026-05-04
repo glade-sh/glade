@@ -142,6 +142,10 @@ func (e *Engine) Undelete(records []storage.Record) []Result {
 			results[i] = resultFromError(record.ID, err)
 			continue
 		}
+		if err := e.validateObjectID(object.Definition, record); err != nil {
+			results[i] = resultFromError(record.ID, err)
+			continue
+		}
 		stored, ok := object.Records[record.ID]
 		if !ok {
 			results[i] = resultFromError(record.ID, fmt.Errorf("dml: record %s does not exist", record.ID))

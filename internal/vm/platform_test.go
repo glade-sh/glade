@@ -1642,6 +1642,65 @@ System.assertEquals(0, restored.getErrors().size());
 	}
 }
 
+func TestExecDatabaseUndeleteMixedRowsAndRollback(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account deleted = new Account(Name = 'Deleted');
+Account active = new Account(Name = 'Active');
+insert new List<Account>{deleted, active};
+delete deleted;
+
+Account missing = new Account(Id = '001999999999999');
+Account wrongType = new Account(Id = '003000000000001');
+List<Account> mixed = new List<Account>{deleted, active, missing, wrongType};
+List<Object> results = Database.undelete(mixed, false);
+System.assertEquals(4, results.size());
+
+Object restored = results.get(0);
+Object activeResult = results.get(1);
+Object missingResult = results.get(2);
+Object wrongTypeResult = results.get(3);
+
+System.assert(restored.isSuccess());
+System.assertEquals(deleted.Id, restored.getId());
+System.assert(!activeResult.isSuccess());
+System.assertEquals(active.Id, activeResult.getId());
+System.assertEquals('ENTITY_IS_NOT_DELETED', activeResult.getErrors().get(0).getStatusCode());
+System.assert(!missingResult.isSuccess());
+System.assertEquals('001999999999999', missingResult.getId());
+System.assertEquals('ENTITY_IS_DELETED', missingResult.getErrors().get(0).getStatusCode());
+System.assert(!wrongTypeResult.isSuccess());
+System.assertEquals('003000000000001', wrongTypeResult.getId());
+System.assertEquals('INVALID_FIELD', wrongTypeResult.getErrors().get(0).getStatusCode());
+
+List<Account> visible = [SELECT Id FROM Account WHERE Id = :deleted.Id];
+System.assertEquals(1, visible.size());
+
+delete deleted;
+Boolean caught = false;
+try {
+	Database.undelete(new List<Account>{deleted, active}, true);
+} catch (DmlException e) {
+	caught = true;
+	System.assert(e.getMessage().contains('Database.undelete failed'));
+	System.assert(e.getMessage().contains('not deleted'));
+}
+System.assert(caught);
+List<Account> rolledBack = [SELECT Id, IsDeleted FROM Account WHERE Id = :deleted.Id ALL ROWS];
+System.assertEquals(1, rolledBack.size());
+Account rolledBackRow = rolledBack.get(0);
+System.assert(rolledBackRow.IsDeleted);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDatabaseAllOrNoneTrueThrowsAndRollsBack(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account good = new Account(Name = 'Acme');
