@@ -45,6 +45,21 @@
       "symbol": "Crypto key/cert APIs",
       "kind": "server",
       "notes": "Key, certificate, encryption, signing, and random surfaces stay explicitly unsupported."
+    },
+    {
+      "symbol": "URL.getCurrentRequestUrl",
+      "kind": "server",
+      "notes": "Current request URL resolution depends on a cloud request context and stays explicitly unsupported."
+    },
+    {
+      "symbol": "PageReference.getContent / getContentAsPDF",
+      "kind": "server",
+      "notes": "Visualforce page rendering and PDF generation stay explicitly unsupported."
+    },
+    {
+      "symbol": "Http.send real transport",
+      "kind": "server",
+      "notes": "Real outbound HTTP transport stays explicitly unsupported outside test mocks."
     }
   ],
   "serverRequests": [
@@ -156,6 +171,50 @@
       "contains": [
         "success\":false",
         "unsupported call \\\"Crypto.getKeyStore local key, certificate, encryption, and random surfaces\\\""
+      ]
+    },
+    {
+      "name": "url-current-request-unsupported",
+      "method": "POST",
+      "path": "/services/data/v61.0/tooling/executeAnonymous",
+      "body": "{\"anonymousBody\": \"URL.getCurrentRequestUrl();\"}",
+      "status": 200,
+      "contains": [
+        "success\":false",
+        "unsupported call \\\"URL.getCurrentRequestUrl local current request URL surface\\\""
+      ]
+    },
+    {
+      "name": "pagereference-content-unsupported",
+      "method": "POST",
+      "path": "/services/data/v61.0/tooling/executeAnonymous",
+      "body": "{\"anonymousBody\": \"PageReference page = new PageReference('/apex/Trail'); page.getContent();\"}",
+      "status": 200,
+      "contains": [
+        "success\":false",
+        "unsupported call \\\"PageReference.getContent local Visualforce page rendering surface\\\""
+      ]
+    },
+    {
+      "name": "pagereference-pdf-unsupported",
+      "method": "POST",
+      "path": "/services/data/v61.0/tooling/executeAnonymous",
+      "body": "{\"anonymousBody\": \"PageReference page = new PageReference('/apex/Trail'); page.getContentAsPDF();\"}",
+      "status": 200,
+      "contains": [
+        "success\":false",
+        "unsupported call \\\"PageReference.getContentAsPDF local Visualforce page rendering surface\\\""
+      ]
+    },
+    {
+      "name": "http-real-transport-unsupported",
+      "method": "POST",
+      "path": "/services/data/v61.0/tooling/executeAnonymous",
+      "body": "{\"anonymousBody\": \"HttpRequest req = new HttpRequest(); req.setEndpoint('https://example.test'); req.setMethod('GET'); Http h = new Http(); h.send(req);\"}",
+      "status": 200,
+      "contains": [
+        "success\":false",
+        "unsupported call \\\"Http.send real network transport\\\""
       ]
     }
   ],

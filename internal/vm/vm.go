@@ -1622,7 +1622,7 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		if len(args) != 0 {
 			return Null, fmt.Errorf("URL.getCurrentRequestUrl expects 0 arguments")
 		}
-		return Null, unsupportedCallError(callee)
+		return Null, unsupportedCallError(callee + " local current request URL surface")
 	case "Test.setMock":
 		return vm.testSetMock(args)
 	case "Test.createStub", "Test.createSoqlStub":
@@ -10146,6 +10146,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		return Null, receiver, false, true, unsupportedCallError(receiver.Type + " local static resource callout mock surface")
 	case "PageReference":
 		switch method {
+		case "getContent", "getContentAsPDF":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("PageReference.%s expects 0 arguments", method)
+			}
+			return Null, receiver, false, true, unsupportedCallError("PageReference." + method + " local Visualforce page rendering surface")
 		case "getUrl":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("PageReference.getUrl expects 0 arguments")

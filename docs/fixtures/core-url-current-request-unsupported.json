@@ -22,7 +22,7 @@
   "expected": {
     "error": {
       "type": "UnsupportedFeature",
-      "message": "unsupported call \"URL.getCurrentRequestUrl\""
+      "message": "unsupported call \"URL.getCurrentRequestUrl local current request URL surface\""
     }
   }
 }
