@@ -181,6 +181,43 @@
       "contains": ["UNSUPPORTED_FEATURE", "Tooling sObject discovery"]
     },
     {
+      "name": "tooling-apexclass-collection-unsupported",
+      "method": "GET",
+      "path": "/services/data/v61.0/tooling/sobjects/ApexClass",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "Tooling ApexClass object collection"]
+    },
+    {
+      "name": "tooling-apexclass-record-unsupported",
+      "method": "GET",
+      "path": "/services/data/v61.0/tooling/sobjects/ApexClass/01p000000000001",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "Tooling ApexClass object record"]
+    },
+    {
+      "name": "tooling-apextrigger-record-unsupported",
+      "method": "PATCH",
+      "path": "/services/data/v61.0/tooling/sobjects/ApexTrigger/01q000000000001",
+      "body": "{}",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "Tooling ApexTrigger object record"]
+    },
+    {
+      "name": "tooling-run-tests-sync-unsupported",
+      "method": "POST",
+      "path": "/services/data/v61.0/tooling/runTestsSynchronous",
+      "body": "{}",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "Tooling runTestsSynchronous"]
+    },
+    {
+      "name": "tooling-coverage-unsupported",
+      "method": "GET",
+      "path": "/services/data/v61.0/tooling/coverage",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "Tooling ApexCodeCoverage"]
+    },
+    {
       "name": "bulk-query-unsupported",
       "method": "POST",
       "path": "/services/data/v61.0/jobs/query",
@@ -237,8 +274,8 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 28,
-      "statuses": [200, 200, 200, 200, 200, 200, 201, 200, 200, 501, 200, 200, 200, 200, 200, 200, 200, 400, 501, 501, 501, 501, 501, 501, 404, 200, 200, 201],
+      "requests": 33,
+      "statuses": [200, 200, 200, 200, 200, 200, 201, 200, 200, 501, 200, 200, 200, 200, 200, 200, 200, 400, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 404, 200, 200, 201],
       "users": 2
     }
   }

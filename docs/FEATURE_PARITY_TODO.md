@@ -627,6 +627,10 @@ a Salesforce-shaped local API server without silently wrong behavior.
   delegation.
   - [x] Return stable unsupported errors for common Tooling sObject discovery,
     Tooling sObject describe, and Tooling completions routes.
+  - [x] Return stable unsupported errors for common Tooling metadata object
+    probes (`ApexClass`, `ApexTrigger`, `ApexPage`, `ApexComponent`,
+    `StaticResource`), test-run orchestration endpoints, and coverage probes
+    instead of falling through to unknown tooling routes.
 - [ ] Add more REST resources used by local integrations and editor tooling.
 - [ ] Add Composite API coverage beyond baseline sObject insert, including
   all-or-none rollback and reference ID behavior.
@@ -648,6 +652,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
   executeAnonymous, composite, errors, auth stubs, and persistence.
   - [x] Cover Tooling and Bulk unsupported route shapes in the server black-box
     fixture.
+  - [x] Cover common Tooling metadata object, test-run, and coverage
+    unsupported route shapes in the server black-box fixture.
   - [x] Cover generic composite unsupported route shape in the server black-box
     fixture.
 

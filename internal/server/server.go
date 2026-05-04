@@ -459,15 +459,50 @@ func (s *Server) handleTooling(w http.ResponseWriter, r *http.Request, version s
 			return
 		}
 		writeSalesforceError(w, errUnsupportedFeature, "Tooling sObject describe for "+parts[1]+" is not implemented in the local server")
+	case len(parts) == 2 && parts[0] == "sobjects" && isToolingMetadataObject(parts[1]):
+		writeUnsupportedToolingMetadata(w, r, parts[1], "object collection", http.MethodGet, http.MethodPost)
+	case len(parts) >= 3 && parts[0] == "sobjects" && isToolingMetadataObject(parts[1]):
+		writeUnsupportedToolingMetadata(w, r, parts[1], "object record", http.MethodGet, http.MethodPatch, http.MethodDelete)
 	case len(parts) == 1 && parts[0] == "completions":
 		if r.Method != http.MethodGet {
 			writeMethodNotAllowed(w, http.MethodGet)
 			return
 		}
 		writeSalesforceError(w, errUnsupportedFeature, "Tooling completions are not implemented in the local server")
+	case len(parts) == 1 && (parts[0] == "runTestsAsynchronous" || parts[0] == "runTestsSynchronous"):
+		if r.Method != http.MethodPost {
+			writeMethodNotAllowed(w, http.MethodPost)
+			return
+		}
+		writeSalesforceError(w, errUnsupportedFeature, "Tooling "+parts[0]+" is not implemented in the local server; use oaer test for local Apex test execution")
+	case len(parts) == 1 && parts[0] == "coverage":
+		if r.Method != http.MethodGet {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
+		writeSalesforceError(w, errUnsupportedFeature, "Tooling ApexCodeCoverage resources are not implemented in the local server")
 	default:
 		writeSalesforceError(w, errUnknownTooling)
 	}
+}
+
+func isToolingMetadataObject(name string) bool {
+	switch name {
+	case "ApexClass", "ApexTrigger", "ApexPage", "ApexComponent", "StaticResource":
+		return true
+	default:
+		return false
+	}
+}
+
+func writeUnsupportedToolingMetadata(w http.ResponseWriter, r *http.Request, objectName, scope string, allowed ...string) {
+	for _, method := range allowed {
+		if r.Method == method {
+			writeSalesforceError(w, errUnsupportedFeature, "Tooling "+objectName+" "+scope+" access is not implemented in the local server")
+			return
+		}
+	}
+	writeMethodNotAllowed(w, allowed...)
 }
 
 func (s *Server) handleBulkJobs(w http.ResponseWriter, r *http.Request, parts []string) {
