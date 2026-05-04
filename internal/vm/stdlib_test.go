@@ -502,6 +502,13 @@ System.assertEquals(sameText.hashCode(), text.hashCode());
 Integer count = 7;
 System.assert(count.equals(7));
 System.assertEquals('7', count.toString());
+List<Integer> left = new List<Integer>();
+left.add(1);
+List<Integer> right = new List<Integer>();
+right.add(1);
+System.assert(left.equals(right));
+System.assertEquals(left.hashCode(), right.hashCode());
+System.assertEquals('List[1]', left.toString());
 
 URL base = URL.getOrgDomainUrl();
 System.assertEquals('https://local.oaer.example', base.toExternalForm());
@@ -953,6 +960,23 @@ System.assertEquals('Contact', contactDescribe.getName());
 	}
 }
 
+func TestExecIDGetSObjectTypeRejectsUnknownPrefix(t *testing.T) {
+	program, err := CompileAnonymous(`
+Id unknown = Id.valueOf('999B000001DVM9t');
+unknown.getSObjectType();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = Execute(program, nil)
+	if err == nil {
+		t.Fatal("expected unknown Id prefix error")
+	}
+	if got, want := err.Error(), "System.StringException: Invalid id prefix: 999"; got != want {
+		t.Fatalf("error = %q, want %q", got, want)
+	}
+}
+
 func TestExecURLCurrentRequestUrlUnsupported(t *testing.T) {
 	program, err := CompileAnonymous(`URL.getCurrentRequestUrl();`)
 	if err != nil {
@@ -964,6 +988,47 @@ func TestExecURLCurrentRequestUrlUnsupported(t *testing.T) {
 	}
 	if got := err.Error(); got != `unsupported call "URL.getCurrentRequestUrl"` {
 		t.Fatalf("error = %q", got)
+	}
+}
+
+func TestExecTypeNewInstanceUnsupportedNamespacePackageToken(t *testing.T) {
+	program, err := CompileAnonymous(`
+Type packaged = Type.forName('pkg', 'Thing');
+packaged.newInstance();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = Execute(program, nil)
+	var runtimeErr *RuntimeError
+	if !errors.As(err, &runtimeErr) {
+		t.Fatalf("error type = %T, want *RuntimeError", err)
+	}
+	if runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != `unsupported call "Type.newInstance namespace/package reflection for pkg.Thing"` {
+		t.Fatalf("runtime error = (%q, %q)", runtimeErr.Type, runtimeErr.Message)
+	}
+}
+
+func TestExecURLConstructorRejectsMalformedInputs(t *testing.T) {
+	tests := []struct {
+		source string
+		want   string
+	}{
+		{source: `URL u = new URL('trail');`, want: "URL constructor invalid URL: missing protocol"},
+		{source: `URL u = new URL('https:///trail');`, want: "URL constructor invalid URL: missing host"},
+		{source: `URL u = new URL('https', 'example.test', 70000, '/trail');`, want: "URL constructor invalid URL: invalid port"},
+		{source: `URL u = new URL('https', '', '/trail');`, want: "URL constructor invalid URL: missing host"},
+	}
+	for _, tc := range tests {
+		program, err := CompileAnonymous(tc.source)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := Execute(program, nil); err == nil {
+			t.Fatalf("expected error for %s", tc.source)
+		} else if !strings.Contains(err.Error(), tc.want) {
+			t.Fatalf("error for %s = %q, want substring %q", tc.source, err.Error(), tc.want)
+		}
 	}
 }
 

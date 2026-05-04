@@ -5574,7 +5574,7 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 		default:
 			return Null, fmt.Errorf("URL constructor expects spec, context and spec, or protocol, host, [port,] file")
 		}
-		if _, err := url.Parse(raw); err != nil {
+		if err := validateURLConstructorValue(raw); err != nil {
 			return Null, err
 		}
 		return platformScalar("URL", raw), nil
@@ -5605,6 +5605,26 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 		return Null, fmt.Errorf("%s constructor does not accept arguments", typeName)
 	}
 	return object, nil
+}
+
+func validateURLConstructorValue(raw string) error {
+	parsed, err := url.Parse(raw)
+	if err != nil {
+		return fmt.Errorf("URL constructor invalid URL: %w", err)
+	}
+	if parsed.Scheme == "" {
+		return fmt.Errorf("URL constructor invalid URL: missing protocol")
+	}
+	if parsed.Host == "" {
+		return fmt.Errorf("URL constructor invalid URL: missing host")
+	}
+	if port := parsed.Port(); port != "" {
+		value, err := strconv.ParseInt(port, 10, 64)
+		if err != nil || value < 0 || value > 65535 {
+			return fmt.Errorf("URL constructor invalid URL: invalid port")
+		}
+	}
+	return nil
 }
 
 func (vm *VM) runInstanceInitializers(class Class, object Value, result *Result) error {
@@ -8223,6 +8243,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Type.newInstance expects 0 arguments")
 			}
 			typeName := typeValueName(receiver)
+			if strings.Contains(typeName, ".") {
+				if _, ok := vm.resolveClassName(typeName); !ok {
+					return Null, receiver, false, true, unsupportedCallError("Type.newInstance namespace/package reflection for " + typeName)
+				}
+			}
 			value, err := vm.constructValue(typeName, nil, nil, result)
 			return value, receiver, false, true, err
 		}
