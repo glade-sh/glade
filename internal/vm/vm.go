@@ -1162,6 +1162,8 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		return patternCompile(args)
 	case "Pattern.matches":
 		return patternMatches(args)
+	case "Pattern.quote":
+		return patternQuote(args)
 	case "Math.abs", "Math.floor", "Math.ceil", "Math.round", "Math.roundToLong", "Math.signum", "Math.sqrt",
 		"Math.acos", "Math.asin", "Math.atan", "Math.cos", "Math.sin", "Math.tan", "Math.exp", "Math.log", "Math.log10":
 		return mathUnary(callee, args)

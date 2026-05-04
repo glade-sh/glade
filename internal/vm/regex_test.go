@@ -91,6 +91,14 @@ regionMatcher.region(3, 9);
 System.assert(regionMatcher.find());
 System.assertEquals('123', regionMatcher.group());
 
+String literal = 'a+b?(x)[1]';
+String quoted = Pattern.quote(literal);
+System.assert(Pattern.matches(quoted, literal));
+System.assert(!Pattern.matches(quoted, 'abx1'));
+Matcher literalMatcher = Pattern.compile(quoted).matcher('pre a+b?(x)[1] post');
+System.assert(literalMatcher.find());
+System.assertEquals(literal, literalMatcher.group());
+
 Pattern comma = Pattern.compile(',');
 List<String> splitDefault = comma.split('a,b,,');
 System.assertEquals(2, splitDefault.size());
@@ -137,6 +145,16 @@ func TestExecPatternCompileRejectsBadRegex(t *testing.T) {
 	}
 	if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), "Pattern.compile invalid regex") {
 		t.Fatalf("expected Pattern.compile invalid regex error, got %v", err)
+	}
+}
+
+func TestExecPatternQuoteRejectsBadArgumentShape(t *testing.T) {
+	program, err := CompileAnonymous(`Pattern.quote(42);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), "Pattern.quote expects String") {
+		t.Fatalf("expected Pattern.quote argument error, got %v", err)
 	}
 }
 

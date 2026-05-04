@@ -219,6 +219,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Pattern | `Pattern.matcher` | `partial` | Creates a Go regexp-backed Matcher. |
 | Pattern | `Pattern.matches` | `partial` | Whole-string Go regexp match. |
 | Pattern | `Pattern.pattern` | `partial` | Returns stored Go regexp source. |
+| Pattern | `Pattern.quote` | `partial` | Returns a Go regexp-escaped literal pattern for local Pattern/Matcher use. |
 | Pattern | `Pattern.split` | `partial` | Go regexp-backed split with local limit semantics. |
 | QuickAction | `QuickAction namespace` | `unsupported` | Quick action UI calls return explicit UnsupportedFeature diagnostics. |
 | REST | `@RestResource local server dispatch` | `unsupported` | Custom Apex REST dispatch returns a stable unsupported error from the local server. |

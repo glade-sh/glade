@@ -288,6 +288,7 @@ var stdlibEntries = []StdlibEntry{
 	{Area: "Pattern", API: "Pattern.matcher", Status: StatusPartial, Notes: "Creates a Go regexp-backed Matcher."},
 	{Area: "Pattern", API: "Pattern.matches", Status: StatusPartial, Notes: "Whole-string Go regexp match."},
 	{Area: "Pattern", API: "Pattern.pattern", Status: StatusPartial, Notes: "Returns stored Go regexp source."},
+	{Area: "Pattern", API: "Pattern.quote", Status: StatusPartial, Notes: "Returns a Go regexp-escaped literal pattern for local Pattern/Matcher use."},
 	{Area: "Pattern", API: "Pattern.split", Status: StatusPartial, Notes: "Go regexp-backed split with local limit semantics."},
 	{Area: "RoundingMode", API: "RoundingMode.valueOf", Status: StatusPartial, Notes: "Constructs supported local Decimal rounding-mode tokens by exact name."},
 	{Area: "Schema", API: "Schema.describeSObjects", Status: StatusPartial, Notes: "Object names and SObjectType tokens for local schema."},
