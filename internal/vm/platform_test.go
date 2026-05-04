@@ -677,6 +677,29 @@ System.assertEquals(1, Limits.getDmlStatements());
 	}
 }
 
+func TestExecPublishImmediateDMLLimitsGettersUnsupported(t *testing.T) {
+	for _, getter := range []string{"getPublishImmediateDML", "getLimitPublishImmediateDML"} {
+		t.Run(getter, func(t *testing.T) {
+			program, err := CompileAnonymous("Integer used = Limits." + getter + "();")
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = New(nil).Execute(program)
+			if err == nil {
+				t.Fatal("expected unsupported feature error")
+			}
+			var runtimeErr *RuntimeError
+			if !errors.As(err, &runtimeErr) {
+				t.Fatalf("error type = %T, want *RuntimeError", err)
+			}
+			want := `unsupported call "Limits.` + getter + `"`
+			if runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != want || err.Error() != want {
+				t.Fatalf("error = (%q, %q, %q), want UnsupportedFeature %q", runtimeErr.Type, runtimeErr.Message, err.Error(), want)
+			}
+		})
+	}
+}
+
 func TestExecUnsupportedLimitsGettersHaveStableShape(t *testing.T) {
 	for _, getter := range []string{
 		"getAggregateQueries",
