@@ -73,6 +73,18 @@ type Result struct {
 	Rows    int              `json:"rows"`
 }
 
+type UnsupportedFeatureError struct {
+	Message string
+}
+
+func (e *UnsupportedFeatureError) Error() string {
+	return e.Message
+}
+
+func unsupportedSOQLErrorf(format string, args ...any) error {
+	return &UnsupportedFeatureError{Message: fmt.Sprintf("soql: "+format, args...)}
+}
+
 func Parse(input string) (Query, error) {
 	return ParseAt(input, time.Now().UTC())
 }
@@ -127,10 +139,10 @@ func Execute(org storage.OrgState, query Query) (Result, error) {
 		}
 	}
 	if len(query.ChildQueries) > 0 && len(query.Aggregates) > 0 {
-		return Result{}, fmt.Errorf("soql: child relationship subqueries are not supported in aggregate queries")
+		return Result{}, unsupportedSOQLErrorf("child relationship subqueries are not supported in aggregate queries")
 	}
 	if query.ForUpdate && len(query.Aggregates) > 0 {
-		return Result{}, fmt.Errorf("soql: FOR UPDATE is not supported with aggregate queries")
+		return Result{}, unsupportedSOQLErrorf("FOR UPDATE is not supported with aggregate queries")
 	}
 	if query.Where != nil {
 		condition, err := resolveSubqueries(org, *query.Where)
@@ -1404,7 +1416,7 @@ func (p *parser) parseQuery() (Query, error) {
 			}
 			q.SecurityMode = mode
 		default:
-			return Query{}, p.errorf("unsupported SOQL token %q", p.peek().text)
+			return Query{}, unsupportedSOQLErrorf("unsupported SOQL token %q", p.peek().text)
 		}
 	}
 	if err := validateAggregateQuery(q); err != nil {
@@ -1899,7 +1911,7 @@ func (p *parser) parseInOperand() ([]storage.Value, *Query, error) {
 			return nil, nil, err
 		}
 		if isRange {
-			return nil, nil, p.errorf("date range literal %s is not supported in IN lists", tok)
+			return nil, nil, unsupportedSOQLErrorf("date range literal %s is not supported in IN lists", tok)
 		}
 		values = append(values, value)
 		if p.match(")") {
@@ -1970,6 +1982,9 @@ func literalAt(text string, now time.Time) (storage.Value, storage.Value, bool, 
 	if start, end, ok := dateLiteral(text, now); ok {
 		return start, end, true, nil
 	}
+	if isKnownUnsupportedDateLiteral(text) {
+		return storage.Value{}, storage.Value{}, false, unsupportedSOQLErrorf("date literal %s is not supported", strings.ToUpper(text))
+	}
 	switch {
 	case strings.EqualFold(text, "null"):
 		return storage.NullValue(), storage.Value{}, false, nil
@@ -2020,6 +2035,19 @@ func dateLiteral(text string, now time.Time) (storage.Value, storage.Value, bool
 	case "NEXT_YEAR":
 		nextYear := time.Date(today.Year()+1, 1, 1, 0, 0, 0, 0, time.UTC)
 		return dateRange(nextYear, nextYear.AddDate(1, 0, 0))
+	case "THIS_QUARTER":
+		start := quarterStart(today)
+		return dateRange(start, start.AddDate(0, 3, 0))
+	case "LAST_QUARTER":
+		start := quarterStart(today).AddDate(0, -3, 0)
+		return dateRange(start, start.AddDate(0, 3, 0))
+	case "NEXT_QUARTER":
+		start := quarterStart(today).AddDate(0, 3, 0)
+		return dateRange(start, start.AddDate(0, 3, 0))
+	case "LAST_90_DAYS":
+		return dateRange(today.AddDate(0, 0, -90), today.AddDate(0, 0, 1))
+	case "NEXT_90_DAYS":
+		return dateRange(today, today.AddDate(0, 0, 91))
 	}
 	if n, ok := literalNumberSuffix(upper, "LAST_N_DAYS:"); ok {
 		return dateRange(today.AddDate(0, 0, -n), today.AddDate(0, 0, 1))
@@ -2027,7 +2055,35 @@ func dateLiteral(text string, now time.Time) (storage.Value, storage.Value, bool
 	if n, ok := literalNumberSuffix(upper, "NEXT_N_DAYS:"); ok {
 		return dateRange(today, today.AddDate(0, 0, n+1))
 	}
+	if n, ok := literalNumberSuffix(upper, "N_DAYS_AGO:"); ok {
+		start := today.AddDate(0, 0, -n)
+		return dateRange(start, start.AddDate(0, 0, 1))
+	}
+	if n, ok := literalNumberSuffix(upper, "LAST_N_MONTHS:"); ok {
+		thisMonth := time.Date(today.Year(), today.Month(), 1, 0, 0, 0, 0, time.UTC)
+		start := thisMonth.AddDate(0, -n, 0)
+		return dateRange(start, thisMonth)
+	}
+	if n, ok := literalNumberSuffix(upper, "NEXT_N_MONTHS:"); ok {
+		nextMonth := time.Date(today.Year(), today.Month(), 1, 0, 0, 0, 0, time.UTC).AddDate(0, 1, 0)
+		return dateRange(nextMonth, nextMonth.AddDate(0, n, 0))
+	}
 	return storage.Value{}, storage.Value{}, false
+}
+
+func isKnownUnsupportedDateLiteral(text string) bool {
+	upper := strings.ToUpper(text)
+	switch upper {
+	case "THIS_WEEK", "LAST_WEEK", "NEXT_WEEK":
+		return true
+	default:
+		return strings.HasPrefix(upper, "LAST_N_WEEKS:") || strings.HasPrefix(upper, "NEXT_N_WEEKS:")
+	}
+}
+
+func quarterStart(day time.Time) time.Time {
+	month := time.Month(((int(day.Month()) - 1) / 3 * 3) + 1)
+	return time.Date(day.Year(), month, 1, 0, 0, 0, 0, time.UTC)
 }
 
 func literalNumberSuffix(text, prefix string) (int, bool) {

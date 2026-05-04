@@ -1,6 +1,7 @@
 package soql
 
 import (
+	"errors"
 	"sort"
 	"strings"
 	"testing"
@@ -217,6 +218,65 @@ func TestExecuteDateLiteralPredicates(t *testing.T) {
 	}
 	if result.Rows != 1 || result.Records[0].ID != "001000000000002" {
 		t.Fatalf("ISO date result = %#v", result)
+	}
+}
+
+func TestExecuteExtendedDateLiteralPredicates(t *testing.T) {
+	org := aggregateTestOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["RenewalDate__c"] = storage.Field{APIName: "RenewalDate__c", Type: storage.FieldDate}
+	account.Records["001000000000001"] = storage.Record{
+		ID:     "001000000000001",
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":           storage.StringValue("March"),
+			"RenewalDate__c": storage.DateValue("2026-03-15"),
+		},
+	}
+	account.Records["001000000000002"] = storage.Record{
+		ID:     "001000000000002",
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":           storage.StringValue("Quarter"),
+			"RenewalDate__c": storage.DateValue("2026-04-01"),
+		},
+	}
+	account.Records["001000000000003"] = storage.Record{
+		ID:     "001000000000003",
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":           storage.StringValue("Yesterday"),
+			"RenewalDate__c": storage.DateValue("2026-05-01"),
+		},
+	}
+	org.Objects["Account"] = account
+	now := time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC)
+
+	result, err := ParseAndExecuteAt(org, "SELECT Id, Name FROM Account WHERE RenewalDate__c = LAST_N_MONTHS:2 ORDER BY Name", now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 2 || result.Records[0].Fields["Name"].String != "March" || result.Records[1].Fields["Name"].String != "Quarter" {
+		t.Fatalf("LAST_N_MONTHS result = %#v", result)
+	}
+	result, err = ParseAndExecuteAt(org, "SELECT Id, Name FROM Account WHERE RenewalDate__c = THIS_QUARTER ORDER BY Name", now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 2 || result.Records[0].Fields["Name"].String != "Quarter" || result.Records[1].Fields["Name"].String != "Yesterday" {
+		t.Fatalf("THIS_QUARTER result = %#v", result)
+	}
+	result, err = ParseAndExecuteAt(org, "SELECT Id, Name FROM Account WHERE RenewalDate__c = N_DAYS_AGO:1", now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 || result.Records[0].Fields["Name"].String != "Yesterday" {
+		t.Fatalf("N_DAYS_AGO result = %#v", result)
+	}
+	_, err = ParseAndExecuteAt(org, "SELECT Id FROM Account WHERE RenewalDate__c = THIS_WEEK", now)
+	var unsupported *UnsupportedFeatureError
+	if !errors.As(err, &unsupported) || unsupported.Message != "soql: date literal THIS_WEEK is not supported" {
+		t.Fatalf("unsupported date literal err = %#v", err)
 	}
 }
 

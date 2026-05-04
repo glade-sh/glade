@@ -31,7 +31,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Database | `Database.convertLead` | `unsupported` | Lead conversion returns an explicit UnsupportedFeature diagnostic until local lead/account/contact/opportunity side effects are modeled. |
 | Database | `Database.delete` | `supported` | DML pipeline with result/error shapes for supported SObjects. |
 | Database | `Database.emptyRecycleBin` | `partial` | Permanently removes already-deleted local rows and returns EmptyRecycleBinResult-shaped objects; retention policy and related platform recycle-bin behavior are not modeled. |
-| Database | `Database.getQueryLocator` | `partial` | Supported SOQL only; executes eagerly for local batch scopes. |
+| Database | `Database.getQueryLocator` | `partial` | Supported SOQL only; executes eagerly for local batch scopes and exposes getQuery()/iterator() over the local snapshot. |
 | Database | `Database.insert` | `supported` | DML pipeline with result/error shapes for supported SObjects. |
 | Database | `Database.lock / Database.unlock` | `partial` | Toggles local storage row lock state and returns LockResult/UnlockResult-shaped objects; ownership, wait timing, and transaction-scoped lock release are not modeled. |
 | Database | `Database.merge` | `partial` | Local merge behavior for supported account/contact-style data. |

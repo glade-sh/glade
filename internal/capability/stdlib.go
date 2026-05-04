@@ -132,7 +132,7 @@ var stdlibEntries = []StdlibEntry{
 	{Area: "Database", API: "Database.convertLead", Status: StatusUnsupported, Notes: "Lead conversion returns an explicit UnsupportedFeature diagnostic until local lead/account/contact/opportunity side effects are modeled."},
 	{Area: "Database", API: "Database.delete", Status: StatusSupported, Notes: "DML pipeline with result/error shapes for supported SObjects."},
 	{Area: "Database", API: "Database.emptyRecycleBin", Status: StatusPartial, Notes: "Permanently removes already-deleted local rows and returns EmptyRecycleBinResult-shaped objects; retention policy and related platform recycle-bin behavior are not modeled."},
-	{Area: "Database", API: "Database.getQueryLocator", Status: StatusPartial, Notes: "Supported SOQL only; executes eagerly for local batch scopes."},
+	{Area: "Database", API: "Database.getQueryLocator", Status: StatusPartial, Notes: "Supported SOQL only; executes eagerly for local batch scopes and exposes getQuery()/iterator() over the local snapshot."},
 	{Area: "Database", API: "Database.insert", Status: StatusSupported, Notes: "DML pipeline with result/error shapes for supported SObjects."},
 	{Area: "Database", API: "Database.lock / Database.unlock", Status: StatusPartial, Notes: "Toggles local storage row lock state and returns LockResult/UnlockResult-shaped objects; ownership, wait timing, and transaction-scoped lock release are not modeled."},
 	{Area: "Database", API: "Database.merge", Status: StatusPartial, Notes: "Local merge behavior for supported account/contact-style data."},

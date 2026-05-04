@@ -511,6 +511,12 @@ insert new Account(Name = 'Acme');
 Object locator = Database.getQueryLocator('SELECT Id, Name FROM Account');
 System.assertEquals(1, Limits.getQueries());
 System.assertEquals(1, Limits.getQueryRows());
+System.assertEquals('SELECT Id, Name FROM Account', locator.getQuery());
+Object iterator = locator.iterator();
+System.assert(iterator.hasNext());
+Account row = iterator.next();
+System.assertEquals('Acme', row.Name);
+System.assert(!iterator.hasNext());
 `)
 	if err != nil {
 		t.Fatal(err)
