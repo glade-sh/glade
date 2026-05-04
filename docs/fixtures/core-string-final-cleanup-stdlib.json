@@ -1,0 +1,55 @@
+{
+  "name": "core-string-final-cleanup-stdlib",
+  "evidence": [
+    {
+      "symbol": "String.escapeHtml3",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.escapeHtml4",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.unescapeHtml3",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.unescapeHtml4",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.escapeXml",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.unescapeXml",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.unescapeXml10",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.unescapeXml11",
+      "kind": "exec"
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "String htmlCore = '\"''<>&';\nSystem.assertEquals('&quot;&#39;&lt;&gt;&amp;', htmlCore.escapeHtml3());\nSystem.assertEquals('&quot;&#39;&lt;&gt;&amp;', htmlCore.escapeHtml4());\nSystem.assertEquals('\"''<>&', htmlCore.escapeHtml4().unescapeHtml4());\nString htmlNamed = '&Alpha;&beta;&copy;&euro;&spades;&notarealentity;&apos;';\nString htmlUnescaped = htmlNamed.unescapeHtml4();\nSystem.assertEquals(913, htmlUnescaped.codePointAt(0));\nSystem.assertEquals(946, htmlUnescaped.codePointAt(1));\nSystem.assertEquals(169, htmlUnescaped.codePointAt(2));\nSystem.assertEquals(8364, htmlUnescaped.codePointAt(3));\nSystem.assertEquals(9824, htmlUnescaped.codePointAt(4));\nSystem.assertEquals('&notarealentity;&apos;', htmlUnescaped.substring(5));\nSystem.assertEquals('&notarealentity;&apos;', '&notarealentity;&apos;'.unescapeHtml3());\nSystem.assertEquals('&quot;&apos;&lt;&gt;&amp;', htmlCore.escapeXml());\nSystem.assertEquals('\"''<>&', htmlCore.escapeXml().unescapeXml());\nSystem.assertEquals('A', '&#65;'.unescapeXml10());\nSystem.assertEquals('&#31;', '&#31;'.unescapeXml10());\nSystem.assertEquals(31, '&#31;'.unescapeXml11().codePointAt(0));\nSystem.assertEquals(1, '&#1;'.unescapeXml11().codePointAt(0));\nSystem.assertEquals('&#0;&#xD800;&#x110000;', '&#0;&#xD800;&#x110000;'.unescapeXml11());\n"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "String htmlCore = '\"''<>&';\nSystem.assertEquals('&quot;&#39;&lt;&gt;&amp;', htmlCore.escapeHtml3());\nSystem.assertEquals('&quot;&#39;&lt;&gt;&amp;', htmlCore.escapeHtml4());\nSystem.assertEquals('\"''<>&', htmlCore.escapeHtml4().unescapeHtml4());\nString htmlNamed = '&Alpha;&beta;&copy;&euro;&spades;&notarealentity;&apos;';\nString htmlUnescaped = htmlNamed.unescapeHtml4();\nSystem.assertEquals(913, htmlUnescaped.codePointAt(0));\nSystem.assertEquals(946, htmlUnescaped.codePointAt(1));\nSystem.assertEquals(169, htmlUnescaped.codePointAt(2));\nSystem.assertEquals(8364, htmlUnescaped.codePointAt(3));\nSystem.assertEquals(9824, htmlUnescaped.codePointAt(4));\nSystem.assertEquals('&notarealentity;&apos;', htmlUnescaped.substring(5));\nSystem.assertEquals('&notarealentity;&apos;', '&notarealentity;&apos;'.unescapeHtml3());\nSystem.assertEquals('&quot;&apos;&lt;&gt;&amp;', htmlCore.escapeXml());\nSystem.assertEquals('\"''<>&', htmlCore.escapeXml().unescapeXml());\nSystem.assertEquals('A', '&#65;'.unescapeXml10());\nSystem.assertEquals('&#31;', '&#31;'.unescapeXml10());\nSystem.assertEquals(31, '&#31;'.unescapeXml11().codePointAt(0));\nSystem.assertEquals(1, '&#1;'.unescapeXml11().codePointAt(0));\nSystem.assertEquals('&#0;&#xD800;&#x110000;', '&#0;&#xD800;&#x110000;'.unescapeXml11());\n"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

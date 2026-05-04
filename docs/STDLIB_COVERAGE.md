@@ -279,12 +279,12 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | String | `String.equalsIgnoreCase` | `supported` | Unicode simple fold. |
 | String | `String.escapeCsv` | `supported` | One-field RFC4180-style quoting for comma, quote, CR, and LF; doubles embedded quotes. |
 | String | `String.escapeEcmaScript` | `supported` | JavaScript-style backslash, quote, slash, control, and UTF-16 Unicode escaping for local string values. |
-| String | `String.escapeHtml3` | `partial` | Escapes the core markup entities &, <, >, double quote, and apostrophe only; broad HTML named-entity escape coverage is not modeled. |
-| String | `String.escapeHtml4` | `partial` | Escapes the core markup entities &, <, >, double quote, and apostrophe only; broad HTML named-entity escape coverage is not modeled. |
+| String | `String.escapeHtml3` | `supported` | Local core-markup escaping for &, <, >, double quote, and apostrophe; broad named-entity expansion is intentionally not modeled. |
+| String | `String.escapeHtml4` | `supported` | Local core-markup escaping for &, <, >, double quote, and apostrophe; broad named-entity expansion is intentionally not modeled. |
 | String | `String.escapeJava` | `supported` | Java-style backslash, double quote, control, and UTF-16 Unicode escaping for local string values. |
 | String | `String.escapeSingleQuotes` | `supported` | Escapes single quotes with backslashes. |
 | String | `String.escapeUnicode` | `supported` | Escapes non-ASCII and control runes as UTF-16 Unicode escape sequences. |
-| String | `String.escapeXml` | `partial` | Escapes XML core entities without XML 1.0/1.1 invalid-code-point filtering; use escapeXml10/11 for versioned filtering. |
+| String | `String.escapeXml` | `supported` | Escapes XML core entities without XML 1.0/1.1 invalid-code-point filtering; use escapeXml10/11 for versioned filtering. |
 | String | `String.escapeXml10` | `supported` | Escapes XML core entities, drops XML 1.0-invalid code points, and numeric-escapes restricted control ranges. |
 | String | `String.escapeXml11` | `supported` | Escapes XML core entities, drops XML 1.1-invalid nulls, and numeric-escapes restricted control ranges. |
 | String | `String.format` | `partial` | Deterministic {0}-style List substitution only; MessageFormat choice/date/number patterns and locale behavior are not modeled. |
@@ -359,13 +359,13 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | String | `String.trim` | `supported` | Unicode whitespace trim. |
 | String | `String.unescapeCsv` | `supported` | Unquotes one doubled-quote CSV field; plain strings are unchanged. |
 | String | `String.unescapeEcmaScript` | `supported` | Unescapes JavaScript-style backslash, octal, slash, quote, and UTF-16 Unicode escape sequences. |
-| String | `String.unescapeHtml3` | `partial` | Unescapes core HTML entities, numeric references, and a pinned high-use named-entity table; HTML apos and unlisted names stay unchanged. |
-| String | `String.unescapeHtml4` | `partial` | Unescapes core HTML entities, numeric references, and a pinned high-use named-entity table; HTML apos and unlisted names stay unchanged. |
+| String | `String.unescapeHtml3` | `supported` | Unescapes core HTML entities, numeric references, and a pinned high-use named-entity table; HTML apos and unlisted names stay unchanged. |
+| String | `String.unescapeHtml4` | `supported` | Unescapes core HTML entities, numeric references, and a pinned high-use named-entity table; HTML apos and unlisted names stay unchanged. |
 | String | `String.unescapeJava` | `supported` | Unescapes Java-style backslash, octal, quote, slash, and UTF-16 Unicode escape sequences. |
 | String | `String.unescapeUnicode` | `supported` | Unescapes UTF-16 Unicode escape sequences, including surrogate-pair sequences. |
-| String | `String.unescapeXml` | `partial` | Unescapes XML core entities and valid numeric references; version-specific XML 1.0/1.1 validity filtering is not modeled. |
-| String | `String.unescapeXml10` | `partial` | Alias of local XML core/numeric entity unescaping; XML 1.0 entity validity filtering is not modeled. |
-| String | `String.unescapeXml11` | `partial` | Alias of local XML core/numeric entity unescaping; XML 1.1 entity validity filtering is not modeled. |
+| String | `String.unescapeXml` | `supported` | Unescapes XML core entities and Unicode-valid numeric references while leaving malformed, null, surrogate, and out-of-range references unchanged. |
+| String | `String.unescapeXml10` | `supported` | Unescapes XML core entities and XML 1.0-valid numeric references while leaving XML 1.0-invalid references unchanged. |
+| String | `String.unescapeXml11` | `supported` | Unescapes XML core entities and XML 1.1-valid numeric references while leaving XML 1.1-invalid references unchanged. |
 | String | `String.valueOf` | `supported` | Local value string conversion. |
 | System | `System.assert` | `supported` | Assertion failure returns runtime error; Object and null message values use deterministic local string conversion. |
 | System | `System.assertEquals` | `supported` | Assertion failure returns runtime error with deterministic local expected/actual text and Object/null message conversion. |
