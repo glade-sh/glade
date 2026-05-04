@@ -1371,16 +1371,25 @@ func recentAllPayload(org storage.OrgState, version string) []map[string]any {
 func resourceDiscoveryPayload(version string) map[string]string {
 	base := "/services/data/" + version
 	return map[string]string{
+		"actions":   base + "/actions",
+		"analytics": base + "/analytics",
+		"apps":      base + "/apps",
+		"chatter":   base + "/chatter",
 		"composite": base + "/composite",
+		"connect":   base + "/connect",
 		"jobs":      base + "/jobs",
 		"limits":    base + "/limits",
+		"metadata":  base + "/metadata",
 		"oaer":      base + "/oaer",
+		"process":   base + "/process",
 		"query":     base + "/query",
 		"queryAll":  base + "/queryAll",
 		"recent":    base + "/recent",
 		"search":    base + "/search",
 		"sobjects":  base + "/sobjects",
+		"support":   base + "/support",
 		"tooling":   base + "/tooling",
+		"wave":      base + "/wave",
 	}
 }
 

@@ -508,34 +508,48 @@ func TestRequestedAPIVersionAppearsInSObjectURLs(t *testing.T) {
 }
 
 func TestResourceDiscoveryIncludesStableServerEndpoints(t *testing.T) {
-	org := testOrg()
-	handler := New(&org)
+	for _, version := range []string{"v61.0", "v60.0"} {
+		t.Run(version, func(t *testing.T) {
+			org := testOrg()
+			handler := New(&org)
 
-	rec := httptest.NewRecorder()
-	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/data/v61.0", nil))
-	if rec.Code != http.StatusOK {
-		t.Fatalf("discovery status = %d body=%s", rec.Code, rec.Body.String())
-	}
-	var payload map[string]string
-	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
-		t.Fatal(err)
-	}
-	want := map[string]string{
-		"composite": "/services/data/v61.0/composite",
-		"jobs":      "/services/data/v61.0/jobs",
-		"limits":    "/services/data/v61.0/limits",
-		"oaer":      "/services/data/v61.0/oaer",
-		"query":     "/services/data/v61.0/query",
-		"queryAll":  "/services/data/v61.0/queryAll",
-		"recent":    "/services/data/v61.0/recent",
-		"search":    "/services/data/v61.0/search",
-		"sobjects":  "/services/data/v61.0/sobjects",
-		"tooling":   "/services/data/v61.0/tooling",
-	}
-	for name, url := range want {
-		if payload[name] != url {
-			t.Fatalf("discovery[%s] = %q, want %q; payload=%#v", name, payload[name], url, payload)
-		}
+			rec := httptest.NewRecorder()
+			handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/data/"+version, nil))
+			if rec.Code != http.StatusOK {
+				t.Fatalf("discovery status = %d body=%s", rec.Code, rec.Body.String())
+			}
+			var payload map[string]string
+			if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
+				t.Fatal(err)
+			}
+			base := "/services/data/" + version
+			want := map[string]string{
+				"actions":   base + "/actions",
+				"analytics": base + "/analytics",
+				"apps":      base + "/apps",
+				"chatter":   base + "/chatter",
+				"composite": base + "/composite",
+				"connect":   base + "/connect",
+				"jobs":      base + "/jobs",
+				"limits":    base + "/limits",
+				"metadata":  base + "/metadata",
+				"oaer":      base + "/oaer",
+				"process":   base + "/process",
+				"query":     base + "/query",
+				"queryAll":  base + "/queryAll",
+				"recent":    base + "/recent",
+				"search":    base + "/search",
+				"sobjects":  base + "/sobjects",
+				"support":   base + "/support",
+				"tooling":   base + "/tooling",
+				"wave":      base + "/wave",
+			}
+			for name, url := range want {
+				if payload[name] != url {
+					t.Fatalf("discovery[%s] = %q, want %q; payload=%#v", name, payload[name], url, payload)
+				}
+			}
+		})
 	}
 }
 
