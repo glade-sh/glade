@@ -98,10 +98,18 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if len(parts) == 3 && parts[0] == "id" {
+		if r.Method != http.MethodGet {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
 		writeJSON(w, http.StatusOK, s.identityPayload(r, storage.ID(parts[2])))
 		return
 	}
 	if len(parts) == 2 && parts[0] == "services" && parts[1] == "data" {
+		if r.Method != http.MethodGet {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
 		writeJSON(w, http.StatusOK, []map[string]string{{"version": "v61.0", "url": "/services/data/v61.0"}})
 		return
 	}
@@ -115,6 +123,10 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	rest := parts[3:]
 	if len(parts) == 3 {
+		if r.Method != http.MethodGet {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
 		writeJSON(w, http.StatusOK, resourceDiscoveryPayload(parts[2]))
 		return
 	}
@@ -161,6 +173,10 @@ func (s *Server) handleOAuth(w http.ResponseWriter, r *http.Request, parts []str
 	}
 	switch parts[0] {
 	case "userinfo":
+		if r.Method != http.MethodGet {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
 		writeJSON(w, http.StatusOK, s.userInfoPayload(r))
 	case "token", "revoke", "introspect":
 		if r.Method != http.MethodPost {

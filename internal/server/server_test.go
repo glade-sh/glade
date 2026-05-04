@@ -526,6 +526,32 @@ func TestDescribeEndpoints(t *testing.T) {
 	}
 }
 
+func TestDiscoveryIdentityAndUserInfoRejectUnsupportedMethods(t *testing.T) {
+	org := testOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	handler := New(&org)
+
+	for _, tc := range []struct {
+		name   string
+		method string
+		path   string
+	}{
+		{name: "version-discovery-post", method: http.MethodPost, path: "/services/data"},
+		{name: "resource-discovery-post", method: http.MethodPost, path: "/services/data/v61.0"},
+		{name: "identity-post", method: http.MethodPost, path: "/id/00D000000000001/005000000000001"},
+		{name: "userinfo-post", method: http.MethodPost, path: "/services/oauth2/userinfo"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			handler.ServeHTTP(rec, httptest.NewRequest(tc.method, tc.path, nil))
+			assertSalesforceError(t, rec, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
+			if got := rec.Header().Get("Allow"); got != http.MethodGet {
+				t.Fatalf("Allow = %q, want %q", got, http.MethodGet)
+			}
+		})
+	}
+}
+
 func TestSObjectResourceShape(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)

@@ -30,6 +30,20 @@
       "contains": ["\"actions\":\"/services/data/v61.0/actions\"", "\"analytics\":\"/services/data/v61.0/analytics\"", "\"appMenu\":\"/services/data/v61.0/appMenu\"", "\"apps\":\"/services/data/v61.0/apps\"", "\"chatter\":\"/services/data/v61.0/chatter\"", "\"composite\":\"/services/data/v61.0/composite\"", "\"connect\":\"/services/data/v61.0/connect\"", "\"jobs\":\"/services/data/v61.0/jobs\"", "\"metadata\":\"/services/data/v61.0/metadata\"", "\"process\":\"/services/data/v61.0/process\"", "\"quickActions\":\"/services/data/v61.0/quickActions\"", "\"recent\":\"/services/data/v61.0/recent\"", "\"search\":\"/services/data/v61.0/search\"", "\"support\":\"/services/data/v61.0/support\"", "\"tabs\":\"/services/data/v61.0/tabs\"", "\"theme\":\"/services/data/v61.0/theme\"", "\"wave\":\"/services/data/v61.0/wave\""]
     },
     {
+      "name": "versions-method-not-allowed",
+      "method": "POST",
+      "path": "/services/data",
+      "status": 405,
+      "contains": ["METHOD_NOT_ALLOWED", "method not allowed"]
+    },
+    {
+      "name": "resource-discovery-method-not-allowed",
+      "method": "POST",
+      "path": "/services/data/v61.0",
+      "status": 405,
+      "contains": ["METHOD_NOT_ALLOWED", "method not allowed"]
+    },
+    {
       "name": "limits-payload",
       "method": "GET",
       "path": "/services/data/v61.0/limits",
@@ -57,6 +71,13 @@
       "headers": {"Authorization": "Bearer 005000000000002"},
       "status": 200,
       "contains": ["005000000000002", "ada@example.test", "ada.alias@example.test", "Ada Trail"]
+    },
+    {
+      "name": "userinfo-method-not-allowed",
+      "method": "POST",
+      "path": "/services/oauth2/userinfo",
+      "status": 405,
+      "contains": ["METHOD_NOT_ALLOWED", "method not allowed"]
     },
     {
       "name": "oauth-token-unsupported",
@@ -95,6 +116,13 @@
       "path": "/id/00D000000000001/005000000000001",
       "status": 200,
       "contains": ["user_id", "organization_id"]
+    },
+    {
+      "name": "identity-method-not-allowed",
+      "method": "POST",
+      "path": "/id/00D000000000001/005000000000001",
+      "status": 405,
+      "contains": ["METHOD_NOT_ALLOWED", "method not allowed"]
     },
     {
       "name": "create-account",
@@ -565,8 +593,8 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 72,
-      "statuses": [200, 200, 200, 200, 200, 200, 501, 501, 501, 501, 200, 201, 200, 200, 200, 200, 501, 501, 400, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 201, 204, 200, 400, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 404, 404, 200, 200, 201],
+      "requests": 76,
+      "statuses": [200, 200, 405, 405, 200, 200, 200, 200, 405, 501, 501, 501, 501, 200, 405, 201, 200, 200, 200, 200, 501, 501, 400, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 201, 204, 200, 400, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 404, 404, 200, 200, 201],
       "users": 2
     }
   }
