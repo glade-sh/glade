@@ -116,7 +116,8 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Exception | `Exception.initCause` | `supported` | Stores one local Exception cause or null, returns the receiver, and throws catchable local exceptions for repeat initialization or self-causation. |
 | Exception | `Exception.toString` | `supported` | Returns System-prefixed local exception type and message text. |
 | FeatureManagement | `FeatureManagement.checkPermission` | `supported` | Checks local current-user and runAs permission-list state. |
-| HTTP | `Http.send` | `partial` | Mock-first local callouts with request validation and callout accounting; real network transport remains explicitly unsupported. |
+| HTTP | `Http.send local mock callouts` | `supported` | Fixture-backed local HttpCalloutMock execution with request validation, callout accounting, trace events, HttpResponse return validation, and no real transport. |
+| HTTP | `Http.send real network transport` | `unsupported` | Outbound HTTP transport remains explicitly unsupported; valid requests without a registered local mock return UnsupportedFeature after callout accounting. |
 | HTTP | `HttpRequest` | `partial` | Deterministic constructor defaults plus endpoint, method, compressed flag, case-insensitive headers/header keys, timeout validation/defaults, body, and blob body accessors; client-certificate and static-resource callout surfaces remain explicit unsupported seams. |
 | HTTP | `HttpResponse` | `supported` | Deterministic constructor defaults plus status, status code, case-insensitive headers/header keys, body, and blob body accessors for local mock responses. |
 | Id | `Id.getSObjectType local prefixes` | `supported` | Resolves local schema key prefixes and the modeled standard prefix table to Schema.SObjectType tokens. |

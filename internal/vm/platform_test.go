@@ -2614,6 +2614,29 @@ h.send(req);
 	}
 }
 
+func TestExecHttpSendWithoutMockInTestContextIsUnsupportedTransport(t *testing.T) {
+	program, err := CompileAnonymous(`
+HttpRequest req = new HttpRequest();
+req.setEndpoint('https://example.test');
+req.setMethod('GET');
+Http h = new Http();
+h.send(req);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	result, err := machine.Execute(program)
+	var runtimeErr *RuntimeError
+	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != `unsupported call "Http.send real network transport"` {
+		t.Fatalf("err = %#v, want UnsupportedFeature real transport", err)
+	}
+	if result.Limits.Callouts != 1 {
+		t.Fatalf("callouts = %d, want 1", result.Limits.Callouts)
+	}
+}
+
 func TestExecUnsupportedHttpCalloutSurfacesHaveStableShape(t *testing.T) {
 	cases := []struct {
 		name string
@@ -2698,5 +2721,38 @@ System.assertEquals('payload:mocked', res.getBody());
 	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecHttpCalloutMockRespondMustReturnHttpResponse(t *testing.T) {
+	respondProgram, err := CompileAnonymous(`return 'not-response';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Test.setMock('HttpCalloutMock', new BadMock());
+HttpRequest req = new HttpRequest();
+req.setEndpoint('https://example.test');
+req.setMethod('GET');
+Http h = new Http();
+h.send(req);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterMethod(Method{
+		Name:       "BadMock.respond",
+		ClassName:  "BadMock",
+		ReturnType: "String",
+		Params:     []Param{{Name: "req", Type: "HttpRequest"}},
+		Program:    respondProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	_, err = machine.Execute(program)
+	if err == nil || !strings.Contains(err.Error(), "HttpCalloutMock.respond must return HttpResponse") {
+		t.Fatalf("err = %v, want HttpResponse return validation", err)
 	}
 }

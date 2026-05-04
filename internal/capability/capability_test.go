@@ -100,6 +100,29 @@ func TestDatabaseStdlibRowsAreLocallyPromotedOrFenced(t *testing.T) {
 	}
 }
 
+func TestHTTPStdlibRowsAreLocallyPromotedOrFenced(t *testing.T) {
+	watched := map[string]Status{
+		"Http.send local mock callouts":    StatusSupported,
+		"Http.send real network transport": StatusUnsupported,
+	}
+	for _, entry := range StdlibMatrix() {
+		want, ok := watched[entry.API]
+		if !ok {
+			continue
+		}
+		delete(watched, entry.API)
+		if entry.Status != want {
+			t.Fatalf("%s = %s, want %s: %s", entry.API, entry.Status, want, entry.Notes)
+		}
+		if entry.Notes == "" {
+			t.Fatalf("%s needs local-model notes", entry.API)
+		}
+	}
+	for api := range watched {
+		t.Fatalf("missing HTTP stdlib row %s", api)
+	}
+}
+
 func TestDateDatetimeTimeZoneRowsAreLocallyPromotedOrFenced(t *testing.T) {
 	watched := map[string]bool{
 		"Date.addMonths":          true,

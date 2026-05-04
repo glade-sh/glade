@@ -681,6 +681,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
     responses without real transport.
   - [x] Add local compressed-flag and deterministic header-key coverage for
     mock-only request/response shapes.
+  - [x] Split `Http.send` coverage into supported local mock-callout behavior
+    and an explicit unsupported real-network transport row.
   - [x] Promote the local `HttpResponse` value object shape: constructor
     defaults, status/status-code, body/blob, and case-insensitive header helpers
     are covered without needing transport.

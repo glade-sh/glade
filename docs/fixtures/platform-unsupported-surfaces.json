@@ -57,7 +57,7 @@
       "notes": "Visualforce page rendering and PDF generation stay explicitly unsupported."
     },
     {
-      "symbol": "Http.send real transport",
+      "symbol": "Http.send real network transport",
       "kind": "server",
       "notes": "Real outbound HTTP transport stays explicitly unsupported outside test mocks."
     },

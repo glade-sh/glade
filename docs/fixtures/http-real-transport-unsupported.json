@@ -2,7 +2,7 @@
   "name": "http-real-transport-unsupported",
   "evidence": [
     {
-      "symbol": "Http.send",
+      "symbol": "Http.send real network transport",
       "kind": "exec",
       "notes": "Real network transport is not locally modeled."
     }
