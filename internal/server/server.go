@@ -238,7 +238,7 @@ func (s *Server) handleObject(w http.ResponseWriter, r *http.Request, version st
 			writeSalesforceError(w, errUnknownObject)
 			return
 		}
-		writeJSON(w, http.StatusOK, describePayload(object.Definition))
+		writeJSON(w, http.StatusOK, describePayload(object.Definition, s.Org))
 	case isObjectMetadataRoute(parts) && r.Method == http.MethodGet:
 		object, ok := s.Org.Objects[objectName]
 		if !ok {
@@ -1301,7 +1301,7 @@ func isCompactLayoutsRoute(parts []string) bool {
 	return len(parts) == 2 && parts[1] == "compactLayouts"
 }
 
-func describePayload(def storage.ObjectDefinition) map[string]any {
+func describePayload(def storage.ObjectDefinition, org *storage.OrgState) map[string]any {
 	fields := make([]map[string]any, 0, len(def.Fields))
 	names := make([]string, 0, len(def.Fields))
 	for name := range def.Fields {
@@ -1310,25 +1310,136 @@ func describePayload(def storage.ObjectDefinition) map[string]any {
 	sort.Strings(names)
 	for _, name := range names {
 		field := def.Fields[name]
-		fields = append(fields, map[string]any{
-			"name":             field.APIName,
-			"label":            field.APIName,
-			"type":             string(field.Type),
-			"nillable":         !field.Required,
-			"referenceTo":      field.ReferenceTo,
-			"relationshipName": field.RelationshipName,
-		})
+		fields = append(fields, describeFieldPayload(field))
 	}
 	return map[string]any{
-		"name":       def.APIName,
-		"label":      def.Label,
-		"keyPrefix":  def.KeyPrefix,
-		"fields":     fields,
-		"queryable":  true,
-		"createable": true,
-		"updateable": true,
-		"deletable":  true,
+		"name":               def.APIName,
+		"label":              labelOrFallback(def.Label, def.APIName),
+		"labelPlural":        labelOrFallback(def.PluralLabel, labelOrFallback(def.Label, def.APIName)),
+		"custom":             strings.HasSuffix(def.APIName, "__c") || strings.HasSuffix(def.APIName, "__mdt"),
+		"keyPrefix":          def.KeyPrefix,
+		"fields":             fields,
+		"searchable":         true,
+		"queryable":          true,
+		"createable":         true,
+		"updateable":         true,
+		"deletable":          true,
+		"recordTypeInfos":    describeRecordTypeInfos(def.RecordTypes),
+		"childRelationships": describeChildRelationships(def.APIName, org),
 	}
+}
+
+func describeFieldPayload(field storage.Field) map[string]any {
+	createable := field.Type != storage.FieldID && field.Type != storage.FieldCalculated
+	updateable := createable
+	referenceTo := append([]string(nil), field.ReferenceTo...)
+	sort.Strings(referenceTo)
+	nillable := !field.Required && field.Type != storage.FieldID && !strings.EqualFold(field.APIName, "Id")
+	return map[string]any{
+		"name":             field.APIName,
+		"label":            labelOrFallback(field.Label, field.APIName),
+		"type":             string(field.Type),
+		"nillable":         nillable,
+		"createable":       createable,
+		"updateable":       updateable,
+		"filterable":       true,
+		"sortable":         field.Type != storage.FieldAddress && field.Type != storage.FieldLocation,
+		"externalId":       field.ExternalID,
+		"unique":           field.Unique,
+		"idLookup":         field.Type == storage.FieldID || strings.EqualFold(field.APIName, "Id") || field.ExternalID,
+		"referenceTo":      referenceTo,
+		"relationshipName": field.RelationshipName,
+		"picklistValues":   describePicklistValues(field.PicklistValues),
+	}
+}
+
+func describePicklistValues(values []storage.PicklistValue) []map[string]any {
+	out := make([]map[string]any, 0, len(values))
+	for _, value := range values {
+		out = append(out, map[string]any{
+			"value":        value.Value,
+			"label":        labelOrFallback(value.Label, value.Value),
+			"active":       value.Active,
+			"defaultValue": value.Default,
+		})
+	}
+	return out
+}
+
+func describeRecordTypeInfos(recordTypes []storage.RecordTypeInfo) []map[string]any {
+	sorted := append([]storage.RecordTypeInfo(nil), recordTypes...)
+	sort.Slice(sorted, func(i, j int) bool {
+		if sorted[i].DeveloperName == sorted[j].DeveloperName {
+			if sorted[i].Name == sorted[j].Name {
+				return sorted[i].ID < sorted[j].ID
+			}
+			return sorted[i].Name < sorted[j].Name
+		}
+		return sorted[i].DeveloperName < sorted[j].DeveloperName
+	})
+	out := make([]map[string]any, 0, len(sorted))
+	for _, recordType := range sorted {
+		out = append(out, map[string]any{
+			"recordTypeId":             recordType.ID.String(),
+			"developerName":            recordType.DeveloperName,
+			"name":                     labelOrFallback(recordType.Name, recordType.DeveloperName),
+			"active":                   recordType.Active,
+			"available":                recordType.Available,
+			"defaultRecordTypeMapping": recordType.Default,
+		})
+	}
+	return out
+}
+
+func describeChildRelationships(objectName string, org *storage.OrgState) []map[string]any {
+	if org == nil {
+		return []map[string]any{}
+	}
+	childNames := make([]string, 0, len(org.Objects))
+	for childName := range org.Objects {
+		childNames = append(childNames, childName)
+	}
+	sort.Strings(childNames)
+	out := make([]map[string]any, 0)
+	for _, childName := range childNames {
+		relationships := append([]storage.Relationship(nil), org.Objects[childName].Definition.Relations...)
+		sort.Slice(relationships, func(i, j int) bool {
+			if relationships[i].ChildRelationship == relationships[j].ChildRelationship {
+				return relationships[i].Field < relationships[j].Field
+			}
+			return relationships[i].ChildRelationship < relationships[j].ChildRelationship
+		})
+		for _, relationship := range relationships {
+			if !relationshipTargetsObject(relationship, objectName) {
+				continue
+			}
+			out = append(out, map[string]any{
+				"cascadeDelete":       relationship.CascadeDelete,
+				"childSObject":        childName,
+				"deprecatedAndHidden": false,
+				"field":               relationship.Field,
+				"relationshipName":    relationship.ChildRelationship,
+				"restrictedDelete":    relationship.RestrictedDelete,
+			})
+		}
+	}
+	return out
+}
+
+func relationshipTargetsObject(relationship storage.Relationship, objectName string) bool {
+	for _, parent := range relationship.ParentObjects {
+		if strings.EqualFold(parent, objectName) {
+			return true
+		}
+	}
+	return false
+}
+
+func labelOrFallback(label, fallback string) string {
+	if label != "" {
+		return label
+	}
+	return fallback
 }
 
 func compactLayoutsPayload(def storage.ObjectDefinition) map[string]any {

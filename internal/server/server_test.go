@@ -608,6 +608,119 @@ func TestSObjectResourceShape(t *testing.T) {
 	}
 }
 
+func TestSObjectDescribePayloadIncludesCommonMetadataShape(t *testing.T) {
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.Label = "Account"
+	account.Definition.PluralLabel = "Accounts"
+	account.Definition.Fields["Id"] = storage.Field{APIName: "Id", Label: "Account ID", Type: storage.FieldID, Required: true}
+	account.Definition.Fields["Name"] = storage.Field{APIName: "Name", Label: "Account Name", Type: storage.FieldString, Required: true}
+	account.Definition.Fields["External_Id__c"] = storage.Field{APIName: "External_Id__c", Label: "External ID", Type: storage.FieldString, ExternalID: true, Unique: true}
+	account.Definition.Fields["Rating"] = storage.Field{
+		APIName: "Rating",
+		Label:   "Rating",
+		Type:    storage.FieldPicklist,
+		PicklistValues: []storage.PicklistValue{
+			{Value: "Hot", Label: "Hot Label", Active: true, Default: true},
+			{Value: "Cold", Active: false},
+		},
+	}
+	account.Definition.RecordTypes = []storage.RecordTypeInfo{{ID: "012000000000001", DeveloperName: "Business", Name: "Business Account", Active: true, Available: true, Default: true}}
+	org.Objects["Account"] = account
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Contact",
+			Label:     "Contact",
+			KeyPrefix: "003",
+			Fields: map[string]storage.Field{
+				"AccountId": {APIName: "AccountId", Label: "Account ID", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Account"},
+				"LastName":  {APIName: "LastName", Label: "Last Name", Type: storage.FieldString, Required: true},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "AccountId",
+				ParentObjects:      []string{"Account"},
+				ParentRelationship: "Account",
+				ChildRelationship:  "Contacts",
+				CascadeDelete:      true,
+			}},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/describe", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("describe status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var payload struct {
+		Name               string           `json:"name"`
+		Label              string           `json:"label"`
+		LabelPlural        string           `json:"labelPlural"`
+		Custom             bool             `json:"custom"`
+		KeyPrefix          string           `json:"keyPrefix"`
+		Searchable         bool             `json:"searchable"`
+		Queryable          bool             `json:"queryable"`
+		Createable         bool             `json:"createable"`
+		Updateable         bool             `json:"updateable"`
+		Deletable          bool             `json:"deletable"`
+		Fields             []map[string]any `json:"fields"`
+		RecordTypeInfos    []map[string]any `json:"recordTypeInfos"`
+		ChildRelationships []map[string]any `json:"childRelationships"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
+		t.Fatal(err)
+	}
+	if payload.Name != "Account" || payload.Label != "Account" || payload.LabelPlural != "Accounts" || payload.Custom || payload.KeyPrefix != "001" {
+		t.Fatalf("object describe identity = %#v", payload)
+	}
+	if !payload.Searchable || !payload.Queryable || !payload.Createable || !payload.Updateable || !payload.Deletable {
+		t.Fatalf("object flags = %#v", payload)
+	}
+	if len(payload.RecordTypeInfos) != 1 || payload.RecordTypeInfos[0]["recordTypeId"] != "012000000000001" || payload.RecordTypeInfos[0]["defaultRecordTypeMapping"] != true {
+		t.Fatalf("recordTypeInfos = %#v", payload.RecordTypeInfos)
+	}
+	if len(payload.ChildRelationships) != 1 || payload.ChildRelationships[0]["childSObject"] != "Contact" || payload.ChildRelationships[0]["field"] != "AccountId" || payload.ChildRelationships[0]["relationshipName"] != "Contacts" || payload.ChildRelationships[0]["cascadeDelete"] != true {
+		t.Fatalf("childRelationships = %#v", payload.ChildRelationships)
+	}
+
+	fieldByName := func(name string) map[string]any {
+		t.Helper()
+		for _, field := range payload.Fields {
+			if field["name"] == name {
+				return field
+			}
+		}
+		t.Fatalf("missing field %s in %#v", name, payload.Fields)
+		return nil
+	}
+	id := fieldByName("Id")
+	if id["label"] != "Account ID" || id["type"] != "id" || id["nillable"] != false || id["createable"] != false || id["updateable"] != false || id["idLookup"] != true {
+		t.Fatalf("Id field = %#v", id)
+	}
+	name := fieldByName("Name")
+	if name["label"] != "Account Name" || name["nillable"] != false || name["createable"] != true || name["filterable"] != true || name["sortable"] != true {
+		t.Fatalf("Name field = %#v", name)
+	}
+	external := fieldByName("External_Id__c")
+	if external["externalId"] != true || external["unique"] != true || external["idLookup"] != true {
+		t.Fatalf("external id field = %#v", external)
+	}
+	rating := fieldByName("Rating")
+	values, ok := rating["picklistValues"].([]any)
+	if !ok || len(values) != 2 {
+		t.Fatalf("Rating picklistValues = %#v", rating["picklistValues"])
+	}
+	hot, ok := values[0].(map[string]any)
+	if !ok || hot["value"] != "Hot" || hot["label"] != "Hot Label" || hot["active"] != true || hot["defaultValue"] != true {
+		t.Fatalf("hot picklist value = %#v", values[0])
+	}
+	cold, ok := values[1].(map[string]any)
+	if !ok || cold["value"] != "Cold" || cold["label"] != "Cold" || cold["active"] != false || cold["defaultValue"] != false {
+		t.Fatalf("cold picklist value = %#v", values[1])
+	}
+}
+
 func TestRequestedAPIVersionAppearsInSObjectURLs(t *testing.T) {
 	org := testOrg()
 	addAccountForTest(&org, "001000000000001", "Acme")

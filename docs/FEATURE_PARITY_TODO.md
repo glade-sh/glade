@@ -624,6 +624,9 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Return Salesforce-like object resource metadata for
     `/sobjects/{Object}` with stable describe/recent URLs and common `urls`
     entries instead of leaking internal storage definitions.
+  - [x] Enrich `/sobjects/{Object}/describe` with conservative object, field,
+    record type, picklist, and child relationship payload keys from local
+    storage metadata.
   - [x] Return flat record GET payloads with `attributes.type`, `attributes.url`,
     and `Id` instead of leaking internal storage value wrappers.
   - [x] Return REST and Tooling query rows as SObject-shaped payloads with
