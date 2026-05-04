@@ -209,11 +209,11 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Math | `Math.sin` | `supported` | Finite deterministic result for numeric values. |
 | Math | `Math.sqrt` | `supported` | Numeric values. |
 | Math | `Math.tan` | `supported` | Finite deterministic result for numeric values. |
-| Messaging | `Messaging email delivery, templates, and capacity APIs` | `unsupported` | Real delivery, template rendering, capacity reservation, push notifications, sendEmailMessage, and sendEmail options remain fixture-backed UnsupportedFeature surfaces. |
 | Messaging | `Messaging.MassEmailMessage` | `supported` | Local value object has deterministic defaults plus common target, whatId, template, description, opt-out, and activity setter/getter storage; no delivery transport is attempted. |
 | Messaging | `Messaging.SendEmailResult` | `supported` | Local success result has deterministic constructor defaults and exposes isSuccess and getErrors getters. |
 | Messaging | `Messaging.SingleEmailMessage` | `supported` | Local value object has deterministic defaults plus common address, body, threading, template-reference, activity, signature, opt-out, priority, BCC sender, and attachment setter/getter storage; no delivery transport is attempted. |
-| Messaging | `Messaging.sendEmail` | `partial` | Single and mass message list overloads, including Boolean allOrNothing, validate local message items, return one local SendEmailResult per message, and increment email limits; transport/template APIs and SendEmailOptions surfaces return explicit unsupported diagnostics. |
+| Messaging | `Messaging.sendEmail local result model` | `supported` | Single, mass, empty, and mixed message-list overloads, including Boolean allOrNothing, validate local message items before limit accounting, return one ordered local SendEmailResult per message, and increment email invocation limits once per valid call. |
+| Messaging | `Messaging.sendEmail transport, templates, and SendEmailOptions` | `unsupported` | Real delivery transport, template rendering/delivery surfaces, push/sendEmailMessage transport, capacity reservation, and SendEmailOptions overloads return fixture-backed UnsupportedFeature diagnostics. |
 | Object | `Object.equals` | `supported` | Uses local value equality for primitives, collections, platform scalars, and object identity. |
 | Object | `Object.hashCode` | `supported` | Deterministic within local value equality; object identity hashes are request-local. |
 | Object | `Object.toString` | `supported` | Returns local string forms for primitives, collections, platform scalars, and objects. |
