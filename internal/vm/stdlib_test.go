@@ -1009,6 +1009,19 @@ packaged.newInstance();
 	}
 }
 
+func TestExecTypeNewInstanceAllowsDottedBuiltins(t *testing.T) {
+	program, err := CompileAnonymous(`
+Object exceptionValue = Type.forName('System.AssertException').newInstance();
+System.assertEquals('System.AssertException', exceptionValue.toString());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecURLConstructorRejectsMalformedInputs(t *testing.T) {
 	tests := []struct {
 		source string

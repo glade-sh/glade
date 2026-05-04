@@ -823,6 +823,15 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 		}
 		return evalBinary(expr.Operator, left, right)
 	case ir.ExprCall:
+		var receiver Value
+		hasReceiver := expr.Left != nil
+		if hasReceiver {
+			var err error
+			receiver, err = vm.eval(*expr.Left, result)
+			if err != nil {
+				return Null, err
+			}
+		}
 		args := make([]Value, 0, len(expr.Args))
 		for _, arg := range expr.Args {
 			value, err := vm.eval(arg, result)
@@ -838,6 +847,13 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 				return Null, err
 			}
 			namedArgs[arg.Name] = value
+		}
+		if hasReceiver {
+			value, handled, err := vm.callValueMember("", receiver, expr.Callee, args, result)
+			if handled || err != nil {
+				return value, err
+			}
+			return Null, unsupportedCallError(expr.Callee)
 		}
 		return vm.call(expr.Callee, args, namedArgs, result)
 	case ir.ExprSOQL:
@@ -5654,6 +5670,12 @@ func isExceptionType(typeName string) bool {
 	return typeName == "Exception" || strings.HasSuffix(typeName, "Exception")
 }
 
+func typeNewInstanceAllowsDottedBuiltin(typeName string) bool {
+	return isExceptionType(typeName) ||
+		strings.HasPrefix(typeName, "Schema.") ||
+		typeName == "ApexPages.Message"
+}
+
 func (vm *VM) initializeFields(object *Value, typeName string) {
 	class, ok := vm.Classes[typeName]
 	if !ok {
@@ -7330,6 +7352,9 @@ func (vm *VM) sObjectFieldExists(typeName, field string) bool {
 }
 
 func (vm *VM) storeReceiver(receiverName string, value Value) error {
+	if receiverName == "" {
+		return nil
+	}
 	if strings.Contains(receiverName, ".") {
 		return vm.assign(receiverName, value)
 	}
@@ -8244,7 +8269,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			typeName := typeValueName(receiver)
 			if strings.Contains(typeName, ".") {
-				if _, ok := vm.resolveClassName(typeName); !ok {
+				if _, ok := vm.resolveClassName(typeName); !ok && !typeNewInstanceAllowsDottedBuiltin(typeName) {
 					return Null, receiver, false, true, unsupportedCallError("Type.newInstance namespace/package reflection for " + typeName)
 				}
 			}
