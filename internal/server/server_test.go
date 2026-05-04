@@ -828,11 +828,40 @@ func TestSObjectLayoutMetadataEdges(t *testing.T) {
 	for _, path := range []string{
 		"/services/data/v61.0/sobjects/Account/layouts",
 		"/services/data/v61.0/sobjects/Account/describe/layouts",
+		"/services/data/v61.0/sobjects/Account/describe/approvalLayouts",
+		"/services/data/v61.0/sobjects/Account/describe/namedLayouts",
+		"/services/data/v61.0/sobjects/Account/namedLayouts/Account%20Layout",
 	} {
 		rec := httptest.NewRecorder()
 		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
-		assertSalesforceError(t, rec, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", "layout metadata")
+		assertSalesforceError(t, rec, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", "layout")
 	}
+
+	for _, path := range []string{
+		"/services/data/v61.0/sobjects/Account/describe/approvalLayouts",
+		"/services/data/v61.0/sobjects/Account/describe/namedLayouts",
+		"/services/data/v61.0/sobjects/Account/namedLayouts/Account%20Layout",
+	} {
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, path, nil))
+		assertSalesforceError(t, rec, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
+		if got := rec.Header().Get("Allow"); got != http.MethodGet {
+			t.Fatalf("%s Allow = %q", path, got)
+		}
+	}
+
+	unknown := httptest.NewRecorder()
+	handler.ServeHTTP(unknown, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/sobjects/Missing__c/describe/approvalLayouts", nil))
+	assertSalesforceError(t, unknown, http.StatusNotFound, "NOT_FOUND", "unknown object")
+
+	unknown = httptest.NewRecorder()
+	handler.ServeHTTP(unknown, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Missing__c/namedLayouts/Account%20Layout", nil))
+	assertSalesforceError(t, unknown, http.StatusNotFound, "NOT_FOUND", "unknown object")
+}
+
+func TestSObjectCompactLayoutsStub(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
 
 	compact := httptest.NewRecorder()
 	handler.ServeHTTP(compact, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/compactLayouts", nil))
@@ -989,16 +1018,18 @@ func TestSObjectResourceShape(t *testing.T) {
 		t.Fatalf("object URL payload = %#v", payload)
 	}
 	wantURLs := map[string]string{
-		"rowTemplate":    "/services/data/v61.0/sobjects/Account/{ID}",
-		"defaultValues":  "/services/data/v61.0/sobjects/Account/defaultValues?recordTypeId&fields",
-		"describe":       "/services/data/v61.0/sobjects/Account/describe",
-		"recent":         "/services/data/v61.0/sobjects/Account/recent",
-		"updated":        "/services/data/v61.0/sobjects/Account/updated",
-		"deleted":        "/services/data/v61.0/sobjects/Account/deleted",
-		"items":          "/services/data/v61.0/sobjects/Account",
-		"layouts":        "/services/data/v61.0/sobjects/Account/describe/layouts",
-		"compactLayouts": "/services/data/v61.0/sobjects/Account/compactLayouts",
-		"listviews":      "/services/data/v61.0/sobjects/Account/listviews",
+		"rowTemplate":     "/services/data/v61.0/sobjects/Account/{ID}",
+		"defaultValues":   "/services/data/v61.0/sobjects/Account/defaultValues?recordTypeId&fields",
+		"describe":        "/services/data/v61.0/sobjects/Account/describe",
+		"recent":          "/services/data/v61.0/sobjects/Account/recent",
+		"updated":         "/services/data/v61.0/sobjects/Account/updated",
+		"deleted":         "/services/data/v61.0/sobjects/Account/deleted",
+		"items":           "/services/data/v61.0/sobjects/Account",
+		"layouts":         "/services/data/v61.0/sobjects/Account/describe/layouts",
+		"approvalLayouts": "/services/data/v61.0/sobjects/Account/describe/approvalLayouts",
+		"compactLayouts":  "/services/data/v61.0/sobjects/Account/compactLayouts",
+		"namedLayouts":    "/services/data/v61.0/sobjects/Account/namedLayouts/{LAYOUT_NAME}",
+		"listviews":       "/services/data/v61.0/sobjects/Account/listviews",
 	}
 	for name, url := range wantURLs {
 		if payload.URLs[name] != url {

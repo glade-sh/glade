@@ -258,17 +258,21 @@ func (s *Server) handleObject(w http.ResponseWriter, r *http.Request, version st
 			return
 		}
 		writeJSON(w, http.StatusOK, describePayload(object.Definition, s.Org))
-	case isObjectMetadataRoute(parts) && r.Method == http.MethodGet:
+	case isObjectMetadataRoute(parts):
 		object, ok := s.Org.Objects[objectName]
 		if !ok {
 			writeSalesforceError(w, errUnknownObject)
+			return
+		}
+		if r.Method != http.MethodGet {
+			writeMethodNotAllowed(w, http.MethodGet)
 			return
 		}
 		if isCompactLayoutsRoute(parts) {
 			writeJSON(w, http.StatusOK, compactLayoutsPayload(object.Definition))
 			return
 		}
-		writeSalesforceError(w, errUnsupportedFeature, "Full SObject layout metadata is not modeled in the local server; use describe fields and compactLayouts stub data instead")
+		writeSalesforceError(w, errUnsupportedFeature, "Full SObject layout and layout-adjacent metadata is not modeled in the local server; use describe fields and compactLayouts stub data instead")
 	case isDefaultValuesRoute(parts) && r.Method == http.MethodGet:
 		if _, ok := s.Org.Objects[objectName]; !ok {
 			writeSalesforceError(w, errUnknownObject)
@@ -350,8 +354,6 @@ func (s *Server) handleObject(w http.ResponseWriter, r *http.Request, version st
 	case len(parts) == 2 && parts[1] == "recent":
 		writeMethodNotAllowed(w, http.MethodGet)
 	case isDefaultValuesRoute(parts):
-		writeMethodNotAllowed(w, http.MethodGet)
-	case isObjectMetadataRoute(parts):
 		writeMethodNotAllowed(w, http.MethodGet)
 	case len(parts) == 1:
 		writeMethodNotAllowed(w, http.MethodGet, http.MethodPost)
@@ -1794,7 +1796,10 @@ func isObjectMetadataRoute(parts []string) bool {
 	if len(parts) == 2 {
 		return parts[1] == "layouts" || parts[1] == "compactLayouts"
 	}
-	return len(parts) == 3 && parts[1] == "describe" && parts[2] == "layouts"
+	if len(parts) == 3 && parts[1] == "describe" {
+		return parts[2] == "layouts" || parts[2] == "approvalLayouts" || parts[2] == "namedLayouts"
+	}
+	return len(parts) == 3 && parts[1] == "namedLayouts"
 }
 
 func isCompactLayoutsRoute(parts []string) bool {
@@ -1970,16 +1975,18 @@ func objectResourcePayload(def storage.ObjectDefinition, version string) map[str
 		"describe":       describe,
 		"url":            base,
 		"urls": map[string]string{
-			"rowTemplate":    base + "/{ID}",
-			"defaultValues":  base + "/defaultValues?recordTypeId&fields",
-			"describe":       describe,
-			"recent":         recent,
-			"updated":        base + "/updated",
-			"deleted":        base + "/deleted",
-			"items":          base,
-			"layouts":        describe + "/layouts",
-			"compactLayouts": base + "/compactLayouts",
-			"listviews":      base + "/listviews",
+			"rowTemplate":     base + "/{ID}",
+			"defaultValues":   base + "/defaultValues?recordTypeId&fields",
+			"describe":        describe,
+			"recent":          recent,
+			"updated":         base + "/updated",
+			"deleted":         base + "/deleted",
+			"items":           base,
+			"layouts":         describe + "/layouts",
+			"approvalLayouts": describe + "/approvalLayouts",
+			"compactLayouts":  base + "/compactLayouts",
+			"namedLayouts":    base + "/namedLayouts/{LAYOUT_NAME}",
+			"listviews":       base + "/listviews",
 		},
 	}
 }

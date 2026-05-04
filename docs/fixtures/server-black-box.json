@@ -144,7 +144,7 @@
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Account",
       "status": 200,
-      "contains": ["\"name\":\"Account\"", "\"keyPrefix\":\"001\"", "\"objectDescribe\":\"/services/data/v61.0/sobjects/Account/describe\"", "\"recentItems\":\"/services/data/v61.0/sobjects/Account/recent\"", "\"rowTemplate\":\"/services/data/v61.0/sobjects/Account/{ID}\"", "\"compactLayouts\":\"/services/data/v61.0/sobjects/Account/compactLayouts\"", "\"listviews\":\"/services/data/v61.0/sobjects/Account/listviews\""]
+      "contains": ["\"name\":\"Account\"", "\"keyPrefix\":\"001\"", "\"objectDescribe\":\"/services/data/v61.0/sobjects/Account/describe\"", "\"recentItems\":\"/services/data/v61.0/sobjects/Account/recent\"", "\"rowTemplate\":\"/services/data/v61.0/sobjects/Account/{ID}\"", "\"approvalLayouts\":\"/services/data/v61.0/sobjects/Account/describe/approvalLayouts\"", "\"compactLayouts\":\"/services/data/v61.0/sobjects/Account/compactLayouts\"", "\"namedLayouts\":\"/services/data/v61.0/sobjects/Account/namedLayouts/{LAYOUT_NAME}\"", "\"listviews\":\"/services/data/v61.0/sobjects/Account/listviews\""]
     },
 
     {
@@ -188,7 +188,42 @@
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Account/layouts",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "layout metadata"]
+      "contains": ["UNSUPPORTED_FEATURE", "layout"]
+    },
+    {
+      "name": "approval-layouts-unsupported",
+      "method": "GET",
+      "path": "/services/data/v61.0/sobjects/Account/describe/approvalLayouts",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "layout-adjacent metadata"]
+    },
+    {
+      "name": "named-layouts-unsupported",
+      "method": "GET",
+      "path": "/services/data/v61.0/sobjects/Account/describe/namedLayouts",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "layout-adjacent metadata"]
+    },
+    {
+      "name": "named-layout-unsupported",
+      "method": "GET",
+      "path": "/services/data/v61.0/sobjects/Account/namedLayouts/Account%20Layout",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "layout-adjacent metadata"]
+    },
+    {
+      "name": "approval-layouts-method-not-allowed",
+      "method": "POST",
+      "path": "/services/data/v61.0/sobjects/Account/describe/approvalLayouts",
+      "status": 405,
+      "contains": ["METHOD_NOT_ALLOWED", "method not allowed"]
+    },
+    {
+      "name": "approval-layouts-unknown-object",
+      "method": "GET",
+      "path": "/services/data/v61.0/sobjects/Missing__c/describe/approvalLayouts",
+      "status": 404,
+      "contains": ["NOT_FOUND", "unknown object"]
     },
     {
       "name": "default-values-unsupported",
@@ -776,8 +811,8 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 99,
-      "statuses": [200, 200, 405, 405, 200, 200, 200, 200, 405, 501, 501, 501, 501, 200, 405, 201, 200, 200, 200, 200, 200, 400, 200, 501, 501, 501, 501, 501, 405, 404, 400, 200, 501, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 400, 200, 200, 201, 204, 200, 201, 204, 200, 200, 204, 400, 501, 501, 200, 200, 200, 200, 501, 405, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 405, 501, 501, 405, 501, 405, 501, 501, 405, 501, 501, 501, 404, 404, 200, 200, 201],
+      "requests": 104,
+      "statuses": [200, 200, 405, 405, 200, 200, 200, 200, 405, 501, 501, 501, 501, 200, 405, 201, 200, 200, 200, 200, 200, 400, 200, 501, 501, 501, 501, 405, 404, 501, 501, 501, 501, 405, 404, 400, 200, 501, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 400, 200, 200, 201, 204, 200, 201, 204, 200, 200, 204, 400, 501, 501, 200, 200, 200, 200, 501, 405, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 405, 501, 501, 405, 501, 405, 501, 501, 405, 501, 501, 501, 404, 404, 200, 200, 201],
       "users": 2
     }
   }
