@@ -154,9 +154,17 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 		return Int(int64(vm.limits.DMLStatements)), true
 	case "getLimitDmlStatements":
 		return Int(int64(vm.limitCaps.DMLStatements)), true
+	case "getDMLStatements":
+		return Int(int64(vm.limits.DMLStatements)), true
+	case "getLimitDMLStatements":
+		return Int(int64(vm.limitCaps.DMLStatements)), true
 	case "getDmlRows":
 		return Int(int64(vm.limits.DMLRows)), true
 	case "getLimitDmlRows":
+		return Int(int64(vm.limitCaps.DMLRows)), true
+	case "getDMLRows":
+		return Int(int64(vm.limits.DMLRows)), true
+	case "getLimitDMLRows":
 		return Int(int64(vm.limitCaps.DMLRows)), true
 	case "getHeapSize":
 		return Int(int64(vm.limits.HeapSize)), true
