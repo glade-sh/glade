@@ -339,12 +339,63 @@
       "contains": ["UNSUPPORTED_FEATURE", "Bulk API v2 query jobs"]
     },
     {
+      "name": "bulk-query-job-record-unsupported",
+      "method": "GET",
+      "path": "/services/data/v61.0/jobs/query/750000000000001",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "Bulk API v2 query job records"]
+    },
+    {
+      "name": "bulk-query-results-unsupported",
+      "method": "GET",
+      "path": "/services/data/v61.0/jobs/query/750000000000001/results",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "Bulk API v2 query job results"]
+    },
+    {
       "name": "bulk-ingest-unsupported",
       "method": "PATCH",
       "path": "/services/data/v61.0/jobs/ingest",
       "body": "{}",
       "status": 501,
       "contains": ["UNSUPPORTED_FEATURE", "Bulk API v2 ingest jobs"]
+    },
+    {
+      "name": "bulk-ingest-job-record-unsupported",
+      "method": "PATCH",
+      "path": "/services/data/v61.0/jobs/ingest/750000000000001",
+      "body": "{\"state\":\"UploadComplete\"}",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "Bulk API v2 ingest job records"]
+    },
+    {
+      "name": "bulk-ingest-batches-unsupported",
+      "method": "PUT",
+      "path": "/services/data/v61.0/jobs/ingest/750000000000001/batches",
+      "body": "Name\nAcme",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "Bulk API v2 ingest job batches"]
+    },
+    {
+      "name": "bulk-ingest-successful-results-unsupported",
+      "method": "GET",
+      "path": "/services/data/v61.0/jobs/ingest/750000000000001/successfulResults",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "Bulk API v2 ingest successful results"]
+    },
+    {
+      "name": "bulk-ingest-failed-results-unsupported",
+      "method": "GET",
+      "path": "/services/data/v61.0/jobs/ingest/750000000000001/failedResults",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "Bulk API v2 ingest failed results"]
+    },
+    {
+      "name": "bulk-ingest-unprocessed-records-unsupported",
+      "method": "GET",
+      "path": "/services/data/v61.0/jobs/ingest/750000000000001/unprocessedrecords",
+      "status": 501,
+      "contains": ["UNSUPPORTED_FEATURE", "Bulk API v2 ingest unprocessed records"]
     },
     {
       "name": "error-shape",
@@ -395,8 +446,8 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 49,
-      "statuses": [200, 200, 200, 200, 200, 501, 501, 501, 501, 200, 201, 200, 200, 200, 501, 501, 400, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 400, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 404, 404, 200, 200, 201],
+      "requests": 56,
+      "statuses": [200, 200, 200, 200, 200, 501, 501, 501, 501, 200, 201, 200, 200, 200, 501, 501, 400, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 400, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 501, 404, 404, 200, 200, 201],
       "users": 2
     }
   }
