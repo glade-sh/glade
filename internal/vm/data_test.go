@@ -97,6 +97,28 @@ System.assertEquals('Acme', row.Name);
 	}
 }
 
+func TestExecMissingSObjectCheckboxFieldsReadAsFalse(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account a = new Account(Name = 'Acme');
+System.assertEquals(false, a.UpdatePrimaryLocation__c);
+System.assertEquals(false, a.get('UpdatePrimaryLocation__c'));
+System.assertEquals(false, a.UpdatePrimaryLocation__c && true);
+System.assertEquals(true, true || a.UpdatePrimaryLocation__c);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["UpdatePrimaryLocation__c"] = storage.Field{APIName: "UpdatePrimaryLocation__c", Type: storage.FieldBoolean}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSOQLBindPlatformId(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account a = new Account(Name = 'Acme');

@@ -7634,8 +7634,8 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 			value, ok = current.Fields[part]
 		}
 		if !ok {
-			if vm.hasSObjectField(current.Type, canonicalPart) {
-				current = Null
+			if value, ok := vm.missingSObjectFieldValue(current.Type, canonicalPart); ok {
+				current = value
 				continue
 			}
 			if strings.HasSuffix(current.Type, "__c") || strings.HasSuffix(current.Type, "__r") {
@@ -11023,6 +11023,9 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		field := vm.resolveSObjectFieldName(receiver.Type, fieldArg)
 		value, ok := receiver.Fields[field]
 		if !ok {
+			if value, ok := vm.missingSObjectFieldValue(receiver.Type, field); ok {
+				return value, true, nil
+			}
 			return Null, true, nil
 		}
 		return value, true, nil
@@ -11310,15 +11313,38 @@ func (vm *VM) resolveSObjectFieldName(typeName, field string) string {
 }
 
 func (vm *VM) hasSObjectField(typeName, field string) bool {
+	_, _, ok := vm.sObjectFieldDefinition(typeName, field)
+	return ok
+}
+
+func (vm *VM) sObjectFieldDefinition(typeName, field string) (storage.ObjectDefinition, storage.Field, bool) {
 	if vm.Org == nil {
-		return false
+		return storage.ObjectDefinition{}, storage.Field{}, false
 	}
 	objectName, ok := storage.ResolveObjectName(*vm.Org, typeName)
 	if !ok {
-		return false
+		return storage.ObjectDefinition{}, storage.Field{}, false
 	}
-	_, ok = storage.ResolveFieldName(vm.Org.Objects[objectName].Definition, vm.Org.Namespace, field)
-	return ok
+	definition := vm.Org.Objects[objectName].Definition
+	fieldName, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, field)
+	if !ok {
+		return storage.ObjectDefinition{}, storage.Field{}, false
+	}
+	return definition, definition.Fields[fieldName], true
+}
+
+func (vm *VM) missingSObjectFieldValue(typeName, field string) (Value, bool) {
+	definition, fieldDef, ok := vm.sObjectFieldDefinition(typeName, field)
+	if !ok {
+		return Null, false
+	}
+	if defaultValue, ok := storage.DefaultValueForField(fieldDef); ok {
+		return vmValueFromStorage(defaultValue), true
+	}
+	if fieldDef.Type == storage.FieldBoolean && !storage.IsCustomMetadataDefinition(definition) && !storage.IsCustomSettingDefinition(definition) {
+		return Bool(false), true
+	}
+	return Null, true
 }
 
 func (vm *VM) sObjectFieldArg(receiverType string, value Value) (string, error) {
