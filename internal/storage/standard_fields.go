@@ -9,11 +9,15 @@ func EnsureStandardObjectFields(definition *ObjectDefinition) {
 	if definition.Fields == nil {
 		definition.Fields = make(map[string]Field)
 	}
-	for _, field := range standardFieldsForObject(definition.APIName) {
+	fields := standardFieldsForObject(definition.APIName)
+	for _, field := range fields {
 		if _, ok := ResolveFieldName(*definition, "", field.APIName); ok {
 			continue
 		}
 		definition.Fields[field.APIName] = field
+	}
+	for _, field := range fields {
+		ensureStandardRelationship(definition, field)
 	}
 }
 
@@ -87,6 +91,10 @@ func standardFieldsForObject(objectName string) []Field {
 			{APIName: "OtherPostalCode", Label: "Other Zip/Postal Code", Type: FieldString},
 			{APIName: "OtherCountry", Label: "Other Country", Type: FieldString},
 		}
+	case stringsHasSuffixFold(objectName, "__c"):
+		return []Field{
+			{APIName: "RecordTypeId", Label: "Record Type ID", Type: FieldReference, ReferenceTo: []string{"RecordType"}, RelationshipName: "RecordType"},
+		}
 	default:
 		return nil
 	}
@@ -109,4 +117,27 @@ func stringsEqualFold(left, right string) bool {
 		}
 	}
 	return true
+}
+
+func stringsHasSuffixFold(value, suffix string) bool {
+	if len(value) < len(suffix) {
+		return false
+	}
+	return stringsEqualFold(value[len(value)-len(suffix):], suffix)
+}
+
+func ensureStandardRelationship(definition *ObjectDefinition, field Field) {
+	if field.RelationshipName == "" || len(field.ReferenceTo) == 0 {
+		return
+	}
+	for _, relation := range definition.Relations {
+		if relation.Field == field.APIName || relation.ParentRelationship == field.RelationshipName {
+			return
+		}
+	}
+	definition.Relations = append(definition.Relations, Relationship{
+		Field:              field.APIName,
+		ParentObjects:      append([]string(nil), field.ReferenceTo...),
+		ParentRelationship: field.RelationshipName,
+	})
 }

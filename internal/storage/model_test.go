@@ -35,6 +35,20 @@ func TestEnsureStandardObjectFieldsAddsAccountWebsiteWithoutClobber(t *testing.T
 	}
 }
 
+func TestEnsureStandardObjectFieldsAddsCustomObjectRecordTypeId(t *testing.T) {
+	definition := ObjectDefinition{APIName: "OrderItem__c"}
+
+	EnsureStandardObjectFields(&definition)
+
+	field, ok := definition.Fields["RecordTypeId"]
+	if !ok || field.Type != FieldReference || field.RelationshipName != "RecordType" {
+		t.Fatalf("RecordTypeId field = %#v, %v", field, ok)
+	}
+	if len(definition.Relations) != 1 || definition.Relations[0].ParentRelationship != "RecordType" {
+		t.Fatalf("relations = %#v", definition.Relations)
+	}
+}
+
 func TestCloneRecordDoesNotShareMutableFieldState(t *testing.T) {
 	original := Record{
 		ID:     "001000000000001",

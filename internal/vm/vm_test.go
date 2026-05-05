@@ -82,6 +82,16 @@ System.assertEquals('trail', value?.toString());
 	}
 }
 
+func TestCompileStringEndingWithEscapedQuote(t *testing.T) {
+	program, err := CompileAnonymous(`String value = 'BYELARUS\''; System.assertEquals('BYELARUS''', value);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestCompileAcceptsApexCastSyntax(t *testing.T) {
 	program, err := CompileAnonymous(`
 Object raw = 'trail';

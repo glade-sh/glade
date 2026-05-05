@@ -125,6 +125,19 @@ func TestServerExampleApexRESTOrderBodyIncludesBillTo(t *testing.T) {
 	}
 }
 
+func TestServerExampleApexRESTCartBuildBodyUsesSeededOrder(t *testing.T) {
+	body := serverExampleApexRESTBody("/selfservice/cart/build/", "POST")
+	var payload struct {
+		OrderID string `json:"OrderId"`
+	}
+	if err := json.Unmarshal([]byte(body), &payload); err != nil {
+		t.Fatal(err)
+	}
+	if payload.OrderID != "a0o000000000001AAA" {
+		t.Fatalf("OrderId = %q", payload.OrderID)
+	}
+}
+
 func localTestDir(t *testing.T, prefix string) string {
 	t.Helper()
 	dir, err := os.MkdirTemp(".", prefix+"-*")
