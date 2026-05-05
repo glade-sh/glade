@@ -82,3 +82,31 @@ func TestBuildDescribeRegistry(t *testing.T) {
 		t.Fatalf("definition record types = %#v", got)
 	}
 }
+
+func TestBuildDescribeRegistryDerivesCustomMetadataRelationship(t *testing.T) {
+	registry := BuildDescribeRegistry(schema.Schema{Objects: []schema.Object{{
+		Name: "Binding__mdt",
+		Fields: []schema.Field{
+			{Name: "Target__c", Type: "MetadataRelationship", ReferenceTo: []string{"Target__mdt"}},
+		},
+	}}})
+
+	describe, err := registry.Describe("Binding__mdt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	field := describe.Fields["Target__c"]
+	if field.Type != storage.FieldReference || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "Target__mdt" {
+		t.Fatalf("field = %#v", field)
+	}
+	if len(describe.Relationships) != 1 {
+		t.Fatalf("relationships = %#v", describe.Relationships)
+	}
+	if got := describe.Relationships[0].ParentRelationship; got != "Target__r" {
+		t.Fatalf("parent relationship = %q", got)
+	}
+	definition := ToObjectDefinition(describe)
+	if got := definition.Relations[0].ParentRelationship; got != "Target__r" {
+		t.Fatalf("definition parent relationship = %q", got)
+	}
+}

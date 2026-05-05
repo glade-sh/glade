@@ -125,6 +125,29 @@ func TestEnsureStandardObjectFieldsAddsCustomMetadataIdentityFields(t *testing.T
 	}
 }
 
+func TestEnsureStandardObjectFieldsDerivesCustomMetadataRelationship(t *testing.T) {
+	definition := ObjectDefinition{
+		APIName: "Binding__mdt",
+		Fields: map[string]Field{
+			"Target__c": {APIName: "Target__c", Type: FieldReference, ReferenceTo: []string{"Target__mdt"}},
+		},
+	}
+
+	EnsureStandardObjectFields(&definition)
+
+	field := definition.Fields["Target__c"]
+	if field.RelationshipName != "" {
+		t.Fatalf("field relationship name should preserve source metadata: %#v", field)
+	}
+	if len(definition.Relations) != 1 {
+		t.Fatalf("relations = %#v", definition.Relations)
+	}
+	relation := definition.Relations[0]
+	if relation.Field != "Target__c" || relation.ParentRelationship != "Target__r" || len(relation.ParentObjects) != 1 || relation.ParentObjects[0] != "Target__mdt" {
+		t.Fatalf("relation = %#v", relation)
+	}
+}
+
 func TestEnsureStandardObjectAddsEmailTemplateRenderAndProbeFields(t *testing.T) {
 	org := NewOrgState()
 

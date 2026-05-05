@@ -2942,6 +2942,24 @@ System.assert(!setting.pkg__Enabled__c);
 	}
 }
 
+func TestExecSOQLCustomMetadataRelationshipProjection(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Binding__mdt> rows = [SELECT DeveloperName, Target__r.QualifiedApiName FROM Binding__mdt WHERE Target__r.QualifiedApiName = 'Target'];
+System.assertEquals(1, rows.size());
+System.assertEquals('Default', rows[0].DeveloperName);
+System.assertEquals('Target', rows[0].Target__r.QualifiedApiName);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := customMetadataRelationshipOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecCustomDataStaticRecordsAreReadOnly(t *testing.T) {
 	cases := []struct {
 		name   string
@@ -3111,6 +3129,47 @@ func customDataOrg() storage.OrgState {
 			"a01000000000001": {ID: "a01000000000001", Object: "Local_Setting__c", Fields: map[string]storage.Value{
 				"Name":       storage.StringValue("Default"),
 				"Enabled__c": storage.BooleanValue(false),
+			}},
+		},
+	}
+	return org
+}
+
+func customMetadataRelationshipOrg() storage.OrgState {
+	org := storage.NewOrgState()
+	targetDefinition := storage.ObjectDefinition{
+		APIName:   "Target__mdt",
+		KeyPrefix: "a10",
+		Metadata:  map[string]string{"kind": "customMetadata"},
+		Fields: map[string]storage.Field{
+			"Name__c": {APIName: "Name__c", Type: storage.FieldString},
+		},
+	}
+	storage.EnsureStandardObjectFields(&targetDefinition)
+	bindingDefinition := storage.ObjectDefinition{
+		APIName:   "Binding__mdt",
+		KeyPrefix: "a11",
+		Metadata:  map[string]string{"kind": "customMetadata"},
+		Fields: map[string]storage.Field{
+			"Target__c": {APIName: "Target__c", Type: storage.FieldReference, ReferenceTo: []string{"Target__mdt"}},
+		},
+	}
+	storage.EnsureStandardObjectFields(&bindingDefinition)
+	org.Objects["Target__mdt"] = storage.ObjectState{
+		Definition: targetDefinition,
+		Records: map[storage.ID]storage.Record{
+			"a10000000000001": {ID: "a10000000000001", Object: "Target__mdt", Fields: map[string]storage.Value{
+				"DeveloperName":    storage.StringValue("Target"),
+				"QualifiedApiName": storage.StringValue("Target"),
+			}},
+		},
+	}
+	org.Objects["Binding__mdt"] = storage.ObjectState{
+		Definition: bindingDefinition,
+		Records: map[storage.ID]storage.Record{
+			"a11000000000001": {ID: "a11000000000001", Object: "Binding__mdt", Fields: map[string]storage.Value{
+				"DeveloperName": storage.StringValue("Default"),
+				"Target__c":     storage.IDValue("a10000000000001"),
 			}},
 		},
 	}

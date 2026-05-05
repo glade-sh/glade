@@ -178,10 +178,14 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 			}
 			references := referenceTargets(field.ReferenceTo)
 			if len(references) != 0 {
+				parentRelationship := storage.ParentRelationshipName(storage.Field{
+					APIName:          field.Name,
+					RelationshipName: field.RelationshipName,
+				})
 				describe.Relationships = append(describe.Relationships, storage.Relationship{
 					Field:              field.Name,
 					ParentObjects:      references,
-					ParentRelationship: field.RelationshipName,
+					ParentRelationship: parentRelationship,
 					ChildRelationship:  field.ChildRelationshipName,
 					Polymorphic:        len(references) > 1,
 					CascadeDelete:      strings.EqualFold(field.DeleteConstraint, "Cascade"),
@@ -389,7 +393,7 @@ func storageFieldType(raw string) storage.FieldType {
 		return storage.FieldDate
 	case "DateTime":
 		return storage.FieldDateTime
-	case "Lookup", "MasterDetail":
+	case "Lookup", "MasterDetail", "MetadataRelationship":
 		return storage.FieldReference
 	case "Id":
 		return storage.FieldID

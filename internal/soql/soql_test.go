@@ -136,6 +136,22 @@ func TestExecuteCustomMetadataDeveloperNameField(t *testing.T) {
 	}
 }
 
+func TestExecuteCustomMetadataRelationshipProjection(t *testing.T) {
+	org := customMetadataRelationshipOrg()
+
+	result, err := ParseAndExecute(org, "SELECT DeveloperName, Target__r.QualifiedApiName FROM Binding__mdt WHERE Target__r.QualifiedApiName = 'Target'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 {
+		t.Fatalf("rows = %d", result.Rows)
+	}
+	value := result.Records[0].Fields["Target__r.QualifiedApiName"]
+	if value.Kind != storage.ValueString || value.String != "Target" {
+		t.Fatalf("relationship projection = %#v", value)
+	}
+}
+
 func TestExecuteKnowledgeArticleLanguageField(t *testing.T) {
 	org := storage.NewOrgState()
 	storage.EnsureStandardObject(&org, "FAQ__kav")
@@ -160,6 +176,45 @@ func TestExecuteKnowledgeArticleLanguageField(t *testing.T) {
 	if value := result.Records[0].Fields["Language"]; value.Kind != storage.ValueString || value.String != "en_US" {
 		t.Fatalf("Language = %#v", value)
 	}
+}
+
+func customMetadataRelationshipOrg() storage.OrgState {
+	org := storage.NewOrgState()
+	targetDefinition := storage.ObjectDefinition{
+		APIName:  "Target__mdt",
+		Metadata: map[string]string{"kind": "customMetadata"},
+		Fields: map[string]storage.Field{
+			"Name__c": {APIName: "Name__c", Type: storage.FieldString},
+		},
+	}
+	storage.EnsureStandardObjectFields(&targetDefinition)
+	bindingDefinition := storage.ObjectDefinition{
+		APIName:  "Binding__mdt",
+		Metadata: map[string]string{"kind": "customMetadata"},
+		Fields: map[string]storage.Field{
+			"Target__c": {APIName: "Target__c", Type: storage.FieldReference, ReferenceTo: []string{"Target__mdt"}},
+		},
+	}
+	storage.EnsureStandardObjectFields(&bindingDefinition)
+	org.Objects["Target__mdt"] = storage.ObjectState{
+		Definition: targetDefinition,
+		Records: map[storage.ID]storage.Record{
+			"a10000000000001": {ID: "a10000000000001", Object: "Target__mdt", Fields: map[string]storage.Value{
+				"DeveloperName":    storage.StringValue("Target"),
+				"QualifiedApiName": storage.StringValue("Target"),
+			}},
+		},
+	}
+	org.Objects["Binding__mdt"] = storage.ObjectState{
+		Definition: bindingDefinition,
+		Records: map[storage.ID]storage.Record{
+			"a11000000000001": {ID: "a11000000000001", Object: "Binding__mdt", Fields: map[string]storage.Value{
+				"DeveloperName": storage.StringValue("Default"),
+				"Target__c":     storage.IDValue("a10000000000001"),
+			}},
+		},
+	}
+	return org
 }
 
 func TestExecuteAggregateQueries(t *testing.T) {

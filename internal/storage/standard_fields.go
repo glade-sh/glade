@@ -22,6 +22,9 @@ func EnsureStandardObjectFields(definition *ObjectDefinition) {
 	for _, field := range fields {
 		ensureStandardRelationship(definition, field)
 	}
+	for _, field := range definition.Fields {
+		ensureStandardRelationship(definition, field)
+	}
 }
 
 func standardFieldsForObject(objectName string) []Field {
@@ -210,17 +213,32 @@ func stringsHasSuffixFold(value, suffix string) bool {
 }
 
 func ensureStandardRelationship(definition *ObjectDefinition, field Field) {
-	if field.RelationshipName == "" || len(field.ReferenceTo) == 0 {
+	relationshipName := ParentRelationshipName(field)
+	if relationshipName == "" || len(field.ReferenceTo) == 0 {
 		return
 	}
 	for _, relation := range definition.Relations {
-		if relation.Field == field.APIName || relation.ParentRelationship == field.RelationshipName {
+		if relation.Field == field.APIName || relation.ParentRelationship == relationshipName {
 			return
 		}
 	}
 	definition.Relations = append(definition.Relations, Relationship{
 		Field:              field.APIName,
 		ParentObjects:      append([]string(nil), field.ReferenceTo...),
-		ParentRelationship: field.RelationshipName,
+		ParentRelationship: relationshipName,
 	})
+}
+
+func ParentRelationshipName(field Field) string {
+	if field.RelationshipName != "" {
+		return field.RelationshipName
+	}
+	switch {
+	case stringsHasSuffixFold(field.APIName, "__c"):
+		return field.APIName[:len(field.APIName)-len("__c")] + "__r"
+	case stringsHasSuffixFold(field.APIName, "Id"):
+		return field.APIName[:len(field.APIName)-len("Id")]
+	default:
+		return ""
+	}
 }
