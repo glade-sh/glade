@@ -76,6 +76,50 @@ System.assert(!a.isSet('Id'), 'clear should unset Id');
 	}
 }
 
+func TestExecSObjectCloneAndRelationshipAccessors(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account parent = new Account(Name = 'Parent');
+Account row = new Account(Name = 'Child');
+row.put('Id', '001000000000001');
+row.put('Parent', parent);
+row.put('Contacts', new List<Contact>{new Contact(LastName = 'Smith')});
+Account parentRow = row.getSObject('Parent');
+System.assertEquals('Parent', parentRow.Name);
+List<Contact> contacts = row.getSObjects('Contacts');
+System.assertEquals(1, contacts.size());
+Account cloneNoId = row.clone();
+System.assertEquals(null, cloneNoId.get('Id'));
+System.assertEquals('Child', cloneNoId.Name);
+Account cloneWithId = row.clone(true, true, false, false);
+System.assertEquals(row.get('Id'), cloneWithId.get('Id'));
+cloneWithId.Name = 'Clone';
+System.assertEquals('Child', row.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Id"] = storage.Field{APIName: "Id", Type: storage.FieldID}
+	org.Objects["Account"] = account
+	contact := storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Contact",
+			KeyPrefix: "003",
+			Fields: map[string]storage.Field{
+				"LastName": {APIName: "LastName", Type: storage.FieldString},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	org.Objects["Contact"] = contact
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecAttachmentBlobRoundTrip(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account a = new Account(Name = 'Acme');

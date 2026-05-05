@@ -1,0 +1,54 @@
+{
+  "name": "data-sobject-clone-relationships",
+  "evidence": [
+    {
+      "symbol": "SObject.clone",
+      "kind": "test",
+      "notes": "SObject.clone preserves field values and optionally removes Id."
+    },
+    {
+      "symbol": "SObject.getSObject",
+      "kind": "test",
+      "notes": "Parent relationship values can be read by relationship name."
+    },
+    {
+      "symbol": "SObject.getSObjects",
+      "kind": "test",
+      "notes": "Child relationship list values can be read by relationship name."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Contact/Contact.object-meta.xml",
+      "content": "<CustomObject><label>Contact</label><pluralLabel>Contacts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Contact/fields/LastName.field-meta.xml",
+      "content": "<CustomField><fullName>LastName</fullName><label>Last Name</label><type>Text</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/classes/DataSObjectCloneRelationshipsTest.cls",
+      "content": "@isTest private class DataSObjectCloneRelationshipsTest { @isTest static void exercisesCloneAndRelationships() { Account parent = new Account(Name = 'Parent'); Account row = new Account(Name = 'Child'); row.put('Id', '001000000000001'); row.put('Parent', parent); row.put('Contacts', new List<Contact>{new Contact(LastName = 'Smith')}); Account parentRow = row.getSObject('Parent'); System.assertEquals('Parent', parentRow.Name); List<Contact> contacts = row.getSObjects('Contacts'); System.assertEquals(1, contacts.size()); Account cloneNoId = row.clone(); System.assertEquals(null, cloneNoId.get('Id')); System.assertEquals('Child', cloneNoId.Name); Account cloneWithId = row.clone(true, true, false, false); System.assertEquals(row.get('Id'), cloneWithId.get('Id')); cloneWithId.Name = 'Clone'; System.assertEquals('Child', row.Name); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

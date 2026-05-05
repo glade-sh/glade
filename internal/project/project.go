@@ -17,6 +17,7 @@ type Project struct {
 	ApexFiles                 []string           `json:"apexFiles"`
 	ObjectFiles               []string           `json:"objectFiles"`
 	FieldFiles                []string           `json:"fieldFiles"`
+	FieldSetFiles             []string           `json:"fieldSetFiles"`
 	RecordTypeFiles           []string           `json:"recordTypeFiles"`
 	ValidationRuleFiles       []string           `json:"validationRuleFiles"`
 	LabelFiles                []string           `json:"labelFiles"`
@@ -26,6 +27,10 @@ type Project struct {
 	RemoteSiteFiles           []string           `json:"remoteSiteFiles"`
 	CustomMetadataFiles       []string           `json:"customMetadataFiles"`
 	WorkflowFiles             []string           `json:"workflowFiles"`
+	FlowFiles                 []string           `json:"flowFiles"`
+	ProfileFiles              []string           `json:"profileFiles"`
+	PermissionSetFiles        []string           `json:"permissionSetFiles"`
+	PermissionAssignmentFiles []string           `json:"permissionAssignmentFiles"`
 	VisualforcePageFiles      []string           `json:"visualforcePageFiles"`
 	VisualforceComponentFiles []string           `json:"visualforceComponentFiles"`
 	AuraFiles                 []string           `json:"auraFiles"`
@@ -64,8 +69,7 @@ func Load(root string) (Project, error) {
 		PackageDirectories: cfg.PackageDirectories,
 	}
 
-	for _, pkg := range p.PackageDirectories {
-		pkgRoot := filepath.Join(absRoot, filepath.FromSlash(pkg.Path))
+	for _, pkgRoot := range packageRoots(absRoot, p.PackageDirectories) {
 		if _, err := os.Stat(pkgRoot); err != nil {
 			if errors.Is(err, os.ErrNotExist) {
 				continue
@@ -80,6 +84,7 @@ func Load(root string) (Project, error) {
 	sort.Strings(p.ApexFiles)
 	sort.Strings(p.ObjectFiles)
 	sort.Strings(p.FieldFiles)
+	sort.Strings(p.FieldSetFiles)
 	sort.Strings(p.RecordTypeFiles)
 	sort.Strings(p.ValidationRuleFiles)
 	sort.Strings(p.LabelFiles)
@@ -89,6 +94,10 @@ func Load(root string) (Project, error) {
 	sort.Strings(p.RemoteSiteFiles)
 	sort.Strings(p.CustomMetadataFiles)
 	sort.Strings(p.WorkflowFiles)
+	sort.Strings(p.FlowFiles)
+	sort.Strings(p.ProfileFiles)
+	sort.Strings(p.PermissionSetFiles)
+	sort.Strings(p.PermissionAssignmentFiles)
 	sort.Strings(p.VisualforcePageFiles)
 	sort.Strings(p.VisualforceComponentFiles)
 	sort.Strings(p.AuraFiles)
@@ -113,12 +122,56 @@ func loadSFDXProject(root string) (sfdxProject, error) {
 	return cfg, nil
 }
 
+func packageRoots(root string, packageDirs []PackageDirectory) []string {
+	seen := make(map[string]bool)
+	var roots []string
+	add := func(rel string) {
+		if rel == "" {
+			return
+		}
+		abs := filepath.Clean(filepath.Join(root, filepath.FromSlash(rel)))
+		if seen[abs] {
+			return
+		}
+		seen[abs] = true
+		roots = append(roots, abs)
+	}
+	for _, pkg := range packageDirs {
+		add(pkg.Path)
+	}
+	for _, rel := range []string{"src", "force-app", "sfdx-source", "unpackaged"} {
+		abs := filepath.Clean(filepath.Join(root, filepath.FromSlash(rel)))
+		if hasCoveredRoot(abs, roots) {
+			continue
+		}
+		if fi, err := os.Stat(abs); err == nil && fi.IsDir() {
+			add(rel)
+		}
+	}
+	return roots
+}
+
+func hasCoveredRoot(root string, roots []string) bool {
+	for _, existing := range roots {
+		if existing == root || strings.HasPrefix(existing, root+string(filepath.Separator)) || strings.HasPrefix(root, existing+string(filepath.Separator)) {
+			return true
+		}
+	}
+	return false
+}
+
 func collectFiles(root string, p *Project) error {
 	return filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 		if d.IsDir() {
+			if shouldSkipDir(d.Name()) && path != root {
+				return filepath.SkipDir
+			}
+			if isStaticResourceVendorDir(path) {
+				return filepath.SkipDir
+			}
 			return nil
 		}
 
@@ -130,6 +183,8 @@ func collectFiles(root string, p *Project) error {
 			p.ObjectFiles = append(p.ObjectFiles, path)
 		case strings.HasSuffix(lower, ".field-meta.xml"):
 			p.FieldFiles = append(p.FieldFiles, path)
+		case strings.HasSuffix(lower, ".fieldset-meta.xml"):
+			p.FieldSetFiles = append(p.FieldSetFiles, path)
 		case strings.HasSuffix(lower, ".recordtype-meta.xml"):
 			p.RecordTypeFiles = append(p.RecordTypeFiles, path)
 		case strings.HasSuffix(lower, ".validationrule-meta.xml"):
@@ -148,6 +203,14 @@ func collectFiles(root string, p *Project) error {
 			p.CustomMetadataFiles = append(p.CustomMetadataFiles, path)
 		case strings.HasSuffix(lower, ".workflow-meta.xml"):
 			p.WorkflowFiles = append(p.WorkflowFiles, path)
+		case strings.HasSuffix(lower, ".flow-meta.xml"), strings.HasSuffix(lower, ".flow"):
+			p.FlowFiles = append(p.FlowFiles, path)
+		case strings.HasSuffix(lower, ".profile"), strings.HasSuffix(lower, ".profile-meta.xml"):
+			p.ProfileFiles = append(p.ProfileFiles, path)
+		case strings.HasSuffix(lower, ".permissionset"), strings.HasSuffix(lower, ".permissionset-meta.xml"):
+			p.PermissionSetFiles = append(p.PermissionSetFiles, path)
+		case strings.HasSuffix(lower, ".permissionsetassignment"), strings.HasSuffix(lower, ".permissionsetassignment-meta.xml"):
+			p.PermissionAssignmentFiles = append(p.PermissionAssignmentFiles, path)
 		case strings.HasSuffix(lower, ".page"):
 			p.VisualforcePageFiles = append(p.VisualforcePageFiles, path)
 		case strings.HasSuffix(lower, ".component"):
@@ -159,6 +222,25 @@ func collectFiles(root string, p *Project) error {
 		}
 		return nil
 	})
+}
+
+func shouldSkipDir(name string) bool {
+	switch name {
+	case ".git", ".sfdx", ".sf", ".claude", "node_modules", ".idea", ".vscode", ".DS_Store":
+		return true
+	default:
+		return false
+	}
+}
+
+func isStaticResourceVendorDir(path string) bool {
+	parts := strings.Split(filepath.ToSlash(path), "/")
+	for i, part := range parts {
+		if part == "staticresources" && i < len(parts)-1 {
+			return true
+		}
+	}
+	return false
 }
 
 func isCustomMetadataPath(path string) bool {

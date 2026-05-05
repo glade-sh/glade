@@ -1,0 +1,59 @@
+{
+  "name": "visualforce-controller-runtime",
+  "evidence": [
+    {
+      "symbol": "Page.MyPage",
+      "kind": "test",
+      "notes": "Visualforce page tokens resolve to local PageReference values."
+    },
+    {
+      "symbol": "ApexPages.StandardController",
+      "kind": "test",
+      "notes": "Observed controller save/getId behavior works against local SObject DML."
+    },
+    {
+      "symbol": "ApexPages.StandardSetController",
+      "kind": "test",
+      "notes": "Observed list pagination helpers work for local record lists."
+    },
+    {
+      "symbol": "SelectOption",
+      "kind": "test",
+      "notes": "Observed constructors and getters/setters are supported."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/pages/MyPage.page",
+      "content": "<apex:page controller=\"RuntimeVisualforceController\"></apex:page>"
+    },
+    {
+      "path": "force-app/main/classes/RuntimeVisualforceController.cls",
+      "content": "public class RuntimeVisualforceController { private ApexPages.StandardController controller; public RuntimeVisualforceController(ApexPages.StandardController controller) { this.controller = controller; } public PageReference save() { return controller.save(); } public List<SelectOption> getOptions() { SelectOption option = new SelectOption('1', 'One', true, false); option.setLabel('Changed'); return new List<SelectOption>{option}; } }"
+    },
+    {
+      "path": "force-app/main/classes/VisualforceControllerRuntimeTest.cls",
+      "content": "@isTest private class VisualforceControllerRuntimeTest { @isTest static void controllerAndUiValueRuntime() { Account account = new Account(Name = 'VF'); ApexPages.StandardController std = new ApexPages.StandardController(account); PageReference saved = std.save(); System.assertEquals(account.Id, std.getId()); System.assertEquals('/' + account.Id, saved.getUrl()); System.assertEquals('/apex/MyPage', Page.MyPage.getUrl()); SelectOption option = new SelectOption('1', 'One', true, false); option.setLabel('Changed'); System.assertEquals('1', option.getValue()); System.assertEquals('Changed', option.getLabel()); System.assert(option.getDisabled()); System.assertEquals(false, option.getEscapeItem()); ApexPages.StandardSetController setController = new ApexPages.StandardSetController(new List<Account>{account, new Account(Name = 'Second')}); setController.setPageSize(1); System.assertEquals(1, setController.getRecords().size()); System.assert(setController.getHasNext()); setController.next(); System.assertEquals(2, setController.getPageNumber()); System.assert(setController.getHasPrevious()); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

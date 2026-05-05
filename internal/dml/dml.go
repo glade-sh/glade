@@ -856,41 +856,7 @@ func validateValidationRules(definition storage.ObjectDefinition, record storage
 }
 
 func evaluateValidationFormula(formula string, record storage.Record) (bool, bool) {
-	formula = strings.TrimSpace(formula)
-	if formula == "" {
-		return false, false
-	}
-	upper := strings.ToUpper(formula)
-	if strings.HasPrefix(upper, "NOT(") && strings.HasSuffix(formula, ")") {
-		value, ok := evaluateValidationFormula(formula[4:len(formula)-1], record)
-		return !value, ok
-	}
-	if strings.HasPrefix(upper, "ISBLANK(") && strings.HasSuffix(formula, ")") {
-		field := strings.TrimSpace(formula[len("ISBLANK(") : len(formula)-1])
-		return validationFieldBlank(record, field), true
-	}
-	for _, op := range []string{"<>", "!="} {
-		if left, right, ok := splitValidationComparison(formula, op); ok {
-			return !validationFieldEquals(record, left, right), true
-		}
-	}
-	if left, right, ok := splitValidationComparison(formula, "="); ok {
-		return validationFieldEquals(record, left, right), true
-	}
-	return false, false
-}
-
-func splitValidationComparison(formula, op string) (string, string, bool) {
-	index := strings.Index(formula, op)
-	if index < 0 {
-		return "", "", false
-	}
-	left := strings.TrimSpace(formula[:index])
-	right := strings.TrimSpace(formula[index+len(op):])
-	if left == "" || right == "" {
-		return "", "", false
-	}
-	return left, trimFormulaLiteral(right), true
+	return evaluateRecordFormula(formula, record)
 }
 
 func trimFormulaLiteral(value string) string {
@@ -902,45 +868,6 @@ func trimFormulaLiteral(value string) string {
 		}
 	}
 	return value
-}
-
-func validationFieldBlank(record storage.Record, field string) bool {
-	if field == "Id" {
-		return record.ID == ""
-	}
-	if record.ExplicitNulls[field] {
-		return true
-	}
-	value, ok := record.Fields[field]
-	if !ok || value.Kind == storage.ValueNull {
-		return true
-	}
-	return value.Kind == storage.ValueString && value.String == ""
-}
-
-func validationFieldEquals(record storage.Record, field, want string) bool {
-	if field == "Id" {
-		return string(record.ID) == want
-	}
-	if record.ExplicitNulls[field] {
-		return want == "" || strings.EqualFold(want, "NULL")
-	}
-	value, ok := record.Fields[field]
-	if !ok || value.Kind == storage.ValueNull {
-		return want == "" || strings.EqualFold(want, "NULL")
-	}
-	switch value.Kind {
-	case storage.ValueString, storage.ValueDate, storage.ValueDateTime, storage.ValueDecimal:
-		return value.String == want
-	case storage.ValueID:
-		return string(value.ID) == want
-	case storage.ValueInteger:
-		return fmt.Sprintf("%d", value.Integer) == want
-	case storage.ValueBoolean:
-		return strings.EqualFold(fmt.Sprintf("%t", value.Boolean), want)
-	default:
-		return false
-	}
 }
 
 func (e *Engine) applyWorkflowFieldUpdates(objectName string, id storage.ID) error {

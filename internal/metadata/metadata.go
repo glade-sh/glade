@@ -16,11 +16,22 @@ type Index struct {
 	NamedCredentials      []NamedCredential      `json:"namedCredentials,omitempty"`
 	RemoteSites           []RemoteSite           `json:"remoteSites,omitempty"`
 	CustomMetadataRecords []CustomMetadataRecord `json:"customMetadataRecords,omitempty"`
+	FieldSets             []FieldSet             `json:"fieldSets,omitempty"`
+	VisualforcePages      []NamedAsset           `json:"visualforcePages,omitempty"`
+	VisualforceComponents []NamedAsset           `json:"visualforceComponents,omitempty"`
+	AuraComponents        []NamedAsset           `json:"auraComponents,omitempty"`
+	LWCComponents         []NamedAsset           `json:"lwcComponents,omitempty"`
+	Workflows             []NamedAsset           `json:"workflows,omitempty"`
+	Flows                 []NamedAsset           `json:"flows,omitempty"`
+	Profiles              []PermissionContainer  `json:"profiles,omitempty"`
+	PermissionSets        []PermissionContainer  `json:"permissionSets,omitempty"`
+	PermissionAssignments []NamedAsset           `json:"permissionAssignments,omitempty"`
 
 	labelsByName    map[string]int
 	resourcesByName map[string]int
 	endpointsByName map[string][]EndpointRef
 	recordsByName   map[string]int
+	fieldSetsByName map[string]int
 }
 
 type CustomLabel struct {
@@ -74,6 +85,48 @@ type CustomMetadataValue struct {
 	Value string `json:"value,omitempty"`
 }
 
+type FieldSet struct {
+	ObjectName string           `json:"objectName,omitempty"`
+	Name       string           `json:"name"`
+	Label      string           `json:"label,omitempty"`
+	Fields     []FieldSetMember `json:"fields,omitempty"`
+	File       string           `json:"file,omitempty"`
+}
+
+type FieldSetMember struct {
+	Field    string `json:"field"`
+	Required bool   `json:"required,omitempty"`
+}
+
+type NamedAsset struct {
+	Name string `json:"name"`
+	File string `json:"file,omitempty"`
+}
+
+type PermissionContainer struct {
+	Name              string                 `json:"name"`
+	Label             string                 `json:"label,omitempty"`
+	ObjectPermissions []ObjectPermissionStub `json:"objectPermissions,omitempty"`
+	FieldPermissions  []FieldPermissionStub  `json:"fieldPermissions,omitempty"`
+	File              string                 `json:"file,omitempty"`
+}
+
+type ObjectPermissionStub struct {
+	Object           string `json:"object"`
+	Read             bool   `json:"read,omitempty"`
+	Create           bool   `json:"create,omitempty"`
+	Edit             bool   `json:"edit,omitempty"`
+	Delete           bool   `json:"delete,omitempty"`
+	ViewAllRecords   bool   `json:"viewAllRecords,omitempty"`
+	ModifyAllRecords bool   `json:"modifyAllRecords,omitempty"`
+}
+
+type FieldPermissionStub struct {
+	Field    string `json:"field"`
+	Readable bool   `json:"readable,omitempty"`
+	Editable bool   `json:"editable,omitempty"`
+}
+
 type EndpointRef struct {
 	Kind string `json:"kind"`
 	Name string `json:"name"`
@@ -118,6 +171,34 @@ func LoadProject(p project.Project) (Index, error) {
 		}
 		idx.CustomMetadataRecords = append(idx.CustomMetadataRecords, record)
 	}
+	for _, path := range p.FieldSetFiles {
+		fieldSet, err := loadFieldSet(path)
+		if err != nil {
+			return Index{}, err
+		}
+		idx.FieldSets = append(idx.FieldSets, fieldSet)
+	}
+	idx.VisualforcePages = namedAssets(p.VisualforcePageFiles, ".page")
+	idx.VisualforceComponents = namedAssets(p.VisualforceComponentFiles, ".component")
+	idx.AuraComponents = componentAssets(p.AuraFiles)
+	idx.LWCComponents = componentAssets(p.LWCFiles)
+	idx.Workflows = namedAssets(p.WorkflowFiles, ".workflow-meta.xml")
+	idx.Flows = namedAssets(p.FlowFiles, ".flow-meta.xml", ".flow")
+	for _, path := range p.ProfileFiles {
+		container, err := loadPermissionContainer(path, ".profile-meta.xml", ".profile")
+		if err != nil {
+			return Index{}, err
+		}
+		idx.Profiles = append(idx.Profiles, container)
+	}
+	for _, path := range p.PermissionSetFiles {
+		container, err := loadPermissionContainer(path, ".permissionset-meta.xml", ".permissionset")
+		if err != nil {
+			return Index{}, err
+		}
+		idx.PermissionSets = append(idx.PermissionSets, container)
+	}
+	idx.PermissionAssignments = namedAssets(p.PermissionAssignmentFiles, ".permissionsetassignment-meta.xml", ".permissionsetassignment")
 
 	idx.sortAndBuildLookups()
 	return idx, nil
@@ -183,12 +264,35 @@ func (i Index) CustomMetadataRecord(fullName string) (CustomMetadataRecord, bool
 	return i.CustomMetadataRecords[idx], true
 }
 
+func (i Index) FieldSet(objectName, name string) (FieldSet, bool) {
+	idx, ok := i.fieldSetsByName[lookupKey(objectName+"."+name)]
+	if !ok {
+		return FieldSet{}, false
+	}
+	return i.FieldSets[idx], true
+}
+
 func (i *Index) sortAndBuildLookups() {
 	sort.Slice(i.CustomLabels, func(a, b int) bool { return i.CustomLabels[a].Name < i.CustomLabels[b].Name })
 	sort.Slice(i.StaticResources, func(a, b int) bool { return i.StaticResources[a].Name < i.StaticResources[b].Name })
 	sort.Slice(i.NamedCredentials, func(a, b int) bool { return i.NamedCredentials[a].Name < i.NamedCredentials[b].Name })
 	sort.Slice(i.RemoteSites, func(a, b int) bool { return i.RemoteSites[a].Name < i.RemoteSites[b].Name })
 	sort.Slice(i.CustomMetadataRecords, func(a, b int) bool { return i.CustomMetadataRecords[a].FullName < i.CustomMetadataRecords[b].FullName })
+	sort.Slice(i.FieldSets, func(a, b int) bool {
+		if i.FieldSets[a].ObjectName != i.FieldSets[b].ObjectName {
+			return i.FieldSets[a].ObjectName < i.FieldSets[b].ObjectName
+		}
+		return i.FieldSets[a].Name < i.FieldSets[b].Name
+	})
+	sortNamedAssets(i.VisualforcePages)
+	sortNamedAssets(i.VisualforceComponents)
+	sortNamedAssets(i.AuraComponents)
+	sortNamedAssets(i.LWCComponents)
+	sortNamedAssets(i.Workflows)
+	sortNamedAssets(i.Flows)
+	sort.Slice(i.Profiles, func(a, b int) bool { return i.Profiles[a].Name < i.Profiles[b].Name })
+	sort.Slice(i.PermissionSets, func(a, b int) bool { return i.PermissionSets[a].Name < i.PermissionSets[b].Name })
+	sortNamedAssets(i.PermissionAssignments)
 
 	i.labelsByName = make(map[string]int, len(i.CustomLabels))
 	for n, label := range i.CustomLabels {
@@ -210,6 +314,10 @@ func (i *Index) sortAndBuildLookups() {
 	i.recordsByName = make(map[string]int, len(i.CustomMetadataRecords))
 	for n, record := range i.CustomMetadataRecords {
 		i.recordsByName[lookupKey(record.FullName)] = n
+	}
+	i.fieldSetsByName = make(map[string]int, len(i.FieldSets))
+	for n, fieldSet := range i.FieldSets {
+		i.fieldSetsByName[lookupKey(fieldSet.ObjectName+"."+fieldSet.Name)] = n
 	}
 }
 
@@ -403,6 +511,140 @@ func loadCustomMetadataRecord(path string) (CustomMetadataRecord, error) {
 	}, nil
 }
 
+type fieldSetXML struct {
+	FullName        string              `xml:"fullName"`
+	Label           string              `xml:"label"`
+	DisplayedFields []fieldSetMemberXML `xml:"displayedFields"`
+	AvailableFields []fieldSetMemberXML `xml:"availableFields"`
+}
+
+type fieldSetMemberXML struct {
+	Field    string `xml:"field"`
+	Required bool   `xml:"isRequired"`
+}
+
+func loadFieldSet(path string) (FieldSet, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return FieldSet{}, err
+	}
+	var raw fieldSetXML
+	if err := xml.Unmarshal(data, &raw); err != nil {
+		return FieldSet{}, err
+	}
+	name := strings.TrimSpace(raw.FullName)
+	if name == "" {
+		name = trimKnownSuffix(filepath.Base(path), ".fieldSet-meta.xml")
+	}
+	members := make([]FieldSetMember, 0, len(raw.DisplayedFields)+len(raw.AvailableFields))
+	for _, member := range append(raw.DisplayedFields, raw.AvailableFields...) {
+		field := strings.TrimSpace(member.Field)
+		if field == "" {
+			continue
+		}
+		members = append(members, FieldSetMember{Field: field, Required: member.Required})
+	}
+	return FieldSet{
+		ObjectName: objectNameFromFieldSetPath(path),
+		Name:       name,
+		Label:      strings.TrimSpace(raw.Label),
+		Fields:     members,
+		File:       path,
+	}, nil
+}
+
+type permissionContainerXML struct {
+	FullName          string          `xml:"fullName"`
+	Label             string          `xml:"label"`
+	ObjectPermissions []objectPermXML `xml:"objectPermissions"`
+	FieldPermissions  []fieldPermXML  `xml:"fieldPermissions"`
+}
+
+type objectPermXML struct {
+	Object           string `xml:"object"`
+	AllowRead        bool   `xml:"allowRead"`
+	AllowCreate      bool   `xml:"allowCreate"`
+	AllowEdit        bool   `xml:"allowEdit"`
+	AllowDelete      bool   `xml:"allowDelete"`
+	ViewAllRecords   bool   `xml:"viewAllRecords"`
+	ModifyAllRecords bool   `xml:"modifyAllRecords"`
+}
+
+type fieldPermXML struct {
+	Field    string `xml:"field"`
+	Readable bool   `xml:"readable"`
+	Editable bool   `xml:"editable"`
+}
+
+func loadPermissionContainer(path string, suffixes ...string) (PermissionContainer, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return PermissionContainer{}, err
+	}
+	var raw permissionContainerXML
+	if err := xml.Unmarshal(data, &raw); err != nil {
+		return PermissionContainer{}, err
+	}
+	name := strings.TrimSpace(raw.FullName)
+	if name == "" {
+		name = trimAnySuffix(filepath.Base(path), suffixes...)
+	}
+	container := PermissionContainer{Name: name, Label: strings.TrimSpace(raw.Label), File: path}
+	for _, perm := range raw.ObjectPermissions {
+		objectName := strings.TrimSpace(perm.Object)
+		if objectName == "" {
+			continue
+		}
+		container.ObjectPermissions = append(container.ObjectPermissions, ObjectPermissionStub{
+			Object:           objectName,
+			Read:             perm.AllowRead,
+			Create:           perm.AllowCreate,
+			Edit:             perm.AllowEdit,
+			Delete:           perm.AllowDelete,
+			ViewAllRecords:   perm.ViewAllRecords,
+			ModifyAllRecords: perm.ModifyAllRecords,
+		})
+	}
+	for _, perm := range raw.FieldPermissions {
+		fieldName := strings.TrimSpace(perm.Field)
+		if fieldName == "" {
+			continue
+		}
+		container.FieldPermissions = append(container.FieldPermissions, FieldPermissionStub{Field: fieldName, Readable: perm.Readable, Editable: perm.Editable})
+	}
+	return container, nil
+}
+
+func namedAssets(paths []string, suffixes ...string) []NamedAsset {
+	assets := make([]NamedAsset, 0, len(paths))
+	for _, path := range paths {
+		assets = append(assets, NamedAsset{Name: trimAnySuffix(filepath.Base(path), suffixes...), File: path})
+	}
+	sortNamedAssets(assets)
+	return assets
+}
+
+func componentAssets(paths []string) []NamedAsset {
+	seen := make(map[string]string)
+	for _, path := range paths {
+		dir := filepath.Dir(path)
+		name := filepath.Base(dir)
+		if _, ok := seen[name]; !ok {
+			seen[name] = dir
+		}
+	}
+	assets := make([]NamedAsset, 0, len(seen))
+	for name, path := range seen {
+		assets = append(assets, NamedAsset{Name: name, File: path})
+	}
+	sortNamedAssets(assets)
+	return assets
+}
+
+func sortNamedAssets(assets []NamedAsset) {
+	sort.Slice(assets, func(a, b int) bool { return assets[a].Name < assets[b].Name })
+}
+
 func customMetadataNames(fullName string) (string, string) {
 	parts := strings.SplitN(fullName, ".", 2)
 	if len(parts) != 2 {
@@ -427,6 +669,21 @@ func baseNoMetaExt(path string) string {
 		base = trimKnownSuffix(base, suffix)
 	}
 	return base
+}
+
+func objectNameFromFieldSetPath(path string) string {
+	dir := filepath.Dir(filepath.Dir(path))
+	if filepath.Base(filepath.Dir(path)) != "fieldSets" {
+		return ""
+	}
+	return filepath.Base(dir)
+}
+
+func trimAnySuffix(name string, suffixes ...string) string {
+	for _, suffix := range suffixes {
+		name = trimKnownSuffix(name, suffix)
+	}
+	return name
 }
 
 func trimKnownSuffix(name, suffix string) string {

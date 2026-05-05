@@ -1,0 +1,35 @@
+{
+  "name": "examples-fflib-selector-pattern",
+  "evidence": [
+    {
+      "symbol": "Database.query",
+      "kind": "check",
+      "notes": "Reduced fflib-style selector with bind-variable SOQL."
+    }
+  ],
+  "source": [
+    {
+      "path": "classes/AccountSelector.cls",
+      "content": "public class AccountSelector {\n  public List<Account> selectByName(String name) {\n    return [SELECT Id, Name FROM Account WHERE Name = :name];\n  }\n  public Account selectById(Id recordId) {\n    return [SELECT Id, Name FROM Account WHERE Id = :recordId LIMIT 1];\n  }\n}"
+    },
+    {
+      "path": "classes/AccountService.cls",
+      "content": "public class AccountService {\n  private AccountSelector selector;\n  public AccountService() {\n    this.selector = new AccountSelector();\n  }\n  public String summarizeAccount(Id accountId) {\n    Account record = selector.selectById(accountId);\n    return record.Name;\n  }\n}"
+    },
+    {
+      "path": "classes/AccountDomain.cls",
+      "content": "public class AccountDomain {\n  private List<Account> records;\n  public AccountDomain(List<Account> records) {\n    this.records = records;\n  }\n  public void setDefaultRating() {\n    for (Account record : records) {\n      if (record.Rating == null) {\n        record.Rating = 'Warm';\n      }\n    }\n  }\n}"
+    }
+  ],
+  "command": {
+    "kind": "check"
+  },
+  "expected": {
+    "result": {
+      "diagnostics": 0,
+      "files": 3,
+      "ok": true,
+      "types": 3
+    }
+  }
+}

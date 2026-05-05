@@ -1,6 +1,7 @@
 package oaercli
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -23,6 +24,7 @@ import (
 	"github.com/open-aer/oaer/internal/config"
 	"github.com/open-aer/oaer/internal/dap"
 	"github.com/open-aer/oaer/internal/diagnostic"
+	"github.com/open-aer/oaer/internal/examplescan"
 	"github.com/open-aer/oaer/internal/lsp"
 	"github.com/open-aer/oaer/internal/profile"
 	"github.com/open-aer/oaer/internal/project"
@@ -181,6 +183,17 @@ Commands:
   db        Seed, reset, export, and inspect a persistent local database.
   compat    Validate fixtures and report capability readiness.
   help      Print this help text.
+
+Compat subcommands:
+  validate      Validate compatibility fixture files.
+  run           Validate and execute fixtures.
+  matrix        Print the full capability matrix.
+  mvp           Print MVP readiness report.
+  examples      Scan example projects and report support status.
+  post-parity   Scan a project for unsupported surfaces.
+  dashboard     Generate compatibility dashboard.
+  gaps          Generate known gaps document.
+  stdlib        Generate standard library coverage document.
 `)+"\n")
 }
 
@@ -473,7 +486,13 @@ func loadIndex(root string) (typesys.Index, error) {
 	}
 	s, err := oaerschema.LoadProject(p)
 	if err != nil {
-		return typesys.Index{}, err
+		index := typesys.Build(p, oaerschema.Schema{})
+		index.Diagnostics = append(index.Diagnostics, diagnostic.Diagnostic{
+			Severity: diagnostic.Error,
+			Code:     "OAERSCHEMA001",
+			Message:  fmt.Sprintf("metadata schema load failed: %v", err),
+		})
+		return index, nil
 	}
 	return typesys.Build(p, s), nil
 }
@@ -1287,13 +1306,15 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 		return err
 	}
 	if len(args) == 0 {
-		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | product-namespaces --catalog <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]")
+		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | product-namespaces --catalog <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]")
 	}
 	switch args[0] {
 	case "matrix", "mvp":
 		return runCompatCapabilities(args[1:], w)
 	case "post-parity":
 		return runCompatPostParity(args[1:], w)
+	case "examples":
+		return runCompatExamples(args[1:], w)
 	case "dashboard":
 		return runCompatDashboard(args[1:], w)
 	case "gaps":
@@ -1313,7 +1334,7 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 			return errors.New("usage: oaer compat validate|run <fixture.json...>")
 		}
 	default:
-		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | product-namespaces --catalog <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]")
+		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | product-namespaces --catalog <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]")
 	}
 
 	for _, path := range args[1:] {
@@ -1357,6 +1378,139 @@ type postParityCount struct {
 type postParityArea struct {
 	Area     string                `json:"area"`
 	Surfaces []projectscan.Surface `json:"surfaces"`
+}
+
+func runCompatExamples(args []string, w io.Writer) error {
+	roots := []string{"."}
+	jsonOut := false
+	outputPath := ""
+	checkPath := ""
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--json":
+			jsonOut = true
+		case "--output":
+			if i+1 >= len(args) {
+				return errors.New("usage: oaer compat examples [--project <root>] [--json|--output <path>|--check <path>]")
+			}
+			outputPath = args[i+1]
+			i++
+		case "--check":
+			if i+1 >= len(args) {
+				return errors.New("usage: oaer compat examples [--project <root>] [--json|--output <path>|--check <path>]")
+			}
+			checkPath = args[i+1]
+			i++
+		case "--project":
+			if i+1 >= len(args) {
+				return errors.New("--project requires a value")
+			}
+			if len(roots) == 1 && roots[0] == "." {
+				roots = []string{args[i+1]}
+			} else {
+				roots = append(roots, args[i+1])
+			}
+			i++
+		default:
+			return fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	requested := 0
+	for _, set := range []bool{jsonOut, outputPath != "", checkPath != ""} {
+		if set {
+			requested++
+		}
+	}
+	if requested > 1 {
+		return errors.New("use only one of --json, --output, or --check")
+	}
+
+	type examplesReport struct {
+		Projects []examplescan.Report `json:"projects"`
+	}
+	var report examplesReport
+	for _, root := range roots {
+		r, err := examplescan.Scan(root, examplescan.Options{
+			Name:           filepath.Base(root),
+			RunSema:        true,
+			RunSurfaceScan: true,
+		})
+		if err != nil {
+			return fmt.Errorf("scan %s: %w", root, err)
+		}
+		report.Projects = append(report.Projects, r)
+	}
+
+	switch {
+	case jsonOut:
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		return enc.Encode(report)
+	case outputPath != "":
+		var buf bytes.Buffer
+		enc := json.NewEncoder(&buf)
+		enc.SetIndent("", "  ")
+		if err := enc.Encode(report); err != nil {
+			return err
+		}
+		return os.WriteFile(outputPath, buf.Bytes(), 0o644)
+	case checkPath != "":
+		var buf bytes.Buffer
+		enc := json.NewEncoder(&buf)
+		enc.SetIndent("", "  ")
+		if err := enc.Encode(report); err != nil {
+			return err
+		}
+		existing, err := os.ReadFile(checkPath)
+		if err != nil {
+			return err
+		}
+		if string(existing) != buf.String() {
+			return fmt.Errorf("example project report drift: %s is out of sync (run with --output to regenerate)", checkPath)
+		}
+		fmt.Fprintf(w, "%s: ok\n", checkPath)
+		return nil
+	default:
+		for _, p := range report.Projects {
+			fmt.Fprintf(w, "project: %s\n", p.Name)
+			fmt.Fprintf(w, "  root: %s\n", p.Root)
+			fmt.Fprintf(w, "  layout: %s\n", p.SourceLayout)
+			fmt.Fprintf(w, "  classes: %d\n", p.Counts.ApexClasses)
+			fmt.Fprintf(w, "  triggers: %d\n", p.Counts.ApexTriggers)
+			fmt.Fprintf(w, "  test classes: %d\n", p.Counts.TestClasses)
+			fmt.Fprintf(w, "  objects: %d\n", p.Counts.Objects)
+			fmt.Fprintf(w, "  fields: %d\n", p.Counts.Fields)
+			fmt.Fprintf(w, "  field sets: %d\n", p.Counts.FieldSets)
+			fmt.Fprintf(w, "  vf pages: %d\n", p.Counts.VisualforcePages)
+			fmt.Fprintf(w, "  vf components: %d\n", p.Counts.VisualforceComponents)
+			fmt.Fprintf(w, "  aura: %d\n", p.Counts.AuraComponents)
+			fmt.Fprintf(w, "  lwc: %d\n", p.Counts.LWCComponents)
+			fmt.Fprintf(w, "  workflows: %d\n", p.Counts.Workflows)
+			fmt.Fprintf(w, "  flows: %d\n", p.Counts.Flows)
+			fmt.Fprintf(w, "  profiles: %d\n", p.Counts.Profiles)
+			fmt.Fprintf(w, "  permission sets: %d\n", p.Counts.PermissionSets)
+			fmt.Fprintf(w, "  static resources: %d\n", p.Counts.StaticResources)
+			fmt.Fprintf(w, "  custom metadata: %d\n", p.Counts.CustomMetadata)
+			fmt.Fprintf(w, "  named credentials: %d\n", p.Counts.NamedCredentials)
+			fmt.Fprintf(w, "  remote sites: %d\n", p.Counts.RemoteSites)
+			fmt.Fprintf(w, "  labels: %d\n", p.Counts.Labels)
+			fmt.Fprintf(w, "  annotations: %v\n", p.Constructs.Annotations)
+			fmt.Fprintf(w, "  async interfaces: %v\n", p.Constructs.AsyncInterfaces)
+			fmt.Fprintf(w, "  soql features: %v\n", p.RuntimeUsage.SOQLFeatures)
+			fmt.Fprintf(w, "  dml features: %v\n", p.RuntimeUsage.DMLFeatures)
+			fmt.Fprintf(w, "  namespace refs: %v\n", p.RuntimeUsage.NamespaceRefs)
+			fmt.Fprintf(w, "  blockers: %d\n", len(p.TopBlockers))
+			for _, b := range p.TopBlockers {
+				fmt.Fprintf(w, "    - %s (%s): count=%d files=%d\n", b.CapabilityID, b.Title, b.Count, b.AffectedFiles)
+			}
+			fmt.Fprintf(w, "  observed blockers: %d\n", len(p.Diagnostics.ObservedBlockers))
+			for _, d := range p.Diagnostics.ObservedBlockers {
+				fmt.Fprintf(w, "    - %s: %s (%d)\n", d.Code, d.Message, d.Count)
+			}
+			fmt.Fprintln(w)
+		}
+		return nil
+	}
 }
 
 func runCompatPostParity(args []string, w io.Writer) error {

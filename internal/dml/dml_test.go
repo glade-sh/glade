@@ -531,6 +531,87 @@ func TestValidationRules(t *testing.T) {
 	}
 }
 
+func TestValidationRulesObservedFormulaFunctions(t *testing.T) {
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["BillingState"] = storage.Field{APIName: "BillingState", Type: storage.FieldString}
+	account.Definition.Fields["BillingCountry"] = storage.Field{APIName: "BillingCountry", Type: storage.FieldString}
+	account.Definition.Fields["BillingPostalCode"] = storage.Field{APIName: "BillingPostalCode", Type: storage.FieldString}
+	account.Definition.ValidationRules = []storage.ValidationRule{
+		{
+			Name:                  "ValidUSState",
+			Active:                true,
+			ErrorConditionFormula: `AND(ISBLANK(BillingState) = FALSE, OR(BillingCountry = "US", BillingCountry = "USA", ISBLANK(BillingCountry)), NOT(CONTAINS("CA:NY:WA", BillingState)))`,
+			ErrorMessage:          "invalid state",
+			ErrorDisplayField:     "BillingState",
+		},
+		{
+			Name:                  "USZip",
+			Active:                true,
+			ErrorConditionFormula: `AND(ISBLANK(BillingPostalCode) = FALSE, OR(BillingCountry = "US", BillingCountry = "USA"), NOT(REGEX(BillingPostalCode, "\d{5}(-\d{4})?")))`,
+			ErrorMessage:          "invalid postal code",
+			ErrorDisplayField:     "BillingPostalCode",
+		},
+		{
+			Name:                  "BothAlternates",
+			Active:                true,
+			ErrorConditionFormula: `NOT(ISBLANK(BindingObject__c)) && NOT(ISBLANK(BindingObjectAlternate__c))`,
+			ErrorMessage:          "choose one binding object",
+			ErrorDisplayField:     "BindingObject__c",
+		},
+	}
+	account.Definition.Fields["BindingObject__c"] = storage.Field{APIName: "BindingObject__c", Type: storage.FieldString}
+	account.Definition.Fields["BindingObjectAlternate__c"] = storage.Field{APIName: "BindingObjectAlternate__c", Type: storage.FieldString}
+	org.Objects["Account"] = account
+	engine := NewEngine(&org)
+
+	allowed := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":              storage.StringValue("Allowed"),
+			"BillingCountry":    storage.StringValue("US"),
+			"BillingState":      storage.StringValue("CA"),
+			"BillingPostalCode": storage.StringValue("94105"),
+		},
+	}})
+	if !allowed[0].Success {
+		t.Fatalf("allowed insert = %#v", allowed)
+	}
+	badState := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":           storage.StringValue("Bad State"),
+			"BillingCountry": storage.StringValue("US"),
+			"BillingState":   storage.StringValue("ZZ"),
+		},
+	}})
+	if badState[0].Success || badState[0].Error != "invalid state" || badState[0].Fields[0] != "BillingState" {
+		t.Fatalf("bad state = %#v", badState)
+	}
+	badPostalCode := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":              storage.StringValue("Bad Zip"),
+			"BillingCountry":    storage.StringValue("USA"),
+			"BillingPostalCode": storage.StringValue("ABCDE"),
+		},
+	}})
+	if badPostalCode[0].Success || badPostalCode[0].Error != "invalid postal code" || badPostalCode[0].Fields[0] != "BillingPostalCode" {
+		t.Fatalf("bad postal code = %#v", badPostalCode)
+	}
+	bothBindings := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":                      storage.StringValue("Both"),
+			"BindingObject__c":          storage.StringValue("Account"),
+			"BindingObjectAlternate__c": storage.StringValue("Contact"),
+		},
+	}})
+	if bothBindings[0].Success || bothBindings[0].Error != "choose one binding object" || bothBindings[0].Fields[0] != "BindingObject__c" {
+		t.Fatalf("both bindings = %#v", bothBindings)
+	}
+}
+
 func TestWorkflowFieldUpdateCriteriaTrueFalseAndVisibleAfterDML(t *testing.T) {
 	org := testOrg()
 	account := org.Objects["Account"]

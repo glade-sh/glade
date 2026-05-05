@@ -53,6 +53,37 @@ func TestLoadProjectIndexesLegacyReadOnlyMetadata(t *testing.T) {
     <value>true</value>
   </values>
 </CustomMetadata>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/fieldSets/Summary.fieldSet-meta.xml"), `<FieldSet>
+  <fullName>Summary</fullName>
+  <label>Summary Fields</label>
+  <displayedFields>
+    <field>Name</field>
+    <isRequired>true</isRequired>
+  </displayedFields>
+</FieldSet>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/pages/Edit.page"), `<apex:page/>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/components/Picker.component"), `<apex:component/>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/aura/Cart/Cart.cmp"), `<aura:component/>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/lwc/cart/cart.js"), `export default class Cart {}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/workflows/Account.workflow-meta.xml"), `<Workflow/>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/flows/Onboard.flow-meta.xml"), `<Flow/>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/profiles/Admin.profile-meta.xml"), `<Profile>
+  <fullName>Admin</fullName>
+  <objectPermissions>
+    <object>Account</object>
+    <allowRead>true</allowRead>
+    <allowCreate>true</allowCreate>
+  </objectPermissions>
+  <fieldPermissions>
+    <field>Account.Name</field>
+    <readable>true</readable>
+  </fieldPermissions>
+</Profile>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/permissionsets/App.permissionset-meta.xml"), `<PermissionSet>
+  <fullName>App</fullName>
+  <label>App User</label>
+</PermissionSet>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/permissionSetAssignments/App.permissionsetassignment-meta.xml"), `<PermissionSetAssignment/>`)
 
 	p, err := project.Load(root)
 	if err != nil {
@@ -97,6 +128,25 @@ func TestLoadProjectIndexesLegacyReadOnlyMetadata(t *testing.T) {
 	}
 	if len(record.Values) != 1 || record.Values[0].Field != "Enabled__c" || record.Values[0].Value != "true" {
 		t.Fatalf("custom metadata values = %#v", record.Values)
+	}
+	fieldSet, ok := idx.FieldSet("Account", "Summary")
+	if !ok || fieldSet.Label != "Summary Fields" || len(fieldSet.Fields) != 1 || fieldSet.Fields[0].Field != "Name" || !fieldSet.Fields[0].Required {
+		t.Fatalf("field set lookup = %#v, %v", fieldSet, ok)
+	}
+	if len(idx.VisualforcePages) != 1 || idx.VisualforcePages[0].Name != "Edit" || len(idx.VisualforceComponents) != 1 || idx.VisualforceComponents[0].Name != "Picker" {
+		t.Fatalf("visualforce assets = %#v %#v", idx.VisualforcePages, idx.VisualforceComponents)
+	}
+	if len(idx.AuraComponents) != 1 || idx.AuraComponents[0].Name != "Cart" || len(idx.LWCComponents) != 1 || idx.LWCComponents[0].Name != "cart" {
+		t.Fatalf("ui assets = %#v %#v", idx.AuraComponents, idx.LWCComponents)
+	}
+	if len(idx.Workflows) != 1 || idx.Workflows[0].Name != "Account" || len(idx.Flows) != 1 || idx.Flows[0].Name != "Onboard" {
+		t.Fatalf("automation assets = %#v %#v", idx.Workflows, idx.Flows)
+	}
+	if len(idx.Profiles) != 1 || idx.Profiles[0].Name != "Admin" || len(idx.Profiles[0].ObjectPermissions) != 1 || !idx.Profiles[0].ObjectPermissions[0].Read || len(idx.Profiles[0].FieldPermissions) != 1 {
+		t.Fatalf("profile stub = %#v", idx.Profiles)
+	}
+	if len(idx.PermissionSets) != 1 || idx.PermissionSets[0].Name != "App" || idx.PermissionSets[0].Label != "App User" || len(idx.PermissionAssignments) != 1 || idx.PermissionAssignments[0].Name != "App" {
+		t.Fatalf("permission stubs = %#v %#v", idx.PermissionSets, idx.PermissionAssignments)
 	}
 }
 

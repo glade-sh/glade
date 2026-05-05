@@ -485,6 +485,45 @@ System.assertEquals('text/html', blank.getHeaders().get('Accept'));
 	}
 }
 
+func TestExecVisualforceControllerAndSelectOptionSlice(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'VF');
+ApexPages.StandardController controller = new ApexPages.StandardController(account);
+System.assertEquals(null, controller.getId());
+PageReference saved = controller.save();
+System.assertEquals(account.Id, controller.getId());
+System.assertEquals('/' + account.Id, saved.getUrl());
+PageReference token = Page.MyPage;
+System.assertEquals('/apex/MyPage', token.getUrl());
+SelectOption option = new SelectOption('1', 'One', true, false);
+System.assertEquals('1', option.getValue());
+System.assertEquals('One', option.getLabel());
+System.assert(option.getDisabled());
+System.assertEquals(false, option.getEscapeItem());
+option.setLabel('Changed');
+option.setDisabled(false);
+System.assertEquals('Changed', option.getLabel());
+System.assertEquals(false, option.getDisabled());
+ApexPages.StandardSetController setController = new ApexPages.StandardSetController(new List<Account>{account, new Account(Name = 'Second')});
+setController.setPageSize(1);
+System.assertEquals(1, setController.getRecords().size());
+System.assert(setController.getHasNext());
+setController.next();
+System.assertEquals(2, setController.getPageNumber());
+System.assert(setController.getHasPrevious());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecMessagingResultAndUnsupportedEdges(t *testing.T) {
 	program, err := CompileAnonymous(`
 Messaging.SingleEmailMessage msg = new Messaging.SingleEmailMessage();

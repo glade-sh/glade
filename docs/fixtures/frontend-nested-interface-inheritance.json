@@ -1,0 +1,35 @@
+{
+  "name": "frontend-nested-interface-inheritance",
+  "evidence": [
+    {
+      "symbol": "nested classes and interface inheritance",
+      "kind": "check",
+      "notes": "Reduced nested type and interface-heavy inheritance pattern."
+    }
+  ],
+  "source": [
+    {
+      "path": "classes/Contracts.cls",
+      "content": "public interface Contracts {\n  String name();\n}"
+    },
+    {
+      "path": "classes/DomainBase.cls",
+      "content": "public virtual class DomainBase {\n  public class Context { public String value; }\n  public virtual String name() { return 'base'; }\n}"
+    },
+    {
+      "path": "classes/DomainImpl.cls",
+      "content": "public class DomainImpl extends DomainBase implements Contracts {\n  public override String name() { return new DomainBase.Context().value; }\n}"
+    }
+  ],
+  "command": {
+    "kind": "check"
+  },
+  "expected": {
+    "result": {
+      "diagnostics": 0,
+      "files": 3,
+      "ok": true,
+      "types": 4
+    }
+  }
+}

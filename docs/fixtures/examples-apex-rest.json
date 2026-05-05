@@ -1,0 +1,27 @@
+{
+  "name": "examples-apex-rest",
+  "evidence": [
+    {
+      "symbol": "RestResource",
+      "kind": "check",
+      "notes": "Reduced Apex REST resource with HttpGet and RestContext references."
+    }
+  ],
+  "source": [
+    {
+      "path": "classes/AccountRestService.cls",
+      "content": "@RestResource(urlMapping='/accounts/*')\nglobal class AccountRestService {\n  @HttpGet\n  global static List<Account> getAccounts() {\n    return [SELECT Id, Name FROM Account LIMIT 10];\n  }\n}"
+    }
+  ],
+  "command": {
+    "kind": "check"
+  },
+  "expected": {
+    "result": {
+      "diagnostics": 0,
+      "files": 1,
+      "ok": true,
+      "types": 1
+    }
+  }
+}

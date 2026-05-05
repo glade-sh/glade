@@ -1,0 +1,35 @@
+{
+  "name": "frontend-annotation-heavy",
+  "evidence": [
+    {
+      "symbol": "@RestResource @HttpGet @isTest @testSetup @future @InvocableMethod",
+      "kind": "check",
+      "notes": "Reduced annotation-heavy classes covering observed front-end annotation parsing."
+    }
+  ],
+  "source": [
+    {
+      "path": "classes/AnnotatedRest.cls",
+      "content": "@RestResource(urlMapping='/annotated/*')\nglobal with sharing class AnnotatedRest {\n  @HttpGet global static String getIt() { return 'ok'; }\n}"
+    },
+    {
+      "path": "classes/AnnotatedJobs.cls",
+      "content": "public class AnnotatedJobs {\n  @future public static void later(String value) {}\n  @InvocableMethod public static void invoke(List<String> values) {}\n}"
+    },
+    {
+      "path": "classes/AnnotatedJobsTest.cls",
+      "content": "@isTest private class AnnotatedJobsTest {\n  @testSetup static void setup() {}\n  @isTest static void runs() { System.assert(true); }\n}"
+    }
+  ],
+  "command": {
+    "kind": "check"
+  },
+  "expected": {
+    "result": {
+      "diagnostics": 0,
+      "files": 3,
+      "ok": true,
+      "types": 3
+    }
+  }
+}

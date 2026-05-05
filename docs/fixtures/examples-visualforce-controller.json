@@ -1,0 +1,27 @@
+{
+  "name": "examples-visualforce-controller",
+  "evidence": [
+    {
+      "symbol": "ApexPages.StandardController",
+      "kind": "check",
+      "notes": "Reduced Visualforce controller with SelectOption and PageReference references."
+    }
+  ],
+  "source": [
+    {
+      "path": "classes/MyPageController.cls",
+      "content": "public class MyPageController {\n  private ApexPages.StandardController stdController;\n  public MyPageController(ApexPages.StandardController stdController) {\n    this.stdController = stdController;\n  }\n  public List<SelectOption> getOptions() {\n    List<SelectOption> options = new List<SelectOption>();\n    options.add(new SelectOption('1', 'One'));\n    options.add(new SelectOption('2', 'Two'));\n    return options;\n  }\n  public PageReference save() {\n    stdController.save();\n    return Page.MyPage;\n  }\n}"
+    }
+  ],
+  "command": {
+    "kind": "check"
+  },
+  "expected": {
+    "result": {
+      "diagnostics": 1,
+      "files": 1,
+      "ok": false,
+      "types": 1
+    }
+  }
+}

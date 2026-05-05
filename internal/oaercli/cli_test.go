@@ -150,6 +150,112 @@ func TestRunCompatPostParityRequireReadyFails(t *testing.T) {
 	}
 }
 
+func TestRunCheckReportsMalformedMetadataAsDiagnostic(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/classes/A.cls"), `public class A {}`)
+	writeTestFile(t, filepath.Join(root, "force-app/objects/Thing__c/Thing__c.object-meta.xml"), `<CustomObject>`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"check", "--project", root, "--json"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if !strings.Contains(stdout.String(), `"code": "OAERSCHEMA001"`) || !strings.Contains(stdout.String(), `"types": 1`) {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
+func TestRunCompatExamples(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/classes/MyClass.cls"), `public class MyClass {
+		@AuraEnabled public static String doWork() { return 'ok'; }
+	}`)
+	writeTestFile(t, filepath.Join(root, "force-app/classes/MyTest.cls"), `@isTest private class MyTest {
+		@isTest static void testIt() { System.assert(true); }
+	}`)
+	writeTestFile(t, filepath.Join(root, "force-app/triggers/MyTrigger.trigger"), `trigger MyTrigger on Account (before insert) { if (Trigger.isBefore) {} }`)
+	writeTestFile(t, filepath.Join(root, "force-app/pages/MyPage.page"), `<apex:page/>`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "examples", "--project", root}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	out := stdout.String()
+	for _, want := range []string{
+		"project:",
+		"classes: 2",
+		"triggers: 1",
+		"test classes: 1",
+		"vf pages: 1",
+		"annotations:",
+		"AuraEnabled",
+		"isTest",
+		"soql features:",
+		"dml features:",
+		"namespace refs:",
+		"System",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("stdout missing %q: %q", want, out)
+		}
+	}
+}
+
+func TestRunCompatExamplesJSON(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/classes/A.cls"), `public class A {}`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "examples", "--project", root, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	for _, want := range []string{
+		`"projects"`,
+		`"name"`,
+		`"counts"`,
+		`"apexClasses"`,
+	} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("stdout missing %q: %q", want, stdout.String())
+		}
+	}
+}
+
+func TestRunCompatExamplesOutputAndCheck(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/classes/A.cls"), `public class A {}`)
+	path := filepath.Join(t.TempDir(), "examples.json")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "examples", "--project", root, "--output", path}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("output exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	content, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(content), `"projects"`) {
+		t.Fatalf("output file missing projects key")
+	}
+
+	// Check mode should succeed against identical file.
+	var stdout2, stderr2 bytes.Buffer
+	code = Run(context.Background(), []string{"compat", "examples", "--project", root, "--check", path}, &stdout2, &stderr2)
+	if code != 0 {
+		t.Fatalf("check exit code = %d, want 0; stderr=%q", code, stderr2.String())
+	}
+	if !strings.Contains(stdout2.String(), "ok") {
+		t.Fatalf("check stdout missing ok: %q", stdout2.String())
+	}
+}
+
 func TestRunCompatPostParityMarkdownOutputAndCheck(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "src/pages/Edit.page"), `<apex:page controller="EditController">{!$Label.EditTitle}</apex:page>`)

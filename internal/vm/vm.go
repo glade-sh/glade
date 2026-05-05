@@ -6263,6 +6263,9 @@ func (vm *VM) lookup(name string) (Value, error) {
 			return token, nil
 		}
 		if len(parts) == 2 {
+			if parts[0] == "Page" {
+				return newPageReference("/apex/" + parts[1]), nil
+			}
 			if value, ok := builtinStaticField(parts[0], parts[1]); ok {
 				return value, nil
 			}
@@ -6802,7 +6805,7 @@ func isBuiltinTypeName(name string) bool {
 		return true
 	}
 	switch name {
-	case "Object", "String", "Boolean", "Integer", "Long", "Decimal", "Double", "Date", "Datetime", "Time", "TimeZone", "Blob", "Id", "Type", "URL", "PageReference", "LoggingLevel", "ApexPages.Severity", "RestContext", "RestRequest", "RestResponse", "Callable", "StubProvider":
+	case "Object", "String", "Boolean", "Integer", "Long", "Decimal", "Double", "Date", "Datetime", "Time", "TimeZone", "Blob", "Id", "Type", "URL", "PageReference", "SelectOption", "LoggingLevel", "ApexPages.Severity", "ApexPages.StandardController", "ApexPages.StandardSetController", "RestContext", "RestRequest", "RestResponse", "Callable", "StubProvider":
 		return true
 	default:
 		return false
@@ -6896,6 +6899,15 @@ func newPageReference(rawURL string) Value {
 	page.Fields["parameters"] = typedMap("Map<String,String>")
 	page.Fields["headers"] = typedMap("Map<String,String>")
 	return page
+}
+
+func newSelectOption(value, label Value, disabled, escapeItem Value) Value {
+	option := Object("SelectOption")
+	option.Fields["value"] = value
+	option.Fields["label"] = label
+	option.Fields["disabled"] = disabled
+	option.Fields["escapeItem"] = escapeItem
+	return option
 }
 
 func newHttpRequest() Value {
@@ -7188,6 +7200,53 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 			rawURL = args[0].Text
 		}
 		return newPageReference(rawURL), nil
+	case "SelectOption":
+		if len(args) < 2 || len(args) > 4 || len(namedArgs) != 0 {
+			return Null, fmt.Errorf("SelectOption constructor expects value, label[, disabled[, escapeItem]]")
+		}
+		if args[0].Kind != ValueString || args[1].Kind != ValueString {
+			return Null, fmt.Errorf("SelectOption constructor expects String value and label")
+		}
+		disabled := Bool(false)
+		escapeItem := Bool(true)
+		if len(args) >= 3 {
+			if args[2].Kind != ValueBool {
+				return Null, fmt.Errorf("SelectOption constructor disabled expects Boolean")
+			}
+			disabled = args[2]
+		}
+		if len(args) == 4 {
+			if args[3].Kind != ValueBool {
+				return Null, fmt.Errorf("SelectOption constructor escapeItem expects Boolean")
+			}
+			escapeItem = args[3]
+		}
+		return newSelectOption(args[0], args[1], disabled, escapeItem), nil
+	case "ApexPages.StandardController":
+		if len(args) != 1 || len(namedArgs) != 0 || args[0].Kind != ValueObject {
+			return Null, fmt.Errorf("ApexPages.StandardController constructor expects SObject")
+		}
+		controller := Object("ApexPages.StandardController")
+		controller.Fields["record"] = args[0]
+		return controller, nil
+	case "ApexPages.StandardSetController":
+		if len(args) != 1 || len(namedArgs) != 0 || (args[0].Kind != ValueList && !(args[0].Kind == ValueObject && args[0].Type == "Database.QueryLocator")) {
+			return Null, fmt.Errorf("ApexPages.StandardSetController constructor expects List or QueryLocator")
+		}
+		records := args[0]
+		if args[0].Kind == ValueObject && args[0].Type == "Database.QueryLocator" {
+			if value, ok := args[0].Fields["Records"]; ok {
+				records = value
+			} else {
+				records = List()
+			}
+		}
+		controller := Object("ApexPages.StandardSetController")
+		controller.Fields["records"] = records
+		controller.Fields["selected"] = List()
+		controller.Fields["pageSize"] = Int(20)
+		controller.Fields["pageNumber"] = Int(1)
+		return controller, nil
 	case "ApexPages.Message":
 		if len(args) < 2 || len(args) > 3 {
 			return Null, fmt.Errorf("ApexPages.Message constructor expects severity, summary[, detail]")
@@ -9260,6 +9319,52 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 			out.Map[mapKey(String(field))] = value
 		}
 		return out, true, nil
+	case "clone":
+		if len(args) != 0 && len(args) != 1 && len(args) != 4 {
+			return Null, true, fmt.Errorf("SObject.clone expects 0, 1, or 4 arguments")
+		}
+		for _, arg := range args {
+			if arg.Kind != ValueBool {
+				return Null, true, fmt.Errorf("SObject.clone preserve flags must be Boolean")
+			}
+		}
+		cloned := cloneValue(receiver)
+		if cloned.Fields == nil {
+			cloned.Fields = make(map[string]Value)
+		}
+		preserveID := len(args) > 0 && args[0].Bool
+		if !preserveID {
+			delete(cloned.Fields, "Id")
+		}
+		delete(cloned.Fields, sobjectErrorsField)
+		delete(cloned.Fields, sobjectReadOnlyField)
+		return cloned, true, nil
+	case "getSObject":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, true, fmt.Errorf("SObject.getSObject expects relationship name String")
+		}
+		field := vm.resolveSObjectFieldName(receiver.Type, args[0].Text)
+		value, ok := receiver.Fields[field]
+		if !ok || value.Kind == ValueNull {
+			return Null, true, nil
+		}
+		if value.Kind != ValueObject {
+			return Null, true, fmt.Errorf("SObject.getSObject field %s is not an SObject", field)
+		}
+		return value, true, nil
+	case "getSObjects":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, true, fmt.Errorf("SObject.getSObjects expects relationship name String")
+		}
+		field := vm.resolveSObjectFieldName(receiver.Type, args[0].Text)
+		value, ok := receiver.Fields[field]
+		if !ok || value.Kind == ValueNull {
+			return List(), true, nil
+		}
+		if value.Kind != ValueList {
+			return Null, true, fmt.Errorf("SObject.getSObjects field %s is not a List", field)
+		}
+		return value, true, nil
 	default:
 		return Null, false, nil
 	}
@@ -10806,6 +10911,12 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		return callMassEmailMessageMember(receiver, method, args)
 	case "Messaging.SendEmailOptions":
 		return Null, receiver, false, true, unsupportedCallError("Messaging.SendEmailOptions." + method + " local messaging send-options surface")
+	case "SelectOption":
+		return callSelectOptionMember(receiver, method, args)
+	case "ApexPages.StandardController":
+		return vm.callStandardControllerMember(receiver, method, args, result)
+	case "ApexPages.StandardSetController":
+		return vm.callStandardSetControllerMember(receiver, method, args, result)
 	case "ApexPages.Message":
 		switch method {
 		case "getSeverity":
@@ -10999,6 +11110,227 @@ func callRestResponseMember(receiver Value, method string, args []Value) (Value,
 	default:
 		return Null, receiver, false, false, nil
 	}
+}
+
+func callSelectOptionMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	fieldForGetter := map[string]string{
+		"getValue":      "value",
+		"getLabel":      "label",
+		"getDisabled":   "disabled",
+		"getEscapeItem": "escapeItem",
+	}
+	if field, ok := fieldForGetter[method]; ok {
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("SelectOption.%s expects 0 arguments", method)
+		}
+		return receiver.Fields[field], receiver, false, true, nil
+	}
+	fieldForSetter := map[string]string{
+		"setValue":      "value",
+		"setLabel":      "label",
+		"setDisabled":   "disabled",
+		"setEscapeItem": "escapeItem",
+	}
+	if field, ok := fieldForSetter[method]; ok {
+		if len(args) != 1 {
+			return Null, receiver, false, true, fmt.Errorf("SelectOption.%s expects 1 argument", method)
+		}
+		if (field == "value" || field == "label") && args[0].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("SelectOption.%s expects String", method)
+		}
+		if (field == "disabled" || field == "escapeItem") && args[0].Kind != ValueBool {
+			return Null, receiver, false, true, fmt.Errorf("SelectOption.%s expects Boolean", method)
+		}
+		receiver.Fields[field] = args[0]
+		return Null, receiver, true, true, nil
+	}
+	return Null, receiver, false, false, nil
+}
+
+func (vm *VM) callStandardControllerMember(receiver Value, method string, args []Value, result *Result) (Value, Value, bool, bool, error) {
+	record, ok := receiver.Fields["record"]
+	if !ok || record.Kind != ValueObject {
+		return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardController has no SObject record")
+	}
+	switch method {
+	case "getId":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardController.getId expects 0 arguments")
+		}
+		if id, ok := record.Fields["Id"]; ok {
+			return id, receiver, false, true, nil
+		}
+		return Null, receiver, false, true, nil
+	case "getRecord":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardController.getRecord expects 0 arguments")
+		}
+		return record, receiver, false, true, nil
+	case "save", "quickSave":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardController.%s expects 0 arguments", method)
+		}
+		op := "insert"
+		if id, ok := record.Fields["Id"]; ok && id.Kind == ValueString && id.Text != "" {
+			op = "update"
+		}
+		results, err := vm.applyDML(op, record, true, "", result)
+		if err != nil {
+			return Null, receiver, false, true, err
+		}
+		if len(results) > 0 && results[0].ID != "" {
+			record.Fields["Id"] = String(string(results[0].ID))
+			receiver.Fields["record"] = record
+		}
+		return standardControllerPage(record), receiver, true, true, nil
+	case "delete":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardController.delete expects 0 arguments")
+		}
+		if _, err := vm.applyDML("delete", record, true, "", result); err != nil {
+			return Null, receiver, false, true, err
+		}
+		return standardControllerPage(record), receiver, false, true, nil
+	case "view", "edit", "cancel", "reset":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardController.%s expects 0 arguments", method)
+		}
+		return standardControllerPage(record), receiver, false, true, nil
+	case "addFields":
+		if len(args) != 1 || args[0].Kind != ValueList {
+			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardController.addFields expects List")
+		}
+		return Null, receiver, false, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
+func (vm *VM) callStandardSetControllerMember(receiver Value, method string, args []Value, result *Result) (Value, Value, bool, bool, error) {
+	records := receiver.Fields["records"]
+	switch method {
+	case "getRecords":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardSetController.getRecords expects 0 arguments")
+		}
+		return standardSetCurrentPage(receiver, records), receiver, false, true, nil
+	case "getSelected":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardSetController.getSelected expects 0 arguments")
+		}
+		return receiver.Fields["selected"], receiver, false, true, nil
+	case "setSelected":
+		if len(args) != 1 || args[0].Kind != ValueList {
+			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardSetController.setSelected expects List")
+		}
+		receiver.Fields["selected"] = args[0]
+		return Null, receiver, true, true, nil
+	case "getPageSize":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardSetController.getPageSize expects 0 arguments")
+		}
+		return receiver.Fields["pageSize"], receiver, false, true, nil
+	case "setPageSize":
+		if len(args) != 1 || args[0].Kind != ValueInt || args[0].Int <= 0 {
+			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardSetController.setPageSize expects positive Integer")
+		}
+		receiver.Fields["pageSize"] = args[0]
+		receiver.Fields["pageNumber"] = Int(1)
+		return Null, receiver, true, true, nil
+	case "getPageNumber":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardSetController.getPageNumber expects 0 arguments")
+		}
+		return receiver.Fields["pageNumber"], receiver, false, true, nil
+	case "first":
+		receiver.Fields["pageNumber"] = Int(1)
+		return Null, receiver, true, true, nil
+	case "last":
+		receiver.Fields["pageNumber"] = Int(int64(standardSetPageCount(receiver, records)))
+		return Null, receiver, true, true, nil
+	case "next":
+		page := int(receiver.Fields["pageNumber"].Int)
+		if page < standardSetPageCount(receiver, records) {
+			receiver.Fields["pageNumber"] = Int(int64(page + 1))
+		}
+		return Null, receiver, true, true, nil
+	case "previous":
+		page := int(receiver.Fields["pageNumber"].Int)
+		if page > 1 {
+			receiver.Fields["pageNumber"] = Int(int64(page - 1))
+		}
+		return Null, receiver, true, true, nil
+	case "getHasNext":
+		return Bool(int(receiver.Fields["pageNumber"].Int) < standardSetPageCount(receiver, records)), receiver, false, true, nil
+	case "getHasPrevious":
+		return Bool(receiver.Fields["pageNumber"].Int > 1), receiver, false, true, nil
+	case "getCompleteResult":
+		return Bool(true), receiver, false, true, nil
+	case "save":
+		return vm.standardSetDML(receiver, "update", result)
+	case "delete":
+		return vm.standardSetDML(receiver, "delete", result)
+	case "cancel":
+		return newPageReference(""), receiver, false, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
+func standardControllerPage(record Value) Value {
+	if id, ok := record.Fields["Id"]; ok && id.Kind == ValueString && id.Text != "" {
+		return newPageReference("/" + id.Text)
+	}
+	return newPageReference("")
+}
+
+func standardSetCurrentPage(controller, records Value) Value {
+	if records.Kind != ValueList {
+		return List()
+	}
+	pageSize := int(controller.Fields["pageSize"].Int)
+	pageNumber := int(controller.Fields["pageNumber"].Int)
+	if pageSize <= 0 {
+		pageSize = 20
+	}
+	if pageNumber <= 0 {
+		pageNumber = 1
+	}
+	start := (pageNumber - 1) * pageSize
+	if start >= len(records.List) {
+		return List()
+	}
+	end := start + pageSize
+	if end > len(records.List) {
+		end = len(records.List)
+	}
+	return List(records.List[start:end]...)
+}
+
+func standardSetPageCount(controller, records Value) int {
+	if records.Kind != ValueList || len(records.List) == 0 {
+		return 1
+	}
+	pageSize := int(controller.Fields["pageSize"].Int)
+	if pageSize <= 0 {
+		pageSize = 20
+	}
+	pages := (len(records.List) + pageSize - 1) / pageSize
+	if pages < 1 {
+		return 1
+	}
+	return pages
+}
+
+func (vm *VM) standardSetDML(receiver Value, op string, result *Result) (Value, Value, bool, bool, error) {
+	records := receiver.Fields["records"]
+	if records.Kind != ValueList {
+		return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardSetController.%s requires records", op)
+	}
+	if _, err := vm.applyDML(op, records, true, "", result); err != nil {
+		return Null, receiver, false, true, err
+	}
+	return newPageReference(""), receiver, false, true, nil
 }
 
 func callSingleEmailMessageMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {

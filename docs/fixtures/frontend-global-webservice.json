@@ -1,0 +1,27 @@
+{
+  "name": "frontend-global-webservice",
+  "evidence": [
+    {
+      "symbol": "global webservice",
+      "kind": "check",
+      "notes": "Reduced enterprise API class with global visibility and a webservice method."
+    }
+  ],
+  "source": [
+    {
+      "path": "classes/PublicApi.cls",
+      "content": "global with sharing class PublicApi {\n  webservice static String ping(String value) {\n    return value;\n  }\n}"
+    }
+  ],
+  "command": {
+    "kind": "check"
+  },
+  "expected": {
+    "result": {
+      "diagnostics": 0,
+      "files": 1,
+      "ok": true,
+      "types": 1
+    }
+  }
+}

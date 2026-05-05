@@ -1,0 +1,50 @@
+{
+  "name": "data-soql-dynamic-selector",
+  "evidence": [
+    {
+      "symbol": "Database.query",
+      "kind": "test",
+      "notes": "Dynamic SELECT-list construction executes with local bind variables."
+    },
+    {
+      "symbol": "Database.queryWithBinds",
+      "kind": "test",
+      "notes": "Bind maps execute with scalar values and AccessLevel overload parsing."
+    },
+    {
+      "symbol": "QueryException",
+      "kind": "test",
+      "notes": "Malformed dynamic SOQL raises catchable QueryException."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type><required>true</required></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Rating.field-meta.xml",
+      "content": "<CustomField><fullName>Rating</fullName><label>Rating</label><type>Text</type></CustomField>"
+    },
+    {
+      "path": "force-app/main/classes/DataSoqlDynamicSelectorTest.cls",
+      "content": "@isTest private class DataSoqlDynamicSelectorTest { @isTest static void exercisesDynamicSelectors() { insert new Account(Name = 'Acme', Rating = 'Hot'); insert new Account(Name = 'Beta', Rating = 'Warm'); String wanted = 'Acme'; String fields = 'Id, Name, Rating'; String queryText = 'SELECT ' + fields + ' FROM Account WHERE Name = :wanted ORDER BY Name'; List<Account> rows = Database.query(queryText); System.assertEquals(1, rows.size()); Map<String,Object> binds = new Map<String,Object>(); binds.put('rating', 'Warm'); rows = Database.queryWithBinds('SELECT Id, Name FROM Account WHERE Rating = :rating ORDER BY Name', binds, AccessLevel.USER_MODE); System.assertEquals(1, rows.size()); Boolean caught = false; try { Database.query('SELECT FROM Account'); } catch (QueryException qe) { caught = true; } System.assert(caught); } }"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
+}

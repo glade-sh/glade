@@ -1,0 +1,48 @@
+{
+  "name": "examples-trigger-handler",
+  "evidence": [
+    {
+      "symbol": "Trigger.new",
+      "kind": "exec",
+      "notes": "Reduced trigger handler pattern with handler class and Trigger context."
+    }
+  ],
+  "source": [
+    {
+      "path": "force-app/main/default/objects/Account/Account.object-meta.xml",
+      "content": "<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Name.field-meta.xml",
+      "content": "<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type><required>true</required></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/fields/Rating.field-meta.xml",
+      "content": "<CustomField><fullName>Rating</fullName><label>Rating</label><type>Picklist</type><valueSet><valueSetDefinition><value><fullName>Hot</fullName><label>Hot</label></value><value><fullName>Warm</fullName><label>Warm</label><default>true</default></value></valueSetDefinition></valueSet></CustomField>"
+    },
+    {
+      "path": "force-app/main/default/classes/AccountTriggerHandler.cls",
+      "content": "public class AccountTriggerHandler {\n  public static void handleBeforeInsert(List<Account> records) {\n    for (Account record : records) {\n      record.Rating = 'Warm';\n    }\n  }\n  public static void handleBeforeUpdate(Map<Id, Account> oldMap, List<Account> newRecords) {\n    for (Account record : newRecords) {\n      Account oldRecord = oldMap.get(record.Id);\n      if (oldRecord != null && oldRecord.Name != record.Name) {\n        record.Rating = 'Hot';\n      }\n    }\n  }\n}"
+    },
+    {
+      "path": "force-app/main/default/triggers/AccountTrigger.trigger",
+      "content": "trigger AccountTrigger on Account (before insert, before update) {\n  if (Trigger.isBefore) {\n    if (Trigger.isInsert) {\n      AccountTriggerHandler.handleBeforeInsert(Trigger.new);\n    }\n    if (Trigger.isUpdate) {\n      AccountTriggerHandler.handleBeforeUpdate(Trigger.oldMap, Trigger.new);\n    }\n  }\n}"
+    },
+    {
+      "path": "force-app/main/default/classes/AccountTriggerHandlerTest.cls",
+      "content": "@isTest private class AccountTriggerHandlerTest {\n  @isTest static void setsDefaultRatingOnInsert() {\n    Account account = new Account(Name = 'Test');\n    insert account;\n    Account inserted = [SELECT Id, Name, Rating FROM Account WHERE Id = :account.Id];\n    System.assertEquals('Warm', inserted.Rating);\n  }\n  @isTest static void setsHotRatingOnNameChange() {\n    Account account = new Account(Name = 'Test');\n    insert account;\n    account.Name = 'Updated';\n    update account;\n    Account updated = [SELECT Id, Name, Rating FROM Account WHERE Id = :account.Id];\n    System.assertEquals('Hot', updated.Rating);\n  }\n}"
+    }
+  ],
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "errors": 0,
+      "failed": 0,
+      "ok": true,
+      "passed": 2,
+      "total": 2
+    }
+  }
+}

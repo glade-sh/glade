@@ -1847,3 +1847,22 @@ func TestExtractTypeNames(t *testing.T) {
 		}
 	}
 }
+
+func TestIsSemaConstructorCallAtHonorsWhitespaceBeforeNew(t *testing.T) {
+	body := "return new DomainBase.Context().value;"
+	start := strings.Index(body, "DomainBase.Context")
+	if start < 0 {
+		t.Fatal("missing constructor call")
+	}
+	if !isSemaConstructorCallAt(body, start) {
+		t.Fatalf("constructor call after whitespace was not recognized")
+	}
+	notConstructor := "return renew DomainBase.Context().value;"
+	start = strings.Index(notConstructor, "DomainBase.Context")
+	if start < 0 {
+		t.Fatal("missing non-constructor call")
+	}
+	if isSemaConstructorCallAt(notConstructor, start) {
+		t.Fatalf("identifier ending in new was recognized as a constructor call")
+	}
+}

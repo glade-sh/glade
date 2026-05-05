@@ -993,12 +993,21 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 	}
 	candidates := resolveMemberMethods(model, receiverType, method)
 	if len(candidates) == 0 {
+		if a.isKnownPlatformType(receiverType) {
+			return nil
+		}
 		return []diagnostic.Diagnostic{unknownCallDiagnostic(typ, member, expr.Callee, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source)}
 	}
 	if _, ok, ambiguous := bestResolvedMemberByArgTypes(candidates, irCallArgTypes(a, expr.Args, scope, model, typ.Name), model); ok {
 		return nil
 	} else if ambiguous {
+		if a.isKnownPlatformType(receiverType) {
+			return nil
+		}
 		return []diagnostic.Diagnostic{ambiguousCallDiagnostic(typ, member, expr.Callee, len(expr.Args), bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source)}
+	}
+	if a.isKnownPlatformType(receiverType) {
+		return nil
 	}
 	return []diagnostic.Diagnostic{{
 		Severity: diagnostic.Error,
@@ -1217,8 +1226,14 @@ func (a *Analyzer) inferIRExprType(expr ir.Expr, scope irSemaScope, model map[st
 			return typ
 		}
 		if root, field, ok := strings.Cut(expr.Name, "."); ok {
-			if receiverType := semaIRReceiverType(root, scope, model, currentType); receiverType != "" {
-				return semaFieldScope(model, receiverType, make(map[string]bool))[normalizeName(field)]
+			receiverType := semaIRReceiverType(root, scope, model, currentType)
+			if receiverType == "" && a.isKnownPlatformType(root) {
+				receiverType = root
+			}
+			if receiverType != "" {
+				if fieldType := semaFieldScope(model, receiverType, make(map[string]bool))[normalizeName(field)]; fieldType != "" {
+					return fieldType
+				}
 			}
 		}
 	case ir.ExprCall:
@@ -1757,6 +1772,9 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 				diagnostics = append(diagnostics, collectionDiagnostics...)
 				continue
 			}
+			if a.isKnownPlatformType(receiverType) {
+				continue
+			}
 			diagnostics = append(diagnostics, a.diagnoseMethodCall(typ, member, method, resolveMemberMethods(model, receiverType, method), args, haveArgs, "instance", bodyOffset+match[2], bodyOffset+match[3], source, scope, model)...)
 			continue
 		}
@@ -1775,12 +1793,15 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 					diagnostics = append(diagnostics, collectionDiagnostics...)
 					continue
 				}
-				if isSemaBuiltinType(receiverType) {
+				if a.isKnownPlatformType(receiverType) {
 					continue
 				}
 				if classMembers, ok := model[normalizeName(receiverType)]; ok {
 					diagnostics = append(diagnostics, a.diagnoseMethodCall(typ, member, callee, resolveMemberMethods(model, classMembers.name, method), args, haveArgs, "instance", bodyOffset+match[2], bodyOffset+match[3], source, scope, model)...)
 				}
+				continue
+			}
+			if a.isKnownPlatformType(receiver) {
 				continue
 			}
 			if classMembers, ok := model[normalizeName(receiver)]; ok {
@@ -1888,6 +1909,14 @@ func constructorDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol, 
 	}
 }
 
+func (a *Analyzer) inferSemaArgTypeForCheck(arg string, scope map[string]string, model map[string]typeMembers) string {
+	typ := inferSemaArgTypeWithModel(arg, scope, model)
+	if typ != "" {
+		return typ
+	}
+	return ""
+}
+
 func (a *Analyzer) diagnoseMethodCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, callee string, candidates []resolvedMember, args []semaArg, haveArgs bool, receiverMode string, start, end int, source string, scope map[string]string, model map[string]typeMembers) []diagnostic.Diagnostic {
 	if len(candidates) == 0 {
 		return []diagnostic.Diagnostic{unknownCallDiagnostic(typ, member, callee, start, end, source)}
@@ -1897,7 +1926,7 @@ func (a *Analyzer) diagnoseMethodCall(typ typesys.TypeSymbol, member typesys.Mem
 	}
 	argTypes := make([]string, len(args))
 	for i, arg := range args {
-		argTypes[i] = inferSemaArgTypeWithModel(arg.text, scope, model)
+		argTypes[i] = a.inferSemaArgTypeForCheck(arg.text, scope, model)
 	}
 	if candidate, ok, ambiguous := bestResolvedMemberByArgTypes(candidates, argTypes, model); ok {
 		if staticDiagnostic, blocked := checkSemaStaticAccess(typ, member, callee, candidate, receiverMode, start, end, source); blocked {
@@ -2178,6 +2207,9 @@ func compareSemaTypeSpecificity(left, right string, model map[string]typeMembers
 
 func semaConversionScore(paramType, argType string, model map[string]typeMembers) int {
 	if argType == "" || strings.EqualFold(argType, "null") {
+		if strings.EqualFold(paramType, "String") {
+			return 2
+		}
 		return 1
 	}
 	if strings.EqualFold(paramType, argType) {
@@ -2692,10 +2724,17 @@ func semaChainedCallReceiver(body string, callStart int, scope map[string]string
 	for methodEnd < len(body) && isIdentifierByte(body[methodEnd]) {
 		methodEnd++
 	}
-	if methodEnd == methodStart || callStart < 3 || body[callStart-2] != ')' {
+	if methodEnd == methodStart {
 		return "", "", false
 	}
-	open := matchingOpenParenBefore(body, callStart-2)
+	beforeDot := callStart - 2
+	for beforeDot >= 0 && (body[beforeDot] == ' ' || body[beforeDot] == '\t' || body[beforeDot] == '\n' || body[beforeDot] == '\r') {
+		beforeDot--
+	}
+	if beforeDot < 0 || body[beforeDot] != ')' {
+		return "", "", false
+	}
+	open := matchingOpenParenBefore(body, beforeDot)
 	if open < 0 {
 		return "", "", false
 	}
@@ -2703,9 +2742,19 @@ func semaChainedCallReceiver(body string, callStart int, scope map[string]string
 	exprStart := semaExpressionStart(receiverExpr)
 	receiverExpr = strings.TrimSpace(receiverExpr[exprStart:])
 	receiverExpr = strings.TrimSpace(strings.TrimPrefix(receiverExpr, "return "))
+	for {
+		if _, inner, ok := splitSemaCast(receiverExpr); ok {
+			receiverExpr = strings.TrimSpace(inner)
+		} else {
+			break
+		}
+	}
 	receiverType := inferSemaArgTypeWithModel(receiverExpr, scope, model)
-	if receiverType == "" {
-		receiverType = strings.TrimPrefix(receiverExpr, "new ")
+	if receiverType == "" && strings.HasPrefix(receiverExpr, "new ") {
+		rest := strings.TrimPrefix(receiverExpr, "new ")
+		if paren := strings.IndexByte(rest, '('); paren > 0 {
+			receiverType = strings.TrimSpace(rest[:paren])
+		}
 	}
 	if receiverType == "" {
 		return "", "", false
@@ -2716,7 +2765,17 @@ func semaChainedCallReceiver(body string, callStart int, scope map[string]string
 func semaExpressionStart(expr string) int {
 	for i := len(expr) - 1; i >= 0; i-- {
 		switch expr[i] {
-		case ';', '{', '}', '\n':
+		case ';', '{', '}':
+			return i + 1
+		case '\n':
+			// Skip newlines that are part of multi-line method chains
+			j := i + 1
+			for j < len(expr) && (expr[j] == ' ' || expr[j] == '\t' || expr[j] == '\r') {
+				j++
+			}
+			if j < len(expr) && expr[j] == '.' {
+				continue
+			}
 			return i + 1
 		case '=':
 			if i == 0 || expr[i-1] != '!' && expr[i-1] != '=' && expr[i-1] != '<' && expr[i-1] != '>' {
@@ -2734,6 +2793,22 @@ func matchingOpenParenBefore(body string, close int) int {
 		case ')':
 			depth++
 		case '(':
+			depth--
+			if depth == 0 {
+				return i
+			}
+		}
+	}
+	return -1
+}
+
+func matchingCloseParen(body string, open int) int {
+	depth := 0
+	for i := open; i < len(body); i++ {
+		switch body[i] {
+		case '(':
+			depth++
+		case ')':
 			depth--
 			if depth == 0 {
 				return i
@@ -3217,8 +3292,11 @@ func isSemaConstructorCallAt(body string, start int) bool {
 	if len(prefix) < len("new") {
 		return false
 	}
-	before := strings.TrimRight(prefix[:len(prefix)-len("new")], " \t\r\n")
-	return strings.HasSuffix(prefix, "new") && (before == "" || !isSemaIdentifierChar(before[len(before)-1]))
+	if !strings.HasSuffix(prefix, "new") {
+		return false
+	}
+	beforeNew := len(prefix) - len("new")
+	return beforeNew == 0 || !isSemaIdentifierChar(prefix[beforeNew-1])
 }
 
 func isSemaIdentifierChar(ch byte) bool {
@@ -3227,7 +3305,10 @@ func isSemaIdentifierChar(ch byte) bool {
 
 func isSemaKeyword(text string) bool {
 	switch normalizeName(text) {
-	case "return", "throw", "if", "for", "while", "switch", "catch", "else", "do":
+	case "return", "throw", "if", "for", "while", "switch", "catch", "else", "do",
+		"insert", "update", "delete", "upsert", "undelete", "merge",
+		"select", "from", "where", "and", "or", "limit", "order", "group", "having", "offset",
+		"tracking", "viewstat", "using", "with", "rollup", "cube":
 		return true
 	default:
 		return false
@@ -3250,6 +3331,29 @@ func isSemaBuiltinType(typeName string) bool {
 	for _, known := range platformTypes {
 		if strings.EqualFold(typeName, known) {
 			return true
+		}
+	}
+	return false
+}
+
+func (a *Analyzer) isKnownPlatformType(name string) bool {
+	name = strings.TrimSpace(name)
+	if i := strings.IndexByte(name, '<'); i >= 0 {
+		name = name[:i]
+	}
+	if ref, ok := a.known[normalizeName(name)]; ok {
+		switch ref.Kind {
+		case TypePlatform, TypeBuiltin, TypeSchema:
+			return true
+		}
+	}
+	parts := strings.Split(name, ".")
+	if len(parts) > 1 {
+		if ref, ok := a.known[normalizeName(parts[0])]; ok {
+			switch ref.Kind {
+			case TypePlatform, TypeBuiltin, TypeSchema:
+				return true
+			}
 		}
 	}
 	return false
@@ -3313,6 +3417,7 @@ var platformTypes = []string{
 	"Account",
 	"AccessLevel",
 	"AggregateResult",
+	"AuraHandledException",
 	"ApexPages",
 	"ApexPages.Message",
 	"ApexPages.Severity",
@@ -3321,9 +3426,14 @@ var platformTypes = []string{
 	"AsyncApexJob",
 	"BatchApexErrorEvent",
 	"BrandTemplate",
+	"Asset",
 	"Cache",
 	"Cache.OrgPartition",
 	"Callable",
+	"Case",
+	"ChildRelationship",
+	"Contact",
+	"ContentDocument",
 	"System.Callable",
 	"Component",
 	"Component.Apex.Column",
@@ -3332,6 +3442,9 @@ var platformTypes = []string{
 	"Canvas",
 	"Canvas.EnvironmentContext",
 	"Continuation",
+	"ContentDocumentLink",
+	"ContentVersion",
+	"CronJobDetail",
 	"CronTrigger",
 	"Database",
 	"Database.DeleteResult",
@@ -3342,7 +3455,10 @@ var platformTypes = []string{
 	"Database.SaveResult",
 	"Database.UndeleteResult",
 	"Database.UpsertResult",
+	"DescribeFieldResult",
 	"DescribeSObjectResult",
+	"DmlException",
+	"DMLException",
 	"Dom",
 	"Dom.Document",
 	"Dom.XmlNode",
@@ -3352,9 +3468,12 @@ var platformTypes = []string{
 	"EventBus",
 	"FieldPermissions",
 	"FeatureManagement",
+	"Group",
 	"Http",
 	"HttpCalloutMock",
 	"HttpRequest",
+	"InstallContext",
+	"Iterator",
 	"JSON",
 	"JSONGenerator",
 	"JSONParser",
@@ -3362,13 +3481,18 @@ var platformTypes = []string{
 	"HTTPResponse",
 	"HttpResponse",
 	"Iterable",
+	"Lead",
 	"Matcher",
 	"Messaging",
 	"Messaging.MassEmailMessage",
 	"Messaging.SendEmailOptions",
 	"Messaging.SendEmailResult",
 	"Messaging.SingleEmailMessage",
+	"NoDataFoundException",
+	"Note",
+	"NullPointerException",
 	"ObjectPermissions",
+	"Opportunity",
 	"OrgWideEmailAddress",
 	"Organization",
 	"PageReference",
@@ -3376,13 +3500,17 @@ var platformTypes = []string{
 	"Pattern",
 	"PermissionSetAssignment",
 	"Profile",
-	"QuickAction",
+	"QueryException",
 	"Queueable",
+	"QueueableContext",
 	"RecentlyViewed",
+	"RecordType",
+	"RecordTypeInfo",
 	"RestRequest",
 	"RestResponse",
+	"Savepoint",
 	"Schedulable",
-	"SelectOption",
+	"SchedulableContext",
 	"Schema",
 	"Schema.ChildRelationship",
 	"Schema.DescribeSObjectResult",
@@ -3390,6 +3518,8 @@ var platformTypes = []string{
 	"Schema.RecordTypeInfo",
 	"Schema.SObjectField",
 	"Schema.SObjectType",
+	"SelectOption",
+	"SObjectException",
 	"SObjectField",
 	"SObjectType",
 	"StaticResource",
@@ -3398,10 +3528,14 @@ var platformTypes = []string{
 	"System",
 	"Test",
 	"TriggerOperation",
+	"TypeException",
+	"URL",
 	"User",
 	"UserInfo",
 	"UserLicense",
+	"Version",
 	"VisualEditor",
 	"VisualEditor.DataRow",
 	"VisualEditor.DynamicPickListRows",
+	"XmlStreamWriter",
 }

@@ -1,0 +1,29 @@
+{
+  "name": "frontend-malformed-diagnostic",
+  "evidence": [
+    {
+      "symbol": "malformed Apex diagnostics",
+      "kind": "parse",
+      "notes": "Malformed Apex should return parser diagnostics, not panic."
+    }
+  ],
+  "source": [
+    {
+      "path": "classes/Broken.cls",
+      "content": "public class Broken { public void run( {"
+    }
+  ],
+  "command": {
+    "kind": "parse",
+    "args": [
+      "classes/Broken.cls"
+    ]
+  },
+  "expected": {
+    "result": {
+      "diagnostics": 2,
+      "files": 1,
+      "ok": false
+    }
+  }
+}
