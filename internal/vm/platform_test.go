@@ -523,8 +523,9 @@ System.assertEquals('Detail', withDetail.getDetail());
 ApexPages.Message withoutDetail = new ApexPages.Message('INFO', 'Only summary');
 System.assertEquals('Only summary', withoutDetail.getDetail());
 ApexPages.addMessage(withDetail);
+ApexPages.addMessage(new ApexPages.message(ApexPages.Severity.Error, 'Lowercase constructor'));
 System.assert(ApexPages.hasMessages());
-System.assertEquals(1, ApexPages.getMessages().size());
+System.assertEquals(2, ApexPages.getMessages().size());
 `)
 	if err != nil {
 		t.Fatal(err)

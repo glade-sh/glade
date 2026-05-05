@@ -159,6 +159,17 @@ func runServerExampleProbes(root, projectPath string, fixture storage.Fixture, p
 	}
 	defer store.Close()
 	org := serverExampleBaseOrg(fixture)
+	p, err := project.Load(projectPath)
+	if err != nil {
+		return nil, err
+	}
+	loadedSchema, err := schema.LoadProject(p)
+	if err != nil {
+		return nil, err
+	}
+	org.Namespace = p.Namespace
+	applyServerExampleSchema(&org, loadedSchema)
+	ensureServerExampleLocalAccount(&org)
 	if err := storage.ApplyFixture(&org, fixture); err != nil {
 		return nil, err
 	}
@@ -195,7 +206,9 @@ func serverExampleHandler(org *storage.OrgState, store interface{ Save(storage.O
 	if err != nil {
 		return nil, err
 	}
+	org.Namespace = p.Namespace
 	applyServerExampleSchema(org, loadedSchema)
+	ensureServerExampleLocalAccount(org)
 	handler := server.NewWithStoreAndSource(org, store, source)
 	index := typesys.Build(p, loadedSchema)
 	handler.SetProjectIndex(index)
@@ -354,6 +367,39 @@ func serverExampleBaseOrg(fixture storage.Fixture) storage.OrgState {
 	}
 	storage.EnsureDeterministicPlatformData(&org)
 	return org
+}
+
+func ensureServerExampleLocalAccount(org *storage.OrgState) {
+	account := org.Objects["Account"]
+	if account.Records == nil {
+		account.Records = make(map[storage.ID]storage.Record)
+	}
+	id := storage.ID("001000000000001AAA")
+	if _, ok := account.Records[id]; ok {
+		org.Objects["Account"] = account
+		return
+	}
+	account.Records[id] = storage.Record{
+		ID:     id,
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name": storage.StringValue("Local Probe Account"),
+			serverExampleAccountFieldName(org, "PasswordSalt__c"): storage.StringValue("local-salt"),
+			serverExampleAccountFieldName(org, "PasswordHash__c"): storage.StringValue("local-hash"),
+		},
+	}
+	org.Objects["Account"] = account
+}
+
+func serverExampleAccountFieldName(org *storage.OrgState, field string) string {
+	account, ok := org.Objects["Account"]
+	if !ok {
+		return field
+	}
+	if resolved, ok := storage.ResolveFieldName(account.Definition, org.Namespace, field); ok {
+		return resolved
+	}
+	return field
 }
 
 func serverExampleProbes(routes []ServerExampleRestRoute, seeded bool) []serverExampleProbe {

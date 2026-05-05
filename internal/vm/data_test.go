@@ -40,6 +40,26 @@ System.assertEquals(0, empty.size());
 	}
 }
 
+func TestExecSOQLBindPlatformId(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account a = new Account(Name = 'Acme');
+insert a;
+Id accountId = a.Id;
+List<Account> rows = [SELECT Id, Name FROM Account WHERE Id = :accountId];
+System.assertEquals(1, rows.size());
+System.assertEquals('Acme', rows[0].Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSObjectFieldShape(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account a = new Account();

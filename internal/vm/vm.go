@@ -4355,7 +4355,7 @@ func soqlLiteral(value Value) string {
 		}
 		return "(" + strings.Join(items, ", ") + ")"
 	case ValueObject:
-		if value.Type == "Date" || value.Type == "Datetime" || value.Type == "Time" {
+		if value.Type == "Date" || value.Type == "Datetime" || value.Type == "Time" || value.Type == "Id" || value.Type == "String" {
 			if raw, ok := value.Fields["value"]; ok && raw.Kind == ValueString {
 				return "'" + strings.ReplaceAll(raw.Text, "'", "''") + "'"
 			}
@@ -7711,7 +7711,7 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 			rawURL = args[0].Text
 		}
 		return newPageReference(rawURL), nil
-	case "ApexPages.Message":
+	case "ApexPages.Message", "ApexPages.message":
 		if len(args) < 2 || len(args) > 3 {
 			return Null, fmt.Errorf("ApexPages.Message constructor expects severity, summary[, detail]")
 		}
