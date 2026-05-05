@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/open-aer/oaer/internal/apexast"
@@ -257,15 +258,12 @@ func RegisterProjectRuntime(machine *vm.VM, index typesys.Index) error {
 }
 
 // RegisterProjectRuntimeForRequest compiles project classes, methods, and
-// triggers for request-scoped server execution. Static initializers are skipped
-// so unsupported eager setup in unrelated project code does not prevent routing
-// to the selected entry point.
+// triggers for request-scoped server execution. The VM runs static initializers
+// lazily when a class is first used, matching request-scoped Apex behavior while
+// avoiding eager setup in unrelated project code.
 func RegisterProjectRuntimeForRequest(machine *vm.VM, index typesys.Index) error {
 	methods := compileProjectMethods(index)
 	classes := compileProjectClasses(index, methods)
-	for i := range classes {
-		classes[i].StaticInitializers = nil
-	}
 	triggers, _ := compileProjectTriggers(index)
 	return registerRuntime(machine, methods, classes, nil, triggers)
 }
@@ -322,7 +320,7 @@ func compileProjectClasses(index typesys.Index, methods map[string]vm.Method) []
 				if member.Kind == apexast.DeclarationProperty {
 					attachPropertyAccessors(&field, typ.Name, typ.File, member, source)
 				}
-				if value, ok := compileFieldInitializer(member.Type, member.Range, source); ok {
+				if value, ok := compileFieldInitializer(member.Type, member.Name, member.Range, source); ok {
 					field.Value = value
 					field.InitialValue = value
 				} else if initializer, ok := compileFieldInitializerMethod(typ.Name, field.Name, field.Static, typ.File, member.Range, source); ok {
@@ -727,8 +725,8 @@ func extractSourceRange(source string, r diagnostic.Range) (string, error) {
 	return source[start:end], nil
 }
 
-func compileFieldInitializer(typeName string, r diagnostic.Range, source string) (vm.Value, bool) {
-	expr, ok := fieldInitializerExpr(r, source)
+func compileFieldInitializer(typeName, fieldName string, r diagnostic.Range, source string) (vm.Value, bool) {
+	expr, ok := fieldInitializerExpr(fieldName, r, source)
 	if !ok {
 		return vm.Value{}, false
 	}
@@ -749,7 +747,7 @@ func compileFieldInitializer(typeName string, r diagnostic.Range, source string)
 }
 
 func compileFieldInitializerMethod(className, fieldName string, static bool, file string, r diagnostic.Range, source string) (vm.Method, bool) {
-	expr, ok := fieldInitializerExpr(r, source)
+	expr, ok := fieldInitializerExpr(fieldName, r, source)
 	if !ok || expr == "" {
 		return vm.Method{}, false
 	}
@@ -773,16 +771,18 @@ func compileFieldInitializerMethod(className, fieldName string, static bool, fil
 	}, true
 }
 
-func fieldInitializerExpr(r diagnostic.Range, source string) (string, bool) {
+func fieldInitializerExpr(fieldName string, r diagnostic.Range, source string) (string, bool) {
 	fieldSource, err := extractSourceRange(source, r)
 	if err != nil {
 		return "", false
 	}
-	eq := strings.IndexByte(fieldSource, '=')
-	if eq < 0 {
+	pattern := regexp.MustCompile(`\b` + regexp.QuoteMeta(fieldName) + `\b\s*=`)
+	matches := pattern.FindAllStringIndex(fieldSource, -1)
+	if len(matches) == 0 {
 		return "", false
 	}
-	expr := strings.TrimSpace(fieldSource[eq+1:])
+	eq := matches[len(matches)-1][1]
+	expr := strings.TrimSpace(fieldSource[eq:])
 	expr = strings.TrimRight(expr, ";,")
 	return strings.TrimSpace(expr), true
 }

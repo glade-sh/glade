@@ -82,9 +82,18 @@ type VM struct {
 	activeSetters    map[string]int
 	triggerGlobals   map[string]Value
 	cryptoRandomSeq  uint64
+	staticInitState  map[string]staticInitState
 }
 
 const maxTriggerDepth = 16
+
+type staticInitState uint8
+
+const (
+	staticInitUninitialized staticInitState = iota
+	staticInitRunning
+	staticInitDone
+)
 
 type Result struct {
 	Debug           []string         `json:"debug,omitempty"`
@@ -186,6 +195,7 @@ func New(stdout io.Writer) *VM {
 		savepointOrder:  make(map[string]int),
 		ctx:             context.Background(),
 		activeSetters:   make(map[string]int),
+		staticInitState: make(map[string]staticInitState),
 	}
 }
 
@@ -259,9 +269,13 @@ func (vm *VM) ResetStatics() error {
 		}
 		vm.Classes[className] = class
 	}
-	for _, class := range vm.Classes {
-		if err := vm.runStaticInitializers(class); err != nil {
-			return err
+	if vm.staticInitState == nil {
+		vm.staticInitState = make(map[string]staticInitState)
+	}
+	for name, class := range vm.Classes {
+		vm.staticInitState[name] = staticInitUninitialized
+		if class.Name != "" {
+			vm.staticInitState[class.Name] = staticInitUninitialized
 		}
 	}
 	return nil
@@ -1012,6 +1026,9 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			if err := vm.checkMemberAccess(method.ClassName, method.Access, method.Name, method.Modifiers); err != nil {
 				return Null, err
 			}
+			if err := vm.ensureClassInitialized(method.ClassName); err != nil {
+				return Null, err
+			}
 			if vm.shouldEnqueueFuture(method) {
 				return vm.enqueueFuture(method, args, result)
 			}
@@ -1021,6 +1038,9 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		}
 		if method, ok, ambiguous := vm.resolveStaticMethodForArgs(vm.currentClass, callee, args); ok {
 			if err := vm.checkMemberAccess(method.ClassName, method.Access, method.Name, method.Modifiers); err != nil {
+				return Null, err
+			}
+			if err := vm.ensureClassInitialized(method.ClassName); err != nil {
 				return Null, err
 			}
 			if vm.shouldEnqueueFuture(method) {
@@ -1033,6 +1053,9 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 	}
 	if method, ok, ambiguous := vm.matchRegisteredMethod(callee, args); ok {
 		if err := vm.checkMemberAccess(method.ClassName, method.Access, method.Name, method.Modifiers); err != nil {
+			return Null, err
+		}
+		if err := vm.ensureClassInitialized(method.ClassName); err != nil {
 			return Null, err
 		}
 		if vm.shouldEnqueueFuture(method) {
@@ -6947,6 +6970,10 @@ func (vm *VM) lookup(name string) (Value, error) {
 				if err := vm.checkMemberAccess(owner, field.Access, owner+"."+parts[0]); err != nil {
 					return Null, err
 				}
+				if err := vm.ensureClassInitialized(owner); err != nil {
+					return Null, err
+				}
+				field, _, _ = vm.lookupStaticField(owner, parts[0])
 				root := field.Value
 				if field.Getter != nil {
 					if field.Getter.Name == vm.currentMethod.Name {
@@ -6981,6 +7008,10 @@ func (vm *VM) lookup(name string) (Value, error) {
 				if err := vm.checkMemberAccess(owner, field.Access, owner+"."+memberName); err != nil {
 					return Null, err
 				}
+				if err := vm.ensureClassInitialized(owner); err != nil {
+					return Null, err
+				}
+				field, _, _ = vm.lookupStaticField(owner, memberName)
 				if field.Getter != nil {
 					if field.Getter.Name == vm.currentMethod.Name {
 						return field.Value, nil
@@ -6990,6 +7021,9 @@ func (vm *VM) lookup(name string) (Value, error) {
 				return field.Value, nil
 			}
 			if class, ok := vm.Classes[className]; ok {
+				if err := vm.ensureClassInitialized(className); err != nil {
+					return Null, err
+				}
 				for _, enumValue := range class.EnumValues {
 					if enumValue == memberName {
 						return Value{Kind: ValueObject, Type: class.Name, Text: memberName}, nil
@@ -7002,6 +7036,9 @@ func (vm *VM) lookup(name string) (Value, error) {
 				nestedCandidates := []string{nestedEnumName, memberName[:dot]}
 				for _, candidate := range nestedCandidates {
 					if class, ok := vm.Classes[candidate]; ok {
+						if err := vm.ensureClassInitialized(candidate); err != nil {
+							return Null, err
+						}
 						for _, enumValue := range class.EnumValues {
 							if enumValue == nestedMemberName {
 								return Value{Kind: ValueObject, Type: class.Name, Text: nestedMemberName}, nil
@@ -7039,6 +7076,10 @@ func (vm *VM) lookup(name string) (Value, error) {
 			if err := vm.checkMemberAccess(owner, field.Access, owner+"."+name); err != nil {
 				return Null, err
 			}
+			if err := vm.ensureClassInitialized(owner); err != nil {
+				return Null, err
+			}
+			field, _, _ = vm.lookupStaticField(owner, name)
 			if field.Getter != nil {
 				if field.Getter.Name == vm.currentMethod.Name {
 					return field.Value, nil
@@ -7273,6 +7314,10 @@ func (vm *VM) assign(name string, value Value) error {
 				if err := vm.checkMemberAccess(owner, field.Access, owner+"."+memberName); err != nil {
 					return err
 				}
+				if err := vm.ensureClassInitialized(owner); err != nil {
+					return err
+				}
+				field, _, _ = vm.lookupStaticField(owner, memberName)
 				coerced, err := vm.coerceAssignable(field.Type, value)
 				if err != nil {
 					return fmt.Errorf("%s.%s: %w", owner, memberName, err)
@@ -7346,6 +7391,10 @@ func (vm *VM) assign(name string, value Value) error {
 			if err := vm.checkMemberAccess(owner, field.Access, owner+"."+name); err != nil {
 				return err
 			}
+			if err := vm.ensureClassInitialized(owner); err != nil {
+				return err
+			}
+			field, _, _ = vm.lookupStaticField(owner, name)
 			coerced, err := vm.coerceAssignable(field.Type, value)
 			if err != nil {
 				return fmt.Errorf("%s.%s: %w", owner, name, err)
@@ -8023,6 +8072,10 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 		if len(class.EnumValues) > 0 {
 			return Null, fmt.Errorf("cannot instantiate enum %s", typeName)
 		}
+		if err := vm.ensureClassInitialized(class.Name); err != nil {
+			return Null, err
+		}
+		class = vm.Classes[typeName]
 		object := Object(typeName)
 		for field, value := range namedArgs {
 			object.Fields[field] = value
@@ -9538,6 +9591,11 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	if methodHasModifier(method.Modifiers, "abstract") {
 		return Null, fmt.Errorf("cannot execute abstract method %s", method.Name)
 	}
+	if method.ClassName != "" && !strings.Contains(method.Name, ".<static_") {
+		if err := vm.ensureClassInitialized(method.ClassName); err != nil {
+			return Null, err
+		}
+	}
 	frame := make(map[string]Value, len(method.Params))
 	frameTypes := make(map[string]string, len(method.Params))
 	for i, param := range method.Params {
@@ -9726,6 +9784,10 @@ func (vm *VM) callMember(callee string, args []Value, result *Result) (Value, bo
 				if err := vm.checkMemberAccess(owner, field.Access, owner+"."+receiverName); err != nil {
 					return Null, true, err
 				}
+				if err := vm.ensureClassInitialized(owner); err != nil {
+					return Null, true, err
+				}
+				field, _, _ = vm.lookupStaticField(owner, receiverName)
 				return vm.callValueMember(receiverName, field.Value, method, args, result)
 			}
 		}
@@ -10724,6 +10786,10 @@ func (vm *VM) callEnumStaticMember(typeName, method string, args []Value) (Value
 	if !ok || len(class.EnumValues) == 0 || method != "values" {
 		return Null, false, nil
 	}
+	if err := vm.ensureClassInitialized(typeName); err != nil {
+		return Null, true, err
+	}
+	class = vm.Classes[typeName]
 	if len(args) != 0 {
 		return Null, true, fmt.Errorf("%s.values expects 0 arguments", typeName)
 	}

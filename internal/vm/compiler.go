@@ -96,6 +96,31 @@ func lex(source string) ([]token, error) {
 					tokens = append(tokens, token{kind: tokenString, text: text.String(), pos: start})
 					goto next
 				}
+				if source[i] == '\\' && i+1 < len(source) {
+					switch source[i+1] {
+					case '\'':
+						if i+2 < len(source) && source[i+2] == '\'' {
+							text.WriteByte('\\')
+							text.WriteByte('\'')
+							i += 3
+							continue
+						}
+						text.WriteByte('\'')
+					case '\\':
+						text.WriteByte('\\')
+					case 'n':
+						text.WriteByte('\n')
+					case 'r':
+						text.WriteByte('\r')
+					case 't':
+						text.WriteByte('\t')
+					default:
+						text.WriteByte('\\')
+						text.WriteByte(source[i+1])
+					}
+					i += 2
+					continue
+				}
 				text.WriteByte(source[i])
 				i++
 			}

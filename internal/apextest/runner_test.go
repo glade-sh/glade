@@ -12,6 +12,7 @@ import (
 	oaerschema "github.com/open-aer/oaer/internal/schema"
 	"github.com/open-aer/oaer/internal/testreport"
 	"github.com/open-aer/oaer/internal/typesys"
+	"github.com/open-aer/oaer/internal/vm"
 )
 
 func TestRunExecutesAnonymousSubsetTestMethods(t *testing.T) {
@@ -1441,6 +1442,34 @@ private class ManyTest {
 	cases := Discover(loadTestIndex(t, root), Options{Filter: "second"})
 	if len(cases) != 1 || cases[0].MethodName != "second" {
 		t.Fatalf("cases = %#v", cases)
+	}
+}
+
+func TestProjectRuntimeCompilesStaticMapInitializerWithEscapedStrings(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/StaticMapProbe.cls"), `
+public class StaticMapProbe {
+  public static String lookup(String key) {
+    return Values.get(key);
+  }
+
+  private static final Map<String, String> Values = new Map<String, String>{
+    'US' => 'US',
+    'L\'ANDORRE' => 'AD'
+  };
+}
+`)
+	machine := vm.New(nil)
+	if err := RegisterProjectRuntimeForRequest(machine, loadTestIndex(t, root)); err != nil {
+		t.Fatal(err)
+	}
+	value, err := machine.CallStatic("StaticMapProbe.lookup", []vm.Value{vm.String("L'ANDORRE")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if value.Kind != vm.ValueString || value.Text != "AD" {
+		t.Fatalf("lookup = %#v, want AD", value)
 	}
 }
 

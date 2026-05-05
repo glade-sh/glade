@@ -139,7 +139,14 @@ func (vm *VM) RegisterClass(class Class) error {
 	if class.Namespace != "" && !strings.Contains(class.Name, ".") {
 		vm.Classes[class.Namespace+"."+class.Name] = class
 	}
-	return vm.runStaticInitializers(class)
+	if vm.staticInitState == nil {
+		vm.staticInitState = make(map[string]staticInitState)
+	}
+	vm.staticInitState[class.Name] = staticInitUninitialized
+	if class.Namespace != "" && !strings.Contains(class.Name, ".") {
+		vm.staticInitState[class.Namespace+"."+class.Name] = staticInitUninitialized
+	}
+	return nil
 }
 
 func orderedFieldNames(fields map[string]Field, order []string) []string {
@@ -174,6 +181,37 @@ func (vm *VM) runStaticInitializers(class Class) error {
 		if _, err := vm.callMethod(initializer, nil, &Result{}); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+func (vm *VM) ensureClassInitialized(className string) error {
+	class, ok := vm.Classes[className]
+	if !ok {
+		return nil
+	}
+	canonical := class.Name
+	if vm.staticInitState == nil {
+		vm.staticInitState = make(map[string]staticInitState)
+	}
+	switch vm.staticInitState[canonical] {
+	case staticInitDone, staticInitRunning:
+		return nil
+	}
+	vm.staticInitState[canonical] = staticInitRunning
+	if class.SuperClass != "" {
+		if err := vm.ensureClassInitialized(class.SuperClass); err != nil {
+			vm.staticInitState[canonical] = staticInitUninitialized
+			return err
+		}
+	}
+	if err := vm.runStaticInitializers(class); err != nil {
+		vm.staticInitState[canonical] = staticInitUninitialized
+		return err
+	}
+	vm.staticInitState[canonical] = staticInitDone
+	if class.Namespace != "" && !strings.Contains(class.Name, ".") {
+		vm.staticInitState[class.Namespace+"."+class.Name] = staticInitDone
 	}
 	return nil
 }
