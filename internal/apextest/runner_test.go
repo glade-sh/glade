@@ -192,6 +192,67 @@ private class CalculatorTest {
 	}
 }
 
+func TestRunDispatchesCreateStubToStubProvider(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/Greeter.cls"), `
+public class Greeter {
+  public String greet(String name) {
+    return 'real';
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/GreeterProvider.cls"), `
+private class GreeterProvider implements System.StubProvider {
+  public Object handleMethodCall(Object stubbedObject, String stubbedMethodName, Type returnType, List<Type> listOfParamTypes, List<String> listOfParamNames, List<Object> listOfArgs) {
+    System.assertEquals('greet', stubbedMethodName);
+    return 'stubbed';
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/GreeterTest.cls"), `
+@isTest
+private class GreeterTest {
+  @isTest static void routesThroughProvider() {
+    Greeter greeter = Test.createStub(Greeter.class, new GreeterProvider());
+    System.assertEquals('stubbed', greeter.greet('Ada'));
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v run=%#v", got, run)
+	}
+}
+
+func TestRunInvokesCallableImplementation(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/LocalCallable.cls"), `
+public class LocalCallable implements System.Callable {
+  public Object call(String action, Map<String, Object> args) {
+    return action;
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/LocalCallableTest.cls"), `
+@isTest
+private class LocalCallableTest {
+  @isTest static void invokesCallable() {
+    System.Callable callable = new LocalCallable();
+    System.assert(callable instanceof System.Callable);
+    System.assertEquals('go', callable.call('go', new Map<String, Object>()));
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v run=%#v", got, run)
+	}
+}
+
 func TestRunExecutesClassStateConstructorLoopsAndExceptions(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)

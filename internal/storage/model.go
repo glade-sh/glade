@@ -29,6 +29,7 @@ type ObjectDefinition struct {
 	Relations       []Relationship    `json:"relationships,omitempty"`
 	RecordTypes     []RecordTypeInfo  `json:"recordTypes,omitempty"`
 	ValidationRules []ValidationRule  `json:"validationRules,omitempty"`
+	WorkflowRules   []WorkflowRule    `json:"workflowRules,omitempty"`
 	Indexes         []IndexDefinition `json:"indexes,omitempty"`
 	Metadata        map[string]string `json:"metadata,omitempty"`
 }
@@ -71,6 +72,28 @@ type ValidationRule struct {
 	ErrorDisplayField     string `json:"errorDisplayField,omitempty"`
 }
 
+type WorkflowRule struct {
+	Name         string                 `json:"name"`
+	Active       bool                   `json:"active,omitempty"`
+	Formula      string                 `json:"formula,omitempty"`
+	Criteria     []WorkflowCriteriaItem `json:"criteria,omitempty"`
+	FieldUpdates []WorkflowFieldUpdate  `json:"fieldUpdates,omitempty"`
+}
+
+type WorkflowCriteriaItem struct {
+	Field     string `json:"field"`
+	Operation string `json:"operation,omitempty"`
+	Value     string `json:"value,omitempty"`
+}
+
+type WorkflowFieldUpdate struct {
+	Name         string `json:"name"`
+	Field        string `json:"field"`
+	LiteralValue string `json:"literalValue,omitempty"`
+	Formula      string `json:"formula,omitempty"`
+	SourceField  string `json:"sourceField,omitempty"`
+}
+
 type FieldType string
 
 const (
@@ -84,6 +107,7 @@ const (
 	FieldDateTime   FieldType = "datetime"
 	FieldPicklist   FieldType = "picklist"
 	FieldReference  FieldType = "reference"
+	FieldBlob       FieldType = "blob"
 	FieldAddress    FieldType = "address"
 	FieldLocation   FieldType = "location"
 	FieldCalculated FieldType = "calculated"
@@ -141,6 +165,7 @@ const (
 	ValueDate     ValueKind = "date"
 	ValueDateTime ValueKind = "datetime"
 	ValueID       ValueKind = "id"
+	ValueBlob     ValueKind = "blob"
 	ValueList     ValueKind = "list"
 )
 
@@ -174,6 +199,10 @@ func DateTimeValue(v string) Value {
 
 func IDValue(v ID) Value {
 	return Value{Kind: ValueID, ID: v}
+}
+
+func BlobValue(v string) Value {
+	return Value{Kind: ValueBlob, String: v}
 }
 
 func ListValue(values ...Value) Value {
@@ -364,6 +393,12 @@ func (d ObjectDefinition) Clone() ObjectDefinition {
 		out.Relations[i].ParentObjects = append([]string(nil), d.Relations[i].ParentObjects...)
 	}
 	out.RecordTypes = append([]RecordTypeInfo(nil), d.RecordTypes...)
+	out.ValidationRules = append([]ValidationRule(nil), d.ValidationRules...)
+	out.WorkflowRules = append([]WorkflowRule(nil), d.WorkflowRules...)
+	for i := range out.WorkflowRules {
+		out.WorkflowRules[i].Criteria = append([]WorkflowCriteriaItem(nil), d.WorkflowRules[i].Criteria...)
+		out.WorkflowRules[i].FieldUpdates = append([]WorkflowFieldUpdate(nil), d.WorkflowRules[i].FieldUpdates...)
+	}
 	out.Indexes = append([]IndexDefinition(nil), d.Indexes...)
 	for i := range out.Indexes {
 		out.Indexes[i].Fields = append([]string(nil), d.Indexes[i].Fields...)

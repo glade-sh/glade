@@ -387,6 +387,8 @@ func storageFieldType(raw string) storage.FieldType {
 		return storage.FieldReference
 	case "Id":
 		return storage.FieldID
+	case "Base64":
+		return storage.FieldBlob
 	case "Formula":
 		return storage.FieldCalculated
 	default:

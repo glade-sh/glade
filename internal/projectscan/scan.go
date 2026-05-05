@@ -332,7 +332,7 @@ func Scan(root string) (Report, error) {
 
 func shouldSkipDir(name string) bool {
 	switch name {
-	case ".git", ".sfdx", ".sf", "node_modules", ".idea", ".vscode":
+	case ".git", ".sfdx", ".sf", ".claude", "node_modules", ".idea", ".vscode":
 		return true
 	default:
 		return false

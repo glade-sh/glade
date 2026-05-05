@@ -222,7 +222,7 @@ simulating a browser.
 ## Post-Parity Local Test Gate
 
 - [ ] Add a post-parity capability area separate from the MVP parity gate.
-- [ ] Add `oaer compat post-parity` or an equivalent dashboard view that reports
+- [x] Add `oaer compat post-parity` or an equivalent dashboard view that reports
   local-test-impacting legacy UI, declarative automation, metadata, and platform
   namespace support.
 - [ ] Keep post-parity failures non-blocking for MVP release promotion, but
@@ -777,12 +777,12 @@ with fixtures and dashboards.
   - [ ] Named-credential/callout-heavy.
   - [ ] Email-template-heavy.
   - [ ] Files-and-attachments-heavy.
-- [ ] Add a post-parity readiness command that reports:
-  - [ ] Supported, partial, stub, unsupported, and unknown post-parity
+- [x] Add a post-parity readiness command that reports:
+  - [x] Supported, partial, stub, unsupported, and unknown post-parity
     capabilities.
-  - [ ] Affected files/classes/tests per gap.
-  - [ ] Suggested next capability to implement.
-  - [ ] Generated docs drift.
+  - [x] Affected files/classes/tests per gap.
+  - [x] Suggested next capability to implement.
+  - [x] Generated docs drift.
 - [ ] Add docs describing release language:
   - [ ] MVP-ready.
   - [ ] Apex-parity-ready.

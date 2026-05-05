@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/open-aer/oaer/internal/soql"
 	"github.com/open-aer/oaer/internal/storage"
 )
 
@@ -530,6 +531,90 @@ func TestValidationRules(t *testing.T) {
 	}
 }
 
+func TestWorkflowFieldUpdateCriteriaTrueFalseAndVisibleAfterDML(t *testing.T) {
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Status__c"] = storage.Field{APIName: "Status__c", Type: storage.FieldString}
+	account.Definition.WorkflowRules = []storage.WorkflowRule{{
+		Name:   "MarkActive",
+		Active: true,
+		Criteria: []storage.WorkflowCriteriaItem{{
+			Field:     "Name",
+			Operation: "equals",
+			Value:     "Acme",
+		}},
+		FieldUpdates: []storage.WorkflowFieldUpdate{{
+			Name:         "SetStatus",
+			Field:        "Status__c",
+			LiteralValue: "Active",
+		}},
+	}}
+	org.Objects["Account"] = account
+	engine := NewEngine(&org)
+
+	miss := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Other")},
+	}})
+	if !miss[0].Success {
+		t.Fatalf("miss insert = %#v", miss)
+	}
+	if _, ok := org.Objects["Account"].Records[miss[0].ID].Fields["Status__c"]; ok {
+		t.Fatalf("workflow should not update false criteria record: %#v", org.Objects["Account"].Records[miss[0].ID])
+	}
+
+	hit := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")},
+	}})
+	if !hit[0].Success {
+		t.Fatalf("hit insert = %#v", hit)
+	}
+	if got := org.Objects["Account"].Records[hit[0].ID].Fields["Status__c"].String; got != "Active" {
+		t.Fatalf("workflow status after insert = %q", got)
+	}
+
+	update := engine.Update([]storage.Record{{
+		ID:     miss[0].ID,
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")},
+	}})
+	if !update[0].Success {
+		t.Fatalf("update = %#v", update)
+	}
+	if got := org.Objects["Account"].Records[miss[0].ID].Fields["Status__c"].String; got != "Active" {
+		t.Fatalf("workflow status after update = %q", got)
+	}
+}
+
+func TestWorkflowFieldUpdateRollsBackOnFailure(t *testing.T) {
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.WorkflowRules = []storage.WorkflowRule{{
+		Name:    "BadUpdate",
+		Active:  true,
+		Formula: `Name = "Acme"`,
+		FieldUpdates: []storage.WorkflowFieldUpdate{{
+			Name:         "SetMissing",
+			Field:        "Missing__c",
+			LiteralValue: "bad",
+		}},
+	}}
+	org.Objects["Account"] = account
+	engine := NewEngine(&org)
+
+	result := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")},
+	}})
+	if result[0].Success || result[0].StatusCode != "INVALID_FIELD_FOR_INSERT_UPDATE" {
+		t.Fatalf("workflow failure = %#v", result)
+	}
+	if len(org.Objects["Account"].Records) != 0 {
+		t.Fatalf("workflow failure did not roll back insert: %#v", org.Objects["Account"].Records)
+	}
+}
+
 func TestMergeSoftDeletesDuplicateAndReparentsChildren(t *testing.T) {
 	org := testOrg()
 	org.Objects["Contact"] = storage.ObjectState{
@@ -676,4 +761,145 @@ func TestCustomMetadataDMLIsReadOnly(t *testing.T) {
 	if deleteResult[0].Success || deleteResult[0].StatusCode != "INVALID_TYPE" || !strings.Contains(deleteResult[0].Error, "read-only") {
 		t.Fatalf("delete = %#v", deleteResult[0])
 	}
+}
+
+func TestAttachmentBodyDMLAndSOQLRoundTrip(t *testing.T) {
+	org := fileTestOrg()
+	engine := NewEngine(&org)
+	account := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")},
+	}})
+	if !account[0].Success {
+		t.Fatalf("account insert = %#v", account)
+	}
+	attachment := engine.Insert([]storage.Record{{
+		Object: "Attachment",
+		Fields: map[string]storage.Value{
+			"Name":     storage.StringValue("note.txt"),
+			"ParentId": storage.IDValue(account[0].ID),
+			"Body":     storage.BlobValue("hello bytes"),
+		},
+	}})
+	if !attachment[0].Success || attachment[0].ID != "00P000000000001" {
+		t.Fatalf("attachment insert = %#v", attachment)
+	}
+	query, err := soql.Parse("SELECT Id, Name, ParentId, Body FROM Attachment WHERE Id = '" + string(attachment[0].ID) + "'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := soql.Execute(org, query)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Records) != 1 {
+		t.Fatalf("attachment query rows = %d", len(result.Records))
+	}
+	row := result.Records[0]
+	if row.Fields["ParentId"].ID != account[0].ID || row.Fields["Body"].Kind != storage.ValueBlob || row.Fields["Body"].String != "hello bytes" {
+		t.Fatalf("attachment row = %#v", row)
+	}
+}
+
+func TestContentVersionCreatesDocumentAndLinks(t *testing.T) {
+	org := fileTestOrg()
+	engine := NewEngine(&org)
+	account := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")},
+	}})
+	if !account[0].Success {
+		t.Fatalf("account insert = %#v", account)
+	}
+	first := engine.Insert([]storage.Record{{
+		Object: "ContentVersion",
+		Fields: map[string]storage.Value{
+			"Title":                  storage.StringValue("Spec"),
+			"PathOnClient":           storage.StringValue("docs/spec.pdf"),
+			"VersionData":            storage.BlobValue("pdf bytes"),
+			"FirstPublishLocationId": storage.IDValue(account[0].ID),
+		},
+	}})
+	if !first[0].Success || first[0].ID != "068000000000001" {
+		t.Fatalf("content version insert = %#v", first)
+	}
+	version := org.Objects["ContentVersion"].Records[first[0].ID]
+	documentID := version.Fields["ContentDocumentId"].ID
+	if documentID != "069000000000001" {
+		t.Fatalf("content document id = %s", documentID)
+	}
+	document := org.Objects["ContentDocument"].Records[documentID]
+	if document.Fields["LatestPublishedVersionId"].ID != first[0].ID || document.Fields["Title"].String != "Spec" || document.Fields["FileExtension"].String != "pdf" {
+		t.Fatalf("content document = %#v", document)
+	}
+	if got := len(org.Objects["ContentDocumentLink"].Records); got != 1 {
+		t.Fatalf("content document links = %d", got)
+	}
+	var autoLink storage.Record
+	for _, link := range org.Objects["ContentDocumentLink"].Records {
+		autoLink = link
+	}
+	if autoLink.Fields["ContentDocumentId"].ID != documentID || autoLink.Fields["LinkedEntityId"].ID != account[0].ID || autoLink.Fields["ShareType"].String != "V" {
+		t.Fatalf("auto link = %#v", autoLink)
+	}
+
+	second := engine.Insert([]storage.Record{{
+		Object: "ContentVersion",
+		Fields: map[string]storage.Value{
+			"Title":             storage.StringValue("Spec v2"),
+			"PathOnClient":      storage.StringValue("docs/spec-v2.pdf"),
+			"VersionData":       storage.BlobValue("second bytes"),
+			"ContentDocumentId": storage.IDValue(documentID),
+		},
+	}})
+	if !second[0].Success || second[0].ID != "068000000000002" {
+		t.Fatalf("second content version insert = %#v", second)
+	}
+	if got := len(org.Objects["ContentDocument"].Records); got != 1 {
+		t.Fatalf("content documents = %d", got)
+	}
+	document = org.Objects["ContentDocument"].Records[documentID]
+	if document.Fields["LatestPublishedVersionId"].ID != second[0].ID || document.Fields["Title"].String != "Spec v2" {
+		t.Fatalf("updated content document = %#v", document)
+	}
+	explicitLink := engine.Insert([]storage.Record{{
+		Object: "ContentDocumentLink",
+		Fields: map[string]storage.Value{
+			"ContentDocumentId": storage.IDValue(documentID),
+			"LinkedEntityId":    storage.IDValue(account[0].ID),
+			"ShareType":         storage.StringValue("C"),
+			"Visibility":        storage.StringValue("InternalUsers"),
+		},
+	}})
+	if !explicitLink[0].Success || explicitLink[0].ID != "06A000000000002" {
+		t.Fatalf("explicit link insert = %#v", explicitLink)
+	}
+}
+
+func TestContentVersionRejectsMissingContentDocument(t *testing.T) {
+	org := fileTestOrg()
+	engine := NewEngine(&org)
+	result := engine.Insert([]storage.Record{{
+		Object: "ContentVersion",
+		Fields: map[string]storage.Value{
+			"Title":             storage.StringValue("Spec"),
+			"VersionData":       storage.BlobValue("bytes"),
+			"ContentDocumentId": storage.IDValue("069000000000999"),
+		},
+	}})
+	if result[0].Success || result[0].StatusCode != "FIELD_INTEGRITY_EXCEPTION" {
+		t.Fatalf("content version insert = %#v", result)
+	}
+	if len(org.Objects["ContentVersion"].Records) != 0 {
+		t.Fatalf("content version was stored after failed insert: %#v", org.Objects["ContentVersion"].Records)
+	}
+	if _, exists := org.Objects["ContentDocument"].Records["069000000000999"]; exists {
+		t.Fatalf("missing content document was created")
+	}
+}
+
+func fileTestOrg() storage.OrgState {
+	org := testOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	return org
 }

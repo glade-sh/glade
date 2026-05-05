@@ -48,6 +48,11 @@ import ACCOUNT_NAME from '@salesforce/schema/Account.Name';
     Community__mdt cfg;
   }
 }`)
+	writeFile(t, filepath.Join(root, ".claude/worktrees/noisy/src/classes/Generated.cls"), `public class Generated {
+  void run() {
+    System.debug(Label.Generated);
+  }
+}`)
 
 	report, err := Scan(root)
 	if err != nil {
@@ -96,6 +101,11 @@ import ACCOUNT_NAME from '@salesforce/schema/Account.Name';
 	}
 	if !hasLineFindingContaining(report, "staticresources.urlfor", "src/pages/Edit.page", "$Resource.Resources") {
 		t.Fatalf("missing Visualforce resource finding")
+	}
+	for _, finding := range report.Findings {
+		if strings.Contains(finding.File, ".claude/") {
+			t.Fatalf("scanner included generated agent worktree file: %#v", finding)
+		}
 	}
 }
 

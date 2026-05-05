@@ -17,6 +17,7 @@ import (
 	"github.com/open-aer/oaer/internal/apexast"
 	"github.com/open-aer/oaer/internal/apexdocs"
 	"github.com/open-aer/oaer/internal/apextest"
+	"github.com/open-aer/oaer/internal/automation"
 	"github.com/open-aer/oaer/internal/capability"
 	"github.com/open-aer/oaer/internal/compat"
 	"github.com/open-aer/oaer/internal/config"
@@ -1184,6 +1185,11 @@ func orgForProject(root string) (storage.OrgState, error) {
 			Records:    make(map[storage.ID]storage.Record),
 		}
 	}
+	if p, err := project.Load(root); err == nil {
+		if automationIndex, err := automation.LoadProject(p); err == nil {
+			automation.ApplyToOrg(&org, automationIndex)
+		}
+	}
 	storage.EnsureDeterministicPlatformData(&org)
 	return org, nil
 }
@@ -1281,11 +1287,13 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 		return err
 	}
 	if len(args) == 0 {
-		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | product-namespaces --catalog <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]")
+		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | product-namespaces --catalog <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]")
 	}
 	switch args[0] {
 	case "matrix", "mvp":
 		return runCompatCapabilities(args[1:], w)
+	case "post-parity":
+		return runCompatPostParity(args[1:], w)
 	case "dashboard":
 		return runCompatDashboard(args[1:], w)
 	case "gaps":
@@ -1305,7 +1313,7 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 			return errors.New("usage: oaer compat validate|run <fixture.json...>")
 		}
 	default:
-		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | product-namespaces --catalog <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]")
+		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | product-namespaces --catalog <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]")
 	}
 
 	for _, path := range args[1:] {
@@ -1327,6 +1335,346 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 		fmt.Fprintf(w, "%s: ok\n", path)
 	}
 	return nil
+}
+
+type postParityReadiness struct {
+	Target       string                   `json:"target"`
+	Ready        bool                     `json:"ready"`
+	Project      string                   `json:"project"`
+	Summary      projectscan.Summary      `json:"summary"`
+	StageCounts  []postParityCount        `json:"stageCounts"`
+	StatusCounts []postParityCount        `json:"statusCounts"`
+	Areas        []postParityArea         `json:"areas"`
+	Surfaces     []projectscan.Surface    `json:"surfaces"`
+	TopBlockers  []projectscan.TopBlocker `json:"topBlockers"`
+}
+
+type postParityCount struct {
+	Name  string `json:"name"`
+	Count int    `json:"count"`
+}
+
+type postParityArea struct {
+	Area     string                `json:"area"`
+	Surfaces []projectscan.Surface `json:"surfaces"`
+}
+
+func runCompatPostParity(args []string, w io.Writer) error {
+	root := "."
+	jsonOut := false
+	requireReady := false
+	outputPath := ""
+	checkPath := ""
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--json":
+			jsonOut = true
+		case "--require-ready":
+			requireReady = true
+		case "--output":
+			if i+1 >= len(args) {
+				return errors.New("usage: oaer compat post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready]")
+			}
+			outputPath = args[i+1]
+			i++
+		case "--check":
+			if i+1 >= len(args) {
+				return errors.New("usage: oaer compat post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready]")
+			}
+			checkPath = args[i+1]
+			i++
+		case "--project":
+			if i+1 >= len(args) {
+				return errors.New("--project requires a value")
+			}
+			root = args[i+1]
+			i++
+		default:
+			return fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	requested := 0
+	for _, set := range []bool{jsonOut, outputPath != "", checkPath != ""} {
+		if set {
+			requested++
+		}
+	}
+	if requested > 1 {
+		return errors.New("use only one of --json, --output, or --check")
+	}
+
+	report, err := projectscan.Scan(root)
+	if err != nil {
+		return err
+	}
+	readiness := postParityReadiness{
+		Target:       "legacy-project local test readiness",
+		Ready:        report.Summary.TestBlockingFindings == 0,
+		Project:      report.Project,
+		Summary:      report.Summary,
+		StageCounts:  countPostParitySurfaceField(report.Surfaces, func(surface projectscan.Surface) string { return surface.Stage }, nil),
+		StatusCounts: countPostParitySurfaceField(report.Surfaces, func(surface projectscan.Surface) string { return surface.Status }, []string{"supported", "partial", "stub", "unsupported", "unknown"}),
+		Areas:        groupPostParitySurfacesByArea(report.Surfaces),
+		Surfaces:     report.Surfaces,
+		TopBlockers:  report.TopBlockers,
+	}
+	switch {
+	case jsonOut:
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		if err := enc.Encode(readiness); err != nil {
+			return err
+		}
+	case outputPath != "":
+		var buf strings.Builder
+		if err := writePostParityReadinessMarkdown(&buf, readiness); err != nil {
+			return err
+		}
+		if err := os.WriteFile(outputPath, []byte(buf.String()), 0o644); err != nil {
+			return err
+		}
+	case checkPath != "":
+		var buf strings.Builder
+		if err := writePostParityReadinessMarkdown(&buf, readiness); err != nil {
+			return err
+		}
+		existing, err := os.ReadFile(checkPath)
+		if err != nil {
+			return err
+		}
+		if string(existing) != buf.String() {
+			return fmt.Errorf("post-parity readiness drift: run `oaer compat post-parity --project %s --output %s`", root, checkPath)
+		}
+		fmt.Fprintf(w, "%s: up to date\n", checkPath)
+	default:
+		writePostParityReadinessText(w, readiness)
+	}
+	if requireReady && !readiness.Ready {
+		return fmt.Errorf("post-parity readiness gate failed: %d test-blocking findings", readiness.Summary.TestBlockingFindings)
+	}
+	return nil
+}
+
+func countPostParitySurfaceField(surfaces []projectscan.Surface, value func(projectscan.Surface) string, seed []string) []postParityCount {
+	counts := map[string]int{}
+	for _, name := range seed {
+		counts[name] = 0
+	}
+	for _, surface := range surfaces {
+		name := value(surface)
+		if name == "" {
+			name = "unknown"
+		}
+		counts[name]++
+	}
+	seen := map[string]struct{}{}
+	names := make([]string, 0, len(counts))
+	for _, name := range seed {
+		if _, ok := seen[name]; ok {
+			continue
+		}
+		if _, ok := counts[name]; ok {
+			names = append(names, name)
+			seen[name] = struct{}{}
+		}
+	}
+	extras := make([]string, 0, len(counts))
+	for name := range counts {
+		if _, ok := seen[name]; ok {
+			continue
+		}
+		extras = append(extras, name)
+	}
+	sort.Strings(extras)
+	names = append(names, extras...)
+	out := make([]postParityCount, 0, len(names))
+	for _, name := range names {
+		out = append(out, postParityCount{Name: name, Count: counts[name]})
+	}
+	return out
+}
+
+func groupPostParitySurfacesByArea(surfaces []projectscan.Surface) []postParityArea {
+	grouped := map[string][]projectscan.Surface{}
+	for _, surface := range surfaces {
+		area := surface.Area
+		if area == "" {
+			area = "unknown"
+		}
+		grouped[area] = append(grouped[area], surface)
+	}
+	areas := make([]string, 0, len(grouped))
+	for area := range grouped {
+		areas = append(areas, area)
+	}
+	sort.Strings(areas)
+	out := make([]postParityArea, 0, len(areas))
+	for _, area := range areas {
+		surfaces := grouped[area]
+		sort.Slice(surfaces, func(i, j int) bool {
+			return surfaces[i].Capability < surfaces[j].Capability
+		})
+		out = append(out, postParityArea{Area: area, Surfaces: surfaces})
+	}
+	return out
+}
+
+func writePostParityReadinessText(w io.Writer, readiness postParityReadiness) {
+	status := "ready"
+	if !readiness.Ready {
+		status = "not ready"
+	}
+	fmt.Fprintf(w, "Post-parity readiness: %s\n", status)
+	fmt.Fprintf(w, "Target: %s\n", readiness.Target)
+	fmt.Fprintf(w, "Project: %s\n", readiness.Project)
+	fmt.Fprintf(w, "Files scanned: %d\n", readiness.Summary.FilesScanned)
+	fmt.Fprintf(w, "Surfaces: %d\n", readiness.Summary.Surfaces)
+	fmt.Fprintf(w, "Findings: %d\n", readiness.Summary.Findings)
+	fmt.Fprintf(w, "Test-blocking findings: %d\n", readiness.Summary.TestBlockingFindings)
+	writePostParityCountsText(w, "Status counts", readiness.StatusCounts)
+	writePostParityCountsText(w, "Stage counts", readiness.StageCounts)
+	if len(readiness.TopBlockers) > 0 {
+		fmt.Fprintln(w, "Top blockers:")
+		for _, blocker := range readiness.TopBlockers {
+			fmt.Fprintf(w, "- %s: %d findings across %d files\n", blocker.Capability, blocker.Count, blocker.AffectedFiles)
+		}
+	}
+	if len(readiness.Areas) > 0 {
+		fmt.Fprintln(w, "Surfaces by area:")
+		for _, area := range readiness.Areas {
+			fmt.Fprintf(w, "- %s:\n", area.Area)
+			for _, surface := range area.Surfaces {
+				fmt.Fprintf(w, "  - %s [%s/%s]: %d findings across %d files; next %s\n", surface.Capability, surface.Stage, surface.Status, surface.Count, surface.AffectedFiles, surface.SuggestedCapability)
+			}
+		}
+	}
+}
+
+func writePostParityCountsText(w io.Writer, title string, counts []postParityCount) {
+	if len(counts) == 0 {
+		return
+	}
+	fmt.Fprintf(w, "%s:\n", title)
+	for _, count := range counts {
+		fmt.Fprintf(w, "- %s: %d\n", count.Name, count.Count)
+	}
+}
+
+func writePostParityReadinessMarkdown(w io.Writer, readiness postParityReadiness) error {
+	status := "ready"
+	if !readiness.Ready {
+		status = "not ready"
+	}
+	if _, err := fmt.Fprintf(w, "# Post-Parity Readiness\n\n"); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(w, "Post-parity readiness is **%s** for `%s`.\n\n", status, readiness.Project); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprint(w, "This dashboard is separate from the MVP readiness gate. Scanner discovery does not promote a surface to supported without explicit status plumbing and tests.\n\n"); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprint(w, "## Summary\n\n"); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(w, "| Metric | Count |"); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(w, "| --- | ---: |"); err != nil {
+		return err
+	}
+	rows := []struct {
+		label string
+		count int
+	}{
+		{"Files scanned", readiness.Summary.FilesScanned},
+		{"Detected surfaces", readiness.Summary.Surfaces},
+		{"Findings", readiness.Summary.Findings},
+		{"Test-blocking findings", readiness.Summary.TestBlockingFindings},
+	}
+	for _, row := range rows {
+		if _, err := fmt.Fprintf(w, "| %s | %d |\n", row.label, row.count); err != nil {
+			return err
+		}
+	}
+	if _, err := fmt.Fprintln(w); err != nil {
+		return err
+	}
+	if err := writePostParityCountsMarkdown(w, "Status Counts", readiness.StatusCounts); err != nil {
+		return err
+	}
+	if err := writePostParityCountsMarkdown(w, "Stage Counts", readiness.StageCounts); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprint(w, "## Top Blockers\n\n"); err != nil {
+		return err
+	}
+	if len(readiness.TopBlockers) == 0 {
+		if _, err := fmt.Fprint(w, "No test-blocking post-parity findings were detected.\n\n"); err != nil {
+			return err
+		}
+	} else {
+		if _, err := fmt.Fprintln(w, "| Capability | Title | Findings | Files |"); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintln(w, "| --- | --- | ---: | ---: |"); err != nil {
+			return err
+		}
+		for _, blocker := range readiness.TopBlockers {
+			if _, err := fmt.Fprintf(w, "| `%s` | %s | %d | %d |\n", blocker.Capability, blocker.Title, blocker.Count, blocker.AffectedFiles); err != nil {
+				return err
+			}
+		}
+		if _, err := fmt.Fprintln(w); err != nil {
+			return err
+		}
+	}
+	if _, err := fmt.Fprint(w, "## Surfaces By Area\n\n"); err != nil {
+		return err
+	}
+	if len(readiness.Areas) == 0 {
+		_, err := fmt.Fprint(w, "No post-parity surfaces were detected.\n\n")
+		return err
+	}
+	for _, area := range readiness.Areas {
+		if _, err := fmt.Fprintf(w, "### %s\n\n", area.Area); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintln(w, "| Capability | Stage | Status | Findings | Files | Suggested next capability |"); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintln(w, "| --- | --- | --- | ---: | ---: | --- |"); err != nil {
+			return err
+		}
+		for _, surface := range area.Surfaces {
+			if _, err := fmt.Fprintf(w, "| `%s` | %s | %s | %d | %d | `%s` |\n", surface.Capability, surface.Stage, surface.Status, surface.Count, surface.AffectedFiles, surface.SuggestedCapability); err != nil {
+				return err
+			}
+		}
+		if _, err := fmt.Fprintln(w); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func writePostParityCountsMarkdown(w io.Writer, title string, counts []postParityCount) error {
+	if _, err := fmt.Fprintf(w, "## %s\n\n", title); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(w, "| Name | Count |"); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(w, "| --- | ---: |"); err != nil {
+		return err
+	}
+	for _, count := range counts {
+		if _, err := fmt.Fprintf(w, "| %s | %d |\n", count.Name, count.Count); err != nil {
+			return err
+		}
+	}
+	_, err := fmt.Fprintln(w)
+	return err
 }
 
 func runCompatCapabilities(args []string, w io.Writer) error {

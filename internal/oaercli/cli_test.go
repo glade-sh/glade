@@ -91,6 +91,102 @@ func TestRunCompatMatrixJSON(t *testing.T) {
 	}
 }
 
+func TestRunCompatPostParity(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "src/pages/Edit.page"), `<apex:page controller="EditController">{!$Label.EditTitle}</apex:page>`)
+	writeTestFile(t, filepath.Join(root, "src/classes/UsesPlatform.cls"), `public class UsesPlatform {
+  void run() {
+    PageReference p = Page.Edit;
+    System.debug(Label.Save);
+  }
+}`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "post-parity", "--project", root}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "Post-parity readiness: not ready") || !strings.Contains(stdout.String(), "Status counts:") || !strings.Contains(stdout.String(), "Surfaces by area:") || !strings.Contains(stdout.String(), "visualforce.controller-test") || !strings.Contains(stdout.String(), "labels.localization") {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
+func TestRunCompatPostParityJSON(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "src/lwc/menu/menu.js"), `import label from '@salesforce/label/c.Save';`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "post-parity", "--project", root, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	for _, want := range []string{
+		`"target": "legacy-project local test readiness"`,
+		`"ready": false`,
+		`"capability": "labels.localization"`,
+		`"statusCounts"`,
+		`"areas"`,
+	} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("stdout missing %q: %q", want, stdout.String())
+		}
+	}
+}
+
+func TestRunCompatPostParityRequireReadyFails(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "src/classes/UsesLabels.cls"), `public class UsesLabels { void run() { System.debug(Label.Save); } }`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "post-parity", "--project", root, "--require-ready"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("exit code = %d, want 1", code)
+	}
+	if !strings.Contains(stdout.String(), "Post-parity readiness: not ready") {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+	if !strings.Contains(stderr.String(), "post-parity readiness gate failed") {
+		t.Fatalf("stderr = %q", stderr.String())
+	}
+}
+
+func TestRunCompatPostParityMarkdownOutputAndCheck(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "src/pages/Edit.page"), `<apex:page controller="EditController">{!$Label.EditTitle}</apex:page>`)
+	path := filepath.Join(t.TempDir(), "post-parity.md")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "post-parity", "--project", root, "--output", path}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("output exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	content, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{
+		"# Post-Parity Readiness",
+		"## Status Counts",
+		"## Top Blockers",
+		"## Surfaces By Area",
+		"`visualforce.controller-test`",
+	} {
+		if !strings.Contains(string(content), want) {
+			t.Fatalf("post-parity markdown missing %q: %q", want, string(content))
+		}
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "post-parity", "--project", root, "--check", path}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("check exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "up to date") {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
 func TestRunCompatDashboard(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"compat", "dashboard"}, &stdout, &stderr)

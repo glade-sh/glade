@@ -1361,7 +1361,7 @@ func equalValues(left, right storage.Value) bool {
 	switch left.Kind {
 	case storage.ValueNull:
 		return true
-	case storage.ValueString, storage.ValueDate, storage.ValueDateTime:
+	case storage.ValueString, storage.ValueDate, storage.ValueDateTime, storage.ValueBlob:
 		return left.String == right.String
 	case storage.ValueInteger:
 		return left.Integer == right.Integer
@@ -1402,7 +1402,7 @@ func compareValues(left, right storage.Value) int {
 		return strings.Compare(string(left.Kind), string(right.Kind))
 	}
 	switch left.Kind {
-	case storage.ValueString, storage.ValueDate, storage.ValueDateTime:
+	case storage.ValueString, storage.ValueDate, storage.ValueDateTime, storage.ValueBlob:
 		return strings.Compare(left.String, right.String)
 	case storage.ValueInteger:
 		if left.Integer < right.Integer {
@@ -1528,7 +1528,7 @@ func decimalString(value *big.Rat) string {
 
 func valueKey(value storage.Value) string {
 	switch value.Kind {
-	case storage.ValueString, storage.ValueDate, storage.ValueDateTime, storage.ValueDecimal:
+	case storage.ValueString, storage.ValueDate, storage.ValueDateTime, storage.ValueDecimal, storage.ValueBlob:
 		return string(value.Kind) + ":" + value.String
 	case storage.ValueInteger:
 		return string(value.Kind) + ":" + strconv.FormatInt(value.Integer, 10)

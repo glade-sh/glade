@@ -313,6 +313,33 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		"IsActive":      {APIName: "IsActive", Type: FieldBoolean},
 		"Description":   {APIName: "Description", Type: FieldString},
 	})
+	ensureObject(org, "Attachment", "00P", map[string]Field{
+		"Name":        {APIName: "Name", Type: FieldString, Required: true},
+		"ParentId":    {APIName: "ParentId", Type: FieldReference, ReferenceTo: []string{"Account", "Contact", "Opportunity", "User"}, RelationshipName: "Parent"},
+		"Body":        {APIName: "Body", Type: FieldBlob},
+		"ContentType": {APIName: "ContentType", Type: FieldString},
+		"Description": {APIName: "Description", Type: FieldString},
+	})
+	ensureObject(org, "ContentDocument", "069", map[string]Field{
+		"Title":                    {APIName: "Title", Type: FieldString},
+		"LatestPublishedVersionId": {APIName: "LatestPublishedVersionId", Type: FieldReference, ReferenceTo: []string{"ContentVersion"}, RelationshipName: "LatestPublishedVersion"},
+		"FileType":                 {APIName: "FileType", Type: FieldString},
+		"FileExtension":            {APIName: "FileExtension", Type: FieldString},
+	})
+	ensureObject(org, "ContentVersion", "068", map[string]Field{
+		"Title":                  {APIName: "Title", Type: FieldString, Required: true},
+		"PathOnClient":           {APIName: "PathOnClient", Type: FieldString},
+		"VersionData":            {APIName: "VersionData", Type: FieldBlob, Required: true},
+		"ContentDocumentId":      {APIName: "ContentDocumentId", Type: FieldReference, ReferenceTo: []string{"ContentDocument"}, RelationshipName: "ContentDocument"},
+		"FirstPublishLocationId": {APIName: "FirstPublishLocationId", Type: FieldReference, ReferenceTo: []string{"Account", "Contact", "Opportunity", "User"}, RelationshipName: "FirstPublishLocation"},
+		"IsLatest":               {APIName: "IsLatest", Type: FieldBoolean},
+	})
+	ensureObject(org, "ContentDocumentLink", "06A", map[string]Field{
+		"ContentDocumentId": {APIName: "ContentDocumentId", Type: FieldReference, ReferenceTo: []string{"ContentDocument"}, RelationshipName: "ContentDocument", Required: true},
+		"LinkedEntityId":    {APIName: "LinkedEntityId", Type: FieldReference, ReferenceTo: []string{"Account", "Contact", "Opportunity", "User"}, RelationshipName: "LinkedEntity", Required: true},
+		"ShareType":         {APIName: "ShareType", Type: FieldString},
+		"Visibility":        {APIName: "Visibility", Type: FieldString},
+	})
 	orgID := ID("00D000000000001")
 	profileID := ID("00e000000000001")
 	roleID := ID("00E000000000001")

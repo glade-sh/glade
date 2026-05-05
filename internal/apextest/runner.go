@@ -8,7 +8,9 @@ import (
 	"strings"
 
 	"github.com/open-aer/oaer/internal/apexast"
+	"github.com/open-aer/oaer/internal/automation"
 	"github.com/open-aer/oaer/internal/diagnostic"
+	"github.com/open-aer/oaer/internal/project"
 	"github.com/open-aer/oaer/internal/schema"
 	"github.com/open-aer/oaer/internal/sobject"
 	"github.com/open-aer/oaer/internal/storage"
@@ -493,6 +495,13 @@ func orgFromIndex(index typesys.Index) storage.OrgState {
 		org.Objects[name] = storage.ObjectState{
 			Definition: sobject.ToObjectDefinition(describe),
 			Records:    make(map[storage.ID]storage.Record),
+		}
+	}
+	if index.Project.Root != "" {
+		if p, err := project.Load(index.Project.Root); err == nil {
+			if automationIndex, err := automation.LoadProject(p); err == nil {
+				automation.ApplyToOrg(&org, automationIndex)
+			}
 		}
 	}
 	return org

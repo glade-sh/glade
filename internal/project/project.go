@@ -10,15 +10,26 @@ import (
 )
 
 type Project struct {
-	Root                string             `json:"root"`
-	Namespace           string             `json:"namespace,omitempty"`
-	SourceAPIVersion    string             `json:"sourceApiVersion,omitempty"`
-	PackageDirectories  []PackageDirectory `json:"packageDirectories"`
-	ApexFiles           []string           `json:"apexFiles"`
-	ObjectFiles         []string           `json:"objectFiles"`
-	FieldFiles          []string           `json:"fieldFiles"`
-	RecordTypeFiles     []string           `json:"recordTypeFiles"`
-	ValidationRuleFiles []string           `json:"validationRuleFiles"`
+	Root                      string             `json:"root"`
+	Namespace                 string             `json:"namespace,omitempty"`
+	SourceAPIVersion          string             `json:"sourceApiVersion,omitempty"`
+	PackageDirectories        []PackageDirectory `json:"packageDirectories"`
+	ApexFiles                 []string           `json:"apexFiles"`
+	ObjectFiles               []string           `json:"objectFiles"`
+	FieldFiles                []string           `json:"fieldFiles"`
+	RecordTypeFiles           []string           `json:"recordTypeFiles"`
+	ValidationRuleFiles       []string           `json:"validationRuleFiles"`
+	LabelFiles                []string           `json:"labelFiles"`
+	StaticResourceFiles       []string           `json:"staticResourceFiles"`
+	StaticResourceMetas       []string           `json:"staticResourceMetas"`
+	NamedCredentialFiles      []string           `json:"namedCredentialFiles"`
+	RemoteSiteFiles           []string           `json:"remoteSiteFiles"`
+	CustomMetadataFiles       []string           `json:"customMetadataFiles"`
+	WorkflowFiles             []string           `json:"workflowFiles"`
+	VisualforcePageFiles      []string           `json:"visualforcePageFiles"`
+	VisualforceComponentFiles []string           `json:"visualforceComponentFiles"`
+	AuraFiles                 []string           `json:"auraFiles"`
+	LWCFiles                  []string           `json:"lwcFiles"`
 }
 
 type PackageDirectory struct {
@@ -71,6 +82,17 @@ func Load(root string) (Project, error) {
 	sort.Strings(p.FieldFiles)
 	sort.Strings(p.RecordTypeFiles)
 	sort.Strings(p.ValidationRuleFiles)
+	sort.Strings(p.LabelFiles)
+	sort.Strings(p.StaticResourceFiles)
+	sort.Strings(p.StaticResourceMetas)
+	sort.Strings(p.NamedCredentialFiles)
+	sort.Strings(p.RemoteSiteFiles)
+	sort.Strings(p.CustomMetadataFiles)
+	sort.Strings(p.WorkflowFiles)
+	sort.Strings(p.VisualforcePageFiles)
+	sort.Strings(p.VisualforceComponentFiles)
+	sort.Strings(p.AuraFiles)
+	sort.Strings(p.LWCFiles)
 	return p, nil
 }
 
@@ -112,7 +134,51 @@ func collectFiles(root string, p *Project) error {
 			p.RecordTypeFiles = append(p.RecordTypeFiles, path)
 		case strings.HasSuffix(lower, ".validationrule-meta.xml"):
 			p.ValidationRuleFiles = append(p.ValidationRuleFiles, path)
+		case strings.HasSuffix(lower, ".labels"), strings.HasSuffix(lower, ".labels-meta.xml"):
+			p.LabelFiles = append(p.LabelFiles, path)
+		case strings.HasSuffix(lower, ".resource-meta.xml"), strings.HasSuffix(lower, ".staticresource-meta.xml"):
+			p.StaticResourceMetas = append(p.StaticResourceMetas, path)
+		case strings.HasSuffix(lower, ".resource"):
+			p.StaticResourceFiles = append(p.StaticResourceFiles, path)
+		case strings.HasSuffix(lower, ".namedcredential"), strings.HasSuffix(lower, ".namedcredential-meta.xml"):
+			p.NamedCredentialFiles = append(p.NamedCredentialFiles, path)
+		case strings.HasSuffix(lower, ".remotesite"), strings.HasSuffix(lower, ".remotesite-meta.xml"):
+			p.RemoteSiteFiles = append(p.RemoteSiteFiles, path)
+		case strings.HasSuffix(lower, ".md") && isCustomMetadataPath(lower):
+			p.CustomMetadataFiles = append(p.CustomMetadataFiles, path)
+		case strings.HasSuffix(lower, ".workflow-meta.xml"):
+			p.WorkflowFiles = append(p.WorkflowFiles, path)
+		case strings.HasSuffix(lower, ".page"):
+			p.VisualforcePageFiles = append(p.VisualforcePageFiles, path)
+		case strings.HasSuffix(lower, ".component"):
+			p.VisualforceComponentFiles = append(p.VisualforceComponentFiles, path)
+		case isAuraPath(lower) && isAuraSourceFile(lower):
+			p.AuraFiles = append(p.AuraFiles, path)
+		case isLWCPath(lower) && strings.HasSuffix(lower, ".js"):
+			p.LWCFiles = append(p.LWCFiles, path)
 		}
 		return nil
 	})
+}
+
+func isCustomMetadataPath(path string) bool {
+	return strings.Contains(filepath.ToSlash(path), "/custommetadata/")
+}
+
+func isAuraPath(path string) bool {
+	return strings.Contains(filepath.ToSlash(path), "/aura/")
+}
+
+func isLWCPath(path string) bool {
+	return strings.Contains(filepath.ToSlash(path), "/lwc/")
+}
+
+func isAuraSourceFile(path string) bool {
+	for _, suffix := range []string{".cmp", ".app", ".evt", ".design"} {
+		if strings.HasSuffix(path, suffix) {
+			return true
+		}
+	}
+	base := filepath.Base(path)
+	return strings.HasSuffix(base, "controller.js") || strings.HasSuffix(base, "helper.js")
 }

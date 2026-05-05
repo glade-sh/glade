@@ -373,6 +373,8 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 	if err := e.validateUnique(objectName, object.Definition, record, ""); err != nil {
 		return "", err
 	}
+	rollbackOrg := e.Org.Clone()
+	rollbackSequences := copySequences(e.IDs.Sequences)
 	if record.ID == "" {
 		id, err := e.IDs.Next(objectName)
 		if err != nil {
@@ -411,7 +413,87 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 	}
 	object.Records[record.ID] = record.Clone()
 	e.Org.Objects[objectName] = object
+	if objectName == "ContentVersion" {
+		if err := e.afterInsertContentVersion(record); err != nil {
+			*e.Org = rollbackOrg
+			e.IDs.Sequences = rollbackSequences
+			return "", err
+		}
+	}
+	if err := e.applyWorkflowFieldUpdates(objectName, record.ID); err != nil {
+		*e.Org = rollbackOrg
+		e.IDs.Sequences = rollbackSequences
+		return "", err
+	}
 	return record.ID, nil
+}
+
+func (e *Engine) afterInsertContentVersion(version storage.Record) error {
+	contentDocumentID := idFromStorageValue(version.Fields["ContentDocumentId"])
+	if contentDocumentID == "" {
+		document := storage.Record{
+			Object: "ContentDocument",
+			Fields: map[string]storage.Value{
+				"Title":                    version.Fields["Title"].Clone(),
+				"LatestPublishedVersionId": storage.IDValue(version.ID),
+			},
+		}
+		if path, ok := version.Fields["PathOnClient"]; ok {
+			document.Fields["FileExtension"] = storage.StringValue(fileExtension(path.String))
+		}
+		id, err := e.insertOne(document)
+		if err != nil {
+			return err
+		}
+		contentDocumentID = id
+		contentVersionObject := e.Org.Objects["ContentVersion"]
+		stored := contentVersionObject.Records[version.ID]
+		if stored.Fields == nil {
+			stored.Fields = make(map[string]storage.Value)
+		}
+		stored.Fields["ContentDocumentId"] = storage.IDValue(contentDocumentID)
+		contentVersionObject.Records[version.ID] = stored
+		e.Org.Objects["ContentVersion"] = contentVersionObject
+	} else {
+		contentDocumentObject := e.Org.Objects["ContentDocument"]
+		document, exists := contentDocumentObject.Records[contentDocumentID]
+		if !exists {
+			return dmlErrorf("FIELD_INTEGRITY_EXCEPTION", []string{"ContentDocumentId"}, "dml: ContentDocument %s does not exist", contentDocumentID)
+		}
+		if document.Fields == nil {
+			document.Fields = make(map[string]storage.Value)
+		}
+		document.Fields["LatestPublishedVersionId"] = storage.IDValue(version.ID)
+		if title, ok := version.Fields["Title"]; ok {
+			document.Fields["Title"] = title.Clone()
+		}
+		contentDocumentObject.Records[contentDocumentID] = document
+		e.Org.Objects["ContentDocument"] = contentDocumentObject
+	}
+	if locationID := idFromStorageValue(version.Fields["FirstPublishLocationId"]); locationID != "" {
+		link := storage.Record{
+			Object: "ContentDocumentLink",
+			Fields: map[string]storage.Value{
+				"ContentDocumentId": storage.IDValue(contentDocumentID),
+				"LinkedEntityId":    storage.IDValue(locationID),
+				"ShareType":         storage.StringValue("V"),
+				"Visibility":        storage.StringValue("AllUsers"),
+			},
+		}
+		if _, err := e.insertOne(link); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func fileExtension(path string) string {
+	lastSlash := strings.LastIndexAny(path, `/\`)
+	lastDot := strings.LastIndex(path, ".")
+	if lastDot <= lastSlash || lastDot == len(path)-1 {
+		return ""
+	}
+	return path[lastDot+1:]
 }
 
 func (e *Engine) updateOne(record storage.Record) error {
@@ -474,6 +556,8 @@ func (e *Engine) updateOne(record storage.Record) error {
 	if existing.ExplicitNulls == nil {
 		existing.ExplicitNulls = make(map[string]bool)
 	}
+	rollbackOrg := e.Org.Clone()
+	rollbackSequences := copySequences(e.IDs.Sequences)
 	stamp := e.systemTimestamp()
 	for field, value := range record.Fields {
 		existing.Fields[field] = value.Clone()
@@ -490,6 +574,11 @@ func (e *Engine) updateOne(record storage.Record) error {
 	existing.System.LastModifiedByID = e.systemUserID()
 	object.Records[record.ID] = existing
 	e.Org.Objects[objectName] = object
+	if err := e.applyWorkflowFieldUpdates(objectName, record.ID); err != nil {
+		*e.Org = rollbackOrg
+		e.IDs.Sequences = rollbackSequences
+		return err
+	}
 	return nil
 }
 
@@ -852,6 +941,191 @@ func validationFieldEquals(record storage.Record, field, want string) bool {
 	}
 }
 
+func (e *Engine) applyWorkflowFieldUpdates(objectName string, id storage.ID) error {
+	object := e.Org.Objects[objectName]
+	if len(object.Definition.WorkflowRules) == 0 {
+		return nil
+	}
+	record, ok := object.Records[id]
+	if !ok || record.System.IsDeleted {
+		return nil
+	}
+	changed := false
+	record = record.Clone()
+	if record.Fields == nil {
+		record.Fields = make(map[string]storage.Value)
+	}
+	if record.ExplicitNulls == nil {
+		record.ExplicitNulls = make(map[string]bool)
+	}
+	for _, rule := range object.Definition.WorkflowRules {
+		if !rule.Active {
+			continue
+		}
+		matches, ok := evaluateWorkflowRule(rule, record)
+		if !ok || !matches {
+			continue
+		}
+		for _, update := range rule.FieldUpdates {
+			fieldName, ok := storage.ResolveFieldName(object.Definition, e.Org.Namespace, update.Field)
+			if !ok || fieldName == "Id" {
+				return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{update.Field}, "dml: workflow field update %s targets unknown or read-only field %s.%s", update.Name, objectName, update.Field)
+			}
+			if object.Definition.Fields[fieldName].Type == storage.FieldCalculated {
+				return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{fieldName}, "dml: workflow field update %s targets calculated field %s.%s", update.Name, objectName, fieldName)
+			}
+			value, explicitNull, ok := workflowUpdateValue(object.Definition.Fields[fieldName], record, update)
+			if !ok {
+				return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{fieldName}, "dml: workflow field update %s has unsupported value expression", update.Name)
+			}
+			if explicitNull {
+				delete(record.Fields, fieldName)
+				record.ExplicitNulls[fieldName] = true
+			} else {
+				record.Fields[fieldName] = value
+				delete(record.ExplicitNulls, fieldName)
+			}
+			changed = true
+		}
+	}
+	if !changed {
+		return nil
+	}
+	if err := validateRequired(object.Definition, record); err != nil {
+		return err
+	}
+	if err := e.validateReferences(object.Definition, record); err != nil {
+		return err
+	}
+	if err := validateValidationRules(object.Definition, record); err != nil {
+		return err
+	}
+	if err := e.validateUnique(objectName, object.Definition, record, record.ID); err != nil {
+		return err
+	}
+	stamp := e.systemTimestamp()
+	record.System.LastModifiedDate = stamp
+	record.System.SystemModstamp = stamp
+	record.System.LastModifiedByID = e.systemUserID()
+	object.Records[id] = record
+	e.Org.Objects[objectName] = object
+	return nil
+}
+
+func evaluateWorkflowRule(rule storage.WorkflowRule, record storage.Record) (bool, bool) {
+	if strings.TrimSpace(rule.Formula) != "" {
+		return evaluateValidationFormula(rule.Formula, record)
+	}
+	if len(rule.Criteria) == 0 {
+		return true, true
+	}
+	for _, item := range rule.Criteria {
+		matches, ok := evaluateWorkflowCriteria(item, record)
+		if !ok || !matches {
+			return matches, ok
+		}
+	}
+	return true, true
+}
+
+func evaluateWorkflowCriteria(item storage.WorkflowCriteriaItem, record storage.Record) (bool, bool) {
+	field := strings.TrimSpace(item.Field)
+	if field == "" {
+		return false, false
+	}
+	want := trimFormulaLiteral(item.Value)
+	switch strings.ToLower(strings.TrimSpace(item.Operation)) {
+	case "", "equals", "equal", "eq":
+		return validationFieldEquals(record, field, want), true
+	case "notequal", "not equal", "notequals", "not equals", "ne":
+		return !validationFieldEquals(record, field, want), true
+	case "contains":
+		value, ok := record.Fields[field]
+		return ok && strings.Contains(workflowValueString(value), want), true
+	case "notcontain", "doesnotcontain":
+		value, ok := record.Fields[field]
+		return !ok || !strings.Contains(workflowValueString(value), want), true
+	case "isnull", "isblank":
+		return validationFieldBlank(record, field), true
+	default:
+		return false, false
+	}
+}
+
+func workflowUpdateValue(field storage.Field, record storage.Record, update storage.WorkflowFieldUpdate) (storage.Value, bool, bool) {
+	switch {
+	case update.SourceField != "":
+		value, ok := record.Fields[update.SourceField]
+		if !ok {
+			return storage.NullValue(), true, true
+		}
+		return value.Clone(), false, true
+	case update.Formula != "":
+		return workflowExpressionValue(field, record, update.Formula)
+	default:
+		return workflowLiteralValue(field, update.LiteralValue)
+	}
+}
+
+func workflowExpressionValue(field storage.Field, record storage.Record, expression string) (storage.Value, bool, bool) {
+	expression = strings.TrimSpace(expression)
+	if expression == "" || strings.EqualFold(expression, "NULL") {
+		return storage.NullValue(), true, true
+	}
+	if value, ok := record.Fields[expression]; ok {
+		return value.Clone(), false, true
+	}
+	return workflowLiteralValue(field, trimFormulaLiteral(expression))
+}
+
+func workflowLiteralValue(field storage.Field, literal string) (storage.Value, bool, bool) {
+	literal = strings.TrimSpace(literal)
+	if strings.EqualFold(literal, "NULL") {
+		return storage.NullValue(), true, true
+	}
+	switch field.Type {
+	case storage.FieldBoolean:
+		if strings.EqualFold(literal, "true") {
+			return storage.BooleanValue(true), false, true
+		}
+		if strings.EqualFold(literal, "false") {
+			return storage.BooleanValue(false), false, true
+		}
+		return storage.Value{}, false, false
+	case storage.FieldInteger:
+		var value int64
+		if _, err := fmt.Sscanf(literal, "%d", &value); err != nil {
+			return storage.Value{}, false, false
+		}
+		return storage.IntegerValue(value), false, true
+	case storage.FieldDecimal:
+		return storage.DecimalValue(literal), false, true
+	case storage.FieldID, storage.FieldReference:
+		return storage.IDValue(storage.ID(literal)), false, true
+	case storage.FieldDate:
+		return storage.DateValue(literal), false, true
+	case storage.FieldDateTime:
+		return storage.DateTimeValue(literal), false, true
+	default:
+		return storage.StringValue(literal), false, true
+	}
+}
+
+func workflowValueString(value storage.Value) string {
+	switch value.Kind {
+	case storage.ValueString, storage.ValueDate, storage.ValueDateTime, storage.ValueDecimal:
+		return value.String
+	case storage.ValueID:
+		return string(value.ID)
+	case storage.ValueInteger:
+		return fmt.Sprintf("%d", value.Integer)
+	case storage.ValueBoolean:
+		return fmt.Sprintf("%t", value.Boolean)
+	default:
+		return ""
+	}
+}
+
 func (e *Engine) validateDeleteReferences(objectName string, id storage.ID) error {
 	for childObjectName, childObject := range e.Org.Objects {
 		for _, relation := range childObject.Definition.Relations {
@@ -952,7 +1226,7 @@ func storageValuesEqual(field storage.Field, left, right storage.Value) bool {
 	switch left.Kind {
 	case storage.ValueNull:
 		return true
-	case storage.ValueString, storage.ValueDate, storage.ValueDateTime, storage.ValueDecimal:
+	case storage.ValueString, storage.ValueDate, storage.ValueDateTime, storage.ValueDecimal, storage.ValueBlob:
 		return left.String == right.String
 	case storage.ValueInteger:
 		return left.Integer == right.Integer

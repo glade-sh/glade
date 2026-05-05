@@ -700,6 +700,14 @@ func (p *parser) parseComparison() (ir.Expr, error) {
 		return ir.Expr{}, err
 	}
 	for {
+		if p.match(tokenIdent, "instanceof") {
+			typeName, err := p.parseTypeName()
+			if err != nil {
+				return ir.Expr{}, err
+			}
+			left = binary("instanceof", left, ir.Expr{Kind: ir.ExprVariable, Name: typeName})
+			continue
+		}
 		op := ""
 		for _, candidate := range []string{"<=", ">=", "<", ">"} {
 			if p.match(tokenSymbol, candidate) {

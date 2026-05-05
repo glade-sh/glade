@@ -76,6 +76,73 @@ System.assert(!a.isSet('Id'), 'clear should unset Id');
 	}
 }
 
+func TestExecAttachmentBlobRoundTrip(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account a = new Account(Name = 'Acme');
+insert a;
+Attachment att = new Attachment(
+    Name = 'note.txt',
+    ParentId = a.Id,
+    Body = Blob.valueOf('hello')
+);
+insert att;
+List<Attachment> rows = [SELECT Id, ParentId, Body FROM Attachment WHERE Id = :att.Id];
+System.assertEquals(1, rows.size());
+Attachment row = rows.get(0);
+System.assertEquals(a.Id, row.ParentId);
+System.assertEquals('hello', row.Body.toString());
+System.assertEquals('aGVsbG8=', EncodingUtil.base64Encode(row.Body));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecContentVersionCreatesDocumentAndLink(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account a = new Account(Name = 'Acme');
+insert a;
+ContentVersion version = new ContentVersion(
+    Title = 'Spec',
+    PathOnClient = 'docs/spec.txt',
+    VersionData = EncodingUtil.base64Decode('aGVsbG8='),
+    FirstPublishLocationId = a.Id
+);
+insert version;
+List<ContentVersion> versions = [SELECT Id, ContentDocumentId, VersionData FROM ContentVersion WHERE Id = :version.Id];
+System.assertEquals(1, versions.size());
+ContentVersion stored = versions.get(0);
+System.assertEquals('hello', stored.VersionData.toString());
+Id docId = stored.ContentDocumentId;
+List<ContentDocument> docs = [SELECT Id, Title, LatestPublishedVersionId FROM ContentDocument WHERE Id = :docId];
+System.assertEquals(1, docs.size());
+ContentDocument doc = docs.get(0);
+System.assertEquals('Spec', doc.Title);
+System.assertEquals(version.Id, doc.LatestPublishedVersionId);
+List<ContentDocumentLink> links = [SELECT Id, ContentDocumentId, LinkedEntityId FROM ContentDocumentLink WHERE ContentDocumentId = :docId];
+System.assertEquals(1, links.size());
+ContentDocumentLink link = links.get(0);
+System.assertEquals(a.Id, link.LinkedEntityId);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDescribePicklistValues(t *testing.T) {
 	program, err := CompileAnonymous(`
 Object describe = Account.Rating.getDescribe();

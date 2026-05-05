@@ -839,6 +839,9 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 		if err != nil {
 			return Null, err
 		}
+		if expr.Operator == "instanceof" {
+			return vm.evalInstanceOf(left, expr.Right.Name), nil
+		}
 		right, err := vm.eval(*expr.Right, result)
 		if err != nil {
 			return Null, err
@@ -1649,7 +1652,12 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		return Null, unsupportedCallError(callee + " local current request URL surface")
 	case "Test.setMock":
 		return vm.testSetMock(args)
-	case "Test.createStub", "Test.createSoqlStub":
+	case "Test.createStub":
+		if vm.testContext == nil {
+			return Null, unsupportedCallError(callee + " local stub API")
+		}
+		return vm.testCreateStub(args)
+	case "Test.createSoqlStub":
 		return Null, unsupportedCallError(callee + " local stub API")
 	case "Continuation.addHttpRequest", "Continuation.getResponse":
 		return Null, unsupportedCallError(callee + " local continuation callout surface")
@@ -2066,6 +2074,31 @@ func (vm *VM) testSetMock(args []Value) (Value, error) {
 	}
 	vm.testContext.HTTPMock = args[1]
 	return Null, nil
+}
+
+func (vm *VM) testCreateStub(args []Value) (Value, error) {
+	if len(args) != 2 {
+		return Null, fmt.Errorf("Test.createStub expects Type and StubProvider")
+	}
+	if err := vm.requireTestContext("Test.createStub"); err != nil {
+		return Null, err
+	}
+	stubbedType, ok := testMockTypeName(args[0])
+	if !ok || stubbedType == "" {
+		return Null, fmt.Errorf("Test.createStub expects Type")
+	}
+	if args[1].Kind != ValueObject || !vm.typeMatches(args[1].Type, "StubProvider", make(map[string]bool)) {
+		return Null, fmt.Errorf("Test.createStub expects StubProvider")
+	}
+	if resolved, ok := vm.resolveClassName(stubbedType); ok {
+		stubbedType = resolved
+	} else {
+		return Null, unsupportedCallError("Test.createStub local proxy for unknown type " + stubbedType)
+	}
+	proxy := Object(stubbedType)
+	proxy.Fields["__oaerStubProvider"] = args[1]
+	proxy.Fields["__oaerStubbedType"] = String(stubbedType)
+	return proxy, nil
 }
 
 func testMockTypeName(value Value) (string, bool) {
@@ -3928,6 +3961,15 @@ func storageValueFromVMForField(value Value, fieldType storage.FieldType) (stora
 		if value.Kind == ValueString {
 			return storageValueFromVM(value)
 		}
+	case storage.FieldBlob:
+		if value.Kind == ValueObject && value.Type == "Blob" {
+			if raw, ok := value.Fields["value"]; ok && raw.Kind == ValueString {
+				return storage.BlobValue(raw.Text), nil
+			}
+		}
+		if value.Kind == ValueString {
+			return storage.BlobValue(value.Text), nil
+		}
 	case storage.FieldDate:
 		if value.Kind == ValueString {
 			return storage.DateValue(value.Text), nil
@@ -3971,6 +4013,8 @@ func vmValueFromStorage(value storage.Value) Value {
 		return Null
 	case storage.ValueString, storage.ValueDate, storage.ValueDateTime:
 		return String(value.String)
+	case storage.ValueBlob:
+		return platformScalar("Blob", value.String)
 	case storage.ValueInteger:
 		return Int(value.Integer)
 	case storage.ValueBoolean:
@@ -6758,7 +6802,7 @@ func isBuiltinTypeName(name string) bool {
 		return true
 	}
 	switch name {
-	case "Object", "String", "Boolean", "Integer", "Long", "Decimal", "Double", "Date", "Datetime", "Time", "TimeZone", "Blob", "Id", "Type", "URL", "PageReference", "LoggingLevel", "ApexPages.Severity", "RestContext", "RestRequest", "RestResponse":
+	case "Object", "String", "Boolean", "Integer", "Long", "Decimal", "Double", "Date", "Datetime", "Time", "TimeZone", "Blob", "Id", "Type", "URL", "PageReference", "LoggingLevel", "ApexPages.Severity", "RestContext", "RestRequest", "RestResponse", "Callable", "StubProvider":
 		return true
 	default:
 		return false
@@ -7690,6 +7734,8 @@ func numericConversionScore(paramType, valueType string) int {
 }
 
 func (vm *VM) typeDistance(typeName, target string, seen map[string]bool) (int, bool) {
+	typeName = systemInterfaceAlias(typeName)
+	target = systemInterfaceAlias(target)
 	if resolved, ok := vm.resolveClassName(typeName); ok {
 		typeName = resolved
 	}
@@ -7828,6 +7874,8 @@ func (vm *VM) exceptionMatches(catchType string, thrown Value) bool {
 }
 
 func (vm *VM) typeMatches(typeName, target string, seen map[string]bool) bool {
+	typeName = systemInterfaceAlias(typeName)
+	target = systemInterfaceAlias(target)
 	if resolved, ok := vm.resolveClassName(typeName); ok {
 		typeName = resolved
 	}
@@ -7865,6 +7913,31 @@ func (vm *VM) typeMatches(typeName, target string, seen map[string]bool) bool {
 		}
 	}
 	return false
+}
+
+func systemInterfaceAlias(typeName string) string {
+	switch strings.TrimSpace(typeName) {
+	case "System.Callable":
+		return "Callable"
+	case "System.StubProvider":
+		return "StubProvider"
+	default:
+		return typeName
+	}
+}
+
+func (vm *VM) evalInstanceOf(value Value, target string) Value {
+	target = strings.TrimSpace(target)
+	if target == "" || value.Kind == ValueNull {
+		return Bool(false)
+	}
+	if value.Kind == ValueObject {
+		return Bool(vm.typeMatches(value.Type, target, make(map[string]bool)))
+	}
+	if strings.EqualFold(target, "Object") {
+		return Bool(true)
+	}
+	return Bool(strings.EqualFold(valueTypeName(value), target))
 }
 
 func builtinExceptionTypeMatches(typeName, target string) bool {
@@ -8564,6 +8637,12 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 		}
 	}
 	if receiver.Kind == ValueObject {
+		if isStubProxy(receiver) {
+			value, handled, err := vm.callStubProxyMember(receiver, method, args, result)
+			if handled || err != nil {
+				return value, true, err
+			}
+		}
 		if value, handled, err := vm.callEnumMember(receiver, method, args); handled || err != nil {
 			return value, true, err
 		}
@@ -9046,6 +9125,62 @@ func (vm *VM) isSObjectType(typeName string) bool {
 	}
 	_, ok := storage.ResolveObjectName(*vm.Org, typeName)
 	return ok
+}
+
+func isStubProxy(receiver Value) bool {
+	if receiver.Kind != ValueObject {
+		return false
+	}
+	provider, ok := receiver.Fields["__oaerStubProvider"]
+	return ok && provider.Kind == ValueObject
+}
+
+func (vm *VM) callStubProxyMember(receiver Value, method string, args []Value, result *Result) (Value, bool, error) {
+	target, ok, ambiguous := vm.resolveInstanceMethodForArgs(receiver.Type, method, args)
+	if ambiguous {
+		return Null, true, fmt.Errorf("ambiguous overload for stubbed call %q", receiver.Type+"."+method)
+	}
+	if !ok {
+		return Null, true, unsupportedCallError("Test.createStub dynamic method " + receiver.Type + "." + method + " without local target method metadata")
+	}
+	provider := receiver.Fields["__oaerStubProvider"]
+	paramTypes := make([]Value, 0, len(target.Params))
+	paramNames := make([]Value, 0, len(target.Params))
+	for _, param := range target.Params {
+		paramTypes = append(paramTypes, platformScalar("Type", param.Type))
+		paramNames = append(paramNames, String(param.Name))
+	}
+	returnType := target.ReturnType
+	if returnType == "" {
+		returnType = "Object"
+	}
+	metadataArgs := []Value{
+		receiver,
+		String(method),
+		platformScalar("Type", returnType),
+		{Kind: ValueList, Type: "List<Type>", List: paramTypes},
+		{Kind: ValueList, Type: "List<String>", List: paramNames},
+		{Kind: ValueList, Type: "List<Object>", List: append([]Value(nil), args...)},
+	}
+	handler, ok, ambiguous := vm.resolveInstanceMethodForArgs(provider.Type, "handleMethodCall", metadataArgs)
+	if ambiguous {
+		return Null, true, fmt.Errorf("ambiguous overload for call %q", provider.Type+".handleMethodCall")
+	}
+	if !ok {
+		return Null, true, fmt.Errorf("StubProvider %s must implement handleMethodCall", provider.Type)
+	}
+	value, err := vm.callMethodWithReceiver(handler, provider, metadataArgs, result)
+	if err != nil {
+		return Null, true, err
+	}
+	if target.ReturnType == "" || strings.EqualFold(target.ReturnType, "void") {
+		return Null, true, nil
+	}
+	coerced, err := vm.coerceAssignable(target.ReturnType, value)
+	if err != nil {
+		return Null, true, fmt.Errorf("stubbed %s.%s return: %w", receiver.Type, method, err)
+	}
+	return coerced, true, nil
 }
 
 func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Value, bool, error) {

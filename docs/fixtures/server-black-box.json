@@ -2616,7 +2616,7 @@
     "result": {
       "ok": true,
       "persistedAccounts": 1,
-      "persistedObjects": 8,
+      "persistedObjects": 12,
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,

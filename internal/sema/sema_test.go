@@ -116,6 +116,56 @@ func TestAnalyzeMethodParameterTypes(t *testing.T) {
 	}
 }
 
+func TestAnalyzeRecognizesCallableAndStubProviderTypes(t *testing.T) {
+	index := typesys.Index{
+		Types: []typesys.TypeSymbol{
+			{
+				Kind:       apexast.DeclarationClass,
+				Name:       "Provider",
+				File:       "Provider.cls",
+				Interfaces: []string{"System.StubProvider"},
+				Members: []typesys.MemberSymbol{
+					{
+						Kind: apexast.DeclarationMethod,
+						Name: "handleMethodCall",
+						Type: "Object",
+						Parameters: []apexast.Parameter{
+							{Name: "stubbedObject", Type: "Object"},
+							{Name: "stubbedMethodName", Type: "String"},
+							{Name: "returnType", Type: "Type"},
+							{Name: "listOfParamTypes", Type: "List<Type>"},
+							{Name: "listOfParamNames", Type: "List<String>"},
+							{Name: "listOfArgs", Type: "List<Object>"},
+						},
+					},
+				},
+			},
+			{
+				Kind:       apexast.DeclarationClass,
+				Name:       "Action",
+				File:       "Action.cls",
+				Interfaces: []string{"System.Callable"},
+				Members: []typesys.MemberSymbol{
+					{
+						Kind: apexast.DeclarationMethod,
+						Name: "call",
+						Type: "Object",
+						Parameters: []apexast.Parameter{
+							{Name: "action", Type: "String"},
+							{Name: "args", Type: "Map<String, Object>"},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
 func TestAnalyzeProjectNamespaceQualifiedTypes(t *testing.T) {
 	index := typesys.Index{
 		Project: typesys.ProjectInfo{Namespace: "pkg"},
