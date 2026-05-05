@@ -235,7 +235,7 @@ func applyServerExampleSchema(org *storage.OrgState, loaded schema.Schema) {
 		state.Definition.Label = object.Label
 		state.Definition.PluralLabel = object.PluralLabel
 		state.Definition.SharingModel = object.SharingModel
-		if strings.EqualFold(object.CustomSettingsType, "List") {
+		if object.CustomSettingsType != "" {
 			if state.Definition.Metadata == nil {
 				state.Definition.Metadata = make(map[string]string)
 			}
@@ -261,6 +261,7 @@ func applyServerExampleSchema(org *storage.OrgState, loaded schema.Schema) {
 				APIName:          field.Name,
 				Label:            field.Label,
 				Type:             serverExampleStorageFieldType(field.Type, field.Formula),
+				DefaultValue:     field.DefaultValue,
 				Required:         field.Required,
 				ExternalID:       field.ExternalID,
 				Unique:           field.Unique,

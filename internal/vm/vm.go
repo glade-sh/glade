@@ -2002,24 +2002,51 @@ func (vm *VM) callCustomDataStaticMember(typeName, method string, args []Value) 
 		}
 		return out, true, nil
 	case "getInstance":
-		if err := unsupportedHierarchyCustomSettingStatic(definition, typeName, method); err != nil {
+		if strings.EqualFold(definition.Metadata["customSettingsType"], "Hierarchy") {
+			if len(args) > 1 {
+				return Null, true, fmt.Errorf("%s.getInstance expects optional setup owner Id", typeName)
+			}
+		} else if err := unsupportedHierarchyCustomSettingStatic(definition, typeName, method); err != nil {
 			return Null, true, err
 		}
 		record, found, err := vm.customDataGetInstance(objectName, definition, kind, args)
 		if err != nil || !found {
+			if err == nil && strings.EqualFold(definition.Metadata["customSettingsType"], "Hierarchy") {
+				return vm.readOnlyCustomDataDefaultValue(objectName, kind), true, nil
+			}
 			return Null, true, err
 		}
 		return vm.readOnlyCustomDataValue(record, kind), true, nil
 	case "getOrgDefaults", "getValues":
-		if err := unsupportedHierarchyCustomSettingStatic(definition, typeName, method); err != nil {
-			return Null, true, err
+		if strings.EqualFold(definition.Metadata["customSettingsType"], "Hierarchy") {
+			switch method {
+			case "getOrgDefaults":
+				if len(args) != 0 {
+					return Null, true, fmt.Errorf("%s.%s expects 0 arguments", typeName, method)
+				}
+				return vm.hierarchyCustomSettingOrgDefaults(objectName, kind), true, nil
+			case "getValues":
+				if len(args) > 1 {
+					return Null, true, fmt.Errorf("%s.getValues expects optional setup owner Id", typeName)
+				}
+				if len(args) == 1 && args[0].Kind != ValueString && args[0].Kind != ValueNull {
+					return Null, true, fmt.Errorf("%s.getValues expects optional setup owner Id", typeName)
+				}
+				if len(args) == 1 && args[0].Kind == ValueString {
+					if record, found := vm.hierarchyCustomSettingRecordForOwner(objectName, args[0].Text); found {
+						return vm.readOnlyCustomDataValue(record, kind), true, nil
+					}
+					return vm.readOnlyCustomDataDefaultValue(objectName, kind), true, nil
+				}
+				return vm.hierarchyCustomSettingOrgDefaults(objectName, kind), true, nil
+			}
 		}
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("%s.%s expects 0 arguments", typeName, method)
 		}
 		record, found := vm.customDataOrgDefaultRecord(objectName)
 		if !found {
-			return Object(objectName), true, nil
+			return vm.readOnlyCustomDataDefaultValue(objectName, kind), true, nil
 		}
 		return vm.readOnlyCustomDataValue(record, kind), true, nil
 	default:
@@ -2057,6 +2084,37 @@ func unsupportedHierarchyCustomSettingStatic(definition storage.ObjectDefinition
 	return nil
 }
 
+func (vm *VM) hierarchyCustomSettingOrgDefaults(objectName, kind string) Value {
+	if record, found := vm.hierarchyCustomSettingRecordForOwner(objectName, vm.orgID()); found {
+		return vm.readOnlyCustomDataValue(record, kind)
+	}
+	return vm.readOnlyCustomDataDefaultValue(objectName, kind)
+}
+
+func (vm *VM) hierarchyCustomSettingRecordForOwner(objectName, ownerID string) (storage.Record, bool) {
+	if vm.Org == nil || ownerID == "" {
+		return storage.Record{}, false
+	}
+	object := vm.Org.Objects[objectName]
+	for _, record := range sortedCustomDataRecords(object.Records, object.Definition, "custom setting", vm.Org.Namespace) {
+		if record.System.IsDeleted {
+			continue
+		}
+		value, ok := record.Fields["SetupOwnerId"]
+		if ok && value.Kind == storage.ValueString && value.String == ownerID {
+			return record, true
+		}
+	}
+	return storage.Record{}, false
+}
+
+func (vm *VM) orgID() string {
+	if vm.Org != nil && vm.Org.OrgID != "" {
+		return vm.Org.OrgID
+	}
+	return "00D000000000001"
+}
+
 func (vm *VM) customDataObject(typeName string) (string, storage.ObjectDefinition, string, bool) {
 	if vm.Org == nil {
 		return "", storage.ObjectDefinition{}, "", false
@@ -2082,6 +2140,12 @@ func (vm *VM) customDataGetInstance(objectName string, definition storage.Object
 		if kind != "custom setting" {
 			return storage.Record{}, false, fmt.Errorf("%s.getInstance expects record name", objectName)
 		}
+		if strings.EqualFold(definition.Metadata["customSettingsType"], "Hierarchy") {
+			if record, found := vm.hierarchyCustomSettingRecordForOwner(objectName, vm.orgID()); found {
+				return record, true, nil
+			}
+			return storage.Record{}, false, nil
+		}
 		for _, record := range sortedCustomDataRecords(object.Records, definition, kind, vm.Org.Namespace) {
 			if record.System.IsDeleted {
 				continue
@@ -2094,6 +2158,15 @@ func (vm *VM) customDataGetInstance(objectName string, definition storage.Object
 		return storage.Record{}, false, fmt.Errorf("%s.getInstance expects optional String name", objectName)
 	}
 	wanted := args[0].Text
+	if strings.EqualFold(definition.Metadata["customSettingsType"], "Hierarchy") {
+		if record, found := vm.hierarchyCustomSettingRecordForOwner(objectName, wanted); found {
+			return record, true, nil
+		}
+		if record, found := vm.hierarchyCustomSettingRecordForOwner(objectName, vm.orgID()); found {
+			return record, true, nil
+		}
+		return storage.Record{}, false, nil
+	}
 	for _, record := range object.Records {
 		if record.System.IsDeleted {
 			continue
@@ -2181,6 +2254,21 @@ func firstStringField(record storage.Record, names ...string) string {
 
 func (vm *VM) readOnlyCustomDataValue(record storage.Record, kind string) Value {
 	value := vmValueFromRecord(record)
+	value.Fields[sobjectReadOnlyField] = String(kind + " records returned by getAll/getInstance are read-only")
+	return value
+}
+
+func (vm *VM) readOnlyCustomDataDefaultValue(objectName, kind string) Value {
+	value := Object(objectName)
+	if vm.Org != nil {
+		if object, ok := vm.Org.Objects[objectName]; ok {
+			for name, field := range object.Definition.Fields {
+				if defaultValue, ok := storage.DefaultValueForField(field); ok {
+					putVMFieldPath(value, name, vmValueFromStorage(defaultValue))
+				}
+			}
+		}
+	}
 	value.Fields[sobjectReadOnlyField] = String(kind + " records returned by getAll/getInstance are read-only")
 	return value
 }
@@ -3836,6 +3924,9 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 			"rows":      len(records),
 		}))
 	}
+	if op == "insert" {
+		vm.applySObjectFieldDefaults(records)
+	}
 	before, err := vm.oldRecords(op, records)
 	if err != nil {
 		return nil, err
@@ -3911,6 +4002,33 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 		return nil, err
 	}
 	return results, nil
+}
+
+func (vm *VM) applySObjectFieldDefaults(records []storage.Record) {
+	if vm.Org == nil {
+		return
+	}
+	for i := range records {
+		objectName, ok := storage.ResolveObjectName(*vm.Org, records[i].Object)
+		if !ok {
+			continue
+		}
+		definition := vm.Org.Objects[objectName].Definition
+		if records[i].Fields == nil {
+			records[i].Fields = make(map[string]storage.Value)
+		}
+		for name, field := range definition.Fields {
+			if _, ok := records[i].Fields[name]; ok {
+				continue
+			}
+			if records[i].ExplicitNulls != nil && records[i].ExplicitNulls[name] {
+				continue
+			}
+			if value, ok := storage.DefaultValueForField(field); ok {
+				records[i].Fields[name] = value
+			}
+		}
+	}
 }
 
 func successfulDMLInputs(records, before []storage.Record, results []dml.Result) ([]storage.Record, []storage.Record, []dml.Result) {
