@@ -184,6 +184,11 @@ func platformScalarObject(typeName string) bool {
 }
 
 func mapKey(v Value) string {
+	if v.Kind == ValueObject && platformScalarObject(v.Type) {
+		if raw, ok := v.Fields["value"]; ok && raw.Kind == ValueString {
+			return string(v.Kind) + ":" + v.Type + ":" + raw.Text
+		}
+	}
 	return string(v.Kind) + ":" + v.String()
 }
 

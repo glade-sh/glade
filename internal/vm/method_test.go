@@ -1631,6 +1631,64 @@ value.required();
 	}
 }
 
+func TestExecDispatchesUnqualifiedVirtualCallToConcreteOverride(t *testing.T) {
+	baseCall, err := CompileAnonymous("return required();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	override, err := CompileAnonymous("return 'concrete';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Base value = new Concrete();
+System.assertEquals('concrete', value.callRequired());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:       "Base",
+		IsAbstract: true,
+		Methods: map[string]Method{
+			"callRequired": {Name: "Base.callRequired", ClassName: "Base", ReturnType: "String", Access: "public", Program: baseCall},
+			"required":     {Name: "Base.required", ClassName: "Base", ReturnType: "String", Access: "public", Modifiers: []string{"abstract"}},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Concrete",
+		SuperClass: "Base",
+		Methods: map[string]Method{
+			"required": {Name: "Concrete.required", ClassName: "Concrete", ReturnType: "String", Access: "public", Modifiers: []string{"override"}, Program: override},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMapKeySetPreservesDateKeys(t *testing.T) {
+	program, err := CompileAnonymous(`
+Date today = Date.today();
+Map<Date, String> values = new Map<Date, String>();
+values.put(today, 'open');
+Set<Date> keys = values.keySet();
+List<Date> ordered = new List<Date>(keys);
+System.assertEquals(today, ordered[0]);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecWhileLoopIterationGuard(t *testing.T) {
 	program, err := CompileAnonymous("while (true) { System.debug('loop'); }")
 	if err != nil {
