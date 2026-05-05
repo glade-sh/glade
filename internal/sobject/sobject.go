@@ -110,6 +110,7 @@ type DescribeFieldResult struct {
 	RelationshipName      string                  `json:"relationshipName,omitempty"`
 	ChildRelationshipName string                  `json:"childRelationshipName,omitempty"`
 	DeleteConstraint      string                  `json:"deleteConstraint,omitempty"`
+	DefaultValue          string                  `json:"defaultValue,omitempty"`
 	Required              bool                    `json:"required,omitempty"`
 	ExternalID            bool                    `json:"externalId,omitempty"`
 	Unique                bool                    `json:"unique,omitempty"`
@@ -167,6 +168,7 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 				RelationshipName:      field.RelationshipName,
 				ChildRelationshipName: field.ChildRelationshipName,
 				DeleteConstraint:      field.DeleteConstraint,
+				DefaultValue:          field.DefaultValue,
 				Required:              field.Required,
 				ExternalID:            field.ExternalID,
 				Unique:                field.Unique,
@@ -277,6 +279,7 @@ func ToObjectDefinition(describe DescribeSObjectResult) storage.ObjectDefinition
 			APIName:          field.Name,
 			Label:            labelOrName(field.Label, field.Name),
 			Type:             field.Type,
+			DefaultValue:     field.DefaultValue,
 			Required:         field.Required,
 			ExternalID:       field.ExternalID,
 			Unique:           field.Unique,

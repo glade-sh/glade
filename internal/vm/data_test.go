@@ -59,6 +59,44 @@ System.assert(fields.containsKey('MasterRecordId'));
 	}
 }
 
+func TestExecInsertAppliesCheckboxDefaultsBeforeTriggers(t *testing.T) {
+	triggerProgram, err := CompileAnonymous(`
+for (Account a : Trigger.new) {
+	if (a.CopyFromPrimaryAffiliationBilling__c && a.Name != null) {
+		a.Name = 'copied';
+	}
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Account a = new Account(Name = 'Acme');
+insert a;
+Account row = [SELECT CopyFromPrimaryAffiliationBilling__c, Name FROM Account WHERE Id = :a.Id][0];
+System.assertEquals(false, row.CopyFromPrimaryAffiliationBilling__c);
+System.assertEquals('Acme', row.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "AccountBeforeInsertDefaults",
+		Object:    "Account",
+		Timing:    triggerTimingBefore,
+		Operation: "insert",
+		Program:   triggerProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSOQLBindPlatformId(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account a = new Account(Name = 'Acme');
@@ -2636,8 +2674,9 @@ func testDataOrg() storage.OrgState {
 			APIName:   "Account",
 			KeyPrefix: "001",
 			Fields: map[string]storage.Field{
-				"Name":           {APIName: "Name", Type: storage.FieldString},
-				"MasterRecordId": {APIName: "MasterRecordId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "MasterRecord"},
+				"Name":                                 {APIName: "Name", Type: storage.FieldString},
+				"MasterRecordId":                       {APIName: "MasterRecordId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "MasterRecord"},
+				"CopyFromPrimaryAffiliationBilling__c": {APIName: "CopyFromPrimaryAffiliationBilling__c", Type: storage.FieldBoolean, DefaultValue: "false"},
 			},
 		},
 		Records: make(map[storage.ID]storage.Record),
@@ -2698,30 +2737,65 @@ func TestExecCustomDataStaticRecordsAreReadOnly(t *testing.T) {
 	}
 }
 
-func TestExecHierarchyCustomSettingStaticsUnsupported(t *testing.T) {
-	cases := []struct {
-		name   string
-		source string
-		want   string
-	}{
-		{"getInstance", "Hierarchy_Setting__c.getInstance();", `unsupported call "Hierarchy_Setting__c.getInstance hierarchy custom setting merge behavior"`},
-		{"getAll", "Hierarchy_Setting__c.getAll();", `unsupported call "Hierarchy_Setting__c.getAll hierarchy custom setting merge behavior"`},
-		{"getOrgDefaults", "Hierarchy_Setting__c.getOrgDefaults();", `unsupported call "Hierarchy_Setting__c.getOrgDefaults hierarchy custom setting merge behavior"`},
-		{"getValues", "Hierarchy_Setting__c.getValues('005000000000001');", `unsupported call "Hierarchy_Setting__c.getValues hierarchy custom setting merge behavior"`},
+func TestExecHierarchyCustomSettingStaticsUseOrgDefaults(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(true, Hierarchy_Setting__c.getInstance().Enabled__c);
+System.assertEquals(true, Hierarchy_Setting__c.getOrgDefaults().Enabled__c);
+System.assertEquals(true, Hierarchy_Setting__c.getValues('00D000000000001').Enabled__c);
+System.assertEquals(null, Hierarchy_Setting__c.getValues('005000000000001').Enabled__c);
+System.assertEquals(false, Hierarchy_Setting__c.getValues('005000000000001').Defaulted__c);
+System.assertEquals(true, Hierarchy_Setting__c.getInstance('005000000000001').Enabled__c);
+System.assertEquals(true, Hierarchy_SETTING__c.getInstance().Enabled__c);
+`)
+	if err != nil {
+		t.Fatal(err)
 	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			program, err := CompileAnonymous(tc.source)
-			if err != nil {
-				t.Fatal(err)
-			}
-			machine := New(nil)
-			org := customDataOrg()
-			machine.SetOrg(&org)
-			if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), tc.want) {
-				t.Fatalf("error = %v, want %q", err, tc.want)
-			}
-		})
+	machine := New(nil)
+	org := customDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecHierarchyCustomSettingGetAllUnsupported(t *testing.T) {
+	program, err := CompileAnonymous(`Hierarchy_Setting__c.getAll();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := customDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), `unsupported call "Hierarchy_Setting__c.getAll hierarchy custom setting merge behavior"`) {
+		t.Fatalf("error = %v, want hierarchy getAll unsupported", err)
+	}
+}
+
+func TestExecHierarchyCustomSettingOrgDefaultsIgnoreUserRecords(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(null, Hierarchy_Setting__c.getOrgDefaults().Enabled__c);
+System.assertEquals(false, Hierarchy_Setting__c.getOrgDefaults().Defaulted__c);
+System.assertEquals(null, Hierarchy_Setting__c.getInstance().Enabled__c);
+System.assertEquals(false, Hierarchy_Setting__c.getInstance().Defaulted__c);
+System.assertEquals(null, Hierarchy_Setting__c.getInstance('a02000000000002').Enabled__c);
+System.assertEquals(true, Hierarchy_Setting__c.getValues('005000000000001').Enabled__c);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := customDataOrg()
+	hierarchy := org.Objects["Hierarchy_Setting__c"]
+	hierarchy.Records = map[storage.ID]storage.Record{
+		"a02000000000002": {ID: "a02000000000002", Object: "Hierarchy_Setting__c", Fields: map[string]storage.Value{
+			"SetupOwnerId": storage.StringValue("005000000000001"),
+			"Enabled__c":   storage.BooleanValue(true),
+		}},
+	}
+	org.Objects["Hierarchy_Setting__c"] = hierarchy
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -2781,6 +2855,7 @@ func customDataOrg() storage.OrgState {
 			Fields: map[string]storage.Field{
 				"SetupOwnerId": {APIName: "SetupOwnerId", Type: storage.FieldString},
 				"Enabled__c":   {APIName: "Enabled__c", Type: storage.FieldBoolean},
+				"Defaulted__c": {APIName: "Defaulted__c", Type: storage.FieldBoolean, DefaultValue: "false"},
 			},
 		},
 		Records: map[storage.ID]storage.Record{

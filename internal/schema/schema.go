@@ -33,6 +33,7 @@ type Field struct {
 	RelationshipName      string          `json:"relationshipName,omitempty"`
 	ChildRelationshipName string          `json:"childRelationshipName,omitempty"`
 	DeleteConstraint      string          `json:"deleteConstraint,omitempty"`
+	DefaultValue          string          `json:"defaultValue,omitempty"`
 	Required              bool            `json:"required,omitempty"`
 	ExternalID            bool            `json:"externalId,omitempty"`
 	Unique                bool            `json:"unique,omitempty"`
@@ -80,6 +81,7 @@ type customFieldXML struct {
 	RelationshipName      string      `xml:"relationshipName"`
 	ChildRelationshipName string      `xml:"childRelationshipName"`
 	DeleteConstraint      string      `xml:"deleteConstraint"`
+	DefaultValue          string      `xml:"defaultValue"`
 	Required              bool        `xml:"required"`
 	ExternalID            bool        `xml:"externalId"`
 	Unique                bool        `xml:"unique"`
@@ -292,6 +294,7 @@ func loadField(path string) (Field, error) {
 		RelationshipName:      raw.RelationshipName,
 		ChildRelationshipName: raw.ChildRelationshipName,
 		DeleteConstraint:      raw.DeleteConstraint,
+		DefaultValue:          strings.TrimSpace(raw.DefaultValue),
 		Required:              raw.Required,
 		ExternalID:            raw.ExternalID,
 		Unique:                raw.Unique,

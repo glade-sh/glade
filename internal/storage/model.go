@@ -1,6 +1,10 @@
 package storage
 
-import "strings"
+import (
+	"sort"
+	"strconv"
+	"strings"
+)
 
 const FixtureVersion = "oaer.storage.v1"
 
@@ -38,6 +42,7 @@ type Field struct {
 	APIName          string          `json:"apiName"`
 	Label            string          `json:"label,omitempty"`
 	Type             FieldType       `json:"type"`
+	DefaultValue     string          `json:"defaultValue,omitempty"`
 	Required         bool            `json:"required,omitempty"`
 	ExternalID       bool            `json:"externalId,omitempty"`
 	Unique           bool            `json:"unique,omitempty"`
@@ -209,6 +214,34 @@ func ListValue(values ...Value) Value {
 	return Value{Kind: ValueList, List: append([]Value(nil), values...)}
 }
 
+func DefaultValueForField(field Field) (Value, bool) {
+	raw := strings.TrimSpace(field.DefaultValue)
+	if raw == "" {
+		return Value{}, false
+	}
+	switch field.Type {
+	case FieldBoolean:
+		if strings.EqualFold(raw, "true") {
+			return BooleanValue(true), true
+		}
+		if strings.EqualFold(raw, "false") {
+			return BooleanValue(false), true
+		}
+	case FieldInteger:
+		value, err := strconv.ParseInt(raw, 10, 64)
+		if err == nil {
+			return IntegerValue(value), true
+		}
+	case FieldDecimal:
+		if _, err := strconv.ParseFloat(raw, 64); err == nil {
+			return DecimalValue(raw), true
+		}
+	case FieldString, FieldPicklist, FieldDate, FieldDateTime, FieldID, FieldAny:
+		return StringValue(strings.Trim(raw, `"`)), true
+	}
+	return Value{}, false
+}
+
 type IndexDefinition struct {
 	Name          string   `json:"name"`
 	Object        string   `json:"object"`
@@ -278,6 +311,16 @@ func ResolveObjectName(org OrgState, name string) (string, bool) {
 			return stripped, true
 		}
 	}
+	candidates := make([]string, 0, len(org.Objects))
+	for candidate := range org.Objects {
+		candidates = append(candidates, candidate)
+	}
+	sort.Strings(candidates)
+	for _, candidate := range candidates {
+		if strings.EqualFold(candidate, name) || strings.EqualFold(candidate, stripped) {
+			return candidate, true
+		}
+	}
 	return "", false
 }
 
@@ -292,6 +335,16 @@ func ResolveFieldName(definition ObjectDefinition, namespace, name string) (stri
 	if stripped != name {
 		if _, ok := definition.Fields[stripped]; ok {
 			return stripped, true
+		}
+	}
+	candidates := make([]string, 0, len(definition.Fields))
+	for candidate := range definition.Fields {
+		candidates = append(candidates, candidate)
+	}
+	sort.Strings(candidates)
+	for _, candidate := range candidates {
+		if strings.EqualFold(candidate, name) || strings.EqualFold(candidate, stripped) {
+			return candidate, true
 		}
 	}
 	return "", false
