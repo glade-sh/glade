@@ -808,6 +808,49 @@ System.assertEquals(true, StaticSettingsHolder.check());
 	}
 }
 
+func TestRuntimeResolvesUnqualifiedSchemaDescribeAliases(t *testing.T) {
+	check, err := CompileAnonymous("return 'readable';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	run, err := CompileAnonymous("return checkFieldIsReadable(Account.SObjectType, Account.Name.getDescribe());")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+System.assertEquals('readable', SecurityProbe.run());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{
+		Name: "SecurityProbe",
+		Methods: map[string]Method{
+			"run": {Name: "SecurityProbe.run", ClassName: "SecurityProbe", ReturnType: "String", IsStatic: true, Access: "public", Program: run},
+			"checkFieldIsReadable": {
+				Name:       "SecurityProbe.checkFieldIsReadable",
+				ClassName:  "SecurityProbe",
+				ReturnType: "String",
+				IsStatic:   true,
+				Access:     "public",
+				Params: []Param{
+					{Name: "objType", Type: "SObjectType"},
+					{Name: "fieldDescribe", Type: "DescribeFieldResult"},
+				},
+				Program: check,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestRuntimeCallsInheritedMethodOnNestedStaticProperty(t *testing.T) {
 	instanceGetter, err := CompileAnonymous("return new Child();")
 	if err != nil {

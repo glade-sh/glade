@@ -9797,6 +9797,14 @@ func platformTokenTypeAlias(typeName, target string) bool {
 		return true
 	case strings.EqualFold(typeName, "SObjectField") && strings.EqualFold(target, "Schema.SObjectField"):
 		return true
+	case strings.EqualFold(typeName, "Schema.DescribeFieldResult") && strings.EqualFold(target, "DescribeFieldResult"):
+		return true
+	case strings.EqualFold(typeName, "DescribeFieldResult") && strings.EqualFold(target, "Schema.DescribeFieldResult"):
+		return true
+	case strings.EqualFold(typeName, "Schema.DescribeSObjectResult") && strings.EqualFold(target, "DescribeSObjectResult"):
+		return true
+	case strings.EqualFold(typeName, "DescribeSObjectResult") && strings.EqualFold(target, "Schema.DescribeSObjectResult"):
+		return true
 	default:
 		return false
 	}
