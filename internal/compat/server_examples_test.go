@@ -102,6 +102,21 @@ func TestServerExampleSchemaAddsPublicAccountStandardFields(t *testing.T) {
 	}
 }
 
+func TestServerExampleSchemaAddsEmailTemplateStandardObject(t *testing.T) {
+	org := storage.NewOrgState()
+	applyServerExampleSchema(&org, schema.Schema{})
+
+	template := org.Objects["EmailTemplate"]
+	if template.Definition.KeyPrefix != "00X" {
+		t.Fatalf("EmailTemplate key prefix = %q", template.Definition.KeyPrefix)
+	}
+	for _, fieldName := range []string{"DeveloperName", "IsActive", "Name", "NamespacePrefix", "Subject"} {
+		if _, ok := template.Definition.Fields[fieldName]; !ok {
+			t.Fatalf("missing EmailTemplate field %s in %#v", fieldName, template.Definition.Fields)
+		}
+	}
+}
+
 func TestServerExampleApexRESTProbeDataForWebhookEvents(t *testing.T) {
 	if body := serverExampleApexRESTBody("/webhookEvents", "POST"); !strings.Contains(body, `"providerId":"local-provider"`) {
 		t.Fatalf("webhook body = %s", body)

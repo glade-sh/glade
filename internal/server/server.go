@@ -306,6 +306,7 @@ func (s *Server) handleApexRest(w http.ResponseWriter, r *http.Request) {
 		machine.SetLimitCaps(s.LimitCaps)
 	}
 	machine.SetCurrentUser(s.currentUser(r, ""))
+	machine.SetServerBaseURL(requestBaseURL(r))
 	if err := apextest.RegisterProjectRuntimeForRequest(machine, *s.Index); err != nil {
 		writeSalesforceError(w, errUnsupportedFeature, "Apex REST runtime setup failed: "+err.Error())
 		return
@@ -322,6 +323,29 @@ func (s *Server) handleApexRest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.writeApexRestResponse(w, machine.RestResponse(), returnValue, strings.EqualFold(route.Method.Type, "void"))
+}
+
+func requestBaseURL(r *http.Request) string {
+	scheme := "http"
+	if r.TLS != nil {
+		scheme = "https"
+	}
+	if forwarded := r.Header.Get("X-Forwarded-Proto"); forwarded != "" {
+		if forwardedScheme := strings.ToLower(strings.TrimSpace(strings.Split(forwarded, ",")[0])); forwardedScheme == "http" || forwardedScheme == "https" {
+			scheme = forwardedScheme
+		}
+	}
+	host := r.Host
+	if forwardedHost := r.Header.Get("X-Forwarded-Host"); forwardedHost != "" {
+		host = strings.TrimSpace(strings.Split(forwardedHost, ",")[0])
+	}
+	if host == "" && r.URL != nil {
+		host = r.URL.Host
+	}
+	if scheme == "" || host == "" {
+		return ""
+	}
+	return scheme + "://" + host
 }
 
 func (r apexRestRoute) MethodStaticNoArgs() bool {

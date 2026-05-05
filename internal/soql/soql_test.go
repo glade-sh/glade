@@ -90,6 +90,19 @@ func TestExecuteResolvesLowercaseIdAsStandardField(t *testing.T) {
 	}
 }
 
+func TestExecuteEmailTemplateStandardObjectQuery(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "EmailTemplate")
+
+	result, err := ParseAndExecute(org, "SELECT Id, DeveloperName, IsActive, Name, NamespacePrefix FROM EmailTemplate WHERE DeveloperName = 'SocialVerify' ORDER BY NamespacePrefix NULLS FIRST")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Records) != 0 {
+		t.Fatalf("records = %d, want 0", len(result.Records))
+	}
+}
+
 func TestExecuteAggregateQueries(t *testing.T) {
 	org := aggregateTestOrg()
 
