@@ -2691,6 +2691,64 @@ System.assertEquals('response-body', res.getBodyAsBlob().toString());
 	}
 }
 
+func TestExecStaticResourceCalloutMocks(t *testing.T) {
+	program, err := CompileAnonymous(`
+StaticResourceCalloutMock singleMock = new StaticResourceCalloutMock();
+singleMock.setStaticResource('Single_Response');
+singleMock.setStatusCode(203);
+singleMock.setHeader('Content-Type', 'application/json');
+Test.setMock('HttpCalloutMock', singleMock);
+HttpRequest firstReq = new HttpRequest();
+firstReq.setEndpoint('https://example.test/single');
+firstReq.setMethod('GET');
+HttpResponse first = new Http().send(firstReq);
+System.assertEquals(203, first.getStatusCode());
+System.assertEquals('{"single":true}', first.getBody());
+System.assertEquals('application/json', first.getHeader('content-type'));
+
+MultiStaticResourceCalloutMock multiMock = new MultiStaticResourceCalloutMock();
+multiMock.setStaticResource('https://example.test/a', 'Response_A');
+multiMock.setStaticResource('https://example.test/b', 'Response_B');
+multiMock.setStatusCode(204);
+Test.setMock('HttpCalloutMock', multiMock);
+HttpRequest reqA = new HttpRequest();
+reqA.setEndpoint('https://example.test/a');
+reqA.setMethod('GET');
+System.assertEquals('A-body', new Http().send(reqA).getBody());
+HttpRequest reqB = new HttpRequest();
+reqB.setEndpoint('https://example.test/b');
+reqB.setMethod('GET');
+HttpResponse second = new Http().send(reqB);
+System.assertEquals(204, second.getStatusCode());
+System.assertEquals('B-body', second.getBody());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	org.Objects["StaticResource"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "StaticResource",
+			KeyPrefix: "081",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+				"Body": {APIName: "Body", Type: storage.FieldBlob},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"081000000000001": {ID: "081000000000001", Object: "StaticResource", Fields: map[string]storage.Value{"Name": storage.StringValue("Single_Response"), "Body": storage.BlobValue(`{"single":true}`)}},
+			"081000000000002": {ID: "081000000000002", Object: "StaticResource", Fields: map[string]storage.Value{"Name": storage.StringValue("Response_A"), "Body": storage.BlobValue("A-body")}},
+			"081000000000003": {ID: "081000000000003", Object: "StaticResource", Fields: map[string]storage.Value{"Name": storage.StringValue("Response_B"), "Body": storage.BlobValue("B-body")}},
+		},
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecHttpRequestRejectsInvalidEdges(t *testing.T) {
 	cases := []struct {
 		name string
@@ -2797,16 +2855,6 @@ func TestExecUnsupportedHttpCalloutSurfacesHaveStableShape(t *testing.T) {
 		src  string
 		want string
 	}{
-		{
-			name: "static-resource-mock-constructor",
-			src:  `StaticResourceCalloutMock mock = new StaticResourceCalloutMock();`,
-			want: `unsupported call "StaticResourceCalloutMock local static resource callout mock surface"`,
-		},
-		{
-			name: "multi-static-resource-mock-constructor",
-			src:  `MultiStaticResourceCalloutMock mock = new MultiStaticResourceCalloutMock();`,
-			want: `unsupported call "MultiStaticResourceCalloutMock local static resource callout mock surface"`,
-		},
 		{
 			name: "continuation-constructor",
 			src:  `Continuation cont = new Continuation(60);`,
