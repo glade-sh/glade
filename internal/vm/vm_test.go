@@ -154,8 +154,9 @@ System.assertEquals(3, total);
 
 func TestExecMapLiteralInitializer(t *testing.T) {
 	program, err := CompileAnonymous(`
-Map<String, String> params = new Map<String, String> { 'orderId' => '001000000000001AAA' };
+Map<String, String> params = new Map<String, String> { 'orderId' => '001000000000001AAA', 'L\'ANDORRE' => 'AD' };
 System.assertEquals('001000000000001AAA', params.get('orderId'));
+System.assertEquals('AD', params.get('L\'ANDORRE'));
 `)
 	if err != nil {
 		t.Fatal(err)

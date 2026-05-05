@@ -301,6 +301,45 @@ System.assertEquals(5, c.score());
 	}
 }
 
+func TestExecStaticInitializersRunLazilyOnFirstClassUse(t *testing.T) {
+	staticInit, err := CompileAnonymous("seed = 4;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	getProgram, err := CompileAnonymous("return seed;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Counter",
+		StaticFields: map[string]Field{
+			"seed": {Name: "seed", Type: "Integer", Static: true},
+		},
+		StaticInitializers: []Method{{
+			Name:      "Counter.<static_init>",
+			ClassName: "Counter",
+			Program:   staticInit,
+			IsStatic:  true,
+		}},
+		Methods: map[string]Method{
+			"get": {Name: "Counter.get", ClassName: "Counter", ReturnType: "Integer", IsStatic: true, Program: getProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if got := machine.Classes["Counter"].StaticFields["seed"].Value.Int; got != 0 {
+		t.Fatalf("seed initialized eagerly = %d", got)
+	}
+	value, err := machine.CallStatic("Counter.get", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if value.Kind != ValueInt || value.Int != 4 {
+		t.Fatalf("Counter.get = %#v, want 4", value)
+	}
+}
+
 func TestExecConstructorThisChaining(t *testing.T) {
 	defaultCtor, err := CompileAnonymous("this(2);")
 	if err != nil {

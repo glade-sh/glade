@@ -99,5 +99,8 @@ func (vm *VM) CallStatic(name string, args []Value) (Value, error) {
 	if !ok {
 		return Null, fmt.Errorf("unknown static method %q", name)
 	}
+	if err := vm.ensureClassInitialized(method.ClassName); err != nil {
+		return Null, err
+	}
 	return vm.callMethod(method, args, &Result{})
 }
