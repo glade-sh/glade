@@ -98,6 +98,19 @@ func evalBinary(op string, left, right Value) (Value, error) {
 	case "!=":
 		return Bool(!left.Equal(right)), nil
 	case "<", "<=", ">", ">=":
+		if comparable, ok := comparablePlatformScalarText(left, right); ok {
+			a, b := comparable[0], comparable[1]
+			switch op {
+			case "<":
+				return Bool(a < b), nil
+			case "<=":
+				return Bool(a <= b), nil
+			case ">":
+				return Bool(a > b), nil
+			default:
+				return Bool(a >= b), nil
+			}
+		}
 		if !isNumeric(left) || !isNumeric(right) {
 			return Null, fmt.Errorf("operator %s requires numeric operands", op)
 		}
@@ -135,6 +148,26 @@ func evalBinary(op string, left, right Value) (Value, error) {
 	default:
 		return Null, fmt.Errorf("unsupported binary operator %q", op)
 	}
+}
+
+func comparablePlatformScalarText(left, right Value) ([2]string, bool) {
+	if left.Kind != ValueObject || right.Kind != ValueObject || !strings.EqualFold(left.Type, right.Type) {
+		return [2]string{}, false
+	}
+	switch strings.ToLower(left.Type) {
+	case "date", "datetime", "time":
+	default:
+		return [2]string{}, false
+	}
+	leftText, err := platformScalarText(left, left.Type)
+	if err != nil || leftText == "" {
+		return [2]string{}, false
+	}
+	rightText, err := platformScalarText(right, right.Type)
+	if err != nil || rightText == "" {
+		return [2]string{}, false
+	}
+	return [2]string{leftText, rightText}, true
 }
 
 func intBinary(op string, left, right Value, fn func(int64, int64) int64) (Value, error) {

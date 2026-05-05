@@ -4283,6 +4283,11 @@ func storageValueFromVMForField(value Value, fieldType storage.FieldType) (stora
 		if value.Kind == ValueString {
 			return storageValueFromVM(value)
 		}
+		if value.Kind == ValueObject && strings.EqualFold(value.Type, "Id") {
+			if raw, err := platformScalarText(value, "Id"); err == nil {
+				return storage.IDValue(storage.ID(raw)), nil
+			}
+		}
 	case storage.FieldBlob:
 		if value.Kind == ValueObject && value.Type == "Blob" {
 			if raw, ok := value.Fields["value"]; ok && raw.Kind == ValueString {

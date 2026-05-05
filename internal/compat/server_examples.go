@@ -543,7 +543,7 @@ func serverExampleApexRESTBody(path, method string) string {
 	case strings.Contains(path, "selfservice/cart/build"):
 		return `{"OrderId":"001000000000001AAA"}`
 	case strings.Contains(path, "selfservice/cart/submit"):
-		return `{"Cart":{"attributes":{"type":"Cart__c"},"Data__c":"{}"},"CartItems":[],"CartItemLines":[],"CartPayments":[],"CartPaymentLines":[]}`
+		return `{"Cart":{"attributes":{"type":"Cart__c"},"Data__c":"{}","Entity2__c":"a0f000000000001AAA","TransactionDate__c":"2026-01-01"},"CartItems":[],"CartItemLines":[],"CartPayments":[],"CartPaymentLines":[]}`
 	case strings.Contains(path, "selfservice/coupon"):
 		return `{"AccountId":"001000000000001AAA","Code":"LOCAL"}`
 	case strings.Contains(path, "selfservice/email"):
