@@ -138,6 +138,17 @@ func TestServerExampleApexRESTCartBuildBodyUsesSeededOrder(t *testing.T) {
 	}
 }
 
+func TestServerExampleApexRESTSObjectsPatchBodyIncludesID(t *testing.T) {
+	body := serverExampleApexRESTBody("/selfservice/sobjects/", "PATCH")
+	var payload []map[string]any
+	if err := json.Unmarshal([]byte(body), &payload); err != nil {
+		t.Fatal(err)
+	}
+	if len(payload) != 1 || payload[0]["Id"] != "001000000000001AAA" {
+		t.Fatalf("PATCH body = %s", body)
+	}
+}
+
 func localTestDir(t *testing.T, prefix string) string {
 	t.Helper()
 	dir, err := os.MkdirTemp(".", prefix+"-*")
