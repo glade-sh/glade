@@ -982,7 +982,8 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 			namedArgs[arg.Name] = value
 		}
 		if hasReceiver {
-			value, handled, err := vm.callValueMember("", receiver, expr.Callee, args, result)
+			receiverName := exprReceiverName(*expr.Left)
+			value, handled, err := vm.callValueMember(receiverName, receiver, expr.Callee, args, result)
 			if handled || err != nil {
 				return value, err
 			}
@@ -1023,7 +1024,8 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			}
 		}
 		if method, ok, ambiguous := vm.resolveInstanceMethodForArgs(dispatchClass, callee, args); ok {
-			if err := vm.checkMemberAccess(method.ClassName, method.Access, method.Name, method.Modifiers); err != nil {
+			accessMethod := vm.dispatchAccessMethod(vm.currentClass, method, callee, args)
+			if err := vm.checkMemberAccess(accessMethod.ClassName, accessMethod.Access, accessMethod.Name, accessMethod.Modifiers); err != nil {
 				return Null, err
 			}
 			if err := vm.ensureClassInitialized(method.ClassName); err != nil {
@@ -1949,6 +1951,13 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		}
 		return Null, unsupportedCallError(callee)
 	}
+}
+
+func exprReceiverName(expr ir.Expr) string {
+	if expr.Kind == ir.ExprVariable {
+		return expr.Name
+	}
+	return ""
 }
 
 func (vm *VM) nextDeterministicCryptoLong() int64 {
@@ -8460,6 +8469,21 @@ func (vm *VM) resolveInstanceMethodForArgs(typeName, method string, args []Value
 	return vm.resolveInstanceMethodForArgsSeen(typeName, method, args, make(map[string]bool))
 }
 
+func (vm *VM) dispatchAccessMethod(staticType string, target Method, method string, args []Value) Method {
+	staticType = vm.resolveTypeNameInClass(vm.currentClass, staticType)
+	if staticType == "" {
+		return target
+	}
+	surface, ok, ambiguous := vm.resolveInstanceMethodForArgs(staticType, method, args)
+	if !ok || ambiguous {
+		return target
+	}
+	if surface.ClassName == target.ClassName || vm.isSubclass(target.ClassName, surface.ClassName) {
+		return surface
+	}
+	return target
+}
+
 func (vm *VM) resolveInstanceMethodForArgsSeen(typeName, method string, args []Value, seen map[string]bool) (Method, bool, bool) {
 	var interfaces []string
 	for typeName != "" {
@@ -8712,11 +8736,20 @@ func (vm *VM) typeAssignableTo(from, to string) bool {
 		(strings.EqualFold(from, "Id") && strings.EqualFold(to, "String")) {
 		return true
 	}
+	if strings.EqualFold(to, "sObject") && vm.isSObjectLikeType(from) {
+		return true
+	}
 	if collectionBase(from) != "" && strings.EqualFold(collectionBase(from), collectionBase(to)) {
 		fromElement, fromOK := collectionElementType(from)
 		toElement, toOK := collectionElementType(to)
 		if fromOK && toOK {
 			return vm.typeAssignableTo(fromElement, toElement)
+		}
+	}
+	if fromKey, fromValue, fromOK := mapTypeArgs(from); fromOK {
+		toKey, toValue, toOK := mapTypeArgs(to)
+		if toOK {
+			return vm.typeAssignableTo(fromKey, toKey) && vm.typeAssignableTo(fromValue, toValue)
 		}
 	}
 	if numericConversionScore(to, from) >= 0 {
@@ -8765,6 +8798,12 @@ func (vm *VM) conversionScore(paramType string, value Value) int {
 		}
 		if vm.collectionElementsAssignable(paramType, value) {
 			return 850
+		}
+		return -1
+	}
+	if strings.HasPrefix(valueType, "Map<") && strings.HasPrefix(paramType, "Map<") {
+		if vm.typeAssignableTo(valueType, paramType) {
+			return 900
 		}
 		return -1
 	}
@@ -9264,6 +9303,21 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 	}
 	if strings.HasPrefix(typeName, "Map<") && value.Kind == ValueMap {
 		value.Type = typeName
+		keyType, valueType, ok := mapTypeArgs(typeName)
+		if !ok {
+			return value, nil
+		}
+		for rawKey, item := range value.Map {
+			keyValue := valueFromMapKey(rawKey)
+			if _, err := vm.coerceAssignable(keyType, keyValue); err != nil {
+				return Null, fmt.Errorf("key: %w", err)
+			}
+			coercedValue, err := vm.coerceAssignable(valueType, item)
+			if err != nil {
+				return Null, fmt.Errorf("value: %w", err)
+			}
+			value.Map[rawKey] = coercedValue
+		}
 		return value, nil
 	}
 	return coerceAssignable(typeName, value)
@@ -9900,7 +9954,11 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			}
 			return Null, true, unsupportedCallError(memberCallName(receiverName, receiver.Type, method))
 		}
-		if err := vm.checkMemberAccess(target.ClassName, target.Access, target.Name, target.Modifiers); err != nil {
+		accessMethod := target
+		if receiverType := vm.VarTypes[receiverName]; receiverType != "" {
+			accessMethod = vm.dispatchAccessMethod(receiverType, target, method, args)
+		}
+		if err := vm.checkMemberAccess(accessMethod.ClassName, accessMethod.Access, accessMethod.Name, accessMethod.Modifiers); err != nil {
 			return Null, true, err
 		}
 		value, err := vm.callMethodWithReceiver(target, receiver, args, result)

@@ -696,7 +696,7 @@ func extractMethodSource(source string, r diagnostic.Range) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if strings.Contains(text, "(") {
+	if open := strings.IndexByte(text, '('); open >= 0 && findMatchingParen(text, open) >= 0 {
 		return text, nil
 	}
 	start := r.Start.Offset

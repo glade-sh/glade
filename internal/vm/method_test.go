@@ -867,6 +867,48 @@ System.assertEquals('child', child.run());
 	}
 }
 
+func TestRuntimeChecksVirtualDispatchAccessAtVisibleSurface(t *testing.T) {
+	run, err := CompileAnonymous("return hook();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	hook, err := CompileAnonymous("return 'child';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Child child = new Child();
+Base base = child;
+System.assertEquals('child', base.run());
+System.assertEquals('child', child.run());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Base",
+		Methods: map[string]Method{
+			"run":  {Name: "Base.run", ClassName: "Base", ReturnType: "String", Program: run},
+			"hook": {Name: "Base.hook", ClassName: "Base", ReturnType: "String", Modifiers: []string{"abstract"}},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Child",
+		SuperClass: "Base",
+		Methods: map[string]Method{
+			"hook": {Name: "Child.hook", ClassName: "Child", ReturnType: "String", Access: "private", Program: hook},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestRuntimeAllowsTestVisiblePrivateMethodFromTestClass(t *testing.T) {
 	visible, err := CompileAnonymous("return 'visible';")
 	if err != nil {
