@@ -3328,6 +3328,22 @@ func TestToolingExecuteAnonymousAndCompositeSObjects(t *testing.T) {
 	}
 }
 
+func TestToolingExecuteAnonymousLocalEventBusAndConnectApiStubs(t *testing.T) {
+	org := testOrg()
+	org.OrgID = "00DLOCAL00000001"
+	handler := New(&org)
+
+	body := `{"anonymousBody":"Database.SaveResult eventResult = EventBus.publish(new Account(Name = 'Local Event')); System.assert(eventResult.isSuccess()); ConnectApi.OrganizationSettings settings = ConnectApi.Organization.getSettings(); System.assertEquals('00DLOCAL00000001', settings.orgId);"}`
+	exec := httptest.NewRecorder()
+	handler.ServeHTTP(exec, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/tooling/executeAnonymous", strings.NewReader(body)))
+	if exec.Code != http.StatusOK || !bytes.Contains(exec.Body.Bytes(), []byte(`"success":true`)) {
+		t.Fatalf("executeAnonymous event/connect status = %d body=%s", exec.Code, exec.Body.String())
+	}
+	if len(org.Objects["Account"].Records) != 0 {
+		t.Fatalf("EventBus publish should not persist event payload locally: %#v", org.Objects["Account"].Records)
+	}
+}
+
 func TestCompositeSObjectsEchoesReferenceIDAndPreservesOrder(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)

@@ -50,6 +50,10 @@ type VM struct {
 	currentClass     string
 	currentMethod    Method
 	testContext      *TestContext
+	localAsyncJobs   []AsyncJob
+	localAsyncSeq    int
+	localAsyncDrain  bool
+	localAsyncChain  bool
 	executionUser    Value
 	limits           Limits
 	limitCaps        LimitCaps
@@ -286,6 +290,13 @@ func (vm *VM) Execute(program ir.Program) (result Result, err error) {
 		return result, fmt.Errorf("%s outside loop", out.signal)
 	}
 	return result, nil
+}
+
+func (vm *VM) DrainAsync(result *Result) error {
+	if vm.testContext != nil {
+		return vm.drainTestAsync(result)
+	}
+	return vm.drainLocalAsync(result)
 }
 
 type controlSignal string
@@ -1567,6 +1578,12 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return Bool(true), nil
 		}
 		return Bool(false), nil
+	case "EventBus.publish":
+		return vm.eventBusPublish(args, result)
+	case "EventBus.publishAfterCommit":
+		return Null, unsupportedCallError(callee + " local platform event after-commit delivery surface")
+	case "ConnectApi.Organization.getSettings":
+		return vm.connectAPIOrganizationSettings(args)
 	case "Messaging.sendEmail":
 		if len(args) == 0 {
 			return Null, fmt.Errorf("Messaging.sendEmail expects messages")
@@ -1742,15 +1759,13 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 }
 
 func unsupportedIntegrationSurface(callee string) (string, bool) {
-	for _, prefix := range []string{"Approval.", "Auth.", "EventBus.", "QuickAction.", "Canvas.", "Continuation."} {
+	for _, prefix := range []string{"Approval.", "Auth.", "QuickAction.", "Canvas.", "Continuation."} {
 		if strings.HasPrefix(callee, prefix) {
 			switch prefix {
 			case "Approval.":
 				return "local approval process and lock surface", true
 			case "Auth.":
 				return "local authentication token/cloud API surface", true
-			case "EventBus.":
-				return "local platform event publish surface", true
 			case "QuickAction.":
 				return "local quick action UI surface", true
 			case "Canvas.":
@@ -1761,6 +1776,52 @@ func unsupportedIntegrationSurface(callee string) (string, bool) {
 		}
 	}
 	return "", false
+}
+
+func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
+	if len(args) != 1 {
+		return Null, fmt.Errorf("EventBus.publish expects event record or list")
+	}
+	records := []Value{args[0]}
+	if args[0].Kind == ValueList {
+		records = args[0].List
+	}
+	results := make([]Value, 0, len(records))
+	for _, record := range records {
+		if record.Kind != ValueObject {
+			return Null, fmt.Errorf("EventBus.publish expects SObject event record(s)")
+		}
+		row := Object("Database.SaveResult")
+		row.Fields["success"] = Bool(true)
+		row.Fields["id"] = Null
+		row.Fields["error"] = String("")
+		row.Fields["errors"] = List()
+		results = append(results, row)
+	}
+	appendTrace(result, "apex.eventbus.publish", "apex.eventbus", map[string]any{
+		"records":  len(records),
+		"delivery": "local-noop",
+	})
+	if args[0].Kind == ValueList {
+		return List(results...), nil
+	}
+	if len(results) == 0 {
+		return Null, nil
+	}
+	return results[0], nil
+}
+
+func (vm *VM) connectAPIOrganizationSettings(args []Value) (Value, error) {
+	if len(args) != 0 {
+		return Null, fmt.Errorf("ConnectApi.Organization.getSettings expects 0 arguments")
+	}
+	orgID := "00D000000000001"
+	if vm.Org != nil && vm.Org.OrgID != "" {
+		orgID = vm.Org.OrgID
+	}
+	settings := Object("ConnectApi.OrganizationSettings")
+	settings.Fields["orgId"] = String(orgID)
+	return settings, nil
 }
 
 func (vm *VM) callCustomDataStaticMember(typeName, method string, args []Value) (Value, bool, error) {
@@ -2143,7 +2204,7 @@ func (vm *VM) testStop(result *Result) (Value, error) {
 		return Null, fmt.Errorf("Test.stopTest cannot be called more than once")
 	}
 	vm.testContext.Stopped = true
-	err := vm.drainAsync(result)
+	err := vm.drainTestAsync(result)
 	vm.limits = vm.testContext.ParentLimits
 	vm.limitViolations = append([]LimitViolation(nil), vm.testContext.ParentViolations...)
 	return Null, err
@@ -2156,9 +2217,6 @@ func (vm *VM) enqueueJob(args []Value, result *Result) (Value, error) {
 	if len(args) != 1 {
 		return Null, fmt.Errorf("System.enqueueJob expects 1 argument")
 	}
-	if vm.testContext == nil {
-		return String("async-job-1"), nil
-	}
 	if args[0].Kind != ValueObject {
 		return Null, fmt.Errorf("System.enqueueJob expects Queueable object")
 	}
@@ -2168,14 +2226,13 @@ func (vm *VM) enqueueJob(args []Value, result *Result) (Value, error) {
 	if err := vm.incrementLimit("queueableJobs", 1); err != nil {
 		return Null, err
 	}
-	if vm.testContext.Draining && vm.testContext.ChainEnqueued {
+	draining, chainEnqueued := vm.asyncDrainState()
+	if draining && chainEnqueued {
 		return Null, fmt.Errorf("Queueable chaining limit exceeded")
 	}
-	if vm.testContext.Draining {
-		vm.testContext.ChainEnqueued = true
-	}
+	vm.markAsyncChainEnqueued()
 	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "Queueable", Object: args[0]}
-	vm.testContext.AsyncJobs = append(vm.testContext.AsyncJobs, job)
+	vm.enqueueAsyncJob(job)
 	vm.recordAsyncJob(job, "Queued", "")
 	appendTrace(result, "apex.async.enqueue", "apex.async", map[string]any{
 		"kind":  job.Kind,
@@ -2205,9 +2262,6 @@ func (vm *VM) executeBatch(args []Value, result *Result) (Value, error) {
 			return Null, fmt.Errorf("Database.executeBatch scope size must be at most 2000")
 		}
 	}
-	if vm.testContext == nil {
-		return String("707000000000001"), nil
-	}
 	if err := vm.incrementLimit("asyncJobs", 1); err != nil {
 		return Null, err
 	}
@@ -2215,7 +2269,7 @@ func (vm *VM) executeBatch(args []Value, result *Result) (Value, error) {
 		return Null, err
 	}
 	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "BatchApex", Object: args[0], BatchSize: batchSize}
-	vm.testContext.AsyncJobs = append(vm.testContext.AsyncJobs, job)
+	vm.enqueueAsyncJob(job)
 	vm.recordAsyncJob(job, "Queued", "")
 	appendTrace(result, "apex.async.enqueue", "apex.async", map[string]any{
 		"kind":      job.Kind,
@@ -2230,9 +2284,6 @@ func (vm *VM) scheduleJob(args []Value, result *Result) (Value, error) {
 	if len(args) != 3 || args[0].Kind != ValueString || args[1].Kind != ValueString || args[2].Kind != ValueObject {
 		return Null, fmt.Errorf("System.schedule expects name, cron, and Schedulable object")
 	}
-	if vm.testContext == nil {
-		return String("08e000000000001"), nil
-	}
 	if err := vm.incrementLimit("asyncJobs", 1); err != nil {
 		return Null, err
 	}
@@ -2240,7 +2291,7 @@ func (vm *VM) scheduleJob(args []Value, result *Result) (Value, error) {
 		return Null, err
 	}
 	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "ScheduledApex", Object: args[2], Name: args[0].Text, Cron: args[1].Text}
-	vm.testContext.AsyncJobs = append(vm.testContext.AsyncJobs, job)
+	vm.enqueueAsyncJob(job)
 	vm.recordAsyncJob(job, "Queued", "")
 	vm.recordCronTrigger(job, "Waiting")
 	appendTrace(result, "apex.async.enqueue", "apex.async", map[string]any{
@@ -2299,21 +2350,32 @@ func (vm *VM) asyncJobRecordStatus(jobID string) string {
 	return ""
 }
 
-func (vm *VM) drainAsync(result *Result) error {
-	if vm.testContext == nil || vm.testContext.Draining {
+func (vm *VM) drainTestAsync(result *Result) error {
+	if vm.testContext == nil {
 		return nil
 	}
-	vm.testContext.Draining = true
+	return vm.drainAsyncJobs(result, &vm.testContext.AsyncJobs, &vm.testContext.Draining, &vm.testContext.ChainEnqueued)
+}
+
+func (vm *VM) drainLocalAsync(result *Result) error {
+	return vm.drainAsyncJobs(result, &vm.localAsyncJobs, &vm.localAsyncDrain, &vm.localAsyncChain)
+}
+
+func (vm *VM) drainAsyncJobs(result *Result, jobs *[]AsyncJob, draining *bool, chainEnqueued *bool) error {
+	if *draining {
+		return nil
+	}
+	*draining = true
 	defer func() {
-		vm.testContext.Draining = false
+		*draining = false
 	}()
-	for len(vm.testContext.AsyncJobs) > 0 {
-		job := vm.testContext.AsyncJobs[0]
-		vm.testContext.AsyncJobs = vm.testContext.AsyncJobs[1:]
+	for len(*jobs) > 0 {
+		job := (*jobs)[0]
+		*jobs = (*jobs)[1:]
 		if err := vm.ResetStatics(); err != nil {
 			return err
 		}
-		vm.testContext.ChainEnqueued = false
+		*chainEnqueued = false
 		vm.recordAsyncJob(job, "Processing", "")
 		appendTrace(result, "apex.async.run", "apex.async", map[string]any{
 			"kind":  job.Kind,
@@ -2326,6 +2388,33 @@ func (vm *VM) drainAsync(result *Result) error {
 		vm.recordAsyncJob(job, "Completed", "")
 	}
 	return nil
+}
+
+func (vm *VM) asyncDrainState() (bool, bool) {
+	if vm.testContext != nil {
+		return vm.testContext.Draining, vm.testContext.ChainEnqueued
+	}
+	return vm.localAsyncDrain, vm.localAsyncChain
+}
+
+func (vm *VM) markAsyncChainEnqueued() {
+	if vm.testContext != nil {
+		if vm.testContext.Draining {
+			vm.testContext.ChainEnqueued = true
+		}
+		return
+	}
+	if vm.localAsyncDrain {
+		vm.localAsyncChain = true
+	}
+}
+
+func (vm *VM) enqueueAsyncJob(job AsyncJob) {
+	if vm.testContext != nil {
+		vm.testContext.AsyncJobs = append(vm.testContext.AsyncJobs, job)
+		return
+	}
+	vm.localAsyncJobs = append(vm.localAsyncJobs, job)
 }
 
 func (vm *VM) runAsyncJob(job AsyncJob, result *Result) error {
@@ -2486,11 +2575,12 @@ func cronTriggerID(jobID string) string {
 }
 
 func (vm *VM) nextAsyncJobID() string {
-	if vm.testContext == nil {
-		return "707000000000001"
+	if vm.testContext != nil {
+		vm.testContext.JobSeq++
+		return fmt.Sprintf("707%012d", vm.testContext.JobSeq)
 	}
-	vm.testContext.JobSeq++
-	return fmt.Sprintf("707%012d", vm.testContext.JobSeq)
+	vm.localAsyncSeq++
+	return fmt.Sprintf("707%012d", vm.localAsyncSeq)
 }
 
 func (vm *VM) ensureAsyncObjects() {

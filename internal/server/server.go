@@ -1403,6 +1403,10 @@ func (s *Server) handleExecuteAnonymous(w http.ResponseWriter, r *http.Request) 
 		writeJSON(w, http.StatusOK, executeAnonymousFailure(true, err.Error(), result.Debug))
 		return
 	}
+	if err := machine.DrainAsync(&result); err != nil {
+		writeJSON(w, http.StatusOK, executeAnonymousFailure(true, err.Error(), result.Debug))
+		return
+	}
 	if err := s.commitOrg(next); err != nil {
 		writeSalesforceError(w, errStoreFailure, err.Error())
 		return

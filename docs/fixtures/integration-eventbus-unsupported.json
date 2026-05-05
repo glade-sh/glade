@@ -1,7 +1,7 @@
 {
-  "name": "integration-eventbus-unsupported",
-  "evidence": [{"symbol": "EventBus.publish", "kind": "exec", "notes": "Platform event publish is not modeled locally."}],
-  "source": [{"path": "anonymous.apex", "content": "EventBus.publish(new Account(Name = 'Acme'));"}],
-  "command": {"kind": "exec", "args": ["EventBus.publish(new Account(Name = 'Acme'));"]},
-  "expected": {"error": {"type": "UnsupportedFeature", "message": "unsupported call \"EventBus.publish local platform event publish surface\""}}
+  "name": "integration-eventbus-local-publish",
+  "evidence": [{"symbol": "EventBus.publish", "kind": "exec", "notes": "Local platform event publish returns no-op success SaveResult records; delivery is not modeled."}],
+  "source": [{"path": "anonymous.apex", "content": "Database.SaveResult result = EventBus.publish(new Account(Name = 'Acme')); System.assert(result.isSuccess());"}],
+  "command": {"kind": "exec", "args": ["Database.SaveResult result = EventBus.publish(new Account(Name = 'Acme')); System.assert(result.isSuccess());"]},
+  "expected": {"result": {"ok": true, "debug": null}}
 }

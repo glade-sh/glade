@@ -24,7 +24,7 @@
     {
       "symbol": "EventBus.*",
       "kind": "server",
-      "notes": "Platform event publish surfaces stay explicitly unsupported."
+      "notes": "Platform event delivery and after-commit publish surfaces stay explicitly unsupported; immediate publish returns local no-op success records."
     },
     {
       "symbol": "QuickAction.*",
@@ -120,7 +120,7 @@
       "status": 200,
       "contains": [
         "success\":false",
-        "unsupported call \\\"EventBus.publishAfterCommit local platform event publish surface\\\""
+        "unsupported call \\\"EventBus.publishAfterCommit local platform event after-commit delivery surface\\\""
       ]
     },
     {
