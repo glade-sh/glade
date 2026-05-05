@@ -233,6 +233,91 @@ System.assertEquals(11, Util.count(names));
 	}
 }
 
+func TestExecOverloadResolutionUsesTypedCollectionArgument(t *testing.T) {
+	listProgram, err := CompileAnonymous(`return 'list';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	setProgram, err := CompileAnonymous(`return 'set';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+List<String> fields = new List<String>{'Name'};
+System.assertEquals('list', QueryFactory.selectFields(fields));
+System.assertEquals('list', QueryFactory.selectFields(new List<String>()));
+System.assertEquals('set', QueryFactory.selectFields(new Set<String>{'Name'}));
+System.assertEquals('set', QueryFactory.selectFields(new Set<String>()));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	for _, method := range []Method{
+		{Name: "QueryFactory.selectFields", ReturnType: "String", Params: []Param{{Name: "fields", Type: "Set<String>"}}, Program: setProgram},
+		{Name: "QueryFactory.selectFields", ReturnType: "String", Params: []Param{{Name: "fields", Type: "List<String>"}}, Program: listProgram},
+	} {
+		if err := machine.RegisterMethod(method); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecOverloadResolutionUsesSchemaFieldCollectionElementType(t *testing.T) {
+	stringSetProgram, err := CompileAnonymous(`return 'string set';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	stringListProgram, err := CompileAnonymous(`return 'string list';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fieldSetProgram, err := CompileAnonymous(`return 'field set';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fieldListProgram, err := CompileAnonymous(`return 'field list';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Map<String, Schema.SObjectField> fieldMap = Schema.SObjectType.Account.fields.getMap();
+Set<String> stringSet = new Set<String>{'Name'};
+List<String> stringList = new List<String>{'Name'};
+Set<Schema.SObjectField> fieldSet = new Set<Schema.SObjectField>{fieldMap.get('Name')};
+List<Schema.SObjectField> fieldList = new List<Schema.SObjectField>{fieldMap.get('Name')};
+
+System.assertEquals('string set', QueryFactory.selectFields(stringSet));
+System.assertEquals('string list', QueryFactory.selectFields(stringList));
+System.assertEquals('field set', QueryFactory.selectFields(fieldSet));
+System.assertEquals('field list', QueryFactory.selectFields(fieldList));
+System.assertEquals('field set', QueryFactory.selectFields(new Set<Schema.SObjectField>()));
+System.assertEquals('field list', QueryFactory.selectFields(new List<Schema.SObjectField>()));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	for _, method := range []Method{
+		{Name: "QueryFactory.selectFields", ReturnType: "String", Params: []Param{{Name: "fields", Type: "Set<String>"}}, Program: stringSetProgram},
+		{Name: "QueryFactory.selectFields", ReturnType: "String", Params: []Param{{Name: "fields", Type: "List<String>"}}, Program: stringListProgram},
+		{Name: "QueryFactory.selectFields", ReturnType: "String", Params: []Param{{Name: "fields", Type: "Set<Schema.SObjectField>"}}, Program: fieldSetProgram},
+		{Name: "QueryFactory.selectFields", ReturnType: "String", Params: []Param{{Name: "fields", Type: "List<Schema.SObjectField>"}}, Program: fieldListProgram},
+	} {
+		if err := machine.RegisterMethod(method); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecOverloadResolutionUsesTypedNullVariables(t *testing.T) {
 	listObjectProgram, err := CompileAnonymous(`return 1;`)
 	if err != nil {

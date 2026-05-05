@@ -9041,7 +9041,7 @@ func (vm *VM) matchMethodByArgs(candidates []Method, args []Value) (Method, bool
 			applicable = append(applicable, candidate)
 		}
 	}
-	return vm.bestMethodBySpecificity(applicable)
+	return vm.bestMethodBySpecificity(applicable, args)
 }
 
 func (vm *VM) methodApplicable(candidate Method, args []Value) bool {
@@ -9057,7 +9057,7 @@ func (vm *VM) methodApplicable(candidate Method, args []Value) bool {
 	return true
 }
 
-func (vm *VM) bestMethodBySpecificity(applicable []Method) (Method, bool, bool) {
+func (vm *VM) bestMethodBySpecificity(applicable []Method, args []Value) (Method, bool, bool) {
 	if len(applicable) == 0 {
 		return Method{}, false, false
 	}
@@ -9068,7 +9068,7 @@ func (vm *VM) bestMethodBySpecificity(applicable []Method) (Method, bool, bool) 
 			if i == j {
 				continue
 			}
-			switch vm.compareMethodSpecificity(candidate, other) {
+			switch vm.compareMethodSpecificityForArgs(candidate, other, args) {
 			case -1, 2:
 				moreSpecificThanAll = false
 			}
@@ -9077,7 +9077,7 @@ func (vm *VM) bestMethodBySpecificity(applicable []Method) (Method, bool, bool) 
 			}
 		}
 		if moreSpecificThanAll {
-			if bestIndex >= 0 && vm.compareMethodSpecificity(candidate, applicable[bestIndex]) == 0 {
+			if bestIndex >= 0 && vm.compareMethodSpecificityForArgs(candidate, applicable[bestIndex], args) == 0 {
 				continue
 			}
 			if bestIndex >= 0 {
@@ -9090,6 +9090,37 @@ func (vm *VM) bestMethodBySpecificity(applicable []Method) (Method, bool, bool) 
 		return Method{}, false, true
 	}
 	return applicable[bestIndex], true, false
+}
+
+func (vm *VM) compareMethodSpecificityForArgs(left, right Method, args []Value) int {
+	if len(args) != len(left.Params) || len(args) != len(right.Params) {
+		return vm.compareMethodSpecificity(left, right)
+	}
+	leftBetter := false
+	rightBetter := false
+	for i, arg := range args {
+		leftType := vm.resolveTypeNameInClass(left.ClassName, left.Params[i].Type)
+		rightType := vm.resolveTypeNameInClass(right.ClassName, right.Params[i].Type)
+		leftScore := vm.conversionScore(leftType, arg)
+		rightScore := vm.conversionScore(rightType, arg)
+		switch {
+		case leftScore > rightScore:
+			leftBetter = true
+		case rightScore > leftScore:
+			rightBetter = true
+		}
+		if leftBetter && rightBetter {
+			return 2
+		}
+	}
+	switch {
+	case leftBetter:
+		return 1
+	case rightBetter:
+		return -1
+	default:
+		return vm.compareMethodSpecificity(left, right)
+	}
 }
 
 func (vm *VM) compareMethodSpecificity(left, right Method) int {
@@ -9289,8 +9320,12 @@ func (vm *VM) collectionElementsAssignable(paramType string, value Value) bool {
 	if !ok {
 		return false
 	}
+	paramBase := collectionBase(paramType)
 	switch value.Kind {
 	case ValueList:
+		if paramBase != "List" {
+			return false
+		}
 		if len(value.List) == 0 {
 			return false
 		}
@@ -9301,6 +9336,9 @@ func (vm *VM) collectionElementsAssignable(paramType string, value Value) bool {
 		}
 		return true
 	case ValueSet:
+		if paramBase != "Set" {
+			return false
+		}
 		if len(value.Set) == 0 {
 			return false
 		}
