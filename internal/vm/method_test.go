@@ -388,6 +388,41 @@ func TestExecStaticInitializersRunLazilyOnFirstClassUse(t *testing.T) {
 	}
 }
 
+func TestCloneRuntimeKeepsStaticStateIsolated(t *testing.T) {
+	getProgram, err := CompileAnonymous("return seed;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	template := New(nil)
+	if err := template.RegisterClass(Class{
+		Name: "Counter",
+		StaticFields: map[string]Field{
+			"seed": {Name: "seed", Type: "Integer", Static: true},
+		},
+		Methods: map[string]Method{
+			"get": {Name: "Counter.get", ClassName: "Counter", ReturnType: "Integer", IsStatic: true, Program: getProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	first := template.CloneRuntime(nil)
+	class := first.Classes["Counter"]
+	field := class.StaticFields["seed"]
+	field.Value = Int(7)
+	class.StaticFields["seed"] = field
+	first.Classes["Counter"] = class
+
+	second := template.CloneRuntime(nil)
+	value, err := second.CallStatic("Counter.get", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if value.Kind != ValueInt || value.Int != 0 {
+		t.Fatalf("Counter.get from second clone = %#v, want zero-value static", value)
+	}
+}
+
 func TestExecDottedStaticMethodRunsStaticInitializer(t *testing.T) {
 	staticInit, err := CompileAnonymous("seed = 4;")
 	if err != nil {

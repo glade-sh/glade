@@ -196,6 +196,11 @@ func TestServerExampleProbeOverlayKeepsEmailEncryptionSettingsScoped(t *testing.
 			t.Fatalf("email encryption fields = %#v", record.Fields)
 		}
 	}
+	templates := emailOrg.Objects["EmailTemplate"].Records
+	template := templates[storage.ID("00X000000000001AAA")]
+	if template.Fields["DeveloperName"].String != "NimbleAMSSocialVerify" {
+		t.Fatalf("email template records = %#v", templates)
+	}
 
 	settingsOrg := base.Clone()
 	applyServerExampleProbeOverlay(&settingsOrg, serverExampleProbe{Path: "/services/apexrest/selfservice/settings/LoginType"})

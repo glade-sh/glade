@@ -13,11 +13,13 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/open-aer/oaer/internal/apextest"
 	"github.com/open-aer/oaer/internal/project"
 	"github.com/open-aer/oaer/internal/schema"
 	"github.com/open-aer/oaer/internal/server"
 	"github.com/open-aer/oaer/internal/storage"
 	"github.com/open-aer/oaer/internal/typesys"
+	"github.com/open-aer/oaer/internal/vm"
 )
 
 const serverExampleAPIVersion = "61.0"
@@ -173,6 +175,8 @@ func runServerExampleProbes(root, projectPath string, fixture storage.Fixture, p
 		return nil, err
 	}
 	index := typesys.Build(p, loadedSchema)
+	runtimeTemplate := vm.New(nil)
+	runtimeErr := apextest.RegisterProjectRuntimeForRequest(runtimeTemplate, index)
 	org.Namespace = p.Namespace
 	applyServerExampleSchema(&org, loadedSchema)
 	if err := storage.ApplyFixture(&org, fixture); err != nil {
@@ -185,7 +189,7 @@ func runServerExampleProbes(root, projectPath string, fixture storage.Fixture, p
 		if err := store.Save(probeOrg); err != nil {
 			return nil, err
 		}
-		handler := serverExampleHandler(&probeOrg, store, source, index)
+		handler := serverExampleHandler(&probeOrg, store, source, index, runtimeTemplate, runtimeErr)
 		req := httptest.NewRequest(probe.Method, probe.Path, strings.NewReader(probe.Body))
 		if probe.Body != "" {
 			req.Header.Set("Content-Type", "application/json")
@@ -200,9 +204,9 @@ func runServerExampleProbes(root, projectPath string, fixture storage.Fixture, p
 	return results, nil
 }
 
-func serverExampleHandler(org *storage.OrgState, store interface{ Save(storage.OrgState) error }, source server.SourceMetadata, index typesys.Index) *server.Server {
+func serverExampleHandler(org *storage.OrgState, store interface{ Save(storage.OrgState) error }, source server.SourceMetadata, index typesys.Index, runtimeTemplate *vm.VM, runtimeErr error) *server.Server {
 	handler := server.NewWithStoreAndSource(org, store, source)
-	handler.SetProjectIndex(index)
+	handler.SetProjectRuntime(index, runtimeTemplate, runtimeErr)
 	return handler
 }
 
@@ -425,6 +429,7 @@ func applyServerExampleProbeOverlay(org *storage.OrgState, probe serverExamplePr
 	}
 	if strings.Contains(path, "selfservice/email") {
 		ensureServerExampleNimbleAMSSettings(org)
+		ensureServerExampleSocialVerifyTemplate(org)
 	}
 	if strings.Contains(path, "webhookEvents") {
 		ensureServerExampleLocalAccount(org)
@@ -563,6 +568,30 @@ func ensureServerExampleNimbleAMSSettings(org *storage.OrgState) {
 		},
 	}
 	org.Objects[objectName] = settings
+}
+
+func ensureServerExampleSocialVerifyTemplate(org *storage.OrgState) {
+	storage.EnsureStandardObject(org, "EmailTemplate")
+	template := org.Objects["EmailTemplate"]
+	if template.Records == nil {
+		template.Records = make(map[storage.ID]storage.Record)
+	}
+	id := storage.ID("00X000000000001AAA")
+	if _, ok := template.Records[id]; ok {
+		org.Objects["EmailTemplate"] = template
+		return
+	}
+	template.Records[id] = storage.Record{
+		ID:     id,
+		Object: "EmailTemplate",
+		Fields: map[string]storage.Value{
+			"DeveloperName": storage.StringValue("NimbleAMSSocialVerify"),
+			"IsActive":      storage.BooleanValue(true),
+			"Name":          storage.StringValue("Nimble AMS Social Verify"),
+			"Subject":       storage.StringValue("Local Social Verify"),
+		},
+	}
+	org.Objects["EmailTemplate"] = template
 }
 
 func ensureServerExampleVerifiableSetupData(org *storage.OrgState, providerIDField string) {

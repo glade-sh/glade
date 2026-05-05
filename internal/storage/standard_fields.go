@@ -117,6 +117,8 @@ func standardFieldsForObject(objectName string) []Field {
 		// Plain custom objects and custom settings do not get these by suffix.
 		return []Field{
 			{APIName: "DeveloperName", Label: "Developer Name", Type: FieldString},
+			{APIName: "Label", Label: "Label", Type: FieldString},
+			{APIName: "Language", Label: "Language", Type: FieldString},
 			{APIName: "MasterLabel", Label: "Master Label", Type: FieldString},
 			{APIName: "NamespacePrefix", Label: "Namespace Prefix", Type: FieldString},
 			{APIName: "QualifiedApiName", Label: "Qualified API Name", Type: FieldString},

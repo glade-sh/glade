@@ -200,6 +200,92 @@ func New(stdout io.Writer) *VM {
 	}
 }
 
+// CloneRuntime returns a fresh VM with the same registered Apex methods,
+// classes, and triggers. Mutable runtime state such as globals, limits, org
+// state, current user, and static field values remains request-local.
+func (vm *VM) CloneRuntime(stdout io.Writer) *VM {
+	clone := New(stdout)
+	clone.Methods = copyMethodMap(vm.Methods)
+	clone.MethodOverloads = copyMethodSliceMap(vm.MethodOverloads)
+	clone.MethodFolded = copyMethodSliceMap(vm.MethodFolded)
+	clone.Classes = copyClassMap(vm.Classes)
+	clone.Triggers = copyTriggerSliceMap(vm.Triggers)
+	clone.staticInitState = copyStaticInitStateMap(vm.staticInitState)
+	return clone
+}
+
+func copyMethodMap(in map[string]Method) map[string]Method {
+	out := make(map[string]Method, len(in))
+	for name, method := range in {
+		out[name] = method
+	}
+	return out
+}
+
+func copyMethodSliceMap(in map[string][]Method) map[string][]Method {
+	out := make(map[string][]Method, len(in))
+	for name, methods := range in {
+		out[name] = append([]Method(nil), methods...)
+	}
+	return out
+}
+
+func copyClassMap(in map[string]Class) map[string]Class {
+	out := make(map[string]Class, len(in))
+	byCanonicalName := make(map[string]Class, len(in))
+	for name, class := range in {
+		canonical := class.Name
+		if canonical == "" {
+			canonical = name
+		}
+		copied, ok := byCanonicalName[canonical]
+		if !ok {
+			copied = copyClass(class)
+			byCanonicalName[canonical] = copied
+		}
+		out[name] = copied
+	}
+	return out
+}
+
+func copyClass(class Class) Class {
+	class.Interfaces = append([]string(nil), class.Interfaces...)
+	class.FieldOrder = append([]string(nil), class.FieldOrder...)
+	class.StaticFieldOrder = append([]string(nil), class.StaticFieldOrder...)
+	class.Constructors = append([]Method(nil), class.Constructors...)
+	class.StaticInitializers = append([]Method(nil), class.StaticInitializers...)
+	class.InstanceInitializers = append([]Method(nil), class.InstanceInitializers...)
+	class.EnumValues = append([]string(nil), class.EnumValues...)
+	class.Fields = copyFieldMap(class.Fields)
+	class.StaticFields = copyFieldMap(class.StaticFields)
+	class.Methods = copyMethodMap(class.Methods)
+	return class
+}
+
+func copyFieldMap(in map[string]Field) map[string]Field {
+	out := make(map[string]Field, len(in))
+	for name, field := range in {
+		out[name] = field
+	}
+	return out
+}
+
+func copyTriggerSliceMap(in map[string][]Trigger) map[string][]Trigger {
+	out := make(map[string][]Trigger, len(in))
+	for name, triggers := range in {
+		out[name] = append([]Trigger(nil), triggers...)
+	}
+	return out
+}
+
+func copyStaticInitStateMap(in map[string]staticInitState) map[string]staticInitState {
+	out := make(map[string]staticInitState, len(in))
+	for name, state := range in {
+		out[name] = state
+	}
+	return out
+}
+
 func (vm *VM) SetOrg(org *storage.OrgState) {
 	vm.Org = org
 }

@@ -111,7 +111,7 @@ func TestEnsureStandardObjectFieldsAddsCustomMetadataIdentityFields(t *testing.T
 
 	EnsureStandardObjectFields(&definition)
 
-	for _, name := range []string{"DeveloperName", "MasterLabel", "NamespacePrefix", "QualifiedApiName"} {
+	for _, name := range []string{"DeveloperName", "Label", "Language", "MasterLabel", "NamespacePrefix", "QualifiedApiName"} {
 		field, ok := definition.Fields[name]
 		if !ok || field.Type != FieldString {
 			t.Fatalf("%s field = %#v, %v", name, field, ok)

@@ -33,10 +33,12 @@ type Server struct {
 	Store interface {
 		Save(storage.OrgState) error
 	}
-	Source    SourceMetadata
-	LimitMode vm.LimitMode
-	LimitCaps vm.LimitCaps
-	Index     *typesys.Index
+	Source     SourceMetadata
+	LimitMode  vm.LimitMode
+	LimitCaps  vm.LimitCaps
+	Index      *typesys.Index
+	runtime    *vm.VM
+	runtimeErr error
 
 	queryLocators map[string]queryLocatorState
 	queryOrder    []string
@@ -137,6 +139,21 @@ func NewWithStoreAndSource(org *storage.OrgState, store interface{ Save(storage.
 
 func (s *Server) SetProjectIndex(index typesys.Index) {
 	s.Index = &index
+	machine := vm.New(nil)
+	s.runtimeErr = apextest.RegisterProjectRuntimeForRequest(machine, index)
+	if s.runtimeErr != nil {
+		s.runtime = nil
+		return
+	}
+	s.runtime = machine
+}
+
+// SetProjectRuntime installs a precompiled request runtime template for Apex
+// REST dispatch. The server clones the template for each request.
+func (s *Server) SetProjectRuntime(index typesys.Index, runtime *vm.VM, runtimeErr error) {
+	s.Index = &index
+	s.runtime = runtime
+	s.runtimeErr = runtimeErr
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -297,7 +314,14 @@ func (s *Server) handleApexRest(w http.ResponseWriter, r *http.Request) {
 		writeSalesforceError(w, errMalformedJSON, err.Error())
 		return
 	}
+	if s.runtimeErr != nil {
+		writeSalesforceError(w, errUnsupportedFeature, "Apex REST runtime setup failed: "+s.runtimeErr.Error())
+		return
+	}
 	machine := vm.New(nil)
+	if s.runtime != nil {
+		machine = s.runtime.CloneRuntime(nil)
+	}
 	machine.SetOrg(s.Org)
 	if s.LimitMode != "" {
 		machine.SetLimitMode(s.LimitMode)
@@ -307,9 +331,11 @@ func (s *Server) handleApexRest(w http.ResponseWriter, r *http.Request) {
 	}
 	machine.SetCurrentUser(s.currentUser(r, ""))
 	machine.SetServerBaseURL(requestBaseURL(r))
-	if err := apextest.RegisterProjectRuntimeForRequest(machine, *s.Index); err != nil {
-		writeSalesforceError(w, errUnsupportedFeature, "Apex REST runtime setup failed: "+err.Error())
-		return
+	if s.runtime == nil {
+		if err := apextest.RegisterProjectRuntimeForRequest(machine, *s.Index); err != nil {
+			writeSalesforceError(w, errUnsupportedFeature, "Apex REST runtime setup failed: "+err.Error())
+			return
+		}
 	}
 	request := apexRestRequestValue(r, body)
 	response := vm.NewRestResponseValue()
