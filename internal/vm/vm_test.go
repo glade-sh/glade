@@ -282,6 +282,225 @@ System.assertEquals(1, Util.count(accounts));
 	}
 }
 
+func TestExecSOQLSingleSObjectAssignmentAndReturn(t *testing.T) {
+	selectorProgram, err := CompileAnonymous(`return [SELECT Id, Name FROM Account LIMIT 1];`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Account assigned;
+assigned = [SELECT Id, Name, Custom__c FROM Account LIMIT 1];
+System.assertEquals('Acme', assigned.Name);
+System.assertEquals('selected', assigned.Custom__c);
+Account returned = Selector.get();
+System.assertEquals('Acme', returned.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := singleSOQLAssignmentOrg()
+	machine.Org = &org
+	if err := machine.RegisterClass(Class{Name: "Selector"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterMethod(Method{Name: "Selector.get", ReturnType: "Account", Program: selectorProgram, ClassName: "Selector", IsStatic: true}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSOQLSingleSObjectNoRowsAndMultiRowsStayExplicit(t *testing.T) {
+	noRowsProgram, err := CompileAnonymous(`Account account; account = [SELECT Id FROM Account WHERE Name = 'Missing'];`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	multiRowsProgram, err := CompileAnonymous(`Account account; account = [SELECT Id FROM Account];`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := singleSOQLAssignmentOrg()
+	machine := New(nil)
+	machine.Org = &org
+	if _, err := machine.Execute(noRowsProgram); err == nil || !strings.Contains(err.Error(), "returned no rows") {
+		t.Fatalf("no-row err = %v, want returned no rows", err)
+	}
+	machine = New(nil)
+	machine.Org = &org
+	if _, err := machine.Execute(multiRowsProgram); err == nil || !strings.Contains(err.Error(), "returned more than one row") {
+		t.Fatalf("multi-row err = %v, want returned more than one row", err)
+	}
+}
+
+func TestExecSOQLSingleSObjectStaticAndDottedFieldAssignment(t *testing.T) {
+	program, err := CompileAnonymous(`
+Constants.ORG = [SELECT Id, Name FROM Organization LIMIT 1];
+Container c = new Container();
+c.account = [SELECT Id, Name FROM Account LIMIT 1];
+System.assertEquals('Acme', c.account.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	multiRowsProgram, err := CompileAnonymous(`
+Container c = new Container();
+c.account = [SELECT Id FROM Account];
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := singleSOQLAssignmentOrg()
+	machine := New(nil)
+	machine.Org = &org
+	registerAssignmentTargetClasses(t, machine)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+	field := machine.Classes["Constants"].StaticFields["ORG"]
+	if field.Value.Kind != ValueObject || field.Value.Type != "Organization" {
+		t.Fatalf("ORG = %#v, want Organization object", field.Value)
+	}
+	machine = New(nil)
+	machine.Org = &org
+	registerAssignmentTargetClasses(t, machine)
+	if _, err := machine.Execute(multiRowsProgram); err == nil || !strings.Contains(err.Error(), "returned more than one row") {
+		t.Fatalf("multi-row dotted assignment err = %v, want returned more than one row", err)
+	}
+}
+
+func TestExecImplicitThisSObjectFieldPathUsesInstanceField(t *testing.T) {
+	program, err := CompileAnonymous(`return OrderRecord.Entity__c;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := singleSOQLAssignmentOrg()
+	machine.Org = &org
+	if err := machine.RegisterClass(Class{Name: "Controller", Fields: map[string]Field{
+		"OrderRecord": {Name: "OrderRecord", Type: "Order__c"},
+	}}); err != nil {
+		t.Fatal(err)
+	}
+	method := Method{Name: "Controller.entityId", ReturnType: "Id", Program: program, ClassName: "Controller"}
+	receiver := Object("Controller")
+	receiver.Fields["OrderRecord"] = Object("Order__c")
+	receiver.Fields["OrderRecord"].Fields["Entity__c"] = platformScalar("Id", "a00000000000001")
+	value, err := machine.callMethodWithReceiver(method, receiver, nil, &Result{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if text, _ := platformScalarText(value, "Id"); text != "a00000000000001" {
+		t.Fatalf("entity id = %#v", value)
+	}
+}
+
+func TestExecSOQLSingleSObjectImplicitThisDottedFieldAssignment(t *testing.T) {
+	program, err := CompileAnonymous(`
+c.account = [SELECT Id, Name FROM Account LIMIT 1];
+return c.account.Name;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	multiRowsProgram, err := CompileAnonymous(`c.account = [SELECT Id FROM Account];`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := singleSOQLAssignmentOrg()
+	machine := New(nil)
+	machine.Org = &org
+	registerAssignmentTargetClasses(t, machine)
+	if err := machine.RegisterClass(Class{Name: "Controller", Fields: map[string]Field{
+		"c": {Name: "c", Type: "Container"},
+	}}); err != nil {
+		t.Fatal(err)
+	}
+	receiver := Object("Controller")
+	receiver.Fields["c"] = Object("Container")
+	method := Method{Name: "Controller.assignAccount", ReturnType: "String", Program: program, ClassName: "Controller"}
+	value, err := machine.callMethodWithReceiver(method, receiver, nil, &Result{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if value.Kind != ValueString || value.Text != "Acme" {
+		t.Fatalf("assigned account name = %#v", value)
+	}
+	machine = New(nil)
+	machine.Org = &org
+	registerAssignmentTargetClasses(t, machine)
+	if err := machine.RegisterClass(Class{Name: "Controller", Fields: map[string]Field{
+		"c": {Name: "c", Type: "Container"},
+	}}); err != nil {
+		t.Fatal(err)
+	}
+	receiver = Object("Controller")
+	receiver.Fields["c"] = Object("Container")
+	method = Method{Name: "Controller.assignAccount", Program: multiRowsProgram, ClassName: "Controller"}
+	if _, err := machine.callMethodWithReceiver(method, receiver, nil, &Result{}); err == nil || !strings.Contains(err.Error(), "returned more than one row") {
+		t.Fatalf("multi-row implicit this assignment err = %v, want returned more than one row", err)
+	}
+}
+
+func TestAssignmentTargetTypeWalksStorageReferenceFields(t *testing.T) {
+	org := singleSOQLAssignmentOrg()
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Contact", Fields: map[string]storage.Field{
+			"Account__c": {APIName: "Account__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}},
+		}},
+	}
+	machine := New(nil)
+	machine.Org = &org
+	machine.Globals["contact"] = Object("Contact")
+	machine.VarTypes["contact"] = "Contact"
+	if got := machine.assignmentTargetType("contact.Account__c.Custom__c"); got != "String" {
+		t.Fatalf("target type = %q, want String", got)
+	}
+}
+
+func singleSOQLAssignmentOrg() storage.OrgState {
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Account", Fields: map[string]storage.Field{
+			"Name":      {APIName: "Name", Type: storage.FieldString},
+			"Custom__c": {APIName: "Custom__c", Type: storage.FieldString},
+		}},
+		Records: map[storage.ID]storage.Record{
+			"001000000000001": {ID: "001000000000001", Object: "Account", Fields: map[string]storage.Value{
+				"Name":      storage.StringValue("Acme"),
+				"Custom__c": storage.StringValue("selected"),
+			}},
+			"001000000000002": {ID: "001000000000002", Object: "Account", Fields: map[string]storage.Value{
+				"Name": storage.StringValue("Other"),
+			}},
+		},
+	}
+	org.Objects["Organization"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Organization", Fields: map[string]storage.Field{
+			"Name": {APIName: "Name", Type: storage.FieldString},
+		}},
+		Records: map[storage.ID]storage.Record{
+			"00D000000000001": {ID: "00D000000000001", Object: "Organization", Fields: map[string]storage.Value{"Name": storage.StringValue("Local")}},
+		},
+	}
+	return org
+}
+
+func registerAssignmentTargetClasses(t *testing.T, machine *VM) {
+	t.Helper()
+	if err := machine.RegisterClass(Class{Name: "Constants", StaticFields: map[string]Field{
+		"ORG": {Name: "ORG", Type: "Organization", Static: true},
+	}}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "Container", Fields: map[string]Field{
+		"account": {Name: "account", Type: "Account"},
+	}}); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestDeleteIDsToSObjectsUsesIDPrefix(t *testing.T) {
 	machine := New(nil)
 	converted, ok := machine.deleteIDsToSObjects(List(platformScalar("Id", "001000000000001AAA")))

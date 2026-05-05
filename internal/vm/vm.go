@@ -385,7 +385,7 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (execOutcome, e
 			vm.Globals[inst.Name] = value
 			vm.VarTypes[inst.Name] = inst.Type
 		case ir.OpAssign:
-			value, err := vm.eval(inst.Expr, result)
+			value, err := vm.evalForAssignment(inst.Name, inst.Expr, result)
 			if err != nil {
 				return execOutcome{}, err
 			}
@@ -399,7 +399,11 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (execOutcome, e
 		case ir.OpReturn:
 			value := Null
 			if inst.Expr.Kind != "" {
-				evaluated, err := vm.eval(inst.Expr, result)
+				returnType := ""
+				if vm.currentMethod.ReturnType != "" && vm.currentMethod.ReturnType != "void" {
+					returnType = vm.currentMethod.ReturnType
+				}
+				evaluated, err := vm.evalForType(inst.Expr, returnType, result)
 				if err != nil {
 					return execOutcome{}, err
 				}
@@ -997,7 +1001,17 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 }
 
 func (vm *VM) evalForType(expr ir.Expr, typeName string, result *Result) (Value, error) {
-	if expr.Kind == ir.ExprSOQL {
+	if expr.Kind == ir.ExprSOQL && typeName != "" {
+		return vm.executeSOQLForType(expr.Value, typeName, result)
+	}
+	return vm.eval(expr, result)
+}
+
+func (vm *VM) evalForAssignment(name string, expr ir.Expr, result *Result) (Value, error) {
+	if expr.Kind != ir.ExprSOQL {
+		return vm.eval(expr, result)
+	}
+	if typeName := vm.assignmentTargetType(name); typeName != "" {
 		return vm.executeSOQLForType(expr.Value, typeName, result)
 	}
 	return vm.eval(expr, result)
@@ -6965,6 +6979,21 @@ func (vm *VM) lookup(name string) (Value, error) {
 		if actual, ok := vm.lookupGlobalName(parts[0]); ok {
 			return vm.lookupPath(vm.Globals[actual], parts[1:])
 		}
+		if this, ok := vm.Globals["this"]; ok && this.Kind == ValueObject {
+			if root, field, owner, ok := vm.lookupThisFieldRoot(this, parts[0]); ok {
+				if err := vm.checkMemberAccess(owner, field.Access, owner+"."+field.Name); err != nil {
+					return Null, err
+				}
+				if field.Getter != nil {
+					value, err := vm.callMethodWithReceiver(*field.Getter, this, nil, resultForLookup())
+					if err != nil {
+						return Null, err
+					}
+					root = value
+				}
+				return vm.lookupPath(root, parts[1:])
+			}
+		}
 		if vm.currentClass != "" {
 			if field, owner, ok := vm.lookupStaticField(vm.currentClass, parts[0]); ok {
 				if err := vm.checkMemberAccess(owner, field.Access, owner+"."+parts[0]); err != nil {
@@ -7092,6 +7121,32 @@ func (vm *VM) lookup(name string) (Value, error) {
 	return Null, fmt.Errorf("unknown variable %q", name)
 }
 
+func (vm *VM) lookupThisFieldRoot(this Value, name string) (Value, Field, string, bool) {
+	actualName := name
+	if _, ok := this.Fields[actualName]; !ok {
+		normalized := strings.ToLower(name)
+		for candidate := range this.Fields {
+			if strings.ToLower(candidate) == normalized {
+				actualName = candidate
+				break
+			}
+		}
+	}
+	root, ok := this.Fields[actualName]
+	if !ok {
+		return Null, Field{}, "", false
+	}
+	field, owner, ok := vm.lookupField(this.Type, actualName)
+	if !ok {
+		field = Field{Name: actualName, Type: root.Type}
+		owner = this.Type
+	}
+	if field.Name == "" {
+		field.Name = actualName
+	}
+	return root, field, owner, true
+}
+
 func (vm *VM) lookupGlobalName(name string) (string, bool) {
 	if _, ok := vm.Globals[name]; ok {
 		return name, true
@@ -7103,6 +7158,90 @@ func (vm *VM) lookupGlobalName(name string) (string, bool) {
 		}
 	}
 	return "", false
+}
+
+func (vm *VM) assignmentTargetType(name string) string {
+	if actual, ok := vm.lookupGlobalName(name); ok {
+		return vm.VarTypes[actual]
+	}
+	parts := strings.Split(name, ".")
+	if len(parts) <= 1 {
+		if vm.currentClass != "" {
+			if field, _, ok := vm.lookupStaticField(vm.currentClass, name); ok {
+				return field.Type
+			}
+		}
+		if this, ok := vm.Globals["this"]; ok && this.Kind == ValueObject {
+			if _, field, _, ok := vm.lookupThisFieldRoot(this, name); ok {
+				return field.Type
+			}
+		}
+		return ""
+	}
+	if rootName, ok := vm.lookupGlobalName(parts[0]); ok {
+		return vm.fieldPathTargetType(vm.VarTypes[rootName], parts[1:])
+	}
+	if this, ok := vm.Globals["this"]; ok && this.Kind == ValueObject {
+		if _, field, _, ok := vm.lookupThisFieldRoot(this, parts[0]); ok {
+			return vm.fieldPathTargetType(field.Type, parts[1:])
+		}
+	}
+	if className, memberName, ok := vm.splitClassMember(name); ok {
+		if field, _, ok := vm.lookupStaticField(className, memberName); ok {
+			return field.Type
+		}
+	}
+	return ""
+}
+
+func (vm *VM) fieldPathTargetType(typeName string, parts []string) string {
+	for _, part := range parts {
+		if typeName == "" {
+			return ""
+		}
+		if field, _, ok := vm.lookupField(typeName, part); ok {
+			typeName = field.Type
+			continue
+		}
+		if vm.Org != nil {
+			if objectName, ok := storage.ResolveObjectName(*vm.Org, typeName); ok {
+				definition := vm.Org.Objects[objectName].Definition
+				if fieldName, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, part); ok {
+					field := definition.Fields[fieldName]
+					typeName = storageFieldTypeName(field)
+					continue
+				}
+			}
+		}
+		return ""
+	}
+	return typeName
+}
+
+func storageFieldTypeName(field storage.Field) string {
+	switch field.Type {
+	case storage.FieldID:
+		return "Id"
+	case storage.FieldReference:
+		if len(field.ReferenceTo) == 1 {
+			return field.ReferenceTo[0]
+		}
+		return "Id"
+	case storage.FieldString, storage.FieldPicklist:
+		return "String"
+	case storage.FieldBoolean:
+		return "Boolean"
+	case storage.FieldInteger:
+		return "Integer"
+	case storage.FieldDecimal:
+		return "Decimal"
+	case storage.FieldDate:
+		return "Date"
+	case storage.FieldDateTime:
+		return "Datetime"
+	default:
+		return ""
+	}
 }
 
 var roundingModeNames = []string{"UP", "DOWN", "CEILING", "FLOOR", "HALF_UP", "HALF_DOWN", "HALF_EVEN", "UNNECESSARY"}
@@ -7308,6 +7447,11 @@ func (vm *VM) assign(name string, value Value) error {
 	if len(parts) > 1 {
 		if rootName, ok := vm.lookupGlobalName(parts[0]); ok {
 			return vm.assignPath(vm.Globals[rootName], parts[1:], value)
+		}
+		if this, ok := vm.Globals["this"]; ok && this.Kind == ValueObject {
+			if root, _, _, ok := vm.lookupThisFieldRoot(this, parts[0]); ok {
+				return vm.assignPath(root, parts[1:], value)
+			}
 		}
 		if className, memberName, ok := vm.splitClassMember(name); ok {
 			if field, owner, ok := vm.lookupStaticField(className, memberName); ok {
