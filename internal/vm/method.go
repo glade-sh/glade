@@ -39,8 +39,13 @@ func (vm *VM) RegisterMethod(method Method) error {
 	if vm.MethodOverloads == nil {
 		vm.MethodOverloads = make(map[string][]Method)
 	}
+	if vm.MethodFolded == nil {
+		vm.MethodFolded = make(map[string][]Method)
+	}
 	vm.Methods[method.Name] = method
 	vm.MethodOverloads[method.Name] = append(vm.MethodOverloads[method.Name], method)
+	foldedName := strings.ToLower(method.Name)
+	vm.MethodFolded[foldedName] = append(vm.MethodFolded[foldedName], method)
 	return nil
 }
 

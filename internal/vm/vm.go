@@ -43,6 +43,7 @@ type VM struct {
 	VarTypes         map[string]string
 	Methods          map[string]Method
 	MethodOverloads  map[string][]Method
+	MethodFolded     map[string][]Method
 	Classes          map[string]Class
 	Org              *storage.OrgState
 	Triggers         map[string][]Trigger
@@ -171,6 +172,7 @@ func New(stdout io.Writer) *VM {
 		VarTypes:        make(map[string]string),
 		Methods:         make(map[string]Method),
 		MethodOverloads: make(map[string][]Method),
+		MethodFolded:    make(map[string][]Method),
 		Classes:         make(map[string]Class),
 		Triggers:        make(map[string][]Trigger),
 		Stdout:          stdout,
@@ -8285,6 +8287,9 @@ func (vm *VM) resolveStaticMethodForArgs(typeName, method string, args []Value) 
 
 func (vm *VM) matchRegisteredMethod(name string, args []Value) (Method, bool, bool) {
 	if candidates := vm.MethodOverloads[name]; len(candidates) > 0 {
+		return vm.matchMethodByArgs(candidates, args)
+	}
+	if candidates := vm.MethodFolded[strings.ToLower(name)]; len(candidates) > 0 {
 		return vm.matchMethodByArgs(candidates, args)
 	}
 	method, ok := vm.Methods[name]
