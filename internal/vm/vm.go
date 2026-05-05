@@ -1093,17 +1093,17 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		return value, err
 	}
 	if dot := strings.LastIndex(callee, "."); dot > 0 && dot < len(callee)-1 {
-		if value, handled, err := vm.callSObjectTypeStaticMember(callee[:dot], callee[dot+1:], args); handled || err != nil {
-			return value, err
+		typeName, methodName := callee[:dot], callee[dot+1:]
+		if _, classExists := vm.Classes[typeName]; !classExists {
+			if value, handled, err := vm.callSObjectTypeStaticMember(typeName, methodName, args); handled || err != nil {
+				return value, err
+			}
 		}
 		if value, handled, err := vm.callCustomDataStaticMember(callee[:dot], callee[dot+1:], args); handled || err != nil {
 			return value, err
 		}
 	}
 	if className, methodName, ok := vm.splitClassMember(callee); ok {
-		if value, handled, err := vm.callSObjectTypeStaticMember(className, methodName, args); handled || err != nil {
-			return value, err
-		}
 		if value, handled, err := vm.callCustomDataStaticMember(className, methodName, args); handled || err != nil {
 			return value, err
 		}
@@ -1123,6 +1123,9 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return vm.callMethod(method, args, result)
 		} else if ambiguous {
 			return Null, fmt.Errorf("ambiguous overload for call %q", callee)
+		}
+		if value, handled, err := vm.callSObjectTypeStaticMember(className, methodName, args); handled || err != nil {
+			return value, err
 		}
 	}
 	if strings.HasPrefix(callee, "Search.") {

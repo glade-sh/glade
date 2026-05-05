@@ -1726,6 +1726,33 @@ System.assertEquals('Account', Account.getSObjectType().getDescribe().getName())
 	}
 }
 
+func TestExecSObjectStaticGetSObjectTypeDoesNotShadowUserStaticMethod(t *testing.T) {
+	methodProgram, err := CompileAnonymous(`return 'user method';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+String value = Account.getSObjectType();
+System.assertEquals('user method', value);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "BaseAccount"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "Account", SuperClass: "BaseAccount"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterMethod(Method{Name: "BaseAccount.getSObjectType", ClassName: "BaseAccount", ReturnType: "String", IsStatic: true, Program: methodProgram}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecIDGetSObjectTypeRejectsUnknownPrefix(t *testing.T) {
 	program, err := CompileAnonymous(`
 Id unknown = Id.valueOf('999B000001DVM9t');
