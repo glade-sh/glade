@@ -977,6 +977,7 @@ func runServer(ctx context.Context, args []string, w io.Writer) error {
 	addr := "127.0.0.1:8080"
 	dbPath := ""
 	root := "."
+	projectProvided := false
 	limitMode := vm.LimitMode("")
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
@@ -997,6 +998,7 @@ func runServer(ctx context.Context, args []string, w io.Writer) error {
 				return errors.New("--project requires a value")
 			}
 			root = args[i+1]
+			projectProvided = true
 			i++
 		case "--limit-mode":
 			if i+1 >= len(args) {
@@ -1023,12 +1025,26 @@ func runServer(ctx context.Context, args []string, w io.Writer) error {
 		org = loaded
 		handler = server.NewWithStore(&org, store)
 	} else {
-		org = storageBaseline()
+		var err error
+		org, err = orgForProject(root)
+		if err != nil {
+			if projectProvided {
+				return err
+			}
+			org = storageBaseline()
+		}
 		handler = server.New(&org)
 	}
 	if limitMode != "" {
 		if srv, ok := handler.(*server.Server); ok {
 			srv.LimitMode = limitMode
+		}
+	}
+	if srv, ok := handler.(*server.Server); ok {
+		if index, err := loadIndex(root); err == nil {
+			srv.SetProjectIndex(index)
+		} else if projectProvided {
+			return err
 		}
 	}
 	fmt.Fprintf(w, "oaer server: %s\n", server.URL(addr))

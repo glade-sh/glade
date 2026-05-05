@@ -8,12 +8,16 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
 
+	"github.com/open-aer/oaer/internal/project"
+	"github.com/open-aer/oaer/internal/schema"
 	"github.com/open-aer/oaer/internal/storage"
+	"github.com/open-aer/oaer/internal/typesys"
 	"github.com/open-aer/oaer/internal/vm"
 )
 
@@ -2528,6 +2532,115 @@ func TestApexRestDispatchRejectsUnsupportedMethodsWithAllowHeader(t *testing.T) 
 	if got, want := rec.Header().Get("Allow"), "GET, POST, PATCH, PUT, DELETE"; got != want {
 		t.Fatalf("Allow = %q, want %q", got, want)
 	}
+}
+
+func TestApexRestDispatchExecutesProjectResource(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+	handler.SetProjectIndex(writeApexRestProject(t, map[string]string{
+		"WidgetResource.cls": `
+@RestResource(urlMapping='/widgets/*')
+global class WidgetResource {
+  @HttpGet global static String getIt() {
+    return RestContext.request.httpMethod + ':' + RestContext.request.resourcePath + ':' + RestContext.request.params.get('q');
+  }
+  @HttpPost global static void postIt() {
+    RestContext.response.statusCode = 201;
+    RestContext.response.responseBody = 'created:' + RestContext.request.requestURI + ':' + RestContext.request.remoteAddress;
+  }
+}
+`,
+	}))
+
+	get := httptest.NewRecorder()
+	handler.ServeHTTP(get, httptest.NewRequest(http.MethodGet, "/services/apexrest/widgets/42?q=abc", nil))
+	if get.Code != http.StatusOK {
+		t.Fatalf("GET status = %d body=%s", get.Code, get.Body.String())
+	}
+	if got, want := strings.TrimSpace(get.Body.String()), `"GET:/widgets/42:abc"`; got != want {
+		t.Fatalf("GET body = %s, want %s", got, want)
+	}
+
+	post := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/services/apexrest/widgets/42", strings.NewReader(`{"name":"Acme"}`))
+	req.RemoteAddr = "192.0.2.10:4567"
+	handler.ServeHTTP(post, req)
+	if post.Code != http.StatusCreated {
+		t.Fatalf("POST status = %d body=%s", post.Code, post.Body.String())
+	}
+	if !strings.Contains(post.Body.String(), "created:/services/apexrest/widgets/42:192.0.2.10:4567") {
+		t.Fatalf("POST body = %s", post.Body.String())
+	}
+	if got := post.Header().Get("Content-Type"); !strings.HasPrefix(got, "text/plain") {
+		t.Fatalf("POST Content-Type = %q, want text/plain", got)
+	}
+}
+
+func TestApexRestDispatchSerializesNestedMapValues(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+	handler.SetProjectIndex(writeApexRestProject(t, map[string]string{
+		"MapResource.cls": `
+@RestResource(urlMapping='/maps/*')
+global class MapResource {
+  @HttpGet global static Map<String,Object> getIt() {
+    Map<String,Object> payload = new Map<String,Object>();
+    List<String> names = new List<String>();
+    names.add('one');
+    names.add('two');
+    payload.put('names', names);
+    return payload;
+  }
+}
+`,
+	}))
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/apexrest/maps/1", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var payload map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("unmarshal: %v body=%s", err, rec.Body.String())
+	}
+	names, ok := payload["names"].([]any)
+	if !ok || len(names) != 2 || names[0] != "one" || names[1] != "two" {
+		t.Fatalf("names = %#v body=%s", payload["names"], rec.Body.String())
+	}
+}
+
+func TestApexRestDispatchFencesUnsupportedSignature(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+	handler.SetProjectIndex(writeApexRestProject(t, map[string]string{
+		"BadResource.cls": `
+@RestResource(urlMapping='/bad/*')
+global class BadResource {
+  @HttpGet global static String getIt(String name) {
+    return name;
+  }
+}
+`,
+	}))
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/apexrest/bad/42", nil))
+	assertSalesforceError(t, rec, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", "must be static and take no parameters")
+}
+
+func writeApexRestProject(t *testing.T, files map[string]string) typesys.Index {
+	t.Helper()
+	root := t.TempDir()
+	apexFiles := make([]string, 0, len(files))
+	for name, content := range files {
+		path := filepath.Join(root, name)
+		if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+			t.Fatalf("write %s: %v", name, err)
+		}
+		apexFiles = append(apexFiles, path)
+	}
+	return typesys.Build(project.Project{Root: root, ApexFiles: apexFiles}, schema.Schema{})
 }
 
 func TestApexRestNearbyUnknownEndpointUnchanged(t *testing.T) {
