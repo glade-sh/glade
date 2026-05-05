@@ -4422,6 +4422,29 @@ System.assertEquals('bearer-email@example.test', UserInfo.getUserEmail());
 	}
 }
 
+func TestRESTDMLUsesBearerUserContext(t *testing.T) {
+	org := testOrg()
+	userID := storage.ID("005000000000779")
+	addUser(&org, userID, "rest@example.test", "rest-email@example.test", "REST User")
+	handler := New(&org)
+
+	req := httptest.NewRequest(http.MethodPost, "/services/data/v61.0/sobjects/Account", strings.NewReader(`{"Name":"Bearer REST"}`))
+	req.Header.Set("Authorization", "Bearer "+string(userID))
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("create status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if len(org.Objects["Account"].Records) != 1 {
+		t.Fatalf("account records = %d, want 1", len(org.Objects["Account"].Records))
+	}
+	for _, record := range org.Objects["Account"].Records {
+		if record.System.CreatedByID != userID || record.System.OwnerID != userID || record.System.LastModifiedByID != userID {
+			t.Fatalf("system user fields = %#v, want bearer user %s", record.System, userID)
+		}
+	}
+}
+
 func TestServerSerializesConcurrentMutations(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)

@@ -7154,6 +7154,20 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 			response.Fields[field] = value
 		}
 		return response, nil
+	case "StaticResourceCalloutMock", "MultiStaticResourceCalloutMock":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("%s constructor expects 0 arguments", typeName)
+		}
+		mock := Object(typeName)
+		mock.Fields["headers"] = typedMap("Map<String,String>")
+		mock.Fields["statusCode"] = Int(200)
+		if typeName == "MultiStaticResourceCalloutMock" {
+			mock.Fields["staticResources"] = typedMap("Map<String,String>")
+		}
+		for field, value := range namedArgs {
+			mock.Fields[field] = value
+		}
+		return mock, nil
 	case "RestRequest":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("RestRequest constructor expects 0 arguments")
@@ -7174,8 +7188,6 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 		return response, nil
 	case "Continuation":
 		return Null, unsupportedCallError("Continuation constructor local continuation callout surface")
-	case "StaticResourceCalloutMock", "MultiStaticResourceCalloutMock":
-		return Null, unsupportedCallError(typeName + " local static resource callout mock surface")
 	case "PageReference":
 		if len(args) > 1 || len(namedArgs) != 0 {
 			return Null, fmt.Errorf("PageReference constructor expects optional URL String")
@@ -10759,7 +10771,6 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, err
 			}
 			appendTrace(result, "apex.callout.http", "apex.callout", map[string]any{"operation": "Http.send"})
-			response := newHttpResponse()
 			if vm.testContext != nil && vm.testContext.HTTPMock.Kind == ValueObject {
 				if target, ok := vm.resolveInstanceMethod(vm.testContext.HTTPMock.Type, "respond"); ok {
 					value, err := vm.callMethodWithReceiver(target, vm.testContext.HTTPMock, []Value{args[0]}, &Result{})
@@ -10771,13 +10782,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 					}
 					return Null, receiver, false, true, fmt.Errorf("HttpCalloutMock.respond must return HttpResponse")
 				}
-				if body, ok := vm.testContext.HTTPMock.Fields["body"]; ok {
-					response.Fields["body"] = body
+				value, err := vm.localHTTPMockResponse(vm.testContext.HTTPMock, args[0])
+				if err != nil {
+					return Null, receiver, false, true, err
 				}
-				if status, ok := vm.testContext.HTTPMock.Fields["statusCode"]; ok {
-					response.Fields["statusCode"] = status
-				}
-				return response, receiver, false, true, nil
+				return value, receiver, false, true, nil
 			}
 			return Null, receiver, false, true, unsupportedCallError("Http.send real network transport")
 		}
@@ -10829,8 +10838,10 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		}
 	case "Continuation":
 		return Null, receiver, false, true, unsupportedCallError("Continuation local continuation callout surface")
-	case "StaticResourceCalloutMock", "MultiStaticResourceCalloutMock":
-		return Null, receiver, false, true, unsupportedCallError(receiver.Type + " local static resource callout mock surface")
+	case "StaticResourceCalloutMock":
+		return callStaticResourceCalloutMockMember(receiver, method, args)
+	case "MultiStaticResourceCalloutMock":
+		return callMultiStaticResourceCalloutMockMember(receiver, method, args)
 	case "PageReference":
 		switch method {
 		case "getContent", "getContentAsPDF":
@@ -10975,6 +10986,155 @@ func callRestRequestMember(receiver Value, method string, args []Value) (Value, 
 		return restMapKeys(receiver, "params"), receiver, false, true, nil
 	default:
 		return Null, receiver, false, false, nil
+	}
+}
+
+func callStaticResourceCalloutMockMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	switch method {
+	case "setStaticResource":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("StaticResourceCalloutMock.setStaticResource expects String")
+		}
+		receiver.Fields["staticResource"] = args[0]
+		return Null, receiver, true, true, nil
+	case "setStatusCode":
+		if len(args) != 1 || args[0].Kind != ValueInt {
+			return Null, receiver, false, true, fmt.Errorf("StaticResourceCalloutMock.setStatusCode expects Integer")
+		}
+		receiver.Fields["statusCode"] = args[0]
+		return Null, receiver, true, true, nil
+	case "setHeader":
+		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("StaticResourceCalloutMock.setHeader expects name and value Strings")
+		}
+		httpSetHeader(receiver, args[0].Text, args[1])
+		return Null, receiver, true, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
+func callMultiStaticResourceCalloutMockMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	switch method {
+	case "setStaticResource":
+		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("MultiStaticResourceCalloutMock.setStaticResource expects endpoint and static resource Strings")
+		}
+		resources, ok := receiver.Fields["staticResources"]
+		if !ok || resources.Kind != ValueMap {
+			resources = typedMap("Map<String,String>")
+		}
+		resources.Map[mapKey(args[0])] = args[1]
+		receiver.Fields["staticResources"] = resources
+		return Null, receiver, true, true, nil
+	case "setStatusCode":
+		if len(args) != 1 || args[0].Kind != ValueInt {
+			return Null, receiver, false, true, fmt.Errorf("MultiStaticResourceCalloutMock.setStatusCode expects Integer")
+		}
+		receiver.Fields["statusCode"] = args[0]
+		return Null, receiver, true, true, nil
+	case "setHeader":
+		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("MultiStaticResourceCalloutMock.setHeader expects name and value Strings")
+		}
+		httpSetHeader(receiver, args[0].Text, args[1])
+		return Null, receiver, true, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
+func (vm *VM) localHTTPMockResponse(mock Value, request Value) (Value, error) {
+	switch mock.Type {
+	case "StaticResourceCalloutMock":
+		resource, ok := mock.Fields["staticResource"]
+		if !ok || resource.Kind != ValueString || strings.TrimSpace(resource.Text) == "" {
+			return Null, fmt.Errorf("StaticResourceCalloutMock static resource is required before Http.send")
+		}
+		return vm.staticResourceMockResponse(mock, resource.Text), nil
+	case "MultiStaticResourceCalloutMock":
+		endpoint, ok := request.Fields["endpoint"]
+		if !ok || endpoint.Kind != ValueString {
+			return Null, fmt.Errorf("MultiStaticResourceCalloutMock request endpoint is missing")
+		}
+		resources, ok := mock.Fields["staticResources"]
+		if !ok || resources.Kind != ValueMap {
+			return Null, fmt.Errorf("MultiStaticResourceCalloutMock has no static resource for endpoint %s", endpoint.Text)
+		}
+		resource, ok := resources.Map[mapKey(endpoint)]
+		if !ok || resource.Kind != ValueString || strings.TrimSpace(resource.Text) == "" {
+			return Null, fmt.Errorf("MultiStaticResourceCalloutMock has no static resource for endpoint %s", endpoint.Text)
+		}
+		return vm.staticResourceMockResponse(mock, resource.Text), nil
+	default:
+		response := newHttpResponse()
+		if body, ok := mock.Fields["body"]; ok {
+			response.Fields["body"] = body
+		}
+		if status, ok := mock.Fields["statusCode"]; ok {
+			response.Fields["statusCode"] = status
+		}
+		if headers, ok := mock.Fields["headers"]; ok {
+			response.Fields["headers"] = headers
+		}
+		return response, nil
+	}
+}
+
+func (vm *VM) staticResourceMockResponse(mock Value, resourceName string) Value {
+	response := newHttpResponse()
+	response.Fields["body"] = String(vm.staticResourceBody(resourceName))
+	if status, ok := mock.Fields["statusCode"]; ok {
+		response.Fields["statusCode"] = status
+	}
+	if headers, ok := mock.Fields["headers"]; ok {
+		response.Fields["headers"] = headers
+	}
+	return response
+}
+
+func (vm *VM) staticResourceBody(resourceName string) string {
+	if vm.Org == nil {
+		return resourceName
+	}
+	object, ok := vm.Org.Objects["StaticResource"]
+	if !ok {
+		return resourceName
+	}
+	for _, record := range object.Records {
+		if !staticResourceNameMatches(record, resourceName) {
+			continue
+		}
+		for _, field := range []string{"Body", "Content"} {
+			if value, ok := record.Fields[field]; ok {
+				if body, ok := staticResourceBodyValue(value); ok {
+					return body
+				}
+			}
+		}
+	}
+	return resourceName
+}
+
+func staticResourceNameMatches(record storage.Record, resourceName string) bool {
+	if strings.EqualFold(string(record.ID), resourceName) {
+		return true
+	}
+	for _, field := range []string{"Name", "DeveloperName"} {
+		value, ok := record.Fields[field]
+		if ok && value.Kind == storage.ValueString && strings.EqualFold(value.String, resourceName) {
+			return true
+		}
+	}
+	return false
+}
+
+func staticResourceBodyValue(value storage.Value) (string, bool) {
+	switch value.Kind {
+	case storage.ValueString, storage.ValueBlob:
+		return value.String, true
+	default:
+		return "", false
 	}
 }
 

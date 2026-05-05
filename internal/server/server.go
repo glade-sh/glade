@@ -385,7 +385,7 @@ func (s *Server) handleObject(w http.ResponseWriter, r *http.Request, version st
 			return
 		}
 		next := s.Org.Clone()
-		engine := dml.NewEngine(&next)
+		engine := s.newDMLEngine(r, &next)
 		result := engine.Insert([]storage.Record{record})[0]
 		if result.Success {
 			if err := s.commitOrg(next); err != nil {
@@ -451,7 +451,7 @@ func (s *Server) handleExternalIDRecord(w http.ResponseWriter, r *http.Request, 
 		}
 		delete(record.ExplicitNulls, fieldName)
 		next := s.Org.Clone()
-		engine := dml.NewEngine(&next)
+		engine := s.newDMLEngine(r, &next)
 		result := engine.UpsertWithExternalID([]storage.Record{record}, fieldName)[0]
 		if result.Success {
 			if err := s.commitOrg(next); err != nil {
@@ -466,7 +466,7 @@ func (s *Server) handleExternalIDRecord(w http.ResponseWriter, r *http.Request, 
 			return
 		}
 		next := s.Org.Clone()
-		engine := dml.NewEngine(&next)
+		engine := s.newDMLEngine(r, &next)
 		result := engine.Delete([]storage.Record{{Object: objectName, ID: id}})[0]
 		if result.Success {
 			if err := s.commitOrg(next); err != nil {
@@ -539,7 +539,7 @@ func (s *Server) handleRecord(w http.ResponseWriter, r *http.Request, version st
 			return
 		}
 		next := s.Org.Clone()
-		engine := dml.NewEngine(&next)
+		engine := s.newDMLEngine(r, &next)
 		result := engine.Update([]storage.Record{record})[0]
 		if result.Success {
 			if err := s.commitOrg(next); err != nil {
@@ -555,7 +555,7 @@ func (s *Server) handleRecord(w http.ResponseWriter, r *http.Request, version st
 			return
 		}
 		next := s.Org.Clone()
-		engine := dml.NewEngine(&next)
+		engine := s.newDMLEngine(r, &next)
 		result := engine.Delete([]storage.Record{{Object: objectName, ID: id}})[0]
 		if result.Success {
 			if err := s.commitOrg(next); err != nil {
@@ -1628,7 +1628,7 @@ func (s *Server) handleCompositeSObjectInsert(w http.ResponseWriter, r *http.Req
 		return
 	}
 	next := s.Org.Clone()
-	engine := dml.NewEngine(&next)
+	engine := s.newDMLEngine(r, &next)
 	results := engine.Insert(body.Records)
 	s.writeCompositeMutationResults(w, next, body.AllOrNone, results, body.ReferenceIDs)
 }
@@ -1639,7 +1639,7 @@ func (s *Server) handleCompositeSObjectUpdate(w http.ResponseWriter, r *http.Req
 		return
 	}
 	next := s.Org.Clone()
-	engine := dml.NewEngine(&next)
+	engine := s.newDMLEngine(r, &next)
 	results := engine.Update(body.Records)
 	s.writeCompositeMutationResults(w, next, body.AllOrNone, results, body.ReferenceIDs)
 }
@@ -1663,7 +1663,7 @@ func (s *Server) handleCompositeSObjectDelete(w http.ResponseWriter, r *http.Req
 		records = append(records, storage.Record{Object: objectName, ID: id})
 	}
 	next := s.Org.Clone()
-	engine := dml.NewEngine(&next)
+	engine := s.newDMLEngine(r, &next)
 	results := engine.Delete(records)
 	s.writeCompositeMutationResults(w, next, allOrNone, results, nil)
 }
@@ -1784,7 +1784,7 @@ func (s *Server) handleCompositeSObjectTypedUpsert(w http.ResponseWriter, r *htt
 	}
 
 	next := s.Org.Clone()
-	engine := dml.NewEngine(&next)
+	engine := s.newDMLEngine(r, &next)
 	results := engine.UpsertWithExternalID(records, fieldName)
 	hasFailure := false
 	hasSuccess := false
@@ -1951,6 +1951,14 @@ func (s *Server) commitOrg(org storage.OrgState) error {
 	}
 	*s.Org = org
 	return nil
+}
+
+func (s *Server) newDMLEngine(r *http.Request, org *storage.OrgState) dml.Engine {
+	engine := dml.NewEngine(org)
+	if user := s.currentUser(r, ""); user.ID != "" {
+		engine.UserID = user.ID
+	}
+	return engine
 }
 
 func (s *Server) persistOrg(org storage.OrgState) error {
