@@ -57,6 +57,24 @@ public class ConcreteSelector extends SelectorBase {
   }
 }
 `)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/PrivateSelectorBase.cls"), `
+public abstract class PrivateSelectorBase {
+  public String run() {
+    return fieldListString();
+  }
+  String fieldListString() {
+    return getSObjectFieldList();
+  }
+  abstract String getSObjectFieldList();
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/PrivateSelectorChild.cls"), `
+public class PrivateSelectorChild extends PrivateSelectorBase {
+  private override String getSObjectFieldList() {
+    return 'private-fields';
+  }
+}
+`)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/DMLHelper.cls"), `
 public virtual class DMLHelper {
   public static DMLHelper Instance {
@@ -70,7 +88,7 @@ public virtual class DMLHelper {
   public virtual String updateRecords(List<SObject> records) {
     return 'base';
   }
-  private class WithoutSharing extends DMLHelper {
+  private without sharing class WithoutSharing extends DMLHelper {
     public override String updateRecords(List<SObject> records) {
       return super.updateRecords(records) + '-without';
     }
@@ -108,7 +126,8 @@ public class DispatchState {
 private class DispatchPatternsTest {
   @isTest static void dispatches() {
     System.assertEquals('selector', new ConcreteSelector().run());
-    System.assertEquals('base-without', DMLHelper.Instance.updateRecords(new List<SObject>()));
+    System.assertEquals('private-fields', new PrivateSelectorChild().run());
+    System.assertEquals('base-without', DMLHelper.Instance.updateRecords(new List<Widget__c>()));
     TriggerHandlerManager.executeHandlers(new ConcreteTriggerHandlers());
     System.assertEquals('child', DispatchState.Value);
   }
@@ -118,7 +137,7 @@ private class DispatchPatternsTest {
 	run := Run(loadTestIndex(t, root), Options{})
 	summary := run.Summary()
 	if summary.Total != 1 || summary.Passed != 1 {
-		t.Fatalf("summary = %#v case = %#v", summary, run.Suites[0].Cases[0])
+		t.Fatalf("summary = %#v case = %#v problem = %#v", summary, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
 	}
 }
 
