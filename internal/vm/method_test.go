@@ -2050,6 +2050,43 @@ System.assertEquals(today, ordered[0]);
 	}
 }
 
+func TestRuntimeIdOverloadPreferredForDeclaredId(t *testing.T) {
+	stringProgram, err := CompileAnonymous("return 'string:' + value;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	idProgram, err := CompileAnonymous("return 'id:' + value;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	returnIDProgram, err := CompileAnonymous("return '00X000000000001AAA';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+String templateName = 'NimbleAMSSocialVerify';
+Id templateId = Util.templateId();
+System.assertEquals('string:NimbleAMSSocialVerify', Util.pick(templateName));
+System.assertEquals('id:00X000000000001AAA', Util.pick(templateId));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	for _, method := range []Method{
+		{Name: "Util.pick", ReturnType: "String", Params: []Param{{Name: "value", Type: "String"}}, Program: stringProgram},
+		{Name: "Util.pick", ReturnType: "String", Params: []Param{{Name: "value", Type: "Id"}}, Program: idProgram},
+		{Name: "Util.templateId", ReturnType: "Id", Program: returnIDProgram},
+	} {
+		if err := machine.RegisterMethod(method); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecWhileLoopIterationGuard(t *testing.T) {
 	program, err := CompileAnonymous("while (true) { System.debug('loop'); }")
 	if err != nil {

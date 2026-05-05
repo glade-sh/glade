@@ -9827,6 +9827,9 @@ func valueTypeName(value Value) string {
 	case ValueBool:
 		return "Boolean"
 	case ValueString:
+		if value.Type != "" {
+			return value.Type
+		}
 		return "String"
 	case ValueList:
 		if value.Type != "" {
@@ -10153,6 +10156,9 @@ func isLoggingLevelValue(value Value) bool {
 func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 	if value.Kind == ValueString {
 		switch typeName {
+		case "Id":
+			value.Type = "Id"
+			return value, nil
 		case "Date":
 			parsed, err := parseDateText(value.Text)
 			if err != nil {
