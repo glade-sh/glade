@@ -114,14 +114,9 @@ func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 			want: `unsupported call "Auth.JWTUtil.validateJWTWithKeysEndpoint local authentication token/cloud API surface"`,
 		},
 		{
-			name: "event bus publish",
-			src:  `EventBus.publish(new Account(Name = 'Acme'));`,
-			want: `unsupported call "EventBus.publish local platform event publish surface"`,
-		},
-		{
 			name: "event bus publish after commit",
 			src:  `EventBus.publishAfterCommit(new List<Account>{new Account(Name = 'Acme')});`,
-			want: `unsupported call "EventBus.publishAfterCommit local platform event publish surface"`,
+			want: `unsupported call "EventBus.publishAfterCommit local platform event after-commit delivery surface"`,
 		},
 		{
 			name: "quick action ui",
@@ -185,6 +180,82 @@ func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 				t.Fatalf("error = (%q, %q), want %q", runtimeErr.Message, err.Error(), tc.want)
 			}
 		})
+	}
+}
+
+func TestExecEventBusPublishReturnsLocalSuccessResults(t *testing.T) {
+	program, err := CompileAnonymous(`
+Database.SaveResult single = EventBus.publish(new Account(Name = 'Acme'));
+System.assert(single.isSuccess());
+System.assertEquals(null, single.getId());
+System.assertEquals(0, single.getErrors().size());
+List<Database.SaveResult> many = EventBus.publish(new List<Account>{new Account(Name = 'One'), new Account(Name = 'Two')});
+System.assertEquals(2, many.size());
+System.assert(many.get(0).isSuccess());
+System.assert(many.get(1).isSuccess());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecConnectApiOrganizationSettingsStub(t *testing.T) {
+	program, err := CompileAnonymous(`
+ConnectApi.OrganizationSettings settings = ConnectApi.Organization.getSettings();
+System.assertEquals('00DLOCAL00000001', settings.orgId);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.OrgID = "00DLOCAL00000001"
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecLocalAsyncDrainRunsQueuedJobsOutsideTestContext(t *testing.T) {
+	jobProgram, err := CompileAnonymous(`insert new Account(Name = 'async ran');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+String jobId = System.enqueueJob(new MarkJob());
+System.assertEquals('707000000000001', jobId);
+Integer beforeDrain = [SELECT COUNT() FROM Account WHERE Name = 'async ran'];
+System.assertEquals(0, beforeDrain);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{
+		Name: "MarkJob",
+		Methods: map[string]Method{
+			"execute": {Name: "MarkJob.execute", ClassName: "MarkJob", ReturnType: "void", Program: jobProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	result, err := machine.Execute(program)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(org.Objects["Account"].Records) != 0 {
+		t.Fatalf("async job ran before drain: %#v", org.Objects["Account"].Records)
+	}
+	if err := machine.DrainAsync(&result); err != nil {
+		t.Fatal(err)
+	}
+	if len(org.Objects["Account"].Records) != 1 {
+		t.Fatalf("async drain records = %#v", org.Objects["Account"].Records)
 	}
 }
 

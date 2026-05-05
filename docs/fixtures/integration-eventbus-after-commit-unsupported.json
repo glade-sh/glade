@@ -4,7 +4,7 @@
     {
       "symbol": "EventBus.publishAfterCommit",
       "kind": "exec",
-      "notes": "After-commit platform event publishing is cloud platform behavior and remains a stable UnsupportedFeature diagnostic."
+      "notes": "After-commit platform event delivery is cloud platform behavior and remains a stable UnsupportedFeature diagnostic."
     }
   ],
   "source": [
@@ -22,7 +22,7 @@
   "expected": {
     "error": {
       "type": "UnsupportedFeature",
-      "message": "unsupported call \"EventBus.publishAfterCommit local platform event publish surface\""
+      "message": "unsupported call \"EventBus.publishAfterCommit local platform event after-commit delivery surface\""
     }
   }
 }
