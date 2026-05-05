@@ -404,6 +404,7 @@ func serverExampleBaseOrg(fixture storage.Fixture) storage.OrgState {
 		}
 		if name == "Account" {
 			fields["Name"] = storage.Field{APIName: "Name", Type: storage.FieldString}
+			fields["MasterRecordId"] = storage.Field{APIName: "MasterRecordId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "MasterRecord"}
 		}
 		org.Objects[name] = storage.ObjectState{
 			Definition: storage.ObjectDefinition{

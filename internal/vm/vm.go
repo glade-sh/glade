@@ -4138,6 +4138,10 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 		if field == "Id" {
 			if fieldValue.Kind == ValueString {
 				record.ID = storage.ID(fieldValue.Text)
+			} else if fieldValue.Kind == ValueObject && strings.EqualFold(fieldValue.Type, "Id") {
+				if raw, err := platformScalarText(fieldValue, "Id"); err == nil {
+					record.ID = storage.ID(raw)
+				}
 			}
 			continue
 		}
@@ -6915,6 +6919,10 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 			value, ok = current.Fields[part]
 		}
 		if !ok {
+			if vm.hasSObjectField(current.Type, canonicalPart) {
+				current = Null
+				continue
+			}
 			if strings.HasSuffix(current.Type, "__c") || strings.HasSuffix(current.Type, "__r") {
 				current = Null
 				continue
@@ -10170,6 +10178,18 @@ func (vm *VM) resolveSObjectFieldName(typeName, field string) string {
 		return canonical
 	}
 	return storage.StripNamespaceToken(vm.Org.Namespace, field)
+}
+
+func (vm *VM) hasSObjectField(typeName, field string) bool {
+	if vm.Org == nil {
+		return false
+	}
+	objectName, ok := storage.ResolveObjectName(*vm.Org, typeName)
+	if !ok {
+		return false
+	}
+	_, ok = storage.ResolveFieldName(vm.Org.Objects[objectName].Definition, vm.Org.Namespace, field)
+	return ok
 }
 
 func (vm *VM) sObjectFieldArg(receiverType string, value Value) (string, error) {

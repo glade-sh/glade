@@ -16,16 +16,18 @@ a.put('Name', 'Changed');
 System.assertEquals('Changed', a.get('Name'));
 insert a;
 String wanted = 'Changed';
-List<Account> rows = [SELECT Id, Name FROM Account WHERE Name = :wanted];
+List<Account> rows = [SELECT Id, Name, MasterRecordId FROM Account WHERE Name = :wanted];
 System.assertEquals(1, rows.size());
 Account row = rows.get(0);
 System.assertEquals('Changed', row.Name);
+System.assertEquals(null, row.MasterRecordId);
 row.Name = 'Updated';
 update row;
 List<Account> updated = Database.query('SELECT Id, Name FROM Account WHERE Name = ''Updated''');
 System.assertEquals(1, updated.size());
 Account updatedRow = updated.get(0);
-delete updatedRow;
+Id updatedId = updatedRow.Id;
+Database.delete(new List<Id>{updatedId});
 List<Account> empty = [SELECT Id FROM Account];
 System.assertEquals(0, empty.size());
 `)
@@ -2614,7 +2616,8 @@ func testDataOrg() storage.OrgState {
 			APIName:   "Account",
 			KeyPrefix: "001",
 			Fields: map[string]storage.Field{
-				"Name": {APIName: "Name", Type: storage.FieldString},
+				"Name":           {APIName: "Name", Type: storage.FieldString},
+				"MasterRecordId": {APIName: "MasterRecordId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "MasterRecord"},
 			},
 		},
 		Records: make(map[storage.ID]storage.Record),
