@@ -598,6 +598,29 @@ System.assertEquals(3, 1 + 1);
 	}
 }
 
+func TestExecNullDereferenceRuntimeErrorIncludesMemberContext(t *testing.T) {
+	program, err := CompileAnonymous(`
+String name = null;
+name.toUpperCase();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = Execute(program, nil)
+	var runtimeErr *RuntimeError
+	if !errors.As(err, &runtimeErr) {
+		t.Fatalf("err = %#v, want RuntimeError", err)
+	}
+	if runtimeErr.Type != "NullPointerException" {
+		t.Fatalf("runtime error type = %q", runtimeErr.Type)
+	}
+	for _, want := range []string{"Attempt to de-reference a null object", "name.toUpperCase", "null receiver name"} {
+		if !strings.Contains(runtimeErr.Message, want) {
+			t.Fatalf("runtime error message = %q, want %q", runtimeErr.Message, want)
+		}
+	}
+}
+
 func TestExecCollectionsAndTrace(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<Integer> xs = new List<Integer>{1, 2};

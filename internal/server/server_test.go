@@ -2863,6 +2863,40 @@ global class MapResource {
 	}
 }
 
+func TestApexRestDispatchRuntimeErrorIncludesRouteAndSourceContext(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+	handler.SetProjectIndex(writeApexRestProject(t, map[string]string{
+		"NullResource.cls": `
+@RestResource(urlMapping='/nulls/*')
+global class NullResource {
+  @HttpGet global static String getIt() {
+    String name = null;
+    return name.toUpperCase();
+  }
+}
+`,
+	}))
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/apexrest/nulls/1", nil))
+	if rec.Code != http.StatusNotImplemented {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	body := rec.Body.String()
+	for _, want := range []string{
+		"Apex REST execution failed in NullResource.getIt",
+		"NullResource.cls",
+		"NullPointerException",
+		"name.toUpperCase",
+		"at NullResource.getIt",
+	} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("body = %s, want %q", body, want)
+		}
+	}
+}
+
 func TestApexRestDispatchFencesUnsupportedSignature(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)

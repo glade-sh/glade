@@ -289,6 +289,7 @@ func (s *Server) handleOAuth(w http.ResponseWriter, r *http.Request, parts []str
 
 type apexRestRoute struct {
 	ClassName string
+	File      string
 	Mapping   string
 	Method    typesys.MemberSymbol
 	PrefixLen int
@@ -345,10 +346,45 @@ func (s *Server) handleApexRest(w http.ResponseWriter, r *http.Request) {
 	}
 	returnValue, err := machine.CallStatic(route.ClassName+"."+route.Method.Name, nil)
 	if err != nil {
-		writeSalesforceError(w, errUnsupportedFeature, "Apex REST execution failed: "+err.Error())
+		writeSalesforceError(w, errUnsupportedFeature, apexRestExecutionError(route, err))
 		return
 	}
 	s.writeApexRestResponse(w, machine.RestResponse(), returnValue, strings.EqualFold(route.Method.Type, "void"))
+}
+
+func apexRestExecutionError(route apexRestRoute, err error) string {
+	message := "Apex REST execution failed in " + route.ClassName + "." + route.Method.Name
+	if loc := methodLocation(route.File, route.Method.Range.Start.Line, route.Method.Range.Start.Column); loc != "" {
+		message += " (" + loc + ")"
+	}
+	message += ": " + err.Error()
+	var runtimeErr *vm.RuntimeError
+	if errors.As(err, &runtimeErr) && len(runtimeErr.Stack) > 0 {
+		frame := runtimeErr.Stack[0]
+		frameLabel := frame.Symbol
+		if frameLabel == "" {
+			frameLabel = route.ClassName + "." + route.Method.Name
+		}
+		if loc := methodLocation(frame.File, frame.Line, frame.Column); loc != "" {
+			message += "; at " + frameLabel + " (" + loc + ")"
+		} else if frameLabel != "" {
+			message += "; at " + frameLabel
+		}
+	}
+	return message
+}
+
+func methodLocation(file string, line, column int) string {
+	if file == "" && line <= 0 {
+		return ""
+	}
+	if file == "" {
+		return fmt.Sprintf("line %d:%d", line, column)
+	}
+	if line <= 0 {
+		return file
+	}
+	return fmt.Sprintf("%s:%d:%d", file, line, column)
 }
 
 func requestBaseURL(r *http.Request) string {
@@ -398,7 +434,7 @@ func (s *Server) apexRestRoute(r *http.Request) (apexRestRoute, bool) {
 		if !ok {
 			continue
 		}
-		candidate := apexRestRoute{ClassName: typ.Name, Mapping: mapping, Method: method, PrefixLen: prefixLen, Exact: exact}
+		candidate := apexRestRoute{ClassName: typ.Name, File: typ.File, Mapping: mapping, Method: method, PrefixLen: prefixLen, Exact: exact}
 		if candidate.betterThan(best) {
 			best = candidate
 		}

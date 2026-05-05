@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -94,7 +95,7 @@ func (vm *VM) CallStatic(name string, args []Value) (Value, error) {
 	methodName := name[dot+1:]
 	method, ok, ambiguous := vm.resolveStaticMethodForArgs(className, methodName, args)
 	if ambiguous {
-		return Null, fmt.Errorf("ambiguous overload for call %q", name)
+		return Null, vm.ambiguousOverloadError(name, args)
 	}
 	if !ok {
 		return Null, fmt.Errorf("unknown static method %q", name)
@@ -102,5 +103,15 @@ func (vm *VM) CallStatic(name string, args []Value) (Value, error) {
 	if err := vm.ensureClassInitialized(method.ClassName); err != nil {
 		return Null, err
 	}
-	return vm.callMethod(method, args, &Result{})
+	value, err := vm.callMethod(method, args, &Result{})
+	if err != nil {
+		var thrown *apexThrowError
+		if errors.As(err, &thrown) {
+			if len(thrown.stack) == 0 {
+				thrown.stack = vm.rawStackFrames()
+			}
+			return Null, runtimeError(thrown.value, thrown.stack)
+		}
+	}
+	return value, err
 }

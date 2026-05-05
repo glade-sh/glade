@@ -1395,6 +1395,15 @@ func TestRuntimeOverloadUsesPairwiseSpecificity(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), "ambiguous overload") {
 		t.Fatalf("expected ambiguous overload error, got %v", err)
 	}
+	for _, want := range []string{
+		"argument types: 1:Integer, 2:String",
+		"Util.pick(count Integer, label Object)",
+		"Util.pick(count Long, label String)",
+	} {
+		if !strings.Contains(err.Error(), want) {
+			t.Fatalf("ambiguous overload error = %q, want %q", err.Error(), want)
+		}
+	}
 }
 
 func TestRuntimeNullOverloadChoosesMostSpecificType(t *testing.T) {
