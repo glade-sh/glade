@@ -164,6 +164,23 @@ func TestServerExampleApexRESTSObjectsPatchBodyIncludesID(t *testing.T) {
 	}
 }
 
+func TestServerExampleProbeOverlayKeepsCartOrderScoped(t *testing.T) {
+	base := storage.NewOrgState()
+	applyServerExampleSchema(&base, schema.Schema{Objects: []schema.Object{{Name: "Order__c"}}})
+
+	cartOrg := base.Clone()
+	applyServerExampleProbeOverlay(&cartOrg, serverExampleProbe{Path: "/services/apexrest/selfservice/cart/build/"})
+	if records := cartOrg.Objects["Order__c"].Records; len(records) != 1 {
+		t.Fatalf("cart order records = %#v", records)
+	}
+
+	deleteOrg := base.Clone()
+	applyServerExampleProbeOverlay(&deleteOrg, serverExampleProbe{Path: "/services/apexrest/selfservice/sobjects/"})
+	if records := deleteOrg.Objects["Order__c"].Records; len(records) != 0 {
+		t.Fatalf("delete probe order records = %#v", records)
+	}
+}
+
 func localTestDir(t *testing.T, prefix string) string {
 	t.Helper()
 	dir, err := os.MkdirTemp(".", prefix+"-*")

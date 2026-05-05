@@ -168,25 +168,24 @@ func runServerExampleProbes(root, projectPath string, fixture storage.Fixture, p
 	if err != nil {
 		return nil, err
 	}
+	source, err := server.NewSourceMetadataFromProject(p)
+	if err != nil {
+		return nil, err
+	}
+	index := typesys.Build(p, loadedSchema)
 	org.Namespace = p.Namespace
 	applyServerExampleSchema(&org, loadedSchema)
-	ensureServerExampleLocalAccount(&org)
-	ensureServerExampleLocalEntity(&org)
-	ensureServerExampleLocalOrder(&org)
-	ensureServerExampleNimbleAMSSettings(&org)
-	ensureServerExampleVerifiableSetupData(&org)
 	if err := storage.ApplyFixture(&org, fixture); err != nil {
-		return nil, err
-	}
-	if err := store.Save(org); err != nil {
-		return nil, err
-	}
-	handler, err := serverExampleHandler(&org, store, projectPath)
-	if err != nil {
 		return nil, err
 	}
 	results := make([]ServerExampleProbeResult, 0, len(probes))
 	for _, probe := range probes {
+		probeOrg := org.Clone()
+		applyServerExampleProbeOverlay(&probeOrg, probe)
+		if err := store.Save(probeOrg); err != nil {
+			return nil, err
+		}
+		handler := serverExampleHandler(&probeOrg, store, source, index)
 		req := httptest.NewRequest(probe.Method, probe.Path, strings.NewReader(probe.Body))
 		if probe.Body != "" {
 			req.Header.Set("Content-Type", "application/json")
@@ -201,30 +200,10 @@ func runServerExampleProbes(root, projectPath string, fixture storage.Fixture, p
 	return results, nil
 }
 
-func serverExampleHandler(org *storage.OrgState, store interface{ Save(storage.OrgState) error }, projectPath string) (*server.Server, error) {
-	p, err := project.Load(projectPath)
-	if err != nil {
-		return nil, err
-	}
-	source, err := server.NewSourceMetadataFromProject(p)
-	if err != nil {
-		return nil, err
-	}
-	loadedSchema, err := schema.LoadProject(p)
-	if err != nil {
-		return nil, err
-	}
-	org.Namespace = p.Namespace
-	applyServerExampleSchema(org, loadedSchema)
-	ensureServerExampleLocalAccount(org)
-	ensureServerExampleLocalEntity(org)
-	ensureServerExampleLocalOrder(org)
-	ensureServerExampleNimbleAMSSettings(org)
-	ensureServerExampleVerifiableSetupData(org)
+func serverExampleHandler(org *storage.OrgState, store interface{ Save(storage.OrgState) error }, source server.SourceMetadata, index typesys.Index) *server.Server {
 	handler := server.NewWithStoreAndSource(org, store, source)
-	index := typesys.Build(p, loadedSchema)
 	handler.SetProjectIndex(index)
-	return handler, nil
+	return handler
 }
 
 func applyServerExampleSchema(org *storage.OrgState, loaded schema.Schema) {
@@ -433,6 +412,22 @@ func serverExampleBaseOrg(fixture storage.Fixture) storage.OrgState {
 	}
 	storage.EnsureDeterministicPlatformData(&org)
 	return org
+}
+
+func applyServerExampleProbeOverlay(org *storage.OrgState, probe serverExampleProbe) {
+	path := probe.Path
+	if strings.Contains(path, "selfservice/") {
+		ensureServerExampleLocalAccount(org)
+		ensureServerExampleLocalEntity(org)
+	}
+	if strings.Contains(path, "selfservice/cart/build") {
+		ensureServerExampleLocalOrder(org)
+	}
+	if strings.Contains(path, "webhookEvents") || strings.Contains(path, "webhookevent/create") {
+		ensureServerExampleLocalAccount(org)
+		ensureServerExampleNimbleAMSSettings(org)
+		ensureServerExampleVerifiableSetupData(org)
+	}
 }
 
 func ensureServerExampleLocalAccount(org *storage.OrgState) {
