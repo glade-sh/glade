@@ -1695,6 +1695,64 @@ System.assertEquals('Trail__c', customDescribe.getName());
 	}
 }
 
+func TestExecSObjectGetSObjectTypeForInstancesAndStaticTypes(t *testing.T) {
+	program, err := CompileAnonymous(`
+Webhook_Event__c event = new Webhook_Event__c();
+Object instanceType = event.getSObjectType();
+System.assertEquals('Webhook_Event__c', instanceType.getDescribe().getName());
+SObject genericEvent = new Webhook_Event__c();
+System.assertEquals('Webhook_Event__c', genericEvent.getSObjectType().getDescribe().getName());
+System.assertEquals('Webhook_Event__c', Webhook_Event__c.getSObjectType().getDescribe().getName());
+System.assertEquals('Account', Account.getSObjectType().getDescribe().getName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Webhook_Event__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Webhook_Event__c",
+			KeyPrefix: "a50",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSObjectStaticGetSObjectTypeDoesNotShadowUserStaticMethod(t *testing.T) {
+	methodProgram, err := CompileAnonymous(`return 'user method';`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+String value = Account.getSObjectType();
+System.assertEquals('user method', value);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "BaseAccount"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "Account", SuperClass: "BaseAccount"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterMethod(Method{Name: "BaseAccount.getSObjectType", ClassName: "BaseAccount", ReturnType: "String", IsStatic: true, Program: methodProgram}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecIDGetSObjectTypeRejectsUnknownPrefix(t *testing.T) {
 	program, err := CompileAnonymous(`
 Id unknown = Id.valueOf('999B000001DVM9t');

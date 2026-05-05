@@ -112,6 +112,15 @@ func standardFieldsForObject(objectName string) []Field {
 			{APIName: "TemplateType", Label: "Template Type", Type: FieldString},
 			{APIName: "TimesUsed", Label: "Times Used", Type: FieldInteger},
 		}
+	case stringsHasSuffixFold(objectName, "__mdt"):
+		// Public custom metadata records expose metadata identity fields.
+		// Plain custom objects and custom settings do not get these by suffix.
+		return []Field{
+			{APIName: "DeveloperName", Label: "Developer Name", Type: FieldString},
+			{APIName: "MasterLabel", Label: "Master Label", Type: FieldString},
+			{APIName: "NamespacePrefix", Label: "Namespace Prefix", Type: FieldString},
+			{APIName: "QualifiedApiName", Label: "Qualified API Name", Type: FieldString},
+		}
 	case stringsHasSuffixFold(objectName, "__c"):
 		return []Field{
 			{APIName: "RecordTypeId", Label: "Record Type ID", Type: FieldReference, ReferenceTo: []string{"RecordType"}, RelationshipName: "RecordType"},

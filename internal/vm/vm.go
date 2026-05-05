@@ -1093,6 +1093,12 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		return value, err
 	}
 	if dot := strings.LastIndex(callee, "."); dot > 0 && dot < len(callee)-1 {
+		typeName, methodName := callee[:dot], callee[dot+1:]
+		if _, classExists := vm.Classes[typeName]; !classExists {
+			if value, handled, err := vm.callSObjectTypeStaticMember(typeName, methodName, args); handled || err != nil {
+				return value, err
+			}
+		}
 		if value, handled, err := vm.callCustomDataStaticMember(callee[:dot], callee[dot+1:], args); handled || err != nil {
 			return value, err
 		}
@@ -1117,6 +1123,9 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return vm.callMethod(method, args, result)
 		} else if ambiguous {
 			return Null, fmt.Errorf("ambiguous overload for call %q", callee)
+		}
+		if value, handled, err := vm.callSObjectTypeStaticMember(className, methodName, args); handled || err != nil {
+			return value, err
 		}
 	}
 	if strings.HasPrefix(callee, "Search.") {
@@ -7366,6 +7375,35 @@ func (vm *VM) lookupSObjectTypeToken(parts []string) (Value, bool) {
 	return sObjectTypeToken(canonical), true
 }
 
+func (vm *VM) sObjectTypeTokenForName(objectName string) (Value, bool) {
+	if strings.EqualFold(objectName, "SObject") {
+		return sObjectTypeToken("SObject"), true
+	}
+	if vm.Org != nil {
+		if canonical, ok := storage.ResolveObjectName(*vm.Org, objectName); ok {
+			return sObjectTypeToken(canonical), true
+		}
+	}
+	if isCommonSObjectTypeName(objectName) || strings.HasSuffix(objectName, "__c") || strings.HasSuffix(objectName, "__e") || strings.HasSuffix(objectName, "__mdt") {
+		return sObjectTypeToken(objectName), true
+	}
+	return Null, false
+}
+
+func (vm *VM) callSObjectTypeStaticMember(typeName, method string, args []Value) (Value, bool, error) {
+	if method != "getSObjectType" {
+		return Null, false, nil
+	}
+	if len(args) != 0 {
+		return Null, true, fmt.Errorf("%s.getSObjectType expects 0 arguments", typeName)
+	}
+	token, ok := vm.sObjectTypeTokenForName(typeName)
+	if !ok {
+		return Null, false, nil
+	}
+	return token, true, nil
+}
+
 func (vm *VM) lookupSObjectFieldToken(parts []string) (Value, bool) {
 	if vm.Org == nil || len(parts) < 2 {
 		return Null, false
@@ -10272,6 +10310,11 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 	if receiver.Kind == ValueNull {
 		return Null, true, newExceptionError("NullPointerException", "Attempt to de-reference a null object")
 	}
+	if _, declared := vm.VarTypes[receiverName]; !declared {
+		if value, handled, err := vm.callSObjectTypeStaticMember(receiverName, method, args); handled || err != nil {
+			return value, true, err
+		}
+	}
 	if receiverType := vm.VarTypes[receiverName]; strings.EqualFold(receiverType, "Id") {
 		if value, handled, err := vm.callIdMember(receiver, method, args); handled || err != nil {
 			return value, true, err
@@ -10950,6 +10993,15 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 			out.Map[mapKey(String(field))] = value
 		}
 		return out, true, nil
+	case "getSObjectType":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("SObject.getSObjectType expects 0 arguments")
+		}
+		token, ok := vm.sObjectTypeTokenForName(receiver.Type)
+		if !ok {
+			return Null, false, nil
+		}
+		return token, true, nil
 	case "clone":
 		if len(args) != 0 && len(args) != 1 && len(args) != 4 {
 			return Null, true, fmt.Errorf("SObject.clone expects 0, 1, or 4 arguments")
