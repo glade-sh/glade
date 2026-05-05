@@ -216,6 +216,9 @@ func mapKey(v Value) string {
 			return string(v.Kind) + ":" + v.Type + ":" + raw.Text
 		}
 	}
+	if v.Kind == ValueObject && v.Type != "" && v.Text != "" {
+		return string(v.Kind) + ":" + v.Type + ":" + v.Text
+	}
 	return string(v.Kind) + ":" + v.String()
 }
 

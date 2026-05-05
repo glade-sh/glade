@@ -902,6 +902,110 @@ private class OuterTest {
 	}
 }
 
+func TestRunExecutesLowercaseNestedClassStaticMethodFromInitializer(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/DispatchOuter.cls"), `
+public class DispatchOuter {
+  public static String initialized = v1.label('init');
+  public class v1 {
+    public static String label(String input) {
+      return input + '-nested';
+    }
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/DispatchOuterTest.cls"), `
+@isTest
+private class DispatchOuterTest {
+  @isTest static void lowercaseNestedStaticDispatches() {
+    System.assertEquals('direct-nested', DispatchOuter.v1.label('direct'));
+    System.assertEquals('init-nested', DispatchOuter.initialized);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v run=%#v", got, run)
+	}
+}
+
+func TestRunExecutesInstanceMethodOnStaticPropertyInitializedByStaticBlock(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/Account.object-meta.xml"), `<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/fields/Name.field-meta.xml"), `<CustomField><fullName>Name</fullName><label>Name</label><type>Text</type></CustomField>`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/DispatchFacade.cls"), `
+public class DispatchFacade {
+  public static DispatchService v1 { get; private set; }
+  static {
+    v1 = new DispatchService();
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/DispatchService.cls"), `
+public class DispatchService {
+  public String label(String input) {
+    return input + '-instance';
+  }
+  public String describeRecords(List<SObject> records, SObjectField fieldToken) {
+    return String.valueOf(records.size()) + ':' + fieldToken.getDescribe().getName();
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/DispatchFacadeTest.cls"), `
+@isTest
+private class DispatchFacadeTest {
+  @isTest static void staticPropertyReceiverDispatches() {
+    System.assertEquals('direct-instance', DispatchFacade.v1.label('direct'));
+    List<Account> records = new List<Account>{new Account(Name = 'Acme')};
+    System.assertEquals('1:Name', DispatchFacade.v1.describeRecords(records, Account.Name));
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestRunExecutesStaticMapInitializerWithInnerClassTypeValues(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/BindingShape.cls"), `
+public abstract class BindingShape {
+  public enum BindingType { Apex, Module }
+  private static final Map<BindingType, Type> bindingImplsByType =
+    new Map<BindingType, Type> {
+      BindingType.Apex => ApexBinding.class,
+      BindingType.Module => ApexBinding.class
+    };
+
+  public static String lookup() {
+    return bindingImplsByType.get(BindingType.Apex).getName();
+  }
+
+  private class ApexBinding extends BindingShape {
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/BindingShapeTest.cls"), `
+@isTest
+private class BindingShapeTest {
+  @isTest static void staticMapTypeInitializerDispatches() {
+    System.assertEquals('BindingShape.ApexBinding', BindingShape.lookup());
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
 func TestRunExecutesNestedTypesWithConstructorsInterfacesEnumsAndIdentity(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)

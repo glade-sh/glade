@@ -10147,16 +10147,28 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 		if !ok {
 			return value, nil
 		}
+		type coercedEntry struct {
+			key   string
+			value Value
+		}
+		entries := make([]coercedEntry, 0, len(value.Map))
 		for rawKey, item := range value.Map {
 			keyValue := valueFromMapKey(rawKey)
-			if _, err := vm.coerceAssignable(keyType, keyValue); err != nil {
+			coercedKey, err := vm.coerceAssignable(keyType, keyValue)
+			if err != nil {
 				return Null, fmt.Errorf("key: %w", err)
 			}
 			coercedValue, err := vm.coerceAssignable(valueType, item)
 			if err != nil {
 				return Null, fmt.Errorf("value: %w", err)
 			}
-			value.Map[rawKey] = coercedValue
+			entries = append(entries, coercedEntry{key: mapKey(coercedKey), value: coercedValue})
+		}
+		for rawKey := range value.Map {
+			delete(value.Map, rawKey)
+		}
+		for _, entry := range entries {
+			value.Map[entry.key] = entry.value
 		}
 		return value, nil
 	}
@@ -10377,6 +10389,9 @@ func valueFromMapKey(key string) Value {
 		}
 		if ok && platformScalarObject(typeName) {
 			return platformScalar(typeName, text)
+		}
+		if ok && typeName != "" {
+			return Value{Kind: ValueObject, Type: typeName, Text: text}
 		}
 	}
 	kind, text, ok := strings.Cut(key, ":")
