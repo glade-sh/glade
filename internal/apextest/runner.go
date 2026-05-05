@@ -7,6 +7,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/open-aer/oaer/internal/apexast"
 	"github.com/open-aer/oaer/internal/automation"
@@ -19,6 +20,8 @@ import (
 	"github.com/open-aer/oaer/internal/typesys"
 	"github.com/open-aer/oaer/internal/vm"
 )
+
+var sourceRuneOffsetCache sync.Map
 
 type Options struct {
 	Filter    string
@@ -699,7 +702,10 @@ func extractMethodSource(source string, r diagnostic.Range) (string, error) {
 	if open := strings.IndexByte(text, '('); open >= 0 && findMatchingParen(text, open) >= 0 {
 		return text, nil
 	}
-	start := r.Start.Offset
+	start, ok := sourceBytePosition(source, r.Start)
+	if !ok {
+		return "", fmt.Errorf("source range is unavailable")
+	}
 	lineStart := strings.LastIndexAny(source[:start], "\r\n")
 	if lineStart < 0 {
 		lineStart = 0
@@ -717,12 +723,39 @@ func extractMethodSource(source string, r diagnostic.Range) (string, error) {
 }
 
 func extractSourceRange(source string, r diagnostic.Range) (string, error) {
-	start := r.Start.Offset
-	end := r.End.Offset
+	start, startOK := sourceBytePosition(source, r.Start)
+	end, endOK := sourceBytePosition(source, r.End)
+	if !startOK || !endOK {
+		return "", fmt.Errorf("source range is unavailable")
+	}
 	if start < 0 || start >= len(source) || end <= start || end > len(source) {
 		return "", fmt.Errorf("source range is unavailable")
 	}
 	return source[start:end], nil
+}
+
+func sourceBytePosition(source string, pos diagnostic.Position) (int, bool) {
+	if pos.Offset < 0 {
+		return 0, false
+	}
+	offsetsValue, ok := sourceRuneOffsetCache.Load(source)
+	if !ok {
+		offsetsValue, _ = sourceRuneOffsetCache.LoadOrStore(source, buildSourceRuneByteOffsets(source))
+	}
+	offsets := offsetsValue.([]int)
+	if pos.Offset >= len(offsets) {
+		return 0, false
+	}
+	return offsets[pos.Offset], true
+}
+
+func buildSourceRuneByteOffsets(source string) []int {
+	offsets := make([]int, 0, len(source)+1)
+	for byteOffset := range source {
+		offsets = append(offsets, byteOffset)
+	}
+	offsets = append(offsets, len(source))
+	return offsets
 }
 
 func compileFieldInitializer(typeName, fieldName string, r diagnostic.Range, source string) (vm.Value, bool) {
