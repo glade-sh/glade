@@ -1,12 +1,14 @@
 package server
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"mime"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"sort"
 	"strconv"
@@ -121,6 +123,10 @@ func NewWithStore(org *storage.OrgState, store interface{ Save(storage.OrgState)
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	s.serveHTTPLocked(w, r)
+}
+
+func (s *Server) serveHTTPLocked(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	parts := splitPath(r.URL.EscapedPath())
 	if len(parts) >= 2 && parts[0] == "services" && parts[1] == "oauth2" {
@@ -1238,24 +1244,40 @@ func requireWellFormedJSONBody(w http.ResponseWriter, r *http.Request) bool {
 }
 
 type compositeSubrequestEnvelope struct {
-	Method      string `json:"method"`
-	URL         string `json:"url"`
-	ReferenceID string `json:"referenceId"`
+	Method      string            `json:"method"`
+	URL         string            `json:"url"`
+	ReferenceID string            `json:"referenceId"`
+	Body        json.RawMessage   `json:"body,omitempty"`
+	HTTPHeaders map[string]string `json:"httpHeaders,omitempty"`
+}
+
+type compositeRequestEnvelope struct {
+	AllOrNone        bool                          `json:"allOrNone"`
+	CompositeRequest []compositeSubrequestEnvelope `json:"compositeRequest"`
 }
 
 func requireCompositeRequestEnvelope(w http.ResponseWriter, r *http.Request) bool {
+	_, ok := decodeCompositeRequestEnvelope(w, r)
+	return ok
+}
+
+func decodeCompositeRequestEnvelope(w http.ResponseWriter, r *http.Request) (compositeRequestEnvelope, bool) {
 	var body struct {
+		AllOrNone        bool                           `json:"allOrNone"`
 		CompositeRequest *[]compositeSubrequestEnvelope `json:"compositeRequest"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		writeSalesforceError(w, errMalformedJSON, err.Error())
-		return false
+		return compositeRequestEnvelope{}, false
 	}
 	if body.CompositeRequest == nil || len(*body.CompositeRequest) == 0 {
 		writeSalesforceError(w, errRequiredFieldMissing, "compositeRequest is required and must contain at least one subrequest")
-		return false
+		return compositeRequestEnvelope{}, false
 	}
-	return validateCompositeSubrequests(w, *body.CompositeRequest, "compositeRequest", true)
+	if !validateCompositeSubrequests(w, *body.CompositeRequest, "compositeRequest", true) {
+		return compositeRequestEnvelope{}, false
+	}
+	return compositeRequestEnvelope{AllOrNone: body.AllOrNone, CompositeRequest: *body.CompositeRequest}, true
 }
 
 func requireCompositeBatchEnvelope(w http.ResponseWriter, r *http.Request) bool {
@@ -1523,12 +1545,19 @@ func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, version
 	if len(parts) == 0 {
 		switch r.Method {
 		case http.MethodGet:
-			writeSalesforceError(w, errUnsupportedFeature, "Composite namespace discovery is not implemented in the local server; generic REST subrequest orchestration is not modeled")
+			writeJSON(w, http.StatusOK, map[string]any{
+				"resources": map[string]string{
+					"composite": "/services/data/" + version + "/composite",
+					"sobjects":  "/services/data/" + version + "/composite/sobjects",
+				},
+				"unsupported": []string{"batch", "graph", "tree"},
+			})
 		case http.MethodPost:
-			if !requireCompositeRequestEnvelope(w, r) {
+			body, ok := decodeCompositeRequestEnvelope(w, r)
+			if !ok {
 				return
 			}
-			writeSalesforceError(w, errUnsupportedFeature, "Generic Composite REST subrequest orchestration is not implemented in the local server")
+			s.handleGenericComposite(w, r, version, body)
 		default:
 			writeMethodNotAllowed(w, http.MethodGet, http.MethodPost)
 		}
@@ -1576,6 +1605,248 @@ func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, version
 		return
 	}
 	writeSalesforceError(w, errUnknownComposite)
+}
+
+type compositeSubresponse struct {
+	Body           any               `json:"body"`
+	HTTPHeaders    map[string]string `json:"httpHeaders,omitempty"`
+	HTTPStatusCode int               `json:"httpStatusCode"`
+	ReferenceID    string            `json:"referenceId"`
+}
+
+func (s *Server) handleGenericComposite(w http.ResponseWriter, r *http.Request, version string, body compositeRequestEnvelope) {
+	next := s.Org.Clone()
+	child := *s
+	child.Org = &next
+	child.Store = nil
+	references := make(map[string]any, len(body.CompositeRequest))
+	responses := make([]compositeSubresponse, 0, len(body.CompositeRequest))
+	hasFailure := false
+	hasMutation := false
+	for _, subrequest := range body.CompositeRequest {
+		resolved, err := resolveCompositeSubrequest(subrequest, references)
+		if err != nil {
+			hasFailure = true
+			responses = append(responses, compositeReferenceErrorResponse(subrequest.ReferenceID, err))
+			continue
+		}
+		if isCompositeMutationMethod(resolved.Method) {
+			hasMutation = true
+		}
+		response := child.executeCompositeSubrequest(r, version, resolved)
+		if response.HTTPStatusCode >= 400 {
+			hasFailure = true
+		}
+		references[resolved.ReferenceID] = response.Body
+		responses = append(responses, response)
+	}
+	if !body.AllOrNone || !hasFailure {
+		s.queryLocators = child.queryLocators
+		s.queryOrder = child.queryOrder
+		s.nextQueryID = child.nextQueryID
+	}
+	if hasMutation && (!body.AllOrNone || !hasFailure) {
+		if err := s.commitOrg(next); err != nil {
+			writeSalesforceError(w, errStoreFailure, err.Error())
+			return
+		}
+	}
+	status := http.StatusOK
+	if body.AllOrNone && hasFailure {
+		status = http.StatusBadRequest
+	}
+	writeJSON(w, status, map[string]any{"compositeResponse": responses})
+}
+
+func (s *Server) executeCompositeSubrequest(parent *http.Request, version string, subrequest compositeSubrequestEnvelope) compositeSubresponse {
+	var body io.Reader
+	if len(subrequest.Body) > 0 {
+		body = bytes.NewReader(subrequest.Body)
+	}
+	req, err := newCompositeHTTPRequest(parent, strings.ToUpper(subrequest.Method), subrequest.URL, body)
+	if err != nil {
+		return compositeReferenceErrorResponse(subrequest.ReferenceID, err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	for name, value := range parent.Header {
+		for _, item := range value {
+			req.Header.Add(name, item)
+		}
+	}
+	for name, value := range subrequest.HTTPHeaders {
+		req.Header.Set(name, value)
+	}
+	rec := httptest.NewRecorder()
+	if !compositeSubrequestRouteSupported(req.URL, version) {
+		writeSalesforceError(rec, errUnsupportedFeature, "Composite subrequest route is not supported by the local generic Composite orchestrator")
+	} else {
+		s.serveHTTPLocked(rec, req)
+	}
+	result := rec.Result()
+	defer result.Body.Close()
+	rawBody, _ := io.ReadAll(result.Body)
+	decodedBody := decodeCompositeSubresponseBody(rawBody)
+	return compositeSubresponse{
+		Body:           decodedBody,
+		HTTPHeaders:    compositeResponseHeaders(result.Header),
+		HTTPStatusCode: result.StatusCode,
+		ReferenceID:    subrequest.ReferenceID,
+	}
+}
+
+func newCompositeHTTPRequest(parent *http.Request, method, target string, body io.Reader) (*http.Request, error) {
+	if strings.TrimSpace(method) == "" {
+		return nil, fmt.Errorf("Composite subrequest method is required")
+	}
+	if strings.TrimSpace(target) == "" {
+		return nil, fmt.Errorf("Composite subrequest url is required")
+	}
+	requestURL := target
+	if strings.HasPrefix(target, "/") {
+		requestURL = "http://local.oaer.test" + target
+	}
+	req, err := http.NewRequest(method, requestURL, body)
+	if err != nil {
+		return nil, err
+	}
+	req.RequestURI = ""
+	req.Host = parent.Host
+	req.RemoteAddr = parent.RemoteAddr
+	return req, nil
+}
+
+func compositeSubrequestRouteSupported(u *url.URL, version string) bool {
+	parts := splitPath(u.EscapedPath())
+	if len(parts) < 4 || parts[0] != "services" || parts[1] != "data" || parts[2] != version {
+		return false
+	}
+	rest := parts[3:]
+	switch {
+	case len(rest) >= 1 && rest[0] == "sobjects":
+		return true
+	case len(rest) >= 1 && (rest[0] == "query" || rest[0] == "queryAll"):
+		return true
+	case len(rest) == 1 && rest[0] == "limits":
+		return true
+	case len(rest) >= 2 && rest[0] == "composite" && rest[1] == "sobjects":
+		return true
+	default:
+		return false
+	}
+}
+
+func resolveCompositeSubrequest(request compositeSubrequestEnvelope, references map[string]any) (compositeSubrequestEnvelope, error) {
+	url, err := substituteCompositeReferences(request.URL, references)
+	if err != nil {
+		return compositeSubrequestEnvelope{}, err
+	}
+	request.URL = url
+	if len(request.Body) > 0 {
+		body, err := substituteCompositeReferences(string(request.Body), references)
+		if err != nil {
+			return compositeSubrequestEnvelope{}, err
+		}
+		request.Body = json.RawMessage(body)
+	}
+	return request, nil
+}
+
+func substituteCompositeReferences(input string, references map[string]any) (string, error) {
+	var out strings.Builder
+	for {
+		start := strings.Index(input, "@{")
+		if start < 0 {
+			out.WriteString(input)
+			return out.String(), nil
+		}
+		end := strings.Index(input[start+2:], "}")
+		if end < 0 {
+			return "", fmt.Errorf("unclosed Composite reference starting with %q", input[start:])
+		}
+		end += start + 2
+		out.WriteString(input[:start])
+		expr := input[start+2 : end]
+		ref, field, ok := strings.Cut(expr, ".")
+		if !ok || strings.TrimSpace(ref) == "" || strings.TrimSpace(field) == "" {
+			return "", fmt.Errorf("invalid Composite reference %q", expr)
+		}
+		value, ok := compositeReferenceValue(references[strings.TrimSpace(ref)], strings.Split(strings.TrimSpace(field), "."))
+		if !ok {
+			return "", fmt.Errorf("Composite reference %s could not be resolved", expr)
+		}
+		out.WriteString(fmt.Sprint(value))
+		input = input[end+1:]
+	}
+}
+
+func compositeReferenceValue(body any, fields []string) (any, bool) {
+	current := body
+	for _, field := range fields {
+		object, ok := current.(map[string]any)
+		if !ok {
+			return nil, false
+		}
+		next, ok := object[field]
+		if !ok {
+			for key, value := range object {
+				if strings.EqualFold(key, field) {
+					next = value
+					ok = true
+					break
+				}
+			}
+		}
+		if !ok {
+			return nil, false
+		}
+		current = next
+	}
+	return current, true
+}
+
+func decodeCompositeSubresponseBody(raw []byte) any {
+	if len(bytes.TrimSpace(raw)) == 0 {
+		return nil
+	}
+	var body any
+	if err := json.Unmarshal(raw, &body); err == nil {
+		return body
+	}
+	return string(raw)
+}
+
+func compositeResponseHeaders(headers http.Header) map[string]string {
+	out := make(map[string]string)
+	for name, values := range headers {
+		if strings.EqualFold(name, "Content-Type") || len(values) == 0 {
+			continue
+		}
+		out[name] = strings.Join(values, ",")
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
+func compositeReferenceErrorResponse(referenceID string, err error) compositeSubresponse {
+	return compositeSubresponse{
+		Body: []salesforceError{{
+			ErrorCode: salesforceErrorCode(errInvalidField),
+			Message:   err.Error(),
+		}},
+		HTTPStatusCode: http.StatusBadRequest,
+		ReferenceID:    referenceID,
+	}
+}
+
+func isCompositeMutationMethod(method string) bool {
+	switch strings.ToUpper(strings.TrimSpace(method)) {
+	case http.MethodPost, http.MethodPatch, http.MethodPut, http.MethodDelete:
+		return true
+	default:
+		return false
+	}
 }
 
 func (s *Server) handleCompositeSObjects(w http.ResponseWriter, r *http.Request, version string, parts []string) {

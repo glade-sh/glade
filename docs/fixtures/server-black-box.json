@@ -1532,14 +1532,16 @@
       ]
     },
     {
-      "name": "composite-generic-unsupported",
+      "name": "composite-generic-limits",
       "method": "POST",
       "path": "/services/data/v61.0/composite",
       "body": "{\"compositeRequest\":[{\"method\":\"GET\",\"url\":\"/services/data/v61.0/limits\",\"referenceId\":\"LimitsRef\"}]}",
-      "status": 501,
+      "status": 200,
       "contains": [
-        "UNSUPPORTED_FEATURE",
-        "Generic Composite REST subrequest orchestration"
+        "\"compositeResponse\"",
+        "\"referenceId\":\"LimitsRef\"",
+        "\"httpStatusCode\":200",
+        "DailyApiRequests"
       ]
     },
     {
@@ -2754,7 +2756,7 @@
         400,
         400,
         501,
-        501,
+        200,
         200,
         200,
         200,

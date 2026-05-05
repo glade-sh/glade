@@ -1768,6 +1768,135 @@ func TestCompositeGenericRouteFamiliesValidateEnvelopesBeforeUnsupported(t *test
 	}
 }
 
+func TestGenericCompositeOrchestratesSupportedRESTSubrequests(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/composite", strings.NewReader(`{
+  "allOrNone": true,
+  "compositeRequest": [
+    {"method":"POST","url":"/services/data/v61.0/sobjects/Account","referenceId":"createAccount","body":{"Name":"Composite"}},
+    {"method":"GET","url":"/services/data/v61.0/sobjects/Account/@{createAccount.id}","referenceId":"getAccount"},
+    {"method":"GET","url":"/services/data/v61.0/query?q=SELECT%20Id,%20Name%20FROM%20Account%20WHERE%20Id%20=%20'@{createAccount.id}'","referenceId":"queryAccount"},
+    {"method":"GET","url":"/services/data/v61.0/limits","referenceId":"limits"}
+  ]
+}`)))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("composite status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var body struct {
+		CompositeResponse []struct {
+			Body           map[string]any `json:"body"`
+			HTTPStatusCode int            `json:"httpStatusCode"`
+			ReferenceID    string         `json:"referenceId"`
+		} `json:"compositeResponse"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	if len(body.CompositeResponse) != 4 {
+		t.Fatalf("responses = %#v", body.CompositeResponse)
+	}
+	if body.CompositeResponse[0].ReferenceID != "createAccount" || body.CompositeResponse[0].HTTPStatusCode != http.StatusCreated {
+		t.Fatalf("create response = %#v", body.CompositeResponse[0])
+	}
+	if got := body.CompositeResponse[1].Body["Name"]; got != "Composite" {
+		t.Fatalf("get body Name = %#v body=%#v", got, body.CompositeResponse[1].Body)
+	}
+	if got := body.CompositeResponse[2].Body["totalSize"]; got != float64(1) {
+		t.Fatalf("query totalSize = %#v body=%#v", got, body.CompositeResponse[2].Body)
+	}
+	if _, ok := body.CompositeResponse[3].Body["DailyApiRequests"]; !ok {
+		t.Fatalf("limits body = %#v", body.CompositeResponse[3].Body)
+	}
+	if got := len(org.Objects["Account"].Records); got != 1 {
+		t.Fatalf("committed Account records = %d", got)
+	}
+}
+
+func TestGenericCompositeAllOrNoneRollsBackMutatingSubrequests(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/composite", strings.NewReader(`{
+  "allOrNone": true,
+  "compositeRequest": [
+    {"method":"POST","url":"/services/data/v61.0/sobjects/Account","referenceId":"good","body":{"Name":"Good"}},
+    {"method":"POST","url":"/services/data/v61.0/sobjects/Account","referenceId":"bad","body":{"Description":"Missing name"}}
+  ]
+}`)))
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("composite status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if got := len(org.Objects["Account"].Records); got != 0 {
+		t.Fatalf("rolled back Account records = %d", got)
+	}
+	if !bytes.Contains(rec.Body.Bytes(), []byte(`"referenceId":"good"`)) || !bytes.Contains(rec.Body.Bytes(), []byte(`"referenceId":"bad"`)) {
+		t.Fatalf("reference ids missing: %s", rec.Body.String())
+	}
+}
+
+func TestGenericCompositePartialFailureCommitsWithoutAllOrNone(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/composite", strings.NewReader(`{
+  "compositeRequest": [
+    {"method":"POST","url":"/services/data/v61.0/sobjects/Account","referenceId":"good","body":{"Name":"Good"}},
+    {"method":"POST","url":"/services/data/v61.0/sobjects/Account","referenceId":"bad","body":{"Description":"Missing name"}}
+  ]
+}`)))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("composite status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if got := len(org.Objects["Account"].Records); got != 1 {
+		t.Fatalf("committed Account records = %d", got)
+	}
+}
+
+func TestGenericCompositeCanCallCompositeSObjectRoutes(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/composite", strings.NewReader(`{
+  "compositeRequest": [
+    {"method":"POST","url":"/services/data/v61.0/composite/sobjects","referenceId":"nestedComposite","body":{"records":[{"attributes":{"type":"Account","referenceId":"row"},"Name":"Nested"}]}}
+  ]
+}`)))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("composite status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if got := len(org.Objects["Account"].Records); got != 1 {
+		t.Fatalf("committed Account records = %d", got)
+	}
+	if !bytes.Contains(rec.Body.Bytes(), []byte(`"referenceId":"nestedComposite"`)) || !bytes.Contains(rec.Body.Bytes(), []byte(`"referenceId":"row"`)) {
+		t.Fatalf("nested composite response = %s", rec.Body.String())
+	}
+}
+
+func TestGenericCompositeRejectsUnclosedReference(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/composite", strings.NewReader(`{
+  "compositeRequest": [
+    {"method":"GET","url":"/services/data/v61.0/limits","referenceId":"limits"},
+    {"method":"GET","url":"/services/data/v61.0/sobjects/Account/@{limits.DailyApiRequests","referenceId":"bad"}
+  ]
+}`)))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("composite status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if !bytes.Contains(rec.Body.Bytes(), []byte(`"httpStatusCode":400`)) || !bytes.Contains(rec.Body.Bytes(), []byte(`unclosed Composite reference`)) {
+		t.Fatalf("unclosed reference response = %s", rec.Body.String())
+	}
+}
+
 func TestRESTSearchReturnsStableUnsupportedError(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
@@ -3971,6 +4100,19 @@ func TestCompositeSObjectTypedUpsertRejectsUnknownExternalField(t *testing.T) {
 	assertSalesforceError(t, rec, http.StatusBadRequest, "INVALID_FIELD", "unknown external id field")
 }
 
+func TestCompositeNamespaceDiscoveryListsSupportedGenericRoutes(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/composite", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("discovery status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if !bytes.Contains(rec.Body.Bytes(), []byte(`"composite"`)) || !bytes.Contains(rec.Body.Bytes(), []byte(`"tree"`)) {
+		t.Fatalf("discovery body = %s", rec.Body.String())
+	}
+}
+
 func TestCompositeNamespaceUnsupportedStubs(t *testing.T) {
 	tests := []struct {
 		name          string
@@ -3979,19 +4121,6 @@ func TestCompositeNamespaceUnsupportedStubs(t *testing.T) {
 		body          string
 		wantMessageIn string
 	}{
-		{
-			name:          "generic composite subrequests",
-			method:        http.MethodPost,
-			path:          "/services/data/v61.0/composite",
-			body:          `{"compositeRequest":[{"method":"GET","url":"/services/data/v61.0/limits","referenceId":"LimitsRef"}]}`,
-			wantMessageIn: "Generic Composite REST subrequest orchestration",
-		},
-		{
-			name:          "composite discovery",
-			method:        http.MethodGet,
-			path:          "/services/data/v61.0/composite",
-			wantMessageIn: "Composite namespace discovery",
-		},
 		{
 			name:          "composite sobject typed collection",
 			method:        http.MethodPost,
