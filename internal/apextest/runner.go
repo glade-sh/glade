@@ -243,6 +243,19 @@ func registerRuntime(machine *vm.VM, methods map[string]vm.Method, classes []vm.
 	return nil
 }
 
+// RegisterProjectRuntime compiles project classes, methods, and triggers from an
+// index and installs them into the VM. It is used by non-test runtimes that need
+// the same supported Apex subset as the local test runner.
+func RegisterProjectRuntime(machine *vm.VM, index typesys.Index) error {
+	methods := compileProjectMethods(index)
+	classes := compileProjectClasses(index, methods)
+	triggers, triggerErrors := compileProjectTriggers(index)
+	if len(triggerErrors) > 0 {
+		return triggerErrors[0]
+	}
+	return registerRuntime(machine, methods, classes, nil, triggers)
+}
+
 func compileProjectClasses(index typesys.Index, methods map[string]vm.Method) []vm.Class {
 	var out []vm.Class
 	sources := make(map[string]string)

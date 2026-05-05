@@ -1,0 +1,36 @@
+{
+  "name": "integration-rest-server-apexrest-dispatch",
+  "evidence": [
+    {"symbol": "@RestResource dispatch", "kind": "server", "notes": "Local server dispatches a simple static Apex REST resource method."}
+  ],
+  "source": [
+    {
+      "path": "WidgetResource.cls",
+      "content": "@RestResource(urlMapping='/widgets/*')\nglobal class WidgetResource {\n  @HttpGet global static String getIt() {\n    return RestContext.request.httpMethod + ':' + RestContext.request.resourcePath + ':' + RestContext.request.params.get('q');\n  }\n}\n"
+    }
+  ],
+  "serverRequests": [
+    {
+      "name": "apexrest-get",
+      "method": "GET",
+      "path": "/services/apexrest/widgets/42?q=abc",
+      "status": 200,
+      "contains": ["GET:/widgets/42:abc"],
+      "notContains": ["UNSUPPORTED_FEATURE"]
+    }
+  ],
+  "command": {"kind": "server"},
+  "expected": {
+    "result": {
+      "ok": true,
+      "persistedAccounts": 0,
+      "persistedObjects": 12,
+      "persistedRecords": 7,
+      "permissions": 2,
+      "profiles": 1,
+      "requests": 1,
+      "statuses": [200],
+      "users": 1
+    }
+  }
+}
