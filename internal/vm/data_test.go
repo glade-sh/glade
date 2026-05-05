@@ -60,10 +60,41 @@ System.assertEquals('Acme', rows[0].Name);
 	}
 }
 
+func TestExecSingleAmpersandAndPipeBooleanOperators(t *testing.T) {
+	program, err := CompileAnonymous(`
+Boolean both = true & true;
+Boolean either = false | true;
+System.assert(both);
+System.assert(either);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecPlatformCasingAliases(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(false, System.Test.isRunningTest());
+System.assertEquals(Date.today(), Date.Today());
+System.assertEquals(false, Test.Database.hasRecords());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSObjectListGetSObjectTypeAndMapValuesProperty(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<SObject> records = (List<SObject>)JSON.deserialize('[{"attributes":{"type":"Account"},"Name":"Acme"}]', List<SObject>.class);
 System.assertEquals('Account', records.getSObjectType().getDescribe().getName());
+List<SObject> emptyRecords = new List<SObject>();
+System.assertEquals('SObject', emptyRecords.getSObjectType().getDescribe().getName());
 Map<Id, Account> accounts = new Map<Id, Account>();
 Account a = new Account(Name = 'Spruce');
 insert a;

@@ -1284,7 +1284,7 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		return mathUnary(callee, args)
 	case "Math.max", "Math.min", "Math.mod", "Math.pow", "Math.atan2":
 		return mathBinary(callee, args)
-	case "Date.today", "System.today":
+	case "Date.today", "Date.Today", "System.today":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
@@ -1403,11 +1403,19 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		return apexPagesSeverityValues(args)
 	case "RoundingMode.values":
 		return roundingModeValues(args)
-	case "System.isRunningTest", "Test.isRunningTest":
+	case "System.isRunningTest", "System.Test.isRunningTest", "Test.isRunningTest":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
 		return Bool(vm.testContext != nil), nil
+	case "Test.Database.hasRecords":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Test.Database.hasRecords expects 0 arguments")
+		}
+		if vm.testContext != nil {
+			return Null, unsupportedCallError("Test.Database.hasRecords local fflib test database surface")
+		}
+		return Bool(false), nil
 	case "Type.forName":
 		if len(args) != 1 && len(args) != 2 {
 			return Null, fmt.Errorf("Type.forName expects type name or namespace and type name")
@@ -9270,7 +9278,19 @@ func (vm *VM) callMember(callee string, args []Value, result *Result) (Value, bo
 				return vm.callValueMember(receiverName, field.Value, method, args, result)
 			}
 		}
-		if receiverName == "" || !unicode.IsLower([]rune(receiverName)[0]) {
+		if receiverName == "" {
+			return Null, false, nil
+		}
+		if thisValue, hasThis := vm.Globals["this"]; hasThis && thisValue.Kind == ValueObject {
+			if _, hasField := thisValue.Fields[receiverName]; hasField {
+				receiver, err := vm.lookup(receiverName)
+				if err != nil {
+					return Null, false, nil
+				}
+				return vm.callValueMember(receiverName, receiver, method, args, result)
+			}
+		}
+		if !unicode.IsLower([]rune(receiverName)[0]) {
 			return Null, false, nil
 		}
 		var err error
@@ -10546,6 +10566,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			objectName, ok := storage.ResolveObjectName(*vm.Org, objectValue.Text)
 			if !ok {
+				if strings.EqualFold(objectValue.Text, "SObject") {
+					return vm.describeSObjectValue("SObject", storage.ObjectDefinition{APIName: "SObject", Label: "SObject", PluralLabel: "SObjects"}), receiver, false, true, nil
+				}
 				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectType.getDescribe unknown object %s", objectValue.Text)
 			}
 			appendTrace(result, "apex.describe.sobject", "apex.describe", map[string]any{

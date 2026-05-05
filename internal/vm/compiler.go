@@ -116,7 +116,7 @@ func lex(source string) ([]token, error) {
 				}
 			}
 			switch source[i] {
-			case '(', ')', '{', '}', '[', ']', ';', ',', '.', ':', '?', '+', '-', '*', '/', '%', '=', '<', '>', '!', '|':
+			case '(', ')', '{', '}', '[', ']', ';', ',', '.', ':', '?', '+', '-', '*', '/', '%', '=', '<', '>', '!', '&', '|':
 				tokens = append(tokens, token{kind: tokenSymbol, text: source[i : i+1], pos: start})
 				i++
 			default:
@@ -730,7 +730,7 @@ func (p *parser) parseOr() (ir.Expr, error) {
 	if err != nil {
 		return ir.Expr{}, err
 	}
-	for p.match(tokenSymbol, "||") {
+	for p.matchAnySymbol("||", "|") {
 		right, err := p.parseAnd()
 		if err != nil {
 			return ir.Expr{}, err
@@ -745,7 +745,7 @@ func (p *parser) parseAnd() (ir.Expr, error) {
 	if err != nil {
 		return ir.Expr{}, err
 	}
-	for p.match(tokenSymbol, "&&") {
+	for p.matchAnySymbol("&&", "&") {
 		right, err := p.parseEquality()
 		if err != nil {
 			return ir.Expr{}, err
@@ -1260,6 +1260,15 @@ func (p *parser) match(kind tokenKind, text string) bool {
 	}
 	p.pos++
 	return true
+}
+
+func (p *parser) matchAnySymbol(symbols ...string) bool {
+	for _, symbol := range symbols {
+		if p.match(tokenSymbol, symbol) {
+			return true
+		}
+	}
+	return false
 }
 
 func (p *parser) peek(kind tokenKind, text string) bool {

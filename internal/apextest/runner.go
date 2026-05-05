@@ -694,7 +694,28 @@ func compilePropertyAccessor(className, file string, member typesys.MemberSymbol
 }
 
 func extractMethodSource(source string, r diagnostic.Range) (string, error) {
-	return extractSourceRange(source, r)
+	text, err := extractSourceRange(source, r)
+	if err != nil {
+		return "", err
+	}
+	if strings.Contains(text, "(") {
+		return text, nil
+	}
+	start := r.Start.Offset
+	lineStart := strings.LastIndexAny(source[:start], "\r\n")
+	if lineStart < 0 {
+		lineStart = 0
+	} else {
+		lineStart++
+	}
+	lineEnd := strings.IndexByte(source[start:], '{')
+	if lineEnd < 0 {
+		lineEnd = strings.IndexAny(source[start:], "\r\n")
+	}
+	if lineEnd < 0 {
+		lineEnd = len(source) - start
+	}
+	return source[lineStart : start+lineEnd], nil
 }
 
 func extractSourceRange(source string, r diagnostic.Range) (string, error) {
@@ -892,6 +913,12 @@ func findMatchingParen(source string, open int) int {
 		switch source[i] {
 		case '\'':
 			i = skipApexString(source, i)
+		case '/':
+			if i+1 < len(source) && source[i+1] == '/' {
+				i = skipLineComment(source, i)
+			} else if i+1 < len(source) && source[i+1] == '*' {
+				i = skipBlockComment(source, i)
+			}
 		case '(':
 			depth++
 		case ')':
@@ -936,24 +963,52 @@ func extractMethodBody(source string, r diagnostic.Range) (string, error) {
 	text := source[start:end]
 	open := strings.IndexByte(text, '{')
 	if open < 0 {
-		return "", fmt.Errorf("test method has no executable body")
+		lineStart := strings.LastIndexAny(source[:start], "\r\n")
+		if lineStart < 0 {
+			lineStart = 0
+		} else {
+			lineStart++
+		}
+		text = source[lineStart:]
+		open = strings.IndexByte(text, '{')
+		if open < 0 {
+			return "", fmt.Errorf("test method has no executable body")
+		}
+		start = lineStart
 	}
+	if body, ok := extractMethodBodyFromText(source, start, text, open); ok {
+		return body, nil
+	}
+	text = source[start:]
+	if body, ok := extractMethodBodyFromText(source, start, text, open); ok {
+		return body, nil
+	}
+	return "", fmt.Errorf("test method body is incomplete")
+}
+
+func extractMethodBodyFromText(source string, start int, text string, open int) (string, bool) {
 	depth := 0
 	for i := open; i < len(text); i++ {
 		switch text[i] {
 		case '\'':
 			i = skipApexString(text, i)
+		case '/':
+			if i+1 < len(text) && text[i+1] == '/' {
+				i = skipLineComment(text, i)
+			} else if i+1 < len(text) && text[i+1] == '*' {
+				i = skipBlockComment(text, i)
+			}
 		case '{':
 			depth++
 		case '}':
 			depth--
 			if depth == 0 {
 				bodyStart := start + open + 1
-				return sourcePositionPrefix(source[:bodyStart]) + text[open+1:i], nil
+				return sourcePositionPrefix(source[:bodyStart]) + text[open+1:i], true
 			}
 		}
 	}
-	return "", fmt.Errorf("test method body is incomplete")
+	return "", false
 }
 
 func sourcePositionPrefix(source string) string {
@@ -977,6 +1032,24 @@ func skipApexString(source string, start int) int {
 				continue
 			}
 			return i
+		}
+	}
+	return len(source) - 1
+}
+
+func skipLineComment(source string, start int) int {
+	for i := start + 2; i < len(source); i++ {
+		if source[i] == '\n' || source[i] == '\r' {
+			return i
+		}
+	}
+	return len(source) - 1
+}
+
+func skipBlockComment(source string, start int) int {
+	for i := start + 2; i+1 < len(source); i++ {
+		if source[i] == '*' && source[i+1] == '/' {
+			return i + 1
 		}
 	}
 	return len(source) - 1

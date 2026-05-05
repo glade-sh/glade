@@ -4,8 +4,10 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
+	"github.com/open-aer/oaer/internal/diagnostic"
 	"github.com/open-aer/oaer/internal/project"
 	oaerschema "github.com/open-aer/oaer/internal/schema"
 	"github.com/open-aer/oaer/internal/testreport"
@@ -33,6 +35,60 @@ private class MathTest {
 	summary := run.Summary()
 	if summary.Total != 1 || summary.Passed != 1 {
 		t.Fatalf("summary = %#v", summary)
+	}
+}
+
+func TestExtractMethodBodyFallsBackPastShortRange(t *testing.T) {
+	source := `public class BigClass {
+  public static void run() {
+    // a comment with { that should not count
+    if (true) {
+      System.debug('}');
+    }
+  }
+}`
+	start := strings.Index(source, "public static void run")
+	shortEnd := strings.Index(source, "if (true)")
+	body, err := extractMethodBody(source, diagnostic.Range{
+		Start: diagnostic.Position{Offset: start},
+		End:   diagnostic.Position{Offset: shortEnd},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(body, "System.debug('}')") {
+		t.Fatalf("body = %q", body)
+	}
+}
+
+func TestExtractMethodSourceRecoversOneLineSignature(t *testing.T) {
+	source := `public class Hooks {
+  public virtual void onApplyDefaults() { }
+}`
+	start := strings.Index(source, "{ }")
+	text, err := extractMethodSource(source, diagnostic.Range{
+		Start: diagnostic.Position{Offset: start},
+		End:   diagnostic.Position{Offset: start + len("{ }")},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	params, err := parseParams(text)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(params) != 0 {
+		t.Fatalf("params = %#v", params)
+	}
+	body, err := extractMethodBody(source, diagnostic.Range{
+		Start: diagnostic.Position{Offset: start + 1},
+		End:   diagnostic.Position{Offset: start + 2},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.TrimSpace(body) != "" {
+		t.Fatalf("body = %q", body)
 	}
 }
 

@@ -1935,6 +1935,9 @@ func listSObjectTypeName(receiver Value) string {
 		if !strings.EqualFold(elementType, "sObject") {
 			return elementType
 		}
+		if len(receiver.List) == 0 {
+			return "SObject"
+		}
 	}
 	for _, item := range receiver.List {
 		if item.Kind == ValueObject && item.Type != "" && item.Type != "Object" {
