@@ -305,6 +305,11 @@ func ResolveObjectName(org OrgState, name string) (string, bool) {
 	if _, ok := org.Objects[name]; ok {
 		return name, true
 	}
+	if prefixed := NamespaceTokenName(org.Namespace, name); prefixed != name {
+		if _, ok := org.Objects[prefixed]; ok {
+			return prefixed, true
+		}
+	}
 	stripped := StripNamespaceToken(org.Namespace, name)
 	if stripped != name {
 		if _, ok := org.Objects[stripped]; ok {
@@ -328,6 +333,11 @@ func ResolveFieldName(definition ObjectDefinition, namespace, name string) (stri
 	if strings.EqualFold(name, "Id") {
 		return "Id", true
 	}
+	if prefixed := NamespaceTokenName(namespace, name); prefixed != name {
+		if _, ok := definition.Fields[prefixed]; ok {
+			return prefixed, true
+		}
+	}
 	if _, ok := definition.Fields[name]; ok {
 		return name, true
 	}
@@ -348,6 +358,23 @@ func ResolveFieldName(definition ObjectDefinition, namespace, name string) (stri
 		}
 	}
 	return "", false
+}
+
+func NamespaceTokenName(namespace, name string) string {
+	if namespace == "" || name == "" || !isCustomAPIName(name) || hasNamespaceToken(name) {
+		return name
+	}
+	return namespace + "__" + name
+}
+
+func hasNamespaceToken(name string) bool {
+	idx := strings.Index(name, "__")
+	suffix := strings.LastIndex(name, "__")
+	return idx > 0 && idx < suffix
+}
+
+func isCustomAPIName(name string) bool {
+	return strings.HasSuffix(name, "__c") || strings.HasSuffix(name, "__r") || strings.HasSuffix(name, "__e") || strings.HasSuffix(name, "__mdt")
 }
 
 func IsCustomMetadataDefinition(definition ObjectDefinition) bool {
