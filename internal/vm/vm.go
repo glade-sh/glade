@@ -990,6 +990,9 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 		}
 		return evalBinary(expr.Operator, left, right)
 	case ir.ExprCall:
+		if strings.HasPrefix(expr.Callee, "__prefix:") || strings.HasPrefix(expr.Callee, "__postfix:") {
+			return vm.evalIncrementExpression(expr, result)
+		}
 		if strings.HasPrefix(expr.Callee, "__cast:") {
 			if len(expr.Args) != 1 {
 				return Null, fmt.Errorf("cast expression requires 1 operand")
@@ -1126,6 +1129,32 @@ func (vm *VM) evalForAssignment(name string, expr ir.Expr, result *Result) (Valu
 		return vm.executeSOQLForType(expr.Value, typeName, result)
 	}
 	return vm.eval(expr, result)
+}
+
+func (vm *VM) evalIncrementExpression(expr ir.Expr, result *Result) (Value, error) {
+	if expr.Left == nil || expr.Left.Kind != ir.ExprVariable {
+		return Null, fmt.Errorf("%s requires assignable variable target", expr.Callee)
+	}
+	target := expr.Left.Name
+	current, err := vm.eval(*expr.Left, result)
+	if err != nil {
+		return Null, err
+	}
+	operator := "+"
+	if strings.HasSuffix(expr.Callee, "--") {
+		operator = "-"
+	}
+	next, err := evalBinary(operator, current, Int(1))
+	if err != nil {
+		return Null, err
+	}
+	if err := vm.assign(target, next); err != nil {
+		return Null, err
+	}
+	if strings.HasPrefix(expr.Callee, "__postfix:") {
+		return current, nil
+	}
+	return next, nil
 }
 
 func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, result *Result) (Value, error) {

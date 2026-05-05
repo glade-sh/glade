@@ -895,6 +895,13 @@ func (p *parser) parseFactor() (ir.Expr, error) {
 
 func (p *parser) parseUnary() (ir.Expr, error) {
 	switch {
+	case p.match(tokenSymbol, "++") || p.match(tokenSymbol, "--"):
+		op := p.tokens[p.pos-1].text
+		expr, err := p.parseUnary()
+		if err != nil {
+			return ir.Expr{}, err
+		}
+		return ir.Expr{Kind: ir.ExprCall, Callee: "__prefix:" + op, Left: &expr}, nil
 	case p.match(tokenSymbol, "!"):
 		expr, err := p.parseUnary()
 		if err != nil {
@@ -954,6 +961,12 @@ func (p *parser) parsePostfix(expr ir.Expr) (ir.Expr, error) {
 				callee = "__safe_call:" + callee
 			}
 			expr = ir.Expr{Kind: ir.ExprCall, Callee: callee, Args: args, Left: &receiver}
+			continue
+		}
+		if p.match(tokenSymbol, "++") || p.match(tokenSymbol, "--") {
+			op := p.tokens[p.pos-1].text
+			left := expr
+			expr = ir.Expr{Kind: ir.ExprCall, Callee: "__postfix:" + op, Left: &left}
 			continue
 		}
 		break

@@ -165,6 +165,40 @@ System.assertEquals(3, total);
 	}
 }
 
+func TestExecPostfixDecrementExpressionInListIndex(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<String> names = new List<String>{'Account', 'Contact', 'Case'};
+Integer objectIdx = names.size() - 1;
+System.assertEquals('Case', names[objectIdx--]);
+System.assertEquals(1, objectIdx);
+System.assertEquals('Contact', names[objectIdx--]);
+System.assertEquals(0, objectIdx);
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecPrefixDecrementExpressionInListIndex(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<String> names = new List<String>{'Account', 'Contact', 'Case'};
+Integer objectIdx = names.size();
+System.assertEquals('Case', names[--objectIdx]);
+System.assertEquals(2, objectIdx);
+System.assertEquals('Contact', names[--objectIdx]);
+System.assertEquals(1, objectIdx);
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecMapLiteralInitializer(t *testing.T) {
 	program, err := CompileAnonymous(`
 Map<String, String> params = new Map<String, String> { 'orderId' => '001000000000001AAA', 'L\'ANDORRE' => 'AD' };
