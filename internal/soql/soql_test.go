@@ -136,6 +136,32 @@ func TestExecuteCustomMetadataDeveloperNameField(t *testing.T) {
 	}
 }
 
+func TestExecuteKnowledgeArticleLanguageField(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "FAQ__kav")
+	state := org.Objects["FAQ__kav"]
+	state.Records["ka0000000000001"] = storage.Record{
+		ID:     "ka0000000000001",
+		Object: "FAQ__kav",
+		Fields: map[string]storage.Value{
+			"Language": storage.StringValue("en_US"),
+			"Title":    storage.StringValue("Local help"),
+		},
+	}
+	org.Objects["FAQ__kav"] = state
+
+	result, err := ParseAndExecute(org, "SELECT Id, Language, Title FROM FAQ__kav WHERE Language = 'en_US'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Records) != 1 {
+		t.Fatalf("records = %d, want 1", len(result.Records))
+	}
+	if value := result.Records[0].Fields["Language"]; value.Kind != storage.ValueString || value.String != "en_US" {
+		t.Fatalf("Language = %#v", value)
+	}
+}
+
 func TestExecuteAggregateQueries(t *testing.T) {
 	org := aggregateTestOrg()
 

@@ -122,6 +122,20 @@ func TestEnsureStandardObjectFieldsAddsCustomMetadataIdentityFields(t *testing.T
 	}
 }
 
+func TestEnsureStandardObjectFieldsAddsKnowledgeArticleLanguage(t *testing.T) {
+	definition := ObjectDefinition{APIName: "FAQ__kav"}
+
+	EnsureStandardObjectFields(&definition)
+
+	field, ok := definition.Fields["Language"]
+	if !ok || field.Type != FieldString {
+		t.Fatalf("Language field = %#v, %v", field, ok)
+	}
+	if title, ok := definition.Fields["Title"]; !ok || title.Type != FieldString {
+		t.Fatalf("Title field = %#v, %v", title, ok)
+	}
+}
+
 func TestEnsureStandardObjectFieldsDoesNotAddDeveloperNameToCustomObjectsOrSettings(t *testing.T) {
 	for _, definition := range []ObjectDefinition{
 		{APIName: "Webhook_Event__c"},

@@ -112,6 +112,24 @@ func standardFieldsForObject(objectName string) []Field {
 			{APIName: "TemplateType", Label: "Template Type", Type: FieldString},
 			{APIName: "TimesUsed", Label: "Times Used", Type: FieldInteger},
 		}
+	case stringsEqualFold(objectName, "KnowledgeArticleVersion") || stringsHasSuffixFold(objectName, "__kav"):
+		return []Field{
+			{APIName: "ArticleNumber", Label: "Article Number", Type: FieldString},
+			{APIName: "FirstPublishedDate", Label: "First Published Date", Type: FieldDateTime},
+			{APIName: "IsLatestVersion", Label: "Is Latest Version", Type: FieldBoolean},
+			{APIName: "IsVisibleInCsp", Label: "Visible in Customer Portal", Type: FieldBoolean},
+			{APIName: "IsVisibleInPkb", Label: "Visible in Public Knowledge Base", Type: FieldBoolean},
+			{APIName: "IsVisibleInPrm", Label: "Visible in Partner Portal", Type: FieldBoolean},
+			{APIName: "KnowledgeArticleId", Label: "Knowledge Article ID", Type: FieldReference, ReferenceTo: []string{"KnowledgeArticle"}},
+			{APIName: "Language", Label: "Language", Type: FieldString},
+			{APIName: "LastPublishedDate", Label: "Last Published Date", Type: FieldDateTime},
+			{APIName: "PublishStatus", Label: "Publish Status", Type: FieldPicklist},
+			{APIName: "RecordTypeId", Label: "Record Type ID", Type: FieldReference, ReferenceTo: []string{"RecordType"}, RelationshipName: "RecordType"},
+			{APIName: "Summary", Label: "Summary", Type: FieldString},
+			{APIName: "Title", Label: "Title", Type: FieldString},
+			{APIName: "UrlName", Label: "URL Name", Type: FieldString},
+			{APIName: "VersionNumber", Label: "Version Number", Type: FieldInteger},
+		}
 	case stringsHasSuffixFold(objectName, "__mdt"):
 		// Public custom metadata records expose metadata identity fields.
 		// Plain custom objects and custom settings do not get these by suffix.
