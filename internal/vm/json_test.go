@@ -52,6 +52,23 @@ System.assertEquals('Trail', (String)parsedSystem.get('Name'));
 	}
 }
 
+func TestExecJSONDeserializeListSObjectUsesAttributesType(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<sObject> records = (List<sObject>)JSON.deserialize('[{"attributes":{"type":"Account"},"Name":"Local Probe"}]', List<sObject>.class);
+System.assertEquals(1, records.size());
+System.assertEquals('Local Probe', (String)records[0].get('Name'));
+List<string> ids = (List<string>)JSON.deserialize('["001000000000001AAA"]', List<string>.class);
+System.assertEquals('001000000000001AAA', ids[0]);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecJSONGeneratorPrettyPrints(t *testing.T) {
 	program, err := CompileAnonymous(`
 JSONGenerator gen = JSON.createGenerator(true);

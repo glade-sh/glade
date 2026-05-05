@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/open-aer/oaer/internal/storage"
 	"github.com/open-aer/oaer/internal/trace"
 )
 
@@ -163,6 +164,110 @@ System.assertEquals('001000000000002AAA', accountId);
 	}
 	if _, err := Execute(program, nil); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecOverloadResolutionUsesCollectionElementType(t *testing.T) {
+	listObjectProgram, err := CompileAnonymous(`return values.size();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	listStringProgram, err := CompileAnonymous(`return values.size() + 10;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+List<String> names = new List<String>{'spruce'};
+System.assertEquals(11, Util.count(names));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterMethod(Method{Name: "Util.count", ReturnType: "Integer", Params: []Param{{Name: "values", Type: "List<Object>"}}, Program: listObjectProgram}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterMethod(Method{Name: "Util.count", ReturnType: "Integer", Params: []Param{{Name: "values", Type: "List<String>"}}, Program: listStringProgram}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecOverloadResolutionUsesTypedNullVariables(t *testing.T) {
+	listObjectProgram, err := CompileAnonymous(`return 1;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	listIDProgram, err := CompileAnonymous(`return 2;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+List<Id> ids = null;
+System.assertEquals(2, Util.count(ids));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterMethod(Method{Name: "Util.count", ReturnType: "Integer", Params: []Param{{Name: "values", Type: "List<Object>"}}, Program: listObjectProgram}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterMethod(Method{Name: "Util.count", ReturnType: "Integer", Params: []Param{{Name: "values", Type: "List<Id>"}}, Program: listIDProgram}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSOQLListAssignmentKeepsDeclaredType(t *testing.T) {
+	listObjectProgram, err := CompileAnonymous(`return 1;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	listStringProgram, err := CompileAnonymous(`return 2;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+List<Account> accounts = [SELECT Id FROM Account LIMIT 1];
+System.assertEquals(1, Util.count(accounts));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{Definition: storage.ObjectDefinition{APIName: "Account"}, Records: map[storage.ID]storage.Record{}}
+	machine := New(nil)
+	machine.Org = &org
+	if err := machine.RegisterMethod(Method{Name: "Util.count", ReturnType: "Integer", Params: []Param{{Name: "values", Type: "List<Object>"}}, Program: listObjectProgram}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterMethod(Method{Name: "Util.count", ReturnType: "Integer", Params: []Param{{Name: "values", Type: "List<String>"}}, Program: listStringProgram}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestDeleteIDsToSObjectsUsesIDPrefix(t *testing.T) {
+	machine := New(nil)
+	converted, ok := machine.deleteIDsToSObjects(List(platformScalar("Id", "001000000000001AAA")))
+	if !ok {
+		t.Fatal("delete id list was not converted")
+	}
+	if converted.Kind != ValueList || len(converted.List) != 1 {
+		t.Fatalf("converted = %#v", converted)
+	}
+	if converted.List[0].Type != "Account" {
+		t.Fatalf("type = %q, want Account", converted.List[0].Type)
+	}
+	if id, _ := platformScalarText(converted.List[0].Fields["Id"], "Id"); id != "001000000000001AAA" {
+		t.Fatalf("id = %#v", id)
 	}
 }
 

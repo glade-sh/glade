@@ -203,9 +203,11 @@ func decimalOf(value Value) float64 {
 
 func coerceAssignable(typeName string, value Value) (Value, error) {
 	if value.Kind == ValueNull {
+		value.Type = typeName
 		return value, nil
 	}
-	switch typeName {
+	canonicalType := canonicalApexScalarType(typeName)
+	switch canonicalType {
 	case "Integer", "Long":
 		if value.Kind == ValueInt {
 			return value, nil
@@ -244,6 +246,29 @@ func coerceAssignable(typeName string, value Value) (Value, error) {
 		return coerceCollectionValue(typeName, value)
 	}
 	return Null, fmt.Errorf("cannot assign %s to %s", value.Kind, typeName)
+}
+
+func canonicalApexScalarType(typeName string) string {
+	switch {
+	case strings.EqualFold(typeName, "Integer"):
+		return "Integer"
+	case strings.EqualFold(typeName, "Long"):
+		return "Long"
+	case strings.EqualFold(typeName, "Decimal"):
+		return "Decimal"
+	case strings.EqualFold(typeName, "Double"):
+		return "Double"
+	case strings.EqualFold(typeName, "Boolean"):
+		return "Boolean"
+	case strings.EqualFold(typeName, "String"):
+		return "String"
+	case strings.EqualFold(typeName, "Id"):
+		return "Id"
+	case strings.EqualFold(typeName, "Object"):
+		return "Object"
+	default:
+		return typeName
+	}
 }
 
 func ensureAssignable(typeName string, value Value) error {

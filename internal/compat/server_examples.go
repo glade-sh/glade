@@ -275,10 +275,23 @@ func serverExampleProbes(routes []ServerExampleRestRoute, seeded bool) []serverE
 			OwnerLane: "lane-2-apex-rest",
 			Method:    method,
 			Path:      "/services/apexrest" + route.Path,
-			Body:      `{}`,
+			Body:      serverExampleApexRESTBody(route.Path, method),
 		})
 	}
 	return probes
+}
+
+func serverExampleApexRESTBody(path, method string) string {
+	switch {
+	case strings.Contains(path, "webhookevent/create"):
+		return `[{"objectId":"local-object","objectType":"Local","objectRoute":"/local","triggeredAt":"1970-01-01T00:00:00Z"}]`
+	case strings.Contains(path, "selfservice/sobjects") && method == http.MethodDelete:
+		return `["001000000000001AAA"]`
+	case strings.Contains(path, "selfservice/sobjects"):
+		return `[{"attributes":{"type":"Account"},"Name":"Local Probe"}]`
+	default:
+		return `{}`
+	}
 }
 
 func classifyServerExampleProbe(probe serverExampleProbe, rec *httptest.ResponseRecorder) ServerExampleProbeResult {

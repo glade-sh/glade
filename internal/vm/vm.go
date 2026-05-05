@@ -2863,6 +2863,9 @@ func (vm *VM) executeSOQLForType(raw, typeName string, result *Result) (Value, e
 		return Null, err
 	}
 	if strings.HasPrefix(typeName, "List<") || typeName == "Object" {
+		if strings.HasPrefix(typeName, "List<") {
+			value.Type = typeName
+		}
 		return value, nil
 	}
 	if typeName == "Integer" || typeName == "Long" {
@@ -3182,6 +3185,12 @@ func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value
 		}
 		allOrNone = args[2].Bool
 	}
+	if op == "delete" {
+		records, ok := vm.deleteIDsToSObjects(args[0])
+		if ok {
+			args[0] = records
+		}
+	}
 	results, err := vm.applyDML(op, args[0], allOrNone, externalIDField, result)
 	if err != nil {
 		return Null, err
@@ -3209,6 +3218,51 @@ func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value
 		return Null, nil
 	}
 	return values[0], nil
+}
+
+func (vm *VM) deleteIDsToSObjects(value Value) (Value, bool) {
+	switch value.Kind {
+	case ValueString:
+		record, ok := vm.deleteIDToSObject(value.Text)
+		return record, ok
+	case ValueObject:
+		if strings.EqualFold(value.Type, "Id") {
+			id, err := platformScalarText(value, "Id")
+			if err != nil {
+				return value, false
+			}
+			record, ok := vm.deleteIDToSObject(id)
+			return record, ok
+		}
+	case ValueList:
+		if len(value.List) == 0 {
+			return value, false
+		}
+		out := List()
+		out.Type = "List<sObject>"
+		for _, item := range value.List {
+			record, ok := vm.deleteIDsToSObjects(item)
+			if !ok || record.Kind != ValueObject {
+				return value, false
+			}
+			out.List = append(out.List, record)
+		}
+		return out, true
+	}
+	return value, false
+}
+
+func (vm *VM) deleteIDToSObject(id string) (Value, bool) {
+	if len(id) < 3 {
+		return Null, false
+	}
+	objectName, ok := vm.sObjectNameForIDPrefix(id[:3])
+	if !ok {
+		return Null, false
+	}
+	record := Object(objectName)
+	record.Fields["Id"] = platformScalar("Id", id)
+	return record, true
 }
 
 func (vm *VM) executeDatabaseRecordAction(op string, args []Value, result *Result) (Value, error) {
@@ -5926,6 +5980,9 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 	if typeName == "Object" {
 		return valueFromJSON(raw), nil
 	}
+	if strings.EqualFold(typeName, "sObject") {
+		return vm.sObjectValueFromJSON(raw, strict)
+	}
 	if !vm.isJSONTypedObjectTarget(typeName) {
 		return Null, unsupportedCallError("JSON.deserialize local class/SObject mapping for " + typeName)
 	}
@@ -5956,6 +6013,36 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 				return Null, err
 			}
 			obj.Fields[key] = value
+			continue
+		}
+		if fieldType, ok := vm.jsonSObjectFieldType(typeName, key); ok {
+			value, err := vm.typedValueFromJSON(fieldType, item, strict)
+			if err != nil {
+				return Null, err
+			}
+			obj.Fields[vm.resolveSObjectFieldName(typeName, key)] = value
+			continue
+		}
+		obj.Fields[key] = valueFromJSON(item)
+	}
+	return obj, nil
+}
+
+func (vm *VM) sObjectValueFromJSON(raw any, strict bool) (Value, error) {
+	fields, ok := raw.(map[string]any)
+	if !ok {
+		return Null, jsonTypeMappingError("sObject", raw)
+	}
+	typeName := "sObject"
+	if attrs, ok := fields["attributes"].(map[string]any); ok {
+		if rawType, ok := attrs["type"].(string); ok && strings.TrimSpace(rawType) != "" {
+			typeName = strings.TrimSpace(rawType)
+		}
+	}
+	obj := Object(typeName)
+	vm.initializeFields(&obj, typeName)
+	for key, item := range fields {
+		if key == "attributes" {
 			continue
 		}
 		if fieldType, ok := vm.jsonSObjectFieldType(typeName, key); ok {
@@ -6017,38 +6104,39 @@ func (vm *VM) isJSONTypedObjectTarget(typeName string) bool {
 }
 
 func typedScalarFromJSON(typeName string, raw any) (Value, bool, error) {
+	canonical := canonicalJSONScalarType(typeName)
 	if raw == nil {
 		return Null, true, nil
 	}
-	switch typeName {
+	switch canonical {
 	case "String":
 		text, ok := raw.(string)
 		if !ok {
-			return Null, true, jsonTypeMappingError(typeName, raw)
+			return Null, true, jsonTypeMappingError(canonical, raw)
 		}
 		return String(text), true, nil
 	case "Boolean":
 		value, ok := raw.(bool)
 		if !ok {
-			return Null, true, jsonTypeMappingError(typeName, raw)
+			return Null, true, jsonTypeMappingError(canonical, raw)
 		}
 		return Bool(value), true, nil
 	case "Integer", "Long":
 		value, ok := jsonIntegralNumber(raw)
 		if !ok {
-			return Null, true, jsonTypeMappingError(typeName, raw)
+			return Null, true, jsonTypeMappingError(canonical, raw)
 		}
 		return Int(value), true, nil
 	case "Decimal", "Double":
 		value, ok := jsonDecimalNumber(raw)
 		if !ok {
-			return Null, true, jsonTypeMappingError(typeName, raw)
+			return Null, true, jsonTypeMappingError(canonical, raw)
 		}
 		return Decimal(value), true, nil
 	case "Date":
 		text, ok := raw.(string)
 		if !ok {
-			return Null, true, jsonTypeMappingError(typeName, raw)
+			return Null, true, jsonTypeMappingError(canonical, raw)
 		}
 		if _, err := time.Parse("2006-01-02", text); err != nil {
 			return Null, true, jsonDeserializeException("JSON.deserialize cannot parse Date %q", text)
@@ -6057,7 +6145,7 @@ func typedScalarFromJSON(typeName string, raw any) (Value, bool, error) {
 	case "Datetime":
 		text, ok := raw.(string)
 		if !ok {
-			return Null, true, jsonTypeMappingError(typeName, raw)
+			return Null, true, jsonTypeMappingError(canonical, raw)
 		}
 		value, err := parseDatetimeText(text)
 		if err != nil {
@@ -6067,7 +6155,7 @@ func typedScalarFromJSON(typeName string, raw any) (Value, bool, error) {
 	case "Time":
 		text, ok := raw.(string)
 		if !ok {
-			return Null, true, jsonTypeMappingError(typeName, raw)
+			return Null, true, jsonTypeMappingError(canonical, raw)
 		}
 		value, err := parseTimeText(text)
 		if err != nil {
@@ -6077,7 +6165,7 @@ func typedScalarFromJSON(typeName string, raw any) (Value, bool, error) {
 	case "Id":
 		text, ok := raw.(string)
 		if !ok {
-			return Null, true, jsonTypeMappingError(typeName, raw)
+			return Null, true, jsonTypeMappingError(canonical, raw)
 		}
 		if err := validateApexID(text); err != nil {
 			return Null, true, jsonDeserializeException("%s", err.Error())
@@ -6086,7 +6174,7 @@ func typedScalarFromJSON(typeName string, raw any) (Value, bool, error) {
 	case "Blob":
 		text, ok := raw.(string)
 		if !ok {
-			return Null, true, jsonTypeMappingError(typeName, raw)
+			return Null, true, jsonTypeMappingError(canonical, raw)
 		}
 		decoded, err := base64.StdEncoding.DecodeString(text)
 		if err != nil {
@@ -6095,6 +6183,35 @@ func typedScalarFromJSON(typeName string, raw any) (Value, bool, error) {
 		return platformScalar("Blob", string(decoded)), true, nil
 	}
 	return Null, false, nil
+}
+
+func canonicalJSONScalarType(typeName string) string {
+	switch {
+	case strings.EqualFold(typeName, "String"):
+		return "String"
+	case strings.EqualFold(typeName, "Boolean"):
+		return "Boolean"
+	case strings.EqualFold(typeName, "Integer"):
+		return "Integer"
+	case strings.EqualFold(typeName, "Long"):
+		return "Long"
+	case strings.EqualFold(typeName, "Decimal"):
+		return "Decimal"
+	case strings.EqualFold(typeName, "Double"):
+		return "Double"
+	case strings.EqualFold(typeName, "Date"):
+		return "Date"
+	case strings.EqualFold(typeName, "Datetime") || strings.EqualFold(typeName, "DateTime"):
+		return "Datetime"
+	case strings.EqualFold(typeName, "Time"):
+		return "Time"
+	case strings.EqualFold(typeName, "Id"):
+		return "Id"
+	case strings.EqualFold(typeName, "Blob"):
+		return "Blob"
+	default:
+		return typeName
+	}
 }
 
 func jsonIntegralNumber(raw any) (int64, bool) {
@@ -6399,10 +6516,17 @@ func approxValueSize(value Value) int {
 
 func (vm *VM) lookup(name string) (Value, error) {
 	if value, ok := vm.Globals[name]; ok {
+		if value.Kind == ValueNull && value.Type == "" {
+			value.Type = vm.VarTypes[name]
+		}
 		return value, nil
 	}
 	if actual, ok := vm.lookupGlobalName(name); ok {
-		return vm.Globals[actual], nil
+		value := vm.Globals[actual]
+		if value.Kind == ValueNull && value.Type == "" {
+			value.Type = vm.VarTypes[actual]
+		}
+		return value, nil
 	}
 	if value, ok, err := vm.lookupRestContextField(name); ok || err != nil {
 		return value, err
@@ -7942,6 +8066,17 @@ func (vm *VM) typeAssignableTo(from, to string) bool {
 	if strings.EqualFold(from, to) || strings.EqualFold(to, "Object") {
 		return true
 	}
+	if (strings.EqualFold(from, "String") && strings.EqualFold(to, "Id")) ||
+		(strings.EqualFold(from, "Id") && strings.EqualFold(to, "String")) {
+		return true
+	}
+	if collectionBase(from) != "" && strings.EqualFold(collectionBase(from), collectionBase(to)) {
+		fromElement, fromOK := collectionElementType(from)
+		toElement, toOK := collectionElementType(to)
+		if fromOK && toOK {
+			return vm.typeAssignableTo(fromElement, toElement)
+		}
+	}
 	if numericConversionScore(to, from) >= 0 {
 		return true
 	}
@@ -7951,13 +8086,39 @@ func (vm *VM) typeAssignableTo(from, to string) bool {
 	return false
 }
 
+func collectionBase(typeName string) string {
+	switch {
+	case strings.HasPrefix(typeName, "List<"):
+		return "List"
+	case strings.HasPrefix(typeName, "Set<"):
+		return "Set"
+	default:
+		return ""
+	}
+}
+
 func (vm *VM) conversionScore(paramType string, value Value) int {
 	if value.Kind == ValueNull {
+		if value.Type != "" {
+			if strings.EqualFold(paramType, value.Type) {
+				return 1000
+			}
+			if vm.typeAssignableTo(value.Type, paramType) {
+				return 900
+			}
+			return -1
+		}
 		return 1
 	}
 	valueType := valueTypeName(value)
 	if strings.EqualFold(paramType, valueType) {
 		return 1000
+	}
+	if collectionBase(valueType) != "" && collectionBase(paramType) != "" {
+		if vm.typeAssignableTo(valueType, paramType) {
+			return 900
+		}
+		return -1
 	}
 	if score := numericConversionScore(paramType, valueType); score >= 0 {
 		return score
@@ -8051,10 +8212,19 @@ func valueTypeName(value Value) string {
 	case ValueString:
 		return "String"
 	case ValueList:
+		if value.Type != "" {
+			return value.Type
+		}
 		return "List"
 	case ValueSet:
+		if value.Type != "" {
+			return value.Type
+		}
 		return "Set"
 	case ValueMap:
+		if value.Type != "" {
+			return value.Type
+		}
 		return "Map"
 	case ValueObject:
 		return value.Type
@@ -8162,7 +8332,10 @@ func (vm *VM) typeMatches(typeName, target string, seen map[string]bool) bool {
 	if typeName == "" || seen[typeName] {
 		return false
 	}
-	if typeName == target {
+	if strings.EqualFold(typeName, target) {
+		return true
+	}
+	if strings.EqualFold(target, "sObject") && vm.isSObjectLikeType(typeName) {
 		return true
 	}
 	if builtinExceptionTypeMatches(typeName, target) {
@@ -8924,7 +9097,7 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 		if value, handled, err := vm.callEnumMember(receiver, method, args); handled || err != nil {
 			return value, true, err
 		}
-		if vm.isSObjectType(receiver.Type) {
+		if vm.isSObjectLikeType(receiver.Type) {
 			if value, handled, err := vm.callSObjectMember(receiver, method, args); handled || err != nil {
 				if method == "put" || method == "addError" || method == "clear" {
 					if err := vm.storeReceiver(receiverName, receiver); err != nil {
@@ -9403,6 +9576,16 @@ func (vm *VM) isSObjectType(typeName string) bool {
 	}
 	_, ok := storage.ResolveObjectName(*vm.Org, typeName)
 	return ok
+}
+
+func (vm *VM) isSObjectLikeType(typeName string) bool {
+	if strings.EqualFold(typeName, "sObject") {
+		return true
+	}
+	if isCommonSObjectTypeName(typeName) || strings.HasSuffix(typeName, "__c") || strings.HasSuffix(typeName, "__e") || strings.HasSuffix(typeName, "__mdt") {
+		return true
+	}
+	return vm.isSObjectType(typeName)
 }
 
 func isStubProxy(receiver Value) bool {
