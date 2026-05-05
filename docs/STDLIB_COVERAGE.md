@@ -25,9 +25,10 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Canvas | `Canvas namespace` | `unsupported` | Canvas app integration and lifecycle calls return fixture-backed UnsupportedFeature diagnostics. |
 | Continuation | `Continuation` | `unsupported` | Continuation construction, request registration, and response calls return fixture-backed UnsupportedFeature diagnostics. |
 | Crypto | `Crypto.areEqualConstantTime` | `supported` | Constant-time local Blob equality comparison. |
-| Crypto | `Crypto.encrypt/decrypt/sign/verify` | `unsupported` | Encrypt/decrypt, managed-IV variants, signing, verification, org key, keystore, certificate, and random key-generation surfaces return explicit UnsupportedFeature diagnostics; no fake local key material is modeled. |
+| Crypto | `Crypto.encrypt/decrypt/sign/verify` | `unsupported` | Encrypt/decrypt, managed-IV variants, signing, verification, org key, keystore, certificate, random integer, and key-generation surfaces return explicit UnsupportedFeature diagnostics; no fake local key material is modeled. |
 | Crypto | `Crypto.generateDigest` | `supported` | MD5, SHA1, SHA-256, SHA-512, SHA3-256/384/512, with conservative algorithm normalization. |
 | Crypto | `Crypto.generateMac` | `supported` | HMAC MD5, SHA1, SHA256, and SHA512 with local Blob keys and conservative algorithm normalization. |
+| Crypto | `Crypto.getRandomLong` | `supported` | Returns a deterministic VM-local Long sequence for local execution and tests; it is not production cryptographic randomness. |
 | Data | `Custom metadata/list custom setting getAll/getInstance` | `supported` | Fixture-backed local __mdt and list custom setting static access supports namespace-stripped object/field names and read-only returned records. |
 | Data | `Hierarchy custom setting merge behavior` | `unsupported` | Hierarchy custom setting static accessors return fixture-backed UnsupportedFeature diagnostics until org/profile/user merge behavior is modeled. |
 | Data | `Metadata mutation for custom metadata/settings` | `unsupported` | Local custom metadata and custom setting static rows are read-only; Metadata API mutation is outside the local runtime model. |
