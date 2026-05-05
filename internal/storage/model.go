@@ -361,10 +361,16 @@ func ResolveFieldName(definition ObjectDefinition, namespace, name string) (stri
 }
 
 func NamespaceTokenName(namespace, name string) string {
-	if namespace == "" || name == "" || strings.HasPrefix(name, namespace+"__") || !isCustomAPIName(name) {
+	if namespace == "" || name == "" || !isCustomAPIName(name) || hasNamespaceToken(name) {
 		return name
 	}
 	return namespace + "__" + name
+}
+
+func hasNamespaceToken(name string) bool {
+	idx := strings.Index(name, "__")
+	suffix := strings.LastIndex(name, "__")
+	return idx > 0 && idx < suffix
 }
 
 func isCustomAPIName(name string) bool {

@@ -23,6 +23,17 @@ func TestResolveFieldNameMapsUnqualifiedCustomFieldToOrgNamespace(t *testing.T) 
 	}
 }
 
+func TestResolveFieldNameKeepsOtherNamespace(t *testing.T) {
+	definition := ObjectDefinition{APIName: "Account", Fields: map[string]Field{
+		"other__Status__c": {APIName: "other__Status__c", Type: FieldString},
+	}}
+
+	resolved, ok := ResolveFieldName(definition, "pkg", "other__Status__c")
+	if !ok || resolved != "other__Status__c" {
+		t.Fatalf("ResolveFieldName(other__Status__c) = %q, %v", resolved, ok)
+	}
+}
+
 func TestResolveObjectNameMapsUnqualifiedCustomObjectToOrgNamespace(t *testing.T) {
 	org := NewOrgState()
 	org.Namespace = "pkg"
@@ -31,6 +42,17 @@ func TestResolveObjectNameMapsUnqualifiedCustomObjectToOrgNamespace(t *testing.T
 	resolved, ok := ResolveObjectName(org, "Thing__c")
 	if !ok || resolved != "pkg__Thing__c" {
 		t.Fatalf("ResolveObjectName(Thing__c) = %q, %v", resolved, ok)
+	}
+}
+
+func TestResolveObjectNameKeepsOtherNamespace(t *testing.T) {
+	org := NewOrgState()
+	org.Namespace = "pkg"
+	org.Objects["other__Thing__c"] = ObjectState{Definition: ObjectDefinition{APIName: "other__Thing__c"}}
+
+	resolved, ok := ResolveObjectName(org, "other__Thing__c")
+	if !ok || resolved != "other__Thing__c" {
+		t.Fatalf("ResolveObjectName(other__Thing__c) = %q, %v", resolved, ok)
 	}
 }
 
