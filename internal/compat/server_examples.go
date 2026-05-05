@@ -423,10 +423,19 @@ func applyServerExampleProbeOverlay(org *storage.OrgState, probe serverExamplePr
 	if strings.Contains(path, "selfservice/cart/build") {
 		ensureServerExampleLocalOrder(org)
 	}
-	if strings.Contains(path, "webhookEvents") || strings.Contains(path, "webhookevent/create") {
+	if strings.Contains(path, "selfservice/email") {
+		ensureServerExampleNimbleAMSSettings(org)
+	}
+	if strings.Contains(path, "webhookEvents") {
+		ensureServerExampleLocalAccount(org)
+		ensureServerExampleWebhookProviderAccount(org)
+		ensureServerExampleNimbleAMSSettings(org)
+		ensureServerExampleVerifiableSetupData(org, "Name")
+	}
+	if strings.Contains(path, "webhookevent/create") {
 		ensureServerExampleLocalAccount(org)
 		ensureServerExampleNimbleAMSSettings(org)
-		ensureServerExampleVerifiableSetupData(org)
+		ensureServerExampleVerifiableSetupData(org, "Id")
 	}
 }
 
@@ -447,6 +456,27 @@ func ensureServerExampleLocalAccount(org *storage.OrgState) {
 			"Name": storage.StringValue("Local Probe Account"),
 			serverExampleAccountFieldName(org, "PasswordSalt__c"): storage.StringValue("local-salt"),
 			serverExampleAccountFieldName(org, "PasswordHash__c"): storage.StringValue("local-hash"),
+		},
+	}
+	org.Objects["Account"] = account
+}
+
+func ensureServerExampleWebhookProviderAccount(org *storage.OrgState) {
+	account := org.Objects["Account"]
+	if account.Records == nil {
+		account.Records = make(map[storage.ID]storage.Record)
+	}
+	id := storage.ID("001000000000002AAA")
+	if _, ok := account.Records[id]; ok {
+		org.Objects["Account"] = account
+		return
+	}
+	account.Records[id] = storage.Record{
+		ID:     id,
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":          storage.StringValue("local-provider"),
+			"AccountNumber": storage.StringValue("local-provider"),
 		},
 	}
 	org.Objects["Account"] = account
@@ -535,7 +565,7 @@ func ensureServerExampleNimbleAMSSettings(org *storage.OrgState) {
 	org.Objects[objectName] = settings
 }
 
-func ensureServerExampleVerifiableSetupData(org *storage.OrgState) {
+func ensureServerExampleVerifiableSetupData(org *storage.OrgState, providerIDField string) {
 	objectName, ok := storage.ResolveObjectName(*org, "Setup_Data__c")
 	if !ok {
 		return
@@ -555,15 +585,18 @@ func ensureServerExampleVerifiableSetupData(org *storage.OrgState) {
 		Fields: map[string]storage.Value{
 			serverExampleFieldName(org, objectName, "Name"):                              storage.StringValue("Default"),
 			serverExampleFieldName(org, objectName, "Disable_Webhook_Security_Check__c"): storage.BooleanValue(true),
-			serverExampleFieldName(org, objectName, "Data_Mappings__c"):                  storage.StringValue(serverExampleVerifiableDataMappings()),
+			serverExampleFieldName(org, objectName, "Data_Mappings__c"):                  storage.StringValue(serverExampleVerifiableDataMappings(providerIDField)),
 			serverExampleFieldName(org, objectName, "Steps_Completed__c"):                storage.StringValue(`{}`),
 		},
 	}
 	org.Objects[objectName] = setup
 }
 
-func serverExampleVerifiableDataMappings() string {
-	return `{"provider":{"sfObject":"Account","rows":[{"tpField":"providerId","sfField":"Id"},{"tpField":"npi","sfField":"Name"}]},"license":{"sfObject":"License__c","recordType":"012000000000000AAA","verifLookupField":"Verification__c","lookupField":"Provider__c","rows":[{"tpField":"verificationId","sfField":"Verifiable_External_Id__c"}]},"boardCert":{"sfObject":"Board_Certification__c","recordType":"012000000000000AAA","verifLookupField":"Verification__c","lookupField":"Provider__c","rows":[{"tpField":"verificationId","sfField":"Verifiable_External_Id__c"}]}}`
+func serverExampleVerifiableDataMappings(providerIDField string) string {
+	if providerIDField == "" {
+		providerIDField = "Id"
+	}
+	return fmt.Sprintf(`{"provider":{"sfObject":"Account","rows":[{"tpField":"providerId","sfField":%q},{"tpField":"npi","sfField":"Name"}]},"license":{"sfObject":"License__c","recordType":"012000000000000AAA","verifLookupField":"Verification__c","lookupField":"Provider__c","rows":[{"tpField":"verificationId","sfField":"Verifiable_External_Id__c"}]},"boardCert":{"sfObject":"Board_Certification__c","recordType":"012000000000000AAA","verifLookupField":"Verification__c","lookupField":"Provider__c","rows":[{"tpField":"verificationId","sfField":"Verifiable_External_Id__c"}]}}`, providerIDField)
 }
 
 func serverExampleOrgID(org *storage.OrgState) string {
