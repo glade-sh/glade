@@ -2,6 +2,8 @@ package vm
 
 import (
 	"context"
+	"crypto/aes"
+	"crypto/cipher"
 	"crypto/hmac"
 	"crypto/md5"
 	"crypto/sha1"
@@ -1616,7 +1618,28 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return Null, err
 		}
 		return Bool(subtle.ConstantTimeCompare([]byte(left), []byte(right)) == 1), nil
-	case "Crypto.encrypt", "Crypto.decrypt", "Crypto.encryptWithManagedIV", "Crypto.decryptWithManagedIV",
+	case "Crypto.encrypt":
+		if len(args) != 4 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("Crypto.encrypt expects algorithm, privateKey Blob, initializationVector Blob, and clearText Blob")
+		}
+		key, err := blobStringArg("Crypto.encrypt privateKey", args[1:2])
+		if err != nil {
+			return Null, err
+		}
+		iv, err := blobStringArg("Crypto.encrypt initializationVector", args[2:3])
+		if err != nil {
+			return Null, err
+		}
+		clearText, err := blobStringArg("Crypto.encrypt clearText", args[3:])
+		if err != nil {
+			return Null, err
+		}
+		cipherText, err := encryptAESCBC(args[0].Text, []byte(key), []byte(iv), []byte(clearText))
+		if err != nil {
+			return Null, err
+		}
+		return platformScalar("Blob", string(cipherText)), nil
+	case "Crypto.decrypt", "Crypto.encryptWithManagedIV", "Crypto.decryptWithManagedIV",
 		"Crypto.sign", "Crypto.signWithCertificate", "Crypto.verify", "Crypto.verifyWithCertificate":
 		return Null, unsupportedCallError(callee + " local deterministic key, certificate, and encryption surfaces")
 	case "Crypto.generateAESKey", "Crypto.getRandomInteger":
@@ -5853,6 +5876,50 @@ func generateMac(algorithm string, input, privateKey []byte) ([]byte, error) {
 		return nil, err
 	}
 	return mac.Sum(nil), nil
+}
+
+func encryptAESCBC(algorithm string, privateKey, initializationVector, clearText []byte) ([]byte, error) {
+	keySize, err := aesKeySizeForAlgorithm(algorithm)
+	if err != nil {
+		return nil, err
+	}
+	if len(privateKey) != keySize {
+		return nil, fmt.Errorf("Crypto.encrypt %s privateKey expects %d bytes, got %d", normalizeCryptoAlgorithm(algorithm), keySize, len(privateKey))
+	}
+	if len(initializationVector) != aes.BlockSize {
+		return nil, fmt.Errorf("Crypto.encrypt initializationVector expects %d bytes, got %d", aes.BlockSize, len(initializationVector))
+	}
+	block, err := aes.NewCipher(privateKey)
+	if err != nil {
+		return nil, err
+	}
+	padded := pkcs7Pad(clearText, aes.BlockSize)
+	out := make([]byte, len(padded))
+	cipher.NewCBCEncrypter(block, initializationVector).CryptBlocks(out, padded)
+	return out, nil
+}
+
+func aesKeySizeForAlgorithm(algorithm string) (int, error) {
+	switch normalizeCryptoAlgorithm(algorithm) {
+	case "AES128":
+		return 16, nil
+	case "AES192":
+		return 24, nil
+	case "AES256":
+		return 32, nil
+	default:
+		return 0, fmt.Errorf("unsupported encryption algorithm %q", algorithm)
+	}
+}
+
+func pkcs7Pad(data []byte, blockSize int) []byte {
+	padding := blockSize - len(data)%blockSize
+	out := make([]byte, len(data)+padding)
+	copy(out, data)
+	for i := len(data); i < len(out); i++ {
+		out[i] = byte(padding)
+	}
+	return out
 }
 
 func mathUnary(callee string, args []Value) (Value, error) {

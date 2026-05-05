@@ -1,0 +1,48 @@
+{
+  "name": "core-blob-crypto-partial-encrypt-unsupported-decrypt-sign-verify",
+  "evidence": [
+    {
+      "symbol": "Crypto.encrypt/decrypt/sign/verify",
+      "kind": "exec",
+      "notes": "Crypto.encrypt supports local deterministic AES CBC with caller-provided key and IV; decrypt, managed-IV variants, signing, and verification stay fenced behind typed unsupported diagnostics."
+    },
+    {
+      "symbol": "Crypto.encrypt",
+      "kind": "exec",
+      "notes": "Local AES256 CBC encrypt returns deterministic Blob bytes for compatibility tests."
+    },
+    {
+      "symbol": "Crypto.decrypt",
+      "kind": "exec",
+      "notes": "Local decryption is not modeled."
+    },
+    {
+      "symbol": "Crypto.sign",
+      "kind": "exec",
+      "notes": "Local signing is not modeled."
+    },
+    {
+      "symbol": "Crypto.verify",
+      "kind": "exec",
+      "notes": "Local signature verification is not modeled."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Blob key = Blob.valueOf('0123456789abcdef0123456789abcdef');\nBlob iv = Blob.valueOf('abcdef9876543210');\nBlob encrypted = Crypto.encrypt('AES256', key, iv, Blob.valueOf('hello'));\nSystem.assertEquals('93ce19c2c83297061f55dadc424d14c3', EncodingUtil.convertToHex(encrypted));"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Blob key = Blob.valueOf('0123456789abcdef0123456789abcdef');\nBlob iv = Blob.valueOf('abcdef9876543210');\nBlob encrypted = Crypto.encrypt('AES256', key, iv, Blob.valueOf('hello'));\nSystem.assertEquals('93ce19c2c83297061f55dadc424d14c3', EncodingUtil.convertToHex(encrypted));"
+    ]
+  },
+  "expected": {
+    "result": {
+      "debug": null,
+      "ok": true
+    }
+  }
+}

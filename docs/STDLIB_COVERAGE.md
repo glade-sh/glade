@@ -25,7 +25,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Canvas | `Canvas namespace` | `unsupported` | Canvas app integration and lifecycle calls return fixture-backed UnsupportedFeature diagnostics. |
 | Continuation | `Continuation` | `unsupported` | Continuation construction, request registration, and response calls return fixture-backed UnsupportedFeature diagnostics. |
 | Crypto | `Crypto.areEqualConstantTime` | `supported` | Constant-time local Blob equality comparison. |
-| Crypto | `Crypto.encrypt/decrypt/sign/verify` | `unsupported` | Encrypt/decrypt, managed-IV variants, signing, verification, org key, keystore, certificate, random integer, and key-generation surfaces return explicit UnsupportedFeature diagnostics; no fake local key material is modeled. |
+| Crypto | `Crypto.encrypt/decrypt/sign/verify` | `partial` | Crypto.encrypt supports a local deterministic AES CBC subset for AES128/192/256 with caller-provided key and IV Blobs; decrypt, managed-IV variants, signing, verification, org key, keystore, certificate, random integer, and key-generation surfaces remain explicitly unsupported. |
 | Crypto | `Crypto.generateDigest` | `supported` | MD5, SHA1, SHA-256, SHA-512, SHA3-256/384/512, with conservative algorithm normalization. |
 | Crypto | `Crypto.generateMac` | `supported` | HMAC MD5, SHA1, SHA256, and SHA512 with local Blob keys and conservative algorithm normalization. |
 | Crypto | `Crypto.getRandomLong` | `supported` | Returns a deterministic VM-local Long sequence for local execution and tests; it is not production cryptographic randomness. |
