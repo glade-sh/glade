@@ -84,6 +84,7 @@ type VM struct {
 	triggerGlobals   map[string]Value
 	cryptoRandomSeq  uint64
 	staticInitState  map[string]staticInitState
+	lastAmbiguous    *overloadDiagnostic
 }
 
 const maxTriggerDepth = 16
@@ -117,6 +118,11 @@ type RuntimeError struct {
 	Type    string
 	Message string
 	Stack   []StackFrame
+}
+
+type overloadDiagnostic struct {
+	Args       []Value
+	Candidates []Method
 }
 
 func (e *RuntimeError) Error() string {
@@ -1141,7 +1147,7 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			}
 			return vm.callMethodWithReceiver(method, receiver, args, result)
 		} else if ambiguous {
-			return Null, fmt.Errorf("ambiguous overload for call %q", callee)
+			return Null, vm.ambiguousOverloadError(callee, args)
 		}
 		if method, ok, ambiguous := vm.resolveStaticMethodForArgs(vm.currentClass, callee, args); ok {
 			if err := vm.checkMemberAccess(method.ClassName, method.Access, method.Name, method.Modifiers); err != nil {
@@ -1155,7 +1161,7 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			}
 			return vm.callMethod(method, args, result)
 		} else if ambiguous {
-			return Null, fmt.Errorf("ambiguous overload for call %q", callee)
+			return Null, vm.ambiguousOverloadError(callee, args)
 		}
 	}
 	if method, ok, ambiguous := vm.matchRegisteredMethod(callee, args); ok {
@@ -1170,7 +1176,7 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		}
 		return vm.callMethod(method, args, result)
 	} else if ambiguous {
-		return Null, fmt.Errorf("ambiguous overload for call %q", callee)
+		return Null, vm.ambiguousOverloadError(callee, args)
 	}
 	if value, handled, err := vm.callSchemaSObjectTypePath(callee, args, result); handled || err != nil {
 		return value, err
@@ -1208,7 +1214,7 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			}
 			return vm.callMethod(method, args, result)
 		} else if ambiguous {
-			return Null, fmt.Errorf("ambiguous overload for call %q", callee)
+			return Null, vm.ambiguousOverloadError(callee, args)
 		}
 		if value, handled, err := vm.callSObjectTypeStaticMember(className, methodName, args); handled || err != nil {
 			return value, err
@@ -2103,6 +2109,13 @@ func exprReceiverName(expr ir.Expr) string {
 		return expr.Name
 	}
 	return ""
+}
+
+func nullMemberContext(receiverName, member string) string {
+	if receiverName == "" {
+		return "while invoking member " + member + " on null receiver"
+	}
+	return "while invoking " + receiverName + "." + member + " on null receiver " + receiverName
 }
 
 func (vm *VM) nextDeterministicCryptoLong() int64 {
@@ -7576,9 +7589,9 @@ func sObjectFieldToken(objectName, fieldName string) Value {
 
 func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 	current := root
-	for _, part := range parts {
+	for i, part := range parts {
 		if current.Kind == ValueNull {
-			return Null, newExceptionError("NullPointerException", "Attempt to de-reference a null object")
+			return Null, newNullDereferenceError("while accessing " + strings.Join(parts[:i+1], "."))
 		}
 		if current.Kind != ValueObject {
 			if current.Kind == ValueMap {
@@ -7802,9 +7815,9 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 		return fmt.Errorf("empty assignment target")
 	}
 	current := root
-	for _, part := range parts[:len(parts)-1] {
+	for i, part := range parts[:len(parts)-1] {
 		if current.Kind == ValueNull {
-			return newExceptionError("NullPointerException", "Attempt to de-reference a null object")
+			return newNullDereferenceError("while assigning " + strings.Join(parts[:i+1], "."))
 		}
 		if current.Kind != ValueObject {
 			return fmt.Errorf("cannot assign field %s on %s", part, current.Kind)
@@ -7820,7 +7833,7 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 	}
 	fieldName := parts[len(parts)-1]
 	if current.Kind == ValueNull {
-		return newExceptionError("NullPointerException", "Attempt to de-reference a null object")
+		return newNullDereferenceError("while assigning " + strings.Join(parts, "."))
 	}
 	if current.Kind != ValueObject {
 		return fmt.Errorf("cannot assign field %s on %s", fieldName, current.Kind)
@@ -8456,7 +8469,7 @@ func (vm *VM) assignRestContextField(name string, value Value) (bool, error) {
 					return true, err
 				}
 				if current.Kind == ValueNull {
-					return true, newExceptionError("NullPointerException", "Attempt to de-reference a null object")
+					return true, newNullDereferenceError("while assigning " + name)
 				}
 				if err := vm.assignPath(current, strings.Split(strings.TrimPrefix(name, root+"."), "."), value); err != nil {
 					return true, err
@@ -9119,7 +9132,16 @@ func (vm *VM) matchMethodByArgs(candidates []Method, args []Value) (Method, bool
 			applicable = append(applicable, candidate)
 		}
 	}
-	return vm.bestMethodBySpecificity(applicable, args)
+	target, ok, ambiguous := vm.bestMethodBySpecificity(applicable, args)
+	if ambiguous {
+		vm.lastAmbiguous = &overloadDiagnostic{
+			Args:       append([]Value(nil), args...),
+			Candidates: append([]Method(nil), applicable...),
+		}
+	} else {
+		vm.lastAmbiguous = nil
+	}
+	return target, ok, ambiguous
 }
 
 func (vm *VM) methodApplicable(candidate Method, args []Value) bool {
@@ -9133,6 +9155,61 @@ func (vm *VM) methodApplicable(candidate Method, args []Value) bool {
 		}
 	}
 	return true
+}
+
+func (vm *VM) ambiguousOverloadError(callee string, args []Value) error {
+	message := fmt.Sprintf("ambiguous overload for call %q", callee)
+	diag := vm.lastAmbiguous
+	if diag == nil || len(diag.Candidates) == 0 {
+		diag = &overloadDiagnostic{Args: append([]Value(nil), args...)}
+	}
+	argTypes := runtimeArgTypes(diag.Args)
+	if len(argTypes) == 0 && len(args) > 0 {
+		argTypes = runtimeArgTypes(args)
+	}
+	if len(argTypes) > 0 {
+		message += "; argument types: " + strings.Join(argTypes, ", ")
+	}
+	if len(diag.Candidates) > 0 {
+		signatures := make([]string, 0, len(diag.Candidates))
+		for _, candidate := range diag.Candidates {
+			signatures = append(signatures, methodSignature(candidate))
+		}
+		sort.Strings(signatures)
+		message += "; candidates: " + strings.Join(signatures, "; ")
+	}
+	return fmt.Errorf("%s", message)
+}
+
+func runtimeArgTypes(args []Value) []string {
+	if len(args) == 0 {
+		return nil
+	}
+	out := make([]string, 0, len(args))
+	for i, arg := range args {
+		out = append(out, fmt.Sprintf("%d:%s", i+1, valueTypeName(arg)))
+	}
+	return out
+}
+
+func methodSignature(method Method) string {
+	name := method.Name
+	if name == "" && method.ClassName != "" {
+		name = method.ClassName
+	}
+	params := make([]string, 0, len(method.Params))
+	for _, param := range method.Params {
+		paramType := strings.TrimSpace(param.Type)
+		if paramType == "" {
+			paramType = "Object"
+		}
+		if param.Name != "" {
+			params = append(params, param.Name+" "+paramType)
+		} else {
+			params = append(params, paramType)
+		}
+	}
+	return name + "(" + strings.Join(params, ", ") + ")"
 }
 
 func (vm *VM) bestMethodBySpecificity(applicable []Method, args []Value) (Method, bool, bool) {
@@ -9553,6 +9630,19 @@ func newExceptionError(typeName, message string) error {
 	value := Object(typeName)
 	value.Fields["message"] = String(message)
 	return &apexThrowError{value: value}
+}
+
+func newExceptionErrorWithContext(typeName, message, context string) error {
+	value := Object(typeName)
+	value.Fields["message"] = String(message)
+	if strings.TrimSpace(context) != "" {
+		value.Fields["__diagnosticContext"] = String(context)
+	}
+	return &apexThrowError{value: value}
+}
+
+func newNullDereferenceError(context string) error {
+	return newExceptionErrorWithContext("NullPointerException", "Attempt to de-reference a null object", context)
 }
 
 func annotateException(value Value, stack []callFrame) Value {
@@ -10178,6 +10268,9 @@ func runtimeError(thrown Value, stack []callFrame) error {
 		message = thrown.String()
 		if thrown.Kind == ValueObject && thrown.Type != "" {
 			errorType = thrown.Type
+			if context, ok := thrown.Fields["__diagnosticContext"]; ok && context.Kind == ValueString && strings.TrimSpace(context.Text) != "" {
+				message += " (context: " + context.Text + ")"
+			}
 		}
 	}
 	if len(stack) == 0 {
@@ -10314,6 +10407,13 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 
 	out, err := vm.executeProgram(method.Program, result)
 	if err != nil {
+		var thrown *apexThrowError
+		if errors.As(err, &thrown) {
+			if len(thrown.stack) == 0 {
+				thrown.stack = vm.rawStackFrames()
+			}
+			return Null, thrown
+		}
 		var runtimeErr *RuntimeError
 		if errors.As(err, &runtimeErr) {
 			if len(runtimeErr.Stack) == 0 {
@@ -10380,7 +10480,7 @@ func (vm *VM) displayString(value Value, result *Result) (string, error) {
 	}
 	target, ok, ambiguous := vm.resolveInstanceMethodForArgs(value.Type, "toString", nil)
 	if ambiguous {
-		return "", fmt.Errorf("ambiguous overload for call %q", "toString")
+		return "", vm.ambiguousOverloadError("toString", nil)
 	}
 	if !ok {
 		return value.String(), nil
@@ -10416,7 +10516,7 @@ func (vm *VM) callMember(callee string, args []Value, result *Result) (Value, bo
 		class := vm.Classes[dispatchClass]
 		target, ok, ambiguous := vm.resolveInstanceMethodForArgs(class.SuperClass, method, args)
 		if ambiguous {
-			return Null, true, fmt.Errorf("ambiguous overload for call %q", callee)
+			return Null, true, vm.ambiguousOverloadError(callee, args)
 		}
 		if !ok {
 			return Null, true, unsupportedCallError(callee)
@@ -10510,7 +10610,7 @@ func (vm *VM) callSObjectFieldAddError(path []string, args []Value) (Value, bool
 
 func (vm *VM) callValueMember(receiverName string, receiver Value, method string, args []Value, result *Result) (Value, bool, error) {
 	if receiver.Kind == ValueNull {
-		return Null, true, newExceptionError("NullPointerException", "Attempt to de-reference a null object")
+		return Null, true, newNullDereferenceError(nullMemberContext(receiverName, method))
 	}
 	if _, declared := vm.VarTypes[receiverName]; !declared {
 		if value, handled, err := vm.callSObjectTypeStaticMember(receiverName, method, args); handled || err != nil {
@@ -10565,7 +10665,7 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 		}
 		target, ok, ambiguous := vm.resolveInstanceMethodForArgs(receiver.Type, method, args)
 		if ambiguous {
-			return Null, true, fmt.Errorf("ambiguous overload for call %q", memberCallName(receiverName, receiver.Type, method))
+			return Null, true, vm.ambiguousOverloadError(memberCallName(receiverName, receiver.Type, method), args)
 		}
 		if !ok {
 			if value, handled, err := callObjectMember(receiver, method, args); handled || err != nil {
@@ -11061,7 +11161,7 @@ func isStubProxy(receiver Value) bool {
 func (vm *VM) callStubProxyMember(receiver Value, method string, args []Value, result *Result) (Value, bool, error) {
 	target, ok, ambiguous := vm.resolveInstanceMethodForArgs(receiver.Type, method, args)
 	if ambiguous {
-		return Null, true, fmt.Errorf("ambiguous overload for stubbed call %q", receiver.Type+"."+method)
+		return Null, true, vm.ambiguousOverloadError(receiver.Type+"."+method, args)
 	}
 	if !ok {
 		return Null, true, unsupportedCallError("Test.createStub dynamic method " + receiver.Type + "." + method + " without local target method metadata")
@@ -11087,7 +11187,7 @@ func (vm *VM) callStubProxyMember(receiver Value, method string, args []Value, r
 	}
 	handler, ok, ambiguous := vm.resolveInstanceMethodForArgs(provider.Type, "handleMethodCall", metadataArgs)
 	if ambiguous {
-		return Null, true, fmt.Errorf("ambiguous overload for call %q", provider.Type+".handleMethodCall")
+		return Null, true, vm.ambiguousOverloadError(provider.Type+".handleMethodCall", metadataArgs)
 	}
 	if !ok {
 		return Null, true, fmt.Errorf("StubProvider %s must implement handleMethodCall", provider.Type)
