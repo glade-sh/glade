@@ -1871,6 +1871,7 @@ func TestExecTriggerContextMapsAndOperationFlags(t *testing.T) {
 System.assert(Trigger.isExecuting);
 System.assert(Trigger.isBefore);
 System.assert(Trigger.isUpdate);
+TriggerFlagProbe.checkBefore();
 System.assertEquals(1, Trigger.size);
 Account newer = Trigger.new.get(0);
 Account older = Trigger.oldMap.get(newer.Id);
@@ -1914,6 +1915,21 @@ delete updated;
 	account.Definition.Fields["Rating"] = storage.Field{APIName: "Rating", Type: storage.FieldString}
 	org.Objects["Account"] = account
 	machine.SetOrg(&org)
+	helper, err := CompileAnonymous(`
+System.assert(Trigger.isExecuting);
+System.assert(Trigger.isBefore);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "TriggerFlagProbe",
+		Methods: map[string]Method{
+			"checkBefore": {Name: "TriggerFlagProbe.checkBefore", ReturnType: "void", Program: helper, IsStatic: true, ClassName: "TriggerFlagProbe"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
 	if err := machine.RegisterTrigger(Trigger{
 		Name:      "AccountBeforeUpdateContext",
 		Object:    "Account",

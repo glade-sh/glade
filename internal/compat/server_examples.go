@@ -233,6 +233,19 @@ func applyServerExampleSchema(org *storage.OrgState, loaded schema.Schema) {
 		state.Definition.Label = object.Label
 		state.Definition.PluralLabel = object.PluralLabel
 		state.Definition.SharingModel = object.SharingModel
+		if strings.EqualFold(object.CustomSettingsType, "List") {
+			if state.Definition.Metadata == nil {
+				state.Definition.Metadata = make(map[string]string)
+			}
+			state.Definition.Metadata["kind"] = "customSetting"
+			state.Definition.Metadata["customSettingsType"] = object.CustomSettingsType
+		}
+		if strings.HasSuffix(object.Name, "__mdt") {
+			if state.Definition.Metadata == nil {
+				state.Definition.Metadata = make(map[string]string)
+			}
+			state.Definition.Metadata["kind"] = "customMetadata"
+		}
 		if state.Definition.Fields == nil {
 			state.Definition.Fields = make(map[string]storage.Field)
 		}
@@ -440,6 +453,8 @@ func serverExampleProbes(routes []ServerExampleRestRoute, seeded bool) []serverE
 
 func serverExampleApexRESTPath(path string) string {
 	switch {
+	case strings.Contains(path, "selfservice/email"):
+		return "/selfservice/email/SocialVerify"
 	case strings.Contains(path, "selfservice/settings"):
 		return "/selfservice/settings/LoginType"
 	default:

@@ -77,6 +77,7 @@ type VM struct {
 	hasDebugHooks    bool
 	ctx              context.Context
 	activeSetters    map[string]int
+	triggerGlobals   map[string]Value
 }
 
 const maxTriggerDepth = 16
@@ -4617,17 +4618,20 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 	})
 	caller := vm.Globals
 	callerClass := vm.currentClass
+	callerTriggerGlobals := vm.triggerGlobals
 	frame := make(map[string]Value)
 	ctx := triggerContext(trigger, records, oldRecords)
 	for key, value := range ctx {
 		frame[key] = value
 	}
 	vm.Globals = frame
+	vm.triggerGlobals = ctx
 	vm.currentClass = trigger.Name
 	vm.callStack = append(vm.callStack, callFrame{Symbol: trigger.Name, File: trigger.File, Line: trigger.Line, Column: trigger.Column})
 	defer func() {
 		vm.callStack = vm.callStack[:len(vm.callStack)-1]
 		vm.Globals = caller
+		vm.triggerGlobals = callerTriggerGlobals
 		vm.currentClass = callerClass
 	}()
 	out, err := vm.executeProgram(trigger.Program, result)
@@ -6588,6 +6592,9 @@ func (vm *VM) lookup(name string) (Value, error) {
 		if value.Kind == ValueNull && value.Type == "" {
 			value.Type = vm.VarTypes[name]
 		}
+		return value, nil
+	}
+	if value, ok := vm.triggerGlobals[name]; ok {
 		return value, nil
 	}
 	if actual, ok := vm.lookupGlobalName(name); ok {

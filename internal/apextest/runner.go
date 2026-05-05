@@ -322,15 +322,15 @@ func compileProjectClasses(index typesys.Index, methods map[string]vm.Method) []
 				if member.Kind == apexast.DeclarationProperty {
 					attachPropertyAccessors(&field, typ.Name, typ.File, member, source)
 				}
-				if initializer, ok := compileFieldInitializerMethod(typ.Name, field.Name, field.Static, typ.File, member.Range, source); ok {
+				if value, ok := compileFieldInitializer(member.Type, member.Range, source); ok {
+					field.Value = value
+					field.InitialValue = value
+				} else if initializer, ok := compileFieldInitializerMethod(typ.Name, field.Name, field.Static, typ.File, member.Range, source); ok {
 					if field.Static {
 						class.StaticInitializers = append(class.StaticInitializers, initializer)
 					} else {
 						class.InstanceInitializers = append(class.InstanceInitializers, initializer)
 					}
-				} else if value, ok := compileFieldInitializer(member.Type, member.Range, source); ok {
-					field.Value = value
-					field.InitialValue = value
 				}
 				if field.Static {
 					class.StaticFields[field.Name] = field
