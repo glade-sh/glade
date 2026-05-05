@@ -8373,9 +8373,9 @@ func (vm *VM) renderStoredEmailTemplate(args []Value) (Value, error) {
 	message.Fields["templateId"] = String(templateID)
 	message.Fields["targetObjectId"] = args[1]
 	message.Fields["whatId"] = args[2]
-	message.Fields["subject"] = String(storageStringField(template, "Subject"))
-	message.Fields["htmlBody"] = String(storageStringField(template, "HtmlValue"))
-	message.Fields["plainTextBody"] = String(storageStringField(template, "Body"))
+	message.Fields["subject"] = String(vm.renderEmailTemplateText(storageStringField(template, "Subject"), args[1], args[2]))
+	message.Fields["htmlBody"] = String(vm.renderEmailTemplateText(storageStringField(template, "HtmlValue"), args[1], args[2]))
+	message.Fields["plainTextBody"] = String(vm.renderEmailTemplateText(storageStringField(template, "Body"), args[1], args[2]))
 	return message, nil
 }
 
@@ -8397,6 +8397,120 @@ func (vm *VM) emailTemplateByID(templateID string) (storage.Record, bool) {
 		}
 		if id, ok := record.Fields["Id"]; ok && string(storageIDFromValue(id)) == templateID {
 			return record, true
+		}
+	}
+	return storage.Record{}, false
+}
+
+func (vm *VM) renderEmailTemplateText(text string, whoID, whatID Value) string {
+	if text == "" || !strings.Contains(text, "{!") {
+		return text
+	}
+	whoRecord, whoOK := vm.recordByIDValue(whoID)
+	whatRecord, whatOK := vm.recordByIDValue(whatID)
+	var out strings.Builder
+	for {
+		start := strings.Index(text, "{!")
+		if start < 0 {
+			out.WriteString(text)
+			return out.String()
+		}
+		out.WriteString(text[:start])
+		text = text[start+2:]
+		end := strings.Index(text, "}")
+		if end < 0 {
+			out.WriteString("{!")
+			out.WriteString(text)
+			return out.String()
+		}
+		token := strings.TrimSpace(text[:end])
+		if value, ok := vm.emailMergeTokenValue(token, whoRecord, whoOK, whatRecord, whatOK); ok {
+			out.WriteString(value)
+		} else {
+			out.WriteString("{!")
+			out.WriteString(text[:end])
+			out.WriteString("}")
+		}
+		text = text[end+1:]
+	}
+}
+
+func (vm *VM) emailMergeTokenValue(token string, whoRecord storage.Record, whoOK bool, whatRecord storage.Record, whatOK bool) (string, bool) {
+	parts := strings.Split(token, ".")
+	if len(parts) < 2 {
+		return "", false
+	}
+	root := strings.TrimSpace(parts[0])
+	field := strings.TrimSpace(strings.Join(parts[1:], "."))
+	if root == "" || field == "" {
+		return "", false
+	}
+	namespace := ""
+	if vm.Org != nil {
+		namespace = vm.Org.Namespace
+	}
+	if whoOK && emailMergeRootMatches(root, whoRecord.Object, namespace, "Recipient", "Who", "TargetObject") {
+		return vm.storageRecordStringField(whoRecord, field), true
+	}
+	if whatOK && emailMergeRootMatches(root, whatRecord.Object, namespace, "RelatedTo", "What") {
+		return vm.storageRecordStringField(whatRecord, field), true
+	}
+	return "", false
+}
+
+func emailMergeRootMatches(root, objectName, namespace string, aliases ...string) bool {
+	for _, alias := range aliases {
+		if strings.EqualFold(root, alias) {
+			return true
+		}
+	}
+	if strings.EqualFold(root, objectName) {
+		return true
+	}
+	return strings.EqualFold(root, storage.StripNamespaceToken(namespace, objectName))
+}
+
+func (vm *VM) storageRecordStringField(record storage.Record, field string) string {
+	if strings.EqualFold(field, "Id") {
+		return string(record.ID)
+	}
+	if vm.Org != nil {
+		if objectName, ok := storage.ResolveObjectName(*vm.Org, record.Object); ok {
+			if object, ok := vm.Org.Objects[objectName]; ok {
+				if resolved, ok := storage.ResolveFieldName(object.Definition, vm.Org.Namespace, field); ok {
+					field = resolved
+				}
+			}
+		}
+	}
+	return storageStringField(record, field)
+}
+
+func (vm *VM) recordByIDValue(value Value) (storage.Record, bool) {
+	if value.Kind != ValueString || value.Text == "" || vm.Org == nil {
+		return storage.Record{}, false
+	}
+	id := storage.ID(value.Text)
+	if len(value.Text) >= 3 {
+		if objectName, ok := vm.sObjectNameForIDPrefix(value.Text[:3]); ok {
+			if object, ok := vm.Org.Objects[objectName]; ok {
+				if record, ok := object.Records[id]; ok {
+					return record, true
+				}
+			}
+		}
+	}
+	for _, object := range vm.Org.Objects {
+		if record, ok := object.Records[id]; ok {
+			return record, true
+		}
+		for _, record := range object.Records {
+			if record.ID == id {
+				return record, true
+			}
+			if fieldID, ok := record.Fields["Id"]; ok && storageIDFromValue(fieldID) == id {
+				return record, true
+			}
 		}
 	}
 	return storage.Record{}, false

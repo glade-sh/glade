@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/open-aer/oaer/internal/schema"
+	"github.com/open-aer/oaer/internal/soql"
 	"github.com/open-aer/oaer/internal/storage"
 	"github.com/open-aer/oaer/internal/vm"
 )
@@ -201,6 +202,16 @@ func TestServerExampleProbeOverlayKeepsEmailEncryptionSettingsScoped(t *testing.
 	template := templates[storage.ID("00X000000000001AAA")]
 	if template.Fields["DeveloperName"].String != "NimbleAMSSocialVerify" {
 		t.Fatalf("email template records = %#v", templates)
+	}
+	if template.Fields["NamespacePrefix"].Kind != storage.ValueNull || !template.Fields["IsActive"].Boolean {
+		t.Fatalf("email template probe fields = %#v", template.Fields)
+	}
+	result, err := soql.ParseAndExecute(emailOrg, "SELECT Id FROM EmailTemplate WHERE DeveloperName = 'NimbleAMSSocialVerify' AND IsActive = true AND NamespacePrefix = null")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Records) != 1 || result.Records[0].Fields["Id"].ID != "00X000000000001AAA" {
+		t.Fatalf("email template query records = %#v", result.Records)
 	}
 
 	settingsOrg := base.Clone()

@@ -757,12 +757,38 @@ System.assertEquals(null, fallback.getWhatId());
 System.assertEquals('', fallback.getSubject());
 System.assertEquals('', fallback.getHtmlBody());
 System.assertEquals('', fallback.getPlainTextBody());
+Messaging.SingleEmailMessage merged = Messaging.renderStoredEmailTemplate('00X000000000003AAA', '003000000000001AAA', '001000000000001AAA');
+System.assertEquals('Hello Ada at Acme', merged.getSubject());
+System.assertEquals('<p>Ada Trail / Acme</p>', merged.getHtmlBody());
+System.assertEquals('Ada Trail / Acme', merged.getPlainTextBody());
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	storage.EnsureStandardObject(&org, "Contact")
 	storage.EnsureStandardObject(&org, "EmailTemplate")
+	accountObject := org.Objects["Account"]
+	accountObject.Records["001000000000001AAA"] = storage.Record{
+		ID:     "001000000000001AAA",
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name": storage.StringValue("Acme"),
+		},
+	}
+	org.Objects["Account"] = accountObject
+	contactObject := org.Objects["Contact"]
+	contactObject.Records["003000000000001AAA"] = storage.Record{
+		ID:     "003000000000001AAA",
+		Object: "Contact",
+		Fields: map[string]storage.Value{
+			"FirstName": storage.StringValue("Ada"),
+			"LastName":  storage.StringValue("Trail"),
+			"Name":      storage.StringValue("Ada Trail"),
+		},
+	}
+	org.Objects["Contact"] = contactObject
 	templateObject := org.Objects["EmailTemplate"]
 	templateObject.Records["00X000000000001AAA"] = storage.Record{
 		ID:     "00X000000000001AAA",
@@ -778,6 +804,15 @@ System.assertEquals('', fallback.getPlainTextBody());
 		Object: "EmailTemplate",
 		Fields: map[string]storage.Value{
 			"DeveloperName": storage.StringValue("MissingBodies"),
+		},
+	}
+	templateObject.Records["00X000000000003AAA"] = storage.Record{
+		ID:     "00X000000000003AAA",
+		Object: "EmailTemplate",
+		Fields: map[string]storage.Value{
+			"Subject":   storage.StringValue("Hello {!Recipient.FirstName} at {!RelatedTo.Name}"),
+			"HtmlValue": storage.StringValue("<p>{!Contact.Name} / {!Account.Name}</p>"),
+			"Body":      storage.StringValue("{!Contact.Name} / {!Account.Name}"),
 		},
 	}
 	org.Objects["EmailTemplate"] = templateObject

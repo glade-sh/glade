@@ -122,6 +122,22 @@ func TestEnsureStandardObjectFieldsAddsCustomMetadataIdentityFields(t *testing.T
 	}
 }
 
+func TestEnsureStandardObjectAddsEmailTemplateRenderAndProbeFields(t *testing.T) {
+	org := NewOrgState()
+
+	EnsureStandardObject(&org, "EmailTemplate")
+
+	template := org.Objects["EmailTemplate"]
+	if template.Definition.KeyPrefix != "00X" {
+		t.Fatalf("EmailTemplate key prefix = %q", template.Definition.KeyPrefix)
+	}
+	for _, name := range []string{"ApiVersion", "Body", "DeveloperName", "HtmlValue", "IsActive", "Name", "NamespacePrefix", "Subject", "TemplateType"} {
+		if field, ok := template.Definition.Fields[name]; !ok || field.APIName != name {
+			t.Fatalf("%s field = %#v, %v", name, field, ok)
+		}
+	}
+}
+
 func TestEnsureStandardObjectFieldsAddsKnowledgeArticleLanguage(t *testing.T) {
 	definition := ObjectDefinition{APIName: "FAQ__kav"}
 
