@@ -702,11 +702,6 @@ System.assertEquals(0, results.get(0).getErrors().size());
 			want: `unsupported call "Messaging.sendEmail send options overloads"`,
 		},
 		{
-			name: "template surface",
-			src:  `Messaging.renderStoredEmailTemplate('00X000000000001', '003000000000001', '001000000000001');`,
-			want: `unsupported call "Messaging.renderStoredEmailTemplate local messaging transport/template surface"`,
-		},
-		{
 			name: "reserve capacity surface",
 			src:  `Messaging.reserveMassEmailCapacity(1);`,
 			want: `unsupported call "Messaging.reserveMassEmailCapacity local messaging transport/template surface"`,
@@ -739,6 +734,85 @@ System.assertEquals(0, results.get(0).getErrors().size());
 				t.Fatal(err)
 			}
 			_, err = New(nil).Execute(program)
+			if err == nil || err.Error() != tc.want {
+				t.Fatalf("err = %v, want %q", err, tc.want)
+			}
+		})
+	}
+}
+
+func TestExecRenderStoredEmailTemplate(t *testing.T) {
+	program, err := CompileAnonymous(`
+Messaging.SingleEmailMessage rendered = Messaging.renderStoredEmailTemplate('00X000000000001AAA', '003000000000001AAA', '001000000000001AAA');
+System.assertEquals('00X000000000001AAA', rendered.getTemplateId());
+System.assertEquals('003000000000001AAA', rendered.getTargetObjectId());
+System.assertEquals('001000000000001AAA', rendered.getWhatId());
+System.assertEquals('Verify subject', rendered.getSubject());
+System.assertEquals('<p>Verify body</p>', rendered.getHtmlBody());
+System.assertEquals('Verify body', rendered.getPlainTextBody());
+Messaging.SingleEmailMessage fallback = Messaging.renderStoredEmailTemplate('00X000000000002AAA', null, null);
+System.assertEquals('00X000000000002AAA', fallback.getTemplateId());
+System.assertEquals(null, fallback.getTargetObjectId());
+System.assertEquals(null, fallback.getWhatId());
+System.assertEquals('', fallback.getSubject());
+System.assertEquals('', fallback.getHtmlBody());
+System.assertEquals('', fallback.getPlainTextBody());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "EmailTemplate")
+	templateObject := org.Objects["EmailTemplate"]
+	templateObject.Records["00X000000000001AAA"] = storage.Record{
+		ID:     "00X000000000001AAA",
+		Object: "EmailTemplate",
+		Fields: map[string]storage.Value{
+			"Subject":   storage.StringValue("Verify subject"),
+			"HtmlValue": storage.StringValue("<p>Verify body</p>"),
+			"Body":      storage.StringValue("Verify body"),
+		},
+	}
+	templateObject.Records["00X000000000002AAA"] = storage.Record{
+		ID:     "00X000000000002AAA",
+		Object: "EmailTemplate",
+		Fields: map[string]storage.Value{
+			"DeveloperName": storage.StringValue("MissingBodies"),
+		},
+	}
+	org.Objects["EmailTemplate"] = templateObject
+
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+
+	cases := []struct {
+		name string
+		src  string
+		want string
+	}{
+		{
+			name: "missing-template",
+			src:  `Messaging.renderStoredEmailTemplate('00X000000000099AAA', null, null);`,
+			want: `Email template not found: 00X000000000099AAA`,
+		},
+		{
+			name: "template-id-type",
+			src:  `Messaging.renderStoredEmailTemplate(7, null, null);`,
+			want: `Messaging.renderStoredEmailTemplate expects templateId String`,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			program, err := CompileAnonymous(tc.src)
+			if err != nil {
+				t.Fatal(err)
+			}
+			machine := New(nil)
+			machine.SetOrg(&org)
+			_, err = machine.Execute(program)
 			if err == nil || err.Error() != tc.want {
 				t.Fatalf("err = %v, want %q", err, tc.want)
 			}

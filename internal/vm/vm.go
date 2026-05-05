@@ -1942,6 +1942,8 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			results = append(results, newSendEmailResult())
 		}
 		return List(results...), nil
+	case "Messaging.renderStoredEmailTemplate":
+		return vm.renderStoredEmailTemplate(args)
 	case "ApexPages.hasMessages":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("ApexPages.hasMessages expects 0 arguments")
@@ -1985,7 +1987,7 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		vm.currentPage = args[0]
 		return Null, nil
 	case "Messaging.reserveSingleEmailCapacity", "Messaging.reserveMassEmailCapacity",
-		"Messaging.renderEmailTemplate", "Messaging.renderStoredEmailTemplate",
+		"Messaging.renderEmailTemplate",
 		"Messaging.sendEmailMessage", "Messaging.sendPushNotification":
 		return Null, unsupportedCallError(callee + " local messaging transport/template surface")
 	case "URL.getSalesforceBaseUrl", "URL.getOrgDomainUrl":
@@ -8310,6 +8312,82 @@ func newMassEmailMessage() Value {
 
 func isLocalEmailMessage(value Value) bool {
 	return value.Kind == ValueObject && (value.Type == "Messaging.SingleEmailMessage" || value.Type == "Messaging.MassEmailMessage")
+}
+
+func (vm *VM) renderStoredEmailTemplate(args []Value) (Value, error) {
+	if len(args) != 3 {
+		return Null, fmt.Errorf("Messaging.renderStoredEmailTemplate expects templateId, whoId, whatId")
+	}
+	for i, arg := range args {
+		if arg.Kind != ValueString && arg.Kind != ValueNull {
+			names := []string{"templateId", "whoId", "whatId"}
+			return Null, fmt.Errorf("Messaging.renderStoredEmailTemplate expects %s String", names[i])
+		}
+	}
+	templateID := args[0].Text
+	if templateID == "" {
+		return Null, fmt.Errorf("Email template not found: %s", templateID)
+	}
+	template, ok := vm.emailTemplateByID(templateID)
+	if !ok {
+		return Null, fmt.Errorf("Email template not found: %s", templateID)
+	}
+
+	message := newSingleEmailMessage()
+	message.Fields["templateId"] = String(templateID)
+	message.Fields["targetObjectId"] = args[1]
+	message.Fields["whatId"] = args[2]
+	message.Fields["subject"] = String(storageStringField(template, "Subject"))
+	message.Fields["htmlBody"] = String(storageStringField(template, "HtmlValue"))
+	message.Fields["plainTextBody"] = String(storageStringField(template, "Body"))
+	return message, nil
+}
+
+func (vm *VM) emailTemplateByID(templateID string) (storage.Record, bool) {
+	if vm.Org == nil {
+		return storage.Record{}, false
+	}
+	objectName, ok := storage.ResolveObjectName(*vm.Org, "EmailTemplate")
+	if !ok {
+		objectName = "EmailTemplate"
+	}
+	object := vm.Org.Objects[objectName]
+	if record, ok := object.Records[storage.ID(templateID)]; ok {
+		return record, true
+	}
+	for _, record := range object.Records {
+		if string(record.ID) == templateID {
+			return record, true
+		}
+		if id, ok := record.Fields["Id"]; ok && string(storageIDFromValue(id)) == templateID {
+			return record, true
+		}
+	}
+	return storage.Record{}, false
+}
+
+func storageStringField(record storage.Record, field string) string {
+	value, ok := record.Fields[field]
+	if !ok {
+		return ""
+	}
+	switch value.Kind {
+	case storage.ValueString, storage.ValueDate, storage.ValueDateTime, storage.ValueBlob:
+		return value.String
+	case storage.ValueDecimal:
+		return value.Decimal
+	case storage.ValueID:
+		return string(value.ID)
+	case storage.ValueInteger:
+		return strconv.FormatInt(value.Integer, 10)
+	case storage.ValueBoolean:
+		if value.Boolean {
+			return "true"
+		}
+		return "false"
+	default:
+		return ""
+	}
 }
 
 func newRestResponse() Value {
