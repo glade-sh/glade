@@ -141,6 +141,109 @@ private class DispatchPatternsTest {
 	}
 }
 
+func TestRunCoversNestedServiceFactoryWithTypeMap(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/objects/Thing__c/Thing__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Thing</label><pluralLabel>Things</pluralLabel><nameField><type>Text</type><label>Name</label></nameField></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/FactoryBase.cls"), `
+public virtual class FactoryBase {
+  public virtual class ServiceFactory {
+    private Map<Type, Type> implByInterface;
+    public ServiceFactory(Map<Type, Type> registrations) {
+      implByInterface = registrations;
+    }
+    public Object newInstance(Type serviceInterfaceType) {
+      Type impl = implByInterface.get(serviceInterfaceType);
+      return impl.newInstance();
+    }
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/Application.cls"), `
+public class Application {
+  private static final List<SObjectType> OBJECTS = new List<SObjectType>{ Thing__c.SObjectType };
+  public static final FactoryBase.ServiceFactory Service = new FactoryBase.ServiceFactory(
+    new Map<Type, Type>{ ILocatorService.class => LocatorServiceImpl.class, IOtherLocatorService.class => OtherLocatorServiceImpl.class }
+  );
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ILocatorService.cls"), `
+public interface ILocatorService {
+  String name();
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/IOtherLocatorService.cls"), `
+public interface IOtherLocatorService {
+  String other();
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/LocatorServiceImpl.cls"), `
+public class LocatorServiceImpl implements ILocatorService {
+  public String name() {
+    return 'located';
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/OtherLocatorServiceImpl.cls"), `
+public class OtherLocatorServiceImpl implements IOtherLocatorService {
+  public String other() {
+    return 'other';
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/LocatorFacade.cls"), `
+public class LocatorFacade {
+  public static String name() {
+    return ((ILocatorService) Application.Service.newInstance(ILocatorService.class)).name();
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/MapOverloadProbe.cls"), `
+public class MapOverloadProbe {
+  public static String choose(Map<Object, Type> values) {
+    return 'object';
+  }
+  public static String choose(Map<SObjectType, Type> values) {
+    return 'sobject';
+  }
+  public static Integer keyCount(Map<SObjectType, Type> values) {
+    Integer count = 0;
+    for (SObjectType key : values.keySet()) {
+      count++;
+    }
+    return count;
+  }
+  public static String typeKeyRoundTrip(Map<Type, String> values) {
+    for (Type key : values.keySet()) {
+      return values.get(key);
+    }
+    return null;
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/LocatorFactoryTest.cls"), `
+@isTest
+private class LocatorFactoryTest {
+  @isTest static void locatesService() {
+    System.assertEquals('located', LocatorFacade.name());
+    System.assertEquals('sobject', MapOverloadProbe.choose(new Map<SObjectType, Type>{ Thing__c.SObjectType => LocatorServiceImpl.class }));
+    System.assertEquals(1, MapOverloadProbe.keyCount(new Map<SObjectType, Type>{ Thing__c.SObjectType => LocatorServiceImpl.class }));
+    System.assertEquals('locator', MapOverloadProbe.typeKeyRoundTrip(new Map<Type, String>{ LocatorServiceImpl.class => 'locator' }));
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	summary := run.Summary()
+	if summary.Total != 1 || summary.Passed != 1 {
+		problem := run.Suites[0].Cases[0].Problem
+		if problem == nil {
+			t.Fatalf("summary = %#v case = %#v problem = nil", summary, run.Suites[0].Cases[0])
+		}
+		t.Fatalf("summary = %#v case = %#v problem = %#v", summary, run.Suites[0].Cases[0], *problem)
+	}
+}
+
 func TestExtractMethodBodyFallsBackPastShortRange(t *testing.T) {
 	source := `public class BigClass {
   public static void run() {

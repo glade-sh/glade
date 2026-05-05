@@ -7095,7 +7095,7 @@ func (vm *VM) lookup(name string) (Value, error) {
 	}
 	if this, ok := vm.Globals["this"]; ok && this.Kind == ValueObject {
 		if value, ok := this.Fields[name]; ok {
-			if field, owner, ok := vm.lookupField(this.Type, name); ok {
+			if field, owner, ok := vm.lookupReceiverField(this.Type, name); ok {
 				if err := vm.checkMemberAccess(owner, field.Access, owner+"."+name); err != nil {
 					return Null, err
 				}
@@ -7507,9 +7507,8 @@ func (vm *VM) assign(name string, value Value) error {
 	}
 	if this, ok := vm.Globals["this"]; ok && this.Kind == ValueObject {
 		if field, ok := this.Fields[name]; ok {
-			class := vm.Classes[this.Type]
-			if def, ok := class.Fields[name]; ok {
-				if err := vm.checkMemberAccess(class.Name, def.Access, class.Name+"."+name); err != nil {
+			if def, owner, ok := vm.lookupReceiverField(this.Type, name); ok {
+				if err := vm.checkMemberAccess(owner, def.Access, owner+"."+name); err != nil {
 					return err
 				}
 				coerced, err := vm.coerceAssignable(def.Type, value)
@@ -7518,7 +7517,7 @@ func (vm *VM) assign(name string, value Value) error {
 				}
 				value = coerced
 				if def.Setter != nil {
-					key := class.Name + "." + name
+					key := owner + "." + name
 					if vm.activeSetters[key] > 0 {
 						this.Fields[name] = value
 						return nil
@@ -7643,6 +7642,17 @@ func (vm *VM) lookupField(typeName, fieldName string) (Field, string, bool) {
 		typeName = class.SuperClass
 	}
 	return Field{}, "", false
+}
+
+func (vm *VM) lookupReceiverField(typeName, fieldName string) (Field, string, bool) {
+	if vm.currentClass != "" && (strings.EqualFold(typeName, vm.currentClass) || vm.isSubclass(typeName, vm.currentClass)) {
+		if class, ok := vm.Classes[vm.currentClass]; ok {
+			if field, ok := class.Fields[fieldName]; ok {
+				return field, class.Name, true
+			}
+		}
+	}
+	return vm.lookupField(typeName, fieldName)
 }
 
 func (vm *VM) lookupStaticField(typeName, fieldName string) (Field, string, bool) {
@@ -8876,6 +8886,9 @@ func (vm *VM) typeAssignableTo(from, to string) bool {
 	if strings.EqualFold(from, to) || strings.EqualFold(to, "Object") {
 		return true
 	}
+	if platformTokenTypeAlias(from, to) {
+		return true
+	}
 	if (strings.EqualFold(from, "String") && strings.EqualFold(to, "Id")) ||
 		(strings.EqualFold(from, "Id") && strings.EqualFold(to, "String")) {
 		return true
@@ -9232,6 +9245,9 @@ func (vm *VM) typeMatches(typeName, target string, seen map[string]bool) bool {
 	if strings.EqualFold(typeName, target) {
 		return true
 	}
+	if platformTokenTypeAlias(typeName, target) {
+		return true
+	}
 	if strings.EqualFold(target, "sObject") && vm.isSObjectLikeType(typeName) {
 		return true
 	}
@@ -9252,6 +9268,21 @@ func (vm *VM) typeMatches(typeName, target string, seen map[string]bool) bool {
 		}
 	}
 	return false
+}
+
+func platformTokenTypeAlias(typeName, target string) bool {
+	switch {
+	case strings.EqualFold(typeName, "Schema.SObjectType") && strings.EqualFold(target, "SObjectType"):
+		return true
+	case strings.EqualFold(typeName, "SObjectType") && strings.EqualFold(target, "Schema.SObjectType"):
+		return true
+	case strings.EqualFold(typeName, "Schema.SObjectField") && strings.EqualFold(target, "SObjectField"):
+		return true
+	case strings.EqualFold(typeName, "SObjectField") && strings.EqualFold(target, "Schema.SObjectField"):
+		return true
+	default:
+		return false
+	}
 }
 
 func systemInterfaceAlias(typeName string) string {
@@ -9690,6 +9721,18 @@ func valueFromMapKey(key string) Value {
 	if strings.HasPrefix(key, string(ValueObject)+":") {
 		rest := strings.TrimPrefix(key, string(ValueObject)+":")
 		typeName, text, ok := strings.Cut(rest, ":")
+		if ok && typeName == "Schema.SObjectType" {
+			return sObjectTypeToken(text)
+		}
+		if ok && typeName == "Schema.SObjectField" {
+			objectName, fieldName, hasField := strings.Cut(text, ".")
+			if hasField {
+				return sObjectFieldToken(objectName, fieldName)
+			}
+		}
+		if ok && typeName == "Type" {
+			return Value{Kind: ValueObject, Type: "Type", Text: text}
+		}
 		if ok && platformScalarObject(typeName) {
 			return platformScalar(typeName, text)
 		}
