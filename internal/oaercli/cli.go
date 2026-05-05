@@ -1287,13 +1287,15 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 		return err
 	}
 	if len(args) == 0 {
-		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | product-namespaces --catalog <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]")
+		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | server-examples [--project <root>] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | product-namespaces --catalog <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]")
 	}
 	switch args[0] {
 	case "matrix", "mvp":
 		return runCompatCapabilities(args[1:], w)
 	case "post-parity":
 		return runCompatPostParity(args[1:], w)
+	case "server-examples":
+		return runCompatServerExamples(args[1:], w)
 	case "dashboard":
 		return runCompatDashboard(args[1:], w)
 	case "gaps":
@@ -1313,7 +1315,7 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 			return errors.New("usage: oaer compat validate|run <fixture.json...>")
 		}
 	default:
-		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | product-namespaces --catalog <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]")
+		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | server-examples [--project <root>] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | product-namespaces --catalog <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]")
 	}
 
 	for _, path := range args[1:] {
@@ -1453,6 +1455,61 @@ func runCompatPostParity(args []string, w io.Writer) error {
 		return fmt.Errorf("post-parity readiness gate failed: %d test-blocking findings", readiness.Summary.TestBlockingFindings)
 	}
 	return nil
+}
+
+func runCompatServerExamples(args []string, w io.Writer) error {
+	root := "."
+	jsonOut := false
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--json":
+			jsonOut = true
+		case "--project":
+			if i+1 >= len(args) {
+				return errors.New("--project requires a value")
+			}
+			root = args[i+1]
+			i++
+		default:
+			return fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	report, err := compat.RunServerExampleHarness(root)
+	if err != nil {
+		return err
+	}
+	if jsonOut {
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		return enc.Encode(report)
+	}
+	writeServerExampleHarnessText(w, report)
+	return nil
+}
+
+func writeServerExampleHarnessText(w io.Writer, report compat.ServerExampleHarnessReport) {
+	status := "pass"
+	if !report.OK {
+		status = "blocked"
+	}
+	fmt.Fprintf(w, "Server example harness: %s\n", status)
+	fmt.Fprintf(w, "Root: %s\n", report.Root)
+	fmt.Fprintf(w, "Probe counts: pass=%d fail=%d unsupported=%d missing=%d\n", report.Counts.Pass, report.Counts.Fail, report.Counts.Unsupported, report.Counts.Missing)
+	for _, project := range report.Projects {
+		fmt.Fprintf(w, "%s: %s dataFiles=%d seededObjects=%d seededRecords=%d restRoutes=%d\n", project.Path, project.Status, project.DataFiles, project.SeededObjects, project.SeededRecords, len(project.RestResources))
+		if project.Message != "" {
+			fmt.Fprintf(w, "  %s\n", project.Message)
+		}
+	}
+	for _, lane := range report.OwnerLanes {
+		if lane.Counts.Fail == 0 && lane.Counts.Unsupported == 0 && lane.Counts.Missing == 0 {
+			continue
+		}
+		fmt.Fprintf(w, "%s: pass=%d fail=%d unsupported=%d missing=%d\n", lane.OwnerLane, lane.Counts.Pass, lane.Counts.Fail, lane.Counts.Unsupported, lane.Counts.Missing)
+		for _, blocker := range lane.FirstBlockers {
+			fmt.Fprintf(w, "  %s %s %s -> %s %d %s\n", blocker.Family, blocker.Method, blocker.Path, blocker.Outcome, blocker.StatusCode, blocker.ErrorCode)
+		}
+	}
 }
 
 func countPostParitySurfaceField(surfaces []projectscan.Surface, value func(projectscan.Surface) string, seed []string) []postParityCount {

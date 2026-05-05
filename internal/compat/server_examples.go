@@ -1,0 +1,594 @@
+package compat
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io/fs"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"regexp"
+	"sort"
+	"strings"
+
+	"github.com/open-aer/oaer/internal/server"
+	"github.com/open-aer/oaer/internal/storage"
+)
+
+const serverExampleAPIVersion = "61.0"
+
+var serverExampleProjects = []string{
+	"example-projects/sf-cred-pkg-develop",
+	"example-projects/src-nmb-nc-develop",
+	"example-projects/src-nmb-nu-develop",
+	"example-projects/src-nmb-nutpl-develop",
+}
+
+type ServerExampleHarnessReport struct {
+	OK         bool                         `json:"ok"`
+	Root       string                       `json:"root"`
+	Projects   []ServerExampleProjectReport `json:"projects"`
+	Counts     ServerExampleProbeCounts     `json:"counts"`
+	OwnerLanes []ServerExampleOwnerLane     `json:"ownerLanes"`
+}
+
+type ServerExampleProjectReport struct {
+	Name          string                     `json:"name"`
+	Path          string                     `json:"path"`
+	Status        string                     `json:"status"`
+	DataFiles     int                        `json:"dataFiles"`
+	SeededObjects int                        `json:"seededObjects"`
+	SeededRecords int                        `json:"seededRecords"`
+	RestResources []ServerExampleRestRoute   `json:"restResources,omitempty"`
+	Probes        []ServerExampleProbeResult `json:"probes,omitempty"`
+	Message       string                     `json:"message,omitempty"`
+}
+
+type ServerExampleRestRoute struct {
+	Class  string `json:"class,omitempty"`
+	Method string `json:"method"`
+	Path   string `json:"path"`
+	Source string `json:"source,omitempty"`
+}
+
+type ServerExampleProbeResult struct {
+	Name       string `json:"name"`
+	Family     string `json:"family"`
+	OwnerLane  string `json:"ownerLane"`
+	Method     string `json:"method"`
+	Path       string `json:"path"`
+	StatusCode int    `json:"statusCode"`
+	Outcome    string `json:"outcome"`
+	ErrorCode  string `json:"errorCode,omitempty"`
+	Message    string `json:"message,omitempty"`
+}
+
+type ServerExampleProbeCounts struct {
+	Pass        int `json:"pass"`
+	Fail        int `json:"fail"`
+	Unsupported int `json:"unsupported"`
+	Missing     int `json:"missing"`
+}
+
+type ServerExampleOwnerLane struct {
+	OwnerLane     string                     `json:"ownerLane"`
+	Counts        ServerExampleProbeCounts   `json:"counts"`
+	FirstBlockers []ServerExampleProbeResult `json:"firstBlockers,omitempty"`
+}
+
+type serverExampleProbe struct {
+	Name      string
+	Family    string
+	OwnerLane string
+	Method    string
+	Path      string
+	Body      string
+}
+
+func RunServerExampleHarness(root string) (ServerExampleHarnessReport, error) {
+	if root == "" {
+		root = "."
+	}
+	absRoot, err := filepath.Abs(root)
+	if err != nil {
+		return ServerExampleHarnessReport{}, err
+	}
+	report := ServerExampleHarnessReport{Root: absRoot}
+	for _, rel := range serverExampleProjects {
+		projectReport, err := runServerExampleProject(absRoot, rel)
+		if err != nil {
+			return ServerExampleHarnessReport{}, err
+		}
+		report.Projects = append(report.Projects, projectReport)
+		accumulateServerExampleCounts(&report.Counts, projectReport)
+	}
+	report.OwnerLanes = serverExampleOwnerLanes(report.Projects)
+	report.OK = report.Counts.Fail == 0 && report.Counts.Missing == 0
+	return report, nil
+}
+
+func runServerExampleProject(root, rel string) (ServerExampleProjectReport, error) {
+	projectPath := filepath.Join(root, filepath.FromSlash(rel))
+	out := ServerExampleProjectReport{Name: filepath.Base(rel), Path: filepath.ToSlash(rel)}
+	if stat, err := os.Stat(projectPath); err != nil || !stat.IsDir() {
+		out.Status = "missing"
+		out.Message = "project directory not found"
+		return out, nil
+	}
+	out.Status = "probed"
+	fixture, dataFiles, err := loadServerExampleSeed(projectPath)
+	if err != nil {
+		out.Status = "failed"
+		out.Message = err.Error()
+		return out, nil
+	}
+	out.DataFiles = dataFiles
+	for _, object := range fixture.Objects {
+		out.SeededObjects++
+		out.SeededRecords += len(object.Records)
+	}
+	out.RestResources, err = discoverServerExampleRestRoutes(projectPath)
+	if err != nil {
+		out.Status = "failed"
+		out.Message = err.Error()
+		return out, nil
+	}
+	probes := serverExampleProbes(out.RestResources, out.SeededRecords > 0)
+	results, err := runServerExampleProbes(root, fixture, probes)
+	if err != nil {
+		return ServerExampleProjectReport{}, err
+	}
+	out.Probes = results
+	return out, nil
+}
+
+func runServerExampleProbes(root string, fixture storage.Fixture, probes []serverExampleProbe) ([]ServerExampleProbeResult, error) {
+	workDir, err := os.MkdirTemp(root, ".oaer-server-example-harness-*")
+	if err != nil {
+		return nil, err
+	}
+	defer os.RemoveAll(workDir)
+	store, err := storage.OpenSQLite(filepath.Join(workDir, "oaer.db"))
+	if err != nil {
+		return nil, err
+	}
+	defer store.Close()
+	org := serverExampleBaseOrg(fixture)
+	if err := storage.ApplyFixture(&org, fixture); err != nil {
+		return nil, err
+	}
+	if err := store.Save(org); err != nil {
+		return nil, err
+	}
+	handler := server.NewWithStore(&org, store)
+	results := make([]ServerExampleProbeResult, 0, len(probes))
+	for _, probe := range probes {
+		req := httptest.NewRequest(probe.Method, probe.Path, strings.NewReader(probe.Body))
+		if probe.Body != "" {
+			req.Header.Set("Content-Type", "application/json")
+		}
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
+		results = append(results, classifyServerExampleProbe(probe, rec))
+	}
+	return results, nil
+}
+
+func serverExampleBaseOrg(fixture storage.Fixture) storage.OrgState {
+	org := storage.NewOrgState()
+	org.APIVersion = serverExampleAPIVersion
+	names := make([]string, 0, len(fixture.Objects)+1)
+	seen := map[string]bool{"Account": true}
+	names = append(names, "Account")
+	for _, object := range fixture.Objects {
+		if object.Name != "" && !seen[object.Name] {
+			seen[object.Name] = true
+			names = append(names, object.Name)
+		}
+	}
+	prefixes := storage.AssignDeterministicPrefixes(names, nil)
+	for _, name := range names {
+		fields := map[string]storage.Field{"Id": {APIName: "Id", Type: storage.FieldID}}
+		for _, object := range fixture.Objects {
+			if object.Name != name {
+				continue
+			}
+			for _, record := range object.Records {
+				for field := range record.Fields {
+					if _, ok := fields[field]; !ok {
+						fields[field] = storage.Field{APIName: field, Type: storage.FieldAny}
+					}
+				}
+			}
+		}
+		if name == "Account" {
+			fields["Name"] = storage.Field{APIName: "Name", Type: storage.FieldString}
+		}
+		org.Objects[name] = storage.ObjectState{
+			Definition: storage.ObjectDefinition{
+				APIName:     name,
+				Label:       name,
+				PluralLabel: name,
+				KeyPrefix:   prefixes[name],
+				Fields:      fields,
+			},
+			Records: make(map[storage.ID]storage.Record),
+		}
+	}
+	storage.EnsureDeterministicPlatformData(&org)
+	return org
+}
+
+func serverExampleProbes(routes []ServerExampleRestRoute, seeded bool) []serverExampleProbe {
+	probes := []serverExampleProbe{
+		{Name: "versions", Family: "core-rest", OwnerLane: "lane-1-example-harness", Method: http.MethodGet, Path: "/services/data"},
+		{Name: "resource-discovery", Family: "core-rest", OwnerLane: "lane-1-example-harness", Method: http.MethodGet, Path: "/services/data/v61.0"},
+		{Name: "limits", Family: "core-rest", OwnerLane: "lane-1-example-harness", Method: http.MethodGet, Path: "/services/data/v61.0/limits"},
+		{Name: "sobjects", Family: "sobjects", OwnerLane: "lane-1-example-harness", Method: http.MethodGet, Path: "/services/data/v61.0/sobjects"},
+		{Name: "oaer-state", Family: "seed-data", OwnerLane: "lane-1-example-harness", Method: http.MethodGet, Path: "/services/data/v61.0/oaer/state"},
+		{Name: "tooling-discovery", Family: "tooling", OwnerLane: "lane-4-tooling-metadata", Method: http.MethodGet, Path: "/services/data/v61.0/tooling"},
+		{Name: "tooling-apexclass-describe", Family: "tooling", OwnerLane: "lane-4-tooling-metadata", Method: http.MethodGet, Path: "/services/data/v61.0/tooling/sobjects/ApexClass/describe"},
+		{Name: "metadata-describe", Family: "metadata", OwnerLane: "lane-4-tooling-metadata", Method: http.MethodGet, Path: "/services/data/v61.0/metadata/describe"},
+		{Name: "composite", Family: "composite", OwnerLane: "lane-5-composite-bulk", Method: http.MethodPost, Path: "/services/data/v61.0/composite", Body: `{"compositeRequest":[]}`},
+		{Name: "bulk-jobs-ingest", Family: "bulk", OwnerLane: "lane-5-composite-bulk", Method: http.MethodGet, Path: "/services/data/v61.0/jobs/ingest"},
+		{Name: "oauth-userinfo", Family: "auth-user", OwnerLane: "lane-3-http-auth", Method: http.MethodGet, Path: "/services/oauth2/userinfo"},
+		{Name: "oauth-token", Family: "auth-user", OwnerLane: "lane-3-http-auth", Method: http.MethodPost, Path: "/services/oauth2/token"},
+	}
+	if seeded {
+		probes = append(probes, serverExampleProbe{Name: "seed-query", Family: "seed-data", OwnerLane: "lane-1-example-harness", Method: http.MethodGet, Path: "/services/data/v61.0/query?q=SELECT%20Id%20FROM%20Account%20LIMIT%201"})
+	}
+	for i, route := range routes {
+		method := route.Method
+		if method == "" {
+			method = http.MethodGet
+		}
+		probes = append(probes, serverExampleProbe{
+			Name:      fmt.Sprintf("apexrest-%d", i+1),
+			Family:    "apex-rest",
+			OwnerLane: "lane-2-apex-rest",
+			Method:    method,
+			Path:      "/services/apexrest" + route.Path,
+			Body:      `{}`,
+		})
+	}
+	return probes
+}
+
+func classifyServerExampleProbe(probe serverExampleProbe, rec *httptest.ResponseRecorder) ServerExampleProbeResult {
+	result := ServerExampleProbeResult{
+		Name:       probe.Name,
+		Family:     probe.Family,
+		OwnerLane:  probe.OwnerLane,
+		Method:     probe.Method,
+		Path:       probe.Path,
+		StatusCode: rec.Code,
+		Outcome:    "fail",
+	}
+	code, message := salesforceErrorSummary(rec.Body.Bytes())
+	result.ErrorCode = code
+	result.Message = message
+	switch {
+	case rec.Code == http.StatusNotImplemented || code == "UNSUPPORTED_FEATURE":
+		result.Outcome = "unsupported"
+	case rec.Code >= 200 && rec.Code < 300:
+		result.Outcome = "pass"
+	}
+	return result
+}
+
+func salesforceErrorSummary(body []byte) (string, string) {
+	var payload []struct {
+		ErrorCode string `json:"errorCode"`
+		Message   string `json:"message"`
+	}
+	if err := json.Unmarshal(body, &payload); err == nil && len(payload) > 0 {
+		return payload[0].ErrorCode, payload[0].Message
+	}
+	var object map[string]any
+	if err := json.Unmarshal(body, &object); err == nil {
+		if errText, ok := object["error"].(string); ok {
+			return "", errText
+		}
+	}
+	return "", strings.TrimSpace(string(body))
+}
+
+func loadServerExampleSeed(projectPath string) (storage.Fixture, int, error) {
+	fixture := storage.NewFixture()
+	objects := map[string][]storage.FixtureRecord{}
+	dataFiles := 0
+	err := filepath.WalkDir(projectPath, func(path string, entry fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if entry.IsDir() || !isUnderDataDir(projectPath, path) || !strings.EqualFold(filepath.Ext(path), ".json") {
+			return nil
+		}
+		parsed, err := parseServerExampleDataFile(path)
+		if err != nil {
+			return err
+		}
+		if len(parsed) == 0 {
+			return nil
+		}
+		dataFiles++
+		for object, records := range parsed {
+			objects[object] = append(objects[object], records...)
+		}
+		return nil
+	})
+	if err != nil {
+		return storage.Fixture{}, 0, err
+	}
+	names := make([]string, 0, len(objects))
+	for name := range objects {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		fixture.Objects = append(fixture.Objects, storage.FixtureObject{Name: name, Records: objects[name]})
+	}
+	return fixture, dataFiles, nil
+}
+
+func isUnderDataDir(root, path string) bool {
+	rel, err := filepath.Rel(root, path)
+	if err != nil {
+		return false
+	}
+	for _, part := range strings.Split(filepath.ToSlash(rel), "/") {
+		if part == "data" {
+			return true
+		}
+	}
+	return false
+}
+
+func parseServerExampleDataFile(path string) (map[string][]storage.FixtureRecord, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	var raw any
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.UseNumber()
+	if err := dec.Decode(&raw); err != nil {
+		return nil, nil
+	}
+	out := map[string][]storage.FixtureRecord{}
+	switch value := raw.(type) {
+	case map[string]any:
+		if records, ok := value["records"].([]any); ok {
+			collectServerExampleRecords(out, records, objectNameFromDataFile(path))
+			return out, nil
+		}
+		for key, child := range value {
+			records, ok := child.([]any)
+			if !ok {
+				continue
+			}
+			collectServerExampleRecords(out, records, key)
+		}
+	}
+	return out, nil
+}
+
+func collectServerExampleRecords(out map[string][]storage.FixtureRecord, records []any, fallbackObject string) {
+	const maxRecordsPerObjectFile = 5
+	counts := map[string]int{}
+	for _, raw := range records {
+		recordMap, ok := raw.(map[string]any)
+		if !ok {
+			continue
+		}
+		objectName := fallbackObject
+		if attrs, ok := recordMap["attributes"].(map[string]any); ok {
+			if typed, ok := attrs["type"].(string); ok && typed != "" {
+				objectName = typed
+			}
+		}
+		if objectName == "" || counts[objectName] >= maxRecordsPerObjectFile {
+			continue
+		}
+		counts[objectName]++
+		fixtureRecord := storage.FixtureRecord{Fields: map[string]storage.Value{}}
+		for field, value := range recordMap {
+			switch field {
+			case "attributes":
+				continue
+			case "Id":
+				if id, ok := value.(string); ok && storage.ValidateID(storage.ID(id)) == nil {
+					fixtureRecord.ID = storage.ID(id)
+					continue
+				}
+			}
+			fixtureRecord.Fields[field] = serverExampleStorageValue(value)
+		}
+		out[objectName] = append(out[objectName], fixtureRecord)
+	}
+}
+
+func serverExampleStorageValue(raw any) storage.Value {
+	switch value := raw.(type) {
+	case nil:
+		return storage.NullValue()
+	case string:
+		return storage.StringValue(value)
+	case bool:
+		return storage.BooleanValue(value)
+	case json.Number:
+		if integer, err := value.Int64(); err == nil {
+			return storage.IntegerValue(integer)
+		}
+		return storage.DecimalValue(value.String())
+	case float64:
+		return storage.DecimalValue(fmt.Sprintf("%g", value))
+	default:
+		data, err := json.Marshal(value)
+		if err == nil {
+			return storage.StringValue(string(data))
+		}
+		return storage.StringValue(fmt.Sprint(value))
+	}
+}
+
+func objectNameFromDataFile(path string) string {
+	name := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
+	name = strings.TrimSuffix(name, "s")
+	if name == "" {
+		return ""
+	}
+	return name
+}
+
+func discoverServerExampleRestRoutes(projectPath string) ([]ServerExampleRestRoute, error) {
+	var routes []ServerExampleRestRoute
+	err := filepath.WalkDir(projectPath, func(path string, entry fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if entry.IsDir() || !strings.EqualFold(filepath.Ext(path), ".cls") {
+			return nil
+		}
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		for _, route := range parseServerExampleRestRoutes(string(data)) {
+			rel, _ := filepath.Rel(projectPath, path)
+			route.Source = filepath.ToSlash(rel)
+			routes = append(routes, route)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	sort.Slice(routes, func(i, j int) bool {
+		if routes[i].Path == routes[j].Path {
+			return routes[i].Method < routes[j].Method
+		}
+		return routes[i].Path < routes[j].Path
+	})
+	return routes, nil
+}
+
+func parseServerExampleRestRoutes(source string) []ServerExampleRestRoute {
+	resourceRE := regexp.MustCompile(`(?is)@RestResource\s*\(\s*urlMapping\s*=\s*['"]([^'"]+)['"]\s*\)(.*?)\bclass\s+([A-Za-z_][A-Za-z0-9_]*)`)
+	methodRE := regexp.MustCompile(`(?i)@Http(Get|Post|Patch|Put|Delete)\b`)
+	matches := resourceRE.FindAllStringSubmatchIndex(source, -1)
+	var routes []ServerExampleRestRoute
+	for i, match := range matches {
+		path := source[match[2]:match[3]]
+		className := source[match[6]:match[7]]
+		start := match[1]
+		end := len(source)
+		if i+1 < len(matches) {
+			end = matches[i+1][0]
+		}
+		methodMatches := methodRE.FindAllStringSubmatch(source[start:end], -1)
+		if len(methodMatches) == 0 {
+			routes = append(routes, ServerExampleRestRoute{Class: className, Method: http.MethodGet, Path: normalizeServerExampleRestPath(path)})
+			continue
+		}
+		seen := map[string]bool{}
+		for _, methodMatch := range methodMatches {
+			method := strings.ToUpper(methodMatch[1])
+			if !seen[method] {
+				seen[method] = true
+				routes = append(routes, ServerExampleRestRoute{Class: className, Method: method, Path: normalizeServerExampleRestPath(path)})
+			}
+		}
+	}
+	return routes
+}
+
+func normalizeServerExampleRestPath(path string) string {
+	if path == "" || path[0] != '/' {
+		path = "/" + path
+	}
+	return strings.TrimRight(path, "*")
+}
+
+func accumulateServerExampleCounts(counts *ServerExampleProbeCounts, project ServerExampleProjectReport) {
+	if project.Status == "missing" {
+		counts.Missing++
+		return
+	}
+	if project.Status == "failed" {
+		counts.Fail++
+		return
+	}
+	for _, probe := range project.Probes {
+		switch probe.Outcome {
+		case "pass":
+			counts.Pass++
+		case "unsupported":
+			counts.Unsupported++
+		default:
+			counts.Fail++
+		}
+	}
+}
+
+func serverExampleOwnerLanes(projects []ServerExampleProjectReport) []ServerExampleOwnerLane {
+	byLane := map[string]*ServerExampleOwnerLane{}
+	for _, project := range projects {
+		if project.Status == "missing" || project.Status == "failed" {
+			lane := "lane-1-example-harness"
+			entry := ensureServerExampleLane(byLane, lane)
+			if project.Status == "missing" {
+				entry.Counts.Missing++
+			} else {
+				entry.Counts.Fail++
+			}
+			entry.FirstBlockers = append(entry.FirstBlockers, ServerExampleProbeResult{
+				Name:      project.Name,
+				Family:    "project",
+				OwnerLane: lane,
+				Outcome:   project.Status,
+				Message:   project.Message,
+				Path:      project.Path,
+			})
+			continue
+		}
+		for _, probe := range project.Probes {
+			entry := ensureServerExampleLane(byLane, probe.OwnerLane)
+			switch probe.Outcome {
+			case "pass":
+				entry.Counts.Pass++
+			case "unsupported":
+				entry.Counts.Unsupported++
+				if len(entry.FirstBlockers) < 3 {
+					entry.FirstBlockers = append(entry.FirstBlockers, probe)
+				}
+			default:
+				entry.Counts.Fail++
+				if len(entry.FirstBlockers) < 3 {
+					entry.FirstBlockers = append(entry.FirstBlockers, probe)
+				}
+			}
+		}
+	}
+	names := make([]string, 0, len(byLane))
+	for name := range byLane {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	out := make([]ServerExampleOwnerLane, 0, len(names))
+	for _, name := range names {
+		out = append(out, *byLane[name])
+	}
+	return out
+}
+
+func ensureServerExampleLane(byLane map[string]*ServerExampleOwnerLane, lane string) *ServerExampleOwnerLane {
+	entry := byLane[lane]
+	if entry == nil {
+		entry = &ServerExampleOwnerLane{OwnerLane: lane}
+		byLane[lane] = entry
+	}
+	return entry
+}
