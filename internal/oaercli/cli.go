@@ -1332,7 +1332,7 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 		return err
 	}
 	if len(args) == 0 {
-		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | product-namespaces --catalog <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]")
+		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | product-namespaces --catalog <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]")
 	}
 	switch args[0] {
 	case "matrix", "mvp":
@@ -1362,7 +1362,7 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 			return errors.New("usage: oaer compat validate|run <fixture.json...>")
 		}
 	default:
-		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | product-namespaces --catalog <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]")
+		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | product-namespaces --catalog <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]")
 	}
 
 	for _, path := range args[1:] {
@@ -1640,21 +1640,48 @@ func runCompatPostParity(args []string, w io.Writer) error {
 func runCompatServerExamples(args []string, w io.Writer) error {
 	root := "."
 	jsonOut := false
+	options := compat.ServerExampleHarnessOptions{}
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--json":
 			jsonOut = true
+		case "--blockers-only":
+			options.BlockersOnly = true
 		case "--project":
 			if i+1 >= len(args) {
 				return errors.New("--project requires a value")
 			}
 			root = args[i+1]
 			i++
+		case "--project-filter":
+			if i+1 >= len(args) {
+				return errors.New("--project-filter requires a value")
+			}
+			options.ProjectFilter = args[i+1]
+			i++
+		case "--route":
+			if i+1 >= len(args) {
+				return errors.New("--route requires a value")
+			}
+			options.RouteFilter = args[i+1]
+			i++
+		case "--probe":
+			if i+1 >= len(args) {
+				return errors.New("--probe requires a value")
+			}
+			options.ProbeFilter = args[i+1]
+			i++
+		case "--outcome":
+			if i+1 >= len(args) {
+				return errors.New("--outcome requires a value")
+			}
+			options.OutcomeFilter = args[i+1]
+			i++
 		default:
 			return fmt.Errorf("unknown flag %q", args[i])
 		}
 	}
-	report, err := compat.RunServerExampleHarness(root)
+	report, err := compat.RunServerExampleHarnessWithOptions(root, options)
 	if err != nil {
 		return err
 	}

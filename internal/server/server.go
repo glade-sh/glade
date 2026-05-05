@@ -370,8 +370,26 @@ func apexRestExecutionError(route apexRestRoute, err error) string {
 		} else if frameLabel != "" {
 			message += "; at " + frameLabel
 		}
+		if stack := apexRestStackSummary(runtimeErr.Stack); stack != "" {
+			message += "; VM stack: " + stack
+		}
 	}
 	return message
+}
+
+func apexRestStackSummary(stack []vm.StackFrame) string {
+	frames := make([]string, 0, len(stack))
+	for _, frame := range stack {
+		label := frame.Symbol
+		if label == "" {
+			label = "<statement>"
+		}
+		if loc := methodLocation(frame.File, frame.Line, frame.Column); loc != "" {
+			label += " (" + loc + ")"
+		}
+		frames = append(frames, label)
+	}
+	return strings.Join(frames, " <- ")
 }
 
 func methodLocation(file string, line, column int) string {

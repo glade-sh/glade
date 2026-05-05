@@ -2890,6 +2890,41 @@ global class NullResource {
 		"NullPointerException",
 		"name.toUpperCase",
 		"at NullResource.getIt",
+		"VM stack:",
+	} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("body = %s, want %q", body, want)
+		}
+	}
+}
+
+func TestApexRestDispatchRuntimeErrorIncludesGeneratedSOQL(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+	handler.SetProjectIndex(writeApexRestProject(t, map[string]string{
+		"QueryResource.cls": `
+@RestResource(urlMapping='/query/*')
+global class QueryResource {
+  @HttpGet global static String getIt() {
+    Database.query('SELECT Missing__c FROM Account');
+    return 'ok';
+  }
+}
+`,
+	}))
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/apexrest/query/1", nil))
+	if rec.Code != http.StatusNotImplemented {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	body := rec.Body.String()
+	for _, want := range []string{
+		"Apex REST execution failed in QueryResource.getIt",
+		"QueryResource.cls",
+		"QueryException",
+		`generated SOQL \"SELECT Missing__c FROM Account\"`,
+		"VM stack:",
 	} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("body = %s, want %q", body, want)

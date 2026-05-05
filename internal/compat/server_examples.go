@@ -83,6 +83,14 @@ type ServerExampleOwnerLane struct {
 	FirstBlockers []ServerExampleProbeResult `json:"firstBlockers,omitempty"`
 }
 
+type ServerExampleHarnessOptions struct {
+	ProjectFilter string
+	RouteFilter   string
+	ProbeFilter   string
+	OutcomeFilter string
+	BlockersOnly  bool
+}
+
 type serverExampleProbe struct {
 	Name      string
 	Family    string
@@ -94,6 +102,10 @@ type serverExampleProbe struct {
 }
 
 func RunServerExampleHarness(root string) (ServerExampleHarnessReport, error) {
+	return RunServerExampleHarnessWithOptions(root, ServerExampleHarnessOptions{})
+}
+
+func RunServerExampleHarnessWithOptions(root string, options ServerExampleHarnessOptions) (ServerExampleHarnessReport, error) {
 	if root == "" {
 		root = "."
 	}
@@ -103,16 +115,58 @@ func RunServerExampleHarness(root string) (ServerExampleHarnessReport, error) {
 	}
 	report := ServerExampleHarnessReport{Root: absRoot}
 	for _, rel := range serverExampleProjects {
+		if !serverExampleProjectMatches(rel, options.ProjectFilter) {
+			continue
+		}
 		projectReport, err := runServerExampleProject(absRoot, rel)
 		if err != nil {
 			return ServerExampleHarnessReport{}, err
 		}
+		applyServerExampleReportFilters(&projectReport, options)
 		report.Projects = append(report.Projects, projectReport)
 		accumulateServerExampleCounts(&report.Counts, projectReport)
 	}
 	report.OwnerLanes = serverExampleOwnerLanes(report.Projects)
 	report.OK = report.Counts.Fail == 0 && report.Counts.Missing == 0
 	return report, nil
+}
+
+func serverExampleProjectMatches(rel, filter string) bool {
+	filter = strings.ToLower(strings.TrimSpace(filter))
+	if filter == "" {
+		return true
+	}
+	return strings.Contains(strings.ToLower(rel), filter) || strings.Contains(strings.ToLower(filepath.Base(rel)), filter)
+}
+
+func applyServerExampleReportFilters(project *ServerExampleProjectReport, options ServerExampleHarnessOptions) {
+	filtered := project.Probes[:0]
+	for _, probe := range project.Probes {
+		if !serverExampleProbeMatches(probe, options) {
+			continue
+		}
+		filtered = append(filtered, probe)
+	}
+	project.Probes = filtered
+}
+
+func serverExampleProbeMatches(probe ServerExampleProbeResult, options ServerExampleHarnessOptions) bool {
+	if !serverExampleContains(probe.Path, options.RouteFilter) {
+		return false
+	}
+	if !serverExampleContains(probe.Name, options.ProbeFilter) {
+		return false
+	}
+	if options.BlockersOnly && probe.Outcome == "pass" {
+		return false
+	}
+	outcome := strings.ToLower(strings.TrimSpace(options.OutcomeFilter))
+	return outcome == "" || strings.EqualFold(probe.Outcome, outcome)
+}
+
+func serverExampleContains(value, filter string) bool {
+	filter = strings.ToLower(strings.TrimSpace(filter))
+	return filter == "" || strings.Contains(strings.ToLower(value), filter)
 }
 
 func runServerExampleProject(root, rel string) (ServerExampleProjectReport, error) {

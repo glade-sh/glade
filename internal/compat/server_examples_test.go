@@ -78,6 +78,29 @@ func TestServerExampleHarnessReportsMissingProjects(t *testing.T) {
 	}
 }
 
+func TestServerExampleHarnessFiltersVisibleProbes(t *testing.T) {
+	project := ServerExampleProjectReport{Probes: []ServerExampleProbeResult{
+		{Name: "versions", Path: "/services/data", Outcome: "pass"},
+		{Name: "apexrest-1", Path: "/services/apexrest/widgets/1", Outcome: "unsupported"},
+		{Name: "apexrest-2", Path: "/services/apexrest/orders/1", Outcome: "fail"},
+	}}
+	applyServerExampleReportFilters(&project, ServerExampleHarnessOptions{
+		RouteFilter:   "widgets",
+		ProbeFilter:   "apexrest",
+		OutcomeFilter: "unsupported",
+		BlockersOnly:  true,
+	})
+	if len(project.Probes) != 1 || project.Probes[0].Path != "/services/apexrest/widgets/1" {
+		t.Fatalf("filtered probes = %#v", project.Probes)
+	}
+	if serverExampleProjectMatches("example-projects/src-nmb-nu-develop", "sf-cred") {
+		t.Fatalf("project filter matched the wrong project")
+	}
+	if !serverExampleProjectMatches("example-projects/sf-cred-pkg-develop", "cred") {
+		t.Fatalf("project filter missed project")
+	}
+}
+
 func TestServerExampleSchemaMarksHierarchyCustomSettings(t *testing.T) {
 	org := storage.NewOrgState()
 	applyServerExampleSchema(&org, schema.Schema{Objects: []schema.Object{{

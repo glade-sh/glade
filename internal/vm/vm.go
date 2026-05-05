@@ -3320,7 +3320,7 @@ func (vm *VM) executeSOQLRowsWithExpander(raw string, execResult *Result, expand
 		if errors.As(err, &unsupported) {
 			return nil, &RuntimeError{Type: "UnsupportedFeature", Message: unsupported.Message}
 		}
-		return nil, newExceptionError("QueryException", err.Error())
+		return nil, newExceptionError("QueryException", fmt.Sprintf("%s in generated SOQL %q", err.Error(), queryText))
 	}
 	limitRows := soqlLimitRows(result)
 	if err := vm.incrementLimit("queryRows", limitRows); err != nil {

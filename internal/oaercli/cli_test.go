@@ -150,6 +150,29 @@ func TestRunCompatPostParityRequireReadyFails(t *testing.T) {
 	}
 }
 
+func TestRunCompatServerExamplesAcceptsFilterFlags(t *testing.T) {
+	root := t.TempDir()
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{
+		"compat", "server-examples",
+		"--project", root,
+		"--project-filter", "sf-cred",
+		"--route", "webhook",
+		"--probe", "apexrest",
+		"--outcome", "unsupported",
+		"--blockers-only",
+		"--json",
+	}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	for _, want := range []string{`"projects"`, `"missing"`, "sf-cred-pkg-develop"} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("stdout missing %q: %q", want, stdout.String())
+		}
+	}
+}
+
 func TestRunCheckReportsMalformedMetadataAsDiagnostic(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
