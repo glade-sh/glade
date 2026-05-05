@@ -26,6 +26,9 @@ func TestLoadSFDXProject(t *testing.T) {
 	writeFile(t, filepath.Join(root, "force-app/main/remoteSiteSettings/Api.remoteSite"), "<RemoteSiteSetting/>")
 	writeFile(t, filepath.Join(root, "force-app/main/customMetadata/Feature.Default.md"), "<CustomMetadata/>")
 	writeFile(t, filepath.Join(root, "force-app/main/workflows/Thing__c.workflow-meta.xml"), "<Workflow/>")
+	writeFile(t, filepath.Join(root, "force-app/main/objects/Thing__c/listViews/All.listView-meta.xml"), "<ListView/>")
+	writeFile(t, filepath.Join(root, "force-app/main/layouts/Thing__c-Thing Layout.layout-meta.xml"), "<Layout/>")
+	writeFile(t, filepath.Join(root, "force-app/main/objects/Thing__c/compactLayouts/Card.compactLayout-meta.xml"), "<CompactLayout/>")
 	writeFile(t, filepath.Join(root, "force-app/main/pages/Edit.page"), `<apex:page controller="EditController"/>`)
 	writeFile(t, filepath.Join(root, "force-app/main/components/Picker.component"), `<apex:component/>`)
 	writeFile(t, filepath.Join(root, "force-app/main/aura/Cart/Cart.cmp"), `<aura:component controller="CartController"/>`)
@@ -49,6 +52,9 @@ func TestLoadSFDXProject(t *testing.T) {
 	}
 	if len(p.WorkflowFiles) != 1 {
 		t.Fatalf("unexpected workflow file counts: %#v", p)
+	}
+	if len(p.ListViewFiles) != 1 || len(p.LayoutFiles) != 1 || len(p.CompactLayoutFiles) != 1 {
+		t.Fatalf("unexpected layout/list view file counts: %#v", p)
 	}
 	if len(p.VisualforcePageFiles) != 1 || len(p.VisualforceComponentFiles) != 1 {
 		t.Fatalf("unexpected visualforce file counts: %#v", p)

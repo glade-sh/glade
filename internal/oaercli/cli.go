@@ -1023,7 +1023,8 @@ func runServer(ctx context.Context, args []string, w io.Writer) error {
 		}
 		defer store.Close()
 		org = loaded
-		handler = server.NewWithStore(&org, store)
+		source, _ := serverSourceMetadata(root)
+		handler = server.NewWithStoreAndSource(&org, store, source)
 	} else {
 		var err error
 		org, err = orgForProject(root)
@@ -1033,7 +1034,8 @@ func runServer(ctx context.Context, args []string, w io.Writer) error {
 			}
 			org = storageBaseline()
 		}
-		handler = server.New(&org)
+		source, _ := serverSourceMetadata(root)
+		handler = server.NewWithSource(&org, source)
 	}
 	if limitMode != "" {
 		if srv, ok := handler.(*server.Server); ok {
@@ -1049,6 +1051,14 @@ func runServer(ctx context.Context, args []string, w io.Writer) error {
 	}
 	fmt.Fprintf(w, "oaer server: %s\n", server.URL(addr))
 	return http.ListenAndServe(addr, handler)
+}
+
+func serverSourceMetadata(root string) (server.SourceMetadata, error) {
+	p, err := project.Load(root)
+	if err != nil {
+		return server.SourceMetadata{}, err
+	}
+	return server.NewSourceMetadataFromProject(p)
 }
 
 func storageBaseline() storage.OrgState {

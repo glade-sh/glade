@@ -517,6 +517,14 @@ func runServerFixture(fixture Fixture) (RunResult, error) {
 	defer func() {
 		_ = store.Close()
 	}()
+	if err := writeFixtureFiles(root, fixture); err != nil {
+		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+	}
+	if len(fixture.Source) > 0 || len(fixture.Schema) > 0 {
+		if err := writeSFDXProject(root, fixture.Project); err != nil {
+			return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+		}
+	}
 
 	org := serverFixtureOrg()
 	if len(fixture.SeedData) > 0 {
@@ -527,7 +535,13 @@ func runServerFixture(fixture Fixture) (RunResult, error) {
 	if err := store.Save(org); err != nil {
 		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
 	}
-	handler := server.NewWithStore(&org, store)
+	source := server.SourceMetadata{}
+	if len(fixture.Source) > 0 || len(fixture.Schema) > 0 {
+		if p, err := project.Load(root); err == nil {
+			source, _ = server.NewSourceMetadataFromProject(p)
+		}
+	}
+	handler := server.NewWithStoreAndSource(&org, store, source)
 	if serverIndex != nil {
 		handler.SetProjectIndex(*serverIndex)
 	}
@@ -552,7 +566,7 @@ func runServerFixture(fixture Fixture) (RunResult, error) {
 			if err != nil {
 				return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
 			}
-			handler = server.NewWithStore(&restartedOrg, store)
+			handler = server.NewWithStoreAndSource(&restartedOrg, store, source)
 			if serverIndex != nil {
 				handler.SetProjectIndex(*serverIndex)
 			}

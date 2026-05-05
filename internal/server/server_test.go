@@ -40,6 +40,43 @@ func assertQueryRecordShape(t *testing.T, record map[string]any, objectName, id,
 	}
 }
 
+func testSourceMetadata(t *testing.T) SourceMetadata {
+	t.Helper()
+	root := filepath.Join(".testdata-generated", strings.NewReplacer("/", "_", " ", "_").Replace(t.Name()))
+	if err := os.RemoveAll(root); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(root) })
+	writeServerTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"61.0"}`)
+	writeServerTestFile(t, filepath.Join(root, "force-app/main/default/classes/LocalOne.cls"), "public class LocalOne {}")
+	writeServerTestFile(t, filepath.Join(root, "force-app/main/default/classes/LocalTwo.cls"), "public class LocalTwo {}")
+	writeServerTestFile(t, filepath.Join(root, "force-app/main/default/triggers/AccountTrigger.trigger"), "trigger AccountTrigger on Account (before insert) {}")
+	writeServerTestFile(t, filepath.Join(root, "force-app/main/default/pages/Edit.page"), `<apex:page controller="LocalOne"/>`)
+	writeServerTestFile(t, filepath.Join(root, "force-app/main/default/objects/Account/listViews/AllAccounts.listView-meta.xml"), `<ListView><label>All Accounts</label><columns>Id</columns><columns>Name</columns><filterScope>Everything</filterScope></ListView>`)
+	writeServerTestFile(t, filepath.Join(root, "force-app/main/default/layouts/Account-Account Layout.layout-meta.xml"), `<Layout/>`)
+	writeServerTestFile(t, filepath.Join(root, "force-app/main/default/objects/Account/compactLayouts/Card.compactLayout-meta.xml"), `<CompactLayout><label>Card</label><fields>Name</fields></CompactLayout>`)
+	writeServerTestFile(t, filepath.Join(root, "force-app/main/default/objects/Widget__c/Widget__c.object-meta.xml"), `<CustomObject><label>Widget</label></CustomObject>`)
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	source, err := NewSourceMetadataFromProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return source
+}
+
+func writeServerTestFile(t *testing.T, path, content string) {
+	t.Helper()
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestVersionDiscoveryRoot(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
@@ -1329,6 +1366,42 @@ func TestSObjectListViewRoutes(t *testing.T) {
 	assertSalesforceError(t, unknown, http.StatusNotFound, "NOT_FOUND", "unknown object")
 }
 
+func TestSObjectListViewsLayoutsAndCompactLayoutsFromSource(t *testing.T) {
+	org := testOrg()
+	addAccountForTest(&org, "001000000000001", "Trail Account")
+	handler := NewWithSource(&org, testSourceMetadata(t))
+
+	collection := httptest.NewRecorder()
+	handler.ServeHTTP(collection, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/listviews", nil))
+	if collection.Code != http.StatusOK || !bytes.Contains(collection.Body.Bytes(), []byte(`"developerName":"AllAccounts"`)) || !bytes.Contains(collection.Body.Bytes(), []byte(`"size":1`)) {
+		t.Fatalf("listviews collection status=%d body=%s", collection.Code, collection.Body.String())
+	}
+
+	describe := httptest.NewRecorder()
+	handler.ServeHTTP(describe, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/listviews/00B000000000001/describe", nil))
+	if describe.Code != http.StatusOK || !bytes.Contains(describe.Body.Bytes(), []byte(`"query":"SELECT Id, Name FROM Account"`)) {
+		t.Fatalf("listview describe status=%d body=%s", describe.Code, describe.Body.String())
+	}
+
+	results := httptest.NewRecorder()
+	handler.ServeHTTP(results, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/listviews/00B000000000001/results", nil))
+	if results.Code != http.StatusOK || !bytes.Contains(results.Body.Bytes(), []byte(`Trail Account`)) || !bytes.Contains(results.Body.Bytes(), []byte(`"listViewId":"00B000000000001"`)) {
+		t.Fatalf("listview results status=%d body=%s", results.Code, results.Body.String())
+	}
+
+	compact := httptest.NewRecorder()
+	handler.ServeHTTP(compact, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/describe/compactLayouts", nil))
+	if compact.Code != http.StatusOK || !bytes.Contains(compact.Body.Bytes(), []byte(`"defaultCompactLayoutId":"0CL000000000001"`)) || !bytes.Contains(compact.Body.Bytes(), []byte(`"fields":["Name"]`)) {
+		t.Fatalf("compact status=%d body=%s", compact.Code, compact.Body.String())
+	}
+
+	layouts := httptest.NewRecorder()
+	handler.ServeHTTP(layouts, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/describe/layouts", nil))
+	if layouts.Code != http.StatusOK || !bytes.Contains(layouts.Body.Bytes(), []byte(`Account-Account Layout`)) {
+		t.Fatalf("layouts status=%d body=%s", layouts.Code, layouts.Body.String())
+	}
+}
+
 func TestDescribeEndpoints(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
@@ -1931,21 +2004,20 @@ func TestToolingDeployChainMemberStubsValidateBodies(t *testing.T) {
 	assertSalesforceError(t, record, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", "Tooling ApexPageMember object record")
 }
 
-func TestToolingQueryStillDelegatesToSOQL(t *testing.T) {
+func TestToolingQueryReadsLocalSourceMetadata(t *testing.T) {
 	org := testOrg()
-	addAccountForTest(&org, "001000000000001", "Tooling Query")
-	handler := New(&org)
+	handler := NewWithSource(&org, testSourceMetadata(t))
 
 	for _, path := range []string{
-		"/services/data/v61.0/tooling/query?q=SELECT%20Id,%20Name%20FROM%20Account%20WHERE%20Name%20=%20'Tooling%20Query'",
-		"/services/data/v61.0/tooling/queryAll?q=SELECT%20Id,%20Name%20FROM%20Account%20WHERE%20Name%20=%20'Tooling%20Query'",
+		"/services/data/v61.0/tooling/query?q=SELECT%20Id,%20Name,%20Body%20FROM%20ApexClass%20WHERE%20Name%20=%20'LocalOne'",
+		"/services/data/v61.0/tooling/queryAll?q=SELECT%20Id,%20Name,%20Body%20FROM%20ApexClass%20WHERE%20Name%20=%20'LocalOne'",
 	} {
 		rec := httptest.NewRecorder()
 		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
 		if rec.Code != http.StatusOK {
 			t.Fatalf("%s status = %d body=%s", path, rec.Code, rec.Body.String())
 		}
-		if !bytes.Contains(rec.Body.Bytes(), []byte(`"totalSize":1`)) || !bytes.Contains(rec.Body.Bytes(), []byte(`Tooling Query`)) {
+		if !bytes.Contains(rec.Body.Bytes(), []byte(`"totalSize":1`)) || !bytes.Contains(rec.Body.Bytes(), []byte(`LocalOne`)) {
 			t.Fatalf("%s body = %s", path, rec.Body.String())
 		}
 		var payload struct {
@@ -1954,68 +2026,49 @@ func TestToolingQueryStillDelegatesToSOQL(t *testing.T) {
 		if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
 			t.Fatal(err)
 		}
-		if len(payload.Records) != 1 || payload.Records[0]["Name"] != "Tooling Query" {
+		if len(payload.Records) != 1 || payload.Records[0]["Name"] != "LocalOne" || !strings.Contains(fmt.Sprint(payload.Records[0]["Body"]), "public class LocalOne") {
 			t.Fatalf("%s records = %#v", path, payload.Records)
 		}
-		assertQueryRecordShape(t, payload.Records[0], "Account", "001000000000001", "/services/data/v61.0/sobjects/Account/001000000000001")
+		assertQueryRecordShape(t, payload.Records[0], "ApexClass", "01p000000000001", "/services/data/v61.0/tooling/sobjects/ApexClass/01p000000000001")
 	}
 }
 
-func TestToolingQueryContinuationUsesToolingPath(t *testing.T) {
+func TestToolingSObjectDiscoveryDescribeAndRecordRead(t *testing.T) {
+	org := testOrg()
+	handler := NewWithSource(&org, testSourceMetadata(t))
+
+	discovery := httptest.NewRecorder()
+	handler.ServeHTTP(discovery, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/tooling/sobjects", nil))
+	if discovery.Code != http.StatusOK || !bytes.Contains(discovery.Body.Bytes(), []byte(`"name":"ApexClass"`)) {
+		t.Fatalf("tooling sobjects status=%d body=%s", discovery.Code, discovery.Body.String())
+	}
+
+	describe := httptest.NewRecorder()
+	handler.ServeHTTP(describe, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/tooling/sobjects/ApexClass/describe", nil))
+	if describe.Code != http.StatusOK || !bytes.Contains(describe.Body.Bytes(), []byte(`"createable":false`)) || !bytes.Contains(describe.Body.Bytes(), []byte(`"name":"Body"`)) {
+		t.Fatalf("tooling describe status=%d body=%s", describe.Code, describe.Body.String())
+	}
+
+	record := httptest.NewRecorder()
+	handler.ServeHTTP(record, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/tooling/sobjects/ApexClass/01p000000000001", nil))
+	if record.Code != http.StatusOK || !bytes.Contains(record.Body.Bytes(), []byte(`LocalOne`)) {
+		t.Fatalf("tooling record status=%d body=%s", record.Code, record.Body.String())
+	}
+
+	write := httptest.NewRecorder()
+	handler.ServeHTTP(write, httptest.NewRequest(http.MethodPatch, "/services/data/v61.0/tooling/sobjects/ApexClass/01p000000000001", strings.NewReader(`{"Body":"changed"}`)))
+	assertSalesforceError(t, write, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
+}
+
+func TestToolingQueryUnsupportedWithoutLocalModel(t *testing.T) {
 	for _, endpoint := range []string{"query", "queryAll"} {
 		t.Run(endpoint, func(t *testing.T) {
 			org := testOrg()
-			addAccountForTest(&org, "001000000000001", "Tooling Page 1")
-			addAccountForTest(&org, "001000000000002", "Tooling Page 2")
 			handler := New(&org)
 
 			rec := httptest.NewRecorder()
-			handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/data/v62.0/tooling/"+endpoint+"?q=SELECT%20Id,%20Name%20FROM%20Account&batchSize=1", nil))
-			if rec.Code != http.StatusOK {
-				t.Fatalf("tooling %s pagination status = %d body=%s", endpoint, rec.Code, rec.Body.String())
-			}
-			var firstPayload struct {
-				TotalSize      int                      `json:"totalSize"`
-				Done           bool                     `json:"done"`
-				NextRecordsURL string                   `json:"nextRecordsUrl"`
-				Records        []map[string]interface{} `json:"records"`
-			}
-			if err := json.Unmarshal(rec.Body.Bytes(), &firstPayload); err != nil {
-				t.Fatal(err)
-			}
-			if firstPayload.TotalSize != 2 || firstPayload.Done || len(firstPayload.Records) != 1 {
-				t.Fatalf("tooling %s first payload = %#v", endpoint, firstPayload)
-			}
-			if firstPayload.NextRecordsURL != "/services/data/v62.0/tooling/query/oaerql000001-1" {
-				t.Fatalf("tooling %s nextRecordsUrl = %q", endpoint, firstPayload.NextRecordsURL)
-			}
-
-			disallowed := httptest.NewRecorder()
-			handler.ServeHTTP(disallowed, httptest.NewRequest(http.MethodPost, firstPayload.NextRecordsURL, nil))
-			if disallowed.Code != http.StatusMethodNotAllowed || disallowed.Header().Get("Allow") != http.MethodGet {
-				t.Fatalf("tooling %s queryMore method boundary status=%d allow=%q body=%s", endpoint, disallowed.Code, disallowed.Header().Get("Allow"), disallowed.Body.String())
-			}
-
-			continuation := httptest.NewRecorder()
-			handler.ServeHTTP(continuation, httptest.NewRequest(http.MethodGet, firstPayload.NextRecordsURL, nil))
-			if continuation.Code != http.StatusOK {
-				t.Fatalf("tooling %s queryMore status = %d body=%s", endpoint, continuation.Code, continuation.Body.String())
-			}
-			var nextPayload struct {
-				TotalSize      int                      `json:"totalSize"`
-				Done           bool                     `json:"done"`
-				NextRecordsURL string                   `json:"nextRecordsUrl"`
-				Records        []map[string]interface{} `json:"records"`
-			}
-			if err := json.Unmarshal(continuation.Body.Bytes(), &nextPayload); err != nil {
-				t.Fatal(err)
-			}
-			if nextPayload.TotalSize != 2 || !nextPayload.Done || nextPayload.NextRecordsURL != "" || len(nextPayload.Records) != 1 {
-				t.Fatalf("tooling %s continuation payload = %#v", endpoint, nextPayload)
-			}
-			if !bytes.Contains(continuation.Body.Bytes(), []byte(`"Name":"Tooling Page 2"`)) {
-				t.Fatalf("tooling %s continuation body = %s", endpoint, continuation.Body.String())
-			}
+			handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/data/v62.0/tooling/"+endpoint+"?q=SELECT%20Id%20FROM%20ApexLog&batchSize=1", nil))
+			assertSalesforceError(t, rec, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", "Tooling query for ApexLog")
 		})
 	}
 }
@@ -2327,6 +2380,39 @@ func TestMetadataRESTDiscoveryAndReadStubs(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestMetadataRESTReadsLocalSourceFiles(t *testing.T) {
+	org := testOrg()
+	handler := NewWithSource(&org, testSourceMetadata(t))
+
+	describe := httptest.NewRecorder()
+	handler.ServeHTTP(describe, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/metadata/describeMetadata", nil))
+	if describe.Code != http.StatusOK || !bytes.Contains(describe.Body.Bytes(), []byte(`"xmlName":"ApexClass"`)) || !bytes.Contains(describe.Body.Bytes(), []byte(`"xmlName":"ListView"`)) {
+		t.Fatalf("describeMetadata status=%d body=%s", describe.Code, describe.Body.String())
+	}
+
+	list := httptest.NewRecorder()
+	handler.ServeHTTP(list, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/metadata/listMetadata?type=ApexClass", nil))
+	if list.Code != http.StatusOK || !bytes.Contains(list.Body.Bytes(), []byte(`"fullName":"LocalOne"`)) || bytes.Contains(list.Body.Bytes(), []byte(`AccountTrigger`)) {
+		t.Fatalf("listMetadata status=%d body=%s", list.Code, list.Body.String())
+	}
+
+	components := httptest.NewRecorder()
+	handler.ServeHTTP(components, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/metadata/components/ApexClass", nil))
+	if components.Code != http.StatusOK || !bytes.Contains(components.Body.Bytes(), []byte(`"size":2`)) {
+		t.Fatalf("components status=%d body=%s", components.Code, components.Body.String())
+	}
+
+	component := httptest.NewRecorder()
+	handler.ServeHTTP(component, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/metadata/components/ApexClass/LocalOne", nil))
+	if component.Code != http.StatusOK || !bytes.Contains(component.Body.Bytes(), []byte(`public class LocalOne`)) {
+		t.Fatalf("component status=%d body=%s", component.Code, component.Body.String())
+	}
+
+	write := httptest.NewRecorder()
+	handler.ServeHTTP(write, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/metadata/deployRequest", strings.NewReader(`{}`)))
+	assertSalesforceError(t, write, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", "Metadata REST deploy requests")
 }
 
 func TestMetadataRESTRetrieveRoutesReturnExplicitUnsupportedBoundaries(t *testing.T) {

@@ -8,6 +8,8 @@ import (
 	"mime"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -29,6 +31,7 @@ type Server struct {
 	Store interface {
 		Save(storage.OrgState) error
 	}
+	Source    SourceMetadata
 	LimitMode vm.LimitMode
 	LimitCaps vm.LimitCaps
 	Index     *typesys.Index
@@ -122,6 +125,14 @@ func NewWithStore(org *storage.OrgState, store interface{ Save(storage.OrgState)
 	return &Server{Org: org, Store: store}
 }
 
+func NewWithSource(org *storage.OrgState, source SourceMetadata) *Server {
+	return &Server{Org: org, Source: source}
+}
+
+func NewWithStoreAndSource(org *storage.OrgState, store interface{ Save(storage.OrgState) error }, source SourceMetadata) *Server {
+	return &Server{Org: org, Store: store, Source: source}
+}
+
 func (s *Server) SetProjectIndex(index typesys.Index) {
 	s.Index = &index
 }
@@ -198,7 +209,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case len(rest) >= 1 && rest[0] == "jobs":
 		s.handleBulkJobs(w, r, parts[2], rest[1:])
 	case len(rest) >= 1 && rest[0] == "metadata":
-		writeUnsupportedMetadataREST(w, r, parts[2], rest[1:])
+		s.handleMetadataREST(w, r, parts[2], rest[1:])
 	case len(rest) >= 1 && rest[0] == "composite":
 		s.handleComposite(w, r, parts[2], rest[1:])
 	case len(rest) >= 1 && rest[0] == "oaer":
@@ -613,7 +624,11 @@ func (s *Server) handleObject(w http.ResponseWriter, r *http.Request, version st
 			return
 		}
 		if isCompactLayoutsRoute(parts) {
-			writeJSON(w, http.StatusOK, compactLayoutsPayload(object.Definition))
+			writeJSON(w, http.StatusOK, s.compactLayoutsPayload(object.Definition, parts))
+			return
+		}
+		if s.hasLayoutMetadata(objectName) {
+			writeJSON(w, http.StatusOK, s.layoutMetadataPayload(object.Definition, version, parts))
 			return
 		}
 		writeSalesforceError(w, errUnsupportedFeature, "Full SObject layout and layout-adjacent metadata is not modeled in the local server; use describe fields and compactLayouts stub data instead")
@@ -644,10 +659,10 @@ func (s *Server) handleObject(w http.ResponseWriter, r *http.Request, version st
 			return
 		}
 		if isListViewCollectionRoute(parts) {
-			writeJSON(w, http.StatusOK, listViewsPayload(object.Definition, version))
+			writeJSON(w, http.StatusOK, s.listViewsPayload(object.Definition, version))
 			return
 		}
-		writeSalesforceError(w, errUnsupportedFeature, "SObject list view describe and result execution are not modeled in the local server; collection discovery returns an empty local stub")
+		s.handleListViewMetadata(w, object, version, parts)
 	case len(parts) == 2 && parts[1] == "recent" && r.Method == http.MethodGet:
 		object, ok := s.Org.Objects[objectName]
 		if !ok {
@@ -1179,9 +1194,9 @@ func (s *Server) handleTooling(w http.ResponseWriter, r *http.Request, version s
 	case len(parts) == 1 && parts[0] == "executeAnonymous":
 		s.handleExecuteAnonymous(w, r)
 	case len(parts) == 1 && parts[0] == "query":
-		s.handleQuery(w, r, version, "tooling/query", false)
+		s.handleToolingQuery(w, r, version, false)
 	case len(parts) == 1 && parts[0] == "queryAll":
-		s.handleQuery(w, r, version, "tooling/query", true)
+		s.handleToolingQuery(w, r, version, true)
 	case len(parts) == 2 && parts[0] == "query":
 		s.handleQueryMore(w, r, parts[1])
 	case len(parts) == 1 && parts[0] == "search":
@@ -1195,13 +1210,45 @@ func (s *Server) handleTooling(w http.ResponseWriter, r *http.Request, version s
 			writeMethodNotAllowed(w, http.MethodGet)
 			return
 		}
-		writeSalesforceError(w, errUnsupportedFeature, "Tooling sObject discovery is not implemented in the local server")
+		if !s.Source.hasData() {
+			writeSalesforceError(w, errUnsupportedFeature, "Tooling sObject discovery is not implemented in the local server")
+			return
+		}
+		writeJSON(w, http.StatusOK, s.toolingSObjectsPayload(version))
 	case len(parts) == 3 && parts[0] == "sobjects" && parts[2] == "describe":
 		if r.Method != http.MethodGet {
 			writeMethodNotAllowed(w, http.MethodGet)
 			return
 		}
-		writeSalesforceError(w, errUnsupportedFeature, "Tooling sObject describe for "+parts[1]+" is not implemented in the local server")
+		object, ok := s.Source.ToolingOrg.Objects[parts[1]]
+		if !ok {
+			if isToolingMetadataObject(parts[1]) {
+				writeSalesforceError(w, errUnsupportedFeature, "Tooling sObject describe for "+parts[1]+" is not implemented in the local server")
+				return
+			}
+			writeSalesforceError(w, errUnknownTooling)
+			return
+		}
+		writeJSON(w, http.StatusOK, toolingDescribePayload(object.Definition))
+	case len(parts) == 2 && parts[0] == "sobjects" && s.isModeledToolingObject(parts[1]):
+		if r.Method != http.MethodGet {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
+		object := s.Source.ToolingOrg.Objects[parts[1]]
+		writeJSON(w, http.StatusOK, toolingObjectResourcePayload(object.Definition, version))
+	case len(parts) == 3 && parts[0] == "sobjects" && s.isModeledToolingObject(parts[1]):
+		if r.Method != http.MethodGet {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
+		object := s.Source.ToolingOrg.Objects[parts[1]]
+		record, ok := object.Records[storage.ID(parts[2])]
+		if !ok {
+			writeSalesforceError(w, errUnknownRecord)
+			return
+		}
+		writeJSON(w, http.StatusOK, toolingRecordPayload(record, version))
 	case len(parts) == 2 && parts[0] == "sobjects" && isToolingMetadataObject(parts[1]):
 		writeUnsupportedToolingMetadata(w, r, parts[1], "object collection", toolingCollectionMethods(parts[1])...)
 	case len(parts) >= 3 && parts[0] == "sobjects" && isToolingMetadataObject(parts[1]):
@@ -1223,6 +1270,119 @@ func (s *Server) handleTooling(w http.ResponseWriter, r *http.Request, version s
 	default:
 		writeSalesforceError(w, errUnknownTooling)
 	}
+}
+
+func (s *Server) isModeledToolingObject(name string) bool {
+	if s.Source.ToolingOrg.Objects == nil {
+		return false
+	}
+	_, ok := s.Source.ToolingOrg.Objects[name]
+	return ok
+}
+
+func (s *Server) handleToolingQuery(w http.ResponseWriter, r *http.Request, version string, allRows bool) {
+	if r.Method != http.MethodGet {
+		writeMethodNotAllowed(w, http.MethodGet)
+		return
+	}
+	queryText := r.URL.Query().Get("q")
+	query, err := soql.Parse(queryText)
+	if err != nil {
+		writeSalesforceError(w, errMalformedQuery, err.Error())
+		return
+	}
+	if !s.isModeledToolingObject(query.Object) {
+		if _, ok := storage.ResolveObjectName(*s.Org, query.Object); ok {
+			s.handleQuery(w, r, version, "tooling/query", allRows)
+			return
+		}
+		writeSalesforceError(w, errUnsupportedFeature, "Tooling query for "+query.Object+" is not modeled in the local server")
+		return
+	}
+	query.AllRows = allRows
+	result, err := soql.Execute(s.Source.ToolingOrg, query)
+	if err != nil {
+		writeSalesforceError(w, errMalformedQuery, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, toolingQueryResultPayload(result.Rows, true, result.Records, version))
+}
+
+func (s *Server) toolingSObjectsPayload(version string) map[string]any {
+	base := "/services/data/" + version + "/tooling/sobjects/"
+	names := make([]string, 0, len(s.Source.ToolingOrg.Objects))
+	for name := range s.Source.ToolingOrg.Objects {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	objects := make([]map[string]any, 0, len(names))
+	for _, name := range names {
+		def := s.Source.ToolingOrg.Objects[name].Definition
+		objects = append(objects, map[string]any{
+			"name":         name,
+			"label":        labelOrFallback(def.Label, name),
+			"keyPrefix":    def.KeyPrefix,
+			"queryable":    true,
+			"retrieveable": true,
+			"createable":   false,
+			"updateable":   false,
+			"deletable":    false,
+			"url":          base + name,
+			"describe":     base + name + "/describe",
+		})
+	}
+	return map[string]any{"sobjects": objects}
+}
+
+func toolingDescribePayload(def storage.ObjectDefinition) map[string]any {
+	payload := describePayload(def, nil)
+	payload["createable"] = false
+	payload["updateable"] = false
+	payload["deletable"] = false
+	payload["custom"] = false
+	payload["retrieveable"] = true
+	return payload
+}
+
+func toolingObjectResourcePayload(def storage.ObjectDefinition, version string) map[string]any {
+	base := "/services/data/" + version + "/tooling/sobjects/" + def.APIName
+	return map[string]any{
+		"name":           def.APIName,
+		"label":          labelOrFallback(def.Label, def.APIName),
+		"keyPrefix":      def.KeyPrefix,
+		"objectDescribe": base + "/describe",
+		"describe":       base + "/describe",
+		"url":            base,
+		"urls": map[string]string{
+			"rowTemplate": base + "/{ID}",
+			"describe":    base + "/describe",
+		},
+	}
+}
+
+func toolingQueryResultPayload(totalSize int, done bool, records []storage.Record, version string) map[string]any {
+	return map[string]any{
+		"totalSize": totalSize,
+		"done":      done,
+		"records":   toolingRecordsPayload(records, version),
+	}
+}
+
+func toolingRecordsPayload(records []storage.Record, version string) []map[string]any {
+	out := make([]map[string]any, 0, len(records))
+	for _, record := range records {
+		out = append(out, toolingRecordPayload(record, version))
+	}
+	return out
+}
+
+func toolingRecordPayload(record storage.Record, version string) map[string]any {
+	objectName := record.Object
+	out := recordPayload(record, version, objectName, record.ID)
+	if attrs, ok := out["attributes"].(map[string]any); ok {
+		attrs["url"] = "/services/data/" + version + "/tooling/sobjects/" + objectName + "/" + string(record.ID)
+	}
+	return out
 }
 
 func isToolingMetadataObject(name string) bool {
@@ -1432,6 +1592,220 @@ func writeUnsupportedMetadataREST(w http.ResponseWriter, r *http.Request, versio
 		writeSalesforceError(w, errUnsupportedFeature, "Metadata REST deploy "+resource+" retrieval is not implemented in the local server; no deploy jobs are created locally")
 	default:
 		writeSalesforceError(w, errUnknownEndpoint)
+	}
+}
+
+func (s *Server) handleMetadataREST(w http.ResponseWriter, r *http.Request, version string, parts []string) {
+	switch {
+	case len(parts) == 0:
+		if !methodAllowed(r, http.MethodGet) {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
+		writeJSON(w, http.StatusOK, metadataRESTDiscoveryPayload(version))
+	case len(parts) == 1 && (parts[0] == "describe" || parts[0] == "describeMetadata"):
+		if !methodAllowed(r, http.MethodGet) {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
+		if !s.Source.hasData() {
+			writeSalesforceError(w, errUnsupportedFeature, metadataReadDiscoveryUnsupportedMessage(parts[0]))
+			return
+		}
+		writeJSON(w, http.StatusOK, s.describeMetadataPayload(version))
+	case len(parts) == 1 && parts[0] == "listMetadata":
+		if !methodAllowed(r, http.MethodGet) {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
+		if !s.Source.hasData() {
+			writeSalesforceError(w, errUnsupportedFeature, metadataReadDiscoveryUnsupportedMessage(parts[0]))
+			return
+		}
+		writeJSON(w, http.StatusOK, s.listMetadataPayload(r))
+	case len(parts) == 1 && parts[0] == "components":
+		if !methodAllowed(r, http.MethodGet) {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
+		if !s.Source.hasData() {
+			writeSalesforceError(w, errUnsupportedFeature, metadataReadDiscoveryUnsupportedMessage(parts[0]))
+			return
+		}
+		writeJSON(w, http.StatusOK, s.metadataComponentsPayload("", ""))
+	case len(parts) == 2 && parts[0] == "components":
+		if !methodAllowed(r, http.MethodGet) {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
+		if !s.Source.hasData() {
+			writeSalesforceError(w, errUnsupportedFeature, "Metadata REST component read and discovery are not implemented in the local server; use source files and oaer inspect/check for local metadata state")
+			return
+		}
+		writeJSON(w, http.StatusOK, s.metadataComponentsPayload(parts[1], ""))
+	case len(parts) == 3 && parts[0] == "components":
+		if !methodAllowed(r, http.MethodGet) {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
+		if !s.Source.hasData() {
+			writeSalesforceError(w, errUnsupportedFeature, "Metadata REST component read and discovery are not implemented in the local server; use source files and oaer inspect/check for local metadata state")
+			return
+		}
+		component, ok := s.Source.componentBy[metadataComponentKey(parts[1], parts[2])]
+		if !ok {
+			writeSalesforceError(w, errUnknownEndpoint, "metadata component not found")
+			return
+		}
+		writeJSON(w, http.StatusOK, s.metadataComponentPayload(component, true))
+	default:
+		writeUnsupportedMetadataREST(w, r, version, parts)
+	}
+}
+
+func (s *Server) describeMetadataPayload(version string) map[string]any {
+	counts := make(map[string]int)
+	for _, component := range s.Source.Components {
+		counts[component.Type]++
+	}
+	types := make([]string, 0, len(counts))
+	for typ := range counts {
+		types = append(types, typ)
+	}
+	sort.Strings(types)
+	objects := make([]map[string]any, 0, len(types))
+	for _, typ := range types {
+		objects = append(objects, map[string]any{
+			"xmlName":        typ,
+			"directoryName":  metadataDirectoryName(typ),
+			"inFolder":       false,
+			"metaFile":       metadataTypeHasMetaFile(typ),
+			"childXmlNames":  []string{},
+			"suffix":         metadataSuffix(typ),
+			"localFileCount": counts[typ],
+		})
+	}
+	return map[string]any{
+		"metadataObjects":       objects,
+		"organizationNamespace": s.Source.Project.Namespace,
+		"partialSaveAllowed":    false,
+		"testRequired":          false,
+		"version":               version,
+	}
+}
+
+func (s *Server) listMetadataPayload(r *http.Request) map[string]any {
+	typ := strings.TrimSpace(firstNonEmptyQuery(r.URL.Query(), "type", "typeName", "metadataType"))
+	components := make([]map[string]any, 0)
+	for _, component := range s.Source.Components {
+		if typ != "" && !strings.EqualFold(component.Type, typ) {
+			continue
+		}
+		components = append(components, metadataFileProperties(component))
+	}
+	return map[string]any{
+		"result": components,
+		"size":   len(components),
+	}
+}
+
+func (s *Server) metadataComponentsPayload(typ, fullName string) map[string]any {
+	components := make([]map[string]any, 0)
+	for _, component := range s.Source.Components {
+		if typ != "" && !strings.EqualFold(component.Type, typ) {
+			continue
+		}
+		if fullName != "" && !strings.EqualFold(component.FullName, fullName) {
+			continue
+		}
+		components = append(components, s.metadataComponentPayload(component, false))
+	}
+	return map[string]any{"components": components, "size": len(components)}
+}
+
+func (s *Server) metadataComponentPayload(component metadataComponent, includeContent bool) map[string]any {
+	payload := metadataFileProperties(component)
+	payload["id"] = string(component.ID)
+	if includeContent {
+		if component.Content != "" {
+			payload["content"] = component.Content
+		} else if data, err := os.ReadFile(component.FileName); err == nil {
+			payload["content"] = string(data)
+		}
+	}
+	return payload
+}
+
+func metadataFileProperties(component metadataComponent) map[string]any {
+	return map[string]any{
+		"type":            component.Type,
+		"fullName":        component.FullName,
+		"fileName":        filepath.ToSlash(component.FileName),
+		"manageableState": "unmanaged",
+	}
+}
+
+func firstNonEmptyQuery(values url.Values, names ...string) string {
+	for _, name := range names {
+		if value := strings.TrimSpace(values.Get(name)); value != "" {
+			return value
+		}
+	}
+	return ""
+}
+
+func metadataDirectoryName(typ string) string {
+	switch typ {
+	case "ApexClass":
+		return "classes"
+	case "ApexTrigger":
+		return "triggers"
+	case "ApexPage":
+		return "pages"
+	case "ApexComponent":
+		return "components"
+	case "CustomObject", "CustomField", "RecordType", "ValidationRule", "ListView", "CompactLayout":
+		return "objects"
+	case "Layout":
+		return "layouts"
+	case "StaticResource":
+		return "staticresources"
+	case "Workflow":
+		return "workflows"
+	default:
+		return strings.ToLower(typ)
+	}
+}
+
+func metadataSuffix(typ string) string {
+	switch typ {
+	case "ApexClass":
+		return "cls"
+	case "ApexTrigger":
+		return "trigger"
+	case "ApexPage":
+		return "page"
+	case "ApexComponent":
+		return "component"
+	case "Layout":
+		return "layout"
+	case "ListView":
+		return "listView"
+	case "CompactLayout":
+		return "compactLayout"
+	case "StaticResource":
+		return "resource"
+	default:
+		return ""
+	}
+}
+
+func metadataTypeHasMetaFile(typ string) bool {
+	switch typ {
+	case "ApexClass", "ApexTrigger", "ApexPage", "ApexComponent", "StaticResource":
+		return true
+	default:
+		return strings.HasSuffix(typ, "Layout") || typ == "ListView"
 	}
 }
 
@@ -2991,12 +3365,196 @@ func listViewsPayload(def storage.ObjectDefinition, version string) map[string]a
 	}
 }
 
+func (s *Server) listViewsPayload(def storage.ObjectDefinition, version string) map[string]any {
+	views := s.Source.ListViews[def.APIName]
+	if len(views) == 0 {
+		return listViewsPayload(def, version)
+	}
+	items := make([]map[string]any, 0, len(views))
+	for _, view := range views {
+		base := "/services/data/" + version + "/sobjects/" + def.APIName + "/listviews/" + view.ID
+		items = append(items, map[string]any{
+			"id":            view.ID,
+			"developerName": view.DeveloperName,
+			"label":         view.Label,
+			"describeUrl":   base + "/describe",
+			"resultsUrl":    base + "/results",
+			"url":           base,
+		})
+	}
+	return map[string]any{
+		"done":       true,
+		"size":       len(items),
+		"listviews":  items,
+		"objectType": def.APIName,
+		"url":        "/services/data/" + version + "/sobjects/" + def.APIName + "/listviews",
+	}
+}
+
+func (s *Server) handleListViewMetadata(w http.ResponseWriter, object storage.ObjectState, version string, parts []string) {
+	if len(parts) != 4 || parts[1] != "listviews" {
+		writeSalesforceError(w, errUnsupportedFeature, "SObject list view describe and result execution are not modeled in the local server; collection discovery returns an empty local stub")
+		return
+	}
+	if len(s.Source.ListViews[object.Definition.APIName]) == 0 {
+		writeSalesforceError(w, errUnsupportedFeature, "SObject list view describe and result execution are not modeled in the local server; collection discovery returns an empty local stub")
+		return
+	}
+	view, ok := s.findListView(object.Definition.APIName, parts[2])
+	if !ok {
+		writeSalesforceError(w, errUnknownEndpoint, "list view not found")
+		return
+	}
+	switch parts[3] {
+	case "describe":
+		writeJSON(w, http.StatusOK, s.listViewDescribePayload(object.Definition, version, view))
+	case "results":
+		writeJSON(w, http.StatusOK, s.listViewResultsPayload(object, version, view))
+	default:
+		writeSalesforceError(w, errUnknownEndpoint)
+	}
+}
+
+func (s *Server) findListView(objectName, idOrName string) (listViewMetadata, bool) {
+	for _, view := range s.Source.ListViews[objectName] {
+		if view.ID == idOrName || strings.EqualFold(view.DeveloperName, idOrName) {
+			return view, true
+		}
+	}
+	return listViewMetadata{}, false
+}
+
+func (s *Server) listViewDescribePayload(def storage.ObjectDefinition, version string, view listViewMetadata) map[string]any {
+	columns := view.Columns
+	if len(columns) == 0 {
+		columns = []string{"Id"}
+		if _, ok := def.Fields["Name"]; ok {
+			columns = append(columns, "Name")
+		}
+	}
+	displayColumns := make([]map[string]any, 0, len(columns))
+	for _, column := range columns {
+		displayColumns = append(displayColumns, map[string]any{
+			"fieldNameOrPath": column,
+			"label":           column,
+			"sortable":        true,
+		})
+	}
+	query := "SELECT " + strings.Join(columns, ", ") + " FROM " + def.APIName
+	base := "/services/data/" + version + "/sobjects/" + def.APIName + "/listviews/" + view.ID
+	return map[string]any{
+		"id":             view.ID,
+		"developerName":  view.DeveloperName,
+		"label":          view.Label,
+		"sobjectType":    def.APIName,
+		"columns":        columns,
+		"displayColumns": displayColumns,
+		"query":          query,
+		"describeUrl":    base + "/describe",
+		"resultsUrl":     base + "/results",
+		"url":            base,
+	}
+}
+
+func (s *Server) listViewResultsPayload(object storage.ObjectState, version string, view listViewMetadata) map[string]any {
+	columns := view.Columns
+	if len(columns) == 0 {
+		columns = []string{"Id"}
+		if _, ok := object.Definition.Fields["Name"]; ok {
+			columns = append(columns, "Name")
+		}
+	}
+	ids := make([]string, 0, len(object.Records))
+	for id, record := range object.Records {
+		if !record.System.IsDeleted {
+			ids = append(ids, string(id))
+		}
+	}
+	sort.Strings(ids)
+	rows := make([]map[string]any, 0, len(ids))
+	for _, idText := range ids {
+		record := object.Records[storage.ID(idText)]
+		rows = append(rows, projectedRecordPayload(record, version, object.Definition.APIName, record.ID, columns))
+	}
+	return map[string]any{
+		"id":         view.ID,
+		"label":      view.Label,
+		"size":       len(rows),
+		"done":       true,
+		"columns":    columns,
+		"records":    rows,
+		"query":      "SELECT " + strings.Join(columns, ", ") + " FROM " + object.Definition.APIName,
+		"listViewId": view.ID,
+	}
+}
+
 func compactLayoutsPayload(def storage.ObjectDefinition) map[string]any {
 	return map[string]any{
 		"compactLayouts":         []map[string]any{},
 		"defaultCompactLayoutId": nil,
 		"objectType":             def.APIName,
 		"message":                "Compact layout metadata is not modeled; returning an empty local stub.",
+	}
+}
+
+func (s *Server) compactLayoutsPayload(def storage.ObjectDefinition, parts []string) map[string]any {
+	layouts := s.Source.Compact[def.APIName]
+	if len(layouts) == 0 {
+		return compactLayoutsPayload(def)
+	}
+	items := make([]map[string]any, 0, len(layouts))
+	for _, layout := range layouts {
+		items = append(items, map[string]any{
+			"id":            layout.ID,
+			"developerName": layout.DeveloperName,
+			"label":         layout.Label,
+			"fields":        layout.Fields,
+			"objectType":    def.APIName,
+		})
+	}
+	defaultID := layouts[0].ID
+	payload := map[string]any{
+		"compactLayouts":         items,
+		"defaultCompactLayoutId": defaultID,
+		"objectType":             def.APIName,
+	}
+	if len(parts) == 4 {
+		for _, item := range items {
+			if item["id"] == parts[3] || strings.EqualFold(fmt.Sprint(item["developerName"]), parts[3]) {
+				return item
+			}
+		}
+	}
+	return payload
+}
+
+func (s *Server) hasLayoutMetadata(objectName string) bool {
+	return len(s.Source.Layouts[objectName]) > 0
+}
+
+func (s *Server) layoutMetadataPayload(def storage.ObjectDefinition, version string, parts []string) map[string]any {
+	layouts := s.Source.Layouts[def.APIName]
+	items := make([]map[string]any, 0, len(layouts))
+	for _, layout := range layouts {
+		base := "/services/data/" + version + "/sobjects/" + def.APIName + "/namedLayouts/" + url.PathEscape(layout.Name)
+		items = append(items, map[string]any{
+			"id":         layout.ID,
+			"name":       layout.Name,
+			"objectType": def.APIName,
+			"url":        base,
+		})
+	}
+	if len(parts) == 3 && parts[1] == "namedLayouts" {
+		for _, item := range items {
+			if strings.EqualFold(fmt.Sprint(item["name"]), parts[2]) {
+				return item
+			}
+		}
+	}
+	return map[string]any{
+		"layouts":    items,
+		"objectType": def.APIName,
+		"url":        "/services/data/" + version + "/sobjects/" + def.APIName + "/describe/layouts",
 	}
 }
 
