@@ -25,6 +25,7 @@ func TestRegisterProjectRuntimeCompilesUnicodeStaticMapFieldInitializer(t *testi
     private static final Map<String, String> CountryMap = new Map<String, String> {
         'ÅLAND'=>'AX',
         'L\'ANDORRE'=>'AD',
+        'BYELARUS\''=>'BY',
         'UNITED STATES'=>'US',
         'US'=>'US'
     };
@@ -51,11 +52,11 @@ func TestRegisterProjectRuntimeCompilesUnicodeStaticMapFieldInitializer(t *testi
 	if err := RegisterProjectRuntimeForRequest(machine, index); err != nil {
 		t.Fatal(err)
 	}
-	value, err := machine.CallStatic("Countries.lookupCountry", []vm.Value{vm.String("US")})
+	value, err := machine.CallStatic("Countries.lookupCountry", []vm.Value{vm.String("BYELARUS'")})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if value.Kind != vm.ValueString || value.Text != "US" {
-		t.Fatalf("lookupCountry = %#v, want US", value)
+	if value.Kind != vm.ValueString || value.Text != "BY" {
+		t.Fatalf("lookupCountry = %#v, want BY", value)
 	}
 }

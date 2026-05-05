@@ -99,7 +99,7 @@ func lex(source string) ([]token, error) {
 				if source[i] == '\\' && i+1 < len(source) {
 					switch source[i+1] {
 					case '\'':
-						if i+2 < len(source) && source[i+2] == '\'' {
+						if i+2 < len(source) && source[i+2] == '\'' && i+3 < len(source) && isIdentPart(source[i+3]) {
 							text.WriteByte('\\')
 							text.WriteByte('\'')
 							i += 3

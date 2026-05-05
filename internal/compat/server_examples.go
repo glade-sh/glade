@@ -172,6 +172,7 @@ func runServerExampleProbes(root, projectPath string, fixture storage.Fixture, p
 	applyServerExampleSchema(&org, loadedSchema)
 	ensureServerExampleLocalAccount(&org)
 	ensureServerExampleLocalEntity(&org)
+	ensureServerExampleLocalOrder(&org)
 	ensureServerExampleNimbleAMSSettings(&org)
 	ensureServerExampleVerifiableSetupData(&org)
 	if err := storage.ApplyFixture(&org, fixture); err != nil {
@@ -217,6 +218,7 @@ func serverExampleHandler(org *storage.OrgState, store interface{ Save(storage.O
 	applyServerExampleSchema(org, loadedSchema)
 	ensureServerExampleLocalAccount(org)
 	ensureServerExampleLocalEntity(org)
+	ensureServerExampleLocalOrder(org)
 	ensureServerExampleNimbleAMSSettings(org)
 	ensureServerExampleVerifiableSetupData(org)
 	handler := server.NewWithStoreAndSource(org, store, source)
@@ -481,6 +483,34 @@ func ensureServerExampleLocalEntity(org *storage.OrgState) {
 	org.Objects[objectName] = entity
 }
 
+func ensureServerExampleLocalOrder(org *storage.OrgState) {
+	objectName, ok := storage.ResolveObjectName(*org, "Order__c")
+	if !ok {
+		return
+	}
+	order := org.Objects[objectName]
+	if order.Records == nil {
+		order.Records = make(map[storage.ID]storage.Record)
+	}
+	id := storage.ID("a0o000000000001AAA")
+	if _, ok := order.Records[id]; ok {
+		org.Objects[objectName] = order
+		return
+	}
+	order.Records[id] = storage.Record{
+		ID:     id,
+		Object: objectName,
+		Fields: map[string]storage.Value{
+			serverExampleFieldName(org, objectName, "Name"):                 storage.StringValue("Local Probe Order"),
+			serverExampleFieldName(org, objectName, "BillTo__c"):            storage.IDValue("001000000000001AAA"),
+			serverExampleFieldName(org, objectName, "Entity__c"):            storage.IDValue("a0f000000000001AAA"),
+			serverExampleFieldName(org, objectName, "GrandTotal__c"):        storage.DecimalValue("0"),
+			serverExampleFieldName(org, objectName, "ConfirmationEmail__c"): storage.StringValue("local@example.test"),
+		},
+	}
+	org.Objects[objectName] = order
+}
+
 func ensureServerExampleNimbleAMSSettings(org *storage.OrgState) {
 	objectName, ok := storage.ResolveObjectName(*org, "NimbleAMSSettings__c")
 	if !ok {
@@ -622,7 +652,7 @@ func serverExampleApexRESTBody(path, method string) string {
 	case strings.Contains(path, "webhookEvents"):
 		return `{"providerId":"local-provider","id":"local-credential","currentVerification":{"id":"local-verification","trigger":"Manual"},"status":"Active"}`
 	case strings.Contains(path, "selfservice/cart/build"):
-		return `{"OrderId":"001000000000001AAA"}`
+		return `{"OrderId":"a0o000000000001AAA"}`
 	case strings.Contains(path, "selfservice/cart/submit"):
 		return `{"Cart":{"attributes":{"type":"Cart__c"},"Data__c":"{}","Entity2__c":"a0f000000000001AAA","TransactionDate__c":"2026-01-01"},"CartItems":[],"CartItemLines":[],"CartPayments":[],"CartPaymentLines":[]}`
 	case strings.Contains(path, "selfservice/coupon"):
