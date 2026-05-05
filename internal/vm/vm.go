@@ -5320,7 +5320,17 @@ func daysInMonth(year int, month time.Month) int {
 }
 
 func parseDatetimeText(text string) (time.Time, error) {
-	for _, layout := range []string{time.RFC3339Nano, "2006-01-02 15:04:05.000", "2006-01-02 15:04:05", "2006-01-02T15:04:05.000", "2006-01-02T15:04:05"} {
+	for _, layout := range []string{
+		time.RFC3339Nano,
+		"2006-01-02 15:04:05.999999999Z07:00",
+		"2006-01-02 15:04:05.999999999Z0700",
+		"2006-01-02 15:04:05Z07:00",
+		"2006-01-02 15:04:05Z0700",
+		"2006-01-02 15:04:05.000",
+		"2006-01-02 15:04:05",
+		"2006-01-02T15:04:05.000",
+		"2006-01-02T15:04:05",
+	} {
 		if value, err := time.Parse(layout, text); err == nil {
 			if err := validateDateParts(value.Year(), int(value.Month()), value.Day()); err != nil {
 				return time.Time{}, err

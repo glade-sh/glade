@@ -2248,6 +2248,27 @@ System.assertEquals(36000000, sydney.getOffset(summerNoon));
 	}
 }
 
+func TestExecDatetimeParsesSpaceSeparatedUtcOffsetText(t *testing.T) {
+	program, err := CompileAnonymous(`
+Datetime unixEpoch = Datetime.valueOfGmt('1970-01-01 00:00:00Z');
+System.assertEquals('1970-01-01T00:00:00Z', unixEpoch.formatGmt());
+Datetime leapDay = Datetime.valueOfGmt('2024-02-29 23:59:58Z');
+System.assertEquals('2024-02-29T23:59:58Z', leapDay.formatGmt());
+Datetime fractional = Datetime.valueOfGmt('2024-02-29 23:59:58.250Z');
+System.assertEquals('2024-02-29T23:59:58.25Z', fractional.formatGmt());
+Datetime offset = Datetime.valueOfGmt('2024-02-29 18:29:58-05:30');
+System.assertEquals('2024-02-29T23:59:58Z', offset.formatGmt());
+Datetime assigned = '2024-02-29 23:59:58+0000';
+System.assertEquals('2024-02-29T23:59:58Z', assigned.formatGmt());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDatetimePatternFormatting(t *testing.T) {
 	program, err := CompileAnonymous(`
 Datetime stamp = Datetime.valueOfGmt('2024-02-29T23:05:06.250Z');
