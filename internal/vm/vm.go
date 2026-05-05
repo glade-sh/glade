@@ -7134,17 +7134,7 @@ func (vm *VM) lookup(name string) (Value, error) {
 }
 
 func (vm *VM) lookupThisFieldRoot(this Value, name string) (Value, Field, string, bool) {
-	actualName := name
-	if _, ok := this.Fields[actualName]; !ok {
-		normalized := strings.ToLower(name)
-		for candidate := range this.Fields {
-			if strings.ToLower(candidate) == normalized {
-				actualName = candidate
-				break
-			}
-		}
-	}
-	root, ok := this.Fields[actualName]
+	actualName, root, ok := objectFieldValue(this, name)
 	if !ok {
 		return Null, Field{}, "", false
 	}
@@ -7157,6 +7147,22 @@ func (vm *VM) lookupThisFieldRoot(this Value, name string) (Value, Field, string
 		field.Name = actualName
 	}
 	return root, field, owner, true
+}
+
+func objectFieldValue(object Value, name string) (string, Value, bool) {
+	if object.Kind != ValueObject || object.Fields == nil {
+		return "", Null, false
+	}
+	if value, ok := object.Fields[name]; ok {
+		return name, value, true
+	}
+	normalized := strings.ToLower(name)
+	for candidate, value := range object.Fields {
+		if strings.ToLower(candidate) == normalized {
+			return candidate, value, true
+		}
+	}
+	return "", Null, false
 }
 
 func (vm *VM) lookupGlobalName(name string) (string, bool) {
@@ -7418,6 +7424,16 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 				current = value
 				continue
 			}
+			if _, value, ok := objectFieldValue(current, field.Name); ok {
+				current = value
+				continue
+			}
+			if _, value, ok := objectFieldValue(current, part); ok {
+				current = value
+				continue
+			}
+			current = Null
+			continue
 		}
 		canonicalPart := vm.resolveSObjectFieldName(current.Type, part)
 		value, ok := current.Fields[canonicalPart]
@@ -7509,8 +7525,8 @@ func (vm *VM) assign(name string, value Value) error {
 		}
 	}
 	if this, ok := vm.Globals["this"]; ok && this.Kind == ValueObject {
-		if field, ok := this.Fields[name]; ok {
-			if def, owner, ok := vm.lookupReceiverField(this.Type, name); ok {
+		if actualName, field, ok := objectFieldValue(this, name); ok {
+			if def, owner, ok := vm.lookupReceiverField(this.Type, actualName); ok {
 				if err := vm.checkMemberAccess(owner, def.Access, owner+"."+name); err != nil {
 					return err
 				}
@@ -7522,7 +7538,7 @@ func (vm *VM) assign(name string, value Value) error {
 				if def.Setter != nil {
 					key := owner + "." + name
 					if vm.activeSetters[key] > 0 {
-						this.Fields[name] = value
+						this.Fields[actualName] = value
 						return nil
 					}
 					vm.activeSetters[key]++
@@ -7537,7 +7553,7 @@ func (vm *VM) assign(name string, value Value) error {
 				}
 			}
 			_ = field
-			this.Fields[name] = value
+			this.Fields[actualName] = value
 			return nil
 		}
 	}
@@ -7599,6 +7615,9 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 			return fmt.Errorf("cannot assign field %s on %s", part, current.Kind)
 		}
 		next, ok := current.Fields[vm.resolveSObjectFieldName(current.Type, part)]
+		if !ok {
+			_, next, ok = objectFieldValue(current, part)
+		}
 		if !ok || next.Kind != ValueObject {
 			return fmt.Errorf("unknown field %q on %s", part, current.Type)
 		}
@@ -7614,9 +7633,12 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 	if reason, ok := sobjectReadOnlyReason(current); ok {
 		return fmt.Errorf("cannot modify read-only %s", reason)
 	}
-	class := vm.Classes[current.Type]
-	if def, ok := class.Fields[fieldName]; ok {
-		if err := vm.checkMemberAccess(class.Name, def.Access, class.Name+"."+fieldName); err != nil {
+	if def, owner, ok := vm.lookupField(current.Type, fieldName); ok {
+		actualName := def.Name
+		if actualName == "" {
+			actualName = fieldName
+		}
+		if err := vm.checkMemberAccess(owner, def.Access, owner+"."+actualName); err != nil {
 			return err
 		}
 		coerced, err := vm.coerceAssignable(def.Type, value)
@@ -7628,6 +7650,8 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 			_, err := vm.callMethodWithReceiver(*def.Setter, current, []Value{value}, resultForLookup())
 			return err
 		}
+		current.Fields[actualName] = value
+		return nil
 	}
 	current.Fields[vm.resolveSObjectFieldName(current.Type, fieldName)] = value
 	return nil
@@ -7640,7 +7664,19 @@ func (vm *VM) lookupField(typeName, fieldName string) (Field, string, bool) {
 			return Field{}, "", false
 		}
 		if field, ok := class.Fields[fieldName]; ok {
+			if field.Name == "" {
+				field.Name = fieldName
+			}
 			return field, class.Name, true
+		}
+		normalized := strings.ToLower(fieldName)
+		for candidate, field := range class.Fields {
+			if strings.ToLower(candidate) == normalized || (field.Name != "" && strings.ToLower(field.Name) == normalized) {
+				if field.Name == "" {
+					field.Name = candidate
+				}
+				return field, class.Name, true
+			}
 		}
 		typeName = class.SuperClass
 	}
