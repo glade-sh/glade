@@ -6994,8 +6994,8 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 	for _, recordType := range definition.RecordTypes {
 		value := recordTypeInfoValue(recordType)
 		recordTypes = append(recordTypes, value)
-		if recordType.Name != "" {
-			byName.Map[mapKey(String(recordType.Name))] = value
+		if name := recordTypeName(recordType); name != "" {
+			byName.Map[mapKey(String(name))] = value
 		}
 		if recordType.DeveloperName != "" {
 			byDeveloperName.Map[mapKey(String(recordType.DeveloperName))] = value
@@ -7005,6 +7005,13 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 	desc.Fields["recordTypeInfosByName"] = byName
 	desc.Fields["recordTypeInfosByDeveloperName"] = byDeveloperName
 	return desc
+}
+
+func recordTypeName(recordType storage.RecordTypeInfo) string {
+	if recordType.Name != "" {
+		return recordType.Name
+	}
+	return recordType.DeveloperName
 }
 
 func isNameFieldDescribe(field storage.Field) bool {
@@ -7034,7 +7041,7 @@ func recordTypeInfoValue(recordType storage.RecordTypeInfo) Value {
 	value := Object("Schema.RecordTypeInfo")
 	value.Fields["recordTypeId"] = String(recordType.ID.String())
 	value.Fields["developerName"] = String(recordType.DeveloperName)
-	value.Fields["name"] = String(recordType.Name)
+	value.Fields["name"] = String(recordTypeName(recordType))
 	value.Fields["active"] = Bool(recordType.Active)
 	value.Fields["available"] = Bool(recordType.Available)
 	value.Fields["default"] = Bool(recordType.Default)
@@ -7568,13 +7575,35 @@ func (vm *VM) lookupSObjectFieldToken(parts []string) (Value, bool) {
 
 func (vm *VM) callSchemaSObjectTypePath(callee string, args []Value, result *Result) (Value, bool, error) {
 	parts := strings.Split(callee, ".")
-	if len(parts) < 4 || !strings.EqualFold(parts[len(parts)-2], "fields") || !strings.EqualFold(parts[len(parts)-1], "getMap") {
+	if len(parts) >= 4 && strings.EqualFold(parts[len(parts)-2], "fields") && strings.EqualFold(parts[len(parts)-1], "getMap") {
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("%s expects 0 arguments", callee)
+		}
+		tokenParts := parts[:len(parts)-2]
+		token, ok := vm.lookupSObjectTypeToken(tokenParts)
+		if !ok {
+			return Null, false, nil
+		}
+		describe, updated, mutated, handled, err := vm.callPlatformObjectMember(token, "getDescribe", nil, result)
+		if err != nil || !handled {
+			return describe, true, err
+		}
+		_ = updated
+		_ = mutated
+		fields, ok := describe.Fields["fields"]
+		if !ok {
+			return Null, true, fmt.Errorf("%s describe fields are not available", callee)
+		}
+		value, _, _, _, err := vm.callPlatformObjectMember(fields, "getMap", nil, result)
+		return value, true, err
+	}
+	if len(parts) < 4 || !schemaSObjectTypeDescribeForwardMethod(parts[len(parts)-1]) {
 		return Null, false, nil
 	}
 	if len(args) != 0 {
 		return Null, true, fmt.Errorf("%s expects 0 arguments", callee)
 	}
-	tokenParts := parts[:len(parts)-2]
+	tokenParts := parts[:len(parts)-1]
 	token, ok := vm.lookupSObjectTypeToken(tokenParts)
 	if !ok {
 		return Null, false, nil
@@ -7585,12 +7614,12 @@ func (vm *VM) callSchemaSObjectTypePath(callee string, args []Value, result *Res
 	}
 	_ = updated
 	_ = mutated
-	fields, ok := describe.Fields["fields"]
-	if !ok {
-		return Null, true, fmt.Errorf("%s describe fields are not available", callee)
-	}
-	value, _, _, _, err := vm.callPlatformObjectMember(fields, "getMap", nil, result)
+	value, _, _, _, err := vm.callPlatformObjectMember(describe, parts[len(parts)-1], nil, result)
 	return value, true, err
+}
+
+func schemaSObjectTypeDescribeForwardMethod(method string) bool {
+	return strings.EqualFold(method, "getRecordTypeInfosByName")
 }
 
 func (vm *VM) callDottedReceiverMember(callee string, args []Value, result *Result) (Value, bool, error) {
@@ -12148,7 +12177,8 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	case "RestResponse":
 		return callRestResponseMember(receiver, method, args)
 	case "Schema.SObjectType":
-		if method == "getDescribe" {
+		switch method {
+		case "getDescribe":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectType.getDescribe expects 0 arguments")
 			}
@@ -12171,6 +12201,19 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				"object":    objectName,
 			})
 			return vm.describeSObjectValue(objectName, vm.Org.Objects[objectName].Definition), receiver, false, true, nil
+		case "getRecordTypeInfosByName":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectType.getRecordTypeInfosByName expects 0 arguments")
+			}
+			describe, _, _, handled, err := vm.callPlatformObjectMember(receiver, "getDescribe", nil, result)
+			if err != nil || !handled {
+				return describe, receiver, false, true, err
+			}
+			value, _, _, handled, err := vm.callPlatformObjectMember(describe, method, nil, result)
+			if err != nil || !handled {
+				return value, receiver, false, true, err
+			}
+			return value, receiver, false, true, nil
 		}
 	case "Schema.SObjectFieldMap":
 		if method == "getMap" {

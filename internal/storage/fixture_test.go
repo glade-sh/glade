@@ -259,6 +259,43 @@ func TestEnsureDeterministicPlatformDataSkipsUsedRecordTypeIDs(t *testing.T) {
 	}
 }
 
+func TestEnsureDeterministicPlatformDataSeedsCustomObjectRecordTypes(t *testing.T) {
+	org := NewOrgState()
+	org.Objects["Batch__c"] = ObjectState{
+		Definition: ObjectDefinition{
+			APIName:   "Batch__c",
+			KeyPrefix: "a00",
+			Fields:    map[string]Field{"Name": {APIName: "Name", Type: FieldString}},
+			RecordTypes: []RecordTypeInfo{
+				{DeveloperName: "Scheduled", Name: "Scheduled Batch", Active: true, Available: true, Default: true},
+				{DeveloperName: "Ad_Hoc", Active: true, Available: true},
+			},
+		},
+		Records: make(map[ID]Record),
+	}
+	EnsureDeterministicPlatformData(&org)
+
+	recordTypes := org.Objects["Batch__c"].Definition.RecordTypes
+	if len(recordTypes) != 2 {
+		t.Fatalf("Batch__c record types = %#v", recordTypes)
+	}
+	if recordTypes[0].ID == "" || recordTypes[0].Name != "Scheduled Batch" {
+		t.Fatalf("first record type = %#v", recordTypes[0])
+	}
+	if recordTypes[1].ID == "" || recordTypes[1].Name != "Ad_Hoc" {
+		t.Fatalf("second record type = %#v", recordTypes[1])
+	}
+	recordTypeRecords := org.Objects["RecordType"].Records
+	first := recordTypeRecords[recordTypes[0].ID]
+	if first.Fields["SobjectType"].String != "Batch__c" || first.Fields["Name"].String != "Scheduled Batch" || !first.Fields["IsActive"].Boolean {
+		t.Fatalf("first RecordType seed = %#v", first)
+	}
+	second := recordTypeRecords[recordTypes[1].ID]
+	if second.Fields["SobjectType"].String != "Batch__c" || second.Fields["Name"].String != "Ad_Hoc" {
+		t.Fatalf("second RecordType seed = %#v", second)
+	}
+}
+
 func TestEnsureDeterministicPlatformDataAdvancesRecordTypeSequenceToMaxID(t *testing.T) {
 	org := NewOrgState()
 	org.Objects["RecordType"] = ObjectState{

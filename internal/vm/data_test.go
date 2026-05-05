@@ -427,6 +427,77 @@ System.assert(!consumer.isDefaultRecordTypeMapping());
 	}
 }
 
+func TestExecSObjectTypeRecordTypeInfosByNameForCustomObject(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String,Object> byName = Schema.SObjectType.Batch__c.getRecordTypeInfosByName();
+System.assertEquals(2, byName.size());
+Object scheduled = byName.get('Scheduled Batch');
+System.assertEquals('Scheduled Batch', scheduled.getName());
+System.assertEquals('Scheduled', scheduled.getDeveloperName());
+System.assertEquals('012000000000101', scheduled.getRecordTypeId());
+System.assert(scheduled.isActive());
+System.assert(scheduled.isAvailable());
+System.assert(scheduled.isDefaultRecordTypeMapping());
+Object adHoc = byName.get('Ad_Hoc');
+System.assertEquals('Ad_Hoc', adHoc.getName());
+System.assertEquals('Ad_Hoc', adHoc.getDeveloperName());
+System.assertEquals('012000000000102', adHoc.getRecordTypeId());
+System.assert(!adHoc.isDefaultRecordTypeMapping());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Batch__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Batch__c",
+			Label:     "Batch",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+			RecordTypes: []storage.RecordTypeInfo{
+				{ID: "012000000000101", DeveloperName: "Scheduled", Name: "Scheduled Batch", Active: true, Available: true, Default: true},
+				{ID: "012000000000102", DeveloperName: "Ad_Hoc", Active: true, Available: true},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSObjectTypeRecordTypeInfosByNameEmptyForCustomObject(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String,Object> byName = Schema.SObjectType.Batch__c.getRecordTypeInfosByName();
+System.assertEquals(0, byName.size());
+System.assertEquals(null, byName.get('Scheduled Batch'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Batch__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Batch__c",
+			Label:     "Batch",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecGlobalDescribeReturnsSObjectTypeTokens(t *testing.T) {
 	program, err := CompileAnonymous(`
 Map<String,Object> describes = Schema.getGlobalDescribe();
