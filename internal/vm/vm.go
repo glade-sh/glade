@@ -1903,8 +1903,6 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return Null, fmt.Errorf("URL.getCurrentRequestUrl expects 0 arguments")
 		}
 		return Null, unsupportedCallError(callee + " local current request URL surface")
-	case "CurrenciesApi.v1.syncCurrencyWithRelatedRecord":
-		return currenciesApiSyncCurrencyWithRelatedRecord(args)
 	case "Test.setMock":
 		return vm.testSetMock(args)
 	case "Test.createStub":
@@ -2001,19 +1999,6 @@ func (vm *VM) salesforceBaseURL() string {
 		return vm.serverBaseURL
 	}
 	return "https://local.oaer.example"
-}
-
-func currenciesApiSyncCurrencyWithRelatedRecord(args []Value) (Value, error) {
-	if len(args) != 2 {
-		return Null, fmt.Errorf("CurrenciesApi.v1.syncCurrencyWithRelatedRecord expects record list and Schema.SObjectField")
-	}
-	if args[0].Kind != ValueList && args[0].Kind != ValueObject {
-		return Null, fmt.Errorf("CurrenciesApi.v1.syncCurrencyWithRelatedRecord expects record list or SObject record")
-	}
-	if args[1].Kind != ValueObject || args[1].Type != "Schema.SObjectField" {
-		return Null, fmt.Errorf("CurrenciesApi.v1.syncCurrencyWithRelatedRecord expects Schema.SObjectField")
-	}
-	return Null, nil
 }
 
 func exprReceiverName(expr ir.Expr) string {

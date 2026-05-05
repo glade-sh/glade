@@ -495,7 +495,6 @@ var stdlibEntries = []StdlibEntry{
 	{Area: "URL", API: "URL.getRef", Status: StatusSupported, Notes: "Returns parsed fragment for local URL values."},
 	{Area: "URL", API: "URL.getSalesforceBaseUrl", Status: StatusSupported, Notes: "Returns the request base URL during Apex REST execution, otherwise the deterministic local base URL."},
 	{Area: "URL", API: "URL.toExternalForm", Status: StatusSupported, Notes: "Returns the stored local URL string."},
-	{Area: "CurrenciesApi", API: "CurrenciesApi.v1.syncCurrencyWithRelatedRecord", Status: StatusStub, Notes: "Explicit local no-op for package currency field sync; record mutation and related-record currency side effects are not modeled."},
 	{Area: "Unsupported", API: "unimplemented platform/stdlib calls", Status: StatusSupported, Notes: "Typed UnsupportedFeature errors with stable message text."},
 	{Area: "UserInfo", API: "UserInfo.getFirstName", Status: StatusSupported, Notes: "Returns the current runAs, server, or default local user FirstName with deterministic fallback."},
 	{Area: "UserInfo", API: "UserInfo.getLanguage", Status: StatusSupported, Notes: "Returns the current runAs/server user LanguageLocaleKey or deterministic en_US default; it does not enable locale-sensitive formatting."},

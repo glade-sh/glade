@@ -1753,19 +1753,6 @@ System.assertEquals('https://trail.example.test:8443', orgUrl.toString());
 	}
 }
 
-func TestCurrenciesApiV1SyncCurrencyWithRelatedRecordNoOp(t *testing.T) {
-	machine := New(nil)
-	record := Object("Account")
-	record.Fields["Name"] = String("Acme")
-	records := List(record)
-	if _, err := machine.call("CurrenciesApi.v1.syncCurrencyWithRelatedRecord", []Value{records, sObjectFieldToken("Account", "Name")}, nil, &Result{}); err != nil {
-		t.Fatal(err)
-	}
-	if got := records.List[0].Fields["Name"]; got.Kind != ValueString || got.Text != "Acme" {
-		t.Fatalf("record name = %#v", got)
-	}
-}
-
 func TestExecRunAsScopesSupportedMixedDMLMode(t *testing.T) {
 	fails, err := CompileAnonymous(`
 insert new User(Username = 'setup@example.test');
