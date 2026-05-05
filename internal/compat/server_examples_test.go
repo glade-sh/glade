@@ -181,6 +181,60 @@ func TestServerExampleProbeOverlayKeepsCartOrderScoped(t *testing.T) {
 	}
 }
 
+func TestServerExampleProbeOverlayKeepsEmailEncryptionSettingsScoped(t *testing.T) {
+	base := storage.NewOrgState()
+	applyServerExampleSchema(&base, schema.Schema{Objects: []schema.Object{{Name: "NimbleAMSSettings__c"}}})
+
+	emailOrg := base.Clone()
+	applyServerExampleProbeOverlay(&emailOrg, serverExampleProbe{Path: "/services/apexrest/selfservice/email/SocialVerify"})
+	settings := emailOrg.Objects["NimbleAMSSettings__c"].Records
+	if len(settings) != 1 {
+		t.Fatalf("email settings records = %#v", settings)
+	}
+	for _, record := range settings {
+		if record.Fields["AESEncryptionKey__c"].String == "" || record.Fields["AESEncryptionIV__c"].String == "" {
+			t.Fatalf("email encryption fields = %#v", record.Fields)
+		}
+	}
+
+	settingsOrg := base.Clone()
+	applyServerExampleProbeOverlay(&settingsOrg, serverExampleProbe{Path: "/services/apexrest/selfservice/settings/LoginType"})
+	if records := settingsOrg.Objects["NimbleAMSSettings__c"].Records; len(records) != 0 {
+		t.Fatalf("settings probe encryption records = %#v", records)
+	}
+}
+
+func TestServerExampleProbeOverlayKeepsWebhookProviderScoped(t *testing.T) {
+	base := storage.NewOrgState()
+	applyServerExampleSchema(&base, schema.Schema{Objects: []schema.Object{
+		{Name: "Account"},
+		{Name: "NimbleAMSSettings__c"},
+		{Name: "Setup_Data__c"},
+	}})
+
+	webhookOrg := base.Clone()
+	applyServerExampleProbeOverlay(&webhookOrg, serverExampleProbe{Path: "/services/apexrest/webhookEvents"})
+	accounts := webhookOrg.Objects["Account"].Records
+	provider := accounts[storage.ID("001000000000002AAA")]
+	if provider.Fields["Name"].String != "local-provider" {
+		t.Fatalf("webhook provider account = %#v", accounts)
+	}
+	setup := webhookOrg.Objects["Setup_Data__c"].Records[storage.ID("a0v000000000001AAA")]
+	if mappings := setup.Fields["Data_Mappings__c"].String; !strings.Contains(mappings, `"tpField":"providerId","sfField":"Name"`) {
+		t.Fatalf("webhook mappings = %s", mappings)
+	}
+
+	createOrg := base.Clone()
+	applyServerExampleProbeOverlay(&createOrg, serverExampleProbe{Path: "/services/apexrest/webhookevent/create"})
+	if _, ok := createOrg.Objects["Account"].Records[storage.ID("001000000000002AAA")]; ok {
+		t.Fatalf("webhook create provider leaked = %#v", createOrg.Objects["Account"].Records)
+	}
+	setup = createOrg.Objects["Setup_Data__c"].Records[storage.ID("a0v000000000001AAA")]
+	if mappings := setup.Fields["Data_Mappings__c"].String; !strings.Contains(mappings, `"tpField":"providerId","sfField":"Id"`) {
+		t.Fatalf("webhook create mappings = %s", mappings)
+	}
+}
+
 func localTestDir(t *testing.T, prefix string) string {
 	t.Helper()
 	dir, err := os.MkdirTemp(".", prefix+"-*")
