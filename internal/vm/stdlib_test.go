@@ -902,11 +902,37 @@ System.assertEquals('e477384d7ca229dd1426e64b63ebf2d36ebd6d7e669a6735424e72ea6c0
 System.assert(Crypto.areEqualConstantTime(hello, Blob.valueOf('hello')));
 System.assert(!Crypto.areEqualConstantTime(hello, Blob.valueOf('hullo')));
 System.assert(!Crypto.areEqualConstantTime(hello, Blob.valueOf('hello!')));
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecCryptoGetRandomLongDeterministicLocalSequence(t *testing.T) {
+	program, err := CompileAnonymous(`
+Long first = Crypto.getRandomLong();
+Long second = Crypto.getRandomLong();
+System.assertEquals(-2152535657050944081, first);
+System.assertEquals(7960286522194355700, second);
+System.assertNotEquals(first, second);
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	repeated, err := CompileAnonymous(`
+System.assertEquals(-2152535657050944081, Crypto.getRandomLong());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(repeated, nil); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -1444,11 +1470,6 @@ func TestBlobEncodingCryptoStdlibUnsupportedCryptoSurfaces(t *testing.T) {
 			name: "getRandomInteger",
 			src:  "Crypto.getRandomInteger();",
 			want: `unsupported call "Crypto.getRandomInteger local deterministic random/key generation surface"`,
-		},
-		{
-			name: "getRandomLong",
-			src:  "Crypto.getRandomLong();",
-			want: `unsupported call "Crypto.getRandomLong local deterministic random/key generation surface"`,
 		},
 	}
 	for _, tc := range tests {

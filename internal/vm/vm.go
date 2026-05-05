@@ -79,6 +79,7 @@ type VM struct {
 	ctx              context.Context
 	activeSetters    map[string]int
 	triggerGlobals   map[string]Value
+	cryptoRandomSeq  uint64
 }
 
 const maxTriggerDepth = 16
@@ -1614,8 +1615,13 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 	case "Crypto.encrypt", "Crypto.decrypt", "Crypto.encryptWithManagedIV", "Crypto.decryptWithManagedIV",
 		"Crypto.sign", "Crypto.signWithCertificate", "Crypto.verify", "Crypto.verifyWithCertificate":
 		return Null, unsupportedCallError(callee + " local deterministic key, certificate, and encryption surfaces")
-	case "Crypto.generateAESKey", "Crypto.getRandomInteger", "Crypto.getRandomLong":
+	case "Crypto.generateAESKey", "Crypto.getRandomInteger":
 		return Null, unsupportedCallError(callee + " local deterministic random/key generation surface")
+	case "Crypto.getRandomLong":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Crypto.getRandomLong expects 0 arguments")
+		}
+		return Int(vm.nextDeterministicCryptoLong()), nil
 	case "JSON.createGenerator":
 		if len(args) != 1 || args[0].Kind != ValueBool {
 			return Null, fmt.Errorf("JSON.createGenerator expects Boolean")
@@ -1893,6 +1899,15 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		}
 		return Null, unsupportedCallError(callee)
 	}
+}
+
+func (vm *VM) nextDeterministicCryptoLong() int64 {
+	vm.cryptoRandomSeq += 0x9e3779b97f4a7c15
+	z := vm.cryptoRandomSeq
+	z = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9
+	z = (z ^ (z >> 27)) * 0x94d049bb133111eb
+	z ^= z >> 31
+	return int64(z)
 }
 
 func unsupportedIntegrationSurface(callee string) (string, bool) {
