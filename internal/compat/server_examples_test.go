@@ -9,6 +9,7 @@ import (
 
 	"github.com/open-aer/oaer/internal/schema"
 	"github.com/open-aer/oaer/internal/storage"
+	"github.com/open-aer/oaer/internal/vm"
 )
 
 func TestServerExampleHarnessReportsSeedsRoutesAndBlockers(t *testing.T) {
@@ -215,7 +216,18 @@ func TestServerExampleProbeOverlayKeepsWebhookProviderScoped(t *testing.T) {
 		{Name: "Account"},
 		{Name: "NimbleAMSSettings__c"},
 		{Name: "Setup_Data__c"},
+		{Name: "VerifiableEnvironment__mdt"},
+		{
+			Name:               "Setup_Settings__c",
+			CustomSettingsType: "Hierarchy",
+			Fields: []schema.Field{
+				{Name: "SetupOwnerId", Type: "Text"},
+				{Name: "Environment__c", Type: "Text"},
+				{Name: "IsInternalOrg__c", Type: "Checkbox"},
+			},
+		},
 	}})
+	base.Namespace = "verifiable"
 
 	webhookOrg := base.Clone()
 	applyServerExampleProbeOverlay(&webhookOrg, serverExampleProbe{Path: "/services/apexrest/webhookEvents"})
@@ -228,6 +240,11 @@ func TestServerExampleProbeOverlayKeepsWebhookProviderScoped(t *testing.T) {
 	if mappings := setup.Fields["Data_Mappings__c"].String; !strings.Contains(mappings, `"tpField":"providerId","sfField":"Name"`) {
 		t.Fatalf("webhook mappings = %s", mappings)
 	}
+	env := webhookOrg.Objects["VerifiableEnvironment__mdt"].Records[storage.ID("m0e000000000001AAA")]
+	if endpoint := env.Fields["Endpoint__c"].String; endpoint == "" {
+		t.Fatalf("webhook environment = %#v", webhookOrg.Objects["VerifiableEnvironment__mdt"].Records)
+	}
+	assertServerExampleSetupSettingsOrgDefault(t, webhookOrg)
 
 	createOrg := base.Clone()
 	applyServerExampleProbeOverlay(&createOrg, serverExampleProbe{Path: "/services/apexrest/webhookevent/create"})
@@ -237,6 +254,23 @@ func TestServerExampleProbeOverlayKeepsWebhookProviderScoped(t *testing.T) {
 	setup = createOrg.Objects["Setup_Data__c"].Records[storage.ID("a0v000000000001AAA")]
 	if mappings := setup.Fields["Data_Mappings__c"].String; !strings.Contains(mappings, `"tpField":"providerId","sfField":"Id"`) {
 		t.Fatalf("webhook create mappings = %s", mappings)
+	}
+	assertServerExampleSetupSettingsOrgDefault(t, createOrg)
+}
+
+func assertServerExampleSetupSettingsOrgDefault(t *testing.T, org storage.OrgState) {
+	t.Helper()
+	program, err := vm.CompileAnonymous(`
+System.assertEquals('Production', Setup_Settings__c.getOrgDefaults().Environment__c);
+System.assertEquals(false, Setup_Settings__c.getOrgDefaults().IsInternalOrg__c);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := vm.New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 

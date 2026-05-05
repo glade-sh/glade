@@ -10,6 +10,7 @@ import (
 	"github.com/open-aer/oaer/internal/diagnostic"
 	"github.com/open-aer/oaer/internal/project"
 	oaerschema "github.com/open-aer/oaer/internal/schema"
+	"github.com/open-aer/oaer/internal/storage"
 	"github.com/open-aer/oaer/internal/testreport"
 	"github.com/open-aer/oaer/internal/typesys"
 	"github.com/open-aer/oaer/internal/vm"
@@ -1592,6 +1593,93 @@ public class StaticMapProbe {
 	}
 	if value.Kind != vm.ValueString || value.Text != "AD" {
 		t.Fatalf("lookup = %#v, want AD", value)
+	}
+}
+
+func TestProjectRuntimeInitializesStaticFieldsInSourceOrder(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/StaticConstants.cls"), `
+public class StaticConstants {
+  public static final Boolean IsInternal = false;
+  public static final String Endpoint = StaticEndpointService.getEndpoint();
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/StaticEndpointService.cls"), `
+public class StaticEndpointService {
+  public static String getEndpoint() {
+    if (StaticConstants.IsInternal) {
+      return 'internal';
+    }
+    return 'external';
+  }
+}
+`)
+	machine := vm.New(nil)
+	if err := RegisterProjectRuntimeForRequest(machine, loadTestIndex(t, root)); err != nil {
+		t.Fatal(err)
+	}
+	value, err := machine.CallStatic("StaticEndpointService.getEndpoint", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if value.Kind != vm.ValueString || value.Text != "external" {
+		t.Fatalf("endpoint = %#v, want external", value)
+	}
+}
+
+func TestProjectRuntimeStaticFieldInitializerCanReadHierarchyCustomSetting(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/StaticSettings.cls"), `
+public class StaticSettings {
+  public static final Boolean IsInternal = Setup_Settings__c.getOrgDefaults().IsInternalOrg__c;
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/objects/Setup_Settings__c/Setup_Settings__c.object-meta.xml"), `
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+  <customSettingsType>Hierarchy</customSettingsType>
+  <label>Setup Settings</label>
+</CustomObject>
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/objects/Setup_Settings__c/fields/IsInternalOrg__c.field-meta.xml"), `
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>IsInternalOrg__c</fullName>
+  <type>Checkbox</type>
+</CustomField>
+`)
+	org := storage.NewOrgState()
+	org.Objects["Setup_Settings__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:  "Setup_Settings__c",
+			Metadata: map[string]string{"kind": "customSetting", "customSettingsType": "Hierarchy"},
+			Fields: map[string]storage.Field{
+				"SetupOwnerId":     {APIName: "SetupOwnerId", Type: storage.FieldString},
+				"IsInternalOrg__c": {APIName: "IsInternalOrg__c", Type: storage.FieldBoolean},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a0s000000000001": {
+				ID:     "a0s000000000001",
+				Object: "Setup_Settings__c",
+				Fields: map[string]storage.Value{
+					"SetupOwnerId":     storage.StringValue("00D000000000001"),
+					"IsInternalOrg__c": storage.BooleanValue(false),
+				},
+			},
+		},
+	}
+	machine := vm.New(nil)
+	machine.SetOrg(&org)
+	if err := RegisterProjectRuntimeForRequest(machine, loadTestIndex(t, root)); err != nil {
+		t.Fatal(err)
+	}
+	program, err := vm.CompileAnonymous(`System.assertEquals(false, StaticSettings.IsInternal);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 

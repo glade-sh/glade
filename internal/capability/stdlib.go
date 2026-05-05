@@ -508,4 +508,5 @@ var stdlibEntries = []StdlibEntry{
 	{Area: "UserInfo", API: "UserInfo.getUserEmail", Status: StatusSupported, Notes: "Returns the current runAs, server, or default local user Email with deterministic fallback."},
 	{Area: "UserInfo", API: "UserInfo.getUserId", Status: StatusSupported, Notes: "Returns the current runAs, server, or default local user ID with deterministic fallback."},
 	{Area: "UserInfo", API: "UserInfo.getUserName", Status: StatusSupported, Notes: "Returns the current runAs, server, or default local user Username, falling back to the user ID."},
+	{Area: "UserInfo", API: "UserInfo.isMultiCurrencyOrganization", Status: StatusSupported, Notes: "Returns the deterministic local false value; org-level multi-currency modeling is not yet configurable."},
 }

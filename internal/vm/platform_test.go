@@ -1589,6 +1589,7 @@ System.runAs(new User(Id = '005-user-a', ProfileId = '00e-profile-a', Username =
   System.assertEquals('', UserInfo.getSessionId());
   System.assertEquals('de_DE', UserInfo.getLocale());
   System.assertEquals('fr', UserInfo.getLanguage());
+  System.assertEquals(false, UserInfo.isMultiCurrencyOrganization());
   TimeZone tz = UserInfo.getTimeZone();
   System.assertEquals('UTC', tz.getID());
   System.assertEquals('UTC', tz.getDisplayName());

@@ -434,11 +434,15 @@ func applyServerExampleProbeOverlay(org *storage.OrgState, probe serverExamplePr
 	if strings.Contains(path, "webhookEvents") {
 		ensureServerExampleLocalAccount(org)
 		ensureServerExampleWebhookProviderAccount(org)
+		ensureServerExampleVerifiableEnvironment(org)
+		ensureServerExampleSetupSettings(org)
 		ensureServerExampleNimbleAMSSettings(org)
 		ensureServerExampleVerifiableSetupData(org, "Name")
 	}
 	if strings.Contains(path, "webhookevent/create") {
 		ensureServerExampleLocalAccount(org)
+		ensureServerExampleVerifiableEnvironment(org)
+		ensureServerExampleSetupSettings(org)
 		ensureServerExampleNimbleAMSSettings(org)
 		ensureServerExampleVerifiableSetupData(org, "Id")
 	}
@@ -619,6 +623,80 @@ func ensureServerExampleVerifiableSetupData(org *storage.OrgState, providerIDFie
 		},
 	}
 	org.Objects[objectName] = setup
+}
+
+func ensureServerExampleVerifiableEnvironment(org *storage.OrgState) {
+	objectName, ok := storage.ResolveObjectName(*org, "VerifiableEnvironment__mdt")
+	if !ok {
+		return
+	}
+	env := org.Objects[objectName]
+	if env.Records == nil {
+		env.Records = make(map[storage.ID]storage.Record)
+	}
+	for _, seed := range []struct {
+		id       storage.ID
+		name     string
+		endpoint string
+		internal string
+	}{
+		{
+			id:       "m0e000000000001AAA",
+			name:     "Production",
+			endpoint: "https://discovery.verifiable.example.test/api/",
+			internal: "https://internal.verifiable.example.test/api/",
+		},
+		{
+			id:       "m0e000000000002AAA",
+			name:     "Staging",
+			endpoint: "https://discovery-staging.verifiable.example.test/api/",
+			internal: "https://internal-staging.verifiable.example.test/api/",
+		},
+	} {
+		if _, ok := env.Records[seed.id]; ok {
+			continue
+		}
+		env.Records[seed.id] = storage.Record{
+			ID:     seed.id,
+			Object: objectName,
+			Fields: map[string]storage.Value{
+				serverExampleFieldName(org, objectName, "DeveloperName"):       storage.StringValue(seed.name),
+				serverExampleFieldName(org, objectName, "MasterLabel"):         storage.StringValue(seed.name),
+				serverExampleFieldName(org, objectName, "Label"):               storage.StringValue(seed.name),
+				serverExampleFieldName(org, objectName, "QualifiedApiName"):    storage.StringValue(seed.name),
+				serverExampleFieldName(org, objectName, "Endpoint__c"):         storage.StringValue(seed.endpoint),
+				serverExampleFieldName(org, objectName, "EndpointInternal__c"): storage.StringValue(seed.internal),
+			},
+		}
+	}
+	org.Objects[objectName] = env
+}
+
+func ensureServerExampleSetupSettings(org *storage.OrgState) {
+	objectName, ok := storage.ResolveObjectName(*org, "Setup_Settings__c")
+	if !ok {
+		return
+	}
+	settings := org.Objects[objectName]
+	if settings.Records == nil {
+		settings.Records = make(map[storage.ID]storage.Record)
+	}
+	if len(settings.Records) > 0 {
+		org.Objects[objectName] = settings
+		return
+	}
+	id := storage.ID("a0s000000000001AAA")
+	settings.Records[id] = storage.Record{
+		ID:     id,
+		Object: objectName,
+		Fields: map[string]storage.Value{
+			serverExampleFieldName(org, objectName, "Name"):             storage.StringValue("Default"),
+			serverExampleFieldName(org, objectName, "SetupOwnerId"):     storage.StringValue(serverExampleOrgID(org)),
+			serverExampleFieldName(org, objectName, "Environment__c"):   storage.StringValue("Production"),
+			serverExampleFieldName(org, objectName, "IsInternalOrg__c"): storage.BooleanValue(false),
+		},
+	}
+	org.Objects[objectName] = settings
 }
 
 func serverExampleVerifiableDataMappings(providerIDField string) string {

@@ -1047,13 +1047,19 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 			entry.Fields["__value"] = value
 			return entry, nil
 		}
-		if strings.HasPrefix(expr.Callee, "__field:") {
+		if strings.HasPrefix(expr.Callee, "__field:") || strings.HasPrefix(expr.Callee, "__safe_field:") {
 			if expr.Left == nil {
 				return Null, fmt.Errorf("field access requires receiver")
 			}
 			receiver, err := vm.eval(*expr.Left, result)
 			if err != nil {
 				return Null, err
+			}
+			if strings.HasPrefix(expr.Callee, "__safe_field:") {
+				if receiver.Kind == ValueNull {
+					return Null, nil
+				}
+				return vm.lookupPath(receiver, []string{strings.TrimPrefix(expr.Callee, "__safe_field:")})
 			}
 			return vm.lookupPath(receiver, []string{strings.TrimPrefix(expr.Callee, "__field:")})
 		}
@@ -1084,7 +1090,14 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 		}
 		if hasReceiver {
 			receiverName := exprReceiverName(*expr.Left)
-			value, handled, err := vm.callValueMember(receiverName, receiver, expr.Callee, args, result)
+			callee := expr.Callee
+			if strings.HasPrefix(callee, "__safe_call:") {
+				if receiver.Kind == ValueNull {
+					return Null, nil
+				}
+				callee = strings.TrimPrefix(callee, "__safe_call:")
+			}
+			value, handled, err := vm.callValueMember(receiverName, receiver, callee, args, result)
 			if handled || err != nil {
 				return value, err
 			}
@@ -2089,6 +2102,11 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return Null, fmt.Errorf("UserInfo.getTimeZone expects 0 arguments")
 		}
 		return fixedTimeZone(vm.currentUserTimeZoneID())
+	case "UserInfo.isMultiCurrencyOrganization":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("UserInfo.isMultiCurrencyOrganization expects 0 arguments")
+		}
+		return Bool(false), nil
 	default:
 		if strings.HasPrefix(callee, "Crypto.") {
 			return Null, unsupportedCallError(callee + " local key, certificate, encryption, and random surfaces")

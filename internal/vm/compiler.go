@@ -135,7 +135,7 @@ func lex(source string) ([]token, error) {
 					i += 2
 					goto next
 				case "?.":
-					tokens = append(tokens, token{kind: tokenSymbol, text: ".", pos: start})
+					tokens = append(tokens, token{kind: tokenSymbol, text: "?.", pos: start})
 					i += 2
 					goto next
 				}
@@ -930,21 +930,30 @@ func (p *parser) parsePostfix(expr ir.Expr) (ir.Expr, error) {
 			expr = ir.Expr{Kind: ir.ExprCall, Callee: "get", Args: []ir.Expr{index}, Left: &receiver}
 			continue
 		}
-		if p.match(tokenSymbol, ".") {
+		if p.matchAnySymbol(".", "?.") {
+			safe := p.tokens[p.pos-1].text == "?."
 			member, err := p.expect(tokenIdent, "")
 			if err != nil {
 				return ir.Expr{}, err
 			}
 			receiver := expr
 			if !p.match(tokenSymbol, "(") {
-				expr = ir.Expr{Kind: ir.ExprCall, Callee: "__field:" + member.text, Left: &receiver}
+				prefix := "__field:"
+				if safe {
+					prefix = "__safe_field:"
+				}
+				expr = ir.Expr{Kind: ir.ExprCall, Callee: prefix + member.text, Left: &receiver}
 				continue
 			}
 			args, err := p.parseArguments()
 			if err != nil {
 				return ir.Expr{}, err
 			}
-			expr = ir.Expr{Kind: ir.ExprCall, Callee: member.text, Args: args, Left: &receiver}
+			callee := member.text
+			if safe {
+				callee = "__safe_call:" + callee
+			}
+			expr = ir.Expr{Kind: ir.ExprCall, Callee: callee, Args: args, Left: &receiver}
 			continue
 		}
 		break

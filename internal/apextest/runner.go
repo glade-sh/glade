@@ -766,6 +766,9 @@ func compileFieldInitializer(typeName, fieldName string, r diagnostic.Range, sou
 	if expr == "" {
 		return vm.Value{}, false
 	}
+	if !canEvaluateFieldInitializerEagerly(expr) {
+		return vm.Value{}, false
+	}
 	program, err := vm.CompileAnonymous(typeName + " __field = " + expr + ";")
 	if err != nil {
 		return vm.Value{}, false
@@ -777,6 +780,17 @@ func compileFieldInitializer(typeName, fieldName string, r diagnostic.Range, sou
 	}
 	value, ok := result.Vars["__field"]
 	return value, ok
+}
+
+func canEvaluateFieldInitializerEagerly(expr string) bool {
+	expr = strings.TrimSpace(expr)
+	if expr == "" {
+		return false
+	}
+	if strings.ContainsAny(expr, "().[]?:+-*/<>") {
+		return false
+	}
+	return true
 }
 
 func compileFieldInitializerMethod(className, fieldName string, static bool, file string, r diagnostic.Range, source string) (vm.Method, bool) {

@@ -73,6 +73,9 @@ String value = 'trail';
 // A line comment should not become divide tokens.
 /* Nor should a block comment. */
 System.assertEquals('trail', value?.toString());
+String missing = null;
+System.assertEquals(null, missing?.toString());
+System.assertEquals(null, missing?.length());
 `)
 	if err != nil {
 		t.Fatal(err)
