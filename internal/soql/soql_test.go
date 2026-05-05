@@ -103,6 +103,39 @@ func TestExecuteEmailTemplateStandardObjectQuery(t *testing.T) {
 	}
 }
 
+func TestExecuteCustomMetadataDeveloperNameField(t *testing.T) {
+	org := storage.NewOrgState()
+	definition := storage.ObjectDefinition{
+		APIName:  "Feature__mdt",
+		Metadata: map[string]string{"kind": "customMetadata"},
+		Fields: map[string]storage.Field{
+			"Enabled__c": {APIName: "Enabled__c", Type: storage.FieldBoolean},
+		},
+	}
+	storage.EnsureStandardObjectFields(&definition)
+	org.Objects["Feature__mdt"] = storage.ObjectState{
+		Definition: definition,
+		Records: map[storage.ID]storage.Record{
+			"a00000000000001": {
+				ID:     "a00000000000001",
+				Object: "Feature__mdt",
+				Fields: map[string]storage.Value{
+					"DeveloperName": storage.StringValue("Default"),
+					"Enabled__c":    storage.BooleanValue(true),
+				},
+			},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT Id, DeveloperName FROM Feature__mdt WHERE DeveloperName = 'Default'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 || result.Records[0].Fields["DeveloperName"].String != "Default" {
+		t.Fatalf("result = %#v", result)
+	}
+}
+
 func TestExecuteAggregateQueries(t *testing.T) {
 	org := aggregateTestOrg()
 

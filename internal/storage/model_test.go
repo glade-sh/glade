@@ -49,6 +49,34 @@ func TestEnsureStandardObjectFieldsAddsCustomObjectRecordTypeId(t *testing.T) {
 	}
 }
 
+func TestEnsureStandardObjectFieldsAddsCustomMetadataIdentityFields(t *testing.T) {
+	definition := ObjectDefinition{APIName: "Feature__mdt"}
+
+	EnsureStandardObjectFields(&definition)
+
+	for _, name := range []string{"DeveloperName", "MasterLabel", "NamespacePrefix", "QualifiedApiName"} {
+		field, ok := definition.Fields[name]
+		if !ok || field.Type != FieldString {
+			t.Fatalf("%s field = %#v, %v", name, field, ok)
+		}
+	}
+	if _, ok := definition.Fields["RecordTypeId"]; ok {
+		t.Fatalf("custom metadata should not get custom object RecordTypeId: %#v", definition.Fields["RecordTypeId"])
+	}
+}
+
+func TestEnsureStandardObjectFieldsDoesNotAddDeveloperNameToCustomObjectsOrSettings(t *testing.T) {
+	for _, definition := range []ObjectDefinition{
+		{APIName: "Webhook_Event__c"},
+		{APIName: "List_Setting__c", Metadata: map[string]string{"kind": "customSetting", "customSettingsType": "List"}},
+	} {
+		EnsureStandardObjectFields(&definition)
+		if _, ok := definition.Fields["DeveloperName"]; ok {
+			t.Fatalf("%s unexpectedly has DeveloperName", definition.APIName)
+		}
+	}
+}
+
 func TestCloneRecordDoesNotShareMutableFieldState(t *testing.T) {
 	original := Record{
 		ID:     "001000000000001",
