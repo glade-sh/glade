@@ -269,13 +269,13 @@ func coerceAssignable(typeName string, value Value) (Value, error) {
 		}
 		return Null, fmt.Errorf("cannot assign %s to %s", value.Type, typeName)
 	}
-	if strings.HasPrefix(typeName, "List<") && value.Kind == ValueList {
+	if collectionBase(typeName) == "List" && value.Kind == ValueList {
 		return coerceCollectionValue(typeName, value)
 	}
-	if strings.HasPrefix(typeName, "Set<") && value.Kind == ValueSet {
+	if collectionBase(typeName) == "Set" && value.Kind == ValueSet {
 		return coerceCollectionValue(typeName, value)
 	}
-	if strings.HasPrefix(typeName, "Map<") && value.Kind == ValueMap {
+	if isMapType(typeName) && value.Kind == ValueMap {
 		return coerceCollectionValue(typeName, value)
 	}
 	return Null, fmt.Errorf("cannot assign %s to %s", value.Kind, typeName)
@@ -346,13 +346,13 @@ func coerceCollectionValue(typeName string, value Value) (Value, error) {
 
 func constructValue(typeName string, args []Value) (Value, error) {
 	switch {
-	case strings.HasPrefix(typeName, "List<"):
+	case collectionBase(typeName) == "List":
 		value := List(args...)
 		return coerceCollectionValue(typeName, value)
-	case strings.HasPrefix(typeName, "Set<"):
+	case collectionBase(typeName) == "Set":
 		value := Set(args...)
 		return coerceCollectionValue(typeName, value)
-	case strings.HasPrefix(typeName, "Map<"):
+	case isMapType(typeName):
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Map constructor does not accept positional values")
 		}

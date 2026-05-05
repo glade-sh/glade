@@ -1006,6 +1006,39 @@ private class BindingShapeTest {
 	}
 }
 
+func TestRunExecutesLowercaseGenericListIsEmptyFromMethodReturn(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/BindingCaseProbe.cls"), `
+public class BindingCaseProbe {
+  public class Binding {
+    public String name;
+  }
+
+  public static list<Binding> retrieveBindings() {
+    list<Binding> bindings = new list<Binding>();
+    return bindings;
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/BindingCaseProbeTest.cls"), `
+@isTest
+private class BindingCaseProbeTest {
+  @isTest static void lowercaseListReturnSupportsIsEmpty() {
+    list<BindingCaseProbe.Binding> matchedBindings = BindingCaseProbe.retrieveBindings();
+    System.assert(matchedBindings.isEmpty());
+    matchedBindings.add(new BindingCaseProbe.Binding());
+    System.assert(!matchedBindings.isEmpty());
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
 func TestRunExecutesNestedTypesWithConstructorsInterfacesEnumsAndIdentity(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)

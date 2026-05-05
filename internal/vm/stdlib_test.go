@@ -2145,6 +2145,31 @@ System.assert(!counts.containsKey('b'));
 	}
 }
 
+func TestExecCollectionStdlibAcceptsLowercaseGenericTypeNames(t *testing.T) {
+	program, err := CompileAnonymous(`
+list<String> matchedBindings = new list<String>();
+System.assert(matchedBindings.isEmpty());
+matchedBindings.add('binding');
+System.assert(!matchedBindings.isEmpty());
+
+set<String> names = new set<String>();
+System.assert(names.isEmpty());
+names.add('acme');
+System.assert(!names.isEmpty());
+
+map<String, Integer> counts = new map<String, Integer>();
+System.assert(counts.isEmpty());
+counts.put('acme', 1);
+System.assert(!counts.isEmpty());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecCollectionStdlibMoreMethods(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<Integer> source = new List<Integer>{3, 1, 2};

@@ -3273,8 +3273,8 @@ func (vm *VM) executeSOQLForType(raw, typeName string, result *Result) (Value, e
 	if err != nil {
 		return Null, err
 	}
-	if strings.HasPrefix(typeName, "List<") || typeName == "Object" {
-		if strings.HasPrefix(typeName, "List<") {
+	if collectionBase(typeName) == "List" || typeName == "Object" {
+		if collectionBase(typeName) == "List" {
 			value.Type = typeName
 		}
 		return value, nil
@@ -6507,7 +6507,7 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 	if value, ok, err := typedScalarFromJSON(typeName, raw); ok || err != nil {
 		return value, err
 	}
-	if strings.HasPrefix(typeName, "List<") {
+	if collectionBase(typeName) == "List" {
 		items, ok := raw.([]any)
 		if !ok {
 			return Null, jsonTypeMappingError(typeName, raw)
@@ -6524,7 +6524,7 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 		}
 		return out, nil
 	}
-	if strings.HasPrefix(typeName, "Set<") {
+	if collectionBase(typeName) == "Set" {
 		items, ok := raw.([]any)
 		if !ok {
 			return Null, jsonTypeMappingError(typeName, raw)
@@ -6543,7 +6543,7 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 		}
 		return out, nil
 	}
-	if strings.HasPrefix(typeName, "Map<") {
+	if isMapType(typeName) {
 		fields, ok := raw.(map[string]any)
 		if !ok {
 			return Null, jsonTypeMappingError(typeName, raw)
@@ -8670,7 +8670,7 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 		typeName = resolved
 	}
 	switch {
-	case strings.HasPrefix(typeName, "List<"):
+	case collectionBase(typeName) == "List":
 		if len(namedArgs) > 0 {
 			return Null, fmt.Errorf("List constructor does not accept named fields")
 		}
@@ -8679,7 +8679,7 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 			return vm.coerceAssignable(typeName, value)
 		}
 		return vm.coerceAssignable(typeName, List(args...))
-	case strings.HasPrefix(typeName, "Set<"):
+	case collectionBase(typeName) == "Set":
 		if len(namedArgs) > 0 {
 			return Null, fmt.Errorf("Set constructor does not accept named fields")
 		}
@@ -8688,7 +8688,7 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 			return vm.coerceAssignable(typeName, value)
 		}
 		return vm.coerceAssignable(typeName, Set(args...))
-	case strings.HasPrefix(typeName, "Map<"):
+	case isMapType(typeName):
 		if len(namedArgs) != 0 {
 			return Null, fmt.Errorf("Map constructor does not accept named fields")
 		}
@@ -9572,14 +9572,32 @@ func (vm *VM) typeAssignableTo(from, to string) bool {
 }
 
 func collectionBase(typeName string) string {
+	base, ok := genericBaseName(typeName)
+	if !ok {
+		return ""
+	}
 	switch {
-	case strings.HasPrefix(typeName, "List<"):
+	case strings.EqualFold(base, "List"):
 		return "List"
-	case strings.HasPrefix(typeName, "Set<"):
+	case strings.EqualFold(base, "Set"):
 		return "Set"
 	default:
 		return ""
 	}
+}
+
+func isMapType(typeName string) bool {
+	base, ok := genericBaseName(typeName)
+	return ok && strings.EqualFold(base, "Map")
+}
+
+func genericBaseName(typeName string) (string, bool) {
+	typeName = strings.TrimSpace(typeName)
+	open := strings.IndexByte(typeName, '<')
+	if open < 0 || !strings.HasSuffix(typeName, ">") {
+		return "", false
+	}
+	return strings.TrimSpace(typeName[:open]), true
 }
 
 func (vm *VM) conversionScore(paramType string, value Value) int {
@@ -9611,7 +9629,7 @@ func (vm *VM) conversionScore(paramType string, value Value) int {
 		}
 		return -1
 	}
-	if strings.HasPrefix(valueType, "Map<") && strings.HasPrefix(paramType, "Map<") {
+	if isMapType(valueType) && isMapType(paramType) {
 		if vm.typeAssignableTo(valueType, paramType) {
 			return 900
 		}
@@ -10146,7 +10164,7 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 		}
 		return Null, fmt.Errorf("cannot assign %s to %s", value.Type, typeName)
 	}
-	if strings.HasPrefix(typeName, "List<") && value.Kind == ValueList {
+	if collectionBase(typeName) == "List" && value.Kind == ValueList {
 		value.Type = typeName
 		elementType, ok := collectionElementType(typeName)
 		if !ok {
@@ -10161,7 +10179,7 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 		}
 		return value, nil
 	}
-	if strings.HasPrefix(typeName, "Set<") && value.Kind == ValueSet {
+	if collectionBase(typeName) == "Set" && value.Kind == ValueSet {
 		value.Type = typeName
 		elementType, ok := collectionElementType(typeName)
 		if !ok {
@@ -10180,7 +10198,7 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 		value.Set = out
 		return value, nil
 	}
-	if strings.HasPrefix(typeName, "Map<") && value.Kind == ValueMap {
+	if isMapType(typeName) && value.Kind == ValueMap {
 		value.Type = typeName
 		keyType, valueType, ok := mapTypeArgs(typeName)
 		if !ok {
@@ -10493,7 +10511,7 @@ func defaultValue(typeName string, explicit Value) Value {
 		if (typeName == "Decimal" || typeName == "Double") && explicit.Kind == ValueInt {
 			return Decimal(float64(explicit.Int))
 		}
-		if strings.HasPrefix(typeName, "List<") || strings.HasPrefix(typeName, "Set<") || strings.HasPrefix(typeName, "Map<") {
+		if collectionBase(typeName) != "" || isMapType(typeName) {
 			if coerced, err := coerceCollectionValue(typeName, explicit); err == nil {
 				return coerced
 			}
