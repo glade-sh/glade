@@ -101,6 +101,18 @@ func (v Value) String() string {
 			}
 			return ""
 		}
+		if v.Type == "Schema.SObjectType" {
+			if objectName, ok := v.Fields["object"]; ok && objectName.Kind == ValueString {
+				return objectName.Text
+			}
+		}
+		if v.Type == "Schema.SObjectField" {
+			objectName, hasObject := v.Fields["object"]
+			fieldName, hasField := v.Fields["field"]
+			if hasObject && hasField && objectName.Kind == ValueString && fieldName.Kind == ValueString {
+				return objectName.Text + "." + fieldName.Text
+			}
+		}
 		if message, ok := v.Fields["message"]; ok && message.Kind == ValueString {
 			return message.Text
 		}

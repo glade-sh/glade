@@ -6944,7 +6944,11 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 	sort.Strings(fieldNames)
 	for _, fieldName := range fieldNames {
 		field := definition.Fields[fieldName]
-		fieldsMap.Map[mapKey(String(field.APIName))] = sObjectFieldToken(name, field.APIName)
+		token := sObjectFieldToken(name, field.APIName)
+		fieldsMap.Map[mapKey(String(field.APIName))] = token
+		if lowered := strings.ToLower(field.APIName); lowered != field.APIName {
+			fieldsMap.Map[mapKey(String(lowered))] = token
+		}
 	}
 	fields := Object("Schema.SObjectFieldMap")
 	fields.Fields["map"] = fieldsMap
