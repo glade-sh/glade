@@ -2210,6 +2210,19 @@ func TestExecDateTimeParsingRejectsInvalidText(t *testing.T) {
 	}
 }
 
+func TestExecDateTimeStringAssignmentPreservesFractionalSeconds(t *testing.T) {
+	program, err := CompileAnonymous(`
+Datetime dt = '2024-01-15T10:30:45.123Z';
+System.assertEquals('2024-01-15T10:30:45.123Z', dt.formatGmt());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecTimeZoneRejectsUnsupportedZones(t *testing.T) {
 	cases := []struct {
 		name string

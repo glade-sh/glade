@@ -1250,6 +1250,42 @@ System.assertEquals(3, quarterRows.size(), 'THIS_QUARTER should cover the curren
 	}
 }
 
+func TestExecMaterializesStoredDateFieldsForMethodDispatch(t *testing.T) {
+	echo, err := CompileAnonymous("return input.format();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+List<Account> rows = [SELECT Id, RenewalDate__c FROM Account WHERE Name = 'Acme'];
+System.assertEquals('2026-05-02', DateWorker.echo(rows[0].RenewalDate__c));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["RenewalDate__c"] = storage.Field{APIName: "RenewalDate__c", Type: storage.FieldDate}
+	record := storage.Record{ID: "001000000000001AAA", Object: "Account", Fields: map[string]storage.Value{
+		"Name": storage.StringValue("Acme"),
+	}}
+	record.Fields["RenewalDate__c"] = storage.DateValue("2026-05-02")
+	account.Records["001000000000001AAA"] = record
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{
+		Name: "DateWorker",
+		Methods: map[string]Method{
+			"echo": {Name: "DateWorker.echo", ClassName: "DateWorker", ReturnType: "String", Params: []Param{{Name: "input", Type: "Date"}}, IsStatic: true, Access: "public", Program: echo},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSOQLUnsupportedDateLiteralDiagnostic(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<Account> rows = [SELECT Id FROM Account WHERE CreatedDate = THIS_WEEK];

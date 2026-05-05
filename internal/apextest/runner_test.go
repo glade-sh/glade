@@ -518,6 +518,61 @@ private class PropertyBoxTest {
 	}
 }
 
+func TestRunExecutesStaticPropertyNestedSubclassManagerDispatch(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ManagerBase.cls"), `
+public abstract class ManagerBase {
+  public abstract String required();
+  public String callRequired() {
+    return required();
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/BatchManager.cls"), `
+public abstract class BatchManager extends ManagerBase {
+  public static BatchManager Instance {
+    get {
+      if (Instance == null) {
+        Instance = (BatchManager)new WithSharing();
+      }
+      return Instance;
+    }
+  }
+
+  public virtual override String required() {
+    return 'base';
+  }
+
+  public virtual String FindBatch(String source) {
+    return callRequired() + ':' + source;
+  }
+
+  private class WithSharing extends BatchManager {
+    public override String required() {
+      return super.required();
+    }
+    public override String FindBatch(String source) {
+      return super.FindBatch(source);
+    }
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/BatchManagerTest.cls"), `
+@isTest
+private class BatchManagerTest {
+  @isTest static void staticPropertyDispatches() {
+    System.assertEquals('base:SS', BatchManager.Instance.FindBatch('SS'));
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v run=%#v", got, run)
+	}
+}
+
 func TestRunExecutesOverloadedMethodsByArgumentTypes(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)

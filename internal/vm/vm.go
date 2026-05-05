@@ -997,13 +997,17 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		return value, err
 	}
 	if vm.currentClass != "" && !strings.Contains(callee, ".") {
-		if method, ok, ambiguous := vm.resolveInstanceMethodForArgs(vm.currentClass, callee, args); ok {
+		dispatchClass := vm.currentClass
+		receiver := Null
+		if this, ok := vm.Globals["this"]; ok {
+			receiver = this
+			if this.Kind == ValueObject && this.Type != "" {
+				dispatchClass = this.Type
+			}
+		}
+		if method, ok, ambiguous := vm.resolveInstanceMethodForArgs(dispatchClass, callee, args); ok {
 			if err := vm.checkMemberAccess(method.ClassName, method.Access, method.Name, method.Modifiers); err != nil {
 				return Null, err
-			}
-			receiver := Null
-			if this, ok := vm.Globals["this"]; ok {
-				receiver = this
 			}
 			if vm.shouldEnqueueFuture(method) {
 				return vm.enqueueFuture(method, args, result)
@@ -4372,8 +4376,12 @@ func vmValueFromStorage(value storage.Value) Value {
 	switch value.Kind {
 	case storage.ValueNull:
 		return Null
-	case storage.ValueString, storage.ValueDate, storage.ValueDateTime:
+	case storage.ValueString:
 		return String(value.String)
+	case storage.ValueDate:
+		return platformScalar("Date", value.String)
+	case storage.ValueDateTime:
+		return platformScalar("Datetime", value.String)
 	case storage.ValueBlob:
 		return platformScalar("Blob", value.String)
 	case storage.ValueInteger:
@@ -8925,6 +8933,28 @@ func isLoggingLevelValue(value Value) bool {
 }
 
 func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
+	if value.Kind == ValueString {
+		switch typeName {
+		case "Date":
+			parsed, err := parseDateText(value.Text)
+			if err != nil {
+				return Null, err
+			}
+			return platformScalar("Date", parsed.Format("2006-01-02")), nil
+		case "Datetime":
+			parsed, err := parseDatetimeText(value.Text)
+			if err != nil {
+				return Null, err
+			}
+			return platformScalar("Datetime", formatPlatformDatetime(parsed)), nil
+		case "Time":
+			parsed, err := parseTimeText(value.Text)
+			if err != nil {
+				return Null, err
+			}
+			return platformScalar("Time", parsed), nil
+		}
+	}
 	if value.Kind == ValueObject {
 		if strings.EqualFold(typeName, "String") && (strings.EqualFold(value.Type, "Id") || strings.EqualFold(value.Type, "String")) {
 			text, err := platformScalarText(value, value.Type)
@@ -9183,6 +9213,13 @@ func collectionSortKindRank(kind ValueKind) int {
 }
 
 func valueFromMapKey(key string) Value {
+	if strings.HasPrefix(key, string(ValueObject)+":") {
+		rest := strings.TrimPrefix(key, string(ValueObject)+":")
+		typeName, text, ok := strings.Cut(rest, ":")
+		if ok && platformScalarObject(typeName) {
+			return platformScalar(typeName, text)
+		}
+	}
 	kind, text, ok := strings.Cut(key, ":")
 	if !ok {
 		return String(key)
