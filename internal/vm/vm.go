@@ -1103,6 +1103,9 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			if err := vm.checkMemberAccess(method.ClassName, method.Access, method.Name, method.Modifiers); err != nil {
 				return Null, err
 			}
+			if err := vm.ensureClassInitialized(method.ClassName); err != nil {
+				return Null, err
+			}
 			if vm.shouldEnqueueFuture(method) {
 				return vm.enqueueFuture(method, args, result)
 			}

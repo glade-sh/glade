@@ -1,6 +1,7 @@
 package compat
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -108,6 +109,19 @@ func TestServerExampleApexRESTProbeDataForWebhookEvents(t *testing.T) {
 	headers := serverExampleApexRESTHeaders("/webhookEvents")
 	if headers["X-WebhookType"] == "" || headers["X-WebhookId"] == "" {
 		t.Fatalf("webhook headers = %#v", headers)
+	}
+}
+
+func TestServerExampleApexRESTOrderBodyIncludesBillTo(t *testing.T) {
+	body := serverExampleApexRESTBody("/selfservice/order/", "POST")
+	var payload struct {
+		Order map[string]any `json:"Order"`
+	}
+	if err := json.Unmarshal([]byte(body), &payload); err != nil {
+		t.Fatal(err)
+	}
+	if payload.Order["BillTo__c"] != "001000000000001AAA" {
+		t.Fatalf("BillTo__c = %#v", payload.Order["BillTo__c"])
 	}
 }
 

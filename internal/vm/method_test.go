@@ -340,6 +340,44 @@ func TestExecStaticInitializersRunLazilyOnFirstClassUse(t *testing.T) {
 	}
 }
 
+func TestExecDottedStaticMethodRunsStaticInitializer(t *testing.T) {
+	staticInit, err := CompileAnonymous("seed = 4;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	getProgram, err := CompileAnonymous("return seed;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+System.assertEquals(4, Counter.get());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Counter",
+		StaticFields: map[string]Field{
+			"seed": {Name: "seed", Type: "Integer", Static: true},
+		},
+		StaticInitializers: []Method{{
+			Name:      "Counter.<static_init>",
+			ClassName: "Counter",
+			Program:   staticInit,
+			IsStatic:  true,
+		}},
+		Methods: map[string]Method{
+			"get": {Name: "Counter.get", ClassName: "Counter", ReturnType: "Integer", IsStatic: true, Program: getProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecConstructorThisChaining(t *testing.T) {
 	defaultCtor, err := CompileAnonymous("this(2);")
 	if err != nil {

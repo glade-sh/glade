@@ -630,7 +630,7 @@ func serverExampleApexRESTBody(path, method string) string {
 	case strings.Contains(path, "selfservice/email"):
 		return `{"AccountId":"001000000000001AAA","EntityId":"a0f000000000001AAA","Service":"Local","SocialAccountId":"local","Name":"Local","Data":{"Email":"local@example.test","OrderId":"001000000000001AAA","RegistrationId":"001000000000001AAA"}}`
 	case strings.Contains(path, "selfservice/order"):
-		return `{"Order":{"attributes":{"type":"Order__c"}},"Items":[],"Payment":{"attributes":{"type":"Payment__c"}},"PaymentLines":[],"PaymentMethod":"Local","PaymentIssuer":"Local","CouponCodes":[],"Version":2}`
+		return `{"Order":{"attributes":{"type":"Order__c"},"BillTo__c":"001000000000001AAA"},"Items":[],"Payment":{"attributes":{"type":"Payment__c"}},"PaymentLines":[],"PaymentMethod":"Local","PaymentIssuer":"Local","CouponCodes":[],"Version":2}`
 	case strings.Contains(path, "selfservice/password"):
 		return `{"AccountId":"001000000000001AAA","NewPassword":"localPassword1!","EntityId":"001000000000001AAA"}`
 	case strings.Contains(path, "selfservice/priceclass"):
