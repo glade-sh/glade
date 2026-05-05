@@ -775,6 +775,39 @@ System.assertEquals('bank-vault', DottedManager.Instance.work());
 	}
 }
 
+func TestRuntimeCallsMethodOnUnqualifiedStaticPropertyReceiver(t *testing.T) {
+	settingsGetter, err := CompileAnonymous("return 'billing';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	check, err := CompileAnonymous("return settings.contains('bill');")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+System.assertEquals(true, StaticSettingsHolder.check());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "StaticSettingsHolder",
+		StaticFields: map[string]Field{
+			"settings": {Name: "settings", Type: "String", Static: true, Access: "private", Getter: &Method{Name: "StaticSettingsHolder.getSettings", ClassName: "StaticSettingsHolder", ReturnType: "String", IsStatic: true, Access: "private", Program: settingsGetter}},
+		},
+		StaticFieldOrder: []string{"settings"},
+		Methods: map[string]Method{
+			"check": {Name: "StaticSettingsHolder.check", ClassName: "StaticSettingsHolder", ReturnType: "Boolean", IsStatic: true, Access: "public", Program: check},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestRuntimeCallsInheritedMethodOnNestedStaticProperty(t *testing.T) {
 	instanceGetter, err := CompileAnonymous("return new Child();")
 	if err != nil {

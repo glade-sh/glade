@@ -37,6 +37,7 @@ type Field struct {
 	Required              bool            `json:"required,omitempty"`
 	ExternalID            bool            `json:"externalId,omitempty"`
 	Unique                bool            `json:"unique,omitempty"`
+	Encrypted             bool            `json:"encrypted,omitempty"`
 	Formula               string          `json:"formula,omitempty"`
 	PicklistValues        []PicklistValue `json:"picklistValues,omitempty"`
 }
@@ -298,6 +299,7 @@ func loadField(path string) (Field, error) {
 		Required:              raw.Required,
 		ExternalID:            raw.ExternalID,
 		Unique:                raw.Unique,
+		Encrypted:             strings.EqualFold(raw.Type, "EncryptedText"),
 		Formula:               strings.TrimSpace(raw.Formula),
 		PicklistValues:        picklistValues(raw.ValueSet.Definition.Values),
 	}, nil

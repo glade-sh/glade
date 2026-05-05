@@ -258,6 +258,7 @@ func applyServerExampleSchema(org *storage.OrgState, loaded schema.Schema) {
 				Required:         field.Required,
 				ExternalID:       field.ExternalID,
 				Unique:           field.Unique,
+				Encrypted:        field.Encrypted,
 				ReferenceTo:      append([]string(nil), field.ReferenceTo...),
 				RelationshipName: field.RelationshipName,
 				PicklistValues:   serverExamplePicklistValues(field.PicklistValues),
@@ -307,7 +308,7 @@ func serverExampleStorageFieldType(raw, formula string) storage.FieldType {
 		return storage.FieldCalculated
 	}
 	switch raw {
-	case "Text", "TextArea", "LongTextArea", "Email", "Phone", "Url":
+	case "Text", "TextArea", "LongTextArea", "Email", "Phone", "Url", "EncryptedText":
 		return storage.FieldString
 	case "Picklist", "MultiselectPicklist":
 		return storage.FieldPicklist

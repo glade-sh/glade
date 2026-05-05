@@ -46,6 +46,7 @@ type Field struct {
 	Required         bool            `json:"required,omitempty"`
 	ExternalID       bool            `json:"externalId,omitempty"`
 	Unique           bool            `json:"unique,omitempty"`
+	Encrypted        bool            `json:"encrypted,omitempty"`
 	CaseSensitive    bool            `json:"caseSensitive,omitempty"`
 	ReferenceTo      []string        `json:"referenceTo,omitempty"`
 	RelationshipName string          `json:"relationshipName,omitempty"`

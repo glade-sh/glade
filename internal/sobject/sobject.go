@@ -114,6 +114,7 @@ type DescribeFieldResult struct {
 	Required              bool                    `json:"required,omitempty"`
 	ExternalID            bool                    `json:"externalId,omitempty"`
 	Unique                bool                    `json:"unique,omitempty"`
+	Encrypted             bool                    `json:"encrypted,omitempty"`
 	PicklistValues        []storage.PicklistValue `json:"picklistValues,omitempty"`
 }
 
@@ -172,6 +173,7 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 				Required:              field.Required,
 				ExternalID:            field.ExternalID,
 				Unique:                field.Unique,
+				Encrypted:             field.Encrypted,
 				PicklistValues:        storagePicklistValues(field.PicklistValues),
 			}
 			references := referenceTargets(field.ReferenceTo)
@@ -283,6 +285,7 @@ func ToObjectDefinition(describe DescribeSObjectResult) storage.ObjectDefinition
 			Required:         field.Required,
 			ExternalID:       field.ExternalID,
 			Unique:           field.Unique,
+			Encrypted:        field.Encrypted,
 			ReferenceTo:      append([]string(nil), field.ReferenceTo...),
 			RelationshipName: field.RelationshipName,
 			PicklistValues:   append([]storage.PicklistValue(nil), field.PicklistValues...),
@@ -374,7 +377,7 @@ func labelOrName(label, name string) string {
 
 func storageFieldType(raw string) storage.FieldType {
 	switch raw {
-	case "Text", "TextArea", "LongTextArea", "Email", "Phone", "Url":
+	case "Text", "TextArea", "LongTextArea", "Email", "Phone", "Url", "EncryptedText":
 		return storage.FieldString
 	case "Picklist", "MultiselectPicklist":
 		return storage.FieldPicklist

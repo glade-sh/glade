@@ -7052,6 +7052,7 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 	desc.Fields["nillable"] = Bool(!field.Required)
 	desc.Fields["externalId"] = Bool(field.ExternalID)
 	desc.Fields["unique"] = Bool(field.Unique)
+	desc.Fields["encrypted"] = Bool(field.Encrypted)
 	desc.Fields["nameField"] = Bool(isNameFieldDescribe(field))
 	if field.RelationshipName == "" {
 		desc.Fields["relationshipName"] = Null
@@ -10574,7 +10575,19 @@ func (vm *VM) callMember(callee string, args []Value, result *Result) (Value, bo
 					return Null, true, err
 				}
 				field, _, _ = vm.lookupStaticField(owner, receiverName)
-				return vm.callValueMember(receiverName, field.Value, method, args, result)
+				receiver := field.Value
+				if field.Getter != nil {
+					if field.Getter.Name == vm.currentMethod.Name {
+						receiver = field.Value
+					} else {
+						var err error
+						receiver, err = vm.callMethod(*field.Getter, nil, resultForLookup())
+						if err != nil {
+							return Null, true, err
+						}
+					}
+				}
+				return vm.callValueMember(receiverName, receiver, method, args, result)
 			}
 		}
 		if receiverName == "" {
@@ -12059,6 +12072,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.isUnique expects 0 arguments")
 			}
 			return receiver.Fields["unique"], receiver, false, true, nil
+		case "isEncrypted":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.isEncrypted expects 0 arguments")
+			}
+			return receiver.Fields["encrypted"], receiver, false, true, nil
 		case "isNameField":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.isNameField expects 0 arguments")

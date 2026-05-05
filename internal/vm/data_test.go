@@ -463,7 +463,11 @@ Object nameField = fields.get('Name');
 Object nameDescribe = nameField.getDescribe();
 System.assertEquals('Name', nameDescribe.getName());
 System.assert(nameDescribe.isNameField());
+System.assert(!nameDescribe.isEncrypted());
 System.assertEquals('string', nameDescribe.getType());
+Object secretField = fields.get('Secret__c');
+Object secretDescribe = secretField.getDescribe();
+System.assert(secretDescribe.isEncrypted());
 Object schemaType = Schema.SObjectType.Account;
 Object schemaDescribe = schemaType.getDescribe();
 System.assertEquals('Account', schemaDescribe.getName());
@@ -492,6 +496,7 @@ System.assert(childFieldDescribe.isAccessible());
 System.assert(childFieldDescribe.isCreateable());
 System.assert(childFieldDescribe.isUpdateable());
 System.assert(!childFieldDescribe.isNameField());
+System.assert(!childFieldDescribe.isEncrypted());
 Object childType = contacts.getChildSObject();
 Object childDescribe = childType.getDescribe();
 System.assertEquals('Contact', childDescribe.getName());
@@ -502,6 +507,9 @@ System.assert(contacts.isCascadeDelete());
 	}
 	machine := New(nil)
 	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Secret__c"] = storage.Field{APIName: "Secret__c", Type: storage.FieldString, Encrypted: true}
+	org.Objects["Account"] = account
 	org.Objects["Contact"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
 			APIName:   "Contact",
