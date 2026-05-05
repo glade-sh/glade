@@ -577,6 +577,83 @@ System.assertEquals('Acme', h.reveal());
 	}
 }
 
+func TestRuntimeCallsMethodOnDottedStaticProperty(t *testing.T) {
+	instanceGetter, err := CompileAnonymous("return new DottedWorker();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	work, err := CompileAnonymous("return 'bank-vault';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+System.assertEquals('bank-vault', DottedManager.Instance.work());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "DottedManager",
+		StaticFields: map[string]Field{
+			"Instance": {Name: "Instance", Type: "DottedWorker", Static: true, Access: "public", Getter: &Method{Name: "DottedManager.getInstance", ClassName: "DottedManager", ReturnType: "DottedWorker", IsStatic: true, Access: "public", Program: instanceGetter}},
+		},
+		StaticFieldOrder: []string{"Instance"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "DottedWorker",
+		Methods: map[string]Method{
+			"work": {Name: "DottedWorker.work", ClassName: "DottedWorker", ReturnType: "String", Access: "public", Program: work},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRuntimeCallsInheritedMethodOnNestedStaticProperty(t *testing.T) {
+	instanceGetter, err := CompileAnonymous("return new Child();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	find, err := CompileAnonymous("return source;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+System.assertEquals('SS', NestedParent.Instance.FindBatch('001000000000001AAA', 'SS', Date.newInstance(2026, 1, 1)));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "NestedParent",
+		StaticFields: map[string]Field{
+			"Instance": {Name: "Instance", Type: "NestedParent", Static: true, Access: "public", Getter: &Method{Name: "NestedParent.getInstance", ClassName: "NestedParent", ReturnType: "NestedParent", IsStatic: true, Access: "public", Program: instanceGetter}},
+		},
+		StaticFieldOrder: []string{"Instance"},
+		Methods: map[string]Method{
+			"FindBatch": {Name: "NestedParent.FindBatch", ClassName: "NestedParent", ReturnType: "String", Params: []Param{{Name: "entity", Type: "Id"}, {Name: "source", Type: "String"}, {Name: "transactionDate", Type: "Date"}}, Access: "public", Program: find},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "NestedParent.Child",
+		SuperClass: "NestedParent",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestRuntimeRejectsPrivateFieldAccessAcrossClasses(t *testing.T) {
 	program, err := CompileAnonymous(`
 Secret s = new Secret();

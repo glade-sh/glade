@@ -1036,6 +1036,9 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 	if value, handled, err := vm.callSchemaSObjectTypePath(callee, args, result); handled || err != nil {
 		return value, err
 	}
+	if value, handled, err := vm.callDottedReceiverMember(callee, args, result); handled || err != nil {
+		return value, err
+	}
 	if dot := strings.LastIndex(callee, "."); dot > 0 && dot < len(callee)-1 {
 		if value, handled, err := vm.callCustomDataStaticMember(callee[:dot], callee[dot+1:], args); handled || err != nil {
 			return value, err
@@ -6927,6 +6930,23 @@ func (vm *VM) callSchemaSObjectTypePath(callee string, args []Value, result *Res
 	}
 	value, _, _, _, err := vm.callPlatformObjectMember(fields, "getMap", nil, result)
 	return value, true, err
+}
+
+func (vm *VM) callDottedReceiverMember(callee string, args []Value, result *Result) (Value, bool, error) {
+	dot := strings.LastIndex(callee, ".")
+	if dot <= 0 || dot >= len(callee)-1 {
+		return Null, false, nil
+	}
+	receiverName := callee[:dot]
+	if !strings.Contains(receiverName, ".") {
+		return Null, false, nil
+	}
+	method := callee[dot+1:]
+	receiver, err := vm.lookup(receiverName)
+	if err != nil {
+		return Null, false, nil
+	}
+	return vm.callValueMember(receiverName, receiver, method, args, result)
 }
 
 func sObjectTypeToken(objectName string) Value {
