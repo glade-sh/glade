@@ -575,7 +575,7 @@ func apexRestRequestValue(r *http.Request, body []byte) vm.Value {
 func requestHeaders(r *http.Request) map[string]string {
 	out := make(map[string]string, len(r.Header))
 	for name, values := range r.Header {
-		out[name] = strings.Join(values, ",")
+		out[strings.ToLower(name)] = strings.Join(values, ",")
 	}
 	return out
 }

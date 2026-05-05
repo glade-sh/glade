@@ -676,6 +676,22 @@ func ensureServerExampleVerifiableSetupData(org *storage.OrgState, providerIDFie
 		setup.Records = make(map[storage.ID]storage.Record)
 	}
 	if len(setup.Records) > 0 {
+		ids := make([]string, 0, len(setup.Records))
+		for id := range setup.Records {
+			ids = append(ids, string(id))
+		}
+		sort.Strings(ids)
+		id := storage.ID(ids[0])
+		record := setup.Records[id]
+		if record.Fields == nil {
+			record.Fields = make(map[string]storage.Value)
+		}
+		setServerExampleFieldValue(org, objectName, record.Fields, "Disable_Webhook_Security_Check__c", storage.BooleanValue(true))
+		setServerExampleFieldValue(org, objectName, record.Fields, "License_Changed_Id__c", storage.StringValue("null"))
+		if _, ok := record.Fields[serverExampleFieldName(org, objectName, "Data_Mappings__c")]; !ok {
+			setServerExampleFieldValue(org, objectName, record.Fields, "Data_Mappings__c", storage.StringValue(serverExampleVerifiableDataMappings(providerIDField)))
+		}
+		setup.Records[id] = record
 		org.Objects[objectName] = setup
 		return
 	}
@@ -684,13 +700,26 @@ func ensureServerExampleVerifiableSetupData(org *storage.OrgState, providerIDFie
 		ID:     id,
 		Object: objectName,
 		Fields: map[string]storage.Value{
-			serverExampleFieldName(org, objectName, "Name"):                              storage.StringValue("Default"),
-			serverExampleFieldName(org, objectName, "Disable_Webhook_Security_Check__c"): storage.BooleanValue(true),
-			serverExampleFieldName(org, objectName, "Data_Mappings__c"):                  storage.StringValue(serverExampleVerifiableDataMappings(providerIDField)),
-			serverExampleFieldName(org, objectName, "Steps_Completed__c"):                storage.StringValue(`{}`),
+			serverExampleFieldName(org, objectName, "Name"):               storage.StringValue("Default"),
+			serverExampleFieldName(org, objectName, "Steps_Completed__c"): storage.StringValue(`{}`),
 		},
 	}
+	record := setup.Records[id]
+	setServerExampleFieldValue(org, objectName, record.Fields, "Disable_Webhook_Security_Check__c", storage.BooleanValue(true))
+	setServerExampleFieldValue(org, objectName, record.Fields, "License_Changed_Id__c", storage.StringValue("null"))
+	setServerExampleFieldValue(org, objectName, record.Fields, "Data_Mappings__c", storage.StringValue(serverExampleVerifiableDataMappings(providerIDField)))
+	setup.Records[id] = record
 	org.Objects[objectName] = setup
+}
+
+func setServerExampleFieldValue(org *storage.OrgState, objectName string, fields map[string]storage.Value, field string, value storage.Value) {
+	fields[field] = value
+	if resolved := serverExampleFieldName(org, objectName, field); resolved != field {
+		fields[resolved] = value
+	}
+	if namespaced := storage.NamespaceTokenName(org.Namespace, field); namespaced != field {
+		fields[namespaced] = value
+	}
 }
 
 func ensureServerExampleVerifiableEnvironment(org *storage.OrgState) {
@@ -854,7 +883,7 @@ func serverExampleApexRESTPath(path string) string {
 func serverExampleApexRESTBody(path, method string) string {
 	switch {
 	case strings.Contains(path, "webhookEvents"):
-		return `{"providerId":"local-provider","id":"local-credential","currentVerification":{"id":"local-verification","trigger":"Manual"},"status":"Active"}`
+		return `{"providerId":"local-provider","id":"local-credential","currentVerification":{"id":"local-verification","trigger":"Manual"},"status":"Active","x-webhooktype":"LicenseChanged","x-webhookid":"null"}`
 	case strings.Contains(path, "selfservice/cart/build"):
 		return `{"OrderId":"a0o000000000001AAA"}`
 	case strings.Contains(path, "selfservice/cart/submit"):
@@ -893,7 +922,7 @@ func serverExampleApexRESTHeaders(path string) map[string]string {
 	case strings.Contains(path, "webhookEvents"):
 		return map[string]string{
 			"X-WebhookType": "LicenseChanged",
-			"X-WebhookId":   "local-webhook",
+			"X-WebhookId":   "null",
 			"X-TraceId":     "oaer-local-probe",
 		}
 	default:

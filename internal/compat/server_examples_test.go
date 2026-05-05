@@ -146,6 +146,9 @@ func TestServerExampleApexRESTProbeDataForWebhookEvents(t *testing.T) {
 	if body := serverExampleApexRESTBody("/webhookEvents", "POST"); !strings.Contains(body, `"providerId":"local-provider"`) {
 		t.Fatalf("webhook body = %s", body)
 	}
+	if body := serverExampleApexRESTBody("/webhookEvents", "POST"); !strings.Contains(body, `"x-webhookid":"null"`) || !strings.Contains(body, `"x-webhooktype":"LicenseChanged"`) {
+		t.Fatalf("webhook body headers = %s", body)
+	}
 	headers := serverExampleApexRESTHeaders("/webhookEvents")
 	if headers["X-WebhookType"] == "" || headers["X-WebhookId"] == "" {
 		t.Fatalf("webhook headers = %#v", headers)
@@ -273,6 +276,31 @@ func TestServerExampleProbeOverlayKeepsWebhookProviderScoped(t *testing.T) {
 	setup := webhookOrg.Objects["Setup_Data__c"].Records[storage.ID("a0v000000000001AAA")]
 	if mappings := setup.Fields["Data_Mappings__c"].String; !strings.Contains(mappings, `"tpField":"providerId","sfField":"Name"`) {
 		t.Fatalf("webhook mappings = %s", mappings)
+	}
+	if webhookID := setup.Fields["License_Changed_Id__c"].String; webhookID != "null" {
+		t.Fatalf("webhook License_Changed_Id__c = %q", webhookID)
+	}
+	existingSetupOrg := base.Clone()
+	existingSetup := existingSetupOrg.Objects["Setup_Data__c"]
+	existingSetup.Records = map[storage.ID]storage.Record{
+		"existing": {
+			ID:     "existing",
+			Object: "Setup_Data__c",
+			Fields: map[string]storage.Value{
+				"Name": storage.StringValue("Seeded"),
+			},
+		},
+	}
+	existingSetupOrg.Objects["Setup_Data__c"] = existingSetup
+	applyServerExampleProbeOverlay(&existingSetupOrg, serverExampleProbe{Path: "/services/apexrest/webhookEvents"})
+	if webhookID := existingSetupOrg.Objects["Setup_Data__c"].Records["existing"].Fields["License_Changed_Id__c"].String; webhookID != "null" {
+		t.Fatalf("existing setup webhook License_Changed_Id__c = %q", webhookID)
+	}
+	if webhookID := existingSetupOrg.Objects["Setup_Data__c"].Records["existing"].Fields["verifiable__License_Changed_Id__c"].String; webhookID != "null" {
+		t.Fatalf("existing setup verifiable__License_Changed_Id__c = %q", webhookID)
+	}
+	if disabled := existingSetupOrg.Objects["Setup_Data__c"].Records["existing"].Fields["Disable_Webhook_Security_Check__c"].Boolean; !disabled {
+		t.Fatalf("existing setup Disable_Webhook_Security_Check__c = %v", disabled)
 	}
 	env := webhookOrg.Objects["VerifiableEnvironment__mdt"].Records[storage.ID("m0e000000000001AAA")]
 	if endpoint := env.Fields["Endpoint__c"].String; endpoint == "" {
