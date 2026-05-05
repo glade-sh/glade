@@ -289,6 +289,7 @@ func applyServerExampleSchema(org *storage.OrgState, loaded schema.Schema) {
 				})
 			}
 		}
+		storage.EnsureStandardObjectFields(&state.Definition)
 		state.Definition.RecordTypes = serverExampleRecordTypes(object.RecordTypes)
 		state.Definition.ValidationRules = serverExampleValidationRules(object.ValidationRules)
 		org.Objects[object.Name] = state
@@ -412,29 +413,19 @@ func serverExampleBaseOrg(fixture storage.Fixture) storage.OrgState {
 			}
 		}
 		if name == "Account" {
-			fields["Name"] = storage.Field{APIName: "Name", Type: storage.FieldString}
-			fields["IsPersonAccount"] = storage.Field{APIName: "IsPersonAccount", Type: storage.FieldBoolean}
-			fields["MasterRecordId"] = storage.Field{APIName: "MasterRecordId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "MasterRecord"}
-			fields["PersonEmail"] = storage.Field{APIName: "PersonEmail", Type: storage.FieldString}
 			fields["UpdatePrimaryLocation__c"] = storage.Field{APIName: "UpdatePrimaryLocation__c", Type: storage.FieldBoolean}
-			for _, field := range []string{
-				"BillingStreet", "BillingCity", "BillingState", "BillingPostalCode", "BillingCountry",
-				"ShippingStreet", "ShippingCity", "ShippingState", "ShippingPostalCode", "ShippingCountry",
-				"PersonMailingStreet", "PersonMailingCity", "PersonMailingState", "PersonMailingPostalCode", "PersonMailingCountry",
-				"PersonOtherStreet", "PersonOtherCity", "PersonOtherState", "PersonOtherPostalCode", "PersonOtherCountry",
-			} {
-				fields[field] = storage.Field{APIName: field, Type: storage.FieldString}
-			}
 		}
+		definition := storage.ObjectDefinition{
+			APIName:     name,
+			Label:       name,
+			PluralLabel: name,
+			KeyPrefix:   prefixes[name],
+			Fields:      fields,
+		}
+		storage.EnsureStandardObjectFields(&definition)
 		org.Objects[name] = storage.ObjectState{
-			Definition: storage.ObjectDefinition{
-				APIName:     name,
-				Label:       name,
-				PluralLabel: name,
-				KeyPrefix:   prefixes[name],
-				Fields:      fields,
-			},
-			Records: make(map[storage.ID]storage.Record),
+			Definition: definition,
+			Records:    make(map[storage.ID]storage.Record),
 		}
 	}
 	storage.EnsureDeterministicPlatformData(&org)

@@ -325,8 +325,8 @@ func ResolveObjectName(org OrgState, name string) (string, bool) {
 }
 
 func ResolveFieldName(definition ObjectDefinition, namespace, name string) (string, bool) {
-	if name == "Id" {
-		return name, true
+	if strings.EqualFold(name, "Id") {
+		return "Id", true
 	}
 	if _, ok := definition.Fields[name]; ok {
 		return name, true

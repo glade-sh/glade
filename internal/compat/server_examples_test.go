@@ -87,6 +87,20 @@ func TestServerExampleSchemaMarksHierarchyCustomSettings(t *testing.T) {
 	}
 }
 
+func TestServerExampleSchemaAddsPublicAccountStandardFields(t *testing.T) {
+	org := storage.NewOrgState()
+	applyServerExampleSchema(&org, schema.Schema{Objects: []schema.Object{{Name: "Account"}}})
+
+	account := org.Objects["Account"]
+	field, ok := account.Definition.Fields["Website"]
+	if !ok || field.Type != storage.FieldString {
+		t.Fatalf("Website field = %#v, %v", field, ok)
+	}
+	if resolved, ok := storage.ResolveFieldName(account.Definition, org.Namespace, "website"); !ok || resolved != "Website" {
+		t.Fatalf("resolve website = %q, %v", resolved, ok)
+	}
+}
+
 func TestServerExampleApexRESTProbeDataForWebhookEvents(t *testing.T) {
 	if body := serverExampleApexRESTBody("/webhookEvents", "POST"); !strings.Contains(body, `"providerId":"local-provider"`) {
 		t.Fatalf("webhook body = %s", body)

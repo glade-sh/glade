@@ -2,6 +2,39 @@ package storage
 
 import "testing"
 
+func TestResolveFieldNameResolvesIdCaseInsensitive(t *testing.T) {
+	definition := ObjectDefinition{APIName: "Account", Fields: map[string]Field{"Name": {APIName: "Name", Type: FieldString}}}
+
+	resolved, ok := ResolveFieldName(definition, "", "id")
+	if !ok || resolved != "Id" {
+		t.Fatalf("ResolveFieldName(id) = %q, %v", resolved, ok)
+	}
+}
+
+func TestEnsureStandardObjectFieldsAddsAccountWebsiteWithoutClobber(t *testing.T) {
+	definition := ObjectDefinition{
+		APIName: "Account",
+		Fields: map[string]Field{
+			"Website": {APIName: "Website", Label: "Custom label", Type: FieldAny},
+		},
+	}
+
+	EnsureStandardObjectFields(&definition)
+
+	if definition.Fields["Website"].Type != FieldAny || definition.Fields["Website"].Label != "Custom label" {
+		t.Fatalf("Website field was clobbered: %#v", definition.Fields["Website"])
+	}
+	if field, ok := definition.Fields["Phone"]; !ok || field.Type != FieldString {
+		t.Fatalf("Phone field = %#v, %v", field, ok)
+	}
+	if field, ok := definition.Fields["PersonMailingStreet"]; !ok || field.Type != FieldString {
+		t.Fatalf("PersonMailingStreet field = %#v, %v", field, ok)
+	}
+	if field, ok := definition.Fields["PersonOtherCountry"]; !ok || field.Type != FieldString {
+		t.Fatalf("PersonOtherCountry field = %#v, %v", field, ok)
+	}
+}
+
 func TestCloneRecordDoesNotShareMutableFieldState(t *testing.T) {
 	original := Record{
 		ID:     "001000000000001",

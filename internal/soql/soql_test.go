@@ -57,6 +57,39 @@ func TestIsSOSLFind(t *testing.T) {
 	}
 }
 
+func TestExecuteResolvesLowercaseIdAsStandardField(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Account",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"001000000000001": {
+				ID:     "001000000000001",
+				Object: "Account",
+				Fields: map[string]storage.Value{
+					"Name": storage.StringValue("Acme"),
+				},
+			},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT id FROM Account WHERE id = '001000000000001'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 {
+		t.Fatalf("rows = %d", result.Rows)
+	}
+	value := result.Records[0].Fields["Id"]
+	if value.Kind != storage.ValueID || value.ID != "001000000000001" {
+		t.Fatalf("Id field = %#v", value)
+	}
+}
+
 func TestExecuteAggregateQueries(t *testing.T) {
 	org := aggregateTestOrg()
 
