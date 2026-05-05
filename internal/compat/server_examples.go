@@ -645,6 +645,8 @@ func serverExampleApexRESTBody(path, method string) string {
 		return `[{"objectId":"local-object","objectType":"Local","objectRoute":"/local","triggeredAt":"1970-01-01T00:00:00Z"}]`
 	case strings.Contains(path, "selfservice/sobjects") && method == http.MethodDelete:
 		return `["001000000000001AAA"]`
+	case strings.Contains(path, "selfservice/sobjects") && method == http.MethodPatch:
+		return `[{"attributes":{"type":"Account"},"Id":"001000000000001AAA","Name":"Local Probe","IsPersonAccount":false,"UpdatePrimaryLocation__c":false}]`
 	case strings.Contains(path, "selfservice/sobjects"):
 		return `[{"attributes":{"type":"Account"},"Name":"Local Probe","IsPersonAccount":false,"UpdatePrimaryLocation__c":false}]`
 	default:

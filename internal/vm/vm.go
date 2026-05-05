@@ -4370,18 +4370,12 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 		Fields:        make(map[string]storage.Value),
 		ExplicitNulls: make(map[string]bool),
 	}
+	record.ID = sObjectIDFromFields(value.Fields)
 	for field, fieldValue := range value.Fields {
 		if field == sobjectErrorsField || field == sobjectReadOnlyField {
 			continue
 		}
-		if field == "Id" {
-			if fieldValue.Kind == ValueString {
-				record.ID = storage.ID(fieldValue.Text)
-			} else if fieldValue.Kind == ValueObject && strings.EqualFold(fieldValue.Type, "Id") {
-				if raw, err := platformScalarText(fieldValue, "Id"); err == nil {
-					record.ID = storage.ID(raw)
-				}
-			}
+		if strings.EqualFold(field, "Id") {
 			continue
 		}
 		if isSObjectSystemField(field) {
@@ -4409,6 +4403,42 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 		}
 	}
 	return record, nil
+}
+
+func sObjectIDFromFields(fields map[string]Value) storage.ID {
+	for _, name := range []string{"Id", "id"} {
+		if id, ok := sObjectIDFromValue(fields[name]); ok {
+			return id
+		}
+	}
+	names := make([]string, 0)
+	for name := range fields {
+		if strings.EqualFold(name, "Id") && name != "Id" && name != "id" {
+			names = append(names, name)
+		}
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		if id, ok := sObjectIDFromValue(fields[name]); ok {
+			return id
+		}
+	}
+	return ""
+}
+
+func sObjectIDFromValue(value Value) (storage.ID, bool) {
+	if value.Kind == ValueString {
+		if value.Text == "" {
+			return "", false
+		}
+		return storage.ID(value.Text), true
+	}
+	if value.Kind == ValueObject && strings.EqualFold(value.Type, "Id") {
+		if raw, err := platformScalarText(value, "Id"); err == nil && raw != "" {
+			return storage.ID(raw), true
+		}
+	}
+	return "", false
 }
 
 func vmValueFromRecord(record storage.Record) Value {
@@ -6804,6 +6834,10 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 	return desc
 }
 
+func isNameFieldDescribe(field storage.Field) bool {
+	return strings.EqualFold(field.APIName, "Name")
+}
+
 func relationshipTargetsObject(relationship storage.Relationship, objectName string) bool {
 	for _, parent := range relationship.ParentObjects {
 		if strings.EqualFold(parent, objectName) {
@@ -6859,6 +6893,7 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 	desc.Fields["nillable"] = Bool(!field.Required)
 	desc.Fields["externalId"] = Bool(field.ExternalID)
 	desc.Fields["unique"] = Bool(field.Unique)
+	desc.Fields["nameField"] = Bool(isNameFieldDescribe(field))
 	if field.RelationshipName == "" {
 		desc.Fields["relationshipName"] = Null
 	} else {
@@ -11454,6 +11489,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.isUnique expects 0 arguments")
 			}
 			return receiver.Fields["unique"], receiver, false, true, nil
+		case "isNameField":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.isNameField expects 0 arguments")
+			}
+			return receiver.Fields["nameField"], receiver, false, true, nil
 		case "getReferenceTo":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getReferenceTo expects 0 arguments")
@@ -12057,6 +12097,15 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.getChildRelationships expects 0 arguments")
 			}
 			return receiver.Fields["childRelationships"], receiver, false, true, nil
+		case "getSObjectType":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.getSObjectType expects 0 arguments")
+			}
+			name, ok := receiver.Fields["name"]
+			if !ok || name.Kind != ValueString {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult token missing object")
+			}
+			return sObjectTypeToken(name.Text), receiver, false, true, nil
 		case "isAccessible", "isCreateable", "isUpdateable", "isDeletable", "isQueryable", "isSearchable":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.%s expects 0 arguments", method)
