@@ -1735,6 +1735,37 @@ System.assertEquals('https://local.oaer.example', orgUrl.toString());
 	}
 }
 
+func TestSystemURLSalesforceBaseURLUsesRequestContext(t *testing.T) {
+	program, err := CompileAnonymous(`
+URL base = System.URL.getSalesforceBaseURL();
+System.assertEquals('https://trail.example.test:8443', base.toExternalForm());
+System.assertEquals('trail.example.test', base.getHost());
+URL orgUrl = System.Url.getOrgDomainUrl();
+System.assertEquals('https://trail.example.test:8443', orgUrl.toString());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.SetServerBaseURL("https://trail.example.test:8443/")
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCurrenciesApiV1SyncCurrencyWithRelatedRecordNoOp(t *testing.T) {
+	machine := New(nil)
+	record := Object("Account")
+	record.Fields["Name"] = String("Acme")
+	records := List(record)
+	if _, err := machine.call("CurrenciesApi.v1.syncCurrencyWithRelatedRecord", []Value{records, sObjectFieldToken("Account", "Name")}, nil, &Result{}); err != nil {
+		t.Fatal(err)
+	}
+	if got := records.List[0].Fields["Name"]; got.Kind != ValueString || got.Text != "Acme" {
+		t.Fatalf("record name = %#v", got)
+	}
+}
+
 func TestExecRunAsScopesSupportedMixedDMLMode(t *testing.T) {
 	fails, err := CompileAnonymous(`
 insert new User(Username = 'setup@example.test');

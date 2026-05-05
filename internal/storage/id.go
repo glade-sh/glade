@@ -78,6 +78,7 @@ func StandardKeyPrefixes() map[string]string {
 		"ContentVersion":          "068",
 		"ContentDocument":         "069",
 		"ContentDocumentLink":     "06A",
+		"EmailTemplate":           "00X",
 		"PermissionSet":           "0PS",
 		"PermissionSetAssignment": "0Pa",
 	}

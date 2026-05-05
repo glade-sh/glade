@@ -87,9 +87,60 @@ func standardFieldsForObject(objectName string) []Field {
 			{APIName: "OtherPostalCode", Label: "Other Zip/Postal Code", Type: FieldString},
 			{APIName: "OtherCountry", Label: "Other Country", Type: FieldString},
 		}
+	case stringsEqualFold(objectName, "EmailTemplate"):
+		return []Field{
+			{APIName: "ApiVersion", Label: "API Version", Type: FieldDecimal},
+			{APIName: "Body", Label: "Body", Type: FieldString},
+			{APIName: "BrandTemplateId", Label: "Letterhead ID", Type: FieldReference, ReferenceTo: []string{"BrandTemplate"}},
+			{APIName: "Description", Label: "Description", Type: FieldString},
+			{APIName: "DeveloperName", Label: "Developer Name", Type: FieldString},
+			{APIName: "Encoding", Label: "Encoding", Type: FieldString},
+			{APIName: "FolderId", Label: "Folder ID", Type: FieldReference, ReferenceTo: []string{"Folder"}},
+			{APIName: "HtmlValue", Label: "HTML Value", Type: FieldString},
+			{APIName: "IsActive", Label: "Active", Type: FieldBoolean},
+			{APIName: "LastUsedDate", Label: "Last Used Date", Type: FieldDateTime},
+			{APIName: "Markup", Label: "Markup", Type: FieldString},
+			{APIName: "Name", Label: "Email Template Name", Type: FieldString},
+			{APIName: "NamespacePrefix", Label: "Namespace Prefix", Type: FieldString},
+			{APIName: "OwnerId", Label: "Owner ID", Type: FieldReference, ReferenceTo: []string{"User"}},
+			{APIName: "Subject", Label: "Subject", Type: FieldString},
+			{APIName: "TemplateStyle", Label: "Template Style", Type: FieldString},
+			{APIName: "TemplateType", Label: "Template Type", Type: FieldString},
+			{APIName: "TimesUsed", Label: "Times Used", Type: FieldInteger},
+		}
 	default:
 		return nil
 	}
+}
+
+func EnsureStandardObject(org *OrgState, objectName string) {
+	if org == nil || objectName == "" {
+		return
+	}
+	if org.Objects == nil {
+		org.Objects = make(map[string]ObjectState)
+	}
+	state := org.Objects[objectName]
+	if state.Definition.APIName == "" {
+		state.Definition.APIName = objectName
+	}
+	if state.Definition.Label == "" {
+		state.Definition.Label = objectName
+	}
+	if state.Definition.PluralLabel == "" {
+		state.Definition.PluralLabel = objectName + "s"
+	}
+	if state.Definition.KeyPrefix == "" {
+		state.Definition.KeyPrefix = StandardKeyPrefixes()[objectName]
+	}
+	if state.Records == nil {
+		state.Records = make(map[ID]Record)
+	}
+	if state.Indexes == nil {
+		state.Indexes = make(map[string]IndexSet)
+	}
+	EnsureStandardObjectFields(&state.Definition)
+	org.Objects[objectName] = state
 }
 
 func stringsEqualFold(left, right string) bool {

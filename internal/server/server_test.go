@@ -40,6 +40,28 @@ func assertQueryRecordShape(t *testing.T, record map[string]any, objectName, id,
 	}
 }
 
+func TestRequestBaseURLUsesForwardedHeaders(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "http://local.example/services/apexrest/test", nil)
+	req.Host = "internal.example"
+	req.Header.Set("X-Forwarded-Proto", "https")
+	req.Header.Set("X-Forwarded-Host", "trail.example.test:8443")
+
+	if got := requestBaseURL(req); got != "https://trail.example.test:8443" {
+		t.Fatalf("base URL = %q", got)
+	}
+}
+
+func TestRequestBaseURLIgnoresUnsafeForwardedProto(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "http://local.example/services/apexrest/test", nil)
+	req.Host = "internal.example"
+	req.Header.Set("X-Forwarded-Proto", "javascript")
+	req.Header.Set("X-Forwarded-Host", "trail.example.test")
+
+	if got := requestBaseURL(req); got != "http://trail.example.test" {
+		t.Fatalf("base URL = %q", got)
+	}
+}
+
 func testSourceMetadata(t *testing.T) SourceMetadata {
 	t.Helper()
 	root := filepath.Join(".testdata-generated", strings.NewReplacer("/", "_", " ", "_").Replace(t.Name()))

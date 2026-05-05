@@ -294,6 +294,7 @@ func applyServerExampleSchema(org *storage.OrgState, loaded schema.Schema) {
 		state.Definition.ValidationRules = serverExampleValidationRules(object.ValidationRules)
 		org.Objects[object.Name] = state
 	}
+	storage.EnsureStandardObject(org, "EmailTemplate")
 }
 
 func serverExampleChildRelationshipName(field schema.Field) string {

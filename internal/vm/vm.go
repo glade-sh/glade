@@ -76,6 +76,7 @@ type VM struct {
 	currentPage      Value
 	restRequest      Value
 	restResponse     Value
+	serverBaseURL    string
 	debugHooks       DebugHooks
 	hasDebugHooks    bool
 	ctx              context.Context
@@ -201,6 +202,10 @@ func New(stdout io.Writer) *VM {
 
 func (vm *VM) SetOrg(org *storage.OrgState) {
 	vm.Org = org
+}
+
+func (vm *VM) SetServerBaseURL(rawURL string) {
+	vm.serverBaseURL = strings.TrimRight(rawURL, "/")
 }
 
 func (vm *VM) SetCurrentUser(record storage.Record) {
@@ -1123,6 +1128,25 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 	if strings.HasPrefix(callee, "System.Json.") {
 		callee = "JSON." + strings.TrimPrefix(callee, "System.Json.")
 	}
+	if strings.HasPrefix(callee, "System.URL.") {
+		callee = "URL." + strings.TrimPrefix(callee, "System.URL.")
+	}
+	if strings.HasPrefix(callee, "System.Url.") {
+		callee = "URL." + strings.TrimPrefix(callee, "System.Url.")
+	}
+	if strings.HasPrefix(callee, "Url.") {
+		callee = "URL." + strings.TrimPrefix(callee, "Url.")
+	}
+	if strings.HasPrefix(callee, "URL.") {
+		switch strings.ToLower(strings.TrimPrefix(callee, "URL.")) {
+		case "getsalesforcebaseurl":
+			callee = "URL.getSalesforceBaseUrl"
+		case "getorgdomainurl":
+			callee = "URL.getOrgDomainUrl"
+		case "getcurrentrequesturl":
+			callee = "URL.getCurrentRequestUrl"
+		}
+	}
 	if strings.HasPrefix(callee, "Json.") {
 		callee = "JSON." + strings.TrimPrefix(callee, "Json.")
 	}
@@ -1873,12 +1897,14 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
-		return platformScalar("URL", "https://local.oaer.example"), nil
+		return platformScalar("URL", vm.salesforceBaseURL()), nil
 	case "URL.getCurrentRequestUrl":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("URL.getCurrentRequestUrl expects 0 arguments")
 		}
 		return Null, unsupportedCallError(callee + " local current request URL surface")
+	case "CurrenciesApi.v1.syncCurrencyWithRelatedRecord":
+		return currenciesApiSyncCurrencyWithRelatedRecord(args)
 	case "Test.setMock":
 		return vm.testSetMock(args)
 	case "Test.createStub":
@@ -1968,6 +1994,26 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		}
 		return Null, unsupportedCallError(callee)
 	}
+}
+
+func (vm *VM) salesforceBaseURL() string {
+	if vm.serverBaseURL != "" {
+		return vm.serverBaseURL
+	}
+	return "https://local.oaer.example"
+}
+
+func currenciesApiSyncCurrencyWithRelatedRecord(args []Value) (Value, error) {
+	if len(args) != 2 {
+		return Null, fmt.Errorf("CurrenciesApi.v1.syncCurrencyWithRelatedRecord expects record list and Schema.SObjectField")
+	}
+	if args[0].Kind != ValueList && args[0].Kind != ValueObject {
+		return Null, fmt.Errorf("CurrenciesApi.v1.syncCurrencyWithRelatedRecord expects record list or SObject record")
+	}
+	if args[1].Kind != ValueObject || args[1].Type != "Schema.SObjectField" {
+		return Null, fmt.Errorf("CurrenciesApi.v1.syncCurrencyWithRelatedRecord expects Schema.SObjectField")
+	}
+	return Null, nil
 }
 
 func exprReceiverName(expr ir.Expr) string {
