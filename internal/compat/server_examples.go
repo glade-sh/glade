@@ -170,6 +170,7 @@ func runServerExampleProbes(root, projectPath string, fixture storage.Fixture, p
 	org.Namespace = p.Namespace
 	applyServerExampleSchema(&org, loadedSchema)
 	ensureServerExampleLocalAccount(&org)
+	ensureServerExampleLocalEntity(&org)
 	if err := storage.ApplyFixture(&org, fixture); err != nil {
 		return nil, err
 	}
@@ -209,6 +210,7 @@ func serverExampleHandler(org *storage.OrgState, store interface{ Save(storage.O
 	org.Namespace = p.Namespace
 	applyServerExampleSchema(org, loadedSchema)
 	ensureServerExampleLocalAccount(org)
+	ensureServerExampleLocalEntity(org)
 	handler := server.NewWithStoreAndSource(org, store, source)
 	index := typesys.Build(p, loadedSchema)
 	handler.SetProjectIndex(index)
@@ -249,6 +251,11 @@ func applyServerExampleSchema(org *storage.OrgState, loaded schema.Schema) {
 		if state.Definition.Fields == nil {
 			state.Definition.Fields = make(map[string]storage.Field)
 		}
+		if strings.HasSuffix(object.Name, "__c") {
+			if _, ok := state.Definition.Fields["Name"]; !ok {
+				state.Definition.Fields["Name"] = storage.Field{APIName: "Name", Label: "Name", Type: storage.FieldString}
+			}
+		}
 		for _, field := range object.Fields {
 			state.Definition.Fields[field.Name] = storage.Field{
 				APIName:          field.Name,
@@ -261,11 +268,42 @@ func applyServerExampleSchema(org *storage.OrgState, loaded schema.Schema) {
 				RelationshipName: field.RelationshipName,
 				PicklistValues:   serverExamplePicklistValues(field.PicklistValues),
 			}
+			childRelationship := serverExampleChildRelationshipName(field)
+			if childRelationship != "" && len(field.ReferenceTo) > 0 {
+				state.Definition.Relations = append(state.Definition.Relations, storage.Relationship{
+					Field:              field.Name,
+					ParentObjects:      append([]string(nil), field.ReferenceTo...),
+					ParentRelationship: serverExampleParentRelationshipName(field),
+					ChildRelationship:  childRelationship,
+					CascadeDelete:      strings.EqualFold(field.DeleteConstraint, "Cascade"),
+					RestrictedDelete:   strings.EqualFold(field.DeleteConstraint, "Restrict"),
+				})
+			}
 		}
 		state.Definition.RecordTypes = serverExampleRecordTypes(object.RecordTypes)
 		state.Definition.ValidationRules = serverExampleValidationRules(object.ValidationRules)
 		org.Objects[object.Name] = state
 	}
+}
+
+func serverExampleChildRelationshipName(field schema.Field) string {
+	if field.ChildRelationshipName != "" {
+		return field.ChildRelationshipName
+	}
+	if field.RelationshipName != "" && strings.HasSuffix(field.Name, "__c") {
+		return field.RelationshipName + "__r"
+	}
+	return ""
+}
+
+func serverExampleParentRelationshipName(field schema.Field) string {
+	if strings.HasSuffix(field.Name, "__c") {
+		return strings.TrimSuffix(field.Name, "__c") + "__r"
+	}
+	if strings.HasSuffix(field.Name, "Id") {
+		return strings.TrimSuffix(field.Name, "Id")
+	}
+	return field.RelationshipName
 }
 
 func serverExampleStorageFieldType(raw, formula string) storage.FieldType {
@@ -404,8 +442,46 @@ func ensureServerExampleLocalAccount(org *storage.OrgState) {
 	org.Objects["Account"] = account
 }
 
+func ensureServerExampleLocalEntity(org *storage.OrgState) {
+	objectName, ok := storage.ResolveObjectName(*org, "Entity__c")
+	if !ok {
+		objectName = "Entity__c"
+	}
+	entity := org.Objects[objectName]
+	if entity.Records == nil {
+		entity.Records = make(map[storage.ID]storage.Record)
+	}
+	id := storage.ID("a0f000000000001AAA")
+	if _, ok := entity.Records[id]; ok {
+		org.Objects[objectName] = entity
+		return
+	}
+	entity.Records[id] = storage.Record{
+		ID:     id,
+		Object: objectName,
+		Fields: map[string]storage.Value{
+			"Name": storage.StringValue("Local Probe Entity"),
+			serverExampleFieldName(org, objectName, "Status__c"):         storage.StringValue("Active"),
+			serverExampleFieldName(org, objectName, "SelfServiceURL__c"): storage.StringValue("https://local.example.test"),
+			serverExampleFieldName(org, objectName, "LogoURL__c"):        storage.StringValue("/resource/local"),
+		},
+	}
+	org.Objects[objectName] = entity
+}
+
 func serverExampleAccountFieldName(org *storage.OrgState, field string) string {
+	return serverExampleFieldName(org, "Account", field)
+}
+
+func serverExampleFieldName(org *storage.OrgState, objectName, field string) string {
 	account, ok := org.Objects["Account"]
+	if !ok || objectName != "Account" {
+		if resolvedObject, resolved := storage.ResolveObjectName(*org, objectName); resolved {
+			account, ok = org.Objects[resolvedObject]
+		} else {
+			account, ok = org.Objects[objectName]
+		}
+	}
 	if !ok {
 		return field
 	}
@@ -471,7 +547,7 @@ func serverExampleApexRESTBody(path, method string) string {
 	case strings.Contains(path, "selfservice/coupon"):
 		return `{"AccountId":"001000000000001AAA","Code":"LOCAL"}`
 	case strings.Contains(path, "selfservice/email"):
-		return `{"AccountId":"001000000000001AAA","EntityId":"001000000000001AAA","Service":"Local","SocialAccountId":"local","Name":"Local","Data":{"Email":"local@example.test","OrderId":"001000000000001AAA","RegistrationId":"001000000000001AAA"}}`
+		return `{"AccountId":"001000000000001AAA","EntityId":"a0f000000000001AAA","Service":"Local","SocialAccountId":"local","Name":"Local","Data":{"Email":"local@example.test","OrderId":"001000000000001AAA","RegistrationId":"001000000000001AAA"}}`
 	case strings.Contains(path, "selfservice/order"):
 		return `{"Order":{"attributes":{"type":"Order__c"}},"Items":[],"Payment":{"attributes":{"type":"Payment__c"}},"PaymentLines":[],"PaymentMethod":"Local","PaymentIssuer":"Local","CouponCodes":[],"Version":2}`
 	case strings.Contains(path, "selfservice/password"):

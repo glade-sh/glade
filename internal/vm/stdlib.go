@@ -1917,9 +1917,31 @@ func callListStdlibMember(receiver Value, method string, args []Value) (Value, V
 			return Null, receiver, false, true, fmt.Errorf("List.iterator expects 0 arguments")
 		}
 		return collectionIterator(receiver), receiver, false, true, nil
+	case "getSObjectType":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("List.getSObjectType expects 0 arguments")
+		}
+		if objectName := listSObjectTypeName(receiver); objectName != "" {
+			return sObjectTypeToken(objectName), receiver, false, true, nil
+		}
+		return Null, receiver, false, true, unsupportedCallError("List.getSObjectType for non-SObject list")
 	default:
 		return Null, receiver, false, false, nil
 	}
+}
+
+func listSObjectTypeName(receiver Value) string {
+	if elementType, ok := collectionElementType(receiver.Type); ok && (isCommonSObjectTypeName(elementType) || strings.HasSuffix(elementType, "__c") || strings.HasSuffix(elementType, "__e") || strings.HasSuffix(elementType, "__mdt") || strings.EqualFold(elementType, "sObject")) {
+		if !strings.EqualFold(elementType, "sObject") {
+			return elementType
+		}
+	}
+	for _, item := range receiver.List {
+		if item.Kind == ValueObject && item.Type != "" && item.Type != "Object" {
+			return item.Type
+		}
+	}
+	return ""
 }
 
 func callSetStdlibMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {

@@ -60,6 +60,31 @@ System.assertEquals('Acme', rows[0].Name);
 	}
 }
 
+func TestExecSObjectListGetSObjectTypeAndMapValuesProperty(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<SObject> records = (List<SObject>)JSON.deserialize('[{"attributes":{"type":"Account"},"Name":"Acme"}]', List<SObject>.class);
+System.assertEquals('Account', records.getSObjectType().getDescribe().getName());
+Map<Id, Account> accounts = new Map<Id, Account>();
+Account a = new Account(Name = 'Spruce');
+insert a;
+accounts.put(a.Id, a);
+System.assertEquals(1, accounts.values.size());
+System.assertEquals('Spruce', accounts.values[0].Name);
+System.assertEquals('Spruce', a.get(Account.Name));
+a.put(Account.Name, 'Birch');
+System.assertEquals('Birch', a.get('Name'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSObjectFieldShape(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account a = new Account();
@@ -481,6 +506,10 @@ rows = Database.query('SELECT Id FROM Account WHERE Name IN :names ORDER BY Name
 System.assertEquals(2, rows.size());
 Account probe = new Account(Name = 'Beta');
 rows = Database.query('SELECT Id FROM Account WHERE Name = :probe.Name');
+System.assertEquals(1, rows.size());
+Map<Id, Account> accountsById = new Map<Id, Account>();
+accountsById.put(rows[0].Id, rows[0]);
+rows = Database.query('SELECT Id FROM Account WHERE Id IN :accountsById.values()');
 System.assertEquals(1, rows.size());
 rows = Database.query('SELECT Id FROM Account WHERE RenewalDate__c = LAST_N_DAYS:2');
 System.assertEquals(2, rows.size());

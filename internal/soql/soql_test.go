@@ -30,6 +30,16 @@ func TestParseCountQuery(t *testing.T) {
 	}
 }
 
+func TestParseEmptyInList(t *testing.T) {
+	query, err := Parse("SELECT Id FROM Account WHERE Id IN ()")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if query.Where.Op != "IN" || len(query.Where.Values) != 0 {
+		t.Fatalf("where = %#v", query.Where)
+	}
+}
+
 func TestIsSOSLFind(t *testing.T) {
 	cases := []struct {
 		input string

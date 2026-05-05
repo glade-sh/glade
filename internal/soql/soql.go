@@ -2292,6 +2292,9 @@ func (p *parser) parseInOperand() ([]storage.Value, *Query, error) {
 		return nil, &query, nil
 	}
 	var values []storage.Value
+	if p.match(")") {
+		return values, nil, nil
+	}
 	for {
 		tok := p.advance().text
 		if tok == "" {

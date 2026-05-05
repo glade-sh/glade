@@ -2933,7 +2933,7 @@ func (vm *VM) executeSOQLRowsWithExpander(raw string, execResult *Result, expand
 	}
 	queryText, err := expand(raw)
 	if err != nil {
-		return nil, newExceptionError("QueryException", err.Error())
+		return nil, newExceptionError("QueryException", fmt.Sprintf("%s in query %q", err.Error(), raw))
 	}
 	if soql.IsSOSLFind(queryText) {
 		return nil, unsupportedCallError("SOSL/FIND local search surface")
@@ -3108,9 +3108,31 @@ func (vm *VM) expandSOQLBindsWith(raw string, lookup func(string) (Value, error)
 			return "", err
 		}
 		out.WriteString(soqlLiteral(value))
-		i = j
+		if callEnd, ok := consumeEmptyCallSuffix(raw, j); ok {
+			i = callEnd
+		} else {
+			i = j
+		}
 	}
 	return out.String(), nil
+}
+
+func consumeEmptyCallSuffix(raw string, index int) (int, bool) {
+	j := index
+	for j < len(raw) && (raw[j] == ' ' || raw[j] == '\t' || raw[j] == '\n' || raw[j] == '\r') {
+		j++
+	}
+	if j >= len(raw) || raw[j] != '(' {
+		return index, false
+	}
+	j++
+	for j < len(raw) && (raw[j] == ' ' || raw[j] == '\t' || raw[j] == '\n' || raw[j] == '\r') {
+		j++
+	}
+	if j >= len(raw) || raw[j] != ')' {
+		return index, false
+	}
+	return j + 1, true
 }
 
 func isSOQLDateLiteralBind(raw string, colon int) bool {
@@ -4359,6 +4381,16 @@ func soqlLiteral(value Value) string {
 		if value.Type == "Date" || value.Type == "Datetime" || value.Type == "Time" || value.Type == "Id" || value.Type == "String" {
 			if raw, ok := value.Fields["value"]; ok && raw.Kind == ValueString {
 				return "'" + strings.ReplaceAll(raw.Text, "'", "''") + "'"
+			}
+		}
+		if idValue, ok := value.Fields["Id"]; ok {
+			if idValue.Kind == ValueString {
+				return "'" + strings.ReplaceAll(idValue.Text, "'", "''") + "'"
+			}
+			if idValue.Kind == ValueObject && strings.EqualFold(idValue.Type, "Id") {
+				if raw, err := platformScalarText(idValue, "Id"); err == nil && raw != "" {
+					return "'" + strings.ReplaceAll(raw, "'", "''") + "'"
+				}
 			}
 		}
 		return "'" + strings.ReplaceAll(value.String(), "'", "''") + "'"
@@ -6825,6 +6857,30 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 			return Null, newExceptionError("NullPointerException", "Attempt to de-reference a null object")
 		}
 		if current.Kind != ValueObject {
+			if current.Kind == ValueMap {
+				switch part {
+				case "values":
+					out := List()
+					for _, key := range sortedMapKeys(current.Map) {
+						out.List = append(out.List, current.Map[key])
+					}
+					if _, valueType, ok := mapTypeArgs(current.Type); ok {
+						out.Type = "List<" + valueType + ">"
+					}
+					current = out
+					continue
+				case "keySet":
+					out := Set()
+					for _, rawKey := range sortedMapKeys(current.Map) {
+						out.Set = append(out.Set, valueFromMapKey(rawKey))
+					}
+					if keyType, _, ok := mapTypeArgs(current.Type); ok {
+						out.Type = "Set<" + keyType + ">"
+					}
+					current = out
+					continue
+				}
+			}
 			return Null, fmt.Errorf("cannot access %s on %s", part, current.Kind)
 		}
 		if field, owner, ok := vm.lookupField(current.Type, part); ok {
@@ -9850,23 +9906,31 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		}
 		return List(sobjectErrors(receiver)...), true, nil
 	case "get":
-		if len(args) != 1 || args[0].Kind != ValueString {
-			return Null, true, fmt.Errorf("SObject.get expects field name String")
+		if len(args) != 1 {
+			return Null, true, fmt.Errorf("SObject.get expects field name String or Schema.SObjectField")
 		}
-		field := vm.resolveSObjectFieldName(receiver.Type, args[0].Text)
+		fieldArg, err := vm.sObjectFieldArg(receiver.Type, args[0])
+		if err != nil {
+			return Null, true, fmt.Errorf("SObject.get expects field name String or Schema.SObjectField")
+		}
+		field := vm.resolveSObjectFieldName(receiver.Type, fieldArg)
 		value, ok := receiver.Fields[field]
 		if !ok {
 			return Null, true, nil
 		}
 		return value, true, nil
 	case "put":
-		if len(args) != 2 || args[0].Kind != ValueString {
-			return Null, true, fmt.Errorf("SObject.put expects field name String and value")
+		if len(args) != 2 {
+			return Null, true, fmt.Errorf("SObject.put expects field name String or Schema.SObjectField and value")
+		}
+		fieldArg, err := vm.sObjectFieldArg(receiver.Type, args[0])
+		if err != nil {
+			return Null, true, fmt.Errorf("SObject.put expects field name String or Schema.SObjectField and value")
 		}
 		if reason, ok := sobjectReadOnlyReason(receiver); ok {
 			return Null, true, fmt.Errorf("cannot modify read-only %s", reason)
 		}
-		field := vm.resolveSObjectFieldName(receiver.Type, args[0].Text)
+		field := vm.resolveSObjectFieldName(receiver.Type, fieldArg)
 		previous, ok := receiver.Fields[field]
 		if !ok {
 			previous = Null
@@ -9874,10 +9938,14 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		receiver.Fields[field] = args[1]
 		return previous, true, nil
 	case "isSet":
-		if len(args) != 1 || args[0].Kind != ValueString {
-			return Null, true, fmt.Errorf("SObject.isSet expects field name String")
+		if len(args) != 1 {
+			return Null, true, fmt.Errorf("SObject.isSet expects field name String or Schema.SObjectField")
 		}
-		field := vm.resolveSObjectFieldName(receiver.Type, args[0].Text)
+		fieldArg, err := vm.sObjectFieldArg(receiver.Type, args[0])
+		if err != nil {
+			return Null, true, fmt.Errorf("SObject.isSet expects field name String or Schema.SObjectField")
+		}
+		field := vm.resolveSObjectFieldName(receiver.Type, fieldArg)
 		_, ok := receiver.Fields[field]
 		return Bool(ok), true, nil
 	case "clear":
@@ -10077,6 +10145,29 @@ func (vm *VM) resolveSObjectFieldName(typeName, field string) string {
 		return canonical
 	}
 	return storage.StripNamespaceToken(vm.Org.Namespace, field)
+}
+
+func (vm *VM) sObjectFieldArg(receiverType string, value Value) (string, error) {
+	if value.Kind == ValueString {
+		return value.Text, nil
+	}
+	if value.Kind == ValueObject && value.Type == "Schema.SObjectField" {
+		if objectValue, ok := value.Fields["object"]; ok && objectValue.Kind == ValueString && receiverType != "" && !strings.EqualFold(receiverType, "SObject") {
+			if vm.Org != nil {
+				if receiverObject, ok := storage.ResolveObjectName(*vm.Org, receiverType); ok {
+					if tokenObject, ok := storage.ResolveObjectName(*vm.Org, objectValue.Text); ok && tokenObject != receiverObject {
+						return "", fmt.Errorf("field token belongs to %s, not %s", objectValue.Text, receiverType)
+					}
+				}
+			}
+		}
+		field, ok := value.Fields["field"]
+		if !ok || field.Kind != ValueString {
+			return "", fmt.Errorf("field token missing field name")
+		}
+		return field.Text, nil
+	}
+	return "", fmt.Errorf("expected field name")
 }
 
 func apexPagesSeverityStaticValue(name string) (Value, bool) {
