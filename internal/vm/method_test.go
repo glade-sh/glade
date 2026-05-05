@@ -301,6 +301,54 @@ System.assertEquals(5, c.score());
 	}
 }
 
+func TestExecInstanceFieldsAreCaseInsensitiveAcrossSuperclass(t *testing.T) {
+	getProgram, err := CompileAnonymous("return this.enforceCRUD;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	setProgram, err := CompileAnonymous("this.enforceFLS = enforce; return this.enforceFls;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+ChildSelector selector = new ChildSelector();
+System.assertEquals(true, selector.isCrud());
+System.assertEquals(false, selector.setFLS(false));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "BaseSelector",
+		Fields: map[string]Field{
+			"enforceCrud": {Name: "enforceCrud", Type: "Boolean", InitialValue: Bool(true)},
+			"enforceFls":  {Name: "enforceFls", Type: "Boolean", InitialValue: Bool(true)},
+		},
+		Methods: map[string]Method{
+			"isCrud": {Name: "BaseSelector.isCrud", ClassName: "BaseSelector", ReturnType: "Boolean", Program: getProgram},
+			"setFLS": {
+				Name:       "BaseSelector.setFLS",
+				ClassName:  "BaseSelector",
+				ReturnType: "Boolean",
+				Params:     []Param{{Name: "enforce", Type: "Boolean"}},
+				Program:    setProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "ChildSelector",
+		SuperClass: "BaseSelector",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecStaticInitializersRunLazilyOnFirstClassUse(t *testing.T) {
 	staticInit, err := CompileAnonymous("seed = 4;")
 	if err != nil {
