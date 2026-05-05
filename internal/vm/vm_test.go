@@ -122,6 +122,20 @@ System.assertEquals('spruce', value);
 	}
 }
 
+func TestExecNullCoalescingSyntax(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String, Integer> values = new Map<String, Integer>();
+values.put('spruce', (values.get('spruce') ?? 0) + 1);
+System.assertEquals(1, values.get('spruce'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestCompileAcceptsPrefixIncrementInForUpdate(t *testing.T) {
 	program, err := CompileAnonymous(`
 Integer total = 0;
@@ -129,6 +143,19 @@ for (Integer i = 0; i < 3; ++i) {
 	total += i;
 }
 System.assertEquals(3, total);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMapLiteralInitializer(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String, String> params = new Map<String, String> { 'orderId' => '001000000000001AAA' };
+System.assertEquals('001000000000001AAA', params.get('orderId'));
 `)
 	if err != nil {
 		t.Fatal(err)

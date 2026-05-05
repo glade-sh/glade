@@ -528,6 +528,7 @@ func compileProjectTriggers(index typesys.Index) ([]vm.Trigger, []error) {
 			}
 			out = append(out, vm.Trigger{
 				Name:      trigger.Name,
+				Namespace: index.Project.Namespace,
 				Object:    trigger.ObjectName,
 				Timing:    timing,
 				Operation: op,

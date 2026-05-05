@@ -22,6 +22,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 	"unicode/utf8"
 
 	"github.com/open-aer/oaer/internal/dml"
@@ -75,6 +76,7 @@ type VM struct {
 	debugHooks       DebugHooks
 	hasDebugHooks    bool
 	ctx              context.Context
+	activeSetters    map[string]int
 }
 
 const maxTriggerDepth = 16
@@ -152,6 +154,7 @@ type AsyncJob struct {
 
 type Trigger struct {
 	Name      string
+	Namespace string
 	Object    string
 	Timing    string
 	Operation string
@@ -176,6 +179,7 @@ func New(stdout io.Writer) *VM {
 		savepoints:      make(map[string]storage.OrgState),
 		savepointOrder:  make(map[string]int),
 		ctx:             context.Background(),
+		activeSetters:   make(map[string]int),
 	}
 }
 
@@ -880,6 +884,36 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 				return vm.eval(expr.Args[1], result)
 			}
 			return vm.eval(expr.Args[2], result)
+		}
+		if expr.Callee == "__coalesce" {
+			if len(expr.Args) != 2 {
+				return Null, fmt.Errorf("null coalescing expression requires 2 operands")
+			}
+			left, err := vm.eval(expr.Args[0], result)
+			if err != nil {
+				return Null, err
+			}
+			if left.Kind != ValueNull {
+				return left, nil
+			}
+			return vm.eval(expr.Args[1], result)
+		}
+		if expr.Callee == "__mapEntry" {
+			if len(expr.Args) != 2 {
+				return Null, fmt.Errorf("map entry requires key and value")
+			}
+			key, err := vm.eval(expr.Args[0], result)
+			if err != nil {
+				return Null, err
+			}
+			value, err := vm.eval(expr.Args[1], result)
+			if err != nil {
+				return Null, err
+			}
+			entry := Object("__mapEntry")
+			entry.Fields["__key"] = key
+			entry.Fields["__value"] = value
+			return entry, nil
 		}
 		if strings.HasPrefix(expr.Callee, "__field:") {
 			if expr.Left == nil {
@@ -4188,6 +4222,22 @@ func storageValueFromVM(value Value) (storage.Value, error) {
 		return storage.DecimalValue(value.String()), nil
 	case ValueBool:
 		return storage.BooleanValue(value.Bool), nil
+	case ValueObject:
+		if raw, ok := value.Fields["value"]; ok && raw.Kind == ValueString {
+			switch value.Type {
+			case "Id", "String":
+				return storage.StringValue(raw.Text), nil
+			case "Date":
+				return storage.DateValue(raw.Text), nil
+			case "Datetime", "DateTime":
+				return storage.DateTimeValue(raw.Text), nil
+			case "Time":
+				return storage.StringValue(raw.Text), nil
+			case "Blob":
+				return storage.BlobValue(raw.Text), nil
+			}
+		}
+		return storage.Value{}, fmt.Errorf("unsupported storage value %s", value.Kind)
 	default:
 		return storage.Value{}, fmt.Errorf("unsupported storage value %s", value.Kind)
 	}
@@ -5993,13 +6043,15 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 		return Null, jsonTypeMappingError(typeName, raw)
 	}
 	if strict {
-		allowed := vm.jsonAllowedFields(typeName)
-		for key := range fields {
-			if key == "attributes" {
-				continue
-			}
-			if _, ok := allowed[key]; !ok {
-				return Null, newExceptionError("JSONException", fmt.Sprintf("JSON.deserializeStrict found unknown field %q for %s", key, typeName))
+		if !vm.allowOpenSObjectJSONFields(typeName) {
+			allowed := vm.jsonAllowedFields(typeName)
+			for key := range fields {
+				if key == "attributes" {
+					continue
+				}
+				if _, ok := allowed[key]; !ok {
+					return Null, newExceptionError("JSONException", fmt.Sprintf("JSON.deserializeStrict found unknown field %q for %s", key, typeName))
+				}
 			}
 		}
 	}
@@ -6093,6 +6145,9 @@ func (vm *VM) jsonSObjectFieldType(typeName, fieldName string) (string, bool) {
 
 func (vm *VM) isJSONTypedObjectTarget(typeName string) bool {
 	if _, ok := vm.Classes[typeName]; ok {
+		return true
+	}
+	if vm.isSObjectLikeType(typeName) {
 		return true
 	}
 	if vm.Org != nil {
@@ -6300,6 +6355,20 @@ func (vm *VM) jsonAllowedFields(typeName string) map[string]struct{} {
 		className = class.SuperClass
 	}
 	return allowed
+}
+
+func (vm *VM) allowOpenSObjectJSONFields(typeName string) bool {
+	if !vm.isSObjectLikeType(typeName) {
+		return false
+	}
+	if _, ok := vm.Classes[typeName]; ok {
+		return false
+	}
+	if vm.Org == nil {
+		return true
+	}
+	_, ok := storage.ResolveObjectName(*vm.Org, typeName)
+	return !ok
 }
 
 func (vm *VM) schemaGlobalDescribe() Value {
@@ -6812,6 +6881,22 @@ func (vm *VM) assign(name string, value Value) error {
 				}
 				value = coerced
 				if field.Setter != nil {
+					key := owner + "." + memberName
+					if vm.activeSetters[key] > 0 {
+						field.Value = value
+						class := vm.Classes[owner]
+						class.StaticFields[memberName] = field
+						vm.Classes[owner] = class
+						vm.storeClassAliases(class)
+						return nil
+					}
+					vm.activeSetters[key]++
+					defer func() {
+						vm.activeSetters[key]--
+						if vm.activeSetters[key] == 0 {
+							delete(vm.activeSetters, key)
+						}
+					}()
 					_, err := vm.callMethod(*field.Setter, []Value{value}, resultForLookup())
 					return err
 				}
@@ -6837,6 +6922,18 @@ func (vm *VM) assign(name string, value Value) error {
 				}
 				value = coerced
 				if def.Setter != nil {
+					key := class.Name + "." + name
+					if vm.activeSetters[key] > 0 {
+						this.Fields[name] = value
+						return nil
+					}
+					vm.activeSetters[key]++
+					defer func() {
+						vm.activeSetters[key]--
+						if vm.activeSetters[key] == 0 {
+							delete(vm.activeSetters, key)
+						}
+					}()
 					_, err := vm.callMethodWithReceiver(*def.Setter, this, []Value{value}, resultForLookup())
 					return err
 				}
@@ -6857,6 +6954,22 @@ func (vm *VM) assign(name string, value Value) error {
 			}
 			value = coerced
 			if field.Setter != nil {
+				key := owner + "." + name
+				if vm.activeSetters[key] > 0 {
+					field.Value = value
+					class := vm.Classes[owner]
+					class.StaticFields[name] = field
+					vm.Classes[owner] = class
+					vm.storeClassAliases(class)
+					return nil
+				}
+				vm.activeSetters[key]++
+				defer func() {
+					vm.activeSetters[key]--
+					if vm.activeSetters[key] == 0 {
+						delete(vm.activeSetters, key)
+					}
+				}()
 				_, err := vm.callMethod(*field.Setter, []Value{value}, resultForLookup())
 				return err
 			}
@@ -7094,6 +7207,13 @@ func (vm *VM) classNamespace(className string) string {
 		}
 	}
 	if !ok {
+		for _, triggers := range vm.Triggers {
+			for _, trigger := range triggers {
+				if trigger.Name == className {
+					return trigger.Namespace
+				}
+			}
+		}
 		return ""
 	}
 	return class.Namespace
@@ -7444,6 +7564,20 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 		if len(namedArgs) != 0 {
 			return Null, fmt.Errorf("Map constructor does not accept named fields")
 		}
+		if len(args) > 0 && allMapEntryValues(args) {
+			value := Map()
+			value.Type = typeName
+			for _, entry := range args {
+				keyValue := entry.Fields["__key"]
+				item := entry.Fields["__value"]
+				key, coerced, err := vm.coerceMapEntry(typeName, keyValue, item)
+				if err != nil {
+					return Null, fmt.Errorf("Map constructor: %w", err)
+				}
+				value.Map[mapKey(key)] = coerced
+			}
+			return value, nil
+		}
 		if len(args) == 1 && args[0].Kind == ValueMap {
 			value := Map()
 			value.Type = typeName
@@ -7686,6 +7820,18 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 		return Null, fmt.Errorf("%s constructor does not accept arguments", typeName)
 	}
 	return object, nil
+}
+
+func allMapEntryValues(values []Value) bool {
+	if len(values) == 0 {
+		return false
+	}
+	for _, value := range values {
+		if value.Kind != ValueObject || value.Type != "__mapEntry" {
+			return false
+		}
+	}
+	return true
 }
 
 func validateURLConstructorValue(raw string) error {
@@ -8496,6 +8642,20 @@ func isLoggingLevelValue(value Value) bool {
 
 func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 	if value.Kind == ValueObject {
+		if strings.EqualFold(typeName, "String") && (strings.EqualFold(value.Type, "Id") || strings.EqualFold(value.Type, "String")) {
+			text, err := platformScalarText(value, value.Type)
+			if err != nil {
+				return Null, err
+			}
+			return String(text), nil
+		}
+		if strings.EqualFold(typeName, "Id") && strings.EqualFold(value.Type, "String") {
+			text, err := platformScalarText(value, value.Type)
+			if err != nil {
+				return Null, err
+			}
+			return platformScalar("Id", text), nil
+		}
 		if strings.EqualFold(typeName, "Object") || vm.typeMatches(value.Type, typeName, make(map[string]bool)) {
 			return value, nil
 		}
@@ -9039,7 +9199,23 @@ func (vm *VM) callMember(callee string, args []Value, result *Result) (Value, bo
 	}
 	receiver, ok := vm.Globals[receiverName]
 	if !ok {
-		return Null, false, nil
+		if vm.currentClass != "" {
+			if field, owner, ok := vm.lookupStaticField(vm.currentClass, receiverName); ok {
+				if err := vm.checkMemberAccess(owner, field.Access, owner+"."+receiverName); err != nil {
+					return Null, true, err
+				}
+				return vm.callValueMember(receiverName, field.Value, method, args, result)
+			}
+		}
+		if receiverName == "" || !unicode.IsLower([]rune(receiverName)[0]) {
+			return Null, false, nil
+		}
+		var err error
+		receiver, err = vm.lookup(receiverName)
+		if err != nil {
+			return Null, false, nil
+		}
+		return vm.callValueMember(receiverName, receiver, method, args, result)
 	}
 	return vm.callValueMember(receiverName, receiver, method, args, result)
 }
@@ -10528,7 +10704,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, err
 			}
 			return String(formatted), receiver, false, true, nil
-		case "date", "dateGmt":
+		case "date", "dateGmt", "dateGMT":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Datetime.%s expects 0 arguments", method)
 			}
@@ -10546,7 +10722,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				t = t.UTC()
 			}
 			return platformScalar("Date", t.Format("2006-01-02")), receiver, false, true, nil
-		case "time", "timeGmt":
+		case "time", "timeGmt", "timeGMT":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Datetime.%s expects 0 arguments", method)
 			}

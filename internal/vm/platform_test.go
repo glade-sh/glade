@@ -1603,6 +1603,7 @@ System.assertEquals(6, winterLocal.secondGmt());
 Datetime fromDateTime = Datetime.newInstance(Date.newInstance(2024, 7, 1), Time.newInstance(5, 30, 0, 250));
 System.assertEquals('2024-07-01T12:30:00.25Z', fromDateTime.formatGmt());
 System.assertEquals('2024-07-01T05:30:00.25-07:00', fromDateTime.format());
+System.assertEquals(Date.newInstance(2024, 7, 1), fromDateTime.dateGMT());
 Datetime fromDateTimeGmt = Datetime.newInstanceGmt(Date.newInstance(2024, 7, 1), Time.newInstance(5, 30, 0, 250));
 System.assertEquals('2024-07-01T05:30:00.25Z', fromDateTimeGmt.formatGmt());
 

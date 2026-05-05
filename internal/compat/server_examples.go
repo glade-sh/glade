@@ -195,10 +195,120 @@ func serverExampleHandler(org *storage.OrgState, store interface{ Save(storage.O
 	if err != nil {
 		return nil, err
 	}
+	applyServerExampleSchema(org, loadedSchema)
 	handler := server.NewWithStoreAndSource(org, store, source)
 	index := typesys.Build(p, loadedSchema)
 	handler.SetProjectIndex(index)
 	return handler, nil
+}
+
+func applyServerExampleSchema(org *storage.OrgState, loaded schema.Schema) {
+	if org.Objects == nil {
+		org.Objects = make(map[string]storage.ObjectState)
+	}
+	for _, object := range loaded.Objects {
+		state := org.Objects[object.Name]
+		if state.Records == nil {
+			state.Records = make(map[storage.ID]storage.Record)
+		}
+		if state.Indexes == nil {
+			state.Indexes = make(map[string]storage.IndexSet)
+		}
+		if state.Definition.APIName == "" {
+			state.Definition.APIName = object.Name
+		}
+		state.Definition.Label = object.Label
+		state.Definition.PluralLabel = object.PluralLabel
+		state.Definition.SharingModel = object.SharingModel
+		if state.Definition.Fields == nil {
+			state.Definition.Fields = make(map[string]storage.Field)
+		}
+		for _, field := range object.Fields {
+			state.Definition.Fields[field.Name] = storage.Field{
+				APIName:          field.Name,
+				Label:            field.Label,
+				Type:             serverExampleStorageFieldType(field.Type, field.Formula),
+				Required:         field.Required,
+				ExternalID:       field.ExternalID,
+				Unique:           field.Unique,
+				ReferenceTo:      append([]string(nil), field.ReferenceTo...),
+				RelationshipName: field.RelationshipName,
+				PicklistValues:   serverExamplePicklistValues(field.PicklistValues),
+			}
+		}
+		state.Definition.RecordTypes = serverExampleRecordTypes(object.RecordTypes)
+		state.Definition.ValidationRules = serverExampleValidationRules(object.ValidationRules)
+		org.Objects[object.Name] = state
+	}
+}
+
+func serverExampleStorageFieldType(raw, formula string) storage.FieldType {
+	if formula != "" {
+		return storage.FieldCalculated
+	}
+	switch raw {
+	case "Text", "TextArea", "LongTextArea", "Email", "Phone", "Url":
+		return storage.FieldString
+	case "Picklist", "MultiselectPicklist":
+		return storage.FieldPicklist
+	case "Checkbox":
+		return storage.FieldBoolean
+	case "Number", "Currency", "Percent":
+		return storage.FieldDecimal
+	case "Date":
+		return storage.FieldDate
+	case "DateTime":
+		return storage.FieldDateTime
+	case "Lookup", "MasterDetail":
+		return storage.FieldReference
+	case "Id":
+		return storage.FieldID
+	case "Base64":
+		return storage.FieldBlob
+	default:
+		return storage.FieldAny
+	}
+}
+
+func serverExamplePicklistValues(values []schema.PicklistValue) []storage.PicklistValue {
+	out := make([]storage.PicklistValue, 0, len(values))
+	for _, value := range values {
+		out = append(out, storage.PicklistValue{
+			Value:   value.FullName,
+			Label:   value.Label,
+			Default: value.Default,
+			Active:  value.Active,
+		})
+	}
+	return out
+}
+
+func serverExampleRecordTypes(values []schema.RecordType) []storage.RecordTypeInfo {
+	out := make([]storage.RecordTypeInfo, 0, len(values))
+	for _, value := range values {
+		out = append(out, storage.RecordTypeInfo{
+			DeveloperName: value.DeveloperName,
+			Name:          value.Label,
+			Active:        value.Active,
+			Default:       value.Default,
+			Description:   value.Description,
+		})
+	}
+	return out
+}
+
+func serverExampleValidationRules(values []schema.ValidationRule) []storage.ValidationRule {
+	out := make([]storage.ValidationRule, 0, len(values))
+	for _, value := range values {
+		out = append(out, storage.ValidationRule{
+			Name:                  value.Name,
+			Active:                value.Active,
+			ErrorConditionFormula: value.ErrorConditionFormula,
+			ErrorMessage:          value.ErrorMessage,
+			ErrorDisplayField:     value.ErrorDisplayField,
+		})
+	}
+	return out
 }
 
 func serverExampleBaseOrg(fixture storage.Fixture) storage.OrgState {
@@ -283,6 +393,26 @@ func serverExampleProbes(routes []ServerExampleRestRoute, seeded bool) []serverE
 
 func serverExampleApexRESTBody(path, method string) string {
 	switch {
+	case strings.Contains(path, "selfservice/cart/build"):
+		return `{"OrderId":"001000000000001AAA"}`
+	case strings.Contains(path, "selfservice/cart/submit"):
+		return `{"Cart":{"attributes":{"type":"Cart__c"},"Data__c":"{}"},"CartItems":[],"CartItemLines":[],"CartPayments":[],"CartPaymentLines":[]}`
+	case strings.Contains(path, "selfservice/coupon"):
+		return `{"AccountId":"001000000000001AAA","Code":"LOCAL"}`
+	case strings.Contains(path, "selfservice/email"):
+		return `{"AccountId":"001000000000001AAA","EntityId":"001000000000001AAA","Service":"Local","SocialAccountId":"local","Name":"Local","Data":{"Email":"local@example.test","OrderId":"001000000000001AAA","RegistrationId":"001000000000001AAA"}}`
+	case strings.Contains(path, "selfservice/order"):
+		return `{"Order":{"attributes":{"type":"Order__c"}},"Items":[],"Payment":{"attributes":{"type":"Payment__c"}},"PaymentLines":[],"PaymentMethod":"Local","PaymentIssuer":"Local","CouponCodes":[],"Version":2}`
+	case strings.Contains(path, "selfservice/password"):
+		return `{"AccountId":"001000000000001AAA","NewPassword":"localPassword1!","EntityId":"001000000000001AAA"}`
+	case strings.Contains(path, "selfservice/priceclass"):
+		return `{"AccountId":"001000000000001AAA","EventId":"001000000000001AAA","MembershipTypeId":"001000000000001AAA","Context":{}}`
+	case strings.Contains(path, "selfservice/pricing"):
+		return `{"AccountId":"001000000000001AAA","ProductIds":[],"MembershipTypeProductLinkIds":[],"Quantities":[],"PriceClass":"Default","Context":{}}`
+	case strings.Contains(path, "selfservice/recurringpaymentcalculator"):
+		return `{"IntervalUnit":"Monthly","IntervalAmount":1,"StartDayOverride":"1","Amount":0,"StartDate":"2026-01-01T00:00:00Z","EndDate":"2026-12-31T00:00:00Z"}`
+	case strings.Contains(path, "selfservice/shippingcalculator"):
+		return `{"Street":"1 Local Trail","City":"Port Alsworth","State":"AK","PostalCode":"99653","Country":"US","CustomerId":"001000000000001AAA","ProductShippingInfos":[]}`
 	case strings.Contains(path, "webhookevent/create"):
 		return `[{"objectId":"local-object","objectType":"Local","objectRoute":"/local","triggeredAt":"1970-01-01T00:00:00Z"}]`
 	case strings.Contains(path, "selfservice/sobjects") && method == http.MethodDelete:

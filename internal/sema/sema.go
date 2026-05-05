@@ -1241,6 +1241,9 @@ func (a *Analyzer) inferIRExprType(expr ir.Expr, scope irSemaScope, model map[st
 		if expr.Callee == "__ternary" {
 			return a.inferIRTernaryType(expr, scope, model, currentType)
 		}
+		if expr.Callee == "__coalesce" && len(expr.Args) > 0 {
+			return a.inferIRExprType(expr.Args[0], scope, model, currentType)
+		}
 		if expr.Left != nil {
 			receiverType := a.inferIRExprType(*expr.Left, scope, model, currentType)
 			if receiverType == "" {
@@ -3247,7 +3250,7 @@ func isSemaNumericType(typeName string) bool {
 
 func skipSemaCall(callee string) bool {
 	switch normalizeName(callee) {
-	case "__ternary", "if", "for", "while", "switch", "catch", "new", "return", "system.assert", "system.assertequals", "system.debug":
+	case "__ternary", "__coalesce", "__mapentry", "if", "for", "while", "switch", "catch", "new", "return", "system.assert", "system.assertequals", "system.debug":
 		return true
 	default:
 		return strings.HasPrefix(callee, "__cast:") || strings.HasPrefix(callee, "__field:")

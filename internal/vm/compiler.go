@@ -105,7 +105,7 @@ func lex(source string) ([]token, error) {
 			if i+1 < len(source) {
 				two := source[i : i+2]
 				switch two {
-				case "==", "!=", "<=", ">=", "&&", "||", "++", "--", "+=", "-=":
+				case "==", "!=", "<=", ">=", "&&", "||", "++", "--", "+=", "-=", "??":
 					tokens = append(tokens, token{kind: tokenSymbol, text: two, pos: start})
 					i += 2
 					goto next
@@ -689,7 +689,7 @@ func (p *parser) parseExpression() (ir.Expr, error) {
 }
 
 func (p *parser) parseTernary() (ir.Expr, error) {
-	condition, err := p.parseOr()
+	condition, err := p.parseNullCoalesce()
 	if err != nil {
 		return ir.Expr{}, err
 	}
@@ -708,6 +708,21 @@ func (p *parser) parseTernary() (ir.Expr, error) {
 		return ir.Expr{}, err
 	}
 	return ir.Expr{Kind: ir.ExprCall, Callee: "__ternary", Args: []ir.Expr{condition, whenTrue, whenFalse}}, nil
+}
+
+func (p *parser) parseNullCoalesce() (ir.Expr, error) {
+	left, err := p.parseOr()
+	if err != nil {
+		return ir.Expr{}, err
+	}
+	for p.match(tokenSymbol, "??") {
+		right, err := p.parseOr()
+		if err != nil {
+			return ir.Expr{}, err
+		}
+		left = ir.Expr{Kind: ir.ExprCall, Callee: "__coalesce", Args: []ir.Expr{left, right}}
+	}
+	return left, nil
 }
 
 func (p *parser) parseOr() (ir.Expr, error) {
@@ -1097,6 +1112,16 @@ func (p *parser) parseNewArgs() ([]ir.Expr, []ir.NamedArg, error) {
 			expr, err := p.parseExpression()
 			if err != nil {
 				return nil, nil, err
+			}
+			if p.match(tokenSymbol, "=") {
+				if _, err := p.expect(tokenSymbol, ">"); err != nil {
+					return nil, nil, err
+				}
+				value, err := p.parseExpression()
+				if err != nil {
+					return nil, nil, err
+				}
+				expr = ir.Expr{Kind: ir.ExprCall, Callee: "__mapEntry", Args: []ir.Expr{expr, value}}
 			}
 			args = append(args, expr)
 			if p.match(tokenSymbol, "}") {
