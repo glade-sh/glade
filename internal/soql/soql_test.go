@@ -158,6 +158,59 @@ func TestExecuteAggregateQueries(t *testing.T) {
 	assertStorageDecimal(t, fields["averageRevenue"], "216.6666666667")
 }
 
+func TestExecuteSelectFieldFunctions(t *testing.T) {
+	org := aggregateTestOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Rating"] = storage.Field{
+		APIName: "Rating",
+		Type:    storage.FieldPicklist,
+		PicklistValues: []storage.PicklistValue{
+			{Value: "Hot", Label: "Hot Label"},
+			{Value: "Warm", Label: "Warm Label"},
+		},
+	}
+	org.Objects["Account"] = account
+
+	result, err := ParseAndExecute(org, "SELECT toLabel(Rating) ratingLabel, FORMAT(AnnualRevenue) formattedRevenue, convertCurrency(AnnualRevenue) convertedRevenue FROM Account WHERE toLabel(Rating) = 'Hot Label' ORDER BY Name LIMIT 1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 {
+		t.Fatalf("result = %#v", result)
+	}
+	fields := result.Records[0].Fields
+	if got := fields["ratingLabel"].String; got != "Hot Label" {
+		t.Fatalf("ratingLabel = %q", got)
+	}
+	if got := fields["formattedRevenue"].String; got != "100" {
+		t.Fatalf("formattedRevenue = %q", got)
+	}
+	assertStorageDecimal(t, fields["convertedRevenue"], "100")
+}
+
+func TestExecuteDatePartSelectFunctionGrouping(t *testing.T) {
+	org := aggregateTestOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["RenewalDate__c"] = storage.Field{APIName: "RenewalDate__c", Type: storage.FieldDate}
+	for id, record := range account.Records {
+		record.Fields["RenewalDate__c"] = storage.DateValue("2026-04-15")
+		account.Records[id] = record
+	}
+	org.Objects["Account"] = account
+
+	result, err := ParseAndExecute(org, "SELECT CALENDAR_YEAR(RenewalDate__c) renewalYear, COUNT(Id) total FROM Account GROUP BY CALENDAR_YEAR(RenewalDate__c)")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 {
+		t.Fatalf("result = %#v", result)
+	}
+	fields := result.Records[0].Fields
+	assertStorageInt(t, fields["CALENDAR_YEAR(RenewalDate__c)"], 2026)
+	assertStorageInt(t, fields["renewalYear"], 2026)
+	assertStorageInt(t, fields["total"], 3)
+}
+
 func aggregateTestOrg() storage.OrgState {
 	org := storage.NewOrgState()
 	org.Objects["Account"] = storage.ObjectState{

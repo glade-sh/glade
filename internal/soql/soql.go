@@ -309,6 +309,13 @@ func aggregateRecords(org storage.OrgState, definition storage.ObjectDefinition,
 		for _, field := range query.GroupBy {
 			fields[field] = group.values[field].Clone()
 		}
+		for _, field := range query.Fields {
+			if expr, ok := parseSelectFieldExpression(field); ok && expr.Alias != "" {
+				if value, ok := fields[expr.Raw]; ok {
+					fields[expr.Alias] = value.Clone()
+				}
+			}
+		}
 		aggregateFields, err := aggregateFields(org, definition, group.records, query.Aggregates, group.grouping)
 		if err != nil {
 			return nil, err
@@ -645,6 +652,12 @@ func projectRecord(org storage.OrgState, definition storage.ObjectDefinition, re
 		System:        record.System,
 	}
 	for _, field := range fields {
+		if expr, ok := parseSelectFieldExpression(field); ok {
+			if value, ok := selectFieldExpressionValue(org, definition, record, expr); ok {
+				out.Fields[expr.outputName()] = value.Clone()
+			}
+			continue
+		}
 		canonicalField, ok := storage.ResolveFieldName(definition, org.Namespace, field)
 		if ok && canonicalField == "Id" {
 			out.Fields[canonicalField] = storage.IDValue(record.ID)
@@ -847,6 +860,12 @@ func validateQueryReferences(org storage.OrgState, definition storage.ObjectDefi
 		return err
 	}
 	for _, field := range query.Fields {
+		if expr, ok := parseSelectFieldExpression(field); ok {
+			if err := validateSelectFieldExpression(org, definition, expr, mode); err != nil {
+				return err
+			}
+			continue
+		}
 		aggregate, ok, err := parseAggregateField(field)
 		if err != nil {
 			return err
@@ -1072,7 +1091,11 @@ func validateConditionReferences(org storage.OrgState, definition storage.Object
 		}
 	}
 	if condition.Field != "" {
-		if err := validateFieldReference(org, definition, condition.Field, mode); err != nil {
+		if expr, ok := parseSelectFieldExpression(condition.Field); ok {
+			if err := validateSelectFieldExpression(org, definition, expr, mode); err != nil {
+				return err
+			}
+		} else if err := validateFieldReference(org, definition, condition.Field, mode); err != nil {
 			return err
 		}
 	}
@@ -1118,6 +1141,9 @@ func validateTypeofReference(org storage.OrgState, definition storage.ObjectDefi
 }
 
 func validateFieldReference(org storage.OrgState, definition storage.ObjectDefinition, field string, mode string) error {
+	if expr, ok := parseSelectFieldExpression(field); ok {
+		return validateSelectFieldExpression(org, definition, expr, mode)
+	}
 	if fieldKnownForMode(org, definition, field, mode != "") {
 		return nil
 	}
@@ -1300,6 +1326,9 @@ func idFromValue(value storage.Value) storage.ID {
 }
 
 func recordValue(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, field string) (storage.Value, bool) {
+	if expr, ok := parseSelectFieldExpression(field); ok {
+		return selectFieldExpressionValue(org, definition, record, expr)
+	}
 	if canonical, ok := storage.ResolveFieldName(definition, org.Namespace, field); ok && canonical == "Id" {
 		return storage.IDValue(record.ID), true
 	}
@@ -1806,6 +1835,27 @@ func (p *parser) parseFields() ([]string, []ChildQuery, []TypeofSpec, error) {
 			}
 			continue
 		}
+		if isSelectFieldFunction(field) && p.match("(") {
+			args, err := p.parseFunctionArgs()
+			if err != nil {
+				return nil, nil, nil, err
+			}
+			field = strings.ToUpper(field) + "(" + strings.Join(args, ",") + ")"
+			if p.matchWord("AS") {
+				alias, err := p.parseName()
+				if err != nil {
+					return nil, nil, nil, err
+				}
+				field += " " + alias
+			} else if tok := p.peek().text; tok != "" && tok != "," && !strings.EqualFold(tok, "FROM") {
+				field += " " + p.advance().text
+			}
+			fields = append(fields, field)
+			if !p.match(",") {
+				return fields, childQueries, typeofs, nil
+			}
+			continue
+		}
 		isAggregate := isAggregateFunc(field) && p.match("(")
 		if isAggregate {
 			if strings.EqualFold(field, "COUNT") && p.match(")") {
@@ -1844,7 +1894,7 @@ func (p *parser) parseFields() ([]string, []ChildQuery, []TypeofSpec, error) {
 func (p *parser) parseNameList() ([]string, error) {
 	var names []string
 	for {
-		name, err := p.parseName()
+		name, err := p.parseSelectableName()
 		if err != nil {
 			return nil, err
 		}
@@ -1853,6 +1903,38 @@ func (p *parser) parseNameList() ([]string, error) {
 			return names, nil
 		}
 	}
+}
+
+func (p *parser) parseFunctionArgs() ([]string, error) {
+	var args []string
+	for {
+		arg, err := p.parseName()
+		if err != nil {
+			return nil, err
+		}
+		args = append(args, arg)
+		if p.match(")") {
+			return args, nil
+		}
+		if !p.match(",") {
+			return nil, p.errorf("expected , or ) in function argument list")
+		}
+	}
+}
+
+func (p *parser) parseSelectableName() (string, error) {
+	name, err := p.parseName()
+	if err != nil {
+		return "", err
+	}
+	if !isSelectFieldFunction(name) || !p.match("(") {
+		return name, nil
+	}
+	args, err := p.parseFunctionArgs()
+	if err != nil {
+		return "", err
+	}
+	return strings.ToUpper(name) + "(" + strings.Join(args, ",") + ")", nil
 }
 
 func (p *parser) parseTypeofSpec() (TypeofSpec, error) {
@@ -1965,6 +2047,203 @@ func isAggregateFunc(name string) bool {
 	}
 }
 
+func isSelectFieldFunction(name string) bool {
+	switch strings.ToUpper(name) {
+	case "TOLABEL", "FORMAT", "CONVERTCURRENCY",
+		"CALENDAR_MONTH", "CALENDAR_QUARTER", "CALENDAR_YEAR",
+		"DAY_IN_MONTH", "DAY_IN_WEEK", "DAY_IN_YEAR", "DAY_ONLY",
+		"FISCAL_MONTH", "FISCAL_QUARTER", "FISCAL_YEAR",
+		"HOUR_IN_DAY", "WEEK_IN_MONTH", "WEEK_IN_YEAR":
+		return true
+	default:
+		return false
+	}
+}
+
+type selectFieldExpression struct {
+	Func  string
+	Args  []string
+	Alias string
+	Raw   string
+}
+
+func (e selectFieldExpression) outputName() string {
+	if e.Alias != "" {
+		return e.Alias
+	}
+	return e.Raw
+}
+
+func parseSelectFieldExpression(field string) (selectFieldExpression, bool) {
+	parts := strings.Fields(field)
+	if len(parts) == 0 || len(parts) > 2 {
+		return selectFieldExpression{}, false
+	}
+	raw := parts[0]
+	open := strings.Index(raw, "(")
+	if open <= 0 || !strings.HasSuffix(raw, ")") {
+		return selectFieldExpression{}, false
+	}
+	fn := strings.ToUpper(raw[:open])
+	if !isSelectFieldFunction(fn) {
+		return selectFieldExpression{}, false
+	}
+	argsText := raw[open+1 : len(raw)-1]
+	if strings.TrimSpace(argsText) == "" {
+		return selectFieldExpression{}, false
+	}
+	args := strings.Split(argsText, ",")
+	for i := range args {
+		args[i] = strings.TrimSpace(args[i])
+		if args[i] == "" {
+			return selectFieldExpression{}, false
+		}
+	}
+	alias := ""
+	if len(parts) == 2 {
+		alias = parts[1]
+	}
+	return selectFieldExpression{Func: fn, Args: args, Alias: alias, Raw: raw}, true
+}
+
+func validateSelectFieldExpression(org storage.OrgState, definition storage.ObjectDefinition, expr selectFieldExpression, mode string) error {
+	if len(expr.Args) != 1 {
+		return unsupportedSOQLErrorf("%s currently supports one field argument", expr.Func)
+	}
+	return validateFieldReference(org, definition, expr.Args[0], mode)
+}
+
+func selectFieldExpressionValue(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, expr selectFieldExpression) (storage.Value, bool) {
+	if len(expr.Args) != 1 {
+		return storage.Value{}, false
+	}
+	value, ok := recordValue(org, definition, record, expr.Args[0])
+	if !ok {
+		return storage.Value{}, false
+	}
+	switch expr.Func {
+	case "TOLABEL":
+		return toLabelValue(org, definition, expr.Args[0], value), true
+	case "FORMAT":
+		return storage.StringValue(storageValueDisplayString(value)), true
+	case "CONVERTCURRENCY":
+		return value.Clone(), true
+	case "DAY_ONLY":
+		if text, ok := storageValueDateText(value); ok {
+			return storage.DateValue(text[:10]), true
+		}
+	case "CALENDAR_MONTH", "FISCAL_MONTH":
+		if text, ok := storageValueDateText(value); ok {
+			if parsed, err := time.Parse("2006-01-02", text[:10]); err == nil {
+				return storage.IntegerValue(int64(parsed.Month())), true
+			}
+		}
+	case "CALENDAR_QUARTER", "FISCAL_QUARTER":
+		if text, ok := storageValueDateText(value); ok {
+			if parsed, err := time.Parse("2006-01-02", text[:10]); err == nil {
+				return storage.IntegerValue(int64((int(parsed.Month())-1)/3 + 1)), true
+			}
+		}
+	case "CALENDAR_YEAR", "FISCAL_YEAR":
+		if text, ok := storageValueDateText(value); ok {
+			if parsed, err := time.Parse("2006-01-02", text[:10]); err == nil {
+				return storage.IntegerValue(int64(parsed.Year())), true
+			}
+		}
+	case "DAY_IN_MONTH":
+		if text, ok := storageValueDateText(value); ok {
+			if parsed, err := time.Parse("2006-01-02", text[:10]); err == nil {
+				return storage.IntegerValue(int64(parsed.Day())), true
+			}
+		}
+	case "DAY_IN_WEEK":
+		if text, ok := storageValueDateText(value); ok {
+			if parsed, err := time.Parse("2006-01-02", text[:10]); err == nil {
+				weekday := int(parsed.Weekday()) + 1
+				return storage.IntegerValue(int64(weekday)), true
+			}
+		}
+	case "DAY_IN_YEAR":
+		if text, ok := storageValueDateText(value); ok {
+			if parsed, err := time.Parse("2006-01-02", text[:10]); err == nil {
+				return storage.IntegerValue(int64(parsed.YearDay())), true
+			}
+		}
+	case "HOUR_IN_DAY":
+		if value.Kind == storage.ValueDateTime && len(value.String) >= 13 {
+			if parsed, err := time.Parse(time.RFC3339, normalizeDateTime(value.String)); err == nil {
+				return storage.IntegerValue(int64(parsed.Hour())), true
+			}
+		}
+	case "WEEK_IN_MONTH":
+		if text, ok := storageValueDateText(value); ok {
+			if parsed, err := time.Parse("2006-01-02", text[:10]); err == nil {
+				return storage.IntegerValue(int64((parsed.Day()-1)/7 + 1)), true
+			}
+		}
+	case "WEEK_IN_YEAR":
+		if text, ok := storageValueDateText(value); ok {
+			if parsed, err := time.Parse("2006-01-02", text[:10]); err == nil {
+				_, week := parsed.ISOWeek()
+				return storage.IntegerValue(int64(week)), true
+			}
+		}
+	}
+	return storage.NullValue(), true
+}
+
+func toLabelValue(org storage.OrgState, definition storage.ObjectDefinition, field string, value storage.Value) storage.Value {
+	fields, ok := fieldDefinitionsForReference(org, definition, field)
+	if !ok || len(fields) == 0 {
+		return value.Clone()
+	}
+	text := storageValueDisplayString(value)
+	for _, fieldDef := range fields {
+		for _, option := range fieldDef.PicklistValues {
+			if option.Value == text {
+				if option.Label != "" {
+					return storage.StringValue(option.Label)
+				}
+				return storage.StringValue(option.Value)
+			}
+		}
+	}
+	return value.Clone()
+}
+
+func storageValueDisplayString(value storage.Value) string {
+	switch value.Kind {
+	case storage.ValueNull:
+		return ""
+	case storage.ValueString, storage.ValueDate, storage.ValueDateTime, storage.ValueBlob:
+		return value.String
+	case storage.ValueInteger:
+		return strconv.FormatInt(value.Integer, 10)
+	case storage.ValueBoolean:
+		return strconv.FormatBool(value.Boolean)
+	case storage.ValueDecimal:
+		return value.Decimal
+	case storage.ValueID:
+		return string(value.ID)
+	default:
+		return ""
+	}
+}
+
+func storageValueDateText(value storage.Value) (string, bool) {
+	if (value.Kind == storage.ValueDate || value.Kind == storage.ValueDateTime) && len(value.String) >= 10 {
+		return value.String, true
+	}
+	return "", false
+}
+
+func normalizeDateTime(text string) string {
+	if strings.HasSuffix(text, "Z") || strings.Contains(text, "+") {
+		return text
+	}
+	return text + "Z"
+}
+
 func aggregateSpecs(fields []string) ([]Aggregate, error) {
 	var aggregates []Aggregate
 	for _, field := range fields {
@@ -2002,7 +2281,7 @@ func validateAggregateQuery(query Query) error {
 			}
 			continue
 		}
-		if !containsName(query.GroupBy, field) {
+		if !containsName(query.GroupBy, groupingComparableField(field)) {
 			return fmt.Errorf("soql: field %s must be grouped or aggregated", field)
 		}
 	}
@@ -2032,6 +2311,13 @@ func validateAggregateAliases(query Query) error {
 		}
 	}
 	return nil
+}
+
+func groupingComparableField(field string) string {
+	if expr, ok := parseSelectFieldExpression(field); ok {
+		return expr.Raw
+	}
+	return field
 }
 
 func aggregateExprMap(aggregates []Aggregate) map[string]string {
@@ -2231,6 +2517,13 @@ func (p *parser) parseConditionField() (string, error) {
 	field, err := p.parseName()
 	if err != nil {
 		return "", err
+	}
+	if isSelectFieldFunction(field) && p.match("(") {
+		args, err := p.parseFunctionArgs()
+		if err != nil {
+			return "", err
+		}
+		return strings.ToUpper(field) + "(" + strings.Join(args, ",") + ")", nil
 	}
 	if isAggregateFunc(field) && p.match("(") {
 		if strings.EqualFold(field, "COUNT") && p.match(")") {
