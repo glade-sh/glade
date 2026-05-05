@@ -1985,6 +1985,7 @@ System.assertEquals('2026-05-02', today.format());
 
 Datetime nowStamp = Datetime.now();
 System.assertEquals('2026-05-02T12:00:00Z', nowStamp.formatGmt());
+System.assertEquals(nowStamp, DateTime.Now());
 Datetime gmt = Datetime.newInstanceGmt(2024, 2, 29, 23, 59, 58);
 Date gmtDate = gmt.dateGmt();
 System.assertEquals('2024-02-29', gmtDate.format());

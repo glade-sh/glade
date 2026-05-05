@@ -36,6 +36,22 @@ System.assert(gen.isClosed());
 	}
 }
 
+func TestExecJSONAliasSupportsDeserializeStrict(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String,Object> parsed = (Map<String,Object>)Json.deserializeStrict('{"Name":"Acme"}', Map<String,Object>.class);
+System.assertEquals('Acme', (String)parsed.get('Name'));
+Map<String,Object> parsedSystem = (Map<String,Object>)System.JSON.deserialize('{"Name":"Trail"}', Map<String,Object>.class);
+System.assertEquals('Trail', (String)parsedSystem.get('Name'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecJSONGeneratorPrettyPrints(t *testing.T) {
 	program, err := CompileAnonymous(`
 JSONGenerator gen = JSON.createGenerator(true);

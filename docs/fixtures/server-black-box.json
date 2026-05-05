@@ -417,14 +417,14 @@
       ]
     },
     {
-      "name": "oauth-token-unsupported",
+      "name": "oauth-token-local",
       "method": "POST",
       "path": "/services/oauth2/token",
       "body": "grant_type=password",
-      "status": 501,
+      "status": 200,
       "contains": [
-        "UNSUPPORTED_FEATURE",
-        "Full OAuth flows and token issuance are not implemented"
+        "\"access_token\":\"local-005000000000001\"",
+        "\"token_type\":\"Bearer\""
       ]
     },
     {
@@ -2723,7 +2723,7 @@
         200,
         200,
         405,
-        501,
+        200,
         501,
         501,
         501,

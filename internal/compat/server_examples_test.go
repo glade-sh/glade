@@ -39,8 +39,8 @@ global with sharing class WebHook {
 	if report.Counts.Pass == 0 {
 		t.Fatalf("expected passing probes: %#v", report.Counts)
 	}
-	if report.Counts.Unsupported == 0 {
-		t.Fatalf("expected unsupported blockers: %#v", report.Counts)
+	if report.Counts.Fail != 0 || report.Counts.Missing != 0 {
+		t.Fatalf("unexpected hard blockers: %#v", report.Counts)
 	}
 	if len(report.Projects) != len(serverExampleProjects) {
 		t.Fatalf("projects = %d", len(report.Projects))

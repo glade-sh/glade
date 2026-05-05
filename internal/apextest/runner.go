@@ -256,6 +256,20 @@ func RegisterProjectRuntime(machine *vm.VM, index typesys.Index) error {
 	return registerRuntime(machine, methods, classes, nil, triggers)
 }
 
+// RegisterProjectRuntimeForRequest compiles project classes, methods, and
+// triggers for request-scoped server execution. Static initializers are skipped
+// so unsupported eager setup in unrelated project code does not prevent routing
+// to the selected entry point.
+func RegisterProjectRuntimeForRequest(machine *vm.VM, index typesys.Index) error {
+	methods := compileProjectMethods(index)
+	classes := compileProjectClasses(index, methods)
+	for i := range classes {
+		classes[i].StaticInitializers = nil
+	}
+	triggers, _ := compileProjectTriggers(index)
+	return registerRuntime(machine, methods, classes, nil, triggers)
+}
+
 func compileProjectClasses(index typesys.Index, methods map[string]vm.Method) []vm.Class {
 	var out []vm.Class
 	sources := make(map[string]string)
@@ -419,12 +433,39 @@ func compileProjectMethods(index typesys.Index) map[string]vm.Method {
 			}
 			method, err := compileProjectMethod(typ.Name, member.Name, member.Type, member.Modifiers, typ.File, member.Range, source)
 			if err != nil {
+				if unsupported, ok := unsupportedProjectMethod(typ.Name, member.Name, member.Type, member.Modifiers, typ.File, member.Range, source, err); ok {
+					out[unsupported.Name+methodParamKey(unsupported.Params)] = unsupported
+				}
 				continue
 			}
 			out[method.Name+methodParamKey(method.Params)] = method
 		}
 	}
 	return out
+}
+
+func unsupportedProjectMethod(className, methodName, returnType string, modifiers []string, file string, r diagnostic.Range, source string, cause error) (vm.Method, bool) {
+	methodSource, err := extractMethodSource(source, r)
+	if err != nil {
+		return vm.Method{}, false
+	}
+	params, err := parseParams(methodSource)
+	if err != nil {
+		params = nil
+	}
+	return vm.Method{
+		Name:        className + "." + methodName,
+		ReturnType:  returnType,
+		Params:      params,
+		ClassName:   className,
+		IsStatic:    hasModifier(modifiers, "static"),
+		Access:      accessModifier(modifiers),
+		Modifiers:   modifiers,
+		File:        file,
+		Line:        r.Start.Line,
+		Column:      r.Start.Column,
+		Unsupported: cause.Error(),
+	}, true
 }
 
 func compileTestSetupMethods(index typesys.Index) (map[string][]vm.Method, map[string]error) {

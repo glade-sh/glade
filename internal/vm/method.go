@@ -26,6 +26,7 @@ type Method struct {
 	File          string
 	Line          int
 	Column        int
+	Unsupported   string
 }
 
 func (vm *VM) RegisterMethod(method Method) error {

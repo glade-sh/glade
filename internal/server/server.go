@@ -247,7 +247,13 @@ func (s *Server) handleOAuth(w http.ResponseWriter, r *http.Request, parts []str
 			return
 		}
 		writeJSON(w, http.StatusOK, s.userInfoPayload(r))
-	case "token", "revoke", "introspect":
+	case "token":
+		if r.Method != http.MethodPost {
+			writeMethodNotAllowed(w, http.MethodPost)
+			return
+		}
+		writeJSON(w, http.StatusOK, s.localTokenPayload(r))
+	case "revoke", "introspect":
 		if r.Method != http.MethodPost {
 			writeMethodNotAllowed(w, http.MethodPost)
 			return
@@ -300,7 +306,7 @@ func (s *Server) handleApexRest(w http.ResponseWriter, r *http.Request) {
 		machine.SetLimitCaps(s.LimitCaps)
 	}
 	machine.SetCurrentUser(s.currentUser(r, ""))
-	if err := apextest.RegisterProjectRuntime(machine, *s.Index); err != nil {
+	if err := apextest.RegisterProjectRuntimeForRequest(machine, *s.Index); err != nil {
 		writeSalesforceError(w, errUnsupportedFeature, "Apex REST runtime setup failed: "+err.Error())
 		return
 	}
@@ -1876,6 +1882,10 @@ func writeUnsupportedBulkIngestJob(w http.ResponseWriter, r *http.Request, parts
 			writeMethodNotAllowed(w, http.MethodGet, http.MethodPost)
 			return
 		}
+		if r.Method == http.MethodGet {
+			writeJSON(w, http.StatusOK, localBulkJobCollectionPayload())
+			return
+		}
 		if r.Method == http.MethodPost {
 			if _, ok := decodeOptionalJSONObject(w, r); !ok {
 				return
@@ -1919,6 +1929,14 @@ func writeUnsupportedBulkIngestJob(w http.ResponseWriter, r *http.Request, parts
 		writeSalesforceError(w, errUnsupportedFeature, "Bulk API v2 ingest unprocessed records are not implemented in the local server")
 	default:
 		writeSalesforceError(w, errUnknownEndpoint)
+	}
+}
+
+func localBulkJobCollectionPayload() map[string]any {
+	return map[string]any{
+		"done":           true,
+		"records":        []any{},
+		"nextRecordsUrl": nil,
 	}
 }
 
@@ -3406,6 +3424,26 @@ func (s *Server) userInfoPayload(r *http.Request) map[string]any {
 		"updated_at":         nil,
 		"urls":               identity["urls"],
 	}
+}
+
+func (s *Server) localTokenPayload(r *http.Request) map[string]any {
+	user := s.currentUser(r, "")
+	identity := s.identityPayload(r, user.ID)
+	base := "http://" + r.Host
+	userID := string(user.ID)
+	return map[string]any{
+		"access_token": localAccessToken(userID),
+		"instance_url": base,
+		"id":           identity["id"],
+		"issued_at":    "0",
+		"signature":    "local",
+		"token_type":   "Bearer",
+		"scope":        "api refresh_token",
+	}
+}
+
+func localAccessToken(userID string) string {
+	return "local-" + userID
 }
 
 func userString(user storage.Record, field, fallback string) string {

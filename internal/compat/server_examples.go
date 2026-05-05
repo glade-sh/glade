@@ -13,8 +13,11 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/open-aer/oaer/internal/project"
+	"github.com/open-aer/oaer/internal/schema"
 	"github.com/open-aer/oaer/internal/server"
 	"github.com/open-aer/oaer/internal/storage"
+	"github.com/open-aer/oaer/internal/typesys"
 )
 
 const serverExampleAPIVersion = "61.0"
@@ -136,7 +139,7 @@ func runServerExampleProject(root, rel string) (ServerExampleProjectReport, erro
 		return out, nil
 	}
 	probes := serverExampleProbes(out.RestResources, out.SeededRecords > 0)
-	results, err := runServerExampleProbes(root, fixture, probes)
+	results, err := runServerExampleProbes(root, projectPath, fixture, probes)
 	if err != nil {
 		return ServerExampleProjectReport{}, err
 	}
@@ -144,7 +147,7 @@ func runServerExampleProject(root, rel string) (ServerExampleProjectReport, erro
 	return out, nil
 }
 
-func runServerExampleProbes(root string, fixture storage.Fixture, probes []serverExampleProbe) ([]ServerExampleProbeResult, error) {
+func runServerExampleProbes(root, projectPath string, fixture storage.Fixture, probes []serverExampleProbe) ([]ServerExampleProbeResult, error) {
 	workDir, err := os.MkdirTemp(root, ".oaer-server-example-harness-*")
 	if err != nil {
 		return nil, err
@@ -162,7 +165,10 @@ func runServerExampleProbes(root string, fixture storage.Fixture, probes []serve
 	if err := store.Save(org); err != nil {
 		return nil, err
 	}
-	handler := server.NewWithStore(&org, store)
+	handler, err := serverExampleHandler(&org, store, projectPath)
+	if err != nil {
+		return nil, err
+	}
 	results := make([]ServerExampleProbeResult, 0, len(probes))
 	for _, probe := range probes {
 		req := httptest.NewRequest(probe.Method, probe.Path, strings.NewReader(probe.Body))
@@ -174,6 +180,25 @@ func runServerExampleProbes(root string, fixture storage.Fixture, probes []serve
 		results = append(results, classifyServerExampleProbe(probe, rec))
 	}
 	return results, nil
+}
+
+func serverExampleHandler(org *storage.OrgState, store interface{ Save(storage.OrgState) error }, projectPath string) (*server.Server, error) {
+	p, err := project.Load(projectPath)
+	if err != nil {
+		return nil, err
+	}
+	source, err := server.NewSourceMetadataFromProject(p)
+	if err != nil {
+		return nil, err
+	}
+	loadedSchema, err := schema.LoadProject(p)
+	if err != nil {
+		return nil, err
+	}
+	handler := server.NewWithStoreAndSource(org, store, source)
+	index := typesys.Build(p, loadedSchema)
+	handler.SetProjectIndex(index)
+	return handler, nil
 }
 
 func serverExampleBaseOrg(fixture storage.Fixture) storage.OrgState {
@@ -231,7 +256,7 @@ func serverExampleProbes(routes []ServerExampleRestRoute, seeded bool) []serverE
 		{Name: "tooling-discovery", Family: "tooling", OwnerLane: "lane-4-tooling-metadata", Method: http.MethodGet, Path: "/services/data/v61.0/tooling"},
 		{Name: "tooling-apexclass-describe", Family: "tooling", OwnerLane: "lane-4-tooling-metadata", Method: http.MethodGet, Path: "/services/data/v61.0/tooling/sobjects/ApexClass/describe"},
 		{Name: "metadata-describe", Family: "metadata", OwnerLane: "lane-4-tooling-metadata", Method: http.MethodGet, Path: "/services/data/v61.0/metadata/describe"},
-		{Name: "composite", Family: "composite", OwnerLane: "lane-5-composite-bulk", Method: http.MethodPost, Path: "/services/data/v61.0/composite", Body: `{"compositeRequest":[]}`},
+		{Name: "composite", Family: "composite", OwnerLane: "lane-5-composite-bulk", Method: http.MethodPost, Path: "/services/data/v61.0/composite", Body: `{"compositeRequest":[{"method":"GET","url":"/services/data/v61.0/limits","referenceId":"limits"}]}`},
 		{Name: "bulk-jobs-ingest", Family: "bulk", OwnerLane: "lane-5-composite-bulk", Method: http.MethodGet, Path: "/services/data/v61.0/jobs/ingest"},
 		{Name: "oauth-userinfo", Family: "auth-user", OwnerLane: "lane-3-http-auth", Method: http.MethodGet, Path: "/services/oauth2/userinfo"},
 		{Name: "oauth-token", Family: "auth-user", OwnerLane: "lane-3-http-auth", Method: http.MethodPost, Path: "/services/oauth2/token"},

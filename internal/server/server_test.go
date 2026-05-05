@@ -2046,6 +2046,23 @@ func TestToolingAndBulkJobsDiscoveryRoutes(t *testing.T) {
 	if got := jobsPost.Header().Get("Allow"); got != http.MethodGet {
 		t.Fatalf("jobs Allow = %q", got)
 	}
+
+	ingestJobs := httptest.NewRecorder()
+	handler.ServeHTTP(ingestJobs, httptest.NewRequest(http.MethodGet, "/services/data/v60.0/jobs/ingest", nil))
+	if ingestJobs.Code != http.StatusOK {
+		t.Fatalf("ingest jobs status = %d body=%s", ingestJobs.Code, ingestJobs.Body.String())
+	}
+	var ingestPayload map[string]any
+	if err := json.Unmarshal(ingestJobs.Body.Bytes(), &ingestPayload); err != nil {
+		t.Fatal(err)
+	}
+	if ingestPayload["done"] != true {
+		t.Fatalf("ingest jobs payload = %#v", ingestPayload)
+	}
+	records, ok := ingestPayload["records"].([]any)
+	if !ok || len(records) != 0 {
+		t.Fatalf("ingest jobs records = %#v", ingestPayload["records"])
+	}
 }
 
 func TestToolingCommonRoutesReturnStableUnsupportedErrors(t *testing.T) {
@@ -2335,7 +2352,6 @@ func TestBulkAPIJobsReturnStableUnsupportedErrors(t *testing.T) {
 		{method: http.MethodPatch, path: "/services/data/v61.0/jobs/query/750000000000001", message: "Bulk API v2 query job records"},
 		{method: http.MethodDelete, path: "/services/data/v61.0/jobs/query/750000000000001", message: "Bulk API v2 query job records"},
 		{method: http.MethodGet, path: "/services/data/v61.0/jobs/query/750000000000001/results", message: "Bulk API v2 query job results"},
-		{method: http.MethodGet, path: "/services/data/v61.0/jobs/ingest", message: "Bulk API v2 ingest jobs"},
 		{method: http.MethodPost, path: "/services/data/v61.0/jobs/ingest", message: "Bulk API v2 ingest jobs"},
 		{method: http.MethodGet, path: "/services/data/v61.0/jobs/ingest/750000000000001", message: "Bulk API v2 ingest job records"},
 		{method: http.MethodPatch, path: "/services/data/v61.0/jobs/ingest/750000000000001", message: "Bulk API v2 ingest job records"},
@@ -3591,7 +3607,6 @@ func TestOAuthUnsupportedStubsAreExplicit(t *testing.T) {
 		method string
 		path   string
 	}{
-		{name: "token", method: http.MethodPost, path: "/services/oauth2/token"},
 		{name: "revoke", method: http.MethodPost, path: "/services/oauth2/revoke"},
 		{name: "introspect", method: http.MethodPost, path: "/services/oauth2/introspect"},
 		{name: "authorize", method: http.MethodGet, path: "/services/oauth2/authorize?response_type=code&client_id=local&redirect_uri=http://localhost/callback"},
@@ -3601,6 +3616,31 @@ func TestOAuthUnsupportedStubsAreExplicit(t *testing.T) {
 			handler.ServeHTTP(rec, httptest.NewRequest(tc.method, tc.path, nil))
 			assertSalesforceError(t, rec, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", "Full OAuth flows and token issuance are not implemented")
 		})
+	}
+}
+
+func TestOAuthTokenReturnsDeterministicLocalBearer(t *testing.T) {
+	org := testOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	addUser(&org, "005000000000123", "ada@example.test", "ada.alias@example.test", "Ada Trail")
+	handler := New(&org)
+
+	req := httptest.NewRequest(http.MethodPost, "/services/oauth2/token", strings.NewReader("grant_type=password"))
+	req.Header.Set("X-OAER-User-Id", "005000000000123")
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("token status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var payload map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
+		t.Fatal(err)
+	}
+	if payload["access_token"] != "local-005000000000123" || payload["token_type"] != "Bearer" || payload["issued_at"] != "0" {
+		t.Fatalf("token payload = %#v", payload)
+	}
+	if !strings.Contains(payload["id"].(string), "/id/00D000000000001/005000000000123") || payload["instance_url"] == "" {
+		t.Fatalf("token identity payload = %#v", payload)
 	}
 }
 

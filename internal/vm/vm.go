@@ -859,6 +859,38 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 		}
 		return evalBinary(expr.Operator, left, right)
 	case ir.ExprCall:
+		if strings.HasPrefix(expr.Callee, "__cast:") {
+			if len(expr.Args) != 1 {
+				return Null, fmt.Errorf("cast expression requires 1 operand")
+			}
+			return vm.eval(expr.Args[0], result)
+		}
+		if expr.Callee == "__ternary" {
+			if len(expr.Args) != 3 {
+				return Null, fmt.Errorf("ternary expression requires 3 operands")
+			}
+			condition, err := vm.eval(expr.Args[0], result)
+			if err != nil {
+				return Null, err
+			}
+			if condition.Kind != ValueBool {
+				return Null, fmt.Errorf("ternary condition requires Boolean, got %s", condition.Kind)
+			}
+			if condition.Bool {
+				return vm.eval(expr.Args[1], result)
+			}
+			return vm.eval(expr.Args[2], result)
+		}
+		if strings.HasPrefix(expr.Callee, "__field:") {
+			if expr.Left == nil {
+				return Null, fmt.Errorf("field access requires receiver")
+			}
+			receiver, err := vm.eval(*expr.Left, result)
+			if err != nil {
+				return Null, err
+			}
+			return vm.lookupPath(receiver, []string{strings.TrimPrefix(expr.Callee, "__field:")})
+		}
 		var receiver Value
 		hasReceiver := expr.Left != nil
 		if hasReceiver {
@@ -970,6 +1002,29 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 	}
 	if strings.HasPrefix(callee, "Search.") {
 		return Null, unsupportedCallError(callee + " local search/SOSL surface")
+	}
+	if strings.HasPrefix(callee, "System.JSON.") {
+		callee = "JSON." + strings.TrimPrefix(callee, "System.JSON.")
+	}
+	if strings.HasPrefix(callee, "System.Json.") {
+		callee = "JSON." + strings.TrimPrefix(callee, "System.Json.")
+	}
+	if strings.HasPrefix(callee, "Json.") {
+		callee = "JSON." + strings.TrimPrefix(callee, "Json.")
+	}
+	if strings.HasPrefix(callee, "DateTime.") {
+		callee = "Datetime." + strings.TrimPrefix(callee, "DateTime.")
+	}
+	if strings.HasPrefix(callee, "Datetime.") && len(callee) > len("Datetime.") {
+		member := strings.TrimPrefix(callee, "Datetime.")
+		switch strings.ToLower(member) {
+		case "now":
+			callee = "Datetime.now"
+		case "newinstance":
+			callee = "Datetime.newInstance"
+		case "newinstancegmt":
+			callee = "Datetime.newInstanceGmt"
+		}
 	}
 	if reason, ok := unsupportedIntegrationSurface(callee); ok {
 		return Null, unsupportedCallError(callee + " " + reason)
@@ -1166,7 +1221,16 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return value, nil
 		}
 		return Null, unsupportedCallError(callee)
-	case "String.isBlank", "String.isNotBlank", "String.isEmpty", "String.isNotEmpty", "String.valueOf", "String.join", "String.format", "String.getCommonPrefix", "String.getLevenshteinDistance", "String.stripAll", "String.fromCharArray", "String.escapeSingleQuotes":
+	case "String.valueOf":
+		if len(args) != 1 {
+			return Null, fmt.Errorf("String.valueOf expects 1 argument")
+		}
+		text, err := vm.displayString(args[0], result)
+		if err != nil {
+			return Null, err
+		}
+		return String(text), nil
+	case "String.isBlank", "String.isNotBlank", "String.isEmpty", "String.isNotEmpty", "String.join", "String.format", "String.getCommonPrefix", "String.getLevenshteinDistance", "String.stripAll", "String.fromCharArray", "String.escapeSingleQuotes":
 		return stringStatic(callee, args)
 	case "Integer.valueOf", "Long.valueOf", "Decimal.valueOf", "Double.valueOf":
 		return numericStatic(callee, args)
@@ -1827,6 +1891,12 @@ func (vm *VM) connectAPIOrganizationSettings(args []Value) (Value, error) {
 func (vm *VM) callCustomDataStaticMember(typeName, method string, args []Value) (Value, bool, error) {
 	objectName, definition, kind, ok := vm.customDataObject(typeName)
 	if !ok {
+		if (method == "getOrgDefaults" || method == "getValues") && strings.HasSuffix(typeName, "__c") {
+			if len(args) != 0 {
+				return Null, true, fmt.Errorf("%s.%s expects 0 arguments", typeName, method)
+			}
+			return Object(typeName), true, nil
+		}
 		return Null, false, nil
 	}
 	switch method {
@@ -1871,10 +1941,37 @@ func (vm *VM) callCustomDataStaticMember(typeName, method string, args []Value) 
 		if err := unsupportedHierarchyCustomSettingStatic(definition, typeName, method); err != nil {
 			return Null, true, err
 		}
-		return Null, true, unsupportedCallError(typeName + "." + method)
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("%s.%s expects 0 arguments", typeName, method)
+		}
+		record, found := vm.customDataOrgDefaultRecord(objectName)
+		if !found {
+			return Object(objectName), true, nil
+		}
+		return vm.readOnlyCustomDataValue(record, kind), true, nil
 	default:
 		return Null, false, nil
 	}
+}
+
+func (vm *VM) customDataOrgDefaultRecord(objectName string) (storage.Record, bool) {
+	if vm.Org == nil {
+		return storage.Record{}, false
+	}
+	object := vm.Org.Objects[objectName]
+	records := make([]storage.Record, 0, len(object.Records))
+	for _, record := range object.Records {
+		if !record.System.IsDeleted {
+			records = append(records, record)
+		}
+	}
+	if len(records) == 0 {
+		return storage.Record{}, false
+	}
+	sort.Slice(records, func(i, j int) bool {
+		return records[i].ID < records[j].ID
+	})
+	return records[0], true
 }
 
 func unsupportedHierarchyCustomSettingStatic(definition storage.ObjectDefinition, typeName, method string) error {
@@ -6304,6 +6401,9 @@ func (vm *VM) lookup(name string) (Value, error) {
 	if value, ok := vm.Globals[name]; ok {
 		return value, nil
 	}
+	if actual, ok := vm.lookupGlobalName(name); ok {
+		return vm.Globals[actual], nil
+	}
 	if value, ok, err := vm.lookupRestContextField(name); ok || err != nil {
 		return value, err
 	}
@@ -6366,6 +6466,9 @@ func (vm *VM) lookup(name string) (Value, error) {
 					return Null, err
 				}
 				if field.Getter != nil {
+					if field.Getter.Name == vm.currentMethod.Name {
+						return field.Value, nil
+					}
 					return vm.callMethod(*field.Getter, nil, resultForLookup())
 				}
 				return field.Value, nil
@@ -6377,7 +6480,27 @@ func (vm *VM) lookup(name string) (Value, error) {
 					}
 				}
 			}
+			if dot := strings.IndexByte(memberName, '.'); dot > 0 {
+				nestedEnumName := className + "." + memberName[:dot]
+				nestedMemberName := memberName[dot+1:]
+				nestedCandidates := []string{nestedEnumName, memberName[:dot]}
+				for _, candidate := range nestedCandidates {
+					if class, ok := vm.Classes[candidate]; ok {
+						for _, enumValue := range class.EnumValues {
+							if enumValue == nestedMemberName {
+								return Value{Kind: ValueObject, Type: class.Name, Text: nestedMemberName}, nil
+							}
+						}
+					}
+				}
+				if _, ok := vm.Classes[className]; ok && apexIdentifierStartsUpper(memberName[:dot]) && apexIdentifierStartsUpper(nestedMemberName) {
+					return Value{Kind: ValueObject, Type: nestedEnumName, Text: nestedMemberName}, nil
+				}
+			}
 		}
+	}
+	if len(parts) == 3 && apexIdentifierStartsUpper(parts[0]) && apexIdentifierStartsUpper(parts[1]) && apexIdentifierStartsUpper(parts[2]) {
+		return Value{Kind: ValueObject, Type: parts[0] + "." + parts[1], Text: parts[2]}, nil
 	}
 	if this, ok := vm.Globals["this"]; ok && this.Kind == ValueObject {
 		if value, ok := this.Fields[name]; ok {
@@ -6398,12 +6521,28 @@ func (vm *VM) lookup(name string) (Value, error) {
 				return Null, err
 			}
 			if field.Getter != nil {
+				if field.Getter.Name == vm.currentMethod.Name {
+					return field.Value, nil
+				}
 				return vm.callMethod(*field.Getter, nil, resultForLookup())
 			}
 			return field.Value, nil
 		}
 	}
 	return Null, fmt.Errorf("unknown variable %q", name)
+}
+
+func (vm *VM) lookupGlobalName(name string) (string, bool) {
+	if _, ok := vm.Globals[name]; ok {
+		return name, true
+	}
+	normalized := strings.ToLower(name)
+	for candidate := range vm.Globals {
+		if strings.ToLower(candidate) == normalized {
+			return candidate, true
+		}
+	}
+	return "", false
 }
 
 var roundingModeNames = []string{"UP", "DOWN", "CEILING", "FLOOR", "HALF_UP", "HALF_DOWN", "HALF_EVEN", "UNNECESSARY"}
@@ -6432,7 +6571,11 @@ func (vm *VM) lookupSObjectTypeToken(parts []string) (Value, bool) {
 	}
 	canonical, ok := storage.ResolveObjectName(*vm.Org, objectName)
 	if !ok {
-		return Null, false
+		if strings.HasSuffix(objectName, "__c") || strings.HasSuffix(objectName, "__e") || strings.HasSuffix(objectName, "__mdt") {
+			canonical = objectName
+		} else {
+			return Null, false
+		}
 	}
 	return sObjectTypeToken(canonical), true
 }
@@ -6503,6 +6646,10 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 			value, ok = current.Fields[part]
 		}
 		if !ok {
+			if strings.HasSuffix(current.Type, "__c") || strings.HasSuffix(current.Type, "__r") {
+				current = Null
+				continue
+			}
 			return Null, fmt.Errorf("unknown field %q on %s", part, current.Type)
 		}
 		current = value
@@ -6511,15 +6658,15 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 }
 
 func (vm *VM) assign(name string, value Value) error {
-	if _, ok := vm.Globals[name]; ok {
-		if typeName := vm.VarTypes[name]; typeName != "" {
+	if actual, ok := vm.lookupGlobalName(name); ok {
+		if typeName := vm.VarTypes[actual]; typeName != "" {
 			coerced, err := vm.coerceAssignable(typeName, value)
 			if err != nil {
 				return fmt.Errorf("%s: %w", name, err)
 			}
 			value = coerced
 		}
-		vm.Globals[name] = value
+		vm.Globals[actual] = value
 		return nil
 	}
 	if ok, err := vm.assignRestContextField(name, value); ok || err != nil {
@@ -6527,8 +6674,8 @@ func (vm *VM) assign(name string, value Value) error {
 	}
 	parts := strings.Split(name, ".")
 	if len(parts) > 1 {
-		if root, ok := vm.Globals[parts[0]]; ok {
-			return vm.assignPath(root, parts[1:], value)
+		if rootName, ok := vm.lookupGlobalName(parts[0]); ok {
+			return vm.assignPath(vm.Globals[rootName], parts[1:], value)
 		}
 		if className, memberName, ok := vm.splitClassMember(name); ok {
 			if field, owner, ok := vm.lookupStaticField(className, memberName); ok {
@@ -6851,6 +6998,14 @@ func (vm *VM) splitClassMember(name string) (string, string, bool) {
 		}
 	}
 	return "", "", false
+}
+
+func apexIdentifierStartsUpper(name string) bool {
+	if name == "" {
+		return false
+	}
+	first := name[0]
+	return first >= 'A' && first <= 'Z'
 }
 
 func (vm *VM) typeForName(namespace, name string) Value {
@@ -7221,6 +7376,14 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 		} else if ambiguous {
 			return Null, fmt.Errorf("ambiguous %s constructor with %d argument(s)", typeName, len(args))
 		} else if len(args) != 0 {
+			if isExceptionType(typeName) && len(args) == 1 {
+				if args[0].Kind == ValueString {
+					object.Fields["message"] = args[0]
+				} else if args[0].Kind != ValueNull {
+					object.Fields["message"] = String(args[0].String())
+				}
+				return object, nil
+			}
 			return Null, fmt.Errorf("%s constructor expects 0 arguments", typeName)
 		}
 		return object, nil
@@ -7388,8 +7551,12 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 	}
 	vm.initializeFields(&object, objectType)
 	if len(args) != 0 {
-		if isExceptionType(typeName) && len(args) == 1 && args[0].Kind == ValueString {
-			object.Fields["message"] = args[0]
+		if isExceptionType(typeName) && len(args) == 1 {
+			if args[0].Kind == ValueString {
+				object.Fields["message"] = args[0]
+			} else if args[0].Kind != ValueNull {
+				object.Fields["message"] = String(args[0].String())
+			}
 			return object, nil
 		}
 		return Null, fmt.Errorf("%s constructor does not accept arguments", typeName)
@@ -8511,6 +8678,9 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	if len(args) != len(method.Params) {
 		return Null, fmt.Errorf("%s expects %d arguments", method.Name, len(method.Params))
 	}
+	if method.Unsupported != "" {
+		return Null, fmt.Errorf("%s is not supported by the local VM: %s", method.Name, method.Unsupported)
+	}
 	if methodHasModifier(method.Modifiers, "abstract") {
 		return Null, fmt.Errorf("cannot execute abstract method %s", method.Name)
 	}
@@ -8616,6 +8786,12 @@ func (vm *VM) displayString(value Value, result *Result) (string, error) {
 		return value.Text, nil
 	}
 	if value.Type == "RoundingMode" && isDecimalRoundingModeName(value.Text) {
+		return value.Text, nil
+	}
+	if class, ok := vm.Classes[value.Type]; ok && len(class.EnumValues) > 0 && value.Text != "" {
+		return value.Text, nil
+	}
+	if value.Text != "" && strings.Contains(value.Type, ".") {
 		return value.Text, nil
 	}
 	if isExceptionType(value.Type) {

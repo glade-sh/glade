@@ -66,6 +66,106 @@ System.assertEquals(6, x);
 	}
 }
 
+func TestCompileSkipsCommentsAndSafeNavigation(t *testing.T) {
+	program, err := CompileAnonymous(`
+String value = 'trail';
+// A line comment should not become divide tokens.
+/* Nor should a block comment. */
+System.assertEquals('trail', value?.toString());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCompileAcceptsApexCastSyntax(t *testing.T) {
+	program, err := CompileAnonymous(`
+Object raw = 'trail';
+String value = (String)raw;
+System.assertEquals('trail', value);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCompileAcceptsListIndexSyntax(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<String> values = new List<String>{'spruce', 'birch'};
+System.assertEquals('spruce', values[0]);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCompileAcceptsTernarySyntax(t *testing.T) {
+	program, err := CompileAnonymous(`
+String value = true ? 'spruce' : null.toString();
+System.assertEquals('spruce', value);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCompileAcceptsPrefixIncrementInForUpdate(t *testing.T) {
+	program, err := CompileAnonymous(`
+Integer total = 0;
+for (Integer i = 0; i < 3; ++i) {
+	total += i;
+}
+System.assertEquals(3, total);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCompileAcceptsPostfixFieldAccess(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'spruce');
+Object raw = account;
+System.assertEquals('spruce', ((Account)raw).Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecLocalVariablesAreCaseInsensitive(t *testing.T) {
+	program, err := CompileAnonymous(`
+Id accountId = '001000000000001AAA';
+System.assertEquals(accountId, accountid);
+accountID = '001000000000002AAA';
+System.assertEquals('001000000000002AAA', accountId);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecCoercesNumericVariablesAndCollections(t *testing.T) {
 	program, err := CompileAnonymous(`
 Decimal total = 1;
@@ -353,6 +453,48 @@ System.assertEquals(3, cleaned);
 		t.Fatal(err)
 	}
 	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecRegisteredCustomExceptionUsesMessageConstructor(t *testing.T) {
+	program, err := CompileAnonymous(`
+String message = '';
+try {
+	throw new NUException('boom');
+} catch (Exception e) {
+	message = e.getMessage();
+}
+System.assertEquals('boom', message);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "NUException", SuperClass: "Exception"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecNestedEnumStaticValue(t *testing.T) {
+	program, err := CompileAnonymous(`
+Object direction = TriggerConstants.Direction.ToCustomer;
+System.assertEquals('ToCustomer', String.valueOf(direction));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "TriggerConstants"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "TriggerConstants.Direction", EnumValues: []string{"ToPlatform", "ToCustomer", "Both"}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }
