@@ -14,6 +14,20 @@
       ]
     }
   ],
+  "source": [
+    {
+      "path": "force-app/main/default/classes/ProbeClass.cls",
+      "content": "public class ProbeClass {}"
+    },
+    {
+      "path": "force-app/main/default/triggers/ProbeTrigger.trigger",
+      "content": "trigger ProbeTrigger on Account (before insert) {}"
+    },
+    {
+      "path": "force-app/main/default/objects/Account/listViews/AllAccounts.listView-meta.xml",
+      "content": "<ListView><label>All Accounts</label><columns>Id</columns><columns>Name</columns></ListView>"
+    }
+  ],
   "serverRequests": [
     {
       "name": "versions",
@@ -104,6 +118,58 @@
       "contains": [
         "METHOD_NOT_ALLOWED",
         "method not allowed"
+      ]
+    },
+    {
+      "name": "tooling-sobjects-source",
+      "method": "GET",
+      "path": "/services/data/v61.0/tooling/sobjects",
+      "status": 200,
+      "contains": [
+        "\"name\":\"ApexClass\"",
+        "\"name\":\"ApexTrigger\"",
+        "\"createable\":false"
+      ]
+    },
+    {
+      "name": "tooling-query-source-apex-class",
+      "method": "GET",
+      "path": "/services/data/v61.0/tooling/query?q=SELECT%20Id,%20Name,%20Body%20FROM%20ApexClass%20WHERE%20Name%20=%20'ProbeClass'",
+      "status": 200,
+      "contains": [
+        "\"totalSize\":1",
+        "\"Name\":\"ProbeClass\"",
+        "public class ProbeClass"
+      ]
+    },
+    {
+      "name": "sobject-list-view-source",
+      "method": "GET",
+      "path": "/services/data/v61.0/sobjects/Account/listviews",
+      "status": 200,
+      "contains": [
+        "\"developerName\":\"AllAccounts\"",
+        "\"size\":1"
+      ]
+    },
+    {
+      "name": "metadata-describe-source",
+      "method": "GET",
+      "path": "/services/data/v61.0/metadata/describeMetadata",
+      "status": 200,
+      "contains": [
+        "\"xmlName\":\"ApexClass\"",
+        "\"xmlName\":\"ApexTrigger\"",
+        "\"xmlName\":\"ListView\""
+      ]
+    },
+    {
+      "name": "metadata-list-source",
+      "method": "GET",
+      "path": "/services/data/v61.0/metadata/listMetadata?type=ApexClass",
+      "status": 200,
+      "contains": [
+        "\"fullName\":\"ProbeClass\""
       ]
     },
     {
@@ -756,36 +822,36 @@
       ]
     },
     {
-      "name": "listviews-empty-stub",
+      "name": "listviews-source-metadata",
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Account/listviews",
       "status": 200,
       "contains": [
         "\"done\":true",
-        "\"size\":0",
-        "\"listviews\":[]",
+        "\"size\":1",
+        "\"developerName\":\"AllAccounts\"",
         "\"objectType\":\"Account\"",
-        "empty local stub"
+        "\"resultsUrl\":\"/services/data/v61.0/sobjects/Account/listviews/00B000000000001/results\""
       ]
     },
     {
-      "name": "listview-describe-unsupported",
+      "name": "listview-describe-source",
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Account/listviews/00B000000000001/describe",
-      "status": 501,
+      "status": 200,
       "contains": [
-        "UNSUPPORTED_FEATURE",
-        "list view describe and result execution"
+        "\"developerName\":\"AllAccounts\"",
+        "\"query\":\"SELECT Id, Name FROM Account\""
       ]
     },
     {
-      "name": "listview-results-unsupported",
+      "name": "listview-results-source",
       "method": "GET",
       "path": "/services/data/v61.0/sobjects/Account/listviews/00B000000000001/results",
-      "status": 501,
+      "status": 200,
       "contains": [
-        "UNSUPPORTED_FEATURE",
-        "list view describe and result execution"
+        "\"listViewId\":\"00B000000000001\"",
+        "\"records\""
       ]
     },
     {
@@ -1819,43 +1885,43 @@
       ]
     },
     {
-      "name": "metadata-describe-unsupported",
+      "name": "metadata-describe-source",
       "method": "GET",
       "path": "/services/data/v61.0/metadata/describeMetadata",
-      "status": 501,
+      "status": 200,
       "contains": [
-        "UNSUPPORTED_FEATURE",
-        "Metadata REST describeMetadata"
+        "\"xmlName\":\"ApexClass\"",
+        "\"xmlName\":\"ApexTrigger\""
       ]
     },
     {
-      "name": "metadata-listmetadata-unsupported",
+      "name": "metadata-listmetadata-source",
       "method": "GET",
       "path": "/services/data/v61.0/metadata/listMetadata",
-      "status": 501,
+      "status": 200,
       "contains": [
-        "UNSUPPORTED_FEATURE",
-        "Metadata REST listMetadata"
+        "\"fullName\":\"ProbeClass\"",
+        "\"fullName\":\"ProbeTrigger\""
       ]
     },
     {
-      "name": "metadata-components-unsupported",
+      "name": "metadata-components-source",
       "method": "GET",
       "path": "/services/data/v61.0/metadata/components",
-      "status": 501,
+      "status": 200,
       "contains": [
-        "UNSUPPORTED_FEATURE",
-        "Metadata REST component discovery"
+        "\"components\"",
+        "\"ProbeClass\""
       ]
     },
     {
-      "name": "metadata-component-type-unsupported",
+      "name": "metadata-component-type-source",
       "method": "GET",
       "path": "/services/data/v61.0/metadata/components/ApexClass",
-      "status": 501,
+      "status": 200,
       "contains": [
-        "UNSUPPORTED_FEATURE",
-        "Metadata REST component read and discovery"
+        "\"size\":1",
+        "\"fullName\":\"ProbeClass\""
       ]
     },
     {
@@ -1996,33 +2062,33 @@
       ]
     },
     {
-      "name": "tooling-sobjects-unsupported",
+      "name": "tooling-sobjects-source-read",
       "method": "GET",
       "path": "/services/data/v61.0/tooling/sobjects",
-      "status": 501,
+      "status": 200,
       "contains": [
-        "UNSUPPORTED_FEATURE",
-        "Tooling sObject discovery"
+        "\"name\":\"ApexClass\"",
+        "\"name\":\"ApexTrigger\""
       ]
     },
     {
-      "name": "tooling-apexclass-collection-unsupported",
+      "name": "tooling-apexclass-collection-source",
       "method": "GET",
       "path": "/services/data/v61.0/tooling/sobjects/ApexClass",
-      "status": 501,
+      "status": 200,
       "contains": [
-        "UNSUPPORTED_FEATURE",
-        "Tooling ApexClass object collection"
+        "\"name\":\"ApexClass\"",
+        "\"rowTemplate\":\"/services/data/v61.0/tooling/sobjects/ApexClass/{ID}\""
       ]
     },
     {
-      "name": "tooling-apexclass-record-unsupported",
+      "name": "tooling-apexclass-record-source",
       "method": "GET",
       "path": "/services/data/v61.0/tooling/sobjects/ApexClass/01p000000000001",
-      "status": 501,
+      "status": 200,
       "contains": [
-        "UNSUPPORTED_FEATURE",
-        "Tooling ApexClass object record"
+        "\"Name\":\"ProbeClass\"",
+        "public class ProbeClass"
       ]
     },
     {
@@ -2030,10 +2096,10 @@
       "method": "PATCH",
       "path": "/services/data/v61.0/tooling/sobjects/ApexTrigger/01q000000000001",
       "body": "{}",
-      "status": 501,
+      "status": 405,
       "contains": [
-        "UNSUPPORTED_FEATURE",
-        "Tooling ApexTrigger object record"
+        "METHOD_NOT_ALLOWED",
+        "method not allowed"
       ]
     },
     {
@@ -2620,7 +2686,7 @@
       "persistedRecords": 9,
       "permissions": 2,
       "profiles": 1,
-      "requests": 233,
+      "requests": 238,
       "statuses": [
         200,
         200,
@@ -2629,6 +2695,11 @@
         405,
         200,
         405,
+        200,
+        200,
+        200,
+        200,
+        200,
         405,
         405,
         200,
@@ -2688,8 +2759,8 @@
         405,
         404,
         200,
-        501,
-        501,
+        200,
+        200,
         405,
         404,
         400,
@@ -2780,10 +2851,10 @@
         501,
         405,
         200,
-        501,
-        501,
-        501,
-        501,
+        200,
+        200,
+        200,
+        200,
         405,
         501,
         400,
@@ -2797,10 +2868,10 @@
         501,
         501,
         405,
-        501,
-        501,
-        501,
-        501,
+        200,
+        200,
+        200,
+        405,
         501,
         501,
         405,

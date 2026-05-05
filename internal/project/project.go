@@ -26,6 +26,9 @@ type Project struct {
 	RemoteSiteFiles           []string           `json:"remoteSiteFiles"`
 	CustomMetadataFiles       []string           `json:"customMetadataFiles"`
 	WorkflowFiles             []string           `json:"workflowFiles"`
+	ListViewFiles             []string           `json:"listViewFiles"`
+	LayoutFiles               []string           `json:"layoutFiles"`
+	CompactLayoutFiles        []string           `json:"compactLayoutFiles"`
 	VisualforcePageFiles      []string           `json:"visualforcePageFiles"`
 	VisualforceComponentFiles []string           `json:"visualforceComponentFiles"`
 	AuraFiles                 []string           `json:"auraFiles"`
@@ -89,6 +92,9 @@ func Load(root string) (Project, error) {
 	sort.Strings(p.RemoteSiteFiles)
 	sort.Strings(p.CustomMetadataFiles)
 	sort.Strings(p.WorkflowFiles)
+	sort.Strings(p.ListViewFiles)
+	sort.Strings(p.LayoutFiles)
+	sort.Strings(p.CompactLayoutFiles)
 	sort.Strings(p.VisualforcePageFiles)
 	sort.Strings(p.VisualforceComponentFiles)
 	sort.Strings(p.AuraFiles)
@@ -148,6 +154,12 @@ func collectFiles(root string, p *Project) error {
 			p.CustomMetadataFiles = append(p.CustomMetadataFiles, path)
 		case strings.HasSuffix(lower, ".workflow-meta.xml"):
 			p.WorkflowFiles = append(p.WorkflowFiles, path)
+		case strings.HasSuffix(lower, ".listview-meta.xml"):
+			p.ListViewFiles = append(p.ListViewFiles, path)
+		case strings.HasSuffix(lower, ".layout-meta.xml"):
+			p.LayoutFiles = append(p.LayoutFiles, path)
+		case strings.HasSuffix(lower, ".compactlayout-meta.xml"):
+			p.CompactLayoutFiles = append(p.CompactLayoutFiles, path)
 		case strings.HasSuffix(lower, ".page"):
 			p.VisualforcePageFiles = append(p.VisualforcePageFiles, path)
 		case strings.HasSuffix(lower, ".component"):
