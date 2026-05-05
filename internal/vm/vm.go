@@ -7045,6 +7045,9 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 		return Null, fmt.Errorf("Schema field describe unknown field %s.%s", objectName, fieldName)
 	}
 	field := definition.Fields[fieldName]
+	if field.APIName == "" && strings.EqualFold(fieldName, "Id") {
+		field = storage.Field{APIName: "Id", Label: "Record ID", Type: storage.FieldID}
+	}
 	desc := Object("Schema.DescribeFieldResult")
 	desc.Fields["name"] = String(field.APIName)
 	label := field.Label

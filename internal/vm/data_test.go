@@ -553,6 +553,48 @@ System.assert(contacts.isCascadeDelete());
 	}
 }
 
+func TestExecCustomObjectIdDescribeNameFeedsDynamicFieldList(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<String> fields = new List<String>();
+fields.add(Invoice__c.Amount__c.getDescribe().getName());
+fields.add(Invoice__c.Id.getDescribe().getName());
+fields.add(Invoice__c.Name.getDescribe().getName());
+String query = 'SELECT ' + String.join(fields, ',') + ' FROM Invoice__c';
+System.assertEquals('SELECT Amount__c,Id,Name FROM Invoice__c', query);
+List<Invoice__c> rows = Database.query(query);
+System.assertEquals(1, rows.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Objects["Invoice__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Invoice__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"Amount__c": {APIName: "Amount__c", Type: storage.FieldDecimal},
+				"Name":      {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a00000000000001AAA": {
+				ID:     "a00000000000001AAA",
+				Object: "Invoice__c",
+				Fields: map[string]storage.Value{
+					"Amount__c": storage.DecimalValue("42"),
+					"Name":      storage.StringValue("INV-001"),
+				},
+			},
+		},
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDescribeSchemaMetadataEdges(t *testing.T) {
 	program, err := CompileAnonymous(`
 Object accountDescribe = Account.SObjectType.getDescribe();

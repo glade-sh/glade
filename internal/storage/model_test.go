@@ -97,6 +97,9 @@ func TestEnsureStandardObjectFieldsAddsCustomObjectRecordTypeId(t *testing.T) {
 
 	EnsureStandardObjectFields(&definition)
 
+	if field, ok := definition.Fields["Id"]; !ok || field.APIName != "Id" || field.Type != FieldID {
+		t.Fatalf("Id field = %#v, %v", field, ok)
+	}
 	field, ok := definition.Fields["RecordTypeId"]
 	if !ok || field.Type != FieldReference || field.RelationshipName != "RecordType" {
 		t.Fatalf("RecordTypeId field = %#v, %v", field, ok)

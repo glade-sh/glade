@@ -9,6 +9,9 @@ func EnsureStandardObjectFields(definition *ObjectDefinition) {
 	if definition.Fields == nil {
 		definition.Fields = make(map[string]Field)
 	}
+	if field, ok := definition.Fields["Id"]; !ok || field.APIName == "" {
+		definition.Fields["Id"] = Field{APIName: "Id", Label: "Record ID", Type: FieldID}
+	}
 	fields := standardFieldsForObject(definition.APIName)
 	for _, field := range fields {
 		if _, ok := ResolveFieldName(*definition, "", field.APIName); ok {
