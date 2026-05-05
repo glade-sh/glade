@@ -15,6 +15,8 @@ type Engine struct {
 	IDs    storage.IDGenerator
 	Now    func() time.Time
 	UserID storage.ID
+
+	workflowDepth int
 }
 
 type Result struct {
@@ -942,6 +944,14 @@ func validationFieldEquals(record storage.Record, field, want string) bool {
 }
 
 func (e *Engine) applyWorkflowFieldUpdates(objectName string, id storage.ID) error {
+	if e.workflowDepth > 8 {
+		return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: workflow field update recursion limit exceeded")
+	}
+	e.workflowDepth++
+	defer func() {
+		e.workflowDepth--
+	}()
+
 	object := e.Org.Objects[objectName]
 	if len(object.Definition.WorkflowRules) == 0 {
 		return nil
@@ -962,7 +972,7 @@ func (e *Engine) applyWorkflowFieldUpdates(objectName string, id storage.ID) err
 		if !rule.Active {
 			continue
 		}
-		matches, ok := evaluateWorkflowRule(rule, record)
+		matches, ok := evaluateWorkflowRule(rule, record, object.Definition, e.Org.Namespace)
 		if !ok || !matches {
 			continue
 		}
@@ -974,7 +984,7 @@ func (e *Engine) applyWorkflowFieldUpdates(objectName string, id storage.ID) err
 			if object.Definition.Fields[fieldName].Type == storage.FieldCalculated {
 				return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{fieldName}, "dml: workflow field update %s targets calculated field %s.%s", update.Name, objectName, fieldName)
 			}
-			value, explicitNull, ok := workflowUpdateValue(object.Definition.Fields[fieldName], record, update)
+			value, explicitNull, ok := workflowUpdateValue(object.Definition.Fields[fieldName], record, update, object.Definition, e.Org.Namespace)
 			if !ok {
 				return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{fieldName}, "dml: workflow field update %s has unsupported value expression", update.Name)
 			}
@@ -1012,7 +1022,7 @@ func (e *Engine) applyWorkflowFieldUpdates(objectName string, id storage.ID) err
 	return nil
 }
 
-func evaluateWorkflowRule(rule storage.WorkflowRule, record storage.Record) (bool, bool) {
+func evaluateWorkflowRule(rule storage.WorkflowRule, record storage.Record, definition storage.ObjectDefinition, namespace string) (bool, bool) {
 	if strings.TrimSpace(rule.Formula) != "" {
 		return evaluateValidationFormula(rule.Formula, record)
 	}
@@ -1020,7 +1030,7 @@ func evaluateWorkflowRule(rule storage.WorkflowRule, record storage.Record) (boo
 		return true, true
 	}
 	for _, item := range rule.Criteria {
-		matches, ok := evaluateWorkflowCriteria(item, record)
+		matches, ok := evaluateWorkflowCriteria(item, record, definition, namespace)
 		if !ok || !matches {
 			return matches, ok
 		}
@@ -1028,9 +1038,9 @@ func evaluateWorkflowRule(rule storage.WorkflowRule, record storage.Record) (boo
 	return true, true
 }
 
-func evaluateWorkflowCriteria(item storage.WorkflowCriteriaItem, record storage.Record) (bool, bool) {
-	field := strings.TrimSpace(item.Field)
-	if field == "" {
+func evaluateWorkflowCriteria(item storage.WorkflowCriteriaItem, record storage.Record, definition storage.ObjectDefinition, namespace string) (bool, bool) {
+	field, ok := storage.ResolveFieldName(definition, namespace, strings.TrimSpace(item.Field))
+	if !ok || field == "" {
 		return false, false
 	}
 	want := trimFormulaLiteral(item.Value)
@@ -1052,28 +1062,35 @@ func evaluateWorkflowCriteria(item storage.WorkflowCriteriaItem, record storage.
 	}
 }
 
-func workflowUpdateValue(field storage.Field, record storage.Record, update storage.WorkflowFieldUpdate) (storage.Value, bool, bool) {
+func workflowUpdateValue(field storage.Field, record storage.Record, update storage.WorkflowFieldUpdate, definition storage.ObjectDefinition, namespace string) (storage.Value, bool, bool) {
 	switch {
 	case update.SourceField != "":
-		value, ok := record.Fields[update.SourceField]
+		sourceField, ok := storage.ResolveFieldName(definition, namespace, update.SourceField)
+		if !ok {
+			return storage.Value{}, false, false
+		}
+		value, ok := record.Fields[sourceField]
 		if !ok {
 			return storage.NullValue(), true, true
 		}
 		return value.Clone(), false, true
 	case update.Formula != "":
-		return workflowExpressionValue(field, record, update.Formula)
+		return workflowExpressionValue(field, record, update.Formula, definition, namespace)
 	default:
 		return workflowLiteralValue(field, update.LiteralValue)
 	}
 }
 
-func workflowExpressionValue(field storage.Field, record storage.Record, expression string) (storage.Value, bool, bool) {
+func workflowExpressionValue(field storage.Field, record storage.Record, expression string, definition storage.ObjectDefinition, namespace string) (storage.Value, bool, bool) {
 	expression = strings.TrimSpace(expression)
 	if expression == "" || strings.EqualFold(expression, "NULL") {
 		return storage.NullValue(), true, true
 	}
-	if value, ok := record.Fields[expression]; ok {
-		return value.Clone(), false, true
+	if fieldName, ok := storage.ResolveFieldName(definition, namespace, expression); ok {
+		if value, ok := record.Fields[fieldName]; ok {
+			return value.Clone(), false, true
+		}
+		return storage.NullValue(), true, true
 	}
 	return workflowLiteralValue(field, trimFormulaLiteral(expression))
 }

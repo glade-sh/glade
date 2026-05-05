@@ -587,6 +587,81 @@ func TestWorkflowFieldUpdateCriteriaTrueFalseAndVisibleAfterDML(t *testing.T) {
 	}
 }
 
+func TestWorkflowFieldUpdateResolvesNamespacedCriteriaAndSourceFields(t *testing.T) {
+	org := testOrg()
+	org.Namespace = "pkg"
+	account := org.Objects["Account"]
+	account.Definition.Fields["Source__c"] = storage.Field{APIName: "Source__c", Type: storage.FieldString}
+	account.Definition.Fields["Status__c"] = storage.Field{APIName: "Status__c", Type: storage.FieldString}
+	account.Definition.Fields["FormulaCopy__c"] = storage.Field{APIName: "FormulaCopy__c", Type: storage.FieldString}
+	account.Definition.WorkflowRules = []storage.WorkflowRule{{
+		Name:   "CopyNamespacedField",
+		Active: true,
+		Criteria: []storage.WorkflowCriteriaItem{{
+			Field:     "pkg__Source__c",
+			Operation: "equals",
+			Value:     "Ready",
+		}},
+		FieldUpdates: []storage.WorkflowFieldUpdate{
+			{Name: "CopySource", Field: "Status__c", SourceField: "pkg__Source__c"},
+			{Name: "CopyFormulaField", Field: "FormulaCopy__c", Formula: "pkg__Source__c"},
+		},
+	}}
+	org.Objects["Account"] = account
+	engine := NewEngine(&org)
+
+	result := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":      storage.StringValue("Acme"),
+			"Source__c": storage.StringValue("Ready"),
+		},
+	}})
+	if !result[0].Success {
+		t.Fatalf("insert = %#v", result)
+	}
+	record := org.Objects["Account"].Records[result[0].ID]
+	if got := record.Fields["Status__c"].String; got != "Ready" {
+		t.Fatalf("source field copy = %q", got)
+	}
+	if got := record.Fields["FormulaCopy__c"].String; got != "Ready" {
+		t.Fatalf("formula field copy = %q", got)
+	}
+}
+
+func TestWorkflowFieldUpdateRejectsInvalidSourceFieldAndRollsBack(t *testing.T) {
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Status__c"] = storage.Field{APIName: "Status__c", Type: storage.FieldString}
+	account.Definition.WorkflowRules = []storage.WorkflowRule{{
+		Name:   "CopyMissing",
+		Active: true,
+		Criteria: []storage.WorkflowCriteriaItem{{
+			Field:     "Name",
+			Operation: "equals",
+			Value:     "Acme",
+		}},
+		FieldUpdates: []storage.WorkflowFieldUpdate{{
+			Name:        "BadSource",
+			Field:       "Status__c",
+			SourceField: "Missing__c",
+		}},
+	}}
+	org.Objects["Account"] = account
+	engine := NewEngine(&org)
+
+	result := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")},
+	}})
+	if result[0].Success || result[0].StatusCode != "INVALID_FIELD_FOR_INSERT_UPDATE" {
+		t.Fatalf("workflow source failure = %#v", result)
+	}
+	if len(org.Objects["Account"].Records) != 0 {
+		t.Fatalf("workflow source failure did not roll back insert: %#v", org.Objects["Account"].Records)
+	}
+}
+
 func TestWorkflowFieldUpdateRollsBackOnFailure(t *testing.T) {
 	org := testOrg()
 	account := org.Objects["Account"]
