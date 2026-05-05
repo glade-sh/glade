@@ -789,6 +789,45 @@ System.assertEquals('guarded', leaf.run());
 	}
 }
 
+func TestRuntimeAllowsSuperclassMethodToDispatchProtectedOverride(t *testing.T) {
+	run, err := CompileAnonymous("return token();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	token, err := CompileAnonymous("return 'child';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Child child = new Child();
+System.assertEquals('child', child.run());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Base",
+		Methods: map[string]Method{
+			"run": {Name: "Base.run", ClassName: "Base", ReturnType: "String", Program: run},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Child",
+		SuperClass: "Base",
+		Methods: map[string]Method{
+			"token": {Name: "Child.token", ClassName: "Child", ReturnType: "String", Access: "protected", Program: token},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestRuntimeAllowsTestVisiblePrivateMethodFromTestClass(t *testing.T) {
 	visible, err := CompileAnonymous("return 'visible';")
 	if err != nil {

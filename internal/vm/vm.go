@@ -7533,7 +7533,7 @@ func (vm *VM) checkMemberAccess(ownerClass, access, member string, modifierSets 
 		if vm.currentClassIsTest() && hasAnyMethodModifier(modifierSets, "testvisible") {
 			return nil
 		}
-		if vm.currentClass == ownerClass || vm.isSubclass(vm.currentClass, ownerClass) {
+		if vm.currentClass == ownerClass || vm.isSubclass(vm.currentClass, ownerClass) || vm.isSubclass(ownerClass, vm.currentClass) {
 			return nil
 		}
 	default:
@@ -9736,6 +9736,9 @@ func (vm *VM) callMember(callee string, args []Value, result *Result) (Value, bo
 			if _, hasField := thisValue.Fields[receiverName]; hasField {
 				receiver, err := vm.lookup(receiverName)
 				if err != nil {
+					if !strings.Contains(err.Error(), "unknown variable") {
+						return Null, true, err
+					}
 					return Null, false, nil
 				}
 				return vm.callValueMember(receiverName, receiver, method, args, result)

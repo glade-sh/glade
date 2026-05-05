@@ -38,6 +38,89 @@ private class MathTest {
 	}
 }
 
+func TestRunCoversProtectedOverrideAndHandlerDispatchPatterns(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/SelectorBase.cls"), `
+public abstract class SelectorBase {
+  public String run() {
+    return getName();
+  }
+  protected abstract String getName();
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ConcreteSelector.cls"), `
+public class ConcreteSelector extends SelectorBase {
+  protected override String getName() {
+    return 'selector';
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/DMLHelper.cls"), `
+public virtual class DMLHelper {
+  public static DMLHelper Instance {
+    get {
+      if (Instance == null) {
+        Instance = new WithoutSharing();
+      }
+      return Instance;
+    }
+  }
+  public virtual String updateRecords(List<SObject> records) {
+    return 'base';
+  }
+  private class WithoutSharing extends DMLHelper {
+    public override String updateRecords(List<SObject> records) {
+      return super.updateRecords(records) + '-without';
+    }
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/TriggerHandlersBase.cls"), `
+global virtual class TriggerHandlersBase {
+  global virtual void onBeforeUpdate(Map<Id, SObject> newRecordMap, Map<Id, SObject> oldRecordMap) {
+    DispatchState.Value = 'base';
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ConcreteTriggerHandlers.cls"), `
+public class ConcreteTriggerHandlers extends TriggerHandlersBase {
+  public override void onBeforeUpdate(Map<Id, SObject> newRecordMap, Map<Id, SObject> oldRecordMap) {
+    DispatchState.Value = 'child';
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/TriggerHandlerManager.cls"), `
+public class TriggerHandlerManager {
+  public static void executeHandlers(TriggerHandlersBase triggerHandler) {
+    triggerHandler.onBeforeUpdate(new Map<Id, SObject>(), new Map<Id, SObject>());
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/DispatchState.cls"), `
+public class DispatchState {
+  public static String Value;
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/DispatchPatternsTest.cls"), `
+@isTest
+private class DispatchPatternsTest {
+  @isTest static void dispatches() {
+    System.assertEquals('selector', new ConcreteSelector().run());
+    System.assertEquals('base-without', DMLHelper.Instance.updateRecords(new List<SObject>()));
+    TriggerHandlerManager.executeHandlers(new ConcreteTriggerHandlers());
+    System.assertEquals('child', DispatchState.Value);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	summary := run.Summary()
+	if summary.Total != 1 || summary.Passed != 1 {
+		t.Fatalf("summary = %#v case = %#v", summary, run.Suites[0].Cases[0])
+	}
+}
+
 func TestExtractMethodBodyFallsBackPastShortRange(t *testing.T) {
 	source := `public class BigClass {
   public static void run() {
