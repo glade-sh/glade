@@ -6700,6 +6700,12 @@ func (vm *VM) lookup(name string) (Value, error) {
 			return Value{Kind: ValueObject, Type: "LoggingLevel", Text: level}, nil
 		}
 	}
+	if strings.HasPrefix(name, "Label.") {
+		label := strings.TrimPrefix(name, "Label.")
+		if label != "" && !strings.Contains(label, ".") {
+			return String(label), nil
+		}
+	}
 	if strings.HasPrefix(name, "JSONToken.") {
 		tokenName := strings.TrimPrefix(name, "JSONToken.")
 		for _, jsonTokenName := range jsonTokenNames {
@@ -6809,6 +6815,9 @@ func (vm *VM) lookup(name string) (Value, error) {
 					return Null, err
 				}
 				if field.Getter != nil {
+					if field.Getter.Name == vm.currentMethod.Name {
+						return value, nil
+					}
 					return vm.callMethodWithReceiver(*field.Getter, this, nil, resultForLookup())
 				}
 			}
@@ -7225,15 +7234,22 @@ func (vm *VM) lookupField(typeName, fieldName string) (Field, string, bool) {
 }
 
 func (vm *VM) lookupStaticField(typeName, fieldName string) (Field, string, bool) {
-	for typeName != "" {
-		class, ok := vm.Classes[typeName]
-		if !ok {
-			return Field{}, "", false
+	for search := typeName; search != ""; {
+		for current := search; current != ""; {
+			class, ok := vm.Classes[current]
+			if !ok {
+				break
+			}
+			if field, ok := class.StaticFields[fieldName]; ok {
+				return field, class.Name, true
+			}
+			current = class.SuperClass
 		}
-		if field, ok := class.StaticFields[fieldName]; ok {
-			return field, class.Name, true
+		dot := strings.LastIndex(search, ".")
+		if dot < 0 {
+			break
 		}
-		typeName = class.SuperClass
+		search = search[:dot]
 	}
 	return Field{}, "", false
 }
@@ -7300,7 +7316,7 @@ func (vm *VM) checkMemberAccess(ownerClass, access, member string, modifierSets 
 		if vm.currentClassIsTest() && hasAnyMethodModifier(modifierSets, "testvisible") {
 			return nil
 		}
-		if vm.currentClass == ownerClass {
+		if vm.currentClass == ownerClass || strings.HasPrefix(vm.currentClass, ownerClass+".") {
 			return nil
 		}
 	case "protected":
@@ -8301,7 +8317,8 @@ func (vm *VM) methodApplicable(candidate Method, args []Value) bool {
 		return false
 	}
 	for i, param := range candidate.Params {
-		if vm.conversionScore(param.Type, args[i]) < 0 {
+		paramType := vm.resolveTypeNameInClass(candidate.ClassName, param.Type)
+		if vm.conversionScore(paramType, args[i]) < 0 {
 			return false
 		}
 	}
@@ -8347,7 +8364,9 @@ func (vm *VM) compareMethodSpecificity(left, right Method) int {
 	leftBetter := false
 	rightBetter := false
 	for i := range left.Params {
-		switch vm.compareTypeSpecificity(left.Params[i].Type, right.Params[i].Type) {
+		leftType := vm.resolveTypeNameInClass(left.ClassName, left.Params[i].Type)
+		rightType := vm.resolveTypeNameInClass(right.ClassName, right.Params[i].Type)
+		switch vm.compareTypeSpecificity(leftType, rightType) {
 		case 1:
 			leftBetter = true
 		case -1:
@@ -8367,6 +8386,38 @@ func (vm *VM) compareMethodSpecificity(left, right Method) int {
 	default:
 		return 0
 	}
+}
+
+func (vm *VM) resolveTypeNameInClass(className, typeName string) string {
+	typeName = strings.TrimSpace(typeName)
+	if typeName == "" {
+		return typeName
+	}
+	if base := collectionBase(typeName); base != "" {
+		element, ok := collectionElementType(typeName)
+		if !ok {
+			return typeName
+		}
+		return base + "<" + vm.resolveTypeNameInClass(className, element) + ">"
+	}
+	if keyType, valueType, ok := mapTypeArgs(typeName); ok {
+		return "Map<" + vm.resolveTypeNameInClass(className, keyType) + "," + vm.resolveTypeNameInClass(className, valueType) + ">"
+	}
+	if strings.Contains(typeName, ".") || className == "" {
+		return typeName
+	}
+	for owner := className; owner != ""; {
+		candidate := owner + "." + typeName
+		if class, ok := vm.Classes[candidate]; ok {
+			return class.Name
+		}
+		dot := strings.LastIndex(owner, ".")
+		if dot < 0 {
+			break
+		}
+		owner = owner[:dot]
+	}
+	return typeName
 }
 
 func (vm *VM) compareTypeSpecificity(left, right string) int {
@@ -9248,12 +9299,13 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	frame := make(map[string]Value, len(method.Params))
 	frameTypes := make(map[string]string, len(method.Params))
 	for i, param := range method.Params {
-		coerced, err := vm.coerceAssignable(param.Type, args[i])
+		paramType := vm.resolveTypeNameInClass(method.ClassName, param.Type)
+		coerced, err := vm.coerceAssignable(paramType, args[i])
 		if err != nil {
 			return Null, fmt.Errorf("%s parameter %s: %w", method.Name, param.Name, err)
 		}
 		frame[param.Name] = coerced
-		frameTypes[param.Name] = param.Type
+		frameTypes[param.Name] = paramType
 	}
 	if receiver.Kind != ValueNull {
 		frame["this"] = receiver

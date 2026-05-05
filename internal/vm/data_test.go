@@ -103,6 +103,7 @@ System.assertEquals(Date.today(), Date.Today());
 System.assertEquals(false, Test.Database.hasRecords());
 System.assert(Date.newInstance(2026, 1, 1) <= Date.newInstance(2026, 1, 2));
 System.assert(Date.newInstance(2026, 1, 2) >= Date.newInstance(2026, 1, 1));
+System.assertEquals('Local_Message', Label.Local_Message);
 `)
 	if err != nil {
 		t.Fatal(err)

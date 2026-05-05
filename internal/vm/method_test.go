@@ -654,6 +654,77 @@ System.assertEquals('SS', NestedParent.Instance.FindBatch('001000000000001AAA', 
 	}
 }
 
+func TestRuntimeResolvesUnqualifiedNestedParameterTypes(t *testing.T) {
+	validate, err := CompileAnonymous("return request.Name;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+NestedValidator validator = new NestedValidator();
+NestedValidator.Request request = new NestedValidator.Request();
+request.Name = 'Acme';
+System.assertEquals('Acme', validator.validate(request));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "NestedValidator",
+		Methods: map[string]Method{
+			"validate": {Name: "NestedValidator.validate", ClassName: "NestedValidator", ReturnType: "String", Params: []Param{{Name: "request", Type: "Request"}}, Access: "public", Program: validate},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "NestedValidator.Request",
+		Fields: map[string]Field{
+			"Name": {Name: "Name", Type: "String"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRuntimeNestedClassReadsOuterPrivateStaticField(t *testing.T) {
+	read, err := CompileAnonymous("return TOKEN;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Outer.Inner inner = new Outer.Inner();
+System.assertEquals('spruce', inner.read());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Outer",
+		StaticFields: map[string]Field{
+			"TOKEN": {Name: "TOKEN", Type: "String", Static: true, Access: "private", InitialValue: String("spruce")},
+		},
+		StaticFieldOrder: []string{"TOKEN"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "Outer.Inner",
+		Methods: map[string]Method{
+			"read": {Name: "Outer.Inner.read", ClassName: "Outer.Inner", ReturnType: "String", Access: "public", Program: read},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestRuntimeRejectsPrivateFieldAccessAcrossClasses(t *testing.T) {
 	program, err := CompileAnonymous(`
 Secret s = new Secret();
