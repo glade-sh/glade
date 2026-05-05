@@ -31,6 +31,9 @@ type Project struct {
 	ProfileFiles              []string           `json:"profileFiles"`
 	PermissionSetFiles        []string           `json:"permissionSetFiles"`
 	PermissionAssignmentFiles []string           `json:"permissionAssignmentFiles"`
+	ListViewFiles             []string           `json:"listViewFiles"`
+	LayoutFiles               []string           `json:"layoutFiles"`
+	CompactLayoutFiles        []string           `json:"compactLayoutFiles"`
 	VisualforcePageFiles      []string           `json:"visualforcePageFiles"`
 	VisualforceComponentFiles []string           `json:"visualforceComponentFiles"`
 	AuraFiles                 []string           `json:"auraFiles"`
@@ -98,6 +101,9 @@ func Load(root string) (Project, error) {
 	sort.Strings(p.ProfileFiles)
 	sort.Strings(p.PermissionSetFiles)
 	sort.Strings(p.PermissionAssignmentFiles)
+	sort.Strings(p.ListViewFiles)
+	sort.Strings(p.LayoutFiles)
+	sort.Strings(p.CompactLayoutFiles)
 	sort.Strings(p.VisualforcePageFiles)
 	sort.Strings(p.VisualforceComponentFiles)
 	sort.Strings(p.AuraFiles)
@@ -211,6 +217,12 @@ func collectFiles(root string, p *Project) error {
 			p.PermissionSetFiles = append(p.PermissionSetFiles, path)
 		case strings.HasSuffix(lower, ".permissionsetassignment"), strings.HasSuffix(lower, ".permissionsetassignment-meta.xml"):
 			p.PermissionAssignmentFiles = append(p.PermissionAssignmentFiles, path)
+		case strings.HasSuffix(lower, ".listview-meta.xml"):
+			p.ListViewFiles = append(p.ListViewFiles, path)
+		case strings.HasSuffix(lower, ".layout-meta.xml"):
+			p.LayoutFiles = append(p.LayoutFiles, path)
+		case strings.HasSuffix(lower, ".compactlayout-meta.xml"):
+			p.CompactLayoutFiles = append(p.CompactLayoutFiles, path)
 		case strings.HasSuffix(lower, ".page"):
 			p.VisualforcePageFiles = append(p.VisualforcePageFiles, path)
 		case strings.HasSuffix(lower, ".component"):

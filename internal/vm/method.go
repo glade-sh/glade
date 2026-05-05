@@ -26,6 +26,7 @@ type Method struct {
 	File          string
 	Line          int
 	Column        int
+	Unsupported   string
 }
 
 func (vm *VM) RegisterMethod(method Method) error {
@@ -38,8 +39,13 @@ func (vm *VM) RegisterMethod(method Method) error {
 	if vm.MethodOverloads == nil {
 		vm.MethodOverloads = make(map[string][]Method)
 	}
+	if vm.MethodFolded == nil {
+		vm.MethodFolded = make(map[string][]Method)
+	}
 	vm.Methods[method.Name] = method
 	vm.MethodOverloads[method.Name] = append(vm.MethodOverloads[method.Name], method)
+	foldedName := strings.ToLower(method.Name)
+	vm.MethodFolded[foldedName] = append(vm.MethodFolded[foldedName], method)
 	return nil
 }
 
@@ -133,7 +139,14 @@ func (vm *VM) RegisterClass(class Class) error {
 	if class.Namespace != "" && !strings.Contains(class.Name, ".") {
 		vm.Classes[class.Namespace+"."+class.Name] = class
 	}
-	return vm.runStaticInitializers(class)
+	if vm.staticInitState == nil {
+		vm.staticInitState = make(map[string]staticInitState)
+	}
+	vm.staticInitState[class.Name] = staticInitUninitialized
+	if class.Namespace != "" && !strings.Contains(class.Name, ".") {
+		vm.staticInitState[class.Namespace+"."+class.Name] = staticInitUninitialized
+	}
+	return nil
 }
 
 func orderedFieldNames(fields map[string]Field, order []string) []string {
@@ -168,6 +181,37 @@ func (vm *VM) runStaticInitializers(class Class) error {
 		if _, err := vm.callMethod(initializer, nil, &Result{}); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+func (vm *VM) ensureClassInitialized(className string) error {
+	class, ok := vm.Classes[className]
+	if !ok {
+		return nil
+	}
+	canonical := class.Name
+	if vm.staticInitState == nil {
+		vm.staticInitState = make(map[string]staticInitState)
+	}
+	switch vm.staticInitState[canonical] {
+	case staticInitDone, staticInitRunning:
+		return nil
+	}
+	vm.staticInitState[canonical] = staticInitRunning
+	if class.SuperClass != "" {
+		if err := vm.ensureClassInitialized(class.SuperClass); err != nil {
+			vm.staticInitState[canonical] = staticInitUninitialized
+			return err
+		}
+	}
+	if err := vm.runStaticInitializers(class); err != nil {
+		vm.staticInitState[canonical] = staticInitUninitialized
+		return err
+	}
+	vm.staticInitState[canonical] = staticInitDone
+	if class.Namespace != "" && !strings.Contains(class.Name, ".") {
+		vm.staticInitState[class.Namespace+"."+class.Name] = staticInitDone
 	}
 	return nil
 }

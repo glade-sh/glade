@@ -301,6 +301,131 @@ System.assertEquals(5, c.score());
 	}
 }
 
+func TestExecInstanceFieldsAreCaseInsensitiveAcrossSuperclass(t *testing.T) {
+	getProgram, err := CompileAnonymous("return this.enforceCRUD;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	setProgram, err := CompileAnonymous("this.enforceFLS = enforce; return this.enforceFls;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+ChildSelector selector = new ChildSelector();
+System.assertEquals(true, selector.isCrud());
+System.assertEquals(false, selector.setFLS(false));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "BaseSelector",
+		Fields: map[string]Field{
+			"enforceCrud": {Name: "enforceCrud", Type: "Boolean", InitialValue: Bool(true)},
+			"enforceFls":  {Name: "enforceFls", Type: "Boolean", InitialValue: Bool(true)},
+		},
+		Methods: map[string]Method{
+			"isCrud": {Name: "BaseSelector.isCrud", ClassName: "BaseSelector", ReturnType: "Boolean", Program: getProgram},
+			"setFLS": {
+				Name:       "BaseSelector.setFLS",
+				ClassName:  "BaseSelector",
+				ReturnType: "Boolean",
+				Params:     []Param{{Name: "enforce", Type: "Boolean"}},
+				Program:    setProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "ChildSelector",
+		SuperClass: "BaseSelector",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStaticInitializersRunLazilyOnFirstClassUse(t *testing.T) {
+	staticInit, err := CompileAnonymous("seed = 4;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	getProgram, err := CompileAnonymous("return seed;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Counter",
+		StaticFields: map[string]Field{
+			"seed": {Name: "seed", Type: "Integer", Static: true},
+		},
+		StaticInitializers: []Method{{
+			Name:      "Counter.<static_init>",
+			ClassName: "Counter",
+			Program:   staticInit,
+			IsStatic:  true,
+		}},
+		Methods: map[string]Method{
+			"get": {Name: "Counter.get", ClassName: "Counter", ReturnType: "Integer", IsStatic: true, Program: getProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if got := machine.Classes["Counter"].StaticFields["seed"].Value.Int; got != 0 {
+		t.Fatalf("seed initialized eagerly = %d", got)
+	}
+	value, err := machine.CallStatic("Counter.get", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if value.Kind != ValueInt || value.Int != 4 {
+		t.Fatalf("Counter.get = %#v, want 4", value)
+	}
+}
+
+func TestExecDottedStaticMethodRunsStaticInitializer(t *testing.T) {
+	staticInit, err := CompileAnonymous("seed = 4;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	getProgram, err := CompileAnonymous("return seed;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+System.assertEquals(4, Counter.get());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Counter",
+		StaticFields: map[string]Field{
+			"seed": {Name: "seed", Type: "Integer", Static: true},
+		},
+		StaticInitializers: []Method{{
+			Name:      "Counter.<static_init>",
+			ClassName: "Counter",
+			Program:   staticInit,
+			IsStatic:  true,
+		}},
+		Methods: map[string]Method{
+			"get": {Name: "Counter.get", ClassName: "Counter", ReturnType: "Integer", IsStatic: true, Program: getProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecConstructorThisChaining(t *testing.T) {
 	defaultCtor, err := CompileAnonymous("this(2);")
 	if err != nil {
@@ -498,6 +623,233 @@ s.hidden();
 	}
 }
 
+func TestRuntimeResolvesUnqualifiedStaticMethodInCurrentClass(t *testing.T) {
+	helper, err := CompileAnonymous("return values[0] + '-static';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	check, err := CompileAnonymous("return values.isEmpty() ? null : values[0].Name;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	reveal, err := CompileAnonymous("return helper((List<String>)values);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	revealAccount, err := CompileAnonymous("return checkAccounts(records);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+StaticHelper h = new StaticHelper();
+System.assertEquals('spruce-static', h.reveal(new List<Object>{'spruce'}));
+Account a = new Account(Name = 'Acme');
+List<sObject> records = new List<sObject>{a};
+System.assertEquals('Acme', h.revealAccount(records));
+System.assertEquals(null, h.revealAccount(new List<sObject>()));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "StaticHelper",
+		Methods: map[string]Method{
+			"helper":        {Name: "StaticHelper.helper", ClassName: "StaticHelper", ReturnType: "String", Params: []Param{{Name: "values", Type: "List<String>"}}, Access: "private", IsStatic: true, Program: helper},
+			"checkAccounts": {Name: "StaticHelper.checkAccounts", ClassName: "StaticHelper", ReturnType: "String", Params: []Param{{Name: "values", Type: "List<Account>"}}, Access: "private", IsStatic: true, Program: check},
+			"reveal":        {Name: "StaticHelper.reveal", ClassName: "StaticHelper", ReturnType: "String", Params: []Param{{Name: "values", Type: "List<Object>"}}, Access: "public", Program: reveal},
+			"revealAccount": {Name: "StaticHelper.revealAccount", ClassName: "StaticHelper", ReturnType: "String", Params: []Param{{Name: "records", Type: "List<sObject>"}}, Access: "public", Program: revealAccount},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRuntimeResolvesDottedStaticPropertyInCurrentClass(t *testing.T) {
+	settingsGetter, err := CompileAnonymous("return new Account(Name = 'Acme');")
+	if err != nil {
+		t.Fatal(err)
+	}
+	reveal, err := CompileAnonymous("return settings.Name;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+SettingsHolder h = new SettingsHolder();
+System.assertEquals('Acme', h.reveal());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "SettingsHolder",
+		StaticFields: map[string]Field{
+			"settings": {Name: "settings", Type: "Account", Static: true, Access: "private", Getter: &Method{Name: "SettingsHolder.getSettings", ClassName: "SettingsHolder", ReturnType: "Account", IsStatic: true, Access: "private", Program: settingsGetter}},
+		},
+		StaticFieldOrder: []string{"settings"},
+		Methods: map[string]Method{
+			"reveal": {Name: "SettingsHolder.reveal", ClassName: "SettingsHolder", ReturnType: "String", Access: "public", Program: reveal},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRuntimeCallsMethodOnDottedStaticProperty(t *testing.T) {
+	instanceGetter, err := CompileAnonymous("return new DottedWorker();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	work, err := CompileAnonymous("return 'bank-vault';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+System.assertEquals('bank-vault', DottedManager.Instance.work());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "DottedManager",
+		StaticFields: map[string]Field{
+			"Instance": {Name: "Instance", Type: "DottedWorker", Static: true, Access: "public", Getter: &Method{Name: "DottedManager.getInstance", ClassName: "DottedManager", ReturnType: "DottedWorker", IsStatic: true, Access: "public", Program: instanceGetter}},
+		},
+		StaticFieldOrder: []string{"Instance"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "DottedWorker",
+		Methods: map[string]Method{
+			"work": {Name: "DottedWorker.work", ClassName: "DottedWorker", ReturnType: "String", Access: "public", Program: work},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRuntimeCallsInheritedMethodOnNestedStaticProperty(t *testing.T) {
+	instanceGetter, err := CompileAnonymous("return new Child();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	find, err := CompileAnonymous("return source;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+System.assertEquals('SS', NestedParent.Instance.FindBatch('001000000000001AAA', 'SS', Date.newInstance(2026, 1, 1)));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "NestedParent",
+		StaticFields: map[string]Field{
+			"Instance": {Name: "Instance", Type: "NestedParent", Static: true, Access: "public", Getter: &Method{Name: "NestedParent.getInstance", ClassName: "NestedParent", ReturnType: "NestedParent", IsStatic: true, Access: "public", Program: instanceGetter}},
+		},
+		StaticFieldOrder: []string{"Instance"},
+		Methods: map[string]Method{
+			"FindBatch": {Name: "NestedParent.FindBatch", ClassName: "NestedParent", ReturnType: "String", Params: []Param{{Name: "entity", Type: "Id"}, {Name: "source", Type: "String"}, {Name: "transactionDate", Type: "Date"}}, Access: "public", Program: find},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "NestedParent.Child",
+		SuperClass: "NestedParent",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRuntimeResolvesUnqualifiedNestedParameterTypes(t *testing.T) {
+	validate, err := CompileAnonymous("return request.Name;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+NestedValidator validator = new NestedValidator();
+NestedValidator.Request request = new NestedValidator.Request();
+request.Name = 'Acme';
+System.assertEquals('Acme', validator.validate(request));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "NestedValidator",
+		Methods: map[string]Method{
+			"validate": {Name: "NestedValidator.validate", ClassName: "NestedValidator", ReturnType: "String", Params: []Param{{Name: "request", Type: "Request"}}, Access: "public", Program: validate},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "NestedValidator.Request",
+		Fields: map[string]Field{
+			"Name": {Name: "Name", Type: "String"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRuntimeNestedClassReadsOuterPrivateStaticField(t *testing.T) {
+	read, err := CompileAnonymous("return TOKEN;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Outer.Inner inner = new Outer.Inner();
+System.assertEquals('spruce', inner.read());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Outer",
+		StaticFields: map[string]Field{
+			"TOKEN": {Name: "TOKEN", Type: "String", Static: true, Access: "private", InitialValue: String("spruce")},
+		},
+		StaticFieldOrder: []string{"TOKEN"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "Outer.Inner",
+		Methods: map[string]Method{
+			"read": {Name: "Outer.Inner.read", ClassName: "Outer.Inner", ReturnType: "String", Access: "public", Program: read},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestRuntimeRejectsPrivateFieldAccessAcrossClasses(t *testing.T) {
 	program, err := CompileAnonymous(`
 Secret s = new Secret();
@@ -553,6 +905,122 @@ System.assertEquals('guarded', leaf.run());
 		SuperClass: "Middle",
 		Methods: map[string]Method{
 			"run": {Name: "Leaf.run", ClassName: "Leaf", ReturnType: "String", Program: run},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRuntimeAllowsSuperclassMethodToDispatchProtectedOverride(t *testing.T) {
+	run, err := CompileAnonymous("return token();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	token, err := CompileAnonymous("return 'child';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Child child = new Child();
+System.assertEquals('child', child.run());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Base",
+		Methods: map[string]Method{
+			"run": {Name: "Base.run", ClassName: "Base", ReturnType: "String", Program: run},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Child",
+		SuperClass: "Base",
+		Methods: map[string]Method{
+			"token": {Name: "Child.token", ClassName: "Child", ReturnType: "String", Access: "protected", Program: token},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRuntimeChecksVirtualDispatchAccessAtVisibleSurface(t *testing.T) {
+	run, err := CompileAnonymous("return hook();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	hook, err := CompileAnonymous("return 'child';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Child child = new Child();
+Base base = child;
+System.assertEquals('child', base.run());
+System.assertEquals('child', child.run());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Base",
+		Methods: map[string]Method{
+			"run":  {Name: "Base.run", ClassName: "Base", ReturnType: "String", Program: run},
+			"hook": {Name: "Base.hook", ClassName: "Base", ReturnType: "String", Modifiers: []string{"abstract"}},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Child",
+		SuperClass: "Base",
+		Methods: map[string]Method{
+			"hook": {Name: "Child.hook", ClassName: "Child", ReturnType: "String", Access: "private", Program: hook},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRuntimeMatchesMapOverloadByEntries(t *testing.T) {
+	accept, err := CompileAnonymous("return values.get('name');")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Map<String,Object> values = new Map<String,Object>();
+values.put('name', 'trail');
+System.assertEquals('trail', Accept.take(values));
+System.assertEquals(null, Accept.take(new Map<String,Object>()));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Accept",
+		Methods: map[string]Method{
+			"take": {
+				Name:       "Accept.take",
+				ClassName:  "Accept",
+				IsStatic:   true,
+				ReturnType: "String",
+				Params:     []Param{{Name: "values", Type: "Map<String,String>"}},
+				Program:    accept,
+			},
 		},
 	}); err != nil {
 		t.Fatal(err)
@@ -1401,6 +1869,64 @@ value.required();
 	_, err = machine.Execute(program)
 	if err == nil || !strings.Contains(err.Error(), "cannot execute abstract method Base.required") {
 		t.Fatalf("error = %v", err)
+	}
+}
+
+func TestExecDispatchesUnqualifiedVirtualCallToConcreteOverride(t *testing.T) {
+	baseCall, err := CompileAnonymous("return required();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	override, err := CompileAnonymous("return 'concrete';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Base value = new Concrete();
+System.assertEquals('concrete', value.callRequired());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:       "Base",
+		IsAbstract: true,
+		Methods: map[string]Method{
+			"callRequired": {Name: "Base.callRequired", ClassName: "Base", ReturnType: "String", Access: "public", Program: baseCall},
+			"required":     {Name: "Base.required", ClassName: "Base", ReturnType: "String", Access: "public", Modifiers: []string{"abstract"}},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Concrete",
+		SuperClass: "Base",
+		Methods: map[string]Method{
+			"required": {Name: "Concrete.required", ClassName: "Concrete", ReturnType: "String", Access: "public", Modifiers: []string{"override"}, Program: override},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMapKeySetPreservesDateKeys(t *testing.T) {
+	program, err := CompileAnonymous(`
+Date today = Date.today();
+Map<Date, String> values = new Map<Date, String>();
+values.put(today, 'open');
+Set<Date> keys = values.keySet();
+List<Date> ordered = new List<Date>(keys);
+System.assertEquals(today, ordered[0]);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
 	}
 }
 

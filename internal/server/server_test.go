@@ -8,12 +8,16 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
 
+	"github.com/open-aer/oaer/internal/project"
+	"github.com/open-aer/oaer/internal/schema"
 	"github.com/open-aer/oaer/internal/storage"
+	"github.com/open-aer/oaer/internal/typesys"
 	"github.com/open-aer/oaer/internal/vm"
 )
 
@@ -33,6 +37,65 @@ func assertQueryRecordShape(t *testing.T, record map[string]any, objectName, id,
 		if _, ok := record[internal]; ok {
 			t.Fatalf("record leaked internal %q field: %#v", internal, record)
 		}
+	}
+}
+
+func TestRequestBaseURLUsesForwardedHeaders(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "http://local.example/services/apexrest/test", nil)
+	req.Host = "internal.example"
+	req.Header.Set("X-Forwarded-Proto", "https")
+	req.Header.Set("X-Forwarded-Host", "trail.example.test:8443")
+
+	if got := requestBaseURL(req); got != "https://trail.example.test:8443" {
+		t.Fatalf("base URL = %q", got)
+	}
+}
+
+func TestRequestBaseURLIgnoresUnsafeForwardedProto(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "http://local.example/services/apexrest/test", nil)
+	req.Host = "internal.example"
+	req.Header.Set("X-Forwarded-Proto", "javascript")
+	req.Header.Set("X-Forwarded-Host", "trail.example.test")
+
+	if got := requestBaseURL(req); got != "http://trail.example.test" {
+		t.Fatalf("base URL = %q", got)
+	}
+}
+
+func testSourceMetadata(t *testing.T) SourceMetadata {
+	t.Helper()
+	root := filepath.Join(".testdata-generated", strings.NewReplacer("/", "_", " ", "_").Replace(t.Name()))
+	if err := os.RemoveAll(root); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(root) })
+	writeServerTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"sourceApiVersion":"61.0"}`)
+	writeServerTestFile(t, filepath.Join(root, "force-app/main/default/classes/LocalOne.cls"), "public class LocalOne {}")
+	writeServerTestFile(t, filepath.Join(root, "force-app/main/default/classes/LocalTwo.cls"), "public class LocalTwo {}")
+	writeServerTestFile(t, filepath.Join(root, "force-app/main/default/triggers/AccountTrigger.trigger"), "trigger AccountTrigger on Account (before insert) {}")
+	writeServerTestFile(t, filepath.Join(root, "force-app/main/default/pages/Edit.page"), `<apex:page controller="LocalOne"/>`)
+	writeServerTestFile(t, filepath.Join(root, "force-app/main/default/objects/Account/listViews/AllAccounts.listView-meta.xml"), `<ListView><label>All Accounts</label><columns>Id</columns><columns>Name</columns><filterScope>Everything</filterScope></ListView>`)
+	writeServerTestFile(t, filepath.Join(root, "force-app/main/default/layouts/Account-Account Layout.layout-meta.xml"), `<Layout/>`)
+	writeServerTestFile(t, filepath.Join(root, "force-app/main/default/objects/Account/compactLayouts/Card.compactLayout-meta.xml"), `<CompactLayout><label>Card</label><fields>Name</fields></CompactLayout>`)
+	writeServerTestFile(t, filepath.Join(root, "force-app/main/default/objects/Widget__c/Widget__c.object-meta.xml"), `<CustomObject><label>Widget</label></CustomObject>`)
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	source, err := NewSourceMetadataFromProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return source
+}
+
+func writeServerTestFile(t *testing.T, path, content string) {
+	t.Helper()
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -1325,6 +1388,42 @@ func TestSObjectListViewRoutes(t *testing.T) {
 	assertSalesforceError(t, unknown, http.StatusNotFound, "NOT_FOUND", "unknown object")
 }
 
+func TestSObjectListViewsLayoutsAndCompactLayoutsFromSource(t *testing.T) {
+	org := testOrg()
+	addAccountForTest(&org, "001000000000001", "Trail Account")
+	handler := NewWithSource(&org, testSourceMetadata(t))
+
+	collection := httptest.NewRecorder()
+	handler.ServeHTTP(collection, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/listviews", nil))
+	if collection.Code != http.StatusOK || !bytes.Contains(collection.Body.Bytes(), []byte(`"developerName":"AllAccounts"`)) || !bytes.Contains(collection.Body.Bytes(), []byte(`"size":1`)) {
+		t.Fatalf("listviews collection status=%d body=%s", collection.Code, collection.Body.String())
+	}
+
+	describe := httptest.NewRecorder()
+	handler.ServeHTTP(describe, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/listviews/00B000000000001/describe", nil))
+	if describe.Code != http.StatusOK || !bytes.Contains(describe.Body.Bytes(), []byte(`"query":"SELECT Id, Name FROM Account"`)) {
+		t.Fatalf("listview describe status=%d body=%s", describe.Code, describe.Body.String())
+	}
+
+	results := httptest.NewRecorder()
+	handler.ServeHTTP(results, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/listviews/00B000000000001/results", nil))
+	if results.Code != http.StatusOK || !bytes.Contains(results.Body.Bytes(), []byte(`Trail Account`)) || !bytes.Contains(results.Body.Bytes(), []byte(`"listViewId":"00B000000000001"`)) {
+		t.Fatalf("listview results status=%d body=%s", results.Code, results.Body.String())
+	}
+
+	compact := httptest.NewRecorder()
+	handler.ServeHTTP(compact, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/describe/compactLayouts", nil))
+	if compact.Code != http.StatusOK || !bytes.Contains(compact.Body.Bytes(), []byte(`"defaultCompactLayoutId":"0CL000000000001"`)) || !bytes.Contains(compact.Body.Bytes(), []byte(`"fields":["Name"]`)) {
+		t.Fatalf("compact status=%d body=%s", compact.Code, compact.Body.String())
+	}
+
+	layouts := httptest.NewRecorder()
+	handler.ServeHTTP(layouts, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/sobjects/Account/describe/layouts", nil))
+	if layouts.Code != http.StatusOK || !bytes.Contains(layouts.Body.Bytes(), []byte(`Account-Account Layout`)) {
+		t.Fatalf("layouts status=%d body=%s", layouts.Code, layouts.Body.String())
+	}
+}
+
 func TestDescribeEndpoints(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
@@ -1768,6 +1867,135 @@ func TestCompositeGenericRouteFamiliesValidateEnvelopesBeforeUnsupported(t *test
 	}
 }
 
+func TestGenericCompositeOrchestratesSupportedRESTSubrequests(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/composite", strings.NewReader(`{
+  "allOrNone": true,
+  "compositeRequest": [
+    {"method":"POST","url":"/services/data/v61.0/sobjects/Account","referenceId":"createAccount","body":{"Name":"Composite"}},
+    {"method":"GET","url":"/services/data/v61.0/sobjects/Account/@{createAccount.id}","referenceId":"getAccount"},
+    {"method":"GET","url":"/services/data/v61.0/query?q=SELECT%20Id,%20Name%20FROM%20Account%20WHERE%20Id%20=%20'@{createAccount.id}'","referenceId":"queryAccount"},
+    {"method":"GET","url":"/services/data/v61.0/limits","referenceId":"limits"}
+  ]
+}`)))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("composite status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var body struct {
+		CompositeResponse []struct {
+			Body           map[string]any `json:"body"`
+			HTTPStatusCode int            `json:"httpStatusCode"`
+			ReferenceID    string         `json:"referenceId"`
+		} `json:"compositeResponse"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	if len(body.CompositeResponse) != 4 {
+		t.Fatalf("responses = %#v", body.CompositeResponse)
+	}
+	if body.CompositeResponse[0].ReferenceID != "createAccount" || body.CompositeResponse[0].HTTPStatusCode != http.StatusCreated {
+		t.Fatalf("create response = %#v", body.CompositeResponse[0])
+	}
+	if got := body.CompositeResponse[1].Body["Name"]; got != "Composite" {
+		t.Fatalf("get body Name = %#v body=%#v", got, body.CompositeResponse[1].Body)
+	}
+	if got := body.CompositeResponse[2].Body["totalSize"]; got != float64(1) {
+		t.Fatalf("query totalSize = %#v body=%#v", got, body.CompositeResponse[2].Body)
+	}
+	if _, ok := body.CompositeResponse[3].Body["DailyApiRequests"]; !ok {
+		t.Fatalf("limits body = %#v", body.CompositeResponse[3].Body)
+	}
+	if got := len(org.Objects["Account"].Records); got != 1 {
+		t.Fatalf("committed Account records = %d", got)
+	}
+}
+
+func TestGenericCompositeAllOrNoneRollsBackMutatingSubrequests(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/composite", strings.NewReader(`{
+  "allOrNone": true,
+  "compositeRequest": [
+    {"method":"POST","url":"/services/data/v61.0/sobjects/Account","referenceId":"good","body":{"Name":"Good"}},
+    {"method":"POST","url":"/services/data/v61.0/sobjects/Account","referenceId":"bad","body":{"Description":"Missing name"}}
+  ]
+}`)))
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("composite status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if got := len(org.Objects["Account"].Records); got != 0 {
+		t.Fatalf("rolled back Account records = %d", got)
+	}
+	if !bytes.Contains(rec.Body.Bytes(), []byte(`"referenceId":"good"`)) || !bytes.Contains(rec.Body.Bytes(), []byte(`"referenceId":"bad"`)) {
+		t.Fatalf("reference ids missing: %s", rec.Body.String())
+	}
+}
+
+func TestGenericCompositePartialFailureCommitsWithoutAllOrNone(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/composite", strings.NewReader(`{
+  "compositeRequest": [
+    {"method":"POST","url":"/services/data/v61.0/sobjects/Account","referenceId":"good","body":{"Name":"Good"}},
+    {"method":"POST","url":"/services/data/v61.0/sobjects/Account","referenceId":"bad","body":{"Description":"Missing name"}}
+  ]
+}`)))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("composite status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if got := len(org.Objects["Account"].Records); got != 1 {
+		t.Fatalf("committed Account records = %d", got)
+	}
+}
+
+func TestGenericCompositeCanCallCompositeSObjectRoutes(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/composite", strings.NewReader(`{
+  "compositeRequest": [
+    {"method":"POST","url":"/services/data/v61.0/composite/sobjects","referenceId":"nestedComposite","body":{"records":[{"attributes":{"type":"Account","referenceId":"row"},"Name":"Nested"}]}}
+  ]
+}`)))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("composite status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if got := len(org.Objects["Account"].Records); got != 1 {
+		t.Fatalf("committed Account records = %d", got)
+	}
+	if !bytes.Contains(rec.Body.Bytes(), []byte(`"referenceId":"nestedComposite"`)) || !bytes.Contains(rec.Body.Bytes(), []byte(`"referenceId":"row"`)) {
+		t.Fatalf("nested composite response = %s", rec.Body.String())
+	}
+}
+
+func TestGenericCompositeRejectsUnclosedReference(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/composite", strings.NewReader(`{
+  "compositeRequest": [
+    {"method":"GET","url":"/services/data/v61.0/limits","referenceId":"limits"},
+    {"method":"GET","url":"/services/data/v61.0/sobjects/Account/@{limits.DailyApiRequests","referenceId":"bad"}
+  ]
+}`)))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("composite status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if !bytes.Contains(rec.Body.Bytes(), []byte(`"httpStatusCode":400`)) || !bytes.Contains(rec.Body.Bytes(), []byte(`unclosed Composite reference`)) {
+		t.Fatalf("unclosed reference response = %s", rec.Body.String())
+	}
+}
+
 func TestRESTSearchReturnsStableUnsupportedError(t *testing.T) {
 	org := testOrg()
 	handler := New(&org)
@@ -1839,6 +2067,23 @@ func TestToolingAndBulkJobsDiscoveryRoutes(t *testing.T) {
 	assertSalesforceError(t, jobsPost, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
 	if got := jobsPost.Header().Get("Allow"); got != http.MethodGet {
 		t.Fatalf("jobs Allow = %q", got)
+	}
+
+	ingestJobs := httptest.NewRecorder()
+	handler.ServeHTTP(ingestJobs, httptest.NewRequest(http.MethodGet, "/services/data/v60.0/jobs/ingest", nil))
+	if ingestJobs.Code != http.StatusOK {
+		t.Fatalf("ingest jobs status = %d body=%s", ingestJobs.Code, ingestJobs.Body.String())
+	}
+	var ingestPayload map[string]any
+	if err := json.Unmarshal(ingestJobs.Body.Bytes(), &ingestPayload); err != nil {
+		t.Fatal(err)
+	}
+	if ingestPayload["done"] != true {
+		t.Fatalf("ingest jobs payload = %#v", ingestPayload)
+	}
+	records, ok := ingestPayload["records"].([]any)
+	if !ok || len(records) != 0 {
+		t.Fatalf("ingest jobs records = %#v", ingestPayload["records"])
 	}
 }
 
@@ -1927,21 +2172,20 @@ func TestToolingDeployChainMemberStubsValidateBodies(t *testing.T) {
 	assertSalesforceError(t, record, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", "Tooling ApexPageMember object record")
 }
 
-func TestToolingQueryStillDelegatesToSOQL(t *testing.T) {
+func TestToolingQueryReadsLocalSourceMetadata(t *testing.T) {
 	org := testOrg()
-	addAccountForTest(&org, "001000000000001", "Tooling Query")
-	handler := New(&org)
+	handler := NewWithSource(&org, testSourceMetadata(t))
 
 	for _, path := range []string{
-		"/services/data/v61.0/tooling/query?q=SELECT%20Id,%20Name%20FROM%20Account%20WHERE%20Name%20=%20'Tooling%20Query'",
-		"/services/data/v61.0/tooling/queryAll?q=SELECT%20Id,%20Name%20FROM%20Account%20WHERE%20Name%20=%20'Tooling%20Query'",
+		"/services/data/v61.0/tooling/query?q=SELECT%20Id,%20Name,%20Body%20FROM%20ApexClass%20WHERE%20Name%20=%20'LocalOne'",
+		"/services/data/v61.0/tooling/queryAll?q=SELECT%20Id,%20Name,%20Body%20FROM%20ApexClass%20WHERE%20Name%20=%20'LocalOne'",
 	} {
 		rec := httptest.NewRecorder()
 		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
 		if rec.Code != http.StatusOK {
 			t.Fatalf("%s status = %d body=%s", path, rec.Code, rec.Body.String())
 		}
-		if !bytes.Contains(rec.Body.Bytes(), []byte(`"totalSize":1`)) || !bytes.Contains(rec.Body.Bytes(), []byte(`Tooling Query`)) {
+		if !bytes.Contains(rec.Body.Bytes(), []byte(`"totalSize":1`)) || !bytes.Contains(rec.Body.Bytes(), []byte(`LocalOne`)) {
 			t.Fatalf("%s body = %s", path, rec.Body.String())
 		}
 		var payload struct {
@@ -1950,68 +2194,49 @@ func TestToolingQueryStillDelegatesToSOQL(t *testing.T) {
 		if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
 			t.Fatal(err)
 		}
-		if len(payload.Records) != 1 || payload.Records[0]["Name"] != "Tooling Query" {
+		if len(payload.Records) != 1 || payload.Records[0]["Name"] != "LocalOne" || !strings.Contains(fmt.Sprint(payload.Records[0]["Body"]), "public class LocalOne") {
 			t.Fatalf("%s records = %#v", path, payload.Records)
 		}
-		assertQueryRecordShape(t, payload.Records[0], "Account", "001000000000001", "/services/data/v61.0/sobjects/Account/001000000000001")
+		assertQueryRecordShape(t, payload.Records[0], "ApexClass", "01p000000000001", "/services/data/v61.0/tooling/sobjects/ApexClass/01p000000000001")
 	}
 }
 
-func TestToolingQueryContinuationUsesToolingPath(t *testing.T) {
+func TestToolingSObjectDiscoveryDescribeAndRecordRead(t *testing.T) {
+	org := testOrg()
+	handler := NewWithSource(&org, testSourceMetadata(t))
+
+	discovery := httptest.NewRecorder()
+	handler.ServeHTTP(discovery, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/tooling/sobjects", nil))
+	if discovery.Code != http.StatusOK || !bytes.Contains(discovery.Body.Bytes(), []byte(`"name":"ApexClass"`)) {
+		t.Fatalf("tooling sobjects status=%d body=%s", discovery.Code, discovery.Body.String())
+	}
+
+	describe := httptest.NewRecorder()
+	handler.ServeHTTP(describe, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/tooling/sobjects/ApexClass/describe", nil))
+	if describe.Code != http.StatusOK || !bytes.Contains(describe.Body.Bytes(), []byte(`"createable":false`)) || !bytes.Contains(describe.Body.Bytes(), []byte(`"name":"Body"`)) {
+		t.Fatalf("tooling describe status=%d body=%s", describe.Code, describe.Body.String())
+	}
+
+	record := httptest.NewRecorder()
+	handler.ServeHTTP(record, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/tooling/sobjects/ApexClass/01p000000000001", nil))
+	if record.Code != http.StatusOK || !bytes.Contains(record.Body.Bytes(), []byte(`LocalOne`)) {
+		t.Fatalf("tooling record status=%d body=%s", record.Code, record.Body.String())
+	}
+
+	write := httptest.NewRecorder()
+	handler.ServeHTTP(write, httptest.NewRequest(http.MethodPatch, "/services/data/v61.0/tooling/sobjects/ApexClass/01p000000000001", strings.NewReader(`{"Body":"changed"}`)))
+	assertSalesforceError(t, write, http.StatusMethodNotAllowed, "METHOD_NOT_ALLOWED", "method not allowed")
+}
+
+func TestToolingQueryUnsupportedWithoutLocalModel(t *testing.T) {
 	for _, endpoint := range []string{"query", "queryAll"} {
 		t.Run(endpoint, func(t *testing.T) {
 			org := testOrg()
-			addAccountForTest(&org, "001000000000001", "Tooling Page 1")
-			addAccountForTest(&org, "001000000000002", "Tooling Page 2")
 			handler := New(&org)
 
 			rec := httptest.NewRecorder()
-			handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/data/v62.0/tooling/"+endpoint+"?q=SELECT%20Id,%20Name%20FROM%20Account&batchSize=1", nil))
-			if rec.Code != http.StatusOK {
-				t.Fatalf("tooling %s pagination status = %d body=%s", endpoint, rec.Code, rec.Body.String())
-			}
-			var firstPayload struct {
-				TotalSize      int                      `json:"totalSize"`
-				Done           bool                     `json:"done"`
-				NextRecordsURL string                   `json:"nextRecordsUrl"`
-				Records        []map[string]interface{} `json:"records"`
-			}
-			if err := json.Unmarshal(rec.Body.Bytes(), &firstPayload); err != nil {
-				t.Fatal(err)
-			}
-			if firstPayload.TotalSize != 2 || firstPayload.Done || len(firstPayload.Records) != 1 {
-				t.Fatalf("tooling %s first payload = %#v", endpoint, firstPayload)
-			}
-			if firstPayload.NextRecordsURL != "/services/data/v62.0/tooling/query/oaerql000001-1" {
-				t.Fatalf("tooling %s nextRecordsUrl = %q", endpoint, firstPayload.NextRecordsURL)
-			}
-
-			disallowed := httptest.NewRecorder()
-			handler.ServeHTTP(disallowed, httptest.NewRequest(http.MethodPost, firstPayload.NextRecordsURL, nil))
-			if disallowed.Code != http.StatusMethodNotAllowed || disallowed.Header().Get("Allow") != http.MethodGet {
-				t.Fatalf("tooling %s queryMore method boundary status=%d allow=%q body=%s", endpoint, disallowed.Code, disallowed.Header().Get("Allow"), disallowed.Body.String())
-			}
-
-			continuation := httptest.NewRecorder()
-			handler.ServeHTTP(continuation, httptest.NewRequest(http.MethodGet, firstPayload.NextRecordsURL, nil))
-			if continuation.Code != http.StatusOK {
-				t.Fatalf("tooling %s queryMore status = %d body=%s", endpoint, continuation.Code, continuation.Body.String())
-			}
-			var nextPayload struct {
-				TotalSize      int                      `json:"totalSize"`
-				Done           bool                     `json:"done"`
-				NextRecordsURL string                   `json:"nextRecordsUrl"`
-				Records        []map[string]interface{} `json:"records"`
-			}
-			if err := json.Unmarshal(continuation.Body.Bytes(), &nextPayload); err != nil {
-				t.Fatal(err)
-			}
-			if nextPayload.TotalSize != 2 || !nextPayload.Done || nextPayload.NextRecordsURL != "" || len(nextPayload.Records) != 1 {
-				t.Fatalf("tooling %s continuation payload = %#v", endpoint, nextPayload)
-			}
-			if !bytes.Contains(continuation.Body.Bytes(), []byte(`"Name":"Tooling Page 2"`)) {
-				t.Fatalf("tooling %s continuation body = %s", endpoint, continuation.Body.String())
-			}
+			handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/data/v62.0/tooling/"+endpoint+"?q=SELECT%20Id%20FROM%20ApexLog&batchSize=1", nil))
+			assertSalesforceError(t, rec, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", "Tooling query for ApexLog")
 		})
 	}
 }
@@ -2149,7 +2374,6 @@ func TestBulkAPIJobsReturnStableUnsupportedErrors(t *testing.T) {
 		{method: http.MethodPatch, path: "/services/data/v61.0/jobs/query/750000000000001", message: "Bulk API v2 query job records"},
 		{method: http.MethodDelete, path: "/services/data/v61.0/jobs/query/750000000000001", message: "Bulk API v2 query job records"},
 		{method: http.MethodGet, path: "/services/data/v61.0/jobs/query/750000000000001/results", message: "Bulk API v2 query job results"},
-		{method: http.MethodGet, path: "/services/data/v61.0/jobs/ingest", message: "Bulk API v2 ingest jobs"},
 		{method: http.MethodPost, path: "/services/data/v61.0/jobs/ingest", message: "Bulk API v2 ingest jobs"},
 		{method: http.MethodGet, path: "/services/data/v61.0/jobs/ingest/750000000000001", message: "Bulk API v2 ingest job records"},
 		{method: http.MethodPatch, path: "/services/data/v61.0/jobs/ingest/750000000000001", message: "Bulk API v2 ingest job records"},
@@ -2323,6 +2547,39 @@ func TestMetadataRESTDiscoveryAndReadStubs(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestMetadataRESTReadsLocalSourceFiles(t *testing.T) {
+	org := testOrg()
+	handler := NewWithSource(&org, testSourceMetadata(t))
+
+	describe := httptest.NewRecorder()
+	handler.ServeHTTP(describe, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/metadata/describeMetadata", nil))
+	if describe.Code != http.StatusOK || !bytes.Contains(describe.Body.Bytes(), []byte(`"xmlName":"ApexClass"`)) || !bytes.Contains(describe.Body.Bytes(), []byte(`"xmlName":"ListView"`)) {
+		t.Fatalf("describeMetadata status=%d body=%s", describe.Code, describe.Body.String())
+	}
+
+	list := httptest.NewRecorder()
+	handler.ServeHTTP(list, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/metadata/listMetadata?type=ApexClass", nil))
+	if list.Code != http.StatusOK || !bytes.Contains(list.Body.Bytes(), []byte(`"fullName":"LocalOne"`)) || bytes.Contains(list.Body.Bytes(), []byte(`AccountTrigger`)) {
+		t.Fatalf("listMetadata status=%d body=%s", list.Code, list.Body.String())
+	}
+
+	components := httptest.NewRecorder()
+	handler.ServeHTTP(components, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/metadata/components/ApexClass", nil))
+	if components.Code != http.StatusOK || !bytes.Contains(components.Body.Bytes(), []byte(`"size":2`)) {
+		t.Fatalf("components status=%d body=%s", components.Code, components.Body.String())
+	}
+
+	component := httptest.NewRecorder()
+	handler.ServeHTTP(component, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/metadata/components/ApexClass/LocalOne", nil))
+	if component.Code != http.StatusOK || !bytes.Contains(component.Body.Bytes(), []byte(`public class LocalOne`)) {
+		t.Fatalf("component status=%d body=%s", component.Code, component.Body.String())
+	}
+
+	write := httptest.NewRecorder()
+	handler.ServeHTTP(write, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/metadata/deployRequest", strings.NewReader(`{}`)))
+	assertSalesforceError(t, write, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", "Metadata REST deploy requests")
 }
 
 func TestMetadataRESTRetrieveRoutesReturnExplicitUnsupportedBoundaries(t *testing.T) {
@@ -2528,6 +2785,115 @@ func TestApexRestDispatchRejectsUnsupportedMethodsWithAllowHeader(t *testing.T) 
 	if got, want := rec.Header().Get("Allow"), "GET, POST, PATCH, PUT, DELETE"; got != want {
 		t.Fatalf("Allow = %q, want %q", got, want)
 	}
+}
+
+func TestApexRestDispatchExecutesProjectResource(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+	handler.SetProjectIndex(writeApexRestProject(t, map[string]string{
+		"WidgetResource.cls": `
+@RestResource(urlMapping='/widgets/*')
+global class WidgetResource {
+  @HttpGet global static String getIt() {
+    return RestContext.request.httpMethod + ':' + RestContext.request.resourcePath + ':' + RestContext.request.params.get('q');
+  }
+  @HttpPost global static void postIt() {
+    RestContext.response.statusCode = 201;
+    RestContext.response.responseBody = 'created:' + RestContext.request.requestURI + ':' + RestContext.request.remoteAddress;
+  }
+}
+`,
+	}))
+
+	get := httptest.NewRecorder()
+	handler.ServeHTTP(get, httptest.NewRequest(http.MethodGet, "/services/apexrest/widgets/42?q=abc", nil))
+	if get.Code != http.StatusOK {
+		t.Fatalf("GET status = %d body=%s", get.Code, get.Body.String())
+	}
+	if got, want := strings.TrimSpace(get.Body.String()), `"GET:/widgets/42:abc"`; got != want {
+		t.Fatalf("GET body = %s, want %s", got, want)
+	}
+
+	post := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/services/apexrest/widgets/42", strings.NewReader(`{"name":"Acme"}`))
+	req.RemoteAddr = "192.0.2.10:4567"
+	handler.ServeHTTP(post, req)
+	if post.Code != http.StatusCreated {
+		t.Fatalf("POST status = %d body=%s", post.Code, post.Body.String())
+	}
+	if !strings.Contains(post.Body.String(), "created:/services/apexrest/widgets/42:192.0.2.10:4567") {
+		t.Fatalf("POST body = %s", post.Body.String())
+	}
+	if got := post.Header().Get("Content-Type"); !strings.HasPrefix(got, "text/plain") {
+		t.Fatalf("POST Content-Type = %q, want text/plain", got)
+	}
+}
+
+func TestApexRestDispatchSerializesNestedMapValues(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+	handler.SetProjectIndex(writeApexRestProject(t, map[string]string{
+		"MapResource.cls": `
+@RestResource(urlMapping='/maps/*')
+global class MapResource {
+  @HttpGet global static Map<String,Object> getIt() {
+    Map<String,Object> payload = new Map<String,Object>();
+    List<String> names = new List<String>();
+    names.add('one');
+    names.add('two');
+    payload.put('names', names);
+    return payload;
+  }
+}
+`,
+	}))
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/apexrest/maps/1", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var payload map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("unmarshal: %v body=%s", err, rec.Body.String())
+	}
+	names, ok := payload["names"].([]any)
+	if !ok || len(names) != 2 || names[0] != "one" || names[1] != "two" {
+		t.Fatalf("names = %#v body=%s", payload["names"], rec.Body.String())
+	}
+}
+
+func TestApexRestDispatchFencesUnsupportedSignature(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+	handler.SetProjectIndex(writeApexRestProject(t, map[string]string{
+		"BadResource.cls": `
+@RestResource(urlMapping='/bad/*')
+global class BadResource {
+  @HttpGet global static String getIt(String name) {
+    return name;
+  }
+}
+`,
+	}))
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/apexrest/bad/42", nil))
+	assertSalesforceError(t, rec, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", "must be static and take no parameters")
+}
+
+func writeApexRestProject(t *testing.T, files map[string]string) typesys.Index {
+	t.Helper()
+	root := t.TempDir()
+	apexFiles := make([]string, 0, len(files))
+	for name, content := range files {
+		path := filepath.Join(root, name)
+		if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+			t.Fatalf("write %s: %v", name, err)
+		}
+		apexFiles = append(apexFiles, path)
+	}
+	return typesys.Build(project.Project{Root: root, ApexFiles: apexFiles}, schema.Schema{})
 }
 
 func TestApexRestNearbyUnknownEndpointUnchanged(t *testing.T) {
@@ -3263,7 +3629,6 @@ func TestOAuthUnsupportedStubsAreExplicit(t *testing.T) {
 		method string
 		path   string
 	}{
-		{name: "token", method: http.MethodPost, path: "/services/oauth2/token"},
 		{name: "revoke", method: http.MethodPost, path: "/services/oauth2/revoke"},
 		{name: "introspect", method: http.MethodPost, path: "/services/oauth2/introspect"},
 		{name: "authorize", method: http.MethodGet, path: "/services/oauth2/authorize?response_type=code&client_id=local&redirect_uri=http://localhost/callback"},
@@ -3273,6 +3638,31 @@ func TestOAuthUnsupportedStubsAreExplicit(t *testing.T) {
 			handler.ServeHTTP(rec, httptest.NewRequest(tc.method, tc.path, nil))
 			assertSalesforceError(t, rec, http.StatusNotImplemented, "UNSUPPORTED_FEATURE", "Full OAuth flows and token issuance are not implemented")
 		})
+	}
+}
+
+func TestOAuthTokenReturnsDeterministicLocalBearer(t *testing.T) {
+	org := testOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	addUser(&org, "005000000000123", "ada@example.test", "ada.alias@example.test", "Ada Trail")
+	handler := New(&org)
+
+	req := httptest.NewRequest(http.MethodPost, "/services/oauth2/token", strings.NewReader("grant_type=password"))
+	req.Header.Set("X-OAER-User-Id", "005000000000123")
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("token status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	var payload map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
+		t.Fatal(err)
+	}
+	if payload["access_token"] != "local-005000000000123" || payload["token_type"] != "Bearer" || payload["issued_at"] != "0" {
+		t.Fatalf("token payload = %#v", payload)
+	}
+	if !strings.Contains(payload["id"].(string), "/id/00D000000000001/005000000000123") || payload["instance_url"] == "" {
+		t.Fatalf("token identity payload = %#v", payload)
 	}
 }
 
@@ -3325,6 +3715,22 @@ func TestToolingExecuteAnonymousAndCompositeSObjects(t *testing.T) {
 }`)))
 	if composite.Code != http.StatusOK || !bytes.Contains(composite.Body.Bytes(), []byte(`"success":true`)) {
 		t.Fatalf("composite status = %d body=%s", composite.Code, composite.Body.String())
+	}
+}
+
+func TestToolingExecuteAnonymousLocalEventBusAndConnectApiStubs(t *testing.T) {
+	org := testOrg()
+	org.OrgID = "00DLOCAL00000001"
+	handler := New(&org)
+
+	body := `{"anonymousBody":"Database.SaveResult eventResult = EventBus.publish(new Account(Name = 'Local Event')); System.assert(eventResult.isSuccess()); ConnectApi.OrganizationSettings settings = ConnectApi.Organization.getSettings(); System.assertEquals('00DLOCAL00000001', settings.orgId);"}`
+	exec := httptest.NewRecorder()
+	handler.ServeHTTP(exec, httptest.NewRequest(http.MethodPost, "/services/data/v61.0/tooling/executeAnonymous", strings.NewReader(body)))
+	if exec.Code != http.StatusOK || !bytes.Contains(exec.Body.Bytes(), []byte(`"success":true`)) {
+		t.Fatalf("executeAnonymous event/connect status = %d body=%s", exec.Code, exec.Body.String())
+	}
+	if len(org.Objects["Account"].Records) != 0 {
+		t.Fatalf("EventBus publish should not persist event payload locally: %#v", org.Objects["Account"].Records)
 	}
 }
 
@@ -3971,6 +4377,19 @@ func TestCompositeSObjectTypedUpsertRejectsUnknownExternalField(t *testing.T) {
 	assertSalesforceError(t, rec, http.StatusBadRequest, "INVALID_FIELD", "unknown external id field")
 }
 
+func TestCompositeNamespaceDiscoveryListsSupportedGenericRoutes(t *testing.T) {
+	org := testOrg()
+	handler := New(&org)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/services/data/v61.0/composite", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("discovery status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if !bytes.Contains(rec.Body.Bytes(), []byte(`"composite"`)) || !bytes.Contains(rec.Body.Bytes(), []byte(`"tree"`)) {
+		t.Fatalf("discovery body = %s", rec.Body.String())
+	}
+}
+
 func TestCompositeNamespaceUnsupportedStubs(t *testing.T) {
 	tests := []struct {
 		name          string
@@ -3979,19 +4398,6 @@ func TestCompositeNamespaceUnsupportedStubs(t *testing.T) {
 		body          string
 		wantMessageIn string
 	}{
-		{
-			name:          "generic composite subrequests",
-			method:        http.MethodPost,
-			path:          "/services/data/v61.0/composite",
-			body:          `{"compositeRequest":[{"method":"GET","url":"/services/data/v61.0/limits","referenceId":"LimitsRef"}]}`,
-			wantMessageIn: "Generic Composite REST subrequest orchestration",
-		},
-		{
-			name:          "composite discovery",
-			method:        http.MethodGet,
-			path:          "/services/data/v61.0/composite",
-			wantMessageIn: "Composite namespace discovery",
-		},
 		{
 			name:          "composite sobject typed collection",
 			method:        http.MethodPost,
@@ -4419,6 +4825,29 @@ System.assertEquals('bearer-email@example.test', UserInfo.getUserEmail());
 	handler.ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK || !bytes.Contains(rec.Body.Bytes(), []byte(`"success":true`)) {
 		t.Fatalf("executeAnonymous status = %d body=%s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestRESTDMLUsesBearerUserContext(t *testing.T) {
+	org := testOrg()
+	userID := storage.ID("005000000000779")
+	addUser(&org, userID, "rest@example.test", "rest-email@example.test", "REST User")
+	handler := New(&org)
+
+	req := httptest.NewRequest(http.MethodPost, "/services/data/v61.0/sobjects/Account", strings.NewReader(`{"Name":"Bearer REST"}`))
+	req.Header.Set("Authorization", "Bearer "+string(userID))
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("create status = %d body=%s", rec.Code, rec.Body.String())
+	}
+	if len(org.Objects["Account"].Records) != 1 {
+		t.Fatalf("account records = %d, want 1", len(org.Objects["Account"].Records))
+	}
+	for _, record := range org.Objects["Account"].Records {
+		if record.System.CreatedByID != userID || record.System.OwnerID != userID || record.System.LastModifiedByID != userID {
+			t.Fatalf("system user fields = %#v, want bearer user %s", record.System, userID)
+		}
 	}
 }
 

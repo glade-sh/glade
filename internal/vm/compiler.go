@@ -46,6 +46,21 @@ func lex(source string) ([]token, error) {
 		switch {
 		case unicode.IsSpace(r):
 			i++
+		case i+1 < len(source) && source[i] == '/' && source[i+1] == '/':
+			i += 2
+			for i < len(source) && source[i] != '\n' && source[i] != '\r' {
+				i++
+			}
+		case i+1 < len(source) && source[i] == '/' && source[i+1] == '*':
+			start := i
+			i += 2
+			for i+1 < len(source) && !(source[i] == '*' && source[i+1] == '/') {
+				i++
+			}
+			if i+1 >= len(source) {
+				return nil, fmt.Errorf("unterminated block comment at byte %d", start)
+			}
+			i += 2
 		case isIdentStart(source[i]):
 			start := i
 			i++
@@ -81,6 +96,31 @@ func lex(source string) ([]token, error) {
 					tokens = append(tokens, token{kind: tokenString, text: text.String(), pos: start})
 					goto next
 				}
+				if source[i] == '\\' && i+1 < len(source) {
+					switch source[i+1] {
+					case '\'':
+						if i+2 < len(source) && source[i+2] == '\'' && i+3 < len(source) && isIdentPart(source[i+3]) {
+							text.WriteByte('\\')
+							text.WriteByte('\'')
+							i += 3
+							continue
+						}
+						text.WriteByte('\'')
+					case '\\':
+						text.WriteByte('\\')
+					case 'n':
+						text.WriteByte('\n')
+					case 'r':
+						text.WriteByte('\r')
+					case 't':
+						text.WriteByte('\t')
+					default:
+						text.WriteByte('\\')
+						text.WriteByte(source[i+1])
+					}
+					i += 2
+					continue
+				}
 				text.WriteByte(source[i])
 				i++
 			}
@@ -90,14 +130,18 @@ func lex(source string) ([]token, error) {
 			if i+1 < len(source) {
 				two := source[i : i+2]
 				switch two {
-				case "==", "!=", "<=", ">=", "&&", "||", "++", "--", "+=", "-=":
+				case "==", "!=", "<=", ">=", "&&", "||", "++", "--", "+=", "-=", "??":
 					tokens = append(tokens, token{kind: tokenSymbol, text: two, pos: start})
+					i += 2
+					goto next
+				case "?.":
+					tokens = append(tokens, token{kind: tokenSymbol, text: ".", pos: start})
 					i += 2
 					goto next
 				}
 			}
 			switch source[i] {
-			case '(', ')', '{', '}', '[', ']', ';', ',', '.', ':', '+', '-', '*', '/', '%', '=', '<', '>', '!', '|':
+			case '(', ')', '{', '}', '[', ']', ';', ',', '.', ':', '?', '+', '-', '*', '/', '%', '=', '<', '>', '!', '&', '|':
 				tokens = append(tokens, token{kind: tokenSymbol, text: source[i : i+1], pos: start})
 				i++
 			default:
@@ -387,6 +431,9 @@ func (p *parser) parseStatement() (ir.Instruction, error) {
 		}
 		return inst, nil
 	}
+	if inst, ok, err := p.parsePrefixIncrementLike(true); ok || err != nil {
+		return inst, err
+	}
 
 	expr, err := p.parseExpression()
 	if err != nil {
@@ -493,6 +540,9 @@ func (p *parser) parseForPart() (ir.Instruction, error) {
 	if inst, ok, err := p.parseAssignmentLike(false); ok || err != nil {
 		return inst, err
 	}
+	if inst, ok, err := p.parsePrefixIncrementLike(false); ok || err != nil {
+		return inst, err
+	}
 	expr, err := p.parseExpression()
 	if err != nil {
 		return ir.Instruction{}, err
@@ -545,6 +595,30 @@ func (p *parser) parseAssignmentLike(requireSemicolon bool) (ir.Instruction, boo
 	}
 	p.pos = save
 	return ir.Instruction{}, false, nil
+}
+
+func (p *parser) parsePrefixIncrementLike(requireSemicolon bool) (ir.Instruction, bool, error) {
+	if !p.peek(tokenSymbol, "++") && !p.peek(tokenSymbol, "--") {
+		return ir.Instruction{}, false, nil
+	}
+	save := p.pos
+	start := p.advance()
+	name, ok := p.parseAssignableName()
+	if !ok {
+		p.pos = save
+		return ir.Instruction{}, false, nil
+	}
+	operator := "+"
+	if start.text == "--" {
+		operator = "-"
+	}
+	expr := binary(operator, ir.Expr{Kind: ir.ExprVariable, Name: name}, ir.Expr{Kind: ir.ExprLiteral, Value: "1"})
+	if requireSemicolon {
+		if _, err := p.expect(tokenSymbol, ";"); err != nil {
+			return ir.Instruction{}, true, err
+		}
+	}
+	return ir.Instruction{Op: ir.OpAssign, Name: name, Expr: expr, Pos: start.pos}, true, nil
 }
 
 func (p *parser) parseAssignableName() (string, bool) {
@@ -636,7 +710,44 @@ func (p *parser) parseStatementBlock() ([]ir.Instruction, error) {
 }
 
 func (p *parser) parseExpression() (ir.Expr, error) {
-	return p.parseOr()
+	return p.parseTernary()
+}
+
+func (p *parser) parseTernary() (ir.Expr, error) {
+	condition, err := p.parseNullCoalesce()
+	if err != nil {
+		return ir.Expr{}, err
+	}
+	if !p.match(tokenSymbol, "?") {
+		return condition, nil
+	}
+	whenTrue, err := p.parseExpression()
+	if err != nil {
+		return ir.Expr{}, err
+	}
+	if _, err := p.expect(tokenSymbol, ":"); err != nil {
+		return ir.Expr{}, err
+	}
+	whenFalse, err := p.parseExpression()
+	if err != nil {
+		return ir.Expr{}, err
+	}
+	return ir.Expr{Kind: ir.ExprCall, Callee: "__ternary", Args: []ir.Expr{condition, whenTrue, whenFalse}}, nil
+}
+
+func (p *parser) parseNullCoalesce() (ir.Expr, error) {
+	left, err := p.parseOr()
+	if err != nil {
+		return ir.Expr{}, err
+	}
+	for p.match(tokenSymbol, "??") {
+		right, err := p.parseOr()
+		if err != nil {
+			return ir.Expr{}, err
+		}
+		left = ir.Expr{Kind: ir.ExprCall, Callee: "__coalesce", Args: []ir.Expr{left, right}}
+	}
+	return left, nil
 }
 
 func (p *parser) parseOr() (ir.Expr, error) {
@@ -644,7 +755,7 @@ func (p *parser) parseOr() (ir.Expr, error) {
 	if err != nil {
 		return ir.Expr{}, err
 	}
-	for p.match(tokenSymbol, "||") {
+	for p.matchAnySymbol("||", "|") {
 		right, err := p.parseAnd()
 		if err != nil {
 			return ir.Expr{}, err
@@ -659,7 +770,7 @@ func (p *parser) parseAnd() (ir.Expr, error) {
 	if err != nil {
 		return ir.Expr{}, err
 	}
-	for p.match(tokenSymbol, "&&") {
+	for p.matchAnySymbol("&&", "&") {
 		right, err := p.parseEquality()
 		if err != nil {
 			return ir.Expr{}, err
@@ -806,20 +917,37 @@ func (p *parser) parseUnary() (ir.Expr, error) {
 }
 
 func (p *parser) parsePostfix(expr ir.Expr) (ir.Expr, error) {
-	for p.match(tokenSymbol, ".") {
-		method, err := p.expect(tokenIdent, "")
-		if err != nil {
-			return ir.Expr{}, err
+	for {
+		if p.match(tokenSymbol, "[") {
+			index, err := p.parseExpression()
+			if err != nil {
+				return ir.Expr{}, err
+			}
+			if _, err := p.expect(tokenSymbol, "]"); err != nil {
+				return ir.Expr{}, err
+			}
+			receiver := expr
+			expr = ir.Expr{Kind: ir.ExprCall, Callee: "get", Args: []ir.Expr{index}, Left: &receiver}
+			continue
 		}
-		if _, err := p.expect(tokenSymbol, "("); err != nil {
-			return ir.Expr{}, err
+		if p.match(tokenSymbol, ".") {
+			member, err := p.expect(tokenIdent, "")
+			if err != nil {
+				return ir.Expr{}, err
+			}
+			receiver := expr
+			if !p.match(tokenSymbol, "(") {
+				expr = ir.Expr{Kind: ir.ExprCall, Callee: "__field:" + member.text, Left: &receiver}
+				continue
+			}
+			args, err := p.parseArguments()
+			if err != nil {
+				return ir.Expr{}, err
+			}
+			expr = ir.Expr{Kind: ir.ExprCall, Callee: member.text, Args: args, Left: &receiver}
+			continue
 		}
-		args, err := p.parseArguments()
-		if err != nil {
-			return ir.Expr{}, err
-		}
-		receiver := expr
-		expr = ir.Expr{Kind: ir.ExprCall, Callee: method.text, Args: args, Left: &receiver}
+		break
 	}
 	return expr, nil
 }
@@ -861,6 +989,9 @@ func (p *parser) parsePrimary() (ir.Expr, error) {
 			}
 			name += "." + next.text
 		}
+		if classLiteral, ok, err := p.parseClassLiteralSuffix(name); ok || err != nil {
+			return classLiteral, err
+		}
 		if p.match(tokenSymbol, "(") {
 			args, err := p.parseArguments()
 			if err != nil {
@@ -871,6 +1002,9 @@ func (p *parser) parsePrimary() (ir.Expr, error) {
 		return ir.Expr{Kind: ir.ExprVariable, Name: name}, nil
 	case tokenSymbol:
 		if tok.text == "(" {
+			if expr, ok, err := p.parseCastExpression(); ok || err != nil {
+				return expr, err
+			}
 			expr, err := p.parseExpression()
 			if err != nil {
 				return ir.Expr{}, err
@@ -885,6 +1019,82 @@ func (p *parser) parsePrimary() (ir.Expr, error) {
 		}
 	}
 	return ir.Expr{}, fmt.Errorf("unexpected token %q at byte %d", p.tokens[p.pos-1].text, p.tokens[p.pos-1].pos)
+}
+
+func (p *parser) parseClassLiteralSuffix(name string) (ir.Expr, bool, error) {
+	save := p.pos
+	typeName, err := p.parseTypeSuffix(name)
+	if err != nil {
+		p.pos = save
+		return ir.Expr{}, false, nil
+	}
+	if !p.match(tokenSymbol, ".") {
+		p.pos = save
+		return ir.Expr{}, false, nil
+	}
+	classToken, err := p.expect(tokenIdent, "class")
+	if err != nil {
+		p.pos = save
+		return ir.Expr{}, false, nil
+	}
+	return ir.Expr{Kind: ir.ExprVariable, Name: typeName + "." + classToken.text}, true, nil
+}
+
+func (p *parser) parseTypeSuffix(name string) (string, error) {
+	if p.match(tokenSymbol, "<") {
+		var args []string
+		for {
+			arg, err := p.parseTypeName()
+			if err != nil {
+				return "", err
+			}
+			args = append(args, arg)
+			if p.match(tokenSymbol, ">") {
+				break
+			}
+			if _, err := p.expect(tokenSymbol, ","); err != nil {
+				return "", err
+			}
+		}
+		name += "<" + strings.Join(args, ",") + ">"
+	}
+	if p.match(tokenSymbol, "[") {
+		if _, err := p.expect(tokenSymbol, "]"); err != nil {
+			return "", err
+		}
+		name += "[]"
+	}
+	return name, nil
+}
+
+func (p *parser) parseCastExpression() (ir.Expr, bool, error) {
+	save := p.pos
+	typeName, err := p.parseTypeName()
+	if err != nil {
+		p.pos = save
+		return ir.Expr{}, false, nil
+	}
+	if !p.match(tokenSymbol, ")") {
+		p.pos = save
+		return ir.Expr{}, false, nil
+	}
+	if !p.startsExpression() {
+		p.pos = save
+		return ir.Expr{}, false, nil
+	}
+	expr, err := p.parseUnary()
+	if err != nil {
+		return ir.Expr{}, true, err
+	}
+	return ir.Expr{Kind: ir.ExprCall, Callee: "__cast:" + typeName, Args: []ir.Expr{expr}}, true, nil
+}
+
+func (p *parser) startsExpression() bool {
+	tok := p.tokens[p.pos]
+	if tok.kind == tokenNumber || tok.kind == tokenString || tok.kind == tokenIdent {
+		return true
+	}
+	return tok.kind == tokenSymbol && (tok.text == "(" || tok.text == "[" || tok.text == "!" || tok.text == "-")
 }
 
 func (p *parser) parseNewArgs() ([]ir.Expr, []ir.NamedArg, error) {
@@ -927,6 +1137,16 @@ func (p *parser) parseNewArgs() ([]ir.Expr, []ir.NamedArg, error) {
 			expr, err := p.parseExpression()
 			if err != nil {
 				return nil, nil, err
+			}
+			if p.match(tokenSymbol, "=") {
+				if _, err := p.expect(tokenSymbol, ">"); err != nil {
+					return nil, nil, err
+				}
+				value, err := p.parseExpression()
+				if err != nil {
+					return nil, nil, err
+				}
+				expr = ir.Expr{Kind: ir.ExprCall, Callee: "__mapEntry", Args: []ir.Expr{expr, value}}
 			}
 			args = append(args, expr)
 			if p.match(tokenSymbol, "}") {
@@ -1065,6 +1285,15 @@ func (p *parser) match(kind tokenKind, text string) bool {
 	}
 	p.pos++
 	return true
+}
+
+func (p *parser) matchAnySymbol(symbols ...string) bool {
+	for _, symbol := range symbols {
+		if p.match(tokenSymbol, symbol) {
+			return true
+		}
+	}
+	return false
 }
 
 func (p *parser) peek(kind tokenKind, text string) bool {

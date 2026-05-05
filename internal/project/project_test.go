@@ -31,6 +31,9 @@ func TestLoadSFDXProject(t *testing.T) {
 	writeFile(t, filepath.Join(root, "force-app/main/profiles/Admin.profile-meta.xml"), "<Profile/>")
 	writeFile(t, filepath.Join(root, "force-app/main/permissionsets/App.permissionset-meta.xml"), "<PermissionSet/>")
 	writeFile(t, filepath.Join(root, "force-app/main/permissionSetAssignments/App.permissionsetassignment-meta.xml"), "<PermissionSetAssignment/>")
+	writeFile(t, filepath.Join(root, "force-app/main/objects/Thing__c/listViews/All.listView-meta.xml"), "<ListView/>")
+	writeFile(t, filepath.Join(root, "force-app/main/layouts/Thing__c-Thing Layout.layout-meta.xml"), "<Layout/>")
+	writeFile(t, filepath.Join(root, "force-app/main/objects/Thing__c/compactLayouts/Card.compactLayout-meta.xml"), "<CompactLayout/>")
 	writeFile(t, filepath.Join(root, "force-app/main/pages/Edit.page"), `<apex:page controller="EditController"/>`)
 	writeFile(t, filepath.Join(root, "force-app/main/components/Picker.component"), `<apex:component/>`)
 	writeFile(t, filepath.Join(root, "force-app/main/aura/Cart/Cart.cmp"), `<aura:component controller="CartController"/>`)
@@ -57,6 +60,9 @@ func TestLoadSFDXProject(t *testing.T) {
 	}
 	if len(p.FlowFiles) != 1 || len(p.ProfileFiles) != 1 || len(p.PermissionSetFiles) != 1 || len(p.PermissionAssignmentFiles) != 1 {
 		t.Fatalf("unexpected metadata stub file counts: %#v", p)
+	}
+	if len(p.ListViewFiles) != 1 || len(p.LayoutFiles) != 1 || len(p.CompactLayoutFiles) != 1 {
+		t.Fatalf("unexpected layout/list view file counts: %#v", p)
 	}
 	if len(p.VisualforcePageFiles) != 1 || len(p.VisualforceComponentFiles) != 1 {
 		t.Fatalf("unexpected visualforce file counts: %#v", p)

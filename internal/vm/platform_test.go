@@ -114,14 +114,9 @@ func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 			want: `unsupported call "Auth.JWTUtil.validateJWTWithKeysEndpoint local authentication token/cloud API surface"`,
 		},
 		{
-			name: "event bus publish",
-			src:  `EventBus.publish(new Account(Name = 'Acme'));`,
-			want: `unsupported call "EventBus.publish local platform event publish surface"`,
-		},
-		{
 			name: "event bus publish after commit",
 			src:  `EventBus.publishAfterCommit(new List<Account>{new Account(Name = 'Acme')});`,
-			want: `unsupported call "EventBus.publishAfterCommit local platform event publish surface"`,
+			want: `unsupported call "EventBus.publishAfterCommit local platform event after-commit delivery surface"`,
 		},
 		{
 			name: "quick action ui",
@@ -185,6 +180,82 @@ func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 				t.Fatalf("error = (%q, %q), want %q", runtimeErr.Message, err.Error(), tc.want)
 			}
 		})
+	}
+}
+
+func TestExecEventBusPublishReturnsLocalSuccessResults(t *testing.T) {
+	program, err := CompileAnonymous(`
+Database.SaveResult single = EventBus.publish(new Account(Name = 'Acme'));
+System.assert(single.isSuccess());
+System.assertEquals(null, single.getId());
+System.assertEquals(0, single.getErrors().size());
+List<Database.SaveResult> many = EventBus.publish(new List<Account>{new Account(Name = 'One'), new Account(Name = 'Two')});
+System.assertEquals(2, many.size());
+System.assert(many.get(0).isSuccess());
+System.assert(many.get(1).isSuccess());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecConnectApiOrganizationSettingsStub(t *testing.T) {
+	program, err := CompileAnonymous(`
+ConnectApi.OrganizationSettings settings = ConnectApi.Organization.getSettings();
+System.assertEquals('00DLOCAL00000001', settings.orgId);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.OrgID = "00DLOCAL00000001"
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecLocalAsyncDrainRunsQueuedJobsOutsideTestContext(t *testing.T) {
+	jobProgram, err := CompileAnonymous(`insert new Account(Name = 'async ran');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+String jobId = System.enqueueJob(new MarkJob());
+System.assertEquals('707000000000001', jobId);
+Integer beforeDrain = [SELECT COUNT() FROM Account WHERE Name = 'async ran'];
+System.assertEquals(0, beforeDrain);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{
+		Name: "MarkJob",
+		Methods: map[string]Method{
+			"execute": {Name: "MarkJob.execute", ClassName: "MarkJob", ReturnType: "void", Program: jobProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	result, err := machine.Execute(program)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(org.Objects["Account"].Records) != 0 {
+		t.Fatalf("async job ran before drain: %#v", org.Objects["Account"].Records)
+	}
+	if err := machine.DrainAsync(&result); err != nil {
+		t.Fatal(err)
+	}
+	if len(org.Objects["Account"].Records) != 1 {
+		t.Fatalf("async drain records = %#v", org.Objects["Account"].Records)
 	}
 }
 
@@ -452,8 +523,9 @@ System.assertEquals('Detail', withDetail.getDetail());
 ApexPages.Message withoutDetail = new ApexPages.Message('INFO', 'Only summary');
 System.assertEquals('Only summary', withoutDetail.getDetail());
 ApexPages.addMessage(withDetail);
+ApexPages.addMessage(new ApexPages.message(ApexPages.Severity.Error, 'Lowercase constructor'));
 System.assert(ApexPages.hasMessages());
-System.assertEquals(1, ApexPages.getMessages().size());
+System.assertEquals(2, ApexPages.getMessages().size());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1571,6 +1643,7 @@ System.assertEquals(6, winterLocal.secondGmt());
 Datetime fromDateTime = Datetime.newInstance(Date.newInstance(2024, 7, 1), Time.newInstance(5, 30, 0, 250));
 System.assertEquals('2024-07-01T12:30:00.25Z', fromDateTime.formatGmt());
 System.assertEquals('2024-07-01T05:30:00.25-07:00', fromDateTime.format());
+System.assertEquals(Date.newInstance(2024, 7, 1), fromDateTime.dateGMT());
 Datetime fromDateTimeGmt = Datetime.newInstanceGmt(Date.newInstance(2024, 7, 1), Time.newInstance(5, 30, 0, 250));
 System.assertEquals('2024-07-01T05:30:00.25Z', fromDateTimeGmt.formatGmt());
 
@@ -1696,6 +1769,24 @@ System.assertEquals('https://local.oaer.example', orgUrl.toString());
 		t.Fatal(err)
 	}
 	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestSystemURLSalesforceBaseURLUsesRequestContext(t *testing.T) {
+	program, err := CompileAnonymous(`
+URL base = System.URL.getSalesforceBaseURL();
+System.assertEquals('https://trail.example.test:8443', base.toExternalForm());
+System.assertEquals('trail.example.test', base.getHost());
+URL orgUrl = System.Url.getOrgDomainUrl();
+System.assertEquals('https://trail.example.test:8443', orgUrl.toString());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.SetServerBaseURL("https://trail.example.test:8443/")
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
@@ -1953,6 +2044,7 @@ System.assertEquals('2026-05-02', today.format());
 
 Datetime nowStamp = Datetime.now();
 System.assertEquals('2026-05-02T12:00:00Z', nowStamp.formatGmt());
+System.assertEquals(nowStamp, DateTime.Now());
 Datetime gmt = Datetime.newInstanceGmt(2024, 2, 29, 23, 59, 58);
 Date gmtDate = gmt.dateGmt();
 System.assertEquals('2024-02-29', gmtDate.format());
@@ -2172,6 +2264,19 @@ func TestExecDateTimeParsingRejectsInvalidText(t *testing.T) {
 		if _, err := New(nil).Execute(program); err == nil {
 			t.Fatalf("source %q expected parse error", source)
 		}
+	}
+}
+
+func TestExecDateTimeStringAssignmentPreservesFractionalSeconds(t *testing.T) {
+	program, err := CompileAnonymous(`
+Datetime dt = '2024-01-15T10:30:45.123Z';
+System.assertEquals('2024-01-15T10:30:45.123Z', dt.formatGmt());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -2730,6 +2835,64 @@ System.assertEquals('response-body', res.getBodyAsBlob().toString());
 	}
 }
 
+func TestExecStaticResourceCalloutMocks(t *testing.T) {
+	program, err := CompileAnonymous(`
+StaticResourceCalloutMock singleMock = new StaticResourceCalloutMock();
+singleMock.setStaticResource('Single_Response');
+singleMock.setStatusCode(203);
+singleMock.setHeader('Content-Type', 'application/json');
+Test.setMock('HttpCalloutMock', singleMock);
+HttpRequest firstReq = new HttpRequest();
+firstReq.setEndpoint('https://example.test/single');
+firstReq.setMethod('GET');
+HttpResponse first = new Http().send(firstReq);
+System.assertEquals(203, first.getStatusCode());
+System.assertEquals('{"single":true}', first.getBody());
+System.assertEquals('application/json', first.getHeader('content-type'));
+
+MultiStaticResourceCalloutMock multiMock = new MultiStaticResourceCalloutMock();
+multiMock.setStaticResource('https://example.test/a', 'Response_A');
+multiMock.setStaticResource('https://example.test/b', 'Response_B');
+multiMock.setStatusCode(204);
+Test.setMock('HttpCalloutMock', multiMock);
+HttpRequest reqA = new HttpRequest();
+reqA.setEndpoint('https://example.test/a');
+reqA.setMethod('GET');
+System.assertEquals('A-body', new Http().send(reqA).getBody());
+HttpRequest reqB = new HttpRequest();
+reqB.setEndpoint('https://example.test/b');
+reqB.setMethod('GET');
+HttpResponse second = new Http().send(reqB);
+System.assertEquals(204, second.getStatusCode());
+System.assertEquals('B-body', second.getBody());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	org.Objects["StaticResource"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "StaticResource",
+			KeyPrefix: "081",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+				"Body": {APIName: "Body", Type: storage.FieldBlob},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"081000000000001": {ID: "081000000000001", Object: "StaticResource", Fields: map[string]storage.Value{"Name": storage.StringValue("Single_Response"), "Body": storage.BlobValue(`{"single":true}`)}},
+			"081000000000002": {ID: "081000000000002", Object: "StaticResource", Fields: map[string]storage.Value{"Name": storage.StringValue("Response_A"), "Body": storage.BlobValue("A-body")}},
+			"081000000000003": {ID: "081000000000003", Object: "StaticResource", Fields: map[string]storage.Value{"Name": storage.StringValue("Response_B"), "Body": storage.BlobValue("B-body")}},
+		},
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecHttpRequestRejectsInvalidEdges(t *testing.T) {
 	cases := []struct {
 		name string
@@ -2836,16 +2999,6 @@ func TestExecUnsupportedHttpCalloutSurfacesHaveStableShape(t *testing.T) {
 		src  string
 		want string
 	}{
-		{
-			name: "static-resource-mock-constructor",
-			src:  `StaticResourceCalloutMock mock = new StaticResourceCalloutMock();`,
-			want: `unsupported call "StaticResourceCalloutMock local static resource callout mock surface"`,
-		},
-		{
-			name: "multi-static-resource-mock-constructor",
-			src:  `MultiStaticResourceCalloutMock mock = new MultiStaticResourceCalloutMock();`,
-			want: `unsupported call "MultiStaticResourceCalloutMock local static resource callout mock surface"`,
-		},
 		{
 			name: "continuation-constructor",
 			src:  `Continuation cont = new Continuation(60);`,

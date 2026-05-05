@@ -625,7 +625,7 @@ func resolveSubqueries(org storage.OrgState, condition Condition) (Condition, er
 }
 
 func subqueryRecordValue(org storage.OrgState, record storage.Record, field string) (storage.Value, bool) {
-	if field == "Id" {
+	if strings.EqualFold(field, "Id") {
 		return storage.IDValue(record.ID), true
 	}
 	if object, ok := org.Objects[record.Object]; ok {
@@ -645,8 +645,9 @@ func projectRecord(org storage.OrgState, definition storage.ObjectDefinition, re
 		System:        record.System,
 	}
 	for _, field := range fields {
-		if field == "Id" {
-			out.Fields[field] = storage.IDValue(record.ID)
+		canonicalField, ok := storage.ResolveFieldName(definition, org.Namespace, field)
+		if ok && canonicalField == "Id" {
+			out.Fields[canonicalField] = storage.IDValue(record.ID)
 			continue
 		}
 		if strings.Contains(field, ".") {
@@ -655,7 +656,6 @@ func projectRecord(org storage.OrgState, definition storage.ObjectDefinition, re
 			}
 			continue
 		}
-		canonicalField, ok := storage.ResolveFieldName(definition, org.Namespace, field)
 		if !ok {
 			canonicalField = field
 		}
@@ -954,7 +954,7 @@ func aggregateFieldMayBeNumeric(org storage.OrgState, definition storage.ObjectD
 }
 
 func fieldDefinitionsForReference(org storage.OrgState, definition storage.ObjectDefinition, field string) ([]storage.Field, bool) {
-	if field == "Id" {
+	if canonical, ok := storage.ResolveFieldName(definition, org.Namespace, field); ok && canonical == "Id" {
 		return []storage.Field{{APIName: "Id", Type: storage.FieldID}}, true
 	}
 	if systemField, ok := systemFieldDefinition(field); ok {
@@ -1300,7 +1300,7 @@ func idFromValue(value storage.Value) storage.ID {
 }
 
 func recordValue(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, field string) (storage.Value, bool) {
-	if field == "Id" {
+	if canonical, ok := storage.ResolveFieldName(definition, org.Namespace, field); ok && canonical == "Id" {
 		return storage.IDValue(record.ID), true
 	}
 	if strings.Contains(field, ".") {
@@ -2292,6 +2292,9 @@ func (p *parser) parseInOperand() ([]storage.Value, *Query, error) {
 		return nil, &query, nil
 	}
 	var values []storage.Value
+	if p.match(")") {
+		return values, nil, nil
+	}
 	for {
 		tok := p.advance().text
 		if tok == "" {

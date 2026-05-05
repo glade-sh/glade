@@ -25,9 +25,10 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Canvas | `Canvas namespace` | `unsupported` | Canvas app integration and lifecycle calls return fixture-backed UnsupportedFeature diagnostics. |
 | Continuation | `Continuation` | `unsupported` | Continuation construction, request registration, and response calls return fixture-backed UnsupportedFeature diagnostics. |
 | Crypto | `Crypto.areEqualConstantTime` | `supported` | Constant-time local Blob equality comparison. |
-| Crypto | `Crypto.encrypt/decrypt/sign/verify` | `unsupported` | Encrypt/decrypt, managed-IV variants, signing, verification, org key, keystore, certificate, and random key-generation surfaces return explicit UnsupportedFeature diagnostics; no fake local key material is modeled. |
+| Crypto | `Crypto.encrypt/decrypt/sign/verify` | `partial` | Crypto.encrypt supports a local deterministic AES CBC subset for AES128/192/256 with caller-provided key and IV Blobs; decrypt, managed-IV variants, signing, verification, org key, keystore, certificate, random integer, and key-generation surfaces remain explicitly unsupported. |
 | Crypto | `Crypto.generateDigest` | `supported` | MD5, SHA1, SHA-256, SHA-512, SHA3-256/384/512, with conservative algorithm normalization. |
 | Crypto | `Crypto.generateMac` | `supported` | HMAC MD5, SHA1, SHA256, and SHA512 with local Blob keys and conservative algorithm normalization. |
+| Crypto | `Crypto.getRandomLong` | `supported` | Returns a deterministic VM-local Long sequence for local execution and tests; it is not production cryptographic randomness. |
 | Data | `Custom metadata/list custom setting getAll/getInstance` | `supported` | Fixture-backed local __mdt and list custom setting static access supports namespace-stripped object/field names and read-only returned records. |
 | Data | `Hierarchy custom setting merge behavior` | `unsupported` | Hierarchy custom setting static accessors return fixture-backed UnsupportedFeature diagnostics until org/profile/user merge behavior is modeled. |
 | Data | `Metadata mutation for custom metadata/settings` | `unsupported` | Local custom metadata and custom setting static rows are read-only; Metadata API mutation is outside the local runtime model. |
@@ -436,13 +437,13 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | URL | `URL.getDefaultPort` | `supported` | Returns HTTP/HTTPS/FTP defaults or -1. |
 | URL | `URL.getFile` | `supported` | Returns path plus query for local URL values. |
 | URL | `URL.getHost` | `supported` | Returns parsed hostname for local URL values. |
-| URL | `URL.getOrgDomainUrl` | `supported` | Returns the deterministic local org URL; request context is not modeled. |
+| URL | `URL.getOrgDomainUrl` | `supported` | Returns the request base URL during Apex REST execution, otherwise the deterministic local org URL. |
 | URL | `URL.getPath` | `supported` | Returns parsed path for local URL values. |
 | URL | `URL.getPort` | `supported` | Returns explicit port or -1. |
 | URL | `URL.getProtocol` | `supported` | Returns parsed scheme for local URL values. |
 | URL | `URL.getQuery` | `supported` | Returns parsed query for local URL values. |
 | URL | `URL.getRef` | `supported` | Returns parsed fragment for local URL values. |
-| URL | `URL.getSalesforceBaseUrl` | `supported` | Returns the deterministic local base URL; request context is not modeled. |
+| URL | `URL.getSalesforceBaseUrl` | `supported` | Returns the request base URL during Apex REST execution, otherwise the deterministic local base URL. |
 | URL | `URL.toExternalForm` | `supported` | Returns the stored local URL string. |
 | Unsupported | `unimplemented platform/stdlib calls` | `supported` | Typed UnsupportedFeature errors with stable message text. |
 | UserInfo | `UserInfo.getFirstName` | `supported` | Returns the current runAs, server, or default local user FirstName with deterministic fallback. |

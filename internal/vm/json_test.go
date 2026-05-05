@@ -36,6 +36,109 @@ System.assert(gen.isClosed());
 	}
 }
 
+func TestExecJSONAliasSupportsDeserializeStrict(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String,Object> parsed = (Map<String,Object>)Json.deserializeStrict('{"Name":"Acme"}', Map<String,Object>.class);
+System.assertEquals('Acme', (String)parsed.get('Name'));
+Map<String,Object> parsedSystem = (Map<String,Object>)System.JSON.deserialize('{"Name":"Trail"}', Map<String,Object>.class);
+System.assertEquals('Trail', (String)parsedSystem.get('Name'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecJSONDeserializeLowercaseIDSupportsGenericUpdate(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account existing = new Account(Name = 'Old');
+insert existing;
+List<sObject> records = (List<sObject>)JSON.deserialize('[{"attributes":{"type":"Account"},"id":"' + existing.Id + '","Name":"New"}]', List<sObject>.class);
+List<Database.SaveResult> results = Database.update(records, false);
+System.assertEquals(true, results[0].isSuccess());
+Account loaded = [SELECT Name FROM Account WHERE Id = :existing.Id];
+System.assertEquals('New', loaded.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecJSONDeserializeDuplicateIDCasePrefersCanonicalID(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account canonical = new Account(Name = 'Canonical');
+Account lowercase = new Account(Name = 'Lowercase');
+insert new List<Account>{canonical, lowercase};
+List<sObject> records = (List<sObject>)JSON.deserialize('[{"attributes":{"type":"Account"},"id":"' + lowercase.Id + '","Id":"' + canonical.Id + '","Name":"Changed"}]', List<sObject>.class);
+List<Database.SaveResult> results = Database.update(records, false);
+System.assertEquals(true, results[0].isSuccess());
+Account canonicalLoaded = [SELECT Name FROM Account WHERE Id = :canonical.Id];
+Account lowercaseLoaded = [SELECT Name FROM Account WHERE Id = :lowercase.Id];
+System.assertEquals('Changed', canonicalLoaded.Name);
+System.assertEquals('Lowercase', lowercaseLoaded.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecJSONDeserializeEmptyCanonicalIDFallsBackToLowercaseID(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account lowercase = new Account(Name = 'Lowercase');
+insert lowercase;
+List<sObject> records = (List<sObject>)JSON.deserialize('[{"attributes":{"type":"Account"},"Id":"","id":"' + lowercase.Id + '","Name":"Changed"}]', List<sObject>.class);
+List<Database.SaveResult> results = Database.update(records, false);
+System.assertEquals(true, results[0].isSuccess());
+Account loaded = [SELECT Name FROM Account WHERE Id = :lowercase.Id];
+System.assertEquals('Changed', loaded.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecJSONDeserializeListSObjectUsesAttributesType(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<sObject> records = (List<sObject>)JSON.deserialize('[{"attributes":{"type":"Account"},"Name":"Local Probe"}]', List<sObject>.class);
+System.assertEquals(1, records.size());
+System.assertEquals('Local Probe', (String)records[0].get('Name'));
+List<string> ids = (List<string>)JSON.deserialize('["001000000000001AAA"]', List<string>.class);
+System.assertEquals('001000000000001AAA', ids[0]);
+Cart__c cart = (Cart__c)JSON.deserialize('{"Data__c":"{}"}', Cart__c.class);
+System.assertEquals('{}', (String)cart.get('Data__c'));
+Cart__c strictCart = (Cart__c)JSON.deserializeStrict('{"Data__c":"strict"}', Cart__c.class);
+System.assertEquals('strict', (String)strictCart.get('Data__c'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecJSONGeneratorPrettyPrints(t *testing.T) {
 	program, err := CompileAnonymous(`
 JSONGenerator gen = JSON.createGenerator(true);

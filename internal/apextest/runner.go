@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/open-aer/oaer/internal/apexast"
 	"github.com/open-aer/oaer/internal/automation"
@@ -18,6 +20,8 @@ import (
 	"github.com/open-aer/oaer/internal/typesys"
 	"github.com/open-aer/oaer/internal/vm"
 )
+
+var sourceRuneOffsetCache sync.Map
 
 type Options struct {
 	Filter    string
@@ -243,6 +247,30 @@ func registerRuntime(machine *vm.VM, methods map[string]vm.Method, classes []vm.
 	return nil
 }
 
+// RegisterProjectRuntime compiles project classes, methods, and triggers from an
+// index and installs them into the VM. It is used by non-test runtimes that need
+// the same supported Apex subset as the local test runner.
+func RegisterProjectRuntime(machine *vm.VM, index typesys.Index) error {
+	methods := compileProjectMethods(index)
+	classes := compileProjectClasses(index, methods)
+	triggers, triggerErrors := compileProjectTriggers(index)
+	if len(triggerErrors) > 0 {
+		return triggerErrors[0]
+	}
+	return registerRuntime(machine, methods, classes, nil, triggers)
+}
+
+// RegisterProjectRuntimeForRequest compiles project classes, methods, and
+// triggers for request-scoped server execution. The VM runs static initializers
+// lazily when a class is first used, matching request-scoped Apex behavior while
+// avoiding eager setup in unrelated project code.
+func RegisterProjectRuntimeForRequest(machine *vm.VM, index typesys.Index) error {
+	methods := compileProjectMethods(index)
+	classes := compileProjectClasses(index, methods)
+	triggers, _ := compileProjectTriggers(index)
+	return registerRuntime(machine, methods, classes, nil, triggers)
+}
+
 func compileProjectClasses(index typesys.Index, methods map[string]vm.Method) []vm.Class {
 	var out []vm.Class
 	sources := make(map[string]string)
@@ -295,15 +323,15 @@ func compileProjectClasses(index typesys.Index, methods map[string]vm.Method) []
 				if member.Kind == apexast.DeclarationProperty {
 					attachPropertyAccessors(&field, typ.Name, typ.File, member, source)
 				}
-				if initializer, ok := compileFieldInitializerMethod(typ.Name, field.Name, field.Static, typ.File, member.Range, source); ok {
+				if value, ok := compileFieldInitializer(member.Type, member.Name, member.Range, source); ok {
+					field.Value = value
+					field.InitialValue = value
+				} else if initializer, ok := compileFieldInitializerMethod(typ.Name, field.Name, field.Static, typ.File, member.Range, source); ok {
 					if field.Static {
 						class.StaticInitializers = append(class.StaticInitializers, initializer)
 					} else {
 						class.InstanceInitializers = append(class.InstanceInitializers, initializer)
 					}
-				} else if value, ok := compileFieldInitializer(member.Type, member.Range, source); ok {
-					field.Value = value
-					field.InitialValue = value
 				}
 				if field.Static {
 					class.StaticFields[field.Name] = field
@@ -406,12 +434,39 @@ func compileProjectMethods(index typesys.Index) map[string]vm.Method {
 			}
 			method, err := compileProjectMethod(typ.Name, member.Name, member.Type, member.Modifiers, typ.File, member.Range, source)
 			if err != nil {
+				if unsupported, ok := unsupportedProjectMethod(typ.Name, member.Name, member.Type, member.Modifiers, typ.File, member.Range, source, err); ok {
+					out[unsupported.Name+methodParamKey(unsupported.Params)] = unsupported
+				}
 				continue
 			}
 			out[method.Name+methodParamKey(method.Params)] = method
 		}
 	}
 	return out
+}
+
+func unsupportedProjectMethod(className, methodName, returnType string, modifiers []string, file string, r diagnostic.Range, source string, cause error) (vm.Method, bool) {
+	methodSource, err := extractMethodSource(source, r)
+	if err != nil {
+		return vm.Method{}, false
+	}
+	params, err := parseParams(methodSource)
+	if err != nil {
+		params = nil
+	}
+	return vm.Method{
+		Name:        className + "." + methodName,
+		ReturnType:  returnType,
+		Params:      params,
+		ClassName:   className,
+		IsStatic:    hasModifier(modifiers, "static"),
+		Access:      accessModifier(modifiers),
+		Modifiers:   modifiers,
+		File:        file,
+		Line:        r.Start.Line,
+		Column:      r.Start.Column,
+		Unsupported: cause.Error(),
+	}, true
 }
 
 func compileTestSetupMethods(index typesys.Index) (map[string][]vm.Method, map[string]error) {
@@ -474,6 +529,7 @@ func compileProjectTriggers(index typesys.Index) ([]vm.Trigger, []error) {
 			}
 			out = append(out, vm.Trigger{
 				Name:      trigger.Name,
+				Namespace: index.Project.Namespace,
 				Object:    trigger.ObjectName,
 				Timing:    timing,
 				Operation: op,
@@ -639,20 +695,71 @@ func compilePropertyAccessor(className, file string, member typesys.MemberSymbol
 }
 
 func extractMethodSource(source string, r diagnostic.Range) (string, error) {
-	return extractSourceRange(source, r)
+	text, err := extractSourceRange(source, r)
+	if err != nil {
+		return "", err
+	}
+	if open := strings.IndexByte(text, '('); open >= 0 && findMatchingParen(text, open) >= 0 {
+		return text, nil
+	}
+	start, ok := sourceBytePosition(source, r.Start)
+	if !ok {
+		return "", fmt.Errorf("source range is unavailable")
+	}
+	lineStart := strings.LastIndexAny(source[:start], "\r\n")
+	if lineStart < 0 {
+		lineStart = 0
+	} else {
+		lineStart++
+	}
+	lineEnd := strings.IndexByte(source[start:], '{')
+	if lineEnd < 0 {
+		lineEnd = strings.IndexAny(source[start:], "\r\n")
+	}
+	if lineEnd < 0 {
+		lineEnd = len(source) - start
+	}
+	return source[lineStart : start+lineEnd], nil
 }
 
 func extractSourceRange(source string, r diagnostic.Range) (string, error) {
-	start := r.Start.Offset
-	end := r.End.Offset
+	start, startOK := sourceBytePosition(source, r.Start)
+	end, endOK := sourceBytePosition(source, r.End)
+	if !startOK || !endOK {
+		return "", fmt.Errorf("source range is unavailable")
+	}
 	if start < 0 || start >= len(source) || end <= start || end > len(source) {
 		return "", fmt.Errorf("source range is unavailable")
 	}
 	return source[start:end], nil
 }
 
-func compileFieldInitializer(typeName string, r diagnostic.Range, source string) (vm.Value, bool) {
-	expr, ok := fieldInitializerExpr(r, source)
+func sourceBytePosition(source string, pos diagnostic.Position) (int, bool) {
+	if pos.Offset < 0 {
+		return 0, false
+	}
+	offsetsValue, ok := sourceRuneOffsetCache.Load(source)
+	if !ok {
+		offsetsValue, _ = sourceRuneOffsetCache.LoadOrStore(source, buildSourceRuneByteOffsets(source))
+	}
+	offsets := offsetsValue.([]int)
+	if pos.Offset >= len(offsets) {
+		return 0, false
+	}
+	return offsets[pos.Offset], true
+}
+
+func buildSourceRuneByteOffsets(source string) []int {
+	offsets := make([]int, 0, len(source)+1)
+	for byteOffset := range source {
+		offsets = append(offsets, byteOffset)
+	}
+	offsets = append(offsets, len(source))
+	return offsets
+}
+
+func compileFieldInitializer(typeName, fieldName string, r diagnostic.Range, source string) (vm.Value, bool) {
+	expr, ok := fieldInitializerExpr(fieldName, r, source)
 	if !ok {
 		return vm.Value{}, false
 	}
@@ -673,7 +780,7 @@ func compileFieldInitializer(typeName string, r diagnostic.Range, source string)
 }
 
 func compileFieldInitializerMethod(className, fieldName string, static bool, file string, r diagnostic.Range, source string) (vm.Method, bool) {
-	expr, ok := fieldInitializerExpr(r, source)
+	expr, ok := fieldInitializerExpr(fieldName, r, source)
 	if !ok || expr == "" {
 		return vm.Method{}, false
 	}
@@ -697,16 +804,18 @@ func compileFieldInitializerMethod(className, fieldName string, static bool, fil
 	}, true
 }
 
-func fieldInitializerExpr(r diagnostic.Range, source string) (string, bool) {
+func fieldInitializerExpr(fieldName string, r diagnostic.Range, source string) (string, bool) {
 	fieldSource, err := extractSourceRange(source, r)
 	if err != nil {
 		return "", false
 	}
-	eq := strings.IndexByte(fieldSource, '=')
-	if eq < 0 {
+	pattern := regexp.MustCompile(`\b` + regexp.QuoteMeta(fieldName) + `\b\s*=`)
+	matches := pattern.FindAllStringIndex(fieldSource, -1)
+	if len(matches) == 0 {
 		return "", false
 	}
-	expr := strings.TrimSpace(fieldSource[eq+1:])
+	eq := matches[len(matches)-1][1]
+	expr := strings.TrimSpace(fieldSource[eq:])
 	expr = strings.TrimRight(expr, ";,")
 	return strings.TrimSpace(expr), true
 }
@@ -837,6 +946,12 @@ func findMatchingParen(source string, open int) int {
 		switch source[i] {
 		case '\'':
 			i = skipApexString(source, i)
+		case '/':
+			if i+1 < len(source) && source[i+1] == '/' {
+				i = skipLineComment(source, i)
+			} else if i+1 < len(source) && source[i+1] == '*' {
+				i = skipBlockComment(source, i)
+			}
 		case '(':
 			depth++
 		case ')':
@@ -881,24 +996,52 @@ func extractMethodBody(source string, r diagnostic.Range) (string, error) {
 	text := source[start:end]
 	open := strings.IndexByte(text, '{')
 	if open < 0 {
-		return "", fmt.Errorf("test method has no executable body")
+		lineStart := strings.LastIndexAny(source[:start], "\r\n")
+		if lineStart < 0 {
+			lineStart = 0
+		} else {
+			lineStart++
+		}
+		text = source[lineStart:]
+		open = strings.IndexByte(text, '{')
+		if open < 0 {
+			return "", fmt.Errorf("test method has no executable body")
+		}
+		start = lineStart
 	}
+	if body, ok := extractMethodBodyFromText(source, start, text, open); ok {
+		return body, nil
+	}
+	text = source[start:]
+	if body, ok := extractMethodBodyFromText(source, start, text, open); ok {
+		return body, nil
+	}
+	return "", fmt.Errorf("test method body is incomplete")
+}
+
+func extractMethodBodyFromText(source string, start int, text string, open int) (string, bool) {
 	depth := 0
 	for i := open; i < len(text); i++ {
 		switch text[i] {
 		case '\'':
 			i = skipApexString(text, i)
+		case '/':
+			if i+1 < len(text) && text[i+1] == '/' {
+				i = skipLineComment(text, i)
+			} else if i+1 < len(text) && text[i+1] == '*' {
+				i = skipBlockComment(text, i)
+			}
 		case '{':
 			depth++
 		case '}':
 			depth--
 			if depth == 0 {
 				bodyStart := start + open + 1
-				return sourcePositionPrefix(source[:bodyStart]) + text[open+1:i], nil
+				return sourcePositionPrefix(source[:bodyStart]) + text[open+1:i], true
 			}
 		}
 	}
-	return "", fmt.Errorf("test method body is incomplete")
+	return "", false
 }
 
 func sourcePositionPrefix(source string) string {
@@ -922,6 +1065,24 @@ func skipApexString(source string, start int) int {
 				continue
 			}
 			return i
+		}
+	}
+	return len(source) - 1
+}
+
+func skipLineComment(source string, start int) int {
+	for i := start + 2; i < len(source); i++ {
+		if source[i] == '\n' || source[i] == '\r' {
+			return i
+		}
+	}
+	return len(source) - 1
+}
+
+func skipBlockComment(source string, start int) int {
+	for i := start + 2; i+1 < len(source); i++ {
+		if source[i] == '*' && source[i+1] == '/' {
+			return i + 1
 		}
 	}
 	return len(source) - 1

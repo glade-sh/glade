@@ -1,22 +1,29 @@
 package server
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"mime"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
+	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/open-aer/oaer/internal/apexast"
+	"github.com/open-aer/oaer/internal/apextest"
 	"github.com/open-aer/oaer/internal/dml"
 	"github.com/open-aer/oaer/internal/soql"
 	"github.com/open-aer/oaer/internal/storage"
+	"github.com/open-aer/oaer/internal/typesys"
 	"github.com/open-aer/oaer/internal/vm"
 )
 
@@ -26,8 +33,10 @@ type Server struct {
 	Store interface {
 		Save(storage.OrgState) error
 	}
+	Source    SourceMetadata
 	LimitMode vm.LimitMode
 	LimitCaps vm.LimitCaps
+	Index     *typesys.Index
 
 	queryLocators map[string]queryLocatorState
 	queryOrder    []string
@@ -118,9 +127,25 @@ func NewWithStore(org *storage.OrgState, store interface{ Save(storage.OrgState)
 	return &Server{Org: org, Store: store}
 }
 
+func NewWithSource(org *storage.OrgState, source SourceMetadata) *Server {
+	return &Server{Org: org, Source: source}
+}
+
+func NewWithStoreAndSource(org *storage.OrgState, store interface{ Save(storage.OrgState) error }, source SourceMetadata) *Server {
+	return &Server{Org: org, Store: store, Source: source}
+}
+
+func (s *Server) SetProjectIndex(index typesys.Index) {
+	s.Index = &index
+}
+
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	s.serveHTTPLocked(w, r)
+}
+
+func (s *Server) serveHTTPLocked(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	parts := splitPath(r.URL.EscapedPath())
 	if len(parts) >= 2 && parts[0] == "services" && parts[1] == "oauth2" {
@@ -148,7 +173,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			writeMethodNotAllowed(w, apexRestAllowedMethods...)
 			return
 		}
-		writeSalesforceError(w, errUnsupportedFeature, apexRestUnsupportedMessage)
+		s.handleApexRest(w, r)
 		return
 	}
 	if len(parts) < 3 || parts[0] != "services" || parts[1] != "data" {
@@ -190,7 +215,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case len(rest) >= 1 && rest[0] == "jobs":
 		s.handleBulkJobs(w, r, parts[2], rest[1:])
 	case len(rest) >= 1 && rest[0] == "metadata":
-		writeUnsupportedMetadataREST(w, r, parts[2], rest[1:])
+		s.handleMetadataREST(w, r, parts[2], rest[1:])
 	case len(rest) >= 1 && rest[0] == "composite":
 		s.handleComposite(w, r, parts[2], rest[1:])
 	case len(rest) >= 1 && rest[0] == "oaer":
@@ -222,7 +247,13 @@ func (s *Server) handleOAuth(w http.ResponseWriter, r *http.Request, parts []str
 			return
 		}
 		writeJSON(w, http.StatusOK, s.userInfoPayload(r))
-	case "token", "revoke", "introspect":
+	case "token":
+		if r.Method != http.MethodPost {
+			writeMethodNotAllowed(w, http.MethodPost)
+			return
+		}
+		writeJSON(w, http.StatusOK, s.localTokenPayload(r))
+	case "revoke", "introspect":
 		if r.Method != http.MethodPost {
 			writeMethodNotAllowed(w, http.MethodPost)
 			return
@@ -236,6 +267,336 @@ func (s *Server) handleOAuth(w http.ResponseWriter, r *http.Request, parts []str
 		writeSalesforceError(w, errUnsupportedFeature, localOAuthUnsupportedMessage)
 	default:
 		writeSalesforceError(w, errUnknownEndpoint)
+	}
+}
+
+type apexRestRoute struct {
+	ClassName string
+	Mapping   string
+	Method    typesys.MemberSymbol
+	PrefixLen int
+	Exact     bool
+}
+
+func (s *Server) handleApexRest(w http.ResponseWriter, r *http.Request) {
+	if s.Index == nil {
+		writeSalesforceError(w, errUnsupportedFeature, apexRestUnsupportedMessage+"; start the server with --project to load local Apex sources")
+		return
+	}
+	route, ok := s.apexRestRoute(r)
+	if !ok {
+		writeSalesforceError(w, errUnsupportedFeature, "No local @RestResource route matched "+r.URL.EscapedPath())
+		return
+	}
+	if !route.MethodStaticNoArgs() {
+		writeSalesforceError(w, errUnsupportedFeature, "Apex REST method "+route.ClassName+"."+route.Method.Name+" must be static and take no parameters in the local server")
+		return
+	}
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		writeSalesforceError(w, errMalformedJSON, err.Error())
+		return
+	}
+	machine := vm.New(nil)
+	machine.SetOrg(s.Org)
+	if s.LimitMode != "" {
+		machine.SetLimitMode(s.LimitMode)
+	}
+	if s.LimitCaps != (vm.LimitCaps{}) {
+		machine.SetLimitCaps(s.LimitCaps)
+	}
+	machine.SetCurrentUser(s.currentUser(r, ""))
+	machine.SetServerBaseURL(requestBaseURL(r))
+	if err := apextest.RegisterProjectRuntimeForRequest(machine, *s.Index); err != nil {
+		writeSalesforceError(w, errUnsupportedFeature, "Apex REST runtime setup failed: "+err.Error())
+		return
+	}
+	request := apexRestRequestValue(r, body)
+	response := vm.NewRestResponseValue()
+	if err := machine.SetRestContext(request, response); err != nil {
+		writeSalesforceError(w, errUnsupportedFeature, err.Error())
+		return
+	}
+	returnValue, err := machine.CallStatic(route.ClassName+"."+route.Method.Name, nil)
+	if err != nil {
+		writeSalesforceError(w, errUnsupportedFeature, "Apex REST execution failed: "+err.Error())
+		return
+	}
+	s.writeApexRestResponse(w, machine.RestResponse(), returnValue, strings.EqualFold(route.Method.Type, "void"))
+}
+
+func requestBaseURL(r *http.Request) string {
+	scheme := "http"
+	if r.TLS != nil {
+		scheme = "https"
+	}
+	if forwarded := r.Header.Get("X-Forwarded-Proto"); forwarded != "" {
+		if forwardedScheme := strings.ToLower(strings.TrimSpace(strings.Split(forwarded, ",")[0])); forwardedScheme == "http" || forwardedScheme == "https" {
+			scheme = forwardedScheme
+		}
+	}
+	host := r.Host
+	if forwardedHost := r.Header.Get("X-Forwarded-Host"); forwardedHost != "" {
+		host = strings.TrimSpace(strings.Split(forwardedHost, ",")[0])
+	}
+	if host == "" && r.URL != nil {
+		host = r.URL.Host
+	}
+	if scheme == "" || host == "" {
+		return ""
+	}
+	return scheme + "://" + host
+}
+
+func (r apexRestRoute) MethodStaticNoArgs() bool {
+	return hasServerModifier(r.Method.Modifiers, "static") && len(r.Method.Parameters) == 0
+}
+
+func (s *Server) apexRestRoute(r *http.Request) (apexRestRoute, bool) {
+	resourcePath := apexRestResourcePath(r.URL.EscapedPath())
+	verbAnnotation := apexRestVerbAnnotation(r.Method)
+	var best apexRestRoute
+	for _, typ := range s.Index.Types {
+		if typ.Kind != apexast.DeclarationClass {
+			continue
+		}
+		mapping, ok := restResourceURLMapping(typ.Modifiers)
+		if !ok {
+			continue
+		}
+		prefixLen, exact, ok := apexRestMappingMatch(mapping, resourcePath)
+		if !ok {
+			continue
+		}
+		method, ok := restResourceMethod(typ.Members, verbAnnotation)
+		if !ok {
+			continue
+		}
+		candidate := apexRestRoute{ClassName: typ.Name, Mapping: mapping, Method: method, PrefixLen: prefixLen, Exact: exact}
+		if candidate.betterThan(best) {
+			best = candidate
+		}
+	}
+	return best, best.ClassName != ""
+}
+
+func (r apexRestRoute) betterThan(other apexRestRoute) bool {
+	if other.ClassName == "" {
+		return true
+	}
+	if r.Exact != other.Exact {
+		return r.Exact
+	}
+	if r.PrefixLen != other.PrefixLen {
+		return r.PrefixLen > other.PrefixLen
+	}
+	return r.ClassName < other.ClassName
+}
+
+func restResourceMethod(members []typesys.MemberSymbol, annotation string) (typesys.MemberSymbol, bool) {
+	for _, member := range members {
+		if member.Kind == apexast.DeclarationMethod && hasServerModifier(member.Modifiers, annotation) {
+			return member, true
+		}
+	}
+	return typesys.MemberSymbol{}, false
+}
+
+func restResourceURLMapping(modifiers []string) (string, bool) {
+	for _, modifier := range modifiers {
+		normalized := strings.TrimSpace(modifier)
+		if !strings.HasPrefix(strings.ToLower(normalized), "@restresource") {
+			continue
+		}
+		open := strings.IndexByte(normalized, '(')
+		close := strings.LastIndexByte(normalized, ')')
+		if open < 0 || close <= open {
+			return "", false
+		}
+		args := normalized[open+1 : close]
+		for _, part := range strings.Split(args, ",") {
+			name, value, ok := strings.Cut(part, "=")
+			if !ok || !strings.EqualFold(strings.TrimSpace(name), "urlMapping") {
+				continue
+			}
+			mapping := strings.TrimSpace(value)
+			mapping = strings.Trim(mapping, `"'`)
+			if mapping == "" {
+				return "", false
+			}
+			if !strings.HasPrefix(mapping, "/") {
+				mapping = "/" + mapping
+			}
+			return mapping, true
+		}
+	}
+	return "", false
+}
+
+func apexRestMappingMatch(mapping, path string) (int, bool, bool) {
+	mapping = strings.TrimSpace(mapping)
+	if mapping == "" {
+		return 0, false, false
+	}
+	if !strings.HasPrefix(mapping, "/") {
+		mapping = "/" + mapping
+	}
+	if strings.HasSuffix(mapping, "*") {
+		prefix := strings.TrimSuffix(mapping, "*")
+		return len(prefix), false, strings.HasPrefix(path, prefix)
+	}
+	return len(mapping), true, path == mapping || strings.TrimRight(path, "/") == strings.TrimRight(mapping, "/")
+}
+
+func apexRestVerbAnnotation(method string) string {
+	switch method {
+	case http.MethodGet:
+		return "HttpGet"
+	case http.MethodPost:
+		return "HttpPost"
+	case http.MethodPatch:
+		return "HttpPatch"
+	case http.MethodPut:
+		return "HttpPut"
+	case http.MethodDelete:
+		return "HttpDelete"
+	default:
+		return ""
+	}
+}
+
+func apexRestResourcePath(escaped string) string {
+	path, err := url.PathUnescape(escaped)
+	if err != nil {
+		path = escaped
+	}
+	path = strings.TrimPrefix(path, "/services/apexrest")
+	if path == "" {
+		return "/"
+	}
+	if !strings.HasPrefix(path, "/") {
+		return "/" + path
+	}
+	return path
+}
+
+func apexRestRequestValue(r *http.Request, body []byte) vm.Value {
+	request := vm.NewRestRequestValue()
+	request.Fields["requestURI"] = vm.String(r.URL.RequestURI())
+	request.Fields["resourcePath"] = vm.String(apexRestResourcePath(r.URL.EscapedPath()))
+	request.Fields["httpMethod"] = vm.String(r.Method)
+	request.Fields["remoteAddress"] = vm.String(r.RemoteAddr)
+	request.Fields["headers"] = vm.NewStringMapValue(requestHeaders(r))
+	request.Fields["params"] = vm.NewStringMapValue(queryParams(r.URL.Query()))
+	request.Fields["requestBody"] = vm.NewBlobValue(string(body))
+	return request
+}
+
+func requestHeaders(r *http.Request) map[string]string {
+	out := make(map[string]string, len(r.Header))
+	for name, values := range r.Header {
+		out[name] = strings.Join(values, ",")
+	}
+	return out
+}
+
+func queryParams(values url.Values) map[string]string {
+	out := make(map[string]string, len(values))
+	for name, raw := range values {
+		out[name] = strings.Join(raw, ",")
+	}
+	return out
+}
+
+func (s *Server) writeApexRestResponse(w http.ResponseWriter, response, returnValue vm.Value, returnVoid bool) {
+	status := http.StatusOK
+	if value, ok := response.Fields["statusCode"]; ok && value.Kind == vm.ValueInt && value.Int >= 100 && value.Int <= 599 {
+		status = int(value.Int)
+	}
+	if headers, ok := response.Fields["headers"]; ok {
+		for name, value := range vm.StringMapEntries(headers) {
+			w.Header().Set(name, value)
+		}
+	}
+	body := response.Fields["responseBody"]
+	if body.Kind != "" && body.Kind != vm.ValueNull {
+		raw, contentType := apexRestRawBody(body)
+		if contentType != "" {
+			w.Header().Set("Content-Type", contentType)
+		} else {
+			w.Header().Del("Content-Type")
+		}
+		w.WriteHeader(status)
+		_, _ = w.Write(raw)
+		return
+	}
+	if returnVoid || returnValue.Kind == vm.ValueNull || returnValue.Kind == "" {
+		w.WriteHeader(status)
+		return
+	}
+	payload := s.apexRestJSONValue(returnValue)
+	writeJSON(w, status, payload)
+}
+
+func apexRestRawBody(value vm.Value) ([]byte, string) {
+	switch {
+	case value.Kind == vm.ValueString:
+		return []byte(value.Text), "text/plain"
+	case value.Kind == vm.ValueObject && value.Type == "Blob":
+		if raw, ok := value.Fields["value"]; ok && raw.Kind == vm.ValueString {
+			return []byte(raw.Text), ""
+		}
+	}
+	return []byte(value.String()), "text/plain"
+}
+
+func (s *Server) apexRestJSONValue(value vm.Value) any {
+	switch value.Kind {
+	case vm.ValueNull:
+		return nil
+	case vm.ValueInt:
+		return value.Int
+	case vm.ValueDecimal:
+		return value.Decimal
+	case vm.ValueBool:
+		return value.Bool
+	case vm.ValueString:
+		return value.Text
+	case vm.ValueList:
+		out := make([]any, 0, len(value.List))
+		for _, item := range value.List {
+			out = append(out, s.apexRestJSONValue(item))
+		}
+		return out
+	case vm.ValueSet:
+		out := make([]any, 0, len(value.Set))
+		for _, item := range value.Set {
+			out = append(out, s.apexRestJSONValue(item))
+		}
+		return out
+	case vm.ValueMap:
+		out := map[string]any{}
+		for key, item := range vm.StringValueMapEntries(value) {
+			out[key] = s.apexRestJSONValue(item)
+		}
+		return out
+	case vm.ValueObject:
+		if value.Type == "Blob" {
+			if raw, ok := value.Fields["value"]; ok {
+				return raw.String()
+			}
+			return ""
+		}
+		out := map[string]any{}
+		if _, ok := s.Org.Objects[value.Type]; ok {
+			out["attributes"] = map[string]any{"type": value.Type}
+		}
+		for name, field := range value.Fields {
+			out[name] = s.apexRestJSONValue(field)
+		}
+		return out
+	default:
+		return value.String()
 	}
 }
 
@@ -299,7 +660,11 @@ func (s *Server) handleObject(w http.ResponseWriter, r *http.Request, version st
 			return
 		}
 		if isCompactLayoutsRoute(parts) {
-			writeJSON(w, http.StatusOK, compactLayoutsPayload(object.Definition))
+			writeJSON(w, http.StatusOK, s.compactLayoutsPayload(object.Definition, parts))
+			return
+		}
+		if s.hasLayoutMetadata(objectName) {
+			writeJSON(w, http.StatusOK, s.layoutMetadataPayload(object.Definition, version, parts))
 			return
 		}
 		writeSalesforceError(w, errUnsupportedFeature, "Full SObject layout and layout-adjacent metadata is not modeled in the local server; use describe fields and compactLayouts stub data instead")
@@ -330,10 +695,10 @@ func (s *Server) handleObject(w http.ResponseWriter, r *http.Request, version st
 			return
 		}
 		if isListViewCollectionRoute(parts) {
-			writeJSON(w, http.StatusOK, listViewsPayload(object.Definition, version))
+			writeJSON(w, http.StatusOK, s.listViewsPayload(object.Definition, version))
 			return
 		}
-		writeSalesforceError(w, errUnsupportedFeature, "SObject list view describe and result execution are not modeled in the local server; collection discovery returns an empty local stub")
+		s.handleListViewMetadata(w, object, version, parts)
 	case len(parts) == 2 && parts[1] == "recent" && r.Method == http.MethodGet:
 		object, ok := s.Org.Objects[objectName]
 		if !ok {
@@ -385,7 +750,7 @@ func (s *Server) handleObject(w http.ResponseWriter, r *http.Request, version st
 			return
 		}
 		next := s.Org.Clone()
-		engine := dml.NewEngine(&next)
+		engine := s.newDMLEngine(r, &next)
 		result := engine.Insert([]storage.Record{record})[0]
 		if result.Success {
 			if err := s.commitOrg(next); err != nil {
@@ -451,7 +816,7 @@ func (s *Server) handleExternalIDRecord(w http.ResponseWriter, r *http.Request, 
 		}
 		delete(record.ExplicitNulls, fieldName)
 		next := s.Org.Clone()
-		engine := dml.NewEngine(&next)
+		engine := s.newDMLEngine(r, &next)
 		result := engine.UpsertWithExternalID([]storage.Record{record}, fieldName)[0]
 		if result.Success {
 			if err := s.commitOrg(next); err != nil {
@@ -466,7 +831,7 @@ func (s *Server) handleExternalIDRecord(w http.ResponseWriter, r *http.Request, 
 			return
 		}
 		next := s.Org.Clone()
-		engine := dml.NewEngine(&next)
+		engine := s.newDMLEngine(r, &next)
 		result := engine.Delete([]storage.Record{{Object: objectName, ID: id}})[0]
 		if result.Success {
 			if err := s.commitOrg(next); err != nil {
@@ -539,7 +904,7 @@ func (s *Server) handleRecord(w http.ResponseWriter, r *http.Request, version st
 			return
 		}
 		next := s.Org.Clone()
-		engine := dml.NewEngine(&next)
+		engine := s.newDMLEngine(r, &next)
 		result := engine.Update([]storage.Record{record})[0]
 		if result.Success {
 			if err := s.commitOrg(next); err != nil {
@@ -555,7 +920,7 @@ func (s *Server) handleRecord(w http.ResponseWriter, r *http.Request, version st
 			return
 		}
 		next := s.Org.Clone()
-		engine := dml.NewEngine(&next)
+		engine := s.newDMLEngine(r, &next)
 		result := engine.Delete([]storage.Record{{Object: objectName, ID: id}})[0]
 		if result.Success {
 			if err := s.commitOrg(next); err != nil {
@@ -865,9 +1230,9 @@ func (s *Server) handleTooling(w http.ResponseWriter, r *http.Request, version s
 	case len(parts) == 1 && parts[0] == "executeAnonymous":
 		s.handleExecuteAnonymous(w, r)
 	case len(parts) == 1 && parts[0] == "query":
-		s.handleQuery(w, r, version, "tooling/query", false)
+		s.handleToolingQuery(w, r, version, false)
 	case len(parts) == 1 && parts[0] == "queryAll":
-		s.handleQuery(w, r, version, "tooling/query", true)
+		s.handleToolingQuery(w, r, version, true)
 	case len(parts) == 2 && parts[0] == "query":
 		s.handleQueryMore(w, r, parts[1])
 	case len(parts) == 1 && parts[0] == "search":
@@ -881,13 +1246,45 @@ func (s *Server) handleTooling(w http.ResponseWriter, r *http.Request, version s
 			writeMethodNotAllowed(w, http.MethodGet)
 			return
 		}
-		writeSalesforceError(w, errUnsupportedFeature, "Tooling sObject discovery is not implemented in the local server")
+		if !s.Source.hasData() {
+			writeSalesforceError(w, errUnsupportedFeature, "Tooling sObject discovery is not implemented in the local server")
+			return
+		}
+		writeJSON(w, http.StatusOK, s.toolingSObjectsPayload(version))
 	case len(parts) == 3 && parts[0] == "sobjects" && parts[2] == "describe":
 		if r.Method != http.MethodGet {
 			writeMethodNotAllowed(w, http.MethodGet)
 			return
 		}
-		writeSalesforceError(w, errUnsupportedFeature, "Tooling sObject describe for "+parts[1]+" is not implemented in the local server")
+		object, ok := s.Source.ToolingOrg.Objects[parts[1]]
+		if !ok {
+			if isToolingMetadataObject(parts[1]) {
+				writeSalesforceError(w, errUnsupportedFeature, "Tooling sObject describe for "+parts[1]+" is not implemented in the local server")
+				return
+			}
+			writeSalesforceError(w, errUnknownTooling)
+			return
+		}
+		writeJSON(w, http.StatusOK, toolingDescribePayload(object.Definition))
+	case len(parts) == 2 && parts[0] == "sobjects" && s.isModeledToolingObject(parts[1]):
+		if r.Method != http.MethodGet {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
+		object := s.Source.ToolingOrg.Objects[parts[1]]
+		writeJSON(w, http.StatusOK, toolingObjectResourcePayload(object.Definition, version))
+	case len(parts) == 3 && parts[0] == "sobjects" && s.isModeledToolingObject(parts[1]):
+		if r.Method != http.MethodGet {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
+		object := s.Source.ToolingOrg.Objects[parts[1]]
+		record, ok := object.Records[storage.ID(parts[2])]
+		if !ok {
+			writeSalesforceError(w, errUnknownRecord)
+			return
+		}
+		writeJSON(w, http.StatusOK, toolingRecordPayload(record, version))
 	case len(parts) == 2 && parts[0] == "sobjects" && isToolingMetadataObject(parts[1]):
 		writeUnsupportedToolingMetadata(w, r, parts[1], "object collection", toolingCollectionMethods(parts[1])...)
 	case len(parts) >= 3 && parts[0] == "sobjects" && isToolingMetadataObject(parts[1]):
@@ -909,6 +1306,119 @@ func (s *Server) handleTooling(w http.ResponseWriter, r *http.Request, version s
 	default:
 		writeSalesforceError(w, errUnknownTooling)
 	}
+}
+
+func (s *Server) isModeledToolingObject(name string) bool {
+	if s.Source.ToolingOrg.Objects == nil {
+		return false
+	}
+	_, ok := s.Source.ToolingOrg.Objects[name]
+	return ok
+}
+
+func (s *Server) handleToolingQuery(w http.ResponseWriter, r *http.Request, version string, allRows bool) {
+	if r.Method != http.MethodGet {
+		writeMethodNotAllowed(w, http.MethodGet)
+		return
+	}
+	queryText := r.URL.Query().Get("q")
+	query, err := soql.Parse(queryText)
+	if err != nil {
+		writeSalesforceError(w, errMalformedQuery, err.Error())
+		return
+	}
+	if !s.isModeledToolingObject(query.Object) {
+		if _, ok := storage.ResolveObjectName(*s.Org, query.Object); ok {
+			s.handleQuery(w, r, version, "tooling/query", allRows)
+			return
+		}
+		writeSalesforceError(w, errUnsupportedFeature, "Tooling query for "+query.Object+" is not modeled in the local server")
+		return
+	}
+	query.AllRows = allRows
+	result, err := soql.Execute(s.Source.ToolingOrg, query)
+	if err != nil {
+		writeSalesforceError(w, errMalformedQuery, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, toolingQueryResultPayload(result.Rows, true, result.Records, version))
+}
+
+func (s *Server) toolingSObjectsPayload(version string) map[string]any {
+	base := "/services/data/" + version + "/tooling/sobjects/"
+	names := make([]string, 0, len(s.Source.ToolingOrg.Objects))
+	for name := range s.Source.ToolingOrg.Objects {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	objects := make([]map[string]any, 0, len(names))
+	for _, name := range names {
+		def := s.Source.ToolingOrg.Objects[name].Definition
+		objects = append(objects, map[string]any{
+			"name":         name,
+			"label":        labelOrFallback(def.Label, name),
+			"keyPrefix":    def.KeyPrefix,
+			"queryable":    true,
+			"retrieveable": true,
+			"createable":   false,
+			"updateable":   false,
+			"deletable":    false,
+			"url":          base + name,
+			"describe":     base + name + "/describe",
+		})
+	}
+	return map[string]any{"sobjects": objects}
+}
+
+func toolingDescribePayload(def storage.ObjectDefinition) map[string]any {
+	payload := describePayload(def, nil)
+	payload["createable"] = false
+	payload["updateable"] = false
+	payload["deletable"] = false
+	payload["custom"] = false
+	payload["retrieveable"] = true
+	return payload
+}
+
+func toolingObjectResourcePayload(def storage.ObjectDefinition, version string) map[string]any {
+	base := "/services/data/" + version + "/tooling/sobjects/" + def.APIName
+	return map[string]any{
+		"name":           def.APIName,
+		"label":          labelOrFallback(def.Label, def.APIName),
+		"keyPrefix":      def.KeyPrefix,
+		"objectDescribe": base + "/describe",
+		"describe":       base + "/describe",
+		"url":            base,
+		"urls": map[string]string{
+			"rowTemplate": base + "/{ID}",
+			"describe":    base + "/describe",
+		},
+	}
+}
+
+func toolingQueryResultPayload(totalSize int, done bool, records []storage.Record, version string) map[string]any {
+	return map[string]any{
+		"totalSize": totalSize,
+		"done":      done,
+		"records":   toolingRecordsPayload(records, version),
+	}
+}
+
+func toolingRecordsPayload(records []storage.Record, version string) []map[string]any {
+	out := make([]map[string]any, 0, len(records))
+	for _, record := range records {
+		out = append(out, toolingRecordPayload(record, version))
+	}
+	return out
+}
+
+func toolingRecordPayload(record storage.Record, version string) map[string]any {
+	objectName := record.Object
+	out := recordPayload(record, version, objectName, record.ID)
+	if attrs, ok := out["attributes"].(map[string]any); ok {
+		attrs["url"] = "/services/data/" + version + "/tooling/sobjects/" + objectName + "/" + string(record.ID)
+	}
+	return out
 }
 
 func isToolingMetadataObject(name string) bool {
@@ -1121,6 +1631,220 @@ func writeUnsupportedMetadataREST(w http.ResponseWriter, r *http.Request, versio
 	}
 }
 
+func (s *Server) handleMetadataREST(w http.ResponseWriter, r *http.Request, version string, parts []string) {
+	switch {
+	case len(parts) == 0:
+		if !methodAllowed(r, http.MethodGet) {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
+		writeJSON(w, http.StatusOK, metadataRESTDiscoveryPayload(version))
+	case len(parts) == 1 && (parts[0] == "describe" || parts[0] == "describeMetadata"):
+		if !methodAllowed(r, http.MethodGet) {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
+		if !s.Source.hasData() {
+			writeSalesforceError(w, errUnsupportedFeature, metadataReadDiscoveryUnsupportedMessage(parts[0]))
+			return
+		}
+		writeJSON(w, http.StatusOK, s.describeMetadataPayload(version))
+	case len(parts) == 1 && parts[0] == "listMetadata":
+		if !methodAllowed(r, http.MethodGet) {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
+		if !s.Source.hasData() {
+			writeSalesforceError(w, errUnsupportedFeature, metadataReadDiscoveryUnsupportedMessage(parts[0]))
+			return
+		}
+		writeJSON(w, http.StatusOK, s.listMetadataPayload(r))
+	case len(parts) == 1 && parts[0] == "components":
+		if !methodAllowed(r, http.MethodGet) {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
+		if !s.Source.hasData() {
+			writeSalesforceError(w, errUnsupportedFeature, metadataReadDiscoveryUnsupportedMessage(parts[0]))
+			return
+		}
+		writeJSON(w, http.StatusOK, s.metadataComponentsPayload("", ""))
+	case len(parts) == 2 && parts[0] == "components":
+		if !methodAllowed(r, http.MethodGet) {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
+		if !s.Source.hasData() {
+			writeSalesforceError(w, errUnsupportedFeature, "Metadata REST component read and discovery are not implemented in the local server; use source files and oaer inspect/check for local metadata state")
+			return
+		}
+		writeJSON(w, http.StatusOK, s.metadataComponentsPayload(parts[1], ""))
+	case len(parts) == 3 && parts[0] == "components":
+		if !methodAllowed(r, http.MethodGet) {
+			writeMethodNotAllowed(w, http.MethodGet)
+			return
+		}
+		if !s.Source.hasData() {
+			writeSalesforceError(w, errUnsupportedFeature, "Metadata REST component read and discovery are not implemented in the local server; use source files and oaer inspect/check for local metadata state")
+			return
+		}
+		component, ok := s.Source.componentBy[metadataComponentKey(parts[1], parts[2])]
+		if !ok {
+			writeSalesforceError(w, errUnknownEndpoint, "metadata component not found")
+			return
+		}
+		writeJSON(w, http.StatusOK, s.metadataComponentPayload(component, true))
+	default:
+		writeUnsupportedMetadataREST(w, r, version, parts)
+	}
+}
+
+func (s *Server) describeMetadataPayload(version string) map[string]any {
+	counts := make(map[string]int)
+	for _, component := range s.Source.Components {
+		counts[component.Type]++
+	}
+	types := make([]string, 0, len(counts))
+	for typ := range counts {
+		types = append(types, typ)
+	}
+	sort.Strings(types)
+	objects := make([]map[string]any, 0, len(types))
+	for _, typ := range types {
+		objects = append(objects, map[string]any{
+			"xmlName":        typ,
+			"directoryName":  metadataDirectoryName(typ),
+			"inFolder":       false,
+			"metaFile":       metadataTypeHasMetaFile(typ),
+			"childXmlNames":  []string{},
+			"suffix":         metadataSuffix(typ),
+			"localFileCount": counts[typ],
+		})
+	}
+	return map[string]any{
+		"metadataObjects":       objects,
+		"organizationNamespace": s.Source.Project.Namespace,
+		"partialSaveAllowed":    false,
+		"testRequired":          false,
+		"version":               version,
+	}
+}
+
+func (s *Server) listMetadataPayload(r *http.Request) map[string]any {
+	typ := strings.TrimSpace(firstNonEmptyQuery(r.URL.Query(), "type", "typeName", "metadataType"))
+	components := make([]map[string]any, 0)
+	for _, component := range s.Source.Components {
+		if typ != "" && !strings.EqualFold(component.Type, typ) {
+			continue
+		}
+		components = append(components, metadataFileProperties(component))
+	}
+	return map[string]any{
+		"result": components,
+		"size":   len(components),
+	}
+}
+
+func (s *Server) metadataComponentsPayload(typ, fullName string) map[string]any {
+	components := make([]map[string]any, 0)
+	for _, component := range s.Source.Components {
+		if typ != "" && !strings.EqualFold(component.Type, typ) {
+			continue
+		}
+		if fullName != "" && !strings.EqualFold(component.FullName, fullName) {
+			continue
+		}
+		components = append(components, s.metadataComponentPayload(component, false))
+	}
+	return map[string]any{"components": components, "size": len(components)}
+}
+
+func (s *Server) metadataComponentPayload(component metadataComponent, includeContent bool) map[string]any {
+	payload := metadataFileProperties(component)
+	payload["id"] = string(component.ID)
+	if includeContent {
+		if component.Content != "" {
+			payload["content"] = component.Content
+		} else if data, err := os.ReadFile(component.FileName); err == nil {
+			payload["content"] = string(data)
+		}
+	}
+	return payload
+}
+
+func metadataFileProperties(component metadataComponent) map[string]any {
+	return map[string]any{
+		"type":            component.Type,
+		"fullName":        component.FullName,
+		"fileName":        filepath.ToSlash(component.FileName),
+		"manageableState": "unmanaged",
+	}
+}
+
+func firstNonEmptyQuery(values url.Values, names ...string) string {
+	for _, name := range names {
+		if value := strings.TrimSpace(values.Get(name)); value != "" {
+			return value
+		}
+	}
+	return ""
+}
+
+func metadataDirectoryName(typ string) string {
+	switch typ {
+	case "ApexClass":
+		return "classes"
+	case "ApexTrigger":
+		return "triggers"
+	case "ApexPage":
+		return "pages"
+	case "ApexComponent":
+		return "components"
+	case "CustomObject", "CustomField", "RecordType", "ValidationRule", "ListView", "CompactLayout":
+		return "objects"
+	case "Layout":
+		return "layouts"
+	case "StaticResource":
+		return "staticresources"
+	case "Workflow":
+		return "workflows"
+	default:
+		return strings.ToLower(typ)
+	}
+}
+
+func metadataSuffix(typ string) string {
+	switch typ {
+	case "ApexClass":
+		return "cls"
+	case "ApexTrigger":
+		return "trigger"
+	case "ApexPage":
+		return "page"
+	case "ApexComponent":
+		return "component"
+	case "Layout":
+		return "layout"
+	case "ListView":
+		return "listView"
+	case "CompactLayout":
+		return "compactLayout"
+	case "StaticResource":
+		return "resource"
+	default:
+		return ""
+	}
+}
+
+func metadataTypeHasMetaFile(typ string) bool {
+	switch typ {
+	case "ApexClass", "ApexTrigger", "ApexPage", "ApexComponent", "StaticResource":
+		return true
+	default:
+		return strings.HasSuffix(typ, "Layout") || typ == "ListView"
+	}
+}
+
 func (s *Server) handleBulkJobs(w http.ResponseWriter, r *http.Request, version string, parts []string) {
 	if len(parts) < 1 {
 		if r.Method != http.MethodGet {
@@ -1182,6 +1906,10 @@ func writeUnsupportedBulkIngestJob(w http.ResponseWriter, r *http.Request, parts
 			writeMethodNotAllowed(w, http.MethodGet, http.MethodPost)
 			return
 		}
+		if r.Method == http.MethodGet {
+			writeJSON(w, http.StatusOK, localBulkJobCollectionPayload())
+			return
+		}
 		if r.Method == http.MethodPost {
 			if _, ok := decodeOptionalJSONObject(w, r); !ok {
 				return
@@ -1228,6 +1956,14 @@ func writeUnsupportedBulkIngestJob(w http.ResponseWriter, r *http.Request, parts
 	}
 }
 
+func localBulkJobCollectionPayload() map[string]any {
+	return map[string]any{
+		"done":           true,
+		"records":        []any{},
+		"nextRecordsUrl": nil,
+	}
+}
+
 func requireWellFormedJSONBody(w http.ResponseWriter, r *http.Request) bool {
 	var body any
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -1238,24 +1974,40 @@ func requireWellFormedJSONBody(w http.ResponseWriter, r *http.Request) bool {
 }
 
 type compositeSubrequestEnvelope struct {
-	Method      string `json:"method"`
-	URL         string `json:"url"`
-	ReferenceID string `json:"referenceId"`
+	Method      string            `json:"method"`
+	URL         string            `json:"url"`
+	ReferenceID string            `json:"referenceId"`
+	Body        json.RawMessage   `json:"body,omitempty"`
+	HTTPHeaders map[string]string `json:"httpHeaders,omitempty"`
+}
+
+type compositeRequestEnvelope struct {
+	AllOrNone        bool                          `json:"allOrNone"`
+	CompositeRequest []compositeSubrequestEnvelope `json:"compositeRequest"`
 }
 
 func requireCompositeRequestEnvelope(w http.ResponseWriter, r *http.Request) bool {
+	_, ok := decodeCompositeRequestEnvelope(w, r)
+	return ok
+}
+
+func decodeCompositeRequestEnvelope(w http.ResponseWriter, r *http.Request) (compositeRequestEnvelope, bool) {
 	var body struct {
+		AllOrNone        bool                           `json:"allOrNone"`
 		CompositeRequest *[]compositeSubrequestEnvelope `json:"compositeRequest"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		writeSalesforceError(w, errMalformedJSON, err.Error())
-		return false
+		return compositeRequestEnvelope{}, false
 	}
 	if body.CompositeRequest == nil || len(*body.CompositeRequest) == 0 {
 		writeSalesforceError(w, errRequiredFieldMissing, "compositeRequest is required and must contain at least one subrequest")
-		return false
+		return compositeRequestEnvelope{}, false
 	}
-	return validateCompositeSubrequests(w, *body.CompositeRequest, "compositeRequest", true)
+	if !validateCompositeSubrequests(w, *body.CompositeRequest, "compositeRequest", true) {
+		return compositeRequestEnvelope{}, false
+	}
+	return compositeRequestEnvelope{AllOrNone: body.AllOrNone, CompositeRequest: *body.CompositeRequest}, true
 }
 
 func requireCompositeBatchEnvelope(w http.ResponseWriter, r *http.Request) bool {
@@ -1365,6 +2117,19 @@ func methodAllowed(r *http.Request, allowed ...string) bool {
 	return false
 }
 
+func hasServerModifier(modifiers []string, expected string) bool {
+	for _, modifier := range modifiers {
+		normalized := strings.TrimPrefix(strings.TrimSpace(modifier), "@")
+		if idx := strings.IndexByte(normalized, '('); idx >= 0 {
+			normalized = normalized[:idx]
+		}
+		if strings.EqualFold(normalized, expected) {
+			return true
+		}
+	}
+	return false
+}
+
 func (s *Server) handleExecuteAnonymous(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet && r.Method != http.MethodPost {
 		writeMethodNotAllowed(w, http.MethodGet, http.MethodPost)
@@ -1400,6 +2165,10 @@ func (s *Server) handleExecuteAnonymous(w http.ResponseWriter, r *http.Request) 
 	}
 	result, err := machine.Execute(program)
 	if err != nil {
+		writeJSON(w, http.StatusOK, executeAnonymousFailure(true, err.Error(), result.Debug))
+		return
+	}
+	if err := machine.DrainAsync(&result); err != nil {
 		writeJSON(w, http.StatusOK, executeAnonymousFailure(true, err.Error(), result.Debug))
 		return
 	}
@@ -1523,12 +2292,19 @@ func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, version
 	if len(parts) == 0 {
 		switch r.Method {
 		case http.MethodGet:
-			writeSalesforceError(w, errUnsupportedFeature, "Composite namespace discovery is not implemented in the local server; generic REST subrequest orchestration is not modeled")
+			writeJSON(w, http.StatusOK, map[string]any{
+				"resources": map[string]string{
+					"composite": "/services/data/" + version + "/composite",
+					"sobjects":  "/services/data/" + version + "/composite/sobjects",
+				},
+				"unsupported": []string{"batch", "graph", "tree"},
+			})
 		case http.MethodPost:
-			if !requireCompositeRequestEnvelope(w, r) {
+			body, ok := decodeCompositeRequestEnvelope(w, r)
+			if !ok {
 				return
 			}
-			writeSalesforceError(w, errUnsupportedFeature, "Generic Composite REST subrequest orchestration is not implemented in the local server")
+			s.handleGenericComposite(w, r, version, body)
 		default:
 			writeMethodNotAllowed(w, http.MethodGet, http.MethodPost)
 		}
@@ -1576,6 +2352,248 @@ func (s *Server) handleComposite(w http.ResponseWriter, r *http.Request, version
 		return
 	}
 	writeSalesforceError(w, errUnknownComposite)
+}
+
+type compositeSubresponse struct {
+	Body           any               `json:"body"`
+	HTTPHeaders    map[string]string `json:"httpHeaders,omitempty"`
+	HTTPStatusCode int               `json:"httpStatusCode"`
+	ReferenceID    string            `json:"referenceId"`
+}
+
+func (s *Server) handleGenericComposite(w http.ResponseWriter, r *http.Request, version string, body compositeRequestEnvelope) {
+	next := s.Org.Clone()
+	child := *s
+	child.Org = &next
+	child.Store = nil
+	references := make(map[string]any, len(body.CompositeRequest))
+	responses := make([]compositeSubresponse, 0, len(body.CompositeRequest))
+	hasFailure := false
+	hasMutation := false
+	for _, subrequest := range body.CompositeRequest {
+		resolved, err := resolveCompositeSubrequest(subrequest, references)
+		if err != nil {
+			hasFailure = true
+			responses = append(responses, compositeReferenceErrorResponse(subrequest.ReferenceID, err))
+			continue
+		}
+		if isCompositeMutationMethod(resolved.Method) {
+			hasMutation = true
+		}
+		response := child.executeCompositeSubrequest(r, version, resolved)
+		if response.HTTPStatusCode >= 400 {
+			hasFailure = true
+		}
+		references[resolved.ReferenceID] = response.Body
+		responses = append(responses, response)
+	}
+	if !body.AllOrNone || !hasFailure {
+		s.queryLocators = child.queryLocators
+		s.queryOrder = child.queryOrder
+		s.nextQueryID = child.nextQueryID
+	}
+	if hasMutation && (!body.AllOrNone || !hasFailure) {
+		if err := s.commitOrg(next); err != nil {
+			writeSalesforceError(w, errStoreFailure, err.Error())
+			return
+		}
+	}
+	status := http.StatusOK
+	if body.AllOrNone && hasFailure {
+		status = http.StatusBadRequest
+	}
+	writeJSON(w, status, map[string]any{"compositeResponse": responses})
+}
+
+func (s *Server) executeCompositeSubrequest(parent *http.Request, version string, subrequest compositeSubrequestEnvelope) compositeSubresponse {
+	var body io.Reader
+	if len(subrequest.Body) > 0 {
+		body = bytes.NewReader(subrequest.Body)
+	}
+	req, err := newCompositeHTTPRequest(parent, strings.ToUpper(subrequest.Method), subrequest.URL, body)
+	if err != nil {
+		return compositeReferenceErrorResponse(subrequest.ReferenceID, err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	for name, value := range parent.Header {
+		for _, item := range value {
+			req.Header.Add(name, item)
+		}
+	}
+	for name, value := range subrequest.HTTPHeaders {
+		req.Header.Set(name, value)
+	}
+	rec := httptest.NewRecorder()
+	if !compositeSubrequestRouteSupported(req.URL, version) {
+		writeSalesforceError(rec, errUnsupportedFeature, "Composite subrequest route is not supported by the local generic Composite orchestrator")
+	} else {
+		s.serveHTTPLocked(rec, req)
+	}
+	result := rec.Result()
+	defer result.Body.Close()
+	rawBody, _ := io.ReadAll(result.Body)
+	decodedBody := decodeCompositeSubresponseBody(rawBody)
+	return compositeSubresponse{
+		Body:           decodedBody,
+		HTTPHeaders:    compositeResponseHeaders(result.Header),
+		HTTPStatusCode: result.StatusCode,
+		ReferenceID:    subrequest.ReferenceID,
+	}
+}
+
+func newCompositeHTTPRequest(parent *http.Request, method, target string, body io.Reader) (*http.Request, error) {
+	if strings.TrimSpace(method) == "" {
+		return nil, fmt.Errorf("Composite subrequest method is required")
+	}
+	if strings.TrimSpace(target) == "" {
+		return nil, fmt.Errorf("Composite subrequest url is required")
+	}
+	requestURL := target
+	if strings.HasPrefix(target, "/") {
+		requestURL = "http://local.oaer.test" + target
+	}
+	req, err := http.NewRequest(method, requestURL, body)
+	if err != nil {
+		return nil, err
+	}
+	req.RequestURI = ""
+	req.Host = parent.Host
+	req.RemoteAddr = parent.RemoteAddr
+	return req, nil
+}
+
+func compositeSubrequestRouteSupported(u *url.URL, version string) bool {
+	parts := splitPath(u.EscapedPath())
+	if len(parts) < 4 || parts[0] != "services" || parts[1] != "data" || parts[2] != version {
+		return false
+	}
+	rest := parts[3:]
+	switch {
+	case len(rest) >= 1 && rest[0] == "sobjects":
+		return true
+	case len(rest) >= 1 && (rest[0] == "query" || rest[0] == "queryAll"):
+		return true
+	case len(rest) == 1 && rest[0] == "limits":
+		return true
+	case len(rest) >= 2 && rest[0] == "composite" && rest[1] == "sobjects":
+		return true
+	default:
+		return false
+	}
+}
+
+func resolveCompositeSubrequest(request compositeSubrequestEnvelope, references map[string]any) (compositeSubrequestEnvelope, error) {
+	url, err := substituteCompositeReferences(request.URL, references)
+	if err != nil {
+		return compositeSubrequestEnvelope{}, err
+	}
+	request.URL = url
+	if len(request.Body) > 0 {
+		body, err := substituteCompositeReferences(string(request.Body), references)
+		if err != nil {
+			return compositeSubrequestEnvelope{}, err
+		}
+		request.Body = json.RawMessage(body)
+	}
+	return request, nil
+}
+
+func substituteCompositeReferences(input string, references map[string]any) (string, error) {
+	var out strings.Builder
+	for {
+		start := strings.Index(input, "@{")
+		if start < 0 {
+			out.WriteString(input)
+			return out.String(), nil
+		}
+		end := strings.Index(input[start+2:], "}")
+		if end < 0 {
+			return "", fmt.Errorf("unclosed Composite reference starting with %q", input[start:])
+		}
+		end += start + 2
+		out.WriteString(input[:start])
+		expr := input[start+2 : end]
+		ref, field, ok := strings.Cut(expr, ".")
+		if !ok || strings.TrimSpace(ref) == "" || strings.TrimSpace(field) == "" {
+			return "", fmt.Errorf("invalid Composite reference %q", expr)
+		}
+		value, ok := compositeReferenceValue(references[strings.TrimSpace(ref)], strings.Split(strings.TrimSpace(field), "."))
+		if !ok {
+			return "", fmt.Errorf("Composite reference %s could not be resolved", expr)
+		}
+		out.WriteString(fmt.Sprint(value))
+		input = input[end+1:]
+	}
+}
+
+func compositeReferenceValue(body any, fields []string) (any, bool) {
+	current := body
+	for _, field := range fields {
+		object, ok := current.(map[string]any)
+		if !ok {
+			return nil, false
+		}
+		next, ok := object[field]
+		if !ok {
+			for key, value := range object {
+				if strings.EqualFold(key, field) {
+					next = value
+					ok = true
+					break
+				}
+			}
+		}
+		if !ok {
+			return nil, false
+		}
+		current = next
+	}
+	return current, true
+}
+
+func decodeCompositeSubresponseBody(raw []byte) any {
+	if len(bytes.TrimSpace(raw)) == 0 {
+		return nil
+	}
+	var body any
+	if err := json.Unmarshal(raw, &body); err == nil {
+		return body
+	}
+	return string(raw)
+}
+
+func compositeResponseHeaders(headers http.Header) map[string]string {
+	out := make(map[string]string)
+	for name, values := range headers {
+		if strings.EqualFold(name, "Content-Type") || len(values) == 0 {
+			continue
+		}
+		out[name] = strings.Join(values, ",")
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
+func compositeReferenceErrorResponse(referenceID string, err error) compositeSubresponse {
+	return compositeSubresponse{
+		Body: []salesforceError{{
+			ErrorCode: salesforceErrorCode(errInvalidField),
+			Message:   err.Error(),
+		}},
+		HTTPStatusCode: http.StatusBadRequest,
+		ReferenceID:    referenceID,
+	}
+}
+
+func isCompositeMutationMethod(method string) bool {
+	switch strings.ToUpper(strings.TrimSpace(method)) {
+	case http.MethodPost, http.MethodPatch, http.MethodPut, http.MethodDelete:
+		return true
+	default:
+		return false
+	}
 }
 
 func (s *Server) handleCompositeSObjects(w http.ResponseWriter, r *http.Request, version string, parts []string) {
@@ -1628,7 +2646,7 @@ func (s *Server) handleCompositeSObjectInsert(w http.ResponseWriter, r *http.Req
 		return
 	}
 	next := s.Org.Clone()
-	engine := dml.NewEngine(&next)
+	engine := s.newDMLEngine(r, &next)
 	results := engine.Insert(body.Records)
 	s.writeCompositeMutationResults(w, next, body.AllOrNone, results, body.ReferenceIDs)
 }
@@ -1639,7 +2657,7 @@ func (s *Server) handleCompositeSObjectUpdate(w http.ResponseWriter, r *http.Req
 		return
 	}
 	next := s.Org.Clone()
-	engine := dml.NewEngine(&next)
+	engine := s.newDMLEngine(r, &next)
 	results := engine.Update(body.Records)
 	s.writeCompositeMutationResults(w, next, body.AllOrNone, results, body.ReferenceIDs)
 }
@@ -1663,7 +2681,7 @@ func (s *Server) handleCompositeSObjectDelete(w http.ResponseWriter, r *http.Req
 		records = append(records, storage.Record{Object: objectName, ID: id})
 	}
 	next := s.Org.Clone()
-	engine := dml.NewEngine(&next)
+	engine := s.newDMLEngine(r, &next)
 	results := engine.Delete(records)
 	s.writeCompositeMutationResults(w, next, allOrNone, results, nil)
 }
@@ -1784,7 +2802,7 @@ func (s *Server) handleCompositeSObjectTypedUpsert(w http.ResponseWriter, r *htt
 	}
 
 	next := s.Org.Clone()
-	engine := dml.NewEngine(&next)
+	engine := s.newDMLEngine(r, &next)
 	results := engine.UpsertWithExternalID(records, fieldName)
 	hasFailure := false
 	hasSuccess := false
@@ -1951,6 +2969,14 @@ func (s *Server) commitOrg(org storage.OrgState) error {
 	}
 	*s.Org = org
 	return nil
+}
+
+func (s *Server) newDMLEngine(r *http.Request, org *storage.OrgState) dml.Engine {
+	engine := dml.NewEngine(org)
+	if user := s.currentUser(r, ""); user.ID != "" {
+		engine.UserID = user.ID
+	}
+	return engine
 }
 
 func (s *Server) persistOrg(org storage.OrgState) error {
@@ -2424,6 +3450,26 @@ func (s *Server) userInfoPayload(r *http.Request) map[string]any {
 	}
 }
 
+func (s *Server) localTokenPayload(r *http.Request) map[string]any {
+	user := s.currentUser(r, "")
+	identity := s.identityPayload(r, user.ID)
+	base := "http://" + r.Host
+	userID := string(user.ID)
+	return map[string]any{
+		"access_token": localAccessToken(userID),
+		"instance_url": base,
+		"id":           identity["id"],
+		"issued_at":    "0",
+		"signature":    "local",
+		"token_type":   "Bearer",
+		"scope":        "api refresh_token",
+	}
+}
+
+func localAccessToken(userID string) string {
+	return "local-" + userID
+}
+
 func userString(user storage.Record, field, fallback string) string {
 	value, ok := user.Fields[field]
 	if !ok {
@@ -2656,12 +3702,196 @@ func listViewsPayload(def storage.ObjectDefinition, version string) map[string]a
 	}
 }
 
+func (s *Server) listViewsPayload(def storage.ObjectDefinition, version string) map[string]any {
+	views := s.Source.ListViews[def.APIName]
+	if len(views) == 0 {
+		return listViewsPayload(def, version)
+	}
+	items := make([]map[string]any, 0, len(views))
+	for _, view := range views {
+		base := "/services/data/" + version + "/sobjects/" + def.APIName + "/listviews/" + view.ID
+		items = append(items, map[string]any{
+			"id":            view.ID,
+			"developerName": view.DeveloperName,
+			"label":         view.Label,
+			"describeUrl":   base + "/describe",
+			"resultsUrl":    base + "/results",
+			"url":           base,
+		})
+	}
+	return map[string]any{
+		"done":       true,
+		"size":       len(items),
+		"listviews":  items,
+		"objectType": def.APIName,
+		"url":        "/services/data/" + version + "/sobjects/" + def.APIName + "/listviews",
+	}
+}
+
+func (s *Server) handleListViewMetadata(w http.ResponseWriter, object storage.ObjectState, version string, parts []string) {
+	if len(parts) != 4 || parts[1] != "listviews" {
+		writeSalesforceError(w, errUnsupportedFeature, "SObject list view describe and result execution are not modeled in the local server; collection discovery returns an empty local stub")
+		return
+	}
+	if len(s.Source.ListViews[object.Definition.APIName]) == 0 {
+		writeSalesforceError(w, errUnsupportedFeature, "SObject list view describe and result execution are not modeled in the local server; collection discovery returns an empty local stub")
+		return
+	}
+	view, ok := s.findListView(object.Definition.APIName, parts[2])
+	if !ok {
+		writeSalesforceError(w, errUnknownEndpoint, "list view not found")
+		return
+	}
+	switch parts[3] {
+	case "describe":
+		writeJSON(w, http.StatusOK, s.listViewDescribePayload(object.Definition, version, view))
+	case "results":
+		writeJSON(w, http.StatusOK, s.listViewResultsPayload(object, version, view))
+	default:
+		writeSalesforceError(w, errUnknownEndpoint)
+	}
+}
+
+func (s *Server) findListView(objectName, idOrName string) (listViewMetadata, bool) {
+	for _, view := range s.Source.ListViews[objectName] {
+		if view.ID == idOrName || strings.EqualFold(view.DeveloperName, idOrName) {
+			return view, true
+		}
+	}
+	return listViewMetadata{}, false
+}
+
+func (s *Server) listViewDescribePayload(def storage.ObjectDefinition, version string, view listViewMetadata) map[string]any {
+	columns := view.Columns
+	if len(columns) == 0 {
+		columns = []string{"Id"}
+		if _, ok := def.Fields["Name"]; ok {
+			columns = append(columns, "Name")
+		}
+	}
+	displayColumns := make([]map[string]any, 0, len(columns))
+	for _, column := range columns {
+		displayColumns = append(displayColumns, map[string]any{
+			"fieldNameOrPath": column,
+			"label":           column,
+			"sortable":        true,
+		})
+	}
+	query := "SELECT " + strings.Join(columns, ", ") + " FROM " + def.APIName
+	base := "/services/data/" + version + "/sobjects/" + def.APIName + "/listviews/" + view.ID
+	return map[string]any{
+		"id":             view.ID,
+		"developerName":  view.DeveloperName,
+		"label":          view.Label,
+		"sobjectType":    def.APIName,
+		"columns":        columns,
+		"displayColumns": displayColumns,
+		"query":          query,
+		"describeUrl":    base + "/describe",
+		"resultsUrl":     base + "/results",
+		"url":            base,
+	}
+}
+
+func (s *Server) listViewResultsPayload(object storage.ObjectState, version string, view listViewMetadata) map[string]any {
+	columns := view.Columns
+	if len(columns) == 0 {
+		columns = []string{"Id"}
+		if _, ok := object.Definition.Fields["Name"]; ok {
+			columns = append(columns, "Name")
+		}
+	}
+	ids := make([]string, 0, len(object.Records))
+	for id, record := range object.Records {
+		if !record.System.IsDeleted {
+			ids = append(ids, string(id))
+		}
+	}
+	sort.Strings(ids)
+	rows := make([]map[string]any, 0, len(ids))
+	for _, idText := range ids {
+		record := object.Records[storage.ID(idText)]
+		rows = append(rows, projectedRecordPayload(record, version, object.Definition.APIName, record.ID, columns))
+	}
+	return map[string]any{
+		"id":         view.ID,
+		"label":      view.Label,
+		"size":       len(rows),
+		"done":       true,
+		"columns":    columns,
+		"records":    rows,
+		"query":      "SELECT " + strings.Join(columns, ", ") + " FROM " + object.Definition.APIName,
+		"listViewId": view.ID,
+	}
+}
+
 func compactLayoutsPayload(def storage.ObjectDefinition) map[string]any {
 	return map[string]any{
 		"compactLayouts":         []map[string]any{},
 		"defaultCompactLayoutId": nil,
 		"objectType":             def.APIName,
 		"message":                "Compact layout metadata is not modeled; returning an empty local stub.",
+	}
+}
+
+func (s *Server) compactLayoutsPayload(def storage.ObjectDefinition, parts []string) map[string]any {
+	layouts := s.Source.Compact[def.APIName]
+	if len(layouts) == 0 {
+		return compactLayoutsPayload(def)
+	}
+	items := make([]map[string]any, 0, len(layouts))
+	for _, layout := range layouts {
+		items = append(items, map[string]any{
+			"id":            layout.ID,
+			"developerName": layout.DeveloperName,
+			"label":         layout.Label,
+			"fields":        layout.Fields,
+			"objectType":    def.APIName,
+		})
+	}
+	defaultID := layouts[0].ID
+	payload := map[string]any{
+		"compactLayouts":         items,
+		"defaultCompactLayoutId": defaultID,
+		"objectType":             def.APIName,
+	}
+	if len(parts) == 4 {
+		for _, item := range items {
+			if item["id"] == parts[3] || strings.EqualFold(fmt.Sprint(item["developerName"]), parts[3]) {
+				return item
+			}
+		}
+	}
+	return payload
+}
+
+func (s *Server) hasLayoutMetadata(objectName string) bool {
+	return len(s.Source.Layouts[objectName]) > 0
+}
+
+func (s *Server) layoutMetadataPayload(def storage.ObjectDefinition, version string, parts []string) map[string]any {
+	layouts := s.Source.Layouts[def.APIName]
+	items := make([]map[string]any, 0, len(layouts))
+	for _, layout := range layouts {
+		base := "/services/data/" + version + "/sobjects/" + def.APIName + "/namedLayouts/" + url.PathEscape(layout.Name)
+		items = append(items, map[string]any{
+			"id":         layout.ID,
+			"name":       layout.Name,
+			"objectType": def.APIName,
+			"url":        base,
+		})
+	}
+	if len(parts) == 3 && parts[1] == "namedLayouts" {
+		for _, item := range items {
+			if strings.EqualFold(fmt.Sprint(item["name"]), parts[2]) {
+				return item
+			}
+		}
+	}
+	return map[string]any{
+		"layouts":    items,
+		"objectType": def.APIName,
+		"url":        "/services/data/" + version + "/sobjects/" + def.APIName + "/describe/layouts",
 	}
 }
 

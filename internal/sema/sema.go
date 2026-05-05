@@ -938,7 +938,7 @@ func (a *Analyzer) checkIRExprVariables(typ typesys.TypeSymbol, member typesys.M
 		if expr.Left != nil {
 			diagnostics = append(diagnostics, a.checkIRExprVariables(typ, member, *expr.Left, scope, pos, bodyOffset, source, model, constructability)...)
 		}
-		if expr.Right != nil {
+		if expr.Right != nil && expr.Operator != "instanceof" {
 			diagnostics = append(diagnostics, a.checkIRExprVariables(typ, member, *expr.Right, scope, pos, bodyOffset, source, model, constructability)...)
 		}
 	}
@@ -1239,6 +1239,25 @@ func (a *Analyzer) inferIRExprType(expr ir.Expr, scope irSemaScope, model map[st
 	case ir.ExprCall:
 		if strings.HasPrefix(expr.Callee, "new:") {
 			return strings.TrimPrefix(expr.Callee, "new:")
+		}
+		if strings.HasPrefix(expr.Callee, "__field:") {
+			if expr.Left == nil {
+				return ""
+			}
+			receiverType := a.inferIRExprType(*expr.Left, scope, model, currentType)
+			if receiverType == "" {
+				return ""
+			}
+			return semaFieldScope(model, receiverType, make(map[string]bool))[normalizeName(strings.TrimPrefix(expr.Callee, "__field:"))]
+		}
+		if strings.HasPrefix(expr.Callee, "__cast:") {
+			return strings.TrimPrefix(expr.Callee, "__cast:")
+		}
+		if expr.Callee == "__ternary" {
+			return a.inferIRTernaryType(expr, scope, model, currentType)
+		}
+		if expr.Callee == "__coalesce" && len(expr.Args) > 0 {
+			return a.inferIRExprType(expr.Args[0], scope, model, currentType)
 		}
 		if expr.Left != nil {
 			receiverType := a.inferIRExprType(*expr.Left, scope, model, currentType)
@@ -1627,6 +1646,32 @@ func returnTypeDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol, d
 		Message:  fmt.Sprintf("%s %q has invalid return: %s", member.Kind, member.Name, detail),
 		File:     typ.File,
 		Range:    semaRange(source, start, end),
+	}
+}
+
+func (a *Analyzer) inferIRTernaryType(expr ir.Expr, scope irSemaScope, model map[string]typeMembers, currentType string) string {
+	if len(expr.Args) != 3 {
+		return ""
+	}
+	whenTrue := a.inferIRExprType(expr.Args[1], scope, model, currentType)
+	whenFalse := a.inferIRExprType(expr.Args[2], scope, model, currentType)
+	switch {
+	case whenTrue == "":
+		return whenFalse
+	case whenFalse == "":
+		return whenTrue
+	case strings.EqualFold(whenTrue, "null"):
+		return whenFalse
+	case strings.EqualFold(whenFalse, "null"):
+		return whenTrue
+	case strings.EqualFold(whenTrue, whenFalse):
+		return whenTrue
+	case semaAssignableToType(whenTrue, whenFalse, model):
+		return whenTrue
+	case semaAssignableToType(whenFalse, whenTrue, model):
+		return whenFalse
+	default:
+		return "Object"
 	}
 }
 
@@ -3280,10 +3325,10 @@ func isSemaNumericType(typeName string) bool {
 
 func skipSemaCall(callee string) bool {
 	switch normalizeName(callee) {
-	case "if", "for", "while", "switch", "catch", "new", "return", "system.assert", "system.assertequals", "system.debug":
+	case "__ternary", "__coalesce", "__mapentry", "if", "for", "while", "switch", "catch", "new", "return", "system.assert", "system.assertequals", "system.debug":
 		return true
 	default:
-		return false
+		return strings.HasPrefix(callee, "__cast:") || strings.HasPrefix(callee, "__field:")
 	}
 }
 

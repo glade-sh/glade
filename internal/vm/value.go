@@ -184,6 +184,26 @@ func platformScalarObject(typeName string) bool {
 }
 
 func mapKey(v Value) string {
+	if v.Kind == ValueObject && v.Type == "Schema.SObjectType" {
+		if objectName, ok := v.Fields["object"]; ok && objectName.Kind == ValueString {
+			return string(v.Kind) + ":" + v.Type + ":" + objectName.Text
+		}
+	}
+	if v.Kind == ValueObject && v.Type == "Schema.SObjectField" {
+		objectName, hasObject := v.Fields["object"]
+		fieldName, hasField := v.Fields["field"]
+		if hasObject && hasField && objectName.Kind == ValueString && fieldName.Kind == ValueString {
+			return string(v.Kind) + ":" + v.Type + ":" + objectName.Text + "." + fieldName.Text
+		}
+	}
+	if v.Kind == ValueObject && v.Type == "Type" && v.Text != "" {
+		return string(v.Kind) + ":" + v.Type + ":" + v.Text
+	}
+	if v.Kind == ValueObject && platformScalarObject(v.Type) {
+		if raw, ok := v.Fields["value"]; ok && raw.Kind == ValueString {
+			return string(v.Kind) + ":" + v.Type + ":" + raw.Text
+		}
+	}
 	return string(v.Kind) + ":" + v.String()
 }
 

@@ -30,6 +30,16 @@ func TestParseCountQuery(t *testing.T) {
 	}
 }
 
+func TestParseEmptyInList(t *testing.T) {
+	query, err := Parse("SELECT Id FROM Account WHERE Id IN ()")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if query.Where.Op != "IN" || len(query.Where.Values) != 0 {
+		t.Fatalf("where = %#v", query.Where)
+	}
+}
+
 func TestIsSOSLFind(t *testing.T) {
 	cases := []struct {
 		input string
@@ -44,6 +54,52 @@ func TestIsSOSLFind(t *testing.T) {
 		if got := IsSOSLFind(tc.input); got != tc.want {
 			t.Fatalf("IsSOSLFind(%q) = %v, want %v", tc.input, got, tc.want)
 		}
+	}
+}
+
+func TestExecuteResolvesLowercaseIdAsStandardField(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Account",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"001000000000001": {
+				ID:     "001000000000001",
+				Object: "Account",
+				Fields: map[string]storage.Value{
+					"Name": storage.StringValue("Acme"),
+				},
+			},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT id FROM Account WHERE id = '001000000000001'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 {
+		t.Fatalf("rows = %d", result.Rows)
+	}
+	value := result.Records[0].Fields["Id"]
+	if value.Kind != storage.ValueID || value.ID != "001000000000001" {
+		t.Fatalf("Id field = %#v", value)
+	}
+}
+
+func TestExecuteEmailTemplateStandardObjectQuery(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "EmailTemplate")
+
+	result, err := ParseAndExecute(org, "SELECT Id, DeveloperName, IsActive, Name, NamespacePrefix FROM EmailTemplate WHERE DeveloperName = 'SocialVerify' ORDER BY NamespacePrefix NULLS FIRST")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Records) != 0 {
+		t.Fatalf("records = %d, want 0", len(result.Records))
 	}
 }
 

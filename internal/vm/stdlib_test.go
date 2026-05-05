@@ -229,6 +229,26 @@ func TestExecPageReferenceRenderingUnsupported(t *testing.T) {
 	}
 }
 
+func TestExecPageReferenceURLStateAccessors(t *testing.T) {
+	program, err := CompileAnonymous(`
+PageReference page = new PageReference('/apex/Trail');
+System.assertEquals('/apex/Trail', page.getUrl());
+System.assertEquals(false, page.getRedirect());
+page.setRedirect(true);
+System.assertEquals(true, page.getRedirect());
+page.getParameters().put('id', '001000000000001');
+page.getHeaders().put('X-Local', 'yes');
+System.assertEquals('001000000000001', page.getParameters().get('id'));
+System.assertEquals('yes', page.getHeaders().get('X-Local'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecStringStdlibMoreMethods(t *testing.T) {
 	program, err := CompileAnonymous(`
 String letters = 'a b c 5 xyz';
@@ -882,6 +902,50 @@ System.assertEquals('e477384d7ca229dd1426e64b63ebf2d36ebd6d7e669a6735424e72ea6c0
 System.assert(Crypto.areEqualConstantTime(hello, Blob.valueOf('hello')));
 System.assert(!Crypto.areEqualConstantTime(hello, Blob.valueOf('hullo')));
 System.assert(!Crypto.areEqualConstantTime(hello, Blob.valueOf('hello!')));
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecCryptoGetRandomLongDeterministicLocalSequence(t *testing.T) {
+	program, err := CompileAnonymous(`
+Long first = Crypto.getRandomLong();
+Long second = Crypto.getRandomLong();
+System.assertEquals(-2152535657050944081, first);
+System.assertEquals(7960286522194355700, second);
+System.assertNotEquals(first, second);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	repeated, err := CompileAnonymous(`
+System.assertEquals(-2152535657050944081, Crypto.getRandomLong());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(repeated, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecCryptoEncryptAESCBCDeterministicLocalSubset(t *testing.T) {
+	program, err := CompileAnonymous(`
+Blob key = Blob.valueOf('0123456789abcdef0123456789abcdef');
+Blob iv = Blob.valueOf('abcdef9876543210');
+Blob encrypted = Crypto.encrypt('AES256', key, iv, Blob.valueOf('hello'));
+System.assertEquals(16, encrypted.size());
+System.assertEquals('93ce19c2c83297061f55dadc424d14c3', EncodingUtil.convertToHex(encrypted));
+Blob normalized = Crypto.encrypt(' aes-256 ', key, iv, Blob.valueOf('hello'));
+System.assertEquals(EncodingUtil.convertToHex(encrypted), EncodingUtil.convertToHex(normalized));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1354,6 +1418,11 @@ func TestBlobEncodingCryptoStdlibRejectsBadInputs(t *testing.T) {
 		{source: "Crypto.generateDigest('SHA-999', Blob.valueOf('x'));", want: `unsupported digest algorithm "SHA-999"`},
 		{source: "Crypto.generateMac('hmacSHA999', Blob.valueOf('x'), Blob.valueOf('key'));", want: `unsupported MAC algorithm "hmacSHA999"`},
 		{source: "Crypto.generateMac('hmacSHA256', Blob.valueOf('x'), 'key');", want: "Crypto.generateMac privateKey expects Blob"},
+		{source: "Crypto.encrypt('AES999', Blob.valueOf('0123456789abcdef'), Blob.valueOf('abcdef9876543210'), Blob.valueOf('x'));", want: `unsupported encryption algorithm "AES999"`},
+		{source: "Crypto.encrypt('AES256', Blob.valueOf('short'), Blob.valueOf('abcdef9876543210'), Blob.valueOf('x'));", want: "Crypto.encrypt AES256 privateKey expects 32 bytes, got 5"},
+		{source: "Crypto.encrypt(' aes-256 ', Blob.valueOf('short'), Blob.valueOf('abcdef9876543210'), Blob.valueOf('x'));", want: "Crypto.encrypt AES256 privateKey expects 32 bytes, got 5"},
+		{source: "Crypto.encrypt('AES128', Blob.valueOf('0123456789abcdef'), Blob.valueOf('short'), Blob.valueOf('x'));", want: "Crypto.encrypt initializationVector expects 16 bytes, got 5"},
+		{source: "Crypto.encrypt('AES128', Blob.valueOf('0123456789abcdef'), Blob.valueOf('abcdef9876543210'), 'x');", want: "Crypto.encrypt clearText expects Blob"},
 	}
 	for _, tc := range tests {
 		source := tc.source
@@ -1375,11 +1444,6 @@ func TestBlobEncodingCryptoStdlibUnsupportedCryptoSurfaces(t *testing.T) {
 		src  string
 		want string
 	}{
-		{
-			name: "encrypt",
-			src:  "Crypto.encrypt('AES128', Blob.valueOf('key'), Blob.valueOf('data'));",
-			want: `unsupported call "Crypto.encrypt local deterministic key, certificate, and encryption surfaces"`,
-		},
 		{
 			name: "decryptWithManagedIV",
 			src:  "Crypto.decryptWithManagedIV('AES128', Blob.valueOf('key'), Blob.valueOf('data'));",
@@ -1424,11 +1488,6 @@ func TestBlobEncodingCryptoStdlibUnsupportedCryptoSurfaces(t *testing.T) {
 			name: "getRandomInteger",
 			src:  "Crypto.getRandomInteger();",
 			want: `unsupported call "Crypto.getRandomInteger local deterministic random/key generation surface"`,
-		},
-		{
-			name: "getRandomLong",
-			src:  "Crypto.getRandomLong();",
-			want: `unsupported call "Crypto.getRandomLong local deterministic random/key generation surface"`,
 		},
 	}
 	for _, tc := range tests {

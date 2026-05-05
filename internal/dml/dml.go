@@ -357,6 +357,7 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 	if err != nil {
 		return "", err
 	}
+	applyFieldDefaults(object.Definition, &record)
 	if err := validateFields(object.Definition, e.Org.Namespace, record); err != nil {
 		return "", err
 	}
@@ -428,6 +429,26 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 		return "", err
 	}
 	return record.ID, nil
+}
+
+func applyFieldDefaults(definition storage.ObjectDefinition, record *storage.Record) {
+	if record == nil {
+		return
+	}
+	if record.Fields == nil {
+		record.Fields = make(map[string]storage.Value)
+	}
+	for name, field := range definition.Fields {
+		if _, ok := record.Fields[name]; ok {
+			continue
+		}
+		if record.ExplicitNulls != nil && record.ExplicitNulls[name] {
+			continue
+		}
+		if value, ok := storage.DefaultValueForField(field); ok {
+			record.Fields[name] = value
+		}
+	}
 }
 
 func (e *Engine) afterInsertContentVersion(version storage.Record) error {

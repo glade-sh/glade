@@ -16,18 +16,156 @@ a.put('Name', 'Changed');
 System.assertEquals('Changed', a.get('Name'));
 insert a;
 String wanted = 'Changed';
-List<Account> rows = [SELECT Id, Name FROM Account WHERE Name = :wanted];
+List<Account> rows = [SELECT Id, Name, MasterRecordId FROM Account WHERE Name = :wanted];
 System.assertEquals(1, rows.size());
 Account row = rows.get(0);
 System.assertEquals('Changed', row.Name);
+System.assertEquals(null, row.MasterRecordId);
 row.Name = 'Updated';
 update row;
 List<Account> updated = Database.query('SELECT Id, Name FROM Account WHERE Name = ''Updated''');
 System.assertEquals(1, updated.size());
 Account updatedRow = updated.get(0);
-delete updatedRow;
+Id updatedId = updatedRow.Id;
+Database.delete(new List<Id>{updatedId});
 List<Account> empty = [SELECT Id FROM Account];
 System.assertEquals(0, empty.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSchemaSObjectTypeFieldMapPath(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String, Schema.SObjectField> fields = Schema.SObjectType.Account.fields.getMap();
+System.assert(fields.containsKey('Name'));
+System.assert(fields.containsKey('MasterRecordId'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecInsertAppliesCheckboxDefaultsBeforeTriggers(t *testing.T) {
+	triggerProgram, err := CompileAnonymous(`
+for (Account a : Trigger.new) {
+	if (a.CopyFromPrimaryAffiliationBilling__c && a.Name != null) {
+		a.Name = 'copied';
+	}
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Account a = new Account(Name = 'Acme');
+insert a;
+Account row = [SELECT CopyFromPrimaryAffiliationBilling__c, Name FROM Account WHERE Id = :a.Id][0];
+System.assertEquals(false, row.CopyFromPrimaryAffiliationBilling__c);
+System.assertEquals('Acme', row.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "AccountBeforeInsertDefaults",
+		Object:    "Account",
+		Timing:    triggerTimingBefore,
+		Operation: "insert",
+		Program:   triggerProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSOQLBindPlatformId(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account a = new Account(Name = 'Acme');
+insert a;
+Id accountId = a.Id;
+List<Account> rows = [SELECT Id, Name FROM Account WHERE Id = :accountId];
+System.assertEquals(1, rows.size());
+System.assertEquals('Acme', rows[0].Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSingleAmpersandAndPipeBooleanOperators(t *testing.T) {
+	program, err := CompileAnonymous(`
+Boolean both = true & true;
+Boolean either = false | true;
+System.assert(both);
+System.assert(either);
+System.assertEquals(false, false && null);
+System.assertEquals(true, true || null);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecPlatformCasingAliases(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(false, System.Test.isRunningTest());
+System.assertEquals(Date.today(), Date.Today());
+System.assertEquals(false, Test.Database.hasRecords());
+System.assert(Date.newInstance(2026, 1, 1) <= Date.newInstance(2026, 1, 2));
+System.assert(Date.newInstance(2026, 1, 2) >= Date.newInstance(2026, 1, 1));
+System.assertEquals('Local_Message', Label.Local_Message);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSObjectListGetSObjectTypeAndMapValuesProperty(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<SObject> records = (List<SObject>)JSON.deserialize('[{"attributes":{"type":"Account"},"Name":"Acme"}]', List<SObject>.class);
+System.assertEquals('Account', records.getSObjectType().getDescribe().getName());
+List<SObject> emptyRecords = new List<SObject>();
+System.assertEquals('SObject', emptyRecords.getSObjectType().getDescribe().getName());
+Map<Id, Account> accounts = new Map<Id, Account>();
+Account a = new Account(Name = 'Spruce');
+insert a;
+accounts.put(a.Id, a);
+System.assertEquals(1, accounts.values.size());
+System.assertEquals('Spruce', accounts.values[0].Name);
+System.assertEquals('Spruce', a.get(Account.Name));
+a.put(Account.Name, 'Birch');
+System.assertEquals('Birch', a.get('Name'));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -302,10 +440,13 @@ System.assert(fields.containsKey('Name'));
 Object nameField = fields.get('Name');
 Object nameDescribe = nameField.getDescribe();
 System.assertEquals('Name', nameDescribe.getName());
+System.assert(nameDescribe.isNameField());
 System.assertEquals('string', nameDescribe.getType());
 Object schemaType = Schema.SObjectType.Account;
 Object schemaDescribe = schemaType.getDescribe();
 System.assertEquals('Account', schemaDescribe.getName());
+Object describedType = schemaDescribe.getSObjectType();
+System.assertEquals('Account', describedType.getDescribe().getName());
 System.assert(schemaDescribe.isAccessible());
 System.assert(schemaDescribe.isCreateable());
 System.assert(schemaDescribe.isUpdateable());
@@ -328,6 +469,7 @@ System.assertEquals('AccountId', childFieldDescribe.getName());
 System.assert(childFieldDescribe.isAccessible());
 System.assert(childFieldDescribe.isCreateable());
 System.assert(childFieldDescribe.isUpdateable());
+System.assert(!childFieldDescribe.isNameField());
 Object childType = contacts.getChildSObject();
 Object childDescribe = childType.getDescribe();
 System.assertEquals('Contact', childDescribe.getName());
@@ -505,6 +647,10 @@ rows = Database.query('SELECT Id FROM Account WHERE Name IN :names ORDER BY Name
 System.assertEquals(2, rows.size());
 Account probe = new Account(Name = 'Beta');
 rows = Database.query('SELECT Id FROM Account WHERE Name = :probe.Name');
+System.assertEquals(1, rows.size());
+Map<Id, Account> accountsById = new Map<Id, Account>();
+accountsById.put(rows[0].Id, rows[0]);
+rows = Database.query('SELECT Id FROM Account WHERE Id IN :accountsById.values()');
 System.assertEquals(1, rows.size());
 rows = Database.query('SELECT Id FROM Account WHERE RenewalDate__c = LAST_N_DAYS:2');
 System.assertEquals(2, rows.size());
@@ -1185,6 +1331,42 @@ System.assertEquals(3, quarterRows.size(), 'THIS_QUARTER should cover the curren
 	account.Definition.Fields["RenewalDate__c"] = storage.Field{APIName: "RenewalDate__c", Type: storage.FieldDate}
 	org.Objects["Account"] = account
 	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMaterializesStoredDateFieldsForMethodDispatch(t *testing.T) {
+	echo, err := CompileAnonymous("return input.format();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+List<Account> rows = [SELECT Id, RenewalDate__c FROM Account WHERE Name = 'Acme'];
+System.assertEquals('2026-05-02', DateWorker.echo(rows[0].RenewalDate__c));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["RenewalDate__c"] = storage.Field{APIName: "RenewalDate__c", Type: storage.FieldDate}
+	record := storage.Record{ID: "001000000000001AAA", Object: "Account", Fields: map[string]storage.Value{
+		"Name": storage.StringValue("Acme"),
+	}}
+	record.Fields["RenewalDate__c"] = storage.DateValue("2026-05-02")
+	account.Records["001000000000001AAA"] = record
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{
+		Name: "DateWorker",
+		Methods: map[string]Method{
+			"echo": {Name: "DateWorker.echo", ClassName: "DateWorker", ReturnType: "String", Params: []Param{{Name: "input", Type: "Date"}}, IsStatic: true, Access: "public", Program: echo},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
@@ -1895,6 +2077,7 @@ func TestExecTriggerContextMapsAndOperationFlags(t *testing.T) {
 System.assert(Trigger.isExecuting);
 System.assert(Trigger.isBefore);
 System.assert(Trigger.isUpdate);
+TriggerFlagProbe.checkBefore();
 System.assertEquals(1, Trigger.size);
 Account newer = Trigger.new.get(0);
 Account older = Trigger.oldMap.get(newer.Id);
@@ -1938,6 +2121,21 @@ delete updated;
 	account.Definition.Fields["Rating"] = storage.Field{APIName: "Rating", Type: storage.FieldString}
 	org.Objects["Account"] = account
 	machine.SetOrg(&org)
+	helper, err := CompileAnonymous(`
+System.assert(Trigger.isExecuting);
+System.assert(Trigger.isBefore);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "TriggerFlagProbe",
+		Methods: map[string]Method{
+			"checkBefore": {Name: "TriggerFlagProbe.checkBefore", ReturnType: "void", Program: helper, IsStatic: true, ClassName: "TriggerFlagProbe"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
 	if err := machine.RegisterTrigger(Trigger{
 		Name:      "AccountBeforeUpdateContext",
 		Object:    "Account",
@@ -2560,7 +2758,9 @@ func testDataOrg() storage.OrgState {
 			APIName:   "Account",
 			KeyPrefix: "001",
 			Fields: map[string]storage.Field{
-				"Name": {APIName: "Name", Type: storage.FieldString},
+				"Name":                                 {APIName: "Name", Type: storage.FieldString},
+				"MasterRecordId":                       {APIName: "MasterRecordId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "MasterRecord"},
+				"CopyFromPrimaryAffiliationBilling__c": {APIName: "CopyFromPrimaryAffiliationBilling__c", Type: storage.FieldBoolean, DefaultValue: "false"},
 			},
 		},
 		Records: make(map[storage.ID]storage.Record),
@@ -2621,30 +2821,65 @@ func TestExecCustomDataStaticRecordsAreReadOnly(t *testing.T) {
 	}
 }
 
-func TestExecHierarchyCustomSettingStaticsUnsupported(t *testing.T) {
-	cases := []struct {
-		name   string
-		source string
-		want   string
-	}{
-		{"getInstance", "Hierarchy_Setting__c.getInstance();", `unsupported call "Hierarchy_Setting__c.getInstance hierarchy custom setting merge behavior"`},
-		{"getAll", "Hierarchy_Setting__c.getAll();", `unsupported call "Hierarchy_Setting__c.getAll hierarchy custom setting merge behavior"`},
-		{"getOrgDefaults", "Hierarchy_Setting__c.getOrgDefaults();", `unsupported call "Hierarchy_Setting__c.getOrgDefaults hierarchy custom setting merge behavior"`},
-		{"getValues", "Hierarchy_Setting__c.getValues('005000000000001');", `unsupported call "Hierarchy_Setting__c.getValues hierarchy custom setting merge behavior"`},
+func TestExecHierarchyCustomSettingStaticsUseOrgDefaults(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(true, Hierarchy_Setting__c.getInstance().Enabled__c);
+System.assertEquals(true, Hierarchy_Setting__c.getOrgDefaults().Enabled__c);
+System.assertEquals(true, Hierarchy_Setting__c.getValues('00D000000000001').Enabled__c);
+System.assertEquals(null, Hierarchy_Setting__c.getValues('005000000000001').Enabled__c);
+System.assertEquals(false, Hierarchy_Setting__c.getValues('005000000000001').Defaulted__c);
+System.assertEquals(true, Hierarchy_Setting__c.getInstance('005000000000001').Enabled__c);
+System.assertEquals(true, Hierarchy_SETTING__c.getInstance().Enabled__c);
+`)
+	if err != nil {
+		t.Fatal(err)
 	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			program, err := CompileAnonymous(tc.source)
-			if err != nil {
-				t.Fatal(err)
-			}
-			machine := New(nil)
-			org := customDataOrg()
-			machine.SetOrg(&org)
-			if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), tc.want) {
-				t.Fatalf("error = %v, want %q", err, tc.want)
-			}
-		})
+	machine := New(nil)
+	org := customDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecHierarchyCustomSettingGetAllUnsupported(t *testing.T) {
+	program, err := CompileAnonymous(`Hierarchy_Setting__c.getAll();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := customDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), `unsupported call "Hierarchy_Setting__c.getAll hierarchy custom setting merge behavior"`) {
+		t.Fatalf("error = %v, want hierarchy getAll unsupported", err)
+	}
+}
+
+func TestExecHierarchyCustomSettingOrgDefaultsIgnoreUserRecords(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(null, Hierarchy_Setting__c.getOrgDefaults().Enabled__c);
+System.assertEquals(false, Hierarchy_Setting__c.getOrgDefaults().Defaulted__c);
+System.assertEquals(null, Hierarchy_Setting__c.getInstance().Enabled__c);
+System.assertEquals(false, Hierarchy_Setting__c.getInstance().Defaulted__c);
+System.assertEquals(null, Hierarchy_Setting__c.getInstance('a02000000000002').Enabled__c);
+System.assertEquals(true, Hierarchy_Setting__c.getValues('005000000000001').Enabled__c);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := customDataOrg()
+	hierarchy := org.Objects["Hierarchy_Setting__c"]
+	hierarchy.Records = map[storage.ID]storage.Record{
+		"a02000000000002": {ID: "a02000000000002", Object: "Hierarchy_Setting__c", Fields: map[string]storage.Value{
+			"SetupOwnerId": storage.StringValue("005000000000001"),
+			"Enabled__c":   storage.BooleanValue(true),
+		}},
+	}
+	org.Objects["Hierarchy_Setting__c"] = hierarchy
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -2704,6 +2939,7 @@ func customDataOrg() storage.OrgState {
 			Fields: map[string]storage.Field{
 				"SetupOwnerId": {APIName: "SetupOwnerId", Type: storage.FieldString},
 				"Enabled__c":   {APIName: "Enabled__c", Type: storage.FieldBoolean},
+				"Defaulted__c": {APIName: "Defaulted__c", Type: storage.FieldBoolean, DefaultValue: "false"},
 			},
 		},
 		Records: map[storage.ID]storage.Record{

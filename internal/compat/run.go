@@ -477,6 +477,39 @@ func runServerFixture(fixture Fixture) (RunResult, error) {
 	}
 	defer os.RemoveAll(root)
 	dbPath := filepath.Join(root, "oaer.db")
+	var serverIndex *typesys.Index
+	if len(fixture.Source) > 0 || len(fixture.Schema) > 0 {
+		if err := writeFixtureFiles(root, fixture); err != nil {
+			return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+		}
+		buildProject := project.Project{Root: root}
+		sch := schema.Schema{}
+		if len(fixture.Schema) > 0 || len(fixture.Project.PackageDirectories) > 0 {
+			if err := writeSFDXProject(root, fixture.Project); err != nil {
+				return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+			}
+			proj, err := project.Load(root)
+			if err != nil {
+				return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+			}
+			loaded, err := schema.LoadProject(proj)
+			if err != nil {
+				return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+			}
+			buildProject = proj
+			sch = loaded
+		} else {
+			for _, source := range fixture.Source {
+				path, err := fixturePath(root, source.Path)
+				if err != nil {
+					return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+				}
+				buildProject.ApexFiles = append(buildProject.ApexFiles, path)
+			}
+		}
+		index := typesys.Build(buildProject, sch)
+		serverIndex = &index
+	}
 	store, err := storage.OpenSQLite(dbPath)
 	if err != nil {
 		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
@@ -484,6 +517,14 @@ func runServerFixture(fixture Fixture) (RunResult, error) {
 	defer func() {
 		_ = store.Close()
 	}()
+	if err := writeFixtureFiles(root, fixture); err != nil {
+		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+	}
+	if len(fixture.Source) > 0 || len(fixture.Schema) > 0 {
+		if err := writeSFDXProject(root, fixture.Project); err != nil {
+			return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
+		}
+	}
 
 	org := serverFixtureOrg()
 	if len(fixture.SeedData) > 0 {
@@ -494,7 +535,16 @@ func runServerFixture(fixture Fixture) (RunResult, error) {
 	if err := store.Save(org); err != nil {
 		return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
 	}
-	handler := server.NewWithStore(&org, store)
+	source := server.SourceMetadata{}
+	if len(fixture.Source) > 0 || len(fixture.Schema) > 0 {
+		if p, err := project.Load(root); err == nil {
+			source, _ = server.NewSourceMetadataFromProject(p)
+		}
+	}
+	handler := server.NewWithStoreAndSource(&org, store, source)
+	if serverIndex != nil {
+		handler.SetProjectIndex(*serverIndex)
+	}
 	if fixture.Command.LimitMode != "" {
 		mode, err := fixtureLimitMode(fixture.Command.LimitMode)
 		if err != nil {
@@ -516,7 +566,10 @@ func runServerFixture(fixture Fixture) (RunResult, error) {
 			if err != nil {
 				return RunResult{Name: fixture.Name, Kind: fixture.Command.Kind}, err
 			}
-			handler = server.NewWithStore(&restartedOrg, store)
+			handler = server.NewWithStoreAndSource(&restartedOrg, store, source)
+			if serverIndex != nil {
+				handler.SetProjectIndex(*serverIndex)
+			}
 			if fixture.Command.LimitMode != "" {
 				mode, err := fixtureLimitMode(fixture.Command.LimitMode)
 				if err != nil {

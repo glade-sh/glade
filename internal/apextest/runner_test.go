@@ -4,12 +4,15 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
+	"github.com/open-aer/oaer/internal/diagnostic"
 	"github.com/open-aer/oaer/internal/project"
 	oaerschema "github.com/open-aer/oaer/internal/schema"
 	"github.com/open-aer/oaer/internal/testreport"
 	"github.com/open-aer/oaer/internal/typesys"
+	"github.com/open-aer/oaer/internal/vm"
 )
 
 func TestRunExecutesAnonymousSubsetTestMethods(t *testing.T) {
@@ -33,6 +36,265 @@ private class MathTest {
 	summary := run.Summary()
 	if summary.Total != 1 || summary.Passed != 1 {
 		t.Fatalf("summary = %#v", summary)
+	}
+}
+
+func TestRunCoversProtectedOverrideAndHandlerDispatchPatterns(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/SelectorBase.cls"), `
+public abstract class SelectorBase {
+  public String run() {
+    return getName();
+  }
+  protected abstract String getName();
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ConcreteSelector.cls"), `
+public class ConcreteSelector extends SelectorBase {
+  protected override String getName() {
+    return 'selector';
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/PrivateSelectorBase.cls"), `
+public abstract class PrivateSelectorBase {
+  public String run() {
+    return fieldListString();
+  }
+  String fieldListString() {
+    return getSObjectFieldList();
+  }
+  abstract String getSObjectFieldList();
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/PrivateSelectorChild.cls"), `
+public class PrivateSelectorChild extends PrivateSelectorBase {
+  private override String getSObjectFieldList() {
+    return 'private-fields';
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/DMLHelper.cls"), `
+public virtual class DMLHelper {
+  public static DMLHelper Instance {
+    get {
+      if (Instance == null) {
+        Instance = new WithoutSharing();
+      }
+      return Instance;
+    }
+  }
+  public virtual String updateRecords(List<SObject> records) {
+    return 'base';
+  }
+  private without sharing class WithoutSharing extends DMLHelper {
+    public override String updateRecords(List<SObject> records) {
+      return super.updateRecords(records) + '-without';
+    }
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/TriggerHandlersBase.cls"), `
+global virtual class TriggerHandlersBase {
+  global virtual void onBeforeUpdate(Map<Id, SObject> newRecordMap, Map<Id, SObject> oldRecordMap) {
+    DispatchState.Value = 'base';
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ConcreteTriggerHandlers.cls"), `
+public class ConcreteTriggerHandlers extends TriggerHandlersBase {
+  public override void onBeforeUpdate(Map<Id, SObject> newRecordMap, Map<Id, SObject> oldRecordMap) {
+    DispatchState.Value = 'child';
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/TriggerHandlerManager.cls"), `
+public class TriggerHandlerManager {
+  public static void executeHandlers(TriggerHandlersBase triggerHandler) {
+    triggerHandler.onBeforeUpdate(new Map<Id, SObject>(), new Map<Id, SObject>());
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/DispatchState.cls"), `
+public class DispatchState {
+  public static String Value;
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/DispatchPatternsTest.cls"), `
+@isTest
+private class DispatchPatternsTest {
+  @isTest static void dispatches() {
+    System.assertEquals('selector', new ConcreteSelector().run());
+    System.assertEquals('private-fields', new PrivateSelectorChild().run());
+    System.assertEquals('base-without', DMLHelper.Instance.updateRecords(new List<Widget__c>()));
+    TriggerHandlerManager.executeHandlers(new ConcreteTriggerHandlers());
+    System.assertEquals('child', DispatchState.Value);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	summary := run.Summary()
+	if summary.Total != 1 || summary.Passed != 1 {
+		t.Fatalf("summary = %#v case = %#v problem = %#v", summary, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestRunCoversNestedServiceFactoryWithTypeMap(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/objects/Thing__c/Thing__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Thing</label><pluralLabel>Things</pluralLabel><nameField><type>Text</type><label>Name</label></nameField></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/FactoryBase.cls"), `
+public virtual class FactoryBase {
+  public virtual class ServiceFactory {
+    private Map<Type, Type> implByInterface;
+    public ServiceFactory(Map<Type, Type> registrations) {
+      implByInterface = registrations;
+    }
+    public Object newInstance(Type serviceInterfaceType) {
+      Type impl = implByInterface.get(serviceInterfaceType);
+      return impl.newInstance();
+    }
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/Application.cls"), `
+public class Application {
+  private static final List<SObjectType> OBJECTS = new List<SObjectType>{ Thing__c.SObjectType };
+  public static final FactoryBase.ServiceFactory Service = new FactoryBase.ServiceFactory(
+    new Map<Type, Type>{ ILocatorService.class => LocatorServiceImpl.class, IOtherLocatorService.class => OtherLocatorServiceImpl.class }
+  );
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ILocatorService.cls"), `
+public interface ILocatorService {
+  String name();
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/IOtherLocatorService.cls"), `
+public interface IOtherLocatorService {
+  String other();
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/LocatorServiceImpl.cls"), `
+public class LocatorServiceImpl implements ILocatorService {
+  public String name() {
+    return 'located';
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/OtherLocatorServiceImpl.cls"), `
+public class OtherLocatorServiceImpl implements IOtherLocatorService {
+  public String other() {
+    return 'other';
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/LocatorFacade.cls"), `
+public class LocatorFacade {
+  public static String name() {
+    return ((ILocatorService) Application.Service.newInstance(ILocatorService.class)).name();
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/MapOverloadProbe.cls"), `
+public class MapOverloadProbe {
+  public static String choose(Map<Object, Type> values) {
+    return 'object';
+  }
+  public static String choose(Map<SObjectType, Type> values) {
+    return 'sobject';
+  }
+  public static Integer keyCount(Map<SObjectType, Type> values) {
+    Integer count = 0;
+    for (SObjectType key : values.keySet()) {
+      count++;
+    }
+    return count;
+  }
+  public static String typeKeyRoundTrip(Map<Type, String> values) {
+    for (Type key : values.keySet()) {
+      return values.get(key);
+    }
+    return null;
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/LocatorFactoryTest.cls"), `
+@isTest
+private class LocatorFactoryTest {
+  @isTest static void locatesService() {
+    System.assertEquals('located', LocatorFacade.name());
+    System.assertEquals('sobject', MapOverloadProbe.choose(new Map<SObjectType, Type>{ Thing__c.SObjectType => LocatorServiceImpl.class }));
+    System.assertEquals(1, MapOverloadProbe.keyCount(new Map<SObjectType, Type>{ Thing__c.SObjectType => LocatorServiceImpl.class }));
+    System.assertEquals('locator', MapOverloadProbe.typeKeyRoundTrip(new Map<Type, String>{ LocatorServiceImpl.class => 'locator' }));
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	summary := run.Summary()
+	if summary.Total != 1 || summary.Passed != 1 {
+		problem := run.Suites[0].Cases[0].Problem
+		if problem == nil {
+			t.Fatalf("summary = %#v case = %#v problem = nil", summary, run.Suites[0].Cases[0])
+		}
+		t.Fatalf("summary = %#v case = %#v problem = %#v", summary, run.Suites[0].Cases[0], *problem)
+	}
+}
+
+func TestExtractMethodBodyFallsBackPastShortRange(t *testing.T) {
+	source := `public class BigClass {
+  public static void run() {
+    // a comment with { that should not count
+    if (true) {
+      System.debug('}');
+    }
+  }
+}`
+	start := strings.Index(source, "public static void run")
+	shortEnd := strings.Index(source, "if (true)")
+	body, err := extractMethodBody(source, diagnostic.Range{
+		Start: diagnostic.Position{Offset: start},
+		End:   diagnostic.Position{Offset: shortEnd},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(body, "System.debug('}')") {
+		t.Fatalf("body = %q", body)
+	}
+}
+
+func TestExtractMethodSourceRecoversOneLineSignature(t *testing.T) {
+	source := `public class Hooks {
+  public virtual void onApplyDefaults() { }
+}`
+	start := strings.Index(source, "{ }")
+	text, err := extractMethodSource(source, diagnostic.Range{
+		Start: diagnostic.Position{Offset: start},
+		End:   diagnostic.Position{Offset: start + len("{ }")},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	params, err := parseParams(text)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(params) != 0 {
+		t.Fatalf("params = %#v", params)
+	}
+	body, err := extractMethodBody(source, diagnostic.Range{
+		Start: diagnostic.Position{Offset: start + 1},
+		End:   diagnostic.Position{Offset: start + 2},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.TrimSpace(body) != "" {
+		t.Fatalf("body = %q", body)
 	}
 }
 
@@ -452,6 +714,61 @@ private class PropertyBoxTest {
     PropertyBox box = new PropertyBox();
     box.Name = 'acme';
     System.assertEquals('ACME!', box.Name);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v run=%#v", got, run)
+	}
+}
+
+func TestRunExecutesStaticPropertyNestedSubclassManagerDispatch(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ManagerBase.cls"), `
+public abstract class ManagerBase {
+  public abstract String required();
+  public String callRequired() {
+    return required();
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/BatchManager.cls"), `
+public abstract class BatchManager extends ManagerBase {
+  public static BatchManager Instance {
+    get {
+      if (Instance == null) {
+        Instance = (BatchManager)new WithSharing();
+      }
+      return Instance;
+    }
+  }
+
+  public virtual override String required() {
+    return 'base';
+  }
+
+  public virtual String FindBatch(String source) {
+    return callRequired() + ':' + source;
+  }
+
+  private class WithSharing extends BatchManager {
+    public override String required() {
+      return super.required();
+    }
+    public override String FindBatch(String source) {
+      return super.FindBatch(source);
+    }
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/BatchManagerTest.cls"), `
+@isTest
+private class BatchManagerTest {
+  @isTest static void staticPropertyDispatches() {
+    System.assertEquals('base:SS', BatchManager.Instance.FindBatch('SS'));
   }
 }
 `)
@@ -1247,6 +1564,34 @@ private class ManyTest {
 	cases := Discover(loadTestIndex(t, root), Options{Filter: "second"})
 	if len(cases) != 1 || cases[0].MethodName != "second" {
 		t.Fatalf("cases = %#v", cases)
+	}
+}
+
+func TestProjectRuntimeCompilesStaticMapInitializerWithEscapedStrings(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/StaticMapProbe.cls"), `
+public class StaticMapProbe {
+  public static String lookup(String key) {
+    return Values.get(key);
+  }
+
+  private static final Map<String, String> Values = new Map<String, String>{
+    'US' => 'US',
+    'L\'ANDORRE' => 'AD'
+  };
+}
+`)
+	machine := vm.New(nil)
+	if err := RegisterProjectRuntimeForRequest(machine, loadTestIndex(t, root)); err != nil {
+		t.Fatal(err)
+	}
+	value, err := machine.CallStatic("StaticMapProbe.lookup", []vm.Value{vm.String("L'ANDORRE")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if value.Kind != vm.ValueString || value.Text != "AD" {
+		t.Fatalf("lookup = %#v, want AD", value)
 	}
 }
 
