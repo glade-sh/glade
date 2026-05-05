@@ -73,7 +73,7 @@ var stdlibEntries = []StdlibEntry{
 	{Area: "Blob", API: "Blob.toString", Status: StatusSupported, Notes: "Returns UTF-8 local Blob bytes as a string and rejects invalid UTF-8 data."},
 	{Area: "Blob", API: "Blob.valueOf", Status: StatusSupported, Notes: "Stores the string bytes in a local Blob value."},
 	{Area: "Crypto", API: "Crypto.areEqualConstantTime", Status: StatusSupported, Notes: "Constant-time local Blob equality comparison."},
-	{Area: "Crypto", API: "Crypto.encrypt/decrypt/sign/verify", Status: StatusUnsupported, Notes: "Encrypt/decrypt, managed-IV variants, signing, verification, org key, keystore, certificate, random integer, and key-generation surfaces return explicit UnsupportedFeature diagnostics; no fake local key material is modeled."},
+	{Area: "Crypto", API: "Crypto.encrypt/decrypt/sign/verify", Status: StatusPartial, Notes: "Crypto.encrypt supports a local deterministic AES CBC subset for AES128/192/256 with caller-provided key and IV Blobs; decrypt, managed-IV variants, signing, verification, org key, keystore, certificate, random integer, and key-generation surfaces remain explicitly unsupported."},
 	{Area: "Crypto", API: "Crypto.generateDigest", Status: StatusSupported, Notes: "MD5, SHA1, SHA-256, SHA-512, SHA3-256/384/512, with conservative algorithm normalization."},
 	{Area: "Crypto", API: "Crypto.generateMac", Status: StatusSupported, Notes: "HMAC MD5, SHA1, SHA256, and SHA512 with local Blob keys and conservative algorithm normalization."},
 	{Area: "Crypto", API: "Crypto.getRandomLong", Status: StatusSupported, Notes: "Returns a deterministic VM-local Long sequence for local execution and tests; it is not production cryptographic randomness."},
