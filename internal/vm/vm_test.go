@@ -952,6 +952,42 @@ System.assertEquals('boom', message);
 	}
 }
 
+func TestExecCustomExceptionConstructorCanSetMessage(t *testing.T) {
+	ctor, err := CompileAnonymous(`this.setMessage(message);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+String message = '';
+try {
+	throw new NUException('blocked');
+} catch (Exception e) {
+	message = e.getMessage();
+}
+System.assertEquals('blocked', message);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:       "NUException",
+		SuperClass: "Exception",
+		Constructors: []Method{{
+			Name:          "NUException.<init>",
+			ClassName:     "NUException",
+			Params:        []Param{{Name: "message", Type: "String"}},
+			Program:       ctor,
+			IsConstructor: true,
+		}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecNestedEnumStaticValue(t *testing.T) {
 	program, err := CompileAnonymous(`
 Object direction = TriggerConstants.Direction.ToCustomer;

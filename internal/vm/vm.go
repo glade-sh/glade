@@ -11784,6 +11784,16 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return message, receiver, false, true, nil
 			}
 			return Null, receiver, false, true, nil
+		case "setMessage":
+			if len(args) != 1 {
+				return Null, receiver, false, true, fmt.Errorf("%s.setMessage expects 1 argument", receiver.Type)
+			}
+			if args[0].Kind == ValueString || args[0].Kind == ValueNull {
+				receiver.Fields["message"] = args[0]
+			} else {
+				receiver.Fields["message"] = String(args[0].String())
+			}
+			return Null, receiver, true, true, nil
 		case "getNumDml":
 			if exceptionTypeName(receiver.Type) != "DmlException" {
 				break
