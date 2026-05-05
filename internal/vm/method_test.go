@@ -498,6 +498,85 @@ s.hidden();
 	}
 }
 
+func TestRuntimeResolvesUnqualifiedStaticMethodInCurrentClass(t *testing.T) {
+	helper, err := CompileAnonymous("return values[0] + '-static';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	check, err := CompileAnonymous("return values.isEmpty() ? null : values[0].Name;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	reveal, err := CompileAnonymous("return helper((List<String>)values);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	revealAccount, err := CompileAnonymous("return checkAccounts(records);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+StaticHelper h = new StaticHelper();
+System.assertEquals('spruce-static', h.reveal(new List<Object>{'spruce'}));
+Account a = new Account(Name = 'Acme');
+List<sObject> records = new List<sObject>{a};
+System.assertEquals('Acme', h.revealAccount(records));
+System.assertEquals(null, h.revealAccount(new List<sObject>()));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "StaticHelper",
+		Methods: map[string]Method{
+			"helper":        {Name: "StaticHelper.helper", ClassName: "StaticHelper", ReturnType: "String", Params: []Param{{Name: "values", Type: "List<String>"}}, Access: "private", IsStatic: true, Program: helper},
+			"checkAccounts": {Name: "StaticHelper.checkAccounts", ClassName: "StaticHelper", ReturnType: "String", Params: []Param{{Name: "values", Type: "List<Account>"}}, Access: "private", IsStatic: true, Program: check},
+			"reveal":        {Name: "StaticHelper.reveal", ClassName: "StaticHelper", ReturnType: "String", Params: []Param{{Name: "values", Type: "List<Object>"}}, Access: "public", Program: reveal},
+			"revealAccount": {Name: "StaticHelper.revealAccount", ClassName: "StaticHelper", ReturnType: "String", Params: []Param{{Name: "records", Type: "List<sObject>"}}, Access: "public", Program: revealAccount},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRuntimeResolvesDottedStaticPropertyInCurrentClass(t *testing.T) {
+	settingsGetter, err := CompileAnonymous("return new Account(Name = 'Acme');")
+	if err != nil {
+		t.Fatal(err)
+	}
+	reveal, err := CompileAnonymous("return settings.Name;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+SettingsHolder h = new SettingsHolder();
+System.assertEquals('Acme', h.reveal());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "SettingsHolder",
+		StaticFields: map[string]Field{
+			"settings": {Name: "settings", Type: "Account", Static: true, Access: "private", Getter: &Method{Name: "SettingsHolder.getSettings", ClassName: "SettingsHolder", ReturnType: "Account", IsStatic: true, Access: "private", Program: settingsGetter}},
+		},
+		StaticFieldOrder: []string{"settings"},
+		Methods: map[string]Method{
+			"reveal": {Name: "SettingsHolder.reveal", ClassName: "SettingsHolder", ReturnType: "String", Access: "public", Program: reveal},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestRuntimeRejectsPrivateFieldAccessAcrossClasses(t *testing.T) {
 	program, err := CompileAnonymous(`
 Secret s = new Secret();

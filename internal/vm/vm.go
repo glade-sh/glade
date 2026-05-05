@@ -858,6 +858,12 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 		if expr.Operator == "instanceof" {
 			return vm.evalInstanceOf(left, expr.Right.Name), nil
 		}
+		if expr.Operator == "&&" && left.Kind == ValueBool && !left.Bool {
+			return Bool(false), nil
+		}
+		if expr.Operator == "||" && left.Kind == ValueBool && left.Bool {
+			return Bool(true), nil
+		}
 		right, err := vm.eval(*expr.Right, result)
 		if err != nil {
 			return Null, err
@@ -868,7 +874,12 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 			if len(expr.Args) != 1 {
 				return Null, fmt.Errorf("cast expression requires 1 operand")
 			}
-			return vm.eval(expr.Args[0], result)
+			value, err := vm.eval(expr.Args[0], result)
+			if err != nil {
+				return Null, err
+			}
+			typeName := strings.TrimPrefix(expr.Callee, "__cast:")
+			return vm.coerceAssignable(typeName, value)
 		}
 		if expr.Callee == "__ternary" {
 			if len(expr.Args) != 3 {
@@ -999,6 +1010,17 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		} else if ambiguous {
 			return Null, fmt.Errorf("ambiguous overload for call %q", callee)
 		}
+		if method, ok, ambiguous := vm.resolveStaticMethodForArgs(vm.currentClass, callee, args); ok {
+			if err := vm.checkMemberAccess(method.ClassName, method.Access, method.Name, method.Modifiers); err != nil {
+				return Null, err
+			}
+			if vm.shouldEnqueueFuture(method) {
+				return vm.enqueueFuture(method, args, result)
+			}
+			return vm.callMethod(method, args, result)
+		} else if ambiguous {
+			return Null, fmt.Errorf("ambiguous overload for call %q", callee)
+		}
 	}
 	if method, ok, ambiguous := vm.matchRegisteredMethod(callee, args); ok {
 		if err := vm.checkMemberAccess(method.ClassName, method.Access, method.Name, method.Modifiers); err != nil {
@@ -1010,6 +1032,9 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		return vm.callMethod(method, args, result)
 	} else if ambiguous {
 		return Null, fmt.Errorf("ambiguous overload for call %q", callee)
+	}
+	if value, handled, err := vm.callSchemaSObjectTypePath(callee, args, result); handled || err != nil {
+		return value, err
 	}
 	if dot := strings.LastIndex(callee, "."); dot > 0 && dot < len(callee)-1 {
 		if value, handled, err := vm.callCustomDataStaticMember(callee[:dot], callee[dot+1:], args); handled || err != nil {
@@ -6695,6 +6720,29 @@ func (vm *VM) lookup(name string) (Value, error) {
 		if root, ok := vm.Globals[parts[0]]; ok {
 			return vm.lookupPath(root, parts[1:])
 		}
+		if actual, ok := vm.lookupGlobalName(parts[0]); ok {
+			return vm.lookupPath(vm.Globals[actual], parts[1:])
+		}
+		if vm.currentClass != "" {
+			if field, owner, ok := vm.lookupStaticField(vm.currentClass, parts[0]); ok {
+				if err := vm.checkMemberAccess(owner, field.Access, owner+"."+parts[0]); err != nil {
+					return Null, err
+				}
+				root := field.Value
+				if field.Getter != nil {
+					if field.Getter.Name == vm.currentMethod.Name {
+						root = field.Value
+					} else {
+						var err error
+						root, err = vm.callMethod(*field.Getter, nil, resultForLookup())
+						if err != nil {
+							return Null, err
+						}
+					}
+				}
+				return vm.lookupPath(root, parts[1:])
+			}
+		}
 		if token, ok := vm.lookupSObjectTypeToken(parts); ok {
 			return token, nil
 		}
@@ -6852,6 +6900,33 @@ func (vm *VM) lookupSObjectFieldToken(parts []string) (Value, bool) {
 		return Null, false
 	}
 	return sObjectFieldToken(objectName, canonical), true
+}
+
+func (vm *VM) callSchemaSObjectTypePath(callee string, args []Value, result *Result) (Value, bool, error) {
+	parts := strings.Split(callee, ".")
+	if len(parts) < 4 || !strings.EqualFold(parts[len(parts)-2], "fields") || !strings.EqualFold(parts[len(parts)-1], "getMap") {
+		return Null, false, nil
+	}
+	if len(args) != 0 {
+		return Null, true, fmt.Errorf("%s expects 0 arguments", callee)
+	}
+	tokenParts := parts[:len(parts)-2]
+	token, ok := vm.lookupSObjectTypeToken(tokenParts)
+	if !ok {
+		return Null, false, nil
+	}
+	describe, updated, mutated, handled, err := vm.callPlatformObjectMember(token, "getDescribe", nil, result)
+	if err != nil || !handled {
+		return describe, true, err
+	}
+	_ = updated
+	_ = mutated
+	fields, ok := describe.Fields["fields"]
+	if !ok {
+		return Null, true, fmt.Errorf("%s describe fields are not available", callee)
+	}
+	value, _, _, _, err := vm.callPlatformObjectMember(fields, "getMap", nil, result)
+	return value, true, err
 }
 
 func sObjectTypeToken(objectName string) Value {
@@ -8348,6 +8423,12 @@ func (vm *VM) conversionScore(paramType string, value Value) int {
 		if vm.typeAssignableTo(valueType, paramType) {
 			return 900
 		}
+		if vm.sObjectCollectionDowncastAssignable(valueType, paramType) {
+			return 850
+		}
+		if vm.collectionElementsAssignable(paramType, value) {
+			return 850
+		}
 		return -1
 	}
 	if score := numericConversionScore(paramType, valueType); score >= 0 {
@@ -8365,6 +8446,49 @@ func (vm *VM) conversionScore(paramType string, value Value) int {
 		return -1
 	}
 	return 1
+}
+
+func (vm *VM) sObjectCollectionDowncastAssignable(fromType, toType string) bool {
+	fromElement, fromOK := collectionElementType(fromType)
+	toElement, toOK := collectionElementType(toType)
+	if !fromOK || !toOK {
+		return false
+	}
+	if !strings.EqualFold(fromElement, "sObject") {
+		return false
+	}
+	return vm.isSObjectLikeType(toElement)
+}
+
+func (vm *VM) collectionElementsAssignable(paramType string, value Value) bool {
+	elementType, ok := collectionElementType(paramType)
+	if !ok {
+		return false
+	}
+	switch value.Kind {
+	case ValueList:
+		if len(value.List) == 0 {
+			return false
+		}
+		for _, item := range value.List {
+			if err := vm.ensureAssignable(elementType, item); err != nil {
+				return false
+			}
+		}
+		return true
+	case ValueSet:
+		if len(value.Set) == 0 {
+			return false
+		}
+		for _, item := range value.Set {
+			if err := vm.ensureAssignable(elementType, item); err != nil {
+				return false
+			}
+		}
+		return true
+	default:
+		return false
+	}
 }
 
 func numericConversionScore(paramType, valueType string) int {
@@ -9389,13 +9513,13 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 		}
 		target, ok, ambiguous := vm.resolveInstanceMethodForArgs(receiver.Type, method, args)
 		if ambiguous {
-			return Null, true, fmt.Errorf("ambiguous overload for call %q", receiverName+"."+method)
+			return Null, true, fmt.Errorf("ambiguous overload for call %q", memberCallName(receiverName, receiver.Type, method))
 		}
 		if !ok {
 			if value, handled, err := callObjectMember(receiver, method, args); handled || err != nil {
 				return value, true, err
 			}
-			return Null, true, unsupportedCallError(receiverName + "." + method)
+			return Null, true, unsupportedCallError(memberCallName(receiverName, receiver.Type, method))
 		}
 		if err := vm.checkMemberAccess(target.ClassName, target.Access, target.Name, target.Modifiers); err != nil {
 			return Null, true, err
@@ -9797,7 +9921,17 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			return cloneValue(receiver), true, nil
 		}
 	}
-	return Null, true, unsupportedCallError(receiverName + "." + method)
+	return Null, true, unsupportedCallError(memberCallName(receiverName, receiver.Type, method))
+}
+
+func memberCallName(receiverName, receiverType, method string) string {
+	if receiverName != "" {
+		return receiverName + "." + method
+	}
+	if receiverType != "" {
+		return receiverType + "." + method
+	}
+	return "." + method
 }
 
 func sObjectAddErrorMessage(args []Value, name string) (string, error) {

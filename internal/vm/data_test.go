@@ -42,6 +42,23 @@ System.assertEquals(0, empty.size());
 	}
 }
 
+func TestExecSchemaSObjectTypeFieldMapPath(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String, Schema.SObjectField> fields = Schema.SObjectType.Account.fields.getMap();
+System.assert(fields.containsKey('Name'));
+System.assert(fields.containsKey('MasterRecordId'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSOQLBindPlatformId(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account a = new Account(Name = 'Acme');
@@ -68,6 +85,8 @@ Boolean both = true & true;
 Boolean either = false | true;
 System.assert(both);
 System.assert(either);
+System.assertEquals(false, false && null);
+System.assertEquals(true, true || null);
 `)
 	if err != nil {
 		t.Fatal(err)

@@ -404,7 +404,18 @@ func serverExampleBaseOrg(fixture storage.Fixture) storage.OrgState {
 		}
 		if name == "Account" {
 			fields["Name"] = storage.Field{APIName: "Name", Type: storage.FieldString}
+			fields["IsPersonAccount"] = storage.Field{APIName: "IsPersonAccount", Type: storage.FieldBoolean}
 			fields["MasterRecordId"] = storage.Field{APIName: "MasterRecordId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "MasterRecord"}
+			fields["PersonEmail"] = storage.Field{APIName: "PersonEmail", Type: storage.FieldString}
+			fields["UpdatePrimaryLocation__c"] = storage.Field{APIName: "UpdatePrimaryLocation__c", Type: storage.FieldBoolean}
+			for _, field := range []string{
+				"BillingStreet", "BillingCity", "BillingState", "BillingPostalCode", "BillingCountry",
+				"ShippingStreet", "ShippingCity", "ShippingState", "ShippingPostalCode", "ShippingCountry",
+				"PersonMailingStreet", "PersonMailingCity", "PersonMailingState", "PersonMailingPostalCode", "PersonMailingCountry",
+				"PersonOtherStreet", "PersonOtherCity", "PersonOtherState", "PersonOtherPostalCode", "PersonOtherCountry",
+			} {
+				fields[field] = storage.Field{APIName: field, Type: storage.FieldString}
+			}
 		}
 		org.Objects[name] = storage.ObjectState{
 			Definition: storage.ObjectDefinition{
@@ -566,7 +577,7 @@ func serverExampleApexRESTBody(path, method string) string {
 	case strings.Contains(path, "selfservice/sobjects") && method == http.MethodDelete:
 		return `["001000000000001AAA"]`
 	case strings.Contains(path, "selfservice/sobjects"):
-		return `[{"attributes":{"type":"Account"},"Name":"Local Probe"}]`
+		return `[{"attributes":{"type":"Account"},"Name":"Local Probe","IsPersonAccount":false,"UpdatePrimaryLocation__c":false}]`
 	default:
 		return `{}`
 	}
