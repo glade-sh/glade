@@ -11,6 +11,41 @@ func TestResolveFieldNameResolvesIdCaseInsensitive(t *testing.T) {
 	}
 }
 
+func TestResolveFieldNameMapsUnqualifiedCustomFieldToOrgNamespace(t *testing.T) {
+	definition := ObjectDefinition{APIName: "Account", Fields: map[string]Field{
+		"pkg__UpdatePrimaryLocation__c": {APIName: "pkg__UpdatePrimaryLocation__c", Type: FieldBoolean},
+		"UpdatePrimaryLocation__c":      {APIName: "UpdatePrimaryLocation__c", Type: FieldString},
+	}}
+
+	resolved, ok := ResolveFieldName(definition, "pkg", "UpdatePrimaryLocation__c")
+	if !ok || resolved != "pkg__UpdatePrimaryLocation__c" {
+		t.Fatalf("ResolveFieldName(UpdatePrimaryLocation__c) = %q, %v", resolved, ok)
+	}
+}
+
+func TestResolveObjectNameMapsUnqualifiedCustomObjectToOrgNamespace(t *testing.T) {
+	org := NewOrgState()
+	org.Namespace = "pkg"
+	org.Objects["pkg__Thing__c"] = ObjectState{Definition: ObjectDefinition{APIName: "pkg__Thing__c"}}
+
+	resolved, ok := ResolveObjectName(org, "Thing__c")
+	if !ok || resolved != "pkg__Thing__c" {
+		t.Fatalf("ResolveObjectName(Thing__c) = %q, %v", resolved, ok)
+	}
+}
+
+func TestResolveObjectNameKeepsExactCustomObjectMatch(t *testing.T) {
+	org := NewOrgState()
+	org.Namespace = "pkg"
+	org.Objects["pkg__Thing__c"] = ObjectState{Definition: ObjectDefinition{APIName: "pkg__Thing__c"}}
+	org.Objects["Thing__c"] = ObjectState{Definition: ObjectDefinition{APIName: "Thing__c"}}
+
+	resolved, ok := ResolveObjectName(org, "Thing__c")
+	if !ok || resolved != "Thing__c" {
+		t.Fatalf("ResolveObjectName(Thing__c) = %q, %v", resolved, ok)
+	}
+}
+
 func TestEnsureStandardObjectFieldsAddsAccountWebsiteWithoutClobber(t *testing.T) {
 	definition := ObjectDefinition{
 		APIName: "Account",
