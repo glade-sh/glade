@@ -425,16 +425,26 @@ func serverExampleProbes(routes []ServerExampleRestRoute, seeded bool) []serverE
 		if method == "" {
 			method = http.MethodGet
 		}
+		path := serverExampleApexRESTPath(route.Path)
 		probes = append(probes, serverExampleProbe{
 			Name:      fmt.Sprintf("apexrest-%d", i+1),
 			Family:    "apex-rest",
 			OwnerLane: "lane-2-apex-rest",
 			Method:    method,
-			Path:      "/services/apexrest" + route.Path,
-			Body:      serverExampleApexRESTBody(route.Path, method),
+			Path:      "/services/apexrest" + path,
+			Body:      serverExampleApexRESTBody(path, method),
 		})
 	}
 	return probes
+}
+
+func serverExampleApexRESTPath(path string) string {
+	switch {
+	case strings.Contains(path, "selfservice/settings"):
+		return "/selfservice/settings/LoginType"
+	default:
+		return path
+	}
 }
 
 func serverExampleApexRESTBody(path, method string) string {
