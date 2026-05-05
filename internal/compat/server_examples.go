@@ -88,6 +88,7 @@ type serverExampleProbe struct {
 	Method    string
 	Path      string
 	Body      string
+	Headers   map[string]string
 }
 
 func RunServerExampleHarness(root string) (ServerExampleHarnessReport, error) {
@@ -171,6 +172,8 @@ func runServerExampleProbes(root, projectPath string, fixture storage.Fixture, p
 	applyServerExampleSchema(&org, loadedSchema)
 	ensureServerExampleLocalAccount(&org)
 	ensureServerExampleLocalEntity(&org)
+	ensureServerExampleNimbleAMSSettings(&org)
+	ensureServerExampleVerifiableSetupData(&org)
 	if err := storage.ApplyFixture(&org, fixture); err != nil {
 		return nil, err
 	}
@@ -186,6 +189,9 @@ func runServerExampleProbes(root, projectPath string, fixture storage.Fixture, p
 		req := httptest.NewRequest(probe.Method, probe.Path, strings.NewReader(probe.Body))
 		if probe.Body != "" {
 			req.Header.Set("Content-Type", "application/json")
+		}
+		for name, value := range probe.Headers {
+			req.Header.Set(name, value)
 		}
 		rec := httptest.NewRecorder()
 		handler.ServeHTTP(rec, req)
@@ -211,6 +217,8 @@ func serverExampleHandler(org *storage.OrgState, store interface{ Save(storage.O
 	applyServerExampleSchema(org, loadedSchema)
 	ensureServerExampleLocalAccount(org)
 	ensureServerExampleLocalEntity(org)
+	ensureServerExampleNimbleAMSSettings(org)
+	ensureServerExampleVerifiableSetupData(org)
 	handler := server.NewWithStoreAndSource(org, store, source)
 	index := typesys.Build(p, loadedSchema)
 	handler.SetProjectIndex(index)
@@ -482,6 +490,72 @@ func ensureServerExampleLocalEntity(org *storage.OrgState) {
 	org.Objects[objectName] = entity
 }
 
+func ensureServerExampleNimbleAMSSettings(org *storage.OrgState) {
+	objectName, ok := storage.ResolveObjectName(*org, "NimbleAMSSettings__c")
+	if !ok {
+		return
+	}
+	settings := org.Objects[objectName]
+	if settings.Records == nil {
+		settings.Records = make(map[storage.ID]storage.Record)
+	}
+	if len(settings.Records) > 0 {
+		org.Objects[objectName] = settings
+		return
+	}
+	id := storage.ID("a0n000000000001AAA")
+	settings.Records[id] = storage.Record{
+		ID:     id,
+		Object: objectName,
+		Fields: map[string]storage.Value{
+			serverExampleFieldName(org, objectName, "Name"):                storage.StringValue("Default"),
+			serverExampleFieldName(org, objectName, "SetupOwnerId"):        storage.StringValue(serverExampleOrgID(org)),
+			serverExampleFieldName(org, objectName, "AESEncryptionKey__c"): storage.StringValue("0123456789abcdef0123456789abcdef"),
+			serverExampleFieldName(org, objectName, "AESEncryptionIV__c"):  storage.StringValue("0123456789abcdef"),
+			serverExampleFieldName(org, objectName, "AESEncryptionIv__c"):  storage.StringValue("0123456789abcdef"),
+		},
+	}
+	org.Objects[objectName] = settings
+}
+
+func ensureServerExampleVerifiableSetupData(org *storage.OrgState) {
+	objectName, ok := storage.ResolveObjectName(*org, "Setup_Data__c")
+	if !ok {
+		return
+	}
+	setup := org.Objects[objectName]
+	if setup.Records == nil {
+		setup.Records = make(map[storage.ID]storage.Record)
+	}
+	if len(setup.Records) > 0 {
+		org.Objects[objectName] = setup
+		return
+	}
+	id := storage.ID("a0v000000000001AAA")
+	setup.Records[id] = storage.Record{
+		ID:     id,
+		Object: objectName,
+		Fields: map[string]storage.Value{
+			serverExampleFieldName(org, objectName, "Name"):                              storage.StringValue("Default"),
+			serverExampleFieldName(org, objectName, "Disable_Webhook_Security_Check__c"): storage.BooleanValue(true),
+			serverExampleFieldName(org, objectName, "Data_Mappings__c"):                  storage.StringValue(serverExampleVerifiableDataMappings()),
+			serverExampleFieldName(org, objectName, "Steps_Completed__c"):                storage.StringValue(`{}`),
+		},
+	}
+	org.Objects[objectName] = setup
+}
+
+func serverExampleVerifiableDataMappings() string {
+	return `{"provider":{"sfObject":"Account","rows":[{"tpField":"providerId","sfField":"Id"},{"tpField":"npi","sfField":"Name"}]},"license":{"sfObject":"License__c","recordType":"012000000000000AAA","verifLookupField":"Verification__c","lookupField":"Provider__c","rows":[{"tpField":"verificationId","sfField":"Verifiable_External_Id__c"}]},"boardCert":{"sfObject":"Board_Certification__c","recordType":"012000000000000AAA","verifLookupField":"Verification__c","lookupField":"Provider__c","rows":[{"tpField":"verificationId","sfField":"Verifiable_External_Id__c"}]}}`
+}
+
+func serverExampleOrgID(org *storage.OrgState) string {
+	if org.OrgID != "" {
+		return org.OrgID
+	}
+	return "00D000000000001"
+}
+
 func serverExampleAccountFieldName(org *storage.OrgState, field string) string {
 	return serverExampleFieldName(org, "Account", field)
 }
@@ -535,6 +609,7 @@ func serverExampleProbes(routes []ServerExampleRestRoute, seeded bool) []serverE
 			Method:    method,
 			Path:      "/services/apexrest" + path,
 			Body:      serverExampleApexRESTBody(path, method),
+			Headers:   serverExampleApexRESTHeaders(path),
 		})
 	}
 	return probes
@@ -553,6 +628,8 @@ func serverExampleApexRESTPath(path string) string {
 
 func serverExampleApexRESTBody(path, method string) string {
 	switch {
+	case strings.Contains(path, "webhookEvents"):
+		return `{"providerId":"local-provider","id":"local-credential","currentVerification":{"id":"local-verification","trigger":"Manual"},"status":"Active"}`
 	case strings.Contains(path, "selfservice/cart/build"):
 		return `{"OrderId":"001000000000001AAA"}`
 	case strings.Contains(path, "selfservice/cart/submit"):
@@ -581,6 +658,19 @@ func serverExampleApexRESTBody(path, method string) string {
 		return `[{"attributes":{"type":"Account"},"Name":"Local Probe","IsPersonAccount":false,"UpdatePrimaryLocation__c":false}]`
 	default:
 		return `{}`
+	}
+}
+
+func serverExampleApexRESTHeaders(path string) map[string]string {
+	switch {
+	case strings.Contains(path, "webhookEvents"):
+		return map[string]string{
+			"X-WebhookType": "LicenseChanged",
+			"X-WebhookId":   "local-webhook",
+			"X-TraceId":     "oaer-local-probe",
+		}
+	default:
+		return nil
 	}
 }
 

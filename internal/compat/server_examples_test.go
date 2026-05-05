@@ -3,7 +3,11 @@ package compat
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+
+	"github.com/open-aer/oaer/internal/schema"
+	"github.com/open-aer/oaer/internal/storage"
 )
 
 func TestServerExampleHarnessReportsSeedsRoutesAndBlockers(t *testing.T) {
@@ -68,6 +72,28 @@ func TestServerExampleHarnessReportsMissingProjects(t *testing.T) {
 	}
 	if report.Counts.Missing != len(serverExampleProjects) {
 		t.Fatalf("missing = %d", report.Counts.Missing)
+	}
+}
+
+func TestServerExampleSchemaMarksHierarchyCustomSettings(t *testing.T) {
+	org := storage.NewOrgState()
+	applyServerExampleSchema(&org, schema.Schema{Objects: []schema.Object{{
+		Name:               "NimbleAMSSettings__c",
+		CustomSettingsType: "Hierarchy",
+	}}})
+	definition := org.Objects["NimbleAMSSettings__c"].Definition
+	if definition.Metadata["kind"] != "customSetting" || definition.Metadata["customSettingsType"] != "Hierarchy" {
+		t.Fatalf("metadata = %#v", definition.Metadata)
+	}
+}
+
+func TestServerExampleApexRESTProbeDataForWebhookEvents(t *testing.T) {
+	if body := serverExampleApexRESTBody("/webhookEvents", "POST"); !strings.Contains(body, `"providerId":"local-provider"`) {
+		t.Fatalf("webhook body = %s", body)
+	}
+	headers := serverExampleApexRESTHeaders("/webhookEvents")
+	if headers["X-WebhookType"] == "" || headers["X-WebhookId"] == "" {
+		t.Fatalf("webhook headers = %#v", headers)
 	}
 }
 
