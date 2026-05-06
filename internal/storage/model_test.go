@@ -119,6 +119,51 @@ func TestEnsureStandardObjectFieldsForFeaturesAddsPersonAccountShape(t *testing.
 	}
 }
 
+func TestApplyOrgShapeAddsOptionalFeatureObjectsAndRecords(t *testing.T) {
+	org := NewOrgState()
+	EnsureDeterministicPlatformData(&org)
+
+	ApplyOrgShape(&org, []string{
+		"PersonAccounts",
+		"Communities",
+		"Sites",
+		"ContactsToMultipleAccounts",
+		"PlatformCache",
+		"StateAndCountryPicklist",
+		"EnableSetPasswordInApi",
+		"AddCustomApps:3",
+		"AnalyticsAdminPerms",
+		"HealthCloudUser",
+	})
+
+	account := org.Objects["Account"]
+	if _, ok := account.Definition.Fields["PersonContactId"]; !ok {
+		t.Fatalf("PersonContactId missing from Account shape")
+	}
+	if _, ok := account.Definition.Fields["PersonMailingStateCode"]; !ok {
+		t.Fatalf("PersonMailingStateCode missing from Account shape")
+	}
+	if _, ok := org.Objects["AccountContactRelation"]; !ok {
+		t.Fatalf("AccountContactRelation object missing")
+	}
+	if site := org.Objects["Site"]; len(site.Records) == 0 || site.Definition.Fields["GuestUserId"].Type != FieldReference {
+		t.Fatalf("Site shape/records = %#v", site)
+	}
+	if network := org.Objects["Network"]; len(network.Records) == 0 {
+		t.Fatalf("Network records = %#v", network.Records)
+	}
+	if cache := org.Objects["PlatformCachePartition"]; len(cache.Records) == 0 {
+		t.Fatalf("PlatformCachePartition records = %#v", cache.Records)
+	}
+	if apps := org.Objects["CustomApplication"]; len(apps.Records) != 3 {
+		t.Fatalf("CustomApplication records = %d, want 3", len(apps.Records))
+	}
+	orgRecord := org.Objects["Organization"].Records["00D000000000001"]
+	if !orgRecord.Fields["IsSetPasswordInApiEnabled"].Boolean || !orgRecord.Fields["HasAnalyticsAdminPerms"].Boolean || !orgRecord.Fields["IsHealthCloudEnabled"].Boolean {
+		t.Fatalf("scratch feature flags were not applied: %#v", orgRecord.Fields)
+	}
+}
+
 func TestEnsureStandardObjectAddsSalesCloudStandardObjectShape(t *testing.T) {
 	org := NewOrgState()
 

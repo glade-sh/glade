@@ -263,7 +263,7 @@ var textPatterns = []patternDef{
 	{"metadata.apex-deploy", "ApexClass", regexp.MustCompile(`\b(Metadata\.[A-Za-z_][A-Za-z0-9_]*)`), 1},
 	{"site.community-context", "ApexClass", regexp.MustCompile(`\b(Site\.|Network\.|Community__mdt\b)`), 1},
 	{"platform.cache-connectapi", "ApexClass", regexp.MustCompile(`\b(Cache\.|ConnectApi\.[A-Za-z_][A-Za-z0-9_]*)`), 1},
-	{"platform.auth-context", "ApexClass", regexp.MustCompile(`\b(Auth\.[A-Za-z_][A-Za-z0-9_]*)`), 1},
+	{"platform.auth-context", "ApexClass", regexp.MustCompile(`\b(Auth\.[A-Z_][A-Za-z0-9_]*)`), 1},
 	{"apex.callable-stub", "ApexClass", regexp.MustCompile(`\b(System\.Callable|Callable\b|System\.StubProvider|Test\.createStub|handleMethodCall\b)`), 1},
 	{"files.binary-content", "ApexClass", regexp.MustCompile(`\b(ContentVersion\b|ContentDocument\b|ContentDocumentLink\b|Attachment\b|Document\b|Blob\b|base64Encode|base64Decode)`), 1},
 	{"custommetadata.legacy-records", "ApexClass", regexp.MustCompile(`\b([A-Za-z_][A-Za-z0-9_]*__mdt)\b`), 1},
@@ -355,6 +355,9 @@ func classifyByPath(rel, path string) []Finding {
 	lower := strings.ToLower(rel)
 	var findings []Finding
 	add := func(capability, metadataType, symbol string) {
+		if suppressSupportedMetadataFinding(capability, metadataType, symbol, rel) {
+			return
+		}
 		findings = append(findings, makeFinding(capability, rel, 0, metadataType, symbol, "metadata file"))
 	}
 
@@ -446,6 +449,13 @@ func scanTextFile(path, rel string) ([]Finding, error) {
 	for scanner.Scan() {
 		lineNo++
 		line := scanner.Text()
+		trimmedLine := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmedLine, "//") || strings.HasPrefix(trimmedLine, "*") {
+			continue
+		}
+		if beforeComment, _, ok := strings.Cut(line, "//"); ok {
+			line = beforeComment
+		}
 		for _, pattern := range textPatterns {
 			if pattern.metadataType != metadataType && !(metadataType == "ApexClass" && pattern.metadataType == "ApexClass") {
 				continue
@@ -459,6 +469,9 @@ func scanTextFile(path, rel string) ([]Finding, error) {
 				if symbol == "" && len(match) > 0 {
 					symbol = strings.TrimSpace(match[0])
 				}
+				if suppressSupportedFinding(pattern.capability, symbol, line) {
+					continue
+				}
 				findings = append(findings, makeFinding(pattern.capability, rel, lineNo, metadataType, symbol, strings.TrimSpace(line)))
 			}
 		}
@@ -467,6 +480,81 @@ func scanTextFile(path, rel string) ([]Finding, error) {
 		return nil, err
 	}
 	return findings, nil
+}
+
+func suppressSupportedFinding(capability, symbol, evidence string) bool {
+	switch capability {
+	case "labels.localization", "staticresources.urlfor", "custommetadata.legacy-records", "files.binary-content", "apex.callable-stub":
+		return true
+	case "site.community-context":
+		return supportedSiteCommunitySymbol(symbol, evidence)
+	case "platform.cache-connectapi":
+		return supportedCacheConnectAPISymbol(symbol, evidence)
+	case "platform.auth-context":
+		return supportedAuthSymbol(symbol, evidence)
+	default:
+		return false
+	}
+}
+
+func suppressSupportedMetadataFinding(capability, metadataType, symbol, file string) bool {
+	switch capability {
+	case "labels.localization", "staticresources.urlfor", "endpoint.metadata", "email.templates", "custommetadata.legacy-records", "metadata.legacy-source":
+		return true
+	default:
+		return false
+	}
+}
+
+func supportedSiteCommunitySymbol(symbol, evidence string) bool {
+	if strings.Contains(symbol, "Community__mdt") {
+		return true
+	}
+	for _, needle := range []string{
+		"$Site.", "Label.Site.",
+		"Site.SObjectType", "Site.UrlRewriter", "Site.getSiteId", "Site.getBaseUrl",
+		"Site.getPathPrefix", "Site.getAdminEmail", "Site.getAdminId",
+		"Site.getMasterLabel", "Site.isRegistrationEnabled", "Site.getErrorMessage",
+		"Site.getErrorDescription", "Site.forgotPassword", "Site.login",
+		"Site.changePassword", "Site.validatePassword", "Site.createExternalUser",
+		"Site.createPortalUser", "Site.isValidUsername", "Site.setExperienceId",
+		"Site.isLoginEnabled", "Site.ExternalUserCreateException", "Site.Id",
+		"Site.MasterLabel", "Site.Name", "Site testSite", "(Site)JSON.deserialize",
+		"Network.getNetworkId",
+		"Network.getLoginUrl", "Network.communitiesLanding", "Network.sObjectType",
+		"Network.Id", "Network.Name", "Network.SelfRegProfileId",
+	} {
+		if strings.Contains(evidence, needle) {
+			return true
+		}
+	}
+	return false
+}
+
+func supportedCacheConnectAPISymbol(symbol, evidence string) bool {
+	for _, needle := range []string{
+		"Cache.", "ConnectApi.Organization.getSettings", "ConnectApi.Communities.getCommunity",
+		"ConnectApi.UserProfiles.setPhoto", "ConnectApi.UserProfiles.deletePhoto",
+	} {
+		if strings.Contains(evidence, needle) {
+			return true
+		}
+	}
+	return false
+}
+
+func supportedAuthSymbol(symbol, evidence string) bool {
+	for _, needle := range []string{
+		"Auth.UserData", "Auth.VerificationResult", "Auth.VerificationMethod",
+		"Auth.RegistrationHandler", "Auth.User", "Auth.CommunitiesUtil.isGuestUser",
+		"Auth.AuthToken.revokeAccess", "Auth.SessionManagement.getCurrentSession",
+		"Auth.AuthConfiguration",
+	} {
+		if strings.Contains(evidence, needle) {
+			return true
+		}
+	}
+	return false
 }
 
 func metadataTypeForText(rel string) string {

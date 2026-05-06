@@ -1,5 +1,7 @@
 package storage
 
+import "strings"
+
 // EnsureStandardObjectFields adds public Salesforce standard fields for objects
 // whose project metadata commonly only carries custom-field deltas.
 func EnsureStandardObjectFields(definition *ObjectDefinition) {
@@ -65,8 +67,10 @@ func standardFieldsForObject(objectName string) []Field {
 			{APIName: "BillingStreet", Label: "Billing Street", Type: FieldString},
 			{APIName: "BillingCity", Label: "Billing City", Type: FieldString},
 			{APIName: "BillingState", Label: "Billing State", Type: FieldString},
+			{APIName: "BillingStateCode", Label: "Billing State/Province Code", Type: FieldString},
 			{APIName: "BillingPostalCode", Label: "Billing Zip/Postal Code", Type: FieldString},
 			{APIName: "BillingCountry", Label: "Billing Country", Type: FieldString},
+			{APIName: "BillingCountryCode", Label: "Billing Country Code", Type: FieldString},
 			{APIName: "BillingLatitude", Label: "Billing Latitude", Type: FieldDecimal},
 			{APIName: "BillingLongitude", Label: "Billing Longitude", Type: FieldDecimal},
 			{APIName: "Description", Label: "Account Description", Type: FieldString},
@@ -77,25 +81,41 @@ func standardFieldsForObject(objectName string) []Field {
 			{APIName: "LastName", Label: "Last Name", Type: FieldString},
 			{APIName: "MasterRecordId", Label: "Master Record ID", Type: FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "MasterRecord"},
 			{APIName: "NumberOfEmployees", Label: "Employees", Type: FieldInteger},
+			{APIName: "PersonBirthdate", Label: "Birthdate", Type: FieldDate},
+			{APIName: "PersonDepartment", Label: "Department", Type: FieldString},
+			{APIName: "PersonDoNotCall", Label: "Do Not Call", Type: FieldBoolean},
 			{APIName: "PersonEmail", Label: "Person Email", Type: FieldString},
+			{APIName: "PersonEmailBouncedDate", Label: "Email Bounced Date", Type: FieldDateTime},
+			{APIName: "PersonEmailBouncedReason", Label: "Email Bounced Reason", Type: FieldString},
+			{APIName: "PersonHasOptedOutOfEmail", Label: "Email Opt Out", Type: FieldBoolean},
+			{APIName: "PersonHasOptedOutOfFax", Label: "Fax Opt Out", Type: FieldBoolean},
+			{APIName: "PersonHomePhone", Label: "Home Phone", Type: FieldString},
 			{APIName: "PersonMailingStreet", Label: "Mailing Street", Type: FieldString},
 			{APIName: "PersonMailingCity", Label: "Mailing City", Type: FieldString},
 			{APIName: "PersonMailingState", Label: "Mailing State", Type: FieldString},
+			{APIName: "PersonMailingStateCode", Label: "Mailing State/Province Code", Type: FieldString},
 			{APIName: "PersonMailingPostalCode", Label: "Mailing Zip/Postal Code", Type: FieldString},
 			{APIName: "PersonMailingCountry", Label: "Mailing Country", Type: FieldString},
+			{APIName: "PersonMailingCountryCode", Label: "Mailing Country Code", Type: FieldString},
+			{APIName: "PersonMobilePhone", Label: "Mobile Phone", Type: FieldString},
 			{APIName: "PersonOtherStreet", Label: "Other Street", Type: FieldString},
 			{APIName: "PersonOtherCity", Label: "Other City", Type: FieldString},
 			{APIName: "PersonOtherState", Label: "Other State", Type: FieldString},
+			{APIName: "PersonOtherStateCode", Label: "Other State/Province Code", Type: FieldString},
 			{APIName: "PersonOtherPostalCode", Label: "Other Zip/Postal Code", Type: FieldString},
 			{APIName: "PersonOtherCountry", Label: "Other Country", Type: FieldString},
+			{APIName: "PersonOtherCountryCode", Label: "Other Country Code", Type: FieldString},
+			{APIName: "PersonTitle", Label: "Title", Type: FieldString},
 			{APIName: "Phone", Label: "Account Phone", Type: FieldString},
 			{APIName: "Rating", Label: "Rating", Type: FieldPicklist},
 			{APIName: "RecordTypeId", Label: "Record Type ID", Type: FieldReference, ReferenceTo: []string{"RecordType"}, RelationshipName: "RecordType"},
 			{APIName: "ShippingStreet", Label: "Shipping Street", Type: FieldString},
 			{APIName: "ShippingCity", Label: "Shipping City", Type: FieldString},
 			{APIName: "ShippingState", Label: "Shipping State", Type: FieldString},
+			{APIName: "ShippingStateCode", Label: "Shipping State/Province Code", Type: FieldString},
 			{APIName: "ShippingPostalCode", Label: "Shipping Zip/Postal Code", Type: FieldString},
 			{APIName: "ShippingCountry", Label: "Shipping Country", Type: FieldString},
+			{APIName: "ShippingCountryCode", Label: "Shipping Country Code", Type: FieldString},
 			{APIName: "ShippingLatitude", Label: "Shipping Latitude", Type: FieldDecimal},
 			{APIName: "ShippingLongitude", Label: "Shipping Longitude", Type: FieldDecimal},
 			{APIName: "Sic", Label: "SIC Code", Type: FieldString},
@@ -112,18 +132,30 @@ func standardFieldsForObject(objectName string) []Field {
 			{APIName: "Salutation", Label: "Salutation", Type: FieldPicklist},
 			{APIName: "Title", Label: "Title", Type: FieldString},
 			{APIName: "Email", Label: "Email", Type: FieldString},
+			{APIName: "EmailBouncedDate", Label: "Email Bounced Date", Type: FieldDateTime},
+			{APIName: "EmailBouncedReason", Label: "Email Bounced Reason", Type: FieldString},
+			{APIName: "Birthdate", Label: "Birthdate", Type: FieldDate},
+			{APIName: "Department", Label: "Department", Type: FieldString},
+			{APIName: "DoNotCall", Label: "Do Not Call", Type: FieldBoolean},
+			{APIName: "HasOptedOutOfEmail", Label: "Email Opt Out", Type: FieldBoolean},
+			{APIName: "HasOptedOutOfFax", Label: "Fax Opt Out", Type: FieldBoolean},
 			{APIName: "HomePhone", Label: "Home Phone", Type: FieldString},
+			{APIName: "MobilePhone", Label: "Mobile Phone", Type: FieldString},
 			{APIName: "Phone", Label: "Business Phone", Type: FieldString},
 			{APIName: "MailingStreet", Label: "Mailing Street", Type: FieldString},
 			{APIName: "MailingCity", Label: "Mailing City", Type: FieldString},
 			{APIName: "MailingState", Label: "Mailing State", Type: FieldString},
+			{APIName: "MailingStateCode", Label: "Mailing State/Province Code", Type: FieldString},
 			{APIName: "MailingPostalCode", Label: "Mailing Zip/Postal Code", Type: FieldString},
 			{APIName: "MailingCountry", Label: "Mailing Country", Type: FieldString},
+			{APIName: "MailingCountryCode", Label: "Mailing Country Code", Type: FieldString},
 			{APIName: "OtherStreet", Label: "Other Street", Type: FieldString},
 			{APIName: "OtherCity", Label: "Other City", Type: FieldString},
 			{APIName: "OtherState", Label: "Other State", Type: FieldString},
+			{APIName: "OtherStateCode", Label: "Other State/Province Code", Type: FieldString},
 			{APIName: "OtherPostalCode", Label: "Other Zip/Postal Code", Type: FieldString},
 			{APIName: "OtherCountry", Label: "Other Country", Type: FieldString},
+			{APIName: "OtherCountryCode", Label: "Other Country Code", Type: FieldString},
 		}
 	case stringsEqualFold(objectName, "EmailTemplate"):
 		return []Field{
@@ -297,11 +329,36 @@ func cloneField(field Field) Field {
 }
 
 func canonicalFeatureName(feature string) string {
+	if idx := strings.IndexByte(feature, ':'); idx >= 0 {
+		feature = feature[:idx]
+	}
 	switch {
 	case stringsEqualFold(feature, "PersonAccounts"):
 		return "PersonAccounts"
 	case stringsEqualFold(feature, "MultiCurrency"):
 		return "MultiCurrency"
+	case stringsEqualFold(feature, "Sites"):
+		return "Sites"
+	case stringsEqualFold(feature, "Communities") || stringsEqualFold(feature, "FlowSites"):
+		return "Communities"
+	case stringsEqualFold(feature, "StateAndCountryPicklist"):
+		return "StateAndCountryPicklist"
+	case stringsEqualFold(feature, "ContactsToMultipleAccounts"):
+		return "ContactsToMultipleAccounts"
+	case stringsEqualFold(feature, "PlatformCache") || stringsEqualFold(feature, "ProviderFreePlatformCache"):
+		return "PlatformCache"
+	case stringsEqualFold(feature, "EnableSetPasswordInApi"):
+		return "EnableSetPasswordInApi"
+	case stringsEqualFold(feature, "AddCustomApps"):
+		return "AddCustomApps"
+	case stringsEqualFold(feature, "AnalyticsAdminPerms"):
+		return "AnalyticsAdminPerms"
+	case strings.HasPrefix(strings.ToLower(feature), "healthcloud"):
+		return "HealthCloud"
+	case stringsEqualFold(feature, "LightningExperience"):
+		return "LightningExperience"
+	case stringsEqualFold(feature, "Chatter"):
+		return "Chatter"
 	default:
 		return feature
 	}

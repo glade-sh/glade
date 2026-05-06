@@ -86,6 +86,75 @@ func TestInsertValidatesRequiredAndUnknownFields(t *testing.T) {
 	}
 }
 
+func TestInsertPersonAccountCreatesSyntheticPersonContact(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureDeterministicPlatformData(&org)
+	storage.ApplyOrgShape(&org, []string{"PersonAccounts"})
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"FirstName":                storage.StringValue("Ada"),
+			"LastName":                 storage.StringValue("Lovelace"),
+			"PersonEmail":              storage.StringValue("ada@example.invalid"),
+			"PersonTitle":              storage.StringValue("Countess"),
+			"PersonMailingStateCode":   storage.StringValue("CA"),
+			"PersonMailingCountryCode": storage.StringValue("US"),
+			"PersonOtherStreet":        storage.StringValue("1 Other Way"),
+			"PersonBirthdate":          storage.DateValue("1815-12-10"),
+			"PersonDoNotCall":          storage.BooleanValue(true),
+		},
+	}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert[0])
+	}
+	account := org.Objects["Account"].Records[insert[0].ID]
+	if got := account.Fields["Name"].String; got != "Ada Lovelace" {
+		t.Fatalf("person account name = %q", got)
+	}
+	contactID := account.Fields["PersonContactId"].ID
+	if contactID == "" {
+		t.Fatalf("PersonContactId was not populated: %#v", account.Fields)
+	}
+	contact := org.Objects["Contact"].Records[contactID]
+	if got := contact.Fields["AccountId"].ID; got != insert[0].ID {
+		t.Fatalf("person contact AccountId = %q", got)
+	}
+	if got := contact.Fields["Email"].String; got != "ada@example.invalid" {
+		t.Fatalf("person contact email = %q", got)
+	}
+	if got := contact.Fields["Title"].String; got != "Countess" {
+		t.Fatalf("person contact title = %q", got)
+	}
+	if got := contact.Fields["MailingCountryCode"].String; got != "US" {
+		t.Fatalf("person contact mailing country code = %q", got)
+	}
+	if got := contact.Fields["OtherStreet"].String; got != "1 Other Way" {
+		t.Fatalf("person contact other street = %q", got)
+	}
+	if got := contact.Fields["Birthdate"].String; got != "1815-12-10" {
+		t.Fatalf("person contact birthdate = %q", got)
+	}
+	if !contact.Fields["DoNotCall"].Boolean {
+		t.Fatalf("person contact DoNotCall was not mirrored: %#v", contact.Fields["DoNotCall"])
+	}
+	update := engine.Update([]storage.Record{{
+		Object: "Account",
+		ID:     insert[0].ID,
+		Fields: map[string]storage.Value{
+			"PersonMobilePhone": storage.StringValue("555-0101"),
+		},
+	}})
+	if !update[0].Success {
+		t.Fatalf("update = %#v", update[0])
+	}
+	contact = org.Objects["Contact"].Records[contactID]
+	if got := contact.Fields["MobilePhone"].String; got != "555-0101" {
+		t.Fatalf("person contact mobile after update = %q", got)
+	}
+}
+
 func TestDatabaseErrorDetailsForRequiredDuplicateAndValidationFailures(t *testing.T) {
 	org := testOrg()
 	account := org.Objects["Account"]

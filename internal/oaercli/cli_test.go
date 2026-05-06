@@ -106,14 +106,14 @@ func TestRunCompatPostParity(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
 	}
-	if !strings.Contains(stdout.String(), "Post-parity readiness: not ready") || !strings.Contains(stdout.String(), "Status counts:") || !strings.Contains(stdout.String(), "Surfaces by area:") || !strings.Contains(stdout.String(), "visualforce.controller-test") || !strings.Contains(stdout.String(), "labels.localization") {
+	if !strings.Contains(stdout.String(), "Post-parity readiness: not ready") || !strings.Contains(stdout.String(), "Status counts:") || !strings.Contains(stdout.String(), "Surfaces by area:") || !strings.Contains(stdout.String(), "visualforce.controller-test") {
 		t.Fatalf("stdout = %q", stdout.String())
 	}
 }
 
 func TestRunCompatPostParityJSON(t *testing.T) {
 	root := t.TempDir()
-	writeTestFile(t, filepath.Join(root, "src/lwc/menu/menu.js"), `import label from '@salesforce/label/c.Save';`)
+	writeTestFile(t, filepath.Join(root, "src/lwc/menu/menu.js"), `import run from '@salesforce/apex/MenuController.run';`)
 
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"compat", "post-parity", "--project", root, "--json"}, &stdout, &stderr)
@@ -123,7 +123,7 @@ func TestRunCompatPostParityJSON(t *testing.T) {
 	for _, want := range []string{
 		`"target": "legacy-project local test readiness"`,
 		`"ready": false`,
-		`"capability": "labels.localization"`,
+		`"capability": "lwc.controller-test"`,
 		`"statusCounts"`,
 		`"areas"`,
 	} {
@@ -178,7 +178,7 @@ func TestRunCompatLocalTestsBlockersOnlyAndFilters(t *testing.T) {
 
 func TestRunCompatPostParityRequireReadyFails(t *testing.T) {
 	root := t.TempDir()
-	writeTestFile(t, filepath.Join(root, "src/classes/UsesLabels.cls"), `public class UsesLabels { void run() { System.debug(Label.Save); } }`)
+	writeTestFile(t, filepath.Join(root, "src/pages/Edit.page"), `<apex:page controller="EditController"/>`)
 
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"compat", "post-parity", "--project", root, "--require-ready"}, &stdout, &stderr)

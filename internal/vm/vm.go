@@ -1639,6 +1639,15 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return Null, vm.assertError(message)
 		}
 		return Null, nil
+	case "System.setPassword":
+		if len(args) != 2 {
+			return Null, fmt.Errorf("System.setPassword expects 2 arguments")
+		}
+		if args[0].Kind != ValueString || args[1].Kind != ValueString {
+			return Null, fmt.Errorf("System.setPassword expects Id and String")
+		}
+		appendTrace(result, "apex.user.password.set", "apex.user", map[string]any{"userId": args[0].Text})
+		return Null, nil
 	case "System.debug":
 		if len(args) != 1 && len(args) != 2 {
 			return Null, fmt.Errorf("System.debug expects message or logging level and message")
@@ -2254,6 +2263,55 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		return Null, unsupportedCallError(callee + " local platform event after-commit delivery surface")
 	case "ConnectApi.Organization.getSettings":
 		return vm.connectAPIOrganizationSettings(args)
+	case "ConnectApi.Communities.getCommunity":
+		return vm.connectAPICommunity(args)
+	case "ConnectApi.UserProfiles.setPhoto":
+		if len(args) != 4 {
+			return Null, fmt.Errorf("ConnectApi.UserProfiles.setPhoto expects 4 arguments")
+		}
+		return Null, nil
+	case "ConnectApi.UserProfiles.deletePhoto":
+		if len(args) != 2 {
+			return Null, fmt.Errorf("ConnectApi.UserProfiles.deletePhoto expects 2 arguments")
+		}
+		return Null, nil
+	case "UserManagement.initSelfRegistration":
+		if len(args) != 2 {
+			return Null, fmt.Errorf("UserManagement.initSelfRegistration expects 2 arguments")
+		}
+		return String("local-self-registration"), nil
+	case "UserManagement.verifySelfRegistration":
+		if len(args) != 4 {
+			return Null, fmt.Errorf("UserManagement.verifySelfRegistration expects 4 arguments")
+		}
+		redirect := newPageReference("/")
+		if args[3].Kind == ValueString && strings.TrimSpace(args[3].Text) != "" {
+			redirect = newPageReference(args[3].Text)
+		}
+		return newAuthVerificationResult(redirect, Bool(true), Null), nil
+	case "Auth.AuthToken.revokeAccess":
+		if len(args) != 3 {
+			return Null, fmt.Errorf("Auth.AuthToken.revokeAccess expects 3 arguments")
+		}
+		return Bool(true), nil
+	case "Auth.SessionManagement.getCurrentSession":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Auth.SessionManagement.getCurrentSession expects 0 arguments")
+		}
+		session := typedMap("Map<String,String>")
+		session.Map[mapKey(String("SessionId"))] = String(vm.currentUserInfoField("Id", "005-local-user") + "-session")
+		return session, nil
+	case "Auth.AuthConfiguration.getAuthProviderSsoUrl":
+		if len(args) != 3 {
+			return Null, fmt.Errorf("Auth.AuthConfiguration.getAuthProviderSsoUrl expects 3 arguments")
+		}
+		communityURL := scalarText(args[0])
+		startURL := scalarText(args[1])
+		providerName := scalarText(args[2])
+		if communityURL == "" {
+			communityURL = vm.salesforceBaseURL()
+		}
+		return String(strings.TrimRight(communityURL, "/") + "/services/auth/sso/" + providerName + "?startURL=" + startURL), nil
 	case "Cache.Org.getPartition", "Cache.Session.getPartition":
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("%s expects String partition name", callee)
@@ -2417,17 +2475,136 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		if len(args) != 0 {
 			return Null, fmt.Errorf("UserInfo.isMultiCurrencyOrganization expects 0 arguments")
 		}
-		return Bool(false), nil
+		return Bool(vm.orgBool("Organization", "IsMultiCurrencyEnabled", false)), nil
 	case "Site.getSiteId":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Site.getSiteId expects 0 arguments")
 		}
-		return String("local-site"), nil
+		return String(vm.firstOrgRecordID("Site", "local-site")), nil
+	case "Site.getBaseUrl":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Site.getBaseUrl expects 0 arguments")
+		}
+		return String(vm.siteBaseURL()), nil
+	case "Site.getPathPrefix":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Site.getPathPrefix expects 0 arguments")
+		}
+		return String(vm.firstOrgRecordString("Site", "UrlPathPrefix", "")), nil
+	case "Site.getAdminEmail":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Site.getAdminEmail expects 0 arguments")
+		}
+		return String(vm.siteAdminEmail()), nil
+	case "Site.getAdminId":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Site.getAdminId expects 0 arguments")
+		}
+		return String(vm.firstOrgRecordIDField("Site", "AdminId", vm.currentUserInfoField("Id", "005-local-user"))), nil
+	case "Site.getMasterLabel":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Site.getMasterLabel expects 0 arguments")
+		}
+		return String(vm.firstOrgRecordString("Site", "MasterLabel", "Local Site")), nil
+	case "Site.isRegistrationEnabled":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Site.isRegistrationEnabled expects 0 arguments")
+		}
+		return Bool(true), nil
+	case "Site.isLoginEnabled":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Site.isLoginEnabled expects 0 arguments")
+		}
+		return Bool(true), nil
+	case "Site.isValidUsername":
+		if len(args) != 1 {
+			return Null, fmt.Errorf("Site.isValidUsername expects 1 argument")
+		}
+		return Bool(args[0].Kind == ValueString && strings.Contains(args[0].Text, "@")), nil
+	case "Site.setExperienceId":
+		if len(args) != 1 {
+			return Null, fmt.Errorf("Site.setExperienceId expects 1 argument")
+		}
+		return Null, nil
+	case "Site.getErrorMessage":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Site.getErrorMessage expects 0 arguments")
+		}
+		return String(""), nil
+	case "Site.getErrorDescription":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Site.getErrorDescription expects 0 arguments")
+		}
+		return String(""), nil
+	case "Site.forgotPassword":
+		if len(args) != 1 {
+			return Null, fmt.Errorf("Site.forgotPassword expects 1 argument")
+		}
+		return Null, nil
+	case "Site.login":
+		if len(args) != 3 {
+			return Null, fmt.Errorf("Site.login expects 3 arguments")
+		}
+		startURL := "/"
+		if args[2].Kind == ValueString && strings.TrimSpace(args[2].Text) != "" {
+			startURL = args[2].Text
+		}
+		return newPageReference(startURL), nil
+	case "Site.changePassword":
+		if len(args) != 2 && len(args) != 3 {
+			return Null, fmt.Errorf("Site.changePassword expects 2 or 3 arguments")
+		}
+		if vm.testContext != nil {
+			return Null, nil
+		}
+		return newPageReference("/" + strings.Trim(vm.firstOrgRecordString("Network", "UrlPathPrefix", "local"), "/")), nil
+	case "Site.validatePassword":
+		if len(args) != 3 {
+			return Null, fmt.Errorf("Site.validatePassword expects 3 arguments")
+		}
+		return Null, nil
+	case "Site.createExternalUser":
+		if len(args) != 3 && len(args) != 4 {
+			return Null, fmt.Errorf("Site.createExternalUser expects 3 or 4 arguments")
+		}
+		userID := String("005000000000E01")
+		if len(args) > 0 && args[0].Kind == ValueObject {
+			args[0].Fields["Id"] = userID
+		}
+		return userID, nil
+	case "Site.createPortalUser":
+		if len(args) != 3 {
+			return Null, fmt.Errorf("Site.createPortalUser expects 3 arguments")
+		}
+		userID := String("005000000000E01")
+		if len(args) > 0 && args[0].Kind == ValueObject {
+			args[0].Fields["Id"] = userID
+		}
+		return userID, nil
+	case "Network.getNetworkId":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Network.getNetworkId expects 0 arguments")
+		}
+		return String(vm.firstOrgRecordID("Network", "0DB-local-network")), nil
+	case "Network.getLoginUrl":
+		if len(args) != 1 {
+			return Null, fmt.Errorf("Network.getLoginUrl expects 1 argument")
+		}
+		prefix := strings.Trim(vm.firstOrgRecordString("Network", "UrlPathPrefix", "local"), "/")
+		if prefix == "" {
+			prefix = "local"
+		}
+		return String(strings.TrimRight(vm.salesforceBaseURL(), "/") + "/" + prefix + "/login"), nil
+	case "Network.communitiesLanding":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Network.communitiesLanding expects 0 arguments")
+		}
+		return newPageReference("/" + strings.Trim(vm.firstOrgRecordString("Network", "UrlPathPrefix", "local"), "/")), nil
 	case "Auth.CommunitiesUtil.isGuestUser":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Auth.CommunitiesUtil.isGuestUser expects 0 arguments")
 		}
-		return Bool(false), nil
+		return Bool(vm.currentUserInfoField("UserType", "") == "Guest"), nil
 	default:
 		if strings.HasPrefix(callee, "Crypto.") {
 			return Null, unsupportedCallError(callee + " local key, certificate, encryption, and random surfaces")
@@ -2441,6 +2618,109 @@ func (vm *VM) salesforceBaseURL() string {
 		return vm.serverBaseURL
 	}
 	return "https://local.oaer.example"
+}
+
+func (vm *VM) siteBaseURL() string {
+	base := strings.TrimRight(vm.salesforceBaseURL(), "/")
+	prefix := strings.Trim(vm.firstOrgRecordString("Site", "UrlPathPrefix", ""), "/")
+	if prefix == "" {
+		return base
+	}
+	return base + "/" + prefix
+}
+
+func (vm *VM) siteAdminEmail() string {
+	adminID := vm.firstOrgRecordIDField("Site", "AdminId", "")
+	if adminID != "" && vm.Org != nil {
+		if userObject, ok := vm.Org.Objects["User"]; ok {
+			if user, ok := userObject.Records[storage.ID(adminID)]; ok {
+				if email, ok := user.Fields["Email"]; ok && email.Kind == storage.ValueString && email.String != "" {
+					return email.String
+				}
+			}
+		}
+	}
+	return "system@example.invalid"
+}
+
+func (vm *VM) orgBool(objectName, field string, fallback bool) bool {
+	if vm.Org == nil {
+		return fallback
+	}
+	object, ok := vm.Org.Objects[objectName]
+	if !ok {
+		return fallback
+	}
+	for _, record := range object.Records {
+		value, ok := record.Fields[field]
+		if ok && value.Kind == storage.ValueBoolean {
+			return value.Boolean
+		}
+	}
+	return fallback
+}
+
+func (vm *VM) firstOrgRecordID(objectName, fallback string) string {
+	if vm.Org == nil {
+		return fallback
+	}
+	object, ok := vm.Org.Objects[objectName]
+	if !ok {
+		return fallback
+	}
+	ids := make([]string, 0, len(object.Records))
+	for id := range object.Records {
+		ids = append(ids, string(id))
+	}
+	sort.Strings(ids)
+	if len(ids) == 0 {
+		return fallback
+	}
+	return ids[0]
+}
+
+func (vm *VM) firstOrgRecordIDField(objectName, field string, fallback string) string {
+	value := vm.firstOrgRecordValue(objectName, field)
+	if value.Kind == storage.ValueID {
+		return string(value.ID)
+	}
+	if value.Kind == storage.ValueString {
+		return value.String
+	}
+	return fallback
+}
+
+func (vm *VM) firstOrgRecordString(objectName, field, fallback string) string {
+	value := vm.firstOrgRecordValue(objectName, field)
+	if value.Kind == storage.ValueString {
+		return value.String
+	}
+	if value.Kind == storage.ValueID {
+		return string(value.ID)
+	}
+	return fallback
+}
+
+func (vm *VM) firstOrgRecordValue(objectName, field string) storage.Value {
+	if vm.Org == nil {
+		return storage.Value{}
+	}
+	object, ok := vm.Org.Objects[objectName]
+	if !ok {
+		return storage.Value{}
+	}
+	ids := make([]string, 0, len(object.Records))
+	for id := range object.Records {
+		ids = append(ids, string(id))
+	}
+	sort.Strings(ids)
+	for _, id := range ids {
+		record := object.Records[storage.ID(id)]
+		if value, ok := record.Fields[field]; ok {
+			return value
+		}
+	}
+	return storage.Value{}
 }
 
 func exprReceiverName(expr ir.Expr) string {
@@ -2468,7 +2748,7 @@ func (vm *VM) nextDeterministicCryptoLong() int64 {
 
 func unsupportedIntegrationSurface(callee string) (string, bool) {
 	switch callee {
-	case "Auth.CommunitiesUtil.isGuestUser":
+	case "Auth.AuthConfiguration.getAuthProviderSsoUrl", "Auth.AuthToken.revokeAccess", "Auth.CommunitiesUtil.isGuestUser", "Auth.SessionManagement.getCurrentSession":
 		return "", false
 	}
 	for _, prefix := range []string{"Approval.", "Auth.", "QuickAction.", "Canvas.", "Continuation."} {
@@ -2543,6 +2823,32 @@ func (vm *VM) connectAPIOrganizationSettings(args []Value) (Value, error) {
 	settings := Object("ConnectApi.OrganizationSettings")
 	settings.Fields["orgId"] = String(orgID)
 	return settings, nil
+}
+
+func (vm *VM) connectAPICommunity(args []Value) (Value, error) {
+	if len(args) != 1 {
+		return Null, fmt.Errorf("ConnectApi.Communities.getCommunity expects 1 argument")
+	}
+	networkID := scalarText(args[0])
+	if networkID == "" {
+		networkID = vm.firstOrgRecordID("Network", "0DB-local-network")
+	}
+	prefix := strings.Trim(vm.firstOrgRecordString("Network", "UrlPathPrefix", "local"), "/")
+	community := Object("ConnectApi.Community")
+	community.Fields["id"] = String(networkID)
+	community.Fields["name"] = String(vm.firstOrgRecordString("Network", "Name", "Local Community"))
+	community.Fields["urlPathPrefix"] = String(prefix)
+	community.Fields["siteUrl"] = String(strings.TrimRight(vm.salesforceBaseURL(), "/") + "/" + prefix)
+	return community, nil
+}
+
+func scalarText(value Value) string {
+	switch value.Kind {
+	case ValueString:
+		return value.Text
+	default:
+		return ""
+	}
 }
 
 func (vm *VM) callCustomDataStaticMember(typeName, method string, args []Value) (Value, bool, error) {
@@ -8469,6 +8775,16 @@ func builtinStaticField(typeName, fieldName string) (Value, bool) {
 		case "UNICODE_CHARACTER_CLASS":
 			return Int(patternFlagUnicodeCharacterClass), true
 		}
+	case "Cache.Visibility":
+		switch fieldName {
+		case "ALL", "NAMESPACE":
+			return String(fieldName), true
+		}
+	case "Auth.VerificationMethod":
+		switch fieldName {
+		case "EMAIL", "SMS":
+			return String(fieldName), true
+		}
 	}
 	return Null, false
 }
@@ -8751,6 +9067,14 @@ func newPageReference(rawURL string) Value {
 	page.Fields["parameters"] = typedMap("Map<String,String>")
 	page.Fields["headers"] = typedMap("Map<String,String>")
 	return page
+}
+
+func newAuthVerificationResult(redirect, success, message Value) Value {
+	result := Object("Auth.VerificationResult")
+	result.Fields["redirect"] = redirect
+	result.Fields["success"] = success
+	result.Fields["message"] = message
+	return result
 }
 
 func newSelectOption(value, label Value, disabled, escapeItem Value) Value {
@@ -9530,6 +9854,31 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 			rawURL = args[0].Text
 		}
 		return newPageReference(rawURL), nil
+	case "Auth.UserData":
+		if len(args) != 11 || len(namedArgs) != 0 {
+			return Null, fmt.Errorf("Auth.UserData constructor expects 11 arguments")
+		}
+		data := Object("Auth.UserData")
+		for index, field := range []string{"identifier", "firstName", "lastName", "fullName", "email", "link", "username", "locale", "provider", "siteLoginUrl", "attributeMap"} {
+			data.Fields[field] = args[index]
+		}
+		return data, nil
+	case "Auth.VerificationResult":
+		if len(args) != 3 || len(namedArgs) != 0 {
+			return Null, fmt.Errorf("Auth.VerificationResult constructor expects redirect, success, message")
+		}
+		return newAuthVerificationResult(args[0], args[1], args[2]), nil
+	case "Auth.AuthConfiguration":
+		if len(args) != 2 || len(namedArgs) != 0 {
+			return Null, fmt.Errorf("Auth.AuthConfiguration constructor expects community URL and start URL")
+		}
+		config := Object("Auth.AuthConfiguration")
+		config.Fields["communityUrl"] = args[0]
+		config.Fields["startUrl"] = args[1]
+		authConfig := Object("Auth.AuthConfig")
+		authConfig.Fields["Url"] = args[0]
+		config.Fields["authConfig"] = authConfig
+		return config, nil
 	case "SelectOption":
 		if len(args) < 2 || len(args) > 4 || len(namedArgs) != 0 {
 			return Null, fmt.Errorf("SelectOption constructor expects value, label[, disabled[, escapeItem]]")
@@ -14045,6 +14394,32 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	case "Cache.OrgPartition", "Cache.SessionPartition":
 		value, updatedReceiver, err := vm.callCachePartitionMember(receiver, method, args)
 		return value, updatedReceiver, true, true, err
+	case "Auth.AuthConfiguration":
+		switch method {
+		case "getAuthProviders":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Auth.AuthConfiguration.getAuthProviders expects 0 arguments")
+			}
+			return List(), receiver, false, true, nil
+		case "getAuthConfig":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Auth.AuthConfiguration.getAuthConfig expects 0 arguments")
+			}
+			if value, ok := receiver.Fields["authConfig"]; ok {
+				return value, receiver, false, true, nil
+			}
+			config := Object("Auth.AuthConfig")
+			config.Fields["Url"] = receiver.Fields["communityUrl"]
+			return config, receiver, false, true, nil
+		case "getStartUrl":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Auth.AuthConfiguration.getStartUrl expects 0 arguments")
+			}
+			if value, ok := receiver.Fields["startUrl"]; ok {
+				return value, receiver, false, true, nil
+			}
+			return String(""), receiver, false, true, nil
+		}
 	case "Messaging.SendEmailResult":
 		switch method {
 		case "isSuccess":
@@ -14356,20 +14731,27 @@ func (vm *VM) callCachePartitionMember(receiver Value, method string, args []Val
 	method = strings.ToLower(method)
 	switch method {
 	case "get":
-		if len(args) != 1 || args[0].Kind != ValueString {
-			return Null, receiver, fmt.Errorf("%s.get expects String key", receiver.Type)
+		if len(args) != 1 && len(args) != 2 {
+			return Null, receiver, fmt.Errorf("%s.get expects key or CacheBuilder type and key", receiver.Type)
 		}
-		value, ok := vm.cacheGet(partitionName, args[0].Text)
+		keyArg := args[0]
+		if len(args) == 2 {
+			keyArg = args[1]
+		}
+		if keyArg.Kind != ValueString {
+			return Null, receiver, fmt.Errorf("%s.get key expects String", receiver.Type)
+		}
+		value, ok := vm.cacheGet(partitionName, keyArg.Text)
 		if !ok {
 			return Null, receiver, nil
 		}
 		return value, receiver, nil
 	case "put":
-		if len(args) < 2 || len(args) > 3 || args[0].Kind != ValueString {
-			return Null, receiver, fmt.Errorf("%s.put expects String key, value[, ttlSeconds]", receiver.Type)
+		if len(args) < 2 || len(args) > 5 || args[0].Kind != ValueString {
+			return Null, receiver, fmt.Errorf("%s.put expects String key, value[, ttlSeconds[, visibility[, immutable]]]", receiver.Type)
 		}
 		ttl := int64(0)
-		if len(args) == 3 {
+		if len(args) >= 3 {
 			if args[2].Kind != ValueInt {
 				return Null, receiver, fmt.Errorf("%s.put ttl expects Integer seconds", receiver.Type)
 			}
@@ -14378,10 +14760,17 @@ func (vm *VM) callCachePartitionMember(receiver Value, method string, args []Val
 		vm.cachePut(partitionName, args[0].Text, args[1], ttl)
 		return Null, receiver, nil
 	case "remove":
-		if len(args) != 1 || args[0].Kind != ValueString {
-			return Null, receiver, fmt.Errorf("%s.remove expects String key", receiver.Type)
+		if len(args) != 1 && len(args) != 2 {
+			return Null, receiver, fmt.Errorf("%s.remove expects key or CacheBuilder type and key", receiver.Type)
 		}
-		removed, ok := vm.cacheRemove(partitionName, args[0].Text)
+		keyArg := args[0]
+		if len(args) == 2 {
+			keyArg = args[1]
+		}
+		if keyArg.Kind != ValueString {
+			return Null, receiver, fmt.Errorf("%s.remove key expects String", receiver.Type)
+		}
+		removed, ok := vm.cacheRemove(partitionName, keyArg.Text)
 		if !ok {
 			return Null, receiver, nil
 		}

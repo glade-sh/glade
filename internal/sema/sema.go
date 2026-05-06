@@ -2642,6 +2642,25 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 		if method == "isguestuser" {
 			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{}}}, true
 		}
+	case "auth.authtoken":
+		if method == "revokeaccess" {
+			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{"String", "String", "String"}}}, true
+		}
+	case "auth.sessionmanagement":
+		if method == "getcurrentsession" {
+			return semaCollectionSignature{returnType: "Map<String,String>", params: [][]string{{}}}, true
+		}
+	case "auth.authconfiguration":
+		switch method {
+		case "getauthproviders":
+			return semaCollectionSignature{returnType: "List<AuthProvider>", params: [][]string{{}}}, true
+		case "getauthconfig":
+			return semaCollectionSignature{returnType: "Auth.AuthConfig", params: [][]string{{}}}, true
+		case "getstarturl":
+			return semaCollectionSignature{returnType: "String", params: [][]string{{}}}, true
+		case "getauthproviderssourl":
+			return semaCollectionSignature{returnType: "String", params: [][]string{{"String", "String", "String"}}}, true
+		}
 	case "cache.org":
 		if method == "getpartition" {
 			return semaCollectionSignature{returnType: "Cache.OrgPartition", params: [][]string{{"String"}}}, true
@@ -2650,13 +2669,74 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 		if method == "getpartition" {
 			return semaCollectionSignature{returnType: "Cache.SessionPartition", params: [][]string{{"String"}}}, true
 		}
+	case "cache.orgpartition", "cache.sessionpartition":
+		switch method {
+		case "get":
+			return semaCollectionSignature{returnType: "Object", params: [][]string{{"String"}, {"Type", "String"}}}, true
+		case "put":
+			return semaCollectionSignature{returnType: "void", params: [][]string{{"String", "Object"}, {"String", "Object", "Integer"}, {"String", "Object", "Integer", "Cache.Visibility", "Boolean"}}}, true
+		case "remove":
+			return semaCollectionSignature{returnType: "Object", params: [][]string{{"String"}, {"Type", "String"}}}, true
+		case "contains":
+			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{"String"}}}, true
+		}
 	case "connectapi.organization":
 		if method == "getsettings" {
 			return semaCollectionSignature{returnType: "ConnectApi.OrganizationSettings", params: [][]string{{}}}, true
 		}
+	case "connectapi.communities":
+		if method == "getcommunity" {
+			return semaCollectionSignature{returnType: "ConnectApi.Community", params: [][]string{{"String"}}}, true
+		}
+	case "connectapi.userprofiles":
+		switch method {
+		case "setphoto":
+			return semaCollectionSignature{returnType: "void", params: [][]string{{"String", "String", "String", "Object"}}}, true
+		case "deletephoto":
+			return semaCollectionSignature{returnType: "void", params: [][]string{{"String", "String"}}}, true
+		}
 	case "site":
-		if method == "getsiteid" {
+		switch method {
+		case "getsiteid", "getbaseurl", "getpathprefix", "getadminemail", "getadminid", "getmasterlabel", "geterrormessage", "geterrordescription":
 			return semaCollectionSignature{returnType: "String", params: [][]string{{}}}, true
+		case "isregistrationenabled", "isloginenabled":
+			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{}}}, true
+		case "isvalidusername":
+			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{"String"}}}, true
+		case "setexperienceid":
+			return semaCollectionSignature{returnType: "void", params: [][]string{{"String"}}}, true
+		case "forgotpassword":
+			return semaCollectionSignature{returnType: "void", params: [][]string{{"String"}}}, true
+		case "login":
+			return semaCollectionSignature{returnType: "PageReference", params: [][]string{{"String", "String", "String"}}}, true
+		case "changepassword":
+			return semaCollectionSignature{returnType: "PageReference", params: [][]string{{"String", "String"}, {"String", "String", "String"}}}, true
+		case "validatepassword":
+			return semaCollectionSignature{returnType: "void", params: [][]string{{"User", "String", "String"}}}, true
+		case "createexternaluser":
+			return semaCollectionSignature{returnType: "String", params: [][]string{{"User", "String", "String"}, {"User", "String", "String", "Boolean"}}}, true
+		case "createportaluser":
+			return semaCollectionSignature{returnType: "String", params: [][]string{{"User", "String", "String"}}}, true
+		}
+	case "system":
+		if method == "setpassword" {
+			return semaCollectionSignature{returnType: "void", params: [][]string{{"String", "String"}}}, true
+		}
+	case "usermanagement":
+		switch method {
+		case "initselfregistration":
+			return semaCollectionSignature{returnType: "String", params: [][]string{{"Auth.VerificationMethod", "User"}}}, true
+		case "verifyselfregistration":
+			return semaCollectionSignature{returnType: "Auth.VerificationResult", params: [][]string{{"Auth.VerificationMethod", "String", "String", "String"}}}, true
+		}
+	case "network":
+		switch method {
+		case "getnetworkid":
+			return semaCollectionSignature{returnType: "String", params: [][]string{{}}}, true
+		case "getloginurl":
+			return semaCollectionSignature{returnType: "String", params: [][]string{{"String"}}}, true
+		case "communitieslanding":
+			return semaCollectionSignature{returnType: "PageReference", params: [][]string{{}}}, true
 		}
 	case "apexpages":
 		switch method {
@@ -2690,15 +2770,6 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 			return semaCollectionSignature{returnType: "Integer", params: [][]string{{}}}, true
 		case "getheader":
 			return semaCollectionSignature{returnType: "String", params: [][]string{{"String"}}}, true
-		}
-	case "cache.orgpartition", "cache.sessionpartition":
-		switch method {
-		case "get", "remove":
-			return semaCollectionSignature{returnType: "Object", params: [][]string{{"String"}}}, true
-		case "put":
-			return semaCollectionSignature{returnType: "void", params: [][]string{{"String", "Object"}, {"String", "Object", "Integer"}}}, true
-		case "contains":
-			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{"String"}}}, true
 		}
 	case "multistaticresourcecalloutmock":
 		switch method {
@@ -3527,10 +3598,12 @@ var platformTypes = []string{
 	"BatchApexErrorEvent",
 	"BrandTemplate",
 	"Cache",
+	"Cache.CacheBuilder",
 	"Cache.Org",
 	"Cache.OrgPartition",
 	"Cache.Session",
 	"Cache.SessionPartition",
+	"Cache.Visibility",
 	"Callable",
 	"Component",
 	"Component.Apex.Column",
@@ -3548,10 +3621,22 @@ var platformTypes = []string{
 	"EntityDefinition",
 	"FieldPermissions",
 	"Auth",
+	"Auth.AuthConfig",
+	"Auth.AuthConfiguration",
+	"Auth.AuthToken",
 	"Auth.CommunitiesUtil",
+	"Auth.RegistrationHandler",
+	"Auth.SessionManagement",
+	"Auth.UserData",
+	"Auth.VerificationMethod",
+	"Auth.VerificationResult",
+	"AuthProvider",
 	"ConnectApi",
+	"ConnectApi.Communities",
+	"ConnectApi.Community",
 	"ConnectApi.Organization",
 	"ConnectApi.OrganizationSettings",
+	"ConnectApi.UserProfiles",
 	"Http",
 	"HttpCalloutMock",
 	"HTTPRequest",
@@ -3562,6 +3647,7 @@ var platformTypes = []string{
 	"Matcher",
 	"Messaging",
 	"MultiStaticResourceCalloutMock",
+	"Network",
 	"ObjectPermissions",
 	"OrgWideEmailAddress",
 	"Organization",
@@ -3588,11 +3674,14 @@ var platformTypes = []string{
 	"SObjectField",
 	"SObjectType",
 	"Site",
+	"Site.ExternalUserCreateException",
+	"Site.UrlRewriter",
 	"StaticResource",
 	"System",
 	"Test",
 	"TriggerOperation",
 	"User",
+	"UserManagement",
 	"UserLicense",
 	"VisualEditor",
 	"VisualEditor.DataRow",

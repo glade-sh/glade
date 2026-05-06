@@ -42,6 +42,9 @@ import ACCOUNT_NAME from '@salesforce/schema/Account.Name';
     System.debug(Site.getAdminEmail());
     System.debug(ConnectApi.Organization.getSettings().orgId);
     Auth.SessionManagement.getCurrentSession();
+    Auth.JWTUtil.validateJWTWithKeysEndpoint('token', 'https://example.invalid/keys');
+    ConnectApi.ChatterFeeds.getFeedElementsFromFeed(null, null);
+    System.debug(Site.UnknownContext());
     Callable cb;
     Test.createStub(UsesPlatform.class, null);
     Attachment a = new Attachment();
@@ -60,21 +63,13 @@ import ACCOUNT_NAME from '@salesforce/schema/Account.Name';
 	}
 
 	wantCaps := []string{
-		"apex.callable-stub",
 		"aura.controller-test",
-		"custommetadata.legacy-records",
-		"email.templates",
-		"endpoint.metadata",
-		"files.binary-content",
 		"flow.save-order",
-		"labels.localization",
 		"lwc.controller-test",
 		"metadata.apex-deploy",
-		"metadata.legacy-source",
 		"platform.cache-connectapi",
 		"platform.auth-context",
 		"site.community-context",
-		"staticresources.urlfor",
 		"ui.presentation-metadata",
 		"visualforce.component-test",
 		"visualforce.controller-test",
@@ -99,8 +94,28 @@ import ACCOUNT_NAME from '@salesforce/schema/Account.Name';
 	if !hasLineFinding(report, "lwc.controller-test", "src/lwc/currencyMenu/currencyMenu.js", "CurrencyMenuController.getCurrencyInformation") {
 		t.Fatalf("missing LWC Apex import finding")
 	}
-	if !hasLineFindingContaining(report, "staticresources.urlfor", "src/pages/Edit.page", "$Resource.Resources") {
-		t.Fatalf("missing Visualforce resource finding")
+	if hasLineFindingContaining(report, "site.community-context", "src/classes/UsesPlatform.cls", "Site.getAdminEmail") {
+		t.Fatalf("supported Site.getAdminEmail was reported as a blocker")
+	}
+	for _, capability := range []string{"labels.localization", "staticresources.urlfor", "endpoint.metadata", "email.templates", "custommetadata.legacy-records", "metadata.legacy-source", "files.binary-content", "apex.callable-stub"} {
+		if findSurface(report, capability) != nil {
+			t.Fatalf("supported metadata capability %s was reported: %#v", capability, report.Surfaces)
+		}
+	}
+	if hasLineFindingContaining(report, "platform.auth-context", "src/classes/UsesPlatform.cls", "Auth.SessionManagement.getCurrentSession") {
+		t.Fatalf("supported Auth.SessionManagement.getCurrentSession was reported as a blocker")
+	}
+	if hasLineFindingContaining(report, "platform.cache-connectapi", "src/classes/UsesPlatform.cls", "ConnectApi.Organization.getSettings") {
+		t.Fatalf("supported ConnectApi.Organization.getSettings was reported as a blocker")
+	}
+	if !hasLineFindingContaining(report, "platform.auth-context", "src/classes/UsesPlatform.cls", "Auth.JWTUtil") {
+		t.Fatalf("missing unsupported Auth.JWTUtil finding")
+	}
+	if !hasLineFindingContaining(report, "platform.cache-connectapi", "src/classes/UsesPlatform.cls", "ConnectApi.ChatterFeeds") {
+		t.Fatalf("missing unsupported ConnectApi.ChatterFeeds finding")
+	}
+	if !hasLineFindingEvidenceContaining(report, "site.community-context", "src/classes/UsesPlatform.cls", "Site.UnknownContext") {
+		t.Fatalf("missing unsupported Site.UnknownContext finding")
 	}
 	for _, finding := range report.Findings {
 		if strings.Contains(finding.File, ".claude/") {
@@ -139,6 +154,15 @@ func hasLineFinding(report Report, capability, file, symbol string) bool {
 func hasLineFindingContaining(report Report, capability, file, symbol string) bool {
 	for _, finding := range report.Findings {
 		if finding.Capability == capability && finding.File == file && finding.Line > 0 && strings.Contains(finding.Symbol, symbol) {
+			return true
+		}
+	}
+	return false
+}
+
+func hasLineFindingEvidenceContaining(report Report, capability, file, evidence string) bool {
+	for _, finding := range report.Findings {
+		if finding.Capability == capability && finding.File == file && finding.Line > 0 && strings.Contains(finding.Evidence, evidence) {
 			return true
 		}
 	}
