@@ -1386,6 +1386,9 @@ func (a *Analyzer) irVariableDiagnostic(typ typesys.TypeSymbol, member typesys.M
 	if _, ok := model[normalizeName(receiverType)]; !ok {
 		return diagnostic.Diagnostic{}, false
 	}
+	if strings.EqualFold(field, "class") {
+		return diagnostic.Diagnostic{}, false
+	}
 	if target, ok := semaResolveField(model, receiverType, field, make(map[string]bool)); ok {
 		if visibilityDiagnostic, blocked := checkSemaMemberAccess(typ, member, field, target, start, start+max(1, len(name)), source, model); blocked {
 			return visibilityDiagnostic, true
@@ -2342,6 +2345,9 @@ func inferSemaArgTypeWithModel(arg string, scope map[string]string, model map[st
 	if match := newExprPattern.FindStringSubmatch(arg); len(match) == 2 {
 		return match[1]
 	}
+	if strings.HasSuffix(arg, ".class") {
+		return "Type"
+	}
 	if typ := inferSemaMethodCallType(arg, scope, model); typ != "" {
 		return typ
 	}
@@ -2629,6 +2635,26 @@ func checkSemaCollectionCall(typ typesys.TypeSymbol, member typesys.MemberSymbol
 func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSignature, bool) {
 	method = normalizeName(method)
 	switch normalizeName(receiverType) {
+	case "auth.communitiesutil":
+		if method == "isguestuser" {
+			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{}}}, true
+		}
+	case "cache.org":
+		if method == "getpartition" {
+			return semaCollectionSignature{returnType: "Cache.OrgPartition", params: [][]string{{"String"}}}, true
+		}
+	case "cache.session":
+		if method == "getpartition" {
+			return semaCollectionSignature{returnType: "Cache.SessionPartition", params: [][]string{{"String"}}}, true
+		}
+	case "connectapi.organization":
+		if method == "getsettings" {
+			return semaCollectionSignature{returnType: "ConnectApi.OrganizationSettings", params: [][]string{{}}}, true
+		}
+	case "site":
+		if method == "getsiteid" {
+			return semaCollectionSignature{returnType: "String", params: [][]string{{}}}, true
+		}
 	case "apexpages":
 		switch method {
 		case "currentpage":
@@ -2661,6 +2687,15 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 			return semaCollectionSignature{returnType: "Integer", params: [][]string{{}}}, true
 		case "getheader":
 			return semaCollectionSignature{returnType: "String", params: [][]string{{"String"}}}, true
+		}
+	case "cache.orgpartition", "cache.sessionpartition":
+		switch method {
+		case "get", "remove":
+			return semaCollectionSignature{returnType: "Object", params: [][]string{{"String"}}}, true
+		case "put":
+			return semaCollectionSignature{returnType: "void", params: [][]string{{"String", "Object"}, {"String", "Object", "Integer"}}}, true
+		case "contains":
+			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{"String"}}}, true
 		}
 	case "multistaticresourcecalloutmock":
 		switch method {
@@ -3237,6 +3272,9 @@ func inferSemaArgType(arg string, scope map[string]string) string {
 	if match := newExprPattern.FindStringSubmatch(arg); len(match) == 2 {
 		return match[1]
 	}
+	if strings.HasSuffix(arg, ".class") {
+		return "Type"
+	}
 	if typ := inferSemaBinaryType(arg, scope); typ != "" {
 		return typ
 	}
@@ -3395,7 +3433,8 @@ func isLikelyTypeReference(text string) bool {
 
 func isSemaKeyword(text string) bool {
 	switch normalizeName(text) {
-	case "return", "throw", "if", "for", "while", "switch", "catch", "else", "do":
+	case "return", "throw", "if", "for", "while", "switch", "catch", "else", "do",
+		"insert", "update", "upsert", "delete", "undelete", "merge":
 		return true
 	default:
 		return false
@@ -3485,7 +3524,10 @@ var platformTypes = []string{
 	"BatchApexErrorEvent",
 	"BrandTemplate",
 	"Cache",
+	"Cache.Org",
 	"Cache.OrgPartition",
+	"Cache.Session",
+	"Cache.SessionPartition",
 	"Callable",
 	"Component",
 	"Component.Apex.Column",
@@ -3502,6 +3544,11 @@ var platformTypes = []string{
 	"EmailTemplate",
 	"EntityDefinition",
 	"FieldPermissions",
+	"Auth",
+	"Auth.CommunitiesUtil",
+	"ConnectApi",
+	"ConnectApi.Organization",
+	"ConnectApi.OrganizationSettings",
 	"Http",
 	"HttpCalloutMock",
 	"HTTPRequest",
@@ -3519,11 +3566,14 @@ var platformTypes = []string{
 	"Pattern",
 	"PermissionSetAssignment",
 	"Profile",
+	"Database.BatchableContext",
 	"Queueable",
+	"QueueableContext",
 	"RecentlyViewed",
 	"RestRequest",
 	"RestResponse",
 	"Schedulable",
+	"SchedulableContext",
 	"SelectOption",
 	"Schema",
 	"Schema.ChildRelationship",
@@ -3534,6 +3584,7 @@ var platformTypes = []string{
 	"Schema.SObjectType",
 	"SObjectField",
 	"SObjectType",
+	"Site",
 	"StaticResource",
 	"System",
 	"Test",

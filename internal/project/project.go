@@ -26,6 +26,7 @@ type Project struct {
 	StaticResourceMetas       []string           `json:"staticResourceMetas"`
 	ContentAssetFiles         []string           `json:"contentAssetFiles,omitempty"`
 	ContentAssetMetas         []string           `json:"contentAssetMetas,omitempty"`
+	EmailTemplateFiles        []string           `json:"emailTemplateFiles,omitempty"`
 	NamedCredentialFiles      []string           `json:"namedCredentialFiles"`
 	RemoteSiteFiles           []string           `json:"remoteSiteFiles"`
 	CustomMetadataFiles       []string           `json:"customMetadataFiles"`
@@ -99,6 +100,7 @@ func Load(root string) (Project, error) {
 	sort.Strings(p.StaticResourceMetas)
 	sort.Strings(p.ContentAssetFiles)
 	sort.Strings(p.ContentAssetMetas)
+	sort.Strings(p.EmailTemplateFiles)
 	sort.Strings(p.NamedCredentialFiles)
 	sort.Strings(p.RemoteSiteFiles)
 	sort.Strings(p.CustomMetadataFiles)
@@ -213,6 +215,8 @@ func collectFiles(root string, p *Project) error {
 			p.ContentAssetMetas = append(p.ContentAssetMetas, path)
 		case strings.HasSuffix(lower, ".asset"):
 			p.ContentAssetFiles = append(p.ContentAssetFiles, path)
+		case strings.HasSuffix(lower, ".email"), strings.HasSuffix(lower, ".email-meta.xml"):
+			p.EmailTemplateFiles = append(p.EmailTemplateFiles, path)
 		case strings.HasSuffix(lower, ".namedcredential"), strings.HasSuffix(lower, ".namedcredential-meta.xml"):
 			p.NamedCredentialFiles = append(p.NamedCredentialFiles, path)
 		case strings.HasSuffix(lower, ".remotesite"), strings.HasSuffix(lower, ".remotesite-meta.xml"):

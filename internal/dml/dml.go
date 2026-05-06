@@ -11,12 +11,16 @@ import (
 )
 
 type Engine struct {
-	Org    *storage.OrgState
-	IDs    storage.IDGenerator
-	Now    func() time.Time
-	UserID storage.ID
+	Org               *storage.OrgState
+	IDs               storage.IDGenerator
+	Now               func() time.Time
+	UserID            storage.ID
+	FlowActionInvoker func(storage.FlowAction, storage.Record) error
+	WorkflowEmailer   func(storage.WorkflowEmailAlert, storage.Record) error
+	DeferAutomation   bool
 
 	workflowDepth int
+	flowDepth     int
 }
 
 type Result struct {
@@ -423,10 +427,12 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 			return "", err
 		}
 	}
-	if err := e.applyWorkflowFieldUpdates(objectName, record.ID); err != nil {
-		*e.Org = rollbackOrg
-		e.IDs.Sequences = rollbackSequences
-		return "", err
+	if !e.DeferAutomation {
+		if err := e.ApplyAutomation(objectName, record.ID); err != nil {
+			*e.Org = rollbackOrg
+			e.IDs.Sequences = rollbackSequences
+			return "", err
+		}
 	}
 	return record.ID, nil
 }
@@ -597,10 +603,12 @@ func (e *Engine) updateOne(record storage.Record) error {
 	existing.System.LastModifiedByID = e.systemUserID()
 	object.Records[record.ID] = existing
 	e.Org.Objects[objectName] = object
-	if err := e.applyWorkflowFieldUpdates(objectName, record.ID); err != nil {
-		*e.Org = rollbackOrg
-		e.IDs.Sequences = rollbackSequences
-		return err
+	if !e.DeferAutomation {
+		if err := e.ApplyAutomation(objectName, record.ID); err != nil {
+			*e.Org = rollbackOrg
+			e.IDs.Sequences = rollbackSequences
+			return err
+		}
 	}
 	return nil
 }
@@ -945,6 +953,111 @@ func (e *Engine) applyWorkflowFieldUpdates(objectName string, id storage.ID) err
 			}
 			changed = true
 		}
+		for _, alert := range rule.EmailAlerts {
+			if e.WorkflowEmailer == nil {
+				continue
+			}
+			if err := e.WorkflowEmailer(alert, record); err != nil {
+				return err
+			}
+		}
+	}
+	if !changed {
+		return nil
+	}
+	if err := validateRequired(object.Definition, record); err != nil {
+		return err
+	}
+	if err := e.validateReferences(object.Definition, record); err != nil {
+		return err
+	}
+	if err := validateValidationRules(object.Definition, record); err != nil {
+		return err
+	}
+	if err := e.validateUnique(objectName, object.Definition, record, record.ID); err != nil {
+		return err
+	}
+	stamp := e.systemTimestamp()
+	record.System.LastModifiedDate = stamp
+	record.System.SystemModstamp = stamp
+	record.System.LastModifiedByID = e.systemUserID()
+	object.Records[id] = record
+	e.Org.Objects[objectName] = object
+	return nil
+}
+
+func (e *Engine) ApplyAutomation(objectName string, id storage.ID) error {
+	if err := e.applyWorkflowFieldUpdates(objectName, id); err != nil {
+		return err
+	}
+	if err := e.applyFlowFieldUpdates(objectName, id); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (e *Engine) applyFlowFieldUpdates(objectName string, id storage.ID) error {
+	if e.flowDepth > 8 {
+		return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow field update recursion limit exceeded")
+	}
+	e.flowDepth++
+	defer func() {
+		e.flowDepth--
+	}()
+
+	object := e.Org.Objects[objectName]
+	if len(object.Definition.FlowRules) == 0 {
+		return nil
+	}
+	record, ok := object.Records[id]
+	if !ok || record.System.IsDeleted {
+		return nil
+	}
+	changed := false
+	record = record.Clone()
+	if record.Fields == nil {
+		record.Fields = make(map[string]storage.Value)
+	}
+	if record.ExplicitNulls == nil {
+		record.ExplicitNulls = make(map[string]bool)
+	}
+	for _, rule := range object.Definition.FlowRules {
+		if !rule.Active {
+			continue
+		}
+		matches, ok := evaluateFlowRule(rule, record, object.Definition, e.Org.Namespace)
+		if !ok || !matches {
+			continue
+		}
+		for _, update := range rule.FieldUpdates {
+			fieldName, ok := storage.ResolveFieldName(object.Definition, e.Org.Namespace, update.Field)
+			if !ok || fieldName == "Id" {
+				return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{update.Field}, "dml: flow field update %s targets unknown or read-only field %s.%s", update.Name, objectName, update.Field)
+			}
+			if object.Definition.Fields[fieldName].Type == storage.FieldCalculated {
+				return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{fieldName}, "dml: flow field update %s targets calculated field %s.%s", update.Name, objectName, fieldName)
+			}
+			value, explicitNull, ok := workflowUpdateValue(object.Definition.Fields[fieldName], record, update, object.Definition, e.Org.Namespace)
+			if !ok {
+				return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{fieldName}, "dml: flow field update %s has unsupported value expression", update.Name)
+			}
+			if explicitNull {
+				delete(record.Fields, fieldName)
+				record.ExplicitNulls[fieldName] = true
+			} else {
+				record.Fields[fieldName] = value
+				delete(record.ExplicitNulls, fieldName)
+			}
+			changed = true
+		}
+		for _, action := range rule.Actions {
+			if e.FlowActionInvoker == nil {
+				return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow action %s requires Apex action execution support", action.Name)
+			}
+			if err := e.FlowActionInvoker(action, record.Clone()); err != nil {
+				return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow action %s failed: %v", action.Name, err)
+			}
+		}
 	}
 	if !changed {
 		return nil
@@ -971,6 +1084,22 @@ func (e *Engine) applyWorkflowFieldUpdates(objectName string, id storage.ID) err
 }
 
 func evaluateWorkflowRule(rule storage.WorkflowRule, record storage.Record, definition storage.ObjectDefinition, namespace string) (bool, bool) {
+	if strings.TrimSpace(rule.Formula) != "" {
+		return evaluateValidationFormula(rule.Formula, record)
+	}
+	if len(rule.Criteria) == 0 {
+		return true, true
+	}
+	for _, item := range rule.Criteria {
+		matches, ok := evaluateWorkflowCriteria(item, record, definition, namespace)
+		if !ok || !matches {
+			return matches, ok
+		}
+	}
+	return true, true
+}
+
+func evaluateFlowRule(rule storage.FlowRule, record storage.Record, definition storage.ObjectDefinition, namespace string) (bool, bool) {
 	if strings.TrimSpace(rule.Formula) != "" {
 		return evaluateValidationFormula(rule.Formula, record)
 	}
@@ -1039,6 +1168,9 @@ func workflowExpressionValue(field storage.Field, record storage.Record, express
 			return value.Clone(), false, true
 		}
 		return storage.NullValue(), true, true
+	}
+	if value, explicitNull, ok := evaluateRecordFormulaValue(expression, field, record); ok {
+		return value, explicitNull, true
 	}
 	return workflowLiteralValue(field, trimFormulaLiteral(expression))
 }

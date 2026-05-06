@@ -968,6 +968,30 @@ private class SampleTest {
 	}
 }
 
+func TestRunTestCompatJSON(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/classes/SampleTest.cls"), `
+@isTest
+private class SampleTest {
+  @isTest static void passes() {
+    System.assertEquals(2, 1 + 1);
+  }
+}
+`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"test", "--project", root, "--compat-json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q stdout=%q", code, stderr.String(), stdout.String())
+	}
+	if !strings.Contains(stdout.String(), `"target": "local Apex test execution readiness"`) ||
+		!strings.Contains(stdout.String(), `"ready": true`) ||
+		!strings.Contains(stdout.String(), `"outcome": "pass"`) {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
 func TestRunTestStaticHelperMethod(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)

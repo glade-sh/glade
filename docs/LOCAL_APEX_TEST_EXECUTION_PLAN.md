@@ -68,9 +68,10 @@ These milestones are ordered by developer value, not by feature count.
 | M6: Declarative-test ready | Workflow and Flow side effects run inside the DML/test transaction with traceable decisions and rollback. | `compat local-tests --project testdata/local-tests/workflow --json` and `.../flow --json` |
 | M7: Legacy-project-test ready | Owned corpus fixtures modeled after the example projects are green, and remaining unsupported surfaces are outside the documented claim. | `compat local-tests --check docs/fixtures/local-tests-corpus.json` |
 
-M0 is already green in this checkout. M1 is the next blocking milestone because
-the project needs a per-test scoreboard before implementation lanes can prove
-they are moving real test execution.
+M0 through the first owned M7 corpus gate are green in this checkout for the
+checked fixtures. The remaining work is to broaden the owned corpus and close
+the documented unsupported surfaces before making a large-project local-test
+execution claim.
 
 ## Speed Requirements
 
@@ -480,10 +481,75 @@ Exit criteria:
   effects.
 - Unsupported automation nodes report the exact node type and metadata source.
 
+### Declarative Coverage Still Partial
+
+The Phase 6 fixtures now cover the first practical Workflow, Flow, and Process
+Builder-shaped execution paths, but they are not full declarative automation
+parity. Current supported slices:
+
+- Workflow rules can load criteria and field updates from metadata and apply
+  field updates during DML/test transactions.
+- Workflow email alerts can load basic alert metadata, use local email template
+  metadata, increment email invocation limits, and capture a local side effect
+  through the VM DML automation path.
+- Flow metadata can model active record-triggered and Process Builder-shaped
+  DML automation when `start.object` is present.
+- Flow start filters, simple decision conditions, formula-backed criteria,
+  assignments, `$Record` source-field copies, typed literal values, and field
+  update formulas can drive same-record mutations.
+- Flow Apex action calls can invoke static `@InvocableMethod` methods through
+  the VM for the modeled list-input shape.
+- Unsupported Flow nodes report stable `OAERAUTO002` diagnostics with node type,
+  node name, and metadata file.
+
+Keep these remaining surfaces tracked before claiming
+`declarative-automation-test-ready`:
+
+- Workflow email alerts still need full recipient expansion, target/related
+  record semantics, richer template rendering, rollback-specific regression
+  coverage, and trace details for every matched/skipped alert.
+- Workflow task actions and outbound messages need captured side-effect records
+  and rollback behavior; they should not perform real transport or create
+  project-specific shortcuts.
+- Workflow rule criteria still need broader formula support, boolean filters,
+  time-dependent actions, recursive save-order coverage, and trace events for
+  matched/skipped rules and applied actions.
+- Flow still needs record lookups, creates/deletes, collection operations,
+  loops, screens, subflows, scheduled paths, pause elements, platform event
+  triggers, and before-save/fast-field-update ordering.
+- Flow decisions and assignments still need multi-branch routing, typed
+  variables beyond `$Record` fields, `$Record__Prior`, relationship references,
+  collection assignments, and precise traces for every decision outcome and
+  assignment.
+- Flow and Process Builder Apex actions still need richer invocable marshaling
+  for custom request/response DTOs, multiple arguments, return values, and
+  unsupported action signatures.
+- Process Builder-shaped flows need more corpus-backed fixtures because their
+  metadata often uses Flow XML shapes that differ from hand-authored
+  record-triggered flows.
+
 ## Phase 7: Org-Like Test Runner Fidelity
 
 Goal: tighten the core `oaer test` behavior once metadata and side-effect
 surfaces exist.
+
+Initial implementation status:
+
+- Added `testdata/local-tests/org-like-runner` as the runner-fidelity fixture.
+  It verifies `@TestSetup` data cloning, static reset between test methods,
+  `Test.startTest`/`Test.stopTest` queueable/future/batch/scheduled drain,
+  current local `EventBus.publish` success behavior, savepoint rollback,
+  trigger ordering, Workflow field updates, and Flow field updates in one
+  composed local test run.
+- DML automation ordering now matches the supported test transaction path:
+  before triggers run before the write, after triggers observe the post-write
+  record before declarative automation, then Workflow and Flow field updates run
+  inside the same rollback-able transaction.
+- Future runner-fidelity work still needs platform-event trigger delivery
+  semantics. Current platform-event-like coverage is limited to the supported
+  local no-op publish result shape.
+- Added `oaer test --compat-json` so the user-facing test command can emit the
+  same readiness-shaped per-test outcome schema as `compat local-tests`.
 
 Primary lanes: Gate, Platform APIs, Declarative.
 
@@ -506,6 +572,7 @@ Validation:
 ```bash
 go test ./internal/apextest ./internal/vm ./internal/dml ./internal/automation
 go run ./cmd/oaer compat local-tests --project testdata/local-tests/org-like-runner --json
+go run ./cmd/oaer test --project testdata/local-tests/org-like-runner --compat-json
 ```
 
 Exit criteria:
@@ -517,6 +584,21 @@ Exit criteria:
 ## Phase 8: Corpus Baselines And Release Gates
 
 Goal: make the work durable and measurable against large anonymized examples.
+
+Initial implementation status:
+
+- Added `docs/fixtures/local-tests-corpus.json` as the first checked baseline
+  for the owned local-test corpus.
+- Added `compat local-tests --check <path>` so the gate reruns every project in
+  the baseline and fails if readiness, summary counts, or stable test outcomes
+  drift.
+- The first baseline covers owned metadata/resources, Visualforce controller,
+  platform/API, files/email, Workflow, Flow, and org-like runner fixtures.
+- Added `compat ui-controllers --check
+  docs/fixtures/ui-controller-discovery.json` for Aura/LWC controller discovery
+  without adding browser rendering or action endpoint semantics.
+- Larger anonymized corpus projects, Aura/LWC action dispatch fixtures, and
+  readiness dashboards remain future Phase 8 work.
 
 Primary lane: Gate.
 
@@ -539,9 +621,15 @@ Validation:
 
 ```bash
 go test ./...
-go run ./cmd/oaer compat local-tests --project testdata/local-tests/corpus-a --json
-go run ./cmd/oaer compat local-tests --project testdata/local-tests/corpus-b --json
+go run ./cmd/oaer compat local-tests --project testdata/local-tests/org-like-runner --json
+go run ./cmd/oaer compat local-tests --project testdata/local-tests/resources-labels --json
+go run ./cmd/oaer compat local-tests --project testdata/local-tests/ui-controller-contracts --json
+go run ./cmd/oaer compat local-tests --project testdata/local-tests/platform-apis --json
+go run ./cmd/oaer compat local-tests --project testdata/local-tests/files-email --json
+go run ./cmd/oaer compat local-tests --project testdata/local-tests/workflow --json
+go run ./cmd/oaer compat local-tests --project testdata/local-tests/flow --json
 go run ./cmd/oaer compat local-tests --check docs/fixtures/local-tests-corpus.json
+go run ./cmd/oaer compat ui-controllers --check docs/fixtures/ui-controller-discovery.json
 ```
 
 Exit criteria:
@@ -549,6 +637,22 @@ Exit criteria:
 - The project can claim local Apex test execution support only when the
   local-test gate is green for the owned corpus and remaining unsupported
   surfaces are outside the documented claim.
+
+## Release Labels
+
+Use these labels consistently in release notes, dashboards, and issue triage:
+
+- `server-examples-green`: the Salesforce-shaped local API route corpus passes
+  with no failing, unsupported, or missing probes.
+- `mvp-ready`: every capability required by `oaer compat mvp --require-ready`
+  is `supported`, and generated compatibility docs are in sync.
+- `legacy-project-test-ready`: `compat local-tests --check
+  docs/fixtures/local-tests-corpus.json` is green for the owned local-test
+  corpus, and larger-project unsupported surfaces are outside the documented
+  support claim.
+- `declarative-automation-test-ready`: Workflow, Flow, and Process
+  Builder-shaped automation fixtures cover the declared save-order,
+  side-effect, rollback, trace, and unsupported-diagnostic surfaces.
 
 ## Merge Strategy
 

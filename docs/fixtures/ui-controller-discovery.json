@@ -1,0 +1,151 @@
+{
+  "target": "UI controller discovery",
+  "ready": true,
+  "project": "../../testdata/local-tests/ui-controller-discovery",
+  "summary": {
+    "auraBundles": 1,
+    "lwcBundles": 1,
+    "apexMethods": 5,
+    "resolvedApex": 5,
+    "unresolvedApex": 0,
+    "lwcImports": 9,
+    "wires": 2
+  },
+  "apexMethods": [
+    {
+      "framework": "aura",
+      "className": "WidgetController",
+      "methodName": "getWidget",
+      "resolved": true,
+      "returnType": "String"
+    },
+    {
+      "framework": "aura",
+      "className": "WidgetController",
+      "methodName": "saveWidget",
+      "resolved": true,
+      "returnType": "void"
+    },
+    {
+      "framework": "aura",
+      "className": "WidgetController",
+      "methodName": "saveWidget",
+      "resolved": true,
+      "returnType": "void"
+    },
+    {
+      "framework": "lwc",
+      "className": "WidgetController",
+      "methodName": "getWidget",
+      "resolved": true,
+      "returnType": "String"
+    },
+    {
+      "framework": "lwc",
+      "className": "WidgetController",
+      "methodName": "saveWidget",
+      "resolved": true,
+      "returnType": "void"
+    }
+  ],
+  "auraActions": [
+    {
+      "bundle": "Widget",
+      "name": "getWidget",
+      "className": "WidgetController",
+      "resolved": true,
+      "returnType": "String"
+    },
+    {
+      "bundle": "Widget",
+      "name": "saveWidget",
+      "className": "WidgetController",
+      "resolved": true,
+      "returnType": "void"
+    },
+    {
+      "bundle": "Widget",
+      "name": "saveWidget",
+      "className": "WidgetController",
+      "resolved": true,
+      "returnType": "void"
+    }
+  ],
+  "lwcImports": [
+    {
+      "bundle": "widget",
+      "localName": "getWidget",
+      "kind": "apex",
+      "className": "WidgetController",
+      "methodName": "getWidget"
+    },
+    {
+      "bundle": "widget",
+      "localName": "saveWidget",
+      "kind": "apex",
+      "className": "WidgetController",
+      "methodName": "saveWidget"
+    },
+    {
+      "bundle": "widget",
+      "localName": "Save",
+      "kind": "label",
+      "labelName": "c.Save"
+    },
+    {
+      "bundle": "widget",
+      "localName": "getRecord",
+      "kind": "lightning",
+      "module": "lightning/uiRecordApi"
+    },
+    {
+      "bundle": "widget",
+      "localName": "child",
+      "kind": "local"
+    },
+    {
+      "bundle": "widget",
+      "localName": "LightningElement",
+      "kind": "module",
+      "module": "lwc"
+    },
+    {
+      "bundle": "widget",
+      "localName": "wire",
+      "kind": "module",
+      "module": "lwc"
+    },
+    {
+      "bundle": "widget",
+      "localName": "RES",
+      "kind": "resourceUrl",
+      "resourceName": "WidgetAssets"
+    },
+    {
+      "bundle": "widget",
+      "localName": "ACCOUNT_NAME",
+      "kind": "schema",
+      "schemaName": "Account.Name"
+    }
+  ],
+  "wires": [
+    {
+      "bundle": "widget",
+      "adapter": "getRecord",
+      "adapterKind": "lightning",
+      "reactiveParameters": [
+        "accountId"
+      ]
+    },
+    {
+      "bundle": "widget",
+      "adapter": "getWidget",
+      "adapterKind": "apex",
+      "apexClassName": "WidgetController",
+      "apexMethodName": "getWidget",
+      "reactiveParameters": [
+        "accountId"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+<Workflow>
+  <rules>
+    <fullName>MarkActive</fullName>
+    <active>true</active>
+    <criteriaItems>
+      <field>Widget__c.Name</field>
+      <operation>equals</operation>
+      <value>Acme</value>
+    </criteriaItems>
+    <actions>
+      <name>SetStatus</name>
+      <type>FieldUpdate</type>
+    </actions>
+    <actions>
+      <name>NotifyOwner</name>
+      <type>Alert</type>
+    </actions>
+  </rules>
+  <fieldUpdates>
+    <fullName>SetStatus</fullName>
+    <field>Widget__c.Status__c</field>
+    <literalValue>Active</literalValue>
+  </fieldUpdates>
+  <alerts>
+    <fullName>NotifyOwner</fullName>
+    <template>welcome</template>
+    <recipients>
+      <type>user</type>
+      <recipient>workflow@example.test</recipient>
+    </recipients>
+  </alerts>
+</Workflow>

@@ -1,0 +1,37 @@
+<CustomObject>
+  <label>Widget</label>
+  <pluralLabel>Widgets</pluralLabel>
+  <deploymentStatus>Deployed</deploymentStatus>
+  <fields>
+    <fullName>Name</fullName>
+    <label>Widget Name</label>
+    <type>Text</type>
+    <length>80</length>
+  </fields>
+  <fields>
+    <fullName>Status__c</fullName>
+    <label>Status</label>
+    <type>Text</type>
+    <length>40</length>
+  </fields>
+  <fields>
+    <fullName>Score__c</fullName>
+    <label>Score</label>
+    <type>Number</type>
+    <precision>18</precision>
+    <scale>0</scale>
+  </fields>
+  <fields>
+    <fullName>Score_Copy__c</fullName>
+    <label>Score Copy</label>
+    <type>Number</type>
+    <precision>18</precision>
+    <scale>0</scale>
+  </fields>
+  <fields>
+    <fullName>Active__c</fullName>
+    <label>Active</label>
+    <type>Checkbox</type>
+    <defaultValue>false</defaultValue>
+  </fields>
+</CustomObject>

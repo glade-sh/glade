@@ -710,6 +710,56 @@ func TestWorkflowFieldUpdateResolvesNamespacedCriteriaAndSourceFields(t *testing
 	}
 }
 
+func TestFlowRuleFormulaAndFormulaFieldUpdates(t *testing.T) {
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Score__c"] = storage.Field{APIName: "Score__c", Type: storage.FieldInteger}
+	account.Definition.Fields["Status__c"] = storage.Field{APIName: "Status__c", Type: storage.FieldString}
+	account.Definition.Fields["Active__c"] = storage.Field{APIName: "Active__c", Type: storage.FieldBoolean}
+	account.Definition.Fields["ScoreCopy__c"] = storage.Field{APIName: "ScoreCopy__c", Type: storage.FieldInteger}
+	account.Definition.FlowRules = []storage.FlowRule{{
+		Name:    "ProcessBuilderStyle",
+		Active:  true,
+		Formula: `Name = "Acme" && Score__c >= 10`,
+		FieldUpdates: []storage.WorkflowFieldUpdate{
+			{Name: "SetStatus", Field: "Status__c", Formula: `"Process-" & Name`},
+			{Name: "SetActive", Field: "Active__c", LiteralValue: "true"},
+			{Name: "CopyScore", Field: "ScoreCopy__c", SourceField: "Score__c"},
+		},
+	}}
+	org.Objects["Account"] = account
+	engine := NewEngine(&org)
+
+	miss := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Other"), "Score__c": storage.IntegerValue(15)},
+	}})
+	if !miss[0].Success {
+		t.Fatalf("miss insert = %#v", miss)
+	}
+	if _, ok := org.Objects["Account"].Records[miss[0].ID].Fields["Status__c"]; ok {
+		t.Fatalf("flow should not update false formula record: %#v", org.Objects["Account"].Records[miss[0].ID])
+	}
+
+	hit := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Acme"), "Score__c": storage.IntegerValue(12)},
+	}})
+	if !hit[0].Success {
+		t.Fatalf("hit insert = %#v", hit)
+	}
+	record := org.Objects["Account"].Records[hit[0].ID]
+	if got := record.Fields["Status__c"].String; got != "Process-Acme" {
+		t.Fatalf("formula status = %q", got)
+	}
+	if got := record.Fields["Active__c"].Boolean; !got {
+		t.Fatalf("active = %v", got)
+	}
+	if got := record.Fields["ScoreCopy__c"].Integer; got != 12 {
+		t.Fatalf("score copy = %d", got)
+	}
+}
+
 func TestWorkflowFieldUpdateRejectsInvalidSourceFieldAndRollsBack(t *testing.T) {
 	org := testOrg()
 	account := org.Objects["Account"]
@@ -957,6 +1007,51 @@ func TestAttachmentBodyDMLAndSOQLRoundTrip(t *testing.T) {
 	}
 }
 
+func TestDocumentBodyDMLSOQLAndDelete(t *testing.T) {
+	org := fileTestOrg()
+	engine := NewEngine(&org)
+	document := engine.Insert([]storage.Record{{
+		Object: "Document",
+		Fields: map[string]storage.Value{
+			"Name":          storage.StringValue("Terms.pdf"),
+			"DeveloperName": storage.StringValue("Terms"),
+			"Body":          storage.BlobValue("document bytes"),
+			"ContentType":   storage.StringValue("application/pdf"),
+			"Type":          storage.StringValue("pdf"),
+			"IsPublic":      storage.BooleanValue(true),
+		},
+	}})
+	if !document[0].Success || document[0].ID != "015000000000001" {
+		t.Fatalf("document insert = %#v", document)
+	}
+	query, err := soql.Parse("SELECT Id, Name, DeveloperName, Body, ContentType, Type, IsPublic FROM Document WHERE Id = '" + string(document[0].ID) + "'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := soql.Execute(org, query)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Records) != 1 {
+		t.Fatalf("document query rows = %d", len(result.Records))
+	}
+	row := result.Records[0]
+	if row.Fields["Body"].Kind != storage.ValueBlob || row.Fields["Body"].String != "document bytes" || row.Fields["ContentType"].String != "application/pdf" || !row.Fields["IsPublic"].Boolean {
+		t.Fatalf("document row = %#v", row)
+	}
+	deleted := engine.Delete([]storage.Record{{Object: "Document", ID: document[0].ID}})
+	if !deleted[0].Success {
+		t.Fatalf("document delete = %#v", deleted)
+	}
+	result, err = soql.Execute(org, query)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Records) != 0 {
+		t.Fatalf("deleted document query rows = %#v", result.Records)
+	}
+}
+
 func TestContentVersionCreatesDocumentAndLinks(t *testing.T) {
 	org := fileTestOrg()
 	engine := NewEngine(&org)
@@ -1029,6 +1124,48 @@ func TestContentVersionCreatesDocumentAndLinks(t *testing.T) {
 	}})
 	if !explicitLink[0].Success || explicitLink[0].ID != "06A000000000002" {
 		t.Fatalf("explicit link insert = %#v", explicitLink)
+	}
+}
+
+func TestContentVersionTransactionRollbackRemovesDocumentAndLink(t *testing.T) {
+	org := fileTestOrg()
+	engine := NewEngine(&org)
+	account := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")},
+	}})
+	if !account[0].Success {
+		t.Fatalf("account insert = %#v", account)
+	}
+	err := engine.WithTransaction(func(tx *Engine) error {
+		insert := tx.Insert([]storage.Record{{
+			Object: "ContentVersion",
+			Fields: map[string]storage.Value{
+				"Title":                  storage.StringValue("Spec"),
+				"PathOnClient":           storage.StringValue("docs/spec.txt"),
+				"VersionData":            storage.BlobValue("version bytes"),
+				"FirstPublishLocationId": storage.IDValue(account[0].ID),
+			},
+		}})
+		if !insert[0].Success {
+			t.Fatalf("content version insert = %#v", insert)
+		}
+		return errors.New("rollback")
+	})
+	if err == nil {
+		t.Fatal("expected transaction rollback")
+	}
+	if got := len(org.Objects["ContentVersion"].Records); got != 0 {
+		t.Fatalf("content versions after rollback = %d", got)
+	}
+	if got := len(org.Objects["ContentDocument"].Records); got != 0 {
+		t.Fatalf("content documents after rollback = %d", got)
+	}
+	if got := len(org.Objects["ContentDocumentLink"].Records); got != 0 {
+		t.Fatalf("content document links after rollback = %d", got)
+	}
+	if got := len(org.Objects["Account"].Records); got != 1 {
+		t.Fatalf("accounts after rollback = %d", got)
 	}
 }
 

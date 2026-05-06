@@ -1,0 +1,13 @@
+<Workflow>
+  <rules>
+    <fullName>MarkWorkflow</fullName>
+    <active>true</active>
+    <criteriaItems><field>Widget__c.Name</field><operation>equals</operation><value>Acme</value></criteriaItems>
+    <actions><name>SetStatus</name><type>FieldUpdate</type></actions>
+  </rules>
+  <fieldUpdates>
+    <fullName>SetStatus</fullName>
+    <field>Widget__c.Status__c</field>
+    <literalValue>workflow</literalValue>
+  </fieldUpdates>
+</Workflow>

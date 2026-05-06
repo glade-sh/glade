@@ -1,0 +1,7 @@
+<EmailTemplate>
+  <fullName>welcome</fullName>
+  <subject>Workflow subject</subject>
+  <body>Workflow alert for {!RelatedTo.Name}</body>
+  <templateType>custom</templateType>
+  <isActive>true</isActive>
+</EmailTemplate>

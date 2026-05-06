@@ -1,0 +1,8 @@
+<EmailTemplate>
+  <fullName>unfiled$public/welcome</fullName>
+  <name>Welcome</name>
+  <subject>Welcome subject</subject>
+  <htmlValue>&lt;p&gt;Hello local tester&lt;/p&gt;</htmlValue>
+  <templateType>custom</templateType>
+  <available>true</available>
+</EmailTemplate>

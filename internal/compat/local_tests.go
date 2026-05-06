@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -58,6 +59,40 @@ type LocalTestOutcome struct {
 	Error               string                 `json:"error,omitempty"`
 	RelatedMetadataFile string                 `json:"relatedMetadataFile,omitempty"`
 	DurationMS          int64                  `json:"durationMs,omitempty"`
+}
+
+type LocalTestCorpusBaseline struct {
+	Target   string                   `json:"target"`
+	Projects []LocalTestCorpusProject `json:"projects"`
+}
+
+type LocalTestCorpusProject struct {
+	Project  string                     `json:"project"`
+	Ready    bool                       `json:"ready"`
+	Summary  LocalTestSummary           `json:"summary"`
+	Outcomes []LocalTestExpectedOutcome `json:"outcomes"`
+}
+
+type LocalTestExpectedOutcome struct {
+	Class        string `json:"class"`
+	Method       string `json:"method"`
+	Outcome      string `json:"outcome"`
+	CapabilityID string `json:"capabilityId,omitempty"`
+}
+
+type LocalTestCorpusReport struct {
+	Target   string                         `json:"target"`
+	Ready    bool                           `json:"ready"`
+	Baseline string                         `json:"baseline"`
+	Projects []LocalTestCorpusProjectResult `json:"projects"`
+	Failures []string                       `json:"failures,omitempty"`
+}
+
+type LocalTestCorpusProjectResult struct {
+	Project  string                     `json:"project"`
+	Ready    bool                       `json:"ready"`
+	Summary  LocalTestSummary           `json:"summary"`
+	Outcomes []LocalTestExpectedOutcome `json:"outcomes"`
 }
 
 func RunLocalTests(options LocalTestOptions) (LocalTestReport, error) {
@@ -125,7 +160,84 @@ func RunLocalTests(options LocalTestOptions) (LocalTestReport, error) {
 	return report, nil
 }
 
+func LocalTestReportFromRun(projectRoot string, run testreport.Run) LocalTestReport {
+	root := projectRoot
+	if strings.TrimSpace(root) == "" {
+		root = "."
+	}
+	absRoot, _ := filepath.Abs(root)
+	projectLabel := filepath.Base(absRoot)
+	if projectLabel == "." || projectLabel == string(filepath.Separator) {
+		projectLabel = absRoot
+	}
+	report := LocalTestReport{
+		Target:  "local Apex test execution readiness",
+		Project: absRoot,
+	}
+	for _, suite := range run.Suites {
+		for _, testCase := range suite.Cases {
+			report.Outcomes = append(report.Outcomes, localTestRunOutcome(projectLabel, testCase))
+		}
+	}
+	finalizeLocalTestReport(&report, LocalTestOptions{}, time.Now())
+	report.DurationMS = run.Summary().DurationMS
+	return report
+}
+
+func CheckLocalTestCorpus(path string) (LocalTestCorpusReport, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return LocalTestCorpusReport{}, err
+	}
+	var baseline LocalTestCorpusBaseline
+	if err := json.Unmarshal(data, &baseline); err != nil {
+		return LocalTestCorpusReport{}, err
+	}
+	absPath, _ := filepath.Abs(path)
+	report := LocalTestCorpusReport{
+		Target:   baseline.Target,
+		Ready:    true,
+		Baseline: absPath,
+	}
+	baseDir := filepath.Dir(absPath)
+	for _, expected := range baseline.Projects {
+		projectPath := expected.Project
+		if !filepath.IsAbs(projectPath) {
+			projectPath = filepath.Clean(filepath.Join(baseDir, projectPath))
+		}
+		actual, err := RunLocalTests(LocalTestOptions{Project: projectPath})
+		if err != nil {
+			return report, err
+		}
+		actualProject := LocalTestCorpusProjectResult{
+			Project:  expected.Project,
+			Ready:    actual.Ready,
+			Summary:  actual.Summary,
+			Outcomes: stableLocalTestOutcomes(actual.Outcomes),
+		}
+		report.Projects = append(report.Projects, actualProject)
+		if actual.Ready != expected.Ready {
+			report.Failures = append(report.Failures, fmt.Sprintf("%s ready = %t, want %t", expected.Project, actual.Ready, expected.Ready))
+		}
+		if actual.Summary != expected.Summary {
+			report.Failures = append(report.Failures, fmt.Sprintf("%s summary = %+v, want %+v", expected.Project, actual.Summary, expected.Summary))
+		}
+		compareLocalTestOutcomes(expected.Project, actualProject.Outcomes, expected.Outcomes, &report.Failures)
+	}
+	report.Ready = len(report.Failures) == 0
+	if !report.Ready {
+		return report, fmt.Errorf("local-tests corpus baseline mismatch: %s", strings.Join(report.Failures, "; "))
+	}
+	return report, nil
+}
+
 func WriteLocalTestJSON(w io.Writer, report LocalTestReport) error {
+	enc := json.NewEncoder(w)
+	enc.SetIndent("", "  ")
+	return enc.Encode(report)
+}
+
+func WriteLocalTestCorpusJSON(w io.Writer, report LocalTestCorpusReport) error {
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")
 	return enc.Encode(report)
@@ -159,6 +271,62 @@ func WriteLocalTestText(w io.Writer, report LocalTestReport) {
 			fmt.Fprintf(w, ": %s", outcome.Error)
 		}
 		fmt.Fprintln(w)
+	}
+}
+
+func WriteLocalTestCorpusText(w io.Writer, report LocalTestCorpusReport) {
+	state := "ready"
+	if !report.Ready {
+		state = "not ready"
+	}
+	fmt.Fprintf(w, "Local test corpus: %s\n", state)
+	fmt.Fprintf(w, "baseline: %s\n", report.Baseline)
+	for _, project := range report.Projects {
+		fmt.Fprintf(w, "- %s: ready=%t pass=%d fail=%d unsupported=%d load_error=%d compile_error=%d internal_error=%d total=%d\n",
+			project.Project,
+			project.Ready,
+			project.Summary.Pass,
+			project.Summary.Fail,
+			project.Summary.Unsupported,
+			project.Summary.LoadErrors,
+			project.Summary.CompileErrors,
+			project.Summary.InternalErrors,
+			project.Summary.Total,
+		)
+	}
+	for _, failure := range report.Failures {
+		fmt.Fprintf(w, "! %s\n", failure)
+	}
+}
+
+func stableLocalTestOutcomes(outcomes []LocalTestOutcome) []LocalTestExpectedOutcome {
+	stable := make([]LocalTestExpectedOutcome, 0, len(outcomes))
+	for _, outcome := range outcomes {
+		stable = append(stable, LocalTestExpectedOutcome{
+			Class:        outcome.Class,
+			Method:       outcome.Method,
+			Outcome:      outcome.Outcome,
+			CapabilityID: outcome.CapabilityID,
+		})
+	}
+	sort.SliceStable(stable, func(i, j int) bool {
+		if stable[i].Class == stable[j].Class {
+			return stable[i].Method < stable[j].Method
+		}
+		return stable[i].Class < stable[j].Class
+	})
+	return stable
+}
+
+func compareLocalTestOutcomes(project string, actual, expected []LocalTestExpectedOutcome, failures *[]string) {
+	if len(actual) != len(expected) {
+		*failures = append(*failures, fmt.Sprintf("%s outcomes length = %d, want %d", project, len(actual), len(expected)))
+		return
+	}
+	for i := range expected {
+		if actual[i] != expected[i] {
+			*failures = append(*failures, fmt.Sprintf("%s outcome[%d] = %+v, want %+v", project, i, actual[i], expected[i]))
+		}
 	}
 }
 

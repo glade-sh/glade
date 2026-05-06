@@ -53,6 +53,21 @@ type remoteSiteXML struct {
 	Description string `xml:"description"`
 }
 
+type emailTemplateXML struct {
+	FullName      string `xml:"fullName"`
+	Name          string `xml:"name"`
+	Subject       string `xml:"subject"`
+	Body          string `xml:"body"`
+	HTMLValue     string `xml:"htmlValue"`
+	Markup        string `xml:"markup"`
+	TemplateType  string `xml:"templateType"`
+	TemplateStyle string `xml:"templateStyle"`
+	Encoding      string `xml:"encodingKey"`
+	Description   string `xml:"description"`
+	FolderName    string `xml:"folderName"`
+	Active        *bool  `xml:"available"`
+}
+
 func LoadProject(p project.Project) (storage.MetadataRegistry, error) {
 	var registry storage.MetadataRegistry
 	for _, path := range p.LabelFiles {
@@ -79,6 +94,11 @@ func LoadProject(p project.Project) (storage.MetadataRegistry, error) {
 		return storage.MetadataRegistry{}, err
 	}
 	registry.ContentAssets = assets
+	templates, err := loadEmailTemplates(p.EmailTemplateFiles, p.Namespace)
+	if err != nil {
+		return storage.MetadataRegistry{}, err
+	}
+	registry.EmailTemplates = templates
 	for _, path := range p.NamedCredentialFiles {
 		endpoint, err := loadNamedCredential(path)
 		if err != nil {
@@ -289,6 +309,77 @@ func loadContentAssets(contentFiles, metaFiles []string) ([]storage.ContentAsset
 	return out, nil
 }
 
+func loadEmailTemplates(paths []string, namespace string) ([]storage.EmailTemplateMetadata, error) {
+	byName := make(map[string]*storage.EmailTemplateMetadata)
+	for _, path := range paths {
+		name := emailTemplateNameFromPath(path)
+		key := lookupKey(name)
+		template := byName[key]
+		if template == nil {
+			template = &storage.EmailTemplateMetadata{Name: name, DeveloperName: name, Namespace: namespace}
+			byName[key] = template
+		}
+		lower := strings.ToLower(path)
+		if strings.HasSuffix(lower, ".email-meta.xml") {
+			meta, err := loadEmailTemplateMeta(path)
+			if err != nil {
+				return nil, err
+			}
+			template.MetadataPath = path
+			template.File = firstNonEmpty(template.File, path)
+			if meta.FullName != "" {
+				template.Name = meta.FullName
+				template.DeveloperName = developerNameFromFullName(meta.FullName)
+			}
+			if meta.Name != "" {
+				template.Name = meta.Name
+			}
+			template.Subject = strings.TrimSpace(meta.Subject)
+			if strings.TrimSpace(meta.Body) != "" {
+				template.Body = strings.TrimSpace(meta.Body)
+			}
+			template.HTMLValue = strings.TrimSpace(meta.HTMLValue)
+			template.Markup = strings.TrimSpace(meta.Markup)
+			template.TemplateType = strings.TrimSpace(meta.TemplateType)
+			template.TemplateStyle = strings.TrimSpace(meta.TemplateStyle)
+			template.Encoding = strings.TrimSpace(meta.Encoding)
+			template.Description = strings.TrimSpace(meta.Description)
+			template.FolderName = strings.TrimSpace(meta.FolderName)
+			template.Active = meta.Active == nil || *meta.Active
+			continue
+		}
+		content, err := os.ReadFile(path)
+		if err != nil {
+			return nil, err
+		}
+		template.File = path
+		template.Body = strings.TrimSpace(string(content))
+		if template.Active == false {
+			template.Active = true
+		}
+	}
+	out := make([]storage.EmailTemplateMetadata, 0, len(byName))
+	for _, template := range byName {
+		if template.DeveloperName == "" {
+			template.DeveloperName = developerNameFromFullName(template.Name)
+		}
+		out = append(out, *template)
+	}
+	return out, nil
+}
+
+func loadEmailTemplateMeta(path string) (emailTemplateXML, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return emailTemplateXML{}, err
+	}
+	var raw emailTemplateXML
+	if err := xml.Unmarshal(data, &raw); err != nil {
+		return emailTemplateXML{}, err
+	}
+	return raw, nil
+}
+
 func loadResourceMeta(path string) (staticResourceXML, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -345,6 +436,9 @@ func ensureMetadataObjects(org *storage.OrgState) {
 		org.Objects = make(map[string]storage.ObjectState)
 	}
 	ensureStaticResourceObject(org)
+	if len(org.Metadata.EmailTemplates) > 0 {
+		ensureEmailTemplateObject(org)
+	}
 }
 
 func ensureStaticResourceObject(org *storage.OrgState) {
@@ -376,6 +470,31 @@ func ensureStaticResourceObject(org *storage.OrgState) {
 	org.Objects["StaticResource"] = object
 }
 
+func ensureEmailTemplateObject(org *storage.OrgState) {
+	storage.EnsureStandardObject(org, "EmailTemplate")
+	object := org.Objects["EmailTemplate"]
+	for i, template := range org.Metadata.EmailTemplates {
+		id := storage.ID("00X" + leftPad(i+1, 12))
+		object.Records[id] = storage.Record{ID: id, Object: "EmailTemplate", Fields: map[string]storage.Value{
+			"Id":              storage.IDValue(id),
+			"Name":            storage.StringValue(firstNonEmpty(template.Name, template.DeveloperName)),
+			"DeveloperName":   storage.StringValue(firstNonEmpty(template.DeveloperName, developerNameFromFullName(template.Name))),
+			"NamespacePrefix": storage.StringValue(template.Namespace),
+			"Subject":         storage.StringValue(template.Subject),
+			"Body":            storage.StringValue(template.Body),
+			"HtmlValue":       storage.StringValue(template.HTMLValue),
+			"Markup":          storage.StringValue(template.Markup),
+			"Description":     storage.StringValue(template.Description),
+			"Encoding":        storage.StringValue(template.Encoding),
+			"TemplateType":    storage.StringValue(template.TemplateType),
+			"TemplateStyle":   storage.StringValue(template.TemplateStyle),
+			"FolderId":        storage.StringValue(template.FolderName),
+			"IsActive":        storage.BooleanValue(template.Active),
+		}}
+	}
+	org.Objects["EmailTemplate"] = object
+}
+
 func sortRegistry(registry *storage.MetadataRegistry) {
 	sort.Slice(registry.Labels, func(i, j int) bool {
 		if registry.Labels[i].Name != registry.Labels[j].Name {
@@ -390,6 +509,9 @@ func sortRegistry(registry *storage.MetadataRegistry) {
 			return registry.Endpoints[i].Name < registry.Endpoints[j].Name
 		}
 		return registry.Endpoints[i].Kind < registry.Endpoints[j].Kind
+	})
+	sort.Slice(registry.EmailTemplates, func(i, j int) bool {
+		return registry.EmailTemplates[i].DeveloperName < registry.EmailTemplates[j].DeveloperName
 	})
 }
 
@@ -427,12 +549,34 @@ func resourceNameFromMetaPath(path string) string {
 
 func baseNoMetaExt(path string) string {
 	base := filepath.Base(path)
-	for _, suffix := range []string{".namedCredential-meta.xml", ".namedCredential", ".remoteSite-meta.xml", ".remoteSite"} {
+	for _, suffix := range []string{".namedCredential-meta.xml", ".namedCredential", ".remoteSite-meta.xml", ".remoteSite", ".email-meta.xml", ".email"} {
 		if strings.HasSuffix(strings.ToLower(base), strings.ToLower(suffix)) {
 			return base[:len(base)-len(suffix)]
 		}
 	}
 	return strings.TrimSuffix(base, filepath.Ext(base))
+}
+
+func emailTemplateNameFromPath(path string) string {
+	return baseNoMetaExt(path)
+}
+
+func developerNameFromFullName(fullName string) string {
+	fullName = strings.TrimSpace(fullName)
+	if fullName == "" {
+		return ""
+	}
+	parts := strings.Split(fullName, "/")
+	return parts[len(parts)-1]
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, value := range values {
+		if strings.TrimSpace(value) != "" {
+			return strings.TrimSpace(value)
+		}
+	}
+	return ""
 }
 
 func trimKnownSuffix(value, suffix string) string {

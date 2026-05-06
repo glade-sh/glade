@@ -370,6 +370,40 @@ System.assertEquals('aGVsbG8=', EncodingUtil.base64Encode(row.Body));
 	}
 }
 
+func TestExecDocumentBlobRoundTripAndDelete(t *testing.T) {
+	program, err := CompileAnonymous(`
+Document doc = new Document(
+    Name = 'Terms.pdf',
+    DeveloperName = 'Terms',
+    Body = Blob.valueOf('document bytes'),
+    ContentType = 'application/pdf',
+    Type = 'pdf',
+    IsPublic = true
+);
+insert doc;
+List<Document> rows = [SELECT Id, DeveloperName, Body, ContentType, Type, IsPublic FROM Document WHERE Id = :doc.Id];
+System.assertEquals(1, rows.size());
+Document stored = rows.get(0);
+System.assertEquals('Terms', stored.DeveloperName);
+System.assertEquals('document bytes', stored.Body.toString());
+System.assertEquals('application/pdf', stored.ContentType);
+System.assertEquals('pdf', stored.Type);
+System.assert(stored.IsPublic);
+delete doc;
+System.assertEquals(0, [SELECT Id FROM Document WHERE Id = :doc.Id].size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecContentVersionCreatesDocumentAndLink(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account a = new Account(Name = 'Acme');

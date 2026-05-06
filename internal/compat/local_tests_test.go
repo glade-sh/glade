@@ -19,6 +19,117 @@ func TestRunLocalTestsClassifiesBasicFixture(t *testing.T) {
 	}
 }
 
+func TestRunLocalTestsPlatformAPIsFixtureReady(t *testing.T) {
+	report, err := RunLocalTests(LocalTestOptions{Project: filepath.Join("..", "..", "testdata", "local-tests", "platform-apis")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !report.Ready {
+		t.Fatalf("ready = false, summary = %#v outcomes = %#v", report.Summary, report.Outcomes)
+	}
+	if report.Summary.Total != 4 || report.Summary.Pass != 4 || report.Summary.CompileErrors != 0 || report.Summary.Unsupported != 0 {
+		t.Fatalf("summary = %#v", report.Summary)
+	}
+}
+
+func TestRunLocalTestsFilesEmailFixtureReady(t *testing.T) {
+	report, err := RunLocalTests(LocalTestOptions{Project: filepath.Join("..", "..", "testdata", "local-tests", "files-email")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !report.Ready {
+		t.Fatalf("ready = false, summary = %#v outcomes = %#v", report.Summary, report.Outcomes)
+	}
+	if report.Summary.Total != 1 || report.Summary.Pass != 1 || report.Summary.CompileErrors != 0 || report.Summary.Unsupported != 0 {
+		t.Fatalf("summary = %#v", report.Summary)
+	}
+}
+
+func TestRunLocalTestsWorkflowFixtureReady(t *testing.T) {
+	report, err := RunLocalTests(LocalTestOptions{Project: filepath.Join("..", "..", "testdata", "local-tests", "workflow")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !report.Ready {
+		t.Fatalf("ready = false, summary = %#v outcomes = %#v", report.Summary, report.Outcomes)
+	}
+	if report.Summary.Total != 1 || report.Summary.Pass != 1 || report.Summary.CompileErrors != 0 || report.Summary.Unsupported != 0 {
+		t.Fatalf("summary = %#v", report.Summary)
+	}
+}
+
+func TestRunLocalTestsFlowFixtureReady(t *testing.T) {
+	report, err := RunLocalTests(LocalTestOptions{Project: filepath.Join("..", "..", "testdata", "local-tests", "flow")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !report.Ready {
+		t.Fatalf("ready = false, summary = %#v outcomes = %#v", report.Summary, report.Outcomes)
+	}
+	if report.Summary.Total != 1 || report.Summary.Pass != 1 || report.Summary.CompileErrors != 0 || report.Summary.Unsupported != 0 {
+		t.Fatalf("summary = %#v", report.Summary)
+	}
+}
+
+func TestRunLocalTestsResourcesLabelsFixtureReady(t *testing.T) {
+	report, err := RunLocalTests(LocalTestOptions{Project: filepath.Join("..", "..", "testdata", "local-tests", "resources-labels")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !report.Ready {
+		t.Fatalf("ready = false, summary = %#v outcomes = %#v", report.Summary, report.Outcomes)
+	}
+	if report.Summary.Total != 2 || report.Summary.Pass != 2 || report.Summary.CompileErrors != 0 || report.Summary.Unsupported != 0 {
+		t.Fatalf("summary = %#v", report.Summary)
+	}
+}
+
+func TestRunLocalTestsUIControllerContractsFixtureReady(t *testing.T) {
+	report, err := RunLocalTests(LocalTestOptions{Project: filepath.Join("..", "..", "testdata", "local-tests", "ui-controller-contracts")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !report.Ready {
+		t.Fatalf("ready = false, summary = %#v outcomes = %#v", report.Summary, report.Outcomes)
+	}
+	if report.Summary.Total != 2 || report.Summary.Pass != 2 || report.Summary.CompileErrors != 0 || report.Summary.Unsupported != 0 {
+		t.Fatalf("summary = %#v", report.Summary)
+	}
+}
+
+func TestRunLocalTestsOrgLikeRunnerFixtureReady(t *testing.T) {
+	report, err := RunLocalTests(LocalTestOptions{Project: filepath.Join("..", "..", "testdata", "local-tests", "org-like-runner")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !report.Ready {
+		t.Fatalf("ready = false, summary = %#v outcomes = %#v", report.Summary, report.Outcomes)
+	}
+	if report.Summary.Total != 2 || report.Summary.Pass != 2 || report.Summary.CompileErrors != 0 || report.Summary.Unsupported != 0 {
+		t.Fatalf("summary = %#v", report.Summary)
+	}
+}
+
+func TestCheckLocalTestCorpusFixture(t *testing.T) {
+	report, err := CheckLocalTestCorpus(filepath.Join("..", "..", "docs", "fixtures", "local-tests-corpus.json"))
+	if err != nil {
+		t.Fatalf("CheckLocalTestCorpus error = %v, report = %#v", err, report)
+	}
+	if !report.Ready || len(report.Projects) != 7 {
+		t.Fatalf("report = %#v", report)
+	}
+}
+
+func TestCheckUIControllerDiscoveryFixture(t *testing.T) {
+	report, err := CheckUIControllerDiscovery(filepath.Join("..", "..", "docs", "fixtures", "ui-controller-discovery.json"))
+	if err != nil {
+		t.Fatalf("CheckUIControllerDiscovery error = %v, report = %#v", err, report)
+	}
+	if !report.Ready || report.Summary.AuraBundles != 1 || report.Summary.LWCBundles != 1 || report.Summary.UnresolvedApex != 0 {
+		t.Fatalf("report = %#v", report)
+	}
+}
+
 func TestRunLocalTestsReportsLoadError(t *testing.T) {
 	root := t.TempDir()
 	writeLocalTestFile(t, filepath.Join(root, "sfdx-project.json"), `{`)

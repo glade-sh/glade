@@ -43,6 +43,7 @@ type MetadataRegistry struct {
 	StaticResources []StaticResourceMetadata `json:"staticResources,omitempty"`
 	ContentAssets   []ContentAssetMetadata   `json:"contentAssets,omitempty"`
 	Endpoints       []EndpointMetadata       `json:"endpoints,omitempty"`
+	EmailTemplates  []EmailTemplateMetadata  `json:"emailTemplates,omitempty"`
 }
 
 type LabelMetadata struct {
@@ -87,6 +88,24 @@ type EndpointMetadata struct {
 	File          string `json:"file,omitempty"`
 }
 
+type EmailTemplateMetadata struct {
+	Name          string `json:"name"`
+	DeveloperName string `json:"developerName,omitempty"`
+	Namespace     string `json:"namespace,omitempty"`
+	Subject       string `json:"subject,omitempty"`
+	Body          string `json:"body,omitempty"`
+	HTMLValue     string `json:"htmlValue,omitempty"`
+	Markup        string `json:"markup,omitempty"`
+	TemplateType  string `json:"templateType,omitempty"`
+	TemplateStyle string `json:"templateStyle,omitempty"`
+	Encoding      string `json:"encoding,omitempty"`
+	Description   string `json:"description,omitempty"`
+	FolderName    string `json:"folderName,omitempty"`
+	Active        bool   `json:"active,omitempty"`
+	File          string `json:"file,omitempty"`
+	MetadataPath  string `json:"metadataPath,omitempty"`
+}
+
 type ObjectState struct {
 	Definition ObjectDefinition    `json:"definition"`
 	Records    map[ID]Record       `json:"records"`
@@ -104,6 +123,7 @@ type ObjectDefinition struct {
 	RecordTypes     []RecordTypeInfo  `json:"recordTypes,omitempty"`
 	ValidationRules []ValidationRule  `json:"validationRules,omitempty"`
 	WorkflowRules   []WorkflowRule    `json:"workflowRules,omitempty"`
+	FlowRules       []FlowRule        `json:"flowRules,omitempty"`
 	Indexes         []IndexDefinition `json:"indexes,omitempty"`
 	Metadata        map[string]string `json:"metadata,omitempty"`
 }
@@ -155,6 +175,7 @@ type WorkflowRule struct {
 	Formula      string                 `json:"formula,omitempty"`
 	Criteria     []WorkflowCriteriaItem `json:"criteria,omitempty"`
 	FieldUpdates []WorkflowFieldUpdate  `json:"fieldUpdates,omitempty"`
+	EmailAlerts  []WorkflowEmailAlert   `json:"emailAlerts,omitempty"`
 }
 
 type WorkflowCriteriaItem struct {
@@ -169,6 +190,38 @@ type WorkflowFieldUpdate struct {
 	LiteralValue string `json:"literalValue,omitempty"`
 	Formula      string `json:"formula,omitempty"`
 	SourceField  string `json:"sourceField,omitempty"`
+}
+
+type WorkflowEmailAlert struct {
+	Name       string                   `json:"name"`
+	Template   string                   `json:"template,omitempty"`
+	Recipients []WorkflowEmailRecipient `json:"recipients,omitempty"`
+}
+
+type WorkflowEmailRecipient struct {
+	Type      string `json:"type,omitempty"`
+	Field     string `json:"field,omitempty"`
+	Recipient string `json:"recipient,omitempty"`
+}
+
+type FlowRule struct {
+	Name         string                 `json:"name"`
+	File         string                 `json:"file,omitempty"`
+	Active       bool                   `json:"active,omitempty"`
+	ProcessType  string                 `json:"processType,omitempty"`
+	TriggerType  string                 `json:"triggerType,omitempty"`
+	Formula      string                 `json:"formula,omitempty"`
+	Criteria     []WorkflowCriteriaItem `json:"criteria,omitempty"`
+	FieldUpdates []WorkflowFieldUpdate  `json:"fieldUpdates,omitempty"`
+	Actions      []FlowAction           `json:"actions,omitempty"`
+}
+
+type FlowAction struct {
+	Name       string `json:"name"`
+	ActionType string `json:"actionType,omitempty"`
+	ActionName string `json:"actionName,omitempty"`
+	ClassName  string `json:"className,omitempty"`
+	MethodName string `json:"methodName,omitempty"`
 }
 
 type FieldType string
@@ -550,6 +603,16 @@ func (d ObjectDefinition) Clone() ObjectDefinition {
 	for i := range out.WorkflowRules {
 		out.WorkflowRules[i].Criteria = append([]WorkflowCriteriaItem(nil), d.WorkflowRules[i].Criteria...)
 		out.WorkflowRules[i].FieldUpdates = append([]WorkflowFieldUpdate(nil), d.WorkflowRules[i].FieldUpdates...)
+		out.WorkflowRules[i].EmailAlerts = append([]WorkflowEmailAlert(nil), d.WorkflowRules[i].EmailAlerts...)
+		for j := range out.WorkflowRules[i].EmailAlerts {
+			out.WorkflowRules[i].EmailAlerts[j].Recipients = append([]WorkflowEmailRecipient(nil), d.WorkflowRules[i].EmailAlerts[j].Recipients...)
+		}
+	}
+	out.FlowRules = append([]FlowRule(nil), d.FlowRules...)
+	for i := range out.FlowRules {
+		out.FlowRules[i].Criteria = append([]WorkflowCriteriaItem(nil), d.FlowRules[i].Criteria...)
+		out.FlowRules[i].FieldUpdates = append([]WorkflowFieldUpdate(nil), d.FlowRules[i].FieldUpdates...)
+		out.FlowRules[i].Actions = append([]FlowAction(nil), d.FlowRules[i].Actions...)
 	}
 	out.Indexes = append([]IndexDefinition(nil), d.Indexes...)
 	for i := range out.Indexes {

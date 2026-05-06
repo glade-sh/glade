@@ -1,0 +1,9 @@
+<CustomObject>
+  <label>Widget</label>
+  <pluralLabel>Widgets</pluralLabel>
+  <deploymentStatus>Deployed</deploymentStatus>
+  <fields><fullName>Name</fullName><label>Name</label><type>Text</type><length>80</length></fields>
+  <fields><fullName>Before__c</fullName><label>Before</label><type>Text</type><length>40</length></fields>
+  <fields><fullName>Status__c</fullName><label>Status</label><type>Text</type><length>40</length></fields>
+  <fields><fullName>Flow__c</fullName><label>Flow</label><type>Text</type><length>40</length></fields>
+</CustomObject>

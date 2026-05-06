@@ -1,0 +1,175 @@
+{
+  "target": "local Apex test execution corpus",
+  "projects": [
+    {
+      "project": "../../testdata/local-tests/org-like-runner",
+      "ready": true,
+      "summary": {
+        "total": 2,
+        "pass": 2,
+        "fail": 0,
+        "unsupported": 0,
+        "loadError": 0,
+        "compileError": 0,
+        "internalError": 0
+      },
+      "outcomes": [
+        {
+          "class": "OrgLikeRunnerTest",
+          "method": "saveOrderAsyncAndRollbackCompose",
+          "outcome": "pass"
+        },
+        {
+          "class": "OrgLikeRunnerTest",
+          "method": "setupDataAndStaticsAreIsolated",
+          "outcome": "pass"
+        }
+      ]
+    },
+    {
+      "project": "../../testdata/local-tests/platform-apis",
+      "ready": true,
+      "summary": {
+        "total": 4,
+        "pass": 4,
+        "fail": 0,
+        "unsupported": 0,
+        "loadError": 0,
+        "compileError": 0,
+        "internalError": 0
+      },
+      "outcomes": [
+        {
+          "class": "PlatformApisTest",
+          "method": "callableAndStubProviderWorkInTests",
+          "outcome": "pass"
+        },
+        {
+          "class": "PlatformApisTest",
+          "method": "contextAndOrganizationApisUseLocalContracts",
+          "outcome": "pass"
+        },
+        {
+          "class": "PlatformApisTest",
+          "method": "namedCredentialEndpointResolvesForCalloutMocks",
+          "outcome": "pass"
+        },
+        {
+          "class": "PlatformApisTest",
+          "method": "platformCachePartitionsAreIsolatedAndMutable",
+          "outcome": "pass"
+        }
+      ]
+    },
+    {
+      "project": "../../testdata/local-tests/resources-labels",
+      "ready": true,
+      "summary": {
+        "total": 2,
+        "pass": 2,
+        "fail": 0,
+        "unsupported": 0,
+        "loadError": 0,
+        "compileError": 0,
+        "internalError": 0
+      },
+      "outcomes": [
+        {
+          "class": "ResourcesLabelsTest",
+          "method": "labelsResolveFromMetadata",
+          "outcome": "pass"
+        },
+        {
+          "class": "ResourcesLabelsTest",
+          "method": "staticResourceMockUsesNamedCredentialEndpoint",
+          "outcome": "pass"
+        }
+      ]
+    },
+    {
+      "project": "../../testdata/local-tests/ui-controller-contracts",
+      "ready": true,
+      "summary": {
+        "total": 2,
+        "pass": 2,
+        "fail": 0,
+        "unsupported": 0,
+        "loadError": 0,
+        "compileError": 0,
+        "internalError": 0
+      },
+      "outcomes": [
+        {
+          "class": "VisualforceControllerContractTest",
+          "method": "pageStateStartsClean",
+          "outcome": "pass"
+        },
+        {
+          "class": "VisualforceControllerContractTest",
+          "method": "resolvesPageTokenAndExtensionConstructor",
+          "outcome": "pass"
+        }
+      ]
+    },
+    {
+      "project": "../../testdata/local-tests/files-email",
+      "ready": true,
+      "summary": {
+        "total": 1,
+        "pass": 1,
+        "fail": 0,
+        "unsupported": 0,
+        "loadError": 0,
+        "compileError": 0,
+        "internalError": 0
+      },
+      "outcomes": [
+        {
+          "class": "FilesEmailTest",
+          "method": "emailTemplateMetadataLoadsAndSends",
+          "outcome": "pass"
+        }
+      ]
+    },
+    {
+      "project": "../../testdata/local-tests/workflow",
+      "ready": true,
+      "summary": {
+        "total": 1,
+        "pass": 1,
+        "fail": 0,
+        "unsupported": 0,
+        "loadError": 0,
+        "compileError": 0,
+        "internalError": 0
+      },
+      "outcomes": [
+        {
+          "class": "WorkflowTest",
+          "method": "workflowFieldUpdateRunsDuringDml",
+          "outcome": "pass"
+        }
+      ]
+    },
+    {
+      "project": "../../testdata/local-tests/flow",
+      "ready": true,
+      "summary": {
+        "total": 1,
+        "pass": 1,
+        "fail": 0,
+        "unsupported": 0,
+        "loadError": 0,
+        "compileError": 0,
+        "internalError": 0
+      },
+      "outcomes": [
+        {
+          "class": "FlowTest",
+          "method": "recordTriggeredFlowFieldUpdateRunsDuringDml",
+          "outcome": "pass"
+        }
+      ]
+    }
+  ]
+}

@@ -35,6 +35,18 @@ func evaluateRecordFormula(formula string, record storage.Record) (bool, bool) {
 	return value.truthy(), true
 }
 
+func evaluateRecordFormulaValue(formula string, field storage.Field, record storage.Record) (storage.Value, bool, bool) {
+	parser := formulaParser{tokens: tokenizeFormula(html.UnescapeString(formula)), record: record}
+	value, ok := parser.parseExpression()
+	if !ok || parser.peek().typ != formulaTokenEOF {
+		return storage.Value{}, false, false
+	}
+	if value.kind == formulaNull {
+		return storage.NullValue(), true, true
+	}
+	return workflowLiteralValue(field, value.asString())
+}
+
 type formulaTokenType int
 
 const (
@@ -361,8 +373,14 @@ func formulaFieldValue(record storage.Record, field string) formulaValue {
 		return formulaValue{kind: formulaNull}
 	}
 	switch value.Kind {
-	case storage.ValueString, storage.ValueDate, storage.ValueDateTime, storage.ValueDecimal:
+	case storage.ValueString, storage.ValueDate, storage.ValueDateTime:
 		return formulaValue{kind: formulaString, text: value.String}
+	case storage.ValueDecimal:
+		number, err := strconv.ParseFloat(value.Decimal, 64)
+		if err != nil {
+			return formulaValue{kind: formulaString, text: value.Decimal}
+		}
+		return formulaValue{kind: formulaNumber, number: number}
 	case storage.ValueID:
 		return formulaValue{kind: formulaString, text: string(value.ID)}
 	case storage.ValueInteger:

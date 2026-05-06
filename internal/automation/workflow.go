@@ -15,6 +15,7 @@ import (
 
 type Index struct {
 	Workflows   []Workflow              `json:"workflows,omitempty"`
+	Flows       []Flow                  `json:"flows,omitempty"`
 	Diagnostics []diagnostic.Diagnostic `json:"diagnostics,omitempty"`
 }
 
@@ -24,9 +25,16 @@ type Workflow struct {
 	File       string                 `json:"file,omitempty"`
 }
 
+type Flow struct {
+	ObjectName string             `json:"objectName"`
+	Rules      []storage.FlowRule `json:"rules,omitempty"`
+	File       string             `json:"file,omitempty"`
+}
+
 type workflowXML struct {
 	Rules        []workflowRuleXML        `xml:"rules"`
 	FieldUpdates []workflowFieldUpdateXML `xml:"fieldUpdates"`
+	Alerts       []workflowAlertXML       `xml:"alerts"`
 }
 
 type workflowRuleXML struct {
@@ -58,6 +66,19 @@ type workflowFieldUpdateXML struct {
 	SourceField  string `xml:"sourceField"`
 }
 
+type workflowAlertXML struct {
+	FullName   string                 `xml:"fullName"`
+	Name       string                 `xml:"name"`
+	Template   string                 `xml:"template"`
+	Recipients []workflowRecipientXML `xml:"recipients"`
+}
+
+type workflowRecipientXML struct {
+	Type      string `xml:"type"`
+	Field     string `xml:"field"`
+	Recipient string `xml:"recipient"`
+}
+
 func LoadProject(p project.Project) (Index, error) {
 	idx := Index{}
 	for _, path := range p.WorkflowFiles {
@@ -68,7 +89,16 @@ func LoadProject(p project.Project) (Index, error) {
 		idx.Workflows = append(idx.Workflows, workflow)
 		idx.Diagnostics = append(idx.Diagnostics, diagnostics...)
 	}
+	for _, path := range p.FlowFiles {
+		flow, diagnostics, err := loadFlow(path)
+		if err != nil {
+			return Index{}, err
+		}
+		idx.Flows = append(idx.Flows, flow)
+		idx.Diagnostics = append(idx.Diagnostics, diagnostics...)
+	}
 	sort.Slice(idx.Workflows, func(i, j int) bool { return idx.Workflows[i].ObjectName < idx.Workflows[j].ObjectName })
+	sort.Slice(idx.Flows, func(i, j int) bool { return idx.Flows[i].ObjectName < idx.Flows[j].ObjectName })
 	return idx, nil
 }
 
@@ -83,6 +113,15 @@ func ApplyToOrg(org *storage.OrgState, idx Index) {
 		}
 		object := org.Objects[objectName]
 		object.Definition.WorkflowRules = append([]storage.WorkflowRule(nil), workflow.Rules...)
+		org.Objects[objectName] = object
+	}
+	for _, flow := range idx.Flows {
+		objectName, ok := storage.ResolveObjectName(*org, flow.ObjectName)
+		if !ok {
+			continue
+		}
+		object := org.Objects[objectName]
+		object.Definition.FlowRules = append([]storage.FlowRule(nil), flow.Rules...)
 		org.Objects[objectName] = object
 	}
 }
@@ -110,6 +149,27 @@ func loadWorkflow(path string) (Workflow, []diagnostic.Diagnostic, error) {
 		}
 		updates[strings.ToLower(update.Name)] = update
 	}
+	alerts := make(map[string]storage.WorkflowEmailAlert, len(raw.Alerts))
+	for _, rawAlert := range raw.Alerts {
+		alert := storage.WorkflowEmailAlert{
+			Name:     firstNonBlank(rawAlert.FullName, rawAlert.Name),
+			Template: strings.TrimSpace(rawAlert.Template),
+		}
+		for _, rawRecipient := range rawAlert.Recipients {
+			recipient := storage.WorkflowEmailRecipient{
+				Type:      strings.TrimSpace(rawRecipient.Type),
+				Field:     trimObjectPrefix(strings.TrimSpace(rawRecipient.Field)),
+				Recipient: strings.TrimSpace(rawRecipient.Recipient),
+			}
+			if recipient.Type != "" || recipient.Field != "" || recipient.Recipient != "" {
+				alert.Recipients = append(alert.Recipients, recipient)
+			}
+		}
+		if alert.Name == "" {
+			continue
+		}
+		alerts[strings.ToLower(alert.Name)] = alert
+	}
 	workflow := Workflow{ObjectName: objectNameFromWorkflowPath(path), File: path}
 	diagnostics := make([]diagnostic.Diagnostic, 0)
 	for _, rawRule := range raw.Rules {
@@ -130,18 +190,31 @@ func loadWorkflow(path string) (Workflow, []diagnostic.Diagnostic, error) {
 			})
 		}
 		for _, action := range rawRule.Actions {
-			if !strings.EqualFold(strings.TrimSpace(action.Type), "FieldUpdate") {
+			actionType := strings.TrimSpace(action.Type)
+			if strings.EqualFold(actionType, "FieldUpdate") {
+				update, ok := updates[strings.ToLower(strings.TrimSpace(action.Name))]
+				if !ok {
+					diagnostics = append(diagnostics, unsupported(path, rule.Name, fmt.Sprintf("workflow field update %q was not found", action.Name)))
+					continue
+				}
+				rule.FieldUpdates = append(rule.FieldUpdates, update)
+				continue
+			}
+			if strings.EqualFold(actionType, "Alert") || strings.EqualFold(actionType, "EmailAlert") {
+				alert, ok := alerts[strings.ToLower(strings.TrimSpace(action.Name))]
+				if !ok {
+					diagnostics = append(diagnostics, unsupported(path, rule.Name, fmt.Sprintf("workflow email alert %q was not found", action.Name)))
+					continue
+				}
+				rule.EmailAlerts = append(rule.EmailAlerts, alert)
+				continue
+			}
+			{
 				diagnostics = append(diagnostics, unsupported(path, rule.Name, fmt.Sprintf("workflow action type %q is not supported", action.Type)))
 				continue
 			}
-			update, ok := updates[strings.ToLower(strings.TrimSpace(action.Name))]
-			if !ok {
-				diagnostics = append(diagnostics, unsupported(path, rule.Name, fmt.Sprintf("workflow field update %q was not found", action.Name)))
-				continue
-			}
-			rule.FieldUpdates = append(rule.FieldUpdates, update)
 		}
-		if len(rule.FieldUpdates) > 0 {
+		if len(rule.FieldUpdates) > 0 || len(rule.EmailAlerts) > 0 {
 			workflow.Rules = append(workflow.Rules, rule)
 		}
 	}

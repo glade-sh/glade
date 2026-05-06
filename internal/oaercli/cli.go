@@ -619,6 +619,8 @@ func runTest(ctx context.Context, args []string, w io.Writer) (testreport.Run, e
 			i++
 		case "--json":
 			format = "json"
+		case "--compat-json":
+			format = "compat-json"
 		case "--junit":
 			if i+1 >= len(args) {
 				return testreport.Run{}, errors.New("--junit requires a path")
@@ -686,6 +688,8 @@ func runTest(ctx context.Context, args []string, w io.Writer) (testreport.Run, e
 	switch format {
 	case "json":
 		return result, testreport.WriteJSON(w, result)
+	case "compat-json":
+		return result, compat.WriteLocalTestJSON(w, compat.LocalTestReportFromRun(root, result))
 	default:
 		return result, testreport.WriteConsole(w, result)
 	}
@@ -1340,7 +1344,7 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 		return err
 	}
 	if len(args) == 0 {
-		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | local-tests [--project <root>] [--class <name>] [--method <name>] [--blockers-only] [--json] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | product-namespaces --catalog <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]")
+		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | local-tests [--project <root>] [--class <name>] [--method <name>] [--blockers-only] [--json] [--check <path>] | ui-controllers [--project <root>] [--json|--check <path>] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | product-namespaces --catalog <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]")
 	}
 	switch args[0] {
 	case "matrix", "mvp":
@@ -1349,6 +1353,8 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 		return runCompatPostParity(args[1:], w)
 	case "local-tests":
 		return runCompatLocalTests(args[1:], w)
+	case "ui-controllers":
+		return runCompatUIControllers(args[1:], w)
 	case "examples":
 		return runCompatExamples(args[1:], w)
 	case "server-examples":
@@ -1372,7 +1378,7 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 			return errors.New("usage: oaer compat validate|run <fixture.json...>")
 		}
 	default:
-		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | local-tests [--project <root>] [--class <name>] [--method <name>] [--blockers-only] [--json] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | product-namespaces --catalog <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]")
+		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | local-tests [--project <root>] [--class <name>] [--method <name>] [--blockers-only] [--json] [--check <path>] | ui-controllers [--project <root>] [--json|--check <path>] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | product-namespaces --catalog <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]")
 	}
 
 	for _, path := range args[1:] {
@@ -1411,10 +1417,17 @@ type postParityReadiness struct {
 func runCompatLocalTests(args []string, w io.Writer) error {
 	options := compat.LocalTestOptions{Project: "."}
 	jsonOut := false
+	checkPath := ""
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--json":
 			jsonOut = true
+		case "--check":
+			if i+1 >= len(args) {
+				return errors.New("--check requires a value")
+			}
+			checkPath = args[i+1]
+			i++
 		case "--blockers-only":
 			options.BlockersOnly = true
 		case "--project":
@@ -1439,6 +1452,20 @@ func runCompatLocalTests(args []string, w io.Writer) error {
 			return fmt.Errorf("unknown flag %q", args[i])
 		}
 	}
+	if checkPath != "" {
+		if options.Project != "." || options.Class != "" || options.Method != "" || options.BlockersOnly {
+			return errors.New("--check cannot be combined with --project, --class, --method, or --blockers-only")
+		}
+		report, err := compat.CheckLocalTestCorpus(checkPath)
+		if jsonOut {
+			if writeErr := compat.WriteLocalTestCorpusJSON(w, report); writeErr != nil {
+				return writeErr
+			}
+		} else {
+			compat.WriteLocalTestCorpusText(w, report)
+		}
+		return err
+	}
 	report, err := compat.RunLocalTests(options)
 	if err != nil {
 		return err
@@ -1447,6 +1474,55 @@ func runCompatLocalTests(args []string, w io.Writer) error {
 		return compat.WriteLocalTestJSON(w, report)
 	}
 	compat.WriteLocalTestText(w, report)
+	return nil
+}
+
+func runCompatUIControllers(args []string, w io.Writer) error {
+	projectRoot := "."
+	jsonOut := false
+	checkPath := ""
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--json":
+			jsonOut = true
+		case "--project":
+			if i+1 >= len(args) {
+				return errors.New("--project requires a value")
+			}
+			projectRoot = args[i+1]
+			i++
+		case "--check":
+			if i+1 >= len(args) {
+				return errors.New("--check requires a value")
+			}
+			checkPath = args[i+1]
+			i++
+		default:
+			return fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	if checkPath != "" {
+		if projectRoot != "." {
+			return errors.New("--check cannot be combined with --project")
+		}
+		report, err := compat.CheckUIControllerDiscovery(checkPath)
+		if jsonOut {
+			if writeErr := compat.WriteUIControllerJSON(w, report); writeErr != nil {
+				return writeErr
+			}
+		} else {
+			compat.WriteUIControllerText(w, report)
+		}
+		return err
+	}
+	report, err := compat.RunUIControllerDiscovery(projectRoot, false)
+	if err != nil {
+		return err
+	}
+	if jsonOut {
+		return compat.WriteUIControllerJSON(w, report)
+	}
+	compat.WriteUIControllerText(w, report)
 	return nil
 }
 

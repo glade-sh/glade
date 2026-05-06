@@ -1,0 +1,56 @@
+<Flow>
+  <processType>Workflow</processType>
+  <status>Active</status>
+  <formulas>
+    <name>Should_Run</name>
+    <dataType>Boolean</dataType>
+    <expression>{!$Record.Name} = "Acme" &amp;&amp; {!$Record.Score__c} &gt;= 10</expression>
+  </formulas>
+  <start>
+    <object>Widget__c</object>
+    <triggerType>RecordAfterSave</triggerType>
+    <filterLogic>Should_Run</filterLogic>
+  </start>
+  <decisions>
+    <name>Check_Name</name>
+    <rules>
+      <name>Name_Is_Acme</name>
+      <conditions>
+        <leftValueReference>$Record.Name</leftValueReference>
+        <operator>EqualTo</operator>
+        <rightValue>
+          <stringValue>Acme</stringValue>
+        </rightValue>
+      </conditions>
+    </rules>
+  </decisions>
+  <assignments>
+    <name>Assign_Status</name>
+    <assignmentItems>
+      <assignToReference>$Record.Status__c</assignToReference>
+      <operator>Assign</operator>
+      <value>
+        <formula>"Flow-" &amp; {!$Record.Name}</formula>
+      </value>
+    </assignmentItems>
+    <assignmentItems>
+      <assignToReference>$Record.Score_Copy__c</assignToReference>
+      <operator>Assign</operator>
+      <value>
+        <elementReference>$Record.Score__c</elementReference>
+      </value>
+    </assignmentItems>
+    <assignmentItems>
+      <assignToReference>$Record.Active__c</assignToReference>
+      <operator>Assign</operator>
+      <value>
+        <booleanValue>true</booleanValue>
+      </value>
+    </assignmentItems>
+  </assignments>
+  <actionCalls>
+    <name>Invoke_Widget_Action</name>
+    <actionType>apex</actionType>
+    <actionName>WidgetFlowAction.run</actionName>
+  </actionCalls>
+</Flow>

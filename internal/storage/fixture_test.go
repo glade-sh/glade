@@ -210,6 +210,10 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 			t.Fatalf("%s records = %#v", objectName, InspectOrg("", org))
 		}
 	}
+	document, ok := org.Objects["Document"]
+	if !ok || document.Definition.KeyPrefix != "015" || document.Definition.Fields["Body"].Type != FieldBlob || document.Definition.Fields["IsPublic"].Type != FieldBoolean {
+		t.Fatalf("document definition = %#v", document.Definition)
+	}
 	if len(org.Objects["Account"].Definition.RecordTypes) != 1 {
 		t.Fatalf("account record types = %#v", org.Objects["Account"].Definition.RecordTypes)
 	}

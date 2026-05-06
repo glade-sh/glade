@@ -219,6 +219,29 @@ System.assertEquals('00DLOCAL00000001', settings.orgId);
 	}
 }
 
+func TestExecPlatformCachePartitions(t *testing.T) {
+	program, err := CompileAnonymous(`
+Cache.OrgPartition orgCache = Cache.Org.getPartition('local');
+System.assertEquals(null, orgCache.get('missing'));
+orgCache.put('name', 'Acme');
+System.assert(orgCache.contains('name'));
+System.assertEquals('Acme', (String) orgCache.get('name'));
+System.assertEquals('Acme', (String) orgCache.remove('name'));
+System.assert(!orgCache.contains('name'));
+
+Cache.SessionPartition sessionCache = Cache.Session.getPartition('local');
+sessionCache.put('count', 7, 60);
+System.assertEquals(7, (Integer) sessionCache.get('count'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecLocalAsyncDrainRunsQueuedJobsOutsideTestContext(t *testing.T) {
 	jobProgram, err := CompileAnonymous(`insert new Account(Name = 'async ran');`)
 	if err != nil {
@@ -897,6 +920,124 @@ System.assertEquals('Ada Trail / Acme', merged.getPlainTextBody());
 			}
 		})
 	}
+}
+
+func TestExecSendEmailCapturesSideEffectsAndTemplates(t *testing.T) {
+	program, err := CompileAnonymous(`
+Messaging.SingleEmailMessage direct = new Messaging.SingleEmailMessage();
+direct.setToAddresses(new List<String>{'trail@example.test'});
+direct.setCcAddresses(new List<String>{'copy@example.test'});
+direct.setBccAddresses(new List<String>{'blind@example.test'});
+direct.setSubject('Direct subject');
+direct.setPlainTextBody('Direct text');
+direct.setHtmlBody('<p>Direct</p>');
+direct.setTargetObjectId('003000000000001AAA');
+direct.setWhatId('001000000000001AAA');
+direct.setSaveAsActivity(true);
+direct.setEntityAttachments(new List<String>{'015000000000001AAA'});
+direct.setDocumentAttachments(new List<String>{'015000000000002AAA'});
+
+Messaging.SingleEmailMessage templated = new Messaging.SingleEmailMessage();
+templated.setToAddresses(new List<String>{'template@example.test'});
+templated.setTemplateId('00X000000000003AAA');
+templated.setTargetObjectId('003000000000001AAA');
+templated.setWhatId('001000000000001AAA');
+
+List<Messaging.SendEmailResult> results = Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{direct, templated});
+System.assertEquals(2, results.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := emailTemplateTestOrg()
+	machine := New(nil)
+	machine.SetOrg(&org)
+	result, err := machine.Execute(program)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.CapturedEmails) != 2 {
+		t.Fatalf("captured emails = %#v", result.CapturedEmails)
+	}
+	first := result.CapturedEmails[0]
+	if first.ToAddresses[0] != "trail@example.test" || first.CcAddresses[0] != "copy@example.test" || first.BccAddresses[0] != "blind@example.test" {
+		t.Fatalf("direct recipients = %#v", first)
+	}
+	if first.Subject != "Direct subject" || first.PlainTextBody != "Direct text" || first.HTMLBody != "<p>Direct</p>" || !first.SaveAsActivity {
+		t.Fatalf("direct body capture = %#v", first)
+	}
+	if first.TargetObjectID != "003000000000001AAA" || first.WhatID != "001000000000001AAA" || first.EntityAttachments[0] != "015000000000001AAA" || first.DocumentAttachments[0] != "015000000000002AAA" {
+		t.Fatalf("direct metadata capture = %#v", first)
+	}
+	second := result.CapturedEmails[1]
+	if second.TemplateID != "00X000000000003AAA" || second.Subject != "Hello Ada at Acme" || second.HTMLBody != "<p>Ada Trail / Acme</p>" || second.PlainTextBody != "Ada Trail / Acme" {
+		t.Fatalf("templated capture = %#v", second)
+	}
+}
+
+func TestExecSendEmailCaptureRollback(t *testing.T) {
+	program, err := CompileAnonymous(`
+Messaging.SingleEmailMessage before = new Messaging.SingleEmailMessage();
+before.setToAddresses(new List<String>{'before@example.test'});
+Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{before});
+System.Savepoint sp = Database.setSavepoint();
+Messaging.SingleEmailMessage after = new Messaging.SingleEmailMessage();
+after.setToAddresses(new List<String>{'after@example.test'});
+Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{after});
+Database.rollback(sp);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	machine := New(nil)
+	machine.SetOrg(&org)
+	result, err := machine.Execute(program)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.CapturedEmails) != 1 || result.CapturedEmails[0].ToAddresses[0] != "before@example.test" {
+		t.Fatalf("captured emails after rollback = %#v", result.CapturedEmails)
+	}
+}
+
+func emailTemplateTestOrg() storage.OrgState {
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	storage.EnsureStandardObject(&org, "Contact")
+	storage.EnsureStandardObject(&org, "EmailTemplate")
+	accountObject := org.Objects["Account"]
+	accountObject.Records["001000000000001AAA"] = storage.Record{
+		ID:     "001000000000001AAA",
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name": storage.StringValue("Acme"),
+		},
+	}
+	org.Objects["Account"] = accountObject
+	contactObject := org.Objects["Contact"]
+	contactObject.Records["003000000000001AAA"] = storage.Record{
+		ID:     "003000000000001AAA",
+		Object: "Contact",
+		Fields: map[string]storage.Value{
+			"FirstName": storage.StringValue("Ada"),
+			"LastName":  storage.StringValue("Trail"),
+			"Name":      storage.StringValue("Ada Trail"),
+		},
+	}
+	org.Objects["Contact"] = contactObject
+	templateObject := org.Objects["EmailTemplate"]
+	templateObject.Records["00X000000000003AAA"] = storage.Record{
+		ID:     "00X000000000003AAA",
+		Object: "EmailTemplate",
+		Fields: map[string]storage.Value{
+			"Subject":   storage.StringValue("Hello {!Recipient.FirstName} at {!RelatedTo.Name}"),
+			"HtmlValue": storage.StringValue("<p>{!Contact.Name} / {!Account.Name}</p>"),
+			"Body":      storage.StringValue("{!Contact.Name} / {!Account.Name}"),
+		},
+	}
+	org.Objects["EmailTemplate"] = templateObject
+	return org
 }
 
 func TestExecCommonTestPlatformAPIs(t *testing.T) {

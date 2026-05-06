@@ -71,11 +71,14 @@ type VM struct {
 	hasStatement     bool
 	triggerDepth     int
 	savepoints       map[string]storage.OrgState
+	emailSavepoints  map[string][]CapturedEmail
 	savepointOrder   map[string]int
 	nextSavepoint    int
 	pageMessages     []Value
 	currentPage      Value
 	pageReferences   map[string]string
+	platformCache    map[string]map[string]cacheEntry
+	capturedEmails   []CapturedEmail
 	restRequest      Value
 	restResponse     Value
 	serverBaseURL    string
@@ -104,9 +107,29 @@ type Result struct {
 	Vars            map[string]Value `json:"vars,omitempty"`
 	TraceFormat     string           `json:"traceFormat,omitempty"`
 	Trace           []trace.Event    `json:"trace,omitempty"`
+	CapturedEmails  []CapturedEmail  `json:"capturedEmails,omitempty"`
 	Limits          Limits           `json:"limits,omitempty"`
 	LimitMode       LimitMode        `json:"limitMode,omitempty"`
 	LimitViolations []LimitViolation `json:"limitViolations,omitempty"`
+}
+
+type CapturedEmail struct {
+	Kind                string   `json:"kind"`
+	ToAddresses         []string `json:"toAddresses,omitempty"`
+	CcAddresses         []string `json:"ccAddresses,omitempty"`
+	BccAddresses        []string `json:"bccAddresses,omitempty"`
+	TargetObjectIDs     []string `json:"targetObjectIds,omitempty"`
+	WhatIDs             []string `json:"whatIds,omitempty"`
+	Subject             string   `json:"subject,omitempty"`
+	PlainTextBody       string   `json:"plainTextBody,omitempty"`
+	HTMLBody            string   `json:"htmlBody,omitempty"`
+	TemplateID          string   `json:"templateId,omitempty"`
+	TargetObjectID      string   `json:"targetObjectId,omitempty"`
+	WhatID              string   `json:"whatId,omitempty"`
+	SaveAsActivity      bool     `json:"saveAsActivity,omitempty"`
+	FileAttachments     []string `json:"fileAttachments,omitempty"`
+	EntityAttachments   []string `json:"entityAttachments,omitempty"`
+	DocumentAttachments []string `json:"documentAttachments,omitempty"`
 }
 
 type StackFrame struct {
@@ -175,6 +198,11 @@ type AsyncJob struct {
 	Cron      string
 }
 
+type cacheEntry struct {
+	Value    Value
+	ExpireAt time.Time
+}
+
 type Trigger struct {
 	Name      string
 	Namespace string
@@ -201,7 +229,9 @@ func New(stdout io.Writer) *VM {
 		limitMode:       LimitModePermissive,
 		fakeNow:         time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC),
 		savepoints:      make(map[string]storage.OrgState),
+		emailSavepoints: make(map[string][]CapturedEmail),
 		savepointOrder:  make(map[string]int),
+		platformCache:   make(map[string]map[string]cacheEntry),
 		ctx:             context.Background(),
 		activeSetters:   make(map[string]int),
 		staticInitState: make(map[string]staticInitState),
@@ -220,6 +250,7 @@ func (vm *VM) CloneRuntime(stdout io.Writer) *VM {
 	clone.Triggers = copyTriggerSliceMap(vm.Triggers)
 	clone.staticInitState = copyStaticInitStateMap(vm.staticInitState)
 	clone.pageReferences = copyStringMap(vm.pageReferences)
+	clone.platformCache = copyCacheMap(vm.platformCache)
 	return clone
 }
 
@@ -306,6 +337,21 @@ func copyStringMap(in map[string]string) map[string]string {
 	return out
 }
 
+func copyCacheMap(in map[string]map[string]cacheEntry) map[string]map[string]cacheEntry {
+	if in == nil {
+		return nil
+	}
+	out := make(map[string]map[string]cacheEntry, len(in))
+	for partition, entries := range in {
+		copied := make(map[string]cacheEntry, len(entries))
+		for key, entry := range entries {
+			copied[key] = entry
+		}
+		out[partition] = copied
+	}
+	return out
+}
+
 func (vm *VM) RegisterPageReference(name string) {
 	name = strings.TrimSpace(name)
 	if name == "" {
@@ -362,13 +408,153 @@ func (vm *VM) SetContext(ctx context.Context) {
 	vm.ctx = ctx
 }
 
-func (vm *VM) newDMLEngine() dml.Engine {
+func (vm *VM) newDMLEngine(result *Result) dml.Engine {
 	engine := dml.NewEngine(vm.Org)
 	engine.Now = func() time.Time { return vm.fakeNow }
 	if userID := vm.currentUserInfoField("Id", ""); userID != "" {
 		engine.UserID = storage.ID(userID)
 	}
+	engine.FlowActionInvoker = func(action storage.FlowAction, record storage.Record) error {
+		return vm.invokeFlowAction(action, record, result)
+	}
+	engine.WorkflowEmailer = func(alert storage.WorkflowEmailAlert, record storage.Record) error {
+		return vm.captureWorkflowEmail(alert, record, result)
+	}
 	return engine
+}
+
+func (vm *VM) newDeferredAutomationDMLEngine(result *Result) dml.Engine {
+	engine := vm.newDMLEngine(result)
+	engine.DeferAutomation = true
+	return engine
+}
+
+func (vm *VM) invokeFlowAction(action storage.FlowAction, record storage.Record, result *Result) error {
+	method, ok, err := vm.resolveFlowInvocableMethod(action)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return fmt.Errorf("flow action %s: no static @InvocableMethod found on %s", action.Name, flowActionTargetName(action))
+	}
+	if len(method.Params) != 1 || collectionBase(method.Params[0].Type) != "List" {
+		return fmt.Errorf("flow action %s: %s must accept exactly one List parameter", action.Name, method.Name)
+	}
+	arg := List(vmValueFromRecord(record))
+	arg.Type = method.Params[0].Type
+	if result != nil {
+		result.Trace = append(result.Trace, trace.Instant("apex.flow.action", "apex.flow", int64(len(result.Trace)), map[string]any{
+			"action": action.Name,
+			"class":  method.ClassName,
+			"method": method.Name,
+			"record": string(record.ID),
+			"object": record.Object,
+		}))
+	}
+	_, err = vm.callMethod(method, []Value{arg}, result)
+	if err != nil {
+		var thrown *apexThrowError
+		if errors.As(err, &thrown) {
+			if len(thrown.stack) == 0 {
+				thrown.stack = vm.rawStackFrames()
+			}
+			return runtimeError(thrown.value, thrown.stack)
+		}
+	}
+	return err
+}
+
+func (vm *VM) resolveFlowInvocableMethod(action storage.FlowAction) (Method, bool, error) {
+	className := strings.TrimSpace(action.ClassName)
+	if className == "" {
+		className = strings.TrimSpace(action.ActionName)
+	}
+	if className == "" {
+		return Method{}, false, fmt.Errorf("flow action %s: missing Apex class name", action.Name)
+	}
+	methodName := strings.TrimSpace(action.MethodName)
+	if methodName != "" {
+		candidates := vm.MethodOverloads[className+"."+methodName]
+		if len(candidates) == 0 {
+			candidates = vm.MethodFolded[strings.ToLower(className+"."+methodName)]
+		}
+		if len(candidates) == 0 {
+			class, ok := vm.Classes[className]
+			if !ok {
+				return Method{}, false, nil
+			}
+			for name, candidate := range class.Methods {
+				if strings.EqualFold(name, methodName) || strings.EqualFold(candidate.Name, className+"."+methodName) {
+					candidates = append(candidates, candidate)
+				}
+			}
+		}
+		for _, method := range candidates {
+			if !method.IsStatic {
+				continue
+			}
+			if !methodHasModifier(method.Modifiers, "InvocableMethod") {
+				return Method{}, false, fmt.Errorf("flow action %s: %s is not annotated @InvocableMethod", action.Name, method.Name)
+			}
+			return method, true, nil
+		}
+		if len(candidates) > 0 {
+			return Method{}, false, nil
+		}
+	}
+	class, ok := vm.Classes[className]
+	if !ok {
+		return Method{}, false, nil
+	}
+	var matches []Method
+	for _, method := range class.Methods {
+		if method.IsStatic && methodHasModifier(method.Modifiers, "InvocableMethod") {
+			matches = append(matches, method)
+		}
+	}
+	sort.Slice(matches, func(i, j int) bool { return matches[i].Name < matches[j].Name })
+	if len(matches) == 0 {
+		return Method{}, false, nil
+	}
+	if len(matches) > 1 {
+		names := make([]string, 0, len(matches))
+		for _, method := range matches {
+			names = append(names, method.Name)
+		}
+		return Method{}, false, fmt.Errorf("flow action %s: multiple @InvocableMethod candidates on %s: %s", action.Name, className, strings.Join(names, ", "))
+	}
+	return matches[0], true, nil
+}
+
+func flowActionTargetName(action storage.FlowAction) string {
+	if strings.TrimSpace(action.ClassName) != "" {
+		return strings.TrimSpace(action.ClassName)
+	}
+	return strings.TrimSpace(action.ActionName)
+}
+
+func (vm *VM) applyDeferredAutomation(engine *dml.Engine, records []storage.Record, allOrNone bool, backup storage.OrgState, result *Result) error {
+	if engine == nil {
+		return nil
+	}
+	for _, record := range records {
+		if record.Object == "" || record.ID == "" {
+			continue
+		}
+		if result != nil {
+			appendTrace(result, "apex.automation.apply", "apex.automation", map[string]any{
+				"object": record.Object,
+				"id":     string(record.ID),
+			})
+		}
+		if err := engine.ApplyAutomation(record.Object, record.ID); err != nil {
+			if allOrNone {
+				*vm.Org = backup
+			}
+			return err
+		}
+	}
+	return nil
 }
 
 func (vm *VM) RegisterTrigger(trigger Trigger) error {
@@ -422,6 +608,7 @@ func (vm *VM) Execute(program ir.Program) (result Result, err error) {
 		if recovered := recover(); recovered != nil {
 			err = fmt.Errorf("internal VM panic: %v", recovered)
 		}
+		result.CapturedEmails = append([]CapturedEmail(nil), vm.capturedEmails...)
 		result.Limits = vm.limits
 		result.LimitMode = vm.limitMode
 		result.LimitViolations = append([]LimitViolation(nil), vm.limitViolations...)
@@ -1504,6 +1691,7 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		vm.nextSavepoint++
 		id := fmt.Sprintf("sp-%d", vm.nextSavepoint)
 		vm.savepoints[id] = vm.Org.Clone()
+		vm.emailSavepoints[id] = append([]CapturedEmail(nil), vm.capturedEmails...)
 		vm.savepointOrder[id] = vm.nextSavepoint
 		savepoint := Object("System.Savepoint")
 		savepoint.Fields["Id"] = String(id)
@@ -1529,9 +1717,11 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		}
 		restored := snapshot.Clone()
 		*vm.Org = restored
+		vm.capturedEmails = append([]CapturedEmail(nil), vm.emailSavepoints[idValue.Text]...)
 		for id, order := range vm.savepointOrder {
 			if order > targetOrder {
 				delete(vm.savepoints, id)
+				delete(vm.emailSavepoints, id)
 				delete(vm.savepointOrder, id)
 			}
 		}
@@ -2043,33 +2233,19 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		return Null, unsupportedCallError(callee + " local platform event after-commit delivery surface")
 	case "ConnectApi.Organization.getSettings":
 		return vm.connectAPIOrganizationSettings(args)
+	case "Cache.Org.getPartition", "Cache.Session.getPartition":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("%s expects String partition name", callee)
+		}
+		partition := Object("Cache.OrgPartition")
+		if strings.HasPrefix(callee, "Cache.Session.") {
+			partition.Type = "Cache.SessionPartition"
+		}
+		partition.Fields["name"] = args[0]
+		partition.Fields["scope"] = String(strings.TrimSuffix(callee, ".getPartition"))
+		return partition, nil
 	case "Messaging.sendEmail":
-		if len(args) == 0 {
-			return Null, fmt.Errorf("Messaging.sendEmail expects messages")
-		}
-		if len(args) > 2 {
-			return Null, unsupportedCallError("Messaging.sendEmail send options overloads")
-		}
-		if args[0].Kind != ValueList {
-			return Null, fmt.Errorf("Messaging.sendEmail expects List")
-		}
-		if len(args) == 2 && args[1].Kind != ValueBool {
-			return Null, unsupportedCallError("Messaging.sendEmail send options overloads")
-		}
-		for _, message := range args[0].List {
-			if !isLocalEmailMessage(message) {
-				return Null, fmt.Errorf("Messaging.sendEmail expects SingleEmailMessage or MassEmailMessage list items")
-			}
-		}
-		if err := vm.incrementLimit("emailInvocations", 1); err != nil {
-			return Null, err
-		}
-		appendTrace(result, "apex.email.send", "apex.email", map[string]any{"messages": len(args[0].List)})
-		results := make([]Value, 0, len(args[0].List))
-		for range args[0].List {
-			results = append(results, newSendEmailResult())
-		}
-		return List(results...), nil
+		return vm.sendEmail(args, result)
 	case "Messaging.renderStoredEmailTemplate":
 		return vm.renderStoredEmailTemplate(args)
 	case "ApexPages.hasMessages":
@@ -3889,7 +4065,7 @@ func (vm *VM) applyDatabaseRecordAction(op string, value Value, allOrNone bool, 
 		}))
 	}
 	backup := vm.Org.Clone()
-	engine := vm.newDMLEngine()
+	engine := vm.newDMLEngine(result)
 	var results []dml.Result
 	switch op {
 	case "emptyRecycleBin":
@@ -4073,7 +4249,7 @@ func (vm *VM) executeDatabaseMerge(args []Value, result *Result) (Value, error) 
 			return vm.mergeResultValue(args[1].Kind == ValueList, duplicates, beforeDeleteFailures), nil
 		}
 	}
-	engine := vm.newDMLEngine()
+	engine := vm.newDMLEngine(result)
 	results := engine.Merge(master[0], mergeDuplicates)
 	if hasDMLFailures(beforeDeleteFailures) {
 		results = mergeDMLResults(beforeDeleteFailures, results)
@@ -4328,7 +4504,7 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 			return beforeFailures, nil
 		}
 	}
-	engine := vm.newDMLEngine()
+	engine := vm.newDeferredAutomationDMLEngine(result)
 	var results []dml.Result
 	switch op {
 	case "insert":
@@ -4378,6 +4554,11 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 			*vm.Org = backup
 		}
 		return nil, err
+	}
+	if op == "insert" || op == "update" || op == "upsert" {
+		if err := vm.applyDeferredAutomation(&engine, afterRecords, allOrNone, backup, result); err != nil {
+			return results, err
+		}
 	}
 	return results, nil
 }
@@ -4476,7 +4657,7 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 			return beforeFailures, nil
 		}
 	}
-	engine := vm.newDMLEngine()
+	engine := vm.newDeferredAutomationDMLEngine(result)
 	var engineResults []dml.Result
 	if externalIDField != "" {
 		engineResults = engine.UpsertWithExternalID(records, externalIDField)
@@ -4514,6 +4695,9 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 				*vm.Org = backup
 			}
 			return nil, err
+		}
+		if err := vm.applyDeferredAutomation(&engine, afterRecords, allOrNone, backup, result); err != nil {
+			return results, err
 		}
 	}
 	return results, nil
@@ -8584,6 +8768,182 @@ func isLocalEmailMessage(value Value) bool {
 	return value.Kind == ValueObject && (value.Type == "Messaging.SingleEmailMessage" || value.Type == "Messaging.MassEmailMessage")
 }
 
+func (vm *VM) sendEmail(args []Value, result *Result) (Value, error) {
+	if len(args) == 0 {
+		return Null, fmt.Errorf("Messaging.sendEmail expects messages")
+	}
+	if len(args) > 2 {
+		return Null, unsupportedCallError("Messaging.sendEmail send options overloads")
+	}
+	if args[0].Kind != ValueList {
+		return Null, fmt.Errorf("Messaging.sendEmail expects List")
+	}
+	if len(args) == 2 && args[1].Kind != ValueBool {
+		return Null, unsupportedCallError("Messaging.sendEmail send options overloads")
+	}
+	for _, message := range args[0].List {
+		if !isLocalEmailMessage(message) {
+			return Null, fmt.Errorf("Messaging.sendEmail expects SingleEmailMessage or MassEmailMessage list items")
+		}
+	}
+	if err := vm.incrementLimit("emailInvocations", 1); err != nil {
+		return Null, err
+	}
+	appendTrace(result, "apex.email.send", "apex.email", map[string]any{"messages": len(args[0].List)})
+	results := make([]Value, 0, len(args[0].List))
+	for _, message := range args[0].List {
+		vm.capturedEmails = append(vm.capturedEmails, vm.captureEmail(message))
+		results = append(results, newSendEmailResult())
+	}
+	return List(results...), nil
+}
+
+func (vm *VM) captureEmail(message Value) CapturedEmail {
+	captured := CapturedEmail{Kind: message.Type}
+	switch message.Type {
+	case "Messaging.SingleEmailMessage":
+		captured.ToAddresses = stringsFromList(message.Fields["toAddresses"])
+		captured.CcAddresses = stringsFromList(message.Fields["ccAddresses"])
+		captured.BccAddresses = stringsFromList(message.Fields["bccAddresses"])
+		captured.FileAttachments = stringsFromList(message.Fields["fileAttachments"])
+		captured.EntityAttachments = stringsFromList(message.Fields["entityAttachments"])
+		captured.DocumentAttachments = stringsFromList(message.Fields["documentAttachments"])
+		captured.TargetObjectIDs = stringsFromList(message.Fields["targetObjectIds"])
+		captured.Subject = stringValue(message.Fields["subject"])
+		captured.PlainTextBody = stringValue(message.Fields["plainTextBody"])
+		captured.HTMLBody = stringValue(message.Fields["htmlBody"])
+		captured.TemplateID = stringValue(message.Fields["templateId"])
+		captured.TargetObjectID = stringValue(message.Fields["targetObjectId"])
+		captured.WhatID = stringValue(message.Fields["whatId"])
+		captured.SaveAsActivity = boolValue(message.Fields["saveAsActivity"])
+		vm.renderCapturedEmailTemplate(&captured)
+	case "Messaging.MassEmailMessage":
+		captured.TargetObjectIDs = stringsFromList(message.Fields["targetObjectIds"])
+		captured.WhatIDs = stringsFromList(message.Fields["whatIds"])
+		captured.TemplateID = stringValue(message.Fields["templateId"])
+		captured.SaveAsActivity = boolValue(message.Fields["saveAsActivity"])
+		if captured.TemplateID != "" && len(captured.TargetObjectIDs) > 0 {
+			captured.TargetObjectID = captured.TargetObjectIDs[0]
+			if len(captured.WhatIDs) > 0 {
+				captured.WhatID = captured.WhatIDs[0]
+			}
+			vm.renderCapturedEmailTemplate(&captured)
+		}
+	}
+	return captured
+}
+
+func (vm *VM) captureWorkflowEmail(alert storage.WorkflowEmailAlert, record storage.Record, result *Result) error {
+	if err := vm.incrementLimit("emailInvocations", 1); err != nil {
+		return err
+	}
+	captured := CapturedEmail{
+		Kind:   "WorkflowEmailAlert",
+		WhatID: string(record.ID),
+	}
+	captured.ToAddresses = vm.workflowEmailRecipients(alert, record)
+	if template, ok := vm.emailTemplateByName(alert.Template); ok {
+		captured.TemplateID = string(template.ID)
+		whoID := Null
+		if len(captured.TargetObjectIDs) > 0 {
+			whoID = String(captured.TargetObjectIDs[0])
+		}
+		whatID := Null
+		if captured.WhatID != "" {
+			whatID = String(captured.WhatID)
+		}
+		captured.Subject = vm.renderEmailTemplateText(storageStringField(template, "Subject"), whoID, whatID)
+		captured.HTMLBody = vm.renderEmailTemplateText(storageStringField(template, "HtmlValue"), whoID, whatID)
+		captured.PlainTextBody = vm.renderEmailTemplateText(storageStringField(template, "Body"), whoID, whatID)
+	}
+	vm.capturedEmails = append(vm.capturedEmails, captured)
+	appendTrace(result, "apex.email.workflow", "apex.email", map[string]any{
+		"alert":      alert.Name,
+		"template":   alert.Template,
+		"recipients": len(captured.ToAddresses),
+		"record":     string(record.ID),
+	})
+	return nil
+}
+
+func (vm *VM) workflowEmailRecipients(alert storage.WorkflowEmailAlert, record storage.Record) []string {
+	recipients := make([]string, 0, len(alert.Recipients))
+	for _, recipient := range alert.Recipients {
+		if recipient.Recipient != "" {
+			recipients = append(recipients, recipient.Recipient)
+			continue
+		}
+		if recipient.Field == "" {
+			continue
+		}
+		fieldName := recipient.Field
+		if vm.Org != nil {
+			if objectName, ok := storage.ResolveObjectName(*vm.Org, record.Object); ok {
+				if object, ok := vm.Org.Objects[objectName]; ok {
+					if resolved, ok := storage.ResolveFieldName(object.Definition, vm.Org.Namespace, recipient.Field); ok {
+						fieldName = resolved
+					}
+				}
+			}
+		}
+		if value, ok := record.Fields[fieldName]; ok && value.String != "" {
+			recipients = append(recipients, value.String)
+		}
+	}
+	return recipients
+}
+
+func (vm *VM) renderCapturedEmailTemplate(captured *CapturedEmail) {
+	if captured == nil || captured.TemplateID == "" || vm.Org == nil {
+		return
+	}
+	template, ok := vm.emailTemplateByID(captured.TemplateID)
+	if !ok {
+		return
+	}
+	whoID := Null
+	if captured.TargetObjectID != "" {
+		whoID = String(captured.TargetObjectID)
+	}
+	whatID := Null
+	if captured.WhatID != "" {
+		whatID = String(captured.WhatID)
+	}
+	if captured.Subject == "" {
+		captured.Subject = vm.renderEmailTemplateText(storageStringField(template, "Subject"), whoID, whatID)
+	}
+	if captured.HTMLBody == "" {
+		captured.HTMLBody = vm.renderEmailTemplateText(storageStringField(template, "HtmlValue"), whoID, whatID)
+	}
+	if captured.PlainTextBody == "" {
+		captured.PlainTextBody = vm.renderEmailTemplateText(storageStringField(template, "Body"), whoID, whatID)
+	}
+}
+
+func stringsFromList(value Value) []string {
+	if value.Kind != ValueList {
+		return nil
+	}
+	out := make([]string, 0, len(value.List))
+	for _, item := range value.List {
+		if item.Kind == ValueString {
+			out = append(out, item.Text)
+		}
+	}
+	return out
+}
+
+func stringValue(value Value) string {
+	if value.Kind == ValueString {
+		return value.Text
+	}
+	return ""
+}
+
+func boolValue(value Value) bool {
+	return value.Kind == ValueBool && value.Bool
+}
+
 func (vm *VM) renderStoredEmailTemplate(args []Value) (Value, error) {
 	if len(args) != 3 {
 		return Null, fmt.Errorf("Messaging.renderStoredEmailTemplate expects templateId, whoId, whatId")
@@ -8631,6 +8991,32 @@ func (vm *VM) emailTemplateByID(templateID string) (storage.Record, bool) {
 		}
 		if id, ok := record.Fields["Id"]; ok && string(storageIDFromValue(id)) == templateID {
 			return record, true
+		}
+	}
+	return storage.Record{}, false
+}
+
+func (vm *VM) emailTemplateByName(name string) (storage.Record, bool) {
+	if vm.Org == nil {
+		return storage.Record{}, false
+	}
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return storage.Record{}, false
+	}
+	objectName, ok := storage.ResolveObjectName(*vm.Org, "EmailTemplate")
+	if !ok {
+		objectName = "EmailTemplate"
+	}
+	object, ok := vm.Org.Objects[objectName]
+	if !ok {
+		return storage.Record{}, false
+	}
+	for _, record := range object.Records {
+		for _, field := range []string{"DeveloperName", "Name"} {
+			if strings.EqualFold(storageStringField(record, field), name) {
+				return record, true
+			}
 		}
 	}
 	return storage.Record{}, false
@@ -13547,6 +13933,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			return Null, receiver, false, true, unsupportedCallError("Http.send real network transport")
 		}
+	case "Cache.OrgPartition", "Cache.SessionPartition":
+		value, updatedReceiver, err := vm.callCachePartitionMember(receiver, method, args)
+		return value, updatedReceiver, true, true, err
 	case "Messaging.SendEmailResult":
 		switch method {
 		case "isSuccess":
@@ -13847,6 +14236,97 @@ func (vm *VM) localHTTPMockResponse(mock Value, request Value) (Value, error) {
 		}
 		return response, nil
 	}
+}
+
+func (vm *VM) callCachePartitionMember(receiver Value, method string, args []Value) (Value, Value, error) {
+	name, ok := receiver.Fields["name"]
+	if !ok || name.Kind != ValueString || strings.TrimSpace(name.Text) == "" {
+		return Null, receiver, fmt.Errorf("%s partition missing name", receiver.Type)
+	}
+	partitionName := strings.ToLower(receiver.Type + ":" + name.Text)
+	method = strings.ToLower(method)
+	switch method {
+	case "get":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, receiver, fmt.Errorf("%s.get expects String key", receiver.Type)
+		}
+		value, ok := vm.cacheGet(partitionName, args[0].Text)
+		if !ok {
+			return Null, receiver, nil
+		}
+		return value, receiver, nil
+	case "put":
+		if len(args) < 2 || len(args) > 3 || args[0].Kind != ValueString {
+			return Null, receiver, fmt.Errorf("%s.put expects String key, value[, ttlSeconds]", receiver.Type)
+		}
+		ttl := int64(0)
+		if len(args) == 3 {
+			if args[2].Kind != ValueInt {
+				return Null, receiver, fmt.Errorf("%s.put ttl expects Integer seconds", receiver.Type)
+			}
+			ttl = args[2].Int
+		}
+		vm.cachePut(partitionName, args[0].Text, args[1], ttl)
+		return Null, receiver, nil
+	case "remove":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, receiver, fmt.Errorf("%s.remove expects String key", receiver.Type)
+		}
+		removed, ok := vm.cacheRemove(partitionName, args[0].Text)
+		if !ok {
+			return Null, receiver, nil
+		}
+		return removed, receiver, nil
+	case "contains":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, receiver, fmt.Errorf("%s.contains expects String key", receiver.Type)
+		}
+		_, ok := vm.cacheGet(partitionName, args[0].Text)
+		return Bool(ok), receiver, nil
+	default:
+		return Null, receiver, unsupportedCallError(receiver.Type + "." + method)
+	}
+}
+
+func (vm *VM) cacheGet(partition, key string) (Value, bool) {
+	entries := vm.platformCache[partition]
+	if entries == nil {
+		return Null, false
+	}
+	entry, ok := entries[key]
+	if !ok {
+		return Null, false
+	}
+	if !entry.ExpireAt.IsZero() && !entry.ExpireAt.After(vm.fakeNow) {
+		delete(entries, key)
+		return Null, false
+	}
+	return entry.Value, true
+}
+
+func (vm *VM) cachePut(partition, key string, value Value, ttlSeconds int64) {
+	if vm.platformCache == nil {
+		vm.platformCache = make(map[string]map[string]cacheEntry)
+	}
+	entries := vm.platformCache[partition]
+	if entries == nil {
+		entries = make(map[string]cacheEntry)
+		vm.platformCache[partition] = entries
+	}
+	entry := cacheEntry{Value: value}
+	if ttlSeconds > 0 {
+		entry.ExpireAt = vm.fakeNow.Add(time.Duration(ttlSeconds) * time.Second)
+	}
+	entries[key] = entry
+}
+
+func (vm *VM) cacheRemove(partition, key string) (Value, bool) {
+	value, ok := vm.cacheGet(partition, key)
+	if !ok {
+		return Null, false
+	}
+	delete(vm.platformCache[partition], key)
+	return value, true
 }
 
 func (vm *VM) staticResourceMockResponse(mock Value, resourceName string) Value {

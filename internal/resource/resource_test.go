@@ -22,6 +22,15 @@ func TestLoadProjectResourcesLabelsAndEndpoints(t *testing.T) {
 	writeFile(t, filepath.Join(root, "force-app/main/default/staticresources/Site.resource-meta.xml"), `<StaticResource><contentType>text/plain</contentType><cacheControl>Public</cacheControl></StaticResource>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/contentassets/Logo.asset"), "asset-body")
 	writeFile(t, filepath.Join(root, "force-app/main/default/contentassets/Logo.asset-meta.xml"), `<ContentAsset><contentType>image/png</contentType></ContentAsset>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/email/welcome.email"), "Hello {!Recipient.FirstName}")
+	writeFile(t, filepath.Join(root, "force-app/main/default/email/welcome.email-meta.xml"), `<EmailTemplate>
+  <fullName>unfiled$public/welcome</fullName>
+  <name>Welcome</name>
+  <subject>Welcome subject</subject>
+  <htmlValue>&lt;p&gt;Hello {!Contact.FirstName}&lt;/p&gt;</htmlValue>
+  <templateType>custom</templateType>
+  <available>true</available>
+</EmailTemplate>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/namedCredentials/Billing.namedCredential"), `<NamedCredential><endpoint>https://billing.example.test</endpoint><protocol>NoAuthentication</protocol></NamedCredential>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/remoteSiteSettings/Maps.remoteSite"), `<RemoteSiteSetting><url>https://maps.example.test</url></RemoteSiteSetting>`)
 
@@ -45,12 +54,22 @@ func TestLoadProjectResourcesLabelsAndEndpoints(t *testing.T) {
 	if got, ok := ResolveEndpoint(registry, "callout:Billing/v1/accounts"); !ok || got != "https://billing.example.test/v1/accounts" {
 		t.Fatalf("endpoint = %q, %v", got, ok)
 	}
+	if len(registry.EmailTemplates) != 1 || registry.EmailTemplates[0].DeveloperName != "welcome" || registry.EmailTemplates[0].Body != "Hello {!Recipient.FirstName}" {
+		t.Fatalf("email templates = %#v", registry.EmailTemplates)
+	}
 	org := storage.OrgState{Objects: map[string]storage.ObjectState{}}
 	if err := ApplyProject(&org, p); err != nil {
 		t.Fatal(err)
 	}
 	if got := org.Objects["StaticResource"].Records["081000000000001"].Fields["Body"].String; got != "site-body" {
 		t.Fatalf("StaticResource body = %q", got)
+	}
+	template := org.Objects["EmailTemplate"].Records["00X000000000001"]
+	if got := template.Fields["DeveloperName"].String; got != "welcome" {
+		t.Fatalf("EmailTemplate DeveloperName = %q", got)
+	}
+	if got := template.Fields["Subject"].String; got != "Welcome subject" {
+		t.Fatalf("EmailTemplate Subject = %q", got)
 	}
 }
 

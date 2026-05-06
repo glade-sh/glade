@@ -380,6 +380,18 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		"ContentType": {APIName: "ContentType", Type: FieldString},
 		"Description": {APIName: "Description", Type: FieldString},
 	})
+	ensureObject(org, "Document", "015", map[string]Field{
+		"Name":          {APIName: "Name", Type: FieldString, Required: true},
+		"DeveloperName": {APIName: "DeveloperName", Type: FieldString},
+		"Body":          {APIName: "Body", Type: FieldBlob},
+		"ContentType":   {APIName: "ContentType", Type: FieldString},
+		"Description":   {APIName: "Description", Type: FieldString},
+		"FolderId":      {APIName: "FolderId", Type: FieldReference, ReferenceTo: []string{"Folder"}, RelationshipName: "Folder"},
+		"Type":          {APIName: "Type", Type: FieldString},
+		"IsPublic":      {APIName: "IsPublic", Type: FieldBoolean},
+		"Url":           {APIName: "Url", Type: FieldString},
+		"Keywords":      {APIName: "Keywords", Type: FieldString},
+	})
 	ensureObject(org, "ContentDocument", "069", map[string]Field{
 		"Title":                    {APIName: "Title", Type: FieldString},
 		"LatestPublishedVersionId": {APIName: "LatestPublishedVersionId", Type: FieldReference, ReferenceTo: []string{"ContentVersion"}, RelationshipName: "LatestPublishedVersion"},

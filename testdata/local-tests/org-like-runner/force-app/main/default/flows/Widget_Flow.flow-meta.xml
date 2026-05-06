@@ -1,0 +1,21 @@
+<Flow>
+  <processType>Workflow</processType>
+  <status>Active</status>
+  <start>
+    <object>Widget__c</object>
+    <triggerType>RecordAfterSave</triggerType>
+    <filters>
+      <field>Name</field>
+      <operator>EqualTo</operator>
+      <value><stringValue>Acme</stringValue></value>
+    </filters>
+  </start>
+  <assignments>
+    <name>Set_Flow</name>
+    <assignmentItems>
+      <assignToReference>$Record.Flow__c</assignToReference>
+      <operator>Assign</operator>
+      <value><stringValue>flow</stringValue></value>
+    </assignmentItems>
+  </assignments>
+</Flow>
