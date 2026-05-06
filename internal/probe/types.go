@@ -38,12 +38,15 @@ type GapEntry struct {
 
 // GapReport is the top-level output of a probe run.
 type GapReport struct {
-	ProbesRun   int        `json:"probesRun"`
-	GapsFound   int        `json:"gapsFound"`
-	Panics      int        `json:"panics"`
-	Unsupported int        `json:"unsupported"`
-	Behavioral  int        `json:"behavioral"`
-	Entries     []GapEntry `json:"entries"`
+	ProbesRun    int                    `json:"probesRun"`
+	GapsFound    int                    `json:"gapsFound"`
+	Panics       int                    `json:"panics"`
+	Unsupported  int                    `json:"unsupported"`
+	Behavioral   int                    `json:"behavioral"`
+	Entries      []GapEntry             `json:"entries"`
+	Timings      []Timing               `json:"timings,omitempty"`
+	ProbeTimings []ProbeTiming          `json:"probeTimings,omitempty"`
+	OrgShape     map[string]interface{} `json:"orgShape,omitempty"`
 }
 
 // LocalRunReport records local-only probe results without implying an org diff.
@@ -59,4 +62,19 @@ type Config struct {
 	OutputDir string // where to write gap-report.json
 	ProbeIDs  []string
 	Features  []string // org shape features (e.g. MultiCurrency)
+}
+
+// Timing records elapsed time for a top-level probe runner phase.
+type Timing struct {
+	Phase      string `json:"phase"`
+	DurationMS int64  `json:"durationMs"`
+}
+
+// ProbeTiming records elapsed time for an individual probe or batch.
+type ProbeTiming struct {
+	Phase      string   `json:"phase"`
+	ProbeID    string   `json:"probeId,omitempty"`
+	ProbeIDs   []string `json:"probeIds,omitempty"`
+	Mode       string   `json:"mode"`
+	DurationMS int64    `json:"durationMs"`
 }

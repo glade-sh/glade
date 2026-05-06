@@ -46,6 +46,8 @@ go run ./cmd/oaer probe deploy --target-org oaer-probe-lab
 
 The deploy command pushes the SFDX source, assigns `ProbeDataAccess`, clears
 existing `ProbeTestObject__c` rows, and seeds the deterministic baseline data.
+When `probes/sfdx/data/reset.apex` is present, reset and seed happen in one Apex
+execution rather than a separate cleanup plus tree import.
 
 ## Running the Harness
 
@@ -63,13 +65,17 @@ go run ./cmd/oaer probe org --target-org oaer-probe-lab --output probes/output
 go run ./cmd/oaer probe local stdlib.math.divide-scale --feature MultiCurrency
 ```
 
-`probe org` resets probe data before each golden probe so DML probes cannot
-pollute later SOQL or DML comparisons. Full org runs write `gap-report.json`;
-local-only runs write `local-results.json`.
+`probe org` groups safe probes into batched Apex executions and runs stateful or
+limit-sensitive probes in isolated savepoint batches. The run also performs an
+org-shape preflight after reset; `gap-report.json` includes the org id, probe
+metadata availability, seed row count, MultiCurrency shape, phase timings, and
+per-batch timings. Full org runs write `gap-report.json` and
+`probe-manifest.json`; local-only runs write `local-results.json`.
 
 ## Adding New Probes
 
 1. Create a new probe class in `probes/sfdx/force-app/main/default/classes/` implementing the `Probe` interface.
 2. Register the probe ID → class mapping in `ProbeRunner.cls`.
-3. Add the probe ID to `internal/probe/runner.go` in `defaultProbeIDs()`.
+3. Add the probe ID to `internal/probe/manifest.go` and classify its isolation:
+   `pure`, `stateful`, or `limit_sensitive`.
 4. Re-deploy to the scratch org and re-run the harness.

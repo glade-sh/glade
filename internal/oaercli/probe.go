@@ -148,7 +148,7 @@ func runProbeLocal(ctx context.Context, args []string, w io.Writer) error {
 	}
 
 	localExec := &probe.LocalExecutor{ProbeDir: probeDir, Features: features}
-	results, err := localExec.CaptureLocal(probeIDs)
+	results, _, err := localExec.CaptureLocal(probeIDs)
 	if err != nil {
 		return err
 	}

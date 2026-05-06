@@ -6,7 +6,7 @@ import (
 
 func TestLocalExecutorCaptureLocal(t *testing.T) {
 	exec := &LocalExecutor{ProbeDir: "../../probes/sfdx", Features: []string{"MultiCurrency"}}
-	results, err := exec.CaptureLocal(defaultProbeIDs())
+	results, _, err := exec.CaptureLocal(defaultProbeIDs())
 	if err != nil {
 		t.Fatalf("capture local failed: %v", err)
 	}

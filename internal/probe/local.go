@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"runtime"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/open-aer/oaer/internal/apextest"
 	"github.com/open-aer/oaer/internal/project"
@@ -23,16 +26,16 @@ type LocalExecutor struct {
 
 // CaptureLocal loads the probe project, registers it with the VM, and executes
 // each probe as anonymous Apex.
-func (l *LocalExecutor) CaptureLocal(probeIDs []string) (map[string]ProbeResult, error) {
+func (l *LocalExecutor) CaptureLocal(probeIDs []string) (map[string]ProbeResult, []ProbeTiming, error) {
 	proj, err := project.Load(l.ProbeDir)
 	if err != nil {
-		return nil, fmt.Errorf("load probe project: %w", err)
+		return nil, nil, fmt.Errorf("load probe project: %w", err)
 	}
 
 	var sch schema.Schema
 	sch, err = schema.LoadProject(proj)
 	if err != nil {
-		return nil, fmt.Errorf("load schema: %w", err)
+		return nil, nil, fmt.Errorf("load schema: %w", err)
 	}
 
 	index := typesys.Build(proj, sch)
@@ -41,23 +44,71 @@ func (l *LocalExecutor) CaptureLocal(probeIDs []string) (map[string]ProbeResult,
 		for _, d := range index.Diagnostics {
 			msgs = append(msgs, d.Message)
 		}
-		return nil, fmt.Errorf("type system errors: %s", strings.Join(msgs, "; "))
+		return nil, nil, fmt.Errorf("type system errors: %s", strings.Join(msgs, "; "))
 	}
 
 	org, err := buildOrg(proj, sch, l.Features)
 	if err != nil {
-		return nil, fmt.Errorf("build org: %w", err)
+		return nil, nil, fmt.Errorf("build org: %w", err)
 	}
 
 	results := make(map[string]ProbeResult, len(probeIDs))
-	for _, id := range probeIDs {
-		result, err := l.runProbe(index, org.Clone(), id)
-		if err != nil {
-			return nil, fmt.Errorf("probe %s: %w", id, err)
-		}
-		results[id] = result
+	timings := make([]ProbeTiming, 0, len(probeIDs))
+	workers := runtime.NumCPU()
+	if workers < 1 {
+		workers = 1
 	}
-	return results, nil
+	if workers > len(probeIDs) {
+		workers = len(probeIDs)
+	}
+	type localJob struct {
+		index int
+		id    string
+	}
+	type localResult struct {
+		index  int
+		id     string
+		result ProbeResult
+		timing ProbeTiming
+		err    error
+	}
+	jobs := make(chan localJob)
+	out := make(chan localResult, len(probeIDs))
+	var wg sync.WaitGroup
+	for i := 0; i < workers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for job := range jobs {
+				start := time.Now()
+				result, err := l.runProbe(index, org.Clone(), job.id)
+				out <- localResult{
+					index:  job.index,
+					id:     job.id,
+					result: result,
+					timing: ProbeTiming{Phase: "local", ProbeID: job.id, Mode: "single", DurationMS: time.Since(start).Milliseconds()},
+					err:    err,
+				}
+			}
+		}()
+	}
+	for i, id := range probeIDs {
+		jobs <- localJob{index: i, id: id}
+	}
+	close(jobs)
+	wg.Wait()
+	close(out)
+
+	orderedTimings := make([]ProbeTiming, len(probeIDs))
+	for item := range out {
+		if item.err != nil {
+			return nil, nil, fmt.Errorf("probe %s: %w", item.id, item.err)
+		}
+		results[item.id] = item.result
+		orderedTimings[item.index] = item.timing
+	}
+	timings = append(timings, orderedTimings...)
+	return results, timings, nil
 }
 
 func buildOrg(proj project.Project, sch schema.Schema, features []string) (storage.OrgState, error) {

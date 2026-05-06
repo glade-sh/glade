@@ -20,22 +20,30 @@ func Run(cfg Config) (*GapReport, error) {
 	}
 
 	fmt.Println("=== Phase 1: Golden Capture (real org) ===")
+	goldenStart := time.Now()
 	goldenExec := &SFDXExecutor{OrgAlias: cfg.OrgAlias}
-	golden, err := goldenExec.CaptureGolden(cfg.ProbeDir, cfg.ProbeIDs)
+	golden, goldenTimings, err := goldenExec.CaptureGolden(cfg.ProbeDir, cfg.ProbeIDs)
 	if err != nil {
 		return nil, fmt.Errorf("golden capture failed: %w", err)
 	}
+	report.OrgShape = goldenExec.OrgShape
+	report.Timings = append(report.Timings, Timing{Phase: "golden", DurationMS: time.Since(goldenStart).Milliseconds()})
+	report.ProbeTimings = append(report.ProbeTimings, goldenTimings...)
 	fmt.Printf("Captured %d golden responses\n", len(golden))
 
 	fmt.Println("\n=== Phase 2: Local Replay (oaer VM) ===")
+	localStart := time.Now()
 	localExec := &LocalExecutor{ProbeDir: cfg.ProbeDir, Features: cfg.Features}
-	local, err := localExec.CaptureLocal(cfg.ProbeIDs)
+	local, localTimings, err := localExec.CaptureLocal(cfg.ProbeIDs)
 	if err != nil {
 		return nil, fmt.Errorf("local replay failed: %w", err)
 	}
+	report.Timings = append(report.Timings, Timing{Phase: "local", DurationMS: time.Since(localStart).Milliseconds()})
+	report.ProbeTimings = append(report.ProbeTimings, localTimings...)
 	fmt.Printf("Captured %d local responses\n", len(local))
 
 	fmt.Println("\n=== Phase 3: Diff & Classify ===")
+	diffStart := time.Now()
 	for _, id := range cfg.ProbeIDs {
 		g, ok1 := golden[id]
 		l, ok2 := local[id]
@@ -62,6 +70,7 @@ func Run(cfg Config) (*GapReport, error) {
 		}
 	}
 	report.GapsFound = len(report.Entries)
+	report.Timings = append(report.Timings, Timing{Phase: "diff", DurationMS: time.Since(diffStart).Milliseconds()})
 
 	// Sort by severity: critical > high > medium > low
 	severityOrder := map[string]int{"critical": 0, "high": 1, "medium": 2, "low": 3}
@@ -78,6 +87,11 @@ func Run(cfg Config) (*GapReport, error) {
 			return report, fmt.Errorf("write report: %w", err)
 		}
 		fmt.Printf("Wrote report to %s\n", reportPath)
+		manifestPath := filepath.Join(cfg.OutputDir, "probe-manifest.json")
+		if err := WriteManifest(selectedProbeSpecs(cfg.ProbeIDs), manifestPath); err != nil {
+			return report, fmt.Errorf("write manifest: %w", err)
+		}
+		fmt.Printf("Wrote manifest to %s\n", manifestPath)
 
 		fixtureDir := filepath.Join(cfg.OutputDir, "fixtures")
 		for _, entry := range report.Entries {
@@ -92,114 +106,12 @@ func Run(cfg Config) (*GapReport, error) {
 	return report, nil
 }
 
-func defaultProbeIDs() []string {
-	return []string{
-		// Stdlib & System
-		"stdlib.string.format-null",
-		"stdlib.string.join-empty",
-		"stdlib.string.containsIgnoreCase-null",
-		"stdlib.string.valueOf-null",
-		"stdlib.string.isBlank-whitespace",
-		"stdlib.datetime.valueOf-null",
-		"stdlib.datetime.leapYear",
-		"stdlib.datetime.format-timezone",
-		"stdlib.datetime.valueOf-invalid",
-		"stdlib.datetime.yearZero",
-		"stdlib.math.divide-scale",
-		"stdlib.math.mod-negative",
-		"stdlib.math.round-halfUp",
-		"stdlib.math.decimalValueOf-null",
-		"stdlib.math.log10",
-		// Data Runtime
-		"soql.select-all",
-		"soql.aggregate-count",
-		"soql.where-like",
-		"soql.order-desc",
-		"soql.dynamic",
-		// DML & Triggers
-		"dml.insert-trigger",
-		"dml.update-return",
-		"dml.delete-return",
-		"dml.undelete",
-		"dml.insert-fail-duplicate",
-		// Limits & System
-		"limits.soql-before-after",
-		"limits.dml-rows",
-		"limits.heap-size",
-		"limits.limit-queries",
-		"limits.cpu-time",
-		// Collections & Language
-		"collections.list-contains-null",
-		"collections.map-null-key",
-		"collections.set-contains-null",
-		"collections.list-indexof-null",
-		"collections.map-remove-null",
-		// Async Apex
-		"async.future-stub",
-		"async.queueable-stub",
-		"async.batchable-stub",
-		"async.schedulable-stub",
-		// Platform Events
-		"platform-event.publish",
-		"platform-event.describe",
-		// Metadata
-		"metadata.custom-metadata-query",
-		"metadata.custom-setting-query",
-		"metadata.custom-metadata-describe",
-		// Email & Messaging
-		"email.single-message",
-		"email.limits",
-		// Schema Describe
-		"schema.global-describe-size",
-		"schema.object-describe-fields",
-		"schema.picklist-describe",
-		"schema.record-type-describe",
-		// Security & Sharing
-		"security.user-info",
-		"security.profile-name",
-		"security.crud-check",
-		"security.fls-check",
-		// Integration
-		"integration.http-request",
-		"integration.json-serialize-complex",
-		"integration.json-deserialize-untyped",
-		"integration.encoding-util",
-		"integration.json-serialize-sobject",
-		"integration.url-encoding",
-		// Bulk DML
-		"bulkdml.partial-success",
-		"bulkdml.errors-shape",
-		"bulkdml.id-assignment",
-		// SObject & Id
-		"sobject.clone",
-		"sobject.get-put",
-		"sobject.getSObjectType",
-		"id.validation",
-		// More Collections
-		"collections.list-sort",
-		"collections.map-keyset",
-		"collections.set-equality",
-		// More Datetime
-		"datetime.now",
-		"datetime.today",
-		"datetime.valueOfGmt",
-		// More String
-		"string.escapeSingleQuotes",
-		"string.split",
-		"string.trim",
-		// More SOQL
-		"soql.count-distinct",
-		"soql.group-by",
-		"soql.subquery",
-		// System Assert
-		"system.assert-pass",
-		"system.assertEquals",
-		// More Math
-		"math.abs-negative",
-		"math.max",
-		"math.pow",
-		"math.min",
+func selectedProbeSpecs(ids []string) []ProbeSpec {
+	specs := make([]ProbeSpec, 0, len(ids))
+	for _, id := range ids {
+		specs = append(specs, probeSpecByID(id))
 	}
+	return specs
 }
 
 // Sleep between sfdx calls to avoid hitting API rate limits.

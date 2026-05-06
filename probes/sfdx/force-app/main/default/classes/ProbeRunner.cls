@@ -142,6 +142,40 @@ public class ProbeRunner {
         return JSON.serialize(payload);
     }
 
+    public static String runMany(List<String> probeIds) {
+        List<Object> results = new List<Object>();
+        for (String probeId : probeIds) {
+            results.add(JSON.deserializeUntyped(run(probeId)));
+        }
+        return JSON.serialize(results);
+    }
+
+    public static String runManyIsolated(List<String> probeIds) {
+        List<Object> results = new List<Object>();
+        for (String probeId : probeIds) {
+            Savepoint sp = Database.setSavepoint();
+            String raw = run(probeId);
+            Database.rollback(sp);
+            results.add(JSON.deserializeUntyped(raw));
+        }
+        return JSON.serialize(results);
+    }
+
+    public static String preflight() {
+        Map<String, Object> shape = new Map<String, Object>();
+        shape.put('organizationId', UserInfo.getOrganizationId());
+        shape.put('userId', UserInfo.getUserId());
+        shape.put('apiVersion', '60.0');
+        shape.put('probeCount', PROBES.size());
+        shape.put('hasProbeTestObject', Schema.getGlobalDescribe().containsKey('ProbeTestObject__c'));
+        shape.put('hasProbeTestEvent', Schema.getGlobalDescribe().containsKey('ProbeTestEvent__e'));
+        shape.put('hasProbeTestMdt', Schema.getGlobalDescribe().containsKey('ProbeTestMdt__mdt'));
+        shape.put('hasProbeTestSetting', Schema.getGlobalDescribe().containsKey('ProbeTestSetting__c'));
+        shape.put('probeTestObjectRows', [SELECT COUNT() FROM ProbeTestObject__c]);
+        shape.put('isMultiCurrency', Schema.SObjectType.ProbeTestObject__c.fields.getMap().containsKey('CurrencyIsoCode'));
+        return JSON.serialize(shape);
+    }
+
     private static String resolveCategory(String className) {
         if (className.startsWith('StdlibString') || className.startsWith('StdlibDatetime') || className.startsWith('StdlibMath')) return 'Stdlib & System';
         if (className.startsWith('Soql') || className.startsWith('MoreSoql')) return 'Data Runtime';

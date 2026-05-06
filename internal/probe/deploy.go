@@ -56,13 +56,20 @@ func (d *Deployer) Deploy(ctx context.Context, w io.Writer) error {
 
 // ResetProbeData clears and re-seeds records used by data-sensitive probes.
 func (d *Deployer) ResetProbeData(ctx context.Context, w io.Writer) error {
+	fmt.Fprintln(w, "Resetting probe data.")
+	if _, err := os.Stat(filepath.Join(d.ProbeDir, "data", "reset.apex")); err == nil {
+		if out, err := d.runCmdOutput(ctx, "sf", "apex", "run", "--target-org", d.OrgAlias, "--file", "data/reset.apex"); err != nil {
+			return fmt.Errorf("reset probe data: %w\n%s", err, out)
+		}
+		fmt.Fprintln(w, "Data reset.")
+		return nil
+	}
 	if _, err := os.Stat(filepath.Join(d.ProbeDir, "data", "cleanup.apex")); err != nil {
 		return fmt.Errorf("probe cleanup script missing: %w", err)
 	}
 	if _, err := os.Stat(filepath.Join(d.ProbeDir, "data", "ProbeTestObjects.json")); err != nil {
 		return fmt.Errorf("probe seed data missing: %w", err)
 	}
-	fmt.Fprintln(w, "Resetting probe data.")
 	if _, err := d.runCmdOutput(ctx, "sf", "apex", "run", "--target-org", d.OrgAlias, "--file", "data/cleanup.apex"); err != nil {
 		return fmt.Errorf("cleanup probe data: %w", err)
 	}

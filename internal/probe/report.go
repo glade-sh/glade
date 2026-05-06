@@ -18,6 +18,11 @@ func WriteLocalRunReport(report *LocalRunReport, path string) error {
 	return writeIndentedJSON(path, report)
 }
 
+// WriteManifest writes the selected probe manifest used by a run.
+func WriteManifest(specs []ProbeSpec, path string) error {
+	return writeIndentedJSON(path, specs)
+}
+
 func writeIndentedJSON(path string, value any) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
