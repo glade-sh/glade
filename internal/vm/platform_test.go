@@ -2215,7 +2215,14 @@ System.assertEquals('/local', Network.communitiesLanding().getUrl());
 System.assertEquals('https://local.oaer.example/local', ConnectApi.Communities.getCommunity(Network.getNetworkId()).siteUrl);
 ConnectApi.UserProfiles.setPhoto(Network.getNetworkId(), UserInfo.getUserId(), '069000000000001', null);
 ConnectApi.UserProfiles.deletePhoto(Network.getNetworkId(), UserInfo.getUserId());
+ConnectApi.UserSettings userSettings = ConnectApi.Organization.getSettings().userSettings;
+System.assertEquals('005-local-user', userSettings.userId);
+ConnectApi.TimeZone zone = userSettings.timeZone;
+System.assertEquals('UTC', zone.name);
 System.assertEquals(false, Auth.CommunitiesUtil.isGuestUser());
+Auth.JWT jwt = new Auth.JWT();
+jwt.setIss('local-issuer');
+System.assert(jwt.toJSONString().contains('local-issuer'));
 System.setPassword(UserInfo.getUserId(), 'local-secret');
 `)
 	if err != nil {

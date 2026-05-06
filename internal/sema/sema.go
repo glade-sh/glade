@@ -2661,6 +2661,13 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 		case "getauthproviderssourl":
 			return semaCollectionSignature{returnType: "String", params: [][]string{{"String", "String", "String"}}}, true
 		}
+	case "auth.jwt":
+		switch method {
+		case "setiss":
+			return semaCollectionSignature{returnType: "void", params: [][]string{{"String"}}}, true
+		case "tojsonstring":
+			return semaCollectionSignature{returnType: "String", params: [][]string{{}}}, true
+		}
 	case "cache.org":
 		if method == "getpartition" {
 			return semaCollectionSignature{returnType: "Cache.OrgPartition", params: [][]string{{"String"}}}, true
@@ -3643,6 +3650,7 @@ var platformTypes = []string{
 	"Auth.AuthConfiguration",
 	"Auth.AuthToken",
 	"Auth.CommunitiesUtil",
+	"Auth.JWT",
 	"Auth.RegistrationHandler",
 	"Auth.SessionManagement",
 	"Auth.UserData",
@@ -3654,7 +3662,9 @@ var platformTypes = []string{
 	"ConnectApi.Community",
 	"ConnectApi.Organization",
 	"ConnectApi.OrganizationSettings",
+	"ConnectApi.TimeZone",
 	"ConnectApi.UserProfiles",
+	"ConnectApi.UserSettings",
 	"Http",
 	"HttpCalloutMock",
 	"HTTPRequest",

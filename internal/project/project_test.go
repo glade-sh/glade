@@ -35,6 +35,7 @@ func TestLoadSFDXProject(t *testing.T) {
 	writeFile(t, filepath.Join(root, "force-app/main/customMetadata/Feature.Modern.md-meta.xml"), "<CustomMetadata/>")
 	writeFile(t, filepath.Join(root, "force-app/main/api/rest/Feature.Nested.md-meta.xml"), "<CustomMetadata/>")
 	writeFile(t, filepath.Join(root, "force-app/main/workflows/Thing__c.workflow-meta.xml"), "<Workflow/>")
+	writeFile(t, filepath.Join(root, "force-app/main/workflows/Legacy__c.workflow"), "<Workflow/>")
 	writeFile(t, filepath.Join(root, "force-app/main/flows/Onboard.flow-meta.xml"), "<Flow/>")
 	writeFile(t, filepath.Join(root, "force-app/main/profiles/Admin.profile-meta.xml"), "<Profile/>")
 	writeFile(t, filepath.Join(root, "force-app/main/permissionsets/App.permissionset-meta.xml"), "<PermissionSet/>")
@@ -70,7 +71,7 @@ func TestLoadSFDXProject(t *testing.T) {
 	if len(p.LabelFiles) != 1 || len(p.TranslationFiles) != 1 || len(p.StaticResourceFiles) != 1 || len(p.StaticResourceMetas) != 1 || len(p.ContentAssetFiles) != 1 || len(p.ContentAssetMetas) != 1 || len(p.EmailTemplateFiles) != 2 || len(p.NamedCredentialFiles) != 1 || len(p.RemoteSiteFiles) != 1 || len(p.CustomMetadataFiles) != 3 {
 		t.Fatalf("unexpected legacy metadata file counts: %#v", p)
 	}
-	if len(p.WorkflowFiles) != 1 {
+	if len(p.WorkflowFiles) != 2 {
 		t.Fatalf("unexpected workflow file counts: %#v", p)
 	}
 	if len(p.FlowFiles) != 1 || len(p.ProfileFiles) != 1 || len(p.PermissionSetFiles) != 1 || len(p.PermissionAssignmentFiles) != 1 {

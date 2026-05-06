@@ -2834,7 +2834,51 @@ func (vm *VM) connectAPIOrganizationSettings(args []Value) (Value, error) {
 	}
 	settings := Object("ConnectApi.OrganizationSettings")
 	settings.Fields["orgId"] = String(orgID)
+	settings.Fields["name"] = String(vm.firstOrgRecordString("Organization", "Name", "Local Organization"))
+	settings.Fields["userSettings"] = vm.connectAPIUserSettings()
 	return settings, nil
+}
+
+func (vm *VM) connectAPIUserSettings() Value {
+	settings := Object("ConnectApi.UserSettings")
+	settings.Fields["approvalPosts"] = Bool(true)
+	settings.Fields["canAccessPersonalStreams"] = Bool(true)
+	settings.Fields["canFollow"] = Bool(true)
+	settings.Fields["canModifyAllData"] = Bool(true)
+	settings.Fields["canOwnGroups"] = Bool(true)
+	settings.Fields["canViewAllData"] = Bool(true)
+	settings.Fields["canViewAllGroups"] = Bool(true)
+	settings.Fields["canViewAllUsers"] = Bool(true)
+	settings.Fields["canViewCommunitySwitcher"] = Bool(true)
+	settings.Fields["canViewFullUserProfile"] = Bool(true)
+	settings.Fields["canViewPublicFiles"] = Bool(true)
+	settings.Fields["currencySymbol"] = String("$")
+	settings.Fields["externalUser"] = Bool(vm.currentUserInfoField("UserType", "") == "Guest")
+	settings.Fields["fileSyncLimit"] = Int(0)
+	settings.Fields["fileSyncStorageLimit"] = Int(0)
+	settings.Fields["folderSyncLimit"] = Int(0)
+	settings.Fields["hasAccessToInternalOrg"] = Bool(true)
+	settings.Fields["hasChatter"] = Bool(true)
+	settings.Fields["hasFileSync"] = Bool(false)
+	settings.Fields["hasFieldServiceLocationTracking"] = Bool(false)
+	settings.Fields["hasFieldServiceMobileAccess"] = Bool(false)
+	settings.Fields["hasFileSyncManagedClientAutoUpdate"] = Bool(false)
+	settings.Fields["hasRestDataApiAccess"] = Bool(true)
+	settings.Fields["timeZone"] = connectAPITimeZone(vm.currentUserTimeZoneID())
+	settings.Fields["userDefaultCurrencyIsoCode"] = String(vm.currentUserInfoField("DefaultCurrencyIsoCode", "USD"))
+	settings.Fields["userId"] = String(vm.currentUserInfoField("Id", "005-local-user"))
+	settings.Fields["userLocale"] = String(vm.currentUserInfoField("LocaleSidKey", "en_US"))
+	return settings
+}
+
+func connectAPITimeZone(name string) Value {
+	if strings.TrimSpace(name) == "" {
+		name = "America/Los_Angeles"
+	}
+	tz := Object("ConnectApi.TimeZone")
+	tz.Fields["name"] = String(name)
+	tz.Fields["gmtOffset"] = Int(0)
+	return tz
 }
 
 func (vm *VM) connectAPICommunity(args []Value) (Value, error) {
@@ -8984,7 +9028,7 @@ func isBuiltinTypeName(name string) bool {
 		return true
 	}
 	switch name {
-	case "Object", "String", "Boolean", "Integer", "Long", "Decimal", "Double", "Date", "Datetime", "Time", "TimeZone", "Blob", "Id", "Type", "URL", "PageReference", "SelectOption", "LoggingLevel", "ApexPages.Severity", "ApexPages.StandardController", "ApexPages.StandardSetController", "RestContext", "RestRequest", "RestResponse", "Callable", "StubProvider", "Metadata.Metadata", "Metadata.MetadataType", "Metadata.DeployContainer", "Metadata.CustomMetadata", "Metadata.CustomMetadataValue", "Metadata.DeployCallback", "Metadata.DeployCallBack", "Metadata.DeployResult", "Metadata.DeployStatus", "Metadata.DeployDetails", "Metadata.DeployMessage", "Metadata.DeployCallbackContext":
+	case "Object", "String", "Boolean", "Integer", "Long", "Decimal", "Double", "Date", "Datetime", "Time", "TimeZone", "Blob", "Id", "Type", "URL", "PageReference", "SelectOption", "LoggingLevel", "ApexPages.Severity", "ApexPages.StandardController", "ApexPages.StandardSetController", "RestContext", "RestRequest", "RestResponse", "Callable", "StubProvider", "Auth.JWT", "ConnectApi.UserSettings", "ConnectApi.TimeZone", "Metadata.Metadata", "Metadata.MetadataType", "Metadata.DeployContainer", "Metadata.CustomMetadata", "Metadata.CustomMetadataValue", "Metadata.DeployCallback", "Metadata.DeployCallBack", "Metadata.DeployResult", "Metadata.DeployStatus", "Metadata.DeployDetails", "Metadata.DeployMessage", "Metadata.DeployCallbackContext":
 		return true
 	default:
 		return false
@@ -9934,6 +9978,15 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 		authConfig.Fields["Url"] = args[0]
 		config.Fields["authConfig"] = authConfig
 		return config, nil
+	case "Auth.JWT":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Auth.JWT constructor expects 0 arguments")
+		}
+		jwt := Object("Auth.JWT")
+		for field, value := range namedArgs {
+			jwt.Fields[field] = value
+		}
+		return jwt, nil
 	case "Metadata.DeployContainer":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Metadata.DeployContainer constructor expects 0 arguments")
@@ -14624,6 +14677,31 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return value, receiver, false, true, nil
 			}
 			return String(""), receiver, false, true, nil
+		}
+	case "Auth.JWT":
+		switch method {
+		case "setIss":
+			if len(args) != 1 {
+				return Null, receiver, false, true, fmt.Errorf("Auth.JWT.setIss expects 1 argument")
+			}
+			receiver.Fields["iss"] = args[0]
+			return Null, receiver, true, true, nil
+		case "toJSONString":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Auth.JWT.toJSONString expects 0 arguments")
+			}
+			fields := make(map[string]any, len(receiver.Fields))
+			for field, value := range receiver.Fields {
+				if strings.HasPrefix(field, "__") || value.Kind == ValueNull {
+					continue
+				}
+				fields[field] = jsonFromValue(value, true)
+			}
+			data, err := json.Marshal(fields)
+			if err != nil {
+				return Null, receiver, false, true, err
+			}
+			return String(string(data)), receiver, false, true, nil
 		}
 	case "Metadata.DeployContainer":
 		switch method {

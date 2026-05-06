@@ -2,6 +2,7 @@ package projectscan
 
 import (
 	"bufio"
+	"encoding/xml"
 	"errors"
 	"io/fs"
 	"os"
@@ -268,16 +269,18 @@ type patternDef struct {
 }
 
 type scanContext struct {
-	org         storage.OrgState
-	metadata    storage.MetadataRegistry
-	vf          visualforce.Index
-	pages       map[string]string
-	uiApex      map[string]bool
-	aura        map[string]bool
-	types       map[string]typesys.TypeSymbol
-	present     map[string]bool
-	loadedFiles map[string]bool
-	automation  map[string]bool
+	org          storage.OrgState
+	metadata     storage.MetadataRegistry
+	vf           visualforce.Index
+	vfComponents map[string]bool
+	pages        map[string]string
+	uiApex       map[string]bool
+	aura         map[string]bool
+	types        map[string]typesys.TypeSymbol
+	present      map[string]bool
+	loadedFiles  map[string]bool
+	automation   map[string]bool
+	namespaces   map[string]bool
 }
 
 var textPatterns = []patternDef{
@@ -392,7 +395,9 @@ func loadScanContext(absRoot string) scanContext {
 	for _, path := range proj.CustomMetadataFiles {
 		ctx.loadedFiles[filepath.Clean(path)] = true
 	}
+	var metadataIndex *metadatapkg.Index
 	if idx, err := metadatapkg.LoadProject(proj); err == nil {
+		metadataIndex = &idx
 		ctx.present = make(map[string]bool)
 		ctx.addPresentationAssetFiles(idx.Layouts)
 		ctx.addPresentationAssetFiles(idx.CompactLayouts)
@@ -410,7 +415,12 @@ func loadScanContext(absRoot string) scanContext {
 			ctx.present[filepath.Clean(permissionSet.File)] = true
 		}
 	}
+	ctx.namespaces = namespaceAliases(proj, sch, metadataIndex)
 	ctx.vf = visualforce.LoadProjectBestEffort(proj)
+	ctx.vfComponents = make(map[string]bool, len(proj.VisualforceComponentFiles))
+	for _, path := range proj.VisualforceComponentFiles {
+		ctx.vfComponents[filepath.Clean(path)] = true
+	}
 	ctx.pages = make(map[string]string, len(proj.VisualforcePageFiles))
 	for _, path := range proj.VisualforcePageFiles {
 		name := baseNoExt(path)
@@ -435,12 +445,64 @@ func loadScanContext(absRoot string) scanContext {
 		storage.EnsureStandardObjectFields(&definition)
 		ctx.org.Objects[definition.APIName] = storage.ObjectState{Definition: definition}
 	}
+	if metadataIndex != nil {
+		ctx.addPresentationFields(*metadataIndex, proj)
+	}
 	return ctx
 }
 
 func (ctx *scanContext) addPresentationAssetFiles(assets []metadatapkg.NamedAsset) {
 	for _, asset := range assets {
 		ctx.present[filepath.Clean(asset.File)] = true
+	}
+}
+
+func (ctx *scanContext) addPresentationFields(idx metadatapkg.Index, proj project.Project) {
+	add := func(objectName, fieldName string) {
+		objectName = strings.TrimSpace(objectName)
+		fieldName = strings.TrimSpace(fieldName)
+		if objectName == "" || fieldName == "" || strings.Contains(fieldName, ".") {
+			return
+		}
+		resolved, ok := storage.ResolveObjectName(ctx.org, objectName)
+		if !ok {
+			return
+		}
+		state := ctx.org.Objects[resolved]
+		if state.Definition.Fields == nil {
+			state.Definition.Fields = make(map[string]storage.Field)
+		}
+		if _, ok := state.Definition.Fields[fieldName]; !ok {
+			state.Definition.Fields[fieldName] = storage.Field{APIName: fieldName, Type: storage.FieldAny}
+			ctx.org.Objects[resolved] = state
+		}
+	}
+	for _, fieldSet := range idx.FieldSets {
+		for _, member := range fieldSet.Fields {
+			add(fieldSet.ObjectName, member.Field)
+		}
+	}
+	for _, path := range proj.CompactLayoutFiles {
+		objectName := objectNameFromObjectMetadataPath(path, "compactLayouts")
+		for _, fieldName := range loadPresentationFields(path) {
+			add(objectName, fieldName)
+		}
+	}
+	for _, path := range proj.LayoutFiles {
+		objectName := objectNameFromLayoutPath(path)
+		for _, fieldName := range loadPresentationFields(path) {
+			add(objectName, fieldName)
+		}
+	}
+	for _, path := range proj.QuickActionFiles {
+		objectName := objectNameFromQuickActionPath(path)
+		fields, target := loadQuickActionPresentationFields(path)
+		if target != "" {
+			objectName = target
+		}
+		for _, fieldName := range fields {
+			add(objectName, fieldName)
+		}
 	}
 }
 
@@ -570,6 +632,86 @@ func baseNoExt(path string) string {
 		}
 	}
 	return strings.TrimSuffix(base, filepath.Ext(base))
+}
+
+func objectNameFromObjectMetadataPath(path, container string) string {
+	dir := filepath.Dir(filepath.Dir(path))
+	if filepath.Base(filepath.Dir(path)) != container {
+		return ""
+	}
+	return filepath.Base(dir)
+}
+
+func objectNameFromLayoutPath(path string) string {
+	name := baseNoExt(path)
+	if dash := strings.Index(name, "-"); dash > 0 {
+		return name[:dash]
+	}
+	return ""
+}
+
+func objectNameFromQuickActionPath(path string) string {
+	name := baseNoExt(path)
+	if dot := strings.Index(name, "."); dot > 0 {
+		return name[:dot]
+	}
+	return ""
+}
+
+func loadPresentationFields(path string) []string {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil
+	}
+	return trimmedNonEmpty(xmlElementTexts(data, "fields"))
+}
+
+func loadQuickActionPresentationFields(path string) ([]string, string) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, ""
+	}
+	fields := trimmedNonEmpty(xmlElementTexts(data, "field"))
+	targets := trimmedNonEmpty(xmlElementTexts(data, "targetObject"))
+	if len(targets) == 0 {
+		return fields, ""
+	}
+	return fields, targets[0]
+}
+
+func xmlElementTexts(data []byte, local string) []string {
+	decoder := xml.NewDecoder(strings.NewReader(string(data)))
+	var values []string
+	for {
+		token, err := decoder.Token()
+		if err != nil {
+			break
+		}
+		start, ok := token.(xml.StartElement)
+		if !ok || start.Name.Local != local {
+			continue
+		}
+		var value string
+		if err := decoder.DecodeElement(&value, &start); err != nil {
+			continue
+		}
+		values = append(values, value)
+	}
+	return values
+}
+
+func trimmedNonEmpty(values []string) []string {
+	out := make([]string, 0, len(values))
+	seen := make(map[string]bool, len(values))
+	for _, value := range values {
+		value = strings.TrimSpace(value)
+		if value == "" || seen[strings.ToLower(value)] {
+			continue
+		}
+		seen[strings.ToLower(value)] = true
+		out = append(out, value)
+	}
+	return out
 }
 
 func auraOrLWCBundle(rel, marker string) string {
@@ -709,8 +851,7 @@ func (ctx *scanContext) resolvesFinding(capability, symbol, rel string) bool {
 		}
 	case "labels.localization":
 		if namespace, label, ok := labelReferenceSymbol(symbol); ok {
-			_, found := resource.LookupLabel(ctx.metadata, namespace, label)
-			return found
+			return ctx.resolvesLabel(namespace, label)
 		}
 	case "staticresources.urlfor":
 		return ctx.resolvesResource(symbol)
@@ -852,7 +993,13 @@ func (ctx *scanContext) resolvesVisualforceComponentMetadata(path string) bool {
 	if !ok {
 		return false
 	}
-	return filepath.Clean(component.File) == cleanPath
+	if filepath.Clean(component.File) != cleanPath {
+		return false
+	}
+	if ctx.vfComponents != nil && !ctx.vfComponents[cleanPath] {
+		return false
+	}
+	return true
 }
 
 func (ctx *scanContext) visualforceTypesHaveMethod(primary, extensions []string, expr string) bool {
@@ -984,6 +1131,84 @@ func labelReferenceSymbol(symbol string) (string, string, bool) {
 		}
 		return namespace, label, label != ""
 	}
+}
+
+func (ctx *scanContext) resolvesLabel(namespace, label string) bool {
+	if _, found := resource.LookupLabel(ctx.metadata, namespace, label); found {
+		return true
+	}
+	if namespace == "" || !ctx.namespaces[strings.ToLower(namespace)] {
+		return false
+	}
+	if ctx.org.Namespace != "" {
+		if _, found := resource.LookupLabel(ctx.metadata, ctx.org.Namespace, label); found {
+			return true
+		}
+	}
+	_, found := resource.LookupLabel(ctx.metadata, "", label)
+	return found
+}
+
+func namespaceAliases(proj project.Project, sch schema.Schema, idx *metadatapkg.Index) map[string]bool {
+	aliases := make(map[string]bool)
+	add := func(name string) {
+		token := namespaceToken(name)
+		if token != "" {
+			aliases[strings.ToLower(token)] = true
+		}
+	}
+	add(proj.Namespace)
+	for _, object := range sch.Objects {
+		add(object.Name)
+		for _, field := range object.Fields {
+			add(field.Name)
+			add(field.RelationshipName)
+			for _, target := range field.ReferenceTo {
+				add(target)
+			}
+		}
+	}
+	if idx != nil {
+		for _, fieldSet := range idx.FieldSets {
+			add(fieldSet.ObjectName)
+			for _, field := range fieldSet.Fields {
+				add(field.Field)
+			}
+		}
+		for _, profile := range idx.Profiles {
+			for _, permission := range profile.ObjectPermissions {
+				add(permission.Object)
+			}
+			for _, permission := range profile.FieldPermissions {
+				add(permission.Field)
+			}
+		}
+		for _, permissionSet := range idx.PermissionSets {
+			for _, permission := range permissionSet.ObjectPermissions {
+				add(permission.Object)
+			}
+			for _, permission := range permissionSet.FieldPermissions {
+				add(permission.Field)
+			}
+		}
+	}
+	if len(aliases) == 0 {
+		return nil
+	}
+	return aliases
+}
+
+func namespaceToken(name string) string {
+	name = strings.TrimSpace(name)
+	idx := strings.Index(name, "__")
+	if idx <= 0 {
+		return ""
+	}
+	token := name[:idx]
+	if strings.Contains(token, ".") {
+		token = token[strings.LastIndex(token, ".")+1:]
+	}
+	return token
 }
 
 func isLabelStringMethod(name string) bool {
@@ -1270,9 +1495,79 @@ func suppressSupportedFinding(capability, symbol, evidence string) bool {
 		return supportedAuthSymbol(symbol, evidence)
 	case "metadata.apex-deploy":
 		return supportedMetadataAPISymbol(symbol, evidence)
+	case "apex.callable-stub":
+		return supportedCallableStubSymbol(symbol, evidence)
 	default:
 		return false
 	}
+}
+
+func supportedCallableStubSymbol(symbol, evidence string) bool {
+	switch strings.TrimSpace(symbol) {
+	case "System.Callable", "Callable", "System.StubProvider":
+		return true
+	case "handleMethodCall":
+		return strings.Contains(evidence, "handleMethodCall(")
+	case "Test.createStub":
+		return !createStubSecondArgIsNull(evidence)
+	default:
+		return false
+	}
+}
+
+func createStubSecondArgIsNull(evidence string) bool {
+	idx := strings.Index(evidence, "Test.createStub")
+	if idx < 0 {
+		return false
+	}
+	open := strings.IndexByte(evidence[idx:], '(')
+	if open < 0 {
+		return false
+	}
+	argsText := evidence[idx+open+1:]
+	args, ok := splitCallArgs(argsText)
+	if !ok || len(args) < 2 {
+		return false
+	}
+	return strings.EqualFold(strings.TrimSpace(args[1]), "null")
+}
+
+func splitCallArgs(argsText string) ([]string, bool) {
+	var args []string
+	start := 0
+	depth := 0
+	inString := false
+	for i := 0; i < len(argsText); i++ {
+		ch := argsText[i]
+		if inString {
+			if ch == '\\' && i+1 < len(argsText) {
+				i++
+				continue
+			}
+			if ch == '\'' {
+				inString = false
+			}
+			continue
+		}
+		switch ch {
+		case '\'':
+			inString = true
+		case '(':
+			depth++
+		case ')':
+			if depth == 0 {
+				args = append(args, strings.TrimSpace(argsText[start:i]))
+				return args, true
+			}
+			depth--
+		case ',':
+			if depth == 0 {
+				args = append(args, strings.TrimSpace(argsText[start:i]))
+				start = i + 1
+			}
+		}
+	}
+	return args, false
 }
 
 func supportedFileSymbol(symbol, evidence string) bool {
@@ -1309,6 +1604,7 @@ func supportedSiteCommunitySymbol(symbol, evidence string) bool {
 		"Site.MasterLabel", "Site.Name", "Site testSite", "(Site)JSON.deserialize",
 		"Network.getNetworkId", "Network.getLoginUrl", "Network.communitiesLanding",
 		"Network.sObjectType", "Network.Id", "Network.Name", "Network.SelfRegProfileId",
+		"Network mockNetwork", "(Network)",
 	} {
 		if strings.Contains(evidence, needle) {
 			return true
@@ -1320,6 +1616,7 @@ func supportedSiteCommunitySymbol(symbol, evidence string) bool {
 func supportedCacheConnectAPISymbol(symbol, evidence string) bool {
 	for _, needle := range []string{
 		"Cache.", "ConnectApi.Organization.getSettings", "ConnectApi.Communities.getCommunity",
+		"ConnectApi.OrganizationSettings", "ConnectApi.UserSettings", "ConnectApi.TimeZone",
 		"ConnectApi.UserProfiles.setPhoto", "ConnectApi.UserProfiles.deletePhoto",
 	} {
 		if strings.Contains(evidence, needle) {
@@ -1332,6 +1629,7 @@ func supportedCacheConnectAPISymbol(symbol, evidence string) bool {
 func supportedAuthSymbol(symbol, evidence string) bool {
 	for _, needle := range []string{
 		"Auth.UserData", "Auth.VerificationResult", "Auth.VerificationMethod",
+		"Auth.JWT ", "new Auth.JWT", "(Auth.JWT)",
 		"Auth.RegistrationHandler", "Auth.User", "Auth.CommunitiesUtil.isGuestUser",
 		"Auth.AuthToken.revokeAccess", "Auth.SessionManagement.getCurrentSession",
 		"Auth.AuthConfiguration",

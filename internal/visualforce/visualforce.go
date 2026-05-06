@@ -1,8 +1,7 @@
 package visualforce
 
 import (
-	"encoding/xml"
-	"io"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -197,39 +196,46 @@ type markupToken struct {
 }
 
 func parseMarkup(path string) (markupDoc, error) {
-	file, err := os.Open(path)
+	content, err := os.ReadFile(path)
 	if err != nil {
 		return markupDoc{}, err
 	}
-	defer file.Close()
-
-	decoder := xml.NewDecoder(file)
-	decoder.Strict = false
 	doc := markupDoc{}
-	for {
-		token, err := decoder.Token()
-		if err == io.EOF {
-			break
+	source := string(content)
+	for _, match := range tagRE.FindAllStringSubmatch(source, -1) {
+		rawName := strings.TrimSpace(match[1])
+		if rawName == "" || strings.HasPrefix(rawName, "/") || strings.HasPrefix(rawName, "!") || strings.HasPrefix(rawName, "?") {
+			continue
 		}
-		if err != nil {
-			return markupDoc{}, err
+		name := rawName
+		if idx := strings.LastIndex(name, ":"); idx >= 0 {
+			name = name[idx+1:]
 		}
-		switch t := token.(type) {
-		case xml.StartElement:
-			attrs := make(map[string]string, len(t.Attr))
-			for _, a := range t.Attr {
-				attrs[lookupKey(a.Name.Local)] = strings.TrimSpace(a.Value)
+		attrs := make(map[string]string)
+		for _, attrMatch := range attrRE.FindAllStringSubmatch(match[2], -1) {
+			value := attrMatch[2]
+			if value == "" {
+				value = attrMatch[3]
 			}
-			doc.Tokens = append(doc.Tokens, markupToken{Start: true, Local: t.Name.Local, Attrs: attrs})
-		case xml.CharData:
-			text := strings.TrimSpace(string(t))
-			if text != "" {
-				doc.Tokens = append(doc.Tokens, markupToken{Text: text})
+			attrName := attrMatch[1]
+			if idx := strings.LastIndex(attrName, ":"); idx >= 0 {
+				attrName = attrName[idx+1:]
 			}
+			attrs[lookupKey(attrName)] = strings.TrimSpace(value)
 		}
+		doc.Tokens = append(doc.Tokens, markupToken{Start: true, Local: name, Attrs: attrs})
+	}
+	if text := strings.TrimSpace(source); text != "" {
+		doc.Tokens = append(doc.Tokens, markupToken{Text: text})
+	}
+	if len(doc.Tokens) == 0 {
+		return markupDoc{}, fmt.Errorf("no Visualforce markup found in %s", path)
 	}
 	return doc, nil
 }
+
+var tagRE = regexp.MustCompile(`(?s)<\s*([A-Za-z_!?/][A-Za-z0-9_.:-]*)\b([^<>]*)>`)
+var attrRE = regexp.MustCompile(`(?s)([A-Za-z_][A-Za-z0-9_.:-]*)\s*=\s*(?:"([^"]*)"|'([^']*)')`)
 
 func attributeFromToken(token markupToken) Attribute {
 	attribute := Attribute{

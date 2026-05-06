@@ -139,10 +139,11 @@ func loadFlow(path string) (Flow, []diagnostic.Diagnostic, error) {
 	name = strings.TrimSuffix(name, ".flow")
 	objectName := strings.TrimSpace(raw.Start.Object)
 	flow := Flow{ObjectName: objectName, File: path}
-	diagnostics := flowUnsupportedNodeDiagnostics(path, name, raw)
+	diagnostics := make([]diagnostic.Diagnostic, 0)
 	if !flowActive(raw.Status) || objectName == "" {
 		return flow, diagnostics, nil
 	}
+	diagnostics = flowUnsupportedNodeDiagnostics(path, name, raw)
 	if !flowProcessTypeSupported(raw.ProcessType) {
 		diagnostics = append(diagnostics, flowUnsupported(path, name, fmt.Sprintf("processType %q is not modeled as DML-triggered automation", raw.ProcessType)))
 	}

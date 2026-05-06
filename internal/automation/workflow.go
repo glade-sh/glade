@@ -178,7 +178,7 @@ func loadWorkflow(path string) (Workflow, []diagnostic.Diagnostic, error) {
 			Active:  rawRule.Active,
 			Formula: strings.TrimSpace(rawRule.Formula),
 		}
-		if strings.TrimSpace(rawRule.BooleanFilter) != "" {
+		if rawRule.Active && !workflowBooleanFilterSupported(rawRule.BooleanFilter, len(rawRule.CriteriaItems)) {
 			diagnostics = append(diagnostics, unsupported(path, rule.Name, "workflow booleanFilter is not supported; criteriaItems use implicit AND"))
 			continue
 		}
@@ -231,7 +231,52 @@ func unsupported(path, rule, message string) diagnostic.Diagnostic {
 
 func objectNameFromWorkflowPath(path string) string {
 	base := filepath.Base(path)
-	return strings.TrimSuffix(base, ".workflow-meta.xml")
+	base = strings.TrimSuffix(base, ".workflow-meta.xml")
+	base = strings.TrimSuffix(base, ".workflow")
+	return base
+}
+
+func workflowBooleanFilterSupported(filter string, criteriaItems int) bool {
+	filter = strings.TrimSpace(filter)
+	if filter == "" {
+		return true
+	}
+	filter = strings.ReplaceAll(filter, "(", " ")
+	filter = strings.ReplaceAll(filter, ")", " ")
+	tokens := strings.Fields(filter)
+	if len(tokens) == 0 {
+		return true
+	}
+	expectCriterion := true
+	for _, token := range tokens {
+		if expectCriterion {
+			index, ok := parseWorkflowBooleanCriterion(token)
+			if !ok || index < 1 || index > criteriaItems {
+				return false
+			}
+			expectCriterion = false
+			continue
+		}
+		if !strings.EqualFold(token, "AND") {
+			return false
+		}
+		expectCriterion = true
+	}
+	return !expectCriterion
+}
+
+func parseWorkflowBooleanCriterion(token string) (int, bool) {
+	if token == "" {
+		return 0, false
+	}
+	out := 0
+	for _, r := range token {
+		if r < '0' || r > '9' {
+			return 0, false
+		}
+		out = out*10 + int(r-'0')
+	}
+	return out, true
 }
 
 func trimObjectPrefix(field string) string {

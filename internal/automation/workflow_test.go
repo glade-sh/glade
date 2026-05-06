@@ -51,6 +51,45 @@ func TestLoadProjectWorkflowFieldUpdatesAndDiagnostics(t *testing.T) {
 	}
 }
 
+func TestLoadProjectWorkflowLegacyExtensionAndSimpleBooleanFilter(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "src/workflows/Widget__c.workflow")
+	writeWorkflowTestFile(t, path, `<Workflow xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fieldUpdates><fullName>SetStatus</fullName><field>Widget__c.Status__c</field><literalValue>Active</literalValue></fieldUpdates>
+  <fieldUpdates><fullName>InactiveUpdate</fullName><field>Widget__c.Status__c</field><literalValue>Inactive</literalValue></fieldUpdates>
+  <rules>
+    <fullName>MarkActive</fullName>
+    <active>true</active>
+    <booleanFilter>1 AND 2</booleanFilter>
+    <criteriaItems><field>Widget__c.Name</field><operation>notEqual</operation></criteriaItems>
+    <criteriaItems><field>Widget__c.Status__c</field><operation>equals</operation></criteriaItems>
+    <actions><name>SetStatus</name><type>FieldUpdate</type></actions>
+  </rules>
+  <rules>
+    <fullName>InactiveComplexFilter</fullName>
+    <active>false</active>
+    <booleanFilter>1 OR 2</booleanFilter>
+    <criteriaItems><field>Widget__c.Name</field><operation>equals</operation><value>Acme</value></criteriaItems>
+    <criteriaItems><field>Widget__c.Status__c</field><operation>equals</operation></criteriaItems>
+    <actions><name>InactiveUpdate</name><type>FieldUpdate</type></actions>
+  </rules>
+</Workflow>`)
+	idx, err := LoadProject(project.Project{WorkflowFiles: []string{path}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(idx.Diagnostics) != 0 {
+		t.Fatalf("diagnostics = %#v", idx.Diagnostics)
+	}
+	if len(idx.Workflows) != 1 || idx.Workflows[0].ObjectName != "Widget__c" {
+		t.Fatalf("workflows = %#v", idx.Workflows)
+	}
+	rules := idx.Workflows[0].Rules
+	if len(rules) != 2 || len(rules[0].Criteria) != 2 || len(rules[0].FieldUpdates) != 1 {
+		t.Fatalf("rules = %#v", rules)
+	}
+}
+
 func TestApplyToOrgInstallsWorkflowRules(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Objects["Account"] = storage.ObjectState{
@@ -94,6 +133,27 @@ func TestLoadProjectFlowFieldUpdatesAndDiagnostics(t *testing.T) {
 	}
 	if len(idx.Diagnostics) != 1 || idx.Diagnostics[0].Code != "OAERAUTO002" {
 		t.Fatalf("diagnostics = %#v", idx.Diagnostics)
+	}
+}
+
+func TestLoadProjectFlowIgnoresNonRecordScreenFlowForSaveOrder(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "force-app/main/default/flows/SetupWizard.flow-meta.xml")
+	writeWorkflowTestFile(t, path, `<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+  <processType>Flow</processType>
+  <status>Active</status>
+  <screens><name>Wizard</name></screens>
+  <recordLookups><name>Pick_Default</name></recordLookups>
+</Flow>`)
+	idx, err := LoadProject(project.Project{FlowFiles: []string{path}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(idx.Diagnostics) != 0 {
+		t.Fatalf("diagnostics = %#v", idx.Diagnostics)
+	}
+	if len(idx.Flows) != 1 || idx.Flows[0].ObjectName != "" || len(idx.Flows[0].Rules) != 0 {
+		t.Fatalf("flows = %#v", idx.Flows)
 	}
 }
 

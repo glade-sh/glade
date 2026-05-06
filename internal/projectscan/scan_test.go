@@ -14,7 +14,7 @@ func TestScanFindsProjectGaps(t *testing.T) {
   <apex:composition template="{!$Site.Template}" />
   {!$Label.EditTitle}
 </apex:page>`)
-	writeFile(t, filepath.Join(root, "src/components/Picker.component"), `<apex:component><`)
+	writeFile(t, filepath.Join(root, "src/components/Picker.component"), `plain text without visualforce tags`)
 	writeFile(t, filepath.Join(root, "src/aura/Thing/Thing.cmp"), `<aura:component controller="ThingController"/>`)
 	writeFile(t, filepath.Join(root, "src/lwc/currencyMenu/currencyMenu.js"), `import { LightningElement, wire } from 'lwc';
 import getCurrencyInformation from '@salesforce/apex/CurrencyMenuController.getCurrencyInformation';
@@ -51,6 +51,10 @@ import { getObjectInfo } from 'lightning/uiObjectInfoApi';
     List<Metadata.Metadata> records = Metadata.Operations.retrieve(Metadata.MetadataType.CustomMetadata, new List<String>{'Thing__mdt.Default'});
     System.debug(Site.getAdminEmail());
     System.debug(ConnectApi.Organization.getSettings().orgId);
+    ConnectApi.UserSettings settings = ConnectApi.Organization.getSettings().userSettings;
+    System.debug(settings.timeZone.name);
+    Auth.JWT jwt = new Auth.JWT();
+    jwt.setIss('issuer');
     Auth.SessionManagement.getCurrentSession();
     Auth.JWTUtil.validateJWTWithKeysEndpoint('token', 'https://example.invalid/keys');
     ConnectApi.ChatterFeeds.getFeedElementsFromFeed(null, null);
@@ -84,7 +88,6 @@ import { getObjectInfo } from 'lightning/uiObjectInfoApi';
 		"platform.auth-context",
 		"site.community-context",
 		"ui.presentation-metadata",
-		"visualforce.component-test",
 		"visualforce.controller-test",
 		"workflow.save-order",
 	}
@@ -132,6 +135,12 @@ import { getObjectInfo } from 'lightning/uiObjectInfoApi';
 	if hasLineFindingContaining(report, "platform.cache-connectapi", "src/classes/UsesPlatform.cls", "ConnectApi.Organization.getSettings") {
 		t.Fatalf("supported ConnectApi.Organization.getSettings was reported as a blocker")
 	}
+	if hasLineFindingContaining(report, "platform.cache-connectapi", "src/classes/UsesPlatform.cls", "ConnectApi.UserSettings") {
+		t.Fatalf("supported ConnectApi.UserSettings was reported as a blocker")
+	}
+	if hasLineFindingContaining(report, "platform.auth-context", "src/classes/UsesPlatform.cls", "Auth.JWT jwt") {
+		t.Fatalf("supported Auth.JWT model was reported as a blocker")
+	}
 	if hasLineFindingContaining(report, "files.binary-content", "src/classes/UsesPlatform.cls", "Attachment") {
 		t.Fatalf("supported Attachment SObject usage was reported as a blocker")
 	}
@@ -154,6 +163,64 @@ import { getObjectInfo } from 'lightning/uiObjectInfoApi';
 		if strings.Contains(finding.File, ".claude/") {
 			t.Fatalf("scanner included generated agent worktree file: %#v", finding)
 		}
+	}
+}
+
+func TestScanSuppressesSupportedCallableStubSurface(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"src","default":true}]}`)
+	writeFile(t, filepath.Join(root, "src/classes/Greeter.cls"), `public interface Greeter {
+  String greet(String name);
+}`)
+	writeFile(t, filepath.Join(root, "src/classes/GreeterProvider.cls"), `private class GreeterProvider implements System.StubProvider {
+  public Object handleMethodCall(Object stubbedObject, String stubbedMethodName, Type returnType, List<Type> listOfParamTypes, List<String> listOfParamNames, List<Object> listOfArgs) {
+    return 'stubbed';
+  }
+}`)
+	writeFile(t, filepath.Join(root, "src/classes/LocalCallable.cls"), `public class LocalCallable implements System.Callable {
+  public Object call(String action, Map<String, Object> args) {
+    return action;
+  }
+}`)
+	writeFile(t, filepath.Join(root, "src/classes/PlatformApisTest.cls"), `@isTest
+private class PlatformApisTest {
+  @isTest static void supportedCallableAndStub() {
+    Callable cb = (Callable) new LocalCallable();
+    System.assert(cb instanceof System.Callable);
+    Greeter greeter = Test.createStub(Greeter.class, new GreeterProvider());
+    System.assertEquals('stubbed', greeter.greet('Ada'));
+  }
+}`)
+
+	report, err := Scan(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if surface := findSurface(report, "apex.callable-stub"); surface != nil {
+		t.Fatalf("callable/stub surface = %#v, want suppressed supported surface", surface)
+	}
+}
+
+func TestScanKeepsUnsupportedCreateStubNullProvider(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"src","default":true}]}`)
+	writeFile(t, filepath.Join(root, "src/classes/CreateStubNullTest.cls"), `@isTest
+private class CreateStubNullTest {
+  @isTest static void unsupportedNullProvider() {
+    Test.createStub(CreateStubNullTest.class, null);
+  }
+}`)
+
+	report, err := Scan(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	surface := findSurface(report, "apex.callable-stub")
+	if surface == nil || surface.Count != 1 {
+		t.Fatalf("callable/stub surface = %#v, want one unsupported null-provider finding", surface)
+	}
+	if got := report.Findings[0].Symbol; got != "Test.createStub" {
+		t.Fatalf("symbol = %q, want Test.createStub", got)
 	}
 }
 
@@ -187,6 +254,8 @@ import BATCH_OBJECT from '@salesforce/schema/Batch__c';
 import BATCH_PARENT_NAME from '@salesforce/schema/Batch__c.Parent__r.Name';
 import PAYMENT_AMOUNT from '@salesforce/schema/pkg__Payment__c.pkg__Amount__c';
 import PAYMENT_BATCH_NAME from '@salesforce/schema/pkg__Payment__c.pkg__Batch__r.Name';
+import NPSP_PAYMENT_AMOUNT from '@salesforce/schema/npe01__OppPayment__c.npe01__Payment_Amount__c';
+import NPSP_RECURRING_INSTALLMENT from '@salesforce/schema/npe03__Recurring_Donation__c.npe03__Installment_Period__c';
 import MISSING_FIELD from '@salesforce/schema/Account.NotAField__c';
 import MISSING_RELATIONSHIP from '@salesforce/schema/Batch__c.Missing__r.Name';
 `)
@@ -196,6 +265,16 @@ import MISSING_RELATIONSHIP from '@salesforce/schema/Batch__c.Missing__r.Name';
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/pkg__Payment__c/pkg__Payment__c.object-meta.xml"), `<CustomObject><label>Payment</label><pluralLabel>Payments</pluralLabel></CustomObject>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/pkg__Payment__c/fields/pkg__Amount__c.field-meta.xml"), `<CustomField><fullName>pkg__Amount__c</fullName><label>Amount</label><type>Currency</type></CustomField>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/pkg__Payment__c/fields/pkg__Batch__c.field-meta.xml"), `<CustomField><fullName>pkg__Batch__c</fullName><label>Batch</label><type>Lookup</type><referenceTo>Batch__c</referenceTo><relationshipName>pkg__Batch__r</relationshipName></CustomField>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/npe01__OppPayment__c/npe01__OppPayment__c.object-meta.xml"), `<CustomObject><label>Payment</label><pluralLabel>Payments</pluralLabel></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/npe01__OppPayment__c/fieldSets/Payment_WizardFS.fieldSet-meta.xml"), `<FieldSet>
+  <fullName>Payment_WizardFS</fullName>
+  <displayedFields><field>npe01__Payment_Amount__c</field></displayedFields>
+</FieldSet>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/npe03__Recurring_Donation__c/npe03__Recurring_Donation__c.object-meta.xml"), `<CustomObject><label>Recurring Donation</label><pluralLabel>Recurring Donations</pluralLabel></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/quickActions/New_Recurring_Donation.quickAction-meta.xml"), `<QuickAction>
+  <quickActionLayout><layoutSection><layoutColumns><layoutItems><field>npe03__Installment_Period__c</field></layoutItems></layoutColumns></layoutSection></quickActionLayout>
+  <targetObject>npe03__Recurring_Donation__c</targetObject>
+</QuickAction>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/pages/Resolved.page"), `<apex:page>
 {!$ObjectType.Opportunity.Fields.StageName.Label}
 {!$ObjectType.Batch__c.Fields.Name.InlineHelpText}
@@ -239,6 +318,12 @@ import MISSING_RELATIONSHIP from '@salesforce/schema/Batch__c.Missing__r.Name';
 	}
 	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "pkg__Payment__c.pkg__Batch__r.Name") {
 		t.Fatalf("resolved package relationship schema import should not be reported")
+	}
+	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "npe01__OppPayment__c.npe01__Payment_Amount__c") {
+		t.Fatalf("loaded field-set field reference should not be reported")
+	}
+	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "npe03__Recurring_Donation__c.npe03__Installment_Period__c") {
+		t.Fatalf("loaded quick-action field reference should not be reported")
 	}
 	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/pages/Resolved.page", "Opportunity.Fields.StageName") {
 		t.Fatalf("resolved Opportunity.StageName object type reference should not be reported")
@@ -556,12 +641,17 @@ func TestScanSuppressesResolvedCustomMetadataTypeReferences(t *testing.T) {
 
 func TestScanSuppressesResolvedLabelReferences(t *testing.T) {
 	root := t.TempDir()
-	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"npsp","packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/labels/CustomLabels.labels"), `<CustomLabels>
   <labels><fullName>Save</fullName><value>Save</value></labels>
   <labels><fullName>Greeting</fullName><value>Hello</value></labels>
   <labels><fullName>pkg__Managed</fullName><value>Managed</value></labels>
+  <labels><fullName>AddressCopyUnknownObject</fullName><value>Unknown address object</value></labels>
+  <labels><fullName>Contact_Merge_Error_Too_Few_Contacts</fullName><value>Too few contacts</value></labels>
 </CustomLabels>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/npe01__OppPayment__c/npe01__OppPayment__c.object-meta.xml"), `<CustomObject><label>Payment</label><pluralLabel>Payments</pluralLabel></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/npo02__Address__c/npo02__Address__c.object-meta.xml"), `<CustomObject><label>Address</label><pluralLabel>Addresses</pluralLabel></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/pkg__Managed__c/pkg__Managed__c.object-meta.xml"), `<CustomObject><label>Managed</label><pluralLabel>Managed</pluralLabel></CustomObject>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/translations/fr.translation-meta.xml"), `<Translations>
   <customLabels><name>Greeting</name><label>Bonjour</label></customLabels>
 </Translations>`)
@@ -571,6 +661,9 @@ func TestScanSuppressesResolvedLabelReferences(t *testing.T) {
     System.debug(Label.Greeting);
     System.debug(Label.Save.replace('{0}', 'Done'));
     System.debug(Label.pkg.Managed);
+    System.debug(System.Label.npo02.AddressCopyUnknownObject);
+    System.debug(Label.npe01.Contact_Merge_Error_Too_Few_Contacts);
+    System.debug(Label.npe01.Missing_Aliased_Label);
     System.debug(Label.Missing);
     System.debug(Label.Missing.replace('{0}', 'Done'));
   }
@@ -604,6 +697,12 @@ import MANAGED from '@salesforce/label/pkg.Managed';
 	if hasLineFinding(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "pkg.Managed") {
 		t.Fatalf("resolved managed-package label fallback should not be reported")
 	}
+	if hasLineFinding(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "npo02.AddressCopyUnknownObject") {
+		t.Fatalf("resolved aliased System.Label namespace should not be reported")
+	}
+	if hasLineFinding(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "npe01.Contact_Merge_Error_Too_Few_Contacts") {
+		t.Fatalf("resolved aliased Label namespace should not be reported")
+	}
 	if hasLineFindingContaining(report, "labels.localization", "force-app/main/default/lwc/labels/labels.js", "c.Save") {
 		t.Fatalf("resolved LWC c.Save label should not be reported")
 	}
@@ -615,6 +714,9 @@ import MANAGED from '@salesforce/label/pkg.Managed';
 	}
 	if !hasLineFinding(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "Missing") {
 		t.Fatalf("missing unresolved Apex label finding")
+	}
+	if !hasLineFinding(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "npe01.Missing_Aliased_Label") {
+		t.Fatalf("missing unresolved aliased label finding")
 	}
 	if !hasLineFindingContaining(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "Missing.replace") {
 		t.Fatalf("missing unresolved Apex label method-chain finding")
@@ -640,11 +742,21 @@ func TestScanSuppressesModeledDeclarativeAutomation(t *testing.T) {
   <fieldUpdates><fullName>SetStatus</fullName><field>Status__c</field><literalValue>Workflow</literalValue></fieldUpdates>
   <rules><fullName>Mark</fullName><active>true</active><actions><name>SetStatus</name><type>FieldUpdate</type></actions></rules>
 </Workflow>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/workflows/Legacy__c.workflow"), `<Workflow>
+  <fieldUpdates><fullName>SetLegacyStatus</fullName><field>Status__c</field><literalValue>Workflow</literalValue></fieldUpdates>
+  <rules><fullName>LegacyMark</fullName><active>true</active><booleanFilter>1</booleanFilter><criteriaItems><field>Legacy__c.Status__c</field><operation>equals</operation></criteriaItems><actions><name>SetLegacyStatus</name><type>FieldUpdate</type></actions></rules>
+</Workflow>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/flows/Widget_Status.flow-meta.xml"), `<Flow>
   <processType>Workflow</processType>
   <status>Active</status>
   <start><object>Widget__c</object></start>
   <assignments><name>SetFlow</name><assignmentItems><assignToReference>$Record.Status__c</assignToReference><operator>Assign</operator><value><stringValue>Flow</stringValue></value></assignmentItems></assignments>
+</Flow>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/flows/SetupWizard.flow-meta.xml"), `<Flow>
+  <processType>Flow</processType>
+  <status>Active</status>
+  <screens><name>Wizard</name></screens>
+  <recordLookups><name>Pick_Default</name></recordLookups>
 </Flow>`)
 
 	report, err := Scan(root)

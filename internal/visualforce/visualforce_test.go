@@ -95,7 +95,7 @@ func TestExtractMergeReferences(t *testing.T) {
 	}
 }
 
-func TestLoadProjectBestEffortKeepsParseableMarkup(t *testing.T) {
+func TestLoadProjectBestEffortKeepsLenientMarkup(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "force-app/main/default/pages/Good.page"), `<apex:page controller="GoodController" />`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/pages/Broken.page"), `<apex:page><apex:outputText>`)
@@ -107,16 +107,50 @@ func TestLoadProjectBestEffortKeepsParseableMarkup(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := LoadProject(p); err == nil {
-		t.Fatal("expected strict visualforce load to report malformed markup")
+	idx, err := LoadProject(p)
+	if err != nil {
+		t.Fatal(err)
 	}
-	idx := LoadProjectBestEffort(p)
 	if _, ok := idx.Page("Good"); !ok {
-		t.Fatalf("best effort index missed parseable page: %#v", idx)
+		t.Fatalf("strict index missed lenient page: %#v", idx)
+	}
+	if _, ok := idx.Page("Broken"); !ok {
+		t.Fatalf("strict index missed XML-hostile page: %#v", idx)
 	}
 	component, ok := idx.Component("Good")
 	if !ok || len(component.Attributes) != 1 || component.Attributes[0].Name != "actSupAction" {
-		t.Fatalf("best effort index missed parseable component: %#v", idx)
+		t.Fatalf("strict index missed parseable component: %#v", idx)
+	}
+}
+
+func TestParseComponentToleratesVisualforceMarkupThatIsNotStrictXML(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "BulkBilling.component")
+	writeFile(t, path, `<apex:component controller="BulkBillingController">
+  <apex:attribute name="cancelAction" type="ApexPages.Action" required="true"
+    description="The action to execute." />
+  <apex:commandButton action="{!cancelAction}" />
+  <div>{!IF(ISBLANK(city), '', city & ',')}</div>
+  <h1>{!c.Subheader}&nbsp;</h1>
+  <script>
+    if (event.status && event.result != null) {
+      poll();
+    }
+  </script>
+</apex:component>`)
+
+	component, err := ParseComponentFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if component.Controller != "BulkBillingController" || len(component.Attributes) != 1 {
+		t.Fatalf("component metadata = %#v", component)
+	}
+	if component.Attributes[0].Name != "cancelAction" || component.Attributes[0].Type != "ApexPages.Action" {
+		t.Fatalf("component attribute = %#v", component.Attributes[0])
+	}
+	if !hasMerge(component.MergeReferences, "ControllerExpression", "", "cancelAction") {
+		t.Fatalf("missing action merge reference: %#v", component.MergeReferences)
 	}
 }
 
