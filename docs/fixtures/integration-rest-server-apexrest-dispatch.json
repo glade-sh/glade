@@ -15,7 +15,7 @@
       "method": "GET",
       "path": "/services/apexrest/widgets/42?q=abc",
       "status": 200,
-      "contains": ["GET:/widgets/42:abc"],
+      "contains": ["GET:/services/apexrest/widgets/*:abc"],
       "notContains": ["UNSUPPORTED_FEATURE"]
     }
   ],

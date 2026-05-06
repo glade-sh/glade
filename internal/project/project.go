@@ -205,7 +205,7 @@ func collectFiles(root string, p *Project) error {
 			p.NamedCredentialFiles = append(p.NamedCredentialFiles, path)
 		case strings.HasSuffix(lower, ".remotesite"), strings.HasSuffix(lower, ".remotesite-meta.xml"):
 			p.RemoteSiteFiles = append(p.RemoteSiteFiles, path)
-		case strings.HasSuffix(lower, ".md") && isCustomMetadataPath(lower):
+		case strings.HasSuffix(lower, ".md-meta.xml"), strings.HasSuffix(lower, ".md") && isCustomMetadataPath(lower):
 			p.CustomMetadataFiles = append(p.CustomMetadataFiles, path)
 		case strings.HasSuffix(lower, ".workflow-meta.xml"):
 			p.WorkflowFiles = append(p.WorkflowFiles, path)

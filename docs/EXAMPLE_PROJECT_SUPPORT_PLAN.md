@@ -28,7 +28,7 @@ fail=0 unsupported=0 missing=0
 ```
 
 The example projects are compatibility proof code. Project-specific classes such
-as `CurrenciesApi`, query factory wrappers, selectors, managers, and REST
+as `WidgetSyncApi`, query factory wrappers, selectors, managers, and REST
 controllers must execute as ordinary Apex. They must not be implemented as VM
 stdlib stubs or capability entries.
 
@@ -36,7 +36,7 @@ stdlib stubs or capability entries.
 
 - Keep runtime changes tied to Apex language semantics or public Salesforce
   platform behavior.
-- Keep route-specific records, webhook setup data, email templates, and other
+- Keep route-specific records, inbound event setup data, email templates, and other
   proof fixtures inside `internal/compat/server_examples.go` probe overlays.
 - Do not add package-specific method names to `internal/vm` stdlib dispatch.
 - When a harness blocker reaches a custom project method, fix the general
@@ -52,24 +52,24 @@ tooling/metadata, composite, bulk, seed-data, and project presence probes are
 passing.
 
 ```text
-example-projects/sf-cred-pkg-develop POST /services/apexrest/webhookEvents
+example-projects/alpha-pkg-develop POST /services/apexrest/inboundEvents
   500 fail: 95: Invalid field '' for object 'Setup_Data__c'
   duplicated by .claude worktree copies plus active force-app source
 
-example-projects/sf-cred-pkg-develop POST /services/apexrest/webhookevent/create
+example-projects/alpha-pkg-develop POST /services/apexrest/inboundEvent/create
   500 fail: 715: soql: expected FROM
   duplicated by .claude worktree copies plus active force-app source
 
-example-projects/src-nmb-nu-develop POST /services/apexrest/selfservice/cart/submit/
+example-projects/beta-pkg-develop POST /services/apexrest/portal/widget/submit/
   501 unsupported: QueryException: soql: expected FROM
   at BatchSelector.selectAutomaticOpen
 
-example-projects/src-nmb-nu-develop POST /services/apexrest/selfservice/email/SocialVerify
+example-projects/beta-pkg-develop POST /services/apexrest/portal/email/EmailVerify
   501 unsupported: Email template not found: 00X000000000001AAA
   at EmailTemplates.BuildEmailMessageForEntity
 
-example-projects/src-nmb-nu-develop POST /services/apexrest/selfservice/order/
-  501 unsupported: unsupported call "CurrenciesApi.v1.syncCurrencyWithRelatedRecord"
+example-projects/beta-pkg-develop POST /services/apexrest/portal/order/
+  501 unsupported: unsupported call "WidgetSyncApi.v1.syncCurrencyWithRelatedRecord"
   while initializing di_Binding.bindingImplsByType
 ```
 
@@ -80,9 +80,9 @@ parallel worktrees.
 
 | Lane | Worktree | Branch | Scope |
 | --- | --- | --- | --- |
-| SOQL builder | `/Users/matt/Dev/oaer-lane-example-soql-builder` | `codex/example-soql-builder` | Capture and fix generated dynamic SOQL failures for webhook create and cart submit. |
-| Email template | `/Users/matt/Dev/oaer-lane-example-email-template` | `codex/example-email-template` | Fix the SocialVerify template lookup/rendering path with general `EmailTemplate` behavior or route-proof overlay data. |
-| Custom dispatch | `/Users/matt/Dev/oaer-lane-example-custom-dispatch` | `codex/example-custom-dispatch` | Make `CurrenciesApi.v1.syncCurrencyWithRelatedRecord` dispatch as ordinary custom Apex, with no stdlib stub. |
+| SOQL builder | `/Users/matt/Dev/oaer-lane-example-soql-builder` | `codex/example-soql-builder` | Capture and fix generated dynamic SOQL failures for inbound event create and widget submit. |
+| Email template | `/Users/matt/Dev/oaer-lane-example-email-template` | `codex/example-email-template` | Fix the EmailVerify template lookup/rendering path with general `EmailTemplate` behavior or route-proof overlay data. |
+| Custom dispatch | `/Users/matt/Dev/oaer-lane-example-custom-dispatch` | `codex/example-custom-dispatch` | Make `WidgetSyncApi.v1.syncCurrencyWithRelatedRecord` dispatch as ordinary custom Apex, with no stdlib stub. |
 | Apex REST diagnostics | `/Users/matt/Dev/oaer-lane-example-apexrest-diagnostics` | `codex/example-apexrest-diagnostics` | Add focused server-example filters, blocker-oriented output, and richer route/source/runtime diagnostics. |
 
 Merge each lane independently when its focused tests pass and its diff is
@@ -100,7 +100,7 @@ Tasks:
 - Add blocker-only output that avoids printing huge successful describe payloads
   during local iteration.
 - Ignore hidden nested project worktrees such as
-  `example-projects/sf-cred-pkg-develop/.claude/worktrees` by default so copied
+  `example-projects/alpha-pkg-develop/.claude/worktrees` by default so copied
   REST resources do not triple failure counts.
 - Keep JSON schema backward-compatible. New filters should reduce the included
   projects/probes, not rename existing fields.
@@ -119,9 +119,9 @@ go run ./cmd/oaer compat server-examples --json
 
 Target blockers:
 
-- `sf-cred` `/webhookevent/create`: `soql: expected FROM`
-- `src-nmb-nu` cart submit: `QueryException: soql: expected FROM`
-- `sf-cred` `/webhookEvents`: invalid blank `Setup_Data__c` field, if caused by
+- `alpha` `/inboundEvent/create`: `soql: expected FROM`
+- `synthetic-nu` widget submit: `QueryException: soql: expected FROM`
+- `alpha` `/inboundEvents`: invalid blank `Setup_Data__c` field, if caused by
   generated field lists
 
 Tasks:
@@ -137,7 +137,7 @@ Tasks:
 
 Target blocker:
 
-- `src-nmb-nu` SocialVerify: `Email template not found: 00X000000000001AAA`
+- `synthetic-nu` EmailVerify: `Email template not found: 00X000000000001AAA`
 
 Tasks:
 
@@ -154,11 +154,11 @@ Tasks:
 
 Target blocker:
 
-- `CurrenciesApi.v1.syncCurrencyWithRelatedRecord`
+- `WidgetSyncApi.v1.syncCurrencyWithRelatedRecord`
 
 Tasks:
 
-- Locate `CurrenciesApi`, nested/static `v1`, and the method declaration.
+- Locate `WidgetSyncApi`, nested/static `v1`, and the method declaration.
 - Determine whether the root cause is nested/lowercase type dispatch, static
   field initialization, alias resolution, method visibility, or DI binding
   initialization.
@@ -237,7 +237,7 @@ Validation:
 
 ```bash
 go test ./internal/vm ./internal/apextest ./internal/projectscan
-go run ./cmd/oaer inspect gaps --project example-projects/src-nmb-nu-develop --json
+go run ./cmd/oaer inspect gaps --project example-projects/beta-pkg-develop --json
 ```
 
 ## Wave 4: Aura And LWC Controller Discovery

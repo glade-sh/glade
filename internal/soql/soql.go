@@ -1164,7 +1164,7 @@ func fieldKnownForMode(org storage.OrgState, definition storage.ObjectDefinition
 	if strings.Contains(field, ".") {
 		parts := strings.SplitN(field, ".", 2)
 		for _, relation := range definition.Relations {
-			if relation.ParentRelationship != parts[0] {
+			if !relationshipNameMatches(org.Namespace, relation.ParentRelationship, parts[0]) {
 				continue
 			}
 			if len(relation.ParentObjects) == 0 {
@@ -1287,7 +1287,7 @@ func relationshipValue(org storage.OrgState, record storage.Record, field string
 		return storage.Value{}, false
 	}
 	for _, relation := range object.Definition.Relations {
-		if relation.ParentRelationship != parts[0] {
+		if !relationshipNameMatches(org.Namespace, relation.ParentRelationship, parts[0]) {
 			continue
 		}
 		parentID, ok := recordValue(org, object.Definition, record, relation.Field)
@@ -1313,6 +1313,17 @@ func relationshipValue(org storage.OrgState, record storage.Record, field string
 		}
 	}
 	return storage.Value{}, false
+}
+
+func relationshipNameMatches(namespace, canonical, candidate string) bool {
+	if canonical == candidate || strings.EqualFold(canonical, candidate) {
+		return true
+	}
+	if namespace == "" {
+		return false
+	}
+	stripped := storage.StripNamespaceToken(namespace, candidate)
+	return canonical == stripped || strings.EqualFold(canonical, stripped)
 }
 
 func idFromValue(value storage.Value) storage.ID {

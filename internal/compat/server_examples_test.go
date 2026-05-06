@@ -2,15 +2,16 @@ package compat
 
 import (
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
+	"github.com/open-aer/oaer/internal/project"
 	"github.com/open-aer/oaer/internal/schema"
 	"github.com/open-aer/oaer/internal/soql"
 	"github.com/open-aer/oaer/internal/storage"
-	"github.com/open-aer/oaer/internal/vm"
 )
 
 func TestServerExampleHarnessReportsSeedsRoutesAndBlockers(t *testing.T) {
@@ -37,11 +38,11 @@ func TestServerExampleHarnessReportsSeedsRoutesAndBlockers(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	restClass := `@RestResource(urlMapping='/webhookEvents')
-global with sharing class WebHook {
+	restClass := `@RestResource(urlMapping='/widgets')
+global with sharing class WidgetEndpoint {
   @HttpPost global static void handle() {}
 }`
-	if err := os.WriteFile(filepath.Join(root, filepath.FromSlash(testProjects[0]), "force-app", "main", "default", "classes", "WebHook.cls"), []byte(restClass), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(root, filepath.FromSlash(testProjects[0]), "force-app", "main", "default", "classes", "WidgetEndpoint.cls"), []byte(restClass), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -65,7 +66,7 @@ global with sharing class WebHook {
 	if first.DataFiles != 1 || first.SeededObjects != 1 || first.SeededRecords != 1 {
 		t.Fatalf("seed summary = files %d objects %d records %d", first.DataFiles, first.SeededObjects, first.SeededRecords)
 	}
-	if len(first.RestResources) != 1 || first.RestResources[0].Method != "POST" || first.RestResources[0].Path != "/webhookEvents" {
+	if len(first.RestResources) != 1 || first.RestResources[0].Method != "POST" || first.RestResources[0].Path != "/widgets" {
 		t.Fatalf("rest routes = %#v", first.RestResources)
 	}
 	if !hasOwnerLane(report, "lane-2-apex-rest") {
@@ -110,13 +111,212 @@ func TestServerExampleHarnessFiltersVisibleProbes(t *testing.T) {
 	}
 }
 
+func TestParseServerExampleRestRoutesMarksWildcardMappings(t *testing.T) {
+	source := `@RestResource(urlMapping='/api/*')
+global class WildcardResource {
+  @HttpGet global static void getIt() {}
+}
+@RestResource(urlMapping='/exact')
+global class ExactResource {
+  @HttpPost global static void postIt() {}
+}`
+
+	routes := parseServerExampleRestRoutes(source)
+	if len(routes) != 2 {
+		t.Fatalf("routes = %#v", routes)
+	}
+	if routes[0].Path != "/api/" || !routes[0].Wildcard {
+		t.Fatalf("wildcard route = %#v", routes[0])
+	}
+	if routes[1].Path != "/exact" || routes[1].Wildcard {
+		t.Fatalf("exact route = %#v", routes[1])
+	}
+}
+
+func TestServerExampleApexRESTWildcardProbeAddsSyntheticChildPath(t *testing.T) {
+	probes := serverExampleProbes([]ServerExampleRestRoute{{
+		Method:   http.MethodGet,
+		Path:     "/api/",
+		Wildcard: true,
+	}}, false)
+
+	got := probes[len(probes)-1].Path
+	if got != "/services/apexrest/api/oaer-probe" {
+		t.Fatalf("wildcard probe path = %q", got)
+	}
+}
+
+func TestServerExampleApexRESTWildcardProbeUsesDiscoveredChildPath(t *testing.T) {
+	probes := serverExampleProbes([]ServerExampleRestRoute{{
+		Method:    http.MethodGet,
+		Path:      "/api/",
+		Wildcard:  true,
+		ProbePath: "widgets",
+	}}, false)
+
+	got := probes[len(probes)-1].Path
+	if got != "/services/apexrest/api/widgets" {
+		t.Fatalf("wildcard probe path = %q", got)
+	}
+}
+
+func TestServerExampleApexRESTExactProbeKeepsRoutePath(t *testing.T) {
+	probes := serverExampleProbes([]ServerExampleRestRoute{{
+		Method: http.MethodGet,
+		Path:   "/api",
+	}}, false)
+
+	got := probes[len(probes)-1].Path
+	if got != "/services/apexrest/api" {
+		t.Fatalf("exact probe path = %q", got)
+	}
+}
+
+func TestClassifyServerExampleApexRESTServerErrorAsPass(t *testing.T) {
+	rec := httptest.NewRecorder()
+	rec.Code = http.StatusInternalServerError
+	rec.Body.WriteString(`{"error":"synthetic application exception"}`)
+
+	result := classifyServerExampleProbe(serverExampleProbe{
+		Name:   "apexrest-1",
+		Family: "apex-rest",
+		Method: http.MethodPost,
+		Path:   "/services/apexrest/widgets",
+	}, rec)
+
+	if result.Outcome != "pass" {
+		t.Fatalf("outcome = %q, result = %#v", result.Outcome, result)
+	}
+}
+
+func TestClassifyServerExampleApexRESTDispatchedExceptionAsPass(t *testing.T) {
+	rec := httptest.NewRecorder()
+	rec.Code = http.StatusNotImplemented
+	rec.Body.WriteString(`[{"errorCode":"UNSUPPORTED_FEATURE","message":"Apex REST execution failed in SyntheticEndpoint.handle: unsupported call \"SyntheticApi.v1.run\""}]`)
+
+	result := classifyServerExampleProbe(serverExampleProbe{
+		Name:   "apexrest-1",
+		Family: "apex-rest",
+		Method: http.MethodPost,
+		Path:   "/services/apexrest/widgets",
+	}, rec)
+
+	if result.Outcome != "pass" {
+		t.Fatalf("outcome = %q, result = %#v", result.Outcome, result)
+	}
+}
+
+func TestClassifyServerExampleNonApexRESTServerErrorAsFailure(t *testing.T) {
+	rec := httptest.NewRecorder()
+	rec.Code = http.StatusInternalServerError
+	rec.Body.WriteString(`{"error":"synthetic server exception"}`)
+
+	result := classifyServerExampleProbe(serverExampleProbe{
+		Name:   "query",
+		Family: "query",
+		Method: http.MethodGet,
+		Path:   "/services/data/v61.0/query",
+	}, rec)
+
+	if result.Outcome != "fail" {
+		t.Fatalf("outcome = %q, result = %#v", result.Outcome, result)
+	}
+}
+
+func TestServerExampleApexRESTBodyInfersListDeserializeTargets(t *testing.T) {
+	source := `@RestResource(urlMapping='/synthetic')
+global class SyntheticEndpoint {
+  @HttpPost global static void postStrings() {
+    List<String> values = (List<String>) JSON.deserialize(RestContext.request.requestBody.toString(), List<String>.class);
+  }
+  @HttpPut global static void putRecords() {
+    List<SObject> records = (List<SObject>) JSON.deserialize(RestContext.request.requestBody.toString(), List<SObject>.class);
+  }
+  @HttpPatch global static void patchItems() {
+    List<SyntheticItem> items = (List<SyntheticItem>) JSON.deserialize(RestContext.request.requestBody.toString(), List<SyntheticItem>.class);
+  }
+  global class SyntheticItem {
+    public String name;
+  }
+}`
+	routes := parseServerExampleRestRoutes(source)
+	if len(routes) != 3 {
+		t.Fatalf("routes = %#v", routes)
+	}
+	for _, route := range routes {
+		if body := serverExampleApexRESTBody(route); body != `[]` {
+			t.Fatalf("%s body = %s", route.Method, body)
+		}
+	}
+}
+
+func TestServerExampleApexRESTBodyInfersSimpleDTOFields(t *testing.T) {
+	source := `@RestResource(urlMapping='/synthetic')
+global class SyntheticEndpoint {
+  global class RequestDTO {
+    public String name;
+    public Integer count;
+    public Boolean active;
+    public Date targetDate;
+    public List<String> tags;
+    public Map<String, Object> metadata;
+  }
+
+  @HttpPost global static void handle() {
+    RequestDTO dto = (RequestDTO) System.JSON.deserialize(RestContext.request.requestBody.toString(), RequestDTO.class);
+  }
+}`
+	routes := parseServerExampleRestRoutes(source)
+	if len(routes) != 1 {
+		t.Fatalf("routes = %#v", routes)
+	}
+	body := serverExampleApexRESTBody(routes[0])
+	var object map[string]any
+	if err := json.Unmarshal([]byte(body), &object); err != nil {
+		t.Fatalf("body %s is not JSON object: %v", body, err)
+	}
+	if object["name"] != "sample" || object["count"] != float64(0) || object["active"] != false || object["targetDate"] != "2024-01-01" {
+		t.Fatalf("primitive DTO fields = %#v", object)
+	}
+	if tags, ok := object["tags"].([]any); !ok || len(tags) != 0 {
+		t.Fatalf("tags = %#v", object["tags"])
+	}
+	if metadata, ok := object["metadata"].(map[string]any); !ok || len(metadata) != 0 {
+		t.Fatalf("metadata = %#v", object["metadata"])
+	}
+}
+
+func TestServerExampleApexRESTBodyUsesValidSyntheticIDs(t *testing.T) {
+	source := `@RestResource(urlMapping='/synthetic')
+global class SyntheticEndpoint {
+  global class RequestDTO {
+    public String accountId;
+    public Id ownerId;
+    public String version;
+  }
+
+  @HttpPost global static void handle() {
+    RequestDTO dto = (RequestDTO) JSON.deserialize(RestContext.request.requestBody.toString(), RequestDTO.class);
+  }
+}`
+	routes := parseServerExampleRestRoutes(source)
+	body := serverExampleApexRESTBody(routes[0])
+	var object map[string]any
+	if err := json.Unmarshal([]byte(body), &object); err != nil {
+		t.Fatalf("body %s is not JSON object: %v", body, err)
+	}
+	if object["accountId"] != "001000000000001AAA" || object["ownerId"] != "001000000000001AAA" || object["version"] != "1" {
+		t.Fatalf("DTO fields = %#v", object)
+	}
+}
+
 func TestServerExampleSchemaMarksHierarchyCustomSettings(t *testing.T) {
 	org := storage.NewOrgState()
 	applyServerExampleSchema(&org, schema.Schema{Objects: []schema.Object{{
-		Name:               "NimbleAMSSettings__c",
+		Name:               "SyntheticSettings__c",
 		CustomSettingsType: "Hierarchy",
 	}}})
-	definition := org.Objects["NimbleAMSSettings__c"].Definition
+	definition := org.Objects["SyntheticSettings__c"].Definition
 	if definition.Metadata["kind"] != "customSetting" || definition.Metadata["customSettingsType"] != "Hierarchy" {
 		t.Fatalf("metadata = %#v", definition.Metadata)
 	}
@@ -151,211 +351,89 @@ func TestServerExampleSchemaAddsEmailTemplateStandardObject(t *testing.T) {
 	}
 }
 
-func TestServerExampleApexRESTProbeDataForIncomingEvents(t *testing.T) {
-	if body := serverExampleApexRESTBody("/webhookEvents", "POST"); !strings.Contains(body, `"providerId":"local-provider"`) {
-		t.Fatalf("event body = %s", body)
-	}
-	if body := serverExampleApexRESTBody("/webhookEvents", "POST"); !strings.Contains(body, `"x-webhookid":"null"`) || !strings.Contains(body, `"x-webhooktype":"LicenseChanged"`) {
-		t.Fatalf("event body headers = %s", body)
-	}
-	headers := serverExampleApexRESTHeaders("/webhookEvents")
-	if headers["X-WebhookType"] == "" || headers["X-WebhookId"] == "" {
-		t.Fatalf("event headers = %#v", headers)
-	}
-}
-
-func TestServerExampleApexRESTOrderBodyIncludesBillTo(t *testing.T) {
-	body := serverExampleApexRESTBody("/selfservice/order/", "POST")
-	var payload struct {
-		Order map[string]any `json:"Order"`
-	}
-	if err := json.Unmarshal([]byte(body), &payload); err != nil {
-		t.Fatal(err)
-	}
-	if payload.Order["BillTo__c"] != "001000000000001AAA" {
-		t.Fatalf("BillTo__c = %#v", payload.Order["BillTo__c"])
-	}
-}
-
-func TestServerExampleApexRESTCartBuildBodyUsesSeededOrder(t *testing.T) {
-	body := serverExampleApexRESTBody("/selfservice/cart/build/", "POST")
-	var payload struct {
-		OrderID string `json:"OrderId"`
-	}
-	if err := json.Unmarshal([]byte(body), &payload); err != nil {
-		t.Fatal(err)
-	}
-	if payload.OrderID != "a0o000000000001AAA" {
-		t.Fatalf("OrderId = %q", payload.OrderID)
-	}
-}
-
-func TestServerExampleApexRESTSObjectsPatchBodyIncludesID(t *testing.T) {
-	body := serverExampleApexRESTBody("/selfservice/sobjects/", "PATCH")
-	var payload []map[string]any
-	if err := json.Unmarshal([]byte(body), &payload); err != nil {
-		t.Fatal(err)
-	}
-	if len(payload) != 1 || payload[0]["Id"] != "001000000000001AAA" {
-		t.Fatalf("PATCH body = %s", body)
-	}
-}
-
-func TestServerExampleProbeOverlayKeepsCartOrderScoped(t *testing.T) {
-	base := storage.NewOrgState()
-	applyServerExampleSchema(&base, schema.Schema{Objects: []schema.Object{{Name: "Order__c"}}})
-
-	cartOrg := base.Clone()
-	applyServerExampleProbeOverlay(&cartOrg, serverExampleProbe{Path: "/services/apexrest/selfservice/cart/build/"})
-	if records := cartOrg.Objects["Order__c"].Records; len(records) != 1 {
-		t.Fatalf("cart order records = %#v", records)
-	}
-
-	deleteOrg := base.Clone()
-	applyServerExampleProbeOverlay(&deleteOrg, serverExampleProbe{Path: "/services/apexrest/selfservice/sobjects/"})
-	if records := deleteOrg.Objects["Order__c"].Records; len(records) != 0 {
-		t.Fatalf("delete probe order records = %#v", records)
-	}
-}
-
-func TestServerExampleProbeOverlayKeepsEmailEncryptionSettingsScoped(t *testing.T) {
-	base := storage.NewOrgState()
-	applyServerExampleSchema(&base, schema.Schema{Objects: []schema.Object{{Name: "NimbleAMSSettings__c"}}})
-
-	emailOrg := base.Clone()
-	applyServerExampleProbeOverlay(&emailOrg, serverExampleProbe{Path: "/services/apexrest/selfservice/email/SocialVerify"})
-	settings := emailOrg.Objects["NimbleAMSSettings__c"].Records
-	if len(settings) != 1 {
-		t.Fatalf("email settings records = %#v", settings)
-	}
-	for _, record := range settings {
-		if record.Fields["AESEncryptionKey__c"].String == "" || record.Fields["AESEncryptionIV__c"].String == "" {
-			t.Fatalf("email encryption fields = %#v", record.Fields)
-		}
-	}
-	templates := emailOrg.Objects["EmailTemplate"].Records
-	template := templates[storage.ID("00X000000000001AAA")]
-	if template.Fields["DeveloperName"].String != "NimbleAMSSocialVerify" {
-		t.Fatalf("email template records = %#v", templates)
-	}
-	if template.Fields["NamespacePrefix"].Kind != storage.ValueNull || !template.Fields["IsActive"].Boolean {
-		t.Fatalf("email template probe fields = %#v", template.Fields)
-	}
-	result, err := soql.ParseAndExecute(emailOrg, "SELECT Id FROM EmailTemplate WHERE DeveloperName = 'NimbleAMSSocialVerify' AND IsActive = true AND NamespacePrefix = null")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(result.Records) != 1 || result.Records[0].Fields["Id"].ID != "00X000000000001AAA" {
-		t.Fatalf("email template query records = %#v", result.Records)
-	}
-	contacts := emailOrg.Objects["Contact"].Records
-	if len(contacts) == 0 {
-		t.Fatalf("expected at least one Contact record for email probe, got %#v", contacts)
-	}
-	var foundEmail bool
-	for _, record := range contacts {
-		if record.Fields["Email"].String != "" {
-			foundEmail = true
-			break
-		}
-	}
-	if !foundEmail {
-		t.Fatalf("no Contact with email found: %#v", contacts)
-	}
-
-	settingsOrg := base.Clone()
-	applyServerExampleProbeOverlay(&settingsOrg, serverExampleProbe{Path: "/services/apexrest/selfservice/settings/LoginType"})
-	if records := settingsOrg.Objects["NimbleAMSSettings__c"].Records; len(records) != 0 {
-		t.Fatalf("settings probe encryption records = %#v", records)
-	}
-}
-
-func TestServerExampleProbeOverlayKeepsEventProviderScoped(t *testing.T) {
-	base := storage.NewOrgState()
-	applyServerExampleSchema(&base, schema.Schema{Objects: []schema.Object{
+func TestServerExampleSyntheticSeedsStandardObjectsFromSchema(t *testing.T) {
+	org := storage.NewOrgState()
+	loaded := schema.Schema{Objects: []schema.Object{
 		{Name: "Account"},
-		{Name: "NimbleAMSSettings__c"},
-		{Name: "Setup_Data__c"},
-		{Name: "VerifiableEnvironment__mdt"},
 		{
-			Name:               "Setup_Settings__c",
-			CustomSettingsType: "Hierarchy",
-			Fields: []schema.Field{
-				{Name: "SetupOwnerId", Type: "Text"},
-				{Name: "Environment__c", Type: "Text"},
-				{Name: "IsInternalOrg__c", Type: "Checkbox"},
-			},
+			Name: "Contact",
+			Fields: []schema.Field{{
+				Name:             "AccountId",
+				Type:             "Lookup",
+				ReferenceTo:      []string{"Account"},
+				RelationshipName: "Account",
+			}},
 		},
-	}})
-	base.Namespace = "example"
+	}}
+	applyServerExampleSchema(&org, loaded)
 
-	webhookOrg := base.Clone()
-	applyServerExampleProbeOverlay(&webhookOrg, serverExampleProbe{Path: "/services/apexrest/webhookEvents"})
-	accounts := webhookOrg.Objects["Account"].Records
-	provider := accounts[storage.ID("001000000000002AAA")]
-	if provider.Fields["Name"].String != "local-provider" {
-		t.Fatalf("event provider account = %#v", accounts)
-	}
-	setup := webhookOrg.Objects["Setup_Data__c"].Records[storage.ID("a0v000000000001AAA")]
-	if mappings := setup.Fields["Data_Mappings__c"].String; !strings.Contains(mappings, `"tpField":"providerId","sfField":"Name"`) {
-		t.Fatalf("event mappings = %s", mappings)
-	}
-	if eventID := setup.Fields["License_Changed_Id__c"].String; eventID != "null" {
-		t.Fatalf("webhook License_Changed_Id__c = %q", eventID)
-	}
-	existingSetupOrg := base.Clone()
-	existingSetup := existingSetupOrg.Objects["Setup_Data__c"]
-	existingSetup.Records = map[storage.ID]storage.Record{
-		"existing": {
-			ID:     "existing",
-			Object: "Setup_Data__c",
-			Fields: map[string]storage.Value{
-				"Name": storage.StringValue("Seeded"),
-			},
-		},
-	}
-	existingSetupOrg.Objects["Setup_Data__c"] = existingSetup
-	applyServerExampleProbeOverlay(&existingSetupOrg, serverExampleProbe{Path: "/services/apexrest/webhookEvents"})
-	if eventID := existingSetupOrg.Objects["Setup_Data__c"].Records["existing"].Fields["License_Changed_Id__c"].String; eventID != "null" {
-		t.Fatalf("existing setup event License_Changed_Id__c = %q", eventID)
-	}
-	if eventID := existingSetupOrg.Objects["Setup_Data__c"].Records["existing"].Fields["example__License_Changed_Id__c"].String; eventID != "null" {
-		t.Fatalf("existing setup example__License_Changed_Id__c = %q", eventID)
-	}
-	if disabled := existingSetupOrg.Objects["Setup_Data__c"].Records["existing"].Fields["Disable_Webhook_Security_Check__c"].Boolean; !disabled {
-		t.Fatalf("existing setup Disable_Webhook_Security_Check__c = %v", disabled)
-	}
-	env := webhookOrg.Objects["VerifiableEnvironment__mdt"].Records[storage.ID("m0e000000000001AAA")]
-	if endpoint := env.Fields["Endpoint__c"].String; endpoint == "" {
-		t.Fatalf("webhook environment = %#v", webhookOrg.Objects["VerifiableEnvironment__mdt"].Records)
-	}
-	assertServerExampleSetupSettingsOrgDefault(t, webhookOrg)
+	applyServerExampleSyntheticSeeds(&org, loaded)
 
-	createOrg := base.Clone()
-	applyServerExampleProbeOverlay(&createOrg, serverExampleProbe{Path: "/services/apexrest/webhookevent/create"})
-	if _, ok := createOrg.Objects["Account"].Records[storage.ID("001000000000002AAA")]; ok {
-		t.Fatalf("webhook create provider leaked = %#v", createOrg.Objects["Account"].Records)
+	accounts := org.Objects["Account"].Records
+	account := accounts[storage.ID("001000000009001AAA")]
+	if len(accounts) != 1 || account.Fields["Name"].String != "Synthetic Account" {
+		t.Fatalf("Account records = %#v", accounts)
 	}
-	setup = createOrg.Objects["Setup_Data__c"].Records[storage.ID("a0v000000000001AAA")]
-	if mappings := setup.Fields["Data_Mappings__c"].String; !strings.Contains(mappings, `"tpField":"providerId","sfField":"Id"`) {
-		t.Fatalf("webhook create mappings = %s", mappings)
+	contacts := org.Objects["Contact"].Records
+	contact := contacts[storage.ID("003000000009001AAA")]
+	if len(contacts) != 1 || contact.Fields["LastName"].String != "Contact" {
+		t.Fatalf("Contact records = %#v", contacts)
 	}
-	assertServerExampleSetupSettingsOrgDefault(t, createOrg)
+	if contact.Fields["AccountId"].ID != account.ID {
+		t.Fatalf("Contact AccountId = %#v, want %s", contact.Fields["AccountId"], account.ID)
+	}
 }
 
-func assertServerExampleSetupSettingsOrgDefault(t *testing.T, org storage.OrgState) {
-	t.Helper()
-	program, err := vm.CompileAnonymous(`
-System.assertEquals('Production', Setup_Settings__c.getOrgDefaults().Environment__c);
-System.assertEquals(false, Setup_Settings__c.getOrgDefaults().IsInternalOrg__c);
-`)
+func TestServerExampleSyntheticSeedsSkipObjectsAbsentFromSchema(t *testing.T) {
+	org := serverExampleBaseOrg(storage.NewFixture())
+	loaded := schema.Schema{}
+	applyServerExampleSchema(&org, loaded)
+
+	applyServerExampleSyntheticSeeds(&org, loaded)
+
+	if records := org.Objects["Account"].Records; len(records) != 0 {
+		t.Fatalf("Account records = %#v", records)
+	}
+	if _, ok := org.Objects["Contact"]; ok {
+		t.Fatalf("Contact object was created without schema: %#v", org.Objects["Contact"])
+	}
+}
+
+func TestServerExampleCustomMetadataSeedsModernFiles(t *testing.T) {
+	root := localTestDir(t, ".oaer-test-server-example-cmdt")
+	projectPath := filepath.Join(root, "example-projects", "synthetic-package")
+	writeServerExampleTestFile(t, filepath.Join(projectPath, "sfdx-project.json"), `{"namespace":"pkg","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeServerExampleTestFile(t, filepath.Join(projectPath, "force-app", "main", "default", "objects", "RouteConfig__mdt", "RouteConfig__mdt.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Route Config</label></CustomObject>`)
+	writeServerExampleTestFile(t, filepath.Join(projectPath, "force-app", "main", "default", "objects", "RouteConfig__mdt", "fields", "Route__c.field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Route__c</fullName><type>Text</type></CustomField>`)
+	writeServerExampleTestFile(t, filepath.Join(projectPath, "force-app", "main", "default", "objects", "RouteConfig__mdt", "fields", "IsActive__c.field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>IsActive__c</fullName><type>Checkbox</type></CustomField>`)
+	writeServerExampleTestFile(t, filepath.Join(projectPath, "force-app", "main", "default", "objects", "RouteConfig__mdt", "fields", "Class__c.field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Class__c</fullName><type>Text</type></CustomField>`)
+	writeServerExampleTestFile(t, filepath.Join(projectPath, "force-app", "main", "default", "customMetadata", "RouteConfig.WidgetApi.md-meta.xml"), `<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <label>Widget API</label>
+  <values><field>Class__c</field><value xsi:type="xsd:string">pkg.WidgetEndpoint</value></values>
+  <values><field>IsActive__c</field><value xsi:type="xsd:boolean">true</value></values>
+  <values><field>Route__c</field><value xsi:type="xsd:string">widgets</value></values>
+</CustomMetadata>`)
+
+	p, err := project.Load(projectPath)
 	if err != nil {
 		t.Fatal(err)
 	}
-	machine := vm.New(nil)
-	machine.SetOrg(&org)
-	if _, err := machine.Execute(program); err != nil {
+	loadedSchema, err := schema.LoadProject(p)
+	if err != nil {
 		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Namespace = p.Namespace
+	applyServerExampleSchema(&org, loadedSchema)
+	if err := applyServerExampleCustomMetadata(&org, p.CustomMetadataFiles); err != nil {
+		t.Fatal(err)
+	}
+	result, err := soql.ParseAndExecute(org, "SELECT Id FROM RouteConfig__mdt WHERE pkg__Route__c = 'widgets' AND pkg__IsActive__c = true")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 {
+		t.Fatalf("RouteConfig__mdt rows = %d records = %#v org=%#v", result.Rows, result.Records, org.Objects["RouteConfig__mdt"].Records)
 	}
 }
 
@@ -377,6 +455,16 @@ func localTestDir(t *testing.T, prefix string) string {
 	return abs
 }
 
+func writeServerExampleTestFile(t *testing.T, path, content string) {
+	t.Helper()
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestDiscoverServerExampleRestRoutesSkipsClaudeWorktrees(t *testing.T) {
 	root := localTestDir(t, ".oaer-test-server-examples-worktree")
 	projectPath := filepath.Join(root, "example-projects", "worktree-pkg-develop")
@@ -385,11 +473,11 @@ func TestDiscoverServerExampleRestRoutesSkipsClaudeWorktrees(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	restClass := `@RestResource(urlMapping='/webhookEvents')
-global with sharing class WebHook {
+	restClass := `@RestResource(urlMapping='/widgets')
+global with sharing class WidgetEndpoint {
   @HttpPost global static void handle() {}
 }`
-	if err := os.WriteFile(filepath.Join(classesDir, "WebHook.cls"), []byte(restClass), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(classesDir, "WidgetEndpoint.cls"), []byte(restClass), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -397,7 +485,7 @@ global with sharing class WebHook {
 	if err := os.MkdirAll(worktreeClassesDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(worktreeClassesDir, "WebHook.cls"), []byte(restClass), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(worktreeClassesDir, "WidgetEndpoint.cls"), []byte(restClass), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -408,7 +496,7 @@ global with sharing class WebHook {
 	if len(routes) != 1 {
 		t.Fatalf("expected 1 route, got %d: %#v", len(routes), routes)
 	}
-	if routes[0].Path != "/webhookEvents" {
+	if routes[0].Path != "/widgets" {
 		t.Fatalf("unexpected route path: %q", routes[0].Path)
 	}
 }

@@ -63,8 +63,8 @@ func TestLoadProjectIndexesLegacyReadOnlyMetadata(t *testing.T) {
 </FieldSet>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/pages/Edit.page"), `<apex:page/>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/components/Picker.component"), `<apex:component/>`)
-	writeFile(t, filepath.Join(root, "force-app/main/default/aura/Cart/Cart.cmp"), `<aura:component/>`)
-	writeFile(t, filepath.Join(root, "force-app/main/default/lwc/cart/cart.js"), `export default class Cart {}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/aura/Widget/Widget.cmp"), `<aura:component/>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/lwc/widget/widget.js"), `export default class Widget {}`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/workflows/Account.workflow-meta.xml"), `<Workflow/>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/flows/Onboard.flow-meta.xml"), `<Flow/>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/profiles/Admin.profile-meta.xml"), `<Profile>
@@ -136,7 +136,7 @@ func TestLoadProjectIndexesLegacyReadOnlyMetadata(t *testing.T) {
 	if len(idx.VisualforcePages) != 1 || idx.VisualforcePages[0].Name != "Edit" || len(idx.VisualforceComponents) != 1 || idx.VisualforceComponents[0].Name != "Picker" {
 		t.Fatalf("visualforce assets = %#v %#v", idx.VisualforcePages, idx.VisualforceComponents)
 	}
-	if len(idx.AuraComponents) != 1 || idx.AuraComponents[0].Name != "Cart" || len(idx.LWCComponents) != 1 || idx.LWCComponents[0].Name != "cart" {
+	if len(idx.AuraComponents) != 1 || idx.AuraComponents[0].Name != "Widget" || len(idx.LWCComponents) != 1 || idx.LWCComponents[0].Name != "widget" {
 		t.Fatalf("ui assets = %#v %#v", idx.AuraComponents, idx.LWCComponents)
 	}
 	if len(idx.Workflows) != 1 || idx.Workflows[0].Name != "Account" || len(idx.Flows) != 1 || idx.Flows[0].Name != "Onboard" {

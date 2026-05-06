@@ -2816,7 +2816,7 @@ global class WidgetResource {
 	if get.Code != http.StatusOK {
 		t.Fatalf("GET status = %d body=%s", get.Code, get.Body.String())
 	}
-	if got, want := strings.TrimSpace(get.Body.String()), `"GET:/widgets/42:abc:local-event:local-event"`; got != want {
+	if got, want := strings.TrimSpace(get.Body.String()), `"GET:/services/apexrest/widgets/*:abc:local-event:local-event"`; got != want {
 		t.Fatalf("GET body = %s, want %s", got, want)
 	}
 
@@ -2827,7 +2827,7 @@ global class WidgetResource {
 	if post.Code != http.StatusCreated {
 		t.Fatalf("POST status = %d body=%s", post.Code, post.Body.String())
 	}
-	if !strings.Contains(post.Body.String(), "created:/services/apexrest/widgets/42:192.0.2.10:4567") {
+	if !strings.Contains(post.Body.String(), "created:/widgets/42:192.0.2.10:4567") {
 		t.Fatalf("POST body = %s", post.Body.String())
 	}
 	if got := post.Header().Get("Content-Type"); !strings.HasPrefix(got, "text/plain") {

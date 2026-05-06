@@ -10,7 +10,7 @@ func TestLoadSFDXProject(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{
   "packageDirectories": [{"path":"force-app","default":true}],
-  "namespace": "NU",
+  "namespace": "pkg",
   "sourceApiVersion": "61.0"
 }`)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/Hello.cls"), "public class Hello {}")
@@ -26,6 +26,8 @@ func TestLoadSFDXProject(t *testing.T) {
 	writeFile(t, filepath.Join(root, "force-app/main/namedCredentials/Api.namedCredential"), "<NamedCredential/>")
 	writeFile(t, filepath.Join(root, "force-app/main/remoteSiteSettings/Api.remoteSite"), "<RemoteSiteSetting/>")
 	writeFile(t, filepath.Join(root, "force-app/main/customMetadata/Feature.Default.md"), "<CustomMetadata/>")
+	writeFile(t, filepath.Join(root, "force-app/main/customMetadata/Feature.Modern.md-meta.xml"), "<CustomMetadata/>")
+	writeFile(t, filepath.Join(root, "force-app/main/api/rest/Feature.Nested.md-meta.xml"), "<CustomMetadata/>")
 	writeFile(t, filepath.Join(root, "force-app/main/workflows/Thing__c.workflow-meta.xml"), "<Workflow/>")
 	writeFile(t, filepath.Join(root, "force-app/main/flows/Onboard.flow-meta.xml"), "<Flow/>")
 	writeFile(t, filepath.Join(root, "force-app/main/profiles/Admin.profile-meta.xml"), "<Profile/>")
@@ -36,23 +38,23 @@ func TestLoadSFDXProject(t *testing.T) {
 	writeFile(t, filepath.Join(root, "force-app/main/objects/Thing__c/compactLayouts/Card.compactLayout-meta.xml"), "<CompactLayout/>")
 	writeFile(t, filepath.Join(root, "force-app/main/pages/Edit.page"), `<apex:page controller="EditController"/>`)
 	writeFile(t, filepath.Join(root, "force-app/main/components/Picker.component"), `<apex:component/>`)
-	writeFile(t, filepath.Join(root, "force-app/main/aura/Cart/Cart.cmp"), `<aura:component controller="CartController"/>`)
-	writeFile(t, filepath.Join(root, "force-app/main/aura/Cart/CartController.js"), `({ save: function(cmp) { cmp.get("c.save"); } })`)
-	writeFile(t, filepath.Join(root, "force-app/main/lwc/cart/cart.js"), `import save from '@salesforce/apex/CartController.save';`)
-	writeFile(t, filepath.Join(root, "force-app/main/lwc/cart/cart.html"), `<template></template>`)
+	writeFile(t, filepath.Join(root, "force-app/main/aura/Widget/Widget.cmp"), `<aura:component controller="WidgetController"/>`)
+	writeFile(t, filepath.Join(root, "force-app/main/aura/Widget/WidgetController.js"), `({ save: function(cmp) { cmp.get("c.save"); } })`)
+	writeFile(t, filepath.Join(root, "force-app/main/lwc/widget/widget.js"), `import save from '@salesforce/apex/WidgetController.save';`)
+	writeFile(t, filepath.Join(root, "force-app/main/lwc/widget/widget.html"), `<template></template>`)
 	writeFile(t, filepath.Join(root, "force-app/main/docs/README.md"), "# not metadata")
 
 	p, err := Load(root)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if p.Namespace != "NU" || p.SourceAPIVersion != "61.0" {
+	if p.Namespace != "pkg" || p.SourceAPIVersion != "61.0" {
 		t.Fatalf("project metadata = %#v", p)
 	}
 	if len(p.ApexFiles) != 2 || len(p.ObjectFiles) != 1 || len(p.FieldFiles) != 1 || len(p.FieldSetFiles) != 1 || len(p.RecordTypeFiles) != 1 || len(p.ValidationRuleFiles) != 1 {
 		t.Fatalf("unexpected file counts: %#v", p)
 	}
-	if len(p.LabelFiles) != 1 || len(p.StaticResourceFiles) != 1 || len(p.StaticResourceMetas) != 1 || len(p.NamedCredentialFiles) != 1 || len(p.RemoteSiteFiles) != 1 || len(p.CustomMetadataFiles) != 1 {
+	if len(p.LabelFiles) != 1 || len(p.StaticResourceFiles) != 1 || len(p.StaticResourceMetas) != 1 || len(p.NamedCredentialFiles) != 1 || len(p.RemoteSiteFiles) != 1 || len(p.CustomMetadataFiles) != 3 {
 		t.Fatalf("unexpected legacy metadata file counts: %#v", p)
 	}
 	if len(p.WorkflowFiles) != 1 {
@@ -79,8 +81,8 @@ func TestLoadLegacySrcLayout(t *testing.T) {
 	writeFile(t, filepath.Join(root, "src/objects/Thing__c/Thing__c.object-meta.xml"), "<CustomObject/>")
 	writeFile(t, filepath.Join(root, "src/pages/Edit.page"), `<apex:page/>`)
 	writeFile(t, filepath.Join(root, "src/components/Picker.component"), `<apex:component/>`)
-	writeFile(t, filepath.Join(root, "src/aura/Cart/Cart.cmp"), `<aura:component/>`)
-	writeFile(t, filepath.Join(root, "src/lwc/cart/cart.js"), `export default class Cart {}`)
+	writeFile(t, filepath.Join(root, "src/aura/Widget/Widget.cmp"), `<aura:component/>`)
+	writeFile(t, filepath.Join(root, "src/lwc/widget/widget.js"), `export default class Widget {}`)
 
 	p, err := Load(root)
 	if err != nil {

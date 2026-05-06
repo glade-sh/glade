@@ -59,6 +59,67 @@ System.assert(fields.containsKey('MasterRecordId'));
 	}
 }
 
+func TestExecSObjectTypeNewSObject(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account emptyAccount = (Account)Account.SObjectType.newSObject();
+System.assertEquals('Account', emptyAccount.getSObjectType().getDescribe().getName());
+Account accountWithId = (Account)Account.SObjectType.newSObject('001000000000001AAA');
+String accountId = accountWithId.Id;
+System.assertEquals('001000000000001AAA', accountId);
+Account accountWithDefaults = (Account)Account.SObjectType.newSObject(null, true);
+System.assertEquals('Account', accountWithDefaults.getSObjectType().getDescribe().getName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMapLiteralCoercesStringBackedEnumKey(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<OperationType,String> byOperation = new Map<OperationType,String> {
+	OperationType.ON_INSERT => 'insert',
+	OperationType.ON_UPDATE => 'update'
+};
+System.assertEquals('insert', byOperation.get(OperationType.ON_INSERT));
+System.assertEquals('update', byOperation.get(OperationType.ON_UPDATE));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "OperationType", EnumValues: []string{"ON_INSERT", "ON_UPDATE"}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMapLiteralCoercesNestedEnumKeyByLocalName(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<OperationType,String> byOperation = new Map<OperationType,String> {
+	SyntheticContainer.OperationType.ON_INSERT => 'insert'
+};
+System.assertEquals('insert', byOperation.get(SyntheticContainer.OperationType.ON_INSERT));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "SyntheticContainer.OperationType", EnumValues: []string{"ON_INSERT", "ON_UPDATE"}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecInsertAppliesCheckboxDefaultsBeforeTriggers(t *testing.T) {
 	triggerProgram, err := CompileAnonymous(`
 for (Account a : Trigger.new) {

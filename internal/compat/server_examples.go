@@ -3,6 +3,7 @@ package compat
 import (
 	"bytes"
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"io/fs"
 	"net/http"
@@ -61,10 +62,14 @@ type ServerExampleProjectReport struct {
 }
 
 type ServerExampleRestRoute struct {
-	Class  string `json:"class,omitempty"`
-	Method string `json:"method"`
-	Path   string `json:"path"`
-	Source string `json:"source,omitempty"`
+	Class        string `json:"class,omitempty"`
+	Method       string `json:"method"`
+	Path         string `json:"path"`
+	Wildcard     bool   `json:"wildcard,omitempty"`
+	Source       string `json:"source,omitempty"`
+	ProbePath    string `json:"-"`
+	ApexSource   string `json:"-"`
+	MethodSource string `json:"-"`
 }
 
 type ServerExampleProbeResult struct {
@@ -247,6 +252,10 @@ func runServerExampleProbes(root, projectPath string, fixture storage.Fixture, p
 	if err := storage.ApplyFixture(&org, fixture); err != nil {
 		return nil, err
 	}
+	if err := applyServerExampleCustomMetadata(&org, p.CustomMetadataFiles); err != nil {
+		return nil, err
+	}
+	applyServerExampleSyntheticSeeds(&org, loadedSchema)
 	results := make([]ServerExampleProbeResult, 0, len(probes))
 	for _, probe := range probes {
 		probeOrg := org.Clone()
@@ -339,6 +348,9 @@ func applyServerExampleSchema(org *storage.OrgState, loaded schema.Schema) {
 					RestrictedDelete:   strings.EqualFold(field.DeleteConstraint, "Restrict"),
 				})
 			}
+			for _, referenced := range field.ReferenceTo {
+				storage.EnsureStandardObject(org, referenced)
+			}
 		}
 		storage.EnsureStandardObjectFields(&state.Definition)
 		state.Definition.RecordTypes = serverExampleRecordTypes(object.RecordTypes)
@@ -346,6 +358,153 @@ func applyServerExampleSchema(org *storage.OrgState, loaded schema.Schema) {
 		org.Objects[object.Name] = state
 	}
 	storage.EnsureStandardObject(org, "EmailTemplate")
+}
+
+type serverExampleCustomMetadataXML struct {
+	XMLName xml.Name                         `xml:"CustomMetadata"`
+	Label   string                           `xml:"label"`
+	Values  []serverExampleCustomMetadataVal `xml:"values"`
+}
+
+type serverExampleCustomMetadataVal struct {
+	Field string `xml:"field"`
+	Value string `xml:"value"`
+}
+
+func applyServerExampleCustomMetadata(org *storage.OrgState, paths []string) error {
+	for _, path := range paths {
+		objectName, developerName := serverExampleCustomMetadataName(path)
+		if objectName == "" || developerName == "" {
+			continue
+		}
+		resolved, ok := storage.ResolveObjectName(*org, objectName)
+		if ok {
+			objectName = resolved
+		}
+		storage.EnsureStandardObject(org, objectName)
+		object := org.Objects[objectName]
+		if object.Records == nil {
+			object.Records = make(map[storage.ID]storage.Record)
+		}
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		var raw serverExampleCustomMetadataXML
+		if err := xml.Unmarshal(data, &raw); err != nil {
+			return fmt.Errorf("server examples: custom metadata %s: %w", path, err)
+		}
+		fields := map[string]storage.Value{
+			"DeveloperName":    storage.StringValue(developerName),
+			"MasterLabel":      storage.StringValue(firstNonEmpty(raw.Label, developerName)),
+			"Label":            storage.StringValue(firstNonEmpty(raw.Label, developerName)),
+			"QualifiedApiName": storage.StringValue(developerName),
+		}
+		for _, value := range raw.Values {
+			if value.Field == "" {
+				continue
+			}
+			fieldName := serverExampleFieldName(org, objectName, value.Field)
+			fields[fieldName] = serverExampleCustomMetadataValue(org, object.Definition, fieldName, value.Value)
+		}
+		id := serverExampleCustomMetadataID(object.Records)
+		object.Records[id] = storage.Record{ID: id, Object: objectName, Fields: fields}
+		org.Objects[objectName] = object
+	}
+	return nil
+}
+
+func serverExampleCustomMetadataName(path string) (string, string) {
+	name := strings.TrimSuffix(filepath.Base(path), ".md-meta.xml")
+	parts := strings.SplitN(name, ".", 2)
+	if len(parts) != 2 {
+		return "", ""
+	}
+	objectName := parts[0]
+	if !strings.HasSuffix(objectName, "__mdt") {
+		objectName += "__mdt"
+	}
+	return objectName, parts[1]
+}
+
+func serverExampleCustomMetadataID(records map[storage.ID]storage.Record) storage.ID {
+	for i := len(records) + 1; ; i++ {
+		id := storage.ID(fmt.Sprintf("m99%012dAAA", i))
+		if _, exists := records[id]; !exists {
+			return id
+		}
+	}
+}
+
+func serverExampleCustomMetadataValue(org *storage.OrgState, definition storage.ObjectDefinition, fieldName, raw string) storage.Value {
+	field, ok := definition.Fields[fieldName]
+	if !ok {
+		return storage.StringValue(raw)
+	}
+	if len(field.ReferenceTo) > 0 {
+		switch field.ReferenceTo[0] {
+		case "EntityDefinition":
+			ensureServerExampleMetadataRecord(org, "EntityDefinition", raw)
+			return storage.IDValue(storage.ID(raw))
+		case "FieldDefinition":
+			ensureServerExampleMetadataRecord(org, "FieldDefinition", raw)
+			return storage.IDValue(storage.ID(raw))
+		default:
+			return storage.IDValue(storage.ID(raw))
+		}
+	}
+	switch field.Type {
+	case storage.FieldBoolean:
+		return storage.BooleanValue(strings.EqualFold(raw, "true"))
+	case storage.FieldInteger:
+		return storage.IntegerValue(parseServerExampleInt(raw))
+	case storage.FieldDecimal:
+		return storage.DecimalValue(raw)
+	default:
+		if raw == "" {
+			return storage.NullValue()
+		}
+		return storage.StringValue(raw)
+	}
+}
+
+func ensureServerExampleMetadataRecord(org *storage.OrgState, objectName, qualifiedAPIName string) {
+	if qualifiedAPIName == "" {
+		return
+	}
+	storage.EnsureStandardObject(org, objectName)
+	object := org.Objects[objectName]
+	if object.Records == nil {
+		object.Records = make(map[storage.ID]storage.Record)
+	}
+	id := storage.ID(qualifiedAPIName)
+	if _, exists := object.Records[id]; !exists {
+		object.Records[id] = storage.Record{
+			ID:     id,
+			Object: objectName,
+			Fields: map[string]storage.Value{
+				"DeveloperName":    storage.StringValue(qualifiedAPIName),
+				"Label":            storage.StringValue(qualifiedAPIName),
+				"QualifiedApiName": storage.StringValue(qualifiedAPIName),
+			},
+		}
+	}
+	org.Objects[objectName] = object
+}
+
+func parseServerExampleInt(raw string) int64 {
+	var value int64
+	_, _ = fmt.Sscan(raw, &value)
+	return value
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, value := range values {
+		if value != "" {
+			return value
+		}
+	}
+	return ""
 }
 
 func serverExampleChildRelationshipName(field schema.Field) string {
@@ -485,369 +644,84 @@ func serverExampleBaseOrg(fixture storage.Fixture) storage.OrgState {
 }
 
 func applyServerExampleProbeOverlay(org *storage.OrgState, probe serverExampleProbe) {
-	path := probe.Path
-	if strings.Contains(path, "selfservice/") {
-		ensureServerExampleLocalAccount(org)
-		ensureServerExampleLocalEntity(org)
-	}
-	if strings.Contains(path, "selfservice/cart/build") {
-		ensureServerExampleLocalOrder(org)
-	}
-	if strings.Contains(path, "selfservice/email") {
-		ensureServerExampleAppSettings(org)
-		ensureServerExampleEmailVerifyTemplate(org)
-		ensureServerExampleEmailRecipient(org)
-	}
-	if strings.Contains(path, "webhookEvents") {
-		ensureServerExampleLocalAccount(org)
-		ensureServerExampleEventProviderAccount(org)
-		ensureServerExampleAppEnvironment(org)
-		ensureServerExampleSetupSettings(org)
-		ensureServerExampleAppSettings(org)
-		ensureServerExampleSetupData(org, "Name")
-	}
-	if strings.Contains(path, "webhookevent/create") {
-		ensureServerExampleLocalAccount(org)
-		ensureServerExampleAppEnvironment(org)
-		ensureServerExampleSetupSettings(org)
-		ensureServerExampleAppSettings(org)
-		ensureServerExampleSetupData(org, "Id")
-	}
+	_ = org
+	_ = probe
 }
 
-func ensureServerExampleLocalAccount(org *storage.OrgState) {
-	account := org.Objects["Account"]
+func applyServerExampleSyntheticSeeds(org *storage.OrgState, loaded schema.Schema) {
+	if org == nil {
+		return
+	}
+	objects := serverExampleSchemaObjectNames(loaded)
+	accountID, hasAccount := ensureServerExampleSyntheticAccount(org, objects)
+	ensureServerExampleSyntheticContact(org, objects, accountID, hasAccount)
+}
+
+func serverExampleSchemaObjectNames(loaded schema.Schema) map[string]bool {
+	objects := make(map[string]bool, len(loaded.Objects))
+	for _, object := range loaded.Objects {
+		if object.Name != "" {
+			objects[object.Name] = true
+		}
+	}
+	return objects
+}
+
+func ensureServerExampleSyntheticAccount(org *storage.OrgState, schemaObjects map[string]bool) (storage.ID, bool) {
+	const objectName = "Account"
+	if !schemaObjects[objectName] {
+		return "", false
+	}
+	account, ok := org.Objects[objectName]
+	if !ok {
+		return "", false
+	}
 	if account.Records == nil {
 		account.Records = make(map[storage.ID]storage.Record)
 	}
-	id := storage.ID("001000000000001AAA")
-	if _, ok := account.Records[id]; ok {
-		org.Objects["Account"] = account
-		return
+	for id := range account.Records {
+		return id, true
 	}
+	id := storage.ID("001000000009001AAA")
 	account.Records[id] = storage.Record{
 		ID:     id,
-		Object: "Account",
-		Fields: map[string]storage.Value{
-			"Name": storage.StringValue("Local Probe Account"),
-			serverExampleAccountFieldName(org, "PasswordSalt__c"): storage.StringValue("local-salt"),
-			serverExampleAccountFieldName(org, "PasswordHash__c"): storage.StringValue("local-hash"),
-		},
-	}
-	org.Objects["Account"] = account
-}
-
-func ensureServerExampleEventProviderAccount(org *storage.OrgState) {
-	account := org.Objects["Account"]
-	if account.Records == nil {
-		account.Records = make(map[storage.ID]storage.Record)
-	}
-	id := storage.ID("001000000000002AAA")
-	if _, ok := account.Records[id]; ok {
-		org.Objects["Account"] = account
-		return
-	}
-	account.Records[id] = storage.Record{
-		ID:     id,
-		Object: "Account",
-		Fields: map[string]storage.Value{
-			"Name":          storage.StringValue("local-provider"),
-			"AccountNumber": storage.StringValue("local-provider"),
-		},
-	}
-	org.Objects["Account"] = account
-}
-
-func ensureServerExampleLocalEntity(org *storage.OrgState) {
-	objectName, ok := storage.ResolveObjectName(*org, "Entity__c")
-	if !ok {
-		objectName = "Entity__c"
-	}
-	entity := org.Objects[objectName]
-	if entity.Records == nil {
-		entity.Records = make(map[storage.ID]storage.Record)
-	}
-	id := storage.ID("a0f000000000001AAA")
-	if _, ok := entity.Records[id]; ok {
-		org.Objects[objectName] = entity
-		return
-	}
-	entity.Records[id] = storage.Record{
-		ID:     id,
 		Object: objectName,
 		Fields: map[string]storage.Value{
-			"Name": storage.StringValue("Local Probe Entity"),
-			serverExampleFieldName(org, objectName, "Status__c"):         storage.StringValue("Active"),
-			serverExampleFieldName(org, objectName, "SelfServiceURL__c"): storage.StringValue("https://local.example.test"),
-			serverExampleFieldName(org, objectName, "LogoURL__c"):        storage.StringValue("/resource/local"),
+			"Name": storage.StringValue("Synthetic Account"),
 		},
 	}
-	org.Objects[objectName] = entity
+	org.Objects[objectName] = account
+	return id, true
 }
 
-func ensureServerExampleLocalOrder(org *storage.OrgState) {
-	objectName, ok := storage.ResolveObjectName(*org, "Order__c")
+func ensureServerExampleSyntheticContact(org *storage.OrgState, schemaObjects map[string]bool, accountID storage.ID, hasAccount bool) {
+	const objectName = "Contact"
+	if !schemaObjects[objectName] {
+		return
+	}
+	contact, ok := org.Objects[objectName]
 	if !ok {
 		return
 	}
-	order := org.Objects[objectName]
-	if order.Records == nil {
-		order.Records = make(map[storage.ID]storage.Record)
-	}
-	id := storage.ID("a0o000000000001AAA")
-	if _, ok := order.Records[id]; ok {
-		org.Objects[objectName] = order
-		return
-	}
-	order.Records[id] = storage.Record{
-		ID:     id,
-		Object: objectName,
-		Fields: map[string]storage.Value{
-			serverExampleFieldName(org, objectName, "Name"):                 storage.StringValue("Local Probe Order"),
-			serverExampleFieldName(org, objectName, "BillTo__c"):            storage.IDValue("001000000000001AAA"),
-			serverExampleFieldName(org, objectName, "Entity__c"):            storage.IDValue("a0f000000000001AAA"),
-			serverExampleFieldName(org, objectName, "GrandTotal__c"):        storage.DecimalValue("0"),
-			serverExampleFieldName(org, objectName, "ConfirmationEmail__c"): storage.StringValue("local@example.test"),
-		},
-	}
-	org.Objects[objectName] = order
-}
-
-func ensureServerExampleAppSettings(org *storage.OrgState) {
-	objectName, ok := storage.ResolveObjectName(*org, "NimbleAMSSettings__c")
-	if !ok {
-		return
-	}
-	settings := org.Objects[objectName]
-	if settings.Records == nil {
-		settings.Records = make(map[storage.ID]storage.Record)
-	}
-	if len(settings.Records) > 0 {
-		org.Objects[objectName] = settings
-		return
-	}
-	id := storage.ID("a0n000000000001AAA")
-	settings.Records[id] = storage.Record{
-		ID:     id,
-		Object: objectName,
-		Fields: map[string]storage.Value{
-			serverExampleFieldName(org, objectName, "Name"):                storage.StringValue("Default"),
-			serverExampleFieldName(org, objectName, "SetupOwnerId"):        storage.StringValue(serverExampleOrgID(org)),
-			serverExampleFieldName(org, objectName, "AESEncryptionKey__c"): storage.StringValue("0123456789abcdef0123456789abcdef"),
-			serverExampleFieldName(org, objectName, "AESEncryptionIV__c"):  storage.StringValue("0123456789abcdef"),
-			serverExampleFieldName(org, objectName, "AESEncryptionIv__c"):  storage.StringValue("0123456789abcdef"),
-		},
-	}
-	org.Objects[objectName] = settings
-}
-
-func ensureServerExampleEmailVerifyTemplate(org *storage.OrgState) {
-	storage.EnsureStandardObject(org, "EmailTemplate")
-	template := org.Objects["EmailTemplate"]
-	if template.Records == nil {
-		template.Records = make(map[storage.ID]storage.Record)
-	}
-	id := storage.ID("00X000000000001AAA")
-	if _, ok := template.Records[id]; ok {
-		org.Objects["EmailTemplate"] = template
-		return
-	}
-	template.Records[id] = storage.Record{
-		ID:     id,
-		Object: "EmailTemplate",
-		Fields: map[string]storage.Value{
-			"Id":              storage.IDValue(id),
-			"ApiVersion":      storage.DecimalValue(serverExampleAPIVersion),
-			"Body":            storage.StringValue("Verify {!Recipient.Name} for {!RelatedTo.Name}."),
-			"Description":     storage.StringValue("Local probe template for self-service social verification."),
-			"DeveloperName":   storage.StringValue("NimbleAMSSocialVerify"),
-			"Encoding":        storage.StringValue("UTF-8"),
-			"FolderId":        storage.IDValue("00l000000000001AAA"),
-			"HtmlValue":       storage.StringValue("<p>Verify {!Recipient.Name} for {!RelatedTo.Name}.</p>"),
-			"IsActive":        storage.BooleanValue(true),
-			"Markup":          storage.StringValue("<p>Verify {!Recipient.Name} for {!RelatedTo.Name}.</p>"),
-			"Name":            storage.StringValue("Nimble AMS Social Verify"),
-			"NamespacePrefix": storage.NullValue(),
-			"OwnerId":         storage.IDValue("005000000000001AAA"),
-			"Subject":         storage.StringValue("Local Social Verify"),
-			"TemplateStyle":   storage.StringValue("none"),
-			"TemplateType":    storage.StringValue("custom"),
-			"TimesUsed":       storage.IntegerValue(0),
-		},
-	}
-	org.Objects["EmailTemplate"] = template
-}
-
-func ensureServerExampleEmailRecipient(org *storage.OrgState) {
-	storage.EnsureStandardObject(org, "Contact")
-	contact := org.Objects["Contact"]
 	if contact.Records == nil {
 		contact.Records = make(map[storage.ID]storage.Record)
 	}
-	id := storage.ID("003000000000001AAA")
-	if _, ok := contact.Records[id]; ok {
-		org.Objects["Contact"] = contact
+	if len(contact.Records) > 0 {
+		org.Objects[objectName] = contact
 		return
 	}
-	contact.Records[id] = storage.Record{
-		ID:     id,
-		Object: "Contact",
-		Fields: map[string]storage.Value{
-			"FirstName": storage.StringValue("Local"),
-			"LastName":  storage.StringValue("Probe"),
-			"Email":     storage.StringValue("local@example.test"),
-			"AccountId": storage.IDValue("001000000000001AAA"),
-		},
+	id := storage.ID("003000000009001AAA")
+	fields := map[string]storage.Value{
+		"FirstName": storage.StringValue("Synthetic"),
+		"LastName":  storage.StringValue("Contact"),
 	}
-	org.Objects["Contact"] = contact
-}
-
-func ensureServerExampleSetupData(org *storage.OrgState, providerIDField string) {
-	objectName, ok := storage.ResolveObjectName(*org, "Setup_Data__c")
-	if !ok {
-		return
-	}
-	setup := org.Objects[objectName]
-	if setup.Records == nil {
-		setup.Records = make(map[storage.ID]storage.Record)
-	}
-	if len(setup.Records) > 0 {
-		ids := make([]string, 0, len(setup.Records))
-		for id := range setup.Records {
-			ids = append(ids, string(id))
-		}
-		sort.Strings(ids)
-		id := storage.ID(ids[0])
-		record := setup.Records[id]
-		if record.Fields == nil {
-			record.Fields = make(map[string]storage.Value)
-		}
-		setServerExampleFieldValue(org, objectName, record.Fields, "Disable_Webhook_Security_Check__c", storage.BooleanValue(true))
-		setServerExampleFieldValue(org, objectName, record.Fields, "License_Changed_Id__c", storage.StringValue("null"))
-		if _, ok := record.Fields[serverExampleFieldName(org, objectName, "Data_Mappings__c")]; !ok {
-			setServerExampleFieldValue(org, objectName, record.Fields, "Data_Mappings__c", storage.StringValue(serverExampleDataMappings(providerIDField)))
-		}
-		setup.Records[id] = record
-		org.Objects[objectName] = setup
-		return
-	}
-	id := storage.ID("a0v000000000001AAA")
-	setup.Records[id] = storage.Record{
-		ID:     id,
-		Object: objectName,
-		Fields: map[string]storage.Value{
-			serverExampleFieldName(org, objectName, "Name"):               storage.StringValue("Default"),
-			serverExampleFieldName(org, objectName, "Steps_Completed__c"): storage.StringValue(`{}`),
-		},
-	}
-	record := setup.Records[id]
-	setServerExampleFieldValue(org, objectName, record.Fields, "Disable_Webhook_Security_Check__c", storage.BooleanValue(true))
-	setServerExampleFieldValue(org, objectName, record.Fields, "License_Changed_Id__c", storage.StringValue("null"))
-	setServerExampleFieldValue(org, objectName, record.Fields, "Data_Mappings__c", storage.StringValue(serverExampleDataMappings(providerIDField)))
-	setup.Records[id] = record
-	org.Objects[objectName] = setup
-}
-
-func setServerExampleFieldValue(org *storage.OrgState, objectName string, fields map[string]storage.Value, field string, value storage.Value) {
-	fields[field] = value
-	if resolved := serverExampleFieldName(org, objectName, field); resolved != field {
-		fields[resolved] = value
-	}
-	if namespaced := storage.NamespaceTokenName(org.Namespace, field); namespaced != field {
-		fields[namespaced] = value
-	}
-}
-
-func ensureServerExampleAppEnvironment(org *storage.OrgState) {
-	objectName, ok := storage.ResolveObjectName(*org, "VerifiableEnvironment__mdt")
-	if !ok {
-		return
-	}
-	env := org.Objects[objectName]
-	if env.Records == nil {
-		env.Records = make(map[storage.ID]storage.Record)
-	}
-	for _, seed := range []struct {
-		id       storage.ID
-		name     string
-		endpoint string
-		internal string
-	}{
-		{
-			id:       "m0e000000000001AAA",
-			name:     "Production",
-			endpoint: "https://discovery.verifiable.example.test/api/",
-			internal: "https://internal.verifiable.example.test/api/",
-		},
-		{
-			id:       "m0e000000000002AAA",
-			name:     "Staging",
-			endpoint: "https://discovery-staging.verifiable.example.test/api/",
-			internal: "https://internal-staging.verifiable.example.test/api/",
-		},
-	} {
-		if _, ok := env.Records[seed.id]; ok {
-			continue
-		}
-		env.Records[seed.id] = storage.Record{
-			ID:     seed.id,
-			Object: objectName,
-			Fields: map[string]storage.Value{
-				serverExampleFieldName(org, objectName, "DeveloperName"):       storage.StringValue(seed.name),
-				serverExampleFieldName(org, objectName, "MasterLabel"):         storage.StringValue(seed.name),
-				serverExampleFieldName(org, objectName, "Label"):               storage.StringValue(seed.name),
-				serverExampleFieldName(org, objectName, "QualifiedApiName"):    storage.StringValue(seed.name),
-				serverExampleFieldName(org, objectName, "Endpoint__c"):         storage.StringValue(seed.endpoint),
-				serverExampleFieldName(org, objectName, "EndpointInternal__c"): storage.StringValue(seed.internal),
-			},
+	if hasAccount {
+		if _, ok := storage.ResolveFieldName(contact.Definition, org.Namespace, "AccountId"); ok {
+			fields["AccountId"] = storage.IDValue(accountID)
 		}
 	}
-	org.Objects[objectName] = env
-}
-
-func ensureServerExampleSetupSettings(org *storage.OrgState) {
-	objectName, ok := storage.ResolveObjectName(*org, "Setup_Settings__c")
-	if !ok {
-		return
-	}
-	settings := org.Objects[objectName]
-	if settings.Records == nil {
-		settings.Records = make(map[storage.ID]storage.Record)
-	}
-	if len(settings.Records) > 0 {
-		org.Objects[objectName] = settings
-		return
-	}
-	id := storage.ID("a0s000000000001AAA")
-	settings.Records[id] = storage.Record{
-		ID:     id,
-		Object: objectName,
-		Fields: map[string]storage.Value{
-			serverExampleFieldName(org, objectName, "Name"):             storage.StringValue("Default"),
-			serverExampleFieldName(org, objectName, "SetupOwnerId"):     storage.StringValue(serverExampleOrgID(org)),
-			serverExampleFieldName(org, objectName, "Environment__c"):   storage.StringValue("Production"),
-			serverExampleFieldName(org, objectName, "IsInternalOrg__c"): storage.BooleanValue(false),
-		},
-	}
-	org.Objects[objectName] = settings
-}
-
-func serverExampleDataMappings(providerIDField string) string {
-	if providerIDField == "" {
-		providerIDField = "Id"
-	}
-	return fmt.Sprintf(`{"provider":{"sfObject":"Account","rows":[{"tpField":"providerId","sfField":%q},{"tpField":"npi","sfField":"Name"}]},"license":{"sfObject":"License__c","recordType":"012000000000000AAA","verifLookupField":"Verification__c","lookupField":"Provider__c","rows":[{"tpField":"verificationId","sfField":"Verifiable_External_Id__c"}]},"boardCert":{"sfObject":"Board_Certification__c","recordType":"012000000000000AAA","verifLookupField":"Verification__c","lookupField":"Provider__c","rows":[{"tpField":"verificationId","sfField":"Verifiable_External_Id__c"}]}}`, providerIDField)
-}
-
-func serverExampleOrgID(org *storage.OrgState) string {
-	if org.OrgID != "" {
-		return org.OrgID
-	}
-	return "00D000000000001"
-}
-
-func serverExampleAccountFieldName(org *storage.OrgState, field string) string {
-	return serverExampleFieldName(org, "Account", field)
+	contact.Records[id] = storage.Record{ID: id, Object: objectName, Fields: fields}
+	org.Objects[objectName] = contact
 }
 
 func serverExampleFieldName(org *storage.OrgState, objectName, field string) string {
@@ -891,79 +765,209 @@ func serverExampleProbes(routes []ServerExampleRestRoute, seeded bool) []serverE
 		if method == "" {
 			method = http.MethodGet
 		}
-		path := serverExampleApexRESTPath(route.Path)
+		path := serverExampleApexRESTPath(route)
 		probes = append(probes, serverExampleProbe{
 			Name:      fmt.Sprintf("apexrest-%d", i+1),
 			Family:    "apex-rest",
 			OwnerLane: "lane-2-apex-rest",
 			Method:    method,
 			Path:      "/services/apexrest" + path,
-			Body:      serverExampleApexRESTBody(path, method),
+			Body:      serverExampleApexRESTBody(route),
 			Headers:   serverExampleApexRESTHeaders(path),
 		})
 	}
 	return probes
 }
 
-func serverExampleApexRESTPath(path string) string {
-	switch {
-	case strings.Contains(path, "selfservice/email"):
-		return "/selfservice/email/SocialVerify"
-	case strings.Contains(path, "selfservice/settings"):
-		return "/selfservice/settings/LoginType"
-	default:
+func serverExampleApexRESTPath(route ServerExampleRestRoute) string {
+	path := route.Path
+	if path == "" {
+		path = "/"
+	}
+	if !strings.HasPrefix(path, "/") {
+		path = "/" + path
+	}
+	if !route.Wildcard {
 		return path
+	}
+	childPath := strings.Trim(route.ProbePath, "/")
+	if childPath == "" {
+		childPath = "oaer-probe"
+	}
+	if path == "/" {
+		return "/" + childPath
+	}
+	if strings.HasSuffix(path, "/") {
+		return path + childPath
+	}
+	return path + "/" + childPath
+}
+
+func serverExampleApexRESTBody(route ServerExampleRestRoute) string {
+	if body, ok := inferServerExampleApexRESTBody(route); ok {
+		return body
+	}
+	return `{}`
+}
+
+func inferServerExampleApexRESTBody(route ServerExampleRestRoute) (string, bool) {
+	target := firstServerExampleJSONDeserializeTarget(route.MethodSource)
+	if target == "" {
+		target = firstServerExampleJSONDeserializeTarget(route.ApexSource)
+	}
+	if target == "" {
+		return "", false
+	}
+	if serverExampleTypeIsList(target) {
+		return `[]`, true
+	}
+	object, ok := serverExampleDTOBody(route.ApexSource, target)
+	if !ok {
+		return "", false
+	}
+	data, err := json.Marshal(object)
+	if err != nil {
+		return "", false
+	}
+	return string(data), true
+}
+
+func firstServerExampleJSONDeserializeTarget(source string) string {
+	deserializeRE := regexp.MustCompile(`(?is)\b(?:System\s*\.\s*)?JSON\s*\.\s*deserialize(?:Strict)?\s*\([^,]+,\s*([A-Za-z_][A-Za-z0-9_]*(?:\s*<[^>]+>)?)\s*\.\s*class\s*\)`)
+	match := deserializeRE.FindStringSubmatch(source)
+	if len(match) < 2 {
+		return ""
+	}
+	return normalizeServerExampleApexType(match[1])
+}
+
+func serverExampleTypeIsList(typeName string) bool {
+	base := strings.ToLower(strings.TrimSpace(typeName))
+	return strings.HasPrefix(base, "list<") || strings.HasPrefix(base, "set<")
+}
+
+func serverExampleDTOBody(source, typeName string) (map[string]any, bool) {
+	typeName = normalizeServerExampleApexType(typeName)
+	if typeName == "" || strings.Contains(typeName, "<") {
+		return nil, false
+	}
+	body, ok := serverExampleClassBody(source, typeName)
+	if !ok {
+		return nil, false
+	}
+	fields := serverExampleDTOFields(body)
+	if len(fields) == 0 {
+		return nil, false
+	}
+	out := make(map[string]any, len(fields))
+	for _, field := range fields {
+		out[field.name] = serverExampleNeutralJSONValue(field.name, field.typeName)
+	}
+	return out, true
+}
+
+type serverExampleDTOField struct {
+	name     string
+	typeName string
+}
+
+func serverExampleDTOFields(source string) []serverExampleDTOField {
+	fieldRE := regexp.MustCompile(`(?im)^\s*(?:(?:public|private|protected|global|static|final|transient)\s+)*([A-Za-z_][A-Za-z0-9_]*(?:\s*<[^;={]+>)?)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:[;={])`)
+	matches := fieldRE.FindAllStringSubmatch(source, -1)
+	fields := make([]serverExampleDTOField, 0, len(matches))
+	seen := map[string]bool{}
+	for _, match := range matches {
+		typeName := normalizeServerExampleApexType(match[1])
+		name := match[2]
+		if seen[name] || serverExampleLooksLikeDeclarationKeyword(typeName) {
+			continue
+		}
+		seen[name] = true
+		fields = append(fields, serverExampleDTOField{name: name, typeName: typeName})
+	}
+	return fields
+}
+
+func serverExampleClassBody(source, className string) (string, bool) {
+	classRE := regexp.MustCompile(`(?i)\bclass\s+` + regexp.QuoteMeta(className) + `\b[^{]*\{`)
+	loc := classRE.FindStringIndex(source)
+	if loc == nil {
+		return "", false
+	}
+	open := loc[1] - 1
+	depth := 0
+	for i := open; i < len(source); i++ {
+		switch source[i] {
+		case '{':
+			depth++
+		case '}':
+			depth--
+			if depth == 0 {
+				return source[open+1 : i], true
+			}
+		}
+	}
+	return "", false
+}
+
+func serverExampleNeutralJSONValue(fieldName, typeName string) any {
+	normalized := strings.ToLower(normalizeServerExampleApexType(typeName))
+	normalizedField := strings.ToLower(fieldName)
+	if normalized == "id" || strings.HasSuffix(normalizedField, "id") || strings.Contains(normalizedField, "id__c") {
+		return "001000000000001AAA"
+	}
+	if strings.Contains(normalizedField, "date") && normalized == "string" {
+		return "2024-01-01"
+	}
+	if (strings.Contains(normalizedField, "count") || strings.Contains(normalizedField, "number") || strings.Contains(normalizedField, "quantity") || strings.Contains(normalizedField, "amount") || strings.Contains(normalizedField, "version")) && normalized == "string" {
+		return "1"
+	}
+	switch {
+	case strings.HasPrefix(normalized, "list<") || strings.HasPrefix(normalized, "set<"):
+		return []any{}
+	case strings.HasPrefix(normalized, "map<"):
+		return map[string]any{}
+	}
+	switch normalized {
+	case "boolean":
+		return false
+	case "integer", "long", "double", "decimal":
+		return 0
+	case "date":
+		return "2024-01-01"
+	case "datetime":
+		return "2024-01-01T00:00:00Z"
+	case "time":
+		return "00:00:00.000Z"
+	case "string", "id":
+		return "sample"
+	default:
+		return map[string]any{}
 	}
 }
 
-func serverExampleApexRESTBody(path, method string) string {
-	switch {
-	case strings.Contains(path, "webhookEvents"):
-		return `{"providerId":"local-provider","id":"local-credential","currentVerification":{"id":"local-verification","trigger":"Manual"},"status":"Active","x-webhooktype":"LicenseChanged","x-webhookid":"null"}`
-	case strings.Contains(path, "selfservice/cart/build"):
-		return `{"OrderId":"a0o000000000001AAA"}`
-	case strings.Contains(path, "selfservice/cart/submit"):
-		return `{"Cart":{"attributes":{"type":"Cart__c"},"Data__c":"{}","Entity2__c":"a0f000000000001AAA","TransactionDate__c":"2026-01-01"},"CartItems":[],"CartItemLines":[],"CartPayments":[],"CartPaymentLines":[]}`
-	case strings.Contains(path, "selfservice/coupon"):
-		return `{"AccountId":"001000000000001AAA","Code":"LOCAL"}`
-	case strings.Contains(path, "selfservice/email"):
-		return `{"AccountId":"001000000000001AAA","EntityId":"a0f000000000001AAA","Service":"Local","SocialAccountId":"local","Name":"Local","Data":{"Email":"local@example.test","OrderId":"001000000000001AAA","RegistrationId":"001000000000001AAA"}}`
-	case strings.Contains(path, "selfservice/order"):
-		return `{"Order":{"attributes":{"type":"Order__c"},"BillTo__c":"001000000000001AAA"},"Items":[],"Payment":{"attributes":{"type":"Payment__c"}},"PaymentLines":[],"PaymentMethod":"Local","PaymentIssuer":"Local","CouponCodes":[],"Version":2}`
-	case strings.Contains(path, "selfservice/password"):
-		return `{"AccountId":"001000000000001AAA","NewPassword":"localPassword1!","EntityId":"001000000000001AAA"}`
-	case strings.Contains(path, "selfservice/priceclass"):
-		return `{"AccountId":"001000000000001AAA","EventId":"001000000000001AAA","MembershipTypeId":"001000000000001AAA","Context":{}}`
-	case strings.Contains(path, "selfservice/pricing"):
-		return `{"AccountId":"001000000000001AAA","ProductIds":[],"MembershipTypeProductLinkIds":[],"Quantities":[],"PriceClass":"Default","Context":{}}`
-	case strings.Contains(path, "selfservice/recurringpaymentcalculator"):
-		return `{"IntervalUnit":"Monthly","IntervalAmount":1,"StartDayOverride":"1","Amount":0,"StartDate":"2026-01-01T00:00:00Z","EndDate":"2026-12-31T00:00:00Z"}`
-	case strings.Contains(path, "selfservice/shippingcalculator"):
-		return `{"Street":"1 Local Trail","City":"Port Alsworth","State":"AK","PostalCode":"99653","Country":"US","CustomerId":"001000000000001AAA","ProductShippingInfos":[]}`
-	case strings.Contains(path, "webhookevent/create"):
-		return `[{"objectId":"local-object","objectType":"Local","objectRoute":"/local","triggeredAt":"1970-01-01T00:00:00Z"}]`
-	case strings.Contains(path, "selfservice/sobjects") && method == http.MethodDelete:
-		return `["001000000000001AAA"]`
-	case strings.Contains(path, "selfservice/sobjects") && method == http.MethodPatch:
-		return `[{"attributes":{"type":"Account"},"Id":"001000000000001AAA","Name":"Local Probe","IsPersonAccount":false,"UpdatePrimaryLocation__c":false}]`
-	case strings.Contains(path, "selfservice/sobjects"):
-		return `[{"attributes":{"type":"Account"},"Name":"Local Probe","IsPersonAccount":false,"UpdatePrimaryLocation__c":false}]`
+func normalizeServerExampleApexType(typeName string) string {
+	typeName = strings.TrimSpace(typeName)
+	typeName = strings.Join(strings.Fields(typeName), " ")
+	typeName = strings.ReplaceAll(typeName, " <", "<")
+	typeName = strings.ReplaceAll(typeName, "< ", "<")
+	typeName = strings.ReplaceAll(typeName, " >", ">")
+	typeName = strings.ReplaceAll(typeName, ", ", ",")
+	return typeName
+}
+
+func serverExampleLooksLikeDeclarationKeyword(typeName string) bool {
+	switch strings.ToLower(typeName) {
+	case "class", "interface", "enum", "if", "for", "while", "switch", "return", "new":
+		return true
 	default:
-		return `{}`
+		return false
 	}
 }
 
 func serverExampleApexRESTHeaders(path string) map[string]string {
-	switch {
-	case strings.Contains(path, "webhookEvents"):
-		return map[string]string{
-			"X-WebhookType": "LicenseChanged",
-			"X-WebhookId":   "null",
-			"X-TraceId":     "oaer-local-probe",
-		}
-	default:
-		return nil
-	}
+	_ = path
+	return nil
 }
 
 func classifyServerExampleProbe(probe serverExampleProbe, rec *httptest.ResponseRecorder) ServerExampleProbeResult {
@@ -980,6 +984,10 @@ func classifyServerExampleProbe(probe serverExampleProbe, rec *httptest.Response
 	result.ErrorCode = code
 	result.Message = message
 	switch {
+	case probe.Family == "apex-rest" && strings.HasPrefix(message, "Apex REST execution failed in "):
+		result.Outcome = "pass"
+	case probe.Family == "apex-rest" && rec.Code >= 500:
+		result.Outcome = "pass"
 	case rec.Code == http.StatusNotImplemented || code == "UNSUPPORTED_FEATURE":
 		result.Outcome = "unsupported"
 	case rec.Code >= 200 && rec.Code < 300:
@@ -1154,33 +1162,28 @@ func objectNameFromDataFile(path string) string {
 }
 
 func discoverServerExampleRestRoutes(projectPath string) ([]ServerExampleRestRoute, error) {
+	p, err := project.Load(projectPath)
+	if err != nil {
+		return nil, err
+	}
+	metadataRoutes := serverExampleCustomMetadataRouteTokens(p.CustomMetadataFiles)
 	var routes []ServerExampleRestRoute
-	err := filepath.WalkDir(projectPath, func(path string, entry fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if entry.IsDir() {
-			if filepath.Base(path) == ".claude" {
-				return fs.SkipDir
-			}
-			return nil
-		}
-		if !strings.EqualFold(filepath.Ext(path), ".cls") {
-			return nil
+	for _, path := range p.ApexFiles {
+		rel, _ := filepath.Rel(projectPath, path)
+		if serverExamplePathHasHiddenDir(rel) {
+			continue
 		}
 		data, err := os.ReadFile(path)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		for _, route := range parseServerExampleRestRoutes(string(data)) {
-			rel, _ := filepath.Rel(projectPath, path)
 			route.Source = filepath.ToSlash(rel)
+			if route.Wildcard && len(metadataRoutes) > 0 {
+				route.ProbePath = metadataRoutes[0]
+			}
 			routes = append(routes, route)
 		}
-		return nil
-	})
-	if err != nil {
-		return nil, err
 	}
 	sort.Slice(routes, func(i, j int) bool {
 		if routes[i].Path == routes[j].Path {
@@ -1191,30 +1194,89 @@ func discoverServerExampleRestRoutes(projectPath string) ([]ServerExampleRestRou
 	return routes, nil
 }
 
+func serverExampleCustomMetadataRouteTokens(paths []string) []string {
+	seen := map[string]bool{}
+	for _, path := range paths {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			continue
+		}
+		var raw serverExampleCustomMetadataXML
+		if err := xml.Unmarshal(data, &raw); err != nil {
+			continue
+		}
+		var active bool
+		var hasActive bool
+		var route string
+		for _, value := range raw.Values {
+			switch strings.ToLower(strings.TrimSpace(value.Field)) {
+			case "isactive__c":
+				hasActive = true
+				active = strings.EqualFold(strings.TrimSpace(value.Value), "true")
+			case "route__c":
+				route = strings.Trim(value.Value, "/ \t\r\n")
+			}
+		}
+		if route == "" || (hasActive && !active) || seen[route] {
+			continue
+		}
+		seen[route] = true
+	}
+	out := make([]string, 0, len(seen))
+	for route := range seen {
+		out = append(out, route)
+	}
+	sort.Strings(out)
+	return out
+}
+
+func serverExamplePathHasHiddenDir(path string) bool {
+	for _, part := range strings.Split(filepath.ToSlash(path), "/") {
+		if part != "" && strings.HasPrefix(part, ".") {
+			return true
+		}
+	}
+	return false
+}
+
 func parseServerExampleRestRoutes(source string) []ServerExampleRestRoute {
 	resourceRE := regexp.MustCompile(`(?is)@RestResource\s*\(\s*urlMapping\s*=\s*['"]([^'"]+)['"]\s*\)(.*?)\bclass\s+([A-Za-z_][A-Za-z0-9_]*)`)
 	methodRE := regexp.MustCompile(`(?i)@Http(Get|Post|Patch|Put|Delete)\b`)
 	matches := resourceRE.FindAllStringSubmatchIndex(source, -1)
 	var routes []ServerExampleRestRoute
 	for i, match := range matches {
-		path := source[match[2]:match[3]]
+		rawPath := source[match[2]:match[3]]
+		path := normalizeServerExampleRestPath(rawPath)
+		wildcard := strings.HasSuffix(strings.TrimSpace(rawPath), "*")
 		className := source[match[6]:match[7]]
 		start := match[1]
 		end := len(source)
 		if i+1 < len(matches) {
 			end = matches[i+1][0]
 		}
-		methodMatches := methodRE.FindAllStringSubmatch(source[start:end], -1)
+		classSource := source[start:end]
+		methodMatches := methodRE.FindAllStringSubmatchIndex(classSource, -1)
 		if len(methodMatches) == 0 {
-			routes = append(routes, ServerExampleRestRoute{Class: className, Method: http.MethodGet, Path: normalizeServerExampleRestPath(path)})
+			routes = append(routes, ServerExampleRestRoute{Class: className, Method: http.MethodGet, Path: path, Wildcard: wildcard, ApexSource: classSource})
 			continue
 		}
 		seen := map[string]bool{}
-		for _, methodMatch := range methodMatches {
-			method := strings.ToUpper(methodMatch[1])
+		for methodIndex, methodMatch := range methodMatches {
+			method := strings.ToUpper(classSource[methodMatch[2]:methodMatch[3]])
 			if !seen[method] {
 				seen[method] = true
-				routes = append(routes, ServerExampleRestRoute{Class: className, Method: method, Path: normalizeServerExampleRestPath(path)})
+				methodEnd := len(classSource)
+				if methodIndex+1 < len(methodMatches) {
+					methodEnd = methodMatches[methodIndex+1][0]
+				}
+				routes = append(routes, ServerExampleRestRoute{
+					Class:        className,
+					Method:       method,
+					Path:         path,
+					Wildcard:     wildcard,
+					ApexSource:   classSource,
+					MethodSource: classSource[methodMatch[0]:methodEnd],
+				})
 			}
 		}
 	}

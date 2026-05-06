@@ -146,6 +146,12 @@ func Run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
 			return 1
 		}
 		return 0
+	case "probe":
+		if err := runProbe(ctx, args[1:], stdout); err != nil {
+			fmt.Fprintf(stderr, "oaer: %v\n", err)
+			return 1
+		}
+		return 0
 	default:
 		report := diagnostic.Report{
 			Diagnostics: []diagnostic.Diagnostic{{
@@ -182,6 +188,7 @@ Commands:
   server    Start the local Salesforce-compatible API baseline.
   db        Seed, reset, export, and inspect a persistent local database.
   compat    Validate fixtures and report capability readiness.
+  probe     Run org probes to discover gaps against a real Salesforce org.
   help      Print this help text.
 
 Compat subcommands:

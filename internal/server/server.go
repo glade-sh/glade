@@ -338,7 +338,7 @@ func (s *Server) handleApexRest(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	request := apexRestRequestValue(r, body)
+	request := apexRestRequestValue(r, body, route.Mapping)
 	response := vm.NewRestResponseValue()
 	if err := machine.SetRestContext(request, response); err != nil {
 		writeSalesforceError(w, errUnsupportedFeature, err.Error())
@@ -560,10 +560,19 @@ func apexRestResourcePath(escaped string) string {
 	return path
 }
 
-func apexRestRequestValue(r *http.Request, body []byte) vm.Value {
+func apexRestRequestValue(r *http.Request, body []byte, routePath string) vm.Value {
 	request := vm.NewRestRequestValue()
-	request.Fields["requestURI"] = vm.String(r.URL.RequestURI())
-	request.Fields["resourcePath"] = vm.String(apexRestResourcePath(r.URL.EscapedPath()))
+	resourcePath := apexRestResourcePath(r.URL.EscapedPath())
+	requestURI := r.URL.RequestURI()
+	if strings.HasSuffix(routePath, "*") {
+		resourcePath = "/services/apexrest" + routePath
+		requestURI = apexRestResourcePath(r.URL.EscapedPath())
+		if r.URL.RawQuery != "" {
+			requestURI += "?" + r.URL.RawQuery
+		}
+	}
+	request.Fields["requestURI"] = vm.String(requestURI)
+	request.Fields["resourcePath"] = vm.String(resourcePath)
 	request.Fields["httpMethod"] = vm.String(r.Method)
 	request.Fields["remoteAddress"] = vm.String(r.RemoteAddr)
 	request.Fields["headers"] = vm.NewStringMapValue(requestHeaders(r))

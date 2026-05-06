@@ -8,10 +8,10 @@ an apexrr dependency. Keep this document only as background for report ideas.
 
 Phase 1 finds Apex performance bottlenecks in a Salesforce codebase and ranks
 them for an architect or code reviewer. Target is large legacy projects like
-`sf-cred-pkg`. Phase 2 (later) proposes and applies refactors with
+`alpha-pkg`. Phase 2 (later) proposes and applies refactors with
 before/after proof using aer.
 
-## Target ground (sf-cred-pkg)
+## Target ground (alpha-pkg)
 
 - 2,116 Apex classes, 40 triggers, ~298,000 lines of Apex.
 - 160 `@AuraEnabled` files, 30 Batchable, 27 Schedulable, 9 Queueable.
@@ -51,7 +51,7 @@ features already exist and apexrr will use them directly:
 
 ## apexrr — what we build
 
-Three pieces. Nothing more until Phase 1 is proven on `sf-cred-pkg`.
+Three pieces. Nothing more until Phase 1 is proven on `alpha-pkg`.
 
 ### 1. Parser + call graph (foundation)
 
@@ -69,7 +69,7 @@ Three pieces. Nothing more until Phase 1 is proven on `sf-cred-pkg`.
 ### 2. Static hotspot pass
 
 AST-level rules, each emitting a finding with `file:line`, `category`,
-`severity`, and a one-line "why this hurts." Rules tuned for `sf-cred-pkg`:
+`severity`, and a one-line "why this hurts." Rules tuned for `alpha-pkg`:
 
 | Rule | Category |
 | --- | --- |
@@ -83,7 +83,7 @@ AST-level rules, each emitting a finding with `file:line`, `category`,
 | Trigger without a handler class (inline Apex in `.trigger`) | trigger_logic_inline |
 | Governor-limit near-miss from static SOQL/DML counts | governor_near_miss |
 
-Rule set grows from real findings on `sf-cred-pkg`. Not speculative.
+Rule set grows from real findings on `alpha-pkg`. Not speculative.
 
 ### 3. aer driver + report
 
@@ -102,7 +102,7 @@ For each discovered entry point, drive aer:
   - Queueable: `System.enqueueJob(new X())`, `Test.startTest`/`stopTest` to
     drain.
   - Schedulable: call `execute()` directly.
-- **Scale sweep.** 1x / 10x / 100x / 1000x record counts. For sf-cred-pkg
+- **Scale sweep.** 1x / 10x / 100x / 1000x record counts. For alpha-pkg
   specifically: `assets/importData/` already has shaped JSON for providers
   and setup data. Use these as the 1x baseline before pulling from a sandbox. Record SOQL count,
   DML count, CPU, heap peak, call chain depth at each scale.
@@ -129,7 +129,7 @@ the workarounds we accept:
    wrap the callee in an Apex shim that reads `Limits` before/after. Gives us
    per-method delta counts. Coarser than per-statement.
 2. **Can't instrument describe calls individually.** With 845 sites in
-   sf-cred-pkg, we cannot say "this `getGlobalDescribe()` on line 412 fired"
+   alpha-pkg, we cannot say "this `getGlobalDescribe()` on line 412 fired"
    from aer alone. *Workaround:* static analysis flags the site, dynamic
    confirms the method ran hot, user connects them.
 3. **No query plan visibility.** aer backs SOQL with SQLite but the pprof
@@ -152,10 +152,10 @@ Net: gaps push us toward coarser per-method attribution (not per-statement)
 and static-only findings for syntax aer can't execute. Phase 1 still lands.
 The before/after CPU + SOQL + DML deltas that sell Phase 2 are unaffected.
 
-## Empirical findings from first aer runs on sf-cred-pkg
+## Empirical findings from first aer runs on alpha-pkg
 
 Before writing any code, ran `aer test force-app --dry-run` against
-sf-cred-pkg. Two findings inside five minutes. These are real value-add
+alpha-pkg. Two findings inside five minutes. These are real value-add
 outputs the smoke harness will formalize.
 
 ### Finding 1 — duplicate class name
@@ -178,14 +178,14 @@ are in different managed packages. Worth flagging as a discrete apexrr rule:
 Scoping aer to a subtree (`force-app/verifiable-app/main/classes/service`)
 surfaces missing references to:
 
-- Verifiable-prefixed types (`VerifiableDataset`, `VerifiableMonitor`,
-  `VerifiableResource`, `VerifiableSchemas`, `VerifiableDatasetMetadata`) —
-  internal namespaces of sf-cred-pkg.
+- Sample-prefixed types (`SampleDataset`, `SampleMonitor`,
+  `SampleResource`, `SampleSchemas`, `SampleDatasetMetadata`) —
+  internal namespaces of alpha-pkg.
 - fflib types (`fflib_Application`, `fflib_SObjectDomain`,
   `fflib_SObjectMocks`, `fflib_SecurityUtils`) — open source library present
   in-tree somewhere we didn't include.
 
-Smoke harness has to understand sf-cred-pkg's real namespace layout and pass
+Smoke harness has to understand alpha-pkg's real namespace layout and pass
 the right `--package` / `--package-dir` / `--default-namespace` flags.
 Config lives per-project in `apexrr.yml`.
 
@@ -212,9 +212,9 @@ which rules matter.
 7. **Scale sweep + curve fit.**
 8. **Report (HTML + JSON + SARIF), diff mode.**
 
-## Build and deploy pipeline awareness (sf-cred-pkg)
+## Build and deploy pipeline awareness (alpha-pkg)
 
-sf-cred-pkg is a managed package project (namespace `verifiable`) using
+alpha-pkg is a managed package project (namespace `sample`) using
 CumulusCI + the Salesforce CLI for the full lifecycle:
 
 - Dev → scratch org (`npm run org:create` via `setup_scratch_org.sh`)
@@ -246,7 +246,7 @@ Relevant notes:
 ## Known aer gaps (file later, not blockers)
 
 These aren't in the documented feature set. If they trip us on
-`sf-cred-pkg`, file issues on `aer-dist`:
+`alpha-pkg`, file issues on `aer-dist`:
 
 - SOSL (`FIND ... RETURNING ...`).
 - SOQL `GROUP BY`, aggregate functions (`COUNT()`, `SUM()`), `TYPEOF`,
@@ -265,9 +265,9 @@ Not Phase 1 blockers. Discovered as we run it, filed as we find them.
 1. **Module setup.** `apexfmt` as a dependency. Verify AST reach. If it's
    thin, switch to Antlr Go target now rather than later.
 2. **Entry-point discovery over the AST.** Output: "here are your 230
-   doors." Useful on day one. Unit tested against `sf-cred-pkg`.
+   doors." Useful on day one. Unit tested against `alpha-pkg`.
 3. **Static hotspot pass.** Three rules first: `soql_in_loop`, `dml_in_loop`,
-   `uncached_describe`. Run against `sf-cred-pkg`. Tune on real findings.
+   `uncached_describe`. Run against `alpha-pkg`. Tune on real findings.
 4. **aer driver.** Start with `@AuraEnabled` (simplest invocation). Capture
    the trace JSON, parse it, attribute cost per method.
 5. **Fixture harvester.** Pull from a sandbox into SQLite. Triggers first.

@@ -907,7 +907,21 @@ func (vm *VM) executeSwitch(source string, inst ir.Instruction, result *Result) 
 		for _, expr := range c.Exprs {
 			caseValue, err := vm.eval(expr, result)
 			if err != nil {
-				return execOutcome{}, err
+				matches, handled := switchCaseEnumNameMatch(value, expr, err)
+				if !handled {
+					return execOutcome{}, err
+				}
+				if !matches {
+					continue
+				}
+				out, err := vm.executeProgram(ir.Program{Instructions: c.Body, Source: source}, result)
+				if err != nil {
+					return execOutcome{}, err
+				}
+				if out.signal == signalBreak {
+					return execOutcome{}, nil
+				}
+				return out, nil
 			}
 			if value.Equal(caseValue) {
 				out, err := vm.executeProgram(ir.Program{Instructions: c.Body, Source: source}, result)
@@ -932,6 +946,16 @@ func (vm *VM) executeSwitch(source string, inst ir.Instruction, result *Result) 
 		return out, nil
 	}
 	return execOutcome{}, nil
+}
+
+func switchCaseEnumNameMatch(value Value, expr ir.Expr, err error) (bool, bool) {
+	if err == nil || value.Kind != ValueObject || value.Text == "" || expr.Kind != ir.ExprVariable {
+		return false, false
+	}
+	if !strings.Contains(err.Error(), "unknown variable") {
+		return false, false
+	}
+	return expr.Name == value.Text, true
 }
 
 func (vm *VM) executeRunAs(source string, inst ir.Instruction, result *Result) (execOutcome, error) {
@@ -2111,6 +2135,11 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return Null, fmt.Errorf("UserInfo.getOrganizationId expects 0 arguments")
 		}
 		return String("00D000000000001"), nil
+	case "UserInfo.getUserType":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("UserInfo.getUserType expects 0 arguments")
+		}
+		return String(vm.currentUserInfoField("UserType", "Standard")), nil
 	case "UserInfo.getSessionId":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("UserInfo.getSessionId expects 0 arguments")
@@ -2141,6 +2170,11 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return Null, fmt.Errorf("Site.getSiteId expects 0 arguments")
 		}
 		return String("local-site"), nil
+	case "Auth.CommunitiesUtil.isGuestUser":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Auth.CommunitiesUtil.isGuestUser expects 0 arguments")
+		}
+		return Bool(false), nil
 	default:
 		if strings.HasPrefix(callee, "Crypto.") {
 			return Null, unsupportedCallError(callee + " local key, certificate, encryption, and random surfaces")
@@ -2180,6 +2214,10 @@ func (vm *VM) nextDeterministicCryptoLong() int64 {
 }
 
 func unsupportedIntegrationSurface(callee string) (string, bool) {
+	switch callee {
+	case "Auth.CommunitiesUtil.isGuestUser":
+		return "", false
+	}
 	for _, prefix := range []string{"Approval.", "Auth.", "QuickAction.", "Canvas.", "Continuation."} {
 		if strings.HasPrefix(callee, prefix) {
 			switch prefix {
@@ -7297,6 +7335,30 @@ func (vm *VM) lookup(name string) (Value, error) {
 				return value, nil
 			}
 		}
+		if len(parts) > 2 {
+			if field, owner, ok := vm.lookupStaticField(parts[0], parts[1]); ok {
+				if err := vm.checkMemberAccess(owner, field.Access, owner+"."+parts[1]); err != nil {
+					return Null, err
+				}
+				if err := vm.ensureClassInitialized(owner); err != nil {
+					return Null, err
+				}
+				field, _, _ = vm.lookupStaticField(owner, parts[1])
+				root := field.Value
+				if field.Getter != nil {
+					if field.Getter.Name == vm.currentMethod.Name {
+						root = field.Value
+					} else {
+						var err error
+						root, err = vm.callMethod(*field.Getter, nil, resultForLookup())
+						if err != nil {
+							return Null, err
+						}
+					}
+				}
+				return vm.lookupPath(root, parts[2:])
+			}
+		}
 		if className, memberName, ok := vm.splitClassMember(name); ok {
 			if value, ok := builtinStaticField(className, memberName); ok {
 				return value, nil
@@ -7324,6 +7386,22 @@ func (vm *VM) lookup(name string) (Value, error) {
 				for _, enumValue := range class.EnumValues {
 					if enumValue == memberName {
 						return Value{Kind: ValueObject, Type: class.Name, Text: memberName}, nil
+					}
+				}
+			}
+			if !strings.Contains(className, ".") {
+				suffix := "." + className
+				for _, class := range vm.Classes {
+					if !strings.HasSuffix(class.Name, suffix) || len(class.EnumValues) == 0 {
+						continue
+					}
+					if err := vm.ensureClassInitialized(class.Name); err != nil {
+						return Null, err
+					}
+					for _, enumValue := range class.EnumValues {
+						if enumValue == memberName {
+							return Value{Kind: ValueObject, Type: class.Name, Text: memberName}, nil
+						}
 					}
 				}
 			}
@@ -7602,7 +7680,10 @@ func (vm *VM) lookupSObjectFieldToken(parts []string) (Value, bool) {
 	definition := vm.Org.Objects[objectName].Definition
 	canonical, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, fieldName)
 	if !ok {
-		return Null, false
+		if !isSObjectSystemField(fieldName) {
+			return Null, false
+		}
+		canonical = fieldName
 	}
 	return sObjectFieldToken(objectName, canonical), true
 }
@@ -7743,9 +7824,9 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 			continue
 		}
 		canonicalPart := vm.resolveSObjectFieldName(current.Type, part)
-		value, ok := current.Fields[canonicalPart]
+		_, value, ok := objectFieldValue(current, canonicalPart)
 		if !ok && canonicalPart != part {
-			value, ok = current.Fields[part]
+			_, value, ok = objectFieldValue(current, part)
 		}
 		if !ok {
 			if value, ok := vm.missingSObjectFieldValue(current.Type, canonicalPart); ok {
@@ -10160,6 +10241,24 @@ func isLoggingLevelValue(value Value) bool {
 
 func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 	if value.Kind == ValueString {
+		if class, ok := vm.resolveEnumClass(typeName); ok {
+			valueText := value.Text
+			if dot := strings.LastIndexByte(valueText, '.'); dot >= 0 {
+				valueText = valueText[dot+1:]
+			}
+			for _, enumValue := range class.EnumValues {
+				if enumValue == valueText {
+					return Value{Kind: ValueObject, Type: class.Name, Text: enumValue}, nil
+				}
+			}
+		}
+		if apexIdentifierStartsUpper(typeName) && !isBuiltinTypeName(typeName) && !platformScalarObject(typeName) && (isLikelyEnumValueText(value.Text) || strings.HasSuffix(typeName, "Type")) {
+			valueText := value.Text
+			if dot := strings.LastIndexByte(valueText, '.'); dot >= 0 {
+				valueText = valueText[dot+1:]
+			}
+			return Value{Kind: ValueObject, Type: typeName, Text: valueText}, nil
+		}
 		switch typeName {
 		case "Id":
 			value.Type = "Id"
@@ -10185,6 +10284,11 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 		}
 	}
 	if value.Kind == ValueObject {
+		if class, ok := vm.resolveEnumClass(typeName); ok && len(class.EnumValues) > 0 {
+			if strings.EqualFold(value.Type, class.Name) {
+				return Value{Kind: ValueObject, Type: class.Name, Text: value.Text}, nil
+			}
+		}
 		if strings.EqualFold(typeName, "String") && (strings.EqualFold(value.Type, "Id") || strings.EqualFold(value.Type, "String")) {
 			text, err := platformScalarText(value, value.Type)
 			if err != nil {
@@ -10270,6 +10374,45 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 		return value, nil
 	}
 	return coerceAssignable(typeName, value)
+}
+
+func (vm *VM) resolveEnumClass(typeName string) (Class, bool) {
+	if enumType, ok := vm.resolveClassName(typeName); ok {
+		if class, ok := vm.Classes[enumType]; ok && len(class.EnumValues) > 0 {
+			return class, true
+		}
+	}
+	if !strings.Contains(typeName, ".") {
+		suffix := "." + typeName
+		for _, class := range vm.Classes {
+			if strings.HasSuffix(class.Name, suffix) && len(class.EnumValues) > 0 {
+				return class, true
+			}
+		}
+	}
+	return Class{}, false
+}
+
+func isLikelyEnumValueText(text string) bool {
+	if text == "" {
+		return false
+	}
+	if dot := strings.LastIndexByte(text, '.'); dot >= 0 {
+		text = text[dot+1:]
+	}
+	for _, r := range text {
+		if r >= 'A' && r <= 'Z' {
+			continue
+		}
+		if r >= '0' && r <= '9' {
+			continue
+		}
+		if r == '_' {
+			continue
+		}
+		return false
+	}
+	return true
 }
 
 func (vm *VM) ensureAssignable(typeName string, value Value) error {
@@ -10559,12 +10702,6 @@ func defaultValue(typeName string, explicit Value) Value {
 		return explicit
 	}
 	switch typeName {
-	case "Integer", "Long":
-		return Int(0)
-	case "Decimal", "Double":
-		return Decimal(0)
-	case "Boolean":
-		return Bool(false)
 	case "String":
 		return Null
 	default:
@@ -11913,23 +12050,40 @@ func (vm *VM) callEnumStaticMember(typeName, method string, args []Value) (Value
 		return value, true, err
 	}
 	class, ok := vm.Classes[typeName]
-	if !ok || len(class.EnumValues) == 0 || method != "values" {
+	if !ok || len(class.EnumValues) == 0 {
 		return Null, false, nil
 	}
 	if err := vm.ensureClassInitialized(typeName); err != nil {
 		return Null, true, err
 	}
 	class = vm.Classes[typeName]
-	if len(args) != 0 {
-		return Null, true, fmt.Errorf("%s.values expects 0 arguments", typeName)
+	switch method {
+	case "values":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("%s.values expects 0 arguments", typeName)
+		}
+		values := make([]Value, 0, len(class.EnumValues))
+		for i, name := range class.EnumValues {
+			value := Value{Kind: ValueObject, Type: class.Name, Text: name}
+			value.Fields = map[string]Value{"ordinal": Int(int64(i))}
+			values = append(values, value)
+		}
+		return List(values...), true, nil
+	case "valueOf":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, true, fmt.Errorf("%s.valueOf expects String", typeName)
+		}
+		for i, name := range class.EnumValues {
+			if name == args[0].Text {
+				value := Value{Kind: ValueObject, Type: class.Name, Text: name}
+				value.Fields = map[string]Value{"ordinal": Int(int64(i))}
+				return value, true, nil
+			}
+		}
+		return Null, true, fmt.Errorf("No enum constant %s.%s", typeName, args[0].Text)
+	default:
+		return Null, false, nil
 	}
-	values := make([]Value, 0, len(class.EnumValues))
-	for i, name := range class.EnumValues {
-		value := Value{Kind: ValueObject, Type: class.Name, Text: name}
-		value.Fields = map[string]Value{"ordinal": Int(int64(i))}
-		values = append(values, value)
-	}
-	return List(values...), true, nil
 }
 
 func roundingModeValues(args []Value) (Value, error) {
@@ -12236,6 +12390,39 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		return callRestResponseMember(receiver, method, args)
 	case "Schema.SObjectType":
 		switch method {
+		case "newSObject":
+			if len(args) > 2 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectType.newSObject expects optional Id and loadDefaults")
+			}
+			if len(args) == 2 && args[1].Kind != ValueBool {
+				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectType.newSObject loadDefaults expects Boolean")
+			}
+			objectValue, ok := receiver.Fields["object"]
+			if !ok || objectValue.Kind != ValueString {
+				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectType token missing object")
+			}
+			objectName := objectValue.Text
+			if vm.Org != nil {
+				if canonical, ok := storage.ResolveObjectName(*vm.Org, objectValue.Text); ok {
+					objectName = canonical
+				}
+			}
+			record := Object(objectName)
+			if len(args) >= 1 && args[0].Kind != ValueNull {
+				switch args[0].Kind {
+				case ValueString:
+					record.Fields["Id"] = platformScalar("Id", args[0].Text)
+				case ValueObject:
+					if strings.EqualFold(args[0].Type, "Id") {
+						record.Fields["Id"] = args[0]
+					} else {
+						return Null, receiver, false, true, fmt.Errorf("Schema.SObjectType.newSObject Id expects Id")
+					}
+				default:
+					return Null, receiver, false, true, fmt.Errorf("Schema.SObjectType.newSObject Id expects Id")
+				}
+			}
+			return record, receiver, false, true, nil
 		case "getDescribe":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectType.getDescribe expects 0 arguments")

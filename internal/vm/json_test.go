@@ -125,10 +125,10 @@ System.assertEquals(1, records.size());
 System.assertEquals('Local Probe', (String)records[0].get('Name'));
 List<string> ids = (List<string>)JSON.deserialize('["001000000000001AAA"]', List<string>.class);
 System.assertEquals('001000000000001AAA', ids[0]);
-Cart__c cart = (Cart__c)JSON.deserialize('{"Data__c":"{}"}', Cart__c.class);
-System.assertEquals('{}', (String)cart.get('Data__c'));
-Cart__c strictCart = (Cart__c)JSON.deserializeStrict('{"Data__c":"strict"}', Cart__c.class);
-System.assertEquals('strict', (String)strictCart.get('Data__c'));
+Widget__c widget = (Widget__c)JSON.deserialize('{"Data__c":"{}"}', Widget__c.class);
+System.assertEquals('{}', (String)widget.get('Data__c'));
+Widget__c strictWidget = (Widget__c)JSON.deserializeStrict('{"Data__c":"strict"}', Widget__c.class);
+System.assertEquals('strict', (String)strictWidget.get('Data__c'));
 `)
 	if err != nil {
 		t.Fatal(err)

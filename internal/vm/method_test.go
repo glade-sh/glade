@@ -418,8 +418,8 @@ func TestCloneRuntimeKeepsStaticStateIsolated(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if value.Kind != ValueInt || value.Int != 0 {
-		t.Fatalf("Counter.get from second clone = %#v, want zero-value static", value)
+	if value.Kind != ValueNull {
+		t.Fatalf("Counter.get from second clone = %#v, want null static default", value)
 	}
 }
 

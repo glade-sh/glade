@@ -29,6 +29,24 @@ func EnsureStandardObjectFields(definition *ObjectDefinition) {
 
 func standardFieldsForObject(objectName string) []Field {
 	switch {
+	case stringsEqualFold(objectName, "EntityDefinition"):
+		return []Field{
+			{APIName: "DeveloperName", Label: "Developer Name", Type: FieldString},
+			{APIName: "DurableId", Label: "Durable ID", Type: FieldString},
+			{APIName: "KeyPrefix", Label: "Key Prefix", Type: FieldString},
+			{APIName: "Label", Label: "Label", Type: FieldString},
+			{APIName: "NamespacePrefix", Label: "Namespace Prefix", Type: FieldString},
+			{APIName: "QualifiedApiName", Label: "Qualified API Name", Type: FieldString},
+		}
+	case stringsEqualFold(objectName, "FieldDefinition"):
+		return []Field{
+			{APIName: "DeveloperName", Label: "Developer Name", Type: FieldString},
+			{APIName: "DurableId", Label: "Durable ID", Type: FieldString},
+			{APIName: "EntityDefinitionId", Label: "Entity Definition ID", Type: FieldReference, ReferenceTo: []string{"EntityDefinition"}, RelationshipName: "EntityDefinition"},
+			{APIName: "Label", Label: "Label", Type: FieldString},
+			{APIName: "NamespacePrefix", Label: "Namespace Prefix", Type: FieldString},
+			{APIName: "QualifiedApiName", Label: "Qualified API Name", Type: FieldString},
+		}
 	case stringsEqualFold(objectName, "Account"):
 		return []Field{
 			{APIName: "Name", Label: "Account Name", Type: FieldString},

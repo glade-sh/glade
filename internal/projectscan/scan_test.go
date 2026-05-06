@@ -25,7 +25,7 @@ import ACCOUNT_NAME from '@salesforce/schema/Account.Name';
 	writeFile(t, filepath.Join(root, "src/workflows/Account.workflow"), `<Workflow><rules><fullName>Rule</fullName></rules></Workflow>`)
 	writeFile(t, filepath.Join(root, "src/flows/Update.flow"), `<Flow><processType>Workflow</processType></Flow>`)
 	writeFile(t, filepath.Join(root, "src/labels/CustomLabels.labels"), `<CustomLabels/>`)
-	writeFile(t, filepath.Join(root, "src/email/Nimble/Welcome.email"), `Hello {!Contact.Name}`)
+	writeFile(t, filepath.Join(root, "src/email/Local/Welcome.email"), `Hello {!Contact.Name}`)
 	writeFile(t, filepath.Join(root, "src/objects/Thing__c.object"), `<CustomObject/>`)
 	writeFile(t, filepath.Join(root, "src/customMetadata/Page2.Home.md"), `<CustomMetadata/>`)
 	writeFile(t, filepath.Join(root, "README.md"), `# Not custom metadata`)

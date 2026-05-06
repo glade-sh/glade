@@ -13,23 +13,23 @@ import (
 func TestBuildExtractsAuraControllerReferences(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
-	writeFile(t, filepath.Join(root, "force-app/main/default/classes/CartController.cls"), `public class CartController {
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/WidgetController.cls"), `public class WidgetController {
   @AuraEnabled public static String save(Id recordId) { return 'ok'; }
   @AuraEnabled public static String load() { return 'loaded'; }
 }`)
-	writeFile(t, filepath.Join(root, "force-app/main/default/aura/Cart/Cart.cmp"), `<aura:component controller="CartController">
+	writeFile(t, filepath.Join(root, "force-app/main/default/aura/Widget/Widget.cmp"), `<aura:component controller="WidgetController">
   <c:lineItem value="{!v.item}" />
   <lightning:button label="Save" press="{!c.save}" />
 </aura:component>`)
-	writeFile(t, filepath.Join(root, "force-app/main/default/aura/Cart/Cart.app"), `<aura:application><c:lineItem /></aura:application>`)
-	writeFile(t, filepath.Join(root, "force-app/main/default/aura/Cart/Cart.evt"), `<aura:event type="APPLICATION" />`)
-	writeFile(t, filepath.Join(root, "force-app/main/default/aura/Cart/Cart.design"), `<design:component label="Cart" />`)
-	writeFile(t, filepath.Join(root, "force-app/main/default/aura/Cart/CartController.js"), `({
+	writeFile(t, filepath.Join(root, "force-app/main/default/aura/Widget/Widget.app"), `<aura:application><c:lineItem /></aura:application>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/aura/Widget/Widget.evt"), `<aura:event type="APPLICATION" />`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/aura/Widget/Widget.design"), `<design:component label="Widget" />`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/aura/Widget/WidgetController.js"), `({
   load: function(component) {
     component.get("c.load");
   }
 })`)
-	writeFile(t, filepath.Join(root, "force-app/main/default/aura/Cart/CartHelper.js"), `({
+	writeFile(t, filepath.Join(root, "force-app/main/default/aura/Widget/WidgetHelper.js"), `({
   save: function(cmp) {
     cmp.get('c.save');
   }
@@ -49,10 +49,10 @@ func TestBuildExtractsAuraControllerReferences(t *testing.T) {
 		t.Fatalf("aura bundles = %#v", idx.AuraBundles)
 	}
 	bundle := idx.AuraBundles[0]
-	if bundle.Name != "Cart" || len(bundle.Files) != 6 {
+	if bundle.Name != "Widget" || len(bundle.Files) != 6 {
 		t.Fatalf("bundle summary = %#v", bundle)
 	}
-	if len(bundle.ControllerReferences) != 1 || bundle.ControllerReferences[0].Name != "CartController" {
+	if len(bundle.ControllerReferences) != 1 || bundle.ControllerReferences[0].Name != "WidgetController" {
 		t.Fatalf("controllers = %#v", bundle.ControllerReferences)
 	}
 	if !hasAuraComponent(bundle, "c", "lineItem") || !hasAuraComponent(bundle, "lightning", "button") {
@@ -69,24 +69,24 @@ func TestBuildExtractsAuraControllerReferences(t *testing.T) {
 func TestBuildExtractsLWCImportsWiresAndReactiveParameters(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
-	writeFile(t, filepath.Join(root, "force-app/main/default/classes/CartController.cls"), `public class CartController {
-  @AuraEnabled(cacheable=true) public static String getCart(String accountId) { return 'ok'; }
-  @AuraEnabled public static void saveCart(String accountId) {}
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/WidgetController.cls"), `public class WidgetController {
+  @AuraEnabled(cacheable=true) public static String getWidget(String accountId) { return 'ok'; }
+  @AuraEnabled public static void saveWidget(String accountId) {}
 }`)
-	writeFile(t, filepath.Join(root, "force-app/main/default/lwc/cart/cart.js"), `import { LightningElement, wire } from 'lwc';
-import getCart from '@salesforce/apex/CartController.getCart';
-import saveCart from '@salesforce/apex/CartController.saveCart';
+	writeFile(t, filepath.Join(root, "force-app/main/default/lwc/widget/widget.js"), `import { LightningElement, wire } from 'lwc';
+import getWidget from '@salesforce/apex/WidgetController.getWidget';
+import saveWidget from '@salesforce/apex/WidgetController.saveWidget';
 import Save from '@salesforce/label/c.Save';
-import RES from '@salesforce/resourceUrl/CartAssets';
+import RES from '@salesforce/resourceUrl/WidgetAssets';
 import ACCOUNT_NAME from '@salesforce/schema/Account.Name';
 import { NavigationMixin } from 'lightning/navigation';
 import { getRecord, updateRecord } from 'lightning/uiRecordApi';
 import { getObjectInfo } from 'lightning/uiObjectInfoApi';
 import child from 'c/child';
 
-export default class Cart extends LightningElement {
+export default class Widget extends LightningElement {
   accountId;
-  @wire(getCart, { accountId: '$accountId', nested: '$filters.term' }) cart;
+  @wire(getWidget, { accountId: '$accountId', nested: '$filters.term' }) widget;
   @wire(getRecord, { recordId: '$accountId', fields: [ACCOUNT_NAME] }) record;
 }`)
 
@@ -108,15 +108,15 @@ export default class Cart extends LightningElement {
 			t.Fatalf("missing import kind %s in %#v", want, bundle.Imports)
 		}
 	}
-	if !hasLWCImport(bundle, "getCart", "apex", "CartController", "getCart") ||
+	if !hasLWCImport(bundle, "getWidget", "apex", "WidgetController", "getWidget") ||
 		!hasLWCImport(bundle, "child", "local", "", "") {
 		t.Fatalf("imports = %#v", bundle.Imports)
 	}
 	if len(bundle.Wires) != 2 {
 		t.Fatalf("wires = %#v", bundle.Wires)
 	}
-	wire := findWire(bundle, "getCart")
-	if wire == nil || wire.AdapterKind != "apex" || wire.ApexClassName != "CartController" || wire.ApexMethodName != "getCart" {
+	wire := findWire(bundle, "getWidget")
+	if wire == nil || wire.AdapterKind != "apex" || wire.ApexClassName != "WidgetController" || wire.ApexMethodName != "getWidget" {
 		t.Fatalf("apex wire = %#v", wire)
 	}
 	if !hasReactive(*wire, "accountId") || !hasReactive(*wire, "filters.term") {
@@ -126,7 +126,7 @@ export default class Cart extends LightningElement {
 	if recordWire == nil || recordWire.AdapterKind != "lightning" || !hasReactive(*recordWire, "accountId") {
 		t.Fatalf("record wire = %#v", recordWire)
 	}
-	if !hasResolvedMethod(idx, "CartController", "getCart") || !hasResolvedMethod(idx, "CartController", "saveCart") {
+	if !hasResolvedMethod(idx, "WidgetController", "getWidget") || !hasResolvedMethod(idx, "WidgetController", "saveWidget") {
 		t.Fatalf("apex methods = %#v", idx.ApexMethods)
 	}
 }

@@ -176,8 +176,8 @@ Current status as of 2026-05-02: complete for the Phase 1 baseline. `internal/ap
 `github.com/octoberswimmer/apexfmt/parser` behind an internal source model,
 and `oaer parse <paths...> --json` can parse `.cls` and `.trigger` files from
 explicit files or directories. The small example project
-`example-projects/src-nmb-nutpl-develop` parses cleanly: 135 Apex files, zero
-diagnostics. The large example project `example-projects/src-nmb-nu-develop`
+`example-projects/delta-pkg-develop` parses cleanly: 135 Apex files, zero
+diagnostics. The large example project `example-projects/beta-pkg-develop`
 parses cleanly: 2,964 Apex files, zero diagnostics, in about 9 seconds. The
 parser adapter includes a clean source-preserving workaround for valid Apex
 methods named `void`, which the upstream generated grammar treats too strictly.
@@ -243,9 +243,9 @@ builds a first symbol index for top-level Apex classes, interfaces, enums,
 triggers, members, test annotations, and schema objects. CLI commands now include
 `oaer inspect symbols --project <root> --json` and
 `oaer schema load --project <root> --json`. The small example project
-`example-projects/src-nmb-nutpl-develop` indexes cleanly: 134 types, 1 trigger,
+`example-projects/delta-pkg-develop` indexes cleanly: 134 types, 1 trigger,
 3 objects, 13 fields, zero diagnostics. The large example project
-`example-projects/src-nmb-nu-develop` indexes cleanly in about 9 seconds:
+`example-projects/beta-pkg-develop` indexes cleanly in about 9 seconds:
 2,898 types, 65 triggers, 168 objects, zero diagnostics.
 
 ### Deliverables
@@ -308,9 +308,9 @@ and a conservative IR-backed method-body baseline for locals, assignments,
 returns, scoped reads, Boolean conditions, user-object field reads/writes, known
 method calls, all-path non-void returns, and constructor calls. Full expression
 typing and full flow analysis remain incomplete. The small example project
-`example-projects/src-nmb-nutpl-develop` checks cleanly: 134 types, 1 trigger, 3
+`example-projects/delta-pkg-develop` checks cleanly: 134 types, 1 trigger, 3
 objects, zero diagnostics. The large example project
-`example-projects/src-nmb-nu-develop` checks cleanly in about 9 seconds: 2,898
+`example-projects/beta-pkg-develop` checks cleanly in about 9 seconds: 2,898
 types, 65 triggers, 168 objects, zero diagnostics.
 
 ### Deliverables

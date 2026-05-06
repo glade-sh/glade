@@ -735,7 +735,7 @@ func TestRunParseJSON(t *testing.T) {
 
 func TestRunInspectSymbolsJSON(t *testing.T) {
 	root := t.TempDir()
-	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"NU","sourceApiVersion":"61.0"}`)
+	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"pkg","sourceApiVersion":"61.0"}`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/classes/Hello.cls"), "public class Hello { public void run() {} }")
 	writeTestFile(t, filepath.Join(root, "force-app/main/objects/Thing__c/Thing__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Thing</label></CustomObject>`)
 
@@ -753,7 +753,7 @@ func TestRunInspectGapsJSON(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/pages/Edit.page"), `<apex:page controller="EditController"><apex:stylesheet value="{!URLFOR($Resource.Resources, 'site.css')}"/></apex:page>`)
-	writeTestFile(t, filepath.Join(root, "force-app/main/lwc/cart/cart.js"), `import save from '@salesforce/apex/CartController.save';`)
+	writeTestFile(t, filepath.Join(root, "force-app/main/lwc/widget/widget.js"), `import save from '@salesforce/apex/WidgetController.save';`)
 	writeTestFile(t, filepath.Join(root, "force-app/main/workflows/Account.workflow-meta.xml"), `<Workflow/>`)
 
 	var stdout, stderr bytes.Buffer

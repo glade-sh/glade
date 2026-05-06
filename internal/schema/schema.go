@@ -331,10 +331,14 @@ func trimMetadataSuffix(name, suffix string) string {
 
 func objectNameFromFieldPath(path string) string {
 	dir := filepath.Dir(filepath.Dir(path))
-	if filepath.Base(filepath.Dir(path)) != "fields" {
-		return ""
+	parent := filepath.Base(filepath.Dir(path))
+	if parent == "fields" {
+		return filepath.Base(dir)
 	}
-	return filepath.Base(dir)
+	if filepath.Base(dir) == "objects" {
+		return parent
+	}
+	return ""
 }
 
 func objectNameFromRecordTypePath(path string) string {
