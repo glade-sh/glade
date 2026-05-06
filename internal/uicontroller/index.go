@@ -25,6 +25,7 @@ type AuraBundle struct {
 	Files                []UIFile              `json:"files,omitempty"`
 	ControllerReferences []ControllerReference `json:"controllerReferences,omitempty"`
 	ComponentReferences  []AuraComponentRef    `json:"componentReferences,omitempty"`
+	ClientActions        []AuraActionReference `json:"clientActions,omitempty"`
 	ActionReferences     []AuraActionReference `json:"actionReferences,omitempty"`
 }
 
@@ -105,7 +106,7 @@ var (
 	auraControllerAttrRe = regexp.MustCompile(`(?i)\bcontroller\s*=\s*["']([A-Za-z_][A-Za-z0-9_.]*)["']`)
 	auraComponentTagRe   = regexp.MustCompile(`<\s*([A-Za-z_][A-Za-z0-9_]*)\s*:\s*([A-Za-z_][A-Za-z0-9_-]*)`)
 	auraMarkupActionRe   = regexp.MustCompile(`\{!\s*c\.([A-Za-z_][A-Za-z0-9_]*)`)
-	auraJSActionRe       = regexp.MustCompile(`\b(?:component|cmp)\s*\.\s*get\s*\(\s*["']c\.([A-Za-z_][A-Za-z0-9_]*)["']\s*\)`)
+	auraJSActionRe       = regexp.MustCompile(`\b[A-Za-z_$][A-Za-z0-9_$]*\s*\.\s*get\s*\(\s*["']c\.([A-Za-z_][A-Za-z0-9_]*)["']\s*\)`)
 	lwcImportRe          = regexp.MustCompile(`(?m)^\s*import\s+(.+?)\s+from\s+["']([^"']+)["']`)
 	lwcWireRe            = regexp.MustCompile(`(?s)@wire\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*(?:,\s*(\{.*?\}))?\s*\)\s*([A-Za-z_][A-Za-z0-9_]*)?`)
 	reactiveParamRe      = regexp.MustCompile(`["']\$([A-Za-z_][A-Za-z0-9_.]*)["']`)
@@ -171,6 +172,7 @@ func parseAuraBundle(paths []string, apex typesys.Index) (AuraBundle, error) {
 	bundle := AuraBundle{Name: filepath.Base(filepath.Dir(paths[0])), Dir: filepath.Dir(paths[0])}
 	controllers := make(map[string]ControllerReference)
 	components := make(map[string]AuraComponentRef)
+	clientActions := make(map[string]AuraActionReference)
 	actions := make(map[string]AuraActionReference)
 	for _, path := range paths {
 		data, err := os.ReadFile(path)
@@ -194,7 +196,7 @@ func parseAuraBundle(paths []string, apex typesys.Index) (AuraBundle, error) {
 		}
 		for _, match := range auraMarkupActionRe.FindAllStringSubmatchIndex(source, -1) {
 			name := source[match[2]:match[3]]
-			actions[actionKey(path, name, match[0])] = AuraActionReference{Name: name, SourceRef: SourceRef{File: path, Line: lineAt(source, match[0])}}
+			clientActions[actionKey(path, name, match[0])] = AuraActionReference{Name: name, SourceRef: SourceRef{File: path, Line: lineAt(source, match[0])}}
 		}
 		if strings.HasSuffix(strings.ToLower(path), ".js") {
 			for _, match := range auraJSActionRe.FindAllStringSubmatchIndex(source, -1) {
@@ -206,17 +208,13 @@ func parseAuraBundle(paths []string, apex typesys.Index) (AuraBundle, error) {
 	controllerName := firstControllerName(controllers)
 	bundle.ControllerReferences = sortedControllers(controllers)
 	bundle.ComponentReferences = sortedComponents(components)
+	bundle.ClientActions = sortedActions(clientActions)
 	for _, action := range actions {
 		action.ClassName = controllerName
 		action.Resolved, action.ReturnType, action.Parameters = resolveApex(apex, action.ClassName, action.Name)
 		bundle.ActionReferences = append(bundle.ActionReferences, action)
 	}
-	sort.Slice(bundle.ActionReferences, func(i, j int) bool {
-		if bundle.ActionReferences[i].File == bundle.ActionReferences[j].File {
-			return bundle.ActionReferences[i].Line < bundle.ActionReferences[j].Line
-		}
-		return bundle.ActionReferences[i].File < bundle.ActionReferences[j].File
-	})
+	bundle.ActionReferences = sortedActionsFromSlice(bundle.ActionReferences)
 	sort.Slice(bundle.Files, func(i, j int) bool { return bundle.Files[i].Path < bundle.Files[j].Path })
 	return bundle, nil
 }
@@ -464,6 +462,27 @@ func sortedComponents(in map[string]AuraComponentRef) []AuraComponentRef {
 			return out[i].Name < out[j].Name
 		}
 		return out[i].Namespace < out[j].Namespace
+	})
+	return out
+}
+
+func sortedActions(in map[string]AuraActionReference) []AuraActionReference {
+	out := make([]AuraActionReference, 0, len(in))
+	for _, item := range in {
+		out = append(out, item)
+	}
+	return sortedActionsFromSlice(out)
+}
+
+func sortedActionsFromSlice(out []AuraActionReference) []AuraActionReference {
+	sort.Slice(out, func(i, j int) bool {
+		if out[i].File == out[j].File {
+			if out[i].Line == out[j].Line {
+				return out[i].Name < out[j].Name
+			}
+			return out[i].Line < out[j].Line
+		}
+		return out[i].File < out[j].File
 	})
 	return out
 }

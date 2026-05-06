@@ -231,12 +231,13 @@ func TestExecPageReferenceRenderingUnsupported(t *testing.T) {
 
 func TestExecPageReferenceURLStateAccessors(t *testing.T) {
 	program, err := CompileAnonymous(`
-PageReference page = new PageReference('/apex/Trail');
-System.assertEquals('/apex/Trail', page.getUrl());
+PageReference page = new PageReference('/apex/Trail?id=001000000000001&mode=edit&mode=view');
+System.assertEquals('/apex/Trail?id=001000000000001&mode=edit&mode=view', page.getUrl());
 System.assertEquals(false, page.getRedirect());
 page.setRedirect(true);
 System.assertEquals(true, page.getRedirect());
-page.getParameters().put('id', '001000000000001');
+System.assertEquals('001000000000001', page.getParameters().get('id'));
+System.assertEquals('view', page.getParameters().get('mode'));
 page.getHeaders().put('X-Local', 'yes');
 System.assertEquals('001000000000001', page.getParameters().get('id'));
 System.assertEquals('yes', page.getHeaders().get('X-Local'));

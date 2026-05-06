@@ -169,10 +169,14 @@ func TestEnsureStandardObjectAddsSalesCloudStandardObjectShape(t *testing.T) {
 
 	EnsureStandardObject(&org, "Lead")
 	EnsureStandardObject(&org, "Opportunity")
+	EnsureStandardObject(&org, "OpportunityContactRole")
 	EnsureStandardObject(&org, "OrderItem")
 
 	if org.Objects["Lead"].Definition.KeyPrefix != "00Q" {
 		t.Fatalf("Lead key prefix = %q", org.Objects["Lead"].Definition.KeyPrefix)
+	}
+	if !IsKnownStandardObject("OpportunityContactRole") {
+		t.Fatalf("OpportunityContactRole should be recognized as a generated standard object")
 	}
 	if field, ok := org.Objects["Lead"].Definition.Fields["LastName"]; !ok || !field.Required {
 		t.Fatalf("Lead.LastName field = %#v, %v", field, ok)
@@ -182,6 +186,9 @@ func TestEnsureStandardObjectAddsSalesCloudStandardObjectShape(t *testing.T) {
 	}
 	if field, ok := org.Objects["Opportunity"].Definition.Fields["RecordTypeId"]; !ok || field.Type != FieldReference {
 		t.Fatalf("Opportunity.RecordTypeId field = %#v, %v", field, ok)
+	}
+	if field, ok := org.Objects["OpportunityContactRole"].Definition.Fields["ContactId"]; !ok || field.Type != FieldReference || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "Contact" {
+		t.Fatalf("OpportunityContactRole.ContactId field = %#v, %v", field, ok)
 	}
 	if field, ok := org.Objects["OrderItem"].Definition.Fields["OrderId"]; !ok || field.Type != FieldReference || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "Order" {
 		t.Fatalf("OrderItem.OrderId field = %#v, %v", field, ok)

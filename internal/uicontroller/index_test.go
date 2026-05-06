@@ -58,6 +58,9 @@ func TestBuildExtractsAuraControllerReferences(t *testing.T) {
 	if !hasAuraComponent(bundle, "c", "lineItem") || !hasAuraComponent(bundle, "lightning", "button") {
 		t.Fatalf("component refs = %#v", bundle.ComponentReferences)
 	}
+	if !hasClientAction(bundle, "save") {
+		t.Fatalf("client actions = %#v", bundle.ClientActions)
+	}
 	if !hasAuraAction(bundle, "save", true) || !hasAuraAction(bundle, "load", true) {
 		t.Fatalf("action refs = %#v", bundle.ActionReferences)
 	}
@@ -140,6 +143,11 @@ func TestBuildResolvesNamespacedAuraAndLWCControllerReferences(t *testing.T) {
 	writeFile(t, filepath.Join(root, "force-app/main/default/aura/Widget/Widget.cmp"), `<aura:component controller="pkg.WidgetController">
   <lightning:button onclick="{!c.saveWidget}" />
 </aura:component>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/aura/Widget/WidgetController.js"), `({
+  save: function(alias) {
+    alias.get("c.saveWidget");
+  }
+})`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/lwc/widget/widget.js"), `import saveWidget from '@salesforce/apex/pkg.WidgetController.saveWidget';`)
 
 	p, err := project.Load(root)
@@ -175,6 +183,15 @@ func hasAuraComponent(bundle AuraBundle, namespace, name string) bool {
 func hasAuraAction(bundle AuraBundle, name string, resolved bool) bool {
 	for _, ref := range bundle.ActionReferences {
 		if ref.Name == name && ref.Resolved == resolved {
+			return true
+		}
+	}
+	return false
+}
+
+func hasClientAction(bundle AuraBundle, name string) bool {
+	for _, ref := range bundle.ClientActions {
+		if ref.Name == name {
 			return true
 		}
 	}

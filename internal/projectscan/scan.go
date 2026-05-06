@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/open-aer/oaer/internal/automation"
 	metadatapkg "github.com/open-aer/oaer/internal/metadata"
 	"github.com/open-aer/oaer/internal/project"
 	"github.com/open-aer/oaer/internal/resource"
@@ -276,6 +277,7 @@ type scanContext struct {
 	types       map[string]typesys.TypeSymbol
 	present     map[string]bool
 	loadedFiles map[string]bool
+	automation  map[string]bool
 }
 
 var textPatterns = []patternDef{
@@ -382,6 +384,7 @@ func loadScanContext(absRoot string) scanContext {
 	if metadata, err := resource.LoadProject(proj); err == nil {
 		ctx.metadata = metadata
 	}
+	ctx.automation = resolvedAutomationFiles(proj)
 	ctx.loadedFiles = make(map[string]bool)
 	for _, path := range proj.ObjectFiles {
 		ctx.loadedFiles[filepath.Clean(path)] = true
@@ -441,6 +444,36 @@ func (ctx *scanContext) addPresentationAssetFiles(assets []metadatapkg.NamedAsse
 	}
 }
 
+func resolvedAutomationFiles(proj project.Project) map[string]bool {
+	resolved := make(map[string]bool)
+	idx, err := automation.LoadProject(proj)
+	if err != nil {
+		return resolved
+	}
+	diagnosticFiles := make(map[string]bool)
+	for _, diag := range idx.Diagnostics {
+		if diag.File != "" {
+			diagnosticFiles[filepath.Clean(diag.File)] = true
+		}
+	}
+	for _, workflow := range idx.Workflows {
+		clean := filepath.Clean(workflow.File)
+		resolved[clean] = !diagnosticFiles[clean]
+	}
+	for _, flow := range idx.Flows {
+		clean := filepath.Clean(flow.File)
+		resolved[clean] = !diagnosticFiles[clean]
+	}
+	return resolved
+}
+
+func (ctx *scanContext) resolvesAutomationFile(path string) bool {
+	if ctx == nil || ctx.automation == nil {
+		return false
+	}
+	return ctx.automation[filepath.Clean(path)]
+}
+
 func shouldSkipDir(name string) bool {
 	switch name {
 	case ".git", ".sfdx", ".sf", ".claude", "node_modules", ".idea", ".vscode", "__tests__":
@@ -471,15 +504,27 @@ func classifyByPath(rel, path string, ctx *scanContext) []Finding {
 
 	switch {
 	case strings.HasSuffix(lower, ".component"):
+		if ctx != nil && ctx.resolvesVisualforceComponentMetadata(path) {
+			return findings
+		}
 		add("visualforce.component-test", "VisualforceComponent", baseNoExt(path))
 	case strings.Contains(lower, "/aura/"):
+		if isPassiveAuraArtifact(lower) {
+			return findings
+		}
 		if ctx != nil && ctx.resolvesAuraFile(path) {
 			return findings
 		}
 		add("aura.controller-test", "AuraBundle", auraOrLWCBundle(rel, "aura"))
 	case strings.HasSuffix(lower, ".workflow-meta.xml"), strings.HasSuffix(lower, ".workflow"):
+		if ctx != nil && ctx.resolvesAutomationFile(path) {
+			return findings
+		}
 		add("workflow.save-order", "Workflow", baseNoExt(path))
 	case strings.HasSuffix(lower, ".flow-meta.xml"), strings.HasSuffix(lower, ".flow"):
+		if ctx != nil && ctx.resolvesAutomationFile(path) {
+			return findings
+		}
 		add("flow.save-order", "Flow", baseNoExt(path))
 	case strings.HasSuffix(lower, ".email"), strings.HasSuffix(lower, ".email-meta.xml"):
 		if ctx != nil && ctx.resolvesEmailTemplate(baseNoExt(path), path) {
@@ -507,6 +552,10 @@ func hasAnySuffix(value string, suffixes ...string) bool {
 		}
 	}
 	return false
+}
+
+func isPassiveAuraArtifact(path string) bool {
+	return hasAnySuffix(path, ".intf", ".intf-meta.xml", ".tokens", ".tokens-meta.xml")
 }
 
 func isCustomMetadataPath(path string) bool {
@@ -793,6 +842,19 @@ func visualforceComponentHasAttribute(component visualforce.Component, expr stri
 	return false
 }
 
+func (ctx *scanContext) resolvesVisualforceComponentMetadata(path string) bool {
+	if ctx == nil {
+		return false
+	}
+	cleanPath := filepath.Clean(path)
+	name := baseNoExt(path)
+	component, ok := ctx.vf.Component(name)
+	if !ok {
+		return false
+	}
+	return filepath.Clean(component.File) == cleanPath
+}
+
 func (ctx *scanContext) visualforceTypesHaveMethod(primary, extensions []string, expr string) bool {
 	methodName := expr
 	if strings.Contains(methodName, ".") {
@@ -972,31 +1034,143 @@ func (ctx *scanContext) resolvesCustomMetadataObject(symbol string) bool {
 }
 
 func (ctx *scanContext) resolvesSchemaReference(ref string) bool {
-	objectName, fieldName := schemaReferenceParts(ref)
-	if objectName == "" {
+	parts := schemaReferenceTokens(ref)
+	if len(parts) == 0 {
 		return false
 	}
-	definition, ok := ctx.objectDefinition(objectName)
+	definition, ok := ctx.objectDefinition(parts[0])
 	if !ok {
 		return false
 	}
-	if fieldName == "" {
+	return ctx.resolvesSchemaPath(definition, parts[1:])
+}
+
+func schemaReferenceTokens(ref string) []string {
+	raw := strings.Split(strings.ReplaceAll(strings.TrimSpace(ref), "/", "."), ".")
+	parts := make([]string, 0, len(raw))
+	for _, part := range raw {
+		part = strings.TrimSpace(part)
+		if part != "" {
+			parts = append(parts, part)
+		}
+	}
+	return parts
+}
+
+func (ctx *scanContext) resolvesSchemaPath(definition storage.ObjectDefinition, parts []string) bool {
+	if len(parts) == 0 {
 		return true
 	}
-	if _, ok := storage.ResolveFieldName(definition, ctx.org.Namespace, fieldName); ok {
+	if strings.EqualFold(parts[0], "Fields") {
+		if len(parts) == 1 {
+			return true
+		}
+		return ctx.resolvesSchemaFieldPath(definition, parts[1], parts[2:])
+	}
+	if isTerminalSchemaProperty(parts[0]) {
 		return true
 	}
-	stripped := stripAnyNamespaceToken(fieldName)
-	if stripped != fieldName {
-		_, ok := storage.ResolveFieldName(definition, ctx.org.Namespace, stripped)
-		return ok
+	return ctx.resolvesSchemaFieldPath(definition, parts[0], parts[1:])
+}
+
+func (ctx *scanContext) resolvesSchemaFieldPath(definition storage.ObjectDefinition, fieldOrRelationship string, rest []string) bool {
+	if field, ok := ctx.resolveSchemaField(definition, fieldOrRelationship); ok {
+		if len(rest) == 0 || isTerminalSchemaProperty(rest[0]) {
+			return true
+		}
+		return ctx.resolvesReferenceTargets(field.ReferenceTo, rest)
+	}
+	for _, field := range definition.Fields {
+		if !fieldRelationshipTokenMatches(field, fieldOrRelationship) {
+			continue
+		}
+		if len(rest) == 0 {
+			return true
+		}
+		if ctx.resolvesReferenceTargets(field.ReferenceTo, rest) {
+			return true
+		}
+		if len(field.ReferenceTo) == 0 {
+			if related, ok := ctx.objectDefinition(fieldOrRelationship); ok && ctx.resolvesSchemaPath(related, rest) {
+				return true
+			}
+		}
+	}
+	for _, relation := range definition.Relations {
+		if !sameSchemaToken(relation.ParentRelationship, fieldOrRelationship) {
+			continue
+		}
+		if len(rest) == 0 {
+			return true
+		}
+		if ctx.resolvesReferenceTargets(relation.ParentObjects, rest) {
+			return true
+		}
 	}
 	return false
 }
 
+func fieldRelationshipTokenMatches(field storage.Field, token string) bool {
+	if sameSchemaToken(field.RelationshipName, token) {
+		return true
+	}
+	apiName := strings.TrimSpace(field.APIName)
+	if strings.HasSuffix(strings.ToLower(apiName), "id") && len(apiName) > 2 {
+		return sameSchemaToken(apiName[:len(apiName)-2], token)
+	}
+	return false
+}
+
+func (ctx *scanContext) resolveSchemaField(definition storage.ObjectDefinition, fieldName string) (storage.Field, bool) {
+	resolved, ok := storage.ResolveFieldName(definition, ctx.org.Namespace, fieldName)
+	if !ok {
+		stripped := stripAnyNamespaceToken(fieldName)
+		if stripped == fieldName {
+			return storage.Field{}, false
+		}
+		resolved, ok = storage.ResolveFieldName(definition, ctx.org.Namespace, stripped)
+	}
+	if !ok {
+		if strings.EqualFold(fieldName, "Id") || strings.EqualFold(fieldName, "Name") {
+			return storage.Field{APIName: fieldName}, true
+		}
+		return storage.Field{}, false
+	}
+	field, ok := definition.Fields[resolved]
+	if !ok && strings.EqualFold(resolved, "Id") {
+		return storage.Field{APIName: "Id"}, true
+	}
+	return field, ok
+}
+
+func (ctx *scanContext) resolvesReferenceTargets(targets []string, rest []string) bool {
+	if len(targets) == 0 {
+		return false
+	}
+	for _, target := range targets {
+		definition, ok := ctx.objectDefinition(target)
+		if ok && ctx.resolvesSchemaPath(definition, rest) {
+			return true
+		}
+	}
+	return false
+}
+
+func sameSchemaToken(a, b string) bool {
+	a = strings.TrimSpace(a)
+	b = strings.TrimSpace(b)
+	if a == "" || b == "" {
+		return false
+	}
+	if strings.EqualFold(a, b) {
+		return true
+	}
+	return strings.EqualFold(stripAnyNamespaceToken(a), stripAnyNamespaceToken(b))
+}
+
 func schemaReferenceParts(ref string) (string, string) {
-	parts := strings.Split(strings.TrimSpace(ref), ".")
-	if len(parts) == 0 || parts[0] == "" {
+	parts := schemaReferenceTokens(ref)
+	if len(parts) == 0 {
 		return "", ""
 	}
 	objectName := parts[0]
@@ -1017,7 +1191,9 @@ func schemaReferenceParts(ref string) (string, string) {
 
 func isTerminalSchemaProperty(part string) bool {
 	switch strings.ToLower(part) {
-	case "label", "labelplural", "keyprefix":
+	case "bytelength", "calculatedformula", "controller", "defaultvalue", "digits", "inlinehelptext",
+		"label", "labelplural", "length", "localname", "name", "precision", "relationshipname",
+		"scale", "soaptype", "type", "keyprefix":
 		return true
 	default:
 		return false
@@ -1033,7 +1209,7 @@ func (ctx *scanContext) objectDefinition(objectName string) (storage.ObjectDefin
 			return ctx.org.Objects[resolved].Definition, true
 		}
 	}
-	if storage.StandardKeyPrefixes()[objectName] == "" {
+	if !storage.IsKnownStandardObject(objectName) {
 		return storage.ObjectDefinition{}, false
 	}
 	storage.EnsureStandardObject(&ctx.org, objectName)
@@ -1169,9 +1345,11 @@ func supportedAuthSymbol(symbol, evidence string) bool {
 
 func supportedMetadataAPISymbol(symbol, evidence string) bool {
 	for _, needle := range []string{
-		"Metadata.DeployContainer", "Metadata.CustomMetadata", "Metadata.CustomMetadataValue",
-		"Metadata.DeployCallback", "Metadata.DeployResult", "Metadata.DeployCallbackContext",
-		"Metadata.Operations.enqueueDeployment",
+		"Metadata.CustomMetadata", "Metadata.CustomMetadataValue",
+		"Metadata.DeployCallback", "Metadata.DeployCallBack", "Metadata.DeployCallbackContext",
+		"Metadata.DeployContainer", "Metadata.DeployDetails", "Metadata.DeployMessage",
+		"Metadata.DeployResult", "Metadata.DeployStatus", "Metadata.Metadata", "Metadata.MetadataType",
+		"Metadata.Operations.enqueueDeployment", "Metadata.Operations.retrieve",
 	} {
 		if strings.Contains(symbol, needle) || strings.Contains(evidence, needle) {
 			return true

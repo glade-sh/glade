@@ -1938,6 +1938,10 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		return loggingLevelValues(args)
 	case "ApexPages.Severity.values":
 		return apexPagesSeverityValues(args)
+	case "Metadata.DeployStatus.values":
+		return metadataDeployStatusValues(args)
+	case "Metadata.MetadataType.values":
+		return metadataMetadataTypeValues(args)
 	case "RoundingMode.values":
 		return roundingModeValues(args)
 	case "System.isRunningTest", "System.Test.isRunningTest", "Test.isRunningTest":
@@ -2272,6 +2276,11 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		}
 		deployID := "0Af000000000001"
 		return platformScalar("Id", deployID), nil
+	case "Metadata.Operations.retrieve":
+		if len(args) < 2 || len(args) > 3 {
+			return Null, fmt.Errorf("Metadata.Operations.retrieve expects metadata type and full names")
+		}
+		return List(), nil
 	case "UserManagement.initSelfRegistration":
 		if len(args) != 2 {
 			return Null, fmt.Errorf("UserManagement.initSelfRegistration expects 2 arguments")
@@ -7872,6 +7881,12 @@ func (vm *VM) lookup(name string) (Value, error) {
 			return Value{Kind: ValueObject, Type: "LoggingLevel", Text: level}, nil
 		}
 	}
+	if value, ok := metadataDeployStatusStaticValue(name); ok {
+		return value, nil
+	}
+	if value, ok := metadataMetadataTypeStaticValue(name); ok {
+		return value, nil
+	}
 	if strings.HasPrefix(name, "Label.") {
 		if value, ok := vm.lookupLabel(name); ok {
 			return value, nil
@@ -8969,7 +8984,7 @@ func isBuiltinTypeName(name string) bool {
 		return true
 	}
 	switch name {
-	case "Object", "String", "Boolean", "Integer", "Long", "Decimal", "Double", "Date", "Datetime", "Time", "TimeZone", "Blob", "Id", "Type", "URL", "PageReference", "SelectOption", "LoggingLevel", "ApexPages.Severity", "ApexPages.StandardController", "ApexPages.StandardSetController", "RestContext", "RestRequest", "RestResponse", "Callable", "StubProvider", "Metadata.DeployContainer", "Metadata.CustomMetadata", "Metadata.CustomMetadataValue", "Metadata.DeployResult", "Metadata.DeployCallbackContext":
+	case "Object", "String", "Boolean", "Integer", "Long", "Decimal", "Double", "Date", "Datetime", "Time", "TimeZone", "Blob", "Id", "Type", "URL", "PageReference", "SelectOption", "LoggingLevel", "ApexPages.Severity", "ApexPages.StandardController", "ApexPages.StandardSetController", "RestContext", "RestRequest", "RestResponse", "Callable", "StubProvider", "Metadata.Metadata", "Metadata.MetadataType", "Metadata.DeployContainer", "Metadata.CustomMetadata", "Metadata.CustomMetadataValue", "Metadata.DeployCallback", "Metadata.DeployCallBack", "Metadata.DeployResult", "Metadata.DeployStatus", "Metadata.DeployDetails", "Metadata.DeployMessage", "Metadata.DeployCallbackContext":
 		return true
 	default:
 		return false
@@ -9060,9 +9075,24 @@ func newRestRequest() Value {
 func newPageReference(rawURL string) Value {
 	page := Object("PageReference")
 	page.Fields["url"] = String(rawURL)
-	page.Fields["parameters"] = typedMap("Map<String,String>")
+	page.Fields["parameters"] = pageReferenceParameters(rawURL)
 	page.Fields["headers"] = typedMap("Map<String,String>")
 	return page
+}
+
+func pageReferenceParameters(rawURL string) Value {
+	params := typedMap("Map<String,String>")
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		return params
+	}
+	for key, values := range parsed.Query() {
+		if key == "" || len(values) == 0 {
+			continue
+		}
+		params.Map[mapKey(String(key))] = String(values[len(values)-1])
+	}
+	return params
 }
 
 func (vm *VM) newPageReference(rawURL string) Value {
@@ -9933,17 +9963,45 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 			value.Fields[field] = fieldValue
 		}
 		return value, nil
+	case "Metadata.Metadata":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Metadata.Metadata constructor expects 0 arguments")
+		}
+		metadata := Object("Metadata.Metadata")
+		for field, value := range namedArgs {
+			metadata.Fields[field] = value
+		}
+		return metadata, nil
 	case "Metadata.DeployResult":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Metadata.DeployResult constructor expects 0 arguments")
 		}
 		result := Object("Metadata.DeployResult")
-		result.Fields["status"] = String("Succeeded")
+		result.Fields["status"] = Value{Kind: ValueObject, Type: "Metadata.DeployStatus", Text: "Succeeded", Fields: map[string]Value{"ordinal": Int(0)}}
 		result.Fields["success"] = Bool(true)
+		result.Fields["details"] = metadataDeployDetailsObject()
 		for field, value := range namedArgs {
 			result.Fields[field] = value
 		}
 		return result, nil
+	case "Metadata.DeployDetails":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Metadata.DeployDetails constructor expects 0 arguments")
+		}
+		details := metadataDeployDetailsObject()
+		for field, value := range namedArgs {
+			details.Fields[field] = value
+		}
+		return details, nil
+	case "Metadata.DeployMessage":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Metadata.DeployMessage constructor expects 0 arguments")
+		}
+		message := Object("Metadata.DeployMessage")
+		for field, value := range namedArgs {
+			message.Fields[field] = value
+		}
+		return message, nil
 	case "Metadata.DeployCallbackContext":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Metadata.DeployCallbackContext constructor expects 0 arguments")
@@ -11229,6 +11287,8 @@ func typeValueName(value Value) string {
 
 var loggingLevelNames = []string{"NONE", "ERROR", "WARN", "INFO", "DEBUG", "FINE", "FINER", "FINEST"}
 var apexPagesSeverityNames = []string{"CONFIRM", "INFO", "WARNING", "ERROR", "FATAL"}
+var metadataDeployStatusNames = []string{"Succeeded", "SUCCEEDED", "Failed", "FAILED", "InProgress", "INPROGRESS", "Pending", "PENDING", "Canceling", "CANCELING", "Canceled", "CANCELED"}
+var metadataMetadataTypeNames = []string{"CustomMetadata"}
 
 func isLoggingLevelName(level string) bool {
 	for _, name := range loggingLevelNames {
@@ -13031,6 +13091,49 @@ func apexPagesSeverityValues(args []Value) (Value, error) {
 	return List(values...), nil
 }
 
+func metadataDeployStatusStaticValue(name string) (Value, bool) {
+	return namedEnumStaticValue("Metadata.DeployStatus", metadataDeployStatusNames, name)
+}
+
+func metadataMetadataTypeStaticValue(name string) (Value, bool) {
+	return namedEnumStaticValue("Metadata.MetadataType", metadataMetadataTypeNames, name)
+}
+
+func namedEnumStaticValue(typeName string, names []string, name string) (Value, bool) {
+	prefix := typeName + "."
+	if !strings.HasPrefix(name, prefix) {
+		return Null, false
+	}
+	member := strings.TrimPrefix(name, prefix)
+	for i, candidate := range names {
+		if member == candidate {
+			return Value{Kind: ValueObject, Type: typeName, Text: member, Fields: map[string]Value{"ordinal": Int(int64(i))}}, true
+		}
+	}
+	return Null, false
+}
+
+func metadataDeployStatusValues(args []Value) (Value, error) {
+	return namedEnumValues("Metadata.DeployStatus", metadataDeployStatusNames, args)
+}
+
+func metadataMetadataTypeValues(args []Value) (Value, error) {
+	return namedEnumValues("Metadata.MetadataType", metadataMetadataTypeNames, args)
+}
+
+func namedEnumValues(typeName string, names []string, args []Value) (Value, error) {
+	if len(args) != 0 {
+		return Null, fmt.Errorf("%s.values expects 0 arguments", typeName)
+	}
+	values := make([]Value, 0, len(names))
+	for i, name := range names {
+		value := Value{Kind: ValueObject, Type: typeName, Text: name}
+		value.Fields = map[string]Value{"ordinal": Int(int64(i))}
+		values = append(values, value)
+	}
+	return List(values...), nil
+}
+
 func loggingLevelValues(args []Value) (Value, error) {
 	if len(args) != 0 {
 		return Null, fmt.Errorf("LoggingLevel.values expects 0 arguments")
@@ -13057,6 +13160,20 @@ func (vm *VM) callEnumStaticMember(typeName, method string, args []Value) (Value
 			return Null, false, nil
 		}
 		value, err := roundingModeValues(args)
+		return value, true, err
+	}
+	if typeName == "Metadata.DeployStatus" {
+		if method != "values" {
+			return Null, false, nil
+		}
+		value, err := metadataDeployStatusValues(args)
+		return value, true, err
+	}
+	if typeName == "Metadata.MetadataType" {
+		if method != "values" {
+			return Null, false, nil
+		}
+		value, err := metadataMetadataTypeValues(args)
 		return value, true, err
 	}
 	class, ok := vm.Classes[typeName]
@@ -13137,6 +13254,12 @@ func (vm *VM) callEnumMember(receiver Value, method string, args []Value) (Value
 	if receiver.Type == "RoundingMode" {
 		return callNamedEnumMember("RoundingMode", roundingModeNames, receiver, method, args)
 	}
+	if receiver.Type == "Metadata.DeployStatus" {
+		return callNamedEnumMember("Metadata.DeployStatus", metadataDeployStatusNames, receiver, method, args)
+	}
+	if receiver.Type == "Metadata.MetadataType" {
+		return callNamedEnumMember("Metadata.MetadataType", metadataMetadataTypeNames, receiver, method, args)
+	}
 	class, ok := vm.Classes[receiver.Type]
 	if !ok || len(class.EnumValues) == 0 {
 		return Null, false, nil
@@ -13157,6 +13280,14 @@ func (vm *VM) callEnumMember(receiver Value, method string, args []Value) (Value
 	default:
 		return Null, false, nil
 	}
+}
+
+func metadataDeployDetailsObject() Value {
+	details := Object("Metadata.DeployDetails")
+	details.Fields["componentFailures"] = List()
+	details.Fields["componentSuccesses"] = List()
+	details.Fields["runTestResult"] = Null
+	return details
 }
 
 func callNamedEnumMember(typeName string, names []string, receiver Value, method string, args []Value) (Value, bool, error) {

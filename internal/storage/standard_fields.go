@@ -170,6 +170,13 @@ func standardFieldsForObject(objectName string) []Field {
 			{APIName: "OtherCountry", Label: "Other Country", Type: FieldString},
 			{APIName: "OtherCountryCode", Label: "Other Country Code", Type: FieldString},
 		}
+	case stringsEqualFold(objectName, "OpportunityContactRole"):
+		return []Field{
+			{APIName: "ContactId", Label: "Contact ID", Type: FieldReference, ReferenceTo: []string{"Contact"}, RelationshipName: "Contact"},
+			{APIName: "OpportunityId", Label: "Opportunity ID", Type: FieldReference, ReferenceTo: []string{"Opportunity"}, RelationshipName: "Opportunity", Required: true},
+			{APIName: "Role", Label: "Role", Type: FieldPicklist},
+			{APIName: "IsPrimary", Label: "Primary", Type: FieldBoolean},
+		}
 	case stringsEqualFold(objectName, "EmailTemplate"):
 		return []Field{
 			{APIName: "ApiVersion", Label: "API Version", Type: FieldDecimal},
@@ -258,6 +265,22 @@ func EnsureStandardObject(org *OrgState, objectName string) {
 	}
 	EnsureStandardObjectFields(&state.Definition)
 	org.Objects[objectName] = state
+}
+
+func IsKnownStandardObject(objectName string) bool {
+	if objectName == "" {
+		return false
+	}
+	if StandardKeyPrefixes()[objectName] != "" {
+		return true
+	}
+	if _, ok := standardObjectCatalogEntryFor(objectName); ok {
+		return true
+	}
+	if stringsHasSuffixFold(objectName, "__c") || stringsHasSuffixFold(objectName, "__mdt") {
+		return false
+	}
+	return len(standardFieldsForObject(objectName)) > 0
 }
 
 func mergeStandardObjectDefinition(definition *ObjectDefinition, features []string) {

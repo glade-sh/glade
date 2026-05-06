@@ -5,8 +5,8 @@
   "summary": {
     "auraBundles": 1,
     "lwcBundles": 1,
-    "apexMethods": 5,
-    "resolvedApex": 5,
+    "apexMethods": 4,
+    "resolvedApex": 4,
     "unresolvedApex": 0,
     "lwcImports": 9,
     "wires": 2
@@ -18,13 +18,6 @@
       "methodName": "getWidget",
       "resolved": true,
       "returnType": "String"
-    },
-    {
-      "framework": "aura",
-      "className": "WidgetController",
-      "methodName": "saveWidget",
-      "resolved": true,
-      "returnType": "void"
     },
     {
       "framework": "aura",
@@ -55,13 +48,6 @@
       "className": "WidgetController",
       "resolved": true,
       "returnType": "String"
-    },
-    {
-      "bundle": "Widget",
-      "name": "saveWidget",
-      "className": "WidgetController",
-      "resolved": true,
-      "returnType": "void"
     },
     {
       "bundle": "Widget",

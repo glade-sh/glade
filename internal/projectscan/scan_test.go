@@ -14,7 +14,7 @@ func TestScanFindsProjectGaps(t *testing.T) {
   <apex:composition template="{!$Site.Template}" />
   {!$Label.EditTitle}
 </apex:page>`)
-	writeFile(t, filepath.Join(root, "src/components/Picker.component"), `<apex:component><apex:attribute name="value" type="String"/></apex:component>`)
+	writeFile(t, filepath.Join(root, "src/components/Picker.component"), `<apex:component><`)
 	writeFile(t, filepath.Join(root, "src/aura/Thing/Thing.cmp"), `<aura:component controller="ThingController"/>`)
 	writeFile(t, filepath.Join(root, "src/lwc/currencyMenu/currencyMenu.js"), `import { LightningElement, wire } from 'lwc';
 import getCurrencyInformation from '@salesforce/apex/CurrencyMenuController.getCurrencyInformation';
@@ -25,8 +25,8 @@ import MISSING_SCHEMA from '@salesforce/schema/Missing__c.Name';
 import { NavigationMixin } from 'lightning/navigation';
 import { getObjectInfo } from 'lightning/uiObjectInfoApi';
 @wire(getCurrencyInformation, { currencyCode: '$guestCurrencyCode' }) value;`)
-	writeFile(t, filepath.Join(root, "src/workflows/Account.workflow"), `<Workflow><rules><fullName>Rule</fullName></rules></Workflow>`)
-	writeFile(t, filepath.Join(root, "src/flows/Update.flow"), `<Flow><processType>Workflow</processType></Flow>`)
+	writeFile(t, filepath.Join(root, "src/workflows/Account.workflow"), `<Workflow><rules><fullName>Rule</fullName><active>true</active><actions><name>FollowUp</name><type>Task</type></actions></rules></Workflow>`)
+	writeFile(t, filepath.Join(root, "src/flows/Update.flow"), `<Flow><processType>Workflow</processType><status>Active</status><start><object>Account</object></start><screens><name>Input</name></screens></Flow>`)
 	writeFile(t, filepath.Join(root, "src/labels/CustomLabels.labels"), `<CustomLabels/>`)
 	writeFile(t, filepath.Join(root, "src/email/Local/Welcome.email"), `Hello {!Contact.Name}`)
 	writeFile(t, filepath.Join(root, "other/email/Unsupported.email"), `Hello {!Contact.Name}`)
@@ -44,6 +44,11 @@ import { getObjectInfo } from 'lightning/uiObjectInfoApi';
     PageReference p = Page.Edit;
     System.debug(Label.Save);
     Metadata.DeployContainer c = new Metadata.DeployContainer();
+    Metadata.DeployResult deployResult = new Metadata.DeployResult();
+    deployResult.status = Metadata.DeployStatus.SUCCEEDED;
+    deployResult.details = new Metadata.DeployDetails();
+    Metadata.DeployMessage deployMessage = new Metadata.DeployMessage();
+    List<Metadata.Metadata> records = Metadata.Operations.retrieve(Metadata.MetadataType.CustomMetadata, new List<String>{'Thing__mdt.Default'});
     System.debug(Site.getAdminEmail());
     System.debug(ConnectApi.Organization.getSettings().orgId);
     Auth.SessionManagement.getCurrentSession();
@@ -175,15 +180,29 @@ func TestScanSuppressesResolvedStandardSchemaReferences(t *testing.T) {
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/lwc/resolved/resolved.js"), `import ACCOUNT_NAME from '@salesforce/schema/Account.Name';
 import LEAD_LAST_NAME from '@salesforce/schema/Lead.LastName';
+import CONTACT_ACCOUNT_NAME from '@salesforce/schema/Contact.Account.Name';
+import OCR_CONTACT_EMAIL from '@salesforce/schema/OpportunityContactRole.Contact.Email';
+import OCR_OPPORTUNITY_STAGE from '@salesforce/schema/OpportunityContactRole.Opportunity.StageName';
 import BATCH_OBJECT from '@salesforce/schema/Batch__c';
+import BATCH_PARENT_NAME from '@salesforce/schema/Batch__c.Parent__r.Name';
+import PAYMENT_AMOUNT from '@salesforce/schema/pkg__Payment__c.pkg__Amount__c';
+import PAYMENT_BATCH_NAME from '@salesforce/schema/pkg__Payment__c.pkg__Batch__r.Name';
 import MISSING_FIELD from '@salesforce/schema/Account.NotAField__c';
+import MISSING_RELATIONSHIP from '@salesforce/schema/Batch__c.Missing__r.Name';
 `)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Batch__c/Batch__c.object-meta.xml"), `<CustomObject><label>Batch</label><pluralLabel>Batches</pluralLabel></CustomObject>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Batch__c/fields/Amount__c.field-meta.xml"), `<CustomField><fullName>Amount__c</fullName><label>Amount</label><type>Currency</type></CustomField>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Batch__c/fields/Parent__c.field-meta.xml"), `<CustomField><fullName>Parent__c</fullName><label>Parent</label><type>Lookup</type><referenceTo>Account</referenceTo><relationshipName>Parent__r</relationshipName></CustomField>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/pkg__Payment__c/pkg__Payment__c.object-meta.xml"), `<CustomObject><label>Payment</label><pluralLabel>Payments</pluralLabel></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/pkg__Payment__c/fields/pkg__Amount__c.field-meta.xml"), `<CustomField><fullName>pkg__Amount__c</fullName><label>Amount</label><type>Currency</type></CustomField>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/pkg__Payment__c/fields/pkg__Batch__c.field-meta.xml"), `<CustomField><fullName>pkg__Batch__c</fullName><label>Batch</label><type>Lookup</type><referenceTo>Batch__c</referenceTo><relationshipName>pkg__Batch__r</relationshipName></CustomField>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/pages/Resolved.page"), `<apex:page>
 {!$ObjectType.Opportunity.Fields.StageName.Label}
 {!$ObjectType.Batch__c.Fields.Name.InlineHelpText}
 {!$ObjectType.Batch__c.Fields.pkg__Amount__c.Label}
+{!$ObjectType.Batch__c.Parent__r.Name}
+{!$ObjectType.OpportunityContactRole.Fields.ContactId.Label}
+{!$ObjectType.OpportunityContactRole.Contact.Email}
 {!$ObjectType.Batch__c.Fields[fieldName].Label}
 {!$Component.localPanel}
 {!$ObjectType.Account.Fields.NotAField__c.Label}
@@ -200,8 +219,26 @@ import MISSING_FIELD from '@salesforce/schema/Account.NotAField__c';
 	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "Lead.LastName") {
 		t.Fatalf("resolved Lead.LastName schema import should not be reported")
 	}
-	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "Batch__c") {
+	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "Contact.Account.Name") {
+		t.Fatalf("resolved Contact.Account.Name relationship schema import should not be reported")
+	}
+	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "OpportunityContactRole.Contact.Email") {
+		t.Fatalf("resolved OpportunityContactRole.Contact.Email schema import should not be reported")
+	}
+	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "OpportunityContactRole.Opportunity.StageName") {
+		t.Fatalf("resolved OpportunityContactRole.Opportunity.StageName schema import should not be reported")
+	}
+	if hasLineFinding(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "Batch__c") {
 		t.Fatalf("resolved Batch__c schema import should not be reported")
+	}
+	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "Batch__c.Parent__r.Name") {
+		t.Fatalf("resolved custom relationship schema import should not be reported")
+	}
+	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "pkg__Payment__c.pkg__Amount__c") {
+		t.Fatalf("resolved package object field schema import should not be reported")
+	}
+	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "pkg__Payment__c.pkg__Batch__r.Name") {
+		t.Fatalf("resolved package relationship schema import should not be reported")
 	}
 	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/pages/Resolved.page", "Opportunity.Fields.StageName") {
 		t.Fatalf("resolved Opportunity.StageName object type reference should not be reported")
@@ -215,6 +252,15 @@ import MISSING_FIELD from '@salesforce/schema/Account.NotAField__c';
 	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/pages/Resolved.page", "Batch__c.Fields") {
 		t.Fatalf("resolved dynamic custom object field map reference should not be reported")
 	}
+	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/pages/Resolved.page", "Batch__c.Parent__r.Name") {
+		t.Fatalf("resolved Visualforce relationship object type reference should not be reported")
+	}
+	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/pages/Resolved.page", "OpportunityContactRole.Fields.ContactId") {
+		t.Fatalf("resolved standard OpportunityContactRole field reference should not be reported")
+	}
+	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/pages/Resolved.page", "OpportunityContactRole.Contact.Email") {
+		t.Fatalf("resolved standard OpportunityContactRole relationship reference should not be reported")
+	}
 	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/pages/Resolved.page", "$Component.localPanel") {
 		t.Fatalf("$Component client-side id reference should not be reported")
 	}
@@ -223,6 +269,9 @@ import MISSING_FIELD from '@salesforce/schema/Account.NotAField__c';
 	}
 	if !hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/pages/Resolved.page", "Account.Fields.NotAField__c") {
 		t.Fatalf("missing unresolved ObjectType field finding")
+	}
+	if !hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "Batch__c.Missing__r.Name") {
+		t.Fatalf("missing unresolved relationship schema finding")
 	}
 }
 
@@ -247,6 +296,9 @@ export default class Passive extends LightningElement {}
 	writeFile(t, filepath.Join(root, "force-app/main/default/components/ActionInput.component"), `<apex:component>
   <apex:attribute name="actSupAction" type="ApexPages.Action" description="action" />
   <apex:actionSupport event="onchange" action="{!actSupAction}" />
+</apex:component>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/components/Indexed.component"), `<apex:component controller="ExistingController">
+  <apex:attribute name="value" type="String" assignTo="{!value}" />
 </apex:component>`)
 
 	report, err := Scan(root)
@@ -273,6 +325,9 @@ export default class Passive extends LightningElement {}
 	}
 	if hasLineFinding(report, "visualforce.controller-test", "force-app/main/default/components/ActionInput.component", "{!actSupAction}") {
 		t.Fatalf("resolved Visualforce action attribute should not be reported")
+	}
+	if hasLineFindingContaining(report, "visualforce.component-test", "force-app/main/default/components/Indexed.component", "Indexed") {
+		t.Fatalf("parseable Visualforce component metadata should be indexed, not reported as a component blocker")
 	}
 	if !hasLineFinding(report, "visualforce.controller-test", "force-app/main/default/pages/Controller.page", "Controller") {
 		t.Fatalf("Visualforce controller attribute should still be reported")
@@ -366,6 +421,20 @@ func TestScanSuppressesResolvedAuraControllerBundles(t *testing.T) {
 	writeFile(t, filepath.Join(root, "force-app/main/default/aura/Missing/Missing.cmp"), `<aura:component controller="MissingController">
   <aura:handler name="init" value="{!this}" action="{!c.missing}" />
 </aura:component>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/aura/ClientOnly/ClientOnly.cmp"), `<aura:component controller="WidgetController">
+  <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+  <lightning:button onclick="{!c.handleClick}" />
+</aura:component>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/aura/ClientOnly/ClientOnlyController.js"), `({
+  doInit: function(component, event, helper) {},
+  handleClick: function(component, event, helper) {}
+})`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/aura/MissingServerAction/MissingServerAction.cmp"), `<aura:component controller="WidgetController" />`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/aura/MissingServerAction/MissingServerActionHelper.js"), `({
+  load: function(localCmp) {
+    localCmp.get("c.missingServer");
+  }
+})`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/lwc/widget/widget.js"), `import saveWidget from '@salesforce/apex/pkg.WidgetController.saveWidget';
 import missing from '@salesforce/apex/pkg.WidgetController.missing';
 `)
@@ -382,11 +451,34 @@ import missing from '@salesforce/apex/pkg.WidgetController.missing';
 	if !hasFindingContaining(report, "aura.controller-test", "force-app/main/default/aura/Missing/Missing.cmp", "Missing") {
 		t.Fatalf("missing unresolved Aura bundle finding")
 	}
+	if hasFindingContaining(report, "aura.controller-test", "force-app/main/default/aura/ClientOnly/ClientOnly.cmp", "ClientOnly") ||
+		hasFindingContaining(report, "aura.controller-test", "force-app/main/default/aura/ClientOnly/ClientOnlyController.js", "ClientOnly") {
+		t.Fatalf("client-only Aura actions should not be reported as Apex blockers: %#v", report.Findings)
+	}
+	if !hasFindingContaining(report, "aura.controller-test", "force-app/main/default/aura/MissingServerAction/MissingServerActionHelper.js", "MissingServerAction") {
+		t.Fatalf("missing unresolved Aura server action bundle finding")
+	}
 	if hasLineFinding(report, "lwc.controller-test", "force-app/main/default/lwc/widget/widget.js", "pkg.WidgetController.saveWidget") {
 		t.Fatalf("resolved namespaced LWC Apex import should not be reported")
 	}
 	if !hasLineFinding(report, "lwc.controller-test", "force-app/main/default/lwc/widget/widget.js", "pkg.WidgetController.missing") {
 		t.Fatalf("missing unresolved namespaced LWC Apex import finding")
+	}
+}
+
+func TestScanDoesNotClassifyPassiveAuraArtifactsAsControllerBlockers(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "force-app/main/default/aura/dataProviderInterface/dataProviderInterface.intf"), `<aura:interface />`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/aura/dataProviderInterface/dataProviderInterface.intf-meta.xml"), `<AuraDefinitionBundle/>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/aura/defaultTokens/defaultTokens.tokens"), `<aura:tokens/>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/aura/defaultTokens/defaultTokens.tokens-meta.xml"), `<AuraDefinitionBundle/>`)
+
+	report, err := Scan(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if findSurface(report, "aura.controller-test") != nil {
+		t.Fatalf("passive Aura artifacts should not be controller-test blockers: %#v", report.Findings)
 	}
 }
 
@@ -468,6 +560,7 @@ func TestScanSuppressesResolvedLabelReferences(t *testing.T) {
 	writeFile(t, filepath.Join(root, "force-app/main/default/labels/CustomLabels.labels"), `<CustomLabels>
   <labels><fullName>Save</fullName><value>Save</value></labels>
   <labels><fullName>Greeting</fullName><value>Hello</value></labels>
+  <labels><fullName>pkg__Managed</fullName><value>Managed</value></labels>
 </CustomLabels>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/translations/fr.translation-meta.xml"), `<Translations>
   <customLabels><name>Greeting</name><label>Bonjour</label></customLabels>
@@ -477,12 +570,14 @@ func TestScanSuppressesResolvedLabelReferences(t *testing.T) {
     System.debug(System.Label.Save);
     System.debug(Label.Greeting);
     System.debug(Label.Save.replace('{0}', 'Done'));
+    System.debug(Label.pkg.Managed);
     System.debug(Label.Missing);
     System.debug(Label.Missing.replace('{0}', 'Done'));
   }
 }`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/lwc/labels/labels.js"), `import SAVE from '@salesforce/label/c.Save';
 import MISSING from '@salesforce/label/c.Missing';
+import MANAGED from '@salesforce/label/pkg.Managed';
 `)
 	writeFile(t, filepath.Join(root, "force-app/main/default/pages/Labels.page"), `<apex:page>
 {!$Label.Save}
@@ -506,8 +601,14 @@ import MISSING from '@salesforce/label/c.Missing';
 	if hasLineFindingContaining(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "Save.replace") {
 		t.Fatalf("resolved label String method chain should not be reported")
 	}
+	if hasLineFinding(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "pkg.Managed") {
+		t.Fatalf("resolved managed-package label fallback should not be reported")
+	}
 	if hasLineFindingContaining(report, "labels.localization", "force-app/main/default/lwc/labels/labels.js", "c.Save") {
 		t.Fatalf("resolved LWC c.Save label should not be reported")
+	}
+	if hasLineFindingContaining(report, "labels.localization", "force-app/main/default/lwc/labels/labels.js", "pkg.Managed") {
+		t.Fatalf("resolved LWC managed-package label fallback should not be reported")
 	}
 	if hasLineFindingContaining(report, "labels.localization", "force-app/main/default/pages/Labels.page", "$Label.Save") {
 		t.Fatalf("resolved Visualforce $Label.Save should not be reported")
@@ -528,6 +629,33 @@ import MISSING from '@salesforce/label/c.Missing';
 		if finding.MetadataType == "CustomLabels" {
 			t.Fatalf("label metadata files should not be reported as unsupported: %#v", finding)
 		}
+	}
+}
+
+func TestScanSuppressesModeledDeclarativeAutomation(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Widget__c/Widget__c.object-meta.xml"), `<CustomObject><label>Widget</label><pluralLabel>Widgets</pluralLabel><fields><fullName>Status__c</fullName><label>Status</label><type>Text</type><length>40</length></fields></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/workflows/Widget__c.workflow-meta.xml"), `<Workflow>
+  <fieldUpdates><fullName>SetStatus</fullName><field>Status__c</field><literalValue>Workflow</literalValue></fieldUpdates>
+  <rules><fullName>Mark</fullName><active>true</active><actions><name>SetStatus</name><type>FieldUpdate</type></actions></rules>
+</Workflow>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/flows/Widget_Status.flow-meta.xml"), `<Flow>
+  <processType>Workflow</processType>
+  <status>Active</status>
+  <start><object>Widget__c</object></start>
+  <assignments><name>SetFlow</name><assignmentItems><assignToReference>$Record.Status__c</assignToReference><operator>Assign</operator><value><stringValue>Flow</stringValue></value></assignmentItems></assignments>
+</Flow>`)
+
+	report, err := Scan(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if findSurface(report, "workflow.save-order") != nil {
+		t.Fatalf("modeled workflow field update should not be reported: %#v", report.Findings)
+	}
+	if findSurface(report, "flow.save-order") != nil {
+		t.Fatalf("modeled flow assignment should not be reported: %#v", report.Findings)
 	}
 }
 

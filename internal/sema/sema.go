@@ -2696,8 +2696,11 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 			return semaCollectionSignature{returnType: "void", params: [][]string{{"String", "String"}}}, true
 		}
 	case "metadata.operations":
-		if method == "enqueuedeployment" {
+		switch method {
+		case "enqueuedeployment":
 			return semaCollectionSignature{returnType: "String", params: [][]string{{"Metadata.DeployContainer", "Metadata.DeployCallback"}}}, true
+		case "retrieve":
+			return semaCollectionSignature{returnType: "List<Metadata.Metadata>", params: [][]string{{"Metadata.MetadataType", "List<String>"}, {"Metadata.MetadataType", "List<String>", "Boolean"}}}, true
 		}
 	case "metadata.deploycontainer":
 		if method == "addmetadata" {
@@ -3665,9 +3668,15 @@ var platformTypes = []string{
 	"Metadata.CustomMetadata",
 	"Metadata.CustomMetadataValue",
 	"Metadata.DeployCallback",
+	"Metadata.DeployCallBack",
 	"Metadata.DeployCallbackContext",
 	"Metadata.DeployContainer",
+	"Metadata.DeployDetails",
+	"Metadata.DeployMessage",
 	"Metadata.DeployResult",
+	"Metadata.DeployStatus",
+	"Metadata.Metadata",
+	"Metadata.MetadataType",
 	"Metadata.Operations",
 	"MultiStaticResourceCalloutMock",
 	"Network",

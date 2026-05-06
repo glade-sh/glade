@@ -155,7 +155,7 @@ func LookupLabel(registry storage.MetadataRegistry, namespace, name string) (str
 	name = strings.TrimSpace(name)
 	if namespace == "" {
 		for _, label := range registry.Labels {
-			if strings.EqualFold(label.Name, name) {
+			if labelNameMatches(label.Name, name) {
 				return label.Value, true
 			}
 		}
@@ -163,7 +163,7 @@ func LookupLabel(registry storage.MetadataRegistry, namespace, name string) (str
 	}
 	for i := len(registry.Labels) - 1; i >= 0; i-- {
 		label := registry.Labels[i]
-		if !strings.EqualFold(label.Name, name) {
+		if !labelNameMatches(label.Name, name) {
 			continue
 		}
 		if namespace != "" && label.Namespace != "" && !strings.EqualFold(label.Namespace, namespace) {
@@ -172,6 +172,20 @@ func LookupLabel(registry storage.MetadataRegistry, namespace, name string) (str
 		return label.Value, true
 	}
 	return "", false
+}
+
+func labelNameMatches(candidate, requested string) bool {
+	candidate = strings.TrimSpace(candidate)
+	requested = strings.TrimSpace(requested)
+	if strings.EqualFold(candidate, requested) {
+		return true
+	}
+	strippedCandidate := stripAnyNamespaceToken(candidate)
+	if strippedCandidate != candidate && strings.EqualFold(strippedCandidate, requested) {
+		return true
+	}
+	strippedRequested := stripAnyNamespaceToken(requested)
+	return strippedRequested != requested && strings.EqualFold(candidate, strippedRequested)
 }
 
 func ResolveEndpoint(registry storage.MetadataRegistry, endpoint string) (string, bool) {

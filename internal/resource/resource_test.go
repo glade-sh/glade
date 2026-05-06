@@ -14,6 +14,7 @@ func TestLoadProjectResourcesLabelsAndEndpoints(t *testing.T) {
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"pkg"}`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/labels/CustomLabels.labels"), `<CustomLabels>
   <labels><fullName>Greeting</fullName><value>Hello</value><language>en_US</language></labels>
+  <labels><fullName>pkg__ManagedGreeting</fullName><value>Hello managed</value><language>en_US</language></labels>
 </CustomLabels>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/translations/fr.translation-meta.xml"), `<Translations>
   <customLabels><name>Greeting</name><label>Bonjour</label></customLabels>
@@ -44,6 +45,9 @@ func TestLoadProjectResourcesLabelsAndEndpoints(t *testing.T) {
 	}
 	if got, ok := LookupLabel(registry, "pkg", "Greeting"); !ok || got != "Bonjour" {
 		t.Fatalf("translated label = %q, %v", got, ok)
+	}
+	if got, ok := LookupLabel(registry, "pkg", "ManagedGreeting"); !ok || got != "Hello managed" {
+		t.Fatalf("managed label fallback = %q, %v", got, ok)
 	}
 	if got, ok := URLForStaticResource(registry, "Site", "css/app.css"); !ok || got != "/resource/Site/css/app.css" {
 		t.Fatalf("resource url = %q, %v", got, ok)

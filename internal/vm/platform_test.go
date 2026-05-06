@@ -194,6 +194,15 @@ System.assertEquals('0Af000000000001', (String)deploymentId);
 System.assertEquals(1, container.metadata.size());
 System.assertEquals(1, item.values.size());
 System.assertEquals('Enabled__c', ((Metadata.CustomMetadataValue)item.values[0]).field);
+Metadata.DeployResult result = new Metadata.DeployResult();
+result.status = Metadata.DeployStatus.SUCCEEDED;
+System.assertEquals('SUCCEEDED', result.status.name());
+System.assertEquals('SUCCEEDED', String.valueOf(result.status));
+result.details = new Metadata.DeployDetails();
+result.details.componentFailures.add(new Metadata.DeployMessage());
+System.assertEquals(1, result.details.componentFailures.size());
+List<Metadata.Metadata> records = Metadata.Operations.retrieve(Metadata.MetadataType.CustomMetadata, new List<String>{'Feature.Default'});
+System.assertEquals(0, records.size());
 `)
 	if err != nil {
 		t.Fatal(err)
