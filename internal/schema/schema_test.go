@@ -77,6 +77,42 @@ func TestLoadProject(t *testing.T) {
 	}
 }
 
+func TestLoadProjectNormalizesLegacyObjectAndCustomMetadata(t *testing.T) {
+	root := t.TempDir()
+	objectPath := filepath.Join(root, "src/objects/Feature__mdt.object")
+	targetPath := filepath.Join(root, "src/objects/Target__mdt.object")
+	defaultPath := filepath.Join(root, "src/customMetadata/Feature.Default.md")
+	modernPath := filepath.Join(root, "src/customMetadata/Feature.Modern.md-meta.xml")
+	writeFile(t, objectPath, `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+<label>Feature</label>
+<fields><fullName>Enabled__c</fullName><label>Enabled</label><type>Checkbox</type><defaultValue>false</defaultValue></fields>
+<fields><fullName>Target__c</fullName><label>Target</label><type>MetadataRelationship</type><referenceTo>Target__mdt</referenceTo><relationshipName>Target__r</relationshipName></fields>
+<recordTypes><fullName>Internal</fullName><active>true</active></recordTypes>
+<validationRules><fullName>HasTarget</fullName><active>true</active><errorMessage>target required</errorMessage></validationRules>
+</CustomObject>`)
+	writeFile(t, targetPath, `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Target</label></CustomObject>`)
+	writeFile(t, defaultPath, `<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata"><label>Default Label</label><protected>true</protected><values><field>Enabled__c</field><value>true</value></values><values><field>Target__c</field><value>Target</value></values></CustomMetadata>`)
+	writeFile(t, modernPath, `<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata"><values><field>Enabled__c</field><value>false</value></values></CustomMetadata>`)
+
+	s, err := LoadProject(project.Project{ObjectFiles: []string{objectPath, targetPath}, CustomMetadataFiles: []string{modernPath, defaultPath}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(s.Objects) != 2 || s.Objects[0].Name != "Feature__mdt" {
+		t.Fatalf("objects = %#v", s.Objects)
+	}
+	feature := s.Objects[0]
+	if len(feature.Fields) != 2 || feature.Fields[1].Name != "Target__c" || feature.Fields[1].Type != "MetadataRelationship" || feature.Fields[1].RelationshipName != "Target__r" {
+		t.Fatalf("legacy fields = %#v", feature.Fields)
+	}
+	if len(feature.RecordTypes) != 1 || feature.RecordTypes[0].DeveloperName != "Internal" || len(feature.ValidationRules) != 1 || feature.ValidationRules[0].Name != "HasTarget" {
+		t.Fatalf("legacy children = %#v %#v", feature.RecordTypes, feature.ValidationRules)
+	}
+	if len(s.CustomMetadataRecords) != 2 || s.CustomMetadataRecords[0].FullName != "Feature.Default" || s.CustomMetadataRecords[0].ObjectName != "Feature__mdt" || s.CustomMetadataRecords[0].DeveloperName != "Default" || !s.CustomMetadataRecords[0].Protected {
+		t.Fatalf("custom metadata records = %#v", s.CustomMetadataRecords)
+	}
+}
+
 func fieldsByName(fields []Field) map[string]Field {
 	out := make(map[string]Field, len(fields))
 	for _, field := range fields {

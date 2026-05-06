@@ -32,9 +32,59 @@ type OrgState struct {
 	OrgID        string                 `json:"orgId,omitempty"`
 	APIVersion   string                 `json:"apiVersion,omitempty"`
 	Namespace    string                 `json:"namespace,omitempty"`
+	Metadata     MetadataRegistry       `json:"metadata,omitempty"`
 	Objects      map[string]ObjectState `json:"objects"`
 	IDSequences  map[string]uint64      `json:"idSequences,omitempty"`
 	Transactions []TransactionFrame     `json:"transactions,omitempty"`
+}
+
+type MetadataRegistry struct {
+	Labels          []LabelMetadata          `json:"labels,omitempty"`
+	StaticResources []StaticResourceMetadata `json:"staticResources,omitempty"`
+	ContentAssets   []ContentAssetMetadata   `json:"contentAssets,omitempty"`
+	Endpoints       []EndpointMetadata       `json:"endpoints,omitempty"`
+}
+
+type LabelMetadata struct {
+	Name             string `json:"name"`
+	Namespace        string `json:"namespace,omitempty"`
+	Language         string `json:"language,omitempty"`
+	Value            string `json:"value,omitempty"`
+	Protected        bool   `json:"protected,omitempty"`
+	ShortDescription string `json:"shortDescription,omitempty"`
+	Categories       string `json:"categories,omitempty"`
+	File             string `json:"file,omitempty"`
+}
+
+type StaticResourceMetadata struct {
+	Name         string `json:"name"`
+	ContentPath  string `json:"contentPath,omitempty"`
+	MetadataPath string `json:"metadataPath,omitempty"`
+	Content      string `json:"content,omitempty"`
+	ContentType  string `json:"contentType,omitempty"`
+	CacheControl string `json:"cacheControl,omitempty"`
+	Description  string `json:"description,omitempty"`
+	URL          string `json:"url,omitempty"`
+}
+
+type ContentAssetMetadata struct {
+	Name         string `json:"name"`
+	ContentPath  string `json:"contentPath,omitempty"`
+	MetadataPath string `json:"metadataPath,omitempty"`
+	Content      string `json:"content,omitempty"`
+	ContentType  string `json:"contentType,omitempty"`
+	Description  string `json:"description,omitempty"`
+	URL          string `json:"url,omitempty"`
+}
+
+type EndpointMetadata struct {
+	Kind          string `json:"kind"`
+	Name          string `json:"name"`
+	URL           string `json:"url,omitempty"`
+	Protocol      string `json:"protocol,omitempty"`
+	PrincipalType string `json:"principalType,omitempty"`
+	Active        bool   `json:"active,omitempty"`
+	File          string `json:"file,omitempty"`
 }
 
 type ObjectState struct {

@@ -16,15 +16,90 @@ The current server-example gate is green:
 pass=101 fail=0 unsupported=0 missing=0
 ```
 
-The broader local-test support gate is not green. The current post-parity
-inventory reports:
+The broader local-test support gate is not green. A May 6, 2026
+post-parity inventory from the current checkout reports:
 
 ```text
-filesScanned=51482 findings=41532 testBlockingFindings=41532 surfaces=19
+filesScanned=51507 findings=41534 testBlockingFindings=41534 surfaces=19
 ```
 
 Use this document for parallel squad planning. Use
 `docs/POST_PARITY_TODO.md` as the exhaustive backlog and capability boundary.
+
+## Execution Objective
+
+The product goal is a local edit-test loop for Apex projects that is much
+faster than deploying to Salesforce and waiting for platform test execution.
+That means the first release claim is not "complete Salesforce." The first
+release claim is:
+
+- Load a large Salesforce-shaped project without project-specific patches.
+- Run its Apex tests locally through the same command developers use while
+  editing code.
+- Match Salesforce-visible behavior for the metadata, DML, SOQL, trigger,
+  async, controller, platform API, and declarative surfaces those tests touch.
+- Classify unsupported behavior separately from real test failures.
+- Keep the common local loop fast enough that developers can run focused tests
+  continuously while changing Apex.
+
+Target command shape:
+
+```bash
+oaer test --project . --filter MyClassTest --json
+oaer test --project . --changed-since main --json
+oaer test --project . --watch --watch-backend auto --json
+```
+
+The compatibility commands below are the engineering gates. The user-facing
+success path is still `oaer test`.
+
+## Milestone Ladder
+
+These milestones are ordered by developer value, not by feature count.
+
+| Milestone | Claim | Required gate |
+| --- | --- | --- |
+| M0: Server examples green | Local Salesforce-shaped API probes work for the checked corpus. | `go run ./cmd/oaer compat server-examples --json` reports no fail, unsupported, or missing probes. |
+| M1: Local-test gate exists | Every discovered test method receives `pass`, `fail`, `unsupported`, `load_error`, `compile_error`, or `internal_error`. | `go run ./cmd/oaer compat local-tests --project testdata/local-tests/basic --json` |
+| M2: Metadata-resolved tests | Legacy objects, custom metadata records, labels, resources, endpoints, and presentation metadata load well enough that metadata load/resolve blockers fall sharply. | `compat local-tests` plus `compat post-parity --json` show reduced `load` and `resolve` blockers. |
+| M3: Controller-test ready | Visualforce controller tests, `Page.*`, `PageReference`, `ApexPages`, Aura Apex discovery, and LWC Apex imports execute or produce precise unsupported diagnostics. | `compat local-tests --project testdata/local-tests/ui-controller-contracts --json` |
+| M4: Platform-test ready | `System.Callable`, `Test.createStub`, Site/Network/Auth, ConnectApi org settings, Platform Cache, and endpoint resolution work for local tests. | `compat local-tests --project testdata/local-tests/platform-apis --json` |
+| M5: Side-effect ready | Files, email templates, captured emails, and rollback-visible side effects behave like test transaction state. | `compat local-tests --project testdata/local-tests/files-email --json` |
+| M6: Declarative-test ready | Workflow and Flow side effects run inside the DML/test transaction with traceable decisions and rollback. | `compat local-tests --project testdata/local-tests/workflow --json` and `.../flow --json` |
+| M7: Legacy-project-test ready | Owned corpus fixtures modeled after the example projects are green, and remaining unsupported surfaces are outside the documented claim. | `compat local-tests --check docs/fixtures/local-tests-corpus.json` |
+
+M0 is already green in this checkout. M1 is the next blocking milestone because
+the project needs a per-test scoreboard before implementation lanes can prove
+they are moving real test execution.
+
+## Speed Requirements
+
+Local execution must be faster because it avoids deploy, org scheduling, and
+remote test startup. Preserve that advantage as features are added:
+
+- Focused test run: load only the selected project packages and execute the
+  filtered test class or method.
+- Changed-test run: use the existing dependency graph and watcher machinery to
+  select affected tests for changed Apex or metadata.
+- Warm watch run: reuse parsed source, type indexes, schema registries, metadata
+  registries, and compiled IR when inputs are unchanged.
+- Per-test isolation: clone org/test state cheaply using storage snapshots, not
+  full project reloads.
+- Unsupported classification: stop at the first capability-specific blocker for
+  a test method instead of burning time in broad fallback execution.
+- Trace/profile on demand: collect detailed traces only for failures, blockers,
+  or explicit profiling flags.
+
+Performance gates should be added once M1 exists:
+
+```bash
+oaer test --project testdata/local-tests/basic --filter PassingTest --json
+oaer test --project testdata/local-tests/org-like-runner --changed-since main --json
+oaer test --project testdata/local-tests/org-like-runner --watch --watch-once --json
+```
+
+The exact millisecond budget should be set from baseline measurements on the
+owned fixtures, then tightened as caching lands.
 
 ## Principles
 
@@ -519,3 +594,130 @@ Start with four lanes:
 Do not start declarative automation first. Workflow and Flow need metadata,
 storage, DML, transaction, and side-effect hooks to be stable before their
 behavior can be meaningful.
+
+## First Work Package: M1 To M3
+
+This is the first parallel batch to schedule. It creates the scoreboard, removes
+the most common metadata blockers, and makes controller tests runnable without
+browser rendering.
+
+### Lane A: Local-Test Gate
+
+Owner scope: `internal/compat`, `internal/oaercli`, `internal/apextest`, docs.
+
+Deliverables:
+
+- Add `oaer compat local-tests`.
+- Reuse `oaer test` discovery and execution; do not add a second test runner.
+- Emit stable JSON with project summary, test outcomes, blocker stage,
+  capability ID, source location, related metadata file, and timing.
+- Add `--project`, `--class`, `--method`, `--blockers-only`, `--json`, and
+  later `--check`.
+- Add fixtures for pass, fail, unsupported, load error, compile error, and panic
+  recovery/internal error.
+
+Validation:
+
+```bash
+go test ./internal/compat ./internal/oaercli ./internal/apextest
+go run ./cmd/oaer compat local-tests --project testdata/local-tests/basic --json
+```
+
+Merge requirement: this lane merges first. Other lanes may add temporary tests,
+but they should migrate to `compat local-tests` after this lands.
+
+### Lane B: Legacy Metadata And Custom Metadata Records
+
+Owner scope: `internal/project`, `internal/schema`, `internal/storage`,
+`internal/soql`, `internal/vm`.
+
+Deliverables:
+
+- Load legacy `.object` files and source-format object metadata through one
+  normalized schema model.
+- Load legacy custom metadata record `.md` files into deterministic local
+  storage records.
+- Preserve namespace, relationship, record type, and field metadata needed by
+  Apex code and SOQL.
+- Make SOQL over loaded custom metadata records work in tests.
+- Report unsupported metadata shapes by capability ID instead of generic load
+  errors.
+
+Validation:
+
+```bash
+go test ./internal/project ./internal/schema ./internal/storage ./internal/soql ./internal/vm
+go run ./cmd/oaer compat local-tests --project testdata/local-tests/custom-metadata --json
+```
+
+Expected movement: reduce `custommetadata.legacy-records` and
+`metadata.legacy-source` blockers first.
+
+### Lane C: Labels, Resources, And Endpoints
+
+Owner scope: `internal/project`, `internal/schema`, `internal/storage`,
+`internal/vm`, Visualforce/resource helpers if added.
+
+Deliverables:
+
+- Load custom labels and translations into a registry.
+- Resolve `Label.Name` and namespaced label forms in Apex execution.
+- Load static resources and content assets with deterministic local URLs.
+- Add the test-facing `URLFOR($Resource...)` behavior needed by controller
+  assertions.
+- Load named credentials and remote site settings as endpoint metadata.
+- Connect endpoint metadata to HTTP callout mock resolution without performing
+  real network authorization.
+
+Validation:
+
+```bash
+go test ./internal/schema ./internal/storage ./internal/vm
+go run ./cmd/oaer compat local-tests --project testdata/local-tests/resources-labels --json
+```
+
+Expected movement: reduce `labels.localization`, `staticresources.urlfor`, and
+`endpoint.metadata` blockers.
+
+### Lane D: Visualforce/PageReference Controller Contracts
+
+Owner scope: `internal/visualforce`, `internal/uicontroller`,
+`internal/apextest`, `internal/vm`, `internal/sema`.
+
+Deliverables:
+
+- Index `.page` and `.component` files with controller, standard controller,
+  extension, and component attribute metadata.
+- Resolve `Page.SomePage` to deterministic `PageReference` values.
+- Implement `ApexPages.currentPage()`, parameters, messages, severities, and
+  per-test reset.
+- Instantiate custom controllers and extensions for supported constructor
+  shapes.
+- Add a minimal standard-controller model for SObject-backed tests.
+
+Validation:
+
+```bash
+go test ./internal/visualforce ./internal/uicontroller ./internal/apextest ./internal/vm
+go run ./cmd/oaer compat local-tests --project testdata/local-tests/page-reference --json
+go run ./cmd/oaer compat local-tests --project testdata/local-tests/ui-controller-contracts --json
+```
+
+Expected movement: reduce `visualforce.controller-test` and
+`visualforce.component-test` blockers without implementing markup rendering.
+
+### Integration Gate For The Batch
+
+After each lane merge:
+
+```bash
+go test ./...
+go run ./cmd/oaer compat server-examples --json
+go run ./cmd/oaer compat post-parity --json
+go run ./cmd/oaer compat local-tests --project testdata/local-tests/basic --json
+```
+
+After all four lanes merge, record the before/after blocker movement in
+`docs/LOCAL_APEX_TEST_EXECUTION_PLAN.md` or a generated local-test dashboard.
+The expected outcome is not "all tests pass"; it is a measurable shift from
+load/resolve blockers toward narrower execute-time blockers.

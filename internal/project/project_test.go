@@ -16,13 +16,17 @@ func TestLoadSFDXProject(t *testing.T) {
 	writeFile(t, filepath.Join(root, "force-app/main/classes/Hello.cls"), "public class Hello {}")
 	writeFile(t, filepath.Join(root, "force-app/main/triggers/Hello.trigger"), "trigger Hello on Account (before insert) {}")
 	writeFile(t, filepath.Join(root, "force-app/main/objects/Thing__c/Thing__c.object-meta.xml"), "<CustomObject/>")
+	writeFile(t, filepath.Join(root, "force-app/main/objects/Legacy__c.object"), "<CustomObject/>")
 	writeFile(t, filepath.Join(root, "force-app/main/objects/Thing__c/fields/Name__c.field-meta.xml"), "<CustomField/>")
 	writeFile(t, filepath.Join(root, "force-app/main/objects/Thing__c/fieldSets/Summary.fieldSet-meta.xml"), "<FieldSet/>")
 	writeFile(t, filepath.Join(root, "force-app/main/objects/Thing__c/recordTypes/Business.recordType-meta.xml"), "<RecordType/>")
 	writeFile(t, filepath.Join(root, "force-app/main/objects/Thing__c/validationRules/Block.validationRule-meta.xml"), "<ValidationRule/>")
 	writeFile(t, filepath.Join(root, "force-app/main/labels/CustomLabels.labels"), "<CustomLabels/>")
+	writeFile(t, filepath.Join(root, "force-app/main/translations/fr.translation-meta.xml"), "<Translations/>")
 	writeFile(t, filepath.Join(root, "force-app/main/staticresources/Site.resource"), "body")
 	writeFile(t, filepath.Join(root, "force-app/main/staticresources/Site.resource-meta.xml"), "<StaticResource/>")
+	writeFile(t, filepath.Join(root, "force-app/main/contentassets/Logo.asset"), "asset body")
+	writeFile(t, filepath.Join(root, "force-app/main/contentassets/Logo.asset-meta.xml"), "<ContentAsset/>")
 	writeFile(t, filepath.Join(root, "force-app/main/namedCredentials/Api.namedCredential"), "<NamedCredential/>")
 	writeFile(t, filepath.Join(root, "force-app/main/remoteSiteSettings/Api.remoteSite"), "<RemoteSiteSetting/>")
 	writeFile(t, filepath.Join(root, "force-app/main/customMetadata/Feature.Default.md"), "<CustomMetadata/>")
@@ -51,10 +55,10 @@ func TestLoadSFDXProject(t *testing.T) {
 	if p.Namespace != "pkg" || p.SourceAPIVersion != "61.0" {
 		t.Fatalf("project metadata = %#v", p)
 	}
-	if len(p.ApexFiles) != 2 || len(p.ObjectFiles) != 1 || len(p.FieldFiles) != 1 || len(p.FieldSetFiles) != 1 || len(p.RecordTypeFiles) != 1 || len(p.ValidationRuleFiles) != 1 {
+	if len(p.ApexFiles) != 2 || len(p.ObjectFiles) != 2 || len(p.FieldFiles) != 1 || len(p.FieldSetFiles) != 1 || len(p.RecordTypeFiles) != 1 || len(p.ValidationRuleFiles) != 1 {
 		t.Fatalf("unexpected file counts: %#v", p)
 	}
-	if len(p.LabelFiles) != 1 || len(p.StaticResourceFiles) != 1 || len(p.StaticResourceMetas) != 1 || len(p.NamedCredentialFiles) != 1 || len(p.RemoteSiteFiles) != 1 || len(p.CustomMetadataFiles) != 3 {
+	if len(p.LabelFiles) != 1 || len(p.TranslationFiles) != 1 || len(p.StaticResourceFiles) != 1 || len(p.StaticResourceMetas) != 1 || len(p.ContentAssetFiles) != 1 || len(p.ContentAssetMetas) != 1 || len(p.NamedCredentialFiles) != 1 || len(p.RemoteSiteFiles) != 1 || len(p.CustomMetadataFiles) != 3 {
 		t.Fatalf("unexpected legacy metadata file counts: %#v", p)
 	}
 	if len(p.WorkflowFiles) != 1 {

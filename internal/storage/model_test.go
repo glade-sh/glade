@@ -1,6 +1,11 @@
 package storage
 
-import "testing"
+import (
+	"errors"
+	"testing"
+
+	"github.com/open-aer/oaer/internal/schema"
+)
 
 func TestResolveFieldNameResolvesIdCaseInsensitive(t *testing.T) {
 	definition := ObjectDefinition{APIName: "Account", Fields: map[string]Field{"Name": {APIName: "Name", Type: FieldString}}}
@@ -145,6 +150,86 @@ func TestEnsureStandardObjectFieldsDerivesCustomMetadataRelationship(t *testing.
 	relation := definition.Relations[0]
 	if relation.Field != "Target__c" || relation.ParentRelationship != "Target__r" || len(relation.ParentObjects) != 1 || relation.ParentObjects[0] != "Target__mdt" {
 		t.Fatalf("relation = %#v", relation)
+	}
+}
+
+func TestApplyCustomMetadataRecordsMaterializesDeterministicRows(t *testing.T) {
+	org := NewOrgState()
+	org.Namespace = "pkg"
+	targetDefinition := ObjectDefinition{
+		APIName:   "Target__mdt",
+		KeyPrefix: "a10",
+		Metadata:  map[string]string{"kind": "customMetadata"},
+		Fields: map[string]Field{
+			"Description__c": {APIName: "Description__c", Type: FieldString},
+		},
+	}
+	EnsureStandardObjectFields(&targetDefinition)
+	featureDefinition := ObjectDefinition{
+		APIName:   "Feature__mdt",
+		KeyPrefix: "a11",
+		Metadata:  map[string]string{"kind": "customMetadata"},
+		Fields: map[string]Field{
+			"Enabled__c": {APIName: "Enabled__c", Type: FieldBoolean},
+			"Target__c":  {APIName: "Target__c", Type: FieldReference, ReferenceTo: []string{"Target__mdt"}},
+		},
+	}
+	EnsureStandardObjectFields(&featureDefinition)
+	org.Objects["Target__mdt"] = ObjectState{Definition: targetDefinition, Records: map[ID]Record{}}
+	org.Objects["Feature__mdt"] = ObjectState{Definition: featureDefinition, Records: map[ID]Record{}}
+
+	err := ApplyCustomMetadataRecords(&org, []schema.CustomMetadataRecord{
+		{FullName: "Feature.Default", ObjectName: "Feature__mdt", DeveloperName: "Default", Label: "Default Label", Values: []schema.CustomMetadataValue{{Field: "Enabled__c", Value: "true"}, {Field: "Target__c", Value: "Target"}}},
+		{FullName: "Target.Target", ObjectName: "Target__mdt", DeveloperName: "Target", Values: []schema.CustomMetadataValue{{Field: "Description__c", Value: "Target row"}}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	target := onlyRecord(t, org.Objects["Target__mdt"].Records)
+	if target.Fields["QualifiedApiName"].String != "Target" || target.Fields["Description__c"].String != "Target row" {
+		t.Fatalf("target record = %#v", target)
+	}
+	feature := onlyRecord(t, org.Objects["Feature__mdt"].Records)
+	if feature.Fields["DeveloperName"].String != "Default" || feature.Fields["MasterLabel"].String != "Default Label" || !feature.Fields["Enabled__c"].Boolean {
+		t.Fatalf("feature record = %#v", feature)
+	}
+	if feature.Fields["Target__c"].Kind != ValueID || feature.Fields["Target__c"].ID != target.ID {
+		t.Fatalf("relationship value = %#v, target id %s", feature.Fields["Target__c"], target.ID)
+	}
+}
+
+func onlyRecord(t *testing.T, records map[ID]Record) Record {
+	t.Helper()
+	if len(records) != 1 {
+		t.Fatalf("records = %#v", records)
+	}
+	for _, record := range records {
+		return record
+	}
+	return Record{}
+}
+
+func TestApplyCustomMetadataRecordsReportsPreciseUnsupportedMetadata(t *testing.T) {
+	org := NewOrgState()
+	definition := ObjectDefinition{
+		APIName:   "Feature__mdt",
+		KeyPrefix: "a11",
+		Metadata:  map[string]string{"kind": "customMetadata"},
+		Fields:    map[string]Field{},
+	}
+	EnsureStandardObjectFields(&definition)
+	org.Objects["Feature__mdt"] = ObjectState{Definition: definition, Records: map[ID]Record{}}
+
+	err := ApplyCustomMetadataRecords(&org, []schema.CustomMetadataRecord{{
+		FullName:      "Feature.Default",
+		ObjectName:    "Feature__mdt",
+		DeveloperName: "Default",
+		File:          "customMetadata/Feature.Default.md",
+		Values:        []schema.CustomMetadataValue{{Field: "Missing__c", Value: "x"}},
+	}})
+	var unsupported UnsupportedMetadataError
+	if !errors.As(err, &unsupported) || unsupported.File != "customMetadata/Feature.Default.md" || unsupported.Feature != "custom metadata field" {
+		t.Fatalf("error = %#v", err)
 	}
 }
 

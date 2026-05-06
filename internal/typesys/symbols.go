@@ -14,11 +14,12 @@ import (
 )
 
 type Index struct {
-	Project     ProjectInfo             `json:"project"`
-	Types       []TypeSymbol            `json:"types"`
-	Triggers    []TriggerSymbol         `json:"triggers"`
-	Objects     []schema.Object         `json:"objects"`
-	Diagnostics []diagnostic.Diagnostic `json:"diagnostics,omitempty"`
+	Project               ProjectInfo                   `json:"project"`
+	Types                 []TypeSymbol                  `json:"types"`
+	Triggers              []TriggerSymbol               `json:"triggers"`
+	Objects               []schema.Object               `json:"objects"`
+	CustomMetadataRecords []schema.CustomMetadataRecord `json:"customMetadataRecords,omitempty"`
+	Diagnostics           []diagnostic.Diagnostic       `json:"diagnostics,omitempty"`
 }
 
 type ProjectInfo struct {
@@ -66,7 +67,8 @@ func Build(p project.Project, s schema.Schema) (idx Index) {
 			Namespace:        p.Namespace,
 			SourceAPIVersion: p.SourceAPIVersion,
 		},
-		Objects: s.Objects,
+		Objects:               s.Objects,
+		CustomMetadataRecords: s.CustomMetadataRecords,
 	}
 	defer func() {
 		if recovered := recover(); recovered != nil {

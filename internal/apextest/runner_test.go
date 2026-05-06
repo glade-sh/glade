@@ -1705,6 +1705,77 @@ private class ManyTest {
 	}
 }
 
+func TestRunResolvesVisualforcePageReferencesAndControllerConstructors(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/pages/AccountView.page"), `<apex:page standardController="Account" extensions="AccountViewExtension">
+  <c:AccountBadge value="{!Account.Name}" />
+</apex:page>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/components/AccountBadge.component"), `<apex:component controller="AccountBadgeController">
+  <apex:attribute name="value" type="String" assignTo="{!value}" />
+</apex:component>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/AccountViewExtension.cls"), `
+public class AccountViewExtension {
+  public String name;
+  public AccountViewExtension(ApexPages.StandardController controller) {
+    Account account = (Account) controller.getRecord();
+    name = account.Name;
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/AccountBadgeController.cls"), `
+public class AccountBadgeController {
+  public String value { get; set; }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/VisualforceControllerContractTest.cls"), `
+@isTest
+private class VisualforceControllerContractTest {
+  @isTest static void resolvesPageTokenAndExtensionConstructor() {
+    Account account = new Account(Name = 'Acme');
+    ApexPages.StandardController controller = new ApexPages.StandardController(account);
+    AccountViewExtension extension = new AccountViewExtension(controller);
+    System.assertEquals('Acme', extension.name);
+    Test.setCurrentPage(Page.AccountView);
+    ApexPages.currentPage().getParameters().put('id', '001000000000001AAA');
+    System.assertEquals('/apex/AccountView', ApexPages.currentPage().getUrl());
+    System.assertEquals('001000000000001AAA', ApexPages.currentPage().getParameters().get('id'));
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestRunResetsApexPagesStateBetweenTestMethods(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/pages/ResetProbe.page"), `<apex:page/>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/PageStateResetTest.cls"), `
+@isTest
+private class PageStateResetTest {
+  @isTest static void addsMessageAndParameter() {
+    Test.setCurrentPage(Page.ResetProbe);
+    ApexPages.currentPage().getParameters().put('marker', 'dirty');
+    ApexPages.addMessage(new ApexPages.Message(ApexPages.Severity.ERROR, 'Summary'));
+    System.assert(ApexPages.hasMessages());
+  }
+  @isTest static void seesCleanPageState() {
+    System.assert(!ApexPages.hasMessages());
+    System.assertEquals(null, ApexPages.currentPage().getParameters().get('marker'));
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 2 || got.Passed != 2 {
+		t.Fatalf("summary = %#v run=%#v", got, run)
+	}
+}
+
 func TestProjectRuntimeCompilesStaticMapInitializerWithEscapedStrings(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)

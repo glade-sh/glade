@@ -1,0 +1,17 @@
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+  <label>Feature</label>
+  <pluralLabel>Features</pluralLabel>
+  <fields>
+    <fullName>Enabled__c</fullName>
+    <label>Enabled</label>
+    <type>Checkbox</type>
+    <defaultValue>false</defaultValue>
+  </fields>
+  <fields>
+    <fullName>Target__c</fullName>
+    <label>Target</label>
+    <type>MetadataRelationship</type>
+    <referenceTo>Target__mdt</referenceTo>
+    <relationshipName>Target__r</relationshipName>
+  </fields>
+</CustomObject>

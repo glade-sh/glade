@@ -133,6 +133,49 @@ func TestRunCompatPostParityJSON(t *testing.T) {
 	}
 }
 
+func TestRunCompatLocalTestsJSON(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "local-tests", "--project", "../../testdata/local-tests/basic", "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	for _, want := range []string{
+		`"target": "local Apex test execution readiness"`,
+		`"ready": false`,
+		`"pass": 1`,
+		`"fail": 1`,
+		`"unsupported": 1`,
+		`"class": "PassingTest"`,
+		`"class": "FailingTest"`,
+		`"class": "UnsupportedTest"`,
+	} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("stdout missing %q: %q", want, stdout.String())
+		}
+	}
+}
+
+func TestRunCompatLocalTestsBlockersOnlyAndFilters(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{
+		"compat", "local-tests",
+		"--project", "../../testdata/local-tests/basic",
+		"--class", "FailingTest",
+		"--method", "fails",
+		"--blockers-only",
+		"--json",
+	}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), `"total": 1`) || !strings.Contains(stdout.String(), `"fail": 1`) {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+	if strings.Contains(stdout.String(), "PassingTest") || strings.Contains(stdout.String(), "UnsupportedTest") {
+		t.Fatalf("stdout included unfiltered tests: %q", stdout.String())
+	}
+}
+
 func TestRunCompatPostParityRequireReadyFails(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "src/classes/UsesLabels.cls"), `public class UsesLabels { void run() { System.debug(Label.Save); } }`)

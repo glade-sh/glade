@@ -10,6 +10,8 @@ import (
 	"strings"
 
 	"github.com/open-aer/oaer/internal/project"
+	"github.com/open-aer/oaer/internal/resource"
+	"github.com/open-aer/oaer/internal/storage"
 )
 
 type Index struct {
@@ -228,6 +230,7 @@ func attributeFromToken(token markupToken) Attribute {
 
 var mergeRE = regexp.MustCompile(`\{!\s*([^}]+?)\s*\}`)
 var resourceInURLFORRE = regexp.MustCompile(`(?i)\$Resource\.([A-Za-z_][A-Za-z0-9_]*)`)
+var urlforPathArgRE = regexp.MustCompile(`(?i)^URLFOR\s*\([^,]+,\s*['"]([^'"]+)['"]`)
 
 func ExtractMergeReferences(value string) []MergeReference {
 	matches := mergeRE.FindAllStringSubmatch(value, -1)
@@ -240,6 +243,17 @@ func ExtractMergeReferences(value string) []MergeReference {
 		refs = append(refs, classifyMergeExpression(expr))
 	}
 	return dedupeMergeReferences(refs)
+}
+
+func ResolveResourceURL(registry storage.MetadataRegistry, expr string) (string, bool) {
+	ref := classifyMergeExpression(strings.TrimSpace(expr))
+	if ref.Kind == "URLFOR" && ref.Root == "$Resource" {
+		return resource.URLForStaticResource(registry, ref.Name, urlforPathArg(ref.Expression))
+	}
+	if ref.Kind == "StaticResource" && ref.Root == "$Resource" {
+		return resource.URLForStaticResource(registry, ref.Name, "")
+	}
+	return "", false
 }
 
 func classifyMergeExpression(expr string) MergeReference {
@@ -268,6 +282,13 @@ func classifyMergeExpression(expr string) MergeReference {
 		}
 	}
 	return MergeReference{Kind: "ControllerExpression", Expression: expr, Name: expr}
+}
+
+func urlforPathArg(expr string) string {
+	if match := urlforPathArgRE.FindStringSubmatch(strings.TrimSpace(expr)); len(match) == 2 {
+		return strings.TrimSpace(match[1])
+	}
+	return ""
 }
 
 func dedupeMergeReferences(refs []MergeReference) []MergeReference {

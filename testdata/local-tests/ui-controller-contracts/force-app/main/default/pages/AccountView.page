@@ -1,0 +1,3 @@
+<apex:page standardController="Account" extensions="AccountViewExtension">
+  <c:AccountBadge value="{!Account.Name}" />
+</apex:page>

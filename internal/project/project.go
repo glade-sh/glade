@@ -21,8 +21,11 @@ type Project struct {
 	RecordTypeFiles           []string           `json:"recordTypeFiles"`
 	ValidationRuleFiles       []string           `json:"validationRuleFiles"`
 	LabelFiles                []string           `json:"labelFiles"`
+	TranslationFiles          []string           `json:"translationFiles,omitempty"`
 	StaticResourceFiles       []string           `json:"staticResourceFiles"`
 	StaticResourceMetas       []string           `json:"staticResourceMetas"`
+	ContentAssetFiles         []string           `json:"contentAssetFiles,omitempty"`
+	ContentAssetMetas         []string           `json:"contentAssetMetas,omitempty"`
 	NamedCredentialFiles      []string           `json:"namedCredentialFiles"`
 	RemoteSiteFiles           []string           `json:"remoteSiteFiles"`
 	CustomMetadataFiles       []string           `json:"customMetadataFiles"`
@@ -91,8 +94,11 @@ func Load(root string) (Project, error) {
 	sort.Strings(p.RecordTypeFiles)
 	sort.Strings(p.ValidationRuleFiles)
 	sort.Strings(p.LabelFiles)
+	sort.Strings(p.TranslationFiles)
 	sort.Strings(p.StaticResourceFiles)
 	sort.Strings(p.StaticResourceMetas)
+	sort.Strings(p.ContentAssetFiles)
+	sort.Strings(p.ContentAssetMetas)
 	sort.Strings(p.NamedCredentialFiles)
 	sort.Strings(p.RemoteSiteFiles)
 	sort.Strings(p.CustomMetadataFiles)
@@ -185,7 +191,7 @@ func collectFiles(root string, p *Project) error {
 		switch {
 		case strings.HasSuffix(lower, ".cls"), strings.HasSuffix(lower, ".trigger"):
 			p.ApexFiles = append(p.ApexFiles, path)
-		case strings.HasSuffix(lower, ".object-meta.xml"):
+		case strings.HasSuffix(lower, ".object-meta.xml"), strings.HasSuffix(lower, ".object") && isLegacyObjectPath(lower):
 			p.ObjectFiles = append(p.ObjectFiles, path)
 		case strings.HasSuffix(lower, ".field-meta.xml"):
 			p.FieldFiles = append(p.FieldFiles, path)
@@ -197,10 +203,16 @@ func collectFiles(root string, p *Project) error {
 			p.ValidationRuleFiles = append(p.ValidationRuleFiles, path)
 		case strings.HasSuffix(lower, ".labels"), strings.HasSuffix(lower, ".labels-meta.xml"):
 			p.LabelFiles = append(p.LabelFiles, path)
+		case strings.HasSuffix(lower, ".translation"), strings.HasSuffix(lower, ".translation-meta.xml"):
+			p.TranslationFiles = append(p.TranslationFiles, path)
 		case strings.HasSuffix(lower, ".resource-meta.xml"), strings.HasSuffix(lower, ".staticresource-meta.xml"):
 			p.StaticResourceMetas = append(p.StaticResourceMetas, path)
 		case strings.HasSuffix(lower, ".resource"):
 			p.StaticResourceFiles = append(p.StaticResourceFiles, path)
+		case strings.HasSuffix(lower, ".asset-meta.xml"):
+			p.ContentAssetMetas = append(p.ContentAssetMetas, path)
+		case strings.HasSuffix(lower, ".asset"):
+			p.ContentAssetFiles = append(p.ContentAssetFiles, path)
 		case strings.HasSuffix(lower, ".namedcredential"), strings.HasSuffix(lower, ".namedcredential-meta.xml"):
 			p.NamedCredentialFiles = append(p.NamedCredentialFiles, path)
 		case strings.HasSuffix(lower, ".remotesite"), strings.HasSuffix(lower, ".remotesite-meta.xml"):
@@ -257,6 +269,10 @@ func isStaticResourceVendorDir(path string) bool {
 
 func isCustomMetadataPath(path string) bool {
 	return strings.Contains(filepath.ToSlash(path), "/custommetadata/")
+}
+
+func isLegacyObjectPath(path string) bool {
+	return strings.Contains(filepath.ToSlash(path), "/objects/")
 }
 
 func isAuraPath(path string) bool {

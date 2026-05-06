@@ -12,7 +12,8 @@ import (
 )
 
 type Schema struct {
-	Objects []Object `json:"objects"`
+	Objects               []Object               `json:"objects"`
+	CustomMetadataRecords []CustomMetadataRecord `json:"customMetadataRecords,omitempty"`
 }
 
 type Object struct {
@@ -66,16 +67,33 @@ type ValidationRule struct {
 	ErrorDisplayField     string `json:"errorDisplayField,omitempty"`
 }
 
+type CustomMetadataRecord struct {
+	FullName      string                `json:"fullName"`
+	ObjectName    string                `json:"objectName"`
+	DeveloperName string                `json:"developerName"`
+	Label         string                `json:"label,omitempty"`
+	Protected     bool                  `json:"protected,omitempty"`
+	Values        []CustomMetadataValue `json:"values,omitempty"`
+	File          string                `json:"file,omitempty"`
+}
+
+type CustomMetadataValue struct {
+	Field string `json:"field"`
+	Value string `json:"value,omitempty"`
+}
+
 type customObjectXML struct {
-	XMLName            xml.Name `xml:"CustomObject"`
-	Label              string   `xml:"label"`
-	PluralLabel        string   `xml:"pluralLabel"`
-	SharingModel       string   `xml:"sharingModel"`
-	CustomSettingsType string   `xml:"customSettingsType"`
+	XMLName            xml.Name            `xml:"CustomObject"`
+	Label              string              `xml:"label"`
+	PluralLabel        string              `xml:"pluralLabel"`
+	SharingModel       string              `xml:"sharingModel"`
+	CustomSettingsType string              `xml:"customSettingsType"`
+	Fields             []customFieldXML    `xml:"fields"`
+	RecordTypes        []recordTypeXML     `xml:"recordTypes"`
+	ValidationRules    []validationRuleXML `xml:"validationRules"`
 }
 
 type customFieldXML struct {
-	XMLName               xml.Name    `xml:"CustomField"`
 	FullName              string      `xml:"fullName"`
 	Label                 string      `xml:"label"`
 	Type                  string      `xml:"type"`
@@ -92,21 +110,19 @@ type customFieldXML struct {
 }
 
 type recordTypeXML struct {
-	XMLName     xml.Name `xml:"RecordType"`
-	FullName    string   `xml:"fullName"`
-	Label       string   `xml:"label"`
-	Active      *bool    `xml:"active"`
-	Default     bool     `xml:"default"`
-	Description string   `xml:"description"`
+	FullName    string `xml:"fullName"`
+	Label       string `xml:"label"`
+	Active      *bool  `xml:"active"`
+	Default     bool   `xml:"default"`
+	Description string `xml:"description"`
 }
 
 type validationRuleXML struct {
-	XMLName               xml.Name `xml:"ValidationRule"`
-	FullName              string   `xml:"fullName"`
-	Active                bool     `xml:"active"`
-	ErrorConditionFormula string   `xml:"errorConditionFormula"`
-	ErrorMessage          string   `xml:"errorMessage"`
-	ErrorDisplayField     string   `xml:"errorDisplayField"`
+	FullName              string `xml:"fullName"`
+	Active                bool   `xml:"active"`
+	ErrorConditionFormula string `xml:"errorConditionFormula"`
+	ErrorMessage          string `xml:"errorMessage"`
+	ErrorDisplayField     string `xml:"errorDisplayField"`
 }
 
 type valueSetXML struct {
@@ -122,6 +138,17 @@ type picklistValueXML struct {
 	Label    string `xml:"label"`
 	Default  bool   `xml:"default"`
 	IsActive *bool  `xml:"isActive"`
+}
+
+type customMetadataXML struct {
+	Label     string                   `xml:"label"`
+	Protected bool                     `xml:"protected"`
+	Values    []customMetadataValueXML `xml:"values"`
+}
+
+type customMetadataValueXML struct {
+	Field string `xml:"field"`
+	Value string `xml:"value"`
 }
 
 func LoadProject(p project.Project) (Schema, error) {
@@ -186,7 +213,25 @@ func LoadProject(p project.Project) (Schema, error) {
 		object.ValidationRules = append(object.ValidationRules, rule)
 	}
 
-	out := Schema{Objects: make([]Object, 0, len(byName))}
+	records := make([]CustomMetadataRecord, 0, len(p.CustomMetadataFiles))
+	for _, path := range p.CustomMetadataFiles {
+		record, err := loadCustomMetadataRecord(path)
+		if err != nil {
+			return Schema{}, err
+		}
+		records = append(records, record)
+	}
+	sort.Slice(records, func(i, j int) bool {
+		if records[i].ObjectName != records[j].ObjectName {
+			return records[i].ObjectName < records[j].ObjectName
+		}
+		if records[i].DeveloperName != records[j].DeveloperName {
+			return records[i].DeveloperName < records[j].DeveloperName
+		}
+		return records[i].File < records[j].File
+	})
+
+	out := Schema{Objects: make([]Object, 0, len(byName)), CustomMetadataRecords: records}
 	for _, object := range byName {
 		sort.Slice(object.Fields, func(i, j int) bool {
 			return object.Fields[i].Name < object.Fields[j].Name
@@ -227,6 +272,20 @@ func loadValidationRule(path string) (ValidationRule, error) {
 	}, nil
 }
 
+func validationRuleFromXML(raw validationRuleXML, fallback string) ValidationRule {
+	name := strings.TrimSpace(raw.FullName)
+	if name == "" {
+		name = fallback
+	}
+	return ValidationRule{
+		Name:                  name,
+		Active:                raw.Active,
+		ErrorConditionFormula: strings.TrimSpace(raw.ErrorConditionFormula),
+		ErrorMessage:          raw.ErrorMessage,
+		ErrorDisplayField:     raw.ErrorDisplayField,
+	}
+}
+
 func loadRecordType(path string) (RecordType, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -257,6 +316,28 @@ func loadRecordType(path string) (RecordType, error) {
 	}, nil
 }
 
+func recordTypeFromXML(raw recordTypeXML, fallback string) RecordType {
+	developerName := strings.TrimSpace(raw.FullName)
+	if developerName == "" {
+		developerName = fallback
+	}
+	label := raw.Label
+	if label == "" {
+		label = developerName
+	}
+	active := true
+	if raw.Active != nil {
+		active = *raw.Active
+	}
+	return RecordType{
+		DeveloperName: developerName,
+		Label:         label,
+		Active:        active,
+		Default:       raw.Default,
+		Description:   raw.Description,
+	}
+}
+
 func loadObject(path string) (Object, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -266,13 +347,32 @@ func loadObject(path string) (Object, error) {
 	if err := xml.Unmarshal(escapeBareAmpersands(data), &raw); err != nil {
 		return Object{}, err
 	}
-	return Object{
-		Name:               trimMetadataSuffix(filepath.Base(path), ".object-meta.xml"),
+	object := Object{
+		Name:               objectNameFromObjectPath(path),
 		Label:              raw.Label,
 		PluralLabel:        raw.PluralLabel,
 		SharingModel:       raw.SharingModel,
 		CustomSettingsType: strings.TrimSpace(raw.CustomSettingsType),
-	}, nil
+	}
+	for _, rawField := range raw.Fields {
+		field := fieldFromXML(rawField, "")
+		if field.Name != "" {
+			object.Fields = append(object.Fields, field)
+		}
+	}
+	for _, rawRecordType := range raw.RecordTypes {
+		recordType := recordTypeFromXML(rawRecordType, "")
+		if recordType.DeveloperName != "" {
+			object.RecordTypes = append(object.RecordTypes, recordType)
+		}
+	}
+	for _, rawRule := range raw.ValidationRules {
+		rule := validationRuleFromXML(rawRule, "")
+		if rule.Name != "" {
+			object.ValidationRules = append(object.ValidationRules, rule)
+		}
+	}
+	return object, nil
 }
 
 func loadField(path string) (Field, error) {
@@ -284,9 +384,13 @@ func loadField(path string) (Field, error) {
 	if err := xml.Unmarshal(escapeBareAmpersands(data), &raw); err != nil {
 		return Field{}, err
 	}
-	name := raw.FullName
+	return fieldFromXML(raw, trimMetadataSuffix(filepath.Base(path), ".field-meta.xml")), nil
+}
+
+func fieldFromXML(raw customFieldXML, fallback string) Field {
+	name := strings.TrimSpace(raw.FullName)
 	if name == "" {
-		name = trimMetadataSuffix(filepath.Base(path), ".field-meta.xml")
+		name = fallback
 	}
 	return Field{
 		Name:                  name,
@@ -303,6 +407,36 @@ func loadField(path string) (Field, error) {
 		Encrypted:             strings.EqualFold(raw.Type, "EncryptedText"),
 		Formula:               strings.TrimSpace(raw.Formula),
 		PicklistValues:        picklistValues(raw.ValueSet.Definition.Values),
+	}
+}
+
+func loadCustomMetadataRecord(path string) (CustomMetadataRecord, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return CustomMetadataRecord{}, err
+	}
+	var raw customMetadataXML
+	if err := xml.Unmarshal(escapeBareAmpersands(data), &raw); err != nil {
+		return CustomMetadataRecord{}, err
+	}
+	fullName := customMetadataFullName(path)
+	objectName, developerName := customMetadataNames(fullName)
+	values := make([]CustomMetadataValue, 0, len(raw.Values))
+	for _, value := range raw.Values {
+		field := strings.TrimSpace(value.Field)
+		if field == "" {
+			continue
+		}
+		values = append(values, CustomMetadataValue{Field: field, Value: strings.TrimSpace(value.Value)})
+	}
+	return CustomMetadataRecord{
+		FullName:      fullName,
+		ObjectName:    objectName,
+		DeveloperName: developerName,
+		Label:         strings.TrimSpace(raw.Label),
+		Protected:     raw.Protected,
+		Values:        values,
+		File:          path,
 	}, nil
 }
 
@@ -327,6 +461,28 @@ func trimMetadataSuffix(name, suffix string) string {
 		return name[:len(name)-len(suffix)]
 	}
 	return strings.TrimSuffix(name, suffix)
+}
+
+func objectNameFromObjectPath(path string) string {
+	name := filepath.Base(path)
+	if strings.HasSuffix(strings.ToLower(name), ".object-meta.xml") {
+		return trimMetadataSuffix(name, ".object-meta.xml")
+	}
+	return trimMetadataSuffix(name, ".object")
+}
+
+func customMetadataFullName(path string) string {
+	name := filepath.Base(path)
+	name = trimMetadataSuffix(name, ".md-meta.xml")
+	return trimMetadataSuffix(name, ".md")
+}
+
+func customMetadataNames(fullName string) (string, string) {
+	parts := strings.SplitN(fullName, ".", 2)
+	if len(parts) != 2 {
+		return "", fullName
+	}
+	return parts[0] + "__mdt", parts[1]
 }
 
 func objectNameFromFieldPath(path string) string {

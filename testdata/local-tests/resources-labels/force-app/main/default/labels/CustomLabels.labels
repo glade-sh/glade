@@ -1,0 +1,9 @@
+<CustomLabels>
+  <labels>
+    <fullName>Greeting</fullName>
+    <language>en_US</language>
+    <protected>false</protected>
+    <shortDescription>Greeting</shortDescription>
+    <value>Hello</value>
+  </labels>
+</CustomLabels>

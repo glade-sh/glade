@@ -196,6 +196,7 @@ Compat subcommands:
   run           Validate and execute fixtures.
   matrix        Print the full capability matrix.
   mvp           Print MVP readiness report.
+  local-tests   Report local Apex test execution readiness.
   examples      Scan example projects and report support status.
   post-parity   Scan a project for unsupported surfaces.
   dashboard     Generate compatibility dashboard.
@@ -1339,13 +1340,15 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 		return err
 	}
 	if len(args) == 0 {
-		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | product-namespaces --catalog <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]")
+		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | local-tests [--project <root>] [--class <name>] [--method <name>] [--blockers-only] [--json] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | product-namespaces --catalog <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]")
 	}
 	switch args[0] {
 	case "matrix", "mvp":
 		return runCompatCapabilities(args[1:], w)
 	case "post-parity":
 		return runCompatPostParity(args[1:], w)
+	case "local-tests":
+		return runCompatLocalTests(args[1:], w)
 	case "examples":
 		return runCompatExamples(args[1:], w)
 	case "server-examples":
@@ -1369,7 +1372,7 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 			return errors.New("usage: oaer compat validate|run <fixture.json...>")
 		}
 	default:
-		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | product-namespaces --catalog <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]")
+		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | local-tests [--project <root>] [--class <name>] [--method <name>] [--blockers-only] [--json] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | product-namespaces --catalog <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]")
 	}
 
 	for _, path := range args[1:] {
@@ -1403,6 +1406,48 @@ type postParityReadiness struct {
 	Areas        []postParityArea         `json:"areas"`
 	Surfaces     []projectscan.Surface    `json:"surfaces"`
 	TopBlockers  []projectscan.TopBlocker `json:"topBlockers"`
+}
+
+func runCompatLocalTests(args []string, w io.Writer) error {
+	options := compat.LocalTestOptions{Project: "."}
+	jsonOut := false
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--json":
+			jsonOut = true
+		case "--blockers-only":
+			options.BlockersOnly = true
+		case "--project":
+			if i+1 >= len(args) {
+				return errors.New("--project requires a value")
+			}
+			options.Project = args[i+1]
+			i++
+		case "--class":
+			if i+1 >= len(args) {
+				return errors.New("--class requires a value")
+			}
+			options.Class = args[i+1]
+			i++
+		case "--method":
+			if i+1 >= len(args) {
+				return errors.New("--method requires a value")
+			}
+			options.Method = args[i+1]
+			i++
+		default:
+			return fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	report, err := compat.RunLocalTests(options)
+	if err != nil {
+		return err
+	}
+	if jsonOut {
+		return compat.WriteLocalTestJSON(w, report)
+	}
+	compat.WriteLocalTestText(w, report)
+	return nil
 }
 
 type postParityCount struct {

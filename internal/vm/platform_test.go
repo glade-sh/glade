@@ -596,6 +596,50 @@ System.assert(setController.getHasPrevious());
 	}
 }
 
+func TestExecRegisteredVisualforcePageReferences(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals('/apex/AccountView', Page.AccountView.getUrl());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.RegisterPageReference("AccountView")
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+
+	missing, err := CompileAnonymous(`PageReference page = Page.Missing;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(missing); err == nil || err.Error() != "unknown Visualforce page Page.Missing" {
+		t.Fatalf("err = %v, want unknown Visualforce page", err)
+	}
+}
+
+func TestExecLabelsFromLocalMetadataRegistry(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals('Hello', Label.Greeting);
+System.assertEquals('Hello', System.Label.Greeting);
+System.assertEquals('Bonjour', Label.pkg.Greeting);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	org.Namespace = "pkg"
+	org.Metadata.Labels = []storage.LabelMetadata{
+		{Name: "Greeting", Namespace: "pkg", Language: "en_US", Value: "Hello"},
+		{Name: "Greeting", Namespace: "pkg", Language: "fr", Value: "Bonjour"},
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecMessagingResultAndUnsupportedEdges(t *testing.T) {
 	program, err := CompileAnonymous(`
 Messaging.SingleEmailMessage msg = new Messaging.SingleEmailMessage();
@@ -3029,6 +3073,30 @@ System.assertEquals('B-body', second.getBody());
 			"081000000000003": {ID: "081000000000003", Object: "StaticResource", Fields: map[string]storage.Value{"Name": storage.StringValue("Response_B"), "Body": storage.BlobValue("B-body")}},
 		},
 	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStaticResourceCalloutMocksUseRegistryAndNamedEndpoint(t *testing.T) {
+	program, err := CompileAnonymous(`
+MultiStaticResourceCalloutMock multiMock = new MultiStaticResourceCalloutMock();
+multiMock.setStaticResource('https://billing.example.test/v1/accounts', 'Account_Response');
+Test.setMock('HttpCalloutMock', multiMock);
+HttpRequest req = new HttpRequest();
+req.setEndpoint('callout:Billing/v1/accounts');
+req.setMethod('GET');
+System.assertEquals('account-body', new Http().send(req).getBody());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	org.Metadata.StaticResources = []storage.StaticResourceMetadata{{Name: "Account_Response", Content: "account-body"}}
+	org.Metadata.Endpoints = []storage.EndpointMetadata{{Kind: "NamedCredential", Name: "Billing", URL: "https://billing.example.test", Active: true}}
 	machine := New(nil)
 	machine.SetOrg(&org)
 	machine.EnableTestContext()

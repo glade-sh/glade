@@ -13,11 +13,13 @@ import (
 	"github.com/open-aer/oaer/internal/automation"
 	"github.com/open-aer/oaer/internal/diagnostic"
 	"github.com/open-aer/oaer/internal/project"
+	"github.com/open-aer/oaer/internal/resource"
 	"github.com/open-aer/oaer/internal/schema"
 	"github.com/open-aer/oaer/internal/sobject"
 	"github.com/open-aer/oaer/internal/storage"
 	"github.com/open-aer/oaer/internal/testreport"
 	"github.com/open-aer/oaer/internal/typesys"
+	"github.com/open-aer/oaer/internal/visualforce"
 	"github.com/open-aer/oaer/internal/vm"
 )
 
@@ -80,6 +82,7 @@ func RunContext(ctx context.Context, index typesys.Index, opts Options) testrepo
 	setups, setupErrors := compileTestSetupMethods(index)
 	triggers, triggerErrors := compileProjectTriggers(index)
 	org := orgFromIndex(index)
+	pageNames := visualforcePageNames(index)
 	suites := make(map[string][]testreport.Case)
 	setupOrgs := make(map[string]storage.OrgState)
 	setupRunErrors := make(map[string]error)
@@ -94,9 +97,9 @@ func RunContext(ctx context.Context, index typesys.Index, opts Options) testrepo
 		}
 		if _, ok := suites[testCase.ClassName]; !ok {
 			order = append(order, testCase.ClassName)
-			setupOrgs[testCase.ClassName], setupRunErrors[testCase.ClassName] = prepareTestSetupOrg(ctx, testCase.ClassName, methods, classes, setups[testCase.ClassName], setupErrors[testCase.ClassName], triggers, triggerErrors, org, opts)
+			setupOrgs[testCase.ClassName], setupRunErrors[testCase.ClassName] = prepareTestSetupOrg(ctx, testCase.ClassName, methods, classes, setups[testCase.ClassName], setupErrors[testCase.ClassName], triggers, triggerErrors, org, pageNames, opts)
 		}
-		suites[testCase.ClassName] = append(suites[testCase.ClassName], runCase(ctx, testCase, methods, classes, setupRunErrors[testCase.ClassName], triggers, triggerErrors, setupOrgs[testCase.ClassName], opts))
+		suites[testCase.ClassName] = append(suites[testCase.ClassName], runCase(ctx, testCase, methods, classes, setupRunErrors[testCase.ClassName], triggers, triggerErrors, setupOrgs[testCase.ClassName], pageNames, opts))
 	}
 
 	run := testreport.Run{Name: "oaer test"}
@@ -106,7 +109,7 @@ func RunContext(ctx context.Context, index typesys.Index, opts Options) testrepo
 	return run
 }
 
-func prepareTestSetupOrg(ctx context.Context, className string, methods map[string]vm.Method, classes []vm.Class, setups []vm.Method, setupErr error, triggers []vm.Trigger, triggerErrors []error, org storage.OrgState, opts Options) (storage.OrgState, error) {
+func prepareTestSetupOrg(ctx context.Context, className string, methods map[string]vm.Method, classes []vm.Class, setups []vm.Method, setupErr error, triggers []vm.Trigger, triggerErrors []error, org storage.OrgState, pageNames []string, opts Options) (storage.OrgState, error) {
 	setupOrg := org.Clone()
 	if err := ctx.Err(); err != nil {
 		return setupOrg, err
@@ -127,6 +130,7 @@ func prepareTestSetupOrg(ctx context.Context, className string, methods map[stri
 	machine.SetOrg(&setupOrg)
 	machine.SetContext(ctx)
 	machine.EnableTestContext()
+	registerVisualforcePages(machine, pageNames)
 	if err := registerRuntime(machine, methods, classes, setups, triggers); err != nil {
 		return setupOrg, err
 	}
@@ -145,7 +149,7 @@ func prepareTestSetupOrg(ctx context.Context, className string, methods map[stri
 	return setupOrg, nil
 }
 
-func runCase(ctx context.Context, testCase TestCase, methods map[string]vm.Method, classes []vm.Class, setupErr error, triggers []vm.Trigger, triggerErrors []error, org storage.OrgState, opts Options) testreport.Case {
+func runCase(ctx context.Context, testCase TestCase, methods map[string]vm.Method, classes []vm.Class, setupErr error, triggers []vm.Trigger, triggerErrors []error, org storage.OrgState, pageNames []string, opts Options) testreport.Case {
 	if err := ctx.Err(); err != nil {
 		return canceledCase(testCase, err)
 	}
@@ -182,6 +186,7 @@ func runCase(ctx context.Context, testCase TestCase, methods map[string]vm.Metho
 	}
 	machine.SetOrg(&org)
 	machine.SetContext(ctx)
+	registerVisualforcePages(machine, pageNames)
 	if err := registerRuntime(machine, methods, classes, nil, triggers); err != nil {
 		out.Status = testreport.StatusUnsupported
 		out.Problem = problem("UnsupportedFeature", err.Error(), testCase)
@@ -195,6 +200,7 @@ func runCase(ctx context.Context, testCase TestCase, methods map[string]vm.Metho
 	org = org.Clone()
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
+	machine.ResetApexPageState()
 	if err := machine.ResetStatics(); err != nil {
 		out.Status = testreport.StatusFail
 		out.Problem = problemFromError(err, testCase)
@@ -268,7 +274,33 @@ func RegisterProjectRuntimeForRequest(machine *vm.VM, index typesys.Index) error
 	methods := compileProjectMethods(index)
 	classes := compileProjectClasses(index, methods)
 	triggers, _ := compileProjectTriggers(index)
+	registerVisualforcePages(machine, visualforcePageNames(index))
 	return registerRuntime(machine, methods, classes, nil, triggers)
+}
+
+func visualforcePageNames(index typesys.Index) []string {
+	if index.Project.Root == "" {
+		return nil
+	}
+	p, err := project.Load(index.Project.Root)
+	if err != nil {
+		return nil
+	}
+	vf, err := visualforce.LoadProject(p)
+	if err != nil {
+		return nil
+	}
+	names := make([]string, 0, len(vf.Pages))
+	for _, page := range vf.Pages {
+		names = append(names, page.Name)
+	}
+	return names
+}
+
+func registerVisualforcePages(machine *vm.VM, names []string) {
+	for _, name := range names {
+		machine.RegisterPageReference(name)
+	}
 }
 
 func compileProjectClasses(index typesys.Index, methods map[string]vm.Method) []vm.Class {
@@ -553,8 +585,10 @@ func orgFromIndex(index typesys.Index) storage.OrgState {
 			Records:    make(map[storage.ID]storage.Record),
 		}
 	}
+	_ = storage.ApplyCustomMetadataRecords(&org, index.CustomMetadataRecords)
 	if index.Project.Root != "" {
 		if p, err := project.Load(index.Project.Root); err == nil {
+			_ = resource.ApplyProject(&org, p)
 			if automationIndex, err := automation.LoadProject(p); err == nil {
 				automation.ApplyToOrg(&org, automationIndex)
 			}

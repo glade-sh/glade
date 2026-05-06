@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/open-aer/oaer/internal/schema"
+	"github.com/open-aer/oaer/internal/sobject"
 	"github.com/open-aer/oaer/internal/storage"
 )
 
@@ -149,6 +151,47 @@ func TestExecuteCustomMetadataRelationshipProjection(t *testing.T) {
 	value := result.Records[0].Fields["Target__r.QualifiedApiName"]
 	if value.Kind != storage.ValueString || value.String != "Target" {
 		t.Fatalf("relationship projection = %#v", value)
+	}
+}
+
+func TestExecuteSOQLOverLoadedCustomMetadataRecords(t *testing.T) {
+	sch := schema.Schema{Objects: []schema.Object{
+		{
+			Name: "Target__mdt",
+			Fields: []schema.Field{
+				{Name: "Description__c", Type: "Text"},
+			},
+		},
+		{
+			Name: "Feature__mdt",
+			Fields: []schema.Field{
+				{Name: "Enabled__c", Type: "Checkbox"},
+				{Name: "Target__c", Type: "MetadataRelationship", ReferenceTo: []string{"Target__mdt"}},
+			},
+		},
+	}, CustomMetadataRecords: []schema.CustomMetadataRecord{
+		{FullName: "Feature.Default", ObjectName: "Feature__mdt", DeveloperName: "Default", Values: []schema.CustomMetadataValue{{Field: "Enabled__c", Value: "true"}, {Field: "Target__c", Value: "Target"}}},
+		{FullName: "Target.Target", ObjectName: "Target__mdt", DeveloperName: "Target", Values: []schema.CustomMetadataValue{{Field: "Description__c", Value: "Target row"}}},
+	}}
+	org := storage.NewOrgState()
+	registry := sobject.BuildDescribeRegistry(sch)
+	for name, describe := range registry.Objects {
+		org.Objects[name] = storage.ObjectState{Definition: sobject.ToObjectDefinition(describe), Records: map[storage.ID]storage.Record{}}
+	}
+	if err := storage.ApplyCustomMetadataRecords(&org, sch.CustomMetadataRecords); err != nil {
+		t.Fatal(err)
+	}
+
+	result, err := ParseAndExecute(org, "SELECT DeveloperName, Enabled__c, Target__r.Description__c FROM Feature__mdt WHERE Target__r.QualifiedApiName = 'Target'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 {
+		t.Fatalf("rows = %d", result.Rows)
+	}
+	record := result.Records[0]
+	if record.Fields["DeveloperName"].String != "Default" || !record.Fields["Enabled__c"].Boolean || record.Fields["Target__r.Description__c"].String != "Target row" {
+		t.Fatalf("record = %#v", record)
 	}
 }
 

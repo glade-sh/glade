@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/open-aer/oaer/internal/project"
+	"github.com/open-aer/oaer/internal/storage"
 )
 
 func TestLoadProjectIndexesPagesAndComponents(t *testing.T) {
@@ -91,6 +92,19 @@ func TestExtractMergeReferences(t *testing.T) {
 	}
 	if !hasMerge(refs, "URLFOR", "$Resource", "Bundle") || !hasMerge(refs, "Site", "$Site", "BaseUrl") {
 		t.Fatalf("classified refs = %#v", refs)
+	}
+}
+
+func TestResolveResourceURL(t *testing.T) {
+	registry := storage.MetadataRegistry{
+		StaticResources: []storage.StaticResourceMetadata{{Name: "Bundle", URL: "/resource/Bundle"}},
+		ContentAssets:   []storage.ContentAssetMetadata{{Name: "Logo", URL: "/sfc/servlet.shepherd/version/download/Logo"}},
+	}
+	if got, ok := ResolveResourceURL(registry, `URLFOR($Resource.Bundle, 'x.css')`); !ok || got != "/resource/Bundle/x.css" {
+		t.Fatalf("URLFOR = %q, %v", got, ok)
+	}
+	if got, ok := ResolveResourceURL(registry, `$Resource.Logo`); !ok || got != "/sfc/servlet.shepherd/version/download/Logo" {
+		t.Fatalf("$Resource = %q, %v", got, ok)
 	}
 }
 

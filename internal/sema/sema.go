@@ -1773,6 +1773,10 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 				diagnostics = append(diagnostics, collectionDiagnostics...)
 				continue
 			}
+			if platformDiagnostics, handled := checkSemaPlatformCall(typ, member, receiverType, method, args, bodyOffset+match[2], bodyOffset+match[3], source, scope, model); handled {
+				diagnostics = append(diagnostics, platformDiagnostics...)
+				continue
+			}
 			diagnostics = append(diagnostics, a.diagnoseMethodCall(typ, member, method, resolveMemberMethods(model, receiverType, method), args, haveArgs, "instance", bodyOffset+match[2], bodyOffset+match[3], source, scope, model)...)
 			continue
 		}
@@ -1789,6 +1793,10 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 			if ok {
 				if collectionDiagnostics, handled := checkSemaCollectionCall(typ, member, receiverType, method, args, bodyOffset+match[2], bodyOffset+match[3], source, scope, model); handled {
 					diagnostics = append(diagnostics, collectionDiagnostics...)
+					continue
+				}
+				if platformDiagnostics, handled := checkSemaPlatformCall(typ, member, receiverType, method, args, bodyOffset+match[2], bodyOffset+match[3], source, scope, model); handled {
+					diagnostics = append(diagnostics, platformDiagnostics...)
 					continue
 				}
 				if isSemaBuiltinType(receiverType) {
@@ -2411,6 +2419,9 @@ func semaResolvedCallReturnType(model map[string]typeMembers, receiverType, meth
 	if sig, ok := semaCollectionMethodSignature(receiverType, method); ok {
 		return sig.returnType
 	}
+	if sig, ok := semaPlatformMethodSignature(receiverType, method); ok {
+		return sig.returnType
+	}
 	if candidate, ok, _ := bestResolvedMemberByArgTypes(resolveMemberMethods(model, receiverType, method), argTypes, model); ok {
 		return candidate.member.Type
 	}
@@ -2615,6 +2626,70 @@ func checkSemaCollectionCall(typ typesys.TypeSymbol, member typesys.MemberSymbol
 	return []diagnostic.Diagnostic{collectionCallDiagnostic(typ, member, method, len(args), start, end, source)}, true
 }
 
+func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSignature, bool) {
+	method = normalizeName(method)
+	switch normalizeName(receiverType) {
+	case "apexpages":
+		switch method {
+		case "currentpage":
+			return semaCollectionSignature{returnType: "PageReference", params: [][]string{{}}}, true
+		case "addmessage":
+			return semaCollectionSignature{returnType: "void", params: [][]string{{"ApexPages.Message"}}}, true
+		case "hasmessages":
+			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{}}}, true
+		}
+	case "pagereference":
+		switch method {
+		case "getparameters":
+			return semaCollectionSignature{returnType: "Map<String,String>", params: [][]string{{}}}, true
+		case "geturl":
+			return semaCollectionSignature{returnType: "String", params: [][]string{{}}}, true
+		case "setredirect":
+			return semaCollectionSignature{returnType: "void", params: [][]string{{"Boolean"}}}, true
+		case "getredirect":
+			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{}}}, true
+		}
+	case "http":
+		if method == "send" {
+			return semaCollectionSignature{returnType: "HttpResponse", params: [][]string{{"HttpRequest"}}}, true
+		}
+	case "httpresponse":
+		switch method {
+		case "getbody":
+			return semaCollectionSignature{returnType: "String", params: [][]string{{}}}, true
+		case "getstatuscode":
+			return semaCollectionSignature{returnType: "Integer", params: [][]string{{}}}, true
+		case "getheader":
+			return semaCollectionSignature{returnType: "String", params: [][]string{{"String"}}}, true
+		}
+	case "multistaticresourcecalloutmock":
+		switch method {
+		case "setstaticresource":
+			return semaCollectionSignature{returnType: "void", params: [][]string{{"String", "String"}}}, true
+		case "setstatuscode":
+			return semaCollectionSignature{returnType: "void", params: [][]string{{"Integer"}}}, true
+		case "setheader":
+			return semaCollectionSignature{returnType: "void", params: [][]string{{"String", "String"}}}, true
+		}
+	}
+	return semaCollectionSignature{}, false
+}
+
+func checkSemaPlatformCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, receiverType, method string, args []semaArg, start, end int, source string, scope map[string]string, model map[string]typeMembers) ([]diagnostic.Diagnostic, bool) {
+	sig, ok := semaPlatformMethodSignature(receiverType, method)
+	if !ok {
+		return nil, false
+	}
+	argTypes := make([]string, len(args))
+	for i, arg := range args {
+		argTypes[i] = inferSemaArgTypeWithModel(arg.text, scope, model)
+	}
+	if semaArgsMatchAny(sig.params, argTypes, model) {
+		return nil, true
+	}
+	return []diagnostic.Diagnostic{collectionCallDiagnostic(typ, member, method, len(args), start, end, source)}, true
+}
+
 func semaArgsMatchAny(params [][]string, args []string, model map[string]typeMembers) bool {
 	if len(params) == 0 {
 		return len(args) == 0
@@ -2777,10 +2852,23 @@ func semaChainedCallReceiverNear(body string, pos int, method string, scope map[
 }
 
 func semaExpressionStart(expr string) int {
+	depth := 0
 	for i := len(expr) - 1; i >= 0; i-- {
 		switch expr[i] {
+		case ')', ']':
+			depth++
+		case '(', '[':
+			if depth > 0 {
+				depth--
+				continue
+			}
+			return i + 1
 		case ';', '{', '}', '\n':
 			return i + 1
+		case ',':
+			if depth == 0 {
+				return i + 1
+			}
 		case '=':
 			if i == 0 || expr[i-1] != '!' && expr[i-1] != '=' && expr[i-1] != '<' && expr[i-1] != '>' {
 				return i + 1
@@ -3170,6 +3258,9 @@ func inferSemaArgType(arg string, scope map[string]string) string {
 	if typ, ok := scope[normalizeName(arg)]; ok {
 		return typ
 	}
+	if receiver, name, ok := strings.Cut(arg, "."); ok && strings.EqualFold(receiver, "Page") && strings.TrimSpace(name) != "" {
+		return "PageReference"
+	}
 	return ""
 }
 
@@ -3420,6 +3511,7 @@ var platformTypes = []string{
 	"Iterable",
 	"Matcher",
 	"Messaging",
+	"MultiStaticResourceCalloutMock",
 	"ObjectPermissions",
 	"OrgWideEmailAddress",
 	"Organization",

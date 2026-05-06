@@ -29,6 +29,7 @@ import (
 
 	"github.com/open-aer/oaer/internal/dml"
 	"github.com/open-aer/oaer/internal/ir"
+	"github.com/open-aer/oaer/internal/resource"
 	"github.com/open-aer/oaer/internal/soql"
 	"github.com/open-aer/oaer/internal/storage"
 	"github.com/open-aer/oaer/internal/trace"
@@ -74,6 +75,7 @@ type VM struct {
 	nextSavepoint    int
 	pageMessages     []Value
 	currentPage      Value
+	pageReferences   map[string]string
 	restRequest      Value
 	restResponse     Value
 	serverBaseURL    string
@@ -217,6 +219,7 @@ func (vm *VM) CloneRuntime(stdout io.Writer) *VM {
 	clone.Classes = copyClassMap(vm.Classes)
 	clone.Triggers = copyTriggerSliceMap(vm.Triggers)
 	clone.staticInitState = copyStaticInitStateMap(vm.staticInitState)
+	clone.pageReferences = copyStringMap(vm.pageReferences)
 	return clone
 }
 
@@ -290,6 +293,36 @@ func copyStaticInitStateMap(in map[string]staticInitState) map[string]staticInit
 		out[name] = state
 	}
 	return out
+}
+
+func copyStringMap(in map[string]string) map[string]string {
+	if in == nil {
+		return nil
+	}
+	out := make(map[string]string, len(in))
+	for key, value := range in {
+		out[key] = value
+	}
+	return out
+}
+
+func (vm *VM) RegisterPageReference(name string) {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return
+	}
+	if strings.HasPrefix(strings.ToLower(name), "page.") {
+		name = name[len("Page."):]
+	}
+	if vm.pageReferences == nil {
+		vm.pageReferences = make(map[string]string)
+	}
+	vm.pageReferences[strings.ToLower(name)] = name
+}
+
+func (vm *VM) ResetApexPageState() {
+	vm.pageMessages = nil
+	vm.currentPage = Value{}
 }
 
 func (vm *VM) SetOrg(org *storage.OrgState) {
@@ -375,6 +408,7 @@ func (vm *VM) ResetStatics() error {
 			vm.staticInitState[class.Name] = staticInitUninitialized
 		}
 	}
+	vm.ResetApexPageState()
 	return nil
 }
 
@@ -7282,9 +7316,13 @@ func (vm *VM) lookup(name string) (Value, error) {
 		}
 	}
 	if strings.HasPrefix(name, "Label.") {
-		label := strings.TrimPrefix(name, "Label.")
-		if label != "" && !strings.Contains(label, ".") {
-			return String(label), nil
+		if value, ok := vm.lookupLabel(name); ok {
+			return value, nil
+		}
+	}
+	if strings.HasPrefix(name, "System.Label.") {
+		if value, ok := vm.lookupLabel(strings.TrimPrefix(name, "System.")); ok {
+			return value, nil
 		}
 	}
 	if strings.HasPrefix(name, "JSONToken.") {
@@ -7360,7 +7398,15 @@ func (vm *VM) lookup(name string) (Value, error) {
 		}
 		if len(parts) == 2 {
 			if parts[0] == "Page" {
-				return newPageReference("/apex/" + parts[1]), nil
+				pageName := parts[1]
+				if vm.pageReferences != nil {
+					registered, ok := vm.pageReferences[strings.ToLower(pageName)]
+					if !ok {
+						return Null, fmt.Errorf("unknown Visualforce page Page.%s", pageName)
+					}
+					pageName = registered
+				}
+				return newPageReference("/apex/" + pageName), nil
 			}
 			if value, ok := builtinStaticField(parts[0], parts[1]); ok {
 				return value, nil
@@ -13472,13 +13518,19 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if err := validateHttpRequest(args[0]); err != nil {
 				return Null, receiver, false, true, err
 			}
+			request := args[0]
+			if endpoint, ok := request.Fields["endpoint"]; ok && endpoint.Kind == ValueString && vm.Org != nil {
+				if resolved, ok := resource.ResolveEndpoint(vm.Org.Metadata, endpoint.Text); ok {
+					request.Fields["resolvedEndpoint"] = String(resolved)
+				}
+			}
 			if err := vm.incrementLimit("callouts", 1); err != nil {
 				return Null, receiver, false, true, err
 			}
 			appendTrace(result, "apex.callout.http", "apex.callout", map[string]any{"operation": "Http.send"})
 			if vm.testContext != nil && vm.testContext.HTTPMock.Kind == ValueObject {
 				if target, ok := vm.resolveInstanceMethod(vm.testContext.HTTPMock.Type, "respond"); ok {
-					value, err := vm.callMethodWithReceiver(target, vm.testContext.HTTPMock, []Value{args[0]}, &Result{})
+					value, err := vm.callMethodWithReceiver(target, vm.testContext.HTTPMock, []Value{request}, &Result{})
 					if err != nil {
 						return Null, receiver, false, true, err
 					}
@@ -13487,7 +13539,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 					}
 					return Null, receiver, false, true, fmt.Errorf("HttpCalloutMock.respond must return HttpResponse")
 				}
-				value, err := vm.localHTTPMockResponse(vm.testContext.HTTPMock, args[0])
+				value, err := vm.localHTTPMockResponse(vm.testContext.HTTPMock, request)
 				if err != nil {
 					return Null, receiver, false, true, err
 				}
@@ -13773,6 +13825,11 @@ func (vm *VM) localHTTPMockResponse(mock Value, request Value) (Value, error) {
 			return Null, fmt.Errorf("MultiStaticResourceCalloutMock has no static resource for endpoint %s", endpoint.Text)
 		}
 		resource, ok := resources.Map[mapKey(endpoint)]
+		if !ok {
+			if resolved, hasResolved := request.Fields["resolvedEndpoint"]; hasResolved && resolved.Kind == ValueString {
+				resource, ok = resources.Map[mapKey(resolved)]
+			}
+		}
 		if !ok || resource.Kind != ValueString || strings.TrimSpace(resource.Text) == "" {
 			return Null, fmt.Errorf("MultiStaticResourceCalloutMock has no static resource for endpoint %s", endpoint.Text)
 		}
@@ -13808,6 +13865,22 @@ func (vm *VM) staticResourceBody(resourceName string) string {
 	if vm.Org == nil {
 		return resourceName
 	}
+	for _, resource := range vm.Org.Metadata.StaticResources {
+		if strings.EqualFold(resource.Name, resourceName) {
+			if resource.Content != "" {
+				return resource.Content
+			}
+			break
+		}
+	}
+	for _, asset := range vm.Org.Metadata.ContentAssets {
+		if strings.EqualFold(asset.Name, resourceName) {
+			if asset.Content != "" {
+				return asset.Content
+			}
+			break
+		}
+	}
 	object, ok := vm.Org.Objects["StaticResource"]
 	if !ok {
 		return resourceName
@@ -13825,6 +13898,27 @@ func (vm *VM) staticResourceBody(resourceName string) string {
 		}
 	}
 	return resourceName
+}
+
+func (vm *VM) lookupLabel(name string) (Value, bool) {
+	label := strings.TrimPrefix(name, "Label.")
+	if label == "" {
+		return Null, false
+	}
+	namespace := ""
+	if before, after, ok := strings.Cut(label, "."); ok {
+		namespace = before
+		label = after
+	}
+	if vm.Org != nil {
+		if value, ok := resource.LookupLabel(vm.Org.Metadata, namespace, label); ok {
+			return String(value), true
+		}
+	}
+	if namespace == "" && !strings.Contains(label, ".") {
+		return String(label), true
+	}
+	return Null, false
 }
 
 func staticResourceNameMatches(record storage.Record, resourceName string) bool {
