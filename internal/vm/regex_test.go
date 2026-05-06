@@ -148,7 +148,7 @@ try {
 	System.assertEquals(-1, e.getIndex());
 	System.assert(e.getDescription().contains('missing closing ]'));
 	System.assert(e.getMessage().contains('missing closing ]'));
-	System.assertEquals('PatternSyntaxException', e.getTypeName());
+	System.assertEquals('System.PatternSyntaxException', e.getTypeName());
 } catch (Exception e) {
 	System.assert(false);
 }
@@ -167,7 +167,7 @@ try {
 	Pattern.matches('[', 'x');
 	System.assert(false);
 } catch (IllegalArgumentException e) {
-	System.assertEquals('PatternSyntaxException', e.getTypeName());
+	System.assertEquals('System.PatternSyntaxException', e.getTypeName());
 	System.assert(e.getMessage().contains('missing closing ]'));
 }
 `)

@@ -15,13 +15,13 @@
   "source": [
     {
       "path": "anonymous.apex",
-      "content": "String utf = EncodingUtil.urlEncode('A B+Ω', 'UTF-8');\nSystem.assertEquals('A+B%2B%CE%A9', utf);\nSystem.assertEquals('A B+Ω', EncodingUtil.urlDecode(utf, 'utf8'));\nString latin = EncodingUtil.urlEncode('café trail', 'ISO-8859-1');\nSystem.assertEquals('caf%E9+trail', latin);\nSystem.assertEquals('café trail', EncodingUtil.urlDecode(latin, 'latin1'));\nSystem.assertEquals('café trail', EncodingUtil.urlDecode('caf%E9+trail', ' ISO_8859_1 '));\n"
+      "content": "String utf = EncodingUtil.urlEncode('A B+\u03a9', 'UTF-8');\nSystem.assertEquals('A+B%2B%CE%A9', utf);\nSystem.assertEquals('A B+\u03a9', EncodingUtil.urlDecode(utf, 'utf8'));\nString latin = EncodingUtil.urlEncode('caf\u00e9 trail', 'ISO-8859-1');\nSystem.assertEquals('caf%E9+trail', latin);\nSystem.assertEquals('caf\u00e9 trail', EncodingUtil.urlDecode(latin, 'latin1'));\nSystem.assertEquals('caf\u00e9 trail', EncodingUtil.urlDecode('caf%E9+trail', ' ISO_8859_1 '));\n"
     }
   ],
   "command": {
     "kind": "exec",
     "args": [
-      "String utf = EncodingUtil.urlEncode('A B+Ω', 'UTF-8');\nSystem.assertEquals('A+B%2B%CE%A9', utf);\nSystem.assertEquals('A B+Ω', EncodingUtil.urlDecode(utf, 'utf8'));\nString latin = EncodingUtil.urlEncode('café trail', 'ISO-8859-1');\nSystem.assertEquals('caf%E9+trail', latin);\nSystem.assertEquals('café trail', EncodingUtil.urlDecode(latin, 'latin1'));\nSystem.assertEquals('café trail', EncodingUtil.urlDecode('caf%E9+trail', ' ISO_8859_1 '));\n"
+      "String utf = EncodingUtil.urlEncode('A B+\u03a9', 'UTF-8');\nSystem.assertEquals('A+B%2B%CE%A9', utf);\nSystem.assertEquals('A B+\u03a9', EncodingUtil.urlDecode(utf, 'utf8'));\nString latin = EncodingUtil.urlEncode('caf\u00e9 trail', 'ISO-8859-1');\nSystem.assertEquals('caf%E9+trail', latin);\nSystem.assertEquals('caf\u00e9 trail', EncodingUtil.urlDecode(latin, 'latin1'));\nSystem.assertEquals('caf\u00e9 trail', EncodingUtil.urlDecode('caf%E9+trail', ' ISO_8859_1 '));\n"
     ]
   },
   "expected": {

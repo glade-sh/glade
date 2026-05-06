@@ -1,8 +1,16 @@
 {
   "name": "data-platform-schema-global-describe-tokens",
   "evidence": [
-    {"symbol": "Schema.getGlobalDescribe", "kind": "test", "notes": "Global describe returns SObjectType tokens keyed by local object API name."},
-    {"symbol": "Schema.describeSObjects", "kind": "test", "notes": "describeSObjects accepts both object names and SObjectType tokens."}
+    {
+      "symbol": "Schema.getGlobalDescribe",
+      "kind": "test",
+      "notes": "Global describe returns SObjectType tokens keyed by local object API name."
+    },
+    {
+      "symbol": "Schema.describeSObjects",
+      "kind": "test",
+      "notes": "describeSObjects accepts both object names and SObjectType tokens."
+    }
   ],
   "source": [
     {
@@ -18,6 +26,16 @@
       "content": "@isTest private class SchemaGlobalDescribeTokensFixtureTest { @isTest static void globalDescribeReturnsTokens() { Map<String,Object> describes = Schema.getGlobalDescribe(); System.assert(describes.containsKey('Account')); Object accountType = describes.get('Account'); Object accountDescribe = accountType.getDescribe(); System.assertEquals('Account', accountDescribe.getName()); System.assertEquals('Accounts', accountDescribe.getLabelPlural()); List<Object> byName = Schema.describeSObjects(new List<String>{'Account'}); System.assertEquals('Account', byName.get(0).getName()); List<Object> byToken = Schema.describeSObjects(new List<Object>{accountType}); System.assertEquals('Account', byToken.get(0).getName()); } }"
     }
   ],
-  "command": {"kind": "test"},
-  "expected": {"result": {"ok": true, "total": 1, "passed": 1, "failed": 0, "errors": 0}}
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "ok": true,
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0
+    }
+  }
 }

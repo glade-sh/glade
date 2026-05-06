@@ -1181,8 +1181,8 @@ try {
 	System.assert(trace != '');
 }
 Exception base = new DmlException('blocked');
-System.assertEquals('DmlException', base.getTypeName());
-System.assertEquals('QueryException:bad query', caught);
+System.assertEquals('System.DmlException', base.getTypeName());
+System.assertEquals('System.QueryException:bad query', caught);
 `)
 	if err != nil {
 		t.Fatal(err)

@@ -1,10 +1,26 @@
 {
   "name": "integration-rest-context-stdlib",
   "evidence": [
-    {"symbol": "RestContext.request", "kind": "exec", "notes": "VM-local static request slot accepts RestRequest or null."},
-    {"symbol": "RestContext.response", "kind": "exec", "notes": "VM-local static response slot lazily creates a RestResponse."},
-    {"symbol": "RestRequest", "kind": "exec", "notes": "Local object shape covers requestURI, resourcePath, httpMethod, remoteAddress, headers, params, and requestBody."},
-    {"symbol": "RestResponse", "kind": "exec", "notes": "Local object shape covers statusCode, headers, and responseBody."}
+    {
+      "symbol": "RestContext.request",
+      "kind": "exec",
+      "notes": "VM-local static request slot accepts RestRequest or null."
+    },
+    {
+      "symbol": "RestContext.response",
+      "kind": "exec",
+      "notes": "VM-local static response slot lazily creates a RestResponse."
+    },
+    {
+      "symbol": "RestRequest",
+      "kind": "exec",
+      "notes": "Local object shape covers requestURI, resourcePath, httpMethod, remoteAddress, headers, params, and requestBody."
+    },
+    {
+      "symbol": "RestResponse",
+      "kind": "exec",
+      "notes": "Local object shape covers statusCode, headers, and responseBody."
+    }
   ],
   "source": [
     {

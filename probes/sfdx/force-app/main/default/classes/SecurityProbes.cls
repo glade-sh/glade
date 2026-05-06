@@ -21,10 +21,12 @@ public class SecurityProbes implements Probe {
     }
 
     private Object runCrudCheck() {
-        return Schema.sObjectType.Account.isAccessible();
+        return Account.SObjectType.getDescribe().isAccessible();
     }
 
     private Object runFlsCheck() {
-        return Schema.sObjectType.Account.fields.Name.isAccessible();
+        Map<String, Schema.SObjectField> fieldMap = Account.SObjectType.getDescribe().fields.getMap();
+        Schema.SObjectField nameField = fieldMap.get('Name');
+        return nameField.getDescribe().isAccessible();
     }
 }

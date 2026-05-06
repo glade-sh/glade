@@ -28,7 +28,7 @@ func Run(cfg Config) (*GapReport, error) {
 	fmt.Printf("Captured %d golden responses\n", len(golden))
 
 	fmt.Println("\n=== Phase 2: Local Replay (oaer VM) ===")
-	localExec := &LocalExecutor{ProbeDir: cfg.ProbeDir}
+	localExec := &LocalExecutor{ProbeDir: cfg.ProbeDir, Features: cfg.Features}
 	local, err := localExec.CaptureLocal(cfg.ProbeIDs)
 	if err != nil {
 		return nil, fmt.Errorf("local replay failed: %w", err)
@@ -164,6 +164,41 @@ func defaultProbeIDs() []string {
 		"integration.json-serialize-complex",
 		"integration.json-deserialize-untyped",
 		"integration.encoding-util",
+		"integration.json-serialize-sobject",
+		"integration.url-encoding",
+		// Bulk DML
+		"bulkdml.partial-success",
+		"bulkdml.errors-shape",
+		"bulkdml.id-assignment",
+		// SObject & Id
+		"sobject.clone",
+		"sobject.get-put",
+		"sobject.getSObjectType",
+		"id.validation",
+		// More Collections
+		"collections.list-sort",
+		"collections.map-keyset",
+		"collections.set-equality",
+		// More Datetime
+		"datetime.now",
+		"datetime.today",
+		"datetime.valueOfGmt",
+		// More String
+		"string.escapeSingleQuotes",
+		"string.split",
+		"string.trim",
+		// More SOQL
+		"soql.count-distinct",
+		"soql.group-by",
+		"soql.subquery",
+		// System Assert
+		"system.assert-pass",
+		"system.assertEquals",
+		// More Math
+		"math.abs-negative",
+		"math.max",
+		"math.pow",
+		"math.min",
 	}
 }
 

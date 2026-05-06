@@ -1,7 +1,28 @@
 {
   "name": "integration-continuation-constructor-unsupported",
-  "evidence": [{"symbol": "Continuation constructor", "kind": "exec", "notes": "Continuation construction returns UnsupportedFeature diagnostics."}],
-  "source": [{"path": "anonymous.apex", "content": "Continuation c = new Continuation(40);"}],
-  "command": {"kind": "exec", "args": ["Continuation c = new Continuation(40);"]},
-  "expected": {"error": {"type": "UnsupportedFeature", "message": "unsupported call \"Continuation constructor local continuation callout surface\""}}
+  "evidence": [
+    {
+      "symbol": "Continuation constructor",
+      "kind": "exec",
+      "notes": "Continuation construction returns UnsupportedFeature diagnostics."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Continuation c = new Continuation(40);"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Continuation c = new Continuation(40);"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"Continuation constructor local continuation callout surface\""
+    }
+  }
 }

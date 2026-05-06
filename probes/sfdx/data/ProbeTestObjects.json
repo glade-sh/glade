@@ -1,0 +1,34 @@
+{
+  "records": [
+    {
+      "attributes": {
+        "type": "ProbeTestObject__c",
+        "referenceId": "ProbeTestObjectRef1"
+      },
+      "Name__c": "Record1",
+      "Value__c": 10,
+      "Triggered__c": "false",
+      "CurrencyIsoCode": "USD"
+    },
+    {
+      "attributes": {
+        "type": "ProbeTestObject__c",
+        "referenceId": "ProbeTestObjectRef2"
+      },
+      "Name__c": "Record2",
+      "Value__c": 20,
+      "Triggered__c": "false",
+      "CurrencyIsoCode": "USD"
+    },
+    {
+      "attributes": {
+        "type": "ProbeTestObject__c",
+        "referenceId": "ProbeTestObjectRef3"
+      },
+      "Name__c": "Record3",
+      "Value__c": 30,
+      "Triggered__c": "false",
+      "CurrencyIsoCode": "USD"
+    }
+  ]
+}

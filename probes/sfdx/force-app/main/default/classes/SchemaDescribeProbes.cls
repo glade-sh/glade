@@ -18,17 +18,17 @@ public class SchemaDescribeProbes implements Probe {
     }
 
     private Object runObjectDescribeFields() {
-        Schema.DescribeSObjectResult desc = Account.SObjectType.getDescribe();
-        return desc.fields.getMap().size() > 0;
+        Schema.DescribeSObjectResult d = Account.SObjectType.getDescribe();
+        return d.fields.getMap().size() > 0;
     }
 
     private Object runPicklistDescribe() {
-        Schema.DescribeFieldResult desc = Account.Industry.getDescribe();
-        return desc.getType().name();
+        Schema.DescribeFieldResult d = Account.Industry.getDescribe();
+        return String.valueOf(d.getType());
     }
 
     private Object runRecordTypeDescribe() {
-        Schema.DescribeSObjectResult desc = Account.SObjectType.getDescribe();
-        return desc.getRecordTypeInfos().size() > 0;
+        Schema.DescribeSObjectResult d = Account.SObjectType.getDescribe();
+        return d.getRecordTypeInfos().size() > 0;
     }
 }

@@ -1064,14 +1064,14 @@ func TestExecCoreExceptionStdlibMethods(t *testing.T) {
 	program, err := CompileAnonymous(`
 Exception constructed = new DmlException('blocked');
 System.assertEquals('blocked', constructed.getMessage());
-System.assertEquals('DmlException', constructed.getTypeName());
+System.assertEquals('System.DmlException', constructed.getTypeName());
 System.assertEquals(0, constructed.getLineNumber());
 System.assertEquals('', constructed.getStackTraceString());
 System.assertEquals('System.DmlException: blocked', constructed.toString());
 Exception noMessage = new DmlException();
 System.assertEquals(null, noMessage.getMessage());
 Exception systemPrefixed = new System.DmlException('system blocked');
-System.assertEquals('DmlException', systemPrefixed.getTypeName());
+System.assertEquals('System.DmlException', systemPrefixed.getTypeName());
 System.assertEquals('System.DmlException: system blocked', systemPrefixed.toString());
 
 String caught = '';
@@ -1084,7 +1084,7 @@ try {
 	System.assert(stackTrace != '', 'caught exceptions should carry a stack trace');
 	System.assertEquals('System.QueryException: bad query', e.toString());
 }
-System.assertEquals('QueryException:bad query', caught);
+System.assertEquals('System.QueryException:bad query', caught);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1102,7 +1102,7 @@ Exception cause = new QueryException('root cause');
 Exception returned = outer.initCause(cause);
 System.assert(outer.equals(returned));
 Exception recovered = outer.getCause();
-System.assertEquals('QueryException', recovered.getTypeName());
+System.assertEquals('System.QueryException', recovered.getTypeName());
 System.assertEquals('root cause', recovered.getMessage());
 
 Boolean repeatCaught = false;
@@ -1110,7 +1110,7 @@ try {
 	outer.initCause(null);
 } catch (Exception e) {
 	repeatCaught = true;
-	System.assertEquals('IllegalStateException', e.getTypeName());
+	System.assertEquals('System.IllegalStateException', e.getTypeName());
 	System.assertEquals('Can''t overwrite cause', e.getMessage());
 }
 System.assert(repeatCaught, 'repeat initCause should throw');
@@ -1124,7 +1124,7 @@ try {
 	nullable.initCause(cause);
 } catch (Exception e) {
 	nullRepeatCaught = true;
-	System.assertEquals('IllegalStateException', e.getTypeName());
+	System.assertEquals('System.IllegalStateException', e.getTypeName());
 }
 System.assert(nullRepeatCaught, 'null cause initialization should count');
 
@@ -1134,7 +1134,7 @@ try {
 	self.initCause(self);
 } catch (Exception e) {
 	selfCaught = true;
-	System.assertEquals('IllegalArgumentException', e.getTypeName());
+	System.assertEquals('System.IllegalArgumentException', e.getTypeName());
 	System.assertEquals('Self-causation not permitted', e.getMessage());
 }
 System.assert(selfCaught, 'self cause should throw');
@@ -1207,7 +1207,7 @@ func TestExecCoreBuiltinExceptionMatrix(t *testing.T) {
 		source.WriteString("('")
 		source.WriteString(name)
 		source.WriteString(" message');\n")
-		source.WriteString("System.assertEquals('")
+		source.WriteString("System.assertEquals('System.")
 		source.WriteString(name)
 		source.WriteString("', e")
 		source.WriteString(string(rune('A' + i/26)))
@@ -1914,15 +1914,16 @@ List<RoundingMode> roundingModes = RoundingMode.values();
 System.assertEquals(8, roundingModes.size());
 System.assertEquals('UP', roundingModes.get(0).name());
 System.assertEquals('UNNECESSARY', roundingModes.get(7).name());
+System.assertEquals(0.33, Decimal.valueOf('1.00').divide(3, 2, System.RoundingMode.HALF_UP));
 System.assertEquals(1, Math.signum(12.5));
 System.assertEquals(-1, Math.signum(-4));
 System.assertEquals(0, Math.signum(0));
 System.assertEquals(1, Math.mod(10, 3));
 System.assertEquals(2.5, Math.mod(12.5, 5));
-System.assertEquals(13, Math.roundToLong(12.5));
+System.assertEquals(12, Math.roundToLong(12.5));
 System.assertEquals(3.0, Math.ceil(2.1));
 System.assertEquals(2.0, Math.floor(2.9));
-System.assertEquals(3.0, Math.round(2.5));
+System.assertEquals(2.0, Math.round(2.5));
 System.assertEquals(7, Math.max(3, 7));
 System.assertEquals(3, Math.min(3, 7));
 System.assertEquals(3.0, Math.sqrt(9));

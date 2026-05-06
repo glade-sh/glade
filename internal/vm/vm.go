@@ -600,12 +600,17 @@ func (vm *VM) executeProgram(program ir.Program, result *Result) (execOutcome, e
 }
 
 func (vm *VM) updateHeapLimit() error {
+	total := vm.currentHeapSize()
+	vm.limits.HeapSize = total
+	return vm.checkLimit("heapSize", vm.limits.HeapSize, vm.limitCaps.HeapSize)
+}
+
+func (vm *VM) currentHeapSize() int {
 	total := 0
 	for name, value := range vm.Globals {
 		total += len(name) + approxValueSize(value)
 	}
-	vm.limits.HeapSize = total
-	return vm.checkLimit("heapSize", vm.limits.HeapSize, vm.limitCaps.HeapSize)
+	return total
 }
 
 func statementTraceEvent(seq int, inst ir.Instruction, source string) trace.Event {
@@ -1517,6 +1522,7 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		"Limits.getHeapSize", "Limits.getLimitHeapSize", "Limits.getCpuTime", "Limits.getLimitCpuTime",
 		"Limits.getCallouts", "Limits.getLimitCallouts", "Limits.getQueueableJobs", "Limits.getLimitQueueableJobs",
 		"Limits.getFutureCalls", "Limits.getLimitFutureCalls", "Limits.getAsyncJobs", "Limits.getLimitAsyncJobs",
+		"Limits.getAsyncCalls", "Limits.getLimitAsyncCalls",
 		"Limits.getBatchJobs", "Limits.getLimitBatchJobs", "Limits.getScheduledJobs", "Limits.getLimitScheduledJobs",
 		"Limits.getEmailInvocations", "Limits.getLimitEmailInvocations":
 		if len(args) != 0 {
@@ -1529,6 +1535,9 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 	case "String.valueOf":
 		if len(args) != 1 {
 			return Null, fmt.Errorf("String.valueOf expects 1 argument")
+		}
+		if args[0].Kind == ValueNull {
+			return Null, nil
 		}
 		text, err := vm.displayString(args[0], result)
 		if err != nil {
@@ -1563,10 +1572,14 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		if len(args) != 3 || args[0].Kind != ValueInt || args[1].Kind != ValueInt || args[2].Kind != ValueInt {
 			return Null, fmt.Errorf("Date.newInstance expects year, month, day integers")
 		}
-		if err := validateDateParts(int(args[0].Int), int(args[1].Int), int(args[2].Int)); err != nil {
+		year := int(args[0].Int)
+		if year == 0 {
+			year = 1
+		}
+		if err := validateDateParts(year, int(args[1].Int), int(args[2].Int)); err != nil {
 			return Null, err
 		}
-		return platformScalar("Date", fmt.Sprintf("%04d-%02d-%02d", args[0].Int, args[1].Int, args[2].Int)), nil
+		return platformScalar("Date", fmt.Sprintf("%04d-%02d-%02d", year, args[1].Int, args[2].Int)), nil
 	case "Date.valueOf":
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("Date.valueOf expects String")
@@ -1639,6 +1652,9 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			}
 		}
 		year, month, day := int(args[0].Int), int(args[1].Int), int(args[2].Int)
+		if year == 0 {
+			year = 1
+		}
 		hour, minute, second := 0, 0, 0
 		if len(args) == 6 {
 			hour, minute, second = int(args[3].Int), int(args[4].Int), int(args[5].Int)
@@ -1659,12 +1675,18 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		}
 		return platformScalar("Datetime", formatPlatformDatetime(value)), nil
 	case "Datetime.valueOf", "Datetime.valueOfGmt":
-		if len(args) != 1 || args[0].Kind != ValueString {
-			return Null, fmt.Errorf("%s expects String", callee)
+		if len(args) != 1 {
+			return Null, newExceptionError("System.NullPointerException", fmt.Sprintf("%s expects String", callee))
+		}
+		if args[0].Kind == ValueNull {
+			return Null, newExceptionError("System.NullPointerException", fmt.Sprintf("%s expects String", callee))
+		}
+		if args[0].Kind != ValueString {
+			return Null, newExceptionError("System.TypeException", fmt.Sprintf("%s expects String", callee))
 		}
 		value, err := parseDatetimeText(args[0].Text)
 		if err != nil {
-			return Null, err
+			return Null, newExceptionError("System.TypeException", err.Error())
 		}
 		return platformScalar("Datetime", formatPlatformDatetime(value)), nil
 	case "LoggingLevel.values":
@@ -5404,7 +5426,12 @@ func parseDatetimeText(text string) (time.Time, error) {
 		"2006-01-02T15:04:05",
 	} {
 		if value, err := time.Parse(layout, text); err == nil {
-			if err := validateDateParts(value.Year(), int(value.Month()), value.Day()); err != nil {
+			year := value.Year()
+			if year == 0 {
+				year = 1
+				value = time.Date(year, value.Month(), value.Day(), value.Hour(), value.Minute(), value.Second(), value.Nanosecond(), value.Location())
+			}
+			if err := validateDateParts(year, int(value.Month()), value.Day()); err != nil {
 				return time.Time{}, err
 			}
 			return value, nil
@@ -5574,11 +5601,11 @@ func maxInt(left, right int) int {
 
 func validateDateParts(year, month, day int) error {
 	if year < 1 || year > 9999 {
-		return fmt.Errorf("invalid Date parts: year=%d month=%d day=%d", year, month, day)
+		return newExceptionError("System.TypeException", fmt.Sprintf("invalid Date parts: year=%d month=%d day=%d", year, month, day))
 	}
 	value := time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
 	if value.Year() != year || int(value.Month()) != month || value.Day() != day {
-		return fmt.Errorf("invalid Date parts: year=%d month=%d day=%d", year, month, day)
+		return newExceptionError("System.TypeException", fmt.Sprintf("invalid Date parts: year=%d month=%d day=%d", year, month, day))
 	}
 	return nil
 }
@@ -6269,10 +6296,10 @@ func mathUnary(callee string, args []Value) (Value, error) {
 		case "Math.ceil":
 			return Decimal(math.Ceil(n)), nil
 		default:
-			return Decimal(math.Round(n)), nil
+			return Decimal(roundHalfEven(n)), nil
 		}
 	case "Math.roundToLong":
-		rounded, err := int64FromFloat("Math.roundToLong", math.Round(n))
+		rounded, err := int64FromFloat("Math.roundToLong", roundHalfEven(n))
 		if err != nil {
 			return Null, err
 		}
@@ -9687,6 +9714,10 @@ func (vm *VM) typeAssignableTo(from, to string) bool {
 }
 
 func collectionBase(typeName string) string {
+	typeName = strings.TrimSpace(typeName)
+	if strings.HasSuffix(typeName, "[]") && strings.TrimSpace(strings.TrimSuffix(typeName, "[]")) != "" {
+		return "List"
+	}
 	base, ok := genericBaseName(typeName)
 	if !ok {
 		return ""
@@ -10197,6 +10228,14 @@ func exceptionTypeName(typeName string) string {
 	return typeName
 }
 
+func exceptionQualifiedTypeName(typeName string) string {
+	typeName = strings.TrimSpace(typeName)
+	if !strings.Contains(typeName, ".") && isBuiltinExceptionType(typeName) {
+		return "System." + typeName
+	}
+	return typeName
+}
+
 func exceptionToString(value Value) string {
 	typeName := exceptionTypeName(value.Type)
 	if typeName == "" {
@@ -10261,6 +10300,9 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 		}
 		switch typeName {
 		case "Id":
+			if err := validateApexIDShape(value.Text); err != nil {
+				return Null, newExceptionError("StringException", strings.TrimPrefix(err.Error(), "System.StringException: "))
+			}
 			value.Type = "Id"
 			return value, nil
 		case "Date":
@@ -12297,7 +12339,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("%s.getTypeName expects 0 arguments", receiver.Type)
 			}
-			return String(exceptionTypeName(receiver.Type)), receiver, false, true, nil
+			return String(exceptionQualifiedTypeName(receiver.Type)), receiver, false, true, nil
 		case "getLineNumber":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("%s.getLineNumber expects 0 arguments", receiver.Type)
@@ -12325,6 +12367,17 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		return callIteratorMember(receiver, method, args)
 	}
 	switch receiver.Type {
+	case "AggregateResult":
+		switch method {
+		case "get":
+			if len(args) != 1 || args[0].Kind != ValueString {
+				return Null, receiver, false, true, fmt.Errorf("AggregateResult.get expects String field name")
+			}
+			if value, ok := receiver.Fields[args[0].Text]; ok {
+				return value, receiver, false, true, nil
+			}
+			return Null, receiver, false, true, nil
+		}
 	case "Database.QueryLocator":
 		switch method {
 		case "getQuery":
@@ -13156,7 +13209,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.isCustom expects 0 arguments")
 			}
 			name, _ := receiver.Fields["name"]
-			return Bool(name.Kind == ValueString && strings.HasSuffix(name.Text, "__c")), receiver, false, true, nil
+			return Bool(name.Kind == ValueString && (strings.HasSuffix(name.Text, "__c") || strings.HasSuffix(name.Text, "__mdt"))), receiver, false, true, nil
 		}
 	case "Schema.RecordTypeInfo":
 		switch method {

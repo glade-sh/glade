@@ -167,6 +167,7 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 	case "getLimitDMLRows":
 		return Int(int64(vm.limitCaps.DMLRows)), true
 	case "getHeapSize":
+		vm.limits.HeapSize = vm.currentHeapSize()
 		return Int(int64(vm.limits.HeapSize)), true
 	case "getLimitHeapSize":
 		return Int(int64(vm.limitCaps.HeapSize)), true
@@ -178,9 +179,9 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 		return Int(int64(vm.limits.Callouts)), true
 	case "getLimitCallouts":
 		return Int(int64(vm.limitCaps.Callouts)), true
-	case "getAsyncJobs":
+	case "getAsyncJobs", "getAsyncCalls":
 		return Int(int64(vm.limits.AsyncJobs)), true
-	case "getLimitAsyncJobs":
+	case "getLimitAsyncJobs", "getLimitAsyncCalls":
 		return Int(int64(vm.limitCaps.AsyncJobs)), true
 	case "getQueueableJobs":
 		return Int(int64(vm.limits.QueueableJobs)), true

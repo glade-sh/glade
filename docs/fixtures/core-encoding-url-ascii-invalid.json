@@ -10,13 +10,13 @@
   "source": [
     {
       "path": "anonymous.apex",
-      "content": "EncodingUtil.urlEncode('é', 'US-ASCII');"
+      "content": "EncodingUtil.urlEncode('\u00e9', 'US-ASCII');"
     }
   ],
   "command": {
     "kind": "exec",
     "args": [
-      "EncodingUtil.urlEncode('é', 'US-ASCII');"
+      "EncodingUtil.urlEncode('\u00e9', 'US-ASCII');"
     ]
   },
   "expected": {

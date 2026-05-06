@@ -160,13 +160,40 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 			return Null, receiver, false, true, err
 		}
 		return String(strconv.FormatFloat(receiver.Decimal, 'f', -1, 64)), receiver, false, true, nil
+	case "divide":
+		if len(args) < 2 || len(args) > 3 {
+			return Null, receiver, false, true, fmt.Errorf("Decimal.divide expects divisor, scale, and optional RoundingMode")
+		}
+		divisor, ok := decimalOperand(args[0])
+		if !ok {
+			return Null, receiver, false, true, fmt.Errorf("Decimal.divide expects Decimal divisor")
+		}
+		if args[1].Kind != ValueInt {
+			return Null, receiver, false, true, fmt.Errorf("Decimal.divide expects Integer scale")
+		}
+		if args[1].Int < 0 {
+			return Null, receiver, false, true, fmt.Errorf("Decimal.divide expects non-negative scale")
+		}
+		mode := "HALF_UP"
+		if len(args) == 3 {
+			parsedMode, err := decimalRoundingMode(args[2])
+			if err != nil {
+				return Null, receiver, false, true, err
+			}
+			mode = parsedMode
+		}
+		result, err := decimalDivide(receiver.Decimal, divisor, args[1].Int, mode)
+		if err != nil {
+			return Null, receiver, false, true, err
+		}
+		return Decimal(result), receiver, false, true, nil
 	default:
 		return Null, receiver, false, false, nil
 	}
 }
 
 func decimalRoundingMode(value Value) (string, error) {
-	if value.Kind != ValueObject || value.Type != "RoundingMode" {
+	if value.Kind != ValueObject || (value.Type != "RoundingMode" && value.Type != "System.RoundingMode") {
 		return "", fmt.Errorf("Decimal rounding expects RoundingMode")
 	}
 	switch value.Text {
@@ -174,6 +201,17 @@ func decimalRoundingMode(value Value) (string, error) {
 		return value.Text, nil
 	default:
 		return "", fmt.Errorf("unsupported Decimal rounding mode %q", value.Text)
+	}
+}
+
+func decimalOperand(value Value) (float64, bool) {
+	switch value.Kind {
+	case ValueDecimal:
+		return value.Decimal, true
+	case ValueInt:
+		return float64(value.Int), true
+	default:
+		return 0, false
 	}
 }
 
@@ -955,6 +993,9 @@ func stringStatic(callee string, args []Value) (Value, error) {
 		if len(args) != 1 {
 			return Null, fmt.Errorf("String.valueOf expects 1 argument")
 		}
+		if args[0].Kind == ValueNull {
+			return Null, nil
+		}
 		return String(args[0].String()), nil
 	case "String.join":
 		if len(args) != 2 || args[0].Kind != ValueList || args[1].Kind != ValueString {
@@ -1070,6 +1111,9 @@ func numericStatic(callee string, args []Value) (Value, error) {
 			return Null, fmt.Errorf("%s expects String or numeric argument", callee)
 		}
 	case "Decimal.valueOf", "Double.valueOf":
+		if args[0].Kind == ValueNull {
+			return Null, newExceptionError("System.NullPointerException", fmt.Sprintf("%s expects String or numeric argument", callee))
+		}
 		switch args[0].Kind {
 		case ValueDecimal:
 			return args[0], nil
@@ -1078,14 +1122,14 @@ func numericStatic(callee string, args []Value) (Value, error) {
 		case ValueString:
 			parsed, err := strconv.ParseFloat(strings.TrimSpace(args[0].Text), 64)
 			if err != nil {
-				return Null, fmt.Errorf("%s invalid decimal %q", callee, args[0].Text)
+				return Null, newExceptionError("System.TypeException", fmt.Sprintf("%s invalid decimal %q", callee, args[0].Text))
 			}
 			if math.IsInf(parsed, 0) || math.IsNaN(parsed) {
-				return Null, fmt.Errorf("%s invalid finite decimal %q", callee, args[0].Text)
+				return Null, newExceptionError("System.TypeException", fmt.Sprintf("%s invalid finite decimal %q", callee, args[0].Text))
 			}
 			return Decimal(parsed), nil
 		default:
-			return Null, fmt.Errorf("%s expects String or numeric argument", callee)
+			return Null, newExceptionError("System.TypeException", fmt.Sprintf("%s expects String or numeric argument", callee))
 		}
 	default:
 		return Null, unsupportedCallError(callee)
@@ -1102,6 +1146,68 @@ func int64FromFloat(name string, value float64) (int64, error) {
 		return 0, fmt.Errorf("%s value out of 64-bit integer range", name)
 	}
 	return int64(value), nil
+}
+
+func roundHalfEven(n float64) float64 {
+	if math.IsNaN(n) || math.IsInf(n, 0) {
+		return n
+	}
+	t := math.Trunc(n)
+	frac := math.Abs(n - t)
+	if frac < 0.5 {
+		return t
+	}
+	if frac > 0.5 {
+		if n >= 0 {
+			return t + 1
+		}
+		return t - 1
+	}
+	// Exactly 0.5 — round to even
+	if math.Mod(math.Abs(t), 2) == 0 {
+		return t
+	}
+	if n >= 0 {
+		return t + 1
+	}
+	return t - 1
+}
+
+func decimalDivide(dividend, divisor float64, scale int64, mode string) (float64, error) {
+	const maxLocalScale int64 = 15
+	if err := ensureFiniteDecimal("Decimal.divide", dividend); err != nil {
+		return 0, err
+	}
+	if err := ensureFiniteDecimal("Decimal.divide", divisor); err != nil {
+		return 0, err
+	}
+	if divisor == 0 {
+		return 0, fmt.Errorf("Decimal.divide division by zero")
+	}
+	if scale > maxLocalScale {
+		return 0, unsupportedCallError(fmt.Sprintf("Decimal.divide scale greater than %d is not supported by the local decimal model", maxLocalScale))
+	}
+	divRat := new(big.Rat)
+	if _, ok := divRat.SetString(strconv.FormatFloat(dividend, 'f', -1, 64)); !ok {
+		return 0, fmt.Errorf("Decimal.divide dividend cannot be represented")
+	}
+	divsRat := new(big.Rat)
+	if _, ok := divsRat.SetString(strconv.FormatFloat(divisor, 'f', -1, 64)); !ok {
+		return 0, fmt.Errorf("Decimal.divide divisor cannot be represented")
+	}
+	result := new(big.Rat).Quo(divRat, divsRat)
+	factor := new(big.Int).Exp(big.NewInt(10), big.NewInt(scale), nil)
+	scaled := new(big.Rat).Mul(result, new(big.Rat).SetInt(factor))
+	rounded, err := roundScaledRat("Decimal.divide", scaled, mode)
+	if err != nil {
+		return 0, err
+	}
+	resultRat := new(big.Rat).SetFrac(rounded, factor)
+	f, _ := resultRat.Float64()
+	if math.IsInf(f, 0) || math.IsNaN(f) {
+		return 0, fmt.Errorf("Decimal.divide result must be finite")
+	}
+	return f, nil
 }
 
 func int32FromFloat(name string, value float64) (int32, error) {
@@ -2003,10 +2109,13 @@ func callMapStdlibMember(receiver Value, method string, args []Value) (Value, Va
 
 func stringArg(name string, args []Value) (string, error) {
 	if len(args) != 1 {
-		return "", fmt.Errorf("%s expects 1 argument", name)
+		return "", newExceptionError("System.NullPointerException", fmt.Sprintf("%s expects 1 argument", name))
+	}
+	if args[0].Kind == ValueNull {
+		return "", newExceptionError("System.NullPointerException", fmt.Sprintf("%s expects String argument", name))
 	}
 	if args[0].Kind != ValueString {
-		return "", fmt.Errorf("%s expects String argument", name)
+		return "", newExceptionError("System.TypeException", fmt.Sprintf("%s expects String argument", name))
 	}
 	return args[0].Text, nil
 }

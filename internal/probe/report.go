@@ -10,6 +10,15 @@ import (
 
 // WriteReport writes a GapReport to disk as JSON.
 func WriteReport(report *GapReport, path string) error {
+	return writeIndentedJSON(path, report)
+}
+
+// WriteLocalRunReport writes local-only probe results to disk as JSON.
+func WriteLocalRunReport(report *LocalRunReport, path string) error {
+	return writeIndentedJSON(path, report)
+}
+
+func writeIndentedJSON(path string, value any) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
 	}
@@ -21,7 +30,7 @@ func WriteReport(report *GapReport, path string) error {
 
 	enc := json.NewEncoder(f)
 	enc.SetIndent("", "  ")
-	return enc.Encode(report)
+	return enc.Encode(value)
 }
 
 // WriteFixtureStub generates a minimal compatibility fixture stub for a gap
@@ -87,7 +96,7 @@ func guessClassName(probeID string) string {
 	}
 	// Map category prefixes to probe class names
 	if strings.HasPrefix(probeID, "async.") {
-		return "AsyncApexProbes"
+		return "AsyncProbes"
 	}
 	if strings.HasPrefix(probeID, "platform-event.") {
 		return "PlatformEventProbes"
@@ -106,6 +115,30 @@ func guessClassName(probeID string) string {
 	}
 	if strings.HasPrefix(probeID, "security.") {
 		return "SecurityProbes"
+	}
+	if strings.HasPrefix(probeID, "bulkdml.") {
+		return "BulkDmlProbes"
+	}
+	if strings.HasPrefix(probeID, "sobject.") || probeID == "id.validation" {
+		return "SObjectProbes"
+	}
+	if strings.HasPrefix(probeID, "datetime.") {
+		return "MoreDatetimeProbes"
+	}
+	if strings.HasPrefix(probeID, "string.") {
+		return "MoreStringProbes"
+	}
+	if probeID == "soql.count-distinct" || probeID == "soql.group-by" || probeID == "soql.subquery" {
+		return "MoreSoqlProbes"
+	}
+	if strings.HasPrefix(probeID, "soql.") {
+		return "SoqlProbes"
+	}
+	if strings.HasPrefix(probeID, "math.") {
+		return "MoreMathProbes"
+	}
+	if strings.HasPrefix(probeID, "system.") {
+		return "SystemAssertProbes"
 	}
 	return "ProbeRunner"
 }

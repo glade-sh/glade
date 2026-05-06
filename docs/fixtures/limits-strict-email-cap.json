@@ -1,13 +1,36 @@
 {
   "name": "limits-strict-email-cap",
   "evidence": [
-    {"symbol": "Messaging.sendEmail", "kind": "exec"},
-    {"symbol": "Limits.getEmailInvocations", "kind": "exec"},
-    {"symbol": "System.LimitException", "kind": "exec"}
+    {
+      "symbol": "Messaging.sendEmail",
+      "kind": "exec"
+    },
+    {
+      "symbol": "Limits.getEmailInvocations",
+      "kind": "exec"
+    },
+    {
+      "symbol": "System.LimitException",
+      "kind": "exec"
+    }
   ],
   "source": [
-    {"path": "anonymous.apex", "content": "for (Integer i = 0; i < 11; i++) { Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage(); email.setToAddresses(new List<String>{'hello@example.test'}); Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{email}); }"}
+    {
+      "path": "anonymous.apex",
+      "content": "for (Integer i = 0; i < 11; i++) { Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage(); email.setToAddresses(new List<String>{'hello@example.test'}); Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{email}); }"
+    }
   ],
-  "command": {"kind": "exec", "limitMode": "strict", "args": ["for (Integer i = 0; i < 11; i++) { Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage(); email.setToAddresses(new List<String>{'hello@example.test'}); Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{email}); }"]},
-  "expected": {"error": {"type": "System.LimitException", "message": "Too many emailInvocations: 11 out of 10"}}
+  "command": {
+    "kind": "exec",
+    "limitMode": "strict",
+    "args": [
+      "for (Integer i = 0; i < 11; i++) { Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage(); email.setToAddresses(new List<String>{'hello@example.test'}); Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{email}); }"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "System.LimitException",
+      "message": "Too many emailInvocations: 11 out of 10"
+    }
+  }
 }

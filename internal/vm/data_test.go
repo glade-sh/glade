@@ -412,7 +412,7 @@ func TestExecDescribePicklistValues(t *testing.T) {
 	program, err := CompileAnonymous(`
 Object describe = Account.Rating.getDescribe();
 System.assertEquals('Rating', describe.getName());
-System.assertEquals('picklist', describe.getType());
+System.assertEquals('PICKLIST', describe.getType());
 List<Object> values = describe.getPicklistValues();
 System.assertEquals(2, values.size());
 Object hot = values.get(0);
@@ -600,7 +600,7 @@ System.assertEquals('Name', nameDescribe.getName());
 System.assertEquals('Name', lowercaseNameDescribe.getName());
 System.assert(nameDescribe.isNameField());
 System.assert(!nameDescribe.isEncrypted());
-System.assertEquals('string', nameDescribe.getType());
+System.assertEquals('STRING', nameDescribe.getType());
 Object secretField = fields.get('Secret__c');
 Object secretDescribe = secretField.getDescribe();
 System.assert(secretDescribe.isEncrypted());
@@ -738,7 +738,7 @@ Map<String,Object> fields = fieldsToken.getMap();
 System.assert(fields.containsKey('Name'));
 Object contactFieldDescribe = Contact.AccountId.getDescribe();
 System.assertEquals('Account', contactFieldDescribe.getLabel());
-System.assertEquals('reference', contactFieldDescribe.getType());
+System.assertEquals('REFERENCE', contactFieldDescribe.getType());
 System.assert(contactFieldDescribe.isNillable());
 System.assert(contactFieldDescribe.isAccessible());
 System.assert(contactFieldDescribe.isCreateable());

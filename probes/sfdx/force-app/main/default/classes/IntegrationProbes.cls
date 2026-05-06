@@ -24,7 +24,8 @@ public class IntegrationProbes implements Probe {
         m.put('a', 1);
         m.put('b', 'test');
         m.put('c', null);
-        return JSON.serialize(m);
+        Map<String, Object> roundTrip = (Map<String, Object>) JSON.deserializeUntyped(JSON.serialize(m));
+        return roundTrip.get('b');
     }
 
     private Object runJsonDeserializeUntyped() {

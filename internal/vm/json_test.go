@@ -402,7 +402,7 @@ try {
 	gen.writeNull();
 } catch (JSONException e) {
 	caught = true;
-	System.assertEquals('JSONException', e.getTypeName());
+	System.assertEquals('System.JSONException', e.getTypeName());
 	System.assert(e.getMessage().contains('JSONGenerator is closed'));
 }
 System.assert(caught);
@@ -411,7 +411,7 @@ try {
 	gen.writeRawValue('{bad');
 } catch (JSONException e) {
 	caught = true;
-	System.assertEquals('JSONException', e.getTypeName());
+	System.assertEquals('System.JSONException', e.getTypeName());
 	System.assert(e.getMessage().contains('JSONGenerator is closed'));
 }
 System.assert(caught);

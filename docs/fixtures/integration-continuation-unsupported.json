@@ -1,7 +1,28 @@
 {
   "name": "integration-continuation-unsupported",
-  "evidence": [{"symbol": "Continuation.getResponse", "kind": "exec", "notes": "Continuation callout APIs return UnsupportedFeature diagnostics."}],
-  "source": [{"path": "anonymous.apex", "content": "Continuation.getResponse('request-one');"}],
-  "command": {"kind": "exec", "args": ["Continuation.getResponse('request-one');"]},
-  "expected": {"error": {"type": "UnsupportedFeature", "message": "unsupported call \"Continuation.getResponse local continuation callout surface\""}}
+  "evidence": [
+    {
+      "symbol": "Continuation.getResponse",
+      "kind": "exec",
+      "notes": "Continuation callout APIs return UnsupportedFeature diagnostics."
+    }
+  ],
+  "source": [
+    {
+      "path": "anonymous.apex",
+      "content": "Continuation.getResponse('request-one');"
+    }
+  ],
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Continuation.getResponse('request-one');"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"Continuation.getResponse local continuation callout surface\""
+    }
+  }
 }
