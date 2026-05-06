@@ -1134,7 +1134,13 @@ func discoverServerExampleRestRoutes(projectPath string) ([]ServerExampleRestRou
 		if err != nil {
 			return err
 		}
-		if entry.IsDir() || !strings.EqualFold(filepath.Ext(path), ".cls") {
+		if entry.IsDir() {
+			if filepath.Base(path) == ".claude" {
+				return fs.SkipDir
+			}
+			return nil
+		}
+		if !strings.EqualFold(filepath.Ext(path), ".cls") {
 			return nil
 		}
 		data, err := os.ReadFile(path)

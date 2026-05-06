@@ -363,6 +363,42 @@ func localTestDir(t *testing.T, prefix string) string {
 	return abs
 }
 
+func TestDiscoverServerExampleRestRoutesSkipsClaudeWorktrees(t *testing.T) {
+	root := localTestDir(t, ".oaer-test-server-examples-worktree")
+	projectPath := filepath.Join(root, "example-projects", "worktree-pkg-develop")
+	classesDir := filepath.Join(projectPath, "force-app", "main", "default", "classes")
+	if err := os.MkdirAll(classesDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	restClass := `@RestResource(urlMapping='/webhookEvents')
+global with sharing class WebHook {
+  @HttpPost global static void handle() {}
+}`
+	if err := os.WriteFile(filepath.Join(classesDir, "WebHook.cls"), []byte(restClass), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	worktreeClassesDir := filepath.Join(projectPath, ".claude", "worktrees", "some-branch", "force-app", "main", "default", "classes")
+	if err := os.MkdirAll(worktreeClassesDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(worktreeClassesDir, "WebHook.cls"), []byte(restClass), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	routes, err := discoverServerExampleRestRoutes(projectPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(routes) != 1 {
+		t.Fatalf("expected 1 route, got %d: %#v", len(routes), routes)
+	}
+	if routes[0].Path != "/webhookEvents" {
+		t.Fatalf("unexpected route path: %q", routes[0].Path)
+	}
+}
+
 func hasOwnerLane(report ServerExampleHarnessReport, lane string) bool {
 	for _, entry := range report.OwnerLanes {
 		if entry.OwnerLane == lane {
