@@ -16,7 +16,7 @@ public class PlatformEventProbes implements Probe {
     }
 
     private Object runDescribe() {
-        Schema.DescribeSObjectResult desc = ProbeTestEvent__e.SObjectType.getDescribe();
-        return desc.getName();
+        Schema.DescribeSObjectResult d = ProbeTestEvent__e.SObjectType.getDescribe();
+        return d.getName();
     }
 }

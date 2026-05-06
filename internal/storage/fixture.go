@@ -260,6 +260,66 @@ func containsString(values []string, want string) bool {
 	return false
 }
 
+func ApplyOrgShape(org *OrgState, features []string) {
+	for _, f := range features {
+		switch f {
+		case "MultiCurrency":
+			applyMultiCurrency(org)
+		}
+	}
+}
+
+func applyMultiCurrency(org *OrgState) {
+	// Add CurrencyIsoCode to all objects that don't already have it
+	for name, obj := range org.Objects {
+		if obj.Definition.Fields == nil {
+			obj.Definition.Fields = make(map[string]Field)
+		}
+		if _, hasCurrency := obj.Definition.Fields["CurrencyIsoCode"]; !hasCurrency {
+			obj.Definition.Fields["CurrencyIsoCode"] = Field{
+				APIName: "CurrencyIsoCode",
+				Label:   "Currency ISO Code",
+				Type:    FieldString,
+			}
+		}
+		org.Objects[name] = obj
+	}
+	// Mark org as multi-currency enabled
+	if orgRec, ok := org.Objects["Organization"]; ok {
+		if orgRec.Records == nil {
+			orgRec.Records = make(map[ID]Record)
+		}
+		for id, rec := range orgRec.Records {
+			rec.Fields["IsMultiCurrencyEnabled"] = BooleanValue(true)
+			orgRec.Records[id] = rec
+		}
+		org.Objects["Organization"] = orgRec
+	}
+}
+
+func EnsureProbeSchemaData(org *OrgState) {
+	// Add rich record types to Account for schema describe probes
+	if account, ok := org.Objects["Account"]; ok {
+		account.Definition.RecordTypes = []RecordTypeInfo{
+			{ID: "012000000000001", DeveloperName: "Customer", Name: "Customer", Active: true, Default: true},
+			{ID: "012000000000002", DeveloperName: "Partner", Name: "Partner", Active: true},
+		}
+		account.Definition.Relations = append(account.Definition.Relations, Relationship{
+			Field:             "AccountId",
+			ParentObjects:     []string{"Account"},
+			ChildRelationship: "Contacts",
+			CascadeDelete:     true,
+		})
+		org.Objects["Account"] = account
+	}
+	ensureObject(org, "Contact", "003", map[string]Field{
+		"FirstName": {APIName: "FirstName", Type: FieldString},
+		"LastName":  {APIName: "LastName", Type: FieldString, Required: true},
+		"AccountId": {APIName: "AccountId", Type: FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Account"},
+		"Email":     {APIName: "Email", Type: FieldString},
+	})
+}
+
 func EnsureDeterministicPlatformData(org *OrgState) {
 	if org.Objects == nil {
 		org.Objects = make(map[string]ObjectState)
@@ -340,6 +400,20 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		"ShareType":         {APIName: "ShareType", Type: FieldString},
 		"Visibility":        {APIName: "Visibility", Type: FieldString},
 	})
+
+	// Standard objects for schema describe probes (without record types; those are added by EnsureProbeSchemaData)
+	ensureObject(org, "Account", "001", map[string]Field{
+		"Name": {APIName: "Name", Type: FieldString, Required: true},
+		"Industry": {APIName: "Industry", Type: FieldPicklist, PicklistValues: []PicklistValue{
+			{Value: "Technology", Label: "Technology", Active: true},
+			{Value: "Finance", Label: "Finance", Active: true},
+			{Value: "Healthcare", Label: "Healthcare", Active: true},
+		}},
+		"Type":    {APIName: "Type", Type: FieldPicklist},
+		"Website": {APIName: "Website", Type: FieldString},
+		"Phone":   {APIName: "Phone", Type: FieldString},
+	})
+
 	orgID := ID("00D000000000001")
 	profileID := ID("00e000000000001")
 	roleID := ID("00E000000000001")

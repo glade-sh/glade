@@ -1,11 +1,28 @@
 {
   "name": "core-numeric-roundingmode-enum",
   "evidence": [
-    {"symbol": "RoundingMode.valueOf", "kind": "exec", "notes": "Exact-name lookup returns a local enum token that supports name, ordinal, and toString."},
-    {"symbol": "RoundingMode.values", "kind": "exec", "notes": "Returns the eight Decimal rounding modes in deterministic Apex order."},
-    {"symbol": "RoundingMode.name", "kind": "exec"},
-    {"symbol": "RoundingMode.ordinal", "kind": "exec"},
-    {"symbol": "RoundingMode.toString", "kind": "exec"}
+    {
+      "symbol": "RoundingMode.valueOf",
+      "kind": "exec",
+      "notes": "Exact-name lookup returns a local enum token that supports name, ordinal, and toString."
+    },
+    {
+      "symbol": "RoundingMode.values",
+      "kind": "exec",
+      "notes": "Returns the eight Decimal rounding modes in deterministic Apex order."
+    },
+    {
+      "symbol": "RoundingMode.name",
+      "kind": "exec"
+    },
+    {
+      "symbol": "RoundingMode.ordinal",
+      "kind": "exec"
+    },
+    {
+      "symbol": "RoundingMode.toString",
+      "kind": "exec"
+    }
   ],
   "source": [
     {

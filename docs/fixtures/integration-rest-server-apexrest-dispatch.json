@@ -1,7 +1,11 @@
 {
   "name": "integration-rest-server-apexrest-dispatch",
   "evidence": [
-    {"symbol": "@RestResource dispatch", "kind": "server", "notes": "Local server dispatches a simple static Apex REST resource method."}
+    {
+      "symbol": "@RestResource dispatch",
+      "kind": "server",
+      "notes": "Local server dispatches a simple static Apex REST resource method."
+    }
   ],
   "source": [
     {
@@ -15,11 +19,17 @@
       "method": "GET",
       "path": "/services/apexrest/widgets/42?q=abc",
       "status": 200,
-      "contains": ["GET:/services/apexrest/widgets/*:abc"],
-      "notContains": ["UNSUPPORTED_FEATURE"]
+      "contains": [
+        "GET:/services/apexrest/widgets/*:abc"
+      ],
+      "notContains": [
+        "UNSUPPORTED_FEATURE"
+      ]
     }
   ],
-  "command": {"kind": "server"},
+  "command": {
+    "kind": "server"
+  },
   "expected": {
     "result": {
       "ok": true,
@@ -29,7 +39,9 @@
       "permissions": 2,
       "profiles": 1,
       "requests": 1,
-      "statuses": [200],
+      "statuses": [
+        200
+      ],
       "users": 1
     }
   }

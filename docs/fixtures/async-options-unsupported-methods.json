@@ -1,12 +1,24 @@
 {
   "name": "async-options-unsupported-methods",
   "evidence": [
-    {"symbol": "AsyncOptions.getMaximumQueueableStackDepth", "kind": "exec", "notes": "Local queueable stack option metadata is not modeled."}
+    {
+      "symbol": "AsyncOptions.getMaximumQueueableStackDepth",
+      "kind": "exec",
+      "notes": "Local queueable stack option metadata is not modeled."
+    }
   ],
   "source": [
-    {"path": "anonymous.apex", "content": "AsyncOptions opts = new AsyncOptions(); opts.getMaximumQueueableStackDepth();"}
+    {
+      "path": "anonymous.apex",
+      "content": "AsyncOptions opts = new AsyncOptions(); opts.getMaximumQueueableStackDepth();"
+    }
   ],
-  "command": {"kind": "exec", "args": ["AsyncOptions opts = new AsyncOptions(); opts.getMaximumQueueableStackDepth();"]},
+  "command": {
+    "kind": "exec",
+    "args": [
+      "AsyncOptions opts = new AsyncOptions(); opts.getMaximumQueueableStackDepth();"
+    ]
+  },
   "expected": {
     "error": {
       "type": "UnsupportedFeature",

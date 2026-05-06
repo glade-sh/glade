@@ -18,6 +18,7 @@ public class DmlTriggerProbes implements Probe {
         ProbeTestObject__c rec = new ProbeTestObject__c();
         rec.Name__c = 'TriggerTest';
         rec.Value__c = 42;
+        rec.CurrencyIsoCode = 'USD';
         insert rec;
 
         ProbeTestObject__c verify = [SELECT Triggered__c FROM ProbeTestObject__c WHERE Name__c = 'TriggerTest' LIMIT 1];
@@ -28,6 +29,7 @@ public class DmlTriggerProbes implements Probe {
         ProbeTestObject__c rec = new ProbeTestObject__c();
         rec.Name__c = 'UpdateTest';
         rec.Value__c = 1;
+        rec.CurrencyIsoCode = 'USD';
         insert rec;
 
         rec.Value__c = 2;
@@ -39,6 +41,7 @@ public class DmlTriggerProbes implements Probe {
         ProbeTestObject__c rec = new ProbeTestObject__c();
         rec.Name__c = 'DeleteTest';
         rec.Value__c = 1;
+        rec.CurrencyIsoCode = 'USD';
         insert rec;
 
         Database.DeleteResult dr = Database.delete(rec, false);
@@ -49,6 +52,7 @@ public class DmlTriggerProbes implements Probe {
         ProbeTestObject__c rec = new ProbeTestObject__c();
         rec.Name__c = 'UndeleteTest';
         rec.Value__c = 1;
+        rec.CurrencyIsoCode = 'USD';
         insert rec;
         delete rec;
 
@@ -62,6 +66,7 @@ public class DmlTriggerProbes implements Probe {
         // by simulating a DML with allOrNothing=false and checking result shape
         ProbeTestObject__c rec = new ProbeTestObject__c();
         rec.Name__c = 'FailTest';
+        rec.CurrencyIsoCode = 'USD';
         Database.SaveResult sr = Database.insert(rec, false);
         return sr.isSuccess();
     }

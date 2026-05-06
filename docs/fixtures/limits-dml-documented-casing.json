@@ -1,10 +1,22 @@
 {
   "name": "limits-dml-documented-casing",
   "evidence": [
-    {"symbol": "Limits.getDMLStatements", "kind": "test"},
-    {"symbol": "Limits.getLimitDMLStatements", "kind": "test"},
-    {"symbol": "Limits.getDMLRows", "kind": "test"},
-    {"symbol": "Limits.getLimitDMLRows", "kind": "test"}
+    {
+      "symbol": "Limits.getDMLStatements",
+      "kind": "test"
+    },
+    {
+      "symbol": "Limits.getLimitDMLStatements",
+      "kind": "test"
+    },
+    {
+      "symbol": "Limits.getDMLRows",
+      "kind": "test"
+    },
+    {
+      "symbol": "Limits.getLimitDMLRows",
+      "kind": "test"
+    }
   ],
   "source": [
     {
@@ -20,6 +32,16 @@
       "content": "@isTest private class LimitsDMLDocumentedCasingFixtureTest { @isTest static void reportsDocumentedDMLAliases() { System.assertEquals(0, Limits.getDMLStatements()); System.assertEquals(150, Limits.getLimitDMLStatements()); System.assertEquals(0, Limits.getDMLRows()); System.assertEquals(10000, Limits.getLimitDMLRows()); insert new Account(Name = 'Acme'); System.assertEquals(1, Limits.getDMLStatements()); System.assertEquals(1, Limits.getDMLRows()); } }"
     }
   ],
-  "command": {"kind": "test"},
-  "expected": {"result": {"errors": 0, "failed": 0, "ok": true, "passed": 1, "total": 1}}
+  "command": {
+    "kind": "test"
+  },
+  "expected": {
+    "result": {
+      "errors": 0,
+      "failed": 0,
+      "ok": true,
+      "passed": 1,
+      "total": 1
+    }
+  }
 }

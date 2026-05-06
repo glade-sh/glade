@@ -2,4 +2,6 @@ project:
   root: .
   packageDirs: []
   defaultNamespace: ""
+org:
+  features: [MultiCurrency]
 

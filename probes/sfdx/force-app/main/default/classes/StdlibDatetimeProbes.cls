@@ -28,7 +28,8 @@ public class StdlibDatetimeProbes implements Probe {
 
     private Object runFormatTimezone() {
         // Edge case: format with explicit timezone
-        DateTime dt = DateTime.newInstance(2024, 6, 15, 12, 0, 0);
+        // Use newInstanceGmt so result is deterministic regardless of org user timezone
+        DateTime dt = DateTime.newInstanceGmt(2024, 6, 15, 12, 0, 0);
         return dt.format('yyyy-MM-dd HH:mm:ss', 'America/Los_Angeles');
     }
 

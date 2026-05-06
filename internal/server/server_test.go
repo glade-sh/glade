@@ -1614,7 +1614,7 @@ func TestSObjectDescribePayloadIncludesCommonMetadataShape(t *testing.T) {
 		return nil
 	}
 	id := fieldByName("Id")
-	if id["label"] != "Account ID" || id["type"] != "id" || id["nillable"] != false || id["createable"] != false || id["updateable"] != false || id["idLookup"] != true {
+	if id["label"] != "Account ID" || id["type"] != "ID" || id["nillable"] != false || id["createable"] != false || id["updateable"] != false || id["idLookup"] != true {
 		t.Fatalf("Id field = %#v", id)
 	}
 	name := fieldByName("Name")

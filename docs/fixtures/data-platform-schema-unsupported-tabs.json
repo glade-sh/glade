@@ -1,11 +1,28 @@
 {
   "name": "data-platform-schema-unsupported-tabs",
   "evidence": [
-    {"symbol": "Schema.describeTabs", "kind": "exec", "notes": "Locally unmodeled tab metadata returns a stable UnsupportedFeature diagnostic."}
+    {
+      "symbol": "Schema.describeTabs",
+      "kind": "exec",
+      "notes": "Locally unmodeled tab metadata returns a stable UnsupportedFeature diagnostic."
+    }
   ],
   "source": [
-    {"path": "anonymous.apex", "content": "Schema.describeTabs();"}
+    {
+      "path": "anonymous.apex",
+      "content": "Schema.describeTabs();"
+    }
   ],
-  "command": {"kind": "exec", "args": ["Schema.describeTabs();"]},
-  "expected": {"error": {"type": "UnsupportedFeature", "message": "unsupported call \"Schema.describeTabs\""}}
+  "command": {
+    "kind": "exec",
+    "args": [
+      "Schema.describeTabs();"
+    ]
+  },
+  "expected": {
+    "error": {
+      "type": "UnsupportedFeature",
+      "message": "unsupported call \"Schema.describeTabs\""
+    }
+  }
 }

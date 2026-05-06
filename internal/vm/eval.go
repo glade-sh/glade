@@ -368,6 +368,11 @@ func constructValue(typeName string, args []Value) (Value, error) {
 }
 
 func collectionElementType(typeName string) (string, bool) {
+	typeName = strings.TrimSpace(typeName)
+	if strings.HasSuffix(typeName, "[]") {
+		element := strings.TrimSpace(strings.TrimSuffix(typeName, "[]"))
+		return element, element != ""
+	}
 	args, ok := genericTypeArgs(typeName)
 	if !ok || len(args) != 1 {
 		return "", false

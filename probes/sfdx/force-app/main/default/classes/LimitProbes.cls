@@ -27,6 +27,7 @@ public class LimitProbes implements Probe {
         for (Integer i = 0; i < 3; i++) {
             ProbeTestObject__c r = new ProbeTestObject__c();
             r.Name__c = 'Limit' + i;
+            r.CurrencyIsoCode = 'USD';
             recs.add(r);
         }
         insert recs;
@@ -36,10 +37,8 @@ public class LimitProbes implements Probe {
 
     private Object runHeapSize() {
         Integer before = Limits.getHeapSize();
-        String big = '';
-        for (Integer i = 0; i < 100; i++) {
-            big = big + 'x';
-        }
+        List<String> values = new List<String>();
+        values.add('abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz');
         Integer after = Limits.getHeapSize();
         return after > before;
     }

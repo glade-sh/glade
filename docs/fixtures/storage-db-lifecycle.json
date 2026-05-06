@@ -16,10 +16,10 @@
   "expected": {
     "result": {
       "exportedObjects": 12,
-      "exportedSequences": 7,
+      "exportedSequences": 8,
       "importedAccountRows": 1,
       "importedProfiles": 1,
-      "importedRecords": 7,
+      "importedRecords": 8,
       "importedUsers": 1,
       "ok": true,
       "permissions": 2,
@@ -28,7 +28,7 @@
       "resetRecords": 7,
       "schemaVersion": 1,
       "seedAccountRows": 1,
-      "seedRecords": 7,
+      "seedRecords": 8,
       "users": 1
     }
   }

@@ -123,20 +123,20 @@ type WorkflowFieldUpdate struct {
 type FieldType string
 
 const (
-	FieldAny        FieldType = "any"
-	FieldID         FieldType = "id"
-	FieldString     FieldType = "string"
-	FieldBoolean    FieldType = "boolean"
-	FieldInteger    FieldType = "integer"
-	FieldDecimal    FieldType = "decimal"
-	FieldDate       FieldType = "date"
-	FieldDateTime   FieldType = "datetime"
-	FieldPicklist   FieldType = "picklist"
-	FieldReference  FieldType = "reference"
-	FieldBlob       FieldType = "blob"
-	FieldAddress    FieldType = "address"
-	FieldLocation   FieldType = "location"
-	FieldCalculated FieldType = "calculated"
+	FieldAny        FieldType = "ANY"
+	FieldID         FieldType = "ID"
+	FieldString     FieldType = "STRING"
+	FieldBoolean    FieldType = "BOOLEAN"
+	FieldInteger    FieldType = "INTEGER"
+	FieldDecimal    FieldType = "DECIMAL"
+	FieldDate       FieldType = "DATE"
+	FieldDateTime   FieldType = "DATETIME"
+	FieldPicklist   FieldType = "PICKLIST"
+	FieldReference  FieldType = "REFERENCE"
+	FieldBlob       FieldType = "BLOB"
+	FieldAddress    FieldType = "ADDRESS"
+	FieldLocation   FieldType = "LOCATION"
+	FieldCalculated FieldType = "CALCULATED"
 )
 
 type Relationship struct {

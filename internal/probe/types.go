@@ -46,10 +46,17 @@ type GapReport struct {
 	Entries     []GapEntry `json:"entries"`
 }
 
+// LocalRunReport records local-only probe results without implying an org diff.
+type LocalRunReport struct {
+	ProbesRun int           `json:"probesRun"`
+	Results   []ProbeResult `json:"results"`
+}
+
 // Config drives a single probe run.
 type Config struct {
-	ProbeDir   string // path to probes/sfdx
-	OrgAlias   string // sfdx target org alias or username
-	OutputDir  string // where to write gap-report.json
-	ProbeIDs   []string
+	ProbeDir  string // path to probes/sfdx
+	OrgAlias  string // sfdx target org alias or username
+	OutputDir string // where to write gap-report.json
+	ProbeIDs  []string
+	Features  []string // org shape features (e.g. MultiCurrency)
 }

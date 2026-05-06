@@ -4,3 +4,6 @@
 /oaer
 /coverage.out
 /example-projects
+/probes/sfdx/.sf/
+/probes/sfdx/.sfdx/
+/probes/output/

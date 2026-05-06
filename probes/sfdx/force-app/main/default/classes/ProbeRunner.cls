@@ -39,7 +39,73 @@ public class ProbeRunner {
         'collections.map-null-key' => 'CollectionProbes',
         'collections.set-contains-null' => 'CollectionProbes',
         'collections.list-indexof-null' => 'CollectionProbes',
-        'collections.map-remove-null' => 'CollectionProbes'
+        'collections.map-remove-null' => 'CollectionProbes',
+        // Async Apex
+        'async.future-stub' => 'AsyncProbes',
+        'async.queueable-stub' => 'AsyncProbes',
+        'async.batchable-stub' => 'AsyncProbes',
+        'async.schedulable-stub' => 'AsyncProbes',
+        // Email & Messaging
+        'email.single-message' => 'EmailProbes',
+        'email.limits' => 'EmailProbes',
+        // Integration
+        'integration.http-request' => 'IntegrationProbes',
+        'integration.json-serialize-complex' => 'IntegrationProbes',
+        'integration.json-deserialize-untyped' => 'IntegrationProbes',
+        'integration.encoding-util' => 'IntegrationProbes',
+        // Metadata
+        'metadata.custom-metadata-query' => 'MetadataProbes',
+        'metadata.custom-setting-query' => 'MetadataProbes',
+        'metadata.custom-metadata-describe' => 'MetadataProbes',
+        // Platform Events
+        'platform-event.publish' => 'PlatformEventProbes',
+        'platform-event.describe' => 'PlatformEventProbes',
+        // Schema Describe
+        'schema.global-describe-size' => 'SchemaDescribeProbes',
+        'schema.object-describe-fields' => 'SchemaDescribeProbes',
+        'schema.picklist-describe' => 'SchemaDescribeProbes',
+        'schema.record-type-describe' => 'SchemaDescribeProbes',
+        // Security
+        'security.user-info' => 'SecurityProbes',
+        'security.profile-name' => 'SecurityProbes',
+        'security.crud-check' => 'SecurityProbes',
+        'security.fls-check' => 'SecurityProbes',
+        // Bulk DML
+        'bulkdml.partial-success' => 'BulkDmlProbes',
+        'bulkdml.errors-shape' => 'BulkDmlProbes',
+        'bulkdml.id-assignment' => 'BulkDmlProbes',
+        // SObject & Id
+        'sobject.clone' => 'SObjectProbes',
+        'sobject.get-put' => 'SObjectProbes',
+        'sobject.getSObjectType' => 'SObjectProbes',
+        'id.validation' => 'SObjectProbes',
+        // More Collections
+        'collections.list-sort' => 'MoreCollectionProbes',
+        'collections.map-keyset' => 'MoreCollectionProbes',
+        'collections.set-equality' => 'MoreCollectionProbes',
+        // More Datetime
+        'datetime.now' => 'MoreDatetimeProbes',
+        'datetime.today' => 'MoreDatetimeProbes',
+        'datetime.valueOfGmt' => 'MoreDatetimeProbes',
+        // More String
+        'string.escapeSingleQuotes' => 'MoreStringProbes',
+        'string.split' => 'MoreStringProbes',
+        'string.trim' => 'MoreStringProbes',
+        // More SOQL
+        'soql.count-distinct' => 'MoreSoqlProbes',
+        'soql.group-by' => 'MoreSoqlProbes',
+        'soql.subquery' => 'MoreSoqlProbes',
+        // System Assert
+        'system.assert-pass' => 'SystemAssertProbes',
+        'system.assertEquals' => 'SystemAssertProbes',
+        // More Math
+        'math.abs-negative' => 'MoreMathProbes',
+        'math.max' => 'MoreMathProbes',
+        'math.pow' => 'MoreMathProbes',
+        'math.min' => 'MoreMathProbes',
+        // More Integration
+        'integration.json-serialize-sobject' => 'IntegrationMoreProbes',
+        'integration.url-encoding' => 'IntegrationMoreProbes'
     };
 
     public static String run(String probeId) {
@@ -78,10 +144,22 @@ public class ProbeRunner {
 
     private static String resolveCategory(String className) {
         if (className.startsWith('StdlibString') || className.startsWith('StdlibDatetime') || className.startsWith('StdlibMath')) return 'Stdlib & System';
-        if (className.startsWith('Soql')) return 'Data Runtime';
-        if (className.startsWith('DmlTrigger')) return 'DML & Triggers';
+        if (className.startsWith('Soql') || className.startsWith('MoreSoql')) return 'Data Runtime';
+        if (className.startsWith('DmlTrigger') || className.startsWith('BulkDml')) return 'DML & Triggers';
         if (className.startsWith('Limit')) return 'Limits & System';
-        if (className.startsWith('Collection')) return 'Collections & Language';
+        if (className.startsWith('Collection') || className.startsWith('MoreCollection')) return 'Collections & Language';
+        if (className.startsWith('Async')) return 'Async Apex';
+        if (className.startsWith('Email')) return 'Email & Messaging';
+        if (className.startsWith('Integration')) return 'Integration';
+        if (className.startsWith('Metadata')) return 'Metadata';
+        if (className.startsWith('PlatformEvent')) return 'Platform Events';
+        if (className.startsWith('SchemaDescribe')) return 'Schema Describe';
+        if (className.startsWith('Security')) return 'Security & Sharing';
+        if (className.startsWith('SObject')) return 'SObject & Type';
+        if (className.startsWith('MoreDatetime')) return 'Stdlib & System';
+        if (className.startsWith('MoreString')) return 'Stdlib & System';
+        if (className.startsWith('MoreMath')) return 'Stdlib & System';
+        if (className.startsWith('SystemAssert')) return 'System & Limits';
         return 'Uncategorized';
     }
 }

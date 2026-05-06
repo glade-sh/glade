@@ -1,7 +1,11 @@
 {
   "name": "integration-rest-server-apexrest-unsupported",
   "evidence": [
-    {"symbol": "@RestResource dispatch", "kind": "server", "notes": "Local server returns a stable unsupported error for custom Apex REST lifecycle dispatch."}
+    {
+      "symbol": "@RestResource dispatch",
+      "kind": "server",
+      "notes": "Local server returns a stable unsupported error for custom Apex REST lifecycle dispatch."
+    }
   ],
   "serverRequests": [
     {
@@ -10,10 +14,15 @@
       "path": "/services/apexrest/widgets/42",
       "body": "{\"name\":\"Acme\"}",
       "status": 501,
-      "contains": ["UNSUPPORTED_FEATURE", "RestResource dispatch"]
+      "contains": [
+        "UNSUPPORTED_FEATURE",
+        "RestResource dispatch"
+      ]
     }
   ],
-  "command": {"kind": "server"},
+  "command": {
+    "kind": "server"
+  },
   "expected": {
     "result": {
       "ok": true,
@@ -23,7 +32,9 @@
       "permissions": 2,
       "profiles": 1,
       "requests": 1,
-      "statuses": [501],
+      "statuses": [
+        501
+      ],
       "users": 1
     }
   }

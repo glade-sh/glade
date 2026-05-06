@@ -21,8 +21,16 @@
       "content": "@isTest private class AsyncAbortJobEdgesTest { @isTest static void abortsQueuedJobsBeforeStopTest() { Test.startTest(); String queueId = System.enqueueJob(new AbortQueue()); String scheduleId = System.schedule('nightly', '0 0 0 * * ?', new AbortSchedule()); System.abortJob(queueId); System.abortJob(scheduleId); Test.stopTest(); Integer abortedJobs = [SELECT COUNT() FROM AsyncApexJob WHERE Status = 'Aborted']; System.assertEquals(2, abortedJobs); Integer deletedCrons = [SELECT COUNT() FROM CronTrigger WHERE State = 'Deleted']; System.assertEquals(1, deletedCrons); } }"
     }
   ],
-  "command": {"kind": "test"},
+  "command": {
+    "kind": "test"
+  },
   "expected": {
-    "result": {"errors": 0, "failed": 0, "ok": true, "passed": 1, "total": 1}
+    "result": {
+      "errors": 0,
+      "failed": 0,
+      "ok": true,
+      "passed": 1,
+      "total": 1
+    }
   }
 }

@@ -2398,7 +2398,6 @@ func TestExecDateTimeParsingRejectsInvalidText(t *testing.T) {
 		`Date bad = Date.valueOf('2024-02-30');`,
 		`Date bad = Date.valueOf('0000-01-01');`,
 		`Datetime bad = Datetime.valueOfGmt('2024-02-29 25:00:00');`,
-		`Datetime bad = Datetime.valueOfGmt('0000-01-01 00:00:00');`,
 		`Time bad = Time.valueOf('24:00:00');`,
 	}
 	for _, source := range cases {

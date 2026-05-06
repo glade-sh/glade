@@ -3,6 +3,5 @@
     <customSettingsType>List</customSettingsType>
     <enableFeeds>false</enableFeeds>
     <label>Probe Test Setting</label>
-    <pluralLabel>Probe Test Settings</pluralLabel>
     <visibility>Public</visibility>
 </CustomObject>

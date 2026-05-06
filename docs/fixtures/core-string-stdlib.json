@@ -1,45 +1,129 @@
 {
   "name": "core-string-stdlib",
   "evidence": [
-    {"symbol": "String.containsIgnoreCase", "kind": "exec"},
-    {"symbol": "String.startsWithIgnoreCase", "kind": "exec"},
-    {"symbol": "String.endsWithIgnoreCase", "kind": "exec"},
-    {"symbol": "String.equals", "kind": "exec"},
-    {"symbol": "String.compareTo", "kind": "exec"},
-    {"symbol": "String.capitalize", "kind": "exec"},
-    {"symbol": "String.uncapitalize", "kind": "exec"},
-    {"symbol": "String.left", "kind": "exec"},
-    {"symbol": "String.right", "kind": "exec"},
-    {"symbol": "String.leftPad", "kind": "exec"},
-    {"symbol": "String.rightPad", "kind": "exec"},
-    {"symbol": "String.center", "kind": "exec"},
-    {"symbol": "String.mid", "kind": "exec"},
-    {"symbol": "String.reverse", "kind": "exec"},
-    {"symbol": "String.substringAfter", "kind": "exec"},
-    {"symbol": "String.substringAfterLast", "kind": "exec"},
-    {"symbol": "String.substringBefore", "kind": "exec"},
-    {"symbol": "String.substringBeforeLast", "kind": "exec"},
-    {"symbol": "String.remove", "kind": "exec"},
-    {"symbol": "String.removeStart", "kind": "exec"},
-    {"symbol": "String.removeStartIgnoreCase", "kind": "exec"},
-    {"symbol": "String.removeEnd", "kind": "exec"},
-    {"symbol": "String.removeEndIgnoreCase", "kind": "exec"},
-    {"symbol": "String.deleteWhitespace", "kind": "exec"},
-    {"symbol": "String.normalizeSpace", "kind": "exec"},
-    {"symbol": "String.repeat", "kind": "exec"},
-    {"symbol": "String.isEmpty", "kind": "exec"},
-    {"symbol": "String.isNotEmpty", "kind": "exec"}
+    {
+      "symbol": "String.containsIgnoreCase",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.startsWithIgnoreCase",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.endsWithIgnoreCase",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.equals",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.compareTo",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.capitalize",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.uncapitalize",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.left",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.right",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.leftPad",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.rightPad",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.center",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.mid",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.reverse",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.substringAfter",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.substringAfterLast",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.substringBefore",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.substringBeforeLast",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.remove",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.removeStart",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.removeStartIgnoreCase",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.removeEnd",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.removeEndIgnoreCase",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.deleteWhitespace",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.normalizeSpace",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.repeat",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.isEmpty",
+      "kind": "exec"
+    },
+    {
+      "symbol": "String.isNotEmpty",
+      "kind": "exec"
+    }
   ],
   "source": [
     {
       "path": "anonymous.apex",
-      "content": "String s = 'AbcDef';\nSystem.assert(s.containsIgnoreCase('CD'));\nSystem.assert(s.startsWithIgnoreCase('ab'));\nSystem.assert(s.endsWithIgnoreCase('def'));\nSystem.assert(s.equals('AbcDef'));\nSystem.assertEquals(-1, s.compareTo('B'));\nString lowerName = 'hello maximillian';\nString upperName = 'Hello max';\nSystem.assertEquals('Hello maximillian', lowerName.capitalize());\nSystem.assertEquals('hello max', upperName.uncapitalize());\nSystem.assertEquals('Abc', s.left(3));\nSystem.assertEquals('Def', s.right(3));\nSystem.assertEquals('  AbcDef', s.leftPad(8));\nSystem.assertEquals('xyAbcDef', s.leftPad(8, 'xy'));\nSystem.assertEquals('AbcDef  ', s.rightPad(8));\nSystem.assertEquals('AbcDefxy', s.rightPad(8, 'xy'));\nSystem.assertEquals(' AbcDef ', s.center(8));\nSystem.assertEquals('cDe', s.mid(2, 3));\nSystem.assertEquals('feDcbA', s.reverse());\nString dotted = 'Salesforce.Lightning.platform';\nSystem.assertEquals('Lightning.platform', dotted.substringAfter('.'));\nSystem.assertEquals('platform', dotted.substringAfterLast('.'));\nSystem.assertEquals('Salesforce', dotted.substringBefore('.'));\nSystem.assertEquals('Salesforce.Lightning', dotted.substringBeforeLast('.'));\nString force = 'Salesforce and force.com';\nSystem.assertEquals('Sales and .com', force.remove('force'));\nSystem.assertEquals('and force.com', force.removeStart('Salesforce '));\nSystem.assertEquals('and force.com', force.removeStartIgnoreCase('SALESFORCE '));\nSystem.assertEquals('Salesforce and force', force.removeEnd('.com'));\nSystem.assertEquals('Salesforce and force', force.removeEndIgnoreCase('.COM'));\nString accent = 'ÄbcDEF';\nSystem.assertEquals('bcDEF', accent.removeStartIgnoreCase('ä'));\nSystem.assertEquals('Äbc', accent.removeEndIgnoreCase('def'));\nString spaced = ' a b c ';\nSystem.assertEquals('abc', spaced.deleteWhitespace());\nString manySpaces = ' a   b  c ';\nSystem.assertEquals('a b c', manySpaces.normalizeSpace());\nString ab = 'ab';\nSystem.assertEquals('ababab', ab.repeat(3));\nSystem.assertEquals('ab|ab|ab', ab.repeat('|', 3));\nSystem.assert(String.isEmpty(null));\nSystem.assert(String.isEmpty(''));\nSystem.assert(!String.isEmpty(' '));\nSystem.assert(String.isNotEmpty('x'));\n"
+      "content": "String s = 'AbcDef';\nSystem.assert(s.containsIgnoreCase('CD'));\nSystem.assert(s.startsWithIgnoreCase('ab'));\nSystem.assert(s.endsWithIgnoreCase('def'));\nSystem.assert(s.equals('AbcDef'));\nSystem.assertEquals(-1, s.compareTo('B'));\nString lowerName = 'hello maximillian';\nString upperName = 'Hello max';\nSystem.assertEquals('Hello maximillian', lowerName.capitalize());\nSystem.assertEquals('hello max', upperName.uncapitalize());\nSystem.assertEquals('Abc', s.left(3));\nSystem.assertEquals('Def', s.right(3));\nSystem.assertEquals('  AbcDef', s.leftPad(8));\nSystem.assertEquals('xyAbcDef', s.leftPad(8, 'xy'));\nSystem.assertEquals('AbcDef  ', s.rightPad(8));\nSystem.assertEquals('AbcDefxy', s.rightPad(8, 'xy'));\nSystem.assertEquals(' AbcDef ', s.center(8));\nSystem.assertEquals('cDe', s.mid(2, 3));\nSystem.assertEquals('feDcbA', s.reverse());\nString dotted = 'Salesforce.Lightning.platform';\nSystem.assertEquals('Lightning.platform', dotted.substringAfter('.'));\nSystem.assertEquals('platform', dotted.substringAfterLast('.'));\nSystem.assertEquals('Salesforce', dotted.substringBefore('.'));\nSystem.assertEquals('Salesforce.Lightning', dotted.substringBeforeLast('.'));\nString force = 'Salesforce and force.com';\nSystem.assertEquals('Sales and .com', force.remove('force'));\nSystem.assertEquals('and force.com', force.removeStart('Salesforce '));\nSystem.assertEquals('and force.com', force.removeStartIgnoreCase('SALESFORCE '));\nSystem.assertEquals('Salesforce and force', force.removeEnd('.com'));\nSystem.assertEquals('Salesforce and force', force.removeEndIgnoreCase('.COM'));\nString accent = '\u00c4bcDEF';\nSystem.assertEquals('bcDEF', accent.removeStartIgnoreCase('\u00e4'));\nSystem.assertEquals('\u00c4bc', accent.removeEndIgnoreCase('def'));\nString spaced = ' a b c ';\nSystem.assertEquals('abc', spaced.deleteWhitespace());\nString manySpaces = ' a   b  c ';\nSystem.assertEquals('a b c', manySpaces.normalizeSpace());\nString ab = 'ab';\nSystem.assertEquals('ababab', ab.repeat(3));\nSystem.assertEquals('ab|ab|ab', ab.repeat('|', 3));\nSystem.assert(String.isEmpty(null));\nSystem.assert(String.isEmpty(''));\nSystem.assert(!String.isEmpty(' '));\nSystem.assert(String.isNotEmpty('x'));\n"
     }
   ],
   "command": {
     "kind": "exec",
     "args": [
-      "String s = 'AbcDef';\nSystem.assert(s.containsIgnoreCase('CD'));\nSystem.assert(s.startsWithIgnoreCase('ab'));\nSystem.assert(s.endsWithIgnoreCase('def'));\nSystem.assert(s.equals('AbcDef'));\nSystem.assertEquals(-1, s.compareTo('B'));\nString lowerName = 'hello maximillian';\nString upperName = 'Hello max';\nSystem.assertEquals('Hello maximillian', lowerName.capitalize());\nSystem.assertEquals('hello max', upperName.uncapitalize());\nSystem.assertEquals('Abc', s.left(3));\nSystem.assertEquals('Def', s.right(3));\nSystem.assertEquals('  AbcDef', s.leftPad(8));\nSystem.assertEquals('xyAbcDef', s.leftPad(8, 'xy'));\nSystem.assertEquals('AbcDef  ', s.rightPad(8));\nSystem.assertEquals('AbcDefxy', s.rightPad(8, 'xy'));\nSystem.assertEquals(' AbcDef ', s.center(8));\nSystem.assertEquals('cDe', s.mid(2, 3));\nSystem.assertEquals('feDcbA', s.reverse());\nString dotted = 'Salesforce.Lightning.platform';\nSystem.assertEquals('Lightning.platform', dotted.substringAfter('.'));\nSystem.assertEquals('platform', dotted.substringAfterLast('.'));\nSystem.assertEquals('Salesforce', dotted.substringBefore('.'));\nSystem.assertEquals('Salesforce.Lightning', dotted.substringBeforeLast('.'));\nString force = 'Salesforce and force.com';\nSystem.assertEquals('Sales and .com', force.remove('force'));\nSystem.assertEquals('and force.com', force.removeStart('Salesforce '));\nSystem.assertEquals('and force.com', force.removeStartIgnoreCase('SALESFORCE '));\nSystem.assertEquals('Salesforce and force', force.removeEnd('.com'));\nSystem.assertEquals('Salesforce and force', force.removeEndIgnoreCase('.COM'));\nString accent = 'ÄbcDEF';\nSystem.assertEquals('bcDEF', accent.removeStartIgnoreCase('ä'));\nSystem.assertEquals('Äbc', accent.removeEndIgnoreCase('def'));\nString spaced = ' a b c ';\nSystem.assertEquals('abc', spaced.deleteWhitespace());\nString manySpaces = ' a   b  c ';\nSystem.assertEquals('a b c', manySpaces.normalizeSpace());\nString ab = 'ab';\nSystem.assertEquals('ababab', ab.repeat(3));\nSystem.assertEquals('ab|ab|ab', ab.repeat('|', 3));\nSystem.assert(String.isEmpty(null));\nSystem.assert(String.isEmpty(''));\nSystem.assert(!String.isEmpty(' '));\nSystem.assert(String.isNotEmpty('x'));\n"
+      "String s = 'AbcDef';\nSystem.assert(s.containsIgnoreCase('CD'));\nSystem.assert(s.startsWithIgnoreCase('ab'));\nSystem.assert(s.endsWithIgnoreCase('def'));\nSystem.assert(s.equals('AbcDef'));\nSystem.assertEquals(-1, s.compareTo('B'));\nString lowerName = 'hello maximillian';\nString upperName = 'Hello max';\nSystem.assertEquals('Hello maximillian', lowerName.capitalize());\nSystem.assertEquals('hello max', upperName.uncapitalize());\nSystem.assertEquals('Abc', s.left(3));\nSystem.assertEquals('Def', s.right(3));\nSystem.assertEquals('  AbcDef', s.leftPad(8));\nSystem.assertEquals('xyAbcDef', s.leftPad(8, 'xy'));\nSystem.assertEquals('AbcDef  ', s.rightPad(8));\nSystem.assertEquals('AbcDefxy', s.rightPad(8, 'xy'));\nSystem.assertEquals(' AbcDef ', s.center(8));\nSystem.assertEquals('cDe', s.mid(2, 3));\nSystem.assertEquals('feDcbA', s.reverse());\nString dotted = 'Salesforce.Lightning.platform';\nSystem.assertEquals('Lightning.platform', dotted.substringAfter('.'));\nSystem.assertEquals('platform', dotted.substringAfterLast('.'));\nSystem.assertEquals('Salesforce', dotted.substringBefore('.'));\nSystem.assertEquals('Salesforce.Lightning', dotted.substringBeforeLast('.'));\nString force = 'Salesforce and force.com';\nSystem.assertEquals('Sales and .com', force.remove('force'));\nSystem.assertEquals('and force.com', force.removeStart('Salesforce '));\nSystem.assertEquals('and force.com', force.removeStartIgnoreCase('SALESFORCE '));\nSystem.assertEquals('Salesforce and force', force.removeEnd('.com'));\nSystem.assertEquals('Salesforce and force', force.removeEndIgnoreCase('.COM'));\nString accent = '\u00c4bcDEF';\nSystem.assertEquals('bcDEF', accent.removeStartIgnoreCase('\u00e4'));\nSystem.assertEquals('\u00c4bc', accent.removeEndIgnoreCase('def'));\nString spaced = ' a b c ';\nSystem.assertEquals('abc', spaced.deleteWhitespace());\nString manySpaces = ' a   b  c ';\nSystem.assertEquals('a b c', manySpaces.normalizeSpace());\nString ab = 'ab';\nSystem.assertEquals('ababab', ab.repeat(3));\nSystem.assertEquals('ab|ab|ab', ab.repeat('|', 3));\nSystem.assert(String.isEmpty(null));\nSystem.assert(String.isEmpty(''));\nSystem.assert(!String.isEmpty(' '));\nSystem.assert(String.isNotEmpty('x'));\n"
     ]
   },
   "expected": {

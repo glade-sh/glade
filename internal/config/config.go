@@ -12,12 +12,17 @@ var ErrNotFound = errors.New("oaer config not found")
 
 type Config struct {
 	Project ProjectConfig `json:"project"`
+	Org     OrgConfig     `json:"org"`
 }
 
 type ProjectConfig struct {
 	Root             string   `json:"root"`
 	PackageDirs      []string `json:"packageDirs"`
 	DefaultNamespace string   `json:"defaultNamespace"`
+}
+
+type OrgConfig struct {
+	Features []string `json:"features"`
 }
 
 func LoadNearest(start string) (Config, string, error) {
@@ -83,6 +88,12 @@ func parseYAMLSubset(src string) (Config, error) {
 				return Config{}, fmt.Errorf("oaer.yml:%d: %w", lineNo+1, err)
 			}
 			cfg.Project.PackageDirs = values
+		case "org.features":
+			values, err := parseInlineList(value)
+			if err != nil {
+				return Config{}, fmt.Errorf("oaer.yml:%d: %w", lineNo+1, err)
+			}
+			cfg.Org.Features = values
 		default:
 			return Config{}, fmt.Errorf("oaer.yml:%d: unsupported config key %q", lineNo+1, key)
 		}

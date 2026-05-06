@@ -21,7 +21,7 @@ public class MetadataProbes implements Probe {
     }
 
     private Object runCustomMetadataDescribe() {
-        Schema.DescribeSObjectResult desc = ProbeTestMdt__mdt.SObjectType.getDescribe();
-        return desc.isCustom();
+        Schema.DescribeSObjectResult d = ProbeTestMdt__mdt.SObjectType.getDescribe();
+        return d.isCustom();
     }
 }

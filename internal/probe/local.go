@@ -2,6 +2,7 @@ package probe
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -17,6 +18,7 @@ import (
 // LocalExecutor captures responses by running probes against the local oaer VM.
 type LocalExecutor struct {
 	ProbeDir string
+	Features []string
 }
 
 // CaptureLocal loads the probe project, registers it with the VM, and executes
@@ -42,7 +44,7 @@ func (l *LocalExecutor) CaptureLocal(probeIDs []string) (map[string]ProbeResult,
 		return nil, fmt.Errorf("type system errors: %s", strings.Join(msgs, "; "))
 	}
 
-	org, err := buildOrg(proj, sch)
+	org, err := buildOrg(proj, sch, l.Features)
 	if err != nil {
 		return nil, fmt.Errorf("build org: %w", err)
 	}
@@ -58,7 +60,7 @@ func (l *LocalExecutor) CaptureLocal(probeIDs []string) (map[string]ProbeResult,
 	return results, nil
 }
 
-func buildOrg(proj project.Project, sch schema.Schema) (storage.OrgState, error) {
+func buildOrg(proj project.Project, sch schema.Schema, features []string) (storage.OrgState, error) {
 	org := storage.NewOrgState()
 	org.APIVersion = proj.SourceAPIVersion
 	org.Namespace = proj.Namespace
@@ -70,6 +72,8 @@ func buildOrg(proj project.Project, sch schema.Schema) (storage.OrgState, error)
 		}
 	}
 	storage.EnsureDeterministicPlatformData(&org)
+	storage.EnsureProbeSchemaData(&org)
+	storage.ApplyOrgShape(&org, features)
 	if err := seedProbeData(&org); err != nil {
 		return org, err
 	}
@@ -89,30 +93,44 @@ func seedProbeData(org *storage.OrgState) error {
 				ID:     id,
 				Object: "ProbeTestObject__c",
 				Fields: map[string]storage.Value{
-					"Name__c":      storage.StringValue(fmt.Sprintf("Record%d", i)),
-					"Value__c":     storage.IntegerValue(int64(i * 10)),
-					"Triggered__c": storage.StringValue("false"),
+					"Name__c":         storage.StringValue(fmt.Sprintf("Record%d", i)),
+					"Value__c":        storage.IntegerValue(int64(i * 10)),
+					"Triggered__c":    storage.StringValue("false"),
+					"CurrencyIsoCode": storage.StringValue("USD"),
 				},
 			}
 		}
 		org.Objects["ProbeTestObject__c"] = obj
 	}
 
-	// Seed ProbeTestSetting__c (custom setting)
-	setting, ok := org.Objects["ProbeTestSetting__c"]
+	account, ok := org.Objects["Account"]
 	if ok {
-		if setting.Records == nil {
-			setting.Records = make(map[storage.ID]storage.Record)
+		if account.Records == nil {
+			account.Records = make(map[storage.ID]storage.Record)
 		}
-		setting.Records[storage.ID("a0s000000000001AAA")] = storage.Record{
-			ID:     storage.ID("a0s000000000001AAA"),
-			Object: "ProbeTestSetting__c",
+		account.Records["001000000000101AAA"] = storage.Record{
+			ID:     "001000000000101AAA",
+			Object: "Account",
 			Fields: map[string]storage.Value{
-				"SetupOwnerId": storage.StringValue("00D000000000001AAA"),
-				"Value__c":     storage.StringValue("setting-value"),
+				"Name": storage.StringValue("OAER Probe Account"),
 			},
 		}
-		org.Objects["ProbeTestSetting__c"] = setting
+		org.Objects["Account"] = account
+	}
+	contact, ok := org.Objects["Contact"]
+	if ok {
+		if contact.Records == nil {
+			contact.Records = make(map[storage.ID]storage.Record)
+		}
+		contact.Records["003000000000101AAA"] = storage.Record{
+			ID:     "003000000000101AAA",
+			Object: "Contact",
+			Fields: map[string]storage.Value{
+				"LastName":  storage.StringValue("Probe"),
+				"AccountId": storage.IDValue("001000000000101AAA"),
+			},
+		}
+		org.Objects["Contact"] = contact
 	}
 
 	return nil
@@ -143,12 +161,18 @@ func (l *LocalExecutor) runProbe(index typesys.Index, org storage.OrgState, prob
 	// If there was an execution error and no debug output, the VM itself failed
 	// before reaching System.debug.
 	if err != nil && raw == "" {
+		excType, excMsg := "ExecutionError", err.Error()
+		var runtimeErr *vm.RuntimeError
+		if errors.As(err, &runtimeErr) && runtimeErr.Type != "" {
+			excType = runtimeErr.Type
+			excMsg = runtimeErr.Message
+		}
 		return ProbeResult{
 			ProbeID:          probeID,
 			Category:         "Stdlib & System",
 			Result:           nil,
-			ExceptionType:    strPtr("ExecutionError"),
-			ExceptionMessage: strPtr(err.Error()),
+			ExceptionType:    strPtr(excType),
+			ExceptionMessage: strPtr(excMsg),
 		}, nil
 	}
 
@@ -158,12 +182,18 @@ func (l *LocalExecutor) runProbe(index typesys.Index, org storage.OrgState, prob
 	if unmarshalErr := json.Unmarshal([]byte(jsonStr), &parsed); unmarshalErr != nil {
 		// If the probe itself threw and we couldn't parse, fall back to the VM error.
 		if err != nil {
+			excType, excMsg := "ExecutionError", err.Error()
+			var runtimeErr *vm.RuntimeError
+			if errors.As(err, &runtimeErr) && runtimeErr.Type != "" {
+				excType = runtimeErr.Type
+				excMsg = runtimeErr.Message
+			}
 			return ProbeResult{
 				ProbeID:          probeID,
 				Category:         "Stdlib & System",
 				Result:           nil,
-				ExceptionType:    strPtr("ExecutionError"),
-				ExceptionMessage: strPtr(err.Error()),
+				ExceptionType:    strPtr(excType),
+				ExceptionMessage: strPtr(excMsg),
 			}, nil
 		}
 		return ProbeResult{}, fmt.Errorf("parse local result %q: %w", raw, unmarshalErr)

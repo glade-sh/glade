@@ -29,7 +29,7 @@ public class AsyncProbes implements Probe {
     }
 
     private Object runSchedulableStub() {
-        // Verify Schedulable interface is available
-        return Limits.getLimitScheduledJobs() > 0;
+        // Verify Schedulable interface is available by checking the type token
+        return Schedulable.class != null;
     }
 }

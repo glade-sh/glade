@@ -38,7 +38,7 @@ public class SoqlProbes implements Probe {
     }
 
     private Object runDynamic() {
-        String q = 'SELECT Name__c FROM ProbeTestObject__c LIMIT 1';
+        String q = 'SELECT Name__c FROM ProbeTestObject__c WHERE Value__c = 10 LIMIT 1';
         List<ProbeTestObject__c> recs = Database.query(q);
         if (recs.isEmpty()) {
             return null;

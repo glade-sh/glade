@@ -41,9 +41,11 @@ The definition enables:
 ## Deploying Probes
 
 ```bash
-cd probes/sfdx
-sf project deploy start --target-org oaer-probe-lab
+go run ./cmd/oaer probe deploy --target-org oaer-probe-lab
 ```
+
+The deploy command pushes the SFDX source, assigns `ProbeDataAccess`, clears
+existing `ProbeTestObject__c` rows, and seeds the deterministic baseline data.
 
 ## Running the Harness
 
@@ -56,7 +58,14 @@ go run ./cmd/oaer probe org --target-org oaer-probe-lab stdlib.math.divide-scale
 
 # Custom output directory
 go run ./cmd/oaer probe org --target-org oaer-probe-lab --output probes/output
+
+# Run local-only probes without touching gap-report.json
+go run ./cmd/oaer probe local stdlib.math.divide-scale --feature MultiCurrency
 ```
+
+`probe org` resets probe data before each golden probe so DML probes cannot
+pollute later SOQL or DML comparisons. Full org runs write `gap-report.json`;
+local-only runs write `local-results.json`.
 
 ## Adding New Probes
 
