@@ -103,6 +103,11 @@ public class ProbeRunner {
         'math.max' => 'MoreMathProbes',
         'math.pow' => 'MoreMathProbes',
         'math.min' => 'MoreMathProbes',
+        // Framework Shape
+        'shape.exception-type-message' => 'ShapeProbes',
+        'shape.soql-row-attributes' => 'ShapeProbes',
+        'shape.json-sobject-attributes' => 'ShapeProbes',
+        'shape.describe-field-type-token' => 'ShapeProbes',
         // More Integration
         'integration.json-serialize-sobject' => 'IntegrationMoreProbes',
         'integration.url-encoding' => 'IntegrationMoreProbes'
@@ -166,6 +171,9 @@ public class ProbeRunner {
         shape.put('organizationId', UserInfo.getOrganizationId());
         shape.put('userId', UserInfo.getUserId());
         shape.put('apiVersion', '60.0');
+        shape.put('probeVersion', '2026-05-06');
+        shape.put('manifestVersion', '2026-05-06.2');
+        shape.put('seedVersion', '2026-05-06.1');
         shape.put('probeCount', PROBES.size());
         shape.put('hasProbeTestObject', Schema.getGlobalDescribe().containsKey('ProbeTestObject__c'));
         shape.put('hasProbeTestEvent', Schema.getGlobalDescribe().containsKey('ProbeTestEvent__e'));
@@ -194,6 +202,7 @@ public class ProbeRunner {
         if (className.startsWith('MoreString')) return 'Stdlib & System';
         if (className.startsWith('MoreMath')) return 'Stdlib & System';
         if (className.startsWith('SystemAssert')) return 'System & Limits';
+        if (className.startsWith('Shape')) return 'Framework Shape';
         return 'Uncategorized';
     }
 }

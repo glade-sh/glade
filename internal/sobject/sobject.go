@@ -105,6 +105,7 @@ type DescribeSObjectResult struct {
 type DescribeFieldResult struct {
 	Name                  string                  `json:"name"`
 	Type                  storage.FieldType       `json:"type"`
+	DisplayType           string                  `json:"displayType,omitempty"`
 	Label                 string                  `json:"label,omitempty"`
 	ReferenceTo           []string                `json:"referenceTo,omitempty"`
 	RelationshipName      string                  `json:"relationshipName,omitempty"`
@@ -164,6 +165,7 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 			describe.Fields[field.Name] = DescribeFieldResult{
 				Name:                  field.Name,
 				Type:                  fieldType,
+				DisplayType:           displayFieldType(field.Type),
 				Label:                 labelOrName(field.Label, field.Name),
 				ReferenceTo:           referenceTargets(field.ReferenceTo),
 				RelationshipName:      field.RelationshipName,
@@ -285,6 +287,7 @@ func ToObjectDefinition(describe DescribeSObjectResult) storage.ObjectDefinition
 			APIName:          field.Name,
 			Label:            labelOrName(field.Label, field.Name),
 			Type:             field.Type,
+			DisplayType:      field.DisplayType,
 			DefaultValue:     field.DefaultValue,
 			Required:         field.Required,
 			ExternalID:       field.ExternalID,
@@ -313,7 +316,20 @@ func ensureDescribeField(fields map[string]DescribeFieldResult, name, typ, label
 	if _, ok := fields[name]; ok {
 		return
 	}
-	fields[name] = DescribeFieldResult{Name: name, Type: storageFieldType(typ), Label: label}
+	fields[name] = DescribeFieldResult{Name: name, Type: storageFieldType(typ), DisplayType: displayFieldType(typ), Label: label}
+}
+
+func displayFieldType(raw string) string {
+	switch raw {
+	case "Number":
+		return "DOUBLE"
+	case "Currency":
+		return "CURRENCY"
+	case "Percent":
+		return "PERCENT"
+	default:
+		return string(storageFieldType(raw))
+	}
 }
 
 func storagePicklistValues(values []schema.PicklistValue) []storage.PicklistValue {

@@ -2,6 +2,12 @@ package probe
 
 import "strings"
 
+const (
+	ProbeVersion    = "2026-05-06"
+	ManifestVersion = "2026-05-06.2"
+	SeedVersion     = "2026-05-06.1"
+)
+
 type ProbeIsolation string
 
 const (
@@ -108,6 +114,10 @@ func defaultProbeSpecs() []ProbeSpec {
 		"math.max",
 		"math.pow",
 		"math.min",
+		"shape.exception-type-message",
+		"shape.soql-row-attributes",
+		"shape.json-sobject-attributes",
+		"shape.describe-field-type-token",
 	}
 	specs := make([]ProbeSpec, 0, len(ids))
 	for _, id := range ids {
@@ -152,6 +162,10 @@ func classifyProbe(id string) ProbeSpec {
 	if strings.Contains(id, "currency") || id == "stdlib.math.divide-scale" {
 		spec.RequiresFeature = []string{"MultiCurrency"}
 	}
+	switch id {
+	case "stdlib.string.format-null", "soql.select-all", "dml.insert-trigger", "schema.picklist-describe", "integration.json-deserialize-untyped", "shape.exception-type-message", "shape.json-sobject-attributes":
+		spec.Tier = "smoke"
+	}
 	return spec
 }
 
@@ -183,7 +197,20 @@ func categoryForProbe(id string) string {
 		return "Integration"
 	case strings.HasPrefix(id, "sobject."), id == "id.validation":
 		return "SObject & Type"
+	case strings.HasPrefix(id, "shape."):
+		return "Framework Shape"
 	default:
 		return "Uncategorized"
 	}
+}
+
+func probeIDsForTier(tier string) []string {
+	specs := defaultProbeSpecs()
+	ids := make([]string, 0, len(specs))
+	for _, spec := range specs {
+		if tier == "" || tier == "full" || spec.Tier == tier {
+			ids = append(ids, spec.ID)
+		}
+	}
+	return ids
 }

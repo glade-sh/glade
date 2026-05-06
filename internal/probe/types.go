@@ -47,6 +47,7 @@ type GapReport struct {
 	Timings      []Timing               `json:"timings,omitempty"`
 	ProbeTimings []ProbeTiming          `json:"probeTimings,omitempty"`
 	OrgShape     map[string]interface{} `json:"orgShape,omitempty"`
+	RunMeta      RunMeta                `json:"runMeta"`
 }
 
 // LocalRunReport records local-only probe results without implying an org diff.
@@ -57,11 +58,14 @@ type LocalRunReport struct {
 
 // Config drives a single probe run.
 type Config struct {
-	ProbeDir  string // path to probes/sfdx
-	OrgAlias  string // sfdx target org alias or username
-	OutputDir string // where to write gap-report.json
-	ProbeIDs  []string
-	Features  []string // org shape features (e.g. MultiCurrency)
+	ProbeDir       string // path to probes/sfdx
+	OrgAlias       string // sfdx target org alias or username
+	OutputDir      string // where to write gap-report.json
+	ProbeIDs       []string
+	Features       []string // org shape features (e.g. MultiCurrency)
+	Tier           string
+	GoldenCache    string
+	UseGoldenCache bool
 }
 
 // Timing records elapsed time for a top-level probe runner phase.
@@ -77,4 +81,41 @@ type ProbeTiming struct {
 	ProbeIDs   []string `json:"probeIds,omitempty"`
 	Mode       string   `json:"mode"`
 	DurationMS int64    `json:"durationMs"`
+}
+
+// RunMeta records the shape inputs used by a probe run.
+type RunMeta struct {
+	StartedAtUTC    string   `json:"startedAtUtc"`
+	ProbeVersion    string   `json:"probeVersion"`
+	ManifestVersion string   `json:"manifestVersion"`
+	SeedVersion     string   `json:"seedVersion"`
+	Tier            string   `json:"tier"`
+	Features        []string `json:"features,omitempty"`
+	GoldenSource    string   `json:"goldenSource"`
+}
+
+// GoldenCache stores reusable org responses for local iteration.
+type GoldenCache struct {
+	RunMeta  RunMeta                `json:"runMeta"`
+	OrgShape map[string]interface{} `json:"orgShape"`
+	Manifest []ProbeSpec            `json:"manifest"`
+	Results  []ProbeResult          `json:"results"`
+}
+
+// TrendEntry is appended after every org probe run.
+type TrendEntry struct {
+	StartedAtUTC     string `json:"startedAtUtc"`
+	ProbeVersion     string `json:"probeVersion"`
+	ManifestVersion  string `json:"manifestVersion"`
+	SeedVersion      string `json:"seedVersion"`
+	Tier             string `json:"tier"`
+	ProbesRun        int    `json:"probesRun"`
+	GapsFound        int    `json:"gapsFound"`
+	Unsupported      int    `json:"unsupported"`
+	Behavioral       int    `json:"behavioral"`
+	Panics           int    `json:"panics"`
+	GoldenDurationMS int64  `json:"goldenDurationMs"`
+	LocalDurationMS  int64  `json:"localDurationMs"`
+	GoldenSource     string `json:"goldenSource"`
+	OrganizationID   string `json:"organizationId,omitempty"`
 }

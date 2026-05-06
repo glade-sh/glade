@@ -23,6 +23,42 @@ func WriteManifest(specs []ProbeSpec, path string) error {
 	return writeIndentedJSON(path, specs)
 }
 
+func WriteGoldenCache(cache GoldenCache, path string) error {
+	return writeIndentedJSON(path, cache)
+}
+
+func ReadGoldenCache(path string) (GoldenCache, error) {
+	var cache GoldenCache
+	f, err := os.Open(path)
+	if err != nil {
+		return cache, err
+	}
+	defer f.Close()
+	if err := json.NewDecoder(f).Decode(&cache); err != nil {
+		return cache, err
+	}
+	return cache, nil
+}
+
+func AppendTrend(path string, entry TrendEntry) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	b, err := json.Marshal(entry)
+	if err != nil {
+		return err
+	}
+	if _, err := f.Write(append(b, '\n')); err != nil {
+		return err
+	}
+	return nil
+}
+
 func writeIndentedJSON(path string, value any) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err

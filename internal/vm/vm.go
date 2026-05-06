@@ -7171,7 +7171,11 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 		label = field.APIName
 	}
 	desc.Fields["label"] = String(label)
-	desc.Fields["type"] = String(string(field.Type))
+	displayType := field.DisplayType
+	if displayType == "" {
+		displayType = string(field.Type)
+	}
+	desc.Fields["type"] = String(displayType)
 	desc.Fields["nillable"] = Bool(!field.Required)
 	desc.Fields["externalId"] = Bool(field.ExternalID)
 	desc.Fields["unique"] = Bool(field.Unique)

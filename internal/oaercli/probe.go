@@ -38,6 +38,9 @@ func runProbeOrg(ctx context.Context, args []string, w io.Writer) error {
 	probeDir := "probes/sfdx"
 	orgAlias := ""
 	outputDir := "probes/output"
+	tier := "full"
+	goldenCache := ""
+	useGoldenCache := false
 	var probeIDs []string
 
 	for i := 0; i < len(args); i++ {
@@ -61,6 +64,20 @@ func runProbeOrg(ctx context.Context, args []string, w io.Writer) error {
 			}
 			outputDir = args[i+1]
 			i++
+		case "--tier":
+			if i+1 >= len(args) {
+				return fmt.Errorf("--tier requires a value")
+			}
+			tier = args[i+1]
+			i++
+		case "--golden-cache":
+			if i+1 >= len(args) {
+				return fmt.Errorf("--golden-cache requires a value")
+			}
+			goldenCache = args[i+1]
+			i++
+		case "--use-golden-cache":
+			useGoldenCache = true
 		default:
 			if strings.HasPrefix(arg, "-") {
 				return fmt.Errorf("unknown flag %q", arg)
@@ -81,11 +98,14 @@ func runProbeOrg(ctx context.Context, args []string, w io.Writer) error {
 	}
 
 	cfg := probe.Config{
-		ProbeDir:  probeDir,
-		OrgAlias:  orgAlias,
-		OutputDir: outputDir,
-		ProbeIDs:  probeIDs,
-		Features:  features,
+		ProbeDir:       probeDir,
+		OrgAlias:       orgAlias,
+		OutputDir:      outputDir,
+		ProbeIDs:       probeIDs,
+		Features:       features,
+		Tier:           tier,
+		GoldenCache:    goldenCache,
+		UseGoldenCache: useGoldenCache,
 	}
 
 	report, err := probe.Run(cfg)
