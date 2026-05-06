@@ -269,23 +269,24 @@ type patternDef struct {
 }
 
 type scanContext struct {
-	org          storage.OrgState
-	metadata     storage.MetadataRegistry
-	vf           visualforce.Index
-	vfComponents map[string]bool
-	pages        map[string]string
-	uiApex       map[string]bool
-	aura         map[string]bool
-	types        map[string]typesys.TypeSymbol
-	present      map[string]bool
-	loadedFiles  map[string]bool
-	automation   map[string]bool
-	namespaces   map[string]bool
+	org               storage.OrgState
+	metadata          storage.MetadataRegistry
+	vf                visualforce.Index
+	vfComponents      map[string]bool
+	pages             map[string]string
+	uiApex            map[string]bool
+	aura              map[string]bool
+	types             map[string]typesys.TypeSymbol
+	present           map[string]bool
+	presentationPaths map[string]bool
+	loadedFiles       map[string]bool
+	automation        map[string]bool
+	namespaces        map[string]bool
 }
 
 var textPatterns = []patternDef{
 	{"visualforce.controller-test", "ApexClass", regexp.MustCompile(`\b(ApexPages\.|PageReference\b|Page\.[A-Za-z_][A-Za-z0-9_]*|StandardController\b|StandardSetController\b)`), 1},
-	{"labels.localization", "ApexClass", regexp.MustCompile(`\b(?:System\.)?Label\.([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)`), 1},
+	{"labels.localization", "ApexClass", regexp.MustCompile(`(^|[^A-Za-z0-9_.])(?:System\.)?Label\.([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)`), 2},
 	{"metadata.apex-deploy", "ApexClass", regexp.MustCompile(`\b(Metadata\.[A-Za-z_][A-Za-z0-9_]*)`), 1},
 	{"site.community-context", "ApexClass", regexp.MustCompile(`\b(Site\.|Network\.|Community__mdt\b)`), 1},
 	{"platform.cache-connectapi", "ApexClass", regexp.MustCompile(`\b(Cache\.|ConnectApi\.[A-Za-z_][A-Za-z0-9_]*)`), 1},
@@ -461,7 +462,11 @@ func (ctx *scanContext) addPresentationFields(idx metadatapkg.Index, proj projec
 	add := func(objectName, fieldName string) {
 		objectName = strings.TrimSpace(objectName)
 		fieldName = strings.TrimSpace(fieldName)
-		if objectName == "" || fieldName == "" || strings.Contains(fieldName, ".") {
+		if objectName == "" || fieldName == "" {
+			return
+		}
+		ctx.addPresentationFieldPath(objectName, fieldName)
+		if strings.Contains(fieldName, ".") {
 			return
 		}
 		resolved, ok := storage.ResolveObjectName(ctx.org, objectName)
@@ -503,6 +508,21 @@ func (ctx *scanContext) addPresentationFields(idx metadatapkg.Index, proj projec
 		for _, fieldName := range fields {
 			add(objectName, fieldName)
 		}
+	}
+}
+
+func (ctx *scanContext) addPresentationFieldPath(objectName, fieldPath string) {
+	if ctx.presentationPaths == nil {
+		ctx.presentationPaths = make(map[string]bool)
+	}
+	parts := schemaReferenceTokens(objectName + "." + fieldPath)
+	if len(parts) < 2 {
+		return
+	}
+	ctx.presentationPaths[schemaPathKey(parts)] = true
+	if stripped := stripAnyNamespaceToken(parts[0]); stripped != parts[0] {
+		alt := append([]string{stripped}, parts[1:]...)
+		ctx.presentationPaths[schemaPathKey(alt)] = true
 	}
 }
 
@@ -759,6 +779,9 @@ func scanTextFile(path, rel string, ctx *scanContext) ([]Finding, error) {
 			matches := pattern.re.FindAllStringSubmatch(scanLine, -1)
 			for _, match := range matches {
 				symbol := patternSymbol(pattern, match)
+				if suppressVisualforceControllerAttributeFinding(pattern, match) {
+					continue
+				}
 				if ctx != nil && ctx.resolvesFinding(pattern.capability, symbol, rel) {
 					continue
 				}
@@ -773,6 +796,22 @@ func scanTextFile(path, rel string, ctx *scanContext) ([]Finding, error) {
 		return nil, err
 	}
 	return findings, nil
+}
+
+func suppressVisualforceControllerAttributeFinding(pattern patternDef, match []string) bool {
+	if pattern.capability != "visualforce.controller-test" || pattern.metadataType != "Visualforce" || len(match) < 3 {
+		return false
+	}
+	attrName := strings.TrimSpace(match[1])
+	symbol := strings.TrimSpace(match[2])
+	switch strings.ToLower(attrName) {
+	case "recordsetvar":
+		return true
+	case "action":
+		return !visualforceActionAttributeCanInvokeController(symbol)
+	default:
+		return false
+	}
 }
 
 func lineForPattern(line string, pattern patternDef) string {
@@ -850,8 +889,10 @@ func (ctx *scanContext) resolvesFinding(capability, symbol, rel string) bool {
 			return true
 		}
 	case "labels.localization":
-		if namespace, label, ok := labelReferenceSymbol(symbol); ok {
-			return ctx.resolvesLabel(namespace, label)
+		for _, ref := range labelReferenceSymbols(symbol) {
+			if ctx.resolvesLabel(ref.namespace, ref.label) {
+				return true
+			}
 		}
 	case "staticresources.urlfor":
 		return ctx.resolvesResource(symbol)
@@ -942,6 +983,9 @@ func (ctx *scanContext) resolvesVisualforceActionReference(symbol, rel string) b
 	if !ok {
 		return false
 	}
+	if strings.Contains(expr, ".") && visualforceStandardControllerAction(expr) {
+		return true
+	}
 	name := baseNoExt(rel)
 	if strings.HasSuffix(strings.ToLower(rel), ".component") {
 		if component, ok := ctx.vf.Component(name); ok {
@@ -953,10 +997,24 @@ func (ctx *scanContext) resolvesVisualforceActionReference(symbol, rel string) b
 	}
 	if strings.HasSuffix(strings.ToLower(rel), ".page") {
 		if page, ok := ctx.vf.Page(name); ok {
+			if page.StandardController != "" && visualforceStandardControllerAction(expr) {
+				return true
+			}
 			return ctx.visualforceTypesHaveMethod([]string{page.Controller}, page.Extensions, expr)
 		}
 	}
 	return false
+}
+
+func visualforceActionAttributeCanInvokeController(symbol string) bool {
+	expr, ok := visualforceActionExpression(symbol)
+	if !ok {
+		return false
+	}
+	if visualforceStandardControllerAction(expr) {
+		return true
+	}
+	return !strings.Contains(expr, ".")
 }
 
 func visualforceActionExpression(symbol string) (string, bool) {
@@ -969,6 +1027,21 @@ func visualforceActionExpression(symbol string) (string, bool) {
 		return "", false
 	}
 	return expr, true
+}
+
+func visualforceStandardControllerAction(expr string) bool {
+	methodName := expr
+	if strings.Contains(methodName, ".") {
+		parts := strings.Split(methodName, ".")
+		methodName = parts[len(parts)-1]
+	}
+	switch strings.ToLower(strings.TrimSpace(methodName)) {
+	case "save", "quicksave", "edit", "delete", "cancel", "list", "view",
+		"first", "previous", "next", "last":
+		return true
+	default:
+		return false
+	}
 }
 
 func visualforceComponentHasAttribute(component visualforce.Component, expr string) bool {
@@ -988,8 +1061,7 @@ func (ctx *scanContext) resolvesVisualforceComponentMetadata(path string) bool {
 		return false
 	}
 	cleanPath := filepath.Clean(path)
-	name := baseNoExt(path)
-	component, ok := ctx.vf.Component(name)
+	component, ok := ctx.vf.ComponentFile(cleanPath)
 	if !ok {
 		return false
 	}
@@ -1106,7 +1178,12 @@ func (ctx *scanContext) resolvesEmailTemplate(symbol, path string) bool {
 	return false
 }
 
-func labelReferenceSymbol(symbol string) (string, string, bool) {
+type labelReference struct {
+	namespace string
+	label     string
+}
+
+func labelReferenceSymbols(symbol string) []labelReference {
 	symbol = strings.TrimSpace(symbol)
 	symbol = strings.TrimPrefix(symbol, "System.")
 	symbol = strings.TrimPrefix(symbol, "Label.")
@@ -1114,23 +1191,48 @@ func labelReferenceSymbol(symbol string) (string, string, bool) {
 	symbol = strings.TrimPrefix(symbol, "@salesforce/label/")
 	symbol = strings.ReplaceAll(symbol, "/", ".")
 	if symbol == "" {
-		return "", "", false
+		return nil
 	}
 	parts := strings.Split(symbol, ".")
-	if len(parts) > 1 && isLabelStringMethod(parts[len(parts)-1]) {
-		parts = parts[:len(parts)-1]
-	}
-	switch len(parts) {
-	case 1:
-		return "", parts[0], true
-	default:
-		namespace := parts[len(parts)-2]
-		label := parts[len(parts)-1]
-		if strings.EqualFold(namespace, "c") {
-			namespace = ""
+	refs := make([]labelReference, 0, 2)
+	addParts := func(parts []string) {
+		if len(parts) == 0 {
+			return
 		}
-		return namespace, label, label != ""
+		ref := labelReference{}
+		switch len(parts) {
+		case 1:
+			ref.label = parts[0]
+		default:
+			ref.namespace = parts[len(parts)-2]
+			ref.label = parts[len(parts)-1]
+			if strings.EqualFold(ref.namespace, "c") {
+				ref.namespace = ""
+			}
+		}
+		if ref.label == "" {
+			return
+		}
+		for _, existing := range refs {
+			if strings.EqualFold(existing.namespace, ref.namespace) && strings.EqualFold(existing.label, ref.label) {
+				return
+			}
+		}
+		refs = append(refs, ref)
 	}
+	addParts(parts)
+	if len(parts) > 1 && isLabelStringMethod(parts[len(parts)-1]) {
+		addParts(parts[:len(parts)-1])
+	}
+	return refs
+}
+
+func labelReferenceSymbol(symbol string) (string, string, bool) {
+	refs := labelReferenceSymbols(symbol)
+	if len(refs) == 0 {
+		return "", "", false
+	}
+	return refs[0].namespace, refs[0].label, true
 }
 
 func (ctx *scanContext) resolvesLabel(namespace, label string) bool {
@@ -1263,6 +1365,9 @@ func (ctx *scanContext) resolvesSchemaReference(ref string) bool {
 	if len(parts) == 0 {
 		return false
 	}
+	if ctx.presentationPaths[schemaPathKey(parts)] {
+		return true
+	}
 	definition, ok := ctx.objectDefinition(parts[0])
 	if !ok {
 		return false
@@ -1280,6 +1385,17 @@ func schemaReferenceTokens(ref string) []string {
 		}
 	}
 	return parts
+}
+
+func schemaPathKey(parts []string) string {
+	normalized := make([]string, 0, len(parts))
+	for _, part := range parts {
+		part = strings.ToLower(strings.TrimSpace(part))
+		if part != "" {
+			normalized = append(normalized, part)
+		}
+	}
+	return strings.Join(normalized, ".")
 }
 
 func (ctx *scanContext) resolvesSchemaPath(definition storage.ObjectDefinition, parts []string) bool {
@@ -1301,6 +1417,12 @@ func (ctx *scanContext) resolvesSchemaPath(definition storage.ObjectDefinition, 
 func (ctx *scanContext) resolvesSchemaFieldPath(definition storage.ObjectDefinition, fieldOrRelationship string, rest []string) bool {
 	if field, ok := ctx.resolveSchemaField(definition, fieldOrRelationship); ok {
 		if len(rest) == 0 || isTerminalSchemaProperty(rest[0]) {
+			return true
+		}
+		return ctx.resolvesReferenceTargets(field.ReferenceTo, rest)
+	}
+	if field, ok := knownStandardRelationshipField(fieldOrRelationship); ok {
+		if len(rest) == 0 {
 			return true
 		}
 		return ctx.resolvesReferenceTargets(field.ReferenceTo, rest)
@@ -1343,6 +1465,9 @@ func fieldRelationshipTokenMatches(field storage.Field, token string) bool {
 	if strings.HasSuffix(strings.ToLower(apiName), "id") && len(apiName) > 2 {
 		return sameSchemaToken(apiName[:len(apiName)-2], token)
 	}
+	if strings.HasSuffix(strings.ToLower(apiName), "__c") && len(apiName) > 3 {
+		return sameSchemaToken(apiName[:len(apiName)-3]+"__r", token)
+	}
 	return false
 }
 
@@ -1351,13 +1476,16 @@ func (ctx *scanContext) resolveSchemaField(definition storage.ObjectDefinition, 
 	if !ok {
 		stripped := stripAnyNamespaceToken(fieldName)
 		if stripped == fieldName {
+			if field, ok := knownStandardField(fieldName); ok {
+				return field, true
+			}
 			return storage.Field{}, false
 		}
 		resolved, ok = storage.ResolveFieldName(definition, ctx.org.Namespace, stripped)
 	}
 	if !ok {
-		if strings.EqualFold(fieldName, "Id") || strings.EqualFold(fieldName, "Name") {
-			return storage.Field{APIName: fieldName}, true
+		if field, ok := knownStandardField(fieldName); ok {
+			return field, true
 		}
 		return storage.Field{}, false
 	}
@@ -1366,6 +1494,44 @@ func (ctx *scanContext) resolveSchemaField(definition storage.ObjectDefinition, 
 		return storage.Field{APIName: "Id"}, true
 	}
 	return field, ok
+}
+
+func knownStandardField(fieldName string) (storage.Field, bool) {
+	switch strings.ToLower(strings.TrimSpace(fieldName)) {
+	case "id":
+		return storage.Field{APIName: "Id", Label: "Record ID", Type: storage.FieldID}, true
+	case "name":
+		return storage.Field{APIName: "Name", Label: "Name", Type: storage.FieldString}, true
+	case "createddate":
+		return storage.Field{APIName: "CreatedDate", Label: "Created Date", Type: storage.FieldDateTime}, true
+	case "createdbyid":
+		return storage.Field{APIName: "CreatedById", Label: "Created By ID", Type: storage.FieldReference, ReferenceTo: []string{"User"}, RelationshipName: "CreatedBy"}, true
+	case "lastmodifieddate":
+		return storage.Field{APIName: "LastModifiedDate", Label: "Last Modified Date", Type: storage.FieldDateTime}, true
+	case "lastmodifiedbyid":
+		return storage.Field{APIName: "LastModifiedById", Label: "Last Modified By ID", Type: storage.FieldReference, ReferenceTo: []string{"User"}, RelationshipName: "LastModifiedBy"}, true
+	case "systemmodstamp":
+		return storage.Field{APIName: "SystemModstamp", Label: "System Modstamp", Type: storage.FieldDateTime}, true
+	case "ownerid":
+		return storage.Field{APIName: "OwnerId", Label: "Owner ID", Type: storage.FieldReference, ReferenceTo: []string{"User"}, RelationshipName: "Owner"}, true
+	case "isdeleted":
+		return storage.Field{APIName: "IsDeleted", Label: "Deleted", Type: storage.FieldBoolean}, true
+	default:
+		return storage.Field{}, false
+	}
+}
+
+func knownStandardRelationshipField(token string) (storage.Field, bool) {
+	switch strings.ToLower(strings.TrimSpace(token)) {
+	case "createdby":
+		return storage.Field{APIName: "CreatedById", Label: "Created By ID", Type: storage.FieldReference, ReferenceTo: []string{"User"}, RelationshipName: "CreatedBy"}, true
+	case "lastmodifiedby":
+		return storage.Field{APIName: "LastModifiedById", Label: "Last Modified By ID", Type: storage.FieldReference, ReferenceTo: []string{"User"}, RelationshipName: "LastModifiedBy"}, true
+	case "owner":
+		return storage.Field{APIName: "OwnerId", Label: "Owner ID", Type: storage.FieldReference, ReferenceTo: []string{"User"}, RelationshipName: "Owner"}, true
+	default:
+		return storage.Field{}, false
+	}
 }
 
 func (ctx *scanContext) resolvesReferenceTargets(targets []string, rest []string) bool {

@@ -19,6 +19,7 @@ type Index struct {
 
 	pagesByName      map[string]int
 	componentsByName map[string]int
+	componentsByFile map[string]int
 }
 
 type Page struct {
@@ -171,6 +172,14 @@ func (i Index) Component(name string) (Component, bool) {
 	return i.Components[idx], true
 }
 
+func (i Index) ComponentFile(path string) (Component, bool) {
+	idx, ok := i.componentsByFile[filepath.Clean(path)]
+	if !ok {
+		return Component{}, false
+	}
+	return i.Components[idx], true
+}
+
 func (i *Index) sortAndBuildLookups() {
 	sort.Slice(i.Pages, func(a, b int) bool { return i.Pages[a].Name < i.Pages[b].Name })
 	sort.Slice(i.Components, func(a, b int) bool { return i.Components[a].Name < i.Components[b].Name })
@@ -179,8 +188,10 @@ func (i *Index) sortAndBuildLookups() {
 		i.pagesByName[lookupKey(page.Name)] = n
 	}
 	i.componentsByName = make(map[string]int, len(i.Components))
+	i.componentsByFile = make(map[string]int, len(i.Components))
 	for n, component := range i.Components {
 		i.componentsByName[lookupKey(component.Name)] = n
+		i.componentsByFile[filepath.Clean(component.File)] = n
 	}
 }
 

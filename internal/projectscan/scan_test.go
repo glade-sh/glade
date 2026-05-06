@@ -256,6 +256,11 @@ import PAYMENT_AMOUNT from '@salesforce/schema/pkg__Payment__c.pkg__Amount__c';
 import PAYMENT_BATCH_NAME from '@salesforce/schema/pkg__Payment__c.pkg__Batch__r.Name';
 import NPSP_PAYMENT_AMOUNT from '@salesforce/schema/npe01__OppPayment__c.npe01__Payment_Amount__c';
 import NPSP_RECURRING_INSTALLMENT from '@salesforce/schema/npe03__Recurring_Donation__c.npe03__Installment_Period__c';
+import FORM_TEMPLATE_MODIFIED from '@salesforce/schema/Form_Template__c.LastModifiedDate';
+import RECURRING_ORG_NAME from '@salesforce/schema/npe03__Recurring_Donation__c.npe03__Organization__r.Name';
+import RECURRING_ORG_CONTACT_LAST from '@salesforce/schema/npe03__Recurring_Donation__c.npe03__Organization__r.npe01__One2OneContact__r.LastName';
+import ACCOUNT_ONE_TO_ONE_LAST from '@salesforce/schema/Account.npe01__One2OneContact__r.LastName';
+import FORM_TEMPLATE_PRESENTATION_PATH from '@salesforce/schema/Form_Template__c.Requester__r.LastModifiedDate';
 import MISSING_FIELD from '@salesforce/schema/Account.NotAField__c';
 import MISSING_RELATIONSHIP from '@salesforce/schema/Batch__c.Missing__r.Name';
 `)
@@ -265,12 +270,20 @@ import MISSING_RELATIONSHIP from '@salesforce/schema/Batch__c.Missing__r.Name';
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/pkg__Payment__c/pkg__Payment__c.object-meta.xml"), `<CustomObject><label>Payment</label><pluralLabel>Payments</pluralLabel></CustomObject>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/pkg__Payment__c/fields/pkg__Amount__c.field-meta.xml"), `<CustomField><fullName>pkg__Amount__c</fullName><label>Amount</label><type>Currency</type></CustomField>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/pkg__Payment__c/fields/pkg__Batch__c.field-meta.xml"), `<CustomField><fullName>pkg__Batch__c</fullName><label>Batch</label><type>Lookup</type><referenceTo>Batch__c</referenceTo><relationshipName>pkg__Batch__r</relationshipName></CustomField>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/Account.object-meta.xml"), `<CustomObject><label>Account</label><pluralLabel>Accounts</pluralLabel></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/fields/npe01__One2OneContact__c.field-meta.xml"), `<CustomField><fullName>npe01__One2OneContact__c</fullName><label>One-to-One Contact</label><type>Lookup</type><referenceTo>Contact</referenceTo></CustomField>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Form_Template__c/Form_Template__c.object-meta.xml"), `<CustomObject><label>Form Template</label><pluralLabel>Form Templates</pluralLabel></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Form_Template__c/fieldSets/Template_Fields.fieldSet-meta.xml"), `<FieldSet>
+  <fullName>Template_Fields</fullName>
+  <displayedFields><field>Requester__r.LastModifiedDate</field></displayedFields>
+</FieldSet>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/npe01__OppPayment__c/npe01__OppPayment__c.object-meta.xml"), `<CustomObject><label>Payment</label><pluralLabel>Payments</pluralLabel></CustomObject>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/npe01__OppPayment__c/fieldSets/Payment_WizardFS.fieldSet-meta.xml"), `<FieldSet>
   <fullName>Payment_WizardFS</fullName>
   <displayedFields><field>npe01__Payment_Amount__c</field></displayedFields>
 </FieldSet>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/npe03__Recurring_Donation__c/npe03__Recurring_Donation__c.object-meta.xml"), `<CustomObject><label>Recurring Donation</label><pluralLabel>Recurring Donations</pluralLabel></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/npe03__Recurring_Donation__c/fields/npe03__Organization__c.field-meta.xml"), `<CustomField><fullName>npe03__Organization__c</fullName><label>Organization</label><type>Lookup</type><referenceTo>Account</referenceTo></CustomField>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/quickActions/New_Recurring_Donation.quickAction-meta.xml"), `<QuickAction>
   <quickActionLayout><layoutSection><layoutColumns><layoutItems><field>npe03__Installment_Period__c</field></layoutItems></layoutColumns></layoutSection></quickActionLayout>
   <targetObject>npe03__Recurring_Donation__c</targetObject>
@@ -325,6 +338,21 @@ import MISSING_RELATIONSHIP from '@salesforce/schema/Batch__c.Missing__r.Name';
 	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "npe03__Recurring_Donation__c.npe03__Installment_Period__c") {
 		t.Fatalf("loaded quick-action field reference should not be reported")
 	}
+	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "Form_Template__c.LastModifiedDate") {
+		t.Fatalf("custom object standard audit field reference should not be reported")
+	}
+	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "npe03__Recurring_Donation__c.npe03__Organization__r.Name") {
+		t.Fatalf("namespaced custom relationship path should not be reported")
+	}
+	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "npe03__Recurring_Donation__c.npe03__Organization__r.npe01__One2OneContact__r.LastName") {
+		t.Fatalf("nested custom relationship path should not be reported")
+	}
+	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "Account.npe01__One2OneContact__r.LastName") {
+		t.Fatalf("standard object custom relationship path should not be reported")
+	}
+	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "Form_Template__c.Requester__r.LastModifiedDate") {
+		t.Fatalf("presentation-declared dotted field path should not be reported")
+	}
 	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/pages/Resolved.page", "Opportunity.Fields.StageName") {
 		t.Fatalf("resolved Opportunity.StageName object type reference should not be reported")
 	}
@@ -376,11 +404,18 @@ export default class Passive extends LightningElement {}
 	writeFile(t, filepath.Join(root, "force-app/main/default/pages/Passive.page"), `<apex:page><apex:outputText value="Passive"/></apex:page>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/pages/Existing.page"), `<apex:page controller="ExistingController" action="{!save}"><apex:form /></apex:page>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/pages/ExistingStandard.page"), `<apex:page standardController="Account" extensions="ExistingExtension" action="{!cancel}"><apex:form /></apex:page>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/pages/SetNavigation.page"), `<apex:page standardController="Account" recordSetVar="allocations" action="{!setCon.first}"><apex:form /></apex:page>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/pages/FormulaAction.page"), `<apex:page controller="ExistingController" action="{!if(true, save, null)}"><apex:form /></apex:page>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/pages/RowItemAction.page"), `<apex:page controller="ExistingController"><apex:repeat value="{!items}" var="item"><apex:commandLink action="{!item.editItem}" /></apex:repeat></apex:page>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/pages/Controller.page"), `<apex:page controller="Controller"><apex:form /></apex:page>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/pages/MissingAction.page"), `<apex:page controller="ExistingController" action="{!missing}"><apex:form /></apex:page>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/pages/MissingCustomQuickSave.page"), `<apex:page controller="ExistingController" action="{!quickSave}"><apex:form /></apex:page>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/components/ActionInput.component"), `<apex:component>
   <apex:attribute name="actSupAction" type="ApexPages.Action" description="action" />
   <apex:actionSupport event="onchange" action="{!actSupAction}" />
+</apex:component>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/components/SetNavigation.component"), `<apex:component>
+  <apex:commandLink action="{!setCon.next}" />
 </apex:component>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/components/Indexed.component"), `<apex:component controller="ExistingController">
   <apex:attribute name="value" type="String" assignTo="{!value}" />
@@ -408,8 +443,21 @@ export default class Passive extends LightningElement {}
 		hasLineFinding(report, "visualforce.controller-test", "force-app/main/default/pages/ExistingStandard.page", "{!cancel}") {
 		t.Fatalf("resolved Visualforce extension contract should not be reported")
 	}
+	if hasLineFinding(report, "visualforce.controller-test", "force-app/main/default/pages/SetNavigation.page", "allocations") ||
+		hasLineFinding(report, "visualforce.controller-test", "force-app/main/default/pages/SetNavigation.page", "{!setCon.first}") {
+		t.Fatalf("Visualforce recordSetVar and standard set controller navigation action should not be reported")
+	}
+	if hasLineFinding(report, "visualforce.controller-test", "force-app/main/default/pages/FormulaAction.page", "{!if(true, save, null)}") {
+		t.Fatalf("Visualforce formula action attributes should not be reported as missing controller methods")
+	}
+	if hasLineFinding(report, "visualforce.controller-test", "force-app/main/default/pages/RowItemAction.page", "{!item.editItem}") {
+		t.Fatalf("Visualforce row-item action expressions should not be reported as page controller methods")
+	}
 	if hasLineFinding(report, "visualforce.controller-test", "force-app/main/default/components/ActionInput.component", "{!actSupAction}") {
 		t.Fatalf("resolved Visualforce action attribute should not be reported")
+	}
+	if hasLineFinding(report, "visualforce.controller-test", "force-app/main/default/components/SetNavigation.component", "{!setCon.next}") {
+		t.Fatalf("Visualforce component standard set controller navigation action should not be reported")
 	}
 	if hasLineFindingContaining(report, "visualforce.component-test", "force-app/main/default/components/Indexed.component", "Indexed") {
 		t.Fatalf("parseable Visualforce component metadata should be indexed, not reported as a component blocker")
@@ -419,6 +467,9 @@ export default class Passive extends LightningElement {}
 	}
 	if !hasLineFinding(report, "visualforce.controller-test", "force-app/main/default/pages/MissingAction.page", "{!missing}") {
 		t.Fatalf("missing Visualforce controller action should still be reported")
+	}
+	if !hasLineFinding(report, "visualforce.controller-test", "force-app/main/default/pages/MissingCustomQuickSave.page", "{!quickSave}") {
+		t.Fatalf("standard action names on custom-controller-only pages should still require a real controller method")
 	}
 }
 
@@ -645,6 +696,7 @@ func TestScanSuppressesResolvedLabelReferences(t *testing.T) {
 	writeFile(t, filepath.Join(root, "force-app/main/default/labels/CustomLabels.labels"), `<CustomLabels>
   <labels><fullName>Save</fullName><value>Save</value></labels>
   <labels><fullName>Greeting</fullName><value>Hello</value></labels>
+  <labels><fullName>Remove</fullName><value>Remove</value></labels>
   <labels><fullName>pkg__Managed</fullName><value>Managed</value></labels>
   <labels><fullName>AddressCopyUnknownObject</fullName><value>Unknown address object</value></labels>
   <labels><fullName>Contact_Merge_Error_Too_Few_Contacts</fullName><value>Too few contacts</value></labels>
@@ -661,6 +713,8 @@ func TestScanSuppressesResolvedLabelReferences(t *testing.T) {
     System.debug(Label.Greeting);
     System.debug(Label.Save.replace('{0}', 'Done'));
     System.debug(Label.pkg.Managed);
+    System.debug(option.Label.compareTo(other.Label));
+    System.debug(wrapper.Label.get('Name'));
     System.debug(System.Label.npo02.AddressCopyUnknownObject);
     System.debug(Label.npe01.Contact_Merge_Error_Too_Few_Contacts);
     System.debug(Label.npe01.Missing_Aliased_Label);
@@ -671,6 +725,7 @@ func TestScanSuppressesResolvedLabelReferences(t *testing.T) {
 	writeFile(t, filepath.Join(root, "force-app/main/default/lwc/labels/labels.js"), `import SAVE from '@salesforce/label/c.Save';
 import MISSING from '@salesforce/label/c.Missing';
 import MANAGED from '@salesforce/label/pkg.Managed';
+import REMOVE from '@salesforce/label/c.Remove';
 `)
 	writeFile(t, filepath.Join(root, "force-app/main/default/pages/Labels.page"), `<apex:page>
 {!$Label.Save}
@@ -694,6 +749,12 @@ import MANAGED from '@salesforce/label/pkg.Managed';
 	if hasLineFindingContaining(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "Save.replace") {
 		t.Fatalf("resolved label String method chain should not be reported")
 	}
+	if hasLineFindingContaining(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "Label.compareTo") {
+		t.Fatalf("ordinary .Label field method chain should not be reported")
+	}
+	if hasLineFindingContaining(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "Label.get") {
+		t.Fatalf("ordinary .Label field map access should not be reported")
+	}
 	if hasLineFinding(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "pkg.Managed") {
 		t.Fatalf("resolved managed-package label fallback should not be reported")
 	}
@@ -708,6 +769,9 @@ import MANAGED from '@salesforce/label/pkg.Managed';
 	}
 	if hasLineFindingContaining(report, "labels.localization", "force-app/main/default/lwc/labels/labels.js", "pkg.Managed") {
 		t.Fatalf("resolved LWC managed-package label fallback should not be reported")
+	}
+	if hasLineFindingContaining(report, "labels.localization", "force-app/main/default/lwc/labels/labels.js", "c.Remove") {
+		t.Fatalf("resolved LWC label named like a String method should not be reported")
 	}
 	if hasLineFindingContaining(report, "labels.localization", "force-app/main/default/pages/Labels.page", "$Label.Save") {
 		t.Fatalf("resolved Visualforce $Label.Save should not be reported")
