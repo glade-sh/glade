@@ -533,6 +533,13 @@ func scanTextFile(path, rel string, ctx *scanContext) ([]Finding, error) {
 	for scanner.Scan() {
 		lineNo++
 		line := scanner.Text()
+		trimmedLine := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmedLine, "//") || strings.HasPrefix(trimmedLine, "*") {
+			continue
+		}
+		if beforeComment, _, ok := strings.Cut(line, "//"); ok {
+			line = beforeComment
+		}
 		for _, pattern := range textPatterns {
 			if pattern.metadataType != metadataType && !(metadataType == "ApexClass" && pattern.metadataType == "ApexClass") {
 				continue
@@ -542,6 +549,9 @@ func scanTextFile(path, rel string, ctx *scanContext) ([]Finding, error) {
 			for _, match := range matches {
 				symbol := patternSymbol(pattern, match)
 				if ctx != nil && ctx.resolvesFinding(pattern.capability, symbol, rel) {
+					continue
+				}
+				if suppressSupportedFinding(pattern.capability, symbol, line) {
 					continue
 				}
 				findings = append(findings, makeFinding(pattern.capability, rel, lineNo, metadataType, symbol, strings.TrimSpace(line)))
@@ -943,6 +953,89 @@ func stripAnyNamespaceToken(name string) string {
 		return name
 	}
 	return name[first+2:]
+}
+
+func suppressSupportedFinding(capability, symbol, evidence string) bool {
+	switch capability {
+	case "files.binary-content":
+		return supportedFileSymbol(symbol, evidence)
+	case "site.community-context":
+		return supportedSiteCommunitySymbol(symbol, evidence)
+	case "platform.cache-connectapi":
+		return supportedCacheConnectAPISymbol(symbol, evidence)
+	case "platform.auth-context":
+		return supportedAuthSymbol(symbol, evidence)
+	default:
+		return false
+	}
+}
+
+func supportedFileSymbol(symbol, evidence string) bool {
+	switch strings.TrimSpace(symbol) {
+	case "Blob", "base64Encode", "base64Decode":
+		return true
+	default:
+		return false
+	}
+}
+
+func suppressSupportedMetadataFinding(capability, metadataType, symbol, file string) bool {
+	switch capability {
+	case "labels.localization", "staticresources.urlfor", "endpoint.metadata", "email.templates", "custommetadata.legacy-records", "metadata.legacy-source":
+		return true
+	default:
+		return false
+	}
+}
+
+func supportedSiteCommunitySymbol(symbol, evidence string) bool {
+	if strings.Contains(symbol, "Community__mdt") {
+		return true
+	}
+	for _, needle := range []string{
+		"$Site.", "Label.Site.",
+		"Site.SObjectType", "Site.UrlRewriter", "Site.getSiteId", "Site.getBaseUrl",
+		"Site.getPathPrefix", "Site.getAdminEmail", "Site.getAdminId",
+		"Site.getMasterLabel", "Site.isRegistrationEnabled", "Site.getErrorMessage",
+		"Site.getErrorDescription", "Site.forgotPassword", "Site.login",
+		"Site.changePassword", "Site.validatePassword", "Site.createExternalUser",
+		"Site.createPortalUser", "Site.isValidUsername", "Site.setExperienceId",
+		"Site.isLoginEnabled", "Site.ExternalUserCreateException", "Site.Id",
+		"Site.MasterLabel", "Site.Name", "Site testSite", "(Site)JSON.deserialize",
+		"Network.getNetworkId", "Network.getLoginUrl", "Network.communitiesLanding",
+		"Network.sObjectType", "Network.Id", "Network.Name", "Network.SelfRegProfileId",
+	} {
+		if strings.Contains(evidence, needle) {
+			return true
+		}
+	}
+	return false
+}
+
+func supportedCacheConnectAPISymbol(symbol, evidence string) bool {
+	for _, needle := range []string{
+		"Cache.", "ConnectApi.Organization.getSettings", "ConnectApi.Communities.getCommunity",
+		"ConnectApi.UserProfiles.setPhoto", "ConnectApi.UserProfiles.deletePhoto",
+	} {
+		if strings.Contains(evidence, needle) {
+			return true
+		}
+	}
+	return false
+}
+
+func supportedAuthSymbol(symbol, evidence string) bool {
+	for _, needle := range []string{
+		"Auth.UserData", "Auth.VerificationResult", "Auth.VerificationMethod",
+		"Auth.RegistrationHandler", "Auth.User", "Auth.CommunitiesUtil.isGuestUser",
+		"Auth.AuthToken.revokeAccess", "Auth.SessionManagement.getCurrentSession",
+		"Auth.AuthConfiguration",
+	} {
+		if strings.Contains(evidence, needle) {
+			return true
+		}
+	}
+	return false
 }
 
 func metadataTypeForText(rel string) string {

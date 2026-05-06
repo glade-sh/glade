@@ -361,6 +361,7 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 	if err != nil {
 		return "", err
 	}
+	normalizePersonAccountFields(objectName, &record)
 	applyFieldDefaults(object.Definition, &record)
 	if err := validateFields(object.Definition, e.Org.Namespace, record); err != nil {
 		return "", err
@@ -427,6 +428,13 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 			return "", err
 		}
 	}
+	if objectName == "Account" && isPersonAccountRecord(record) {
+		if err := e.afterInsertPersonAccount(record); err != nil {
+			*e.Org = rollbackOrg
+			e.IDs.Sequences = rollbackSequences
+			return "", err
+		}
+	}
 	if !e.DeferAutomation {
 		if err := e.ApplyAutomation(objectName, record.ID); err != nil {
 			*e.Org = rollbackOrg
@@ -435,6 +443,57 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 		}
 	}
 	return record.ID, nil
+}
+
+func normalizePersonAccountFields(objectName string, record *storage.Record) {
+	if !strings.EqualFold(objectName, "Account") || record == nil {
+		return
+	}
+	if record.Fields == nil {
+		record.Fields = make(map[string]storage.Value)
+	}
+	if !hasPersonAccountSignal(*record) {
+		return
+	}
+	record.Fields["IsPersonAccount"] = storage.BooleanValue(true)
+	if _, ok := record.Fields["Name"]; ok {
+		return
+	}
+	firstName := stringField(record.Fields, "FirstName")
+	lastName := stringField(record.Fields, "LastName")
+	switch {
+	case firstName != "" && lastName != "":
+		record.Fields["Name"] = storage.StringValue(firstName + " " + lastName)
+	case lastName != "":
+		record.Fields["Name"] = storage.StringValue(lastName)
+	}
+}
+
+func hasPersonAccountSignal(record storage.Record) bool {
+	if isPersonAccountRecord(record) {
+		return true
+	}
+	for field := range record.Fields {
+		if strings.HasPrefix(field, "Person") || field == "FirstName" || field == "LastName" {
+			return true
+		}
+	}
+	return false
+}
+
+func isPersonAccountRecord(record storage.Record) bool {
+	if value, ok := record.Fields["IsPersonAccount"]; ok && value.Kind == storage.ValueBoolean {
+		return value.Boolean
+	}
+	return false
+}
+
+func stringField(fields map[string]storage.Value, name string) string {
+	value, ok := fields[name]
+	if !ok || value.Kind != storage.ValueString {
+		return ""
+	}
+	return strings.TrimSpace(value.String)
 }
 
 func applyFieldDefaults(definition storage.ObjectDefinition, record *storage.Record) {
@@ -516,6 +575,94 @@ func (e *Engine) afterInsertContentVersion(version storage.Record) error {
 	return nil
 }
 
+func (e *Engine) afterInsertPersonAccount(account storage.Record) error {
+	if _, ok := e.Org.Objects["Contact"]; !ok {
+		return nil
+	}
+	contact := storage.Record{
+		Object: "Contact",
+		Fields: personContactFields(account),
+	}
+	contactID, err := e.insertOne(contact)
+	if err != nil {
+		return err
+	}
+	accountObject := e.Org.Objects["Account"]
+	stored := accountObject.Records[account.ID]
+	if stored.Fields == nil {
+		stored.Fields = make(map[string]storage.Value)
+	}
+	stored.Fields["PersonContactId"] = storage.IDValue(contactID)
+	accountObject.Records[account.ID] = stored
+	e.Org.Objects["Account"] = accountObject
+	return nil
+}
+
+func personContactFields(account storage.Record) map[string]storage.Value {
+	fields := map[string]storage.Value{
+		"AccountId": storage.IDValue(account.ID),
+	}
+	copyPersonContactField(fields, account, "FirstName", "FirstName")
+	copyPersonContactField(fields, account, "LastName", "LastName")
+	copyPersonContactField(fields, account, "PersonEmail", "Email")
+	copyPersonContactField(fields, account, "PersonHomePhone", "HomePhone")
+	copyPersonContactField(fields, account, "PersonMobilePhone", "MobilePhone")
+	copyPersonContactField(fields, account, "PersonTitle", "Title")
+	copyPersonContactField(fields, account, "PersonDepartment", "Department")
+	copyPersonContactField(fields, account, "PersonBirthdate", "Birthdate")
+	copyPersonContactField(fields, account, "PersonDoNotCall", "DoNotCall")
+	copyPersonContactField(fields, account, "PersonHasOptedOutOfEmail", "HasOptedOutOfEmail")
+	copyPersonContactField(fields, account, "PersonHasOptedOutOfFax", "HasOptedOutOfFax")
+	copyPersonContactField(fields, account, "PersonEmailBouncedReason", "EmailBouncedReason")
+	copyPersonContactField(fields, account, "PersonEmailBouncedDate", "EmailBouncedDate")
+	for _, suffix := range []string{"Street", "City", "State", "StateCode", "PostalCode", "Country", "CountryCode"} {
+		copyPersonContactField(fields, account, "PersonMailing"+suffix, "Mailing"+suffix)
+		copyPersonContactField(fields, account, "PersonOther"+suffix, "Other"+suffix)
+	}
+	if _, ok := fields["LastName"]; !ok || fields["LastName"].Kind == storage.ValueNull {
+		fields["LastName"] = storage.StringValue(stringField(account.Fields, "Name"))
+	}
+	for field, value := range fields {
+		if value.Kind == "" {
+			delete(fields, field)
+		}
+	}
+	return fields
+}
+
+func copyPersonContactField(fields map[string]storage.Value, account storage.Record, source, target string) {
+	if value, ok := account.Fields[source]; ok {
+		fields[target] = value.Clone()
+	}
+}
+
+func (e *Engine) syncPersonContact(account storage.Record) error {
+	if !isPersonAccountRecord(account) {
+		return nil
+	}
+	contactID := idFromStorageValue(account.Fields["PersonContactId"])
+	if contactID == "" {
+		return nil
+	}
+	contactObject, ok := e.Org.Objects["Contact"]
+	if !ok {
+		return nil
+	}
+	contact, ok := contactObject.Records[contactID]
+	if !ok || contact.System.IsDeleted {
+		return nil
+	}
+	if contact.Fields == nil {
+		contact.Fields = make(map[string]storage.Value)
+	}
+	for field, value := range personContactFields(account) {
+		contact.Fields[field] = value.Clone()
+	}
+	contactObject.Records[contactID] = contact
+	e.Org.Objects["Contact"] = contactObject
+	return nil
+}
+
 func fileExtension(path string) string {
 	lastSlash := strings.LastIndexAny(path, `/\`)
 	lastDot := strings.LastIndex(path, ".")
@@ -537,6 +684,7 @@ func (e *Engine) updateOne(record storage.Record) error {
 	if err != nil {
 		return err
 	}
+	normalizePersonAccountFields(objectName, &record)
 	if record.ID == "" {
 		return fmt.Errorf("dml: update requires id")
 	}
@@ -603,6 +751,13 @@ func (e *Engine) updateOne(record storage.Record) error {
 	existing.System.LastModifiedByID = e.systemUserID()
 	object.Records[record.ID] = existing
 	e.Org.Objects[objectName] = object
+	if strings.EqualFold(objectName, "Account") {
+		if err := e.syncPersonContact(existing); err != nil {
+			*e.Org = rollbackOrg
+			e.IDs.Sequences = rollbackSequences
+			return err
+		}
+	}
 	if !e.DeferAutomation {
 		if err := e.ApplyAutomation(objectName, record.ID); err != nil {
 			*e.Org = rollbackOrg

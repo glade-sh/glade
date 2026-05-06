@@ -104,11 +104,6 @@ func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 			want: `unsupported call "Approval.lock local approval process and lock surface"`,
 		},
 		{
-			name: "auth token api",
-			src:  `Auth.SessionManagement.getCurrentSession();`,
-			want: `unsupported call "Auth.SessionManagement.getCurrentSession local authentication token/cloud API surface"`,
-		},
-		{
 			name: "auth oauth api",
 			src:  `Auth.JWTUtil.validateJWTWithKeysEndpoint('token', 'https://example.invalid/keys');`,
 			want: `unsupported call "Auth.JWTUtil.validateJWTWithKeysEndpoint local authentication token/cloud API surface"`,
@@ -224,14 +219,45 @@ func TestExecPlatformCachePartitions(t *testing.T) {
 Cache.OrgPartition orgCache = Cache.Org.getPartition('local');
 System.assertEquals(null, orgCache.get('missing'));
 orgCache.put('name', 'Acme');
+orgCache.put('visible', 'Trail', 60, Cache.Visibility.ALL, false);
 System.assert(orgCache.contains('name'));
 System.assertEquals('Acme', (String) orgCache.get('name'));
+System.assertEquals('Trail', (String) orgCache.get('visible'));
 System.assertEquals('Acme', (String) orgCache.remove('name'));
 System.assert(!orgCache.contains('name'));
 
 Cache.SessionPartition sessionCache = Cache.Session.getPartition('local');
 sessionCache.put('count', 7, 60);
 System.assertEquals(7, (Integer) sessionCache.get('count'));
+System.assertEquals(null, sessionCache.get(String.class, 'missing'));
+sessionCache.remove(String.class, 'missing');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecCommunityAuthValueObjects(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String,String> attributes = new Map<String,String>{ 'display_name' => 'Ada' };
+Auth.UserData data = new Auth.UserData('003000000000001', 'Ada', 'Lovelace', 'Ada Lovelace', 'ada@example.invalid', null, 'ada@example.invalid', 'en_US', 'local', null, attributes);
+System.assertEquals('003000000000001', data.identifier);
+System.assertEquals('ada@example.invalid', data.email);
+System.assertEquals('local-self-registration', UserManagement.initSelfRegistration(Auth.VerificationMethod.EMAIL, new User(LastName='Lovelace', Email='ada@example.invalid')));
+Auth.VerificationResult result = UserManagement.verifySelfRegistration(Auth.VerificationMethod.EMAIL, 'local-self-registration', '12345', '/welcome');
+System.assert(result.success);
+System.assertEquals('/welcome', result.redirect.getUrl());
+System.assertEquals(true, Auth.AuthToken.revokeAccess('provider', 'user', 'token'));
+System.assert(Auth.SessionManagement.getCurrentSession().get('SessionId').contains('session'));
+Auth.AuthConfiguration config = new Auth.AuthConfiguration('https://local.example', '/start');
+System.assertEquals(0, config.getAuthProviders().size());
+System.assertEquals('https://local.example', config.getAuthConfig().Url);
+System.assertEquals('/start', config.getStartUrl());
+System.assertEquals('https://local.example/services/auth/sso/local?startURL=/start', Auth.AuthConfiguration.getAuthProviderSsoUrl('https://local.example', '/start', 'local'));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -2120,6 +2146,52 @@ System.assertEquals('local-site', siteId);
 		t.Fatal(err)
 	}
 	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecOrgShapeBackedSiteNetworkAndCurrencyCalls(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assert(UserInfo.isMultiCurrencyOrganization());
+System.assertEquals('0DM000000000001', Site.getSiteId());
+System.assertEquals('https://local.oaer.example/local', Site.getBaseUrl());
+System.assertEquals('local', Site.getPathPrefix());
+System.assertEquals('system@example.invalid', Site.getAdminEmail());
+System.assertEquals('005000000000001', Site.getAdminId());
+System.assertEquals('Local Site', Site.getMasterLabel());
+System.assertEquals(true, Site.isRegistrationEnabled());
+System.assertEquals(true, Site.isLoginEnabled());
+System.assertEquals(true, Site.isValidUsername('user@example.invalid'));
+System.assertEquals(false, Site.isValidUsername('not-an-email'));
+Site.setExperienceId(Network.getNetworkId());
+System.assertEquals('', Site.getErrorMessage());
+System.assertEquals('', Site.getErrorDescription());
+Site.forgotPassword('user@example.invalid');
+User externalUser = new User(Username='external@example.invalid', LastName='External', Email='external@example.invalid', Alias='ext');
+System.assertEquals('005000000000E01', Site.createExternalUser(externalUser, '001000000000001', 'secret', false));
+System.assertEquals('005000000000E01', externalUser.Id);
+User portalUser = new User(Username='portal@example.invalid', LastName='Portal', Email='portal@example.invalid', Alias='port');
+System.assertEquals('005000000000E01', Site.createPortalUser(portalUser, '001000000000001', 'secret'));
+System.assertEquals('/next', Site.login('external@example.invalid', 'secret', '/next').getUrl());
+Site.validatePassword(externalUser, 'secret', 'secret');
+System.assertEquals('0DB000000000001', Network.getNetworkId());
+System.assertEquals('https://local.oaer.example/local/login', Network.getLoginUrl(Network.getNetworkId()));
+System.assertEquals('/local', Network.communitiesLanding().getUrl());
+System.assertEquals('https://local.oaer.example/local', ConnectApi.Communities.getCommunity(Network.getNetworkId()).siteUrl);
+ConnectApi.UserProfiles.setPhoto(Network.getNetworkId(), UserInfo.getUserId(), '069000000000001', null);
+ConnectApi.UserProfiles.deletePhoto(Network.getNetworkId(), UserInfo.getUserId());
+System.assertEquals(false, Auth.CommunitiesUtil.isGuestUser());
+System.setPassword(UserInfo.getUserId(), 'local-secret');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	storage.EnsureDeterministicPlatformData(&org)
+	storage.ApplyOrgShape(&org, []string{"MultiCurrency", "Sites", "Communities"})
+	machine := New(nil)
+	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}

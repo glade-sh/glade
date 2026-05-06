@@ -45,6 +45,9 @@ import { getObjectInfo } from 'lightning/uiObjectInfoApi';
     System.debug(Site.getAdminEmail());
     System.debug(ConnectApi.Organization.getSettings().orgId);
     Auth.SessionManagement.getCurrentSession();
+    Auth.JWTUtil.validateJWTWithKeysEndpoint('token', 'https://example.invalid/keys');
+    ConnectApi.ChatterFeeds.getFeedElementsFromFeed(null, null);
+    System.debug(Site.UnknownContext());
     Callable cb;
     Test.createStub(UsesPlatform.class, null);
     req.setEndpoint('callout:Api/path');
@@ -69,7 +72,6 @@ import { getObjectInfo } from 'lightning/uiObjectInfoApi';
 		"email.templates",
 		"files.binary-content",
 		"flow.save-order",
-		"labels.localization",
 		"lwc.controller-test",
 		"metadata.apex-deploy",
 		"metadata.legacy-source",
@@ -112,6 +114,24 @@ import { getObjectInfo } from 'lightning/uiObjectInfoApi';
 	}
 	if hasLineFinding(report, "ui.presentation-metadata", "src/layouts/Account.layout", "Account") {
 		t.Fatalf("discovered presentation metadata file should not be a load blocker")
+	}
+	if hasLineFindingContaining(report, "site.community-context", "src/classes/UsesPlatform.cls", "Site.getAdminEmail") {
+		t.Fatalf("supported Site.getAdminEmail was reported as a blocker")
+	}
+	if hasLineFindingContaining(report, "platform.auth-context", "src/classes/UsesPlatform.cls", "Auth.SessionManagement.getCurrentSession") {
+		t.Fatalf("supported Auth.SessionManagement.getCurrentSession was reported as a blocker")
+	}
+	if hasLineFindingContaining(report, "platform.cache-connectapi", "src/classes/UsesPlatform.cls", "ConnectApi.Organization.getSettings") {
+		t.Fatalf("supported ConnectApi.Organization.getSettings was reported as a blocker")
+	}
+	if !hasLineFindingContaining(report, "platform.auth-context", "src/classes/UsesPlatform.cls", "Auth.JWTUtil") {
+		t.Fatalf("missing unsupported Auth.JWTUtil finding")
+	}
+	if !hasLineFindingContaining(report, "platform.cache-connectapi", "src/classes/UsesPlatform.cls", "ConnectApi.ChatterFeeds") {
+		t.Fatalf("missing unsupported ConnectApi.ChatterFeeds finding")
+	}
+	if !hasLineFindingEvidenceContaining(report, "site.community-context", "src/classes/UsesPlatform.cls", "Site.UnknownContext") {
+		t.Fatalf("missing unsupported Site.UnknownContext finding")
 	}
 	for _, finding := range report.Findings {
 		if strings.Contains(finding.File, ".claude/") {
@@ -524,6 +544,15 @@ func hasLineFinding(report Report, capability, file, symbol string) bool {
 func hasLineFindingContaining(report Report, capability, file, symbol string) bool {
 	for _, finding := range report.Findings {
 		if finding.Capability == capability && finding.File == file && finding.Line > 0 && strings.Contains(finding.Symbol, symbol) {
+			return true
+		}
+	}
+	return false
+}
+
+func hasLineFindingEvidenceContaining(report Report, capability, file, evidence string) bool {
+	for _, finding := range report.Findings {
+		if finding.Capability == capability && finding.File == file && finding.Line > 0 && strings.Contains(finding.Evidence, evidence) {
 			return true
 		}
 	}

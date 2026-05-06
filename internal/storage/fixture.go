@@ -262,13 +262,80 @@ func containsString(values []string, want string) bool {
 
 func ApplyOrgShape(org *OrgState, features []string) {
 	for _, f := range features {
-		switch f {
+		switch canonicalFeatureName(f) {
 		case "PersonAccounts":
-			applyStandardFeature(org, "PersonAccounts")
+			applyPersonAccounts(org)
 		case "MultiCurrency":
 			applyMultiCurrency(org)
+		case "Sites", "Communities":
+			applySitesAndCommunities(org)
+		case "StateAndCountryPicklist":
+			applyStateAndCountryPicklist(org)
+		case "ContactsToMultipleAccounts":
+			applyContactsToMultipleAccounts(org)
+		case "PlatformCache":
+			applyPlatformCache(org)
+		case "EnableSetPasswordInApi":
+			setOrganizationFlag(org, "IsSetPasswordInApiEnabled", true)
+		case "AddCustomApps":
+			applyAddCustomApps(org, featureArgumentInt(f, 0))
+		case "AnalyticsAdminPerms":
+			setOrganizationFlag(org, "HasAnalyticsAdminPerms", true)
+		case "HealthCloud":
+			setOrganizationFlag(org, "IsHealthCloudEnabled", true)
+		case "LightningExperience":
+			setOrganizationFlag(org, "IsLightningExperienceEnabled", true)
+		case "Chatter":
+			setOrganizationFlag(org, "IsChatterEnabled", true)
 		}
 	}
+	if _, ok := org.Objects["RecordType"]; ok {
+		ensureRecordTypeRecords(org)
+	}
+}
+
+func featureArgumentInt(feature string, fallback int) int {
+	idx := strings.IndexByte(feature, ':')
+	if idx < 0 || idx == len(feature)-1 {
+		return fallback
+	}
+	n, err := strconv.Atoi(strings.TrimSpace(feature[idx+1:]))
+	if err != nil || n < 0 {
+		return fallback
+	}
+	return n
+}
+
+func setOrganizationFlag(org *OrgState, fieldName string, enabled bool) {
+	if org == nil {
+		return
+	}
+	if org.Objects == nil {
+		org.Objects = make(map[string]ObjectState)
+	}
+	ensureObject(org, "Organization", "00D", map[string]Field{
+		"Name": {APIName: "Name", Type: FieldString},
+	})
+	object := org.Objects["Organization"]
+	if object.Definition.Fields == nil {
+		object.Definition.Fields = make(map[string]Field)
+	}
+	if len(object.Records) == 0 {
+		object.Records["00D000000000001"] = Record{
+			ID:     "00D000000000001",
+			Object: "Organization",
+			Fields: map[string]Value{"Name": StringValue("OAER Local Org")},
+		}
+	}
+	object.Definition.Fields[fieldName] = Field{APIName: fieldName, Type: FieldBoolean}
+	for id, record := range object.Records {
+		if record.Fields == nil {
+			record.Fields = make(map[string]Value)
+		}
+		record.Fields[fieldName] = BooleanValue(enabled)
+		object.Records[id] = record
+	}
+	org.Objects["Organization"] = object
 }
 
 func applyStandardFeature(org *OrgState, feature string) {
@@ -276,6 +343,19 @@ func applyStandardFeature(org *OrgState, feature string) {
 		EnsureStandardObjectFieldsForFeatures(&obj.Definition, []string{feature})
 		org.Objects[name] = obj
 	}
+}
+
+func applyPersonAccounts(org *OrgState) {
+	EnsureStandardObject(org, "Account")
+	EnsureStandardObject(org, "Contact")
+	applyStandardFeature(org, "PersonAccounts")
+	account := org.Objects["Account"]
+	account.Definition.Relations = append(account.Definition.Relations, Relationship{
+		Field:              "PersonContactId",
+		ParentObjects:      []string{"Contact"},
+		ParentRelationship: "PersonContact",
+	})
+	org.Objects["Account"] = account
 }
 
 func applyMultiCurrency(org *OrgState) {
@@ -303,6 +383,111 @@ func applyMultiCurrency(org *OrgState) {
 			orgRec.Records[id] = rec
 		}
 		org.Objects["Organization"] = orgRec
+	}
+}
+
+func applySitesAndCommunities(org *OrgState) {
+	ensureObject(org, "Site", "0DM", map[string]Field{
+		"Name":          {APIName: "Name", Type: FieldString, Required: true},
+		"MasterLabel":   {APIName: "MasterLabel", Type: FieldString},
+		"Subdomain":     {APIName: "Subdomain", Type: FieldString},
+		"UrlPathPrefix": {APIName: "UrlPathPrefix", Type: FieldString},
+		"SiteType":      {APIName: "SiteType", Type: FieldPicklist},
+		"AdminId":       {APIName: "AdminId", Type: FieldReference, ReferenceTo: []string{"User"}, RelationshipName: "Admin"},
+		"GuestUserId":   {APIName: "GuestUserId", Type: FieldReference, ReferenceTo: []string{"User"}, RelationshipName: "GuestUser"},
+		"IsActive":      {APIName: "IsActive", Type: FieldBoolean},
+	})
+	ensureObject(org, "Network", "0DB", map[string]Field{
+		"Name":                       {APIName: "Name", Type: FieldString, Required: true},
+		"Status":                     {APIName: "Status", Type: FieldString},
+		"UrlPathPrefix":              {APIName: "UrlPathPrefix", Type: FieldString},
+		"OptionsGuestChatterEnabled": {APIName: "OptionsGuestChatterEnabled", Type: FieldBoolean},
+	})
+	ensureObject(org, "NetworkMember", "0NM", map[string]Field{
+		"NetworkId": {APIName: "NetworkId", Type: FieldReference, ReferenceTo: []string{"Network"}, RelationshipName: "Network", Required: true},
+		"MemberId":  {APIName: "MemberId", Type: FieldReference, ReferenceTo: []string{"User"}, RelationshipName: "Member", Required: true},
+	})
+	ensureLocalSiteRecords(org)
+}
+
+func applyStateAndCountryPicklist(org *OrgState) {
+	for _, objectName := range []string{"Account", "Contact", "Lead", "User"} {
+		EnsureStandardObject(org, objectName)
+	}
+}
+
+func applyContactsToMultipleAccounts(org *OrgState) {
+	EnsureStandardObject(org, "Account")
+	EnsureStandardObject(org, "Contact")
+	ensureObject(org, "AccountContactRelation", "07k", map[string]Field{
+		"AccountId": {APIName: "AccountId", Type: FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Account", Required: true},
+		"ContactId": {APIName: "ContactId", Type: FieldReference, ReferenceTo: []string{"Contact"}, RelationshipName: "Contact", Required: true},
+		"Roles":     {APIName: "Roles", Type: FieldString},
+		"IsActive":  {APIName: "IsActive", Type: FieldBoolean, DefaultValue: "true"},
+		"IsDirect":  {APIName: "IsDirect", Type: FieldBoolean, DefaultValue: "false"},
+	})
+}
+
+func applyPlatformCache(org *OrgState) {
+	ensureObject(org, "PlatformCachePartition", "0Px", map[string]Field{
+		"DeveloperName":      {APIName: "DeveloperName", Type: FieldString, Required: true},
+		"MasterLabel":        {APIName: "MasterLabel", Type: FieldString},
+		"NamespacePrefix":    {APIName: "NamespacePrefix", Type: FieldString},
+		"IsDefaultPartition": {APIName: "IsDefaultPartition", Type: FieldBoolean},
+	})
+	putSeedRecord(org, "PlatformCachePartition", Record{
+		ID:     "0Px000000000001",
+		Object: "PlatformCachePartition",
+		Fields: map[string]Value{
+			"DeveloperName":      StringValue("local"),
+			"MasterLabel":        StringValue("Local"),
+			"IsDefaultPartition": BooleanValue(true),
+		},
+	})
+}
+
+func applyAddCustomApps(org *OrgState, count int) {
+	if count <= 0 {
+		count = 1
+	}
+	ensureObject(org, "CustomApplication", "02u", map[string]Field{
+		"DeveloperName": {APIName: "DeveloperName", Type: FieldString, Required: true},
+		"Label":         {APIName: "Label", Type: FieldString},
+		"Name":          {APIName: "Name", Type: FieldString},
+	})
+	ensureObject(org, "AppMenuItem", "0DS", map[string]Field{
+		"ApplicationId": {APIName: "ApplicationId", Type: FieldReference, ReferenceTo: []string{"CustomApplication"}, RelationshipName: "Application"},
+		"Label":         {APIName: "Label", Type: FieldString},
+		"Name":          {APIName: "Name", Type: FieldString},
+		"Type":          {APIName: "Type", Type: FieldString},
+		"SortOrder":     {APIName: "SortOrder", Type: FieldInteger},
+	})
+	if count > 50 {
+		count = 50
+	}
+	for i := 1; i <= count; i++ {
+		appID := ID(fmt.Sprintf("02u000000000%03d", i))
+		developerName := fmt.Sprintf("LocalApp%d", i)
+		putSeedRecord(org, "CustomApplication", Record{
+			ID:     appID,
+			Object: "CustomApplication",
+			Fields: map[string]Value{
+				"DeveloperName": StringValue(developerName),
+				"Label":         StringValue(fmt.Sprintf("Local App %d", i)),
+				"Name":          StringValue(developerName),
+			},
+		})
+		putSeedRecord(org, "AppMenuItem", Record{
+			ID:     ID(fmt.Sprintf("0DS000000000%03d", i)),
+			Object: "AppMenuItem",
+			Fields: map[string]Value{
+				"ApplicationId": IDValue(appID),
+				"Label":         StringValue(fmt.Sprintf("Local App %d", i)),
+				"Name":          StringValue(developerName),
+				"Type":          StringValue("TabSet"),
+				"SortOrder":     IntegerValue(int64(i)),
+			},
+		})
 	}
 }
 
@@ -503,6 +688,9 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 			"PermissionSetId": IDValue(permissionSetID),
 		},
 	})
+	if _, ok := org.Objects["Site"]; ok {
+		ensureLocalSiteRecords(org)
+	}
 	ensureRecordTypeRecords(org)
 	if org.IDSequences == nil {
 		org.IDSequences = make(map[string]uint64)
@@ -518,6 +706,64 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	} {
 		if org.IDSequences[object] < sequence {
 			org.IDSequences[object] = sequence
+		}
+	}
+}
+
+func ensureLocalSiteRecords(org *OrgState) {
+	userID := ID("005000000000001")
+	guestID := ID("005000000000G01")
+	if _, ok := org.Objects["User"]; ok {
+		putSeedRecord(org, "User", Record{
+			ID:     guestID,
+			Object: "User",
+			Fields: map[string]Value{
+				"Username":          StringValue("guest@example.invalid"),
+				"Alias":             StringValue("guest"),
+				"Email":             StringValue("guest@example.invalid"),
+				"IsActive":          BooleanValue(true),
+				"UserType":          StringValue("Guest"),
+				"LocaleSidKey":      StringValue("en_US"),
+				"LanguageLocaleKey": StringValue("en_US"),
+				"TimeZoneSidKey":    StringValue("UTC"),
+				"EmailEncodingKey":  StringValue("UTF-8"),
+			},
+		})
+	}
+	putSeedRecord(org, "Site", Record{
+		ID:     "0DM000000000001",
+		Object: "Site",
+		Fields: map[string]Value{
+			"Name":          StringValue("LocalSite"),
+			"MasterLabel":   StringValue("Local Site"),
+			"Subdomain":     StringValue("local"),
+			"UrlPathPrefix": StringValue("local"),
+			"SiteType":      StringValue("ChatterNetwork"),
+			"AdminId":       IDValue(userID),
+			"GuestUserId":   IDValue(guestID),
+			"IsActive":      BooleanValue(true),
+		},
+	})
+	if _, ok := org.Objects["Network"]; ok {
+		putSeedRecord(org, "Network", Record{
+			ID:     "0DB000000000001",
+			Object: "Network",
+			Fields: map[string]Value{
+				"Name":                       StringValue("Local Community"),
+				"Status":                     StringValue("Live"),
+				"UrlPathPrefix":              StringValue("local"),
+				"OptionsGuestChatterEnabled": BooleanValue(false),
+			},
+		})
+		if _, ok := org.Objects["NetworkMember"]; ok {
+			putSeedRecord(org, "NetworkMember", Record{
+				ID:     "0NM000000000001",
+				Object: "NetworkMember",
+				Fields: map[string]Value{
+					"NetworkId": IDValue("0DB000000000001"),
+					"MemberId":  IDValue(userID),
+				},
+			})
 		}
 	}
 }
@@ -634,7 +880,7 @@ func ResetPlatformData(org *OrgState) {
 
 func IsPlatformObject(name string) bool {
 	switch name {
-	case "Organization", "Profile", "UserRole", "User", "PermissionSet", "PermissionSetAssignment", "RecordType":
+	case "Organization", "Profile", "UserRole", "User", "PermissionSet", "PermissionSetAssignment", "RecordType", "Site", "Network", "NetworkMember", "PlatformCachePartition":
 		return true
 	default:
 		return false
