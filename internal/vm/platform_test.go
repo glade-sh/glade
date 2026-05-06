@@ -1805,6 +1805,20 @@ System.runAs(new User(Id = '005-ny-user', TimeZoneSidKey = 'America/New_York')) 
 	}
 }
 
+func TestExecSiteGetSiteId(t *testing.T) {
+	program, err := CompileAnonymous(`
+String siteId = Site.getSiteId();
+System.assertEquals('local-site', siteId);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecLocalCurrentUserContextDoesNotEnableRunAs(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals('005-local-user', UserInfo.getUserId());

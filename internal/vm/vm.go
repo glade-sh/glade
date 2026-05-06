@@ -2136,6 +2136,11 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return Null, fmt.Errorf("UserInfo.isMultiCurrencyOrganization expects 0 arguments")
 		}
 		return Bool(false), nil
+	case "Site.getSiteId":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Site.getSiteId expects 0 arguments")
+		}
+		return String("local-site"), nil
 	default:
 		if strings.HasPrefix(callee, "Crypto.") {
 			return Null, unsupportedCallError(callee + " local key, certificate, encryption, and random surfaces")
