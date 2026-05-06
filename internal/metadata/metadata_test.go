@@ -67,6 +67,15 @@ func TestLoadProjectIndexesLegacyReadOnlyMetadata(t *testing.T) {
 	writeFile(t, filepath.Join(root, "force-app/main/default/lwc/widget/widget.js"), `export default class Widget {}`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/workflows/Account.workflow-meta.xml"), `<Workflow/>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/flows/Onboard.flow-meta.xml"), `<Flow/>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/layouts/Account-Account Layout.layout-meta.xml"), `<Layout/>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/compactLayouts/Card.compactLayout-meta.xml"), `<CompactLayout/>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/tabs/Account.tab-meta.xml"), `<CustomTab/>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/webLinks/Open.webLink-meta.xml"), `<WebLink/>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/quickActions/Account.New.quickAction-meta.xml"), `<QuickAction/>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/globalValueSets/Region.globalValueSet-meta.xml"), `<GlobalValueSet/>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/standardValueSets/CaseStatus.standardValueSet-meta.xml"), `<StandardValueSet/>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/flexipages/Home.flexipage-meta.xml"), `<FlexiPage/>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/applications/Console.app-meta.xml"), `<CustomApplication/>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/profiles/Admin.profile-meta.xml"), `<Profile>
   <fullName>Admin</fullName>
   <objectPermissions>
@@ -141,6 +150,18 @@ func TestLoadProjectIndexesLegacyReadOnlyMetadata(t *testing.T) {
 	}
 	if len(idx.Workflows) != 1 || idx.Workflows[0].Name != "Account" || len(idx.Flows) != 1 || idx.Flows[0].Name != "Onboard" {
 		t.Fatalf("automation assets = %#v %#v", idx.Workflows, idx.Flows)
+	}
+	if len(idx.Layouts) != 1 || idx.Layouts[0].Name != "Account-Account Layout" || len(idx.CompactLayouts) != 1 || idx.CompactLayouts[0].Name != "Card" {
+		t.Fatalf("layout assets = %#v %#v", idx.Layouts, idx.CompactLayouts)
+	}
+	if len(idx.Tabs) != 1 || idx.Tabs[0].Name != "Account" || len(idx.WebLinks) != 1 || idx.WebLinks[0].Name != "Open" || len(idx.QuickActions) != 1 || idx.QuickActions[0].Name != "Account.New" {
+		t.Fatalf("navigation assets = %#v %#v %#v", idx.Tabs, idx.WebLinks, idx.QuickActions)
+	}
+	if len(idx.GlobalValueSets) != 1 || idx.GlobalValueSets[0].Name != "Region" || len(idx.StandardValueSets) != 1 || idx.StandardValueSets[0].Name != "CaseStatus" {
+		t.Fatalf("value set assets = %#v %#v", idx.GlobalValueSets, idx.StandardValueSets)
+	}
+	if len(idx.FlexiPages) != 1 || idx.FlexiPages[0].Name != "Home" || len(idx.Applications) != 1 || idx.Applications[0].Name != "Console" {
+		t.Fatalf("presentation assets = %#v %#v", idx.FlexiPages, idx.Applications)
 	}
 	if len(idx.Profiles) != 1 || idx.Profiles[0].Name != "Admin" || len(idx.Profiles[0].ObjectPermissions) != 1 || !idx.Profiles[0].ObjectPermissions[0].Read || len(idx.Profiles[0].FieldPermissions) != 1 {
 		t.Fatalf("profile stub = %#v", idx.Profiles)

@@ -95,6 +95,31 @@ func TestExtractMergeReferences(t *testing.T) {
 	}
 }
 
+func TestLoadProjectBestEffortKeepsParseableMarkup(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "force-app/main/default/pages/Good.page"), `<apex:page controller="GoodController" />`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/pages/Broken.page"), `<apex:page><apex:outputText>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/components/Good.component"), `<apex:component>
+  <apex:attribute name="actSupAction" type="ApexPages.Action" />
+</apex:component>`)
+
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := LoadProject(p); err == nil {
+		t.Fatal("expected strict visualforce load to report malformed markup")
+	}
+	idx := LoadProjectBestEffort(p)
+	if _, ok := idx.Page("Good"); !ok {
+		t.Fatalf("best effort index missed parseable page: %#v", idx)
+	}
+	component, ok := idx.Component("Good")
+	if !ok || len(component.Attributes) != 1 || component.Attributes[0].Name != "actSupAction" {
+		t.Fatalf("best effort index missed parseable component: %#v", idx)
+	}
+}
+
 func TestResolveResourceURL(t *testing.T) {
 	registry := storage.MetadataRegistry{
 		StaticResources: []storage.StaticResourceMetadata{{Name: "Bundle", URL: "/resource/Bundle"}},

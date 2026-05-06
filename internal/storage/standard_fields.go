@@ -19,6 +19,7 @@ func EnsureStandardObjectFieldsForFeatures(definition *ObjectDefinition, feature
 		definition.Fields["Id"] = Field{APIName: "Id", Label: "Record ID", Type: FieldID}
 	}
 	mergeStandardObjectDefinition(definition, features)
+	ensureCommonRecordTypeField(definition)
 	fields := standardFieldsForObject(definition.APIName)
 	for _, field := range fields {
 		if _, ok := ResolveFieldName(*definition, "", field.APIName); ok {
@@ -32,6 +33,18 @@ func EnsureStandardObjectFieldsForFeatures(definition *ObjectDefinition, feature
 	for _, field := range definition.Fields {
 		ensureStandardRelationship(definition, field)
 	}
+}
+
+func ensureCommonRecordTypeField(definition *ObjectDefinition) {
+	switch {
+	case stringsEqualFold(definition.APIName, "Opportunity"):
+	default:
+		return
+	}
+	if _, ok := ResolveFieldName(*definition, "", "RecordTypeId"); ok {
+		return
+	}
+	definition.Fields["RecordTypeId"] = Field{APIName: "RecordTypeId", Label: "Record Type ID", Type: FieldReference, ReferenceTo: []string{"RecordType"}, RelationshipName: "RecordType"}
 }
 
 func standardFieldsForObject(objectName string) []Field {
@@ -177,6 +190,7 @@ func standardFieldsForObject(objectName string) []Field {
 		}
 	case stringsHasSuffixFold(objectName, "__c"):
 		return []Field{
+			{APIName: "Name", Label: "Name", Type: FieldString},
 			{APIName: "RecordTypeId", Label: "Record Type ID", Type: FieldReference, ReferenceTo: []string{"RecordType"}, RelationshipName: "RecordType"},
 		}
 	default:

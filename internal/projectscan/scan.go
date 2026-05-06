@@ -9,6 +9,15 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+
+	metadatapkg "github.com/open-aer/oaer/internal/metadata"
+	"github.com/open-aer/oaer/internal/project"
+	"github.com/open-aer/oaer/internal/resource"
+	"github.com/open-aer/oaer/internal/schema"
+	"github.com/open-aer/oaer/internal/storage"
+	"github.com/open-aer/oaer/internal/typesys"
+	"github.com/open-aer/oaer/internal/uicontroller"
+	"github.com/open-aer/oaer/internal/visualforce"
 )
 
 type Report struct {
@@ -257,22 +266,33 @@ type patternDef struct {
 	symbolGroup  int
 }
 
+type scanContext struct {
+	org      storage.OrgState
+	metadata storage.MetadataRegistry
+	vf       visualforce.Index
+	pages    map[string]string
+	uiApex   map[string]bool
+	types    map[string]typesys.TypeSymbol
+	present  map[string]bool
+}
+
 var textPatterns = []patternDef{
 	{"visualforce.controller-test", "ApexClass", regexp.MustCompile(`\b(ApexPages\.|PageReference\b|Page\.[A-Za-z_][A-Za-z0-9_]*|StandardController\b|StandardSetController\b)`), 1},
-	{"labels.localization", "ApexClass", regexp.MustCompile(`\b(System\.Label|Label\.[A-Za-z_][A-Za-z0-9_]*)`), 1},
+	{"labels.localization", "ApexClass", regexp.MustCompile(`\b(?:System\.)?Label\.([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)`), 1},
 	{"metadata.apex-deploy", "ApexClass", regexp.MustCompile(`\b(Metadata\.[A-Za-z_][A-Za-z0-9_]*)`), 1},
 	{"site.community-context", "ApexClass", regexp.MustCompile(`\b(Site\.|Network\.|Community__mdt\b)`), 1},
 	{"platform.cache-connectapi", "ApexClass", regexp.MustCompile(`\b(Cache\.|ConnectApi\.[A-Za-z_][A-Za-z0-9_]*)`), 1},
 	{"platform.auth-context", "ApexClass", regexp.MustCompile(`\b(Auth\.[A-Za-z_][A-Za-z0-9_]*)`), 1},
 	{"apex.callable-stub", "ApexClass", regexp.MustCompile(`\b(System\.Callable|Callable\b|System\.StubProvider|Test\.createStub|handleMethodCall\b)`), 1},
-	{"files.binary-content", "ApexClass", regexp.MustCompile(`\b(ContentVersion\b|ContentDocument\b|ContentDocumentLink\b|Attachment\b|Document\b|Blob\b|base64Encode|base64Decode)`), 1},
+	{"endpoint.metadata", "ApexClass", regexp.MustCompile(`callout:([A-Za-z_][A-Za-z0-9_]*)`), 1},
+	{"files.binary-content", "ApexClass", regexp.MustCompile(`\b(ContentVersion\b|ContentDocument\b|ContentDocumentLink\b|Attachment\b|Document\b)`), 1},
 	{"custommetadata.legacy-records", "ApexClass", regexp.MustCompile(`\b([A-Za-z_][A-Za-z0-9_]*__mdt)\b`), 1},
 	{"lwc.controller-test", "LWCJavaScript", regexp.MustCompile(`@salesforce/apex/([A-Za-z_][A-Za-z0-9_]*\.[A-Za-z_][A-Za-z0-9_]*)`), 1},
 	{"lwc.controller-test", "LWCJavaScript", regexp.MustCompile(`\b@wire\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)`), 1},
 	{"labels.localization", "LWCJavaScript", regexp.MustCompile(`@salesforce/label/([A-Za-z0-9_./]+)`), 1},
 	{"staticresources.urlfor", "LWCJavaScript", regexp.MustCompile(`@salesforce/resourceUrl/([A-Za-z_][A-Za-z0-9_]*)`), 1},
 	{"ui.presentation-metadata", "LWCJavaScript", regexp.MustCompile(`@salesforce/schema/([A-Za-z0-9_./]+)|lightning/(navigation|uiRecordApi|uiObjectInfoApi)`), 1},
-	{"staticresources.urlfor", "Visualforce", regexp.MustCompile(`(\$Resource\.[A-Za-z_][A-Za-z0-9_]*|URLFOR\s*\(\s*\$Resource\.[A-Za-z_][A-Za-z0-9_]*)`), 1},
+	{"staticresources.urlfor", "Visualforce", regexp.MustCompile(`\$Resource\.([A-Za-z_][A-Za-z0-9_]*)|URLFOR\s*\(\s*\$Resource\.([A-Za-z_][A-Za-z0-9_]*)`), 1},
 	{"site.community-context", "Visualforce", regexp.MustCompile(`(\$Site\.[A-Za-z_][A-Za-z0-9_]*)`), 1},
 	{"labels.localization", "Visualforce", regexp.MustCompile(`(\$Label(?:\.[A-Za-z_][A-Za-z0-9_]*)+)`), 1},
 	{"ui.presentation-metadata", "Visualforce", regexp.MustCompile(`(\$ObjectType(?:\.[A-Za-z_][A-Za-z0-9_]*)+|\$Component(?:\.[A-Za-z_][A-Za-z0-9_]*)*)`), 1},
@@ -295,6 +315,7 @@ func Scan(root string) (Report, error) {
 		return Report{}, errors.New("project scan root must be a directory")
 	}
 
+	ctx := loadScanContext(absRoot)
 	var findings []Finding
 	filesScanned := 0
 	err = filepath.WalkDir(absRoot, func(path string, d fs.DirEntry, walkErr error) error {
@@ -312,9 +333,9 @@ func Scan(root string) (Report, error) {
 		}
 		filesScanned++
 		rel := slashRel(absRoot, path)
-		findings = append(findings, classifyByPath(rel, path)...)
+		findings = append(findings, classifyByPath(rel, path, &ctx)...)
 		if isTextScannable(rel) {
-			lineFindings, err := scanTextFile(path, rel)
+			lineFindings, err := scanTextFile(path, rel, &ctx)
 			if err != nil {
 				return err
 			}
@@ -330,9 +351,88 @@ func Scan(root string) (Report, error) {
 	return report, nil
 }
 
+func loadScanContext(absRoot string) scanContext {
+	ctx := scanContext{org: storage.NewOrgState()}
+	proj, err := project.Load(absRoot)
+	if err != nil {
+		return ctx
+	}
+	ctx.org.Namespace = proj.Namespace
+	sch, err := schema.LoadProject(proj)
+	if err != nil {
+		return ctx
+	}
+	typeIndex := typesys.Build(proj, sch)
+	ctx.types = make(map[string]typesys.TypeSymbol, len(typeIndex.Types))
+	for _, typ := range typeIndex.Types {
+		ctx.types[strings.ToLower(typ.Name)] = typ
+	}
+	if ui, err := uicontroller.Build(proj, typeIndex); err == nil {
+		ctx.uiApex = make(map[string]bool)
+		for _, method := range ui.ApexMethods {
+			if method.Resolved {
+				ctx.uiApex[strings.ToLower(method.ClassName+"."+method.MethodName)] = true
+			}
+		}
+	}
+	if metadata, err := resource.LoadProject(proj); err == nil {
+		ctx.metadata = metadata
+	}
+	if idx, err := metadatapkg.LoadProject(proj); err == nil {
+		ctx.present = make(map[string]bool)
+		ctx.addPresentationAssetFiles(idx.Layouts)
+		ctx.addPresentationAssetFiles(idx.CompactLayouts)
+		ctx.addPresentationAssetFiles(idx.Tabs)
+		ctx.addPresentationAssetFiles(idx.WebLinks)
+		ctx.addPresentationAssetFiles(idx.QuickActions)
+		ctx.addPresentationAssetFiles(idx.GlobalValueSets)
+		ctx.addPresentationAssetFiles(idx.StandardValueSets)
+		ctx.addPresentationAssetFiles(idx.FlexiPages)
+		ctx.addPresentationAssetFiles(idx.Applications)
+		for _, profile := range idx.Profiles {
+			ctx.present[filepath.Clean(profile.File)] = true
+		}
+		for _, permissionSet := range idx.PermissionSets {
+			ctx.present[filepath.Clean(permissionSet.File)] = true
+		}
+	}
+	ctx.vf = visualforce.LoadProjectBestEffort(proj)
+	ctx.pages = make(map[string]string, len(proj.VisualforcePageFiles))
+	for _, path := range proj.VisualforcePageFiles {
+		name := baseNoExt(path)
+		ctx.pages[strings.ToLower(name)] = name
+	}
+	for _, object := range sch.Objects {
+		definition := storage.ObjectDefinition{
+			APIName:     object.Name,
+			Label:       object.Label,
+			PluralLabel: object.PluralLabel,
+			Fields:      make(map[string]storage.Field, len(object.Fields)),
+		}
+		for _, field := range object.Fields {
+			definition.Fields[field.Name] = storage.Field{
+				APIName:          field.Name,
+				Label:            field.Label,
+				Type:             storage.FieldAny,
+				ReferenceTo:      append([]string(nil), field.ReferenceTo...),
+				RelationshipName: field.RelationshipName,
+			}
+		}
+		storage.EnsureStandardObjectFields(&definition)
+		ctx.org.Objects[definition.APIName] = storage.ObjectState{Definition: definition}
+	}
+	return ctx
+}
+
+func (ctx *scanContext) addPresentationAssetFiles(assets []metadatapkg.NamedAsset) {
+	for _, asset := range assets {
+		ctx.present[filepath.Clean(asset.File)] = true
+	}
+}
+
 func shouldSkipDir(name string) bool {
 	switch name {
-	case ".git", ".sfdx", ".sf", ".claude", "node_modules", ".idea", ".vscode":
+	case ".git", ".sfdx", ".sf", ".claude", "node_modules", ".idea", ".vscode", "__tests__":
 		return true
 	default:
 		return false
@@ -351,7 +451,7 @@ func slashRel(root, path string) string {
 	return filepath.ToSlash(rel)
 }
 
-func classifyByPath(rel, path string) []Finding {
+func classifyByPath(rel, path string, ctx *scanContext) []Finding {
 	lower := strings.ToLower(rel)
 	var findings []Finding
 	add := func(capability, metadataType, symbol string) {
@@ -359,35 +459,22 @@ func classifyByPath(rel, path string) []Finding {
 	}
 
 	switch {
-	case strings.HasSuffix(lower, ".page"):
-		add("visualforce.controller-test", "VisualforcePage", baseNoExt(path))
 	case strings.HasSuffix(lower, ".component"):
 		add("visualforce.component-test", "VisualforceComponent", baseNoExt(path))
 	case strings.Contains(lower, "/aura/"):
 		add("aura.controller-test", "AuraBundle", auraOrLWCBundle(rel, "aura"))
-	case strings.Contains(lower, "/lwc/"):
-		add("lwc.controller-test", "LWCBundle", auraOrLWCBundle(rel, "lwc"))
 	case strings.HasSuffix(lower, ".workflow-meta.xml"), strings.HasSuffix(lower, ".workflow"):
 		add("workflow.save-order", "Workflow", baseNoExt(path))
 	case strings.HasSuffix(lower, ".flow-meta.xml"), strings.HasSuffix(lower, ".flow"):
 		add("flow.save-order", "Flow", baseNoExt(path))
-	case strings.HasSuffix(lower, ".labels-meta.xml"), strings.HasSuffix(lower, ".labels"):
-		add("labels.localization", "CustomLabels", baseNoExt(path))
 	case strings.HasSuffix(lower, ".email"), strings.HasSuffix(lower, ".email-meta.xml"):
 		add("email.templates", "EmailTemplate", baseNoExt(path))
 	case strings.HasSuffix(lower, ".object"):
 		add("metadata.legacy-source", "LegacyObject", baseNoExt(path))
-	case strings.HasSuffix(lower, ".md") && isCustomMetadataPath(lower):
-		add("custommetadata.legacy-records", "LegacyCustomMetadata", baseNoExt(path))
-	case strings.HasSuffix(lower, ".resource"), strings.HasSuffix(lower, ".resource-meta.xml"), strings.HasSuffix(lower, ".staticresource-meta.xml"):
-		add("staticresources.urlfor", "StaticResource", baseNoExt(path))
-	case strings.HasSuffix(lower, ".asset"), strings.HasSuffix(lower, ".asset-meta.xml"):
-		add("staticresources.urlfor", "ContentAsset", baseNoExt(path))
-	case strings.HasSuffix(lower, ".namedcredential"), strings.HasSuffix(lower, ".namedcredential-meta.xml"):
-		add("endpoint.metadata", "NamedCredential", baseNoExt(path))
-	case strings.HasSuffix(lower, ".remotesite"), strings.HasSuffix(lower, ".remotesite-meta.xml"):
-		add("endpoint.metadata", "RemoteSiteSetting", baseNoExt(path))
 	case hasAnySuffix(lower, ".layout", ".layout-meta.xml", ".profile", ".profile-meta.xml", ".permissionset", ".permissionset-meta.xml", ".tab", ".tab-meta.xml", ".weblink", ".weblink-meta.xml", ".quickaction-meta.xml", ".globalvalueset-meta.xml", ".standardvalueset-meta.xml", ".flexipage", ".flexipage-meta.xml", ".application", ".app-meta.xml"):
+		if ctx != nil && ctx.present[filepath.Clean(path)] {
+			return findings
+		}
 		add("ui.presentation-metadata", "UIPresentationMetadata", baseNoExt(path))
 	}
 	return findings
@@ -431,7 +518,7 @@ func isTextScannable(rel string) bool {
 	return hasAnySuffix(lower, ".cls", ".trigger", ".page", ".component", ".cmp", ".app", ".evt", ".design", ".js", ".html", ".xml")
 }
 
-func scanTextFile(path, rel string) ([]Finding, error) {
+func scanTextFile(path, rel string, ctx *scanContext) ([]Finding, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -450,14 +537,12 @@ func scanTextFile(path, rel string) ([]Finding, error) {
 			if pattern.metadataType != metadataType && !(metadataType == "ApexClass" && pattern.metadataType == "ApexClass") {
 				continue
 			}
-			matches := pattern.re.FindAllStringSubmatch(line, -1)
+			scanLine := lineForPattern(line, pattern)
+			matches := pattern.re.FindAllStringSubmatch(scanLine, -1)
 			for _, match := range matches {
-				symbol := ""
-				if pattern.symbolGroup > 0 && pattern.symbolGroup < len(match) {
-					symbol = strings.TrimSpace(match[pattern.symbolGroup])
-				}
-				if symbol == "" && len(match) > 0 {
-					symbol = strings.TrimSpace(match[0])
+				symbol := patternSymbol(pattern, match)
+				if ctx != nil && ctx.resolvesFinding(pattern.capability, symbol, rel) {
+					continue
 				}
 				findings = append(findings, makeFinding(pattern.capability, rel, lineNo, metadataType, symbol, strings.TrimSpace(line)))
 			}
@@ -469,6 +554,397 @@ func scanTextFile(path, rel string) ([]Finding, error) {
 	return findings, nil
 }
 
+func lineForPattern(line string, pattern patternDef) string {
+	if pattern.capability == "custommetadata.legacy-records" && pattern.metadataType == "ApexClass" {
+		return stripApexCommentsAndStrings(line)
+	}
+	return line
+}
+
+func stripApexCommentsAndStrings(line string) string {
+	if strings.HasPrefix(strings.TrimSpace(line), "*") {
+		return ""
+	}
+	if idx := strings.Index(line, "//"); idx >= 0 {
+		line = line[:idx]
+	}
+	if idx := strings.Index(line, "/*"); idx >= 0 {
+		line = line[:idx]
+	}
+	var b strings.Builder
+	inString := false
+	for i := 0; i < len(line); i++ {
+		ch := line[i]
+		if inString {
+			if ch == '\\' && i+1 < len(line) {
+				i++
+				continue
+			}
+			if ch == '\'' {
+				inString = false
+			}
+			b.WriteByte(' ')
+			continue
+		}
+		if ch == '\'' {
+			inString = true
+			b.WriteByte(' ')
+			continue
+		}
+		b.WriteByte(ch)
+	}
+	return b.String()
+}
+
+func patternSymbol(pattern patternDef, match []string) string {
+	if pattern.symbolGroup > 0 && pattern.symbolGroup < len(match) {
+		if symbol := strings.TrimSpace(match[pattern.symbolGroup]); symbol != "" {
+			return symbol
+		}
+	}
+	for i := 1; i < len(match); i++ {
+		if symbol := strings.TrimSpace(match[i]); symbol != "" {
+			return symbol
+		}
+	}
+	if len(match) > 0 {
+		return strings.TrimSpace(match[0])
+	}
+	return ""
+}
+
+func (ctx *scanContext) resolvesFinding(capability, symbol, rel string) bool {
+	switch capability {
+	case "ui.presentation-metadata":
+		if isRecognizedLightningClientModule(symbol) {
+			return true
+		}
+		if strings.HasPrefix(strings.TrimSpace(symbol), "$Component") {
+			return true
+		}
+		if schemaRef, ok := schemaReferenceSymbol(symbol); ok {
+			return ctx.resolvesSchemaReference(schemaRef)
+		}
+		if ctx.resolvesSchemaReference(symbol) {
+			return true
+		}
+	case "labels.localization":
+		if namespace, label, ok := labelReferenceSymbol(symbol); ok {
+			_, found := resource.LookupLabel(ctx.metadata, namespace, label)
+			return found
+		}
+	case "staticresources.urlfor":
+		return ctx.resolvesResource(symbol)
+	case "endpoint.metadata":
+		return ctx.resolvesEndpoint(symbol)
+	case "custommetadata.legacy-records":
+		return ctx.resolvesCustomMetadataObject(symbol)
+	case "visualforce.controller-test":
+		return ctx.resolvesVisualforceControllerReference(symbol, rel)
+	case "lwc.controller-test":
+		return ctx.resolvesLWCControllerReference(symbol)
+	}
+	return false
+}
+
+func isRecognizedLightningClientModule(symbol string) bool {
+	switch strings.TrimSpace(symbol) {
+	case "navigation", "uiRecordApi", "uiObjectInfoApi":
+		return true
+	default:
+		return false
+	}
+}
+
+func (ctx *scanContext) resolvesLWCControllerReference(symbol string) bool {
+	symbol = strings.TrimSpace(symbol)
+	if !strings.Contains(symbol, ".") {
+		return false
+	}
+	return ctx.uiApex[strings.ToLower(symbol)]
+}
+
+func (ctx *scanContext) resolvesVisualforceControllerReference(symbol, rel string) bool {
+	symbol = strings.TrimSpace(symbol)
+	switch symbol {
+	case "ApexPages.", "PageReference", "StandardController", "StandardSetController":
+		return true
+	}
+	if strings.HasPrefix(symbol, "Page.") {
+		pageName := strings.TrimPrefix(symbol, "Page.")
+		if ctx.vf.HasPageReference(pageName) {
+			return true
+		}
+		_, ok := ctx.pages[strings.ToLower(pageName)]
+		return ok
+	}
+	if ctx.resolvesApexType(symbol) {
+		return true
+	}
+	if _, ok := ctx.objectDefinition(symbol); ok {
+		return true
+	}
+	if ctx.resolvesVisualforceActionReference(symbol, rel) {
+		return true
+	}
+	return false
+}
+
+func (ctx *scanContext) resolvesVisualforceActionReference(symbol, rel string) bool {
+	expr, ok := visualforceActionExpression(symbol)
+	if !ok {
+		return false
+	}
+	name := baseNoExt(rel)
+	if strings.HasSuffix(strings.ToLower(rel), ".component") {
+		if component, ok := ctx.vf.Component(name); ok {
+			if visualforceComponentHasAttribute(component, expr) {
+				return true
+			}
+			return ctx.visualforceTypesHaveMethod([]string{component.Controller}, component.Extensions, expr)
+		}
+	}
+	if strings.HasSuffix(strings.ToLower(rel), ".page") {
+		if page, ok := ctx.vf.Page(name); ok {
+			return ctx.visualforceTypesHaveMethod([]string{page.Controller}, page.Extensions, expr)
+		}
+	}
+	return false
+}
+
+func visualforceActionExpression(symbol string) (string, bool) {
+	symbol = strings.TrimSpace(symbol)
+	if !strings.HasPrefix(symbol, "{!") || !strings.HasSuffix(symbol, "}") {
+		return "", false
+	}
+	expr := strings.TrimSpace(strings.TrimSuffix(strings.TrimPrefix(symbol, "{!"), "}"))
+	if expr == "" || strings.ContainsAny(expr, " ()+-*/?:=<>!&|,") {
+		return "", false
+	}
+	return expr, true
+}
+
+func visualforceComponentHasAttribute(component visualforce.Component, expr string) bool {
+	if strings.Contains(expr, ".") {
+		return false
+	}
+	for _, attr := range component.Attributes {
+		if strings.EqualFold(attr.Name, expr) {
+			return true
+		}
+	}
+	return false
+}
+
+func (ctx *scanContext) visualforceTypesHaveMethod(primary, extensions []string, expr string) bool {
+	methodName := expr
+	if strings.Contains(methodName, ".") {
+		parts := strings.Split(methodName, ".")
+		methodName = parts[len(parts)-1]
+	}
+	for _, typeName := range append(primary, extensions...) {
+		if ctx.apexTypeHasMethod(typeName, methodName) {
+			return true
+		}
+	}
+	return false
+}
+
+func (ctx *scanContext) resolvesApexType(symbol string) bool {
+	symbol = strings.TrimSpace(symbol)
+	if symbol == "" {
+		return false
+	}
+	if _, ok := ctx.types[strings.ToLower(symbol)]; ok {
+		return true
+	}
+	stripped := stripAnyNamespaceToken(symbol)
+	if stripped != symbol {
+		_, ok := ctx.types[strings.ToLower(stripped)]
+		return ok
+	}
+	return false
+}
+
+func (ctx *scanContext) apexTypeHasMethod(typeName, methodName string) bool {
+	typ, ok := ctx.lookupApexType(typeName)
+	if !ok {
+		return false
+	}
+	for _, member := range typ.Members {
+		if member.Kind == "method" && strings.EqualFold(member.Name, methodName) {
+			return true
+		}
+	}
+	return false
+}
+
+func (ctx *scanContext) lookupApexType(typeName string) (typesys.TypeSymbol, bool) {
+	typeName = strings.TrimSpace(typeName)
+	if typeName == "" {
+		return typesys.TypeSymbol{}, false
+	}
+	if typ, ok := ctx.types[strings.ToLower(typeName)]; ok {
+		return typ, true
+	}
+	stripped := stripAnyNamespaceToken(typeName)
+	if stripped != typeName {
+		typ, ok := ctx.types[strings.ToLower(stripped)]
+		return typ, ok
+	}
+	return typesys.TypeSymbol{}, false
+}
+
+func (ctx *scanContext) resolvesResource(symbol string) bool {
+	name := strings.TrimSpace(symbol)
+	if name == "" {
+		return false
+	}
+	_, ok := resource.URLForStaticResource(ctx.metadata, name, "")
+	return ok
+}
+
+func (ctx *scanContext) resolvesEndpoint(symbol string) bool {
+	name := strings.TrimSpace(symbol)
+	if name == "" {
+		return false
+	}
+	_, ok := resource.ResolveEndpoint(ctx.metadata, "callout:"+name)
+	return ok
+}
+
+func labelReferenceSymbol(symbol string) (string, string, bool) {
+	symbol = strings.TrimSpace(symbol)
+	symbol = strings.TrimPrefix(symbol, "System.")
+	symbol = strings.TrimPrefix(symbol, "Label.")
+	symbol = strings.TrimPrefix(symbol, "$Label.")
+	symbol = strings.TrimPrefix(symbol, "@salesforce/label/")
+	symbol = strings.ReplaceAll(symbol, "/", ".")
+	if symbol == "" {
+		return "", "", false
+	}
+	parts := strings.Split(symbol, ".")
+	switch len(parts) {
+	case 1:
+		return "", parts[0], true
+	default:
+		namespace := parts[len(parts)-2]
+		label := parts[len(parts)-1]
+		if strings.EqualFold(namespace, "c") {
+			namespace = ""
+		}
+		return namespace, label, label != ""
+	}
+}
+
+func schemaReferenceSymbol(symbol string) (string, bool) {
+	symbol = strings.TrimSpace(symbol)
+	if strings.HasPrefix(symbol, "@salesforce/schema/") {
+		return strings.TrimPrefix(symbol, "@salesforce/schema/"), true
+	}
+	if strings.HasPrefix(symbol, "$ObjectType.") {
+		return strings.TrimPrefix(symbol, "$ObjectType."), true
+	}
+	if strings.Contains(symbol, ".") && !strings.HasPrefix(symbol, "lightning/") {
+		return symbol, true
+	}
+	return "", false
+}
+
+func (ctx *scanContext) resolvesCustomMetadataObject(symbol string) bool {
+	objectName := strings.TrimSpace(symbol)
+	if objectName == "" || !strings.HasSuffix(objectName, "__mdt") {
+		return false
+	}
+	if _, ok := storage.ResolveObjectName(ctx.org, objectName); ok {
+		return true
+	}
+	stripped := stripAnyNamespaceToken(objectName)
+	if stripped != objectName {
+		_, ok := storage.ResolveObjectName(ctx.org, stripped)
+		return ok
+	}
+	return false
+}
+
+func (ctx *scanContext) resolvesSchemaReference(ref string) bool {
+	objectName, fieldName := schemaReferenceParts(ref)
+	if objectName == "" {
+		return false
+	}
+	definition, ok := ctx.objectDefinition(objectName)
+	if !ok {
+		return false
+	}
+	if fieldName == "" {
+		return true
+	}
+	if _, ok := storage.ResolveFieldName(definition, ctx.org.Namespace, fieldName); ok {
+		return true
+	}
+	stripped := stripAnyNamespaceToken(fieldName)
+	if stripped != fieldName {
+		_, ok := storage.ResolveFieldName(definition, ctx.org.Namespace, stripped)
+		return ok
+	}
+	return false
+}
+
+func schemaReferenceParts(ref string) (string, string) {
+	parts := strings.Split(strings.TrimSpace(ref), ".")
+	if len(parts) == 0 || parts[0] == "" {
+		return "", ""
+	}
+	objectName := parts[0]
+	if len(parts) == 1 {
+		return objectName, ""
+	}
+	if len(parts) >= 2 && strings.EqualFold(parts[1], "Fields") {
+		if len(parts) >= 3 {
+			return objectName, parts[2]
+		}
+		return objectName, ""
+	}
+	if len(parts) >= 2 && isTerminalSchemaProperty(parts[1]) {
+		return objectName, ""
+	}
+	return objectName, parts[1]
+}
+
+func isTerminalSchemaProperty(part string) bool {
+	switch strings.ToLower(part) {
+	case "label", "labelplural", "keyprefix":
+		return true
+	default:
+		return false
+	}
+}
+
+func (ctx *scanContext) objectDefinition(objectName string) (storage.ObjectDefinition, bool) {
+	if resolved, ok := storage.ResolveObjectName(ctx.org, objectName); ok {
+		return ctx.org.Objects[resolved].Definition, true
+	}
+	if stripped := stripAnyNamespaceToken(objectName); stripped != objectName {
+		if resolved, ok := storage.ResolveObjectName(ctx.org, stripped); ok {
+			return ctx.org.Objects[resolved].Definition, true
+		}
+	}
+	if storage.StandardKeyPrefixes()[objectName] == "" {
+		return storage.ObjectDefinition{}, false
+	}
+	storage.EnsureStandardObject(&ctx.org, objectName)
+	return ctx.org.Objects[objectName].Definition, true
+}
+
+func stripAnyNamespaceToken(name string) string {
+	first := strings.Index(name, "__")
+	last := strings.LastIndex(name, "__")
+	if first <= 0 || first >= last {
+		return name
+	}
+	return name[first+2:]
+}
+
 func metadataTypeForText(rel string) string {
 	lower := strings.ToLower(rel)
 	switch {
@@ -476,8 +952,10 @@ func metadataTypeForText(rel string) string {
 		return "Visualforce"
 	case strings.Contains(lower, "/lwc/") && (strings.HasSuffix(lower, ".js") || strings.HasSuffix(lower, ".html")):
 		return "LWCJavaScript"
-	default:
+	case strings.HasSuffix(lower, ".cls"), strings.HasSuffix(lower, ".trigger"):
 		return "ApexClass"
+	default:
+		return "MetadataXML"
 	}
 }
 

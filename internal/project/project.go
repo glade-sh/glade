@@ -282,7 +282,7 @@ func collectFiles(root string, p *Project) error {
 
 func shouldSkipDir(name string) bool {
 	switch name {
-	case ".git", ".sfdx", ".sf", ".claude", "node_modules", ".idea", ".vscode", ".DS_Store":
+	case ".git", ".sfdx", ".sf", ".claude", "node_modules", ".idea", ".vscode", ".DS_Store", "__tests__":
 		return true
 	default:
 		return false

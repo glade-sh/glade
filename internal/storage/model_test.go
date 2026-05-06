@@ -135,18 +135,24 @@ func TestEnsureStandardObjectAddsSalesCloudStandardObjectShape(t *testing.T) {
 	if field, ok := org.Objects["Opportunity"].Definition.Fields["StageName"]; !ok || !field.Required {
 		t.Fatalf("Opportunity.StageName field = %#v, %v", field, ok)
 	}
+	if field, ok := org.Objects["Opportunity"].Definition.Fields["RecordTypeId"]; !ok || field.Type != FieldReference {
+		t.Fatalf("Opportunity.RecordTypeId field = %#v, %v", field, ok)
+	}
 	if field, ok := org.Objects["OrderItem"].Definition.Fields["OrderId"]; !ok || field.Type != FieldReference || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "Order" {
 		t.Fatalf("OrderItem.OrderId field = %#v, %v", field, ok)
 	}
 }
 
-func TestEnsureStandardObjectFieldsAddsCustomObjectRecordTypeId(t *testing.T) {
+func TestEnsureStandardObjectFieldsAddsCustomObjectNameAndRecordTypeId(t *testing.T) {
 	definition := ObjectDefinition{APIName: "OrderItem__c"}
 
 	EnsureStandardObjectFields(&definition)
 
 	if field, ok := definition.Fields["Id"]; !ok || field.APIName != "Id" || field.Type != FieldID {
 		t.Fatalf("Id field = %#v, %v", field, ok)
+	}
+	if field, ok := definition.Fields["Name"]; !ok || field.Type != FieldString {
+		t.Fatalf("Name field = %#v, %v", field, ok)
 	}
 	field, ok := definition.Fields["RecordTypeId"]
 	if !ok || field.Type != FieldReference || field.RelationshipName != "RecordType" {

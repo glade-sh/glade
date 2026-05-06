@@ -21,8 +21,25 @@ intentional unsupported classifications. The broader post-parity inventory is
 not green. A May 6, 2026 inventory from the current checkout reports:
 
 ```text
-filesScanned=51507 findings=41534 testBlockingFindings=41534 surfaces=19
+filesScanned=51067 findings=4712 testBlockingFindings=4712 surfaces=15
 ```
+
+That inventory is implementation-aware as of this checkpoint: generated
+standard object/field metadata, loaded labels/translations, loaded static
+resources/content assets, named credential and remote site endpoints, and
+namespace-tolerant custom metadata type references are suppressed when the
+project metadata resolves them. Passive LWC files, resolved LWC Apex imports,
+supported Visualforce runtime references, registered `Page.*` references,
+static resource metadata, endpoint metadata, discovered read-only presentation
+metadata files, custom-object `Name` and dynamic field-map references, and
+recognized Lightning client modules no longer appear as broad post-parity
+blocker surfaces in the current inventory. The scanner also resolves existing
+Visualforce controller classes, standard controller objects, controller
+extensions, action methods, and component action attributes through the
+best-effort Visualforce index and Apex symbol table; the remaining
+Visualforce findings are unresolved page/controller/action contracts or
+component metadata work. Remaining findings should be treated as the next
+implementation frontier rather than stale scanner noise.
 
 Use this document for parallel squad planning. Use
 `docs/POST_PARITY_TODO.md` as the exhaustive backlog and capability boundary.
@@ -727,8 +744,8 @@ Start with four lanes:
 | Lane | Why first |
 | --- | --- |
 | Gate/reporting | Creates the scoreboard for all later work. |
-| Legacy object/custom metadata | Removes the biggest load/resolve blocker family. |
-| Labels/resources/endpoints | Unblocks common controller and callout-test setup. |
+| Legacy object/custom metadata records | Legacy custom metadata type references now resolve through loaded schema; the remaining work is record loading and legacy source behavior. |
+| Labels/resources/endpoints | Scanner resolution is mostly in place; remaining work is runtime behavior and namespaced edge cases. |
 | Visualforce index/PageReference | Attacks the highest-count controller-test blocker without requiring rendering. |
 
 Do not start declarative automation first. Workflow and Flow need metadata,

@@ -481,6 +481,11 @@ replacement.getHeaders().put('X-Local', 'true');
 Test.setCurrentPage(replacement);
 System.assertEquals('/apex/Replaced', ApexPages.currentPage().getUrl());
 System.assertEquals('true', ApexPages.currentPage().getHeaders().get('X-Local'));
+PageReference aliasReplacement = new PageReference('Page.AccountView?mode=alias');
+Test.setCurrentPageReference(aliasReplacement);
+System.assertEquals('/apex/AccountView?mode=alias', System.currentPageReference().getUrl());
+System.assertEquals('/apex/AccountView?mode=alias', ApexPages.currentPage().getUrl());
+System.assertEquals('Page.Missing', new PageReference('Page.Missing').getUrl());
 ApexPages.Severity severity = ApexPages.Severity.ERROR;
 System.assertEquals('ERROR', severity.name());
 System.assertEquals('ERROR', severity.toString());
@@ -496,6 +501,7 @@ System.assertEquals('Detail', message.getDetail());
 	}
 	machine := New(nil)
 	machine.EnableTestContext()
+	machine.RegisterPageReference("AccountView")
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}

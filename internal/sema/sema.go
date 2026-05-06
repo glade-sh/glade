@@ -2658,6 +2658,14 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 		if method == "getsiteid" {
 			return semaCollectionSignature{returnType: "String", params: [][]string{{}}}, true
 		}
+	case "system":
+		if method == "currentpagereference" {
+			return semaCollectionSignature{returnType: "PageReference", params: [][]string{{}}}, true
+		}
+	case "test":
+		if method == "setcurrentpagereference" || method == "setcurrentpage" {
+			return semaCollectionSignature{returnType: "void", params: [][]string{{"PageReference"}}}, true
+		}
 	case "apexpages":
 		switch method {
 		case "currentpage":

@@ -2294,19 +2294,19 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		}
 		vm.pageMessages = nil
 		return Null, nil
-	case "ApexPages.currentPage":
+	case "ApexPages.currentPage", "System.currentPageReference":
 		if len(args) != 0 {
-			return Null, fmt.Errorf("ApexPages.currentPage expects 0 arguments")
+			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
 		if vm.currentPage.Kind == "" {
 			vm.currentPage = newPageReference("/apex/current")
 		}
 		return vm.currentPage, nil
-	case "Test.setCurrentPage":
+	case "Test.setCurrentPage", "Test.setCurrentPageReference":
 		if len(args) != 1 || args[0].Kind != ValueObject || args[0].Type != "PageReference" {
-			return Null, fmt.Errorf("Test.setCurrentPage expects PageReference")
+			return Null, fmt.Errorf("%s expects PageReference", callee)
 		}
-		if err := vm.requireTestContext("Test.setCurrentPage"); err != nil {
+		if err := vm.requireTestContext(callee); err != nil {
 			return Null, err
 		}
 		vm.currentPage = args[0]
@@ -8753,6 +8753,35 @@ func newPageReference(rawURL string) Value {
 	return page
 }
 
+func (vm *VM) newPageReference(rawURL string) Value {
+	return newPageReference(vm.normalizePageReferenceURL(rawURL))
+}
+
+func (vm *VM) normalizePageReferenceURL(rawURL string) string {
+	rawURL = strings.TrimSpace(rawURL)
+	if !strings.HasPrefix(strings.ToLower(rawURL), "page.") {
+		return rawURL
+	}
+	rest := rawURL[len("Page."):]
+	pageName := rest
+	suffix := ""
+	for _, sep := range []string{"?", "#"} {
+		if idx := strings.Index(pageName, sep); idx >= 0 {
+			suffix = pageName[idx:]
+			pageName = pageName[:idx]
+			break
+		}
+	}
+	if pageName == "" || vm.pageReferences == nil {
+		return rawURL
+	}
+	registered, ok := vm.pageReferences[strings.ToLower(pageName)]
+	if !ok {
+		return rawURL
+	}
+	return "/apex/" + registered + suffix
+}
+
 func newSelectOption(value, label Value, disabled, escapeItem Value) Value {
 	option := Object("SelectOption")
 	option.Fields["value"] = value
@@ -9529,7 +9558,7 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 			}
 			rawURL = args[0].Text
 		}
-		return newPageReference(rawURL), nil
+		return vm.newPageReference(rawURL), nil
 	case "SelectOption":
 		if len(args) < 2 || len(args) > 4 || len(namedArgs) != 0 {
 			return Null, fmt.Errorf("SelectOption constructor expects value, label[, disabled[, escapeItem]]")

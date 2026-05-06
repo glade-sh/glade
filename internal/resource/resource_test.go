@@ -48,11 +48,17 @@ func TestLoadProjectResourcesLabelsAndEndpoints(t *testing.T) {
 	if got, ok := URLForStaticResource(registry, "Site", "css/app.css"); !ok || got != "/resource/Site/css/app.css" {
 		t.Fatalf("resource url = %q, %v", got, ok)
 	}
+	if got, ok := URLForStaticResource(registry, "pkg__Site", "css/app.css"); !ok || got != "/resource/Site/css/app.css" {
+		t.Fatalf("namespaced resource url = %q, %v", got, ok)
+	}
 	if got, ok := URLForStaticResource(registry, "Logo", ""); !ok || got != "/sfc/servlet.shepherd/version/download/Logo" {
 		t.Fatalf("asset url = %q, %v", got, ok)
 	}
 	if got, ok := ResolveEndpoint(registry, "callout:Billing/v1/accounts"); !ok || got != "https://billing.example.test/v1/accounts" {
 		t.Fatalf("endpoint = %q, %v", got, ok)
+	}
+	if got, ok := ResolveEndpoint(registry, "callout:pkg__Billing/v1/accounts"); !ok || got != "https://billing.example.test/v1/accounts" {
+		t.Fatalf("namespaced endpoint = %q, %v", got, ok)
 	}
 	if len(registry.EmailTemplates) != 1 || registry.EmailTemplates[0].DeveloperName != "welcome" || registry.EmailTemplates[0].Body != "Hello {!Recipient.FirstName}" {
 		t.Fatalf("email templates = %#v", registry.EmailTemplates)

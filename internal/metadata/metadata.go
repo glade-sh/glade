@@ -23,6 +23,15 @@ type Index struct {
 	LWCComponents         []NamedAsset           `json:"lwcComponents,omitempty"`
 	Workflows             []NamedAsset           `json:"workflows,omitempty"`
 	Flows                 []NamedAsset           `json:"flows,omitempty"`
+	Layouts               []NamedAsset           `json:"layouts,omitempty"`
+	CompactLayouts        []NamedAsset           `json:"compactLayouts,omitempty"`
+	Tabs                  []NamedAsset           `json:"tabs,omitempty"`
+	WebLinks              []NamedAsset           `json:"webLinks,omitempty"`
+	QuickActions          []NamedAsset           `json:"quickActions,omitempty"`
+	GlobalValueSets       []NamedAsset           `json:"globalValueSets,omitempty"`
+	StandardValueSets     []NamedAsset           `json:"standardValueSets,omitempty"`
+	FlexiPages            []NamedAsset           `json:"flexiPages,omitempty"`
+	Applications          []NamedAsset           `json:"applications,omitempty"`
 	Profiles              []PermissionContainer  `json:"profiles,omitempty"`
 	PermissionSets        []PermissionContainer  `json:"permissionSets,omitempty"`
 	PermissionAssignments []NamedAsset           `json:"permissionAssignments,omitempty"`
@@ -184,6 +193,15 @@ func LoadProject(p project.Project) (Index, error) {
 	idx.LWCComponents = componentAssets(p.LWCFiles)
 	idx.Workflows = namedAssets(p.WorkflowFiles, ".workflow-meta.xml")
 	idx.Flows = namedAssets(p.FlowFiles, ".flow-meta.xml", ".flow")
+	idx.Layouts = namedAssets(p.LayoutFiles, ".layout-meta.xml", ".layout")
+	idx.CompactLayouts = namedAssets(p.CompactLayoutFiles, ".compactLayout-meta.xml")
+	idx.Tabs = namedAssets(p.TabFiles, ".tab-meta.xml", ".tab")
+	idx.WebLinks = namedAssets(p.WebLinkFiles, ".webLink-meta.xml", ".weblink-meta.xml", ".webLink", ".weblink")
+	idx.QuickActions = namedAssets(p.QuickActionFiles, ".quickAction-meta.xml", ".quickaction-meta.xml", ".quickAction", ".quickaction")
+	idx.GlobalValueSets = namedAssets(p.GlobalValueSetFiles, ".globalValueSet-meta.xml", ".globalvalueset-meta.xml", ".globalValueSet", ".globalvalueset")
+	idx.StandardValueSets = namedAssets(p.StandardValueSetFiles, ".standardValueSet-meta.xml", ".standardvalueset-meta.xml", ".standardValueSet", ".standardvalueset")
+	idx.FlexiPages = namedAssets(p.FlexiPageFiles, ".flexipage-meta.xml", ".flexipage")
+	idx.Applications = namedAssets(p.ApplicationFiles, ".app-meta.xml", ".app")
 	for _, path := range p.ProfileFiles {
 		container, err := loadPermissionContainer(path, ".profile-meta.xml", ".profile")
 		if err != nil {
@@ -290,6 +308,15 @@ func (i *Index) sortAndBuildLookups() {
 	sortNamedAssets(i.LWCComponents)
 	sortNamedAssets(i.Workflows)
 	sortNamedAssets(i.Flows)
+	sortNamedAssets(i.Layouts)
+	sortNamedAssets(i.CompactLayouts)
+	sortNamedAssets(i.Tabs)
+	sortNamedAssets(i.WebLinks)
+	sortNamedAssets(i.QuickActions)
+	sortNamedAssets(i.GlobalValueSets)
+	sortNamedAssets(i.StandardValueSets)
+	sortNamedAssets(i.FlexiPages)
+	sortNamedAssets(i.Applications)
 	sort.Slice(i.Profiles, func(a, b int) bool { return i.Profiles[a].Name < i.Profiles[b].Name })
 	sort.Slice(i.PermissionSets, func(a, b int) bool { return i.PermissionSets[a].Name < i.PermissionSets[b].Name })
 	sortNamedAssets(i.PermissionAssignments)

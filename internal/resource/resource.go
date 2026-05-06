@@ -138,12 +138,12 @@ func ContentAssetURL(name string) string {
 func URLForStaticResource(registry storage.MetadataRegistry, name, path string) (string, bool) {
 	name = strings.TrimSpace(name)
 	for _, resource := range registry.StaticResources {
-		if strings.EqualFold(resource.Name, name) {
+		if metadataNameMatches(resource.Name, name) {
 			return joinURLPath(resourceURL(resource), path), true
 		}
 	}
 	for _, asset := range registry.ContentAssets {
-		if strings.EqualFold(asset.Name, name) {
+		if metadataNameMatches(asset.Name, name) {
 			return joinURLPath(assetURL(asset), path), true
 		}
 	}
@@ -181,7 +181,7 @@ func ResolveEndpoint(registry storage.MetadataRegistry, endpoint string) (string
 	rest := strings.TrimPrefix(endpoint, "callout:")
 	name, suffix, _ := strings.Cut(rest, "/")
 	for _, candidate := range registry.Endpoints {
-		if !strings.EqualFold(candidate.Name, name) {
+		if !metadataNameMatches(candidate.Name, name) {
 			continue
 		}
 		base := strings.TrimRight(candidate.URL, "/")
@@ -191,6 +191,20 @@ func ResolveEndpoint(registry storage.MetadataRegistry, endpoint string) (string
 		return base + "/" + strings.TrimLeft(suffix, "/"), true
 	}
 	return endpoint, false
+}
+
+func metadataNameMatches(candidate, requested string) bool {
+	candidate = strings.TrimSpace(candidate)
+	requested = strings.TrimSpace(requested)
+	if strings.EqualFold(candidate, requested) {
+		return true
+	}
+	strippedRequested := stripAnyNamespaceToken(requested)
+	if strippedRequested != requested && strings.EqualFold(candidate, strippedRequested) {
+		return true
+	}
+	strippedCandidate := stripAnyNamespaceToken(candidate)
+	return strippedCandidate != candidate && strings.EqualFold(strippedCandidate, requested)
 }
 
 func loadLabels(path, namespace string) ([]storage.LabelMetadata, error) {
@@ -588,6 +602,14 @@ func trimKnownSuffix(value, suffix string) string {
 
 func lookupKey(value string) string {
 	return strings.ToLower(strings.TrimSpace(value))
+}
+
+func stripAnyNamespaceToken(name string) string {
+	first := strings.Index(name, "__")
+	if first <= 0 || first+2 >= len(name) {
+		return name
+	}
+	return name[first+2:]
 }
 
 func leftPad(value, width int) string {

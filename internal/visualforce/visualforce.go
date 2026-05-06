@@ -59,10 +59,22 @@ type MergeReference struct {
 }
 
 func LoadProject(p project.Project) (Index, error) {
+	return loadProject(p, false)
+}
+
+func LoadProjectBestEffort(p project.Project) Index {
+	idx, _ := loadProject(p, true)
+	return idx
+}
+
+func loadProject(p project.Project, bestEffort bool) (Index, error) {
 	idx := Index{}
 	for _, path := range p.VisualforcePageFiles {
 		page, err := ParsePageFile(path)
 		if err != nil {
+			if bestEffort {
+				continue
+			}
 			return Index{}, err
 		}
 		idx.Pages = append(idx.Pages, page)
@@ -70,6 +82,9 @@ func LoadProject(p project.Project) (Index, error) {
 	for _, path := range p.VisualforceComponentFiles {
 		component, err := ParseComponentFile(path)
 		if err != nil {
+			if bestEffort {
+				continue
+			}
 			return Index{}, err
 		}
 		idx.Components = append(idx.Components, component)

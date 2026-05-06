@@ -44,8 +44,22 @@ Current checked status:
 - The server-example support gate is green:
   `pass=101 fail=0 unsupported=0 missing=0`.
 - The broader post-parity readiness inventory is not green. A May 6, 2026
-  `oaer compat post-parity --json` run reported 51,482 files scanned, 41,532
-  findings, 41,532 test-blocking findings, and 19 surfaces.
+  `oaer compat post-parity --json` run reported 51,067 files scanned, 4,712
+  findings, 4,712 test-blocking findings, and 15 surfaces after resolving
+  standard schema-backed object and field references through the generated
+  standard object catalog and suppressing label references resolved by loaded
+  label/translation metadata, resource imports resolved by static resource or
+  content asset metadata, callout endpoints resolved by named credential or
+  remote site metadata, and namespace-tolerant custom metadata type references
+  resolved by loaded schema metadata. Passive LWC files, resolved LWC Apex
+  imports, supported Visualforce runtime references, registered `Page.*`
+  references, static resource metadata, endpoint metadata, discovered read-only
+  presentation metadata files, custom-object `Name` and dynamic field-map
+  references, recognized Lightning client modules, core `Blob` and base64
+  helper usage, and resolved Visualforce controller classes, standard
+  controller objects, controller extensions, action methods, and component
+  action attributes no longer appear as broad post-parity blocker surfaces in
+  this inventory.
 - Treat this document as the source for broad local-test support beyond the
   green server-example harness.
 
@@ -161,12 +175,20 @@ and controller contracts have a solid place to stand.
      platform APIs, files, email, Workflow, and Flow.
    - [ ] A readiness gate for claiming "legacy-project-test-ready."
 
-Current scanner top blockers:
+Current scanner top blockers from the broad post-parity inventory:
 
-| Project | Top blockers |
+| Rank | Blocker |
 | --- | --- |
-| Corpus A | Visualforce controller tests: 2,575 findings across 345 files; legacy custom metadata: 2,220 across 198 files; labels: 928 across 238 files; UI metadata: 815 across 559 files; LWC: 357 across 316 files; Aura: 218 across 218 files; files/binary content: 182 across 49 files; resources/`URLFOR`: 131 across 89 files; Apex Metadata API: 102 across 11 files; Workflow: 101 across 101 files. |
-| Corpus B | Visualforce controller tests: 4,859 findings across 909 files; legacy custom metadata: 4,196 across 1,410 files; labels: 1,438 across 477 files; UI metadata: 657 across 103 files; files/binary content: 343 across 46 files; site/community context: 283 across 90 files; resources/`URLFOR`: 208 across 75 files; LWC: 159 across 143 files; Visualforce components: 133 across 133 files; Auth namespace: 93 across 25 files. |
+| 1 | Files, attachments, documents, and binary content: 985 findings across 108 files. |
+| 2 | `System.Callable` and Stub API compatibility: 745 findings across 186 files. |
+| 3 | Aura controller action discovery: 601 findings across 601 files. |
+| 4 | Apex Metadata API deploy/mutation behavior: 495 findings across 53 files. |
+| 5 | UI and org presentation metadata: 392 findings across 200 files. |
+| 6 | Visualforce controller tests: 338 findings across 132 files. |
+| 7 | Site, community, and network test context: 319 findings across 109 files. |
+| 8 | Visualforce component metadata: 218 findings across 218 files. |
+| 9 | Legacy Metadata API source format loading: 136 findings across 136 files. |
+| 10 | Auth namespace and authentication context: 113 findings across 35 files. |
 
 ## Local Test Running Boundary
 
