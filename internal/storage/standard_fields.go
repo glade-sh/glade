@@ -217,8 +217,13 @@ func ensureStandardRelationship(definition *ObjectDefinition, field Field) {
 	if relationshipName == "" || len(field.ReferenceTo) == 0 {
 		return
 	}
-	for _, relation := range definition.Relations {
-		if relation.Field == field.APIName || relation.ParentRelationship == relationshipName {
+	for i, relation := range definition.Relations {
+		if relation.Field == field.APIName {
+			definition.Relations[i].ParentRelationship = relationshipName
+			definition.Relations[i].ParentObjects = append([]string(nil), field.ReferenceTo...)
+			return
+		}
+		if relation.ParentRelationship == relationshipName {
 			return
 		}
 	}
@@ -230,12 +235,11 @@ func ensureStandardRelationship(definition *ObjectDefinition, field Field) {
 }
 
 func ParentRelationshipName(field Field) string {
-	if field.RelationshipName != "" {
-		return field.RelationshipName
-	}
 	switch {
 	case stringsHasSuffixFold(field.APIName, "__c"):
 		return field.APIName[:len(field.APIName)-len("__c")] + "__r"
+	case field.RelationshipName != "":
+		return field.RelationshipName
 	case stringsHasSuffixFold(field.APIName, "Id"):
 		return field.APIName[:len(field.APIName)-len("Id")]
 	default:

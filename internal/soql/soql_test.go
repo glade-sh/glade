@@ -152,6 +152,65 @@ func TestExecuteCustomMetadataRelationshipProjection(t *testing.T) {
 	}
 }
 
+func TestExecuteCustomObjectRelationshipProjectionWithMismatchedRelationshipName(t *testing.T) {
+	org := storage.NewOrgState()
+	parentDefinition := storage.ObjectDefinition{
+		APIName: "Parent__c",
+		Fields: map[string]storage.Field{
+			"Name__c": {APIName: "Name__c", Type: storage.FieldString},
+		},
+	}
+	storage.EnsureStandardObjectFields(&parentDefinition)
+	org.Objects["Parent__c"] = storage.ObjectState{
+		Definition: parentDefinition,
+		Records: map[storage.ID]storage.Record{
+			"a00000000000001": {
+				ID:     "a00000000000001",
+				Object: "Parent__c",
+				Fields: map[string]storage.Value{
+					"Name__c": storage.StringValue("ParentValue"),
+				},
+			},
+		},
+	}
+	childDefinition := storage.ObjectDefinition{
+		APIName: "Child__c",
+		Fields: map[string]storage.Field{
+			"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}, RelationshipName: "Parents"},
+		},
+		Relations: []storage.Relationship{{
+			Field:              "Parent__c",
+			ParentObjects:      []string{"Parent__c"},
+			ParentRelationship: "Parents",
+		}},
+	}
+	storage.EnsureStandardObjectFields(&childDefinition)
+	org.Objects["Child__c"] = storage.ObjectState{
+		Definition: childDefinition,
+		Records: map[storage.ID]storage.Record{
+			"a01000000000001": {
+				ID:     "a01000000000001",
+				Object: "Child__c",
+				Fields: map[string]storage.Value{
+					"Parent__c": storage.IDValue("a00000000000001"),
+				},
+			},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT Parent__r.Name__c FROM Child__c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 {
+		t.Fatalf("rows = %d", result.Rows)
+	}
+	value := result.Records[0].Fields["Parent__r.Name__c"]
+	if value.Kind != storage.ValueString || value.String != "ParentValue" {
+		t.Fatalf("relationship projection = %#v", value)
+	}
+}
+
 func TestExecuteKnowledgeArticleLanguageField(t *testing.T) {
 	org := storage.NewOrgState()
 	storage.EnsureStandardObject(&org, "FAQ__kav")
