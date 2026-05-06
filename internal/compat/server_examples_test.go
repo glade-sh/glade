@@ -248,6 +248,20 @@ func TestServerExampleProbeOverlayKeepsEmailEncryptionSettingsScoped(t *testing.
 	if len(result.Records) != 1 || result.Records[0].Fields["Id"].ID != "00X000000000001AAA" {
 		t.Fatalf("email template query records = %#v", result.Records)
 	}
+	contacts := emailOrg.Objects["Contact"].Records
+	if len(contacts) == 0 {
+		t.Fatalf("expected at least one Contact record for email probe, got %#v", contacts)
+	}
+	var foundEmail bool
+	for _, record := range contacts {
+		if record.Fields["Email"].String != "" {
+			foundEmail = true
+			break
+		}
+	}
+	if !foundEmail {
+		t.Fatalf("no Contact with email found: %#v", contacts)
+	}
 
 	settingsOrg := base.Clone()
 	applyServerExampleProbeOverlay(&settingsOrg, serverExampleProbe{Path: "/services/apexrest/selfservice/settings/LoginType"})

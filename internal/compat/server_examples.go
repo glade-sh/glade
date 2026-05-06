@@ -496,6 +496,7 @@ func applyServerExampleProbeOverlay(org *storage.OrgState, probe serverExamplePr
 	if strings.Contains(path, "selfservice/email") {
 		ensureServerExampleAppSettings(org)
 		ensureServerExampleEmailVerifyTemplate(org)
+		ensureServerExampleEmailRecipient(org)
 	}
 	if strings.Contains(path, "webhookEvents") {
 		ensureServerExampleLocalAccount(org)
@@ -675,6 +676,30 @@ func ensureServerExampleEmailVerifyTemplate(org *storage.OrgState) {
 		},
 	}
 	org.Objects["EmailTemplate"] = template
+}
+
+func ensureServerExampleEmailRecipient(org *storage.OrgState) {
+	storage.EnsureStandardObject(org, "Contact")
+	contact := org.Objects["Contact"]
+	if contact.Records == nil {
+		contact.Records = make(map[storage.ID]storage.Record)
+	}
+	id := storage.ID("003000000000001AAA")
+	if _, ok := contact.Records[id]; ok {
+		org.Objects["Contact"] = contact
+		return
+	}
+	contact.Records[id] = storage.Record{
+		ID:     id,
+		Object: "Contact",
+		Fields: map[string]storage.Value{
+			"FirstName": storage.StringValue("Local"),
+			"LastName":  storage.StringValue("Probe"),
+			"Email":     storage.StringValue("local@example.test"),
+			"AccountId": storage.IDValue("001000000000001AAA"),
+		},
+	}
+	org.Objects["Contact"] = contact
 }
 
 func ensureServerExampleSetupData(org *storage.OrgState, providerIDField string) {
