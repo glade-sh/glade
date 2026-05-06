@@ -1179,8 +1179,13 @@ func TestContentVersionCreatesDocumentAndLinks(t *testing.T) {
 		t.Fatalf("content documents = %d", got)
 	}
 	document = org.Objects["ContentDocument"].Records[documentID]
-	if document.Fields["LatestPublishedVersionId"].ID != second[0].ID || document.Fields["Title"].String != "Spec v2" {
+	if document.Fields["LatestPublishedVersionId"].ID != second[0].ID || document.Fields["Title"].String != "Spec v2" || document.Fields["FileExtension"].String != "pdf" {
 		t.Fatalf("updated content document = %#v", document)
+	}
+	firstVersion := org.Objects["ContentVersion"].Records[first[0].ID]
+	secondVersion := org.Objects["ContentVersion"].Records[second[0].ID]
+	if firstVersion.Fields["IsLatest"].Boolean || !secondVersion.Fields["IsLatest"].Boolean {
+		t.Fatalf("content version latest flags: first=%#v second=%#v", firstVersion.Fields["IsLatest"], secondVersion.Fields["IsLatest"])
 	}
 	explicitLink := engine.Insert([]storage.Record{{
 		Object: "ContentDocumentLink",

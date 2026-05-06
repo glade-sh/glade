@@ -44,8 +44,8 @@ Current checked status:
 - The server-example support gate is green:
   `pass=101 fail=0 unsupported=0 missing=0`.
 - The broader post-parity readiness inventory is not green. A May 6, 2026
-  `oaer compat post-parity --json` run reported 51,067 files scanned, 4,712
-  findings, 4,712 test-blocking findings, and 15 surfaces after resolving
+  `oaer compat post-parity --json` run reported 51,067 files scanned, 2,391
+  findings, 1,711 test-blocking findings, and 12 surfaces after resolving
   standard schema-backed object and field references through the generated
   standard object catalog and suppressing label references resolved by loaded
   label/translation metadata, resource imports resolved by static resource or
@@ -59,7 +59,11 @@ Current checked status:
   helper usage, and resolved Visualforce controller classes, standard
   controller objects, controller extensions, action methods, and component
   action attributes no longer appear as broad post-parity blocker surfaces in
-  this inventory.
+  this inventory. Files/content SObjects, email template metadata, loaded
+  legacy object source, core Metadata API deployment model types, and local
+  Callable/Stub support are now implemented or truthfully modeled enough to
+  leave the test-blocking frontier; Callable/Stub remains visible as a partial,
+  non-blocking inventory surface.
 - Treat this document as the source for broad local-test support beyond the
   green server-example harness.
 
@@ -179,16 +183,16 @@ Current scanner top blockers from the broad post-parity inventory:
 
 | Rank | Blocker |
 | --- | --- |
-| 1 | Files, attachments, documents, and binary content: 985 findings across 108 files. |
-| 2 | `System.Callable` and Stub API compatibility: 745 findings across 186 files. |
-| 3 | Aura controller action discovery: 601 findings across 601 files. |
-| 4 | Apex Metadata API deploy/mutation behavior: 495 findings across 53 files. |
-| 5 | UI and org presentation metadata: 392 findings across 200 files. |
-| 6 | Visualforce controller tests: 338 findings across 132 files. |
-| 7 | Site, community, and network test context: 319 findings across 109 files. |
-| 8 | Visualforce component metadata: 218 findings across 218 files. |
-| 9 | Legacy Metadata API source format loading: 136 findings across 136 files. |
-| 10 | Auth namespace and authentication context: 113 findings across 35 files. |
+| 1 | Aura controller action discovery: 457 findings across 457 files. |
+| 2 | UI and org presentation metadata: 392 findings across 200 files. |
+| 3 | Visualforce controller tests: 337 findings across 131 files. |
+| 4 | Visualforce component metadata: 218 findings across 218 files. |
+| 5 | Workflow rule save-order side effects: 107 findings across 107 files. |
+| 6 | Custom label and translation resolution: 99 findings across 54 files. |
+| 7 | Apex Metadata API deploy/mutation behavior: 64 findings across 20 files. |
+| 8 | Flow and Process Builder save-order side effects: 30 findings across 30 files. |
+| 9 | Auth namespace and authentication context: 3 findings across 2 files. |
+| 10 | Platform Cache and ConnectApi org settings: 3 findings across 2 files. |
 
 ## Local Test Running Boundary
 

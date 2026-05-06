@@ -29,7 +29,9 @@ import { getObjectInfo } from 'lightning/uiObjectInfoApi';
 	writeFile(t, filepath.Join(root, "src/flows/Update.flow"), `<Flow><processType>Workflow</processType></Flow>`)
 	writeFile(t, filepath.Join(root, "src/labels/CustomLabels.labels"), `<CustomLabels/>`)
 	writeFile(t, filepath.Join(root, "src/email/Local/Welcome.email"), `Hello {!Contact.Name}`)
+	writeFile(t, filepath.Join(root, "other/email/Unsupported.email"), `Hello {!Contact.Name}`)
 	writeFile(t, filepath.Join(root, "src/objects/Thing__c.object"), `<CustomObject/>`)
+	writeFile(t, filepath.Join(root, "other/objects/Unsupported__c.object"), `<CustomObject/>`)
 	writeFile(t, filepath.Join(root, "src/customMetadata/Page2.Home.md"), `<CustomMetadata/>`)
 	writeFile(t, filepath.Join(root, "README.md"), `# Not custom metadata`)
 	writeFile(t, filepath.Join(root, "src/staticresources/Resources.resource"), `body`)
@@ -47,6 +49,7 @@ import { getObjectInfo } from 'lightning/uiObjectInfoApi';
     Auth.SessionManagement.getCurrentSession();
     Auth.JWTUtil.validateJWTWithKeysEndpoint('token', 'https://example.invalid/keys');
     ConnectApi.ChatterFeeds.getFeedElementsFromFeed(null, null);
+    Metadata.UnknownType unsupportedMetadata;
     System.debug(Site.UnknownContext());
     Callable cb;
     Test.createStub(UsesPlatform.class, null);
@@ -69,12 +72,9 @@ import { getObjectInfo } from 'lightning/uiObjectInfoApi';
 	wantCaps := []string{
 		"apex.callable-stub",
 		"aura.controller-test",
-		"email.templates",
-		"files.binary-content",
 		"flow.save-order",
 		"lwc.controller-test",
 		"metadata.apex-deploy",
-		"metadata.legacy-source",
 		"platform.cache-connectapi",
 		"platform.auth-context",
 		"site.community-context",
@@ -93,6 +93,9 @@ import { getObjectInfo } from 'lightning/uiObjectInfoApi';
 	}
 	if len(report.TopBlockers) == 0 {
 		t.Fatalf("top blockers empty")
+	}
+	if surface := findSurface(report, "apex.callable-stub"); surface == nil || surface.Status != "partial" || surface.TestBlocking {
+		t.Fatalf("callable/stub surface = %#v, want partial non-blocking", surface)
 	}
 	for _, finding := range report.Findings {
 		if finding.File == "README.md" && finding.Capability == "custommetadata.legacy-records" {
@@ -124,6 +127,15 @@ import { getObjectInfo } from 'lightning/uiObjectInfoApi';
 	if hasLineFindingContaining(report, "platform.cache-connectapi", "src/classes/UsesPlatform.cls", "ConnectApi.Organization.getSettings") {
 		t.Fatalf("supported ConnectApi.Organization.getSettings was reported as a blocker")
 	}
+	if hasLineFindingContaining(report, "files.binary-content", "src/classes/UsesPlatform.cls", "Attachment") {
+		t.Fatalf("supported Attachment SObject usage was reported as a blocker")
+	}
+	if hasLineFindingContaining(report, "metadata.apex-deploy", "src/classes/UsesPlatform.cls", "Metadata.DeployContainer") {
+		t.Fatalf("supported Metadata.DeployContainer model was reported as a blocker")
+	}
+	if !hasLineFindingContaining(report, "metadata.apex-deploy", "src/classes/UsesPlatform.cls", "Metadata.UnknownType") {
+		t.Fatalf("missing unsupported Metadata.UnknownType finding")
+	}
 	if !hasLineFindingContaining(report, "platform.auth-context", "src/classes/UsesPlatform.cls", "Auth.JWTUtil") {
 		t.Fatalf("missing unsupported Auth.JWTUtil finding")
 	}
@@ -137,6 +149,24 @@ import { getObjectInfo } from 'lightning/uiObjectInfoApi';
 		if strings.Contains(finding.File, ".claude/") {
 			t.Fatalf("scanner included generated agent worktree file: %#v", finding)
 		}
+	}
+}
+
+func TestScanSuppressesLoadedLegacyObjectSource(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"src","default":true}]}`)
+	writeFile(t, filepath.Join(root, "src/objects/Legacy__c.object"), `<CustomObject>
+  <label>Legacy</label>
+  <pluralLabel>Legacy</pluralLabel>
+  <fields><fullName>Code__c</fullName><label>Code</label><type>Text</type></fields>
+</CustomObject>`)
+
+	report, err := Scan(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if hasLineFinding(report, "metadata.legacy-source", "src/objects/Legacy__c.object", "Legacy__c") {
+		t.Fatalf("loaded legacy object should not be reported as a source blocker")
 	}
 }
 
@@ -318,7 +348,49 @@ import missing from '@salesforce/apex/WidgetController.missing';
 	}
 }
 
-func TestScanTreatsBlobAsSupportedButKeepsFileObjects(t *testing.T) {
+func TestScanSuppressesResolvedAuraControllerBundles(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"pkg","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/WidgetController.cls"), `public class WidgetController {
+  @AuraEnabled public static String getWidget() { return 'widget'; }
+  @AuraEnabled public static String saveWidget() { return 'saved'; }
+}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/aura/Widget/Widget.cmp"), `<aura:component controller="pkg.WidgetController">
+  <aura:handler name="init" value="{!this}" action="{!c.getWidget}" />
+</aura:component>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/aura/Widget/WidgetController.js"), `({
+  save: function(component) {
+    component.get("c.saveWidget");
+  }
+})`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/aura/Missing/Missing.cmp"), `<aura:component controller="MissingController">
+  <aura:handler name="init" value="{!this}" action="{!c.missing}" />
+</aura:component>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/lwc/widget/widget.js"), `import saveWidget from '@salesforce/apex/pkg.WidgetController.saveWidget';
+import missing from '@salesforce/apex/pkg.WidgetController.missing';
+`)
+
+	report, err := Scan(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if hasFindingContaining(report, "aura.controller-test", "force-app/main/default/aura/Widget/Widget.cmp", "Widget") ||
+		hasFindingContaining(report, "aura.controller-test", "force-app/main/default/aura/Widget/WidgetController.js", "Widget") {
+		t.Fatalf("resolved Aura bundle files should not be reported: %#v", report.Findings)
+	}
+	if !hasFindingContaining(report, "aura.controller-test", "force-app/main/default/aura/Missing/Missing.cmp", "Missing") {
+		t.Fatalf("missing unresolved Aura bundle finding")
+	}
+	if hasLineFinding(report, "lwc.controller-test", "force-app/main/default/lwc/widget/widget.js", "pkg.WidgetController.saveWidget") {
+		t.Fatalf("resolved namespaced LWC Apex import should not be reported")
+	}
+	if !hasLineFinding(report, "lwc.controller-test", "force-app/main/default/lwc/widget/widget.js", "pkg.WidgetController.missing") {
+		t.Fatalf("missing unresolved namespaced LWC Apex import finding")
+	}
+}
+
+func TestScanSuppressesSupportedFileObjects(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "force-app/main/default/classes/UsesBinary.cls"), `public class UsesBinary {
   void run() {
@@ -337,14 +409,10 @@ func TestScanTreatsBlobAsSupportedButKeepsFileObjects(t *testing.T) {
 
 	if hasLineFinding(report, "files.binary-content", "force-app/main/default/classes/UsesBinary.cls", "Blob") ||
 		hasLineFinding(report, "files.binary-content", "force-app/main/default/classes/UsesBinary.cls", "base64Encode") ||
-		hasLineFinding(report, "files.binary-content", "force-app/main/default/classes/UsesBinary.cls", "base64Decode") {
-		t.Fatalf("core Blob and base64 helpers should not be file side-effect blockers")
-	}
-	if !hasLineFinding(report, "files.binary-content", "force-app/main/default/classes/UsesBinary.cls", "ContentVersion") {
-		t.Fatalf("missing ContentVersion file-object finding")
-	}
-	if !hasLineFinding(report, "files.binary-content", "force-app/main/default/classes/UsesBinary.cls", "Attachment") {
-		t.Fatalf("missing Attachment file-object finding")
+		hasLineFinding(report, "files.binary-content", "force-app/main/default/classes/UsesBinary.cls", "base64Decode") ||
+		hasLineFinding(report, "files.binary-content", "force-app/main/default/classes/UsesBinary.cls", "ContentVersion") ||
+		hasLineFinding(report, "files.binary-content", "force-app/main/default/classes/UsesBinary.cls", "Attachment") {
+		t.Fatalf("supported file and Blob runtime shapes should not be file side-effect blockers")
 	}
 }
 
@@ -408,7 +476,9 @@ func TestScanSuppressesResolvedLabelReferences(t *testing.T) {
   void run() {
     System.debug(System.Label.Save);
     System.debug(Label.Greeting);
+    System.debug(Label.Save.replace('{0}', 'Done'));
     System.debug(Label.Missing);
+    System.debug(Label.Missing.replace('{0}', 'Done'));
   }
 }`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/lwc/labels/labels.js"), `import SAVE from '@salesforce/label/c.Save';
@@ -433,6 +503,9 @@ import MISSING from '@salesforce/label/c.Missing';
 	if hasLineFinding(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "Greeting") {
 		t.Fatalf("resolved Label.Greeting should not be reported")
 	}
+	if hasLineFindingContaining(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "Save.replace") {
+		t.Fatalf("resolved label String method chain should not be reported")
+	}
 	if hasLineFindingContaining(report, "labels.localization", "force-app/main/default/lwc/labels/labels.js", "c.Save") {
 		t.Fatalf("resolved LWC c.Save label should not be reported")
 	}
@@ -441,6 +514,9 @@ import MISSING from '@salesforce/label/c.Missing';
 	}
 	if !hasLineFinding(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "Missing") {
 		t.Fatalf("missing unresolved Apex label finding")
+	}
+	if !hasLineFindingContaining(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "Missing.replace") {
+		t.Fatalf("missing unresolved Apex label method-chain finding")
 	}
 	if !hasLineFindingContaining(report, "labels.localization", "force-app/main/default/lwc/labels/labels.js", "c.Missing") {
 		t.Fatalf("missing unresolved LWC label finding")
@@ -462,6 +538,8 @@ func TestScanSuppressesResolvedResourcesAndEndpoints(t *testing.T) {
 	writeFile(t, filepath.Join(root, "force-app/main/default/staticresources/Site.resource-meta.xml"), `<StaticResource><contentType>text/plain</contentType></StaticResource>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/contentassets/Logo.asset"), "body")
 	writeFile(t, filepath.Join(root, "force-app/main/default/contentassets/Logo.asset-meta.xml"), `<ContentAsset><contentType>image/png</contentType></ContentAsset>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/email/Welcome.email"), "Hello")
+	writeFile(t, filepath.Join(root, "force-app/main/default/email/Welcome.email-meta.xml"), `<EmailTemplate><fullName>unfiled$public/Welcome</fullName><subject>Hello</subject><available>true</available></EmailTemplate>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/namedCredentials/Billing.namedCredential"), `<NamedCredential><endpoint>https://billing.example.test</endpoint></NamedCredential>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/remoteSiteSettings/Maps.remoteSite"), `<RemoteSiteSetting><url>https://maps.example.test</url></RemoteSiteSetting>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/lwc/resources/resources.js"), `import SITE from '@salesforce/resourceUrl/Site';
@@ -508,7 +586,7 @@ import MISSING from '@salesforce/resourceUrl/MissingResource';
 	}
 	for _, finding := range report.Findings {
 		switch finding.MetadataType {
-		case "StaticResource", "ContentAsset", "NamedCredential", "RemoteSiteSetting":
+		case "StaticResource", "ContentAsset", "EmailTemplate", "NamedCredential", "RemoteSiteSetting":
 			t.Fatalf("loaded metadata files should not be reported as unsupported: %#v", finding)
 		}
 	}
@@ -541,9 +619,18 @@ func hasLineFinding(report Report, capability, file, symbol string) bool {
 	return false
 }
 
+func hasFindingContaining(report Report, capability, file, symbol string) bool {
+	for _, finding := range report.Findings {
+		if finding.Capability == capability && finding.File == file && strings.Contains(finding.Symbol, symbol) {
+			return true
+		}
+	}
+	return false
+}
+
 func hasLineFindingContaining(report Report, capability, file, symbol string) bool {
 	for _, finding := range report.Findings {
-		if finding.Capability == capability && finding.File == file && finding.Line > 0 && strings.Contains(finding.Symbol, symbol) {
+		if finding.Capability == capability && finding.File == file && strings.Contains(finding.Symbol, symbol) {
 			return true
 		}
 	}

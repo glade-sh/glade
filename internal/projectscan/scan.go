@@ -217,8 +217,8 @@ var surfaceDefs = map[string]surfaceDef{
 		title:               "System.Callable and Stub API compatibility",
 		area:                "platform-apis",
 		stage:               "execute",
-		status:              "unsupported",
-		testBlocking:        true,
+		status:              "partial",
+		testBlocking:        false,
 		suggestedCapability: "apex.callable-stub",
 	},
 	"endpoint.metadata": {
@@ -267,13 +267,15 @@ type patternDef struct {
 }
 
 type scanContext struct {
-	org      storage.OrgState
-	metadata storage.MetadataRegistry
-	vf       visualforce.Index
-	pages    map[string]string
-	uiApex   map[string]bool
-	types    map[string]typesys.TypeSymbol
-	present  map[string]bool
+	org         storage.OrgState
+	metadata    storage.MetadataRegistry
+	vf          visualforce.Index
+	pages       map[string]string
+	uiApex      map[string]bool
+	aura        map[string]bool
+	types       map[string]typesys.TypeSymbol
+	present     map[string]bool
+	loadedFiles map[string]bool
 }
 
 var textPatterns = []patternDef{
@@ -287,7 +289,7 @@ var textPatterns = []patternDef{
 	{"endpoint.metadata", "ApexClass", regexp.MustCompile(`callout:([A-Za-z_][A-Za-z0-9_]*)`), 1},
 	{"files.binary-content", "ApexClass", regexp.MustCompile(`\b(ContentVersion\b|ContentDocument\b|ContentDocumentLink\b|Attachment\b|Document\b)`), 1},
 	{"custommetadata.legacy-records", "ApexClass", regexp.MustCompile(`\b([A-Za-z_][A-Za-z0-9_]*__mdt)\b`), 1},
-	{"lwc.controller-test", "LWCJavaScript", regexp.MustCompile(`@salesforce/apex/([A-Za-z_][A-Za-z0-9_]*\.[A-Za-z_][A-Za-z0-9_]*)`), 1},
+	{"lwc.controller-test", "LWCJavaScript", regexp.MustCompile(`@salesforce/apex/([A-Za-z_][A-Za-z0-9_.]*\.[A-Za-z_][A-Za-z0-9_]*)`), 1},
 	{"lwc.controller-test", "LWCJavaScript", regexp.MustCompile(`\b@wire\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)`), 1},
 	{"labels.localization", "LWCJavaScript", regexp.MustCompile(`@salesforce/label/([A-Za-z0-9_./]+)`), 1},
 	{"staticresources.urlfor", "LWCJavaScript", regexp.MustCompile(`@salesforce/resourceUrl/([A-Za-z_][A-Za-z0-9_]*)`), 1},
@@ -372,11 +374,20 @@ func loadScanContext(absRoot string) scanContext {
 		for _, method := range ui.ApexMethods {
 			if method.Resolved {
 				ctx.uiApex[strings.ToLower(method.ClassName+"."+method.MethodName)] = true
+				ctx.uiApex[strings.ToLower(stripDotNamespace(method.ClassName)+"."+method.MethodName)] = true
 			}
 		}
+		ctx.aura = resolvedAuraFiles(ui, &ctx)
 	}
 	if metadata, err := resource.LoadProject(proj); err == nil {
 		ctx.metadata = metadata
+	}
+	ctx.loadedFiles = make(map[string]bool)
+	for _, path := range proj.ObjectFiles {
+		ctx.loadedFiles[filepath.Clean(path)] = true
+	}
+	for _, path := range proj.CustomMetadataFiles {
+		ctx.loadedFiles[filepath.Clean(path)] = true
 	}
 	if idx, err := metadatapkg.LoadProject(proj); err == nil {
 		ctx.present = make(map[string]bool)
@@ -462,14 +473,23 @@ func classifyByPath(rel, path string, ctx *scanContext) []Finding {
 	case strings.HasSuffix(lower, ".component"):
 		add("visualforce.component-test", "VisualforceComponent", baseNoExt(path))
 	case strings.Contains(lower, "/aura/"):
+		if ctx != nil && ctx.resolvesAuraFile(path) {
+			return findings
+		}
 		add("aura.controller-test", "AuraBundle", auraOrLWCBundle(rel, "aura"))
 	case strings.HasSuffix(lower, ".workflow-meta.xml"), strings.HasSuffix(lower, ".workflow"):
 		add("workflow.save-order", "Workflow", baseNoExt(path))
 	case strings.HasSuffix(lower, ".flow-meta.xml"), strings.HasSuffix(lower, ".flow"):
 		add("flow.save-order", "Flow", baseNoExt(path))
 	case strings.HasSuffix(lower, ".email"), strings.HasSuffix(lower, ".email-meta.xml"):
+		if ctx != nil && ctx.resolvesEmailTemplate(baseNoExt(path), path) {
+			return findings
+		}
 		add("email.templates", "EmailTemplate", baseNoExt(path))
 	case strings.HasSuffix(lower, ".object"):
+		if ctx != nil && ctx.loadedFiles[filepath.Clean(path)] {
+			return findings
+		}
 		add("metadata.legacy-source", "LegacyObject", baseNoExt(path))
 	case hasAnySuffix(lower, ".layout", ".layout-meta.xml", ".profile", ".profile-meta.xml", ".permissionset", ".permissionset-meta.xml", ".tab", ".tab-meta.xml", ".weblink", ".weblink-meta.xml", ".quickaction-meta.xml", ".globalvalueset-meta.xml", ".standardvalueset-meta.xml", ".flexipage", ".flexipage-meta.xml", ".application", ".app-meta.xml"):
 		if ctx != nil && ctx.present[filepath.Clean(path)] {
@@ -651,6 +671,8 @@ func (ctx *scanContext) resolvesFinding(capability, symbol, rel string) bool {
 		return ctx.resolvesCustomMetadataObject(symbol)
 	case "visualforce.controller-test":
 		return ctx.resolvesVisualforceControllerReference(symbol, rel)
+	case "aura.controller-test":
+		return ctx.resolvesAuraControllerReference(symbol)
 	case "lwc.controller-test":
 		return ctx.resolvesLWCControllerReference(symbol)
 	}
@@ -671,7 +693,32 @@ func (ctx *scanContext) resolvesLWCControllerReference(symbol string) bool {
 	if !strings.Contains(symbol, ".") {
 		return false
 	}
-	return ctx.uiApex[strings.ToLower(symbol)]
+	if ctx.uiApex[strings.ToLower(symbol)] {
+		return true
+	}
+	lastDot := strings.LastIndex(symbol, ".")
+	if lastDot > 0 {
+		className := symbol[:lastDot]
+		methodName := symbol[lastDot+1:]
+		return ctx.uiApex[strings.ToLower(stripDotNamespace(className)+"."+methodName)]
+	}
+	return false
+}
+
+func (ctx *scanContext) resolvesAuraFile(path string) bool {
+	if ctx == nil || ctx.aura == nil {
+		return false
+	}
+	cleanPath := filepath.Clean(path)
+	if resolved, ok := ctx.aura[cleanPath]; ok {
+		return resolved
+	}
+	resolved, ok := ctx.aura[filepath.Dir(cleanPath)]
+	return ok && resolved
+}
+
+func (ctx *scanContext) resolvesAuraControllerReference(symbol string) bool {
+	return ctx.resolvesApexType(symbol)
 }
 
 func (ctx *scanContext) resolvesVisualforceControllerReference(symbol, rel string) bool {
@@ -768,6 +815,10 @@ func (ctx *scanContext) resolvesApexType(symbol string) bool {
 	if _, ok := ctx.types[strings.ToLower(symbol)]; ok {
 		return true
 	}
+	if stripped := stripDotNamespace(symbol); stripped != symbol {
+		_, ok := ctx.types[strings.ToLower(stripped)]
+		return ok
+	}
 	stripped := stripAnyNamespaceToken(symbol)
 	if stripped != symbol {
 		_, ok := ctx.types[strings.ToLower(stripped)]
@@ -797,6 +848,10 @@ func (ctx *scanContext) lookupApexType(typeName string) (typesys.TypeSymbol, boo
 	if typ, ok := ctx.types[strings.ToLower(typeName)]; ok {
 		return typ, true
 	}
+	if stripped := stripDotNamespace(typeName); stripped != typeName {
+		typ, ok := ctx.types[strings.ToLower(stripped)]
+		return typ, ok
+	}
 	stripped := stripAnyNamespaceToken(typeName)
 	if stripped != typeName {
 		typ, ok := ctx.types[strings.ToLower(stripped)]
@@ -823,6 +878,25 @@ func (ctx *scanContext) resolvesEndpoint(symbol string) bool {
 	return ok
 }
 
+func (ctx *scanContext) resolvesEmailTemplate(symbol, path string) bool {
+	symbol = strings.TrimSpace(symbol)
+	cleanPath := filepath.Clean(path)
+	for _, template := range ctx.metadata.EmailTemplates {
+		if filepath.Clean(template.File) == cleanPath || filepath.Clean(template.MetadataPath) == cleanPath {
+			return true
+		}
+		for _, candidate := range []string{template.DeveloperName, template.Name} {
+			if strings.EqualFold(candidate, symbol) {
+				return true
+			}
+			if slash := strings.LastIndex(candidate, "/"); slash >= 0 && strings.EqualFold(candidate[slash+1:], symbol) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func labelReferenceSymbol(symbol string) (string, string, bool) {
 	symbol = strings.TrimSpace(symbol)
 	symbol = strings.TrimPrefix(symbol, "System.")
@@ -834,6 +908,9 @@ func labelReferenceSymbol(symbol string) (string, string, bool) {
 		return "", "", false
 	}
 	parts := strings.Split(symbol, ".")
+	if len(parts) > 1 && isLabelStringMethod(parts[len(parts)-1]) {
+		parts = parts[:len(parts)-1]
+	}
 	switch len(parts) {
 	case 1:
 		return "", parts[0], true
@@ -844,6 +921,23 @@ func labelReferenceSymbol(symbol string) (string, string, bool) {
 			namespace = ""
 		}
 		return namespace, label, label != ""
+	}
+}
+
+func isLabelStringMethod(name string) bool {
+	switch strings.ToLower(strings.TrimSpace(name)) {
+	case "abbreviate", "capitalize", "center", "contains", "containsany", "containsignorecase",
+		"containsnone", "deletewhitespace", "difference", "endswith", "equals", "equalsignorecase",
+		"escapeecmascript", "escapehtml3", "escapehtml4", "escapesinglequotes", "escapeunicode",
+		"indexof", "isempty", "isblank", "isnotblank", "isnotempty", "join", "left", "leftpad",
+		"length", "mid", "normalize", "overlay", "remove", "removeend", "removeendignorecase",
+		"removestart", "removestartignorecase", "repeat", "replace", "replaceall", "replacefirst",
+		"reverse", "right", "rightpad", "split", "startswith", "substring", "substringafter",
+		"substringafterlast", "substringbefore", "substringbeforelast", "swapcase", "tolowercase",
+		"touppercase", "trim", "unescapeecmascript", "unescapehtml3", "unescapehtml4", "uncapitalize":
+		return true
+	default:
+		return false
 	}
 }
 
@@ -955,6 +1049,39 @@ func stripAnyNamespaceToken(name string) string {
 	return name[first+2:]
 }
 
+func stripDotNamespace(name string) string {
+	if dot := strings.LastIndex(name, "."); dot >= 0 && dot < len(name)-1 {
+		return name[dot+1:]
+	}
+	return name
+}
+
+func resolvedAuraFiles(ui uicontroller.Index, ctx *scanContext) map[string]bool {
+	resolved := make(map[string]bool)
+	for _, bundle := range ui.AuraBundles {
+		bundleResolved := true
+		for _, controller := range bundle.ControllerReferences {
+			if !ctx.resolvesAuraControllerReference(controller.Name) {
+				bundleResolved = false
+				break
+			}
+		}
+		if bundleResolved {
+			for _, action := range bundle.ActionReferences {
+				if action.ClassName == "" || !action.Resolved {
+					bundleResolved = false
+					break
+				}
+			}
+		}
+		for _, file := range bundle.Files {
+			resolved[filepath.Clean(file.Path)] = bundleResolved
+		}
+		resolved[filepath.Clean(bundle.Dir)] = bundleResolved
+	}
+	return resolved
+}
+
 func suppressSupportedFinding(capability, symbol, evidence string) bool {
 	switch capability {
 	case "files.binary-content":
@@ -965,6 +1092,8 @@ func suppressSupportedFinding(capability, symbol, evidence string) bool {
 		return supportedCacheConnectAPISymbol(symbol, evidence)
 	case "platform.auth-context":
 		return supportedAuthSymbol(symbol, evidence)
+	case "metadata.apex-deploy":
+		return supportedMetadataAPISymbol(symbol, evidence)
 	default:
 		return false
 	}
@@ -972,7 +1101,7 @@ func suppressSupportedFinding(capability, symbol, evidence string) bool {
 
 func supportedFileSymbol(symbol, evidence string) bool {
 	switch strings.TrimSpace(symbol) {
-	case "Blob", "base64Encode", "base64Decode":
+	case "Blob", "base64Encode", "base64Decode", "Attachment", "Document", "ContentVersion", "ContentDocument", "ContentDocumentLink":
 		return true
 	default:
 		return false
@@ -1032,6 +1161,19 @@ func supportedAuthSymbol(symbol, evidence string) bool {
 		"Auth.AuthConfiguration",
 	} {
 		if strings.Contains(evidence, needle) {
+			return true
+		}
+	}
+	return false
+}
+
+func supportedMetadataAPISymbol(symbol, evidence string) bool {
+	for _, needle := range []string{
+		"Metadata.DeployContainer", "Metadata.CustomMetadata", "Metadata.CustomMetadataValue",
+		"Metadata.DeployCallback", "Metadata.DeployResult", "Metadata.DeployCallbackContext",
+		"Metadata.Operations.enqueueDeployment",
+	} {
+		if strings.Contains(symbol, needle) || strings.Contains(evidence, needle) {
 			return true
 		}
 	}

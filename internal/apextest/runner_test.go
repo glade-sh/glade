@@ -459,10 +459,8 @@ func TestRunDispatchesCreateStubToStubProvider(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/Greeter.cls"), `
-public class Greeter {
-  public String greet(String name) {
-    return 'real';
-  }
+public interface Greeter {
+  String greet(String name);
 }
 `)
 	writeFile(t, filepath.Join(root, "force-app/main/classes/GreeterProvider.cls"), `

@@ -2266,6 +2266,12 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return Null, fmt.Errorf("ConnectApi.UserProfiles.deletePhoto expects 2 arguments")
 		}
 		return Null, nil
+	case "Metadata.Operations.enqueueDeployment":
+		if len(args) != 2 || args[0].Kind != ValueObject || args[0].Type != "Metadata.DeployContainer" {
+			return Null, fmt.Errorf("Metadata.Operations.enqueueDeployment expects DeployContainer and DeployCallback")
+		}
+		deployID := "0Af000000000001"
+		return platformScalar("Id", deployID), nil
 	case "UserManagement.initSelfRegistration":
 		if len(args) != 2 {
 			return Null, fmt.Errorf("UserManagement.initSelfRegistration expects 2 arguments")
@@ -8963,7 +8969,7 @@ func isBuiltinTypeName(name string) bool {
 		return true
 	}
 	switch name {
-	case "Object", "String", "Boolean", "Integer", "Long", "Decimal", "Double", "Date", "Datetime", "Time", "TimeZone", "Blob", "Id", "Type", "URL", "PageReference", "SelectOption", "LoggingLevel", "ApexPages.Severity", "ApexPages.StandardController", "ApexPages.StandardSetController", "RestContext", "RestRequest", "RestResponse", "Callable", "StubProvider":
+	case "Object", "String", "Boolean", "Integer", "Long", "Decimal", "Double", "Date", "Datetime", "Time", "TimeZone", "Blob", "Id", "Type", "URL", "PageReference", "SelectOption", "LoggingLevel", "ApexPages.Severity", "ApexPages.StandardController", "ApexPages.StandardSetController", "RestContext", "RestRequest", "RestResponse", "Callable", "StubProvider", "Metadata.DeployContainer", "Metadata.CustomMetadata", "Metadata.CustomMetadataValue", "Metadata.DeployResult", "Metadata.DeployCallbackContext":
 		return true
 	default:
 		return false
@@ -9898,6 +9904,55 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 		authConfig.Fields["Url"] = args[0]
 		config.Fields["authConfig"] = authConfig
 		return config, nil
+	case "Metadata.DeployContainer":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Metadata.DeployContainer constructor expects 0 arguments")
+		}
+		container := Object("Metadata.DeployContainer")
+		container.Fields["metadata"] = List()
+		for field, value := range namedArgs {
+			container.Fields[field] = value
+		}
+		return container, nil
+	case "Metadata.CustomMetadata":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Metadata.CustomMetadata constructor expects 0 arguments")
+		}
+		metadata := Object("Metadata.CustomMetadata")
+		metadata.Fields["values"] = List()
+		for field, value := range namedArgs {
+			metadata.Fields[field] = value
+		}
+		return metadata, nil
+	case "Metadata.CustomMetadataValue":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Metadata.CustomMetadataValue constructor expects 0 arguments")
+		}
+		value := Object("Metadata.CustomMetadataValue")
+		for field, fieldValue := range namedArgs {
+			value.Fields[field] = fieldValue
+		}
+		return value, nil
+	case "Metadata.DeployResult":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Metadata.DeployResult constructor expects 0 arguments")
+		}
+		result := Object("Metadata.DeployResult")
+		result.Fields["status"] = String("Succeeded")
+		result.Fields["success"] = Bool(true)
+		for field, value := range namedArgs {
+			result.Fields[field] = value
+		}
+		return result, nil
+	case "Metadata.DeployCallbackContext":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Metadata.DeployCallbackContext constructor expects 0 arguments")
+		}
+		context := Object("Metadata.DeployCallbackContext")
+		for field, value := range namedArgs {
+			context.Fields[field] = value
+		}
+		return context, nil
 	case "SelectOption":
 		if len(args) < 2 || len(args) > 4 || len(namedArgs) != 0 {
 			return Null, fmt.Errorf("SelectOption constructor expects value, label[, disabled[, escapeItem]]")
@@ -12534,10 +12589,10 @@ func (vm *VM) callStubProxyMember(receiver Value, method string, args []Value, r
 	paramTypes := make([]Value, 0, len(target.Params))
 	paramNames := make([]Value, 0, len(target.Params))
 	for _, param := range target.Params {
-		paramTypes = append(paramTypes, platformScalar("Type", param.Type))
+		paramTypes = append(paramTypes, platformScalar("Type", vm.resolveTypeNameInClass(target.ClassName, param.Type)))
 		paramNames = append(paramNames, String(param.Name))
 	}
-	returnType := target.ReturnType
+	returnType := vm.resolveTypeNameInClass(target.ClassName, target.ReturnType)
 	if returnType == "" {
 		returnType = "Object"
 	}
@@ -14438,6 +14493,20 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return value, receiver, false, true, nil
 			}
 			return String(""), receiver, false, true, nil
+		}
+	case "Metadata.DeployContainer":
+		switch method {
+		case "addMetadata":
+			if len(args) != 1 {
+				return Null, receiver, false, true, fmt.Errorf("Metadata.DeployContainer.addMetadata expects metadata")
+			}
+			values := receiver.Fields["metadata"]
+			if values.Kind != ValueList {
+				values = List()
+			}
+			values.List = append(values.List, args[0])
+			receiver.Fields["metadata"] = values
+			return Null, receiver, true, true, nil
 		}
 	case "Messaging.SendEmailResult":
 		switch method {

@@ -131,6 +131,38 @@ export default class Widget extends LightningElement {
 	}
 }
 
+func TestBuildResolvesNamespacedAuraAndLWCControllerReferences(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"pkg","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/WidgetController.cls"), `public class WidgetController {
+  @AuraEnabled public static String saveWidget() { return 'ok'; }
+}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/aura/Widget/Widget.cmp"), `<aura:component controller="pkg.WidgetController">
+  <lightning:button onclick="{!c.saveWidget}" />
+</aura:component>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/lwc/widget/widget.js"), `import saveWidget from '@salesforce/apex/pkg.WidgetController.saveWidget';`)
+
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	apex := typesys.Build(p, schema.Schema{})
+	idx, err := Build(p, apex)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !hasResolvedMethod(idx, "pkg.WidgetController", "saveWidget") {
+		t.Fatalf("namespaced controller method was not resolved: %#v", idx.ApexMethods)
+	}
+	if len(idx.AuraBundles) != 1 || !hasAuraAction(idx.AuraBundles[0], "saveWidget", true) {
+		t.Fatalf("namespaced Aura action was not resolved: %#v", idx.AuraBundles)
+	}
+	if len(idx.LWCBundles) != 1 || !hasLWCImport(idx.LWCBundles[0], "saveWidget", "apex", "pkg.WidgetController", "saveWidget") {
+		t.Fatalf("namespaced LWC import was not parsed: %#v", idx.LWCBundles)
+	}
+}
+
 func hasAuraComponent(bundle AuraBundle, namespace, name string) bool {
 	for _, ref := range bundle.ComponentReferences {
 		if ref.Namespace == namespace && ref.Name == name {

@@ -21,7 +21,7 @@ intentional unsupported classifications. The broader post-parity inventory is
 not green. A May 6, 2026 inventory from the current checkout reports:
 
 ```text
-filesScanned=51067 findings=4712 testBlockingFindings=4712 surfaces=15
+filesScanned=51067 findings=2391 testBlockingFindings=1711 surfaces=12
 ```
 
 That inventory is implementation-aware as of this checkpoint: generated
@@ -38,8 +38,11 @@ Visualforce controller classes, standard controller objects, controller
 extensions, action methods, and component action attributes through the
 best-effort Visualforce index and Apex symbol table; the remaining
 Visualforce findings are unresolved page/controller/action contracts or
-component metadata work. Remaining findings should be treated as the next
-implementation frontier rather than stale scanner noise.
+component metadata work. Files/content SObjects, email templates, legacy object
+source, core Metadata API deployment models, and local Callable/Stub support
+are now implemented or truthfully modeled enough to leave the test-blocking
+frontier. Remaining findings should be treated as the next implementation
+frontier rather than stale scanner noise.
 
 Use this document for parallel squad planning. Use
 `docs/POST_PARITY_TODO.md` as the exhaustive backlog and capability boundary.

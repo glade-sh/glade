@@ -156,8 +156,8 @@
       "project": "../../testdata/local-tests/files-email",
       "ready": true,
       "summary": {
-        "total": 1,
-        "pass": 1,
+        "total": 2,
+        "pass": 2,
         "fail": 0,
         "unsupported": 0,
         "loadError": 0,
@@ -168,6 +168,11 @@
         {
           "class": "FilesEmailTest",
           "method": "emailTemplateMetadataLoadsAndSends",
+          "outcome": "pass"
+        },
+        {
+          "class": "FilesEmailTest",
+          "method": "fileObjectsRoundTripAndVersion",
           "outcome": "pass"
         }
       ]

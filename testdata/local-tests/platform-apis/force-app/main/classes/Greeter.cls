@@ -1,5 +1,3 @@
-public class Greeter {
-  public String greet(String name) {
-    return 'real';
-  }
+public interface Greeter {
+  String greet(String name);
 }

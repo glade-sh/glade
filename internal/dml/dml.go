@@ -555,9 +555,13 @@ func (e *Engine) afterInsertContentVersion(version storage.Record) error {
 		if title, ok := version.Fields["Title"]; ok {
 			document.Fields["Title"] = title.Clone()
 		}
+		if path, ok := version.Fields["PathOnClient"]; ok {
+			document.Fields["FileExtension"] = storage.StringValue(fileExtension(path.String))
+		}
 		contentDocumentObject.Records[contentDocumentID] = document
 		e.Org.Objects["ContentDocument"] = contentDocumentObject
 	}
+	e.markLatestContentVersion(contentDocumentID, version.ID)
 	if locationID := idFromStorageValue(version.Fields["FirstPublishLocationId"]); locationID != "" {
 		link := storage.Record{
 			Object: "ContentDocumentLink",
@@ -573,6 +577,25 @@ func (e *Engine) afterInsertContentVersion(version storage.Record) error {
 		}
 	}
 	return nil
+}
+
+func (e *Engine) markLatestContentVersion(contentDocumentID storage.ID, latestVersionID storage.ID) {
+	contentVersionObject := e.Org.Objects["ContentVersion"]
+	changed := false
+	for id, stored := range contentVersionObject.Records {
+		if idFromStorageValue(stored.Fields["ContentDocumentId"]) != contentDocumentID {
+			continue
+		}
+		if stored.Fields == nil {
+			stored.Fields = make(map[string]storage.Value)
+		}
+		stored.Fields["IsLatest"] = storage.BooleanValue(id == latestVersionID)
+		contentVersionObject.Records[id] = stored
+		changed = true
+	}
+	if changed {
+		e.Org.Objects["ContentVersion"] = contentVersionObject
+	}
 }
 
 func (e *Engine) afterInsertPersonAccount(account storage.Record) error {

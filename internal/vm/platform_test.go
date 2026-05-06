@@ -178,6 +178,31 @@ func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 	}
 }
 
+func TestExecMetadataDeployContainerLocalModel(t *testing.T) {
+	program, err := CompileAnonymous(`
+Metadata.DeployContainer container = new Metadata.DeployContainer();
+Metadata.CustomMetadata item = new Metadata.CustomMetadata();
+item.fullName = 'Feature.Default';
+item.label = 'Default';
+Metadata.CustomMetadataValue value = new Metadata.CustomMetadataValue();
+value.field = 'Enabled__c';
+value.value = true;
+item.values.add(value);
+container.addMetadata(item);
+Id deploymentId = Metadata.Operations.enqueueDeployment(container, null);
+System.assertEquals('0Af000000000001', (String)deploymentId);
+System.assertEquals(1, container.metadata.size());
+System.assertEquals(1, item.values.size());
+System.assertEquals('Enabled__c', ((Metadata.CustomMetadataValue)item.values[0]).field);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecEventBusPublishReturnsLocalSuccessResults(t *testing.T) {
 	program, err := CompileAnonymous(`
 Database.SaveResult single = EventBus.publish(new Account(Name = 'Acme'));

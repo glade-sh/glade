@@ -476,7 +476,7 @@ func compileProjectMethods(index typesys.Index) map[string]vm.Method {
 	out := make(map[string]vm.Method)
 	sources := make(map[string]string)
 	for _, typ := range index.Types {
-		if typ.Kind != apexast.DeclarationClass {
+		if typ.Kind != apexast.DeclarationClass && typ.Kind != apexast.DeclarationInterface {
 			continue
 		}
 		for _, member := range typ.Members {
@@ -492,6 +492,14 @@ func compileProjectMethods(index typesys.Index) map[string]vm.Method {
 				source = string(data)
 				sources[typ.File] = source
 			}
+			if typ.Kind == apexast.DeclarationInterface {
+				method, err := compileProjectMethodSignature(typ.Name, member.Name, member.Type, append(member.Modifiers, "abstract"), typ.File, member.Range, source)
+				if err != nil {
+					continue
+				}
+				out[method.Name+methodParamKey(method.Params)] = method
+				continue
+			}
 			method, err := compileProjectMethod(typ.Name, member.Name, member.Type, member.Modifiers, typ.File, member.Range, source)
 			if err != nil {
 				if unsupported, ok := unsupportedProjectMethod(typ.Name, member.Name, member.Type, member.Modifiers, typ.File, member.Range, source, err); ok {
@@ -503,6 +511,29 @@ func compileProjectMethods(index typesys.Index) map[string]vm.Method {
 		}
 	}
 	return out
+}
+
+func compileProjectMethodSignature(className, methodName, returnType string, modifiers []string, file string, r diagnostic.Range, source string) (vm.Method, error) {
+	methodSource, err := extractMethodSource(source, r)
+	if err != nil {
+		return vm.Method{}, err
+	}
+	params, err := parseParams(methodSource)
+	if err != nil {
+		return vm.Method{}, err
+	}
+	return vm.Method{
+		Name:       className + "." + methodName,
+		ReturnType: returnType,
+		Params:     params,
+		ClassName:  className,
+		IsStatic:   hasModifier(modifiers, "static"),
+		Access:     accessModifier(modifiers),
+		Modifiers:  modifiers,
+		File:       file,
+		Line:       r.Start.Line,
+		Column:     r.Start.Column,
+	}, nil
 }
 
 func unsupportedProjectMethod(className, methodName, returnType string, modifiers []string, file string, r diagnostic.Range, source string, cause error) (vm.Method, bool) {
@@ -622,6 +653,7 @@ func orgFromIndex(index typesys.Index) storage.OrgState {
 			}
 		}
 	}
+	storage.EnsureDeterministicPlatformData(&org)
 	return org
 }
 

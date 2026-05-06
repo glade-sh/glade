@@ -2695,6 +2695,14 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 		case "deletephoto":
 			return semaCollectionSignature{returnType: "void", params: [][]string{{"String", "String"}}}, true
 		}
+	case "metadata.operations":
+		if method == "enqueuedeployment" {
+			return semaCollectionSignature{returnType: "String", params: [][]string{{"Metadata.DeployContainer", "Metadata.DeployCallback"}}}, true
+		}
+	case "metadata.deploycontainer":
+		if method == "addmetadata" {
+			return semaCollectionSignature{returnType: "void", params: [][]string{{"Object"}}}, true
+		}
 	case "site":
 		switch method {
 		case "getsiteid", "getbaseurl", "getpathprefix", "getadminemail", "getadminid", "getmasterlabel", "geterrormessage", "geterrordescription":
@@ -3653,6 +3661,14 @@ var platformTypes = []string{
 	"Iterable",
 	"Matcher",
 	"Messaging",
+	"Metadata",
+	"Metadata.CustomMetadata",
+	"Metadata.CustomMetadataValue",
+	"Metadata.DeployCallback",
+	"Metadata.DeployCallbackContext",
+	"Metadata.DeployContainer",
+	"Metadata.DeployResult",
+	"Metadata.Operations",
 	"MultiStaticResourceCalloutMock",
 	"Network",
 	"ObjectPermissions",

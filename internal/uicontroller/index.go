@@ -306,10 +306,10 @@ func parseWires(path, source string, importsByLocal map[string]LWCImport) []LWCW
 func classifyLWCImport(module string) LWCImport {
 	switch {
 	case strings.HasPrefix(module, "@salesforce/apex/"):
-		parts := strings.SplitN(strings.TrimPrefix(module, "@salesforce/apex/"), ".", 2)
+		apexRef := strings.TrimPrefix(module, "@salesforce/apex/")
 		imp := LWCImport{Kind: "apex"}
-		if len(parts) == 2 {
-			imp.ClassName, imp.MethodName = parts[0], parts[1]
+		if dot := strings.LastIndex(apexRef, "."); dot > 0 && dot < len(apexRef)-1 {
+			imp.ClassName, imp.MethodName = apexRef[:dot], apexRef[dot+1:]
 		}
 		return imp
 	case strings.HasPrefix(module, "@salesforce/label/"):
@@ -357,8 +357,9 @@ func resolveApex(idx typesys.Index, className, methodName string) (bool, string,
 	if className == "" || methodName == "" {
 		return false, "", nil
 	}
+	candidates := apexClassCandidates(idx, className)
 	for _, typ := range idx.Types {
-		if !strings.EqualFold(typ.Name, className) {
+		if !candidateMatches(candidates, typ.Name) {
 			continue
 		}
 		for _, member := range typ.Members {
@@ -368,6 +369,54 @@ func resolveApex(idx typesys.Index, className, methodName string) (bool, string,
 		}
 	}
 	return false, "", nil
+}
+
+func apexClassCandidates(idx typesys.Index, className string) []string {
+	className = strings.TrimSpace(className)
+	if className == "" {
+		return nil
+	}
+	seen := map[string]bool{}
+	var candidates []string
+	add := func(name string) {
+		name = strings.TrimSpace(name)
+		key := strings.ToLower(name)
+		if name == "" || seen[key] {
+			return
+		}
+		seen[key] = true
+		candidates = append(candidates, name)
+	}
+	add(className)
+	if dot := strings.LastIndex(className, "."); dot >= 0 && dot < len(className)-1 {
+		add(className[dot+1:])
+	}
+	if ns := strings.TrimSpace(idx.Project.Namespace); ns != "" {
+		add(strings.TrimPrefix(className, ns+"."))
+		add(strings.TrimPrefix(className, ns+"__"))
+	}
+	if stripped := stripNamespaceToken(className); stripped != className {
+		add(stripped)
+	}
+	return candidates
+}
+
+func candidateMatches(candidates []string, name string) bool {
+	for _, candidate := range candidates {
+		if strings.EqualFold(candidate, name) {
+			return true
+		}
+	}
+	return false
+}
+
+func stripNamespaceToken(name string) string {
+	first := strings.Index(name, "__")
+	last := strings.LastIndex(name, "__")
+	if first <= 0 || first >= last {
+		return name
+	}
+	return name[first+2:]
 }
 
 func groupByBundle(paths []string) [][]string {
