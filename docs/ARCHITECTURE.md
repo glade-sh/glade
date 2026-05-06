@@ -7,8 +7,8 @@ and composed by the CLI.
 
 - `cmd/oaer`: executable entry point.
 - `internal/oaercli`: command routing and user-facing CLI behavior.
-- `internal/apexast`: parser adapter and stable source model over the public
-  `apexfmt` ANTLR parser.
+- `internal/apexast`: parser adapter and stable source model over the local
+  tree-sitter Apex parser module.
 - `internal/apexdocs`: public Apex documentation inventory extraction, diffing,
   and stable JSON generation for the broad support catalog.
 - `internal/config`: `oaer.yml` discovery and parsing.

@@ -1,11 +1,14 @@
 # Post-Parity Todo
 
-Status date: 2026-05-02.
+Status date: 2026-05-06.
 
 This is the follow-on work after `docs/FEATURE_PARITY_TODO.md` is complete.
 It assumes `oaer` can already parse, check, and run real Apex tests with
 credible SObject, SOQL, DML, trigger, async, limit, fixture, server, LSP, DAP,
 and compatibility behavior.
+
+The squad-oriented implementation plan for full local Apex test execution lives
+in `docs/LOCAL_APEX_TEST_EXECUTION_PLAN.md`.
 
 Every item in Part I is intended to be additive to the initial parity todo. If a
 topic overlaps a parity area, this document only tracks the next layer needed by
@@ -36,15 +39,25 @@ selected platform namespaces. These are not required for the core Apex runtime
 to be useful, but they block projects that mix modern Apex tests with legacy UI
 and declarative automation.
 
-The motivating audit targets are large old projects:
+Current checked status:
 
-- `example-projects/beta-pkg-develop`: roughly 2,899 Apex classes, 65
+- The server-example support gate is green:
+  `pass=101 fail=0 unsupported=0 missing=0`.
+- The broader post-parity readiness inventory is not green. A May 6, 2026
+  `oaer compat post-parity --json` run reported 51,482 files scanned, 41,532
+  findings, 41,532 test-blocking findings, and 19 surfaces.
+- Treat this document as the source for broad local-test support beyond the
+  green server-example harness.
+
+The motivating audit targets are anonymized large old projects:
+
+- Corpus A: roughly 2,899 Apex classes, 65
   triggers, 1,390 test-bearing classes, 141 Visualforce pages, 38 Aura
   components, 101 Workflow metadata files, 6 Flow metadata files, 208
   validation rules, 159 custom objects, 1,917 custom fields, 187 layouts, 81
   tabs, 29 web links, 21 permission sets, 8 profiles, 7 remote site settings,
   and 1 named credential.
-- `example-projects/gamma-pkg-develop`: roughly 2,419 Apex classes, 5 triggers,
+- Corpus B: roughly 2,419 Apex classes, 5 triggers,
   1,205 test-bearing classes, 89 Visualforce pages, 133 Visualforce
   components, 13 Aura components, 38 LWC bundles, 65 legacy `.object` files,
   1,140 legacy `.md` custom metadata records, 25 layouts, 11 tabs, 2
@@ -87,7 +100,7 @@ The motivating audit targets are large old projects:
 
 This is the shortest path to running broad legacy-project Apex tests after the
 initial parity todo is complete. It is based on `oaer inspect gaps` output from
-`example-projects/beta-pkg-develop` and `example-projects/gamma-pkg-develop`.
+the anonymized large-project corpus.
 
 The highest-count blockers are not the same as the safest implementation order.
 Load and resolve metadata first. Execute side effects only after the metadata
@@ -152,8 +165,8 @@ Current scanner top blockers:
 
 | Project | Top blockers |
 | --- | --- |
-| `beta-pkg-develop` | Visualforce controller tests: 2,575 findings across 345 files; legacy custom metadata: 2,220 across 198 files; labels: 928 across 238 files; UI metadata: 815 across 559 files; LWC: 357 across 316 files; Aura: 218 across 218 files; files/binary content: 182 across 49 files; resources/`URLFOR`: 131 across 89 files; Apex Metadata API: 102 across 11 files; Workflow: 101 across 101 files. |
-| `gamma-pkg-develop` | Visualforce controller tests: 4,859 findings across 909 files; legacy custom metadata: 4,196 across 1,410 files; labels: 1,438 across 477 files; UI metadata: 657 across 103 files; files/binary content: 343 across 46 files; site/community context: 283 across 90 files; resources/`URLFOR`: 208 across 75 files; LWC: 159 across 143 files; Visualforce components: 133 across 133 files; Auth namespace: 93 across 25 files. |
+| Corpus A | Visualforce controller tests: 2,575 findings across 345 files; legacy custom metadata: 2,220 across 198 files; labels: 928 across 238 files; UI metadata: 815 across 559 files; LWC: 357 across 316 files; Aura: 218 across 218 files; files/binary content: 182 across 49 files; resources/`URLFOR`: 131 across 89 files; Apex Metadata API: 102 across 11 files; Workflow: 101 across 101 files. |
+| Corpus B | Visualforce controller tests: 4,859 findings across 909 files; legacy custom metadata: 4,196 across 1,410 files; labels: 1,438 across 477 files; UI metadata: 657 across 103 files; files/binary content: 343 across 46 files; site/community context: 283 across 90 files; resources/`URLFOR`: 208 across 75 files; LWC: 159 across 143 files; Visualforce components: 133 across 133 files; Auth namespace: 93 across 25 files. |
 
 ## Local Test Running Boundary
 
@@ -269,8 +282,8 @@ project against `oaer` support, not just post-parity work.
   gaps.
 - [x] Add a "top blockers" report that combines unsupported feature count,
   affected files, metadata types, and examples.
-- [x] Add scanner fixtures modeled after `example-projects/beta-pkg-develop`
-  and `example-projects/gamma-pkg-develop` surfaces without requiring
+- [x] Add scanner fixtures modeled after the anonymized large-project corpus
+  surfaces without requiring
   proprietary behavior as an implementation source.
 - [x] Add a text summary generated from project scan results.
 - [x] Add gap output that separates load, resolve, and execute blockers; reserve
@@ -763,8 +776,7 @@ Post-parity support should be earned the same way core parity support is earned:
 with fixtures and dashboards.
 
 - [ ] Add owned legacy enterprise fixture projects modeled after the audited
-  features in `example-projects/beta-pkg-develop` and
-  `example-projects/gamma-pkg-develop`.
+  features in the anonymized large-project corpus.
 - [ ] Add fixture categories:
   - [ ] Visualforce-heavy.
   - [ ] Aura-controller-heavy.

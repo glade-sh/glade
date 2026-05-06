@@ -6,6 +6,8 @@ Compatibility status:
 
 - MVP readiness: not ready.
 - Required MVP capabilities are still partial or unsupported.
+- Checked example-project server support is green:
+  `pass=101 fail=0 unsupported=0 missing=0`.
 - See [`COMPATIBILITY_DASHBOARD.md`](COMPATIBILITY_DASHBOARD.md) and
   [`KNOWN_GAPS.md`](KNOWN_GAPS.md) for generated status.
 

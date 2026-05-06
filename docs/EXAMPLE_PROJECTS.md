@@ -1,6 +1,6 @@
 # Example Project Compatibility Harness
 
-The `oaer compat examples` command inventories real Salesforce projects and reports
+The `oaer compat examples` command inventories local Salesforce-shaped projects and reports
 what OAER supports, what is unsupported, and what blocks progress.
 
 ## Running the Harness
@@ -67,6 +67,17 @@ done
 ```
 
 ## Phase Gate
+
+Current status as of 2026-05-06:
+
+- The server-example execution harness is green across the checked
+  `example-projects` corpus: `pass=101 fail=0 unsupported=0 missing=0`.
+- `oaer compat examples` and `oaer compat post-parity` remain inventory and
+  readiness tools for broader local-test support; they are not the same gate as
+  `server-examples`.
+- Post-parity inventory still reports broad legacy/local-test gaps, especially
+  metadata, UI/controller contracts, declarative automation, and platform
+  namespace surfaces.
 
 Phase 0 is complete when:
 

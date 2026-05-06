@@ -30,9 +30,8 @@ composed by the CLI in `internal/oaercli`.
 - **Language**: Go 1.26
 - **Module**: `github.com/open-aer/oaer`
 - **Key dependencies**:
-  - `github.com/antlr4-go/antlr/v4` — ANTLR runtime for the Apex parser.
-  - `github.com/octoberswimmer/apexfmt` — public Apex grammar and parser
-    (wrapped behind `internal/apexast`).
+  - `github.com/open-aer/apex-parser` — local tree-sitter Apex parser module
+    wrapped behind `internal/apexast`.
   - `modernc.org/sqlite` — pure-Go SQLite for persistent org storage.
 - **Configuration**: `oaer.yml` (minimal YAML-subset parser in
   `internal/config`; only scalar and inline-list values are supported).
@@ -44,7 +43,7 @@ composed by the CLI in `internal/oaercli`.
 | --- | --- |
 | `cmd/oaer` | Executable entry point. |
 | `internal/oaercli` | Command routing, flags, and user-facing CLI behavior. |
-| `internal/apexast` | Parser adapter and stable source model over `apexfmt`/ANTLR. |
+| `internal/apexast` | Parser adapter and stable source model over the local tree-sitter Apex parser module. |
 | `internal/config` | `oaer.yml` discovery and parsing. |
 | `internal/diagnostic` | Shared diagnostic model for parser, semantic analysis, runtime, and CLI. |
 | `internal/project` | SFDX package directory discovery and source file collection. |
@@ -173,21 +172,19 @@ startup, and compat commands.
 
 ## Working Rules
 
-- Current priority, as of 2026-05-03, is Section 8 Local API Server parity and
-  integration gates. The detailed execution plan lives in the active Copilot
-  session plan, but the durable direction is: finish server/API surfaces and
-  compatibility gates before taking on unrelated parser or stdlib depth.
-- Deep core stdlib parity is being developed in separate worktrees. Do not
-  duplicate that work on main. Keep mainline changes focused on integration
-  readiness, server/API behavior, fixtures, capability notes, and generated
-  docs unless a server task needs a small runtime hook.
-- The `data-platform-search-edges` worktree contains a small orthogonal
-  Search/SOSL unsupported-diagnostic slice that can be ported without pulling
-  the full stdlib branch. Port only that slice if needed.
-- Keep the parser cutover out of MVP/server work. The parser proof-of-concept
-  uses a local `github.com/open-aer/apex-parser` replacement and belongs to the
-  cutover documented in `docs/APEX_PARSER_CUTOVER.md`, not incidental feature
-  work.
+- Current priority, as of 2026-05-06, is full local Apex test execution support:
+  make `oaer test` run broad Salesforce-shaped projects with org-like metadata
+  resolution, test isolation, platform APIs, DML/trigger behavior, declarative
+  side effects, and explicit unsupported diagnostics.
+- Use `docs/LOCAL_APEX_TEST_EXECUTION_PLAN.md` for squad-sized implementation
+  phases and `docs/POST_PARITY_TODO.md` for the exhaustive post-parity backlog.
+- The server-example route harness is currently green. Do not add
+  project-specific runtime routes or stdlib stubs for future example-project
+  failures; fix the general parser, sema, VM, SOQL, DML, storage, metadata, or
+  server behavior.
+- Keep the parser behind `internal/apexast`. The current parser module is
+  `github.com/open-aer/apex-parser` with a local replacement; parser cutover
+  details live in `docs/APEX_PARSER_CUTOVER.md`.
 - When moving a capability from `partial` to `supported`, add compatibility
   coverage first.
 - Update generated docs after capability changes:
@@ -203,31 +200,27 @@ go run ./cmd/oaer compat stdlib --output docs/STDLIB_COVERAGE.md
 - Do not stage or commit the built `oaer` binary unless the user explicitly asks
   for a binary update.
 
-### Server/API Parity Work Order
+### Local-Test Execution Work Order
 
-Use this order for Section 8 server/API work unless a later checked-in plan says
-otherwise:
+Use this order for full local Apex test execution unless a later checked-in plan
+supersedes it:
 
-1. Establish a clean baseline with generated-doc checks and focused
-   `internal/server`, `internal/storage`, and `internal/oaercli` tests.
-2. Port Search/SOSL unsupported diagnostics, if still absent, without importing
-   broad stdlib changes.
-3. Centralize Salesforce-shaped server error arrays and status-code mapping.
-4. Add deterministic local auth and user-context stubs without claiming full
-   OAuth security.
-5. Harden mutating request transactions so CRUD, Tooling executeAnonymous,
-   Composite, fixture load, reset, persistence, and rollback all use one
-   clone/execute/persist/commit discipline.
-6. Expand resource discovery, SObject REST response shapes, Tooling stubs, and
-   Composite behavior in small covered slices.
-7. Add black-box server compatibility fixtures before changing capability
-   status or checking off parity tasks.
-8. Reconcile `docs/FEATURE_PARITY_TODO.md`, `internal/capability`, generated
-   docs, and release notes before each phase commit.
-
-Treat unsupported large surfaces, such as full Composite Graph or Bulk API, as
-explicit unsupported responses until fixtures prove local behavior. A clean
-unsupported answer is better than a shallow fake.
+1. Add a local-test compatibility gate that reports per-test pass, fail,
+   unsupported, load error, compile error, and internal error outcomes.
+2. Load read-only metadata needed by tests: legacy objects, custom metadata
+   records, labels, resources, endpoint metadata, permissions, layouts, tabs,
+   and related presentation metadata.
+3. Implement test-facing UI controller contracts without rendering UI:
+   Visualforce page metadata, `Page.*`, `PageReference`, `ApexPages`, standard
+   controllers, extensions, Aura Apex discovery, and LWC Apex imports.
+4. Implement test-visible platform APIs: `System.Callable`,
+   `System.StubProvider`, `Test.createStub`, Site/Network context, `Auth.*`,
+   `ConnectApi.Organization.getSettings`, Platform Cache basics, and endpoint
+   resolution.
+5. Add files, email, and captured side effects with transaction rollback.
+6. Add Workflow and Flow side effects inside the DML/test transaction.
+7. Add corpus baselines and release gates for `legacy-project-test-ready` and
+   `declarative-automation-test-ready`.
 
 ## MVP Gate and Capability System
 
@@ -252,8 +245,11 @@ generated docs are in sync.
 - `docs/COMPATIBILITY_DASHBOARD.md`, `docs/KNOWN_GAPS.md`, and
   `docs/STDLIB_COVERAGE.md` — generated from `internal/capability`.
 - `docs/FEATURE_PARITY_TODO.md` — remaining parity work.
-- `docs/OAER_IMPLEMENTATION_PLAN.md` and `docs/OPEN_AER_PLAN.md` — roadmap and
-  historical context; keep stale package names out of these files.
+- `docs/POST_PARITY_TODO.md` — exhaustive backlog for large-project local test
+  execution beyond MVP parity.
+- `docs/LOCAL_APEX_TEST_EXECUTION_PLAN.md` — squad-oriented implementation
+  phases for full local Apex test execution.
+- `docs/APEX_PARSER_CUTOVER.md` — local parser module status and validation.
 - `docs/RELEASE_NOTES.md` — ongoing release log.
 - `docs/RELEASE_POLICY.md` — release promotion and upgrade policy.
 - `docs/EDITOR.md` — VS Code tasks, DAP launch examples, and LSP wiring.

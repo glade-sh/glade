@@ -1,11 +1,19 @@
 # Feature Parity Todo
 
-Status date: 2026-05-02.
+Status date: 2026-05-06.
 
 This is the remaining work to get `oaer` to credible feature parity with aer,
 then beyond it. The current baselines are broad, but `oaer compat mvp` is still
 expected to report not ready until every required capability is supported and
 covered by compatibility fixtures.
+
+Current checked status:
+
+- `oaer compat mvp --json`: not ready; 4 of 21 required capabilities are
+  supported and 17 remain partial.
+- `oaer compat server-examples --json`: `pass=101 fail=0 unsupported=0
+  missing=0`.
+- Generated compatibility docs are in sync with `internal/capability`.
 
 Parity means a local Apex development loop that can run real project tests,
 execute anonymous Apex, support schema-aware SObjects/SOQL/DML/triggers,

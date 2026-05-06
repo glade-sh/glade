@@ -47,9 +47,9 @@ The updated local parser module matches the former `apexfmt` adapter across the
 checked example projects:
 
 ```text
-example-projects/gamma-pkg-develop:      2424 files, 2424 matched, 0 mismatches
-example-projects/beta-pkg-develop:       2963 files, 2963 matched, 0 mismatches
-example-projects/delta-pkg-develop:       135 files, 135 matched, 0 mismatches
+large-example-corpus-a:                  2424 files, 2424 matched, 0 mismatches
+large-example-corpus-b:                  2963 files, 2963 matched, 0 mismatches
+small-example-corpus:                     135 files, 135 matched, 0 mismatches
 ```
 
 It also matches the checked replay bundle used during cutover:
@@ -113,7 +113,7 @@ go test -count=1 ./...
 Run project-level smoke checks from `oaer`:
 
 ```sh
-go run ./cmd/oaer check --project example-projects/delta-pkg-develop --json
+go run ./cmd/oaer check --project path/to/project --json
 go run ./cmd/oaer compat replay testdata/replay/selector-service-domain
 scripts/smoke.sh
 ```
