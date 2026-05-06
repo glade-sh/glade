@@ -90,17 +90,25 @@ oaer db export --db .oaer/local-org.sqlite > exported-fixture.json
 ```
 
 The running server exposes fixture and reset endpoints under the REST version
-path. Full reset remains `POST /services/data/v61.0/oaer/reset`. Scoped resets
+path. Full reset remains `POST /services/data/v65.0/oaer/reset`. Scoped resets
 can target only data or platform state:
 
 ```bash
-curl -s -X POST http://127.0.0.1:8080/services/data/v61.0/oaer/reset/data
-curl -s -X POST 'http://127.0.0.1:8080/services/data/v61.0/oaer/reset?scope=users,limits,async'
+curl -s -X POST http://127.0.0.1:8080/services/data/v65.0/oaer/reset/data
+curl -s -X POST 'http://127.0.0.1:8080/services/data/v65.0/oaer/reset?scope=users,limits,async'
 ```
 
 Use `oaer db inspect --json` before and after mutating server requests as the
 basic operational check. Counts should change after successful mutations and
 stay fixed after failed mutations.
+
+The local API server accepts missing `Authorization` headers and local
+`Authorization: Bearer ...` values without validating OAuth tokens. Use the
+`X-OAER-User-Id` header only to select an existing local `User` record for test
+requests. Direct REST DML uses that local user for system field stamping;
+Tooling `executeAnonymous` still uses the VM's local default user context. Do
+not expose `oaer server` to untrusted networks without an authenticating reverse
+proxy.
 
 ## Homebrew
 

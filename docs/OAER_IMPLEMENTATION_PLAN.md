@@ -1024,15 +1024,18 @@ Goal: expose local data and execution through Salesforce-shaped endpoints.
 
 Effort: L.
 
-Current status as of 2026-05-02: complete for the Phase 15 baseline.
+Current status as of 2026-05-03: complete for the Phase 15 baseline plus the
+Section 8 local API server parity slice.
 `internal/server` provides an HTTP handler backed by `storage.OrgState`,
 `internal/dml`, `internal/soql`, and the VM. It supports `/services/data`,
-sObject CRUD, normal REST JSON payload decoding, `query`/`queryAll`,
-describe/recent, limits, OAuth userinfo and `/id` stubs, Tooling
-`executeAnonymous`, Tooling query delegation, composite sObject insert,
-Salesforce-shaped error arrays, OAER fixture/reset endpoints, and optional
-SQLite persistence through `oaer server --db`. Full auth, Tooling object
-coverage, Composite Graph, Bulk API, broader REST resources, and exact error
+sObject CRUD with normal REST JSON payload decoding and explicit nulls,
+`query`/`queryAll` with REST-shaped record attributes, describe/recent, limits,
+OAuth userinfo and `/id` stubs with local user selection, Tooling
+`executeAnonymous`, local-object Tooling queries, composite sObject insert with
+reference IDs, partial success, and all-or-none rollback, Salesforce-shaped
+error arrays, OAER fixture/reset endpoints, and optional SQLite persistence
+through `oaer server --db`. Full auth, unmodeled Tooling objects, Composite
+Graph/batch, Bulk API, broader REST resources, layout metadata, and exact error
 fidelity remain incomplete.
 
 ### Deliverables

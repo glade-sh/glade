@@ -134,6 +134,36 @@ func defaultProbeIDs() []string {
 		"collections.set-contains-null",
 		"collections.list-indexof-null",
 		"collections.map-remove-null",
+		// Async Apex
+		"async.future-stub",
+		"async.queueable-stub",
+		"async.batchable-stub",
+		"async.schedulable-stub",
+		// Platform Events
+		"platform-event.publish",
+		"platform-event.describe",
+		// Metadata
+		"metadata.custom-metadata-query",
+		"metadata.custom-setting-query",
+		"metadata.custom-metadata-describe",
+		// Email & Messaging
+		"email.single-message",
+		"email.limits",
+		// Schema Describe
+		"schema.global-describe-size",
+		"schema.object-describe-fields",
+		"schema.picklist-describe",
+		"schema.record-type-describe",
+		// Security & Sharing
+		"security.user-info",
+		"security.profile-name",
+		"security.crud-check",
+		"security.fls-check",
+		// Integration
+		"integration.http-request",
+		"integration.json-serialize-complex",
+		"integration.json-deserialize-untyped",
+		"integration.encoding-util",
 	}
 }
 

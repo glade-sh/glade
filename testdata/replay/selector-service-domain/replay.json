@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "name": "selector-service-domain",
+  "description": "Small owned replay bundle for project check readiness.",
+  "project": {
+    "root": ".",
+    "sourceApiVersion": "65.0"
+  },
+  "environment": {
+    "clock": "2026-01-01T00:00:00Z",
+    "userId": "005000000000001AAA",
+    "limitMode": "strict"
+  },
+  "steps": [
+    {
+      "name": "check",
+      "kind": "check",
+      "expect": "expected/check.json"
+    }
+  ]
+}

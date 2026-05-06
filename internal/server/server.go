@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"mime"
 	"net/http"
 	"net/http/httptest"
@@ -64,15 +65,18 @@ type apiVersionEntry struct {
 	URL     string `json:"url"`
 }
 
-var localAPIVersions = []apiVersionEntry{
-	{Version: "61.0", Label: "Summer '24", URL: "/services/data/v61.0"},
-}
-
 const localOAuthUnsupportedMessage = "Full OAuth flows and token issuance are not implemented by the local server; use deterministic local user stubs via /services/oauth2/userinfo, /id/{org}/{user}, X-OAER-User-Id, or Authorization: Bearer <userId>"
 
 const apexRestUnsupportedMessage = "Apex @RestResource dispatch is not implemented in the local server"
 
 var apexRestAllowedMethods = []string{http.MethodGet, http.MethodPost, http.MethodPatch, http.MethodPut, http.MethodDelete}
+
+func (s *Server) advertisedRESTAPIVersion() string {
+	if s != nil && s.Org != nil {
+		return storage.EffectiveRESTAPIVersion(s.Org.APIVersion)
+	}
+	return storage.DefaultRESTAPIVersion
+}
 
 type resetScopeInfo struct {
 	Name        string `json:"name"`
@@ -182,7 +186,7 @@ func (s *Server) serveHTTPLocked(w http.ResponseWriter, r *http.Request) {
 			writeMethodNotAllowed(w, http.MethodGet)
 			return
 		}
-		writeJSON(w, http.StatusOK, apiVersionDiscoveryPayload())
+		writeJSON(w, http.StatusOK, s.apiVersionDiscoveryPayload())
 		return
 	}
 	if len(parts) >= 2 && parts[0] == "services" && parts[1] == "apexrest" {
@@ -1143,7 +1147,7 @@ func versionFromRequest(r *http.Request) string {
 	if len(parts) >= 3 && parts[0] == "services" && parts[1] == "data" {
 		return parts[2]
 	}
-	return localAPIVersions[0].Version
+	return "v" + storage.DefaultRESTAPIVersion
 }
 
 func resetScopeSupport() []resetScopeInfo {
@@ -2881,6 +2885,14 @@ func (s *Server) handleCompositeSObjectTypedUpsert(w http.ResponseWriter, r *htt
 			referenceID = attrs.ReferenceID
 			delete(raw, "attributes")
 		}
+		if topLevelReferenceID, ok := decodeCompositeTopLevelReferenceID(w, raw, i); ok {
+			if topLevelReferenceID != "" {
+				referenceID = topLevelReferenceID
+			}
+			delete(raw, "referenceId")
+		} else {
+			return
+		}
 		record, err := recordFromRawFields(objectName, "", raw)
 		if err != nil {
 			writeSalesforceError(w, errMalformedJSON, err.Error())
@@ -2947,6 +2959,14 @@ func decodeCompositeSObjectBody(w http.ResponseWriter, r *http.Request, requireI
 			referenceID = attrs.ReferenceID
 			delete(raw, "attributes")
 		}
+		if topLevelReferenceID, ok := decodeCompositeTopLevelReferenceID(w, raw, i); ok {
+			if topLevelReferenceID != "" {
+				referenceID = topLevelReferenceID
+			}
+			delete(raw, "referenceId")
+		} else {
+			return compositeSObjectBody{}, false
+		}
 		if objectName == "" {
 			writeSalesforceError(w, errRequiredFieldMissing, "attributes.type is required")
 			return compositeSObjectBody{}, false
@@ -2973,6 +2993,24 @@ func decodeCompositeSObjectBody(w http.ResponseWriter, r *http.Request, requireI
 		body.ReferenceIDs = append(body.ReferenceIDs, referenceID)
 	}
 	return body, true
+}
+
+func decodeCompositeTopLevelReferenceID(w http.ResponseWriter, raw map[string]json.RawMessage, recordIndex int) (string, bool) {
+	rawReferenceID, ok := raw["referenceId"]
+	if !ok {
+		return "", true
+	}
+	var referenceID string
+	if err := json.Unmarshal(rawReferenceID, &referenceID); err != nil {
+		writeSalesforceError(w, errMalformedJSON, fmt.Sprintf("records[%d].referenceId must be a string", recordIndex))
+		return "", false
+	}
+	referenceID = strings.TrimSpace(referenceID)
+	if referenceID == "" {
+		writeSalesforceError(w, errRequiredFieldMissing, fmt.Sprintf("records[%d].referenceId is required when provided", recordIndex))
+		return "", false
+	}
+	return referenceID, true
 }
 
 type compositeSObjectAttributes struct {
@@ -3352,6 +3390,9 @@ func storageValueFromJSON(value any) storage.Value {
 	case bool:
 		return storage.BooleanValue(v)
 	case float64:
+		if math.Trunc(v) != v {
+			return storage.DecimalValue(strconv.FormatFloat(v, 'f', -1, 64))
+		}
 		return storage.IntegerValue(int64(v))
 	case []any:
 		values := make([]storage.Value, 0, len(v))
@@ -3403,7 +3444,7 @@ func writeDMLFailure(w http.ResponseWriter, result dml.Result) {
 		if message == "" {
 			message = result.Error
 		}
-		errors = append(errors, salesforceError{ErrorCode: code, Message: message})
+		errors = append(errors, salesforceError{ErrorCode: code, Message: message, Fields: append([]string(nil), err.Fields...)})
 	}
 	writeJSON(w, http.StatusBadRequest, errors)
 }
@@ -3677,6 +3718,7 @@ func describeFieldPayload(field storage.Field) map[string]any {
 		"name":             field.APIName,
 		"label":            labelOrFallback(field.Label, field.APIName),
 		"type":             string(field.Type),
+		"length":           describeFieldLength(field),
 		"nillable":         nillable,
 		"createable":       createable,
 		"updateable":       updateable,
@@ -3688,6 +3730,17 @@ func describeFieldPayload(field storage.Field) map[string]any {
 		"referenceTo":      referenceTo,
 		"relationshipName": field.RelationshipName,
 		"picklistValues":   describePicklistValues(field.PicklistValues),
+	}
+}
+
+func describeFieldLength(field storage.Field) int {
+	switch field.Type {
+	case storage.FieldString, storage.FieldPicklist, storage.FieldID, storage.FieldReference:
+		return 255
+	case storage.FieldBlob:
+		return 0
+	default:
+		return 0
 	}
 }
 
@@ -4615,10 +4668,13 @@ func resourceDiscoveryPayload(version string) map[string]string {
 	}
 }
 
-func apiVersionDiscoveryPayload() []apiVersionEntry {
-	out := make([]apiVersionEntry, len(localAPIVersions))
-	copy(out, localAPIVersions)
-	return out
+func (s *Server) apiVersionDiscoveryPayload() []apiVersionEntry {
+	adv := s.advertisedRESTAPIVersion()
+	return []apiVersionEntry{{
+		Version: adv,
+		Label:   "OAER Local API v" + adv,
+		URL:     "/services/data/v" + adv,
+	}}
 }
 
 func unsupportedRESTNamespaceMessage(namespace string) (string, bool) {

@@ -6,8 +6,9 @@ import (
 )
 
 type salesforceError struct {
-	ErrorCode string `json:"errorCode"`
-	Message   string `json:"message"`
+	ErrorCode string   `json:"errorCode"`
+	Message   string   `json:"message"`
+	Fields    []string `json:"fields,omitempty"`
 }
 
 type serverErrorKind string

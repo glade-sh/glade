@@ -56,8 +56,8 @@ The machine-readable report contains, per project:
 
 ## Example Projects
 
-The `example-projects/` directory contains real Salesforce applications used to
-derive the compatibility plan. Run the harness against them:
+The `example-projects/` directory contains local compatibility projects used to
+derive the support plan. Run the harness against them:
 
 ```bash
 for dir in example-projects/*; do

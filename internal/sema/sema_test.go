@@ -711,6 +711,32 @@ public class Hello {
 	}
 }
 
+func TestAnalyzeSearchAndSOSLUnsupportedDiagnostics(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public void run() {
+    Search.find('FIND {Acme} IN ALL FIELDS RETURNING Account(Id)');
+    Object rows = [FIND 'Acme' IN ALL FIELDS RETURNING Account(Id)];
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "Hello.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	count := 0
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "OAERSEMA028" && strings.Contains(diag.Message, "unsupported local") {
+			count++
+		}
+	}
+	if count != 2 {
+		t.Fatalf("OAERSEMA028 count = %d diagnostics=%#v", count, result.Diagnostics)
+	}
+}
+
 func TestAnalyzeIRBodyConstructorCalls(t *testing.T) {
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Helper.cls"), `

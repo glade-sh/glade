@@ -195,12 +195,12 @@ oaer server --db .oaer/local-org.sqlite --addr 127.0.0.1:8080
 Server-side OAER endpoints mirror the fixture lifecycle:
 
 ```bash
-curl -s -X GET  http://127.0.0.1:8080/services/data/v61.0/oaer/fixture
-curl -s -X POST http://127.0.0.1:8080/services/data/v61.0/oaer/fixture \
+curl -s -X GET  http://127.0.0.1:8080/services/data/v65.0/oaer/fixture
+curl -s -X POST http://127.0.0.1:8080/services/data/v65.0/oaer/fixture \
   -H 'content-type: application/json' --data @fixtures/base-org.json
-curl -s -X POST http://127.0.0.1:8080/services/data/v61.0/oaer/reset
-curl -s -X POST http://127.0.0.1:8080/services/data/v61.0/oaer/reset/data
-curl -s -X POST 'http://127.0.0.1:8080/services/data/v61.0/oaer/reset?scope=users,limits,async'
+curl -s -X POST http://127.0.0.1:8080/services/data/v65.0/oaer/reset
+curl -s -X POST http://127.0.0.1:8080/services/data/v65.0/oaer/reset/data
+curl -s -X POST 'http://127.0.0.1:8080/services/data/v65.0/oaer/reset?scope=users,limits,async'
 ```
 
 `/oaer/reset` with no scope performs the full deterministic reset. Scoped resets

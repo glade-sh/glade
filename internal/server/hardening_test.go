@@ -12,11 +12,11 @@ func TestNoPanicOnMalformedServerRequests(t *testing.T) {
 	handler := New(&org)
 	requests := []*http.Request{
 		httptest.NewRequest(http.MethodGet, "/not-salesforce", nil),
-		httptest.NewRequest(http.MethodPost, "/services/data/v61.0/sobjects/Account", strings.NewReader("{")),
-		httptest.NewRequest(http.MethodPatch, "/services/data/v61.0/sobjects/Account/bad-id", strings.NewReader(`{"Name":"Acme"}`)),
-		httptest.NewRequest(http.MethodGet, "/services/data/v61.0/query?q=SELECT", nil),
-		httptest.NewRequest(http.MethodPost, "/services/data/v61.0/tooling/executeAnonymous", strings.NewReader(`{"anonymousBody":"System.debug("}`)),
-		httptest.NewRequest(http.MethodPost, "/services/data/v61.0/oaer/fixture", strings.NewReader(`{"version":"wrong"}`)),
+		httptest.NewRequest(http.MethodPost, "/services/data/v65.0/sobjects/Account", strings.NewReader("{")),
+		httptest.NewRequest(http.MethodPatch, "/services/data/v65.0/sobjects/Account/bad-id", strings.NewReader(`{"Name":"Acme"}`)),
+		httptest.NewRequest(http.MethodGet, "/services/data/v65.0/query?q=SELECT", nil),
+		httptest.NewRequest(http.MethodPost, "/services/data/v65.0/tooling/executeAnonymous", strings.NewReader(`{"anonymousBody":"System.debug("}`)),
+		httptest.NewRequest(http.MethodPost, "/services/data/v65.0/oaer/fixture", strings.NewReader(`{"version":"wrong"}`)),
 	}
 	for _, request := range requests {
 		assertNoPanic(t, func() {

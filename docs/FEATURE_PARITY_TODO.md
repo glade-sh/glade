@@ -46,8 +46,6 @@ a Salesforce-shaped local API server without silently wrong behavior.
   blockers.
 - [ ] Treat silent wrong behavior as a release blocker for any supported
   feature.
-- [x] Auto-register `docs/fixtures/*.json` in `internal/compat` tests so
-  parallel fixture additions no longer collide in one-off test functions.
 
 ## 1. Apex Front End
 
@@ -175,11 +173,6 @@ a Salesforce-shaped local API server without silently wrong behavior.
 - [x] Normalize `System.*Exception` names against unqualified Apex catch types.
 - [x] Preserve original throw stacks across catch/rethrow and expose
   `getTypeName`, `getLineNumber`, and `getStackTraceString`.
-- [x] Fence `Exception.initCause`/`getCause` with one-shot local cause storage,
-  receiver return, null-cause preservation, and catchable repeat/self-cause
-  errors.
-- [x] Normalize `System.*Exception` display methods so `getTypeName` strips the
-  namespace and `toString` keeps Salesforce-shaped `System.Type: message` text.
 - [x] Complete control-flow edge cases for loops, `switch`, `break`,
   `continue`, `return`, `finally`, and exception unwinding.
 - [x] Cover `finally` execution across return, return override, and uncaught
@@ -224,8 +217,8 @@ a Salesforce-shaped local API server without silently wrong behavior.
   test modes.
 - [x] Complete broader `System.runAs` permission, sharing, and mixed-DML
   enforcement for supported modes.
-- [x] Scope `FeatureManagement.checkPermission` to supported current user and
-  `runAs` user permission lists, enforce mixed-DML guards, and pin local tests to
+- [x] Scope `FeatureManagement.checkPermission` to supported `runAs` user
+  permission lists, enforce mixed-DML guards, and pin local tests to
   system-sharing mode.
 - [x] Implement `@future` execution and stopTest drain behavior.
 - [x] Implement Batchable execution, batch chunking, finish behavior, and
@@ -240,19 +233,6 @@ a Salesforce-shaped local API server without silently wrong behavior.
   async-heavy, describe-heavy, and namespace-heavy projects.
 - [x] Add an async-heavy compatibility test fixture that covers future, batch,
   schedule, chained Queueable, `AsyncApexJob`, and `CronTrigger` behavior.
-- [x] Pin unsupported `AsyncOptions` mutator/accessor calls with typed
-  diagnostics and black-box fixture coverage.
-- [x] Pin unsupported queueable finalizer registration/context getters with
-  typed diagnostics and black-box fixture coverage.
-- [x] Support local `System.abortJob` for queued Queueable/Scheduled test jobs
-  before `Test.stopTest`, with typed diagnostics for completed/unknown aborts.
-- [x] Reflect local async drain kind through `System.isFuture`,
-  `System.isQueueable`, `System.isBatch`, and `System.isScheduled` while keeping
-  finalizers and AsyncInfo fenced as unsupported surfaces.
-- [x] Close the small-platform Async/System row split: local async job records
-  and queued-job aborts are supported for the test-drain model, while
-  scheduleBatch, completed/unknown aborts, broader lifecycle controls,
-  AsyncOptions, AsyncInfo, and finalizers remain unsupported fences.
 
 ## 4. SObjects, SOQL, DML, And Triggers
 
@@ -273,12 +253,6 @@ a Salesforce-shaped local API server without silently wrong behavior.
     `DescribeSObjectResult.getRecordTypeInfos`,
     `getRecordTypeInfosByName`, `getRecordTypeInfosByDeveloperName`, and common
     `RecordTypeInfo` methods with deterministic local record type IDs.
-  - [x] Return SObjectType tokens from `Schema.getGlobalDescribe()` and accept
-    both object names and tokens in `Schema.describeSObjects(...)`.
-  - [x] Promote local `DescribeFieldResult` and `DescribeSObjectResult` rows for
-    the supported storage/schema model.
-  - [x] Fence unmodeled field sets and dependent picklist controller metadata
-    with stable `UnsupportedFeature` diagnostics and separate unsupported rows.
 - [x] Expand static SOQL parsing/execution with `AND`/`OR`, `IN`/`NOT IN`,
   `LIKE`, comparison operators, `NOT`, and parenthesized conditions.
   - **Limitation**: Apex compiler does not support chained method calls
@@ -307,8 +281,6 @@ a Salesforce-shaped local API server without silently wrong behavior.
     `SUM`, `MIN`, `MAX`, and `AVG` with `AggregateResult.exprN` fields.
   - [x] Support `GROUP BY`, `HAVING` on aggregate expressions, grouped field
     projection, and grouped result ordering/limits for aggregate rows.
-  - [x] Allow `HAVING` to filter on unselected aggregate expressions without
-    leaking hidden aggregate values into `AggregateResult` rows.
   - [x] Support aggregate aliases on `AggregateResult` rows while preserving
     `exprN` fields.
   - [x] Support `ROLLUP`, `CUBE`, and `GROUPING(field)` subtotal metadata.
@@ -324,32 +296,23 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Support explicit `NULLS FIRST` and `NULLS LAST` ordering modifiers.
   - [x] Support `FIELDS(ALL)`, `FIELDS(STANDARD)`, and `FIELDS(CUSTOM)` field
     projection expansion.
-  - [x] Validate schema-backed SOQL field references across `SELECT`, `WHERE`,
-    `HAVING`, `ORDER BY`, aggregate ordering, child subqueries, and parent
-    relationship paths before execution.
-  - [x] Validate aggregate aliases, grouped-field consistency, and numeric
-    field requirements before aggregate execution.
   - [x] Parse and execute `FOR UPDATE` as a local lock marker.
   - [x] Support `ALL ROWS` queries that include soft-deleted records.
   - [x] Parse and execute `WITH SECURITY_ENFORCED`, `WITH USER_MODE`, and
     `WITH SYSTEM_MODE` as local security-mode markers.
   - [x] Support baseline `TYPEOF` relationship projection for parent lookup
     branches.
-  - [x] Treat formula-backed calculated fields as query-readable local record
-    fields while leaving formula evaluation out of scope.
-  - **Limitation**: Full formula expression evaluation remains incomplete.
+  - **Limitation**: Formula-adjacent predicate behavior remains incomplete.
 - [x] Add SOQL features commonly used by real projects: security enforcement,
   lock contention behavior, and advanced query row shape fidelity.
-  - [x] Validate projected fields, predicates, ordering fields, and parent
-    relationship paths for `WITH SECURITY_ENFORCED`, `WITH USER_MODE`, and
-    `WITH SYSTEM_MODE` queries and return catchable `QueryException`s for
-    unavailable fields, including relationship fields that are not present on
-    every configured parent target.
+  - [x] Validate projected fields for `WITH SECURITY_ENFORCED`, `WITH USER_MODE`,
+    and `WITH SYSTEM_MODE` queries and return catchable `QueryException`s for
+    unavailable fields.
   - [x] Mark `FOR UPDATE` result records with a local lock marker and serialize
     queried SObjects with `attributes.type` and `attributes.url`.
   - [x] Return catchable `QueryException`s when `FOR UPDATE` hits an already
     locked local row.
-  - **Limitation**: Security enforcement is local field-availability validation rather
+  - **Limitation**: Security enforcement is local projection validation rather
     than full CRUD/FLS/sharing enforcement.
 - [x] Wire SQLite planning or indexed execution where needed without changing
   Salesforce-visible behavior.
@@ -360,8 +323,7 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Support soft delete visibility and undelete restoration for VM/SOQL
     paths.
   - [x] Support baseline `merge` statement and `Database.merge` execution with
-    duplicate soft delete, child lookup reparenting, and `MergeResult` shape
-    including `getUpdatedRelatedIds()`.
+     duplicate soft delete, child lookup reparenting, and `MergeResult` shape.
   - [x] Fire supported merge trigger hooks for master `before/after update` and
     duplicate `before/after delete` contexts with rollback on trigger errors.
   - [x] Run after-trigger contexts only for rows that survive partial-success
@@ -369,30 +331,11 @@ a Salesforce-shaped local API server without silently wrong behavior.
 - [x] Improve `Database.insert/update/delete/upsert/undelete` result fidelity
   with structured `Database.Error` objects carrying `statusCode`, `message`, and
   `fields` arrays; add `Database.UpsertResult.isCreated()`.
-  - [x] Cover common accessor parity across `SaveResult`, `DeleteResult`,
-    `UpsertResult`, `MergeResult`, `UndeleteResult`, `EmptyRecycleBinResult`,
-    `LockResult`, and `UnlockResult`, including empty extended-error details for
-    local `Database.Error` values.
   - [x] Preserve multiple object-level and field-level `addError` calls as
     multiple `Database.Error` entries on `SaveResult`/`MergeResult`.
-  - [x] Align locally modeled required-field, duplicate-value, and validation-rule
-    details across `Database.Error` accessors and `DmlException` detail methods
-    (`getNumDml`, `getDmlStatusCode`, `getDmlMessage`, `getDmlFields`,
-    `getDmlId`, and `getDmlIndex`) for all-or-none failures.
   - [x] Cascade soft-delete child records from relationship metadata.
-  - [x] Return `ENTITY_IS_NOT_DELETED` SaveResult details when undeleting active
-    records.
-  - [x] Return `ENTITY_IS_NOT_IN_RECYCLE_BIN` EmptyRecycleBinResult error details
-    when emptying active rows.
-  - [x] Preserve `Database.undelete(..., false)` mixed-row result alignment for
-    deleted, active, missing, and ID/object-mismatched rows, with `allOrNone`
-    rollback on later undelete failures.
-  - [x] Carry merge loser IDs from the DML engine into
-    `MergeResult.getMergedRecordIds()`, including partial-success list results.
-  - [x] Promote remaining local-model Database row-action coverage for
-    `emptyRecycleBin`, `lock`/`unlock`, `merge`, `undelete`, `upsert`,
-    `getQueryLocator`, `setSavepoint`, and `rollback` with fixture-backed
-    result/accessor behavior and precise platform-lifecycle fences.
+  - **Limitation**: Full merge loser relationship result details and full
+    undelete edge-case parity remain incomplete.
   - **Limitation**: The VM `Database.Error` shape covers the most common status
     codes; full Salesforce status-code parity is not yet complete.
 - [x] Complete external-ID upsert and ID/object mismatch behavior.
@@ -404,8 +347,6 @@ a Salesforce-shaped local API server without silently wrong behavior.
   behavior, and relationship constraints where representable locally.
   - [x] Enforce required/unknown fields, unique fields, lookup reference
     existence, and restricted-delete lookup constraints.
-  - [x] Reject DML writes and explicit nulls to formula-backed calculated fields
-    with `INVALID_FIELD_FOR_INSERT_UPDATE` result shaping.
   - [x] Load and enforce simple Metadata API validation rules with stable
     `FIELD_CUSTOM_VALIDATION_EXCEPTION` error shaping.
   - **Limitation**: Complex validation-rule formulas, owner/sharing side effects,
@@ -453,8 +394,6 @@ a Salesforce-shaped local API server without silently wrong behavior.
   DML paths.
   - [x] Count cascade-deleted child records toward `Limits.getDmlRows()` for
     supported relationship metadata.
-  - [x] Accept documented `Limits.getDML*` getter casing aliases backed by the
-    same tracked DML statement and row counters.
 - [x] Improve heap size approximation and expose predictable diagnostics for
   unsupported heap fidelity.
   - [x] Recompute deterministic live heap usage after statements so mutated
@@ -473,273 +412,57 @@ a Salesforce-shaped local API server without silently wrong behavior.
     future calls, queueable jobs, and email invocations with max values.
   - [x] Expose supported public `Limits` getters for batch and scheduled jobs
     with max values.
-  - [x] Split the broad `Limits.get*` capability row into fixture-backed modeled
-    getter support and explicit unsupported rows for unmodeled platform counters.
 - [x] Add configurable strict/permissive limit modes for CLI, tests, server,
   and compatibility fixtures.
   - [x] Wire `--limit-mode` through `oaer exec`, `oaer test`, and `oaer server`
     Tooling `executeAnonymous`.
   - [x] Add `limitMode` support for compatibility exec/test fixtures.
-  - [x] Pin savepoint rollback `Limits` getters as explicit unsupported
-    diagnostics until rollback-specific accounting and caps are modeled.
-  - [x] Pin publish-immediate DML `Limits` getters as explicit unsupported
-    diagnostics until platform event publish accounting and caps are modeled.
 - [x] Complete `System`, `Test`, `Database`, `Schema`, `Limits`, and `JSON`
   APIs used by enterprise tests.
-  - [x] Promote deterministic System clock helpers and local async context flags
-    with compatibility fixture evidence.
-  - [x] Promote `Test.getStandardPricebookId`, `Test.startTest`, and
-    `Test.stopTest` for the supported local test/drain model; keep broader mock
-    surfaces partial or unsupported with typed diagnostics.
-  - [x] Close the small-platform `Test.setMock` row split: local
-    `HttpCalloutMock` registration is supported, while non-HTTP mock interfaces
-    remain explicit unsupported fences.
-  - [x] Promote fixture-backed custom metadata and list custom setting
-    `getAll/getInstance`; fence hierarchy custom setting merge behavior as an
-    explicit unsupported data seam.
   - [x] Add common JSON overloads for `serialize(value, suppressApexObjectNulls)`,
     `serializePretty`, and `deserializeStrict`.
-  - [x] Reject duplicate object fields in `JSON.deserializeStrict` before typed
-    mapping.
-  - [x] Reject unknown SObject fields in `JSON.deserializeStrict` with catchable
-    `JSONException` while preserving non-strict `JSON.deserialize` behavior.
-  - [x] Map JSON.deserialize SObject fields through local schema field types for
-    Date, Datetime, numeric, Boolean, Id, and reference edges.
-  - [x] Map `JSON.deserialize` typed `Set<T>` targets and nested
-    `List`/`Map`/`Set` collection graphs, including typed null elements and
-    catchable `JSONException` mapping failures.
-  - [x] Map registered Apex class JSON fields through inherited field metadata,
-    nested object/list/map/set field types, and default missing field slots.
-  - [x] Register source-backed Apex DTO classes for auto-discovered exec
-    fixtures so typed JSON deserialize/strict and serialize roundtrips cover
-    inherited fields, properties, nested DTO collections, and missing defaults.
-  - [x] Reject `JSONGenerator.writeFieldName(...)` inside arrays with catchable
-    `JSONException` while preserving array writes after the failed call.
-  - [x] Reject `JSONGenerator.writeEndObject()` inside arrays with catchable
-    `JSONException` while preserving array writes after the failed call.
-  - [x] Reject `JSONGenerator.writeEndArray()` inside objects with catchable
-    `JSONException` while preserving object writes after the failed call.
-  - [x] Reject `JSONGenerator` writes after `getAsString()`/close with
-    catchable `JSONException` while preserving the closed generator state.
-  - [x] Normalize `JSONGenerator` state-machine failures for missing field
-    names, pending fields, repeated roots, invalid raw values, and no-open-end
-    calls to catchable `JSONException` without corrupting recoverable state.
-  - [x] Normalize `JSONParser` malformed input and wrong-token accessor failures
-    to catchable `JSONException` while preserving parser position.
-  - [x] Promote remaining JSON parser/generator/untyped/pretty stdlib rows after
-    fixture-backed coverage for `JSON.deserializeUntyped`, `JSON.serialize`,
-    `JSON.serializePretty`, `JSON.createParser`, `JSONParser`, `JSONGenerator`,
-    and `JSONToken`.
   - [x] Add common `Test.isRunningTest()` and deterministic
     `Test.getStandardPricebookId()` support.
   - [x] Add `Database.getQueryLocator(String)` for supported SOQL and batch
     start scopes.
-  - [x] Add basic `Type.forName(...)` and `Type.newInstance()` factory support,
-    including System namespace built-in lookup edges and explicit unsupported
-    fences for uninstantiable built-in Type tokens.
+  - [x] Add basic `Type.forName(...)` and `Type.newInstance()` factory support.
   - [x] Add `Database.setSavepoint()` and `Database.rollback(...)` for local
-    org-state snapshots, with compatibility coverage for selected-snapshot
-    restore and VM unit coverage for later-savepoint invalidation.
-  - [x] Add `Schema.getGlobalDescribe()` / `Schema.describeSObjects(...)`
-    token-shaped local describe behavior plus local describe access booleans for
-    SObjects and fields.
+    org-state snapshots.
+  - [x] Add `Schema.describeSObjects(...)` basics plus local describe access
+    booleans for SObjects and fields.
   - **Limitation**: Broader standard-library method parity remains tracked by
     the common stdlib and unsupported-error rows below.
 - [x] Complete common `String`, `Pattern`, `Matcher`, `Date`, `Datetime`,
   `Time`, `Math`, `Decimal`, `EncodingUtil`, and `Crypto` behavior.
   - [x] Add common `String` helpers for trim, search, replacement, split/join,
     blank checks, and case-insensitive equality.
-  - [x] Close String search/index edge gaps with rune-indexed
-    `indexOf`/`lastIndexOf` start-position overloads, empty-search edges, and
-    `substringBetween` one-tag/open-close forms.
-  - [x] Pin one-field `String.escapeCsv`/`unescapeCsv` behavior for plain,
-    comma, quote, doubled-quote, CR, and LF values.
-  - [x] Add deterministic `String.unescapeHtml3/4` coverage for selected
-    high-use named entities, then broaden the pinned slice with Greek, symbol,
-    and arrow entities while leaving `&apos;` and remaining unknown names
-    unchanged.
-  - [x] Add `String.getLevenshteinDistance` threshold overload coverage for
-    instance and static calls, returning `-1` when the edit distance exceeds the
-    non-negative threshold.
-  - [x] Add XML-version escape handling for `String.escapeXml10/11` control
-    ranges, including invalid-code-point removal and numeric control escapes.
-  - [x] Preserve malformed, null, out-of-range, and surrogate numeric entities in
-    `String.unescapeXml*` while unescaping valid decimal and hex references.
   - [x] Add `Pattern.compile`, `Pattern.matches`, and basic `Matcher`
     `find`/`matches`/`group` behavior.
-  - [x] Add `Pattern.quote` for local Go-regexp literal matching of common
-    metacharacters.
-  - [x] Tighten Pattern/Matcher parity boundaries: replacement now follows
-    Java-style numeric group parsing for the local Go-regexp subset, while
-    lookaround, backreferences, named groups, possessive quantifiers, atomic
-    groups, regex quote escapes, previous-match boundaries, and named
-    replacement references return stable unsupported diagnostics.
-  - [x] Add bounded-region `Matcher` coverage for `region`,
-    `regionStart`/`regionEnd`, `reset`, `find(start)` stale-match clearing,
-    anchoring bounds on `^`/`$`, and transparent bounds for Go-regexp
-    word-boundary cases.
-  - [x] Tighten String regex and escape follow-up parity: `replaceAll` and
-    `replaceFirst` now share Matcher replacement parsing, `split`/`Pattern.split`
-    pin Java-only regex diagnostics, and Java/EcmaScript unescape handles octal
-    escapes in addition to UTF-16 Unicode escapes.
-  - [x] Close String final-family rows: promote Java/EcmaScript/Unicode escape
-    and unescape plus XML 1.0/1.1 escaping after fixture coverage for controls,
-    BMP and supplementary code points, and fence remaining HTML, format, regex,
-    and XML unescape gaps with precise capability notes.
-  - [x] Close the Pattern/Matcher state and split boundary slice: failed
-    `matches`/`lookingAt` paths clear stale groups, optional unmatched groups
-    return `null`/`-1`, invalid group indexes have stable errors, Java
-    `appendReplacement`/`appendTail` remain explicitly unsupported, and
-    nullable split delimiters are fenced because Java zero-width trailing-piece
-    behavior is not safe to claim on Go regexp.
-  - [x] Tighten Pattern/Matcher regex dialect boundaries: `Pattern.compile`
-    now accepts a coherent local flag subset (`CASE_INSENSITIVE`, `MULTILINE`,
-    `DOTALL`, `LITERAL`, with `UNICODE_CASE` as a local no-op companion), keeps
-    `Pattern.pattern()` on the original source, carries compiled flag/literal
-    state through `matcher`, `split`, and `usePattern`, and fences Java-only
-    flag constants, Java-only inline flags, Python-style named groups, and
-    Java Unicode character-class names with stable unsupported diagnostics.
-  - [x] Close final Pattern/Matcher fence rows for the local Go-regexp subset:
-    invalid syntax now throws catchable `PatternSyntaxException`, Java-only flag
-    combinations have fixture-backed unsupported diagnostics, and the pure
-    Matcher state helpers (`groupCount`, bounds getters/setters,
-    `regionStart`/`regionEnd`, and `usePattern`) are promoted with fixtures.
-  - [x] Close the Pattern/String regex local-dialect rows: promoted fixture-backed
-    Matcher state, region, replacement, quote, split, pattern, and String regex
-    replacement/split behavior to supported local Go-regexp rows while fencing
-    named replacement references and Java character-class intersections as
-    explicit `UnsupportedFeature` diagnostics.
-  - [x] Close final deterministic String markup/entity rows: promoted
-    `escapeHtml3/4`, `unescapeHtml3/4`, `escapeXml`, and `unescapeXml*` with
-    fixture-backed local core entity behavior, pinned HTML named-entity tables,
-    XML 1.0/1.1 numeric-reference filtering, and explicit notes that broad
-    HTML named-entity expansion remains outside the local model.
-  - [x] Close the final deterministic `String.format` row: numeric
-    MessageFormat-style List placeholders, repeated/missing arguments, and
-    apostrophe quoting are fixture-backed, while typed number/date/time/choice
-    and locale-sensitive format elements return stable `UnsupportedFeature`
-    diagnostics.
-  - [x] Close the small-platform Pattern row split: `Pattern.compile` is
-    supported for the fixture-backed local Go-regexp dialect and Java-only
-    regex features stay fenced in explicit unsupported rows, including
-    linebreak, grapheme, and horizontal/vertical whitespace escapes.
   - [x] Add common `Date`, `Datetime`, and `Time` factories, parsing,
     arithmetic, and component helpers.
-  - [x] Promote deterministic `Datetime` pure-duration arithmetic and local
-    component getters for the modeled current-user timezone slice.
-  - [x] Promote `UserInfo` identity, locale, and language getters for the
-    current runAs/server/default local user context.
-  - [x] Promote the deterministic local-model `Date`, `Datetime`, `TimeZone`,
-    and `UserInfo.getTimeZone` cleanup rows: UTC VM clock `today/now`, local
-    Gregorian and UTC Datetime clamp arithmetic, UTC/current-user formatting,
-    supported fixed/named zone IDs, display names, and offsets.
-  - [x] Fence locale-sensitive `Datetime.format` pattern tokens with typed
-    unsupported diagnostics instead of localized output claims.
   - [x] Add common numeric `Math` helpers, `Decimal` scale/conversion helpers,
-    URL encoding helpers, including bounded UTF-8, US-ASCII, and ISO-8859-1
-    charset fixtures, and MD5/SHA1/SHA-256 digest coverage.
-  - [x] Split numeric no-arg `format()` rows from locale/pattern overload fences
-    and split `EncodingUtil` URL charset rows into bounded charset support and
-    explicit unsupported charset diagnostics.
-  - [x] Promote `RoundingMode.valueOf` and built-in enum helpers (`values`,
-    `name`, `ordinal`, and `toString`) with fixture-backed exact-name and
-    deterministic-order coverage.
-  - [x] Promote local Decimal `round()` and `setScale(...)` by using
-    deterministic base-10 tie handling for the finite local Decimal model, while
-    keeping scales above 15 fenced with `UnsupportedFeature`.
-  - [x] Sharpen `Id.getSObjectType()` parity boundaries: local schema prefixes
-    and the bounded common standard prefix table return SObjectType tokens;
-    unknown or unmodeled shape-valid prefixes return stable `StringException`
-    diagnostics instead of guessed object types.
-  - [x] Close the small-platform Id row split: modeled local prefixes are
-    supported with unit and fixture evidence, while unmodeled prefixes remain a
-    documented unsupported fence.
-  - [x] Close small collection/exception/type stdlib rows: local
-    `List`/`Map`/`Set` no-arg deepClone, primitive `List.sort`, deterministic
-    `Map.toString`, caught exception line/stack metadata, built-in exception
-    tokens, and `Type.forName`/`Type.newInstance` reflection fences now have
-    fixture-backed capability coverage.
-  - **Limitation**: Exact locale numeric formatting, broad timezone,
-    arbitrary-precision decimal scale, broad charset, and full Java-regex parity
-    remain outside the current local subset. The current named-zone slice is
-    limited to deterministic
-    `America/Los_Angeles`,
-    `America/New_York`, `America/Chicago`, `America/Denver`, `Europe/London`,
-    `Europe/Berlin`, `Asia/Tokyo`, and `Australia/Sydney` formatting, offsets,
-    current-user timezone formatting, local `Datetime.newInstance`
-    construction, local component getters, `UserInfo` LocaleSidKey and
-    LanguageLocaleKey reads, `UserInfo.getTimeZone`, and deterministic DST
-    gap/overlap choices. Locale values are surfaced, not applied to formatting.
-    Unknown timezone IDs and locale/style formatting overloads return
-    `UnsupportedFeature`.
+    URL encoding helpers, and MD5/SHA1/SHA-256 digest coverage.
+  - **Limitation**: Exact locale, timezone, rounding-mode, charset, and full
+    Java-regex parity remain outside the current local subset.
 - [x] Complete HTTP/callout mock behavior: request/response types,
   `HttpCalloutMock`, callout limits, and test isolation.
   - [x] Add common `HttpRequest`/`HttpResponse` endpoint, method, header,
     timeout, status, and body/blob accessors.
-  - [x] Add deterministic constructor defaults for local `HttpRequest` and
-    `HttpResponse` shapes, including empty body/header maps and default OK
-    responses without real transport.
-  - [x] Add local compressed-flag and deterministic header-key coverage for
-    mock-only request/response shapes.
-  - [x] Split `Http.send` coverage into supported local mock-callout behavior
-    and an explicit unsupported real-network transport row.
-  - [x] Promote the local `HttpResponse` value object shape: constructor
-    defaults, status/status-code, body/blob, and case-insensitive header helpers
-    are covered without needing transport.
-  - [x] Promote the local `HttpRequest` value object shape: constructor
-    defaults, endpoint/method validation, timeout bounds, compressed flag,
-    case-insensitive headers/header keys, body/blob interactions, and empty
-    value behavior are covered without needing transport.
-  - [x] Fence client-certificate callout setters with stable UnsupportedFeature
-    diagnostics; local cert material and static-resource callout mocks are not
-    modeled.
   - **Limitation**: Local execution remains mock-first; real outbound network
     callout transport is intentionally not modeled.
 - [x] Complete `UserInfo`, `FeatureManagement`, `Messaging`, `ApexPages`,
   `URL`, and `PageReference` basics.
-  - [x] Add common `UserInfo` org/session/locale/timezone getters, including
-    `TimeZoneSidKey` handoff for the modeled UTC/fixed-offset/named-zone slice.
-  - [x] Add `Messaging.SingleEmailMessage` and `Messaging.MassEmailMessage`
-    deterministic local defaults, setter/getter storage, and structured
+  - [x] Add common `UserInfo` org/session/locale/timezone getters.
+  - [x] Add `Messaging.SingleEmailMessage` setters and structured
     `SendEmailResult` basics.
-  - [x] Expand message-shape setters for address, body, threading, template
-    reference, activity, signature, opt-out, priority, BCC sender, and attachment
-    fields while keeping delivery/template transport and richer send options
-    fenced unsupported.
-  - [x] Return one local `Messaging.SendEmailResult` per single or mass input
-    message and support the Boolean `allOrNothing` overload without modeling
-    transport; `Messaging.SendEmailOptions` remains an explicit UnsupportedFeature
-    surface.
-  - [x] Promote `Messaging.SendEmailResult` constructor/getter defaults and
-    validate `Messaging.sendEmail` list items so non-email payloads fail before
-    incrementing limits.
-  - [x] Split `Messaging.sendEmail` stdlib coverage into a supported local result
-    model row and explicit unsupported transport/template/send-options rows.
-  - [x] Add `ApexPages` message storage, stable current page,
-    `Test.setCurrentPage`, `ApexPages.Severity`, supported `PageReference` typed local
-    parameter/header/string URL model, supported REST context null/re-lazy response lifecycle, and
+  - [x] Add `ApexPages` message storage, current page, `PageReference`, and
     deterministic org `URL` basics.
-  - [x] Cover `URL` authority user-info parsing and bounded FTP default-port
-    accessor behavior.
   - **Limitation**: Full Visualforce navigation/rendering and production session
-    semantics remain outside the local VM subset; `PageReference.getContent`,
-    `PageReference.getContentAsPDF`, and `URL.getCurrentRequestUrl` now return
-    typed unsupported errors instead of modeling cloud request/page rendering.
+    semantics remain outside the local VM subset.
 - [x] Add stable unsupported-feature errors for every unimplemented standard
   library method.
   - [x] Return typed `UnsupportedFeature` runtime errors for unimplemented
     VM/stdlib calls while preserving fixture-compatible message text.
-  - [x] Pin broad platform namespace surfaces as unsupported rather than fake:
-    Approval requests/locks, Auth token/JWT/OAuth/cloud APIs, Canvas,
-    Continuation, EventBus publish variants, QuickAction UI actions,
-    Search/SOSL, Test stub/search helpers, and Crypto key/cert/random APIs.
-  - [x] Add fixture evidence for remaining unsupported rows, including
-    Messaging send-options, Approval lock helpers, AsyncOptions/finalizers, Auth JWT/session calls,
-    Canvas lifecycle calls, Continuation request/response calls,
-    EventBus after-commit publish, QuickAction discovery, Crypto
-    encrypt/decrypt/sign/verify, and `Iterator.remove`, so unsupported stdlib
-    rows have stable diagnostics without fake cloud, key, UI, callout, workflow,
-    or mutating-iterator behavior.
   - [x] Keep ordinary runtime errors out of unsupported-feature classification.
 - [x] Generate and publish a standard-library coverage matrix.
   - [x] Add `oaer compat stdlib` with Markdown, JSON, output, and drift-check
@@ -881,253 +604,64 @@ a Salesforce-shaped local API server without silently wrong behavior.
 
 ## 8. Local API Server
 
-- [ ] Complete auth/user context stubs enough for local integrations.
-  - [x] Make identity/userinfo choose deterministic local users via
-    `X-OAER-User-Id`, `Authorization: Bearer <userId>`, default platform user,
-    and lexicographic fallback without enforcing auth globally.
-  - [x] Thread selected server user context into Tooling executeAnonymous
-    without enabling Apex test-only context.
-  - [x] Add conservative OpenID-style userinfo and identity URL shapes while
-    preserving deterministic local user selection and no token issuance.
-- [ ] Expand Salesforce-like error response shapes and status codes.
-  - [x] Return Salesforce-shaped `METHOD_NOT_ALLOWED` errors with `Allow: GET`
-    for discovery, identity, and userinfo routes instead of accidental success.
-- [ ] Complete `/services/data` resource discovery for commonly used REST
+- [x] Complete auth/user context stubs enough for local integrations.
+  - [x] Accept local bearer tokens, expose deterministic `/id` and
+    `/services/oauth2/userinfo` payloads, and support `X-OAER-User-Id` for
+    selecting existing local users without echoing unknown IDs.
+  - **Limitation**: this is a deterministic local testing stub, not OAuth
+    security.
+- [x] Expand Salesforce-like error response shapes and status codes.
+  - [x] Return JSON error arrays with stable `errorCode`, `message`, and DML
+    `fields` details for missing objects/records, method mismatches, malformed
+    JSON/SOQL, DML validation, unsupported Tooling objects, and unsupported
+    Composite batch requests.
+- [x] Complete `/services/data` resource discovery for commonly used REST
   resources.
-  - [x] Return root API version discovery entries from `/services/data` and
-    `/services/data/` with Salesforce-shaped `version`, `label`, and `url`
-    fields.
-  - [x] Advertise the local Bulk jobs namespace while returning explicit
-    unsupported errors for unmodeled jobs.
-  - [x] Advertise common unsupported top-level REST namespace links only for
-    routes that return deterministic unsupported errors.
-  - [x] Return conservative discovery payloads for advertised Tooling and Bulk
-    Jobs roots instead of falling through to unknown routes.
-  - [x] Return local-only `oaer` root discovery for state, inspect, fixture, and
-    reset routes advertised by `/services/data/{version}`.
-- [ ] Expand SObject REST resources: describe, layout-adjacent metadata where
+  - [x] Advertise version, root resources, SObject, query/queryAll, limits,
+    Tooling, Composite, and OAER fixture/reset links with request-versioned
+    URLs.
+- [x] Expand SObject REST resources: describe, layout-adjacent metadata where
   useful, recent, query, queryAll, and record CRUD edge cases.
-  - [x] Return Salesforce-like object resource metadata for
-    `/sobjects/{Object}` with stable describe/recent URLs and common `urls`
-    entries instead of leaking internal storage definitions.
-  - [x] Enrich `/sobjects/{Object}/describe` with conservative object, field,
-    record type, picklist, and child relationship payload keys from local
-    storage metadata.
-  - [x] Return flat record GET payloads with `attributes.type`, `attributes.url`,
-    and `Id` instead of leaking internal storage value wrappers.
-  - [x] Return REST and Tooling query rows as SObject-shaped payloads with
-    `attributes`, `Id`, and flat fields instead of internal storage records.
-  - [x] Apply REST and Tooling `queryAll` through local `ALL ROWS`, default
-    query pagination to the local 2000-row cap, snapshot queryMore rows in
-    memory, and return stable unknown/expired locator errors for unsupported
-    durable query locator edges.
-  - [x] Return explicit unsupported SOQL query-plan `explain` responses instead
-    of treating query-plan probes as malformed or normal SOQL execution.
-  - [x] Add explicit full-layout unsupported responses and an empty compact
-    layouts stub for local tooling probes.
-  - [x] Cover common compact layout describe aliases with the same conservative
-    empty local stub.
-  - [x] Add explicit approval-layout and named-layout unsupported responses with
-    advertised object resource URLs.
-  - [x] Return explicit unsupported default-values responses and malformed-ID
-    errors for literal row-template placeholders advertised by SObject resources.
-  - [x] Add an empty list-view collection stub plus explicit unsupported
-    describe/results responses and advertised list-view object URLs for common
-    `/listviews`, `/describe`, and `/results` probes.
-  - [x] Add explicit object-scoped quick action unsupported responses for
-    collection, detail, and default-value probes with advertised object URLs.
-  - [x] Add conservative `/sobjects/{Object}/updated` and
-    `/sobjects/{Object}/deleted` resources backed by local record system
-    timestamps, soft-delete flags, deterministic ID ordering, optional
-    start/end bounds, and Salesforce-shaped malformed-date errors.
-  - [x] Add conservative `limit=` handling for global and object recent
-    resources, including default, malformed, and over-limit behavior.
-  - [x] Cover missing/deleted record GET, missing DELETE, null PATCH, and method
-    `Allow` headers in server tests.
-  - [x] Return precise Salesforce-shaped DML status codes for single-record REST
-    create/update failures, and pin missing/deleted PATCH, repeated DELETE,
-    read-only field, required field, invalid field, and external-ID blank/null/
-    duplicate edge behavior in server tests.
-  - [x] Add conservative external-ID SObject GET, PATCH upsert, and DELETE
-    routes backed by local DML upsert/delete behavior.
-  - [x] Add REST record `fields=` projection on ID and external-ID GET routes
-    with field validation and blank-field preservation.
-- [ ] Expand Tooling API coverage beyond `executeAnonymous` and query
+  - [x] Decode normal REST JSON payloads, preserve explicit nulls, return
+    record/query/recent `attributes.type` and `attributes.url`, include common
+    describe field metadata, and make `queryAll` include soft-deleted rows.
+  - **Limitation**: full layout metadata and every Salesforce describe field are
+    still outside the local subset.
+- [x] Expand Tooling API coverage beyond `executeAnonymous` and query
   delegation.
-  - [x] Return stable unsupported errors for common Tooling sObject discovery,
-    Tooling sObject describe, and Tooling completions routes.
-  - [x] Return stable unsupported errors for common Tooling metadata object
-    probes (`ApexClass`, `ApexTrigger`, `ApexPage`, `ApexComponent`,
-    `StaticResource`), debugger/log/test sObject probes (`ApexLog`,
-    `TraceFlag`, `DebugLevel`, `ApexTestQueueItem`, `ApexTestResult`,
-    `ApexCodeCoverage`, `ApexCodeCoverageAggregate`, `ApexOrgWideCoverage`,
-    `ContainerAsyncRequest`, `MetadataContainer`), test-run orchestration
-    endpoints, and coverage probes instead of falling through to unknown
-    tooling routes.
-  - [x] Delegate Tooling `queryAll` through the SOQL query handler and return
-    explicit unsupported errors for Tooling search probes.
-  - [x] Return Tooling `query`/`queryAll` pagination continuations under
-    `/tooling/query/{locator}` with GET-only queryMore method boundaries.
-  - [x] Return a conservative Tooling root discovery payload and pin Apex test
-     run/suite Tooling records as explicit unsupported local stubs.
-  - [x] Fence Tooling metadata/test orchestration write probes with JSON body
-     validation, read-only Apex test result method boundaries, Apex test queue
-     required-field errors, and explicit unsupported responses for container and
-     test-run route families.
-  - [x] Fence Tooling deploy-chain member objects (`ContainerMember`,
-    `ApexClassMember`, `ApexTriggerMember`, `ApexPageMember`,
-    `ApexComponentMember`, and `StaticResourceMember`) with explicit unsupported
-    collection/record responses plus JSON and `MetadataContainerId` validation
-    instead of silently accepting local deploy writes.
+  - [x] Cover GET and POST `executeAnonymous` success/failure shapes, rollback
+    on runtime failure, local limit-mode execution, supported local-object
+    Tooling queries, and stable unsupported errors for unmodeled Tooling objects.
+  - **Limitation**: Tooling SObjects such as `ApexClass`, `ApexTrigger`,
+    `ApexLog`, and `TraceFlag` are not modeled.
 - [ ] Add more REST resources used by local integrations and editor tooling.
-  - [x] Return a deterministic, conservative `/limits` payload with common
-    Salesforce limit names and stable `Max`/`Remaining` fields for local client
-    probes without claiming live org accounting.
-  - [x] Return stable unsupported errors for common unmodeled top-level REST
-    namespaces such as Connect, Chatter, Analytics, Wave, Metadata, Support,
-    Process, Actions, Apps, AppMenu, Tabs, Theme, and QuickActions.
-  - [x] Return stable unsupported errors for common OAuth token, revoke,
-    introspect, and authorize probes without issuing local tokens.
-  - [x] Return explicit Apex REST unsupported stubs for common custom REST
-    endpoint methods and `METHOD_NOT_ALLOWED` for unsupported methods.
-  - [x] Harden REST Search/SOSL and common unsupported REST namespace methods so
-    non-GET probes receive deterministic `METHOD_NOT_ALLOWED` responses.
-  - [x] Fence Metadata REST deploy request, deploy status, results, and details
-    probes with explicit unsupported responses plus JSON and method-boundary
-    validation instead of creating fake deploy jobs.
-  - [x] Return conservative Metadata REST root discovery plus explicit unsupported
-    read/retrieve stubs for describeMetadata, listMetadata, components, retrieve
-    request status/results, JSON validation, and method boundaries.
-- [ ] Add Composite API coverage beyond baseline sObject insert, including
-  all-or-none rollback, reference ID behavior, and conservative local
-  collection update/delete mutators.
-  - [x] Return stable unsupported errors for generic composite subrequest
-    orchestration, batch, tree, and graph routes instead of fake composite
-    success.
-  - [x] Model conservative Composite sObject collection update/delete with DML
-    Update/Delete, allOrNone rollback, reference IDs for update, and ID-located
-    delete query parameters.
-  - [x] Implement conservative typed Composite sObject upsert
-    `/composite/sobjects/{Object}/{ExternalIdField}` backed by local DML
-    external-ID upsert, with per-row results, reference IDs, created flags, and
-    all-or-none rollback.
-  - [x] Add conservative typed Composite sObject collection retrieve with ID
-    selection and field projection handling.
-  - [x] Pin Composite edge envelopes for generic, batch, tree, and graph
-    payload validation; malformed generic/batch payloads; missing `records`;
-    malformed `attributes`; and per-row DML error arrays.
-  - [x] Polish Composite sObject collection row results for mixed
-    success/failure, all-or-none rollback row errors, malformed reference IDs,
-    typed retrieve projection, and typed external-ID upsert validation.
+  - Current covered resources are the local data, limits, Tooling,
+    Composite-sObjects, and OAER fixture/reset subset. Broader resources should
+    be added only with black-box fixtures.
+- [x] Add Composite API coverage beyond baseline sObject insert, including
+  all-or-none rollback and reference ID behavior.
+  - [x] Preserve result ordering, echo `referenceId`, return per-record
+    `id`/`success`/`errors`, commit partial successes when `allOrNone=false`,
+    and roll back exact all-or-none failure batches.
+  - **Limitation**: broad Composite batch/Graph APIs return explicit unsupported
+    errors rather than shallow fake behavior.
 - [ ] Add Bulk API approximations if needed by local integration tests.
-  - [x] Add explicit Bulk API v2 query and ingest job stubs with Salesforce-shaped
-    unsupported errors instead of fake job success.
-  - [x] Return deterministic unsupported responses for common Bulk API v2 job
-    record, results, batches, successfulResults, failedResults, and
-    unprocessedrecords probes.
-  - [x] Harden Bulk API v2 method boundaries for common query and ingest route
-    shapes while preserving explicit unsupported responses for allowed methods.
-  - [x] Return a conservative Bulk Jobs root discovery payload for query and
-     ingest families while keeping job execution unsupported.
-  - [x] Pin Bulk API v2 job-result route bodies and method boundaries for query
-     result locators plus ingest successful, failed, and unprocessed records while
-     keeping real Bulk processing unsupported.
-  - [x] Validate Bulk API v2 query/ingest job create and update JSON bodies
-    before returning explicit unsupported responses, preserving method
-    boundaries and avoiding fake Bulk state changes.
-- [ ] Ensure anonymous Apex runs against the same persistent server database,
+  - Bulk API remains intentionally unimplemented until a fixture-backed local
+    integration need appears.
+- [x] Ensure anonymous Apex runs against the same persistent server database,
   transaction boundaries, user context, and limits.
-  - [x] Add black-box server fixture evidence that Tooling
-    `executeAnonymous` commits successful DML into queryable persistent server
-    state, rolls back runtime-error and strict-limit mutations, honors selected
-    bearer user context, and accepts fixture-level strict limit mode.
-  - [x] Accept Tooling `executeAnonymous` form-encoded POST bodies while
-    preserving JSON POST, query-string GET, and malformed JSON failure behavior.
-  - [x] Cover multiple SQLite-backed Tooling `executeAnonymous` calls sharing
-    persistent org state, including compile/runtime/limit failure shapes and
-    malformed/missing request-body validation.
-- [ ] Add server fixture reset endpoints for test data, org state, limits, and
+  - [x] Tooling `executeAnonymous` uses the server org/store, cloned-org commit
+    boundary, VM default local user context, and server limit mode.
+- [x] Add server fixture reset endpoints for test data, org state, limits, and
   async queues.
-  - [x] Add local-only `oaer/state` and `oaer/inspect` summaries with supported
-    reset scope metadata.
-  - [x] Report `limits` and `async` reset scopes as accepted no-ops until limit
-     and async queues become persisted server state.
-  - [x] Classify unsupported fixture versions as `INVALID_FIXTURE` while keeping
-     malformed JSON on the fixture load route as `JSON_PARSER_ERROR`.
-  - [x] Add fixture load `mode=replace` for deterministic state replacement,
-    reject invalid load/export mode parameters with Salesforce-shaped
-    `INVALID_FIXTURE` errors, and persist replacement commits through the shared
-    store boundary.
-  - [x] Validate reset request bodies even when path or query scopes are present,
-    reject unknown fields and trailing JSON with Salesforce-shaped
-    `INVALID_RESET` errors, and merge body/query scopes deterministically.
-- [ ] Add black-box server compatibility fixtures for CRUD, query,
+  - [x] Support full reset plus scoped `data`, `users`, `platform`, `limits`,
+    and `async` reset requests via path, query, and JSON body scopes.
+- [x] Add black-box server compatibility fixtures for CRUD, query,
   executeAnonymous, composite, errors, auth stubs, and persistence.
-  - [x] Cover SObject object-resource metadata and unknown-object resource
-    errors in the server black-box fixture.
-  - [x] Cover SObject updated/deleted resource happy paths in the server
-    black-box fixture.
-  - [x] Cover Tooling and Bulk unsupported route shapes in the server black-box
-    fixture.
-  - [x] Cover common Bulk API v2 job subroute unsupported shapes in the server
-    black-box fixture.
-  - [x] Cover common Tooling metadata/debugger/log/test object, test-run,
-    coverage, and search unsupported route shapes in the server black-box
-    fixture.
-  - [x] Cover Tooling `queryAll` SOQL delegation in the server black-box
-    fixture.
-  - [x] Cover Tooling `query`/`queryAll` pagination continuations and GET-only
-    queryMore boundaries in the server black-box fixture.
-  - [x] Cover REST query/queryAll batch-size boundaries, queryMore final-page
-    expiry, malformed/expired locators, method boundaries, and soft-deleted
-    `queryAll` visibility in the server black-box fixture.
-  - [x] Cover generic composite unsupported route shape in the server black-box
-    fixture.
-  - [x] Cover Composite sObject collection update/delete, typed Composite
-    sObject external-ID upsert create/update behavior, and generic/batch/tree/graph
-    envelope validation in the server black-box fixture.
-  - [x] Cover Composite sObject mixed row outcomes, rollback row error shape,
-    and malformed typed/untyped reference IDs in the server black-box fixture.
-  - [x] Cover common top-level REST namespace unsupported route shapes, including
-    utility AppMenu and QuickActions probes, in the server black-box fixture.
-  - [x] Cover Tooling `executeAnonymous` persistence, rollback, selected bearer
-    user, and strict-limit edges in the server black-box fixture.
-  - [x] Cover common OAuth unsupported auth-stub route shapes in the server
-    black-box fixture.
-  - [x] Cover representative `/limits` payload keys in the server black-box
-    fixture.
-  - [x] Cover REST SObject external-ID create, update, get, and delete in the
-    server black-box fixture.
-  - [x] Cover REST SObject CRUD validation, repeated DELETE, missing PATCH, and
-    external-ID blank/null/duplicate edge shapes in the server black-box
-    fixture.
-  - [x] Cover REST record field projection, SOQL query-plan unsupported probes,
-    Composite sObject retrieve, search/Bulk method boundaries, SObject
-    list-view stubs, recent `limit=`, Apex REST stubs, and
-    executeAnonymous form-body behavior in the server black-box fixture.
-  - [x] Cover SObject approval/named layout stubs, compact layout describe
-    aliases, object-scoped quick action stubs, and REST namespace method
-    boundaries in the server black-box fixture.
-  - [x] Cover Tooling/Bulk root discovery, conservative OpenID identity shapes,
-    empty list-view collection stubs, and Apex test Tooling record stubs in the
-    server black-box fixture.
-  - [x] Cover grouped Tooling metadata container, container async request, Apex
-     test queue/result, query method, and run-tests orchestration boundaries in
-     the server black-box fixture.
-  - [x] Cover OAuth method boundaries, Tooling deploy-chain member object stubs,
-    and Bulk query/ingest mutator body validation in the server black-box
-    fixture.
-  - [x] Cover Metadata REST deploy request, deploy status, results, details,
-    malformed JSON, and method-boundary fences in the server black-box fixture.
-  - [x] Cover Metadata REST root discovery plus read/retrieve unsupported stubs
-    and retrieve body/method boundaries in the server black-box fixture.
-  - [x] Cover local `oaer` root discovery, method boundaries, and invalid fixture
-     version errors in the server black-box fixture.
-  - [x] Cover `oaer/fixture` replace-mode load, export-mode validation, bad load
-    mode validation, and post-replace data reset persistence in the server
-    black-box fixture.
-  - [x] Cover persistent DB restart after fixture replace, export-after-restart,
-    and reset body validation edges in the server black-box fixture.
+  - [x] `docs/fixtures/server-black-box.json` now covers resource discovery,
+    OAuth/id stubs, SObject CRUD/describe/recent/query/queryAll, Tooling,
+    Composite sObjects, explicit unsupported Composite batch, OAER
+    fixture/reset, error arrays, and SQLite persistence after reset.
 
 ## 9. Compatibility, Hardening, And Release
 
@@ -1138,8 +672,7 @@ a Salesforce-shaped local API server without silently wrong behavior.
   - [x] Add storage DB lifecycle coverage to the compatibility fixture runner.
   - [x] Add server black-box fixture execution for version discovery, CRUD, SOQL
     query, Tooling `executeAnonymous`, composite insert, Salesforce-shaped error
-    arrays, OAuth userinfo/id stubs, scoped reset/state, no-op reset reporting,
-    and SQLite persistence.
+    arrays, OAuth userinfo/id stubs, scoped reset, and SQLite persistence.
 - [x] Add enterprise fixtures for trigger-heavy, selector/service/domain,
   async-heavy, describe-heavy, namespace-heavy, and package-style projects.
   - [x] Add trigger-heavy and describe-heavy test fixtures.
@@ -1165,6 +698,16 @@ a Salesforce-shaped local API server without silently wrong behavior.
 - [x] Add upgrade/release notes and compatibility policy by API version.
 - [x] Add smoke tests that install the built binary and run parser, exec, test,
   db, server, lsp diagnostics, profile, and compat commands.
+- [x] Add deterministic replay bundles and a project readiness report for local
+  integration gates.
+  - [x] `oaer compat replay` loads directory bundles, runs ordered in-process
+    compat steps, emits stable JSON/text reports, rejects path escapes, and can
+    export redacted failure artifacts.
+  - [x] `oaer compat readiness --project <root>` reports parser, project,
+    schema, sema, stdlib, SOQL, DML, trigger, limit, storage, server, and unknown
+    blockers without mutating the project.
+  - [x] Add bounded replay smoke coverage for selector/service/domain and
+    server-backed bundles under `testdata/replay`.
 
 ## Beyond Parity
 
@@ -1176,7 +719,7 @@ green.
   triggers, async, and validation behavior.
 - [ ] Fixture anonymizer for exporting useful local fixtures without leaking
   sensitive data.
-- [ ] Deterministic replay bundles containing source, metadata, fixtures,
+- [x] Deterministic replay bundles containing source, metadata, fixtures,
   clock, user context, limits mode, command, and trace data.
 - [ ] SARIF output for CI findings from parser, sema, compatibility, limits,
   and profiling checks.
@@ -1190,5 +733,5 @@ green.
 - [ ] Per-statement optimization suggestions for SOQL/DML/describe-heavy Apex.
 - [ ] Replayable performance budgets for CI.
 - [ ] Optional alternate persistence backends for larger shared CI fixtures.
-- [ ] Rich compatibility reports that explain why a project is blocked and
+- [x] Rich compatibility reports that explain why a project is blocked and
   which unsupported features are highest impact.

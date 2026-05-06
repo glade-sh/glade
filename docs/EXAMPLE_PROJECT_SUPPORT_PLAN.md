@@ -28,7 +28,7 @@ fail=0 unsupported=0 missing=0
 ```
 
 The example projects are compatibility proof code. Project-specific classes such
-as `WidgetSyncApi`, query factory wrappers, selectors, managers, and REST
+as `ExampleSyncApi`, query factory wrappers, selectors, managers, and REST
 controllers must execute as ordinary Apex. They must not be implemented as VM
 stdlib stubs or capability entries.
 
@@ -53,7 +53,7 @@ passing.
 
 ```text
 example-projects/alpha-pkg-develop POST /services/apexrest/inboundEvents
-  500 fail: 95: Invalid field '' for object 'Setup_Data__c'
+  500 fail: 95: Invalid field '' for object 'Example_Setup__c'
   duplicated by .claude worktree copies plus active force-app source
 
 example-projects/alpha-pkg-develop POST /services/apexrest/inboundEvent/create
@@ -62,15 +62,15 @@ example-projects/alpha-pkg-develop POST /services/apexrest/inboundEvent/create
 
 example-projects/beta-pkg-develop POST /services/apexrest/portal/widget/submit/
   501 unsupported: QueryException: soql: expected FROM
-  at BatchSelector.selectAutomaticOpen
+  at ExampleSelector.selectOpen
 
-example-projects/beta-pkg-develop POST /services/apexrest/portal/email/EmailVerify
+example-projects/beta-pkg-develop POST /services/apexrest/portal/email/ExampleEmailVerify
   501 unsupported: Email template not found: 00X000000000001AAA
-  at EmailTemplates.BuildEmailMessageForEntity
+  at ExampleEmailTemplates.buildMessage
 
 example-projects/beta-pkg-develop POST /services/apexrest/portal/order/
-  501 unsupported: unsupported call "WidgetSyncApi.v1.syncCurrencyWithRelatedRecord"
-  while initializing di_Binding.bindingImplsByType
+  501 unsupported: unsupported call "ExampleSyncApi.v1.syncRelatedRecord"
+  while initializing ExampleBinding.registryByType
 ```
 
 ## Active Wave 1 Squad
@@ -81,8 +81,8 @@ parallel worktrees.
 | Lane | Worktree | Branch | Scope |
 | --- | --- | --- | --- |
 | SOQL builder | `/Users/matt/Dev/oaer-lane-example-soql-builder` | `codex/example-soql-builder` | Capture and fix generated dynamic SOQL failures for inbound event create and widget submit. |
-| Email template | `/Users/matt/Dev/oaer-lane-example-email-template` | `codex/example-email-template` | Fix the EmailVerify template lookup/rendering path with general `EmailTemplate` behavior or route-proof overlay data. |
-| Custom dispatch | `/Users/matt/Dev/oaer-lane-example-custom-dispatch` | `codex/example-custom-dispatch` | Make `WidgetSyncApi.v1.syncCurrencyWithRelatedRecord` dispatch as ordinary custom Apex, with no stdlib stub. |
+| Email template | `/Users/matt/Dev/oaer-lane-example-email-template` | `codex/example-email-template` | Fix the ExampleEmailVerify template lookup/rendering path with general `EmailTemplate` behavior or route-proof overlay data. |
+| Custom dispatch | `/Users/matt/Dev/oaer-lane-example-custom-dispatch` | `codex/example-custom-dispatch` | Make `ExampleSyncApi.v1.syncRelatedRecord` dispatch as ordinary custom Apex, with no stdlib stub. |
 | Apex REST diagnostics | `/Users/matt/Dev/oaer-lane-example-apexrest-diagnostics` | `codex/example-apexrest-diagnostics` | Add focused server-example filters, blocker-oriented output, and richer route/source/runtime diagnostics. |
 
 Merge each lane independently when its focused tests pass and its diff is
@@ -121,7 +121,7 @@ Target blockers:
 
 - `alpha` `/inboundEvent/create`: `soql: expected FROM`
 - `synthetic-nu` widget submit: `QueryException: soql: expected FROM`
-- `alpha` `/inboundEvents`: invalid blank `Setup_Data__c` field, if caused by
+- `alpha` `/inboundEvents`: invalid blank `Example_Setup__c` field, if caused by
   generated field lists
 
 Tasks:
@@ -137,7 +137,7 @@ Tasks:
 
 Target blocker:
 
-- `synthetic-nu` EmailVerify: `Email template not found: 00X000000000001AAA`
+- `synthetic-nu` ExampleEmailVerify: `Email template not found: 00X000000000001AAA`
 
 Tasks:
 
@@ -154,11 +154,11 @@ Tasks:
 
 Target blocker:
 
-- `WidgetSyncApi.v1.syncCurrencyWithRelatedRecord`
+- `ExampleSyncApi.v1.syncRelatedRecord`
 
 Tasks:
 
-- Locate `WidgetSyncApi`, nested/static `v1`, and the method declaration.
+- Locate `ExampleSyncApi`, nested/static `v1`, and the method declaration.
 - Determine whether the root cause is nested/lowercase type dispatch, static
   field initialization, alias resolution, method visibility, or DI binding
   initialization.

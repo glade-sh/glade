@@ -15,7 +15,7 @@ func TestFixtureJSONRoundTrip(t *testing.T) {
 		Name: "parser-smoke",
 		Project: ProjectConfig{
 			Namespace:        "pkg",
-			SourceAPIVersion: "61.0",
+			SourceAPIVersion: "65.0",
 			PackageDirectories: []PackageDirectory{
 				{Path: "force-app", Default: true},
 				{Path: "modules/core"},

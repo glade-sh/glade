@@ -116,7 +116,7 @@ func TestVersionDiscoveryRoot(t *testing.T) {
 		if len(versions) != 1 {
 			t.Fatalf("%s versions = %#v", path, versions)
 		}
-		if versions[0].Version != "61.0" || versions[0].Label != "Summer '24" || versions[0].URL != "/services/data/v61.0" {
+		if versions[0].Version != "65.0" || versions[0].Label != "OAER Local API v65.0" || versions[0].URL != "/services/data/v65.0" {
 			t.Fatalf("%s version entry = %#v", path, versions[0])
 		}
 	}
@@ -1430,7 +1430,7 @@ func TestDescribeEndpoints(t *testing.T) {
 
 	list := httptest.NewRecorder()
 	handler.ServeHTTP(list, httptest.NewRequest(http.MethodGet, "/services/data", nil))
-	if list.Code != http.StatusOK || !bytes.Contains(list.Body.Bytes(), []byte(`"url":"/services/data/v61.0"`)) {
+	if list.Code != http.StatusOK || !bytes.Contains(list.Body.Bytes(), []byte(`"url":"/services/data/v65.0"`)) {
 		t.Fatalf("versions status = %d body=%s", list.Code, list.Body.String())
 	}
 

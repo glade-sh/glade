@@ -77,26 +77,44 @@ func buildOrg(proj project.Project, sch schema.Schema) (storage.OrgState, error)
 }
 
 func seedProbeData(org *storage.OrgState) error {
+	// Seed ProbeTestObject__c
 	obj, ok := org.Objects["ProbeTestObject__c"]
-	if !ok {
-		return nil // object not defined, skip seeding
+	if ok {
+		if obj.Records == nil {
+			obj.Records = make(map[storage.ID]storage.Record)
+		}
+		for i := 1; i <= 3; i++ {
+			id := storage.ID(fmt.Sprintf("a0p00000000000%dAAA", i))
+			obj.Records[id] = storage.Record{
+				ID:     id,
+				Object: "ProbeTestObject__c",
+				Fields: map[string]storage.Value{
+					"Name__c":      storage.StringValue(fmt.Sprintf("Record%d", i)),
+					"Value__c":     storage.IntegerValue(int64(i * 10)),
+					"Triggered__c": storage.StringValue("false"),
+				},
+			}
+		}
+		org.Objects["ProbeTestObject__c"] = obj
 	}
-	if obj.Records == nil {
-		obj.Records = make(map[storage.ID]storage.Record)
-	}
-	for i := 1; i <= 3; i++ {
-		id := storage.ID(fmt.Sprintf("a0p00000000000%dAAA", i))
-		obj.Records[id] = storage.Record{
-			ID:     id,
-			Object: "ProbeTestObject__c",
+
+	// Seed ProbeTestSetting__c (custom setting)
+	setting, ok := org.Objects["ProbeTestSetting__c"]
+	if ok {
+		if setting.Records == nil {
+			setting.Records = make(map[storage.ID]storage.Record)
+		}
+		setting.Records[storage.ID("a0s000000000001AAA")] = storage.Record{
+			ID:     storage.ID("a0s000000000001AAA"),
+			Object: "ProbeTestSetting__c",
 			Fields: map[string]storage.Value{
-				"Name__c":     storage.StringValue(fmt.Sprintf("Record%d", i)),
-				"Value__c":    storage.IntegerValue(int64(i * 10)),
-				"Triggered__c": storage.StringValue("false"),
+				"SetupOwnerId": storage.StringValue("00D000000000001AAA"),
+				"Value__c":     storage.StringValue("setting-value"),
 			},
 		}
+		org.Objects["ProbeTestSetting__c"] = setting
 	}
-	org.Objects["ProbeTestObject__c"] = obj
+
 	return nil
 }
 

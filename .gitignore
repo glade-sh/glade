@@ -1,5 +1,6 @@
 .DS_Store
 /bin/
 /dist/
+/oaer
 /coverage.out
 /example-projects

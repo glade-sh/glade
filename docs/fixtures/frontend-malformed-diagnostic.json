@@ -21,7 +21,7 @@
   },
   "expected": {
     "result": {
-      "diagnostics": 2,
+      "diagnostics": 1,
       "files": 1,
       "ok": false
     }

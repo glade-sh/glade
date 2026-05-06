@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // WriteReport writes a GapReport to disk as JSON.
@@ -83,6 +84,28 @@ func guessClassName(probeID string) string {
 		case "m":
 			return "StdlibMathProbes"
 		}
+	}
+	// Map category prefixes to probe class names
+	if strings.HasPrefix(probeID, "async.") {
+		return "AsyncApexProbes"
+	}
+	if strings.HasPrefix(probeID, "platform-event.") {
+		return "PlatformEventProbes"
+	}
+	if strings.HasPrefix(probeID, "metadata.") {
+		return "MetadataProbes"
+	}
+	if strings.HasPrefix(probeID, "integration.") {
+		return "IntegrationProbes"
+	}
+	if strings.HasPrefix(probeID, "email.") {
+		return "EmailProbes"
+	}
+	if strings.HasPrefix(probeID, "schema.") {
+		return "SchemaDescribeProbes"
+	}
+	if strings.HasPrefix(probeID, "security.") {
+		return "SecurityProbes"
 	}
 	return "ProbeRunner"
 }

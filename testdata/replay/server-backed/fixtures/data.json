@@ -1,0 +1,11 @@
+[
+  {
+    "object": "Account",
+    "records": [
+      {
+        "Name": "Replay Account",
+        "Amount__c": 42
+      }
+    ]
+  }
+]

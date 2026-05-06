@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "name": "server-backed",
+  "description": "Small owned replay bundle for in-process REST server checks.",
+  "project": {
+    "root": ".",
+    "sourceApiVersion": "65.0"
+  },
+  "fixtures": {
+    "data": "fixtures/data.json"
+  },
+  "steps": [
+    {
+      "name": "rest-sequence",
+      "kind": "server",
+      "serverRequests": [
+        {
+          "name": "versions",
+          "method": "GET",
+          "path": "/services/data/",
+          "status": 200,
+          "contains": [
+            "v65.0"
+          ]
+        },
+        {
+          "name": "query-account",
+          "method": "GET",
+          "path": "/services/data/v65.0/query?q=SELECT%20Id,Name%20FROM%20Account",
+          "status": 200,
+          "contains": [
+            "Replay Account"
+          ]
+        }
+      ]
+    }
+  ]
+}

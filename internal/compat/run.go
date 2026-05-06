@@ -623,13 +623,14 @@ func runServerFixture(fixture Fixture) (RunResult, error) {
 
 func serverFixtureOrg() storage.OrgState {
 	org := storage.NewOrgState()
-	org.APIVersion = "61.0"
+	org.APIVersion = storage.DefaultRESTAPIVersion
 	org.Objects["Account"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
 			APIName:   "Account",
 			KeyPrefix: "001",
 			Fields: map[string]storage.Field{
 				"Name":           {APIName: "Name", Type: storage.FieldString, Required: true},
+				"Amount__c":      {APIName: "Amount__c", Type: storage.FieldDecimal},
 				"Description":    {APIName: "Description", Type: storage.FieldString},
 				"External_Id__c": {APIName: "External_Id__c", Type: storage.FieldString, ExternalID: true, Unique: true},
 				"Formula__c":     {APIName: "Formula__c", Type: storage.FieldCalculated},
