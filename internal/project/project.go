@@ -249,7 +249,7 @@ func collectFiles(root string, p *Project) error {
 			p.PermissionAssignmentFiles = append(p.PermissionAssignmentFiles, path)
 		case strings.HasSuffix(lower, ".listview-meta.xml"):
 			p.ListViewFiles = append(p.ListViewFiles, path)
-		case strings.HasSuffix(lower, ".layout-meta.xml"):
+		case strings.HasSuffix(lower, ".layout-meta.xml"), strings.HasSuffix(lower, ".layout"):
 			p.LayoutFiles = append(p.LayoutFiles, path)
 		case strings.HasSuffix(lower, ".compactlayout-meta.xml"):
 			p.CompactLayoutFiles = append(p.CompactLayoutFiles, path)

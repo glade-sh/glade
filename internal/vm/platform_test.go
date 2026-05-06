@@ -712,6 +712,8 @@ func TestExecLabelsFromLocalMetadataRegistry(t *testing.T) {
 System.assertEquals('Hello', Label.Greeting);
 System.assertEquals('Hello', System.Label.Greeting);
 System.assertEquals('Bonjour', Label.pkg.Greeting);
+System.assertEquals('Dependency_Message', Label.ext.Dependency_Message);
+System.assertEquals('invalid_email', Label.Site.invalid_email);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -722,6 +724,7 @@ System.assertEquals('Bonjour', Label.pkg.Greeting);
 		{Name: "Greeting", Namespace: "pkg", Language: "en_US", Value: "Hello"},
 		{Name: "Greeting", Namespace: "pkg", Language: "fr", Value: "Bonjour"},
 	}
+	org.Metadata.ManagedLabelNamespaces = []string{"ext"}
 	machine := New(nil)
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {

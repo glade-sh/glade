@@ -45,6 +45,12 @@ func TestLoadProjectIndexesPagesAndComponents(t *testing.T) {
 	if ref, ok := idx.PageReference("Page.Edit"); !ok || ref.Name != "Edit" {
 		t.Fatalf("page reference lookup = %#v, %v", ref, ok)
 	}
+	if ref, ok := idx.PageReference("Page.pkg__Edit"); !ok || ref.Name != "Edit" {
+		t.Fatalf("namespaced page reference lookup = %#v, %v", ref, ok)
+	}
+	if ref, ok := idx.PageFile(filepath.Join(root, "force-app/main/default/pages/Edit.page")); !ok || ref.Name != "Edit" {
+		t.Fatalf("page file lookup = %#v, %v", ref, ok)
+	}
 	if !idx.HasPageReference("Page.Edit") || idx.HasPageReference("Page.Missing") {
 		t.Fatalf("page readiness lookup failed: %#v", idx.pagesByName)
 	}

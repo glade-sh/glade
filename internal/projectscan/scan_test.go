@@ -244,7 +244,7 @@ func TestScanSuppressesLoadedLegacyObjectSource(t *testing.T) {
 
 func TestScanSuppressesResolvedStandardSchemaReferences(t *testing.T) {
 	root := t.TempDir()
-	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"pkg"}`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/lwc/resolved/resolved.js"), `import ACCOUNT_NAME from '@salesforce/schema/Account.Name';
 import LEAD_LAST_NAME from '@salesforce/schema/Lead.LastName';
 import CONTACT_ACCOUNT_NAME from '@salesforce/schema/Contact.Account.Name';
@@ -257,16 +257,29 @@ import PAYMENT_BATCH_NAME from '@salesforce/schema/pkg__Payment__c.pkg__Batch__r
 import NPSP_PAYMENT_AMOUNT from '@salesforce/schema/npe01__OppPayment__c.npe01__Payment_Amount__c';
 import NPSP_RECURRING_INSTALLMENT from '@salesforce/schema/npe03__Recurring_Donation__c.npe03__Installment_Period__c';
 import FORM_TEMPLATE_MODIFIED from '@salesforce/schema/Form_Template__c.LastModifiedDate';
+import FORM_TEMPLATE_VIEWED from '@salesforce/schema/Form_Template__c.LastViewedDate';
+import FORM_TEMPLATE_REFERENCED from '@salesforce/schema/Form_Template__c.LastReferencedDate';
 import RECURRING_ORG_NAME from '@salesforce/schema/npe03__Recurring_Donation__c.npe03__Organization__r.Name';
 import RECURRING_ORG_CONTACT_LAST from '@salesforce/schema/npe03__Recurring_Donation__c.npe03__Organization__r.npe01__One2OneContact__r.LastName';
 import ACCOUNT_ONE_TO_ONE_LAST from '@salesforce/schema/Account.npe01__One2OneContact__r.LastName';
 import FORM_TEMPLATE_PRESENTATION_PATH from '@salesforce/schema/Form_Template__c.Requester__r.LastModifiedDate';
+import EXTERNAL_MANAGED_FIELD from '@salesforce/schema/ext__Managed__c.ext__Amount__c';
+import EXTERNAL_MANAGED_RELATIONSHIP from '@salesforce/schema/ext__Managed__c.ext__Account__r.Name';
+import EXTERNAL_MANAGED_NESTED_RELATIONSHIP from '@salesforce/schema/ext__Managed__c.ext__Account__r.ext__Primary_Contact__r.LastName';
 import MISSING_FIELD from '@salesforce/schema/Account.NotAField__c';
 import MISSING_RELATIONSHIP from '@salesforce/schema/Batch__c.Missing__r.Name';
 `)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Batch__c/Batch__c.object-meta.xml"), `<CustomObject><label>Batch</label><pluralLabel>Batches</pluralLabel></CustomObject>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Batch__c/fields/Amount__c.field-meta.xml"), `<CustomField><fullName>Amount__c</fullName><label>Amount</label><type>Currency</type></CustomField>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Batch__c/fields/Parent__c.field-meta.xml"), `<CustomField><fullName>Parent__c</fullName><label>Parent</label><type>Lookup</type><referenceTo>Account</referenceTo><relationshipName>Parent__r</relationshipName></CustomField>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Batch__c/fieldSets/BatchDetailView.fieldSet-meta.xml"), `<FieldSet>
+  <fullName>BatchDetailView</fullName>
+  <displayedFields><field>Name</field></displayedFields>
+</FieldSet>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/DuplicateRecordSet/fieldSets/ContactMergeDRS.fieldSet-meta.xml"), `<FieldSet>
+  <fullName>ContactMergeDRS</fullName>
+  <displayedFields><field>Name</field></displayedFields>
+</FieldSet>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/pkg__Payment__c/pkg__Payment__c.object-meta.xml"), `<CustomObject><label>Payment</label><pluralLabel>Payments</pluralLabel></CustomObject>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/pkg__Payment__c/fields/pkg__Amount__c.field-meta.xml"), `<CustomField><fullName>pkg__Amount__c</fullName><label>Amount</label><type>Currency</type></CustomField>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/pkg__Payment__c/fields/pkg__Batch__c.field-meta.xml"), `<CustomField><fullName>pkg__Batch__c</fullName><label>Batch</label><type>Lookup</type><referenceTo>Batch__c</referenceTo><relationshipName>pkg__Batch__r</relationshipName></CustomField>`)
@@ -293,6 +306,10 @@ import MISSING_RELATIONSHIP from '@salesforce/schema/Batch__c.Missing__r.Name';
 {!$ObjectType.Batch__c.Fields.Name.InlineHelpText}
 {!$ObjectType.Batch__c.Fields.pkg__Amount__c.Label}
 {!$ObjectType.Batch__c.Parent__r.Name}
+{!$ObjectType.Batch__c.FieldSets.BatchDetailView}
+{!$ObjectType.DuplicateRecordSet.FieldSets.ContactMergeDRS}
+{!$ObjectType.Opportunity.Createable}
+{!$ObjectType.Contact.fields.FirstName.Createable}
 {!$ObjectType.OpportunityContactRole.Fields.ContactId.Label}
 {!$ObjectType.OpportunityContactRole.Contact.Email}
 {!$ObjectType.Batch__c.Fields[fieldName].Label}
@@ -341,6 +358,12 @@ import MISSING_RELATIONSHIP from '@salesforce/schema/Batch__c.Missing__r.Name';
 	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "Form_Template__c.LastModifiedDate") {
 		t.Fatalf("custom object standard audit field reference should not be reported")
 	}
+	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "Form_Template__c.LastViewedDate") {
+		t.Fatalf("custom object standard LastViewedDate field reference should not be reported")
+	}
+	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "Form_Template__c.LastReferencedDate") {
+		t.Fatalf("custom object standard LastReferencedDate field reference should not be reported")
+	}
 	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "npe03__Recurring_Donation__c.npe03__Organization__r.Name") {
 		t.Fatalf("namespaced custom relationship path should not be reported")
 	}
@@ -352,6 +375,15 @@ import MISSING_RELATIONSHIP from '@salesforce/schema/Batch__c.Missing__r.Name';
 	}
 	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "Form_Template__c.Requester__r.LastModifiedDate") {
 		t.Fatalf("presentation-declared dotted field path should not be reported")
+	}
+	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "ext__Managed__c.ext__Amount__c") {
+		t.Fatalf("external managed-package field reference should not be reported")
+	}
+	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "ext__Managed__c.ext__Account__r.Name") {
+		t.Fatalf("external managed-package relationship reference should not be reported")
+	}
+	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/lwc/resolved/resolved.js", "ext__Managed__c.ext__Account__r.ext__Primary_Contact__r.LastName") {
+		t.Fatalf("nested external managed-package relationship reference should not be reported")
 	}
 	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/pages/Resolved.page", "Opportunity.Fields.StageName") {
 		t.Fatalf("resolved Opportunity.StageName object type reference should not be reported")
@@ -367,6 +399,18 @@ import MISSING_RELATIONSHIP from '@salesforce/schema/Batch__c.Missing__r.Name';
 	}
 	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/pages/Resolved.page", "Batch__c.Parent__r.Name") {
 		t.Fatalf("resolved Visualforce relationship object type reference should not be reported")
+	}
+	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/pages/Resolved.page", "Batch__c.FieldSets.BatchDetailView") {
+		t.Fatalf("resolved Visualforce field set reference should not be reported")
+	}
+	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/pages/Resolved.page", "DuplicateRecordSet.FieldSets.ContactMergeDRS") {
+		t.Fatalf("resolved standard-object Visualforce field set reference should not be reported")
+	}
+	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/pages/Resolved.page", "Opportunity.Createable") {
+		t.Fatalf("resolved Visualforce object permission property should not be reported")
+	}
+	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/pages/Resolved.page", "Contact.fields.FirstName.Createable") {
+		t.Fatalf("resolved Visualforce field permission property should not be reported")
 	}
 	if hasLineFindingContaining(report, "ui.presentation-metadata", "force-app/main/default/pages/Resolved.page", "OpportunityContactRole.Fields.ContactId") {
 		t.Fatalf("resolved standard OpportunityContactRole field reference should not be reported")
@@ -397,6 +441,18 @@ func TestScanDoesNotClassifyPassiveUIFilesAsControllerBlockers(t *testing.T) {
   public ExistingExtension(ApexPages.StandardController controller) {}
   public void cancel() {}
 }`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/BasePanel.cls"), `public virtual class BasePanel {
+  public virtual PageReference editSettings() { return null; }
+  public virtual PageReference saveSettings() { return null; }
+}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/InheritedPanel.cls"), `public class InheritedPanel extends BasePanel {
+}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/InheritedExtension.cls"), `public class InheritedExtension extends BasePanel {
+  public InheritedExtension(ApexPages.StandardController controller) {}
+}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/AuditExtension.cls"), `public class AuditExtension {
+  public AuditExtension(ApexPages.StandardController controller) {}
+}`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/lwc/passive/passive.js"), `import { LightningElement } from 'lwc';
 export default class Passive extends LightningElement {}
 `)
@@ -404,6 +460,13 @@ export default class Passive extends LightningElement {}
 	writeFile(t, filepath.Join(root, "force-app/main/default/pages/Passive.page"), `<apex:page><apex:outputText value="Passive"/></apex:page>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/pages/Existing.page"), `<apex:page controller="ExistingController" action="{!save}"><apex:form /></apex:page>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/pages/ExistingStandard.page"), `<apex:page standardController="Account" extensions="ExistingExtension" action="{!cancel}"><apex:form /></apex:page>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/pages/ExistingStandardMulti.page"), `<apex:page standardController="Account" extensions="ExistingExtension, AuditExtension"><apex:form /></apex:page>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/pages/Inherited.page"), `<apex:page controller="InheritedPanel">
+  <apex:commandButton action="{!editSettings}" />
+</apex:page>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/pages/InheritedStandard.page"), `<apex:page standardController="Account" extensions="InheritedExtension">
+  <apex:commandButton action="{!saveSettings}" />
+</apex:page>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/pages/SetNavigation.page"), `<apex:page standardController="Account" recordSetVar="allocations" action="{!setCon.first}"><apex:form /></apex:page>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/pages/FormulaAction.page"), `<apex:page controller="ExistingController" action="{!if(true, save, null)}"><apex:form /></apex:page>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/pages/RowItemAction.page"), `<apex:page controller="ExistingController"><apex:repeat value="{!items}" var="item"><apex:commandLink action="{!item.editItem}" /></apex:repeat></apex:page>`)
@@ -442,6 +505,15 @@ export default class Passive extends LightningElement {}
 	if hasLineFinding(report, "visualforce.controller-test", "force-app/main/default/pages/ExistingStandard.page", "ExistingExtension") ||
 		hasLineFinding(report, "visualforce.controller-test", "force-app/main/default/pages/ExistingStandard.page", "{!cancel}") {
 		t.Fatalf("resolved Visualforce extension contract should not be reported")
+	}
+	if hasLineFinding(report, "visualforce.controller-test", "force-app/main/default/pages/ExistingStandardMulti.page", "ExistingExtension, AuditExtension") {
+		t.Fatalf("resolved Visualforce extension list should not be reported")
+	}
+	if hasLineFinding(report, "visualforce.controller-test", "force-app/main/default/pages/Inherited.page", "{!editSettings}") {
+		t.Fatalf("inherited Visualforce controller action should not be reported")
+	}
+	if hasLineFinding(report, "visualforce.controller-test", "force-app/main/default/pages/InheritedStandard.page", "{!saveSettings}") {
+		t.Fatalf("inherited Visualforce extension action should not be reported")
 	}
 	if hasLineFinding(report, "visualforce.controller-test", "force-app/main/default/pages/SetNavigation.page", "allocations") ||
 		hasLineFinding(report, "visualforce.controller-test", "force-app/main/default/pages/SetNavigation.page", "{!setCon.first}") {
@@ -482,6 +554,7 @@ func TestScanSuppressesSupportedVisualforceRuntimeReferences(t *testing.T) {
     PageReference page = Page.AccountView;
     ApexPages.currentPage().getParameters().put('id', '001000000000001AAA');
     ApexPages.StandardController controller = new ApexPages.StandardController(new Account(Name = 'Acme'));
+    PageReference stringPage = new PageReference('Page.StringOnly');
   }
   void missing() {
     PageReference page = Page.MissingPage;
@@ -504,6 +577,9 @@ func TestScanSuppressesSupportedVisualforceRuntimeReferences(t *testing.T) {
 	}
 	if hasLineFinding(report, "visualforce.controller-test", "force-app/main/default/classes/UsesVisualforce.cls", "Page.AccountView") {
 		t.Fatalf("registered Page.AccountView reference should not be reported")
+	}
+	if hasLineFinding(report, "visualforce.controller-test", "force-app/main/default/classes/UsesVisualforce.cls", "Page.StringOnly") {
+		t.Fatalf("Page.* inside Apex strings should not be reported as page namespace references")
 	}
 	if !hasLineFinding(report, "visualforce.controller-test", "force-app/main/default/classes/UsesVisualforce.cls", "Page.MissingPage") {
 		t.Fatalf("missing unresolved Page.MissingPage finding")
@@ -704,6 +780,7 @@ func TestScanSuppressesResolvedLabelReferences(t *testing.T) {
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/npe01__OppPayment__c/npe01__OppPayment__c.object-meta.xml"), `<CustomObject><label>Payment</label><pluralLabel>Payments</pluralLabel></CustomObject>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/npo02__Address__c/npo02__Address__c.object-meta.xml"), `<CustomObject><label>Address</label><pluralLabel>Addresses</pluralLabel></CustomObject>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/pkg__Managed__c/pkg__Managed__c.object-meta.xml"), `<CustomObject><label>Managed</label><pluralLabel>Managed</pluralLabel></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/ext__External__c/ext__External__c.object-meta.xml"), `<CustomObject><label>External</label><pluralLabel>Externals</pluralLabel></CustomObject>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/translations/fr.translation-meta.xml"), `<Translations>
   <customLabels><name>Greeting</name><label>Bonjour</label></customLabels>
 </Translations>`)
@@ -717,6 +794,11 @@ func TestScanSuppressesResolvedLabelReferences(t *testing.T) {
     System.debug(wrapper.Label.get('Name'));
     System.debug(System.Label.npo02.AddressCopyUnknownObject);
     System.debug(Label.npe01.Contact_Merge_Error_Too_Few_Contacts);
+    System.debug(Label.ext.Managed_Dependency_Label);
+    System.debug(Label.npsp.Own_Namespace_Missing);
+    System.debug(System.Label.get('ext', 'Managed_Dynamic_Label', 'en_US'));
+    String formula = '$Label.c.MyLabelName';
+    System.debug(Label.Site.invalid_email);
     System.debug(Label.npe01.Missing_Aliased_Label);
     System.debug(Label.Missing);
     System.debug(Label.Missing.replace('{0}', 'Done'));
@@ -730,6 +812,9 @@ import REMOVE from '@salesforce/label/c.Remove';
 	writeFile(t, filepath.Join(root, "force-app/main/default/pages/Labels.page"), `<apex:page>
 {!$Label.Save}
 {!$Label.Missing}
+{!$Label.ext__External_Visualforce_Label}
+{!$Label.site.site_login}
+{!$Label.npsp__Own_Visualforce_Missing}
 </apex:page>`)
 
 	report, err := Scan(root)
@@ -764,6 +849,18 @@ import REMOVE from '@salesforce/label/c.Remove';
 	if hasLineFinding(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "npe01.Contact_Merge_Error_Too_Few_Contacts") {
 		t.Fatalf("resolved aliased Label namespace should not be reported")
 	}
+	if hasLineFinding(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "ext.Managed_Dependency_Label") {
+		t.Fatalf("external managed-package label fallback should not be reported")
+	}
+	if hasLineFinding(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "get") {
+		t.Fatalf("System.Label.get should not be reported as a missing label")
+	}
+	if hasLineFindingContaining(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "c.MyLabelName") {
+		t.Fatalf("label-like Apex string literals should not be reported")
+	}
+	if hasLineFinding(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "Site.invalid_email") {
+		t.Fatalf("platform Site label fallback should not be reported")
+	}
 	if hasLineFindingContaining(report, "labels.localization", "force-app/main/default/lwc/labels/labels.js", "c.Save") {
 		t.Fatalf("resolved LWC c.Save label should not be reported")
 	}
@@ -776,11 +873,20 @@ import REMOVE from '@salesforce/label/c.Remove';
 	if hasLineFindingContaining(report, "labels.localization", "force-app/main/default/pages/Labels.page", "$Label.Save") {
 		t.Fatalf("resolved Visualforce $Label.Save should not be reported")
 	}
+	if hasLineFindingContaining(report, "labels.localization", "force-app/main/default/pages/Labels.page", "$Label.ext__External_Visualforce_Label") {
+		t.Fatalf("external Visualforce managed-package label fallback should not be reported")
+	}
+	if hasLineFindingContaining(report, "labels.localization", "force-app/main/default/pages/Labels.page", "$Label.site.site_login") {
+		t.Fatalf("platform Visualforce Site label fallback should not be reported")
+	}
 	if !hasLineFinding(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "Missing") {
 		t.Fatalf("missing unresolved Apex label finding")
 	}
-	if !hasLineFinding(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "npe01.Missing_Aliased_Label") {
-		t.Fatalf("missing unresolved aliased label finding")
+	if hasLineFinding(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "npe01.Missing_Aliased_Label") {
+		t.Fatalf("external managed-package missing label fallback should not be reported")
+	}
+	if !hasLineFinding(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "npsp.Own_Namespace_Missing") {
+		t.Fatalf("missing own-namespace label finding")
 	}
 	if !hasLineFindingContaining(report, "labels.localization", "force-app/main/default/classes/UsesLabels.cls", "Missing.replace") {
 		t.Fatalf("missing unresolved Apex label method-chain finding")
@@ -790,6 +896,9 @@ import REMOVE from '@salesforce/label/c.Remove';
 	}
 	if !hasLineFindingContaining(report, "labels.localization", "force-app/main/default/pages/Labels.page", "$Label.Missing") {
 		t.Fatalf("missing unresolved Visualforce label finding")
+	}
+	if !hasLineFindingContaining(report, "labels.localization", "force-app/main/default/pages/Labels.page", "$Label.npsp__Own_Visualforce_Missing") {
+		t.Fatalf("missing own-namespace Visualforce label finding")
 	}
 	for _, finding := range report.Findings {
 		if finding.MetadataType == "CustomLabels" {
@@ -810,11 +919,26 @@ func TestScanSuppressesModeledDeclarativeAutomation(t *testing.T) {
   <fieldUpdates><fullName>SetLegacyStatus</fullName><field>Status__c</field><literalValue>Workflow</literalValue></fieldUpdates>
   <rules><fullName>LegacyMark</fullName><active>true</active><booleanFilter>1</booleanFilter><criteriaItems><field>Legacy__c.Status__c</field><operation>equals</operation></criteriaItems><actions><name>SetLegacyStatus</name><type>FieldUpdate</type></actions></rules>
 </Workflow>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/workflows/Contact.workflow"), `<Workflow>
+  <rules><fullName>CopyEmail</fullName><active>true</active><actions><name>ContactEmailUpdate</name><type>FieldUpdate</type></actions></rules>
+</Workflow>`)
+	writeFile(t, filepath.Join(root, "unpackaged/config/trial_tso/workflows/Contact.workflow"), `<Workflow>
+  <fieldUpdates><fullName>ContactEmailUpdate</fullName><field>OtherEmail__c</field><formula>Email</formula></fieldUpdates>
+</Workflow>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/flows/Widget_Status.flow-meta.xml"), `<Flow>
   <processType>Workflow</processType>
   <status>Active</status>
   <start><object>Widget__c</object></start>
   <assignments><name>SetFlow</name><assignmentItems><assignToReference>$Record.Status__c</assignToReference><operator>Assign</operator><value><stringValue>Flow</stringValue></value></assignmentItems></assignments>
+</Flow>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/flows/Widget_Propagate_Delete.flow-meta.xml"), `<Flow>
+  <processType>AutoLaunchedFlow</processType>
+  <status>Active</status>
+  <decisions><name>ExistingRequest</name><defaultConnector><targetReference>CreateRequest</targetReference></defaultConnector><rules><name>Exists</name><conditionLogic>and</conditionLogic><conditions><leftValueReference>PendingRequest</leftValueReference><operator>IsNull</operator><rightValue><booleanValue>false</booleanValue></rightValue></conditions></rules></decisions>
+  <recordLookups><name>PendingRequest</name><object>ActionRequest__c</object><filterLogic>and</filterLogic><filters><field>SourceRecordId__c</field><operator>EqualTo</operator><value><elementReference>$Record.Id</elementReference></value></filters><getFirstRecordOnly>true</getFirstRecordOnly><storeOutputAutomatically>true</storeOutputAutomatically></recordLookups>
+  <recordCreates><name>CreateRequest</name><object>ActionRequest__c</object><inputAssignments><field>ActionName__c</field><value><stringValue>Delete</stringValue></value></inputAssignments><inputAssignments><field>SourceRecordId__c</field><value><elementReference>$Record.Id</elementReference></value></inputAssignments><storeOutputAutomatically>true</storeOutputAutomatically></recordCreates>
+  <start><object>Widget__c</object><triggerType>RecordBeforeDelete</triggerType></start>
+  <variables><name>PendingRequest</name><dataType>SObject</dataType><objectType>ActionRequest__c</objectType></variables>
 </Flow>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/flows/SetupWizard.flow-meta.xml"), `<Flow>
   <processType>Flow</processType>

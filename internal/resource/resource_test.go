@@ -16,6 +16,7 @@ func TestLoadProjectResourcesLabelsAndEndpoints(t *testing.T) {
   <labels><fullName>Greeting</fullName><value>Hello</value><language>en_US</language></labels>
   <labels><fullName>pkg__ManagedGreeting</fullName><value>Hello managed</value><language>en_US</language></labels>
 </CustomLabels>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/ext__Widget__c/ext__Widget__c.object-meta.xml"), `<CustomObject><label>Widget</label></CustomObject>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/translations/fr.translation-meta.xml"), `<Translations>
   <customLabels><name>Greeting</name><label>Bonjour</label></customLabels>
 </Translations>`)
@@ -48,6 +49,15 @@ func TestLoadProjectResourcesLabelsAndEndpoints(t *testing.T) {
 	}
 	if got, ok := LookupLabel(registry, "pkg", "ManagedGreeting"); !ok || got != "Hello managed" {
 		t.Fatalf("managed label fallback = %q, %v", got, ok)
+	}
+	if got, status := ResolveLabel(registry, "pkg", "ext", "External_Message"); got != "External_Message" || status != LabelLookupManagedNamespaceFallback {
+		t.Fatalf("external managed label fallback = %q, %s", got, status)
+	}
+	if got, status := ResolveLabel(registry, "pkg", "Site", "invalid_email"); got != "invalid_email" || status != LabelLookupPlatformFallback {
+		t.Fatalf("platform label fallback = %q, %s", got, status)
+	}
+	if got, status := ResolveLabel(registry, "pkg", "pkg", "Missing"); got != "" || status != LabelLookupMissing {
+		t.Fatalf("own namespace missing label = %q, %s", got, status)
 	}
 	if got, ok := URLForStaticResource(registry, "Site", "css/app.css"); !ok || got != "/resource/Site/css/app.css" {
 		t.Fatalf("resource url = %q, %v", got, ok)

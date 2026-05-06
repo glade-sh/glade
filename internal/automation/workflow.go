@@ -81,8 +81,12 @@ type workflowRecipientXML struct {
 
 func LoadProject(p project.Project) (Index, error) {
 	idx := Index{}
+	workflowUpdates, err := loadProjectWorkflowFieldUpdates(p.WorkflowFiles)
+	if err != nil {
+		return Index{}, err
+	}
 	for _, path := range p.WorkflowFiles {
-		workflow, diagnostics, err := loadWorkflow(path)
+		workflow, diagnostics, err := loadWorkflowWithUpdates(path, workflowUpdates[objectNameFromWorkflowPath(path)])
 		if err != nil {
 			return Index{}, err
 		}
@@ -127,6 +131,10 @@ func ApplyToOrg(org *storage.OrgState, idx Index) {
 }
 
 func loadWorkflow(path string) (Workflow, []diagnostic.Diagnostic, error) {
+	return loadWorkflowWithUpdates(path, nil)
+}
+
+func loadWorkflowWithUpdates(path string, externalUpdates map[string]storage.WorkflowFieldUpdate) (Workflow, []diagnostic.Diagnostic, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return Workflow{}, nil, err
@@ -135,20 +143,11 @@ func loadWorkflow(path string) (Workflow, []diagnostic.Diagnostic, error) {
 	if err := xml.Unmarshal(data, &raw); err != nil {
 		return Workflow{}, nil, err
 	}
-	updates := make(map[string]storage.WorkflowFieldUpdate, len(raw.FieldUpdates))
-	for _, rawUpdate := range raw.FieldUpdates {
-		update := storage.WorkflowFieldUpdate{
-			Name:         firstNonBlank(rawUpdate.FullName, rawUpdate.Name),
-			Field:        trimObjectPrefix(strings.TrimSpace(rawUpdate.Field)),
-			LiteralValue: strings.TrimSpace(rawUpdate.LiteralValue),
-			Formula:      strings.TrimSpace(rawUpdate.Formula),
-			SourceField:  trimObjectPrefix(strings.TrimSpace(rawUpdate.SourceField)),
-		}
-		if update.Name == "" || update.Field == "" {
-			continue
-		}
-		updates[strings.ToLower(update.Name)] = update
+	updates := make(map[string]storage.WorkflowFieldUpdate, len(externalUpdates)+len(raw.FieldUpdates))
+	for name, update := range externalUpdates {
+		updates[name] = update
 	}
+	mergeWorkflowFieldUpdates(updates, raw.FieldUpdates)
 	alerts := make(map[string]storage.WorkflowEmailAlert, len(raw.Alerts))
 	for _, rawAlert := range raw.Alerts {
 		alert := storage.WorkflowEmailAlert{
@@ -220,6 +219,42 @@ func loadWorkflow(path string) (Workflow, []diagnostic.Diagnostic, error) {
 	}
 	sort.Slice(workflow.Rules, func(i, j int) bool { return workflow.Rules[i].Name < workflow.Rules[j].Name })
 	return workflow, diagnostics, nil
+}
+
+func loadProjectWorkflowFieldUpdates(paths []string) (map[string]map[string]storage.WorkflowFieldUpdate, error) {
+	out := make(map[string]map[string]storage.WorkflowFieldUpdate)
+	for _, path := range paths {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return nil, err
+		}
+		var raw workflowXML
+		if err := xml.Unmarshal(data, &raw); err != nil {
+			return nil, err
+		}
+		objectName := objectNameFromWorkflowPath(path)
+		if out[objectName] == nil {
+			out[objectName] = make(map[string]storage.WorkflowFieldUpdate)
+		}
+		mergeWorkflowFieldUpdates(out[objectName], raw.FieldUpdates)
+	}
+	return out, nil
+}
+
+func mergeWorkflowFieldUpdates(updates map[string]storage.WorkflowFieldUpdate, rawUpdates []workflowFieldUpdateXML) {
+	for _, rawUpdate := range rawUpdates {
+		update := storage.WorkflowFieldUpdate{
+			Name:         firstNonBlank(rawUpdate.FullName, rawUpdate.Name),
+			Field:        trimObjectPrefix(strings.TrimSpace(rawUpdate.Field)),
+			LiteralValue: strings.TrimSpace(rawUpdate.LiteralValue),
+			Formula:      strings.TrimSpace(rawUpdate.Formula),
+			SourceField:  trimObjectPrefix(strings.TrimSpace(rawUpdate.SourceField)),
+		}
+		if update.Name == "" || update.Field == "" {
+			continue
+		}
+		updates[strings.ToLower(update.Name)] = update
+	}
 }
 
 func unsupported(path, rule, message string) diagnostic.Diagnostic {

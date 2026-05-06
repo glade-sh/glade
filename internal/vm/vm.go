@@ -15186,7 +15186,7 @@ func (vm *VM) lookupLabel(name string) (Value, bool) {
 		label = after
 	}
 	if vm.Org != nil {
-		if value, ok := resource.LookupLabel(vm.Org.Metadata, namespace, label); ok {
+		if value, status := resource.ResolveLabel(vm.Org.Metadata, vm.Org.Namespace, namespace, label); status != resource.LabelLookupMissing {
 			return String(value), true
 		}
 	}

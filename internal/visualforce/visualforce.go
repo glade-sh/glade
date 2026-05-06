@@ -18,6 +18,7 @@ type Index struct {
 	Components []Component `json:"components,omitempty"`
 
 	pagesByName      map[string]int
+	pagesByFile      map[string]int
 	componentsByName map[string]int
 	componentsByFile map[string]int
 }
@@ -164,6 +165,14 @@ func (i Index) HasPageReference(name string) bool {
 	return ok
 }
 
+func (i Index) PageFile(path string) (Page, bool) {
+	idx, ok := i.pagesByFile[filepath.Clean(path)]
+	if !ok {
+		return Page{}, false
+	}
+	return i.Pages[idx], true
+}
+
 func (i Index) Component(name string) (Component, bool) {
 	idx, ok := i.componentsByName[lookupKey(name)]
 	if !ok {
@@ -184,8 +193,10 @@ func (i *Index) sortAndBuildLookups() {
 	sort.Slice(i.Pages, func(a, b int) bool { return i.Pages[a].Name < i.Pages[b].Name })
 	sort.Slice(i.Components, func(a, b int) bool { return i.Components[a].Name < i.Components[b].Name })
 	i.pagesByName = make(map[string]int, len(i.Pages))
+	i.pagesByFile = make(map[string]int, len(i.Pages))
 	for n, page := range i.Pages {
 		i.pagesByName[lookupKey(page.Name)] = n
+		i.pagesByFile[filepath.Clean(page.File)] = n
 	}
 	i.componentsByName = make(map[string]int, len(i.Components))
 	i.componentsByFile = make(map[string]int, len(i.Components))
@@ -372,7 +383,10 @@ func nameFromPath(path, suffix string) string {
 func trimPageReference(name string) string {
 	name = strings.TrimSpace(name)
 	if strings.HasPrefix(strings.ToLower(name), "page.") {
-		return name[len("Page."):]
+		name = name[len("Page."):]
+	}
+	if idx := strings.Index(name, "__"); idx > 0 {
+		return name[idx+len("__"):]
 	}
 	return name
 }

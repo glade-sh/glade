@@ -99,6 +99,7 @@ func LoadProject(p project.Project) (storage.MetadataRegistry, error) {
 		return storage.MetadataRegistry{}, err
 	}
 	registry.EmailTemplates = templates
+	registry.ManagedLabelNamespaces = managedLabelNamespaces(p)
 	for _, path := range p.NamedCredentialFiles {
 		endpoint, err := loadNamedCredential(path)
 		if err != nil {
@@ -174,6 +175,47 @@ func LookupLabel(registry storage.MetadataRegistry, namespace, name string) (str
 	return "", false
 }
 
+type LabelLookupStatus string
+
+const (
+	LabelLookupMissing                  LabelLookupStatus = "missing"
+	LabelLookupPlatformFallback         LabelLookupStatus = "platform-label-fallback"
+	LabelLookupManagedNamespaceFallback LabelLookupStatus = "managed-namespace-fallback"
+	LabelLookupResolved                 LabelLookupStatus = "resolved"
+)
+
+func ResolveLabel(registry storage.MetadataRegistry, orgNamespace, namespace, name string) (string, LabelLookupStatus) {
+	if value, ok := LookupLabel(registry, namespace, name); ok {
+		return value, LabelLookupResolved
+	}
+	namespace = strings.TrimSpace(namespace)
+	name = strings.TrimSpace(name)
+	if namespace == "" || name == "" {
+		return "", LabelLookupMissing
+	}
+	if isPlatformLabelNamespace(namespace) {
+		return name, LabelLookupPlatformFallback
+	}
+	if orgNamespace != "" && strings.EqualFold(namespace, orgNamespace) {
+		return "", LabelLookupMissing
+	}
+	for _, managed := range registry.ManagedLabelNamespaces {
+		if strings.EqualFold(strings.TrimSpace(managed), namespace) {
+			return name, LabelLookupManagedNamespaceFallback
+		}
+	}
+	return "", LabelLookupMissing
+}
+
+func isPlatformLabelNamespace(namespace string) bool {
+	switch strings.ToLower(strings.TrimSpace(namespace)) {
+	case "site":
+		return true
+	default:
+		return false
+	}
+}
+
 func labelNameMatches(candidate, requested string) bool {
 	candidate = strings.TrimSpace(candidate)
 	requested = strings.TrimSpace(requested)
@@ -186,6 +228,68 @@ func labelNameMatches(candidate, requested string) bool {
 	}
 	strippedRequested := stripAnyNamespaceToken(requested)
 	return strippedRequested != requested && strings.EqualFold(candidate, strippedRequested)
+}
+
+func managedLabelNamespaces(p project.Project) []string {
+	aliases := make(map[string]bool)
+	add := func(value string) {
+		token := namespaceToken(value)
+		if token == "" {
+			return
+		}
+		if p.Namespace != "" && strings.EqualFold(token, p.Namespace) {
+			return
+		}
+		aliases[strings.ToLower(token)] = true
+	}
+	for _, paths := range [][]string{
+		p.ObjectFiles,
+		p.FieldFiles,
+		p.FieldSetFiles,
+		p.RecordTypeFiles,
+		p.ValidationRuleFiles,
+		p.CustomMetadataFiles,
+		p.LayoutFiles,
+		p.CompactLayoutFiles,
+		p.TabFiles,
+		p.WebLinkFiles,
+		p.QuickActionFiles,
+		p.ApexFiles,
+		p.VisualforcePageFiles,
+		p.VisualforceComponentFiles,
+		p.AuraFiles,
+		p.LWCFiles,
+	} {
+		for _, path := range paths {
+			add(filepath.Base(path))
+			for _, part := range strings.Split(filepath.ToSlash(path), "/") {
+				add(part)
+			}
+		}
+	}
+	if len(aliases) == 0 {
+		return nil
+	}
+	out := make([]string, 0, len(aliases))
+	for alias := range aliases {
+		out = append(out, alias)
+	}
+	sort.Strings(out)
+	return out
+}
+
+func namespaceToken(name string) string {
+	name = strings.TrimSpace(name)
+	first := strings.Index(name, "__")
+	last := strings.LastIndex(name, "__")
+	if first <= 0 || first >= last {
+		return ""
+	}
+	token := name[:first]
+	if strings.Contains(token, ".") {
+		token = token[strings.LastIndex(token, ".")+1:]
+	}
+	return token
 }
 
 func ResolveEndpoint(registry storage.MetadataRegistry, endpoint string) (string, bool) {

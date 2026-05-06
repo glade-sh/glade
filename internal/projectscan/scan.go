@@ -279,6 +279,7 @@ type scanContext struct {
 	types             map[string]typesys.TypeSymbol
 	present           map[string]bool
 	presentationPaths map[string]bool
+	fieldSets         map[string]bool
 	loadedFiles       map[string]bool
 	automation        map[string]bool
 	namespaces        map[string]bool
@@ -459,6 +460,7 @@ func (ctx *scanContext) addPresentationAssetFiles(assets []metadatapkg.NamedAsse
 }
 
 func (ctx *scanContext) addPresentationFields(idx metadatapkg.Index, proj project.Project) {
+	ctx.fieldSets = make(map[string]bool, len(idx.FieldSets))
 	add := func(objectName, fieldName string) {
 		objectName = strings.TrimSpace(objectName)
 		fieldName = strings.TrimSpace(fieldName)
@@ -483,6 +485,10 @@ func (ctx *scanContext) addPresentationFields(idx metadatapkg.Index, proj projec
 		}
 	}
 	for _, fieldSet := range idx.FieldSets {
+		ctx.fieldSets[schemaPathKey([]string{fieldSet.ObjectName, fieldSet.Name})] = true
+		if stripped := stripAnyNamespaceToken(fieldSet.ObjectName); stripped != fieldSet.ObjectName {
+			ctx.fieldSets[schemaPathKey([]string{stripped, fieldSet.Name})] = true
+		}
 		for _, member := range fieldSet.Fields {
 			add(fieldSet.ObjectName, member.Field)
 		}
@@ -782,7 +788,7 @@ func scanTextFile(path, rel string, ctx *scanContext) ([]Finding, error) {
 				if suppressVisualforceControllerAttributeFinding(pattern, match) {
 					continue
 				}
-				if ctx != nil && ctx.resolvesFinding(pattern.capability, symbol, rel) {
+				if ctx != nil && ctx.resolvesFinding(pattern.capability, symbol, rel, path) {
 					continue
 				}
 				if suppressSupportedFinding(pattern.capability, symbol, line) {
@@ -815,7 +821,7 @@ func suppressVisualforceControllerAttributeFinding(pattern patternDef, match []s
 }
 
 func lineForPattern(line string, pattern patternDef) string {
-	if pattern.capability == "custommetadata.legacy-records" && pattern.metadataType == "ApexClass" {
+	if pattern.metadataType == "ApexClass" && (pattern.capability == "custommetadata.legacy-records" || pattern.capability == "visualforce.controller-test" || pattern.capability == "labels.localization") {
 		return stripApexCommentsAndStrings(line)
 	}
 	return line
@@ -873,7 +879,7 @@ func patternSymbol(pattern patternDef, match []string) string {
 	return ""
 }
 
-func (ctx *scanContext) resolvesFinding(capability, symbol, rel string) bool {
+func (ctx *scanContext) resolvesFinding(capability, symbol, rel, path string) bool {
 	switch capability {
 	case "ui.presentation-metadata":
 		if isRecognizedLightningClientModule(symbol) {
@@ -901,7 +907,7 @@ func (ctx *scanContext) resolvesFinding(capability, symbol, rel string) bool {
 	case "custommetadata.legacy-records":
 		return ctx.resolvesCustomMetadataObject(symbol)
 	case "visualforce.controller-test":
-		return ctx.resolvesVisualforceControllerReference(symbol, rel)
+		return ctx.resolvesVisualforceControllerReference(symbol, rel, path)
 	case "aura.controller-test":
 		return ctx.resolvesAuraControllerReference(symbol)
 	case "lwc.controller-test":
@@ -952,8 +958,11 @@ func (ctx *scanContext) resolvesAuraControllerReference(symbol string) bool {
 	return ctx.resolvesApexType(symbol)
 }
 
-func (ctx *scanContext) resolvesVisualforceControllerReference(symbol, rel string) bool {
+func (ctx *scanContext) resolvesVisualforceControllerReference(symbol, rel, path string) bool {
 	symbol = strings.TrimSpace(symbol)
+	if strings.Contains(symbol, ",") {
+		return ctx.resolvesVisualforceControllerList(symbol)
+	}
 	switch symbol {
 	case "ApexPages.", "PageReference", "StandardController", "StandardSetController":
 		return true
@@ -963,7 +972,17 @@ func (ctx *scanContext) resolvesVisualforceControllerReference(symbol, rel strin
 		if ctx.vf.HasPageReference(pageName) {
 			return true
 		}
+		if stripped := stripAnyNamespaceToken(pageName); stripped != pageName && ctx.vf.HasPageReference(stripped) {
+			return true
+		}
 		_, ok := ctx.pages[strings.ToLower(pageName)]
+		if ok {
+			return true
+		}
+		stripped := stripAnyNamespaceToken(pageName)
+		if stripped != pageName {
+			_, ok = ctx.pages[strings.ToLower(stripped)]
+		}
 		return ok
 	}
 	if ctx.resolvesApexType(symbol) {
@@ -972,13 +991,29 @@ func (ctx *scanContext) resolvesVisualforceControllerReference(symbol, rel strin
 	if _, ok := ctx.objectDefinition(symbol); ok {
 		return true
 	}
-	if ctx.resolvesVisualforceActionReference(symbol, rel) {
+	if ctx.resolvesVisualforceActionReference(symbol, rel, path) {
 		return true
 	}
 	return false
 }
 
-func (ctx *scanContext) resolvesVisualforceActionReference(symbol, rel string) bool {
+func (ctx *scanContext) resolvesVisualforceControllerList(symbol string) bool {
+	parts := strings.Split(symbol, ",")
+	found := false
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+		found = true
+		if !ctx.resolvesVisualforceControllerReference(part, "", "") {
+			return false
+		}
+	}
+	return found
+}
+
+func (ctx *scanContext) resolvesVisualforceActionReference(symbol, rel, path string) bool {
 	expr, ok := visualforceActionExpression(symbol)
 	if !ok {
 		return false
@@ -988,7 +1023,11 @@ func (ctx *scanContext) resolvesVisualforceActionReference(symbol, rel string) b
 	}
 	name := baseNoExt(rel)
 	if strings.HasSuffix(strings.ToLower(rel), ".component") {
-		if component, ok := ctx.vf.Component(name); ok {
+		component, ok := ctx.vf.ComponentFile(path)
+		if !ok {
+			component, ok = ctx.vf.Component(name)
+		}
+		if ok {
 			if visualforceComponentHasAttribute(component, expr) {
 				return true
 			}
@@ -996,7 +1035,11 @@ func (ctx *scanContext) resolvesVisualforceActionReference(symbol, rel string) b
 		}
 	}
 	if strings.HasSuffix(strings.ToLower(rel), ".page") {
-		if page, ok := ctx.vf.Page(name); ok {
+		page, ok := ctx.vf.PageFile(path)
+		if !ok {
+			page, ok = ctx.vf.Page(name)
+		}
+		if ok {
 			if page.StandardController != "" && visualforceStandardControllerAction(expr) {
 				return true
 			}
@@ -1109,16 +1152,28 @@ func (ctx *scanContext) resolvesApexType(symbol string) bool {
 }
 
 func (ctx *scanContext) apexTypeHasMethod(typeName, methodName string) bool {
+	return ctx.apexTypeHasMethodSeen(typeName, methodName, nil)
+}
+
+func (ctx *scanContext) apexTypeHasMethodSeen(typeName, methodName string, seen map[string]bool) bool {
 	typ, ok := ctx.lookupApexType(typeName)
 	if !ok {
 		return false
 	}
+	key := strings.ToLower(typ.Name)
+	if seen == nil {
+		seen = make(map[string]bool)
+	}
+	if seen[key] {
+		return false
+	}
+	seen[key] = true
 	for _, member := range typ.Members {
 		if member.Kind == "method" && strings.EqualFold(member.Name, methodName) {
 			return true
 		}
 	}
-	return false
+	return ctx.apexTypeHasMethodSeen(typ.SuperClass, methodName, seen)
 }
 
 func (ctx *scanContext) lookupApexType(typeName string) (typesys.TypeSymbol, bool) {
@@ -1221,6 +1276,11 @@ func labelReferenceSymbols(symbol string) []labelReference {
 		refs = append(refs, ref)
 	}
 	addParts(parts)
+	if len(parts) == 1 {
+		if namespace, label, ok := labelNamespaceToken(parts[0]); ok {
+			addParts([]string{namespace, label})
+		}
+	}
 	if len(parts) > 1 && isLabelStringMethod(parts[len(parts)-1]) {
 		addParts(parts[:len(parts)-1])
 	}
@@ -1235,12 +1295,24 @@ func labelReferenceSymbol(symbol string) (string, string, bool) {
 	return refs[0].namespace, refs[0].label, true
 }
 
+func labelNamespaceToken(name string) (string, string, bool) {
+	name = strings.TrimSpace(name)
+	idx := strings.Index(name, "__")
+	if idx <= 0 || idx+2 >= len(name) {
+		return "", "", false
+	}
+	return name[:idx], name[idx+2:], true
+}
+
 func (ctx *scanContext) resolvesLabel(namespace, label string) bool {
-	if _, found := resource.LookupLabel(ctx.metadata, namespace, label); found {
+	if _, status := resource.ResolveLabel(ctx.metadata, ctx.org.Namespace, namespace, label); status != resource.LabelLookupMissing {
 		return true
 	}
 	if namespace == "" || !ctx.namespaces[strings.ToLower(namespace)] {
 		return false
+	}
+	if ctx.org.Namespace == "" || !strings.EqualFold(namespace, ctx.org.Namespace) {
+		return true
 	}
 	if ctx.org.Namespace != "" {
 		if _, found := resource.LookupLabel(ctx.metadata, ctx.org.Namespace, label); found {
@@ -1302,11 +1374,12 @@ func namespaceAliases(proj project.Project, sch schema.Schema, idx *metadatapkg.
 
 func namespaceToken(name string) string {
 	name = strings.TrimSpace(name)
-	idx := strings.Index(name, "__")
-	if idx <= 0 {
+	first := strings.Index(name, "__")
+	last := strings.LastIndex(name, "__")
+	if first <= 0 || first >= last {
 		return ""
 	}
-	token := name[:idx]
+	token := name[:first]
 	if strings.Contains(token, ".") {
 		token = token[strings.LastIndex(token, ".")+1:]
 	}
@@ -1368,6 +1441,9 @@ func (ctx *scanContext) resolvesSchemaReference(ref string) bool {
 	if ctx.presentationPaths[schemaPathKey(parts)] {
 		return true
 	}
+	if len(parts) >= 3 && strings.EqualFold(parts[1], "FieldSets") && ctx.resolvesFieldSet(parts[0], parts[2]) {
+		return true
+	}
 	definition, ok := ctx.objectDefinition(parts[0])
 	if !ok {
 		return false
@@ -1408,10 +1484,30 @@ func (ctx *scanContext) resolvesSchemaPath(definition storage.ObjectDefinition, 
 		}
 		return ctx.resolvesSchemaFieldPath(definition, parts[1], parts[2:])
 	}
+	if strings.EqualFold(parts[0], "FieldSets") {
+		if len(parts) == 1 {
+			return true
+		}
+		return ctx.resolvesFieldSet(definition.APIName, parts[1])
+	}
 	if isTerminalSchemaProperty(parts[0]) {
 		return true
 	}
 	return ctx.resolvesSchemaFieldPath(definition, parts[0], parts[1:])
+}
+
+func (ctx *scanContext) resolvesFieldSet(objectName, fieldSetName string) bool {
+	if ctx.fieldSets == nil {
+		return false
+	}
+	if ctx.fieldSets[schemaPathKey([]string{objectName, fieldSetName})] {
+		return true
+	}
+	stripped := stripAnyNamespaceToken(objectName)
+	if stripped != objectName && ctx.fieldSets[schemaPathKey([]string{stripped, fieldSetName})] {
+		return true
+	}
+	return false
 }
 
 func (ctx *scanContext) resolvesSchemaFieldPath(definition storage.ObjectDefinition, fieldOrRelationship string, rest []string) bool {
@@ -1454,7 +1550,65 @@ func (ctx *scanContext) resolvesSchemaFieldPath(definition storage.ObjectDefinit
 			return true
 		}
 	}
+	if ctx.resolvesExternalManagedPackageFieldPath(definition, fieldOrRelationship, rest) {
+		return true
+	}
 	return false
+}
+
+func (ctx *scanContext) resolvesExternalManagedPackageFieldPath(definition storage.ObjectDefinition, fieldOrRelationship string, rest []string) bool {
+	objectNamespace := externalManagedNamespaceToken(definition.APIName)
+	fieldNamespace := externalManagedNamespaceToken(fieldOrRelationship)
+	externalObject := isExternalManagedPackageObjectName(ctx.org.Namespace, definition.APIName)
+	if objectNamespace == "" && fieldNamespace == "" {
+		return false
+	}
+	for _, namespace := range []string{objectNamespace, fieldNamespace} {
+		if namespace == "" {
+			continue
+		}
+		if ctx.org.Namespace != "" && strings.EqualFold(namespace, ctx.org.Namespace) {
+			continue
+		}
+		if ctx.namespaces[strings.ToLower(namespace)] || externalObject {
+			lower := strings.ToLower(strings.TrimSpace(fieldOrRelationship))
+			if strings.HasSuffix(lower, "__c") {
+				return len(rest) == 0 || isTerminalSchemaProperty(rest[0])
+			}
+			if strings.HasSuffix(lower, "__r") {
+				if len(rest) == 0 {
+					return true
+				}
+				if len(rest) == 1 {
+					if isTerminalSchemaProperty(rest[0]) {
+						return true
+					}
+					_, ok := knownStandardField(rest[0])
+					return ok
+				}
+				if hasNamespaceToken(rest[0]) && strings.HasSuffix(strings.ToLower(rest[0]), "__r") {
+					return ctx.resolvesExternalManagedPackageFieldPath(definition, rest[0], rest[1:])
+				}
+				return len(rest) == 2 && strings.EqualFold(rest[0], "Fields") && isTerminalSchemaProperty(rest[1])
+			}
+			return len(rest) == 0 || isTerminalSchemaProperty(rest[len(rest)-1])
+		}
+	}
+	return false
+}
+
+func externalManagedNamespaceToken(name string) string {
+	name = strings.TrimSpace(name)
+	first := strings.Index(name, "__")
+	last := strings.LastIndex(name, "__")
+	if first <= 0 || first >= last {
+		return ""
+	}
+	return name[:first]
+}
+
+func hasNamespaceToken(name string) bool {
+	return externalManagedNamespaceToken(name) != ""
 }
 
 func fieldRelationshipTokenMatches(field storage.Field, token string) bool {
@@ -1502,6 +1656,12 @@ func knownStandardField(fieldName string) (storage.Field, bool) {
 		return storage.Field{APIName: "Id", Label: "Record ID", Type: storage.FieldID}, true
 	case "name":
 		return storage.Field{APIName: "Name", Label: "Name", Type: storage.FieldString}, true
+	case "firstname":
+		return storage.Field{APIName: "FirstName", Label: "First Name", Type: storage.FieldString}, true
+	case "lastname":
+		return storage.Field{APIName: "LastName", Label: "Last Name", Type: storage.FieldString}, true
+	case "personbirthdate":
+		return storage.Field{APIName: "PersonBirthdate", Label: "Birthdate", Type: storage.FieldDate}, true
 	case "createddate":
 		return storage.Field{APIName: "CreatedDate", Label: "Created Date", Type: storage.FieldDateTime}, true
 	case "createdbyid":
@@ -1512,6 +1672,10 @@ func knownStandardField(fieldName string) (storage.Field, bool) {
 		return storage.Field{APIName: "LastModifiedById", Label: "Last Modified By ID", Type: storage.FieldReference, ReferenceTo: []string{"User"}, RelationshipName: "LastModifiedBy"}, true
 	case "systemmodstamp":
 		return storage.Field{APIName: "SystemModstamp", Label: "System Modstamp", Type: storage.FieldDateTime}, true
+	case "lastvieweddate":
+		return storage.Field{APIName: "LastViewedDate", Label: "Last Viewed Date", Type: storage.FieldDateTime}, true
+	case "lastreferenceddate":
+		return storage.Field{APIName: "LastReferencedDate", Label: "Last Referenced Date", Type: storage.FieldDateTime}, true
 	case "ownerid":
 		return storage.Field{APIName: "OwnerId", Label: "Owner ID", Type: storage.FieldReference, ReferenceTo: []string{"User"}, RelationshipName: "Owner"}, true
 	case "isdeleted":
@@ -1545,6 +1709,19 @@ func (ctx *scanContext) resolvesReferenceTargets(targets []string, rest []string
 		}
 	}
 	return false
+}
+
+func isExternalManagedPackageObjectName(projectNamespace, objectName string) bool {
+	objectName = strings.TrimSpace(objectName)
+	token := externalManagedNamespaceToken(objectName)
+	if token == "" {
+		return false
+	}
+	if projectNamespace != "" && strings.EqualFold(token, projectNamespace) {
+		return false
+	}
+	lower := strings.ToLower(objectName)
+	return strings.HasSuffix(lower, "__c") || strings.HasSuffix(lower, "__mdt") || strings.HasSuffix(lower, "__e")
 }
 
 func sameSchemaToken(a, b string) bool {
@@ -1584,7 +1761,9 @@ func isTerminalSchemaProperty(part string) bool {
 	switch strings.ToLower(part) {
 	case "bytelength", "calculatedformula", "controller", "defaultvalue", "digits", "inlinehelptext",
 		"label", "labelplural", "length", "localname", "name", "precision", "relationshipname",
-		"scale", "soaptype", "type", "keyprefix":
+		"scale", "soaptype", "type", "keyprefix", "accessible", "createable", "creatable",
+		"deleteable", "deletable", "filterable", "groupable", "nillable", "queryable",
+		"sortable", "updateable", "updatable":
 		return true
 	default:
 		return false
@@ -1599,6 +1778,9 @@ func (ctx *scanContext) objectDefinition(objectName string) (storage.ObjectDefin
 		if resolved, ok := storage.ResolveObjectName(ctx.org, stripped); ok {
 			return ctx.org.Objects[resolved].Definition, true
 		}
+	}
+	if isExternalManagedPackageObjectName(ctx.org.Namespace, objectName) {
+		return storage.ObjectDefinition{APIName: objectName, Fields: map[string]storage.Field{}}, true
 	}
 	if !storage.IsKnownStandardObject(objectName) {
 		return storage.ObjectDefinition{}, false
@@ -1651,6 +1833,8 @@ func resolvedAuraFiles(ui uicontroller.Index, ctx *scanContext) map[string]bool 
 
 func suppressSupportedFinding(capability, symbol, evidence string) bool {
 	switch capability {
+	case "labels.localization":
+		return supportedLabelSymbol(symbol, evidence)
 	case "files.binary-content":
 		return supportedFileSymbol(symbol, evidence)
 	case "site.community-context":
@@ -1666,6 +1850,12 @@ func suppressSupportedFinding(capability, symbol, evidence string) bool {
 	default:
 		return false
 	}
+}
+
+func supportedLabelSymbol(symbol, evidence string) bool {
+	symbol = strings.TrimSpace(symbol)
+	evidence = strings.TrimSpace(evidence)
+	return strings.EqualFold(symbol, "get") && (strings.Contains(evidence, "System.Label.get(") || strings.Contains(evidence, "Label.get("))
 }
 
 func supportedCallableStubSymbol(symbol, evidence string) bool {

@@ -39,11 +39,12 @@ type OrgState struct {
 }
 
 type MetadataRegistry struct {
-	Labels          []LabelMetadata          `json:"labels,omitempty"`
-	StaticResources []StaticResourceMetadata `json:"staticResources,omitempty"`
-	ContentAssets   []ContentAssetMetadata   `json:"contentAssets,omitempty"`
-	Endpoints       []EndpointMetadata       `json:"endpoints,omitempty"`
-	EmailTemplates  []EmailTemplateMetadata  `json:"emailTemplates,omitempty"`
+	Labels                 []LabelMetadata          `json:"labels,omitempty"`
+	ManagedLabelNamespaces []string                 `json:"managedLabelNamespaces,omitempty"`
+	StaticResources        []StaticResourceMetadata `json:"staticResources,omitempty"`
+	ContentAssets          []ContentAssetMetadata   `json:"contentAssets,omitempty"`
+	Endpoints              []EndpointMetadata       `json:"endpoints,omitempty"`
+	EmailTemplates         []EmailTemplateMetadata  `json:"emailTemplates,omitempty"`
 }
 
 type LabelMetadata struct {
@@ -179,9 +180,10 @@ type WorkflowRule struct {
 }
 
 type WorkflowCriteriaItem struct {
-	Field     string `json:"field"`
-	Operation string `json:"operation,omitempty"`
-	Value     string `json:"value,omitempty"`
+	Field       string `json:"field"`
+	Operation   string `json:"operation,omitempty"`
+	Value       string `json:"value,omitempty"`
+	SourceField string `json:"sourceField,omitempty"`
 }
 
 type WorkflowFieldUpdate struct {
@@ -205,15 +207,17 @@ type WorkflowEmailRecipient struct {
 }
 
 type FlowRule struct {
-	Name         string                 `json:"name"`
-	File         string                 `json:"file,omitempty"`
-	Active       bool                   `json:"active,omitempty"`
-	ProcessType  string                 `json:"processType,omitempty"`
-	TriggerType  string                 `json:"triggerType,omitempty"`
-	Formula      string                 `json:"formula,omitempty"`
-	Criteria     []WorkflowCriteriaItem `json:"criteria,omitempty"`
-	FieldUpdates []WorkflowFieldUpdate  `json:"fieldUpdates,omitempty"`
-	Actions      []FlowAction           `json:"actions,omitempty"`
+	Name          string                 `json:"name"`
+	File          string                 `json:"file,omitempty"`
+	Active        bool                   `json:"active,omitempty"`
+	ProcessType   string                 `json:"processType,omitempty"`
+	TriggerType   string                 `json:"triggerType,omitempty"`
+	Formula       string                 `json:"formula,omitempty"`
+	Criteria      []WorkflowCriteriaItem `json:"criteria,omitempty"`
+	FieldUpdates  []WorkflowFieldUpdate  `json:"fieldUpdates,omitempty"`
+	Actions       []FlowAction           `json:"actions,omitempty"`
+	RecordLookups []FlowRecordLookup     `json:"recordLookups,omitempty"`
+	RecordCreates []FlowRecordCreate     `json:"recordCreates,omitempty"`
 }
 
 type FlowAction struct {
@@ -222,6 +226,21 @@ type FlowAction struct {
 	ActionName string `json:"actionName,omitempty"`
 	ClassName  string `json:"className,omitempty"`
 	MethodName string `json:"methodName,omitempty"`
+}
+
+type FlowRecordLookup struct {
+	Name                     string                 `json:"name"`
+	ObjectName               string                 `json:"objectName"`
+	Criteria                 []WorkflowCriteriaItem `json:"criteria,omitempty"`
+	GetFirstRecordOnly       bool                   `json:"getFirstRecordOnly,omitempty"`
+	StoreOutputAutomatically bool                   `json:"storeOutputAutomatically,omitempty"`
+}
+
+type FlowRecordCreate struct {
+	Name                     string                `json:"name"`
+	ObjectName               string                `json:"objectName"`
+	InputAssignments         []WorkflowFieldUpdate `json:"inputAssignments,omitempty"`
+	StoreOutputAutomatically bool                  `json:"storeOutputAutomatically,omitempty"`
 }
 
 type FieldType string
@@ -613,6 +632,14 @@ func (d ObjectDefinition) Clone() ObjectDefinition {
 		out.FlowRules[i].Criteria = append([]WorkflowCriteriaItem(nil), d.FlowRules[i].Criteria...)
 		out.FlowRules[i].FieldUpdates = append([]WorkflowFieldUpdate(nil), d.FlowRules[i].FieldUpdates...)
 		out.FlowRules[i].Actions = append([]FlowAction(nil), d.FlowRules[i].Actions...)
+		out.FlowRules[i].RecordLookups = append([]FlowRecordLookup(nil), d.FlowRules[i].RecordLookups...)
+		for j := range out.FlowRules[i].RecordLookups {
+			out.FlowRules[i].RecordLookups[j].Criteria = append([]WorkflowCriteriaItem(nil), d.FlowRules[i].RecordLookups[j].Criteria...)
+		}
+		out.FlowRules[i].RecordCreates = append([]FlowRecordCreate(nil), d.FlowRules[i].RecordCreates...)
+		for j := range out.FlowRules[i].RecordCreates {
+			out.FlowRules[i].RecordCreates[j].InputAssignments = append([]WorkflowFieldUpdate(nil), d.FlowRules[i].RecordCreates[j].InputAssignments...)
+		}
 	}
 	out.Indexes = append([]IndexDefinition(nil), d.Indexes...)
 	for i := range out.Indexes {

@@ -24,10 +24,11 @@ type flowXML struct {
 	Loops         []flowNamedNodeXML    `xml:"loops"`
 	Subflows      []flowNamedNodeXML    `xml:"subflows"`
 	ActionCalls   []flowActionCallXML   `xml:"actionCalls"`
-	RecordLookups []flowNamedNodeXML    `xml:"recordLookups"`
-	RecordCreates []flowNamedNodeXML    `xml:"recordCreates"`
+	RecordLookups []flowRecordLookupXML `xml:"recordLookups"`
+	RecordCreates []flowRecordCreateXML `xml:"recordCreates"`
 	RecordDeletes []flowNamedNodeXML    `xml:"recordDeletes"`
 	Waits         []flowNamedNodeXML    `xml:"waits"`
+	Variables     []flowVariableXML     `xml:"variables"`
 }
 
 type flowStartXML struct {
@@ -95,6 +96,28 @@ type flowRecordUpdateXML struct {
 	FaultConnector flowConnectorXML         `xml:"faultConnector"`
 }
 
+type flowRecordLookupXML struct {
+	Name                     string           `xml:"name"`
+	Label                    string           `xml:"label"`
+	Object                   string           `xml:"object"`
+	Filters                  []flowFilterXML  `xml:"filters"`
+	FilterLogic              string           `xml:"filterLogic"`
+	Connector                flowConnectorXML `xml:"connector"`
+	FaultConnector           flowConnectorXML `xml:"faultConnector"`
+	GetFirstRecordOnly       bool             `xml:"getFirstRecordOnly"`
+	StoreOutputAutomatically bool             `xml:"storeOutputAutomatically"`
+}
+
+type flowRecordCreateXML struct {
+	Name                     string                   `xml:"name"`
+	Label                    string                   `xml:"label"`
+	Object                   string                   `xml:"object"`
+	Fields                   []flowFieldAssignmentXML `xml:"inputAssignments"`
+	Connector                flowConnectorXML         `xml:"connector"`
+	FaultConnector           flowConnectorXML         `xml:"faultConnector"`
+	StoreOutputAutomatically bool                     `xml:"storeOutputAutomatically"`
+}
+
 type flowFieldAssignmentXML struct {
 	Field string       `xml:"field"`
 	Value flowValueXML `xml:"value"`
@@ -109,6 +132,13 @@ type flowActionCallXML struct {
 	Label      string `xml:"label"`
 	ActionType string `xml:"actionType"`
 	ActionName string `xml:"actionName"`
+}
+
+type flowVariableXML struct {
+	Name       string       `xml:"name"`
+	DataType   string       `xml:"dataType"`
+	ObjectType string       `xml:"objectType"`
+	Value      flowValueXML `xml:"value"`
 }
 
 type flowConnectorXML struct {
@@ -155,6 +185,7 @@ func loadFlow(path string) (Flow, []diagnostic.Diagnostic, error) {
 		TriggerType: strings.TrimSpace(raw.Start.TriggerType),
 	}
 	formulas := flowFormulaMap(raw.Formulas)
+	variables := flowVariableMap(raw.Variables)
 	for _, filter := range raw.Start.Filters {
 		rule.Criteria = append(rule.Criteria, storage.WorkflowCriteriaItem{
 			Field:     trimObjectPrefix(strings.TrimSpace(filter.Field)),
@@ -171,7 +202,9 @@ func loadFlow(path string) (Flow, []diagnostic.Diagnostic, error) {
 			continue
 		}
 		if target := strings.TrimSpace(decision.DefaultConnector.TargetReference); target != "" {
-			diagnostics = append(diagnostics, flowUnsupported(path, name, fmt.Sprintf("decision %q default connector to %q is not modeled", decision.Name, target)))
+			if !flowNodeReferenceModeled(target, raw) {
+				diagnostics = append(diagnostics, flowUnsupported(path, name, fmt.Sprintf("decision %q default connector to %q is not modeled", decision.Name, target)))
+			}
 		}
 		if logic := strings.TrimSpace(decision.Rules[0].ConditionLogic); logic != "" && !strings.EqualFold(logic, "and") {
 			diagnostics = append(diagnostics, flowUnsupported(path, name, fmt.Sprintf("decision %q condition logic %q is not supported", decision.Name, logic)))
@@ -180,14 +213,18 @@ func loadFlow(path string) (Flow, []diagnostic.Diagnostic, error) {
 		for _, condition := range decision.Rules[0].Conditions {
 			field := flowRecordFieldReference(condition.LeftValueReference)
 			if field == "" {
-				diagnostics = append(diagnostics, flowUnsupported(path, name, fmt.Sprintf("decision %q condition %q is not a $Record field", decision.Name, condition.LeftValueReference)))
-				continue
+				if !flowReferenceModeled(condition.LeftValueReference, variables, raw.RecordLookups) {
+					diagnostics = append(diagnostics, flowUnsupported(path, name, fmt.Sprintf("decision %q condition %q is not a $Record field or modeled flow resource", decision.Name, condition.LeftValueReference)))
+					continue
+				}
 			}
-			rule.Criteria = append(rule.Criteria, storage.WorkflowCriteriaItem{
-				Field:     field,
-				Operation: flowOperator(strings.TrimSpace(condition.Operator)),
-				Value:     flowLiteralValue(condition.RightValue),
-			})
+			if field != "" {
+				rule.Criteria = append(rule.Criteria, storage.WorkflowCriteriaItem{
+					Field:     field,
+					Operation: flowOperator(strings.TrimSpace(condition.Operator)),
+					Value:     flowLiteralValue(condition.RightValue),
+				})
+			}
 		}
 		if len(decision.Rules) > 1 {
 			diagnostics = append(diagnostics, flowUnsupported(path, name, fmt.Sprintf("decision %q has additional branches beyond the first supported rule", decision.Name)))
@@ -209,7 +246,7 @@ func loadFlow(path string) (Flow, []diagnostic.Diagnostic, error) {
 				Field:        field,
 				LiteralValue: flowLiteralValue(item.Value),
 				Formula:      flowExpressionValue(item.Value, formulas),
-				SourceField:  flowSourceFieldValue(item.Value),
+				SourceField:  flowSourceFieldValue(item.Value, variables),
 			})
 		}
 	}
@@ -232,9 +269,25 @@ func loadFlow(path string) (Flow, []diagnostic.Diagnostic, error) {
 				Field:        field,
 				LiteralValue: flowLiteralValue(assignment.Value),
 				Formula:      flowExpressionValue(assignment.Value, formulas),
-				SourceField:  flowSourceFieldValue(assignment.Value),
+				SourceField:  flowSourceFieldValue(assignment.Value, variables),
 			})
 		}
+	}
+	for _, lookup := range raw.RecordLookups {
+		recordLookup, ok := modeledFlowRecordLookup(lookup)
+		if !ok {
+			diagnostics = append(diagnostics, flowUnsupported(path, name, fmt.Sprintf("record lookup node %q is not modeled", firstNonBlank(lookup.Name, lookup.Label))))
+			continue
+		}
+		rule.RecordLookups = append(rule.RecordLookups, recordLookup)
+	}
+	for _, create := range raw.RecordCreates {
+		recordCreate, ok := modeledFlowRecordCreate(create, formulas, variables)
+		if !ok {
+			diagnostics = append(diagnostics, flowUnsupported(path, name, fmt.Sprintf("record create node %q is not modeled", firstNonBlank(create.Name, create.Label))))
+			continue
+		}
+		rule.RecordCreates = append(rule.RecordCreates, recordCreate)
 	}
 	for _, action := range raw.ActionCalls {
 		flowAction, ok := modeledFlowActionCall(action)
@@ -244,7 +297,7 @@ func loadFlow(path string) (Flow, []diagnostic.Diagnostic, error) {
 		}
 		rule.Actions = append(rule.Actions, flowAction)
 	}
-	if len(rule.FieldUpdates) > 0 || len(rule.Actions) > 0 {
+	if len(rule.FieldUpdates) > 0 || len(rule.Actions) > 0 || len(rule.RecordLookups) > 0 || len(rule.RecordCreates) > 0 {
 		flow.Rules = append(flow.Rules, rule)
 	}
 	sort.Slice(flow.Rules, func(i, j int) bool { return flow.Rules[i].Name < flow.Rules[j].Name })
@@ -276,6 +329,17 @@ func flowFormulaMap(formulas []flowFormulaXML) map[string]string {
 		expression := normalizeFlowFormula(strings.TrimSpace(formula.Expression))
 		if name != "" && expression != "" {
 			out[strings.ToLower(name)] = expression
+		}
+	}
+	return out
+}
+
+func flowVariableMap(variables []flowVariableXML) map[string]flowVariableXML {
+	out := make(map[string]flowVariableXML, len(variables))
+	for _, variable := range variables {
+		name := strings.TrimSpace(variable.Name)
+		if name != "" {
+			out[strings.ToLower(name)] = variable
 		}
 	}
 	return out
@@ -331,12 +395,140 @@ func flowExpressionValue(value flowValueXML, formulas map[string]string) string 
 	return ""
 }
 
-func flowSourceFieldValue(value flowValueXML) string {
+func flowSourceFieldValue(value flowValueXML, variables map[string]flowVariableXML) string {
 	reference := strings.TrimSpace(value.ElementReference)
 	if reference == "" {
 		return ""
 	}
-	return flowRecordFieldReference(reference)
+	if field := flowRecordFieldReference(reference); field != "" {
+		return field
+	}
+	if variable, ok := variables[strings.ToLower(reference)]; ok {
+		return flowRecordFieldReference(variable.Value.ElementReference)
+	}
+	return ""
+}
+
+func flowLiteralOrVariableValue(value flowValueXML, variables map[string]flowVariableXML) string {
+	if literal := flowLiteralValue(value); literal != "" {
+		return literal
+	}
+	reference := strings.TrimSpace(value.ElementReference)
+	if variable, ok := variables[strings.ToLower(reference)]; ok {
+		return flowLiteralValue(variable.Value)
+	}
+	return ""
+}
+
+func modeledFlowRecordLookup(lookup flowRecordLookupXML) (storage.FlowRecordLookup, bool) {
+	name := firstNonBlank(lookup.Name, lookup.Label)
+	objectName := strings.TrimSpace(lookup.Object)
+	if name == "" || objectName == "" {
+		return storage.FlowRecordLookup{}, false
+	}
+	if logic := strings.TrimSpace(lookup.FilterLogic); logic != "" && !strings.EqualFold(logic, "and") {
+		return storage.FlowRecordLookup{}, false
+	}
+	out := storage.FlowRecordLookup{
+		Name:                     name,
+		ObjectName:               objectName,
+		GetFirstRecordOnly:       lookup.GetFirstRecordOnly,
+		StoreOutputAutomatically: lookup.StoreOutputAutomatically,
+	}
+	for _, filter := range lookup.Filters {
+		field := trimObjectPrefix(strings.TrimSpace(filter.Field))
+		if field == "" {
+			return storage.FlowRecordLookup{}, false
+		}
+		out.Criteria = append(out.Criteria, storage.WorkflowCriteriaItem{
+			Field:       field,
+			Operation:   flowOperator(strings.TrimSpace(filter.Operator)),
+			Value:       flowLiteralValue(filter.Value),
+			SourceField: flowRecordFieldReference(filter.Value.ElementReference),
+		})
+	}
+	return out, true
+}
+
+func modeledFlowRecordCreate(create flowRecordCreateXML, formulas map[string]string, variables map[string]flowVariableXML) (storage.FlowRecordCreate, bool) {
+	name := firstNonBlank(create.Name, create.Label)
+	objectName := strings.TrimSpace(create.Object)
+	if name == "" || objectName == "" {
+		return storage.FlowRecordCreate{}, false
+	}
+	out := storage.FlowRecordCreate{
+		Name:                     name,
+		ObjectName:               objectName,
+		StoreOutputAutomatically: create.StoreOutputAutomatically,
+	}
+	for _, assignment := range create.Fields {
+		field := trimObjectPrefix(strings.TrimSpace(assignment.Field))
+		if field == "" {
+			return storage.FlowRecordCreate{}, false
+		}
+		out.InputAssignments = append(out.InputAssignments, storage.WorkflowFieldUpdate{
+			Name:         field,
+			Field:        field,
+			LiteralValue: flowLiteralOrVariableValue(assignment.Value, variables),
+			Formula:      flowExpressionValue(assignment.Value, formulas),
+			SourceField:  flowSourceFieldValue(assignment.Value, variables),
+		})
+	}
+	return out, true
+}
+
+func flowReferenceModeled(reference string, variables map[string]flowVariableXML, lookups []flowRecordLookupXML) bool {
+	reference = strings.TrimSpace(reference)
+	if reference == "" {
+		return false
+	}
+	if _, ok := variables[strings.ToLower(reference)]; ok {
+		return true
+	}
+	for _, lookup := range lookups {
+		if strings.EqualFold(reference, firstNonBlank(lookup.Name, lookup.Label)) {
+			return true
+		}
+	}
+	return false
+}
+
+func flowNodeReferenceModeled(reference string, raw flowXML) bool {
+	reference = strings.TrimSpace(reference)
+	if reference == "" {
+		return false
+	}
+	for _, assignment := range raw.Assignments {
+		if strings.EqualFold(reference, firstNonBlank(assignment.Name, assignment.Label)) {
+			return true
+		}
+	}
+	for _, update := range raw.RecordUpdates {
+		if strings.EqualFold(reference, firstNonBlank(update.Name, update.Label)) {
+			return true
+		}
+	}
+	for _, lookup := range raw.RecordLookups {
+		if strings.EqualFold(reference, firstNonBlank(lookup.Name, lookup.Label)) {
+			return true
+		}
+	}
+	for _, create := range raw.RecordCreates {
+		if strings.EqualFold(reference, firstNonBlank(create.Name, create.Label)) {
+			return true
+		}
+	}
+	for _, action := range raw.ActionCalls {
+		if strings.EqualFold(reference, firstNonBlank(action.Name, action.Label, action.ActionName)) {
+			return true
+		}
+	}
+	for _, decision := range raw.Decisions {
+		if strings.EqualFold(reference, decision.Name) {
+			return true
+		}
+	}
+	return false
 }
 
 func normalizeFlowFormula(expression string) string {
@@ -419,12 +611,6 @@ func flowUnsupportedNodeDiagnostics(path, flowName string, raw flowXML) []diagno
 	}
 	for _, subflow := range raw.Subflows {
 		diagnostics = append(diagnostics, flowUnsupported(path, flowName, fmt.Sprintf("subflow node %q is not supported", subflow.Name)))
-	}
-	for _, lookup := range raw.RecordLookups {
-		diagnostics = append(diagnostics, flowUnsupported(path, flowName, fmt.Sprintf("record lookup node %q is not supported", lookup.Name)))
-	}
-	for _, create := range raw.RecordCreates {
-		diagnostics = append(diagnostics, flowUnsupported(path, flowName, fmt.Sprintf("record create node %q is not supported", create.Name)))
 	}
 	for _, delete := range raw.RecordDeletes {
 		diagnostics = append(diagnostics, flowUnsupported(path, flowName, fmt.Sprintf("record delete node %q is not supported", delete.Name)))
