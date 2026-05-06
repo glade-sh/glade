@@ -94,7 +94,7 @@ func TestExecuteEmailTemplateStandardObjectQuery(t *testing.T) {
 	org := storage.NewOrgState()
 	storage.EnsureStandardObject(&org, "EmailTemplate")
 
-	result, err := ParseAndExecute(org, "SELECT Id, DeveloperName, IsActive, Name, NamespacePrefix FROM EmailTemplate WHERE DeveloperName = 'SocialVerify' ORDER BY NamespacePrefix NULLS FIRST")
+	result, err := ParseAndExecute(org, "SELECT Id, DeveloperName, IsActive, Name, NamespacePrefix FROM EmailTemplate WHERE DeveloperName = 'EmailVerify' ORDER BY NamespacePrefix NULLS FIRST")
 	if err != nil {
 		t.Fatal(err)
 	}

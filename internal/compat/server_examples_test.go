@@ -15,7 +15,13 @@ import (
 
 func TestServerExampleHarnessReportsSeedsRoutesAndBlockers(t *testing.T) {
 	root := localTestDir(t, ".oaer-test-server-examples")
-	for _, rel := range serverExampleProjects {
+	testProjects := []string{
+		"example-projects/alpha-pkg-develop",
+		"example-projects/beta-pkg-develop",
+		"example-projects/gamma-pkg-develop",
+		"example-projects/delta-pkg-develop",
+	}
+	for _, rel := range testProjects {
 		projectPath := filepath.Join(root, filepath.FromSlash(rel))
 		if err := os.MkdirAll(filepath.Join(projectPath, "force-app", "main", "default", "classes"), 0o755); err != nil {
 			t.Fatal(err)
@@ -27,12 +33,15 @@ func TestServerExampleHarnessReportsSeedsRoutesAndBlockers(t *testing.T) {
 		if err := os.WriteFile(filepath.Join(projectPath, "data", "Accounts.json"), []byte(data), 0o644); err != nil {
 			t.Fatal(err)
 		}
+		if err := os.WriteFile(filepath.Join(projectPath, "sfdx-project.json"), []byte(`{"packageDirectories":[{"path":"force-app","default":true}]}`), 0o644); err != nil {
+			t.Fatal(err)
+		}
 	}
 	restClass := `@RestResource(urlMapping='/webhookEvents')
 global with sharing class WebHook {
   @HttpPost global static void handle() {}
 }`
-	if err := os.WriteFile(filepath.Join(root, filepath.FromSlash(serverExampleProjects[0]), "force-app", "main", "default", "classes", "WebHook.cls"), []byte(restClass), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(root, filepath.FromSlash(testProjects[0]), "force-app", "main", "default", "classes", "WebHook.cls"), []byte(restClass), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -49,7 +58,7 @@ global with sharing class WebHook {
 	if report.Counts.Fail != 0 || report.Counts.Missing != 0 {
 		t.Fatalf("unexpected hard blockers: %#v", report.Counts)
 	}
-	if len(report.Projects) != len(serverExampleProjects) {
+	if len(report.Projects) != len(testProjects) {
 		t.Fatalf("projects = %d", len(report.Projects))
 	}
 	first := report.Projects[0]
@@ -64,17 +73,17 @@ global with sharing class WebHook {
 	}
 }
 
-func TestServerExampleHarnessReportsMissingProjects(t *testing.T) {
-	root := localTestDir(t, ".oaer-test-server-examples-missing")
+func TestServerExampleHarnessReportsNoProjects(t *testing.T) {
+	root := localTestDir(t, ".oaer-test-server-examples-empty")
 	report, err := RunServerExampleHarness(root)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if report.OK {
-		t.Fatalf("report unexpectedly ok: %#v", report)
+	if !report.OK {
+		t.Fatalf("report unexpectedly not ok: %#v", report)
 	}
-	if report.Counts.Missing != len(serverExampleProjects) {
-		t.Fatalf("missing = %d", report.Counts.Missing)
+	if len(report.Projects) != 0 {
+		t.Fatalf("expected 0 projects, got %d", len(report.Projects))
 	}
 }
 
@@ -93,10 +102,10 @@ func TestServerExampleHarnessFiltersVisibleProbes(t *testing.T) {
 	if len(project.Probes) != 1 || project.Probes[0].Path != "/services/apexrest/widgets/1" {
 		t.Fatalf("filtered probes = %#v", project.Probes)
 	}
-	if serverExampleProjectMatches("example-projects/src-nmb-nu-develop", "sf-cred") {
+	if serverExampleProjectMatches("example-projects/beta-pkg-develop", "alpha") {
 		t.Fatalf("project filter matched the wrong project")
 	}
-	if !serverExampleProjectMatches("example-projects/sf-cred-pkg-develop", "cred") {
+	if !serverExampleProjectMatches("example-projects/alpha-pkg-develop", "alpha") {
 		t.Fatalf("project filter missed project")
 	}
 }
@@ -142,16 +151,16 @@ func TestServerExampleSchemaAddsEmailTemplateStandardObject(t *testing.T) {
 	}
 }
 
-func TestServerExampleApexRESTProbeDataForWebhookEvents(t *testing.T) {
+func TestServerExampleApexRESTProbeDataForIncomingEvents(t *testing.T) {
 	if body := serverExampleApexRESTBody("/webhookEvents", "POST"); !strings.Contains(body, `"providerId":"local-provider"`) {
-		t.Fatalf("webhook body = %s", body)
+		t.Fatalf("event body = %s", body)
 	}
 	if body := serverExampleApexRESTBody("/webhookEvents", "POST"); !strings.Contains(body, `"x-webhookid":"null"`) || !strings.Contains(body, `"x-webhooktype":"LicenseChanged"`) {
-		t.Fatalf("webhook body headers = %s", body)
+		t.Fatalf("event body headers = %s", body)
 	}
 	headers := serverExampleApexRESTHeaders("/webhookEvents")
 	if headers["X-WebhookType"] == "" || headers["X-WebhookId"] == "" {
-		t.Fatalf("webhook headers = %#v", headers)
+		t.Fatalf("event headers = %#v", headers)
 	}
 }
 
@@ -247,7 +256,7 @@ func TestServerExampleProbeOverlayKeepsEmailEncryptionSettingsScoped(t *testing.
 	}
 }
 
-func TestServerExampleProbeOverlayKeepsWebhookProviderScoped(t *testing.T) {
+func TestServerExampleProbeOverlayKeepsEventProviderScoped(t *testing.T) {
 	base := storage.NewOrgState()
 	applyServerExampleSchema(&base, schema.Schema{Objects: []schema.Object{
 		{Name: "Account"},
@@ -264,21 +273,21 @@ func TestServerExampleProbeOverlayKeepsWebhookProviderScoped(t *testing.T) {
 			},
 		},
 	}})
-	base.Namespace = "verifiable"
+	base.Namespace = "example"
 
 	webhookOrg := base.Clone()
 	applyServerExampleProbeOverlay(&webhookOrg, serverExampleProbe{Path: "/services/apexrest/webhookEvents"})
 	accounts := webhookOrg.Objects["Account"].Records
 	provider := accounts[storage.ID("001000000000002AAA")]
 	if provider.Fields["Name"].String != "local-provider" {
-		t.Fatalf("webhook provider account = %#v", accounts)
+		t.Fatalf("event provider account = %#v", accounts)
 	}
 	setup := webhookOrg.Objects["Setup_Data__c"].Records[storage.ID("a0v000000000001AAA")]
 	if mappings := setup.Fields["Data_Mappings__c"].String; !strings.Contains(mappings, `"tpField":"providerId","sfField":"Name"`) {
-		t.Fatalf("webhook mappings = %s", mappings)
+		t.Fatalf("event mappings = %s", mappings)
 	}
-	if webhookID := setup.Fields["License_Changed_Id__c"].String; webhookID != "null" {
-		t.Fatalf("webhook License_Changed_Id__c = %q", webhookID)
+	if eventID := setup.Fields["License_Changed_Id__c"].String; eventID != "null" {
+		t.Fatalf("webhook License_Changed_Id__c = %q", eventID)
 	}
 	existingSetupOrg := base.Clone()
 	existingSetup := existingSetupOrg.Objects["Setup_Data__c"]
@@ -293,11 +302,11 @@ func TestServerExampleProbeOverlayKeepsWebhookProviderScoped(t *testing.T) {
 	}
 	existingSetupOrg.Objects["Setup_Data__c"] = existingSetup
 	applyServerExampleProbeOverlay(&existingSetupOrg, serverExampleProbe{Path: "/services/apexrest/webhookEvents"})
-	if webhookID := existingSetupOrg.Objects["Setup_Data__c"].Records["existing"].Fields["License_Changed_Id__c"].String; webhookID != "null" {
-		t.Fatalf("existing setup webhook License_Changed_Id__c = %q", webhookID)
+	if eventID := existingSetupOrg.Objects["Setup_Data__c"].Records["existing"].Fields["License_Changed_Id__c"].String; eventID != "null" {
+		t.Fatalf("existing setup event License_Changed_Id__c = %q", eventID)
 	}
-	if webhookID := existingSetupOrg.Objects["Setup_Data__c"].Records["existing"].Fields["verifiable__License_Changed_Id__c"].String; webhookID != "null" {
-		t.Fatalf("existing setup verifiable__License_Changed_Id__c = %q", webhookID)
+	if eventID := existingSetupOrg.Objects["Setup_Data__c"].Records["existing"].Fields["example__License_Changed_Id__c"].String; eventID != "null" {
+		t.Fatalf("existing setup example__License_Changed_Id__c = %q", eventID)
 	}
 	if disabled := existingSetupOrg.Objects["Setup_Data__c"].Records["existing"].Fields["Disable_Webhook_Security_Check__c"].Boolean; !disabled {
 		t.Fatalf("existing setup Disable_Webhook_Security_Check__c = %v", disabled)

@@ -2799,7 +2799,7 @@ global class WidgetResource {
     for (String key : RestContext.request.headers.keySet()) {
       lowered.put(key.toLowerCase(), RestContext.request.headers.get(key));
     }
-    return RestContext.request.httpMethod + ':' + RestContext.request.resourcePath + ':' + RestContext.request.params.get('q') + ':' + lowered.get('x-webhookid') + ':' + RestContext.request.getHeader('X-WEBHOOKID');
+    return RestContext.request.httpMethod + ':' + RestContext.request.resourcePath + ':' + RestContext.request.params.get('q') + ':' + lowered.get('x-eventid') + ':' + RestContext.request.getHeader('X-EVENTID');
   }
   @HttpPost global static void postIt() {
     RestContext.response.statusCode = 201;
@@ -2811,12 +2811,12 @@ global class WidgetResource {
 
 	get := httptest.NewRecorder()
 	getReq := httptest.NewRequest(http.MethodGet, "/services/apexrest/widgets/42?q=abc", nil)
-	getReq.Header.Set("X-WebhookId", "local-webhook")
+	getReq.Header.Set("X-EventId", "local-event")
 	handler.ServeHTTP(get, getReq)
 	if get.Code != http.StatusOK {
 		t.Fatalf("GET status = %d body=%s", get.Code, get.Body.String())
 	}
-	if got, want := strings.TrimSpace(get.Body.String()), `"GET:/widgets/42:abc:local-webhook:local-webhook"`; got != want {
+	if got, want := strings.TrimSpace(get.Body.String()), `"GET:/widgets/42:abc:local-event:local-event"`; got != want {
 		t.Fatalf("GET body = %s, want %s", got, want)
 	}
 

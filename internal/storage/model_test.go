@@ -180,7 +180,7 @@ func TestEnsureStandardObjectFieldsAddsKnowledgeArticleLanguage(t *testing.T) {
 
 func TestEnsureStandardObjectFieldsDoesNotAddDeveloperNameToCustomObjectsOrSettings(t *testing.T) {
 	for _, definition := range []ObjectDefinition{
-		{APIName: "Webhook_Event__c"},
+		{APIName: "Event_Log__c"},
 		{APIName: "List_Setting__c", Metadata: map[string]string{"kind": "customSetting", "customSettingsType": "List"}},
 	} {
 		EnsureStandardObjectFields(&definition)

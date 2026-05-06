@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -210,7 +211,7 @@ func loadValidationRule(path string) (ValidationRule, error) {
 		return ValidationRule{}, err
 	}
 	var raw validationRuleXML
-	if err := xml.Unmarshal(data, &raw); err != nil {
+	if err := xml.Unmarshal(escapeBareAmpersands(data), &raw); err != nil {
 		return ValidationRule{}, err
 	}
 	name := raw.FullName
@@ -232,7 +233,7 @@ func loadRecordType(path string) (RecordType, error) {
 		return RecordType{}, err
 	}
 	var raw recordTypeXML
-	if err := xml.Unmarshal(data, &raw); err != nil {
+	if err := xml.Unmarshal(escapeBareAmpersands(data), &raw); err != nil {
 		return RecordType{}, err
 	}
 	developerName := raw.FullName
@@ -262,7 +263,7 @@ func loadObject(path string) (Object, error) {
 		return Object{}, err
 	}
 	var raw customObjectXML
-	if err := xml.Unmarshal(data, &raw); err != nil {
+	if err := xml.Unmarshal(escapeBareAmpersands(data), &raw); err != nil {
 		return Object{}, err
 	}
 	return Object{
@@ -280,7 +281,7 @@ func loadField(path string) (Field, error) {
 		return Field{}, err
 	}
 	var raw customFieldXML
-	if err := xml.Unmarshal(data, &raw); err != nil {
+	if err := xml.Unmarshal(escapeBareAmpersands(data), &raw); err != nil {
 		return Field{}, err
 	}
 	name := raw.FullName
@@ -350,4 +351,26 @@ func objectNameFromValidationRulePath(path string) string {
 		return ""
 	}
 	return filepath.Base(dir)
+}
+
+var validEntityRE = regexp.MustCompile(`^(?:amp|lt|gt|quot|apos|#[0-9]+|#x[0-9a-fA-F]+);`)
+
+func escapeBareAmpersands(data []byte) []byte {
+	s := string(data)
+	var out strings.Builder
+	for {
+		idx := strings.Index(s, "&")
+		if idx == -1 {
+			out.WriteString(s)
+			break
+		}
+		out.WriteString(s[:idx])
+		s = s[idx+1:]
+		if validEntityRE.MatchString(s) {
+			out.WriteString("&")
+		} else {
+			out.WriteString("&amp;")
+		}
+	}
+	return []byte(out.String())
 }

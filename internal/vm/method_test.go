@@ -2064,9 +2064,9 @@ func TestRuntimeIdOverloadPreferredForDeclaredId(t *testing.T) {
 		t.Fatal(err)
 	}
 	program, err := CompileAnonymous(`
-String templateName = 'NimbleAMSSocialVerify';
+String templateName = 'ExampleEmailVerify';
 Id templateId = Util.templateId();
-System.assertEquals('string:NimbleAMSSocialVerify', Util.pick(templateName));
+System.assertEquals('string:ExampleEmailVerify', Util.pick(templateName));
 System.assertEquals('id:00X000000000001AAA', Util.pick(templateId));
 `)
 	if err != nil {

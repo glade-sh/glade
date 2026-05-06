@@ -1697,12 +1697,12 @@ System.assertEquals('Trail__c', customDescribe.getName());
 
 func TestExecSObjectGetSObjectTypeForInstancesAndStaticTypes(t *testing.T) {
 	program, err := CompileAnonymous(`
-Webhook_Event__c event = new Webhook_Event__c();
+Event_Log__c event = new Event_Log__c();
 Object instanceType = event.getSObjectType();
-System.assertEquals('Webhook_Event__c', instanceType.getDescribe().getName());
-SObject genericEvent = new Webhook_Event__c();
-System.assertEquals('Webhook_Event__c', genericEvent.getSObjectType().getDescribe().getName());
-System.assertEquals('Webhook_Event__c', Webhook_Event__c.getSObjectType().getDescribe().getName());
+System.assertEquals('Event_Log__c', instanceType.getDescribe().getName());
+SObject genericEvent = new Event_Log__c();
+System.assertEquals('Event_Log__c', genericEvent.getSObjectType().getDescribe().getName());
+System.assertEquals('Event_Log__c', Event_Log__c.getSObjectType().getDescribe().getName());
 System.assertEquals('Account', Account.getSObjectType().getDescribe().getName());
 `)
 	if err != nil {
@@ -1710,9 +1710,9 @@ System.assertEquals('Account', Account.getSObjectType().getDescribe().getName())
 	}
 	machine := New(nil)
 	org := testDataOrg()
-	org.Objects["Webhook_Event__c"] = storage.ObjectState{
+	org.Objects["Event_Log__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
-			APIName:   "Webhook_Event__c",
+			APIName:   "Event_Log__c",
 			KeyPrefix: "a50",
 			Fields: map[string]storage.Field{
 				"Name": {APIName: "Name", Type: storage.FieldString},

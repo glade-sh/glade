@@ -24,11 +24,20 @@ import (
 
 const serverExampleAPIVersion = "61.0"
 
-var serverExampleProjects = []string{
-	"example-projects/sf-cred-pkg-develop",
-	"example-projects/src-nmb-nc-develop",
-	"example-projects/src-nmb-nu-develop",
-	"example-projects/src-nmb-nutpl-develop",
+func serverExampleProjectPaths(root string) []string {
+	exampleDir := filepath.Join(root, "example-projects")
+	entries, err := os.ReadDir(exampleDir)
+	if err != nil {
+		return nil
+	}
+	var paths []string
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+		paths = append(paths, filepath.Join("example-projects", entry.Name()))
+	}
+	return paths
 }
 
 type ServerExampleHarnessReport struct {
@@ -114,7 +123,7 @@ func RunServerExampleHarnessWithOptions(root string, options ServerExampleHarnes
 		return ServerExampleHarnessReport{}, err
 	}
 	report := ServerExampleHarnessReport{Root: absRoot}
-	for _, rel := range serverExampleProjects {
+	for _, rel := range serverExampleProjectPaths(absRoot) {
 		if !serverExampleProjectMatches(rel, options.ProjectFilter) {
 			continue
 		}
@@ -198,7 +207,9 @@ func runServerExampleProject(root, rel string) (ServerExampleProjectReport, erro
 	probes := serverExampleProbes(out.RestResources, out.SeededRecords > 0)
 	results, err := runServerExampleProbes(root, projectPath, fixture, probes)
 	if err != nil {
-		return ServerExampleProjectReport{}, err
+		out.Status = "failed"
+		out.Message = err.Error()
+		return out, nil
 	}
 	out.Probes = results
 	return out, nil
@@ -483,23 +494,23 @@ func applyServerExampleProbeOverlay(org *storage.OrgState, probe serverExamplePr
 		ensureServerExampleLocalOrder(org)
 	}
 	if strings.Contains(path, "selfservice/email") {
-		ensureServerExampleNimbleAMSSettings(org)
-		ensureServerExampleSocialVerifyTemplate(org)
+		ensureServerExampleAppSettings(org)
+		ensureServerExampleEmailVerifyTemplate(org)
 	}
 	if strings.Contains(path, "webhookEvents") {
 		ensureServerExampleLocalAccount(org)
-		ensureServerExampleWebhookProviderAccount(org)
-		ensureServerExampleVerifiableEnvironment(org)
+		ensureServerExampleEventProviderAccount(org)
+		ensureServerExampleAppEnvironment(org)
 		ensureServerExampleSetupSettings(org)
-		ensureServerExampleNimbleAMSSettings(org)
-		ensureServerExampleVerifiableSetupData(org, "Name")
+		ensureServerExampleAppSettings(org)
+		ensureServerExampleSetupData(org, "Name")
 	}
 	if strings.Contains(path, "webhookevent/create") {
 		ensureServerExampleLocalAccount(org)
-		ensureServerExampleVerifiableEnvironment(org)
+		ensureServerExampleAppEnvironment(org)
 		ensureServerExampleSetupSettings(org)
-		ensureServerExampleNimbleAMSSettings(org)
-		ensureServerExampleVerifiableSetupData(org, "Id")
+		ensureServerExampleAppSettings(org)
+		ensureServerExampleSetupData(org, "Id")
 	}
 }
 
@@ -525,7 +536,7 @@ func ensureServerExampleLocalAccount(org *storage.OrgState) {
 	org.Objects["Account"] = account
 }
 
-func ensureServerExampleWebhookProviderAccount(org *storage.OrgState) {
+func ensureServerExampleEventProviderAccount(org *storage.OrgState) {
 	account := org.Objects["Account"]
 	if account.Records == nil {
 		account.Records = make(map[storage.ID]storage.Record)
@@ -601,7 +612,7 @@ func ensureServerExampleLocalOrder(org *storage.OrgState) {
 	org.Objects[objectName] = order
 }
 
-func ensureServerExampleNimbleAMSSettings(org *storage.OrgState) {
+func ensureServerExampleAppSettings(org *storage.OrgState) {
 	objectName, ok := storage.ResolveObjectName(*org, "NimbleAMSSettings__c")
 	if !ok {
 		return
@@ -629,7 +640,7 @@ func ensureServerExampleNimbleAMSSettings(org *storage.OrgState) {
 	org.Objects[objectName] = settings
 }
 
-func ensureServerExampleSocialVerifyTemplate(org *storage.OrgState) {
+func ensureServerExampleEmailVerifyTemplate(org *storage.OrgState) {
 	storage.EnsureStandardObject(org, "EmailTemplate")
 	template := org.Objects["EmailTemplate"]
 	if template.Records == nil {
@@ -666,7 +677,7 @@ func ensureServerExampleSocialVerifyTemplate(org *storage.OrgState) {
 	org.Objects["EmailTemplate"] = template
 }
 
-func ensureServerExampleVerifiableSetupData(org *storage.OrgState, providerIDField string) {
+func ensureServerExampleSetupData(org *storage.OrgState, providerIDField string) {
 	objectName, ok := storage.ResolveObjectName(*org, "Setup_Data__c")
 	if !ok {
 		return
@@ -689,7 +700,7 @@ func ensureServerExampleVerifiableSetupData(org *storage.OrgState, providerIDFie
 		setServerExampleFieldValue(org, objectName, record.Fields, "Disable_Webhook_Security_Check__c", storage.BooleanValue(true))
 		setServerExampleFieldValue(org, objectName, record.Fields, "License_Changed_Id__c", storage.StringValue("null"))
 		if _, ok := record.Fields[serverExampleFieldName(org, objectName, "Data_Mappings__c")]; !ok {
-			setServerExampleFieldValue(org, objectName, record.Fields, "Data_Mappings__c", storage.StringValue(serverExampleVerifiableDataMappings(providerIDField)))
+			setServerExampleFieldValue(org, objectName, record.Fields, "Data_Mappings__c", storage.StringValue(serverExampleDataMappings(providerIDField)))
 		}
 		setup.Records[id] = record
 		org.Objects[objectName] = setup
@@ -707,7 +718,7 @@ func ensureServerExampleVerifiableSetupData(org *storage.OrgState, providerIDFie
 	record := setup.Records[id]
 	setServerExampleFieldValue(org, objectName, record.Fields, "Disable_Webhook_Security_Check__c", storage.BooleanValue(true))
 	setServerExampleFieldValue(org, objectName, record.Fields, "License_Changed_Id__c", storage.StringValue("null"))
-	setServerExampleFieldValue(org, objectName, record.Fields, "Data_Mappings__c", storage.StringValue(serverExampleVerifiableDataMappings(providerIDField)))
+	setServerExampleFieldValue(org, objectName, record.Fields, "Data_Mappings__c", storage.StringValue(serverExampleDataMappings(providerIDField)))
 	setup.Records[id] = record
 	org.Objects[objectName] = setup
 }
@@ -722,7 +733,7 @@ func setServerExampleFieldValue(org *storage.OrgState, objectName string, fields
 	}
 }
 
-func ensureServerExampleVerifiableEnvironment(org *storage.OrgState) {
+func ensureServerExampleAppEnvironment(org *storage.OrgState) {
 	objectName, ok := storage.ResolveObjectName(*org, "VerifiableEnvironment__mdt")
 	if !ok {
 		return
@@ -796,7 +807,7 @@ func ensureServerExampleSetupSettings(org *storage.OrgState) {
 	org.Objects[objectName] = settings
 }
 
-func serverExampleVerifiableDataMappings(providerIDField string) string {
+func serverExampleDataMappings(providerIDField string) string {
 	if providerIDField == "" {
 		providerIDField = "Id"
 	}

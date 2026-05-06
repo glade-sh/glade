@@ -152,12 +152,18 @@ func TestRunCompatPostParityRequireReadyFails(t *testing.T) {
 
 func TestRunCompatServerExamplesAcceptsFilterFlags(t *testing.T) {
 	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, "example-projects", "alpha-pkg-develop"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Join(root, "example-projects", "beta-pkg-develop"), 0o755); err != nil {
+		t.Fatal(err)
+	}
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{
 		"compat", "server-examples",
 		"--project", root,
-		"--project-filter", "sf-cred",
-		"--route", "webhook",
+		"--project-filter", "alpha",
+		"--route", "event",
 		"--probe", "apexrest",
 		"--outcome", "unsupported",
 		"--blockers-only",
@@ -166,7 +172,7 @@ func TestRunCompatServerExamplesAcceptsFilterFlags(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
 	}
-	for _, want := range []string{`"projects"`, `"missing"`, "sf-cred-pkg-develop"} {
+	for _, want := range []string{`"projects"`, "alpha-pkg-develop"} {
 		if !strings.Contains(stdout.String(), want) {
 			t.Fatalf("stdout missing %q: %q", want, stdout.String())
 		}
