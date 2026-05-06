@@ -1,0 +1,8 @@
+<PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>App</fullName>
+  <label>App User</label>
+  <tabSettings>
+    <tab>Widget__c</tab>
+    <visibility>Available</visibility>
+  </tabSettings>
+</PermissionSet>

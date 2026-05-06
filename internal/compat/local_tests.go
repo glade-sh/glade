@@ -20,10 +20,12 @@ import (
 )
 
 type LocalTestOptions struct {
-	Project      string
-	Class        string
-	Method       string
-	BlockersOnly bool
+	Project             string
+	Class               string
+	Method              string
+	BlockersOnly        bool
+	TraceBlocked        bool
+	SlowTestThresholdMS int64
 }
 
 type LocalTestReport struct {
@@ -59,6 +61,9 @@ type LocalTestOutcome struct {
 	Error               string                 `json:"error,omitempty"`
 	RelatedMetadataFile string                 `json:"relatedMetadataFile,omitempty"`
 	DurationMS          int64                  `json:"durationMs,omitempty"`
+	TraceEvents         int                    `json:"traceEvents,omitempty"`
+	ProfileEvents       int                    `json:"profileEvents,omitempty"`
+	ProfileCategories   map[string]int         `json:"profileCategories,omitempty"`
 }
 
 type LocalTestCorpusBaseline struct {
@@ -127,7 +132,11 @@ func RunLocalTests(options LocalTestOptions) (LocalTestReport, error) {
 	}
 	report.Diagnostics = append(report.Diagnostics, loadDiagnostics...)
 
-	testOpts := apextest.Options{Filter: localTestFilter(options)}
+	testOpts := apextest.Options{
+		Filter:              localTestFilter(options),
+		TraceBlocked:        true,
+		SlowTestThresholdMS: options.SlowTestThresholdMS,
+	}
 	cases := apextest.Discover(index, testOpts)
 	cases = filterLocalTestCases(cases, options)
 	sort.SliceStable(cases, func(i, j int) bool {
@@ -446,6 +455,13 @@ func localTestRunOutcome(projectLabel string, testCase testreport.Case) LocalTes
 		Phase:        phase,
 		DurationMS:   testCase.DurationMS,
 	}
+	if len(testCase.Trace) > 0 {
+		out.TraceEvents = len(testCase.Trace)
+	}
+	if testCase.Profile != nil {
+		out.ProfileEvents = testCase.Profile.Events
+		out.ProfileCategories = testCase.Profile.Categories
+	}
 	if testCase.Problem != nil {
 		out.Error = testCase.Problem.Message
 		out.CapabilityID = localTestCapabilityID(phase, testCase.Problem.Type, testCase.Problem.Message)
@@ -461,6 +477,9 @@ func localTestRunOutcome(projectLabel string, testCase testreport.Case) LocalTes
 
 func localTestCapabilityID(phase, code, message string) string {
 	code = strings.TrimSpace(code)
+	if strings.EqualFold(code, "UnsupportedFeature") {
+		return "apex.test.unsupported"
+	}
 	if code != "" {
 		return strings.ToLower(code)
 	}

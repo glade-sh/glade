@@ -17,6 +17,16 @@ func TestRunLocalTestsClassifiesBasicFixture(t *testing.T) {
 	if report.Ready {
 		t.Fatalf("ready = true, want false")
 	}
+	var failing LocalTestOutcome
+	for _, outcome := range report.Outcomes {
+		if outcome.Class == "FailingTest" {
+			failing = outcome
+			break
+		}
+	}
+	if failing.TraceEvents == 0 || failing.ProfileEvents == 0 || len(failing.ProfileCategories) == 0 {
+		t.Fatalf("failing outcome missing trace/profile summary: %#v", failing)
+	}
 }
 
 func TestRunLocalTestsPlatformAPIsFixtureReady(t *testing.T) {
@@ -115,7 +125,7 @@ func TestCheckLocalTestCorpusFixture(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CheckLocalTestCorpus error = %v, report = %#v", err, report)
 	}
-	if !report.Ready || len(report.Projects) != 7 {
+	if !report.Ready || len(report.Projects) != 9 {
 		t.Fatalf("report = %#v", report)
 	}
 }

@@ -3,6 +3,12 @@ package storage
 // EnsureStandardObjectFields adds public Salesforce standard fields for objects
 // whose project metadata commonly only carries custom-field deltas.
 func EnsureStandardObjectFields(definition *ObjectDefinition) {
+	EnsureStandardObjectFieldsForFeatures(definition, nil)
+}
+
+// EnsureStandardObjectFieldsForFeatures adds the base standard object overlay,
+// plus feature-gated standard fields and record types for enabled org features.
+func EnsureStandardObjectFieldsForFeatures(definition *ObjectDefinition, features []string) {
 	if definition == nil {
 		return
 	}
@@ -12,6 +18,7 @@ func EnsureStandardObjectFields(definition *ObjectDefinition) {
 	if field, ok := definition.Fields["Id"]; !ok || field.APIName == "" {
 		definition.Fields["Id"] = Field{APIName: "Id", Label: "Record ID", Type: FieldID}
 	}
+	mergeStandardObjectDefinition(definition, features)
 	fields := standardFieldsForObject(definition.APIName)
 	for _, field := range fields {
 		if _, ok := ResolveFieldName(*definition, "", field.APIName); ok {
@@ -28,6 +35,9 @@ func EnsureStandardObjectFields(definition *ObjectDefinition) {
 }
 
 func standardFieldsForObject(objectName string) []Field {
+	if _, ok := standardObjectCatalogEntryFor(objectName); ok {
+		return nil
+	}
 	switch {
 	case stringsEqualFold(objectName, "EntityDefinition"):
 		return []Field{
@@ -202,6 +212,99 @@ func EnsureStandardObject(org *OrgState, objectName string) {
 	}
 	EnsureStandardObjectFields(&state.Definition)
 	org.Objects[objectName] = state
+}
+
+func mergeStandardObjectDefinition(definition *ObjectDefinition, features []string) {
+	entry, ok := standardObjectCatalogEntryFor(definition.APIName)
+	if !ok {
+		return
+	}
+	if definition.APIName == "" {
+		definition.APIName = entry.Definition.APIName
+	}
+	if definition.Label == "" {
+		definition.Label = entry.Definition.Label
+	}
+	if definition.PluralLabel == "" {
+		definition.PluralLabel = entry.Definition.PluralLabel
+	}
+	if definition.KeyPrefix == "" {
+		definition.KeyPrefix = entry.Definition.KeyPrefix
+	}
+	mergeStandardFields(definition, entry.Definition.Fields)
+	mergeStandardRecordTypes(definition, entry.Definition.RecordTypes)
+	for _, feature := range features {
+		feature = canonicalFeatureName(feature)
+		if feature == "" {
+			continue
+		}
+		mergeStandardFields(definition, entry.FeatureFields[feature])
+		mergeStandardRecordTypes(definition, entry.FeatureRecordTypes[feature])
+	}
+}
+
+func mergeStandardFields(definition *ObjectDefinition, fields map[string]Field) {
+	for _, field := range fields {
+		if _, ok := ResolveFieldName(*definition, "", field.APIName); ok {
+			continue
+		}
+		definition.Fields[field.APIName] = cloneField(field)
+	}
+}
+
+func mergeStandardRelationships(definition *ObjectDefinition, relationships []Relationship) {
+	for _, relationship := range relationships {
+		if relationship.Field == "" {
+			continue
+		}
+		found := false
+		for _, existing := range definition.Relations {
+			if stringsEqualFold(existing.Field, relationship.Field) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			copy := relationship
+			copy.ParentObjects = append([]string(nil), relationship.ParentObjects...)
+			definition.Relations = append(definition.Relations, copy)
+		}
+	}
+}
+
+func mergeStandardRecordTypes(definition *ObjectDefinition, recordTypes []RecordTypeInfo) {
+	for _, recordType := range recordTypes {
+		if recordType.DeveloperName == "" {
+			continue
+		}
+		found := false
+		for _, existing := range definition.RecordTypes {
+			if stringsEqualFold(existing.DeveloperName, recordType.DeveloperName) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			definition.RecordTypes = append(definition.RecordTypes, recordType)
+		}
+	}
+}
+
+func cloneField(field Field) Field {
+	field.ReferenceTo = append([]string(nil), field.ReferenceTo...)
+	field.PicklistValues = append([]PicklistValue(nil), field.PicklistValues...)
+	return field
+}
+
+func canonicalFeatureName(feature string) string {
+	switch {
+	case stringsEqualFold(feature, "PersonAccounts"):
+		return "PersonAccounts"
+	case stringsEqualFold(feature, "MultiCurrency"):
+		return "MultiCurrency"
+	default:
+		return feature
+	}
 }
 
 func stringsEqualFold(left, right string) bool {

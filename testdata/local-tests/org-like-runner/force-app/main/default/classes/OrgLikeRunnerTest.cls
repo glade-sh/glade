@@ -31,8 +31,9 @@ private class OrgLikeRunnerTest {
     String batchId = Database.executeBatch(new RunnerBatch(), 2);
     String scheduleId = System.schedule('nightly', '0 0 0 * * ?', new RunnerSchedule());
     System.enqueueJob(new RunnerQueue());
-    Database.SaveResult eventResult = EventBus.publish(new Widget__c(Name = 'Local Event'));
+    Database.SaveResult eventResult = EventBus.publish(new Widget_Event__e(Name__c = 'Local Event'));
     System.assert(eventResult.isSuccess());
+    System.assertEquals(1, RunnerState.futureRan);
     System.assertNotEquals('', batchId);
     System.assertNotEquals('', scheduleId);
     insert new Widget__c(Name = 'Acme');

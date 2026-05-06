@@ -1,0 +1,6 @@
+<CustomObject>
+  <label>Widget Event</label>
+  <pluralLabel>Widget Events</pluralLabel>
+  <deploymentStatus>Deployed</deploymentStatus>
+  <fields><fullName>Name__c</fullName><label>Name</label><type>Text</type><length>80</length></fields>
+</CustomObject>

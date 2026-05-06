@@ -42,6 +42,13 @@ func TestLoadSFDXProject(t *testing.T) {
 	writeFile(t, filepath.Join(root, "force-app/main/objects/Thing__c/listViews/All.listView-meta.xml"), "<ListView/>")
 	writeFile(t, filepath.Join(root, "force-app/main/layouts/Thing__c-Thing Layout.layout-meta.xml"), "<Layout/>")
 	writeFile(t, filepath.Join(root, "force-app/main/objects/Thing__c/compactLayouts/Card.compactLayout-meta.xml"), "<CompactLayout/>")
+	writeFile(t, filepath.Join(root, "force-app/main/tabs/Thing__c.tab-meta.xml"), "<CustomTab/>")
+	writeFile(t, filepath.Join(root, "force-app/main/objects/Thing__c/webLinks/Open.webLink-meta.xml"), "<WebLink/>")
+	writeFile(t, filepath.Join(root, "force-app/main/quickActions/Thing__c.New.quickAction-meta.xml"), "<QuickAction/>")
+	writeFile(t, filepath.Join(root, "force-app/main/globalValueSets/Status.globalValueSet-meta.xml"), "<GlobalValueSet/>")
+	writeFile(t, filepath.Join(root, "force-app/main/standardValueSets/CaseStatus.standardValueSet-meta.xml"), "<StandardValueSet/>")
+	writeFile(t, filepath.Join(root, "force-app/main/flexipages/Home.flexipage-meta.xml"), "<FlexiPage/>")
+	writeFile(t, filepath.Join(root, "force-app/main/applications/Console.app-meta.xml"), "<CustomApplication/>")
 	writeFile(t, filepath.Join(root, "force-app/main/pages/Edit.page"), `<apex:page controller="EditController"/>`)
 	writeFile(t, filepath.Join(root, "force-app/main/components/Picker.component"), `<apex:component/>`)
 	writeFile(t, filepath.Join(root, "force-app/main/aura/Widget/Widget.cmp"), `<aura:component controller="WidgetController"/>`)
@@ -71,6 +78,9 @@ func TestLoadSFDXProject(t *testing.T) {
 	}
 	if len(p.ListViewFiles) != 1 || len(p.LayoutFiles) != 1 || len(p.CompactLayoutFiles) != 1 {
 		t.Fatalf("unexpected layout/list view file counts: %#v", p)
+	}
+	if len(p.TabFiles) != 1 || len(p.WebLinkFiles) != 1 || len(p.QuickActionFiles) != 1 || len(p.GlobalValueSetFiles) != 1 || len(p.StandardValueSetFiles) != 1 || len(p.FlexiPageFiles) != 1 || len(p.ApplicationFiles) != 1 {
+		t.Fatalf("unexpected presentation metadata file counts: %#v", p)
 	}
 	if len(p.VisualforcePageFiles) != 1 || len(p.VisualforceComponentFiles) != 1 {
 		t.Fatalf("unexpected visualforce file counts: %#v", p)

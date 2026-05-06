@@ -58,6 +58,9 @@ func NewAnalyzer() *Analyzer {
 	for _, name := range platformTypes {
 		a.addKnown(name, TypePlatform, "")
 	}
+	for _, name := range vm.CommonSObjectTypeNames() {
+		a.addKnown(name, TypePlatform, "")
+	}
 	return a
 }
 

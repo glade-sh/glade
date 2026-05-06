@@ -1,0 +1,5 @@
+<QuickAction xmlns="http://soap.sforce.com/2006/04/metadata">
+  <label>New Widget</label>
+  <type>Create</type>
+  <targetObject>Widget__c</targetObject>
+</QuickAction>

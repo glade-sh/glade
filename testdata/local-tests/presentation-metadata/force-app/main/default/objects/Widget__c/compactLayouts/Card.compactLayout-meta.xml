@@ -1,0 +1,4 @@
+<CompactLayout xmlns="http://soap.sforce.com/2006/04/metadata">
+  <label>Widget Card</label>
+  <fields>Name</fields>
+</CompactLayout>

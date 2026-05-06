@@ -27,6 +27,26 @@
       ]
     },
     {
+      "project": "../../testdata/local-tests/custom-metadata",
+      "ready": true,
+      "summary": {
+        "total": 1,
+        "pass": 1,
+        "fail": 0,
+        "unsupported": 0,
+        "loadError": 0,
+        "compileError": 0,
+        "internalError": 0
+      },
+      "outcomes": [
+        {
+          "class": "CustomMetadataTest",
+          "method": "queriesLoadedCustomMetadata",
+          "outcome": "pass"
+        }
+      ]
+    },
+    {
       "project": "../../testdata/local-tests/platform-apis",
       "ready": true,
       "summary": {
@@ -108,6 +128,27 @@
           "class": "VisualforceControllerContractTest",
           "method": "resolvesPageTokenAndExtensionConstructor",
           "outcome": "pass"
+        }
+      ]
+    },
+    {
+      "project": "../../testdata/local-tests/presentation-metadata",
+      "ready": false,
+      "summary": {
+        "total": 1,
+        "pass": 0,
+        "fail": 0,
+        "unsupported": 1,
+        "loadError": 0,
+        "compileError": 0,
+        "internalError": 0
+      },
+      "outcomes": [
+        {
+          "class": "PresentationMetadataTest",
+          "method": "tabsAreExplicitlyUnsupportedUntilModeled",
+          "outcome": "unsupported",
+          "capabilityId": "apex.test.unsupported"
         }
       ]
     },

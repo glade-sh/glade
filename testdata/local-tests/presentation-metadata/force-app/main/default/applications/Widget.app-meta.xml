@@ -1,0 +1,4 @@
+<CustomApplication xmlns="http://soap.sforce.com/2006/04/metadata">
+  <label>Widget Console</label>
+  <tabs>Widget__c</tabs>
+</CustomApplication>

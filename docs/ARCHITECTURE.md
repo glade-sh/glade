@@ -35,10 +35,10 @@ and composed by the CLI.
   static reset, `startTest`/`stopTest`, `runAs`, Queueable/Future/Batch/
   Scheduled draining, async job records, and console/JSON/JUnit reporting.
 - `internal/sobject`: runtime SObject value and schema describe helpers.
-- `internal/storage`: org/object/record model, fixture envelope, deterministic
-  IDs, cloneable transaction snapshots, fixture alias/reference resolution,
-  deterministic platform users/profiles/permissions, SQLite persistence, and
-  schema migrations.
+- `internal/storage`: org/object/record model, generated standard object schema
+  baseline, fixture envelope, deterministic IDs, cloneable transaction
+  snapshots, fixture alias/reference resolution, deterministic platform
+  users/profiles/permissions, SQLite persistence, and schema migrations.
 - `internal/soql`: in-memory SOQL parser and executor for the supported query
   subset, including binds, ordering, limits, offsets, `COUNT()`, and simple
   parent relationship projection.

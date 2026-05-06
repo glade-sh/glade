@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -601,6 +602,8 @@ func runTest(ctx context.Context, args []string, w io.Writer) (testreport.Run, e
 	watchMode := false
 	watchOnce := false
 	debug := false
+	traceBlocked := false
+	slowTestThresholdMS := int64(0)
 	debounce := watch.DefaultDebounce
 	backend := watch.BackendAuto
 	for i := 0; i < len(args); i++ {
@@ -621,6 +624,19 @@ func runTest(ctx context.Context, args []string, w io.Writer) (testreport.Run, e
 			format = "json"
 		case "--compat-json":
 			format = "compat-json"
+			traceBlocked = true
+		case "--trace-blockers":
+			traceBlocked = true
+		case "--slow-test-ms":
+			if i+1 >= len(args) {
+				return testreport.Run{}, errors.New("--slow-test-ms requires a value")
+			}
+			parsed, err := strconv.ParseInt(args[i+1], 10, 64)
+			if err != nil || parsed < 0 {
+				return testreport.Run{}, fmt.Errorf("--slow-test-ms must be a non-negative integer")
+			}
+			slowTestThresholdMS = parsed
+			i++
 		case "--junit":
 			if i+1 >= len(args) {
 				return testreport.Run{}, errors.New("--junit requires a path")
@@ -674,9 +690,9 @@ func runTest(ctx context.Context, args []string, w io.Writer) (testreport.Run, e
 		return testreport.Run{}, err
 	}
 	if watchMode {
-		return runWatchTests(ctx, root, index, apextest.Options{Filter: filter, LimitMode: limitMode}, watch.Config{Root: root, Debounce: debounce, Backend: backend}, watchOnce, w)
+		return runWatchTests(ctx, root, index, apextest.Options{Filter: filter, LimitMode: limitMode, TraceBlocked: traceBlocked, SlowTestThresholdMS: slowTestThresholdMS}, watch.Config{Root: root, Debounce: debounce, Backend: backend}, watchOnce, w)
 	}
-	result := apextest.Run(index, apextest.Options{Filter: filter, LimitMode: limitMode})
+	result := apextest.Run(index, apextest.Options{Filter: filter, LimitMode: limitMode, TraceBlocked: traceBlocked, SlowTestThresholdMS: slowTestThresholdMS})
 	if debug {
 		return result, serveDAPSnapshot(testRunSnapshot(result), w)
 	}
@@ -1430,6 +1446,18 @@ func runCompatLocalTests(args []string, w io.Writer) error {
 			i++
 		case "--blockers-only":
 			options.BlockersOnly = true
+		case "--trace-blockers":
+			options.TraceBlocked = true
+		case "--slow-test-ms":
+			if i+1 >= len(args) {
+				return errors.New("--slow-test-ms requires a value")
+			}
+			parsed, err := strconv.ParseInt(args[i+1], 10, 64)
+			if err != nil || parsed < 0 {
+				return fmt.Errorf("--slow-test-ms must be a non-negative integer")
+			}
+			options.SlowTestThresholdMS = parsed
+			i++
 		case "--project":
 			if i+1 >= len(args) {
 				return errors.New("--project requires a value")
@@ -1453,8 +1481,8 @@ func runCompatLocalTests(args []string, w io.Writer) error {
 		}
 	}
 	if checkPath != "" {
-		if options.Project != "." || options.Class != "" || options.Method != "" || options.BlockersOnly {
-			return errors.New("--check cannot be combined with --project, --class, --method, or --blockers-only")
+		if options.Project != "." || options.Class != "" || options.Method != "" || options.BlockersOnly || options.TraceBlocked || options.SlowTestThresholdMS != 0 {
+			return errors.New("--check cannot be combined with --project, --class, --method, --blockers-only, --trace-blockers, or --slow-test-ms")
 		}
 		report, err := compat.CheckLocalTestCorpus(checkPath)
 		if jsonOut {

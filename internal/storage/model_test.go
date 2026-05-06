@@ -89,11 +89,54 @@ func TestEnsureStandardObjectFieldsAddsAccountWebsiteWithoutClobber(t *testing.T
 	if field, ok := definition.Fields["Phone"]; !ok || field.Type != FieldString {
 		t.Fatalf("Phone field = %#v, %v", field, ok)
 	}
+	if _, ok := definition.Fields["PersonMailingStreet"]; ok {
+		t.Fatalf("PersonMailingStreet should be gated by PersonAccounts: %#v", definition.Fields["PersonMailingStreet"])
+	}
+}
+
+func TestEnsureStandardObjectFieldsForFeaturesAddsPersonAccountShape(t *testing.T) {
+	definition := ObjectDefinition{APIName: "Account"}
+
+	EnsureStandardObjectFieldsForFeatures(&definition, []string{"PersonAccounts"})
+
 	if field, ok := definition.Fields["PersonMailingStreet"]; !ok || field.Type != FieldString {
 		t.Fatalf("PersonMailingStreet field = %#v, %v", field, ok)
 	}
-	if field, ok := definition.Fields["PersonOtherCountry"]; !ok || field.Type != FieldString {
-		t.Fatalf("PersonOtherCountry field = %#v, %v", field, ok)
+	if field, ok := definition.Fields["IsPersonAccount"]; !ok || field.Type != FieldBoolean {
+		t.Fatalf("IsPersonAccount field = %#v, %v", field, ok)
+	}
+	if len(definition.RecordTypes) == 0 {
+		t.Fatalf("record types = %#v", definition.RecordTypes)
+	}
+	foundPersonAccount := false
+	for _, recordType := range definition.RecordTypes {
+		if recordType.DeveloperName == "PersonAccount" {
+			foundPersonAccount = true
+		}
+	}
+	if !foundPersonAccount {
+		t.Fatalf("record types missing PersonAccount: %#v", definition.RecordTypes)
+	}
+}
+
+func TestEnsureStandardObjectAddsSalesCloudStandardObjectShape(t *testing.T) {
+	org := NewOrgState()
+
+	EnsureStandardObject(&org, "Lead")
+	EnsureStandardObject(&org, "Opportunity")
+	EnsureStandardObject(&org, "OrderItem")
+
+	if org.Objects["Lead"].Definition.KeyPrefix != "00Q" {
+		t.Fatalf("Lead key prefix = %q", org.Objects["Lead"].Definition.KeyPrefix)
+	}
+	if field, ok := org.Objects["Lead"].Definition.Fields["LastName"]; !ok || !field.Required {
+		t.Fatalf("Lead.LastName field = %#v, %v", field, ok)
+	}
+	if field, ok := org.Objects["Opportunity"].Definition.Fields["StageName"]; !ok || !field.Required {
+		t.Fatalf("Opportunity.StageName field = %#v, %v", field, ok)
+	}
+	if field, ok := org.Objects["OrderItem"].Definition.Fields["OrderId"]; !ok || field.Type != FieldReference || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "Order" {
+		t.Fatalf("OrderItem.OrderId field = %#v, %v", field, ok)
 	}
 }
 

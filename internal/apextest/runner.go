@@ -8,16 +8,19 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/open-aer/oaer/internal/apexast"
 	"github.com/open-aer/oaer/internal/automation"
 	"github.com/open-aer/oaer/internal/diagnostic"
+	"github.com/open-aer/oaer/internal/profile"
 	"github.com/open-aer/oaer/internal/project"
 	"github.com/open-aer/oaer/internal/resource"
 	"github.com/open-aer/oaer/internal/schema"
 	"github.com/open-aer/oaer/internal/sobject"
 	"github.com/open-aer/oaer/internal/storage"
 	"github.com/open-aer/oaer/internal/testreport"
+	"github.com/open-aer/oaer/internal/trace"
 	"github.com/open-aer/oaer/internal/typesys"
 	"github.com/open-aer/oaer/internal/visualforce"
 	"github.com/open-aer/oaer/internal/vm"
@@ -26,8 +29,10 @@ import (
 var sourceRuneOffsetCache sync.Map
 
 type Options struct {
-	Filter    string
-	LimitMode vm.LimitMode
+	Filter              string
+	LimitMode           vm.LimitMode
+	TraceBlocked        bool
+	SlowTestThresholdMS int64
 }
 
 type TestCase struct {
@@ -158,6 +163,10 @@ func runCase(ctx context.Context, testCase TestCase, methods map[string]vm.Metho
 		MethodName: testCase.MethodName,
 		Status:     testreport.StatusPass,
 	}
+	started := time.Now()
+	defer func() {
+		out.DurationMS = time.Since(started).Milliseconds()
+	}()
 	source, err := os.ReadFile(testCase.File)
 	if err != nil {
 		out.Status = testreport.StatusCompileError
@@ -212,12 +221,31 @@ func runCase(ctx context.Context, testCase TestCase, methods map[string]vm.Metho
 		out.Problem = problem("UnsupportedFeature", err.Error(), testCase)
 		return out
 	}
-	if _, err := machine.Execute(program); err != nil {
+	result, err := machine.Execute(program)
+	if err != nil {
 		out.Status = testreport.StatusFail
 		out.Problem = problemFromError(err, testCase)
-		return out
 	}
+	out.DurationMS = time.Since(started).Milliseconds()
+	attachTraceProfile(&out, result, opts)
 	return out
+}
+
+func attachTraceProfile(out *testreport.Case, result vm.Result, opts Options) {
+	if len(result.Trace) == 0 {
+		return
+	}
+	blocked := out.Status != testreport.StatusPass
+	slow := opts.SlowTestThresholdMS > 0 && out.DurationMS >= opts.SlowTestThresholdMS
+	if !blocked && !slow {
+		return
+	}
+	if !opts.TraceBlocked && !slow {
+		return
+	}
+	out.Trace = append([]trace.Event(nil), result.Trace...)
+	report := profile.Analyze(trace.NewDocument(out.Trace))
+	out.Profile = &report
 }
 
 func canceledCase(testCase TestCase, err error) testreport.Case {

@@ -1,0 +1,6 @@
+<WebLink xmlns="http://soap.sforce.com/2006/04/metadata">
+  <fullName>Open</fullName>
+  <displayType>link</displayType>
+  <linkType>url</linkType>
+  <url>/lightning/r/Widget__c/{!Widget__c.Id}/view</url>
+</WebLink>

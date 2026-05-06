@@ -38,6 +38,13 @@ type Project struct {
 	ListViewFiles             []string           `json:"listViewFiles"`
 	LayoutFiles               []string           `json:"layoutFiles"`
 	CompactLayoutFiles        []string           `json:"compactLayoutFiles"`
+	TabFiles                  []string           `json:"tabFiles"`
+	WebLinkFiles              []string           `json:"webLinkFiles"`
+	QuickActionFiles          []string           `json:"quickActionFiles"`
+	GlobalValueSetFiles       []string           `json:"globalValueSetFiles"`
+	StandardValueSetFiles     []string           `json:"standardValueSetFiles"`
+	FlexiPageFiles            []string           `json:"flexiPageFiles"`
+	ApplicationFiles          []string           `json:"applicationFiles"`
 	VisualforcePageFiles      []string           `json:"visualforcePageFiles"`
 	VisualforceComponentFiles []string           `json:"visualforceComponentFiles"`
 	AuraFiles                 []string           `json:"auraFiles"`
@@ -112,6 +119,13 @@ func Load(root string) (Project, error) {
 	sort.Strings(p.ListViewFiles)
 	sort.Strings(p.LayoutFiles)
 	sort.Strings(p.CompactLayoutFiles)
+	sort.Strings(p.TabFiles)
+	sort.Strings(p.WebLinkFiles)
+	sort.Strings(p.QuickActionFiles)
+	sort.Strings(p.GlobalValueSetFiles)
+	sort.Strings(p.StandardValueSetFiles)
+	sort.Strings(p.FlexiPageFiles)
+	sort.Strings(p.ApplicationFiles)
 	sort.Strings(p.VisualforcePageFiles)
 	sort.Strings(p.VisualforceComponentFiles)
 	sort.Strings(p.AuraFiles)
@@ -239,6 +253,20 @@ func collectFiles(root string, p *Project) error {
 			p.LayoutFiles = append(p.LayoutFiles, path)
 		case strings.HasSuffix(lower, ".compactlayout-meta.xml"):
 			p.CompactLayoutFiles = append(p.CompactLayoutFiles, path)
+		case strings.HasSuffix(lower, ".tab"), strings.HasSuffix(lower, ".tab-meta.xml"):
+			p.TabFiles = append(p.TabFiles, path)
+		case strings.HasSuffix(lower, ".weblink"), strings.HasSuffix(lower, ".weblink-meta.xml"):
+			p.WebLinkFiles = append(p.WebLinkFiles, path)
+		case strings.HasSuffix(lower, ".quickaction"), strings.HasSuffix(lower, ".quickaction-meta.xml"):
+			p.QuickActionFiles = append(p.QuickActionFiles, path)
+		case strings.HasSuffix(lower, ".globalvalueset"), strings.HasSuffix(lower, ".globalvalueset-meta.xml"):
+			p.GlobalValueSetFiles = append(p.GlobalValueSetFiles, path)
+		case strings.HasSuffix(lower, ".standardvalueset"), strings.HasSuffix(lower, ".standardvalueset-meta.xml"):
+			p.StandardValueSetFiles = append(p.StandardValueSetFiles, path)
+		case strings.HasSuffix(lower, ".flexipage"), strings.HasSuffix(lower, ".flexipage-meta.xml"):
+			p.FlexiPageFiles = append(p.FlexiPageFiles, path)
+		case strings.HasSuffix(lower, ".app-meta.xml"), strings.HasSuffix(lower, ".app") && strings.Contains(filepath.ToSlash(lower), "/applications/"):
+			p.ApplicationFiles = append(p.ApplicationFiles, path)
 		case strings.HasSuffix(lower, ".page"):
 			p.VisualforcePageFiles = append(p.VisualforcePageFiles, path)
 		case strings.HasSuffix(lower, ".component"):

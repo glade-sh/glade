@@ -16,8 +16,9 @@ The current server-example gate is green:
 pass=101 fail=0 unsupported=0 missing=0
 ```
 
-The broader local-test support gate is not green. A May 6, 2026
-post-parity inventory from the current checkout reports:
+The owned local-test corpus gate is green for the checked baseline, including
+intentional unsupported classifications. The broader post-parity inventory is
+not green. A May 6, 2026 inventory from the current checkout reports:
 
 ```text
 filesScanned=51507 findings=41534 testBlockingFindings=41534 surfaces=19
@@ -68,9 +69,12 @@ These milestones are ordered by developer value, not by feature count.
 | M6: Declarative-test ready | Workflow and Flow side effects run inside the DML/test transaction with traceable decisions and rollback. | `compat local-tests --project testdata/local-tests/workflow --json` and `.../flow --json` |
 | M7: Legacy-project-test ready | Owned corpus fixtures modeled after the example projects are green, and remaining unsupported surfaces are outside the documented claim. | `compat local-tests --check docs/fixtures/local-tests-corpus.json` |
 
-M0 through the first owned M7 corpus gate are green in this checkout for the
-checked fixtures. The remaining work is to broaden the owned corpus and close
-the documented unsupported surfaces before making a large-project local-test
+M0 through the first owned M7 corpus gate were green before the Phase 2C
+presentation-metadata fixture was added. The corpus now intentionally includes a
+presentation-metadata fixture that is not ready yet because tab describe is
+reported as an explicit unsupported capability instead of being silently
+modeled. The remaining work is to broaden the owned corpus and close the
+documented unsupported surfaces before making a large-project local-test
 execution claim.
 
 ## Speed Requirements
@@ -234,6 +238,9 @@ Primary lanes: Metadata core, Metadata resources.
 Tasks:
 
 - Load legacy `.object` files alongside source-format `object-meta.xml`.
+- Merge the generated Salesforce standard object schema baseline before project
+  custom-field deltas so Account, Contact, Lead, Opportunity, Orders, Quotes,
+  Products, Activities, files, and platform objects resolve consistently.
 - Load custom fields, record types, validation rules, compact layouts, and
   business processes from both legacy and source-format layouts where present.
 - Load legacy custom metadata record `.md` files into schema/storage fixtures.
@@ -274,11 +281,28 @@ go run ./cmd/oaer compat local-tests --project testdata/local-tests/resources-la
 
 Tasks:
 
-- Load profiles, permission sets, tabs, layouts, web links, quick actions,
-  global value sets, and flexipages into read-only metadata registries.
+- Discover profiles, permission sets, tabs, layouts, web links, quick actions,
+  global value sets, standard value sets, applications, and flexipages as
+  read-only project metadata inputs.
+- Load profiles and permission sets into the existing read-only metadata
+  registry; layouts and compact layouts are available through the local server
+  source metadata path.
+- Add registry-backed loaders for tabs, web links, quick actions, global value
+  sets, standard value sets, applications, and flexipages before treating those
+  surfaces as supported.
 - Support describe/controller lookups that need this metadata.
 - Keep enforcement conservative: if a permission rule is not modeled, report a
   capability-specific unsupported diagnostic instead of allowing silently.
+
+Current status:
+
+- Custom metadata Phase 2A has an owned local-test fixture and is expected to
+  pass through the corpus gate.
+- Phase 2C has an owned `presentation-metadata` fixture that loads representative
+  profile, permission set, tab, layout, compact layout, web link, quick action,
+  global value set, standard value set, application, and flexipage files. The
+  test intentionally exercises `Schema.describeTabs()` and currently expects an
+  `unsupported` outcome until tab describe metadata is modeled.
 
 Validation:
 
@@ -536,6 +560,9 @@ surfaces exist.
 Initial implementation status:
 
 - Added `testdata/local-tests/org-like-runner` as the runner-fidelity fixture.
+- Added local platform-event trigger delivery for `EventBus.publish(...)` so
+  after-insert platform event triggers participate in the same per-test VM
+  transaction and trace stream.
   It verifies `@TestSetup` data cloning, static reset between test methods,
   `Test.startTest`/`Test.stopTest` queueable/future/batch/scheduled drain,
   current local `EventBus.publish` success behavior, savepoint rollback,
@@ -545,9 +572,10 @@ Initial implementation status:
   before triggers run before the write, after triggers observe the post-write
   record before declarative automation, then Workflow and Flow field updates run
   inside the same rollback-able transaction.
-- Future runner-fidelity work still needs platform-event trigger delivery
-  semantics. Current platform-event-like coverage is limited to the supported
-  local no-op publish result shape.
+- Platform-event trigger delivery now has owned fixture coverage for the local
+  synchronous after-insert trigger path used by tests. Broader Salesforce event
+  bus semantics, publish callbacks, replay IDs, and asynchronous subscriber
+  ordering remain outside the current claim.
 - Added `oaer test --compat-json` so the user-facing test command can emit the
   same readiness-shaped per-test outcome schema as `compat local-tests`.
 
@@ -563,7 +591,9 @@ Tasks:
   paths used by tests.
 - Verify DML save-order composition: validation, before triggers, DML write,
   after triggers, workflow, flow, async enqueue, rollback.
-- Add per-test trace/profile output for blocked or slow tests.
+- Added per-test trace/profile summaries for blocked local-test outcomes and
+  `--slow-test-ms` slow-test capture for `oaer test --compat-json` and
+  `compat local-tests`.
 - Add `oaer test --compat-json` or equivalent output compatible with the
   local-test gate.
 
@@ -597,8 +627,14 @@ Initial implementation status:
 - Added `compat ui-controllers --check
   docs/fixtures/ui-controller-discovery.json` for Aura/LWC controller discovery
   without adding browser rendering or action endpoint semantics.
-- Larger anonymized corpus projects, Aura/LWC action dispatch fixtures, and
-  readiness dashboards remain future Phase 8 work.
+- The checked corpus now covers owned metadata/resources, presentation-metadata
+  unsupported classification, Visualforce controller contracts, Aura/LWC
+  discovery, VM-level Aura/LWC action invocation, platform APIs, files/email,
+  Workflow, Flow, and org-like runner fidelity.
+- Larger anonymized corpus projects and generated local-test dashboard files
+  remain future release-hardening work. VM-level Aura/LWC action dispatch now
+  has JSON-shaped return and `AuraHandledException` error contracts ready for
+  fixture expansion.
 
 Primary lane: Gate.
 

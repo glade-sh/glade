@@ -219,7 +219,9 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 				ErrorDisplayField:     rule.ErrorDisplayField,
 			})
 		}
-		registry.Objects[object.Name] = describe
+		definition := ToObjectDefinition(describe)
+		storage.EnsureStandardObjectFields(&definition)
+		registry.Objects[object.Name] = FromObjectDefinition(definition)
 	}
 	return registry
 }
@@ -310,6 +312,53 @@ func ToObjectDefinition(describe DescribeSObjectResult) storage.ObjectDefinition
 		})
 	}
 	return definition
+}
+
+func FromObjectDefinition(definition storage.ObjectDefinition) DescribeSObjectResult {
+	describe := DescribeSObjectResult{
+		Name:            definition.APIName,
+		Label:           definition.Label,
+		PluralLabel:     definition.PluralLabel,
+		KeyPrefix:       definition.KeyPrefix,
+		Fields:          make(map[string]DescribeFieldResult, len(definition.Fields)),
+		Relationships:   append([]storage.Relationship(nil), definition.Relations...),
+		RecordTypes:     make([]DescribeRecordTypeInfo, 0, len(definition.RecordTypes)),
+		ValidationRules: append([]storage.ValidationRule(nil), definition.ValidationRules...),
+	}
+	if definition.Metadata != nil {
+		describe.Metadata = make(map[string]string, len(definition.Metadata))
+		for key, value := range definition.Metadata {
+			describe.Metadata[key] = value
+		}
+	}
+	for name, field := range definition.Fields {
+		describe.Fields[name] = DescribeFieldResult{
+			Name:             field.APIName,
+			Type:             field.Type,
+			DisplayType:      field.DisplayType,
+			Label:            labelOrName(field.Label, field.APIName),
+			ReferenceTo:      append([]string(nil), field.ReferenceTo...),
+			RelationshipName: field.RelationshipName,
+			DefaultValue:     field.DefaultValue,
+			Required:         field.Required,
+			ExternalID:       field.ExternalID,
+			Unique:           field.Unique,
+			Encrypted:        field.Encrypted,
+			PicklistValues:   append([]storage.PicklistValue(nil), field.PicklistValues...),
+		}
+	}
+	for _, recordType := range definition.RecordTypes {
+		describe.RecordTypes = append(describe.RecordTypes, DescribeRecordTypeInfo{
+			ID:            recordType.ID,
+			DeveloperName: recordType.DeveloperName,
+			Name:          recordType.Name,
+			Active:        recordType.Active,
+			Available:     recordType.Available,
+			Default:       recordType.Default,
+			Description:   recordType.Description,
+		})
+	}
+	return describe
 }
 
 func ensureDescribeField(fields map[string]DescribeFieldResult, name, typ, label string) {

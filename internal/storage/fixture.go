@@ -263,9 +263,18 @@ func containsString(values []string, want string) bool {
 func ApplyOrgShape(org *OrgState, features []string) {
 	for _, f := range features {
 		switch f {
+		case "PersonAccounts":
+			applyStandardFeature(org, "PersonAccounts")
 		case "MultiCurrency":
 			applyMultiCurrency(org)
 		}
+	}
+}
+
+func applyStandardFeature(org *OrgState, feature string) {
+	for name, obj := range org.Objects {
+		EnsureStandardObjectFieldsForFeatures(&obj.Definition, []string{feature})
+		org.Objects[name] = obj
 	}
 }
 

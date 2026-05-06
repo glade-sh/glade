@@ -1,6 +1,11 @@
 package testreport
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/open-aer/oaer/internal/profile"
+	"github.com/open-aer/oaer/internal/trace"
+)
 
 type Status string
 
@@ -26,12 +31,14 @@ type Suite struct {
 }
 
 type Case struct {
-	Name       string   `json:"name,omitempty"`
-	ClassName  string   `json:"className,omitempty"`
-	MethodName string   `json:"methodName,omitempty"`
-	Status     Status   `json:"status"`
-	DurationMS int64    `json:"durationMs,omitempty"`
-	Problem    *Problem `json:"problem,omitempty"`
+	Name       string          `json:"name,omitempty"`
+	ClassName  string          `json:"className,omitempty"`
+	MethodName string          `json:"methodName,omitempty"`
+	Status     Status          `json:"status"`
+	DurationMS int64           `json:"durationMs,omitempty"`
+	Problem    *Problem        `json:"problem,omitempty"`
+	Trace      []trace.Event   `json:"trace,omitempty"`
+	Profile    *profile.Report `json:"profile,omitempty"`
 }
 
 type Problem struct {
@@ -154,12 +161,14 @@ func (s Suite) MarshalJSON() ([]byte, error) {
 
 func (c Case) MarshalJSON() ([]byte, error) {
 	type jsonCase struct {
-		Name       string   `json:"name,omitempty"`
-		ClassName  string   `json:"className,omitempty"`
-		MethodName string   `json:"methodName,omitempty"`
-		Status     Status   `json:"status"`
-		DurationMS int64    `json:"durationMs,omitempty"`
-		Problem    *Problem `json:"problem,omitempty"`
+		Name       string          `json:"name,omitempty"`
+		ClassName  string          `json:"className,omitempty"`
+		MethodName string          `json:"methodName,omitempty"`
+		Status     Status          `json:"status"`
+		DurationMS int64           `json:"durationMs,omitempty"`
+		Problem    *Problem        `json:"problem,omitempty"`
+		Trace      []trace.Event   `json:"trace,omitempty"`
+		Profile    *profile.Report `json:"profile,omitempty"`
 	}
 	return json.Marshal(jsonCase{
 		Name:       c.Name,
@@ -168,6 +177,8 @@ func (c Case) MarshalJSON() ([]byte, error) {
 		Status:     normalizeStatus(c.Status),
 		DurationMS: c.DurationMS,
 		Problem:    c.Problem,
+		Trace:      c.Trace,
+		Profile:    c.Profile,
 	})
 }
 

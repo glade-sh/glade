@@ -65,7 +65,7 @@ func AssignDeterministicPrefixes(objectNames []string, explicit map[string]strin
 }
 
 func StandardKeyPrefixes() map[string]string {
-	return map[string]string{
+	prefixes := map[string]string{
 		"Account":                 "001",
 		"Contact":                 "003",
 		"User":                    "005",
@@ -83,6 +83,12 @@ func StandardKeyPrefixes() map[string]string {
 		"PermissionSet":           "0PS",
 		"PermissionSetAssignment": "0Pa",
 	}
+	for object, prefix := range standardObjectKeyPrefixes() {
+		if prefix != "" {
+			prefixes[object] = prefix
+		}
+	}
+	return prefixes
 }
 
 func ValidateID(id ID) error {

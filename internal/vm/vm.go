@@ -132,6 +132,10 @@ type CapturedEmail struct {
 	DocumentAttachments []string `json:"documentAttachments,omitempty"`
 }
 
+type sideEffectSnapshot struct {
+	capturedEmails []CapturedEmail
+}
+
 type StackFrame struct {
 	Symbol string
 	File   string
@@ -537,6 +541,7 @@ func (vm *VM) applyDeferredAutomation(engine *dml.Engine, records []storage.Reco
 	if engine == nil {
 		return nil
 	}
+	sideEffects := vm.snapshotSideEffects()
 	for _, record := range records {
 		if record.Object == "" || record.ID == "" {
 			continue
@@ -550,11 +555,27 @@ func (vm *VM) applyDeferredAutomation(engine *dml.Engine, records []storage.Reco
 		if err := engine.ApplyAutomation(record.Object, record.ID); err != nil {
 			if allOrNone {
 				*vm.Org = backup
+				vm.restoreSideEffects(sideEffects)
+				appendTrace(result, "apex.automation.rollback", "apex.automation", map[string]any{
+					"object": record.Object,
+					"id":     string(record.ID),
+					"reason": err.Error(),
+				})
 			}
 			return err
 		}
 	}
 	return nil
+}
+
+func (vm *VM) snapshotSideEffects() sideEffectSnapshot {
+	return sideEffectSnapshot{
+		capturedEmails: append([]CapturedEmail(nil), vm.capturedEmails...),
+	}
+}
+
+func (vm *VM) restoreSideEffects(snapshot sideEffectSnapshot) {
+	vm.capturedEmails = append([]CapturedEmail(nil), snapshot.capturedEmails...)
 }
 
 func (vm *VM) RegisterTrigger(trigger Trigger) error {
@@ -2478,10 +2499,16 @@ func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
 		records = args[0].List
 	}
 	results := make([]Value, 0, len(records))
+	triggerRecords := make([]storage.Record, 0, len(records))
 	for _, record := range records {
 		if record.Kind != ValueObject {
 			return Null, fmt.Errorf("EventBus.publish expects SObject event record(s)")
 		}
+		stored, err := vm.recordFromValue(&record)
+		if err != nil {
+			return Null, err
+		}
+		triggerRecords = append(triggerRecords, stored)
 		row := Object("Database.SaveResult")
 		row.Fields["success"] = Bool(true)
 		row.Fields["id"] = Null
@@ -2489,9 +2516,12 @@ func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
 		row.Fields["errors"] = List()
 		results = append(results, row)
 	}
+	if _, err := vm.runTriggers(triggerTimingAfter, "insert", triggerRecords, nil, result); err != nil {
+		return Null, err
+	}
 	appendTrace(result, "apex.eventbus.publish", "apex.eventbus", map[string]any{
 		"records":  len(records),
-		"delivery": "local-noop",
+		"delivery": "local-after-insert-trigger",
 	})
 	if args[0].Kind == ValueList {
 		return List(results...), nil
@@ -4849,6 +4879,16 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 		if strings.EqualFold(field, "Id") {
 			continue
 		}
+		if strings.EqualFold(field, "OwnerId") {
+			converted, err := storageValueFromVM(fieldValue)
+			if err != nil {
+				return storage.Record{}, fmt.Errorf("%s.%s: %w", value.Type, field, err)
+			}
+			if ownerID := storageIDFromValue(converted); ownerID != "" {
+				record.System.OwnerID = ownerID
+			}
+			continue
+		}
 		if isSObjectSystemField(field) {
 			continue
 		}
@@ -5543,6 +5583,27 @@ var standardSObjectPrefixes = map[string]string{
 	"00D": "Organization",
 	"500": "Case",
 	"701": "Campaign",
+}
+
+func init() {
+	for objectName, prefix := range storage.StandardKeyPrefixes() {
+		if prefix != "" {
+			standardSObjectPrefixes[prefix] = objectName
+		}
+	}
+}
+
+func CommonSObjectTypeNames() []string {
+	names := make([]string, 0, len(standardSObjectPrefixes))
+	seen := make(map[string]bool, len(standardSObjectPrefixes))
+	for _, name := range standardSObjectPrefixes {
+		if !seen[name] {
+			names = append(names, name)
+			seen[name] = true
+		}
+	}
+	sort.Strings(names)
+	return names
 }
 
 func platformScalar(typeName, value string) Value {
@@ -8841,7 +8902,10 @@ func (vm *VM) captureWorkflowEmail(alert storage.WorkflowEmailAlert, record stor
 		Kind:   "WorkflowEmailAlert",
 		WhatID: string(record.ID),
 	}
-	captured.ToAddresses = vm.workflowEmailRecipients(alert, record)
+	captured.ToAddresses, captured.TargetObjectIDs = vm.workflowEmailRecipients(alert, record)
+	if len(captured.TargetObjectIDs) > 0 {
+		captured.TargetObjectID = captured.TargetObjectIDs[0]
+	}
 	if template, ok := vm.emailTemplateByName(alert.Template); ok {
 		captured.TemplateID = string(template.ID)
 		whoID := Null
@@ -8866,31 +8930,76 @@ func (vm *VM) captureWorkflowEmail(alert storage.WorkflowEmailAlert, record stor
 	return nil
 }
 
-func (vm *VM) workflowEmailRecipients(alert storage.WorkflowEmailAlert, record storage.Record) []string {
-	recipients := make([]string, 0, len(alert.Recipients))
+func (vm *VM) workflowEmailRecipients(alert storage.WorkflowEmailAlert, record storage.Record) ([]string, []string) {
+	addresses := make([]string, 0, len(alert.Recipients))
+	targetIDs := make([]string, 0, len(alert.Recipients))
 	for _, recipient := range alert.Recipients {
 		if recipient.Recipient != "" {
-			recipients = append(recipients, recipient.Recipient)
-			continue
-		}
-		if recipient.Field == "" {
+			vm.appendWorkflowEmailRecipient(recipient.Type, recipient.Recipient, &addresses, &targetIDs)
 			continue
 		}
 		fieldName := recipient.Field
+		if fieldName == "" && strings.EqualFold(strings.TrimSpace(recipient.Type), "owner") {
+			fieldName = "OwnerId"
+		}
+		if fieldName == "" {
+			continue
+		}
 		if vm.Org != nil {
 			if objectName, ok := storage.ResolveObjectName(*vm.Org, record.Object); ok {
 				if object, ok := vm.Org.Objects[objectName]; ok {
-					if resolved, ok := storage.ResolveFieldName(object.Definition, vm.Org.Namespace, recipient.Field); ok {
+					if resolved, ok := storage.ResolveFieldName(object.Definition, vm.Org.Namespace, fieldName); ok {
 						fieldName = resolved
 					}
 				}
 			}
 		}
-		if value, ok := record.Fields[fieldName]; ok && value.String != "" {
-			recipients = append(recipients, value.String)
+		if value, ok := record.Fields[fieldName]; ok {
+			vm.appendWorkflowEmailRecipient(recipient.Type, workflowEmailRecipientValue(value), &addresses, &targetIDs)
+			continue
+		}
+		if strings.EqualFold(fieldName, "OwnerId") && record.System.OwnerID != "" {
+			vm.appendWorkflowEmailRecipient(recipient.Type, string(record.System.OwnerID), &addresses, &targetIDs)
 		}
 	}
-	return recipients
+	return addresses, targetIDs
+}
+
+func (vm *VM) appendWorkflowEmailRecipient(recipientType, raw string, addresses, targetIDs *[]string) {
+	value := strings.TrimSpace(raw)
+	if value == "" {
+		return
+	}
+	normalizedType := strings.ToLower(strings.ReplaceAll(strings.TrimSpace(recipientType), " ", ""))
+	if workflowRecipientLooksLikeID(value) || (normalizedType == "owner" && !strings.Contains(value, "@")) {
+		*targetIDs = append(*targetIDs, value)
+		return
+	}
+	*addresses = append(*addresses, value)
+}
+
+func workflowEmailRecipientValue(value storage.Value) string {
+	switch value.Kind {
+	case storage.ValueID:
+		return string(value.ID)
+	case storage.ValueString:
+		return value.String
+	default:
+		return ""
+	}
+}
+
+func workflowRecipientLooksLikeID(value string) bool {
+	if len(value) != 15 && len(value) != 18 {
+		return false
+	}
+	for _, ch := range value {
+		if ch >= '0' && ch <= '9' || ch >= 'A' && ch <= 'Z' || ch >= 'a' && ch <= 'z' {
+			continue
+		}
+		return false
+	}
+	return true
 }
 
 func (vm *VM) renderCapturedEmailTemplate(captured *CapturedEmail) {

@@ -1,0 +1,10 @@
+<Layout xmlns="http://soap.sforce.com/2006/04/metadata">
+  <layoutSections>
+    <label>Information</label>
+    <layoutColumns>
+      <layoutItems>
+        <field>Name</field>
+      </layoutItems>
+    </layoutColumns>
+  </layoutSections>
+</Layout>

@@ -877,9 +877,11 @@ System.assertEquals('Ada Trail / Acme', merged.getPlainTextBody());
 		ID:     "00X000000000003AAA",
 		Object: "EmailTemplate",
 		Fields: map[string]storage.Value{
-			"Subject":   storage.StringValue("Hello {!Recipient.FirstName} at {!RelatedTo.Name}"),
-			"HtmlValue": storage.StringValue("<p>{!Contact.Name} / {!Account.Name}</p>"),
-			"Body":      storage.StringValue("{!Contact.Name} / {!Account.Name}"),
+			"DeveloperName": storage.StringValue("Welcome"),
+			"Name":          storage.StringValue("Welcome"),
+			"Subject":       storage.StringValue("Hello {!Recipient.FirstName} at {!RelatedTo.Name}"),
+			"HtmlValue":     storage.StringValue("<p>{!Contact.Name} / {!Account.Name}</p>"),
+			"Body":          storage.StringValue("{!Contact.Name} / {!Account.Name}"),
 		},
 	}
 	org.Objects["EmailTemplate"] = templateObject
@@ -1001,6 +1003,117 @@ Database.rollback(sp);
 	}
 }
 
+func TestExecWorkflowEmailCaptureRollsBackWithFailedAutomation(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Account> rows = new List<Account>();
+rows.add(new Account(Name = 'Acme'));
+rows.add(new Account(Name = 'Bad'));
+insert rows;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.WorkflowRules = []storage.WorkflowRule{
+		{
+			Name:   "NotifyAcme",
+			Active: true,
+			Criteria: []storage.WorkflowCriteriaItem{{
+				Field:     "Name",
+				Operation: "equals",
+				Value:     "Acme",
+			}},
+			EmailAlerts: []storage.WorkflowEmailAlert{{
+				Name:     "Notify",
+				Template: "welcome",
+				Recipients: []storage.WorkflowEmailRecipient{{
+					Type:      "email",
+					Recipient: "workflow@example.test",
+				}},
+			}},
+		},
+		{
+			Name:   "BreakBad",
+			Active: true,
+			Criteria: []storage.WorkflowCriteriaItem{{
+				Field:     "Name",
+				Operation: "equals",
+				Value:     "Bad",
+			}},
+			FieldUpdates: []storage.WorkflowFieldUpdate{{
+				Name:         "BadUpdate",
+				Field:        "Missing__c",
+				LiteralValue: "broken",
+			}},
+		},
+	}
+	org.Objects["Account"] = account
+	machine := New(nil)
+	machine.SetOrg(&org)
+	result, err := machine.Execute(program)
+	if err == nil {
+		t.Fatal("expected failed automation")
+	}
+	if len(result.CapturedEmails) != 0 {
+		t.Fatalf("captured emails should roll back with failed all-or-none DML: %#v", result.CapturedEmails)
+	}
+	if got := len(org.Objects["Account"].Records); got != 0 {
+		t.Fatalf("records after automation rollback = %d, want 0", got)
+	}
+	if !traceHas(result.Trace, "apex.automation.rollback", "apex.automation") {
+		t.Fatalf("trace missing automation rollback: %#v", result.Trace)
+	}
+}
+
+func TestExecWorkflowEmailRecipientTargetsRenderTemplates(t *testing.T) {
+	program, err := CompileAnonymous(`
+insert new Account(Name = 'Acme', OwnerId = '003000000000001AAA');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := emailTemplateTestOrg()
+	account := org.Objects["Account"]
+	if account.Definition.Fields == nil {
+		account.Definition.Fields = make(map[string]storage.Field)
+	}
+	account.Definition.Fields["OwnerId"] = storage.Field{APIName: "OwnerId", Type: storage.FieldReference, ReferenceTo: []string{"User", "Contact"}}
+	account.Definition.WorkflowRules = []storage.WorkflowRule{{
+		Name:   "NotifyOwner",
+		Active: true,
+		Criteria: []storage.WorkflowCriteriaItem{{
+			Field:     "Name",
+			Operation: "equals",
+			Value:     "Acme",
+		}},
+		EmailAlerts: []storage.WorkflowEmailAlert{{
+			Name:     "Notify",
+			Template: "Welcome",
+			Recipients: []storage.WorkflowEmailRecipient{{
+				Type: "owner",
+			}},
+		}},
+	}}
+	org.Objects["Account"] = account
+	machine := New(nil)
+	machine.SetOrg(&org)
+	result, err := machine.Execute(program)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.CapturedEmails) != 1 {
+		t.Fatalf("captured emails = %#v", result.CapturedEmails)
+	}
+	email := result.CapturedEmails[0]
+	if email.TargetObjectID != "003000000000001AAA" || len(email.TargetObjectIDs) != 1 {
+		t.Fatalf("target capture = %#v", email)
+	}
+	if email.Subject != "Hello Ada at Acme" || email.PlainTextBody != "Ada Trail / Acme" {
+		t.Fatalf("rendered template = %#v", email)
+	}
+}
+
 func emailTemplateTestOrg() storage.OrgState {
 	org := storage.NewOrgState()
 	storage.EnsureStandardObject(&org, "Account")
@@ -1031,9 +1144,11 @@ func emailTemplateTestOrg() storage.OrgState {
 		ID:     "00X000000000003AAA",
 		Object: "EmailTemplate",
 		Fields: map[string]storage.Value{
-			"Subject":   storage.StringValue("Hello {!Recipient.FirstName} at {!RelatedTo.Name}"),
-			"HtmlValue": storage.StringValue("<p>{!Contact.Name} / {!Account.Name}</p>"),
-			"Body":      storage.StringValue("{!Contact.Name} / {!Account.Name}"),
+			"DeveloperName": storage.StringValue("Welcome"),
+			"Name":          storage.StringValue("Welcome"),
+			"Subject":       storage.StringValue("Hello {!Recipient.FirstName} at {!RelatedTo.Name}"),
+			"HtmlValue":     storage.StringValue("<p>{!Contact.Name} / {!Account.Name}</p>"),
+			"Body":          storage.StringValue("{!Contact.Name} / {!Account.Name}"),
 		},
 	}
 	org.Objects["EmailTemplate"] = templateObject
