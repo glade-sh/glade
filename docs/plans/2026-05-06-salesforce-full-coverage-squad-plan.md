@@ -14,6 +14,26 @@ The goal is to:
 
 This plan keeps work aligned with `oaer` clean-room rules: public Salesforce docs, black-box compatibility tests, generated docs, explicit unsupported diagnostics, and no proprietary AER internals.
 
+## Current Checkpoint
+
+Verified May 7, 2026:
+
+- Server examples are green: `pass=101 fail=0 unsupported=0 missing=0`.
+- The checked post-parity inventory is green for `example-projects`:
+  `filesScanned=50457 findings=0 testBlockingFindings=0 surfaces=0`.
+- The owned local-test corpus is green:
+  `go run ./cmd/oaer compat local-tests --check docs/fixtures/local-tests-corpus.json --json`.
+- Example-project runtime support is partial, not complete:
+  `src-nmb-nutpl-develop` is green at `total=761 pass=761`, while the other
+  five checked example projects still stop at measured compile-gap frontiers in
+  `docs/fixtures/local-tests-example-projects.json`.
+
+That means the next high-leverage squad work should target the remaining
+compile frontiers before claiming full example-project support: managed package
+dependency artifacts for `znu`, missing standard object/type coverage such as
+`CampaignMemberStatus`, static/member resolution gaps, and package/source
+layout duplicate-symbol handling.
+
 ## Key Inputs
 
 - Local Salesforce docs: `/Users/matt/Downloads/Kimi_Agent_Salesforce Docs Scraper (1)/salesforce-docs`

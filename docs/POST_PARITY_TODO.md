@@ -1,6 +1,6 @@
 # Post-Parity Todo
 
-Status date: 2026-05-06.
+Status date: 2026-05-07.
 
 This is the follow-on work after `docs/FEATURE_PARITY_TODO.md` is complete.
 It assumes `oaer` can already parse, check, and run real Apex tests with
@@ -44,9 +44,10 @@ Current checked status:
 - The server-example support gate is green:
   `pass=101 fail=0 unsupported=0 missing=0`.
 - The broader post-parity readiness inventory is green for the checked
-  `example-projects` corpus. A May 6, 2026
-  `oaer compat post-parity --json --require-ready` run reported 51,115 files scanned, 0
-  findings, 0 test-blocking findings, 0 surfaces, 114 reports, and 7 dashboards.
+  `example-projects` corpus. A May 7, 2026
+  `oaer compat post-parity --project ./example-projects --json` run reported
+  50,457 files scanned, 0 findings, 0 test-blocking findings, 0 surfaces, 114
+  reports, and 7 dashboards.
   This means the known
   scanner/test-readiness blockers for standard schema references, labels,
   static resources, content assets, endpoint metadata, custom metadata type
@@ -62,6 +63,11 @@ Current checked status:
   metadata deployment, Workflow field updates, Flow field updates/invocable
   actions, email templates, and Files objects. Runtime depth for UI rendering,
   advanced Flow interviews, and local UI/API serving remains tracked below.
+- The green post-parity inventory is also not a full runtime claim for every
+  checked example project. The current six-project runtime baseline has
+  `src-nmb-nutpl-develop` green at `total=761 pass=761`; the remaining five
+  example projects still stop at measured compile-gap frontiers tracked in
+  `docs/fixtures/local-tests-example-projects.json`.
 - Treat this document as the source for broad local-test support beyond the
   green server-example harness.
 
@@ -203,7 +209,7 @@ Current scanner top blockers from the broad post-parity inventory:
 
 | Rank | Blocker |
 | --- | --- |
-| 1 | None. The May 6, 2026 checked scan reports 0 findings, 0 test-blocking findings, and 0 surfaces across 51,115 files, while accounting for 114 report metadata files and 7 dashboard metadata files. |
+| 1 | None. The May 7, 2026 checked scan reports 0 findings, 0 test-blocking findings, and 0 surfaces across 50,457 files, while accounting for 114 report metadata files and 7 dashboard metadata files. |
 
 Recently cleared blocker families:
 

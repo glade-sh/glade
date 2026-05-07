@@ -1,6 +1,6 @@
 # Local Apex Test Execution Plan
 
-Status date: 2026-05-06.
+Status date: 2026-05-07.
 
 This plan turns the broad post-parity backlog into squad-sized implementation
 phases for full local Apex test execution. The target is not merely loading
@@ -18,11 +18,11 @@ pass=101 fail=0 unsupported=0 missing=0
 
 The owned local-test corpus gate is green for the checked baseline, including
 intentional unsupported classifications. The broader post-parity inventory is
-also green for the checked `example-projects` corpus. A May 6, 2026 inventory
+also green for the checked `example-projects` corpus. A May 7, 2026 inventory
 from the current checkout reports:
 
 ```text
-filesScanned=51107 findings=0 testBlockingFindings=0 surfaces=0
+filesScanned=50457 findings=0 testBlockingFindings=0 surfaces=0
 ```
 
 That inventory is implementation-aware as of this checkpoint. It suppresses
@@ -45,6 +45,8 @@ version-pinned installed package dependency handling.
 Use `docs/APEX_PARITY_FOLLOWUP_PLAN.md` for the broader Apex language,
 runtime, platform API, tooling, and release-hardening roadmap after the
 enterprise example-project local-test path is under control.
+Use `docs/plans/2026-05-07-src-nmb-nu-develop-squad-plan.md` for the current
+parallel squad plan to move `src-nmb-nu-develop` past its compile-gap frontier.
 
 ## Execution Objective
 
@@ -125,11 +127,12 @@ owned fixtures, then tightened as caching lands.
 ## Enterprise Example-Project Runtime Gap Plan
 
 The six checked `example-projects` directories are the runtime parity target for
-the next phase. The current static/readiness inventory is green, but broad
-`oaer test` execution still fails because the VM, compiler, schema model, and
-test runner do not yet match every Salesforce behavior those enterprise tests
-exercise. Treat scratch-org pass results as the behavioral target: failures in
-these projects are OAER parity gaps unless proven otherwise.
+the next phase. The current static/readiness inventory is green, and the fast
+NUTPL runtime sentinel now passes end to end. The other five example projects
+still stop at measured compile-gap frontiers, so the project does not yet have
+full runtime support for all example projects. Treat scratch-org pass results as
+the behavioral target: failures in these projects are OAER parity gaps unless
+proven otherwise.
 
 Current example-project set:
 
@@ -147,8 +150,9 @@ Current measured runtime frontier:
 | Gate | Current signal |
 | --- | --- |
 | Static/readiness inventory | `go run ./cmd/oaer compat post-parity --project ./example-projects --json` reports `filesScanned=50457 findings=0 testBlockingFindings=0 surfaces=0`. |
-| Fast runtime sentinel | `go run ./cmd/oaer test --project example-projects/src-nmb-nutpl-develop --json` runs to JSON but still has hundreds of failures and unsupported outcomes. |
-| Scale runtime sentinel | `go run ./cmd/oaer test --project example-projects/src-nmb-nc-develop --json` no longer immediately stack-overflows, but remains CPU-bound for several minutes and needs focused performance isolation. |
+| Fast runtime sentinel | `go run ./cmd/oaer compat local-tests --project example-projects/src-nmb-nutpl-develop --timeout 30000 --top-failures 8 --json` reports `total=761 pass=761 fail=0 unsupported=0 loadError=0 compileError=0 internalError=0`. |
+| Six-project runtime baseline | `node scripts/baseline-local-tests-example-projects.mjs` records one green project and five compile-gap frontiers in `docs/fixtures/local-tests-example-projects.json`. |
+| Scale runtime sentinel | `go run ./cmd/oaer compat local-tests --project example-projects/src-nmb-nc-develop --timeout 30000 --top-failures 8 --json` returns structured compile-gap output rather than timing out or stack-overflowing; the current top blocker is missing `znu.Address`. |
 | Unit/regression suite | `go test ./...` must stay green after every merge. |
 
 ### Runtime Closure Phases
@@ -254,18 +258,18 @@ E1 baseline artifact:
   `go run ./cmd/oaer compat post-parity --project ./example-projects --json --require-ready`
   reports `filesScanned=50457 findings=0 testBlockingFindings=0 surfaces=0`.
 
-Measured May 6, 2026 E1 baseline after native timeout/top-failure reporting,
-standard-schema refreshes, package-aware duplicate-symbol handling, and the
-first sema frontier fixes:
+Measured May 7, 2026 E1 baseline after native timeout/top-failure reporting,
+standard-schema refreshes, package-aware duplicate-symbol handling, sema
+frontier fixes, and the NUTPL runtime closure:
 
 | Project | Result | Top blocker family |
 | --- | --- | --- |
-| `NPSP-rel-3.237` | `total=4938 compileGap=4938`, completed in 6.0s wall time. | Unknown `SoapType` type from `CMT_FilterRule.cls:90`. |
-| `src-nmb-nc-develop` | `total=12084 compileGap=12084`, completed in 7.7s wall time. | Unknown namespaced type `znu.Address` from `AddressMessage.cls:8`. |
-| `src-nmb-nu-develop` | `total=15068 compileGap=15068`, completed in 13.2s wall time. | Assignment inference gap: `Object` assigned to `ARAgingManager.Instance`. |
-| `src-nmb-nutpl-develop` | `total=811 compileGap=811`, completed in 0.7s wall time. | Enhanced-for/local scope gap: `copyAttributes` references unknown variable `i`. |
-| `sf-cred-pkg-develop` | `total=4672 compileGap=4672`, completed in 7.5s wall time. | Same-package duplicate top-level symbol `BaseSingleProviderProfileInfo`, which remains a true source duplicate. |
-| `nams-workspace` | `total=6287 compileGap=6287`, completed in 6.7s wall time. | Unknown managed Apex type `znu.Pluggable` from `AddProgramsToProformaOrderHelper.cls:30`. |
+| `NPSP-rel-3.237` | `total=3986 compileGap=3986`, completed in 26.1s wall time. | Unknown standard object/type `CampaignMemberStatus` from `CON_AddToCampaign.cls:42`. |
+| `src-nmb-nc-develop` | `total=9761 compileGap=9761`, completed in 30.1s wall time. | Unknown managed Apex type `znu.Address` from `AddressMessage.cls:8`. |
+| `src-nmb-nu-develop` | `total=11526 compileGap=11526`, completed in 112.8s wall time. | Static/member resolution gap: `ARTransaction` references unknown `ORDER_ITEM_PARAM`. |
+| `src-nmb-nutpl-develop` | `total=761 pass=761`, completed in 50.9s wall time. | Green runtime sentinel; no fail, unsupported, load, compile, or internal errors. |
+| `sf-cred-pkg-develop` | `total=4268 compileGap=4268`, completed in 42.4s wall time. | Same-package duplicate top-level symbol `BaseSingleProviderProfileInfo`, which remains a true source duplicate. |
+| `nams-workspace` | `total=5716 compileGap=5716`, completed in 52.0s wall time. | Unknown managed Apex type `znu.Pluggable` from `AddProgramsToProformaOrderHelper.cls:30`. |
 
 First E1 implementation notes:
 
@@ -1156,7 +1160,7 @@ Initial implementation status:
   fixture expansion.
 - The broad post-parity readiness inventory is green for the checked
   `example-projects` corpus:
-  `filesScanned=51107 findings=0 testBlockingFindings=0 surfaces=0`.
+  `filesScanned=50457 findings=0 testBlockingFindings=0 surfaces=0`.
 - CI now keeps the release-hardening gates live with `go test ./...`,
   `compat local-tests --check docs/fixtures/local-tests-corpus.json`,
   `compat post-parity --json --require-ready`, `compat ui-controllers --check
@@ -1411,7 +1415,7 @@ go run ./cmd/oaer compat local-tests --project testdata/local-tests/basic --json
 After all four lanes merged, the post-parity readiness inventory moved to:
 
 ```text
-filesScanned=51107 findings=0 testBlockingFindings=0 surfaces=0
+filesScanned=50457 findings=0 testBlockingFindings=0 surfaces=0
 ```
 
 The outcome is not "all Salesforce behavior is implemented"; it is a shift from

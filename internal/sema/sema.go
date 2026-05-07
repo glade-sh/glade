@@ -11,6 +11,7 @@ import (
 	"github.com/open-aer/oaer/internal/apexast"
 	"github.com/open-aer/oaer/internal/diagnostic"
 	"github.com/open-aer/oaer/internal/ir"
+	"github.com/open-aer/oaer/internal/schema"
 	"github.com/open-aer/oaer/internal/soql"
 	"github.com/open-aer/oaer/internal/storage"
 	"github.com/open-aer/oaer/internal/typesys"
@@ -691,6 +692,7 @@ type typeMembers struct {
 	name         string
 	namespace    string
 	dependency   bool
+	sobject      bool
 	kind         apexast.DeclarationKind
 	superClass   string
 	interfaces   []string
@@ -807,8 +809,80 @@ func buildTypeMembers(index typesys.Index) map[string]typeMembers {
 			shortAliases[normalizeName(short)] = append(shortAliases[normalizeName(short)], typ.Name)
 		}
 	}
+	for _, object := range index.Objects {
+		if len(object.Fields) == 0 {
+			continue
+		}
+		objectKey := normalizeName(object.Name)
+		objectMembers, objectOK := out[objectKey]
+		if !objectOK {
+			objectMembers = typeMembers{
+				name:    object.Name,
+				sobject: true,
+				kind:    apexast.DeclarationClass,
+				fields:  make(map[string]typesys.MemberSymbol),
+				methods: make(map[string][]typesys.MemberSymbol),
+			}
+		}
+		objectMembers.sobject = true
+		if objectMembers.fields == nil {
+			objectMembers.fields = make(map[string]typesys.MemberSymbol)
+		}
+		for _, field := range object.Fields {
+			if field.Name != "" {
+				objectMembers.fields[normalizeName(field.Name)] = typesys.MemberSymbol{
+					Kind:      apexast.DeclarationField,
+					Name:      field.Name,
+					Type:      semaApexTypeForSchemaField(field),
+					Modifiers: []string{"public"},
+				}
+			}
+			if field.RelationshipName != "" && len(field.ReferenceTo) == 1 {
+				objectMembers.fields[normalizeName(field.RelationshipName)] = typesys.MemberSymbol{
+					Kind:      apexast.DeclarationField,
+					Name:      field.RelationshipName,
+					Type:      field.ReferenceTo[0],
+					Modifiers: []string{"public"},
+				}
+			}
+			if field.ChildRelationshipName == "" {
+				continue
+			}
+			for _, parent := range field.ReferenceTo {
+				parentKey := normalizeName(parent)
+				if parentKey == "" {
+					continue
+				}
+				parentMembers, ok := out[parentKey]
+				if !ok {
+					parentMembers = typeMembers{
+						name:    parent,
+						sobject: true,
+						kind:    apexast.DeclarationClass,
+						fields:  make(map[string]typesys.MemberSymbol),
+						methods: make(map[string][]typesys.MemberSymbol),
+					}
+				}
+				parentMembers.sobject = true
+				if parentMembers.fields == nil {
+					parentMembers.fields = make(map[string]typesys.MemberSymbol)
+				}
+				parentMembers.fields[normalizeName(field.ChildRelationshipName)] = typesys.MemberSymbol{
+					Kind:      apexast.DeclarationField,
+					Name:      field.ChildRelationshipName,
+					Type:      "List<" + object.Name + ">",
+					Modifiers: []string{"public"},
+				}
+				out[parentKey] = parentMembers
+			}
+		}
+		out[objectKey] = objectMembers
+	}
 	for short, names := range shortAliases {
 		if len(names) == 1 {
+			if _, exists := out[short]; exists {
+				continue
+			}
 			out[short] = out[normalizeName(names[0])]
 		}
 	}
@@ -838,6 +912,50 @@ func buildTypeMembers(index typesys.Index) map[string]typeMembers {
 		out[key] = members
 	}
 	return out
+}
+
+func semaApexTypeForSchemaField(field schema.Field) string {
+	fieldType := normalizeName(field.Type)
+	switch fieldType {
+	case "id":
+		return "Id"
+	case "checkbox", "boolean":
+		return "Boolean"
+	case "int", "integer":
+		return "Integer"
+	case "long":
+		return "Long"
+	case "double", "currency", "percent", "number":
+		return "Decimal"
+	case "date":
+		return "Date"
+	case "datetime":
+		return "Datetime"
+	case "time":
+		return "Time"
+	case "base64", "blob":
+		return "Blob"
+	case "address":
+		return "Address"
+	case "location":
+		return "Location"
+	case "lookup", "masterdetail", "metadatarelationship", "externallookup", "indirectlookup", "reference":
+		return "Id"
+	case "text", "textarea", "longtextarea", "html", "encryptedtext", "email", "phone", "url", "picklist", "multipicklist", "combobox", "autonumber":
+		return "String"
+	}
+	if field.Name != "" {
+		key := normalizeName(field.Name)
+		switch {
+		case key == "id" || strings.HasSuffix(key, "id"):
+			return "Id"
+		case key == "isdeleted" || strings.HasPrefix(key, "is") || strings.HasPrefix(key, "has"):
+			return "Boolean"
+		case key == "name" || key == "developername" || key == "masterlabel":
+			return "String"
+		}
+	}
+	return "Object"
 }
 
 func semaEnumValues(typ typesys.TypeSymbol) []string {
@@ -1017,11 +1135,34 @@ func semaFieldScope(model map[string]typeMembers, typeName string, seen map[stri
 	if !ok {
 		return out
 	}
+	for _, owner := range semaEnclosingTypeNames(members.name) {
+		ownerMembers, ok := model[normalizeName(owner)]
+		if !ok {
+			continue
+		}
+		for name, field := range ownerMembers.fields {
+			if hasModifier(field.Modifiers, "static") {
+				out[name] = field.Type
+			}
+		}
+	}
 	for name, field := range semaFieldScope(model, members.superClass, seen) {
 		out[name] = field
 	}
 	for name, field := range members.fields {
 		out[name] = field.Type
+	}
+	return out
+}
+
+func semaEnclosingTypeNames(typeName string) []string {
+	parts := strings.Split(typeName, ".")
+	if len(parts) <= 1 {
+		return nil
+	}
+	out := make([]string, 0, len(parts)-1)
+	for i := 1; i < len(parts); i++ {
+		out = append(out, strings.Join(parts[:i], "."))
 	}
 	return out
 }
@@ -1083,12 +1224,22 @@ func semaSObjectFieldMember(typeName, fieldName string, model map[string]typeMem
 	fieldType := ""
 	fieldKey := normalizeName(fieldName)
 	switch {
+	case fieldKey == "recordtype":
+		fieldType = "RecordType"
 	case strings.HasSuffix(fieldKey, "__r"):
-		fieldType = "SObject"
+		fieldType = semaRelationshipFieldType(fieldName)
 	case fieldKey == "id" || strings.HasSuffix(fieldKey, "id"):
 		fieldType = "Id"
 	case fieldKey == "body" || fieldKey == "versiondata":
 		fieldType = "Blob"
+	case strings.HasSuffix(fieldKey, "street") ||
+		strings.HasSuffix(fieldKey, "city") ||
+		strings.HasSuffix(fieldKey, "state") ||
+		strings.HasSuffix(fieldKey, "statecode") ||
+		strings.HasSuffix(fieldKey, "postalcode") ||
+		strings.HasSuffix(fieldKey, "country") ||
+		strings.HasSuffix(fieldKey, "countrycode"):
+		fieldType = "String"
 	case strings.Contains(fieldKey, "file") || strings.Contains(fieldKey, "name"):
 		fieldType = "String"
 	case fieldKey == "name" || fieldKey == "developername" || fieldKey == "masterlabel":
@@ -1102,6 +1253,37 @@ func semaSObjectFieldMember(typeName, fieldName string, model map[string]typeMem
 		Type:      fieldType,
 		Modifiers: []string{"public"},
 	}}, true
+}
+
+func semaRelationshipFieldType(fieldName string) string {
+	key := normalizeName(strings.TrimSuffix(fieldName, "__r"))
+	switch key {
+	case "personcontact", "contact":
+		return "Contact"
+	case "account", "parentaccount":
+		return "Account"
+	case "owner", "createdby", "lastmodifiedby", "user":
+		return "User"
+	case "product2", "product":
+		return "Product2"
+	case "pricebook2":
+		return "Pricebook2"
+	case "pricebookentry":
+		return "PricebookEntry"
+	case "opportunity":
+		return "Opportunity"
+	case "order":
+		return "Order"
+	}
+	if semaLooksLikeChildRelationship(key) {
+		return "List<SObject>"
+	}
+	return "SObject"
+}
+
+func semaLooksLikeChildRelationship(key string) bool {
+	trimmed := strings.TrimRight(key, "0123456789")
+	return strings.HasSuffix(trimmed, "s")
 }
 
 type irSemaScope struct {
@@ -1482,6 +1664,12 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 		}
 	}
 	if len(candidates) == 0 {
+		if semaRelationshipCollectionMethod(expr.Callee, method) {
+			return nil
+		}
+		if semaKnownFluentHelperMethod(method) {
+			return nil
+		}
 		if explicitReceiver && a.hasKnown(receiverType) {
 			return nil
 		}
@@ -1490,7 +1678,13 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 	if _, ok, ambiguous := bestResolvedMemberByArgTypes(candidates, irCallArgTypes(a, expr.Args, scope, model, typ.Name), model); ok {
 		return nil
 	} else if ambiguous {
+		if semaKnownFluentHelperMethod(method) {
+			return nil
+		}
 		return []diagnostic.Diagnostic{ambiguousCallDiagnostic(typ, member, expr.Callee, len(expr.Args), bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source)}
+	}
+	if semaKnownFluentHelperMethod(method) {
+		return nil
 	}
 	return []diagnostic.Diagnostic{{
 		Severity: diagnostic.Error,
@@ -1736,6 +1930,9 @@ func (a *Analyzer) checkIRForEachType(typ typesys.TypeSymbol, member typesys.Mem
 		return nil
 	}
 	elementType, ok := semaIterableElementType(iterableType)
+	if !ok && strings.EqualFold(iterableType, "SObject") && semaIRExprLooksLikeCustomRelationship(inst.Expr) {
+		elementType, ok = "SObject", true
+	}
 	if !ok {
 		return []diagnostic.Diagnostic{{
 			Severity: diagnostic.Error,
@@ -1769,17 +1966,24 @@ func (a *Analyzer) inferIRExprType(expr ir.Expr, scope irSemaScope, model map[st
 			return typ
 		}
 		if root, field, ok := strings.Cut(expr.Name, "."); ok {
+			if targetType, staticOK := semaStaticClassFieldPathType(model, root, field); staticOK {
+				return targetType
+			}
+		}
+		if semaIRExprLooksLikeStaticSObjectToken(expr.Name, scope) {
+			if semaLooksLikeSObjectFieldToken(expr.Name) {
+				return "Schema.SObjectField"
+			}
+			if semaLooksLikeSObjectTypeToken(expr.Name) {
+				return "Schema.SObjectType"
+			}
+		}
+		if root, field, ok := strings.Cut(expr.Name, "."); ok {
 			if receiverType := semaIRReceiverType(root, scope, model, currentType); receiverType != "" {
 				if target, ok := semaResolveFieldPath(model, receiverType, field); ok {
 					return target.member.Type
 				}
 			}
-		}
-		if semaLooksLikeSObjectFieldToken(expr.Name) {
-			return "Schema.SObjectField"
-		}
-		if semaLooksLikeSObjectTypeToken(expr.Name) {
-			return "Schema.SObjectType"
 		}
 	case ir.ExprCall:
 		if strings.HasPrefix(expr.Callee, "__assign:") {
@@ -1844,6 +2048,17 @@ func (a *Analyzer) inferIRExprType(expr ir.Expr, scope irSemaScope, model map[st
 		return semaBinaryType(expr.Operator, leftType, rightType)
 	}
 	return ""
+}
+
+func semaIRExprLooksLikeStaticSObjectToken(expr string, scope irSemaScope) bool {
+	root, _, ok := strings.Cut(strings.TrimSpace(expr), ".")
+	if !ok || root == "" {
+		return false
+	}
+	if scopedType, scoped := scope.lookup(root); scoped {
+		return root == scopedType
+	}
+	return semaLooksLikeSObjectFieldToken(expr) || semaLooksLikeSObjectTypeToken(expr)
 }
 
 func semaIRReceiverType(receiver string, scope irSemaScope, model map[string]typeMembers, currentType string) string {
@@ -2080,6 +2295,9 @@ func (a *Analyzer) collectBodyScopes(typ typesys.TypeSymbol, member typesys.Memb
 	scopes := semaScopeModel{base: base}
 	var diagnostics []diagnostic.Diagnostic
 	for _, match := range lineLocalDeclPattern.FindAllStringSubmatchIndex(body, -1) {
+		if semaOffsetInIgnoredText(body, match[0]) {
+			continue
+		}
 		diagnostics = append(diagnostics, a.collectSemaLocalDecl(typ, member, body, bodyOffset, source, &scopes, model, match)...)
 	}
 	for _, match := range localDeclPattern.FindAllStringSubmatchIndex(body, -1) {
@@ -2399,6 +2617,9 @@ func (s semaScopeModel) localInBlock(name string, start, end int) (semaLocal, bo
 func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.MemberSymbol, body string, bodyOffset int, source string, scopes semaScopeModel, model map[string]typeMembers) []diagnostic.Diagnostic {
 	var diagnostics []diagnostic.Diagnostic
 	for _, match := range assignmentPattern.FindAllStringSubmatchIndex(body, -1) {
+		if semaOffsetInIgnoredText(body, match[0]) {
+			continue
+		}
 		target := strings.TrimSpace(body[match[2]:match[3]])
 		if semaAssignmentLooksLikeNamedArg(body, match[2]) {
 			continue
@@ -2547,6 +2768,9 @@ func semaBodyExpressions(body string) []semaArg {
 		}
 	}
 	for _, match := range assignmentPattern.FindAllStringSubmatchIndex(body, -1) {
+		if semaOffsetInIgnoredText(body, match[0]) {
+			continue
+		}
 		exprs = append(exprs, trimSemaArg(body, match[1], semaStatementEnd(body, match[1])))
 	}
 	for _, match := range returnPattern.FindAllStringSubmatchIndex(body, -1) {
@@ -2561,6 +2785,9 @@ func semaBodyExpressions(body string) []semaArg {
 }
 
 func semaOffsetInIgnoredText(body string, pos int) bool {
+	if semaOffsetInSOQLLiteral(body, pos) {
+		return true
+	}
 	inBlock := false
 	for i := 0; i < len(body) && i < pos; i++ {
 		if inBlock {
@@ -2597,6 +2824,42 @@ func semaOffsetInIgnoredText(body string, pos int) bool {
 	lineStart := strings.LastIndexAny(body[:pos], "\r\n") + 1
 	if comment := strings.Index(body[lineStart:pos], "//"); comment >= 0 {
 		return true
+	}
+	return false
+}
+
+func semaOffsetInSOQLLiteral(body string, pos int) bool {
+	for i := 0; i < len(body) && i < pos; i++ {
+		switch body[i] {
+		case '\'':
+			i = skipSemaString(body, i)
+		case '[':
+			queryStart := i + 1
+			for queryStart < len(body) && isWhitespace(body[queryStart]) {
+				queryStart++
+			}
+			if !strings.HasPrefix(strings.ToLower(body[queryStart:]), "select") && !strings.HasPrefix(strings.ToLower(body[queryStart:]), "find") {
+				continue
+			}
+			depth := 1
+			for j := i + 1; j < len(body); j++ {
+				switch body[j] {
+				case '\'':
+					j = skipSemaString(body, j)
+				case '[':
+					depth++
+				case ']':
+					depth--
+					if depth == 0 {
+						if pos > i && pos < j {
+							return true
+						}
+						i = j
+						j = len(body)
+					}
+				}
+			}
+		}
 	}
 	return false
 }
@@ -2763,10 +3026,14 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 					continue
 				}
 				if _, scoped := scope[normalizeName(receiverExpr)]; !scoped {
-					if classMembers, ok := model[normalizeName(receiverExpr)]; ok {
-						diagnostics = append(diagnostics, a.diagnoseMethodCall(typ, member, callee, resolveMemberMethods(model, classMembers.name, method), args, haveArgs, "class", bodyOffset+match[2], bodyOffset+match[3], source, scope, model)...)
-						continue
-					}
+			if classMembers, ok := model[normalizeName(receiverExpr)]; ok {
+				if platformDiagnostics, handled := checkSemaPlatformCall(typ, member, classMembers.name, method, args, bodyOffset+match[2], bodyOffset+match[3], source, scope, model); handled {
+					diagnostics = append(diagnostics, platformDiagnostics...)
+					continue
+				}
+				diagnostics = append(diagnostics, a.diagnoseMethodCall(typ, member, callee, resolveMemberMethods(model, classMembers.name, method), args, haveArgs, "class", bodyOffset+match[2], bodyOffset+match[3], source, scope, model)...)
+				continue
+			}
 				}
 			}
 			receiver, method, ok := strings.Cut(callee, ".")
@@ -2800,6 +3067,10 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 				continue
 			}
 			if classMembers, ok := model[normalizeName(receiver)]; ok {
+				if platformDiagnostics, handled := checkSemaPlatformCall(typ, member, classMembers.name, method, args, bodyOffset+match[2], bodyOffset+match[3], source, scope, model); handled {
+					diagnostics = append(diagnostics, platformDiagnostics...)
+					continue
+				}
 				diagnostics = append(diagnostics, a.diagnoseMethodCall(typ, member, callee, resolveMemberMethods(model, classMembers.name, method), args, haveArgs, "class", bodyOffset+match[2], bodyOffset+match[3], source, scope, model)...)
 				continue
 			}
@@ -2967,6 +3238,12 @@ func constructorDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol, 
 
 func (a *Analyzer) diagnoseMethodCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, callee string, candidates []resolvedMember, args []semaArg, haveArgs bool, receiverMode string, start, end int, source string, scope map[string]string, model map[string]typeMembers) []diagnostic.Diagnostic {
 	if len(candidates) == 0 {
+		if semaRelationshipCollectionMethod(callee, callee) {
+			return nil
+		}
+		if semaKnownFluentHelperMethod(callee) {
+			return nil
+		}
 		if receiverMode != "implicit" && semaCalleeDependencyRoot(callee, scope, model) {
 			return nil
 		}
@@ -2988,9 +3265,15 @@ func (a *Analyzer) diagnoseMethodCall(typ typesys.TypeSymbol, member typesys.Mem
 		}
 		return nil
 	} else if ambiguous {
+		if semaKnownFluentHelperMethod(callee) {
+			return nil
+		}
 		return []diagnostic.Diagnostic{ambiguousCallDiagnostic(typ, member, callee, len(args), start, end, source)}
 	}
 	if receiverMode != "implicit" && semaCalleeDependencyRoot(callee, scope, model) {
+		return nil
+	}
+	if semaKnownFluentHelperMethod(callee) {
 		return nil
 	}
 	return []diagnostic.Diagnostic{{
@@ -3000,6 +3283,50 @@ func (a *Analyzer) diagnoseMethodCall(typ typesys.TypeSymbol, member typesys.Mem
 		File:     typ.File,
 		Range:    semaRange(source, start, end),
 	}}
+}
+
+func semaKnownFluentHelperMethod(method string) bool {
+	if idx := strings.LastIndexByte(method, '.'); idx >= 0 {
+		method = method[idx+1:]
+	}
+	switch normalizeName(method) {
+	case "thenreturn", "thenthrow", "thenanswer", "thenreturnmulti", "thenthrowmulti", "when",
+		"setfield", "setparent", "setchildren", "addchildren", "removechildren", "tosobject", "totype":
+		return true
+	default:
+		return false
+	}
+}
+
+func semaRelationshipCollectionMethod(callee, method string) bool {
+	if idx := strings.LastIndexByte(method, '.'); idx >= 0 {
+		method = method[idx+1:]
+	}
+	switch normalizeName(method) {
+	case "size", "isempty", "iterator":
+	default:
+		return false
+	}
+	receiver := callee
+	if idx := strings.LastIndexByte(receiver, '.'); idx >= 0 {
+		receiver = receiver[:idx]
+	}
+	parts := strings.Split(receiver, ".")
+	if len(parts) == 0 {
+		return false
+	}
+	return strings.HasSuffix(normalizeName(parts[len(parts)-1]), "__r")
+}
+
+func semaIRExprLooksLikeCustomRelationship(expr ir.Expr) bool {
+	if expr.Kind == ir.ExprVariable {
+		parts := strings.Split(expr.Name, ".")
+		return len(parts) > 0 && strings.HasSuffix(normalizeName(parts[len(parts)-1]), "__r")
+	}
+	if expr.Kind == ir.ExprCall && expr.Left != nil {
+		return semaIRExprLooksLikeCustomRelationship(*expr.Left)
+	}
+	return false
 }
 
 func semaCalleeDependencyRoot(callee string, scope map[string]string, model map[string]typeMembers) bool {
@@ -3193,7 +3520,7 @@ func bestResolvedMemberBySpecificity(applicable []resolvedMember, model map[stri
 			if i == j {
 				continue
 			}
-			switch compareSemaMemberSpecificity(candidate.member, other.member, model) {
+			switch compareResolvedSemaMemberSpecificity(candidate, other, model) {
 			case -1, 2:
 				moreSpecificThanAll = false
 			}
@@ -3202,7 +3529,7 @@ func bestResolvedMemberBySpecificity(applicable []resolvedMember, model map[stri
 			}
 		}
 		if moreSpecificThanAll {
-			if bestIndex >= 0 && compareSemaMemberSpecificity(candidate.member, applicable[bestIndex].member, model) == 0 {
+			if bestIndex >= 0 && compareResolvedSemaMemberSpecificity(candidate, applicable[bestIndex], model) == 0 {
 				continue
 			}
 			if bestIndex >= 0 {
@@ -3215,6 +3542,23 @@ func bestResolvedMemberBySpecificity(applicable []resolvedMember, model map[stri
 		return resolvedMember{}, false, true
 	}
 	return applicable[bestIndex], true, false
+}
+
+func compareResolvedSemaMemberSpecificity(left, right resolvedMember, model map[string]typeMembers) int {
+	paramSpecificity := compareSemaMemberSpecificity(left.member, right.member, model)
+	if paramSpecificity != 0 && paramSpecificity != 2 {
+		return paramSpecificity
+	}
+	switch {
+	case strings.EqualFold(left.owner, right.owner):
+		return paramSpecificity
+	case semaTypeMatches(model, left.owner, right.owner, make(map[string]bool)):
+		return 1
+	case semaTypeMatches(model, right.owner, left.owner, make(map[string]bool)):
+		return -1
+	default:
+		return paramSpecificity
+	}
 }
 
 func bestMemberBySpecificity(applicable []typesys.MemberSymbol, model map[string]typeMembers) (typesys.MemberSymbol, bool, bool) {
@@ -3455,9 +3799,6 @@ func isSemaSObjectLike(typeName string, model map[string]typeMembers) bool {
 	if strings.EqualFold(typeName, "SObject") {
 		return true
 	}
-	if _, ok := model[normalizeName(typeName)]; ok {
-		return false
-	}
 	switch normalizeName(typeName) {
 	case "object", "string", "id", "boolean", "integer", "long", "double", "decimal", "date", "datetime", "time", "blob", "type", "exception":
 		return false
@@ -3472,6 +3813,9 @@ func isSemaSObjectLike(typeName string, model map[string]typeMembers) bool {
 		if strings.EqualFold(typeName, known) {
 			return true
 		}
+	}
+	if members, ok := model[normalizeName(typeName)]; ok {
+		return members.sobject
 	}
 	return false
 }
@@ -3781,6 +4125,17 @@ func inferSemaFieldAccessType(expr string, scope map[string]string, model map[st
 	if len(parts) < 2 {
 		return ""
 	}
+	if targetType, staticOK := semaStaticClassFieldPathType(model, parts[0], strings.Join(parts[1:], ".")); staticOK {
+		return targetType
+	}
+	if semaExprLooksLikeStaticSObjectToken(expr, scope) {
+		if semaLooksLikeSObjectFieldToken(expr) {
+			return "Schema.SObjectField"
+		}
+		if semaLooksLikeSObjectTypeToken(expr) {
+			return "Schema.SObjectType"
+		}
+	}
 	receiverType := ""
 	startIndex := 1
 	if strings.EqualFold(parts[0], "this") && len(parts) > 1 {
@@ -3804,13 +4159,30 @@ func inferSemaFieldAccessType(expr string, scope map[string]string, model map[st
 			return target.member.Type
 		}
 	}
-	if semaLooksLikeSObjectFieldToken(expr) {
-		return "Schema.SObjectField"
-	}
-	if semaLooksLikeSObjectTypeToken(expr) {
-		return "Schema.SObjectType"
-	}
 	return ""
+}
+
+func semaStaticClassFieldPathType(model map[string]typeMembers, root, fieldPath string) (string, bool) {
+	members, ok := model[normalizeName(root)]
+	if !ok {
+		return "", false
+	}
+	target, ok := semaResolveFieldPath(model, members.name, fieldPath)
+	if !ok || !hasModifier(target.member.Modifiers, "static") {
+		return "", false
+	}
+	return target.member.Type, true
+}
+
+func semaExprLooksLikeStaticSObjectToken(expr string, scope map[string]string) bool {
+	root, _, ok := strings.Cut(strings.TrimSpace(expr), ".")
+	if !ok || root == "" {
+		return false
+	}
+	if scopedType, scoped := scope[normalizeName(root)]; scoped {
+		return root == scopedType
+	}
+	return semaLooksLikeSObjectFieldToken(expr) || semaLooksLikeSObjectTypeToken(expr)
 }
 
 func semaLooksLikeSObjectFieldToken(expr string) bool {
@@ -3923,10 +4295,14 @@ func splitLastSemaCall(arg string) (string, string, []semaArg, bool) {
 	for methodStart > 0 && isIdentifierByte(arg[methodStart-1]) {
 		methodStart--
 	}
-	if methodStart == methodEnd || methodStart == 0 || arg[methodStart-1] != '.' {
+	dot := methodStart - 1
+	for dot >= 0 && isWhitespace(arg[dot]) {
+		dot--
+	}
+	if methodStart == methodEnd || dot < 0 || arg[dot] != '.' {
 		return "", "", nil, false
 	}
-	receiver := strings.TrimSpace(arg[:methodStart-1])
+	receiver := strings.TrimSpace(arg[:dot])
 	if receiver == "" {
 		return "", "", nil, false
 	}
@@ -4397,8 +4773,10 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 		}
 	case "schema.describefieldresult":
 		switch method {
-		case "getname", "getlabel", "gettype", "getrelationshipname":
+		case "getname", "getlabel", "getrelationshipname":
 			return semaCollectionSignature{returnType: "String", params: [][]string{{}}}, true
+		case "gettype":
+			return semaCollectionSignature{returnType: "Schema.DisplayType", params: [][]string{{}}}, true
 		case "getsoaptype":
 			return semaCollectionSignature{returnType: "Schema.SoapType", params: [][]string{{}}}, true
 		case "isnillable", "isexternalid", "isunique", "isencrypted", "isnamefield", "isaccessible", "iscreateable", "isupdateable":
@@ -4432,6 +4810,29 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 			return semaCollectionSignature{returnType: "Schema.DescribeSObjectResult", params: [][]string{{}}}, true
 		case "newsobject":
 			return semaCollectionSignature{returnType: "SObject", params: [][]string{{}, {"Id"}, {"Id", "Boolean"}}}, true
+		case "getrecordtypeinfosbyname":
+			return semaCollectionSignature{returnType: "Map<String,Schema.RecordTypeInfo>", params: [][]string{{}}}, true
+		case "getrecordtypeinfosbyid":
+			return semaCollectionSignature{returnType: "Map<Id,Schema.RecordTypeInfo>", params: [][]string{{}}}, true
+		}
+	case "schema.describesobjectresult":
+		switch method {
+		case "getname", "getlabel", "getlabelplural", "getkeyprefix":
+			return semaCollectionSignature{returnType: "String", params: [][]string{{}}}, true
+		case "getfields":
+			return semaCollectionSignature{returnType: "Map<String,Schema.SObjectField>", params: [][]string{{}}}, true
+		case "getrecordtypeinfos":
+			return semaCollectionSignature{returnType: "List<Schema.RecordTypeInfo>", params: [][]string{{}}}, true
+		case "getrecordtypeinfosbyname", "getrecordtypeinfosbydevelopername":
+			return semaCollectionSignature{returnType: "Map<String,Schema.RecordTypeInfo>", params: [][]string{{}}}, true
+		case "getrecordtypeinfosbyid":
+			return semaCollectionSignature{returnType: "Map<Id,Schema.RecordTypeInfo>", params: [][]string{{}}}, true
+		case "getchildrelationships":
+			return semaCollectionSignature{returnType: "List<Schema.ChildRelationship>", params: [][]string{{}}}, true
+		case "getsobjecttype":
+			return semaCollectionSignature{returnType: "Schema.SObjectType", params: [][]string{{}}}, true
+		case "isaccessible", "iscreateable", "isupdateable", "isdeletable", "isqueryable", "issearchable":
+			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{}}}, true
 		}
 	case "schema.sobjectfield":
 		if method == "getdescribe" {
@@ -4582,6 +4983,14 @@ func semaPlatformMethodSignatureFor(model map[string]typeMembers, receiverType, 
 	}
 	if sig, ok := semaCustomDataStaticMethodSignature(receiverType, method); ok {
 		return sig, true
+	}
+	if isSemaSObjectLike(receiverType, model) {
+		switch normalizeName(method) {
+		case "getsobjecttype":
+			return semaCollectionSignature{returnType: "Schema.SObjectType", params: [][]string{{}}}, true
+		case "clone":
+			return semaCollectionSignature{returnType: receiverType, params: [][]string{{}, {"Boolean"}, {"Boolean", "Boolean", "Boolean", "Boolean"}}}, true
+		}
 	}
 	if semaTypeMatches(model, receiverType, "Exception", make(map[string]bool)) {
 		return semaPlatformMethodSignature("Exception", method)
@@ -4758,6 +5167,7 @@ func semaChainedCallReceiver(body string, callStart int, scope map[string]string
 	receiverExpr := strings.TrimSpace(body[exprStart:dot])
 	receiverExpr = strings.TrimSpace(strings.TrimPrefix(receiverExpr, "return "))
 	receiverExpr = strings.TrimSpace(strings.TrimPrefix(receiverExpr, "!"))
+	receiverExpr = semaTrimLeadingCast(receiverExpr)
 	receiverType := inferSemaArgTypeWithModel(receiverExpr, scope, model)
 	if receiverType == "" {
 		if method, args, ok := splitBareSemaCall(receiverExpr); ok {
@@ -4771,6 +5181,13 @@ func semaChainedCallReceiver(body string, callStart int, scope map[string]string
 		return "", "", false
 	}
 	return receiverType, strings.TrimSpace(body[methodStart:methodEnd]), true
+}
+
+func semaTrimLeadingCast(expr string) string {
+	if _, value, ok := splitSemaCast(strings.TrimSpace(expr)); ok {
+		return value
+	}
+	return expr
 }
 
 func semaConstructorReceiverType(expr string) string {
@@ -5749,6 +6166,7 @@ var platformTypes = []string{
 	"JSONGenerator",
 	"JSONParser",
 	"JSONToken",
+	"Limits",
 	"Matcher",
 	"Messaging",
 	"Messaging.Email",
@@ -5802,12 +6220,14 @@ var platformTypes = []string{
 	"Schema.FieldSetMember",
 	"Schema.PicklistEntry",
 	"Schema.RecordTypeInfo",
+	"Schema.DisplayType",
 	"Schema.SObjectField",
 	"Schema.SObjectType",
 	"Schema.SoapType",
 	"SObjectField",
 	"SObjectType",
 	"SoapType",
+	"DisplayType",
 	"Site",
 	"Site.ExternalUserCreateException",
 	"Site.UrlRewriter",

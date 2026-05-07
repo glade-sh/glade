@@ -9082,6 +9082,7 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 	recordTypes := make([]Value, 0, len(definition.RecordTypes))
 	byName := Map()
 	byDeveloperName := Map()
+	byID := Map()
 	for _, recordType := range definition.RecordTypes {
 		value := recordTypeInfoValue(recordType)
 		recordTypes = append(recordTypes, value)
@@ -9091,10 +9092,14 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 		if recordType.DeveloperName != "" {
 			byDeveloperName.Map[mapKey(String(recordType.DeveloperName))] = value
 		}
+		if recordType.ID != "" {
+			byID.Map[mapKey(String(string(recordType.ID)))] = value
+		}
 	}
 	desc.Fields["recordTypeInfos"] = List(recordTypes...)
 	desc.Fields["recordTypeInfosByName"] = byName
 	desc.Fields["recordTypeInfosByDeveloperName"] = byDeveloperName
+	desc.Fields["recordTypeInfosById"] = byID
 	return desc
 }
 
@@ -9402,6 +9407,9 @@ func (vm *VM) lookup(name string) (Value, error) {
 		return value, nil
 	}
 	if value, ok := schemaSOAPTypeStaticValue(name); ok {
+		return value, nil
+	}
+	if value, ok := schemaDisplayTypeStaticValue(name); ok {
 		return value, nil
 	}
 	if strings.HasPrefix(name, "Label.") {
@@ -15266,7 +15274,7 @@ func canonicalPlatformObjectMemberName(typeName, method string) string {
 		"getDuplicateSignature", "setDuplicateSignature",
 		"getMaximumQueueableStackDepth", "setMaximumQueueableStackDepth",
 		"getMinimumQueueableDelayInMinutes", "setMinimumQueueableDelayInMinutes",
-		"newSObject", "getDescribe", "getRecordTypeInfosByName",
+		"newSObject", "getDescribe", "getRecordTypeInfosByName", "getRecordTypeInfosById",
 		"getMap",
 		"getName", "getLabel", "getType", "getSOAPType", "getSoapType",
 		"isNillable", "isExternalId", "isUnique", "isEncrypted", "isNameField",
@@ -16050,6 +16058,7 @@ func soapTypeForStorageField(field storage.Field) string {
 }
 
 var schemaSOAPTypeNames = []string{"ID", "STRING", "BOOLEAN", "INTEGER", "DOUBLE", "DATE", "DATETIME", "TIME", "BASE64BINARY", "ANYTYPE"}
+var schemaDisplayTypeNames = []string{"BOOLEAN", "CURRENCY", "DATE", "DATETIME", "DOUBLE", "ID", "INTEGER", "PERCENT", "PICKLIST", "REFERENCE", "STRING", "TEXTAREA"}
 
 func schemaSOAPTypeStaticValue(name string) (Value, bool) {
 	if value, ok := namedEnumStaticValue("Schema.SOAPType", schemaSOAPTypeNames, name); ok {
@@ -16064,6 +16073,10 @@ func schemaSOAPTypeStaticValue(name string) (Value, bool) {
 func schemaSOAPTypeValue(name string) Value {
 	value, _ := namedEnumStaticValue("Schema.SOAPType", schemaSOAPTypeNames, "Schema.SOAPType."+name)
 	return value
+}
+
+func schemaDisplayTypeStaticValue(name string) (Value, bool) {
+	return namedEnumStaticValue("Schema.DisplayType", schemaDisplayTypeNames, name)
 }
 
 func namedEnumStaticValue(typeName string, names []string, name string) (Value, bool) {
@@ -17263,9 +17276,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				"object":    objectName,
 			})
 			return vm.describeSObjectValue(objectName, vm.Org.Objects[objectName].Definition), receiver, false, true, nil
-		case "getRecordTypeInfosByName":
+		case "getRecordTypeInfosByName", "getRecordTypeInfosById":
 			if len(args) != 0 {
-				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectType.getRecordTypeInfosByName expects 0 arguments")
+				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectType.%s expects 0 arguments", method)
 			}
 			describe, _, _, handled, err := vm.callPlatformObjectMember(receiver, "getDescribe", nil, result)
 			if err != nil || !handled {
@@ -18116,6 +18129,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.getRecordTypeInfosByDeveloperName expects 0 arguments")
 			}
 			return receiver.Fields["recordTypeInfosByDeveloperName"], receiver, false, true, nil
+		case "getRecordTypeInfosById":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.getRecordTypeInfosById expects 0 arguments")
+			}
+			return receiver.Fields["recordTypeInfosById"], receiver, false, true, nil
 		case "getChildRelationships":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.getChildRelationships expects 0 arguments")

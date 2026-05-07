@@ -9,7 +9,11 @@ Compatibility status:
 - Checked example-project server support is green:
   `pass=101 fail=0 unsupported=0 missing=0`.
 - Checked example-project post-parity readiness inventory is green:
-  `filesScanned=51107 findings=0 testBlockingFindings=0 surfaces=0`.
+  `filesScanned=50457 findings=0 testBlockingFindings=0 surfaces=0`.
+- Checked example-project runtime support is partial: `src-nmb-nutpl-develop`
+  is green at `total=761 pass=761`, while the other five checked
+  example-projects still have measured compile-gap frontiers tracked in
+  `docs/fixtures/local-tests-example-projects.json`.
 - See [`COMPATIBILITY_DASHBOARD.md`](COMPATIBILITY_DASHBOARD.md) and
   [`KNOWN_GAPS.md`](KNOWN_GAPS.md) for generated status.
 

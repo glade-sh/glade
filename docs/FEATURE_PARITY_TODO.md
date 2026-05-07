@@ -1,6 +1,6 @@
 # Feature Parity Todo
 
-Status date: 2026-05-06.
+Status date: 2026-05-07.
 
 This is the remaining work to get `oaer` to credible feature parity with aer,
 then beyond it. The current baselines are broad, but `oaer compat mvp` is still
@@ -13,6 +13,11 @@ Current checked status:
   supported and 17 remain partial.
 - `oaer compat server-examples --json`: `pass=101 fail=0 unsupported=0
   missing=0`.
+- `oaer compat local-tests --project example-projects/src-nmb-nutpl-develop
+  --timeout 30000 --top-failures 8 --json`: `total=761 pass=761`.
+- Full example-project runtime support is still incomplete; the current
+  six-project baseline is tracked in
+  `docs/fixtures/local-tests-example-projects.json`.
 - Generated compatibility docs are in sync with `internal/capability`.
 
 Parity means a local Apex development loop that can run real project tests,

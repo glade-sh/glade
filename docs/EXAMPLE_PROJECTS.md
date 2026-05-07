@@ -68,12 +68,23 @@ done
 
 ## Phase Gate
 
-Current status as of 2026-05-06:
+Current status as of 2026-05-07:
 
 - The server-example execution harness is green across the checked
   `example-projects` corpus: `pass=101 fail=0 unsupported=0 missing=0`.
 - `oaer compat post-parity --json` is green for the checked corpus:
-  `filesScanned=51107 findings=0 testBlockingFindings=0 surfaces=0`.
+  `filesScanned=50457 findings=0 testBlockingFindings=0 surfaces=0`.
+- `src-nmb-nutpl-develop` is the current green runtime sentinel:
+  `go run ./cmd/oaer compat local-tests --project
+  example-projects/src-nmb-nutpl-develop --timeout 30000 --top-failures 8
+  --json` reports `total=761 pass=761` with no failures, unsupported outcomes,
+  load errors, compile errors, or internal errors.
+- Full runtime support for all six example projects is not complete yet. The
+  current six-project runtime baseline is
+  `docs/fixtures/local-tests-example-projects.json`: one project is green and
+  the other five stop at compile-gap frontiers such as missing `znu` managed
+  package types, missing standard object/type coverage, and package/source
+  duplicate-symbol issues.
 - `oaer compat examples`, `oaer compat server-examples`, and
   `oaer compat post-parity` are separate gates. The zero post-parity inventory
   means no current scanner/test-readiness blockers are known for the checked

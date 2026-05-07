@@ -1,6 +1,6 @@
 {
   "target": "enterprise example-project local Apex runtime baseline",
-  "generatedAt": "2026-05-07T03:10:54.792Z",
+  "generatedAt": "2026-05-07T20:48:30.283Z",
   "timeoutSupport": {
     "compatLocalTestsTimeoutFlag": true,
     "command": "go run ./cmd/oaer compat local-tests --project <project> --json --timeout 30000 --top-failures 8"
@@ -12,74 +12,32 @@
       "timeoutSeconds": 30,
       "timedOut": false,
       "exitCode": 0,
-      "elapsedMs": 6037,
+      "elapsedMs": 30296,
       "ready": false,
-      "durationMs": 5644,
+      "durationMs": 29530,
       "summary": {
-        "total": 4938,
+        "total": 3986,
         "pass": 0,
         "fail": 0,
         "unsupported": 0,
         "loadError": 0,
         "compileError": 0,
         "internalError": 0,
-        "compileGap": 4938
+        "compileGap": 3986
       },
       "topOutcomeBlockers": [
         {
-          "key": "compile_gap|compile|oaersema002|CMT_FilterRule.cls|90|field \"<symbol>\" references unknown type \"<symbol>\"",
-          "count": 4938,
+          "key": "compile_gap|compile|oaersema002|CON_AddToCampaign.cls|42|field \"<symbol>\" references unknown type \"<symbol>\"",
+          "count": 3986,
           "outcome": "compile_gap",
           "phase": "compile",
           "capabilityId": "oaersema002",
-          "file": "example-projects/NPSP-rel-3.237/force-app/main/default/classes/CMT_FilterRule.cls",
-          "line": 90,
-          "error": "field \"converters\" references unknown type \"SoapType\""
+          "file": "example-projects/NPSP-rel-3.237/force-app/main/default/classes/CON_AddToCampaign.cls",
+          "line": 42,
+          "error": "field \"MAPcampaignMemberStatuses\" references unknown type \"CampaignMemberStatus\""
         }
       ],
       "topDiagnostics": [
-        {
-          "key": "OAERSEMA008|fflib_InOrderTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
-          "count": 95,
-          "code": "OAERSEMA008",
-          "file": "example-projects/NPSP-rel-3.237/force-app/infrastructure/apex-mocks/test/classes/fflib_InOrderTest.cls",
-          "message": "method \"thatVerifyInOrderAllTheMethodsCalled\" calls unknown method \"Then\""
-        },
-        {
-          "key": "OAERSEMA022|ALLO_AllocationsService_TEST.cls|method \"<symbol>\" has ambiguous overloads for call \"<symbol>\" with <n> argument(s)",
-          "count": 90,
-          "code": "OAERSEMA022",
-          "file": "example-projects/NPSP-rel-3.237/force-app/main/default/classes/ALLO_AllocationsService_TEST.cls",
-          "message": "method \"confirmAllocationServiceUpdatesAllocationsCorrectlyWhenPaymentAllocationsAreEnabled\" has ambiguous overloads for call \"ALLO_UnitTestHelper_TEST.assertOpportunityAllocation\" with 6 argument(s)"
-        },
-        {
-          "key": "OAERSEMA008|ALLO_AllocationsService_TEST.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
-          "count": 78,
-          "code": "OAERSEMA008",
-          "file": "example-projects/NPSP-rel-3.237/force-app/main/default/classes/ALLO_AllocationsService_TEST.cls",
-          "message": "method \"confirmAllocationServiceUpdatesAllocationsCorrectlyWhenPaymentAllocationsAreEnabled\" calls unknown method \"Allocations\""
-        },
-        {
-          "key": "OAERSEMA008|ALLO_AllocationsRecalculateService_TEST.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
-          "count": 77,
-          "code": "OAERSEMA008",
-          "file": "example-projects/NPSP-rel-3.237/force-app/main/default/classes/ALLO_AllocationsRecalculateService_TEST.cls",
-          "message": "method \"confirmProcessOpportunityAllocationsCreatesCorrectPendingDMLChangesWhenDefaultAllocationsEnabledPaymentAllocationsDisabled\" calls unknown method \"Allocations\""
-        },
-        {
-          "key": "OAERSEMA013|RD2_ScheduleService_TEST.cls|method \"<symbol>\" references unknown variable \"<symbol>\"",
-          "count": 77,
-          "code": "OAERSEMA013",
-          "file": "example-projects/NPSP-rel-3.237/force-app/main/default/classes/RD2_ScheduleService_TEST.cls",
-          "message": "method \"shouldGenerateNextDonationDateLastDayInFebruaryWhenDayIs29\" references unknown variable \"startDate\""
-        },
-        {
-          "key": "OAERSEMA021|fflib_MatchTest.cls|method \"<symbol>\" references unknown field \"<symbol>\" on fflib_MatcherDefinitions",
-          "count": 77,
-          "code": "OAERSEMA021",
-          "file": "example-projects/NPSP-rel-3.237/force-app/infrastructure/apex-mocks/test/classes/fflib_MatchTest.cls",
-          "message": "method \"allOfWith2ArgsRegistersCorrectMatcherType\" references unknown field \"Combined\" on fflib_MatcherDefinitions"
-        },
         {
           "key": "OAERSEMA013|BDI_Donations_TEST3.cls|method \"<symbol>\" reads unknown variable \"<symbol>\"",
           "count": 74,
@@ -88,11 +46,53 @@
           "message": "method \"donationMatchRules1\" reads unknown variable \"label.bdiMatched\""
         },
         {
+          "key": "OAERSEMA013|RD2_ScheduleService_TEST.cls|method \"<symbol>\" references unknown variable \"<symbol>\"",
+          "count": 73,
+          "code": "OAERSEMA013",
+          "file": "example-projects/NPSP-rel-3.237/force-app/main/default/classes/RD2_ScheduleService_TEST.cls",
+          "message": "method \"shouldGenerateNextDonationDateLastDayInFebruaryWhenDayIs29\" references unknown variable \"startDate\""
+        },
+        {
+          "key": "OAERSEMA013|BDI_DataImport_TEST2.cls|method \"<symbol>\" reads unknown variable \"<symbol>\"",
+          "count": 57,
+          "code": "OAERSEMA013",
+          "file": "example-projects/NPSP-rel-3.237/force-app/main/default/classes/BDI_DataImport_TEST2.cls",
+          "message": "method \"ManyDIDuplicateEmailNewContacts\" reads unknown variable \"label.bdiCreated\""
+        },
+        {
+          "key": "OAERSEMA013|HH_NameSpec_TEST.cls|method \"<symbol>\" references unknown variable \"<symbol>\"",
+          "count": 56,
+          "code": "OAERSEMA013",
+          "file": "example-projects/NPSP-rel-3.237/force-app/test/HH_NameSpec_TEST.cls",
+          "message": "method \"OneContact\" references unknown variable \"listCon\""
+        },
+        {
           "key": "OAERSEMA008|CRLP_DefaultConfigBuilder_SVC.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
-          "count": 72,
+          "count": 47,
           "code": "OAERSEMA008",
           "file": "example-projects/NPSP-rel-3.237/force-app/main/default/classes/CRLP_DefaultConfigBuilder_SVC.cls",
-          "message": "method \"buildDefaultFilterGroups\" calls unknown method \"Won\""
+          "message": "method \"buildDefaultFilterGroups\" calls unknown method \"CMT_FilterRule.FilterOperation.EQUALS.name\""
+        },
+        {
+          "key": "OAERSEMA022|RD2_OpportunityEvaluationService_TEST.cls|method \"<symbol>\" has ambiguous overloads for call \"<symbol>\" with <n> argument(s)",
+          "count": 35,
+          "code": "OAERSEMA022",
+          "file": "example-projects/NPSP-rel-3.237/force-app/main/default/classes/RD2_OpportunityEvaluationService_TEST.cls",
+          "message": "method \"shouldDetermineIfNewOrPreExistingRecurringDonation\" has ambiguous overloads for call \"withAccount\" with 1 argument(s)"
+        },
+        {
+          "key": "OAERSEMA010|fflib_SObjects2Test.cls|method \"<symbol>\" cannot access protected method \"<symbol>\"",
+          "count": 32,
+          "code": "OAERSEMA010",
+          "file": "example-projects/NPSP-rel-3.237/force-app/infrastructure/apex-extensions/tests/classes/domains/fflib_SObjects2Test.cls",
+          "message": "method \"itShouldAddErrorMessage\" cannot access protected method \"domain.addError\""
+        },
+        {
+          "key": "OAERSEMA013|STG_PanelHealthCheck_CTRL.cls|method \"<symbol>\" reads unknown variable \"<symbol>\"",
+          "count": 32,
+          "code": "OAERSEMA013",
+          "file": "example-projects/NPSP-rel-3.237/force-app/main/default/classes/STG_PanelHealthCheck_CTRL.cls",
+          "message": "method \"verifyAccountModel\" reads unknown variable \"label.healthDetailsHHAccountModel\""
         }
       ]
     },
@@ -102,23 +102,23 @@
       "timeoutSeconds": 30,
       "timedOut": false,
       "exitCode": 0,
-      "elapsedMs": 7654,
+      "elapsedMs": 29158,
       "ready": false,
-      "durationMs": 7417,
+      "durationMs": 28959,
       "summary": {
-        "total": 12084,
+        "total": 9761,
         "pass": 0,
         "fail": 0,
         "unsupported": 0,
         "loadError": 0,
         "compileError": 0,
         "internalError": 0,
-        "compileGap": 12084
+        "compileGap": 9761
       },
       "topOutcomeBlockers": [
         {
           "key": "compile_gap|compile|oaersema002|AddressMessage.cls|8|field \"<symbol>\" references unknown type \"<symbol>\"",
-          "count": 12084,
+          "count": 9761,
           "outcome": "compile_gap",
           "phase": "compile",
           "capabilityId": "oaersema002",
@@ -129,18 +129,32 @@
       ],
       "topDiagnostics": [
         {
-          "key": "OAERSEMA008|fflib_InOrderTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
-          "count": 90,
+          "key": "OAERSEMA008|NavigationInstallData.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
+          "count": 96,
           "code": "OAERSEMA008",
-          "file": "example-projects/src-nmb-nc-develop/src/classes/fflib_InOrderTest.cls",
-          "message": "method \"thatVerifyInOrderAllTheMethodsCalled\" calls unknown method \"Then\""
+          "file": "example-projects/src-nmb-nc-develop/src/classes/NavigationInstallData.cls",
+          "message": "method \"createProfileSnapshotNavigationMenuItem\" calls unknown method \"withTitle\""
         },
         {
-          "key": "OAERSEMA021|fflib_MatchTest.cls|method \"<symbol>\" references unknown field \"<symbol>\" on fflib_MatcherDefinitions",
-          "count": 77,
-          "code": "OAERSEMA021",
-          "file": "example-projects/src-nmb-nc-develop/src/classes/fflib_MatchTest.cls",
-          "message": "method \"allOfWith2ArgsRegistersCorrectMatcherType\" references unknown field \"Combined\" on fflib_MatcherDefinitions"
+          "key": "OAERSEMA008|JoinRenewButton2Test.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
+          "count": 89,
+          "code": "OAERSEMA008",
+          "file": "example-projects/src-nmb-nc-develop/src/classes/JoinRenewButton2Test.cls",
+          "message": "method \"execute_withOutstandingInvoicesForAssociatedAccount_expectCartFromOrderAction\" calls unknown method \"setField\""
+        },
+        {
+          "key": "OAERSEMA008|BillingAddressComponentControllerTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
+          "count": 76,
+          "code": "OAERSEMA008",
+          "file": "example-projects/src-nmb-nc-develop/src/classes/BillingAddressComponentControllerTest.cls",
+          "message": "method \"doHandleMessage_paymentOptionSelected_creditCard_expectShouldRender\" calls unknown method \"getName\""
+        },
+        {
+          "key": "OAERSEMA008|ItemLineDisplayTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
+          "count": 76,
+          "code": "OAERSEMA008",
+          "file": "example-projects/src-nmb-nc-develop/src/classes/ItemLineDisplayTest.cls",
+          "message": "method \"isPartOfBundle_forCartItemLine_expectTrue\" calls unknown method \"setField\""
         },
         {
           "key": "OAERSEMA006|PaymentOptionsTest.cls|method \"<symbol>\" constructs unknown type \"<symbol>\"",
@@ -164,25 +178,11 @@
           "message": "method \"setupCartWithBalance\" declares local \"userCartItem\" with unknown type \"znu__CartItem__c\""
         },
         {
-          "key": "OAERSEMA006|ItemDisplayTest.cls|method \"<symbol>\" declares local \"<symbol>\" with unknown type \"<symbol>\"",
-          "count": 44,
-          "code": "OAERSEMA006",
-          "file": "example-projects/src-nmb-nc-develop/src/classes/ItemDisplayTest.cls",
-          "message": "method \"requeryOrderItem\" declares local \"orderItemsByOrderId\" with unknown type \"znu__OrderItem__c\""
-        },
-        {
-          "key": "OAERSEMA008|AccountSettingsTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
-          "count": 44,
+          "key": "OAERSEMA008|DynamicCheckoutSubmitButtonTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
+          "count": 51,
           "code": "OAERSEMA008",
-          "file": "example-projects/src-nmb-nc-develop/src/classes/AccountSettingsTest.cls",
-          "message": "method \"isValidPassword_minimumPasswordLengths\" calls unknown method \"AccountSettings.Instance.isValidPassword\""
-        },
-        {
-          "key": "OAERSEMA008|fflib_AnyOrderTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
-          "count": 42,
-          "code": "OAERSEMA008",
-          "file": "example-projects/src-nmb-nc-develop/src/classes/fflib_AnyOrderTest.cls",
-          "message": "method \"whenVerifyMultipleCallsWithMatchersShouldReturnCorrectMethodCallCounts\" calls unknown method \"Then\""
+          "file": "example-projects/src-nmb-nc-develop/src/classes/DynamicCheckoutSubmitButtonTest.cls",
+          "message": "method \"getShouldRender_scheduledPaymentSelected_correctMessage_expectFalse\" calls unknown method \"setField\""
         }
       ]
     },
@@ -192,87 +192,87 @@
       "timeoutSeconds": 30,
       "timedOut": false,
       "exitCode": 0,
-      "elapsedMs": 13243,
+      "elapsedMs": 107396,
       "ready": false,
-      "durationMs": 12993,
+      "durationMs": 107179,
       "summary": {
-        "total": 15068,
+        "total": 11526,
         "pass": 0,
         "fail": 0,
         "unsupported": 0,
         "loadError": 0,
         "compileError": 0,
         "internalError": 0,
-        "compileGap": 15068
+        "compileGap": 11526
       },
       "topOutcomeBlockers": [
         {
-          "key": "compile_gap|compile|oaersema018|ARAgingManager.cls|9|method \"<symbol>\" assigns Object to ARAgingManager variable \"<symbol>\"",
-          "count": 15068,
+          "key": "compile_gap|compile|oaersema013|AccountManager.cls|703|method \"<symbol>\" assigns unknown variable \"<symbol>\"",
+          "count": 11526,
           "outcome": "compile_gap",
           "phase": "compile",
-          "capabilityId": "oaersema018",
-          "file": "example-projects/src-nmb-nu-develop/sfdx-source/nu/main/default/classes/ARAgingManager.cls",
-          "line": 9,
-          "error": "method \"Instance.get\" assigns Object to ARAgingManager variable \"Instance\""
+          "capabilityId": "oaersema013",
+          "file": "example-projects/src-nmb-nu-develop/sfdx-source/nu/main/default/classes/AccountManager.cls",
+          "line": 703,
+          "error": "method \"getNameAndEvent\" assigns unknown variable \"Status__c\""
         }
       ],
       "topDiagnostics": [
         {
-          "key": "OAERSEMA008|TestCartSubmitter.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
-          "count": 856,
-          "code": "OAERSEMA008",
-          "file": "example-projects/src-nmb-nu-develop/sfdx-source/nu/main/default/classes/TestCartSubmitter.cls",
-          "message": "method \"assertOrderItemsWithCouponLines\" calls unknown method \"assertSObjectListContainsId\""
-        },
-        {
           "key": "OAERSEMA008|TransactionGenerator2Test.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
-          "count": 634,
+          "count": 2220,
           "code": "OAERSEMA008",
           "file": "example-projects/src-nmb-nu-develop/sfdx-source/nu/main/default/classes/TransactionGenerator2Test.cls",
           "message": "method \"createProduct\" calls unknown method \"setField\""
         },
         {
           "key": "OAERSEMA008|CartSubmitterTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
-          "count": 187,
+          "count": 682,
           "code": "OAERSEMA008",
           "file": "example-projects/src-nmb-nu-develop/sfdx-source/nu/main/default/classes/CartSubmitterTest.cls",
-          "message": "method \"cartSubmitterInstance.get\" calls unknown method \"__mapEntry\""
+          "message": "method \"submit_refundCart_expectSuccess\" calls unknown method \"setField\""
         },
         {
           "key": "OAERSEMA008|TestOrderPaymentController.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
+          "count": 226,
+          "code": "OAERSEMA008",
+          "file": "example-projects/src-nmb-nu-develop/sfdx-source/nu/main/default/classes/TestOrderPaymentController.cls",
+          "message": "method \"paymentAmountChanged_refundWithHosted_expectNegativePaymentNotAllowedMessageNotDisplayed\" calls unknown method \"setField\""
+        },
+        {
+          "key": "OAERSEMA008|DeferredScheduleTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
+          "count": 224,
+          "code": "OAERSEMA008",
+          "file": "example-projects/src-nmb-nu-develop/sfdx-source/nu/main/default/classes/DeferredScheduleTest.cls",
+          "message": "method \"getDifferenceInExpectedAmount_correctRecognizedAmount_expectZero\" calls unknown method \"setField\""
+        },
+        {
+          "key": "OAERSEMA008|TestAddressUtils.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
+          "count": 194,
+          "code": "OAERSEMA008",
+          "file": "example-projects/src-nmb-nu-develop/sfdx-source/nu/main/utility/classes/TestAddressUtils.cls",
+          "message": "method \"getShipToAddressFromAccount_withShippingAddress_expectShipToAddress\" calls unknown method \"setField\""
+        },
+        {
+          "key": "OAERSEMA008|TestCartSubmitter.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
+          "count": 160,
+          "code": "OAERSEMA008",
+          "file": "example-projects/src-nmb-nu-develop/sfdx-source/nu/main/default/classes/TestCartSubmitter.cls",
+          "message": "method \"submit_newCouponCartSubmission_expectCouponCreated\" calls unknown method \"then\""
+        },
+        {
+          "key": "OAERSEMA008|TestAutomaticSalesTax.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
+          "count": 149,
+          "code": "OAERSEMA008",
+          "file": "example-projects/src-nmb-nu-develop/sfdx-source/nu/main/default/classes/TestAutomaticSalesTax.cls",
+          "message": "method \"recalculateTax_NoTaxableLinesOnCartItem_expectSalesTaxRemovedFromCartItem\" calls unknown method \"setField\""
+        },
+        {
+          "key": "OAERSEMA008|TestOrderController.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
           "count": 124,
           "code": "OAERSEMA008",
-          "file": "example-projects/src-nmb-nu-develop/sfdx-source/nu/main/default/classes/TestOrderPaymentController.cls",
-          "message": "method \"newFullPaymentTest\" calls unknown method \"savePayment\""
-        },
-        {
-          "key": "OAERSEMA008|OrderTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
-          "count": 114,
-          "code": "OAERSEMA008",
-          "file": "example-projects/src-nmb-nu-develop/sfdx-source/nu/main/default/classes/OrderTest.cls",
-          "message": "method \"mockTaxCalculatorHandler\" calls unknown method \"thenReturn\""
-        },
-        {
-          "key": "OAERSEMA021|TestOrderPaymentController.cls|method \"<symbol>\" references unknown field \"<symbol>\" on OrderPaymentController",
-          "count": 106,
-          "code": "OAERSEMA021",
-          "file": "example-projects/src-nmb-nu-develop/sfdx-source/nu/main/default/classes/TestOrderPaymentController.cls",
-          "message": "method \"createOrderPaymentControllerWithCashPrepaymentEnabled\" references unknown field \"Controller.Cart.Entity2__c\" on OrderPaymentController"
-        },
-        {
-          "key": "OAERSEMA022|TransactionGenerator2Test.cls|method \"<symbol>\" has ambiguous overloads for call \"<symbol>\" with <n> argument(s)",
-          "count": 99,
-          "code": "OAERSEMA022",
-          "file": "example-projects/src-nmb-nu-develop/sfdx-source/nu/main/default/classes/TransactionGenerator2Test.cls",
-          "message": "method \"createOrderItem\" has ambiguous overloads for call \"setField\" with 2 argument(s)"
-        },
-        {
-          "key": "OAERSEMA021|TestCartSubmitter.cls|method \"<symbol>\" references unknown field \"<symbol>\" on Mock",
-          "count": 94,
-          "code": "OAERSEMA021",
-          "file": "example-projects/src-nmb-nu-develop/sfdx-source/nu/main/default/classes/TestCartSubmitter.cls",
-          "message": "method \"submit_newCartSubmission_expectCartDeletedAndNewOrder\" references unknown field \"MI.MockScheduleService\" on Mock"
+          "file": "example-projects/src-nmb-nu-develop/sfdx-source/nu/main/default/classes/TestOrderController.cls",
+          "message": "method \"fullAdjustmentEditItemTest\" calls unknown method \"modifiedItem.OrderItemLines__r.size\""
         }
       ]
     },
@@ -282,87 +282,38 @@
       "timeoutSeconds": 30,
       "timedOut": false,
       "exitCode": 0,
-      "elapsedMs": 655,
+      "elapsedMs": 1022,
       "ready": false,
-      "durationMs": 502,
+      "durationMs": 885,
       "summary": {
-        "total": 811,
+        "total": 761,
         "pass": 0,
         "fail": 0,
         "unsupported": 0,
         "loadError": 0,
         "compileError": 0,
         "internalError": 0,
-        "compileGap": 811
+        "compileGap": 761
       },
       "topOutcomeBlockers": [
         {
-          "key": "compile_gap|compile|oaersema013|HtmlElementUtil.cls|110|method \"<symbol>\" references unknown variable \"<symbol>\"",
-          "count": 811,
+          "key": "compile_gap|compile|oaersema013|fflib_Application.cls|202|method \"<symbol>\" references unknown variable \"<symbol>\"",
+          "count": 761,
           "outcome": "compile_gap",
           "phase": "compile",
           "capabilityId": "oaersema013",
-          "file": "example-projects/src-nmb-nutpl-develop/force-app/main/classes/Utilities/HTMLSanitization/HtmlElementUtil.cls",
-          "line": 110,
-          "error": "method \"copyAttributes\" references unknown variable \"i\""
+          "file": "example-projects/src-nmb-nutpl-develop/force-app/main/classes/Utilities/fflib/fflib_Application.cls",
+          "line": 202,
+          "error": "method \"selectById\" references unknown variable \"domainSObjectType\""
         }
       ],
       "topDiagnostics": [
         {
-          "key": "OAERSEMA008|fflib_InOrderTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
-          "count": 90,
-          "code": "OAERSEMA008",
-          "file": "example-projects/src-nmb-nutpl-develop/force-app/main/classes/Utilities/fflib/fflib_InOrderTest.cls",
-          "message": "method \"thatVerifyInOrderAllTheMethodsCalled\" calls unknown method \"Then\""
-        },
-        {
-          "key": "OAERSEMA021|fflib_MatchTest.cls|method \"<symbol>\" references unknown field \"<symbol>\" on fflib_MatcherDefinitions",
-          "count": 77,
-          "code": "OAERSEMA021",
-          "file": "example-projects/src-nmb-nutpl-develop/force-app/main/classes/Utilities/fflib/fflib_MatchTest.cls",
-          "message": "method \"allOfWith2ArgsRegistersCorrectMatcherType\" references unknown field \"Combined\" on fflib_MatcherDefinitions"
-        },
-        {
-          "key": "OAERSEMA008|fflib_AnyOrderTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
-          "count": 42,
-          "code": "OAERSEMA008",
-          "file": "example-projects/src-nmb-nutpl-develop/force-app/main/classes/Utilities/fflib/fflib_AnyOrderTest.cls",
-          "message": "method \"whenVerifyMultipleCallsWithMatchersShouldReturnCorrectMethodCallCounts\" calls unknown method \"Then\""
-        },
-        {
-          "key": "OAERSEMA008|fflib_ApexMocksTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
-          "count": 42,
-          "code": "OAERSEMA008",
-          "file": "example-projects/src-nmb-nutpl-develop/force-app/main/classes/Utilities/fflib/fflib_ApexMocksTest.cls",
-          "message": "method \"whenVerifyMultipleCallsWithMatchersShouldReturnCorrectMethodCallCounts\" calls unknown method \"Then\""
-        },
-        {
-          "key": "OAERSEMA008|fflib_MatcherDefinitionsTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
-          "count": 33,
-          "code": "OAERSEMA008",
-          "file": "example-projects/src-nmb-nutpl-develop/force-app/main/classes/Utilities/fflib/fflib_MatcherDefinitionsTest.cls",
-          "message": "method \"whenConstructingCombinedWithNullConnectiveExpressionShouldThrowException\" calls unknown method \"e.getMessage\""
-        },
-        {
-          "key": "OAERSEMA011|fflib_QueryFactoryTest.cls|method \"<symbol>\" has invalid new fflib_QueryFactory(...) call: ambiguous fflib_QueryFactory constructor with <n> argument(s)",
-          "count": 30,
-          "code": "OAERSEMA011",
-          "file": "example-projects/src-nmb-nutpl-develop/force-app/main/classes/Utilities/fflib/fflib_QueryFactoryTest.cls",
-          "message": "method \"fieldSelections\" has invalid new fflib_QueryFactory(...) call: ambiguous fflib_QueryFactory constructor with 1 argument(s)"
-        },
-        {
-          "key": "OAERSEMA008|fflib_MatcherDefinitions.cls|constructor \"<symbol>\" calls unknown method \"<symbol>\"",
-          "count": 26,
-          "code": "OAERSEMA008",
-          "file": "example-projects/src-nmb-nutpl-develop/force-app/main/classes/Utilities/fflib/fflib_MatcherDefinitions.cls",
-          "message": "constructor \"DatetimeAfter\" calls unknown method \"validateNotNull\""
-        },
-        {
-          "key": "OAERSEMA013|fflib_InOrderTest.cls|method \"<symbol>\" references unknown variable \"<symbol>\"",
-          "count": 23,
+          "key": "OAERSEMA013|fflib_Application.cls|method \"<symbol>\" references unknown variable \"<symbol>\"",
+          "count": 1,
           "code": "OAERSEMA013",
-          "file": "example-projects/src-nmb-nutpl-develop/force-app/main/classes/Utilities/fflib/fflib_InOrderTest.cls",
-          "message": "method \"thatVerifyInOrderThrownExceptionIfVerifyMockInstanceNotInTheSet\" references unknown variable \"String\""
+          "file": "example-projects/src-nmb-nutpl-develop/force-app/main/classes/Utilities/fflib/fflib_Application.cls",
+          "message": "method \"selectById\" references unknown variable \"domainSObjectType\""
         }
       ]
     },
@@ -372,23 +323,23 @@
       "timeoutSeconds": 30,
       "timedOut": false,
       "exitCode": 0,
-      "elapsedMs": 7540,
+      "elapsedMs": 41947,
       "ready": false,
-      "durationMs": 7328,
+      "durationMs": 41772,
       "summary": {
-        "total": 4672,
+        "total": 4268,
         "pass": 0,
         "fail": 0,
         "unsupported": 0,
         "loadError": 0,
         "compileError": 0,
         "internalError": 0,
-        "compileGap": 4672
+        "compileGap": 4268
       },
       "topOutcomeBlockers": [
         {
           "key": "compile_gap|compile|oaertype001|BaseSingleProviderProfileInfo.cls|1|duplicate top-level symbol \"<symbol>\"; first seen in /Users/matt/Dev/oaer/example-projects/sf-cred-pkg-develop/force-app/verifiable-app/main/classes/verifiable-api/Abstractions/Mod",
-          "count": 4672,
+          "count": 4268,
           "outcome": "compile_gap",
           "phase": "compile",
           "capabilityId": "oaertype001",
@@ -399,60 +350,60 @@
       ],
       "topDiagnostics": [
         {
-          "key": "OAERSEMA013|SOQL_Test.cls|method \"<symbol>\" references unknown variable \"<symbol>\"",
-          "count": 128,
-          "code": "OAERSEMA013",
+          "key": "OAERSEMA027|SOQL_Test.cls|method \"<symbol>\" has invalid static access for \"<symbol>\": instance method called through a type",
+          "count": 166,
+          "code": "OAERSEMA027",
           "file": "example-projects/sf-cred-pkg-develop/force-app/verifiable-app/next-gen/selectors/dynamic-soql/SOQL_Test.cls",
-          "message": "method \"countSObjectField\" references unknown variable \"Id\""
+          "message": "method \"subQueryField\" has invalid static access for \"SOQL.SubQuery.of\": instance method called through a type"
         },
         {
           "key": "OAERSEMA021|ProviderServiceTest.cls|method \"<symbol>\" references unknown field \"<symbol>\" on Contact",
-          "count": 126,
+          "count": 128,
           "code": "OAERSEMA021",
           "file": "example-projects/sf-cred-pkg-develop/force-app/verifiable-app/test/classes/service/ProviderServiceTest.cls",
           "message": "method \"callingCreateNewProviderFromId\" references unknown field \"Title\" on Contact"
         },
         {
-          "key": "OAERSEMA008|verifiable.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
-          "count": 110,
-          "code": "OAERSEMA008",
-          "file": "example-projects/sf-cred-pkg-develop/force-app/verifiable-app/main/classes/verifiable.cls",
-          "message": "method \"getData\" calls unknown method \"rd.put\""
-        },
-        {
-          "key": "OAERSEMA008|MonitoringActionHandlerTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
-          "count": 102,
-          "code": "OAERSEMA008",
-          "file": "example-projects/sf-cred-pkg-develop/force-app/verifiable-app/test/MonitoringActionHandlerTest.cls",
-          "message": "method \"whenSyncMonitoringIsCalledWithNoMonitoringResultsFromPlatform\" calls unknown method \"removeEnd\""
-        },
-        {
-          "key": "OAERSEMA008|SOQL_Test.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
-          "count": 99,
-          "code": "OAERSEMA008",
-          "file": "example-projects/sf-cred-pkg-develop/force-app/verifiable-app/next-gen/selectors/dynamic-soql/SOQL_Test.cls",
-          "message": "method \"countDistinct\" calls unknown method \"COUNT_DISTINCT\""
-        },
-        {
-          "key": "OAERSEMA008|fflib_InOrderTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
-          "count": 95,
-          "code": "OAERSEMA008",
-          "file": "example-projects/sf-cred-pkg-develop/force-app/fflib/classes/fflib_InOrderTest.cls",
-          "message": "method \"thatVerifyInOrderAllTheMethodsCalled\" calls unknown method \"Then\""
-        },
-        {
           "key": "OAERSEMA008|ProviderServiceImpl.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
-          "count": 89,
+          "count": 58,
           "code": "OAERSEMA008",
           "file": "example-projects/sf-cred-pkg-develop/force-app/verifiable-app/main/classes/service/ProviderServiceImpl.cls",
           "message": "method \"allowEmailSync.get\" calls unknown method \"__coalesce\""
         },
         {
-          "key": "OAERSEMA008|DeleteActionHandlerTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
-          "count": 87,
+          "key": "OAERSEMA021|MappedProviderTriggerHandlerTest.cls|method \"<symbol>\" references unknown field \"<symbol>\" on Contact",
+          "count": 55,
+          "code": "OAERSEMA021",
+          "file": "example-projects/sf-cred-pkg-develop/force-app/verifiable-app/test/classes/triggerHandlers/MappedProviderTriggerHandlerTest.cls",
+          "message": "method \"whenTriggerIsDisabledTriggerShouldNotRun\" references unknown field \"HasOptedOutOfEmail\" on Contact"
+        },
+        {
+          "key": "OAERSEMA021|fflib_QueryFactoryTest.cls|method \"<symbol>\" references unknown field \"<symbol>\" on Contact",
+          "count": 51,
+          "code": "OAERSEMA021",
+          "file": "example-projects/sf-cred-pkg-develop/force-app/fflib/classes/fflib_QueryFactoryTest.cls",
+          "message": "method \"fieldSelections\" references unknown field \"SObjectType\" on Contact"
+        },
+        {
+          "key": "OAERSEMA022|SOQL_Test.cls|method \"<symbol>\" has ambiguous overloads for call \"<symbol>\" with <n> argument(s)",
+          "count": 50,
+          "code": "OAERSEMA022",
+          "file": "example-projects/sf-cred-pkg-develop/force-app/verifiable-app/next-gen/selectors/dynamic-soql/SOQL_Test.cls",
+          "message": "method \"filterId\" has ambiguous overloads for call \"whereAre\" with 1 argument(s)"
+        },
+        {
+          "key": "OAERSEMA021|ProviderInfoServiceTest.cls|method \"<symbol>\" references unknown field \"<symbol>\" on Contact",
+          "count": 37,
+          "code": "OAERSEMA021",
+          "file": "example-projects/sf-cred-pkg-develop/force-app/verifiable-app/test/classes/service/ProviderInfoServiceTest.cls",
+          "message": "method \"whenCreateLiabilityInsuranceForProviderCallsApiSuccessAndCommits\" references unknown field \"MobilePhone\" on Contact"
+        },
+        {
+          "key": "OAERSEMA008|MonitoringActionHandlerTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
+          "count": 33,
           "code": "OAERSEMA008",
-          "file": "example-projects/sf-cred-pkg-develop/force-app/verifiable-app/test/classes/actionHandlers/DeleteActionHandlerTest.cls",
-          "message": "method \"testCall_MissingPayload\" calls unknown method \"__mapEntry\""
+          "file": "example-projects/sf-cred-pkg-develop/force-app/verifiable-app/test/MonitoringActionHandlerTest.cls",
+          "message": "method \"whenSyncMonitoringIsCalledWithNoMonitoringResultsFromPlatform\" calls unknown method \"Type.forName\""
         }
       ]
     },
@@ -462,23 +413,23 @@
       "timeoutSeconds": 30,
       "timedOut": false,
       "exitCode": 0,
-      "elapsedMs": 6680,
+      "elapsedMs": 49578,
       "ready": false,
-      "durationMs": 6423,
+      "durationMs": 49386,
       "summary": {
-        "total": 6287,
+        "total": 5716,
         "pass": 0,
         "fail": 0,
         "unsupported": 0,
         "loadError": 0,
         "compileError": 0,
         "internalError": 0,
-        "compileGap": 6287
+        "compileGap": 5716
       },
       "topOutcomeBlockers": [
         {
           "key": "compile_gap|compile|oaersema002|AddProgramsToProformaOrderHelper.cls|30|method \"<symbol>\" references unknown type \"<symbol>\"",
-          "count": 6287,
+          "count": 5716,
           "outcome": "compile_gap",
           "phase": "compile",
           "capabilityId": "oaersema002",
@@ -489,25 +440,11 @@
       ],
       "topDiagnostics": [
         {
-          "key": "OAERSEMA008|R.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
-          "count": 655,
+          "key": "OAERSEMA008|CartToOrderConverterTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
+          "count": 127,
           "code": "OAERSEMA008",
-          "file": "example-projects/nams-workspace/sfdx-source/nams/src-nmb-namz-core/sfdx-source/core/headless/libraries/R.apex/src/classes/R.cls",
-          "message": "method \"withObj\" calls unknown method \"__mapEntry\""
-        },
-        {
-          "key": "OAERSEMA008|expr_CollectionFunctionsTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
-          "count": 165,
-          "code": "OAERSEMA008",
-          "file": "example-projects/nams-workspace/sfdx-source/nams/src-nmb-namz-core/sfdx-source/core/headless/libraries/expression/src/spec/language/std-functions/expr_CollectionFunctionsTest.cls",
-          "message": "method \"listFunctionReturnsAListContainingAllArguments\" calls unknown method \"LIST\""
-        },
-        {
-          "key": "OAERSEMA018|ProFormaOrderServiceTest.cls|method \"<symbol>\" initializes String local \"<symbol>\" with Id",
-          "count": 123,
-          "code": "OAERSEMA018",
-          "file": "example-projects/nams-workspace/sfdx-source/nams/src-nmb-namz-core/sfdx-source/core/nu-nams-orders/api/orders/adapters/in/ProFormaOrderServiceTest.cls",
-          "message": "method \"canGenerateProFormaOrder\" initializes String local \"accountId\" with Id"
+          "file": "example-projects/nams-workspace/sfdx-source/nams/src-nmb-namz-core/sfdx-source/core/nu-nams-orders/api/helper/CartToOrderConverterTest.cls",
+          "message": "method \"convert_withBillingHistory_expectCartInformationCorrectlyTranslated\" calls unknown method \"setField\""
         },
         {
           "key": "OAERSEMA010|CommerceCheckoutUiTest.cls|method \"<symbol>\" cannot access private property \"<symbol>\"",
@@ -517,32 +454,46 @@
           "message": "method \"canGetOrderSummary\" cannot access private property \"GetOrderSummary\""
         },
         {
-          "key": "OAERSEMA008|CartToOrderConverterTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
-          "count": 103,
-          "code": "OAERSEMA008",
-          "file": "example-projects/nams-workspace/sfdx-source/nams/src-nmb-namz-core/sfdx-source/core/nu-nams-orders/api/helper/CartToOrderConverterTest.cls",
-          "message": "method \"convert_withBillingHistory_expectCartInformationCorrectlyTranslated\" calls unknown method \"setField\""
-        },
-        {
-          "key": "OAERSEMA008|OrderSObjectTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
-          "count": 103,
-          "code": "OAERSEMA008",
-          "file": "example-projects/nams-workspace/sfdx-source/nams/src-nmb-namz-core/sfdx-source/core/nu-nams-orders/api/orders/model/order/OrderSObjectTest.cls",
-          "message": "method \"getId_hasNoIdByDefault\" calls unknown method \"testOrder.getId\""
-        },
-        {
           "key": "OAERSEMA008|OrderToCartConverterTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
-          "count": 97,
+          "count": 95,
           "code": "OAERSEMA008",
           "file": "example-projects/nams-workspace/sfdx-source/nams/src-nmb-namz-core/sfdx-source/core/nu-nams-orders/api/helper/OrderToCartConverterTest.cls",
           "message": "method \"expectOrderInformationCorrectlyConverted\" calls unknown method \"setField\""
         },
         {
-          "key": "OAERSEMA008|NimbleAmsPricingFunctionsTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
-          "count": 94,
+          "key": "OAERSEMA009|R.cls|method \"<symbol>\" has no matching overload for call \"<symbol>\" with <n> argument(s)",
+          "count": 80,
+          "code": "OAERSEMA009",
+          "file": "example-projects/nams-workspace/sfdx-source/nams/src-nmb-namz-core/sfdx-source/core/headless/libraries/R.apex/src/classes/R.cls",
+          "message": "method \"exec\" has no matching overload for call \"toString\" with 1 argument(s)"
+        },
+        {
+          "key": "OAERSEMA008|StoredPaymentMethodsRepositoryImplTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
+          "count": 76,
           "code": "OAERSEMA008",
-          "file": "example-projects/nams-workspace/sfdx-source/nams/src-nmb-namz-core/sfdx-source/core/enterprise-pricing/functions/NimbleAmsPricingFunctionsTest.cls",
-          "message": "method \"isRegisteringEarly_noEvent\" calls unknown method \"ISREGISTERINGEARLY\""
+          "file": "example-projects/nams-workspace/sfdx-source/nams/src-nmb-namz-core/sfdx-source/core/nu-nams-orders/api/payments/domain/repository/StoredPaymentMethodsRepositoryImplTest.cls",
+          "message": "method \"canGetStoredPaymentMethodsById\" calls unknown method \"setField\""
+        },
+        {
+          "key": "OAERSEMA021|CardPointePaymentGatewayService.cls|method \"<symbol>\" references unknown field \"<symbol>\" on CardPointePaymentGatewayService",
+          "count": 60,
+          "code": "OAERSEMA021",
+          "file": "example-projects/nams-workspace/sfdx-source/nams/src-nmb-namz-cardpointe/sfdx-source/namz-nu-cardpointe/classes/CardPointePaymentGatewayService.cls",
+          "message": "method \"buildAddAndUpdateProfileRequest\" references unknown field \"request.BillingStreet\" on CardPointePaymentGatewayService"
+        },
+        {
+          "key": "OAERSEMA008|SyncProformaLineToCartLineTest.cls|method \"<symbol>\" calls unknown method \"<symbol>\"",
+          "count": 54,
+          "code": "OAERSEMA008",
+          "file": "example-projects/nams-workspace/sfdx-source/nams/src-nmb-namz-core/sfdx-source/core/nams-commerce/triggers/trigger-handlers/SyncProformaLineToCartLineTest.cls",
+          "message": "method \"afterUpdate_noCartItemLine_expectNoUpdate\" calls unknown method \"setField\""
+        },
+        {
+          "key": "OAERSEMA010|sfab_FabricatedSObjectTest.cls|method \"<symbol>\" cannot access private method \"<symbol>\"",
+          "count": 53,
+          "code": "OAERSEMA010",
+          "file": "example-projects/nams-workspace/sfdx-source/nams/src-nmb-namz-core/sfdx-source/core/headless/libraries/SObjectFabricator/classes/sfab_FabricatedSObjectTest.cls",
+          "message": "method \"constructor_expectFieldsSetViaSObjectField\" cannot access private method \"fabricatedAccount.getNumberOfNodes\""
         }
       ]
     }

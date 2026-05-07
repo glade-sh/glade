@@ -44,6 +44,9 @@ function topGroups(groups, limit = 8) {
 function summarizeReport(project, report, elapsedMs, command) {
   const outcomeGroups = new Map();
   for (const outcome of report.outcomes || []) {
+    if (outcome.outcome === "pass") {
+      continue;
+    }
     const file = outcome.file ? relative(repoRoot, outcome.file) : "";
     const key = [
       outcome.outcome || "unknown",

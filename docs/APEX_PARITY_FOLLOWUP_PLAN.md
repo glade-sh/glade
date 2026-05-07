@@ -1,12 +1,19 @@
 # Comprehensive Apex Parity Follow-Up Plan
 
-Status date: 2026-05-06.
+Status date: 2026-05-07.
 
 This plan follows `docs/LOCAL_APEX_TEST_EXECUTION_PLAN.md`. The local-test plan
 is the near-term product path: make the six enterprise example projects run
 locally with scratch-org-like test behavior. This follow-up plan is broader. It
 tracks the work needed for `oaer` to become a comprehensive Apex compatibility
 runtime and tooling stack, beyond the first local-test claim.
+
+Current checkpoint: `src-nmb-nutpl-develop` is the first green
+example-project runtime sentinel at `total=761 pass=761`, while the remaining
+five checked example projects still have compile-gap frontiers tracked in
+`docs/fixtures/local-tests-example-projects.json`. Keep this plan behind the
+local-test closure work until all six example projects have bounded green or
+explicitly accepted outcomes.
 
 The goal is not to clone every Salesforce service. The goal is to make public
 Apex language behavior, public platform APIs, metadata-driven data behavior, and
