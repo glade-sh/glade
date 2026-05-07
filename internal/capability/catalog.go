@@ -73,6 +73,7 @@ func BuildCatalog(inv apexdocs.Inventory) Catalog {
 			Owner:      classification.owner,
 			DocsSource: doc.SourcePath,
 		}
+		applyCatalogTargetDefaults(&docEntry)
 		if match, ok := known[doc.Name]; ok && (doc.Namespace == "" || doc.Namespace == "System") {
 			docEntry.Status = match.Status
 			docEntry.Notes = match.Notes
@@ -94,6 +95,7 @@ func BuildCatalog(inv apexdocs.Inventory) Catalog {
 				Owner:      classification.owner,
 				DocsSource: doc.SourcePath,
 			}
+			applyCatalogTargetDefaults(&entry)
 			if match, ok := known[knownKey(doc.Name, member.Name)]; ok {
 				entry.Status = match.Status
 				entry.Notes = match.Notes
@@ -112,6 +114,16 @@ func BuildCatalog(inv apexdocs.Inventory) Catalog {
 	}
 	catalog.Summary = summarizeCatalog(entries)
 	return catalog
+}
+
+func applyCatalogTargetDefaults(entry *CatalogEntry) {
+	if entry == nil {
+		return
+	}
+	if entry.Target == TargetUnsupported && entry.Status == StatusUnknown {
+		entry.Status = StatusUnsupported
+		entry.Notes = "Documentation or guide surface; not an executable local runtime target."
+	}
 }
 
 func WriteCatalogJSON(w io.Writer, catalog Catalog) error {

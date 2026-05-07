@@ -4,7 +4,7 @@
 - Source members: 5177
 - Coverage entries: 8401
 - Known supported entries: 152
-- Unknown entries: 8195
+- Unknown entries: 7103
 - Tooling API classes: 7091
 - Tooling API members: 73326
 - Runtime APIs found in Tooling API: 109/110
@@ -14,7 +14,7 @@
 | Core stdlib | `executable-parity` | 968 | 87 | 32 | 0 | 0 | 849 |
 | Data platform | `local-model` | 835 | 58 | 5 | 0 | 0 | 772 |
 | Integration, security, and UI | `local-model` | 761 | 6 | 13 | 0 | 0 | 742 |
-| Language and guide docs | `unsupported` | 1092 | 0 | 0 | 0 | 0 | 1092 |
+| Language and guide docs | `unsupported` | 1092 | 0 | 0 | 0 | 1092 | 0 |
 | Product namespaces | `typed-stub` | 4616 | 0 | 0 | 0 | 0 | 4616 |
 | Tests, async, and limits | `local-model` | 129 | 1 | 4 | 0 | 0 | 124 |
 

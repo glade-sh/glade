@@ -12,8 +12,8 @@ import (
 func TestBuildCatalogClassifiesInventoryEntries(t *testing.T) {
 	inv := apexdocs.Inventory{
 		SchemaVersion: 1,
-		TotalFiles:    4,
-		TotalMembers:  4,
+		TotalFiles:    5,
+		TotalMembers:  5,
 		Documents: []apexdocs.Document{{
 			SourcePath: "apex_methods_system_string.md",
 			Kind:       "class",
@@ -54,11 +54,20 @@ func TestBuildCatalogClassifiesInventoryEntries(t *testing.T) {
 				Name:      "areEqual",
 				Signature: "areEqual(expected, actual)",
 			}},
+		}, {
+			SourcePath: "apex_language_variables.md",
+			Kind:       "guide",
+			Name:       "Variables",
+			Members: []apexdocs.Member{{
+				Kind:      "section",
+				Name:      "local variables",
+				Signature: "local variables",
+			}},
 		}},
 	}
 
 	catalog := BuildCatalog(inv)
-	if catalog.SchemaVersion != CatalogSchemaVersion || catalog.SourceDocuments != 4 || catalog.SourceMembers != 4 {
+	if catalog.SchemaVersion != CatalogSchemaVersion || catalog.SourceDocuments != 5 || catalog.SourceMembers != 5 {
 		t.Fatalf("catalog summary = %#v", catalog)
 	}
 
@@ -80,6 +89,11 @@ func TestBuildCatalogClassifiesInventoryEntries(t *testing.T) {
 	systemAssert := findCatalogEntry(t, catalog, "Assert.areEqual")
 	if systemAssert.Area != "Core stdlib" || systemAssert.Target != TargetExecutableParity {
 		t.Fatalf("System.Assert entry = %#v", systemAssert)
+	}
+
+	variables := findCatalogEntry(t, catalog, "Variables")
+	if variables.Target != TargetUnsupported || variables.Status != StatusUnsupported || !strings.Contains(variables.Notes, "not an executable") {
+		t.Fatalf("Variables entry = %#v", variables)
 	}
 }
 

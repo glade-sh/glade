@@ -235,70 +235,8 @@
       "supported": 0,
       "partial": 0,
       "stub": 0,
-      "unsupported": 0,
-      "unknown": 1092,
-      "topUnknown": [
-        {
-          "symbol": "$A",
-          "kind": "document",
-          "owner": "internal/apexast",
-          "docsSource": "lightning-aura/ref_jsapi_dollarA.md"
-        },
-        {
-          "symbol": "`@salesforce`",
-          "kind": "document",
-          "owner": "internal/apexast",
-          "docsSource": "lwc/reference-salesforce-modules.md"
-        },
-        {
-          "symbol": "`experience/cms*Api`",
-          "kind": "document",
-          "owner": "internal/apexast",
-          "docsSource": "lwc/reference-experience-cms-api.md"
-        },
-        {
-          "symbol": "`experience/cmsEditorApi`",
-          "kind": "document",
-          "owner": "internal/apexast",
-          "docsSource": "lwc/reference-experience-cms-editor-api.md"
-        },
-        {
-          "symbol": "`lightning/analyticsWaveApi`",
-          "kind": "document",
-          "owner": "internal/apexast",
-          "docsSource": "lwc/reference-lightning-analytics-wave-api.md"
-        },
-        {
-          "symbol": "`lightning/graphql`",
-          "kind": "document",
-          "owner": "internal/apexast",
-          "docsSource": "lwc/reference-lightning-graphql-module.md"
-        },
-        {
-          "symbol": "`lightning/industriesEducationPublicApi`",
-          "kind": "document",
-          "owner": "internal/apexast",
-          "docsSource": "lwc/reference-lightning-industries-education.md"
-        },
-        {
-          "symbol": "`lightning/mobileCapabilities`",
-          "kind": "document",
-          "owner": "internal/apexast",
-          "docsSource": "lwc/reference-lightning-mobilecapabilities.md"
-        },
-        {
-          "symbol": "`lightning/serviceKnowledgeApi`",
-          "kind": "document",
-          "owner": "internal/apexast",
-          "docsSource": "lwc/reference-lightning-service-knowledge-api.md"
-        },
-        {
-          "symbol": "`lightning/ui*Api`",
-          "kind": "document",
-          "owner": "internal/apexast",
-          "docsSource": "lwc/reference-ui-api.md"
-        }
-      ]
+      "unsupported": 1092,
+      "unknown": 0
     },
     {
       "area": "Product namespaces",
@@ -453,8 +391,8 @@
     "supported": 152,
     "partial": 54,
     "stub": 0,
-    "unsupported": 0,
-    "unknown": 8195
+    "unsupported": 1092,
+    "unknown": 7103
   },
   "tooling": {
     "source": "tooling_system_symbols.json.gz",
