@@ -242,6 +242,18 @@ func (v Value) Equal(other Value) bool {
 	}
 }
 
+func valueIdentityEqual(left, right Value) bool {
+	if left.Kind != right.Kind {
+		return false
+	}
+	switch left.Kind {
+	case ValueList, ValueSet, ValueMap, ValueObject:
+		return left.Ref != 0 && left.Ref == right.Ref
+	default:
+		return left.Equal(right)
+	}
+}
+
 func platformScalarObjectText(value Value) (string, bool) {
 	if value.Kind != ValueObject {
 		return "", false
@@ -399,6 +411,9 @@ func valuesString(values []Value) string {
 }
 
 func mapString(values map[string]Value) string {
+	if len(values) == 0 {
+		return "{}"
+	}
 	keys := sortedMapKeys(values)
 	out := "Map{"
 	for i, key := range keys {

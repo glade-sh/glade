@@ -2479,6 +2479,10 @@ System.assert(!nameIt.hasNext());
 Iterator<String> splitIt = 'CreatedBy.Name'.split('\\.').iterator();
 System.assertEquals('CreatedBy', splitIt.next());
 System.assertEquals('Name', splitIt.next());
+
+System.Iterator<Integer> systemIt = xs.iterator();
+System.assert(systemIt.hasNext());
+System.assertEquals(1, systemIt.next());
 `)
 	if err != nil {
 		t.Fatal(err)

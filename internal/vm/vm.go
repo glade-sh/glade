@@ -1328,7 +1328,7 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 				return Null, err
 			}
 			typeName := strings.TrimPrefix(expr.Callee, "__cast:")
-			return vm.coerceAssignable(typeName, value)
+			return vm.coerceCast(typeName, value)
 		}
 		if expr.Callee == "__ternary" {
 			if len(expr.Args) != 3 {
@@ -1497,7 +1497,7 @@ func (vm *VM) evalBinary(op string, left, right Value, result *Result) (Value, e
 		}
 		return Bool(equal), nil
 	case "===", "!==":
-		equal := left.Equal(right)
+		equal := valueIdentityEqual(left, right)
 		if op == "!==" {
 			equal = !equal
 		}
@@ -1510,6 +1510,18 @@ func (vm *VM) evalBinary(op string, left, right Value, result *Result) (Value, e
 func (vm *VM) apexEquals(left, right Value, result *Result) (bool, error) {
 	if left.Kind == ValueNull || right.Kind == ValueNull {
 		return left.Kind == ValueNull && right.Kind == ValueNull, nil
+	}
+	if left.Kind == ValueList && right.Kind == ValueList {
+		if len(left.List) != len(right.List) {
+			return false, nil
+		}
+		for i := range left.List {
+			equal, err := vm.apexEquals(left.List[i], right.List[i], result)
+			if err != nil || !equal {
+				return equal, err
+			}
+		}
+		return true, nil
 	}
 	if left.Kind != ValueObject || platformScalarObject(left.Type) || left.Type == "Type" {
 		return left.Equal(right), nil
@@ -1532,6 +1544,9 @@ func (vm *VM) apexEquals(left, right Value, result *Result) (bool, error) {
 }
 
 func (vm *VM) evalIncrementExpression(expr ir.Expr, result *Result) (Value, error) {
+	if expr.Left != nil && expr.Left.Kind == ir.ExprCall {
+		return vm.evalIndexedIncrementExpression(expr, result)
+	}
 	if expr.Left == nil || expr.Left.Kind != ir.ExprVariable {
 		return Null, fmt.Errorf("%s requires assignable variable target", expr.Callee)
 	}
@@ -1549,6 +1564,46 @@ func (vm *VM) evalIncrementExpression(expr ir.Expr, result *Result) (Value, erro
 		return Null, err
 	}
 	if err := vm.assign(target, next); err != nil {
+		return Null, err
+	}
+	if strings.HasPrefix(expr.Callee, "__postfix:") {
+		return current, nil
+	}
+	return next, nil
+}
+
+func (vm *VM) evalIndexedIncrementExpression(expr ir.Expr, result *Result) (Value, error) {
+	target := expr.Left
+	if target == nil || target.Left == nil || target.Left.Kind != ir.ExprVariable || len(target.Args) != 1 {
+		return Null, fmt.Errorf("%s requires assignable variable target", expr.Callee)
+	}
+	receiverName := target.Left.Name
+	receiver, err := vm.lookup(receiverName)
+	if err != nil {
+		return Null, err
+	}
+	index, err := vm.eval(target.Args[0], result)
+	if err != nil {
+		return Null, err
+	}
+	if receiver.Kind != ValueList || index.Kind != ValueInt {
+		return Null, fmt.Errorf("%s requires List integer index target", expr.Callee)
+	}
+	i := int(index.Int)
+	if i < 0 || i >= len(receiver.List) {
+		return Null, fmt.Errorf("List index out of bounds: %d", i)
+	}
+	current := receiver.List[i]
+	operator := "+"
+	if strings.HasSuffix(expr.Callee, "--") {
+		operator = "-"
+	}
+	next, err := evalBinary(operator, current, Int(1))
+	if err != nil {
+		return Null, err
+	}
+	receiver.List[i] = next
+	if err := vm.storeReceiver(receiverName, receiver); err != nil {
 		return Null, err
 	}
 	if strings.HasPrefix(expr.Callee, "__postfix:") {
@@ -6246,15 +6301,32 @@ func (vm *VM) isChildRelationshipField(definition storage.ObjectDefinition, fiel
 
 func derivedVMChildRelationshipName(definition storage.ObjectDefinition) string {
 	if strings.TrimSpace(definition.PluralLabel) != "" {
-		return strings.ReplaceAll(definition.PluralLabel, " ", "")
+		return normalizeDerivedChildRelationshipName(definition.PluralLabel)
 	}
 	if strings.TrimSpace(definition.Label) != "" {
-		return strings.ReplaceAll(definition.Label, " ", "") + "s"
+		return normalizeDerivedChildRelationshipName(definition.Label)
 	}
 	if definition.APIName != "" {
-		return definition.APIName + "s"
+		return normalizeDerivedChildRelationshipName(definition.APIName)
 	}
 	return ""
+}
+
+func normalizeDerivedChildRelationshipName(name string) string {
+	name = strings.ReplaceAll(strings.TrimSpace(name), " ", "")
+	if name == "" {
+		return ""
+	}
+	if strings.HasSuffix(name, "ys") && len(name) > 2 {
+		return strings.TrimSuffix(name, "ys") + "ies"
+	}
+	if strings.HasSuffix(name, "s") {
+		return name
+	}
+	if strings.HasSuffix(name, "y") && len(name) > 1 {
+		return strings.TrimSuffix(name, "y") + "ies"
+	}
+	return name + "s"
 }
 
 func sObjectIDFromFields(fields map[string]Value) storage.ID {
@@ -8767,6 +8839,7 @@ func (vm *VM) allowOpenSObjectJSONFields(typeName string) bool {
 
 func (vm *VM) schemaGlobalDescribe() Value {
 	out := Map()
+	out.Type = "Schema.GlobalDescribeMap"
 	if vm.Org == nil {
 		return out
 	}
@@ -8776,7 +8849,11 @@ func (vm *VM) schemaGlobalDescribe() Value {
 	}
 	sort.Strings(names)
 	for _, name := range names {
-		out.Map[mapKey(String(name))] = sObjectTypeToken(name)
+		token := sObjectTypeToken(name)
+		out.Map[mapKey(String(name))] = token
+		if lowered := strings.ToLower(name); lowered != name {
+			out.Map[mapKey(String(lowered))] = token
+		}
 	}
 	return out
 }
@@ -12980,7 +13057,11 @@ func genericBaseName(typeName string) (string, bool) {
 	if open < 0 || !strings.HasSuffix(typeName, ">") {
 		return "", false
 	}
-	return strings.TrimSpace(typeName[:open]), true
+	base := strings.TrimSpace(typeName[:open])
+	if rest, ok := stripLeadingSystemNamespace(base); ok {
+		base = rest
+	}
+	return base, true
 }
 
 func (vm *VM) conversionScore(paramType string, value Value) int {
@@ -13187,6 +13268,9 @@ func (vm *VM) typeDistance(typeName, target string, seen map[string]bool) (int, 
 func valueTypeName(value Value) string {
 	switch value.Kind {
 	case ValueInt:
+		if value.Type != "" {
+			return value.Type
+		}
 		return "Integer"
 	case ValueDecimal:
 		return "Decimal"
@@ -13413,6 +13497,12 @@ func (vm *VM) evalInstanceOf(value Value, target string) Value {
 	target = strings.TrimSpace(target)
 	if target == "" || value.Kind == ValueNull {
 		return Bool(false)
+	}
+	if strings.EqualFold(target, "Id") && value.Kind == ValueString {
+		return Bool(validateApexIDShape(value.Text) == nil)
+	}
+	if strings.EqualFold(target, "Datetime") && value.Kind == ValueObject && strings.EqualFold(value.Type, "Date") {
+		return Bool(true)
 	}
 	if value.Kind == ValueObject {
 		return Bool(vm.typeMatches(value.Type, target, make(map[string]bool)))
@@ -13791,6 +13881,18 @@ func (vm *VM) ensureAssignable(typeName string, value Value) error {
 	return err
 }
 
+func (vm *VM) coerceCast(typeName string, value Value) (Value, error) {
+	coerced, err := vm.coerceAssignable(typeName, value)
+	if err == nil {
+		return coerced, nil
+	}
+	var thrown *apexThrowError
+	if errors.As(err, &thrown) {
+		return Null, err
+	}
+	return Null, newExceptionError("System.TypeException", fmt.Sprintf("Invalid conversion from runtime type %s to %s", valueTypeName(value), typeName))
+}
+
 func (vm *VM) coerceCollectionElement(collectionType string, value Value) (Value, error) {
 	elementType, ok := collectionElementType(collectionType)
 	if !ok {
@@ -13888,7 +13990,7 @@ func collectionIteratorType(collectionType string) string {
 }
 
 func isIteratorValue(value Value) bool {
-	return value.Kind == ValueObject && (value.Type == "Iterator" || strings.HasPrefix(value.Type, "Iterator<") || value.Type == "Database.QueryLocatorIterator")
+	return value.Kind == ValueObject && (strings.EqualFold(value.Type, "Iterator") || strings.HasPrefix(strings.ToLower(value.Type), "iterator<") || strings.HasPrefix(strings.ToLower(value.Type), "system.iterator<") || value.Type == "Database.QueryLocatorIterator")
 }
 
 func callIteratorMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
@@ -14891,6 +14993,9 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			}
 			value, ok := receiver.Map[vm.mapKey(args[0])]
 			if !ok {
+				value, ok = specialMapLookup(receiver, args[0])
+			}
+			if !ok {
 				return Null, true, nil
 			}
 			return value, true, nil
@@ -14899,6 +15004,9 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 				return Null, true, fmt.Errorf("Map.containsKey expects 1 argument")
 			}
 			_, ok := receiver.Map[vm.mapKey(args[0])]
+			if !ok {
+				_, ok = specialMapLookup(receiver, args[0])
+			}
 			return Bool(ok), true, nil
 		case "containsValue":
 			if len(args) != 1 {
@@ -15105,6 +15213,22 @@ func (vm *VM) mapKey(value Value) string {
 	return mapKey(value)
 }
 
+func specialMapLookup(receiver, key Value) (Value, bool) {
+	if receiver.Kind != ValueMap || key.Kind != ValueString {
+		return Null, false
+	}
+	switch receiver.Type {
+	case "Schema.GlobalDescribeMap":
+		for rawKey, value := range receiver.Map {
+			candidate := valueFromMapKey(rawKey)
+			if candidate.Kind == ValueString && strings.EqualFold(candidate.Text, key.Text) {
+				return value, true
+			}
+		}
+	}
+	return Null, false
+}
+
 func (vm *VM) fflibIndependentMocksEnabled() bool {
 	class, ok := vm.lookupClass("fflib_ApexMocksConfig")
 	if !ok {
@@ -15305,7 +15429,10 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		}
 		fieldArg, err := vm.sObjectFieldArg(receiver.Type, args[0])
 		if err != nil {
-			return Null, true, fmt.Errorf("SObject.get expects field name String or Schema.SObjectField")
+			if errors.Is(err, errSObjectFieldTokenWrongObject) {
+				return Null, true, newExceptionError("SObjectException", err.Error())
+			}
+			return Null, true, fmt.Errorf("SObject.get expects field name String or Schema.SObjectField: %w", err)
 		}
 		field := vm.resolveSObjectFieldName(receiver.Type, fieldArg)
 		value, ok := receiver.Fields[field]
@@ -15670,12 +15797,12 @@ func (vm *VM) sObjectFieldArg(receiverType string, value Value) (string, error) 
 	if value.Kind == ValueString {
 		return value.Text, nil
 	}
-	if value.Kind == ValueObject && value.Type == "Schema.SObjectField" {
+	if value.Kind == ValueObject && strings.EqualFold(value.Type, "Schema.SObjectField") {
 		if objectValue, ok := value.Fields["object"]; ok && objectValue.Kind == ValueString && receiverType != "" && !strings.EqualFold(receiverType, "SObject") {
 			if vm.Org != nil {
 				if receiverObject, ok := storage.ResolveObjectName(*vm.Org, receiverType); ok {
 					if tokenObject, ok := storage.ResolveObjectName(*vm.Org, objectValue.Text); ok && tokenObject != receiverObject {
-						return "", fmt.Errorf("field token belongs to %s, not %s", objectValue.Text, receiverType)
+						return "", fmt.Errorf("%w: field token belongs to %s, not %s", errSObjectFieldTokenWrongObject, objectValue.Text, receiverType)
 					}
 				}
 			}
@@ -15688,6 +15815,8 @@ func (vm *VM) sObjectFieldArg(receiverType string, value Value) (string, error) 
 	}
 	return "", fmt.Errorf("expected field name")
 }
+
+var errSObjectFieldTokenWrongObject = errors.New("field token belongs to another SObject type")
 
 func apexPagesSeverityStaticValue(name string) (Value, bool) {
 	prefix := "ApexPages.Severity."

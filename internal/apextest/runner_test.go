@@ -42,6 +42,60 @@ private class MathTest {
 	}
 }
 
+func TestRunKeepsPageParametersAndDynamicSelectorBinds(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/objects/Template__c/Template__c.object-meta.xml"), `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Template</label><pluralLabel>Templates</pluralLabel><nameField><type>Text</type><label>Name</label></nameField></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/objects/Template__c/fields/SOQLQuery__c.field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>SOQLQuery__c</fullName><label>SOQL Query</label><type>LongTextArea</type></CustomField>`)
+	writeFile(t, filepath.Join(root, "force-app/main/objects/Template__c/fields/TemplateSource__c.field-meta.xml"), `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>TemplateSource__c</fullName><label>Template Source</label><type>LongTextArea</type></CustomField>`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/TemplateSelector.cls"), `
+public class TemplateSelector {
+  public static Template__c selectById(Id recordId) {
+    Set<Id> escapedIdSet = new Set<Id>{ recordId };
+    List<Template__c> rows = Database.query('SELECT Id, Name, SOQLQuery__c, TemplateSource__c FROM Template__c WHERE Id IN :escapedIdSet');
+    if (rows.isEmpty()) {
+      return null;
+    }
+    return rows[0];
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/TemplateController.cls"), `
+public class TemplateController {
+  public String Source { get; private set; }
+  public String Query { get; private set; }
+  public TemplateController() {
+    Id templateId = ApexPages.currentPage().getParameters().get('templateId');
+    Template__c row = TemplateSelector.selectById(templateId);
+    if (row != null) {
+      Source = row.TemplateSource__c;
+      Query = row.SOQLQuery__c;
+    }
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/TemplateControllerTest.cls"), `
+@isTest
+private class TemplateControllerTest {
+  @isTest static void loadsFromCurrentPageParameter() {
+    Template__c tpl = new Template__c(Name = 'T', SOQLQuery__c = 'SELECT Id FROM Account', TemplateSource__c = 'Hello');
+    insert tpl;
+    PageReference pageRef = new PageReference('/apex/Template');
+    Test.setCurrentPage(pageRef);
+    ApexPages.currentPage().getParameters().put('templateId', tpl.Id);
+    TemplateController controller = new TemplateController();
+    System.assertEquals('Hello', controller.Source);
+    System.assertEquals('SELECT Id FROM Account', controller.Query);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if summary := run.Summary(); summary.Total != 1 || summary.Passed != 1 {
+		t.Fatalf("summary = %#v run = %#v", summary, run)
+	}
+}
+
 func TestExtractMethodBodyHandlesBackslashEscapedApexStrings(t *testing.T) {
 	source := `@IsTest
 private class DataRequestTest {

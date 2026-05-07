@@ -815,15 +815,32 @@ func childRelationship(org storage.OrgState, parentDefinition storage.ObjectDefi
 
 func derivedChildRelationshipName(definition storage.ObjectDefinition) string {
 	if strings.TrimSpace(definition.PluralLabel) != "" {
-		return strings.ReplaceAll(definition.PluralLabel, " ", "")
+		return normalizeDerivedChildRelationshipName(definition.PluralLabel)
 	}
 	if strings.TrimSpace(definition.Label) != "" {
-		return strings.ReplaceAll(definition.Label, " ", "") + "s"
+		return normalizeDerivedChildRelationshipName(definition.Label)
 	}
 	if definition.APIName != "" {
-		return definition.APIName + "s"
+		return normalizeDerivedChildRelationshipName(definition.APIName)
 	}
 	return ""
+}
+
+func normalizeDerivedChildRelationshipName(name string) string {
+	name = strings.ReplaceAll(strings.TrimSpace(name), " ", "")
+	if name == "" {
+		return ""
+	}
+	if strings.HasSuffix(name, "ys") && len(name) > 2 {
+		return strings.TrimSuffix(name, "ys") + "ies"
+	}
+	if strings.HasSuffix(name, "s") {
+		return name
+	}
+	if strings.HasSuffix(name, "y") && len(name) > 1 {
+		return strings.TrimSuffix(name, "y") + "ies"
+	}
+	return name + "s"
 }
 
 func expandFieldsFunctions(definition storage.ObjectDefinition, fields []string) ([]string, error) {
@@ -1428,7 +1445,26 @@ func recordValue(org storage.OrgState, definition storage.ObjectDefinition, reco
 		return storage.NullValue(), true
 	}
 	value, ok := record.Fields[canonicalField]
+	if !ok && strings.EqualFold(definition.APIName, "Contact") && strings.EqualFold(canonicalField, "Name") {
+		return contactNameValue(record)
+	}
 	return value, ok
+}
+
+func contactNameValue(record storage.Record) (storage.Value, bool) {
+	first, hasFirst := record.Fields["FirstName"]
+	last, hasLast := record.Fields["LastName"]
+	parts := make([]string, 0, 2)
+	if hasFirst && first.Kind == storage.ValueString && strings.TrimSpace(first.String) != "" {
+		parts = append(parts, strings.TrimSpace(first.String))
+	}
+	if hasLast && last.Kind == storage.ValueString && strings.TrimSpace(last.String) != "" {
+		parts = append(parts, strings.TrimSpace(last.String))
+	}
+	if len(parts) == 0 {
+		return storage.Value{}, false
+	}
+	return storage.StringValue(strings.Join(parts, " ")), true
 }
 
 func equalValues(left, right storage.Value) bool {
@@ -1436,10 +1472,10 @@ func equalValues(left, right storage.Value) bool {
 		return leftNumber.Cmp(rightNumber) == 0
 	}
 	if left.Kind == storage.ValueID && right.Kind == storage.ValueString {
-		return string(left.ID) == right.String
+		return idTextEqual(string(left.ID), right.String)
 	}
 	if left.Kind == storage.ValueString && right.Kind == storage.ValueID {
-		return left.String == string(right.ID)
+		return idTextEqual(left.String, string(right.ID))
 	}
 	if left.Kind == storage.ValueID && right.Kind == storage.ValueInteger {
 		return idEqualsInteger(left.ID, right.Integer)
@@ -1462,10 +1498,23 @@ func equalValues(left, right storage.Value) bool {
 	case storage.ValueDecimal:
 		return left.Decimal == right.Decimal
 	case storage.ValueID:
-		return left.ID == right.ID
+		return idTextEqual(string(left.ID), string(right.ID))
 	default:
 		return false
 	}
+}
+
+func idTextEqual(left, right string) bool {
+	if left == right {
+		return true
+	}
+	if len(left) == 15 && len(right) == 18 {
+		return left == right[:15]
+	}
+	if len(left) == 18 && len(right) == 15 {
+		return left[:15] == right
+	}
+	return false
 }
 
 func idEqualsInteger(id storage.ID, value int64) bool {

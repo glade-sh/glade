@@ -2413,6 +2413,29 @@ func TestExecRejectsUnrelatedObjectAssignment(t *testing.T) {
 	}
 }
 
+func TestExecInvalidObjectCastThrowsTypeException(t *testing.T) {
+	program, err := CompileAnonymous(`
+try {
+	Base base = (Base) new Other();
+	System.assert(false);
+} catch (System.TypeException e) {
+	System.assertEquals('Invalid conversion from runtime type Other to Base', e.getMessage());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	for _, class := range []Class{{Name: "Base"}, {Name: "Other"}} {
+		if err := machine.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecRejectsNonConstructableRegisteredTypes(t *testing.T) {
 	cases := []struct {
 		name  string

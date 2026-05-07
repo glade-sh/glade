@@ -749,6 +749,69 @@ System.assert(Account.Name != Account.Id);
 	}
 }
 
+func TestExecMapSObjectFieldKeysRoundTripToSObjectGet(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String, Schema.SObjectField> fields = Account.SObjectType.getDescribe().fields.getMap();
+Schema.SObjectField idField = fields.get('Id');
+Schema.SObjectField nameField = fields.get('Name');
+Account record = new Account(Id = '001000000000001AAA', Name = 'Acme');
+Map<Schema.SObjectField, Object> expected = new Map<Schema.SObjectField, Object>{
+  idField => record.Id,
+  nameField => record.get('Name')
+};
+for (Schema.SObjectField fieldToken : expected.keySet()) {
+  System.assertEquals(expected.get(fieldToken), record.get(fieldToken));
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSObjectGetWrongFieldTokenIsCatchable(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String, Schema.SObjectType> globalDescribe = Schema.getGlobalDescribe();
+Schema.SObjectType accountType = globalDescribe.get('Account');
+SObject inserted = accountType.newSObject();
+inserted.put('Name', 'Acme');
+insert inserted;
+Id accountId = inserted.Id;
+SObject queried = Database.query('SELECT Id, Name FROM Account WHERE Id = :accountId LIMIT 1');
+System.assertNotEquals(null, queried.Id);
+System.assertNotEquals(null, queried.get('Name'));
+Map<String, Schema.SObjectField> accountFields = accountType.getDescribe().fields.getMap();
+Map<Schema.SObjectField, Object> expected = new Map<Schema.SObjectField, Object>{
+  accountFields.get('Id') => queried.Id,
+  accountFields.get('Name') => queried.get('Name')
+};
+for (Schema.SObjectField fieldToken : expected.keySet()) {
+  System.assertEquals(expected.get(fieldToken), queried.get(fieldToken));
+}
+Boolean caught = false;
+try {
+  globalDescribe.get('Opportunity').newSObject().get(accountFields.get('Id'));
+} catch (Exception e) {
+  caught = true;
+}
+System.assert(caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSchemaSObjectTypeFieldsPathReturnsFieldToken(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals(Contact.LastName, Schema.Contact.SObjectType.fields.lastName);
@@ -835,6 +898,27 @@ System.assert(count instanceof Double);
 System.assert(longer instanceof Decimal);
 System.assert(amount instanceof Double);
 System.assert(!(amount instanceof Integer));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecInstanceOfHonorsScalarRuntimeTypes(t *testing.T) {
+	program, err := CompileAnonymous(`
+Object longValue = 3L;
+Object integerValue = 3;
+Object dateValue = Date.today();
+Object idString = '001000000000001AAA';
+System.assert(longValue instanceof Long);
+System.assert(!(longValue instanceof Integer));
+System.assert(integerValue instanceof Integer);
+System.assert(dateValue instanceof Datetime);
+System.assert(idString instanceof Id);
+System.assert(!('bob' instanceof Id));
 `)
 	if err != nil {
 		t.Fatal(err)

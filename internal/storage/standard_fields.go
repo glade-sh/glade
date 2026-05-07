@@ -295,6 +295,14 @@ func EnsureStandardObject(org *OrgState, objectName string) {
 		state.Indexes = make(map[string]IndexSet)
 	}
 	EnsureStandardObjectFields(&state.Definition)
+	if entry, ok := standardObjectCatalogEntryFor(objectName); ok {
+		if state.Definition.Label == objectName && entry.Definition.Label != "" {
+			state.Definition.Label = entry.Definition.Label
+		}
+		if state.Definition.PluralLabel == objectName+"s" && entry.Definition.PluralLabel != "" {
+			state.Definition.PluralLabel = entry.Definition.PluralLabel
+		}
+	}
 	org.Objects[objectName] = state
 }
 

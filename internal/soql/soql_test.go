@@ -91,6 +91,14 @@ func TestExecuteResolvesLowercaseIdAsStandardField(t *testing.T) {
 		t.Fatalf("Id field = %#v", value)
 	}
 
+	result, err = ParseAndExecute(org, "SELECT id FROM Account WHERE id IN ('001000000000001AAA')")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 {
+		t.Fatalf("18-character Id literal rows = %d", result.Rows)
+	}
+
 	result, err = ParseAndExecute(org, "SELECT id FROM Account WHERE id = 001000000000001")
 	if err != nil {
 		t.Fatal(err)

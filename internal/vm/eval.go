@@ -20,6 +20,7 @@ func parseLiteral(raw string) (Value, error) {
 		text := strings.TrimSuffix(strings.TrimPrefix(raw, "'"), "'")
 		return String(strings.ReplaceAll(text, "''", "'")), nil
 	}
+	isLong := strings.HasSuffix(raw, "L") || strings.HasSuffix(raw, "l")
 	numberRaw := strings.TrimSuffix(strings.TrimSuffix(raw, "L"), "l")
 	if strings.Contains(numberRaw, ".") {
 		value, err := strconv.ParseFloat(numberRaw, 64)
@@ -32,7 +33,11 @@ func parseLiteral(raw string) (Value, error) {
 	if err != nil {
 		return Null, fmt.Errorf("invalid literal %q", raw)
 	}
-	return Int(value), nil
+	out := Int(value)
+	if isLong {
+		out.Type = "Long"
+	}
+	return out, nil
 }
 
 func evalUnary(op string, value Value) (Value, error) {
