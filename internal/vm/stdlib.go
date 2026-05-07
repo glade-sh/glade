@@ -1369,6 +1369,9 @@ func patternRegexpSource(pattern Value) (string, error) {
 
 func callPatternMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
 	switch method {
+	case "matches":
+		value, err := patternMatches(args)
+		return value, receiver, false, true, err
 	case "matcher":
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, receiver, false, true, fmt.Errorf("Pattern.matcher expects input String")

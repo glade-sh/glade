@@ -20,6 +20,7 @@ import (
 	"io"
 	"math"
 	"net/url"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -86,6 +87,7 @@ type VM struct {
 	debugHooks       DebugHooks
 	hasDebugHooks    bool
 	ctx              context.Context
+	activeGetters    map[string]int
 	activeSetters    map[string]int
 	triggerGlobals   map[string]Value
 	cryptoRandomSeq  uint64
@@ -239,6 +241,7 @@ func New(stdout io.Writer) *VM {
 		platformCache:   make(map[string]map[string]cacheEntry),
 		metadataDeploys: make(map[string]Value),
 		ctx:             context.Background(),
+		activeGetters:   make(map[string]int),
 		activeSetters:   make(map[string]int),
 		staticInitState: make(map[string]staticInitState),
 	}
@@ -1433,12 +1436,68 @@ func (vm *VM) evalIncrementExpression(expr ir.Expr, result *Result) (Value, erro
 	return next, nil
 }
 
+func normalizeStaticCallCasing(callee string) string {
+	dot := strings.IndexByte(callee, '.')
+	if dot < 0 {
+		return callee
+	}
+	typeName := callee[:dot]
+	member := callee[dot+1:]
+	switch strings.ToLower(typeName) {
+	case "system":
+		switch strings.ToLower(member) {
+		case "assert":
+			return "System.assert"
+		case "assertequals":
+			return "System.assertEquals"
+		case "assertnotequals":
+			return "System.assertNotEquals"
+		case "debug":
+			return "System.debug"
+		}
+	case "database":
+		if strings.EqualFold(member, "setSavePoint") {
+			return "Database.setSavepoint"
+		}
+	case "pattern":
+		switch strings.ToLower(member) {
+		case "compile":
+			return "Pattern.compile"
+		case "matches":
+			return "Pattern.matches"
+		case "quote":
+			return "Pattern.quote"
+		}
+	}
+	return callee
+}
+
 func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, result *Result) (Value, error) {
 	if strings.HasPrefix(callee, "new:") {
 		return vm.constructValue(strings.TrimPrefix(callee, "new:"), args, namedArgs, result)
 	}
 	if (callee == "this" || callee == "super") && vm.currentMethod.IsConstructor {
 		return vm.callChainedConstructor(callee, args, result)
+	}
+	callee = normalizeStaticCallCasing(callee)
+	if className, methodName, ok := vm.splitClassMember(callee); ok {
+		if value, handled, err := vm.callEnumStaticMember(className, methodName, args); handled || err != nil {
+			return value, err
+		}
+		if method, ok, ambiguous := vm.resolveStaticMethodForArgs(className, methodName, args); ok {
+			if err := vm.checkMemberAccess(method.ClassName, method.Access, method.Name, method.Modifiers); err != nil {
+				return Null, err
+			}
+			if err := vm.ensureClassInitialized(method.ClassName); err != nil {
+				return Null, err
+			}
+			if vm.shouldEnqueueFuture(method) {
+				return vm.enqueueFuture(method, args, result)
+			}
+			return vm.callMethod(method, args, result)
+		} else if ambiguous {
+			return Null, vm.ambiguousOverloadError(callee, args)
+		}
 	}
 	if value, ok, err := vm.callMember(callee, args, result); ok || err != nil {
 		return value, err
@@ -1504,7 +1563,7 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 	}
 	if dot := strings.LastIndex(callee, "."); dot > 0 && dot < len(callee)-1 {
 		typeName, methodName := callee[:dot], callee[dot+1:]
-		if _, classExists := vm.Classes[typeName]; !classExists {
+		if _, classExists := vm.resolveClassName(typeName); !classExists {
 			if value, handled, err := vm.callSObjectTypeStaticMember(typeName, methodName, args); handled || err != nil {
 				return value, err
 			}
@@ -1571,6 +1630,22 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 	}
 	if strings.HasPrefix(callee, "DateTime.") {
 		callee = "Datetime." + strings.TrimPrefix(callee, "DateTime.")
+	}
+	if strings.HasPrefix(strings.ToLower(callee), "system.") {
+		member := callee[len("System."):]
+		switch strings.ToLower(member) {
+		case "assert":
+			callee = "System.assert"
+		case "assertequals":
+			callee = "System.assertEquals"
+		case "assertnotequals":
+			callee = "System.assertNotEquals"
+		case "debug":
+			callee = "System.debug"
+		}
+	}
+	if strings.EqualFold(callee, "Database.setSavePoint") {
+		callee = "Database.setSavepoint"
 	}
 	if strings.HasPrefix(callee, "Datetime.") && len(callee) > len("Datetime.") {
 		member := strings.TrimPrefix(callee, "Datetime.")
@@ -7906,7 +7981,16 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 	return desc, nil
 }
 
+type approxVisitKey struct {
+	kind ValueKind
+	ptr  uintptr
+}
+
 func approxValueSize(value Value) int {
+	return approxValueSizeSeen(value, make(map[approxVisitKey]bool))
+}
+
+func approxValueSizeSeen(value Value, seen map[approxVisitKey]bool) int {
 	switch value.Kind {
 	case ValueNull:
 		return 4
@@ -7915,27 +7999,55 @@ func approxValueSize(value Value) int {
 	case ValueString:
 		return len(value.Text)
 	case ValueList:
+		if len(value.List) > 0 {
+			key := approxVisitKey{kind: value.Kind, ptr: reflect.ValueOf(value.List).Pointer()}
+			if seen[key] {
+				return 0
+			}
+			seen[key] = true
+		}
 		total := 24
 		for _, item := range value.List {
-			total += approxValueSize(item)
+			total += approxValueSizeSeen(item, seen)
 		}
 		return total
 	case ValueSet:
+		if len(value.Set) > 0 {
+			key := approxVisitKey{kind: value.Kind, ptr: reflect.ValueOf(value.Set).Pointer()}
+			if seen[key] {
+				return 0
+			}
+			seen[key] = true
+		}
 		total := 24
 		for _, item := range value.Set {
-			total += approxValueSize(item)
+			total += approxValueSizeSeen(item, seen)
 		}
 		return total
 	case ValueMap:
+		if value.Map != nil {
+			key := approxVisitKey{kind: value.Kind, ptr: reflect.ValueOf(value.Map).Pointer()}
+			if seen[key] {
+				return 0
+			}
+			seen[key] = true
+		}
 		total := 24
 		for key, item := range value.Map {
-			total += len(key) + approxValueSize(item)
+			total += len(key) + approxValueSizeSeen(item, seen)
 		}
 		return total
 	case ValueObject:
+		if value.Fields != nil {
+			key := approxVisitKey{kind: value.Kind, ptr: reflect.ValueOf(value.Fields).Pointer()}
+			if seen[key] {
+				return 0
+			}
+			seen[key] = true
+		}
 		total := 32 + len(value.Type)
 		for key, item := range value.Fields {
-			total += len(key) + approxValueSize(item)
+			total += len(key) + approxValueSizeSeen(item, seen)
 		}
 		return total
 	default:
@@ -8027,7 +8139,7 @@ func (vm *VM) lookup(name string) (Value, error) {
 					return Null, err
 				}
 				if field.Getter != nil {
-					value, err := vm.callMethodWithReceiver(*field.Getter, this, nil, resultForLookup())
+					value, err := vm.callGetter(owner, field, this)
 					if err != nil {
 						return Null, err
 					}
@@ -8187,7 +8299,7 @@ func (vm *VM) lookup(name string) (Value, error) {
 					if field.Getter.Name == vm.currentMethod.Name {
 						return value, nil
 					}
-					return vm.callMethodWithReceiver(*field.Getter, this, nil, resultForLookup())
+					return vm.callGetter(owner, field, this)
 				}
 			}
 			return value, nil
@@ -8244,6 +8356,35 @@ func objectFieldValue(object Value, name string) (string, Value, bool) {
 		}
 	}
 	return "", Null, false
+}
+
+func (vm *VM) callGetter(owner string, field Field, receiver Value) (Value, error) {
+	if field.Getter == nil {
+		if _, value, ok := objectFieldValue(receiver, field.Name); ok {
+			return value, nil
+		}
+		return field.Value, nil
+	}
+	fieldName := field.Name
+	if fieldName == "" {
+		fieldName = strings.TrimPrefix(field.Getter.Name, owner+".")
+		fieldName = strings.TrimSuffix(fieldName, ".get")
+	}
+	key := owner + "." + fieldName
+	if vm.activeGetters[key] > 0 {
+		if _, value, ok := objectFieldValue(receiver, fieldName); ok {
+			return value, nil
+		}
+		return field.Value, nil
+	}
+	vm.activeGetters[key]++
+	defer func() {
+		vm.activeGetters[key]--
+		if vm.activeGetters[key] == 0 {
+			delete(vm.activeGetters, key)
+		}
+	}()
+	return vm.callMethodWithReceiver(*field.Getter, receiver, nil, resultForLookup())
 }
 
 func (vm *VM) lookupGlobalName(name string) (string, bool) {
@@ -8552,7 +8693,7 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 				return Null, err
 			}
 			if field.Getter != nil {
-				value, err := vm.callMethodWithReceiver(*field.Getter, current, nil, resultForLookup())
+				value, err := vm.callGetter(owner, field, current)
 				if err != nil {
 					return Null, err
 				}
@@ -8794,7 +8935,7 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 
 func (vm *VM) lookupField(typeName, fieldName string) (Field, string, bool) {
 	for typeName != "" {
-		class, ok := vm.Classes[typeName]
+		class, ok := vm.lookupClass(typeName)
 		if !ok {
 			return Field{}, "", false
 		}
@@ -8832,12 +8973,21 @@ func (vm *VM) lookupReceiverField(typeName, fieldName string) (Field, string, bo
 func (vm *VM) lookupStaticField(typeName, fieldName string) (Field, string, bool) {
 	for search := typeName; search != ""; {
 		for current := search; current != ""; {
-			class, ok := vm.Classes[current]
+			class, ok := vm.lookupClass(current)
 			if !ok {
 				break
 			}
 			if field, ok := class.StaticFields[fieldName]; ok {
 				return field, class.Name, true
+			}
+			normalized := strings.ToLower(fieldName)
+			for candidate, field := range class.StaticFields {
+				if strings.ToLower(candidate) == normalized || (field.Name != "" && strings.ToLower(field.Name) == normalized) {
+					if field.Name == "" {
+						field.Name = candidate
+					}
+					return field, class.Name, true
+				}
 			}
 			current = class.SuperClass
 		}
@@ -9123,13 +9273,13 @@ func isCommonSObjectTypeName(name string) bool {
 }
 
 func (vm *VM) resolveClassName(typeName string) (string, bool) {
-	if class, ok := vm.Classes[typeName]; ok {
+	if class, ok := vm.lookupClass(typeName); ok {
 		return class.Name, true
 	}
 	if !strings.Contains(typeName, ".") && vm.currentClass != "" {
 		for owner := vm.currentClass; owner != ""; {
 			candidate := owner + "." + typeName
-			if class, ok := vm.Classes[candidate]; ok {
+			if class, ok := vm.lookupClass(candidate); ok {
 				return class.Name, true
 			}
 			dot := strings.LastIndex(owner, ".")
@@ -9140,11 +9290,27 @@ func (vm *VM) resolveClassName(typeName string) (string, bool) {
 		}
 	}
 	for _, class := range vm.Classes {
-		if class.Namespace != "" && typeName == class.Namespace+"."+class.Name {
+		if class.Namespace != "" && strings.EqualFold(typeName, class.Namespace+"."+class.Name) {
 			return class.Name, true
 		}
 	}
 	return "", false
+}
+
+func (vm *VM) lookupClass(typeName string) (Class, bool) {
+	if class, ok := vm.Classes[typeName]; ok {
+		return class, true
+	}
+	normalized := strings.ToLower(typeName)
+	for candidate, class := range vm.Classes {
+		if strings.ToLower(candidate) == normalized || strings.ToLower(class.Name) == normalized {
+			return class, true
+		}
+		if class.Namespace != "" && strings.ToLower(class.Namespace+"."+class.Name) == normalized {
+			return class, true
+		}
+	}
+	return Class{}, false
 }
 
 func (vm *VM) storeClassAliases(class Class) {
@@ -9913,7 +10079,7 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 		if err := vm.ensureClassInitialized(class.Name); err != nil {
 			return Null, err
 		}
-		class = vm.Classes[typeName]
+		class, _ = vm.lookupClass(typeName)
 		object := Object(typeName)
 		for field, value := range namedArgs {
 			object.Fields[field] = value
@@ -10381,7 +10547,7 @@ func typeNewInstanceUnsupportedBuiltin(typeName string) (string, bool) {
 }
 
 func (vm *VM) initializeFields(object *Value, typeName string) {
-	class, ok := vm.Classes[typeName]
+	class, ok := vm.lookupClass(typeName)
 	if !ok {
 		return
 	}
@@ -10464,7 +10630,7 @@ func (vm *VM) resolveInstanceMethodSeen(typeName, method string, seen map[string
 		if target, ok := vm.Methods[typeName+"."+method]; ok {
 			return target, true
 		}
-		class, ok := vm.Classes[typeName]
+		class, ok := vm.lookupClass(typeName)
 		if !ok {
 			break
 		}
@@ -10508,7 +10674,7 @@ func (vm *VM) resolveInstanceMethodForArgsSeen(typeName, method string, args []V
 		if target, ok, ambiguous := vm.matchRegisteredMethod(typeName+"."+method, args); ok || ambiguous {
 			return target, ok, ambiguous
 		}
-		class, ok := vm.Classes[typeName]
+		class, ok := vm.lookupClass(typeName)
 		if !ok {
 			break
 		}
@@ -10531,7 +10697,7 @@ func (vm *VM) resolveInterfaceMethodSeen(typeName, method string, seen map[strin
 	if target, ok := vm.Methods[typeName+"."+method]; ok {
 		return target, true
 	}
-	class, ok := vm.Classes[typeName]
+	class, ok := vm.lookupClass(typeName)
 	if !ok {
 		return Method{}, false
 	}
@@ -10551,7 +10717,7 @@ func (vm *VM) resolveInterfaceMethodForArgsSeen(typeName, method string, args []
 	if target, ok, ambiguous := vm.matchRegisteredMethod(typeName+"."+method, args); ok || ambiguous {
 		return target, ok, ambiguous
 	}
-	class, ok := vm.Classes[typeName]
+	class, ok := vm.lookupClass(typeName)
 	if !ok {
 		return Method{}, false, false
 	}
@@ -10575,7 +10741,7 @@ func (vm *VM) resolveStaticMethodForArgs(typeName, method string, args []Value) 
 			}
 			return Method{}, false, false
 		}
-		class, ok := vm.Classes[typeName]
+		class, ok := vm.lookupClass(typeName)
 		if !ok {
 			return Method{}, false, false
 		}
@@ -11069,11 +11235,11 @@ func (vm *VM) typeDistance(typeName, target string, seen map[string]bool) (int, 
 	if typeName == "" || seen[typeName] {
 		return 0, false
 	}
-	if typeName == target {
+	if strings.EqualFold(typeName, target) {
 		return 0, true
 	}
 	seen[typeName] = true
-	class, ok := vm.Classes[typeName]
+	class, ok := vm.lookupClass(typeName)
 	if !ok {
 		return 0, false
 	}
@@ -11089,6 +11255,15 @@ func (vm *VM) typeDistance(typeName, target string, seen map[string]bool) (int, 
 			if !found || distance < best {
 				best = distance
 				found = true
+			}
+		}
+		if !strings.Contains(iface, ".") {
+			if distance, ok := vm.typeDistance(class.Name+"."+iface, target, seen); ok {
+				distance++
+				if !found || distance < best {
+					best = distance
+					found = true
+				}
 			}
 		}
 	}
@@ -11255,7 +11430,7 @@ func (vm *VM) typeMatches(typeName, target string, seen map[string]bool) bool {
 		return true
 	}
 	seen[typeName] = true
-	class, ok := vm.Classes[typeName]
+	class, ok := vm.lookupClass(typeName)
 	if !ok {
 		return false
 	}
@@ -11264,6 +11439,9 @@ func (vm *VM) typeMatches(typeName, target string, seen map[string]bool) bool {
 	}
 	for _, iface := range class.Interfaces {
 		if vm.typeMatches(iface, target, seen) {
+			return true
+		}
+		if !strings.Contains(iface, ".") && vm.typeMatches(class.Name+"."+iface, target, seen) {
 			return true
 		}
 	}
@@ -12102,7 +12280,7 @@ func (vm *VM) callMember(callee string, args []Value, result *Result) (Value, bo
 		return Null, false, nil
 	}
 	receiverName, method := parts[0], parts[1]
-	if receiverName == "super" {
+	if strings.EqualFold(receiverName, "super") {
 		if len(parts) != 2 {
 			return Null, false, nil
 		}
@@ -12114,7 +12292,7 @@ func (vm *VM) callMember(callee string, args []Value, result *Result) (Value, bo
 		if dispatchClass == "" {
 			dispatchClass = receiver.Type
 		}
-		class := vm.Classes[dispatchClass]
+		class, _ := vm.lookupClass(dispatchClass)
 		target, ok, ambiguous := vm.resolveInstanceMethodForArgs(class.SuperClass, method, args)
 		if ambiguous {
 			return Null, true, vm.ambiguousOverloadError(callee, args)
@@ -12147,6 +12325,13 @@ func (vm *VM) callMember(callee string, args []Value, result *Result) (Value, bo
 		return vm.callValueMember(receiverName, receiver, method, args, result)
 	}
 	receiver, ok := vm.Globals[receiverName]
+	if !ok {
+		if actual, found := vm.lookupGlobalName(receiverName); found {
+			receiverName = actual
+			receiver = vm.Globals[actual]
+			ok = true
+		}
+	}
 	if !ok {
 		if vm.currentClass != "" {
 			if field, owner, ok := vm.lookupStaticField(vm.currentClass, receiverName); ok {
@@ -13872,10 +14057,10 @@ func (vm *VM) callEnumStaticMember(typeName, method string, args []Value) (Value
 	if !ok || len(class.EnumValues) == 0 {
 		return Null, false, nil
 	}
-	if err := vm.ensureClassInitialized(typeName); err != nil {
+	if err := vm.ensureClassInitialized(class.Name); err != nil {
 		return Null, true, err
 	}
-	class = vm.Classes[typeName]
+	class, _ = vm.lookupClass(class.Name)
 	switch method {
 	case "values":
 		if len(args) != 0 {

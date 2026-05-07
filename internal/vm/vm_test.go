@@ -21,6 +21,58 @@ func TestExecAssertEquals(t *testing.T) {
 	}
 }
 
+func TestExecSystemAssertEqualsIsCaseInsensitive(t *testing.T) {
+	program, err := CompileAnonymous("system.assertEquals(2, 1 + 1);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecUserTypesAndMembersAreCaseInsensitive(t *testing.T) {
+	echo, err := CompileAnonymous("return 'ok';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	shout, err := CompileAnonymous("return value;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+caseprobe.Count = 2;
+System.assertEquals(2, CASEPROBE.count);
+CaseProbe p = new caseprobe();
+p.name = 'Ada';
+System.assertEquals('Ada', p.NAME);
+System.assertEquals('ok', caseprobe.echo());
+System.assertEquals('go', p.SHOUT('go'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "CaseProbe",
+		Fields: map[string]Field{
+			"Name": {Name: "Name", Type: "String"},
+		},
+		StaticFields: map[string]Field{
+			"Count": {Name: "Count", Type: "Integer"},
+		},
+		Methods: map[string]Method{
+			"echo":  {Name: "CaseProbe.echo", ClassName: "CaseProbe", IsStatic: true, ReturnType: "String", Program: echo},
+			"shout": {Name: "CaseProbe.shout", ClassName: "CaseProbe", ReturnType: "String", Params: []Param{{Name: "value", Type: "String"}}, Program: shout},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecuteStopsWhenContextCanceled(t *testing.T) {
 	program, err := CompileAnonymous("System.assert(true);")
 	if err != nil {

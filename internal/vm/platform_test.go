@@ -1750,7 +1750,7 @@ System.assertEquals('pkg.Thing', namespaced.getName());
 func TestExecDatabaseSavepointRollback(t *testing.T) {
 	program, err := CompileAnonymous(`
 insert new Account(Name = 'before');
-System.Savepoint sp = Database.setSavepoint();
+System.Savepoint sp = Database.setSavePoint();
 insert new Account(Name = 'after');
 Integer beforeRollback = [SELECT COUNT() FROM Account];
 System.assertEquals(2, beforeRollback);

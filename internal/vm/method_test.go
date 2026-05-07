@@ -599,6 +599,47 @@ System.assertEquals('ACME!', b.Name);
 	}
 }
 
+func TestExecPropertyGetterSelfReferenceUsesBackingField(t *testing.T) {
+	getter, err := CompileAnonymous("return this.Name;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Box b = new Box();
+b.Name = 'Acme';
+System.assertEquals('Acme', b.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Box",
+		Fields: map[string]Field{
+			"Name": {
+				Name:     "Name",
+				Type:     "String",
+				Property: true,
+				Getter:   &Method{Name: "Box.Name.get", ClassName: "Box", ReturnType: "String", Program: getter},
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestApproxValueSizeHandlesCyclicObjects(t *testing.T) {
+	account := Object("Account")
+	account.Fields["Name"] = String("Acme")
+	account.Fields["Parent"] = account
+	if got := approxValueSize(account); got <= 0 {
+		t.Fatalf("approxValueSize(account) = %d, want positive size", got)
+	}
+}
+
 func TestRegisterClassPreservesFieldOrder(t *testing.T) {
 	machine := New(nil)
 	if err := machine.RegisterClass(Class{
@@ -1913,6 +1954,40 @@ System.assertEquals(1, Util.acceptMarker(new Child()));
 		Name:       "Util.acceptMarker",
 		ReturnType: "Integer",
 		Params:     []Param{{Name: "marker", Type: "Marker"}},
+		Program:    acceptProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecObjectAssignabilityUsesNestedInterfaceShortName(t *testing.T) {
+	acceptProgram, err := CompileAnonymous("return 1;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Outer.I item = new Outer();
+System.assertEquals(1, Util.accept(new Outer()));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	for _, class := range []Class{
+		{Name: "Outer.I", IsInterface: true},
+		{Name: "Outer", Interfaces: []string{"I"}},
+	} {
+		if err := machine.RegisterClass(class); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := machine.RegisterMethod(Method{
+		Name:       "Util.accept",
+		ReturnType: "Integer",
+		Params:     []Param{{Name: "item", Type: "Outer.I"}},
 		Program:    acceptProgram,
 	}); err != nil {
 		t.Fatal(err)
