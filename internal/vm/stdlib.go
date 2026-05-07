@@ -2249,6 +2249,9 @@ func callListStdlibMember(receiver Value, method string, args []Value) (Value, V
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("List.getSObjectType expects 0 arguments")
 		}
+		if elementType, ok := collectionElementType(receiver.Type); ok && strings.EqualFold(elementType, "sObject") && len(receiver.List) == 0 {
+			return Null, receiver, false, true, nil
+		}
 		if objectName := listSObjectTypeName(receiver); objectName != "" {
 			return sObjectTypeToken(objectName), receiver, false, true, nil
 		}
@@ -2264,7 +2267,7 @@ func listSObjectTypeName(receiver Value) string {
 			return elementType
 		}
 		if len(receiver.List) == 0 {
-			return "SObject"
+			return ""
 		}
 	}
 	for _, item := range receiver.List {

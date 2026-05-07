@@ -310,7 +310,7 @@ func TestExecSObjectListGetSObjectTypeAndMapValuesProperty(t *testing.T) {
 List<SObject> records = (List<SObject>)JSON.deserialize('[{"attributes":{"type":"Account"},"Name":"Acme"}]', List<SObject>.class);
 System.assertEquals('Account', records.getSObjectType().getDescribe().getName());
 List<SObject> emptyRecords = new List<SObject>();
-System.assertEquals('SObject', emptyRecords.getSObjectType().getDescribe().getName());
+System.assertEquals(null, emptyRecords.getSObjectType());
 Map<Id, Account> accounts = new Map<Id, Account>();
 Account a = new Account(Name = 'Spruce');
 insert a;
@@ -1970,7 +1970,9 @@ insert child;
 Contact c = new Contact(AccountId = child.Id, LastName = 'Smith');
 insert c;
 Contact row = [SELECT Id, Account.Name, Account.Parent.Name FROM Contact WHERE Account.Parent.Name = 'Acme'];
+System.assertEquals(child.Id, row.Account.Id);
 System.assertEquals('Child', row.Account.Name);
+System.assertEquals(a.Id, row.Account.Parent.Id);
 System.assertEquals('Acme', row.Account.Parent.Name);
 `)
 	if err != nil {
@@ -2286,12 +2288,25 @@ queried.Name = 'Changed';
 update queried;
 Opportunity updated = [SELECT Id, Name FROM Opportunity WHERE Id = :opp.Id];
 System.assertEquals('Changed', updated.Name);
+
+Account acct = new Account(Name = 'Acme');
+insert acct;
+Contact contact = new Contact(AccountId = acct.Id, LastName = 'Original');
+insert contact;
+Contact queriedContact = [SELECT Id, LastName, Account.Name FROM Contact WHERE Id = :contact.Id];
+System.assertEquals(acct.Id, queriedContact.Account.Id);
+queriedContact.LastName = 'Changed';
+update queriedContact;
+Contact updatedContact = [SELECT Id, LastName FROM Contact WHERE Id = :contact.Id];
+System.assertEquals('Changed', updatedContact.LastName);
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	machine := New(nil)
 	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	storage.EnsureStandardObject(&org, "Contact")
 	storage.EnsureStandardObject(&org, "Opportunity")
 	storage.EnsureStandardObject(&org, "OpportunityLineItem")
 	machine.SetOrg(&org)

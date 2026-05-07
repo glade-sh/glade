@@ -1063,6 +1063,9 @@ func TestExecuteProjectsParentRelationshipField(t *testing.T) {
 	if got := result.Records[0].Fields["Account.Name"].String; got != "Acme" {
 		t.Fatalf("Account.Name = %q", got)
 	}
+	if value := result.Records[0].Fields["Account.Id"]; value.Kind != storage.ValueID || value.ID != "001000000000001" {
+		t.Fatalf("Account.Id = %#v", value)
+	}
 	result, err = ParseAndExecute(org, "SELECT Id, Account.Parent.Name FROM Contact WHERE Account.Parent.Name = 'Acme'")
 	if err != nil {
 		t.Fatal(err)
@@ -1072,6 +1075,12 @@ func TestExecuteProjectsParentRelationshipField(t *testing.T) {
 	}
 	if got := result.Records[0].Fields["Account.Parent.Name"].String; got != "Acme" {
 		t.Fatalf("Account.Parent.Name = %q", got)
+	}
+	if value := result.Records[0].Fields["Account.Id"]; value.Kind != storage.ValueID || value.ID != "001000000000002" {
+		t.Fatalf("multi-hop Account.Id = %#v", value)
+	}
+	if value := result.Records[0].Fields["Account.Parent.Id"]; value.Kind != storage.ValueID || value.ID != "001000000000001" {
+		t.Fatalf("multi-hop Account.Parent.Id = %#v", value)
 	}
 }
 

@@ -6261,6 +6261,9 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 		if fieldValue.Kind == ValueList && vm.isChildRelationshipField(definition, field) {
 			continue
 		}
+		if fieldValue.Kind == ValueObject && vm.isParentRelationshipField(definition, field) {
+			continue
+		}
 		converted, err := storageValueFromVM(fieldValue)
 		if definition.APIName != "" {
 			if fieldDef, ok := definition.Fields[canonicalField]; ok {
@@ -6277,6 +6280,18 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 		}
 	}
 	return record, nil
+}
+
+func (vm *VM) isParentRelationshipField(definition storage.ObjectDefinition, field string) bool {
+	if vm == nil || vm.Org == nil || definition.APIName == "" || strings.TrimSpace(field) == "" {
+		return false
+	}
+	for _, relation := range definition.Relations {
+		if vmRelationshipNameMatches(vm.Org.Namespace, relation.ParentRelationship, field) {
+			return true
+		}
+	}
+	return false
 }
 
 func (vm *VM) isChildRelationshipField(definition storage.ObjectDefinition, field string) bool {
@@ -14501,6 +14516,11 @@ func (vm *VM) displayString(value Value, result *Result) (string, error) {
 			return text, nil
 		}
 	}
+	if strings.EqualFold(value.Type, "Schema.SObjectField") {
+		if fieldName, ok := value.Fields["field"]; ok && fieldName.Kind == ValueString {
+			return fieldName.Text, nil
+		}
+	}
 	if value.Type == "LoggingLevel" && isLoggingLevelName(value.Text) {
 		return value.Text, nil
 	}
@@ -14773,6 +14793,12 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 						return token, true, nil
 					}
 				}
+			}
+			if elementType, ok := collectionElementType(receiver.Type); ok && strings.EqualFold(elementType, "sObject") {
+				return Null, true, nil
+			}
+			if len(receiver.List) == 0 {
+				return Null, true, nil
 			}
 			if token, ok := vm.sObjectTypeTokenForName("SObject"); ok {
 				return token, true, nil

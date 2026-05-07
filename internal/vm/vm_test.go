@@ -777,6 +777,23 @@ System.assert(record.get(createdDateField) != System.now());
 	}
 }
 
+func TestExecStringValueOfSObjectFieldUsesFieldAPIName(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals('Name', String.valueOf(Account.Name));
+System.assertEquals('AccountNumber', String.valueOf(Account.AccountNumber));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureStandardObject(&org, "Account")
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecNestedListInitializerPreservesInnerList(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<List<Contact>> nested = new List<List<Contact>>{ new List<Contact>{ new Contact(LastName = 'One'), new Contact(LastName = 'Two') } };

@@ -675,6 +675,7 @@ func projectRecord(org storage.OrgState, definition storage.ObjectDefinition, re
 		if strings.Contains(field, ".") {
 			if value, ok := relationshipValue(org, record, field); ok {
 				out.Fields[field] = value
+				projectRelationshipIDs(org, record, field, out.Fields)
 			}
 			continue
 		}
@@ -713,6 +714,7 @@ func projectRecord(org storage.OrgState, definition storage.ObjectDefinition, re
 			value, ok := relationshipValue(org, record, spec.Relationship+"."+field)
 			if ok {
 				out.Fields[spec.Relationship+"."+field] = value.Clone()
+				projectRelationshipIDs(org, record, spec.Relationship+"."+field, out.Fields)
 			}
 		}
 	}
@@ -1373,6 +1375,58 @@ func relationshipValue(org storage.OrgState, record storage.Record, field string
 		}
 	}
 	return storage.Value{}, false
+}
+
+func projectRelationshipIDs(org storage.OrgState, record storage.Record, field string, fields map[string]storage.Value) {
+	parts := strings.Split(field, ".")
+	if len(parts) < 2 {
+		return
+	}
+	currentRecord := record
+	currentPath := ""
+	for _, relationship := range parts[:len(parts)-1] {
+		parentID, parent, ok := parentRelationshipRecord(org, currentRecord, relationship)
+		if !ok {
+			return
+		}
+		if currentPath == "" {
+			currentPath = relationship
+		} else {
+			currentPath += "." + relationship
+		}
+		fields[currentPath+".Id"] = parentID.Clone()
+		currentRecord = parent
+	}
+}
+
+func parentRelationshipRecord(org storage.OrgState, record storage.Record, relationship string) (storage.Value, storage.Record, bool) {
+	object, ok := org.Objects[record.Object]
+	if !ok {
+		return storage.Value{}, storage.Record{}, false
+	}
+	for _, relation := range object.Definition.Relations {
+		if !relationshipNameMatches(org.Namespace, relation.ParentRelationship, relationship) {
+			continue
+		}
+		parentID, ok := recordValue(org, object.Definition, record, relation.Field)
+		if !ok || parentID.Kind == storage.ValueNull {
+			return storage.Value{}, storage.Record{}, false
+		}
+		for _, parentObjectName := range relation.ParentObjects {
+			canonicalParent, ok := storage.ResolveObjectName(org, parentObjectName)
+			if !ok {
+				continue
+			}
+			parentObject := org.Objects[canonicalParent]
+			parent, ok := parentObject.Records[idFromValue(parentID)]
+			if !ok || parent.System.IsDeleted {
+				continue
+			}
+			parent.Object = canonicalParent
+			return parentID, parent, true
+		}
+	}
+	return storage.Value{}, storage.Record{}, false
 }
 
 func relationshipNameMatches(namespace, canonical, candidate string) bool {
