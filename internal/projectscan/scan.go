@@ -280,6 +280,7 @@ type scanContext struct {
 	present           map[string]bool
 	presentationPaths map[string]bool
 	fieldSets         map[string]bool
+	customMetadata    map[string]bool
 	loadedFiles       map[string]bool
 	automation        map[string]bool
 	namespaces        map[string]bool
@@ -366,10 +367,18 @@ func loadScanContext(absRoot string) scanContext {
 	if err != nil {
 		return ctx
 	}
+	scanProj := scanMetadataProject(absRoot, proj)
 	ctx.org.Namespace = proj.Namespace
-	sch, err := schema.LoadProject(proj)
+	sch, err := schema.LoadProject(scanProj)
 	if err != nil {
 		return ctx
+	}
+	ctx.customMetadata = make(map[string]bool)
+	for _, record := range sch.CustomMetadataRecords {
+		ctx.customMetadata[schemaPathKey([]string{record.ObjectName})] = true
+		if stripped := stripAnyNamespaceToken(record.ObjectName); stripped != record.ObjectName {
+			ctx.customMetadata[schemaPathKey([]string{stripped})] = true
+		}
 	}
 	typeIndex := typesys.Build(proj, sch)
 	ctx.types = make(map[string]typesys.TypeSymbol, len(typeIndex.Types))
@@ -386,19 +395,19 @@ func loadScanContext(absRoot string) scanContext {
 		}
 		ctx.aura = resolvedAuraFiles(ui, &ctx)
 	}
-	if metadata, err := resource.LoadProject(proj); err == nil {
+	if metadata, err := resource.LoadProject(scanProj); err == nil {
 		ctx.metadata = metadata
 	}
 	ctx.automation = resolvedAutomationFiles(proj)
 	ctx.loadedFiles = make(map[string]bool)
-	for _, path := range proj.ObjectFiles {
+	for _, path := range scanProj.ObjectFiles {
 		ctx.loadedFiles[filepath.Clean(path)] = true
 	}
-	for _, path := range proj.CustomMetadataFiles {
+	for _, path := range scanProj.CustomMetadataFiles {
 		ctx.loadedFiles[filepath.Clean(path)] = true
 	}
 	var metadataIndex *metadatapkg.Index
-	if idx, err := metadatapkg.LoadProject(proj); err == nil {
+	if idx, err := metadatapkg.LoadProject(scanProj); err == nil {
 		metadataIndex = &idx
 		ctx.present = make(map[string]bool)
 		ctx.addPresentationAssetFiles(idx.Layouts)
@@ -448,9 +457,164 @@ func loadScanContext(absRoot string) scanContext {
 		ctx.org.Objects[definition.APIName] = storage.ObjectState{Definition: definition}
 	}
 	if metadataIndex != nil {
-		ctx.addPresentationFields(*metadataIndex, proj)
+		ctx.addPresentationFields(*metadataIndex, scanProj)
 	}
 	return ctx
+}
+
+func scanMetadataProject(absRoot string, proj project.Project) project.Project {
+	out := proj
+	seen := scanProjectSeenFiles(out)
+	_ = filepath.WalkDir(absRoot, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			if shouldSkipDir(d.Name()) && path != absRoot {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if shouldSkipFile(d.Name()) {
+			return nil
+		}
+		addScanMetadataFile(path, &out, seen)
+		return nil
+	})
+	sortScanProjectFiles(&out)
+	return out
+}
+
+func scanProjectSeenFiles(proj project.Project) map[string]bool {
+	seen := make(map[string]bool)
+	addAll := func(paths []string) {
+		for _, path := range paths {
+			seen[filepath.Clean(path)] = true
+		}
+	}
+	addAll(proj.ObjectFiles)
+	addAll(proj.FieldFiles)
+	addAll(proj.FieldSetFiles)
+	addAll(proj.RecordTypeFiles)
+	addAll(proj.ValidationRuleFiles)
+	addAll(proj.LabelFiles)
+	addAll(proj.TranslationFiles)
+	addAll(proj.StaticResourceFiles)
+	addAll(proj.StaticResourceMetas)
+	addAll(proj.ContentAssetFiles)
+	addAll(proj.ContentAssetMetas)
+	addAll(proj.EmailTemplateFiles)
+	addAll(proj.NamedCredentialFiles)
+	addAll(proj.RemoteSiteFiles)
+	addAll(proj.CustomMetadataFiles)
+	addAll(proj.WorkflowFiles)
+	addAll(proj.FlowFiles)
+	addAll(proj.ProfileFiles)
+	addAll(proj.PermissionSetFiles)
+	addAll(proj.PermissionAssignmentFiles)
+	addAll(proj.ListViewFiles)
+	addAll(proj.LayoutFiles)
+	addAll(proj.CompactLayoutFiles)
+	addAll(proj.TabFiles)
+	addAll(proj.WebLinkFiles)
+	addAll(proj.QuickActionFiles)
+	addAll(proj.GlobalValueSetFiles)
+	addAll(proj.StandardValueSetFiles)
+	addAll(proj.FlexiPageFiles)
+	addAll(proj.ApplicationFiles)
+	return seen
+}
+
+func addScanMetadataFile(path string, proj *project.Project, seen map[string]bool) {
+	clean := filepath.Clean(path)
+	if seen[clean] {
+		return
+	}
+	lower := strings.ToLower(filepath.ToSlash(path))
+	add := func(target *[]string) {
+		*target = append(*target, path)
+		seen[clean] = true
+	}
+	switch {
+	case strings.HasSuffix(lower, ".object-meta.xml"), strings.HasSuffix(lower, ".object") && strings.Contains(lower, "/objects/"):
+		add(&proj.ObjectFiles)
+	case strings.HasSuffix(lower, ".field-meta.xml"):
+		add(&proj.FieldFiles)
+	case strings.HasSuffix(lower, ".fieldset-meta.xml"):
+		add(&proj.FieldSetFiles)
+	case strings.HasSuffix(lower, ".recordtype-meta.xml"):
+		add(&proj.RecordTypeFiles)
+	case strings.HasSuffix(lower, ".validationrule-meta.xml"):
+		add(&proj.ValidationRuleFiles)
+	case strings.HasSuffix(lower, ".labels"), strings.HasSuffix(lower, ".labels-meta.xml"):
+		add(&proj.LabelFiles)
+	case strings.HasSuffix(lower, ".translation"), strings.HasSuffix(lower, ".translation-meta.xml"):
+		add(&proj.TranslationFiles)
+	case strings.HasSuffix(lower, ".resource-meta.xml"), strings.HasSuffix(lower, ".staticresource-meta.xml"):
+		add(&proj.StaticResourceMetas)
+	case strings.HasSuffix(lower, ".resource"):
+		add(&proj.StaticResourceFiles)
+	case strings.HasSuffix(lower, ".asset-meta.xml"):
+		add(&proj.ContentAssetMetas)
+	case strings.HasSuffix(lower, ".asset"):
+		add(&proj.ContentAssetFiles)
+	case strings.HasSuffix(lower, ".email"), strings.HasSuffix(lower, ".email-meta.xml"):
+		add(&proj.EmailTemplateFiles)
+	case strings.HasSuffix(lower, ".namedcredential"), strings.HasSuffix(lower, ".namedcredential-meta.xml"):
+		add(&proj.NamedCredentialFiles)
+	case strings.HasSuffix(lower, ".remotesite"), strings.HasSuffix(lower, ".remotesite-meta.xml"):
+		add(&proj.RemoteSiteFiles)
+	case strings.HasSuffix(lower, ".md-meta.xml"), strings.HasSuffix(lower, ".md") && isCustomMetadataPath(lower):
+		add(&proj.CustomMetadataFiles)
+	case strings.HasSuffix(lower, ".workflow-meta.xml"), strings.HasSuffix(lower, ".workflow"):
+		add(&proj.WorkflowFiles)
+	case strings.HasSuffix(lower, ".flow-meta.xml"), strings.HasSuffix(lower, ".flow"):
+		add(&proj.FlowFiles)
+	case strings.HasSuffix(lower, ".profile"), strings.HasSuffix(lower, ".profile-meta.xml"):
+		add(&proj.ProfileFiles)
+	case strings.HasSuffix(lower, ".permissionset"), strings.HasSuffix(lower, ".permissionset-meta.xml"):
+		add(&proj.PermissionSetFiles)
+	case strings.HasSuffix(lower, ".permissionsetassignment"), strings.HasSuffix(lower, ".permissionsetassignment-meta.xml"):
+		add(&proj.PermissionAssignmentFiles)
+	case strings.HasSuffix(lower, ".listview-meta.xml"):
+		add(&proj.ListViewFiles)
+	case strings.HasSuffix(lower, ".layout-meta.xml"), strings.HasSuffix(lower, ".layout"):
+		add(&proj.LayoutFiles)
+	case strings.HasSuffix(lower, ".compactlayout-meta.xml"):
+		add(&proj.CompactLayoutFiles)
+	case strings.HasSuffix(lower, ".tab"), strings.HasSuffix(lower, ".tab-meta.xml"):
+		add(&proj.TabFiles)
+	case strings.HasSuffix(lower, ".weblink"), strings.HasSuffix(lower, ".weblink-meta.xml"):
+		add(&proj.WebLinkFiles)
+	case strings.HasSuffix(lower, ".quickaction"), strings.HasSuffix(lower, ".quickaction-meta.xml"):
+		add(&proj.QuickActionFiles)
+	case strings.HasSuffix(lower, ".globalvalueset"), strings.HasSuffix(lower, ".globalvalueset-meta.xml"):
+		add(&proj.GlobalValueSetFiles)
+	case strings.HasSuffix(lower, ".standardvalueset"), strings.HasSuffix(lower, ".standardvalueset-meta.xml"):
+		add(&proj.StandardValueSetFiles)
+	case strings.HasSuffix(lower, ".flexipage"), strings.HasSuffix(lower, ".flexipage-meta.xml"):
+		add(&proj.FlexiPageFiles)
+	case strings.HasSuffix(lower, ".app-meta.xml"), strings.HasSuffix(lower, ".app") && strings.Contains(lower, "/applications/"):
+		add(&proj.ApplicationFiles)
+	}
+}
+
+func sortScanProjectFiles(proj *project.Project) {
+	lists := []*[]string{
+		&proj.ObjectFiles, &proj.FieldFiles, &proj.FieldSetFiles, &proj.RecordTypeFiles,
+		&proj.ValidationRuleFiles, &proj.LabelFiles, &proj.TranslationFiles,
+		&proj.StaticResourceFiles, &proj.StaticResourceMetas, &proj.ContentAssetFiles,
+		&proj.ContentAssetMetas, &proj.EmailTemplateFiles, &proj.NamedCredentialFiles,
+		&proj.RemoteSiteFiles, &proj.CustomMetadataFiles, &proj.WorkflowFiles,
+		&proj.FlowFiles, &proj.ProfileFiles, &proj.PermissionSetFiles,
+		&proj.PermissionAssignmentFiles, &proj.ListViewFiles, &proj.LayoutFiles,
+		&proj.CompactLayoutFiles, &proj.TabFiles, &proj.WebLinkFiles,
+		&proj.QuickActionFiles, &proj.GlobalValueSetFiles, &proj.StandardValueSetFiles,
+		&proj.FlexiPageFiles, &proj.ApplicationFiles,
+	}
+	for _, list := range lists {
+		sort.Strings(*list)
+	}
 }
 
 func (ctx *scanContext) addPresentationAssetFiles(assets []metadatapkg.NamedAsset) {
@@ -1202,7 +1366,20 @@ func (ctx *scanContext) resolvesResource(symbol string) bool {
 		return false
 	}
 	_, ok := resource.URLForStaticResource(ctx.metadata, name, "")
-	return ok
+	if ok {
+		return true
+	}
+	namespace := namespaceToken(name)
+	if namespace == "" {
+		namespace = metadataNamespacePrefix(name)
+	}
+	if namespace == "" {
+		return false
+	}
+	if ctx.org.Namespace != "" && strings.EqualFold(namespace, ctx.org.Namespace) {
+		return false
+	}
+	return ctx.namespaces[strings.ToLower(namespace)]
 }
 
 func (ctx *scanContext) resolvesEndpoint(symbol string) bool {
@@ -1342,7 +1519,23 @@ func namespaceAliases(proj project.Project, sch schema.Schema, idx *metadatapkg.
 			}
 		}
 	}
+	for _, record := range sch.CustomMetadataRecords {
+		add(record.FullName)
+		add(record.ObjectName)
+		for _, value := range record.Values {
+			add(value.Field)
+			add(value.Value)
+		}
+	}
 	if idx != nil {
+		for _, record := range idx.CustomMetadataRecords {
+			add(record.FullName)
+			add(record.ObjectName)
+			for _, value := range record.Values {
+				add(value.Field)
+				add(value.Value)
+			}
+		}
 		for _, fieldSet := range idx.FieldSets {
 			add(fieldSet.ObjectName)
 			for _, field := range fieldSet.Fields {
@@ -1386,6 +1579,15 @@ func namespaceToken(name string) string {
 	return token
 }
 
+func metadataNamespacePrefix(name string) string {
+	name = strings.TrimSpace(name)
+	idx := strings.Index(name, "__")
+	if idx <= 0 {
+		return ""
+	}
+	return name[:idx]
+}
+
 func isLabelStringMethod(name string) bool {
 	switch strings.ToLower(strings.TrimSpace(name)) {
 	case "abbreviate", "capitalize", "center", "contains", "containsany", "containsignorecase",
@@ -1425,12 +1627,20 @@ func (ctx *scanContext) resolvesCustomMetadataObject(symbol string) bool {
 	if _, ok := storage.ResolveObjectName(ctx.org, objectName); ok {
 		return true
 	}
+	if ctx.customMetadata[schemaPathKey([]string{objectName})] {
+		return true
+	}
 	stripped := stripAnyNamespaceToken(objectName)
 	if stripped != objectName {
 		_, ok := storage.ResolveObjectName(ctx.org, stripped)
-		return ok
+		if ok {
+			return true
+		}
+		if ctx.customMetadata[schemaPathKey([]string{stripped})] {
+			return true
+		}
 	}
-	return false
+	return isExternalManagedPackageObjectName(ctx.org.Namespace, objectName)
 }
 
 func (ctx *scanContext) resolvesSchemaReference(ref string) bool {

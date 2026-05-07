@@ -909,6 +909,58 @@ public class Hello {
 	}
 }
 
+func TestAnalyzeRawCollectionsAndArraySyntax(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public void run(List rawList, Map rawMap, Object[] values, SObject[] records) {
+    rawList.add('value');
+    Object first = rawList.get(0);
+    Integer rawSize = rawList.size();
+    rawMap.put('key', first);
+    Object mapped = rawMap.get('key');
+    values.add(first);
+    Object value = values.get(0);
+    Integer valueCount = values.size();
+    for (Object item : values) {
+      System.debug(item);
+    }
+    List<SObject> recordList = records;
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		switch diag.Code {
+		case "OAERSEMA008", "OAERSEMA023", "OAERSEMA024", "OAERSEMA018":
+			t.Fatalf("raw collections and array syntax should be accepted, got %#v", result.Diagnostics)
+		}
+	}
+}
+
+func TestAnalyzeSObjectGenericCollectionAssignability(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public void takesSObjects(List<SObject> records) {}
+  public void run(List<Account> accounts, Account account) {
+    takesSObjects(accounts);
+    List<SObject> records = new List<Account>{account};
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "OAERSEMA009" || diag.Code == "OAERSEMA018" || diag.Code == "OAERSEMA025" {
+			t.Fatalf("SObject generic collection assignability should be accepted, got %#v", result.Diagnostics)
+		}
+	}
+}
+
 func TestAnalyzeEnhancedForGenericCollectionTypes(t *testing.T) {
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
@@ -1549,6 +1601,69 @@ public class Bad extends Base implements Worker {
 	}
 	if counts["OAERSEMA016"] != 1 || counts["OAERSEMA017"] != 3 {
 		t.Fatalf("diagnostic counts = %#v diagnostics=%#v", counts, result.Diagnostics)
+	}
+}
+
+func TestAnalyzeNestedSiblingOverrideSignatures(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "ExprNode.cls"), `
+public abstract class ExprNode {
+  public abstract Object evaluate(Context context);
+  public abstract class BinaryExprNode extends ExprNode {
+  }
+  public class AddNode extends BinaryExprNode {
+    public override Object evaluate(Context context) {
+      return null;
+    }
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "Context.cls"), `
+public interface Context {
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "ExprNode.cls"),
+		filepath.Join(root, "Context.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "OAERSEMA016" || diag.Code == "OAERSEMA017" {
+			t.Fatalf("nested sibling inheritance should satisfy override contracts: %#v", result.Diagnostics)
+		}
+	}
+}
+
+func TestAnalyzePlatformOverrideSignatures(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Picklist.cls"), `
+global class Picklist extends VisualEditor.DynamicPickList {
+  global override VisualEditor.DataRow getDefaultValue() {
+    return new VisualEditor.DataRow('None', '');
+  }
+  global override VisualEditor.DynamicPickListRows getValues() {
+    return new VisualEditor.DynamicPickListRows();
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "Callback.cls"), `
+public class Callback extends Metadata.DeployCallbackContext {
+  public override Id getCallbackJobId() {
+    return '000000000000001';
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "Picklist.cls"),
+		filepath.Join(root, "Callback.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "OAERSEMA016" {
+			t.Fatalf("platform base overrides should satisfy override contracts: %#v", result.Diagnostics)
+		}
 	}
 }
 

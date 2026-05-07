@@ -1094,6 +1094,42 @@ System.assertEquals('ToCustomer', String.valueOf(direction));
 	}
 }
 
+func TestExecNestedEnumStaticValueIsCaseInsensitive(t *testing.T) {
+	program, err := CompileAnonymous(`
+Object mode = fflib_VerificationMode.ModeName.CALLS;
+System.assertEquals('calls', String.valueOf(mode));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "fflib_VerificationMode"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "fflib_VerificationMode.ModeName", EnumValues: []string{"times", "calls"}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecChainedAssignmentExpression(t *testing.T) {
+	program, err := CompileAnonymous(`
+Integer left;
+Integer right;
+left = right = 3;
+System.assertEquals(3, left);
+System.assertEquals(3, right);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecMultiCatchAndRethrow(t *testing.T) {
 	program, err := CompileAnonymous(`
 String message = '';

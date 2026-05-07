@@ -71,6 +71,41 @@ System.assert(String.isNotEmpty('x'));
 	}
 }
 
+func TestExecDomDocumentLoadAndXmlNodeMembers(t *testing.T) {
+	program, err := CompileAnonymous(`
+Dom.Document doc = new Dom.Document();
+doc.load('<myprefix:node xmlns:myprefix="http://my.name.space" myprefix:type="test">hello<!--note--><child id="c">there</child></myprefix:node>');
+Dom.XmlNode root = doc.getRootElement();
+System.assertEquals(Dom.XmlNodeType.ELEMENT, root.getNodeType());
+System.assertEquals('node', root.getName());
+System.assertEquals('http://my.name.space', root.getNamespace());
+System.assertEquals('myprefix', root.getPrefixFor('http://my.name.space'));
+System.assertEquals(1, root.getAttributeCount());
+System.assertEquals('type', root.getAttributeKeyAt(0));
+System.assertEquals('http://my.name.space', root.getAttributeKeyNsAt(0));
+System.assertEquals('test', root.getAttributeValue('type', 'http://my.name.space'));
+System.assertEquals(null, root.getAttributeValueNs('type', 'http://my.name.space'));
+System.assertEquals('hellonote', root.getText());
+List<Dom.XmlNode> children = root.getChildren();
+System.assertEquals(3, children.size());
+System.assertEquals(Dom.XmlNodeType.TEXT, children[0].getNodeType());
+System.assertEquals(Dom.XmlNodeType.COMMENT, children[1].getNodeType());
+System.assertEquals('child', children[2].getName());
+System.assertEquals(root, children[2].getParent());
+Dom.XmlNode added = root.addChildElement('second', null, null);
+added.setAttributeNs('id', 's', null, null);
+System.assertEquals('s', added.getAttributeValue('id', null));
+root.removeChild(added);
+System.assertEquals(3, root.getChildren().size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecStringSearchIndexesAndBetween(t *testing.T) {
 	program, err := CompileAnonymous(`
 String text = 'café café';

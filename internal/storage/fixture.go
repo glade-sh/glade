@@ -619,6 +619,13 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		"Website": {APIName: "Website", Type: FieldString},
 		"Phone":   {APIName: "Phone", Type: FieldString},
 	})
+	for _, objectName := range []string{"Account", "Contact", "Opportunity", "Product2"} {
+		existing := append([]RecordTypeInfo(nil), org.Objects[objectName].Definition.RecordTypes...)
+		EnsureStandardObject(org, objectName)
+		state := org.Objects[objectName]
+		state.Definition.RecordTypes = existing
+		org.Objects[objectName] = state
+	}
 
 	orgID := ID("00D000000000001")
 	profileID := ID("00e000000000001")

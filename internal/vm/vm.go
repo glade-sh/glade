@@ -14,6 +14,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"hash"
@@ -43,56 +44,57 @@ const (
 )
 
 type VM struct {
-	Globals          map[string]Value
-	VarTypes         map[string]string
-	Methods          map[string]Method
-	MethodOverloads  map[string][]Method
-	MethodFolded     map[string][]Method
-	Classes          map[string]Class
-	Org              *storage.OrgState
-	Triggers         map[string][]Trigger
-	Stdout           io.Writer
-	callStack        []callFrame
-	currentClass     string
-	currentMethod    Method
-	testContext      *TestContext
-	localAsyncJobs   []AsyncJob
-	localAsyncSeq    int
-	localAsyncDrain  bool
-	localAsyncChain  bool
-	executionUser    Value
-	limits           Limits
-	limitCaps        LimitCaps
-	limitMode        LimitMode
-	limitViolations  []LimitViolation
-	fakeNow          time.Time
-	currentAsyncKind string
-	activeExceptions []activeException
-	currentStatement callFrame
-	hasStatement     bool
-	triggerDepth     int
-	savepoints       map[string]storage.OrgState
-	emailSavepoints  map[string][]CapturedEmail
-	savepointOrder   map[string]int
-	nextSavepoint    int
-	pageMessages     []Value
-	currentPage      Value
-	pageReferences   map[string]string
-	platformCache    map[string]map[string]cacheEntry
-	capturedEmails   []CapturedEmail
-	restRequest      Value
-	restResponse     Value
-	serverBaseURL    string
-	metadataDeploys  map[string]Value
-	debugHooks       DebugHooks
-	hasDebugHooks    bool
-	ctx              context.Context
-	activeGetters    map[string]int
-	activeSetters    map[string]int
-	triggerGlobals   map[string]Value
-	cryptoRandomSeq  uint64
-	staticInitState  map[string]staticInitState
-	lastAmbiguous    *overloadDiagnostic
+	Globals            map[string]Value
+	VarTypes           map[string]string
+	Methods            map[string]Method
+	MethodOverloads    map[string][]Method
+	MethodFolded       map[string][]Method
+	Classes            map[string]Class
+	Org                *storage.OrgState
+	Triggers           map[string][]Trigger
+	Stdout             io.Writer
+	callStack          []callFrame
+	currentClass       string
+	currentMethod      Method
+	testContext        *TestContext
+	localAsyncJobs     []AsyncJob
+	localAsyncSeq      int
+	localAsyncDrain    bool
+	localAsyncChain    bool
+	executionUser      Value
+	limits             Limits
+	limitCaps          LimitCaps
+	limitMode          LimitMode
+	limitViolations    []LimitViolation
+	fakeNow            time.Time
+	currentAsyncKind   string
+	activeExceptions   []activeException
+	currentStatement   callFrame
+	hasStatement       bool
+	triggerDepth       int
+	savepoints         map[string]storage.OrgState
+	emailSavepoints    map[string][]CapturedEmail
+	savepointOrder     map[string]int
+	nextSavepoint      int
+	pageMessages       []Value
+	currentPage        Value
+	pageReferences     map[string]string
+	platformCache      map[string]map[string]cacheEntry
+	capturedEmails     []CapturedEmail
+	restRequest        Value
+	restResponse       Value
+	serverBaseURL      string
+	metadataDeploys    map[string]Value
+	debugHooks         DebugHooks
+	hasDebugHooks      bool
+	ctx                context.Context
+	activeGetters      map[string]int
+	activeSetters      map[string]int
+	triggerGlobals     map[string]Value
+	cryptoRandomSeq    uint64
+	staticInitState    map[string]staticInitState
+	lastAmbiguous      *overloadDiagnostic
+	activeConstructors map[string]int
 }
 
 const maxTriggerDepth = 16
@@ -1269,6 +1271,20 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 		}
 		return evalBinary(expr.Operator, left, right)
 	case ir.ExprCall:
+		if strings.HasPrefix(expr.Callee, "__assign:") {
+			if len(expr.Args) != 1 {
+				return Null, fmt.Errorf("assignment expression requires 1 operand")
+			}
+			target := strings.TrimPrefix(expr.Callee, "__assign:")
+			value, err := vm.evalForAssignment(target, expr.Args[0], result)
+			if err != nil {
+				return Null, err
+			}
+			if err := vm.assign(target, value); err != nil {
+				return Null, err
+			}
+			return value, nil
+		}
 		if strings.HasPrefix(expr.Callee, "__prefix:") || strings.HasPrefix(expr.Callee, "__postfix:") {
 			return vm.evalIncrementExpression(expr, result)
 		}
@@ -1472,6 +1488,18 @@ func normalizeStaticCallCasing(callee string) string {
 	return callee
 }
 
+func lexicalOuterClasses(className string) []string {
+	outers := []string{}
+	for {
+		dot := strings.LastIndex(className, ".")
+		if dot <= 0 {
+			return outers
+		}
+		className = className[:dot]
+		outers = append(outers, className)
+	}
+}
+
 func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, result *Result) (Value, error) {
 	if strings.HasPrefix(callee, "new:") {
 		return vm.constructValue(strings.TrimPrefix(callee, "new:"), args, namedArgs, result)
@@ -1539,6 +1567,22 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return vm.callMethod(method, args, result)
 		} else if ambiguous {
 			return Null, vm.ambiguousOverloadError(callee, args)
+		}
+		for _, outerClass := range lexicalOuterClasses(vm.currentClass) {
+			if method, ok, ambiguous := vm.resolveStaticMethodForArgs(outerClass, callee, args); ok {
+				if err := vm.checkMemberAccess(method.ClassName, method.Access, method.Name, method.Modifiers); err != nil {
+					return Null, err
+				}
+				if err := vm.ensureClassInitialized(method.ClassName); err != nil {
+					return Null, err
+				}
+				if vm.shouldEnqueueFuture(method) {
+					return vm.enqueueFuture(method, args, result)
+				}
+				return vm.callMethod(method, args, result)
+			} else if ambiguous {
+				return Null, vm.ambiguousOverloadError(callee, args)
+			}
 		}
 	}
 	if method, ok, ambiguous := vm.matchRegisteredMethod(callee, args); ok {
@@ -8243,8 +8287,8 @@ func (vm *VM) lookup(name string) (Value, error) {
 					return Null, err
 				}
 				for _, enumValue := range class.EnumValues {
-					if enumValue == memberName {
-						return Value{Kind: ValueObject, Type: class.Name, Text: memberName}, nil
+					if strings.EqualFold(enumValue, memberName) {
+						return Value{Kind: ValueObject, Type: class.Name, Text: enumValue}, nil
 					}
 				}
 			}
@@ -8258,8 +8302,8 @@ func (vm *VM) lookup(name string) (Value, error) {
 						return Null, err
 					}
 					for _, enumValue := range class.EnumValues {
-						if enumValue == memberName {
-							return Value{Kind: ValueObject, Type: class.Name, Text: memberName}, nil
+						if strings.EqualFold(enumValue, memberName) {
+							return Value{Kind: ValueObject, Type: class.Name, Text: enumValue}, nil
 						}
 					}
 				}
@@ -8274,14 +8318,11 @@ func (vm *VM) lookup(name string) (Value, error) {
 							return Null, err
 						}
 						for _, enumValue := range class.EnumValues {
-							if enumValue == nestedMemberName {
-								return Value{Kind: ValueObject, Type: class.Name, Text: nestedMemberName}, nil
+							if strings.EqualFold(enumValue, nestedMemberName) {
+								return Value{Kind: ValueObject, Type: class.Name, Text: enumValue}, nil
 							}
 						}
 					}
-				}
-				if _, ok := vm.Classes[className]; ok && apexIdentifierStartsUpper(memberName[:dot]) && apexIdentifierStartsUpper(nestedMemberName) {
-					return Value{Kind: ValueObject, Type: nestedEnumName, Text: nestedMemberName}, nil
 				}
 			}
 		}
@@ -9044,6 +9085,8 @@ func builtinStaticField(typeName, fieldName string) (Value, bool) {
 		case "UNICODE_CHARACTER_CLASS":
 			return Int(patternFlagUnicodeCharacterClass), true
 		}
+	case "Dom.XmlNodeType":
+		return domXmlNodeTypeValue(fieldName)
 	}
 	return Null, false
 }
@@ -9357,6 +9400,385 @@ func pageReferenceParameters(rawURL string) Value {
 		params.Map[mapKey(String(key))] = String(values[len(values)-1])
 	}
 	return params
+}
+
+func newDomDocument() Value {
+	doc := Object("Dom.Document")
+	doc.Fields["root"] = Null
+	return doc
+}
+
+func domXmlNodeTypeValue(name string) (Value, bool) {
+	switch strings.ToUpper(name) {
+	case "ELEMENT", "TEXT", "COMMENT":
+		return Value{Kind: ValueObject, Type: "Dom.XmlNodeType", Text: strings.ToUpper(name)}, true
+	default:
+		return Null, false
+	}
+}
+
+func newDomXmlNode(nodeType, name, namespace, text string) Value {
+	node := Object("Dom.XmlNode")
+	node.Fields["nodeType"] = Value{Kind: ValueObject, Type: "Dom.XmlNodeType", Text: nodeType}
+	node.Fields["name"] = String(name)
+	node.Fields["namespace"] = domNullableString(namespace)
+	node.Fields["text"] = String(text)
+	node.Fields["children"] = typedList("List<Dom.XmlNode>")
+	node.Fields["attributes"] = typedList("List<Dom.XmlAttribute>")
+	node.Fields["namespaces"] = typedMap("Map<String,String>")
+	node.Fields["parent"] = Null
+	return node
+}
+
+func domNullableString(value string) Value {
+	if value == "" {
+		return Null
+	}
+	return String(value)
+}
+
+func domString(value Value) string {
+	if value.Kind == ValueString {
+		return value.Text
+	}
+	return ""
+}
+
+func domNodeType(node Value) string {
+	if value, ok := node.Fields["nodeType"]; ok && value.Kind == ValueObject {
+		return value.Text
+	}
+	return ""
+}
+
+func domNodeList(node Value, field string) Value {
+	if value, ok := node.Fields[field]; ok && value.Kind == ValueList {
+		return value
+	}
+	return typedList("List<Dom.XmlNode>")
+}
+
+func domSetParent(child, parent Value) Value {
+	if child.Kind == ValueObject && child.Type == "Dom.XmlNode" {
+		child.Fields["parent"] = parent
+	}
+	return child
+}
+
+func domAppendChild(parent, child Value) Value {
+	children := domNodeList(parent, "children")
+	child = domSetParent(child, parent)
+	children.List = append(children.List, child)
+	parent.Fields["children"] = children
+	return child
+}
+
+func domAttribute(key, value, keyNamespace, valueNamespace string) Value {
+	attr := Object("Dom.XmlAttribute")
+	attr.Fields["key"] = String(key)
+	attr.Fields["value"] = String(value)
+	attr.Fields["keyNamespace"] = domNullableString(keyNamespace)
+	attr.Fields["valueNamespace"] = domNullableString(valueNamespace)
+	return attr
+}
+
+func parseDomDocument(source string) (Value, error) {
+	decoder := xml.NewDecoder(strings.NewReader(source))
+	var stack []Value
+	var root Value
+	prefixes := map[string]string{}
+	for {
+		token, err := decoder.Token()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return Null, fmt.Errorf("Dom.Document.load invalid XML: %w", err)
+		}
+		switch typed := token.(type) {
+		case xml.StartElement:
+			node := newDomXmlNode("ELEMENT", typed.Name.Local, typed.Name.Space, "")
+			attrs := typedList("List<Dom.XmlAttribute>")
+			namespaces := typedMap("Map<String,String>")
+			for _, attr := range typed.Attr {
+				if attr.Name.Local == "xmlns" && attr.Name.Space == "" {
+					prefixes[""] = attr.Value
+					namespaces.Map[mapKey(String(""))] = String(attr.Value)
+					continue
+				}
+				if attr.Name.Space == "xmlns" {
+					prefixes[attr.Name.Local] = attr.Value
+					namespaces.Map[mapKey(String(attr.Name.Local))] = String(attr.Value)
+					continue
+				}
+				attrs.List = append(attrs.List, domAttribute(attr.Name.Local, attr.Value, attr.Name.Space, ""))
+			}
+			for prefix, uri := range prefixes {
+				if _, ok := namespaces.Map[mapKey(String(prefix))]; !ok {
+					namespaces.Map[mapKey(String(prefix))] = String(uri)
+				}
+			}
+			node.Fields["attributes"] = attrs
+			node.Fields["namespaces"] = namespaces
+			if len(stack) == 0 {
+				root = node
+			} else {
+				parent := stack[len(stack)-1]
+				domAppendChild(parent, node)
+			}
+			stack = append(stack, node)
+		case xml.EndElement:
+			if len(stack) > 0 {
+				stack = stack[:len(stack)-1]
+			}
+		case xml.CharData:
+			text := string([]byte(typed))
+			if len(stack) == 0 || text == "" {
+				continue
+			}
+			textNode := newDomXmlNode("TEXT", "", "", text)
+			parent := stack[len(stack)-1]
+			domAppendChild(parent, textNode)
+		case xml.Comment:
+			if len(stack) == 0 {
+				continue
+			}
+			commentNode := newDomXmlNode("COMMENT", "", "", string([]byte(typed)))
+			parent := stack[len(stack)-1]
+			domAppendChild(parent, commentNode)
+		}
+	}
+	if root.Kind == "" {
+		return Null, fmt.Errorf("Dom.Document.load expected root element")
+	}
+	doc := newDomDocument()
+	doc.Fields["root"] = root
+	return doc, nil
+}
+
+func callDomDocumentMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	switch method {
+	case "load":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("Dom.Document.load expects String")
+		}
+		doc, err := parseDomDocument(args[0].Text)
+		if err != nil {
+			return Null, receiver, false, true, err
+		}
+		return Null, doc, true, true, nil
+	case "getRootElement":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Dom.Document.getRootElement expects 0 arguments")
+		}
+		if root, ok := receiver.Fields["root"]; ok {
+			return root, receiver, false, true, nil
+		}
+		return Null, receiver, false, true, nil
+	}
+	return Null, receiver, false, false, nil
+}
+
+func callDomXmlNodeMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	switch method {
+	case "getNodeType":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Dom.XmlNode.getNodeType expects 0 arguments")
+		}
+		return receiver.Fields["nodeType"], receiver, false, true, nil
+	case "getName":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Dom.XmlNode.getName expects 0 arguments")
+		}
+		return receiver.Fields["name"], receiver, false, true, nil
+	case "getNamespace":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Dom.XmlNode.getNamespace expects 0 arguments")
+		}
+		return receiver.Fields["namespace"], receiver, false, true, nil
+	case "getText":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Dom.XmlNode.getText expects 0 arguments")
+		}
+		if domNodeType(receiver) != "ELEMENT" {
+			return receiver.Fields["text"], receiver, false, true, nil
+		}
+		var text strings.Builder
+		for _, child := range domNodeList(receiver, "children").List {
+			if domNodeType(child) == "TEXT" || domNodeType(child) == "COMMENT" {
+				text.WriteString(domString(child.Fields["text"]))
+			}
+		}
+		return String(text.String()), receiver, false, true, nil
+	case "getChildren":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Dom.XmlNode.getChildren expects 0 arguments")
+		}
+		return domNodeList(receiver, "children"), receiver, false, true, nil
+	case "getParent":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Dom.XmlNode.getParent expects 0 arguments")
+		}
+		return receiver.Fields["parent"], receiver, false, true, nil
+	case "getAttributeCount":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Dom.XmlNode.getAttributeCount expects 0 arguments")
+		}
+		return Int(int64(len(domNodeList(receiver, "attributes").List))), receiver, false, true, nil
+	case "getAttributeKeyAt", "getAttributeKeyNsAt":
+		if len(args) != 1 || args[0].Kind != ValueInt {
+			return Null, receiver, false, true, fmt.Errorf("Dom.XmlNode.%s expects Integer", method)
+		}
+		attrs := domNodeList(receiver, "attributes").List
+		index := int(args[0].Int)
+		if index < 0 || index >= len(attrs) {
+			return Null, receiver, false, true, fmt.Errorf("Dom.XmlNode.%s index out of bounds: %d", method, index)
+		}
+		field := "key"
+		if method == "getAttributeKeyNsAt" {
+			field = "keyNamespace"
+		}
+		return attrs[index].Fields[field], receiver, false, true, nil
+	case "getAttributeValue", "getAttributeValueNs":
+		if len(args) != 2 || args[0].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("Dom.XmlNode.%s expects key and namespace", method)
+		}
+		key := args[0].Text
+		namespace := ""
+		if args[1].Kind == ValueString {
+			namespace = args[1].Text
+		}
+		for _, attr := range domNodeList(receiver, "attributes").List {
+			if domString(attr.Fields["key"]) == key && domString(attr.Fields["keyNamespace"]) == namespace {
+				if method == "getAttributeValueNs" {
+					return attr.Fields["valueNamespace"], receiver, false, true, nil
+				}
+				return attr.Fields["value"], receiver, false, true, nil
+			}
+		}
+		return Null, receiver, false, true, nil
+	case "getPrefixFor":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("Dom.XmlNode.getPrefixFor expects namespace String")
+		}
+		namespaces := receiver.Fields["namespaces"]
+		if namespaces.Kind == ValueMap {
+			for rawKey, value := range namespaces.Map {
+				if value.Kind == ValueString && value.Text == args[0].Text {
+					return valueFromMapKey(rawKey), receiver, false, true, nil
+				}
+			}
+		}
+		return Null, receiver, false, true, nil
+	case "setNamespace":
+		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("Dom.XmlNode.setNamespace expects prefix and namespace Strings")
+		}
+		namespaces := receiver.Fields["namespaces"]
+		if namespaces.Kind != ValueMap {
+			namespaces = typedMap("Map<String,String>")
+		}
+		namespaces.Map[mapKey(args[0])] = args[1]
+		receiver.Fields["namespaces"] = namespaces
+		return Null, receiver, true, true, nil
+	case "setAttributeNs":
+		if len(args) != 4 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("Dom.XmlNode.setAttributeNs expects key, value, key namespace, and value namespace")
+		}
+		key := args[0].Text
+		keyNamespace := domString(args[2])
+		attrs := domNodeList(receiver, "attributes")
+		for i, attr := range attrs.List {
+			if domString(attr.Fields["key"]) == key && domString(attr.Fields["keyNamespace"]) == keyNamespace {
+				attr.Fields["value"] = args[1]
+				attr.Fields["valueNamespace"] = args[3]
+				attrs.List[i] = attr
+				receiver.Fields["attributes"] = attrs
+				return Null, receiver, true, true, nil
+			}
+		}
+		attrs.List = append(attrs.List, domAttribute(key, args[1].Text, keyNamespace, domString(args[3])))
+		receiver.Fields["attributes"] = attrs
+		return Null, receiver, true, true, nil
+	case "removeAttribute":
+		if len(args) != 2 || args[0].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("Dom.XmlNode.removeAttribute expects key and namespace")
+		}
+		key := args[0].Text
+		keyNamespace := domString(args[1])
+		attrs := domNodeList(receiver, "attributes")
+		filtered := attrs.List[:0]
+		for _, attr := range attrs.List {
+			if domString(attr.Fields["key"]) == key && domString(attr.Fields["keyNamespace"]) == keyNamespace {
+				continue
+			}
+			filtered = append(filtered, attr)
+		}
+		attrs.List = filtered
+		receiver.Fields["attributes"] = attrs
+		return Null, receiver, true, true, nil
+	case "addTextNode", "addCommentNode":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("Dom.XmlNode.%s expects String", method)
+		}
+		nodeType := "TEXT"
+		if method == "addCommentNode" {
+			nodeType = "COMMENT"
+		}
+		child := newDomXmlNode(nodeType, "", "", args[0].Text)
+		child = domAppendChild(receiver, child)
+		return child, receiver, true, true, nil
+	case "addChildElement":
+		if len(args) != 3 || args[0].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("Dom.XmlNode.addChildElement expects name, namespace, prefix")
+		}
+		namespace := domString(args[1])
+		child := newDomXmlNode("ELEMENT", args[0].Text, namespace, "")
+		if args[2].Kind == ValueString && namespace != "" {
+			namespaces := typedMap("Map<String,String>")
+			namespaces.Map[mapKey(args[2])] = String(namespace)
+			child.Fields["namespaces"] = namespaces
+		}
+		child = domAppendChild(receiver, child)
+		return child, receiver, true, true, nil
+	case "removeChild":
+		if len(args) != 1 || args[0].Kind != ValueObject {
+			return Null, receiver, false, true, fmt.Errorf("Dom.XmlNode.removeChild expects XmlNode")
+		}
+		children := domNodeList(receiver, "children")
+		filtered := children.List[:0]
+		for _, child := range children.List {
+			if child.Equal(args[0]) {
+				continue
+			}
+			filtered = append(filtered, child)
+		}
+		children.List = filtered
+		receiver.Fields["children"] = children
+		return Null, receiver, true, true, nil
+	case "insertBefore":
+		if len(args) != 2 || args[0].Kind != ValueObject || args[1].Kind != ValueObject {
+			return Null, receiver, false, true, fmt.Errorf("Dom.XmlNode.insertBefore expects new child and reference child")
+		}
+		children := domNodeList(receiver, "children")
+		newChild := domSetParent(args[0], receiver)
+		inserted := false
+		out := make([]Value, 0, len(children.List)+1)
+		for _, child := range children.List {
+			if !inserted && child.Equal(args[1]) {
+				out = append(out, newChild)
+				inserted = true
+			}
+			out = append(out, child)
+		}
+		if !inserted {
+			out = append(out, newChild)
+		}
+		children.List = out
+		receiver.Fields["children"] = children
+		return Null, receiver, true, true, nil
+	}
+	return Null, receiver, false, false, nil
 }
 
 func (vm *VM) newPageReference(rawURL string) Value {
@@ -9926,6 +10348,12 @@ func typedMap(typeName string) Value {
 	return value
 }
 
+func typedList(typeName string) Value {
+	value := List()
+	value.Type = typeName
+	return value
+}
+
 func (vm *VM) lookupRestContextField(name string) (Value, bool, error) {
 	switch name {
 	case "RestContext.request":
@@ -10173,6 +10601,11 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 			rawURL = args[0].Text
 		}
 		return vm.newPageReference(rawURL), nil
+	case "Dom.Document":
+		if len(args) != 0 || len(namedArgs) != 0 {
+			return Null, fmt.Errorf("Dom.Document constructor expects 0 arguments")
+		}
+		return newDomDocument(), nil
 	case "Auth.UserData":
 		if len(args) != 11 || len(namedArgs) != 0 {
 			return Null, fmt.Errorf("Auth.UserData constructor expects 11 arguments")
@@ -10600,8 +11033,20 @@ func (vm *VM) callChainedConstructor(callee string, args []Value, result *Result
 	if callee == "this" && sameConstructorSignature(vm.currentMethod, target) {
 		return Null, fmt.Errorf("recursive constructor invocation %s", target.Name)
 	}
+	if vm.activeConstructors[constructorCallKey(target)] > 0 {
+		return Null, fmt.Errorf("recursive constructor invocation %s", target.Name)
+	}
 	_, err := vm.callMethodWithReceiver(target, receiver, args, result)
 	return Null, err
+}
+
+func constructorCallKey(method Method) string {
+	parts := make([]string, 0, len(method.Params)+2)
+	parts = append(parts, method.ClassName, method.Name)
+	for _, param := range method.Params {
+		parts = append(parts, param.Type)
+	}
+	return strings.Join(parts, "\x00")
 }
 
 func sameConstructorSignature(left, right Method) bool {
@@ -11619,6 +12064,9 @@ func isLoggingLevelValue(value Value) bool {
 }
 
 func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
+	if value.Type != "" && strings.EqualFold(value.Type, typeName) {
+		return value, nil
+	}
 	if value.Kind == ValueString {
 		if class, ok := vm.resolveEnumClass(typeName); ok {
 			valueText := value.Text
@@ -12135,6 +12583,20 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		if err := vm.ensureClassInitialized(method.ClassName); err != nil {
 			return Null, err
 		}
+	}
+	constructorKey := ""
+	if method.IsConstructor {
+		constructorKey = constructorCallKey(method)
+		if vm.activeConstructors == nil {
+			vm.activeConstructors = make(map[string]int)
+		}
+		vm.activeConstructors[constructorKey]++
+		defer func() {
+			vm.activeConstructors[constructorKey]--
+			if vm.activeConstructors[constructorKey] <= 0 {
+				delete(vm.activeConstructors, constructorKey)
+			}
+		}()
 	}
 	frame := make(map[string]Value, len(method.Params))
 	frameTypes := make(map[string]string, len(method.Params))
@@ -15773,6 +16235,10 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			return receiver.Fields["summary"], receiver, false, true, nil
 		}
+	case "Dom.Document":
+		return callDomDocumentMember(receiver, method, args)
+	case "Dom.XmlNode":
+		return callDomXmlNodeMember(receiver, method, args)
 	case "Continuation":
 		return Null, receiver, false, true, unsupportedCallError("Continuation local continuation callout surface")
 	case "StaticResourceCalloutMock":

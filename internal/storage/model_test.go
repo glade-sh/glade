@@ -164,6 +164,43 @@ func TestApplyOrgShapeAddsOptionalFeatureObjectsAndRecords(t *testing.T) {
 	}
 }
 
+func TestEnsureDeterministicPlatformDataSeedsCommonSalesObjects(t *testing.T) {
+	org := NewOrgState()
+	EnsureDeterministicPlatformData(&org)
+
+	for _, objectName := range []string{"Account", "Contact", "Opportunity", "Product2"} {
+		if resolved, ok := ResolveObjectName(org, objectName); !ok || resolved != objectName {
+			t.Fatalf("ResolveObjectName(%s) = %q, %v", objectName, resolved, ok)
+		}
+	}
+	for objectName, wantPrefix := range map[string]string{
+		"Contact":     "003",
+		"Opportunity": "006",
+		"Product2":    "01t",
+	} {
+		if got := org.Objects[objectName].Definition.KeyPrefix; got != wantPrefix {
+			t.Fatalf("%s key prefix = %q, want %q", objectName, got, wantPrefix)
+		}
+	}
+
+	account := org.Objects["Account"].Definition
+	if field, ok := account.Fields["NumberOfEmployees"]; !ok || field.Type != FieldInteger {
+		t.Fatalf("Account.NumberOfEmployees field = %#v, %v", field, ok)
+	}
+	if field, ok := account.Fields["AnnualRevenue"]; !ok || field.Type != FieldDecimal {
+		t.Fatalf("Account.AnnualRevenue field = %#v, %v", field, ok)
+	}
+	if field, ok := org.Objects["Contact"].Definition.Fields["AccountId"]; !ok || field.Type != FieldReference || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "Account" {
+		t.Fatalf("Contact.AccountId field = %#v, %v", field, ok)
+	}
+	if field, ok := org.Objects["Opportunity"].Definition.Fields["StageName"]; !ok || !field.Required {
+		t.Fatalf("Opportunity.StageName field = %#v, %v", field, ok)
+	}
+	if field, ok := org.Objects["Product2"].Definition.Fields["IsActive"]; !ok || field.Type != FieldBoolean {
+		t.Fatalf("Product2.IsActive field = %#v, %v", field, ok)
+	}
+}
+
 func TestEnsureStandardObjectAddsSalesCloudStandardObjectShape(t *testing.T) {
 	org := NewOrgState()
 

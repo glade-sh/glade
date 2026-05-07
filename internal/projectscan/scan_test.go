@@ -724,9 +724,15 @@ func TestScanSuppressesResolvedCustomMetadataTypeReferences(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Feature__mdt/Feature__mdt.object-meta.xml"), `<CustomObject><label>Feature</label><pluralLabel>Features</pluralLabel></CustomObject>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/customMetadata/pkg__RecordBacked.Default.md-meta.xml"), `<CustomMetadata>
+  <label>Default</label>
+  <values><field>pkg__Enabled__c</field><value>true</value></values>
+</CustomMetadata>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/classes/UsesMetadata.cls"), `public class UsesMetadata {
   Feature__mdt configured;
   pkg__Feature__mdt namespaced;
+  pkg__RecordBacked__mdt recordBacked;
+  ext__ManagedOnly__mdt externalManaged;
   Missing__mdt missing;
   /*
    * BlockCommentOnly__mdt should not count.
@@ -748,6 +754,12 @@ func TestScanSuppressesResolvedCustomMetadataTypeReferences(t *testing.T) {
 	}
 	if hasLineFinding(report, "custommetadata.legacy-records", "force-app/main/default/classes/UsesMetadata.cls", "pkg__Feature__mdt") {
 		t.Fatalf("resolved namespaced pkg__Feature__mdt type reference should not be reported")
+	}
+	if hasLineFinding(report, "custommetadata.legacy-records", "force-app/main/default/classes/UsesMetadata.cls", "pkg__RecordBacked__mdt") {
+		t.Fatalf("record-backed custom metadata type reference should not be reported")
+	}
+	if hasLineFinding(report, "custommetadata.legacy-records", "force-app/main/default/classes/UsesMetadata.cls", "ext__ManagedOnly__mdt") {
+		t.Fatalf("external managed custom metadata type reference should not be reported")
 	}
 	if !hasLineFinding(report, "custommetadata.legacy-records", "force-app/main/default/classes/UsesMetadata.cls", "Missing__mdt") {
 		t.Fatalf("missing unresolved Missing__mdt finding")
@@ -1017,6 +1029,41 @@ import MISSING from '@salesforce/resourceUrl/MissingResource';
 		case "StaticResource", "ContentAsset", "EmailTemplate", "NamedCredential", "RemoteSiteSetting":
 			t.Fatalf("loaded metadata files should not be reported as unsupported: %#v", finding)
 		}
+	}
+}
+
+func TestScanUsesMetadataOutsideConfiguredPackageDirectories(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"namz","packageDirectories":[{"path":"core","default":true}]}`)
+	writeFile(t, filepath.Join(root, "core/customMetadata/znu__SOQLQuery.Default.md-meta.xml"), `<CustomMetadata>
+  <label>Default Query</label>
+</CustomMetadata>`)
+	writeFile(t, filepath.Join(root, "core/classes/UsesSupplementalMetadata.cls"), `public class UsesSupplementalMetadata {
+  znu__SOQLQuery__mdt query;
+  void run() {
+    HttpRequest req = new HttpRequest();
+    req.setEndpoint('callout:OPEX__OpenExchangeRates/latest.json');
+  }
+}`)
+	writeFile(t, filepath.Join(root, "core/lwc/payment/payment.js"), `import paymentOptionsIcon from '@salesforce/resourceUrl/znu__PaymentOptions';`)
+	writeFile(t, filepath.Join(root, "extras/namedCredentials/OpenExchangeRates.namedCredential-meta.xml"), `<NamedCredential>
+  <endpoint>https://openexchangerates.example.test</endpoint>
+  <protocol>NoAuthentication</protocol>
+</NamedCredential>`)
+
+	report, err := Scan(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if hasLineFinding(report, "custommetadata.legacy-records", "core/classes/UsesSupplementalMetadata.cls", "znu__SOQLQuery__mdt") {
+		t.Fatalf("record-backed namespaced custom metadata type should not be reported")
+	}
+	if hasLineFinding(report, "endpoint.metadata", "core/classes/UsesSupplementalMetadata.cls", "OPEX__OpenExchangeRates") {
+		t.Fatalf("named credential outside configured package directories should be available")
+	}
+	if hasLineFinding(report, "staticresources.urlfor", "core/lwc/payment/payment.js", "znu__PaymentOptions") {
+		t.Fatalf("external managed-package static resource reference should not be reported")
 	}
 }
 

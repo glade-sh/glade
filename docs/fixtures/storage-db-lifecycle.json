@@ -15,7 +15,7 @@
   },
   "expected": {
     "result": {
-      "exportedObjects": 13,
+      "exportedObjects": 16,
       "exportedSequences": 8,
       "importedAccountRows": 1,
       "importedProfiles": 1,

@@ -350,6 +350,12 @@ func (a *Analyzer) checkInheritanceContracts(index typesys.Index) []diagnostic.D
 }
 
 func hasInheritedMethodSignature(model map[string]typeMembers, typ typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if isObjectOverrideSignature(member) {
+		return true
+	}
+	if hasPlatformInheritedMethodSignature(typ, member) {
+		return true
+	}
 	for _, candidate := range resolveMemberMethods(model, typ.SuperClass, member.Name) {
 		if sameSemaSignature(candidate.member, member) {
 			return true
@@ -363,6 +369,31 @@ func hasInheritedMethodSignature(model map[string]typeMembers, typ typesys.TypeS
 		}
 	}
 	return false
+}
+
+func hasPlatformInheritedMethodSignature(typ typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	superClass := normalizeName(typ.SuperClass)
+	name := normalizeName(member.Name)
+	switch superClass {
+	case "visualeditor.dynamicpicklist":
+		return len(member.Parameters) == 0 && (name == "getdefaultvalue" || name == "getvalues")
+	case "metadata.deploycallbackcontext":
+		return len(member.Parameters) == 0 && name == "getcallbackjobid"
+	default:
+		return false
+	}
+}
+
+func isObjectOverrideSignature(member typesys.MemberSymbol) bool {
+	if len(member.Parameters) != 0 {
+		return false
+	}
+	switch normalizeName(member.Name) {
+	case "tostring", "hashcode":
+		return true
+	default:
+		return false
+	}
 }
 
 type methodRequirement struct {
@@ -444,11 +475,31 @@ func sameSemaSignature(left, right typesys.MemberSymbol) bool {
 		return false
 	}
 	for i := range left.Parameters {
-		if !strings.EqualFold(left.Parameters[i].Type, right.Parameters[i].Type) {
+		if !sameSemaSignatureType(left.Parameters[i].Type, right.Parameters[i].Type) {
 			return false
 		}
 	}
 	return true
+}
+
+func sameSemaSignatureType(left, right string) bool {
+	if strings.EqualFold(left, right) {
+		return true
+	}
+	leftBase, leftArgs := semaGenericBaseAndArgs(left)
+	rightBase, rightArgs := semaGenericBaseAndArgs(right)
+	if len(leftArgs) > 0 || len(rightArgs) > 0 {
+		if !sameSemaSignatureType(leftBase, rightBase) || len(leftArgs) != len(rightArgs) {
+			return false
+		}
+		for i := range leftArgs {
+			if !sameSemaSignatureType(leftArgs[i], rightArgs[i]) {
+				return false
+			}
+		}
+		return true
+	}
+	return strings.EqualFold(shortNestedTypeName(left), shortNestedTypeName(right))
 }
 
 func methodSignatureKey(member typesys.MemberSymbol) string {
@@ -533,6 +584,7 @@ func readSemaSource(path string, cache map[string]string) (string, bool) {
 
 func buildTypeMembers(index typesys.Index) map[string]typeMembers {
 	out := make(map[string]typeMembers)
+	shortAliases := make(map[string][]string)
 	for _, typ := range index.Types {
 		members := typeMembers{
 			name:       typ.Name,
@@ -555,8 +607,48 @@ func buildTypeMembers(index typesys.Index) map[string]typeMembers {
 		if index.Project.Namespace != "" {
 			out[normalizeName(index.Project.Namespace+"."+typ.Name)] = members
 		}
+		if short := shortNestedTypeName(typ.Name); short != typ.Name {
+			shortAliases[normalizeName(short)] = append(shortAliases[normalizeName(short)], typ.Name)
+		}
+	}
+	for short, names := range shortAliases {
+		if len(names) == 1 {
+			out[short] = out[normalizeName(names[0])]
+		}
+	}
+	for key, members := range out {
+		members.superClass = resolveNestedTypeName(out, members.name, members.superClass)
+		for i, iface := range members.interfaces {
+			members.interfaces[i] = resolveNestedTypeName(out, members.name, iface)
+		}
+		out[key] = members
 	}
 	return out
+}
+
+func shortNestedTypeName(typeName string) string {
+	if idx := strings.LastIndexByte(typeName, '.'); idx >= 0 {
+		return typeName[idx+1:]
+	}
+	return typeName
+}
+
+func resolveNestedTypeName(model map[string]typeMembers, owner, typeName string) string {
+	typeName = strings.TrimSpace(typeName)
+	if typeName == "" || strings.Contains(typeName, ".") {
+		return typeName
+	}
+	ownerParts := strings.Split(owner, ".")
+	if len(ownerParts) > 0 && strings.EqualFold(ownerParts[0], typeName) {
+		return typeName
+	}
+	for i := len(ownerParts) - 1; i > 0; i-- {
+		candidate := strings.Join(append(append([]string{}, ownerParts[:i]...), typeName), ".")
+		if _, ok := model[normalizeName(candidate)]; ok {
+			return candidate
+		}
+	}
+	return typeName
 }
 
 func buildConstructability(index typesys.Index) map[string]typesys.TypeSymbol {
@@ -2226,6 +2318,12 @@ func semaConversionScore(paramType, argType string, model map[string]typeMembers
 	if score := semaNumericConversionScore(paramType, argType); score >= 0 {
 		return score
 	}
+	if semaGenericAssignableToType(paramType, argType, model) {
+		return 850
+	}
+	if strings.EqualFold(normalizeArrayType(paramType), "SObject") && isSemaSObjectLike(argType, model) {
+		return 750
+	}
 	if strings.EqualFold(paramType, "Object") {
 		return 10
 	}
@@ -2262,7 +2360,15 @@ func semaNumericConversionScore(paramType, argType string) int {
 }
 
 func semaAssignableToType(paramType, argType string, model map[string]typeMembers) bool {
+	paramType = normalizeArrayType(paramType)
+	argType = normalizeArrayType(argType)
 	if strings.EqualFold(paramType, argType) || strings.EqualFold(paramType, "Object") {
+		return true
+	}
+	if semaGenericAssignableToType(paramType, argType, model) {
+		return true
+	}
+	if strings.EqualFold(paramType, "SObject") && isSemaSObjectLike(argType, model) {
 		return true
 	}
 	if strings.EqualFold(argType, "Integer") {
@@ -2275,6 +2381,69 @@ func semaAssignableToType(paramType, argType string, model map[string]typeMember
 		return strings.EqualFold(paramType, "Double")
 	}
 	return semaTypeMatches(model, argType, paramType, make(map[string]bool))
+}
+
+func semaGenericAssignableToType(paramType, argType string, model map[string]typeMembers) bool {
+	paramBase, paramArgs := semaGenericBaseAndArgs(paramType)
+	argBase, argArgs := semaGenericBaseAndArgs(argType)
+	if !strings.EqualFold(paramBase, argBase) {
+		return false
+	}
+	switch normalizeName(paramBase) {
+	case "list", "set":
+		if len(paramArgs) == 0 {
+			return true
+		}
+		if len(paramArgs) != 1 || len(argArgs) != 1 {
+			return false
+		}
+		return semaAssignableToType(paramArgs[0], argArgs[0], model)
+	case "map":
+		if len(paramArgs) == 0 {
+			return true
+		}
+		if len(paramArgs) != 2 || len(argArgs) != 2 {
+			return false
+		}
+		return semaAssignableToType(paramArgs[0], argArgs[0], model) && semaAssignableToType(paramArgs[1], argArgs[1], model)
+	default:
+		return false
+	}
+}
+
+func isSemaSObjectLike(typeName string, model map[string]typeMembers) bool {
+	typeName = normalizeArrayType(strings.TrimSpace(typeName))
+	if typeName == "" || strings.Contains(typeName, "<") {
+		return false
+	}
+	if _, ok := model[normalizeName(typeName)]; ok {
+		return false
+	}
+	switch normalizeName(typeName) {
+	case "object", "string", "id", "boolean", "integer", "long", "double", "decimal", "date", "datetime", "time", "blob", "type", "exception":
+		return false
+	}
+	if strings.HasSuffix(normalizeName(typeName), "__c") || strings.HasSuffix(normalizeName(typeName), "__mdt") {
+		return true
+	}
+	if isCommonSemaSObjectName(typeName) {
+		return true
+	}
+	for _, known := range vm.CommonSObjectTypeNames() {
+		if strings.EqualFold(typeName, known) {
+			return true
+		}
+	}
+	return false
+}
+
+func isCommonSemaSObjectName(typeName string) bool {
+	switch normalizeName(typeName) {
+	case "account", "contact", "opportunity", "lead", "campaign", "campaignmember", "case", "task", "event", "user", "profile", "organization", "staticresource", "product2", "pricebook2", "pricebookentry", "recordtype":
+		return true
+	default:
+		return false
+	}
 }
 
 func semaTypeDistance(model map[string]typeMembers, typeName, target string, seen map[string]bool) (int, bool) {
@@ -2523,10 +2692,14 @@ type semaCollectionSignature struct {
 }
 
 func semaCollectionMethodSignature(receiverType, method string) (semaCollectionSignature, bool) {
+	receiverType = normalizeArrayType(receiverType)
 	base, args := semaGenericBaseAndArgs(receiverType)
 	method = normalizeName(method)
 	switch normalizeName(base) {
 	case "list":
+		if len(args) == 0 {
+			args = []string{"Object"}
+		}
 		if len(args) != 1 {
 			return semaCollectionSignature{}, false
 		}
@@ -2559,6 +2732,9 @@ func semaCollectionMethodSignature(receiverType, method string) (semaCollectionS
 			return semaCollectionSignature{returnType: "List<" + args[0] + ">"}, true
 		}
 	case "set":
+		if len(args) == 0 {
+			args = []string{"Object"}
+		}
 		if len(args) != 1 {
 			return semaCollectionSignature{}, false
 		}
@@ -2581,6 +2757,9 @@ func semaCollectionMethodSignature(receiverType, method string) (semaCollectionS
 			return semaCollectionSignature{returnType: "Set<" + args[0] + ">"}, true
 		}
 	case "map":
+		if len(args) == 0 {
+			args = []string{"Object", "Object"}
+		}
 		if len(args) != 2 {
 			return semaCollectionSignature{}, false
 		}
@@ -2875,6 +3054,7 @@ func collectionConstructorDiagnostic(typ typesys.TypeSymbol, member typesys.Memb
 }
 
 func semaGenericBaseAndArgs(typeName string) (string, []string) {
+	typeName = normalizeArrayType(typeName)
 	typeName = strings.TrimSpace(typeName)
 	open := strings.IndexByte(typeName, '<')
 	if open < 0 || !strings.HasSuffix(typeName, ">") {
@@ -2905,6 +3085,14 @@ func semaGenericBaseAndArgs(typeName string) (string, []string) {
 	}
 	args = append(args, strings.TrimSpace(inner[start:]))
 	return base, args
+}
+
+func normalizeArrayType(typeName string) string {
+	typeName = strings.TrimSpace(typeName)
+	for strings.HasSuffix(typeName, "[]") {
+		typeName = "List<" + strings.TrimSpace(typeName[:len(typeName)-2]) + ">"
+	}
+	return typeName
 }
 
 func semaIterableElementType(typeName string) (string, bool) {

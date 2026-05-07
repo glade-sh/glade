@@ -1002,6 +1002,112 @@ System.assertEquals('spruce', inner.read());
 	}
 }
 
+func TestRuntimeNestedClassCallsOuterPrivateStaticMethod(t *testing.T) {
+	require, err := CompileAnonymous("return value;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	run, err := CompileAnonymous("return require(value);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Outer.Inner inner = new Outer.Inner();
+System.assertEquals('spruce', inner.run('spruce'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Outer",
+		Methods: map[string]Method{
+			"require": {Name: "Outer.require", ClassName: "Outer", ReturnType: "Object", Params: []Param{{Name: "value", Type: "Object"}}, Access: "private", IsStatic: true, Program: require},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "Outer.Inner",
+		Methods: map[string]Method{
+			"run": {Name: "Outer.Inner.run", ClassName: "Outer.Inner", ReturnType: "Object", Params: []Param{{Name: "value", Type: "Object"}}, Access: "public", Program: run},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRuntimeRejectsRecursiveChainedConstructor(t *testing.T) {
+	ctor, err := CompileAnonymous("this(value);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous("Loopy l = new Loopy('spruce');")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Loopy",
+		Constructors: []Method{{
+			Name:          "Loopy.<init>",
+			ClassName:     "Loopy",
+			IsConstructor: true,
+			Params:        []Param{{Name: "value", Type: "String"}},
+			Program:       ctor,
+		}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	_, err = machine.Execute(program)
+	if err == nil || !strings.Contains(err.Error(), "recursive constructor invocation Loopy.<init>") {
+		t.Fatalf("err = %v, want recursive constructor invocation", err)
+	}
+}
+
+func TestRuntimeReturnsAlreadyTypedMapWithObjectKeys(t *testing.T) {
+	record, err := CompileAnonymous("store.put(key, new List<String>{'spruce'});")
+	if err != nil {
+		t.Fatal(err)
+	}
+	get, err := CompileAnonymous("return store;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Key key = new Key();
+Holder.record(key);
+Map<Key, List<String>> store = Holder.getStore();
+System.assertEquals('spruce', store.get(key).get(0));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Key"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "Holder",
+		StaticFields: map[string]Field{
+			"store": {Name: "store", Type: "Map<Key,List<String>>", Static: true, Access: "private", InitialValue: typedMap("Map<Key,List<String>>")},
+		},
+		StaticFieldOrder: []string{"store"},
+		Methods: map[string]Method{
+			"record":   {Name: "Holder.record", ClassName: "Holder", Params: []Param{{Name: "key", Type: "Key"}}, Access: "public", IsStatic: true, Program: record},
+			"getStore": {Name: "Holder.getStore", ClassName: "Holder", ReturnType: "Map<Key,List<String>>", Access: "public", IsStatic: true, Program: get},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestRuntimeRejectsPrivateFieldAccessAcrossClasses(t *testing.T) {
 	program, err := CompileAnonymous(`
 Secret s = new Secret();

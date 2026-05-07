@@ -283,7 +283,7 @@ func (p *parser) parseStatement() (ir.Instruction, error) {
 		if p.match(tokenSymbol, ";") {
 			return ir.Instruction{Op: ir.OpThrow, Pos: start.pos}, nil
 		}
-		expr, err := p.parseExpression()
+		expr, err := p.parseAssignmentExpression()
 		if err != nil {
 			return ir.Instruction{}, err
 		}
@@ -435,7 +435,7 @@ func (p *parser) parseStatement() (ir.Instruction, error) {
 		return inst, err
 	}
 
-	expr, err := p.parseExpression()
+	expr, err := p.parseAssignmentExpression()
 	if err != nil {
 		return ir.Instruction{}, err
 	}
@@ -489,7 +489,7 @@ func (p *parser) parseFor(pos int) (ir.Instruction, error) {
 	}
 	condition := ir.Expr{Kind: ir.ExprLiteral, Value: "true"}
 	if !p.peek(tokenSymbol, ";") {
-		expr, err := p.parseExpression()
+		expr, err := p.parseAssignmentExpression()
 		if err != nil {
 			return ir.Instruction{}, err
 		}
@@ -563,7 +563,7 @@ func (p *parser) parseAssignmentLike(requireSemicolon bool) (ir.Instruction, boo
 	}
 	if p.match(tokenSymbol, "=") || p.match(tokenSymbol, "+=") || p.match(tokenSymbol, "-=") {
 		op := p.tokens[p.pos-1].text
-		expr, err := p.parseExpression()
+		expr, err := p.parseAssignmentExpression()
 		if err != nil {
 			return ir.Instruction{}, true, err
 		}
@@ -634,6 +634,20 @@ func (p *parser) parseAssignableName() (string, bool) {
 		name += "." + next.text
 	}
 	return name, true
+}
+
+func (p *parser) parseAssignmentExpression() (ir.Expr, error) {
+	save := p.pos
+	name, ok := p.parseAssignableName()
+	if ok && p.match(tokenSymbol, "=") {
+		value, err := p.parseAssignmentExpression()
+		if err != nil {
+			return ir.Expr{}, err
+		}
+		return ir.Expr{Kind: ir.ExprCall, Callee: "__assign:" + name, Args: []ir.Expr{value}}, nil
+	}
+	p.pos = save
+	return p.parseExpression()
 }
 
 func (p *parser) parseSwitch(pos int) (ir.Instruction, error) {

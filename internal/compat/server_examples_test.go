@@ -394,8 +394,8 @@ func TestServerExampleSyntheticSeedsSkipObjectsAbsentFromSchema(t *testing.T) {
 	if records := org.Objects["Account"].Records; len(records) != 0 {
 		t.Fatalf("Account records = %#v", records)
 	}
-	if _, ok := org.Objects["Contact"]; ok {
-		t.Fatalf("Contact object was created without schema: %#v", org.Objects["Contact"])
+	if records := org.Objects["Contact"].Records; len(records) != 0 {
+		t.Fatalf("Contact records = %#v", records)
 	}
 }
 

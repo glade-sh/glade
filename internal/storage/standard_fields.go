@@ -301,7 +301,9 @@ func mergeStandardObjectDefinition(definition *ObjectDefinition, features []stri
 		definition.KeyPrefix = entry.Definition.KeyPrefix
 	}
 	mergeStandardFields(definition, entry.Definition.Fields)
-	mergeStandardRecordTypes(definition, entry.Definition.RecordTypes)
+	if len(definition.RecordTypes) == 0 {
+		mergeStandardRecordTypes(definition, entry.Definition.RecordTypes)
+	}
 	for _, feature := range features {
 		feature = canonicalFeatureName(feature)
 		if feature == "" {
