@@ -546,6 +546,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		"Email":             {APIName: "Email", Type: FieldString},
 		"FirstName":         {APIName: "FirstName", Type: FieldString},
 		"LastName":          {APIName: "LastName", Type: FieldString},
+		"CommunityNickname": {APIName: "CommunityNickname", Type: FieldString},
 		"AccountId":         {APIName: "AccountId", Type: FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Account"},
 		"ProfileId":         {APIName: "ProfileId", Type: FieldReference, ReferenceTo: []string{"Profile"}, RelationshipName: "Profile"},
 		"UserRoleId":        {APIName: "UserRoleId", Type: FieldReference, ReferenceTo: []string{"UserRole"}, RelationshipName: "UserRole"},
@@ -574,6 +575,13 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	ensureObject(org, "PermissionSetAssignment", "0Pa", map[string]Field{
 		"AssigneeId":      {APIName: "AssigneeId", Type: FieldReference, ReferenceTo: []string{"User"}, RelationshipName: "Assignee"},
 		"PermissionSetId": {APIName: "PermissionSetId", Type: FieldReference, ReferenceTo: []string{"PermissionSet"}, RelationshipName: "PermissionSet"},
+	})
+	ensureObject(org, "Group", "00G", map[string]Field{
+		"Name":          {APIName: "Name", Type: FieldString, Required: true},
+		"DeveloperName": {APIName: "DeveloperName", Type: FieldString},
+		"Type":          {APIName: "Type", Type: FieldPicklist, DefaultValue: "Regular"},
+		"RelatedId":     {APIName: "RelatedId", Type: FieldReference, ReferenceTo: []string{"User", "UserRole"}, RelationshipName: "Related"},
+		"Email":         {APIName: "Email", Type: FieldString},
 	})
 	ensureObject(org, "ObjectPermissions", "110", map[string]Field{
 		"ParentId":                    {APIName: "ParentId", Type: FieldReference, ReferenceTo: []string{"PermissionSet", "Profile"}, RelationshipName: "Parent"},

@@ -2672,6 +2672,49 @@ System.runAs(new User(Id = '005-user-a', ProfileId = '00e-profile-a', Username =
 	}
 }
 
+func TestExecMixedDMLIsCatchableAndFailedAttemptDoesNotPoisonTransaction(t *testing.T) {
+	program, err := CompileAnonymous(`
+insert new Account(Name = 'Before');
+Boolean caught = false;
+try {
+  insert new User(Username = 'setup@example.test');
+} catch (DmlException e) {
+  caught = true;
+  System.assert(e.getMessage().contains('Mixed DML'));
+}
+System.assert(caught);
+insert new Account(Name = 'After');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecQueueGroupDMLDoesNotTripMixedDML(t *testing.T) {
+	program, err := CompileAnonymous(`
+insert new Account(Name = 'Queue Target');
+insert new Group(Name = 'Local Queue', DeveloperName = 'LocalQueue', Type = 'Queue');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureStandardObject(&org, "Group")
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecPermissionMetadataObjectsAreSetupDML(t *testing.T) {
 	setupOnly, err := CompileAnonymous(`
 PermissionSet ps = new PermissionSet(Name = 'LocalPermissions');
@@ -2708,6 +2751,86 @@ insert new Account(Name = 'Acme');
 	machine.EnableTestContext()
 	if _, err := machine.Execute(mixed); err == nil || !strings.Contains(err.Error(), "Mixed DML") {
 		t.Fatalf("err = %v, want Mixed DML", err)
+	}
+}
+
+func TestExecPermissionSetInsertDefaultsGeneratedRequiredPermissionFields(t *testing.T) {
+	program, err := CompileAnonymous(`
+PermissionSet ps = new PermissionSet(Name = 'LocalPermissions', Label = 'Local Permissions');
+insert ps;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "PermissionSet")
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+	var inserted storage.Record
+	for _, record := range org.Objects["PermissionSet"].Records {
+		if record.Fields["Name"].String == "LocalPermissions" {
+			inserted = record
+			break
+		}
+	}
+	if inserted.ID == "" {
+		t.Fatalf("inserted permission set not found: %#v", org.Objects["PermissionSet"].Records)
+	}
+	if value := inserted.Fields["PermissionsApiEnabled"]; value.Kind != storage.ValueBoolean || value.Boolean {
+		t.Fatalf("PermissionsApiEnabled = %#v, want false default", value)
+	}
+}
+
+func TestExecUserInsertDefaultsGeneratedRequiredPreferenceFields(t *testing.T) {
+	program, err := CompileAnonymous(`
+User usr = new User(
+  Username = 'local-user@example.test',
+  Alias = 'local',
+  Email = 'local-user@example.test',
+  EmailEncodingKey = 'UTF-8',
+  LastName = 'Testing',
+  LanguageLocaleKey = 'en_US',
+  LocaleSidKey = 'en_US',
+  ProfileId = '00e000000000001',
+  TimeZoneSidKey = 'America/Los_Angeles'
+);
+insert usr;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "User")
+	storage.EnsureStandardObject(&org, "Profile")
+	org.Objects["Profile"].Records["00e000000000001"] = storage.Record{
+		ID:     "00e000000000001",
+		Object: "Profile",
+		Fields: map[string]storage.Value{
+			"Name": storage.StringValue("System Administrator"),
+		},
+	}
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+	var inserted storage.Record
+	for _, record := range org.Objects["User"].Records {
+		if record.Fields["Username"].String == "local-user@example.test" {
+			inserted = record
+			break
+		}
+	}
+	if inserted.ID == "" {
+		t.Fatalf("inserted user not found: %#v", org.Objects["User"].Records)
+	}
+	if value := inserted.Fields["UserPreferencesEnableLwrLexPilot"]; value.Kind != storage.ValueBoolean || value.Boolean {
+		t.Fatalf("UserPreferencesEnableLwrLexPilot = %#v, want false default", value)
 	}
 }
 
@@ -3170,6 +3293,24 @@ func TestExecDateTimeParsingRejectsInvalidText(t *testing.T) {
 		if _, err := New(nil).Execute(program); err == nil {
 			t.Fatalf("source %q expected parse error", source)
 		}
+	}
+}
+
+func TestExecDateValueOfInvalidTextCanBeCaught(t *testing.T) {
+	program, err := CompileAnonymous(`
+Boolean caught = false;
+try {
+	Date.valueOf('Test0');
+} catch (Exception e) {
+	caught = e.getMessage().startsWith('Invalid date');
+}
+System.assert(caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 

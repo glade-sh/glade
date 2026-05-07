@@ -2146,12 +2146,18 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		}
 		return platformScalar("Date", fmt.Sprintf("%04d-%02d-%02d", year, args[1].Int, args[2].Int)), nil
 	case "Date.valueOf":
-		if len(args) != 1 || args[0].Kind != ValueString {
-			return Null, fmt.Errorf("Date.valueOf expects String")
+		if len(args) != 1 {
+			return Null, newExceptionError("System.NullPointerException", "Date.valueOf expects String")
+		}
+		if args[0].Kind == ValueNull {
+			return Null, newExceptionError("System.NullPointerException", "Date.valueOf expects String")
+		}
+		if args[0].Kind != ValueString {
+			return Null, newExceptionError("System.TypeException", "Date.valueOf expects String")
 		}
 		date, err := parseDateText(args[0].Text)
 		if err != nil {
-			return Null, err
+			return Null, newExceptionError("System.TypeException", "Invalid date: "+args[0].Text)
 		}
 		return platformScalar("Date", date.Format("2006-01-02")), nil
 	case "Datetime.now", "System.now":
@@ -5746,25 +5752,19 @@ func (vm *VM) checkMixedDML(records []storage.Record) error {
 			hasNonSetup = true
 		}
 	}
-	if hasSetup {
-		vm.testContext.SetupDML = true
+	nextSetup := vm.testContext.SetupDML || hasSetup
+	nextNonSetup := vm.testContext.NonSetupDML || hasNonSetup
+	if nextSetup && nextNonSetup {
+		return newExceptionError("DmlException", "Mixed DML operation detected; wrap supported setup/non-setup test work in System.runAs")
 	}
-	if hasNonSetup {
-		vm.testContext.NonSetupDML = true
-	}
-	if vm.testContext.SetupDML && vm.testContext.NonSetupDML {
-		return &RuntimeError{
-			Type:    "System.DmlException",
-			Message: "Mixed DML operation detected; wrap supported setup/non-setup test work in System.runAs",
-			Stack:   vm.stackFrames(),
-		}
-	}
+	vm.testContext.SetupDML = nextSetup
+	vm.testContext.NonSetupDML = nextNonSetup
 	return nil
 }
 
 func isSetupObject(objectName string) bool {
 	switch strings.ToLower(objectName) {
-	case "user", "profile", "userrole", "permissionset", "permissionsetassignment", "fieldpermissions", "objectpermissions", "setupentityaccess", "group", "groupmember", "queuesobject":
+	case "user", "profile", "userrole", "permissionset", "permissionsetassignment", "fieldpermissions", "objectpermissions", "setupentityaccess":
 		return true
 	default:
 		return false
@@ -8421,7 +8421,7 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 	fields := Object("Schema.SObjectFieldMap")
 	fields.Fields["map"] = fieldsMap
 	desc.Fields["fields"] = fields
-	desc.Fields["fieldSets"] = Object("Schema.FieldSetMapUnsupported")
+	desc.Fields["fieldSets"] = vm.fieldSetMapValue(name, definition)
 	childRelationships := make([]Value, 0)
 	if vm.Org != nil {
 		childObjects := make([]string, 0, len(vm.Org.Objects))
@@ -8496,6 +8496,79 @@ func childRelationshipValue(childObject string, relationship storage.Relationshi
 	value.Fields["cascadeDelete"] = Bool(relationship.CascadeDelete)
 	value.Fields["restrictedDelete"] = Bool(relationship.RestrictedDelete)
 	return value
+}
+
+func (vm *VM) fieldSetMapValue(objectName string, definition storage.ObjectDefinition) Value {
+	fieldSets := Object("Schema.FieldSetMap")
+	m := Map()
+	if vm.Org == nil {
+		fieldSets.Fields["map"] = m
+		return fieldSets
+	}
+	for _, fieldSet := range vm.Org.Metadata.FieldSets {
+		if !metadataObjectNameMatches(vm.Org.Namespace, objectName, fieldSet.ObjectName) {
+			continue
+		}
+		value := vm.fieldSetValue(objectName, definition, fieldSet)
+		m.Map[mapKey(String(fieldSet.Name))] = value
+		if lower := strings.ToLower(fieldSet.Name); lower != fieldSet.Name {
+			m.Map[mapKey(String(lower))] = value
+		}
+	}
+	fieldSets.Fields["map"] = m
+	return fieldSets
+}
+
+func (vm *VM) fieldSetValue(objectName string, definition storage.ObjectDefinition, fieldSet storage.FieldSetMetadata) Value {
+	value := Object("Schema.FieldSet")
+	value.Fields["name"] = String(fieldSet.Name)
+	label := fieldSet.Label
+	if label == "" {
+		label = fieldSet.Name
+	}
+	value.Fields["label"] = String(label)
+	members := make([]Value, 0, len(fieldSet.Fields))
+	for _, member := range fieldSet.Fields {
+		members = append(members, vm.fieldSetMemberValue(objectName, definition, member))
+	}
+	value.Fields["fields"] = List(members...)
+	return value
+}
+
+func (vm *VM) fieldSetMemberValue(objectName string, definition storage.ObjectDefinition, member storage.FieldSetMemberMetadata) Value {
+	value := Object("Schema.FieldSetMember")
+	value.Fields["fieldPath"] = String(member.Field)
+	value.Fields["required"] = Bool(member.Required)
+	value.Fields["dbRequired"] = Bool(member.Required)
+	label := member.Field
+	soapType := String("STRING")
+	if fieldName, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, member.Field); ok {
+		field := definition.Fields[fieldName]
+		if field.Label != "" {
+			label = field.Label
+		} else if field.APIName != "" {
+			label = field.APIName
+		}
+		soapType = schemaSOAPTypeValue(soapTypeForStorageField(field))
+		value.Fields["dbRequired"] = Bool(field.Required)
+	}
+	value.Fields["label"] = String(label)
+	value.Fields["type"] = soapType
+	return value
+}
+
+func metadataObjectNameMatches(namespace, canonical, candidate string) bool {
+	if candidate == "" {
+		return false
+	}
+	if strings.EqualFold(canonical, candidate) {
+		return true
+	}
+	if namespace == "" {
+		return false
+	}
+	stripped := storage.StripNamespaceToken(namespace, candidate)
+	return strings.EqualFold(canonical, stripped)
 }
 
 func recordTypeInfoValue(recordType storage.RecordTypeInfo) Value {
@@ -8770,6 +8843,16 @@ func (vm *VM) lookup(name string) (Value, error) {
 		}
 		if token, ok := vm.lookupSObjectTypeToken(parts); ok {
 			return token, nil
+		}
+		if len(parts) > 2 {
+			if token, ok := vm.lookupSObjectTypeToken(parts[:2]); ok {
+				return vm.lookupPath(token, parts[2:])
+			}
+		}
+		if len(parts) > 3 {
+			if token, ok := vm.lookupSObjectTypeToken(parts[:3]); ok {
+				return vm.lookupPath(token, parts[3:])
+			}
 		}
 		if token, ok := vm.lookupSObjectFieldToken(parts); ok {
 			return token, nil
@@ -9098,6 +9181,8 @@ func (vm *VM) lookupSObjectTypeToken(parts []string) (Value, bool) {
 		objectName = parts[0]
 	case len(parts) == 3 && strings.EqualFold(parts[0], "Schema") && strings.EqualFold(parts[1], "SObjectType"):
 		objectName = parts[2]
+	case len(parts) == 2 && strings.EqualFold(parts[0], "SObjectType"):
+		objectName = parts[1]
 	default:
 		return Null, false
 	}
@@ -9201,6 +9286,53 @@ func (vm *VM) callSchemaSObjectTypePath(callee string, args []Value, result *Res
 			return Null, true, fmt.Errorf("%s describe fields are not available", callee)
 		}
 		value, _, _, _, err := vm.callPlatformObjectMember(fields, "getMap", nil, result)
+		return value, true, err
+	}
+	if len(parts) >= 4 && strings.EqualFold(parts[len(parts)-2], "fieldSets") && strings.EqualFold(parts[len(parts)-1], "getMap") {
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("%s expects 0 arguments", callee)
+		}
+		tokenParts := parts[:len(parts)-2]
+		token, ok := vm.lookupSObjectTypeToken(tokenParts)
+		if !ok {
+			return Null, false, nil
+		}
+		describe, _, _, handled, err := vm.callPlatformObjectMember(token, "getDescribe", nil, result)
+		if err != nil || !handled {
+			return describe, true, err
+		}
+		fieldSets, ok := describe.Fields["fieldSets"]
+		if !ok {
+			return Null, true, fmt.Errorf("%s describe field sets are not available", callee)
+		}
+		value, _, _, _, err := vm.callPlatformObjectMember(fieldSets, "getMap", nil, result)
+		return value, true, err
+	}
+	if len(parts) >= 5 && strings.EqualFold(parts[len(parts)-3], "fieldSets") && strings.EqualFold(parts[len(parts)-1], "getFields") {
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("%s expects 0 arguments", callee)
+		}
+		tokenParts := parts[:len(parts)-3]
+		token, ok := vm.lookupSObjectTypeToken(tokenParts)
+		if !ok {
+			return Null, false, nil
+		}
+		describe, _, _, handled, err := vm.callPlatformObjectMember(token, "getDescribe", nil, result)
+		if err != nil || !handled {
+			return describe, true, err
+		}
+		fieldSets, ok := describe.Fields["fieldSets"]
+		if !ok {
+			return Null, true, fmt.Errorf("%s describe field sets are not available", callee)
+		}
+		fieldSet, _, _, handled, err := vm.callPlatformObjectMember(fieldSets, "get", []Value{String(parts[len(parts)-2])}, result)
+		if err != nil || !handled {
+			return fieldSet, true, err
+		}
+		if fieldSet.Kind == ValueNull {
+			return Null, true, newNullDereferenceError("while accessing " + callee)
+		}
+		value, _, _, _, err := vm.callPlatformObjectMember(fieldSet, "getFields", nil, result)
 		return value, true, err
 	}
 	if len(parts) >= 4 && strings.EqualFold(parts[len(parts)-2], "fields") {
@@ -9352,10 +9484,41 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 				current = describe.Fields["fields"]
 				continue
 			}
+			if strings.EqualFold(part, "fieldSets") {
+				if vm.Org == nil {
+					return Null, fmt.Errorf("Schema.SObjectType.fieldSets requires org state")
+				}
+				objectName := objectValue.Text
+				if canonical, ok := storage.ResolveObjectName(*vm.Org, objectName); ok {
+					objectName = canonical
+				}
+				state, ok := vm.Org.Objects[objectName]
+				if !ok {
+					return Null, fmt.Errorf("Schema.SObjectType.fieldSets unknown object %s", objectName)
+				}
+				describe := vm.describeSObjectValue(objectName, state.Definition)
+				current = describe.Fields["fieldSets"]
+				continue
+			}
 		case "Schema.SObjectFieldMap":
 			mapValue, ok := current.Fields["map"]
 			if !ok || mapValue.Kind != ValueMap {
 				return Null, fmt.Errorf("Schema.SObjectFieldMap is missing map")
+			}
+			if value, ok := mapValue.Map[mapKey(String(part))]; ok {
+				current = value
+				continue
+			}
+			if value, ok := mapValue.Map[mapKey(String(strings.ToLower(part)))]; ok {
+				current = value
+				continue
+			}
+			current = Null
+			continue
+		case "Schema.FieldSetMap":
+			mapValue, ok := current.Fields["map"]
+			if !ok || mapValue.Kind != ValueMap {
+				return Null, fmt.Errorf("Schema.FieldSetMap is missing map")
 			}
 			if value, ok := mapValue.Map[mapKey(String(part))]; ok {
 				current = value
@@ -12248,6 +12411,9 @@ func (vm *VM) typeAssignableTo(from, to string) bool {
 		(strings.EqualFold(from, "Id") && strings.EqualFold(to, "String")) {
 		return true
 	}
+	if strings.EqualFold(from, "Date") && strings.EqualFold(to, "Datetime") {
+		return true
+	}
 	if strings.EqualFold(to, "sObject") && vm.isSObjectLikeType(from) {
 		return true
 	}
@@ -12892,6 +13058,12 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 		return value, nil
 	}
 	if value.Kind == ValueString {
+		if strings.EqualFold(typeName, "String") && strings.EqualFold(value.Type, "Id") {
+			if len(value.Text) == 15 {
+				return String(apexIDTo18(value.Text)), nil
+			}
+			return String(value.Text), nil
+		}
 		if class, ok := vm.resolveEnumClass(typeName); ok {
 			valueText := value.Text
 			if dot := strings.LastIndexByte(valueText, '.'); dot >= 0 {
@@ -12924,6 +13096,13 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 			}
 			return platformScalar("Date", parsed.Format("2006-01-02")), nil
 		case "Datetime":
+			if strings.EqualFold(value.Type, "Date") {
+				parsed, err := parseDateText(value.Text)
+				if err != nil {
+					return Null, err
+				}
+				return platformScalar("Datetime", formatPlatformDatetime(parsed)), nil
+			}
 			parsed, err := parseDatetimeText(value.Text)
 			if err != nil {
 				return Null, err
@@ -12942,6 +13121,17 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 			if strings.EqualFold(value.Type, class.Name) {
 				return Value{Kind: ValueObject, Type: class.Name, Text: value.Text}, nil
 			}
+		}
+		if strings.EqualFold(typeName, "Datetime") && strings.EqualFold(value.Type, "Date") {
+			text, err := platformScalarText(value, "Date")
+			if err != nil {
+				return Null, err
+			}
+			parsed, err := parseDateText(text)
+			if err != nil {
+				return Null, err
+			}
+			return platformScalar("Datetime", formatPlatformDatetime(parsed)), nil
 		}
 		if strings.EqualFold(typeName, "String") && (strings.EqualFold(value.Type, "Id") || strings.EqualFold(value.Type, "String")) {
 			text, err := platformScalarText(value, value.Type)
@@ -13289,6 +13479,19 @@ func valueFromMapKey(key string) Value {
 			objectName, fieldName, hasField := strings.Cut(text, ".")
 			if hasField {
 				return sObjectFieldToken(objectName, fieldName)
+			}
+		}
+		if ok && typeName == "Schema.ChildRelationship" {
+			relationshipName, rest, hasRelationship := strings.Cut(text, "|")
+			childName, fieldName, hasField := strings.Cut(rest, "|")
+			if hasRelationship && hasField {
+				value := Object("Schema.ChildRelationship")
+				value.Fields["relationshipName"] = String(relationshipName)
+				value.Fields["childSObject"] = sObjectTypeToken(childName)
+				value.Fields["field"] = sObjectFieldToken(childName, fieldName)
+				value.Fields["cascadeDelete"] = Bool(false)
+				value.Fields["restrictedDelete"] = Bool(false)
+				return value
 			}
 		}
 		if ok && typeName == "Type" {
@@ -14292,6 +14495,7 @@ func canonicalPlatformObjectMemberName(typeName, method string) string {
 		"getName", "getLabel", "getType", "getSOAPType", "getSoapType",
 		"isNillable", "isExternalId", "isUnique", "isEncrypted", "isNameField",
 		"getReferenceTo", "getRelationshipName", "getPicklistValues",
+		"getFields", "getFieldPath", "getRequired", "getDbRequired",
 		"getController", "getControllerValues", "isAccessible", "isCreateable", "isUpdateable",
 		"to15", "to18", "getSObjectType",
 		"toStartOfMonth", "format", "toString", "date", "time",
@@ -16263,6 +16467,68 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			appendTrace(result, "apex.describe.fields", "apex.describe", map[string]any{"operation": "fields.getMap"})
 			return receiver.Fields["map"], receiver, false, true, nil
 		}
+	case "Schema.FieldSetMap":
+		switch method {
+		case "getMap":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.FieldSetMap.getMap expects 0 arguments")
+			}
+			appendTrace(result, "apex.describe.fieldSets", "apex.describe", map[string]any{"operation": "fieldSets.getMap"})
+			return receiver.Fields["map"], receiver, false, true, nil
+		case "get":
+			if len(args) != 1 || args[0].Kind != ValueString {
+				return Null, receiver, false, true, fmt.Errorf("Schema.FieldSetMap.get expects field set name")
+			}
+			m, ok := receiver.Fields["map"]
+			if !ok || m.Kind != ValueMap {
+				return Null, receiver, false, true, fmt.Errorf("Schema.FieldSetMap is missing map")
+			}
+			if value, ok := m.Map[mapKey(args[0])]; ok {
+				return value, receiver, false, true, nil
+			}
+			return Null, receiver, false, true, nil
+		}
+	case "Schema.FieldSet":
+		switch method {
+		case "getFields":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.FieldSet.getFields expects 0 arguments")
+			}
+			return receiver.Fields["fields"], receiver, false, true, nil
+		case "getLabel":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.FieldSet.getLabel expects 0 arguments")
+			}
+			return receiver.Fields["label"], receiver, false, true, nil
+		}
+	case "Schema.FieldSetMember":
+		switch method {
+		case "getFieldPath":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.FieldSetMember.getFieldPath expects 0 arguments")
+			}
+			return receiver.Fields["fieldPath"], receiver, false, true, nil
+		case "getLabel":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.FieldSetMember.getLabel expects 0 arguments")
+			}
+			return receiver.Fields["label"], receiver, false, true, nil
+		case "getRequired":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.FieldSetMember.getRequired expects 0 arguments")
+			}
+			return receiver.Fields["required"], receiver, false, true, nil
+		case "getDbRequired":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.FieldSetMember.getDbRequired expects 0 arguments")
+			}
+			return receiver.Fields["dbRequired"], receiver, false, true, nil
+		case "getType":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.FieldSetMember.getType expects 0 arguments")
+			}
+			return receiver.Fields["type"], receiver, false, true, nil
+		}
 	case "Schema.SObjectField":
 		if method == "getDescribe" {
 			if len(args) != 0 {
@@ -16394,13 +16660,6 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.PicklistEntry.isActive expects 0 arguments")
 			}
 			return receiver.Fields["active"], receiver, false, true, nil
-		}
-	case "Schema.FieldSetMapUnsupported":
-		if method == "getMap" {
-			if len(args) != 0 {
-				return Null, receiver, false, true, fmt.Errorf("Schema.FieldSetMap.getMap expects 0 arguments")
-			}
-			return Null, receiver, false, true, unsupportedCallError("Schema.DescribeSObjectResult.fieldSets local field set metadata")
 		}
 	case "Schema.DescribeTabSetResult":
 		switch method {

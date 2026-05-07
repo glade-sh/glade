@@ -40,6 +40,18 @@ type tabXML struct {
 	Motif        string `xml:"motif"`
 }
 
+type fieldSetXML struct {
+	FullName        string              `xml:"fullName"`
+	Label           string              `xml:"label"`
+	DisplayedFields []fieldSetMemberXML `xml:"displayedFields"`
+	AvailableFields []fieldSetMemberXML `xml:"availableFields"`
+}
+
+type fieldSetMemberXML struct {
+	Field    string `xml:"field"`
+	Required bool   `xml:"isRequired"`
+}
+
 type staticResourceXML struct {
 	CacheControl string `xml:"cacheControl"`
 	ContentType  string `xml:"contentType"`
@@ -113,6 +125,13 @@ func LoadProject(p project.Project) (storage.MetadataRegistry, error) {
 			return storage.MetadataRegistry{}, err
 		}
 		registry.Tabs = append(registry.Tabs, tab)
+	}
+	for _, path := range p.FieldSetFiles {
+		fieldSet, err := loadFieldSet(path)
+		if err != nil {
+			return storage.MetadataRegistry{}, err
+		}
+		registry.FieldSets = append(registry.FieldSets, fieldSet)
 	}
 	for _, path := range p.NamedCredentialFiles {
 		endpoint, err := loadNamedCredential(path)
@@ -193,6 +212,50 @@ func loadTab(path string) (storage.TabMetadata, error) {
 		tab.SObjectName = name
 	}
 	return tab, nil
+}
+
+func loadFieldSet(path string) (storage.FieldSetMetadata, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return storage.FieldSetMetadata{}, err
+	}
+	var raw fieldSetXML
+	if len(strings.TrimSpace(string(data))) > 0 {
+		if err := xml.Unmarshal(data, &raw); err != nil {
+			return storage.FieldSetMetadata{}, err
+		}
+	}
+	name := strings.TrimSpace(raw.FullName)
+	if name == "" {
+		name = metadataNameFromPath(path, ".fieldSet-meta.xml", ".fieldSet")
+	}
+	members := make([]storage.FieldSetMemberMetadata, 0, len(raw.DisplayedFields)+len(raw.AvailableFields))
+	for _, member := range append(raw.DisplayedFields, raw.AvailableFields...) {
+		field := strings.TrimSpace(member.Field)
+		if field == "" {
+			continue
+		}
+		members = append(members, storage.FieldSetMemberMetadata{Field: field, Required: member.Required})
+	}
+	return storage.FieldSetMetadata{
+		ObjectName: objectNameFromFieldSetPath(path),
+		Name:       name,
+		Label:      strings.TrimSpace(raw.Label),
+		Fields:     members,
+		File:       path,
+	}, nil
+}
+
+func objectNameFromFieldSetPath(path string) string {
+	dir := filepath.Dir(path)
+	if filepath.Base(dir) != "fieldSets" {
+		return ""
+	}
+	objectDir := filepath.Dir(dir)
+	if filepath.Base(filepath.Dir(objectDir)) != "objects" {
+		return ""
+	}
+	return filepath.Base(objectDir)
 }
 
 func metadataNameFromPath(path string, suffixes ...string) string {
@@ -694,6 +757,12 @@ func sortRegistry(registry *storage.MetadataRegistry) {
 		return registry.Labels[i].Language < registry.Labels[j].Language
 	})
 	sort.Slice(registry.Tabs, func(i, j int) bool { return registry.Tabs[i].Name < registry.Tabs[j].Name })
+	sort.Slice(registry.FieldSets, func(i, j int) bool {
+		if registry.FieldSets[i].ObjectName != registry.FieldSets[j].ObjectName {
+			return registry.FieldSets[i].ObjectName < registry.FieldSets[j].ObjectName
+		}
+		return registry.FieldSets[i].Name < registry.FieldSets[j].Name
+	})
 	sort.Slice(registry.StaticResources, func(i, j int) bool { return registry.StaticResources[i].Name < registry.StaticResources[j].Name })
 	sort.Slice(registry.ContentAssets, func(i, j int) bool { return registry.ContentAssets[i].Name < registry.ContentAssets[j].Name })
 	sort.Slice(registry.Endpoints, func(i, j int) bool {

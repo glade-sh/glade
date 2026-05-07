@@ -365,6 +365,7 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 	normalizePersonAccountFields(objectName, &record)
 	applyFieldDefaults(object.Definition, &record)
 	applyCustomSettingInsertDefaults(e.Org, object.Definition, &record)
+	applySetupInsertDefaults(objectName, object.Definition, &record)
 	if err := validateFields(object.Definition, e.Org.Namespace, record); err != nil {
 		return "", err
 	}
@@ -518,6 +519,66 @@ func applyCustomSettingInsertDefaults(org *storage.OrgState, definition storage.
 				record.Fields["SetupOwnerId"] = storage.StringValue(orgID)
 			}
 		}
+	}
+}
+
+func applySetupInsertDefaults(objectName string, definition storage.ObjectDefinition, record *storage.Record) {
+	if record == nil {
+		return
+	}
+	defaultRequiredBoolean := func(fieldName string) bool {
+		switch {
+		case (strings.EqualFold(objectName, "PermissionSet") || strings.EqualFold(objectName, "Profile")) && strings.HasPrefix(fieldName, "Permissions"):
+			return true
+		case strings.EqualFold(objectName, "User"):
+			return true
+		default:
+			return false
+		}
+	}
+	if !strings.EqualFold(objectName, "PermissionSet") && !strings.EqualFold(objectName, "Profile") && !strings.EqualFold(objectName, "User") {
+		return
+	}
+	if record.Fields == nil {
+		record.Fields = make(map[string]storage.Value)
+	}
+	for name, field := range definition.Fields {
+		if field.Type != storage.FieldBoolean || !field.Required || !defaultRequiredBoolean(name) {
+			continue
+		}
+		if _, ok := record.Fields[name]; ok {
+			continue
+		}
+		if record.ExplicitNulls != nil && record.ExplicitNulls[name] {
+			continue
+		}
+		record.Fields[name] = storage.BooleanValue(false)
+	}
+	if strings.EqualFold(objectName, "User") {
+		if _, ok := definition.Fields["CommunityNickname"]; !ok {
+			return
+		}
+		defaultUserCommunityNickname(record)
+	}
+}
+
+func defaultUserCommunityNickname(record *storage.Record) {
+	if record == nil || record.Fields == nil {
+		return
+	}
+	if _, ok := record.Fields["CommunityNickname"]; ok {
+		return
+	}
+	if record.ExplicitNulls != nil && record.ExplicitNulls["CommunityNickname"] {
+		return
+	}
+	for _, field := range []string{"Alias", "Username", "LastName"} {
+		value, ok := record.Fields[field]
+		if !ok || value.Kind != storage.ValueString || strings.TrimSpace(value.String) == "" {
+			continue
+		}
+		record.Fields["CommunityNickname"] = storage.StringValue(strings.TrimSpace(value.String))
+		return
 	}
 }
 

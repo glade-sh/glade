@@ -326,6 +326,18 @@ func mapKey(v Value) string {
 			return string(v.Kind) + ":" + v.Type + ":" + objectName.Text + "." + fieldName.Text
 		}
 	}
+	if v.Kind == ValueObject && v.Type == "Schema.ChildRelationship" {
+		relationshipName, hasRelationship := v.Fields["relationshipName"]
+		childSObject, hasChild := v.Fields["childSObject"]
+		field, hasField := v.Fields["field"]
+		if hasRelationship && hasChild && hasField && relationshipName.Kind == ValueString && childSObject.Kind == ValueObject && childSObject.Type == "Schema.SObjectType" && field.Kind == ValueObject && field.Type == "Schema.SObjectField" {
+			childName, childOK := childSObject.Fields["object"]
+			fieldName, fieldOK := field.Fields["field"]
+			if childOK && fieldOK && childName.Kind == ValueString && fieldName.Kind == ValueString {
+				return string(v.Kind) + ":" + v.Type + ":" + relationshipName.Text + "|" + childName.Text + "|" + fieldName.Text
+			}
+		}
+	}
 	if v.Kind == ValueObject && v.Type == "Type" && v.Text != "" {
 		return string(v.Kind) + ":" + v.Type + ":" + v.Text
 	}

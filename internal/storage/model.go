@@ -42,6 +42,7 @@ type MetadataRegistry struct {
 	Labels                 []LabelMetadata          `json:"labels,omitempty"`
 	ManagedLabelNamespaces []string                 `json:"managedLabelNamespaces,omitempty"`
 	Tabs                   []TabMetadata            `json:"tabs,omitempty"`
+	FieldSets              []FieldSetMetadata       `json:"fieldSets,omitempty"`
 	StaticResources        []StaticResourceMetadata `json:"staticResources,omitempty"`
 	ContentAssets          []ContentAssetMetadata   `json:"contentAssets,omitempty"`
 	Endpoints              []EndpointMetadata       `json:"endpoints,omitempty"`
@@ -67,6 +68,19 @@ type TabMetadata struct {
 	Motif       string `json:"motif,omitempty"`
 	Description string `json:"description,omitempty"`
 	File        string `json:"file,omitempty"`
+}
+
+type FieldSetMetadata struct {
+	ObjectName string                   `json:"objectName,omitempty"`
+	Name       string                   `json:"name"`
+	Label      string                   `json:"label,omitempty"`
+	Fields     []FieldSetMemberMetadata `json:"fields,omitempty"`
+	File       string                   `json:"file,omitempty"`
+}
+
+type FieldSetMemberMetadata struct {
+	Field    string `json:"field"`
+	Required bool   `json:"required,omitempty"`
 }
 
 type StaticResourceMetadata struct {

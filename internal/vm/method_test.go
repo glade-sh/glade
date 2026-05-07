@@ -2529,6 +2529,45 @@ System.assertEquals('id:00X000000000001AAA', Util.pick(templateId));
 	}
 }
 
+func TestExecAssignIDToStringUses18CharacterID(t *testing.T) {
+	program, err := CompileAnonymous(`
+Id accountId = Id.valueOf('001000000000001');
+String text = accountId;
+System.assertEquals('001000000000001AAA', text);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDateArgumentAssignableToDatetimeParameter(t *testing.T) {
+	acceptProgram, err := CompileAnonymous(`
+System.assertEquals('2026-05-07T00:00:00Z', value.formatGmt('yyyy-MM-dd''T''HH:mm:ss''Z'''));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`Util.accept(Date.newInstance(2026, 5, 7));`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterMethod(Method{
+		Name:       "Util.accept",
+		ReturnType: "void",
+		Params:     []Param{{Name: "value", Type: "Datetime"}},
+		Program:    acceptProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecWhileLoopIterationGuard(t *testing.T) {
 	program, err := CompileAnonymous("while (true) { System.debug('loop'); }")
 	if err != nil {

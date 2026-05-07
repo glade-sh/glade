@@ -4314,8 +4314,11 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 			return semaCollectionSignature{returnType: "List<Schema.PicklistEntry>", params: [][]string{{}}}, true
 		}
 	case "schema.fieldset":
-		if method == "getfields" {
+		switch method {
+		case "getfields":
 			return semaCollectionSignature{returnType: "List<Schema.FieldSetMember>", params: [][]string{{}}}, true
+		case "getlabel":
+			return semaCollectionSignature{returnType: "String", params: [][]string{{}}}, true
 		}
 	case "schema.fieldsetmember":
 		switch method {

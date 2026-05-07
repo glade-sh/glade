@@ -78,6 +78,12 @@ func standardFieldsForObject(objectName string) []Field {
 			{APIName: "NamespacePrefix", Label: "Namespace Prefix", Type: FieldString},
 			{APIName: "QualifiedApiName", Label: "Qualified API Name", Type: FieldString},
 		}
+	case stringsEqualFold(objectName, "Group"):
+		return []Field{
+			{APIName: "Name", Label: "Group Name", Type: FieldString, Required: true},
+			{APIName: "DeveloperName", Label: "Developer Name", Type: FieldString},
+			{APIName: "Type", Label: "Type", Type: FieldPicklist},
+		}
 	case stringsEqualFold(objectName, "Account"):
 		return []Field{
 			{APIName: "Name", Label: "Account Name", Type: FieldString},
@@ -354,6 +360,7 @@ func mergeStandardObjectDefinition(definition *ObjectDefinition, features []stri
 		definition.KeyPrefix = entry.Definition.KeyPrefix
 	}
 	mergeStandardFields(definition, entry.Definition.Fields)
+	mergeStandardRelationships(definition, entry.Definition.Relations)
 	if len(definition.RecordTypes) == 0 {
 		mergeStandardRecordTypes(definition, entry.Definition.RecordTypes)
 	}

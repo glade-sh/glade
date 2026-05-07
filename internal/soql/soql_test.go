@@ -1351,20 +1351,54 @@ func TestExecuteDerivedStandardChildRelationshipSubquery(t *testing.T) {
 	org := storage.NewOrgState()
 	storage.EnsureStandardObject(&org, "Account")
 	storage.EnsureStandardObject(&org, "Contact")
+	storage.EnsureStandardObject(&org, "Task")
 	account := org.Objects["Account"]
 	account.Records["001000000000001"] = storage.Record{ID: "001000000000001", Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")}}
 	org.Objects["Account"] = account
 	contact := org.Objects["Contact"]
 	contact.Records["003000000000001"] = storage.Record{ID: "003000000000001", Object: "Contact", Fields: map[string]storage.Value{"LastName": storage.StringValue("Smith"), "AccountId": storage.IDValue("001000000000001")}}
 	org.Objects["Contact"] = contact
+	task := org.Objects["Task"]
+	task.Records["00T000000000001"] = storage.Record{ID: "00T000000000001", Object: "Task", Fields: map[string]storage.Value{"Subject": storage.StringValue("Call"), "AccountId": storage.IDValue("001000000000001")}}
+	org.Objects["Task"] = task
 
-	result, err := ParseAndExecute(org, "SELECT Id, (SELECT Id, LastName FROM Contacts) FROM Account")
+	result, err := ParseAndExecute(org, "SELECT Id, (SELECT Id, LastName FROM Contacts), (SELECT Id, Subject FROM Tasks) FROM Account")
 	if err != nil {
 		t.Fatal(err)
 	}
 	children := result.Records[0].Children["Contacts"]
 	if len(children) != 1 || children[0].Fields["LastName"].String != "Smith" {
 		t.Fatalf("children = %#v", children)
+	}
+	tasks := result.Records[0].Children["Tasks"]
+	if len(tasks) != 1 || tasks[0].Fields["Subject"].String != "Call" {
+		t.Fatalf("tasks = %#v", tasks)
+	}
+}
+
+func TestExecuteStandardIsDeletedWhereWithoutExplicitFieldDefinition(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Custom__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Custom__c", Fields: map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}}},
+		Records: map[storage.ID]storage.Record{
+			"a00000000000001": {ID: "a00000000000001", Object: "Custom__c", Fields: map[string]storage.Value{"Name": storage.StringValue("Live")}},
+			"a00000000000002": {ID: "a00000000000002", Object: "Custom__c", Fields: map[string]storage.Value{"Name": storage.StringValue("Deleted")}, System: storage.SystemFields{IsDeleted: true}},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT Id, IsDeleted FROM Custom__c WHERE IsDeleted = false")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 || result.Records[0].Fields["IsDeleted"].Boolean {
+		t.Fatalf("live rows = %#v", result)
+	}
+	result, err = ParseAndExecute(org, "SELECT Id, IsDeleted FROM Custom__c WHERE IsDeleted = true ALL ROWS")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 || !result.Records[0].Fields["IsDeleted"].Boolean {
+		t.Fatalf("deleted rows = %#v", result)
 	}
 }
 

@@ -935,15 +935,6 @@ func TestExecDescribeUnsupportedMetadataEdges(t *testing.T) {
 		want   string
 	}{
 		{
-			name: "field sets",
-			source: `
-Object accountDescribe = Account.SObjectType.getDescribe();
-Object fieldSets = accountDescribe.fieldSets;
-fieldSets.getMap();
-`,
-			want: `unsupported call "Schema.DescribeSObjectResult.fieldSets local field set metadata"`,
-		},
-		{
 			name:   "dependent picklist controller metadata",
 			source: `Account.Rating.getDescribe().getController();`,
 			want:   `unsupported call "Schema.DescribeFieldResult.getController dependent picklist controller metadata"`,
@@ -966,6 +957,51 @@ fieldSets.getMap();
 				t.Fatalf("err = %v, want %s", err, tc.want)
 			}
 		})
+	}
+}
+
+func TestExecDescribeFieldSetsFromMetadata(t *testing.T) {
+	program, err := CompileAnonymous(`
+Object accountDescribe = Account.SObjectType.getDescribe();
+Map<String,Object> fieldSets = accountDescribe.fieldSets.getMap();
+System.assert(fieldSets.containsKey('Summary'));
+Object summary = fieldSets.get('Summary');
+System.assertEquals('Account Summary', summary.getLabel());
+List<Object> members = summary.getFields();
+System.assertEquals(2, members.size());
+Object nameMember = members.get(0);
+System.assertEquals('Name', nameMember.getFieldPath());
+System.assertEquals('Account Name', nameMember.getLabel());
+System.assertEquals(Schema.SOAPType.STRING, nameMember.getType());
+System.assert(nameMember.getRequired());
+System.assert(nameMember.getDbRequired());
+Object ratingMember = Schema.SObjectType.Account.fieldSets.Summary.getFields().get(1);
+System.assertEquals('Rating', ratingMember.getFieldPath());
+System.assertEquals('Rating', ratingMember.getLabel());
+System.assert(!ratingMember.getRequired());
+System.assert(!ratingMember.getDbRequired());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Name"] = storage.Field{APIName: "Name", Label: "Account Name", Type: storage.FieldString, Required: true}
+	account.Definition.Fields["Rating"] = storage.Field{APIName: "Rating", Label: "Rating", Type: storage.FieldString}
+	org.Objects["Account"] = account
+	org.Metadata.FieldSets = []storage.FieldSetMetadata{{
+		ObjectName: "Account",
+		Name:       "Summary",
+		Label:      "Account Summary",
+		Fields: []storage.FieldSetMemberMetadata{
+			{Field: "Name", Required: true},
+			{Field: "Rating"},
+		},
+	}}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 

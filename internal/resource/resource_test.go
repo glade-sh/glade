@@ -30,6 +30,12 @@ func TestLoadProjectResourcesLabelsAndEndpoints(t *testing.T) {
   <label>Widgets</label>
   <motif>Custom1: Heart</motif>
 </CustomTab>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/fieldSets/Summary.fieldSet-meta.xml"), `<FieldSet>
+  <fullName>Summary</fullName>
+  <label>Account Summary</label>
+  <displayedFields><field>Name</field><isRequired>true</isRequired></displayedFields>
+  <availableFields><field>Rating</field></availableFields>
+</FieldSet>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/email/welcome.email"), "Hello {!Recipient.FirstName}")
 	writeFile(t, filepath.Join(root, "force-app/main/default/email/welcome.email-meta.xml"), `<EmailTemplate>
   <fullName>unfiled$public/welcome</fullName>
@@ -82,6 +88,9 @@ func TestLoadProjectResourcesLabelsAndEndpoints(t *testing.T) {
 	}
 	if len(registry.Tabs) != 1 || registry.Tabs[0].Name != "ext__Widget__c" || registry.Tabs[0].Label != "Widgets" || registry.Tabs[0].SObjectName != "ext__Widget__c" {
 		t.Fatalf("tabs = %#v", registry.Tabs)
+	}
+	if len(registry.FieldSets) != 1 || registry.FieldSets[0].ObjectName != "Account" || registry.FieldSets[0].Name != "Summary" || len(registry.FieldSets[0].Fields) != 2 || !registry.FieldSets[0].Fields[0].Required {
+		t.Fatalf("field sets = %#v", registry.FieldSets)
 	}
 	if len(registry.EmailTemplates) != 1 || registry.EmailTemplates[0].DeveloperName != "welcome" || registry.EmailTemplates[0].Body != "Hello {!Recipient.FirstName}" {
 		t.Fatalf("email templates = %#v", registry.EmailTemplates)
