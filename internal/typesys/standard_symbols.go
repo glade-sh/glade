@@ -33,6 +33,7 @@ type StandardPropertySpec struct {
 
 func StandardPlatformSymbols() []TypeSymbol {
 	specs := append([]StandardSymbolSpec(nil), standardPlatformSymbolSpecs...)
+	specs = append(specs, productNamespaceSymbolSpecs...)
 	for _, name := range standardPlatformTypeNames {
 		if standardSpecExists(specs, name) {
 			continue
@@ -69,6 +70,7 @@ func StandardTypeNameSymbols(names []string) []TypeSymbol {
 }
 
 func StandardSymbolsFromSpecs(specs []StandardSymbolSpec) []TypeSymbol {
+	specs = mergeStandardSymbolSpecs(specs)
 	out := make([]TypeSymbol, 0, len(specs))
 	seen := make(map[string]bool, len(specs))
 	for _, spec := range specs {
@@ -138,6 +140,118 @@ func StandardSymbolsFromSpecs(specs []StandardSymbolSpec) []TypeSymbol {
 		return out[i].Namespace < out[j].Namespace
 	})
 	return out
+}
+
+func mergeStandardSymbolSpecs(specs []StandardSymbolSpec) []StandardSymbolSpec {
+	out := make([]StandardSymbolSpec, 0, len(specs))
+	byName := make(map[string]int, len(specs))
+	for _, spec := range specs {
+		if spec.Name == "" {
+			continue
+		}
+		key := strings.ToLower(spec.Name)
+		existingIndex, ok := byName[key]
+		if !ok {
+			byName[key] = len(out)
+			out = append(out, spec)
+			continue
+		}
+		existing := &out[existingIndex]
+		if existing.Kind == "" {
+			existing.Kind = spec.Kind
+		}
+		if existing.SuperClass == "" {
+			existing.SuperClass = spec.SuperClass
+		}
+		existing.Interfaces = appendUniqueStandardStrings(existing.Interfaces, spec.Interfaces)
+		existing.Constructors = appendUniqueStandardConstructors(existing.Constructors, spec.Constructors)
+		existing.Methods = appendUniqueStandardMethods(existing.Methods, spec.Methods)
+		existing.Properties = appendUniqueStandardProperties(existing.Properties, spec.Properties)
+	}
+	return out
+}
+
+func appendUniqueStandardStrings(values, additions []string) []string {
+	for _, addition := range additions {
+		if addition == "" {
+			continue
+		}
+		found := false
+		for _, value := range values {
+			if strings.EqualFold(value, addition) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			values = append(values, addition)
+		}
+	}
+	return values
+}
+
+func appendUniqueStandardConstructors(values, additions [][]string) [][]string {
+	seen := make(map[string]bool, len(values)+len(additions))
+	for _, value := range values {
+		seen[standardTypeListKey(value)] = true
+	}
+	for _, addition := range additions {
+		key := standardTypeListKey(addition)
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		values = append(values, addition)
+	}
+	return values
+}
+
+func appendUniqueStandardMethods(values, additions []StandardMethodSpec) []StandardMethodSpec {
+	seen := make(map[string]bool, len(values)+len(additions))
+	for _, value := range values {
+		seen[standardMethodKey(value)] = true
+	}
+	for _, addition := range additions {
+		key := standardMethodKey(addition)
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		values = append(values, addition)
+	}
+	return values
+}
+
+func appendUniqueStandardProperties(values, additions []StandardPropertySpec) []StandardPropertySpec {
+	seen := make(map[string]bool, len(values)+len(additions))
+	for _, value := range values {
+		seen[standardPropertyKey(value)] = true
+	}
+	for _, addition := range additions {
+		key := standardPropertyKey(addition)
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		values = append(values, addition)
+	}
+	return values
+}
+
+func standardMethodKey(method StandardMethodSpec) string {
+	return strings.ToLower(method.Name) + "|" + strconv.FormatBool(method.Static) + "|" + standardTypeListKey(method.Parameters)
+}
+
+func standardPropertyKey(prop StandardPropertySpec) string {
+	return strings.ToLower(prop.Name) + "|" + strconv.FormatBool(prop.Static)
+}
+
+func standardTypeListKey(types []string) string {
+	normalized := make([]string, 0, len(types))
+	for _, typ := range types {
+		normalized = append(normalized, strings.ToLower(strings.TrimSpace(typ)))
+	}
+	return strings.Join(normalized, ",")
 }
 
 func standardSpecExists(specs []StandardSymbolSpec, name string) bool {

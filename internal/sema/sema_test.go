@@ -225,6 +225,37 @@ public class UsesInner {
 	}
 }
 
+func TestAnalyzeProductNamespaceGeneratedDeclarations(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesProductNamespaces.cls"), `
+public class UsesProductNamespaces {
+  public static void run() {
+    connectapi.organizationsettings settings = connectapi.organization.getsettings();
+    ConnectApi.TimeZone zone = settings.userSettings.timeZone;
+    Metadata.DeployContainer container = new Metadata.DeployContainer();
+    Metadata.CustomMetadata item = new Metadata.CustomMetadata();
+    Metadata.CustomMetadataValue value = new Metadata.CustomMetadataValue();
+    value.field = 'Enabled__c';
+    value.value = true;
+    item.values.add(value);
+    container.addMetadata(item);
+    Id deploymentId = Metadata.Operations.enqueueDeployment(container, null);
+    Metadata.DeployResult result = Metadata.Operations.checkDeployStatus(deploymentId, true);
+    Cache.OrgPartition partition = cache.org.getpartition('local');
+    partition.put('zone', zone.id, 60, cache.visibility.all, false);
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "UsesProductNamespaces.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
 func TestAnalyzeSchemaSoapTypeAliases(t *testing.T) {
 	index := typesys.Index{
 		Types: []typesys.TypeSymbol{
