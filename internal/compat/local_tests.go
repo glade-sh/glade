@@ -34,14 +34,15 @@ type LocalTestOptions struct {
 }
 
 type LocalTestReport struct {
-	Target      string                  `json:"target"`
-	Ready       bool                    `json:"ready"`
-	Project     string                  `json:"project"`
-	DurationMS  int64                   `json:"durationMs,omitempty"`
-	Summary     LocalTestSummary        `json:"summary"`
-	Outcomes    []LocalTestOutcome      `json:"outcomes"`
-	TopFailures []LocalTestFailureGroup `json:"topFailures,omitempty"`
-	Diagnostics []diagnostic.Diagnostic `json:"diagnostics,omitempty"`
+	Target       string                   `json:"target"`
+	Ready        bool                     `json:"ready"`
+	Project      string                   `json:"project"`
+	DurationMS   int64                    `json:"durationMs,omitempty"`
+	Dependencies []typesys.DependencyInfo `json:"dependencies,omitempty"`
+	Summary      LocalTestSummary         `json:"summary"`
+	Outcomes     []LocalTestOutcome       `json:"outcomes"`
+	TopFailures  []LocalTestFailureGroup  `json:"topFailures,omitempty"`
+	Diagnostics  []diagnostic.Diagnostic  `json:"diagnostics,omitempty"`
 }
 
 type LocalTestSummary struct {
@@ -148,6 +149,7 @@ func RunLocalTests(options LocalTestOptions) (LocalTestReport, error) {
 		finalizeLocalTestReport(&report, options, started)
 		return report, nil
 	}
+	report.Dependencies = append(report.Dependencies, index.Dependencies...)
 	report.Diagnostics = append(report.Diagnostics, loadDiagnostics...)
 
 	testOpts := apextest.Options{

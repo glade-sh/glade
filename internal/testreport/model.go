@@ -5,6 +5,7 @@ import (
 
 	"github.com/open-aer/oaer/internal/profile"
 	"github.com/open-aer/oaer/internal/trace"
+	"github.com/open-aer/oaer/internal/typesys"
 )
 
 type Status string
@@ -19,9 +20,10 @@ const (
 )
 
 type Run struct {
-	Name       string  `json:"name,omitempty"`
-	DurationMS int64   `json:"durationMs,omitempty"`
-	Suites     []Suite `json:"suites"`
+	Name         string                   `json:"name,omitempty"`
+	DurationMS   int64                    `json:"durationMs,omitempty"`
+	Dependencies []typesys.DependencyInfo `json:"dependencies,omitempty"`
+	Suites       []Suite                  `json:"suites"`
 }
 
 type Suite struct {
@@ -125,20 +127,22 @@ func (s Suite) Summary() Summary {
 
 func (r Run) MarshalJSON() ([]byte, error) {
 	type jsonRun struct {
-		Name       string  `json:"name,omitempty"`
-		DurationMS int64   `json:"durationMs,omitempty"`
-		Summary    Summary `json:"summary"`
-		Suites     []Suite `json:"suites"`
+		Name         string                   `json:"name,omitempty"`
+		DurationMS   int64                    `json:"durationMs,omitempty"`
+		Dependencies []typesys.DependencyInfo `json:"dependencies,omitempty"`
+		Summary      Summary                  `json:"summary"`
+		Suites       []Suite                  `json:"suites"`
 	}
 	suites := r.Suites
 	if suites == nil {
 		suites = []Suite{}
 	}
 	return json.Marshal(jsonRun{
-		Name:       r.Name,
-		DurationMS: r.DurationMS,
-		Summary:    r.Summary(),
-		Suites:     suites,
+		Name:         r.Name,
+		DurationMS:   r.DurationMS,
+		Dependencies: r.Dependencies,
+		Summary:      r.Summary(),
+		Suites:       suites,
 	})
 }
 

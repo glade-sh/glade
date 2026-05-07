@@ -7,48 +7,69 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/open-aer/oaer/internal/config"
 )
 
 type Project struct {
-	Root                      string             `json:"root"`
-	Namespace                 string             `json:"namespace,omitempty"`
-	SourceAPIVersion          string             `json:"sourceApiVersion,omitempty"`
-	PackageDirectories        []PackageDirectory `json:"packageDirectories"`
-	ApexFiles                 []string           `json:"apexFiles"`
-	ObjectFiles               []string           `json:"objectFiles"`
-	FieldFiles                []string           `json:"fieldFiles"`
-	FieldSetFiles             []string           `json:"fieldSetFiles"`
-	RecordTypeFiles           []string           `json:"recordTypeFiles"`
-	ValidationRuleFiles       []string           `json:"validationRuleFiles"`
-	LabelFiles                []string           `json:"labelFiles"`
-	TranslationFiles          []string           `json:"translationFiles,omitempty"`
-	StaticResourceFiles       []string           `json:"staticResourceFiles"`
-	StaticResourceMetas       []string           `json:"staticResourceMetas"`
-	ContentAssetFiles         []string           `json:"contentAssetFiles,omitempty"`
-	ContentAssetMetas         []string           `json:"contentAssetMetas,omitempty"`
-	EmailTemplateFiles        []string           `json:"emailTemplateFiles,omitempty"`
-	NamedCredentialFiles      []string           `json:"namedCredentialFiles"`
-	RemoteSiteFiles           []string           `json:"remoteSiteFiles"`
-	CustomMetadataFiles       []string           `json:"customMetadataFiles"`
-	WorkflowFiles             []string           `json:"workflowFiles"`
-	FlowFiles                 []string           `json:"flowFiles"`
-	ProfileFiles              []string           `json:"profileFiles"`
-	PermissionSetFiles        []string           `json:"permissionSetFiles"`
-	PermissionAssignmentFiles []string           `json:"permissionAssignmentFiles"`
-	ListViewFiles             []string           `json:"listViewFiles"`
-	LayoutFiles               []string           `json:"layoutFiles"`
-	CompactLayoutFiles        []string           `json:"compactLayoutFiles"`
-	TabFiles                  []string           `json:"tabFiles"`
-	WebLinkFiles              []string           `json:"webLinkFiles"`
-	QuickActionFiles          []string           `json:"quickActionFiles"`
-	GlobalValueSetFiles       []string           `json:"globalValueSetFiles"`
-	StandardValueSetFiles     []string           `json:"standardValueSetFiles"`
-	FlexiPageFiles            []string           `json:"flexiPageFiles"`
-	ApplicationFiles          []string           `json:"applicationFiles"`
-	VisualforcePageFiles      []string           `json:"visualforcePageFiles"`
-	VisualforceComponentFiles []string           `json:"visualforceComponentFiles"`
-	AuraFiles                 []string           `json:"auraFiles"`
-	LWCFiles                  []string           `json:"lwcFiles"`
+	Root                       string                     `json:"root"`
+	Namespace                  string                     `json:"namespace,omitempty"`
+	SourceAPIVersion           string                     `json:"sourceApiVersion,omitempty"`
+	PackageDirectories         []PackageDirectory         `json:"packageDirectories"`
+	ApexFiles                  []string                   `json:"apexFiles"`
+	ObjectFiles                []string                   `json:"objectFiles"`
+	FieldFiles                 []string                   `json:"fieldFiles"`
+	FieldSetFiles              []string                   `json:"fieldSetFiles"`
+	RecordTypeFiles            []string                   `json:"recordTypeFiles"`
+	ValidationRuleFiles        []string                   `json:"validationRuleFiles"`
+	LabelFiles                 []string                   `json:"labelFiles"`
+	TranslationFiles           []string                   `json:"translationFiles,omitempty"`
+	StaticResourceFiles        []string                   `json:"staticResourceFiles"`
+	StaticResourceMetas        []string                   `json:"staticResourceMetas"`
+	ContentAssetFiles          []string                   `json:"contentAssetFiles,omitempty"`
+	ContentAssetMetas          []string                   `json:"contentAssetMetas,omitempty"`
+	EmailTemplateFiles         []string                   `json:"emailTemplateFiles,omitempty"`
+	NamedCredentialFiles       []string                   `json:"namedCredentialFiles"`
+	RemoteSiteFiles            []string                   `json:"remoteSiteFiles"`
+	CustomMetadataFiles        []string                   `json:"customMetadataFiles"`
+	WorkflowFiles              []string                   `json:"workflowFiles"`
+	FlowFiles                  []string                   `json:"flowFiles"`
+	ProfileFiles               []string                   `json:"profileFiles"`
+	PermissionSetFiles         []string                   `json:"permissionSetFiles"`
+	PermissionAssignmentFiles  []string                   `json:"permissionAssignmentFiles"`
+	ListViewFiles              []string                   `json:"listViewFiles"`
+	LayoutFiles                []string                   `json:"layoutFiles"`
+	CompactLayoutFiles         []string                   `json:"compactLayoutFiles"`
+	TabFiles                   []string                   `json:"tabFiles"`
+	WebLinkFiles               []string                   `json:"webLinkFiles"`
+	QuickActionFiles           []string                   `json:"quickActionFiles"`
+	GlobalValueSetFiles        []string                   `json:"globalValueSetFiles"`
+	StandardValueSetFiles      []string                   `json:"standardValueSetFiles"`
+	FlexiPageFiles             []string                   `json:"flexiPageFiles"`
+	ApplicationFiles           []string                   `json:"applicationFiles"`
+	VisualforcePageFiles       []string                   `json:"visualforcePageFiles"`
+	VisualforceComponentFiles  []string                   `json:"visualforceComponentFiles"`
+	AuraFiles                  []string                   `json:"auraFiles"`
+	LWCFiles                   []string                   `json:"lwcFiles"`
+	ManagedPackageDependencies []ManagedPackageDependency `json:"managedPackageDependencies,omitempty"`
+	DependencyDiagnostics      []DependencyDiagnostic     `json:"dependencyDiagnostics,omitempty"`
+}
+
+type ManagedPackageDependency struct {
+	Namespace  string   `json:"namespace"`
+	SourceRoot string   `json:"sourceRoot"`
+	Version    string   `json:"version,omitempty"`
+	Project    *Project `json:"project,omitempty"`
+	Status     string   `json:"status"`
+}
+
+type DependencyDiagnostic struct {
+	Namespace  string `json:"namespace,omitempty"`
+	SourceRoot string `json:"sourceRoot,omitempty"`
+	Version    string `json:"version,omitempty"`
+	Status     string `json:"status"`
+	Code       string `json:"code"`
+	Message    string `json:"message"`
 }
 
 type PackageDirectory struct {
@@ -88,14 +109,50 @@ type sfdxProject struct {
 }
 
 func Load(root string) (Project, error) {
+	return load(root, nil)
+}
+
+func load(root string, stack map[string]bool) (Project, error) {
 	absRoot, err := filepath.Abs(root)
 	if err != nil {
 		return Project{}, err
 	}
+	absRoot = filepath.Clean(absRoot)
+	if stack == nil {
+		stack = make(map[string]bool)
+	}
+	if stack[absRoot] {
+		return Project{}, nil
+	}
+	stack[absRoot] = true
+	defer delete(stack, absRoot)
 
 	cfg, err := loadSFDXProject(absRoot)
 	if err != nil {
 		return Project{}, err
+	}
+	cfgPath := filepath.Join(absRoot, "oaer.yml")
+	oaerCfg, cfgErr := config.LoadFile(cfgPath)
+	if errors.Is(cfgErr, os.ErrNotExist) {
+		cfgErr = config.ErrNotFound
+	}
+	if cfgErr == nil {
+		cfgDir := filepath.Dir(cfgPath)
+		if oaerCfg.Project.Root != "" {
+			configuredRoot := oaerCfg.Project.Root
+			if !filepath.IsAbs(configuredRoot) {
+				configuredRoot = filepath.Join(cfgDir, filepath.FromSlash(configuredRoot))
+			}
+			if cleaned := filepath.Clean(configuredRoot); cleaned != absRoot {
+				return load(cleaned, stack)
+			}
+		}
+		if len(oaerCfg.Project.PackageDirs) > 0 {
+			cfg.PackageDirectories = packageDirectoriesFromConfig(oaerCfg.Project.PackageDirs)
+		}
+		if oaerCfg.Project.DefaultNamespace != "" {
+			cfg.Namespace = oaerCfg.Project.DefaultNamespace
+		}
 	}
 	if len(cfg.PackageDirectories) == 0 {
 		cfg.PackageDirectories = []PackageDirectory{{Path: "."}}
@@ -106,6 +163,9 @@ func Load(root string) (Project, error) {
 		Namespace:          cfg.Namespace,
 		SourceAPIVersion:   cfg.SourceAPIVersion,
 		PackageDirectories: cfg.PackageDirectories,
+	}
+	if cfgErr == nil {
+		p.ManagedPackageDependencies, p.DependencyDiagnostics = loadManagedPackageDependencies(oaerCfg.Project.ManagedPackageDependencies, stack)
 	}
 
 	for _, pkgRoot := range packageRoots(absRoot, p.PackageDirectories) {
@@ -156,6 +216,80 @@ func Load(root string) (Project, error) {
 	sort.Strings(p.AuraFiles)
 	sort.Strings(p.LWCFiles)
 	return p, nil
+}
+
+func packageDirectoriesFromConfig(paths []string) []PackageDirectory {
+	out := make([]PackageDirectory, 0, len(paths))
+	for _, path := range paths {
+		path = strings.TrimSpace(path)
+		if path == "" {
+			continue
+		}
+		out = append(out, PackageDirectory{Path: filepath.ToSlash(path)})
+	}
+	return out
+}
+
+func loadManagedPackageDependencies(configured []config.ManagedPackageDependency, stack map[string]bool) ([]ManagedPackageDependency, []DependencyDiagnostic) {
+	deps := make([]ManagedPackageDependency, 0, len(configured))
+	var diagnostics []DependencyDiagnostic
+	for _, dep := range configured {
+		projectDep := ManagedPackageDependency{
+			Namespace:  dep.Namespace,
+			SourceRoot: dep.SourceRoot,
+			Version:    dep.Version,
+		}
+		if dep.Namespace == "" || dep.SourceRoot == "" {
+			projectDep.Status = "invalid"
+			diagnostics = append(diagnostics, DependencyDiagnostic{
+				Namespace:  dep.Namespace,
+				SourceRoot: dep.SourceRoot,
+				Version:    dep.Version,
+				Status:     "invalid",
+				Code:       "dependency_invalid",
+				Message:    "managed package dependency requires namespace and sourceRoot",
+			})
+			deps = append(deps, projectDep)
+			continue
+		}
+		info, err := os.Stat(dep.SourceRoot)
+		if err != nil || !info.IsDir() {
+			projectDep.Status = "missing"
+			message := "managed package dependency source root not found"
+			if err != nil && !errors.Is(err, os.ErrNotExist) {
+				message = err.Error()
+			}
+			diagnostics = append(diagnostics, DependencyDiagnostic{
+				Namespace:  dep.Namespace,
+				SourceRoot: dep.SourceRoot,
+				Version:    dep.Version,
+				Status:     "missing",
+				Code:       "dependency_missing",
+				Message:    message,
+			})
+			deps = append(deps, projectDep)
+			continue
+		}
+		loaded, err := load(dep.SourceRoot, stack)
+		if err != nil {
+			projectDep.Status = "load_error"
+			diagnostics = append(diagnostics, DependencyDiagnostic{
+				Namespace:  dep.Namespace,
+				SourceRoot: dep.SourceRoot,
+				Version:    dep.Version,
+				Status:     "load_error",
+				Code:       "dependency_load_error",
+				Message:    err.Error(),
+			})
+			deps = append(deps, projectDep)
+			continue
+		}
+		loaded.Namespace = dep.Namespace
+		projectDep.Project = &loaded
+		projectDep.Status = "loaded"
+		deps = append(deps, projectDep)
+	}
+	return deps, diagnostics
 }
 
 func loadSFDXProject(root string) (sfdxProject, error) {

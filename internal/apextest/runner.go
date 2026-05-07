@@ -47,6 +47,9 @@ func Discover(index typesys.Index, opts Options) []TestCase {
 	var out []TestCase
 	filter := strings.ToLower(strings.TrimSpace(opts.Filter))
 	for _, typ := range index.Types {
+		if typ.Dependency {
+			continue
+		}
 		if typ.Kind != apexast.DeclarationClass {
 			continue
 		}
@@ -350,7 +353,7 @@ func compileProjectClasses(index typesys.Index, methods map[string]vm.Method) []
 		}
 		class := vm.Class{
 			Name:         typ.Name,
-			Namespace:    index.Project.Namespace,
+			Namespace:    typ.Namespace,
 			Access:       accessModifier(typ.Modifiers),
 			IsAbstract:   hasModifier(typ.Modifiers, "abstract"),
 			IsInterface:  typ.Kind == apexast.DeclarationInterface,
@@ -476,6 +479,9 @@ func compileProjectMethods(index typesys.Index) map[string]vm.Method {
 	out := make(map[string]vm.Method)
 	sources := make(map[string]string)
 	for _, typ := range index.Types {
+		if typ.Dependency && typ.IsTest {
+			continue
+		}
 		if typ.Kind != apexast.DeclarationClass && typ.Kind != apexast.DeclarationInterface {
 			continue
 		}
@@ -565,6 +571,9 @@ func compileTestSetupMethods(index typesys.Index) (map[string][]vm.Method, map[s
 	errs := make(map[string]error)
 	sources := make(map[string]string)
 	for _, typ := range index.Types {
+		if typ.Dependency {
+			continue
+		}
 		if typ.Kind != apexast.DeclarationClass {
 			continue
 		}
@@ -620,7 +629,7 @@ func compileProjectTriggers(index typesys.Index) ([]vm.Trigger, []error) {
 			}
 			out = append(out, vm.Trigger{
 				Name:      trigger.Name,
-				Namespace: index.Project.Namespace,
+				Namespace: trigger.Namespace,
 				Object:    trigger.ObjectName,
 				Timing:    timing,
 				Operation: op,

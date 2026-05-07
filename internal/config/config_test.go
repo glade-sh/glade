@@ -1,6 +1,10 @@
 package config
 
-import "testing"
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
 
 func TestParseYAMLSubset(t *testing.T) {
 	cfg, err := parseYAMLSubset(`
@@ -8,6 +12,7 @@ project:
   root: .
   packageDirs: ["force-app", "packages/core"]
   defaultNamespace: verifiable
+  managedPackageDependencies: ["znu:../znu:1.2", "pkg:/tmp/pkg"]
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -20,5 +25,51 @@ project:
 	}
 	if cfg.Project.DefaultNamespace != "verifiable" {
 		t.Fatalf("default namespace = %q", cfg.Project.DefaultNamespace)
+	}
+	if got := len(cfg.Project.ManagedPackageDependencies); got != 2 {
+		t.Fatalf("managed dependency count = %d", got)
+	}
+	if dep := cfg.Project.ManagedPackageDependencies[0]; dep.Namespace != "znu" || dep.SourceRoot != "../znu" || dep.Version != "1.2" {
+		t.Fatalf("managed dependency[0] = %#v", dep)
+	}
+}
+
+func TestParseYAMLSubsetRejectsInvalidManagedPackageDependency(t *testing.T) {
+	if _, err := parseYAMLSubset(`
+project:
+  managedPackageDependencies: ["znu"]
+`); err == nil {
+		t.Fatal("expected invalid managed package dependency error")
+	}
+}
+
+func TestParseYAMLSubsetRejectsDuplicateManagedPackageDependencyNamespace(t *testing.T) {
+	if _, err := parseYAMLSubset(`
+project:
+  managedPackageDependencies: ["znu:../one", "ZNU:../two"]
+`); err == nil {
+		t.Fatal("expected duplicate namespace error")
+	}
+}
+
+func TestLoadFileResolvesManagedPackageDependencyPaths(t *testing.T) {
+	root := t.TempDir()
+	cfgPath := filepath.Join(root, "nested", "oaer.yml")
+	if err := os.MkdirAll(filepath.Dir(cfgPath), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(cfgPath, []byte(`
+project:
+  managedPackageDependencies: ["znu:../deps/znu"]
+`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := LoadFile(cfgPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := filepath.Clean(filepath.Join(root, "deps", "znu"))
+	if got := cfg.Project.ManagedPackageDependencies[0].SourceRoot; got != want {
+		t.Fatalf("source root = %q, want %q", got, want)
 	}
 }

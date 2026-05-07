@@ -19,6 +19,7 @@ type Index struct {
 	Triggers              []TriggerSymbol               `json:"triggers"`
 	Objects               []schema.Object               `json:"objects"`
 	CustomMetadataRecords []schema.CustomMetadataRecord `json:"customMetadataRecords,omitempty"`
+	Dependencies          []DependencyInfo              `json:"dependencies,omitempty"`
 	Diagnostics           []diagnostic.Diagnostic       `json:"diagnostics,omitempty"`
 }
 
@@ -32,6 +33,10 @@ type TypeSymbol struct {
 	Kind       apexast.DeclarationKind `json:"kind"`
 	Name       string                  `json:"name"`
 	File       string                  `json:"file"`
+	Namespace  string                  `json:"namespace,omitempty"`
+	SourceRoot string                  `json:"sourceRoot,omitempty"`
+	Version    string                  `json:"version,omitempty"`
+	Dependency bool                    `json:"dependency,omitempty"`
 	Modifiers  []string                `json:"modifiers,omitempty"`
 	IsTest     bool                    `json:"isTest,omitempty"`
 	SuperClass string                  `json:"superClass,omitempty"`
@@ -53,10 +58,24 @@ type MemberSymbol struct {
 
 type TriggerSymbol struct {
 	Name       string           `json:"name"`
+	Namespace  string           `json:"namespace,omitempty"`
 	ObjectName string           `json:"objectName"`
 	Events     []string         `json:"events,omitempty"`
 	File       string           `json:"file"`
+	Dependency bool             `json:"dependency,omitempty"`
 	Range      diagnostic.Range `json:"range"`
+}
+
+type DependencyInfo struct {
+	Namespace       string                  `json:"namespace"`
+	SourceRoot      string                  `json:"sourceRoot"`
+	Version         string                  `json:"version,omitempty"`
+	Status          string                  `json:"status"`
+	ApexTypes       int                     `json:"apexTypes,omitempty"`
+	Objects         int                     `json:"objects,omitempty"`
+	Labels          int                     `json:"labels,omitempty"`
+	StaticResources int                     `json:"staticResources,omitempty"`
+	Diagnostics     []diagnostic.Diagnostic `json:"diagnostics,omitempty"`
 }
 
 func Build(p project.Project, s schema.Schema) (idx Index) {
@@ -80,7 +99,78 @@ func Build(p project.Project, s schema.Schema) (idx Index) {
 		}
 	}()
 	seenTypes := make(map[string][]seenTypeSymbol)
+	for _, depDiag := range p.DependencyDiagnostics {
+		idx.Dependencies = append(idx.Dependencies, DependencyInfo{
+			Namespace:  depDiag.Namespace,
+			SourceRoot: depDiag.SourceRoot,
+			Version:    depDiag.Version,
+			Status:     depDiag.Status,
+			Diagnostics: []diagnostic.Diagnostic{{
+				Severity: diagnostic.Error,
+				Code:     depDiag.Code,
+				Message:  depDiag.Message,
+			}},
+		})
+		idx.Diagnostics = append(idx.Diagnostics, diagnostic.Diagnostic{
+			Severity: diagnostic.Error,
+			Code:     depDiag.Code,
+			Message:  depDiag.Message,
+		})
+	}
+	for _, dep := range p.ManagedPackageDependencies {
+		if dep.Status != "loaded" || dep.Project == nil {
+			continue
+		}
+		depSchema, err := schema.LoadProject(*dep.Project)
+		if err != nil {
+			diag := diagnostic.Diagnostic{
+				Severity: diagnostic.Error,
+				Code:     "dependency_load_error",
+				Message:  fmt.Sprintf("managed package dependency %s schema load failed: %v", dep.Namespace, err),
+			}
+			idx.Diagnostics = append(idx.Diagnostics, diag)
+			idx.Dependencies = append(idx.Dependencies, DependencyInfo{
+				Namespace:   dep.Namespace,
+				SourceRoot:  dep.SourceRoot,
+				Version:     dep.Version,
+				Status:      "load_error",
+				Diagnostics: []diagnostic.Diagnostic{diag},
+			})
+			continue
+		}
+		beforeTypes := len(idx.Types)
+		appendProjectSymbols(&idx, parser, *dep.Project, true, dep.Namespace, dep.Version, seenTypes)
+		idx.Objects = append(idx.Objects, depSchema.Objects...)
+		idx.CustomMetadataRecords = append(idx.CustomMetadataRecords, depSchema.CustomMetadataRecords...)
+		idx.Dependencies = append(idx.Dependencies, DependencyInfo{
+			Namespace:       dep.Namespace,
+			SourceRoot:      dep.SourceRoot,
+			Version:         dep.Version,
+			Status:          dep.Status,
+			ApexTypes:       len(idx.Types) - beforeTypes,
+			Objects:         len(depSchema.Objects),
+			Labels:          len(dep.Project.LabelFiles),
+			StaticResources: len(dep.Project.StaticResourceFiles) + len(dep.Project.StaticResourceMetas),
+		})
+	}
+	appendProjectSymbols(&idx, parser, p, false, p.Namespace, "", seenTypes)
 
+	sort.Slice(idx.Types, func(i, j int) bool {
+		if idx.Types[i].Namespace == idx.Types[j].Namespace {
+			return idx.Types[i].Name < idx.Types[j].Name
+		}
+		return idx.Types[i].Namespace < idx.Types[j].Namespace
+	})
+	sort.Slice(idx.Triggers, func(i, j int) bool {
+		if idx.Triggers[i].Namespace == idx.Triggers[j].Namespace {
+			return idx.Triggers[i].Name < idx.Triggers[j].Name
+		}
+		return idx.Triggers[i].Namespace < idx.Triggers[j].Namespace
+	})
+	return idx
+}
+
+func appendProjectSymbols(idx *Index, parser *apexast.Parser, p project.Project, dependency bool, namespace, version string, seenTypes map[string][]seenTypeSymbol) {
 	for _, path := range p.ApexFiles {
 		file, err := parser.ParseFile(path)
 		if err != nil {
@@ -101,7 +191,11 @@ func Build(p project.Project, s schema.Schema) (idx Index) {
 			case apexast.DeclarationClass, apexast.DeclarationInterface, apexast.DeclarationEnum:
 				if source, err := os.ReadFile(path); err == nil {
 					for _, sym := range typeSymbolsFromDeclaration(path, decl, "", string(source)) {
-						key := strings.ToLower(sym.Name)
+						sym.Namespace = namespace
+						sym.SourceRoot = p.Root
+						sym.Version = version
+						sym.Dependency = dependency
+						key := namespaceTypeKey(sym.Namespace, sym.Name)
 						currentPackage := p.PackagePathForFile(path)
 						if previous, ok := conflictingSeenType(seenTypes[key], currentPackage); ok {
 							idx.Diagnostics = append(idx.Diagnostics, duplicateDiagnostic(sym, previous.Symbol))
@@ -112,7 +206,11 @@ func Build(p project.Project, s schema.Schema) (idx Index) {
 					}
 				} else {
 					sym := typeSymbolFromDeclaration(path, decl, "")
-					key := strings.ToLower(sym.Name)
+					sym.Namespace = namespace
+					sym.SourceRoot = p.Root
+					sym.Version = version
+					sym.Dependency = dependency
+					key := namespaceTypeKey(sym.Namespace, sym.Name)
 					currentPackage := p.PackagePathForFile(path)
 					if previous, ok := conflictingSeenType(seenTypes[key], currentPackage); ok {
 						idx.Diagnostics = append(idx.Diagnostics, duplicateDiagnostic(sym, previous.Symbol))
@@ -124,22 +222,23 @@ func Build(p project.Project, s schema.Schema) (idx Index) {
 			case apexast.DeclarationTrigger:
 				idx.Triggers = append(idx.Triggers, TriggerSymbol{
 					Name:       decl.Name,
+					Namespace:  namespace,
 					ObjectName: decl.ObjectName,
 					Events:     decl.Events,
 					File:       path,
+					Dependency: dependency,
 					Range:      decl.Range,
 				})
 			}
 		}
 	}
+}
 
-	sort.Slice(idx.Types, func(i, j int) bool {
-		return idx.Types[i].Name < idx.Types[j].Name
-	})
-	sort.Slice(idx.Triggers, func(i, j int) bool {
-		return idx.Triggers[i].Name < idx.Triggers[j].Name
-	})
-	return idx
+func namespaceTypeKey(namespace, name string) string {
+	if namespace == "" {
+		return strings.ToLower(name)
+	}
+	return strings.ToLower(namespace + "." + name)
 }
 
 type seenTypeSymbol struct {

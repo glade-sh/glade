@@ -694,6 +694,7 @@ func runTest(ctx context.Context, args []string, w io.Writer) (testreport.Run, e
 		return runWatchTests(ctx, root, index, apextest.Options{Filter: filter, LimitMode: limitMode, TraceBlocked: traceBlocked, SlowTestThresholdMS: slowTestThresholdMS}, watch.Config{Root: root, Debounce: debounce, Backend: backend}, watchOnce, w)
 	}
 	result := apextest.Run(index, apextest.Options{Filter: filter, LimitMode: limitMode, TraceBlocked: traceBlocked, SlowTestThresholdMS: slowTestThresholdMS})
+	result.Dependencies = append(result.Dependencies, index.Dependencies...)
 	if debug {
 		return result, serveDAPSnapshot(testRunSnapshot(result), w)
 	}

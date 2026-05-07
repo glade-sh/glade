@@ -178,6 +178,53 @@ func TestLoadSkipsStaticResourceVendorTrees(t *testing.T) {
 	}
 }
 
+func TestLoadManagedPackageDependencies(t *testing.T) {
+	root := t.TempDir()
+	depRoot := filepath.Join(root, "deps", "znu")
+	consumerRoot := filepath.Join(root, "consumer")
+	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"namespace":"znu","packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/default/classes/Visible.cls"), "global class Visible {}")
+	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(consumerRoot, "oaer.yml"), `project:
+  managedPackageDependencies: ["znu:../deps/znu:1.0"]
+`)
+	writeFile(t, filepath.Join(consumerRoot, "force-app/main/default/classes/Consumer.cls"), "public class Consumer {}")
+
+	p, err := Load(consumerRoot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.ManagedPackageDependencies) != 1 {
+		t.Fatalf("dependency count = %d", len(p.ManagedPackageDependencies))
+	}
+	dep := p.ManagedPackageDependencies[0]
+	if dep.Status != "loaded" || dep.Namespace != "znu" || dep.Version != "1.0" {
+		t.Fatalf("dependency = %#v", dep)
+	}
+	if dep.Project.Namespace != "znu" || len(dep.Project.ApexFiles) != 1 {
+		t.Fatalf("loaded dependency project = %#v", dep.Project)
+	}
+}
+
+func TestLoadReportsMissingManagedPackageDependency(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "oaer.yml"), `project:
+  managedPackageDependencies: ["znu:../missing"]
+`)
+
+	p, err := Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(p.ManagedPackageDependencies) != 1 || p.ManagedPackageDependencies[0].Status != "missing" {
+		t.Fatalf("dependencies = %#v", p.ManagedPackageDependencies)
+	}
+	if len(p.DependencyDiagnostics) != 1 || p.DependencyDiagnostics[0].Code != "dependency_missing" {
+		t.Fatalf("diagnostics = %#v", p.DependencyDiagnostics)
+	}
+}
+
 func writeFile(t *testing.T, path, content string) {
 	t.Helper()
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {

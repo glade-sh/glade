@@ -89,11 +89,21 @@ func (a *Analyzer) Analyze(index typesys.Index) (result Result) {
 		a.addKnown(object.Name, TypeSchema, "")
 	}
 	for _, typ := range index.Types {
-		a.addKnown(typ.Name, TypeApex, typ.File)
+		if !typ.Dependency {
+			a.addKnown(typ.Name, TypeApex, typ.File)
+		}
+		if typ.Namespace != "" {
+			a.addKnown(typ.Namespace+"."+typ.Name, TypeApex, typ.File)
+		}
 		for _, member := range typ.Members {
 			if member.Kind == apexast.DeclarationClass || member.Kind == apexast.DeclarationInterface || member.Kind == apexast.DeclarationEnum {
-				a.addKnown(member.Name, TypeApex, typ.File)
-				a.addKnown(typ.Name+"."+member.Name, TypeApex, typ.File)
+				if !typ.Dependency {
+					a.addKnown(member.Name, TypeApex, typ.File)
+					a.addKnown(typ.Name+"."+member.Name, TypeApex, typ.File)
+				}
+				if typ.Namespace != "" {
+					a.addKnown(typ.Namespace+"."+typ.Name+"."+member.Name, TypeApex, typ.File)
+				}
 			}
 		}
 	}
@@ -104,6 +114,7 @@ func (a *Analyzer) Analyze(index typesys.Index) (result Result) {
 	result.Diagnostics = append(result.Diagnostics, a.checkAnnotations(index)...)
 	result.Diagnostics = append(result.Diagnostics, a.checkMethodBodies(index)...)
 	result.Diagnostics = append(result.Diagnostics, a.checkVisibility(index)...)
+	result.Diagnostics = append(result.Diagnostics, a.checkManagedPackageAccess(index)...)
 	result.Diagnostics = append(result.Diagnostics, a.checkInheritanceContracts(index)...)
 	result.Diagnostics = append(result.Diagnostics, a.checkSchemaReferences(index)...)
 
@@ -296,6 +307,129 @@ func (a *Analyzer) checkVisibility(index typesys.Index) []diagnostic.Diagnostic 
 		}
 	}
 	return diagnostics
+}
+
+func (a *Analyzer) checkManagedPackageAccess(index typesys.Index) []diagnostic.Diagnostic {
+	dependencyNamespaces := make(map[string]typesys.DependencyInfo)
+	for _, dep := range index.Dependencies {
+		if dep.Status == "loaded" {
+			dependencyNamespaces[strings.ToLower(dep.Namespace)] = dep
+		}
+	}
+	if len(dependencyNamespaces) == 0 {
+		return nil
+	}
+	typesByNamespace := make(map[string][]typesys.TypeSymbol)
+	for _, typ := range index.Types {
+		if typ.Namespace == "" {
+			continue
+		}
+		typesByNamespace[strings.ToLower(typ.Namespace)] = append(typesByNamespace[strings.ToLower(typ.Namespace)], typ)
+	}
+	var diagnostics []diagnostic.Diagnostic
+	sourceCache := make(map[string]string)
+	seen := make(map[string]bool)
+	for _, typ := range index.Types {
+		if typ.Dependency {
+			continue
+		}
+		source, ok := readSemaSource(typ.File, sourceCache)
+		if !ok {
+			continue
+		}
+		for namespace, dep := range dependencyNamespaces {
+			for _, ref := range managedPackageReferences(source, dep.Namespace) {
+				key := typ.File + ":" + ref.Namespace + "." + ref.TypeName + ":" + ref.MemberName
+				if seen[key] {
+					continue
+				}
+				seen[key] = true
+				depType, ok := findManagedPackageType(typesByNamespace[namespace], ref.TypeName)
+				if !ok {
+					diagnostics = append(diagnostics, diagnostic.Diagnostic{
+						Severity: diagnostic.Error,
+						Code:     "dependency_unknown_symbol",
+						Message:  fmt.Sprintf("managed package dependency %s does not expose type %q", dep.Namespace, ref.TypeName),
+						File:     typ.File,
+					})
+					continue
+				}
+				if !hasModifier(depType.Modifiers, "global") && !hasModifier(depType.Modifiers, "webservice") {
+					diagnostics = append(diagnostics, diagnostic.Diagnostic{
+						Severity: diagnostic.Error,
+						Code:     "dependency_access_denied",
+						Message:  fmt.Sprintf("managed package dependency %s type %q is not global", dep.Namespace, depType.Name),
+						File:     typ.File,
+					})
+					continue
+				}
+				if ref.MemberName == "" {
+					continue
+				}
+				member, ok := findManagedPackageMember(depType, ref.MemberName)
+				if !ok {
+					continue
+				}
+				if !hasModifier(member.Modifiers, "global") && !hasModifier(member.Modifiers, "webservice") {
+					diagnostics = append(diagnostics, diagnostic.Diagnostic{
+						Severity: diagnostic.Error,
+						Code:     "dependency_member_access_denied",
+						Message:  fmt.Sprintf("managed package dependency %s member %q on %q is not global", dep.Namespace, member.Name, depType.Name),
+						File:     typ.File,
+					})
+				}
+			}
+		}
+	}
+	return diagnostics
+}
+
+type managedPackageReference struct {
+	Namespace  string
+	TypeName   string
+	MemberName string
+}
+
+func managedPackageReferences(source, namespace string) []managedPackageReference {
+	pattern := regexp.MustCompile(`\b` + regexp.QuoteMeta(namespace) + `\.([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)`)
+	matches := pattern.FindAllStringSubmatch(source, -1)
+	out := make([]managedPackageReference, 0, len(matches))
+	for _, match := range matches {
+		if len(match) < 2 {
+			continue
+		}
+		parts := strings.Split(match[1], ".")
+		ref := managedPackageReference{Namespace: namespace, TypeName: match[1]}
+		if len(parts) > 1 {
+			ref.TypeName = strings.Join(parts[:len(parts)-1], ".")
+			ref.MemberName = parts[len(parts)-1]
+		}
+		out = append(out, ref)
+	}
+	return out
+}
+
+func findManagedPackageType(types []typesys.TypeSymbol, name string) (typesys.TypeSymbol, bool) {
+	for _, typ := range types {
+		if strings.EqualFold(typ.Name, name) {
+			return typ, true
+		}
+	}
+	for _, typ := range types {
+		if strings.HasPrefix(strings.ToLower(name), strings.ToLower(typ.Name)+".") {
+			return typ, true
+		}
+	}
+	return typesys.TypeSymbol{}, false
+}
+
+func findManagedPackageMember(typ typesys.TypeSymbol, name string) (typesys.MemberSymbol, bool) {
+	for _, member := range typ.Members {
+		if strings.EqualFold(member.Name, name) {
+			return member, true
+		}
+	}
+	return typesys.MemberSymbol{}, false
 }
 
 func (a *Analyzer) checkInheritanceContracts(index typesys.Index) []diagnostic.Diagnostic {
@@ -513,6 +647,8 @@ func methodSignatureKey(member typesys.MemberSymbol) string {
 
 type typeMembers struct {
 	name         string
+	namespace    string
+	dependency   bool
 	kind         apexast.DeclarationKind
 	superClass   string
 	interfaces   []string
@@ -589,6 +725,8 @@ func buildTypeMembers(index typesys.Index) map[string]typeMembers {
 	for _, typ := range index.Types {
 		members := typeMembers{
 			name:       typ.Name,
+			namespace:  typ.Namespace,
+			dependency: typ.Dependency,
 			kind:       typ.Kind,
 			superClass: typ.SuperClass,
 			interfaces: append([]string(nil), typ.Interfaces...),
@@ -616,8 +754,8 @@ func buildTypeMembers(index typesys.Index) map[string]typeMembers {
 			}
 		}
 		out[normalizeName(typ.Name)] = members
-		if index.Project.Namespace != "" {
-			out[normalizeName(index.Project.Namespace+"."+typ.Name)] = members
+		if typ.Namespace != "" {
+			out[normalizeName(typ.Namespace+"."+typ.Name)] = members
 		}
 		if short := shortNestedTypeName(typ.Name); short != typ.Name {
 			shortAliases[normalizeName(short)] = append(shortAliases[normalizeName(short)], typ.Name)
@@ -740,9 +878,11 @@ func resolveNestedTypeReference(model map[string]typeMembers, owner, typeName st
 func buildConstructability(index typesys.Index) map[string]typesys.TypeSymbol {
 	out := make(map[string]typesys.TypeSymbol)
 	for _, typ := range index.Types {
-		out[normalizeName(typ.Name)] = typ
-		if index.Project.Namespace != "" {
-			out[normalizeName(index.Project.Namespace+"."+typ.Name)] = typ
+		if !typ.Dependency {
+			out[normalizeName(typ.Name)] = typ
+		}
+		if typ.Namespace != "" {
+			out[normalizeName(typ.Namespace+"."+typ.Name)] = typ
 		}
 	}
 	return out
