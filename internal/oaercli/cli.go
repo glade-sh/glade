@@ -1467,6 +1467,8 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 		return runCompatCatalog(args[1:], w)
 	case "salesforce-coverage":
 		return runCompatSalesforceCoverage(args[1:], w)
+	case "standard-objects":
+		return runCompatStandardObjects(args[1:], w)
 	case "product-namespaces":
 		return runCompatProductNamespaces(args[1:], w)
 	case "evidence":
@@ -1501,7 +1503,7 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 }
 
 func compatUsage() string {
-	return "usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | local-tests [--project <root>] [--class <name>] [--method <name>] [--blockers-only] [--top-failures <n>] [--timeout <ms>] [--profile-on-timeout] [--json] [--check <path>] | ui-controllers [--project <root>] [--json|--check <path>] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | salesforce-coverage [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--tooling-symbols <path>] [--json|--output <path>|--check <path>] | product-namespaces --catalog <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]"
+	return "usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | local-tests [--project <root>] [--class <name>] [--method <name>] [--blockers-only] [--top-failures <n>] [--timeout <ms>] [--profile-on-timeout] [--json] [--check <path>] | ui-controllers [--project <root>] [--json|--check <path>] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | salesforce-coverage [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--tooling-symbols <path>] [--json|--output <path>|--check <path>] | standard-objects [--json|--output <path>|--check <path>] | product-namespaces --catalog <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]"
 }
 
 type postParityReadiness struct {
@@ -2620,6 +2622,80 @@ func displayToolingSource(source string) string {
 		parts[i] = filepath.Base(part)
 	}
 	return strings.Join(parts, ", ")
+}
+
+func runCompatStandardObjects(args []string, w io.Writer) error {
+	outputPath := ""
+	checkPath := ""
+	jsonOut := false
+	usage := "usage: oaer compat standard-objects [--json|--output <path>|--check <path>]"
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--json":
+			jsonOut = true
+		case "--output":
+			i++
+			if i >= len(args) {
+				return errors.New(usage)
+			}
+			outputPath = args[i]
+		case "--check":
+			i++
+			if i >= len(args) {
+				return errors.New(usage)
+			}
+			checkPath = args[i]
+		default:
+			return fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	requested := 0
+	for _, set := range []bool{jsonOut, outputPath != "", checkPath != ""} {
+		if set {
+			requested++
+		}
+	}
+	if requested > 1 {
+		return errors.New("use only one of --json, --output, or --check")
+	}
+	report := capability.BuildStandardObjectCoverageReport()
+	switch {
+	case jsonOut:
+		return capability.WriteStandardObjectCoverageJSON(w, report)
+	case outputPath != "":
+		var buf strings.Builder
+		if err := writeStandardObjectCoverageOutput(&buf, report, outputPath); err != nil {
+			return err
+		}
+		return os.WriteFile(outputPath, []byte(buf.String()), 0o644)
+	case checkPath != "":
+		var buf strings.Builder
+		if err := writeStandardObjectCoverageOutput(&buf, report, checkPath); err != nil {
+			return err
+		}
+		existing, err := os.ReadFile(checkPath)
+		if err != nil {
+			return err
+		}
+		if string(existing) != buf.String() {
+			return fmt.Errorf("standard object coverage drift: run `oaer compat standard-objects --output %s`", checkPath)
+		}
+		fmt.Fprintf(w, "%s: up to date\n", checkPath)
+		return nil
+	default:
+		fmt.Fprintf(w, "objects: %d\n", report.Totals.Objects)
+		fmt.Fprintf(w, "fields: %d\n", report.Totals.Fields)
+		fmt.Fprintf(w, "relationships: %d\n", report.Totals.Relationships)
+		fmt.Fprintf(w, "recordTypes: %d\n", report.Totals.RecordTypes)
+		return nil
+	}
+}
+
+func writeStandardObjectCoverageOutput(w io.Writer, report capability.StandardObjectCoverageReport, path string) error {
+	if strings.EqualFold(filepath.Ext(path), ".json") {
+		return capability.WriteStandardObjectCoverageJSON(w, report)
+	}
+	return capability.WriteStandardObjectCoverageMarkdown(w, report)
 }
 
 func loadSalesforceCoverageCatalog(source, inventoryPath, catalogPath string) (capability.Catalog, error) {

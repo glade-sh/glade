@@ -295,6 +295,30 @@ func TestBuildSalesforceToolingAlignmentNormalizesCompletionsAndSymbolTables(t *
 	}
 }
 
+func TestBuildStandardObjectCoverageReport(t *testing.T) {
+	report := BuildStandardObjectCoverageReport()
+	if report.SchemaVersion != StandardObjectCoverageSchemaVersion || report.Totals.Objects == 0 || report.Totals.Fields == 0 {
+		t.Fatalf("report totals = %#v", report.Totals)
+	}
+	account := StandardObjectCoverageEntry{}
+	for _, entry := range report.Objects {
+		if entry.Object == "Account" {
+			account = entry
+			break
+		}
+	}
+	if account.Object != "Account" || account.KeyPrefix != "001" || account.Fields == 0 {
+		t.Fatalf("account coverage = %#v", account)
+	}
+	var out bytes.Buffer
+	if err := WriteStandardObjectCoverageMarkdown(&out, report); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out.String(), "# Standard Object Coverage") || !strings.Contains(out.String(), "`Account`") {
+		t.Fatalf("markdown = %q", out.String())
+	}
+}
+
 func findCatalogEntry(t *testing.T, catalog Catalog, symbol string) CatalogEntry {
 	t.Helper()
 	for _, entry := range catalog.Entries {

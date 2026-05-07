@@ -829,6 +829,57 @@ Does it.
 	}
 }
 
+func TestRunCompatStandardObjectsOutputAndCheck(t *testing.T) {
+	dir := t.TempDir()
+	markdownPath := filepath.Join(dir, "standard-objects.md")
+	jsonPath := filepath.Join(dir, "standard-objects.json")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "standard-objects", "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("standard objects json exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	for _, want := range []string{
+		`"schemaVersion": 1`,
+		`"object": "Account"`,
+		`"keyPrefix": "001"`,
+	} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("standard objects stdout missing %q: %q", want, stdout.String())
+		}
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "standard-objects", "--output", markdownPath}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("standard objects markdown output exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	content, err := os.ReadFile(markdownPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(content), "# Standard Object Coverage") || !strings.Contains(string(content), "`Account`") {
+		t.Fatalf("markdown = %q", string(content))
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "standard-objects", "--output", jsonPath}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("standard objects json output exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "standard-objects", "--check", jsonPath}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("standard objects json check exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "up to date") {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
 func TestRunCompatEvidenceJSON(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "apex_methods_system_string.md"), `# String Class

@@ -343,6 +343,24 @@ func KnownStandardObjectNames() []string {
 	return out
 }
 
+func StandardObjectDefinition(objectName string) (ObjectDefinition, bool) {
+	if objectName == "" || !IsKnownStandardObject(objectName) {
+		return ObjectDefinition{}, false
+	}
+	definition := ObjectDefinition{APIName: objectName}
+	EnsureStandardObjectFields(&definition)
+	if definition.Label == "" {
+		definition.Label = objectName
+	}
+	if definition.PluralLabel == "" {
+		definition.PluralLabel = objectName + "s"
+	}
+	if definition.KeyPrefix == "" {
+		definition.KeyPrefix = StandardKeyPrefixes()[objectName]
+	}
+	return definition, true
+}
+
 func mergeStandardObjectDefinition(definition *ObjectDefinition, features []string) {
 	entry, ok := standardObjectCatalogEntryFor(definition.APIName)
 	if !ok {
