@@ -1215,74 +1215,33 @@ func (e *Engine) applyFlowFieldUpdates(objectName string, id storage.ID) error {
 		if !ok || !matches {
 			continue
 		}
-		for _, update := range rule.FieldUpdates {
-			fieldName, ok := storage.ResolveFieldName(object.Definition, e.Org.Namespace, update.Field)
-			if !ok || fieldName == "Id" {
-				return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{update.Field}, "dml: flow field update %s targets unknown or read-only field %s.%s", update.Name, objectName, update.Field)
-			}
-			if object.Definition.Fields[fieldName].Type == storage.FieldCalculated {
-				return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{fieldName}, "dml: flow field update %s targets calculated field %s.%s", update.Name, objectName, fieldName)
-			}
-			value, explicitNull, ok := workflowUpdateValue(object.Definition.Fields[fieldName], record, update, object.Definition, e.Org.Namespace)
-			if !ok {
-				return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{fieldName}, "dml: flow field update %s has unsupported value expression", update.Name)
-			}
-			if explicitNull {
-				delete(record.Fields, fieldName)
-				record.ExplicitNulls[fieldName] = true
-			} else {
-				record.Fields[fieldName] = value
-				delete(record.ExplicitNulls, fieldName)
-			}
-			e.traceAutomation("apex.flow.field_update", map[string]any{
-				"flow":   rule.Name,
-				"update": update.Name,
-				"object": objectName,
-				"record": string(record.ID),
-				"field":  fieldName,
+		if len(rule.Branches) > 0 {
+			branch, matched := e.selectFlowBranch(rule, record, object.Definition)
+			e.traceAutomation("apex.flow.decision", map[string]any{
+				"flow":    rule.Name,
+				"object":  objectName,
+				"record":  string(record.ID),
+				"branch":  branch.Name,
+				"default": branch.Default,
+				"matched": matched,
 			})
-			changed = true
-		}
-		for _, action := range rule.Actions {
-			e.traceAutomation("apex.flow.action", map[string]any{
-				"flow":   rule.Name,
-				"action": action.Name,
-				"object": objectName,
-				"record": string(record.ID),
-			})
-			if e.FlowActionInvoker == nil {
-				return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow action %s requires Apex action execution support", action.Name)
-			}
-			if err := e.FlowActionInvoker(action, record.Clone()); err != nil {
-				return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow action %s failed: %v", action.Name, err)
-			}
-		}
-		for _, create := range rule.RecordCreates {
-			suppressed, err := e.flowRecordCreateSuppressedByLookup(create, rule.RecordLookups, record, object.Definition)
-			if err != nil {
-				return err
-			}
-			if suppressed {
-				e.traceAutomation("apex.flow.record_create_suppressed", map[string]any{
-					"flow":   rule.Name,
-					"create": create.Name,
-					"object": create.ObjectName,
-					"record": string(record.ID),
-				})
+			if !matched {
 				continue
 			}
-			createdID, err := e.executeFlowRecordCreate(create, record, object.Definition)
+			branchLookups := append([]storage.FlowRecordLookup(nil), rule.RecordLookups...)
+			branchLookups = append(branchLookups, branch.RecordLookups...)
+			branchChanged, err := e.applyFlowEffects(rule.Name, objectName, &record, object.Definition, branch.FieldUpdates, branch.Actions, branchLookups, branch.RecordCreates)
 			if err != nil {
 				return err
 			}
-			e.traceAutomation("apex.flow.record_create", map[string]any{
-				"flow":      rule.Name,
-				"create":    create.Name,
-				"object":    create.ObjectName,
-				"sourceId":  string(record.ID),
-				"createdId": string(createdID),
-			})
+			changed = changed || branchChanged
+			continue
 		}
+		ruleChanged, err := e.applyFlowEffects(rule.Name, objectName, &record, object.Definition, rule.FieldUpdates, rule.Actions, rule.RecordLookups, rule.RecordCreates)
+		if err != nil {
+			return err
+		}
+		changed = changed || ruleChanged
 	}
 	if !changed {
 		return nil
@@ -1306,6 +1265,116 @@ func (e *Engine) applyFlowFieldUpdates(objectName string, id storage.ID) error {
 	object.Records[id] = record
 	e.Org.Objects[objectName] = object
 	return nil
+}
+
+func (e *Engine) selectFlowBranch(rule storage.FlowRule, record storage.Record, definition storage.ObjectDefinition) (storage.FlowBranch, bool) {
+	var defaultBranch storage.FlowBranch
+	hasDefault := false
+	for _, branch := range rule.Branches {
+		if branch.Default {
+			if !hasDefault {
+				defaultBranch = branch
+				hasDefault = true
+			}
+			continue
+		}
+		matches, ok := evaluateFlowBranch(branch, record, definition, e.Org.Namespace)
+		if ok && matches {
+			return branch, true
+		}
+	}
+	if hasDefault {
+		return defaultBranch, true
+	}
+	return storage.FlowBranch{}, false
+}
+
+func evaluateFlowBranch(branch storage.FlowBranch, record storage.Record, definition storage.ObjectDefinition, namespace string) (bool, bool) {
+	if len(branch.Criteria) == 0 {
+		return true, true
+	}
+	for _, item := range branch.Criteria {
+		matches, ok := evaluateWorkflowCriteria(item, record, definition, namespace)
+		if !ok || !matches {
+			return matches, ok
+		}
+	}
+	return true, true
+}
+
+func (e *Engine) applyFlowEffects(flowName, objectName string, record *storage.Record, definition storage.ObjectDefinition, updates []storage.WorkflowFieldUpdate, actions []storage.FlowAction, lookups []storage.FlowRecordLookup, creates []storage.FlowRecordCreate) (bool, error) {
+	changed := false
+	for _, update := range updates {
+		fieldName, ok := storage.ResolveFieldName(definition, e.Org.Namespace, update.Field)
+		if !ok || fieldName == "Id" {
+			return false, dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{update.Field}, "dml: flow field update %s targets unknown or read-only field %s.%s", update.Name, objectName, update.Field)
+		}
+		if definition.Fields[fieldName].Type == storage.FieldCalculated {
+			return false, dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{fieldName}, "dml: flow field update %s targets calculated field %s.%s", update.Name, objectName, fieldName)
+		}
+		value, explicitNull, ok := workflowUpdateValue(definition.Fields[fieldName], *record, update, definition, e.Org.Namespace)
+		if !ok {
+			return false, dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{fieldName}, "dml: flow field update %s has unsupported value expression", update.Name)
+		}
+		if explicitNull {
+			delete(record.Fields, fieldName)
+			record.ExplicitNulls[fieldName] = true
+		} else {
+			record.Fields[fieldName] = value
+			delete(record.ExplicitNulls, fieldName)
+		}
+		e.traceAutomation("apex.flow.field_update", map[string]any{
+			"flow":         flowName,
+			"update":       update.Name,
+			"object":       objectName,
+			"record":       string(record.ID),
+			"field":        fieldName,
+			"value":        workflowValueString(value),
+			"explicitNull": explicitNull,
+		})
+		changed = true
+	}
+	for _, action := range actions {
+		e.traceAutomation("apex.flow.action", map[string]any{
+			"flow":   flowName,
+			"action": action.Name,
+			"object": objectName,
+			"record": string(record.ID),
+		})
+		if e.FlowActionInvoker == nil {
+			return changed, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow action %s requires Apex action execution support", action.Name)
+		}
+		if err := e.FlowActionInvoker(action, record.Clone()); err != nil {
+			return changed, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow action %s failed: %v", action.Name, err)
+		}
+	}
+	for _, create := range creates {
+		suppressed, err := e.flowRecordCreateSuppressedByLookup(create, lookups, *record, definition)
+		if err != nil {
+			return changed, err
+		}
+		if suppressed {
+			e.traceAutomation("apex.flow.record_create_suppressed", map[string]any{
+				"flow":   flowName,
+				"create": create.Name,
+				"object": create.ObjectName,
+				"record": string(record.ID),
+			})
+			continue
+		}
+		createdID, err := e.executeFlowRecordCreate(create, *record, definition)
+		if err != nil {
+			return changed, err
+		}
+		e.traceAutomation("apex.flow.record_create", map[string]any{
+			"flow":      flowName,
+			"create":    create.Name,
+			"object":    create.ObjectName,
+			"sourceId":  string(record.ID),
+			"createdId": string(createdID),
+		})
+	}
+	return changed, nil
 }
 
 func (e *Engine) executeFlowRecordCreate(create storage.FlowRecordCreate, source storage.Record, sourceDefinition storage.ObjectDefinition) (storage.ID, error) {
@@ -1518,6 +1587,14 @@ func evaluateWorkflowCriteria(item storage.WorkflowCriteriaItem, record storage.
 		return validationFieldEquals(record, field, want), true
 	case "notequal", "not equal", "notequals", "not equals", "ne":
 		return !validationFieldEquals(record, field, want), true
+	case "greaterthan", "greater than", "gt":
+		return compareFormulaValues(formulaFieldValue(record, field), formulaValue{kind: formulaString, text: want}, ">"), true
+	case "greaterthanorequalto", "greater than or equal", "greater than or equal to", "gte", "ge":
+		return compareFormulaValues(formulaFieldValue(record, field), formulaValue{kind: formulaString, text: want}, ">="), true
+	case "lessthan", "less than", "lt":
+		return compareFormulaValues(formulaFieldValue(record, field), formulaValue{kind: formulaString, text: want}, "<"), true
+	case "lessthanorequalto", "less than or equal", "less than or equal to", "lte", "le":
+		return compareFormulaValues(formulaFieldValue(record, field), formulaValue{kind: formulaString, text: want}, "<="), true
 	case "contains":
 		value, ok := record.Fields[field]
 		return ok && strings.Contains(workflowValueString(value), want), true

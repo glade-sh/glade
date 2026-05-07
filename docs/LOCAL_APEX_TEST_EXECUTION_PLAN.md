@@ -22,7 +22,7 @@ also green for the checked `example-projects` corpus. A May 6, 2026 inventory
 from the current checkout reports:
 
 ```text
-filesScanned=51089 findings=0 testBlockingFindings=0 surfaces=0
+filesScanned=51092 findings=0 testBlockingFindings=0 surfaces=0
 ```
 
 That inventory is implementation-aware as of this checkpoint. It suppresses
@@ -549,13 +549,14 @@ Keep these remaining surfaces tracked before claiming
 - Workflow rule criteria still need broader formula support, boolean filters,
   time-dependent actions, recursive save-order coverage, and trace events for
   matched/skipped rules and applied actions.
-- Flow still needs record lookups, creates/deletes, collection operations,
-  loops, screens, subflows, scheduled paths, pause elements, platform event
-  triggers, and before-save/fast-field-update ordering.
-- Flow decisions and assignments still need multi-branch routing, typed
-  variables beyond `$Record` fields, `$Record__Prior`, relationship references,
-  collection assignments, and precise traces for every decision outcome and
-  assignment.
+- Flow now models routed decision branches, default routes, record lookups, and
+  record creates for the delete-propagation shape in the checked corpus. Flow
+  still needs record deletes, collection operations, loops, screens, subflows,
+  scheduled paths, pause elements, platform event triggers, and broader
+  before-save/fast-field-update ordering.
+- Flow decisions and assignments still need richer typed variables beyond
+  `$Record` fields, `$Record__Prior`, relationship references, collection
+  assignments, and precise traces for every decision outcome and assignment.
 - Flow and Process Builder Apex actions still need richer invocable marshaling
   for custom request/response DTOs, multiple arguments, return values, and
   unsupported action signatures.
@@ -638,9 +639,10 @@ Initial implementation status:
 - Added `compat ui-controllers --check
   docs/fixtures/ui-controller-discovery.json` for Aura/LWC controller discovery
   without adding browser rendering or action endpoint semantics.
-- The checked corpus now covers owned metadata/resources, presentation-metadata
-  unsupported classification, Visualforce controller contracts, Aura/LWC
-  discovery, VM-level Aura/LWC action invocation, platform APIs, files/email,
+- The checked 12-project corpus now covers owned metadata/resources,
+  presentation-metadata unsupported classification, Visualforce controller
+  contracts, Aura/LWC discovery, VM-level Aura/LWC action invocation, platform
+  APIs, local Metadata API custom object/field deployment, files/email,
   Workflow, Flow, and org-like runner fidelity.
 - Larger anonymized corpus projects and generated local-test dashboard files
   remain future release-hardening work. VM-level Aura/LWC action dispatch now
@@ -648,7 +650,7 @@ Initial implementation status:
   fixture expansion.
 - The broad post-parity readiness inventory is green for the checked
   `example-projects` corpus:
-  `filesScanned=51089 findings=0 testBlockingFindings=0 surfaces=0`.
+  `filesScanned=51092 findings=0 testBlockingFindings=0 surfaces=0`.
 
 Primary lane: Gate.
 
@@ -664,6 +666,8 @@ Tasks:
   - `mvp-ready`
   - `legacy-project-test-ready`
   - `declarative-automation-test-ready`
+  - Done in `docs/RELEASE_POLICY.md`; each label is tied to a checked gate and
+    explicitly avoids broader Salesforce runtime claims.
 - Add CI-friendly focused jobs for quick fixtures and optional large corpus
   scans.
 
@@ -893,7 +897,7 @@ go run ./cmd/oaer compat local-tests --project testdata/local-tests/basic --json
 After all four lanes merged, the post-parity readiness inventory moved to:
 
 ```text
-filesScanned=51089 findings=0 testBlockingFindings=0 surfaces=0
+filesScanned=51092 findings=0 testBlockingFindings=0 surfaces=0
 ```
 
 The outcome is not "all Salesforce behavior is implemented"; it is a shift from

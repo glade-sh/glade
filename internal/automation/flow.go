@@ -186,6 +186,7 @@ func loadFlow(path string) (Flow, []diagnostic.Diagnostic, error) {
 	}
 	formulas := flowFormulaMap(raw.Formulas)
 	variables := flowVariableMap(raw.Variables)
+	routedDecisions := false
 	for _, filter := range raw.Start.Filters {
 		rule.Criteria = append(rule.Criteria, storage.WorkflowCriteriaItem{
 			Field:     trimObjectPrefix(strings.TrimSpace(filter.Field)),
@@ -201,6 +202,10 @@ func loadFlow(path string) (Flow, []diagnostic.Diagnostic, error) {
 		if len(decision.Rules) == 0 {
 			continue
 		}
+		isRoutedDecision := flowDecisionHasRoutedBranch(decision)
+		if isRoutedDecision {
+			routedDecisions = true
+		}
 		if target := strings.TrimSpace(decision.DefaultConnector.TargetReference); target != "" {
 			if !flowNodeReferenceModeled(target, raw) {
 				diagnostics = append(diagnostics, flowUnsupported(path, name, fmt.Sprintf("decision %q default connector to %q is not modeled", decision.Name, target)))
@@ -210,24 +215,28 @@ func loadFlow(path string) (Flow, []diagnostic.Diagnostic, error) {
 			diagnostics = append(diagnostics, flowUnsupported(path, name, fmt.Sprintf("decision %q condition logic %q is not supported", decision.Name, logic)))
 			continue
 		}
-		for _, condition := range decision.Rules[0].Conditions {
-			field := flowRecordFieldReference(condition.LeftValueReference)
-			if field == "" {
-				if !flowReferenceModeled(condition.LeftValueReference, variables, raw.RecordLookups) {
-					diagnostics = append(diagnostics, flowUnsupported(path, name, fmt.Sprintf("decision %q condition %q is not a $Record field or modeled flow resource", decision.Name, condition.LeftValueReference)))
-					continue
+		if !isRoutedDecision {
+			for _, condition := range decision.Rules[0].Conditions {
+				field := flowRecordFieldReference(condition.LeftValueReference)
+				if field == "" {
+					if !flowReferenceModeled(condition.LeftValueReference, variables, raw.RecordLookups) {
+						diagnostics = append(diagnostics, flowUnsupported(path, name, fmt.Sprintf("decision %q condition %q is not a $Record field or modeled flow resource", decision.Name, condition.LeftValueReference)))
+						continue
+					}
 				}
-			}
-			if field != "" {
-				rule.Criteria = append(rule.Criteria, storage.WorkflowCriteriaItem{
-					Field:     field,
-					Operation: flowOperator(strings.TrimSpace(condition.Operator)),
-					Value:     flowLiteralValue(condition.RightValue),
-				})
+				if field != "" {
+					rule.Criteria = append(rule.Criteria, storage.WorkflowCriteriaItem{
+						Field:     field,
+						Operation: flowOperator(strings.TrimSpace(condition.Operator)),
+						Value:     flowLiteralValue(condition.RightValue),
+					})
+				}
 			}
 		}
 		if len(decision.Rules) > 1 {
-			diagnostics = append(diagnostics, flowUnsupported(path, name, fmt.Sprintf("decision %q has additional branches beyond the first supported rule", decision.Name)))
+			if !flowDecisionHasRoutedBranch(decision) {
+				diagnostics = append(diagnostics, flowUnsupported(path, name, fmt.Sprintf("decision %q has additional branches beyond the first supported rule", decision.Name)))
+			}
 		}
 	}
 	for _, assignment := range raw.Assignments {
@@ -297,7 +306,16 @@ func loadFlow(path string) (Flow, []diagnostic.Diagnostic, error) {
 		}
 		rule.Actions = append(rule.Actions, flowAction)
 	}
-	if len(rule.FieldUpdates) > 0 || len(rule.Actions) > 0 || len(rule.RecordLookups) > 0 || len(rule.RecordCreates) > 0 {
+	if routedDecisions {
+		branches, branchDiagnostics := modeledFlowDecisionBranches(path, name, raw, formulas, variables)
+		diagnostics = append(diagnostics, branchDiagnostics...)
+		if len(branches) > 0 {
+			rule.Branches = branches
+			rule.FieldUpdates = nil
+			rule.Actions = nil
+		}
+	}
+	if len(rule.Branches) > 0 || len(rule.FieldUpdates) > 0 || len(rule.Actions) > 0 || len(rule.RecordLookups) > 0 || len(rule.RecordCreates) > 0 {
 		flow.Rules = append(flow.Rules, rule)
 	}
 	sort.Slice(flow.Rules, func(i, j int) bool { return flow.Rules[i].Name < flow.Rules[j].Name })
@@ -477,6 +495,248 @@ func modeledFlowRecordCreate(create flowRecordCreateXML, formulas map[string]str
 	return out, true
 }
 
+func flowDecisionHasRoutedBranch(decision flowDecisionXML) bool {
+	if strings.TrimSpace(decision.DefaultConnector.TargetReference) != "" {
+		return true
+	}
+	for _, rule := range decision.Rules {
+		if strings.TrimSpace(rule.Connector.TargetReference) != "" {
+			return true
+		}
+	}
+	return false
+}
+
+func modeledFlowDecisionBranches(path, flowName string, raw flowXML, formulas map[string]string, variables map[string]flowVariableXML) ([]storage.FlowBranch, []diagnostic.Diagnostic) {
+	var branches []storage.FlowBranch
+	var diagnostics []diagnostic.Diagnostic
+	for _, decision := range raw.Decisions {
+		if !flowDecisionHasRoutedBranch(decision) {
+			continue
+		}
+		for _, decisionRule := range decision.Rules {
+			branch := storage.FlowBranch{Name: firstNonBlank(decisionRule.Name, decision.Name)}
+			if logic := strings.TrimSpace(decisionRule.ConditionLogic); logic != "" && !strings.EqualFold(logic, "and") {
+				diagnostics = append(diagnostics, flowUnsupported(path, flowName, fmt.Sprintf("decision %q branch %q condition logic %q is not supported", decision.Name, branch.Name, logic)))
+				continue
+			}
+			modeled := true
+			for _, condition := range decisionRule.Conditions {
+				field := flowVariableRecordField(condition.LeftValueReference, variables)
+				if field == "" {
+					field = flowRecordFieldReference(condition.LeftValueReference)
+				}
+				if field == "" {
+					if flowReferenceModeled(condition.LeftValueReference, variables, raw.RecordLookups) {
+						continue
+					} else {
+						diagnostics = append(diagnostics, flowUnsupported(path, flowName, fmt.Sprintf("decision %q branch %q condition %q is not a $Record field or modeled flow resource", decision.Name, branch.Name, condition.LeftValueReference)))
+					}
+					modeled = false
+					continue
+				}
+				branch.Criteria = append(branch.Criteria, storage.WorkflowCriteriaItem{
+					Field:     field,
+					Operation: flowOperator(strings.TrimSpace(condition.Operator)),
+					Value:     flowLiteralValue(condition.RightValue),
+				})
+			}
+			if !modeled {
+				continue
+			}
+			target := strings.TrimSpace(decisionRule.Connector.TargetReference)
+			if target == "" {
+				continue
+			}
+			var branchDiagnostics []diagnostic.Diagnostic
+			branch, branchDiagnostics = flowPopulateBranchFromTarget(branch, target, raw, formulas, variables)
+			for _, diagnostic := range branchDiagnostics {
+				diagnostics = append(diagnostics, flowUnsupported(path, flowName, diagnostic.Message))
+			}
+			if flowBranchHasEffects(branch) {
+				branches = append(branches, branch)
+			}
+		}
+		defaultTarget := strings.TrimSpace(decision.DefaultConnector.TargetReference)
+		if defaultTarget == "" {
+			continue
+		}
+		branch := storage.FlowBranch{Name: firstNonBlank(decision.Name+"_Default", decision.Name), Default: true}
+		var branchDiagnostics []diagnostic.Diagnostic
+		branch, branchDiagnostics = flowPopulateBranchFromTarget(branch, defaultTarget, raw, formulas, variables)
+		for _, diagnostic := range branchDiagnostics {
+			diagnostics = append(diagnostics, flowUnsupported(path, flowName, diagnostic.Message))
+		}
+		if flowBranchHasEffects(branch) {
+			branches = append(branches, branch)
+		}
+	}
+	return branches, diagnostics
+}
+
+func flowPopulateBranchFromTarget(branch storage.FlowBranch, target string, raw flowXML, formulas map[string]string, variables map[string]flowVariableXML) (storage.FlowBranch, []diagnostic.Diagnostic) {
+	var diagnostics []diagnostic.Diagnostic
+	visited := make(map[string]bool)
+	for target = strings.TrimSpace(target); target != ""; {
+		key := strings.ToLower(target)
+		if visited[key] {
+			break
+		}
+		visited[key] = true
+		next := ""
+		modeled := false
+		for _, assignment := range raw.Assignments {
+			if !strings.EqualFold(target, firstNonBlank(assignment.Name, assignment.Label)) {
+				continue
+			}
+			modeled = true
+			for _, item := range assignment.Items {
+				update, ok := modeledFlowAssignmentUpdate(assignment, item, formulas, variables)
+				if !ok {
+					diagnostics = append(diagnostics, diagnostic.Diagnostic{Message: fmt.Sprintf("assignment %q is not modeled in routed decision branch", firstNonBlank(assignment.Name, assignment.Label))})
+					continue
+				}
+				branch.FieldUpdates = append(branch.FieldUpdates, update)
+			}
+			next = assignment.Connector.TargetReference
+			break
+		}
+		if modeled {
+			target = next
+			continue
+		}
+		for _, update := range raw.RecordUpdates {
+			if !strings.EqualFold(target, firstNonBlank(update.Name, update.Label)) {
+				continue
+			}
+			modeled = true
+			updates, ok := modeledFlowRecordUpdates(update, formulas, variables)
+			if !ok {
+				diagnostics = append(diagnostics, diagnostic.Diagnostic{Message: fmt.Sprintf("record update %q is not modeled in routed decision branch", firstNonBlank(update.Name, update.Label))})
+			}
+			branch.FieldUpdates = append(branch.FieldUpdates, updates...)
+			next = update.Connector.TargetReference
+			break
+		}
+		if modeled {
+			target = next
+			continue
+		}
+		for _, lookup := range raw.RecordLookups {
+			if !strings.EqualFold(target, firstNonBlank(lookup.Name, lookup.Label)) {
+				continue
+			}
+			modeled = true
+			if recordLookup, ok := modeledFlowRecordLookup(lookup); ok {
+				branch.RecordLookups = append(branch.RecordLookups, recordLookup)
+			} else {
+				diagnostics = append(diagnostics, diagnostic.Diagnostic{Message: fmt.Sprintf("record lookup node %q is not modeled in routed decision branch", firstNonBlank(lookup.Name, lookup.Label))})
+			}
+			next = lookup.Connector.TargetReference
+			break
+		}
+		if modeled {
+			target = next
+			continue
+		}
+		for _, create := range raw.RecordCreates {
+			if !strings.EqualFold(target, firstNonBlank(create.Name, create.Label)) {
+				continue
+			}
+			modeled = true
+			if recordCreate, ok := modeledFlowRecordCreate(create, formulas, variables); ok {
+				branch.RecordCreates = append(branch.RecordCreates, recordCreate)
+			} else {
+				diagnostics = append(diagnostics, diagnostic.Diagnostic{Message: fmt.Sprintf("record create node %q is not modeled in routed decision branch", firstNonBlank(create.Name, create.Label))})
+			}
+			next = create.Connector.TargetReference
+			break
+		}
+		if modeled {
+			target = next
+			continue
+		}
+		for _, action := range raw.ActionCalls {
+			if !strings.EqualFold(target, firstNonBlank(action.Name, action.Label, action.ActionName)) {
+				continue
+			}
+			modeled = true
+			if flowAction, ok := modeledFlowActionCall(action); ok {
+				branch.Actions = append(branch.Actions, flowAction)
+			} else {
+				diagnostics = append(diagnostics, diagnostic.Diagnostic{Message: fmt.Sprintf("action node %q is not modeled in routed decision branch", firstNonBlank(action.Name, action.Label, action.ActionName))})
+			}
+			break
+		}
+		if modeled {
+			target = next
+			continue
+		}
+		for _, decision := range raw.Decisions {
+			if !strings.EqualFold(target, decision.Name) {
+				continue
+			}
+			modeled = true
+			next = flowDefaultDecisionTarget(decision)
+			break
+		}
+		if modeled {
+			target = next
+			continue
+		}
+		if !modeled {
+			diagnostics = append(diagnostics, diagnostic.Diagnostic{Message: fmt.Sprintf("routed decision target %q is not modeled", target)})
+		}
+		break
+	}
+	return branch, diagnostics
+}
+
+func modeledFlowAssignmentUpdate(assignment flowAssignmentXML, item flowAssignmentItemXML, formulas map[string]string, variables map[string]flowVariableXML) (storage.WorkflowFieldUpdate, bool) {
+	if !flowAssignmentOperatorSupported(item.Operator) {
+		return storage.WorkflowFieldUpdate{}, false
+	}
+	field := flowRecordFieldReference(item.AssignToReference)
+	if field == "" {
+		return storage.WorkflowFieldUpdate{}, false
+	}
+	return storage.WorkflowFieldUpdate{
+		Name:         firstNonBlank(assignment.Name, assignment.Label, field),
+		Field:        field,
+		LiteralValue: flowLiteralValue(item.Value),
+		Formula:      flowExpressionValue(item.Value, formulas),
+		SourceField:  flowSourceFieldValue(item.Value, variables),
+	}, true
+}
+
+func modeledFlowRecordUpdates(update flowRecordUpdateXML, formulas map[string]string, variables map[string]flowVariableXML) ([]storage.WorkflowFieldUpdate, bool) {
+	if !flowUpdatesTriggeringRecord(update.InputReference) {
+		return nil, false
+	}
+	if logic := strings.TrimSpace(update.FilterLogic); logic != "" && !strings.EqualFold(logic, "and") {
+		return nil, false
+	}
+	var updates []storage.WorkflowFieldUpdate
+	for _, assignment := range update.Fields {
+		field := trimObjectPrefix(strings.TrimSpace(assignment.Field))
+		if field == "" {
+			return nil, false
+		}
+		updates = append(updates, storage.WorkflowFieldUpdate{
+			Name:         firstNonBlank(update.Name, update.Label, field),
+			Field:        field,
+			LiteralValue: flowLiteralValue(assignment.Value),
+			Formula:      flowExpressionValue(assignment.Value, formulas),
+			SourceField:  flowSourceFieldValue(assignment.Value, variables),
+		})
+	}
+	return updates, true
+}
+
+func flowBranchHasEffects(branch storage.FlowBranch) bool {
+	return len(branch.FieldUpdates) > 0 || len(branch.Actions) > 0 || len(branch.RecordLookups) > 0 || len(branch.RecordCreates) > 0
+}
+
 func flowReferenceModeled(reference string, variables map[string]flowVariableXML, lookups []flowRecordLookupXML) bool {
 	reference = strings.TrimSpace(reference)
 	if reference == "" {
@@ -491,6 +751,26 @@ func flowReferenceModeled(reference string, variables map[string]flowVariableXML
 		}
 	}
 	return false
+}
+
+func flowVariableRecordField(reference string, variables map[string]flowVariableXML) string {
+	variable, ok := variables[strings.ToLower(strings.TrimSpace(reference))]
+	if !ok {
+		return ""
+	}
+	return flowRecordFieldReference(variable.Value.ElementReference)
+}
+
+func flowDefaultDecisionTarget(decision flowDecisionXML) string {
+	if target := strings.TrimSpace(decision.DefaultConnector.TargetReference); target != "" {
+		return target
+	}
+	for _, rule := range decision.Rules {
+		if target := strings.TrimSpace(rule.Connector.TargetReference); target != "" {
+			return target
+		}
+	}
+	return ""
 }
 
 func flowNodeReferenceModeled(reference string, raw flowXML) bool {

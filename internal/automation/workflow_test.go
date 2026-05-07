@@ -234,6 +234,64 @@ func TestLoadProjectFlowDecisionAssignments(t *testing.T) {
 	}
 }
 
+func TestLoadProjectFlowRoutedDecisionBranches(t *testing.T) {
+	root := t.TempDir()
+	path := filepath.Join(root, "force-app/main/default/flows/Widget_Decision_Branches.flow-meta.xml")
+	writeWorkflowTestFile(t, path, `<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+  <processType>AutoLaunchedFlow</processType>
+  <status>Active</status>
+  <start><object>Widget__c</object><triggerType>RecordAfterSave</triggerType></start>
+  <decisions>
+    <name>Route_Status</name>
+    <rules>
+      <name>Hot</name>
+      <conditionLogic>and</conditionLogic>
+      <conditions><leftValueReference>$Record.Score__c</leftValueReference><operator>GreaterThanOrEqualTo</operator><rightValue><numberValue>90</numberValue></rightValue></conditions>
+      <connector><targetReference>Assign_Hot</targetReference></connector>
+    </rules>
+    <rules>
+      <name>Warm</name>
+      <conditionLogic>and</conditionLogic>
+      <conditions><leftValueReference>$Record.Score__c</leftValueReference><operator>GreaterThanOrEqualTo</operator><rightValue><numberValue>50</numberValue></rightValue></conditions>
+      <connector><targetReference>Assign_Warm</targetReference></connector>
+    </rules>
+    <defaultConnector><targetReference>Assign_Cold</targetReference></defaultConnector>
+  </decisions>
+  <assignments>
+    <name>Assign_Hot</name>
+    <assignmentItems><assignToReference>$Record.Status__c</assignToReference><operator>Assign</operator><value><stringValue>Hot</stringValue></value></assignmentItems>
+  </assignments>
+  <assignments>
+    <name>Assign_Warm</name>
+    <assignmentItems><assignToReference>$Record.Status__c</assignToReference><operator>Assign</operator><value><stringValue>Warm</stringValue></value></assignmentItems>
+  </assignments>
+  <assignments>
+    <name>Assign_Cold</name>
+    <assignmentItems><assignToReference>$Record.Status__c</assignToReference><operator>Assign</operator><value><stringValue>Cold</stringValue></value></assignmentItems>
+  </assignments>
+</Flow>`)
+	idx, err := LoadProject(project.Project{FlowFiles: []string{path}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(idx.Diagnostics) != 0 {
+		t.Fatalf("diagnostics = %#v", idx.Diagnostics)
+	}
+	rule := idx.Flows[0].Rules[0]
+	if len(rule.Branches) != 3 {
+		t.Fatalf("branches = %#v", rule.Branches)
+	}
+	if len(rule.FieldUpdates) != 0 {
+		t.Fatalf("routed decision should not keep global field updates: %#v", rule.FieldUpdates)
+	}
+	if rule.Branches[0].Name != "Hot" || rule.Branches[0].Criteria[0].Field != "Score__c" || rule.Branches[0].FieldUpdates[0].LiteralValue != "Hot" {
+		t.Fatalf("hot branch = %#v", rule.Branches[0])
+	}
+	if !rule.Branches[2].Default || rule.Branches[2].FieldUpdates[0].LiteralValue != "Cold" {
+		t.Fatalf("default branch = %#v", rule.Branches[2])
+	}
+}
+
 func TestLoadProjectFlowApexActionCalls(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "force-app/main/default/flows/Widget_Action.flow-meta.xml")
@@ -330,6 +388,15 @@ func TestLoadProjectFlowBeforeDeleteLookupAndCreate(t *testing.T) {
   <processType>AutoLaunchedFlow</processType>
   <status>Active</status>
   <decisions>
+    <name>HasSourceValues</name>
+    <rules>
+      <name>HasValues</name>
+      <conditionLogic>and</conditionLogic>
+      <conditions><leftValueReference>SourceName</leftValueReference><operator>IsNull</operator><rightValue><booleanValue>false</booleanValue></rightValue></conditions>
+      <connector><targetReference>PendingRequest</targetReference></connector>
+    </rules>
+  </decisions>
+  <decisions>
     <name>ExistingRequest</name>
     <defaultConnector><targetReference>CreateRequest</targetReference></defaultConnector>
     <rules>
@@ -344,6 +411,7 @@ func TestLoadProjectFlowBeforeDeleteLookupAndCreate(t *testing.T) {
     <filterLogic>and</filterLogic>
     <filters><field>SourceRecordId__c</field><operator>EqualTo</operator><value><elementReference>$Record.Id</elementReference></value></filters>
     <filters><field>ActionName__c</field><operator>EqualTo</operator><value><stringValue>Delete</stringValue></value></filters>
+    <connector><targetReference>ExistingRequest</targetReference></connector>
     <getFirstRecordOnly>true</getFirstRecordOnly>
     <storeOutputAutomatically>true</storeOutputAutomatically>
   </recordLookups>
@@ -355,8 +423,9 @@ func TestLoadProjectFlowBeforeDeleteLookupAndCreate(t *testing.T) {
     <inputAssignments><field>SourceRecordId__c</field><value><elementReference>$Record.Id</elementReference></value></inputAssignments>
     <storeOutputAutomatically>true</storeOutputAutomatically>
   </recordCreates>
-  <start><object>Widget__c</object><triggerType>RecordBeforeDelete</triggerType></start>
+  <start><connector><targetReference>HasSourceValues</targetReference></connector><object>Widget__c</object><triggerType>RecordBeforeDelete</triggerType></start>
   <variables><name>Payload</name><dataType>String</dataType><value><stringValue>{"id":"{!$Record.Id}"}</stringValue></value></variables>
+  <variables><name>SourceName</name><dataType>String</dataType><value><elementReference>$Record.Name</elementReference></value></variables>
   <variables><name>PendingRequest</name><dataType>SObject</dataType><objectType>ActionRequest__c</objectType></variables>
 </Flow>`)
 
@@ -379,6 +448,9 @@ func TestLoadProjectFlowBeforeDeleteLookupAndCreate(t *testing.T) {
 	}
 	if len(rule.RecordCreates) != 1 || rule.RecordCreates[0].ObjectName != "ActionRequest__c" {
 		t.Fatalf("creates = %#v", rule.RecordCreates)
+	}
+	if len(rule.Branches) != 2 || rule.Branches[0].Criteria[0].Field != "Name" || !rule.Branches[1].Default {
+		t.Fatalf("branches = %#v", rule.Branches)
 	}
 	assignments := rule.RecordCreates[0].InputAssignments
 	if len(assignments) != 3 || assignments[1].LiteralValue != `{"id":"{!$Record.Id}"}` || assignments[2].SourceField != "Id" {

@@ -2706,6 +2706,8 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 		switch method {
 		case "enqueuedeployment":
 			return semaCollectionSignature{returnType: "String", params: [][]string{{"Metadata.DeployContainer", "Metadata.DeployCallback"}}}, true
+		case "checkdeploystatus":
+			return semaCollectionSignature{returnType: "Metadata.DeployResult", params: [][]string{{"Id"}, {"Id", "Boolean"}, {"String"}, {"String", "Boolean"}}}, true
 		case "retrieve":
 			return semaCollectionSignature{returnType: "List<Metadata.Metadata>", params: [][]string{{"Metadata.MetadataType", "List<String>"}, {"Metadata.MetadataType", "List<String>", "Boolean"}}}, true
 		}
@@ -3677,6 +3679,8 @@ var platformTypes = []string{
 	"Metadata",
 	"Metadata.CustomMetadata",
 	"Metadata.CustomMetadataValue",
+	"Metadata.CustomObject",
+	"Metadata.CustomField",
 	"Metadata.DeployCallback",
 	"Metadata.DeployCallBack",
 	"Metadata.DeployCallbackContext",

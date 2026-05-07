@@ -2000,10 +2000,11 @@ func supportedAuthSymbol(symbol, evidence string) bool {
 func supportedMetadataAPISymbol(symbol, evidence string) bool {
 	for _, needle := range []string{
 		"Metadata.CustomMetadata", "Metadata.CustomMetadataValue",
+		"Metadata.CustomObject", "Metadata.CustomField",
 		"Metadata.DeployCallback", "Metadata.DeployCallBack", "Metadata.DeployCallbackContext",
 		"Metadata.DeployContainer", "Metadata.DeployDetails", "Metadata.DeployMessage",
 		"Metadata.DeployResult", "Metadata.DeployStatus", "Metadata.Metadata", "Metadata.MetadataType",
-		"Metadata.Operations.enqueueDeployment", "Metadata.Operations.retrieve",
+		"Metadata.Operations.enqueueDeployment", "Metadata.Operations.checkDeployStatus", "Metadata.Operations.retrieve",
 	} {
 		if strings.Contains(symbol, needle) || strings.Contains(evidence, needle) {
 			return true

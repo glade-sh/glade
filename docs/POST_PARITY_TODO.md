@@ -45,14 +45,15 @@ Current checked status:
   `pass=101 fail=0 unsupported=0 missing=0`.
 - The broader post-parity readiness inventory is green for the checked
   `example-projects` corpus. A May 6, 2026
-  `oaer compat post-parity --json` run reported 51,089 files scanned, 0
+  `oaer compat post-parity --json` run reported 51,092 files scanned, 0
   findings, 0 test-blocking findings, and 0 surfaces. This means the known
   scanner/test-readiness blockers for standard schema references, labels,
   static resources, content assets, endpoint metadata, custom metadata type
   references, legacy presentation metadata, Visualforce controller/page and
   component contracts, Aura/LWC Apex discovery, Workflow save-order metadata,
-  and modeled Flow record-lookup/record-create shapes have moved out of the
-  post-parity blocker frontier.
+  modeled Flow record-lookup/record-create shapes, and local Metadata API
+  custom object/field deployment have moved out of the post-parity blocker
+  frontier.
 - The zero-blocker inventory is not a blanket full-Salesforce claim. The owned
   local-test corpus is green, including local `Schema.describeTabs()` coverage,
   while runtime depth for UI rendering, full metadata mutation, advanced Flow
@@ -181,7 +182,7 @@ Current scanner top blockers from the broad post-parity inventory:
 
 | Rank | Blocker |
 | --- | --- |
-| 1 | None. The May 6, 2026 checked scan reports 0 findings, 0 test-blocking findings, and 0 surfaces across 51,089 files. |
+| 1 | None. The May 6, 2026 checked scan reports 0 findings, 0 test-blocking findings, and 0 surfaces across 51,092 files. |
 
 Recently cleared blocker families:
 
@@ -458,25 +459,26 @@ Post-parity does not need a full Flow runtime at first. It does need enough to
 avoid silent gaps where old projects use Flow or Process Builder as part of the
 save order or call Apex invocable methods during local tests.
 
-- [ ] Load Flow metadata and index process types, versions, status, variables,
+- [x] Load Flow metadata and index process types, versions, status, variables,
   record triggers, and invocable action references.
-- [ ] Add stable diagnostics for unsupported Flow elements.
+- [x] Add stable diagnostics for unsupported Flow elements.
 - [ ] Implement minimal autolaunched Flow execution:
-  - [ ] Variables, constants, assignments, decisions, simple formulas, and
+  - [x] Variables, constants, assignments, decisions, simple formulas, and
     subflow diagnostics.
-  - [ ] Record create/update/delete/get elements backed by local storage.
+  - [ ] Record create/update/get elements backed by local storage; record
+    delete elements remain explicit unsupported diagnostics.
   - [ ] Apex action calls into `@InvocableMethod` with `@InvocableVariable`
     argument and result mapping.
   - [ ] Fault paths where representable.
-- [ ] Model Flow execution in DML save order where record-triggered flows are
+- [x] Model Flow execution in DML save order where record-triggered flows are
   enabled, including rollback and limit accounting.
-- [ ] Implement Process Builder-style flow metadata enough to call invocable
+- [x] Implement Process Builder-style flow metadata enough to call invocable
   Apex and update records from local test DML.
-- [ ] Add deterministic Flow interview IDs and trace events.
+- [ ] Add deterministic Flow interview IDs and fuller trace events.
 - [ ] Add compatibility fixtures for:
   - [ ] Invocable method metadata and argument mapping.
-  - [ ] Record-triggered flow update.
-  - [ ] Flow action that calls Apex.
+  - [x] Record-triggered flow update.
+  - [x] Flow action that calls Apex.
   - [ ] Flow rollback with DML transaction failure.
   - [ ] Unsupported element diagnostics.
 
@@ -545,13 +547,15 @@ baseline with legacy source formats and local metadata mutation.
   - [ ] Describe and field metadata.
   - [ ] LWC/Aura controller methods that query configuration records.
 - [ ] Implement Apex `Metadata` namespace models used by enterprise projects:
-  - [ ] `Metadata.DeployContainer`.
+  - [x] `Metadata.DeployContainer`.
   - [ ] `Metadata.CustomMetadata`.
   - [ ] `Metadata.CustomMetadataValue`.
+  - [x] `Metadata.CustomObject`.
+  - [x] `Metadata.CustomField`.
   - [ ] Deploy callback interfaces and result shapes.
 - [ ] Implement local enqueue behavior for metadata deployments:
-  - [ ] Deterministic deployment IDs.
-  - [ ] Synchronous or queued execution mode.
+  - [x] Deterministic deployment IDs.
+  - [x] Synchronous or queued execution mode.
   - [ ] Test-visible callback invocation.
   - [ ] Error results for invalid metadata.
 - [ ] Support local custom metadata mutation where safe:
@@ -821,12 +825,12 @@ with fixtures and dashboards.
   - [x] Affected files/classes/tests per gap.
   - [x] Suggested next capability to implement.
   - [x] Generated docs drift.
-- [ ] Add docs describing release language:
-  - [ ] MVP-ready.
-  - [ ] Apex-parity-ready.
-  - [ ] Legacy-project-test-ready.
-  - [ ] Declarative-automation-test-ready.
-  - [ ] Visualforce/Aura/LWC-controller-test-ready.
+- [x] Add docs describing release language:
+  - [x] MVP-ready.
+  - [x] Apex-parity-ready.
+  - [x] Legacy-project-test-ready.
+  - [x] Declarative-automation-test-ready.
+  - [x] Visualforce/Aura/LWC-controller-test-ready.
 - [ ] Add CI jobs that keep post-parity docs and dashboards in sync without
   blocking MVP releases until the project opts in.
 

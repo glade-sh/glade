@@ -253,6 +253,71 @@ System.assertEquals('Feature.Created', records[1].fullName);
 	}
 }
 
+func TestExecMetadataDeployContainerCustomObjectAndField(t *testing.T) {
+	program, err := CompileAnonymous(`
+Metadata.DeployContainer container = new Metadata.DeployContainer();
+Metadata.CustomObject objectDef = new Metadata.CustomObject();
+objectDef.fullName = 'Invoice__c';
+objectDef.label = 'Invoice';
+objectDef.pluralLabel = 'Invoices';
+container.addMetadata(objectDef);
+
+Metadata.CustomField amount = new Metadata.CustomField();
+amount.fullName = 'Invoice__c.Amount__c';
+amount.label = 'Amount';
+amount.type = 'Number';
+amount.required = true;
+container.addMetadata(amount);
+
+Metadata.CustomField paid = new Metadata.CustomField();
+paid.fullName = 'Invoice__c.Paid__c';
+paid.label = 'Paid';
+paid.type = 'Checkbox';
+container.addMetadata(paid);
+
+Id deploymentId = Metadata.Operations.enqueueDeployment(container, null);
+Metadata.DeployResult result = Metadata.Operations.checkDeployStatus(deploymentId, true);
+System.assert(result.success);
+System.assertEquals(3, result.numberComponentsTotal);
+System.assertEquals(3, result.numberComponentsDeployed);
+System.assertEquals(0, result.numberComponentErrors);
+System.assertEquals('CustomObject', result.details.componentSuccesses[0].componentType);
+System.assertEquals('Invoice__c', result.details.componentSuccesses[0].fullName);
+System.assertEquals('CustomField', result.details.componentSuccesses[1].componentType);
+System.assertEquals('Invoice__c.Amount__c', result.details.componentSuccesses[1].fullName);
+
+Map<String,Object> describes = Schema.getGlobalDescribe();
+System.assert(describes.containsKey('Invoice__c'));
+Object invoiceType = describes.get('Invoice__c');
+Object invoiceDescribe = invoiceType.getDescribe();
+System.assertEquals('Invoice__c', invoiceDescribe.getName());
+Map<String,Object> fields = invoiceDescribe.fields.getMap();
+System.assert(fields.containsKey('Amount__c'));
+System.assert(fields.containsKey('Paid__c'));
+System.assertEquals('Amount', fields.get('Amount__c').getDescribe().getLabel());
+
+SObject invoice = invoiceType.newSObject();
+invoice.put('Name', 'INV-1');
+invoice.put('Amount__c', 42);
+invoice.put('Paid__c', true);
+insert invoice;
+List<SObject> rows = Database.query('SELECT Name, Amount__c, Paid__c FROM Invoice__c WHERE Amount__c = 42');
+System.assertEquals(1, rows.size());
+System.assertEquals('INV-1', (String)rows[0].get('Name'));
+System.assertEquals(42, (Integer)rows[0].get('Amount__c'));
+System.assertEquals(true, (Boolean)rows[0].get('Paid__c'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecMetadataDeploymentUnsupportedItemType(t *testing.T) {
 	program, err := CompileAnonymous(`
 Metadata.DeployContainer container = new Metadata.DeployContainer();

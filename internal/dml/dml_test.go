@@ -829,6 +829,84 @@ func TestFlowRuleFormulaAndFormulaFieldUpdates(t *testing.T) {
 	}
 }
 
+func TestFlowDecisionBranchesRouteFirstMatchOrDefaultAndTraceValue(t *testing.T) {
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Score__c"] = storage.Field{APIName: "Score__c", Type: storage.FieldInteger}
+	account.Definition.Fields["Status__c"] = storage.Field{APIName: "Status__c", Type: storage.FieldString}
+	account.Definition.FlowRules = []storage.FlowRule{{
+		Name:   "RouteStatus",
+		Active: true,
+		Branches: []storage.FlowBranch{
+			{
+				Name:     "Enterprise",
+				Criteria: []storage.WorkflowCriteriaItem{{Field: "Score__c", Operation: "greaterThanOrEqualTo", Value: "90"}},
+				FieldUpdates: []storage.WorkflowFieldUpdate{{
+					Name:         "SetEnterpriseStatus",
+					Field:        "Status__c",
+					LiteralValue: "Priority",
+				}},
+			},
+			{
+				Name:     "Startup",
+				Criteria: []storage.WorkflowCriteriaItem{{Field: "Score__c", Operation: "greaterThanOrEqualTo", Value: "50"}},
+				FieldUpdates: []storage.WorkflowFieldUpdate{{
+					Name:         "SetStartupStatus",
+					Field:        "Status__c",
+					LiteralValue: "Nurture",
+				}},
+			},
+			{
+				Name:    "Default",
+				Default: true,
+				FieldUpdates: []storage.WorkflowFieldUpdate{{
+					Name:         "SetDefaultStatus",
+					Field:        "Status__c",
+					LiteralValue: "Standard",
+				}},
+			},
+		},
+	}}
+	org.Objects["Account"] = account
+	engine := NewEngine(&org)
+	var decisions []map[string]any
+	var updates []map[string]any
+	engine.AutomationTracer = func(name string, args map[string]any) {
+		switch name {
+		case "apex.flow.decision":
+			decisions = append(decisions, args)
+		case "apex.flow.field_update":
+			updates = append(updates, args)
+		}
+	}
+
+	insert := engine.Insert([]storage.Record{
+		{Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("Acme"), "Score__c": storage.IntegerValue(95)}},
+		{Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("Beta"), "Score__c": storage.IntegerValue(65)}},
+		{Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("Core"), "Score__c": storage.IntegerValue(20)}},
+	})
+	for _, result := range insert {
+		if !result.Success {
+			t.Fatalf("insert = %#v", insert)
+		}
+	}
+	assertAccountStatus := func(id storage.ID, want string) {
+		t.Helper()
+		if got := org.Objects["Account"].Records[id].Fields["Status__c"].String; got != want {
+			t.Fatalf("status for %s = %q, want %q", id, got, want)
+		}
+	}
+	assertAccountStatus(insert[0].ID, "Priority")
+	assertAccountStatus(insert[1].ID, "Nurture")
+	assertAccountStatus(insert[2].ID, "Standard")
+	if len(decisions) != 3 || decisions[0]["branch"] != "Enterprise" || decisions[1]["branch"] != "Startup" || decisions[2]["branch"] != "Default" || decisions[2]["default"] != true {
+		t.Fatalf("decision traces = %#v", decisions)
+	}
+	if len(updates) != 3 || updates[0]["value"] != "Priority" || updates[1]["value"] != "Nurture" || updates[2]["value"] != "Standard" {
+		t.Fatalf("field update traces = %#v", updates)
+	}
+}
+
 func TestFlowRecordCreateRunsAndLookupSuppressesDuplicate(t *testing.T) {
 	org := testOrg()
 	account := org.Objects["Account"]

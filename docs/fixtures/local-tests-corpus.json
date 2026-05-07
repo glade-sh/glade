@@ -107,6 +107,26 @@
       ]
     },
     {
+      "project": "../../testdata/local-tests/metadata-deploy",
+      "ready": true,
+      "summary": {
+        "total": 1,
+        "pass": 1,
+        "fail": 0,
+        "unsupported": 0,
+        "loadError": 0,
+        "compileError": 0,
+        "internalError": 0
+      },
+      "outcomes": [
+        {
+          "class": "MetadataDeployTest",
+          "method": "deploysCustomObjectAndFieldsIntoLocalSchema",
+          "outcome": "pass"
+        }
+      ]
+    },
+    {
       "project": "../../testdata/local-tests/resources-labels",
       "ready": true,
       "summary": {

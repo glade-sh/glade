@@ -225,6 +225,17 @@ type FlowRule struct {
 	TriggerType   string                 `json:"triggerType,omitempty"`
 	Formula       string                 `json:"formula,omitempty"`
 	Criteria      []WorkflowCriteriaItem `json:"criteria,omitempty"`
+	Branches      []FlowBranch           `json:"branches,omitempty"`
+	FieldUpdates  []WorkflowFieldUpdate  `json:"fieldUpdates,omitempty"`
+	Actions       []FlowAction           `json:"actions,omitempty"`
+	RecordLookups []FlowRecordLookup     `json:"recordLookups,omitempty"`
+	RecordCreates []FlowRecordCreate     `json:"recordCreates,omitempty"`
+}
+
+type FlowBranch struct {
+	Name          string                 `json:"name"`
+	Default       bool                   `json:"default,omitempty"`
+	Criteria      []WorkflowCriteriaItem `json:"criteria,omitempty"`
 	FieldUpdates  []WorkflowFieldUpdate  `json:"fieldUpdates,omitempty"`
 	Actions       []FlowAction           `json:"actions,omitempty"`
 	RecordLookups []FlowRecordLookup     `json:"recordLookups,omitempty"`

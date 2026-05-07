@@ -16,6 +16,30 @@ A release can be promoted as MVP-ready only when:
 
 Until that gate is green, releases must be described as preview builds.
 
+## Release Readiness Labels
+
+Use these labels narrowly. They are claims about checked gates from the current
+source tree, not broad promises that every Salesforce behavior is implemented.
+
+- `server-examples-green`: `oaer compat server-examples` reports no failing,
+  unsupported, or missing probes for the checked server-example corpus.
+- `mvp-ready`: `oaer compat mvp --require-ready` passes, every MVP-required
+  capability is `supported`, and generated compatibility docs are in sync.
+- `apex-parity-ready`: the parser, semantic checker, VM, stdlib, storage,
+  DML/SOQL, test runner, and local API compatibility fixtures that define the
+  Apex parity surface pass from source.
+- `legacy-project-test-ready`: `oaer compat local-tests --check
+  docs/fixtures/local-tests-corpus.json` passes for owned fixtures modeled
+  after large legacy projects, and `oaer compat post-parity --json` reports no
+  test-blocking findings for the checked example-project inventory.
+- `declarative-automation-test-ready`: the local-test corpus covers Workflow,
+  record-triggered or Process Builder-shaped Flow, invocable Apex actions, DML
+  rollback, and trace-visible declarative side effects.
+- `visualforce-aura-lwc-controller-test-ready`: owned fixtures cover
+  non-rendering Visualforce page/controller/action contracts, Aura Apex
+  discovery, LWC Apex import discovery, and VM-level controller action
+  dispatch. This label does not imply browser rendering or local UI serving.
+
 ## Salesforce API Versions
 
 The current default local API version is `v65.0`. Compatibility is tracked by

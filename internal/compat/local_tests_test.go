@@ -146,12 +146,25 @@ func TestRunLocalTestsEnterpriseComposedFixtureReady(t *testing.T) {
 	}
 }
 
+func TestRunLocalTestsMetadataDeployFixtureReady(t *testing.T) {
+	report, err := RunLocalTests(LocalTestOptions{Project: filepath.Join("..", "..", "testdata", "local-tests", "metadata-deploy")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !report.Ready {
+		t.Fatalf("ready = false, summary = %#v outcomes = %#v", report.Summary, report.Outcomes)
+	}
+	if report.Summary.Total != 1 || report.Summary.Pass != 1 || report.Summary.CompileErrors != 0 || report.Summary.Unsupported != 0 {
+		t.Fatalf("summary = %#v", report.Summary)
+	}
+}
+
 func TestCheckLocalTestCorpusFixture(t *testing.T) {
 	report, err := CheckLocalTestCorpus(filepath.Join("..", "..", "docs", "fixtures", "local-tests-corpus.json"))
 	if err != nil {
 		t.Fatalf("CheckLocalTestCorpus error = %v, report = %#v", err, report)
 	}
-	if !report.Ready || len(report.Projects) != 11 {
+	if !report.Ready || len(report.Projects) != 12 {
 		t.Fatalf("report = %#v", report)
 	}
 }

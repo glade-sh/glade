@@ -90,6 +90,9 @@ return next;
 		t.Fatal(err)
 	}
 	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
 	if err := machine.RegisterClass(Class{
 		Name: "AccountController",
 		Methods: map[string]Method{
@@ -163,6 +166,70 @@ return next;
 	}
 }
 
+func TestInvokeVisualforceActionTracesStandardControllerActions(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'VF Trace');
+ApexPages.StandardController controller = new ApexPages.StandardController(account);
+PageReference saved = controller.save();
+PageReference viewed = controller.view();
+PageReference cancelled = controller.cancel();
+System.assertEquals('/' + account.Id, saved.getUrl());
+System.assertEquals('/' + account.Id, viewed.getUrl());
+System.assertEquals('/' + account.Id, cancelled.getUrl());
+return controller.delete();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name: "AccountController",
+		Methods: map[string]Method{
+			"remove": {
+				Name:       "AccountController.remove",
+				ClassName:  "AccountController",
+				ReturnType: "PageReference",
+				Program:    program,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	result, err := machine.InvokeVisualforceAction("AccountController", "remove", "/apex/Edit", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Success {
+		t.Fatalf("success = false: %#v", result.Error)
+	}
+	if countTraceEvents(result.Trace, "apex.visualforce.standard_controller.action.start") != 4 {
+		t.Fatalf("standard controller start traces = %#v", result.Trace)
+	}
+	if countTraceEvents(result.Trace, "apex.visualforce.standard_controller.action.complete") != 4 {
+		t.Fatalf("standard controller complete traces = %#v", result.Trace)
+	}
+	deleteComplete := findTraceEventWithArg(result.Trace, "apex.visualforce.standard_controller.action.complete", "method", "delete")
+	if deleteComplete == nil {
+		t.Fatalf("delete completion trace missing: %#v", result.Trace)
+	}
+	if deleteComplete.Category != "apex.visualforce.standard_controller" || deleteComplete.Args["objectType"] != "Account" || deleteComplete.Args["dmlOperation"] != "delete" {
+		t.Fatalf("delete completion args = %#v", deleteComplete.Args)
+	}
+	pageRef, ok := deleteComplete.Args["pageReference"].(map[string]any)
+	if !ok || pageRef["url"] == "" {
+		t.Fatalf("delete pageReference trace = %#v", deleteComplete.Args["pageReference"])
+	}
+	if findTraceEventWithArg(result.Trace, "apex.visualforce.standard_controller.action.complete", "method", "view") == nil {
+		t.Fatalf("view completion trace missing: %#v", result.Trace)
+	}
+	if findTraceEventWithArg(result.Trace, "apex.visualforce.standard_controller.action.complete", "method", "cancel") == nil {
+		t.Fatalf("cancel completion trace missing: %#v", result.Trace)
+	}
+}
+
 func TestInvokeVisualforceActionReportsMissingInstanceAction(t *testing.T) {
 	machine := New(nil)
 	if err := machine.RegisterClass(Class{Name: "AccountController"}); err != nil {
@@ -174,6 +241,51 @@ func TestInvokeVisualforceActionReportsMissingInstanceAction(t *testing.T) {
 	}
 	if result.Success || result.Error == nil || result.Error.Type != "UnsupportedFeature" {
 		t.Fatalf("result = %#v", result)
+	}
+}
+
+func TestInvokeVisualforceActionTracesStandardControllerActionError(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'Unsaved');
+ApexPages.StandardController controller = new ApexPages.StandardController(account);
+return controller.delete();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "AccountController",
+		Methods: map[string]Method{
+			"removeUnsaved": {
+				Name:       "AccountController.removeUnsaved",
+				ClassName:  "AccountController",
+				ReturnType: "PageReference",
+				Program:    program,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	result, err := machine.InvokeVisualforceAction("AccountController", "removeUnsaved", "/apex/Edit", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Success || result.Error == nil {
+		t.Fatalf("result = %#v", result)
+	}
+	actionError := findTraceEventWithArg(result.Trace, "apex.visualforce.standard_controller.action.error", "method", "delete")
+	if actionError == nil {
+		t.Fatalf("standard controller action error trace missing: %#v", result.Trace)
+	}
+	if actionError.Args["objectType"] != "Account" || actionError.Args["dmlOperation"] != "delete" {
+		t.Fatalf("action error args = %#v", actionError.Args)
+	}
+	if actionError.Args["error"] == "" || actionError.Args["errorType"] == "" {
+		t.Fatalf("action error args = %#v", actionError.Args)
+	}
+	if !traceHas(result.Trace, "apex.visualforce.action.error", "apex.visualforce") {
+		t.Fatalf("visualforce action error trace missing: %#v", result.Trace)
 	}
 }
 
@@ -231,4 +343,23 @@ func findTraceEvent(events []trace.Event, name string) *trace.Event {
 		}
 	}
 	return nil
+}
+
+func findTraceEventWithArg(events []trace.Event, name, key string, value any) *trace.Event {
+	for i := range events {
+		if events[i].Name == name && events[i].Args[key] == value {
+			return &events[i]
+		}
+	}
+	return nil
+}
+
+func countTraceEvents(events []trace.Event, name string) int {
+	count := 0
+	for _, event := range events {
+		if event.Name == name {
+			count++
+		}
+	}
+	return count
 }

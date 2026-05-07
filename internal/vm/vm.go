@@ -9082,7 +9082,7 @@ func isBuiltinTypeName(name string) bool {
 		return true
 	}
 	switch name {
-	case "Object", "String", "Boolean", "Integer", "Long", "Decimal", "Double", "Date", "Datetime", "Time", "TimeZone", "Blob", "Id", "Type", "URL", "PageReference", "SelectOption", "LoggingLevel", "ApexPages.Severity", "ApexPages.StandardController", "ApexPages.StandardSetController", "RestContext", "RestRequest", "RestResponse", "Callable", "StubProvider", "Auth.JWT", "ConnectApi.UserSettings", "ConnectApi.TimeZone", "Metadata.Metadata", "Metadata.MetadataType", "Metadata.DeployContainer", "Metadata.CustomMetadata", "Metadata.CustomMetadataValue", "Metadata.DeployCallback", "Metadata.DeployCallBack", "Metadata.DeployResult", "Metadata.DeployStatus", "Metadata.DeployDetails", "Metadata.DeployMessage", "Metadata.DeployCallbackContext", "Metadata.AsyncResult":
+	case "Object", "String", "Boolean", "Integer", "Long", "Decimal", "Double", "Date", "Datetime", "Time", "TimeZone", "Blob", "Id", "Type", "URL", "PageReference", "SelectOption", "LoggingLevel", "ApexPages.Severity", "ApexPages.StandardController", "ApexPages.StandardSetController", "RestContext", "RestRequest", "RestResponse", "Callable", "StubProvider", "Auth.JWT", "ConnectApi.UserSettings", "ConnectApi.TimeZone", "Metadata.Metadata", "Metadata.MetadataType", "Metadata.DeployContainer", "Metadata.CustomMetadata", "Metadata.CustomMetadataValue", "Metadata.CustomObject", "Metadata.CustomField", "Metadata.DeployCallback", "Metadata.DeployCallBack", "Metadata.DeployResult", "Metadata.DeployStatus", "Metadata.DeployDetails", "Metadata.DeployMessage", "Metadata.DeployCallbackContext", "Metadata.AsyncResult":
 		return true
 	default:
 		return false
@@ -10070,6 +10070,24 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 			value.Fields[field] = fieldValue
 		}
 		return value, nil
+	case "Metadata.CustomObject":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Metadata.CustomObject constructor expects 0 arguments")
+		}
+		metadata := Object("Metadata.CustomObject")
+		for field, value := range namedArgs {
+			metadata.Fields[field] = value
+		}
+		return metadata, nil
+	case "Metadata.CustomField":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Metadata.CustomField constructor expects 0 arguments")
+		}
+		field := Object("Metadata.CustomField")
+		for name, value := range namedArgs {
+			field.Fields[name] = value
+		}
+		return field, nil
 	case "Metadata.Metadata":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Metadata.Metadata constructor expects 0 arguments")
@@ -13257,7 +13275,7 @@ func (vm *VM) metadataEnqueueDeployment(args []Value) (Value, error) {
 		return Null, unsupportedCallError("Metadata.Operations.enqueueDeployment requires org storage for local metadata mutation")
 	}
 	for _, item := range items.List {
-		if err := vm.applyCustomMetadataDeployment(item); err != nil {
+		if err := vm.applyMetadataDeployment(item); err != nil {
 			return Null, err
 		}
 	}
@@ -13266,7 +13284,7 @@ func (vm *VM) metadataEnqueueDeployment(args []Value) (Value, error) {
 }
 
 func (vm *VM) metadataCheckDeployStatus(args []Value) (Value, error) {
-	if len(args) < 1 || len(args) > 2 || args[0].Kind != ValueObject || args[0].Type != "Id" {
+	if len(args) < 1 || len(args) > 2 || !metadataDeploymentIDValue(args[0]) {
 		return Null, fmt.Errorf("Metadata.Operations.checkDeployStatus expects deployment Id[, includeDetails]")
 	}
 	includeDetails := false
@@ -13276,9 +13294,13 @@ func (vm *VM) metadataCheckDeployStatus(args []Value) (Value, error) {
 		}
 		includeDetails = args[1].Bool
 	}
-	deploymentID, err := platformScalarText(args[0], "Id")
-	if err != nil {
-		return Null, err
+	deploymentID := args[0].Text
+	if args[0].Kind == ValueObject {
+		var err error
+		deploymentID, err = platformScalarText(args[0], "Id")
+		if err != nil {
+			return Null, err
+		}
 	}
 	if vm.metadataDeploys == nil {
 		vm.metadataDeploys = make(map[string]Value)
@@ -13294,6 +13316,10 @@ func (vm *VM) metadataCheckDeployStatus(args []Value) (Value, error) {
 	return result, nil
 }
 
+func metadataDeploymentIDValue(value Value) bool {
+	return value.Kind == ValueString || (value.Kind == ValueObject && value.Type == "Id")
+}
+
 func (vm *VM) recordMetadataDeployment(deploymentID string, items []Value) {
 	if vm.metadataDeploys == nil {
 		vm.metadataDeploys = make(map[string]Value)
@@ -13301,14 +13327,27 @@ func (vm *VM) recordMetadataDeployment(deploymentID string, items []Value) {
 	vm.metadataDeploys[deploymentID] = metadataDeployResultObject(deploymentID, items)
 }
 
-func (vm *VM) applyCustomMetadataDeployment(item Value) error {
-	if item.Kind != ValueObject || item.Type != "Metadata.CustomMetadata" {
-		typeName := string(item.Kind)
-		if item.Type != "" {
-			typeName = item.Type
+func (vm *VM) applyMetadataDeployment(item Value) error {
+	if item.Kind != ValueObject {
+		return unsupportedCallError("Metadata.Operations.enqueueDeployment " + string(item.Kind) + " metadata deploy")
+	}
+	switch item.Type {
+	case "Metadata.CustomMetadata":
+		return vm.applyCustomMetadataDeployment(item)
+	case "Metadata.CustomObject":
+		return vm.applyCustomObjectDeployment(item)
+	case "Metadata.CustomField":
+		return vm.applyCustomFieldDeployment(item)
+	default:
+		typeName := item.Type
+		if typeName == "" {
+			typeName = string(item.Kind)
 		}
 		return unsupportedCallError("Metadata.Operations.enqueueDeployment " + typeName + " metadata deploy")
 	}
+}
+
+func (vm *VM) applyCustomMetadataDeployment(item Value) error {
 	fullName, ok := metadataStringField(item, "fullName")
 	if !ok || strings.TrimSpace(fullName) == "" {
 		return fmt.Errorf("Metadata.CustomMetadata.fullName is required")
@@ -13354,6 +13393,82 @@ func (vm *VM) applyCustomMetadataDeployment(item Value) error {
 	record.Fields["Id"] = storage.IDValue(recordID)
 	state.Records[recordID] = record
 	vm.Org.Objects[definition.APIName] = state
+	return nil
+}
+
+func (vm *VM) applyCustomObjectDeployment(item Value) error {
+	fullName, ok := metadataStringField(item, "fullName")
+	if !ok || strings.TrimSpace(fullName) == "" {
+		return fmt.Errorf("Metadata.CustomObject.fullName is required")
+	}
+	objectName := strings.TrimSpace(fullName)
+	if !strings.HasSuffix(objectName, "__c") && !strings.HasSuffix(objectName, "__mdt") && !strings.HasSuffix(objectName, "__e") {
+		return fmt.Errorf("Metadata.CustomObject.fullName must be a custom object API name")
+	}
+	objectName = storage.NamespaceTokenName(vm.Org.Namespace, objectName)
+	state := vm.Org.Objects[objectName]
+	state.Definition.APIName = objectName
+	if state.Definition.Label == "" {
+		state.Definition.Label = metadataTextFieldOrDefault(item, "label", strings.TrimSuffix(objectName, "__c"))
+	}
+	if state.Definition.PluralLabel == "" {
+		state.Definition.PluralLabel = metadataTextFieldOrDefault(item, "pluralLabel", state.Definition.Label+"s")
+	}
+	if state.Definition.SharingModel == "" {
+		state.Definition.SharingModel = metadataTextFieldOrDefault(item, "sharingModel", "ReadWrite")
+	}
+	if state.Definition.KeyPrefix == "" {
+		state.Definition.KeyPrefix = storage.AssignDeterministicPrefixes([]string{objectName}, nil)[objectName]
+	}
+	if state.Definition.Fields == nil {
+		state.Definition.Fields = make(map[string]storage.Field)
+	}
+	if _, ok := state.Definition.Fields["Name"]; !ok {
+		state.Definition.Fields["Name"] = storage.Field{APIName: "Name", Label: "Name", Type: storage.FieldString}
+	}
+	if state.Definition.Metadata == nil {
+		state.Definition.Metadata = map[string]string{"kind": "customObject"}
+	}
+	storage.EnsureStandardObjectFields(&state.Definition)
+	if state.Records == nil {
+		state.Records = make(map[storage.ID]storage.Record)
+	}
+	vm.Org.Objects[objectName] = state
+	return nil
+}
+
+func (vm *VM) applyCustomFieldDeployment(item Value) error {
+	fullName, ok := metadataStringField(item, "fullName")
+	if !ok || strings.TrimSpace(fullName) == "" {
+		return fmt.Errorf("Metadata.CustomField.fullName is required")
+	}
+	objectName, fieldName := metadataCustomFieldNames(fullName)
+	if objectName == "" || fieldName == "" {
+		return fmt.Errorf("Metadata.CustomField.fullName must be Object.Field")
+	}
+	objectName = storage.NamespaceTokenName(vm.Org.Namespace, objectName)
+	fieldName = storage.NamespaceTokenName(vm.Org.Namespace, fieldName)
+	state, ok := vm.Org.Objects[objectName]
+	if !ok {
+		return fmt.Errorf("Metadata.CustomField.fullName references unknown object %s", objectName)
+	}
+	if state.Definition.Fields == nil {
+		state.Definition.Fields = make(map[string]storage.Field)
+	}
+	fieldType, displayType := metadataCustomFieldType(item)
+	field := state.Definition.Fields[fieldName]
+	field.APIName = fieldName
+	field.Label = metadataTextFieldOrDefault(item, "label", fieldName)
+	field.Type = fieldType
+	field.DisplayType = displayType
+	field.Required = metadataBoolField(item, "required")
+	field.ExternalID = metadataBoolField(item, "externalId")
+	field.Unique = metadataBoolField(item, "unique")
+	if referenceTo := metadataReferenceTo(item); len(referenceTo) > 0 {
+		field.ReferenceTo = referenceTo
+	}
+	state.Definition.Fields[fieldName] = field
+	vm.Org.Objects[objectName] = state
 	return nil
 }
 
@@ -13517,6 +13632,78 @@ func metadataStringField(value Value, field string) (string, bool) {
 		return "", false
 	}
 	return raw.Text, true
+}
+
+func metadataTextFieldOrDefault(value Value, field, fallback string) string {
+	if raw, ok := metadataStringField(value, field); ok && strings.TrimSpace(raw) != "" {
+		return strings.TrimSpace(raw)
+	}
+	return fallback
+}
+
+func metadataBoolField(value Value, field string) bool {
+	raw, ok := value.Fields[field]
+	return ok && raw.Kind == ValueBool && raw.Bool
+}
+
+func metadataCustomFieldNames(fullName string) (string, string) {
+	parts := strings.SplitN(strings.TrimSpace(fullName), ".", 2)
+	if len(parts) != 2 {
+		return "", strings.TrimSpace(fullName)
+	}
+	return strings.TrimSpace(parts[0]), strings.TrimSpace(parts[1])
+}
+
+func metadataCustomFieldType(item Value) (storage.FieldType, string) {
+	raw := metadataTextFieldOrDefault(item, "type", "Text")
+	switch strings.ToLower(strings.ReplaceAll(raw, "_", "")) {
+	case "checkbox", "boolean":
+		return storage.FieldBoolean, "BOOLEAN"
+	case "number", "integer", "int":
+		return storage.FieldInteger, "INTEGER"
+	case "currency", "percent", "double", "decimal":
+		return storage.FieldDecimal, "DOUBLE"
+	case "date":
+		return storage.FieldDate, "DATE"
+	case "datetime":
+		return storage.FieldDateTime, "DATETIME"
+	case "picklist", "multipicklist":
+		return storage.FieldPicklist, "PICKLIST"
+	case "lookup", "masterdetail", "reference":
+		return storage.FieldReference, "REFERENCE"
+	case "textarea", "longtextarea", "html", "email", "phone", "url", "text":
+		return storage.FieldString, "STRING"
+	default:
+		return storage.FieldString, strings.ToUpper(raw)
+	}
+}
+
+func metadataReferenceTo(item Value) []string {
+	raw, ok := item.Fields["referenceTo"]
+	if !ok || raw.Kind == ValueNull {
+		return nil
+	}
+	switch raw.Kind {
+	case ValueString:
+		if strings.TrimSpace(raw.Text) == "" {
+			return nil
+		}
+		return []string{strings.TrimSpace(raw.Text)}
+	case ValueList, ValueSet:
+		items := raw.List
+		if raw.Kind == ValueSet {
+			items = raw.Set
+		}
+		out := make([]string, 0, len(items))
+		for _, item := range items {
+			if item.Kind == ValueString && strings.TrimSpace(item.Text) != "" {
+				out = append(out, strings.TrimSpace(item.Text))
+			}
+		}
+		return out
+	default:
+		return nil
+	}
 }
 
 func metadataStringList(value Value) ([]string, error) {
@@ -15862,28 +16049,47 @@ func (vm *VM) callStandardControllerMember(receiver Value, method string, args [
 		if id, ok := record.Fields["Id"]; ok && id.Kind == ValueString && id.Text != "" {
 			op = "update"
 		}
+		appendStandardControllerActionTrace(result, "start", method, record, map[string]any{"dmlOperation": op})
 		results, err := vm.applyDML(op, record, true, "", result)
 		if err != nil {
+			appendStandardControllerErrorTrace(result, method, record, op, err)
 			return Null, receiver, false, true, err
 		}
 		if len(results) > 0 && results[0].ID != "" {
 			record.Fields["Id"] = String(string(results[0].ID))
 			receiver.Fields["record"] = record
 		}
-		return standardControllerPage(record), receiver, true, true, nil
+		page := standardControllerPage(record)
+		appendStandardControllerActionTrace(result, "complete", method, record, map[string]any{
+			"dmlOperation":  op,
+			"pageReference": tracePageReference(page),
+		})
+		return page, receiver, true, true, nil
 	case "delete":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardController.delete expects 0 arguments")
 		}
+		appendStandardControllerActionTrace(result, "start", method, record, map[string]any{"dmlOperation": "delete"})
 		if _, err := vm.applyDML("delete", record, true, "", result); err != nil {
+			appendStandardControllerErrorTrace(result, method, record, "delete", err)
 			return Null, receiver, false, true, err
 		}
-		return standardControllerPage(record), receiver, false, true, nil
+		page := standardControllerPage(record)
+		appendStandardControllerActionTrace(result, "complete", method, record, map[string]any{
+			"dmlOperation":  "delete",
+			"pageReference": tracePageReference(page),
+		})
+		return page, receiver, false, true, nil
 	case "view", "edit", "cancel", "reset":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardController.%s expects 0 arguments", method)
 		}
-		return standardControllerPage(record), receiver, false, true, nil
+		page := standardControllerPage(record)
+		appendStandardControllerActionTrace(result, "start", method, record, nil)
+		appendStandardControllerActionTrace(result, "complete", method, record, map[string]any{
+			"pageReference": tracePageReference(page),
+		})
+		return page, receiver, false, true, nil
 	case "addFields":
 		if len(args) != 1 || args[0].Kind != ValueList {
 			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardController.addFields expects List")
@@ -15892,6 +16098,34 @@ func (vm *VM) callStandardControllerMember(receiver Value, method string, args [
 	default:
 		return Null, receiver, false, false, nil
 	}
+}
+
+func appendStandardControllerActionTrace(result *Result, phase, method string, record Value, extra map[string]any) {
+	args := standardControllerTraceArgs(method, record)
+	for key, value := range extra {
+		args[key] = value
+	}
+	appendTrace(result, "apex.visualforce.standard_controller.action."+phase, "apex.visualforce.standard_controller", args)
+}
+
+func appendStandardControllerErrorTrace(result *Result, method string, record Value, dmlOperation string, err error) {
+	actionErr := uiInvocationError(err)
+	appendStandardControllerActionTrace(result, "error", method, record, map[string]any{
+		"dmlOperation": dmlOperation,
+		"error":        actionErr.Message,
+		"errorType":    actionErr.Type,
+	})
+}
+
+func standardControllerTraceArgs(method string, record Value) map[string]any {
+	args := map[string]any{"method": method}
+	if record.Kind == ValueObject {
+		args["objectType"] = record.Type
+		if id, ok := record.Fields["Id"]; ok && id.Kind == ValueString && id.Text != "" {
+			args["recordId"] = id.Text
+		}
+	}
+	return args
 }
 
 func (vm *VM) callStandardSetControllerMember(receiver Value, method string, args []Value, result *Result) (Value, Value, bool, bool, error) {
