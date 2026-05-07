@@ -24,6 +24,7 @@ func EnsureStandardObjectFieldsForFeatures(definition *ObjectDefinition, feature
 		definition.Fields["Id"] = Field{APIName: "Id", Label: "Record ID", Type: FieldID}
 	}
 	mergeStandardObjectDefinition(definition, features)
+	applyStandardObjectCompatibilityOverlays(definition)
 	ensureCommonRecordTypeField(definition)
 	fields := standardFieldsForObject(definition.APIName)
 	for _, field := range fields {
@@ -372,6 +373,57 @@ func mergeStandardObjectDefinition(definition *ObjectDefinition, features []stri
 		mergeStandardFields(definition, entry.FeatureFields[feature])
 		mergeStandardRecordTypes(definition, entry.FeatureRecordTypes[feature])
 	}
+}
+
+func applyStandardObjectCompatibilityOverlays(definition *ObjectDefinition) {
+	switch {
+	case stringsEqualFold(definition.APIName, "Attachment"):
+		ensureReferenceTarget(definition, "ParentId", "User")
+	case stringsEqualFold(definition.APIName, "Document"):
+		ensureReferenceTarget(definition, "FolderId", "User")
+	case stringsEqualFold(definition.APIName, "ContentVersion"):
+		allowGeneratedContentDocument(definition)
+	}
+}
+
+func allowGeneratedContentDocument(definition *ObjectDefinition) {
+	field, ok := definition.Fields["ContentDocumentId"]
+	if !ok {
+		return
+	}
+	field.Required = false
+	definition.Fields["ContentDocumentId"] = field
+}
+
+func ensureReferenceTarget(definition *ObjectDefinition, fieldName string, targetName string) {
+	if field, ok := definition.Fields[fieldName]; ok {
+		field.ReferenceTo = appendUniqueStringsFold(field.ReferenceTo, targetName)
+		definition.Fields[fieldName] = field
+	}
+	for i := range definition.Relations {
+		if stringsEqualFold(definition.Relations[i].Field, fieldName) {
+			definition.Relations[i].ParentObjects = appendUniqueStringsFold(definition.Relations[i].ParentObjects, targetName)
+		}
+	}
+}
+
+func appendUniqueStringsFold(values []string, additions ...string) []string {
+	for _, addition := range additions {
+		if addition == "" {
+			continue
+		}
+		found := false
+		for _, value := range values {
+			if stringsEqualFold(value, addition) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			values = append(values, addition)
+		}
+	}
+	return values
 }
 
 func mergeStandardFields(definition *ObjectDefinition, fields map[string]Field) {

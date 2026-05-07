@@ -33,6 +33,7 @@ func callJSONParserMember(receiver Value, method string, args []Value) (Value, V
 	if receiver.Type != "JSONParser" {
 		return Null, receiver, false, false, nil
 	}
+	method = canonicalJSONParserMethod(method)
 	switch method {
 	case "nextToken":
 		if len(args) != 0 {
@@ -185,6 +186,15 @@ func callJSONParserMember(receiver Value, method string, args []Value) (Value, V
 	default:
 		return Null, receiver, false, false, nil
 	}
+}
+
+func canonicalJSONParserMethod(method string) string {
+	return canonicalStdlibMemberName(method,
+		"nextToken", "nextValue", "getCurrentToken", "getText", "getCurrentName",
+		"getIntegerValue", "getLongValue", "getDecimalValue", "getDoubleValue", "getBooleanValue",
+		"getDateValue", "getDatetimeValue", "getDateTimeValue", "getTimeValue", "getIdValue", "getBlobValue",
+		"skipChildren", "clearCurrentToken",
+	)
 }
 
 func jsonParserTokenize(text string) ([]Value, error) {
@@ -513,4 +523,13 @@ var jsonTokenNames = []string{
 
 func jsonTokenValue(name string) Value {
 	return Value{Kind: ValueObject, Type: "JSONToken", Text: name}
+}
+
+func canonicalJSONTokenName(name string) (string, bool) {
+	for _, candidate := range jsonTokenNames {
+		if strings.EqualFold(name, candidate) {
+			return candidate, true
+		}
+	}
+	return "", false
 }

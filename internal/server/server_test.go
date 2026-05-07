@@ -3346,11 +3346,11 @@ func TestOAERResetScopesPreserveAndClearExpectedState(t *testing.T) {
 		wantProfiles int
 		wantNoOps    string
 	}{
-		{name: "data", scope: "data", wantAccounts: 0, wantUsers: 2, wantProfiles: 1},
-		{name: "users", scope: "users", wantAccounts: 1, wantUsers: 1, wantProfiles: 1},
-		{name: "platform", scope: "platform", wantAccounts: 1, wantUsers: 1, wantProfiles: 1},
-		{name: "all", scope: "all", wantAccounts: 0, wantUsers: 1, wantProfiles: 1},
-		{name: "limits async", scope: "limits,async", wantAccounts: 1, wantUsers: 2, wantProfiles: 1, wantNoOps: "limits,async"},
+		{name: "data", scope: "data", wantAccounts: 0, wantUsers: 2, wantProfiles: 3},
+		{name: "users", scope: "users", wantAccounts: 1, wantUsers: 1, wantProfiles: 3},
+		{name: "platform", scope: "platform", wantAccounts: 1, wantUsers: 1, wantProfiles: 3},
+		{name: "all", scope: "all", wantAccounts: 0, wantUsers: 1, wantProfiles: 3},
+		{name: "limits async", scope: "limits,async", wantAccounts: 1, wantUsers: 2, wantProfiles: 3, wantNoOps: "limits,async"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

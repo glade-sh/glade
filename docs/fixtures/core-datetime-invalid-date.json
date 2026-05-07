@@ -21,8 +21,8 @@
   },
   "expected": {
     "error": {
-      "type": "Error",
-      "message": "unsupported Date value \"2024-02-30\""
+      "type": "System.TypeException",
+      "message": "Invalid date: 2024-02-30"
     }
   }
 }

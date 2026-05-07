@@ -625,7 +625,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		"Body":          {APIName: "Body", Type: FieldBlob},
 		"ContentType":   {APIName: "ContentType", Type: FieldString},
 		"Description":   {APIName: "Description", Type: FieldString},
-		"FolderId":      {APIName: "FolderId", Type: FieldReference, ReferenceTo: []string{"Folder"}, RelationshipName: "Folder"},
+		"FolderId":      {APIName: "FolderId", Type: FieldReference, ReferenceTo: []string{"Folder", "User"}, RelationshipName: "Folder"},
 		"Type":          {APIName: "Type", Type: FieldString},
 		"IsPublic":      {APIName: "IsPublic", Type: FieldBoolean},
 		"Url":           {APIName: "Url", Type: FieldString},

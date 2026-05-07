@@ -665,6 +665,9 @@ func projectRecord(org storage.OrgState, definition storage.ObjectDefinition, re
 			continue
 		}
 		canonicalField, ok := storage.ResolveFieldName(definition, org.Namespace, field)
+		if !ok {
+			canonicalField, ok = canonicalSystemFieldName(field)
+		}
 		if ok && canonicalField == "Id" {
 			out.Fields[canonicalField] = storage.IDValue(record.ID)
 			continue
@@ -1038,13 +1041,17 @@ func fieldDefinitionsForReference(org storage.OrgState, definition storage.Objec
 }
 
 func systemFieldDefinition(field string) (storage.Field, bool) {
-	switch field {
+	canonical, ok := canonicalSystemFieldName(field)
+	if !ok {
+		return storage.Field{}, false
+	}
+	switch canonical {
 	case "CreatedDate", "LastModifiedDate", "SystemModstamp":
-		return storage.Field{APIName: field, Type: storage.FieldDateTime}, true
+		return storage.Field{APIName: canonical, Type: storage.FieldDateTime}, true
 	case "CreatedById", "LastModifiedById", "OwnerId":
-		return storage.Field{APIName: field, Type: storage.FieldID}, true
+		return storage.Field{APIName: canonical, Type: storage.FieldID}, true
 	case "IsDeleted":
-		return storage.Field{APIName: field, Type: storage.FieldBoolean}, true
+		return storage.Field{APIName: canonical, Type: storage.FieldBoolean}, true
 	default:
 		return storage.Field{}, false
 	}
@@ -1269,12 +1276,17 @@ func typeofTargetUnavailableError(typeName, mode string) error {
 }
 
 func isSystemField(field string) bool {
-	switch field {
-	case "CreatedDate", "CreatedById", "LastModifiedDate", "LastModifiedById", "SystemModstamp", "OwnerId", "IsDeleted":
-		return true
-	default:
-		return false
+	_, ok := canonicalSystemFieldName(field)
+	return ok
+}
+
+func canonicalSystemFieldName(field string) (string, bool) {
+	for _, candidate := range []string{"CreatedDate", "CreatedById", "LastModifiedDate", "LastModifiedById", "SystemModstamp", "OwnerId", "IsDeleted"} {
+		if strings.EqualFold(field, candidate) {
+			return candidate, true
+		}
 	}
+	return "", false
 }
 
 func isCustomFieldName(name string) bool {
@@ -1376,6 +1388,9 @@ func recordValue(org storage.OrgState, definition storage.ObjectDefinition, reco
 	}
 	if strings.Contains(field, ".") {
 		return relationshipValue(org, record, field)
+	}
+	if canonical, ok := canonicalSystemFieldName(field); ok {
+		field = canonical
 	}
 	switch field {
 	case "CreatedDate":
@@ -2464,7 +2479,7 @@ func rewriteConditionAggregates(condition Condition, aliases map[string]string) 
 
 func containsName(values []string, want string) bool {
 	for _, value := range values {
-		if value == want {
+		if strings.EqualFold(value, want) {
 			return true
 		}
 	}

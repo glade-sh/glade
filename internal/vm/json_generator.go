@@ -24,6 +24,7 @@ func callJSONGeneratorMember(receiver Value, method string, args []Value) (Value
 	if receiver.Type != "JSONGenerator" {
 		return Null, receiver, false, false, nil
 	}
+	method = canonicalJSONGeneratorMethod(method)
 	switch method {
 	case "writeStartObject":
 		if len(args) != 0 {
@@ -189,6 +190,18 @@ func callJSONGeneratorMember(receiver Value, method string, args []Value) (Value
 	default:
 		return Null, receiver, false, false, nil
 	}
+}
+
+func canonicalJSONGeneratorMethod(method string) string {
+	return canonicalStdlibMemberName(method,
+		"writeStartObject", "writeEndObject", "writeStartArray", "writeEndArray", "writeFieldName",
+		"writeString", "writeStringField", "writeObject", "writeObjectField",
+		"writeNumber", "writeNumberField", "writeBoolean", "writeBooleanField",
+		"writeNull", "writeNullField", "writeRaw", "writeRawValue", "writeRawField",
+		"writeDate", "writeDateField", "writeDateTime", "writeDatetime", "writeDateTimeField", "writeDatetimeField",
+		"writeTime", "writeTimeField", "writeId", "writeIdField", "writeBlob", "writeBlobField",
+		"getAsString", "close", "isClosed",
+	)
 }
 
 func jsonGeneratorWriteContainer(receiver Value, kind string) (Value, Value, bool, bool, error) {

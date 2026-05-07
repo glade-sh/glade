@@ -1394,7 +1394,23 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 		}
 		var receiver Value
 		hasReceiver := expr.Left != nil
+		receiverResolved := false
+		callee := expr.Callee
 		if hasReceiver {
+			if receiverName := exprReceiverName(*expr.Left); receiverName != "" {
+				member := strings.TrimPrefix(expr.Callee, "__safe_call:")
+				if canonical, ok := canonicalBuiltinStaticCall(receiverName + "." + member); ok {
+					hasReceiver = false
+					callee = canonical
+				} else if typeName, fieldName, ok := splitDottedTypeMember(receiverName); ok {
+					if value, ok := builtinStaticField(typeName, fieldName); ok {
+						receiver = value
+						receiverResolved = true
+					}
+				}
+			}
+		}
+		if hasReceiver && !receiverResolved {
 			var err error
 			receiver, err = vm.eval(*expr.Left, result)
 			if err != nil {
@@ -1419,7 +1435,6 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 		}
 		if hasReceiver {
 			receiverName := exprReceiverName(*expr.Left)
-			callee := expr.Callee
 			if strings.HasPrefix(callee, "__safe_call:") {
 				if receiver.Kind == ValueNull {
 					return Null, nil
@@ -1432,7 +1447,7 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 			}
 			return Null, unsupportedCallError(expr.Callee)
 		}
-		return vm.call(expr.Callee, args, namedArgs, result)
+		return vm.call(callee, args, namedArgs, result)
 	case ir.ExprSOQL:
 		return vm.executeSOQL(expr.Value, result)
 	default:
@@ -1625,6 +1640,18 @@ func normalizeStaticCallCasing(callee string) string {
 var canonicalBuiltinStaticCalls = func() map[string]string {
 	names := []string{
 		"System.assert", "System.assertEquals", "System.assertNotEquals", "System.debug", "System.today",
+		"System.now", "System.currentTimeMillis", "System.isBatch", "System.isFuture", "System.isQueueable",
+		"System.isScheduled", "System.abortJob", "System.attachFinalizer", "System.isRunningTest",
+		"Test.isRunningTest", "System.currentPageReference", "System.setPassword", "System.enqueueJob", "System.schedule",
+		"Limits.getQueries", "Limits.getLimitQueries", "Limits.getQueryRows", "Limits.getLimitQueryRows",
+		"Limits.getDmlStatements", "Limits.getLimitDmlStatements", "Limits.getDMLStatements", "Limits.getLimitDMLStatements",
+		"Limits.getDmlRows", "Limits.getLimitDmlRows", "Limits.getDMLRows", "Limits.getLimitDMLRows",
+		"Limits.getHeapSize", "Limits.getLimitHeapSize", "Limits.getCpuTime", "Limits.getLimitCpuTime",
+		"Limits.getCallouts", "Limits.getLimitCallouts", "Limits.getAsyncJobs", "Limits.getLimitAsyncJobs",
+		"Limits.getAsyncCalls", "Limits.getLimitAsyncCalls", "Limits.getQueueableJobs", "Limits.getLimitQueueableJobs",
+		"Limits.getFutureCalls", "Limits.getLimitFutureCalls", "Limits.getBatchJobs", "Limits.getLimitBatchJobs",
+		"Limits.getScheduledJobs", "Limits.getLimitScheduledJobs",
+		"Limits.getEmailInvocations", "Limits.getLimitEmailInvocations",
 		"Database.query", "Database.queryWithBinds", "Database.countQuery", "Database.getQueryLocator",
 		"Database.setSavepoint", "Database.rollback", "Database.insert", "Database.update", "Database.delete",
 		"Database.upsert", "Database.undelete", "Database.emptyRecycleBin", "Database.lock", "Database.unlock",
@@ -1640,9 +1667,29 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"Math.sqrt", "Math.acos", "Math.asin", "Math.atan", "Math.cos", "Math.sin", "Math.tan",
 		"Math.exp", "Math.log", "Math.log10", "Math.max", "Math.min", "Math.mod", "Math.pow",
 		"Math.atan2", "Math.random",
-		"Date.today", "Date.newInstance",
-		"Datetime.now", "Datetime.newInstance", "Datetime.newInstanceGmt",
+		"Date.today", "Date.newInstance", "Date.valueOf",
+		"Datetime.now", "Datetime.newInstance", "Datetime.newInstanceGmt", "Datetime.valueOf", "Datetime.valueOfGmt",
+		"Time.newInstance", "Time.valueOf",
 		"URL.getSalesforceBaseUrl", "URL.getOrgDomainUrl", "URL.getCurrentRequestUrl",
+		"JSON.createGenerator", "JSON.createParser", "JSON.serialize", "JSON.serializePretty",
+		"JSON.deserializeUntyped", "JSON.deserialize", "JSON.deserializeStrict",
+		"ConnectApi.Organization.getSettings", "ConnectApi.Communities.getCommunity",
+		"ConnectApi.UserProfiles.setPhoto", "ConnectApi.UserProfiles.deletePhoto",
+		"Auth.AuthToken.revokeAccess", "Auth.SessionManagement.getCurrentSession",
+		"Auth.AuthConfiguration.getAuthProviderSsoUrl", "Auth.CommunitiesUtil.isGuestUser",
+		"Messaging.sendEmail", "Messaging.renderStoredEmailTemplate",
+		"Messaging.reserveSingleEmailCapacity", "Messaging.reserveMassEmailCapacity",
+		"ApexPages.hasMessages", "ApexPages.addMessage", "ApexPages.getMessages", "ApexPages.currentPage",
+		"Test.clearApexPageMessages", "Test.setCurrentPage", "Test.setCurrentPageReference",
+		"Test.setMock", "Test.testInstall", "Test.createStub", "Test.createSoqlStub",
+		"Test.setFixedSearchResults", "Test.startTest", "Test.stopTest", "Test.getStandardPricebookId",
+		"Test.Database.hasRecords",
+		"Site.getSiteId", "Site.getBaseUrl", "Site.getPathPrefix", "Site.getAdminEmail", "Site.getAdminId",
+		"Site.getMasterLabel", "Site.isRegistrationEnabled", "Site.isLoginEnabled", "Site.isValidUsername",
+		"Site.setExperienceId", "Site.getErrorMessage", "Site.getErrorDescription", "Site.forgotPassword",
+		"Site.login", "Site.changePassword", "Site.validatePassword", "Site.createExternalUser", "Site.createPortalUser",
+		"Network.getNetworkId", "Network.getLoginUrl", "Network.communitiesLanding",
+		"LoggingLevel.values", "ApexPages.Severity.values", "RoundingMode.values",
 	}
 	calls := make(map[string]string, len(names))
 	for _, name := range names {
@@ -1652,8 +1699,77 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 }()
 
 func canonicalBuiltinStaticCall(callee string) (string, bool) {
-	canonical, ok := canonicalBuiltinStaticCalls[strings.ToLower(callee)]
-	return canonical, ok
+	if canonical, ok := canonicalBuiltinStaticCalls[strings.ToLower(callee)]; ok {
+		return canonical, true
+	}
+	if rest, ok := stripLeadingSystemNamespace(callee); ok {
+		if canonical, ok := canonicalBuiltinStaticCalls[strings.ToLower(rest)]; ok {
+			return canonical, true
+		}
+		if typeName, member, ok := splitDottedTypeMember(rest); ok {
+			if canonicalType, typeOK := canonicalSystemNamespaceType(typeName); typeOK {
+				callee := canonicalType + "." + member
+				if canonical, ok := canonicalBuiltinStaticCalls[strings.ToLower(callee)]; ok {
+					return canonical, true
+				}
+				return callee, true
+			}
+		}
+	}
+	return "", false
+}
+
+func stripLeadingSystemNamespace(callee string) (string, bool) {
+	const prefix = "System."
+	if len(callee) <= len(prefix) || !strings.EqualFold(callee[:len(prefix)], prefix) {
+		return "", false
+	}
+	return callee[len(prefix):], true
+}
+
+func splitDottedTypeMember(callee string) (string, string, bool) {
+	dot := strings.LastIndex(callee, ".")
+	if dot <= 0 || dot >= len(callee)-1 {
+		return "", "", false
+	}
+	return callee[:dot], callee[dot+1:], true
+}
+
+func canonicalSystemNamespaceType(typeName string) (string, bool) {
+	for _, known := range systemNamespaceTypes {
+		if strings.EqualFold(typeName, known) {
+			return known, true
+		}
+	}
+	return "", false
+}
+
+var systemNamespaceTypes = []string{
+	"System",
+	"Database",
+	"String",
+	"Integer",
+	"Long",
+	"Decimal",
+	"Double",
+	"Boolean",
+	"Id",
+	"Pattern",
+	"Math",
+	"Date",
+	"Datetime",
+	"Time",
+	"URL",
+	"JSON",
+	"Limits",
+	"Test",
+	"UserInfo",
+	"Messaging",
+	"ApexPages",
+	"RoundingMode",
+	"LoggingLevel",
+	"Blob",
+	"Type",
 }
 
 func lexicalOuterClasses(className string) []string {
@@ -1676,6 +1792,9 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		return vm.callChainedConstructor(callee, args, result)
 	}
 	callee = normalizeStaticCallCasing(callee)
+	if value, handled, err := vm.callBuiltinStaticFieldMember(callee, args, result); handled || err != nil {
+		return value, err
+	}
 	if className, methodName, ok := vm.splitClassMember(callee); ok {
 		if value, handled, err := vm.callEnumStaticMember(className, methodName, args); handled || err != nil {
 			return value, err
@@ -1812,65 +1931,7 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 	if strings.HasPrefix(callee, "Search.") {
 		return Null, unsupportedCallError(callee + " local search/SOSL surface")
 	}
-	if strings.HasPrefix(callee, "System.JSON.") {
-		callee = "JSON." + strings.TrimPrefix(callee, "System.JSON.")
-	}
-	if strings.HasPrefix(callee, "System.Json.") {
-		callee = "JSON." + strings.TrimPrefix(callee, "System.Json.")
-	}
-	if strings.HasPrefix(callee, "System.URL.") {
-		callee = "URL." + strings.TrimPrefix(callee, "System.URL.")
-	}
-	if strings.HasPrefix(callee, "System.Url.") {
-		callee = "URL." + strings.TrimPrefix(callee, "System.Url.")
-	}
-	if strings.HasPrefix(callee, "Url.") {
-		callee = "URL." + strings.TrimPrefix(callee, "Url.")
-	}
-	if strings.HasPrefix(callee, "URL.") {
-		switch strings.ToLower(strings.TrimPrefix(callee, "URL.")) {
-		case "getsalesforcebaseurl":
-			callee = "URL.getSalesforceBaseUrl"
-		case "getorgdomainurl":
-			callee = "URL.getOrgDomainUrl"
-		case "getcurrentrequesturl":
-			callee = "URL.getCurrentRequestUrl"
-		}
-	}
-	if strings.HasPrefix(strings.ToLower(callee), "json.") {
-		callee = "JSON." + callee[5:]
-	}
-	if strings.HasPrefix(strings.ToLower(callee), "datetime.") {
-		callee = "Datetime." + callee[9:]
-	}
 	callee = normalizeStaticCallCasing(callee)
-	if strings.HasPrefix(strings.ToLower(callee), "system.") {
-		member := callee[len("System."):]
-		switch strings.ToLower(member) {
-		case "assert":
-			callee = "System.assert"
-		case "assertequals":
-			callee = "System.assertEquals"
-		case "assertnotequals":
-			callee = "System.assertNotEquals"
-		case "debug":
-			callee = "System.debug"
-		}
-	}
-	if strings.EqualFold(callee, "Database.setSavePoint") {
-		callee = "Database.setSavepoint"
-	}
-	if strings.HasPrefix(callee, "Datetime.") && len(callee) > len("Datetime.") {
-		member := strings.TrimPrefix(callee, "Datetime.")
-		switch strings.ToLower(member) {
-		case "now":
-			callee = "Datetime.now"
-		case "newinstance":
-			callee = "Datetime.newInstance"
-		case "newinstancegmt":
-			callee = "Datetime.newInstanceGmt"
-		}
-	}
 	if reason, ok := unsupportedIntegrationSurface(callee); ok {
 		return Null, unsupportedCallError(callee + " " + reason)
 	}
@@ -3091,12 +3152,22 @@ func (vm *VM) nextDeterministicCryptoLong() int64 {
 }
 
 func unsupportedIntegrationSurface(callee string) (string, bool) {
+	if canonical, ok := canonicalBuiltinStaticCall(callee); ok {
+		callee = canonical
+	}
+	switch {
+	case strings.EqualFold(callee, "Auth.AuthConfiguration.getAuthProviderSsoUrl"),
+		strings.EqualFold(callee, "Auth.AuthToken.revokeAccess"),
+		strings.EqualFold(callee, "Auth.CommunitiesUtil.isGuestUser"),
+		strings.EqualFold(callee, "Auth.SessionManagement.getCurrentSession"):
+		return "", false
+	}
 	switch callee {
 	case "Auth.AuthConfiguration.getAuthProviderSsoUrl", "Auth.AuthToken.revokeAccess", "Auth.CommunitiesUtil.isGuestUser", "Auth.SessionManagement.getCurrentSession":
 		return "", false
 	}
 	for _, prefix := range []string{"Approval.", "Auth.", "QuickAction.", "Canvas.", "Continuation."} {
-		if strings.HasPrefix(callee, prefix) {
+		if len(callee) >= len(prefix) && strings.EqualFold(callee[:len(prefix)], prefix) {
 			switch prefix {
 			case "Approval.":
 				return "local approval process and lock surface", true
@@ -3632,16 +3703,60 @@ func (vm *VM) currentUserObjectPermission(objectName, method string) bool {
 		user = vm.testContext.CurrentUser
 	}
 	profileID := stringField(user, "ProfileId")
-	if allowed, ok := vm.explicitObjectPermission(profileID, objectName, method); ok {
-		return allowed
+	if vm.currentProfileIsSystemAdministrator(profileID) {
+		return true
 	}
 	for _, permissionSetID := range vm.assignedPermissionSetIDs(stringField(user, "Id")) {
 		if allowed, ok := vm.explicitObjectPermission(permissionSetID, objectName, method); ok && allowed {
 			return true
 		}
 	}
+	if allowed, ok := vm.explicitObjectPermission(profileID, objectName, method); ok {
+		return allowed
+	}
 	if vm.profileHasLicense(profileID, "Chatter External") && !isSetupObject(objectName) {
+		return false
+	}
+	switch vm.currentProfileName(profileID) {
+	case "Minimum Access - Salesforce":
+		return false
+	case "Read Only":
 		return method == "isAccessible"
+	}
+	return true
+}
+
+func (vm *VM) currentUserFieldPermission(objectName, fieldName, method string) bool {
+	if vm.Org == nil {
+		return true
+	}
+	user := vm.executionUser
+	if vm.testContext != nil && vm.testContext.CurrentUser.Kind != "" {
+		user = vm.testContext.CurrentUser
+	}
+	profileID := stringField(user, "ProfileId")
+	if vm.currentProfileIsSystemAdministrator(profileID) {
+		return true
+	}
+	for _, permissionSetID := range vm.assignedPermissionSetIDs(stringField(user, "Id")) {
+		if allowed, ok := vm.explicitFieldPermission(permissionSetID, objectName, fieldName, method); ok && allowed {
+			return true
+		}
+	}
+	if allowed, ok := vm.explicitFieldPermission(profileID, objectName, fieldName, method); ok {
+		return allowed
+	}
+	if method == "isAccessible" && vm.isBaselineReadableField(objectName, fieldName) {
+		return true
+	}
+	switch vm.currentProfileName(profileID) {
+	case "Minimum Access - Salesforce":
+		return false
+	case "Read Only":
+		return method == "isAccessible"
+	}
+	if vm.profileHasLicense(profileID, "Chatter External") && !isSetupObject(objectName) {
+		return false
 	}
 	return true
 }
@@ -3693,6 +3808,48 @@ func (vm *VM) explicitObjectPermission(parentID, objectName, method string) (boo
 	return false, false
 }
 
+func (vm *VM) explicitFieldPermission(parentID, objectName, fieldName, method string) (bool, bool) {
+	if parentID == "" || vm.Org == nil {
+		return false, false
+	}
+	state, ok := vm.Org.Objects["FieldPermissions"]
+	if !ok {
+		return false, false
+	}
+	field := "PermissionsRead"
+	if method == "isCreateable" || method == "isUpdateable" {
+		field = "PermissionsEdit"
+	}
+	for _, record := range state.Records {
+		if !storageIDValueEquals(record.Fields["ParentId"], parentID) {
+			continue
+		}
+		if !storageStringValueEquals(record.Fields["SObjectType"], objectName) {
+			continue
+		}
+		if !fieldPermissionFieldMatches(record.Fields["Field"], objectName, fieldName) {
+			continue
+		}
+		value, ok := record.Fields[field]
+		if !ok || value.Kind != storage.ValueBoolean {
+			return false, false
+		}
+		return value.Boolean, true
+	}
+	return false, false
+}
+
+func fieldPermissionFieldMatches(value storage.Value, objectName, fieldName string) bool {
+	if value.Kind != storage.ValueString {
+		return false
+	}
+	text := value.String
+	if dot := strings.LastIndexByte(text, '.'); dot >= 0 {
+		return strings.EqualFold(text[:dot], objectName) && strings.EqualFold(text[dot+1:], fieldName)
+	}
+	return strings.EqualFold(text, fieldName)
+}
+
 func objectPermissionField(method string) string {
 	switch method {
 	case "isCreateable":
@@ -3723,6 +3880,48 @@ func (vm *VM) assignedPermissionSetIDs(userID string) []string {
 		}
 	}
 	return out
+}
+
+func (vm *VM) currentProfileIsSystemAdministrator(profileID string) bool {
+	return vm.currentProfileName(profileID) == "System Administrator"
+}
+
+func (vm *VM) currentProfileName(profileID string) string {
+	if profileID == "" || vm.Org == nil {
+		return ""
+	}
+	profiles, ok := vm.Org.Objects["Profile"]
+	if !ok {
+		return ""
+	}
+	profile, ok := profiles.Records[storage.ID(profileID)]
+	if !ok {
+		return ""
+	}
+	if value, ok := profile.Fields["Name"]; ok && value.Kind == storage.ValueString {
+		return value.String
+	}
+	return ""
+}
+
+func (vm *VM) isBaselineReadableField(objectName, fieldName string) bool {
+	if strings.EqualFold(fieldName, "Id") {
+		return true
+	}
+	if vm.Org == nil {
+		return false
+	}
+	objectName, ok := storage.ResolveObjectName(*vm.Org, objectName)
+	if !ok {
+		return false
+	}
+	definition := vm.Org.Objects[objectName].Definition
+	fieldName, ok = storage.ResolveFieldName(definition, vm.Org.Namespace, fieldName)
+	if !ok {
+		return false
+	}
+	field := definition.Fields[fieldName]
+	return field.Required || isNameFieldDescribe(field)
 }
 
 func (vm *VM) profileHasLicense(profileID, licenseName string) bool {
@@ -4535,7 +4734,18 @@ func (vm *VM) executeSOQLRowsWithExpander(raw string, execResult *Result, expand
 	if soql.IsSOSLFind(queryText) {
 		return nil, unsupportedCallError("SOSL/FIND local search surface")
 	}
-	result, err := soql.ParseAndExecuteAt(*vm.Org, queryText, vm.fakeNow)
+	query, err := soql.ParseAt(queryText, vm.fakeNow)
+	if err != nil {
+		var unsupported *soql.UnsupportedFeatureError
+		if errors.As(err, &unsupported) {
+			return nil, &RuntimeError{Type: "UnsupportedFeature", Message: unsupported.Message}
+		}
+		return nil, newExceptionError("QueryException", fmt.Sprintf("%s in generated SOQL %q", err.Error(), queryText))
+	}
+	if err := vm.enforceSOQLSecurity(query); err != nil {
+		return nil, err
+	}
+	result, err := soql.Execute(*vm.Org, query)
 	if err != nil {
 		var unsupported *soql.UnsupportedFeatureError
 		if errors.As(err, &unsupported) {
@@ -4601,6 +4811,63 @@ func (vm *VM) queriedSObjectFields(queryText string) map[string]bool {
 	}
 	fields["id"] = true
 	return fields
+}
+
+func (vm *VM) enforceSOQLSecurity(query soql.Query) error {
+	mode := strings.ToUpper(strings.TrimSpace(query.SecurityMode))
+	if mode == "" || mode == "SYSTEM_MODE" {
+		return nil
+	}
+	objectName := query.Object
+	if vm.Org != nil {
+		if canonical, ok := storage.ResolveObjectName(*vm.Org, objectName); ok {
+			objectName = canonical
+		}
+	}
+	if !vm.currentUserObjectPermission(objectName, "isAccessible") {
+		return newExceptionError("QueryException", fmt.Sprintf("%s requires read access to %s", mode, objectName))
+	}
+	for _, field := range query.Fields {
+		for _, fieldName := range vm.securityFieldNames(objectName, field) {
+			if !vm.currentUserFieldPermission(objectName, fieldName, "isAccessible") {
+				return newExceptionError("QueryException", fmt.Sprintf("%s requires read access to %s.%s", mode, objectName, fieldName))
+			}
+		}
+	}
+	for _, order := range query.Order {
+		for _, fieldName := range vm.securityFieldNames(objectName, order.Field) {
+			if !vm.currentUserFieldPermission(objectName, fieldName, "isAccessible") {
+				return newExceptionError("QueryException", fmt.Sprintf("%s requires read access to %s.%s", mode, objectName, fieldName))
+			}
+		}
+	}
+	for _, child := range query.ChildQueries {
+		if err := vm.enforceSOQLSecurity(child.Query); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (vm *VM) securityFieldNames(objectName, expression string) []string {
+	expression = strings.TrimSpace(expression)
+	if expression == "" || strings.Contains(expression, "(") {
+		return nil
+	}
+	if dot := strings.IndexByte(expression, '.'); dot >= 0 {
+		expression = expression[:dot]
+	}
+	if vm.Org != nil {
+		if object, ok := vm.Org.Objects[objectName]; ok {
+			if canonical, ok := storage.ResolveFieldName(object.Definition, vm.Org.Namespace, expression); ok {
+				expression = canonical
+			}
+		}
+	}
+	if strings.EqualFold(expression, "Id") {
+		return nil
+	}
+	return []string{expression}
 }
 
 func soqlLimitRows(result soql.Result) int {
@@ -4856,7 +5123,7 @@ func (vm *VM) executeDML(op string, expr ir.Expr, externalIDField string, result
 	}
 	for _, dmlResult := range results {
 		if !dmlResult.Success {
-			return errors.New(dmlResult.Error)
+			return databaseDMLException(op, results)
 		}
 	}
 	if expr.Kind == ir.ExprVariable {
@@ -5115,7 +5382,11 @@ func databaseDMLException(op string, results []dml.Result) error {
 	}
 	for _, result := range results {
 		if !result.Success && result.Error != "" {
-			message += ": " + result.Error
+			if result.StatusCode != "" {
+				message += ": " + result.StatusCode + ": " + result.Error
+			} else {
+				message += ": " + result.Error
+			}
 			break
 		}
 	}
@@ -5839,6 +6110,9 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 				canonicalField = resolved
 			}
 		}
+		if fieldValue.Kind == ValueList && vm.isChildRelationshipField(definition, field) {
+			continue
+		}
 		converted, err := storageValueFromVM(fieldValue)
 		if definition.APIName != "" {
 			if fieldDef, ok := definition.Fields[canonicalField]; ok {
@@ -5855,6 +6129,40 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 		}
 	}
 	return record, nil
+}
+
+func (vm *VM) isChildRelationshipField(definition storage.ObjectDefinition, field string) bool {
+	if vm == nil || vm.Org == nil || definition.APIName == "" || strings.TrimSpace(field) == "" {
+		return false
+	}
+	for _, childObject := range vm.Org.Objects {
+		for _, relation := range childObject.Definition.Relations {
+			if !relationshipTargetsObject(relation, definition.APIName) {
+				continue
+			}
+			childRelationshipName := relation.ChildRelationship
+			if childRelationshipName == "" {
+				childRelationshipName = derivedVMChildRelationshipName(childObject.Definition)
+			}
+			if vmRelationshipNameMatches(vm.Org.Namespace, childRelationshipName, field) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func derivedVMChildRelationshipName(definition storage.ObjectDefinition) string {
+	if strings.TrimSpace(definition.PluralLabel) != "" {
+		return strings.ReplaceAll(definition.PluralLabel, " ", "")
+	}
+	if strings.TrimSpace(definition.Label) != "" {
+		return strings.ReplaceAll(definition.Label, " ", "") + "s"
+	}
+	if definition.APIName != "" {
+		return definition.APIName + "s"
+	}
+	return ""
 }
 
 func sObjectIDFromFields(fields map[string]Value) storage.ID {
@@ -7721,6 +8029,33 @@ func numericFloat(value Value) float64 {
 	return value.Decimal
 }
 
+func builtinEnumStaticValue(typeName, memberName string) (Value, bool) {
+	if rest, ok := stripLeadingSystemNamespace(typeName); ok {
+		typeName = rest
+	}
+	switch {
+	case strings.EqualFold(typeName, "AccessLevel"):
+		for _, known := range []string{"USER_MODE", "SYSTEM_MODE"} {
+			if strings.EqualFold(memberName, known) {
+				return Value{Kind: ValueObject, Type: "AccessLevel", Text: known}, true
+			}
+		}
+	case strings.EqualFold(typeName, "RoundingMode"):
+		if mode, ok := canonicalDecimalRoundingModeName(memberName); ok {
+			return Value{Kind: ValueObject, Type: "RoundingMode", Text: mode}, true
+		}
+	case strings.EqualFold(typeName, "LoggingLevel"):
+		if level, ok := canonicalLoggingLevelName(memberName); ok {
+			return Value{Kind: ValueObject, Type: "LoggingLevel", Text: level}, true
+		}
+	case strings.EqualFold(typeName, "JSONToken"):
+		if token, ok := canonicalJSONTokenName(memberName); ok {
+			return Value{Kind: ValueObject, Type: "JSONToken", Text: token}, true
+		}
+	}
+	return Null, false
+}
+
 func jsonSuppressNulls(callee string, args []Value) (bool, error) {
 	if len(args) == 0 {
 		return false, nil
@@ -7964,7 +8299,7 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 		if !ok {
 			return Null, jsonTypeMappingError(typeName, raw)
 		}
-		if keyType != "String" && keyType != "Object" {
+		if !strings.EqualFold(keyType, "String") && !strings.EqualFold(keyType, "Object") {
 			return Null, jsonDeserializeException("JSON.deserialize supports Map keys only for String/Object targets, got %s", keyType)
 		}
 		out := Map()
@@ -7978,7 +8313,7 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 		}
 		return out, nil
 	}
-	if typeName == "Object" {
+	if strings.EqualFold(typeName, "Object") {
 		return valueFromJSON(raw), nil
 	}
 	if strings.EqualFold(typeName, "sObject") {
@@ -8000,7 +8335,7 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 				if key == "attributes" {
 					continue
 				}
-				if _, ok := allowed[key]; !ok {
+				if !jsonAllowedFieldContains(allowed, key) {
 					return Null, newExceptionError("JSONException", fmt.Sprintf("JSON.deserializeStrict found unknown field %q for %s", key, typeName))
 				}
 			}
@@ -8015,7 +8350,11 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 			if err != nil {
 				return Null, err
 			}
-			obj.Fields[key] = value
+			fieldName := field.Name
+			if fieldName == "" {
+				fieldName = key
+			}
+			obj.Fields[fieldName] = value
 			continue
 		}
 		if fieldType, ok := vm.jsonSObjectFieldType(typeName, key); ok {
@@ -8306,6 +8645,18 @@ func (vm *VM) jsonAllowedFields(typeName string) map[string]struct{} {
 		className = class.SuperClass
 	}
 	return allowed
+}
+
+func jsonAllowedFieldContains(allowed map[string]struct{}, key string) bool {
+	if _, ok := allowed[key]; ok {
+		return true
+	}
+	for candidate := range allowed {
+		if strings.EqualFold(candidate, key) {
+			return true
+		}
+	}
+	return false
 }
 
 func (vm *VM) allowOpenSObjectJSONFields(typeName string) bool {
@@ -8601,6 +8952,7 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 	}
 	desc := Object("Schema.DescribeFieldResult")
 	desc.Fields["name"] = String(field.APIName)
+	desc.Fields["sObjectName"] = String(objectName)
 	label := field.Label
 	if label == "" {
 		label = field.APIName
@@ -8738,20 +9090,9 @@ func (vm *VM) lookup(name string) (Value, error) {
 	if value, ok, err := vm.lookupRestContextField(name); ok || err != nil {
 		return value, err
 	}
-	switch name {
-	case "AccessLevel.USER_MODE", "AccessLevel.SYSTEM_MODE":
-		return Value{Kind: ValueObject, Type: "AccessLevel", Text: strings.TrimPrefix(name, "AccessLevel.")}, nil
-	}
-	if strings.HasPrefix(name, "RoundingMode.") {
-		mode := strings.TrimPrefix(name, "RoundingMode.")
-		if isDecimalRoundingModeName(mode) {
-			return Value{Kind: ValueObject, Type: "RoundingMode", Text: mode}, nil
-		}
-	}
-	if strings.HasPrefix(name, "LoggingLevel.") {
-		level := strings.TrimPrefix(name, "LoggingLevel.")
-		if isLoggingLevelName(level) {
-			return Value{Kind: ValueObject, Type: "LoggingLevel", Text: level}, nil
+	if className, memberName, ok := vm.splitClassMember(name); ok {
+		if value, ok := builtinEnumStaticValue(className, memberName); ok {
+			return value, nil
 		}
 	}
 	if value, ok := metadataDeployStatusStaticValue(name); ok {
@@ -9163,12 +9504,17 @@ func storageFieldTypeName(field storage.Field) string {
 var roundingModeNames = []string{"UP", "DOWN", "CEILING", "FLOOR", "HALF_UP", "HALF_DOWN", "HALF_EVEN", "UNNECESSARY"}
 
 func isDecimalRoundingModeName(name string) bool {
+	_, ok := canonicalDecimalRoundingModeName(name)
+	return ok
+}
+
+func canonicalDecimalRoundingModeName(name string) (string, bool) {
 	for _, candidate := range roundingModeNames {
-		if name == candidate {
-			return true
+		if strings.EqualFold(name, candidate) {
+			return candidate, true
 		}
 	}
-	return false
+	return "", false
 }
 
 func (vm *VM) lookupSObjectTypeToken(parts []string) (Value, bool) {
@@ -9409,8 +9755,31 @@ func (vm *VM) callDottedReceiverMember(callee string, args []Value, result *Resu
 		return Null, false, nil
 	}
 	method := callee[dot+1:]
+	if typeName, fieldName, ok := splitDottedTypeMember(receiverName); ok {
+		if receiver, ok := builtinStaticField(typeName, fieldName); ok {
+			return vm.callValueMember(receiverName, receiver, method, args, result)
+		}
+	}
 	receiver, err := vm.lookup(receiverName)
 	if err != nil {
+		return Null, false, nil
+	}
+	return vm.callValueMember(receiverName, receiver, method, args, result)
+}
+
+func (vm *VM) callBuiltinStaticFieldMember(callee string, args []Value, result *Result) (Value, bool, error) {
+	dot := strings.LastIndex(callee, ".")
+	if dot <= 0 || dot >= len(callee)-1 {
+		return Null, false, nil
+	}
+	receiverName := callee[:dot]
+	method := callee[dot+1:]
+	typeName, fieldName, ok := splitDottedTypeMember(receiverName)
+	if !ok {
+		return Null, false, nil
+	}
+	receiver, ok := builtinStaticField(typeName, fieldName)
+	if !ok {
 		return Null, false, nil
 	}
 	return vm.callValueMember(receiverName, receiver, method, args, result)
@@ -9847,6 +10216,21 @@ func (vm *VM) lookupStaticField(typeName, fieldName string) (Field, string, bool
 }
 
 func builtinStaticField(typeName, fieldName string) (Value, bool) {
+	if value, ok := builtinEnumStaticValue(typeName, fieldName); ok {
+		return value, true
+	}
+	if rest, ok := stripLeadingSystemNamespace(typeName); ok {
+		typeName = rest
+	}
+	switch {
+	case strings.EqualFold(typeName, "Math"):
+		switch {
+		case strings.EqualFold(fieldName, "E"):
+			return Decimal(math.E), true
+		case strings.EqualFold(fieldName, "PI"):
+			return Decimal(math.Pi), true
+		}
+	}
 	switch typeName {
 	case "Math":
 		switch fieldName {
@@ -11252,6 +11636,26 @@ func typedList(typeName string) Value {
 	return value
 }
 
+func canonicalRuntimeTypeName(typeName string) string {
+	typeName = strings.TrimSpace(typeName)
+	for _, known := range []string{
+		"HttpRequest", "HttpResponse", "StaticResourceCalloutMock", "MultiStaticResourceCalloutMock",
+		"RestRequest", "RestResponse", "Continuation", "PageReference", "VisualEditor.DataRow",
+		"VisualEditor.DynamicPickListRows", "Dom.Document", "Auth.UserData", "Auth.VerificationResult",
+		"Auth.AuthConfiguration", "Auth.JWT", "Metadata.DeployContainer", "Metadata.CustomMetadata",
+		"Metadata.CustomMetadataValue", "Metadata.CustomObject", "Metadata.CustomField", "Metadata.Metadata",
+		"Metadata.DeployResult", "Metadata.DeployDetails", "Metadata.DeployMessage", "Metadata.DeployCallbackContext",
+		"Metadata.AsyncResult", "SelectOption", "ApexPages.StandardController", "ApexPages.StandardSetController",
+		"ApexPages.Message", "Messaging.SendEmailResult", "Messaging.SingleEmailMessage",
+		"Messaging.MassEmailMessage", "Messaging.SendEmailOptions", "URL",
+	} {
+		if strings.EqualFold(typeName, known) {
+			return known
+		}
+	}
+	return typeName
+}
+
 func (vm *VM) lookupRestContextField(name string) (Value, bool, error) {
 	switch name {
 	case "RestContext.request":
@@ -11324,6 +11728,8 @@ func (vm *VM) assignRestContextField(name string, value Value) (bool, error) {
 func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string]Value, result *Result) (Value, error) {
 	if resolved, ok := vm.resolveClassName(typeName); ok {
 		typeName = resolved
+	} else {
+		typeName = canonicalRuntimeTypeName(typeName)
 	}
 	switch {
 	case collectionBase(typeName) == "List":
@@ -12411,6 +12817,9 @@ func (vm *VM) typeAssignableTo(from, to string) bool {
 		(strings.EqualFold(from, "Id") && strings.EqualFold(to, "String")) {
 		return true
 	}
+	if messagingEmailAssignable(from, to) {
+		return true
+	}
 	if strings.EqualFold(from, "Date") && strings.EqualFold(to, "Datetime") {
 		return true
 	}
@@ -12437,6 +12846,14 @@ func (vm *VM) typeAssignableTo(from, to string) bool {
 		return true
 	}
 	return false
+}
+
+func messagingEmailAssignable(from, to string) bool {
+	if !strings.EqualFold(to, "Messaging.Email") {
+		return false
+	}
+	return strings.EqualFold(from, "Messaging.SingleEmailMessage") ||
+		strings.EqualFold(from, "Messaging.MassEmailMessage")
 }
 
 func collectionBase(typeName string) string {
@@ -13038,12 +13455,17 @@ var metadataDeployStatusNames = []string{"Succeeded", "SUCCEEDED", "Failed", "FA
 var metadataMetadataTypeNames = []string{"CustomMetadata"}
 
 func isLoggingLevelName(level string) bool {
+	_, ok := canonicalLoggingLevelName(level)
+	return ok
+}
+
+func canonicalLoggingLevelName(level string) (string, bool) {
 	for _, name := range loggingLevelNames {
-		if level == name {
-			return true
+		if strings.EqualFold(level, name) {
+			return name, true
 		}
 	}
-	return false
+	return "", false
 }
 
 func isLoggingLevelValue(value Value) bool {
@@ -13151,7 +13573,7 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 			value.Type = typeName
 			return value, nil
 		}
-		if strings.EqualFold(typeName, "Object") || vm.typeMatches(value.Type, typeName, make(map[string]bool)) {
+		if strings.EqualFold(typeName, "Object") || vm.typeAssignableTo(value.Type, typeName) || vm.typeMatches(value.Type, typeName, make(map[string]bool)) {
 			if !strings.EqualFold(typeName, "Object") && !strings.EqualFold(value.Type, typeName) && value.Runtime == "" {
 				value.Runtime = value.Type
 			}
@@ -14494,7 +14916,7 @@ func canonicalPlatformObjectMemberName(typeName, method string) string {
 		"getMap",
 		"getName", "getLabel", "getType", "getSOAPType", "getSoapType",
 		"isNillable", "isExternalId", "isUnique", "isEncrypted", "isNameField",
-		"getReferenceTo", "getRelationshipName", "getPicklistValues",
+		"getReferenceTo", "getRelationshipName", "getPicklistValues", "getSObjectField",
 		"getFields", "getFieldPath", "getRequired", "getDbRequired",
 		"getController", "getControllerValues", "isAccessible", "isCreateable", "isUpdateable",
 		"to15", "to18", "getSObjectType",
@@ -16572,6 +16994,22 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getName expects 0 arguments")
 			}
 			return receiver.Fields["name"], receiver, false, true, nil
+		case "getSObjectField":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getSObjectField expects 0 arguments")
+			}
+			objectName := ""
+			if value, ok := receiver.Fields["sObjectName"]; ok && value.Kind == ValueString {
+				objectName = value.Text
+			}
+			fieldName := ""
+			if value, ok := receiver.Fields["name"]; ok && value.Kind == ValueString {
+				fieldName = value.Text
+			}
+			if objectName == "" || fieldName == "" {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult token missing object or field")
+			}
+			return sObjectFieldToken(objectName, fieldName), receiver, false, true, nil
 		case "getLabel":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getLabel expects 0 arguments")
@@ -16636,7 +17074,18 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.%s expects 0 arguments", method)
 			}
-			return Bool(true), receiver, false, true, nil
+			objectName := ""
+			if value, ok := receiver.Fields["sObjectName"]; ok && value.Kind == ValueString {
+				objectName = value.Text
+			}
+			fieldName := ""
+			if value, ok := receiver.Fields["name"]; ok && value.Kind == ValueString {
+				fieldName = value.Text
+			}
+			if objectName == "" || fieldName == "" {
+				return Bool(true), receiver, false, true, nil
+			}
+			return Bool(vm.currentUserFieldPermission(objectName, fieldName, method)), receiver, false, true, nil
 		}
 	case "Schema.PicklistEntry":
 		switch method {

@@ -2062,6 +2062,19 @@ system.assertEquals(8.0, math.Pow(2, 3));
 SYSTEM.ASSERTEQUALS(3.0, MATH.sqrt(9));
 System.assertEquals(4, database.CountQuery('SELECT count() FROM Account'));
 System.assertEquals(Date.today(), date.TODAY());
+System.assertEquals('INFO', logginglevel.info.name());
+System.assertEquals('HALF_UP', roundingmode.half_up.name());
+System.assertEquals(1.3, Decimal.valueOf('1.25').setScale(1, roundingmode.half_up));
+System.assertEquals(false, test.ISRUNNINGTEST());
+System.assertEquals(false, System.Test.isRunningTest());
+System.System.debug('default namespace System class call');
+System.assertEquals(Date.today(), System.Date.today());
+System.assertEquals(1, System.Limits.GETQUERIES());
+Map<String,Object> parsed = (Map<String,Object>)System.JSON.deserializeUntyped('{"ok":true}');
+System.assertEquals(true, (Boolean)parsed.get('ok'));
+System.assertEquals('HALF_UP', System.RoundingMode.HALF_UP.name());
+System.assertEquals(UserInfo.getUserId(), userinfo.GETUSERID());
+System.assertEquals(UserInfo.getUserId(), System.UserInfo.getUserId());
 `)
 	if err != nil {
 		t.Fatal(err)

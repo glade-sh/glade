@@ -77,6 +77,39 @@ func TestExecRegisteredMethodCoercesParamsAndReturns(t *testing.T) {
 	}
 }
 
+func TestExecRegisteredMethodAcceptsMessagingEmailBaseType(t *testing.T) {
+	methodProgram, err := CompileAnonymous("return 1;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+EmailSink sink = new EmailSink();
+Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage();
+System.assertEquals(1, sink.registerEmail(email));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "EmailSink",
+		Methods: map[string]Method{
+			"registerEmail": {
+				Name:       "EmailSink.registerEmail",
+				ClassName:  "EmailSink",
+				ReturnType: "Integer",
+				Params:     []Param{{Name: "email", Type: "Messaging.Email"}},
+				Program:    methodProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecRegisteredStaticMethodWithBranchingReturn(t *testing.T) {
 	methodProgram, err := CompileAnonymous(`
 if (a > b) {

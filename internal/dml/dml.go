@@ -366,6 +366,7 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 	applyFieldDefaults(object.Definition, &record)
 	applyCustomSettingInsertDefaults(e.Org, object.Definition, &record)
 	applySetupInsertDefaults(objectName, object.Definition, &record)
+	e.applyFileInsertDefaults(objectName, object.Definition, &record)
 	if err := validateFields(object.Definition, e.Org.Namespace, record); err != nil {
 		return "", err
 	}
@@ -560,6 +561,35 @@ func applySetupInsertDefaults(objectName string, definition storage.ObjectDefini
 		}
 		defaultUserCommunityNickname(record)
 	}
+}
+
+func (e *Engine) applyFileInsertDefaults(objectName string, definition storage.ObjectDefinition, record *storage.Record) {
+	if record == nil || !strings.EqualFold(objectName, "Document") {
+		return
+	}
+	field, ok := definition.Fields["FolderId"]
+	if !ok || !fieldReferencesObject(field, "User") {
+		return
+	}
+	if record.Fields == nil {
+		record.Fields = make(map[string]storage.Value)
+	}
+	if _, ok := record.Fields["FolderId"]; ok {
+		return
+	}
+	if record.ExplicitNulls != nil && record.ExplicitNulls["FolderId"] {
+		return
+	}
+	record.Fields["FolderId"] = storage.IDValue(e.systemUserID())
+}
+
+func fieldReferencesObject(field storage.Field, objectName string) bool {
+	for _, target := range field.ReferenceTo {
+		if strings.EqualFold(target, objectName) {
+			return true
+		}
+	}
+	return false
 }
 
 func defaultUserCommunityNickname(record *storage.Record) {

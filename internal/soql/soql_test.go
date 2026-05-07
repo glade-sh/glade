@@ -1402,6 +1402,39 @@ func TestExecuteStandardIsDeletedWhereWithoutExplicitFieldDefinition(t *testing.
 	}
 }
 
+func TestExecuteSystemFieldsAreCaseInsensitive(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Account", Fields: map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}}},
+		Records: map[storage.ID]storage.Record{
+			"001000000000001": {
+				ID:     "001000000000001",
+				Object: "Account",
+				Fields: map[string]storage.Value{
+					"Name": storage.StringValue("Acme"),
+				},
+				System: storage.SystemFields{
+					CreatedDate: "2026-05-01T12:00:00Z",
+					OwnerID:     "005000000000001",
+					IsDeleted:   true,
+				},
+			},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT createddate, OWNERID, isdeleted FROM Account WHERE isdeleted = true ORDER BY createddate ALL ROWS")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 {
+		t.Fatalf("rows = %#v", result)
+	}
+	fields := result.Records[0].Fields
+	if fields["CreatedDate"].String != "2026-05-01T12:00:00Z" || fields["OwnerId"].ID != "005000000000001" || !fields["IsDeleted"].Boolean {
+		t.Fatalf("system fields = %#v", fields)
+	}
+}
+
 func TestExecuteChildRelationshipSubqueryErrors(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Objects["Account"] = storage.ObjectState{

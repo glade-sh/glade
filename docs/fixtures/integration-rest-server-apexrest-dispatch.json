@@ -34,8 +34,8 @@
     "result": {
       "ok": true,
       "persistedAccounts": 0,
-      "persistedObjects": 21,
-      "persistedRecords": 11,
+      "persistedObjects": 23,
+      "persistedRecords": 12,
       "permissions": 2,
       "profiles": 3,
       "requests": 1,

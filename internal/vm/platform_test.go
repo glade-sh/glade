@@ -67,6 +67,29 @@ System.assertEquals(1, Limits.getDMLRows());
 	}
 }
 
+func TestExecBuiltinConstructorsAreCaseInsensitive(t *testing.T) {
+	program, err := CompileAnonymous(`
+HttpRequest req = new httprequest();
+req.setEndpoint('https://example.test');
+req.setMethod('GET');
+System.assertEquals('GET', req.getMethod());
+
+PageReference page = new pagereference('/apex/Home');
+System.assertEquals('/apex/Home', page.getUrl());
+
+Messaging.SingleEmailMessage email = new messaging.singleemailmessage();
+email.setSubject('Hello');
+System.assertEquals('Hello', email.getSubject());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 	cases := []struct {
 		name string

@@ -420,8 +420,8 @@
     "result": {
       "ok": true,
       "persistedAccounts": 1,
-      "persistedObjects": 21,
-      "persistedRecords": 12,
+      "persistedObjects": 23,
+      "persistedRecords": 13,
       "permissions": 2,
       "profiles": 3,
       "requests": 39,

@@ -141,6 +141,7 @@ func (vm *VM) checkLimit(name string, used, cap int) error {
 }
 
 func (vm *VM) limitValue(name string) (Value, bool) {
+	name = canonicalLimitGetterName(name)
 	switch name {
 	case "getQueries":
 		return Int(int64(vm.limits.Queries)), true
@@ -209,6 +210,7 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 }
 
 func unsupportedLimitGetter(name string) bool {
+	name = canonicalLimitGetterName(name)
 	switch name {
 	case "getAggregateQueries", "getLimitAggregateQueries",
 		"getFindSimilarCalls", "getLimitFindSimilarCalls",
@@ -221,4 +223,55 @@ func unsupportedLimitGetter(name string) bool {
 	default:
 		return false
 	}
+}
+
+func canonicalLimitGetterName(name string) string {
+	return canonicalStdlibMemberName(name,
+		"getQueries",
+		"getLimitQueries",
+		"getQueryRows",
+		"getLimitQueryRows",
+		"getDmlStatements",
+		"getLimitDmlStatements",
+		"getDMLStatements",
+		"getLimitDMLStatements",
+		"getDmlRows",
+		"getLimitDmlRows",
+		"getDMLRows",
+		"getLimitDMLRows",
+		"getHeapSize",
+		"getLimitHeapSize",
+		"getCpuTime",
+		"getLimitCpuTime",
+		"getCallouts",
+		"getLimitCallouts",
+		"getAsyncJobs",
+		"getLimitAsyncJobs",
+		"getAsyncCalls",
+		"getLimitAsyncCalls",
+		"getQueueableJobs",
+		"getLimitQueueableJobs",
+		"getFutureCalls",
+		"getLimitFutureCalls",
+		"getBatchJobs",
+		"getLimitBatchJobs",
+		"getScheduledJobs",
+		"getLimitScheduledJobs",
+		"getEmailInvocations",
+		"getLimitEmailInvocations",
+		"getAggregateQueries",
+		"getLimitAggregateQueries",
+		"getFindSimilarCalls",
+		"getLimitFindSimilarCalls",
+		"getMobilePushApexCalls",
+		"getLimitMobilePushApexCalls",
+		"getPublishImmediateDML",
+		"getLimitPublishImmediateDML",
+		"getQueryLocatorRows",
+		"getLimitQueryLocatorRows",
+		"getSavepointRollbacks",
+		"getLimitSavepointRollbacks",
+		"getSoslQueries",
+		"getLimitSoslQueries",
+	)
 }

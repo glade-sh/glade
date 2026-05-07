@@ -22,7 +22,7 @@
   "expected": {
     "error": {
       "type": "System.TypeException",
-      "message": "unsupported Datetime value \"2024-02-29 25:00:00\""
+      "message": "Invalid date/time: 2024-02-29 25:00:00"
     }
   }
 }

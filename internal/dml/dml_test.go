@@ -1255,6 +1255,26 @@ func TestAttachmentBodyDMLAndSOQLRoundTrip(t *testing.T) {
 	}
 }
 
+func TestAttachmentParentCanReferenceCurrentUser(t *testing.T) {
+	org := fileTestOrg()
+	engine := NewEngine(&org)
+	attachment := engine.Insert([]storage.Record{{
+		Object: "Attachment",
+		Fields: map[string]storage.Value{
+			"Name":     storage.StringValue("user-note.txt"),
+			"ParentId": storage.IDValue("005000000000001"),
+			"Body":     storage.BlobValue("hello user"),
+		},
+	}})
+	if !attachment[0].Success {
+		t.Fatalf("attachment insert = %#v", attachment)
+	}
+	stored := org.Objects["Attachment"].Records[attachment[0].ID]
+	if stored.Fields["ParentId"].ID != "005000000000001" {
+		t.Fatalf("parent id = %#v", stored.Fields["ParentId"])
+	}
+}
+
 func TestDocumentBodyDMLSOQLAndDelete(t *testing.T) {
 	org := fileTestOrg()
 	engine := NewEngine(&org)
@@ -1286,6 +1306,9 @@ func TestDocumentBodyDMLSOQLAndDelete(t *testing.T) {
 	row := result.Records[0]
 	if row.Fields["Body"].Kind != storage.ValueBlob || row.Fields["Body"].String != "document bytes" || row.Fields["ContentType"].String != "application/pdf" || !row.Fields["IsPublic"].Boolean {
 		t.Fatalf("document row = %#v", row)
+	}
+	if folderID := org.Objects["Document"].Records[document[0].ID].Fields["FolderId"].ID; folderID != "005000000000001" {
+		t.Fatalf("document folder id = %q", folderID)
 	}
 	deleted := engine.Delete([]storage.Record{{Object: "Document", ID: document[0].ID}})
 	if !deleted[0].Success {

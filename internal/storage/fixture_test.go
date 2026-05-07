@@ -241,6 +241,15 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 	if user.Fields["UserRoleId"].ID != "00E000000000001" || user.Fields["LocaleSidKey"].String != "en_US" || user.Fields["TimeZoneSidKey"].String != "UTC" {
 		t.Fatalf("user fields = %#v", user.Fields)
 	}
+	if refs := org.Objects["Attachment"].Definition.Fields["ParentId"].ReferenceTo; !containsStringFold(refs, "User") {
+		t.Fatalf("Attachment.ParentId references = %#v, want User", refs)
+	}
+	if refs := org.Objects["Document"].Definition.Fields["FolderId"].ReferenceTo; !containsStringFold(refs, "User") {
+		t.Fatalf("Document.FolderId references = %#v, want User", refs)
+	}
+	if org.Objects["ContentVersion"].Definition.Fields["ContentDocumentId"].Required {
+		t.Fatalf("ContentVersion.ContentDocumentId should be optional for first-version inserts")
+	}
 	orgRecord := org.Objects["Organization"].Records["00D000000000001"]
 	if orgRecord.Fields["IsSandbox"].Kind != ValueBoolean || !orgRecord.Fields["IsSandbox"].Boolean {
 		t.Fatalf("organization fields = %#v", orgRecord.Fields)
@@ -332,4 +341,13 @@ func TestEnsureDeterministicPlatformDataAdvancesRecordTypeSequenceToMaxID(t *tes
 	if _, exists := org.Objects["RecordType"].Records[next]; exists {
 		t.Fatalf("next RecordType ID %s collides with existing records", next)
 	}
+}
+
+func containsStringFold(values []string, want string) bool {
+	for _, value := range values {
+		if strings.EqualFold(value, want) {
+			return true
+		}
+	}
+	return false
 }

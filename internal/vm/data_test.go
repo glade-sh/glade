@@ -795,6 +795,129 @@ System.assert(contacts.isCascadeDelete());
 	}
 }
 
+func TestExecDescribePermissionsHonorLocalObjectAndFieldPermissions(t *testing.T) {
+	program, err := CompileAnonymous(`
+PermissionSet ps = new PermissionSet(Name = 'ReadAccountContact', Label = 'Read Account Contact');
+insert ps;
+insert new ObjectPermissions(ParentId = ps.Id, SObjectType = 'Account', PermissionsRead = true);
+insert new ObjectPermissions(ParentId = ps.Id, SObjectType = 'Contact', PermissionsRead = true);
+insert new FieldPermissions(ParentId = ps.Id, SObjectType = 'Contact', Field = 'Contact.Email', PermissionsRead = true);
+Profile p = [SELECT Id FROM Profile WHERE Name = 'Minimum Access - Salesforce'];
+User u = new User(
+	Username = 'minimum@example.invalid',
+	Alias = 'minimum',
+	Email = 'minimum@example.invalid',
+	LastName = 'Minimum',
+	ProfileId = p.Id,
+	TimeZoneSidKey = 'UTC',
+	LocaleSidKey = 'en_US',
+	LanguageLocaleKey = 'en_US',
+	EmailEncodingKey = 'UTF-8'
+);
+insert u;
+insert new PermissionSetAssignment(AssigneeId = u.Id, PermissionSetId = ps.Id);
+System.runAs(u) {
+	System.assert(Account.SObjectType.getDescribe().isAccessible());
+	System.assert(!Account.SObjectType.getDescribe().isCreateable());
+	System.assert(!Lead.SObjectType.getDescribe().isUpdateable());
+	System.assert(!Opportunity.SObjectType.getDescribe().isDeletable());
+	System.assert(!Account.Name.getDescribe().isCreateable());
+	System.assert(Contact.LastName.getDescribe().isAccessible());
+	System.assert(Contact.Email.getDescribe().isAccessible());
+	System.assert(!Lead.Company.getDescribe().isUpdateable());
+}
+Profile admin = [SELECT Id FROM Profile WHERE Name = 'System Administrator'];
+User sys = new User(
+	Username = 'admin@example.invalid',
+	Alias = 'admin',
+	Email = 'admin@example.invalid',
+	LastName = 'Admin',
+	ProfileId = admin.Id,
+	TimeZoneSidKey = 'UTC',
+	LocaleSidKey = 'en_US',
+	LanguageLocaleKey = 'en_US',
+	EmailEncodingKey = 'UTF-8'
+);
+insert sys;
+System.runAs(sys) {
+	System.assert(Account.SObjectType.getDescribe().isCreateable());
+	System.assert(Account.Name.getDescribe().isCreateable());
+	System.assert(Lead.Company.getDescribe().isUpdateable());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	storage.EnsureStandardObject(&org, "Contact")
+	storage.EnsureStandardObject(&org, "Lead")
+	storage.EnsureStandardObject(&org, "Opportunity")
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSOQLUserModeChecksLocalObjectAndFieldPermissions(t *testing.T) {
+	program, err := CompileAnonymous(`
+PermissionSet ps = new PermissionSet(Name = 'ReadAccount', Label = 'Read Account');
+insert ps;
+insert new ObjectPermissions(ParentId = ps.Id, SObjectType = 'Account', PermissionsRead = true);
+Profile p = [SELECT Id FROM Profile WHERE Name = 'Minimum Access - Salesforce'];
+User u = new User(
+	Username = 'query-user@example.invalid',
+	Alias = 'quser',
+	Email = 'query-user@example.invalid',
+	LastName = 'Query',
+	ProfileId = p.Id,
+	TimeZoneSidKey = 'UTC',
+	LocaleSidKey = 'en_US',
+	LanguageLocaleKey = 'en_US',
+	EmailEncodingKey = 'UTF-8'
+);
+insert u;
+insert new PermissionSetAssignment(AssigneeId = u.Id, PermissionSetId = ps.Id);
+System.runAs(u) {
+	List<Account> readable = Database.query('SELECT Id, Name FROM Account WITH USER_MODE');
+	System.assertEquals(1, readable.size());
+	Boolean caught = false;
+	try {
+		Database.query('SELECT Id, Score__c FROM Account WITH USER_MODE');
+	} catch (QueryException qe) {
+		caught = qe.getMessage().contains('Score__c');
+	}
+	System.assert(caught);
+	List<Account> systemRows = Database.query('SELECT Id, Score__c FROM Account WITH SYSTEM_MODE');
+	System.assertEquals(1, systemRows.size());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	account := org.Objects["Account"]
+	account.Definition.Fields["Score__c"] = storage.Field{APIName: "Score__c", Type: storage.FieldDecimal}
+	account.Records["001000000000901AAA"] = storage.Record{
+		ID:     "001000000000901AAA",
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":     storage.StringValue("Acme"),
+			"Score__c": storage.DecimalValue("7"),
+		},
+	}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecCustomObjectIdDescribeNameFeedsDynamicFieldList(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<String> fields = new List<String>();
@@ -2124,6 +2247,53 @@ System.assertEquals(0, rows.size());
 		ErrorDisplayField:     "Name",
 	}}
 	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDMLStatementValidationFailureThrowsDmlException(t *testing.T) {
+	program, err := CompileAnonymous(`
+Boolean caught = false;
+try {
+	insert new Opportunity();
+} catch (DmlException e) {
+	caught = true;
+	System.assert(e.getMessage().contains('REQUIRED_FIELD_MISSING'));
+	System.assertEquals('REQUIRED_FIELD_MISSING', e.getDmlStatusCode(0));
+}
+System.assert(caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Opportunity")
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDMLIgnoresQueriedChildRelationshipLists(t *testing.T) {
+	program, err := CompileAnonymous(`
+Opportunity opp = new Opportunity(Name = 'Original', StageName = 'Open', CloseDate = System.today());
+insert opp;
+Opportunity queried = [SELECT Id, Name, (SELECT Id FROM OpportunityLineItems) FROM Opportunity WHERE Id = :opp.Id];
+queried.Name = 'Changed';
+update queried;
+Opportunity updated = [SELECT Id, Name FROM Opportunity WHERE Id = :opp.Id];
+System.assertEquals('Changed', updated.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Opportunity")
+	storage.EnsureStandardObject(&org, "OpportunityLineItem")
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)

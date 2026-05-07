@@ -36,6 +36,37 @@ System.assert(gen.isClosed());
 	}
 }
 
+func TestExecJSONParserGeneratorMethodsAreCaseInsensitive(t *testing.T) {
+	program, err := CompileAnonymous(`
+JSONGenerator gen = json.CREATEGENERATOR(false);
+gen.WriteStartObject();
+gen.WRITESTRINGFIELD('name', 'Acme');
+gen.writeFieldName('items');
+gen.WriteStartArray();
+gen.WriteNumber(7);
+gen.writeEndArray();
+gen.WRITEENDOBJECT();
+System.assertEquals('{"name":"Acme","items":[7]}', gen.GETASSTRING());
+System.assert(gen.ISCLOSED());
+
+JSONParser parser = JSON.createparser('{"name":"Acme"}');
+System.assertEquals(JSONToken.START_OBJECT, parser.NEXTTOKEN());
+System.assertEquals(jsontoken.FIELD_NAME, parser.nexttoken());
+System.assertEquals('name', parser.GETTEXT());
+System.assertEquals(JSONToken.VALUE_STRING, parser.NextValue());
+System.assertEquals('Acme', parser.getText());
+parser.ClearCurrentToken();
+System.assertEquals(null, parser.GetCurrentToken());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecJSONAliasSupportsDeserializeStrict(t *testing.T) {
 	program, err := CompileAnonymous(`
 Map<String,Object> parsed = (Map<String,Object>)Json.deserializeStrict('{"Name":"Acme"}', Map<String,Object>.class);

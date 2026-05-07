@@ -1934,6 +1934,32 @@ public class Uses {
 	}
 }
 
+func TestAnalyzeCustomDataStaticMethodsAreCaseInsensitive(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Uses.cls"), `
+public class Uses {
+  public Feature__mdt one() {
+    Feature__mdt cfg = feature__MDT.GETINSTANCE('Default');
+    return cfg;
+  }
+  public Map<String,Feature__mdt> allRows() {
+    return FEATURE__mdt.getALL();
+  }
+  public Feature__mdt valuesRow() {
+    return FEATURE__mdt.getValues('Default');
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Uses.cls")}}, schema.Schema{
+		Objects: []schema.Object{{Name: "Feature__mdt"}},
+	})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
 func TestAnalyzeFieldSetGetFieldsSignature(t *testing.T) {
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Uses.cls"), `

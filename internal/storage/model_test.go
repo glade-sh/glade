@@ -28,6 +28,28 @@ func TestResolveFieldNameMapsUnqualifiedCustomFieldToOrgNamespace(t *testing.T) 
 	}
 }
 
+func TestResolveFieldNameMapsCustomFieldCaseInsensitiveToOrgNamespace(t *testing.T) {
+	definition := ObjectDefinition{APIName: "Account", Fields: map[string]Field{
+		"pkg__UpdatePrimaryLocation__c": {APIName: "pkg__UpdatePrimaryLocation__c", Type: FieldBoolean},
+	}}
+
+	resolved, ok := ResolveFieldName(definition, "pkg", "updateprimarylocation__C")
+	if !ok || resolved != "pkg__UpdatePrimaryLocation__c" {
+		t.Fatalf("ResolveFieldName(updateprimarylocation__C) = %q, %v", resolved, ok)
+	}
+}
+
+func TestResolveFieldNameStripsNamespaceCaseInsensitive(t *testing.T) {
+	definition := ObjectDefinition{APIName: "Account", Fields: map[string]Field{
+		"UpdatePrimaryLocation__c": {APIName: "UpdatePrimaryLocation__c", Type: FieldBoolean},
+	}}
+
+	resolved, ok := ResolveFieldName(definition, "pkg", "PKG__UpdatePrimaryLocation__c")
+	if !ok || resolved != "UpdatePrimaryLocation__c" {
+		t.Fatalf("ResolveFieldName(PKG__UpdatePrimaryLocation__c) = %q, %v", resolved, ok)
+	}
+}
+
 func TestResolveFieldNameKeepsOtherNamespace(t *testing.T) {
 	definition := ObjectDefinition{APIName: "Account", Fields: map[string]Field{
 		"other__Status__c": {APIName: "other__Status__c", Type: FieldString},
@@ -68,6 +90,28 @@ func TestResolveObjectNameMapsUnqualifiedCustomObjectToOrgNamespace(t *testing.T
 	resolved, ok := ResolveObjectName(org, "Thing__c")
 	if !ok || resolved != "pkg__Thing__c" {
 		t.Fatalf("ResolveObjectName(Thing__c) = %q, %v", resolved, ok)
+	}
+}
+
+func TestResolveObjectNameMapsCustomObjectCaseInsensitiveToOrgNamespace(t *testing.T) {
+	org := NewOrgState()
+	org.Namespace = "pkg"
+	org.Objects["pkg__Thing__c"] = ObjectState{Definition: ObjectDefinition{APIName: "pkg__Thing__c"}}
+
+	resolved, ok := ResolveObjectName(org, "thing__C")
+	if !ok || resolved != "pkg__Thing__c" {
+		t.Fatalf("ResolveObjectName(thing__C) = %q, %v", resolved, ok)
+	}
+}
+
+func TestResolveObjectNameStripsNamespaceCaseInsensitive(t *testing.T) {
+	org := NewOrgState()
+	org.Namespace = "pkg"
+	org.Objects["Thing__c"] = ObjectState{Definition: ObjectDefinition{APIName: "Thing__c"}}
+
+	resolved, ok := ResolveObjectName(org, "PKG__Thing__c")
+	if !ok || resolved != "Thing__c" {
+		t.Fatalf("ResolveObjectName(PKG__Thing__c) = %q, %v", resolved, ok)
 	}
 }
 

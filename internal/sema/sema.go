@@ -1034,17 +1034,17 @@ func semaSObjectFieldMember(typeName, fieldName string, model map[string]typeMem
 	fieldType := ""
 	fieldKey := normalizeName(fieldName)
 	switch {
-	case strings.HasSuffix(fieldName, "__r"):
+	case strings.HasSuffix(fieldKey, "__r"):
 		fieldType = "SObject"
 	case fieldKey == "id" || strings.HasSuffix(fieldKey, "id"):
 		fieldType = "Id"
 	case fieldKey == "body" || fieldKey == "versiondata":
 		fieldType = "Blob"
-	case strings.Contains(fieldName, "File") || strings.Contains(fieldName, "Name"):
+	case strings.Contains(fieldKey, "file") || strings.Contains(fieldKey, "name"):
 		fieldType = "String"
 	case fieldKey == "name" || fieldKey == "developername" || fieldKey == "masterlabel":
 		fieldType = "String"
-	case fieldKey == "isdeleted" || strings.HasPrefix(fieldName, "Is") || strings.HasPrefix(fieldName, "Has"):
+	case fieldKey == "isdeleted" || strings.HasPrefix(fieldKey, "is") || strings.HasPrefix(fieldKey, "has"):
 		fieldType = "Boolean"
 	}
 	return resolvedMember{owner: typeName, member: typesys.MemberSymbol{
@@ -1713,12 +1713,6 @@ func (a *Analyzer) inferIRExprType(expr ir.Expr, scope irSemaScope, model map[st
 	case ir.ExprLiteral:
 		return inferSemaArgType(expr.Value, scope.flat())
 	case ir.ExprVariable:
-		if semaLooksLikeSObjectFieldToken(expr.Name) {
-			return "Schema.SObjectField"
-		}
-		if semaLooksLikeSObjectTypeToken(expr.Name) {
-			return "Schema.SObjectType"
-		}
 		if typ, ok := scope.lookup(expr.Name); ok {
 			return typ
 		}
@@ -1728,6 +1722,12 @@ func (a *Analyzer) inferIRExprType(expr ir.Expr, scope irSemaScope, model map[st
 					return target.member.Type
 				}
 			}
+		}
+		if semaLooksLikeSObjectFieldToken(expr.Name) {
+			return "Schema.SObjectField"
+		}
+		if semaLooksLikeSObjectTypeToken(expr.Name) {
+			return "Schema.SObjectType"
 		}
 	case ir.ExprCall:
 		if strings.HasPrefix(expr.Callee, "__assign:") {
@@ -2780,7 +2780,7 @@ func semaIsStringFluentMethod(method string) bool {
 }
 
 func semaClassLiteralMethod(callee string) (string, bool) {
-	idx := strings.Index(callee, ".class.")
+	idx := strings.Index(strings.ToLower(callee), ".class.")
 	if idx < 0 {
 		return "", false
 	}
@@ -3248,29 +3248,29 @@ func semaConversionScore(paramType, argType string, model map[string]typeMembers
 }
 
 func semaNumericConversionScore(paramType, argType string) int {
-	switch argType {
-	case "Integer":
-		switch paramType {
-		case "Long":
+	switch normalizeName(argType) {
+	case "integer":
+		switch normalizeName(paramType) {
+		case "long":
 			return 900
-		case "Decimal":
+		case "decimal":
 			return 800
-		case "Double":
+		case "double":
 			return 700
 		}
-	case "Long":
-		switch paramType {
-		case "Decimal":
+	case "long":
+		switch normalizeName(paramType) {
+		case "decimal":
 			return 800
-		case "Double":
+		case "double":
 			return 700
 		}
-	case "Decimal":
-		if paramType == "Double" {
+	case "decimal":
+		if strings.EqualFold(paramType, "Double") {
 			return 800
 		}
-	case "Double":
-		if paramType == "Decimal" {
+	case "double":
+		if strings.EqualFold(paramType, "Decimal") {
 			return 800
 		}
 	}
@@ -3587,7 +3587,7 @@ func inferSemaArgTypeWithModel(arg string, scope map[string]string, model map[st
 		}
 		return match[1]
 	}
-	if strings.HasSuffix(arg, ".class") {
+	if strings.HasSuffix(strings.ToLower(arg), ".class") {
 		return "Type"
 	}
 	if receiver, ok := splitSemaIndexExpression(arg); ok {
@@ -3679,12 +3679,6 @@ func inferSemaBinaryTypeWithModel(arg string, scope map[string]string, model map
 }
 
 func inferSemaFieldAccessType(expr string, scope map[string]string, model map[string]typeMembers) string {
-	if semaLooksLikeSObjectFieldToken(expr) {
-		return "Schema.SObjectField"
-	}
-	if semaLooksLikeSObjectTypeToken(expr) {
-		return "Schema.SObjectType"
-	}
 	if receiverExpr, field, ok := splitSemaMethodPath(expr); ok {
 		if castType, _, castOK := splitSemaCast(receiverExpr); castOK {
 			if target, ok := semaResolveFieldPath(model, castType, field); ok {
@@ -3710,29 +3704,39 @@ func inferSemaFieldAccessType(expr string, scope map[string]string, model map[st
 		receiverType = scoped
 	} else if members, ok := model[normalizeName(parts[0])]; ok {
 		receiverType = members.name
-	} else {
-		return ""
 	}
-	if startIndex >= len(parts) {
-		return receiverType
+	if receiverType != "" {
+		if startIndex >= len(parts) {
+			return receiverType
+		}
+		if target, ok := semaResolveFieldPath(model, receiverType, strings.Join(parts[startIndex:], ".")); ok {
+			return target.member.Type
+		}
 	}
-	if target, ok := semaResolveFieldPath(model, receiverType, strings.Join(parts[startIndex:], ".")); ok {
-		return target.member.Type
+	if semaLooksLikeSObjectFieldToken(expr) {
+		return "Schema.SObjectField"
+	}
+	if semaLooksLikeSObjectTypeToken(expr) {
+		return "Schema.SObjectType"
 	}
 	return ""
 }
 
 func semaLooksLikeSObjectFieldToken(expr string) bool {
 	parts := strings.Split(strings.TrimSpace(expr), ".")
-	if len(parts) == 2 && startsWithUpperASCII(parts[0]) && startsWithUpperASCII(parts[1]) && isSemaSObjectLike(parts[0], nil) && !strings.EqualFold(parts[1], "SObjectType") {
+	if len(parts) == 2 && semaFieldTokenPart(parts[0]) && semaFieldTokenPart(parts[1]) && isSemaSObjectLike(parts[0], nil) && !strings.EqualFold(parts[1], "SObjectType") {
 		return true
 	}
 	for i := 0; i+2 < len(parts); i++ {
-		if strings.EqualFold(parts[i], "SObjectType") && strings.EqualFold(parts[i+1], "fields") && parts[i+2] != "" {
+		if strings.EqualFold(parts[i], "SObjectType") && strings.EqualFold(parts[i+1], "fields") && semaFieldTokenPart(parts[i+2]) {
 			return true
 		}
 	}
 	return false
+}
+
+func semaFieldTokenPart(part string) bool {
+	return simpleIdentifierPattern.MatchString(strings.TrimSpace(part))
 }
 
 func startsWithUpperASCII(text string) bool {
@@ -4312,6 +4316,8 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 			return semaCollectionSignature{returnType: "List<Schema.SObjectType>", params: [][]string{{}}}, true
 		case "getpicklistvalues":
 			return semaCollectionSignature{returnType: "List<Schema.PicklistEntry>", params: [][]string{{}}}, true
+		case "getsobjectfield":
+			return semaCollectionSignature{returnType: "Schema.SObjectField", params: [][]string{{}}}, true
 		}
 	case "schema.fieldset":
 		switch method {
@@ -4530,8 +4536,31 @@ func semaPlatformMethodSignatureFor(model map[string]typeMembers, receiverType, 
 	if sig, ok := semaPlatformMethodSignature(receiverType, method); ok {
 		return sig, true
 	}
+	if sig, ok := semaCustomDataStaticMethodSignature(receiverType, method); ok {
+		return sig, true
+	}
 	if semaTypeMatches(model, receiverType, "Exception", make(map[string]bool)) {
 		return semaPlatformMethodSignature("Exception", method)
+	}
+	return semaCollectionSignature{}, false
+}
+
+func semaCustomDataStaticMethodSignature(receiverType, method string) (semaCollectionSignature, bool) {
+	receiverType = strings.TrimSpace(receiverType)
+	if receiverType == "" {
+		return semaCollectionSignature{}, false
+	}
+	key := normalizeName(receiverType)
+	if !strings.HasSuffix(key, "__mdt") && !strings.HasSuffix(key, "__c") {
+		return semaCollectionSignature{}, false
+	}
+	switch normalizeName(method) {
+	case "getall":
+		return semaCollectionSignature{returnType: "Map<String," + receiverType + ">", params: [][]string{{}}}, true
+	case "getinstance", "getvalues":
+		return semaCollectionSignature{returnType: receiverType, params: [][]string{{}, {"String"}, {"Id"}}}, true
+	case "getorgdefaults":
+		return semaCollectionSignature{returnType: receiverType, params: [][]string{{}}}, true
 	}
 	return semaCollectionSignature{}, false
 }
@@ -5016,16 +5045,16 @@ var (
 	typeReferencePattern    = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?(?:\s*\[\s*\])*$`)
 	lineLocalDeclPattern    = regexp.MustCompile(`(?m)^\s*([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:=|;)`)
 	localDeclPattern        = regexp.MustCompile(`(?m)(?:^|[;\n])\s*([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:=|;)`)
-	enhancedForLocalPattern = regexp.MustCompile(`(?m)\bfor\s*\(\s*([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?)\s+([A-Za-z_][A-Za-z0-9_]*)\s*:`)
-	forHeaderPattern        = regexp.MustCompile(`\bfor\s*\(`)
-	catchLocalPattern       = regexp.MustCompile(`(?m)\bcatch\s*\(\s*([A-Za-z_][A-Za-z0-9_.]*(?:\s*\|\s*[A-Za-z_][A-Za-z0-9_.]*)*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*\)`)
+	enhancedForLocalPattern = regexp.MustCompile(`(?im)\bfor\s*\(\s*([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?)\s+([A-Za-z_][A-Za-z0-9_]*)\s*:`)
+	forHeaderPattern        = regexp.MustCompile(`(?i)\bfor\s*\(`)
+	catchLocalPattern       = regexp.MustCompile(`(?im)\bcatch\s*\(\s*([A-Za-z_][A-Za-z0-9_.]*(?:\s*\|\s*[A-Za-z_][A-Za-z0-9_.]*)*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*\)`)
 	assignmentPattern       = regexp.MustCompile(`(?m)(?:^|[;{}\n])\s*([A-Za-z_][A-Za-z0-9_]*)\s=`)
 	callPattern             = regexp.MustCompile(`\b([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*)\s*\(`)
-	constructorPattern      = regexp.MustCompile(`\bnew\s+([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?)\s*\(`)
+	constructorPattern      = regexp.MustCompile(`(?i)\bnew\s+([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?)\s*\(`)
 	newExprPattern          = regexp.MustCompile(`(?is)^new\s+([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?(?:\s*\[\s*\])*)\s*(?:\([^)]*\)|\{.*\})\s*$`)
 	decimalLiteralPattern   = regexp.MustCompile(`^-?(?:[0-9]+\.[0-9]*|[0-9]*\.[0-9]+)$`)
 	intLiteralPattern       = regexp.MustCompile(`^-?[0-9]+$`)
-	returnPattern           = regexp.MustCompile(`(?s)\breturn(?:\s+([^;]+))?\s*;`)
+	returnPattern           = regexp.MustCompile(`(?is)\breturn(?:\s+([^;]+))?\s*;`)
 	simpleIdentifierPattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
 )
 
