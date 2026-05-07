@@ -81,7 +81,7 @@ func callIntegerMember(receiver Value, method string, args []Value) (Value, Valu
 		if len(args) != 0 {
 			return Null, receiver, false, true, unsupportedCallError("Integer/Long.format locale/pattern overloads")
 		}
-		return String(strconv.FormatInt(receiver.Int, 10)), receiver, false, true, nil
+		return String(formatIntegerWithGrouping(receiver.Int)), receiver, false, true, nil
 	case "intValue", "longValue":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Integer.%s expects 0 arguments", method)
@@ -196,7 +196,7 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 		if err := ensureFiniteDecimal("Decimal.format", receiver.Decimal); err != nil {
 			return Null, receiver, false, true, err
 		}
-		return String(strconv.FormatFloat(receiver.Decimal, 'f', -1, 64)), receiver, false, true, nil
+		return String(formatDecimalWithGrouping(receiver.Decimal)), receiver, false, true, nil
 	case "divide":
 		if len(args) < 2 || len(args) > 3 {
 			return Null, receiver, false, true, fmt.Errorf("Decimal.divide expects divisor, scale, and optional RoundingMode")
@@ -250,6 +250,49 @@ func decimalOperand(value Value) (float64, bool) {
 	default:
 		return 0, false
 	}
+}
+
+func formatIntegerWithGrouping(value int64) string {
+	sign := ""
+	text := strconv.FormatInt(value, 10)
+	if strings.HasPrefix(text, "-") {
+		sign = "-"
+		text = text[1:]
+	}
+	return sign + addThousandsSeparators(text)
+}
+
+func formatDecimalWithGrouping(value float64) string {
+	text := strconv.FormatFloat(value, 'f', -1, 64)
+	sign := ""
+	if strings.HasPrefix(text, "-") {
+		sign = "-"
+		text = text[1:]
+	}
+	whole := text
+	fraction := ""
+	if dot := strings.IndexByte(text, '.'); dot >= 0 {
+		whole = text[:dot]
+		fraction = text[dot:]
+	}
+	return sign + addThousandsSeparators(whole) + fraction
+}
+
+func addThousandsSeparators(text string) string {
+	if len(text) <= 3 {
+		return text
+	}
+	first := len(text) % 3
+	if first == 0 {
+		first = 3
+	}
+	var out strings.Builder
+	out.WriteString(text[:first])
+	for i := first; i < len(text); i += 3 {
+		out.WriteByte(',')
+		out.WriteString(text[i : i+3])
+	}
+	return out.String()
 }
 
 func roundDecimalToScale(callee string, value float64, scaleValue int64, mode string) (float64, error) {

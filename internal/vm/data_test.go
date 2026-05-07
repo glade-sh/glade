@@ -949,6 +949,8 @@ System.assertEquals('Acme', first.Name);
 List<String> names = new List<String>{'Acme', 'Beta'};
 rows = Database.query('SELECT Id FROM Account WHERE Name IN :names ORDER BY Name');
 System.assertEquals(2, rows.size());
+rows = Database.query('SELECT Id FROM Account WHERE Name = :names ORDER BY Name');
+System.assertEquals(2, rows.size());
 Account probe = new Account(Name = 'Beta');
 rows = Database.query('SELECT Id FROM Account WHERE Name = :probe.Name');
 System.assertEquals(1, rows.size());

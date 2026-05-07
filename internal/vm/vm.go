@@ -2243,7 +2243,7 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		}
 		value, err := parseDatetimeText(args[0].Text)
 		if err != nil {
-			return Null, newExceptionError("System.TypeException", err.Error())
+			return Null, newExceptionError("System.TypeException", "Invalid date/time: "+args[0].Text)
 		}
 		return platformScalar("Datetime", formatPlatformDatetime(value)), nil
 	case "LoggingLevel.values":
@@ -4695,6 +4695,9 @@ func (vm *VM) expandSOQLBindsWith(raw string, lookup func(string) (Value, error)
 		if err != nil {
 			return "", err
 		}
+		if value.Kind == ValueList || value.Kind == ValueSet {
+			rewriteTrailingSOQLEqualsToIn(&out)
+		}
 		out.WriteString(soqlLiteral(value))
 		if isCall {
 			i = callEnd
@@ -4703,6 +4706,17 @@ func (vm *VM) expandSOQLBindsWith(raw string, lookup func(string) (Value, error)
 		}
 	}
 	return out.String(), nil
+}
+
+func rewriteTrailingSOQLEqualsToIn(out *strings.Builder) {
+	text := out.String()
+	trimmed := strings.TrimRight(text, " \t\n\r")
+	if !strings.HasSuffix(trimmed, "=") {
+		return
+	}
+	out.Reset()
+	out.WriteString(strings.TrimRight(trimmed[:len(trimmed)-1], " \t\n\r"))
+	out.WriteString(" IN ")
 }
 
 func consumeEmptyCallSuffix(raw string, index int) (int, bool) {
