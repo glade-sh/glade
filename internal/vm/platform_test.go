@@ -340,6 +340,43 @@ Metadata.Operations.enqueueDeployment(container, null);
 	}
 }
 
+func TestExecMetadataDeploymentInvalidSupportedItemReturnsFailureResult(t *testing.T) {
+	program, err := CompileAnonymous(`
+Metadata.DeployContainer container = new Metadata.DeployContainer();
+Metadata.CustomObject objectDef = new Metadata.CustomObject();
+objectDef.fullName = 'Invoice__c';
+container.addMetadata(objectDef);
+Metadata.CustomField missingObject = new Metadata.CustomField();
+missingObject.fullName = 'Missing__c.Amount__c';
+missingObject.label = 'Amount';
+missingObject.type = 'Number';
+container.addMetadata(missingObject);
+Id deploymentId = Metadata.Operations.enqueueDeployment(container, null);
+Metadata.DeployResult result = Metadata.Operations.checkDeployStatus(deploymentId, true);
+System.assert(result.done);
+System.assert(!result.success);
+System.assertEquals('FAILED', result.status.name());
+System.assertEquals(2, result.numberComponentsTotal);
+System.assertEquals(0, result.numberComponentsDeployed);
+System.assertEquals(1, result.numberComponentErrors);
+System.assertEquals(0, result.details.componentSuccesses.size());
+System.assertEquals(1, result.details.componentFailures.size());
+System.assertEquals('CustomField', result.details.componentFailures[0].componentType);
+System.assertEquals('Missing__c.Amount__c', result.details.componentFailures[0].fullName);
+System.assert(result.details.componentFailures[0].problem.contains('unknown object Missing__c'));
+System.assert(!Schema.getGlobalDescribe().containsKey('Invoice__c'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecEventBusPublishReturnsLocalSuccessResults(t *testing.T) {
 	program, err := CompileAnonymous(`
 Database.SaveResult single = EventBus.publish(new Account(Name = 'Acme'));

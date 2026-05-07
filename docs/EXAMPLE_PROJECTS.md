@@ -73,7 +73,7 @@ Current status as of 2026-05-06:
 - The server-example execution harness is green across the checked
   `example-projects` corpus: `pass=101 fail=0 unsupported=0 missing=0`.
 - `oaer compat post-parity --json` is green for the checked corpus:
-  `filesScanned=51092 findings=0 testBlockingFindings=0 surfaces=0`.
+  `filesScanned=51107 findings=0 testBlockingFindings=0 surfaces=0`.
 - `oaer compat examples`, `oaer compat server-examples`, and
   `oaer compat post-parity` are separate gates. The zero post-parity inventory
   means no current scanner/test-readiness blockers are known for the checked

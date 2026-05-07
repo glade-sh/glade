@@ -22,7 +22,7 @@ also green for the checked `example-projects` corpus. A May 6, 2026 inventory
 from the current checkout reports:
 
 ```text
-filesScanned=51092 findings=0 testBlockingFindings=0 surfaces=0
+filesScanned=51107 findings=0 testBlockingFindings=0 surfaces=0
 ```
 
 That inventory is implementation-aware as of this checkpoint. It suppresses
@@ -639,18 +639,26 @@ Initial implementation status:
 - Added `compat ui-controllers --check
   docs/fixtures/ui-controller-discovery.json` for Aura/LWC controller discovery
   without adding browser rendering or action endpoint semantics.
-- The checked 12-project corpus now covers owned metadata/resources,
+- The checked 13-project corpus now covers owned metadata/resources,
   presentation-metadata unsupported classification, Visualforce controller
   contracts, Aura/LWC discovery, VM-level Aura/LWC action invocation, platform
-  APIs, local Metadata API custom object/field deployment, files/email,
-  Workflow, Flow, and org-like runner fidelity.
+  APIs, named-credential and remote-site callout matching, local Metadata API
+  custom object/field deployment, files/email, Workflow, Flow, and org-like
+  runner fidelity.
 - Larger anonymized corpus projects and generated local-test dashboard files
   remain future release-hardening work. VM-level Aura/LWC action dispatch now
   has JSON-shaped return and `AuraHandledException` error contracts ready for
   fixture expansion.
 - The broad post-parity readiness inventory is green for the checked
   `example-projects` corpus:
-  `filesScanned=51092 findings=0 testBlockingFindings=0 surfaces=0`.
+  `filesScanned=51107 findings=0 testBlockingFindings=0 surfaces=0`.
+- CI now keeps the release-hardening gates live with `go test ./...`,
+  `compat local-tests --check docs/fixtures/local-tests-corpus.json`,
+  `compat post-parity --json --require-ready`, `compat ui-controllers --check
+  docs/fixtures/ui-controller-discovery.json`, and generated stdlib coverage
+  drift checks.
+- Added `docs/fixtures/post-parity-trace-events.json` as a stable trace
+  fixture for Flow, Visualforce controller, and Metadata deploy events.
 
 Primary lane: Gate.
 
@@ -684,6 +692,7 @@ go run ./cmd/oaer compat local-tests --project testdata/local-tests/workflow --j
 go run ./cmd/oaer compat local-tests --project testdata/local-tests/flow --json
 go run ./cmd/oaer compat local-tests --check docs/fixtures/local-tests-corpus.json
 go run ./cmd/oaer compat ui-controllers --check docs/fixtures/ui-controller-discovery.json
+go run ./cmd/oaer compat post-parity --json --require-ready
 ```
 
 Exit criteria:
@@ -897,7 +906,7 @@ go run ./cmd/oaer compat local-tests --project testdata/local-tests/basic --json
 After all four lanes merged, the post-parity readiness inventory moved to:
 
 ```text
-filesScanned=51092 findings=0 testBlockingFindings=0 surfaces=0
+filesScanned=51107 findings=0 testBlockingFindings=0 surfaces=0
 ```
 
 The outcome is not "all Salesforce behavior is implemented"; it is a shift from

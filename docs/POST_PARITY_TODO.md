@@ -45,7 +45,7 @@ Current checked status:
   `pass=101 fail=0 unsupported=0 missing=0`.
 - The broader post-parity readiness inventory is green for the checked
   `example-projects` corpus. A May 6, 2026
-  `oaer compat post-parity --json` run reported 51,092 files scanned, 0
+  `oaer compat post-parity --json` run reported 51,107 files scanned, 0
   findings, 0 test-blocking findings, and 0 surfaces. This means the known
   scanner/test-readiness blockers for standard schema references, labels,
   static resources, content assets, endpoint metadata, custom metadata type
@@ -182,7 +182,7 @@ Current scanner top blockers from the broad post-parity inventory:
 
 | Rank | Blocker |
 | --- | --- |
-| 1 | None. The May 6, 2026 checked scan reports 0 findings, 0 test-blocking findings, and 0 surfaces across 51,092 files. |
+| 1 | None. The May 6, 2026 checked scan reports 0 findings, 0 test-blocking findings, and 0 surfaces across 51,107 files. |
 
 Recently cleared blocker families:
 
@@ -798,7 +798,7 @@ layers.
 - [ ] Add profile aggregation for post-parity surfaces.
 - [ ] Add DAP scope rendering for page parameters, `ApexPages` messages, Flow
   variables, cache state, and captured emails where practical.
-- [ ] Add post-parity trace fixtures with stable JSON output.
+- [x] Add post-parity trace fixtures with stable JSON output.
 
 ## 19. Local Test Compatibility Fixtures And Release Claims
 
@@ -816,7 +816,7 @@ with fixtures and dashboards.
   - [ ] Static-resource-and-content-asset-heavy.
   - [ ] Site/community-heavy.
   - [ ] Metadata-API-heavy.
-  - [ ] Named-credential/callout-heavy.
+  - [x] Named-credential/callout-heavy.
   - [ ] Email-template-heavy.
   - [ ] Files-and-attachments-heavy.
 - [x] Add a post-parity readiness command that reports:
@@ -831,8 +831,10 @@ with fixtures and dashboards.
   - [x] Legacy-project-test-ready.
   - [x] Declarative-automation-test-ready.
   - [x] Visualforce/Aura/LWC-controller-test-ready.
-- [ ] Add CI jobs that keep post-parity docs and dashboards in sync without
-  blocking MVP releases until the project opts in.
+- [x] Add CI jobs that keep post-parity docs and dashboards in sync without
+  blocking MVP release labeling. CI now runs the checked local-test corpus,
+  post-parity readiness gate, UI controller discovery baseline, and generated
+  stdlib coverage drift check.
 
 ## Part II: After Local Tests Pass
 

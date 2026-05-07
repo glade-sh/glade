@@ -2285,9 +2285,9 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		}
 		return Null, nil
 	case "Metadata.Operations.enqueueDeployment":
-		return vm.metadataEnqueueDeployment(args)
+		return vm.metadataEnqueueDeployment(args, result)
 	case "Metadata.Operations.checkDeployStatus":
-		return vm.metadataCheckDeployStatus(args)
+		return vm.metadataCheckDeployStatus(args, result)
 	case "Metadata.Operations.retrieve":
 		return vm.metadataRetrieve(args)
 	case "UserManagement.initSelfRegistration":
@@ -13255,7 +13255,7 @@ func metadataMetadataTypeValues(args []Value) (Value, error) {
 	return namedEnumValues("Metadata.MetadataType", metadataMetadataTypeNames, args)
 }
 
-func (vm *VM) metadataEnqueueDeployment(args []Value) (Value, error) {
+func (vm *VM) metadataEnqueueDeployment(args []Value, result *Result) (Value, error) {
 	if len(args) != 2 || args[0].Kind != ValueObject || args[0].Type != "Metadata.DeployContainer" {
 		return Null, fmt.Errorf("Metadata.Operations.enqueueDeployment expects DeployContainer and DeployCallback")
 	}
@@ -13266,6 +13266,11 @@ func (vm *VM) metadataEnqueueDeployment(args []Value) (Value, error) {
 	items := args[0].Fields["metadata"]
 	if items.Kind == ValueNull || (items.Kind == ValueList && len(items.List) == 0) {
 		vm.recordMetadataDeployment(deploymentID, nil)
+		appendTrace(result, "apex.metadata.deploy.enqueue", "apex.metadata", map[string]any{
+			"deploymentId": deploymentID,
+			"components":   0,
+			"success":      true,
+		})
 		return platformScalar("Id", deploymentID), nil
 	}
 	if items.Kind != ValueList {
@@ -13274,16 +13279,38 @@ func (vm *VM) metadataEnqueueDeployment(args []Value) (Value, error) {
 	if vm.Org == nil {
 		return Null, unsupportedCallError("Metadata.Operations.enqueueDeployment requires org storage for local metadata mutation")
 	}
+	originalOrg := vm.Org
+	candidateOrg := originalOrg.Clone()
+	vm.Org = &candidateOrg
 	for _, item := range items.List {
 		if err := vm.applyMetadataDeployment(item); err != nil {
-			return Null, err
+			vm.Org = originalOrg
+			var runtimeErr *RuntimeError
+			if errors.As(err, &runtimeErr) && runtimeErr.Type == "UnsupportedFeature" {
+				return Null, err
+			}
+			vm.recordMetadataDeploymentFailure(deploymentID, items.List, item, err)
+			appendTrace(result, "apex.metadata.deploy.enqueue", "apex.metadata", map[string]any{
+				"deploymentId": deploymentID,
+				"components":   len(items.List),
+				"success":      false,
+				"error":        err.Error(),
+			})
+			return platformScalar("Id", deploymentID), nil
 		}
 	}
+	*originalOrg = candidateOrg
+	vm.Org = originalOrg
 	vm.recordMetadataDeployment(deploymentID, items.List)
+	appendTrace(result, "apex.metadata.deploy.enqueue", "apex.metadata", map[string]any{
+		"deploymentId": deploymentID,
+		"components":   len(items.List),
+		"success":      true,
+	})
 	return platformScalar("Id", deploymentID), nil
 }
 
-func (vm *VM) metadataCheckDeployStatus(args []Value) (Value, error) {
+func (vm *VM) metadataCheckDeployStatus(args []Value, result *Result) (Value, error) {
 	if len(args) < 1 || len(args) > 2 || !metadataDeploymentIDValue(args[0]) {
 		return Null, fmt.Errorf("Metadata.Operations.checkDeployStatus expects deployment Id[, includeDetails]")
 	}
@@ -13305,15 +13332,21 @@ func (vm *VM) metadataCheckDeployStatus(args []Value) (Value, error) {
 	if vm.metadataDeploys == nil {
 		vm.metadataDeploys = make(map[string]Value)
 	}
-	result, ok := vm.metadataDeploys[deploymentID]
+	storedResult, ok := vm.metadataDeploys[deploymentID]
 	if !ok {
 		return Null, unsupportedCallError("Metadata.Operations.checkDeployStatus unknown local deployment " + deploymentID)
 	}
-	result = cloneMetadataDeployResult(result)
+	deployResult := cloneMetadataDeployResult(storedResult)
 	if !includeDetails {
-		result.Fields["details"] = Null
+		deployResult.Fields["details"] = Null
 	}
-	return result, nil
+	appendTrace(result, "apex.metadata.deploy.status", "apex.metadata", map[string]any{
+		"deploymentId":   deploymentID,
+		"includeDetails": includeDetails,
+		"success":        deployResult.Fields["success"].Bool,
+		"status":         deployResult.Fields["status"].Text,
+	})
+	return deployResult, nil
 }
 
 func metadataDeploymentIDValue(value Value) bool {
@@ -13325,6 +13358,13 @@ func (vm *VM) recordMetadataDeployment(deploymentID string, items []Value) {
 		vm.metadataDeploys = make(map[string]Value)
 	}
 	vm.metadataDeploys[deploymentID] = metadataDeployResultObject(deploymentID, items)
+}
+
+func (vm *VM) recordMetadataDeploymentFailure(deploymentID string, items []Value, failedItem Value, err error) {
+	if vm.metadataDeploys == nil {
+		vm.metadataDeploys = make(map[string]Value)
+	}
+	vm.metadataDeploys[deploymentID] = metadataDeployFailureResultObject(deploymentID, items, failedItem, err)
 }
 
 func (vm *VM) applyMetadataDeployment(item Value) error {
@@ -13964,6 +14004,24 @@ func metadataDeployResultObject(deploymentID string, items []Value) Value {
 	return result
 }
 
+func metadataDeployFailureResultObject(deploymentID string, items []Value, failedItem Value, err error) Value {
+	result := Object("Metadata.DeployResult")
+	result.Fields["id"] = platformScalar("Id", deploymentID)
+	result.Fields["status"] = metadataDeployStatusValue("FAILED")
+	result.Fields["success"] = Bool(false)
+	result.Fields["done"] = Bool(true)
+	result.Fields["numberComponentErrors"] = Int(1)
+	result.Fields["numberComponentsDeployed"] = Int(0)
+	result.Fields["numberComponentsTotal"] = Int(int64(len(items)))
+	result.Fields["numberTestErrors"] = Int(0)
+	result.Fields["numberTestsCompleted"] = Int(0)
+	result.Fields["checkOnly"] = Bool(false)
+	details := metadataDeployDetailsObject()
+	details.Fields["componentFailures"] = List(metadataDeployFailureMessage(failedItem, err))
+	result.Fields["details"] = details
+	return result
+}
+
 func metadataDeploySuccessMessage(item Value) Value {
 	message := Object("Metadata.DeployMessage")
 	fullName := metadataDeployItemFullName(item)
@@ -13972,6 +14030,21 @@ func metadataDeploySuccessMessage(item Value) Value {
 	message.Fields["componentType"] = String(metadataDeployItemComponentType(item))
 	message.Fields["success"] = Bool(true)
 	message.Fields["problem"] = Null
+	return message
+}
+
+func metadataDeployFailureMessage(item Value, err error) Value {
+	message := Object("Metadata.DeployMessage")
+	fullName := metadataDeployItemFullName(item)
+	message.Fields["fullName"] = String(fullName)
+	message.Fields["fileName"] = String(fullName)
+	message.Fields["componentType"] = String(metadataDeployItemComponentType(item))
+	message.Fields["success"] = Bool(false)
+	if err == nil {
+		message.Fields["problem"] = String("metadata deployment failed")
+	} else {
+		message.Fields["problem"] = String(err.Error())
+	}
 	return message
 }
 

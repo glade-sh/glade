@@ -1,0 +1,91 @@
+{
+  "target": "post-parity local-test trace surfaces",
+  "surfaces": [
+    {
+      "name": "flow",
+      "expectedEvents": [
+        {
+          "name": "apex.flow.rule",
+          "category": "apex.flow",
+          "args": {
+            "flow": "TraceStatus",
+            "matched": "true"
+          }
+        },
+        {
+          "name": "apex.flow.field_update",
+          "category": "apex.flow",
+          "args": {
+            "flow": "TraceStatus",
+            "field": "Status__c",
+            "value": "Flowed"
+          }
+        }
+      ]
+    },
+    {
+      "name": "visualforce",
+      "expectedEvents": [
+        {
+          "name": "apex.visualforce.current_page",
+          "category": "apex.visualforce"
+        },
+        {
+          "name": "apex.visualforce.action.invoke",
+          "category": "apex.visualforce",
+          "args": {
+            "className": "TraceController",
+            "methodName": "save"
+          }
+        },
+        {
+          "name": "apex.visualforce.action.complete",
+          "category": "apex.visualforce",
+          "args": {
+            "pageMessageCount": "1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "metadata-deploy",
+      "expectedEvents": [
+        {
+          "name": "apex.metadata.deploy.enqueue",
+          "category": "apex.metadata",
+          "args": {
+            "deploymentId": "0Af000000000001",
+            "components": "1",
+            "success": "true"
+          }
+        },
+        {
+          "name": "apex.metadata.deploy.status",
+          "category": "apex.metadata",
+          "args": {
+            "deploymentId": "0Af000000000001",
+            "includeDetails": "true",
+            "success": "true",
+            "status": "SUCCEEDED"
+          }
+        },
+        {
+          "name": "apex.statement.declare",
+          "category": "apex.statement",
+          "args": {
+            "name": "deploymentId",
+            "type": "Id"
+          }
+        },
+        {
+          "name": "apex.statement.declare",
+          "category": "apex.statement",
+          "args": {
+            "name": "deployStatus",
+            "type": "Metadata.DeployResult"
+          }
+        }
+      ]
+    }
+  ]
+}

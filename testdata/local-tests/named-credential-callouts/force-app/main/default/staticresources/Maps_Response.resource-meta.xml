@@ -1,0 +1,4 @@
+<StaticResource>
+  <cacheControl>Public</cacheControl>
+  <contentType>application/json</contentType>
+</StaticResource>

@@ -9,7 +9,7 @@ Compatibility status:
 - Checked example-project server support is green:
   `pass=101 fail=0 unsupported=0 missing=0`.
 - Checked example-project post-parity readiness inventory is green:
-  `filesScanned=51092 findings=0 testBlockingFindings=0 surfaces=0`.
+  `filesScanned=51107 findings=0 testBlockingFindings=0 surfaces=0`.
 - See [`COMPATIBILITY_DASHBOARD.md`](COMPATIBILITY_DASHBOARD.md) and
   [`KNOWN_GAPS.md`](KNOWN_GAPS.md) for generated status.
 
@@ -19,9 +19,13 @@ Release engineering:
 - Added release-readiness labels for server examples, MVP, Apex parity, legacy
   local tests, declarative automation, and Visualforce/Aura/LWC controller-test
   support.
-- Expanded the checked local-test corpus to 12 projects with a
-  `metadata-deploy` fixture covering local `Metadata.CustomObject` and
-  `Metadata.CustomField` deployment.
+- Added CI release-hardening gates for the checked local-test corpus,
+  post-parity readiness, UI controller discovery, and generated stdlib coverage
+  drift.
+- Expanded the checked local-test corpus to 13 projects with `metadata-deploy`
+  and `named-credential-callouts` fixtures covering local `Metadata.CustomObject`
+  and `Metadata.CustomField` deployment plus named-credential/remote-site
+  callout matching.
 - Added Flow routed-decision/default-branch execution, nested decision target
   traversal, variable-backed decision criteria, richer Flow assignment traces,
   and comparison criteria for local declarative automation.
@@ -29,6 +33,10 @@ Release engineering:
   `save`, `quickSave`, `delete`, `view`, `edit`, `cancel`, and `reset`.
 - Added local Apex Metadata API deployment of custom objects and custom fields,
   including schema mutation and deploy-result component success details.
+- Added failed `Metadata.DeployResult` records for invalid supported metadata
+  deployments without partial org schema mutation.
+- Added a stable post-parity trace fixture for Flow, Visualforce controller, and
+  Metadata deploy trace events.
 - Added `SHA256SUMS.txt` checksum generation for release artifacts.
 - Added manual, CI, and future Homebrew installation guidance.
 - Added editor integration docs with VS Code tasks, debug launch examples, LSP
