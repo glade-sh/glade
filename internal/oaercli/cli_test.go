@@ -717,6 +717,98 @@ Adds metadata.
 	}
 }
 
+func TestRunCompatSalesforceCoverageOutputAndCheck(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "apex_methods_system_string.md"), `# String Class
+
+## String Methods
+### trim()
+Removes leading and trailing white space.
+`)
+	writeTestFile(t, filepath.Join(root, "apex_connectapi_output_FeedElement.md"), `# FeedElement
+
+## Properties
+### body
+The feed body.
+`)
+	reportPath := filepath.Join(t.TempDir(), "salesforce-coverage.md")
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "salesforce-coverage", "--source", root, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("salesforce coverage json exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	for _, want := range []string{
+		`"schemaVersion": 1`,
+		`"area": "Core stdlib"`,
+		`"area": "Product namespaces"`,
+		`"supported": 1`,
+	} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("salesforce coverage stdout missing %q: %q", want, stdout.String())
+		}
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "salesforce-coverage", "--source", root, "--output", reportPath}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("salesforce coverage output exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	content, err := os.ReadFile(reportPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(content), "# Salesforce Coverage Manifest") {
+		t.Fatalf("report file = %q", string(content))
+	}
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "salesforce-coverage", "--source", root, "--check", reportPath}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("salesforce coverage check exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "up to date") {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
+func TestRunCompatSalesforceCoverageWithToolingSymbols(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "apex_class_System_Managed.md"), `# Managed Class
+
+## Methods
+### doIt()
+Does it.
+`)
+	dir := t.TempDir()
+	symbolsPath := filepath.Join(dir, "symbols.json")
+	writeTestFile(t, symbolsPath, `{
+  "records": [{
+    "Name": "Managed",
+    "NamespacePrefix": "",
+    "SymbolTable": {
+      "methods": [{"name": "doIt"}]
+    }
+  }]
+}`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "salesforce-coverage", "--source", root, "--tooling-symbols", symbolsPath, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("salesforce coverage tooling symbols exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	for _, want := range []string{
+		`"symbolTableClasses": 1`,
+		`"symbolTableMethods": 1`,
+		`"catalogSystemEntriesInTooling": 2`,
+	} {
+		if !strings.Contains(stdout.String(), want) {
+			t.Fatalf("salesforce coverage stdout missing %q: %q", want, stdout.String())
+		}
+	}
+}
+
 func TestRunCompatEvidenceJSON(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "apex_methods_system_string.md"), `# String Class

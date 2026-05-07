@@ -1440,7 +1440,7 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 		return err
 	}
 	if len(args) == 0 {
-		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | local-tests [--project <root>] [--class <name>] [--method <name>] [--blockers-only] [--top-failures <n>] [--timeout <ms>] [--profile-on-timeout] [--json] [--check <path>] | ui-controllers [--project <root>] [--json|--check <path>] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | product-namespaces --catalog <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]")
+		return errors.New(compatUsage())
 	}
 	switch args[0] {
 	case "matrix", "mvp":
@@ -1465,6 +1465,8 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 		return runCompatDocsInventory(args[1:], w)
 	case "catalog":
 		return runCompatCatalog(args[1:], w)
+	case "salesforce-coverage":
+		return runCompatSalesforceCoverage(args[1:], w)
 	case "product-namespaces":
 		return runCompatProductNamespaces(args[1:], w)
 	case "evidence":
@@ -1474,7 +1476,7 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 			return errors.New("usage: oaer compat validate|run <fixture.json...>")
 		}
 	default:
-		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | local-tests [--project <root>] [--class <name>] [--method <name>] [--blockers-only] [--top-failures <n>] [--timeout <ms>] [--profile-on-timeout] [--json] [--check <path>] | ui-controllers [--project <root>] [--json|--check <path>] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | product-namespaces --catalog <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]")
+		return errors.New(compatUsage())
 	}
 
 	for _, path := range args[1:] {
@@ -1496,6 +1498,10 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 		fmt.Fprintf(w, "%s: ok\n", path)
 	}
 	return nil
+}
+
+func compatUsage() string {
+	return "usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | local-tests [--project <root>] [--class <name>] [--method <name>] [--blockers-only] [--top-failures <n>] [--timeout <ms>] [--profile-on-timeout] [--json] [--check <path>] | ui-controllers [--project <root>] [--json|--check <path>] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | salesforce-coverage [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--tooling-symbols <path>] [--json|--output <path>|--check <path>] | product-namespaces --catalog <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]"
 }
 
 type postParityReadiness struct {
@@ -2454,6 +2460,182 @@ func runCompatCatalog(args []string, w io.Writer) error {
 		writeCatalogSummary(w, catalog)
 		return nil
 	}
+}
+
+func runCompatSalesforceCoverage(args []string, w io.Writer) error {
+	source := ""
+	inventoryPath := ""
+	catalogPath := ""
+	toolingCompletionsPath := ""
+	toolingSymbolsPath := ""
+	outputPath := ""
+	checkPath := ""
+	jsonOut := false
+	usage := "usage: oaer compat salesforce-coverage [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--tooling-symbols <path>] [--json|--output <path>|--check <path>]"
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--source":
+			i++
+			if i >= len(args) {
+				return errors.New(usage)
+			}
+			source = args[i]
+		case "--inventory":
+			i++
+			if i >= len(args) {
+				return errors.New(usage)
+			}
+			inventoryPath = args[i]
+		case "--catalog":
+			i++
+			if i >= len(args) {
+				return errors.New(usage)
+			}
+			catalogPath = args[i]
+		case "--tooling-completions":
+			i++
+			if i >= len(args) {
+				return errors.New(usage)
+			}
+			toolingCompletionsPath = args[i]
+		case "--tooling-symbols":
+			i++
+			if i >= len(args) {
+				return errors.New(usage)
+			}
+			toolingSymbolsPath = args[i]
+		case "--json":
+			jsonOut = true
+		case "--output":
+			i++
+			if i >= len(args) {
+				return errors.New(usage)
+			}
+			outputPath = args[i]
+		case "--check":
+			i++
+			if i >= len(args) {
+				return errors.New(usage)
+			}
+			checkPath = args[i]
+		default:
+			return fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	sources := 0
+	for _, set := range []bool{source != "", inventoryPath != "", catalogPath != ""} {
+		if set {
+			sources++
+		}
+	}
+	if sources > 1 {
+		return errors.New("use only one of --source, --inventory, or --catalog")
+	}
+	if sources == 0 {
+		source = defaultSalesforceDocsSource()
+	}
+	requested := 0
+	for _, set := range []bool{jsonOut, outputPath != "", checkPath != ""} {
+		if set {
+			requested++
+		}
+	}
+	if requested > 1 {
+		return errors.New("use only one of --json, --output, or --check")
+	}
+
+	catalog, err := loadSalesforceCoverageCatalog(source, inventoryPath, catalogPath)
+	if err != nil {
+		return err
+	}
+	var tooling *capability.ToolingCompletions
+	var apexClassSymbols *capability.ToolingApexClassSymbols
+	if toolingCompletionsPath != "" {
+		completions, err := capability.ReadToolingCompletions(toolingCompletionsPath)
+		if err != nil {
+			return err
+		}
+		tooling = &completions
+	}
+	if toolingSymbolsPath != "" {
+		symbols, err := capability.ReadToolingApexClassSymbols(toolingSymbolsPath)
+		if err != nil {
+			return err
+		}
+		apexClassSymbols = &symbols
+	}
+	toolingSource := toolingCompletionsPath
+	if toolingSymbolsPath != "" {
+		if toolingSource != "" {
+			toolingSource += ", "
+		}
+		toolingSource += toolingSymbolsPath
+	}
+	toolingSource = displayToolingSource(toolingSource)
+	report := capability.BuildSalesforceCoverageReportWithTooling(catalog, tooling, apexClassSymbols, toolingSource)
+	switch {
+	case jsonOut:
+		return capability.WriteSalesforceCoverageJSON(w, report)
+	case outputPath != "":
+		var buf strings.Builder
+		if err := capability.WriteSalesforceCoverageMarkdown(&buf, report); err != nil {
+			return err
+		}
+		return os.WriteFile(outputPath, []byte(buf.String()), 0o644)
+	case checkPath != "":
+		var buf strings.Builder
+		if err := capability.WriteSalesforceCoverageMarkdown(&buf, report); err != nil {
+			return err
+		}
+		existing, err := os.ReadFile(checkPath)
+		if err != nil {
+			return err
+		}
+		if string(existing) != buf.String() {
+			return fmt.Errorf("Salesforce coverage drift: run `oaer compat salesforce-coverage --output %s`", checkPath)
+		}
+		fmt.Fprintf(w, "%s: up to date\n", checkPath)
+		return nil
+	default:
+		return capability.WriteSalesforceCoverageText(w, report)
+	}
+}
+
+func displayToolingSource(source string) string {
+	if source == "" {
+		return ""
+	}
+	parts := strings.Split(source, ", ")
+	for i, part := range parts {
+		if part == "" {
+			continue
+		}
+		parts[i] = filepath.Base(part)
+	}
+	return strings.Join(parts, ", ")
+}
+
+func loadSalesforceCoverageCatalog(source, inventoryPath, catalogPath string) (capability.Catalog, error) {
+	switch {
+	case catalogPath != "":
+		return capability.ReadCatalog(catalogPath)
+	case inventoryPath != "":
+		inv, err := apexdocs.ReadInventory(inventoryPath)
+		if err != nil {
+			return capability.Catalog{}, err
+		}
+		return capability.BuildCatalog(inv), nil
+	default:
+		inv, err := apexdocs.BuildInventory(source)
+		if err != nil {
+			return capability.Catalog{}, err
+		}
+		return capability.BuildCatalog(inv), nil
+	}
+}
+
+func defaultSalesforceDocsSource() string {
+	return "/Users/matt/Downloads/Kimi_Agent_Salesforce Docs Scraper (1)/salesforce-docs"
 }
 
 func writeCatalogSummary(w io.Writer, catalog capability.Catalog) {

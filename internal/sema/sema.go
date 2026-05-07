@@ -12,6 +12,7 @@ import (
 	"github.com/open-aer/oaer/internal/diagnostic"
 	"github.com/open-aer/oaer/internal/ir"
 	"github.com/open-aer/oaer/internal/soql"
+	"github.com/open-aer/oaer/internal/storage"
 	"github.com/open-aer/oaer/internal/typesys"
 	"github.com/open-aer/oaer/internal/vm"
 )
@@ -61,6 +62,9 @@ func NewAnalyzer() *Analyzer {
 	for _, name := range vm.CommonSObjectTypeNames() {
 		a.addKnown(name, TypePlatform, "")
 	}
+	for _, name := range storage.KnownStandardObjectNames() {
+		a.addKnown(name, TypePlatform, "")
+	}
 	return a
 }
 
@@ -70,6 +74,7 @@ func Analyze(index typesys.Index) Result {
 
 func (a *Analyzer) Analyze(index typesys.Index) (result Result) {
 	a.namespace = index.Project.Namespace
+	index = enrichIndexWithStandardSymbols(index)
 	result = Result{
 		Project:     index.Project,
 		Diagnostics: append([]diagnostic.Diagnostic{}, index.Diagnostics...),
@@ -119,13 +124,50 @@ func (a *Analyzer) Analyze(index typesys.Index) (result Result) {
 	result.Diagnostics = append(result.Diagnostics, a.checkSchemaReferences(index)...)
 
 	result.Summary = Summary{
-		Types:       len(index.Types),
+		Types:       countProjectTypes(index.Types),
 		Triggers:    len(index.Triggers),
 		Objects:     len(index.Objects),
 		Diagnostics: len(result.Diagnostics),
 	}
 	result.Types = a.exportKnownTypes()
 	return result
+}
+
+func countProjectTypes(types []typesys.TypeSymbol) int {
+	count := 0
+	for _, typ := range types {
+		if !typ.Dependency {
+			count++
+		}
+	}
+	return count
+}
+
+func enrichIndexWithStandardSymbols(index typesys.Index) typesys.Index {
+	seen := make(map[string]bool, len(index.Types))
+	localNames := make(map[string]bool, len(index.Types))
+	for _, typ := range index.Types {
+		seen[semaTypeKey(typ.Namespace, typ.Name)] = true
+		localNames[normalizeName(typ.Name)] = true
+	}
+	for _, typ := range typesys.StandardPlatformSymbols() {
+		if seen[semaTypeKey(typ.Namespace, typ.Name)] {
+			continue
+		}
+		if typ.Namespace != "" && localNames[normalizeName(typ.Name)] {
+			continue
+		}
+		seen[semaTypeKey(typ.Namespace, typ.Name)] = true
+		index.Types = append(index.Types, typ)
+	}
+	return index
+}
+
+func semaTypeKey(namespace, name string) string {
+	if namespace == "" {
+		return normalizeName(name)
+	}
+	return normalizeName(namespace + "." + name)
 }
 
 func (r Result) HasErrors() bool {
@@ -755,7 +797,9 @@ func buildTypeMembers(index typesys.Index) map[string]typeMembers {
 				}
 			}
 		}
-		out[normalizeName(typ.Name)] = members
+		if _, exists := out[normalizeName(typ.Name)]; !exists {
+			out[normalizeName(typ.Name)] = members
+		}
 		if typ.Namespace != "" {
 			out[normalizeName(typ.Namespace+"."+typ.Name)] = members
 		}
@@ -999,6 +1043,11 @@ func semaResolveField(model map[string]typeMembers, typeName, fieldName string, 
 		return field, true
 	}
 	return resolvedMember{}, false
+}
+
+func semaLooksLikeSchemaTokenPath(field string) bool {
+	parts := strings.Split(field, ".")
+	return len(parts) >= 2 && strings.EqualFold(parts[1], "SObjectType")
 }
 
 func semaResolveFieldPath(model map[string]typeMembers, receiverType, fieldPath string) (resolvedMember, bool) {
@@ -1921,6 +1970,9 @@ func (a *Analyzer) irVariableDiagnostic(typ typesys.TypeSymbol, member typesys.M
 	if _, ok := model[normalizeName(receiverType+"."+field)]; ok {
 		return diagnostic.Diagnostic{}, false
 	}
+	if strings.EqualFold(receiverType, "Schema") && semaLooksLikeSchemaTokenPath(field) {
+		return diagnostic.Diagnostic{}, false
+	}
 	if target, ok := semaResolveNestedStaticField(model, receiverType, field); ok {
 		if visibilityDiagnostic, blocked := checkSemaMemberAccess(typ, member, field, target, start, start+max(1, len(name)), source, model); blocked {
 			return visibilityDiagnostic, true
@@ -1931,6 +1983,9 @@ func (a *Analyzer) irVariableDiagnostic(typ typesys.TypeSymbol, member typesys.M
 		if visibilityDiagnostic, blocked := checkSemaMemberAccess(typ, member, field, target, start, start+max(1, len(name)), source, model); blocked {
 			return visibilityDiagnostic, true
 		}
+		return diagnostic.Diagnostic{}, false
+	}
+	if semaDependencyType(model, receiverType) {
 		return diagnostic.Diagnostic{}, false
 	}
 	return diagnostic.Diagnostic{
@@ -2704,6 +2759,12 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 					diagnostics = append(diagnostics, a.diagnoseMethodCall(typ, member, callee, resolveMemberMethods(model, receiverType, method), args, haveArgs, "instance", bodyOffset+match[2], bodyOffset+match[3], source, scope, model)...)
 					continue
 				}
+				if _, scoped := scope[normalizeName(receiverExpr)]; !scoped {
+					if classMembers, ok := model[normalizeName(receiverExpr)]; ok {
+						diagnostics = append(diagnostics, a.diagnoseMethodCall(typ, member, callee, resolveMemberMethods(model, classMembers.name, method), args, haveArgs, "class", bodyOffset+match[2], bodyOffset+match[3], source, scope, model)...)
+						continue
+					}
+				}
 			}
 			receiver, method, ok := strings.Cut(callee, ".")
 			if !ok || method == "" {
@@ -2903,6 +2964,9 @@ func constructorDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol, 
 
 func (a *Analyzer) diagnoseMethodCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, callee string, candidates []resolvedMember, args []semaArg, haveArgs bool, receiverMode string, start, end int, source string, scope map[string]string, model map[string]typeMembers) []diagnostic.Diagnostic {
 	if len(candidates) == 0 {
+		if receiverMode != "implicit" && semaCalleeDependencyRoot(callee, scope, model) {
+			return nil
+		}
 		return []diagnostic.Diagnostic{unknownCallDiagnostic(typ, member, callee, start, end, source)}
 	}
 	if !haveArgs {
@@ -2923,6 +2987,9 @@ func (a *Analyzer) diagnoseMethodCall(typ typesys.TypeSymbol, member typesys.Mem
 	} else if ambiguous {
 		return []diagnostic.Diagnostic{ambiguousCallDiagnostic(typ, member, callee, len(args), start, end, source)}
 	}
+	if receiverMode != "implicit" && semaCalleeDependencyRoot(callee, scope, model) {
+		return nil
+	}
 	return []diagnostic.Diagnostic{{
 		Severity: diagnostic.Error,
 		Code:     "OAERSEMA009",
@@ -2930,6 +2997,27 @@ func (a *Analyzer) diagnoseMethodCall(typ typesys.TypeSymbol, member typesys.Mem
 		File:     typ.File,
 		Range:    semaRange(source, start, end),
 	}}
+}
+
+func semaCalleeDependencyRoot(callee string, scope map[string]string, model map[string]typeMembers) bool {
+	root, _, ok := strings.Cut(strings.TrimSpace(callee), ".")
+	if !ok || root == "" {
+		return false
+	}
+	if typ, ok := scope[normalizeName(root)]; ok {
+		return semaDependencyType(model, typ)
+	}
+	return semaDependencyType(model, root)
+}
+
+func semaDependencyType(model map[string]typeMembers, typeName string) bool {
+	if typeName == "" {
+		return false
+	}
+	if members, ok := model[normalizeName(typeName)]; ok {
+		return members.dependency
+	}
+	return false
 }
 
 func checkSemaStaticAccess(from typesys.TypeSymbol, context typesys.MemberSymbol, callee string, target resolvedMember, receiverMode string, start, end int, source string) (diagnostic.Diagnostic, bool) {

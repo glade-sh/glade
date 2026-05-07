@@ -180,6 +180,121 @@ func TestBuildProductNamespaceReport(t *testing.T) {
 	}
 }
 
+func TestBuildSalesforceCoverageReport(t *testing.T) {
+	catalog := Catalog{
+		SchemaVersion:   CatalogSchemaVersion,
+		SourceDocuments: 2,
+		SourceMembers:   2,
+		Entries: []CatalogEntry{{
+			ID:         "string/trim#method",
+			Area:       "Core stdlib",
+			TypeName:   "String",
+			MemberName: "trim",
+			Symbol:     "String.trim",
+			Kind:       "method",
+			Target:     TargetExecutableParity,
+			Status:     StatusSupported,
+			Owner:      "internal/vm",
+			DocsSource: "apex_methods_system_string.md",
+		}, {
+			ID:         "connectapi/feedelement/body#property",
+			Area:       "Product namespaces",
+			Namespace:  "ConnectApi",
+			TypeName:   "FeedElement",
+			MemberName: "body",
+			Symbol:     "ConnectApi.FeedElement.body",
+			Kind:       "property",
+			Target:     TargetTypedStub,
+			Status:     StatusUnknown,
+			Owner:      "generated declarations",
+			DocsSource: "apex_connectapi_output_FeedElement.md",
+		}},
+	}
+
+	report := BuildSalesforceCoverageReport(catalog)
+	if report.SchemaVersion != SalesforceCoverageSchemaVersion || report.SourceDocuments != 2 || report.Entries != 2 {
+		t.Fatalf("report = %#v", report)
+	}
+	if report.Totals.Supported != 1 || report.Totals.Unknown != 1 {
+		t.Fatalf("totals = %#v", report.Totals)
+	}
+	if len(report.Areas) != 2 {
+		t.Fatalf("areas = %#v", report.Areas)
+	}
+	var out bytes.Buffer
+	if err := WriteSalesforceCoverageMarkdown(&out, report); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out.String(), "# Salesforce Coverage Manifest") || !strings.Contains(out.String(), "Core stdlib") {
+		t.Fatalf("markdown = %q", out.String())
+	}
+}
+
+func TestBuildSalesforceToolingAlignmentNormalizesCompletionsAndSymbolTables(t *testing.T) {
+	catalog := Catalog{
+		SchemaVersion: CatalogSchemaVersion,
+		Entries: []CatalogEntry{{
+			ID:       "list/class",
+			Area:     "Core stdlib",
+			TypeName: "List",
+			Symbol:   "List",
+			Kind:     "class",
+			Target:   TargetExecutableParity,
+			Status:   StatusUnknown,
+		}, {
+			ID:         "connectapi/chatterfeeds/postfeedelement",
+			Area:       "Product namespaces",
+			Namespace:  "ConnectApi",
+			TypeName:   "ChatterFeeds",
+			MemberName: "postFeedElement",
+			Symbol:     "ConnectApi.ChatterFeeds.postFeedElement",
+			Kind:       "method",
+			Target:     TargetLocalModel,
+			Status:     StatusUnknown,
+		}, {
+			ID:         "pkg/managed/doit",
+			Area:       "Product namespaces",
+			Namespace:  "pkg",
+			TypeName:   "Managed",
+			MemberName: "doIt",
+			Symbol:     "pkg.Managed.doIt",
+			Kind:       "method",
+			Target:     TargetLocalModel,
+			Status:     StatusUnknown,
+		}},
+	}
+	completions := ToolingCompletions{PublicDeclarations: map[string]map[string]ToolingClassDecl{
+		"System": {
+			"LIST":          {},
+			"CallException": {},
+		},
+		"ConnectApi": {},
+	}}
+	NormalizeToolingCompletions(&completions)
+	symbols := ToolingApexClassSymbols{Records: []ToolingApexClassRecord{{
+		Name:            "Managed",
+		NamespacePrefix: "pkg",
+		SymbolTable: &ToolingSymbolTable{
+			Methods: []ToolingSymbolMethod{{Name: "doIt"}},
+			InnerClasses: []ToolingSymbolTable{{
+				Name:       "Nested",
+				Properties: []ToolingSymbolProperty{{Name: "label", Type: "String"}},
+			}},
+		},
+	}}}
+
+	alignment := BuildSalesforceToolingAlignment(catalog, &completions, &symbols)
+	if alignment.SystemDefaultNamespaceClasses != 2 || alignment.Constructors != 4 {
+		t.Fatalf("system alignment = %#v", alignment)
+	}
+	if alignment.SymbolTableClasses != 2 || alignment.SymbolTableMethods != 1 || alignment.SymbolTableProperties != 1 {
+		t.Fatalf("symbol table alignment = %#v", alignment)
+	}
+	if alignment.CatalogSystemEntriesInTooling != 3 || alignment.CatalogSystemEntriesMissing != 0 {
+		t.Fatalf("catalog alignment = %#v", alignment)
+	}
+}
+
 func findCatalogEntry(t *testing.T, catalog Catalog, symbol string) CatalogEntry {
 	t.Helper()
 	for _, entry := range catalog.Entries {
