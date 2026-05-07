@@ -670,6 +670,7 @@ Adds metadata.
 	inventoryPath := filepath.Join(dir, "inventory.json")
 	catalogPath := filepath.Join(dir, "catalog.json")
 	reportPath := filepath.Join(dir, "product-namespaces.json")
+	markdownPath := filepath.Join(dir, "product-namespaces.md")
 
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"compat", "docs-inventory", "--source", root, "--output", inventoryPath}, &stdout, &stderr)
@@ -714,6 +715,27 @@ Adds metadata.
 	}
 	if !strings.Contains(stdout.String(), "up to date") {
 		t.Fatalf("stdout = %q", stdout.String())
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "product-namespaces", "--source", root, "--output", markdownPath}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("product namespaces markdown output exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	content, err := os.ReadFile(markdownPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(content), "# Product Namespace Coverage") || !strings.Contains(string(content), "| ConnectApi | `typed-stub` | `unknown` |") {
+		t.Fatalf("product namespaces markdown = %q", string(content))
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "product-namespaces", "--inventory", inventoryPath, "--check", markdownPath}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("product namespaces markdown check exit code = %d, want 0; stderr=%q", code, stderr.String())
 	}
 }
 

@@ -57,6 +57,7 @@ reviewing broad typed-stub coverage:
 oaer compat docs-inventory --source /path/to/salesforce-docs/apex --output inventory.json
 oaer compat catalog --inventory inventory.json --output catalog.json
 oaer compat product-namespaces --catalog catalog.json --json
+oaer compat product-namespaces --source /path/to/salesforce-docs/apex --output docs/generated/PRODUCT_NAMESPACE_COVERAGE.md
 ```
 
 Use a release artifact:

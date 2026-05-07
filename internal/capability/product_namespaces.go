@@ -142,6 +142,45 @@ func WriteProductNamespaceJSON(w io.Writer, report ProductNamespaceReport) error
 	return enc.Encode(report)
 }
 
+func WriteProductNamespaceMarkdown(w io.Writer, report ProductNamespaceReport) error {
+	if _, err := fmt.Fprintln(w, "# Product Namespace Coverage"); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(w, "\nGenerated from the Salesforce Apex docs inventory and capability catalog."); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(w, "\n- Namespaces: %d\n", report.Totals.Namespaces); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(w, "- Types: %d\n", report.Totals.Types); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(w, "- Members: %d\n", report.Totals.Members); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(w, "- Entries: %d\n", report.Totals.Entries); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(w, "- Input DTO types: %d\n", report.Totals.Inputs); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(w, "- Output DTO types: %d\n", report.Totals.Outputs); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(w, "\n| Namespace | Target | Status | Types | Members | Entries | Inputs | Outputs |"); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(w, "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: |"); err != nil {
+		return err
+	}
+	for _, ns := range report.Namespaces {
+		if _, err := fmt.Fprintf(w, "| %s | `%s` | `%s` | %d | %d | %d | %d | %d |\n", ns.Namespace, ns.Target, ns.Status, ns.TypeCount, ns.MemberCount, ns.EntryCount, ns.InputCount, ns.OutputCount); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func WriteProductNamespaceText(w io.Writer, report ProductNamespaceReport) error {
 	fmt.Fprintf(w, "schemaVersion: %d\n", report.SchemaVersion)
 	fmt.Fprintf(w, "namespaces: %d\n", report.Totals.Namespaces)
