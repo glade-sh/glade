@@ -762,6 +762,26 @@ The feed body.
 	if !strings.Contains(string(content), "# Salesforce Coverage Manifest") {
 		t.Fatalf("report file = %q", string(content))
 	}
+	jsonReportPath := filepath.Join(t.TempDir(), "salesforce-coverage.json")
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "salesforce-coverage", "--source", root, "--output", jsonReportPath}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("salesforce coverage json output exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	jsonContent, err := os.ReadFile(jsonReportPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(jsonContent), `"schemaVersion": 1`) || !strings.Contains(string(jsonContent), `"areas"`) {
+		t.Fatalf("json report file = %q", string(jsonContent))
+	}
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "salesforce-coverage", "--source", root, "--check", jsonReportPath}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("salesforce coverage json check exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
 	stdout.Reset()
 	stderr.Reset()
 	code = Run(context.Background(), []string{"compat", "salesforce-coverage", "--source", root, "--check", reportPath}, &stdout, &stderr)

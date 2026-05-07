@@ -2578,13 +2578,13 @@ func runCompatSalesforceCoverage(args []string, w io.Writer) error {
 		return capability.WriteSalesforceCoverageJSON(w, report)
 	case outputPath != "":
 		var buf strings.Builder
-		if err := capability.WriteSalesforceCoverageMarkdown(&buf, report); err != nil {
+		if err := writeSalesforceCoverageOutput(&buf, report, outputPath); err != nil {
 			return err
 		}
 		return os.WriteFile(outputPath, []byte(buf.String()), 0o644)
 	case checkPath != "":
 		var buf strings.Builder
-		if err := capability.WriteSalesforceCoverageMarkdown(&buf, report); err != nil {
+		if err := writeSalesforceCoverageOutput(&buf, report, checkPath); err != nil {
 			return err
 		}
 		existing, err := os.ReadFile(checkPath)
@@ -2599,6 +2599,13 @@ func runCompatSalesforceCoverage(args []string, w io.Writer) error {
 	default:
 		return capability.WriteSalesforceCoverageText(w, report)
 	}
+}
+
+func writeSalesforceCoverageOutput(w io.Writer, report capability.SalesforceCoverageReport, path string) error {
+	if strings.EqualFold(filepath.Ext(path), ".json") {
+		return capability.WriteSalesforceCoverageJSON(w, report)
+	}
+	return capability.WriteSalesforceCoverageMarkdown(w, report)
 }
 
 func displayToolingSource(source string) string {
