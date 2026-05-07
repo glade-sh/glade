@@ -82,6 +82,7 @@ type VM struct {
 	restRequest      Value
 	restResponse     Value
 	serverBaseURL    string
+	metadataDeploys  map[string]Value
 	debugHooks       DebugHooks
 	hasDebugHooks    bool
 	ctx              context.Context
@@ -236,6 +237,7 @@ func New(stdout io.Writer) *VM {
 		emailSavepoints: make(map[string][]CapturedEmail),
 		savepointOrder:  make(map[string]int),
 		platformCache:   make(map[string]map[string]cacheEntry),
+		metadataDeploys: make(map[string]Value),
 		ctx:             context.Background(),
 		activeSetters:   make(map[string]int),
 		staticInitState: make(map[string]staticInitState),
@@ -423,6 +425,9 @@ func (vm *VM) newDMLEngine(result *Result) dml.Engine {
 	}
 	engine.WorkflowEmailer = func(alert storage.WorkflowEmailAlert, record storage.Record) error {
 		return vm.captureWorkflowEmail(alert, record, result)
+	}
+	engine.AutomationTracer = func(name string, args map[string]any) {
+		appendTrace(result, name, "apex.flow", args)
 	}
 	return engine
 }
@@ -2281,6 +2286,8 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		return Null, nil
 	case "Metadata.Operations.enqueueDeployment":
 		return vm.metadataEnqueueDeployment(args)
+	case "Metadata.Operations.checkDeployStatus":
+		return vm.metadataCheckDeployStatus(args)
 	case "Metadata.Operations.retrieve":
 		return vm.metadataRetrieve(args)
 	case "UserManagement.initSelfRegistration":
@@ -9075,7 +9082,7 @@ func isBuiltinTypeName(name string) bool {
 		return true
 	}
 	switch name {
-	case "Object", "String", "Boolean", "Integer", "Long", "Decimal", "Double", "Date", "Datetime", "Time", "TimeZone", "Blob", "Id", "Type", "URL", "PageReference", "SelectOption", "LoggingLevel", "ApexPages.Severity", "ApexPages.StandardController", "ApexPages.StandardSetController", "RestContext", "RestRequest", "RestResponse", "Callable", "StubProvider", "Auth.JWT", "ConnectApi.UserSettings", "ConnectApi.TimeZone", "Metadata.Metadata", "Metadata.MetadataType", "Metadata.DeployContainer", "Metadata.CustomMetadata", "Metadata.CustomMetadataValue", "Metadata.DeployCallback", "Metadata.DeployCallBack", "Metadata.DeployResult", "Metadata.DeployStatus", "Metadata.DeployDetails", "Metadata.DeployMessage", "Metadata.DeployCallbackContext":
+	case "Object", "String", "Boolean", "Integer", "Long", "Decimal", "Double", "Date", "Datetime", "Time", "TimeZone", "Blob", "Id", "Type", "URL", "PageReference", "SelectOption", "LoggingLevel", "ApexPages.Severity", "ApexPages.StandardController", "ApexPages.StandardSetController", "RestContext", "RestRequest", "RestResponse", "Callable", "StubProvider", "Auth.JWT", "ConnectApi.UserSettings", "ConnectApi.TimeZone", "Metadata.Metadata", "Metadata.MetadataType", "Metadata.DeployContainer", "Metadata.CustomMetadata", "Metadata.CustomMetadataValue", "Metadata.DeployCallback", "Metadata.DeployCallBack", "Metadata.DeployResult", "Metadata.DeployStatus", "Metadata.DeployDetails", "Metadata.DeployMessage", "Metadata.DeployCallbackContext", "Metadata.AsyncResult":
 		return true
 	default:
 		return false
@@ -10111,6 +10118,15 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 			context.Fields[field] = value
 		}
 		return context, nil
+	case "Metadata.AsyncResult":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Metadata.AsyncResult constructor expects 0 arguments")
+		}
+		result := metadataAsyncResultObject("0Af000000000001", true, "Succeeded", "")
+		for field, value := range namedArgs {
+			result.Fields[field] = value
+		}
+		return result, nil
 	case "SelectOption":
 		if len(args) < 2 || len(args) > 4 || len(namedArgs) != 0 {
 			return Null, fmt.Errorf("SelectOption constructor expects value, label[, disabled[, escapeItem]]")
@@ -13228,9 +13244,11 @@ func (vm *VM) metadataEnqueueDeployment(args []Value) (Value, error) {
 	if args[1].Kind != ValueNull {
 		return Null, unsupportedCallError("Metadata.Operations.enqueueDeployment deploy callback invocation")
 	}
+	deploymentID := "0Af000000000001"
 	items := args[0].Fields["metadata"]
 	if items.Kind == ValueNull || (items.Kind == ValueList && len(items.List) == 0) {
-		return platformScalar("Id", "0Af000000000001"), nil
+		vm.recordMetadataDeployment(deploymentID, nil)
+		return platformScalar("Id", deploymentID), nil
 	}
 	if items.Kind != ValueList {
 		return Null, fmt.Errorf("Metadata.DeployContainer.metadata must be a list")
@@ -13243,7 +13261,44 @@ func (vm *VM) metadataEnqueueDeployment(args []Value) (Value, error) {
 			return Null, err
 		}
 	}
-	return platformScalar("Id", "0Af000000000001"), nil
+	vm.recordMetadataDeployment(deploymentID, items.List)
+	return platformScalar("Id", deploymentID), nil
+}
+
+func (vm *VM) metadataCheckDeployStatus(args []Value) (Value, error) {
+	if len(args) < 1 || len(args) > 2 || args[0].Kind != ValueObject || args[0].Type != "Id" {
+		return Null, fmt.Errorf("Metadata.Operations.checkDeployStatus expects deployment Id[, includeDetails]")
+	}
+	includeDetails := false
+	if len(args) == 2 {
+		if args[1].Kind != ValueBool {
+			return Null, fmt.Errorf("Metadata.Operations.checkDeployStatus includeDetails expects Boolean")
+		}
+		includeDetails = args[1].Bool
+	}
+	deploymentID, err := platformScalarText(args[0], "Id")
+	if err != nil {
+		return Null, err
+	}
+	if vm.metadataDeploys == nil {
+		vm.metadataDeploys = make(map[string]Value)
+	}
+	result, ok := vm.metadataDeploys[deploymentID]
+	if !ok {
+		return Null, unsupportedCallError("Metadata.Operations.checkDeployStatus unknown local deployment " + deploymentID)
+	}
+	result = cloneMetadataDeployResult(result)
+	if !includeDetails {
+		result.Fields["details"] = Null
+	}
+	return result, nil
+}
+
+func (vm *VM) recordMetadataDeployment(deploymentID string, items []Value) {
+	if vm.metadataDeploys == nil {
+		vm.metadataDeploys = make(map[string]Value)
+	}
+	vm.metadataDeploys[deploymentID] = metadataDeployResultObject(deploymentID, items)
 }
 
 func (vm *VM) applyCustomMetadataDeployment(item Value) error {
@@ -13698,6 +13753,97 @@ func metadataDeployDetailsObject() Value {
 	details.Fields["componentSuccesses"] = List()
 	details.Fields["runTestResult"] = Null
 	return details
+}
+
+func metadataDeployResultObject(deploymentID string, items []Value) Value {
+	result := Object("Metadata.DeployResult")
+	result.Fields["id"] = platformScalar("Id", deploymentID)
+	result.Fields["status"] = metadataDeployStatusValue("SUCCEEDED")
+	result.Fields["success"] = Bool(true)
+	result.Fields["done"] = Bool(true)
+	result.Fields["numberComponentErrors"] = Int(0)
+	result.Fields["numberComponentsDeployed"] = Int(int64(len(items)))
+	result.Fields["numberComponentsTotal"] = Int(int64(len(items)))
+	result.Fields["numberTestErrors"] = Int(0)
+	result.Fields["numberTestsCompleted"] = Int(0)
+	result.Fields["checkOnly"] = Bool(false)
+	details := metadataDeployDetailsObject()
+	successes := make([]Value, 0, len(items))
+	for _, item := range items {
+		successes = append(successes, metadataDeploySuccessMessage(item))
+	}
+	details.Fields["componentSuccesses"] = List(successes...)
+	result.Fields["details"] = details
+	return result
+}
+
+func metadataDeploySuccessMessage(item Value) Value {
+	message := Object("Metadata.DeployMessage")
+	fullName := metadataDeployItemFullName(item)
+	message.Fields["fullName"] = String(fullName)
+	message.Fields["fileName"] = String(fullName)
+	message.Fields["componentType"] = String(metadataDeployItemComponentType(item))
+	message.Fields["success"] = Bool(true)
+	message.Fields["problem"] = Null
+	return message
+}
+
+func metadataDeployItemFullName(item Value) string {
+	if item.Kind == ValueObject {
+		if fullName, ok := metadataStringField(item, "fullName"); ok {
+			return fullName
+		}
+	}
+	return ""
+}
+
+func metadataDeployItemComponentType(item Value) string {
+	if item.Kind != ValueObject {
+		return string(item.Kind)
+	}
+	switch item.Type {
+	case "Metadata.CustomMetadata":
+		return "CustomMetadata"
+	case "":
+		return string(item.Kind)
+	default:
+		return strings.TrimPrefix(item.Type, "Metadata.")
+	}
+}
+
+func metadataAsyncResultObject(id string, done bool, state, message string) Value {
+	result := Object("Metadata.AsyncResult")
+	result.Fields["id"] = platformScalar("Id", id)
+	result.Fields["done"] = Bool(done)
+	result.Fields["state"] = String(state)
+	result.Fields["statusCode"] = Null
+	if message == "" {
+		result.Fields["message"] = Null
+	} else {
+		result.Fields["message"] = String(message)
+	}
+	return result
+}
+
+func metadataDeployStatusValue(name string) Value {
+	return Value{Kind: ValueObject, Type: "Metadata.DeployStatus", Text: name, Fields: map[string]Value{"ordinal": Int(metadataDeployStatusOrdinal(name))}}
+}
+
+func metadataDeployStatusOrdinal(name string) int64 {
+	for i, candidate := range metadataDeployStatusNames {
+		if candidate == name {
+			return int64(i)
+		}
+	}
+	return -1
+}
+
+func cloneMetadataDeployResult(result Value) Value {
+	cloned := cloneValue(result)
+	if cloned.Fields == nil {
+		cloned.Fields = make(map[string]Value)
+	}
+	return cloned
 }
 
 func callNamedEnumMember(typeName string, names []string, receiver Value, method string, args []Value) (Value, bool, error) {

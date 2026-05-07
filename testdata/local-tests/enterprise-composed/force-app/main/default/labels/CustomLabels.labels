@@ -1,0 +1,9 @@
+<CustomLabels xmlns="http://soap.sforce.com/2006/04/metadata">
+  <labels>
+    <fullName>LegacyStatus</fullName>
+    <language>en_US</language>
+    <protected>false</protected>
+    <shortDescription>Legacy status label</shortDescription>
+    <value>Escalated Legacy</value>
+  </labels>
+</CustomLabels>

@@ -183,7 +183,7 @@ startup, and compat commands.
   failures; fix the general parser, sema, VM, SOQL, DML, storage, metadata, or
   server behavior.
 - The checked post-parity readiness inventory is currently green for the
-  `example-projects` corpus (`filesScanned=51075 findings=0
+  `example-projects` corpus (`filesScanned=51089 findings=0
   testBlockingFindings=0 surfaces=0`). Treat that as a scanner/readiness gate,
   not a blanket full-runtime claim. The checked local-test corpus is also green;
   future unsupported runtime cases should remain explicit when they are outside

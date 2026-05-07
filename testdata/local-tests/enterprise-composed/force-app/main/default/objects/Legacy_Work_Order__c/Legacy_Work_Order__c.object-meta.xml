@@ -1,0 +1,16 @@
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+  <label>Legacy Work Order</label>
+  <pluralLabel>Legacy Work Orders</pluralLabel>
+  <nameField>
+    <label>Work Order Name</label>
+    <type>Text</type>
+  </nameField>
+  <deploymentStatus>Deployed</deploymentStatus>
+  <sharingModel>ReadWrite</sharingModel>
+  <fields><fullName>Status__c</fullName><label>Status</label><type>Text</type><length>40</length></fields>
+  <fields><fullName>Workflow_Marker__c</fullName><label>Workflow Marker</label><type>Text</type><length>80</length></fields>
+  <fields><fullName>Flow_Marker__c</fullName><label>Flow Marker</label><type>Text</type><length>80</length></fields>
+  <fields><fullName>Priority__c</fullName><label>Priority</label><type>Number</type><precision>18</precision><scale>0</scale></fields>
+  <fields><fullName>Active__c</fullName><label>Active</label><type>Checkbox</type><defaultValue>false</defaultValue></fields>
+  <fields><fullName>Label_Marker__c</fullName><label>Label Marker</label><type>Text</type><length>80</length></fields>
+</CustomObject>

@@ -22,7 +22,7 @@ also green for the checked `example-projects` corpus. A May 6, 2026 inventory
 from the current checkout reports:
 
 ```text
-filesScanned=51075 findings=0 testBlockingFindings=0 surfaces=0
+filesScanned=51089 findings=0 testBlockingFindings=0 surfaces=0
 ```
 
 That inventory is implementation-aware as of this checkpoint. It suppresses
@@ -648,7 +648,7 @@ Initial implementation status:
   fixture expansion.
 - The broad post-parity readiness inventory is green for the checked
   `example-projects` corpus:
-  `filesScanned=51075 findings=0 testBlockingFindings=0 surfaces=0`.
+  `filesScanned=51089 findings=0 testBlockingFindings=0 surfaces=0`.
 
 Primary lane: Gate.
 
@@ -893,7 +893,7 @@ go run ./cmd/oaer compat local-tests --project testdata/local-tests/basic --json
 After all four lanes merged, the post-parity readiness inventory moved to:
 
 ```text
-filesScanned=51075 findings=0 testBlockingFindings=0 surfaces=0
+filesScanned=51089 findings=0 testBlockingFindings=0 surfaces=0
 ```
 
 The outcome is not "all Salesforce behavior is implemented"; it is a shift from

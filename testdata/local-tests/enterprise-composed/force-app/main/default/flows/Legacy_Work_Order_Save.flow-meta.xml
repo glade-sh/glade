@@ -1,0 +1,36 @@
+<Flow>
+  <processType>Workflow</processType>
+  <status>Active</status>
+  <formulas>
+    <name>Should_Run</name>
+    <dataType>Boolean</dataType>
+    <expression>{!$Record.Name} = "Legacy Acme" &amp;&amp; {!$Record.Priority__c} &gt;= 5</expression>
+  </formulas>
+  <start>
+    <object>Legacy_Work_Order__c</object>
+    <triggerType>RecordAfterSave</triggerType>
+    <filterLogic>Should_Run</filterLogic>
+  </start>
+  <assignments>
+    <name>Assign_Fields</name>
+    <assignmentItems>
+      <assignToReference>$Record.Flow_Marker__c</assignToReference>
+      <operator>Assign</operator>
+      <value>
+        <formula>"Flow-" &amp; {!$Record.Name}</formula>
+      </value>
+    </assignmentItems>
+    <assignmentItems>
+      <assignToReference>$Record.Active__c</assignToReference>
+      <operator>Assign</operator>
+      <value>
+        <booleanValue>true</booleanValue>
+      </value>
+    </assignmentItems>
+  </assignments>
+  <actionCalls>
+    <name>Invoke_Legacy_Action</name>
+    <actionType>apex</actionType>
+    <actionName>LegacyFlowAction.run</actionName>
+  </actionCalls>
+</Flow>

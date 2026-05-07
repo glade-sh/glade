@@ -199,6 +199,24 @@ created.values.add(createdValue);
 container.addMetadata(created);
 Id deploymentId = Metadata.Operations.enqueueDeployment(container, null);
 System.assertEquals('0Af000000000001', (String)deploymentId);
+Metadata.DeployResult deployStatus = Metadata.Operations.checkDeployStatus(deploymentId, true);
+System.assert(deployStatus.done);
+System.assert(deployStatus.success);
+System.assertEquals('SUCCEEDED', deployStatus.status.name());
+System.assertEquals((String)deploymentId, (String)deployStatus.id);
+System.assertEquals(2, deployStatus.numberComponentsTotal);
+System.assertEquals(2, deployStatus.numberComponentsDeployed);
+System.assertEquals(0, deployStatus.numberComponentErrors);
+System.assertEquals(2, deployStatus.details.componentSuccesses.size());
+System.assertEquals('Feature.Default', deployStatus.details.componentSuccesses[0].fullName);
+System.assertEquals('CustomMetadata', deployStatus.details.componentSuccesses[0].componentType);
+Metadata.DeployResult deployStatusWithoutDetails = Metadata.Operations.checkDeployStatus(deploymentId, false);
+System.assertEquals(null, deployStatusWithoutDetails.details);
+Metadata.AsyncResult asyncResult = new Metadata.AsyncResult();
+asyncResult.id = deploymentId;
+asyncResult.done = true;
+asyncResult.state = 'Succeeded';
+System.assertEquals((String)deploymentId, (String)asyncResult.id);
 System.assertEquals(2, container.metadata.size());
 System.assertEquals(1, item.values.size());
 System.assertEquals('Enabled__c', ((Metadata.CustomMetadataValue)item.values[0]).field);
@@ -1177,6 +1195,69 @@ insert rows;
 	}
 	if !traceHas(result.Trace, "apex.automation.rollback", "apex.automation") {
 		t.Fatalf("trace missing automation rollback: %#v", result.Trace)
+	}
+}
+
+func TestExecFlowRecordCreateTraceEvents(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'Acme');
+insert account;
+account.Name = 'Acme Updated';
+update account;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.FlowRules = []storage.FlowRule{{
+		Name:   "CreateActionRequest",
+		Active: true,
+		RecordLookups: []storage.FlowRecordLookup{{
+			Name:               "ExistingRequest",
+			ObjectName:         "ActionRequest__c",
+			GetFirstRecordOnly: true,
+			Criteria: []storage.WorkflowCriteriaItem{
+				{Field: "SourceRecordId__c", Operation: "equals", SourceField: "Id"},
+				{Field: "ActionName__c", Operation: "equals", Value: "Notify"},
+			},
+		}},
+		RecordCreates: []storage.FlowRecordCreate{{
+			Name:       "CreateRequest",
+			ObjectName: "ActionRequest__c",
+			InputAssignments: []storage.WorkflowFieldUpdate{
+				{Name: "ActionName__c", Field: "ActionName__c", LiteralValue: "Notify"},
+				{Name: "SourceRecordId__c", Field: "SourceRecordId__c", SourceField: "Id"},
+			},
+		}},
+	}}
+	org.Objects["Account"] = account
+	org.Objects["ActionRequest__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "ActionRequest__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"ActionName__c":     {APIName: "ActionName__c", Type: storage.FieldString, Required: true},
+				"SourceRecordId__c": {APIName: "SourceRecordId__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, Required: true},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	result, err := machine.Execute(program)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{
+		"apex.flow.rule",
+		"apex.flow.record_lookup",
+		"apex.flow.record_create",
+		"apex.flow.record_create_suppressed",
+	} {
+		if !traceHas(result.Trace, name, "apex.flow") {
+			t.Fatalf("trace missing %s: %#v", name, result.Trace)
+		}
 	}
 }
 

@@ -1,6 +1,10 @@
 package vm
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/open-aer/oaer/internal/trace"
+)
 
 func TestInvokeLWCMethodSerializesWrapperReturn(t *testing.T) {
 	program, err := CompileAnonymous(`
@@ -120,6 +124,43 @@ return next;
 	if len(result.Trace) == 0 {
 		t.Fatalf("trace missing")
 	}
+	for _, event := range []string{
+		"apex.visualforce.current_page",
+		"apex.visualforce.controller.construct.start",
+		"apex.visualforce.controller.construct.complete",
+		"apex.visualforce.action.invoke",
+		"apex.visualforce.action.complete",
+	} {
+		if !traceHas(result.Trace, event, "apex.visualforce") {
+			t.Fatalf("trace missing %s: %#v", event, result.Trace)
+		}
+	}
+	complete := findTraceEvent(result.Trace, "apex.visualforce.action.complete")
+	if complete == nil {
+		t.Fatalf("completion trace missing: %#v", result.Trace)
+	}
+	if complete.Args["className"] != "AccountController" || complete.Args["methodName"] != "save" {
+		t.Fatalf("completion args = %#v", complete.Args)
+	}
+	if complete.Args["pageMessageCount"] != 1 {
+		t.Fatalf("completion args = %#v", complete.Args)
+	}
+	pageRef, ok := complete.Args["pageReference"].(map[string]any)
+	if !ok || pageRef["url"] != "/apex/Done?mode=quick" || pageRef["redirect"] != true {
+		t.Fatalf("pageReference trace = %#v", complete.Args["pageReference"])
+	}
+	current := findTraceEvent(result.Trace, "apex.visualforce.current_page")
+	if current == nil {
+		t.Fatalf("current-page trace missing: %#v", result.Trace)
+	}
+	currentPage, ok := current.Args["page"].(map[string]any)
+	if !ok || currentPage["url"] != "/apex/Edit" {
+		t.Fatalf("current-page trace = %#v", current.Args["page"])
+	}
+	currentParams, ok := currentPage["parameters"].(map[string]any)
+	if !ok || currentParams["mode"] != "quick" {
+		t.Fatalf("current-page params = %#v", currentPage["parameters"])
+	}
 }
 
 func TestInvokeVisualforceActionReportsMissingInstanceAction(t *testing.T) {
@@ -134,4 +175,60 @@ func TestInvokeVisualforceActionReportsMissingInstanceAction(t *testing.T) {
 	if result.Success || result.Error == nil || result.Error.Type != "UnsupportedFeature" {
 		t.Fatalf("result = %#v", result)
 	}
+}
+
+func TestInvokeVisualforceActionTracesRuntimeError(t *testing.T) {
+	program, err := CompileAnonymous(`
+ApexPages.addMessage(new ApexPages.Message(ApexPages.Severity.ERROR, 'Before failure'));
+throw new VisualforceException('blocked');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "AccountController",
+		Methods: map[string]Method{
+			"save": {
+				Name:       "AccountController.save",
+				ClassName:  "AccountController",
+				ReturnType: "PageReference",
+				Program:    program,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	result, err := machine.InvokeVisualforceAction("AccountController", "save", "/apex/Edit", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Success || result.Error == nil || result.Error.Type != "VisualforceException" || result.Error.Message != "blocked" {
+		t.Fatalf("result = %#v", result)
+	}
+	if len(result.PageMessages) != 1 {
+		t.Fatalf("pageMessages = %#v", result.PageMessages)
+	}
+	if !traceHas(result.Trace, "apex.visualforce.action.error", "apex.visualforce") {
+		t.Fatalf("trace missing action error: %#v", result.Trace)
+	}
+	errorEvent := findTraceEvent(result.Trace, "apex.visualforce.action.error")
+	if errorEvent == nil {
+		t.Fatalf("error trace missing: %#v", result.Trace)
+	}
+	if errorEvent.Args["errorType"] != "VisualforceException" || errorEvent.Args["error"] != "blocked" {
+		t.Fatalf("error args = %#v", errorEvent.Args)
+	}
+	if errorEvent.Args["pageMessageCount"] != 1 {
+		t.Fatalf("error args = %#v", errorEvent.Args)
+	}
+}
+
+func findTraceEvent(events []trace.Event, name string) *trace.Event {
+	for i := range events {
+		if events[i].Name == name {
+			return &events[i]
+		}
+	}
+	return nil
 }

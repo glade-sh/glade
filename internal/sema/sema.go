@@ -3688,6 +3688,7 @@ var platformTypes = []string{
 	"Metadata.Metadata",
 	"Metadata.MetadataType",
 	"Metadata.Operations",
+	"Metadata.AsyncResult",
 	"MultiStaticResourceCalloutMock",
 	"Network",
 	"ObjectPermissions",

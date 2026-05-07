@@ -45,7 +45,7 @@ Current checked status:
   `pass=101 fail=0 unsupported=0 missing=0`.
 - The broader post-parity readiness inventory is green for the checked
   `example-projects` corpus. A May 6, 2026
-  `oaer compat post-parity --json` run reported 51,075 files scanned, 0
+  `oaer compat post-parity --json` run reported 51,089 files scanned, 0
   findings, 0 test-blocking findings, and 0 surfaces. This means the known
   scanner/test-readiness blockers for standard schema references, labels,
   static resources, content assets, endpoint metadata, custom metadata type
@@ -181,7 +181,7 @@ Current scanner top blockers from the broad post-parity inventory:
 
 | Rank | Blocker |
 | --- | --- |
-| 1 | None. The May 6, 2026 checked scan reports 0 findings, 0 test-blocking findings, and 0 surfaces across 51,075 files. |
+| 1 | None. The May 6, 2026 checked scan reports 0 findings, 0 test-blocking findings, and 0 surfaces across 51,089 files. |
 
 Recently cleared blocker families:
 

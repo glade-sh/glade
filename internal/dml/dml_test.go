@@ -868,6 +868,10 @@ func TestFlowRecordCreateRunsAndLookupSuppressesDuplicate(t *testing.T) {
 		Records: make(map[storage.ID]storage.Record),
 	}
 	engine := NewEngine(&org)
+	var events []string
+	engine.AutomationTracer = func(name string, args map[string]any) {
+		events = append(events, name)
+	}
 
 	insert := engine.Insert([]storage.Record{{
 		Object: "Account",
@@ -905,6 +909,25 @@ func TestFlowRecordCreateRunsAndLookupSuppressesDuplicate(t *testing.T) {
 	if got := len(org.Objects["ActionRequest__c"].Records); got != 1 {
 		t.Fatalf("lookup should suppress duplicate record create, got %d records", got)
 	}
+	for _, name := range []string{
+		"apex.flow.rule",
+		"apex.flow.record_lookup",
+		"apex.flow.record_create",
+		"apex.flow.record_create_suppressed",
+	} {
+		if !stringSliceContains(events, name) {
+			t.Fatalf("trace missing %s in %#v", name, events)
+		}
+	}
+}
+
+func stringSliceContains(values []string, needle string) bool {
+	for _, value := range values {
+		if value == needle {
+			return true
+		}
+	}
+	return false
 }
 
 func TestWorkflowFieldUpdateRejectsInvalidSourceFieldAndRollsBack(t *testing.T) {

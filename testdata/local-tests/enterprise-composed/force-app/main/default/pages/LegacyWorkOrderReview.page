@@ -1,0 +1,3 @@
+<apex:page standardController="Legacy_Work_Order__c" extensions="LegacyWorkOrderReviewExtension">
+  <c:LegacyBadge value="{!title}" />
+</apex:page>

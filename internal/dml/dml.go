@@ -17,6 +17,7 @@ type Engine struct {
 	UserID            storage.ID
 	FlowActionInvoker func(storage.FlowAction, storage.Record) error
 	WorkflowEmailer   func(storage.WorkflowEmailAlert, storage.Record) error
+	AutomationTracer  func(name string, args map[string]any)
 	DeferAutomation   bool
 
 	workflowDepth int
@@ -1204,6 +1205,13 @@ func (e *Engine) applyFlowFieldUpdates(objectName string, id storage.ID) error {
 			continue
 		}
 		matches, ok := evaluateFlowRule(rule, record, object.Definition, e.Org.Namespace)
+		e.traceAutomation("apex.flow.rule", map[string]any{
+			"flow":    rule.Name,
+			"object":  objectName,
+			"record":  string(record.ID),
+			"matched": ok && matches,
+			"modeled": ok,
+		})
 		if !ok || !matches {
 			continue
 		}
@@ -1226,9 +1234,22 @@ func (e *Engine) applyFlowFieldUpdates(objectName string, id storage.ID) error {
 				record.Fields[fieldName] = value
 				delete(record.ExplicitNulls, fieldName)
 			}
+			e.traceAutomation("apex.flow.field_update", map[string]any{
+				"flow":   rule.Name,
+				"update": update.Name,
+				"object": objectName,
+				"record": string(record.ID),
+				"field":  fieldName,
+			})
 			changed = true
 		}
 		for _, action := range rule.Actions {
+			e.traceAutomation("apex.flow.action", map[string]any{
+				"flow":   rule.Name,
+				"action": action.Name,
+				"object": objectName,
+				"record": string(record.ID),
+			})
 			if e.FlowActionInvoker == nil {
 				return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow action %s requires Apex action execution support", action.Name)
 			}
@@ -1242,11 +1263,25 @@ func (e *Engine) applyFlowFieldUpdates(objectName string, id storage.ID) error {
 				return err
 			}
 			if suppressed {
+				e.traceAutomation("apex.flow.record_create_suppressed", map[string]any{
+					"flow":   rule.Name,
+					"create": create.Name,
+					"object": create.ObjectName,
+					"record": string(record.ID),
+				})
 				continue
 			}
-			if err := e.executeFlowRecordCreate(create, record, object.Definition); err != nil {
+			createdID, err := e.executeFlowRecordCreate(create, record, object.Definition)
+			if err != nil {
 				return err
 			}
+			e.traceAutomation("apex.flow.record_create", map[string]any{
+				"flow":      rule.Name,
+				"create":    create.Name,
+				"object":    create.ObjectName,
+				"sourceId":  string(record.ID),
+				"createdId": string(createdID),
+			})
 		}
 	}
 	if !changed {
@@ -1273,10 +1308,10 @@ func (e *Engine) applyFlowFieldUpdates(objectName string, id storage.ID) error {
 	return nil
 }
 
-func (e *Engine) executeFlowRecordCreate(create storage.FlowRecordCreate, source storage.Record, sourceDefinition storage.ObjectDefinition) error {
+func (e *Engine) executeFlowRecordCreate(create storage.FlowRecordCreate, source storage.Record, sourceDefinition storage.ObjectDefinition) (storage.ID, error) {
 	target, targetName, err := e.object(create.ObjectName)
 	if err != nil {
-		return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record create %s targets unknown object %s", create.Name, create.ObjectName)
+		return "", dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record create %s targets unknown object %s", create.Name, create.ObjectName)
 	}
 	record := storage.Record{
 		Object:        targetName,
@@ -1286,15 +1321,15 @@ func (e *Engine) executeFlowRecordCreate(create storage.FlowRecordCreate, source
 	for _, assignment := range create.InputAssignments {
 		fieldName, ok := storage.ResolveFieldName(target.Definition, e.Org.Namespace, assignment.Field)
 		if !ok || fieldName == "Id" {
-			return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{assignment.Field}, "dml: flow record create %s targets unknown or read-only field %s.%s", create.Name, targetName, assignment.Field)
+			return "", dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{assignment.Field}, "dml: flow record create %s targets unknown or read-only field %s.%s", create.Name, targetName, assignment.Field)
 		}
 		field := target.Definition.Fields[fieldName]
 		if field.Type == storage.FieldCalculated {
-			return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{fieldName}, "dml: flow record create %s targets calculated field %s.%s", create.Name, targetName, fieldName)
+			return "", dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{fieldName}, "dml: flow record create %s targets calculated field %s.%s", create.Name, targetName, fieldName)
 		}
 		value, explicitNull, ok := flowRecordCreateAssignmentValue(field, source, assignment, sourceDefinition, e.Org.Namespace)
 		if !ok {
-			return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{fieldName}, "dml: flow record create %s has unsupported value expression for %s.%s", create.Name, targetName, fieldName)
+			return "", dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{fieldName}, "dml: flow record create %s has unsupported value expression for %s.%s", create.Name, targetName, fieldName)
 		}
 		if explicitNull {
 			record.ExplicitNulls[fieldName] = true
@@ -1304,10 +1339,11 @@ func (e *Engine) executeFlowRecordCreate(create storage.FlowRecordCreate, source
 			delete(record.ExplicitNulls, fieldName)
 		}
 	}
-	if _, err := e.insertOne(record); err != nil {
-		return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record create %s failed: %v", create.Name, err)
+	createdID, err := e.insertOne(record)
+	if err != nil {
+		return "", dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record create %s failed: %v", create.Name, err)
 	}
-	return nil
+	return createdID, nil
 }
 
 func flowRecordCreateAssignmentValue(field storage.Field, source storage.Record, assignment storage.WorkflowFieldUpdate, sourceDefinition storage.ObjectDefinition, namespace string) (storage.Value, bool, bool) {
@@ -1342,11 +1378,23 @@ func (e *Engine) flowRecordCreateSuppressedByLookup(create storage.FlowRecordCre
 		if err != nil {
 			return false, err
 		}
+		e.traceAutomation("apex.flow.record_lookup", map[string]any{
+			"lookup":  lookup.Name,
+			"object":  lookup.ObjectName,
+			"source":  string(source.ID),
+			"matched": matches,
+		})
 		if matches {
 			return true, nil
 		}
 	}
 	return false, nil
+}
+
+func (e *Engine) traceAutomation(name string, args map[string]any) {
+	if e.AutomationTracer != nil {
+		e.AutomationTracer(name, args)
+	}
 }
 
 func (e *Engine) flowRecordLookupMatches(lookup storage.FlowRecordLookup, source storage.Record, sourceDefinition storage.ObjectDefinition) (bool, error) {

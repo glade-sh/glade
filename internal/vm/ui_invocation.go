@@ -64,23 +64,69 @@ func (vm *VM) InvokeVisualforceAction(className, methodName, pageURL string, par
 		vm.currentPage.Fields["parameters"] = pageParams
 	}
 	result := &Result{TraceFormat: trace.FormatChromeTraceEvent}
+	appendVisualforceTrace(result, "current_page", map[string]any{
+		"className":  className,
+		"methodName": methodName,
+		"page":       tracePageReference(vm.currentPage),
+	})
+	appendVisualforceTrace(result, "controller.construct.start", map[string]any{
+		"className": className,
+	})
 	controller, err := vm.constructValue(className, nil, nil, result)
 	if err != nil {
 		out.Success = false
 		out.Error = uiInvocationError(err)
+		appendVisualforceTrace(result, "controller.construct.error", map[string]any{
+			"className": className,
+			"error":     out.Error.Message,
+			"errorType": out.Error.Type,
+		})
 		out.Trace = result.Trace
 		return out, nil
 	}
+	appendVisualforceTrace(result, "controller.construct.complete", map[string]any{
+		"className": className,
+	})
+	appendVisualforceTrace(result, "action.invoke", map[string]any{
+		"className":  className,
+		"methodName": methodName,
+		"page":       tracePageReference(vm.currentPage),
+	})
 	value, err := vm.callMethodWithReceiver(method, controller, nil, result)
-	out.Trace = result.Trace
 	out.PageMessages = jsonListFromValues(vm.pageMessages)
 	if err != nil {
 		out.Success = false
 		out.Error = uiInvocationError(err)
+		appendVisualforceTrace(result, "action.error", map[string]any{
+			"className":         className,
+			"methodName":        methodName,
+			"error":             out.Error.Message,
+			"errorType":         out.Error.Type,
+			"pageMessageCount":  len(out.PageMessages),
+			"pageMessages":      out.PageMessages,
+			"currentPage":       tracePageReference(vm.currentPage),
+			"controllerCreated": true,
+		})
+		out.Trace = result.Trace
 		return out, nil
 	}
 	out.Success = true
 	out.ReturnValue = jsonFromValue(value, false)
+	completeArgs := map[string]any{
+		"className":        className,
+		"methodName":       methodName,
+		"returnValue":      out.ReturnValue,
+		"pageMessageCount": len(out.PageMessages),
+		"currentPage":      tracePageReference(vm.currentPage),
+	}
+	if value.Kind == ValueObject && value.Type == "PageReference" {
+		completeArgs["pageReference"] = tracePageReference(value)
+	}
+	if len(out.PageMessages) > 0 {
+		completeArgs["pageMessages"] = out.PageMessages
+	}
+	appendVisualforceTrace(result, "action.complete", completeArgs)
+	out.Trace = result.Trace
 	return out, nil
 }
 
@@ -196,6 +242,30 @@ func uiMethodSignature(method Method) string {
 		parts = append(parts, param.Name+":"+param.Type)
 	}
 	return method.Name + "(" + strings.Join(parts, ",") + ")"
+}
+
+func appendVisualforceTrace(result *Result, name string, args map[string]any) {
+	appendTrace(result, "apex.visualforce."+name, "apex.visualforce", args)
+}
+
+func tracePageReference(value Value) map[string]any {
+	out := map[string]any{}
+	if value.Kind != ValueObject || value.Type != "PageReference" {
+		return out
+	}
+	if url, ok := value.Fields["url"]; ok && url.Kind == ValueString {
+		out["url"] = url.Text
+	}
+	if redirect, ok := value.Fields["redirect"]; ok && redirect.Kind == ValueBool {
+		out["redirect"] = redirect.Bool
+	}
+	if params, ok := value.Fields["parameters"]; ok && params.Kind == ValueMap {
+		out["parameters"] = jsonFromValue(params, false)
+	}
+	if headers, ok := value.Fields["headers"]; ok && headers.Kind == ValueMap && len(headers.Map) > 0 {
+		out["headers"] = jsonFromValue(headers, false)
+	}
+	return out
 }
 
 func (r UIInvocationResult) JSON() ([]byte, error) {

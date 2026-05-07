@@ -1,0 +1,20 @@
+<Workflow>
+  <rules>
+    <fullName>MarkLegacyActive</fullName>
+    <active>true</active>
+    <criteriaItems>
+      <field>Legacy_Work_Order__c.Name</field>
+      <operation>equals</operation>
+      <value>Legacy Acme</value>
+    </criteriaItems>
+    <actions>
+      <name>SetWorkflowMarker</name>
+      <type>FieldUpdate</type>
+    </actions>
+  </rules>
+  <fieldUpdates>
+    <fullName>SetWorkflowMarker</fullName>
+    <field>Legacy_Work_Order__c.Workflow_Marker__c</field>
+    <literalValue>Workflow Active</literalValue>
+  </fieldUpdates>
+</Workflow>
