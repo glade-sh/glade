@@ -43,27 +43,21 @@ Current checked status:
 
 - The server-example support gate is green:
   `pass=101 fail=0 unsupported=0 missing=0`.
-- The broader post-parity readiness inventory is not green. A May 6, 2026
-  `oaer compat post-parity --json` run reported 51,067 files scanned, 2,391
-  findings, 1,711 test-blocking findings, and 12 surfaces after resolving
-  standard schema-backed object and field references through the generated
-  standard object catalog and suppressing label references resolved by loaded
-  label/translation metadata, resource imports resolved by static resource or
-  content asset metadata, callout endpoints resolved by named credential or
-  remote site metadata, and namespace-tolerant custom metadata type references
-  resolved by loaded schema metadata. Passive LWC files, resolved LWC Apex
-  imports, supported Visualforce runtime references, registered `Page.*`
-  references, static resource metadata, endpoint metadata, discovered read-only
-  presentation metadata files, custom-object `Name` and dynamic field-map
-  references, recognized Lightning client modules, core `Blob` and base64
-  helper usage, and resolved Visualforce controller classes, standard
-  controller objects, controller extensions, action methods, and component
-  action attributes no longer appear as broad post-parity blocker surfaces in
-  this inventory. Files/content SObjects, email template metadata, loaded
-  legacy object source, core Metadata API deployment model types, and local
-  Callable/Stub support are now implemented or truthfully modeled enough to
-  leave the test-blocking frontier; Callable/Stub remains visible as a partial,
-  non-blocking inventory surface.
+- The broader post-parity readiness inventory is green for the checked
+  `example-projects` corpus. A May 6, 2026
+  `oaer compat post-parity --json` run reported 51,067 files scanned, 0
+  findings, 0 test-blocking findings, and 0 surfaces. This means the known
+  scanner/test-readiness blockers for standard schema references, labels,
+  static resources, content assets, endpoint metadata, custom metadata type
+  references, legacy presentation metadata, Visualforce controller/page and
+  component contracts, Aura/LWC Apex discovery, Workflow save-order metadata,
+  and modeled Flow record-lookup/record-create shapes have moved out of the
+  post-parity blocker frontier.
+- The zero-blocker inventory is not a blanket full-Salesforce claim. The owned
+  local-test corpus still intentionally records an explicit unsupported
+  presentation-metadata tab-describe case, and runtime depth for UI rendering,
+  full metadata mutation, advanced Flow interviews, and local UI/API serving
+  remains tracked below.
 - Treat this document as the source for broad local-test support beyond the
   green server-example harness.
 
@@ -124,6 +118,11 @@ The highest-count blockers are not the same as the safest implementation order.
 Load and resolve metadata first. Execute side effects only after the metadata
 and controller contracts have a solid place to stand.
 
+Current inventory status: the checked post-parity scan has no remaining
+scanner/test-readiness blockers. Unchecked items below remain as runtime-depth,
+behavioral fidelity, trace/debug visibility, release-hardening, or larger owned
+fixture work, not as known blockers in the current `example-projects` inventory.
+
 1. Keep the project gap scanner current.
    - [x] Detect the major unsupported surfaces in both audited legacy projects.
    - [x] Report blockers by capability, stage, file, line, symbol, examples, and
@@ -183,16 +182,18 @@ Current scanner top blockers from the broad post-parity inventory:
 
 | Rank | Blocker |
 | --- | --- |
-| 1 | Aura controller action discovery: 457 findings across 457 files. |
-| 2 | UI and org presentation metadata: 392 findings across 200 files. |
-| 3 | Visualforce controller tests: 337 findings across 131 files. |
-| 4 | Visualforce component metadata: 218 findings across 218 files. |
-| 5 | Workflow rule save-order side effects: 107 findings across 107 files. |
-| 6 | Custom label and translation resolution: 99 findings across 54 files. |
-| 7 | Apex Metadata API deploy/mutation behavior: 64 findings across 20 files. |
-| 8 | Flow and Process Builder save-order side effects: 30 findings across 30 files. |
-| 9 | Auth namespace and authentication context: 3 findings across 2 files. |
-| 10 | Platform Cache and ConnectApi org settings: 3 findings across 2 files. |
+| 1 | None. The May 6, 2026 checked scan reports 0 findings, 0 test-blocking findings, and 0 surfaces across 51,067 files. |
+
+Recently cleared blocker families:
+
+| Cleared surface | Result |
+| --- | --- |
+| Aura/LWC Apex discovery | No current post-parity findings. |
+| UI and org presentation metadata | No current post-parity findings. |
+| Visualforce controller/page/component contracts | No current post-parity findings. |
+| Workflow rule save-order metadata | No current post-parity findings. |
+| Custom label and translation resolution | No current post-parity findings. |
+| Flow and Process Builder save-order metadata | No current post-parity findings. |
 
 ## Local Test Running Boundary
 

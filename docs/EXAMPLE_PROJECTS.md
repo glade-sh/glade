@@ -72,12 +72,13 @@ Current status as of 2026-05-06:
 
 - The server-example execution harness is green across the checked
   `example-projects` corpus: `pass=101 fail=0 unsupported=0 missing=0`.
-- `oaer compat examples` and `oaer compat post-parity` remain inventory and
-  readiness tools for broader local-test support; they are not the same gate as
-  `server-examples`.
-- Post-parity inventory still reports broad legacy/local-test gaps, especially
-  metadata, UI/controller contracts, declarative automation, and platform
-  namespace surfaces.
+- `oaer compat post-parity --json` is green for the checked corpus:
+  `filesScanned=51067 findings=0 testBlockingFindings=0 surfaces=0`.
+- `oaer compat examples`, `oaer compat server-examples`, and
+  `oaer compat post-parity` are separate gates. The zero post-parity inventory
+  means no current scanner/test-readiness blockers are known for the checked
+  example projects; it is not the same as proving every example-project Apex
+  test runs end to end.
 
 Phase 0 is complete when:
 

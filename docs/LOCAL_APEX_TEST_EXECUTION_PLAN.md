@@ -18,31 +18,25 @@ pass=101 fail=0 unsupported=0 missing=0
 
 The owned local-test corpus gate is green for the checked baseline, including
 intentional unsupported classifications. The broader post-parity inventory is
-not green. A May 6, 2026 inventory from the current checkout reports:
+also green for the checked `example-projects` corpus. A May 6, 2026 inventory
+from the current checkout reports:
 
 ```text
-filesScanned=51067 findings=2391 testBlockingFindings=1711 surfaces=12
+filesScanned=51067 findings=0 testBlockingFindings=0 surfaces=0
 ```
 
-That inventory is implementation-aware as of this checkpoint: generated
-standard object/field metadata, loaded labels/translations, loaded static
-resources/content assets, named credential and remote site endpoints, and
-namespace-tolerant custom metadata type references are suppressed when the
-project metadata resolves them. Passive LWC files, resolved LWC Apex imports,
-supported Visualforce runtime references, registered `Page.*` references,
-static resource metadata, endpoint metadata, discovered read-only presentation
-metadata files, custom-object `Name` and dynamic field-map references, and
-recognized Lightning client modules no longer appear as broad post-parity
-blocker surfaces in the current inventory. The scanner also resolves existing
-Visualforce controller classes, standard controller objects, controller
-extensions, action methods, and component action attributes through the
-best-effort Visualforce index and Apex symbol table; the remaining
-Visualforce findings are unresolved page/controller/action contracts or
-component metadata work. Files/content SObjects, email templates, legacy object
-source, core Metadata API deployment models, and local Callable/Stub support
-are now implemented or truthfully modeled enough to leave the test-blocking
-frontier. Remaining findings should be treated as the next implementation
-frontier rather than stale scanner noise.
+That inventory is implementation-aware as of this checkpoint. It suppresses
+surfaces only when the project metadata, static model, or runtime fallback can
+resolve them generally: generated standard object/field metadata, loaded
+labels/translations, managed-package and platform label fallbacks, loaded static
+resources/content assets, named credential and remote site endpoints,
+namespace-tolerant custom metadata type references, legacy presentation
+metadata, Visualforce page/component metadata, Visualforce controller and action
+contracts, Aura/LWC Apex discovery, Workflow rules, and the modeled
+record-lookup/record-create Flow shapes are no longer reported as broad
+post-parity blockers. The zero-blocker scan is a readiness inventory result,
+not a claim that every Salesforce UI, metadata, or automation behavior is fully
+implemented at runtime.
 
 Use this document for parallel squad planning. Use
 `docs/POST_PARITY_TODO.md` as the exhaustive backlog and capability boundary.
@@ -89,13 +83,12 @@ These milestones are ordered by developer value, not by feature count.
 | M6: Declarative-test ready | Workflow and Flow side effects run inside the DML/test transaction with traceable decisions and rollback. | `compat local-tests --project testdata/local-tests/workflow --json` and `.../flow --json` |
 | M7: Legacy-project-test ready | Owned corpus fixtures modeled after the example projects are green, and remaining unsupported surfaces are outside the documented claim. | `compat local-tests --check docs/fixtures/local-tests-corpus.json` |
 
-M0 through the first owned M7 corpus gate were green before the Phase 2C
-presentation-metadata fixture was added. The corpus now intentionally includes a
-presentation-metadata fixture that is not ready yet because tab describe is
-reported as an explicit unsupported capability instead of being silently
-modeled. The remaining work is to broaden the owned corpus and close the
-documented unsupported surfaces before making a large-project local-test
-execution claim.
+M0 through the checked M7 corpus gate are green. The corpus intentionally
+includes a presentation-metadata fixture that records one explicit unsupported
+tab-describe case; the checked baseline accepts that classification so it stays
+visible instead of becoming silent no-op behavior. The remaining work is to
+broaden the owned corpus and implement that runtime describe surface before
+making a full presentation-metadata runtime claim.
 
 ## Speed Requirements
 
@@ -655,6 +648,9 @@ Initial implementation status:
   remain future release-hardening work. VM-level Aura/LWC action dispatch now
   has JSON-shaped return and `AuraHandledException` error contracts ready for
   fixture expansion.
+- The broad post-parity readiness inventory is green for the checked
+  `example-projects` corpus:
+  `filesScanned=51067 findings=0 testBlockingFindings=0 surfaces=0`.
 
 Primary lane: Gate.
 
@@ -740,9 +736,28 @@ go run ./cmd/oaer compat local-tests --project testdata/local-tests/basic --json
 Clean up merged worktrees and branches immediately after their commits are on
 the integration branch.
 
-## Suggested First Squad
+## Current Squad Completion Snapshot
 
-Start with four lanes:
+The first broad blocker-reduction squad has completed. The integrated result
+cleared the checked post-parity blocker frontier for:
+
+- UI and org presentation metadata resolution.
+- Visualforce controller, page, component, extension, action, and `Page.*`
+  reference discovery.
+- Label/resource resolution, including platform `Site` labels and discovered
+  external managed-package label namespaces.
+- Workflow sibling field-update metadata and modeled Flow record lookup/create
+  shapes.
+
+The next squad should not repeat those scanner-readiness lanes. It should focus
+on runtime-depth gaps that remain outside the zero-blocker inventory claim:
+presentation-metadata tab describe, richer Visualforce controller execution,
+advanced Flow interviews and invocable actions, Metadata API mutation behavior,
+and larger owned enterprise fixtures.
+
+## Historical First Squad
+
+The first squad started with four lanes:
 
 | Lane | Why first |
 | --- | --- |
@@ -751,9 +766,9 @@ Start with four lanes:
 | Labels/resources/endpoints | Scanner resolution is mostly in place; remaining work is runtime behavior and namespaced edge cases. |
 | Visualforce index/PageReference | Attacks the highest-count controller-test blocker without requiring rendering. |
 
-Do not start declarative automation first. Workflow and Flow need metadata,
-storage, DML, transaction, and side-effect hooks to be stable before their
-behavior can be meaningful.
+That ordering has already been executed for scanner-readiness work. Use it as
+context for why the current implementation is layered; do not treat it as the
+next work queue.
 
 ## First Work Package: M1 To M3
 
@@ -877,7 +892,12 @@ go run ./cmd/oaer compat post-parity --json
 go run ./cmd/oaer compat local-tests --project testdata/local-tests/basic --json
 ```
 
-After all four lanes merge, record the before/after blocker movement in
-`docs/LOCAL_APEX_TEST_EXECUTION_PLAN.md` or a generated local-test dashboard.
-The expected outcome is not "all tests pass"; it is a measurable shift from
-load/resolve blockers toward narrower execute-time blockers.
+After all four lanes merged, the post-parity readiness inventory moved to:
+
+```text
+filesScanned=51067 findings=0 testBlockingFindings=0 surfaces=0
+```
+
+The outcome is not "all Salesforce behavior is implemented"; it is a shift from
+load/resolve blocker discovery toward narrower runtime-depth and fixture
+hardening work.
