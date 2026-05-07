@@ -457,7 +457,7 @@
     "unknown": 8195
   },
   "tooling": {
-    "source": "bundled_system_symbols.json",
+    "source": "tooling_system_symbols.json.gz",
     "namespaces": 145,
     "classes": 7091,
     "constructors": 5807,

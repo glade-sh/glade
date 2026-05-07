@@ -20,7 +20,7 @@
 
 ## Tooling API System Alignment
 
-Source: `bundled_system_symbols.json`
+Source: `tooling_system_symbols.json.gz`
 
 - Namespaces: 145
 - Classes: 7091

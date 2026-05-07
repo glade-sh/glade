@@ -2536,6 +2536,11 @@ func runCompatSalesforceCoverage(args []string, w io.Writer) error {
 	if sources == 0 {
 		source = defaultSalesforceDocsSource()
 	}
+	if toolingCompletionsPath == "" {
+		if defaultPath := defaultSalesforceToolingCompletionsSource(); fileExists(defaultPath) {
+			toolingCompletionsPath = defaultPath
+		}
+	}
 	requested := 0
 	for _, set := range []bool{jsonOut, outputPath != "", checkPath != ""} {
 		if set {
@@ -2719,6 +2724,15 @@ func loadSalesforceCoverageCatalog(source, inventoryPath, catalogPath string) (c
 
 func defaultSalesforceDocsSource() string {
 	return "/Users/matt/Downloads/Kimi_Agent_Salesforce Docs Scraper (1)/salesforce-docs"
+}
+
+func defaultSalesforceToolingCompletionsSource() string {
+	return filepath.Join("testdata", "generated", "tooling_system_symbols.json.gz")
+}
+
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
 }
 
 func writeCatalogSummary(w io.Writer, catalog capability.Catalog) {

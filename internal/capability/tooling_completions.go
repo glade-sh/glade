@@ -1,9 +1,13 @@
 package capability
 
 import (
+	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -103,6 +107,17 @@ func ReadToolingCompletions(path string) (ToolingCompletions, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return ToolingCompletions{}, err
+	}
+	if filepath.Ext(path) == ".gz" {
+		reader, err := gzip.NewReader(bytes.NewReader(data))
+		if err != nil {
+			return ToolingCompletions{}, fmt.Errorf("read Tooling API completions %s: %w", path, err)
+		}
+		defer reader.Close()
+		data, err = io.ReadAll(reader)
+		if err != nil {
+			return ToolingCompletions{}, fmt.Errorf("read Tooling API completions %s: %w", path, err)
+		}
 	}
 	var completions ToolingCompletions
 	if err := json.Unmarshal(data, &completions); err != nil {
