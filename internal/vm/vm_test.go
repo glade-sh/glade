@@ -644,7 +644,7 @@ func TestExecInstanceOfSObjectCollectionGenerics(t *testing.T) {
 List<Account> accounts = new List<Account>{new Account(Name = 'Test')};
 Object accountObject = accounts;
 System.assert(accountObject instanceof List<SObject>, 'List<Account> should be List<SObject>');
-System.assert(accountObject instanceof List<Account>, 'List<Account> should be List<Account>');
+System.assert(accountObject instanceOf List<Account>, 'List<Account> should be List<Account>');
 System.assert(!(accountObject instanceof List<Contact>), 'List<Account> should not be List<Contact>');
 
 List<AggregateResult> aggregateRows = new List<AggregateResult>();

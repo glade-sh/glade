@@ -1425,7 +1425,7 @@ func (p *parser) peek(kind tokenKind, text string) bool {
 	if tok.kind != kind {
 		return false
 	}
-	return text == "" || tok.text == text
+	return tokenTextMatches(kind, tok.text, text)
 }
 
 func (p *parser) peekNext(kind tokenKind, text string) bool {
@@ -1440,7 +1440,17 @@ func (p *parser) peekN(offset int, kind tokenKind, text string) bool {
 	if tok.kind != kind {
 		return false
 	}
-	return text == "" || tok.text == text
+	return tokenTextMatches(kind, tok.text, text)
+}
+
+func tokenTextMatches(kind tokenKind, actual, expected string) bool {
+	if expected == "" {
+		return true
+	}
+	if kind == tokenIdent {
+		return strings.EqualFold(actual, expected)
+	}
+	return actual == expected
 }
 
 func (p *parser) advance() token {
