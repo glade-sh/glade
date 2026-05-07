@@ -56,6 +56,31 @@ type PackageDirectory struct {
 	Default bool   `json:"default,omitempty"`
 }
 
+func (p Project) PackagePathForFile(file string) string {
+	absFile, err := filepath.Abs(file)
+	if err != nil {
+		absFile = file
+	}
+	absFile = filepath.Clean(absFile)
+
+	bestRoot := ""
+	bestPath := ""
+	for _, pkg := range p.PackageDirectories {
+		if pkg.Path == "" {
+			continue
+		}
+		root := filepath.Clean(filepath.Join(p.Root, filepath.FromSlash(pkg.Path)))
+		if absFile != root && !strings.HasPrefix(absFile, root+string(filepath.Separator)) {
+			continue
+		}
+		if len(root) > len(bestRoot) {
+			bestRoot = root
+			bestPath = filepath.ToSlash(filepath.Clean(pkg.Path))
+		}
+	}
+	return bestPath
+}
+
 type sfdxProject struct {
 	PackageDirectories []PackageDirectory `json:"packageDirectories"`
 	Namespace          string             `json:"namespace"`

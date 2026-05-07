@@ -79,7 +79,7 @@ func Build(p project.Project, s schema.Schema) (idx Index) {
 			})
 		}
 	}()
-	seenTypes := make(map[string]TypeSymbol)
+	seenTypes := make(map[string][]seenTypeSymbol)
 
 	for _, path := range p.ApexFiles {
 		file, err := parser.ParseFile(path)
@@ -102,20 +102,22 @@ func Build(p project.Project, s schema.Schema) (idx Index) {
 				if source, err := os.ReadFile(path); err == nil {
 					for _, sym := range typeSymbolsFromDeclaration(path, decl, "", string(source)) {
 						key := strings.ToLower(sym.Name)
-						if previous, ok := seenTypes[key]; ok {
-							idx.Diagnostics = append(idx.Diagnostics, duplicateDiagnostic(sym, previous))
+						currentPackage := p.PackagePathForFile(path)
+						if previous, ok := conflictingSeenType(seenTypes[key], currentPackage); ok {
+							idx.Diagnostics = append(idx.Diagnostics, duplicateDiagnostic(sym, previous.Symbol))
 						} else {
-							seenTypes[key] = sym
+							seenTypes[key] = append(seenTypes[key], seenTypeSymbol{Symbol: sym, PackagePath: currentPackage})
 						}
 						idx.Types = append(idx.Types, sym)
 					}
 				} else {
 					sym := typeSymbolFromDeclaration(path, decl, "")
 					key := strings.ToLower(sym.Name)
-					if previous, ok := seenTypes[key]; ok {
-						idx.Diagnostics = append(idx.Diagnostics, duplicateDiagnostic(sym, previous))
+					currentPackage := p.PackagePathForFile(path)
+					if previous, ok := conflictingSeenType(seenTypes[key], currentPackage); ok {
+						idx.Diagnostics = append(idx.Diagnostics, duplicateDiagnostic(sym, previous.Symbol))
 					} else {
-						seenTypes[key] = sym
+						seenTypes[key] = append(seenTypes[key], seenTypeSymbol{Symbol: sym, PackagePath: currentPackage})
 					}
 					idx.Types = append(idx.Types, sym)
 				}
@@ -138,6 +140,27 @@ func Build(p project.Project, s schema.Schema) (idx Index) {
 		return idx.Triggers[i].Name < idx.Triggers[j].Name
 	})
 	return idx
+}
+
+type seenTypeSymbol struct {
+	Symbol      TypeSymbol
+	PackagePath string
+}
+
+func conflictingSeenType(previous []seenTypeSymbol, currentPackage string) (seenTypeSymbol, bool) {
+	for _, candidate := range previous {
+		if duplicateSymbolsConflict(currentPackage, candidate.PackagePath) {
+			return candidate, true
+		}
+	}
+	return seenTypeSymbol{}, false
+}
+
+func duplicateSymbolsConflict(currentPackage, previousPackage string) bool {
+	if currentPackage != "" && previousPackage != "" && currentPackage != previousPackage {
+		return false
+	}
+	return true
 }
 
 func UpdateApexFiles(previous Index, changedPaths, deletedPaths []string) (idx Index) {

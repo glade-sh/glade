@@ -1032,6 +1032,60 @@ import MISSING from '@salesforce/resourceUrl/MissingResource';
 	}
 }
 
+func TestScanCountsReportAndDashboardMetadata(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/reports/Sales/Pipeline.report-meta.xml"), `<Report>
+  <name>Pipeline</name>
+  <format>Summary</format>
+</Report>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/reports/Legacy/Bookings.report"), `<Report>
+  <name>Bookings</name>
+</Report>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/dashboards/Executive/Sales.dashboard-meta.xml"), `<Dashboard>
+  <title>Sales</title>
+</Dashboard>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/dashboards/Legacy/Support.dashboard"), `<Dashboard>
+  <title>Support</title>
+</Dashboard>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/RunReports.cls"), `public class RunReports {
+  void run() {
+    Reports.ReportManager.runReport('00O000000000001');
+    Analytics.ExternalDataSourceConnection conn;
+    VerificationResult result = new VerificationResult();
+    Boolean empty = result.Reports != null && !result.Reports.isEmpty();
+  }
+  private class VerificationResult {
+    List<String> Reports;
+  }
+}`)
+
+	report, err := Scan(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if report.Summary.Reports != 2 {
+		t.Fatalf("reports = %d, want 2", report.Summary.Reports)
+	}
+	if report.Summary.Dashboards != 2 {
+		t.Fatalf("dashboards = %d, want 2", report.Summary.Dashboards)
+	}
+	if !hasLineFindingContaining(report, "analytics.report-execution", "force-app/main/default/classes/RunReports.cls", "Reports.ReportManager") {
+		t.Fatalf("missing unsupported Reports execution finding")
+	}
+	if !hasLineFindingContaining(report, "analytics.report-execution", "force-app/main/default/classes/RunReports.cls", "Analytics.ExternalDataSourceConnection") {
+		t.Fatalf("missing unsupported Analytics execution finding")
+	}
+	if hasLineFindingContaining(report, "analytics.report-execution", "force-app/main/default/classes/RunReports.cls", "Reports.isEmpty") {
+		t.Fatalf("instance property named Reports should not be reported as namespace execution")
+	}
+	for _, finding := range report.Findings {
+		if strings.Contains(finding.File, "/reports/") || strings.Contains(finding.File, "/dashboards/") {
+			t.Fatalf("report/dashboard metadata should be accounted for without load blockers: %#v", finding)
+		}
+	}
+}
+
 func TestScanUsesMetadataOutsideConfiguredPackageDirectories(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"namespace":"namz","packageDirectories":[{"path":"core","default":true}]}`)

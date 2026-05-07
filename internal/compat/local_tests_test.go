@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/open-aer/oaer/internal/testreport"
 )
 
 func TestRunLocalTestsClassifiesBasicFixture(t *testing.T) {
@@ -11,7 +13,7 @@ func TestRunLocalTestsClassifiesBasicFixture(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if report.Summary.Total != 3 || report.Summary.Pass != 1 || report.Summary.Fail != 1 || report.Summary.Unsupported != 1 {
+	if report.Summary.Total != 3 || report.Summary.Pass != 1 || report.Summary.AssertFailures != 1 || report.Summary.Unsupported != 1 {
 		t.Fatalf("summary = %#v", report.Summary)
 	}
 	if report.Ready {
@@ -26,6 +28,54 @@ func TestRunLocalTestsClassifiesBasicFixture(t *testing.T) {
 	}
 	if failing.TraceEvents == 0 || failing.ProfileEvents == 0 || len(failing.ProfileCategories) == 0 {
 		t.Fatalf("failing outcome missing trace/profile summary: %#v", failing)
+	}
+}
+
+func TestRunLocalTestsReportsTopFailures(t *testing.T) {
+	report, err := RunLocalTests(LocalTestOptions{
+		Project:     filepath.Join("..", "..", "testdata", "local-tests", "basic"),
+		TopFailures: 2,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(report.TopFailures) != 2 {
+		t.Fatalf("topFailures = %#v", report.TopFailures)
+	}
+	if report.TopFailures[0].Count == 0 || report.TopFailures[0].Outcome == "pass" {
+		t.Fatalf("topFailures[0] = %#v", report.TopFailures[0])
+	}
+}
+
+func TestLocalTestRunOutcomeSplitsRuntimeAndTimeout(t *testing.T) {
+	runtimeGap := localTestRunOutcome("fixture", testreport.Case{
+		ClassName:  "RuntimeGapTest",
+		MethodName: "fails",
+		Status:     testreport.StatusFail,
+		Problem:    &testreport.Problem{Type: "RuntimeError", Message: "method dispatch failed"},
+	})
+	if runtimeGap.Outcome != "runtime_gap" {
+		t.Fatalf("runtime outcome = %#v", runtimeGap)
+	}
+
+	assertFail := localTestRunOutcome("fixture", testreport.Case{
+		ClassName:  "AssertTest",
+		MethodName: "fails",
+		Status:     testreport.StatusFail,
+		Problem:    &testreport.Problem{Type: "AssertException", Message: "Assertion Failed"},
+	})
+	if assertFail.Outcome != "assert_fail" || assertFail.Phase != "assert" {
+		t.Fatalf("assert outcome = %#v", assertFail)
+	}
+
+	timeout := localTestRunOutcome("fixture", testreport.Case{
+		ClassName:  "TimeoutTest",
+		MethodName: "hangs",
+		Status:     testreport.StatusUnsupported,
+		Problem:    &testreport.Problem{Type: "Canceled", Message: "context deadline exceeded"},
+	})
+	if timeout.Outcome != "timeout" || timeout.CapabilityID != "apex.test.timeout" {
+		t.Fatalf("timeout outcome = %#v", timeout)
 	}
 }
 

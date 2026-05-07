@@ -67,11 +67,37 @@ func TestAnalyzeAttributesExpandedRuntimeEvents(t *testing.T) {
 	}
 }
 
+func TestAnalyzeAggregatesPostParitySurfaces(t *testing.T) {
+	doc := trace.NewDocument([]trace.Event{
+		trace.Instant("apex.flow.rule", "apex.flow", 1, map[string]any{"flow": "TraceStatus", "matched": true}),
+		trace.Instant("apex.flow.field_update", "apex.flow", 2, map[string]any{"field": "Status__c"}),
+		trace.Instant("apex.visualforce.action.invoke", "apex.visualforce", 3, map[string]any{"className": "TraceController"}),
+		trace.Instant("apex.visualforce.standard_controller.action.invoke", "apex.visualforce.standard_controller", 4, map[string]any{"object": "Account"}),
+		trace.Instant("apex.metadata.deploy.enqueue", "apex.metadata", 5, map[string]any{"components": 1}),
+		trace.Instant("apex.metadata.deploy.status", "apex.metadata", 6, map[string]any{"status": "SUCCEEDED"}),
+	})
+
+	report := Analyze(doc)
+	if report.Categories["apex.flow"] != 2 || report.Categories["apex.visualforce"] != 1 || report.Categories["apex.metadata"] != 2 {
+		t.Fatalf("categories = %#v", report.Categories)
+	}
+	if len(report.Automation) != 2 {
+		t.Fatalf("automation = %#v", report.Automation)
+	}
+	if len(report.Visualforce) != 2 {
+		t.Fatalf("visualforce = %#v", report.Visualforce)
+	}
+	if len(report.Metadata) != 2 {
+		t.Fatalf("metadata = %#v", report.Metadata)
+	}
+}
+
 func TestWriteMarkdown(t *testing.T) {
 	report := Analyze(trace.NewDocument([]trace.Event{
 		trace.Instant("apex.statement.expr", "apex.statement", 1, map[string]any{"sourceOffset": 5}),
 		trace.Instant("apex.method.Work.run", "apex.method", 2, nil),
 		trace.Instant("apex.soql", "apex.soql", 3, map[string]any{"rows": 4}),
+		trace.Instant("apex.metadata.deploy.status", "apex.metadata", 5, map[string]any{"status": "SUCCEEDED"}),
 		trace.Instant("apex.limits", "apex.limits", 4, map[string]any{"cpuTimeMs": 7, "heapSize": 64}),
 	}))
 	var out bytes.Buffer
@@ -82,12 +108,12 @@ func TestWriteMarkdown(t *testing.T) {
 	if !strings.Contains(markdown, "## Runtime summary") || !strings.Contains(markdown, "CPU: 7 ms") || !strings.Contains(markdown, "Heap: 64 bytes") {
 		t.Fatalf("markdown summary = %q", markdown)
 	}
-	for _, section := range []string{"## Categories", "## Hot events", "## Statements", "## Methods", "## SOQL", "## Platform"} {
+	for _, section := range []string{"## Categories", "## Hot events", "## Statements", "## Methods", "## SOQL", "## Platform", "## Metadata"} {
 		if !strings.Contains(markdown, section) {
 			t.Fatalf("markdown missing %s: %q", section, markdown)
 		}
 	}
-	if !strings.Contains(markdown, "| 4 | `apex.statement.expr` | `apex.statement` | 1 | [5] |\n\n## Statements") {
+	if !strings.Contains(markdown, "| 5 | `apex.statement.expr` | `apex.statement` | 1 | [5] |\n\n## Statements") {
 		t.Fatalf("markdown sections not separated = %q", markdown)
 	}
 	if !strings.Contains(markdown, "| 1 | `apex.statement.expr` | `apex.statement` | 1 | [5] |") {

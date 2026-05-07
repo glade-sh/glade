@@ -1439,7 +1439,7 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 		return err
 	}
 	if len(args) == 0 {
-		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | local-tests [--project <root>] [--class <name>] [--method <name>] [--blockers-only] [--json] [--check <path>] | ui-controllers [--project <root>] [--json|--check <path>] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | product-namespaces --catalog <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]")
+		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | local-tests [--project <root>] [--class <name>] [--method <name>] [--blockers-only] [--top-failures <n>] [--timeout <ms>] [--profile-on-timeout] [--json] [--check <path>] | ui-controllers [--project <root>] [--json|--check <path>] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | product-namespaces --catalog <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]")
 	}
 	switch args[0] {
 	case "matrix", "mvp":
@@ -1473,7 +1473,7 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 			return errors.New("usage: oaer compat validate|run <fixture.json...>")
 		}
 	default:
-		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | local-tests [--project <root>] [--class <name>] [--method <name>] [--blockers-only] [--json] [--check <path>] | ui-controllers [--project <root>] [--json|--check <path>] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | product-namespaces --catalog <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]")
+		return errors.New("usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | local-tests [--project <root>] [--class <name>] [--method <name>] [--blockers-only] [--top-failures <n>] [--timeout <ms>] [--profile-on-timeout] [--json] [--check <path>] | ui-controllers [--project <root>] [--json|--check <path>] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | product-namespaces --catalog <path> [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]")
 	}
 
 	for _, path := range args[1:] {
@@ -1537,6 +1537,28 @@ func runCompatLocalTests(args []string, w io.Writer) error {
 			}
 			options.SlowTestThresholdMS = parsed
 			i++
+		case "--top-failures":
+			if i+1 >= len(args) {
+				return errors.New("--top-failures requires a value")
+			}
+			parsed, err := strconv.Atoi(args[i+1])
+			if err != nil || parsed < 0 {
+				return fmt.Errorf("--top-failures must be a non-negative integer")
+			}
+			options.TopFailures = parsed
+			i++
+		case "--timeout":
+			if i+1 >= len(args) {
+				return errors.New("--timeout requires a value")
+			}
+			parsed, err := strconv.ParseInt(args[i+1], 10, 64)
+			if err != nil || parsed < 0 {
+				return fmt.Errorf("--timeout must be a non-negative integer")
+			}
+			options.TimeoutMS = parsed
+			i++
+		case "--profile-on-timeout":
+			options.ProfileOnTimeout = true
 		case "--project":
 			if i+1 >= len(args) {
 				return errors.New("--project requires a value")
@@ -1560,8 +1582,8 @@ func runCompatLocalTests(args []string, w io.Writer) error {
 		}
 	}
 	if checkPath != "" {
-		if options.Project != "." || options.Class != "" || options.Method != "" || options.BlockersOnly || options.TraceBlocked || options.SlowTestThresholdMS != 0 {
-			return errors.New("--check cannot be combined with --project, --class, --method, --blockers-only, --trace-blockers, or --slow-test-ms")
+		if options.Project != "." || options.Class != "" || options.Method != "" || options.BlockersOnly || options.TraceBlocked || options.SlowTestThresholdMS != 0 || options.TopFailures != 0 || options.TimeoutMS != 0 || options.ProfileOnTimeout {
+			return errors.New("--check cannot be combined with --project, --class, --method, --blockers-only, --trace-blockers, --slow-test-ms, --top-failures, --timeout, or --profile-on-timeout")
 		}
 		report, err := compat.CheckLocalTestCorpus(checkPath)
 		if jsonOut {
@@ -2027,6 +2049,8 @@ func writePostParityReadinessText(w io.Writer, readiness postParityReadiness) {
 	fmt.Fprintf(w, "Target: %s\n", readiness.Target)
 	fmt.Fprintf(w, "Project: %s\n", readiness.Project)
 	fmt.Fprintf(w, "Files scanned: %d\n", readiness.Summary.FilesScanned)
+	fmt.Fprintf(w, "Reports: %d\n", readiness.Summary.Reports)
+	fmt.Fprintf(w, "Dashboards: %d\n", readiness.Summary.Dashboards)
 	fmt.Fprintf(w, "Surfaces: %d\n", readiness.Summary.Surfaces)
 	fmt.Fprintf(w, "Findings: %d\n", readiness.Summary.Findings)
 	fmt.Fprintf(w, "Test-blocking findings: %d\n", readiness.Summary.TestBlockingFindings)
@@ -2087,6 +2111,8 @@ func writePostParityReadinessMarkdown(w io.Writer, readiness postParityReadiness
 		count int
 	}{
 		{"Files scanned", readiness.Summary.FilesScanned},
+		{"Reports", readiness.Summary.Reports},
+		{"Dashboards", readiness.Summary.Dashboards},
 		{"Detected surfaces", readiness.Summary.Surfaces},
 		{"Findings", readiness.Summary.Findings},
 		{"Test-blocking findings", readiness.Summary.TestBlockingFindings},

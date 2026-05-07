@@ -225,6 +225,35 @@ public class UsesInner {
 	}
 }
 
+func TestAnalyzeSchemaSoapTypeAliases(t *testing.T) {
+	index := typesys.Index{
+		Types: []typesys.TypeSymbol{
+			{
+				Kind: apexast.DeclarationClass,
+				Name: "UsesSoapType",
+				File: "UsesSoapType.cls",
+				Members: []typesys.MemberSymbol{
+					{Kind: apexast.DeclarationField, Name: "byAlias", Type: "Map<SoapType, Type>"},
+					{Kind: apexast.DeclarationField, Name: "byQualifiedName", Type: "Map<Schema.SoapType, Type>"},
+					{
+						Kind: apexast.DeclarationMethod,
+						Name: "accept",
+						Parameters: []apexast.Parameter{
+							{Name: "fieldType", Type: "SoapType"},
+							{Name: "qualifiedFieldType", Type: "Schema.SoapType"},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
 func TestAnalyzeNestedTypeRelativeReferencesInsideOwner(t *testing.T) {
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Outer.cls"), `
@@ -375,6 +404,625 @@ public class Uses {
 	}
 	if count != 3 {
 		t.Fatalf("OAERSEMA015 count = %d, diagnostics = %#v", count, result.Diagnostics)
+	}
+}
+
+func TestAnalyzeCustomExceptionUsesInheritedConstructors(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "NUException.cls"), `public class NUException extends Exception {}`)
+	writeSemaFile(t, filepath.Join(root, "Uses.cls"), `
+public class Uses {
+  public void run(Exception cause) {
+    NUException empty = new NUException();
+    NUException message = new NUException('blocked');
+    NUException nested = new NUException(cause);
+    throw new NUException('blocked', cause);
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "NUException.cls"),
+		filepath.Join(root, "Uses.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeMultilineReturnExpression(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  private static final String TEMPLATE = '{0} {1} {2}';
+
+  private static String build(String one, String two, String three) {
+    return String.format(TEMPLATE, new List<String> {
+      one, two, three
+    });
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeIgnoresReturnWordInComments(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public static void run(Boolean done) {
+    // If done, return early.
+    if (done) {
+      return;
+    }
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeIgnoresCallShapeInsideStringLiteral(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public static void run() {
+    String message = 'failure (///_-) dude';
+    String html = '<div><img src="notmyproblem.jpeg">Hello</div>';
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "OAERSEMA008" || diag.Code == "OAERSEMA006" {
+			t.Fatalf("unexpected string-literal diagnostic: %#v", result.Diagnostics)
+		}
+	}
+}
+
+func TestAnalyzeCatchVariableVisibleInCatchBlock(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public void run() {
+    try {
+      throw new DmlException('blocked');
+    } catch (DmlException | QueryException e) {
+      System.debug(e.getMessage());
+    }
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "OAERSEMA013" {
+			t.Fatalf("unexpected catch-variable diagnostic: %#v", result.Diagnostics)
+		}
+	}
+}
+
+func TestAnalyzeEnumValuesAsStaticFields(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "DataRequest.cls"), `
+public class DataRequest {
+  public enum SharingMode {
+    WithSharing,
+    WithoutSharing
+  }
+
+  public SharingMode SharingModeToUse {
+    get {
+      if (this.SharingModeToUse == null) {
+        this.SharingModeToUse = SharingMode.WithSharing;
+      }
+      return this.SharingModeToUse;
+    }
+    private set;
+  }
+
+  public static DataRequest.SharingMode qualifiedEnum() {
+    return DataRequest.SharingMode.WithoutSharing;
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "DataRequest.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeChainedCollectionCallOnImplicitMethodResult(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public static List<String> supported() {
+    return new List<String>{ 'a' };
+  }
+
+  public static Boolean run(String key) {
+    return !supported().contains(key);
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeTypeLiteralToStringCall(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public static String run() {
+    return Hello.class.toString();
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeListBracketIndexUsesListReceiver(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  private static final List<String> KEYS = new List<String>{ 'a' };
+
+  public static String run() {
+    return KEYS[0];
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeCollectionCallOnFieldPath(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Request.cls"), `
+public class Request {
+  public List<String> Values { get; private set; }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public static Boolean run(Request request) {
+    return request.Values.isEmpty();
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "Request.cls"),
+		filepath.Join(root, "Hello.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeMethodCallWithListInitializerArgument(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public static void accepts(String key, List<String> values) {}
+
+  public static void run() {
+    accepts('key', new List<String> { 'one', 'two' });
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeMultilineMapInitializerLocal(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public static void run() {
+    Map<String, Object> values = new Map<String, Object> {
+      'someString' => 'someValue',
+      'someMap' => new Map<String, Object> {
+        'someChild' => 'someChildValue'
+      }
+    };
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeStringReplaceAllCall(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public static String run(String input) {
+    return input.replaceAll('[^a-z]', '');
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeStringSplitCall(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public static String run(String input) {
+    List<String> parts = input.split('-', 2);
+    return parts[0];
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeBooleanExpressionWithStringCalls(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public static Boolean run(String classPrefix) {
+    Boolean isValid = ''.equals(classPrefix) || (classPrefix.length() > 2 && classPrefix.endsWith('.'));
+    return isValid;
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeMetadataRetrieveCustomMetadataReturn(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public static Integer run() {
+    List<Metadata.CustomMetadata> records = Metadata.Operations.retrieve(
+      Metadata.MetadataType.CustomMetadata,
+      new List<String>{'Feature.Default'}
+    );
+    return records.size();
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeSObjectDynamicRelationshipCalls(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public static Object run(Object value, String property) {
+    SObject parent = ((SObject)value).getSObject(property);
+    List<SObject> children = parent.getSObjects('Contacts');
+    return children.isEmpty() ? parent.get('Name') : children[0].get('Name');
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeCastNullSelectsOverload(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Parameters.cls"), `
+public class Parameters {
+  public static Parameters newInstance(String paramsString) {
+    return new Parameters();
+  }
+  public static Parameters newInstance(Map<String, String> paramMap) {
+    return new Parameters();
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public static Parameters run() {
+    return Parameters.newInstance((String)null);
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "Parameters.cls"),
+		filepath.Join(root, "Hello.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeNestedInstanceFieldPath(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "DataRequest.cls"), `
+public class DataRequest {
+  public String Query { get; private set; }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "SObjectData.cls"), `
+public class SObjectData {
+  private DataRequest request;
+  public String run() {
+    return this.request.Query;
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "DataRequest.cls"),
+		filepath.Join(root, "SObjectData.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeFluentChainAcrossNewlinesWithEqualsInArgument(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "DataRequest.cls"), `
+public class DataRequest {
+  public enum SharingMode { WithSharing, WithoutSharing }
+  public static DataRequest newInstance() { return new DataRequest(); }
+  public DataRequest setQuery(String queryString) { return this; }
+  public DataRequest setParam1(List<String> param1s) { return this; }
+  public DataRequest withSharingMode(SharingMode sharingModeToSet) { return this; }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public static DataRequest run(String idValue) {
+    DataRequest request = DataRequest.newInstance()
+      .setQuery('SELECT Id FROM Account WHERE Id = :param1')
+      .setParam1(new List<String>{ idValue })
+      .withSharingMode(DataRequest.SharingMode.WithoutSharing);
+    return request;
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "DataRequest.cls"),
+		filepath.Join(root, "Hello.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeRecordTypeInfoMethods(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public static Id run(Map<String, Schema.RecordTypeInfo> recordTypes) {
+    Schema.RecordTypeInfo info = recordTypes.get('Business');
+    Boolean active = info.isActive();
+    return active ? info.getRecordTypeId() : null;
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeStringArgumentMatchesIdParameter(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  private static Account byId(List<Account> accounts, Id recordId) {
+    return accounts.isEmpty() ? null : accounts[0];
+  }
+  public static Account run(List<Account> accounts, String recordId) {
+    return byId(accounts, recordId);
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeIdValuesFitStringInitializer(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public static List<String> run(Account account) {
+    return new List<String>{ account.Name, account.Id };
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeNestedCustomSObjectSystemFieldPath(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "SubtemplateWrapper.cls"), `
+public class SubtemplateWrapper {
+  public Account TemplateRecord { get; private set; }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public static Id run(SubtemplateWrapper wrapper) {
+    return wrapper.TemplateRecord.Id;
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "SubtemplateWrapper.cls"),
+		filepath.Join(root, "Hello.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeRelationshipSObjectMatchesConcreteSObjectParameter(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Template.cls"), `
+public class Template {
+  private Account record;
+  public Template ParentTemplate {
+    get {
+      return Template.newInstance(this.record.ParentTemplate__r);
+    }
+  }
+  public static Template newInstance(Account templateRecord) {
+    return new Template();
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Template.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeEnumNameCall(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "TokenType.cls"), `
+public enum TokenType {
+  Add,
+  Subtract
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public static String run(TokenType op) {
+    return op.name();
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "TokenType.cls"),
+		filepath.Join(root, "Hello.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeStringChainFromThisField(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  private Dom.Document htmlDocumentInstance;
+  private String SourceHtml;
+
+  public String getHtml() {
+    return this.htmlDocumentInstance.toXmlString()
+      .substringAfter('<html>')
+      .substringBeforeLast('</html>')
+      .replace('{amp}', '&');
+  }
+
+  public String clean() {
+    return this.SourceHtml.trim().toLowerCase().unescapeHtml4();
+  }
+
+  public Dom.XmlNode root() {
+    this.htmlDocumentInstance.load('<html></html>');
+    String htmlDocumentBody = String.format('<html>{0}</html>',
+      new List<String> { clean() });
+    return this.htmlDocumentInstance.getRootElement();
+  }
+
+  public void mutate(Dom.XmlNode node) {
+    node.removeAttribute('href', null);
+    node.setAttributeNs('href', 'x', null, null);
+    node.addTextNode('text');
+    node.addCommentNode('comment');
+    node.addChildElement('span', null, null);
+    node.removeChild(node);
+    node.insertBefore(node, node);
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
 	}
 }
 
@@ -998,6 +1646,28 @@ public class Hello {
 	}
 }
 
+func TestAnalyzeClassicForMultipleInitializerLocals(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public static void run(List<String> values) {
+    for (Integer i = 0, j = values.size(); i < j; i++) {
+      String value = values[i];
+      System.debug(value);
+    }
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "OAERSEMA013" {
+			t.Fatalf("unexpected for-local diagnostic: %#v", result.Diagnostics)
+		}
+	}
+}
+
 func TestAnalyzeGenericCollectionInitializerTypes(t *testing.T) {
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
@@ -1028,6 +1698,56 @@ public class Hello {
 	}
 	if count != 5 {
 		t.Fatalf("OAERSEMA025 count = %d diagnostics=%#v", count, result.Diagnostics)
+	}
+}
+
+func TestAnalyzeConstructorAcceptsBareSchemaTypeAliases(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UnitOfWork.cls"), `
+public class UnitOfWork {
+  public UnitOfWork(List<Schema.SObjectType> types) {}
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public void run() {
+    UnitOfWork uow = new UnitOfWork(new List<SObjectType>{Account.SObjectType});
+    List<Schema.DescribeFieldResult> fieldDescribes = new List<DescribeFieldResult>();
+    List<Schema.ChildRelationship> childRelationships = new List<ChildRelationship>();
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "UnitOfWork.cls"),
+		filepath.Join(root, "Hello.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeIgnoresSObjectConstructorNamedArgumentsAsAssignments(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public void run() {
+    Account account = new Account(
+      Name = 'Acme',
+      Phone = '555'
+    );
+    Contact contact = new Contact(LastName = 'Smith', AccountId = account.Id);
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "OAERSEMA013" {
+			t.Fatalf("unexpected named-argument assignment diagnostic: %#v", result.Diagnostics)
+		}
 	}
 }
 

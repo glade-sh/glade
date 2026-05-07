@@ -174,10 +174,12 @@ func TestEnsureDeterministicPlatformDataSeedsCommonSalesObjects(t *testing.T) {
 		}
 	}
 	for objectName, wantPrefix := range map[string]string{
-		"Contact":     "003",
-		"Opportunity": "006",
-		"Product2":    "01t",
+		"Contact":                "003",
+		"Opportunity":            "006",
+		"OpportunityContactRole": "00K",
+		"Product2":               "01t",
 	} {
+		EnsureStandardObject(&org, objectName)
 		if got := org.Objects[objectName].Definition.KeyPrefix; got != wantPrefix {
 			t.Fatalf("%s key prefix = %q, want %q", objectName, got, wantPrefix)
 		}
@@ -206,6 +208,7 @@ func TestEnsureStandardObjectAddsSalesCloudStandardObjectShape(t *testing.T) {
 
 	EnsureStandardObject(&org, "Lead")
 	EnsureStandardObject(&org, "Opportunity")
+	EnsureStandardObject(&org, "CampaignMember")
 	EnsureStandardObject(&org, "OpportunityContactRole")
 	EnsureStandardObject(&org, "OrderItem")
 
@@ -215,8 +218,26 @@ func TestEnsureStandardObjectAddsSalesCloudStandardObjectShape(t *testing.T) {
 	if !IsKnownStandardObject("OpportunityContactRole") {
 		t.Fatalf("OpportunityContactRole should be recognized as a generated standard object")
 	}
+	if !IsKnownStandardObject("CampaignMember") {
+		t.Fatalf("CampaignMember should be recognized as a generated standard object")
+	}
 	if field, ok := org.Objects["Lead"].Definition.Fields["LastName"]; !ok || !field.Required {
 		t.Fatalf("Lead.LastName field = %#v, %v", field, ok)
+	}
+	if field, ok := org.Objects["CampaignMember"].Definition.Fields["CampaignId"]; !ok || field.Type != FieldReference || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "Campaign" || !field.Required {
+		t.Fatalf("CampaignMember.CampaignId field = %#v, %v", field, ok)
+	}
+	if field, ok := org.Objects["CampaignMember"].Definition.Fields["ContactId"]; !ok || field.Type != FieldReference || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "Contact" {
+		t.Fatalf("CampaignMember.ContactId field = %#v, %v", field, ok)
+	}
+	if field, ok := org.Objects["CampaignMember"].Definition.Fields["LeadId"]; !ok || field.Type != FieldReference || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "Lead" {
+		t.Fatalf("CampaignMember.LeadId field = %#v, %v", field, ok)
+	}
+	if field, ok := org.Objects["CampaignMember"].Definition.Fields["HasResponded"]; !ok || field.Type != FieldBoolean {
+		t.Fatalf("CampaignMember.HasResponded field = %#v, %v", field, ok)
+	}
+	if field, ok := org.Objects["CampaignMember"].Definition.Fields["Status"]; !ok || field.Type != FieldPicklist {
+		t.Fatalf("CampaignMember.Status field = %#v, %v", field, ok)
 	}
 	if field, ok := org.Objects["Opportunity"].Definition.Fields["StageName"]; !ok || !field.Required {
 		t.Fatalf("Opportunity.StageName field = %#v, %v", field, ok)
@@ -227,9 +248,38 @@ func TestEnsureStandardObjectAddsSalesCloudStandardObjectShape(t *testing.T) {
 	if field, ok := org.Objects["OpportunityContactRole"].Definition.Fields["ContactId"]; !ok || field.Type != FieldReference || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "Contact" {
 		t.Fatalf("OpportunityContactRole.ContactId field = %#v, %v", field, ok)
 	}
+	if field, ok := org.Objects["OpportunityContactRole"].Definition.Fields["OpportunityId"]; !ok || field.Type != FieldReference || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "Opportunity" || !field.Required {
+		t.Fatalf("OpportunityContactRole.OpportunityId field = %#v, %v", field, ok)
+	}
+	if field, ok := org.Objects["OpportunityContactRole"].Definition.Fields["Role"]; !ok || field.Type != FieldPicklist || len(field.PicklistValues) == 0 {
+		t.Fatalf("OpportunityContactRole.Role field = %#v, %v", field, ok)
+	}
+	if field, ok := org.Objects["OpportunityContactRole"].Definition.Fields["IsPrimary"]; !ok || field.Type != FieldBoolean {
+		t.Fatalf("OpportunityContactRole.IsPrimary field = %#v, %v", field, ok)
+	}
+	if !hasRelationship(org.Objects["OpportunityContactRole"].Definition.Relations, "OpportunityId", "Opportunity", "Opportunity") {
+		t.Fatalf("OpportunityContactRole relations missing OpportunityId: %#v", org.Objects["OpportunityContactRole"].Definition.Relations)
+	}
+	if !hasRelationship(org.Objects["OpportunityContactRole"].Definition.Relations, "ContactId", "Contact", "Contact") {
+		t.Fatalf("OpportunityContactRole relations missing ContactId: %#v", org.Objects["OpportunityContactRole"].Definition.Relations)
+	}
 	if field, ok := org.Objects["OrderItem"].Definition.Fields["OrderId"]; !ok || field.Type != FieldReference || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "Order" {
 		t.Fatalf("OrderItem.OrderId field = %#v, %v", field, ok)
 	}
+}
+
+func hasRelationship(relations []Relationship, fieldName, parentObject, parentRelationship string) bool {
+	for _, relation := range relations {
+		if relation.Field != fieldName || relation.ParentRelationship != parentRelationship {
+			continue
+		}
+		for _, candidate := range relation.ParentObjects {
+			if candidate == parentObject {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func TestEnsureStandardObjectFieldsAddsCustomObjectNameAndRecordTypeId(t *testing.T) {

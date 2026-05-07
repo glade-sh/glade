@@ -41,6 +41,29 @@ func TestBuildIndexDuplicateType(t *testing.T) {
 	}
 }
 
+func TestBuildIndexAllowsDuplicateTypesAcrossPackageDirectories(t *testing.T) {
+	root := t.TempDir()
+	first := filepath.Join(root, "packages/one/classes/Shared.cls")
+	second := filepath.Join(root, "packages/two/classes/Shared.cls")
+	writeFile(t, first, "public class Shared { public String one() { return 'one'; } }")
+	writeFile(t, second, "public class Shared { public String two() { return 'two'; } }")
+
+	idx := Build(project.Project{
+		Root: root,
+		PackageDirectories: []project.PackageDirectory{
+			{Path: "packages/one"},
+			{Path: "packages/two"},
+		},
+		ApexFiles: []string{first, second},
+	}, schema.Schema{})
+	if idx.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", idx.Diagnostics)
+	}
+	if len(idx.Types) != 2 {
+		t.Fatalf("types = %#v", idx.Types)
+	}
+}
+
 func TestBuildIndexDiscoversTests(t *testing.T) {
 	root := t.TempDir()
 	classPath := filepath.Join(root, "HelloTest.cls")
@@ -138,6 +161,9 @@ func TestUpdateApexFilesReplacesChangedSymbolsAndDropsDeleted(t *testing.T) {
 
 func writeFile(t *testing.T, path, content string) {
 	t.Helper()
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		t.Fatal(err)
+	}
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		t.Fatal(err)
 	}

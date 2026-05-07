@@ -245,6 +245,51 @@ private class LocatorFactoryTest {
 	}
 }
 
+func TestRunExecutesJSONParserFieldOnInnerHandler(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/JSONParserHolder.cls"), `
+public class JSONParserHolder {
+  private interface ParserEvents {
+    String nextToken();
+  }
+  private class InjectChildrenEventHandler implements ParserEvents {
+    private JSONParser childrenParser;
+    public InjectChildrenEventHandler(JSONParser childrenParser) {
+      this.childrenParser = childrenParser;
+      this.childrenParser.nextToken();
+    }
+    public String nextToken() {
+      JSONToken token = childrenParser.nextToken();
+      return token == null ? null : token.name();
+    }
+  }
+  public static String firstChildToken(String payload) {
+    ParserEvents handler = new InjectChildrenEventHandler(JSON.createParser(payload));
+    return handler.nextToken();
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/JSONParserHolderTest.cls"), `
+@isTest
+private class JSONParserHolderTest {
+  @isTest static void storesParserOnInnerHandlerField() {
+    System.assertEquals('VALUE_STRING', JSONParserHolder.firstChildToken('["child"]'));
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	summary := run.Summary()
+	if summary.Total != 1 || summary.Passed != 1 {
+		problem := run.Suites[0].Cases[0].Problem
+		if problem == nil {
+			t.Fatalf("summary = %#v case = %#v problem = nil", summary, run.Suites[0].Cases[0])
+		}
+		t.Fatalf("summary = %#v case = %#v problem = %#v", summary, run.Suites[0].Cases[0], *problem)
+	}
+}
+
 func TestExtractMethodBodyFallsBackPastShortRange(t *testing.T) {
 	source := `public class BigClass {
   public static void run() {

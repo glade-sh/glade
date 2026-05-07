@@ -213,6 +213,8 @@ func LoadProject(p project.Project) (Schema, error) {
 		object.ValidationRules = append(object.ValidationRules, rule)
 	}
 
+	addReferencedCustomObjects(byName)
+
 	records := make([]CustomMetadataRecord, 0, len(p.CustomMetadataFiles))
 	for _, path := range p.CustomMetadataFiles {
 		record, err := loadCustomMetadataRecord(path)
@@ -248,6 +250,36 @@ func LoadProject(p project.Project) (Schema, error) {
 		return out.Objects[i].Name < out.Objects[j].Name
 	})
 	return out, nil
+}
+
+func addReferencedCustomObjects(byName map[string]*Object) {
+	referenced := make(map[string]bool)
+	for _, object := range byName {
+		for _, field := range object.Fields {
+			for _, referenceTo := range field.ReferenceTo {
+				name := strings.TrimSpace(referenceTo)
+				if name == "" || !isCustomEntityName(name) {
+					continue
+				}
+				referenced[name] = true
+			}
+		}
+	}
+	for name := range referenced {
+		if _, ok := byName[name]; ok {
+			continue
+		}
+		byName[name] = &Object{Name: name}
+	}
+}
+
+func isCustomEntityName(name string) bool {
+	for _, suffix := range []string{"__c", "__mdt", "__e", "__b"} {
+		if strings.HasSuffix(name, suffix) {
+			return true
+		}
+	}
+	return false
 }
 
 func loadValidationRule(path string) (ValidationRule, error) {

@@ -139,6 +139,29 @@ func TestLoadDoesNotDuplicateCoveredNestedRoots(t *testing.T) {
 	}
 }
 
+func TestPackagePathForFileChoosesConfiguredPackageRoot(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"packages"},{"path":"packages/app","default":true},{"path":"packages/lib"}]}`)
+	writeFile(t, filepath.Join(root, "packages/app/classes/App.cls"), "public class App {}")
+	writeFile(t, filepath.Join(root, "packages/lib/classes/Lib.cls"), "public class Lib {}")
+
+	p, err := Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	appPath := filepath.Join(root, "packages/app/classes/App.cls")
+	libPath := filepath.Join(root, "packages/lib/classes/Lib.cls")
+	if got := p.PackagePathForFile(appPath); got != "packages/app" {
+		t.Fatalf("app package path = %q, want packages/app", got)
+	}
+	if got := p.PackagePathForFile(libPath); got != "packages/lib" {
+		t.Fatalf("lib package path = %q, want packages/lib", got)
+	}
+	if got := p.PackagePathForFile(filepath.Join(root, "outside/Other.cls")); got != "" {
+		t.Fatalf("outside package path = %q, want empty", got)
+	}
+}
+
 func TestLoadSkipsStaticResourceVendorTrees(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)

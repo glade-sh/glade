@@ -45,8 +45,9 @@ Current checked status:
   `pass=101 fail=0 unsupported=0 missing=0`.
 - The broader post-parity readiness inventory is green for the checked
   `example-projects` corpus. A May 6, 2026
-  `oaer compat post-parity --json` run reported 51,107 files scanned, 0
-  findings, 0 test-blocking findings, and 0 surfaces. This means the known
+  `oaer compat post-parity --json --require-ready` run reported 51,115 files scanned, 0
+  findings, 0 test-blocking findings, 0 surfaces, 114 reports, and 7 dashboards.
+  This means the known
   scanner/test-readiness blockers for standard schema references, labels,
   static resources, content assets, endpoint metadata, custom metadata type
   references, legacy presentation metadata, Visualforce controller/page and
@@ -55,9 +56,12 @@ Current checked status:
   custom object/field deployment have moved out of the post-parity blocker
   frontier.
 - The zero-blocker inventory is not a blanket full-Salesforce claim. The owned
-  local-test corpus is green, including local `Schema.describeTabs()` coverage,
-  while runtime depth for UI rendering, full metadata mutation, advanced Flow
-  interviews, and local UI/API serving remains tracked below.
+  local-test corpus is green across 13 fixture projects, including local
+  `Schema.describeTabs()` coverage, Visualforce controller contracts,
+  named-credential callout resolution, custom metadata and custom object/field
+  metadata deployment, Workflow field updates, Flow field updates/invocable
+  actions, email templates, and Files objects. Runtime depth for UI rendering,
+  advanced Flow interviews, and local UI/API serving remains tracked below.
 - Treat this document as the source for broad local-test support beyond the
   green server-example harness.
 
@@ -89,22 +93,27 @@ The motivating audit targets are anonymized large old projects:
    Visualforce/Aura/LWC Apex controllers, Workflow, Flow, Process Builder,
    labels, email templates, site context, metadata APIs, endpoint metadata,
    static resources, content assets, and legacy Metadata API source files.
-2. Read-only metadata ingestion for tests: load every metadata type needed for
+2. Managed package dependencies: load source-backed or version-pinned installed
+   package artifacts before consuming project code so namespaced Apex, schema,
+   labels, resources, custom metadata, and package metadata resolve with
+   managed-package global access rules. See
+   `docs/MANAGED_PACKAGE_DEPENDENCY_PLAN.md`.
+3. Read-only metadata ingestion for tests: load every metadata type needed for
    Apex symbol resolution, describe results, label values, controller
    references, automation rules, and local test fixtures.
-3. Legacy UI controller test support: make Visualforce controllers,
+4. Legacy UI controller test support: make Visualforce controllers,
    controller extensions, Aura-enabled Apex methods, and LWC-used Apex methods
    callable from tests without rendering or serving the UI.
-4. Declarative test side effects: execute Workflow Rule field updates, email
+5. Declarative test side effects: execute Workflow Rule field updates, email
    alerts, record-triggered or autolaunched Flow, Process Builder-style
    automation, and `@InvocableMethod` paths that fire during DML in tests.
-5. Test-visible platform namespace behavior: implement deterministic local
+6. Test-visible platform namespace behavior: implement deterministic local
    behavior for project-visible `Site`, `Cache`, `ConnectApi`, `Metadata`,
    `System.Callable`, `Test.createStub`, named credential, and remote site APIs.
-6. Enterprise test release gates: add black-box fixtures and stress tests based
+7. Enterprise test release gates: add black-box fixtures and stress tests based
    on large old projects, then publish post-parity dashboards and gap reports
    focused on what still blocks `oaer test`.
-7. Local UI/API running: after local tests pass, add optional Visualforce,
+8. Local UI/API running: after local tests pass, add optional Visualforce,
    Aura, LWC, Experience Cloud, email rendering, and local server execution
    surfaces for interactive or integration-style running.
 
@@ -131,58 +140,70 @@ fixture work, not as known blockers in the current `example-projects` inventory.
      the local Salesforce docs mirror where available.
    - [ ] Add scanner baselines that keep the top blockers stable as project
      support improves.
-   - [ ] Wire scanner output into a local-test readiness view.
+   - [x] Wire scanner output into a local-test readiness view.
 2. Load the metadata needed before tests can resolve code.
-   - [ ] Legacy Metadata API source format: `.object`, `.md`, `.labels`,
-     `.layout`, `.profile`, `.permissionset`, `.tab`, `.workflow`, `.flow`,
-     `.resource`, `.namedCredential`, and `.remoteSite`.
-   - [ ] Legacy custom metadata records and large custom metadata fixture sets.
-   - [ ] Custom labels and translations.
-   - [ ] Static resources, content assets, and deterministic resource URLs.
-   - [ ] UI presentation metadata needed by describe/controller tests: layouts,
-     tabs, profiles, permission sets, web links, quick actions, value sets, and
-     flexipages.
-   - [ ] Named credential and remote site metadata as endpoint configuration, not
+   - [x] Legacy Metadata API source format covered by owned local-test fixtures
+     for `.object`, `.md`, `.labels`, `.tab`, `.workflow`, `.flow`,
+     static-resource metadata, content assets, email templates,
+     `.namedCredential`, and `.remoteSite`.
+   - [ ] Broaden legacy Metadata API source coverage for deeper `.layout`,
+     `.profile`, `.permissionset`, flexipage, quick-action, web-link, and value
+     set behavior beyond current loading/describe fixtures.
+   - [x] Legacy custom metadata records and owned custom metadata fixture sets.
+   - [x] Custom labels and translations.
+   - [x] Static resources, content assets, and deterministic resource URLs for
+     local-test callout/resource fixtures.
+   - [x] UI presentation metadata needed by current describe/controller tests:
+     tabs and local `Schema.describeTabs()` behavior.
+   - [ ] Deeper UI presentation APIs for layouts, profiles, permission sets, web
+     links, quick actions, value sets, and flexipages.
+   - [x] Named credential and remote site metadata as endpoint configuration, not
      callout execution.
 3. Resolve test-facing UI controller contracts without running a browser.
-   - [ ] Visualforce page metadata, `Page.*`, `PageReference`, page parameters,
+   - [x] Visualforce page metadata, `Page.*`, `PageReference`, page parameters,
      `ApexPages` messages, standard controllers, controller extensions, and
-     component attribute bindings.
-   - [ ] Aura bundle-to-Apex controller discovery.
-   - [ ] LWC `@salesforce/apex`, `@wire`, `@salesforce/label`,
+     standard-set-controller contracts covered by local-test fixtures.
+   - [ ] Component attribute binding execution beyond current discovery/loading
+     coverage.
+   - [x] Aura bundle-to-Apex controller discovery.
+   - [x] LWC `@salesforce/apex`, `@wire`, `@salesforce/label`,
      `@salesforce/resourceUrl`, `@salesforce/schema`, and local `c/...` import
      discovery.
    - [ ] Wrapper serialization shapes used by Aura/LWC controller tests.
 4. Add platform context and platform API contracts used by tests.
-   - [ ] `System.Callable`, `System.StubProvider`, and `Test.createStub`.
-   - [ ] Site, Network, Community, and guest/current-site context, including
-     `$Site.Template`.
-   - [ ] `Auth.*` namespace methods used by tests.
-   - [ ] `ConnectApi.Organization.getSettings()` and Platform Cache basics.
-   - [ ] Endpoint resolution from named credentials and remote site settings.
+   - [x] `System.Callable`, `System.StubProvider`, and `Test.createStub`.
+   - [ ] Site, Network, Community, and guest/current-site context beyond the
+     currently covered local Site/Auth defaults.
+   - [x] `Auth.*` namespace methods currently used by local platform fixtures.
+   - [x] `ConnectApi.Organization.getSettings()` and Platform Cache basics.
+   - [x] Endpoint resolution from named credentials and remote site settings.
 5. Add data and messaging side effects beyond core SObject/DML/SOQL parity.
-   - [ ] `Attachment`, `Document`, `ContentVersion`, `ContentDocument`, and
+   - [x] `Attachment`, `Document`, `ContentVersion`, `ContentDocument`, and
      `ContentDocumentLink` binary-body behavior.
-   - [ ] Email templates, merge context, captured email side effects, and email
-     limit accounting.
+   - [x] Email templates, basic template rendering, captured email side
+     effects, and email limit accounting.
+   - [ ] Broader email merge context for recipient, related-record,
+     organization, user, and custom-label fields.
 6. Execute declarative automation in the test transaction.
-   - [ ] Workflow Rule criteria, field updates, email alerts, recursive
-     save-order behavior, and rollback.
-   - [ ] Record-triggered/autolaunched Flow and Process Builder-style metadata
-     that mutates records or calls `@InvocableMethod`.
-   - [ ] Trace events for Workflow/Flow decisions and side effects.
+   - [x] Workflow Rule criteria, field updates, email alert capture, and DML
+     visibility for current owned fixtures.
+   - [ ] Recursive Workflow save-order behavior and rollback fixture coverage.
+   - [x] Record-triggered/autolaunched Flow and Process Builder-style metadata
+     that mutates records or calls `@InvocableMethod` for current owned
+     fixtures.
+   - [x] Trace events for Workflow/Flow decisions and side effects.
 7. Prove the whole local-test path with enterprise fixtures.
-   - [ ] Fixture projects modeled after both audited legacy projects.
-   - [ ] Compatibility tests for trigger/service/domain tests that depend on
+   - [x] Owned fixture projects modeled after audited legacy-project surfaces.
+   - [x] Compatibility tests for trigger/service/domain tests that depend on
      Visualforce controllers, custom metadata, labels, resources, sites,
      platform APIs, files, email, Workflow, and Flow.
-   - [ ] A readiness gate for claiming "legacy-project-test-ready."
+   - [x] A readiness gate for claiming "legacy-project-test-ready."
 
 Current scanner top blockers from the broad post-parity inventory:
 
 | Rank | Blocker |
 | --- | --- |
-| 1 | None. The May 6, 2026 checked scan reports 0 findings, 0 test-blocking findings, and 0 surfaces across 51,107 files. |
+| 1 | None. The May 6, 2026 checked scan reports 0 findings, 0 test-blocking findings, and 0 surfaces across 51,115 files, while accounting for 114 report metadata files and 7 dashboard metadata files. |
 
 Recently cleared blocker families:
 
@@ -199,21 +220,26 @@ Recently cleared blocker families:
 
 Everything before this boundary should serve local test execution first.
 
-- [ ] A Visualforce page is in the test-running lane when Apex tests reference
+- [x] A Visualforce page is in the test-running lane when Apex tests reference
   `Page.SomePage`, `PageReference`, page parameters, `ApexPages` messages,
   standard controllers, or controller extensions.
-- [ ] Aura and LWC are in the test-running lane when Apex tests call the same
-  `@AuraEnabled` methods, wrapper serializers, exceptions, or permissions that
-  UI actions use.
-- [ ] Workflow Rules are in the test-running lane when DML can trigger field
+- [x] Aura and LWC discovery is in the test-running lane when Apex tests or
+  readiness checks need `@AuraEnabled` methods, imports, labels, resources,
+  schema references, or wire dependencies.
+- [ ] Aura/LWC wrapper serializer, exception, and permission behavior still
+  needs broader local-test fixture coverage before a full controller-test claim.
+- [x] Workflow Rules are in the test-running lane when DML can trigger field
   updates, email alerts, recursive save-order behavior, or email limits.
-- [ ] Flow and Process Builder are in the test-running lane when record-triggered
+- [x] Flow and Process Builder are in the test-running lane when record-triggered
   or autolaunched automation can run from DML, call `@InvocableMethod`, mutate
   records, send email, or affect rollback.
-- [ ] Labels, email templates, profiles, permission sets, layouts, global value
-  sets, sites, named credentials, and remote site settings are in the
-  test-running lane when Apex tests or automation resolve them.
-- [ ] Static resources and content assets are in the test-running lane when
+- [x] Labels, email templates, tabs, sites/local context defaults, named
+  credentials, and remote site settings are in the test-running lane when Apex
+  tests or automation resolve them.
+- [ ] Profiles, permission sets, layouts, global value sets, and deeper
+  site/community presentation behavior remain in the lane but need broader
+  behavioral fixtures.
+- [x] Static resources and content assets are in the test-running lane when
   Visualforce `URLFOR`, LWC `@salesforce/resourceUrl`, or controller tests assert
   generated URLs.
 
@@ -332,29 +358,29 @@ redirects/messages. Rendering markup is a later local-running concern.
   - [ ] Merge expressions in attributes and text nodes.
   - [ ] `$Label`, `$ObjectType`, `$CurrentPage`, `$User`, `$Setup`, and simple
     global merge references.
-- [ ] Resolve `Page.SomePage` references to local page metadata.
+- [x] Resolve `Page.SomePage` references to local page metadata.
 - [ ] Implement `PageReference` behavior needed by controllers:
-  - [ ] URL construction, `getUrl`, `setRedirect`, `getRedirect`, `getParameters`,
+  - [x] URL construction, `getUrl`, `setRedirect`, `getRedirect`, `getParameters`,
     headers, cookies, and request body stubs.
-  - [ ] `ApexPages.currentPage()` isolation per test and per server request.
-  - [ ] Current-page parameter setup and mutation in tests.
+  - [x] `ApexPages.currentPage()` isolation per test and per server request.
+  - [x] Current-page parameter setup and mutation in tests.
 - [ ] Implement Visualforce controller construction:
-  - [ ] Custom controllers with default constructors.
-  - [ ] Standard controllers for SObjects and record IDs.
-  - [ ] Controller extensions, including constructor overloads that accept
+  - [x] Custom controllers with default constructors.
+  - [x] Standard controllers for SObjects and record IDs.
+  - [x] Controller extensions, including constructor overloads that accept
     `ApexPages.StandardController` or `StandardSetController`.
   - [ ] Action method invocation during page load.
 - [ ] Implement `ApexPages` message behavior:
-  - [ ] `ApexPages.Message`, `Severity`, `addMessage`, `getMessages`,
+  - [x] `ApexPages.Message`, `Severity`, `addMessage`, `getMessages`,
     `hasMessages`, and per-request/test isolation.
   - [ ] Message ordering and duplicate behavior close enough for controller
     tests.
 - [ ] Implement a non-rendering Visualforce test harness:
-  - [ ] Load a page by name.
-  - [ ] Construct its controller and extensions.
-  - [ ] Bind page parameters.
+  - [x] Load a page by name.
+  - [x] Construct its controller and extensions.
+  - [x] Bind page parameters.
   - [ ] Invoke page action methods.
-  - [ ] Validate redirect targets and messages.
+  - [x] Validate redirect targets and messages.
 - [ ] Defer full Visualforce rendering until the local-test boundary is crossed:
   - [ ] Render simple text, output panels, repeats, page blocks, forms, command
     buttons, and custom component inclusions.
@@ -364,12 +390,12 @@ redirects/messages. Rendering markup is a later local-running concern.
   for local execution, such as full browser lifecycle, JavaScript remoting,
   view state serialization, and PDF rendering if not implemented.
 - [ ] Add compatibility fixtures for:
-  - [ ] Standard controller page with extension.
+  - [x] Standard controller page with extension.
   - [ ] Page action redirect.
-  - [ ] Page parameters and `Page.*` references.
+  - [x] Page parameters and `Page.*` references.
   - [ ] Custom component attribute binding.
   - [ ] `$Label` and `$ObjectType` merge expressions.
-  - [ ] `ApexPages` messages in tests.
+  - [x] `ApexPages` messages in tests.
 
 ## 3. Aura And LWC Apex Controller Test Support
 
@@ -377,27 +403,27 @@ Post-parity support should focus first on the server-side Apex contract, not a
 complete browser runtime. Aura and LWC matter to local tests when their Apex
 controllers, serializers, and exceptions are exercised directly.
 
-- [ ] Parse and index Aura bundle metadata:
-  - [ ] `.cmp`, `.app`, `.evt`, `.design`, `.auradoc`, controller `.js`, helper
+- [x] Parse and index Aura bundle metadata for current discovery fixtures:
+  - [x] `.cmp`, `.app`, `.evt`, `.design`, `.auradoc`, controller `.js`, helper
     `.js`, renderer `.js`, style, and SVG files.
-  - [ ] Component attributes, controller action references, event registrations,
+  - [x] Component attributes, controller action references, event registrations,
     and design-time attributes.
-- [ ] Resolve `@AuraEnabled` Apex methods to Aura action descriptors.
-- [ ] Resolve LWC-used Apex methods through the same `@AuraEnabled` metadata
+- [x] Resolve `@AuraEnabled` Apex methods to Aura action descriptors.
+- [x] Resolve LWC-used Apex methods through the same `@AuraEnabled` metadata
   and access checks.
-- [ ] Parse LWC JavaScript imports enough to build a local test-impact graph:
-  - [ ] `@salesforce/apex/Class.method`.
-  - [ ] `@salesforce/label/...`.
-  - [ ] `@salesforce/resourceUrl/...`.
-  - [ ] `@salesforce/schema/...`.
+- [x] Parse LWC JavaScript imports enough to build a local test-impact graph:
+  - [x] `@salesforce/apex/Class.method`.
+  - [x] `@salesforce/label/...`.
+  - [x] `@salesforce/resourceUrl/...`.
+  - [x] `@salesforce/schema/...`.
   - [ ] `lightning/navigation` current page references.
   - [ ] `lightning/uiRecordApi` and `lightning/uiObjectInfoApi` imports.
-  - [ ] Local `c/...` shared modules and pubsub helpers.
+  - [x] Local `c/...` shared modules and pubsub helpers.
 - [ ] Model LWC wire usage as metadata for test impact:
-  - [ ] Wired Apex method references.
-  - [ ] Reactive parameter names.
+  - [x] Wired Apex method references.
+  - [x] Reactive parameter names.
   - [ ] Current page reference dependencies.
-  - [ ] Labels and static resources used by wired controllers.
+  - [x] Labels and static resources used by wired controllers.
 - [ ] Implement Aura/LWC-style Apex invocation for local tests:
   - [ ] JSON argument decoding into Apex primitives, collections, SObjects, and
     wrapper classes.
@@ -411,14 +437,14 @@ controllers, serializers, and exceptions are exercised directly.
 - [ ] Add unsupported diagnostics for client-only Aura and LWC features not
   executed locally.
 - [ ] Add compatibility fixtures for:
-  - [ ] `@AuraEnabled` method discovery.
-  - [ ] LWC `@salesforce/apex` import discovery.
-  - [ ] LWC `@wire` Apex method discovery.
+  - [x] `@AuraEnabled` method discovery.
+  - [x] LWC `@salesforce/apex` import discovery.
+  - [x] LWC `@wire` Apex method discovery.
   - [ ] Wrapper argument and return serialization.
   - [ ] `AuraHandledException`.
-  - [ ] Component-to-controller action mapping.
+  - [x] Component-to-controller action mapping.
   - [ ] Cacheable method metadata.
-  - [ ] LWC Apex import-to-method mapping where source metadata is present.
+  - [x] LWC Apex import-to-method mapping where source metadata is present.
 
 ## 4. Workflow Rules And Test-Critical Declarative Side Effects
 
@@ -427,31 +453,34 @@ schema behavior. Workflow Rules add another old-platform execution layer after
 DML, and they belong in the test-running lane when they change records, send
 emails, or cause recursive save-order behavior.
 
-- [ ] Load Workflow metadata files and model:
-  - [ ] Rules, criteria formulas, active flags, actions, and evaluation order.
-  - [ ] Field updates, email alerts, tasks, outbound messages, and flow actions.
-  - [ ] Referenced templates, recipients, and target fields.
-- [ ] Implement formula evaluation needed for Workflow criteria and field update
+- [x] Load Workflow metadata files and model for current field-update/email
+  fixtures:
+  - [x] Rules, criteria formulas, active flags, actions, and evaluation order.
+  - [x] Field updates and email alerts.
+  - [x] Referenced templates, recipients, and target fields.
+  - [ ] Tasks, outbound messages, and flow actions.
+- [x] Implement formula evaluation needed for Workflow criteria and field update
   formulas.
-- [ ] Execute Workflow Rule field updates during DML in Salesforce-like order:
-  - [ ] After before/after triggers at the correct point in the save order.
+- [x] Execute Workflow Rule field updates during DML for current local-test
+  fixtures:
+  - [x] After before/after triggers at the supported save-order point.
   - [ ] With recursive update behavior where field updates cause another pass.
   - [ ] With trigger re-entry behavior and recursion guards matching supported
     local limits.
   - [ ] With all-or-none rollback across DML, triggers, validation, and workflow
     side effects.
-- [ ] Implement Workflow email alert capture:
-  - [ ] Resolve email templates and recipients.
-  - [ ] Record deterministic email-send side effects for tests.
-  - [ ] Count email limits.
+- [x] Implement Workflow email alert capture:
+  - [x] Resolve email templates and recipients for current fixtures.
+  - [x] Record deterministic email-send side effects for tests.
+  - [x] Count email limits.
 - [ ] Add unsupported diagnostics for outbound messages, tasks, and flow actions
   until implemented.
 - [ ] Add fixture coverage for:
-  - [ ] Rule criteria true/false paths.
-  - [ ] Field update side effects visible to Apex after DML.
+  - [x] Rule criteria true/false paths.
+  - [x] Field update side effects visible to Apex after DML.
   - [ ] Workflow-triggered second update pass.
   - [ ] Workflow rollback on DML failure.
-  - [ ] Email alert capture.
+  - [x] Email alert capture.
 
 ## 5. Flow, Process Builder, And Invocable Execution
 
@@ -467,7 +496,7 @@ save order or call Apex invocable methods during local tests.
     subflow diagnostics.
   - [ ] Record create/update/get elements backed by local storage; record
     delete elements remain explicit unsupported diagnostics.
-  - [ ] Apex action calls into `@InvocableMethod` with `@InvocableVariable`
+  - [x] Apex action calls into `@InvocableMethod` with `@InvocableVariable`
     argument and result mapping.
   - [ ] Fault paths where representable.
 - [x] Model Flow execution in DML save order where record-triggered flows are
@@ -476,7 +505,7 @@ save order or call Apex invocable methods during local tests.
   Apex and update records from local test DML.
 - [ ] Add deterministic Flow interview IDs and fuller trace events.
 - [ ] Add compatibility fixtures for:
-  - [ ] Invocable method metadata and argument mapping.
+  - [x] Invocable method metadata and argument mapping.
   - [x] Record-triggered flow update.
   - [x] Flow action that calls Apex.
   - [ ] Flow rollback with DML transaction failure.
@@ -487,13 +516,14 @@ save order or call Apex invocable methods during local tests.
 Large projects often compare exact label text in tests. Labels also appear in
 Visualforce, Aura, and LWC metadata/source.
 
-- [ ] Load `CustomLabels.labels-meta.xml` and translation metadata.
-- [ ] Load legacy Metadata API-format `.labels` files.
-- [ ] Resolve Apex `Label.Name` and `System.Label.Name`.
+- [x] Load `CustomLabels.labels-meta.xml` and translation metadata.
+- [x] Load legacy Metadata API-format `.labels` files.
+- [x] Resolve Apex `Label.Name` and `System.Label.Name`.
 - [ ] Resolve Visualforce `$Label.Name`, `$Label.namespace.Name`, and site label
   references where metadata is available.
-- [ ] Resolve LWC `@salesforce/label/...` imports to the same label table.
-- [ ] Support namespace-token label references for package-style projects.
+- [x] Resolve LWC `@salesforce/label/...` imports to the same label table for
+  discovery/readiness checks.
+- [x] Support namespace-token label references for package-style projects.
 - [ ] Implement deterministic locale selection for tests, server requests, and
   `System.runAs` user context.
 - [ ] Implement fallback behavior for missing translations.
@@ -501,10 +531,10 @@ Visualforce, Aura, and LWC metadata/source.
   messages.
 - [ ] Emit stable diagnostics for missing labels and ambiguous names.
 - [ ] Add compatibility fixtures for:
-  - [ ] Apex label access.
-  - [ ] Namespaced label access.
+  - [x] Apex label access.
+  - [x] Namespaced label access.
   - [ ] Visualforce label merge expressions.
-  - [ ] LWC label import resolution.
+  - [x] LWC label import resolution.
   - [ ] Translation fallback.
   - [ ] Exact assertion text in tests.
 
@@ -513,22 +543,23 @@ Visualforce, Aura, and LWC metadata/source.
 The core parity todo covers `Messaging` basics. Post-parity should add metadata
 templates and declarative email senders.
 
-- [ ] Load email template metadata and bodies.
-- [ ] Support text, HTML, and custom template metadata enough for local tests.
+- [x] Load email template metadata and bodies.
+- [x] Support text and HTML template metadata enough for local tests.
+- [ ] Support custom template metadata beyond current text/HTML coverage.
 - [ ] Implement merge rendering for common fields:
   - [ ] Recipient fields.
   - [ ] Related-record fields.
   - [ ] Organization and user fields.
   - [ ] Custom labels.
-- [ ] Connect templates to `Messaging.SingleEmailMessage`.
-- [ ] Connect templates to Workflow email alerts.
-- [ ] Capture email side effects in test-visible local state.
-- [ ] Add email limit accounting for template and workflow sends.
+- [x] Connect templates to `Messaging.SingleEmailMessage`.
+- [x] Connect templates to Workflow email alerts.
+- [x] Capture email side effects in test-visible local state.
+- [x] Add email limit accounting for template and workflow sends.
 - [ ] Add unsupported diagnostics for advanced template features not implemented.
 - [ ] Add compatibility fixtures for:
-  - [ ] Template lookup by ID/name.
+  - [x] Template lookup by ID/name.
   - [ ] Template merge with target object and related object.
-  - [ ] Workflow email alert rendering.
+  - [x] Workflow email alert rendering.
   - [ ] Test isolation of captured emails.
 
 ## 8. Apex Metadata API And Local Metadata Mutation
@@ -537,19 +568,19 @@ Some old admin/configuration tools use the Apex `Metadata` namespace to create
 or update custom metadata. This extends the initial parity custom-metadata
 baseline with legacy source formats and local metadata mutation.
 
-- [ ] Load legacy `.md` custom metadata records in addition to SFDX
+- [x] Load legacy `.md` custom metadata records in addition to SFDX
   `customMetadata/*.md-meta.xml` or equivalent source shapes.
-- [ ] Preserve custom metadata record developer names, protected flags,
+- [x] Preserve custom metadata record developer names, protected flags,
   namespace tokens, field values, and relationship references.
-- [ ] Make custom metadata records visible to tests through:
-  - [ ] Static SOQL and dynamic SOQL.
-  - [ ] Typed `__mdt` SObject construction and field access.
-  - [ ] Describe and field metadata.
+- [x] Make custom metadata records visible to tests through:
+  - [x] Static SOQL and dynamic SOQL.
+  - [x] Typed `__mdt` SObject construction and field access.
+  - [x] Describe and field metadata.
   - [ ] LWC/Aura controller methods that query configuration records.
 - [ ] Implement Apex `Metadata` namespace models used by enterprise projects:
   - [x] `Metadata.DeployContainer`.
-  - [ ] `Metadata.CustomMetadata`.
-  - [ ] `Metadata.CustomMetadataValue`.
+  - [x] `Metadata.CustomMetadata`.
+  - [x] `Metadata.CustomMetadataValue`.
   - [x] `Metadata.CustomObject`.
   - [x] `Metadata.CustomField`.
   - [ ] Deploy callback interfaces and result shapes.
@@ -559,16 +590,16 @@ baseline with legacy source formats and local metadata mutation.
   - [ ] Test-visible callback invocation.
   - [ ] Error results for invalid metadata.
 - [ ] Support local custom metadata mutation where safe:
-  - [ ] Insert/update custom metadata records in the in-memory metadata model.
-  - [ ] Reflect changes into describe, SOQL, and SObject access.
+  - [x] Insert/update custom metadata records in the in-memory metadata model.
+  - [x] Reflect changes into describe, SOQL, and SObject access.
   - [ ] Roll back metadata mutation during tests unless a supported mode opts
     into persistence.
 - [ ] Add diagnostics for metadata types not supported by local deployment.
 - [ ] Add compatibility fixtures for:
-  - [ ] Custom metadata deploy success.
+  - [x] Custom metadata deploy success.
   - [ ] Deploy error result shape.
   - [ ] Callback invocation.
-  - [ ] Visibility of deployed metadata to subsequent Apex.
+  - [x] Visibility of deployed metadata to subsequent Apex.
 
 ## 9. Sites, Communities, Networks, And Guest Context
 
@@ -623,22 +654,23 @@ Dependency-injection libraries may use platform cache as a storage backend and
 Core interface dispatch is not enough for projects that use platform-provided
 dynamic call and mocking contracts.
 
-- [ ] Treat `System.Callable` as a built-in interface with the correct method
+- [x] Treat `System.Callable` as a built-in interface with the correct method
   signature and dispatch behavior.
-- [ ] Support unqualified `Callable` and `System.Callable` consistently.
-- [ ] Preserve `instanceof Callable` behavior across dynamically instantiated
+- [x] Support unqualified `Callable` and `System.Callable` consistently.
+- [x] Preserve `instanceof Callable` behavior across dynamically instantiated
   classes.
-- [ ] Implement `call(String action, Map<String, Object> args)` dispatch with
+- [x] Implement `call(String action, Map<String, Object> args)` dispatch with
   Apex-compatible argument and return handling.
-- [ ] Implement `System.StubProvider` and `Test.createStub`:
-  - [ ] Stub creation for interfaces and virtual classes where supported.
-  - [ ] Method interception through `handleMethodCall`.
-  - [ ] Argument list, method name, return type, and exception behavior.
+- [x] Implement `System.StubProvider` and `Test.createStub` for current
+  platform fixtures:
+  - [x] Stub creation for interfaces and virtual classes where supported.
+  - [x] Method interception through `handleMethodCall`.
+  - [ ] Full argument list, method name, return type, and exception behavior.
   - [ ] Test-only isolation and unsupported diagnostics for unsupported targets.
 - [ ] Add focused compatibility fixtures for fflib ApexMocks patterns:
-  - [ ] Interface mock creation.
-  - [ ] Method call interception.
-  - [ ] Return value stubbing.
+  - [x] Interface mock creation.
+  - [x] Method call interception.
+  - [x] Return value stubbing.
   - [ ] Exception stubbing.
   - [ ] Verification-style method call capture if feasible.
 - [ ] Add fixtures for project state-machine patterns using `Callable`.
@@ -649,19 +681,20 @@ HTTP callout mocks cover the request/response layer. Large projects also depend
 on endpoint metadata and endpoint naming conventions. This extends the initial
 parity HTTP/callout work; it does not replace it.
 
-- [ ] Load Named Credential metadata.
-- [ ] Load Remote Site Settings metadata.
-- [ ] Resolve `callout:Name` endpoint prefixes to deterministic local endpoint
+- [x] Load Named Credential metadata.
+- [x] Load Remote Site Settings metadata.
+- [x] Resolve `callout:Name` endpoint prefixes to deterministic local endpoint
   records.
 - [ ] Enforce or report remote-site allowlist behavior in strict mode.
-- [ ] Model endpoint URL, label, auth protocol, and principal metadata enough for
+- [x] Model endpoint URL, label, auth protocol, and principal metadata enough for
   tests and diagnostics.
 - [ ] Keep secrets out of local fixture exports and logs.
 - [ ] Add configurable endpoint replacement for local integration tests.
 - [ ] Add compatibility fixtures for:
-  - [ ] Named credential endpoint resolution.
-  - [ ] Remote-site allowed/blocked behavior.
-  - [ ] Callout mock matching after endpoint resolution.
+  - [x] Named credential endpoint resolution.
+  - [x] Remote-site allowed behavior.
+  - [ ] Remote-site blocked behavior.
+  - [x] Callout mock matching after endpoint resolution.
   - [ ] Missing endpoint diagnostics.
 
 ## 13. UI And Org Presentation Metadata
@@ -673,7 +706,7 @@ metadata ingestion.
 
 - [ ] Load layouts and expose layout-adjacent metadata where local APIs need it:
   - [ ] Sections, fields, buttons, related lists, and page assignments.
-- [ ] Load tabs and custom applications where present.
+- [x] Load tabs and custom applications where present.
 - [ ] Load web links and quick actions.
 - [ ] Load global value sets and connect them to picklist field describe results.
 - [ ] Load profiles and permission sets beyond core permission checks:
@@ -687,7 +720,8 @@ metadata ingestion.
   - [ ] Global value set describe behavior.
   - [ ] Profile/permission-set class and page access.
   - [ ] Layout field discovery.
-  - [ ] Tab and web-link metadata loading.
+  - [x] Tab metadata loading.
+  - [ ] Web-link metadata loading.
 
 ## 14. Static Resources, Content Assets, And URLFOR
 
@@ -695,21 +729,22 @@ Static resources and content assets are in the test-running lane when tests or
 controller code assert generated URLs, when Visualforce pages use `URLFOR`, or
 when LWC imports `@salesforce/resourceUrl/...`.
 
-- [ ] Load legacy `.resource` static resources and companion metadata.
-- [ ] Load SFDX static resource metadata where present.
-- [ ] Load content asset metadata and binary asset files.
+- [x] Load legacy `.resource` static resources and companion metadata.
+- [x] Load SFDX static resource metadata where present.
+- [x] Load content asset metadata and binary asset files.
 - [ ] Resolve Visualforce `$Resource.Name` and `URLFOR($Resource.Name, path)`.
-- [ ] Resolve LWC `@salesforce/resourceUrl/Name` imports.
-- [ ] Preserve MIME type, cache control, and relative path information where
+- [x] Resolve LWC `@salesforce/resourceUrl/Name` imports for discovery/readiness
+  checks.
+- [x] Preserve MIME type, cache control, and relative path information where
   metadata provides it.
-- [ ] Add deterministic local resource URLs for tests, Visualforce controller
+- [x] Add deterministic local resource URLs for tests, Visualforce controller
   harnesses, and local-running server routes.
 - [ ] Add fixture import/export support for binary resource bodies without
   leaking local file paths.
 - [ ] Add compatibility fixtures for:
   - [ ] Visualforce `URLFOR($Resource...)`.
-  - [ ] LWC `@salesforce/resourceUrl` import.
-  - [ ] Content asset lookup.
+  - [x] LWC `@salesforce/resourceUrl` import.
+  - [x] Content asset lookup.
   - [ ] Missing resource diagnostics.
 
 ## 15. Files, Attachments, Documents, And Binary Content
@@ -718,25 +753,26 @@ Generic SObject storage can hold these records, but project tests may expect
 Salesforce-specific file relationships and body behavior. This extends the
 initial parity SObject/DML/SOQL storage baseline with file-specific side effects.
 
-- [ ] Model legacy `Attachment` and `Document` basics:
-  - [ ] Body blob storage.
-  - [ ] Parent linkage.
-  - [ ] Name/content type fields.
-- [ ] Model Salesforce Files basics:
-  - [ ] `ContentVersion`.
-  - [ ] `ContentDocument`.
-  - [ ] `ContentDocumentLink`.
-  - [ ] Latest-version behavior.
-  - [ ] Version data blob handling.
-- [ ] Support SOQL relationships and common filters for file/document records.
-- [ ] Support DML side effects that create linked document records where needed.
+- [x] Model legacy `Attachment` and `Document` basics:
+  - [x] Body blob storage.
+  - [x] Parent linkage.
+  - [x] Name/content type fields.
+- [x] Model Salesforce Files basics:
+  - [x] `ContentVersion`.
+  - [x] `ContentDocument`.
+  - [x] `ContentDocumentLink`.
+  - [x] Latest-version behavior.
+  - [x] Version data blob handling.
+- [x] Support SOQL relationships and common filters for file/document records
+  covered by current local-test fixtures.
+- [x] Support DML side effects that create linked document records where needed.
 - [ ] Add fixture import/export support for binary body fields without leaking
   local file paths.
 - [ ] Add compatibility fixtures for:
-  - [ ] Insert/query `Attachment`.
-  - [ ] Insert/query `ContentVersion`.
-  - [ ] Link file to record.
-  - [ ] Blob/base64 round-trip.
+  - [x] Insert/query `Attachment`.
+  - [x] Insert/query `ContentVersion`.
+  - [x] Link file to record.
+  - [x] Blob/base64 round-trip.
 
 ## 16. Reports, Dashboards, And Analytics Metadata
 
@@ -805,20 +841,21 @@ layers.
 Post-parity support should be earned the same way core parity support is earned:
 with fixtures and dashboards.
 
-- [ ] Add owned legacy enterprise fixture projects modeled after the audited
+- [x] Add owned legacy enterprise fixture projects modeled after the audited
   features in the anonymized large-project corpus.
 - [ ] Add fixture categories:
-  - [ ] Visualforce-heavy.
-  - [ ] Aura-controller-heavy.
-  - [ ] Workflow-field-update-heavy.
-  - [ ] Flow-and-invocable-heavy.
-  - [ ] Label-and-translation-heavy.
-  - [ ] Static-resource-and-content-asset-heavy.
+  - [x] Visualforce-heavy.
+  - [x] Aura/LWC discovery-heavy.
+  - [ ] Aura/LWC controller invocation-heavy.
+  - [x] Workflow-field-update-heavy.
+  - [x] Flow-and-invocable-heavy.
+  - [x] Label-and-translation-heavy.
+  - [x] Static-resource-and-content-asset-heavy.
   - [ ] Site/community-heavy.
-  - [ ] Metadata-API-heavy.
+  - [x] Metadata-API-heavy.
   - [x] Named-credential/callout-heavy.
-  - [ ] Email-template-heavy.
-  - [ ] Files-and-attachments-heavy.
+  - [x] Email-template-heavy.
+  - [x] Files-and-attachments-heavy.
 - [x] Add a post-parity readiness command that reports:
   - [x] Supported, partial, stub, unsupported, and unknown post-parity
     capabilities.

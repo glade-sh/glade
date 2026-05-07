@@ -18,7 +18,7 @@ Regenerate the catalog with:
 
 ```bash
 mkdir -p tmp/standard-describes
-for obj in Account Contact Opportunity Lead Order OrderItem Quote Pricebook2 Product2 Campaign Case Asset Contract Task Event User RecordType EmailTemplate ContentVersion ContentDocument ContentDocumentLink Attachment Document Organization UserRole Profile PermissionSet PermissionSetAssignment; do
+for obj in Account Contact Opportunity OpportunityContactRole Lead Order OrderItem Quote Pricebook2 Product2 Campaign CampaignMember Case Asset Contract Task Event User RecordType EmailTemplate ContentVersion ContentDocument ContentDocumentLink Attachment Document Organization UserRole Profile PermissionSet PermissionSetAssignment; do
   sf sobject describe --sobject "$obj" --target-org oaer-probe-lab --json > "tmp/standard-describes/$obj.json"
 done
 node scripts/generate-standard-schema.mjs tmp/standard-describes internal/storage/standard_schema_generated.go
@@ -51,12 +51,12 @@ REST describe, and test execution all see the same standard baseline.
 
 The initial generated spread covers these standard objects:
 
-`Account`, `Contact`, `Opportunity`, `Lead`, `Order`, `OrderItem`, `Quote`,
-`Pricebook2`, `Product2`, `Campaign`, `Case`, `Asset`, `Contract`, `Task`,
-`Event`, `User`, `RecordType`, `EmailTemplate`, `ContentVersion`,
-`ContentDocument`, `ContentDocumentLink`, `Attachment`, `Document`,
-`Organization`, `UserRole`, `Profile`, `PermissionSet`, and
-`PermissionSetAssignment`.
+`Account`, `Contact`, `Opportunity`, `OpportunityContactRole`, `Lead`,
+`Order`, `OrderItem`, `Quote`, `Pricebook2`, `Product2`, `Campaign`,
+`CampaignMember`, `Case`, `Asset`, `Contract`, `Task`, `Event`, `User`,
+`RecordType`, `EmailTemplate`, `ContentVersion`, `ContentDocument`,
+`ContentDocumentLink`, `Attachment`, `Document`, `Organization`, `UserRole`,
+`Profile`, `PermissionSet`, and `PermissionSetAssignment`.
 
 The generator preserves field names, labels, display/storage types, required
 flags for create-time required fields, references, relationship names,

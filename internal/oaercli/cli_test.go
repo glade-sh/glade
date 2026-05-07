@@ -94,6 +94,8 @@ func TestRunCompatMatrixJSON(t *testing.T) {
 func TestRunCompatPostParity(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "src/pages/Edit.page"), `<apex:page controller="EditController">{!$Label.EditTitle}</apex:page>`)
+	writeTestFile(t, filepath.Join(root, "src/reports/Sales/Pipeline.report-meta.xml"), `<Report><name>Pipeline</name></Report>`)
+	writeTestFile(t, filepath.Join(root, "src/dashboards/Sales/Pipeline.dashboard-meta.xml"), `<Dashboard><title>Pipeline</title></Dashboard>`)
 	writeTestFile(t, filepath.Join(root, "src/classes/UsesPlatform.cls"), `public class UsesPlatform {
   void run() {
     PageReference p = Page.Edit;
@@ -106,7 +108,7 @@ func TestRunCompatPostParity(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
 	}
-	if !strings.Contains(stdout.String(), "Post-parity readiness: not ready") || !strings.Contains(stdout.String(), "Status counts:") || !strings.Contains(stdout.String(), "Surfaces by area:") || !strings.Contains(stdout.String(), "visualforce.controller-test") {
+	if !strings.Contains(stdout.String(), "Post-parity readiness: not ready") || !strings.Contains(stdout.String(), "Reports: 1") || !strings.Contains(stdout.String(), "Dashboards: 1") || !strings.Contains(stdout.String(), "Status counts:") || !strings.Contains(stdout.String(), "Surfaces by area:") || !strings.Contains(stdout.String(), "visualforce.controller-test") {
 		t.Fatalf("stdout = %q", stdout.String())
 	}
 }
@@ -114,6 +116,7 @@ func TestRunCompatPostParity(t *testing.T) {
 func TestRunCompatPostParityJSON(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "src/lwc/menu/menu.js"), `import run from '@salesforce/apex/MenuController.run';`)
+	writeTestFile(t, filepath.Join(root, "src/reports/Sales/Pipeline.report-meta.xml"), `<Report><name>Pipeline</name></Report>`)
 
 	var stdout, stderr bytes.Buffer
 	code := Run(context.Background(), []string{"compat", "post-parity", "--project", root, "--json"}, &stdout, &stderr)
@@ -124,6 +127,8 @@ func TestRunCompatPostParityJSON(t *testing.T) {
 		`"target": "legacy-project local test readiness"`,
 		`"ready": false`,
 		`"capability": "lwc.controller-test"`,
+		`"reports": 1`,
+		`"dashboards": 0`,
 		`"statusCounts"`,
 		`"areas"`,
 	} {
@@ -143,7 +148,7 @@ func TestRunCompatLocalTestsJSON(t *testing.T) {
 		`"target": "local Apex test execution readiness"`,
 		`"ready": false`,
 		`"pass": 1`,
-		`"fail": 1`,
+		`"assertFail": 1`,
 		`"unsupported": 1`,
 		`"class": "PassingTest"`,
 		`"class": "FailingTest"`,
@@ -163,12 +168,15 @@ func TestRunCompatLocalTestsBlockersOnlyAndFilters(t *testing.T) {
 		"--class", "FailingTest",
 		"--method", "fails",
 		"--blockers-only",
+		"--top-failures", "1",
+		"--timeout", "5000",
+		"--profile-on-timeout",
 		"--json",
 	}, &stdout, &stderr)
 	if code != 0 {
 		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
 	}
-	if !strings.Contains(stdout.String(), `"total": 1`) || !strings.Contains(stdout.String(), `"fail": 1`) {
+	if !strings.Contains(stdout.String(), `"total": 1`) || !strings.Contains(stdout.String(), `"assertFail": 1`) || !strings.Contains(stdout.String(), `"topFailures"`) {
 		t.Fatalf("stdout = %q", stdout.String())
 	}
 	if strings.Contains(stdout.String(), "PassingTest") || strings.Contains(stdout.String(), "UnsupportedTest") {

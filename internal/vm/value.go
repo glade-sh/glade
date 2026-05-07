@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"strings"
 )
 
 type Value struct {
@@ -169,6 +170,13 @@ func (v Value) Equal(other Value) bool {
 		}
 		return true
 	case ValueObject:
+		if v.Type == "Type" && other.Type == "Type" {
+			leftType := typeValueText(v)
+			rightType := typeValueText(other)
+			if leftType != "" || rightType != "" {
+				return canonicalTypeValueText(leftType) == canonicalTypeValueText(rightType)
+			}
+		}
 		if platformScalarObject(v.Type) {
 			value, ok := v.Fields["value"]
 			otherValue, otherOK := other.Fields["value"]
@@ -183,6 +191,54 @@ func (v Value) Equal(other Value) bool {
 		return v.Type == other.Type && fmt.Sprintf("%p", v.Fields) == fmt.Sprintf("%p", other.Fields)
 	default:
 		return false
+	}
+}
+
+func typeValueText(value Value) string {
+	if value.Text != "" {
+		return value.Text
+	}
+	if raw, ok := value.Fields["value"]; ok && raw.Kind == ValueString {
+		return raw.Text
+	}
+	return ""
+}
+
+func canonicalTypeValueText(text string) string {
+	normalized := strings.TrimPrefix(text, "System.")
+	switch strings.ToLower(normalized) {
+	case "blob":
+		return "Blob"
+	case "boolean":
+		return "Boolean"
+	case "date":
+		return "Date"
+	case "datetime":
+		return "Datetime"
+	case "decimal":
+		return "Decimal"
+	case "double":
+		return "Double"
+	case "id":
+		return "Id"
+	case "integer":
+		return "Integer"
+	case "long":
+		return "Long"
+	case "object":
+		return "Object"
+	case "string":
+		return "String"
+	case "time":
+		return "Time"
+	case "type":
+		return "Type"
+	case "url":
+		return "URL"
+	case "void":
+		return "Void"
+	default:
+		return text
 	}
 }
 

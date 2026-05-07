@@ -77,6 +77,30 @@ func TestLoadProject(t *testing.T) {
 	}
 }
 
+func TestLoadProjectInfersMissingReferencedCustomObjects(t *testing.T) {
+	root := t.TempDir()
+	objectPath := filepath.Join(root, "force-app/main/objects/Line__c/Line__c.object-meta.xml")
+	fieldPath := filepath.Join(root, "force-app/main/objects/Line__c/fields/ManagedCart__c.field-meta.xml")
+	writeFile(t, objectPath, `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Line</label></CustomObject>`)
+	writeFile(t, fieldPath, `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>ManagedCart__c</fullName><label>Managed Cart</label><type>Lookup</type><referenceTo>znu__CartItemLine__c</referenceTo><referenceTo>Account</referenceTo><relationshipName>ManagedCart__r</relationshipName></CustomField>`)
+
+	s, err := LoadProject(project.Project{ObjectFiles: []string{objectPath}, FieldFiles: []string{fieldPath}})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	objects := objectsByName(s.Objects)
+	if _, ok := objects["Line__c"]; !ok {
+		t.Fatalf("missing local object: %#v", s.Objects)
+	}
+	if inferred, ok := objects["znu__CartItemLine__c"]; !ok || len(inferred.Fields) != 0 {
+		t.Fatalf("missing inferred managed package object: %#v", s.Objects)
+	}
+	if _, ok := objects["Account"]; ok {
+		t.Fatalf("standard reference should not be inferred into project schema: %#v", s.Objects)
+	}
+}
+
 func TestLoadProjectNormalizesLegacyObjectAndCustomMetadata(t *testing.T) {
 	root := t.TempDir()
 	objectPath := filepath.Join(root, "src/objects/Feature__mdt.object")
@@ -117,6 +141,14 @@ func fieldsByName(fields []Field) map[string]Field {
 	out := make(map[string]Field, len(fields))
 	for _, field := range fields {
 		out[field.Name] = field
+	}
+	return out
+}
+
+func objectsByName(objects []Object) map[string]Object {
+	out := make(map[string]Object, len(objects))
+	for _, object := range objects {
+		out[object.Name] = object
 	}
 	return out
 }

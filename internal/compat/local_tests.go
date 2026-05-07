@@ -1,7 +1,9 @@
 package compat
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -26,6 +28,9 @@ type LocalTestOptions struct {
 	BlockersOnly        bool
 	TraceBlocked        bool
 	SlowTestThresholdMS int64
+	TimeoutMS           int64
+	TopFailures         int
+	ProfileOnTimeout    bool
 }
 
 type LocalTestReport struct {
@@ -35,6 +40,7 @@ type LocalTestReport struct {
 	DurationMS  int64                   `json:"durationMs,omitempty"`
 	Summary     LocalTestSummary        `json:"summary"`
 	Outcomes    []LocalTestOutcome      `json:"outcomes"`
+	TopFailures []LocalTestFailureGroup `json:"topFailures,omitempty"`
 	Diagnostics []diagnostic.Diagnostic `json:"diagnostics,omitempty"`
 }
 
@@ -46,6 +52,10 @@ type LocalTestSummary struct {
 	LoadErrors     int `json:"loadError"`
 	CompileErrors  int `json:"compileError"`
 	InternalErrors int `json:"internalError"`
+	AssertFailures int `json:"assertFail,omitempty"`
+	RuntimeGaps    int `json:"runtimeGap,omitempty"`
+	CompileGaps    int `json:"compileGap,omitempty"`
+	Timeouts       int `json:"timeout,omitempty"`
 }
 
 type LocalTestOutcome struct {
@@ -64,6 +74,14 @@ type LocalTestOutcome struct {
 	TraceEvents         int                    `json:"traceEvents,omitempty"`
 	ProfileEvents       int                    `json:"profileEvents,omitempty"`
 	ProfileCategories   map[string]int         `json:"profileCategories,omitempty"`
+}
+
+type LocalTestFailureGroup struct {
+	Outcome      string `json:"outcome"`
+	Phase        string `json:"phase,omitempty"`
+	CapabilityID string `json:"capabilityId,omitempty"`
+	Error        string `json:"error,omitempty"`
+	Count        int    `json:"count"`
 }
 
 type LocalTestCorpusBaseline struct {
@@ -150,13 +168,24 @@ func RunLocalTests(options LocalTestOptions) (LocalTestReport, error) {
 	report.Diagnostics = append(report.Diagnostics, semaResult.Diagnostics...)
 	if firstError, ok := firstLocalTestError(semaResult.Diagnostics); ok {
 		for _, testCase := range cases {
-			report.Outcomes = append(report.Outcomes, localTestDiagnosticOutcome(projectLabel, testCase, "compile_error", "compile", firstError))
+			report.Outcomes = append(report.Outcomes, localTestDiagnosticOutcome(projectLabel, testCase, "compile_gap", "compile", firstError))
 		}
 		finalizeLocalTestReport(&report, options, started)
 		return report, nil
 	}
 
-	run := apextest.Run(index, testOpts)
+	ctx := context.Background()
+	cancel := func() {}
+	if options.TimeoutMS > 0 {
+		var timeoutCancel context.CancelFunc
+		ctx, timeoutCancel = context.WithTimeout(ctx, time.Duration(options.TimeoutMS)*time.Millisecond)
+		cancel = timeoutCancel
+		if options.ProfileOnTimeout {
+			testOpts.TraceBlocked = true
+		}
+	}
+	defer cancel()
+	run := apextest.RunContext(ctx, index, testOpts)
 	for _, suite := range run.Suites {
 		for _, testCase := range suite.Cases {
 			if !matchesLocalTestCase(testCase.ClassName, testCase.MethodName, options) {
@@ -259,15 +288,30 @@ func WriteLocalTestText(w io.Writer, report LocalTestReport) {
 	}
 	fmt.Fprintf(w, "Local test readiness: %s\n", state)
 	fmt.Fprintf(w, "project: %s\n", report.Project)
-	fmt.Fprintf(w, "summary: pass=%d fail=%d unsupported=%d load_error=%d compile_error=%d internal_error=%d total=%d\n",
+	fmt.Fprintf(w, "summary: pass=%d fail=%d unsupported=%d load_error=%d compile_error=%d internal_error=%d assert_fail=%d runtime_gap=%d compile_gap=%d timeout=%d total=%d\n",
 		report.Summary.Pass,
 		report.Summary.Fail,
 		report.Summary.Unsupported,
 		report.Summary.LoadErrors,
 		report.Summary.CompileErrors,
 		report.Summary.InternalErrors,
+		report.Summary.AssertFailures,
+		report.Summary.RuntimeGaps,
+		report.Summary.CompileGaps,
+		report.Summary.Timeouts,
 		report.Summary.Total,
 	)
+	for _, group := range report.TopFailures {
+		fmt.Fprintf(w, "* %s", group.Outcome)
+		if group.CapabilityID != "" {
+			fmt.Fprintf(w, " [%s]", group.CapabilityID)
+		}
+		fmt.Fprintf(w, ": %d", group.Count)
+		if group.Error != "" {
+			fmt.Fprintf(w, " - %s", group.Error)
+		}
+		fmt.Fprintln(w)
+	}
 	for _, outcome := range report.Outcomes {
 		if outcome.Outcome == "pass" {
 			continue
@@ -291,7 +335,7 @@ func WriteLocalTestCorpusText(w io.Writer, report LocalTestCorpusReport) {
 	fmt.Fprintf(w, "Local test corpus: %s\n", state)
 	fmt.Fprintf(w, "baseline: %s\n", report.Baseline)
 	for _, project := range report.Projects {
-		fmt.Fprintf(w, "- %s: ready=%t pass=%d fail=%d unsupported=%d load_error=%d compile_error=%d internal_error=%d total=%d\n",
+		fmt.Fprintf(w, "- %s: ready=%t pass=%d fail=%d unsupported=%d load_error=%d compile_error=%d internal_error=%d assert_fail=%d runtime_gap=%d compile_gap=%d timeout=%d total=%d\n",
 			project.Project,
 			project.Ready,
 			project.Summary.Pass,
@@ -300,6 +344,10 @@ func WriteLocalTestCorpusText(w io.Writer, report LocalTestCorpusReport) {
 			project.Summary.LoadErrors,
 			project.Summary.CompileErrors,
 			project.Summary.InternalErrors,
+			project.Summary.AssertFailures,
+			project.Summary.RuntimeGaps,
+			project.Summary.CompileGaps,
+			project.Summary.Timeouts,
 			project.Summary.Total,
 		)
 	}
@@ -434,17 +482,22 @@ func localTestRunOutcome(projectLabel string, testCase testreport.Case) LocalTes
 	case testreport.StatusUnsupported:
 		outcome = "unsupported"
 	case testreport.StatusCompileError:
-		outcome = "compile_error"
+		outcome = "compile_gap"
 		phase = "compile"
 	case testreport.StatusRuntimeError:
 		outcome = "internal_error"
 	default:
-		outcome = "fail"
+		outcome = "runtime_gap"
 	}
 	if testCase.Problem != nil && strings.EqualFold(testCase.Problem.Type, "UnsupportedFeature") {
 		outcome = "unsupported"
 	}
+	if testCase.Problem != nil && strings.EqualFold(testCase.Problem.Type, "Canceled") && strings.Contains(strings.ToLower(testCase.Problem.Message), "deadline exceeded") {
+		outcome = "timeout"
+		phase = "timeout"
+	}
 	if testCase.Problem != nil && strings.Contains(strings.ToLower(testCase.Problem.Type+" "+testCase.Problem.Message), "assert") {
+		outcome = "assert_fail"
 		phase = "assert"
 	}
 	out := LocalTestOutcome{
@@ -479,6 +532,12 @@ func localTestCapabilityID(phase, code, message string) string {
 	code = strings.TrimSpace(code)
 	if strings.EqualFold(code, "UnsupportedFeature") {
 		return "apex.test.unsupported"
+	}
+	if strings.EqualFold(code, "Canceled") {
+		if strings.Contains(strings.ToLower(message), "deadline exceeded") {
+			return "apex.test.timeout"
+		}
+		return "apex.test.canceled"
 	}
 	if code != "" {
 		return strings.ToLower(code)
@@ -525,12 +584,85 @@ func finalizeLocalTestReport(report *LocalTestReport, options LocalTestOptions, 
 			report.Summary.CompileErrors++
 		case "internal_error":
 			report.Summary.InternalErrors++
+		case "assert_fail":
+			report.Summary.AssertFailures++
+		case "runtime_gap":
+			report.Summary.RuntimeGaps++
+		case "compile_gap":
+			report.Summary.CompileGaps++
+		case "timeout":
+			report.Summary.Timeouts++
 		}
+	}
+	if options.TopFailures > 0 {
+		report.TopFailures = localTestTopFailures(report.Outcomes, options.TopFailures)
 	}
 	report.Ready = report.Summary.Fail == 0 &&
 		report.Summary.Unsupported == 0 &&
 		report.Summary.LoadErrors == 0 &&
 		report.Summary.CompileErrors == 0 &&
-		report.Summary.InternalErrors == 0
+		report.Summary.InternalErrors == 0 &&
+		report.Summary.AssertFailures == 0 &&
+		report.Summary.RuntimeGaps == 0 &&
+		report.Summary.CompileGaps == 0 &&
+		report.Summary.Timeouts == 0
 	report.DurationMS = time.Since(started).Milliseconds()
+}
+
+func localTestTopFailures(outcomes []LocalTestOutcome, limit int) []LocalTestFailureGroup {
+	if limit <= 0 {
+		return nil
+	}
+	type key struct {
+		outcome      string
+		phase        string
+		capabilityID string
+		error        string
+	}
+	counts := make(map[key]int)
+	for _, outcome := range outcomes {
+		if outcome.Outcome == "pass" {
+			continue
+		}
+		errText := strings.TrimSpace(outcome.Error)
+		if errText != "" && len(errText) > 180 {
+			errText = errText[:180]
+		}
+		counts[key{
+			outcome:      outcome.Outcome,
+			phase:        outcome.Phase,
+			capabilityID: outcome.CapabilityID,
+			error:        errText,
+		}]++
+	}
+	groups := make([]LocalTestFailureGroup, 0, len(counts))
+	for key, count := range counts {
+		groups = append(groups, LocalTestFailureGroup{
+			Outcome:      key.outcome,
+			Phase:        key.phase,
+			CapabilityID: key.capabilityID,
+			Error:        key.error,
+			Count:        count,
+		})
+	}
+	sort.SliceStable(groups, func(i, j int) bool {
+		if groups[i].Count != groups[j].Count {
+			return groups[i].Count > groups[j].Count
+		}
+		if groups[i].Outcome != groups[j].Outcome {
+			return groups[i].Outcome < groups[j].Outcome
+		}
+		if groups[i].CapabilityID != groups[j].CapabilityID {
+			return groups[i].CapabilityID < groups[j].CapabilityID
+		}
+		return groups[i].Error < groups[j].Error
+	})
+	if len(groups) > limit {
+		groups = groups[:limit]
+	}
+	return groups
+}
+
+func IsLocalTestTimeout(err error) bool {
+	return errors.Is(err, context.DeadlineExceeded)
 }

@@ -35,6 +35,8 @@ type Summary struct {
 	Findings             int `json:"findings"`
 	TestBlockingFindings int `json:"testBlockingFindings"`
 	Surfaces             int `json:"surfaces"`
+	Reports              int `json:"reports"`
+	Dashboards           int `json:"dashboards"`
 }
 
 type Surface struct {
@@ -259,6 +261,15 @@ var surfaceDefs = map[string]surfaceDef{
 		testBlocking:        true,
 		suggestedCapability: "files.binary-content",
 	},
+	"analytics.report-execution": {
+		capability:          "analytics.report-execution",
+		title:               "Local report and analytics execution",
+		area:                "analytics-metadata",
+		stage:               "execute",
+		status:              "unsupported",
+		testBlocking:        true,
+		suggestedCapability: "analytics.report-execution",
+	},
 }
 
 type patternDef struct {
@@ -284,6 +295,8 @@ type scanContext struct {
 	loadedFiles       map[string]bool
 	automation        map[string]bool
 	namespaces        map[string]bool
+	reports           map[string]bool
+	dashboards        map[string]bool
 }
 
 var textPatterns = []patternDef{
@@ -296,6 +309,7 @@ var textPatterns = []patternDef{
 	{"apex.callable-stub", "ApexClass", regexp.MustCompile(`\b(System\.Callable|Callable\b|System\.StubProvider|Test\.createStub|handleMethodCall\b)`), 1},
 	{"endpoint.metadata", "ApexClass", regexp.MustCompile(`callout:([A-Za-z_][A-Za-z0-9_]*)`), 1},
 	{"files.binary-content", "ApexClass", regexp.MustCompile(`\b(ContentVersion\b|ContentDocument\b|ContentDocumentLink\b|Attachment\b|Document\b)`), 1},
+	{"analytics.report-execution", "ApexClass", regexp.MustCompile(`\b((?:Reports|Analytics)\.[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)`), 1},
 	{"custommetadata.legacy-records", "ApexClass", regexp.MustCompile(`\b([A-Za-z_][A-Za-z0-9_]*__mdt)\b`), 1},
 	{"lwc.controller-test", "LWCJavaScript", regexp.MustCompile(`@salesforce/apex/([A-Za-z_][A-Za-z0-9_.]*\.[A-Za-z_][A-Za-z0-9_]*)`), 1},
 	{"lwc.controller-test", "LWCJavaScript", regexp.MustCompile(`\b@wire\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)`), 1},
@@ -357,7 +371,7 @@ func Scan(root string) (Report, error) {
 		return Report{}, err
 	}
 
-	report := buildReport(absRoot, filesScanned, findings)
+	report := buildReport(absRoot, filesScanned, findings, ctx)
 	return report, nil
 }
 
@@ -459,7 +473,35 @@ func loadScanContext(absRoot string) scanContext {
 	if metadataIndex != nil {
 		ctx.addPresentationFields(*metadataIndex, scanProj)
 	}
+	ctx.reports, ctx.dashboards = loadAnalyticsMetadata(absRoot)
 	return ctx
+}
+
+func loadAnalyticsMetadata(absRoot string) (map[string]bool, map[string]bool) {
+	reports := make(map[string]bool)
+	dashboards := make(map[string]bool)
+	_ = filepath.WalkDir(absRoot, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			if shouldSkipDir(d.Name()) && path != absRoot {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if shouldSkipFile(d.Name()) {
+			return nil
+		}
+		switch {
+		case isReportMetadataPath(path):
+			reports[filepath.Clean(path)] = true
+		case isDashboardMetadataPath(path):
+			dashboards[filepath.Clean(path)] = true
+		}
+		return nil
+	})
+	return reports, dashboards
 }
 
 func scanMetadataProject(absRoot string, proj project.Project) project.Project {
@@ -793,8 +835,22 @@ func classifyByPath(rel, path string, ctx *scanContext) []Finding {
 			return findings
 		}
 		add("ui.presentation-metadata", "UIPresentationMetadata", baseNoExt(path))
+	case isReportMetadataPath(lower):
+		return findings
+	case isDashboardMetadataPath(lower):
+		return findings
 	}
 	return findings
+}
+
+func isReportMetadataPath(path string) bool {
+	lower := strings.ToLower(filepath.ToSlash(path))
+	return strings.Contains(lower, "/reports/") && hasAnySuffix(lower, ".report", ".report-meta.xml")
+}
+
+func isDashboardMetadataPath(path string) bool {
+	lower := strings.ToLower(filepath.ToSlash(path))
+	return strings.Contains(lower, "/dashboards/") && hasAnySuffix(lower, ".dashboard", ".dashboard-meta.xml")
 }
 
 func hasAnySuffix(value string, suffixes ...string) bool {
@@ -2057,9 +2113,28 @@ func suppressSupportedFinding(capability, symbol, evidence string) bool {
 		return supportedMetadataAPISymbol(symbol, evidence)
 	case "apex.callable-stub":
 		return supportedCallableStubSymbol(symbol, evidence)
+	case "analytics.report-execution":
+		return !analyticsNamespaceSymbol(symbol)
 	default:
 		return false
 	}
+}
+
+func analyticsNamespaceSymbol(symbol string) bool {
+	parts := strings.Split(strings.TrimSpace(symbol), ".")
+	if len(parts) < 2 {
+		return false
+	}
+	if parts[0] != "Reports" && parts[0] != "Analytics" {
+		return false
+	}
+	member := strings.TrimSpace(parts[1])
+	return member != "" && member[0] >= 'A' && member[0] <= 'Z'
+}
+
+func apexIdentifierStartsUpper(name string) bool {
+	name = strings.TrimSpace(name)
+	return name != "" && name[0] >= 'A' && name[0] <= 'Z'
 }
 
 func supportedLabelSymbol(symbol, evidence string) bool {
@@ -2252,7 +2327,7 @@ func makeFinding(capability, file string, line int, metadataType, symbol, eviden
 	}
 }
 
-func buildReport(projectRoot string, filesScanned int, findings []Finding) Report {
+func buildReport(projectRoot string, filesScanned int, findings []Finding, ctx scanContext) Report {
 	sort.Slice(findings, func(i, j int) bool {
 		if findings[i].Capability != findings[j].Capability {
 			return findings[i].Capability < findings[j].Capability
@@ -2359,6 +2434,8 @@ func buildReport(projectRoot string, filesScanned int, findings []Finding) Repor
 			Findings:             len(findings),
 			TestBlockingFindings: testBlockingFindings,
 			Surfaces:             len(surfaces),
+			Reports:              len(ctx.reports),
+			Dashboards:           len(ctx.dashboards),
 		},
 	}
 }

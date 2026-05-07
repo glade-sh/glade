@@ -40,6 +40,11 @@ implemented at runtime.
 
 Use this document for parallel squad planning. Use
 `docs/POST_PARITY_TODO.md` as the exhaustive backlog and capability boundary.
+Use `docs/MANAGED_PACKAGE_DEPENDENCY_PLAN.md` for source-backed and
+version-pinned installed package dependency handling.
+Use `docs/APEX_PARITY_FOLLOWUP_PLAN.md` for the broader Apex language,
+runtime, platform API, tooling, and release-hardening roadmap after the
+enterprise example-project local-test path is under control.
 
 ## Execution Objective
 
@@ -116,6 +121,506 @@ oaer test --project testdata/local-tests/org-like-runner --watch --watch-once --
 
 The exact millisecond budget should be set from baseline measurements on the
 owned fixtures, then tightened as caching lands.
+
+## Enterprise Example-Project Runtime Gap Plan
+
+The six checked `example-projects` directories are the runtime parity target for
+the next phase. The current static/readiness inventory is green, but broad
+`oaer test` execution still fails because the VM, compiler, schema model, and
+test runner do not yet match every Salesforce behavior those enterprise tests
+exercise. Treat scratch-org pass results as the behavioral target: failures in
+these projects are OAER parity gaps unless proven otherwise.
+
+Current example-project set:
+
+| Project | Runtime role |
+| --- | --- |
+| `NPSP-rel-3.237` | Large nonprofit domain/trigger/service corpus with heavy builders, metadata, SOQL, and fluent APIs. |
+| `src-nmb-nc-develop` | Large legacy package with extensive custom metadata, UI/controller contracts, and currently expensive local runtime execution. |
+| `src-nmb-nu-develop` | Large legacy package with Workflow/Flow, Visualforce/Aura, and broad metadata shape. |
+| `src-nmb-nutpl-develop` | Smaller fflib/ApexMocks-heavy package that gives fast focused feedback on VM behavior. |
+| `sf-cred-pkg-develop` | Large credentialing package with namespaces, HTTP/callout tests, map/list literal usage, and service models. |
+| `nams-workspace` | Large workspace with namespaced test setup, fflib, metadata, endpoint, and UI controller surfaces. |
+
+Current measured runtime frontier:
+
+| Gate | Current signal |
+| --- | --- |
+| Static/readiness inventory | `go run ./cmd/oaer compat post-parity --project ./example-projects --json` reports `filesScanned=50457 findings=0 testBlockingFindings=0 surfaces=0`. |
+| Fast runtime sentinel | `go run ./cmd/oaer test --project example-projects/src-nmb-nutpl-develop --json` runs to JSON but still has hundreds of failures and unsupported outcomes. |
+| Scale runtime sentinel | `go run ./cmd/oaer test --project example-projects/src-nmb-nc-develop --json` no longer immediately stack-overflows, but remains CPU-bound for several minutes and needs focused performance isolation. |
+| Unit/regression suite | `go test ./...` must stay green after every merge. |
+
+### Runtime Closure Phases
+
+These phases should be tackled by parallel squad agents with disjoint write
+sets. Each phase must add owned fixtures or targeted package tests before
+claiming support. Do not add project-specific branches in runtime code.
+
+#### Phase E0: Managed Package Dependency Artifacts
+
+Goal: load installed managed package dependencies before compiling consuming
+enterprise projects.
+
+Primary write scope: `internal/config`, `internal/project`,
+`internal/typesys`, `internal/sema`, `internal/schema`, `internal/vm`,
+`internal/compat`, `docs/MANAGED_PACKAGE_DEPENDENCY_PLAN.md`.
+
+Current blockers:
+
+- `src-nmb-nc-develop` references installed package Apex such as `znu.Address`.
+- `nams-workspace` references installed package Apex such as `znu.Pluggable`
+  and installed package schema such as `znu__CartItemLine__c`.
+- Treating those as ordinary current-project compile gaps hides the real
+  prerequisite: OAER needs the `znu` managed package contract loaded first.
+
+Tasks:
+
+- Add explicit first-iteration dependency config in `oaer.yml`, mapping a
+  namespace to a local source project root and optional package version.
+- Build a source-backed managed package artifact model for Apex contracts,
+  schema, labels, resources, custom metadata, and other test-visible metadata.
+- Load dependency artifacts before current project package directories.
+- Resolve `namespace.Type`, nested dependency types, `namespace__Object__c`,
+  namespaced fields, labels, resources, and custom metadata through dependency
+  registries.
+- Enforce managed-package boundaries: consuming packages can access dependency
+  Apex only through `global` top-level types and `global` members.
+- Split missing package, version mismatch, dependency load error, and
+  dependency access denial from ordinary compile/runtime gaps in JSON output.
+
+Validation:
+
+```bash
+go test ./internal/config ./internal/project ./internal/typesys ./internal/sema ./internal/schema ./internal/vm ./internal/compat
+go run ./cmd/oaer test --project testdata/local-tests/managed-package-consumer --json
+go run ./cmd/oaer test --project testdata/local-tests/managed-package-access --json
+go run ./cmd/oaer compat local-tests --project example-projects/src-nmb-nc-develop --timeout 30000 --top-failures 8 --json
+go run ./cmd/oaer compat local-tests --project example-projects/nams-workspace --timeout 30000 --top-failures 8 --json
+```
+
+Exit criteria:
+
+- Missing `znu` setup reports `dependency_missing` rather than unknown type or
+  unknown SObject compile gaps.
+- Source-backed `znu` setup moves `znu.Address`, `znu.Pluggable`, and
+  `znu__*` blockers to successful resolution or package-scoped diagnostics.
+- Cross-namespace access rejects dependency `public` APIs and allows dependency
+  `global` APIs.
+- No project-specific `znu` stubs or runtime branches are added.
+
+#### Phase E1: Local-Test Corpus Baseline And Triage
+
+Goal: make the six-project runtime gap measurable and stable.
+
+Primary write scope: `internal/compat`, `internal/apextest`, `docs/fixtures`,
+`docs/LOCAL_APEX_TEST_EXECUTION_PLAN.md`.
+
+Tasks:
+
+- Add or refresh a checked `local-tests-corpus` baseline that records summary
+  counts and top blocker families per example project.
+- Add `--top-failures`, `--timeout`, and `--profile-on-timeout` support to the
+  local-test compatibility/reporting path if missing.
+- Split local runtime outcomes into `assert_fail`, `runtime_gap`,
+  `unsupported`, `compile_gap`, `internal_error`, and `timeout`.
+- Persist a small focused sentinel for each project so future runs do not need
+  the full corpus to detect regressions.
+- Add a timeout-safe runner path so large projects never hang a squad lane
+  indefinitely.
+
+Validation:
+
+```bash
+go test ./internal/compat ./internal/apextest ./internal/testreport
+go run ./cmd/oaer test --project example-projects/src-nmb-nutpl-develop --json
+go run ./cmd/oaer test --project example-projects/src-nmb-nc-develop --filter <focused-sentinel> --json
+go run ./cmd/oaer compat post-parity --project ./example-projects --json
+```
+
+E1 baseline artifact:
+
+- Added `docs/fixtures/local-tests-example-projects.json` as the timeout-safe
+  six-project runtime baseline.
+- Generated with
+  `node scripts/baseline-local-tests-example-projects.mjs`, which runs
+  `go run ./cmd/oaer compat local-tests --project <project> --json --timeout 30000 --top-failures 8`
+  per project and records compact summaries plus top blocker families.
+- `compat local-tests --timeout`, `--top-failures`, and
+  `--profile-on-timeout` are now implemented in the compatibility reporting
+  path, so large-project runs return structured timeout outcomes instead of
+  relying on shell-level process termination.
+- Static/readiness gate remains green:
+  `go run ./cmd/oaer compat post-parity --project ./example-projects --json --require-ready`
+  reports `filesScanned=50457 findings=0 testBlockingFindings=0 surfaces=0`.
+
+Measured May 6, 2026 E1 baseline after native timeout/top-failure reporting,
+standard-schema refreshes, package-aware duplicate-symbol handling, and the
+first sema frontier fixes:
+
+| Project | Result | Top blocker family |
+| --- | --- | --- |
+| `NPSP-rel-3.237` | `total=4938 compileGap=4938`, completed in 6.0s wall time. | Unknown `SoapType` type from `CMT_FilterRule.cls:90`. |
+| `src-nmb-nc-develop` | `total=12084 compileGap=12084`, completed in 7.7s wall time. | Unknown namespaced type `znu.Address` from `AddressMessage.cls:8`. |
+| `src-nmb-nu-develop` | `total=15068 compileGap=15068`, completed in 13.2s wall time. | Assignment inference gap: `Object` assigned to `ARAgingManager.Instance`. |
+| `src-nmb-nutpl-develop` | `total=811 compileGap=811`, completed in 0.7s wall time. | Enhanced-for/local scope gap: `copyAttributes` references unknown variable `i`. |
+| `sf-cred-pkg-develop` | `total=4672 compileGap=4672`, completed in 7.5s wall time. | Same-package duplicate top-level symbol `BaseSingleProviderProfileInfo`, which remains a true source duplicate. |
+| `nams-workspace` | `total=6287 compileGap=6287`, completed in 6.7s wall time. | Unknown managed Apex type `znu.Pluggable` from `AddProgramsToProformaOrderHelper.cls:30`. |
+
+First E1 implementation notes:
+
+- Outcome taxonomy now distinguishes `assert_fail`, `runtime_gap`,
+  `compile_gap`, `unsupported`, `internal_error`, and `timeout`.
+- The NUTPL blocker frontier moved past missing `JSONParser`, `JSONToken`,
+  `InstallContext`, `InstallHandler`, schema describe aliases, public built-in
+  exception types, XML stream types, custom exception inherited constructors,
+  multiline returns, catch locals, enum static values, implicit chained
+  collection calls, `Type.class.toString()`, list bracket indexing, collection
+  calls on field paths, list-initializer argument splitting, owner-relative enum
+  access, enum `name()`, common String fluent APIs, basic `Dom.Document` /
+  `Dom.XmlNode` signatures, and comment-safe return scanning.
+- NAMS duplicate symbols are now package-aware: duplicate class names across
+  sibling package directories are allowed, while same-package duplicates remain
+  blockers.
+- NAMS moved past the generated `znu__CartItemLine__c` placeholder object gap by
+  inferring missing referenced managed-package custom objects from lookup
+  metadata.
+- NPSP moved past the generated `CampaignMember` and `OpportunityContactRole`
+  standard-schema gaps; the next frontier is managed/generated type `SoapType`.
+- Added a clean-room `testdata/local-tests/apexmocks-proxy` fixture for
+  `Test.createStub` / `System.StubProvider` proxy lifecycle, method metadata,
+  argument capture, return dispatch, void calls, and stub object identity.
+- Added `docs/E4_STANDARD_SCHEMA_QUICK_SCAN.md`; the NPSP `CampaignMember`
+  blocker is a generated standard-schema coverage gap and should be fixed by
+  refreshing the public describe-driven standard schema baseline, not by adding
+  project-specific runtime behavior.
+
+Exit criteria:
+
+- Every project has a reproducible local runtime baseline.
+- Timeouts are reported as structured outcomes, not long-running shell probes.
+- The plan tracks top blocker families from measured output, not stale notes.
+
+#### Phase E2: ApexMocks And Dynamic Proxy Semantics
+
+Goal: make fflib/ApexMocks verification tests pass locally and unlock similar
+mock-heavy enterprise tests.
+
+Primary write scope: `internal/vm`, `internal/apextest`, focused fixtures.
+
+Current blockers:
+
+- Matcher registration/clear state is lost or observed at the wrong time:
+  matcher count errors dominate NUTPL.
+- Invocation recording misses calls, causing `Wanted but not invoked:
+  fflib_QualifiedMethod{}` failures.
+- `System.StubProvider` and `Test.createStub` need Salesforce-like method-call
+  metadata, argument capture, return dispatch, and exception propagation.
+- Object-key equality and map/set semantics need to preserve Apex object
+  identity where mocks use objects as keys.
+
+Tasks:
+
+- Implement full `Test.createStub` / `System.StubProvider` invocation metadata
+  for method name, return type, parameter types, args, and stubbed object.
+- Fix matcher lifecycle so matcher factory calls register state that survives
+  through the subsequent mocked method call and is cleared at Salesforce-like
+  boundaries.
+- Preserve object identity/equality for map and set keys used by mock
+  invocations.
+- Add support for common ApexMocks invocation patterns: ordered verification,
+  any-order verification, never/times verification, custom matchers, combined
+  matchers, and exception stubbing.
+- Add focused fixtures modeled on NUTPL ApexMocks classes without copying the
+  entire project into tests.
+
+Validation:
+
+```bash
+go test ./internal/vm ./internal/apextest
+go run ./cmd/oaer test --project example-projects/src-nmb-nutpl-develop --filter fflib_AnyOrderTest --json
+go run ./cmd/oaer test --project example-projects/src-nmb-nutpl-develop --filter fflib_InOrderTest --json
+```
+
+Exit criteria:
+
+- NUTPL ApexMocks matcher-count errors are gone.
+- `Wanted but not invoked` failures drop to real assertion mismatches or pass.
+- No new project-specific fflib shortcuts exist in production runtime code.
+
+#### Phase E3: Compiler And Apex Language Fidelity
+
+Goal: remove syntax/compiler gaps that Salesforce accepts and enterprise tests
+use heavily.
+
+Primary write scope: `internal/vm/compiler.go`, `internal/apexast`,
+`internal/sema`, parser/IR tests.
+
+Current blockers:
+
+- Multi-variable `for` initializers such as
+  `for (Integer i = 0, j = size; i < j; i++)` fail in compiled method bodies.
+- Some collection/map/list initializers still reject valid Apex shapes in
+  larger packages.
+- Some lexer/coercion paths treat Apex identifiers or enum-ish constants as the
+  wrong scalar type, such as integer assignment failures from string tokens.
+- Chained assignment is now supported, but similar assignment-expression
+  contexts need corpus coverage.
+
+Tasks:
+
+- Add compiler support for comma-separated variable declarations in `for`
+  initializers and update IR lowering accordingly.
+- Broaden list/set/map initializer support for nested generics and object/SObject
+  values used in service tests.
+- Harden enum/static-field parsing for nested classes and all case-insensitive
+  Apex identifier paths.
+- Add corpus-derived compiler fixtures for the syntax seen in all six projects.
+
+Validation:
+
+```bash
+go test ./internal/vm ./internal/sema ./internal/apexast
+go run ./cmd/oaer test --project example-projects/src-nmb-nutpl-develop --filter HtmlElement --json
+go run ./cmd/oaer compat post-parity --project ./example-projects --json
+```
+
+Exit criteria:
+
+- Multi-variable `for` initializer failures are gone.
+- Compiler failures in the example-project runtime baseline are below the next
+  measured blocker family.
+
+#### Phase E4: Standard Schema And SObject Token Completion
+
+Goal: make generated standard object support usable at runtime, not only in
+static inventory.
+
+Primary write scope: `internal/storage`, `internal/sobject`, `internal/vm`,
+schema fixtures.
+
+Current blockers:
+
+- Runtime references such as `OpportunityLineItem.SObjectType` can still fail
+  even when the generated schema knows the object.
+- Standard object field tokens, relationship fields, child relationships,
+  record type describes, and standard pricebook/product objects need broader
+  test coverage.
+- Project-defined record types must remain authoritative over generated
+  baseline record types.
+
+Tasks:
+
+- Ensure every generated standard object exposes `<Object>.SObjectType` and
+  `<Object>.<Field>` tokens through VM lookup paths.
+- Add runtime describe coverage for Opportunity, OpportunityLineItem, Product2,
+  Pricebook2, PricebookEntry, Lead, Campaign, Case, Task, Event, User, Group,
+  QueueSObject, Content*, and common Health/Sales Cloud references present in
+  the six projects.
+- Preserve explicit project metadata over generated schema overlays for fields,
+  record types, labels, and relationships.
+- Add SObject constructor/coercion coverage for generated standard fields and
+  relationship references.
+
+Validation:
+
+```bash
+go test ./internal/storage ./internal/sobject ./internal/vm ./internal/soql
+go run ./cmd/oaer test --project example-projects/src-nmb-nutpl-develop --json
+go run ./cmd/oaer test --project example-projects/sf-cred-pkg-develop --filter <schema-heavy-sentinel> --json
+```
+
+Exit criteria:
+
+- Standard `SObjectType` runtime lookup failures disappear from the six-project
+  baseline.
+- Fixture tests prove generated schema overlays do not clobber project
+  metadata.
+
+#### Phase E5: Data, DML, Mixed DML, And Test Isolation
+
+Goal: align local test transaction behavior with scratch-org behavior for setup
+data, mixed DML, rollback, and test-visible side effects.
+
+Primary write scope: `internal/dml`, `internal/storage`, `internal/apextest`,
+`internal/vm`.
+
+Current blockers:
+
+- Some tests report mixed-DML failures where scratch orgs pass, likely because
+  `System.runAs`, setup-object classification, or test transaction isolation is
+  too strict or in the wrong phase.
+- Some helper APIs see null state such as `Test.Database.hasRecords` because
+  setup/test fixture state is not initialized like the project expects.
+- Large project execution needs cheaper org cloning and better per-test
+  isolation.
+
+Tasks:
+
+- Audit setup-object classification against the standard schema and known setup
+  objects used by the six projects.
+- Match Salesforce `System.runAs` mixed-DML relaxation for tests.
+- Ensure `@testSetup` data, static state reset, savepoints, async drain, and
+  rollback happen in the correct order.
+- Add deterministic support for test helper data APIs discovered in the corpus,
+  but model general behavior instead of naming project helpers.
+- Profile and optimize org/test state cloning for large projects.
+
+Validation:
+
+```bash
+go test ./internal/dml ./internal/storage ./internal/apextest ./internal/vm
+go run ./cmd/oaer test --project example-projects/src-nmb-nc-develop --filter <mixed-dml-sentinel> --json
+go run ./cmd/oaer test --project example-projects/nams-workspace --filter <setup-sentinel> --json
+```
+
+Exit criteria:
+
+- Mixed-DML failures in the baseline are either gone or classified as precise
+  unsupported behavior with a fixture-backed reason.
+- Large project focused tests run in bounded time.
+
+#### Phase E6: SOQL, Relationship, And Dynamic Access Fidelity
+
+Goal: make enterprise selector/service tests behave like scratch-org tests.
+
+Primary write scope: `internal/soql`, `internal/vm`, `internal/sobject`,
+`internal/sema`.
+
+Common blocker families:
+
+- Unknown `get`, `contains`, fluent builder, and relationship access calls often
+  mean receiver type inference or dynamic SObject/map access is too shallow.
+- Relationship queries, polymorphic references, aggregate rows, and dynamic
+  fields need runtime depth across NPSP and credentialing packages.
+
+Tasks:
+
+- Improve receiver inference and runtime dispatch for `Object`, `SObject`,
+  `Map`, `List`, aggregate rows, and dynamic JSON/SObject maps.
+- Broaden relationship SOQL support for parent/child, polymorphic, aliases, and
+  relationship field projection.
+- Make fluent builder return-type handling robust for nested and inherited
+  methods.
+- Add focused fixtures from NPSP-style selector/domain patterns.
+
+Validation:
+
+```bash
+go test ./internal/soql ./internal/sobject ./internal/vm ./internal/sema
+go run ./cmd/oaer test --project example-projects/NPSP-rel-3.237 --filter <selector-sentinel> --json
+```
+
+Exit criteria:
+
+- Unknown collection/SObject dynamic access failures drop sharply in NPSP and
+  the credentialing package.
+
+#### Phase E7: Platform APIs, Resources, And UI Controller Test Contracts
+
+Goal: make non-rendering controller/service tests pass when they depend on
+Salesforce platform context.
+
+Primary write scope: `internal/vm`, `internal/resource`, `internal/uicontroller`,
+`internal/visualforce`, `internal/apextest`.
+
+Tasks:
+
+- Finish test-facing `PageReference`, `ApexPages`, standard controller, and
+  controller extension behavior used by the six projects.
+- Complete deterministic static resource/content asset URL behavior for
+  `URLFOR`, `$Resource`, and LWC resource imports.
+- Fill remaining `Site`, `Network`, `Auth`, `ConnectApi.Organization`,
+  Platform Cache, endpoint, named credential, and remote-site test contracts.
+- Keep unsupported diagnostics for browser rendering, real callouts, OAuth,
+  and external network behavior outside the local-test claim.
+
+Validation:
+
+```bash
+go test ./internal/vm ./internal/resource ./internal/uicontroller ./internal/visualforce
+go run ./cmd/oaer test --project example-projects/src-nmb-nu-develop --filter <ui-controller-sentinel> --json
+go run ./cmd/oaer test --project example-projects/sf-cred-pkg-develop --filter <endpoint-sentinel> --json
+```
+
+Exit criteria:
+
+- Controller/resource/platform-context failures are no longer top blockers in
+  any of the six project baselines.
+
+#### Phase E8: Declarative Runtime Side Effects
+
+Goal: execute Workflow, Flow, and Process Builder behavior that affects Apex
+test assertions.
+
+Primary write scope: `internal/automation`, `internal/dml`, `internal/storage`,
+`internal/vm`.
+
+Tasks:
+
+- Extend current Workflow support for criteria, field updates, email alerts,
+  recursion, and rollback.
+- Extend Flow support for richer nodes, decisions, assignments, loops, record
+  lookups/creates/updates/deletes, invocable Apex, formulas, and collection
+  variables.
+- Model Process Builder variants as Flow-like automation where public metadata
+  shape allows.
+- Emit trace events for automation decisions and side effects.
+
+Validation:
+
+```bash
+go test ./internal/automation ./internal/dml ./internal/storage ./internal/vm
+go run ./cmd/oaer test --project example-projects/src-nmb-nu-develop --filter <automation-sentinel> --json
+go run ./cmd/oaer test --project example-projects/nams-workspace --filter <automation-sentinel> --json
+```
+
+Exit criteria:
+
+- Declarative side-effect differences are no longer top blockers for broad
+  local test execution.
+
+#### Phase E9: Full-Corpus Performance And Release Gate
+
+Goal: make full local runs practical and turn the six projects into a durable
+release gate.
+
+Primary write scope: `internal/apextest`, `internal/project`, `internal/watch`,
+`internal/profile`, `internal/compat`.
+
+Tasks:
+
+- Profile full runs for `src-nmb-nc-develop`, `src-nmb-nu-develop`,
+  `sf-cred-pkg-develop`, `nams-workspace`, and NPSP.
+- Cache parsed source, semantic model, compiled methods, metadata registries,
+  describe registries, and immutable org baselines across test methods.
+- Add bounded parallel test execution where static state and org clone
+  semantics allow.
+- Add `compat local-tests --check docs/fixtures/local-tests-corpus.json` as the
+  promotion gate for the six-project corpus.
+- Publish a dashboard that separates `pass`, `assert_fail`, `runtime_gap`,
+  `unsupported`, and `timeout` by project and blocker family.
+
+Validation:
+
+```bash
+go test ./...
+go run ./cmd/oaer compat local-tests --check docs/fixtures/local-tests-corpus.json
+go run ./cmd/oaer test --project example-projects/src-nmb-nutpl-develop --json
+go run ./cmd/oaer test --project example-projects/src-nmb-nc-develop --json
+go run ./cmd/oaer test --project example-projects/src-nmb-nu-develop --json
+go run ./cmd/oaer test --project example-projects/sf-cred-pkg-develop --json
+go run ./cmd/oaer test --project example-projects/nams-workspace --json
+go run ./cmd/oaer test --project example-projects/NPSP-rel-3.237 --json
+```
+
+Exit criteria:
+
+- Full runs complete with structured JSON in bounded time.
+- Remaining non-pass outcomes are either zero or intentionally documented as
+  outside the local-test support claim.
+- The scratch-org passing result and local result are close enough that local
+  failures can be treated as actionable developer feedback.
 
 ## Principles
 

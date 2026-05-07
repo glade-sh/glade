@@ -10,20 +10,23 @@ import (
 )
 
 type Report struct {
-	Format     string           `json:"format"`
-	Events     int              `json:"events"`
-	Hot        []Entry          `json:"hot"`
-	Categories map[string]int   `json:"categories,omitempty"`
-	Limits     LimitAttribution `json:"limits,omitempty"`
-	Statements []Entry          `json:"statements,omitempty"`
-	Methods    []Entry          `json:"methods,omitempty"`
-	SOQL       []Entry          `json:"soql,omitempty"`
-	DML        []Entry          `json:"dml,omitempty"`
-	Triggers   []Entry          `json:"triggers,omitempty"`
-	Describe   []Entry          `json:"describe,omitempty"`
-	Callouts   []Entry          `json:"callouts,omitempty"`
-	Async      []Entry          `json:"async,omitempty"`
-	Platform   []Entry          `json:"platform,omitempty"`
+	Format      string           `json:"format"`
+	Events      int              `json:"events"`
+	Hot         []Entry          `json:"hot"`
+	Categories  map[string]int   `json:"categories,omitempty"`
+	Limits      LimitAttribution `json:"limits,omitempty"`
+	Statements  []Entry          `json:"statements,omitempty"`
+	Methods     []Entry          `json:"methods,omitempty"`
+	SOQL        []Entry          `json:"soql,omitempty"`
+	DML         []Entry          `json:"dml,omitempty"`
+	Triggers    []Entry          `json:"triggers,omitempty"`
+	Describe    []Entry          `json:"describe,omitempty"`
+	Callouts    []Entry          `json:"callouts,omitempty"`
+	Async       []Entry          `json:"async,omitempty"`
+	Platform    []Entry          `json:"platform,omitempty"`
+	Automation  []Entry          `json:"automation,omitempty"`
+	Visualforce []Entry          `json:"visualforce,omitempty"`
+	Metadata    []Entry          `json:"metadata,omitempty"`
 }
 
 type Entry struct {
@@ -177,6 +180,9 @@ func Analyze(doc trace.Document) Report {
 	report.Callouts = entriesForCategory(report.Hot, "apex.callout")
 	report.Async = entriesForCategory(report.Hot, "apex.async")
 	report.Platform = append(entriesForCategory(report.Hot, "apex.email"), entriesForCategory(report.Hot, "apex.limits")...)
+	report.Automation = entriesForCategories(report.Hot, "apex.flow", "apex.workflow")
+	report.Visualforce = entriesForCategories(report.Hot, "apex.visualforce", "apex.visualforce.standard_controller")
+	report.Metadata = entriesForCategory(report.Hot, "apex.metadata")
 	return report
 }
 
@@ -223,6 +229,9 @@ func WriteMarkdown(w io.Writer, report Report) error {
 		{"Callouts", report.Callouts},
 		{"Async", report.Async},
 		{"Platform", report.Platform},
+		{"Automation", report.Automation},
+		{"Visualforce", report.Visualforce},
+		{"Metadata", report.Metadata},
 	}
 	for _, section := range sections {
 		if err := writeEntriesSection(w, section.title, section.entries); err != nil {
@@ -288,6 +297,20 @@ func entriesForCategory(entries []Entry, category string) []Entry {
 	var out []Entry
 	for _, entry := range entries {
 		if entry.Category == category {
+			out = append(out, entry)
+		}
+	}
+	return out
+}
+
+func entriesForCategories(entries []Entry, categories ...string) []Entry {
+	wanted := make(map[string]struct{}, len(categories))
+	for _, category := range categories {
+		wanted[category] = struct{}{}
+	}
+	var out []Entry
+	for _, entry := range entries {
+		if _, ok := wanted[entry.Category]; ok {
 			out = append(out, entry)
 		}
 	}
