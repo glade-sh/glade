@@ -1,0 +1,209 @@
+{
+  "schemaVersion": 1,
+  "orgAlias": "oaer-probe-lab",
+  "generatedAtUtc": "2026-05-07T18:17:12Z",
+  "snippets": [
+    {
+      "id": "system-test-isrunningtest-short",
+      "category": "stdlib-system",
+      "source": "System.debug(Test.isRunningTest());",
+      "cli": "sf",
+      "status": 0,
+      "compiled": true,
+      "executed": false,
+      "success": true,
+      "line": -1,
+      "column": -1,
+      "logsCaptured": true,
+      "rawShape": {
+        "topLevelKeys": [
+          "result",
+          "status",
+          "warnings"
+        ],
+        "payloadKey": "result",
+        "resultKeys": [
+          "column",
+          "compileProblem",
+          "compiled",
+          "exceptionMessage",
+          "exceptionStackTrace",
+          "line",
+          "logs",
+          "success"
+        ]
+      },
+      "fixture": {
+        "commandKind": "tooling-execute-anonymous",
+        "compiled": true,
+        "executed": false,
+        "success": true
+      }
+    },
+    {
+      "id": "system-test-isrunningtest-qualified",
+      "category": "stdlib-system",
+      "source": "System.debug(System.Test.isRunningTest());",
+      "cli": "sf",
+      "status": 0,
+      "compiled": true,
+      "executed": false,
+      "success": true,
+      "line": -1,
+      "column": -1,
+      "logsCaptured": true,
+      "rawShape": {
+        "topLevelKeys": [
+          "result",
+          "status",
+          "warnings"
+        ],
+        "payloadKey": "result",
+        "resultKeys": [
+          "column",
+          "compileProblem",
+          "compiled",
+          "exceptionMessage",
+          "exceptionStackTrace",
+          "line",
+          "logs",
+          "success"
+        ]
+      },
+      "fixture": {
+        "commandKind": "tooling-execute-anonymous",
+        "compiled": true,
+        "executed": false,
+        "success": true
+      }
+    },
+    {
+      "id": "system-assert-case-insensitive",
+      "category": "stdlib-assert",
+      "source": "SYSTEM.assert.AREEQUAL('trail', 'trail');",
+      "cli": "sf",
+      "status": 0,
+      "compiled": true,
+      "executed": false,
+      "success": true,
+      "line": -1,
+      "column": -1,
+      "logsCaptured": true,
+      "rawShape": {
+        "topLevelKeys": [
+          "result",
+          "status",
+          "warnings"
+        ],
+        "payloadKey": "result",
+        "resultKeys": [
+          "column",
+          "compileProblem",
+          "compiled",
+          "exceptionMessage",
+          "exceptionStackTrace",
+          "line",
+          "logs",
+          "success"
+        ]
+      },
+      "fixture": {
+        "commandKind": "tooling-execute-anonymous",
+        "compiled": true,
+        "executed": false,
+        "success": true
+      }
+    },
+    {
+      "id": "time-valueof-runtime-api",
+      "category": "stdlib-time",
+      "source": "System.debug(Time.valueOf('12:34:56.789'));",
+      "cli": "sf",
+      "status": 1,
+      "compiled": false,
+      "executed": false,
+      "success": false,
+      "line": 1,
+      "column": 19,
+      "compileProblem": "Method does not exist or incorrect signature: void valueOf(String) from the type Time",
+      "logsCaptured": false,
+      "rawShape": {
+        "topLevelKeys": [
+          "cause",
+          "code",
+          "commandName",
+          "context",
+          "data",
+          "exitCode",
+          "message",
+          "name",
+          "stack",
+          "status",
+          "warnings"
+        ],
+        "payloadKey": "data",
+        "resultKeys": [
+          "column",
+          "compileProblem",
+          "compiled",
+          "exceptionMessage",
+          "exceptionStackTrace",
+          "line",
+          "logs",
+          "success"
+        ]
+      },
+      "fixture": {
+        "commandKind": "tooling-execute-anonymous",
+        "compiled": false,
+        "executed": false,
+        "success": false
+      },
+      "diagnostics": [
+        {
+          "line": 1,
+          "column": 19,
+          "message": "Method does not exist or incorrect signature: void valueOf(String) from the type Time",
+          "category": "compile"
+        }
+      ]
+    },
+    {
+      "id": "connectapi-org-settings",
+      "category": "platform-api",
+      "source": "System.debug(ConnectApi.Organization.getSettings());",
+      "cli": "sf",
+      "status": 0,
+      "compiled": true,
+      "executed": false,
+      "success": true,
+      "line": -1,
+      "column": -1,
+      "logsCaptured": true,
+      "rawShape": {
+        "topLevelKeys": [
+          "result",
+          "status",
+          "warnings"
+        ],
+        "payloadKey": "result",
+        "resultKeys": [
+          "column",
+          "compileProblem",
+          "compiled",
+          "exceptionMessage",
+          "exceptionStackTrace",
+          "line",
+          "logs",
+          "success"
+        ]
+      },
+      "fixture": {
+        "commandKind": "tooling-execute-anonymous",
+        "compiled": true,
+        "executed": false,
+        "success": true
+      }
+    }
+  ]
+}

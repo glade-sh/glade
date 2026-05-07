@@ -2,6 +2,7 @@ package oaercli
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
@@ -29,6 +30,8 @@ func runProbe(ctx context.Context, args []string, w io.Writer) error {
 		return runProbeLocal(ctx, subargs, w)
 	case "deploy":
 		return runProbeDeploy(ctx, subargs, w)
+	case "tooling-snippet":
+		return runProbeToolingSnippet(ctx, subargs, w)
 	default:
 		return fmt.Errorf("unknown probe subcommand %q", subcommand)
 	}
@@ -237,5 +240,119 @@ func runProbeDeploy(ctx context.Context, args []string, w io.Writer) error {
 	if err := deployer.Deploy(ctx, w); err != nil {
 		return err
 	}
+	return nil
+}
+
+func runProbeToolingSnippet(ctx context.Context, args []string, w io.Writer) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	probeDir := "probes/sfdx"
+	orgAlias := ""
+	outputPath := ""
+	manifestPath := ""
+	id := "snippet"
+	category := ""
+	source := ""
+	file := ""
+	jsonOut := false
+
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		switch arg {
+		case "--project":
+			if i+1 >= len(args) {
+				return fmt.Errorf("--project requires a value")
+			}
+			probeDir = args[i+1]
+			i++
+		case "--target-org":
+			if i+1 >= len(args) {
+				return fmt.Errorf("--target-org requires a value")
+			}
+			orgAlias = args[i+1]
+			i++
+		case "--output":
+			if i+1 >= len(args) {
+				return fmt.Errorf("--output requires a value")
+			}
+			outputPath = args[i+1]
+			i++
+		case "--manifest":
+			if i+1 >= len(args) {
+				return fmt.Errorf("--manifest requires a value")
+			}
+			manifestPath = args[i+1]
+			i++
+		case "--id":
+			if i+1 >= len(args) {
+				return fmt.Errorf("--id requires a value")
+			}
+			id = args[i+1]
+			i++
+		case "--category":
+			if i+1 >= len(args) {
+				return fmt.Errorf("--category requires a value")
+			}
+			category = args[i+1]
+			i++
+		case "--source":
+			if i+1 >= len(args) {
+				return fmt.Errorf("--source requires a value")
+			}
+			source = args[i+1]
+			i++
+		case "--file":
+			if i+1 >= len(args) {
+				return fmt.Errorf("--file requires a value")
+			}
+			file = args[i+1]
+			i++
+		case "--json":
+			jsonOut = true
+		default:
+			if strings.HasPrefix(arg, "-") {
+				return fmt.Errorf("unknown flag %q", arg)
+			}
+			if source != "" {
+				return fmt.Errorf("use only one inline source argument")
+			}
+			source = arg
+		}
+	}
+
+	if orgAlias == "" {
+		return fmt.Errorf("--target-org is required")
+	}
+	var snippets []probe.ToolingSnippet
+	if manifestPath != "" {
+		if source != "" || file != "" {
+			return fmt.Errorf("use --manifest or --source/--file, not both")
+		}
+		loaded, err := probe.ReadToolingSnippetManifest(manifestPath)
+		if err != nil {
+			return err
+		}
+		snippets = loaded
+	} else {
+		snippets = []probe.ToolingSnippet{{ID: id, Category: category, Source: source, File: file}}
+	}
+
+	exec := &probe.SFDXExecutor{OrgAlias: orgAlias}
+	report, err := exec.CaptureToolingSnippets(probeDir, snippets)
+	if err != nil {
+		return err
+	}
+	if outputPath != "" {
+		if err := probe.WriteToolingSnippetReport(outputPath, report); err != nil {
+			return err
+		}
+	}
+	if jsonOut || outputPath == "" {
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		return enc.Encode(report)
+	}
+	fmt.Fprintf(w, "%s: wrote %d Tooling snippet result(s)\n", outputPath, len(report.Snippets))
 	return nil
 }

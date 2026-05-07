@@ -717,8 +717,10 @@ A squad can add features inside its package scope, but changes to shared VM/sche
 
 ## Recommended Immediate Next Steps
 
-1. Build Salesforce docs ingestion manifest.
-2. Build Tooling/API oracle fixture generator.
-3. Add `compat salesforce-coverage` skeleton.
-4. Expand `internal/capability` with granular coverage IDs.
-5. Assign squads by primary package ownership.
+1. [x] Build Salesforce docs ingestion manifest.
+2. [x] Build Tooling/API oracle fixture generator.
+   - Use `oaer probe tooling-snippet --target-org <alias> --manifest docs/generated/TOOLING_SNIPPET_MANIFEST.json --output <report.json>`.
+   - Validate captured reports with `oaer compat tooling-fixtures <report.json>`.
+3. [x] Add `compat salesforce-coverage` skeleton.
+4. [x] Expand `internal/capability` with granular coverage IDs for Salesforce, standard object, stdlib, and product namespace coverage gates.
+5. [ ] Assign squads by primary package ownership for generated typed declarations and runtime implementation lanes.

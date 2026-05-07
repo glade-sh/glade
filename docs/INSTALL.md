@@ -60,6 +60,14 @@ oaer compat product-namespaces --catalog catalog.json --json
 oaer compat product-namespaces --source /path/to/salesforce-docs/apex --output docs/generated/PRODUCT_NAMESPACE_COVERAGE.md
 ```
 
+Tooling snippet oracle reports can be captured from a scratch org and validated
+as stable JSON artifacts:
+
+```bash
+oaer probe tooling-snippet --target-org oaer-probe-lab --manifest docs/generated/TOOLING_SNIPPET_MANIFEST.json --output tmp/tooling-snippet-results.json
+oaer compat tooling-fixtures tmp/tooling-snippet-results.json
+```
+
 Use a release artifact:
 
 ```yaml

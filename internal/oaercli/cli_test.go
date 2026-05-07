@@ -739,6 +739,50 @@ Adds metadata.
 	}
 }
 
+func TestRunCompatToolingFixtures(t *testing.T) {
+	dir := t.TempDir()
+	reportPath := filepath.Join(dir, "tooling-report.json")
+	writeTestFile(t, reportPath, `{
+  "schemaVersion": 1,
+  "orgAlias": "fixture",
+  "snippets": [{
+    "id": "system-test",
+    "source": "System.debug('ok');",
+    "cli": "sf",
+    "status": 0,
+    "compiled": true,
+    "executed": true,
+    "success": true,
+    "rawShape": {"payloadKey": "result"},
+    "fixture": {
+      "commandKind": "tooling-execute-anonymous",
+      "compiled": true,
+      "executed": true,
+      "success": true
+    }
+  }]
+}`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "tooling-fixtures", reportPath}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("tooling fixtures exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "ok (1 snippets)") {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "tooling-fixtures", reportPath, "--json"}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("tooling fixtures json exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), `"snippets": 1`) {
+		t.Fatalf("json stdout = %q", stdout.String())
+	}
+}
+
 func TestRunCompatSalesforceCoverageOutputAndCheck(t *testing.T) {
 	root := t.TempDir()
 	writeTestFile(t, filepath.Join(root, "apex_methods_system_string.md"), `# String Class

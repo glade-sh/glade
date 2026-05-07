@@ -1,0 +1,34 @@
+{
+  "snippets": [
+    {
+      "id": "system-test-isrunningtest-short",
+      "category": "stdlib-system",
+      "source": "System.debug(Test.isRunningTest());",
+      "notes": "Validates that Test.isRunningTest does not require the System namespace."
+    },
+    {
+      "id": "system-test-isrunningtest-qualified",
+      "category": "stdlib-system",
+      "source": "System.debug(System.Test.isRunningTest());",
+      "notes": "Validates that the System-qualified Test namespace also compiles."
+    },
+    {
+      "id": "system-assert-case-insensitive",
+      "category": "stdlib-assert",
+      "source": "SYSTEM.assert.AREEQUAL('trail', 'trail');",
+      "notes": "Validates case-insensitive native class and method dispatch."
+    },
+    {
+      "id": "time-valueof-runtime-api",
+      "category": "stdlib-time",
+      "source": "System.debug(Time.valueOf('12:34:56.789'));",
+      "notes": "Tracks the runtime API that is supported locally but absent from the current Tooling completions artifact."
+    },
+    {
+      "id": "connectapi-org-settings",
+      "category": "platform-api",
+      "source": "System.debug(ConnectApi.Organization.getSettings());",
+      "notes": "Captures public Tooling compile/runtime shape for an org settings API used by local tests."
+    }
+  ]
+}

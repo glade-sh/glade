@@ -27,6 +27,7 @@ import (
 	"github.com/open-aer/oaer/internal/diagnostic"
 	"github.com/open-aer/oaer/internal/examplescan"
 	"github.com/open-aer/oaer/internal/lsp"
+	"github.com/open-aer/oaer/internal/probe"
 	"github.com/open-aer/oaer/internal/profile"
 	"github.com/open-aer/oaer/internal/project"
 	"github.com/open-aer/oaer/internal/projectscan"
@@ -204,6 +205,8 @@ Compat subcommands:
   dashboard     Generate compatibility dashboard.
   gaps          Generate known gaps document.
   stdlib        Generate standard library coverage document.
+  tooling-fixtures
+                Validate captured Tooling snippet oracle reports.
 `)+"\n")
 }
 
@@ -1471,6 +1474,8 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 		return runCompatStandardObjects(args[1:], w)
 	case "product-namespaces":
 		return runCompatProductNamespaces(args[1:], w)
+	case "tooling-fixtures":
+		return runCompatToolingFixtures(args[1:], w)
 	case "evidence":
 		return runCompatEvidence(args[1:], w)
 	case "validate", "run":
@@ -1503,7 +1508,7 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 }
 
 func compatUsage() string {
-	return "usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | local-tests [--project <root>] [--class <name>] [--method <name>] [--blockers-only] [--top-failures <n>] [--timeout <ms>] [--profile-on-timeout] [--json] [--check <path>] | ui-controllers [--project <root>] [--json|--check <path>] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | salesforce-coverage [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--tooling-symbols <path>] [--json|--output <path>|--check <path>] | standard-objects [--json|--output <path>|--check <path>] | product-namespaces [--source <dir>|--inventory <path>|--catalog <path>] [--json|--output <path>|--check <path>] | evidence --catalog <path> <fixture.json...> [--json]"
+	return "usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | local-tests [--project <root>] [--class <name>] [--method <name>] [--blockers-only] [--top-failures <n>] [--timeout <ms>] [--profile-on-timeout] [--json] [--check <path>] | ui-controllers [--project <root>] [--json|--check <path>] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | salesforce-coverage [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--tooling-symbols <path>] [--json|--output <path>|--check <path>] | standard-objects [--json|--output <path>|--check <path>] | product-namespaces [--source <dir>|--inventory <path>|--catalog <path>] [--json|--output <path>|--check <path>] | tooling-fixtures <report.json...> [--json] | evidence --catalog <path> <fixture.json...> [--json]"
 }
 
 type postParityReadiness struct {
@@ -2854,6 +2859,51 @@ func writeProductNamespaceOutput(w io.Writer, report capability.ProductNamespace
 		return capability.WriteProductNamespaceJSON(w, report)
 	}
 	return capability.WriteProductNamespaceMarkdown(w, report)
+}
+
+func runCompatToolingFixtures(args []string, w io.Writer) error {
+	jsonOut := false
+	var paths []string
+	for _, arg := range args {
+		switch arg {
+		case "--json":
+			jsonOut = true
+		default:
+			if strings.HasPrefix(arg, "-") {
+				return fmt.Errorf("unknown flag %q", arg)
+			}
+			paths = append(paths, arg)
+		}
+	}
+	if len(paths) == 0 {
+		return errors.New("usage: oaer compat tooling-fixtures <report.json...> [--json]")
+	}
+	type checkedReport struct {
+		Path     string `json:"path"`
+		Snippets int    `json:"snippets"`
+	}
+	checked := make([]checkedReport, 0, len(paths))
+	for _, path := range paths {
+		report, err := probe.ReadToolingSnippetReport(path)
+		if err != nil {
+			return err
+		}
+		if err := probe.ValidateToolingSnippetReport(report); err != nil {
+			return fmt.Errorf("%s: %w", path, err)
+		}
+		checked = append(checked, checkedReport{Path: path, Snippets: len(report.Snippets)})
+	}
+	if jsonOut {
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		return enc.Encode(struct {
+			Reports []checkedReport `json:"reports"`
+		}{Reports: checked})
+	}
+	for _, report := range checked {
+		fmt.Fprintf(w, "%s: ok (%d snippets)\n", report.Path, report.Snippets)
+	}
+	return nil
 }
 
 func runCompatEvidence(args []string, w io.Writer) error {
