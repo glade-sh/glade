@@ -1752,13 +1752,13 @@ func TestRunAsSetsUserContextForBlock(t *testing.T) {
 @isTest
 private class RunAsTest {
   @isTest static void scopesCurrentUser() {
-    System.assertEquals('system', UserInfo.getUserId());
+    System.assertEquals('005000000000001', UserInfo.getUserId());
     System.runAs(new User(Id = 'user-a', ProfileId = 'profile-a', Username = 'user-a@example.test')) {
       System.assertEquals('user-a', UserInfo.getUserId());
       System.assertEquals('profile-a', UserInfo.getProfileId());
       System.assertEquals('user-a@example.test', UserInfo.getUserName());
     }
-    System.assertEquals('system', UserInfo.getUserId());
+    System.assertEquals('005000000000001', UserInfo.getUserId());
   }
 }
 `)
@@ -2355,6 +2355,82 @@ func TestOrgFromIndexIncludesProjectStaticResources(t *testing.T) {
 		}
 	}
 	t.Fatalf("resetcss StaticResource record was not created; records=%#v", object.Records)
+}
+
+func TestRuntimeCallsNUTPLMergeValuesPutSObject(t *testing.T) {
+	root := filepath.Join("..", "..", "example-projects", "src-nmb-nutpl-develop")
+	if _, err := os.Stat(filepath.Join(root, "sfdx-project.json")); err != nil {
+		t.Skip("example project is not available")
+	}
+	index := loadTestIndex(t, root)
+	methods := compileProjectMethods(index)
+	found := false
+	for _, method := range methods {
+		if method.Name == "MergeValues.putSObject" {
+			found = true
+			if len(method.Params) != 2 || method.Params[0].Type != "String" || method.Params[1].Type != "Id" {
+				t.Fatalf("MergeValues.putSObject params = %#v", method.Params)
+			}
+		}
+	}
+	if !found {
+		t.Fatal("MergeValues.putSObject was not compiled")
+	}
+	org := orgFromIndex(index)
+	machine := vm.New(nil)
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := registerRuntime(machine, methods, compileProjectClasses(index, methods), nil, nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := machine.Classes["MergeValues"]; !ok {
+		t.Fatal("MergeValues class was not registered")
+	}
+	if candidates := machine.MethodOverloads["MergeValues.putSObject"]; len(candidates) == 0 {
+		t.Fatalf("MergeValues.putSObject overloads were not registered; methods has %d entries", len(machine.Methods))
+	}
+	program, err := vm.CompileAnonymous(`
+MergeValues bag = new MergeValues();
+bag.registerFieldSecurely('User.FirstName');
+bag.registerFieldSecurely('User.LastName');
+bag.putSObject('User', UserInfo.getUserId());
+System.assertEquals(UserInfo.getFirstName(), bag.get('User.FirstName'));
+System.assertEquals(UserInfo.getLastName(), bag.get('User.LastName'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestParseParamsSkipsAnnotationArguments(t *testing.T) {
+	params, err := parseParams(`
+@AuraEnabled(Cacheable=true)
+public static Id getAccountId() {
+    return UserInfo.getUserId();
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(params) != 0 {
+		t.Fatalf("params = %#v", params)
+	}
+
+	params, err = parseParams(`
+@AuraEnabled(Cacheable=true)
+public static String render(final Id templateId, Map<String, Object> values) {
+    return '';
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(params) != 2 || params[0].Type != "Id" || params[0].Name != "templateId" || params[1].Type != "Map<String, Object>" || params[1].Name != "values" {
+		t.Fatalf("params = %#v", params)
+	}
 }
 
 func writeFile(t *testing.T, path, content string) {

@@ -604,8 +604,25 @@ func (vm *VM) RegisterTrigger(trigger Trigger) error {
 }
 
 func (vm *VM) EnableTestContext() {
-	vm.testContext = &TestContext{CurrentUser: String("system")}
+	vm.testContext = &TestContext{CurrentUser: vm.defaultTestCurrentUser()}
 	vm.ensureAsyncObjects()
+}
+
+func (vm *VM) defaultTestCurrentUser() Value {
+	if vm.executionUser.Kind != "" && vm.executionUser.Kind != ValueNull {
+		return vm.executionUser
+	}
+	if vm.Org != nil {
+		if users, ok := vm.Org.Objects["User"]; ok && len(users.Records) > 0 {
+			ids := make([]string, 0, len(users.Records))
+			for id := range users.Records {
+				ids = append(ids, string(id))
+			}
+			sort.Strings(ids)
+			return vmValueFromRecord(users.Records[storage.ID(ids[0])])
+		}
+	}
+	return String("system")
 }
 
 func (vm *VM) ResetStatics() error {
@@ -1576,6 +1593,10 @@ func normalizeStaticCallCasing(callee string) string {
 		if strings.EqualFold(member, "valueOf") {
 			return "Double.valueOf"
 		}
+	case "boolean":
+		if strings.EqualFold(member, "valueOf") {
+			return "Boolean.valueOf"
+		}
 	case "userinfo":
 		for _, known := range []string{
 			"getUserId",
@@ -1612,7 +1633,7 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"String.valueOf", "String.isBlank", "String.isNotBlank", "String.isEmpty", "String.isNotEmpty",
 		"String.join", "String.format", "String.getCommonPrefix", "String.getLevenshteinDistance",
 		"String.stripAll", "String.fromCharArray", "String.escapeSingleQuotes",
-		"Integer.valueOf", "Long.valueOf", "Decimal.valueOf", "Double.valueOf",
+		"Integer.valueOf", "Long.valueOf", "Decimal.valueOf", "Double.valueOf", "Boolean.valueOf",
 		"RoundingMode.valueOf", "Id.valueOf",
 		"Pattern.compile", "Pattern.matches", "Pattern.quote",
 		"Math.abs", "Math.floor", "Math.ceil", "Math.round", "Math.roundToLong", "Math.signum",
@@ -2065,6 +2086,20 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		return stringStatic(callee, args)
 	case "Integer.valueOf", "Long.valueOf", "Decimal.valueOf", "Double.valueOf":
 		return numericStatic(callee, args)
+	case "Boolean.valueOf":
+		if len(args) != 1 {
+			return Null, fmt.Errorf("Boolean.valueOf expects 1 argument")
+		}
+		if args[0].Kind == ValueNull {
+			return Bool(false), nil
+		}
+		if args[0].Kind == ValueBool {
+			return args[0], nil
+		}
+		if args[0].Kind != ValueString {
+			return Null, fmt.Errorf("Boolean.valueOf expects String or Boolean")
+		}
+		return Bool(strings.EqualFold(strings.TrimSpace(args[0].Text), "true")), nil
 	case "RoundingMode.valueOf":
 		return roundingModeStatic(args)
 	case "Id.valueOf":
@@ -4461,8 +4496,13 @@ func (vm *VM) executeSOQLRowsWithExpander(raw string, execResult *Result, expand
 		return nil, err
 	}
 	values := make([]Value, 0, len(result.Records))
+	queriedFields := vm.queriedSObjectFields(queryText)
 	for _, record := range result.Records {
-		values = append(values, vm.vmValueFromRecord(record))
+		value := vm.vmValueFromRecord(record)
+		if len(queriedFields) > 0 && value.Kind == ValueObject {
+			value.Fields[sobjectQueriedFieldsField] = queriedSObjectFieldsValue(record.Object, queriedFields)
+		}
+		values = append(values, value)
 	}
 	if execResult != nil {
 		execResult.Trace = append(execResult.Trace, trace.Instant("apex.soql", "apex.soql", int64(len(execResult.Trace)), map[string]any{
@@ -4471,6 +4511,41 @@ func (vm *VM) executeSOQLRowsWithExpander(raw string, execResult *Result, expand
 		}))
 	}
 	return values, nil
+}
+
+func (vm *VM) queriedSObjectFields(queryText string) map[string]bool {
+	query, err := soql.Parse(queryText)
+	if err != nil || query.Count || len(query.Aggregates) > 0 || len(query.GroupBy) > 0 {
+		return nil
+	}
+	objectName := query.Object
+	if vm.Org != nil {
+		if canonical, ok := storage.ResolveObjectName(*vm.Org, objectName); ok {
+			objectName = canonical
+		}
+	}
+	fields := make(map[string]bool)
+	for _, field := range query.Fields {
+		if strings.Contains(field, "(") {
+			continue
+		}
+		if dot := strings.IndexByte(field, '.'); dot >= 0 {
+			field = field[:dot]
+		}
+		if vm.Org != nil {
+			if object, ok := vm.Org.Objects[objectName]; ok {
+				if canonical, ok := storage.ResolveFieldName(object.Definition, vm.Org.Namespace, field); ok {
+					field = canonical
+				}
+			}
+		}
+		fields[strings.ToLower(field)] = true
+	}
+	if len(fields) == 0 {
+		return nil
+	}
+	fields["id"] = true
+	return fields
 }
 
 func soqlLimitRows(result soql.Result) int {
@@ -5676,7 +5751,7 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 	}
 	record.ID = sObjectIDFromFields(value.Fields)
 	for field, fieldValue := range value.Fields {
-		if field == sobjectErrorsField || field == sobjectReadOnlyField {
+		if isInternalSObjectField(field) {
 			continue
 		}
 		if strings.EqualFold(field, "Id") {
@@ -9212,6 +9287,9 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 			_, value, ok = objectFieldValue(current, part)
 		}
 		if !ok {
+			if err := vm.unqueriedSObjectFieldError(current, canonicalPart); err != nil {
+				return Null, err
+			}
 			if value, ok := vm.missingSObjectFieldValue(current.Type, canonicalPart); ok {
 				current = value
 				continue
@@ -12158,6 +12236,9 @@ func (vm *VM) conversionScore(paramType string, value Value) int {
 	if score := numericConversionScore(paramType, valueType); score >= 0 {
 		return score
 	}
+	if vm.typeAssignableTo(valueType, paramType) {
+		return 900
+	}
 	if strings.EqualFold(paramType, "Object") {
 		return 10
 	}
@@ -14351,6 +14432,9 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		field := vm.resolveSObjectFieldName(receiver.Type, fieldArg)
 		value, ok := receiver.Fields[field]
 		if !ok {
+			if err := vm.unqueriedSObjectFieldError(receiver, field); err != nil {
+				return Null, true, err
+			}
 			if value, ok := vm.missingSObjectFieldValue(receiver.Type, field); ok {
 				return value, true, nil
 			}
@@ -14404,7 +14488,7 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		out := Map()
 		out.Type = "Map<String,Object>"
 		for field, value := range receiver.Fields {
-			if field == sobjectErrorsField || field == sobjectReadOnlyField {
+			if isInternalSObjectField(field) {
 				continue
 			}
 			out.Map[mapKey(String(field))] = value
@@ -14471,9 +14555,38 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 }
 
 const (
-	sobjectErrorsField   = "__oaer_errors"
-	sobjectReadOnlyField = "__oaer_readonly"
+	sobjectErrorsField        = "__oaer_errors"
+	sobjectReadOnlyField      = "__oaer_readonly"
+	sobjectQueriedFieldsField = "__oaer_queried_fields"
 )
+
+func isInternalSObjectField(field string) bool {
+	return field == sobjectErrorsField || field == sobjectReadOnlyField || field == sobjectQueriedFieldsField
+}
+
+func queriedSObjectFieldsValue(objectName string, fields map[string]bool) Value {
+	value := Map()
+	value.Type = "Map<String,Boolean>"
+	value.Map[mapKey(String("object"))] = String(objectName)
+	for field := range fields {
+		value.Map[mapKey(String(field))] = Bool(true)
+	}
+	return value
+}
+
+func (vm *VM) unqueriedSObjectFieldError(receiver Value, field string) error {
+	if receiver.Kind != ValueObject {
+		return nil
+	}
+	selected, ok := receiver.Fields[sobjectQueriedFieldsField]
+	if !ok || selected.Kind != ValueMap {
+		return nil
+	}
+	if _, ok := selected.Map[mapKey(String(strings.ToLower(field)))]; ok {
+		return nil
+	}
+	return newExceptionError("SObjectException", fmt.Sprintf("SObject row was retrieved via SOQL without querying the requested field: %s.%s", receiver.Type, field))
+}
 
 func sobjectReadOnlyReason(value Value) (string, bool) {
 	if value.Kind != ValueObject {

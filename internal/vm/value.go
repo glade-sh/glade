@@ -123,6 +123,9 @@ func (v Value) String() string {
 				return objectName.Text + "." + fieldName.Text
 			}
 		}
+		if raw, ok := v.Fields["value"]; ok && raw.Kind == ValueString {
+			return raw.Text
+		}
 		if message, ok := v.Fields["message"]; ok && message.Kind == ValueString {
 			return message.Text
 		}
@@ -134,6 +137,16 @@ func (v Value) String() string {
 
 func (v Value) Equal(other Value) bool {
 	if v.Kind != other.Kind {
+		if v.Kind == ValueString && other.Kind == ValueObject && strings.EqualFold(other.Type, "Id") {
+			if text, ok := platformScalarObjectText(other); ok {
+				return v.Text == text
+			}
+		}
+		if v.Kind == ValueObject && strings.EqualFold(v.Type, "Id") && other.Kind == ValueString {
+			if text, ok := platformScalarObjectText(v); ok {
+				return text == other.Text
+			}
+		}
 		return false
 	}
 	switch v.Kind {
@@ -207,6 +220,17 @@ func (v Value) Equal(other Value) bool {
 	default:
 		return false
 	}
+}
+
+func platformScalarObjectText(value Value) (string, bool) {
+	if value.Kind != ValueObject {
+		return "", false
+	}
+	raw, ok := value.Fields["value"]
+	if !ok || raw.Kind != ValueString {
+		return "", false
+	}
+	return raw.Text, true
 }
 
 func typeValueText(value Value) string {

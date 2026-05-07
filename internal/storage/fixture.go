@@ -546,6 +546,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		"Email":             {APIName: "Email", Type: FieldString},
 		"FirstName":         {APIName: "FirstName", Type: FieldString},
 		"LastName":          {APIName: "LastName", Type: FieldString},
+		"AccountId":         {APIName: "AccountId", Type: FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Account"},
 		"ProfileId":         {APIName: "ProfileId", Type: FieldReference, ReferenceTo: []string{"Profile"}, RelationshipName: "Profile"},
 		"UserRoleId":        {APIName: "UserRoleId", Type: FieldReference, ReferenceTo: []string{"UserRole"}, RelationshipName: "UserRole"},
 		"IsActive":          {APIName: "IsActive", Type: FieldBoolean},
@@ -724,6 +725,9 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		Object: "User",
 		Fields: map[string]Value{
 			"Username":          StringValue("system@example.invalid"),
+			"FirstName":         StringValue("System"),
+			"LastName":          StringValue("User"),
+			"Name":              StringValue("System User"),
 			"Alias":             StringValue("system"),
 			"Email":             StringValue("system@example.invalid"),
 			"ProfileId":         IDValue(profileID),

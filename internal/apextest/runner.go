@@ -1077,7 +1077,11 @@ func typeHeader(typeSource string) string {
 }
 
 func parseParams(methodSource string) ([]vm.Param, error) {
-	open := strings.IndexByte(methodSource, '(')
+	header := methodSource
+	if body := strings.IndexByte(methodSource, '{'); body >= 0 {
+		header = methodSource[:body]
+	}
+	open := strings.LastIndexByte(header, '(')
 	if open < 0 {
 		return nil, fmt.Errorf("method parameter list is unavailable")
 	}
