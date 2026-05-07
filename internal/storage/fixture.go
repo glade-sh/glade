@@ -529,6 +529,10 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		"FiscalYearStartMonth": {APIName: "FiscalYearStartMonth", Type: FieldInteger},
 	})
 	ensureObject(org, "Profile", "00e", map[string]Field{
+		"Name":          {APIName: "Name", Type: FieldString, Required: true},
+		"UserLicenseId": {APIName: "UserLicenseId", Type: FieldReference, ReferenceTo: []string{"UserLicense"}, RelationshipName: "UserLicense"},
+	})
+	ensureObject(org, "UserLicense", "100", map[string]Field{
 		"Name": {APIName: "Name", Type: FieldString, Required: true},
 	})
 	ensureObject(org, "UserRole", "00E", map[string]Field{
@@ -540,6 +544,8 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		"Username":          {APIName: "Username", Type: FieldString, Required: true},
 		"Alias":             {APIName: "Alias", Type: FieldString},
 		"Email":             {APIName: "Email", Type: FieldString},
+		"FirstName":         {APIName: "FirstName", Type: FieldString},
+		"LastName":          {APIName: "LastName", Type: FieldString},
 		"ProfileId":         {APIName: "ProfileId", Type: FieldReference, ReferenceTo: []string{"Profile"}, RelationshipName: "Profile"},
 		"UserRoleId":        {APIName: "UserRoleId", Type: FieldReference, ReferenceTo: []string{"UserRole"}, RelationshipName: "UserRole"},
 		"IsActive":          {APIName: "IsActive", Type: FieldBoolean},
@@ -550,6 +556,13 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		"EmailEncodingKey":  {APIName: "EmailEncodingKey", Type: FieldString},
 		"Permissions":       {APIName: "Permissions", Type: FieldAny},
 	})
+	ensureObject(org, "Lead", "00Q", map[string]Field{
+		"FirstName": {APIName: "FirstName", Type: FieldString},
+		"LastName":  {APIName: "LastName", Type: FieldString, Required: true},
+		"Company":   {APIName: "Company", Type: FieldString},
+		"Email":     {APIName: "Email", Type: FieldString},
+		"Status":    {APIName: "Status", Type: FieldString},
+	})
 	ensureObject(org, "PermissionSet", "0PS", map[string]Field{
 		"Name":             {APIName: "Name", Type: FieldString, Required: true},
 		"Label":            {APIName: "Label", Type: FieldString},
@@ -559,6 +572,28 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	ensureObject(org, "PermissionSetAssignment", "0Pa", map[string]Field{
 		"AssigneeId":      {APIName: "AssigneeId", Type: FieldReference, ReferenceTo: []string{"User"}, RelationshipName: "Assignee"},
 		"PermissionSetId": {APIName: "PermissionSetId", Type: FieldReference, ReferenceTo: []string{"PermissionSet"}, RelationshipName: "PermissionSet"},
+	})
+	ensureObject(org, "ObjectPermissions", "110", map[string]Field{
+		"ParentId":                    {APIName: "ParentId", Type: FieldReference, ReferenceTo: []string{"PermissionSet", "Profile"}, RelationshipName: "Parent"},
+		"SObjectType":                 {APIName: "SObjectType", Type: FieldString, Required: true},
+		"PermissionsRead":             {APIName: "PermissionsRead", Type: FieldBoolean},
+		"PermissionsCreate":           {APIName: "PermissionsCreate", Type: FieldBoolean},
+		"PermissionsEdit":             {APIName: "PermissionsEdit", Type: FieldBoolean},
+		"PermissionsDelete":           {APIName: "PermissionsDelete", Type: FieldBoolean},
+		"PermissionsViewAllRecords":   {APIName: "PermissionsViewAllRecords", Type: FieldBoolean},
+		"PermissionsModifyAllRecords": {APIName: "PermissionsModifyAllRecords", Type: FieldBoolean},
+	})
+	ensureObject(org, "FieldPermissions", "0FP", map[string]Field{
+		"ParentId":        {APIName: "ParentId", Type: FieldReference, ReferenceTo: []string{"PermissionSet", "Profile"}, RelationshipName: "Parent"},
+		"SObjectType":     {APIName: "SObjectType", Type: FieldString, Required: true},
+		"Field":           {APIName: "Field", Type: FieldString, Required: true},
+		"PermissionsRead": {APIName: "PermissionsRead", Type: FieldBoolean},
+		"PermissionsEdit": {APIName: "PermissionsEdit", Type: FieldBoolean},
+	})
+	ensureObject(org, "SetupEntityAccess", "0J0", map[string]Field{
+		"ParentId":        {APIName: "ParentId", Type: FieldReference, ReferenceTo: []string{"PermissionSet", "Profile"}, RelationshipName: "Parent"},
+		"SetupEntityId":   {APIName: "SetupEntityId", Type: FieldReference, RelationshipName: "SetupEntity"},
+		"SetupEntityType": {APIName: "SetupEntityType", Type: FieldString},
 	})
 	ensureObject(org, "RecordType", "012", map[string]Field{
 		"Name":          {APIName: "Name", Type: FieldString},
@@ -629,6 +664,10 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 
 	orgID := ID("00D000000000001")
 	profileID := ID("00e000000000001")
+	minimumAccessProfileID := ID("00e000000000002")
+	chatterExternalProfileID := ID("00e000000000003")
+	salesforceLicenseID := ID("100000000000001")
+	chatterExternalLicenseID := ID("100000000000002")
 	roleID := ID("00E000000000001")
 	userID := ID("005000000000001")
 	permissionSetID := ID("0PS000000000001")
@@ -647,10 +686,30 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 			"FiscalYearStartMonth": IntegerValue(1),
 		},
 	})
+	putSeedRecord(org, "UserLicense", Record{
+		ID:     salesforceLicenseID,
+		Object: "UserLicense",
+		Fields: map[string]Value{"Name": StringValue("Salesforce")},
+	})
+	putSeedRecord(org, "UserLicense", Record{
+		ID:     chatterExternalLicenseID,
+		Object: "UserLicense",
+		Fields: map[string]Value{"Name": StringValue("Chatter External")},
+	})
 	putSeedRecord(org, "Profile", Record{
 		ID:     profileID,
 		Object: "Profile",
-		Fields: map[string]Value{"Name": StringValue("System Administrator")},
+		Fields: map[string]Value{"Name": StringValue("System Administrator"), "UserLicenseId": IDValue(salesforceLicenseID)},
+	})
+	putSeedRecord(org, "Profile", Record{
+		ID:     minimumAccessProfileID,
+		Object: "Profile",
+		Fields: map[string]Value{"Name": StringValue("Minimum Access - Salesforce"), "UserLicenseId": IDValue(salesforceLicenseID)},
+	})
+	putSeedRecord(org, "Profile", Record{
+		ID:     chatterExternalProfileID,
+		Object: "Profile",
+		Fields: map[string]Value{"Name": StringValue("Chatter External User"), "UserLicenseId": IDValue(chatterExternalLicenseID)},
 	})
 	putSeedRecord(org, "UserRole", Record{
 		ID:     roleID,
@@ -704,11 +763,15 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	}
 	for object, sequence := range map[string]uint64{
 		"Organization":            1,
-		"Profile":                 1,
+		"Profile":                 3,
+		"UserLicense":             2,
 		"UserRole":                1,
 		"User":                    1,
 		"PermissionSet":           1,
 		"PermissionSetAssignment": 1,
+		"FieldPermissions":        1,
+		"ObjectPermissions":       1,
+		"SetupEntityAccess":       1,
 		"RecordType":              maxRecordTypeSequence(*org),
 	} {
 		if org.IDSequences[object] < sequence {
@@ -887,7 +950,7 @@ func ResetPlatformData(org *OrgState) {
 
 func IsPlatformObject(name string) bool {
 	switch name {
-	case "Organization", "Profile", "UserRole", "User", "PermissionSet", "PermissionSetAssignment", "RecordType", "Site", "Network", "NetworkMember", "PlatformCachePartition":
+	case "Organization", "Profile", "UserRole", "User", "PermissionSet", "PermissionSetAssignment", "FieldPermissions", "ObjectPermissions", "SetupEntityAccess", "RecordType", "Site", "Network", "NetworkMember", "PlatformCachePartition":
 		return true
 	default:
 		return false
@@ -934,11 +997,28 @@ func ensureObject(org *OrgState, name, prefix string, fields map[string]Field) {
 		if _, ok := object.Definition.Fields[fieldName]; !ok {
 			object.Definition.Fields[fieldName] = field
 		}
+		if field.Type == FieldReference && field.RelationshipName != "" && len(field.ReferenceTo) > 0 && !hasParentRelationship(object.Definition.Relations, field.RelationshipName) {
+			object.Definition.Relations = append(object.Definition.Relations, Relationship{
+				Field:              field.APIName,
+				ParentObjects:      append([]string(nil), field.ReferenceTo...),
+				ParentRelationship: field.RelationshipName,
+				Polymorphic:        len(field.ReferenceTo) > 1,
+			})
+		}
 	}
 	if object.Records == nil {
 		object.Records = make(map[ID]Record)
 	}
 	org.Objects[name] = object
+}
+
+func hasParentRelationship(relations []Relationship, name string) bool {
+	for _, relation := range relations {
+		if relation.ParentRelationship == name {
+			return true
+		}
+	}
+	return false
 }
 
 func putSeedRecord(org *OrgState, objectName string, record Record) {

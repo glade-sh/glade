@@ -76,12 +76,16 @@ func StandardKeyPrefixes() map[string]string {
 		"Organization":            "00D",
 		"UserRole":                "00E",
 		"Profile":                 "00e",
+		"UserLicense":             "100",
 		"ContentVersion":          "068",
 		"ContentDocument":         "069",
 		"ContentDocumentLink":     "06A",
 		"EmailTemplate":           "00X",
 		"PermissionSet":           "0PS",
 		"PermissionSetAssignment": "0Pa",
+		"FieldPermissions":        "0FP",
+		"ObjectPermissions":       "110",
+		"SetupEntityAccess":       "0J0",
 	}
 	for object, prefix := range standardObjectKeyPrefixes() {
 		if prefix != "" {

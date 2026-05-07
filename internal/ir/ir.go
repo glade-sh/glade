@@ -13,7 +13,9 @@ type Instruction struct {
 	Expr       Expr          `json:"expr,omitempty"`
 	Field      string        `json:"field,omitempty"`
 	Init       *Instruction  `json:"init,omitempty"`
+	Inits      []Instruction `json:"inits,omitempty"`
 	Update     *Instruction  `json:"update,omitempty"`
+	Updates    []Instruction `json:"updates,omitempty"`
 	Then       []Instruction `json:"then,omitempty"`
 	Else       []Instruction `json:"else,omitempty"`
 	Catch      []Instruction `json:"catch,omitempty"`
@@ -37,6 +39,7 @@ const (
 	OpAssign   Op = "assign"
 	OpExpr     Op = "expr"
 	OpReturn   Op = "return"
+	OpBlock    Op = "block"
 	OpIf       Op = "if"
 	OpWhile    Op = "while"
 	OpDoWhile  Op = "doWhile"

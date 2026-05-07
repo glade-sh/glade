@@ -2,9 +2,13 @@ package vm
 
 import (
 	"errors"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/open-aer/oaer/internal/project"
+	"github.com/open-aer/oaer/internal/resource"
 	"github.com/open-aer/oaer/internal/storage"
 )
 
@@ -23,6 +27,8 @@ System.assertEquals('Hello maximillian', lowerName.capitalize());
 System.assertEquals('hello max', upperName.uncapitalize());
 System.assertEquals('cDef', s.substring(2));
 System.assertEquals('cD', s.substring(2, 4));
+System.assertEquals('bcD', s.Substring(1, 4));
+System.assertEquals('abcdef', s.ToLowerCase());
 System.assert(s.containsIgnoreCase('CD'));
 System.assert(s.startsWithIgnoreCase('ab'));
 System.assert(s.endsWithIgnoreCase('def'));
@@ -75,6 +81,14 @@ func TestExecDomDocumentLoadAndXmlNodeMembers(t *testing.T) {
 	program, err := CompileAnonymous(`
 Dom.Document doc = new Dom.Document();
 doc.load('<myprefix:node xmlns:myprefix="http://my.name.space" myprefix:type="test">hello<!--note--><child id="c">there</child></myprefix:node>');
+Dom.Document htmlDoc = new Dom.Document();
+htmlDoc.load('<div><img src="notmyproblem.jpeg">Hello</div>');
+try {
+  htmlDoc.load('<div><img src="<<">Hello</div>');
+  System.assert(false);
+} catch (XmlException e) {
+  System.assert(e.getMessage().contains('Dom.Document.load invalid XML'));
+}
 Dom.XmlNode root = doc.getRootElement();
 System.assertEquals(Dom.XmlNodeType.ELEMENT, root.getNodeType());
 System.assertEquals('node', root.getName());
@@ -95,6 +109,8 @@ System.assertEquals(root, children[2].getParent());
 Dom.XmlNode added = root.addChildElement('second', null, null);
 added.setAttributeNs('id', 's', null, null);
 System.assertEquals('s', added.getAttributeValue('id', null));
+System.assert(doc.toXmlString().contains('<child id="c">there</child>'));
+System.assert(root.toXmlString().contains('<child id="c">there</child>'));
 root.removeChild(added);
 System.assertEquals(3, root.getChildren().size());
 `)
@@ -467,7 +483,7 @@ String kitten = 'kitten';
 System.assertEquals(3, kitten.getLevenshteinDistance('sitting'));
 System.assertEquals(3, String.getLevenshteinDistance('kitten', 'sitting'));
 String chars = 'AΩ';
-System.assertEquals('A', chars.charAt(0));
+System.assertEquals(65, chars.charAt(0));
 System.assertEquals(937, chars.codePointAt(1));
 System.assertEquals(65, chars.codePointBefore(1));
 System.assertEquals(2, chars.codePointCount(0, 2));
@@ -627,19 +643,19 @@ System.assertEquals('ABC', xml10Invalid.escapeXml10());
 String xml10Control = String.fromCharArray(new List<Integer>{65, 127, 66, 133, 67});
 String xml10Escaped = xml10Control.escapeXml10();
 System.assertEquals(65, xml10Escaped.codePointAt(0));
-System.assertEquals('&', xml10Escaped.charAt(1));
-System.assertEquals('#', xml10Escaped.charAt(2));
-System.assertEquals('B', xml10Escaped.charAt(7));
+System.assertEquals(38, xml10Escaped.charAt(1));
+System.assertEquals(35, xml10Escaped.charAt(2));
+System.assertEquals(66, xml10Escaped.charAt(7));
 System.assertEquals(133, xml10Escaped.codePointAt(8));
 String xml11Control = String.fromCharArray(new List<Integer>{65, 0, 1, 66, 31, 67, 133});
 String xml11Escaped = xml11Control.escapeXml11();
 System.assertEquals(65, xml11Escaped.codePointAt(0));
-System.assertEquals('&', xml11Escaped.charAt(1));
-System.assertEquals('#', xml11Escaped.charAt(2));
-System.assertEquals('B', xml11Escaped.charAt(5));
-System.assertEquals('&', xml11Escaped.charAt(6));
-System.assertEquals('#', xml11Escaped.charAt(7));
-System.assertEquals('C', xml11Escaped.charAt(11));
+System.assertEquals(38, xml11Escaped.charAt(1));
+System.assertEquals(35, xml11Escaped.charAt(2));
+System.assertEquals(66, xml11Escaped.charAt(5));
+System.assertEquals(38, xml11Escaped.charAt(6));
+System.assertEquals(35, xml11Escaped.charAt(7));
+System.assertEquals(67, xml11Escaped.charAt(11));
 System.assertEquals(133, xml11Escaped.codePointAt(12));
 String xmlMarkup = '<a attr=''q''>&"';
 System.assertEquals('&lt;a attr=&apos;q&apos;&gt;&amp;&quot;', xmlMarkup.escapeXml10());
@@ -810,6 +826,18 @@ func TestStringRegexReplacementSplitAndUnsupportedEdges(t *testing.T) {
 	replacedFirst, handled, err := callStringMember(String("A1 B22"), "replaceFirst", []Value{String("([A-Z]+)([0-9]+)"), String(`\$1`)})
 	if err != nil || !handled || replacedFirst.Text != "$1 B22" {
 		t.Fatalf("replaceFirst = %#v handled=%v err=%v", replacedFirst, handled, err)
+	}
+	unescapedWildcards, handled, err := callStringMember(String(`\Qname_%\E`), "replaceAll", []Value{String(`(?<!\\)_`), String(`\\E.\\Q`)})
+	if err != nil || !handled || unescapedWildcards.Text != `\Qname\E.\Q%\E` {
+		t.Fatalf("replaceAll negative lookbehind _ = %#v handled=%v err=%v", unescapedWildcards, handled, err)
+	}
+	unescapedWildcards, handled, err = callStringMember(String(`\Qname\E.\Q%\E`), "replaceAll", []Value{String(`(?<!\\)%`), String(`\\E.*\\Q`)})
+	if err != nil || !handled || unescapedWildcards.Text != `\Qname\E.\Q\E.*\Q\E` {
+		t.Fatalf("replaceAll negative lookbehind %% = %#v handled=%v err=%v", unescapedWildcards, handled, err)
+	}
+	escapedWildcard, handled, err := callStringMember(String(`\Qname\_%\E`), "replaceAll", []Value{String(`(?<!\\)_`), String(`\\E.\\Q`)})
+	if err != nil || !handled || escapedWildcard.Text != `\Qname\_%\E` {
+		t.Fatalf("replaceAll escaped negative lookbehind = %#v handled=%v err=%v", escapedWildcard, handled, err)
 	}
 	split, handled, err := callStringMember(String(":boo:"), "split", []Value{String(":"), Int(-1)})
 	if err != nil || !handled || split.Kind != ValueList || len(split.List) != 3 || split.List[0].Text != "" || split.List[1].Text != "boo" || split.List[2].Text != "" {
@@ -1023,6 +1051,7 @@ System.assert(!text.equals('ridge'));
 System.assertEquals('trail', text.toString());
 String sameText = 'trail';
 System.assertEquals(sameText.hashCode(), text.hashCode());
+System.assertEquals(text.hashCode(), text.HashCode());
 Integer count = 7;
 System.assert(count.equals(7));
 System.assertEquals('7', count.toString());
@@ -1031,6 +1060,7 @@ left.add(1);
 List<Integer> right = new List<Integer>();
 right.add(1);
 System.assert(left.equals(right));
+System.assert(left.Equals(right));
 System.assertEquals(left.hashCode(), right.hashCode());
 System.assertEquals('List[1]', left.toString());
 
@@ -1898,6 +1928,7 @@ Long minLong = Long.valueOf(' -9223372036854775808 ');
 Long maxLong = Long.valueOf('+9223372036854775807');
 Decimal d = Decimal.valueOf('12.5');
 Decimal negativeDecimal = Decimal.valueOf(' -0.125 ');
+Decimal lowerCaseDecimal = decimal.valueOf('3.5');
 Double x = Double.valueOf('2.25');
 Double signedDouble = Double.valueOf(' +6.25 ');
 Decimal bigLong = Decimal.valueOf('3000000000');
@@ -1908,6 +1939,7 @@ System.assertEquals(Long.MIN_VALUE, minLong);
 System.assertEquals(Long.MAX_VALUE, maxLong);
 System.assertEquals(12.5, d);
 System.assertEquals(-0.125, negativeDecimal);
+System.assertEquals(3.5, lowerCaseDecimal);
 System.assertEquals(2.25, x);
 System.assertEquals(6.25, signedDouble);
 System.assertEquals('42', i.format());
@@ -1980,11 +2012,81 @@ System.assert(Math.abs(Math.atan2(1, 1) - (Math.PI / 4)) < 0.000000000001);
 System.assert(Math.abs(Math.exp(1) - Math.E) < 0.000000000001);
 System.assert(Math.abs(Math.log(Math.E) - 1) < 0.000000000001);
 System.assert(Math.abs(Math.log10(1000) - 3) < 0.000000000001);
+System.assert(Math.random() >= 0);
+System.assert(Math.random() < 1);
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecBuiltinStaticCallsAreCaseInsensitive(t *testing.T) {
+	program, err := CompileAnonymous(`
+system.assertEquals(8.0, math.Pow(2, 3));
+SYSTEM.ASSERTEQUALS(3.0, MATH.sqrt(9));
+System.assertEquals(4, database.CountQuery('SELECT count() FROM Account'));
+System.assertEquals(Date.today(), date.TODAY());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Account",
+			Fields: map[string]storage.Field{
+				"Id": {APIName: "Id", Type: storage.FieldID},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"001000000000001": {ID: "001000000000001", Object: "Account"},
+			"001000000000002": {ID: "001000000000002", Object: "Account"},
+			"001000000000003": {ID: "001000000000003", Object: "Account"},
+			"001000000000004": {ID: "001000000000004", Object: "Account"},
+		},
+	}
+	machine := New(nil)
+	machine.Org = &org
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecProjectStaticResourceSOQL(t *testing.T) {
+	root := filepath.Join("..", "..", "example-projects", "src-nmb-nutpl-develop")
+	if _, err := os.Stat(filepath.Join(root, "sfdx-project.json")); err != nil {
+		t.Skip("example project is not available")
+	}
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	if err := resource.ApplyProject(&org, p); err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+String recordName = 'resetcss';
+Set<String> names = new Set<String>{ recordName };
+Set<String> escaped = new Set<String>();
+for (String name : names) {
+	escaped.add(String.escapeSingleQuotes(name));
+}
+System.assertEquals(1, escaped.size());
+String query = String.format('SELECT {0} FROM {1} WHERE Name in :escaped ORDER BY {2}', new List<String>{ 'Body,Name,NamespacePrefix,SystemModStamp', 'StaticResource', 'Name' });
+List<StaticResource> resources = Database.query(query);
+System.assertEquals(1, resources.size());
+System.assertEquals('resetcss', resources[0].Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.Org = &org
+	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -2297,6 +2399,10 @@ System.assert(nameIt.hasNext());
 System.assertEquals('b', nameIt.next());
 System.assertEquals('a', nameIt.next());
 System.assert(!nameIt.hasNext());
+
+Iterator<String> splitIt = 'CreatedBy.Name'.split('\\.').iterator();
+System.assertEquals('CreatedBy', splitIt.next());
+System.assertEquals('Name', splitIt.next());
 `)
 	if err != nil {
 		t.Fatal(err)

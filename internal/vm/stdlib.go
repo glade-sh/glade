@@ -16,26 +16,63 @@ import (
 func callStdlibMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
 	switch receiver.Kind {
 	case ValueInt:
+		method = canonicalStdlibMemberName(method, "format", "intValue", "longValue", "doubleValue", "decimalValue")
 		return callIntegerMember(receiver, method, args)
 	case ValueString:
+		method = canonicalStdlibMemberName(method, stringStdlibMethodNames...)
 		value, handled, err := callStringMember(receiver, method, args)
 		return value, receiver, false, handled, err
 	case ValueDecimal:
+		method = canonicalStdlibMemberName(method, "abs", "setScale", "round", "intValue", "longValue", "doubleValue", "format", "divide")
 		return callDecimalMember(receiver, method, args)
 	case ValueList:
+		method = canonicalStdlibMemberName(method, "add", "addAll", "clear", "clone", "contains", "deepClone", "get", "getSObjectType", "isEmpty", "iterator", "remove", "set", "size", "sort")
 		return callListStdlibMember(receiver, method, args)
 	case ValueSet:
+		method = canonicalStdlibMemberName(method, "add", "addAll", "clear", "clone", "contains", "containsAll", "deepClone", "isEmpty", "iterator", "remove", "removeAll", "retainAll", "size")
 		return callSetStdlibMember(receiver, method, args)
 	case ValueMap:
+		method = canonicalStdlibMemberName(method, "clear", "clone", "containsKey", "deepClone", "get", "isEmpty", "keySet", "put", "putAll", "remove", "size", "values")
 		return callMapStdlibMember(receiver, method, args)
 	case ValueObject:
 		if isIteratorValue(receiver) {
+			method = canonicalStdlibMemberName(method, "hasNext", "next")
 			return callIteratorMember(receiver, method, args)
 		}
 		return Null, receiver, false, false, nil
 	default:
 		return Null, receiver, false, false, nil
 	}
+}
+
+func canonicalStdlibMemberName(method string, known ...string) string {
+	for _, candidate := range known {
+		if strings.EqualFold(method, candidate) {
+			return candidate
+		}
+	}
+	return method
+}
+
+var stringStdlibMethodNames = []string{
+	"abbreviate", "capitalize", "center", "charAt", "codePointAt", "codePointBefore", "codePointCount",
+	"commonPrefix", "compareTo", "contains", "containsAny", "containsIgnoreCase", "containsNone",
+	"containsOnly", "containsWhitespace", "countMatches", "deleteWhitespace", "difference", "endsWith",
+	"endsWithIgnoreCase", "equals", "equalsIgnoreCase", "escapeCsv", "escapeEcmaScript", "escapeHtml3",
+	"escapeHtml4", "escapeJava", "escapeUnicode", "escapeXml", "escapeXml10", "escapeXml11", "format",
+	"getChars", "getLevenshteinDistance", "hashCode", "indexOf", "indexOfAny", "indexOfAnyBut",
+	"isAllLowerCase", "isAllUpperCase", "isAlpha", "isAlphaSpace", "isAlphanumeric", "isAlphanumericSpace",
+	"isAsciiPrintable", "isBlank", "isEmpty", "isNotBlank", "isNotEmpty", "isNumeric", "isNumericSpace",
+	"isWhitespace", "lastIndexOf", "lastIndexOfAny", "lastOrdinalIndexOf", "left", "leftPad", "length",
+	"mid", "normalizeSpace", "ordinalIndexOf", "overlay", "remove", "removeEnd", "removeEndIgnoreCase",
+	"removeIgnoreCase", "removeStart", "removeStartIgnoreCase", "repeat", "replace", "replaceAll",
+	"replaceFirst", "replaceIgnoreCase", "replaceOnce", "reverse", "right", "rightPad", "rotate", "split",
+	"splitByCharacterType", "splitByCharacterTypeCamelCase", "startsWith", "startsWithIgnoreCase", "strip",
+	"stripEnd", "stripStart", "stripToEmpty", "stripToNull", "substring", "substringAfter",
+	"substringAfterLast", "substringBefore", "substringBeforeLast", "substringBetween", "swapCase",
+	"toCharArray", "toLowerCase", "toString", "toUpperCase", "trim", "uncapitalize", "unescapeCsv",
+	"unescapeEcmaScript", "unescapeHtml3", "unescapeHtml4", "unescapeJava", "unescapeUnicode",
+	"unescapeXml", "unescapeXml10", "unescapeXml11", "valueOf",
 }
 
 func callIntegerMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
@@ -318,6 +355,7 @@ func roundingModeStatic(args []Value) (Value, error) {
 }
 
 func callStringMember(receiver Value, method string, args []Value) (Value, bool, error) {
+	method = canonicalStringMemberMethod(method)
 	switch method {
 	case "length":
 		if len(args) != 0 {
@@ -642,6 +680,11 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 			return Null, true, err
 		}
 		return Bool(receiver.Text == other), true, nil
+	case "hashCode":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("String.hashCode expects 0 arguments")
+		}
+		return Int(int64(javaStringHashCode(receiver.Text))), true, nil
 	case "compareTo":
 		other, err := stringArg("String.compareTo", args)
 		if err != nil {
@@ -659,7 +702,7 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 		if index < 0 || index >= len(runes) {
 			return Null, true, fmt.Errorf("String.charAt index out of bounds: %d", index)
 		}
-		return String(string(runes[index])), true, nil
+		return Int(int64(runes[index])), true, nil
 	case "codePointAt":
 		index, err := stringIntArg("String.codePointAt", args)
 		if err != nil {
@@ -969,6 +1012,122 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 	}
 }
 
+var stringMemberMethodNames = []string{
+	"length",
+	"contains",
+	"containsIgnoreCase",
+	"containsAny",
+	"containsOnly",
+	"containsNone",
+	"indexOfAny",
+	"indexOfAnyBut",
+	"lastIndexOfAny",
+	"containsWhitespace",
+	"countMatches",
+	"escapeCsv",
+	"unescapeCsv",
+	"escapeHtml3",
+	"escapeHtml4",
+	"unescapeHtml3",
+	"unescapeHtml4",
+	"escapeXml",
+	"escapeXml10",
+	"escapeXml11",
+	"unescapeXml",
+	"unescapeXml10",
+	"unescapeXml11",
+	"escapeJava",
+	"unescapeJava",
+	"escapeEcmaScript",
+	"unescapeEcmaScript",
+	"escapeUnicode",
+	"unescapeUnicode",
+	"startsWith",
+	"startsWithIgnoreCase",
+	"endsWith",
+	"endsWithIgnoreCase",
+	"toLowerCase",
+	"toUpperCase",
+	"trim",
+	"capitalize",
+	"uncapitalize",
+	"indexOf",
+	"lastIndexOf",
+	"ordinalIndexOf",
+	"lastOrdinalIndexOf",
+	"replace",
+	"replaceOnce",
+	"replaceIgnoreCase",
+	"replaceAll",
+	"replaceFirst",
+	"remove",
+	"removeIgnoreCase",
+	"removeStart",
+	"removeStartIgnoreCase",
+	"removeEnd",
+	"removeEndIgnoreCase",
+	"split",
+	"equalsIgnoreCase",
+	"equals",
+	"hashCode",
+	"compareTo",
+	"substring",
+	"charAt",
+	"codePointAt",
+	"codePointBefore",
+	"codePointCount",
+	"getChars",
+	"toCharArray",
+	"left",
+	"right",
+	"leftPad",
+	"rightPad",
+	"center",
+	"mid",
+	"reverse",
+	"overlay",
+	"rotate",
+	"swapCase",
+	"abbreviate",
+	"difference",
+	"commonPrefix",
+	"getLevenshteinDistance",
+	"splitByCharacterType",
+	"splitByCharacterTypeCamelCase",
+	"substringAfter",
+	"substringAfterLast",
+	"substringBefore",
+	"substringBeforeLast",
+	"substringBetween",
+	"deleteWhitespace",
+	"strip",
+	"stripStart",
+	"stripEnd",
+	"stripToNull",
+	"stripToEmpty",
+	"normalizeSpace",
+	"isWhitespace",
+	"isAlpha",
+	"isAlphaSpace",
+	"isAlphanumeric",
+	"isAlphanumericSpace",
+	"isNumeric",
+	"isNumericSpace",
+	"isAllLowerCase",
+	"isAllUpperCase",
+	"isAsciiPrintable",
+	"repeat",
+}
+
+func canonicalStringMemberMethod(method string) string {
+	for _, name := range stringMemberMethodNames {
+		if strings.EqualFold(method, name) {
+			return name
+		}
+	}
+	return method
+}
+
 func stringStatic(callee string, args []Value) (Value, error) {
 	switch callee {
 	case "String.isBlank", "String.isNotBlank":
@@ -1265,13 +1424,19 @@ func patternMatches(args []Value) (Value, error) {
 	if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
 		return Null, fmt.Errorf("Pattern.matches expects regex and input Strings")
 	}
-	if feature := unsupportedJavaRegexFeature(args[0].Text); feature != "" {
+	source, err := javaRegexQuoteEscapesToGo(args[0].Text)
+	if err != nil {
+		return Null, unsupportedCallError("Pattern.matches " + err.Error())
+	}
+	if feature := unsupportedJavaRegexFeature(source); feature != "" {
 		return Null, unsupportedCallError("Pattern.matches " + feature)
 	}
-	matched, err := regexp.MatchString("^(?:"+args[0].Text+")$", args[1].Text)
+	re, err := regexp.Compile(source)
 	if err != nil {
 		return Null, newPatternSyntaxExceptionError(args[0].Text, err)
 	}
+	indices := re.FindStringIndex(args[1].Text)
+	matched := indices != nil && indices[0] == 0 && indices[1] == len(args[1].Text)
 	return Bool(matched), nil
 }
 
@@ -1289,7 +1454,11 @@ func patternQuote(args []Value) (Value, error) {
 	if len(args) != 1 || args[0].Kind != ValueString {
 		return Null, fmt.Errorf("Pattern.quote expects String")
 	}
-	return String(regexp.QuoteMeta(args[0].Text)), nil
+	return String(javaPatternQuote(args[0].Text)), nil
+}
+
+func javaPatternQuote(text string) string {
+	return `\Q` + strings.ReplaceAll(text, `\E`, `\E\\E\Q`) + `\E`
 }
 
 func compilePatternSource(callee, source string, flags int64) (string, error) {
@@ -1302,8 +1471,15 @@ func compilePatternSource(callee, source string, flags int64) (string, error) {
 	regexpSource := source
 	if flags&patternFlagLiteral != 0 {
 		regexpSource = regexp.QuoteMeta(source)
-	} else if feature := unsupportedJavaRegexFeature(source); feature != "" {
-		return "", unsupportedCallError(callee + " " + feature)
+	} else {
+		converted, err := javaRegexQuoteEscapesToGo(source)
+		if err != nil {
+			return "", unsupportedCallError(callee + " " + err.Error())
+		}
+		regexpSource = converted
+		if feature := unsupportedJavaRegexFeature(regexpSource); feature != "" {
+			return "", unsupportedCallError(callee + " " + feature)
+		}
 	}
 	prefix := patternFlagPrefix(flags)
 	if prefix == "" {
@@ -2575,6 +2751,9 @@ func stringRegexReplace(name, text string, args []Value, all bool) (string, erro
 		return "", fmt.Errorf("%s expects regex and replacement Strings", name)
 	}
 	pattern := args[0].Text
+	if replaced, ok, err := stringRegexReplaceNegativeLookbehindLiteral(name, text, pattern, args[1].Text, all); ok || err != nil {
+		return replaced, err
+	}
 	if feature := unsupportedJavaRegexFeature(pattern); feature != "" {
 		return "", unsupportedCallError(name + " " + feature)
 	}
@@ -2596,6 +2775,39 @@ func stringRegexReplace(name, text string, args []Value, all bool) (string, erro
 	var expanded []byte
 	expanded = re.ExpandString(expanded, replacement, text, indices)
 	return text[:indices[0]] + string(expanded) + text[indices[1]:], nil
+}
+
+func stringRegexReplaceNegativeLookbehindLiteral(callee, text, pattern, replacement string, all bool) (string, bool, error) {
+	if !strings.HasPrefix(pattern, "(?<!") {
+		return "", false, nil
+	}
+	close := strings.IndexByte(pattern, ')')
+	if close != len(pattern)-2 || close < len("(?<!)") {
+		return "", false, nil
+	}
+	behind := pattern[len("(?<!"):close]
+	if behind != `\\` {
+		return "", false, nil
+	}
+	target := pattern[len(pattern)-1]
+	repl, err := javaReplacementToGoTemplate(callee, replacement, 0)
+	if err != nil {
+		return "", true, fmt.Errorf("%s %w", callee, err)
+	}
+	var out strings.Builder
+	replaced := false
+	for i := 0; i < len(text); i++ {
+		if text[i] == target && (i == 0 || text[i-1] != '\\') && (all || !replaced) {
+			out.WriteString(repl)
+			replaced = true
+			continue
+		}
+		out.WriteByte(text[i])
+	}
+	if !replaced {
+		return text, true, nil
+	}
+	return out.String(), true, nil
 }
 
 func stringRegexSplit(text string, args []Value) ([]string, error) {
@@ -2742,6 +2954,32 @@ func unsupportedJavaRegexFeature(source string) string {
 		}
 	}
 	return ""
+}
+
+func javaRegexQuoteEscapesToGo(source string) (string, error) {
+	if !strings.Contains(source, `\Q`) && !strings.Contains(source, `\E`) {
+		return source, nil
+	}
+	var out strings.Builder
+	for i := 0; i < len(source); {
+		if strings.HasPrefix(source[i:], `\Q`) {
+			i += len(`\Q`)
+			end := strings.Index(source[i:], `\E`)
+			if end < 0 {
+				out.WriteString(regexp.QuoteMeta(source[i:]))
+				return out.String(), nil
+			}
+			out.WriteString(regexp.QuoteMeta(source[i : i+end]))
+			i += end + len(`\E`)
+			continue
+		}
+		if strings.HasPrefix(source[i:], `\E`) {
+			return "", fmt.Errorf("Java regex quote escapes")
+		}
+		out.WriteByte(source[i])
+		i++
+	}
+	return out.String(), nil
 }
 
 func javaOnlyUnicodeClass(className string) bool {
@@ -3535,6 +3773,7 @@ func substring(text string, args []Value) (Value, bool, error) {
 }
 
 func callObjectMember(receiver Value, method string, args []Value) (Value, bool, error) {
+	method = canonicalObjectMemberMethod(method)
 	switch method {
 	case "toString":
 		if len(args) != 0 {
@@ -3554,6 +3793,15 @@ func callObjectMember(receiver Value, method string, args []Value) (Value, bool,
 	default:
 		return Null, false, nil
 	}
+}
+
+func canonicalObjectMemberMethod(method string) string {
+	for _, name := range []string{"toString", "equals", "hashCode"} {
+		if strings.EqualFold(method, name) {
+			return name
+		}
+	}
+	return method
 }
 
 func javaStringHashCode(text string) int32 {

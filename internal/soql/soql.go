@@ -314,6 +314,12 @@ func aggregateRecords(org storage.OrgState, definition storage.ObjectDefinition,
 				if value, ok := fields[expr.Raw]; ok {
 					fields[expr.Alias] = value.Clone()
 				}
+				continue
+			}
+			if raw, alias, ok := splitSelectFieldAlias(field); ok {
+				if value, ok := fields[raw]; ok {
+					fields[alias] = value.Clone()
+				}
 			}
 		}
 		aggregateFields, err := aggregateFields(org, definition, group.records, query.Aggregates, group.grouping)
@@ -783,7 +789,11 @@ func childRelationship(org storage.OrgState, parentDefinition storage.ObjectDefi
 	parentName := parentDefinition.APIName
 	for childObjectName, childObject := range org.Objects {
 		for _, relation := range childObject.Definition.Relations {
-			if relation.ChildRelationship != relationship {
+			childRelationshipName := relation.ChildRelationship
+			if childRelationshipName == "" {
+				childRelationshipName = derivedChildRelationshipName(childObject.Definition)
+			}
+			if !strings.EqualFold(childRelationshipName, relationship) {
 				continue
 			}
 			for _, candidate := range relation.ParentObjects {
@@ -798,6 +808,19 @@ func childRelationship(org storage.OrgState, parentDefinition storage.ObjectDefi
 		}
 	}
 	return "", storage.Relationship{}, false
+}
+
+func derivedChildRelationshipName(definition storage.ObjectDefinition) string {
+	if strings.TrimSpace(definition.PluralLabel) != "" {
+		return strings.ReplaceAll(definition.PluralLabel, " ", "")
+	}
+	if strings.TrimSpace(definition.Label) != "" {
+		return strings.ReplaceAll(definition.Label, " ", "") + "s"
+	}
+	if definition.APIName != "" {
+		return definition.APIName + "s"
+	}
+	return ""
 }
 
 func expandFieldsFunctions(definition storage.ObjectDefinition, fields []string) ([]string, error) {
@@ -875,6 +898,9 @@ func validateQueryReferences(org storage.OrgState, definition storage.ObjectDefi
 				return err
 			}
 			continue
+		}
+		if raw, _, ok := splitSelectFieldAlias(field); ok {
+			field = raw
 		}
 		if err := validateFieldReference(org, definition, field, mode); err != nil {
 			return err
@@ -1202,6 +1228,11 @@ func queryHasAggregates(query Query) bool {
 func aggregateOrderFieldKnown(query Query, field string) bool {
 	if containsName(query.GroupBy, field) {
 		return true
+	}
+	for _, selected := range query.Fields {
+		if raw, alias, ok := splitSelectFieldAlias(selected); ok && containsName(query.GroupBy, raw) && strings.EqualFold(alias, field) {
+			return true
+		}
 	}
 	for i, aggregate := range query.Aggregates {
 		if field == fmt.Sprintf("expr%d", i) || (aggregate.Alias != "" && field == aggregate.Alias) {
@@ -1894,6 +1925,8 @@ func (p *parser) parseFields() ([]string, []ChildQuery, []TypeofSpec, error) {
 			if alias != "" {
 				field += " " + alias
 			}
+		} else if tok := p.peek().text; tok != "" && tok != "," && !strings.EqualFold(tok, "FROM") {
+			field += " " + p.advance().text
 		}
 		fields = append(fields, field)
 		if !p.match(",") {
@@ -2328,7 +2361,21 @@ func groupingComparableField(field string) string {
 	if expr, ok := parseSelectFieldExpression(field); ok {
 		return expr.Raw
 	}
+	if raw, _, ok := splitSelectFieldAlias(field); ok {
+		return raw
+	}
 	return field
+}
+
+func splitSelectFieldAlias(field string) (string, string, bool) {
+	parts := strings.Fields(field)
+	if len(parts) != 2 {
+		return "", "", false
+	}
+	if strings.Contains(parts[0], "(") {
+		return "", "", false
+	}
+	return parts[0], parts[1], true
 }
 
 func aggregateExprMap(aggregates []Aggregate) map[string]string {

@@ -496,6 +496,15 @@ func TestExecuteGroupedAggregateQueries(t *testing.T) {
 	if result.Rows != 1 || result.Records[0].Fields["Rating"].Kind != storage.ValueNull {
 		t.Fatalf("nulls first aggregate result = %#v", result)
 	}
+
+	result, err = ParseAndExecute(org, "SELECT Rating ratingKey, MAX(AnnualRevenue) maxRevenue FROM Account GROUP BY Rating ORDER BY ratingKey")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Records[0].Fields["ratingKey"].Kind != storage.ValueNull || result.Records[1].Fields["ratingKey"].String != "Hot" {
+		t.Fatalf("grouped field alias result = %#v", result)
+	}
+	assertStorageDecimal(t, result.Records[1].Fields["maxRevenue"], "300")
 }
 
 func TestExecuteValidatesAggregateHavingAndAliases(t *testing.T) {
@@ -1327,6 +1336,27 @@ func TestExecuteProjectsChildRelationshipSubquery(t *testing.T) {
 	children = result.Records[0].Children["Contacts"]
 	if len(children) != 1 || children[0].Fields["LastName"].String != "Alpha" || children[0].Fields["AccountId"].ID != "001000000000001" {
 		t.Fatalf("child FIELDS() rows = %#v", children)
+	}
+}
+
+func TestExecuteDerivedStandardChildRelationshipSubquery(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	storage.EnsureStandardObject(&org, "Contact")
+	account := org.Objects["Account"]
+	account.Records["001000000000001"] = storage.Record{ID: "001000000000001", Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")}}
+	org.Objects["Account"] = account
+	contact := org.Objects["Contact"]
+	contact.Records["003000000000001"] = storage.Record{ID: "003000000000001", Object: "Contact", Fields: map[string]storage.Value{"LastName": storage.StringValue("Smith"), "AccountId": storage.IDValue("001000000000001")}}
+	org.Objects["Contact"] = contact
+
+	result, err := ParseAndExecute(org, "SELECT Id, (SELECT Id, LastName FROM Contacts) FROM Account")
+	if err != nil {
+		t.Fatal(err)
+	}
+	children := result.Records[0].Children["Contacts"]
+	if len(children) != 1 || children[0].Fields["LastName"].String != "Smith" {
+		t.Fatalf("children = %#v", children)
 	}
 }
 

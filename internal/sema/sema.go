@@ -657,6 +657,8 @@ type typeMembers struct {
 	fields       map[string]typesys.MemberSymbol
 }
 
+const semaCurrentTypeScopeKey = "__oaer_current_type"
+
 func (a *Analyzer) checkMethodBodies(index typesys.Index) []diagnostic.Diagnostic {
 	model := buildTypeMembers(index)
 	constructability := buildConstructability(index)
@@ -891,6 +893,7 @@ func buildConstructability(index typesys.Index) map[string]typesys.TypeSymbol {
 func (a *Analyzer) checkBodyText(typ typesys.TypeSymbol, member typesys.MemberSymbol, body string, bodyOffset int, source string, model map[string]typeMembers, constructability map[string]typesys.TypeSymbol) []diagnostic.Diagnostic {
 	member = semaNormalizeMemberTypes(model, typ.Name, member)
 	baseScope := make(map[string]string)
+	baseScope[semaCurrentTypeScopeKey] = typ.Name
 	for name, fieldType := range semaFieldScope(model, typ.Name, make(map[string]bool)) {
 		baseScope[name] = fieldType
 	}
@@ -1167,14 +1170,22 @@ func (a *Analyzer) checkIRInstructions(typ typesys.TypeSymbol, member typesys.Me
 			scope.pop()
 		case ir.OpFor:
 			scope.push()
-			if inst.Init != nil {
-				diagnostics = append(diagnostics, a.checkIRInstructions(typ, member, []ir.Instruction{*inst.Init}, scope, bodyOffset, source, model, constructability)...)
+			inits := inst.Inits
+			if len(inits) == 0 && inst.Init != nil {
+				inits = []ir.Instruction{*inst.Init}
+			}
+			if len(inits) > 0 {
+				diagnostics = append(diagnostics, a.checkIRInstructions(typ, member, inits, scope, bodyOffset, source, model, constructability)...)
 			}
 			diagnostics = append(diagnostics, a.checkIRExprVariables(typ, member, inst.Expr, scope, inst.Pos, bodyOffset, source, model, constructability)...)
 			diagnostics = append(diagnostics, a.checkIRConditionType(typ, member, inst.Expr, scope, inst.Pos, bodyOffset, source, model)...)
 			diagnostics = append(diagnostics, a.checkIRInstructions(typ, member, inst.Then, scope, bodyOffset, source, model, constructability)...)
-			if inst.Update != nil {
-				diagnostics = append(diagnostics, a.checkIRInstructions(typ, member, []ir.Instruction{*inst.Update}, scope, bodyOffset, source, model, constructability)...)
+			updates := inst.Updates
+			if len(updates) == 0 && inst.Update != nil {
+				updates = []ir.Instruction{*inst.Update}
+			}
+			if len(updates) > 0 {
+				diagnostics = append(diagnostics, a.checkIRInstructions(typ, member, updates, scope, bodyOffset, source, model, constructability)...)
 			}
 			scope.pop()
 		case ir.OpForEach:
@@ -1345,6 +1356,9 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 	if strings.HasPrefix(expr.Callee, "new:") {
 		return a.checkIRConstructorCall(typ, member, expr, scope, pos, bodyOffset, source, model, constructability)
 	}
+	if strings.HasPrefix(expr.Callee, "__assign:") {
+		return a.checkIRAssignmentTarget(typ, member, strings.TrimPrefix(expr.Callee, "__assign:"), scope, pos, bodyOffset, source, model)
+	}
 	if strings.HasPrefix(expr.Callee, "__field:") ||
 		strings.HasPrefix(expr.Callee, "__safe_field:") ||
 		strings.HasPrefix(expr.Callee, "__cast:") ||
@@ -1402,6 +1416,9 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 		return diagnostics
 	}
 	candidates := resolveMemberMethods(model, receiverType, method)
+	if !explicitReceiver {
+		candidates = resolveImplicitMemberMethods(model, receiverType, method)
+	}
 	if len(candidates) == 0 && !strings.Contains(expr.Callee, ".") && bodyOffset >= 0 && bodyOffset <= len(source) {
 		if chainedReceiver, chainedMethod, ok := semaChainedCallReceiverNear(source[bodyOffset:], pos, method, scope.flat(), model, typ.Name); ok && strings.EqualFold(chainedMethod, method) {
 			receiverType = chainedReceiver
@@ -1467,6 +1484,7 @@ func (a *Analyzer) checkIRPlatformCall(typ typesys.TypeSymbol, member typesys.Me
 
 func (a *Analyzer) checkIRConstructorCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, expr ir.Expr, scope irSemaScope, pos, bodyOffset int, source string, model map[string]typeMembers, constructability map[string]typesys.TypeSymbol) []diagnostic.Diagnostic {
 	typeName := strings.TrimPrefix(expr.Callee, "new:")
+	resolvedTypeName := resolveNestedTypeReference(model, typ.Name, typeName)
 	for _, ref := range extractTypeNames(typeName) {
 		if !a.hasKnown(ref) {
 			return []diagnostic.Diagnostic{{
@@ -1478,7 +1496,7 @@ func (a *Analyzer) checkIRConstructorCall(typ typesys.TypeSymbol, member typesys
 			}}
 		}
 	}
-	if target, ok := constructability[normalizeName(typeName)]; ok && !isConstructableType(target) {
+	if target, ok := constructability[normalizeName(resolvedTypeName)]; ok && !isConstructableType(target) {
 		return []diagnostic.Diagnostic{{
 			Severity: diagnostic.Error,
 			Code:     "OAERSEMA015",
@@ -1490,12 +1508,12 @@ func (a *Analyzer) checkIRConstructorCall(typ typesys.TypeSymbol, member typesys
 	if diagnostics, handled := a.checkIRCollectionConstructor(typ, member, typeName, expr.Args, scope, pos, bodyOffset, source, model); handled {
 		return diagnostics
 	}
-	target, ok := model[normalizeName(typeName)]
+	target, ok := model[normalizeName(resolvedTypeName)]
 	if !ok {
 		return nil
 	}
 	if len(target.constructors) == 0 {
-		if len(expr.Args) == 0 || a.allowsInheritedExceptionConstructor(typeName, expr.Args, scope, model, typ.Name) {
+		if len(expr.Args) == 0 || a.allowsInheritedExceptionConstructor(resolvedTypeName, expr.Args, scope, model, typ.Name) {
 			return nil
 		}
 		return []diagnostic.Diagnostic{constructorDiagnostic(typ, member, "new "+typeName, fmt.Sprintf("no matching %s constructor with %d argument(s)", typeName, len(expr.Args)), bodyOffset+pos, bodyOffset+pos+max(1, len(typeName)), source)}
@@ -1504,6 +1522,9 @@ func (a *Analyzer) checkIRConstructorCall(typ typesys.TypeSymbol, member typesys
 		return nil
 	} else if ambiguous {
 		return []diagnostic.Diagnostic{constructorDiagnostic(typ, member, "new "+typeName, fmt.Sprintf("ambiguous %s constructor with %d argument(s)", typeName, len(expr.Args)), bodyOffset+pos, bodyOffset+pos+max(1, len(typeName)), source)}
+	}
+	if a.allowsInheritedExceptionConstructor(resolvedTypeName, expr.Args, scope, model, typ.Name) {
+		return nil
 	}
 	return []diagnostic.Diagnostic{constructorDiagnostic(typ, member, "new "+typeName, fmt.Sprintf("no matching %s constructor with %d argument(s)", typeName, len(expr.Args)), bodyOffset+pos, bodyOffset+pos+max(1, len(typeName)), source)}
 }
@@ -1514,6 +1535,7 @@ func (a *Analyzer) allowsInheritedExceptionConstructor(typeName string, args []i
 	}
 	argTypes := irCallArgTypes(a, args, scope, model, ownerType)
 	return semaArgsMatchAny([][]string{
+		{},
 		{"String"},
 		{"Exception"},
 		{"String", "Exception"},
@@ -1691,6 +1713,12 @@ func (a *Analyzer) inferIRExprType(expr ir.Expr, scope irSemaScope, model map[st
 	case ir.ExprLiteral:
 		return inferSemaArgType(expr.Value, scope.flat())
 	case ir.ExprVariable:
+		if semaLooksLikeSObjectFieldToken(expr.Name) {
+			return "Schema.SObjectField"
+		}
+		if semaLooksLikeSObjectTypeToken(expr.Name) {
+			return "Schema.SObjectType"
+		}
 		if typ, ok := scope.lookup(expr.Name); ok {
 			return typ
 		}
@@ -1702,6 +1730,16 @@ func (a *Analyzer) inferIRExprType(expr ir.Expr, scope irSemaScope, model map[st
 			}
 		}
 	case ir.ExprCall:
+		if strings.HasPrefix(expr.Callee, "__assign:") {
+			name := strings.TrimPrefix(expr.Callee, "__assign:")
+			if typ, ok := scope.lookup(name); ok {
+				return typ
+			}
+			if len(expr.Args) == 1 {
+				return a.inferIRExprType(expr.Args[0], scope, model, currentType)
+			}
+			return ""
+		}
 		if strings.HasPrefix(expr.Callee, "__cast:") {
 			return resolveNestedTypeReference(model, currentType, strings.TrimPrefix(expr.Callee, "__cast:"))
 		}
@@ -1723,6 +1761,7 @@ func (a *Analyzer) inferIRExprType(expr ir.Expr, scope irSemaScope, model map[st
 			if sig, ok := semaEnumMethodSignature(model, receiverType, method); ok {
 				return sig.returnType
 			}
+			return semaResolvedIRCallReturnType(a, model, receiverType, method, expr.Args, scope, currentType)
 		}
 		if receiver, method, ok := strings.Cut(expr.Callee, "."); ok {
 			receiverType := semaIRReceiverType(receiver, scope, model, currentType)
@@ -1871,6 +1910,14 @@ func (a *Analyzer) irVariableDiagnostic(typ typesys.TypeSymbol, member typesys.M
 	if strings.EqualFold(field, "class") {
 		return diagnostic.Diagnostic{}, false
 	}
+	if strings.HasSuffix(strings.ToLower(field), ".class") {
+		nestedType := strings.TrimSpace(field[:len(field)-len(".class")])
+		if resolved := resolveNestedTypeName(model, receiverType, nestedType); resolved != "" {
+			if _, ok := model[normalizeName(resolved)]; ok {
+				return diagnostic.Diagnostic{}, false
+			}
+		}
+	}
 	if _, ok := model[normalizeName(receiverType+"."+field)]; ok {
 		return diagnostic.Diagnostic{}, false
 	}
@@ -1918,6 +1965,9 @@ func semaResolveNestedStaticField(model map[string]typeMembers, receiverType, fi
 
 func (a *Analyzer) irVariableKnown(name string, scope irSemaScope, model map[string]typeMembers, currentType string) bool {
 	if name == "" || name == "this" || name == "super" {
+		return true
+	}
+	if semaKeywordLiteralType(name) != "" {
 		return true
 	}
 	root, _, hasMember := strings.Cut(name, ".")
@@ -2001,7 +2051,7 @@ func (a *Analyzer) collectBodyScopes(typ typesys.TypeSymbol, member typesys.Memb
 				})
 			}
 		}
-		scopes.locals = append(scopes.locals, semaLocal{name: name, typeName: typeName, start: match[5], scopeStart: scopeStart, scopeEnd: scopeEnd})
+		scopes.locals = append(scopes.locals, semaLocal{name: name, typeName: resolveNestedTypeReference(model, typ.Name, typeName), start: match[5], scopeStart: scopeStart, scopeEnd: scopeEnd})
 	}
 	for _, local := range collectClassicForLocals(body) {
 		if isSemaKeyword(local.typeName) {
@@ -2018,6 +2068,7 @@ func (a *Analyzer) collectBodyScopes(typ typesys.TypeSymbol, member typesys.Memb
 				})
 			}
 		}
+		local.typeName = resolveNestedTypeReference(model, typ.Name, local.typeName)
 		scopes.locals = append(scopes.locals, local)
 	}
 	for _, match := range catchLocalPattern.FindAllStringSubmatchIndex(body, -1) {
@@ -2035,7 +2086,7 @@ func (a *Analyzer) collectBodyScopes(typ typesys.TypeSymbol, member typesys.Memb
 				})
 			}
 		}
-		scopes.locals = append(scopes.locals, semaLocal{name: name, typeName: firstCatchType(typeName), start: scopeStart, scopeStart: scopeStart, scopeEnd: scopeEnd})
+		scopes.locals = append(scopes.locals, semaLocal{name: name, typeName: resolveNestedTypeReference(model, typ.Name, firstCatchType(typeName)), start: scopeStart, scopeStart: scopeStart, scopeEnd: scopeEnd})
 	}
 	return scopes, diagnostics
 }
@@ -2125,7 +2176,7 @@ func (a *Analyzer) collectSemaLocalDecl(typ typesys.TypeSymbol, member typesys.M
 			})
 		}
 	}
-	scopes.locals = append(scopes.locals, semaLocal{name: name, typeName: typeName, start: match[5], scopeStart: scopeStart, scopeEnd: scopeEnd})
+	scopes.locals = append(scopes.locals, semaLocal{name: name, typeName: resolveNestedTypeReference(model, typ.Name, typeName), start: match[5], scopeStart: scopeStart, scopeEnd: scopeEnd})
 	return diagnostics
 }
 
@@ -2294,6 +2345,9 @@ func (a *Analyzer) checkBodyAssignments(typ typesys.TypeSymbol, member typesys.M
 		if semaAssignmentLooksLikeNamedArg(body, match[2]) {
 			continue
 		}
+		if semaAssignmentLooksLikeMapEntry(body, match[1]) {
+			continue
+		}
 		targetType, ok := scopes.visibleAt(target, match[2])
 		if ok {
 			value := trimSemaArg(body, match[1], semaStatementEnd(body, match[1]))
@@ -2332,6 +2386,20 @@ func semaAnyKnownField(model map[string]typeMembers, name string) bool {
 	for _, members := range model {
 		if _, ok := members.fields[key]; ok {
 			return true
+		}
+	}
+	return false
+}
+
+func semaAssignmentLooksLikeMapEntry(body string, afterEquals int) bool {
+	for i := afterEquals; i < len(body); i++ {
+		switch body[i] {
+		case ' ', '\t', '\r', '\n':
+			continue
+		case '>':
+			return true
+		default:
+			return false
 		}
 	}
 	return false
@@ -2584,7 +2652,7 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 			continue
 		}
 		diagnostics = append(diagnostics, checkUnknownCallArgs(typ, member, args, match[3], bodyOffset, source, scopes)...)
-		if receiverType, method, ok := semaChainedCallReceiver(body, match[0], scope, model, typ.Name); ok {
+		if receiverType, method, ok := semaChainedCallReceiver(body, match[0], scope, model, typ.Name); ok && semaChainedMethodMatchesCallee(callee, method) {
 			if collectionDiagnostics, handled := checkSemaCollectionCall(typ, member, receiverType, method, args, bodyOffset+match[2], bodyOffset+match[3], source, scope, model); handled {
 				diagnostics = append(diagnostics, collectionDiagnostics...)
 				continue
@@ -2680,9 +2748,16 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 		if !ok {
 			continue
 		}
-		diagnostics = append(diagnostics, a.diagnoseMethodCall(typ, member, callee, resolveMemberMethods(model, classMembers.name, callee), args, haveArgs, "implicit", bodyOffset+match[2], bodyOffset+match[3], source, scope, model)...)
+		diagnostics = append(diagnostics, a.diagnoseMethodCall(typ, member, callee, resolveImplicitMemberMethods(model, classMembers.name, callee), args, haveArgs, "implicit", bodyOffset+match[2], bodyOffset+match[3], source, scope, model)...)
 	}
 	return diagnostics
+}
+
+func semaChainedMethodMatchesCallee(callee, method string) bool {
+	if _, last, ok := splitSemaMethodPath(callee); ok {
+		return strings.EqualFold(last, method)
+	}
+	return true
 }
 
 func semaUnresolvedFluentReceiver(receiverType string, model map[string]typeMembers) bool {
@@ -2697,7 +2772,7 @@ func semaUnresolvedFluentReceiver(receiverType string, model map[string]typeMemb
 
 func semaIsStringFluentMethod(method string) bool {
 	switch normalizeName(method) {
-	case "replace", "replaceall", "replacefirst", "substring", "substringafter", "substringafterlast", "substringbefore", "substringbeforelast", "trim", "normalizespace", "deletewhitespace", "tolowercase", "touppercase", "capitalize", "uncapitalize", "escapehtml3", "escapehtml4", "unescapehtml3", "unescapehtml4", "escapexml", "unescapexml":
+	case "replace", "replaceall", "replacefirst", "substring", "substringafter", "substringafterlast", "substringbefore", "substringbeforelast", "removeend", "removeendignorecase", "removestart", "removestartignorecase", "trim", "normalizespace", "deletewhitespace", "tolowercase", "touppercase", "capitalize", "uncapitalize", "escapehtml3", "escapehtml4", "unescapehtml3", "unescapehtml4", "escapexml", "unescapexml":
 		return true
 	default:
 		return false
@@ -2722,6 +2797,20 @@ func resolveMemberMethods(model map[string]typeMembers, typeName, method string)
 	return resolveMemberMethodsSeen(model, typeName, method, make(map[string]bool))
 }
 
+func resolveImplicitMemberMethods(model map[string]typeMembers, typeName, method string) []resolvedMember {
+	if direct := resolveMemberMethods(model, typeName, method); len(direct) > 0 {
+		return direct
+	}
+	parts := strings.Split(typeName, ".")
+	for i := len(parts) - 1; i > 0; i-- {
+		owner := strings.Join(parts[:i], ".")
+		if inherited := resolveMemberMethods(model, owner, method); len(inherited) > 0 {
+			return inherited
+		}
+	}
+	return nil
+}
+
 func resolveMemberMethodsSeen(model map[string]typeMembers, typeName, method string, seen map[string]bool) []resolvedMember {
 	key := normalizeName(typeName)
 	if key == "" || seen[key] {
@@ -2732,22 +2821,34 @@ func resolveMemberMethodsSeen(model map[string]typeMembers, typeName, method str
 	if !ok {
 		return nil
 	}
+	resolved := make([]resolvedMember, 0)
+	seenSignatures := make(map[string]bool)
 	if direct := members.methods[normalizeName(method)]; len(direct) > 0 {
-		resolved := make([]resolvedMember, 0, len(direct))
 		for _, member := range direct {
+			signature := methodSignatureKey(member)
+			seenSignatures[signature] = true
 			resolved = append(resolved, resolvedMember{owner: members.name, member: member})
 		}
-		return resolved
 	}
-	if inherited := resolveMemberMethodsSeen(model, members.superClass, method, seen); len(inherited) > 0 {
-		return inherited
+	for _, inherited := range resolveMemberMethodsSeen(model, members.superClass, method, seen) {
+		signature := methodSignatureKey(inherited.member)
+		if seenSignatures[signature] {
+			continue
+		}
+		seenSignatures[signature] = true
+		resolved = append(resolved, inherited)
 	}
 	for _, iface := range members.interfaces {
-		if inherited := resolveMemberMethodsSeen(model, iface, method, seen); len(inherited) > 0 {
-			return inherited
+		for _, inherited := range resolveMemberMethodsSeen(model, iface, method, seen) {
+			signature := methodSignatureKey(inherited.member)
+			if seenSignatures[signature] {
+				continue
+			}
+			seenSignatures[signature] = true
+			resolved = append(resolved, inherited)
 		}
 	}
-	return nil
+	return resolved
 }
 
 func (a *Analyzer) diagnoseConstructorChain(typ typesys.TypeSymbol, member typesys.MemberSymbol, callee string, args []semaArg, start, end int, source string, model map[string]typeMembers) []diagnostic.Diagnostic {
@@ -2891,9 +2992,9 @@ func checkSemaMemberAccess(from typesys.TypeSymbol, context typesys.MemberSymbol
 	allowed := false
 	switch access {
 	case "private":
-		allowed = normalizeName(from.Name) == normalizeName(target.owner)
+		allowed = semaSameTypeFamily(from.Name, target.owner)
 	case "protected":
-		allowed = normalizeName(from.Name) == normalizeName(target.owner) || semaIsSubclass(model, from.Name, target.owner)
+		allowed = semaSameTypeFamily(from.Name, target.owner) || semaIsSubclass(model, from.Name, target.owner)
 	default:
 		allowed = true
 	}
@@ -2927,6 +3028,12 @@ func semaIsSubclass(model map[string]typeMembers, child, parent string) bool {
 		child = members.superClass
 	}
 	return false
+}
+
+func semaSameTypeFamily(left, right string) bool {
+	leftParts := strings.Split(normalizeName(left), ".")
+	rightParts := strings.Split(normalizeName(right), ".")
+	return len(leftParts) > 0 && len(rightParts) > 0 && leftParts[0] == rightParts[0]
 }
 
 func accessModifier(modifiers []string) string {
@@ -3102,6 +3209,8 @@ func semaConversionScore(paramType, argType string, model map[string]typeMembers
 	if argType == "" || strings.EqualFold(argType, "null") {
 		return 1
 	}
+	paramType = semaCanonicalPlatformAlias(paramType)
+	argType = semaCanonicalPlatformAlias(argType)
 	if strings.EqualFold(paramType, argType) {
 		return 1000
 	}
@@ -3109,6 +3218,12 @@ func semaConversionScore(paramType, argType string, model map[string]typeMembers
 		return 850
 	}
 	if strings.EqualFold(paramType, "String") && strings.EqualFold(argType, "Id") {
+		return 850
+	}
+	if strings.EqualFold(paramType, "Datetime") && strings.EqualFold(argType, "Date") {
+		return 850
+	}
+	if semaMessagingEmailAssignable(paramType, argType) {
 		return 850
 	}
 	if score := semaNumericConversionScore(paramType, argType); score >= 0 {
@@ -3154,6 +3269,10 @@ func semaNumericConversionScore(paramType, argType string) int {
 		if paramType == "Double" {
 			return 800
 		}
+	case "Double":
+		if paramType == "Decimal" {
+			return 800
+		}
 	}
 	return -1
 }
@@ -3184,13 +3303,27 @@ func semaAssignableToType(paramType, argType string, model map[string]typeMember
 	if strings.EqualFold(argType, "Decimal") {
 		return strings.EqualFold(paramType, "Double")
 	}
+	if strings.EqualFold(argType, "Double") {
+		return strings.EqualFold(paramType, "Decimal")
+	}
 	if strings.EqualFold(paramType, "Id") && strings.EqualFold(argType, "String") {
 		return true
 	}
 	if strings.EqualFold(paramType, "String") && strings.EqualFold(argType, "Id") {
 		return true
 	}
+	if strings.EqualFold(paramType, "Datetime") && strings.EqualFold(argType, "Date") {
+		return true
+	}
+	if semaMessagingEmailAssignable(paramType, argType) {
+		return true
+	}
 	return semaTypeMatches(model, argType, paramType, make(map[string]bool))
+}
+
+func semaMessagingEmailAssignable(paramType, argType string) bool {
+	return strings.EqualFold(paramType, "Messaging.Email") &&
+		(strings.EqualFold(argType, "Messaging.SingleEmailMessage") || strings.EqualFold(argType, "Messaging.MassEmailMessage"))
 }
 
 func semaGenericAssignableToType(paramType, argType string, model map[string]typeMembers) bool {
@@ -3228,6 +3361,9 @@ func isSemaSObjectLike(typeName string, model map[string]typeMembers) bool {
 	if typeName == "" || strings.Contains(typeName, "<") {
 		return false
 	}
+	if strings.EqualFold(typeName, "SObject") {
+		return true
+	}
 	if _, ok := model[normalizeName(typeName)]; ok {
 		return false
 	}
@@ -3251,7 +3387,7 @@ func isSemaSObjectLike(typeName string, model map[string]typeMembers) bool {
 
 func isCommonSemaSObjectName(typeName string) bool {
 	switch normalizeName(typeName) {
-	case "account", "contact", "opportunity", "lead", "campaign", "campaignmember", "case", "task", "event", "user", "profile", "organization", "staticresource", "product2", "pricebook2", "pricebookentry", "recordtype":
+	case "account", "contact", "opportunity", "opportunitylineitem", "lead", "campaign", "campaignmember", "case", "task", "event", "user", "profile", "group", "organization", "staticresource", "product2", "pricebook2", "pricebookentry", "recordtype":
 		return true
 	default:
 		return false
@@ -3270,9 +3406,17 @@ func semaTypeDistance(model map[string]typeMembers, typeName, target string, see
 	seen[key] = true
 	members, ok := model[key]
 	if !ok {
-		return 0, false
+		return semaTypeDistanceByShortName(model, key, target, seen)
 	}
+	return semaTypeDistanceFromMembers(model, members, target, seen)
+}
+
+func semaTypeDistanceFromMembers(model map[string]typeMembers, members typeMembers, target string, seen map[string]bool) (int, bool) {
+	targetKey := normalizeName(target)
 	if normalizeName(members.name) == targetKey {
+		return 0, true
+	}
+	if semaShortTypeKey(members.name) == targetKey {
 		return 0, true
 	}
 	if targetMembers, ok := model[targetKey]; ok && normalizeName(targetMembers.name) == normalizeName(members.name) {
@@ -3296,6 +3440,25 @@ func semaTypeDistance(model map[string]typeMembers, typeName, target string, see
 	return best, found
 }
 
+func semaTypeDistanceByShortName(model map[string]typeMembers, key, target string, seen map[string]bool) (int, bool) {
+	best := 0
+	found := false
+	for candidateKey, members := range model {
+		if candidateKey == key || semaShortTypeKey(members.name) != key || seen[candidateKey] {
+			continue
+		}
+		distance, ok := semaTypeDistanceFromMembers(model, members, target, seen)
+		if !ok {
+			return 0, false
+		}
+		if !found || distance < best {
+			best = distance
+		}
+		found = true
+	}
+	return best, found
+}
+
 func semaTypeMatches(model map[string]typeMembers, typeName, target string, seen map[string]bool) bool {
 	typeName = semaCanonicalPlatformAlias(typeName)
 	target = semaCanonicalPlatformAlias(target)
@@ -3310,9 +3473,17 @@ func semaTypeMatches(model map[string]typeMembers, typeName, target string, seen
 	seen[key] = true
 	members, ok := model[key]
 	if !ok {
-		return false
+		return semaTypeMatchesByShortName(model, key, target, seen)
 	}
+	return semaTypeMatchesFromMembers(model, members, target, seen)
+}
+
+func semaTypeMatchesFromMembers(model map[string]typeMembers, members typeMembers, target string, seen map[string]bool) bool {
+	targetKey := normalizeName(target)
 	if normalizeName(members.name) == targetKey {
+		return true
+	}
+	if semaShortTypeKey(members.name) == targetKey {
 		return true
 	}
 	if targetMembers, ok := model[targetKey]; ok && normalizeName(targetMembers.name) == normalizeName(members.name) {
@@ -3327,6 +3498,28 @@ func semaTypeMatches(model map[string]typeMembers, typeName, target string, seen
 		}
 	}
 	return false
+}
+
+func semaTypeMatchesByShortName(model map[string]typeMembers, key, target string, seen map[string]bool) bool {
+	found := false
+	for candidateKey, members := range model {
+		if candidateKey == key || semaShortTypeKey(members.name) != key || seen[candidateKey] {
+			continue
+		}
+		if !semaTypeMatchesFromMembers(model, members, target, seen) {
+			return false
+		}
+		found = true
+	}
+	return found
+}
+
+func semaShortTypeKey(typeName string) string {
+	key := normalizeName(typeName)
+	if idx := strings.LastIndexByte(key, '.'); idx >= 0 {
+		return key[idx+1:]
+	}
+	return key
 }
 
 func semaCanonicalPlatformAlias(typeName string) string {
@@ -3353,6 +3546,10 @@ func semaCanonicalPlatformAlias(typeName string) string {
 		return "Schema.DescribeTabResult"
 	case "describetabsetresult":
 		return "Schema.DescribeTabSetResult"
+	case "fieldset":
+		return "Schema.FieldSet"
+	case "fieldsetmember":
+		return "Schema.FieldSetMember"
 	case "picklistentry":
 		return "Schema.PicklistEntry"
 	case "recordtypeinfo":
@@ -3363,6 +3560,8 @@ func semaCanonicalPlatformAlias(typeName string) string {
 		return "Schema.SObjectType"
 	case "soaptype":
 		return "Schema.SoapType"
+	case "system.savepoint":
+		return "Savepoint"
 	default:
 		return typeName
 	}
@@ -3383,6 +3582,9 @@ func inferSemaArgTypeWithModel(arg string, scope map[string]string, model map[st
 		return castType
 	}
 	if match := newExprPattern.FindStringSubmatch(arg); len(match) == 2 {
+		if currentType := scope[semaCurrentTypeScopeKey]; currentType != "" {
+			return resolveNestedTypeReference(model, currentType, match[1])
+		}
 		return match[1]
 	}
 	if strings.HasSuffix(arg, ".class") {
@@ -3477,6 +3679,19 @@ func inferSemaBinaryTypeWithModel(arg string, scope map[string]string, model map
 }
 
 func inferSemaFieldAccessType(expr string, scope map[string]string, model map[string]typeMembers) string {
+	if semaLooksLikeSObjectFieldToken(expr) {
+		return "Schema.SObjectField"
+	}
+	if semaLooksLikeSObjectTypeToken(expr) {
+		return "Schema.SObjectType"
+	}
+	if receiverExpr, field, ok := splitSemaMethodPath(expr); ok {
+		if castType, _, castOK := splitSemaCast(receiverExpr); castOK {
+			if target, ok := semaResolveFieldPath(model, castType, field); ok {
+				return target.member.Type
+			}
+		}
+	}
 	parts := strings.Split(strings.TrimSpace(expr), ".")
 	if len(parts) < 2 {
 		return ""
@@ -3484,7 +3699,10 @@ func inferSemaFieldAccessType(expr string, scope map[string]string, model map[st
 	receiverType := ""
 	startIndex := 1
 	if strings.EqualFold(parts[0], "this") && len(parts) > 1 {
-		if scoped, ok := scope[normalizeName(parts[1])]; ok {
+		if currentType := scope[semaCurrentTypeScopeKey]; currentType != "" {
+			receiverType = currentType
+			startIndex = 1
+		} else if scoped, ok := scope[normalizeName(parts[1])]; ok {
 			receiverType = scoped
 			startIndex = 2
 		}
@@ -3504,6 +3722,39 @@ func inferSemaFieldAccessType(expr string, scope map[string]string, model map[st
 	return ""
 }
 
+func semaLooksLikeSObjectFieldToken(expr string) bool {
+	parts := strings.Split(strings.TrimSpace(expr), ".")
+	if len(parts) == 2 && startsWithUpperASCII(parts[0]) && startsWithUpperASCII(parts[1]) && isSemaSObjectLike(parts[0], nil) && !strings.EqualFold(parts[1], "SObjectType") {
+		return true
+	}
+	for i := 0; i+2 < len(parts); i++ {
+		if strings.EqualFold(parts[i], "SObjectType") && strings.EqualFold(parts[i+1], "fields") && parts[i+2] != "" {
+			return true
+		}
+	}
+	return false
+}
+
+func startsWithUpperASCII(text string) bool {
+	text = strings.TrimSpace(text)
+	return text != "" && text[0] >= 'A' && text[0] <= 'Z'
+}
+
+func semaLooksLikeSObjectTypeToken(expr string) bool {
+	parts := strings.Split(strings.TrimSpace(expr), ".")
+	if len(parts) < 2 {
+		return false
+	}
+	if len(parts) == 3 && strings.EqualFold(parts[0], "Schema") && strings.EqualFold(parts[1], "SObjectType") && isSemaSObjectLike(parts[2], nil) {
+		return true
+	}
+	if !strings.EqualFold(parts[len(parts)-1], "SObjectType") {
+		return false
+	}
+	objectName := parts[len(parts)-2]
+	return isSemaSObjectLike(objectName, nil)
+}
+
 func splitSemaMethodPath(callee string) (string, string, bool) {
 	idx := strings.LastIndexByte(callee, '.')
 	if idx <= 0 || idx >= len(callee)-1 {
@@ -3515,14 +3766,7 @@ func splitSemaMethodPath(callee string) (string, string, bool) {
 func inferSemaMethodCallType(arg string, scope map[string]string, model map[string]typeMembers) string {
 	arg = strings.TrimSpace(arg)
 	if receiverExpr, method, args, ok := splitLastSemaCall(arg); ok {
-		receiverType := inferSemaArgTypeWithModel(receiverExpr, scope, model)
-		if receiverType == "" {
-			if scoped, ok := scope[normalizeName(receiverExpr)]; ok {
-				receiverType = scoped
-			} else {
-				receiverType = receiverExpr
-			}
-		}
+		receiverType := semaTextReceiverType(receiverExpr, scope, model)
 		return semaResolvedCallReturnType(model, receiverType, method, args, scope)
 	}
 	open := strings.Index(arg, "(")
@@ -3539,13 +3783,36 @@ func inferSemaMethodCallType(arg string, scope map[string]string, model map[stri
 		if !ok || method == "" {
 			return ""
 		}
-		receiverType := receiver
-		if scoped, ok := scope[normalizeName(receiver)]; ok {
-			receiverType = scoped
-		}
+		receiverType := semaTextReceiverType(receiver, scope, model)
 		return semaResolvedCallReturnType(model, receiverType, method, args, scope)
 	}
+	if currentType := scope[semaCurrentTypeScopeKey]; currentType != "" {
+		return semaResolvedImplicitCallReturnType(model, currentType, callee, args, scope)
+	}
 	return ""
+}
+
+func semaTextReceiverType(receiver string, scope map[string]string, model map[string]typeMembers) string {
+	receiver = strings.TrimSpace(receiver)
+	if strings.EqualFold(receiver, "this") {
+		return scope[semaCurrentTypeScopeKey]
+	}
+	if strings.EqualFold(receiver, "super") {
+		if currentType := scope[semaCurrentTypeScopeKey]; currentType != "" {
+			if members, ok := model[normalizeName(currentType)]; ok {
+				return members.superClass
+			}
+		}
+		return ""
+	}
+	receiverType := inferSemaArgTypeWithModel(receiver, scope, model)
+	if receiverType != "" {
+		return receiverType
+	}
+	if scoped, ok := scope[normalizeName(receiver)]; ok {
+		return scoped
+	}
+	return receiver
 }
 
 func splitLastSemaCall(arg string) (string, string, []semaArg, bool) {
@@ -3590,6 +3857,17 @@ func semaResolvedCallReturnType(model map[string]typeMembers, receiverType, meth
 		return sig.returnType
 	}
 	if candidate, ok, _ := bestResolvedMemberByArgTypes(resolveMemberMethods(model, receiverType, method), argTypes, model); ok {
+		return candidate.member.Type
+	}
+	return ""
+}
+
+func semaResolvedImplicitCallReturnType(model map[string]typeMembers, receiverType, method string, args []semaArg, scope map[string]string) string {
+	argTypes := make([]string, len(args))
+	for i, arg := range args {
+		argTypes[i] = inferSemaArgTypeWithModel(arg.text, scope, model)
+	}
+	if candidate, ok, _ := bestResolvedMemberByArgTypes(resolveImplicitMemberMethods(model, receiverType, method), argTypes, model); ok {
 		return candidate.member.Type
 	}
 	return ""
@@ -3695,6 +3973,10 @@ func semaCollectionMethodSignature(receiverType, method string) (semaCollectionS
 		switch method {
 		case "get":
 			return semaCollectionSignature{returnType: args[0], params: [][]string{{"Integer"}}}, true
+		case "getsobjecttype":
+			if strings.EqualFold(args[0], "SObject") || isSemaSObjectLike(args[0], nil) {
+				return semaCollectionSignature{returnType: "Schema.SObjectType", params: [][]string{{}}}, true
+			}
 		case "add":
 			return semaCollectionSignature{returnType: "void", params: [][]string{{args[0]}, {"Integer", args[0]}}}, true
 		case "addall":
@@ -3719,6 +4001,8 @@ func semaCollectionMethodSignature(receiverType, method string) (semaCollectionS
 			return semaCollectionSignature{returnType: "String", params: [][]string{{}}}, true
 		case "clone", "deepclone":
 			return semaCollectionSignature{returnType: "List<" + args[0] + ">"}, true
+		case "iterator":
+			return semaCollectionSignature{returnType: "Iterator<" + args[0] + ">", params: [][]string{{}}}, true
 		}
 	case "set":
 		if len(args) == 0 {
@@ -3744,6 +4028,23 @@ func semaCollectionMethodSignature(receiverType, method string) (semaCollectionS
 			return semaCollectionSignature{returnType: "String", params: [][]string{{}}}, true
 		case "clone":
 			return semaCollectionSignature{returnType: "Set<" + args[0] + ">"}, true
+		case "iterator":
+			return semaCollectionSignature{returnType: "Iterator<" + args[0] + ">", params: [][]string{{}}}, true
+		}
+	case "iterator":
+		if len(args) == 0 {
+			args = []string{"Object"}
+		}
+		if len(args) != 1 {
+			return semaCollectionSignature{}, false
+		}
+		switch method {
+		case "hasnext":
+			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{}}}, true
+		case "next":
+			return semaCollectionSignature{returnType: args[0], params: [][]string{{}}}, true
+		case "remove":
+			return semaCollectionSignature{returnType: "void", params: [][]string{{}}}, true
 		}
 	case "map":
 		if len(args) == 0 {
@@ -3833,6 +4134,7 @@ func semaEnumMethodSignature(model map[string]typeMembers, receiverType, method 
 }
 
 func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSignature, bool) {
+	receiverType = semaCanonicalPlatformAlias(receiverType)
 	method = normalizeName(method)
 	switch normalizeName(receiverType) {
 	case "type":
@@ -3844,6 +4146,62 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 		if method == "tostring" {
 			return semaCollectionSignature{returnType: "String", params: [][]string{{}}}, true
 		}
+	case "id":
+		switch method {
+		case "getsobjecttype":
+			return semaCollectionSignature{returnType: "Schema.SObjectType", params: [][]string{{}}}, true
+		case "adderror":
+			return semaCollectionSignature{returnType: "void", params: [][]string{{"String"}, {"Exception"}, {"String", "Boolean"}, {"Exception", "Boolean"}}}, true
+		}
+	case "datetime":
+		switch method {
+		case "gettime":
+			return semaCollectionSignature{returnType: "Long", params: [][]string{{}}}, true
+		case "format", "formatgmt":
+			return semaCollectionSignature{returnType: "String", params: [][]string{{}, {"String"}, {"String", "String"}}}, true
+		}
+	case "date":
+		if method == "format" {
+			return semaCollectionSignature{returnType: "String", params: [][]string{{}, {"String"}}}, true
+		}
+	case "database":
+		switch method {
+		case "setsavepoint":
+			return semaCollectionSignature{returnType: "Savepoint", params: [][]string{{}}}, true
+		case "rollback":
+			return semaCollectionSignature{returnType: "void", params: [][]string{{"Savepoint"}}}, true
+		}
+	case "jsonparser":
+		switch method {
+		case "nexttoken", "nextvalue", "getcurrenttoken":
+			return semaCollectionSignature{returnType: "JSONToken", params: [][]string{{}}}, true
+		case "gettext", "getcurrentname":
+			return semaCollectionSignature{returnType: "String", params: [][]string{{}}}, true
+		case "getintegervalue":
+			return semaCollectionSignature{returnType: "Integer", params: [][]string{{}}}, true
+		case "getlongvalue":
+			return semaCollectionSignature{returnType: "Long", params: [][]string{{}}}, true
+		case "getdoublevalue":
+			return semaCollectionSignature{returnType: "Double", params: [][]string{{}}}, true
+		case "getdecimalvalue":
+			return semaCollectionSignature{returnType: "Decimal", params: [][]string{{}}}, true
+		case "getbooleanvalue":
+			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{}}}, true
+		case "getdatevalue":
+			return semaCollectionSignature{returnType: "Date", params: [][]string{{}}}, true
+		case "getdatetimevalue":
+			return semaCollectionSignature{returnType: "Datetime", params: [][]string{{}}}, true
+		case "gettimevalue":
+			return semaCollectionSignature{returnType: "Time", params: [][]string{{}}}, true
+		case "getidvalue":
+			return semaCollectionSignature{returnType: "Id", params: [][]string{{}}}, true
+		case "getblobvalue":
+			return semaCollectionSignature{returnType: "Blob", params: [][]string{{}}}, true
+		case "skipchildren":
+			return semaCollectionSignature{returnType: "JSONParser", params: [][]string{{}}}, true
+		case "clearcurrenttoken":
+			return semaCollectionSignature{returnType: "void", params: [][]string{{}}}, true
+		}
 	case "exception":
 		switch method {
 		case "getmessage", "gettypename", "getstacktracestring":
@@ -3853,17 +4211,21 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 		}
 	case "string":
 		switch method {
-		case "equals", "equalsignorecase", "startswith", "endswith", "contains":
+		case "equals", "equalsignorecase", "startswith", "startswithignorecase", "endswith", "endswithignorecase", "contains", "containsignorecase":
 			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{"String"}}}, true
+		case "adderror":
+			return semaCollectionSignature{returnType: "void", params: [][]string{{"String"}, {"Exception"}, {"String", "Boolean"}, {"Exception", "Boolean"}}}, true
 		case "isnumeric", "isalpha", "isalphanumeric", "isblank", "isnotblank", "isempty", "isnotempty":
 			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{}, {"String"}}}, true
+		case "valueof":
+			return semaCollectionSignature{returnType: "String", params: [][]string{{"Object"}, {"String"}, {"Boolean"}, {"Integer"}, {"Long"}, {"Decimal"}, {"Double"}, {"Date"}, {"Datetime"}, {"Time"}, {"Id"}}}, true
 		case "length":
 			return semaCollectionSignature{returnType: "Integer", params: [][]string{{}}}, true
 		case "replace", "replaceall", "replacefirst":
 			return semaCollectionSignature{returnType: "String", params: [][]string{{"String", "String"}}}, true
 		case "split":
 			return semaCollectionSignature{returnType: "List<String>", params: [][]string{{"String"}, {"String", "Integer"}}}, true
-		case "substring", "substringafter", "substringafterlast", "substringbefore", "substringbeforelast":
+		case "substring", "substringafter", "substringafterlast", "substringbefore", "substringbeforelast", "removeend", "removeendignorecase", "removestart", "removestartignorecase":
 			return semaCollectionSignature{returnType: "String", params: [][]string{{"Integer"}, {"Integer", "Integer"}, {"String"}}}, true
 		case "trim", "normalizespace", "deletewhitespace":
 			return semaCollectionSignature{returnType: "String", params: [][]string{{}}}, true
@@ -3937,6 +4299,43 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 			return semaCollectionSignature{returnType: "Id", params: [][]string{{}}}, true
 		case "isavailable", "isdefaultrecordtypemapping", "isactive":
 			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{}}}, true
+		}
+	case "schema.describefieldresult":
+		switch method {
+		case "getname", "getlabel", "gettype", "getrelationshipname":
+			return semaCollectionSignature{returnType: "String", params: [][]string{{}}}, true
+		case "getsoaptype":
+			return semaCollectionSignature{returnType: "Schema.SoapType", params: [][]string{{}}}, true
+		case "isnillable", "isexternalid", "isunique", "isencrypted", "isnamefield", "isaccessible", "iscreateable", "isupdateable":
+			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{}}}, true
+		case "getreferenceto":
+			return semaCollectionSignature{returnType: "List<Schema.SObjectType>", params: [][]string{{}}}, true
+		case "getpicklistvalues":
+			return semaCollectionSignature{returnType: "List<Schema.PicklistEntry>", params: [][]string{{}}}, true
+		}
+	case "schema.fieldset":
+		if method == "getfields" {
+			return semaCollectionSignature{returnType: "List<Schema.FieldSetMember>", params: [][]string{{}}}, true
+		}
+	case "schema.fieldsetmember":
+		switch method {
+		case "getfieldpath", "getlabel":
+			return semaCollectionSignature{returnType: "String", params: [][]string{{}}}, true
+		case "getrequired", "getdbrequired":
+			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{}}}, true
+		case "gettype":
+			return semaCollectionSignature{returnType: "Schema.SoapType", params: [][]string{{}}}, true
+		}
+	case "schema.sobjecttype":
+		switch method {
+		case "getdescribe":
+			return semaCollectionSignature{returnType: "Schema.DescribeSObjectResult", params: [][]string{{}}}, true
+		case "newsobject":
+			return semaCollectionSignature{returnType: "SObject", params: [][]string{{}, {"Id"}, {"Id", "Boolean"}}}, true
+		}
+	case "schema.sobjectfield":
+		if method == "getdescribe" {
+			return semaCollectionSignature{returnType: "Schema.DescribeFieldResult", params: [][]string{{}}}, true
 		}
 	case "auth.communitiesutil":
 		if method == "isguestuser" {
@@ -4015,6 +4414,17 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 		if method == "addmetadata" {
 			return semaCollectionSignature{returnType: "void", params: [][]string{{"Object"}}}, true
 		}
+	case "messaging.singleemailmessage":
+		switch method {
+		case "setwhatid", "settargetobjectid", "setorgwideemailaddressid", "settemplateid":
+			return semaCollectionSignature{returnType: "void", params: [][]string{{"Id"}}}, true
+		case "setplaintextbody", "sethtmlbody", "setsubject", "setreplyto", "setsenderdisplayname", "setcharset":
+			return semaCollectionSignature{returnType: "void", params: [][]string{{"String"}}}, true
+		case "settoaddresses", "setccaddresses", "setbccaddresses":
+			return semaCollectionSignature{returnType: "void", params: [][]string{{"List<String>"}, {"String[]"}}}, true
+		case "setsaveasactivity", "settreattargetobjectasrecipient", "setusesignature":
+			return semaCollectionSignature{returnType: "void", params: [][]string{{"Boolean"}}}, true
+		}
 	case "site":
 		switch method {
 		case "getsiteid", "getbaseurl", "getpathprefix", "getadminemail", "getadminid", "getmasterlabel", "geterrormessage", "geterrordescription":
@@ -4040,6 +4450,8 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 		}
 	case "system":
 		switch method {
+		case "now":
+			return semaCollectionSignature{returnType: "Datetime", params: [][]string{{}}}, true
 		case "setpassword":
 			return semaCollectionSignature{returnType: "void", params: [][]string{{"String", "String"}}}, true
 		case "currentpagereference":
@@ -4277,12 +4689,40 @@ func semaChainedCallReceiver(body string, callStart int, scope map[string]string
 		}
 	}
 	if receiverType == "" {
-		receiverType = strings.TrimPrefix(receiverExpr, "new ")
+		receiverType = semaConstructorReceiverType(receiverExpr)
 	}
 	if receiverType == "" {
 		return "", "", false
 	}
 	return receiverType, strings.TrimSpace(body[methodStart:methodEnd]), true
+}
+
+func semaConstructorReceiverType(expr string) string {
+	expr = strings.TrimSpace(expr)
+	if !strings.HasPrefix(strings.ToLower(expr), "new ") {
+		return ""
+	}
+	typ := strings.TrimSpace(expr[len("new "):])
+	depth := 0
+	for i := 0; i < len(typ); i++ {
+		switch typ[i] {
+		case '<':
+			depth++
+		case '>':
+			if depth > 0 {
+				depth--
+			}
+		case '(':
+			if depth == 0 {
+				return strings.TrimSpace(typ[:i])
+			}
+		case '{':
+			if depth == 0 {
+				return strings.TrimSpace(typ[:i])
+			}
+		}
+	}
+	return typ
 }
 
 func semaLooksLikeDottedCall(body string, callStart int) bool {
@@ -4351,6 +4791,7 @@ func semaChainedCallReceiverNear(body string, pos int, method string, scope map[
 
 func semaExpressionStart(expr string) int {
 	depth := 0
+	angleDepth := 0
 	for i := len(expr) - 1; i >= 0; i-- {
 		switch expr[i] {
 		case ')', ']', '}':
@@ -4361,21 +4802,47 @@ func semaExpressionStart(expr string) int {
 				continue
 			}
 			return i + 1
-		case ';':
+		case '>':
 			if depth == 0 {
+				angleDepth++
+			}
+		case '<':
+			if depth == 0 && angleDepth > 0 {
+				angleDepth--
+			}
+		case ';':
+			if depth == 0 && angleDepth == 0 {
 				return i + 1
 			}
 		case '\n':
-			if depth == 0 && semaContinuesWithDot(expr, i+1) {
+			if depth == 0 && angleDepth == 0 && semaContinuesWithDot(expr, i+1) {
 				continue
 			}
-			return i + 1
+			if angleDepth == 0 {
+				return i + 1
+			}
 		case ',':
-			if depth == 0 {
+			if depth == 0 && angleDepth == 0 {
+				return i + 1
+			}
+		case '?', ':':
+			if depth == 0 && angleDepth == 0 {
+				return i + 1
+			}
+		case '+', '*', '/', '%':
+			if depth == 0 && angleDepth == 0 {
+				return i + 1
+			}
+		case '&', '|':
+			if depth == 0 && angleDepth == 0 {
+				return i + 1
+			}
+		case '-':
+			if depth == 0 && angleDepth == 0 && i > 0 && !strings.ContainsRune("([{=,:?+-*/%&|", rune(expr[i-1])) {
 				return i + 1
 			}
 		case '=':
-			if depth == 0 && (i == 0 || expr[i-1] != '!' && expr[i-1] != '=' && expr[i-1] != '<' && expr[i-1] != '>') {
+			if depth == 0 && angleDepth == 0 && (i == 0 || expr[i-1] != '!' && expr[i-1] != '=' && expr[i-1] != '<' && expr[i-1] != '>') {
 				return i + 1
 			}
 		}
@@ -4421,6 +4888,9 @@ func checkUnknownCallArgs(typ typesys.TypeSymbol, member typesys.MemberSymbol, a
 	var diagnostics []diagnostic.Diagnostic
 	for _, arg := range args {
 		name := strings.TrimSpace(arg.text)
+		if strings.EqualFold(name, "this") || strings.EqualFold(name, "super") {
+			continue
+		}
 		if inferSemaArgType(name, scopes.flat()) != "" {
 			continue
 		}
@@ -4540,7 +5010,7 @@ func (a *Analyzer) exportKnownTypes() map[string]TypeReference {
 
 var (
 	typeIdentifierPattern   = regexp.MustCompile(`[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*`)
-	typeReferencePattern    = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?$`)
+	typeReferencePattern    = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?(?:\s*\[\s*\])*$`)
 	lineLocalDeclPattern    = regexp.MustCompile(`(?m)^\s*([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:=|;)`)
 	localDeclPattern        = regexp.MustCompile(`(?m)(?:^|[;\n])\s*([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?)\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:=|;)`)
 	enhancedForLocalPattern = regexp.MustCompile(`(?m)\bfor\s*\(\s*([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?)\s+([A-Za-z_][A-Za-z0-9_]*)\s*:`)
@@ -4549,7 +5019,7 @@ var (
 	assignmentPattern       = regexp.MustCompile(`(?m)(?:^|[;{}\n])\s*([A-Za-z_][A-Za-z0-9_]*)\s=`)
 	callPattern             = regexp.MustCompile(`\b([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*)\s*\(`)
 	constructorPattern      = regexp.MustCompile(`\bnew\s+([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?)\s*\(`)
-	newExprPattern          = regexp.MustCompile(`(?is)^new\s+([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?)\s*(?:\([^)]*\)|\{.*\})\s*$`)
+	newExprPattern          = regexp.MustCompile(`(?is)^new\s+([A-Za-z_][A-Za-z0-9_.]*(?:\s*<[^;=(){}]+>)?(?:\s*\[\s*\])*)\s*(?:\([^)]*\)|\{.*\})\s*$`)
 	decimalLiteralPattern   = regexp.MustCompile(`^-?(?:[0-9]+\.[0-9]*|[0-9]*\.[0-9]+)$`)
 	intLiteralPattern       = regexp.MustCompile(`^-?[0-9]+$`)
 	returnPattern           = regexp.MustCompile(`(?s)\breturn(?:\s+([^;]+))?\s*;`)
@@ -4692,7 +5162,9 @@ func callArgumentsAt(body string, calleeEnd int) ([]semaArg, bool) {
 		return nil, false
 	}
 	open += calleeEnd
-	depth := 0
+	parenDepth := 0
+	groupDepth := 0
+	angleDepth := 0
 	start := open + 1
 	var args []semaArg
 	for i := open; i < len(body); i++ {
@@ -4700,29 +5172,35 @@ func callArgumentsAt(body string, calleeEnd int) ([]semaArg, bool) {
 		case '\'':
 			i = skipSemaString(body, i)
 		case '(':
-			depth++
+			if angleDepth == 0 && groupDepth == 0 {
+				parenDepth++
+			}
 		case '<':
-			depth++
+			angleDepth++
 		case '>':
-			if depth > 1 {
-				depth--
+			if angleDepth > 0 && (i == 0 || body[i-1] != '=') {
+				angleDepth--
 			}
 		case '{', '[':
-			depth++
+			if angleDepth == 0 {
+				groupDepth++
+			}
 		case ')':
-			depth--
-			if depth == 0 {
+			if angleDepth == 0 && groupDepth == 0 {
+				parenDepth--
+			}
+			if parenDepth == 0 {
 				if arg := trimSemaArg(body, start, i); arg.text != "" {
 					args = append(args, arg)
 				}
 				return args, true
 			}
 		case '}', ']':
-			if depth > 0 {
-				depth--
+			if angleDepth == 0 && groupDepth > 0 {
+				groupDepth--
 			}
 		case ',':
-			if depth == 1 {
+			if parenDepth == 1 && groupDepth == 0 && angleDepth == 0 {
 				args = append(args, trimSemaArg(body, start, i))
 				start = i + 1
 			}
@@ -4785,11 +5263,8 @@ func inferSemaArgType(arg string, scope map[string]string) string {
 	if strings.HasPrefix(arg, "'") {
 		return "String"
 	}
-	if arg == "true" || arg == "false" {
-		return "Boolean"
-	}
-	if arg == "null" {
-		return "null"
+	if literalType := semaKeywordLiteralType(arg); literalType != "" {
+		return literalType
 	}
 	if decimalLiteralPattern.MatchString(arg) {
 		return "Decimal"
@@ -4825,11 +5300,43 @@ func splitSemaInstanceOf(arg string) (string, string, bool) {
 		}
 		if depth == 0 && strings.EqualFold(arg[i:i+len(op)], op) {
 			left := strings.TrimSpace(arg[:i])
-			right := strings.TrimSpace(arg[i+len(op):])
+			right := semaLeadingTypeToken(strings.TrimSpace(arg[i+len(op):]))
 			return left, right, left != "" && right != ""
 		}
 	}
 	return "", "", false
+}
+
+func semaLeadingTypeToken(text string) string {
+	depth := 0
+	for i := 0; i < len(text); i++ {
+		switch text[i] {
+		case '<':
+			depth++
+		case '>':
+			if depth > 0 {
+				depth--
+			}
+		case '[', ']':
+			continue
+		default:
+			if depth == 0 && !isSemaIdentifierChar(text[i]) {
+				return strings.TrimSpace(text[:i])
+			}
+		}
+	}
+	return strings.TrimSpace(text)
+}
+
+func semaKeywordLiteralType(arg string) string {
+	switch strings.ToLower(strings.TrimSpace(arg)) {
+	case "true", "false":
+		return "Boolean"
+	case "null":
+		return "null"
+	default:
+		return ""
+	}
 }
 
 func inferSemaBinaryType(arg string, scope map[string]string) string {
@@ -4871,6 +5378,7 @@ func inferSemaBinaryType(arg string, scope map[string]string) string {
 
 func splitSemaBinary(arg, op string) (string, string, bool) {
 	depth := 0
+	angleDepth := 0
 	for i := 0; i <= len(arg)-len(op); i++ {
 		switch arg[i] {
 		case '\'':
@@ -4884,8 +5392,18 @@ func splitSemaBinary(arg, op string) (string, string, bool) {
 				depth--
 			}
 			continue
+		case '<':
+			if depth == 0 && looksLikeSemaGenericOpen(arg, i) {
+				angleDepth++
+				continue
+			}
+		case '>':
+			if angleDepth > 0 {
+				angleDepth--
+				continue
+			}
 		}
-		if depth == 0 && strings.HasPrefix(arg[i:], op) {
+		if depth == 0 && angleDepth == 0 && strings.HasPrefix(arg[i:], op) {
 			if op == "-" && strings.TrimSpace(arg[:i]) == "" {
 				continue
 			}
@@ -4895,13 +5413,46 @@ func splitSemaBinary(arg, op string) (string, string, bool) {
 	return "", "", false
 }
 
+func looksLikeSemaGenericOpen(arg string, pos int) bool {
+	left := pos - 1
+	for left >= 0 && isWhitespace(arg[left]) {
+		left--
+	}
+	right := pos + 1
+	for right < len(arg) && isWhitespace(arg[right]) {
+		right++
+	}
+	if left < 0 || right >= len(arg) || !isSemaIdentifierChar(arg[left]) || !isSemaIdentifierChar(arg[right]) {
+		return false
+	}
+	depth := 0
+	for i := pos; i < len(arg); i++ {
+		switch arg[i] {
+		case '\'':
+			i = skipSemaString(arg, i)
+		case '<':
+			depth++
+		case '>':
+			depth--
+			if depth == 0 {
+				return true
+			}
+		case '(', '[', '{', ';', '=':
+			if depth == 1 {
+				return false
+			}
+		}
+	}
+	return false
+}
+
 func isSemaNumericType(typeName string) bool {
 	return strings.EqualFold(typeName, "Integer") || strings.EqualFold(typeName, "Long") || strings.EqualFold(typeName, "Decimal") || strings.EqualFold(typeName, "Double")
 }
 
 func skipSemaCall(callee string) bool {
 	switch normalizeName(callee) {
-	case "if", "for", "while", "switch", "catch", "new", "return", "__mapentry", "system.assert", "system.assertequals", "system.debug", "count", "count_distinct", "sum", "avg", "min", "max":
+	case "if", "for", "while", "switch", "catch", "new", "return", "throw", "__mapentry", "system.assert", "system.assertequals", "system.debug", "count", "count_distinct", "sum", "avg", "min", "max":
 		return true
 	default:
 		return false
@@ -4932,6 +5483,9 @@ func isSemaIdentifierChar(ch byte) bool {
 
 func isLikelyTypeReference(text string) bool {
 	text = strings.TrimSpace(text)
+	if strings.HasSuffix(strings.ToLower(text), ".class") {
+		text = strings.TrimSpace(text[:len(text)-len(".class")])
+	}
 	return text != "" && text[0] >= 'A' && text[0] <= 'Z' && typeReferencePattern.MatchString(text)
 }
 
@@ -5039,6 +5593,8 @@ var builtinTypes = []string{
 	"PatternSyntaxException",
 	"QueryException",
 	"RequiredFeatureMissingException",
+	"Savepoint",
+	"System.Savepoint",
 	"SearchException",
 	"SecurityException",
 	"SerializationException",
@@ -5083,6 +5639,7 @@ var platformTypes = []string{
 	"EmailTemplate",
 	"EntityDefinition",
 	"FieldPermissions",
+	"Group",
 	"Auth",
 	"Auth.AuthConfig",
 	"Auth.AuthConfiguration",
@@ -5112,11 +5669,15 @@ var platformTypes = []string{
 	"InstallContext",
 	"InstallHandler",
 	"Iterable",
+	"Iterator",
 	"JSONGenerator",
 	"JSONParser",
 	"JSONToken",
 	"Matcher",
 	"Messaging",
+	"Messaging.Email",
+	"Messaging.MassEmailMessage",
+	"Messaging.SingleEmailMessage",
 	"Metadata",
 	"Metadata.CustomMetadata",
 	"Metadata.CustomMetadataValue",
@@ -5139,10 +5700,12 @@ var platformTypes = []string{
 	"ObjectPermissions",
 	"OrgWideEmailAddress",
 	"Organization",
+	"OpportunityLineItem",
 	"PageReference",
 	"Pattern",
 	"PermissionSetAssignment",
 	"PicklistEntry",
+	"PricebookEntry",
 	"Profile",
 	"Database.BatchableContext",
 	"Queueable",
@@ -5160,6 +5723,7 @@ var platformTypes = []string{
 	"Schema.DescribeTabResult",
 	"Schema.DescribeTabSetResult",
 	"Schema.FieldSet",
+	"Schema.FieldSetMember",
 	"Schema.PicklistEntry",
 	"Schema.RecordTypeInfo",
 	"Schema.SObjectField",

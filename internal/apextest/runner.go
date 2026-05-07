@@ -7,7 +7,6 @@ import (
 	"os"
 	"regexp"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/open-aer/oaer/internal/apexast"
@@ -25,8 +24,6 @@ import (
 	"github.com/open-aer/oaer/internal/visualforce"
 	"github.com/open-aer/oaer/internal/vm"
 )
-
-var sourceRuneOffsetCache sync.Map
 
 type Options struct {
 	Filter              string
@@ -53,12 +50,11 @@ func Discover(index typesys.Index, opts Options) []TestCase {
 		if typ.Kind != apexast.DeclarationClass {
 			continue
 		}
-		classIsTest := typ.IsTest
 		for _, member := range typ.Members {
 			if member.Kind != apexast.DeclarationMethod {
 				continue
 			}
-			if !member.IsTest && !classIsTest {
+			if !member.IsTest {
 				continue
 			}
 			if isTestSetup(member.Modifiers) {
@@ -362,9 +358,17 @@ func compileProjectClasses(index typesys.Index, methods map[string]vm.Method) []
 			StaticFields: make(map[string]vm.Field),
 			Methods:      make(map[string]vm.Method),
 		}
-		typeSource, _ := extractSourceRange(source, typ.Range)
-		class.SuperClass = qualifyNestedTypeName(typ.Name, parseExtends(typeSource), knownTypes)
-		class.Interfaces = qualifyNestedTypeNames(typ.Name, parseImplements(typeSource), knownTypes)
+		superClass := typ.SuperClass
+		interfaces := append([]string(nil), typ.Interfaces...)
+		typeSource, _ := typeDeclarationSource(source, typ.Range)
+		if superClass == "" {
+			superClass = parseExtends(typeSource)
+		}
+		if len(interfaces) == 0 {
+			interfaces = parseImplements(typeSource)
+		}
+		class.SuperClass = qualifyNestedTypeName(typ.Name, superClass, knownTypes)
+		class.Interfaces = qualifyNestedTypeNames(typ.Name, interfaces, knownTypes)
 		if typ.Kind == apexast.DeclarationEnum {
 			class.EnumValues = parseEnumValues(typeSource)
 		}
@@ -377,11 +381,12 @@ func compileProjectClasses(index typesys.Index, methods map[string]vm.Method) []
 			switch member.Kind {
 			case apexast.DeclarationField, apexast.DeclarationProperty:
 				field := vm.Field{
-					Name:     member.Name,
-					Type:     member.Type,
-					Static:   hasModifier(member.Modifiers, "static"),
-					Access:   accessModifier(member.Modifiers),
-					Property: member.Kind == apexast.DeclarationProperty,
+					Name:      member.Name,
+					Type:      member.Type,
+					Static:    hasModifier(member.Modifiers, "static"),
+					Access:    accessModifier(member.Modifiers),
+					Modifiers: append([]string(nil), member.Modifiers...),
+					Property:  member.Kind == apexast.DeclarationProperty,
 				}
 				if member.Kind == apexast.DeclarationProperty {
 					attachPropertyAccessors(&field, typ.Name, typ.File, member, source)
@@ -837,28 +842,50 @@ func extractSourceRange(source string, r diagnostic.Range) (string, error) {
 	return source[start:end], nil
 }
 
+func typeDeclarationSource(source string, r diagnostic.Range) (string, error) {
+	text, err := extractSourceRange(source, r)
+	if err != nil {
+		return "", err
+	}
+	if typeHeaderHasDeclarationKeyword(typeHeader(text)) {
+		return text, nil
+	}
+	start, startOK := sourceBytePosition(source, r.Start)
+	end, endOK := sourceBytePosition(source, r.End)
+	if !startOK || !endOK || start < 0 || start >= len(source) || end <= start || end > len(source) {
+		return text, nil
+	}
+	lineStart := strings.LastIndexAny(source[:start], "\r\n")
+	if lineStart < 0 {
+		lineStart = 0
+	} else {
+		lineStart++
+	}
+	candidate := source[lineStart:end]
+	if typeHeaderHasDeclarationKeyword(typeHeader(candidate)) {
+		return candidate, nil
+	}
+	return text, nil
+}
+
+func typeHeaderHasDeclarationKeyword(header string) bool {
+	for _, field := range strings.Fields(header) {
+		switch strings.ToLower(field) {
+		case "class", "interface", "enum":
+			return true
+		}
+	}
+	return false
+}
+
 func sourceBytePosition(source string, pos diagnostic.Position) (int, bool) {
 	if pos.Offset < 0 {
 		return 0, false
 	}
-	offsetsValue, ok := sourceRuneOffsetCache.Load(source)
-	if !ok {
-		offsetsValue, _ = sourceRuneOffsetCache.LoadOrStore(source, buildSourceRuneByteOffsets(source))
-	}
-	offsets := offsetsValue.([]int)
-	if pos.Offset >= len(offsets) {
+	if pos.Offset > len(source) {
 		return 0, false
 	}
-	return offsets[pos.Offset], true
-}
-
-func buildSourceRuneByteOffsets(source string) []int {
-	offsets := make([]int, 0, len(source)+1)
-	for byteOffset := range source {
-		offsets = append(offsets, byteOffset)
-	}
-	offsets = append(offsets, len(source))
-	return offsets
+	return pos.Offset, true
 }
 
 func compileFieldInitializer(typeName, fieldName string, r diagnostic.Range, source string) (vm.Value, bool) {
@@ -927,6 +954,11 @@ func fieldInitializerExpr(fieldName string, r diagnostic.Range, source string) (
 		return "", false
 	}
 	pattern := regexp.MustCompile(`\b` + regexp.QuoteMeta(fieldName) + `\b\s*=`)
+	if !pattern.MatchString(fieldSource) {
+		if stmt, ok := fieldDeclarationStatementSource(source, r); ok {
+			fieldSource = stmt
+		}
+	}
 	matches := pattern.FindAllStringIndex(fieldSource, -1)
 	if len(matches) == 0 {
 		return "", false
@@ -935,6 +967,28 @@ func fieldInitializerExpr(fieldName string, r diagnostic.Range, source string) (
 	expr := strings.TrimSpace(fieldSource[eq:])
 	expr = strings.TrimRight(expr, ";,")
 	return strings.TrimSpace(expr), true
+}
+
+func fieldDeclarationStatementSource(source string, r diagnostic.Range) (string, bool) {
+	start, ok := sourceBytePosition(source, r.Start)
+	if !ok || start < 0 || start >= len(source) {
+		return "", false
+	}
+	lineStart := strings.LastIndexAny(source[:start], "\r\n")
+	if lineStart < 0 {
+		lineStart = 0
+	} else {
+		lineStart++
+	}
+	stmtEnd := strings.IndexByte(source[start:], ';')
+	if stmtEnd < 0 {
+		return "", false
+	}
+	end := start + stmtEnd + 1
+	if end <= lineStart || end > len(source) {
+		return "", false
+	}
+	return source[lineStart:end], true
 }
 
 func methodShortName(name string) string {

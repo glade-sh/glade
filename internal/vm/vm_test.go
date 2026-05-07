@@ -73,6 +73,25 @@ System.assertEquals('go', p.SHOUT('go'));
 	}
 }
 
+func TestExecPlatformMembersAreCaseInsensitive(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Integer> values = new List<Integer>();
+values.ADD(1);
+System.assertEquals(1, values.SIZE());
+try {
+	throw new DmlException('blocked');
+} catch (Exception e) {
+	System.assertEquals('blocked', e.getMEssage());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecuteStopsWhenContextCanceled(t *testing.T) {
 	program, err := CompileAnonymous("System.assert(true);")
 	if err != nil {
@@ -208,6 +227,184 @@ for (Integer i = 0; i < 3; ++i) {
 	total += i;
 }
 System.assertEquals(3, total);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecForInitializerWithMultipleVariableDeclarations(t *testing.T) {
+	program, err := CompileAnonymous(`
+Integer total = 0;
+for (Integer i = 0, j = 3; i < j; i++) {
+	total += i;
+}
+System.assertEquals(3, total);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecForUpdateWithMultipleExpressions(t *testing.T) {
+	program, err := CompileAnonymous(`
+Integer total = 0;
+for (Integer i = 0, j = 3; i < j; i++, j--) {
+	total += i + j;
+}
+System.assertEquals(6, total);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecTripleEqualsIdentityOperators(t *testing.T) {
+	program, err := CompileAnonymous(`
+Object left = new Account(Name = 'Acme');
+Object same = left;
+Object right = new Account(Name = 'Acme');
+System.assert(left === same);
+System.assert(left !== right);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecObjectEqualityUsesEqualsOverride(t *testing.T) {
+	equalsProgram, err := CompileAnonymous(`
+Probe that = (Probe) other;
+return this.Key == that.Key;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Probe left = new Probe();
+left.Key = 'one';
+Probe sameValue = new Probe();
+sameValue.Key = 'one';
+Probe differentValue = new Probe();
+differentValue.Key = 'two';
+System.assert(left == sameValue);
+System.assert(left != differentValue);
+System.assert(left !== sameValue);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:   "Probe",
+		Fields: map[string]Field{"Key": {Name: "Key", Type: "String"}},
+		Methods: map[string]Method{
+			"equals": {
+				Name:       "Probe.equals",
+				ClassName:  "Probe",
+				ReturnType: "Boolean",
+				Params:     []Param{{Name: "other", Type: "Object"}},
+				Program:    equalsProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStringConcatenationUsesToStringOverride(t *testing.T) {
+	toStringProgram, err := CompileAnonymous("return 'Probe(' + this.Key + ')';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Probe probe = new Probe();
+probe.Key = 'one';
+System.assertEquals('value=Probe(one).', 'value=' + probe + '.');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:   "Probe",
+		Fields: map[string]Field{"Key": {Name: "Key", Type: "String"}},
+		Methods: map[string]Method{
+			"toString": {
+				Name:       "Probe.toString",
+				ClassName:  "Probe",
+				ReturnType: "String",
+				Program:    toStringProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStringConcatenationFormatsTypeLists(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Type> args = new List<Type>{String.class, Integer.class};
+System.assertEquals('call(String, Integer)', 'call' + args);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecBareBlockStatement(t *testing.T) {
+	program, err := CompileAnonymous(`
+Integer total = 0;
+{
+  Integer local = 2;
+  total += local;
+}
+System.assertEquals(2, total);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCompileBareConstructorExpressionStatement(t *testing.T) {
+	program, err := CompileAnonymous(`new Account(Name = 'Acme');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecGroupIsSObjectLike(t *testing.T) {
+	program, err := CompileAnonymous(`
+SObject record = new Group(Name = 'Queue');
+SObject[] records = new List<Group>{new Group(Name = 'Queue 1'), new Group(Name = 'Queue 2')};
+System.assertEquals(2, records.size());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -407,6 +604,109 @@ System.assertEquals('field list', QueryFactory.selectFields(new List<Schema.SObj
 	}
 }
 
+func TestExecSchemaFieldTokensCompareByObjectAndField(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(Account.Name, Account.Name);
+System.assert(Account.Name == Account.Name);
+System.assert(Account.Name != Account.Id);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSObjectListGetSObjectType(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<SObject> records = new List<SObject>{ new Account(Name = 'Test') };
+System.assertEquals(Account.SObjectType, records.getSObjectType());
+List<Account> accounts = new List<Account>();
+System.assertEquals(Account.SObjectType, accounts.getSObjectType());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecInstanceOfSObjectCollectionGenerics(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Account> accounts = new List<Account>{new Account(Name = 'Test')};
+Object accountObject = accounts;
+System.assert(accountObject instanceof List<SObject>, 'List<Account> should be List<SObject>');
+System.assert(accountObject instanceof List<Account>, 'List<Account> should be List<Account>');
+System.assert(!(accountObject instanceof List<Contact>), 'List<Account> should not be List<Contact>');
+
+List<AggregateResult> aggregateRows = new List<AggregateResult>();
+Object aggregateObject = aggregateRows;
+System.assert(aggregateObject instanceof List<SObject>, 'List<AggregateResult> should be List<SObject>');
+
+List<String> names = new List<String>{'Test'};
+Object namesObject = names;
+System.assert(!(namesObject instanceof List<SObject>), 'List<String> should not be List<SObject>');
+System.assert(namesObject instanceof List<Object>, 'List<String> should be List<Object>');
+
+Map<String, Account> byName = new Map<String, Account>{'Test' => new Account(Name = 'Test')};
+Object mapObject = byName;
+System.assert(mapObject instanceof Map<String, SObject>, 'Map<String,Account> should be Map<String,SObject>');
+System.assert(!(mapObject instanceof Map<Integer, SObject>), 'Map<String,Account> should not be Map<Integer,SObject>');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecNullableBooleanLogicalOperands(t *testing.T) {
+	program, err := CompileAnonymous(`
+Boolean flag;
+System.assertEquals(false, flag && true);
+System.assertEquals(true, !flag);
+Boolean other = true;
+System.assertEquals(true, flag || other);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecAssignmentExpressionInCallArgument(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String, List<String>> values = new Map<String, List<String>>();
+List<String> current = values.get('items');
+if (current == null) {
+  values.put('items', current = new List<String>());
+}
+current.add('one');
+System.assertEquals(1, current.size());
+System.assertEquals(1, values.get('items').size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecOverloadResolutionUsesTypedNullVariables(t *testing.T) {
 	listObjectProgram, err := CompileAnonymous(`return 1;`)
 	if err != nil {
@@ -508,13 +808,13 @@ func TestExecSOQLSingleSObjectNoRowsAndMultiRowsStayExplicit(t *testing.T) {
 	org := singleSOQLAssignmentOrg()
 	machine := New(nil)
 	machine.Org = &org
-	if _, err := machine.Execute(noRowsProgram); err == nil || !strings.Contains(err.Error(), "returned no rows") {
-		t.Fatalf("no-row err = %v, want returned no rows", err)
+	if _, err := machine.Execute(noRowsProgram); err == nil || !strings.Contains(err.Error(), "List has no rows") {
+		t.Fatalf("no-row err = %v, want List has no rows", err)
 	}
 	machine = New(nil)
 	machine.Org = &org
-	if _, err := machine.Execute(multiRowsProgram); err == nil || !strings.Contains(err.Error(), "returned more than one row") {
-		t.Fatalf("multi-row err = %v, want returned more than one row", err)
+	if _, err := machine.Execute(multiRowsProgram); err == nil || !strings.Contains(err.Error(), "List has more than 1 row") {
+		t.Fatalf("multi-row err = %v, want List has more than 1 row", err)
 	}
 }
 
@@ -549,8 +849,8 @@ c.account = [SELECT Id FROM Account];
 	machine = New(nil)
 	machine.Org = &org
 	registerAssignmentTargetClasses(t, machine)
-	if _, err := machine.Execute(multiRowsProgram); err == nil || !strings.Contains(err.Error(), "returned more than one row") {
-		t.Fatalf("multi-row dotted assignment err = %v, want returned more than one row", err)
+	if _, err := machine.Execute(multiRowsProgram); err == nil || !strings.Contains(err.Error(), "List has more than 1 row") {
+		t.Fatalf("multi-row dotted assignment err = %v, want List has more than 1 row", err)
 	}
 }
 
@@ -622,8 +922,8 @@ return c.account.Name;
 	receiver = Object("Controller")
 	receiver.Fields["c"] = Object("Container")
 	method = Method{Name: "Controller.assignAccount", Program: multiRowsProgram, ClassName: "Controller"}
-	if _, err := machine.callMethodWithReceiver(method, receiver, nil, &Result{}); err == nil || !strings.Contains(err.Error(), "returned more than one row") {
-		t.Fatalf("multi-row implicit this assignment err = %v, want returned more than one row", err)
+	if _, err := machine.callMethodWithReceiver(method, receiver, nil, &Result{}); err == nil || !strings.Contains(err.Error(), "List has more than 1 row") {
+		t.Fatalf("multi-row implicit this assignment err = %v, want List has more than 1 row", err)
 	}
 }
 

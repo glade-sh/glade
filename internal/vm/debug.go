@@ -159,6 +159,10 @@ func cloneValues(in map[string]Value) map[string]Value {
 
 func cloneValue(value Value) Value {
 	out := value
+	switch value.Kind {
+	case ValueObject, ValueList, ValueSet, ValueMap:
+		out.Ref = newValueRef()
+	}
 	if value.Fields != nil {
 		out.Fields = make(map[string]Value, len(value.Fields))
 		for name, child := range value.Fields {

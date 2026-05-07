@@ -37,10 +37,11 @@ func parseLiteral(raw string) (Value, error) {
 func evalUnary(op string, value Value) (Value, error) {
 	switch op {
 	case "!":
-		if value.Kind != ValueBool {
+		boolValue, ok := booleanOperand(value)
+		if !ok {
 			return Null, fmt.Errorf("operator ! requires Boolean, got %s", value.Kind)
 		}
-		return Bool(!value.Bool), nil
+		return Bool(!boolValue), nil
 	case "-":
 		if value.Kind == ValueDecimal {
 			return Decimal(-value.Decimal), nil
@@ -138,16 +139,28 @@ func evalBinary(op string, left, right Value) (Value, error) {
 			return Bool(left.Int >= right.Int), nil
 		}
 	case "&&", "||":
-		if left.Kind != ValueBool || right.Kind != ValueBool {
+		leftBool, leftOK := booleanOperand(left)
+		rightBool, rightOK := booleanOperand(right)
+		if !leftOK || !rightOK {
 			return Null, fmt.Errorf("operator %s requires Boolean operands", op)
 		}
 		if op == "&&" {
-			return Bool(left.Bool && right.Bool), nil
+			return Bool(leftBool && rightBool), nil
 		}
-		return Bool(left.Bool || right.Bool), nil
+		return Bool(leftBool || rightBool), nil
 	default:
 		return Null, fmt.Errorf("unsupported binary operator %q", op)
 	}
+}
+
+func booleanOperand(value Value) (bool, bool) {
+	if value.Kind == ValueBool {
+		return value.Bool, true
+	}
+	if value.Kind == ValueNull && strings.EqualFold(value.Type, "Boolean") {
+		return false, true
+	}
+	return false, false
 }
 
 func comparablePlatformScalarText(left, right Value) ([2]string, bool) {

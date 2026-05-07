@@ -27,10 +27,10 @@
     "result": {
       "ok": true,
       "persistedAccounts": 0,
-      "persistedObjects": 16,
-      "persistedRecords": 7,
+      "persistedObjects": 21,
+      "persistedRecords": 11,
       "permissions": 2,
-      "profiles": 1,
+      "profiles": 3,
       "requests": 1,
       "statuses": [
         501

@@ -398,7 +398,7 @@ type staticResourceXML struct {
 func loadStaticResources(contentFiles, metaFiles []string) ([]StaticResource, error) {
 	byName := make(map[string]*StaticResource)
 	for _, path := range contentFiles {
-		name := trimKnownSuffix(filepath.Base(path), ".resource")
+		name := resourceNameFromContentPath(path)
 		byName[lookupKey(name)] = &StaticResource{Name: name, ContentPath: path}
 	}
 	for _, path := range metaFiles {
@@ -688,6 +688,14 @@ func resourceNameFromMetaPath(path string) string {
 	base := filepath.Base(path)
 	base = trimKnownSuffix(base, ".staticresource-meta.xml")
 	return trimKnownSuffix(base, ".resource-meta.xml")
+}
+
+func resourceNameFromContentPath(path string) string {
+	base := filepath.Base(path)
+	if name := trimKnownSuffix(base, ".resource"); name != base {
+		return name
+	}
+	return strings.TrimSuffix(base, filepath.Ext(base))
 }
 
 func baseNoMetaExt(path string) string {

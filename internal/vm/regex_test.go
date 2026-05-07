@@ -55,6 +55,8 @@ System.assertEquals('zzzcatzzzdogzzz', replaceFirstMatcher.replaceFirst('cat'));
 Pattern captures = Pattern.compile('([A-Z]+)([0-9]+)');
 Matcher captureReplace = captures.matcher('A1 B22');
 System.assertEquals('1-A 22-B', captureReplace.replaceAll('$2-$1'));
+System.assert(Pattern.matches('(?i)\\Qhello.world\\E', 'HELLO.WORLD'));
+System.assert(!Pattern.matches('(?i)\\Qhello.world\\E', 'HELLOXWORLD'));
 
 Pattern regionWords = Pattern.compile('[A-Z]+');
 Matcher regionMatcher = regionWords.matcher('aa ABC bb DEF cc');
@@ -201,7 +203,6 @@ func TestExecPatternRejectsJavaOnlyRegex(t *testing.T) {
 		{name: "namedGroup", source: `Pattern.compile('(?<word>a)');`, message: "Java regex named groups"},
 		{name: "atomicGroup", source: `Pattern.compile('(?>a)');`, message: "Java regex atomic groups"},
 		{name: "possessiveQuantifier", source: `Pattern.compile('a++');`, message: "Java regex possessive quantifiers"},
-		{name: "quoteEscape", source: `Pattern.compile('\Qabc\E');`, message: "Java regex quote escapes"},
 		{name: "previousMatchBoundary", source: `Pattern.compile('\Gabc');`, message: "Java regex previous-match boundary"},
 		{name: "pythonNamedGroup", source: `Pattern.compile('(?P<word>a)');`, message: "Java regex named groups"},
 		{name: "unicodeJavaClass", source: `Pattern.compile('\p{javaLowerCase}+');`, message: "Java regex Unicode character classes"},

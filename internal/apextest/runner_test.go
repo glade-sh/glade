@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/open-aer/oaer/internal/apexast"
 	"github.com/open-aer/oaer/internal/diagnostic"
 	"github.com/open-aer/oaer/internal/project"
 	oaerschema "github.com/open-aer/oaer/internal/schema"
@@ -409,7 +410,7 @@ private class MathUtilTest {
 
 	run := Run(loadTestIndex(t, root), Options{})
 	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
-		t.Fatalf("summary = %#v run=%#v", got, run)
+		t.Fatalf("summary = %#v problem=%#v run=%#v", got, run.Suites[0].Cases[0].Problem, run)
 	}
 }
 
@@ -439,7 +440,14 @@ private class MathUtilTest {
 
 	run := Run(loadTestIndex(t, root), Options{})
 	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
-		t.Fatalf("summary = %#v run=%#v", got, run)
+		index := loadTestIndex(t, root)
+		methods := compileProjectMethods(index)
+		for _, class := range compileProjectClasses(index, methods) {
+			if class.Name == "ListDowncastDomain" {
+				t.Logf("constructors=%#v fields=%#v", class.Constructors, class.Fields)
+			}
+		}
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
 	}
 }
 
@@ -684,7 +692,83 @@ private class InitOrderTest {
 
 	run := Run(loadTestIndex(t, root), Options{})
 	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
-		t.Fatalf("summary = %#v run=%#v", got, run)
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestFieldInitializerExprFallsBackToFullDeclarationStatement(t *testing.T) {
+	source := "\t\tprivate List<Error> errorList = new List<Error>(); \n\t\tprivate Boolean enabled = false;\n"
+	start := strings.Index(source, "new List<Error>()")
+	end := strings.Index(source, "private Boolean")
+	expr, ok := fieldInitializerExpr("errorList", diagnostic.Range{
+		Start: diagnostic.Position{Offset: start},
+		End:   diagnostic.Position{Offset: end},
+	}, source)
+	if !ok || expr != "new List<Error>()" {
+		t.Fatalf("expr = %q ok=%v, want new List<Error>()", expr, ok)
+	}
+}
+
+func TestTypeDeclarationSourceFallsBackToFullDeclarationLine(t *testing.T) {
+	source := "\t\tpublic class TestSObjectDisableBehaviourConstructor implements fflib_SObjectDomain.IConstructable\n\t\t{\n\t\t\tpublic Object construct() { return null; }\n\t\t}\n"
+	start := strings.Index(source, "TestSObjectDisableBehaviourConstructor")
+	end := strings.LastIndex(source, "}") + 1
+	typeSource, err := typeDeclarationSource(source, diagnostic.Range{
+		Start: diagnostic.Position{Offset: start},
+		End:   diagnostic.Position{Offset: end},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if interfaces := parseImplements(typeSource); len(interfaces) != 1 || interfaces[0] != "fflib_SObjectDomain.IConstructable" {
+		t.Fatalf("interfaces = %#v", interfaces)
+	}
+}
+
+func TestCompileProjectClassesPrefersIndexedInterfaces(t *testing.T) {
+	root := t.TempDir()
+	file := filepath.Join(root, "Outer.cls")
+	writeFile(t, file, "public class Outer {}\n")
+	index := typesys.Index{Types: []typesys.TypeSymbol{
+		{
+			Kind:  apexast.DeclarationInterface,
+			Name:  "Outer.Marker",
+			File:  file,
+			Range: diagnostic.Range{Start: diagnostic.Position{Offset: 0}, End: diagnostic.Position{Offset: 1}},
+		},
+		{
+			Kind:       apexast.DeclarationClass,
+			Name:       "Outer.Impl",
+			File:       file,
+			Interfaces: []string{"Outer.Marker"},
+			Range:      diagnostic.Range{Start: diagnostic.Position{Offset: 0}, End: diagnostic.Position{Offset: 1}},
+		},
+	}}
+	classes := compileProjectClasses(index, nil)
+	for _, class := range classes {
+		if class.Name == "Outer.Impl" {
+			if len(class.Interfaces) != 1 || class.Interfaces[0] != "Outer.Marker" {
+				t.Fatalf("interfaces = %#v", class.Interfaces)
+			}
+			return
+		}
+	}
+	t.Fatal("Outer.Impl class not compiled")
+}
+
+func TestExtractMethodSourceUsesByteOffsets(t *testing.T) {
+	source := "// café comment before the method\npublic Integer runIt() {\n  return 7;\n}\n"
+	start := strings.Index(source, "public Integer")
+	end := len(source)
+	methodSource, err := extractMethodSource(source, diagnostic.Range{
+		Start: diagnostic.Position{Offset: start},
+		End:   diagnostic.Position{Offset: end},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(methodSource, "public Integer runIt()") {
+		t.Fatalf("methodSource = %q", methodSource)
 	}
 }
 
@@ -1011,6 +1095,38 @@ private class DispatchFacadeTest {
 	run := Run(loadTestIndex(t, root), Options{})
 	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
 		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestRunPersistsUnqualifiedStaticListMutation(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/StaticListRegistry.cls"), `
+public class StaticListRegistry {
+  private static List<String> values = new List<String>();
+
+  public static void addOne(String value) {
+    values.add(value);
+  }
+
+  public static Integer countValues() {
+    return values.size();
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/StaticListRegistryTest.cls"), `
+@IsTest
+private class StaticListRegistryTest {
+  @IsTest static void staticListMutationPersistsAcrossStaticMethods() {
+    StaticListRegistry.addOne('x');
+    System.assertEquals(1, StaticListRegistry.countValues());
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v run=%#v", got, run)
 	}
 }
 
@@ -1748,6 +1864,23 @@ private class ManyTest {
 	}
 }
 
+func TestDiscoverSkipsHelpersInIsTestClass(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/HelperTest.cls"), `
+@isTest
+private class HelperTest {
+  static String helper() { return 'skip'; }
+  @isTest static void runs() { System.assertEquals('skip', helper()); }
+}
+`)
+
+	cases := Discover(loadTestIndex(t, root), Options{})
+	if len(cases) != 1 || cases[0].MethodName != "runs" {
+		t.Fatalf("cases = %#v", cases)
+	}
+}
+
 func TestRunResolvesVisualforcePageReferencesAndControllerConstructors(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -1879,6 +2012,268 @@ public class StaticEndpointService {
 	}
 }
 
+func TestProjectRuntimeInitializesNestedInstanceFields(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/NestedInitializer.cls"), `
+public class NestedInitializer {
+  public static Inner StaticInner { get; private set; }
+  public static TestFactory Test { get; private set; }
+  static {
+    StaticInner = new Inner();
+    Test = new TestFactory();
+  }
+  public class Inner {
+    private List<String> values = new List<String>();
+    public Child child = new Child();
+    public Child Database = new Child();
+    private Inner() {
+    }
+    public Integer size() {
+      values.add('x');
+      return values.size();
+    }
+  }
+  public class Child {
+    public Integer value() {
+      return 7;
+    }
+  }
+  public class TestFactory {
+    public MockDatabase Database = new MockDatabase();
+    private TestFactory() {
+    }
+  }
+  public class MockDatabase {
+    private List<String> rows = new List<String>();
+    private MockDatabase() {
+    }
+    public Boolean hasRecords() {
+      return rows != null;
+    }
+  }
+  public static Integer run() {
+    return new Inner().size();
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/NestedInitializerTest.cls"), `
+@isTest
+private class NestedInitializerTest {
+  @isTest static void initializes() {
+    System.assertEquals(1, NestedInitializer.run());
+    System.assertEquals(7, NestedInitializer.StaticInner.child.value());
+    System.assertEquals(7, NestedInitializer.StaticInner.Database.value());
+    System.assert(NestedInitializer.Test.Database.hasRecords());
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v run=%#v", got, run)
+	}
+}
+
+func TestProjectRuntimeMatchesSObjectListDowncastConstructors(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ListDowncastDomain.cls"), `
+public class ListDowncastDomain {
+  public List<Opportunity> Records;
+  public ListDowncastDomain(List<Opportunity> source) {
+    Records = source;
+  }
+  public static Integer run() {
+    List<SObject> records = new List<SObject>{ new Opportunity(Name = 'Test') };
+    ListDowncastDomain domain = new ListDowncastDomain(records);
+    return domain.Records.size();
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/CustomListDowncastDomain.cls"), `
+public class CustomListDowncastDomain {
+  public List<Thing__c> Records;
+  public CustomListDowncastDomain(List<Thing__c> source) {
+    Records = source;
+  }
+  public static Integer run() {
+    List<SObject> records = new List<SObject>{ new Thing__c(Name = 'Test') };
+    CustomListDowncastDomain domain = new CustomListDowncastDomain(records);
+    return domain.Records.size();
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/objects/Thing__c/Thing__c.object-meta.xml"), `
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+  <label>Thing</label>
+</CustomObject>
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ListDowncastDomainTest.cls"), `
+@isTest
+private class ListDowncastDomainTest {
+  @isTest static void constructs() {
+    System.assertEquals(1, ListDowncastDomain.run());
+    System.assertEquals(1, CustomListDowncastDomain.run());
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestProjectRuntimeCallsImplicitDefaultSuperConstructor(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ImplicitSuperBase.cls"), `
+public virtual class ImplicitSuperBase {
+  public List<String> values;
+  public ImplicitSuperBase() {
+    values = new List<String>();
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ImplicitSuperChild.cls"), `
+public class ImplicitSuperChild extends ImplicitSuperBase {
+  public Integer size() {
+    values.add('x');
+    return values.size();
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ImplicitSuperChildTest.cls"), `
+@isTest
+private class ImplicitSuperChildTest {
+  @isTest static void constructsBase() {
+    System.assertEquals(1, new ImplicitSuperChild().size());
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestProjectRuntimeMatchesChainedConstructorWithSObjectTypeAlias(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ChainedSObjectTypeCtor.cls"), `
+public class ChainedSObjectTypeCtor {
+  public SObjectType Captured;
+  public ChainedSObjectTypeCtor(List<SObject> records) {
+    this(records, records.getSObjectType());
+  }
+  public ChainedSObjectTypeCtor(List<SObject> records, SObjectType objectType) {
+    Captured = objectType;
+  }
+  public static SObjectType run() {
+    return new ChainedSObjectTypeCtor(new List<SObject>{ new Account(Name = 'Test') }).Captured;
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ChainedSObjectTypeCtorTest.cls"), `
+@isTest
+private class ChainedSObjectTypeCtorTest {
+  @isTest static void constructs() {
+    System.assertEquals(Account.SObjectType, ChainedSObjectTypeCtor.run());
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestProjectRuntimeSuperclassThisConstructorChainsLexically(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/LexicalBaseCtor.cls"), `
+public virtual class LexicalBaseCtor {
+  public Integer value;
+  public LexicalBaseCtor(Integer seed) {
+    this(seed, 2);
+  }
+  public LexicalBaseCtor(Integer seed, Integer multiplier) {
+    value = seed * multiplier;
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/LexicalChildCtor.cls"), `
+public class LexicalChildCtor extends LexicalBaseCtor {
+  public LexicalChildCtor(Integer seed) {
+    super(seed);
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/LexicalChildCtorTest.cls"), `
+@isTest
+private class LexicalChildCtorTest {
+  @isTest static void constructs() {
+    LexicalChildCtor child = new LexicalChildCtor(3);
+    System.assertEquals(6, child.value);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestProjectRuntimeAssignsNestedInterfaceByShortName(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/NestedInterfaceOwner.cls"), `
+public class NestedInterfaceOwner {
+  public interface Worker {
+    Integer run();
+  }
+  public class Impl implements Worker {
+    public Integer run() {
+      return 7;
+    }
+  }
+  public static Integer execute() {
+    Worker worker = new Impl();
+    return worker.run();
+  }
+  public static Integer executeFromType() {
+    Type implType = Type.forName('NestedInterfaceOwner.Impl');
+    Worker worker = (Worker) implType.newInstance();
+    return worker.run();
+  }
+  public static Integer executeFromInterfaceMap() {
+    Map<String, Worker> workers = new Map<String, Worker>();
+    workers.put('one', (Worker) Type.forName('NestedInterfaceOwner.Impl').newInstance());
+    return workers.get('one').run();
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/NestedInterfaceOwnerTest.cls"), `
+@isTest
+private class NestedInterfaceOwnerTest {
+  @isTest static void assignsShortName() {
+    System.assertEquals(7, NestedInterfaceOwner.execute());
+    System.assertEquals(7, NestedInterfaceOwner.executeFromType());
+    System.assertEquals(7, NestedInterfaceOwner.executeFromInterfaceMap());
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
 func TestProjectRuntimeStaticFieldInitializerCanReadHierarchyCustomSetting(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -1945,6 +2340,21 @@ func loadTestIndex(t *testing.T, root string) typesys.Index {
 		t.Fatal(err)
 	}
 	return typesys.Build(p, s)
+}
+
+func TestOrgFromIndexIncludesProjectStaticResources(t *testing.T) {
+	root := filepath.Join("..", "..", "example-projects", "src-nmb-nutpl-develop")
+	if _, err := os.Stat(filepath.Join(root, "sfdx-project.json")); err != nil {
+		t.Skip("example project is not available")
+	}
+	org := orgFromIndex(loadTestIndex(t, root))
+	object := org.Objects["StaticResource"]
+	for _, record := range object.Records {
+		if record.Fields["Name"].String == "resetcss" {
+			return
+		}
+	}
+	t.Fatalf("resetcss StaticResource record was not created; records=%#v", object.Records)
 }
 
 func writeFile(t *testing.T, path, content string) {

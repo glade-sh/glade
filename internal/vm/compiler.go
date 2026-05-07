@@ -127,6 +127,15 @@ func lex(source string) ([]token, error) {
 			return nil, fmt.Errorf("unterminated string literal at byte %d", start)
 		default:
 			start := i
+			if i+2 < len(source) {
+				three := source[i : i+3]
+				switch three {
+				case "===", "!==":
+					tokens = append(tokens, token{kind: tokenSymbol, text: three, pos: start})
+					i += 3
+					goto next
+				}
+			}
 			if i+1 < len(source) {
 				two := source[i : i+2]
 				switch two {
@@ -192,6 +201,14 @@ func (p *parser) parseStatement() (ir.Instruction, error) {
 			return ir.Instruction{}, err
 		}
 		return ir.Instruction{Op: ir.OpRunAs, Expr: userExpr, Then: body, Pos: start.pos}, nil
+	}
+
+	if p.peek(tokenSymbol, "{") {
+		body, err := p.parseStatementBlock()
+		if err != nil {
+			return ir.Instruction{}, err
+		}
+		return ir.Instruction{Op: ir.OpBlock, Then: body, Pos: start.pos}, nil
 	}
 
 	if p.match(tokenIdent, "if") {
@@ -477,12 +494,16 @@ func (p *parser) parseFor(pos int) (ir.Instruction, error) {
 	}
 
 	var init *ir.Instruction
+	var inits []ir.Instruction
 	if !p.peek(tokenSymbol, ";") {
-		stmt, err := p.parseForPart()
+		stmts, err := p.parseForParts(";")
 		if err != nil {
 			return ir.Instruction{}, err
 		}
-		init = &stmt
+		inits = stmts
+		if len(stmts) > 0 {
+			init = &stmts[0]
+		}
 	}
 	if _, err := p.expect(tokenSymbol, ";"); err != nil {
 		return ir.Instruction{}, err
@@ -499,12 +520,16 @@ func (p *parser) parseFor(pos int) (ir.Instruction, error) {
 		return ir.Instruction{}, err
 	}
 	var update *ir.Instruction
+	var updates []ir.Instruction
 	if !p.peek(tokenSymbol, ")") {
-		stmt, err := p.parseForPart()
+		stmts, err := p.parseForParts(")")
 		if err != nil {
 			return ir.Instruction{}, err
 		}
-		update = &stmt
+		updates = stmts
+		if len(stmts) > 0 {
+			update = &stmts[0]
+		}
 	}
 	if _, err := p.expect(tokenSymbol, ")"); err != nil {
 		return ir.Instruction{}, err
@@ -513,7 +538,54 @@ func (p *parser) parseFor(pos int) (ir.Instruction, error) {
 	if err != nil {
 		return ir.Instruction{}, err
 	}
-	return ir.Instruction{Op: ir.OpFor, Expr: condition, Init: init, Update: update, Then: body, Pos: pos}, nil
+	return ir.Instruction{Op: ir.OpFor, Expr: condition, Init: init, Inits: inits, Update: update, Updates: updates, Then: body, Pos: pos}, nil
+}
+
+func (p *parser) parseForParts(end string) ([]ir.Instruction, error) {
+	if p.isDeclarationStart() {
+		return p.parseForDeclarationParts()
+	}
+	var out []ir.Instruction
+	for {
+		stmt, err := p.parseForPart()
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, stmt)
+		if !p.match(tokenSymbol, ",") {
+			return out, nil
+		}
+		if p.peek(tokenSymbol, end) {
+			return nil, fmt.Errorf("expected for part after comma")
+		}
+	}
+}
+
+func (p *parser) parseForDeclarationParts() ([]ir.Instruction, error) {
+	start := p.tokens[p.pos]
+	typeName, err := p.parseTypeName()
+	if err != nil {
+		return nil, err
+	}
+	var out []ir.Instruction
+	for {
+		name, err := p.expect(tokenIdent, "")
+		if err != nil {
+			return nil, err
+		}
+		inst := ir.Instruction{Op: ir.OpDeclare, Type: typeName, Name: name.text, Pos: start.pos}
+		if p.match(tokenSymbol, "=") {
+			expr, err := p.parseExpression()
+			if err != nil {
+				return nil, err
+			}
+			inst.Expr = expr
+		}
+		out = append(out, inst)
+		if !p.match(tokenSymbol, ",") {
+			return out, nil
+		}
+	}
 }
 
 func (p *parser) parseForPart() (ir.Instruction, error) {
@@ -639,7 +711,8 @@ func (p *parser) parseAssignableName() (string, bool) {
 func (p *parser) parseAssignmentExpression() (ir.Expr, error) {
 	save := p.pos
 	name, ok := p.parseAssignableName()
-	if ok && p.match(tokenSymbol, "=") {
+	if ok && p.peek(tokenSymbol, "=") && !p.peekNext(tokenSymbol, ">") {
+		p.advance()
 		value, err := p.parseAssignmentExpression()
 		if err != nil {
 			return ir.Expr{}, err
@@ -647,7 +720,7 @@ func (p *parser) parseAssignmentExpression() (ir.Expr, error) {
 		return ir.Expr{Kind: ir.ExprCall, Callee: "__assign:" + name, Args: []ir.Expr{value}}, nil
 	}
 	p.pos = save
-	return p.parseExpression()
+	return p.parseTernary()
 }
 
 func (p *parser) parseSwitch(pos int) (ir.Instruction, error) {
@@ -724,7 +797,7 @@ func (p *parser) parseStatementBlock() ([]ir.Instruction, error) {
 }
 
 func (p *parser) parseExpression() (ir.Expr, error) {
-	return p.parseTernary()
+	return p.parseAssignmentExpression()
 }
 
 func (p *parser) parseTernary() (ir.Expr, error) {
@@ -807,12 +880,24 @@ func (p *parser) parseEquality() (ir.Expr, error) {
 				return ir.Expr{}, err
 			}
 			left = binary("==", left, right)
+		case p.match(tokenSymbol, "==="):
+			right, err := p.parseComparison()
+			if err != nil {
+				return ir.Expr{}, err
+			}
+			left = binary("===", left, right)
 		case p.match(tokenSymbol, "!="):
 			right, err := p.parseComparison()
 			if err != nil {
 				return ir.Expr{}, err
 			}
 			left = binary("!=", left, right)
+		case p.match(tokenSymbol, "!=="):
+			right, err := p.parseComparison()
+			if err != nil {
+				return ir.Expr{}, err
+			}
+			left = binary("!==", left, right)
 		default:
 			return left, nil
 		}
@@ -1248,6 +1333,9 @@ func binary(op string, left, right ir.Expr) ir.Expr {
 
 func (p *parser) isDeclarationStart() bool {
 	if !p.peek(tokenIdent, "") {
+		return false
+	}
+	if p.peek(tokenIdent, "new") {
 		return false
 	}
 	save := p.pos

@@ -718,6 +718,7 @@ System.assertEquals(3, severity.ordinal());
 System.assertEquals(5, ApexPages.Severity.values().size());
 ApexPages.Message message = new ApexPages.Message(severity, 'Summary', 'Detail');
 System.assertEquals(ApexPages.Severity.ERROR, message.getSeverity());
+System.assertEquals(ApexPages.Severity.ERROR, ApexPages.severity.ERROR);
 System.assertEquals('Summary', message.getSummary());
 System.assertEquals('Detail', message.getDetail());
 `)
@@ -869,6 +870,27 @@ System.assertEquals('/apex/AccountView', Page.AccountView.getUrl());
 	}
 	if _, err := machine.Execute(missing); err == nil || err.Error() != "unknown Visualforce page Page.Missing" {
 		t.Fatalf("err = %v, want unknown Visualforce page", err)
+	}
+}
+
+func TestExecVisualEditorDynamicPickListRows(t *testing.T) {
+	program, err := CompileAnonymous(`
+VisualEditor.DataRow row = new VisualEditor.DataRow('Template', 'a01000000000001');
+System.assertEquals('Template', row.getLabel());
+System.assertEquals('a01000000000001', row.getValue());
+row.setLabel('Updated');
+row.setValue('next');
+VisualEditor.DynamicPickListRows rows = new VisualEditor.DynamicPickListRows();
+rows.addRow(row);
+System.assertEquals(1, rows.size());
+System.assertEquals('Updated', rows.get(0).getLabel());
+System.assertEquals('next', rows.getRows().get(0).getValue());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -2246,6 +2268,19 @@ System.runAs(new User(Id = '005-user-b', FirstName = 'Ada', LastName = 'Trail', 
 	}
 }
 
+func TestExecStaticUserInfoCallsAreCaseInsensitive(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(false, Userinfo.isMultiCurrencyOrganization());
+System.assertEquals('system', USERINFO.getuserid());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecCurrentUserTimeZoneScopesUserInfoAndDatetimeFormat(t *testing.T) {
 	program, err := CompileAnonymous(`
 Datetime winter = Datetime.valueOfGmt('2024-02-29T23:05:06Z');
@@ -2600,6 +2635,45 @@ System.runAs(new User(Id = '005-user-a', ProfileId = '00e-profile-a', Username =
 	}
 }
 
+func TestExecPermissionMetadataObjectsAreSetupDML(t *testing.T) {
+	setupOnly, err := CompileAnonymous(`
+PermissionSet ps = new PermissionSet(Name = 'LocalPermissions');
+insert ps;
+insert new ObjectPermissions(ParentId = ps.Id, SObjectType = 'Account', PermissionsRead = true);
+insert new FieldPermissions(ParentId = ps.Id, SObjectType = 'Account', Field = 'Account.Name', PermissionsRead = true);
+insert new SetupEntityAccess(ParentId = ps.Id, SetupEntityId = '01p000000000001', SetupEntityType = 'ApexClass');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(setupOnly); err != nil {
+		t.Fatal(err)
+	}
+
+	mixed, err := CompileAnonymous(`
+PermissionSet ps = new PermissionSet(Name = 'LocalPermissions');
+insert ps;
+insert new ObjectPermissions(ParentId = ps.Id, SObjectType = 'Account', PermissionsRead = true);
+insert new Account(Name = 'Acme');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine = New(nil)
+	org = testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(mixed); err == nil || !strings.Contains(err.Error(), "Mixed DML") {
+		t.Fatalf("err = %v, want Mixed DML", err)
+	}
+}
+
 func TestExecPlatformAPIs(t *testing.T) {
 	program, err := CompileAnonymous(`
 String padded = '  Alpha,Beta,Alpha  ';
@@ -2651,6 +2725,7 @@ Date dtDate = dt.date();
 System.assertEquals('2026-05-02', dtDate.format());
 Datetime made = Datetime.newInstance(2026, 5, 2, 1, 2, 3);
 System.assertEquals('2026-05-02T01:02:03Z', made.format());
+System.assertEquals(1777683723000, made.getTime());
 Datetime madePlusHour = made.addHours(1);
 System.assertEquals('2026-05-02T02:02:03Z', madePlusHour.format());
 Datetime madePlusMinutes = made.addMinutes(2);

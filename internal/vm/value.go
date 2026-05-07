@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync/atomic"
 )
 
 type Value struct {
@@ -14,6 +15,8 @@ type Value struct {
 	Bool    bool             `json:"bool,omitempty"`
 	Text    string           `json:"text,omitempty"`
 	Type    string           `json:"type,omitempty"`
+	Runtime string           `json:"-"`
+	Ref     uint64           `json:"-"`
 	Fields  map[string]Value `json:"fields,omitempty"`
 	List    []Value          `json:"list,omitempty"`
 	Set     []Value          `json:"set,omitempty"`
@@ -36,6 +39,12 @@ const (
 
 var Null = Value{Kind: ValueNull}
 
+var nextValueRef atomic.Uint64
+
+func newValueRef() uint64 {
+	return nextValueRef.Add(1)
+}
+
 func Int(v int64) Value {
 	return Value{Kind: ValueInt, Int: v}
 }
@@ -53,11 +62,11 @@ func String(v string) Value {
 }
 
 func List(values ...Value) Value {
-	return Value{Kind: ValueList, List: values}
+	return Value{Kind: ValueList, List: values, Ref: newValueRef()}
 }
 
 func Set(values ...Value) Value {
-	out := Value{Kind: ValueSet}
+	out := Value{Kind: ValueSet, Ref: newValueRef()}
 	for _, value := range values {
 		if !containsValue(out.Set, value) {
 			out.Set = append(out.Set, value)
@@ -67,11 +76,11 @@ func Set(values ...Value) Value {
 }
 
 func Map() Value {
-	return Value{Kind: ValueMap, Map: make(map[string]Value)}
+	return Value{Kind: ValueMap, Map: make(map[string]Value), Ref: newValueRef()}
 }
 
 func Object(typeName string) Value {
-	return Value{Kind: ValueObject, Type: typeName, Fields: make(map[string]Value)}
+	return Value{Kind: ValueObject, Type: typeName, Fields: make(map[string]Value), Ref: newValueRef()}
 }
 
 func (v Value) String() string {
@@ -176,6 +185,12 @@ func (v Value) Equal(other Value) bool {
 			if leftType != "" || rightType != "" {
 				return canonicalTypeValueText(leftType) == canonicalTypeValueText(rightType)
 			}
+		}
+		if v.Type == "Schema.SObjectType" && other.Type == "Schema.SObjectType" {
+			return mapKey(v) == mapKey(other)
+		}
+		if v.Type == "Schema.SObjectField" && other.Type == "Schema.SObjectField" {
+			return mapKey(v) == mapKey(other)
 		}
 		if platformScalarObject(v.Type) {
 			value, ok := v.Fields["value"]

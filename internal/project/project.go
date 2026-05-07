@@ -382,7 +382,7 @@ func collectFiles(root string, p *Project) error {
 			p.TranslationFiles = append(p.TranslationFiles, path)
 		case strings.HasSuffix(lower, ".resource-meta.xml"), strings.HasSuffix(lower, ".staticresource-meta.xml"):
 			p.StaticResourceMetas = append(p.StaticResourceMetas, path)
-		case strings.HasSuffix(lower, ".resource"):
+		case strings.HasSuffix(lower, ".resource"), isStaticResourceContentFile(path):
 			p.StaticResourceFiles = append(p.StaticResourceFiles, path)
 		case strings.HasSuffix(lower, ".asset-meta.xml"):
 			p.ContentAssetMetas = append(p.ContentAssetMetas, path)
@@ -454,6 +454,18 @@ func isStaticResourceVendorDir(path string) bool {
 		if part == "staticresources" && i < len(parts)-1 {
 			return true
 		}
+	}
+	return false
+}
+
+func isStaticResourceContentFile(path string) bool {
+	parts := strings.Split(filepath.ToSlash(path), "/")
+	for i, part := range parts {
+		if part != "staticresources" || i != len(parts)-2 {
+			continue
+		}
+		name := strings.ToLower(parts[len(parts)-1])
+		return !strings.HasSuffix(name, "-meta.xml") && !strings.HasSuffix(name, ".xml")
 	}
 	return false
 }

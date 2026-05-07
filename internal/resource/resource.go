@@ -434,7 +434,7 @@ func loadTranslations(path, namespace string) ([]storage.LabelMetadata, error) {
 func loadStaticResources(contentFiles, metaFiles []string) ([]storage.StaticResourceMetadata, error) {
 	byName := make(map[string]*storage.StaticResourceMetadata)
 	for _, path := range contentFiles {
-		name := trimKnownSuffix(filepath.Base(path), ".resource")
+		name := resourceNameFromContentPath(path)
 		content, err := os.ReadFile(path)
 		if err != nil {
 			return nil, err
@@ -635,11 +635,13 @@ func ensureStaticResourceObject(org *storage.OrgState) {
 			Label:     "Static Resource",
 			KeyPrefix: "081",
 			Fields: map[string]storage.Field{
-				"Name":         {APIName: "Name", Label: "Name", Type: storage.FieldString},
-				"Body":         {APIName: "Body", Label: "Body", Type: storage.FieldBlob},
-				"ContentType":  {APIName: "ContentType", Label: "Content Type", Type: storage.FieldString},
-				"CacheControl": {APIName: "CacheControl", Label: "Cache Control", Type: storage.FieldString},
-				"URL":          {APIName: "URL", Label: "URL", Type: storage.FieldString},
+				"Name":            {APIName: "Name", Label: "Name", Type: storage.FieldString},
+				"Body":            {APIName: "Body", Label: "Body", Type: storage.FieldBlob},
+				"ContentType":     {APIName: "ContentType", Label: "Content Type", Type: storage.FieldString},
+				"CacheControl":    {APIName: "CacheControl", Label: "Cache Control", Type: storage.FieldString},
+				"NamespacePrefix": {APIName: "NamespacePrefix", Label: "Namespace Prefix", Type: storage.FieldString},
+				"SystemModStamp":  {APIName: "SystemModStamp", Label: "System Modstamp", Type: storage.FieldDateTime},
+				"URL":             {APIName: "URL", Label: "URL", Type: storage.FieldString},
 			},
 		},
 		Records: make(map[storage.ID]storage.Record),
@@ -647,11 +649,13 @@ func ensureStaticResourceObject(org *storage.OrgState) {
 	for i, resource := range org.Metadata.StaticResources {
 		id := storage.ID("081" + leftPad(i+1, 12))
 		object.Records[id] = storage.Record{ID: id, Object: "StaticResource", Fields: map[string]storage.Value{
-			"Name":         storage.StringValue(resource.Name),
-			"Body":         storage.BlobValue(resource.Content),
-			"ContentType":  storage.StringValue(resource.ContentType),
-			"CacheControl": storage.StringValue(resource.CacheControl),
-			"URL":          storage.StringValue(resourceURL(resource)),
+			"Name":            storage.StringValue(resource.Name),
+			"Body":            storage.BlobValue(resource.Content),
+			"ContentType":     storage.StringValue(resource.ContentType),
+			"CacheControl":    storage.StringValue(resource.CacheControl),
+			"NamespacePrefix": storage.NullValue(),
+			"SystemModStamp":  storage.DateTimeValue("2026-01-01T00:00:00Z"),
+			"URL":             storage.StringValue(resourceURL(resource)),
 		}}
 	}
 	org.Objects["StaticResource"] = object
@@ -731,6 +735,14 @@ func resourceNameFromMetaPath(path string) string {
 		if strings.HasSuffix(strings.ToLower(base), strings.ToLower(suffix)) {
 			return base[:len(base)-len(suffix)]
 		}
+	}
+	return strings.TrimSuffix(base, filepath.Ext(base))
+}
+
+func resourceNameFromContentPath(path string) string {
+	base := filepath.Base(path)
+	if name := trimKnownSuffix(base, ".resource"); name != base {
+		return name
 	}
 	return strings.TrimSuffix(base, filepath.Ext(base))
 }

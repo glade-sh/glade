@@ -205,8 +205,15 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 		Records:    make(map[ID]Record),
 	}
 	EnsureDeterministicPlatformData(&org)
-	for _, objectName := range []string{"Organization", "UserRole", "User", "Profile", "PermissionSet", "PermissionSetAssignment", "RecordType"} {
-		if len(org.Objects[objectName].Records) != 1 {
+	for _, objectName := range []string{"Organization", "UserRole", "User", "Profile", "UserLicense", "PermissionSet", "PermissionSetAssignment", "RecordType"} {
+		want := 1
+		if objectName == "Profile" {
+			want = 3
+		}
+		if objectName == "UserLicense" {
+			want = 2
+		}
+		if len(org.Objects[objectName].Records) != want {
 			t.Fatalf("%s records = %#v", objectName, InspectOrg("", org))
 		}
 	}
@@ -224,7 +231,7 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 	if _, ok := org.Objects["RecordType"].Records[recordTypeID]; !ok {
 		t.Fatalf("missing RecordType record %s: %#v", recordTypeID, org.Objects["RecordType"].Records)
 	}
-	if len(org.Objects["User"].Records) != 1 || len(org.Objects["Profile"].Records) != 1 {
+	if len(org.Objects["User"].Records) != 1 || len(org.Objects["Profile"].Records) != 3 || len(org.Objects["UserLicense"].Records) != 2 {
 		t.Fatalf("platform records = %#v", InspectOrg("", org))
 	}
 	user, ok := org.Objects["User"].Records["005000000000001"]

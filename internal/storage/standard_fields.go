@@ -177,6 +177,15 @@ func standardFieldsForObject(objectName string) []Field {
 			{APIName: "Role", Label: "Role", Type: FieldPicklist},
 			{APIName: "IsPrimary", Label: "Primary", Type: FieldBoolean},
 		}
+	case stringsEqualFold(objectName, "OpportunityLineItem"):
+		return []Field{
+			{APIName: "OpportunityId", Label: "Opportunity ID", Type: FieldReference, ReferenceTo: []string{"Opportunity"}, RelationshipName: "Opportunity", Required: true},
+			{APIName: "PricebookEntryId", Label: "Price Book Entry ID", Type: FieldReference, ReferenceTo: []string{"PricebookEntry"}, RelationshipName: "PricebookEntry", Required: true},
+			{APIName: "Product2Id", Label: "Product ID", Type: FieldReference, ReferenceTo: []string{"Product2"}, RelationshipName: "Product2"},
+			{APIName: "Quantity", Label: "Quantity", Type: FieldDecimal},
+			{APIName: "UnitPrice", Label: "Sales Price", Type: FieldDecimal},
+			{APIName: "TotalPrice", Label: "Total Price", Type: FieldDecimal},
+		}
 	case stringsEqualFold(objectName, "EmailTemplate"):
 		return []Field{
 			{APIName: "ApiVersion", Label: "API Version", Type: FieldDecimal},

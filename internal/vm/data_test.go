@@ -42,11 +42,36 @@ System.assertEquals(0, empty.size());
 	}
 }
 
+func TestExecDatabaseQueryCanAssignSingleRowToSObject(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account a = new Account(Name = 'Single');
+insert a;
+Id accountId = a.Id;
+SObject row = Database.query('SELECT Id, Name FROM Account WHERE Id = :accountId LIMIT 1');
+System.assertEquals(a.Id, row.Id);
+System.assertEquals('Single', row.get('Name'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSchemaSObjectTypeFieldMapPath(t *testing.T) {
 	program, err := CompileAnonymous(`
 Map<String, Schema.SObjectField> fields = Schema.SObjectType.Account.fields.getMap();
 System.assert(fields.containsKey('Name'));
 System.assert(fields.containsKey('MasterRecordId'));
+System.assertNotEquals(null, Account.SObjectType.fields.Id);
+System.assertNotEquals(null, Account.SObjectType.fields.id);
+System.assertNotEquals(null, OpportunityLineItem.SObjectType);
+Schema.SObjectField ownerField = fields.get('OwnerId');
+System.assertEquals(Schema.SOAPType.ID, ownerField.getDescribe().getSOAPType());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1007,6 +1032,26 @@ Database.queryWithBinds('SELECT Id FROM Account WHERE Name = :wanted', binds, 'U
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(badProgram); err == nil || !strings.Contains(err.Error(), "AccessLevel") {
 		t.Fatalf("expected AccessLevel error, got %v", err)
+	}
+}
+
+func TestExecSOQLBindStaticMethodCall(t *testing.T) {
+	program, err := CompileAnonymous(`
+User row = [SELECT Id FROM User WHERE Id = :UserInfo.getUserId() LIMIT 1];
+System.assertEquals(UserInfo.getUserId(), row.Id);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureStandardObject(&org, "User")
+	user := org.Objects["User"]
+	user.Records["system"] = storage.Record{ID: "system", Object: "User", Fields: map[string]storage.Value{"LastName": storage.StringValue("System")}}
+	org.Objects["User"] = user
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -2449,6 +2494,7 @@ System.assert(false);
 System.assert(Trigger.isExecuting);
 System.assert(Trigger.isAfter);
 System.assert(Trigger.isUndelete);
+System.assert(Trigger.isUnDelete);
 System.assertEquals(1, Trigger.size);
 System.assertEquals(null, Trigger.old);
 System.assertEquals(null, Trigger.oldMap);

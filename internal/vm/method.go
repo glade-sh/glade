@@ -56,6 +56,7 @@ type Field struct {
 	Value        Value
 	InitialValue Value
 	Access       string
+	Modifiers    []string
 	Property     bool
 	Getter       *Method
 	Setter       *Method

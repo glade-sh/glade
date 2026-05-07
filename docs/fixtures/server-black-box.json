@@ -420,10 +420,10 @@
     "result": {
       "ok": true,
       "persistedAccounts": 1,
-      "persistedObjects": 16,
-      "persistedRecords": 8,
+      "persistedObjects": 21,
+      "persistedRecords": 12,
       "permissions": 2,
-      "profiles": 1,
+      "profiles": 3,
       "requests": 39,
       "statuses": [
         200,

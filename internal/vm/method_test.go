@@ -561,6 +561,100 @@ System.assertEquals(7, c.score());
 	}
 }
 
+func TestExecConstructorSuperChainingPassesMapArgument(t *testing.T) {
+	parentCtor, err := CompileAnonymous("values = source;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	childCtor, err := CompileAnonymous("super(source);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	getProgram, err := CompileAnonymous("return values.get(name);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Map<String,Object> source = new Map<String,Object>{'id' => 'value'};
+Child c = new Child(source);
+System.assertEquals('value', c.get('id'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Parent",
+		Fields: map[string]Field{
+			"values": {Name: "values", Type: "Map<String,Object>"},
+		},
+		Constructors: []Method{{
+			Name:          "Parent.<init>",
+			ClassName:     "Parent",
+			Params:        []Param{{Name: "source", Type: "Map<String,Object>"}},
+			Program:       parentCtor,
+			IsConstructor: true,
+		}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Child",
+		SuperClass: "Parent",
+		Constructors: []Method{{
+			Name:          "Child.<init>",
+			ClassName:     "Child",
+			Params:        []Param{{Name: "source", Type: "Map<String,Object>"}},
+			Program:       childCtor,
+			IsConstructor: true,
+		}},
+		Methods: map[string]Method{
+			"get": {Name: "Child.get", ClassName: "Child", ReturnType: "Object", Params: []Param{{Name: "name", Type: "String"}}, Program: getProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMutatingInstanceCollectionFieldPersists(t *testing.T) {
+	addProgram, err := CompileAnonymous("names.add(name);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	sizeProgram, err := CompileAnonymous("return names.size();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Box b = new Box();
+b.add('Ada');
+b.add('Grace');
+System.assertEquals(2, b.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Box",
+		Fields: map[string]Field{
+			"names": {Name: "names", Type: "Set<String>", InitialValue: Set()},
+		},
+		Methods: map[string]Method{
+			"add":  {Name: "Box.add", ClassName: "Box", Params: []Param{{Name: "name", Type: "String"}}, Program: addProgram},
+			"size": {Name: "Box.size", ClassName: "Box", ReturnType: "Integer", Program: sizeProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecPropertyAccessorMethods(t *testing.T) {
 	getter, err := CompileAnonymous("return backing + '!';")
 	if err != nil {

@@ -102,6 +102,35 @@ func TestLoadProjectResourcesLabelsAndEndpoints(t *testing.T) {
 	}
 }
 
+func TestLoadProjectDiscoversUnpackagedStaticResourceFiles(t *testing.T) {
+	root := filepath.Join("..", "..", "example-projects", "src-nmb-nutpl-develop")
+	if _, err := os.Stat(filepath.Join(root, "sfdx-project.json")); err != nil {
+		t.Skip("example project is not available")
+	}
+	p, err := project.Load(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	registry, err := LoadProject(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := URLForStaticResource(registry, "resetcss", ""); !ok {
+		t.Fatalf("resetcss static resource was not loaded; resources=%#v", registry.StaticResources)
+	}
+	org := storage.NewOrgState()
+	if err := ApplyProject(&org, p); err != nil {
+		t.Fatal(err)
+	}
+	object := org.Objects["StaticResource"]
+	for _, record := range object.Records {
+		if record.Fields["Name"].String == "resetcss" {
+			return
+		}
+	}
+	t.Fatalf("resetcss StaticResource record was not created; records=%#v", object.Records)
+}
+
 func writeFile(t *testing.T, path, content string) {
 	t.Helper()
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
