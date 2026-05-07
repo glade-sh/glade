@@ -10,11 +10,11 @@
       "entries": 968,
       "documents": 104,
       "members": 864,
-      "supported": 87,
+      "supported": 101,
       "partial": 32,
       "stub": 0,
       "unsupported": 0,
-      "unknown": 849,
+      "unknown": 835,
       "topUnknown": [
         {
           "symbol": "AccessLevel",
@@ -71,7 +71,7 @@
           "docsSource": "apex/apex_class_System_Assert.md"
         },
         {
-          "symbol": "Assert.areEqual",
+          "symbol": "Assert.isInstanceOfType",
           "kind": "method",
           "owner": "internal/vm",
           "docsSource": "apex/apex_class_System_Assert.md"
@@ -388,11 +388,11 @@
     }
   ],
   "totals": {
-    "supported": 152,
+    "supported": 166,
     "partial": 54,
     "stub": 0,
     "unsupported": 1092,
-    "unknown": 7103
+    "unknown": 7089
   },
   "tooling": {
     "source": "tooling_system_symbols.json.gz",
@@ -404,8 +404,8 @@
     "members": 73326,
     "systemDefaultNamespaceClasses": 198,
     "systemDefaultNamespaceMembers": 3280,
-    "concreteRuntimeApis": 110,
-    "concreteRuntimeApisInTooling": 109,
+    "concreteRuntimeApis": 117,
+    "concreteRuntimeApisInTooling": 116,
     "concreteRuntimeApisMissing": 1,
     "catalogSystemEntries": 2693,
     "catalogSystemEntriesInTooling": 1985,

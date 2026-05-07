@@ -11,6 +11,13 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | ApexPages | `ApexPages.currentPage` | `supported` | Returns a deterministic local PageReference. |
 | ApexPages | `ApexPages.getMessages` | `supported` | Returns VM-local page messages. |
 | ApexPages | `ApexPages.hasMessages` | `supported` | Checks VM-local page messages. |
+| Assert | `Assert.areEqual` | `supported` | Routes through local assertion failures with optional message text. |
+| Assert | `Assert.areNotEqual` | `supported` | Routes through local assertion failures with optional message text. |
+| Assert | `Assert.fail` | `supported` | Raises local System.AssertException with optional message text. |
+| Assert | `Assert.isFalse` | `supported` | Routes through local assertion failures with optional message text. |
+| Assert | `Assert.isNotNull` | `supported` | Routes through local assertion failures with optional message text. |
+| Assert | `Assert.isNull` | `supported` | Routes through local assertion failures with optional message text. |
+| Assert | `Assert.isTrue` | `supported` | Routes through local assertion failures with optional message text. |
 | Crypto | `Crypto.generateDigest` | `partial` | MD5, SHA1, and SHA-256. |
 | Database | `Database.delete` | `supported` | DML pipeline with result/error shapes for supported SObjects. |
 | Database | `Database.getQueryLocator` | `supported` | Supported SOQL executes eagerly for local batch scopes. |

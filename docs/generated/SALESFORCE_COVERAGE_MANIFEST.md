@@ -3,15 +3,15 @@
 - Source documents: 3224
 - Source members: 5177
 - Coverage entries: 8401
-- Known supported entries: 152
-- Unknown entries: 7103
+- Known supported entries: 166
+- Unknown entries: 7089
 - Tooling API classes: 7091
 - Tooling API members: 73326
-- Runtime APIs found in Tooling API: 109/110
+- Runtime APIs found in Tooling API: 116/117
 
 | Area | Target | Entries | Supported | Partial | Stub | Unsupported | Unknown |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Core stdlib | `executable-parity` | 968 | 87 | 32 | 0 | 0 | 849 |
+| Core stdlib | `executable-parity` | 968 | 101 | 32 | 0 | 0 | 835 |
 | Data platform | `local-model` | 835 | 58 | 5 | 0 | 0 | 772 |
 | Integration, security, and UI | `local-model` | 761 | 6 | 13 | 0 | 0 | 742 |
 | Language and guide docs | `unsupported` | 1092 | 0 | 0 | 0 | 1092 | 0 |
@@ -29,7 +29,7 @@ Source: `tooling_system_symbols.json.gz`
 - Properties: 26997
 - System-default namespace classes: 198
 - System-default namespace members: 3280
-- Concrete runtime APIs in Tooling API: 109/110
+- Concrete runtime APIs in Tooling API: 116/117
 - Catalog system entries in Tooling API: 1985/2693
 
 ### Runtime APIs Not Found In Tooling API
