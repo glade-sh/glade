@@ -1960,6 +1960,31 @@ public class Uses {
 	}
 }
 
+func TestAnalyzeSystemAssertClassAliases(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Uses.cls"), `
+public class Uses {
+  public static void run() {
+    System.Assert.areEqual(2, 1 + 1);
+    System.Assert.areNotEqual(3, 1 + 1, 'different');
+    System.Assert.isTrue(true);
+    System.Assert.isFalse(false, 'false');
+    System.Assert.isNull(null);
+    System.Assert.isNotNull('value');
+    System.Assert.fail('forced');
+    SYSTEM.assert.AREEQUAL('trail', 'trail');
+    Assert.areEqual('short', 'short');
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Uses.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
 func TestAnalyzeFieldSetGetFieldsSignature(t *testing.T) {
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Uses.cls"), `

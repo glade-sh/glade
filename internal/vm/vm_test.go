@@ -31,6 +31,80 @@ func TestExecSystemAssertEqualsIsCaseInsensitive(t *testing.T) {
 	}
 }
 
+func TestExecSystemAssertClassAliases(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.Assert.areEqual(2, 1 + 1);
+System.Assert.areNotEqual(3, 1 + 1);
+System.Assert.isTrue(1 < 2);
+System.Assert.isFalse(2 < 1);
+System.Assert.isNull(null);
+System.Assert.isNotNull('value');
+SYSTEM.assert.AREEQUAL('trail', 'trail');
+Assert.areEqual('short', 'short');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSystemAssertClassFailures(t *testing.T) {
+	tests := []struct {
+		name   string
+		source string
+		want   string
+	}{
+		{
+			name:   "areEqual",
+			source: "System.Assert.areEqual('left', 'right', 'mismatch');",
+			want:   "expected <left>, actual <right>: mismatch",
+		},
+		{
+			name:   "areNotEqual",
+			source: "System.Assert.areNotEqual('same', 'same', 'duplicate');",
+			want:   "values should not be equal: <same>: duplicate",
+		},
+		{
+			name:   "isFalse",
+			source: "System.Assert.isFalse(true, 'truthy');",
+			want:   "assertion failed: truthy",
+		},
+		{
+			name:   "isNull",
+			source: "System.Assert.isNull('value', 'not null');",
+			want:   "expected null, actual <value>: not null",
+		},
+		{
+			name:   "isNotNull",
+			source: "System.Assert.isNotNull(null, 'missing');",
+			want:   "value should not be null: missing",
+		},
+		{
+			name:   "fail",
+			source: "System.Assert.fail('forced');",
+			want:   "assertion failed: forced",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			program, err := CompileAnonymous(tt.source)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = Execute(program, nil)
+			var runtimeErr *RuntimeError
+			if !errors.As(err, &runtimeErr) {
+				t.Fatalf("error type = %T, want *RuntimeError", err)
+			}
+			if runtimeErr.Type != "System.AssertException" || runtimeErr.Message != tt.want {
+				t.Fatalf("runtime error = (%q, %q), want System.AssertException %q", runtimeErr.Type, runtimeErr.Message, tt.want)
+			}
+		})
+	}
+}
+
 func TestExecKeywordsAreCaseInsensitive(t *testing.T) {
 	program, err := CompileAnonymous(`
 Object value = NULL;

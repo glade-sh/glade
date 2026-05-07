@@ -180,6 +180,7 @@ func standardParameterName(index int) string {
 var standardPlatformTypeNames = []string{
 	"AccessLevel",
 	"AggregateResult",
+	"Assert",
 	"ApexPages",
 	"ApexPages.Message",
 	"ApexPages.StandardController",
@@ -296,6 +297,7 @@ var standardPlatformTypeNames = []string{
 	"SObjectType",
 	"SoapType",
 	"System",
+	"System.Assert",
 	"Test",
 	"TriggerOperation",
 	"UserInfo",
@@ -305,7 +307,9 @@ var standardPlatformTypeNames = []string{
 var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 	{Name: "PageReference", Constructors: [][]string{{"String"}}, Methods: []StandardMethodSpec{{Name: "getUrl", ReturnType: "String"}, {Name: "setRedirect", ReturnType: "void", Parameters: []string{"Boolean"}}, {Name: "getParameters", ReturnType: "Map<String,String>"}}},
 	{Name: "SelectOption", Constructors: [][]string{{"String", "String"}, {"String", "String", "Boolean"}, {"String", "String", "Boolean", "Boolean"}}},
-	{Name: "System", Methods: []StandardMethodSpec{{Name: "now", ReturnType: "Datetime", Static: true}, {Name: "today", ReturnType: "Date", Static: true}, {Name: "debug", ReturnType: "void", Parameters: []string{"Object"}, Static: true}, {Name: "assert", ReturnType: "void", Parameters: []string{"Boolean"}, Static: true}, {Name: "assertEquals", ReturnType: "void", Parameters: []string{"Object", "Object"}, Static: true}}},
+	{Name: "System", Methods: []StandardMethodSpec{{Name: "now", ReturnType: "Datetime", Static: true}, {Name: "today", ReturnType: "Date", Static: true}, {Name: "debug", ReturnType: "void", Parameters: []string{"Object"}, Static: true}, {Name: "assert", ReturnType: "void", Parameters: []string{"Boolean"}, Static: true}, {Name: "assert", ReturnType: "void", Parameters: []string{"Boolean", "Object"}, Static: true}, {Name: "assertEquals", ReturnType: "void", Parameters: []string{"Object", "Object"}, Static: true}, {Name: "assertEquals", ReturnType: "void", Parameters: []string{"Object", "Object", "Object"}, Static: true}, {Name: "assertNotEquals", ReturnType: "void", Parameters: []string{"Object", "Object"}, Static: true}, {Name: "assertNotEquals", ReturnType: "void", Parameters: []string{"Object", "Object", "Object"}, Static: true}}},
+	{Name: "Assert", Methods: standardAssertMethods()},
+	{Name: "System.Assert", Methods: standardAssertMethods()},
 	{Name: "Pattern", Methods: []StandardMethodSpec{{Name: "compile", ReturnType: "Pattern", Parameters: []string{"String"}, Static: true}, {Name: "compile", ReturnType: "Pattern", Parameters: []string{"String", "Integer"}, Static: true}, {Name: "matches", ReturnType: "Boolean", Parameters: []string{"String", "String"}, Static: true}, {Name: "quote", ReturnType: "String", Parameters: []string{"String"}, Static: true}, {Name: "matcher", ReturnType: "Matcher", Parameters: []string{"String"}}, {Name: "pattern", ReturnType: "String"}, {Name: "split", ReturnType: "List<String>", Parameters: []string{"String"}}, {Name: "split", ReturnType: "List<String>", Parameters: []string{"String", "Integer"}}}, Properties: []StandardPropertySpec{{Name: "CASE_INSENSITIVE", Type: "Integer", Static: true}, {Name: "COMMENTS", Type: "Integer", Static: true}, {Name: "MULTILINE", Type: "Integer", Static: true}, {Name: "LITERAL", Type: "Integer", Static: true}, {Name: "DOTALL", Type: "Integer", Static: true}, {Name: "UNICODE_CASE", Type: "Integer", Static: true}, {Name: "UNIX_LINES", Type: "Integer", Static: true}, {Name: "CANON_EQ", Type: "Integer", Static: true}}},
 	{Name: "Matcher", Methods: []StandardMethodSpec{{Name: "find", ReturnType: "Boolean"}, {Name: "find", ReturnType: "Boolean", Parameters: []string{"Integer"}}, {Name: "matches", ReturnType: "Boolean"}, {Name: "lookingAt", ReturnType: "Boolean"}, {Name: "group", ReturnType: "String"}, {Name: "group", ReturnType: "String", Parameters: []string{"Integer"}}, {Name: "groupCount", ReturnType: "Integer"}, {Name: "start", ReturnType: "Integer"}, {Name: "start", ReturnType: "Integer", Parameters: []string{"Integer"}}, {Name: "end", ReturnType: "Integer"}, {Name: "end", ReturnType: "Integer", Parameters: []string{"Integer"}}, {Name: "replaceAll", ReturnType: "String", Parameters: []string{"String"}}, {Name: "replaceFirst", ReturnType: "String", Parameters: []string{"String"}}, {Name: "reset", ReturnType: "Matcher"}, {Name: "reset", ReturnType: "Matcher", Parameters: []string{"String"}}, {Name: "region", ReturnType: "Matcher", Parameters: []string{"Integer", "Integer"}}, {Name: "regionStart", ReturnType: "Integer"}, {Name: "regionEnd", ReturnType: "Integer"}, {Name: "hasAnchoringBounds", ReturnType: "Boolean"}, {Name: "hasTransparentBounds", ReturnType: "Boolean"}, {Name: "useAnchoringBounds", ReturnType: "Matcher", Parameters: []string{"Boolean"}}, {Name: "useTransparentBounds", ReturnType: "Matcher", Parameters: []string{"Boolean"}}, {Name: "usePattern", ReturnType: "Matcher", Parameters: []string{"Pattern"}}, {Name: "pattern", ReturnType: "Pattern"}, {Name: "quoteReplacement", ReturnType: "String", Parameters: []string{"String"}, Static: true}}},
 	{Name: "ApexPages", Methods: []StandardMethodSpec{{Name: "currentPage", ReturnType: "PageReference", Static: true}, {Name: "addMessage", ReturnType: "void", Parameters: []string{"ApexPages.Message"}, Static: true}, {Name: "getMessages", ReturnType: "List<ApexPages.Message>", Static: true}, {Name: "hasMessages", ReturnType: "Boolean", Static: true}}},
@@ -332,4 +336,23 @@ var standardPlatformSymbolSpecs = []StandardSymbolSpec{
 	{Name: "Callable", Kind: apexast.DeclarationInterface, Methods: []StandardMethodSpec{{Name: "call", ReturnType: "Object", Parameters: []string{"String", "Map<String,Object>"}}}},
 	{Name: "System.Callable", Kind: apexast.DeclarationInterface, Methods: []StandardMethodSpec{{Name: "call", ReturnType: "Object", Parameters: []string{"String", "Map<String,Object>"}}}},
 	{Name: "System.StubProvider", Kind: apexast.DeclarationInterface, Methods: []StandardMethodSpec{{Name: "handleMethodCall", ReturnType: "Object", Parameters: []string{"Object", "String", "Type", "List<Type>", "List<String>", "List<Object>"}}}},
+}
+
+func standardAssertMethods() []StandardMethodSpec {
+	return []StandardMethodSpec{
+		{Name: "areEqual", ReturnType: "void", Parameters: []string{"Object", "Object"}, Static: true},
+		{Name: "areEqual", ReturnType: "void", Parameters: []string{"Object", "Object", "Object"}, Static: true},
+		{Name: "areNotEqual", ReturnType: "void", Parameters: []string{"Object", "Object"}, Static: true},
+		{Name: "areNotEqual", ReturnType: "void", Parameters: []string{"Object", "Object", "Object"}, Static: true},
+		{Name: "isTrue", ReturnType: "void", Parameters: []string{"Boolean"}, Static: true},
+		{Name: "isTrue", ReturnType: "void", Parameters: []string{"Boolean", "Object"}, Static: true},
+		{Name: "isFalse", ReturnType: "void", Parameters: []string{"Boolean"}, Static: true},
+		{Name: "isFalse", ReturnType: "void", Parameters: []string{"Boolean", "Object"}, Static: true},
+		{Name: "isNull", ReturnType: "void", Parameters: []string{"Object"}, Static: true},
+		{Name: "isNull", ReturnType: "void", Parameters: []string{"Object", "Object"}, Static: true},
+		{Name: "isNotNull", ReturnType: "void", Parameters: []string{"Object"}, Static: true},
+		{Name: "isNotNull", ReturnType: "void", Parameters: []string{"Object", "Object"}, Static: true},
+		{Name: "fail", ReturnType: "void", Static: true},
+		{Name: "fail", ReturnType: "void", Parameters: []string{"Object"}, Static: true},
+	}
 }

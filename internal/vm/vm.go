@@ -1640,6 +1640,7 @@ func normalizeStaticCallCasing(callee string) string {
 var canonicalBuiltinStaticCalls = func() map[string]string {
 	names := []string{
 		"System.assert", "System.assertEquals", "System.assertNotEquals", "System.debug", "System.today",
+		"Assert.areEqual", "Assert.areNotEqual", "Assert.isTrue", "Assert.isFalse", "Assert.isNull", "Assert.isNotNull", "Assert.fail",
 		"System.now", "System.currentTimeMillis", "System.isBatch", "System.isFuture", "System.isQueueable",
 		"System.isScheduled", "System.abortJob", "System.attachFinalizer", "System.isRunningTest",
 		"Test.isRunningTest", "System.currentPageReference", "System.setPassword", "System.enqueueJob", "System.schedule",
@@ -1694,6 +1695,13 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 	calls := make(map[string]string, len(names))
 	for _, name := range names {
 		calls[strings.ToLower(name)] = name
+	}
+	for alias, canonical := range map[string]string{
+		"Assert.areEqual":    "System.assertEquals",
+		"Assert.areNotEqual": "System.assertNotEquals",
+		"Assert.isTrue":      "System.assert",
+	} {
+		calls[strings.ToLower(alias)] = canonical
 	}
 	return calls
 }()
@@ -1957,6 +1965,58 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return Null, vm.assertError(message)
 		}
 		return Null, nil
+	case "Assert.isFalse":
+		if len(args) != 1 && len(args) != 2 {
+			return Null, fmt.Errorf("Assert.isFalse expects 1 or 2 arguments")
+		}
+		if args[0].Kind != ValueBool {
+			return Null, fmt.Errorf("Assert.isFalse expects Boolean, got %s", args[0].Kind)
+		}
+		if args[0].Bool {
+			message, err := vm.assertMessage("assertion failed", args[1:], result)
+			if err != nil {
+				return Null, err
+			}
+			return Null, vm.assertError(message)
+		}
+		return Null, nil
+	case "Assert.isNull":
+		if len(args) != 1 && len(args) != 2 {
+			return Null, fmt.Errorf("Assert.isNull expects 1 or 2 arguments")
+		}
+		if args[0].Kind != ValueNull {
+			value, err := vm.displayString(args[0], result)
+			if err != nil {
+				return Null, err
+			}
+			message, err := vm.assertMessage(fmt.Sprintf("expected null, actual <%s>", value), args[1:], result)
+			if err != nil {
+				return Null, err
+			}
+			return Null, vm.assertError(message)
+		}
+		return Null, nil
+	case "Assert.isNotNull":
+		if len(args) != 1 && len(args) != 2 {
+			return Null, fmt.Errorf("Assert.isNotNull expects 1 or 2 arguments")
+		}
+		if args[0].Kind == ValueNull {
+			message, err := vm.assertMessage("value should not be null", args[1:], result)
+			if err != nil {
+				return Null, err
+			}
+			return Null, vm.assertError(message)
+		}
+		return Null, nil
+	case "Assert.fail":
+		if len(args) > 1 {
+			return Null, fmt.Errorf("Assert.fail expects 0 or 1 arguments")
+		}
+		message, err := vm.assertMessage("assertion failed", args, result)
+		if err != nil {
+			return Null, err
+		}
+		return Null, vm.assertError(message)
 	case "System.assertEquals":
 		if len(args) != 2 && len(args) != 3 {
 			return Null, fmt.Errorf("System.assertEquals expects 2 or 3 arguments")
