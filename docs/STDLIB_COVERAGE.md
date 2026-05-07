@@ -28,6 +28,7 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Database | `Database.undelete` | `supported` | Soft-delete restoration for supported local records. |
 | Database | `Database.update` | `supported` | DML pipeline with result/error shapes for supported SObjects. |
 | Database | `Database.upsert` | `supported` | Schema-backed external-ID matching for supported local records. |
+| Date | `Date.addDays` | `supported` | Local Gregorian day arithmetic. |
 | Date | `Date.addMonths` | `supported` | Local Gregorian month arithmetic with end-of-month clamping. |
 | Date | `Date.addYears` | `supported` | Local Gregorian year arithmetic with leap-day clamping. |
 | Date | `Date.newInstance` | `supported` | Validates date parts. |
@@ -126,10 +127,17 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | URL | `URL.getOrgDomainUrl` | `partial` | Deterministic local org URL. |
 | URL | `URL.getSalesforceBaseUrl` | `partial` | Deterministic local base URL. |
 | Unsupported | `unimplemented platform/stdlib calls` | `supported` | Typed UnsupportedFeature errors with stable message text. |
+| UserInfo | `UserInfo.getFirstName` | `partial` | Current runAs/default user. |
 | UserInfo | `UserInfo.getLanguage` | `partial` | Deterministic local value. |
+| UserInfo | `UserInfo.getLastName` | `partial` | Current runAs/default user. |
 | UserInfo | `UserInfo.getLocale` | `partial` | Deterministic local value. |
+| UserInfo | `UserInfo.getName` | `partial` | Current runAs/default user. |
 | UserInfo | `UserInfo.getOrganizationId` | `partial` | Local org identity. |
 | UserInfo | `UserInfo.getProfileId` | `partial` | Current runAs/default user. |
 | UserInfo | `UserInfo.getSessionId` | `partial` | Empty local session value. |
 | UserInfo | `UserInfo.getTimeZone` | `supported` | Returns the deterministic local user timezone. |
+| UserInfo | `UserInfo.getUserEmail` | `partial` | Current runAs/default user. |
 | UserInfo | `UserInfo.getUserId` | `partial` | Current runAs/default user. |
+| UserInfo | `UserInfo.getUserName` | `partial` | Current runAs/default user. |
+| UserInfo | `UserInfo.getUserType` | `partial` | Current runAs/default user. |
+| UserInfo | `UserInfo.isMultiCurrencyOrganization` | `partial` | Local org metadata flag. |

@@ -1637,6 +1637,33 @@ func normalizeStaticCallCasing(callee string) string {
 	return callee
 }
 
+func (vm *VM) shouldUseBuiltinStaticPrecedence(original, canonical string) bool {
+	if _, ok := canonicalBuiltinStaticCall(canonical); !ok {
+		return false
+	}
+	if _, systemPrefixed := stripLeadingSystemNamespace(original); systemPrefixed {
+		return true
+	}
+	root, _, ok := strings.Cut(original, ".")
+	if !ok {
+		return true
+	}
+	if _, ok := vm.Globals[root]; ok {
+		return false
+	}
+	if actual, found := vm.lookupGlobalName(root); found {
+		if _, ok := vm.Globals[actual]; ok {
+			return false
+		}
+	}
+	if vm.currentClass != "" {
+		if _, _, ok := vm.lookupStaticField(vm.currentClass, root); ok {
+			return false
+		}
+	}
+	return true
+}
+
 var canonicalBuiltinStaticCalls = func() map[string]string {
 	names := []string{
 		"System.assert", "System.assertEquals", "System.assertNotEquals", "System.debug", "System.today",
@@ -1799,7 +1826,11 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 	if (callee == "this" || callee == "super") && vm.currentMethod.IsConstructor {
 		return vm.callChainedConstructor(callee, args, result)
 	}
+	originalCallee := callee
 	callee = normalizeStaticCallCasing(callee)
+	if vm.shouldUseBuiltinStaticPrecedence(originalCallee, callee) {
+		goto platformStaticCall
+	}
 	if value, handled, err := vm.callBuiltinStaticFieldMember(callee, args, result); handled || err != nil {
 		return value, err
 	}
@@ -1939,6 +1970,7 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 	if strings.HasPrefix(callee, "Search.") {
 		return Null, unsupportedCallError(callee + " local search/SOSL surface")
 	}
+platformStaticCall:
 	callee = normalizeStaticCallCasing(callee)
 	if reason, ok := unsupportedIntegrationSurface(callee); ok {
 		return Null, unsupportedCallError(callee + " " + reason)

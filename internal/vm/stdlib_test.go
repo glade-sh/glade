@@ -2101,6 +2101,36 @@ System.assertEquals(UserInfo.getUserId(), System.UserInfo.getUserId());
 	}
 }
 
+func TestExecSystemNamespaceBuiltinBeatsShadowingGlobal(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(false, System.Test.isRunningTest());
+System.assertEquals(true, Test.Database.hasRecords());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	hasRecordsProgram, err := CompileAnonymous("return true;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "MockDatabase",
+		Methods: map[string]Method{
+			"hasRecords": {Name: "MockDatabase.hasRecords", ClassName: "MockDatabase", ReturnType: "Boolean", Program: hasRecordsProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	testFactory := Object("TestFactory")
+	testFactory.Fields["Database"] = Object("MockDatabase")
+	machine.Globals["Test"] = testFactory
+
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecProjectStaticResourceSOQL(t *testing.T) {
 	root := filepath.Join("..", "..", "example-projects", "src-nmb-nutpl-develop")
 	if _, err := os.Stat(filepath.Join(root, "sfdx-project.json")); err != nil {

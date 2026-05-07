@@ -256,6 +256,148 @@ public class UsesProductNamespaces {
 	}
 }
 
+func TestAnalyzeUserInfoStandardDeclarations(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesUserInfo.cls"), `
+public class UsesUserInfo {
+  public static void run() {
+    Id userId = UserInfo.getUserId();
+    Id profileId = USERINFO.getProfileId();
+    String username = UserInfo.getUserName();
+    String name = UserInfo.getName();
+    String firstName = UserInfo.getFirstName();
+    String lastName = UserInfo.getLastName();
+    String email = UserInfo.getUserEmail();
+    Id orgId = UserInfo.getOrganizationId();
+    String userType = UserInfo.getUserType();
+    String sessionId = UserInfo.getSessionId();
+    String locale = UserInfo.getLocale();
+    String language = UserInfo.getLanguage();
+    TimeZone zone = UserInfo.getTimeZone();
+    Boolean multiCurrency = UserInfo.isMultiCurrencyOrganization();
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "UsesUserInfo.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeDatabaseDMLCollectionOverloads(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesDatabaseDML.cls"), `
+public class UsesDatabaseDML {
+  public static void run(List<Account> accounts, Account account) {
+    List<Database.SaveResult> insertResults = Database.insert(accounts);
+    List<Database.SaveResult> partialInsertResults = Database.insert(accounts, false);
+    Database.SaveResult singleInsert = Database.insert(account, false);
+    List<Database.SaveResult> updateResults = Database.update(accounts);
+    List<Database.DeleteResult> deleteResults = Database.delete(accounts, false);
+    List<Database.UpsertResult> upsertResults = Database.upsert(accounts, Account.External_Id__c, false);
+    Database.UpsertResult singleUpsert = Database.upsert(account, Account.External_Id__c, false);
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "UsesDatabaseDML.cls"),
+	}}, schema.Schema{Objects: []schema.Object{{
+		Name: "Account",
+		Fields: []schema.Field{
+			{Name: "External_Id__c", Type: "Text"},
+		},
+	}}})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeSchemaDescribeSObjectResultMethods(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesDescribe.cls"), `
+public class UsesDescribe {
+  public static void run(Schema.SObjectType token) {
+    Schema.DescribeSObjectResult describe = token.getDescribe();
+    String name = describe.getName();
+    String label = describe.getLabel();
+    String plural = describe.getLabelPlural();
+    String prefix = describe.getKeyPrefix();
+    Map<String, Schema.SObjectField> fields = describe.getFields();
+    List<Schema.RecordTypeInfo> infos = describe.getRecordTypeInfos();
+    Map<String, Schema.RecordTypeInfo> byName = describe.getRecordTypeInfosByName();
+    Map<String, Schema.RecordTypeInfo> byDeveloperName = describe.getRecordTypeInfosByDeveloperName();
+    List<Schema.ChildRelationship> children = describe.getChildRelationships();
+    Schema.ChildRelationship child = children[0];
+    String relationship = child.getRelationshipName();
+    Schema.SObjectType childType = child.getChildSObject();
+    Schema.SObjectField field = child.getField();
+    Boolean cascade = child.isCascadeDelete();
+    Boolean accessible = describe.isAccessible();
+    Boolean creatable = describe.isCreateable();
+    Boolean updateable = describe.isUpdateable();
+    Boolean deletable = describe.isDeletable();
+    Boolean queryable = describe.isQueryable();
+    Boolean searchable = describe.isSearchable();
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "UsesDescribe.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeDateDatetimeStandardDeclarations(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesDates.cls"), `
+public class UsesDates {
+  public static void run() {
+    Date today = Date.today();
+    Date made = Date.newInstance(2026, 5, 7);
+    Date parsed = Date.valueOf('2026-05-07');
+    Date due = System.today().addDays(30);
+    Date nextMonth = due.addMonths(1);
+    Date nextYear = due.addYears(1);
+    Integer days = today.daysBetween(due);
+    Integer day = due.day();
+    Integer month = due.month();
+    Integer year = due.year();
+    String formattedDate = due.format();
+    Datetime nowStamp = Datetime.now();
+    Datetime stamp = Datetime.newInstance(2026, 5, 7, 1, 2, 3);
+    Datetime stampFromParts = Datetime.newInstance(today, Time.newInstance(1, 2, 3, 0));
+    Datetime gmtStamp = Datetime.newInstanceGmt(2026, 5, 7, 1, 2, 3);
+    Datetime parsedStamp = Datetime.valueOfGmt('2026-05-07T01:02:03Z');
+    Datetime later = stamp.addDays(1).addHours(2).addMinutes(3).addSeconds(4).addMilliseconds(5);
+    Date localDate = later.date();
+    Date gmtDate = later.dateGmt();
+    Time localTime = later.time();
+    Time gmtTime = later.timeGmt();
+    String formatted = later.format('yyyy-MM-dd', 'UTC');
+    String gmtFormatted = later.formatGmt('yyyy-MM-dd');
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "UsesDates.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
 func TestAnalyzeSchemaSoapTypeAliases(t *testing.T) {
 	index := typesys.Index{
 		Types: []typesys.TypeSymbol{
@@ -2792,6 +2934,30 @@ public class Hello {
 	}
 	if count != 5 {
 		t.Fatalf("OAERSEMA025 count = %d diagnostics=%#v", count, result.Diagnostics)
+	}
+}
+
+func TestAnalyzeTypeCollectionInitializerAcceptsClassLiterals(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public void run() {
+    List<Type> types = new List<Type>{
+      SObject.ClAsS,
+      Schema.SObjectField.class,
+      List<SObject>.class,
+      System.Type.forName('List<SObjectField>')
+    };
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "Hello.cls")}}, schema.Schema{})
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "OAERSEMA025" {
+			t.Fatalf("unexpected List<Type> initializer diagnostic: %#v", result.Diagnostics)
+		}
 	}
 }
 

@@ -1762,6 +1762,9 @@ func (a *Analyzer) inferIRExprType(expr ir.Expr, scope irSemaScope, model map[st
 	case ir.ExprLiteral:
 		return inferSemaArgType(expr.Value, scope.flat())
 	case ir.ExprVariable:
+		if strings.HasSuffix(strings.ToLower(strings.TrimSpace(expr.Name)), ".class") {
+			return "Type"
+		}
 		if typ, ok := scope.lookup(expr.Name); ok {
 			return typ
 		}
@@ -5811,6 +5814,7 @@ var platformTypes = []string{
 	"StaticResource",
 	"System",
 	"Test",
+	"TimeZone",
 	"RecordTypeInfo",
 	"TriggerOperation",
 	"User",
