@@ -42,6 +42,8 @@ Map<String,Object> parsed = (Map<String,Object>)Json.deserializeStrict('{"Name":
 System.assertEquals('Acme', (String)parsed.get('Name'));
 Map<String,Object> parsedSystem = (Map<String,Object>)System.JSON.deserialize('{"Name":"Trail"}', Map<String,Object>.class);
 System.assertEquals('Trail', (String)parsedSystem.get('Name'));
+Map<String,List<String>> parsedNested = (Map<String,List<String>>)JSON.deserialize('{"Account":["Id","Name"]}', Map<String,List<String>>.Class);
+System.assertEquals('Name', parsedNested.get('Account')[1]);
 `)
 	if err != nil {
 		t.Fatal(err)

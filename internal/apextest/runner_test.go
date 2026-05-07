@@ -31,6 +31,7 @@ private class MathTest {
     System.debug('setup');
   }
 }
+
 `)
 
 	index := loadTestIndex(t, root)
@@ -38,6 +39,37 @@ private class MathTest {
 	summary := run.Summary()
 	if summary.Total != 1 || summary.Passed != 1 {
 		t.Fatalf("summary = %#v", summary)
+	}
+}
+
+func TestExtractMethodBodyHandlesBackslashEscapedApexStrings(t *testing.T) {
+	source := `@IsTest
+private class DataRequestTest {
+    @IsTest
+    private static void setParam1_validParams_expectSet() {
+        List<String> testParams = new List<String> { 'it\'s', 'wednesday' };
+        System.assertEquals('it\'s', testParams[0]);
+    }
+
+    @IsTest
+    private static void nextTest() {
+        System.assert(true);
+    }
+}`
+	start := strings.Index(source, "private static void setParam1")
+	end := strings.Index(source, "    @IsTest\n    private static void nextTest")
+	if start < 0 || end < 0 {
+		t.Fatal("test source markers not found")
+	}
+	body, err := extractMethodBody(source, diagnostic.Range{
+		Start: diagnostic.Position{Offset: start},
+		End:   diagnostic.Position{Offset: end},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(body, "nextTest") || !strings.Contains(body, `'it\'s'`) {
+		t.Fatalf("body = %q", body)
 	}
 }
 

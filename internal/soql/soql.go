@@ -1426,6 +1426,12 @@ func equalValues(left, right storage.Value) bool {
 	if left.Kind == storage.ValueString && right.Kind == storage.ValueID {
 		return left.String == string(right.ID)
 	}
+	if left.Kind == storage.ValueID && right.Kind == storage.ValueInteger {
+		return idEqualsInteger(left.ID, right.Integer)
+	}
+	if left.Kind == storage.ValueInteger && right.Kind == storage.ValueID {
+		return idEqualsInteger(right.ID, left.Integer)
+	}
 	if left.Kind != right.Kind {
 		return false
 	}
@@ -1445,6 +1451,17 @@ func equalValues(left, right storage.Value) bool {
 	default:
 		return false
 	}
+}
+
+func idEqualsInteger(id storage.ID, value int64) bool {
+	if value < 0 {
+		return false
+	}
+	text := strconv.FormatInt(value, 10)
+	if len(text) > len(id) {
+		return false
+	}
+	return strings.Repeat("0", len(id)-len(text))+text == string(id)
 }
 
 func compareValues(left, right storage.Value) int {

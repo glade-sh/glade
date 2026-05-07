@@ -558,11 +558,12 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		"Permissions":       {APIName: "Permissions", Type: FieldAny},
 	})
 	ensureObject(org, "Lead", "00Q", map[string]Field{
-		"FirstName": {APIName: "FirstName", Type: FieldString},
-		"LastName":  {APIName: "LastName", Type: FieldString, Required: true},
-		"Company":   {APIName: "Company", Type: FieldString},
-		"Email":     {APIName: "Email", Type: FieldString},
-		"Status":    {APIName: "Status", Type: FieldString},
+		"FirstName":         {APIName: "FirstName", Type: FieldString},
+		"LastName":          {APIName: "LastName", Type: FieldString, Required: true},
+		"Company":           {APIName: "Company", Type: FieldString},
+		"Email":             {APIName: "Email", Type: FieldString},
+		"NumberOfEmployees": {APIName: "NumberOfEmployees", Label: "Employees", Type: FieldInteger},
+		"Status":            {APIName: "Status", Type: FieldString},
 	})
 	ensureObject(org, "PermissionSet", "0PS", map[string]Field{
 		"Name":             {APIName: "Name", Type: FieldString, Required: true},

@@ -1234,6 +1234,10 @@ func sourcePositionPrefix(source string) string {
 
 func skipApexString(source string, start int) int {
 	for i := start + 1; i < len(source); i++ {
+		if source[i] == '\\' && i+1 < len(source) {
+			i++
+			continue
+		}
 		if source[i] == '\'' {
 			if i+1 < len(source) && source[i+1] == '\'' {
 				i++

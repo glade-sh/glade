@@ -403,9 +403,21 @@ func DefaultValueForField(field Field) (Value, bool) {
 			return DecimalValue(raw), true
 		}
 	case FieldString, FieldPicklist, FieldDate, FieldDateTime, FieldID, FieldAny:
-		return StringValue(strings.Trim(raw, `"`)), true
+		return StringValue(normalizeStringDefaultValue(raw)), true
 	}
 	return Value{}, false
+}
+
+func normalizeStringDefaultValue(raw string) string {
+	if len(raw) >= 2 {
+		if raw[0] == '\'' && raw[len(raw)-1] == '\'' {
+			return strings.ReplaceAll(raw[1:len(raw)-1], "''", "'")
+		}
+		if raw[0] == '"' && raw[len(raw)-1] == '"' {
+			return raw[1 : len(raw)-1]
+		}
+	}
+	return raw
 }
 
 type IndexDefinition struct {

@@ -20,14 +20,15 @@ func parseLiteral(raw string) (Value, error) {
 		text := strings.TrimSuffix(strings.TrimPrefix(raw, "'"), "'")
 		return String(strings.ReplaceAll(text, "''", "'")), nil
 	}
-	if strings.Contains(raw, ".") {
-		value, err := strconv.ParseFloat(raw, 64)
+	numberRaw := strings.TrimSuffix(strings.TrimSuffix(raw, "L"), "l")
+	if strings.Contains(numberRaw, ".") {
+		value, err := strconv.ParseFloat(numberRaw, 64)
 		if err != nil {
 			return Null, fmt.Errorf("invalid decimal literal %q", raw)
 		}
 		return Decimal(value), nil
 	}
-	value, err := strconv.ParseInt(raw, 10, 64)
+	value, err := strconv.ParseInt(numberRaw, 10, 64)
 	if err != nil {
 		return Null, fmt.Errorf("invalid literal %q", raw)
 	}

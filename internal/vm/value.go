@@ -137,6 +137,12 @@ func (v Value) String() string {
 
 func (v Value) Equal(other Value) bool {
 	if v.Kind != other.Kind {
+		if v.Kind == ValueInt && other.Kind == ValueDecimal {
+			return float64(v.Int) == other.Decimal
+		}
+		if v.Kind == ValueDecimal && other.Kind == ValueInt {
+			return v.Decimal == float64(other.Int)
+		}
 		if v.Kind == ValueString && other.Kind == ValueObject && strings.EqualFold(other.Type, "Id") {
 			if text, ok := platformScalarObjectText(other); ok {
 				return v.Text == text
@@ -291,6 +297,9 @@ func platformScalarObject(typeName string) bool {
 }
 
 func mapKey(v Value) string {
+	if key, ok := fflibQualifiedMethodMapKey(v, true); ok {
+		return key
+	}
 	if v.Kind == ValueObject && v.Type == "Schema.SObjectType" {
 		if objectName, ok := v.Fields["object"]; ok && objectName.Kind == ValueString {
 			return string(v.Kind) + ":" + v.Type + ":" + objectName.Text
@@ -315,6 +324,32 @@ func mapKey(v Value) string {
 		return string(v.Kind) + ":" + v.Type + ":" + v.Text
 	}
 	return string(v.Kind) + ":" + v.String()
+}
+
+func fflibQualifiedMethodMapKey(v Value, independentMocks bool) (string, bool) {
+	if v.Kind != ValueObject || v.Type != "fflib_QualifiedMethod" {
+		return "", false
+	}
+	typeName, typeOK := v.Fields["typeName"]
+	methodName, methodOK := v.Fields["methodName"]
+	argTypes, argTypesOK := v.Fields["methodArgTypes"]
+	if !typeOK || !methodOK || !argTypesOK {
+		return "", false
+	}
+	mockKey := "mock:null"
+	if independentMocks {
+		if mock, ok := v.Fields["mockInstance"]; ok && mock.Kind != ValueNull {
+			mockKey = fmt.Sprintf("mock:%s:%d", mock.Type, mock.Ref)
+		}
+	}
+	return strings.Join([]string{
+		string(v.Kind),
+		v.Type,
+		mapKey(typeName),
+		mapKey(methodName),
+		mapKey(argTypes),
+		mockKey,
+	}, ":"), true
 }
 
 func containsValue(values []Value, needle Value) bool {

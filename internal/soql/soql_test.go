@@ -90,6 +90,14 @@ func TestExecuteResolvesLowercaseIdAsStandardField(t *testing.T) {
 	if value.Kind != storage.ValueID || value.ID != "001000000000001" {
 		t.Fatalf("Id field = %#v", value)
 	}
+
+	result, err = ParseAndExecute(org, "SELECT id FROM Account WHERE id = 001000000000001")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 {
+		t.Fatalf("numeric Id literal rows = %d", result.Rows)
+	}
 }
 
 func TestExecuteEmailTemplateStandardObjectQuery(t *testing.T) {

@@ -93,12 +93,58 @@ String accountId = accountWithId.Id;
 System.assertEquals('001000000000001AAA', accountId);
 Account accountWithDefaults = (Account)Account.SObjectType.newSObject(null, true);
 System.assertEquals('Account', accountWithDefaults.getSObjectType().getDescribe().getName());
+TemplateSettings__c settings = (TemplateSettings__c)TemplateSettings__c.SObjectType.newSObject(null, true);
+System.assertEquals('resetcss', settings.DefaultCSS__c);
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	machine := New(nil)
 	org := testDataOrg()
+	org.Objects["TemplateSettings__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "TemplateSettings__c",
+			Fields: map[string]storage.Field{
+				"Id":            {APIName: "Id", Type: storage.FieldID},
+				"DefaultCSS__c": {APIName: "DefaultCSS__c", Type: storage.FieldString, DefaultValue: "'resetcss'"},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecHierarchyCustomSettingInsertGetsOrgDefaults(t *testing.T) {
+	program, err := CompileAnonymous(`
+insert new TemplateSettings__c();
+TemplateSettings__c settings = TemplateSettings__c.getInstance();
+System.assertEquals('00D000000000001', settings.Name);
+System.assertEquals('resetcss', settings.DefaultCSS__c);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["TemplateSettings__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "TemplateSettings__c",
+			KeyPrefix: "a00",
+			Metadata: map[string]string{
+				"kind":               "customSetting",
+				"customSettingsType": "Hierarchy",
+			},
+			Fields: map[string]storage.Field{
+				"Id":            {APIName: "Id", Type: storage.FieldID},
+				"Name":          {APIName: "Name", Type: storage.FieldString},
+				"DefaultCSS__c": {APIName: "DefaultCSS__c", Type: storage.FieldString, DefaultValue: "'resetcss'"},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
@@ -656,10 +702,15 @@ Object lowercaseNameField = fields.get('name');
 Object nameDescribe = nameField.getDescribe();
 Object lowercaseNameDescribe = lowercaseNameField.getDescribe();
 System.assertEquals('Name', nameDescribe.getName());
+System.assertEquals('Name', nameField.getName());
 System.assertEquals('Name', lowercaseNameDescribe.getName());
 System.assert(nameDescribe.isNameField());
 System.assert(!nameDescribe.isEncrypted());
 System.assertEquals('STRING', nameDescribe.getType());
+System.assert(nameField.isAccessible());
+System.assert(nameField.isCreateable());
+System.assert(nameField.isUpdateable());
+System.assert(Schema.sObjectType.Account.fields.Name.isUpdateable());
 Object secretField = fields.get('Secret__c');
 Object secretDescribe = secretField.getDescribe();
 System.assert(secretDescribe.isEncrypted());

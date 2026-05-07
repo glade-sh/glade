@@ -1675,6 +1675,43 @@ func TestExecTestSetMockAcceptsTypeTokenForHttpMock(t *testing.T) {
 	}
 }
 
+func TestExecTestInstallInvokesInstallHandler(t *testing.T) {
+	program, err := CompileAnonymous(`
+Test.testInstall(new InstallScript(), null);
+Account account = [SELECT Id, Name FROM Account WHERE Name = 'Installed'];
+System.assertEquals('Installed', account.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	onInstall, err := CompileAnonymous(`insert new Account(Name = 'Installed');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name:       "InstallScript",
+		Interfaces: []string{"InstallHandler"},
+		Methods: map[string]Method{
+			"onInstall": {
+				Name:       "InstallScript.onInstall",
+				ClassName:  "InstallScript",
+				ReturnType: "void",
+				Params:     []Param{{Name: "context", Type: "InstallContext"}},
+				Program:    onInstall,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecTestSetMockRejectsUnsupportedMockType(t *testing.T) {
 	program, err := CompileAnonymous(`Test.setMock('WebServiceMock', new MockResponse());`)
 	if err != nil {

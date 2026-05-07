@@ -39,6 +39,27 @@ func TestResolveFieldNameKeepsOtherNamespace(t *testing.T) {
 	}
 }
 
+func TestDefaultValueForFieldUnquotesStringExpressions(t *testing.T) {
+	tests := []struct {
+		name string
+		raw  string
+		want string
+	}{
+		{name: "single quoted", raw: "'resetcss'", want: "resetcss"},
+		{name: "escaped single quote", raw: "'Bob''s'", want: "Bob's"},
+		{name: "double quoted", raw: `"resetcss"`, want: "resetcss"},
+		{name: "bare", raw: "resetcss", want: "resetcss"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, ok := DefaultValueForField(Field{APIName: "DefaultCSS__c", Type: FieldString, DefaultValue: tt.raw})
+			if !ok || got.Kind != ValueString || got.String != tt.want {
+				t.Fatalf("DefaultValueForField(%q) = %#v, %v; want %q", tt.raw, got, ok, tt.want)
+			}
+		})
+	}
+}
+
 func TestResolveObjectNameMapsUnqualifiedCustomObjectToOrgNamespace(t *testing.T) {
 	org := NewOrgState()
 	org.Namespace = "pkg"
@@ -194,6 +215,9 @@ func TestEnsureDeterministicPlatformDataSeedsCommonSalesObjects(t *testing.T) {
 	}
 	if field, ok := org.Objects["Contact"].Definition.Fields["AccountId"]; !ok || field.Type != FieldReference || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "Account" {
 		t.Fatalf("Contact.AccountId field = %#v, %v", field, ok)
+	}
+	if field, ok := org.Objects["Lead"].Definition.Fields["NumberOfEmployees"]; !ok || field.Type != FieldInteger {
+		t.Fatalf("Lead.NumberOfEmployees field = %#v, %v", field, ok)
 	}
 	if field, ok := org.Objects["Opportunity"].Definition.Fields["StageName"]; !ok || !field.Required {
 		t.Fatalf("Opportunity.StageName field = %#v, %v", field, ok)

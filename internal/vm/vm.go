@@ -2269,7 +2269,7 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return Null, unsupportedCallError("Test.Database.hasRecords local fflib test database surface")
 		}
 		return Bool(false), nil
-	case "Type.forName":
+	case "Type.forName", "System.Type.forName":
 		if len(args) != 1 && len(args) != 2 {
 			return Null, fmt.Errorf("Type.forName expects type name or namespace and type name")
 		}
@@ -2707,6 +2707,8 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		return Null, unsupportedCallError(callee + " local current request URL surface")
 	case "Test.setMock":
 		return vm.testSetMock(args)
+	case "Test.testInstall":
+		return vm.testInstall(args, result)
 	case "Test.createStub":
 		if vm.testContext == nil {
 			return Null, unsupportedCallError(callee + " local stub API")
@@ -3409,6 +3411,11 @@ func (vm *VM) customDataGetInstance(objectName string, definition storage.Object
 			if record, found := vm.hierarchyCustomSettingRecordForOwner(objectName, vm.orgID()); found {
 				return record, true, nil
 			}
+			for _, record := range sortedCustomDataRecords(object.Records, definition, kind, vm.Org.Namespace) {
+				if !record.System.IsDeleted && customSettingRecordHasNoSetupOwner(record) {
+					return record, true, nil
+				}
+			}
 			return storage.Record{}, false, nil
 		}
 		for _, record := range sortedCustomDataRecords(object.Records, definition, kind, vm.Org.Namespace) {
@@ -3441,6 +3448,14 @@ func (vm *VM) customDataGetInstance(objectName string, definition storage.Object
 		}
 	}
 	return storage.Record{}, false, nil
+}
+
+func customSettingRecordHasNoSetupOwner(record storage.Record) bool {
+	value, ok := record.Fields["SetupOwnerId"]
+	if !ok || value.Kind == storage.ValueNull {
+		return true
+	}
+	return value.Kind == storage.ValueString && strings.TrimSpace(value.String) == ""
 }
 
 func sortedCustomDataRecords(records map[storage.ID]storage.Record, definition storage.ObjectDefinition, kind, namespace string) []storage.Record {
@@ -3834,6 +3849,32 @@ func (vm *VM) testCreateStub(args []Value) (Value, error) {
 	proxy.Fields["__oaerStubProvider"] = args[1]
 	proxy.Fields["__oaerStubbedType"] = String(stubbedType)
 	return proxy, nil
+}
+
+func (vm *VM) testInstall(args []Value, result *Result) (Value, error) {
+	if len(args) != 2 {
+		return Null, fmt.Errorf("Test.testInstall expects InstallHandler and previousVersion")
+	}
+	if err := vm.requireTestContext("Test.testInstall"); err != nil {
+		return Null, err
+	}
+	handler := args[0]
+	if handler.Kind != ValueObject || handler.Type == "" {
+		return Null, fmt.Errorf("Test.testInstall expects InstallHandler")
+	}
+	method, ok, ambiguous := vm.resolveInstanceMethodForArgs(handler.Type, "onInstall", []Value{Object("InstallContext")})
+	if ambiguous {
+		return Null, vm.ambiguousOverloadError(handler.Type+".onInstall", []Value{Object("InstallContext")})
+	}
+	if !ok {
+		return Null, fmt.Errorf("Test.testInstall expects InstallHandler with onInstall")
+	}
+	context := Object("InstallContext")
+	context.Fields["PreviousVersion"] = args[1]
+	if _, err := vm.callMethodWithReceiver(method, handler, []Value{context}, result); err != nil {
+		return Null, err
+	}
+	return Null, nil
 }
 
 func testMockTypeName(value Value) (string, bool) {
@@ -8659,8 +8700,8 @@ func (vm *VM) lookup(name string) (Value, error) {
 	if value, ok := apexPagesSeverityStaticValue(name); ok {
 		return value, nil
 	}
-	if strings.HasSuffix(name, ".class") {
-		className := strings.TrimSuffix(name, ".class")
+	if strings.HasSuffix(strings.ToLower(name), ".class") {
+		className := name[:len(name)-len(".class")]
 		if exceptionTypeName(className) == "XmlException" {
 			return Value{Kind: ValueObject, Type: "Type", Text: "System.XmlException"}, nil
 		}
@@ -9145,6 +9186,26 @@ func (vm *VM) callSchemaSObjectTypePath(callee string, args []Value, result *Res
 		}
 		value, _, _, _, err := vm.callPlatformObjectMember(fields, "getMap", nil, result)
 		return value, true, err
+	}
+	if len(parts) >= 5 && strings.EqualFold(parts[len(parts)-3], "fields") {
+		tokenParts := parts[:len(parts)-3]
+		token, ok := vm.lookupSObjectTypeToken(tokenParts)
+		if !ok {
+			return Null, false, nil
+		}
+		objectValue, ok := token.Fields["object"]
+		if !ok || objectValue.Kind != ValueString {
+			return Null, true, fmt.Errorf("%s token missing object", callee)
+		}
+		fieldToken, ok := vm.lookupSObjectFieldToken([]string{objectValue.Text, parts[len(parts)-2]})
+		if !ok {
+			return Null, false, nil
+		}
+		value, _, _, handled, err := vm.callPlatformObjectMember(fieldToken, parts[len(parts)-1], args, result)
+		if err != nil || !handled {
+			return value, true, err
+		}
+		return value, true, nil
 	}
 	if len(parts) < 4 || !schemaSObjectTypeDescribeForwardMethod(parts[len(parts)-1]) {
 		return Null, false, nil
@@ -9849,6 +9910,9 @@ func isGenericTypeName(name string) bool {
 }
 
 func isTypeNameToken(name string) bool {
+	if strings.HasSuffix(name, "[]") {
+		return isTypeNameToken(strings.TrimSpace(strings.TrimSuffix(name, "[]")))
+	}
 	return isBuiltinTypeName(name) || isGenericTypeName(name) || isCommonSObjectTypeName(name)
 }
 
@@ -12659,7 +12723,11 @@ func (vm *VM) evalInstanceOf(value Value, target string) Value {
 	if strings.EqualFold(target, "Object") {
 		return Bool(true)
 	}
-	return Bool(strings.EqualFold(valueTypeName(value), target))
+	valueType := valueTypeName(value)
+	if strings.EqualFold(valueType, target) {
+		return Bool(true)
+	}
+	return Bool(numericConversionScore(target, valueType) >= 0)
 }
 
 func builtinExceptionTypeMatches(typeName, target string) bool {
@@ -13260,10 +13328,10 @@ func defaultValue(typeName string, explicit Value) Value {
 		}
 		if collectionBase(typeName) != "" || isMapType(typeName) {
 			if coerced, err := coerceCollectionValue(typeName, explicit); err == nil {
-				return coerced
+				return cloneValue(coerced)
 			}
 		}
-		return explicit
+		return cloneValue(explicit)
 	}
 	switch typeName {
 	case "String":
@@ -14031,10 +14099,10 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 				return Null, true, fmt.Errorf("Map.put: %w", err)
 			}
 			previous := Null
-			if existing, ok := receiver.Map[mapKey(key)]; ok {
+			if existing, ok := receiver.Map[vm.mapKey(key)]; ok {
 				previous = existing
 			}
-			receiver.Map[mapKey(key)] = item
+			receiver.Map[vm.mapKey(key)] = item
 			if err := vm.storeReceiver(receiverName, receiver); err != nil {
 				return Null, true, err
 			}
@@ -14059,7 +14127,7 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 				if err != nil {
 					return Null, true, fmt.Errorf("Map.putAll: %w", err)
 				}
-				receiver.Map[mapKey(key)] = item
+				receiver.Map[vm.mapKey(key)] = item
 			}
 			if err := vm.storeReceiver(receiverName, receiver); err != nil {
 				return Null, true, err
@@ -14069,7 +14137,7 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			if len(args) != 1 {
 				return Null, true, fmt.Errorf("Map.get expects 1 argument")
 			}
-			value, ok := receiver.Map[mapKey(args[0])]
+			value, ok := receiver.Map[vm.mapKey(args[0])]
 			if !ok {
 				return Null, true, nil
 			}
@@ -14078,7 +14146,7 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			if len(args) != 1 {
 				return Null, true, fmt.Errorf("Map.containsKey expects 1 argument")
 			}
-			_, ok := receiver.Map[mapKey(args[0])]
+			_, ok := receiver.Map[vm.mapKey(args[0])]
 			return Bool(ok), true, nil
 		case "containsValue":
 			if len(args) != 1 {
@@ -14260,6 +14328,34 @@ func (vm *VM) storeReceiver(receiverName string, value Value) error {
 	}
 	vm.Globals[receiverName] = value
 	return nil
+}
+
+func (vm *VM) mapKey(value Value) string {
+	if key, ok := fflibQualifiedMethodMapKey(value, vm.fflibIndependentMocksEnabled()); ok {
+		return key
+	}
+	return mapKey(value)
+}
+
+func (vm *VM) fflibIndependentMocksEnabled() bool {
+	class, ok := vm.lookupClass("fflib_ApexMocksConfig")
+	if !ok {
+		return true
+	}
+	field, ok := class.StaticFields["HasIndependentMocks"]
+	if !ok {
+		for name, candidate := range class.StaticFields {
+			if strings.EqualFold(name, "HasIndependentMocks") {
+				field = candidate
+				ok = true
+				break
+			}
+		}
+	}
+	if !ok || field.Value.Kind != ValueBool {
+		return false
+	}
+	return field.Value.Bool
 }
 
 func (vm *VM) propagateCollectionMutation(previous, updated Value) {
@@ -16056,6 +16152,18 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 					return Null, receiver, false, true, fmt.Errorf("Schema.SObjectType.newSObject Id expects Id")
 				}
 			}
+			if len(args) == 2 && args[1].Bool && vm.Org != nil {
+				if object, ok := vm.Org.Objects[objectName]; ok {
+					for name, field := range object.Definition.Fields {
+						if _, exists := record.Fields[name]; exists {
+							continue
+						}
+						if defaultValue, ok := storage.DefaultValueForField(field); ok {
+							putVMFieldPath(record, name, vmValueFromStorage(defaultValue))
+						}
+					}
+				}
+			}
 			return record, receiver, false, true, nil
 		case "getDescribe":
 			if len(args) != 0 {
@@ -16128,6 +16236,18 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				"field":     fieldValue.Text,
 			})
 			return describe, receiver, false, true, nil
+		}
+		switch method {
+		case "getName", "getLabel", "getType", "getSOAPType", "getSoapType", "isNillable", "isExternalId", "isUnique", "isEncrypted", "isNameField", "getReferenceTo", "getRelationshipName", "getPicklistValues", "getController", "getControllerValues", "isAccessible", "isCreateable", "isUpdateable":
+			describe, _, _, handled, err := vm.callPlatformObjectMember(receiver, "getDescribe", nil, result)
+			if err != nil || !handled {
+				return describe, receiver, false, true, err
+			}
+			value, _, _, handled, err := vm.callPlatformObjectMember(describe, method, args, result)
+			if err != nil || !handled {
+				return value, receiver, false, true, err
+			}
+			return value, receiver, false, true, nil
 		}
 	case "Schema.DescribeFieldResult":
 		switch method {

@@ -423,6 +423,86 @@ func TestCloneRuntimeKeepsStaticStateIsolated(t *testing.T) {
 	}
 }
 
+func TestResetStaticsClonesExplicitCollectionInitializers(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Registry",
+		StaticFields: map[string]Field{
+			"values": {Name: "values", Type: "List<String>", Static: true, InitialValue: List()},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.ResetStatics(); err != nil {
+		t.Fatal(err)
+	}
+	class := machine.Classes["Registry"]
+	first := class.StaticFields["values"].Value
+	first.List = append(first.List, String("leaked"))
+	field := class.StaticFields["values"]
+	field.Value = first
+	class.StaticFields["values"] = field
+	machine.Classes["Registry"] = class
+
+	if err := machine.ResetStatics(); err != nil {
+		t.Fatal(err)
+	}
+	reset := machine.Classes["Registry"].StaticFields["values"].Value
+	if reset.Kind != ValueList || len(reset.List) != 0 {
+		t.Fatalf("reset static list = %#v, want empty cloned initializer", reset)
+	}
+	if reset.Ref == first.Ref {
+		t.Fatalf("reset static list reused ref %d", reset.Ref)
+	}
+}
+
+func TestFFLibQualifiedMethodMapKeyUsesSignatureAndMockIdentity(t *testing.T) {
+	firstMock := Object("Mocked")
+	secondMock := Object("Mocked")
+	first := Object("fflib_QualifiedMethod")
+	first.Fields["typeName"] = String("Selector")
+	first.Fields["methodName"] = String("selectById")
+	first.Fields["methodArgTypes"] = List(platformScalar("Type", "Id"))
+	first.Fields["mockInstance"] = firstMock
+	same := Object("fflib_QualifiedMethod")
+	same.Fields["typeName"] = String("Selector")
+	same.Fields["methodName"] = String("selectById")
+	same.Fields["methodArgTypes"] = List(platformScalar("Type", "Id"))
+	same.Fields["mockInstance"] = firstMock
+	differentArgs := Object("fflib_QualifiedMethod")
+	differentArgs.Fields["typeName"] = String("Selector")
+	differentArgs.Fields["methodName"] = String("selectById")
+	differentArgs.Fields["methodArgTypes"] = List(platformScalar("Type", "Set<Id>"))
+	differentArgs.Fields["mockInstance"] = firstMock
+	differentMock := Object("fflib_QualifiedMethod")
+	differentMock.Fields["typeName"] = String("Selector")
+	differentMock.Fields["methodName"] = String("selectById")
+	differentMock.Fields["methodArgTypes"] = List(platformScalar("Type", "Id"))
+	differentMock.Fields["mockInstance"] = secondMock
+
+	if mapKey(first) != mapKey(same) {
+		t.Fatalf("same qualified method key mismatch: %q != %q", mapKey(first), mapKey(same))
+	}
+	if mapKey(first) == mapKey(differentArgs) {
+		t.Fatalf("qualified method key ignored argument types: %q", mapKey(first))
+	}
+	if mapKey(first) == mapKey(differentMock) {
+		t.Fatalf("qualified method key ignored mock identity: %q", mapKey(first))
+	}
+	if key, ok := fflibQualifiedMethodMapKey(first, false); !ok || key != mustFFLibQualifiedMethodMapKey(t, differentMock, false) {
+		t.Fatalf("dependent qualified method key used mock identity: %q", key)
+	}
+}
+
+func mustFFLibQualifiedMethodMapKey(t *testing.T, value Value, independentMocks bool) string {
+	t.Helper()
+	key, ok := fflibQualifiedMethodMapKey(value, independentMocks)
+	if !ok {
+		t.Fatalf("value is not an fflib qualified method: %#v", value)
+	}
+	return key
+}
+
 func TestExecDottedStaticMethodRunsStaticInitializer(t *testing.T) {
 	staticInit, err := CompileAnonymous("seed = 4;")
 	if err != nil {
@@ -2155,6 +2235,40 @@ System.assertEquals(1, Util.acceptMarker(new Child()));
 		ReturnType: "Integer",
 		Params:     []Param{{Name: "marker", Type: "Marker"}},
 		Program:    acceptProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStaticListMutationPersistsAcrossStaticMethods(t *testing.T) {
+	addProgram, err := CompileAnonymous("values.add(value);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	countProgram, err := CompileAnonymous("return values.size();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+StaticListRegistry.addOne('x');
+System.assertEquals(1, StaticListRegistry.countValues());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "StaticListRegistry",
+		StaticFields: map[string]Field{
+			"values": {Name: "values", Type: "List<String>", Static: true, Value: List(), InitialValue: List()},
+		},
+		Methods: map[string]Method{
+			"addOne":      {Name: "StaticListRegistry.addOne", ClassName: "StaticListRegistry", Params: []Param{{Name: "value", Type: "String"}}, Program: addProgram, IsStatic: true},
+			"countValues": {Name: "StaticListRegistry.countValues", ClassName: "StaticListRegistry", ReturnType: "Integer", Program: countProgram, IsStatic: true},
+		},
 	}); err != nil {
 		t.Fatal(err)
 	}

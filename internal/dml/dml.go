@@ -364,6 +364,7 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 	}
 	normalizePersonAccountFields(objectName, &record)
 	applyFieldDefaults(object.Definition, &record)
+	applyCustomSettingInsertDefaults(e.Org, object.Definition, &record)
 	if err := validateFields(object.Definition, e.Org.Namespace, record); err != nil {
 		return "", err
 	}
@@ -495,6 +496,29 @@ func stringField(fields map[string]storage.Value, name string) string {
 		return ""
 	}
 	return strings.TrimSpace(value.String)
+}
+
+func applyCustomSettingInsertDefaults(org *storage.OrgState, definition storage.ObjectDefinition, record *storage.Record) {
+	if org == nil || record == nil || !storage.IsCustomSettingDefinition(definition) {
+		return
+	}
+	if record.Fields == nil {
+		record.Fields = make(map[string]storage.Value)
+	}
+	orgID := strings.TrimSpace(org.OrgID)
+	if orgID == "" {
+		orgID = "00D000000000001"
+	}
+	if value, ok := record.Fields["Name"]; !ok || value.Kind == storage.ValueNull || (value.Kind == storage.ValueString && strings.TrimSpace(value.String) == "") {
+		record.Fields["Name"] = storage.StringValue(orgID)
+	}
+	if strings.EqualFold(definition.Metadata["customSettingsType"], "Hierarchy") {
+		if _, fieldOK := definition.Fields["SetupOwnerId"]; fieldOK {
+			if value, ok := record.Fields["SetupOwnerId"]; !ok || value.Kind == storage.ValueNull || (value.Kind == storage.ValueString && strings.TrimSpace(value.String) == "") {
+				record.Fields["SetupOwnerId"] = storage.StringValue(orgID)
+			}
+		}
+	}
 }
 
 func applyFieldDefaults(definition storage.ObjectDefinition, record *storage.Record) {

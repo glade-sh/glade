@@ -31,6 +31,22 @@ func TestExecSystemAssertEqualsIsCaseInsensitive(t *testing.T) {
 	}
 }
 
+func TestExecNumericEqualityCrossIntegerDecimal(t *testing.T) {
+	program, err := CompileAnonymous(`
+Object integerValue = 100;
+Object decimalValue = 100.0;
+System.assert(integerValue == decimalValue);
+System.assert(!(integerValue != decimalValue));
+System.assertEquals(integerValue, decimalValue);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecUserTypesAndMembersAreCaseInsensitive(t *testing.T) {
 	echo, err := CompileAnonymous("return 'ok';")
 	if err != nil {
@@ -158,6 +174,29 @@ System.assertEquals(null, missing?.length());
 
 func TestCompileStringEndingWithEscapedQuote(t *testing.T) {
 	program, err := CompileAnonymous(`String value = 'BYELARUS\''; System.assertEquals('BYELARUS''', value);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCompileAcceptsLongLiteralSuffix(t *testing.T) {
+	program, err := CompileAnonymous(`System.assertEquals(9, 9L);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCompileAcceptsFinalLocalDeclaration(t *testing.T) {
+	program, err := CompileAnonymous(`
+final Account insertedOpp = new Account(Name = 'Original');
+System.assertEquals('Original', insertedOpp.Name);
+`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -668,6 +707,25 @@ System.assert(!(mapObject instanceof Map<Integer, SObject>), 'Map<String,Account
 	org := testDataOrg()
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecInstanceOfHonorsNumericWidening(t *testing.T) {
+	program, err := CompileAnonymous(`
+Integer count = 3;
+Long longer = 3L;
+Decimal amount = 3.5;
+System.assert(count instanceof Decimal);
+System.assert(count instanceof Double);
+System.assert(longer instanceof Decimal);
+System.assert(amount instanceof Double);
+System.assert(!(amount instanceof Integer));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }

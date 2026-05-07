@@ -80,6 +80,9 @@ func lex(source string) ([]token, error) {
 					i++
 				}
 			}
+			if i < len(source) && (source[i] == 'L' || source[i] == 'l') {
+				i++
+			}
 			tokens = append(tokens, token{kind: tokenNumber, text: source[start:i], pos: start})
 		case source[i] == '\'':
 			start := i
@@ -419,27 +422,13 @@ func (p *parser) parseStatement() (ir.Instruction, error) {
 		return inst, nil
 	}
 
+	if p.peek(tokenIdent, "final") && p.isDeclarationStartAfterFinal() {
+		p.advance()
+		return p.parseDeclaration(start.pos)
+	}
+
 	if p.isDeclarationStart() {
-		typeName, err := p.parseTypeName()
-		if err != nil {
-			return ir.Instruction{}, err
-		}
-		name, err := p.expect(tokenIdent, "")
-		if err != nil {
-			return ir.Instruction{}, err
-		}
-		inst := ir.Instruction{Op: ir.OpDeclare, Type: typeName, Name: name.text, Pos: start.pos}
-		if p.match(tokenSymbol, "=") {
-			expr, err := p.parseExpression()
-			if err != nil {
-				return ir.Instruction{}, err
-			}
-			inst.Expr = expr
-		}
-		if _, err := p.expect(tokenSymbol, ";"); err != nil {
-			return ir.Instruction{}, err
-		}
-		return inst, nil
+		return p.parseDeclaration(start.pos)
 	}
 
 	if inst, ok, err := p.parseAssignmentLike(true); ok || err != nil {
@@ -542,6 +531,10 @@ func (p *parser) parseFor(pos int) (ir.Instruction, error) {
 }
 
 func (p *parser) parseForParts(end string) ([]ir.Instruction, error) {
+	if p.peek(tokenIdent, "final") && p.isDeclarationStartAfterFinal() {
+		p.advance()
+		return p.parseForDeclarationParts()
+	}
 	if p.isDeclarationStart() {
 		return p.parseForDeclarationParts()
 	}
@@ -590,24 +583,12 @@ func (p *parser) parseForDeclarationParts() ([]ir.Instruction, error) {
 
 func (p *parser) parseForPart() (ir.Instruction, error) {
 	start := p.tokens[p.pos]
+	if p.peek(tokenIdent, "final") && p.isDeclarationStartAfterFinal() {
+		p.advance()
+		return p.parseForDeclarationPart(start.pos)
+	}
 	if p.isDeclarationStart() {
-		typeName, err := p.parseTypeName()
-		if err != nil {
-			return ir.Instruction{}, err
-		}
-		name, err := p.expect(tokenIdent, "")
-		if err != nil {
-			return ir.Instruction{}, err
-		}
-		inst := ir.Instruction{Op: ir.OpDeclare, Type: typeName, Name: name.text, Pos: start.pos}
-		if p.match(tokenSymbol, "=") {
-			expr, err := p.parseExpression()
-			if err != nil {
-				return ir.Instruction{}, err
-			}
-			inst.Expr = expr
-		}
-		return inst, nil
+		return p.parseForDeclarationPart(start.pos)
 	}
 	if inst, ok, err := p.parseAssignmentLike(false); ok || err != nil {
 		return inst, err
@@ -620,6 +601,37 @@ func (p *parser) parseForPart() (ir.Instruction, error) {
 		return ir.Instruction{}, err
 	}
 	return ir.Instruction{Op: ir.OpExpr, Expr: expr, Pos: start.pos}, nil
+}
+
+func (p *parser) parseDeclaration(pos int) (ir.Instruction, error) {
+	inst, err := p.parseForDeclarationPart(pos)
+	if err != nil {
+		return ir.Instruction{}, err
+	}
+	if _, err := p.expect(tokenSymbol, ";"); err != nil {
+		return ir.Instruction{}, err
+	}
+	return inst, nil
+}
+
+func (p *parser) parseForDeclarationPart(pos int) (ir.Instruction, error) {
+	typeName, err := p.parseTypeName()
+	if err != nil {
+		return ir.Instruction{}, err
+	}
+	name, err := p.expect(tokenIdent, "")
+	if err != nil {
+		return ir.Instruction{}, err
+	}
+	inst := ir.Instruction{Op: ir.OpDeclare, Type: typeName, Name: name.text, Pos: pos}
+	if p.match(tokenSymbol, "=") {
+		expr, err := p.parseExpression()
+		if err != nil {
+			return ir.Instruction{}, err
+		}
+		inst.Expr = expr
+	}
+	return inst, nil
 }
 
 func (p *parser) parseAssignmentLike(requireSemicolon bool) (ir.Instruction, bool, error) {
@@ -1076,11 +1088,12 @@ func (p *parser) parsePostfix(expr ir.Expr) (ir.Expr, error) {
 func (p *parser) parsePrimary() (ir.Expr, error) {
 	switch tok := p.advance(); tok.kind {
 	case tokenNumber:
-		if strings.Contains(tok.text, ".") {
-			if _, err := strconv.ParseFloat(tok.text, 64); err != nil {
+		numberText := strings.TrimSuffix(strings.TrimSuffix(tok.text, "L"), "l")
+		if strings.Contains(numberText, ".") {
+			if _, err := strconv.ParseFloat(numberText, 64); err != nil {
 				return ir.Expr{}, fmt.Errorf("invalid decimal %q at byte %d", tok.text, tok.pos)
 			}
-		} else if _, err := strconv.ParseInt(tok.text, 10, 64); err != nil {
+		} else if _, err := strconv.ParseInt(numberText, 10, 64); err != nil {
 			return ir.Expr{}, fmt.Errorf("invalid integer %q at byte %d", tok.text, tok.pos)
 		}
 		return ir.Expr{Kind: ir.ExprLiteral, Value: tok.text}, nil
@@ -1344,6 +1357,17 @@ func (p *parser) isDeclarationStart() bool {
 		return false
 	}
 	ok := p.peek(tokenIdent, "")
+	p.pos = save
+	return ok
+}
+
+func (p *parser) isDeclarationStartAfterFinal() bool {
+	if !p.peek(tokenIdent, "final") {
+		return false
+	}
+	save := p.pos
+	p.advance()
+	ok := p.isDeclarationStart()
 	p.pos = save
 	return ok
 }
