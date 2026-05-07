@@ -31,6 +31,21 @@ func TestExecSystemAssertEqualsIsCaseInsensitive(t *testing.T) {
 	}
 }
 
+func TestExecKeywordsAreCaseInsensitive(t *testing.T) {
+	program, err := CompileAnonymous(`
+Object value = NULL;
+System.assertEquals(null, value);
+Object built = NEW Account(Name = 'Acme');
+System.assert(built != NULL);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecNumericEqualityCrossIntegerDecimal(t *testing.T) {
 	program, err := CompileAnonymous(`
 Object integerValue = 100;
@@ -654,6 +669,31 @@ System.assert(Account.Name != Account.Id);
 	}
 	machine := New(nil)
 	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSchemaSObjectTypeFieldsPathReturnsFieldToken(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(Contact.LastName, Schema.Contact.SObjectType.fields.lastName);
+System.assertEquals(Account.AccountNumber, Schema.Account.SObjectType.fields.AccountNumber);
+Boolean sawContacts = false;
+for (Schema.ChildRelationship relationship : Account.SObjectType.getDescribe().getChildRelationships()) {
+  if (relationship.getRelationshipName() == 'Contacts') {
+    sawContacts = true;
+  }
+}
+System.assert(sawContacts);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	storage.EnsureStandardObject(&org, "Contact")
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)

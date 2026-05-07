@@ -3900,7 +3900,7 @@ func valueHashCode(value Value) int32 {
 		return hash
 	case ValueObject:
 		if value.Type == "Type" {
-			if typeName, ok := platformScalarValue(value); ok {
+			if typeName := typeValueText(value); typeName != "" {
 				return javaStringHashCode(typeName)
 			}
 		}
@@ -3924,42 +3924,48 @@ func platformScalarValue(value Value) (string, bool) {
 }
 
 func (vm *VM) callIdMember(receiver Value, method string, args []Value) (Value, bool, error) {
-	if receiver.Kind != ValueString {
+	idText, ok := idValueText(receiver)
+	if !ok {
 		return Null, false, nil
 	}
-	switch method {
+	switch strings.ToLower(method) {
+	case "tostring":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("Id.toString expects 0 arguments")
+		}
+		return String(idText), true, nil
 	case "to15":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("Id.to15 expects 0 arguments")
 		}
-		if err := validateApexID(receiver.Text); err != nil {
+		if err := validateApexID(idText); err != nil {
 			return Null, true, err
 		}
-		if len(receiver.Text) == 15 {
-			return String(receiver.Text), true, nil
+		if len(idText) == 15 {
+			return String(idText), true, nil
 		}
-		return String(receiver.Text[:15]), true, nil
+		return String(idText[:15]), true, nil
 	case "to18":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("Id.to18 expects 0 arguments")
 		}
-		if err := validateApexID(receiver.Text); err != nil {
+		if err := validateApexID(idText); err != nil {
 			return Null, true, err
 		}
-		if len(receiver.Text) == 18 {
-			return String(receiver.Text), true, nil
+		if len(idText) == 18 {
+			return String(idText), true, nil
 		}
-		return String(apexIDTo18(receiver.Text)), true, nil
-	case "getSObjectType":
+		return String(apexIDTo18(idText)), true, nil
+	case "getsobjecttype":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("Id.getSObjectType expects 0 arguments")
 		}
-		if err := validateApexID(receiver.Text); err != nil {
+		if err := validateApexID(idText); err != nil {
 			return Null, true, err
 		}
-		objectName, ok := vm.sObjectNameForIDPrefix(receiver.Text[:3])
+		objectName, ok := vm.sObjectNameForIDPrefix(idText[:3])
 		if !ok {
-			return Null, true, fmt.Errorf("System.StringException: Invalid id prefix: %s", receiver.Text[:3])
+			return Null, true, fmt.Errorf("System.StringException: Invalid id prefix: %s", idText[:3])
 		}
 		token := Object("Schema.SObjectType")
 		token.Fields["object"] = String(objectName)
@@ -3967,6 +3973,28 @@ func (vm *VM) callIdMember(receiver Value, method string, args []Value) (Value, 
 	default:
 		return Null, false, nil
 	}
+}
+
+func idValueText(value Value) (string, bool) {
+	if value.Kind == ValueString {
+		return value.Text, true
+	}
+	if value.Kind == ValueObject && strings.EqualFold(value.Type, "Id") {
+		return platformScalarObjectText(value)
+	}
+	return "", false
+}
+
+func idMemberReceiver(value Value, method string) bool {
+	switch strings.ToLower(method) {
+	case "to15", "to18", "getsobjecttype":
+	default:
+		return false
+	}
+	if value.Kind == ValueObject && strings.EqualFold(value.Type, "Id") {
+		return true
+	}
+	return value.Kind == ValueString && strings.EqualFold(value.Type, "Id")
 }
 
 func validateApexID(text string) error {

@@ -197,7 +197,9 @@ func TestEnsureDeterministicPlatformDataSeedsCommonSalesObjects(t *testing.T) {
 	for objectName, wantPrefix := range map[string]string{
 		"Contact":                "003",
 		"Opportunity":            "006",
+		"OpportunityLineItem":    "00k",
 		"OpportunityContactRole": "00K",
+		"PricebookEntry":         "01u",
 		"Product2":               "01t",
 	} {
 		EnsureStandardObject(&org, objectName)
@@ -225,16 +227,22 @@ func TestEnsureDeterministicPlatformDataSeedsCommonSalesObjects(t *testing.T) {
 	if field, ok := org.Objects["Product2"].Definition.Fields["IsActive"]; !ok || field.Type != FieldBoolean {
 		t.Fatalf("Product2.IsActive field = %#v, %v", field, ok)
 	}
+	if _, ok := org.Objects["Pricebook2"].Records["01s000000000001"]; !ok {
+		t.Fatalf("standard Pricebook2 record was not seeded: %#v", org.Objects["Pricebook2"].Records)
+	}
 }
 
 func TestEnsureStandardObjectAddsSalesCloudStandardObjectShape(t *testing.T) {
 	org := NewOrgState()
 
+	EnsureStandardObject(&org, "Account")
 	EnsureStandardObject(&org, "Lead")
 	EnsureStandardObject(&org, "Opportunity")
 	EnsureStandardObject(&org, "CampaignMember")
 	EnsureStandardObject(&org, "OpportunityContactRole")
 	EnsureStandardObject(&org, "OrderItem")
+	EnsureStandardObject(&org, "OpportunityLineItem")
+	EnsureStandardObject(&org, "PricebookEntry")
 
 	if org.Objects["Lead"].Definition.KeyPrefix != "00Q" {
 		t.Fatalf("Lead key prefix = %q", org.Objects["Lead"].Definition.KeyPrefix)
@@ -247,6 +255,9 @@ func TestEnsureStandardObjectAddsSalesCloudStandardObjectShape(t *testing.T) {
 	}
 	if field, ok := org.Objects["Lead"].Definition.Fields["LastName"]; !ok || !field.Required {
 		t.Fatalf("Lead.LastName field = %#v, %v", field, ok)
+	}
+	if field, ok := org.Objects["Account"].Definition.Fields["AccountNumber"]; !ok || field.Type != FieldString {
+		t.Fatalf("Account.AccountNumber field = %#v, %v", field, ok)
 	}
 	if field, ok := org.Objects["CampaignMember"].Definition.Fields["CampaignId"]; !ok || field.Type != FieldReference || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "Campaign" || !field.Required {
 		t.Fatalf("CampaignMember.CampaignId field = %#v, %v", field, ok)
@@ -289,6 +300,12 @@ func TestEnsureStandardObjectAddsSalesCloudStandardObjectShape(t *testing.T) {
 	}
 	if field, ok := org.Objects["OrderItem"].Definition.Fields["OrderId"]; !ok || field.Type != FieldReference || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "Order" {
 		t.Fatalf("OrderItem.OrderId field = %#v, %v", field, ok)
+	}
+	if field, ok := org.Objects["OpportunityLineItem"].Definition.Fields["PricebookEntryId"]; !ok || field.Type != FieldReference || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "PricebookEntry" {
+		t.Fatalf("OpportunityLineItem.PricebookEntryId field = %#v, %v", field, ok)
+	}
+	if field, ok := org.Objects["PricebookEntry"].Definition.Fields["Product2Id"]; !ok || field.Type != FieldReference || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "Product2" {
+		t.Fatalf("PricebookEntry.Product2Id field = %#v, %v", field, ok)
 	}
 }
 

@@ -1100,7 +1100,7 @@ func (p *parser) parsePrimary() (ir.Expr, error) {
 	case tokenString:
 		return ir.Expr{Kind: ir.ExprLiteral, Value: "'" + strings.ReplaceAll(tok.text, "'", "''") + "'"}, nil
 	case tokenIdent:
-		if tok.text == "new" {
+		if strings.EqualFold(tok.text, "new") {
 			typeName, err := p.parseTypeName()
 			if err != nil {
 				return ir.Expr{}, err
@@ -1111,9 +1111,9 @@ func (p *parser) parsePrimary() (ir.Expr, error) {
 			}
 			return ir.Expr{Kind: ir.ExprCall, Callee: "new:" + typeName, Args: args, NamedArgs: namedArgs}, nil
 		}
-		switch tok.text {
+		switch strings.ToLower(tok.text) {
 		case "true", "false", "null":
-			return ir.Expr{Kind: ir.ExprLiteral, Value: tok.text}, nil
+			return ir.Expr{Kind: ir.ExprLiteral, Value: strings.ToLower(tok.text)}, nil
 		}
 		name := tok.text
 		for p.match(tokenSymbol, ".") {

@@ -42,6 +42,8 @@ Map<String,Object> parsed = (Map<String,Object>)Json.deserializeStrict('{"Name":
 System.assertEquals('Acme', (String)parsed.get('Name'));
 Map<String,Object> parsedSystem = (Map<String,Object>)System.JSON.deserialize('{"Name":"Trail"}', Map<String,Object>.class);
 System.assertEquals('Trail', (String)parsedSystem.get('Name'));
+Map<String,Object> parsedLower = (Map<String,Object>)json.deserialize('{"Name":"Lower"}', Map<String,Object>.class);
+System.assertEquals('Lower', (String)parsedLower.get('Name'));
 Map<String,List<String>> parsedNested = (Map<String,List<String>>)JSON.deserialize('{"Account":["Id","Name"]}', Map<String,List<String>>.Class);
 System.assertEquals('Name', parsedNested.get('Account')[1]);
 `)

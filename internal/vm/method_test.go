@@ -2178,6 +2178,59 @@ System.assertEquals('expected-value', named);
 	}
 }
 
+func TestExecSystemAssertEqualsUsesApexEqualsOverride(t *testing.T) {
+	equalsProgram, err := CompileAnonymous("return true;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	notEqualsProgram, err := CompileAnonymous("return false;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+System.assertEquals(new EqualBox(), new EqualBox());
+System.assertNotEquals(new DistinctBox(), new DistinctBox());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "EqualBox",
+		Methods: map[string]Method{
+			"equals": {Name: "EqualBox.equals", ClassName: "EqualBox", ReturnType: "Boolean", Params: []Param{{Name: "other", Type: "Object"}}, Program: equalsProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "DistinctBox",
+		Methods: map[string]Method{
+			"equals": {Name: "DistinctBox.equals", ClassName: "DistinctBox", ReturnType: "Boolean", Params: []Param{{Name: "other", Type: "Object"}}, Program: notEqualsProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestTypeHashCodeUsesTypeName(t *testing.T) {
+	if valueHashCode(platformScalar("Type", "Integer")) == valueHashCode(platformScalar("Type", "String")) {
+		t.Fatal("Type.hashCode ignored the type name")
+	}
+}
+
+func TestStubProxyStringUsesGeneratedApexStubTypeName(t *testing.T) {
+	proxy := Object("fflib_MyList")
+	proxy.Fields["__oaerStubbedType"] = String("fflib_MyList")
+	got := proxy.String()
+	if !strings.HasPrefix(got, "fflib_MyList__sfdc_ApexStub:") {
+		t.Fatalf("proxy string = %q", got)
+	}
+}
+
 func TestExecUserObjectEqualityUsesIdentity(t *testing.T) {
 	program, err := CompileAnonymous(`
 Box first = new Box();

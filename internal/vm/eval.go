@@ -8,7 +8,7 @@ import (
 )
 
 func parseLiteral(raw string) (Value, error) {
-	switch raw {
+	switch strings.ToLower(raw) {
 	case "true":
 		return Bool(true), nil
 	case "false":

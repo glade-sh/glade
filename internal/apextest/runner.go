@@ -658,6 +658,9 @@ func orgFromIndex(index typesys.Index) storage.OrgState {
 			Records:    make(map[storage.ID]storage.Record),
 		}
 	}
+	for _, objectName := range storage.KnownStandardObjectNames() {
+		storage.EnsureStandardObject(&org, objectName)
+	}
 	_ = storage.ApplyCustomMetadataRecords(&org, index.CustomMetadataRecords)
 	if index.Project.Root != "" {
 		if p, err := project.Load(index.Project.Root); err == nil {

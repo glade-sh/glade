@@ -1837,11 +1837,11 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			callee = "URL.getCurrentRequestUrl"
 		}
 	}
-	if strings.HasPrefix(callee, "Json.") {
-		callee = "JSON." + strings.TrimPrefix(callee, "Json.")
+	if strings.HasPrefix(strings.ToLower(callee), "json.") {
+		callee = "JSON." + callee[5:]
 	}
-	if strings.HasPrefix(callee, "DateTime.") {
-		callee = "Datetime." + strings.TrimPrefix(callee, "DateTime.")
+	if strings.HasPrefix(strings.ToLower(callee), "datetime.") {
+		callee = "Datetime." + callee[9:]
 	}
 	callee = normalizeStaticCallCasing(callee)
 	if strings.HasPrefix(strings.ToLower(callee), "system.") {
@@ -1900,7 +1900,11 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		if len(args) != 2 && len(args) != 3 {
 			return Null, fmt.Errorf("System.assertEquals expects 2 or 3 arguments")
 		}
-		if !args[0].Equal(args[1]) {
+		equal, err := vm.apexEquals(args[0], args[1], result)
+		if err != nil {
+			return Null, err
+		}
+		if !equal {
 			expected, err := vm.displayString(args[0], result)
 			if err != nil {
 				return Null, err
@@ -1920,7 +1924,11 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		if len(args) != 2 && len(args) != 3 {
 			return Null, fmt.Errorf("System.assertNotEquals expects 2 or 3 arguments")
 		}
-		if args[0].Equal(args[1]) {
+		equal, err := vm.apexEquals(args[0], args[1], result)
+		if err != nil {
+			return Null, err
+		}
+		if equal {
 			value, err := vm.displayString(args[0], result)
 			if err != nil {
 				return Null, err
@@ -8432,6 +8440,9 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 			})
 			for _, relationship := range relationships {
 				if relationshipTargetsObject(relationship, name) {
+					if relationship.ChildRelationship == "" {
+						relationship.ChildRelationship = childDefinition.PluralLabel
+					}
 					childRelationships = append(childRelationships, childRelationshipValue(childName, relationship))
 				}
 			}
@@ -9137,10 +9148,7 @@ func (vm *VM) lookupSObjectFieldToken(parts []string) (Value, bool) {
 	if vm.Org == nil || len(parts) < 2 {
 		return Null, false
 	}
-	objectName, ok := storage.ResolveObjectName(*vm.Org, parts[0])
-	if !ok {
-		return Null, false
-	}
+	objectName := parts[0]
 	fieldName := ""
 	switch {
 	case len(parts) == 2:
@@ -9149,9 +9157,17 @@ func (vm *VM) lookupSObjectFieldToken(parts []string) (Value, bool) {
 		fieldName = parts[2]
 	case len(parts) == 4 && strings.EqualFold(parts[1], "SObjectType") && strings.EqualFold(parts[2], "Fields"):
 		fieldName = parts[3]
+	case len(parts) == 5 && strings.EqualFold(parts[0], "Schema") && strings.EqualFold(parts[2], "SObjectType") && strings.EqualFold(parts[3], "Fields"):
+		objectName = parts[1]
+		fieldName = parts[4]
 	default:
 		return Null, false
 	}
+	canonicalObject, ok := storage.ResolveObjectName(*vm.Org, objectName)
+	if !ok {
+		return Null, false
+	}
+	objectName = canonicalObject
 	definition := vm.Org.Objects[objectName].Definition
 	canonical, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, fieldName)
 	if !ok {
@@ -9186,6 +9202,25 @@ func (vm *VM) callSchemaSObjectTypePath(callee string, args []Value, result *Res
 		}
 		value, _, _, _, err := vm.callPlatformObjectMember(fields, "getMap", nil, result)
 		return value, true, err
+	}
+	if len(parts) >= 4 && strings.EqualFold(parts[len(parts)-2], "fields") {
+		tokenParts := parts[:len(parts)-2]
+		token, ok := vm.lookupSObjectTypeToken(tokenParts)
+		if !ok {
+			return Null, false, nil
+		}
+		objectValue, ok := token.Fields["object"]
+		if !ok || objectValue.Kind != ValueString {
+			return Null, true, fmt.Errorf("%s token missing object", callee)
+		}
+		fieldToken, ok := vm.lookupSObjectFieldToken([]string{objectValue.Text, parts[len(parts)-1]})
+		if !ok {
+			return Null, false, nil
+		}
+		if len(args) == 0 {
+			return fieldToken, true, nil
+		}
+		return Null, true, fmt.Errorf("%s does not accept arguments", callee)
 	}
 	if len(parts) >= 5 && strings.EqualFold(parts[len(parts)-3], "fields") {
 		tokenParts := parts[:len(parts)-3]
@@ -13704,7 +13739,7 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			return value, true, err
 		}
 	}
-	if receiverType := vm.VarTypes[receiverName]; strings.EqualFold(receiverType, "Id") {
+	if receiverType := vm.VarTypes[receiverName]; strings.EqualFold(receiverType, "Id") || idMemberReceiver(receiver, method) {
 		if value, handled, err := vm.callIdMember(receiver, method, args); handled || err != nil {
 			return value, true, err
 		}
@@ -14244,33 +14279,48 @@ func canonicalCollectionMemberName(collection, method string) string {
 }
 
 func canonicalPlatformObjectMemberName(typeName, method string) string {
-	if !isExceptionType(typeName) {
-		return method
+	known := []string{
+		"get", "iterator",
+		"getQuery",
+		"getJobId", "getTriggerId",
+		"getAsyncApexJobId", "getRequestId", "getResult", "getException",
+		"getDuplicateSignature", "setDuplicateSignature",
+		"getMaximumQueueableStackDepth", "setMaximumQueueableStackDepth",
+		"getMinimumQueueableDelayInMinutes", "setMinimumQueueableDelayInMinutes",
+		"newSObject", "getDescribe", "getRecordTypeInfosByName",
+		"getMap",
+		"getName", "getLabel", "getType", "getSOAPType", "getSoapType",
+		"isNillable", "isExternalId", "isUnique", "isEncrypted", "isNameField",
+		"getReferenceTo", "getRelationshipName", "getPicklistValues",
+		"getController", "getControllerValues", "isAccessible", "isCreateable", "isUpdateable",
+		"to15", "to18", "getSObjectType",
+		"toStartOfMonth", "format", "toString", "date", "time",
+		"equals", "hashCode", "newInstance", "isAssignableFrom",
+		"send", "toExternalForm", "getProtocol", "getHost", "getAuthority",
+		"getPath", "getQuery", "getRef", "getFile", "getPort", "getDefaultPort",
 	}
-	for _, known := range []string{
-		"getMessage",
-		"setMessage",
-		"getNumDml",
-		"getDmlMessage",
-		"getDmlStatusCode",
-		"getDmlFields",
-		"getDmlId",
-		"getDmlIndex",
-		"getCause",
-		"initCause",
-		"getDescription",
-		"getIndex",
-		"getPattern",
-		"getTypeName",
-		"getLineNumber",
-		"getStackTraceString",
-		"toString",
-	} {
-		if strings.EqualFold(method, known) {
-			return known
-		}
+	if isExceptionType(typeName) {
+		known = append(known,
+			"getMessage",
+			"setMessage",
+			"getNumDml",
+			"getDmlMessage",
+			"getDmlStatusCode",
+			"getDmlFields",
+			"getDmlId",
+			"getDmlIndex",
+			"getCause",
+			"initCause",
+			"getDescription",
+			"getIndex",
+			"getPattern",
+			"getTypeName",
+			"getLineNumber",
+			"getStackTraceString",
+			"toString",
+		)
 	}
-	return method
+	return canonicalStdlibMemberName(method, known...)
 }
 
 func sObjectAddErrorMessage(args []Value, name string) (string, error) {
@@ -16738,6 +16788,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			return offset, receiver, false, true, nil
 		}
 	case "Id":
+		if value, handled, err := vm.callIdMember(receiver, method, args); handled || err != nil {
+			return value, receiver, false, true, err
+		}
 		switch method {
 		case "toString":
 			if len(args) != 0 {

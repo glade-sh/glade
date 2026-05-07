@@ -656,7 +656,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		"Website": {APIName: "Website", Type: FieldString},
 		"Phone":   {APIName: "Phone", Type: FieldString},
 	})
-	for _, objectName := range []string{"Account", "Contact", "Opportunity", "Product2"} {
+	for _, objectName := range []string{"Account", "Contact", "Opportunity", "Pricebook2", "Product2"} {
 		existing := append([]RecordTypeInfo(nil), org.Objects[objectName].Definition.RecordTypes...)
 		EnsureStandardObject(org, objectName)
 		state := org.Objects[objectName]
@@ -674,6 +674,15 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	userID := ID("005000000000001")
 	permissionSetID := ID("0PS000000000001")
 	assignmentID := ID("0Pa000000000001")
+	putSeedRecord(org, "Pricebook2", Record{
+		ID:     ID("01s000000000001"),
+		Object: "Pricebook2",
+		Fields: map[string]Value{
+			"Name":       StringValue("Standard Price Book"),
+			"IsActive":   BooleanValue(true),
+			"IsStandard": BooleanValue(true),
+		},
+	})
 	putSeedRecord(org, "Organization", Record{
 		ID:     orgID,
 		Object: "Organization",

@@ -2374,6 +2374,25 @@ func loadTestIndex(t *testing.T, root string) typesys.Index {
 	return typesys.Build(p, s)
 }
 
+func TestOrgFromIndexIncludesGeneratedStandardSchema(t *testing.T) {
+	org := orgFromIndex(typesys.Index{})
+
+	for objectName, fieldName := range map[string]string{
+		"Account":             "AccountNumber",
+		"Task":                "WhatId",
+		"PricebookEntry":      "Product2Id",
+		"OpportunityLineItem": "PricebookEntryId",
+	} {
+		state, ok := org.Objects[objectName]
+		if !ok {
+			t.Fatalf("%s object was not exposed", objectName)
+		}
+		if _, ok := state.Definition.Fields[fieldName]; !ok {
+			t.Fatalf("%s.%s field was not exposed; fields=%#v", objectName, fieldName, state.Definition.Fields)
+		}
+	}
+}
+
 func TestOrgFromIndexIncludesProjectStaticResources(t *testing.T) {
 	root := filepath.Join("..", "..", "example-projects", "src-nmb-nutpl-develop")
 	if _, err := os.Stat(filepath.Join(root, "sfdx-project.json")); err != nil {

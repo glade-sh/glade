@@ -1,6 +1,9 @@
 package storage
 
-import "strings"
+import (
+	"sort"
+	"strings"
+)
 
 // EnsureStandardObjectFields adds public Salesforce standard fields for objects
 // whose project metadata commonly only carries custom-field deltas.
@@ -51,6 +54,9 @@ func ensureCommonRecordTypeField(definition *ObjectDefinition) {
 
 func standardFieldsForObject(objectName string) []Field {
 	if _, ok := standardObjectCatalogEntryFor(objectName); ok {
+		if stringsEqualFold(objectName, "Account") {
+			return []Field{{APIName: "AccountNumber", Label: "Account Number", Type: FieldString}}
+		}
 		return nil
 	}
 	switch {
@@ -186,6 +192,15 @@ func standardFieldsForObject(objectName string) []Field {
 			{APIName: "UnitPrice", Label: "Sales Price", Type: FieldDecimal},
 			{APIName: "TotalPrice", Label: "Total Price", Type: FieldDecimal},
 		}
+	case stringsEqualFold(objectName, "PricebookEntry"):
+		return []Field{
+			{APIName: "Name", Label: "Price Book Entry Name", Type: FieldString},
+			{APIName: "Pricebook2Id", Label: "Price Book ID", Type: FieldReference, ReferenceTo: []string{"Pricebook2"}, RelationshipName: "Pricebook2", Required: true},
+			{APIName: "Product2Id", Label: "Product ID", Type: FieldReference, ReferenceTo: []string{"Product2"}, RelationshipName: "Product2", Required: true},
+			{APIName: "UnitPrice", Label: "List Price", Type: FieldDecimal, Required: true},
+			{APIName: "IsActive", Label: "Active", Type: FieldBoolean},
+			{APIName: "UseStandardPrice", Label: "Use Standard Price", Type: FieldBoolean},
+		}
 	case stringsEqualFold(objectName, "EmailTemplate"):
 		return []Field{
 			{APIName: "ApiVersion", Label: "API Version", Type: FieldDecimal},
@@ -290,6 +305,35 @@ func IsKnownStandardObject(objectName string) bool {
 		return false
 	}
 	return len(standardFieldsForObject(objectName)) > 0
+}
+
+func KnownStandardObjectNames() []string {
+	names := make(map[string]bool)
+	for name := range StandardKeyPrefixes() {
+		names[name] = true
+	}
+	for name := range standardObjectCatalogData {
+		names[name] = true
+	}
+	for _, name := range []string{
+		"Account",
+		"Contact",
+		"EmailTemplate",
+		"EntityDefinition",
+		"FieldDefinition",
+		"KnowledgeArticleVersion",
+		"OpportunityContactRole",
+		"OpportunityLineItem",
+		"PricebookEntry",
+	} {
+		names[name] = true
+	}
+	out := make([]string, 0, len(names))
+	for name := range names {
+		out = append(out, name)
+	}
+	sort.Strings(out)
+	return out
 }
 
 func mergeStandardObjectDefinition(definition *ObjectDefinition, features []string) {

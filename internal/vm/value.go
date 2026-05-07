@@ -105,6 +105,9 @@ func (v Value) String() string {
 	case ValueMap:
 		return mapString(v.Map)
 	case ValueObject:
+		if stubbedType, ok := stubProxyTypeName(v); ok {
+			return fmt.Sprintf("%s__sfdc_ApexStub:%d", stubbedType, v.Ref)
+		}
 		if v.Type == "PageReference" {
 			if rawURL, ok := v.Fields["url"]; ok && rawURL.Kind == ValueString {
 				return rawURL.Text
@@ -133,6 +136,17 @@ func (v Value) String() string {
 	default:
 		return fmt.Sprintf("<%s>", v.Kind)
 	}
+}
+
+func stubProxyTypeName(value Value) (string, bool) {
+	if value.Kind != ValueObject {
+		return "", false
+	}
+	raw, ok := value.Fields["__oaerStubbedType"]
+	if !ok || raw.Kind != ValueString || raw.Text == "" {
+		return "", false
+	}
+	return raw.Text, true
 }
 
 func (v Value) Equal(other Value) bool {

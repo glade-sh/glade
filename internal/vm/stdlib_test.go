@@ -1761,6 +1761,31 @@ System.assertEquals('Trail__c', customDescribe.getName());
 	}
 }
 
+func TestExecIDMembersAreCaseInsensitive(t *testing.T) {
+	program, err := CompileAnonymous(`
+Id accountId = Id.valueOf('001B000001DVM9t');
+System.assertEquals('001B000001DVM9t', accountId.to15());
+System.assertEquals('001B000001DVM9tIAH', accountId.TO18());
+System.assertEquals('Account', accountId.getSobjectType().getDescribe().getName());
+Object boxedId = accountId;
+System.assertEquals('Account', boxedId.getSOBJECTTYPE().getDescribe().getName());
+System.assertEquals('Account', Account.SObjectType.GETDESCRIBE().GETNAME());
+System.assert(Account.SObjectType.fields.Name.GETDESCRIBE().ISUPDATEABLE());
+URL detailed = new URL('https://example.test:8443/apex/Page?id=001#top');
+System.assertEquals('https', detailed.GETPROTOCOL());
+System.assertEquals('example.test', detailed.getHOST());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSObjectGetSObjectTypeForInstancesAndStaticTypes(t *testing.T) {
 	program, err := CompileAnonymous(`
 Event_Log__c event = new Event_Log__c();
