@@ -5776,6 +5776,7 @@ func (vm *VM) populateDMLResultFields(value *Value, results []dml.Result) {
 			return
 		}
 		putSystemFields(*value, record.System)
+		value.Fields[sobjectQueriedFieldsField] = queriedSObjectFieldsValue(objectName, dmlVisibleSObjectFields(value))
 	}
 }
 
@@ -8421,7 +8422,11 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 	if collectionBase(typeName) == "List" {
 		items, ok := raw.([]any)
 		if !ok {
-			return Null, jsonTypeMappingError(typeName, raw)
+			if records, recordsOK := jsonQueryResultRecords(raw); recordsOK {
+				items = records
+			} else {
+				return Null, jsonTypeMappingError(typeName, raw)
+			}
 		}
 		elementType, _ := collectionElementType(typeName)
 		out := List()
@@ -8509,6 +8514,16 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 		if key == "attributes" {
 			continue
 		}
+		if _, hasRecords := jsonQueryResultRecords(item); hasRecords {
+			if relationshipType, ok := vm.jsonSObjectChildRelationshipType(typeName, key); ok {
+				value, err := vm.typedValueFromJSON(relationshipType, item, strict)
+				if err != nil {
+					return Null, err
+				}
+				obj.Fields[key] = value
+				continue
+			}
+		}
 		if field, _, ok := vm.lookupField(typeName, key); ok && field.Type != "" {
 			value, err := vm.typedValueFromJSON(field.Type, item, strict)
 			if err != nil {
@@ -8551,6 +8566,16 @@ func (vm *VM) sObjectValueFromJSON(raw any, strict bool) (Value, error) {
 		if key == "attributes" {
 			continue
 		}
+		if _, hasRecords := jsonQueryResultRecords(item); hasRecords {
+			if relationshipType, ok := vm.jsonSObjectChildRelationshipType(typeName, key); ok {
+				value, err := vm.typedValueFromJSON(relationshipType, item, strict)
+				if err != nil {
+					return Null, err
+				}
+				obj.Fields[key] = value
+				continue
+			}
+		}
 		if fieldType, ok := vm.jsonSObjectFieldType(typeName, key); ok {
 			value, err := vm.typedValueFromJSON(fieldType, item, strict)
 			if err != nil {
@@ -8562,6 +8587,15 @@ func (vm *VM) sObjectValueFromJSON(raw any, strict bool) (Value, error) {
 		obj.Fields[key] = valueFromJSON(item)
 	}
 	return obj, nil
+}
+
+func jsonQueryResultRecords(raw any) ([]any, bool) {
+	fields, ok := raw.(map[string]any)
+	if !ok {
+		return nil, false
+	}
+	records, ok := fields["records"].([]any)
+	return records, ok
 }
 
 func (vm *VM) jsonSObjectFieldType(typeName, fieldName string) (string, bool) {
@@ -8597,6 +8631,32 @@ func (vm *VM) jsonSObjectFieldType(typeName, fieldName string) (string, bool) {
 	}
 }
 
+func (vm *VM) jsonSObjectChildRelationshipType(typeName, relationshipName string) (string, bool) {
+	if vm.Org == nil {
+		return "", false
+	}
+	parentObject, ok := storage.ResolveObjectName(*vm.Org, typeName)
+	if !ok {
+		return "", false
+	}
+	for childName, childState := range vm.Org.Objects {
+		childRelationshipName := ""
+		for _, relation := range childState.Definition.Relations {
+			if !relationshipTargetsObject(relation, parentObject) {
+				continue
+			}
+			childRelationshipName = relation.ChildRelationship
+			if childRelationshipName == "" {
+				childRelationshipName = derivedVMChildRelationshipName(childState.Definition)
+			}
+			if vmRelationshipNameMatches(vm.Org.Namespace, childRelationshipName, relationshipName) {
+				return "List<" + childName + ">", true
+			}
+		}
+	}
+	return "", false
+}
+
 func (vm *VM) isJSONTypedObjectTarget(typeName string) bool {
 	if _, ok := vm.Classes[typeName]; ok {
 		return true
@@ -8627,18 +8687,36 @@ func typedScalarFromJSON(typeName string, raw any) (Value, bool, error) {
 	case "Boolean":
 		value, ok := raw.(bool)
 		if !ok {
+			if text, textOK := raw.(string); textOK {
+				parsed, err := strconv.ParseBool(strings.ToLower(strings.TrimSpace(text)))
+				if err == nil {
+					return Bool(parsed), true, nil
+				}
+			}
 			return Null, true, jsonTypeMappingError(canonical, raw)
 		}
 		return Bool(value), true, nil
 	case "Integer", "Long":
 		value, ok := jsonIntegralNumber(raw)
 		if !ok {
+			if text, textOK := raw.(string); textOK {
+				parsed, err := strconv.ParseInt(strings.TrimSpace(text), 10, 64)
+				if err == nil {
+					return Int(parsed), true, nil
+				}
+			}
 			return Null, true, jsonTypeMappingError(canonical, raw)
 		}
 		return Int(value), true, nil
 	case "Decimal", "Double":
 		value, ok := jsonDecimalNumber(raw)
 		if !ok {
+			if text, textOK := raw.(string); textOK {
+				parsed, err := strconv.ParseFloat(strings.TrimSpace(text), 64)
+				if err == nil {
+					return Decimal(parsed), true, nil
+				}
+			}
 			return Null, true, jsonTypeMappingError(canonical, raw)
 		}
 		return Decimal(value), true, nil
@@ -8932,9 +9010,26 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 	sort.Strings(fieldNames)
 	for _, fieldName := range fieldNames {
 		field := definition.Fields[fieldName]
-		token := sObjectFieldToken(name, field.APIName)
-		fieldsMap.Map[mapKey(String(field.APIName))] = token
-		if lowered := strings.ToLower(field.APIName); lowered != field.APIName {
+		apiName := field.APIName
+		if strings.TrimSpace(apiName) == "" {
+			apiName = fieldName
+		}
+		if strings.TrimSpace(apiName) == "" {
+			continue
+		}
+		token := sObjectFieldToken(name, apiName)
+		fieldsMap.Map[mapKey(String(apiName))] = token
+		if lowered := strings.ToLower(apiName); lowered != apiName {
+			fieldsMap.Map[mapKey(String(lowered))] = token
+		}
+	}
+	for _, fieldName := range []string{"Id", "Name", "CreatedDate", "CreatedById", "LastModifiedDate", "LastModifiedById", "SystemModstamp"} {
+		if _, ok := fieldsMap.Map[mapKey(String(fieldName))]; ok {
+			continue
+		}
+		token := sObjectFieldToken(name, fieldName)
+		fieldsMap.Map[mapKey(String(fieldName))] = token
+		if lowered := strings.ToLower(fieldName); lowered != fieldName {
 			fieldsMap.Map[mapKey(String(lowered))] = token
 		}
 	}
@@ -9113,6 +9208,9 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 	definition := vm.Org.Objects[objectName].Definition
 	fieldName, ok = storage.ResolveFieldName(definition, vm.Org.Namespace, fieldName)
 	if !ok {
+		if strings.TrimSpace(fieldName) == "" {
+			return emptySObjectFieldDescribe(objectName), nil
+		}
 		return Null, fmt.Errorf("Schema field describe unknown field %s.%s", objectName, fieldName)
 	}
 	field := definition.Fields[fieldName]
@@ -9163,6 +9261,24 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 	}
 	desc.Fields["picklistValues"] = List(picklistValues...)
 	return desc, nil
+}
+
+func emptySObjectFieldDescribe(objectName string) Value {
+	desc := Object("Schema.DescribeFieldResult")
+	desc.Fields["name"] = String("")
+	desc.Fields["sObjectName"] = String(objectName)
+	desc.Fields["label"] = String("")
+	desc.Fields["type"] = String("")
+	desc.Fields["soapType"] = schemaSOAPTypeValue("xsd:string")
+	desc.Fields["nillable"] = Bool(true)
+	desc.Fields["externalId"] = Bool(false)
+	desc.Fields["unique"] = Bool(false)
+	desc.Fields["encrypted"] = Bool(false)
+	desc.Fields["nameField"] = Bool(false)
+	desc.Fields["relationshipName"] = Null
+	desc.Fields["referenceTo"] = List()
+	desc.Fields["picklistValues"] = List()
+	return desc
 }
 
 type approxVisitKey struct {
@@ -11905,6 +12021,13 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 		if len(namedArgs) > 0 {
 			return Null, fmt.Errorf("List constructor does not accept named fields")
 		}
+		if len(args) == 1 && args[0].Kind == ValueList {
+			if elementType, ok := collectionElementType(typeName); ok && collectionBase(elementType) != "" {
+				if element, err := vm.coerceAssignable(elementType, args[0]); err == nil {
+					return vm.coerceAssignable(typeName, List(element))
+				}
+			}
+		}
 		if len(args) == 1 && (args[0].Kind == ValueList || args[0].Kind == ValueSet) {
 			value := List(append([]Value(nil), collectionMembers(args[0])...)...)
 			return vm.coerceAssignable(typeName, value)
@@ -13784,6 +13907,11 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 		}
 		return value, nil
 	}
+	if collectionBase(typeName) == "List" && value.Kind == ValueMap {
+		if records, ok := queryResultRecordsList(value); ok {
+			return vm.coerceAssignable(typeName, records)
+		}
+	}
 	if collectionBase(typeName) == "Set" && value.Kind == ValueSet {
 		value.Type = typeName
 		elementType, ok := collectionElementType(typeName)
@@ -15432,14 +15560,17 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 			if errors.Is(err, errSObjectFieldTokenWrongObject) {
 				return Null, true, newExceptionError("SObjectException", err.Error())
 			}
-			return Null, true, fmt.Errorf("SObject.get expects field name String or Schema.SObjectField: %w", err)
+			if errors.Is(err, errSObjectFieldTokenNull) {
+				return Null, true, newExceptionError("SObjectException", err.Error())
+			}
+			return Null, true, fmt.Errorf("SObject.get expects field name String or Schema.SObjectField")
 		}
 		field := vm.resolveSObjectFieldName(receiver.Type, fieldArg)
+		if err := vm.unqueriedSObjectFieldError(receiver, field); err != nil {
+			return Null, true, err
+		}
 		value, ok := receiver.Fields[field]
 		if !ok {
-			if err := vm.unqueriedSObjectFieldError(receiver, field); err != nil {
-				return Null, true, err
-			}
 			if value, ok := vm.missingSObjectFieldValue(receiver.Type, field); ok {
 				return value, true, nil
 			}
@@ -15577,6 +15708,20 @@ func queriedSObjectFieldsValue(objectName string, fields map[string]bool) Value 
 		value.Map[mapKey(String(field))] = Bool(true)
 	}
 	return value
+}
+
+func dmlVisibleSObjectFields(value *Value) map[string]bool {
+	fields := map[string]bool{"id": true}
+	if value == nil || value.Kind != ValueObject {
+		return fields
+	}
+	for field := range value.Fields {
+		if isInternalSObjectField(field) || isSObjectSystemField(field) {
+			continue
+		}
+		fields[strings.ToLower(field)] = true
+	}
+	return fields
 }
 
 func (vm *VM) unqueriedSObjectFieldError(receiver Value, field string) error {
@@ -15813,10 +15958,14 @@ func (vm *VM) sObjectFieldArg(receiverType string, value Value) (string, error) 
 		}
 		return field.Text, nil
 	}
+	if value.Kind == ValueNull && strings.EqualFold(value.Type, "Schema.SObjectField") {
+		return "", errSObjectFieldTokenNull
+	}
 	return "", fmt.Errorf("expected field name")
 }
 
 var errSObjectFieldTokenWrongObject = errors.New("field token belongs to another SObject type")
+var errSObjectFieldTokenNull = errors.New("field token is null")
 
 func apexPagesSeverityStaticValue(name string) (Value, bool) {
 	prefix := "ApexPages.Severity."

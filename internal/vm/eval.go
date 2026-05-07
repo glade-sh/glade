@@ -291,6 +291,11 @@ func coerceAssignable(typeName string, value Value) (Value, error) {
 	if collectionBase(typeName) == "List" && value.Kind == ValueList {
 		return coerceCollectionValue(typeName, value)
 	}
+	if collectionBase(typeName) == "List" && value.Kind == ValueMap {
+		if records, ok := queryResultRecordsList(value); ok {
+			return coerceCollectionValue(typeName, records)
+		}
+	}
 	if collectionBase(typeName) == "Set" && value.Kind == ValueSet {
 		return coerceCollectionValue(typeName, value)
 	}

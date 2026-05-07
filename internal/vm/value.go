@@ -254,6 +254,20 @@ func valueIdentityEqual(left, right Value) bool {
 	}
 }
 
+func queryResultRecordsList(value Value) (Value, bool) {
+	if value.Kind != ValueMap {
+		return Null, false
+	}
+	records, ok := value.Map[mapKey(String("records"))]
+	if !ok {
+		return Null, false
+	}
+	if records.Kind != ValueList {
+		return Null, false
+	}
+	return records, true
+}
+
 func platformScalarObjectText(value Value) (string, bool) {
 	if value.Kind != ValueObject {
 		return "", false

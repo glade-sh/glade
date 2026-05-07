@@ -961,6 +961,43 @@ System.assertEquals('001B000001DVM9t', parent.toString());
 	}
 }
 
+func TestExecJSONDeserializeSObjectChildRelationshipRecords(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account decoded = JSON.deserialize('{"Name":"Acme","NumberOfEmployees":"7","Contacts":{"totalSize":"2","done":"true","records":[{"attributes":{"type":"Contact"},"LastName":"One","DoNotCall":"true"},{"attributes":{"type":"Contact"},"LastName":"Two","DoNotCall":"false"}]}}', Account.class);
+Integer employees = decoded.NumberOfEmployees;
+System.assertEquals(7, employees);
+List<Contact> contacts = decoded.Contacts;
+System.assertEquals(2, contacts.size());
+System.assertEquals('One', contacts[0].LastName);
+System.assertEquals(true, contacts[0].DoNotCall);
+System.assertEquals('Two', contacts[1].LastName);
+System.assertEquals(false, contacts[1].DoNotCall);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["NumberOfEmployees"] = storage.Field{APIName: "NumberOfEmployees", Type: storage.FieldInteger}
+	org.Objects["Account"] = account
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:     "Contact",
+			Label:       "Contact",
+			PluralLabel: "Contacts",
+			KeyPrefix:   "003",
+			Fields:      map[string]storage.Field{"LastName": {APIName: "LastName", Type: storage.FieldString}, "DoNotCall": {APIName: "DoNotCall", Type: storage.FieldBoolean}, "AccountId": {APIName: "AccountId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Account"}},
+			Relations:   []storage.Relationship{{Field: "AccountId", ParentObjects: []string{"Account"}, ParentRelationship: "Account", ChildRelationship: "Contacts"}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecJSONDeserializeStrictRejectsDuplicateFields(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account decoded = JSON.deserializeStrict('{"Name":"First","Name":"Second"}', Account.class);

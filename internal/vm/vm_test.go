@@ -754,6 +754,8 @@ func TestExecMapSObjectFieldKeysRoundTripToSObjectGet(t *testing.T) {
 Map<String, Schema.SObjectField> fields = Account.SObjectType.getDescribe().fields.getMap();
 Schema.SObjectField idField = fields.get('Id');
 Schema.SObjectField nameField = fields.get('Name');
+Schema.SObjectField createdDateField = fields.get('CreatedDate');
+System.assertNotEquals(null, createdDateField);
 Account record = new Account(Id = '001000000000001AAA', Name = 'Acme');
 Map<Schema.SObjectField, Object> expected = new Map<Schema.SObjectField, Object>{
   idField => record.Id,
@@ -762,12 +764,38 @@ Map<Schema.SObjectField, Object> expected = new Map<Schema.SObjectField, Object>
 for (Schema.SObjectField fieldToken : expected.keySet()) {
   System.assertEquals(expected.get(fieldToken), record.get(fieldToken));
 }
+System.assert(record.get(createdDateField) != System.now());
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	machine := New(nil)
 	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecNestedListInitializerPreservesInnerList(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<List<Contact>> nested = new List<List<Contact>>{ new List<Contact>{ new Contact(LastName = 'One'), new Contact(LastName = 'Two') } };
+System.assertEquals(1, nested.size());
+System.assertEquals(2, nested[0].size());
+System.assertEquals('Two', nested[0][1].LastName);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Contact",
+			Fields:  map[string]storage.Field{"LastName": {APIName: "LastName", Type: storage.FieldString}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
@@ -793,9 +821,42 @@ Map<Schema.SObjectField, Object> expected = new Map<Schema.SObjectField, Object>
 for (Schema.SObjectField fieldToken : expected.keySet()) {
   System.assertEquals(expected.get(fieldToken), queried.get(fieldToken));
 }
+Boolean unqueriedCaught = false;
+try {
+  queried.get(accountFields.get('CreatedDate'));
+} catch (Exception e) {
+  unqueriedCaught = true;
+}
+System.assert(unqueriedCaught);
 Boolean caught = false;
 try {
   globalDescribe.get('Opportunity').newSObject().get(accountFields.get('Id'));
+} catch (Exception e) {
+  caught = true;
+}
+System.assert(caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDMLSObjectGetTreatsAuditFieldsAsUnqueried(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account record = new Account(Name = 'Acme');
+insert record;
+System.assert(record.CreatedDate != null);
+Map<String, Schema.SObjectField> fields = Account.SObjectType.getDescribe().fields.getMap();
+System.assertEquals('Acme', record.get(fields.get('Name')));
+Boolean caught = false;
+try {
+  record.get(fields.get('CreatedDate'));
 } catch (Exception e) {
   caught = true;
 }
