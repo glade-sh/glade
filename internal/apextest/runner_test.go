@@ -400,6 +400,34 @@ private class CanceledTest {
 	}
 }
 
+func TestRunContextPerTestDeadlineDoesNotCancelFollowingTests(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/PerTestTimeoutTest.cls"), `
+@isTest
+private class PerTestTimeoutTest {
+  @isTest static void a_hangs() {
+    while (true) {}
+  }
+  @isTest static void z_passes() {
+    System.assert(true);
+  }
+}
+`)
+
+	run := RunContext(context.Background(), loadTestIndex(t, root), Options{TimeoutMS: 5})
+	if got := run.Summary(); got.Total != 2 || got.Passed != 1 || got.Failed != 1 {
+		t.Fatalf("summary = %#v cases=%#v", got, run.Suites[0].Cases)
+	}
+	cases := run.Suites[0].Cases
+	if cases[0].Problem == nil {
+		t.Fatalf("first case = %#v", cases[0])
+	}
+	if cases[1].Status != testreport.StatusPass {
+		t.Fatalf("second case = %#v", cases[1])
+	}
+}
+
 func TestRunReportsAssertionFailures(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)

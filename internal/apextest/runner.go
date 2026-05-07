@@ -30,6 +30,7 @@ type Options struct {
 	LimitMode           vm.LimitMode
 	TraceBlocked        bool
 	SlowTestThresholdMS int64
+	TimeoutMS           int64
 }
 
 type TestCase struct {
@@ -101,9 +102,13 @@ func RunContext(ctx context.Context, index typesys.Index, opts Options) testrepo
 		}
 		if _, ok := suites[testCase.ClassName]; !ok {
 			order = append(order, testCase.ClassName)
-			setupOrgs[testCase.ClassName], setupRunErrors[testCase.ClassName] = prepareTestSetupOrg(ctx, testCase.ClassName, methods, classes, setups[testCase.ClassName], setupErrors[testCase.ClassName], triggers, triggerErrors, org, pageNames, opts)
+			setupCtx, setupCancel := testContext(ctx, opts.TimeoutMS)
+			setupOrgs[testCase.ClassName], setupRunErrors[testCase.ClassName] = prepareTestSetupOrg(setupCtx, testCase.ClassName, methods, classes, setups[testCase.ClassName], setupErrors[testCase.ClassName], triggers, triggerErrors, org, pageNames, opts)
+			setupCancel()
 		}
-		suites[testCase.ClassName] = append(suites[testCase.ClassName], runCase(ctx, testCase, methods, classes, setupRunErrors[testCase.ClassName], triggers, triggerErrors, setupOrgs[testCase.ClassName], pageNames, opts))
+		caseCtx, caseCancel := testContext(ctx, opts.TimeoutMS)
+		suites[testCase.ClassName] = append(suites[testCase.ClassName], runCase(caseCtx, testCase, methods, classes, setupRunErrors[testCase.ClassName], triggers, triggerErrors, setupOrgs[testCase.ClassName], pageNames, opts))
+		caseCancel()
 	}
 
 	run := testreport.Run{Name: "oaer test"}
@@ -111,6 +116,13 @@ func RunContext(ctx context.Context, index typesys.Index, opts Options) testrepo
 		run.Suites = append(run.Suites, testreport.Suite{Name: name, Cases: suites[name]})
 	}
 	return run
+}
+
+func testContext(parent context.Context, timeoutMS int64) (context.Context, context.CancelFunc) {
+	if timeoutMS <= 0 {
+		return parent, func() {}
+	}
+	return context.WithTimeout(parent, time.Duration(timeoutMS)*time.Millisecond)
 }
 
 func prepareTestSetupOrg(ctx context.Context, className string, methods map[string]vm.Method, classes []vm.Class, setups []vm.Method, setupErr error, triggers []vm.Trigger, triggerErrors []error, org storage.OrgState, pageNames []string, opts Options) (storage.OrgState, error) {
@@ -173,6 +185,11 @@ func runCase(ctx context.Context, testCase TestCase, methods map[string]vm.Metho
 		return out
 	}
 	if setupErr != nil {
+		if errors.Is(setupErr, context.Canceled) || errors.Is(setupErr, context.DeadlineExceeded) {
+			out.Status = testreport.StatusUnsupported
+			out.Problem = problem("Canceled", setupErr.Error(), testCase)
+			return out
+		}
 		out.Status = testreport.StatusUnsupported
 		out.Problem = problem("UnsupportedFeature", setupErr.Error(), testCase)
 		return out
@@ -222,7 +239,11 @@ func runCase(ctx context.Context, testCase TestCase, methods map[string]vm.Metho
 	}
 	result, err := machine.Execute(program)
 	if err != nil {
-		out.Status = testreport.StatusFail
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			out.Status = testreport.StatusUnsupported
+		} else {
+			out.Status = testreport.StatusFail
+		}
 		out.Problem = problemFromError(err, testCase)
 	}
 	out.DurationMS = time.Since(started).Milliseconds()
@@ -1302,6 +1323,9 @@ func problem(kind, message string, testCase TestCase) *testreport.Problem {
 }
 
 func problemFromError(err error, testCase TestCase) *testreport.Problem {
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return problem("Canceled", err.Error(), testCase)
+	}
 	var runtimeErr *vm.RuntimeError
 	if errors.As(err, &runtimeErr) {
 		stack := make([]testreport.StackFrame, 0, len(runtimeErr.Stack))

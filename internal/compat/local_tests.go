@@ -156,6 +156,7 @@ func RunLocalTests(options LocalTestOptions) (LocalTestReport, error) {
 		Filter:              localTestFilter(options),
 		TraceBlocked:        true,
 		SlowTestThresholdMS: options.SlowTestThresholdMS,
+		TimeoutMS:           options.TimeoutMS,
 	}
 	cases := apextest.Discover(index, testOpts)
 	cases = filterLocalTestCases(cases, options)
@@ -176,18 +177,10 @@ func RunLocalTests(options LocalTestOptions) (LocalTestReport, error) {
 		return report, nil
 	}
 
-	ctx := context.Background()
-	cancel := func() {}
-	if options.TimeoutMS > 0 {
-		var timeoutCancel context.CancelFunc
-		ctx, timeoutCancel = context.WithTimeout(ctx, time.Duration(options.TimeoutMS)*time.Millisecond)
-		cancel = timeoutCancel
-		if options.ProfileOnTimeout {
-			testOpts.TraceBlocked = true
-		}
+	if options.ProfileOnTimeout {
+		testOpts.TraceBlocked = true
 	}
-	defer cancel()
-	run := apextest.RunContext(ctx, index, testOpts)
+	run := apextest.RunContext(context.Background(), index, testOpts)
 	for _, suite := range run.Suites {
 		for _, testCase := range suite.Cases {
 			if !matchesLocalTestCase(testCase.ClassName, testCase.MethodName, options) {
