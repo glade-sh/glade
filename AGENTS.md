@@ -183,11 +183,11 @@ startup, and compat commands.
   failures; fix the general parser, sema, VM, SOQL, DML, storage, metadata, or
   server behavior.
 - The checked post-parity readiness inventory is currently green for the
-  `example-projects` corpus (`filesScanned=51067 findings=0
+  `example-projects` corpus (`filesScanned=51075 findings=0
   testBlockingFindings=0 surfaces=0`). Treat that as a scanner/readiness gate,
-  not a blanket full-runtime claim; the local-test corpus still keeps explicit
-  unsupported runtime cases visible when they are outside the current support
-  claim.
+  not a blanket full-runtime claim. The checked local-test corpus is also green;
+  future unsupported runtime cases should remain explicit when they are outside
+  the current support claim.
 - Keep the parser behind `internal/apexast`. The current parser module is
   `github.com/open-aer/apex-parser` with a local replacement; parser cutover
   details live in `docs/APEX_PARSER_CUTOVER.md`.

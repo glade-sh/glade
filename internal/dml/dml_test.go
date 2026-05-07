@@ -829,6 +829,84 @@ func TestFlowRuleFormulaAndFormulaFieldUpdates(t *testing.T) {
 	}
 }
 
+func TestFlowRecordCreateRunsAndLookupSuppressesDuplicate(t *testing.T) {
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.FlowRules = []storage.FlowRule{{
+		Name:   "CreateActionRequest",
+		Active: true,
+		RecordLookups: []storage.FlowRecordLookup{{
+			Name:               "ExistingRequest",
+			ObjectName:         "ActionRequest__c",
+			GetFirstRecordOnly: true,
+			Criteria: []storage.WorkflowCriteriaItem{
+				{Field: "SourceRecordId__c", Operation: "equals", SourceField: "Id"},
+				{Field: "ActionName__c", Operation: "equals", Value: "Notify"},
+			},
+		}},
+		RecordCreates: []storage.FlowRecordCreate{{
+			Name:       "CreateRequest",
+			ObjectName: "ActionRequest__c",
+			InputAssignments: []storage.WorkflowFieldUpdate{
+				{Name: "ActionName__c", Field: "ActionName__c", LiteralValue: "Notify"},
+				{Name: "SourceRecordId__c", Field: "SourceRecordId__c", SourceField: "Id"},
+				{Name: "Payload__c", Field: "Payload__c", SourceField: "Name"},
+			},
+		}},
+	}}
+	org.Objects["Account"] = account
+	org.Objects["ActionRequest__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "ActionRequest__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"ActionName__c":     {APIName: "ActionName__c", Type: storage.FieldString, Required: true},
+				"SourceRecordId__c": {APIName: "SourceRecordId__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, Required: true},
+				"Payload__c":        {APIName: "Payload__c", Type: storage.FieldString},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")},
+	}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert)
+	}
+	requests := org.Objects["ActionRequest__c"].Records
+	if len(requests) != 1 {
+		t.Fatalf("requests after insert = %#v", requests)
+	}
+	var request storage.Record
+	for _, candidate := range requests {
+		request = candidate
+	}
+	if got := request.Fields["ActionName__c"].String; got != "Notify" {
+		t.Fatalf("action name = %q", got)
+	}
+	if got := request.Fields["SourceRecordId__c"].ID; got != insert[0].ID {
+		t.Fatalf("source record = %q", got)
+	}
+	if got := request.Fields["Payload__c"].String; got != "Acme" {
+		t.Fatalf("payload = %q", got)
+	}
+
+	update := engine.Update([]storage.Record{{
+		Object: "Account",
+		ID:     insert[0].ID,
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Acme Updated")},
+	}})
+	if !update[0].Success {
+		t.Fatalf("update = %#v", update)
+	}
+	if got := len(org.Objects["ActionRequest__c"].Records); got != 1 {
+		t.Fatalf("lookup should suppress duplicate record create, got %d records", got)
+	}
+}
+
 func TestWorkflowFieldUpdateRejectsInvalidSourceFieldAndRollsBack(t *testing.T) {
 	org := testOrg()
 	account := org.Objects["Account"]

@@ -2241,6 +2241,15 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			"count":     len(describes),
 		})
 		return List(describes...), nil
+	case "Schema.describeTabs":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Schema.describeTabs expects 0 arguments")
+		}
+		appendTrace(result, "apex.describe.tabs", "apex.describe", map[string]any{
+			"operation": "describeTabs",
+			"count":     len(vm.schemaDescribeTabValues()),
+		})
+		return vm.schemaDescribeTabs(), nil
 	case "FeatureManagement.checkPermission":
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("FeatureManagement.checkPermission expects String")
@@ -2271,16 +2280,9 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		}
 		return Null, nil
 	case "Metadata.Operations.enqueueDeployment":
-		if len(args) != 2 || args[0].Kind != ValueObject || args[0].Type != "Metadata.DeployContainer" {
-			return Null, fmt.Errorf("Metadata.Operations.enqueueDeployment expects DeployContainer and DeployCallback")
-		}
-		deployID := "0Af000000000001"
-		return platformScalar("Id", deployID), nil
+		return vm.metadataEnqueueDeployment(args)
 	case "Metadata.Operations.retrieve":
-		if len(args) < 2 || len(args) > 3 {
-			return Null, fmt.Errorf("Metadata.Operations.retrieve expects metadata type and full names")
-		}
-		return List(), nil
+		return vm.metadataRetrieve(args)
 	case "UserManagement.initSelfRegistration":
 		if len(args) != 2 {
 			return Null, fmt.Errorf("UserManagement.initSelfRegistration expects 2 arguments")
@@ -7681,6 +7683,51 @@ func (vm *VM) schemaDescribeObjectName(value Value) (string, error) {
 		return objectValue.Text, nil
 	}
 	return "", fmt.Errorf("Schema.describeSObjects expects object names or SObjectType tokens")
+}
+
+func (vm *VM) schemaDescribeTabs() Value {
+	tabs := vm.schemaDescribeTabValues()
+	if len(tabs) == 0 {
+		return List()
+	}
+	tabSet := Object("Schema.DescribeTabSetResult")
+	tabSet.Fields["name"] = String("AllTabs")
+	tabSet.Fields["label"] = String("All Tabs")
+	tabSet.Fields["tabs"] = List(tabs...)
+	tabSet.Fields["selected"] = Bool(false)
+	return List(tabSet)
+}
+
+func (vm *VM) schemaDescribeTabValues() []Value {
+	if vm.Org == nil || len(vm.Org.Metadata.Tabs) == 0 {
+		return nil
+	}
+	tabs := append([]storage.TabMetadata(nil), vm.Org.Metadata.Tabs...)
+	sort.Slice(tabs, func(i, j int) bool { return tabs[i].Name < tabs[j].Name })
+	values := make([]Value, 0, len(tabs))
+	for _, tab := range tabs {
+		values = append(values, describeTabValue(tab))
+	}
+	return values
+}
+
+func describeTabValue(tab storage.TabMetadata) Value {
+	value := Object("Schema.DescribeTabResult")
+	label := tab.Label
+	if label == "" {
+		label = tab.Name
+	}
+	value.Fields["name"] = String(tab.Name)
+	value.Fields["label"] = String(label)
+	if strings.TrimSpace(tab.SObjectName) == "" {
+		value.Fields["sObjectName"] = Null
+	} else {
+		value.Fields["sObjectName"] = String(tab.SObjectName)
+	}
+	value.Fields["custom"] = Bool(tab.Custom)
+	value.Fields["iconUrl"] = String(tab.Motif)
+	value.Fields["url"] = String("/lightning/o/" + tab.Name + "/list")
+	return value
 }
 
 func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinition) Value {
@@ -13174,6 +13221,316 @@ func metadataMetadataTypeValues(args []Value) (Value, error) {
 	return namedEnumValues("Metadata.MetadataType", metadataMetadataTypeNames, args)
 }
 
+func (vm *VM) metadataEnqueueDeployment(args []Value) (Value, error) {
+	if len(args) != 2 || args[0].Kind != ValueObject || args[0].Type != "Metadata.DeployContainer" {
+		return Null, fmt.Errorf("Metadata.Operations.enqueueDeployment expects DeployContainer and DeployCallback")
+	}
+	if args[1].Kind != ValueNull {
+		return Null, unsupportedCallError("Metadata.Operations.enqueueDeployment deploy callback invocation")
+	}
+	items := args[0].Fields["metadata"]
+	if items.Kind == ValueNull || (items.Kind == ValueList && len(items.List) == 0) {
+		return platformScalar("Id", "0Af000000000001"), nil
+	}
+	if items.Kind != ValueList {
+		return Null, fmt.Errorf("Metadata.DeployContainer.metadata must be a list")
+	}
+	if vm.Org == nil {
+		return Null, unsupportedCallError("Metadata.Operations.enqueueDeployment requires org storage for local metadata mutation")
+	}
+	for _, item := range items.List {
+		if err := vm.applyCustomMetadataDeployment(item); err != nil {
+			return Null, err
+		}
+	}
+	return platformScalar("Id", "0Af000000000001"), nil
+}
+
+func (vm *VM) applyCustomMetadataDeployment(item Value) error {
+	if item.Kind != ValueObject || item.Type != "Metadata.CustomMetadata" {
+		typeName := string(item.Kind)
+		if item.Type != "" {
+			typeName = item.Type
+		}
+		return unsupportedCallError("Metadata.Operations.enqueueDeployment " + typeName + " metadata deploy")
+	}
+	fullName, ok := metadataStringField(item, "fullName")
+	if !ok || strings.TrimSpace(fullName) == "" {
+		return fmt.Errorf("Metadata.CustomMetadata.fullName is required")
+	}
+	objectName, developerName := metadataCustomMetadataNames(fullName)
+	if objectName == "" || developerName == "" {
+		return fmt.Errorf("Metadata.CustomMetadata.fullName must be Type.Record")
+	}
+	state := vm.metadataCustomMetadataState(objectName)
+	definition := state.Definition
+	recordFields := map[string]storage.Value{
+		"DeveloperName":    storage.StringValue(developerName),
+		"MasterLabel":      storage.StringValue(metadataLabelOrDefault(item, developerName)),
+		"Label":            storage.StringValue(metadataLabelOrDefault(item, developerName)),
+		"NamespacePrefix":  storage.StringValue(metadataNamespacePrefix(vm.Org.Namespace, definition.APIName)),
+		"QualifiedApiName": storage.StringValue(metadataQualifiedAPIName(vm.Org.Namespace, definition.APIName, developerName)),
+	}
+	values := item.Fields["values"]
+	if values.Kind != ValueNull {
+		if values.Kind != ValueList {
+			return fmt.Errorf("Metadata.CustomMetadata.values must be a list")
+		}
+		for _, valueItem := range values.List {
+			fieldName, fieldValue, err := vm.metadataCustomMetadataValue(definition, valueItem)
+			if err != nil {
+				return err
+			}
+			recordFields[fieldName] = fieldValue
+		}
+	}
+	var recordID storage.ID
+	for _, existing := range state.Records {
+		if customDataRecordMatches(definition, "custom metadata", existing, developerName, vm.Org.Namespace) ||
+			customDataRecordMatches(definition, "custom metadata", existing, fullName, vm.Org.Namespace) {
+			recordID = existing.ID
+			break
+		}
+	}
+	if recordID == "" {
+		recordID = nextMetadataRecordID(state)
+	}
+	record := storage.Record{ID: recordID, Object: definition.APIName, Fields: recordFields}
+	record.Fields["Id"] = storage.IDValue(recordID)
+	state.Records[recordID] = record
+	vm.Org.Objects[definition.APIName] = state
+	return nil
+}
+
+func (vm *VM) metadataCustomMetadataState(objectName string) storage.ObjectState {
+	state := vm.Org.Objects[objectName]
+	if state.Definition.APIName == "" {
+		state.Definition.APIName = objectName
+	}
+	if state.Definition.KeyPrefix == "" {
+		state.Definition.KeyPrefix = storage.AssignDeterministicPrefixes([]string{objectName}, nil)[objectName]
+	}
+	if state.Definition.Metadata == nil {
+		state.Definition.Metadata = map[string]string{"kind": "customMetadata"}
+	}
+	if state.Definition.Fields == nil {
+		state.Definition.Fields = make(map[string]storage.Field)
+	}
+	for _, field := range []storage.Field{
+		{APIName: "DeveloperName", Type: storage.FieldString},
+		{APIName: "MasterLabel", Type: storage.FieldString},
+		{APIName: "Label", Type: storage.FieldString},
+		{APIName: "NamespacePrefix", Type: storage.FieldString},
+		{APIName: "QualifiedApiName", Type: storage.FieldString},
+	} {
+		if _, ok := state.Definition.Fields[field.APIName]; !ok {
+			state.Definition.Fields[field.APIName] = field
+		}
+	}
+	storage.EnsureStandardObjectFields(&state.Definition)
+	if state.Records == nil {
+		state.Records = make(map[storage.ID]storage.Record)
+	}
+	vm.Org.Objects[objectName] = state
+	return state
+}
+
+func (vm *VM) metadataCustomMetadataValue(definition storage.ObjectDefinition, item Value) (string, storage.Value, error) {
+	if item.Kind != ValueObject || item.Type != "Metadata.CustomMetadataValue" {
+		return "", storage.Value{}, fmt.Errorf("Metadata.CustomMetadata.values expects CustomMetadataValue entries")
+	}
+	fieldName, ok := metadataStringField(item, "field")
+	if !ok || strings.TrimSpace(fieldName) == "" {
+		return "", storage.Value{}, fmt.Errorf("Metadata.CustomMetadataValue.field is required")
+	}
+	resolved, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, fieldName)
+	if !ok {
+		value := item.Fields["value"]
+		fieldType := metadataFieldTypeFromValue(value)
+		resolved = storage.NamespaceTokenName(vm.Org.Namespace, fieldName)
+		definition.Fields[resolved] = storage.Field{APIName: resolved, Type: fieldType}
+		if state, exists := vm.Org.Objects[definition.APIName]; exists {
+			state.Definition.Fields[resolved] = definition.Fields[resolved]
+			vm.Org.Objects[definition.APIName] = state
+		}
+	}
+	converted, err := storageValueFromVMForField(item.Fields["value"], definition.Fields[resolved].Type)
+	if err != nil {
+		return "", storage.Value{}, fmt.Errorf("Metadata.CustomMetadataValue.%s %v", fieldName, err)
+	}
+	return resolved, converted, nil
+}
+
+func metadataFieldTypeFromValue(value Value) storage.FieldType {
+	switch value.Kind {
+	case ValueBool:
+		return storage.FieldBoolean
+	case ValueInt:
+		return storage.FieldInteger
+	case ValueDecimal:
+		return storage.FieldDecimal
+	case ValueObject:
+		switch value.Type {
+		case "Date":
+			return storage.FieldDate
+		case "Datetime", "DateTime":
+			return storage.FieldDateTime
+		case "Id":
+			return storage.FieldID
+		}
+	}
+	return storage.FieldString
+}
+
+func (vm *VM) metadataRetrieve(args []Value) (Value, error) {
+	if len(args) < 2 || len(args) > 3 {
+		return Null, fmt.Errorf("Metadata.Operations.retrieve expects metadata type and full names")
+	}
+	if args[0].Kind != ValueObject || args[0].Type != "Metadata.MetadataType" {
+		return Null, fmt.Errorf("Metadata.Operations.retrieve expects metadata type")
+	}
+	if !strings.EqualFold(args[0].Text, "CustomMetadata") {
+		return Null, unsupportedCallError("Metadata.Operations.retrieve " + args[0].Text)
+	}
+	names, err := metadataStringList(args[1])
+	if err != nil {
+		return Null, err
+	}
+	if vm.Org == nil {
+		return List(), nil
+	}
+	out := make([]Value, 0, len(names))
+	for _, fullName := range names {
+		objectName, developerName := metadataCustomMetadataNames(fullName)
+		objectName, ok := storage.ResolveObjectName(*vm.Org, objectName)
+		if !ok {
+			continue
+		}
+		state := vm.Org.Objects[objectName]
+		if !storage.IsCustomMetadataDefinition(state.Definition) {
+			continue
+		}
+		for _, record := range sortedCustomDataRecords(state.Records, state.Definition, "custom metadata", vm.Org.Namespace) {
+			if record.System.IsDeleted {
+				continue
+			}
+			if customDataRecordMatches(state.Definition, "custom metadata", record, developerName, vm.Org.Namespace) ||
+				customDataRecordMatches(state.Definition, "custom metadata", record, fullName, vm.Org.Namespace) {
+				out = append(out, metadataCustomMetadataObject(state.Definition, record))
+				break
+			}
+		}
+	}
+	return List(out...), nil
+}
+
+func metadataCustomMetadataObject(definition storage.ObjectDefinition, record storage.Record) Value {
+	item := Object("Metadata.CustomMetadata")
+	developerName := firstStringField(record, "DeveloperName", "Name")
+	fullName := strings.TrimSuffix(definition.APIName, "__mdt") + "." + developerName
+	item.Fields["fullName"] = String(fullName)
+	item.Fields["label"] = String(firstStringField(record, "MasterLabel", "Label", "DeveloperName", "Name"))
+	values := make([]Value, 0, len(record.Fields))
+	for fieldName, fieldValue := range record.Fields {
+		if isCustomMetadataSystemField(fieldName) {
+			continue
+		}
+		value := Object("Metadata.CustomMetadataValue")
+		value.Fields["field"] = String(fieldName)
+		value.Fields["value"] = vmValueFromStorage(fieldValue)
+		values = append(values, value)
+	}
+	sort.Slice(values, func(i, j int) bool {
+		return values[i].Fields["field"].Text < values[j].Fields["field"].Text
+	})
+	item.Fields["values"] = List(values...)
+	return item
+}
+
+func isCustomMetadataSystemField(fieldName string) bool {
+	switch fieldName {
+	case "Id", "DeveloperName", "MasterLabel", "Label", "NamespacePrefix", "QualifiedApiName", "Name":
+		return true
+	default:
+		return false
+	}
+}
+
+func metadataStringField(value Value, field string) (string, bool) {
+	raw, ok := value.Fields[field]
+	if !ok || raw.Kind != ValueString {
+		return "", false
+	}
+	return raw.Text, true
+}
+
+func metadataStringList(value Value) ([]string, error) {
+	if value.Kind != ValueList && value.Kind != ValueSet {
+		return nil, fmt.Errorf("Metadata.Operations.retrieve expects full names list")
+	}
+	items := value.List
+	if value.Kind == ValueSet {
+		items = value.Set
+	}
+	out := make([]string, 0, len(items))
+	for _, item := range items {
+		if item.Kind != ValueString {
+			return nil, fmt.Errorf("Metadata.Operations.retrieve expects String full names")
+		}
+		out = append(out, item.Text)
+	}
+	return out, nil
+}
+
+func metadataCustomMetadataNames(fullName string) (string, string) {
+	parts := strings.SplitN(strings.TrimSpace(fullName), ".", 2)
+	if len(parts) != 2 {
+		return "", strings.TrimSpace(fullName)
+	}
+	objectName := strings.TrimSpace(parts[0])
+	if !strings.HasSuffix(objectName, "__mdt") {
+		objectName += "__mdt"
+	}
+	return objectName, strings.TrimSpace(parts[1])
+}
+
+func metadataLabelOrDefault(item Value, developerName string) string {
+	if label, ok := metadataStringField(item, "label"); ok && strings.TrimSpace(label) != "" {
+		return label
+	}
+	return developerName
+}
+
+func metadataNamespacePrefix(namespace, objectName string) string {
+	if namespace == "" {
+		return ""
+	}
+	if strings.HasPrefix(objectName, namespace+"__") {
+		return namespace
+	}
+	return ""
+}
+
+func metadataQualifiedAPIName(namespace, objectName, developerName string) string {
+	if metadataNamespacePrefix(namespace, objectName) != "" {
+		return namespace + "__" + developerName
+	}
+	return developerName
+}
+
+func nextMetadataRecordID(state storage.ObjectState) storage.ID {
+	generator := storage.NewIDGenerator(map[string]string{state.Definition.APIName: state.Definition.KeyPrefix})
+	for {
+		id, err := generator.Next(state.Definition.APIName)
+		if err != nil {
+			return storage.ID(state.Definition.KeyPrefix + "000000000001")
+		}
+		if _, exists := state.Records[id]; !exists {
+			return id
+		}
+	}
+}
+
 func namedEnumValues(typeName string, names []string, args []Value) (Value, error) {
 	if len(args) != 0 {
 		return Null, fmt.Errorf("%s.values expects 0 arguments", typeName)
@@ -13794,6 +14151,62 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.FieldSetMap.getMap expects 0 arguments")
 			}
 			return Null, receiver, false, true, unsupportedCallError("Schema.DescribeSObjectResult.fieldSets local field set metadata")
+		}
+	case "Schema.DescribeTabSetResult":
+		switch method {
+		case "getTabs":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeTabSetResult.getTabs expects 0 arguments")
+			}
+			return receiver.Fields["tabs"], receiver, false, true, nil
+		case "getLabel":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeTabSetResult.getLabel expects 0 arguments")
+			}
+			return receiver.Fields["label"], receiver, false, true, nil
+		case "getName":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeTabSetResult.getName expects 0 arguments")
+			}
+			return receiver.Fields["name"], receiver, false, true, nil
+		case "isSelected":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeTabSetResult.isSelected expects 0 arguments")
+			}
+			return receiver.Fields["selected"], receiver, false, true, nil
+		}
+	case "Schema.DescribeTabResult":
+		switch method {
+		case "getLabel":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeTabResult.getLabel expects 0 arguments")
+			}
+			return receiver.Fields["label"], receiver, false, true, nil
+		case "getName":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeTabResult.getName expects 0 arguments")
+			}
+			return receiver.Fields["name"], receiver, false, true, nil
+		case "getSObjectName":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeTabResult.getSObjectName expects 0 arguments")
+			}
+			return receiver.Fields["sObjectName"], receiver, false, true, nil
+		case "isCustom":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeTabResult.isCustom expects 0 arguments")
+			}
+			return receiver.Fields["custom"], receiver, false, true, nil
+		case "getIconUrl":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeTabResult.getIconUrl expects 0 arguments")
+			}
+			return receiver.Fields["iconUrl"], receiver, false, true, nil
+		case "getUrl":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeTabResult.getUrl expects 0 arguments")
+			}
+			return receiver.Fields["url"], receiver, false, true, nil
 		}
 	case "Pattern":
 		return callPatternMember(receiver, method, args)

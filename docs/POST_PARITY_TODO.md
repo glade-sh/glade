@@ -45,7 +45,7 @@ Current checked status:
   `pass=101 fail=0 unsupported=0 missing=0`.
 - The broader post-parity readiness inventory is green for the checked
   `example-projects` corpus. A May 6, 2026
-  `oaer compat post-parity --json` run reported 51,067 files scanned, 0
+  `oaer compat post-parity --json` run reported 51,075 files scanned, 0
   findings, 0 test-blocking findings, and 0 surfaces. This means the known
   scanner/test-readiness blockers for standard schema references, labels,
   static resources, content assets, endpoint metadata, custom metadata type
@@ -54,10 +54,9 @@ Current checked status:
   and modeled Flow record-lookup/record-create shapes have moved out of the
   post-parity blocker frontier.
 - The zero-blocker inventory is not a blanket full-Salesforce claim. The owned
-  local-test corpus still intentionally records an explicit unsupported
-  presentation-metadata tab-describe case, and runtime depth for UI rendering,
-  full metadata mutation, advanced Flow interviews, and local UI/API serving
-  remains tracked below.
+  local-test corpus is green, including local `Schema.describeTabs()` coverage,
+  while runtime depth for UI rendering, full metadata mutation, advanced Flow
+  interviews, and local UI/API serving remains tracked below.
 - Treat this document as the source for broad local-test support beyond the
   green server-example harness.
 
@@ -182,7 +181,7 @@ Current scanner top blockers from the broad post-parity inventory:
 
 | Rank | Blocker |
 | --- | --- |
-| 1 | None. The May 6, 2026 checked scan reports 0 findings, 0 test-blocking findings, and 0 surfaces across 51,067 files. |
+| 1 | None. The May 6, 2026 checked scan reports 0 findings, 0 test-blocking findings, and 0 surfaces across 51,075 files. |
 
 Recently cleared blocker families:
 

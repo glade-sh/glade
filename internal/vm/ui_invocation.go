@@ -11,13 +11,14 @@ import (
 )
 
 type UIInvocationResult struct {
-	Framework   string         `json:"framework"`
-	ClassName   string         `json:"className"`
-	MethodName  string         `json:"methodName"`
-	Success     bool           `json:"success"`
-	ReturnValue any            `json:"returnValue,omitempty"`
-	Error       *UIActionError `json:"error,omitempty"`
-	Trace       []trace.Event  `json:"trace,omitempty"`
+	Framework    string         `json:"framework"`
+	ClassName    string         `json:"className"`
+	MethodName   string         `json:"methodName"`
+	Success      bool           `json:"success"`
+	ReturnValue  any            `json:"returnValue,omitempty"`
+	PageMessages []any          `json:"pageMessages,omitempty"`
+	Error        *UIActionError `json:"error,omitempty"`
+	Trace        []trace.Event  `json:"trace,omitempty"`
 }
 
 type UIActionError struct {
@@ -31,6 +32,56 @@ func (vm *VM) InvokeAuraAction(className, methodName string, params map[string]a
 
 func (vm *VM) InvokeLWCMethod(className, methodName string, params map[string]any) (UIInvocationResult, error) {
 	return vm.invokeUIAction("lwc", className, methodName, params)
+}
+
+func (vm *VM) InvokeVisualforceAction(className, methodName, pageURL string, params map[string]string) (UIInvocationResult, error) {
+	out := UIInvocationResult{Framework: "visualforce", ClassName: className, MethodName: methodName}
+	if strings.TrimSpace(className) == "" || strings.TrimSpace(methodName) == "" {
+		out.Success = false
+		out.Error = &UIActionError{Type: "UnsupportedFeature", Message: "Visualforce action requires controller class and method"}
+		return out, nil
+	}
+	method, ok := vm.resolveInstanceMethod(className, methodName)
+	if !ok || method.IsStatic || len(method.Params) != 0 {
+		out.Success = false
+		out.Error = &UIActionError{Type: "UnsupportedFeature", Message: fmt.Sprintf("no instance Visualforce action %s.%s accepts zero arguments", className, methodName)}
+		return out, nil
+	}
+	if strings.TrimSpace(pageURL) == "" {
+		pageURL = "/apex/current"
+	}
+	vm.currentPage = vm.newPageReference(pageURL)
+	if len(params) > 0 {
+		pageParams := typedMap("Map<String,String>")
+		names := make([]string, 0, len(params))
+		for name := range params {
+			names = append(names, name)
+		}
+		sort.Strings(names)
+		for _, name := range names {
+			pageParams.Map[mapKey(String(name))] = String(params[name])
+		}
+		vm.currentPage.Fields["parameters"] = pageParams
+	}
+	result := &Result{TraceFormat: trace.FormatChromeTraceEvent}
+	controller, err := vm.constructValue(className, nil, nil, result)
+	if err != nil {
+		out.Success = false
+		out.Error = uiInvocationError(err)
+		out.Trace = result.Trace
+		return out, nil
+	}
+	value, err := vm.callMethodWithReceiver(method, controller, nil, result)
+	out.Trace = result.Trace
+	out.PageMessages = jsonListFromValues(vm.pageMessages)
+	if err != nil {
+		out.Success = false
+		out.Error = uiInvocationError(err)
+		return out, nil
+	}
+	out.Success = true
+	out.ReturnValue = jsonFromValue(value, false)
+	return out, nil
 }
 
 func (vm *VM) invokeUIAction(framework, className, methodName string, params map[string]any) (UIInvocationResult, error) {
@@ -126,6 +177,17 @@ func sortedParamNames(params map[string]any) []string {
 	}
 	sort.Strings(names)
 	return names
+}
+
+func jsonListFromValues(values []Value) []any {
+	if len(values) == 0 {
+		return nil
+	}
+	out := make([]any, 0, len(values))
+	for _, value := range values {
+		out = append(out, jsonFromValue(value, false))
+	}
+	return out
 }
 
 func uiMethodSignature(method Method) string {

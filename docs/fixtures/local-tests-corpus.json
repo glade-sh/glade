@@ -132,13 +132,43 @@
       ]
     },
     {
+      "project": "../../testdata/local-tests/visualforce-pages",
+      "ready": true,
+      "summary": {
+        "total": 3,
+        "pass": 3,
+        "fail": 0,
+        "unsupported": 0,
+        "loadError": 0,
+        "compileError": 0,
+        "internalError": 0
+      },
+      "outcomes": [
+        {
+          "class": "VisualforcePagesTest",
+          "method": "pageTokensAndPageReferenceStateAreRegistered",
+          "outcome": "pass"
+        },
+        {
+          "class": "VisualforcePagesTest",
+          "method": "standardControllerExtensionSavesAndKeepsPageState",
+          "outcome": "pass"
+        },
+        {
+          "class": "VisualforcePagesTest",
+          "method": "standardSetControllerAndMessagesResetBetweenMethods",
+          "outcome": "pass"
+        }
+      ]
+    },
+    {
       "project": "../../testdata/local-tests/presentation-metadata",
-      "ready": false,
+      "ready": true,
       "summary": {
         "total": 1,
-        "pass": 0,
+        "pass": 1,
         "fail": 0,
-        "unsupported": 1,
+        "unsupported": 0,
         "loadError": 0,
         "compileError": 0,
         "internalError": 0
@@ -146,9 +176,8 @@
       "outcomes": [
         {
           "class": "PresentationMetadataTest",
-          "method": "tabsAreExplicitlyUnsupportedUntilModeled",
-          "outcome": "unsupported",
-          "capabilityId": "apex.test.unsupported"
+          "method": "describesLocalTabs",
+          "outcome": "pass"
         }
       ]
     },

@@ -9,7 +9,7 @@ Compatibility status:
 - Checked example-project server support is green:
   `pass=101 fail=0 unsupported=0 missing=0`.
 - Checked example-project post-parity readiness inventory is green:
-  `filesScanned=51067 findings=0 testBlockingFindings=0 surfaces=0`.
+  `filesScanned=51075 findings=0 testBlockingFindings=0 surfaces=0`.
 - See [`COMPATIBILITY_DASHBOARD.md`](COMPATIBILITY_DASHBOARD.md) and
   [`KNOWN_GAPS.md`](KNOWN_GAPS.md) for generated status.
 

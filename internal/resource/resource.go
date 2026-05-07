@@ -33,6 +33,13 @@ type translatedLabelXML struct {
 	Label string `xml:"label"`
 }
 
+type tabXML struct {
+	CustomObject bool   `xml:"customObject"`
+	Description  string `xml:"description"`
+	Label        string `xml:"label"`
+	Motif        string `xml:"motif"`
+}
+
 type staticResourceXML struct {
 	CacheControl string `xml:"cacheControl"`
 	ContentType  string `xml:"contentType"`
@@ -100,6 +107,13 @@ func LoadProject(p project.Project) (storage.MetadataRegistry, error) {
 	}
 	registry.EmailTemplates = templates
 	registry.ManagedLabelNamespaces = managedLabelNamespaces(p)
+	for _, path := range p.TabFiles {
+		tab, err := loadTab(path)
+		if err != nil {
+			return storage.MetadataRegistry{}, err
+		}
+		registry.Tabs = append(registry.Tabs, tab)
+	}
 	for _, path := range p.NamedCredentialFiles {
 		endpoint, err := loadNamedCredential(path)
 		if err != nil {
@@ -149,6 +163,47 @@ func URLForStaticResource(registry storage.MetadataRegistry, name, path string) 
 		}
 	}
 	return "", false
+}
+
+func loadTab(path string) (storage.TabMetadata, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return storage.TabMetadata{}, err
+	}
+	var raw tabXML
+	if len(strings.TrimSpace(string(data))) > 0 {
+		if err := xml.Unmarshal(data, &raw); err != nil {
+			return storage.TabMetadata{}, err
+		}
+	}
+	name := metadataNameFromPath(path, ".tab-meta.xml", ".tab")
+	label := strings.TrimSpace(raw.Label)
+	if label == "" {
+		label = name
+	}
+	tab := storage.TabMetadata{
+		Name:        name,
+		Label:       label,
+		Custom:      raw.CustomObject,
+		Motif:       strings.TrimSpace(raw.Motif),
+		Description: strings.TrimSpace(raw.Description),
+		File:        path,
+	}
+	if raw.CustomObject || strings.HasSuffix(strings.ToLower(name), "__c") {
+		tab.SObjectName = name
+	}
+	return tab, nil
+}
+
+func metadataNameFromPath(path string, suffixes ...string) string {
+	base := filepath.Base(path)
+	lower := strings.ToLower(base)
+	for _, suffix := range suffixes {
+		if strings.HasSuffix(lower, strings.ToLower(suffix)) {
+			return base[:len(base)-len(suffix)]
+		}
+	}
+	return strings.TrimSuffix(base, filepath.Ext(base))
 }
 
 func LookupLabel(registry storage.MetadataRegistry, namespace, name string) (string, bool) {
@@ -634,6 +689,7 @@ func sortRegistry(registry *storage.MetadataRegistry) {
 		}
 		return registry.Labels[i].Language < registry.Labels[j].Language
 	})
+	sort.Slice(registry.Tabs, func(i, j int) bool { return registry.Tabs[i].Name < registry.Tabs[j].Name })
 	sort.Slice(registry.StaticResources, func(i, j int) bool { return registry.StaticResources[i].Name < registry.StaticResources[j].Name })
 	sort.Slice(registry.ContentAssets, func(i, j int) bool { return registry.ContentAssets[i].Name < registry.ContentAssets[j].Name })
 	sort.Slice(registry.Endpoints, func(i, j int) bool {

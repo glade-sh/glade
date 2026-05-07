@@ -186,14 +186,28 @@ item.fullName = 'Feature.Default';
 item.label = 'Default';
 Metadata.CustomMetadataValue value = new Metadata.CustomMetadataValue();
 value.field = 'Enabled__c';
-value.value = true;
+value.value = false;
 item.values.add(value);
 container.addMetadata(item);
+Metadata.CustomMetadata created = new Metadata.CustomMetadata();
+created.fullName = 'Feature.Created';
+created.label = 'Created';
+Metadata.CustomMetadataValue createdValue = new Metadata.CustomMetadataValue();
+createdValue.field = 'Enabled__c';
+createdValue.value = true;
+created.values.add(createdValue);
+container.addMetadata(created);
 Id deploymentId = Metadata.Operations.enqueueDeployment(container, null);
 System.assertEquals('0Af000000000001', (String)deploymentId);
-System.assertEquals(1, container.metadata.size());
+System.assertEquals(2, container.metadata.size());
 System.assertEquals(1, item.values.size());
 System.assertEquals('Enabled__c', ((Metadata.CustomMetadataValue)item.values[0]).field);
+Feature__mdt cfg = Feature__mdt.getInstance('Default');
+System.assertEquals('Default', cfg.MasterLabel);
+System.assertEquals(false, cfg.Enabled__c);
+Feature__mdt createdCfg = Feature__mdt.getInstance('Created');
+System.assertEquals('Created', createdCfg.MasterLabel);
+System.assertEquals(true, createdCfg.Enabled__c);
 Metadata.DeployResult result = new Metadata.DeployResult();
 result.status = Metadata.DeployStatus.SUCCEEDED;
 System.assertEquals('SUCCEEDED', result.status.name());
@@ -201,14 +215,45 @@ System.assertEquals('SUCCEEDED', String.valueOf(result.status));
 result.details = new Metadata.DeployDetails();
 result.details.componentFailures.add(new Metadata.DeployMessage());
 System.assertEquals(1, result.details.componentFailures.size());
-List<Metadata.Metadata> records = Metadata.Operations.retrieve(Metadata.MetadataType.CustomMetadata, new List<String>{'Feature.Default'});
-System.assertEquals(0, records.size());
+List<Metadata.CustomMetadata> records = Metadata.Operations.retrieve(Metadata.MetadataType.CustomMetadata, new List<String>{'Feature.Default', 'Feature.Created'});
+System.assertEquals(2, records.size());
+Metadata.CustomMetadata retrieved = records[0];
+System.assertEquals('Feature.Default', retrieved.fullName);
+System.assertEquals(1, retrieved.values.size());
+System.assertEquals('Enabled__c', retrieved.values[0].field);
+System.assertEquals(false, retrieved.values[0].value);
+System.assertEquals('Feature.Created', records[1].fullName);
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := Execute(program, nil); err != nil {
+	machine := New(nil)
+	org := customDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecMetadataDeploymentUnsupportedItemType(t *testing.T) {
+	program, err := CompileAnonymous(`
+Metadata.DeployContainer container = new Metadata.DeployContainer();
+container.addMetadata(new Metadata.Metadata());
+Metadata.Operations.enqueueDeployment(container, null);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := customDataOrg()
+	machine.SetOrg(&org)
+	_, err = machine.Execute(program)
+	if err == nil {
+		t.Fatal("expected unsupported metadata deploy item")
+	}
+	var runtimeErr *RuntimeError
+	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != `unsupported call "Metadata.Operations.enqueueDeployment Metadata.Metadata metadata deploy"` {
+		t.Fatalf("err = %#v, want UnsupportedFeature Metadata.Metadata deploy", err)
 	}
 }
 

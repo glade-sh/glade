@@ -41,6 +41,7 @@ type OrgState struct {
 type MetadataRegistry struct {
 	Labels                 []LabelMetadata          `json:"labels,omitempty"`
 	ManagedLabelNamespaces []string                 `json:"managedLabelNamespaces,omitempty"`
+	Tabs                   []TabMetadata            `json:"tabs,omitempty"`
 	StaticResources        []StaticResourceMetadata `json:"staticResources,omitempty"`
 	ContentAssets          []ContentAssetMetadata   `json:"contentAssets,omitempty"`
 	Endpoints              []EndpointMetadata       `json:"endpoints,omitempty"`
@@ -56,6 +57,16 @@ type LabelMetadata struct {
 	ShortDescription string `json:"shortDescription,omitempty"`
 	Categories       string `json:"categories,omitempty"`
 	File             string `json:"file,omitempty"`
+}
+
+type TabMetadata struct {
+	Name        string `json:"name"`
+	Label       string `json:"label,omitempty"`
+	SObjectName string `json:"sObjectName,omitempty"`
+	Custom      bool   `json:"custom,omitempty"`
+	Motif       string `json:"motif,omitempty"`
+	Description string `json:"description,omitempty"`
+	File        string `json:"file,omitempty"`
 }
 
 type StaticResourceMetadata struct {

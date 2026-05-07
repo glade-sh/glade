@@ -73,3 +73,65 @@ func TestInvokeAuraActionReturnsAuraHandledExceptionShape(t *testing.T) {
 		t.Fatalf("result = %#v", result)
 	}
 }
+
+func TestInvokeVisualforceActionUsesCurrentPageAndMessages(t *testing.T) {
+	program, err := CompileAnonymous(`
+String mode = ApexPages.currentPage().getParameters().get('mode');
+ApexPages.addMessage(new ApexPages.Message(ApexPages.Severity.INFO, 'Saved ' + mode, 'detail ' + mode));
+PageReference next = new PageReference('/apex/Done?mode=' + mode);
+next.setRedirect(true);
+return next;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "AccountController",
+		Methods: map[string]Method{
+			"save": {
+				Name:       "AccountController.save",
+				ClassName:  "AccountController",
+				ReturnType: "PageReference",
+				Program:    program,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	result, err := machine.InvokeVisualforceAction("AccountController", "save", "/apex/Edit", map[string]string{"mode": "quick"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Success {
+		t.Fatalf("success = false: %#v", result.Error)
+	}
+	page, ok := result.ReturnValue.(map[string]any)
+	if !ok || page["url"] != "/apex/Done?mode=quick" || page["redirect"] != true {
+		t.Fatalf("returnValue = %#v", result.ReturnValue)
+	}
+	if len(result.PageMessages) != 1 {
+		t.Fatalf("pageMessages = %#v", result.PageMessages)
+	}
+	message, ok := result.PageMessages[0].(map[string]any)
+	if !ok || message["summary"] != "Saved quick" || message["detail"] != "detail quick" {
+		t.Fatalf("pageMessages = %#v", result.PageMessages)
+	}
+	if len(result.Trace) == 0 {
+		t.Fatalf("trace missing")
+	}
+}
+
+func TestInvokeVisualforceActionReportsMissingInstanceAction(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "AccountController"}); err != nil {
+		t.Fatal(err)
+	}
+	result, err := machine.InvokeVisualforceAction("AccountController", "save", "", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Success || result.Error == nil || result.Error.Type != "UnsupportedFeature" {
+		t.Fatalf("result = %#v", result)
+	}
+}

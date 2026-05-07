@@ -22,7 +22,7 @@ also green for the checked `example-projects` corpus. A May 6, 2026 inventory
 from the current checkout reports:
 
 ```text
-filesScanned=51067 findings=0 testBlockingFindings=0 surfaces=0
+filesScanned=51075 findings=0 testBlockingFindings=0 surfaces=0
 ```
 
 That inventory is implementation-aware as of this checkpoint. It suppresses
@@ -83,12 +83,10 @@ These milestones are ordered by developer value, not by feature count.
 | M6: Declarative-test ready | Workflow and Flow side effects run inside the DML/test transaction with traceable decisions and rollback. | `compat local-tests --project testdata/local-tests/workflow --json` and `.../flow --json` |
 | M7: Legacy-project-test ready | Owned corpus fixtures modeled after the example projects are green, and remaining unsupported surfaces are outside the documented claim. | `compat local-tests --check docs/fixtures/local-tests-corpus.json` |
 
-M0 through the checked M7 corpus gate are green. The corpus intentionally
-includes a presentation-metadata fixture that records one explicit unsupported
-tab-describe case; the checked baseline accepts that classification so it stays
-visible instead of becoming silent no-op behavior. The remaining work is to
-broaden the owned corpus and implement that runtime describe surface before
-making a full presentation-metadata runtime claim.
+M0 through the checked M7 corpus gate are green. The corpus now includes passing
+coverage for local tab describe metadata through `Schema.describeTabs()`. The
+remaining work is to broaden the owned corpus and deepen runtime fidelity for
+surfaces that are outside the current fixture claim.
 
 ## Speed Requirements
 
@@ -314,8 +312,8 @@ Current status:
 - Phase 2C has an owned `presentation-metadata` fixture that loads representative
   profile, permission set, tab, layout, compact layout, web link, quick action,
   global value set, standard value set, application, and flexipage files. The
-  test intentionally exercises `Schema.describeTabs()` and currently expects an
-  `unsupported` outcome until tab describe metadata is modeled.
+  test now exercises `Schema.describeTabs()` and asserts local tab describe
+  values.
 
 Validation:
 
@@ -650,7 +648,7 @@ Initial implementation status:
   fixture expansion.
 - The broad post-parity readiness inventory is green for the checked
   `example-projects` corpus:
-  `filesScanned=51067 findings=0 testBlockingFindings=0 surfaces=0`.
+  `filesScanned=51075 findings=0 testBlockingFindings=0 surfaces=0`.
 
 Primary lane: Gate.
 
@@ -751,9 +749,9 @@ cleared the checked post-parity blocker frontier for:
 
 The next squad should not repeat those scanner-readiness lanes. It should focus
 on runtime-depth gaps that remain outside the zero-blocker inventory claim:
-presentation-metadata tab describe, richer Visualforce controller execution,
-advanced Flow interviews and invocable actions, Metadata API mutation behavior,
-and larger owned enterprise fixtures.
+richer Visualforce controller execution, advanced Flow interviews and invocable
+actions, broader Metadata API mutation behavior, trace/debug visibility, and
+larger owned enterprise fixtures.
 
 ## Historical First Squad
 
@@ -895,7 +893,7 @@ go run ./cmd/oaer compat local-tests --project testdata/local-tests/basic --json
 After all four lanes merged, the post-parity readiness inventory moved to:
 
 ```text
-filesScanned=51067 findings=0 testBlockingFindings=0 surfaces=0
+filesScanned=51075 findings=0 testBlockingFindings=0 surfaces=0
 ```
 
 The outcome is not "all Salesforce behavior is implemented"; it is a shift from

@@ -107,6 +107,19 @@ func TestRunLocalTestsUIControllerContractsFixtureReady(t *testing.T) {
 	}
 }
 
+func TestRunLocalTestsVisualforcePagesFixtureReady(t *testing.T) {
+	report, err := RunLocalTests(LocalTestOptions{Project: filepath.Join("..", "..", "testdata", "local-tests", "visualforce-pages")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !report.Ready {
+		t.Fatalf("ready = false, summary = %#v outcomes = %#v", report.Summary, report.Outcomes)
+	}
+	if report.Summary.Total != 3 || report.Summary.Pass != 3 || report.Summary.CompileErrors != 0 || report.Summary.Unsupported != 0 {
+		t.Fatalf("summary = %#v", report.Summary)
+	}
+}
+
 func TestRunLocalTestsOrgLikeRunnerFixtureReady(t *testing.T) {
 	report, err := RunLocalTests(LocalTestOptions{Project: filepath.Join("..", "..", "testdata", "local-tests", "org-like-runner")})
 	if err != nil {
@@ -125,7 +138,7 @@ func TestCheckLocalTestCorpusFixture(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CheckLocalTestCorpus error = %v, report = %#v", err, report)
 	}
-	if !report.Ready || len(report.Projects) != 9 {
+	if !report.Ready || len(report.Projects) != 10 {
 		t.Fatalf("report = %#v", report)
 	}
 }

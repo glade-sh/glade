@@ -24,6 +24,12 @@ func TestLoadProjectResourcesLabelsAndEndpoints(t *testing.T) {
 	writeFile(t, filepath.Join(root, "force-app/main/default/staticresources/Site.resource-meta.xml"), `<StaticResource><contentType>text/plain</contentType><cacheControl>Public</cacheControl></StaticResource>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/contentassets/Logo.asset"), "asset-body")
 	writeFile(t, filepath.Join(root, "force-app/main/default/contentassets/Logo.asset-meta.xml"), `<ContentAsset><contentType>image/png</contentType></ContentAsset>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/tabs/ext__Widget__c.tab-meta.xml"), `<CustomTab>
+  <customObject>true</customObject>
+  <description>Widget tab</description>
+  <label>Widgets</label>
+  <motif>Custom1: Heart</motif>
+</CustomTab>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/email/welcome.email"), "Hello {!Recipient.FirstName}")
 	writeFile(t, filepath.Join(root, "force-app/main/default/email/welcome.email-meta.xml"), `<EmailTemplate>
   <fullName>unfiled$public/welcome</fullName>
@@ -73,6 +79,9 @@ func TestLoadProjectResourcesLabelsAndEndpoints(t *testing.T) {
 	}
 	if got, ok := ResolveEndpoint(registry, "callout:pkg__Billing/v1/accounts"); !ok || got != "https://billing.example.test/v1/accounts" {
 		t.Fatalf("namespaced endpoint = %q, %v", got, ok)
+	}
+	if len(registry.Tabs) != 1 || registry.Tabs[0].Name != "ext__Widget__c" || registry.Tabs[0].Label != "Widgets" || registry.Tabs[0].SObjectName != "ext__Widget__c" {
+		t.Fatalf("tabs = %#v", registry.Tabs)
 	}
 	if len(registry.EmailTemplates) != 1 || registry.EmailTemplates[0].DeveloperName != "welcome" || registry.EmailTemplates[0].Body != "Hello {!Recipient.FirstName}" {
 		t.Fatalf("email templates = %#v", registry.EmailTemplates)

@@ -1236,6 +1236,18 @@ func (e *Engine) applyFlowFieldUpdates(objectName string, id storage.ID) error {
 				return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow action %s failed: %v", action.Name, err)
 			}
 		}
+		for _, create := range rule.RecordCreates {
+			suppressed, err := e.flowRecordCreateSuppressedByLookup(create, rule.RecordLookups, record, object.Definition)
+			if err != nil {
+				return err
+			}
+			if suppressed {
+				continue
+			}
+			if err := e.executeFlowRecordCreate(create, record, object.Definition); err != nil {
+				return err
+			}
+		}
 	}
 	if !changed {
 		return nil
@@ -1259,6 +1271,160 @@ func (e *Engine) applyFlowFieldUpdates(objectName string, id storage.ID) error {
 	object.Records[id] = record
 	e.Org.Objects[objectName] = object
 	return nil
+}
+
+func (e *Engine) executeFlowRecordCreate(create storage.FlowRecordCreate, source storage.Record, sourceDefinition storage.ObjectDefinition) error {
+	target, targetName, err := e.object(create.ObjectName)
+	if err != nil {
+		return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record create %s targets unknown object %s", create.Name, create.ObjectName)
+	}
+	record := storage.Record{
+		Object:        targetName,
+		Fields:        make(map[string]storage.Value),
+		ExplicitNulls: make(map[string]bool),
+	}
+	for _, assignment := range create.InputAssignments {
+		fieldName, ok := storage.ResolveFieldName(target.Definition, e.Org.Namespace, assignment.Field)
+		if !ok || fieldName == "Id" {
+			return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{assignment.Field}, "dml: flow record create %s targets unknown or read-only field %s.%s", create.Name, targetName, assignment.Field)
+		}
+		field := target.Definition.Fields[fieldName]
+		if field.Type == storage.FieldCalculated {
+			return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{fieldName}, "dml: flow record create %s targets calculated field %s.%s", create.Name, targetName, fieldName)
+		}
+		value, explicitNull, ok := flowRecordCreateAssignmentValue(field, source, assignment, sourceDefinition, e.Org.Namespace)
+		if !ok {
+			return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{fieldName}, "dml: flow record create %s has unsupported value expression for %s.%s", create.Name, targetName, fieldName)
+		}
+		if explicitNull {
+			record.ExplicitNulls[fieldName] = true
+			delete(record.Fields, fieldName)
+		} else {
+			record.Fields[fieldName] = value
+			delete(record.ExplicitNulls, fieldName)
+		}
+	}
+	if _, err := e.insertOne(record); err != nil {
+		return dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record create %s failed: %v", create.Name, err)
+	}
+	return nil
+}
+
+func flowRecordCreateAssignmentValue(field storage.Field, source storage.Record, assignment storage.WorkflowFieldUpdate, sourceDefinition storage.ObjectDefinition, namespace string) (storage.Value, bool, bool) {
+	if assignment.SourceField != "" {
+		sourceField, ok := storage.ResolveFieldName(sourceDefinition, namespace, assignment.SourceField)
+		if !ok {
+			return storage.Value{}, false, false
+		}
+		value, ok := sourceRecordFieldValue(source, sourceField)
+		if !ok {
+			return storage.NullValue(), true, true
+		}
+		return value.Clone(), false, true
+	}
+	return workflowUpdateValue(field, source, assignment, sourceDefinition, namespace)
+}
+
+func (e *Engine) flowRecordCreateSuppressedByLookup(create storage.FlowRecordCreate, lookups []storage.FlowRecordLookup, source storage.Record, sourceDefinition storage.ObjectDefinition) (bool, error) {
+	createObject, ok := storage.ResolveObjectName(*e.Org, create.ObjectName)
+	if !ok {
+		return false, nil
+	}
+	for _, lookup := range lookups {
+		lookupObject, ok := storage.ResolveObjectName(*e.Org, lookup.ObjectName)
+		if !ok {
+			return false, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record lookup %s targets unknown object %s", lookup.Name, lookup.ObjectName)
+		}
+		if lookupObject != createObject {
+			continue
+		}
+		matches, err := e.flowRecordLookupMatches(lookup, source, sourceDefinition)
+		if err != nil {
+			return false, err
+		}
+		if matches {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func (e *Engine) flowRecordLookupMatches(lookup storage.FlowRecordLookup, source storage.Record, sourceDefinition storage.ObjectDefinition) (bool, error) {
+	target, targetName, err := e.object(lookup.ObjectName)
+	if err != nil {
+		return false, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", nil, "dml: flow record lookup %s targets unknown object %s", lookup.Name, lookup.ObjectName)
+	}
+	for _, candidate := range target.Records {
+		if candidate.System.IsDeleted {
+			continue
+		}
+		matches := true
+		for _, item := range lookup.Criteria {
+			match, ok := e.evaluateFlowLookupCriteria(item, candidate, target.Definition, source, sourceDefinition)
+			if !ok {
+				return false, dmlErrorf("CANNOT_INSERT_UPDATE_ACTIVATE_ENTITY", []string{item.Field}, "dml: flow record lookup %s has unsupported criteria for %s.%s", lookup.Name, targetName, item.Field)
+			}
+			if !match {
+				matches = false
+				break
+			}
+		}
+		if matches {
+			return true, nil
+		}
+		if lookup.GetFirstRecordOnly {
+			continue
+		}
+	}
+	return false, nil
+}
+
+func (e *Engine) evaluateFlowLookupCriteria(item storage.WorkflowCriteriaItem, target storage.Record, targetDefinition storage.ObjectDefinition, source storage.Record, sourceDefinition storage.ObjectDefinition) (bool, bool) {
+	if strings.TrimSpace(item.SourceField) == "" {
+		return evaluateWorkflowCriteria(item, target, targetDefinition, e.Org.Namespace)
+	}
+	targetField, ok := storage.ResolveFieldName(targetDefinition, e.Org.Namespace, strings.TrimSpace(item.Field))
+	if !ok || targetField == "" {
+		return false, false
+	}
+	sourceField, ok := storage.ResolveFieldName(sourceDefinition, e.Org.Namespace, strings.TrimSpace(item.SourceField))
+	if !ok || sourceField == "" {
+		return false, false
+	}
+	targetValue, targetOK := target.Fields[targetField]
+	sourceValue, sourceOK := sourceRecordFieldValue(source, sourceField)
+	if !targetOK {
+		targetValue = storage.NullValue()
+	}
+	if !sourceOK {
+		sourceValue = storage.NullValue()
+	}
+	field := targetDefinition.Fields[targetField]
+	switch strings.ToLower(strings.TrimSpace(item.Operation)) {
+	case "", "equals", "equal", "eq":
+		return storageValuesEqual(field, targetValue, sourceValue), true
+	case "notequal", "not equal", "notequals", "not equals", "ne":
+		return !storageValuesEqual(field, targetValue, sourceValue), true
+	case "contains":
+		return strings.Contains(workflowValueString(targetValue), workflowValueString(sourceValue)), true
+	case "notcontain", "doesnotcontain":
+		return !strings.Contains(workflowValueString(targetValue), workflowValueString(sourceValue)), true
+	case "isnull", "isblank":
+		return targetValue.Kind == storage.ValueNull, true
+	default:
+		return false, false
+	}
+}
+
+func sourceRecordFieldValue(record storage.Record, field string) (storage.Value, bool) {
+	if strings.EqualFold(field, "Id") {
+		if record.ID == "" {
+			return storage.Value{}, false
+		}
+		return storage.IDValue(record.ID), true
+	}
+	value, ok := record.Fields[field]
+	return value, ok
 }
 
 func evaluateWorkflowRule(rule storage.WorkflowRule, record storage.Record, definition storage.ObjectDefinition, namespace string) (bool, bool) {

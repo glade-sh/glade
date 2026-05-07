@@ -816,6 +816,42 @@ System.assertEquals(null, nameDescribe.getRelationshipName());
 	}
 }
 
+func TestExecDescribeTabsFromLocalMetadata(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Object> tabSets = Schema.describeTabs();
+System.assertEquals(1, tabSets.size());
+Object tabSet = tabSets.get(0);
+System.assertEquals('All Tabs', tabSet.getLabel());
+System.assertEquals('AllTabs', tabSet.getName());
+System.assert(!tabSet.isSelected());
+List<Object> tabs = tabSet.getTabs();
+System.assertEquals(1, tabs.size());
+Object tab = tabs.get(0);
+System.assertEquals('Widget__c', tab.getName());
+System.assertEquals('Widgets', tab.getLabel());
+System.assertEquals('Widget__c', tab.getSObjectName());
+System.assert(tab.isCustom());
+System.assertEquals('Custom1: Heart', tab.getIconUrl());
+System.assertEquals('/lightning/o/Widget__c/list', tab.getUrl());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Metadata.Tabs = []storage.TabMetadata{{
+		Name:        "Widget__c",
+		Label:       "Widgets",
+		SObjectName: "Widget__c",
+		Custom:      true,
+		Motif:       "Custom1: Heart",
+	}}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDescribeUnsupportedMetadataEdges(t *testing.T) {
 	tests := []struct {
 		name   string
