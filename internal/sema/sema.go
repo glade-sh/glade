@@ -4464,53 +4464,6 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 		case "tojsonstring":
 			return semaCollectionSignature{returnType: "String", params: [][]string{{}}}, true
 		}
-	case "cache.org":
-		if method == "getpartition" {
-			return semaCollectionSignature{returnType: "Cache.OrgPartition", params: [][]string{{"String"}}}, true
-		}
-	case "cache.session":
-		if method == "getpartition" {
-			return semaCollectionSignature{returnType: "Cache.SessionPartition", params: [][]string{{"String"}}}, true
-		}
-	case "cache.orgpartition", "cache.sessionpartition":
-		switch method {
-		case "get":
-			return semaCollectionSignature{returnType: "Object", params: [][]string{{"String"}, {"Type", "String"}}}, true
-		case "put":
-			return semaCollectionSignature{returnType: "void", params: [][]string{{"String", "Object"}, {"String", "Object", "Integer"}, {"String", "Object", "Integer", "Cache.Visibility", "Boolean"}}}, true
-		case "remove":
-			return semaCollectionSignature{returnType: "Object", params: [][]string{{"String"}, {"Type", "String"}}}, true
-		case "contains":
-			return semaCollectionSignature{returnType: "Boolean", params: [][]string{{"String"}}}, true
-		}
-	case "connectapi.organization":
-		if method == "getsettings" {
-			return semaCollectionSignature{returnType: "ConnectApi.OrganizationSettings", params: [][]string{{}}}, true
-		}
-	case "connectapi.communities":
-		if method == "getcommunity" {
-			return semaCollectionSignature{returnType: "ConnectApi.Community", params: [][]string{{"String"}}}, true
-		}
-	case "connectapi.userprofiles":
-		switch method {
-		case "setphoto":
-			return semaCollectionSignature{returnType: "void", params: [][]string{{"String", "String", "String", "Object"}}}, true
-		case "deletephoto":
-			return semaCollectionSignature{returnType: "void", params: [][]string{{"String", "String"}}}, true
-		}
-	case "metadata.operations":
-		switch method {
-		case "enqueuedeployment":
-			return semaCollectionSignature{returnType: "String", params: [][]string{{"Metadata.DeployContainer", "Metadata.DeployCallback"}}}, true
-		case "checkdeploystatus":
-			return semaCollectionSignature{returnType: "Metadata.DeployResult", params: [][]string{{"Id"}, {"Id", "Boolean"}, {"String"}, {"String", "Boolean"}}}, true
-		case "retrieve":
-			return semaCollectionSignature{returnType: "List<Metadata.CustomMetadata>", params: [][]string{{"Metadata.MetadataType", "List<String>"}, {"Metadata.MetadataType", "List<String>", "Boolean"}}}, true
-		}
-	case "metadata.deploycontainer":
-		if method == "addmetadata" {
-			return semaCollectionSignature{returnType: "void", params: [][]string{{"Object"}}}, true
-		}
 	case "messaging.singleemailmessage":
 		switch method {
 		case "setwhatid", "settargetobjectid", "setorgwideemailaddressid", "settemplateid":

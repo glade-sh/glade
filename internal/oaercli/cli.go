@@ -1508,7 +1508,7 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 }
 
 func compatUsage() string {
-	return "usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | local-tests [--project <root>] [--class <name>] [--method <name>] [--blockers-only] [--top-failures <n>] [--timeout <ms>] [--profile-on-timeout] [--json] [--check <path>] | ui-controllers [--project <root>] [--json|--check <path>] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | salesforce-coverage [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--tooling-symbols <path>] [--json|--output <path>|--check <path>] | standard-objects [--json|--output <path>|--check <path>] | product-namespaces [--source <dir>|--inventory <path>|--catalog <path>] [--json|--output <path>|--check <path>] | tooling-fixtures <report.json...> [--json] | evidence --catalog <path> <fixture.json...> [--json]"
+	return "usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | local-tests [--project <root>] [--class <name>] [--method <name>] [--blockers-only] [--top-failures <n>] [--timeout <ms>] [--profile-on-timeout] [--json] [--check <path>] | ui-controllers [--project <root>] [--json|--check <path>] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | salesforce-coverage [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--tooling-symbols <path>] [--json|--output <path>|--check <path>] | standard-objects [--json|--output <path>|--check <path>] | product-namespaces [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--symbols-go] [--json|--output <path>|--check <path>] | tooling-fixtures <report.json...> [--json] | evidence --catalog <path> <fixture.json...> [--json]"
 }
 
 type postParityReadiness struct {
@@ -2758,10 +2758,12 @@ func runCompatProductNamespaces(args []string, w io.Writer) error {
 	source := ""
 	inventoryPath := ""
 	catalogPath := ""
+	toolingCompletionsPath := ""
 	outputPath := ""
 	checkPath := ""
 	jsonOut := false
-	usage := "usage: oaer compat product-namespaces [--source <dir>|--inventory <path>|--catalog <path>] [--json|--output <path>|--check <path>]"
+	symbolsGo := false
+	usage := "usage: oaer compat product-namespaces [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--symbols-go] [--json|--output <path>|--check <path>]"
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--source":
@@ -2782,6 +2784,14 @@ func runCompatProductNamespaces(args []string, w io.Writer) error {
 				return errors.New(usage)
 			}
 			catalogPath = args[i]
+		case "--tooling-completions":
+			i++
+			if i >= len(args) {
+				return errors.New(usage)
+			}
+			toolingCompletionsPath = args[i]
+		case "--symbols-go":
+			symbolsGo = true
 		case "--json":
 			jsonOut = true
 		case "--output":
@@ -2821,9 +2831,51 @@ func runCompatProductNamespaces(args []string, w io.Writer) error {
 	if requested > 1 {
 		return errors.New("use only one of --json, --output, or --check")
 	}
+	if jsonOut && symbolsGo {
+		return errors.New("use only one of --json or --symbols-go")
+	}
+	if symbolsGo && toolingCompletionsPath == "" {
+		if defaultPath := defaultSalesforceToolingCompletionsSource(); fileExists(defaultPath) {
+			toolingCompletionsPath = defaultPath
+		}
+	}
 	catalog, err := loadSalesforceCoverageCatalog(source, inventoryPath, catalogPath)
 	if err != nil {
 		return err
+	}
+	var tooling *capability.ToolingCompletions
+	if toolingCompletionsPath != "" {
+		completions, err := capability.ReadToolingCompletions(toolingCompletionsPath)
+		if err != nil {
+			return err
+		}
+		tooling = &completions
+	}
+	if symbolsGo {
+		switch {
+		case outputPath != "":
+			var buf strings.Builder
+			if err := capability.WriteProductNamespaceSymbolsGo(&buf, catalog, tooling); err != nil {
+				return err
+			}
+			return os.WriteFile(outputPath, []byte(buf.String()), 0o644)
+		case checkPath != "":
+			var buf strings.Builder
+			if err := capability.WriteProductNamespaceSymbolsGo(&buf, catalog, tooling); err != nil {
+				return err
+			}
+			existing, err := os.ReadFile(checkPath)
+			if err != nil {
+				return err
+			}
+			if string(existing) != buf.String() {
+				return fmt.Errorf("product namespace symbols drift: run `oaer compat product-namespaces --symbols-go --output %s`", checkPath)
+			}
+			fmt.Fprintf(w, "%s: up to date\n", checkPath)
+			return nil
+		default:
+			return capability.WriteProductNamespaceSymbolsGo(w, catalog, tooling)
+		}
 	}
 	report := capability.BuildProductNamespaceReport(catalog)
 	switch {

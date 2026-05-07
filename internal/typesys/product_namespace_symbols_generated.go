@@ -248,6 +248,8 @@ var productNamespaceSymbolSpecs = []StandardSymbolSpec{
 		Methods: []StandardMethodSpec{
 			{Name: "checkDeployStatus", ReturnType: "Metadata.DeployResult", Parameters: []string{"Id"}, Static: true},
 			{Name: "checkDeployStatus", ReturnType: "Metadata.DeployResult", Parameters: []string{"Id", "Boolean"}, Static: true},
+			{Name: "checkDeployStatus", ReturnType: "Metadata.DeployResult", Parameters: []string{"String"}, Static: true},
+			{Name: "checkDeployStatus", ReturnType: "Metadata.DeployResult", Parameters: []string{"String", "Boolean"}, Static: true},
 			{Name: "enqueueDeployment", ReturnType: "Id", Parameters: []string{"Metadata.DeployContainer", "Metadata.DeployCallback"}, Static: true},
 			{Name: "retrieve", ReturnType: "List<Metadata.CustomMetadata>", Parameters: []string{"Metadata.MetadataType", "List<String>"}, Static: true},
 			{Name: "retrieve", ReturnType: "List<Metadata.CustomMetadata>", Parameters: []string{"Metadata.MetadataType", "List<String>", "Boolean"}, Static: true},

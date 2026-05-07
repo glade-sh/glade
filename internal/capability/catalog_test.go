@@ -178,12 +178,32 @@ func TestBuildProductNamespaceReport(t *testing.T) {
 		}},
 	}
 
-	report := BuildProductNamespaceReport(catalog)
+	report := BuildProductNamespaceReportWithDeclarations(catalog, ProductNamespaceDeclarations{
+		Types: map[string]ProductNamespaceDeclaredType{
+			"connectapi.feedelement": {
+				Namespace: "ConnectApi",
+				Name:      "FeedElement",
+				Kind:      "class",
+				Members: map[string][]string{
+					"body": {"property"},
+				},
+			},
+		},
+	})
 	if report.Totals.Namespaces != 2 || report.Totals.Types != 2 || report.Totals.Members != 1 || report.Totals.Outputs != 1 {
 		t.Fatalf("report totals = %#v", report.Totals)
 	}
+	if report.DeclarationCoverage.TypesWithDeclarations != 1 || report.DeclarationCoverage.TypesMissingDeclarations != 1 || report.DeclarationCoverage.MembersWithDeclarations != 1 || report.DeclarationCoverage.EntriesWithDeclarations != 2 {
+		t.Fatalf("declaration coverage = %#v", report.DeclarationCoverage)
+	}
 	if report.Namespaces[0].Namespace != "ConnectApi" || report.Namespaces[0].Types[0].MemberCount != 1 {
 		t.Fatalf("report namespaces = %#v", report.Namespaces)
+	}
+	if !report.Namespaces[0].Types[0].HasTypedDeclaration || !report.Namespaces[0].Types[0].Members[0].HasTypedDeclaration {
+		t.Fatalf("typed declaration flags = %#v", report.Namespaces[0].Types[0])
+	}
+	if report.Namespaces[1].DeclarationStatus != "missing" || report.Namespaces[1].MissingTypes != 1 {
+		t.Fatalf("missing declaration summary = %#v", report.Namespaces[1])
 	}
 	var out bytes.Buffer
 	if err := WriteProductNamespaceJSON(&out, report); err != nil {
@@ -191,6 +211,110 @@ func TestBuildProductNamespaceReport(t *testing.T) {
 	}
 	if !strings.Contains(out.String(), `"declarationPolicy": "generate typed declarations from public docs inventory"`) {
 		t.Fatalf("json = %q", out.String())
+	}
+	if !strings.Contains(out.String(), `"hasTypedDeclaration": true`) {
+		t.Fatalf("json missing declaration availability = %q", out.String())
+	}
+}
+
+func TestWriteProductNamespaceSymbolsGoNormalizesCatalogAndTooling(t *testing.T) {
+	catalog := Catalog{
+		SchemaVersion: CatalogSchemaVersion,
+		Entries: []CatalogEntry{{
+			ID:        "cache/orgpartition#class",
+			Area:      "Product namespaces",
+			Namespace: "cache",
+			TypeName:  "OrgPartition",
+			Symbol:    "cache.OrgPartition",
+			Kind:      "class",
+			Target:    TargetTypedStub,
+			Status:    StatusUnknown,
+		}, {
+			ID:         "cache/orgpartition/doconly",
+			Area:       "Product namespaces",
+			Namespace:  "cache",
+			TypeName:   "OrgPartition",
+			MemberName: "docOnly",
+			Symbol:     "cache.OrgPartition.docOnly",
+			Kind:       "method",
+			Signature:  "docOnly(value, other)",
+			Target:     TargetTypedStub,
+			Status:     StatusUnknown,
+		}, {
+			ID:         "cache/orgpartition/get",
+			Area:       "Product namespaces",
+			Namespace:  "cache",
+			TypeName:   "OrgPartition",
+			MemberName: "get",
+			Symbol:     "cache.OrgPartition.get",
+			Kind:       "method",
+			Signature:  "get(key)",
+			Target:     TargetTypedStub,
+			Status:     StatusUnknown,
+		}, {
+			ID:        "connectapi/weakoutput#output",
+			Area:      "Product namespaces",
+			Namespace: "ConnectApi",
+			TypeName:  "WeakOutput",
+			Symbol:    "ConnectApi.WeakOutput",
+			Kind:      "output",
+			Target:    TargetTypedStub,
+			Status:    StatusUnknown,
+		}, {
+			ID:         "connectapi/weakoutput/value",
+			Area:       "Product namespaces",
+			Namespace:  "ConnectApi",
+			TypeName:   "WeakOutput",
+			MemberName: "value",
+			Symbol:     "ConnectApi.WeakOutput.value",
+			Kind:       "property",
+			Signature:  "value",
+			Target:     TargetTypedStub,
+			Status:     StatusUnknown,
+		}},
+	}
+	tooling := ToolingCompletions{PublicDeclarations: map[string]map[string]ToolingClassDecl{
+		"cache": {
+			"OrgPartition": {
+				Methods: []ToolingMethod{{
+					Name:       "get",
+					ReturnType: "System.Object",
+					IsStatic:   true,
+					Parameters: []ToolingParameter{{Name: "key", Type: "System.String"}},
+				}, {
+					Name:       "put",
+					ReturnType: "void",
+					Parameters: []ToolingParameter{{Name: "key", Type: "System.String"}, {Name: "value", Type: "APEX_OBJECT"}},
+				}},
+			},
+		},
+	}}
+
+	var out bytes.Buffer
+	if err := WriteProductNamespaceSymbolsGo(&out, catalog, &tooling); err != nil {
+		t.Fatal(err)
+	}
+	goSource := out.String()
+	for _, want := range []string{
+		`Name: "Cache.OrgPartition"`,
+		`{Name: "docOnly", ReturnType: "Object", Parameters: []string{"Object", "Object"}}`,
+		`{Name: "get", ReturnType: "Object", Parameters: []string{"String"}, Static: true}`,
+		`{Name: "put", ReturnType: "void", Parameters: []string{"String", "Object"}}`,
+		`Name: "ConnectApi.WeakOutput"`,
+		`{Name: "value", Type: "Object"}`,
+	} {
+		if !strings.Contains(goSource, want) {
+			t.Fatalf("generated symbols missing %q:\n%s", want, goSource)
+		}
+	}
+	if strings.Contains(goSource, `Name: "cache.`) || strings.Contains(goSource, `System.String`) || strings.Contains(goSource, `APEX_OBJECT`) {
+		t.Fatalf("generated symbols were not normalized:\n%s", goSource)
+	}
+	if strings.Count(goSource, `Name: "get"`) != 1 {
+		t.Fatalf("weak docs shape shadowed typed Tooling shape:\n%s", goSource)
+	}
+	if got := normalizeProductNamespaceType("Map<System.String,ANY>"); got != "Map<String,Object>" {
+		t.Fatalf("generic weak type normalization = %q", got)
 	}
 }
 

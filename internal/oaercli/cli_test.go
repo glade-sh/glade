@@ -739,6 +739,74 @@ Adds metadata.
 	}
 }
 
+func TestRunCompatProductNamespacesSymbolsGoOutputAndCheck(t *testing.T) {
+	root := t.TempDir()
+	writeTestFile(t, filepath.Join(root, "apex_connectapi_output_FeedElement.md"), `# FeedElement
+
+## Properties
+### body
+The feed body.
+`)
+	writeTestFile(t, filepath.Join(root, "apex_class_cache_OrgPartition.md"), `# OrgPartition Class
+
+## Namespace
+[cache](./apex_namespace_cache.md)
+
+## Methods
+### docOnly(value)
+Docs-only method.
+`)
+	dir := t.TempDir()
+	symbolsPath := filepath.Join(dir, "product_namespace_symbols_generated.go")
+	toolingPath := filepath.Join(dir, "tooling.json")
+	writeTestFile(t, toolingPath, `{
+  "publicDeclarations": {
+    "cache": {
+      "OrgPartition": {
+        "methods": [{
+          "name": "get",
+          "returnType": "System.Object",
+          "isStatic": true,
+          "parameters": [{"name": "key", "type": "System.String"}]
+        }]
+      }
+    }
+  }
+}`)
+
+	var stdout, stderr bytes.Buffer
+	code := Run(context.Background(), []string{"compat", "product-namespaces", "--source", root, "--tooling-completions", toolingPath, "--symbols-go", "--output", symbolsPath}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("product namespace symbols output exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	content, err := os.ReadFile(symbolsPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{
+		`var productNamespaceSymbolSpecs = []StandardSymbolSpec`,
+		`Name: "Cache.OrgPartition"`,
+		`{Name: "docOnly", ReturnType: "Object", Parameters: []string{"Object"}}`,
+		`{Name: "get", ReturnType: "Object", Parameters: []string{"String"}, Static: true}`,
+		`Name: "ConnectApi.FeedElement"`,
+		`{Name: "body", Type: "Object"}`,
+	} {
+		if !strings.Contains(string(content), want) {
+			t.Fatalf("symbols output missing %q:\n%s", want, string(content))
+		}
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	code = Run(context.Background(), []string{"compat", "product-namespaces", "--source", root, "--tooling-completions", toolingPath, "--symbols-go", "--check", symbolsPath}, &stdout, &stderr)
+	if code != 0 {
+		t.Fatalf("product namespace symbols check exit code = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "up to date") {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
 func TestRunCompatToolingFixtures(t *testing.T) {
 	dir := t.TempDir()
 	reportPath := filepath.Join(dir, "tooling-report.json")
