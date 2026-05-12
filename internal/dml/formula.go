@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"html"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/open-aer/oaer/internal/storage"
 )
@@ -35,8 +37,40 @@ func evaluateRecordFormula(formula string, record storage.Record) (bool, bool) {
 	return value.truthy(), true
 }
 
+func evaluateRecordFormulaInOrg(formula string, org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record) (bool, bool) {
+	parser := formulaParser{
+		tokens:     tokenizeFormula(html.UnescapeString(formula)),
+		record:     record,
+		org:        org,
+		definition: definition,
+	}
+	value, ok := parser.parseExpression()
+	if !ok || parser.peek().typ != formulaTokenEOF {
+		return false, false
+	}
+	return value.truthy(), true
+}
+
 func evaluateRecordFormulaValue(formula string, field storage.Field, record storage.Record) (storage.Value, bool, bool) {
 	parser := formulaParser{tokens: tokenizeFormula(html.UnescapeString(formula)), record: record}
+	value, ok := parser.parseExpression()
+	if !ok || parser.peek().typ != formulaTokenEOF {
+		return storage.Value{}, false, false
+	}
+	if value.kind == formulaNull {
+		return storage.NullValue(), true, true
+	}
+	return workflowLiteralValue(field, value.asString())
+}
+
+func EvaluateRecordFormulaValueInOrg(formula string, field storage.Field, org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record) (storage.Value, bool, bool) {
+	parser := formulaParser{
+		tokens:     tokenizeFormula(html.UnescapeString(formula)),
+		record:     record,
+		org:        org,
+		definition: definition,
+		evaluating: make(map[string]bool),
+	}
 	value, ok := parser.parseExpression()
 	if !ok || parser.peek().typ != formulaTokenEOF {
 		return storage.Value{}, false, false
@@ -136,9 +170,12 @@ func isFormulaIdentPart(ch byte) bool {
 }
 
 type formulaParser struct {
-	tokens []formulaToken
-	pos    int
-	record storage.Record
+	tokens     []formulaToken
+	pos        int
+	record     storage.Record
+	org        *storage.OrgState
+	definition storage.ObjectDefinition
+	evaluating map[string]bool
 }
 
 func (p *formulaParser) parseExpression() (formulaValue, bool) {
@@ -195,18 +232,46 @@ func (p *formulaParser) parseComparison() (formulaValue, bool) {
 }
 
 func (p *formulaParser) parseConcat() (formulaValue, bool) {
-	left, ok := p.parseUnary()
+	left, ok := p.parseAdditive()
 	if !ok {
 		return formulaValue{}, false
 	}
 	for p.matchSymbol("&") {
-		right, ok := p.parseUnary()
+		right, ok := p.parseAdditive()
 		if !ok {
 			return formulaValue{}, false
 		}
 		left = formulaValue{kind: formulaString, text: left.asString() + right.asString()}
 	}
 	return left, true
+}
+
+func (p *formulaParser) parseAdditive() (formulaValue, bool) {
+	left, ok := p.parseUnary()
+	if !ok {
+		return formulaValue{}, false
+	}
+	for {
+		op := p.peek().text
+		if p.peek().typ != formulaTokenSymbol || (op != "+" && op != "-") {
+			return left, true
+		}
+		p.pos++
+		right, ok := p.parseUnary()
+		if !ok {
+			return formulaValue{}, false
+		}
+		leftNumber, leftOK := left.asNumber()
+		rightNumber, rightOK := right.asNumber()
+		if !leftOK || !rightOK {
+			return formulaValue{}, false
+		}
+		if op == "+" {
+			left = formulaValue{kind: formulaNumber, number: leftNumber + rightNumber}
+		} else {
+			left = formulaValue{kind: formulaNumber, number: leftNumber - rightNumber}
+		}
+	}
 }
 
 func (p *formulaParser) parseUnary() (formulaValue, bool) {
@@ -236,6 +301,9 @@ func (p *formulaParser) parsePrimary() (formulaValue, bool) {
 	case formulaTokenIdent:
 		p.pos++
 		if p.matchSymbol("(") {
+			if strings.EqualFold(token.text, "IF") {
+				return p.parseIfFunction()
+			}
 			args, ok := p.parseArguments()
 			if !ok {
 				return formulaValue{}, false
@@ -250,7 +318,7 @@ func (p *formulaParser) parsePrimary() (formulaValue, bool) {
 		case "NULL":
 			return formulaValue{kind: formulaNull}, true
 		}
-		return formulaFieldValue(p.record, token.text), true
+		return p.fieldValue(token.text), true
 	case formulaTokenSymbol:
 		if p.matchSymbol("(") {
 			value, ok := p.parseExpression()
@@ -283,6 +351,62 @@ func (p *formulaParser) parseArguments() ([]formulaValue, bool) {
 	}
 }
 
+func (p *formulaParser) parseIfFunction() (formulaValue, bool) {
+	condition, ok := p.parseExpression()
+	if !ok || !p.matchSymbol(",") {
+		return formulaValue{}, false
+	}
+	if condition.truthy() {
+		value, ok := p.parseExpression()
+		if !ok {
+			return formulaValue{}, false
+		}
+		if p.matchSymbol(",") {
+			if !p.skipFormulaArgument() {
+				return formulaValue{}, false
+			}
+		}
+		if !p.matchSymbol(")") {
+			return formulaValue{}, false
+		}
+		return value, true
+	}
+	if !p.skipFormulaArgument() || !p.matchSymbol(",") {
+		return formulaValue{}, false
+	}
+	value, ok := p.parseExpression()
+	if !ok || !p.matchSymbol(")") {
+		return formulaValue{}, false
+	}
+	return value, true
+}
+
+func (p *formulaParser) skipFormulaArgument() bool {
+	depth := 0
+	for {
+		token := p.peek()
+		if token.typ == formulaTokenEOF {
+			return false
+		}
+		if token.typ == formulaTokenSymbol {
+			switch token.text {
+			case "(":
+				depth++
+			case ")":
+				if depth == 0 {
+					return true
+				}
+				depth--
+			case ",":
+				if depth == 0 {
+					return true
+				}
+			}
+		}
+		p.pos++
+	}
+}
+
 func (p *formulaParser) peek() formulaToken {
 	if p.pos >= len(p.tokens) {
 		return formulaToken{typ: formulaTokenEOF}
@@ -296,6 +420,44 @@ func (p *formulaParser) matchSymbol(symbol string) bool {
 		return true
 	}
 	return false
+}
+
+func (p *formulaParser) fieldValue(field string) formulaValue {
+	if p.org == nil {
+		return formulaFieldValue(p.record, field)
+	}
+	if strings.Contains(field, ".") {
+		if value, ok := formulaRelationshipFieldValue(*p.org, p.definition, p.record, field); ok {
+			return value
+		}
+	}
+	if resolved, ok := storage.ResolveFieldName(p.definition, p.org.Namespace, field); ok {
+		field = resolved
+	}
+	if p.definition.APIName != "" {
+		if fieldDef, ok := p.definition.Fields[field]; ok && fieldDef.Type == storage.FieldCalculated && strings.TrimSpace(fieldDef.Formula) != "" {
+			if p.evaluating == nil {
+				p.evaluating = make(map[string]bool)
+			}
+			if p.evaluating[field] {
+				return formulaValue{kind: formulaNull}
+			}
+			p.evaluating[field] = true
+			nested := formulaParser{
+				tokens:     tokenizeFormula(html.UnescapeString(fieldDef.Formula)),
+				record:     p.record,
+				org:        p.org,
+				definition: p.definition,
+				evaluating: p.evaluating,
+			}
+			value, ok := nested.parseExpression()
+			delete(p.evaluating, field)
+			if ok && nested.peek().typ == formulaTokenEOF {
+				return value
+			}
+		}
+	}
+	return formulaFieldValue(p.record, field)
 }
 
 func evaluateFormulaFunction(name string, args []formulaValue) (formulaValue, bool) {
@@ -348,6 +510,11 @@ func evaluateFormulaFunction(name string, args []formulaValue) (formulaValue, bo
 			return formulaValue{}, false
 		}
 		return formulaValue{kind: formulaString, text: args[0].asString()}, true
+	case "TODAY":
+		if len(args) != 0 {
+			return formulaValue{}, false
+		}
+		return formulaValue{kind: formulaString, text: time.Now().UTC().Format("2006-01-02")}, true
 	case "LEN":
 		if len(args) != 1 {
 			return formulaValue{}, false
@@ -356,6 +523,102 @@ func evaluateFormulaFunction(name string, args []formulaValue) (formulaValue, bo
 	default:
 		return formulaValue{}, false
 	}
+}
+
+func formulaRelationshipFieldValue(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, fieldPath string) (formulaValue, bool) {
+	parts := strings.Split(fieldPath, ".")
+	if len(parts) < 2 {
+		return formulaValue{}, false
+	}
+	currentDefinition := definition
+	currentRecord := record
+	for _, relationship := range parts[:len(parts)-1] {
+		lookupField, ok := relationshipLookupField(currentDefinition, org.Namespace, relationship)
+		if !ok {
+			return formulaValue{}, false
+		}
+		value, ok := currentRecord.Fields[lookupField.APIName]
+		if !ok || value.Kind == storage.ValueNull {
+			return formulaValue{kind: formulaNull}, true
+		}
+		parentID := idFromStorageValue(value)
+		if parentID == "" {
+			return formulaValue{kind: formulaNull}, true
+		}
+		parentRecord, parentDefinition, ok := formulaParentRecord(org, lookupField, parentID)
+		if !ok {
+			return formulaValue{kind: formulaNull}, true
+		}
+		currentRecord = parentRecord
+		currentDefinition = parentDefinition
+	}
+	last := parts[len(parts)-1]
+	if resolved, ok := storage.ResolveFieldName(currentDefinition, org.Namespace, last); ok {
+		last = resolved
+	}
+	return formulaFieldValue(currentRecord, last), true
+}
+
+func relationshipLookupField(definition storage.ObjectDefinition, namespace, relationship string) (storage.Field, bool) {
+	names := make([]string, 0, len(definition.Fields))
+	for name := range definition.Fields {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		field := definition.Fields[name]
+		if len(field.ReferenceTo) == 0 {
+			continue
+		}
+		if relationshipNameMatches(namespace, field, relationship) {
+			if field.APIName == "" {
+				field.APIName = name
+			}
+			return field, true
+		}
+	}
+	return storage.Field{}, false
+}
+
+func relationshipNameMatches(namespace string, field storage.Field, relationship string) bool {
+	for _, candidate := range formulaRelationshipNames(field) {
+		if strings.EqualFold(candidate, relationship) ||
+			strings.EqualFold(storage.NamespaceTokenName(namespace, candidate), relationship) ||
+			strings.EqualFold(storage.StripNamespaceToken(namespace, candidate), relationship) {
+			return true
+		}
+	}
+	return false
+}
+
+func formulaRelationshipNames(field storage.Field) []string {
+	names := []string(nil)
+	if field.RelationshipName != "" {
+		names = append(names, field.RelationshipName)
+	}
+	apiName := field.APIName
+	switch {
+	case strings.HasSuffix(apiName, "__c"):
+		names = append(names, strings.TrimSuffix(apiName, "__c")+"__r")
+	case strings.HasSuffix(apiName, "Id") && len(apiName) > len("Id"):
+		names = append(names, strings.TrimSuffix(apiName, "Id"))
+	}
+	return names
+}
+
+func formulaParentRecord(org storage.OrgState, lookupField storage.Field, id storage.ID) (storage.Record, storage.ObjectDefinition, bool) {
+	for _, targetName := range lookupField.ReferenceTo {
+		canonical, ok := storage.ResolveObjectName(org, targetName)
+		if !ok {
+			continue
+		}
+		target := org.Objects[canonical]
+		record, ok := target.Records[id]
+		if ok && !record.System.IsDeleted {
+			return record, target.Definition, true
+		}
+	}
+	return storage.Record{}, storage.ObjectDefinition{}, false
 }
 
 func formulaFieldValue(record storage.Record, field string) formulaValue {
@@ -488,6 +751,8 @@ func (v formulaValue) asString() string {
 
 func (v formulaValue) asNumber() (float64, bool) {
 	switch v.kind {
+	case formulaNull:
+		return 0, true
 	case formulaNumber:
 		return v.number, true
 	case formulaString:

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -364,6 +365,7 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 	}
 	normalizePersonAccountFields(objectName, &record)
 	applyFieldDefaults(object.Definition, &record)
+	applyAutoNumberName(object.Definition, e.IDs.Sequences[objectName]+1, &record)
 	applyCustomSettingInsertDefaults(e.Org, object.Definition, &record)
 	applySetupInsertDefaults(objectName, object.Definition, &record)
 	e.applyFileInsertDefaults(objectName, object.Definition, &record)
@@ -379,7 +381,7 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 	if err := e.validateReferences(object.Definition, record); err != nil {
 		return "", err
 	}
-	if err := validateValidationRules(object.Definition, record); err != nil {
+	if err := e.validateValidationRules(object.Definition, record); err != nil {
 		return "", err
 	}
 	if err := e.validateUnique(objectName, object.Definition, record, ""); err != nil {
@@ -425,6 +427,7 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 	}
 	object.Records[record.ID] = record.Clone()
 	e.Org.Objects[objectName] = object
+	e.recalculateSummaryFieldsForChildren(objectName, record)
 	if objectName == "ContentVersion" {
 		if err := e.afterInsertContentVersion(record); err != nil {
 			*e.Org = rollbackOrg
@@ -626,10 +629,53 @@ func applyFieldDefaults(definition storage.ObjectDefinition, record *storage.Rec
 		if record.ExplicitNulls != nil && record.ExplicitNulls[name] {
 			continue
 		}
-		if value, ok := storage.DefaultValueForField(field); ok {
+		if value, ok := storage.DefaultValueForRecordField(definition, *record, field); ok {
 			record.Fields[name] = value
 		}
 	}
+}
+
+func applyAutoNumberName(definition storage.ObjectDefinition, sequence uint64, record *storage.Record) {
+	if record == nil {
+		return
+	}
+	nameField, ok := definition.Fields["Name"]
+	if !ok || !nameField.AutoNumber {
+		return
+	}
+	if record.Fields == nil {
+		record.Fields = make(map[string]storage.Value)
+	}
+	if value, ok := record.Fields["Name"]; ok && value.Kind == storage.ValueString && strings.TrimSpace(value.String) != "" {
+		return
+	}
+	record.Fields["Name"] = storage.StringValue(formatAutoNumber(nameField.DisplayFormat, sequence))
+}
+
+func formatAutoNumber(format string, sequence uint64) string {
+	format = strings.TrimSpace(format)
+	if format == "" {
+		return fmt.Sprintf("%d", sequence)
+	}
+	start := strings.Index(format, "{")
+	end := strings.Index(format, "}")
+	if start < 0 || end <= start {
+		return format
+	}
+	token := format[start+1 : end]
+	width := 0
+	for _, r := range token {
+		if r != '0' {
+			width = 0
+			break
+		}
+		width++
+	}
+	number := fmt.Sprintf("%d", sequence)
+	if width > 0 {
+		number = fmt.Sprintf("%0*d", width, sequence)
+	}
+	return format[:start] + number + format[end+1:]
 }
 
 func (e *Engine) afterInsertContentVersion(version storage.Record) error {
@@ -830,6 +876,14 @@ func (e *Engine) updateOne(record storage.Record) error {
 	if err := e.validateObjectID(object.Definition, record); err != nil {
 		return err
 	}
+	existing, ok := object.Records[record.ID]
+	if !ok {
+		return fmt.Errorf("dml: record %s does not exist", record.ID)
+	}
+	if existing.System.IsDeleted {
+		return fmt.Errorf("dml: record %s is deleted", record.ID)
+	}
+	stripReadOnlyUpdateFields(object.Definition, e.Org.Namespace, &record)
 	if err := validateFields(object.Definition, e.Org.Namespace, record); err != nil {
 		return err
 	}
@@ -838,13 +892,6 @@ func (e *Engine) updateOne(record storage.Record) error {
 	}
 	if err := e.validateUnique(objectName, object.Definition, record, record.ID); err != nil {
 		return err
-	}
-	existing, ok := object.Records[record.ID]
-	if !ok {
-		return fmt.Errorf("dml: record %s does not exist", record.ID)
-	}
-	if existing.System.IsDeleted {
-		return fmt.Errorf("dml: record %s is deleted", record.ID)
 	}
 	finalRecord := existing.Clone()
 	if finalRecord.Fields == nil {
@@ -863,7 +910,7 @@ func (e *Engine) updateOne(record storage.Record) error {
 			finalRecord.ExplicitNulls[field] = true
 		}
 	}
-	if err := validateValidationRules(object.Definition, finalRecord); err != nil {
+	if err := e.validateValidationRules(object.Definition, finalRecord); err != nil {
 		return err
 	}
 	if existing.Fields == nil {
@@ -875,6 +922,7 @@ func (e *Engine) updateOne(record storage.Record) error {
 	rollbackOrg := e.Org.Clone()
 	rollbackSequences := copySequences(e.IDs.Sequences)
 	stamp := e.systemTimestamp()
+	oldRecord := existing.Clone()
 	for field, value := range record.Fields {
 		existing.Fields[field] = value.Clone()
 		delete(existing.ExplicitNulls, field)
@@ -890,6 +938,7 @@ func (e *Engine) updateOne(record storage.Record) error {
 	existing.System.LastModifiedByID = e.systemUserID()
 	object.Records[record.ID] = existing
 	e.Org.Objects[objectName] = object
+	e.recalculateSummaryFieldsForChildren(objectName, oldRecord, finalRecord)
 	if strings.EqualFold(objectName, "Account") {
 		if err := e.syncPersonContact(existing); err != nil {
 			*e.Org = rollbackOrg
@@ -958,6 +1007,7 @@ func (e *Engine) deleteRecord(objectName string, id storage.ID, seen map[string]
 	stored.System.LastModifiedByID = e.systemUserID()
 	object.Records[id] = stored
 	e.Org.Objects[objectName] = object
+	e.recalculateSummaryFieldsForChildren(objectName, stored)
 	return e.cascadeDeleteChildren(objectName, id, seen)
 }
 
@@ -1055,7 +1105,7 @@ func validateFields(definition storage.ObjectDefinition, namespace string, recor
 		if !ok {
 			return fmt.Errorf("dml: unknown field %s.%s", record.Object, field)
 		}
-		if definition.Fields[canonical].Type == storage.FieldCalculated {
+		if definition.Fields[canonical].Type == storage.FieldCalculated || definition.Fields[canonical].Type == storage.FieldSummary {
 			return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{canonical}, "dml: field %s.%s is not writeable", record.Object, canonical)
 		}
 	}
@@ -1064,7 +1114,7 @@ func validateFields(definition storage.ObjectDefinition, namespace string, recor
 		if !ok {
 			return fmt.Errorf("dml: unknown field %s.%s", record.Object, field)
 		}
-		if definition.Fields[canonical].Type == storage.FieldCalculated {
+		if definition.Fields[canonical].Type == storage.FieldCalculated || definition.Fields[canonical].Type == storage.FieldSummary {
 			return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{canonical}, "dml: field %s.%s is not writeable", record.Object, canonical)
 		}
 	}
@@ -1085,6 +1135,23 @@ func validateRequired(definition storage.ObjectDefinition, record storage.Record
 		return dmlErrorf("REQUIRED_FIELD_MISSING", []string{name}, "dml: missing required field %s.%s", record.Object, name)
 	}
 	return nil
+}
+
+func stripReadOnlyUpdateFields(definition storage.ObjectDefinition, namespace string, record *storage.Record) {
+	if record == nil {
+		return
+	}
+	for field := range record.Fields {
+		canonical, ok := storage.ResolveFieldName(definition, namespace, field)
+		if !ok {
+			continue
+		}
+		fieldDef := definition.Fields[canonical]
+		if fieldDef.Type != storage.FieldCalculated && fieldDef.Type != storage.FieldSummary {
+			continue
+		}
+		delete(record.Fields, field)
+	}
 }
 
 func (e *Engine) validateObjectID(definition storage.ObjectDefinition, record storage.Record) error {
@@ -1123,11 +1190,33 @@ func (e *Engine) validateReferences(definition storage.ObjectDefinition, record 
 				break
 			}
 		}
+		if !found && isPolymorphicReference(definition, name) {
+			found = e.referenceExistsInAnyObject(id)
+		}
 		if !found {
 			return dmlErrorf("FIELD_INTEGRITY_EXCEPTION", []string{name}, "dml: reference %s.%s points to missing record %s", record.Object, name, id)
 		}
 	}
 	return nil
+}
+
+func isPolymorphicReference(definition storage.ObjectDefinition, fieldName string) bool {
+	for _, relationship := range definition.Relations {
+		if strings.EqualFold(relationship.Field, fieldName) && relationship.Polymorphic {
+			return true
+		}
+	}
+	return strings.EqualFold(fieldName, "WhatId") || strings.EqualFold(fieldName, "WhoId")
+}
+
+func (e *Engine) referenceExistsInAnyObject(id storage.ID) bool {
+	for _, object := range e.Org.Objects {
+		record, ok := object.Records[id]
+		if ok && !record.System.IsDeleted {
+			return true
+		}
+	}
+	return false
 }
 
 func (e *Engine) validateUnique(objectName string, definition storage.ObjectDefinition, record storage.Record, currentID storage.ID) error {
@@ -1156,12 +1245,12 @@ func (e *Engine) validateUnique(objectName string, definition storage.ObjectDefi
 	return nil
 }
 
-func validateValidationRules(definition storage.ObjectDefinition, record storage.Record) error {
+func (e *Engine) validateValidationRules(definition storage.ObjectDefinition, record storage.Record) error {
 	for _, rule := range definition.ValidationRules {
 		if !rule.Active {
 			continue
 		}
-		matches, ok := evaluateValidationFormula(rule.ErrorConditionFormula, record)
+		matches, ok := evaluateValidationFormulaInOrg(rule.ErrorConditionFormula, e.Org, definition, record)
 		if !ok || !matches {
 			continue
 		}
@@ -1180,6 +1269,10 @@ func validateValidationRules(definition storage.ObjectDefinition, record storage
 
 func evaluateValidationFormula(formula string, record storage.Record) (bool, bool) {
 	return evaluateRecordFormula(formula, record)
+}
+
+func evaluateValidationFormulaInOrg(formula string, org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record) (bool, bool) {
+	return evaluateRecordFormulaInOrg(formula, org, definition, record)
 }
 
 func trimFormulaLiteral(value string) string {
@@ -1265,7 +1358,7 @@ func (e *Engine) applyWorkflowFieldUpdates(objectName string, id storage.ID) err
 	if err := e.validateReferences(object.Definition, record); err != nil {
 		return err
 	}
-	if err := validateValidationRules(object.Definition, record); err != nil {
+	if err := e.validateValidationRules(object.Definition, record); err != nil {
 		return err
 	}
 	if err := e.validateUnique(objectName, object.Definition, record, record.ID); err != nil {
@@ -1367,7 +1460,7 @@ func (e *Engine) applyFlowFieldUpdates(objectName string, id storage.ID) error {
 	if err := e.validateReferences(object.Definition, record); err != nil {
 		return err
 	}
-	if err := validateValidationRules(object.Definition, record); err != nil {
+	if err := e.validateValidationRules(object.Definition, record); err != nil {
 		return err
 	}
 	if err := e.validateUnique(objectName, object.Definition, record, record.ID); err != nil {
@@ -1765,6 +1858,27 @@ func workflowLiteralValue(field storage.Field, literal string) (storage.Value, b
 		return storage.NullValue(), true, true
 	}
 	switch field.Type {
+	case storage.FieldCalculated:
+		switch strings.ToUpper(field.DisplayType) {
+		case "INTEGER":
+			var value int64
+			if _, err := fmt.Sscanf(literal, "%d", &value); err != nil {
+				return storage.Value{}, false, false
+			}
+			return storage.IntegerValue(value), false, true
+		case "DECIMAL", "DOUBLE", "CURRENCY", "PERCENT":
+			return storage.DecimalValue(literal), false, true
+		case "BOOLEAN":
+			if strings.EqualFold(literal, "true") {
+				return storage.BooleanValue(true), false, true
+			}
+			if strings.EqualFold(literal, "false") {
+				return storage.BooleanValue(false), false, true
+			}
+			return storage.Value{}, false, false
+		default:
+			return storage.StringValue(literal), false, true
+		}
 	case storage.FieldBoolean:
 		if strings.EqualFold(literal, "true") {
 			return storage.BooleanValue(true), false, true
@@ -1888,6 +2002,239 @@ func idFromStorageValue(value storage.Value) storage.ID {
 		return storage.ID(value.String)
 	default:
 		return ""
+	}
+}
+
+func (e *Engine) recalculateSummaryFieldsForChildren(childObjectName string, childRecords ...storage.Record) {
+	if e == nil || e.Org == nil || len(childRecords) == 0 {
+		return
+	}
+	canonicalChild, ok := storage.ResolveObjectName(*e.Org, childObjectName)
+	if !ok {
+		canonicalChild = childObjectName
+	}
+	for parentObjectName, parentObject := range e.Org.Objects {
+		changed := false
+		for parentFieldName, field := range parentObject.Definition.Fields {
+			if field.Type != storage.FieldSummary {
+				continue
+			}
+			summaryChild, _ := splitSummaryQualifiedField(field.SummarizedField)
+			fkChild, fkField := splitSummaryQualifiedField(field.SummaryForeignKey)
+			if summaryChild == "" || fkChild == "" || fkField == "" || !strings.EqualFold(summaryChild, fkChild) {
+				continue
+			}
+			resolvedSummaryChild, ok := storage.ResolveObjectName(*e.Org, summaryChild)
+			if !ok {
+				resolvedSummaryChild = summaryChild
+			}
+			if !strings.EqualFold(resolvedSummaryChild, canonicalChild) {
+				continue
+			}
+			childObject := e.Org.Objects[canonicalChild]
+			fkFieldName, ok := storage.ResolveFieldName(childObject.Definition, e.Org.Namespace, fkField)
+			if !ok {
+				continue
+			}
+			parentIDs := summaryParentIDs(childRecords, fkFieldName)
+			for parentID := range parentIDs {
+				parentRecord, ok := parentObject.Records[parentID]
+				if !ok || parentRecord.System.IsDeleted {
+					continue
+				}
+				value, ok := e.evaluateSummaryField(parentRecord, field)
+				if !ok {
+					continue
+				}
+				if parentRecord.Fields == nil {
+					parentRecord.Fields = make(map[string]storage.Value)
+				}
+				parentRecord.Fields[parentFieldName] = value
+				parentObject.Records[parentID] = parentRecord
+				changed = true
+			}
+		}
+		if changed {
+			e.Org.Objects[parentObjectName] = parentObject
+		}
+	}
+}
+
+func summaryParentIDs(records []storage.Record, fkFieldName string) map[storage.ID]bool {
+	ids := make(map[storage.ID]bool)
+	for _, record := range records {
+		if record.Fields == nil {
+			continue
+		}
+		id := idFromStorageValue(record.Fields[fkFieldName])
+		if id != "" {
+			ids[id] = true
+		}
+	}
+	return ids
+}
+
+func (e *Engine) evaluateSummaryField(parent storage.Record, field storage.Field) (storage.Value, bool) {
+	childObject, childField := splitSummaryQualifiedField(field.SummarizedField)
+	fkObject, fkField := splitSummaryQualifiedField(field.SummaryForeignKey)
+	if e == nil || e.Org == nil || parent.ID == "" || childObject == "" || childField == "" || fkObject == "" || fkField == "" || !strings.EqualFold(childObject, fkObject) {
+		return storage.Value{}, false
+	}
+	canonicalChild, ok := storage.ResolveObjectName(*e.Org, childObject)
+	if !ok {
+		return storage.Value{}, false
+	}
+	childState := e.Org.Objects[canonicalChild]
+	childFieldName, ok := storage.ResolveFieldName(childState.Definition, e.Org.Namespace, childField)
+	if !ok {
+		return storage.Value{}, false
+	}
+	fkFieldName, ok := storage.ResolveFieldName(childState.Definition, e.Org.Namespace, fkField)
+	if !ok {
+		return storage.Value{}, false
+	}
+	values := make([]float64, 0)
+	for _, child := range childState.Records {
+		if child.System.IsDeleted || idFromStorageValue(child.Fields[fkFieldName]) != parent.ID {
+			continue
+		}
+		if !summaryFiltersMatch(e.Org, childState.Definition, child, field.SummaryFilterItems) {
+			continue
+		}
+		value, ok := summaryRecordFieldValue(e.Org, childState.Definition, child, childFieldName)
+		if !ok {
+			continue
+		}
+		number, ok := summaryNumericValue(value)
+		if !ok {
+			continue
+		}
+		values = append(values, number)
+	}
+	operation := strings.ToLower(strings.TrimSpace(field.SummaryOperation))
+	switch operation {
+	case "count":
+		return storage.IntegerValue(int64(len(values))), true
+	case "", "sum":
+		total := 0.0
+		for _, value := range values {
+			total += value
+		}
+		return storage.DecimalValue(strconv.FormatFloat(total, 'f', -1, 64)), true
+	case "max":
+		if len(values) == 0 {
+			return storage.NullValue(), true
+		}
+		max := values[0]
+		for _, value := range values[1:] {
+			if value > max {
+				max = value
+			}
+		}
+		return storage.DecimalValue(strconv.FormatFloat(max, 'f', -1, 64)), true
+	case "min":
+		if len(values) == 0 {
+			return storage.NullValue(), true
+		}
+		min := values[0]
+		for _, value := range values[1:] {
+			if value < min {
+				min = value
+			}
+		}
+		return storage.DecimalValue(strconv.FormatFloat(min, 'f', -1, 64)), true
+	default:
+		return storage.Value{}, false
+	}
+}
+
+func splitSummaryQualifiedField(name string) (string, string) {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return "", ""
+	}
+	parts := strings.Split(name, ".")
+	if len(parts) < 2 {
+		return "", name
+	}
+	return strings.Join(parts[:len(parts)-1], "."), parts[len(parts)-1]
+}
+
+func summaryFiltersMatch(org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record, filters []storage.SummaryFilterItem) bool {
+	for _, filter := range filters {
+		_, fieldName := splitSummaryQualifiedField(filter.Field)
+		if fieldName == "" {
+			fieldName = filter.Field
+		}
+		canonical, ok := storage.ResolveFieldName(definition, org.Namespace, fieldName)
+		if !ok {
+			return false
+		}
+		value, ok := summaryRecordFieldValue(org, definition, record, canonical)
+		if !ok {
+			value = storage.NullValue()
+		}
+		if !summaryFilterMatches(value, filter) {
+			return false
+		}
+	}
+	return true
+}
+
+func summaryRecordFieldValue(org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record, fieldName string) (storage.Value, bool) {
+	if value, ok := record.Fields[fieldName]; ok {
+		return value, true
+	}
+	field, ok := definition.Fields[fieldName]
+	if !ok || field.Type != storage.FieldCalculated || strings.TrimSpace(field.Formula) == "" {
+		return storage.Value{}, false
+	}
+	value, _, ok := EvaluateRecordFormulaValueInOrg(field.Formula, field, org, definition, record)
+	return value, ok
+}
+
+func summaryFilterMatches(value storage.Value, filter storage.SummaryFilterItem) bool {
+	switch strings.ToLower(strings.TrimSpace(filter.Operation)) {
+	case "", "equals":
+		return summaryValueMatchesText(value, filter.Value)
+	default:
+		return false
+	}
+}
+
+func summaryValueMatchesText(value storage.Value, text string) bool {
+	text = strings.TrimSpace(text)
+	switch value.Kind {
+	case storage.ValueBoolean:
+		return strings.EqualFold(strconv.FormatBool(value.Boolean), text)
+	case storage.ValueString:
+		return strings.EqualFold(value.String, text)
+	case storage.ValueID:
+		return strings.EqualFold(string(value.ID), text)
+	case storage.ValueInteger:
+		parsed, err := strconv.ParseInt(text, 10, 64)
+		return err == nil && value.Integer == parsed
+	case storage.ValueDecimal:
+		return strings.TrimRight(strings.TrimRight(value.Decimal, "0"), ".") == strings.TrimRight(strings.TrimRight(text, "0"), ".")
+	case storage.ValueNull:
+		return strings.EqualFold(text, "null") || text == ""
+	default:
+		return false
+	}
+}
+
+func summaryNumericValue(value storage.Value) (float64, bool) {
+	switch value.Kind {
+	case storage.ValueInteger:
+		return float64(value.Integer), true
+	case storage.ValueDecimal:
+		parsed, err := strconv.ParseFloat(value.Decimal, 64)
+		return parsed, err == nil
+	case storage.ValueString:
+		parsed, err := strconv.ParseFloat(value.String, 64)
+		return parsed, err == nil
+	default:
+		return 0, false
 	}
 }
 

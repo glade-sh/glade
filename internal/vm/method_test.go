@@ -54,6 +54,25 @@ func TestExecRegisteredMethodDoesNotLeakParams(t *testing.T) {
 	}
 }
 
+func TestExecRecursiveMethodReturnsRuntimeError(t *testing.T) {
+	methodProgram, err := CompileAnonymous("return Loop.run();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous("Loop.run();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterMethod(Method{Name: "Loop.run", ClassName: "Loop", ReturnType: "Object", Program: methodProgram}); err != nil {
+		t.Fatal(err)
+	}
+	_, err = machine.Execute(program)
+	if err == nil || !strings.Contains(err.Error(), "maximum Apex call stack depth exceeded") {
+		t.Fatalf("expected call depth error, got %v", err)
+	}
+}
+
 func TestExecRegisteredMethodCoercesParamsAndReturns(t *testing.T) {
 	methodProgram, err := CompileAnonymous("return value;")
 	if err != nil {
@@ -796,6 +815,52 @@ System.assertEquals('ACME!', b.Name);
 				Property: true,
 				Getter:   &Method{Name: "Box.Name.get", ClassName: "Box", ReturnType: "String", Program: getter},
 				Setter:   &Method{Name: "Box.Name.set", ClassName: "Box", Params: []Param{{Name: "value", Type: "String"}}, Program: setter},
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDottedAssignmentUsesIntermediatePropertyGetter(t *testing.T) {
+	getter, err := CompileAnonymous(`
+if (child == null) {
+    child = new Child();
+}
+return child;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Parent p = new Parent();
+p.Child.Name = 'Acme';
+System.assertEquals('Acme', p.Child.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Child",
+		Fields: map[string]Field{
+			"Name": {Name: "Name", Type: "String"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "Parent",
+		Fields: map[string]Field{
+			"child": {Name: "child", Type: "Child", Access: "private"},
+			"Child": {
+				Name:     "Child",
+				Type:     "Child",
+				Property: true,
+				Getter:   &Method{Name: "Parent.Child.get", ClassName: "Parent", ReturnType: "Child", Program: getter},
 			},
 		},
 	}); err != nil {
@@ -1573,6 +1638,39 @@ String value = pkg.Secret.pub();
 	}
 }
 
+func TestRuntimeAllowsPublicAccessInsideCurrentNamespace(t *testing.T) {
+	helperProgram, err := CompileAnonymous("return 'public';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous("System.assertEquals('public', Secret.pub());")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:      "Secret",
+		Namespace: "pkg",
+		Access:    "public",
+		Methods: map[string]Method{
+			"pub": {Name: "Secret.pub", ClassName: "Secret", ReturnType: "String", Access: "public", IsStatic: true, Program: helperProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:      "SecretTest",
+		Namespace: "pkg",
+		Access:    "public",
+		IsTest:    true,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.ExecuteInClass(program, "SecretTest"); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestRuntimeConstructsNamespaceQualifiedClass(t *testing.T) {
 	program, err := CompileAnonymous(`
 pkg.Box box = new pkg.Box();
@@ -2277,6 +2375,131 @@ System.assertEquals(first, alias);
 	}
 	machine := New(nil)
 	if err := machine.RegisterClass(Class{Name: "Box"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDottedCallOnInstanceFieldWithSimpleReceiver(t *testing.T) {
+	runProgram, err := CompileAnonymous(`
+Set<String> keys = values.keySet();
+return keys.size();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Holder holder = new Holder();
+System.assertEquals(1, holder.run());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	values := typedMap("Map<String,Object>")
+	values.Map[mapKey(String("name"))] = String("value")
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Holder",
+		Fields: map[string]Field{
+			"values": {Name: "values", Type: "Map<String,Object>", InitialValue: values},
+		},
+		Methods: map[string]Method{
+			"run": {
+				Name:       "Holder.run",
+				ClassName:  "Holder",
+				ReturnType: "Integer",
+				Program:    runProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDottedCallOnInheritedPropertyWithSimpleReceiver(t *testing.T) {
+	getterProgram, err := CompileAnonymous(`
+Map<String,Object> values = new Map<String,Object>();
+values.put('name', 'value');
+return values;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	runProgram, err := CompileAnonymous(`
+Set<String> keys = values.keySet();
+return keys.size();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Child child = new Child();
+System.assertEquals(1, child.run());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Base",
+		Fields: map[string]Field{
+			"values": {
+				Name:   "values",
+				Type:   "Map<String,Object>",
+				Access: "private",
+				Getter: &Method{
+					Name:       "Base.values.get",
+					ClassName:  "Base",
+					ReturnType: "Map<String,Object>",
+					Program:    getterProgram,
+				},
+			},
+		},
+		Methods: map[string]Method{
+			"run": {
+				Name:       "Base.run",
+				ClassName:  "Base",
+				ReturnType: "Integer",
+				Program:    runProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Child",
+		SuperClass: "Base",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecAssignsFieldOnIndexedListElement(t *testing.T) {
+	program, err := CompileAnonymous(`
+Item first = new Item();
+Item second = new Item();
+List<Item> items = new List<Item>{ first, second };
+items[0].next = items[1];
+System.assertEquals(second, first.next);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Item",
+		Fields: map[string]Field{
+			"next": {Name: "next", Type: "Item"},
+		},
+	}); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := machine.Execute(program); err != nil {

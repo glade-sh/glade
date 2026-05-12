@@ -60,6 +60,157 @@ func TestInsertUpdateDelete(t *testing.T) {
 	}
 }
 
+func TestInsertAppliesAutoNumberName(t *testing.T) {
+	org := testOrg()
+	org.Objects["Order__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Order__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString, Required: true, AutoNumber: true, DisplayFormat: "Order {0000000}"},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{Object: "Order__c"}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert[0])
+	}
+	if got := org.Objects["Order__c"].Records[insert[0].ID].Fields["Name"].String; got != "Order 0000001" {
+		t.Fatalf("auto number name = %q", got)
+	}
+}
+
+func TestDMLRecalculatesSummaryFields(t *testing.T) {
+	org := testOrg()
+	org.Objects["Parent__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Parent__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"Name":       {APIName: "Name", Type: storage.FieldString},
+				"MaxTerm__c": {APIName: "MaxTerm__c", Type: storage.FieldSummary, SummarizedField: "Child__c.Term__c", SummaryForeignKey: "Child__c.Parent__c", SummaryOperation: "max"},
+				"Total__c":   {APIName: "Total__c", Type: storage.FieldSummary, SummarizedField: "Child__c.Amount__c", SummaryForeignKey: "Child__c.Parent__c", SummaryOperation: "sum"},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	org.Objects["Child__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Child__c",
+			KeyPrefix: "a01",
+			Fields: map[string]storage.Field{
+				"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}},
+				"Term__c":   {APIName: "Term__c", Type: storage.FieldDecimal},
+				"Amount__c": {APIName: "Amount__c", Type: storage.FieldDecimal},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+	parent := engine.Insert([]storage.Record{{Object: "Parent__c"}})
+	if !parent[0].Success {
+		t.Fatalf("parent insert = %#v", parent[0])
+	}
+	children := engine.Insert([]storage.Record{
+		{Object: "Child__c", Fields: map[string]storage.Value{"Parent__c": storage.IDValue(parent[0].ID), "Term__c": storage.DecimalValue("1"), "Amount__c": storage.DecimalValue("5")}},
+		{Object: "Child__c", Fields: map[string]storage.Value{"Parent__c": storage.IDValue(parent[0].ID), "Term__c": storage.DecimalValue("12"), "Amount__c": storage.DecimalValue("7")}},
+	})
+	if !children[0].Success || !children[1].Success {
+		t.Fatalf("child insert = %#v", children)
+	}
+	stored := org.Objects["Parent__c"].Records[parent[0].ID]
+	if got := stored.Fields["MaxTerm__c"].Decimal; got != "12" {
+		t.Fatalf("max summary after insert = %q", got)
+	}
+	if got := stored.Fields["Total__c"].Decimal; got != "12" {
+		t.Fatalf("sum summary after insert = %q", got)
+	}
+	parentUpdate := engine.Update([]storage.Record{{ID: parent[0].ID, Object: "Parent__c", Fields: map[string]storage.Value{
+		"Name":       storage.StringValue("Updated"),
+		"MaxTerm__c": stored.Fields["MaxTerm__c"],
+		"Total__c":   stored.Fields["Total__c"],
+	}}})
+	if !parentUpdate[0].Success {
+		t.Fatalf("parent update with unchanged summaries = %#v", parentUpdate[0])
+	}
+	update := engine.Update([]storage.Record{{ID: children[1].ID, Object: "Child__c", Fields: map[string]storage.Value{"Term__c": storage.DecimalValue("2"), "Amount__c": storage.DecimalValue("3")}}})
+	if !update[0].Success {
+		t.Fatalf("child update = %#v", update[0])
+	}
+	stored = org.Objects["Parent__c"].Records[parent[0].ID]
+	if got := stored.Fields["MaxTerm__c"].Decimal; got != "2" {
+		t.Fatalf("max summary after update = %q", got)
+	}
+	if got := stored.Fields["Total__c"].Decimal; got != "8" {
+		t.Fatalf("sum summary after update = %q", got)
+	}
+	deleteResult := engine.Delete([]storage.Record{{ID: children[1].ID, Object: "Child__c"}})
+	if !deleteResult[0].Success {
+		t.Fatalf("child delete = %#v", deleteResult[0])
+	}
+	stored = org.Objects["Parent__c"].Records[parent[0].ID]
+	if got := stored.Fields["MaxTerm__c"].Decimal; got != "1" {
+		t.Fatalf("max summary after delete = %q", got)
+	}
+	if got := stored.Fields["Total__c"].Decimal; got != "5" {
+		t.Fatalf("sum summary after delete = %q", got)
+	}
+}
+
+func TestInsertAppliesRecordTypeFormulaDefaults(t *testing.T) {
+	org := testOrg()
+	org.Objects["Product__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Product__c",
+			KeyPrefix: "a01",
+			Fields: map[string]storage.Field{
+				"Name":           {APIName: "Name", Type: storage.FieldString, Required: true},
+				"RecordTypeId":   {APIName: "RecordTypeId", Type: storage.FieldReference, ReferenceTo: []string{"RecordType"}, RelationshipName: "RecordType"},
+				"QuantityMax__c": {APIName: "QuantityMax__c", Type: storage.FieldDecimal, Required: true, DefaultValue: "IF($RecordType.Name == 'Merchandise', 999, 1)"},
+			},
+			RecordTypes: []storage.RecordTypeInfo{
+				{ID: "012000000000001AAA", DeveloperName: "Merchandise", Name: "Merchandise"},
+				{ID: "012000000000002AAA", DeveloperName: "Membership", Name: "Membership"},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	org.Objects["RecordType"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "RecordType",
+			KeyPrefix: "012",
+			Fields: map[string]storage.Field{
+				"Id":            {APIName: "Id", Type: storage.FieldID},
+				"Name":          {APIName: "Name", Type: storage.FieldString},
+				"DeveloperName": {APIName: "DeveloperName", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"012000000000001AAA": {Object: "RecordType", ID: "012000000000001AAA"},
+			"012000000000002AAA": {Object: "RecordType", ID: "012000000000002AAA"},
+		},
+	}
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Product__c",
+		Fields: map[string]storage.Value{
+			"Name":         storage.StringValue("Membership"),
+			"RecordTypeId": storage.IDValue("012000000000002AAA"),
+		},
+	}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert[0])
+	}
+	got := org.Objects["Product__c"].Records[insert[0].ID].Fields["QuantityMax__c"]
+	if got.Kind != storage.ValueDecimal || got.Decimal != "1" {
+		t.Fatalf("QuantityMax__c = %#v; want decimal 1", got)
+	}
+}
+
 func TestInsertValidatesRequiredAndUnknownFields(t *testing.T) {
 	org := testOrg()
 	engine := NewEngine(&org)
@@ -597,6 +748,112 @@ func TestValidationRules(t *testing.T) {
 	}})
 	if blockedUpdate[0].Success || blockedUpdate[0].Error != "blocked by validation rule" {
 		t.Fatalf("blocked update = %#v", blockedUpdate)
+	}
+}
+
+func TestValidationRulesResolveParentRelationshipFields(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["GLAccount__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "GLAccount__c",
+			KeyPrefix: "a10",
+			Fields: map[string]storage.Field{
+				"Name":      {APIName: "Name", Type: storage.FieldString},
+				"Entity__c": {APIName: "Entity__c", Type: storage.FieldString},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	org.Objects["BankAccount__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "BankAccount__c",
+			KeyPrefix: "a11",
+			Fields: map[string]storage.Field{
+				"Name":          {APIName: "Name", Type: storage.FieldString},
+				"Entity__c":     {APIName: "Entity__c", Type: storage.FieldString},
+				"GLAccount__c":  {APIName: "GLAccount__c", Type: storage.FieldReference, ReferenceTo: []string{"GLAccount__c"}},
+				"OtherGL__c":    {APIName: "OtherGL__c", Type: storage.FieldReference, ReferenceTo: []string{"GLAccount__c"}, RelationshipName: "OtherGL"},
+				"LegacyOwnerId": {APIName: "LegacyOwnerId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "LegacyOwner"},
+			},
+			ValidationRules: []storage.ValidationRule{{
+				Name:                  "BankAccountGLAccountEntityMustMatch",
+				Active:                true,
+				ErrorConditionFormula: `AND(IsBlank(Entity__c)=False, IsBlank(GLAccount__c)=False, Entity__c <> GLAccount__r.Entity__c)`,
+				ErrorMessage:          "entity mismatch",
+			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+
+	parent := engine.Insert([]storage.Record{{
+		Object: "GLAccount__c",
+		Fields: map[string]storage.Value{
+			"Name":      storage.StringValue("Cash"),
+			"Entity__c": storage.StringValue("Entity A"),
+		},
+	}})
+	if !parent[0].Success {
+		t.Fatalf("parent insert = %#v", parent)
+	}
+
+	matching := engine.Insert([]storage.Record{{
+		Object: "BankAccount__c",
+		Fields: map[string]storage.Value{
+			"Name":         storage.StringValue("Bank"),
+			"Entity__c":    storage.StringValue("Entity A"),
+			"GLAccount__c": storage.IDValue(parent[0].ID),
+		},
+	}})
+	if !matching[0].Success {
+		t.Fatalf("matching insert = %#v", matching)
+	}
+
+	mismatched := engine.Insert([]storage.Record{{
+		Object: "BankAccount__c",
+		Fields: map[string]storage.Value{
+			"Name":         storage.StringValue("Other Bank"),
+			"Entity__c":    storage.StringValue("Entity B"),
+			"GLAccount__c": storage.IDValue(parent[0].ID),
+		},
+	}})
+	if mismatched[0].Success || mismatched[0].StatusCode != "FIELD_CUSTOM_VALIDATION_EXCEPTION" || mismatched[0].Error != "entity mismatch" {
+		t.Fatalf("mismatched insert = %#v", mismatched)
+	}
+}
+
+func TestInsertAllowsTaskWhatIDToReferenceCustomObject(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Task")
+	org.Objects["Invoice__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Invoice__c",
+			KeyPrefix: "a0S",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a0S000000000001": {
+				ID:     "a0S000000000001",
+				Object: "Invoice__c",
+				Fields: map[string]storage.Value{
+					"Name": storage.StringValue("INV-1"),
+				},
+			},
+		},
+	}
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Task",
+		Fields: map[string]storage.Value{
+			"Subject": storage.StringValue("Follow up"),
+			"WhatId":  storage.IDValue("a0S000000000001"),
+		},
+	}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert)
 	}
 }
 

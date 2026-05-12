@@ -82,6 +82,40 @@ func TestDefaultValueForFieldUnquotesStringExpressions(t *testing.T) {
 	}
 }
 
+func TestDefaultValueForFieldUsesPicklistDefaultEntry(t *testing.T) {
+	got, ok := DefaultValueForField(Field{
+		APIName: "Status__c",
+		Type:    FieldPicklist,
+		PicklistValues: []PicklistValue{
+			{Value: "Active", Default: true, Active: true},
+			{Value: "Inactive", Active: true},
+		},
+	})
+	if !ok || got.Kind != ValueString || got.String != "Active" {
+		t.Fatalf("picklist default = %#v, %v; want Active", got, ok)
+	}
+}
+
+func TestDefaultValueForRecordFieldEvaluatesRecordTypeIF(t *testing.T) {
+	definition := ObjectDefinition{
+		APIName: "Product__c",
+		RecordTypes: []RecordTypeInfo{
+			{ID: "012000000000001AAA", DeveloperName: "Merchandise", Name: "Merchandise"},
+			{ID: "012000000000002AAA", DeveloperName: "Membership", Name: "Membership"},
+		},
+	}
+	field := Field{APIName: "QuantityMax__c", Type: FieldDecimal, DefaultValue: "IF($RecordType.Name == 'Merchandise', 999, 1)"}
+
+	merch, ok := DefaultValueForRecordField(definition, Record{Fields: map[string]Value{"RecordTypeId": IDValue("012000000000001AAA")}}, field)
+	if !ok || merch.Kind != ValueDecimal || merch.Decimal != "999" {
+		t.Fatalf("merchandise default = %#v, %v; want 999", merch, ok)
+	}
+	membership, ok := DefaultValueForRecordField(definition, Record{Fields: map[string]Value{"RecordTypeId": IDValue("012000000000002AAA")}}, field)
+	if !ok || membership.Kind != ValueDecimal || membership.Decimal != "1" {
+		t.Fatalf("membership default = %#v, %v; want 1", membership, ok)
+	}
+}
+
 func TestResolveObjectNameMapsUnqualifiedCustomObjectToOrgNamespace(t *testing.T) {
 	org := NewOrgState()
 	org.Namespace = "pkg"
@@ -153,6 +187,9 @@ func TestEnsureStandardObjectFieldsAddsAccountWebsiteWithoutClobber(t *testing.T
 	}
 	if field, ok := definition.Fields["Phone"]; !ok || field.Type != FieldString {
 		t.Fatalf("Phone field = %#v, %v", field, ok)
+	}
+	if field, ok := definition.Fields["TickerSymbol"]; !ok || field.Type != FieldString {
+		t.Fatalf("TickerSymbol field = %#v, %v", field, ok)
 	}
 	if _, ok := definition.Fields["PersonMailingStreet"]; ok {
 		t.Fatalf("PersonMailingStreet should be gated by PersonAccounts: %#v", definition.Fields["PersonMailingStreet"])

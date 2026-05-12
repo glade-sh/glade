@@ -67,7 +67,7 @@ func TestBuildIndexAllowsDuplicateTypesAcrossPackageDirectories(t *testing.T) {
 func TestBuildIndexDiscoversTests(t *testing.T) {
 	root := t.TempDir()
 	classPath := filepath.Join(root, "HelloTest.cls")
-	writeFile(t, classPath, "@IsTest private class HelloTest { @isTest private static void run() {} }")
+	writeFile(t, classPath, "@IsTest(IsParallel=true) private class HelloTest { @isTest private static void run() {} }")
 
 	idx := Build(project.Project{Root: root, ApexFiles: []string{classPath}}, schema.Schema{})
 	if idx.HasErrors() {

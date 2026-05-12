@@ -252,6 +252,7 @@ System.assertEquals('trail', value?.toString());
 String missing = null;
 System.assertEquals(null, missing?.toString());
 System.assertEquals(null, missing?.length());
+System.assertEquals(null, missing?.replace('a', 'b').replace('b', 'c'));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -794,6 +795,34 @@ System.assertEquals('AccountNumber', String.valueOf(Account.AccountNumber));
 	}
 }
 
+func TestExecSObjectFieldTokenUsesStandardOverlayFallback(t *testing.T) {
+	program, err := CompileAnonymous("System.assertEquals('FirstName', String.valueOf(Account.FirstName));")
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Account",
+			KeyPrefix: "001",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	definition := org.Objects["Account"].Definition
+	storage.EnsureStandardObjectFieldsForFeatures(&definition, []string{"PersonAccounts"})
+	if _, ok := definition.Fields["FirstName"]; !ok {
+		t.Fatalf("standard Account overlay missing FirstName")
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecNestedListInitializerPreservesInnerList(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<List<Contact>> nested = new List<List<Contact>>{ new List<Contact>{ new Contact(LastName = 'One'), new Contact(LastName = 'Two') } };
@@ -871,13 +900,7 @@ insert record;
 System.assert(record.CreatedDate != null);
 Map<String, Schema.SObjectField> fields = Account.SObjectType.getDescribe().fields.getMap();
 System.assertEquals('Acme', record.get(fields.get('Name')));
-Boolean caught = false;
-try {
-  record.get(fields.get('CreatedDate'));
-} catch (Exception e) {
-  caught = true;
-}
-System.assert(caught);
+System.assert(record.get(fields.get('CreatedDate')) != null);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1100,6 +1123,27 @@ System.assertEquals(1, Util.count(accounts));
 	}
 }
 
+func TestExpandSOQLBindsKeepsBooleanAndNullLiterals(t *testing.T) {
+	machine := New(nil)
+	got, err := machine.expandSOQLBindsWith(
+		"SELECT Id FROM Account WHERE TaxExempt__c = : true AND IsDeleted = :false AND ParentId = :NULL AND Id IN :ids",
+		func(name string) (Value, error) {
+			if name == "ids" {
+				return Value{Kind: ValueList, List: []Value{{Kind: ValueString, Text: "001000000000001"}}}, nil
+			}
+			return Null, errors.New("unexpected lookup")
+		},
+		nil,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "SELECT Id FROM Account WHERE TaxExempt__c = true AND IsDeleted = false AND ParentId = null AND Id IN ('001000000000001')"
+	if got != want {
+		t.Fatalf("query = %q, want %q", got, want)
+	}
+}
+
 func TestExecSOQLSingleSObjectAssignmentAndReturn(t *testing.T) {
 	selectorProgram, err := CompileAnonymous(`return [SELECT Id, Name FROM Account LIMIT 1];`)
 	if err != nil {
@@ -1274,6 +1318,59 @@ func TestAssignmentTargetTypeWalksStorageReferenceFields(t *testing.T) {
 	machine.VarTypes["contact"] = "Contact"
 	if got := machine.assignmentTargetType("contact.Account__c.Custom__c"); got != "String" {
 		t.Fatalf("target type = %q, want String", got)
+	}
+}
+
+func TestExecUnaryPlusNoOpForStringConcatenation(t *testing.T) {
+	program, err := CompileAnonymous(`
+String value = 'a';
+value += + 'b';
+System.assertEquals('ab', value);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMultipleVariableDeclarationStatement(t *testing.T) {
+	program, err := CompileAnonymous(`
+Integer left = 1, right = 2;
+System.assertEquals(3, left + right);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecExplicitDecimalToIntegerCast(t *testing.T) {
+	program, err := CompileAnonymous(`
+Decimal countValue = 5;
+Integer existingCount = (Integer)countValue;
+System.assertEquals(5, existingCount);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecAssertEqualsMatchesFifteenAndEighteenCharacterIDs(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals('001000000000001', '001000000000001AAA');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 

@@ -22,9 +22,16 @@ type Object struct {
 	PluralLabel        string           `json:"pluralLabel,omitempty"`
 	SharingModel       string           `json:"sharingModel,omitempty"`
 	CustomSettingsType string           `json:"customSettingsType,omitempty"`
+	NameField          NameField        `json:"nameField,omitempty"`
 	Fields             []Field          `json:"fields,omitempty"`
 	RecordTypes        []RecordType     `json:"recordTypes,omitempty"`
 	ValidationRules    []ValidationRule `json:"validationRules,omitempty"`
+}
+
+type NameField struct {
+	Label         string `json:"label,omitempty"`
+	Type          string `json:"type,omitempty"`
+	DisplayFormat string `json:"displayFormat,omitempty"`
 }
 
 type Field struct {
@@ -41,7 +48,17 @@ type Field struct {
 	Unique                bool            `json:"unique,omitempty"`
 	Encrypted             bool            `json:"encrypted,omitempty"`
 	Formula               string          `json:"formula,omitempty"`
+	SummarizedField       string          `json:"summarizedField,omitempty"`
+	SummaryForeignKey     string          `json:"summaryForeignKey,omitempty"`
+	SummaryOperation      string          `json:"summaryOperation,omitempty"`
+	SummaryFilterItems    []SummaryFilter `json:"summaryFilterItems,omitempty"`
 	PicklistValues        []PicklistValue `json:"picklistValues,omitempty"`
+}
+
+type SummaryFilter struct {
+	Field     string `json:"field,omitempty"`
+	Operation string `json:"operation,omitempty"`
+	Value     string `json:"value,omitempty"`
 }
 
 type PicklistValue struct {
@@ -88,25 +105,42 @@ type customObjectXML struct {
 	PluralLabel        string              `xml:"pluralLabel"`
 	SharingModel       string              `xml:"sharingModel"`
 	CustomSettingsType string              `xml:"customSettingsType"`
+	NameField          nameFieldXML        `xml:"nameField"`
 	Fields             []customFieldXML    `xml:"fields"`
 	RecordTypes        []recordTypeXML     `xml:"recordTypes"`
 	ValidationRules    []validationRuleXML `xml:"validationRules"`
 }
 
+type nameFieldXML struct {
+	Label         string `xml:"label"`
+	Type          string `xml:"type"`
+	DisplayFormat string `xml:"displayFormat"`
+}
+
 type customFieldXML struct {
-	FullName              string      `xml:"fullName"`
-	Label                 string      `xml:"label"`
-	Type                  string      `xml:"type"`
-	ReferenceTo           []string    `xml:"referenceTo"`
-	RelationshipName      string      `xml:"relationshipName"`
-	ChildRelationshipName string      `xml:"childRelationshipName"`
-	DeleteConstraint      string      `xml:"deleteConstraint"`
-	DefaultValue          string      `xml:"defaultValue"`
-	Required              bool        `xml:"required"`
-	ExternalID            bool        `xml:"externalId"`
-	Unique                bool        `xml:"unique"`
-	Formula               string      `xml:"formula"`
-	ValueSet              valueSetXML `xml:"valueSet"`
+	FullName              string             `xml:"fullName"`
+	Label                 string             `xml:"label"`
+	Type                  string             `xml:"type"`
+	ReferenceTo           []string           `xml:"referenceTo"`
+	RelationshipName      string             `xml:"relationshipName"`
+	ChildRelationshipName string             `xml:"childRelationshipName"`
+	DeleteConstraint      string             `xml:"deleteConstraint"`
+	DefaultValue          string             `xml:"defaultValue"`
+	Required              bool               `xml:"required"`
+	ExternalID            bool               `xml:"externalId"`
+	Unique                bool               `xml:"unique"`
+	Formula               string             `xml:"formula"`
+	SummarizedField       string             `xml:"summarizedField"`
+	SummaryForeignKey     string             `xml:"summaryForeignKey"`
+	SummaryOperation      string             `xml:"summaryOperation"`
+	SummaryFilterItems    []summaryFilterXML `xml:"summaryFilterItems"`
+	ValueSet              valueSetXML        `xml:"valueSet"`
+}
+
+type summaryFilterXML struct {
+	Field     string `xml:"field"`
+	Operation string `xml:"operation"`
+	Value     string `xml:"value"`
 }
 
 type recordTypeXML struct {
@@ -385,6 +419,11 @@ func loadObject(path string) (Object, error) {
 		PluralLabel:        raw.PluralLabel,
 		SharingModel:       raw.SharingModel,
 		CustomSettingsType: strings.TrimSpace(raw.CustomSettingsType),
+		NameField: NameField{
+			Label:         strings.TrimSpace(raw.NameField.Label),
+			Type:          strings.TrimSpace(raw.NameField.Type),
+			DisplayFormat: strings.TrimSpace(raw.NameField.DisplayFormat),
+		},
 	}
 	for _, rawField := range raw.Fields {
 		field := fieldFromXML(rawField, "")
@@ -438,8 +477,28 @@ func fieldFromXML(raw customFieldXML, fallback string) Field {
 		Unique:                raw.Unique,
 		Encrypted:             strings.EqualFold(raw.Type, "EncryptedText"),
 		Formula:               strings.TrimSpace(raw.Formula),
+		SummarizedField:       strings.TrimSpace(raw.SummarizedField),
+		SummaryForeignKey:     strings.TrimSpace(raw.SummaryForeignKey),
+		SummaryOperation:      strings.TrimSpace(raw.SummaryOperation),
+		SummaryFilterItems:    summaryFiltersFromXML(raw.SummaryFilterItems),
 		PicklistValues:        picklistValues(raw.ValueSet.Definition.Values),
 	}
+}
+
+func summaryFiltersFromXML(raw []summaryFilterXML) []SummaryFilter {
+	out := make([]SummaryFilter, 0, len(raw))
+	for _, item := range raw {
+		field := strings.TrimSpace(item.Field)
+		if field == "" {
+			continue
+		}
+		out = append(out, SummaryFilter{
+			Field:     field,
+			Operation: strings.TrimSpace(item.Operation),
+			Value:     strings.TrimSpace(item.Value),
+		})
+	}
+	return out
 }
 
 func loadCustomMetadataRecord(path string) (CustomMetadataRecord, error) {

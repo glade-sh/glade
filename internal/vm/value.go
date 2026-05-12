@@ -21,6 +21,7 @@ type Value struct {
 	List    []Value          `json:"list,omitempty"`
 	Set     []Value          `json:"set,omitempty"`
 	Map     map[string]Value `json:"map,omitempty"`
+	MapKeys map[string]Value `json:"-"`
 }
 
 type ValueKind string
@@ -76,7 +77,7 @@ func Set(values ...Value) Value {
 }
 
 func Map() Value {
-	return Value{Kind: ValueMap, Map: make(map[string]Value), Ref: newValueRef()}
+	return Value{Kind: ValueMap, Map: make(map[string]Value), MapKeys: make(map[string]Value), Ref: newValueRef()}
 }
 
 func Object(typeName string) Value {
@@ -159,13 +160,19 @@ func (v Value) Equal(other Value) bool {
 		}
 		if v.Kind == ValueString && other.Kind == ValueObject && strings.EqualFold(other.Type, "Id") {
 			if text, ok := platformScalarObjectText(other); ok {
-				return v.Text == text
+				return apexIDTextEqual(v.Text, text)
 			}
 		}
 		if v.Kind == ValueObject && strings.EqualFold(v.Type, "Id") && other.Kind == ValueString {
 			if text, ok := platformScalarObjectText(v); ok {
-				return text == other.Text
+				return apexIDTextEqual(text, other.Text)
 			}
+		}
+		if v.Kind == ValueString && other.Kind == ValueObject && isStringComparableEnum(other.Type) {
+			return v.Text == other.Text
+		}
+		if v.Kind == ValueObject && isStringComparableEnum(v.Type) && other.Kind == ValueString {
+			return v.Text == other.Text
 		}
 		return false
 	}
@@ -179,6 +186,9 @@ func (v Value) Equal(other Value) bool {
 	case ValueBool:
 		return v.Bool == other.Bool
 	case ValueString:
+		if looksLikeID(v.Text) && looksLikeID(other.Text) {
+			return apexIDTextEqual(v.Text, other.Text)
+		}
 		return v.Text == other.Text
 	case ValueList:
 		if len(v.List) != len(other.List) {
@@ -231,6 +241,9 @@ func (v Value) Equal(other Value) bool {
 			if !ok || !otherOK {
 				return false
 			}
+			if strings.EqualFold(v.Type, "Id") && strings.EqualFold(other.Type, "Id") && value.Kind == ValueString && otherValue.Kind == ValueString {
+				return apexIDTextEqual(value.Text, otherValue.Text)
+			}
 			return v.Type == other.Type && value.Equal(otherValue)
 		}
 		if v.Text != "" || other.Text != "" {
@@ -240,6 +253,42 @@ func (v Value) Equal(other Value) bool {
 	default:
 		return false
 	}
+}
+
+func isStringComparableEnum(typeName string) bool {
+	switch typeName {
+	case "Schema.DisplayType", "Schema.SOAPType":
+		return true
+	default:
+		return false
+	}
+}
+
+func apexIDTextEqual(left, right string) bool {
+	if len(left) >= 15 && len(right) >= 15 {
+		return strings.EqualFold(left[:15], right[:15])
+	}
+	return left == right
+}
+
+func canonicalIDMapKey(value string) string {
+	if len(value) >= 15 {
+		return strings.ToLower(value[:15])
+	}
+	return value
+}
+
+func looksLikeID(value string) bool {
+	if len(value) != 15 && len(value) != 18 {
+		return false
+	}
+	for _, r := range value {
+		if (r >= '0' && r <= '9') || (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') {
+			continue
+		}
+		return false
+	}
+	return true
 }
 
 func valueIdentityEqual(left, right Value) bool {
@@ -369,8 +418,21 @@ func mapKey(v Value) string {
 	}
 	if v.Kind == ValueObject && platformScalarObject(v.Type) {
 		if raw, ok := v.Fields["value"]; ok && raw.Kind == ValueString {
+			if strings.EqualFold(v.Type, "Id") {
+				return string(v.Kind) + ":" + v.Type + ":" + canonicalIDMapKey(raw.Text)
+			}
 			return string(v.Kind) + ":" + v.Type + ":" + raw.Text
 		}
+	}
+	if v.Kind == ValueObject && v.Type != "" {
+		if id, ok := v.Fields["Id"]; ok {
+			if text, ok := idValueText(id); ok && text != "" {
+				return string(v.Kind) + ":" + v.Type + ":" + canonicalIDMapKey(text)
+			}
+		}
+	}
+	if v.Kind == ValueString && looksLikeID(v.Text) {
+		return string(ValueObject) + ":Id:" + canonicalIDMapKey(v.Text)
 	}
 	if v.Kind == ValueObject && v.Type != "" && v.Text != "" {
 		return string(v.Kind) + ":" + v.Type + ":" + v.Text

@@ -42,6 +42,27 @@ System.assertEquals(0, empty.size());
 	}
 }
 
+func TestExecSObjectMapKeySetKeepsSObjectKeys(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account a = new Account(Name = 'Acme');
+insert a;
+Map<Account, String> byAccount = new Map<Account, String>();
+byAccount.put(a, 'seen');
+for (Account key : byAccount.keySet()) {
+    System.assertEquals(a.Id, key.Id);
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDatabaseQueryCanAssignSingleRowToSObject(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account a = new Account(Name = 'Single');
@@ -69,9 +90,202 @@ System.assert(fields.containsKey('Name'));
 System.assert(fields.containsKey('MasterRecordId'));
 System.assertNotEquals(null, Account.SObjectType.fields.Id);
 System.assertNotEquals(null, Account.SObjectType.fields.id);
+System.assertEquals('Name', Account.SObjectType.fields.Name.Name);
 System.assertNotEquals(null, OpportunityLineItem.SObjectType);
 Schema.SObjectField ownerField = fields.get('OwnerId');
 System.assertEquals(Schema.SOAPType.ID, ownerField.getDescribe().getSOAPType());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestQueriedSObjectFieldsMarksLookupForRelationshipProjection(t *testing.T) {
+	machine := New(nil)
+	org := storage.OrgState{Objects: map[string]storage.ObjectState{
+		"Child__c": {
+			Definition: storage.ObjectDefinition{
+				APIName: "Child__c",
+				Fields: map[string]storage.Field{
+					"Id":        {APIName: "Id", Type: storage.FieldID},
+					"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Parent__r"},
+				},
+				Relations: []storage.Relationship{{
+					Field:              "Parent__c",
+					ParentObjects:      []string{"Account"},
+					ParentRelationship: "Parent__r",
+				}},
+			},
+		},
+		"Account": {
+			Definition: storage.ObjectDefinition{
+				APIName: "Account",
+				Fields:  map[string]storage.Field{"Id": {APIName: "Id", Type: storage.FieldID}},
+			},
+		},
+	}}
+	machine.SetOrg(&org)
+
+	fields := machine.queriedSObjectFields("SELECT Id, Parent__r.Id FROM Child__c")
+	if !fields["parent__c"] {
+		t.Fatalf("relationship projection did not mark lookup field: %#v", fields)
+	}
+}
+
+func TestExecRelationshipProjectionHydratesLookupField(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<SObject> rows = Database.query('SELECT Parent__r.Id FROM Child__c');
+System.assertEquals(1, rows.size());
+System.assertEquals('001000000000001AAA', rows[0].get('Parent__c'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.OrgState{Objects: map[string]storage.ObjectState{
+		"Account": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "Account",
+				KeyPrefix: "001",
+				Fields:    map[string]storage.Field{"Id": {APIName: "Id", Type: storage.FieldID}},
+			},
+			Records: map[storage.ID]storage.Record{
+				"001000000000001AAA": {Object: "Account", ID: "001000000000001AAA", Fields: map[string]storage.Value{}},
+			},
+		},
+		"Child__c": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "Child__c",
+				KeyPrefix: "a00",
+				Fields: map[string]storage.Field{
+					"Id":        {APIName: "Id", Type: storage.FieldID},
+					"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Parent__r"},
+				},
+				Relations: []storage.Relationship{{
+					Field:              "Parent__c",
+					ParentObjects:      []string{"Account"},
+					ParentRelationship: "Parent__r",
+				}},
+			},
+			Records: map[storage.ID]storage.Record{
+				"a00000000000001AAA": {
+					Object: "Child__c",
+					ID:     "a00000000000001AAA",
+					Fields: map[string]storage.Value{"Parent__c": storage.IDValue("001000000000001AAA")},
+				},
+			},
+		},
+	}}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecParentRelationshipCanLoadFromLookupID(t *testing.T) {
+	program, err := CompileAnonymous(`
+Child__c child = new Child__c(Parent__c = '001000000000001AAA');
+System.assertEquals('Acme', child.Parent__r.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.OrgState{Objects: map[string]storage.ObjectState{
+		"Account": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "Account",
+				KeyPrefix: "001",
+				Fields: map[string]storage.Field{
+					"Id":   {APIName: "Id", Type: storage.FieldID},
+					"Name": {APIName: "Name", Type: storage.FieldString},
+				},
+			},
+			Records: map[storage.ID]storage.Record{
+				"001000000000001AAA": {Object: "Account", ID: "001000000000001AAA", Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")}},
+			},
+		},
+		"Child__c": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "Child__c",
+				KeyPrefix: "a00",
+				Fields: map[string]storage.Field{
+					"Id":        {APIName: "Id", Type: storage.FieldID},
+					"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Parent__r"},
+				},
+				Relations: []storage.Relationship{{
+					Field:              "Parent__c",
+					ParentObjects:      []string{"Account"},
+					ParentRelationship: "Parent__r",
+				}},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+	}}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecJSONDeserializeSObjectParentRelationship(t *testing.T) {
+	program, err := CompileAnonymous(`
+Child__c child = (Child__c)JSON.deserialize('{"Id":"a00000000000001AAA","Parent__r":{"Id":"001000000000001AAA","Name":"Acme"}}', Child__c.class);
+System.assertEquals('Parent__r', Child__c.Parent__c.getDescribe().getRelationshipName());
+System.assertEquals('Acme', child.Parent__r.Name);
+System.assertEquals('001000000000001AAA', child.Parent__r.Id);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.OrgState{Objects: map[string]storage.ObjectState{
+		"Account": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "Account",
+				KeyPrefix: "001",
+				Fields: map[string]storage.Field{
+					"Id":   {APIName: "Id", Type: storage.FieldID},
+					"Name": {APIName: "Name", Type: storage.FieldString},
+				},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+		"Child__c": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "Child__c",
+				KeyPrefix: "a00",
+				Fields: map[string]storage.Field{
+					"Id":        {APIName: "Id", Type: storage.FieldID},
+					"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "ChildRecords"},
+				},
+				Relations: []storage.Relationship{{
+					Field:              "Parent__c",
+					ParentObjects:      []string{"Account"},
+					ParentRelationship: "Parent__r",
+				}},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+	}}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDescribeFieldTypeCanCompareUnqualifiedDisplayType(t *testing.T) {
+	program, err := CompileAnonymous(`
+Schema.DescribeFieldResult describe = Account.Name.getDescribe();
+System.assertEquals(Schema.DisplayType.STRING, describe.getType());
+System.assertEquals(DisplayType.STRING, describe.getType());
+System.assertEquals('STRING', describe.getType());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -88,9 +302,10 @@ func TestExecSObjectTypeNewSObject(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account emptyAccount = (Account)Account.SObjectType.newSObject();
 System.assertEquals('Account', emptyAccount.getSObjectType().getDescribe().getName());
+Account accountWithRecordTypeId = (Account)Account.SObjectType.newSObject('012000000000001AAA');
+System.assertEquals('012000000000001AAA', accountWithRecordTypeId.RecordTypeId);
 Account accountWithId = (Account)Account.SObjectType.newSObject('001000000000001AAA');
-String accountId = accountWithId.Id;
-System.assertEquals('001000000000001AAA', accountId);
+System.assertEquals('001000000000001AAA', accountWithId.Id);
 Account accountWithDefaults = (Account)Account.SObjectType.newSObject(null, true);
 System.assertEquals('Account', accountWithDefaults.getSObjectType().getDescribe().getName());
 TemplateSettings__c settings = (TemplateSettings__c)TemplateSettings__c.SObjectType.newSObject(null, true);
@@ -295,6 +510,8 @@ System.assertEquals(Date.today(), Date.Today());
 System.assertEquals(false, Test.Database.hasRecords());
 System.assert(Date.newInstance(2026, 1, 1) <= Date.newInstance(2026, 1, 2));
 System.assert(Date.newInstance(2026, 1, 2) >= Date.newInstance(2026, 1, 1));
+Date missingDate = null;
+System.assertEquals(false, missingDate < Date.newInstance(2026, 1, 1));
 System.assertEquals('Local_Message', Label.Local_Message);
 `)
 	if err != nil {
@@ -596,6 +813,45 @@ System.assert(!consumer.isDefaultRecordTypeMapping());
 	}
 }
 
+func TestExecDescribeAccountRecordTypeInfosUsesPersonAccountFallback(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String,Object> byName = Account.SObjectType.getDescribe().getRecordTypeInfosByName();
+Object individual = byName.get('Individual');
+System.assertNotEquals(null, individual);
+System.assertEquals('Individual', individual.getName());
+System.assertNotEquals(null, individual.getRecordTypeId());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Account",
+			KeyPrefix: "001",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	org.Objects["PersonAccount"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "PersonAccount",
+			KeyPrefix: "001",
+			RecordTypes: []storage.RecordTypeInfo{
+				{ID: "012000000000201", DeveloperName: "Individual", Name: "Individual", Active: true, Available: true},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSObjectTypeRecordTypeInfosByNameForCustomObject(t *testing.T) {
 	program, err := CompileAnonymous(`
 Map<String,Object> byName = Schema.SObjectType.Batch__c.getRecordTypeInfosByName();
@@ -612,6 +868,7 @@ System.assertEquals('Ad_Hoc', adHoc.getName());
 System.assertEquals('Ad_Hoc', adHoc.getDeveloperName());
 System.assertEquals('012000000000102', adHoc.getRecordTypeId());
 System.assert(!adHoc.isDefaultRecordTypeMapping());
+System.assertEquals('Scheduled Batch', byName.get('Scheduled').getName());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -633,6 +890,205 @@ System.assert(!adHoc.isDefaultRecordTypeMapping());
 		},
 		Records: make(map[storage.ID]storage.Record),
 	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecRecordTypeInfoActiveRecordTypeDefaultsAvailable(t *testing.T) {
+	program, err := CompileAnonymous(`
+Object info = Batch__c.SObjectType.getDescribe().getRecordTypeInfosByName().get('Scheduled Batch');
+System.assert(info.isActive());
+System.assert(info.isAvailable());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	org.Objects["Batch__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Batch__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+			RecordTypes: []storage.RecordTypeInfo{
+				{ID: "012000000000101", DeveloperName: "Scheduled", Name: "Scheduled Batch", Active: true},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecRecordTypeInfoIdComparesToIdValues(t *testing.T) {
+	program, err := CompileAnonymous(`
+Id recordTypeId = Batch__c.SObjectType.getDescribe().getRecordTypeInfosByName().get('Scheduled Batch').getRecordTypeId();
+for (Schema.RecordTypeInfo info : Batch__c.SObjectType.getDescribe().getRecordTypeInfosByName().values()) {
+	if (info.getRecordTypeId() == recordTypeId) {
+		System.assertEquals('Scheduled Batch', info.getName());
+		return;
+	}
+}
+System.assert(false);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	org.Objects["Batch__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Batch__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+			RecordTypes: []storage.RecordTypeInfo{
+				{ID: "012000000000101", DeveloperName: "Scheduled", Name: "Scheduled Batch", Active: true},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecRecordTypeInfoIdComparesFifteenAndEighteenCharacterIds(t *testing.T) {
+	program, err := CompileAnonymous(`
+Id recordTypeId = '012000000000101AAA';
+for (Schema.RecordTypeInfo info : Batch__c.SObjectType.getDescribe().getRecordTypeInfosByName().values()) {
+	if (info.getRecordTypeId() == recordTypeId) {
+		System.assertEquals('Scheduled Batch', info.getName());
+		return;
+	}
+}
+System.assert(false);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	org.Objects["Batch__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Batch__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+			RecordTypes: []storage.RecordTypeInfo{
+				{ID: "012000000000101", DeveloperName: "Scheduled", Name: "Scheduled Batch", Active: true},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecRecordTypeIdFieldTokenOnCustomObjectWithRecordTypes(t *testing.T) {
+	program, err := CompileAnonymous(`
+Schema.SObjectField field = Batch__c.RecordTypeId;
+System.assertEquals('RecordTypeId', field.getDescribe().getName());
+Batch__c record = Batch__c.SObjectType.newSObject(null, true);
+Id recordTypeId = Batch__c.SObjectType.getDescribe().getRecordTypeInfosByName().get('Scheduled Batch').getRecordTypeId();
+record.put(field, recordTypeId);
+System.assertEquals(recordTypeId, record.RecordTypeId);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	org.Objects["Batch__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Batch__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+			RecordTypes: []storage.RecordTypeInfo{
+				{ID: "012000000000101", DeveloperName: "Scheduled", Name: "Scheduled Batch", Active: true},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	storage.EnsureDeterministicPlatformData(&org)
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecRecordTypeIdSurvivesChildRelationshipQuery(t *testing.T) {
+	program, err := CompileAnonymous(`
+Id recordTypeId = Child__c.SObjectType.getDescribe().getRecordTypeInfosByName().get('Scheduled Batch').getRecordTypeId();
+Child__c defaultChild = (Child__c)Child__c.SObjectType.newSObject(null, true);
+System.assertEquals(recordTypeId, defaultChild.RecordTypeId);
+Parent__c parent = new Parent__c(Name = 'P');
+insert parent;
+insert new Child__c(Name = 'C', Parent__c = parent.Id, RecordTypeId = recordTypeId);
+Parent__c queried = [SELECT Id, (SELECT Id, Parent__c, RecordTypeId FROM Children__r) FROM Parent__c WHERE Id = :parent.Id];
+Child__c child = queried.Children__r[0];
+Map<Id, Parent__c> parentsById = new Map<Id, Parent__c>(new List<Parent__c>{queried});
+System.assertNotEquals(null, parentsById.get(child.Parent__c));
+System.assertNotEquals(null, parentsById.get(String.valueOf(child.Parent__c) + 'AAA'));
+update queried;
+Schema.RecordTypeInfo matched;
+for (Schema.RecordTypeInfo info : Child__c.SObjectType.getDescribe().getRecordTypeInfosByName().values()) {
+	if (info.getRecordTypeId() == child.RecordTypeId) {
+		matched = info;
+	}
+}
+System.assertNotEquals(null, matched);
+System.assertEquals('Scheduled Batch', matched.getName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	org.Objects["Parent__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Parent__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	org.Objects["Child__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Child__c",
+			KeyPrefix: "a01",
+			Fields: map[string]storage.Field{
+				"Name":      {APIName: "Name", Type: storage.FieldString},
+				"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}, RelationshipName: "Parent__r"},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "Parent__c",
+				ParentObjects:      []string{"Parent__c"},
+				ParentRelationship: "Parent__r",
+				ChildRelationship:  "Children__r",
+			}},
+			RecordTypes: []storage.RecordTypeInfo{
+				{ID: "012000000000101", DeveloperName: "Scheduled", Name: "Scheduled Batch", Active: true},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	storage.EnsureDeterministicPlatformData(&org)
+	machine := New(nil)
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
@@ -709,6 +1165,8 @@ System.assertEquals('Name', nameField.getName());
 System.assertEquals('Name', lowercaseNameDescribe.getName());
 System.assert(nameDescribe.isNameField());
 System.assert(!nameDescribe.isEncrypted());
+System.assert(!nameDescribe.isCalculated());
+System.assert(!nameDescribe.isCustom());
 System.assertEquals('STRING', nameDescribe.getType());
 System.assert(nameField.isAccessible());
 System.assert(nameField.isCreateable());
@@ -717,6 +1175,10 @@ System.assert(Schema.sObjectType.Account.fields.Name.isUpdateable());
 Object secretField = fields.get('Secret__c');
 Object secretDescribe = secretField.getDescribe();
 System.assert(secretDescribe.isEncrypted());
+System.assert(secretDescribe.isCustom());
+Object totalField = fields.get('Total__c');
+Object totalDescribe = totalField.getDescribe();
+System.assert(totalDescribe.isCalculated());
 Object schemaType = Schema.SObjectType.Account;
 System.assertEquals('Account', String.valueOf(schemaType));
 Object schemaDescribe = schemaType.getDescribe();
@@ -1197,6 +1659,78 @@ System.assert(caught);
 	}
 }
 
+func TestExecDMLCoercesDateIntoDateTimeField(t *testing.T) {
+	program, err := CompileAnonymous(`
+insert new Account(Name = 'Acme', LastSeen__c = Date.newInstance(2026, 5, 2));
+Account row = [SELECT LastSeen__c FROM Account LIMIT 1];
+System.assertEquals(Datetime.newInstanceGmt(2026, 5, 2, 0, 0, 0), row.LastSeen__c);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["LastSeen__c"] = storage.Field{APIName: "LastSeen__c", Type: storage.FieldDateTime}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSummaryFieldSumsChildRecords(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account parent = new Account(Name = 'Acme');
+insert parent;
+insert new WidgetLine__c(Account__c = parent.Id, Amount__c = 4, IsCoupon__c = false);
+insert new WidgetLine__c(Account__c = parent.Id, Amount__c = 3, IsCoupon__c = false);
+insert new WidgetLine__c(Account__c = parent.Id, Amount__c = 9, IsCoupon__c = true);
+Account row = [SELECT SubTotal__c FROM Account WHERE Id = :parent.Id LIMIT 1];
+System.assertEquals(7, row.SubTotal__c);
+row.Name = 'Changed';
+update row;
+Account changed = [SELECT Name FROM Account WHERE Id = :parent.Id LIMIT 1];
+System.assertEquals('Changed', changed.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["SubTotal__c"] = storage.Field{
+		APIName:           "SubTotal__c",
+		Type:              storage.FieldSummary,
+		DisplayType:       "DECIMAL",
+		SummarizedField:   "WidgetLine__c.Amount__c",
+		SummaryForeignKey: "WidgetLine__c.Account__c",
+		SummaryOperation:  "sum",
+		SummaryFilterItems: []storage.SummaryFilterItem{{
+			Field:     "WidgetLine__c.IsCoupon__c",
+			Operation: "equals",
+			Value:     "False",
+		}},
+	}
+	org.Objects["Account"] = account
+	org.Objects["WidgetLine__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "WidgetLine__c",
+			KeyPrefix: "a01",
+			Fields: map[string]storage.Field{
+				"Account__c":  {APIName: "Account__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Account__r"},
+				"Amount__c":   {APIName: "Amount__c", Type: storage.FieldDecimal},
+				"IsCoupon__c": {APIName: "IsCoupon__c", Type: storage.FieldBoolean},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDatabaseQueryWithBinds(t *testing.T) {
 	program, err := CompileAnonymous(`
 insert new Account(Name = 'Acme', Rating = 'Hot');
@@ -1588,6 +2122,47 @@ System.assertEquals('/services/data/v60.0/sobjects/Account/' + a.Id, attrs.get('
 	}
 	machine := New(nil)
 	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecInsertedSObjectMissingFieldReturnsNull(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account a = new Account(Name = 'Acme');
+insert a;
+System.assertEquals(null, a.MasterRecordId);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMissingCalculatedNumericFieldDefaultsToZero(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account a = new Account(Name = 'Acme', Amount__c = 2, Paid__c = 3);
+insert a;
+System.assertEquals('-1', String.valueOf(a.Balance__c));
+Account row = [SELECT Id, Balance__c FROM Account WHERE Id = :a.Id];
+System.assertEquals('-1', String.valueOf(row.Balance__c));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Amount__c"] = storage.Field{APIName: "Amount__c", Type: storage.FieldDecimal}
+	account.Definition.Fields["Paid__c"] = storage.Field{APIName: "Paid__c", Type: storage.FieldDecimal}
+	account.Definition.Fields["Balance__c"] = storage.Field{APIName: "Balance__c", Type: storage.FieldCalculated, DisplayType: "CURRENCY", Formula: "Amount__c - Paid__c"}
+	org.Objects["Account"] = account
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
@@ -2821,6 +3396,7 @@ func TestExecUpsertFiresInsertAndUpdateTriggers(t *testing.T) {
 	beforeInsert, err := CompileAnonymous(`
 for (Account a : Trigger.new) {
 	System.assert(Trigger.isInsert);
+	System.assertEquals(1, a.Defaulted__c);
 	if (a.External_Key__c == 'ext-2') {
 		a.Rating = 'before-insert';
 	}
@@ -2846,6 +3422,7 @@ for (Account a : Trigger.new) {
 	System.assert(Trigger.isUpdate);
 	Account oldAccount = Trigger.oldMap.get(a.Id);
 	System.assertEquals('Existing', oldAccount.Name);
+	System.assertEquals(1, a.Defaulted__c);
 	a.Rating = 'before-update';
 }
 `)
@@ -2886,6 +3463,7 @@ System.assertEquals(1, updateMarkers.size());
 	account := org.Objects["Account"]
 	account.Definition.Fields["External_Key__c"] = storage.Field{APIName: "External_Key__c", Type: storage.FieldString, ExternalID: true, Unique: true}
 	account.Definition.Fields["Rating"] = storage.Field{APIName: "Rating", Type: storage.FieldString}
+	account.Definition.Fields["Defaulted__c"] = storage.Field{APIName: "Defaulted__c", Type: storage.FieldDecimal, Required: true, DefaultValue: "IF($RecordType.Name == 'Merchandise', 999, 1)"}
 	org.Objects["Account"] = account
 	org.Objects["Contact"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
@@ -2913,11 +3491,42 @@ System.assertEquals(1, updateMarkers.size());
 	}
 }
 
+func TestExecTestContextDefaultsCustomObjectTextName(t *testing.T) {
+	program, err := CompileAnonymous(`
+MembershipType__c membershipType = new MembershipType__c();
+insert membershipType;
+MembershipType__c stored = [SELECT Name FROM MembershipType__c WHERE Id = :membershipType.Id];
+System.assertEquals('Membership Type', stored.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	org := testDataOrg()
+	org.Objects["MembershipType__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "MembershipType__c",
+			Label:     "Membership Type",
+			KeyPrefix: "a01",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString, Required: true},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecTriggerBulkPartialSuccessKeepsRowAlignment(t *testing.T) {
 	beforeInsert, err := CompileAnonymous(`
 System.assert(Trigger.isExecuting);
 System.assert(Trigger.isBefore);
 System.assert(Trigger.isInsert);
+System.assert(trigger.isInsert);
 System.assertEquals(3, Trigger.size);
 System.assertEquals(null, Trigger.old);
 System.assertEquals(null, Trigger.newMap);
@@ -3363,6 +3972,7 @@ func testDataOrg() storage.OrgState {
 				"Name":                                 {APIName: "Name", Type: storage.FieldString},
 				"MasterRecordId":                       {APIName: "MasterRecordId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "MasterRecord"},
 				"CopyFromPrimaryAffiliationBilling__c": {APIName: "CopyFromPrimaryAffiliationBilling__c", Type: storage.FieldBoolean, DefaultValue: "false"},
+				"Total__c":                             {APIName: "Total__c", Type: storage.FieldCalculated, DisplayType: "DECIMAL"},
 			},
 		},
 		Records: make(map[storage.ID]storage.Record),

@@ -54,10 +54,7 @@ func ensureCommonRecordTypeField(definition *ObjectDefinition) {
 }
 
 func standardFieldsForObject(objectName string) []Field {
-	if _, ok := standardObjectCatalogEntryFor(objectName); ok {
-		if stringsEqualFold(objectName, "Account") {
-			return []Field{{APIName: "AccountNumber", Label: "Account Number", Type: FieldString}}
-		}
+	if _, ok := standardObjectCatalogEntryFor(objectName); ok && !stringsEqualFold(objectName, "Account") {
 		return nil
 	}
 	switch {
@@ -86,7 +83,7 @@ func standardFieldsForObject(objectName string) []Field {
 			{APIName: "Type", Label: "Type", Type: FieldPicklist},
 		}
 	case stringsEqualFold(objectName, "Account"):
-		return []Field{
+		return withoutPersonAccountFields([]Field{
 			{APIName: "Name", Label: "Account Name", Type: FieldString},
 			{APIName: "AccountNumber", Label: "Account Number", Type: FieldString},
 			{APIName: "AnnualRevenue", Label: "Annual Revenue", Type: FieldDecimal},
@@ -149,7 +146,7 @@ func standardFieldsForObject(objectName string) []Field {
 			{APIName: "TickerSymbol", Label: "Ticker Symbol", Type: FieldString},
 			{APIName: "Type", Label: "Account Type", Type: FieldPicklist},
 			{APIName: "Website", Label: "Website", Type: FieldString},
-		}
+		})
 	case stringsEqualFold(objectName, "Contact"):
 		return []Field{
 			{APIName: "Name", Label: "Full Name", Type: FieldString},
@@ -266,6 +263,17 @@ func standardFieldsForObject(objectName string) []Field {
 	default:
 		return nil
 	}
+}
+
+func withoutPersonAccountFields(fields []Field) []Field {
+	out := fields[:0]
+	for _, field := range fields {
+		if strings.HasPrefix(field.APIName, "Person") {
+			continue
+		}
+		out = append(out, field)
+	}
+	return out
 }
 
 func EnsureStandardObject(org *OrgState, objectName string) {

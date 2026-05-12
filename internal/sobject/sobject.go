@@ -103,20 +103,27 @@ type DescribeSObjectResult struct {
 }
 
 type DescribeFieldResult struct {
-	Name                  string                  `json:"name"`
-	Type                  storage.FieldType       `json:"type"`
-	DisplayType           string                  `json:"displayType,omitempty"`
-	Label                 string                  `json:"label,omitempty"`
-	ReferenceTo           []string                `json:"referenceTo,omitempty"`
-	RelationshipName      string                  `json:"relationshipName,omitempty"`
-	ChildRelationshipName string                  `json:"childRelationshipName,omitempty"`
-	DeleteConstraint      string                  `json:"deleteConstraint,omitempty"`
-	DefaultValue          string                  `json:"defaultValue,omitempty"`
-	Required              bool                    `json:"required,omitempty"`
-	ExternalID            bool                    `json:"externalId,omitempty"`
-	Unique                bool                    `json:"unique,omitempty"`
-	Encrypted             bool                    `json:"encrypted,omitempty"`
-	PicklistValues        []storage.PicklistValue `json:"picklistValues,omitempty"`
+	Name                  string                      `json:"name"`
+	Type                  storage.FieldType           `json:"type"`
+	DisplayType           string                      `json:"displayType,omitempty"`
+	Label                 string                      `json:"label,omitempty"`
+	Formula               string                      `json:"formula,omitempty"`
+	AutoNumber            bool                        `json:"autoNumber,omitempty"`
+	DisplayFormat         string                      `json:"displayFormat,omitempty"`
+	SummarizedField       string                      `json:"summarizedField,omitempty"`
+	SummaryForeignKey     string                      `json:"summaryForeignKey,omitempty"`
+	SummaryOperation      string                      `json:"summaryOperation,omitempty"`
+	SummaryFilterItems    []storage.SummaryFilterItem `json:"summaryFilterItems,omitempty"`
+	ReferenceTo           []string                    `json:"referenceTo,omitempty"`
+	RelationshipName      string                      `json:"relationshipName,omitempty"`
+	ChildRelationshipName string                      `json:"childRelationshipName,omitempty"`
+	DeleteConstraint      string                      `json:"deleteConstraint,omitempty"`
+	DefaultValue          string                      `json:"defaultValue,omitempty"`
+	Required              bool                        `json:"required,omitempty"`
+	ExternalID            bool                        `json:"externalId,omitempty"`
+	Unique                bool                        `json:"unique,omitempty"`
+	Encrypted             bool                        `json:"encrypted,omitempty"`
+	PicklistValues        []storage.PicklistValue     `json:"picklistValues,omitempty"`
 }
 
 type DescribeRecordTypeInfo struct {
@@ -157,17 +164,36 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 			ensureDescribeField(describe.Fields, "SetupOwnerId", "Text", "Setup Owner ID")
 			describe.Metadata = map[string]string{"kind": "customSetting", "customSettingsType": object.CustomSettingsType}
 		}
+		if object.NameField.Type != "" {
+			describe.Fields["Name"] = DescribeFieldResult{
+				Name:          "Name",
+				Type:          storage.FieldString,
+				DisplayType:   displayFieldType(object.NameField.Type),
+				Label:         labelOrName(object.NameField.Label, "Name"),
+				Required:      true,
+				AutoNumber:    strings.EqualFold(object.NameField.Type, "AutoNumber"),
+				DisplayFormat: object.NameField.DisplayFormat,
+			}
+		}
 		for _, field := range object.Fields {
 			fieldType := storageFieldType(field.Type)
 			if field.Formula != "" {
 				fieldType = storage.FieldCalculated
+			}
+			if strings.EqualFold(field.Type, "Summary") {
+				fieldType = storage.FieldSummary
 			}
 			describe.Fields[field.Name] = DescribeFieldResult{
 				Name:                  field.Name,
 				Type:                  fieldType,
 				DisplayType:           displayFieldType(field.Type),
 				Label:                 labelOrName(field.Label, field.Name),
+				Formula:               field.Formula,
 				ReferenceTo:           referenceTargets(field.ReferenceTo),
+				SummarizedField:       field.SummarizedField,
+				SummaryForeignKey:     field.SummaryForeignKey,
+				SummaryOperation:      field.SummaryOperation,
+				SummaryFilterItems:    storageSummaryFilters(field.SummaryFilterItems),
 				RelationshipName:      field.RelationshipName,
 				ChildRelationshipName: field.ChildRelationshipName,
 				DeleteConstraint:      field.DeleteConstraint,
@@ -184,11 +210,15 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 					APIName:          field.Name,
 					RelationshipName: field.RelationshipName,
 				})
+				childRelationship := field.ChildRelationshipName
+				if childRelationship == "" && !strings.EqualFold(field.RelationshipName, parentRelationship) {
+					childRelationship = field.RelationshipName
+				}
 				describe.Relationships = append(describe.Relationships, storage.Relationship{
 					Field:              field.Name,
 					ParentObjects:      references,
 					ParentRelationship: parentRelationship,
-					ChildRelationship:  field.ChildRelationshipName,
+					ChildRelationship:  childRelationship,
 					Polymorphic:        len(references) > 1,
 					CascadeDelete:      strings.EqualFold(field.DeleteConstraint, "Cascade"),
 					RestrictedDelete:   strings.EqualFold(field.DeleteConstraint, "Restrict"),
@@ -209,6 +239,16 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 				Default:       recordType.Default,
 				Description:   recordType.Description,
 			})
+		}
+		if len(describe.RecordTypes) > 0 {
+			describe.Fields["RecordTypeId"] = DescribeFieldResult{
+				Name:             "RecordTypeId",
+				Type:             storage.FieldReference,
+				DisplayType:      string(storage.FieldReference),
+				Label:            "Record Type ID",
+				ReferenceTo:      []string{"RecordType"},
+				RelationshipName: "RecordType",
+			}
 		}
 		for _, rule := range object.ValidationRules {
 			describe.ValidationRules = append(describe.ValidationRules, storage.ValidationRule{
@@ -286,18 +326,25 @@ func ToObjectDefinition(describe DescribeSObjectResult) storage.ObjectDefinition
 	}
 	for name, field := range describe.Fields {
 		definition.Fields[name] = storage.Field{
-			APIName:          field.Name,
-			Label:            labelOrName(field.Label, field.Name),
-			Type:             field.Type,
-			DisplayType:      field.DisplayType,
-			DefaultValue:     field.DefaultValue,
-			Required:         field.Required,
-			ExternalID:       field.ExternalID,
-			Unique:           field.Unique,
-			Encrypted:        field.Encrypted,
-			ReferenceTo:      append([]string(nil), field.ReferenceTo...),
-			RelationshipName: field.RelationshipName,
-			PicklistValues:   append([]storage.PicklistValue(nil), field.PicklistValues...),
+			APIName:            field.Name,
+			Label:              labelOrName(field.Label, field.Name),
+			Type:               field.Type,
+			DisplayType:        field.DisplayType,
+			Formula:            field.Formula,
+			DefaultValue:       field.DefaultValue,
+			AutoNumber:         field.AutoNumber,
+			DisplayFormat:      field.DisplayFormat,
+			SummarizedField:    field.SummarizedField,
+			SummaryForeignKey:  field.SummaryForeignKey,
+			SummaryOperation:   field.SummaryOperation,
+			SummaryFilterItems: append([]storage.SummaryFilterItem(nil), field.SummaryFilterItems...),
+			Required:           field.Required,
+			ExternalID:         field.ExternalID,
+			Unique:             field.Unique,
+			Encrypted:          field.Encrypted,
+			ReferenceTo:        append([]string(nil), field.ReferenceTo...),
+			RelationshipName:   field.RelationshipName,
+			PicklistValues:     append([]storage.PicklistValue(nil), field.PicklistValues...),
 		}
 	}
 	for _, recordType := range describe.RecordTypes {
@@ -311,6 +358,7 @@ func ToObjectDefinition(describe DescribeSObjectResult) storage.ObjectDefinition
 			Description:   recordType.Description,
 		})
 	}
+	storage.EnsureRecordTypeIDField(&definition)
 	return definition
 }
 
@@ -333,18 +381,25 @@ func FromObjectDefinition(definition storage.ObjectDefinition) DescribeSObjectRe
 	}
 	for name, field := range definition.Fields {
 		describe.Fields[name] = DescribeFieldResult{
-			Name:             field.APIName,
-			Type:             field.Type,
-			DisplayType:      field.DisplayType,
-			Label:            labelOrName(field.Label, field.APIName),
-			ReferenceTo:      append([]string(nil), field.ReferenceTo...),
-			RelationshipName: field.RelationshipName,
-			DefaultValue:     field.DefaultValue,
-			Required:         field.Required,
-			ExternalID:       field.ExternalID,
-			Unique:           field.Unique,
-			Encrypted:        field.Encrypted,
-			PicklistValues:   append([]storage.PicklistValue(nil), field.PicklistValues...),
+			Name:               field.APIName,
+			Type:               field.Type,
+			DisplayType:        field.DisplayType,
+			Label:              labelOrName(field.Label, field.APIName),
+			Formula:            field.Formula,
+			AutoNumber:         field.AutoNumber,
+			DisplayFormat:      field.DisplayFormat,
+			SummarizedField:    field.SummarizedField,
+			SummaryForeignKey:  field.SummaryForeignKey,
+			SummaryOperation:   field.SummaryOperation,
+			SummaryFilterItems: append([]storage.SummaryFilterItem(nil), field.SummaryFilterItems...),
+			ReferenceTo:        append([]string(nil), field.ReferenceTo...),
+			RelationshipName:   field.RelationshipName,
+			DefaultValue:       field.DefaultValue,
+			Required:           field.Required,
+			ExternalID:         field.ExternalID,
+			Unique:             field.Unique,
+			Encrypted:          field.Encrypted,
+			PicklistValues:     append([]storage.PicklistValue(nil), field.PicklistValues...),
 		}
 	}
 	for _, recordType := range definition.RecordTypes {
@@ -357,6 +412,16 @@ func FromObjectDefinition(definition storage.ObjectDefinition) DescribeSObjectRe
 			Default:       recordType.Default,
 			Description:   recordType.Description,
 		})
+	}
+	if len(describe.RecordTypes) > 0 {
+		describe.Fields["RecordTypeId"] = DescribeFieldResult{
+			Name:             "RecordTypeId",
+			Type:             storage.FieldReference,
+			DisplayType:      string(storage.FieldReference),
+			Label:            "Record Type ID",
+			ReferenceTo:      []string{"RecordType"},
+			RelationshipName: "RecordType",
+		}
 	}
 	return describe
 }
@@ -389,6 +454,18 @@ func storagePicklistValues(values []schema.PicklistValue) []storage.PicklistValu
 			Label:   value.Label,
 			Default: value.Default,
 			Active:  value.Active,
+		})
+	}
+	return out
+}
+
+func storageSummaryFilters(values []schema.SummaryFilter) []storage.SummaryFilterItem {
+	out := make([]storage.SummaryFilterItem, 0, len(values))
+	for _, value := range values {
+		out = append(out, storage.SummaryFilterItem{
+			Field:     value.Field,
+			Operation: value.Operation,
+			Value:     value.Value,
 		})
 	}
 	return out
@@ -466,6 +543,8 @@ func storageFieldType(raw string) storage.FieldType {
 		return storage.FieldBlob
 	case "Formula":
 		return storage.FieldCalculated
+	case "Summary":
+		return storage.FieldSummary
 	default:
 		return storage.FieldAny
 	}

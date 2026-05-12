@@ -154,12 +154,11 @@ func RunLocalTests(options LocalTestOptions) (LocalTestReport, error) {
 
 	testOpts := apextest.Options{
 		Filter:              localTestFilter(options),
-		TraceBlocked:        true,
+		TraceBlocked:        shouldTraceFocusedLocalTests(options),
 		SlowTestThresholdMS: options.SlowTestThresholdMS,
 		TimeoutMS:           options.TimeoutMS,
 	}
 	cases := apextest.Discover(index, testOpts)
-	cases = filterLocalTestCases(cases, options)
 	sort.SliceStable(cases, func(i, j int) bool {
 		if cases[i].ClassName == cases[j].ClassName {
 			return cases[i].MethodName < cases[j].MethodName
@@ -167,20 +166,22 @@ func RunLocalTests(options LocalTestOptions) (LocalTestReport, error) {
 		return cases[i].ClassName < cases[j].ClassName
 	})
 
-	semaResult := sema.Analyze(index)
-	report.Diagnostics = append(report.Diagnostics, semaResult.Diagnostics...)
-	if firstError, ok := firstLocalTestError(semaResult.Diagnostics); ok {
-		for _, testCase := range cases {
-			report.Outcomes = append(report.Outcomes, localTestDiagnosticOutcome(projectLabel, testCase, "compile_gap", "compile", firstError))
+	if shouldAnalyzeLocalTests(options) {
+		semaResult := sema.Analyze(index)
+		report.Diagnostics = append(report.Diagnostics, semaResult.Diagnostics...)
+		if firstError, ok := firstLocalTestError(semaResult.Diagnostics); ok {
+			for _, testCase := range cases {
+				report.Outcomes = append(report.Outcomes, localTestDiagnosticOutcome(projectLabel, testCase, "compile_gap", "compile", firstError))
+			}
+			finalizeLocalTestReport(&report, options, started)
+			return report, nil
 		}
-		finalizeLocalTestReport(&report, options, started)
-		return report, nil
 	}
 
 	if options.ProfileOnTimeout {
 		testOpts.TraceBlocked = true
 	}
-	run := apextest.RunContext(context.Background(), index, testOpts)
+	run := apextest.RunCasesContext(context.Background(), index, testOpts, cases)
 	for _, suite := range run.Suites {
 		for _, testCase := range suite.Cases {
 			if !matchesLocalTestCase(testCase.ClassName, testCase.MethodName, options) {
@@ -191,6 +192,17 @@ func RunLocalTests(options LocalTestOptions) (LocalTestReport, error) {
 	}
 	finalizeLocalTestReport(&report, options, started)
 	return report, nil
+}
+
+func shouldAnalyzeLocalTests(options LocalTestOptions) bool {
+	return strings.TrimSpace(options.Class) == "" && strings.TrimSpace(options.Method) == ""
+}
+
+func shouldTraceFocusedLocalTests(options LocalTestOptions) bool {
+	if options.TraceBlocked || options.ProfileOnTimeout {
+		return true
+	}
+	return strings.TrimSpace(options.Class) == "" && strings.TrimSpace(options.Method) == ""
 }
 
 func LocalTestReportFromRun(projectRoot string, run testreport.Run) LocalTestReport {

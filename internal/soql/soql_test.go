@@ -108,6 +108,35 @@ func TestExecuteResolvesLowercaseIdAsStandardField(t *testing.T) {
 	}
 }
 
+func TestExecuteComparesCustomObjectIDsCaseInsensitively(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["MembershipType__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "MembershipType__c",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a1N000000000001": {
+				ID:     "a1N000000000001",
+				Object: "MembershipType__c",
+				Fields: map[string]storage.Value{
+					"Name": storage.StringValue("Individual"),
+				},
+			},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT Id FROM MembershipType__c WHERE Id IN ('a1n000000000001')")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 {
+		t.Fatalf("lowercase custom Id rows = %d", result.Rows)
+	}
+}
+
 func TestExecuteEmailTemplateStandardObjectQuery(t *testing.T) {
 	org := storage.NewOrgState()
 	storage.EnsureStandardObject(&org, "EmailTemplate")
@@ -1245,6 +1274,94 @@ func TestExecuteValidatesReferencesAcrossClauses(t *testing.T) {
 	}
 }
 
+func TestExecuteEvaluatesFormulaFieldsInWhere(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Member__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Member__c",
+			Fields: map[string]storage.Field{
+				"StartDate__c": {APIName: "StartDate__c", Type: storage.FieldDate},
+				"EndDate__c":   {APIName: "EndDate__c", Type: storage.FieldDate},
+				"Pending__c":   {APIName: "Pending__c", Type: storage.FieldBoolean},
+				"Status__c": {
+					APIName: "Status__c",
+					Type:    storage.FieldCalculated,
+					Formula: "IF(Pending__c, 'Pending', IF(StartDate__c > TODAY(), 'Future', IF(EndDate__c >= TODAY(), 'Current', 'Expired')))",
+				},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a00000000000001": {
+				ID:     "a00000000000001",
+				Object: "Member__c",
+				Fields: map[string]storage.Value{
+					"StartDate__c": storage.DateValue("2000-01-01"),
+					"EndDate__c":   storage.DateValue("2999-12-31"),
+				},
+			},
+			"a00000000000002": {
+				ID:     "a00000000000002",
+				Object: "Member__c",
+				Fields: map[string]storage.Value{
+					"StartDate__c": storage.DateValue("2000-01-01"),
+					"EndDate__c":   storage.DateValue("2000-12-31"),
+				},
+			},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT Id, Status__c FROM Member__c WHERE Status__c IN ('Current') ORDER BY Id")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 || result.Records[0].ID != "a00000000000001" || result.Records[0].Fields["Status__c"].String != "Current" {
+		t.Fatalf("formula where result = %#v", result)
+	}
+}
+
+func TestExecuteNotInIgnoresNullCandidates(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Parent__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Parent__c",
+			Fields:  map[string]storage.Field{"Name__c": {APIName: "Name__c", Type: storage.FieldString}},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	childDefinition := storage.ObjectDefinition{
+		APIName: "Child__c",
+		Fields: map[string]storage.Field{
+			"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}, RelationshipName: "Parent"},
+		},
+		Relations: []storage.Relationship{{
+			Field:              "Parent__c",
+			ParentObjects:      []string{"Parent__c"},
+			ParentRelationship: "Parent__r",
+		}},
+	}
+	storage.EnsureStandardObjectFields(&childDefinition)
+	org.Objects["Child__c"] = storage.ObjectState{
+		Definition: childDefinition,
+		Records: map[storage.ID]storage.Record{
+			"a01000000000001": {
+				ID:     "a01000000000001",
+				Object: "Child__c",
+				Fields: map[string]storage.Value{
+					"Name": storage.StringValue("orphan"),
+				},
+			},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT Id FROM Child__c WHERE Parent__r.Name__c NOT IN (null)")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 {
+		t.Fatalf("rows = %d, want 1", result.Rows)
+	}
+}
+
 func TestExecuteValidatesRelationshipReferencesAcrossClauses(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Objects["Account"] = storage.ObjectState{
@@ -1361,6 +1478,48 @@ func TestExecuteProjectsChildRelationshipSubquery(t *testing.T) {
 	children = result.Records[0].Children["Contacts"]
 	if len(children) != 1 || children[0].Fields["LastName"].String != "Alpha" || children[0].Fields["AccountId"].ID != "001000000000001" {
 		t.Fatalf("child FIELDS() rows = %#v", children)
+	}
+}
+
+func TestExecuteCustomChildRelationshipSubqueryAcceptsRuntimeSuffix(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Cart__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Cart__c",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a0S000000000001": {ID: "a0S000000000001", Object: "Cart__c", Fields: map[string]storage.Value{"Name": storage.StringValue("Cart")}},
+		},
+	}
+	org.Objects["CartItem__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "CartItem__c",
+			Fields: map[string]storage.Field{
+				"Name":    {APIName: "Name", Type: storage.FieldString},
+				"Cart__c": {APIName: "Cart__c", Type: storage.FieldReference, ReferenceTo: []string{"Cart__c"}},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "Cart__c",
+				ParentObjects:      []string{"Cart__c"},
+				ParentRelationship: "Cart__r",
+				ChildRelationship:  "CartItems",
+			}},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a0I000000000001": {ID: "a0I000000000001", Object: "CartItem__c", Fields: map[string]storage.Value{"Name": storage.StringValue("Line"), "Cart__c": storage.IDValue("a0S000000000001")}},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT Id, (SELECT Id, Name FROM CartItems__r) FROM Cart__c")
+	if err != nil {
+		t.Fatal(err)
+	}
+	children := result.Records[0].Children["CartItems__r"]
+	if len(children) != 1 || children[0].Fields["Name"].String != "Line" {
+		t.Fatalf("children = %#v", children)
 	}
 }
 

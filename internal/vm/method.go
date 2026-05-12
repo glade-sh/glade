@@ -136,10 +136,7 @@ func (vm *VM) RegisterClass(class Class) error {
 		}
 		class.Constructors[i].IsConstructor = true
 	}
-	vm.Classes[class.Name] = class
-	if class.Namespace != "" && !strings.Contains(class.Name, ".") {
-		vm.Classes[class.Namespace+"."+class.Name] = class
-	}
+	vm.storeClassAliases(class)
 	if vm.staticInitState == nil {
 		vm.staticInitState = make(map[string]staticInitState)
 	}

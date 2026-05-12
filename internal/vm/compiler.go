@@ -431,6 +431,12 @@ func (p *parser) parseStatement() (ir.Instruction, error) {
 		return p.parseDeclaration(start.pos)
 	}
 
+	if inst, ok, err := p.parseComplexAssignmentLike(true); ok || err != nil {
+		if err != nil {
+			return ir.Instruction{}, err
+		}
+		return inst, nil
+	}
 	if inst, ok, err := p.parseAssignmentLike(true); ok || err != nil {
 		if err != nil {
 			return ir.Instruction{}, err
@@ -604,14 +610,17 @@ func (p *parser) parseForPart() (ir.Instruction, error) {
 }
 
 func (p *parser) parseDeclaration(pos int) (ir.Instruction, error) {
-	inst, err := p.parseForDeclarationPart(pos)
+	insts, err := p.parseForDeclarationParts()
 	if err != nil {
 		return ir.Instruction{}, err
 	}
 	if _, err := p.expect(tokenSymbol, ";"); err != nil {
 		return ir.Instruction{}, err
 	}
-	return inst, nil
+	if len(insts) == 1 {
+		return insts[0], nil
+	}
+	return ir.Instruction{Op: ir.OpBlock, Then: insts, Pos: pos}, nil
 }
 
 func (p *parser) parseForDeclarationPart(pos int) (ir.Instruction, error) {
@@ -679,6 +688,36 @@ func (p *parser) parseAssignmentLike(requireSemicolon bool) (ir.Instruction, boo
 	}
 	p.pos = save
 	return ir.Instruction{}, false, nil
+}
+
+func (p *parser) parseComplexAssignmentLike(requireSemicolon bool) (ir.Instruction, bool, error) {
+	save := p.pos
+	start := p.tokens[p.pos]
+	left, err := p.parseTernary()
+	if err != nil {
+		p.pos = save
+		return ir.Instruction{}, false, nil
+	}
+	if !p.match(tokenSymbol, "=") {
+		p.pos = save
+		return ir.Instruction{}, false, nil
+	}
+	if left.Kind != ir.ExprCall || !strings.HasPrefix(left.Callee, "__field:") || left.Left == nil {
+		p.pos = save
+		return ir.Instruction{}, false, nil
+	}
+	value, err := p.parseAssignmentExpression()
+	if err != nil {
+		return ir.Instruction{}, true, err
+	}
+	if requireSemicolon {
+		if _, err := p.expect(tokenSymbol, ";"); err != nil {
+			return ir.Instruction{}, true, err
+		}
+	}
+	receiver := *left.Left
+	field := strings.TrimPrefix(left.Callee, "__field:")
+	return ir.Instruction{Op: ir.OpExpr, Expr: ir.Expr{Kind: ir.ExprCall, Callee: "__assignField:" + field, Left: &receiver, Args: []ir.Expr{value}}, Pos: start.pos}, true, nil
 }
 
 func (p *parser) parsePrefixIncrementLike(requireSemicolon bool) (ir.Instruction, bool, error) {
@@ -1025,6 +1064,12 @@ func (p *parser) parseUnary() (ir.Expr, error) {
 			return ir.Expr{}, err
 		}
 		return ir.Expr{Kind: ir.ExprUnary, Operator: "-", Left: &expr}, nil
+	case p.match(tokenSymbol, "+"):
+		expr, err := p.parseUnary()
+		if err != nil {
+			return ir.Expr{}, err
+		}
+		return ir.Expr{Kind: ir.ExprUnary, Operator: "+", Left: &expr}, nil
 	default:
 		expr, err := p.parsePrimary()
 		if err != nil {

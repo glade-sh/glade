@@ -93,6 +93,29 @@ func TestLoadSFDXProject(t *testing.T) {
 	}
 }
 
+func TestOrgShapeFeaturesLoadsScratchDefinition(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "oaer.yml"), "org:\n  features: [MultiCurrency]\n")
+	writeFile(t, filepath.Join(root, "config/project-scratch-def.json"), `{
+  "features": ["PersonAccounts", "AddCustomApps:30"],
+  "settings": {
+    "communitiesSettings": {"enableNetworksEnabled": true},
+    "chatterSettings": {"enableChatter": true}
+  }
+}`)
+
+	got := OrgShapeFeatures(root)
+	want := []string{"MultiCurrency", "PersonAccounts", "AddCustomApps:30", "Communities", "Chatter"}
+	if len(got) != len(want) {
+		t.Fatalf("features = %#v, want %#v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("features = %#v, want %#v", got, want)
+		}
+	}
+}
+
 func TestLoadLegacySrcLayout(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "src/classes/Legacy.cls"), "public class Legacy {}")

@@ -175,6 +175,12 @@ func cloneValue(value Value) Value {
 			out.Map[name] = cloneValue(child)
 		}
 	}
+	if value.MapKeys != nil {
+		out.MapKeys = make(map[string]Value, len(value.MapKeys))
+		for name, child := range value.MapKeys {
+			out.MapKeys[name] = cloneValue(child)
+		}
+	}
 	if value.List != nil {
 		out.List = make([]Value, len(value.List))
 		for i, child := range value.List {

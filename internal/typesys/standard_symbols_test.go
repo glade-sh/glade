@@ -56,6 +56,26 @@ func TestStandardSymbolsFromSpecsMergesDuplicateTypesCaseInsensitively(t *testin
 	requireStandardMethod(t, symbols[0], "getHealth", nil, true)
 }
 
+func TestStandardPlatformSymbolsIncludeInstallVersion(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+
+	version := requireStandardSymbol(t, symbols, "Version")
+	requireStandardConstructor(t, version, []string{"Integer", "Integer"})
+	requireStandardConstructor(t, version, []string{"Integer", "Integer", "Integer"})
+	requireStandardMethod(t, version, "compareTo", []string{"Version"}, false)
+
+	installContext := requireStandardSymbol(t, symbols, "InstallContext")
+	requireStandardMethod(t, installContext, "previousVersion", nil, false)
+}
+
+func TestStandardPlatformSymbolsIncludeSearchQuery(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+
+	search := requireStandardSymbol(t, symbols, "Search")
+	requireStandardMethod(t, search, "query", []string{"String"}, true)
+	requireStandardMethodType(t, search, "query", "List<List<SObject>>")
+}
+
 func requireStandardSymbol(t *testing.T, symbols []TypeSymbol, name string) TypeSymbol {
 	t.Helper()
 	for _, symbol := range symbols {
@@ -105,6 +125,16 @@ func requireStandardProperty(t *testing.T, symbol TypeSymbol, name, typ string) 
 		}
 	}
 	t.Fatalf("missing property %s.%s type %s: %#v", standardSymbolFullName(symbol), name, typ, symbol.Members)
+}
+
+func requireStandardMethodType(t *testing.T, symbol TypeSymbol, name, typ string) {
+	t.Helper()
+	for _, member := range symbol.Members {
+		if member.Kind == apexast.DeclarationMethod && strings.EqualFold(member.Name, name) && strings.EqualFold(member.Type, typ) {
+			return
+		}
+	}
+	t.Fatalf("missing method %s.%s type %s: %#v", standardSymbolFullName(symbol), name, typ, symbol.Members)
 }
 
 func standardMemberParamsEqual(member MemberSymbol, params []string) bool {

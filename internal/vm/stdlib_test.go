@@ -1105,6 +1105,10 @@ func TestExecCoreSystemTimeAndDebugStdlib(t *testing.T) {
 	program, err := CompileAnonymous(`
 Date today = System.today();
 System.assertEquals('2026-05-02', today.format(), 'System.today should use the VM clock');
+System.assertEquals(0, Date.newInstance(2026, 5, 1).monthsBetween(Date.newInstance(2026, 5, 31)));
+System.assertEquals(1, Date.newInstance(2026, 5, 31).monthsBetween(Date.newInstance(2026, 6, 1)));
+System.assertEquals(-12, Date.newInstance(2026, 5, 1).monthsBetween(Date.newInstance(2025, 5, 1)));
+System.assertEquals(5, today.Month());
 Datetime now = System.now();
 System.assertEquals('2026-05-02T12:00:00Z', now.format());
 System.assertEquals(1777723200000, System.currentTimeMillis());
@@ -2403,6 +2407,10 @@ List<Integer> deep = copied.deepClone();
 deep.set(1, 8);
 System.assertEquals(2, copied.get(1));
 System.assertEquals(8, deep.get(1));
+List<Integer> deepWithOptions = copied.deepClone(true, true, true);
+deepWithOptions.set(2, 9);
+System.assertEquals(3, copied.get(2));
+System.assertEquals(9, deepWithOptions.get(2));
 
 List<String> words = new List<String>{'delta', 'alpha', 'charlie'};
 words.sort();
@@ -2448,13 +2456,81 @@ System.assertEquals(8, deepCounts.get('b'));
 
 func TestCollectionStdlibMoreRejectsUnsupportedSortValues(t *testing.T) {
 	values := []Value{Map()}
-	err := sortComparableValues(values)
+	err := New(nil).sortComparableValues(values, nil)
 	var runtimeErr *RuntimeError
 	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" {
 		t.Fatalf("err = %T %v, want UnsupportedFeature", err, err)
 	}
 	if !strings.Contains(runtimeErr.Message, "List.sort for non-primitive comparable values") {
 		t.Fatalf("error message = %q", runtimeErr.Message)
+	}
+}
+
+func TestExecListSortUsesApexComparable(t *testing.T) {
+	compareProgram, err := CompileAnonymous(`
+Box otherBox = (Box) other;
+if (this.Rank == otherBox.Rank) {
+	return 0;
+}
+if (this.Rank > otherBox.Rank) {
+	return 1;
+}
+return -1;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Box high = new Box();
+high.Rank = 2;
+Box low = new Box();
+low.Rank = 1;
+List<Box> boxes = new List<Box>{high, low};
+boxes.sort();
+System.assertEquals(1, boxes.get(0).Rank);
+System.assertEquals(2, boxes.get(1).Rank);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:       "Box",
+		Interfaces: []string{"Comparable"},
+		Fields: map[string]Field{
+			"Rank": {Name: "Rank", Type: "Integer"},
+		},
+		Methods: map[string]Method{
+			"compareTo": {
+				Name:       "Box.compareTo",
+				ClassName:  "Box",
+				ReturnType: "Integer",
+				Params:     []Param{{Name: "other", Type: "Object"}},
+				Program:    compareProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecListSortSupportsSObjects(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account beta = new Account(Id = '001000000000002AAA', Name = 'Beta');
+Account acme = new Account(Id = '001000000000001AAA', Name = 'Acme');
+List<Account> accounts = new List<Account>{beta, acme};
+accounts.sort();
+System.assertEquals('001000000000001AAA', accounts.get(0).Id);
+System.assertEquals('001000000000002AAA', accounts.get(1).Id);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -2510,7 +2586,7 @@ func TestExecCollectionStdlibIteratorErrors(t *testing.T) {
 		},
 		{
 			name: "object sort unsupported",
-			body: "List<Account> accounts = new List<Account>{new Account(Name = 'Acme')}; accounts.sort();",
+			body: "List<PageReference> pages = new List<PageReference>{new PageReference('/a')}; pages.sort();",
 			want: "unsupported call \"List.sort for non-primitive comparable values\"",
 		},
 		{
@@ -2702,11 +2778,6 @@ func TestExecCollectionStdlibRejectsSObjectMapEdgeErrors(t *testing.T) {
 			name: "wrong map key type",
 			body: "List<Account> accounts = new List<Account>{new Account(Id = '001B000001DVM9tIAH')}; Map<String, Account> byId = new Map<String, Account>(accounts);",
 			want: "unsupported call \"Map constructor from SObject list\"",
-		},
-		{
-			name: "deepClone options",
-			body: "List<Account> accounts = new List<Account>{new Account(Id = '001B000001DVM9tIAH')}; accounts.deepClone(true);",
-			want: "unsupported call \"List.deepClone with preserve options\"",
 		},
 	}
 	for _, tt := range tests {

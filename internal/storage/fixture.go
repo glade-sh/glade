@@ -902,6 +902,7 @@ func ensureRecordTypeRecords(org *OrgState) {
 				Default:       true,
 			}}
 		}
+		EnsureRecordTypeIDField(&object.Definition)
 		for i, info := range object.Definition.RecordTypes {
 			if info.ID == "" {
 				info.ID, next = nextUnusedRecordTypeID(usedIDs, next)

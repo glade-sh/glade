@@ -155,19 +155,52 @@ type ObjectDefinition struct {
 }
 
 type Field struct {
-	APIName          string          `json:"apiName"`
-	Label            string          `json:"label,omitempty"`
-	Type             FieldType       `json:"type"`
-	DisplayType      string          `json:"displayType,omitempty"`
-	DefaultValue     string          `json:"defaultValue,omitempty"`
-	Required         bool            `json:"required,omitempty"`
-	ExternalID       bool            `json:"externalId,omitempty"`
-	Unique           bool            `json:"unique,omitempty"`
-	Encrypted        bool            `json:"encrypted,omitempty"`
-	CaseSensitive    bool            `json:"caseSensitive,omitempty"`
-	ReferenceTo      []string        `json:"referenceTo,omitempty"`
-	RelationshipName string          `json:"relationshipName,omitempty"`
-	PicklistValues   []PicklistValue `json:"picklistValues,omitempty"`
+	APIName            string              `json:"apiName"`
+	Label              string              `json:"label,omitempty"`
+	Type               FieldType           `json:"type"`
+	DisplayType        string              `json:"displayType,omitempty"`
+	Formula            string              `json:"formula,omitempty"`
+	DefaultValue       string              `json:"defaultValue,omitempty"`
+	AutoNumber         bool                `json:"autoNumber,omitempty"`
+	DisplayFormat      string              `json:"displayFormat,omitempty"`
+	SummarizedField    string              `json:"summarizedField,omitempty"`
+	SummaryForeignKey  string              `json:"summaryForeignKey,omitempty"`
+	SummaryOperation   string              `json:"summaryOperation,omitempty"`
+	SummaryFilterItems []SummaryFilterItem `json:"summaryFilterItems,omitempty"`
+	Required           bool                `json:"required,omitempty"`
+	ExternalID         bool                `json:"externalId,omitempty"`
+	Unique             bool                `json:"unique,omitempty"`
+	Encrypted          bool                `json:"encrypted,omitempty"`
+	CaseSensitive      bool                `json:"caseSensitive,omitempty"`
+	ReferenceTo        []string            `json:"referenceTo,omitempty"`
+	RelationshipName   string              `json:"relationshipName,omitempty"`
+	PicklistValues     []PicklistValue     `json:"picklistValues,omitempty"`
+}
+
+type SummaryFilterItem struct {
+	Field     string `json:"field,omitempty"`
+	Operation string `json:"operation,omitempty"`
+	Value     string `json:"value,omitempty"`
+}
+
+func EnsureRecordTypeIDField(definition *ObjectDefinition) {
+	if definition == nil || len(definition.RecordTypes) == 0 {
+		return
+	}
+	if definition.Fields == nil {
+		definition.Fields = make(map[string]Field)
+	}
+	if _, ok := ResolveFieldName(*definition, "", "RecordTypeId"); ok {
+		return
+	}
+	definition.Fields["RecordTypeId"] = Field{
+		APIName:          "RecordTypeId",
+		Label:            "Record Type ID",
+		Type:             FieldReference,
+		DisplayType:      string(FieldReference),
+		ReferenceTo:      []string{"RecordType"},
+		RelationshipName: "RecordType",
+	}
 }
 
 type PicklistValue struct {
@@ -296,6 +329,7 @@ const (
 	FieldAddress    FieldType = "ADDRESS"
 	FieldLocation   FieldType = "LOCATION"
 	FieldCalculated FieldType = "CALCULATED"
+	FieldSummary    FieldType = "SUMMARY"
 )
 
 type Relationship struct {
@@ -397,8 +431,170 @@ func ListValue(values ...Value) Value {
 func DefaultValueForField(field Field) (Value, bool) {
 	raw := strings.TrimSpace(field.DefaultValue)
 	if raw == "" {
+		if field.Type == FieldPicklist {
+			for _, value := range field.PicklistValues {
+				if value.Default && strings.TrimSpace(value.Value) != "" {
+					return StringValue(value.Value), true
+				}
+			}
+		}
 		return Value{}, false
 	}
+	switch field.Type {
+	case FieldBoolean:
+		if strings.EqualFold(raw, "true") {
+			return BooleanValue(true), true
+		}
+		if strings.EqualFold(raw, "false") {
+			return BooleanValue(false), true
+		}
+	case FieldInteger:
+		value, err := strconv.ParseInt(raw, 10, 64)
+		if err == nil {
+			return IntegerValue(value), true
+		}
+	case FieldDecimal:
+		if _, err := strconv.ParseFloat(raw, 64); err == nil {
+			return DecimalValue(raw), true
+		}
+	case FieldString, FieldPicklist, FieldDate, FieldDateTime, FieldID, FieldAny:
+		return StringValue(normalizeStringDefaultValue(raw)), true
+	}
+	return Value{}, false
+}
+
+func DefaultValueForRecordField(definition ObjectDefinition, record Record, field Field) (Value, bool) {
+	if value, ok := DefaultValueForField(field); ok {
+		return value, true
+	}
+	raw := strings.TrimSpace(field.DefaultValue)
+	if raw == "" {
+		return Value{}, false
+	}
+	condition, trueValue, falseValue, ok := splitDefaultIF(raw)
+	if !ok {
+		return Value{}, false
+	}
+	branch := falseValue
+	if evaluateDefaultCondition(definition, record, condition) {
+		branch = trueValue
+	}
+	return defaultValueFromRaw(field, branch)
+}
+
+func splitDefaultIF(raw string) (string, string, string, bool) {
+	raw = strings.TrimSpace(raw)
+	if len(raw) < len("IF()") || !strings.EqualFold(raw[:2], "IF") {
+		return "", "", "", false
+	}
+	open := strings.IndexByte(raw, '(')
+	if open < 0 || raw[len(raw)-1] != ')' {
+		return "", "", "", false
+	}
+	parts := splitDefaultArgs(raw[open+1 : len(raw)-1])
+	if len(parts) != 3 {
+		return "", "", "", false
+	}
+	return parts[0], parts[1], parts[2], true
+}
+
+func splitDefaultArgs(raw string) []string {
+	var out []string
+	start := 0
+	depth := 0
+	inString := false
+	for i := 0; i < len(raw); i++ {
+		switch raw[i] {
+		case '\'':
+			if inString && i+1 < len(raw) && raw[i+1] == '\'' {
+				i++
+				continue
+			}
+			inString = !inString
+		case '(':
+			if !inString {
+				depth++
+			}
+		case ')':
+			if !inString && depth > 0 {
+				depth--
+			}
+		case ',':
+			if !inString && depth == 0 {
+				out = append(out, strings.TrimSpace(raw[start:i]))
+				start = i + 1
+			}
+		}
+	}
+	out = append(out, strings.TrimSpace(raw[start:]))
+	return out
+}
+
+func evaluateDefaultCondition(definition ObjectDefinition, record Record, condition string) bool {
+	left, right, ok := splitDefaultComparison(condition, "==")
+	if ok {
+		return strings.EqualFold(defaultConditionValue(definition, record, left), normalizeStringDefaultValue(right))
+	}
+	left, right, ok = splitDefaultComparison(condition, "!=")
+	if ok {
+		return !strings.EqualFold(defaultConditionValue(definition, record, left), normalizeStringDefaultValue(right))
+	}
+	return false
+}
+
+func splitDefaultComparison(condition, op string) (string, string, bool) {
+	if idx := strings.Index(condition, op); idx >= 0 {
+		return strings.TrimSpace(condition[:idx]), strings.TrimSpace(condition[idx+len(op):]), true
+	}
+	return "", "", false
+}
+
+func defaultConditionValue(definition ObjectDefinition, record Record, name string) string {
+	name = strings.TrimSpace(name)
+	switch name {
+	case "$RecordType.Name", "$RecordType.DeveloperName":
+		recordTypeID := ""
+		if value, ok := record.Fields["RecordTypeId"]; ok {
+			recordTypeID = strings.TrimSpace(defaultConditionScalar(value))
+		}
+		for _, recordType := range definition.RecordTypes {
+			if recordTypeID != "" && string(recordType.ID) != recordTypeID {
+				continue
+			}
+			if name == "$RecordType.DeveloperName" {
+				return recordType.DeveloperName
+			}
+			if recordType.Name != "" {
+				return recordType.Name
+			}
+			return recordType.DeveloperName
+		}
+	}
+	return ""
+}
+
+func defaultConditionScalar(value Value) string {
+	switch value.Kind {
+	case ValueString, ValueDate, ValueDateTime, ValueBlob:
+		return value.String
+	case ValueID:
+		return string(value.ID)
+	case ValueInteger:
+		return strconv.FormatInt(value.Integer, 10)
+	case ValueDecimal:
+		return value.Decimal
+	case ValueBoolean:
+		if value.Boolean {
+			return "true"
+		}
+		return "false"
+	default:
+		return ""
+	}
+}
+
+func defaultValueFromRaw(field Field, raw string) (Value, bool) {
+	raw = strings.TrimSpace(raw)
 	switch field.Type {
 	case FieldBoolean:
 		if strings.EqualFold(raw, "true") {

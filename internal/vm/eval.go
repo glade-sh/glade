@@ -59,6 +59,8 @@ func evalUnary(op string, value Value) (Value, error) {
 			return Null, fmt.Errorf("integer unary - overflow")
 		}
 		return Int(-value.Int), nil
+	case "+":
+		return value, nil
 	default:
 		return Null, fmt.Errorf("unsupported unary operator %q", op)
 	}
@@ -105,6 +107,9 @@ func evalBinary(op string, left, right Value) (Value, error) {
 	case "!=":
 		return Bool(!left.Equal(right)), nil
 	case "<", "<=", ">", ">=":
+		if left.Kind == ValueNull || right.Kind == ValueNull {
+			return Bool(false), nil
+		}
 		if comparable, ok := comparablePlatformScalarText(left, right); ok {
 			a, b := comparable[0], comparable[1]
 			switch op {

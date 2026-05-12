@@ -96,6 +96,41 @@ private class TemplateControllerTest {
 	}
 }
 
+func TestRunAllowsListReturnForIterableObject(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/IterableBatch.cls"), `
+public class IterableBatch {
+  private List<Account> records;
+  public IterableBatch(List<Account> records) {
+    this.records = records;
+  }
+  public Iterable<Object> start() {
+    return this.records;
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/IterableBatchTest.cls"), `
+@isTest
+private class IterableBatchTest {
+  @isTest static void listSatisfiesIterableObject() {
+    List<Account> records = new List<Account>{ new Account(Name = 'Acme') };
+    Iterable<Object> items = new IterableBatch(records).start();
+    Integer count = 0;
+    for (Object item : items) {
+      count++;
+    }
+    System.assertEquals(1, count);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if summary := run.Summary(); summary.Total != 1 || summary.Passed != 1 {
+		t.Fatalf("summary = %#v run = %#v", summary, run)
+	}
+}
+
 func TestExtractMethodBodyHandlesBackslashEscapedApexStrings(t *testing.T) {
 	source := `@IsTest
 private class DataRequestTest {
@@ -561,6 +596,173 @@ private class MathUtilTest {
 				t.Logf("constructors=%#v fields=%#v", class.Constructors, class.Fields)
 			}
 		}
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestCompileProjectMethodsIncludesDependencyTestHelpers(t *testing.T) {
+	root := t.TempDir()
+	depRoot := filepath.Join(root, "dep")
+	consumerRoot := filepath.Join(root, "consumer")
+	writeFile(t, filepath.Join(depRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(depRoot, "force-app/main/classes/SharedTestHelper.cls"), `
+@isTest
+public class SharedTestHelper {
+  public static String value() {
+    return 'dep';
+  }
+}
+`)
+	writeFile(t, filepath.Join(consumerRoot, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(consumerRoot, "oaer.yml"), `project:
+  managedPackageDependencies: ["znu:../dep:1.0"]
+`)
+	index := loadTestIndex(t, consumerRoot)
+
+	if cases := Discover(index, Options{}); len(cases) != 0 {
+		t.Fatalf("discovered dependency test helpers as runnable cases: %#v", cases)
+	}
+	methods := compileProjectMethods(index)
+	if _, ok := methods["SharedTestHelper.value#"]; !ok {
+		t.Fatalf("dependency @isTest helper method was not compiled; methods=%#v", methods)
+	}
+}
+
+func TestRunCallsInstanceMethodThroughStaticProperty(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/Context.cls"), `
+public class Context {
+  public static Context Instance {
+    get {
+      if (Instance == null) {
+        Instance = new Context();
+      }
+      return Instance;
+    }
+  }
+  public Context() {
+    Object duringConstruction = Context.Instance;
+  }
+  public String value(Schema.SObjectType typ) {
+    return typ.getDescribe().getName();
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ContextTest.cls"), `
+@isTest
+private class ContextTest {
+  @isTest static void callsThroughProperty() {
+    System.assertEquals('Account', Context.Instance.value(Account.SObjectType));
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestRunCallsStaticPropertyReceiverInsideMapLiteral(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/Context.cls"), `
+public class Context {
+  public static Context Instance {
+    get {
+      if (Instance == null) {
+        Instance = new Context();
+      }
+      return Instance;
+    }
+  }
+  public Id getId(Schema.SObjectType typ) {
+    return '001000000000001AAA';
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ContextTest.cls"), `
+@isTest
+private class ContextTest {
+  @isTest static void callsThroughPropertyInMapLiteral() {
+    Map<Schema.SObjectField, Object> values = new Map<Schema.SObjectField, Object>{
+      Account.Name => Context.Instance.getId(Account.SObjectType)
+    };
+    System.assertEquals('001000000000001AAA', values.get(Account.Name));
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestRunAllowsNestedInheritedPropertyGetterOnDifferentInstances(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/BaseBuilder.cls"), `
+public abstract class BaseBuilder {
+  private Map<String, Object> defaultsPriv;
+  private Map<String, Object> defaults {
+    get {
+      if (defaultsPriv == null) {
+        defaultsPriv = getDefaults();
+      }
+      return defaultsPriv;
+    }
+  }
+  protected abstract Map<String, Object> getDefaults();
+  public Integer countDefaults() {
+    return defaults.keySet().size();
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ChildBuilder.cls"), `
+public class ChildBuilder extends BaseBuilder {
+  public static ChildBuilder Instance {
+    get {
+      if (Instance == null) {
+        Instance = new ChildBuilder();
+      }
+      return Instance;
+    }
+  }
+  protected override Map<String, Object> getDefaults() {
+    Map<String, Object> values = new Map<String, Object>{'self' => 'ok'};
+    values.put('other', OtherBuilder.Instance.countDefaults());
+    return values;
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/OtherBuilder.cls"), `
+public class OtherBuilder extends BaseBuilder {
+  public static OtherBuilder Instance {
+    get {
+      if (Instance == null) {
+        Instance = new OtherBuilder();
+      }
+      return Instance;
+    }
+  }
+  protected override Map<String, Object> getDefaults() {
+    return new Map<String, Object>{'other' => 'ok'};
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/BuilderTest.cls"), `
+@isTest
+private class BuilderTest {
+  @isTest static void nestedInheritedGetterUsesOwnReceiver() {
+    System.assertEquals(2, ChildBuilder.Instance.countDefaults());
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
 		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
 	}
 }
@@ -2126,6 +2328,162 @@ public class StaticEndpointService {
 	}
 }
 
+func TestRunAssignsDottedPathThroughStaticFieldRoot(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/BaseControllerProbe.cls"), `
+public virtual class BaseControllerProbe {
+  private String marker;
+  public String Marker {
+    get { return marker; }
+    set { marker = value; }
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/ConcreteControllerProbe.cls"), `
+public class ConcreteControllerProbe extends BaseControllerProbe {
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/DottedStaticRootAssignmentTest.cls"), `
+@isTest
+private class DottedStaticRootAssignmentTest {
+  private static ConcreteControllerProbe controller;
+
+  @isTest static void assignsInheritedPropertyThroughStaticField() {
+    controller = new ConcreteControllerProbe();
+    controller.Marker = 'set';
+    System.assertEquals('set', controller.Marker);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestRunJSONDeserializeUsesPropertySetter(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/JSONPropertySetterPayload.cls"), `
+public class JSONPropertySetterPayload {
+  public Date StartDate { get; set; }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/JSONPropertySetterEnvelope.cls"), `
+public class JSONPropertySetterEnvelope {
+  private JSONPropertySetterPayload payload;
+  public JSONPropertySetterPayload Payload {
+    get {
+      if (payload == null) {
+        payload = new JSONPropertySetterPayload();
+      }
+      return payload;
+    }
+    private set { payload = value; }
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/JSONPropertySetterTest.cls"), `
+@isTest
+private class JSONPropertySetterTest {
+  @isTest static void deserializePopulatesBackingFieldThroughSetter() {
+    JSONPropertySetterEnvelope envelope = (JSONPropertySetterEnvelope)JSON.deserialize(
+      '{"Payload":{"StartDate":"2026-05-07"}}',
+      JSONPropertySetterEnvelope.class
+    );
+    System.assertNotEquals(null, envelope.Payload.StartDate);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestRunPropertySetterSeesAutoPropertyAssignedInConstructor(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/SetterDispatchControllerProbe.cls"), `
+public class SetterDispatchControllerProbe {
+  public Account CurrentRecord { get; set; }
+  public SetterDispatchControllerProbe() {
+    CurrentRecord = new Account();
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/SetterDispatchBaseProbe.cls"), `
+public virtual class SetterDispatchBaseProbe {
+  private SetterDispatchControllerProbe c;
+  public SetterDispatchControllerProbe Controller {
+    get { return c; }
+    set {
+      c = value;
+      OnControllerSet();
+    }
+  }
+  public virtual void OnControllerSet() {}
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/SetterDispatchChildProbe.cls"), `
+public class SetterDispatchChildProbe extends SetterDispatchBaseProbe {
+  public override void OnControllerSet() {
+    Controller.CurrentRecord.Name = 'set';
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/SetterDispatchPropertyTest.cls"), `
+@isTest
+private class SetterDispatchPropertyTest {
+  private static SetterDispatchControllerProbe controller;
+  private static SetterDispatchChildProbe child;
+
+  @isTest static void setterDispatchSeesConstructorAssignedProperty() {
+    controller = new SetterDispatchControllerProbe();
+    System.assertNotEquals(null, controller.CurrentRecord);
+    child = new SetterDispatchChildProbe();
+    child.Controller = controller;
+    System.assertEquals('set', controller.CurrentRecord.Name);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
+func TestRunInstanceFieldLookupIsCaseInsensitive(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/CaseInsensitiveFieldProbe.cls"), `
+public class CaseInsensitiveFieldProbe {
+  public Map<Object, List<Account>> RecordsByKey;
+  public CaseInsensitiveFieldProbe() {
+    RecordsByKey = new Map<Object, List<Account>>();
+    System.assertEquals(0, recordsByKey.keySet().size());
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/classes/CaseInsensitiveFieldLookupTest.cls"), `
+@isTest
+private class CaseInsensitiveFieldLookupTest {
+  @isTest static void constructorReadsFieldWithDifferentCase() {
+    new CaseInsensitiveFieldProbe();
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
 func TestProjectRuntimeInitializesNestedInstanceFields(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -2472,6 +2830,38 @@ func TestOrgFromIndexIncludesGeneratedStandardSchema(t *testing.T) {
 		if _, ok := state.Definition.Fields[fieldName]; !ok {
 			t.Fatalf("%s.%s field was not exposed; fields=%#v", objectName, fieldName, state.Definition.Fields)
 		}
+	}
+}
+
+func TestOrgFromIndexIncludesApexClassRows(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/WidgetTestData.cls"), `
+public class WidgetTestData {
+}
+`)
+	index := loadTestIndex(t, root)
+
+	org := orgFromIndex(index)
+	state, ok := org.Objects["ApexClass"]
+	if !ok {
+		t.Fatal("ApexClass object was not exposed")
+	}
+	var found bool
+	for _, record := range state.Records {
+		if record.Fields["Name"].String != "WidgetTestData" {
+			continue
+		}
+		found = true
+		if record.Fields["Body"].String == "" {
+			t.Fatal("ApexClass.Body was empty")
+		}
+		if record.Fields["NamespacePrefix"].Kind != storage.ValueString {
+			t.Fatalf("NamespacePrefix field = %#v", record.Fields["NamespacePrefix"])
+		}
+	}
+	if !found {
+		t.Fatalf("ApexClass row for WidgetTestData not found: %#v", state.Records)
 	}
 }
 

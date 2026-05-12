@@ -47,6 +47,36 @@ func TestRunLocalTestsReportsTopFailures(t *testing.T) {
 	}
 }
 
+func TestShouldAnalyzeLocalTestsSkipsFocusedRuns(t *testing.T) {
+	if !shouldAnalyzeLocalTests(LocalTestOptions{}) {
+		t.Fatalf("unfiltered local test run should analyze the full project")
+	}
+	if shouldAnalyzeLocalTests(LocalTestOptions{Class: "CartItemTest"}) {
+		t.Fatalf("class-filtered local test run should skip full-project semantic analysis")
+	}
+	if shouldAnalyzeLocalTests(LocalTestOptions{Method: "runsFast"}) {
+		t.Fatalf("method-filtered local test run should skip full-project semantic analysis")
+	}
+}
+
+func TestFocusedLocalTestsSkipTraceByDefault(t *testing.T) {
+	report, err := RunLocalTests(LocalTestOptions{
+		Project: filepath.Join("..", "..", "testdata", "local-tests", "basic"),
+		Class:   "FailingTest",
+		Method:  "fails",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if report.Summary.Total != 1 || report.Summary.AssertFailures != 1 {
+		t.Fatalf("summary = %#v", report.Summary)
+	}
+	outcome := report.Outcomes[0]
+	if outcome.TraceEvents != 0 || outcome.ProfileEvents != 0 || len(outcome.ProfileCategories) != 0 {
+		t.Fatalf("focused outcome should not include trace/profile by default: %#v", outcome)
+	}
+}
+
 func TestLocalTestRunOutcomeSplitsRuntimeAndTimeout(t *testing.T) {
 	runtimeGap := localTestRunOutcome("fixture", testreport.Case{
 		ClassName:  "RuntimeGapTest",

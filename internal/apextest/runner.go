@@ -81,12 +81,19 @@ func Run(index typesys.Index, opts Options) testreport.Run {
 }
 
 func RunContext(ctx context.Context, index typesys.Index, opts Options) testreport.Run {
-	cases := Discover(index, opts)
-	methods := compileProjectMethods(index)
-	classes := compileProjectClasses(index, methods)
-	setups, setupErrors := compileTestSetupMethods(index)
-	triggers, triggerErrors := compileProjectTriggers(index)
-	org := orgFromIndex(index)
+	return RunCasesContext(ctx, index, opts, nil)
+}
+
+func RunCasesContext(ctx context.Context, index typesys.Index, opts Options, cases []TestCase) testreport.Run {
+	if cases == nil {
+		cases = Discover(index, opts)
+	}
+	sources := newSourceCache()
+	methods := compileProjectMethods(index, sources)
+	classes := compileProjectClasses(index, methods, sources)
+	setups, setupErrors := compileTestSetupMethods(index, sources)
+	triggers, triggerErrors := compileProjectTriggers(index, sources)
+	org := orgFromIndex(index, sources)
 	pageNames := visualforcePageNames(index)
 	suites := make(map[string][]testreport.Case)
 	setupOrgs := make(map[string]storage.OrgState)
@@ -158,7 +165,7 @@ func prepareTestSetupOrg(ctx context.Context, className string, methods map[stri
 		if err != nil {
 			return setupOrg, err
 		}
-		if _, err := machine.Execute(program); err != nil {
+		if _, err := machine.ExecuteInClass(program, setup.ClassName); err != nil {
 			return setupOrg, err
 		}
 	}
@@ -237,7 +244,7 @@ func runCase(ctx context.Context, testCase TestCase, methods map[string]vm.Metho
 		out.Problem = problem("UnsupportedFeature", err.Error(), testCase)
 		return out
 	}
-	result, err := machine.Execute(program)
+	result, err := machine.ExecuteInClass(program, testCase.ClassName)
 	if err != nil {
 		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 			out.Status = testreport.StatusUnsupported
@@ -305,9 +312,10 @@ func registerRuntime(machine *vm.VM, methods map[string]vm.Method, classes []vm.
 // index and installs them into the VM. It is used by non-test runtimes that need
 // the same supported Apex subset as the local test runner.
 func RegisterProjectRuntime(machine *vm.VM, index typesys.Index) error {
-	methods := compileProjectMethods(index)
-	classes := compileProjectClasses(index, methods)
-	triggers, triggerErrors := compileProjectTriggers(index)
+	sources := newSourceCache()
+	methods := compileProjectMethods(index, sources)
+	classes := compileProjectClasses(index, methods, sources)
+	triggers, triggerErrors := compileProjectTriggers(index, sources)
 	if len(triggerErrors) > 0 {
 		return triggerErrors[0]
 	}
@@ -319,9 +327,10 @@ func RegisterProjectRuntime(machine *vm.VM, index typesys.Index) error {
 // lazily when a class is first used, matching request-scoped Apex behavior while
 // avoiding eager setup in unrelated project code.
 func RegisterProjectRuntimeForRequest(machine *vm.VM, index typesys.Index) error {
-	methods := compileProjectMethods(index)
-	classes := compileProjectClasses(index, methods)
-	triggers, _ := compileProjectTriggers(index)
+	sources := newSourceCache()
+	methods := compileProjectMethods(index, sources)
+	classes := compileProjectClasses(index, methods, sources)
+	triggers, _ := compileProjectTriggers(index, sources)
 	registerVisualforcePages(machine, visualforcePageNames(index))
 	return registerRuntime(machine, methods, classes, nil, triggers)
 }
@@ -351,22 +360,43 @@ func registerVisualforcePages(machine *vm.VM, names []string) {
 	}
 }
 
-func compileProjectClasses(index typesys.Index, methods map[string]vm.Method) []vm.Class {
+type sourceCache map[string]string
+
+func newSourceCache() sourceCache {
+	return make(sourceCache)
+}
+
+func sourceCacheFor(caches []sourceCache) sourceCache {
+	if len(caches) > 0 && caches[0] != nil {
+		return caches[0]
+	}
+	return newSourceCache()
+}
+
+func (cache sourceCache) read(file string) (string, error) {
+	if source, ok := cache[file]; ok {
+		return source, nil
+	}
+	data, err := os.ReadFile(file)
+	if err != nil {
+		return "", err
+	}
+	source := string(data)
+	cache[file] = source
+	return source, nil
+}
+
+func compileProjectClasses(index typesys.Index, methods map[string]vm.Method, caches ...sourceCache) []vm.Class {
 	var out []vm.Class
-	sources := make(map[string]string)
+	sources := sourceCacheFor(caches)
 	knownTypes := knownTypeNames(index.Types)
 	for _, typ := range index.Types {
 		if typ.Kind != apexast.DeclarationClass && typ.Kind != apexast.DeclarationInterface && typ.Kind != apexast.DeclarationEnum {
 			continue
 		}
-		source, ok := sources[typ.File]
-		if !ok {
-			data, err := os.ReadFile(typ.File)
-			if err != nil {
-				continue
-			}
-			source = string(data)
-			sources[typ.File] = source
+		source, err := sources.read(typ.File)
+		if err != nil {
+			continue
 		}
 		class := vm.Class{
 			Name:         typ.Name,
@@ -501,13 +531,10 @@ func attachPropertyAccessors(field *vm.Field, className, file string, member typ
 	}
 }
 
-func compileProjectMethods(index typesys.Index) map[string]vm.Method {
+func compileProjectMethods(index typesys.Index, caches ...sourceCache) map[string]vm.Method {
 	out := make(map[string]vm.Method)
-	sources := make(map[string]string)
+	sources := sourceCacheFor(caches)
 	for _, typ := range index.Types {
-		if typ.Dependency && typ.IsTest {
-			continue
-		}
 		if typ.Kind != apexast.DeclarationClass && typ.Kind != apexast.DeclarationInterface {
 			continue
 		}
@@ -515,14 +542,9 @@ func compileProjectMethods(index typesys.Index) map[string]vm.Method {
 			if member.Kind != apexast.DeclarationMethod || member.IsTest || isTestSetup(member.Modifiers) {
 				continue
 			}
-			source, ok := sources[typ.File]
-			if !ok {
-				data, err := os.ReadFile(typ.File)
-				if err != nil {
-					continue
-				}
-				source = string(data)
-				sources[typ.File] = source
+			source, err := sources.read(typ.File)
+			if err != nil {
+				continue
 			}
 			if typ.Kind == apexast.DeclarationInterface {
 				method, err := compileProjectMethodSignature(typ.Name, member.Name, member.Type, append(member.Modifiers, "abstract"), typ.File, member.Range, source)
@@ -592,10 +614,10 @@ func unsupportedProjectMethod(className, methodName, returnType string, modifier
 	}, true
 }
 
-func compileTestSetupMethods(index typesys.Index) (map[string][]vm.Method, map[string]error) {
+func compileTestSetupMethods(index typesys.Index, caches ...sourceCache) (map[string][]vm.Method, map[string]error) {
 	out := make(map[string][]vm.Method)
 	errs := make(map[string]error)
-	sources := make(map[string]string)
+	sources := sourceCacheFor(caches)
 	for _, typ := range index.Types {
 		if typ.Dependency {
 			continue
@@ -607,15 +629,10 @@ func compileTestSetupMethods(index typesys.Index) (map[string][]vm.Method, map[s
 			if member.Kind != apexast.DeclarationMethod || !isTestSetup(member.Modifiers) {
 				continue
 			}
-			source, ok := sources[typ.File]
-			if !ok {
-				data, err := os.ReadFile(typ.File)
-				if err != nil {
-					errs[typ.Name] = err
-					continue
-				}
-				source = string(data)
-				sources[typ.File] = source
+			source, err := sources.read(typ.File)
+			if err != nil {
+				errs[typ.Name] = err
+				continue
 			}
 			method, err := compileProjectMethod(typ.Name, member.Name, member.Type, member.Modifiers, typ.File, member.Range, source)
 			if err != nil {
@@ -629,16 +646,17 @@ func compileTestSetupMethods(index typesys.Index) (map[string][]vm.Method, map[s
 	return out, errs
 }
 
-func compileProjectTriggers(index typesys.Index) ([]vm.Trigger, []error) {
+func compileProjectTriggers(index typesys.Index, caches ...sourceCache) ([]vm.Trigger, []error) {
 	var out []vm.Trigger
 	var errs []error
+	sources := sourceCacheFor(caches)
 	for _, trigger := range index.Triggers {
-		sourceData, err := os.ReadFile(trigger.File)
+		source, err := sources.read(trigger.File)
 		if err != nil {
 			errs = append(errs, err)
 			continue
 		}
-		body, err := extractMethodBody(string(sourceData), trigger.Range)
+		body, err := extractMethodBody(source, trigger.Range)
 		if err != nil {
 			errs = append(errs, err)
 			continue
@@ -669,7 +687,7 @@ func compileProjectTriggers(index typesys.Index) ([]vm.Trigger, []error) {
 	return out, errs
 }
 
-func orgFromIndex(index typesys.Index) storage.OrgState {
+func orgFromIndex(index typesys.Index, caches ...sourceCache) storage.OrgState {
 	org := storage.NewOrgState()
 	org.Namespace = index.Project.Namespace
 	registry := sobject.BuildDescribeRegistry(schemaFromIndex(index))
@@ -682,6 +700,10 @@ func orgFromIndex(index typesys.Index) storage.OrgState {
 	for _, objectName := range storage.KnownStandardObjectNames() {
 		storage.EnsureStandardObject(&org, objectName)
 	}
+	if index.Project.Root != "" {
+		storage.ApplyOrgShape(&org, project.OrgShapeFeatures(index.Project.Root))
+	}
+	applyApexClassRecords(&org, index, caches...)
 	_ = storage.ApplyCustomMetadataRecords(&org, index.CustomMetadataRecords)
 	if index.Project.Root != "" {
 		if p, err := project.Load(index.Project.Root); err == nil {
@@ -693,6 +715,55 @@ func orgFromIndex(index typesys.Index) storage.OrgState {
 	}
 	storage.EnsureDeterministicPlatformData(&org)
 	return org
+}
+
+func applyApexClassRecords(org *storage.OrgState, index typesys.Index, caches ...sourceCache) {
+	if org == nil {
+		return
+	}
+	definition := storage.ObjectDefinition{
+		APIName:   "ApexClass",
+		Label:     "Apex Class",
+		KeyPrefix: "01p",
+		Fields: map[string]storage.Field{
+			"Id":              {APIName: "Id", Label: "Record ID", Type: storage.FieldID},
+			"Name":            {APIName: "Name", Label: "Class Name", Type: storage.FieldString},
+			"NamespacePrefix": {APIName: "NamespacePrefix", Label: "Namespace Prefix", Type: storage.FieldString},
+			"Body":            {APIName: "Body", Label: "Body", Type: storage.FieldString},
+		},
+	}
+	state := org.Objects["ApexClass"]
+	state.Definition = definition
+	if state.Records == nil {
+		state.Records = make(map[storage.ID]storage.Record)
+	}
+	generator := storage.NewIDGenerator(map[string]string{"ApexClass": "01p"})
+	sources := sourceCacheFor(caches)
+	for _, typ := range index.Types {
+		if typ.Kind != apexast.DeclarationClass || strings.Contains(typ.Name, ".") {
+			continue
+		}
+		id, err := generator.Next("ApexClass")
+		if err != nil {
+			continue
+		}
+		source := ""
+		if typ.File != "" {
+			if data, err := sources.read(typ.File); err == nil {
+				source = data
+			}
+		}
+		state.Records[id] = storage.Record{
+			ID:     id,
+			Object: "ApexClass",
+			Fields: map[string]storage.Value{
+				"Name":            {Kind: storage.ValueString, String: typ.Name},
+				"NamespacePrefix": {Kind: storage.ValueString, String: typ.Namespace},
+				"Body":            {Kind: storage.ValueString, String: source},
+			},
+		}
+	}
+	org.Objects["ApexClass"] = state
 }
 
 func schemaFromIndex(index typesys.Index) schema.Schema {

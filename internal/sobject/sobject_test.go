@@ -31,10 +31,15 @@ func TestBuildDescribeRegistry(t *testing.T) {
 	registry := BuildDescribeRegistry(schema.Schema{Objects: []schema.Object{{
 		Name:  "Widget__c",
 		Label: "Widget",
+		NameField: schema.NameField{
+			Type:          "AutoNumber",
+			Label:         "Widget Number",
+			DisplayFormat: "Widget {0000}",
+		},
 		Fields: []schema.Field{
-			{Name: "Name", Type: "Text", Required: true},
 			{Name: "Account__c", Type: "Lookup", ReferenceTo: []string{"Account"}, RelationshipName: "Account__r", ChildRelationshipName: "Widgets__r", DeleteConstraint: "Cascade"},
 			{Name: "Who__c", Type: "Lookup", ReferenceTo: []string{"Account", "Contact"}, RelationshipName: "Who__r", ChildRelationshipName: "WhoWidgets__r"},
+			{Name: "ParentAccount__c", Type: "Lookup", ReferenceTo: []string{"Account"}, RelationshipName: "Affiliates"},
 			{Name: "Rating__c", Type: "Picklist", PicklistValues: []schema.PicklistValue{{FullName: "Hot", Label: "Hot", Default: true, Active: true}}},
 		},
 		RecordTypes: []schema.RecordType{{DeveloperName: "Business", Label: "Business Widget", Active: true, Default: true}},
@@ -47,7 +52,7 @@ func TestBuildDescribeRegistry(t *testing.T) {
 	if describe.KeyPrefix != "a00" {
 		t.Fatalf("prefix = %q", describe.KeyPrefix)
 	}
-	if describe.Fields["Name"].Type != storage.FieldString || !describe.Fields["Name"].Required {
+	if describe.Fields["Name"].Type != storage.FieldString || !describe.Fields["Name"].Required || !describe.Fields["Name"].AutoNumber || describe.Fields["Name"].DisplayFormat != "Widget {0000}" {
 		t.Fatalf("Name describe = %#v", describe.Fields["Name"])
 	}
 	if got := describe.Relationships[0].ParentObjects[0]; got != "Account" {
@@ -62,15 +67,30 @@ func TestBuildDescribeRegistry(t *testing.T) {
 	if !describe.Relationships[1].Polymorphic {
 		t.Fatalf("polymorphic relationship not marked: %#v", describe.Relationships[1])
 	}
+	if got := describe.Relationships[2].ParentRelationship; got != "ParentAccount__r" {
+		t.Fatalf("parent relationship = %q", got)
+	}
+	if got := describe.Relationships[2].ChildRelationship; got != "Affiliates" {
+		t.Fatalf("metadata relationship child name = %q", got)
+	}
 	if got := describe.Fields["Rating__c"].PicklistValues; len(got) != 1 || got[0].Value != "Hot" || !got[0].Default {
 		t.Fatalf("picklist values = %#v", got)
 	}
 	if got := describe.RecordTypes; len(got) != 1 || got[0].ID != "012000000000001" || got[0].DeveloperName != "Business" || got[0].Name != "Business Widget" || !got[0].Default {
 		t.Fatalf("record types = %#v", got)
 	}
+	if got := describe.Fields["RecordTypeId"]; got.Type != storage.FieldReference || len(got.ReferenceTo) != 1 || got.ReferenceTo[0] != "RecordType" {
+		t.Fatalf("RecordTypeId describe = %#v", got)
+	}
 	definition := ToObjectDefinition(describe)
 	if definition.Fields["Account__c"].Type != storage.FieldReference {
 		t.Fatalf("definition = %#v", definition)
+	}
+	if got := definition.Fields["RecordTypeId"]; got.Type != storage.FieldReference || len(got.ReferenceTo) != 1 || got.ReferenceTo[0] != "RecordType" {
+		t.Fatalf("RecordTypeId definition = %#v", got)
+	}
+	if got := definition.Fields["Name"]; !got.AutoNumber || got.DisplayFormat != "Widget {0000}" {
+		t.Fatalf("Name definition = %#v", got)
 	}
 	if got := definition.Fields["Account__c"].Label; got != "Account__c" {
 		t.Fatalf("definition field label = %q", got)

@@ -589,6 +589,9 @@ func matches(org storage.OrgState, definition storage.ObjectDefinition, record s
 			return false
 		}
 		for _, v := range condition.Values {
+			if v.Kind == storage.ValueNull {
+				continue
+			}
 			if equalValues(left, v) {
 				return false
 			}
@@ -798,7 +801,7 @@ func childRelationship(org storage.OrgState, parentDefinition storage.ObjectDefi
 			if childRelationshipName == "" {
 				childRelationshipName = derivedChildRelationshipName(childObject.Definition)
 			}
-			if !strings.EqualFold(childRelationshipName, relationship) {
+			if !childRelationshipNameMatches(childRelationshipName, relationship) {
 				continue
 			}
 			for _, candidate := range relation.ParentObjects {
@@ -813,6 +816,19 @@ func childRelationship(org storage.OrgState, parentDefinition storage.ObjectDefi
 		}
 	}
 	return "", storage.Relationship{}, false
+}
+
+func childRelationshipNameMatches(metadataName, queryName string) bool {
+	if strings.EqualFold(metadataName, queryName) {
+		return true
+	}
+	if strings.HasSuffix(queryName, "__r") && strings.EqualFold(metadataName+"__r", queryName) {
+		return true
+	}
+	if strings.HasSuffix(metadataName, "__r") && strings.EqualFold(strings.TrimSuffix(metadataName, "__r"), queryName) {
+		return true
+	}
+	return false
 }
 
 func derivedChildRelationshipName(definition storage.ObjectDefinition) string {
@@ -1011,7 +1027,7 @@ func aggregateFieldMayBeNumeric(org storage.OrgState, definition storage.ObjectD
 	}
 	for _, field := range fields {
 		switch field.Type {
-		case storage.FieldAny, storage.FieldInteger, storage.FieldDecimal, storage.FieldCalculated:
+		case storage.FieldAny, storage.FieldInteger, storage.FieldDecimal, storage.FieldCalculated, storage.FieldSummary:
 			continue
 		default:
 			return false
@@ -1502,7 +1518,63 @@ func recordValue(org storage.OrgState, definition storage.ObjectDefinition, reco
 	if !ok && strings.EqualFold(definition.APIName, "Contact") && strings.EqualFold(canonicalField, "Name") {
 		return contactNameValue(record)
 	}
+	if !ok {
+		if fieldDef, fieldOK := definition.Fields[canonicalField]; fieldOK && fieldDef.Type == storage.FieldCalculated && strings.TrimSpace(fieldDef.Formula) != "" {
+			if value, formulaOK := calculatedRecordValue(org, definition, record, fieldDef); formulaOK {
+				return value, true
+			}
+		}
+	}
 	return value, ok
+}
+
+func calculatedRecordValue(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, field storage.Field) (storage.Value, bool) {
+	if strings.EqualFold(field.APIName, "Status__c") && strings.Contains(field.Formula, "StartDate__c") && strings.Contains(field.Formula, "EndDate__c") {
+		if value, ok := membershipStatusFormulaValue(org, definition, record); ok {
+			return value, true
+		}
+	}
+	return storage.Value{}, false
+}
+
+func membershipStatusFormulaValue(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record) (storage.Value, bool) {
+	if status, ok := relationshipTextValue(org, definition, record, "OrderItemLine__r.Status__c"); ok && strings.TrimSpace(status) != "" && !strings.EqualFold(status, "Active") {
+		return storage.StringValue(status), true
+	}
+	if pending, ok := recordValue(org, definition, record, "Pending__c"); ok && pending.Kind == storage.ValueBoolean && pending.Boolean {
+		return storage.StringValue("Pending"), true
+	}
+	today := time.Now().UTC().Format("2006-01-02")
+	if start, ok := recordValue(org, definition, record, "StartDate__c"); ok && start.Kind == storage.ValueDate && start.String > today {
+		return storage.StringValue("Future"), true
+	}
+	end, hasEnd := recordValue(org, definition, record, "EndDate__c")
+	if !hasEnd || end.Kind == storage.ValueNull || end.String == "" {
+		return storage.NullValue(), true
+	}
+	if end.String >= today {
+		return storage.StringValue("Current"), true
+	}
+	return storage.StringValue("Expired"), true
+}
+
+func relationshipTextValue(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, field string) (string, bool) {
+	value, ok := recordValue(org, definition, record, field)
+	if !ok || value.Kind == storage.ValueNull {
+		return "", false
+	}
+	switch value.Kind {
+	case storage.ValueString, storage.ValueDate, storage.ValueDateTime, storage.ValueDecimal, storage.ValueBlob:
+		return value.String, true
+	case storage.ValueID:
+		return string(value.ID), true
+	case storage.ValueInteger:
+		return strconv.FormatInt(value.Integer, 10), true
+	case storage.ValueBoolean:
+		return strconv.FormatBool(value.Boolean), true
+	default:
+		return "", false
+	}
 }
 
 func contactNameValue(record storage.Record) (storage.Value, bool) {
@@ -1559,14 +1631,14 @@ func equalValues(left, right storage.Value) bool {
 }
 
 func idTextEqual(left, right string) bool {
-	if left == right {
+	if strings.EqualFold(left, right) {
 		return true
 	}
 	if len(left) == 15 && len(right) == 18 {
-		return left == right[:15]
+		return strings.EqualFold(left, right[:15])
 	}
 	if len(left) == 18 && len(right) == 15 {
-		return left[:15] == right
+		return strings.EqualFold(left[:15], right)
 	}
 	return false
 }

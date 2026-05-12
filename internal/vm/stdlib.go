@@ -712,12 +712,18 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 		}
 		return List(out...), true, nil
 	case "equalsIgnoreCase":
+		if len(args) == 1 && args[0].Kind == ValueNull {
+			return Bool(false), true, nil
+		}
 		other, err := stringArg("String.equalsIgnoreCase", args)
 		if err != nil {
 			return Null, true, err
 		}
 		return Bool(strings.EqualFold(receiver.Text, other)), true, nil
 	case "equals":
+		if len(args) == 1 && args[0].Kind == ValueNull {
+			return Bool(false), true, nil
+		}
 		other, err := stringArg("String.equals", args)
 		if err != nil {
 			return Null, true, err
@@ -2428,11 +2434,27 @@ func stringContainsOnly(text, chars string) bool {
 }
 
 func stringIndexOf(text, needle string, start int) int {
-	textRunes := []rune(text)
-	needleRunes := []rune(needle)
 	if start < 0 {
 		start = 0
 	}
+	if asciiPrefixLen(text, len(text)) == len(text) && asciiPrefixLen(needle, len(needle)) == len(needle) {
+		if start > len(text) {
+			if needle == "" {
+				return len(text)
+			}
+			return -1
+		}
+		if needle == "" {
+			return start
+		}
+		index := strings.Index(text[start:], needle)
+		if index < 0 {
+			return -1
+		}
+		return start + index
+	}
+	textRunes := []rune(text)
+	needleRunes := []rune(needle)
 	if start > len(textRunes) {
 		if len(needleRunes) == 0 {
 			return len(textRunes)
@@ -3800,12 +3822,15 @@ func substring(text string, args []Value) (Value, bool, error) {
 	if args[0].Kind != ValueInt || (len(args) == 2 && args[1].Kind != ValueInt) {
 		return Null, true, fmt.Errorf("String.substring expects integer indexes")
 	}
-	runes := []rune(text)
 	start := int(args[0].Int)
-	end := len(runes)
+	end := utf8.RuneCountInString(text)
 	if len(args) == 2 {
 		end = int(args[1].Int)
 	}
+	if start >= 0 && end >= start && asciiPrefixLen(text, end) == end {
+		return String(text[start:end]), true, nil
+	}
+	runes := []rune(text)
 	if start < 0 || start > len(runes) {
 		return Null, true, fmt.Errorf("String substring index out of bounds: %d", start)
 	}
@@ -3816,6 +3841,18 @@ func substring(text string, args []Value) (Value, bool, error) {
 		return Null, true, fmt.Errorf("String substring start index exceeds end index")
 	}
 	return String(string(runes[start:end])), true, nil
+}
+
+func asciiPrefixLen(text string, limit int) int {
+	if limit > len(text) {
+		limit = len(text)
+	}
+	for i := 0; i < limit; i++ {
+		if text[i] >= utf8.RuneSelf {
+			return i
+		}
+	}
+	return limit
 }
 
 func callObjectMember(receiver Value, method string, args []Value) (Value, bool, error) {

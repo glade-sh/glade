@@ -444,6 +444,9 @@ func parseTypeInheritance(source string, r diagnostic.Range) (string, []string) 
 func hasTestModifier(modifiers []string) bool {
 	for _, modifier := range modifiers {
 		normalized := strings.ToLower(strings.TrimPrefix(modifier, "@"))
+		if i := strings.IndexByte(normalized, '('); i >= 0 {
+			normalized = normalized[:i]
+		}
 		if normalized == "istest" {
 			return true
 		}

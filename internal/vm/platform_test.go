@@ -845,6 +845,7 @@ System.assertEquals(account.Id, controller.getId());
 System.assertEquals('/' + account.Id, saved.getUrl());
 PageReference token = Page.MyPage;
 System.assertEquals('/apex/MyPage', token.getUrl());
+System.assertEquals('/apex/MyPage', page.MyPage.getUrl());
 SelectOption option = new SelectOption('1', 'One', true, false);
 System.assertEquals('1', option.getValue());
 System.assertEquals('One', option.getLabel());
@@ -1184,7 +1185,7 @@ System.assertEquals('Ada Trail / Acme', merged.getPlainTextBody());
 		{
 			name: "template-id-type",
 			src:  `Messaging.renderStoredEmailTemplate(7, null, null);`,
-			want: `Messaging.renderStoredEmailTemplate expects templateId String`,
+			want: `Messaging.renderStoredEmailTemplate expects templateId String or Id`,
 		},
 	}
 	for _, tc := range cases {
@@ -2449,6 +2450,10 @@ System.assertEquals(Date.newInstance(2024, 7, 1), fromDateTime.dateGMT());
 Datetime fromDateTimeGmt = Datetime.newInstanceGmt(Date.newInstance(2024, 7, 1), Time.newInstance(5, 30, 0, 250));
 System.assertEquals('2024-07-01T05:30:00.25Z', fromDateTimeGmt.formatGmt());
 
+Datetime fromMillis = Datetime.newInstance(winterLocal.getTime());
+System.assertEquals(winterLocal, fromMillis);
+System.assertEquals(0, Datetime.newInstance(0).getTime());
+
 Datetime gap = Datetime.newInstance(2024, 3, 10, 2, 30, 0);
 System.assertEquals('2024-03-10T10:30:00Z', gap.formatGmt());
 System.assertEquals('2024-03-10T03:30:00-07:00', gap.format());
@@ -2871,6 +2876,8 @@ System.assertEquals('Alpha|Beta|Alpha', String.join(pieces, '|'));
 System.assert(String.isBlank('   '));
 System.assert(String.isNotBlank('x'));
 System.assert(trimmed.equalsIgnoreCase('alpha,beta,alpha'));
+System.assertEquals(false, trimmed.equalsIgnoreCase(null));
+System.assertEquals(false, trimmed.equals(null));
 Pattern pattern = Pattern.compile('[A-Z]+');
 Matcher matcher = pattern.matcher('abc DEF ghi');
 System.assert(matcher.find());
