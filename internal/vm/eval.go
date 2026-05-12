@@ -27,7 +27,9 @@ func parseLiteral(raw string) (Value, error) {
 		if err != nil {
 			return Null, fmt.Errorf("invalid decimal literal %q", raw)
 		}
-		return Decimal(value), nil
+		out := Decimal(value)
+		out.Text = numberRaw
+		return out, nil
 	}
 	value, err := strconv.ParseInt(numberRaw, 10, 64)
 	if err != nil {

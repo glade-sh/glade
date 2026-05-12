@@ -2037,6 +2037,11 @@ System.assertEquals(12.5, d.abs());
 System.assertEquals(156.25, d.pow(2));
 System.assertEquals('12.5', d.format());
 System.assertEquals('10000.5', Decimal.valueOf('10000.5').toPlainString());
+System.assertEquals(2, Decimal.valueOf('0.010').stripTrailingZeros().scale());
+System.assertEquals(1, Decimal.valueOf('0.010').stripTrailingZeros().precision());
+System.assertEquals(0, Decimal.valueOf('0.00').stripTrailingZeros().scale());
+System.assertEquals(-1, Decimal.valueOf('10').scale() - Decimal.valueOf('10').precision() + 1);
+System.assertEquals(10, Decimal.valueOf('12.5').setScale(-1));
 Decimal halfTie = Decimal.valueOf('1.25');
 Decimal halfEvenUp = Decimal.valueOf('1.35');
 Decimal negativeHalfTie = Decimal.valueOf('-1.25');
@@ -2266,7 +2271,7 @@ func TestExecDecimalScaleFenceUnsupported(t *testing.T) {
 	}
 	if _, err := Execute(program, nil); err == nil {
 		t.Fatal("expected Decimal.setScale scale fence error")
-	} else if !strings.Contains(err.Error(), `unsupported call "Decimal.setScale scale greater than 15 is not supported by the local decimal model"`) {
+	} else if !strings.Contains(err.Error(), `unsupported call "Decimal.setScale absolute scale greater than 15 is not supported by the local decimal model"`) {
 		t.Fatalf("Decimal.setScale scale fence error = %q", err.Error())
 	}
 }

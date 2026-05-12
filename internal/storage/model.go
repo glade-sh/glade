@@ -159,6 +159,9 @@ type Field struct {
 	Label              string              `json:"label,omitempty"`
 	Type               FieldType           `json:"type"`
 	DisplayType        string              `json:"displayType,omitempty"`
+	Length             int                 `json:"length,omitempty"`
+	Precision          int                 `json:"precision,omitempty"`
+	Scale              int                 `json:"scale,omitempty"`
 	Formula            string              `json:"formula,omitempty"`
 	DefaultValue       string              `json:"defaultValue,omitempty"`
 	AutoNumber         bool                `json:"autoNumber,omitempty"`

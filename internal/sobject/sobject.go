@@ -152,6 +152,9 @@ type DescribeFieldResult struct {
 	Type                  storage.FieldType           `json:"type"`
 	DisplayType           string                      `json:"displayType,omitempty"`
 	Label                 string                      `json:"label,omitempty"`
+	Length                int                         `json:"length,omitempty"`
+	Precision             int                         `json:"precision,omitempty"`
+	Scale                 int                         `json:"scale,omitempty"`
 	Formula               string                      `json:"formula,omitempty"`
 	AutoNumber            bool                        `json:"autoNumber,omitempty"`
 	DisplayFormat         string                      `json:"displayFormat,omitempty"`
@@ -233,6 +236,9 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 				Type:                  fieldType,
 				DisplayType:           displayFieldType(field.Type),
 				Label:                 labelOrName(field.Label, field.Name),
+				Length:                field.Length,
+				Precision:             field.Precision,
+				Scale:                 field.Scale,
 				Formula:               field.Formula,
 				ReferenceTo:           referenceTargets(field.ReferenceTo),
 				SummarizedField:       field.SummarizedField,
@@ -375,6 +381,9 @@ func ToObjectDefinition(describe DescribeSObjectResult) storage.ObjectDefinition
 			Label:              labelOrName(field.Label, field.Name),
 			Type:               field.Type,
 			DisplayType:        field.DisplayType,
+			Length:             field.Length,
+			Precision:          field.Precision,
+			Scale:              field.Scale,
 			Formula:            field.Formula,
 			DefaultValue:       field.DefaultValue,
 			AutoNumber:         field.AutoNumber,
@@ -430,6 +439,9 @@ func FromObjectDefinition(definition storage.ObjectDefinition) DescribeSObjectRe
 			Type:               field.Type,
 			DisplayType:        field.DisplayType,
 			Label:              labelOrName(field.Label, field.APIName),
+			Length:             field.Length,
+			Precision:          field.Precision,
+			Scale:              field.Scale,
 			Formula:            field.Formula,
 			AutoNumber:         field.AutoNumber,
 			DisplayFormat:      field.DisplayFormat,

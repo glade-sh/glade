@@ -32,6 +32,22 @@ func TestParseCountQuery(t *testing.T) {
 	}
 }
 
+func TestParseIgnoresEmptyGeneratedFieldEntries(t *testing.T) {
+	query, err := Parse("SELECT Id,,Name,(SELECT Id,,Name FROM Contacts) FROM Account")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := strings.Join(query.Fields, ","); got != "Id,Name" {
+		t.Fatalf("fields = %q", got)
+	}
+	if len(query.ChildQueries) != 1 {
+		t.Fatalf("child queries = %#v", query.ChildQueries)
+	}
+	if got := strings.Join(query.ChildQueries[0].Query.Fields, ","); got != "Id,Name" {
+		t.Fatalf("child fields = %q", got)
+	}
+}
+
 func TestParseEmptyInList(t *testing.T) {
 	query, err := Parse("SELECT Id FROM Account WHERE Id IN ()")
 	if err != nil {

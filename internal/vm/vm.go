@@ -1812,7 +1812,7 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"Math.sqrt", "Math.acos", "Math.asin", "Math.atan", "Math.cos", "Math.sin", "Math.tan",
 		"Math.exp", "Math.log", "Math.log10", "Math.max", "Math.min", "Math.mod", "Math.pow",
 		"Math.atan2", "Math.random",
-		"Date.today", "Date.newInstance", "Date.valueOf", "Date.daysInMonth",
+		"Date.today", "Date.newInstance", "Date.valueOf", "Date.parse", "Date.daysInMonth",
 		"Datetime.now", "Datetime.newInstance", "Datetime.newInstanceGmt", "Datetime.valueOf", "Datetime.valueOfGmt",
 		"Time.newInstance", "Time.valueOf",
 		"Blob.valueOf",
@@ -2447,6 +2447,21 @@ platformStaticCall:
 			return Null, newExceptionError("System.TypeException", "Date.valueOf expects String")
 		}
 		date, err := parseDateText(args[0].Text)
+		if err != nil {
+			return Null, newExceptionError("System.TypeException", "Invalid date: "+args[0].Text)
+		}
+		return platformScalar("Date", date.Format("2006-01-02")), nil
+	case "Date.parse":
+		if len(args) != 1 {
+			return Null, newExceptionError("System.NullPointerException", "Date.parse expects String")
+		}
+		if args[0].Kind == ValueNull {
+			return Null, newExceptionError("System.NullPointerException", "Date.parse expects String")
+		}
+		if args[0].Kind != ValueString {
+			return Null, newExceptionError("System.TypeException", "Date.parse expects String")
+		}
+		date, err := parseDateParseText(args[0].Text)
 		if err != nil {
 			return Null, newExceptionError("System.TypeException", "Invalid date: "+args[0].Text)
 		}
@@ -7930,6 +7945,19 @@ func parseDateText(text string) (time.Time, error) {
 	return time.Time{}, fmt.Errorf("unsupported Date value %q", text)
 }
 
+func parseDateParseText(text string) (time.Time, error) {
+	text = strings.TrimSpace(text)
+	for _, layout := range []string{"1/2/2006", "01/02/2006", "1/2/06", "01/02/06"} {
+		if value, err := time.Parse(layout, text); err == nil {
+			if err := validateDateParts(value.Year(), int(value.Month()), value.Day()); err != nil {
+				return time.Time{}, err
+			}
+			return time.Date(value.Year(), value.Month(), value.Day(), 0, 0, 0, 0, time.UTC), nil
+		}
+	}
+	return parseDateText(text)
+}
+
 func formatPlatformDatetime(value time.Time) string {
 	return value.UTC().Format(time.RFC3339Nano)
 }
@@ -9915,6 +9943,53 @@ func isCustomSchemaName(name string) bool {
 	return strings.HasSuffix(name, "__c") || strings.HasSuffix(name, "__pc") || strings.HasSuffix(name, "__pr")
 }
 
+func describeFieldLength(field storage.Field) int {
+	if field.Length > 0 {
+		return field.Length
+	}
+	switch strings.ToUpper(field.DisplayType) {
+	case "TEXTAREA", "LONGTEXTAREA", "RICHTEXTAREA":
+		return 32768
+	}
+	switch field.Type {
+	case storage.FieldString, storage.FieldPicklist, storage.FieldReference, storage.FieldID:
+		return 255
+	default:
+		return 0
+	}
+}
+
+func describeFieldPrecision(field storage.Field) int {
+	if field.Precision > 0 {
+		return field.Precision
+	}
+	switch field.Type {
+	case storage.FieldDecimal:
+		return 18
+	default:
+		return 0
+	}
+}
+
+func describeFieldScale(field storage.Field) int {
+	if field.Scale > 0 {
+		return field.Scale
+	}
+	if field.Type != storage.FieldDecimal {
+		return 0
+	}
+	switch strings.ToUpper(field.DisplayType) {
+	case "CURRENCY", "PERCENT":
+		return 2
+	default:
+		return 0
+	}
+}
+
+func describeFieldIsHTMLFormatted(field storage.Field) bool {
+	return strings.EqualFold(field.DisplayType, "RICHTEXTAREA") || strings.EqualFold(string(field.Type), "RICHTEXTAREA")
+}
+
 func isCustomObjectLikeName(name string) bool {
 	name = strings.ToLower(name)
 	return strings.HasSuffix(name, "__c") || strings.HasSuffix(name, "__e") || strings.HasSuffix(name, "__mdt")
@@ -10069,6 +10144,10 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 	desc.Fields["calculated"] = Bool(field.Type == storage.FieldCalculated)
 	desc.Fields["nameField"] = Bool(isNameFieldDescribe(field))
 	desc.Fields["custom"] = Bool(isCustomSchemaName(field.APIName))
+	desc.Fields["length"] = Int(int64(describeFieldLength(field)))
+	desc.Fields["precision"] = Int(int64(describeFieldPrecision(field)))
+	desc.Fields["scale"] = Int(int64(describeFieldScale(field)))
+	desc.Fields["htmlFormatted"] = Bool(describeFieldIsHTMLFormatted(field))
 	relationshipName := field.RelationshipName
 	if parentRelationship, ok := vm.parentRelationshipNameForField(definition, field.APIName); ok {
 		relationshipName = parentRelationship
@@ -10114,6 +10193,10 @@ func emptySObjectFieldDescribe(objectName string) Value {
 	desc.Fields["calculated"] = Bool(false)
 	desc.Fields["nameField"] = Bool(false)
 	desc.Fields["custom"] = Bool(false)
+	desc.Fields["length"] = Int(0)
+	desc.Fields["precision"] = Int(0)
+	desc.Fields["scale"] = Int(0)
+	desc.Fields["htmlFormatted"] = Bool(false)
 	desc.Fields["relationshipName"] = Null
 	desc.Fields["referenceTo"] = List()
 	desc.Fields["picklistValues"] = List()
@@ -16815,6 +16898,7 @@ func canonicalPlatformObjectMemberName(typeName, method string) string {
 		"getMap",
 		"getName", "getLabel", "getType", "getSOAPType", "getSoapType",
 		"isNillable", "isExternalId", "isUnique", "isEncrypted", "isNameField",
+		"getLength", "getPrecision", "getScale", "isHtmlFormatted",
 		"getReferenceTo", "getRelationshipName", "getPicklistValues", "getSObjectField",
 		"getFields", "getFieldPath", "getRequired", "getDbRequired",
 		"getController", "getControllerValues", "isAccessible", "isCreateable", "isUpdateable",
@@ -19338,6 +19422,26 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.isCustom expects 0 arguments")
 			}
 			return receiver.Fields["custom"], receiver, false, true, nil
+		case "getLength":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getLength expects 0 arguments")
+			}
+			return receiver.Fields["length"], receiver, false, true, nil
+		case "getPrecision":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getPrecision expects 0 arguments")
+			}
+			return receiver.Fields["precision"], receiver, false, true, nil
+		case "getScale":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getScale expects 0 arguments")
+			}
+			return receiver.Fields["scale"], receiver, false, true, nil
+		case "isHtmlFormatted":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.isHtmlFormatted expects 0 arguments")
+			}
+			return receiver.Fields["htmlFormatted"], receiver, false, true, nil
 		case "getReferenceTo":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getReferenceTo expects 0 arguments")

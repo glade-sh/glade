@@ -38,6 +38,9 @@ type Field struct {
 	Name                  string          `json:"name"`
 	Label                 string          `json:"label,omitempty"`
 	Type                  string          `json:"type,omitempty"`
+	Length                int             `json:"length,omitempty"`
+	Precision             int             `json:"precision,omitempty"`
+	Scale                 int             `json:"scale,omitempty"`
 	ReferenceTo           []string        `json:"referenceTo,omitempty"`
 	RelationshipName      string          `json:"relationshipName,omitempty"`
 	ChildRelationshipName string          `json:"childRelationshipName,omitempty"`
@@ -121,6 +124,9 @@ type customFieldXML struct {
 	FullName              string             `xml:"fullName"`
 	Label                 string             `xml:"label"`
 	Type                  string             `xml:"type"`
+	Length                int                `xml:"length"`
+	Precision             int                `xml:"precision"`
+	Scale                 int                `xml:"scale"`
 	ReferenceTo           []string           `xml:"referenceTo"`
 	RelationshipName      string             `xml:"relationshipName"`
 	ChildRelationshipName string             `xml:"childRelationshipName"`
@@ -467,6 +473,9 @@ func fieldFromXML(raw customFieldXML, fallback string) Field {
 		Name:                  name,
 		Label:                 raw.Label,
 		Type:                  raw.Type,
+		Length:                raw.Length,
+		Precision:             raw.Precision,
+		Scale:                 raw.Scale,
 		ReferenceTo:           raw.ReferenceTo,
 		RelationshipName:      raw.RelationshipName,
 		ChildRelationshipName: raw.ChildRelationshipName,

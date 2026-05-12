@@ -23,7 +23,7 @@ func callStdlibMember(receiver Value, method string, args []Value) (Value, Value
 		value, handled, err := callStringMember(receiver, method, args)
 		return value, receiver, false, handled, err
 	case ValueDecimal:
-		method = canonicalStdlibMemberName(method, "abs", "setScale", "round", "intValue", "longValue", "doubleValue", "format", "toPlainString", "divide")
+		method = canonicalStdlibMemberName(method, "abs", "setScale", "round", "intValue", "longValue", "doubleValue", "format", "toPlainString", "divide", "scale", "precision", "stripTrailingZeros")
 		return callDecimalMember(receiver, method, args)
 	case ValueList:
 		method = canonicalStdlibMemberName(method, "add", "addAll", "clear", "clone", "contains", "deepClone", "get", "getSObjectType", "isEmpty", "iterator", "remove", "set", "size", "sort")
@@ -113,9 +113,6 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 		}
 		if args[0].Kind != ValueInt {
 			return Null, receiver, false, true, fmt.Errorf("Decimal.setScale expects Integer scale")
-		}
-		if args[0].Int < 0 {
-			return Null, receiver, false, true, fmt.Errorf("Decimal.setScale expects non-negative scale")
 		}
 		mode := "HALF_UP"
 		if len(args) == 2 {
@@ -210,6 +207,34 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 			return String(receiver.Text), receiver, false, true, nil
 		}
 		return String(strconv.FormatFloat(receiver.Decimal, 'f', -1, 64)), receiver, false, true, nil
+	case "scale":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Decimal.scale expects 0 arguments")
+		}
+		return Int(int64(decimalScale(receiver))), receiver, false, true, nil
+	case "precision":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Decimal.precision expects 0 arguments")
+		}
+		return Int(int64(decimalPrecision(receiver))), receiver, false, true, nil
+	case "stripTrailingZeros":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Decimal.stripTrailingZeros expects 0 arguments")
+		}
+		if err := ensureFiniteDecimal("Decimal.stripTrailingZeros", receiver.Decimal); err != nil {
+			return Null, receiver, false, true, err
+		}
+		text := decimalPlainText(receiver)
+		if dot := strings.IndexByte(text, '.'); dot >= 0 {
+			text = strings.TrimRight(text, "0")
+			text = strings.TrimRight(text, ".")
+		}
+		if text == "" || text == "-" {
+			text = "0"
+		}
+		value := Decimal(receiver.Decimal)
+		value.Text = text
+		return value, receiver, false, true, nil
 	case "divide":
 		if len(args) < 2 || len(args) > 3 {
 			return Null, receiver, false, true, fmt.Errorf("Decimal.divide expects divisor, scale, and optional RoundingMode")
@@ -265,6 +290,50 @@ func decimalOperand(value Value) (float64, bool) {
 	}
 }
 
+func decimalPlainText(value Value) string {
+	text := strings.TrimSpace(value.Text)
+	if text != "" {
+		return text
+	}
+	return strconv.FormatFloat(value.Decimal, 'f', -1, 64)
+}
+
+func decimalScale(value Value) int {
+	text := decimalPlainText(value)
+	if exponent := strings.IndexAny(text, "eE"); exponent >= 0 {
+		text = text[:exponent]
+	}
+	dot := strings.IndexByte(text, '.')
+	if dot < 0 {
+		return 0
+	}
+	return len(text) - dot - 1
+}
+
+func decimalPrecision(value Value) int {
+	text := decimalPlainText(value)
+	if exponent := strings.IndexAny(text, "eE"); exponent >= 0 {
+		text = text[:exponent]
+	}
+	digits := 0
+	seenNonZero := false
+	for _, ch := range text {
+		if ch < '0' || ch > '9' {
+			continue
+		}
+		if ch != '0' {
+			seenNonZero = true
+		}
+		if seenNonZero {
+			digits++
+		}
+	}
+	if digits == 0 {
+		return 1
+	}
+	return digits
+}
+
 func formatIntegerWithGrouping(value int64) string {
 	sign := ""
 	text := strconv.FormatInt(value, 10)
@@ -313,8 +382,8 @@ func roundDecimalToScale(callee string, value float64, scaleValue int64, mode st
 	if err := ensureFiniteDecimal(callee, value); err != nil {
 		return 0, err
 	}
-	if scaleValue > maxLocalScale {
-		return 0, unsupportedCallError(fmt.Sprintf("%s scale greater than %d is not supported by the local decimal model", callee, maxLocalScale))
+	if scaleValue > maxLocalScale || scaleValue < -maxLocalScale {
+		return 0, unsupportedCallError(fmt.Sprintf("%s absolute scale greater than %d is not supported by the local decimal model", callee, maxLocalScale))
 	}
 	rounded, err := roundLocalDecimalStringToScale(callee, value, scaleValue, mode)
 	if err != nil {
@@ -335,13 +404,28 @@ func roundLocalDecimalStringToScale(callee string, value float64, scaleValue int
 	if _, ok := rat.SetString(strconv.FormatFloat(value, 'f', -1, 64)); !ok {
 		return 0, fmt.Errorf("%s value cannot be represented by local decimal model", callee)
 	}
-	factor := new(big.Int).Exp(big.NewInt(10), big.NewInt(scaleValue), nil)
-	scaled := new(big.Rat).Mul(rat, new(big.Rat).SetInt(factor))
+	absScale := scaleValue
+	if absScale < 0 {
+		absScale = -absScale
+	}
+	factor := new(big.Int).Exp(big.NewInt(10), big.NewInt(absScale), nil)
+	factorRat := new(big.Rat).SetInt(factor)
+	scaled := new(big.Rat)
+	if scaleValue >= 0 {
+		scaled.Mul(rat, factorRat)
+	} else {
+		scaled.Quo(rat, factorRat)
+	}
 	rounded, err := roundScaledRat(callee, scaled, mode)
 	if err != nil {
 		return 0, err
 	}
-	resultRat := new(big.Rat).SetFrac(rounded, factor)
+	resultRat := new(big.Rat)
+	if scaleValue >= 0 {
+		resultRat.SetFrac(rounded, factor)
+	} else {
+		resultRat.Mul(new(big.Rat).SetInt(rounded), factorRat)
+	}
 	result, _ := resultRat.Float64()
 	if math.IsInf(result, 0) || math.IsNaN(result) {
 		return 0, fmt.Errorf("%s rounded value must be finite", callee)
@@ -1345,14 +1429,17 @@ func numericStatic(callee string, args []Value) (Value, error) {
 		case ValueInt:
 			return Decimal(float64(args[0].Int)), nil
 		case ValueString:
-			parsed, err := strconv.ParseFloat(strings.TrimSpace(args[0].Text), 64)
+			text := strings.TrimSpace(args[0].Text)
+			parsed, err := strconv.ParseFloat(text, 64)
 			if err != nil {
 				return Null, newExceptionError("System.TypeException", fmt.Sprintf("%s invalid decimal %q", callee, args[0].Text))
 			}
 			if math.IsInf(parsed, 0) || math.IsNaN(parsed) {
 				return Null, newExceptionError("System.TypeException", fmt.Sprintf("%s invalid finite decimal %q", callee, args[0].Text))
 			}
-			return Decimal(parsed), nil
+			value := Decimal(parsed)
+			value.Text = text
+			return value, nil
 		default:
 			return Null, newExceptionError("System.TypeException", fmt.Sprintf("%s expects String or numeric argument", callee))
 		}

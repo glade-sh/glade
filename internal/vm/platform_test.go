@@ -2971,6 +2971,8 @@ Date parsedDate = Date.valueOf('2026-05-04');
 System.assertEquals(2, d.daysBetween(parsedDate));
 Date parsedDateTime = Date.valueOf('2026-05-04 23:59:58');
 System.assertEquals(parsedDate, parsedDateTime);
+System.assertEquals(2026, Date.parse('01/01/2026').year());
+System.assertEquals(2026, Date.parse('01/01/26').year());
 Datetime dt = Datetime.now();
 String dtText = dt.format();
 System.assert(dtText.startsWith('2026-05-02T12:00:00'));

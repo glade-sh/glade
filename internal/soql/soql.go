@@ -2111,6 +2111,12 @@ func (p *parser) parseFields() ([]string, []ChildQuery, []TypeofSpec, error) {
 	var childQueries []ChildQuery
 	var typeofs []TypeofSpec
 	for {
+		if p.match(",") {
+			continue
+		}
+		if p.peek().text == "" || p.peek().text == ")" || strings.EqualFold(p.peek().text, "FROM") {
+			return fields, childQueries, typeofs, nil
+		}
 		if p.match("(") {
 			query, err := p.parseQuery()
 			if err != nil {
