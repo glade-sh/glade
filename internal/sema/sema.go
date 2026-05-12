@@ -847,6 +847,9 @@ func buildTypeMembers(index typesys.Index) map[string]typeMembers {
 	for _, object := range index.Objects {
 		objectKey := normalizeName(object.Name)
 		objectMembers, objectOK := out[objectKey]
+		if objectOK && !objectMembers.sobject {
+			continue
+		}
 		if !objectOK {
 			objectMembers = typeMembers{
 				name:    object.Name,
@@ -964,6 +967,9 @@ func addStandardSObjectMembers(out map[string]typeMembers) {
 		}
 		members, ok := out[key]
 		synthetic := !ok
+		if ok && !members.sobject {
+			continue
+		}
 		if !ok {
 			members = typeMembers{
 				name:    objectName,
@@ -1154,6 +1160,8 @@ func semaEnumValues(typ typesys.TypeSymbol) []string {
 		return nil
 	}
 	body := decl[open+1 : close]
+	// Strip both line and block comments before splitting on commas
+	body = stripComments(body)
 	parts := strings.Split(body, ",")
 	out := make([]string, 0, len(parts))
 	for _, part := range parts {
@@ -1171,6 +1179,41 @@ func semaEnumValues(typ typesys.TypeSymbol) []string {
 		}
 	}
 	return out
+}
+
+func stripComments(source string) string {
+	var sb strings.Builder
+	for len(source) > 0 {
+		// Find the next comment start
+		lineIdx := strings.Index(source, "//")
+		blockIdx := strings.Index(source, "/*")
+		if lineIdx < 0 && blockIdx < 0 {
+			sb.WriteString(source)
+			break
+		}
+		// Determine which comment comes first
+		idx := lineIdx
+		if blockIdx >= 0 && (lineIdx < 0 || blockIdx < lineIdx) {
+			idx = blockIdx
+		}
+		sb.WriteString(source[:idx])
+		if idx == lineIdx {
+			// Line comment: skip to end of line
+			if nl := strings.IndexByte(source[idx:], '\n'); nl >= 0 {
+				source = source[idx+nl:]
+			} else {
+				break
+			}
+		} else {
+			// Block comment: skip to */
+			if end := strings.Index(source[idx+2:], "*/"); end >= 0 {
+				source = source[idx+2+end+2:]
+			} else {
+				break
+			}
+		}
+	}
+	return sb.String()
 }
 
 func shortNestedTypeName(typeName string) string {
@@ -1923,6 +1966,9 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 			}
 		}
 	}
+	if strings.HasPrefix(method, "__safe_call:") {
+		method = strings.TrimPrefix(method, "__safe_call:")
+	}
 	if receiverType == "" {
 		return nil
 	}
@@ -2350,16 +2396,25 @@ func (a *Analyzer) inferIRExprType(expr ir.Expr, scope irSemaScope, model map[st
 		if root, field, ok := strings.Cut(expr.Name, "."); ok {
 			if _, scoped := scope.lookup(root); !scoped {
 				if target, staticOK := semaStaticClassFieldPathMemberInContext(model, currentType, root, field); staticOK && !hasModifier(target.member.Modifiers, semaSyntheticStandardSObjectFieldModifier) {
-					return target.member.Type
+					if owner, ok := model[normalizeName(target.owner)]; !ok || !owner.sobject {
+						return target.member.Type
+					}
 				}
 			}
 		}
-		if semaIRExprLooksLikeStaticSObjectToken(expr.Name, scope) {
-			if semaLooksLikeSObjectFieldToken(expr.Name) {
+		if semaIRExprLooksLikeStaticSObjectToken(expr.Name, scope, model) {
+			if semaLooksLikeSObjectFieldTokenInModel(expr.Name, model) {
 				return "Schema.SObjectField"
 			}
-			if semaLooksLikeSObjectTypeToken(expr.Name) {
+			if semaLooksLikeSObjectTypeTokenInModel(expr.Name, model) {
 				return "Schema.SObjectType"
+			}
+		}
+		if root, field, ok := strings.Cut(expr.Name, "."); ok {
+			if _, scoped := scope.lookup(root); !scoped {
+				if target, staticOK := semaStaticClassFieldPathMemberInContext(model, currentType, root, field); staticOK && !hasModifier(target.member.Modifiers, semaSyntheticStandardSObjectFieldModifier) {
+					return target.member.Type
+				}
 			}
 		}
 		if root, field, ok := strings.Cut(expr.Name, "."); ok {
@@ -2434,7 +2489,7 @@ func (a *Analyzer) inferIRExprType(expr ir.Expr, scope irSemaScope, model map[st
 	return ""
 }
 
-func semaIRExprLooksLikeStaticSObjectToken(expr string, scope irSemaScope) bool {
+func semaIRExprLooksLikeStaticSObjectToken(expr string, scope irSemaScope, model map[string]typeMembers) bool {
 	root, _, ok := strings.Cut(strings.TrimSpace(expr), ".")
 	if !ok || root == "" {
 		return false
@@ -2442,7 +2497,7 @@ func semaIRExprLooksLikeStaticSObjectToken(expr string, scope irSemaScope) bool 
 	if scopedType, scoped := scope.lookup(root); scoped {
 		return root == scopedType
 	}
-	return semaLooksLikeSObjectFieldToken(expr) || semaLooksLikeSObjectTypeToken(expr)
+	return semaLooksLikeSObjectFieldTokenInModel(expr, model) || semaLooksLikeSObjectTypeTokenInModel(expr, model)
 }
 
 func semaIRReceiverType(receiver string, scope irSemaScope, model map[string]typeMembers, currentType string) string {
@@ -4524,6 +4579,9 @@ func semaAssignableToType(paramType, argType string, model map[string]typeMember
 	if semaGenericAssignableToType(paramType, argType, model) {
 		return true
 	}
+	if semaPlatformAssignableToType(paramType, argType, model) {
+		return true
+	}
 	if strings.EqualFold(paramType, "SObject") && isSemaSObjectLike(argType, model) {
 		return true
 	}
@@ -4561,6 +4619,17 @@ func semaAssignableToType(paramType, argType string, model map[string]typeMember
 		return true
 	}
 	return semaTypeMatches(model, argType, paramType, make(map[string]bool))
+}
+
+func semaPlatformAssignableToType(paramType, argType string, model map[string]typeMembers) bool {
+	paramBase, paramArgs := semaGenericBaseAndArgs(semaCanonicalPlatformAlias(paramType))
+	if !strings.EqualFold(paramBase, "Iterator") || !strings.EqualFold(argType, "Database.QueryLocatorIterator") {
+		return false
+	}
+	if len(paramArgs) == 0 {
+		return true
+	}
+	return len(paramArgs) == 1 && semaAssignableToType(paramArgs[0], "SObject", model)
 }
 
 func semaStandardExceptionType(typeName string) bool {
@@ -4842,6 +4911,16 @@ func semaCanonicalPlatformAlias(typeName string) string {
 		return "Type"
 	case "system.savepoint":
 		return "Savepoint"
+	case "system.iterable":
+		return "Iterable"
+	case "system.iterator":
+		return "Iterator"
+	case "system.list":
+		return "List"
+	case "system.set":
+		return "Set"
+	case "system.map":
+		return "Map"
 	default:
 		return typeName
 	}
@@ -5035,14 +5114,16 @@ func inferSemaFieldAccessType(expr string, scope map[string]string, model map[st
 	}
 	if _, scoped := scope[normalizeName(parts[0])]; !scoped {
 		if target, staticOK := semaStaticClassFieldPathMemberInContext(model, scope[semaCurrentTypeScopeKey], parts[0], strings.Join(parts[1:], ".")); staticOK && !hasModifier(target.member.Modifiers, semaSyntheticStandardSObjectFieldModifier) {
-			return target.member.Type
+			if owner, ok := model[normalizeName(target.owner)]; !ok || !owner.sobject {
+				return target.member.Type
+			}
 		}
 	}
-	if semaExprLooksLikeStaticSObjectToken(expr, scope) {
-		if semaLooksLikeSObjectFieldToken(expr) {
+	if semaExprLooksLikeStaticSObjectTokenInModel(expr, scope, model) {
+		if semaLooksLikeSObjectFieldTokenInModel(expr, model) {
 			return "Schema.SObjectField"
 		}
-		if semaLooksLikeSObjectTypeToken(expr) {
+		if semaLooksLikeSObjectTypeTokenInModel(expr, model) {
 			return "Schema.SObjectType"
 		}
 	}
@@ -5176,6 +5257,10 @@ func semaEnumValuePathType(model map[string]typeMembers, expr string) string {
 }
 
 func semaExprLooksLikeStaticSObjectToken(expr string, scope map[string]string) bool {
+	return semaExprLooksLikeStaticSObjectTokenInModel(expr, scope, nil)
+}
+
+func semaExprLooksLikeStaticSObjectTokenInModel(expr string, scope map[string]string, model map[string]typeMembers) bool {
 	root, _, ok := strings.Cut(strings.TrimSpace(expr), ".")
 	if !ok || root == "" {
 		return false
@@ -5183,12 +5268,16 @@ func semaExprLooksLikeStaticSObjectToken(expr string, scope map[string]string) b
 	if scopedType, scoped := scope[normalizeName(root)]; scoped {
 		return root == scopedType
 	}
-	return semaLooksLikeSObjectFieldToken(expr) || semaLooksLikeSObjectTypeToken(expr)
+	return semaLooksLikeSObjectFieldTokenInModel(expr, model) || semaLooksLikeSObjectTypeTokenInModel(expr, model)
 }
 
 func semaLooksLikeSObjectFieldToken(expr string) bool {
+	return semaLooksLikeSObjectFieldTokenInModel(expr, nil)
+}
+
+func semaLooksLikeSObjectFieldTokenInModel(expr string, model map[string]typeMembers) bool {
 	parts := strings.Split(strings.TrimSpace(expr), ".")
-	if len(parts) == 2 && semaFieldTokenPart(parts[0]) && semaFieldTokenPart(parts[1]) && isSemaSObjectLike(parts[0], nil) && !strings.EqualFold(parts[1], "SObjectType") {
+	if len(parts) == 2 && semaFieldTokenPart(parts[0]) && semaFieldTokenPart(parts[1]) && isSemaSObjectLike(parts[0], model) && !strings.EqualFold(parts[1], "SObjectType") && !semaLooksLikeStaticConstantName(parts[1]) {
 		return true
 	}
 	for i := 0; i+2 < len(parts); i++ {
@@ -5197,6 +5286,39 @@ func semaLooksLikeSObjectFieldToken(expr string) bool {
 		}
 	}
 	return false
+}
+
+func semaLooksLikeStaticConstantName(name string) bool {
+	name = strings.TrimSpace(name)
+	if name == "" || !strings.Contains(name, "_") {
+		return false
+	}
+	hasLetter := false
+	for _, ch := range name {
+		switch {
+		case ch >= 'A' && ch <= 'Z':
+			hasLetter = true
+		case ch >= '0' && ch <= '9', ch == '_':
+		default:
+			return false
+		}
+	}
+	return hasLetter
+}
+
+func semaLooksLikeSObjectTypeTokenInModel(expr string, model map[string]typeMembers) bool {
+	parts := strings.Split(strings.TrimSpace(expr), ".")
+	if len(parts) < 2 {
+		return false
+	}
+	if len(parts) == 3 && strings.EqualFold(parts[0], "Schema") && strings.EqualFold(parts[1], "SObjectType") && isSemaSObjectLike(parts[2], model) {
+		return true
+	}
+	if !strings.EqualFold(parts[len(parts)-1], "SObjectType") {
+		return false
+	}
+	objectName := parts[len(parts)-2]
+	return isSemaSObjectLike(objectName, model)
 }
 
 func semaFieldTokenPart(part string) bool {
@@ -5209,18 +5331,7 @@ func startsWithUpperASCII(text string) bool {
 }
 
 func semaLooksLikeSObjectTypeToken(expr string) bool {
-	parts := strings.Split(strings.TrimSpace(expr), ".")
-	if len(parts) < 2 {
-		return false
-	}
-	if len(parts) == 3 && strings.EqualFold(parts[0], "Schema") && strings.EqualFold(parts[1], "SObjectType") && isSemaSObjectLike(parts[2], nil) {
-		return true
-	}
-	if !strings.EqualFold(parts[len(parts)-1], "SObjectType") {
-		return false
-	}
-	objectName := parts[len(parts)-2]
-	return isSemaSObjectLike(objectName, nil)
+	return semaLooksLikeSObjectTypeTokenInModel(expr, nil)
 }
 
 func splitSemaMethodPath(callee string) (string, string, bool) {

@@ -352,6 +352,38 @@ type Record struct {
 	System        SystemFields        `json:"system,omitempty"`
 }
 
+func (r Record) GetField(name string) (Value, bool) {
+	if r.Fields == nil {
+		return Value{}, false
+	}
+	if v, ok := r.Fields[name]; ok {
+		return v, true
+	}
+	lower := strings.ToLower(name)
+	for k, v := range r.Fields {
+		if strings.ToLower(k) == lower {
+			return v, true
+		}
+	}
+	return Value{}, false
+}
+
+func (r Record) HasExplicitNull(name string) bool {
+	if r.ExplicitNulls == nil {
+		return false
+	}
+	if r.ExplicitNulls[name] {
+		return true
+	}
+	lower := strings.ToLower(name)
+	for k, v := range r.ExplicitNulls {
+		if strings.ToLower(k) == lower && v {
+			return true
+		}
+	}
+	return false
+}
+
 type SystemFields struct {
 	CreatedByID      ID     `json:"createdById,omitempty"`
 	CreatedDate      string `json:"createdDate,omitempty"`

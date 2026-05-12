@@ -3914,8 +3914,26 @@ func (vm *VM) readOnlyCustomDataDefaultValue(objectName, kind string) Value {
 
 func userInfoField(user Value, field, fallback string) string {
 	if user.Kind == ValueObject {
-		if value, ok := user.Fields[field]; ok && value.Kind == ValueString {
-			return value.Text
+		value, ok := user.Fields[field]
+		if !ok {
+			normalized := strings.ToLower(field)
+			for candidate, candidateValue := range user.Fields {
+				if strings.ToLower(candidate) == normalized {
+					value = candidateValue
+					ok = true
+					break
+				}
+			}
+		}
+		if ok {
+			if value.Kind == ValueString {
+				return value.Text
+			}
+			if value.Kind == ValueObject {
+				if raw, err := platformScalarText(value, value.Type); err == nil {
+					return raw
+				}
+			}
 		}
 		return fallback
 	}
@@ -4067,13 +4085,13 @@ func (vm *VM) explicitObjectPermission(parentID, objectName, method string) (boo
 	}
 	field := objectPermissionField(method)
 	for _, record := range state.Records {
-		if !storageIDValueEquals(record.Fields["ParentId"], parentID) {
+		if parentIDValue, ok := record.GetField("ParentId"); !ok || !storageIDValueEquals(parentIDValue, parentID) {
 			continue
 		}
-		if !storageStringValueEquals(record.Fields["SObjectType"], objectName) {
+		if sObjectTypeValue, ok := record.GetField("SObjectType"); !ok || !storageStringValueEquals(sObjectTypeValue, objectName) {
 			continue
 		}
-		value, ok := record.Fields[field]
+		value, ok := record.GetField(field)
 		if !ok || value.Kind != storage.ValueBoolean {
 			return false, false
 		}
@@ -4095,16 +4113,16 @@ func (vm *VM) explicitFieldPermission(parentID, objectName, fieldName, method st
 		field = "PermissionsEdit"
 	}
 	for _, record := range state.Records {
-		if !storageIDValueEquals(record.Fields["ParentId"], parentID) {
+		if parentIDValue, ok := record.GetField("ParentId"); !ok || !storageIDValueEquals(parentIDValue, parentID) {
 			continue
 		}
-		if !storageStringValueEquals(record.Fields["SObjectType"], objectName) {
+		if sObjectTypeValue, ok := record.GetField("SObjectType"); !ok || !storageStringValueEquals(sObjectTypeValue, objectName) {
 			continue
 		}
-		if !fieldPermissionFieldMatches(record.Fields["Field"], objectName, fieldName) {
+		if fieldValue, ok := record.GetField("Field"); !ok || !fieldPermissionFieldMatches(fieldValue, objectName, fieldName) {
 			continue
 		}
-		value, ok := record.Fields[field]
+		value, ok := record.GetField(field)
 		if !ok || value.Kind != storage.ValueBoolean {
 			return false, false
 		}
@@ -4147,9 +4165,11 @@ func (vm *VM) assignedPermissionSetIDs(userID string) []string {
 	}
 	var out []string
 	for _, record := range state.Records {
-		if storageIDValueEquals(record.Fields["AssigneeId"], userID) {
-			if id := storageValueIDText(record.Fields["PermissionSetId"]); id != "" {
-				out = append(out, id)
+		if assigneeValue, ok := record.GetField("AssigneeId"); ok && storageIDValueEquals(assigneeValue, userID) {
+			if permissionSetValue, ok := record.GetField("PermissionSetId"); ok {
+				if id := storageValueIDText(permissionSetValue); id != "" {
+					out = append(out, id)
+				}
 			}
 		}
 	}
@@ -7884,7 +7904,6 @@ func parseDatetimeText(text string) (time.Time, error) {
 		"2006-01-02 15:04:05",
 		"2006-01-02T15:04:05.000",
 		"2006-01-02T15:04:05",
-		"2006-01-02",
 	} {
 		if value, err := time.Parse(layout, text); err == nil {
 			year := value.Year()

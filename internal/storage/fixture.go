@@ -1017,8 +1017,24 @@ func ensureObject(org *OrgState, name, prefix string, fields map[string]Field) {
 		object.Definition.Fields = make(map[string]Field)
 	}
 	for fieldName, field := range fields {
-		if _, ok := object.Definition.Fields[fieldName]; !ok {
+		existingKey := ""
+		if _, ok := object.Definition.Fields[fieldName]; ok {
+			existingKey = fieldName
+		} else {
+			lower := strings.ToLower(fieldName)
+			for candidate := range object.Definition.Fields {
+				if strings.ToLower(candidate) == lower {
+					existingKey = candidate
+					break
+				}
+			}
+		}
+		if existingKey == "" {
 			object.Definition.Fields[fieldName] = field
+		} else if field.Required && !object.Definition.Fields[existingKey].Required {
+			existing := object.Definition.Fields[existingKey]
+			existing.Required = true
+			object.Definition.Fields[existingKey] = existing
 		}
 		if field.Type == FieldReference && field.RelationshipName != "" && len(field.ReferenceTo) > 0 && !hasParentRelationship(object.Definition.Relations, field.RelationshipName) {
 			object.Definition.Relations = append(object.Definition.Relations, Relationship{

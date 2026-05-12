@@ -590,10 +590,10 @@ func applySetupInsertDefaults(objectName string, definition storage.ObjectDefini
 		if field.Type != storage.FieldBoolean || !field.Required || !defaultRequiredBoolean(name) {
 			continue
 		}
-		if _, ok := record.Fields[name]; ok {
+		if _, ok := record.GetField(name); ok {
 			continue
 		}
-		if record.ExplicitNulls != nil && record.ExplicitNulls[name] {
+		if record.HasExplicitNull(name) {
 			continue
 		}
 		record.Fields[name] = storage.BooleanValue(false)
@@ -1169,10 +1169,10 @@ func validateRequired(definition storage.ObjectDefinition, record storage.Record
 		if !field.Required {
 			continue
 		}
-		if _, ok := record.Fields[name]; ok {
+		if _, ok := record.GetField(name); ok {
 			continue
 		}
-		if record.ExplicitNulls[name] {
+		if record.HasExplicitNull(name) {
 			return dmlErrorf("REQUIRED_FIELD_MISSING", []string{name}, "dml: required field %s.%s is null", record.Object, name)
 		}
 		return dmlErrorf("REQUIRED_FIELD_MISSING", []string{name}, "dml: missing required field %s.%s", record.Object, name)
@@ -1212,7 +1212,7 @@ func (e *Engine) validateReferences(definition storage.ObjectDefinition, record 
 		if field.Type != storage.FieldReference || len(field.ReferenceTo) == 0 {
 			continue
 		}
-		value, ok := record.Fields[name]
+		value, ok := record.GetField(name)
 		if !ok || value.Kind == storage.ValueNull {
 			continue
 		}

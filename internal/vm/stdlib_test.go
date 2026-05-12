@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/open-aer/oaer/internal/project"
 	"github.com/open-aer/oaer/internal/resource"
@@ -1131,14 +1130,10 @@ System.debug('logged without level');
 	}
 }
 
-func TestParseDatetimeTextAcceptsDateOnlyAtMidnightUTC(t *testing.T) {
-	value, err := parseDatetimeText("2026-05-02")
-	if err != nil {
-		t.Fatal(err)
-	}
-	want := time.Date(2026, 5, 2, 0, 0, 0, 0, time.UTC)
-	if !value.Equal(want) {
-		t.Fatalf("datetime = %s, want %s", value.Format(time.RFC3339), want.Format(time.RFC3339))
+func TestParseDatetimeTextRejectsDateOnly(t *testing.T) {
+	_, err := parseDatetimeText("2026-05-02")
+	if err == nil {
+		t.Fatal("expected error for date-only datetime text")
 	}
 }
 

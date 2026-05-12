@@ -859,6 +859,29 @@ public class UsesStandardFieldTokens {
 	}
 }
 
+func TestAnalyzeSObjectFieldTokenDoesNotShadowClassStaticField(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Order.cls"), `
+public class Order {
+  public static final String EXTERNAL_TAX_STATUS_TRANSACTION_LOCKED = 'Locked';
+  public String TaxTransactionStatus { get; set; }
+  public void run() {
+    this.TaxTransactionStatus = Order.EXTERNAL_TAX_STATUS_TRANSACTION_LOCKED;
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "Order.cls")},
+	}, schema.Schema{})
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "OAERSEMA018" && strings.Contains(diag.Message, "Schema.SObjectField") {
+			t.Fatalf("unexpected field token diagnostic: %#v", result.Diagnostics)
+		}
+	}
+}
+
 func TestAnalyzeChildRelationshipAddAllSpecificType(t *testing.T) {
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesChildRelationships.cls"), `
@@ -3158,6 +3181,11 @@ public class Hello {
     Database.QueryLocatorIterator queryIterator = locator.iterator();
     queryIterator.hasNext();
     Object record = queryIterator.next();
+    Iterator<SObject> sobjectIterator = locator.iterator();
+    sobjectIterator.hasNext();
+    SObject sobjectRecord = sobjectIterator.next();
+    System.Iterator<SObject> qualifiedIterator = locator.iterator();
+    qualifiedIterator.hasNext();
     Iterable<Object> iterable = batch.start(null);
     Iterator<Object> iterator = iterable.iterator();
     iterator.hasNext();
@@ -4511,4 +4539,78 @@ func TestIsSemaConstructorCallAtHonorsWhitespaceBeforeNew(t *testing.T) {
 	if isSemaConstructorCallAt(notConstructor, start) {
 		t.Fatalf("identifier ending in new was recognized as a constructor call")
 	}
+}
+
+func TestSemaEnumValuesStripsComments(t *testing.T) {
+	tests := []struct {
+		name     string
+		decl     string
+		expected []string
+	}{
+		{
+			name:     "no comments",
+			decl:     `public enum E { A, B, C }`,
+			expected: []string{"A", "B", "C"},
+		},
+		{
+			name:     "line comments",
+			decl:     "public enum E {\nA, // comment\nB, // another\nC\n}",
+			expected: []string{"A", "B", "C"},
+		},
+		{
+			name:     "block comments",
+			decl:     "public enum E { /* block */ A, /* block */ B, C }",
+			expected: []string{"A", "B", "C"},
+		},
+		{
+			name:     "mixed comments",
+			decl:     "public enum E { /* block */ A, // line\nB, /* block */ C }",
+			expected: []string{"A", "B", "C"},
+		},
+		{
+			name:     "comment before first value",
+			decl:     "public enum E { /* header */ A, B }",
+			expected: []string{"A", "B"},
+		},
+		{
+			name:     "comment after last value",
+			decl:     "public enum E { A, B /* trailing */ }",
+			expected: []string{"A", "B"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmp := t.TempDir()
+			path := filepath.Join(tmp, "Test.cls")
+			if err := os.WriteFile(path, []byte(tt.decl), 0644); err != nil {
+				t.Fatal(err)
+			}
+			typ := typesys.TypeSymbol{
+				Kind: "enum",
+				Name: "E",
+				File: path,
+				Range: diagnostic.Range{
+					Start: diagnostic.Position{Offset: 0},
+					End:   diagnostic.Position{Offset: len(tt.decl)},
+				},
+			}
+			got := semaEnumValues(typ)
+			if !slicesEqual(got, tt.expected) {
+				t.Errorf("semaEnumValues() = %v, want %v", got, tt.expected)
+			}
+		})
+	}
+}
+
+func slicesEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }
