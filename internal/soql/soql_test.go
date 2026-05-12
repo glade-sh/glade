@@ -108,6 +108,39 @@ func TestExecuteResolvesLowercaseIdAsStandardField(t *testing.T) {
 	}
 }
 
+func TestExecuteFieldReferencesAreCaseInsensitive(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Account",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"001000000000001": {
+				ID:     "001000000000001",
+				Object: "Account",
+				Fields: map[string]storage.Value{
+					"name": storage.StringValue("Acme"),
+				},
+			},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT NAME FROM account WHERE nAmE = 'Acme'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 {
+		t.Fatalf("rows = %d", result.Rows)
+	}
+	value := result.Records[0].Fields["Name"]
+	if value.Kind != storage.ValueString || value.String != "Acme" {
+		t.Fatalf("Name field = %#v", value)
+	}
+}
+
 func TestExecuteComparesCustomObjectIDsCaseInsensitively(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Objects["MembershipType__c"] = storage.ObjectState{
@@ -1510,6 +1543,63 @@ func TestExecuteProjectsChildRelationshipSubquery(t *testing.T) {
 	children = result.Records[0].Children["Contacts"]
 	if len(children) != 1 || children[0].Fields["LastName"].String != "Alpha" || children[0].Fields["AccountId"].ID != "001000000000001" {
 		t.Fatalf("child FIELDS() rows = %#v", children)
+	}
+}
+
+func TestExecuteChildRelationshipPrefersExplicitCustomRelationship(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Account",
+			Fields:  map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}},
+		},
+		Records: map[storage.ID]storage.Record{
+			"001000000000001": {ID: "001000000000001", Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")}},
+		},
+	}
+	org.Objects["Order"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Order",
+			Fields: map[string]storage.Field{
+				"AccountId":  {APIName: "AccountId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}},
+				"GrandTotal": {APIName: "GrandTotal", Type: storage.FieldDecimal},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "AccountId",
+				ParentObjects:      []string{"Account"},
+				ParentRelationship: "Account",
+			}},
+			PluralLabel: "Orders",
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	org.Objects["Order__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Order__c",
+			Fields: map[string]storage.Field{
+				"Account__c": {APIName: "Account__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Account__r"},
+				"Balance__c": {APIName: "Balance__c", Type: storage.FieldDecimal},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "Account__c",
+				ParentObjects:      []string{"Account"},
+				ParentRelationship: "Account__r",
+				ChildRelationship:  "Orders__r",
+			}},
+			PluralLabel: "Orders",
+		},
+		Records: map[storage.ID]storage.Record{
+			"a01000000000001": {ID: "a01000000000001", Object: "Order__c", Fields: map[string]storage.Value{"Account__c": storage.IDValue("001000000000001"), "Balance__c": storage.DecimalValue("42")}},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT Id, (SELECT Balance__c FROM Orders__r) FROM Account")
+	if err != nil {
+		t.Fatal(err)
+	}
+	children := result.Records[0].Children["Orders__r"]
+	if len(children) != 1 || children[0].Fields["Balance__c"].Decimal != "42" {
+		t.Fatalf("children = %#v", children)
 	}
 }
 

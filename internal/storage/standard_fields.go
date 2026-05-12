@@ -608,12 +608,12 @@ func ensureStandardRelationship(definition *ObjectDefinition, field Field) {
 		return
 	}
 	for i, relation := range definition.Relations {
-		if relation.Field == field.APIName {
+		if stringsEqualFold(relation.Field, field.APIName) {
 			definition.Relations[i].ParentRelationship = relationshipName
 			definition.Relations[i].ParentObjects = append([]string(nil), field.ReferenceTo...)
 			return
 		}
-		if relation.ParentRelationship == relationshipName {
+		if stringsEqualFold(relation.ParentRelationship, relationshipName) {
 			return
 		}
 	}

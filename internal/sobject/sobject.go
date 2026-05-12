@@ -53,6 +53,7 @@ func (v *Value) Put(field string, value storage.Value) {
 	if v.ExplicitNulls == nil {
 		v.ExplicitNulls = make(map[string]bool)
 	}
+	field = canonicalValueFieldName(v.Fields, v.ExplicitNulls, field)
 	if value.Kind == storage.ValueNull {
 		delete(v.Fields, field)
 		v.ExplicitNulls[field] = true
@@ -63,11 +64,55 @@ func (v *Value) Put(field string, value storage.Value) {
 }
 
 func (v Value) Get(field string) (storage.Value, bool) {
-	if v.ExplicitNulls[field] {
+	if actual, ok := lookupBoolFold(v.ExplicitNulls, field); ok && v.ExplicitNulls[actual] {
 		return storage.NullValue(), true
 	}
-	value, ok := v.Fields[field]
+	actual, ok := lookupValueFold(v.Fields, field)
+	if !ok {
+		return storage.Value{}, false
+	}
+	value := v.Fields[actual]
 	return value.Clone(), ok
+}
+
+func canonicalValueFieldName(fields map[string]storage.Value, nulls map[string]bool, field string) string {
+	if actual, ok := lookupValueFold(fields, field); ok {
+		return actual
+	}
+	if actual, ok := lookupBoolFold(nulls, field); ok {
+		return actual
+	}
+	return field
+}
+
+func lookupValueFold(values map[string]storage.Value, field string) (string, bool) {
+	if values == nil {
+		return "", false
+	}
+	if _, ok := values[field]; ok {
+		return field, true
+	}
+	for candidate := range values {
+		if strings.EqualFold(candidate, field) {
+			return candidate, true
+		}
+	}
+	return "", false
+}
+
+func lookupBoolFold(values map[string]bool, field string) (string, bool) {
+	if values == nil {
+		return "", false
+	}
+	if _, ok := values[field]; ok {
+		return field, true
+	}
+	for candidate := range values {
+		if strings.EqualFold(candidate, field) {
+			return candidate, true
+		}
+	}
+	return "", false
 }
 
 func (v Value) FieldNames() []string {

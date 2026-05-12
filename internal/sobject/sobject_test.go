@@ -19,10 +19,23 @@ func TestValueTracksFieldsAndExplicitNulls(t *testing.T) {
 	if value, ok := account.Get("Description"); !ok || value.Kind != storage.ValueNull {
 		t.Fatalf("Description = %#v ok=%t", value, ok)
 	}
+	if value, ok := account.Get("name"); !ok || value.String != "Acme" {
+		t.Fatalf("lowercase name = %#v ok=%t", value, ok)
+	}
+	if value, ok := account.Get("description"); !ok || value.Kind != storage.ValueNull {
+		t.Fatalf("lowercase description = %#v ok=%t", value, ok)
+	}
+	account.Put("name", storage.StringValue("Changed"))
+	if _, ok := account.Fields["name"]; ok {
+		t.Fatalf("Put created duplicate lowercase field: %#v", account.Fields)
+	}
+	if value, ok := account.Get("Name"); !ok || value.String != "Changed" {
+		t.Fatalf("Name after lowercase Put = %#v ok=%t", value, ok)
+	}
 	record := account.ToRecord()
 	roundTrip := FromRecord(record)
-	roundTrip.Put("Name", storage.StringValue("Changed"))
-	if original, _ := account.Get("Name"); original.String != "Acme" {
+	roundTrip.Put("Name", storage.StringValue("RoundTrip"))
+	if original, _ := account.Get("Name"); original.String != "Changed" {
 		t.Fatalf("original changed: %#v", original)
 	}
 }

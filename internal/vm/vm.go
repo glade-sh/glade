@@ -405,7 +405,9 @@ func (vm *VM) SetServerBaseURL(rawURL string) {
 
 func (vm *VM) SetCurrentUser(record storage.Record) {
 	if record.ID == "" {
-		record.ID = storageIDFromValue(record.Fields["Id"])
+		if id, ok := record.GetField("Id"); ok {
+			record.ID = storageIDFromValue(id)
+		}
 	}
 	if record.Object == "" {
 		record.Object = "User"
@@ -3313,7 +3315,7 @@ func (vm *VM) siteAdminEmail() string {
 	if adminID != "" && vm.Org != nil {
 		if userObject, ok := vm.Org.Objects["User"]; ok {
 			if user, ok := userObject.Records[storage.ID(adminID)]; ok {
-				if email, ok := user.Fields["Email"]; ok && email.Kind == storage.ValueString && email.String != "" {
+				if email, ok := user.GetField("Email"); ok && email.Kind == storage.ValueString && email.String != "" {
 					return email.String
 				}
 			}
@@ -3331,7 +3333,7 @@ func (vm *VM) orgBool(objectName, field string, fallback bool) bool {
 		return fallback
 	}
 	for _, record := range object.Records {
-		value, ok := record.Fields[field]
+		value, ok := record.GetField(field)
 		if ok && value.Kind == storage.ValueBoolean {
 			return value.Boolean
 		}
@@ -3395,7 +3397,7 @@ func (vm *VM) firstOrgRecordValue(objectName, field string) storage.Value {
 	sort.Strings(ids)
 	for _, id := range ids {
 		record := object.Records[storage.ID(id)]
-		if value, ok := record.Fields[field]; ok {
+		if value, ok := record.GetField(field); ok {
 			return value
 		}
 	}
@@ -3590,7 +3592,7 @@ func scalarText(value Value) string {
 func (vm *VM) callCustomDataStaticMember(typeName, method string, args []Value) (Value, bool, error) {
 	objectName, definition, kind, ok := vm.customDataObject(typeName)
 	if !ok {
-		if (method == "getOrgDefaults" || method == "getValues") && strings.HasSuffix(typeName, "__c") {
+		if (method == "getOrgDefaults" || method == "getValues") && strings.HasSuffix(strings.ToLower(typeName), "__c") {
 			if len(args) != 0 {
 				return Null, true, fmt.Errorf("%s.%s expects 0 arguments", typeName, method)
 			}
@@ -3726,7 +3728,7 @@ func (vm *VM) hierarchyCustomSettingRecordForOwner(objectName, ownerID string) (
 		if record.System.IsDeleted {
 			continue
 		}
-		value, ok := record.Fields["SetupOwnerId"]
+		value, ok := record.GetField("SetupOwnerId")
 		if ok && value.Kind == storage.ValueString && value.String == ownerID {
 			return record, true
 		}
@@ -3810,7 +3812,7 @@ func (vm *VM) customDataGetInstance(objectName string, definition storage.Object
 }
 
 func customSettingRecordHasNoSetupOwner(record storage.Record) bool {
-	value, ok := record.Fields["SetupOwnerId"]
+	value, ok := record.GetField("SetupOwnerId")
 	if !ok || value.Kind == storage.ValueNull {
 		return true
 	}
@@ -3864,7 +3866,7 @@ func customDataRecordNames(definition storage.ObjectDefinition, kind string, rec
 	}
 	var out []string
 	for _, field := range fieldOrder {
-		if value, ok := record.Fields[field]; ok && value.Kind == storage.ValueString && value.String != "" {
+		if value, ok := record.GetField(field); ok && value.Kind == storage.ValueString && value.String != "" {
 			out = append(out, value.String)
 		}
 	}
@@ -3883,7 +3885,7 @@ func customDataRecordNames(definition storage.ObjectDefinition, kind string, rec
 
 func firstStringField(record storage.Record, names ...string) string {
 	for _, name := range names {
-		value, ok := record.Fields[name]
+		value, ok := record.GetField(name)
 		if ok && value.Kind == storage.ValueString {
 			return value.String
 		}
@@ -3914,17 +3916,7 @@ func (vm *VM) readOnlyCustomDataDefaultValue(objectName, kind string) Value {
 
 func userInfoField(user Value, field, fallback string) string {
 	if user.Kind == ValueObject {
-		value, ok := user.Fields[field]
-		if !ok {
-			normalized := strings.ToLower(field)
-			for candidate, candidateValue := range user.Fields {
-				if strings.ToLower(candidate) == normalized {
-					value = candidateValue
-					ok = true
-					break
-				}
-			}
-		}
+		_, value, ok := objectFieldValue(user, field)
 		if ok {
 			if value.Kind == ValueString {
 				return value.Text
@@ -3938,7 +3930,7 @@ func userInfoField(user Value, field, fallback string) string {
 		return fallback
 	}
 	if user.Kind == ValueString {
-		if field != "Id" && field != "Username" {
+		if !strings.EqualFold(field, "Id") && !strings.EqualFold(field, "Username") {
 			return fallback
 		}
 		return user.Text
@@ -3965,7 +3957,7 @@ func userHasPermission(user Value, permission string) bool {
 		return false
 	}
 	for _, field := range []string{"Permissions", "PermissionSets"} {
-		value, ok := user.Fields[field]
+		_, value, ok := objectFieldValue(user, field)
 		if !ok {
 			continue
 		}
@@ -4661,7 +4653,7 @@ func (vm *VM) asyncJobRecordStatus(jobID string) string {
 	if !ok {
 		return ""
 	}
-	if status, ok := record.Fields["Status"]; ok && status.Kind == storage.ValueString {
+	if status, ok := record.GetField("Status"); ok && status.Kind == storage.ValueString {
 		return status.String
 	}
 	return ""
@@ -6473,10 +6465,10 @@ func (vm *VM) applySObjectFieldDefaults(records []storage.Record) {
 			records[i].Fields = make(map[string]storage.Value)
 		}
 		for name, field := range definition.Fields {
-			if _, ok := records[i].Fields[name]; ok {
+			if _, ok := records[i].GetField(name); ok {
 				continue
 			}
-			if records[i].ExplicitNulls != nil && records[i].ExplicitNulls[name] {
+			if records[i].HasExplicitNull(name) {
 				continue
 			}
 			if value, ok := storage.DefaultValueForRecordField(definition, records[i], field); ok {
@@ -6491,17 +6483,18 @@ func (vm *VM) applyTestSObjectNameDefault(definition storage.ObjectDefinition, r
 	if vm.testContext == nil || record == nil || record.Fields == nil {
 		return
 	}
-	if _, ok := record.Fields["Name"]; ok {
+	if _, ok := record.GetField("Name"); ok {
 		return
 	}
-	if record.ExplicitNulls != nil && record.ExplicitNulls["Name"] {
+	if record.HasExplicitNull("Name") {
 		return
 	}
 	field, ok := definition.Fields["Name"]
 	if !ok || !field.Required || field.Type != storage.FieldString || field.AutoNumber || field.DefaultValue != "" {
 		return
 	}
-	if !strings.HasSuffix(definition.APIName, "__c") && !strings.HasSuffix(definition.APIName, "__e") {
+	apiName := strings.ToLower(definition.APIName)
+	if !strings.HasSuffix(apiName, "__c") && !strings.HasSuffix(apiName, "__e") {
 		return
 	}
 	name := strings.TrimSpace(definition.Label)
@@ -7098,10 +7091,10 @@ func vmRelationshipNameMatches(namespace, canonical, candidate string) bool {
 	if canonical == candidate || strings.EqualFold(canonical, candidate) {
 		return true
 	}
-	if strings.HasSuffix(candidate, "__r") && strings.EqualFold(canonical+"__r", candidate) {
+	if strings.HasSuffix(strings.ToLower(candidate), "__r") && strings.EqualFold(canonical+"__r", candidate) {
 		return true
 	}
-	if strings.HasSuffix(canonical, "__r") && strings.EqualFold(strings.TrimSuffix(canonical, "__r"), candidate) {
+	if strings.HasSuffix(strings.ToLower(canonical), "__r") && strings.EqualFold(canonical[:len(canonical)-3], candidate) {
 		return true
 	}
 	if namespace == "" {
@@ -7111,10 +7104,10 @@ func vmRelationshipNameMatches(namespace, canonical, candidate string) bool {
 	if stripped == canonical || strings.EqualFold(stripped, canonical) {
 		return true
 	}
-	if strings.HasSuffix(stripped, "__r") && strings.EqualFold(canonical+"__r", stripped) {
+	if strings.HasSuffix(strings.ToLower(stripped), "__r") && strings.EqualFold(canonical+"__r", stripped) {
 		return true
 	}
-	return strings.HasSuffix(canonical, "__r") && strings.EqualFold(strings.TrimSuffix(canonical, "__r"), stripped)
+	return strings.HasSuffix(strings.ToLower(canonical), "__r") && strings.EqualFold(canonical[:len(canonical)-3], stripped)
 }
 
 func storageValueFromVM(value Value) (storage.Value, error) {
@@ -7285,7 +7278,12 @@ func soqlLiteral(value Value) string {
 		}
 		return "(" + strings.Join(items, ", ") + ")"
 	case ValueObject:
-		if value.Type == "Date" || value.Type == "Datetime" || value.Type == "Time" || value.Type == "Id" || value.Type == "String" {
+		if strings.EqualFold(value.Type, "Date") || strings.EqualFold(value.Type, "Datetime") || strings.EqualFold(value.Type, "Time") {
+			if raw, ok := value.Fields["value"]; ok && raw.Kind == ValueString {
+				return raw.Text
+			}
+		}
+		if strings.EqualFold(value.Type, "Id") || strings.EqualFold(value.Type, "String") {
 			if raw, ok := value.Fields["value"]; ok && raw.Kind == ValueString {
 				return "'" + strings.ReplaceAll(raw.Text, "'", "''") + "'"
 			}
@@ -7445,14 +7443,14 @@ func upsertMatchField(definition storage.ObjectDefinition, namespace string, rec
 		if canonical, ok := storage.ResolveFieldName(definition, namespace, fieldName); ok {
 			fieldName = canonical
 		}
-		value, ok := record.Fields[fieldName]
+		value, ok := record.GetField(fieldName)
 		return fieldName, value, ok && value.Kind != storage.ValueNull
 	}
 	for name, field := range definition.Fields {
 		if !field.ExternalID {
 			continue
 		}
-		value, ok := record.Fields[name]
+		value, ok := record.GetField(name)
 		if ok && value.Kind != storage.ValueNull {
 			return name, value, true
 		}
@@ -9917,6 +9915,16 @@ func isCustomSchemaName(name string) bool {
 	return strings.HasSuffix(name, "__c") || strings.HasSuffix(name, "__pc") || strings.HasSuffix(name, "__pr")
 }
 
+func isCustomObjectLikeName(name string) bool {
+	name = strings.ToLower(name)
+	return strings.HasSuffix(name, "__c") || strings.HasSuffix(name, "__e") || strings.HasSuffix(name, "__mdt")
+}
+
+func isCustomFieldOrRelationshipType(name string) bool {
+	name = strings.ToLower(name)
+	return strings.HasSuffix(name, "__c") || strings.HasSuffix(name, "__r")
+}
+
 func relationshipTargetsObject(relationship storage.Relationship, objectName string) bool {
 	for _, parent := range relationship.ParentObjects {
 		if strings.EqualFold(parent, objectName) {
@@ -10760,7 +10768,7 @@ func (vm *VM) lookupSObjectTypeToken(parts []string) (Value, bool) {
 	}
 	canonical, ok := storage.ResolveObjectName(*vm.Org, objectName)
 	if !ok {
-		if isCommonSObjectTypeName(objectName) || strings.HasSuffix(objectName, "__c") || strings.HasSuffix(objectName, "__e") || strings.HasSuffix(objectName, "__mdt") {
+		if isCommonSObjectTypeName(objectName) || isCustomObjectLikeName(objectName) {
 			canonical = objectName
 		} else {
 			return Null, false
@@ -10781,7 +10789,7 @@ func (vm *VM) sObjectTypeTokenForName(objectName string) (Value, bool) {
 			return sObjectTypeToken(canonical), true
 		}
 	}
-	if isCommonSObjectTypeName(objectName) || strings.HasSuffix(objectName, "__c") || strings.HasSuffix(objectName, "__e") || strings.HasSuffix(objectName, "__mdt") {
+	if isCommonSObjectTypeName(objectName) || isCustomObjectLikeName(objectName) {
 		return sObjectTypeToken(objectName), true
 	}
 	return Null, false
@@ -11211,7 +11219,7 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 				current = value
 				continue
 			}
-			if strings.HasSuffix(current.Type, "__c") || strings.HasSuffix(current.Type, "__r") {
+			if isCustomFieldOrRelationshipType(current.Type) {
 				current = Null
 				continue
 			}
@@ -11488,7 +11496,11 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 		current.Fields[actualName] = value
 		return nil
 	}
-	current.Fields[vm.resolveSObjectFieldName(current.Type, fieldName)] = value
+	resolvedField := vm.resolveSObjectFieldName(current.Type, fieldName)
+	if actualName, _, ok := objectFieldValue(current, resolvedField); ok {
+		resolvedField = actualName
+	}
+	current.Fields[resolvedField] = value
 	return nil
 }
 
@@ -11523,6 +11535,15 @@ func (vm *VM) lookupReceiverField(typeName, fieldName string) (Field, string, bo
 		if class, ok := vm.Classes[vm.currentClass]; ok {
 			if field, ok := class.Fields[fieldName]; ok {
 				return field, class.Name, true
+			}
+			normalized := strings.ToLower(fieldName)
+			for candidate, field := range class.Fields {
+				if strings.ToLower(candidate) == normalized || (field.Name != "" && strings.ToLower(field.Name) == normalized) {
+					if field.Name == "" {
+						field.Name = candidate
+					}
+					return field, class.Name, true
+				}
 			}
 		}
 	}
@@ -11638,21 +11659,21 @@ func (vm *VM) checkMemberAccess(ownerClass, access, member string, modifierSets 
 		if vm.currentClassIsTest() && hasAnyMethodModifier(modifierSets, "testvisible") {
 			return nil
 		}
-		if vm.currentClass == ownerClass || strings.HasPrefix(vm.currentClass, ownerClass+".") || strings.HasPrefix(ownerClass, vm.currentClass+".") || sameLexicalTopLevel(vm.currentClass, ownerClass) {
+		if sameOrNestedTypeFold(vm.currentClass, ownerClass) || sameLexicalTopLevel(vm.currentClass, ownerClass) {
 			return nil
 		}
 		methodOwner := vm.currentMethod.ClassName
 		if methodOwner == "" {
 			methodOwner = classNameFromMethod(vm.currentMethod.Name)
 		}
-		if methodOwner == ownerClass || strings.HasPrefix(methodOwner, ownerClass+".") || strings.HasPrefix(ownerClass, methodOwner+".") || sameLexicalTopLevel(methodOwner, ownerClass) {
+		if sameOrNestedTypeFold(methodOwner, ownerClass) || sameLexicalTopLevel(methodOwner, ownerClass) {
 			return nil
 		}
 	case "protected":
 		if vm.currentClassIsTest() && hasAnyMethodModifier(modifierSets, "testvisible") {
 			return nil
 		}
-		if vm.currentClass == ownerClass || strings.HasPrefix(vm.currentClass, ownerClass+".") || strings.HasPrefix(ownerClass, vm.currentClass+".") || vm.isSubclass(vm.currentClass, ownerClass) || vm.isSubclass(ownerClass, vm.currentClass) {
+		if sameOrNestedTypeFold(vm.currentClass, ownerClass) || vm.isSubclass(vm.currentClass, ownerClass) || vm.isSubclass(ownerClass, vm.currentClass) {
 			return nil
 		}
 	default:
@@ -11667,7 +11688,18 @@ func (vm *VM) checkMemberAccess(ownerClass, access, member string, modifierSets 
 func sameLexicalTopLevel(a, b string) bool {
 	aTop, aNested := lexicalTopLevel(a)
 	bTop, bNested := lexicalTopLevel(b)
-	return aNested && bNested && aTop == bTop
+	return aNested && bNested && strings.EqualFold(aTop, bTop)
+}
+
+func sameOrNestedTypeFold(left, right string) bool {
+	return strings.EqualFold(left, right) || hasTypePrefixFold(left, right) || hasTypePrefixFold(right, left)
+}
+
+func hasTypePrefixFold(value, prefix string) bool {
+	if prefix == "" || len(value) <= len(prefix) || value[len(prefix)] != '.' {
+		return false
+	}
+	return strings.EqualFold(value[:len(prefix)], prefix)
 }
 
 func lexicalTopLevel(className string) (string, bool) {
@@ -11747,7 +11779,7 @@ func (vm *VM) classNamespace(className string) string {
 	if !ok {
 		for _, triggers := range vm.Triggers {
 			for _, trigger := range triggers {
-				if trigger.Name == className {
+				if strings.EqualFold(trigger.Name, className) {
 					return trigger.Namespace
 				}
 			}
@@ -11763,7 +11795,7 @@ func (vm *VM) isSubclass(child, parent string) bool {
 		if !ok {
 			return false
 		}
-		if class.SuperClass == parent {
+		if strings.EqualFold(class.SuperClass, parent) {
 			return true
 		}
 		child = class.SuperClass
@@ -12688,7 +12720,7 @@ func (vm *VM) workflowEmailRecipients(alert storage.WorkflowEmailAlert, record s
 				}
 			}
 		}
-		if value, ok := record.Fields[fieldName]; ok {
+		if value, ok := record.GetField(fieldName); ok {
 			vm.appendWorkflowEmailRecipient(recipient.Type, workflowEmailRecipientValue(value), &addresses, &targetIDs)
 			continue
 		}
@@ -12835,7 +12867,7 @@ func (vm *VM) emailTemplateByID(templateID string) (storage.Record, bool) {
 		if string(record.ID) == templateID {
 			return record, true
 		}
-		if id, ok := record.Fields["Id"]; ok && string(storageIDFromValue(id)) == templateID {
+		if id, ok := record.GetField("Id"); ok && string(storageIDFromValue(id)) == templateID {
 			return record, true
 		}
 	}
@@ -12974,7 +13006,7 @@ func (vm *VM) recordByIDValue(value Value) (storage.Record, bool) {
 			if record.ID == id {
 				return record, true
 			}
-			if fieldID, ok := record.Fields["Id"]; ok && storageIDFromValue(fieldID) == id {
+			if fieldID, ok := record.GetField("Id"); ok && storageIDFromValue(fieldID) == id {
 				return record, true
 			}
 		}
@@ -12983,7 +13015,7 @@ func (vm *VM) recordByIDValue(value Value) (storage.Record, bool) {
 }
 
 func storageStringField(record storage.Record, field string) string {
-	value, ok := record.Fields[field]
+	value, ok := record.GetField(field)
 	if !ok {
 		return ""
 	}
@@ -13814,11 +13846,11 @@ func constructorCallKey(method Method) string {
 }
 
 func sameConstructorSignature(left, right Method) bool {
-	if left.Name != right.Name || len(left.Params) != len(right.Params) {
+	if !strings.EqualFold(left.Name, right.Name) || len(left.Params) != len(right.Params) {
 		return false
 	}
 	for i := range left.Params {
-		if left.Params[i].Type != right.Params[i].Type {
+		if !strings.EqualFold(left.Params[i].Type, right.Params[i].Type) {
 			return false
 		}
 	}
@@ -13867,7 +13899,7 @@ func (vm *VM) dispatchAccessMethod(staticType string, target Method, method stri
 	if !ok || ambiguous {
 		return target
 	}
-	if surface.ClassName == target.ClassName || vm.isSubclass(target.ClassName, surface.ClassName) {
+	if strings.EqualFold(surface.ClassName, target.ClassName) || vm.isSubclass(target.ClassName, surface.ClassName) {
 		return surface
 	}
 	return target
@@ -13929,7 +13961,7 @@ func classExtendsType(class Class, baseType string) bool {
 
 func receiverHasClassField(receiver Value, class Class) bool {
 	for name := range class.Fields {
-		if _, ok := receiver.Fields[name]; ok {
+		if _, _, ok := objectFieldValue(receiver, name); ok {
 			return true
 		}
 	}
@@ -13940,7 +13972,7 @@ func (vm *VM) concreteOverrideByReceiverFields(receiver Value, baseType, method 
 	var found Method
 	count := 0
 	for className, class := range vm.Classes {
-		if className == baseType || vm.classIsTestScoped(className) || !receiverHasClassField(receiver, class) {
+		if strings.EqualFold(className, baseType) || vm.classIsTestScoped(className) || !receiverHasClassField(receiver, class) {
 			continue
 		}
 		target, ok, ambiguous := vm.resolveInstanceMethodForArgs(className, method, args)
@@ -16779,6 +16811,7 @@ func canonicalPlatformObjectMemberName(typeName, method string) string {
 		"getMaximumQueueableStackDepth", "setMaximumQueueableStackDepth",
 		"getMinimumQueueableDelayInMinutes", "setMinimumQueueableDelayInMinutes",
 		"newSObject", "getDescribe", "getRecordTypeInfosByName", "getRecordTypeInfosById",
+		"getRecordTypeId",
 		"getMap",
 		"getName", "getLabel", "getType", "getSOAPType", "getSoapType",
 		"isNillable", "isExternalId", "isUnique", "isEncrypted", "isNameField",
@@ -16991,7 +17024,7 @@ func collectionAliasMatch(left, right Value) bool {
 }
 
 func sameCollectionType(left, right Value) bool {
-	if left.Kind != right.Kind || left.Type != right.Type {
+	if left.Kind != right.Kind || !strings.EqualFold(left.Type, right.Type) {
 		return false
 	}
 	switch left.Kind {
@@ -17017,7 +17050,7 @@ func (vm *VM) isSObjectLikeType(typeName string) bool {
 	if strings.EqualFold(typeName, "AggregateResult") {
 		return true
 	}
-	if isCommonSObjectTypeName(typeName) || strings.HasSuffix(typeName, "__c") || strings.HasSuffix(typeName, "__e") || strings.HasSuffix(typeName, "__mdt") {
+	if isCommonSObjectTypeName(typeName) || isCustomObjectLikeName(typeName) {
 		return true
 	}
 	return vm.isSObjectType(typeName)
@@ -17122,7 +17155,7 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		if err := vm.unqueriedSObjectFieldError(receiver, field, true); err != nil {
 			return Null, true, err
 		}
-		value, ok := receiver.Fields[field]
+		_, value, ok := objectFieldValue(receiver, field)
 		if !ok {
 			if value, ok := vm.missingSObjectFieldValue(receiver, field); ok {
 				return value, true, nil
@@ -17142,11 +17175,12 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 			return Null, true, fmt.Errorf("cannot modify read-only %s", reason)
 		}
 		field := vm.resolveSObjectFieldName(receiver.Type, fieldArg)
-		previous, ok := receiver.Fields[field]
+		actualField, previous, ok := objectFieldValue(receiver, field)
 		if !ok {
+			actualField = field
 			previous = Null
 		}
-		receiver.Fields[field] = args[1]
+		receiver.Fields[actualField] = args[1]
 		return previous, true, nil
 	case "isSet":
 		if len(args) != 1 {
@@ -17157,7 +17191,7 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 			return Null, true, fmt.Errorf("SObject.isSet expects field name String or Schema.SObjectField")
 		}
 		field := vm.resolveSObjectFieldName(receiver.Type, fieldArg)
-		_, ok := receiver.Fields[field]
+		_, _, ok := objectFieldValue(receiver, field)
 		return Bool(ok), true, nil
 	case "clear":
 		if len(args) != 0 {
@@ -17217,7 +17251,7 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 			return Null, true, fmt.Errorf("SObject.getSObject expects relationship name String")
 		}
 		field := vm.resolveSObjectFieldName(receiver.Type, args[0].Text)
-		value, ok := receiver.Fields[field]
+		_, value, ok := objectFieldValue(receiver, field)
 		if !ok || value.Kind == ValueNull {
 			return Null, true, nil
 		}
@@ -17230,7 +17264,7 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 			return Null, true, fmt.Errorf("SObject.getSObjects expects relationship name String")
 		}
 		field := vm.resolveSObjectFieldName(receiver.Type, args[0].Text)
-		value, ok := receiver.Fields[field]
+		_, value, ok := objectFieldValue(receiver, field)
 		if !ok || value.Kind == ValueNull {
 			return List(), true, nil
 		}
@@ -17632,7 +17666,7 @@ func (vm *VM) formulaRecordFromSObject(value Value) (storage.Record, bool) {
 	}
 	if persisted, ok := vm.Org.Objects[objectName].Records[record.ID]; ok {
 		for field, fieldValue := range persisted.Fields {
-			if _, exists := record.Fields[field]; !exists && !record.ExplicitNulls[field] {
+			if _, exists := record.GetField(field); !exists && !record.HasExplicitNull(field) {
 				record.Fields[field] = fieldValue.Clone()
 			}
 		}
@@ -17726,7 +17760,7 @@ func (vm *VM) summaryFiltersMatch(definition storage.ObjectDefinition, record st
 }
 
 func (vm *VM) summaryRecordFieldValue(definition storage.ObjectDefinition, record storage.Record, fieldName string) (storage.Value, bool) {
-	if value, ok := record.Fields[fieldName]; ok {
+	if value, ok := record.GetField(fieldName); ok {
 		return value, true
 	}
 	fieldDef, ok := definition.Fields[fieldName]
@@ -17790,7 +17824,7 @@ func (vm *VM) sObjectFieldArg(receiverType string, value Value) (string, error) 
 		if objectValue, ok := value.Fields["object"]; ok && objectValue.Kind == ValueString && receiverType != "" && !strings.EqualFold(receiverType, "SObject") {
 			if vm.Org != nil {
 				if receiverObject, ok := storage.ResolveObjectName(*vm.Org, receiverType); ok {
-					if tokenObject, ok := storage.ResolveObjectName(*vm.Org, objectValue.Text); ok && tokenObject != receiverObject {
+					if tokenObject, ok := storage.ResolveObjectName(*vm.Org, objectValue.Text); ok && !strings.EqualFold(tokenObject, receiverObject) {
 						return "", fmt.Errorf("%w: field token belongs to %s, not %s", errSObjectFieldTokenWrongObject, objectValue.Text, receiverType)
 					}
 				}
@@ -18111,7 +18145,7 @@ func (vm *VM) applyCustomObjectDeployment(item Value) error {
 		return fmt.Errorf("Metadata.CustomObject.fullName is required")
 	}
 	objectName := strings.TrimSpace(fullName)
-	if !strings.HasSuffix(objectName, "__c") && !strings.HasSuffix(objectName, "__mdt") && !strings.HasSuffix(objectName, "__e") {
+	if !isCustomObjectLikeName(objectName) {
 		return fmt.Errorf("Metadata.CustomObject.fullName must be a custom object API name")
 	}
 	objectName = storage.NamespaceTokenName(vm.Org.Namespace, objectName)
@@ -18439,7 +18473,7 @@ func metadataCustomMetadataNames(fullName string) (string, string) {
 		return "", strings.TrimSpace(fullName)
 	}
 	objectName := strings.TrimSpace(parts[0])
-	if !strings.HasSuffix(objectName, "__mdt") {
+	if !strings.HasSuffix(strings.ToLower(objectName), "__mdt") {
 		objectName += "__mdt"
 	}
 	return objectName, strings.TrimSpace(parts[1])
@@ -19069,13 +19103,13 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			if len(args) == 2 && args[1].Bool && vm.Org != nil {
 				if object, ok := vm.Org.Objects[objectName]; ok {
-					if _, exists := record.Fields["RecordTypeId"]; !exists {
+					if _, _, exists := objectFieldValue(record, "RecordTypeId"); !exists {
 						if recordTypeID := defaultRecordTypeID(object.Definition); recordTypeID != "" {
 							record.Fields["RecordTypeId"] = platformScalar("Id", string(recordTypeID))
 						}
 					}
 					for name, field := range object.Definition.Fields {
-						if _, exists := record.Fields[name]; exists {
+						if _, _, exists := objectFieldValue(record, name); exists {
 							continue
 						}
 						if defaultValue, ok := storage.DefaultValueForField(field); ok {
@@ -20021,7 +20055,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.isCustom expects 0 arguments")
 			}
 			name, _ := receiver.Fields["name"]
-			return Bool(name.Kind == ValueString && (strings.HasSuffix(name.Text, "__c") || strings.HasSuffix(name.Text, "__mdt"))), receiver, false, true, nil
+			return Bool(name.Kind == ValueString && isCustomObjectLikeName(name.Text)), receiver, false, true, nil
 		}
 	case "Schema.RecordTypeInfo":
 		switch method {
@@ -20833,7 +20867,7 @@ func (vm *VM) staticResourceBody(resourceName string) string {
 			continue
 		}
 		for _, field := range []string{"Body", "Content"} {
-			if value, ok := record.Fields[field]; ok {
+			if value, ok := record.GetField(field); ok {
 				if body, ok := staticResourceBodyValue(value); ok {
 					return body
 				}
@@ -20869,7 +20903,7 @@ func staticResourceNameMatches(record storage.Record, resourceName string) bool 
 		return true
 	}
 	for _, field := range []string{"Name", "DeveloperName"} {
-		value, ok := record.Fields[field]
+		value, ok := record.GetField(field)
 		if ok && value.Kind == storage.ValueString && strings.EqualFold(value.String, resourceName) {
 			return true
 		}
@@ -21020,7 +21054,7 @@ func (vm *VM) callStandardControllerMember(receiver Value, method string, args [
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardController.getId expects 0 arguments")
 		}
-		if id, ok := record.Fields["Id"]; ok {
+		if _, id, ok := objectFieldValue(record, "Id"); ok {
 			return id, receiver, false, true, nil
 		}
 		return Null, receiver, false, true, nil
@@ -21034,7 +21068,7 @@ func (vm *VM) callStandardControllerMember(receiver Value, method string, args [
 			return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardController.%s expects 0 arguments", method)
 		}
 		op := "insert"
-		if id, ok := record.Fields["Id"]; ok {
+		if _, id, ok := objectFieldValue(record, "Id"); ok {
 			if idText, ok := idValueText(id); ok && idText != "" {
 				op = "update"
 			}
@@ -21111,7 +21145,7 @@ func standardControllerTraceArgs(method string, record Value) map[string]any {
 	args := map[string]any{"method": method}
 	if record.Kind == ValueObject {
 		args["objectType"] = record.Type
-		if id, ok := record.Fields["Id"]; ok && id.Kind == ValueString && id.Text != "" {
+		if _, id, ok := objectFieldValue(record, "Id"); ok && id.Kind == ValueString && id.Text != "" {
 			args["recordId"] = id.Text
 		}
 	}
@@ -21190,7 +21224,7 @@ func (vm *VM) callStandardSetControllerMember(receiver Value, method string, arg
 }
 
 func standardControllerPage(record Value) Value {
-	if id, ok := record.Fields["Id"]; ok && id.Kind == ValueString && id.Text != "" {
+	if _, id, ok := objectFieldValue(record, "Id"); ok && id.Kind == ValueString && id.Text != "" {
 		return newPageReference("/" + id.Text)
 	}
 	return newPageReference("")

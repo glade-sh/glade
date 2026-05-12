@@ -294,7 +294,7 @@ func customMetadataQualifiedName(namespace, objectName, developerName string) st
 
 func firstString(record Record, fields ...string) string {
 	for _, field := range fields {
-		value, ok := record.Fields[field]
+		value, ok := record.GetField(field)
 		if ok && value.Kind == ValueString {
 			return value.String
 		}

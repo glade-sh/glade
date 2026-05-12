@@ -586,7 +586,7 @@ func defaultConditionValue(definition ObjectDefinition, record Record, name stri
 	switch name {
 	case "$RecordType.Name", "$RecordType.DeveloperName":
 		recordTypeID := ""
-		if value, ok := record.Fields["RecordTypeId"]; ok {
+		if value, ok := record.GetField("RecordTypeId"); ok {
 			recordTypeID = strings.TrimSpace(defaultConditionScalar(value))
 		}
 		for _, recordType := range definition.RecordTypes {

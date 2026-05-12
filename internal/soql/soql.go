@@ -380,7 +380,7 @@ func groupingSets(fields []string, mode string) []map[string]bool {
 }
 
 func aggregateRecordValue(record storage.Record, field string) storage.Value {
-	if value, ok := record.Fields[field]; ok {
+	if value, ok := record.GetField(field); ok {
 		return value
 	}
 	return storage.NullValue()
@@ -647,7 +647,7 @@ func subqueryRecordValue(org storage.OrgState, record storage.Record, field stri
 	if object, ok := org.Objects[record.Object]; ok {
 		return recordValue(org, object.Definition, record, field)
 	}
-	value, ok := record.Fields[field]
+	value, ok := record.GetField(field)
 	return value, ok
 }
 
@@ -685,11 +685,11 @@ func projectRecord(org storage.OrgState, definition storage.ObjectDefinition, re
 		if !ok {
 			canonicalField = field
 		}
-		if record.ExplicitNulls[canonicalField] {
+		if record.HasExplicitNull(canonicalField) {
 			out.ExplicitNulls[canonicalField] = true
 			continue
 		}
-		if value, ok := record.Fields[canonicalField]; ok {
+		if value, ok := record.GetField(canonicalField); ok {
 			out.Fields[canonicalField] = value.Clone()
 			continue
 		}
@@ -795,13 +795,13 @@ func executeChildRelationshipQuery(org storage.OrgState, parentDefinition storag
 
 func childRelationship(org storage.OrgState, parentDefinition storage.ObjectDefinition, relationship string) (string, storage.Relationship, bool) {
 	parentName := parentDefinition.APIName
+	bestRank := 99
+	var bestObject string
+	var bestRelation storage.Relationship
 	for childObjectName, childObject := range org.Objects {
 		for _, relation := range childObject.Definition.Relations {
-			childRelationshipName := relation.ChildRelationship
-			if childRelationshipName == "" {
-				childRelationshipName = derivedChildRelationshipName(childObject.Definition)
-			}
-			if !childRelationshipNameMatches(childRelationshipName, relationship) {
+			rank, matched := childRelationshipMatchRank(relation, childObject.Definition, relationship)
+			if !matched || rank >= bestRank {
 				continue
 			}
 			for _, candidate := range relation.ParentObjects {
@@ -809,23 +809,48 @@ func childRelationship(org storage.OrgState, parentDefinition storage.ObjectDefi
 				if !ok {
 					resolved = candidate
 				}
-				if resolved == parentName {
-					return childObjectName, relation, true
+				if strings.EqualFold(resolved, parentName) {
+					bestRank = rank
+					bestObject = childObjectName
+					bestRelation = relation
+					break
 				}
 			}
 		}
 	}
+	if bestRank != 99 {
+		return bestObject, bestRelation, true
+	}
 	return "", storage.Relationship{}, false
+}
+
+func childRelationshipMatchRank(relation storage.Relationship, definition storage.ObjectDefinition, queryName string) (int, bool) {
+	if relation.ChildRelationship != "" {
+		if strings.EqualFold(relation.ChildRelationship, queryName) {
+			return 0, true
+		}
+		if childRelationshipNameMatches(relation.ChildRelationship, queryName) {
+			return 1, true
+		}
+	}
+	derived := derivedChildRelationshipName(definition)
+	if strings.EqualFold(derived, queryName) {
+		return 2, true
+	}
+	if childRelationshipNameMatches(derived, queryName) {
+		return 3, true
+	}
+	return 99, false
 }
 
 func childRelationshipNameMatches(metadataName, queryName string) bool {
 	if strings.EqualFold(metadataName, queryName) {
 		return true
 	}
-	if strings.HasSuffix(queryName, "__r") && strings.EqualFold(metadataName+"__r", queryName) {
+	if strings.HasSuffix(strings.ToLower(queryName), "__r") && strings.EqualFold(metadataName+"__r", queryName) {
 		return true
 	}
-	if strings.HasSuffix(metadataName, "__r") && strings.EqualFold(strings.TrimSuffix(metadataName, "__r"), queryName) {
+	if strings.HasSuffix(strings.ToLower(metadataName), "__r") && strings.EqualFold(strings.TrimSuffix(metadataName, metadataName[len(metadataName)-3:]), queryName) {
 		return true
 	}
 	return false
@@ -1046,7 +1071,7 @@ func fieldDefinitionsForReference(org storage.OrgState, definition storage.Objec
 	if strings.Contains(field, ".") {
 		parts := strings.SplitN(field, ".", 2)
 		for _, relation := range definition.Relations {
-			if relation.ParentRelationship != parts[0] {
+			if !relationshipNameMatches(org.Namespace, relation.ParentRelationship, parts[0]) {
 				continue
 			}
 			if len(relation.ParentObjects) == 0 {
@@ -1174,7 +1199,7 @@ func validateTypeofReference(org storage.OrgState, definition storage.ObjectDefi
 	allowedTargets := map[string]bool{}
 	relationshipKnown := false
 	for _, relation := range definition.Relations {
-		if relation.ParentRelationship != spec.Relationship {
+		if !relationshipNameMatches(org.Namespace, relation.ParentRelationship, spec.Relationship) {
 			continue
 		}
 		relationshipKnown = true
@@ -1223,7 +1248,7 @@ func fieldKnown(org storage.OrgState, definition storage.ObjectDefinition, field
 }
 
 func fieldKnownForMode(org storage.OrgState, definition storage.ObjectDefinition, field string, requireAllParents bool) bool {
-	if field == "Id" || isSystemField(field) {
+	if strings.EqualFold(field, "Id") || isSystemField(field) {
 		return true
 	}
 	if len(definition.Fields) == 0 && !strings.Contains(field, ".") {
@@ -1296,12 +1321,12 @@ func aggregateOrderFieldKnown(query Query, field string) bool {
 		}
 	}
 	for i, aggregate := range query.Aggregates {
-		if field == fmt.Sprintf("expr%d", i) || (aggregate.Alias != "" && field == aggregate.Alias) {
+		if strings.EqualFold(field, fmt.Sprintf("expr%d", i)) || (aggregate.Alias != "" && strings.EqualFold(field, aggregate.Alias)) {
 			return true
 		}
 	}
 	for _, aggregate := range query.HavingAggregates {
-		if aggregate.Alias != "" && field == aggregate.Alias {
+		if aggregate.Alias != "" && strings.EqualFold(field, aggregate.Alias) {
 			return true
 		}
 	}
@@ -1344,12 +1369,12 @@ func canonicalSystemFieldName(field string) (string, bool) {
 }
 
 func isCustomFieldName(name string) bool {
-	return strings.HasSuffix(name, "__c")
+	return strings.HasSuffix(strings.ToLower(name), "__c")
 }
 
 func polymorphicParentObject(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, relationship string) (string, bool) {
 	for _, relation := range definition.Relations {
-		if relation.ParentRelationship != relationship {
+		if !relationshipNameMatches(org.Namespace, relation.ParentRelationship, relationship) {
 			continue
 		}
 		parentID, ok := recordValue(org, definition, record, relation.Field)
@@ -1559,10 +1584,10 @@ func recordValue(org storage.OrgState, definition storage.ObjectDefinition, reco
 	if !ok {
 		canonicalField = field
 	}
-	if record.ExplicitNulls[canonicalField] {
+	if record.HasExplicitNull(canonicalField) {
 		return storage.NullValue(), true
 	}
-	value, ok := record.Fields[canonicalField]
+	value, ok := record.GetField(canonicalField)
 	if !ok && strings.EqualFold(definition.APIName, "Contact") && strings.EqualFold(canonicalField, "Name") {
 		return contactNameValue(record)
 	}
@@ -1577,7 +1602,8 @@ func recordValue(org storage.OrgState, definition storage.ObjectDefinition, reco
 }
 
 func calculatedRecordValue(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, field storage.Field) (storage.Value, bool) {
-	if strings.EqualFold(field.APIName, "Status__c") && strings.Contains(field.Formula, "StartDate__c") && strings.Contains(field.Formula, "EndDate__c") {
+	formula := strings.ToLower(field.Formula)
+	if strings.EqualFold(field.APIName, "Status__c") && strings.Contains(formula, "startdate__c") && strings.Contains(formula, "enddate__c") {
 		if value, ok := membershipStatusFormulaValue(org, definition, record); ok {
 			return value, true
 		}
@@ -1626,8 +1652,8 @@ func relationshipTextValue(org storage.OrgState, definition storage.ObjectDefini
 }
 
 func contactNameValue(record storage.Record) (storage.Value, bool) {
-	first, hasFirst := record.Fields["FirstName"]
-	last, hasLast := record.Fields["LastName"]
+	first, hasFirst := record.GetField("FirstName")
+	last, hasLast := record.GetField("LastName")
 	parts := make([]string, 0, 2)
 	if hasFirst && first.Kind == storage.ValueString && strings.TrimSpace(first.String) != "" {
 		parts = append(parts, strings.TrimSpace(first.String))

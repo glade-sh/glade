@@ -49,7 +49,7 @@ func indexRecordKey(record Record, definition IndexDefinition) (string, bool) {
 			values = append(values, IDValue(record.ID))
 			continue
 		}
-		value, ok := record.Fields[field]
+		value, ok := record.GetField(field)
 		if !ok {
 			return "", false
 		}

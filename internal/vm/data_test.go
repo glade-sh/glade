@@ -845,6 +845,7 @@ Object business = byName.get('Business Account');
 System.assertEquals('Business Account', business.getName());
 System.assertEquals('Business', business.getDeveloperName());
 System.assertEquals('012000000000001', business.getRecordTypeId());
+System.assertEquals('012000000000001', business.getRecordTypeID());
 System.assert(business.isActive());
 System.assert(business.isAvailable());
 System.assert(business.isDefaultRecordTypeMapping());
@@ -1323,6 +1324,29 @@ System.assert(contacts.isCascadeDelete());
 	}
 }
 
+func TestExecSObjectDynamicFieldNamesAreCaseInsensitive(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account();
+account.put('name', 'Acme');
+System.assert(account.isSet('NAME'));
+System.assertEquals('Acme', account.get('Name'));
+System.assertEquals('Acme', account.Name);
+account.Name = 'Changed';
+System.assertEquals('Changed', account.get('name'));
+account.put(Schema.SObjectType.Account.fields.Name, 'Token');
+System.assertEquals('Token', account.get('NAME'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDescribePermissionsHonorLocalObjectAndFieldPermissions(t *testing.T) {
 	program, err := CompileAnonymous(`
 PermissionSet ps = new PermissionSet(Name = 'ReadAccountContact', Label = 'Read Account Contact');
@@ -1697,6 +1721,9 @@ accountsById.put(rows[0].Id, rows[0]);
 rows = Database.query('SELECT Id FROM Account WHERE Id IN :accountsById.values()');
 System.assertEquals(1, rows.size());
 rows = Database.query('SELECT Id FROM Account WHERE RenewalDate__c = LAST_N_DAYS:2');
+System.assertEquals(2, rows.size());
+Date today = Date.today();
+rows = Database.query('SELECT Id FROM Account WHERE RenewalDate__c >= :today');
 System.assertEquals(2, rows.size());
 Boolean caught = false;
 try {

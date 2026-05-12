@@ -1053,7 +1053,7 @@ func ensureObject(org *OrgState, name, prefix string, fields map[string]Field) {
 
 func hasParentRelationship(relations []Relationship, name string) bool {
 	for _, relation := range relations {
-		if relation.ParentRelationship == name {
+		if strings.EqualFold(relation.ParentRelationship, name) {
 			return true
 		}
 	}

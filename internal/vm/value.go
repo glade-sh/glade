@@ -222,20 +222,20 @@ func (v Value) Equal(other Value) bool {
 		}
 		return true
 	case ValueObject:
-		if v.Type == "Type" && other.Type == "Type" {
+		if strings.EqualFold(v.Type, "Type") && strings.EqualFold(other.Type, "Type") {
 			leftType := typeValueText(v)
 			rightType := typeValueText(other)
 			if leftType != "" || rightType != "" {
 				return canonicalTypeValueText(leftType) == canonicalTypeValueText(rightType)
 			}
 		}
-		if v.Type == "Schema.SObjectType" && other.Type == "Schema.SObjectType" {
+		if strings.EqualFold(v.Type, "Schema.SObjectType") && strings.EqualFold(other.Type, "Schema.SObjectType") {
 			if sObjectTypeTokenEqual(v, other) {
 				return true
 			}
 			return mapKey(v) == mapKey(other)
 		}
-		if v.Type == "Schema.SObjectField" && other.Type == "Schema.SObjectField" {
+		if strings.EqualFold(v.Type, "Schema.SObjectField") && strings.EqualFold(other.Type, "Schema.SObjectField") {
 			return mapKey(v) == mapKey(other)
 		}
 		if platformScalarObject(v.Type) {
@@ -247,32 +247,33 @@ func (v Value) Equal(other Value) bool {
 			if strings.EqualFold(v.Type, "Id") && strings.EqualFold(other.Type, "Id") && value.Kind == ValueString && otherValue.Kind == ValueString {
 				return apexIDTextEqual(value.Text, otherValue.Text)
 			}
-			return v.Type == other.Type && value.Equal(otherValue)
+			return strings.EqualFold(v.Type, other.Type) && value.Equal(otherValue)
 		}
 		if v.Text != "" || other.Text != "" {
-			return v.Type == other.Type && v.Text == other.Text
+			return strings.EqualFold(v.Type, other.Type) && v.Text == other.Text
 		}
 		if sObjectValueType(v.Type) && sObjectValueType(other.Type) {
 			return sObjectValuesEqual(v, other)
 		}
-		return v.Type == other.Type && fmt.Sprintf("%p", v.Fields) == fmt.Sprintf("%p", other.Fields)
+		return strings.EqualFold(v.Type, other.Type) && fmt.Sprintf("%p", v.Fields) == fmt.Sprintf("%p", other.Fields)
 	default:
 		return false
 	}
 }
 
 func sObjectValueType(typeName string) bool {
+	key := strings.ToLower(typeName)
 	return strings.EqualFold(typeName, "sObject") || strings.EqualFold(typeName, "AggregateResult") ||
-		isCommonSObjectTypeName(typeName) || strings.HasSuffix(typeName, "__c") ||
-		strings.HasSuffix(typeName, "__e") || strings.HasSuffix(typeName, "__mdt")
+		isCommonSObjectTypeName(typeName) || strings.HasSuffix(key, "__c") ||
+		strings.HasSuffix(key, "__e") || strings.HasSuffix(key, "__mdt")
 }
 
 func sObjectValuesEqual(left, right Value) bool {
-	if left.Type != right.Type || len(left.Fields) != len(right.Fields) {
+	if !strings.EqualFold(left.Type, right.Type) || len(left.Fields) != len(right.Fields) {
 		return false
 	}
 	for key, leftValue := range left.Fields {
-		rightValue, ok := right.Fields[key]
+		_, rightValue, ok := objectFieldValue(right, key)
 		if !ok || !leftValue.Equal(rightValue) {
 			return false
 		}
@@ -281,8 +282,8 @@ func sObjectValuesEqual(left, right Value) bool {
 }
 
 func isStringComparableEnum(typeName string) bool {
-	switch typeName {
-	case "Schema.DisplayType", "Schema.SOAPType":
+	switch {
+	case strings.EqualFold(typeName, "Schema.DisplayType"), strings.EqualFold(typeName, "Schema.SOAPType"):
 		return true
 	default:
 		return false
