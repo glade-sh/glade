@@ -294,10 +294,8 @@ First E1 implementation notes:
 - Added a clean-room `testdata/local-tests/apexmocks-proxy` fixture for
   `Test.createStub` / `System.StubProvider` proxy lifecycle, method metadata,
   argument capture, return dispatch, void calls, and stub object identity.
-- Added `docs/E4_STANDARD_SCHEMA_QUICK_SCAN.md`; the NPSP `CampaignMember`
-  blocker is a generated standard-schema coverage gap and should be fixed by
-  refreshing the public describe-driven standard schema baseline, not by adding
-  project-specific runtime behavior.
+- Superseded the old E4 quick-scan note by folding standard-object coverage into
+  `docs/STANDARD_OBJECT_SCHEMA.md` and the generated SObject stub field overlay.
 
 Exit criteria:
 
@@ -405,11 +403,11 @@ schema fixtures.
 
 Current blockers:
 
-- Runtime references such as `OpportunityLineItem.SObjectType` can still fail
-  even when the generated schema knows the object.
+- Runtime references such as `OpportunityLineItem.SObjectType` should resolve
+  through generated describe metadata or the SObject stub field overlay.
 - Standard object field tokens, relationship fields, child relationships,
-  record type describes, and standard pricebook/product objects need broader
-  test coverage.
+  record type describes, and standard pricebook/product objects need continued
+  sentinel coverage.
 - Project-defined record types must remain authoritative over generated
   baseline record types.
 
@@ -417,6 +415,9 @@ Tasks:
 
 - Ensure every generated standard object exposes `<Object>.SObjectType` and
   `<Object>.<Field>` tokens through VM lookup paths.
+- Keep the stub field overlay generated from public Apex stubs so standard
+  object field coverage moves in batches rather than one missing field at a
+  time.
 - Add runtime describe coverage for Opportunity, OpportunityLineItem, Product2,
   Pricebook2, PricebookEntry, Lead, Campaign, Case, Task, Event, User, Group,
   QueueSObject, Content*, and common Health/Sales Cloud references present in

@@ -24,6 +24,7 @@ func EnsureStandardObjectFieldsForFeatures(definition *ObjectDefinition, feature
 		definition.Fields["Id"] = Field{APIName: "Id", Label: "Record ID", Type: FieldID}
 	}
 	mergeStandardObjectDefinition(definition, features)
+	mergeStandardSObjectStubFields(definition)
 	applyStandardObjectCompatibilityOverlays(definition)
 	ensureCommonRecordTypeField(definition)
 	fields := standardFieldsForObject(definition.APIName)
@@ -324,6 +325,9 @@ func IsKnownStandardObject(objectName string) bool {
 	if _, ok := standardObjectCatalogEntryFor(objectName); ok {
 		return true
 	}
+	if _, ok := standardSObjectStubFieldsFor(objectName); ok {
+		return true
+	}
 	if stringsHasSuffixFold(objectName, "__c") || stringsHasSuffixFold(objectName, "__mdt") {
 		return false
 	}
@@ -336,6 +340,9 @@ func KnownStandardObjectNames() []string {
 		names[name] = true
 	}
 	for name := range standardObjectCatalogData {
+		names[name] = true
+	}
+	for _, name := range standardSObjectStubNames() {
 		names[name] = true
 	}
 	for _, name := range []string{
@@ -409,8 +416,18 @@ func mergeStandardObjectDefinition(definition *ObjectDefinition, features []stri
 	}
 }
 
+func mergeStandardSObjectStubFields(definition *ObjectDefinition) {
+	fields, ok := standardSObjectStubFieldsFor(definition.APIName)
+	if !ok {
+		return
+	}
+	mergeStandardFields(definition, fields)
+}
+
 func applyStandardObjectCompatibilityOverlays(definition *ObjectDefinition) {
 	switch {
+	case stringsEqualFold(definition.APIName, "Account"):
+		markFieldRequired(definition, "Name")
 	case stringsEqualFold(definition.APIName, "Attachment"):
 		ensureReferenceTarget(definition, "ParentId", "User")
 	case stringsEqualFold(definition.APIName, "Document"):
@@ -418,6 +435,16 @@ func applyStandardObjectCompatibilityOverlays(definition *ObjectDefinition) {
 	case stringsEqualFold(definition.APIName, "ContentVersion"):
 		allowGeneratedContentDocument(definition)
 	}
+}
+
+func markFieldRequired(definition *ObjectDefinition, fieldName string) {
+	resolved, ok := ResolveFieldName(*definition, "", fieldName)
+	if !ok {
+		return
+	}
+	field := definition.Fields[resolved]
+	field.Required = true
+	definition.Fields[resolved] = field
 }
 
 func allowGeneratedContentDocument(definition *ObjectDefinition) {

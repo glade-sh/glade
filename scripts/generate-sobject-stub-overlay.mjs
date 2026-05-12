@@ -1,0 +1,174 @@
+#!/usr/bin/env node
+import fs from "node:fs";
+import path from "node:path";
+import { spawnSync } from "node:child_process";
+
+const repoRoot = path.resolve(new URL("..", import.meta.url).pathname);
+const inputDir = process.argv[2] ? path.resolve(process.argv[2]) : path.join(repoRoot, "tmp", "apex-sobject-stubs");
+const outputFile = process.argv[3] ? path.resolve(process.argv[3]) : path.join(repoRoot, "internal", "storage", "standard_sobject_stub_overlay_generated.go");
+
+function goString(value) {
+  return JSON.stringify(value ?? "");
+}
+
+function goStringSlice(values) {
+  if (!values || values.length === 0) return "nil";
+  return `[]string{${values.map(goString).join(", ")}}`;
+}
+
+function cleanCommentLine(line) {
+  return line
+    .replace(/^\s*\/\*\*\s*/, "")
+    .replace(/^\s*\*\s?/, "")
+    .replace(/\s*\*\/\s*$/, "")
+    .trim();
+}
+
+function displayType(apexType, fieldName) {
+  const type = apexType.toLowerCase();
+  if (fieldName === "Id") return "ID";
+  if (fieldName.endsWith("Id")) return "REFERENCE";
+  switch (type) {
+    case "id":
+      return "ID";
+    case "boolean":
+      return "BOOLEAN";
+    case "integer":
+    case "long":
+      return "INTEGER";
+    case "decimal":
+    case "double":
+      return "DOUBLE";
+    case "date":
+      return "DATE";
+    case "datetime":
+      return "DATETIME";
+    case "blob":
+      return "BLOB";
+    case "string":
+      return "STRING";
+    default:
+      return "";
+  }
+}
+
+function fieldType(apexType, fieldName) {
+  const type = apexType.toLowerCase();
+  if (fieldName === "Id") return "FieldID";
+  if (fieldName.endsWith("Id")) return "FieldReference";
+  switch (type) {
+    case "id":
+      return "FieldID";
+    case "boolean":
+      return "FieldBoolean";
+    case "integer":
+    case "long":
+      return "FieldInteger";
+    case "decimal":
+    case "double":
+      return "FieldDecimal";
+    case "date":
+      return "FieldDate";
+    case "datetime":
+      return "FieldDateTime";
+    case "blob":
+      return "FieldBlob";
+    case "string":
+      return "FieldString";
+    default:
+      return "FieldAny";
+  }
+}
+
+function relationshipName(fieldName) {
+  if (!fieldName.endsWith("Id") || fieldName === "Id") return "";
+  return fieldName.slice(0, -2);
+}
+
+function fieldLiteral(field) {
+  const pieces = [
+    `APIName: ${goString(field.name)}`,
+    `Label: ${goString(field.label || field.name)}`,
+    `Type: ${fieldType(field.apexType, field.name)}`,
+  ];
+  const dt = displayType(field.apexType, field.name);
+  if (dt) pieces.push(`DisplayType: ${goString(dt)}`);
+  if (field.name.endsWith("Id") && field.name !== "Id" && field.apexType && !["Id", "String"].includes(field.apexType)) {
+    pieces.push(`ReferenceTo: ${goStringSlice([field.apexType])}`);
+    const rel = relationshipName(field.name);
+    if (rel) pieces.push(`RelationshipName: ${goString(rel)}`);
+  }
+  return `Field{${pieces.join(", ")}}`;
+}
+
+function parseSObjectStub(filePath) {
+  const source = fs.readFileSync(filePath, "utf8");
+  const classMatch = source.match(/global\s+class\s+([A-Za-z_][A-Za-z0-9_]*)\s+extends\s+SObject\b/);
+  if (!classMatch) return null;
+  const objectName = classMatch[1];
+  const fieldsBlockMatch = source.match(/global\s+class\s+SObjectFields\s*\{([\s\S]*?)^\s*\}/m);
+  if (!fieldsBlockMatch) return null;
+  const fieldNames = [];
+  for (const match of fieldsBlockMatch[1].matchAll(/\bpublic\s+SObjectField\s+([A-Za-z_][A-Za-z0-9_]*)\s*;/g)) {
+    fieldNames.push(match[1]);
+  }
+  if (fieldNames.length === 0) return null;
+
+  const properties = new Map();
+  let comment = [];
+  let inComment = false;
+  for (const line of source.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (trimmed.startsWith("/**")) {
+      inComment = true;
+      comment = [];
+    }
+    if (inComment) {
+      const text = cleanCommentLine(line);
+      if (text && !text.startsWith("Parent relationship") && !text.startsWith("Child relationship")) {
+        comment.push(text);
+      }
+      if (trimmed.endsWith("*/")) {
+        inComment = false;
+      }
+      continue;
+    }
+    const propertyMatch = line.match(/^\s*global\s+([A-Za-z_][A-Za-z0-9_.]*(?:<[^>{};]+>)?)\s+([A-Za-z_][A-Za-z0-9_]*)\s*\{\s*get;/);
+    if (propertyMatch) {
+      properties.set(propertyMatch[2], {
+        apexType: propertyMatch[1],
+        label: comment[0] || propertyMatch[2],
+      });
+      comment = [];
+    }
+  }
+
+  const fields = [];
+  for (const name of fieldNames) {
+    const property = properties.get(name) || { apexType: "Object", label: name };
+    fields.push({ name, apexType: property.apexType, label: property.label });
+  }
+  fields.sort((a, b) => a.name.localeCompare(b.name));
+  return { objectName, fields };
+}
+
+const files = fs.readdirSync(inputDir).filter((file) => file.endsWith(".cls")).sort();
+const entries = [];
+for (const file of files) {
+  const entry = parseSObjectStub(path.join(inputDir, file));
+  if (entry) entries.push(entry);
+}
+
+let out = `// Code generated by scripts/generate-sobject-stub-overlay.mjs; DO NOT EDIT.\n\npackage storage\n\nvar standardSObjectStubFieldData = map[string]map[string]Field{\n`;
+for (const entry of entries) {
+  out += `\t${goString(entry.objectName)}: {\n`;
+  for (const field of entry.fields) {
+    out += `\t\t${goString(field.name)}: ${fieldLiteral(field)},\n`;
+  }
+  out += "\t},\n";
+}
+out += `}\n\nfunc standardSObjectStubFieldsFor(objectName string) (map[string]Field, bool) {\n\tfields, ok := standardSObjectStubFieldData[objectName]\n\treturn fields, ok\n}\n\nfunc standardSObjectStubNames() []string {\n\tnames := make([]string, 0, len(standardSObjectStubFieldData))\n\tfor name := range standardSObjectStubFieldData {\n\t\tnames = append(names, name)\n\t}\n\treturn names\n}\n`;
+
+fs.writeFileSync(outputFile, out);
+const gofmt = spawnSync("gofmt", ["-w", outputFile], { stdio: "inherit" });
+if (gofmt.status !== 0) process.exit(gofmt.status ?? 1);

@@ -60,6 +60,33 @@ func TestInsertUpdateDelete(t *testing.T) {
 	}
 }
 
+func TestUpdateRequiredFieldToNullFails(t *testing.T) {
+	org := testOrg()
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name": storage.StringValue("Acme"),
+		},
+	}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert)
+	}
+
+	update := engine.Update([]storage.Record{{
+		ID:            insert[0].ID,
+		Object:        "Account",
+		ExplicitNulls: map[string]bool{"Name": true},
+	}})
+	if update[0].Success || update[0].Error == "" {
+		t.Fatalf("expected required field failure, got %#v", update)
+	}
+	if got := org.Objects["Account"].Records[insert[0].ID].Fields["Name"].String; got != "Acme" {
+		t.Fatalf("stored name after failed update = %q", got)
+	}
+}
+
 func TestInsertAppliesAutoNumberName(t *testing.T) {
 	org := testOrg()
 	org.Objects["Order__c"] = storage.ObjectState{
@@ -303,6 +330,53 @@ func TestInsertPersonAccountCreatesSyntheticPersonContact(t *testing.T) {
 	contact = org.Objects["Contact"].Records[contactID]
 	if got := contact.Fields["MobilePhone"].String; got != "555-0101" {
 		t.Fatalf("person contact mobile after update = %q", got)
+	}
+}
+
+func TestInsertContactPopulatesCompoundName(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureDeterministicPlatformData(&org)
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Contact",
+		Fields: map[string]storage.Value{
+			"FirstName": storage.StringValue("Query"),
+			"LastName":  storage.StringValue("Factory"),
+		},
+	}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert[0])
+	}
+	contact := org.Objects["Contact"].Records[insert[0].ID]
+	if got := contact.Fields["Name"].String; got != "Query Factory" {
+		t.Fatalf("contact name = %q", got)
+	}
+}
+
+func TestInsertAccountWithDefaultPersonFlagDoesNotCreatePersonContact(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureDeterministicPlatformData(&org)
+	storage.EnsureStandardObject(&org, "Account")
+	storage.EnsureStandardObject(&org, "Contact")
+	account := org.Objects["Account"]
+	field := account.Definition.Fields["IsPersonAccount"]
+	field.DefaultValue = "true"
+	account.Definition.Fields["IsPersonAccount"] = field
+	org.Objects["Account"] = account
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name": storage.StringValue("Business Account"),
+		},
+	}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert[0])
+	}
+	if got := len(org.Objects["Contact"].Records); got != 0 {
+		t.Fatalf("synthetic contacts = %d", got)
 	}
 }
 
@@ -938,6 +1012,67 @@ func TestValidationRulesObservedFormulaFunctions(t *testing.T) {
 	}
 }
 
+func TestValidationRulesDateFunctionsAndDateArithmetic(t *testing.T) {
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["StartDate__c"] = storage.Field{APIName: "StartDate__c", Type: storage.FieldDate}
+	account.Definition.Fields["EndDate__c"] = storage.Field{APIName: "EndDate__c", Type: storage.FieldDate}
+	account.Definition.ValidationRules = []storage.ValidationRule{
+		{
+			Name:                  "StartDateFirstDayOfMonth",
+			Active:                true,
+			ErrorConditionFormula: `AND(ISBLANK(StartDate__c) = FALSE, DAY(StartDate__c) <> 1)`,
+			ErrorMessage:          "start date must be first day",
+			ErrorDisplayField:     "StartDate__c",
+		},
+		{
+			Name:                  "EndDateLastDayOfMonth",
+			Active:                true,
+			ErrorConditionFormula: `AND(ISBLANK(EndDate__c) = FALSE, DAY(EndDate__c) <> IF(MONTH(EndDate__c)=12, 31, DAY(DATE(YEAR(EndDate__c), MONTH(EndDate__c)+1, 1) - 1)))`,
+			ErrorMessage:          "end date must be last day",
+			ErrorDisplayField:     "EndDate__c",
+		},
+	}
+	org.Objects["Account"] = account
+	engine := NewEngine(&org)
+
+	allowed := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":         storage.StringValue("Allowed"),
+			"StartDate__c": storage.DateValue("2026-05-01"),
+			"EndDate__c":   storage.DateValue("2026-05-31"),
+		},
+	}})
+	if !allowed[0].Success {
+		t.Fatalf("allowed insert = %#v", allowed)
+	}
+
+	badStart := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":         storage.StringValue("Bad Start"),
+			"StartDate__c": storage.DateValue("2026-05-02"),
+			"EndDate__c":   storage.DateValue("2026-05-31"),
+		},
+	}})
+	if badStart[0].Success || badStart[0].Error != "start date must be first day" || badStart[0].Fields[0] != "StartDate__c" {
+		t.Fatalf("bad start = %#v", badStart)
+	}
+
+	badEnd := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":         storage.StringValue("Bad End"),
+			"StartDate__c": storage.DateValue("2026-05-01"),
+			"EndDate__c":   storage.DateValue("2026-05-30"),
+		},
+	}})
+	if badEnd[0].Success || badEnd[0].Error != "end date must be last day" || badEnd[0].Fields[0] != "EndDate__c" {
+		t.Fatalf("bad end = %#v", badEnd)
+	}
+}
+
 func TestWorkflowFieldUpdateCriteriaTrueFalseAndVisibleAfterDML(t *testing.T) {
 	org := testOrg()
 	account := org.Objects["Account"]
@@ -1083,6 +1218,64 @@ func TestFlowRuleFormulaAndFormulaFieldUpdates(t *testing.T) {
 	}
 	if got := record.Fields["ScoreCopy__c"].Integer; got != 12 {
 		t.Fatalf("score copy = %d", got)
+	}
+}
+
+func TestFormulaEvaluatesMultiplication(t *testing.T) {
+	org := testOrg()
+	definition := storage.ObjectDefinition{
+		APIName: "Line__c",
+		Fields: map[string]storage.Field{
+			"UnitPrice__c": {APIName: "UnitPrice__c", Type: storage.FieldDecimal},
+			"Quantity__c":  {APIName: "Quantity__c", Type: storage.FieldInteger},
+			"Fees__c":      {APIName: "Fees__c", Type: storage.FieldDecimal},
+			"Total__c":     {APIName: "Total__c", Type: storage.FieldCalculated, DisplayType: "Currency", Formula: "(UnitPrice__c * Quantity__c) + Fees__c"},
+		},
+	}
+	record := storage.Record{Object: "Line__c", Fields: map[string]storage.Value{
+		"UnitPrice__c": storage.DecimalValue("10"),
+		"Quantity__c":  storage.IntegerValue(2),
+		"Fees__c":      storage.DecimalValue("1.5"),
+	}}
+
+	value, _, ok := EvaluateRecordFormulaValueInOrg(definition.Fields["Total__c"].Formula, definition.Fields["Total__c"], &org, definition, record)
+	if !ok || value.Kind != storage.ValueDecimal || value.Decimal != "21.5" {
+		t.Fatalf("formula value = %#v, ok=%v", value, ok)
+	}
+}
+
+func TestFormulaEvaluatesRelatedObjectFormulaField(t *testing.T) {
+	org := storage.NewOrgState()
+	parentDefinition := storage.ObjectDefinition{
+		APIName:   "Parent__c",
+		KeyPrefix: "a01",
+		Fields: map[string]storage.Field{
+			"Amount__c": {APIName: "Amount__c", Type: storage.FieldDecimal},
+			"Fees__c":   {APIName: "Fees__c", Type: storage.FieldDecimal},
+			"Total__c":  {APIName: "Total__c", Type: storage.FieldCalculated, DisplayType: "Currency", Formula: "Amount__c + Fees__c"},
+		},
+	}
+	childDefinition := storage.ObjectDefinition{
+		APIName:   "Child__c",
+		KeyPrefix: "a02",
+		Fields: map[string]storage.Field{
+			"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}},
+			"Total__c":  {APIName: "Total__c", Type: storage.FieldCalculated, DisplayType: "Currency", Formula: "Parent__r.Total__c"},
+		},
+	}
+	parent := storage.Record{ID: "a01000000000001", Object: "Parent__c", Fields: map[string]storage.Value{
+		"Amount__c": storage.DecimalValue("10"),
+		"Fees__c":   storage.DecimalValue("2.5"),
+	}}
+	child := storage.Record{ID: "a02000000000001", Object: "Child__c", Fields: map[string]storage.Value{
+		"Parent__c": storage.IDValue(parent.ID),
+	}}
+	org.Objects["Parent__c"] = storage.ObjectState{Definition: parentDefinition, Records: map[storage.ID]storage.Record{parent.ID: parent}}
+	org.Objects["Child__c"] = storage.ObjectState{Definition: childDefinition, Records: map[storage.ID]storage.Record{child.ID: child}}
+
+	value, _, ok := EvaluateRecordFormulaValueInOrg(childDefinition.Fields["Total__c"].Formula, childDefinition.Fields["Total__c"], &org, childDefinition, child)
+	if !ok || value.Kind != storage.ValueDecimal || value.Decimal != "12.5" {
+		t.Fatalf("related formula value = %#v, ok=%v", value, ok)
 	}
 }
 

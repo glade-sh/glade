@@ -23,7 +23,7 @@ func callStdlibMember(receiver Value, method string, args []Value) (Value, Value
 		value, handled, err := callStringMember(receiver, method, args)
 		return value, receiver, false, handled, err
 	case ValueDecimal:
-		method = canonicalStdlibMemberName(method, "abs", "setScale", "round", "intValue", "longValue", "doubleValue", "format", "divide")
+		method = canonicalStdlibMemberName(method, "abs", "setScale", "round", "intValue", "longValue", "doubleValue", "format", "toPlainString", "divide")
 		return callDecimalMember(receiver, method, args)
 	case ValueList:
 		method = canonicalStdlibMemberName(method, "add", "addAll", "clear", "clone", "contains", "deepClone", "get", "getSObjectType", "isEmpty", "iterator", "remove", "set", "size", "sort")
@@ -129,7 +129,9 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
-		return Decimal(rounded), receiver, false, true, nil
+		value := Decimal(rounded)
+		value.Text = strconv.FormatFloat(rounded, 'f', int(args[0].Int), 64)
+		return value, receiver, false, true, nil
 	case "round":
 		if len(args) > 1 {
 			return Null, receiver, false, true, fmt.Errorf("Decimal.round expects optional RoundingMode")
@@ -197,6 +199,17 @@ func callDecimalMember(receiver Value, method string, args []Value) (Value, Valu
 			return Null, receiver, false, true, err
 		}
 		return String(formatDecimalWithGrouping(receiver.Decimal)), receiver, false, true, nil
+	case "toPlainString":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Decimal.toPlainString expects 0 arguments")
+		}
+		if err := ensureFiniteDecimal("Decimal.toPlainString", receiver.Decimal); err != nil {
+			return Null, receiver, false, true, err
+		}
+		if receiver.Text != "" {
+			return String(receiver.Text), receiver, false, true, nil
+		}
+		return String(strconv.FormatFloat(receiver.Decimal, 'f', -1, 64)), receiver, false, true, nil
 	case "divide":
 		if len(args) < 2 || len(args) > 3 {
 			return Null, receiver, false, true, fmt.Errorf("Decimal.divide expects divisor, scale, and optional RoundingMode")
@@ -798,7 +811,7 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 		}
 		runes := []rune(receiver.Text)
 		if length < 0 {
-			return Null, true, fmt.Errorf("String.left expects non-negative length")
+			return String(""), true, nil
 		}
 		if length > len(runes) {
 			length = len(runes)
@@ -811,7 +824,7 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 		}
 		runes := []rune(receiver.Text)
 		if length < 0 {
-			return Null, true, fmt.Errorf("String.right expects non-negative length")
+			return String(""), true, nil
 		}
 		if length > len(runes) {
 			length = len(runes)
@@ -1278,6 +1291,8 @@ func numericStatic(callee string, args []Value) (Value, error) {
 	switch callee {
 	case "Integer.valueOf":
 		switch args[0].Kind {
+		case ValueNull:
+			return Null, nil
 		case ValueInt:
 			converted, err := int32FromFloat(callee, float64(args[0].Int))
 			if err != nil {
@@ -1301,6 +1316,8 @@ func numericStatic(callee string, args []Value) (Value, error) {
 		}
 	case "Long.valueOf":
 		switch args[0].Kind {
+		case ValueNull:
+			return Null, nil
 		case ValueInt:
 			return args[0], nil
 		case ValueDecimal:
@@ -1320,7 +1337,7 @@ func numericStatic(callee string, args []Value) (Value, error) {
 		}
 	case "Decimal.valueOf", "Double.valueOf":
 		if args[0].Kind == ValueNull {
-			return Null, newExceptionError("System.NullPointerException", fmt.Sprintf("%s expects String or numeric argument", callee))
+			return Null, nil
 		}
 		switch args[0].Kind {
 		case ValueDecimal:

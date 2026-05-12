@@ -175,11 +175,16 @@ func booleanOperand(value Value) (bool, bool) {
 }
 
 func comparablePlatformScalarText(left, right Value) ([2]string, bool) {
+	if leftText, leftOK := comparableIDText(left); leftOK {
+		if rightText, rightOK := comparableIDText(right); rightOK {
+			return [2]string{leftText, rightText}, true
+		}
+	}
 	if left.Kind != ValueObject || right.Kind != ValueObject || !strings.EqualFold(left.Type, right.Type) {
 		return [2]string{}, false
 	}
 	switch strings.ToLower(left.Type) {
-	case "date", "datetime", "time":
+	case "date", "datetime", "time", "id":
 	default:
 		return [2]string{}, false
 	}
@@ -192,6 +197,23 @@ func comparablePlatformScalarText(left, right Value) ([2]string, bool) {
 		return [2]string{}, false
 	}
 	return [2]string{leftText, rightText}, true
+}
+
+func comparableIDText(value Value) (string, bool) {
+	if value.Kind == ValueObject && strings.EqualFold(value.Type, "Id") {
+		text, err := platformScalarText(value, value.Type)
+		return text, err == nil && text != ""
+	}
+	if value.Kind != ValueString {
+		return "", false
+	}
+	if strings.EqualFold(value.Type, "Id") {
+		return value.Text, value.Text != ""
+	}
+	if err := validateApexIDShape(value.Text); err == nil {
+		return value.Text, true
+	}
+	return "", false
 }
 
 func intBinary(op string, left, right Value, fn func(int64, int64) int64) (Value, error) {

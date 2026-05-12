@@ -45,9 +45,9 @@ System.assertEquals(0, empty.size());
 func TestExecSObjectMapKeySetKeepsSObjectKeys(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account a = new Account(Name = 'Acme');
-insert a;
 Map<Account, String> byAccount = new Map<Account, String>();
 byAccount.put(a, 'seen');
+insert a;
 for (Account key : byAccount.keySet()) {
     System.assertEquals(a.Id, key.Id);
 }
@@ -188,6 +188,24 @@ System.assertEquals('001000000000001AAA', rows[0].get('Parent__c'));
 	}
 }
 
+func TestExecSOQLSingletonFieldAccessUnwrapsOneRow(t *testing.T) {
+	program, err := CompileAnonymous(`
+insert new Account(Name = 'Acme');
+String name = [SELECT Name FROM Account LIMIT 1].Name;
+System.assertEquals('Acme', name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecParentRelationshipCanLoadFromLookupID(t *testing.T) {
 	program, err := CompileAnonymous(`
 Child__c child = new Child__c(Parent__c = '001000000000001AAA');
@@ -209,6 +227,50 @@ System.assertEquals('Acme', child.Parent__r.Name);
 			Records: map[storage.ID]storage.Record{
 				"001000000000001AAA": {Object: "Account", ID: "001000000000001AAA", Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")}},
 			},
+		},
+		"Child__c": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "Child__c",
+				KeyPrefix: "a00",
+				Fields: map[string]storage.Field{
+					"Id":        {APIName: "Id", Type: storage.FieldID},
+					"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Parent__r"},
+				},
+				Relations: []storage.Relationship{{
+					Field:              "Parent__c",
+					ParentObjects:      []string{"Account"},
+					ParentRelationship: "Parent__r",
+				}},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+	}}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMissingOptionalParentRelationshipNestedFieldIsNull(t *testing.T) {
+	program, err := CompileAnonymous(`
+Child__c child = new Child__c();
+System.assertEquals(null, child.Parent__r.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.OrgState{Objects: map[string]storage.ObjectState{
+		"Account": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "Account",
+				KeyPrefix: "001",
+				Fields: map[string]storage.Field{
+					"Id":   {APIName: "Id", Type: storage.FieldID},
+					"Name": {APIName: "Name", Type: storage.FieldString},
+				},
+			},
+			Records: map[storage.ID]storage.Record{},
 		},
 		"Child__c": {
 			Definition: storage.ObjectDefinition{
@@ -1160,9 +1222,10 @@ Object nameField = fields.get('Name');
 Object lowercaseNameField = fields.get('name');
 Object nameDescribe = nameField.getDescribe();
 Object lowercaseNameDescribe = lowercaseNameField.getDescribe();
-System.assertEquals('Name', nameDescribe.getName());
-System.assertEquals('Name', nameField.getName());
-System.assertEquals('Name', lowercaseNameDescribe.getName());
+	System.assertEquals('Name', nameDescribe.getName());
+	System.assertEquals('Name', nameField.getName());
+	System.assertEquals('Name', nameField.label);
+	System.assertEquals('Name', lowercaseNameDescribe.getName());
 System.assert(nameDescribe.isNameField());
 System.assert(!nameDescribe.isEncrypted());
 System.assert(!nameDescribe.isCalculated());
@@ -2569,6 +2632,7 @@ System.assertEquals('Acme', row.Account.Parent.Name);
 			Fields: map[string]storage.Field{
 				"AccountId": {APIName: "AccountId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Account"},
 				"LastName":  {APIName: "LastName", Type: storage.FieldString},
+				"Name":      {APIName: "Name", Type: storage.FieldString},
 			},
 			Relations: []storage.Relationship{{
 				Field:              "AccountId",
@@ -2647,6 +2711,7 @@ System.assertEquals('Alpha', contact.LastName);
 			Fields: map[string]storage.Field{
 				"AccountId": {APIName: "AccountId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Account"},
 				"LastName":  {APIName: "LastName", Type: storage.FieldString},
+				"Name":      {APIName: "Name", Type: storage.FieldString},
 			},
 			Relations: []storage.Relationship{{
 				Field:              "AccountId",
@@ -2657,6 +2722,59 @@ System.assertEquals('Alpha', contact.LastName);
 		},
 		Records: make(map[storage.ID]storage.Record),
 	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMissingChildRelationshipFieldDefaultsToEmptyList(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account a = new Account(Name = 'Acme');
+System.assertEquals(true, a.Contacts.isEmpty());
+System.assertEquals(0, a.Contacts.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Contact",
+			KeyPrefix: "003",
+			Fields: map[string]storage.Field{
+				"AccountId": {APIName: "AccountId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Account"},
+				"LastName":  {APIName: "LastName", Type: storage.FieldString},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "AccountId",
+				ParentObjects:      []string{"Account"},
+				ParentRelationship: "Account",
+				ChildRelationship:  "Contacts",
+			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSObjectEqualityUsesTypeAndFields(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account first = new Account(Name = 'Acme');
+Account clone = first.clone(false, true, true, true);
+System.assertEquals(first, clone);
+clone.Name = 'Beta';
+System.assertNotEquals(first, clone);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
@@ -2983,6 +3101,69 @@ System.assertEquals(1, survivors.size(), 'partial insert should keep only unbloc
 	machine.SetOrg(&org)
 	if err := machine.RegisterTrigger(Trigger{
 		Name:      "AccountBeforeInsertAddError",
+		Object:    "Account",
+		Timing:    triggerTimingBefore,
+		Operation: "insert",
+		Program:   triggerProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestBeforeInsertTriggerCanQueryExistingRowsAndAddOverlapError(t *testing.T) {
+	triggerProgram, err := CompileAnonymous(`
+Set<Id> parentIds = new Set<Id>();
+for (Account candidate : Trigger.new) {
+	Id parentId = (Id)candidate.get('ParentId');
+	if (parentId != null) {
+		parentIds.add(parentId);
+	}
+}
+List<Account> existingRows = [SELECT Id, ParentId, StartDate__c, EndDate__c FROM Account WHERE ParentId IN :parentIds];
+for (Account candidate : Trigger.new) {
+	for (Account existing : existingRows) {
+		if (candidate.ParentId == existing.ParentId &&
+			candidate.Id != existing.Id &&
+			candidate.StartDate__c >= existing.StartDate__c &&
+			candidate.StartDate__c <= existing.EndDate__c) {
+			candidate.addError('overlap');
+		}
+	}
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Account parent = new Account(Name = 'Parent');
+insert parent;
+Account first = new Account(Name = 'First', ParentId = parent.Id, StartDate__c = Date.newInstance(2026, 1, 1), EndDate__c = Date.newInstance(2026, 12, 31));
+insert first;
+Account second = new Account(Name = 'Second', ParentId = parent.Id, StartDate__c = first.StartDate__c.addMonths(1), EndDate__c = first.EndDate__c);
+try {
+	upsert second;
+	System.assert(false, 'overlapping insert should fail');
+} catch (DmlException ex) {
+	System.assertEquals(1, ex.getNumDml());
+	System.assertEquals('overlap', ex.getDmlMessage(0));
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["ParentId"] = storage.Field{APIName: "ParentId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}}
+	account.Definition.Fields["StartDate__c"] = storage.Field{APIName: "StartDate__c", Type: storage.FieldDate}
+	account.Definition.Fields["EndDate__c"] = storage.Field{APIName: "EndDate__c", Type: storage.FieldDate}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "AccountBeforeInsertOverlap",
 		Object:    "Account",
 		Timing:    triggerTimingBefore,
 		Operation: "insert",
@@ -3327,6 +3508,53 @@ System.assert(Trigger.isBefore);
 		Timing:    triggerTimingBefore,
 		Operation: "delete",
 		Program:   deleteTrigger,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecBeforeUpdateTriggerSeesMergedRecordAndFormulas(t *testing.T) {
+	triggerProgram, err := CompileAnonymous(`
+for (Account a : Trigger.new) {
+	System.assertEquals('Before', a.Name);
+	System.assertEquals(7, a.Score__c);
+	a.Rating = 'Warm';
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Account a = new Account(Name = 'Before');
+a.Amount__c = 5;
+insert a;
+Account patch = new Account(Id = a.Id);
+patch.Rating = 'Cold';
+update patch;
+Account updated = [SELECT Id, Name, Rating FROM Account WHERE Id = :a.Id];
+System.assertEquals('Before', updated.Name);
+System.assertEquals('Warm', updated.Rating);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Rating"] = storage.Field{APIName: "Rating", Type: storage.FieldString}
+	account.Definition.Fields["Amount__c"] = storage.Field{APIName: "Amount__c", Type: storage.FieldInteger}
+	account.Definition.Fields["Score__c"] = storage.Field{APIName: "Score__c", Type: storage.FieldCalculated, DisplayType: "Integer", Formula: "Amount__c + 2"}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "AccountBeforeUpdateMergedRecord",
+		Object:    "Account",
+		Timing:    triggerTimingBefore,
+		Operation: "update",
+		Program:   triggerProgram,
 	}); err != nil {
 		t.Fatal(err)
 	}

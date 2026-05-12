@@ -961,6 +961,23 @@ System.assertEquals('001B000001DVM9t', parent.toString());
 	}
 }
 
+func TestExecJSONDeserializeSObjectAllowsFabricatedIdValue(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account decoded = JSON.deserialize('{"Id":"id-1","Name":"Acme"}', Account.class);
+System.assertEquals('id-1', decoded.Id);
+System.assertEquals('Acme', decoded.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecJSONDeserializeSObjectChildRelationshipRecords(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account decoded = JSON.deserialize('{"Name":"Acme","NumberOfEmployees":"7","Contacts":{"totalSize":"2","done":"true","records":[{"attributes":{"type":"Contact"},"LastName":"One","DoNotCall":"true"},{"attributes":{"type":"Contact"},"LastName":"Two","DoNotCall":"false"}]}}', Account.class);

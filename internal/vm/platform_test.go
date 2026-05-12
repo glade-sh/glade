@@ -749,6 +749,8 @@ System.assertEquals('Detail', message.getDetail());
 		t.Fatal(err)
 	}
 	machine := New(nil)
+	org := storage.NewOrgState()
+	machine.SetOrg(&org)
 	machine.EnableTestContext()
 	machine.RegisterPageReference("AccountView")
 	if _, err := machine.Execute(program); err != nil {
@@ -2090,14 +2092,27 @@ System.assertEquals(1, Limits.getQueueableJobs());
 
 Database.executeBatch(new BatchWorker(), 1);
 System.schedule('nightly', '0 0 0 * * ?', new ScheduledWorker());
-System.assertEquals(4, Limits.getAsyncJobs());
-System.assertEquals(1, Limits.getBatchJobs());
-System.assertEquals(1, Limits.getScheduledJobs());
+System.scheduleBatch(new BatchWorker(), 'batch later', 1, 200);
+System.assertEquals(5, Limits.getAsyncJobs());
+System.assertEquals(2, Limits.getBatchJobs());
+System.assertEquals(2, Limits.getScheduledJobs());
+List<AsyncApexJob> scheduledBatches = [
+	SELECT Id
+	FROM AsyncApexJob
+	WHERE CompletedDate = null
+	AND JobType = 'BatchApex'
+	AND ApexClass.Name = 'BatchWorker'
+	AND ApexClass.NamespacePrefix = ''
+	LIMIT 1
+];
+System.assertEquals(1, scheduledBatches.size());
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	machine := New(nil)
+	org := storage.NewOrgState()
+	machine.SetOrg(&org)
 	machine.EnableTestContext()
 	for _, class := range []Class{{Name: "FutureWorker"}, {Name: "QueueWorker"}, {Name: "BatchWorker"}, {Name: "ScheduledWorker"}} {
 		if err := machine.RegisterClass(class); err != nil {
@@ -2111,7 +2126,7 @@ System.assertEquals(1, Limits.getScheduledJobs());
 	if err != nil {
 		t.Fatal(err)
 	}
-	if result.Limits.FutureCalls != 1 || result.Limits.QueueableJobs != 1 || result.Limits.BatchJobs != 1 || result.Limits.ScheduledJobs != 1 || result.Limits.EmailInvokes != 1 {
+	if result.Limits.FutureCalls != 1 || result.Limits.QueueableJobs != 1 || result.Limits.BatchJobs != 2 || result.Limits.ScheduledJobs != 2 || result.Limits.EmailInvokes != 1 {
 		t.Fatalf("limits = %#v", result.Limits)
 	}
 	if !traceHas(result.Trace, "apex.email.send", "apex.email") {
@@ -2138,6 +2153,55 @@ func TestExecExecuteBatchRejectsScopeAbovePlatformMaximum(t *testing.T) {
 	_, err = machine.Execute(program)
 	if err == nil || !strings.Contains(err.Error(), "scope size must be at most 2000") {
 		t.Fatalf("err = %v, want scope maximum", err)
+	}
+}
+
+func TestExecScheduledApexResolvesExecuteBySchedulableContext(t *testing.T) {
+	scheduledProgram, err := CompileAnonymous("return null;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	batchProgram, err := CompileAnonymous("return null;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Test.startTest();
+System.schedule('nightly', '0 0 0 * * ?', new MultiWorker());
+Test.stopTest();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name:       "MultiWorker",
+		Interfaces: []string{"Schedulable", "Database.Batchable<SObject>"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterMethod(Method{
+		Name:      "MultiWorker.execute",
+		ClassName: "MultiWorker",
+		Params:    []Param{{Name: "context", Type: "SchedulableContext"}},
+		Program:   scheduledProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterMethod(Method{
+		Name:      "MultiWorker.execute",
+		ClassName: "MultiWorker",
+		Params: []Param{
+			{Name: "context", Type: "Database.BatchableContext"},
+			{Name: "scope", Type: "List<SObject>"},
+		},
+		Program: batchProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -2263,11 +2327,6 @@ func TestExecAsyncUnsupportedEdgesAreTyped(t *testing.T) {
 			name: "finalizer context result",
 			src:  `System.FinalizerContext fc = new System.FinalizerContext(); fc.getResult();`,
 			want: `unsupported call "System.FinalizerContext.getResult local queueable finalizers"`,
-		},
-		{
-			name: "schedule batch",
-			src:  `Database.scheduleBatch(null, 'nightly', 1, 200);`,
-			want: `unsupported call "Database.scheduleBatch local async scheduling surface"`,
 		},
 	}
 	for _, tc := range cases {
@@ -2490,6 +2549,10 @@ System.runAs(new User(Id = '005-ny-user', TimeZoneSidKey = 'America/New_York')) 
     System.assertEquals(8, stamp.hour());
     System.assertEquals(12, stamp.hourGmt());
     System.assertEquals('2024-07-01', stamp.date().format());
+}
+System.runAs(new User(Id = '005-panama-user', TimeZoneSidKey = 'America/Panama')) {
+    Datetime stamp = Datetime.newInstance(Date.newInstance(2014, 11, 4), Time.newInstance(0, 0, 0, 0));
+    System.assertEquals('2014-11-04T05:00:00Z', stamp.formatGmt());
 }
 `)
 	if err != nil {
@@ -3009,6 +3072,8 @@ System.assertEquals('2023-02-28', previousYear.format());
 System.assertEquals(31, leap.day());
 System.assertEquals(1, leap.month());
 System.assertEquals(2024, leap.year());
+System.assertEquals(29, Date.daysInMonth(2024, 2));
+System.assertEquals(28, Date.daysInMonth(2025, 2));
 Date monthStart = leap.toStartOfMonth();
 Date monthEnd = leap.toEndOfMonth();
 System.assertEquals('2024-01-01', monthStart.format());

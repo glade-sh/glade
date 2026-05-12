@@ -363,7 +363,8 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 	if err != nil {
 		return "", err
 	}
-	normalizePersonAccountFields(objectName, &record)
+	normalizeNameFields(objectName, &record)
+	createPersonContact := objectName == "Account" && isPersonAccountRecord(record)
 	applyFieldDefaults(object.Definition, &record)
 	applyAutoNumberName(object.Definition, e.IDs.Sequences[objectName]+1, &record)
 	applyCustomSettingInsertDefaults(e.Org, object.Definition, &record)
@@ -435,7 +436,7 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 			return "", err
 		}
 	}
-	if objectName == "Account" && isPersonAccountRecord(record) {
+	if createPersonContact {
 		if err := e.afterInsertPersonAccount(record); err != nil {
 			*e.Org = rollbackOrg
 			e.IDs.Sequences = rollbackSequences
@@ -452,17 +453,21 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 	return record.ID, nil
 }
 
-func normalizePersonAccountFields(objectName string, record *storage.Record) {
-	if !strings.EqualFold(objectName, "Account") || record == nil {
+func normalizeNameFields(objectName string, record *storage.Record) {
+	if record == nil {
 		return
 	}
+	if strings.EqualFold(objectName, "Contact") || strings.EqualFold(objectName, "Lead") {
+		normalizeFirstLastName(record)
+		return
+	}
+	normalizePersonAccountFields(objectName, record)
+}
+
+func normalizeFirstLastName(record *storage.Record) {
 	if record.Fields == nil {
 		record.Fields = make(map[string]storage.Value)
 	}
-	if !hasPersonAccountSignal(*record) {
-		return
-	}
-	record.Fields["IsPersonAccount"] = storage.BooleanValue(true)
 	if _, ok := record.Fields["Name"]; ok {
 		return
 	}
@@ -476,21 +481,56 @@ func normalizePersonAccountFields(objectName string, record *storage.Record) {
 	}
 }
 
-func hasPersonAccountSignal(record storage.Record) bool {
-	if isPersonAccountRecord(record) {
-		return true
+func normalizePersonAccountFields(objectName string, record *storage.Record) {
+	if !strings.EqualFold(objectName, "Account") || record == nil {
+		return
 	}
-	for field := range record.Fields {
-		if strings.HasPrefix(field, "Person") || field == "FirstName" || field == "LastName" {
+	if record.Fields == nil {
+		record.Fields = make(map[string]storage.Value)
+	}
+	if !hasPersonAccountSignal(*record) {
+		return
+	}
+	record.Fields["IsPersonAccount"] = storage.BooleanValue(true)
+	normalizeFirstLastName(record)
+}
+
+func hasPersonAccountSignal(record storage.Record) bool {
+	return hasPersonAccountFieldSignal(record)
+}
+
+func hasPersonAccountFieldSignal(record storage.Record) bool {
+	for field, value := range record.Fields {
+		if (strings.HasPrefix(field, "Person") || field == "FirstName" || field == "LastName") && nonDefaultPersonValue(value) {
 			return true
 		}
 	}
 	return false
 }
 
+func nonDefaultPersonValue(value storage.Value) bool {
+	switch value.Kind {
+	case storage.ValueNull, "":
+		return false
+	case storage.ValueBoolean:
+		return value.Boolean
+	case storage.ValueString, storage.ValueDate, storage.ValueDateTime, storage.ValueDecimal:
+		return value.String != ""
+	case storage.ValueID:
+		return value.ID != ""
+	case storage.ValueInteger:
+		return value.Integer != 0
+	default:
+		return true
+	}
+}
+
 func isPersonAccountRecord(record storage.Record) bool {
 	if value, ok := record.Fields["IsPersonAccount"]; ok && value.Kind == storage.ValueBoolean {
-		return value.Boolean
+		if !value.Boolean {
+			return false
+		}
+		return hasPersonAccountFieldSignal(record) || idFromStorageValue(record.Fields["PersonContactId"]) != ""
 	}
 	return false
 }
@@ -869,7 +909,7 @@ func (e *Engine) updateOne(record storage.Record) error {
 	if err != nil {
 		return err
 	}
-	normalizePersonAccountFields(objectName, &record)
+	normalizeNameFields(objectName, &record)
 	if record.ID == "" {
 		return fmt.Errorf("dml: update requires id")
 	}
@@ -909,6 +949,9 @@ func (e *Engine) updateOne(record storage.Record) error {
 			delete(finalRecord.Fields, field)
 			finalRecord.ExplicitNulls[field] = true
 		}
+	}
+	if err := validateRequired(object.Definition, finalRecord); err != nil {
+		return err
 	}
 	if err := e.validateValidationRules(object.Definition, finalRecord); err != nil {
 		return err

@@ -1721,6 +1721,7 @@ func normalizeStaticCallCasing(callee string) string {
 		}
 	case "userinfo":
 		for _, known := range []string{
+			"getCurrentUvid",
 			"getUserId",
 			"getProfileId",
 			"getUserName",
@@ -1729,11 +1730,18 @@ func normalizeStaticCallCasing(callee string) string {
 			"getLastName",
 			"getUserEmail",
 			"getOrganizationId",
+			"getOrganizationName",
 			"getUserType",
+			"getUserRoleId",
 			"getSessionId",
 			"getLocale",
 			"getLanguage",
 			"getTimeZone",
+			"getUiTheme",
+			"getUiThemeDisplayed",
+			"hasPackageLicense",
+			"isCurrentUserLicensed",
+			"isCurrentUserLicensedForPackage",
 			"isMultiCurrencyOrganization",
 		} {
 			if strings.EqualFold(member, known) {
@@ -1802,9 +1810,10 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"Math.sqrt", "Math.acos", "Math.asin", "Math.atan", "Math.cos", "Math.sin", "Math.tan",
 		"Math.exp", "Math.log", "Math.log10", "Math.max", "Math.min", "Math.mod", "Math.pow",
 		"Math.atan2", "Math.random",
-		"Date.today", "Date.newInstance", "Date.valueOf",
+		"Date.today", "Date.newInstance", "Date.valueOf", "Date.daysInMonth",
 		"Datetime.now", "Datetime.newInstance", "Datetime.newInstanceGmt", "Datetime.valueOf", "Datetime.valueOfGmt",
 		"Time.newInstance", "Time.valueOf",
+		"Blob.valueOf",
 		"URL.getSalesforceBaseUrl", "URL.getOrgDomainUrl", "URL.getCurrentRequestUrl",
 		"JSON.createGenerator", "JSON.createParser", "JSON.serialize", "JSON.serializePretty",
 		"JSON.deserializeUntyped", "JSON.deserialize", "JSON.deserializeStrict",
@@ -1819,6 +1828,7 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"Test.setMock", "Test.testInstall", "Test.createStub", "Test.createSoqlStub",
 		"Test.setFixedSearchResults", "Test.startTest", "Test.stopTest", "Test.getStandardPricebookId",
 		"Test.Database.hasRecords",
+		"UserInfo.getDefaultCurrency",
 		"Site.getSiteId", "Site.getBaseUrl", "Site.getPathPrefix", "Site.getAdminEmail", "Site.getAdminId",
 		"Site.getMasterLabel", "Site.isRegistrationEnabled", "Site.isLoginEnabled", "Site.isValidUsername",
 		"Site.setExperienceId", "Site.getErrorMessage", "Site.getErrorDescription", "Site.forgotPassword",
@@ -1940,6 +1950,11 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 	}
 	if value, handled, err := vm.callBuiltinStaticFieldMember(callee, args, result); handled || err != nil {
 		return value, err
+	}
+	if vm.calleeStartsWithRuntimeReceiver(callee) {
+		if value, ok, err := vm.callMember(callee, args, result); ok || err != nil {
+			return value, err
+		}
 	}
 	if className, methodName, ok := vm.splitClassMember(callee); ok {
 		if value, handled, err := vm.callEnumStaticMember(className, methodName, args); handled || err != nil {
@@ -2088,6 +2103,7 @@ platformStaticCall:
 		}
 		return Null, unsupportedCallError(callee)
 	}
+
 	switch callee {
 	case "System.assert":
 		if len(args) != 1 && len(args) != 2 {
@@ -2405,6 +2421,19 @@ platformStaticCall:
 			return Null, err
 		}
 		return platformScalar("Date", fmt.Sprintf("%04d-%02d-%02d", year, args[1].Int, args[2].Int)), nil
+	case "Date.daysInMonth":
+		if len(args) != 2 || args[0].Kind != ValueInt || args[1].Kind != ValueInt {
+			return Null, fmt.Errorf("Date.daysInMonth expects year and month integers")
+		}
+		month := time.Month(args[1].Int)
+		if month < time.January || month > time.December {
+			return Null, newExceptionError("System.TypeException", fmt.Sprintf("Invalid month: %d", args[1].Int))
+		}
+		year := int(args[0].Int)
+		if year == 0 {
+			year = 1
+		}
+		return Int(int64(daysInMonth(year, month))), nil
 	case "Date.valueOf":
 		if len(args) != 1 {
 			return Null, newExceptionError("System.NullPointerException", "Date.valueOf expects String")
@@ -2438,7 +2467,7 @@ platformStaticCall:
 	case "System.abortJob":
 		return vm.abortJob(args)
 	case "Database.scheduleBatch", "System.scheduleBatch":
-		return Null, unsupportedCallError(callee + " local async scheduling surface")
+		return vm.scheduleBatch(args, result)
 	case "System.attachFinalizer":
 		return Null, unsupportedCallError("System.attachFinalizer local queueable finalizers")
 	case "AsyncInfo.getCurrentQueueableStackDepth", "AsyncInfo.getMaximumQueueableStackDepth",
@@ -3021,6 +3050,11 @@ platformStaticCall:
 			return Null, fmt.Errorf("UserInfo.getUserId expects 0 arguments")
 		}
 		return String(vm.currentUserInfoField("Id", "system")), nil
+	case "UserInfo.getCurrentUvid":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("UserInfo.getCurrentUvid expects 0 arguments")
+		}
+		return String(vm.currentUserInfoField("Id", "005-local-user") + ":local"), nil
 	case "UserInfo.getProfileId":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("UserInfo.getProfileId expects 0 arguments")
@@ -3056,6 +3090,16 @@ platformStaticCall:
 			return Null, fmt.Errorf("UserInfo.getOrganizationId expects 0 arguments")
 		}
 		return String("00D000000000001"), nil
+	case "UserInfo.getOrganizationName":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("UserInfo.getOrganizationName expects 0 arguments")
+		}
+		return String(vm.firstOrgRecordString("Organization", "Name", "Local Organization")), nil
+	case "UserInfo.getDefaultCurrency":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("UserInfo.getDefaultCurrency expects 0 arguments")
+		}
+		return String(vm.currentUserInfoField("DefaultCurrencyIsoCode", "USD")), nil
 	case "UserInfo.getUserType":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("UserInfo.getUserType expects 0 arguments")
@@ -3066,6 +3110,11 @@ platformStaticCall:
 			return Null, fmt.Errorf("UserInfo.getSessionId expects 0 arguments")
 		}
 		return String(""), nil
+	case "UserInfo.getUserRoleId":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("UserInfo.getUserRoleId expects 0 arguments")
+		}
+		return String(vm.currentUserInfoField("UserRoleId", "")), nil
 	case "UserInfo.getLocale":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("UserInfo.getLocale expects 0 arguments")
@@ -3081,6 +3130,26 @@ platformStaticCall:
 			return Null, fmt.Errorf("UserInfo.getTimeZone expects 0 arguments")
 		}
 		return fixedTimeZone(vm.currentUserTimeZoneID())
+	case "UserInfo.getUiTheme", "UserInfo.getUiThemeDisplayed":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("%s expects 0 arguments", callee)
+		}
+		return String("Theme4d"), nil
+	case "UserInfo.hasPackageLicense":
+		if len(args) != 1 {
+			return Null, fmt.Errorf("UserInfo.hasPackageLicense expects 1 argument")
+		}
+		return Bool(true), nil
+	case "UserInfo.isCurrentUserLicensed":
+		if len(args) != 1 {
+			return Null, fmt.Errorf("UserInfo.isCurrentUserLicensed expects 1 argument")
+		}
+		return Bool(true), nil
+	case "UserInfo.isCurrentUserLicensedForPackage":
+		if len(args) != 1 {
+			return Null, fmt.Errorf("UserInfo.isCurrentUserLicensedForPackage expects 1 argument")
+		}
+		return Bool(true), nil
 	case "UserInfo.isMultiCurrencyOrganization":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("UserInfo.isMultiCurrencyOrganization expects 0 arguments")
@@ -4226,6 +4295,33 @@ func (vm *VM) requireTestContext(callee string) error {
 	return nil
 }
 
+func (vm *VM) calleeStartsWithRuntimeReceiver(callee string) bool {
+	root, _, ok := strings.Cut(callee, ".")
+	if !ok || root == "" {
+		return false
+	}
+	if _, ok := vm.Globals[root]; ok {
+		return true
+	}
+	if _, ok := vm.lookupGlobalName(root); ok {
+		return true
+	}
+	if this, ok := vm.Globals["this"]; ok && this.Kind == ValueObject {
+		if _, _, ok := objectFieldValue(this, root); ok {
+			return true
+		}
+		if _, _, ok := vm.lookupReceiverField(this.Type, root); ok {
+			return true
+		}
+	}
+	if vm.currentClass != "" {
+		if _, _, ok := vm.lookupStaticField(vm.currentClass, root); ok {
+			return true
+		}
+	}
+	return false
+}
+
 func (vm *VM) testSetMock(args []Value) (Value, error) {
 	if len(args) != 2 {
 		return Null, fmt.Errorf("Test.setMock expects mock type and mock instance")
@@ -4266,6 +4362,25 @@ func (vm *VM) testCreateStub(args []Value) (Value, error) {
 	proxy := Object(stubbedType)
 	proxy.Fields["__oaerStubProvider"] = args[1]
 	proxy.Fields["__oaerStubbedType"] = String(stubbedType)
+	if class, ok := vm.lookupClass(stubbedType); ok {
+		initResult := &Result{}
+		vm.initializeFields(&proxy, stubbedType)
+		if err := vm.runInstanceInitializers(class, proxy, initResult); err != nil {
+			return Null, err
+		}
+		if ctor, found, ambiguous := vm.matchConstructor(class, nil); ambiguous {
+			return Null, fmt.Errorf("ambiguous %s constructor with 0 argument(s)", class.Name)
+		} else if found {
+			if err := vm.callImplicitSuperConstructor(class, ctor, proxy, initResult); err != nil {
+				return Null, err
+			}
+			if _, err := vm.callMethodWithReceiver(ctor, proxy, nil, initResult); err != nil {
+				return Null, err
+			}
+		} else if err := vm.callImplicitSuperConstructor(class, Method{}, proxy, initResult); err != nil {
+			return Null, err
+		}
+	}
 	return proxy, nil
 }
 
@@ -4436,6 +4551,55 @@ func (vm *VM) scheduleJob(args []Value, result *Result) (Value, error) {
 	return String(cronTriggerID(job.ID)), nil
 }
 
+func (vm *VM) scheduleBatch(args []Value, result *Result) (Value, error) {
+	if len(args) != 3 && len(args) != 4 {
+		return Null, fmt.Errorf("System.scheduleBatch expects batch instance, name, minutesFromNow[, scopeSize]")
+	}
+	if args[0].Kind != ValueObject {
+		return Null, fmt.Errorf("System.scheduleBatch expects Batchable object")
+	}
+	if args[1].Kind != ValueString {
+		return Null, fmt.Errorf("System.scheduleBatch expects job name String")
+	}
+	if args[2].Kind != ValueInt {
+		return Null, fmt.Errorf("System.scheduleBatch expects minutesFromNow Integer")
+	}
+	batchSize := 200
+	if len(args) == 4 {
+		if args[3].Kind != ValueInt {
+			return Null, fmt.Errorf("System.scheduleBatch scope size expects Integer")
+		}
+		batchSize = int(args[3].Int)
+		if batchSize <= 0 {
+			return Null, fmt.Errorf("System.scheduleBatch scope size must be positive")
+		}
+		if batchSize > 2000 {
+			return Null, fmt.Errorf("System.scheduleBatch scope size must be at most 2000")
+		}
+	}
+	if err := vm.incrementLimit("asyncJobs", 1); err != nil {
+		return Null, err
+	}
+	if err := vm.incrementLimit("batchJobs", 1); err != nil {
+		return Null, err
+	}
+	if err := vm.incrementLimit("scheduledJobs", 1); err != nil {
+		return Null, err
+	}
+	job := AsyncJob{ID: vm.nextAsyncJobID(), Kind: "ScheduledBatch", Object: args[0], BatchSize: batchSize, Name: args[1].Text, Cron: fmt.Sprintf("after %d minutes", args[2].Int)}
+	vm.enqueueAsyncJob(job)
+	vm.recordAsyncJob(job, "Queued", "")
+	vm.recordCronTrigger(job, "Waiting")
+	appendTrace(result, "apex.async.enqueue", "apex.async", map[string]any{
+		"kind":      job.Kind,
+		"jobId":     job.ID,
+		"class":     args[0].Type,
+		"name":      job.Name,
+		"batchSize": batchSize,
+	})
+	return String(cronTriggerID(job.ID)), nil
+}
+
 func (vm *VM) abortJob(args []Value) (Value, error) {
 	if len(args) != 1 {
 		return Null, fmt.Errorf("System.abortJob expects job Id")
@@ -4499,14 +4663,18 @@ func (vm *VM) drainAsyncJobs(result *Result, jobs *[]AsyncJob, draining *bool, c
 		return nil
 	}
 	*draining = true
+	snapshot := vm.staticFieldSnapshot()
 	defer func() {
+		vm.restoreStaticFieldSnapshot(snapshot)
 		*draining = false
 	}()
 	for len(*jobs) > 0 {
 		job := (*jobs)[0]
 		*jobs = (*jobs)[1:]
-		if err := vm.ResetStatics(); err != nil {
-			return err
+		if vm.testContext == nil {
+			if err := vm.ResetStatics(); err != nil {
+				return err
+			}
 		}
 		*chainEnqueued = false
 		vm.recordAsyncJob(job, "Processing", "")
@@ -4521,6 +4689,36 @@ func (vm *VM) drainAsyncJobs(result *Result, jobs *[]AsyncJob, draining *bool, c
 		vm.recordAsyncJob(job, "Completed", "")
 	}
 	return nil
+}
+
+func (vm *VM) staticFieldSnapshot() map[string]map[string]Value {
+	out := make(map[string]map[string]Value, len(vm.Classes))
+	for className, class := range vm.Classes {
+		fields := make(map[string]Value, len(class.StaticFields))
+		for fieldName, field := range class.StaticFields {
+			fields[fieldName] = field.Value
+		}
+		out[className] = fields
+	}
+	return out
+}
+
+func (vm *VM) restoreStaticFieldSnapshot(snapshot map[string]map[string]Value) {
+	for className, fields := range snapshot {
+		class, ok := vm.Classes[className]
+		if !ok {
+			continue
+		}
+		for fieldName, value := range fields {
+			field, ok := class.StaticFields[fieldName]
+			if !ok {
+				continue
+			}
+			field.Value = value
+			class.StaticFields[fieldName] = field
+		}
+		vm.Classes[className] = class
+	}
 }
 
 func (vm *VM) asyncDrainState() (bool, bool) {
@@ -4575,12 +4773,27 @@ func (vm *VM) runAsyncJob(job AsyncJob, result *Result) error {
 			return Null, vm.runBatchJob(job, result)
 		})
 		return err
+	case "ScheduledBatch":
+		_, err := vm.withAsyncKind("BatchApex", func() (Value, error) {
+			return Null, vm.runBatchJob(job, result)
+		})
+		vm.recordCronTrigger(job, "Complete")
+		return err
 	case "ScheduledApex":
-		target, ok := vm.resolveInstanceMethod(job.Object.Type, "execute")
+		args := []Value{schedulableContext(job.ID)}
+		target, ok, ambiguous := vm.resolveInstanceMethodForArgs(job.Object.Type, "execute", args)
+		if ambiguous {
+			return vm.ambiguousOverloadError(job.Object.Type+".execute", args)
+		}
+		if !ok {
+			target, ok, ambiguous = vm.resolveInstanceMethodForArgs(job.Object.Type, "execute", nil)
+			if ambiguous {
+				return vm.ambiguousOverloadError(job.Object.Type+".execute", nil)
+			}
+		}
 		if !ok {
 			return fmt.Errorf("scheduled job %s has no execute method", job.Object.Type)
 		}
-		args := []Value{schedulableContext(job.ID)}
 		if len(target.Params) == 0 {
 			args = nil
 		}
@@ -4634,8 +4847,26 @@ func (vm *VM) runBatchJob(job AsyncJob, result *Result) error {
 			}
 		}
 	}
-	if execute, ok := vm.resolveInstanceMethod(job.Object.Type, "execute"); ok {
-		chunks := batchChunks(scope, job.BatchSize)
+	chunks := batchChunks(scope, job.BatchSize)
+	executeArgs := []Value{asyncContext("Database.BatchableContext", job.ID), List()}
+	execute, ok, ambiguous := vm.resolveInstanceMethodForArgs(job.Object.Type, "execute", executeArgs)
+	if ambiguous {
+		return vm.ambiguousOverloadError(job.Object.Type+".execute", executeArgs)
+	}
+	if !ok {
+		executeArgs = []Value{List()}
+		execute, ok, ambiguous = vm.resolveInstanceMethodForArgs(job.Object.Type, "execute", executeArgs)
+		if ambiguous {
+			return vm.ambiguousOverloadError(job.Object.Type+".execute", executeArgs)
+		}
+	}
+	if !ok {
+		execute, ok, ambiguous = vm.resolveInstanceMethodForArgs(job.Object.Type, "execute", nil)
+		if ambiguous {
+			return vm.ambiguousOverloadError(job.Object.Type+".execute", nil)
+		}
+	}
+	if ok {
 		vm.recordAsyncJobTotals(job, len(chunks), 0, 0)
 		for _, chunk := range chunks {
 			if _, err := vm.callMethodWithReceiver(execute, job.Object, batchExecuteArgs(execute, chunk, job.ID), result); err != nil {
@@ -4728,12 +4959,29 @@ func (vm *VM) ensureAsyncObjects() {
 			"Id":                {APIName: "Id", Type: storage.FieldID},
 			"Status":            {APIName: "Status", Type: storage.FieldString},
 			"JobType":           {APIName: "JobType", Type: storage.FieldString},
+			"ApexClassId":       {APIName: "ApexClassId", Type: storage.FieldReference, ReferenceTo: []string{"ApexClass"}, RelationshipName: "ApexClass"},
 			"ApexClassName":     {APIName: "ApexClassName", Type: storage.FieldString},
 			"MethodName":        {APIName: "MethodName", Type: storage.FieldString},
+			"CompletedDate":     {APIName: "CompletedDate", Type: storage.FieldDateTime},
 			"TotalJobItems":     {APIName: "TotalJobItems", Type: storage.FieldInteger},
 			"JobItemsProcessed": {APIName: "JobItemsProcessed", Type: storage.FieldInteger},
 			"NumberOfErrors":    {APIName: "NumberOfErrors", Type: storage.FieldInteger},
 			"ExtendedStatus":    {APIName: "ExtendedStatus", Type: storage.FieldString},
+		},
+		Relations: []storage.Relationship{{
+			Field:              "ApexClassId",
+			ParentObjects:      []string{"ApexClass"},
+			ParentRelationship: "ApexClass",
+		}},
+	})
+	ensureObject(vm.Org, storage.ObjectDefinition{
+		APIName:   "ApexClass",
+		Label:     "Apex Class",
+		KeyPrefix: "01p",
+		Fields: map[string]storage.Field{
+			"Id":              {APIName: "Id", Type: storage.FieldID},
+			"Name":            {APIName: "Name", Type: storage.FieldString},
+			"NamespacePrefix": {APIName: "NamespacePrefix", Type: storage.FieldString},
 		},
 	})
 	ensureObject(vm.Org, storage.ObjectDefinition{
@@ -4741,10 +4989,26 @@ func (vm *VM) ensureAsyncObjects() {
 		Label:     "Cron Trigger",
 		KeyPrefix: "08e",
 		Fields: map[string]storage.Field{
-			"Id":             {APIName: "Id", Type: storage.FieldID},
-			"State":          {APIName: "State", Type: storage.FieldString},
-			"CronExpression": {APIName: "CronExpression", Type: storage.FieldString},
-			"CronJobDetail":  {APIName: "CronJobDetail", Type: storage.FieldString},
+			"Id":              {APIName: "Id", Type: storage.FieldID},
+			"State":           {APIName: "State", Type: storage.FieldString},
+			"CronExpression":  {APIName: "CronExpression", Type: storage.FieldString},
+			"CronJobDetail":   {APIName: "CronJobDetail", Type: storage.FieldString},
+			"CronJobDetailId": {APIName: "CronJobDetailId", Type: storage.FieldReference, ReferenceTo: []string{"CronJobDetail"}, RelationshipName: "CronJobDetail"},
+		},
+		Relations: []storage.Relationship{{
+			Field:              "CronJobDetailId",
+			ParentObjects:      []string{"CronJobDetail"},
+			ParentRelationship: "CronJobDetail",
+		}},
+	})
+	ensureObject(vm.Org, storage.ObjectDefinition{
+		APIName:   "CronJobDetail",
+		Label:     "Cron Job Detail",
+		KeyPrefix: "08a",
+		Fields: map[string]storage.Field{
+			"Id":      {APIName: "Id", Type: storage.FieldID},
+			"Name":    {APIName: "Name", Type: storage.FieldString},
+			"JobType": {APIName: "JobType", Type: storage.FieldString},
 		},
 	})
 	ensureObject(vm.Org, storage.ObjectDefinition{
@@ -4778,6 +5042,24 @@ func ensureObject(org *storage.OrgState, definition storage.ObjectDefinition) {
 		}
 		if existing.Definition.Fields == nil {
 			existing.Definition.Fields = definition.Fields
+		} else {
+			for name, field := range definition.Fields {
+				if _, ok := existing.Definition.Fields[name]; !ok {
+					existing.Definition.Fields[name] = field
+				}
+			}
+		}
+		for _, relation := range definition.Relations {
+			found := false
+			for _, existingRelation := range existing.Definition.Relations {
+				if existingRelation.Field == relation.Field {
+					found = true
+					break
+				}
+			}
+			if !found {
+				existing.Definition.Relations = append(existing.Definition.Relations, relation)
+			}
 		}
 		org.Objects[definition.APIName] = existing
 		return
@@ -4795,11 +5077,13 @@ func (vm *VM) recordAsyncJob(job AsyncJob, status, detail string) {
 	if record.ID == "" {
 		record = storage.Record{ID: storage.ID(job.ID), Object: "AsyncApexJob", Fields: make(map[string]storage.Value)}
 	}
+	className := asyncClassName(job)
 	record.Fields["Status"] = storage.StringValue(status)
-	record.Fields["JobType"] = storage.StringValue(job.Kind)
-	record.Fields["ApexClassName"] = storage.StringValue(asyncClassName(job))
+	record.Fields["JobType"] = storage.StringValue(asyncJobType(job))
+	record.Fields["ApexClassId"] = storage.IDValue(storage.ID(asyncApexClassID(className)))
+	record.Fields["ApexClassName"] = storage.StringValue(className)
 	record.Fields["MethodName"] = storage.StringValue(asyncMethodName(job))
-	if existing, ok := record.Fields["TotalJobItems"]; ok && existing.Kind == storage.ValueInteger && existing.Integer > 0 && job.Kind == "BatchApex" {
+	if existing, ok := record.Fields["TotalJobItems"]; ok && existing.Kind == storage.ValueInteger && existing.Integer > 0 && asyncJobType(job) == "BatchApex" {
 		record.Fields["TotalJobItems"] = existing
 	} else {
 		record.Fields["TotalJobItems"] = storage.IntegerValue(int64(asyncTotalItems(job)))
@@ -4807,12 +5091,39 @@ func (vm *VM) recordAsyncJob(job AsyncJob, status, detail string) {
 	if status == "Completed" {
 		record.Fields["JobItemsProcessed"] = record.Fields["TotalJobItems"]
 		record.Fields["NumberOfErrors"] = storage.IntegerValue(0)
+		record.Fields["CompletedDate"] = storage.DateTimeValue(vm.fakeNow.Format(time.RFC3339))
 	} else if status == "Failed" {
 		record.Fields["NumberOfErrors"] = storage.IntegerValue(1)
 		record.Fields["ExtendedStatus"] = storage.StringValue(detail)
+		record.Fields["CompletedDate"] = storage.DateTimeValue(vm.fakeNow.Format(time.RFC3339))
+	} else if status == "Aborted" {
+		record.Fields["CompletedDate"] = storage.DateTimeValue(vm.fakeNow.Format(time.RFC3339))
+	} else {
+		delete(record.Fields, "CompletedDate")
 	}
 	object.Records[record.ID] = record
 	vm.Org.Objects["AsyncApexJob"] = object
+	vm.recordApexClass(className)
+}
+
+func (vm *VM) recordApexClass(className string) {
+	if vm.Org == nil || className == "" {
+		return
+	}
+	object := vm.Org.Objects["ApexClass"]
+	id := storage.ID(asyncApexClassID(className))
+	if _, ok := object.Records[id]; ok {
+		return
+	}
+	object.Records[id] = storage.Record{
+		ID:     id,
+		Object: "ApexClass",
+		Fields: map[string]storage.Value{
+			"Name":            storage.StringValue(className),
+			"NamespacePrefix": storage.StringValue(""),
+		},
+	}
+	vm.Org.Objects["ApexClass"] = object
 }
 
 func (vm *VM) recordAsyncJobTotals(job AsyncJob, total, processed, errors int) {
@@ -4846,8 +5157,30 @@ func (vm *VM) recordCronTrigger(job AsyncJob, state string) {
 	record.Fields["State"] = storage.StringValue(state)
 	record.Fields["CronExpression"] = storage.StringValue(job.Cron)
 	record.Fields["CronJobDetail"] = storage.StringValue(job.Name)
+	record.Fields["CronJobDetailId"] = storage.IDValue(storage.ID(cronJobDetailID(job.Name)))
 	object.Records[record.ID] = record
 	vm.Org.Objects["CronTrigger"] = object
+	vm.recordCronJobDetail(job)
+}
+
+func (vm *VM) recordCronJobDetail(job AsyncJob) {
+	if vm.Org == nil || job.Name == "" {
+		return
+	}
+	object := vm.Org.Objects["CronJobDetail"]
+	id := storage.ID(cronJobDetailID(job.Name))
+	if _, ok := object.Records[id]; ok {
+		return
+	}
+	object.Records[id] = storage.Record{
+		ID:     id,
+		Object: "CronJobDetail",
+		Fields: map[string]storage.Value{
+			"Name":    storage.StringValue(job.Name),
+			"JobType": storage.StringValue(cronJobType(job)),
+		},
+	}
+	vm.Org.Objects["CronJobDetail"] = object
 }
 
 func asyncClassName(job AsyncJob) string {
@@ -4855,6 +5188,30 @@ func asyncClassName(job AsyncJob) string {
 		return job.Method.ClassName
 	}
 	return job.Object.Type
+}
+
+func asyncJobType(job AsyncJob) string {
+	if job.Kind == "ScheduledBatch" {
+		return "BatchApex"
+	}
+	return job.Kind
+}
+
+func asyncApexClassID(className string) string {
+	sum := sha1.Sum([]byte(className))
+	return "01p" + hex.EncodeToString(sum[:])[:12]
+}
+
+func cronJobDetailID(name string) string {
+	sum := sha1.Sum([]byte(name))
+	return "08a" + hex.EncodeToString(sum[:])[:12]
+}
+
+func cronJobType(job AsyncJob) string {
+	if job.Kind == "ScheduledBatch" {
+		return "7"
+	}
+	return "0"
 }
 
 func asyncMethodName(job AsyncJob) string {
@@ -4869,7 +5226,7 @@ func asyncMethodName(job AsyncJob) string {
 }
 
 func asyncTotalItems(job AsyncJob) int {
-	if job.Kind != "BatchApex" || job.BatchSize <= 0 {
+	if asyncJobType(job) != "BatchApex" || job.BatchSize <= 0 {
 		return 1
 	}
 	return 1
@@ -5871,6 +6228,7 @@ func (vm *VM) populateDMLResultFields(value *Value, results []dml.Result) {
 		if vm.Org == nil || id == "" {
 			return
 		}
+		markDMLAccessibleFields(value)
 		objectName, ok := storage.ResolveObjectName(*vm.Org, value.Type)
 		if !ok {
 			return
@@ -5881,6 +6239,17 @@ func (vm *VM) populateDMLResultFields(value *Value, results []dml.Result) {
 		}
 		putSystemFields(*value, record.System)
 	}
+}
+
+func markDMLAccessibleFields(value *Value) {
+	if value == nil || value.Kind != ValueObject {
+		return
+	}
+	if selected, ok := value.Fields[sobjectQueriedFieldsField]; ok && selected.Kind == ValueMap {
+		return
+	}
+	value.Fields[sobjectQueriedFieldsField] = queriedSObjectFieldsValue(value.Type, dmlVisibleSObjectFields(value))
+	value.Fields[sobjectDMLAccessibleField] = Bool(true)
 }
 
 func hasDMLFailures(results []dml.Result) bool {
@@ -5987,11 +6356,18 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 	}
 	backup := vm.Org.Clone()
 	var beforeFailures []dml.Result
+	beforeTriggerRecords := records
+	if op == "update" {
+		beforeTriggerRecords = vm.hydrateUpdateTriggerRecords(records, before)
+	}
 	if op != "undelete" {
-		beforeFailures, err = vm.runTriggers(triggerTimingBefore, op, records, before, result)
+		beforeFailures, err = vm.runTriggers(triggerTimingBefore, op, beforeTriggerRecords, before, result)
 		if err != nil {
 			*vm.Org = backup
 			return nil, err
+		}
+		if op == "update" {
+			records = beforeTriggerRecords
 		}
 	}
 	if hasDMLFailures(beforeFailures) {
@@ -6938,6 +7314,80 @@ func (vm *VM) oldRecords(op string, records []storage.Record) ([]storage.Record,
 	return out, nil
 }
 
+func (vm *VM) hydrateUpdateTriggerRecords(records, before []storage.Record) []storage.Record {
+	if vm == nil || vm.Org == nil || len(records) == 0 || len(before) != len(records) {
+		return records
+	}
+	out := make([]storage.Record, 0, len(records))
+	for i, record := range records {
+		merged := before[i].Clone()
+		if merged.Object == "" {
+			merged.Object = record.Object
+		}
+		if record.ID != "" {
+			merged.ID = record.ID
+		}
+		if merged.Fields == nil {
+			merged.Fields = make(map[string]storage.Value)
+		}
+		if merged.ExplicitNulls == nil {
+			merged.ExplicitNulls = make(map[string]bool)
+		}
+		for field, value := range record.Fields {
+			merged.Fields[field] = value.Clone()
+			delete(merged.ExplicitNulls, field)
+		}
+		for field, isNull := range record.ExplicitNulls {
+			if isNull {
+				delete(merged.Fields, field)
+				merged.ExplicitNulls[field] = true
+			}
+		}
+		vm.populateCalculatedTriggerFields(&merged)
+		out = append(out, merged)
+	}
+	return out
+}
+
+func (vm *VM) populateCalculatedTriggerFields(record *storage.Record) {
+	if vm == nil || vm.Org == nil || record == nil || record.Object == "" {
+		return
+	}
+	objectName := record.Object
+	if canonical, ok := storage.ResolveObjectName(*vm.Org, record.Object); ok {
+		objectName = canonical
+		record.Object = canonical
+	}
+	object, ok := vm.Org.Objects[objectName]
+	if !ok {
+		return
+	}
+	if record.Fields == nil {
+		record.Fields = make(map[string]storage.Value)
+	}
+	for name, field := range object.Definition.Fields {
+		if field.Type != storage.FieldCalculated || strings.TrimSpace(field.Formula) == "" {
+			continue
+		}
+		value, explicitNull, ok := dml.EvaluateRecordFormulaValueInOrg(field.Formula, field, vm.Org, object.Definition, *record)
+		if !ok {
+			continue
+		}
+		if explicitNull {
+			delete(record.Fields, name)
+			if record.ExplicitNulls == nil {
+				record.ExplicitNulls = make(map[string]bool)
+			}
+			record.ExplicitNulls[name] = true
+			continue
+		}
+		record.Fields[name] = value
+		if record.ExplicitNulls != nil {
+			delete(record.ExplicitNulls, name)
+		}
+	}
+}
+
 func (vm *VM) classifyUpsert(record storage.Record, externalIDField string) (string, storage.Record, error) {
 	objectName := record.Object
 	if canonical, ok := storage.ResolveObjectName(*vm.Org, record.Object); ok {
@@ -7274,7 +7724,7 @@ func (vm *VM) sObjectNameForIDPrefix(prefix string) (string, bool) {
 		}
 		sort.Strings(names)
 		for _, name := range names {
-			if strings.EqualFold(vm.Org.Objects[name].Definition.KeyPrefix, prefix) {
+			if vm.Org.Objects[name].Definition.KeyPrefix == prefix {
 				return name, true
 			}
 		}
@@ -7434,6 +7884,7 @@ func parseDatetimeText(text string) (time.Time, error) {
 		"2006-01-02 15:04:05",
 		"2006-01-02T15:04:05.000",
 		"2006-01-02T15:04:05",
+		"2006-01-02",
 	} {
 		if value, err := time.Parse(layout, text); err == nil {
 			year := value.Year()
@@ -7721,6 +8172,7 @@ var supportedNamedTimeZones = map[string]modeledTimeZone{
 	"America/New_York":    {id: "America/New_York", standardOffset: -5 * time.Hour, daylightOffset: -4 * time.Hour, standardLabel: "EST", daylightLabel: "EDT", daylightRule: "us"},
 	"America/Chicago":     {id: "America/Chicago", standardOffset: -6 * time.Hour, daylightOffset: -5 * time.Hour, standardLabel: "CST", daylightLabel: "CDT", daylightRule: "us"},
 	"America/Denver":      {id: "America/Denver", standardOffset: -7 * time.Hour, daylightOffset: -6 * time.Hour, standardLabel: "MST", daylightLabel: "MDT", daylightRule: "us"},
+	"America/Panama":      {id: "America/Panama", standardOffset: -5 * time.Hour, standardLabel: "EST"},
 	"Europe/London":       {id: "Europe/London", standardOffset: 0, daylightOffset: time.Hour, standardLabel: "GMT", daylightLabel: "BST", daylightRule: "europe"},
 	"Europe/Berlin":       {id: "Europe/Berlin", standardOffset: time.Hour, daylightOffset: 2 * time.Hour, standardLabel: "CET", daylightLabel: "CEST", daylightRule: "europe"},
 	"Asia/Tokyo":          {id: "Asia/Tokyo", standardOffset: 9 * time.Hour, standardLabel: "JST"},
@@ -8437,6 +8889,10 @@ func builtinEnumStaticValue(typeName, memberName string) (Value, bool) {
 		if level, ok := canonicalLoggingLevelName(memberName); ok {
 			return Value{Kind: ValueObject, Type: "LoggingLevel", Text: level}, true
 		}
+	case strings.EqualFold(typeName, "TriggerOperation"):
+		if operation, ok := canonicalTriggerOperationName(memberName); ok {
+			return Value{Kind: ValueObject, Type: "TriggerOperation", Text: operation}, true
+		}
 	case strings.EqualFold(typeName, "JSONToken"):
 		if token, ok := canonicalJSONTokenName(memberName); ok {
 			return Value{Kind: ValueObject, Type: "JSONToken", Text: token}, true
@@ -8447,6 +8903,15 @@ func builtinEnumStaticValue(typeName, memberName string) (Value, bool) {
 		return schemaSOAPTypeStaticValue("Schema.SOAPType." + memberName)
 	}
 	return Null, false
+}
+
+func canonicalTriggerOperationName(name string) (string, bool) {
+	for _, candidate := range triggerOperationNames {
+		if strings.EqualFold(name, candidate) {
+			return candidate, true
+		}
+	}
+	return "", false
 }
 
 func jsonSuppressNulls(callee string, args []Value) (bool, error) {
@@ -8854,6 +9319,9 @@ func (vm *VM) jsonSObjectFieldType(typeName, fieldName string) (string, bool) {
 	if vm.Org == nil {
 		return "", false
 	}
+	if strings.EqualFold(fieldName, "Id") {
+		return "String", true
+	}
 	objectName, ok := storage.ResolveObjectName(*vm.Org, typeName)
 	if !ok {
 		return "", false
@@ -8935,6 +9403,9 @@ func (vm *VM) isJSONTypedObjectTarget(typeName string) bool {
 		return true
 	}
 	if vm.isSObjectLikeType(typeName) {
+		return true
+	}
+	if strings.EqualFold(typeName, "Schema.FieldSetMember") {
 		return true
 	}
 	if vm.Org != nil {
@@ -9299,7 +9770,7 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 		if strings.TrimSpace(apiName) == "" {
 			continue
 		}
-		token := sObjectFieldToken(name, apiName)
+		token := sObjectFieldTokenFromField(name, field)
 		fieldsMap.Map[mapKey(String(apiName))] = token
 		if lowered := strings.ToLower(apiName); lowered != apiName {
 			fieldsMap.Map[mapKey(String(lowered))] = token
@@ -10064,6 +10535,12 @@ func (vm *VM) callGetter(owner string, field Field, receiver Value) (Value, erro
 		fieldName = strings.TrimPrefix(field.Getter.Name, owner+".")
 		fieldName = strings.TrimSuffix(fieldName, ".get")
 	}
+	if isStubProxy(receiver) {
+		value, handled, err := vm.callStubProxyGetter(receiver, fieldName, field.Type)
+		if handled || err != nil {
+			return value, err
+		}
+	}
 	key := getterCallKey(owner, fieldName, receiver)
 	if vm.activeGetters[key] > 0 {
 		if _, value, ok := objectFieldValue(receiver, fieldName); ok {
@@ -10079,6 +10556,38 @@ func (vm *VM) callGetter(owner string, field Field, receiver Value) (Value, erro
 		}
 	}()
 	return vm.callMethodWithReceiver(*field.Getter, receiver, nil, resultForLookup())
+}
+
+func (vm *VM) callStubProxyGetter(receiver Value, fieldName, returnType string) (Value, bool, error) {
+	provider := receiver.Fields["__oaerStubProvider"]
+	resolvedReturnType := vm.resolveTypeNameInClass(receiver.Type, returnType)
+	if resolvedReturnType == "" {
+		resolvedReturnType = "Object"
+	}
+	metadataArgs := []Value{
+		receiver,
+		String(fieldName),
+		platformScalar("Type", resolvedReturnType),
+		{Kind: ValueList, Type: "List<Type>"},
+		{Kind: ValueList, Type: "List<String>"},
+		{Kind: ValueList, Type: "List<Object>"},
+	}
+	handler, ok, ambiguous := vm.resolveInstanceMethodForArgs(provider.Type, "handleMethodCall", metadataArgs)
+	if ambiguous {
+		return Null, true, vm.ambiguousOverloadError(provider.Type+".handleMethodCall", metadataArgs)
+	}
+	if !ok {
+		return Null, true, fmt.Errorf("StubProvider %s must implement handleMethodCall", provider.Type)
+	}
+	value, err := vm.callMethodWithReceiver(handler, provider, metadataArgs, resultForLookup())
+	if err != nil {
+		return Null, true, err
+	}
+	coerced, err := vm.coerceAssignable(returnType, value)
+	if err != nil {
+		return Null, true, fmt.Errorf("stubbed %s.%s return: %w", receiver.Type, fieldName, err)
+	}
+	return coerced, true, nil
 }
 
 func getterCallKey(owner, fieldName string, receiver Value) string {
@@ -10310,7 +10819,11 @@ func (vm *VM) lookupSObjectFieldToken(parts []string) (Value, bool) {
 			canonical = fieldName
 		}
 	}
-	return sObjectFieldToken(objectName, canonical), true
+	field := definition.Fields[canonical]
+	if field.APIName == "" {
+		field.APIName = canonical
+	}
+	return sObjectFieldTokenFromField(objectName, field), true
 }
 
 func (vm *VM) callSchemaSObjectTypePath(callee string, args []Value, result *Result) (Value, bool, error) {
@@ -10508,11 +11021,28 @@ func sObjectFieldToken(objectName, fieldName string) Value {
 	return token
 }
 
+func sObjectFieldTokenFromField(objectName string, field storage.Field) Value {
+	fieldName := field.APIName
+	token := sObjectFieldToken(objectName, fieldName)
+	label := field.Label
+	if label == "" {
+		label = fieldName
+	}
+	token.Fields["label"] = String(label)
+	return token
+}
+
 func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 	current := root
 	for i, part := range parts {
 		if current.Kind == ValueNull {
 			return Null, newNullDereferenceError("while accessing " + strings.Join(parts[:i+1], "."))
+		}
+		if current.Kind == ValueList {
+			if len(current.List) != 1 {
+				return Null, fmt.Errorf("cannot access %s on list", part)
+			}
+			current = current.List[0]
 		}
 		if current.Kind != ValueObject {
 			if current.Kind == ValueMap {
@@ -10530,7 +11060,7 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 				case "keySet":
 					out := Set()
 					for _, rawKey := range sortedMapKeys(current.Map) {
-						out.Set = append(out.Set, valueFromMapKey(rawKey))
+						out.Set = append(out.Set, mapStoredKey(current, rawKey))
 					}
 					if keyType, _, ok := mapTypeArgs(current.Type); ok {
 						out.Type = "Set<" + keyType + ">"
@@ -10610,7 +11140,8 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 			current = Null
 			continue
 		}
-		if field, owner, ok := vm.lookupField(current.Type, part); ok {
+		currentType := runtimeObjectType(current)
+		if field, owner, ok := vm.lookupField(currentType, part); ok {
 			if err := vm.checkMemberAccess(owner, field.Access, owner+"."+part, field.Modifiers); err != nil {
 				return Null, err
 			}
@@ -10641,13 +11172,23 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 		if ok && value.Kind == ValueNull {
 			if relationshipValue, hasRelationship := vm.parentRelationshipValue(current, canonicalPart); hasRelationship {
 				value = relationshipValue
+				if value.Kind == ValueNull && i < len(parts)-1 {
+					if shell, ok := vm.parentRelationshipShell(current, canonicalPart); ok {
+						value = shell
+					}
+				}
 			}
 		}
 		if !ok {
-			if err := vm.unqueriedSObjectFieldError(current, canonicalPart); err != nil {
+			if err := vm.unqueriedSObjectFieldError(current, canonicalPart, false); err != nil {
 				return Null, err
 			}
 			if value, ok := vm.missingSObjectFieldValue(current, canonicalPart); ok {
+				if value.Kind == ValueNull && i < len(parts)-1 {
+					if shell, hasShell := vm.parentRelationshipShell(current, canonicalPart); hasShell {
+						value = shell
+					}
+				}
 				current = value
 				continue
 			}
@@ -10655,7 +11196,7 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 				current = Null
 				continue
 			}
-			return Null, fmt.Errorf("unknown field %q on %s", part, current.Type)
+			return Null, fmt.Errorf("unknown field %q on %s", part, currentType)
 		}
 		current = value
 	}
@@ -10716,6 +11257,26 @@ func (vm *VM) assign(name string, value Value) error {
 					}
 				}
 				return vm.assignPath(root, parts[1:], value)
+			}
+		}
+		if len(parts) > 2 {
+			if field, owner, ok := vm.lookupStaticField(parts[0], parts[1]); ok {
+				if err := vm.checkMemberAccess(owner, field.Access, owner+"."+parts[1], field.Modifiers); err != nil {
+					return err
+				}
+				if err := vm.ensureClassInitialized(owner); err != nil {
+					return err
+				}
+				field, _, _ = vm.lookupStaticField(owner, parts[1])
+				root := field.Value
+				if field.Getter != nil {
+					var err error
+					root, err = vm.callGetter(owner, field, Null)
+					if err != nil {
+						return err
+					}
+				}
+				return vm.assignPath(root, parts[2:], value)
 			}
 		}
 		if className, memberName, ok := vm.splitClassMember(name); ok {
@@ -11058,14 +11619,14 @@ func (vm *VM) checkMemberAccess(ownerClass, access, member string, modifierSets 
 		if vm.currentClassIsTest() && hasAnyMethodModifier(modifierSets, "testvisible") {
 			return nil
 		}
-		if vm.currentClass == ownerClass || strings.HasPrefix(vm.currentClass, ownerClass+".") || strings.HasPrefix(ownerClass, vm.currentClass+".") {
+		if vm.currentClass == ownerClass || strings.HasPrefix(vm.currentClass, ownerClass+".") || strings.HasPrefix(ownerClass, vm.currentClass+".") || sameLexicalTopLevel(vm.currentClass, ownerClass) {
 			return nil
 		}
 		methodOwner := vm.currentMethod.ClassName
 		if methodOwner == "" {
 			methodOwner = classNameFromMethod(vm.currentMethod.Name)
 		}
-		if methodOwner == ownerClass || strings.HasPrefix(methodOwner, ownerClass+".") || strings.HasPrefix(ownerClass, methodOwner+".") {
+		if methodOwner == ownerClass || strings.HasPrefix(methodOwner, ownerClass+".") || strings.HasPrefix(ownerClass, methodOwner+".") || sameLexicalTopLevel(methodOwner, ownerClass) {
 			return nil
 		}
 	case "protected":
@@ -11082,6 +11643,20 @@ func (vm *VM) checkMemberAccess(ownerClass, access, member string, modifierSets 
 		return fmt.Errorf("%s is %s and not visible", member, access)
 	}
 	return fmt.Errorf("%s is %s and not visible from %s", member, access, vm.currentClass)
+}
+
+func sameLexicalTopLevel(a, b string) bool {
+	aTop, aNested := lexicalTopLevel(a)
+	bTop, bNested := lexicalTopLevel(b)
+	return aNested && bNested && aTop == bTop
+}
+
+func lexicalTopLevel(className string) (string, bool) {
+	dot := strings.IndexByte(className, '.')
+	if dot <= 0 {
+		return className, false
+	}
+	return className[:dot], true
 }
 
 func (vm *VM) checkClassAccess(ownerClass, member string) error {
@@ -11183,6 +11758,9 @@ func (vm *VM) splitClassMember(name string) (string, string, bool) {
 		className := strings.Join(parts[:i], ".")
 		if resolved, ok := vm.resolveClassName(className); ok {
 			return resolved, strings.Join(parts[i:], "."), true
+		}
+		if class, ok := vm.resolveEnumClass(className); ok {
+			return class.Name, strings.Join(parts[i:], "."), true
 		}
 	}
 	return "", "", false
@@ -11286,16 +11864,8 @@ func (vm *VM) resolveClassName(typeName string) (string, bool) {
 		return class.Name, true
 	}
 	if !strings.Contains(typeName, ".") && vm.currentClass != "" {
-		for owner := vm.currentClass; owner != ""; {
-			candidate := owner + "." + typeName
-			if class, ok := vm.lookupClass(candidate); ok {
-				return class.Name, true
-			}
-			dot := strings.LastIndex(owner, ".")
-			if dot < 0 {
-				break
-			}
-			owner = owner[:dot]
+		if resolved, ok := vm.resolveNestedTypeInClassHierarchy(vm.currentClass, typeName); ok {
+			return resolved, true
 		}
 	}
 	return "", false
@@ -12527,7 +13097,9 @@ func (vm *VM) assignRestContextField(name string, value Value) (bool, error) {
 }
 
 func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string]Value, result *Result) (Value, error) {
-	if resolved, ok := vm.resolveClassName(typeName); ok {
+	if resolved := vm.resolveTypeNameInClass(vm.currentClass, typeName); resolved != "" && !strings.EqualFold(resolved, typeName) {
+		typeName = resolved
+	} else if resolved, ok := vm.resolveClassName(typeName); ok {
 		typeName = resolved
 	} else {
 		typeName = canonicalRuntimeTypeName(typeName)
@@ -13206,6 +13778,9 @@ func (vm *VM) callChainedConstructor(callee string, args []Value, result *Result
 	if vm.activeConstructors[constructorCallKey(target)] > 0 {
 		return Null, fmt.Errorf("recursive constructor invocation %s", target.Name)
 	}
+	if err := vm.callImplicitSuperConstructor(targetClass, target, receiver, result); err != nil {
+		return Null, err
+	}
 	_, err := vm.callMethodWithReceiver(target, receiver, args, result)
 	return Null, err
 }
@@ -13277,6 +13852,101 @@ func (vm *VM) dispatchAccessMethod(staticType string, target Method, method stri
 		return surface
 	}
 	return target
+}
+
+func (vm *VM) uniqueConcreteOverride(receiver Value, baseType, method string, args []Value) (Method, bool) {
+	var found Method
+	count := 0
+	var fieldMatched Method
+	fieldMatchCount := 0
+	var qualifierMatched Method
+	qualifierMatchCount := 0
+	for className, class := range vm.Classes {
+		if strings.EqualFold(className, baseType) || (!vm.typeMatches(className, baseType, make(map[string]bool)) && !classExtendsType(class, baseType)) {
+			continue
+		}
+		if vm.classIsTestScoped(className) && !sameLexicalTopLevel(vm.currentClass, className) {
+			continue
+		}
+		target, ok, ambiguous := vm.resolveInstanceMethodForArgs(className, method, args)
+		if !ok || ambiguous || methodHasModifier(target.Modifiers, "abstract") {
+			continue
+		}
+		count++
+		found = target
+		if sameTypeQualifier(baseType, className) {
+			qualifierMatched = target
+			qualifierMatchCount++
+		}
+		if class, ok := vm.Classes[className]; ok && receiverHasClassField(receiver, class) {
+			fieldMatched = target
+			fieldMatchCount++
+		}
+	}
+	if count > 1 {
+		if qualifierMatchCount == 1 {
+			return qualifierMatched, true
+		}
+		return fieldMatched, fieldMatchCount == 1
+	}
+	return found, count == 1
+}
+
+func sameTypeQualifier(baseType, className string) bool {
+	baseDot := strings.IndexByte(baseType, '.')
+	classDot := strings.IndexByte(className, '.')
+	if baseDot < 0 {
+		return classDot < 0
+	}
+	if classDot < 0 {
+		return false
+	}
+	return strings.EqualFold(baseType[:baseDot], className[:classDot])
+}
+
+func classExtendsType(class Class, baseType string) bool {
+	return strings.EqualFold(class.SuperClass, baseType) || strings.EqualFold(shortTypeName(class.SuperClass), shortTypeName(baseType))
+}
+
+func receiverHasClassField(receiver Value, class Class) bool {
+	for name := range class.Fields {
+		if _, ok := receiver.Fields[name]; ok {
+			return true
+		}
+	}
+	return false
+}
+
+func (vm *VM) concreteOverrideByReceiverFields(receiver Value, baseType, method string, args []Value) (Method, bool) {
+	var found Method
+	count := 0
+	for className, class := range vm.Classes {
+		if className == baseType || vm.classIsTestScoped(className) || !receiverHasClassField(receiver, class) {
+			continue
+		}
+		target, ok, ambiguous := vm.resolveInstanceMethodForArgs(className, method, args)
+		if !ok || ambiguous || methodHasModifier(target.Modifiers, "abstract") {
+			continue
+		}
+		count++
+		if count > 1 {
+			return Method{}, false
+		}
+		found = target
+	}
+	return found, count == 1
+}
+
+func (vm *VM) classIsTestScoped(className string) bool {
+	if class, ok := vm.Classes[className]; ok && class.IsTest {
+		return true
+	}
+	top, nested := lexicalTopLevel(className)
+	if !nested {
+		return strings.Contains(top, "Test")
+	}
+	class, ok := vm.Classes[top]
+	return (ok && class.IsTest) || strings.Contains(top, "Test")
 }
 
 func (vm *VM) resolveInstanceMethodForArgsSeen(typeName, method string, args []Value, seen map[string]bool) (Method, bool, bool) {
@@ -13586,10 +14256,29 @@ func (vm *VM) resolveTypeNameInClass(className, typeName string) string {
 	if strings.Contains(typeName, ".") || className == "" {
 		return typeName
 	}
+	if resolved, ok := vm.resolveNestedTypeInClassHierarchy(className, typeName); ok {
+		return resolved
+	}
+	return typeName
+}
+
+func (vm *VM) resolveNestedTypeInClassHierarchy(className, typeName string) (string, bool) {
 	for owner := className; owner != ""; {
 		candidate := owner + "." + typeName
-		if class, ok := vm.Classes[candidate]; ok {
-			return class.Name
+		if class, ok := vm.lookupClass(candidate); ok {
+			return class.Name, true
+		}
+		seenSupers := map[string]bool{}
+		for super := vm.superClassName(owner); super != ""; super = vm.superClassName(super) {
+			key := strings.ToLower(super)
+			if seenSupers[key] {
+				break
+			}
+			seenSupers[key] = true
+			candidate = super + "." + typeName
+			if class, ok := vm.lookupClass(candidate); ok {
+				return class.Name, true
+			}
 		}
 		dot := strings.LastIndex(owner, ".")
 		if dot < 0 {
@@ -13597,7 +14286,15 @@ func (vm *VM) resolveTypeNameInClass(className, typeName string) string {
 		}
 		owner = owner[:dot]
 	}
-	return typeName
+	return "", false
+}
+
+func (vm *VM) superClassName(className string) string {
+	class, ok := vm.lookupClass(className)
+	if !ok {
+		return ""
+	}
+	return class.SuperClass
 }
 
 func (vm *VM) compareTypeSpecificity(left, right string) int {
@@ -14285,6 +14982,7 @@ func typeValueName(value Value) string {
 
 var loggingLevelNames = []string{"NONE", "ERROR", "WARN", "INFO", "DEBUG", "FINE", "FINER", "FINEST"}
 var apexPagesSeverityNames = []string{"CONFIRM", "INFO", "WARNING", "ERROR", "FATAL"}
+var triggerOperationNames = []string{"BEFORE_INSERT", "BEFORE_UPDATE", "BEFORE_DELETE", "AFTER_INSERT", "AFTER_UPDATE", "AFTER_DELETE", "AFTER_UNDELETE"}
 var metadataDeployStatusNames = []string{"Succeeded", "SUCCEEDED", "Failed", "FAILED", "InProgress", "INPROGRESS", "Pending", "PENDING", "Canceling", "CANCELING", "Canceled", "CANCELED"}
 var metadataMetadataTypeNames = []string{"CustomMetadata"}
 
@@ -14331,7 +15029,7 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 				}
 			}
 		}
-		if apexIdentifierStartsUpper(typeName) && !isBuiltinTypeName(typeName) && !platformScalarObject(typeName) && (isLikelyEnumValueText(value.Text) || strings.HasSuffix(typeName, "Type")) {
+		if apexIdentifierStartsUpper(typeName) && !isBuiltinTypeName(typeName) && !platformScalarObject(typeName) && stringEnumCoercionTarget(typeName) {
 			valueText := value.Text
 			if dot := strings.LastIndexByte(valueText, '.'); dot >= 0 {
 				valueText = valueText[dot+1:]
@@ -14489,11 +15187,12 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 			return value, nil
 		}
 		type coercedEntry struct {
-			key   string
-			value Value
+			key      string
+			keyValue Value
+			value    Value
 		}
 		entries := make([]coercedEntry, 0, len(value.Map))
-	for rawKey, item := range value.Map {
+		for rawKey, item := range value.Map {
 			keyValue := mapStoredKey(value, rawKey)
 			coercedKey, err := vm.coerceAssignable(keyType, keyValue)
 			if err != nil {
@@ -14503,14 +15202,16 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 			if err != nil {
 				return Null, fmt.Errorf("value: %w", err)
 			}
-			entries = append(entries, coercedEntry{key: mapKey(coercedKey), value: coercedValue})
+			entries = append(entries, coercedEntry{key: mapKey(coercedKey), keyValue: coercedKey, value: coercedValue})
 		}
 		for rawKey := range value.Map {
 			delete(value.Map, rawKey)
 		}
-	for _, entry := range entries {
-		value.Map[entry.key] = entry.value
-	}
+		value.MapKeys = make(map[string]Value, len(entries))
+		for _, entry := range entries {
+			value.Map[entry.key] = entry.value
+			value.MapKeys[entry.key] = entry.keyValue
+		}
 		return value, nil
 	}
 	return coerceAssignable(typeName, value)
@@ -14595,6 +15296,20 @@ func (vm *VM) coerceCast(typeName string, value Value) (Value, error) {
 	return Null, newExceptionError("System.TypeException", fmt.Sprintf("Invalid conversion from runtime type %s to %s", valueTypeName(value), typeName))
 }
 
+func stringEnumCoercionTarget(typeName string) bool {
+	if strings.HasSuffix(typeName, "Type") {
+		return true
+	}
+	switch typeName {
+	case "TriggerOperation", "RoundingMode", "System.RoundingMode", "LoggingLevel", "ApexPages.Severity",
+		"Schema.DisplayType", "DisplayType", "Schema.SOAPType", "SOAPType",
+		"Metadata.DeployStatus", "Metadata.MetadataType":
+		return true
+	default:
+		return false
+	}
+}
+
 func (vm *VM) coerceCollectionElement(collectionType string, value Value) (Value, error) {
 	elementType, ok := collectionElementType(collectionType)
 	if !ok {
@@ -14650,6 +15365,7 @@ func (vm *VM) mapFromSObjectList(mapType string, list Value) (Value, error) {
 			return Null, fmt.Errorf("Map constructor from SObject list found duplicate Id at index %d", i)
 		}
 		out.Map[encodedKey] = coerced
+		out.MapKeys[encodedKey] = key
 	}
 	return out, nil
 }
@@ -14673,6 +15389,12 @@ func (vm *VM) putAllSObjectList(receiver Value, list Value) (Value, error) {
 	}
 	for key, item := range value.Map {
 		receiver.Map[key] = item
+	}
+	if receiver.MapKeys == nil {
+		receiver.MapKeys = make(map[string]Value)
+	}
+	for key, item := range value.MapKeys {
+		receiver.MapKeys[key] = item
 	}
 	return receiver, nil
 }
@@ -14993,6 +15715,15 @@ func valueFromMapKey(key string) Value {
 	return String(text)
 }
 
+func mapStoredKey(value Value, rawKey string) Value {
+	if value.MapKeys != nil {
+		if key, ok := value.MapKeys[rawKey]; ok {
+			return key
+		}
+	}
+	return valueFromMapKey(rawKey)
+}
+
 func (vm *VM) runtimeError(thrown Value) error {
 	return runtimeError(thrown, vm.callStack)
 }
@@ -15021,6 +15752,13 @@ func classNameFromMethod(name string) string {
 		return name[:i]
 	}
 	return ""
+}
+
+func apexMethodMemberName(name string) string {
+	if i := strings.LastIndex(name, "."); i >= 0 {
+		return name[i+1:]
+	}
+	return name
 }
 
 func defaultValue(typeName string, explicit Value) Value {
@@ -15079,6 +15817,27 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	}
 	if len(args) != len(method.Params) {
 		return Null, fmt.Errorf("%s expects %d arguments", method.Name, len(method.Params))
+	}
+	if method.Unsupported != "" {
+		return Null, fmt.Errorf("%s is not supported by the local VM: %s", method.Name, method.Unsupported)
+	}
+	if methodHasModifier(method.Modifiers, "abstract") {
+		if receiver.Kind == ValueObject {
+			baseType := method.ClassName
+			if baseType == "" {
+				baseType, _, _ = strings.Cut(method.Name, ".")
+			}
+			methodName := apexMethodMemberName(method.Name)
+			if override, found := vm.uniqueConcreteOverride(receiver, baseType, methodName, args); found {
+				method = override
+			} else if override, found := vm.concreteOverrideByReceiverFields(receiver, baseType, methodName, args); found {
+				method = override
+			} else {
+				return Null, fmt.Errorf("cannot execute abstract method %s", method.Name)
+			}
+		} else {
+			return Null, fmt.Errorf("cannot execute abstract method %s", method.Name)
+		}
 	}
 	if method.Unsupported != "" {
 		return Null, fmt.Errorf("%s is not supported by the local VM: %s", method.Name, method.Unsupported)
@@ -15467,6 +16226,13 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			}
 			return Null, true, unsupportedCallError(memberCallName(receiverName, dispatchType, method))
 		}
+		if methodHasModifier(target.Modifiers, "abstract") {
+			if override, found := vm.uniqueConcreteOverride(receiver, dispatchType, method, args); found {
+				target = override
+			} else if override, found := vm.concreteOverrideByReceiverFields(receiver, dispatchType, method, args); found {
+				target = override
+			}
+		}
 		accessMethod := target
 		if receiverType := vm.VarTypes[receiverName]; receiverType != "" {
 			accessMethod = vm.dispatchAccessMethod(receiverType, target, method, args)
@@ -15816,10 +16582,15 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 				return Null, true, fmt.Errorf("Map.put: %w", err)
 			}
 			previous := Null
-			if existing, ok := receiver.Map[vm.mapKey(key)]; ok {
+			encodedKey := vm.mapKey(key)
+			if existing, ok := receiver.Map[encodedKey]; ok {
 				previous = existing
 			}
-			receiver.Map[vm.mapKey(key)] = item
+			receiver.Map[encodedKey] = item
+			if receiver.MapKeys == nil {
+				receiver.MapKeys = make(map[string]Value)
+			}
+			receiver.MapKeys[encodedKey] = key
 			if err := vm.storeReceiver(receiverName, receiver); err != nil {
 				return Null, true, err
 			}
@@ -15839,12 +16610,17 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 				return Null, true, nil
 			}
 			for rawKey, value := range args[0].Map {
-				keyValue := valueFromMapKey(rawKey)
+				keyValue := mapStoredKey(args[0], rawKey)
 				key, item, err := vm.coerceMapEntry(receiver.Type, keyValue, value)
 				if err != nil {
 					return Null, true, fmt.Errorf("Map.putAll: %w", err)
 				}
-				receiver.Map[vm.mapKey(key)] = item
+				encodedKey := vm.mapKey(key)
+				receiver.Map[encodedKey] = item
+				if receiver.MapKeys == nil {
+					receiver.MapKeys = make(map[string]Value)
+				}
+				receiver.MapKeys[encodedKey] = key
 			}
 			if err := vm.storeReceiver(receiverName, receiver); err != nil {
 				return Null, true, err
@@ -15889,7 +16665,7 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			}
 			out := Set()
 			for _, rawKey := range sortedMapKeys(receiver.Map) {
-				out.Set = append(out.Set, valueFromMapKey(rawKey))
+				out.Set = append(out.Set, mapStoredKey(receiver, rawKey))
 			}
 			if keyType, _, ok := mapTypeArgs(receiver.Type); ok {
 				out.Type = "Set<" + keyType + ">"
@@ -15921,6 +16697,12 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			cloned.Map = make(map[string]Value, len(receiver.Map))
 			for key, value := range receiver.Map {
 				cloned.Map[key] = value
+			}
+			if receiver.MapKeys != nil {
+				cloned.MapKeys = make(map[string]Value, len(receiver.MapKeys))
+				for key, value := range receiver.MapKeys {
+					cloned.MapKeys[key] = value
+				}
 			}
 			return cloned, true, nil
 		case "deepClone":
@@ -16167,6 +16949,9 @@ func replaceCollectionAlias(value, previous, updated Value, seen map[uint64]bool
 		for key, child := range value.Map {
 			value.Map[key] = replaceCollectionAlias(child, previous, updated, seen)
 		}
+		for key, child := range value.MapKeys {
+			value.MapKeys[key] = replaceCollectionAlias(child, previous, updated, seen)
+		}
 	case ValueList:
 		for i, child := range value.List {
 			value.List[i] = replaceCollectionAlias(child, previous, updated, seen)
@@ -16233,6 +17018,9 @@ func (vm *VM) callStubProxyMember(receiver Value, method string, args []Value, r
 		return Null, true, vm.ambiguousOverloadError(receiver.Type+"."+method, args)
 	}
 	if !ok {
+		if value, handled, err := callObjectMember(receiver, method, args); handled || err != nil {
+			return value, true, err
+		}
 		return Null, true, unsupportedCallError("Test.createStub dynamic method " + receiver.Type + "." + method + " without local target method metadata")
 	}
 	provider := receiver.Fields["__oaerStubProvider"]
@@ -16248,7 +17036,7 @@ func (vm *VM) callStubProxyMember(receiver Value, method string, args []Value, r
 	}
 	metadataArgs := []Value{
 		receiver,
-		String(method),
+		String(apexMethodMemberName(method)),
 		platformScalar("Type", returnType),
 		{Kind: ValueList, Type: "List<Type>", List: paramTypes},
 		{Kind: ValueList, Type: "List<String>", List: paramNames},
@@ -16312,7 +17100,7 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 			return Null, true, fmt.Errorf("SObject.get expects field name String or Schema.SObjectField")
 		}
 		field := vm.resolveSObjectFieldName(receiver.Type, fieldArg)
-		if err := vm.unqueriedSObjectFieldError(receiver, field); err != nil {
+		if err := vm.unqueriedSObjectFieldError(receiver, field, true); err != nil {
 			return Null, true, err
 		}
 		value, ok := receiver.Fields[field]
@@ -16440,10 +17228,11 @@ const (
 	sobjectErrorsField        = "__oaer_errors"
 	sobjectReadOnlyField      = "__oaer_readonly"
 	sobjectQueriedFieldsField = "__oaer_queried_fields"
+	sobjectDMLAccessibleField = "__oaer_dml_accessible"
 )
 
 func isInternalSObjectField(field string) bool {
-	return field == sobjectErrorsField || field == sobjectReadOnlyField || field == sobjectQueriedFieldsField
+	return field == sobjectErrorsField || field == sobjectReadOnlyField || field == sobjectQueriedFieldsField || field == sobjectDMLAccessibleField
 }
 
 func queriedSObjectFieldsValue(objectName string, fields map[string]bool) Value {
@@ -16470,9 +17259,14 @@ func dmlVisibleSObjectFields(value *Value) map[string]bool {
 	return fields
 }
 
-func (vm *VM) unqueriedSObjectFieldError(receiver Value, field string) error {
+func (vm *VM) unqueriedSObjectFieldError(receiver Value, field string, enforceDML bool) error {
 	if receiver.Kind != ValueObject {
 		return nil
+	}
+	if !enforceDML {
+		if marker, ok := receiver.Fields[sobjectDMLAccessibleField]; ok && marker.Kind == ValueBool && marker.Bool {
+			return nil
+		}
 	}
 	selected, ok := receiver.Fields[sobjectQueriedFieldsField]
 	if !ok || selected.Kind != ValueMap {
@@ -16673,6 +17467,11 @@ func (vm *VM) sObjectFieldDefinition(typeName, field string) (storage.ObjectDefi
 func (vm *VM) missingSObjectFieldValue(receiver Value, field string) (Value, bool) {
 	definition, fieldDef, ok := vm.sObjectFieldDefinition(receiver.Type, field)
 	if !ok {
+		if relationshipType, ok := vm.jsonSObjectChildRelationshipType(receiver.Type, field); ok {
+			children := List()
+			children.Type = relationshipType
+			return children, true
+		}
 		if value, ok := vm.parentRelationshipValue(receiver, field); ok {
 			return value, true
 		}
@@ -16749,6 +17548,34 @@ func (vm *VM) parentRelationshipValue(receiver Value, relationshipName string) (
 			return parent, true
 		}
 		return Null, true
+	}
+	return Null, false
+}
+
+func (vm *VM) parentRelationshipShell(receiver Value, relationshipName string) (Value, bool) {
+	if vm == nil || vm.Org == nil || receiver.Kind != ValueObject {
+		return Null, false
+	}
+	objectName, ok := storage.ResolveObjectName(*vm.Org, receiver.Type)
+	if !ok {
+		objectName = receiver.Type
+	}
+	object, ok := vm.Org.Objects[objectName]
+	if !ok {
+		return Null, false
+	}
+	for _, relation := range object.Definition.Relations {
+		if !vmRelationshipNameMatches(vm.Org.Namespace, relation.ParentRelationship, relationshipName) {
+			continue
+		}
+		for _, parentName := range relation.ParentObjects {
+			parentObject, ok := storage.ResolveObjectName(*vm.Org, parentName)
+			if !ok {
+				parentObject = parentName
+			}
+			return Object(parentObject), true
+		}
+		return Null, false
 	}
 	return Null, false
 }
@@ -17053,13 +17880,18 @@ func schemaDisplayTypeValue(name string) Value {
 
 func namedEnumStaticValue(typeName string, names []string, name string) (Value, bool) {
 	prefix := typeName + "."
-	if !strings.HasPrefix(name, prefix) {
+	if !strings.HasPrefix(strings.ToLower(name), strings.ToLower(prefix)) {
 		return Null, false
 	}
-	member := strings.TrimPrefix(name, prefix)
+	member := name[len(prefix):]
 	for i, candidate := range names {
 		if member == candidate {
-			return Value{Kind: ValueObject, Type: typeName, Text: member, Fields: map[string]Value{"ordinal": Int(int64(i))}}, true
+			return Value{Kind: ValueObject, Type: typeName, Text: candidate, Fields: map[string]Value{"ordinal": Int(int64(i))}}, true
+		}
+	}
+	for i, candidate := range names {
+		if strings.EqualFold(member, candidate) {
+			return Value{Kind: ValueObject, Type: typeName, Text: candidate, Fields: map[string]Value{"ordinal": Int(int64(i))}}, true
 		}
 	}
 	return Null, false
@@ -17763,6 +18595,15 @@ func (vm *VM) callEnumMember(receiver Value, method string, args []Value) (Value
 	}
 	if receiver.Type == "RoundingMode" {
 		return callNamedEnumMember("RoundingMode", roundingModeNames, receiver, method, args)
+	}
+	if receiver.Type == "TriggerOperation" {
+		return callNamedEnumMember("TriggerOperation", triggerOperationNames, receiver, method, args)
+	}
+	if receiver.Type == "Schema.DisplayType" {
+		return callNamedEnumMember("Schema.DisplayType", schemaDisplayTypeNames, receiver, method, args)
+	}
+	if receiver.Type == "Schema.SOAPType" {
+		return callNamedEnumMember("Schema.SOAPType", schemaSOAPTypeNames, receiver, method, args)
 	}
 	if receiver.Type == "Metadata.DeployStatus" {
 		return callNamedEnumMember("Metadata.DeployStatus", metadataDeployStatusNames, receiver, method, args)

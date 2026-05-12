@@ -188,6 +188,9 @@ func TestEnsureStandardObjectFieldsAddsAccountWebsiteWithoutClobber(t *testing.T
 	if field, ok := definition.Fields["Phone"]; !ok || field.Type != FieldString {
 		t.Fatalf("Phone field = %#v, %v", field, ok)
 	}
+	if field, ok := definition.Fields["Name"]; !ok || !field.Required {
+		t.Fatalf("Name field = %#v, %v", field, ok)
+	}
 	if field, ok := definition.Fields["TickerSymbol"]; !ok || field.Type != FieldString {
 		t.Fatalf("TickerSymbol field = %#v, %v", field, ok)
 	}
@@ -218,6 +221,19 @@ func TestEnsureStandardObjectFieldsForFeaturesAddsPersonAccountShape(t *testing.
 	}
 	if !foundPersonAccount {
 		t.Fatalf("record types missing PersonAccount: %#v", definition.RecordTypes)
+	}
+}
+
+func TestEnsureStandardObjectFieldsIncludesStubOverlayFields(t *testing.T) {
+	definition := ObjectDefinition{APIName: "AsyncApexJob"}
+
+	EnsureStandardObjectFields(&definition)
+
+	if field, ok := definition.Fields["CreatedDate"]; !ok || field.Type != FieldDateTime {
+		t.Fatalf("CreatedDate field = %#v, %v", field, ok)
+	}
+	if field, ok := definition.Fields["ApexClassId"]; !ok || field.Type != FieldReference || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "ApexClass" {
+		t.Fatalf("ApexClassId field = %#v, %v", field, ok)
 	}
 }
 
@@ -505,6 +521,31 @@ func TestApplyCustomMetadataRecordsMaterializesDeterministicRows(t *testing.T) {
 	}
 	if feature.Fields["Target__c"].Kind != ValueID || feature.Fields["Target__c"].ID != target.ID {
 		t.Fatalf("relationship value = %#v, target id %s", feature.Fields["Target__c"], target.ID)
+	}
+}
+
+func TestApplyCustomMetadataRecordsKeepsEntityDefinitionRelationshipsByName(t *testing.T) {
+	org := NewOrgState()
+	definition := ObjectDefinition{
+		APIName:   "TriggerStep__mdt",
+		KeyPrefix: "a12",
+		Metadata:  map[string]string{"kind": "customMetadata"},
+		Fields: map[string]Field{
+			"Object__c": {APIName: "Object__c", Type: FieldReference, ReferenceTo: []string{"EntityDefinition"}},
+		},
+	}
+	EnsureStandardObjectFields(&definition)
+	org.Objects["TriggerStep__mdt"] = ObjectState{Definition: definition, Records: map[ID]Record{}}
+
+	err := ApplyCustomMetadataRecords(&org, []schema.CustomMetadataRecord{
+		{FullName: "TriggerStep.MembershipUpdateAccountStep", ObjectName: "TriggerStep__mdt", DeveloperName: "MembershipUpdateAccountStep", Values: []schema.CustomMetadataValue{{Field: "Object__c", Value: "Membership__c"}}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	record := onlyRecord(t, org.Objects["TriggerStep__mdt"].Records)
+	if value := record.Fields["Object__c"]; value.Kind != ValueString || value.String != "Membership__c" {
+		t.Fatalf("entity relationship value = %#v", value)
 	}
 }
 

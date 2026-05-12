@@ -27,12 +27,36 @@ node scripts/generate-standard-schema.mjs tmp/standard-describes internal/storag
 The generator writes `internal/storage/standard_schema_generated.go`. Do not
 edit that file by hand.
 
+## Stub Field Overlay
+
+The describe baseline is the authoritative source for rich metadata such as key
+prefixes, picklists, record types, and feature-gated fields. It does not cover
+every platform object that large legacy projects reference. OAER therefore also
+keeps a generated SObject field overlay derived from public Apex stub shape
+data.
+
+Regenerate the overlay with:
+
+```bash
+node scripts/generate-sobject-stub-overlay.mjs /path/to/fulgor/stubs/apex-sobject-stubs internal/storage/standard_sobject_stub_overlay_generated.go
+```
+
+The overlay generator reads factual API shape from stub `.cls` files: standard
+object names, field names, field labels, simple Apex field types, and reference
+targets inferred from `*Id` fields. It writes
+`internal/storage/standard_sobject_stub_overlay_generated.go`. Do not edit that
+file by hand.
+
+The overlay is intentionally field-only. It fills broad compile/runtime gaps for
+standard objects such as `AsyncApexJob` without replacing the richer
+describe-driven catalog where Salesforce describe data exists.
+
 ## Runtime Behavior
 
 `internal/storage.EnsureStandardObjectFields` merges the generated base standard
-schema into local object definitions. Existing project metadata wins, so custom
-labels, project-defined fields, validation rules, and record types are not
-clobbered.
+schema and then the SObject stub field overlay into local object definitions.
+Existing project metadata wins, so custom labels, project-defined fields,
+validation rules, and record types are not clobbered.
 
 Feature-gated standard fields are kept out of the base shape:
 
@@ -49,7 +73,7 @@ REST describe, and test execution all see the same standard baseline.
 
 ## Current Baseline
 
-The initial generated spread covers these standard objects:
+The describe-driven generated spread covers these standard objects:
 
 `Account`, `Contact`, `Opportunity`, `OpportunityContactRole`, `Lead`,
 `Order`, `OrderItem`, `Quote`, `Pricebook2`, `Product2`, `Campaign`,
@@ -64,3 +88,8 @@ picklists, record types, and key prefixes. It intentionally does not model full
 layout metadata, permissions, security enforcement, automation behavior, or
 feature provisioning side effects beyond the explicit feature-gated schema
 overlays above.
+
+The stub overlay currently adds field coverage for 1,373 platform SObjects and
+25,075 fields. Those entries improve SObject token lookup, SOQL projection,
+DML/default field handling, and schema describe access, but they do not assert
+full runtime behavior for those objects.

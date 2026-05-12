@@ -2,6 +2,20 @@
 
 Generated from `internal/storage` standard object metadata.
 
+The describe baseline below is enriched at runtime by the generated SObject stub
+field overlay in
+`internal/storage/standard_sobject_stub_overlay_generated.go`.
+
+Overlay summary:
+
+- Overlay objects: 1,373
+- Overlay fields: 25,075
+- Overlay reference fields: 5,130
+- Generator:
+  `node scripts/generate-sobject-stub-overlay.mjs /path/to/fulgor/stubs/apex-sobject-stubs internal/storage/standard_sobject_stub_overlay_generated.go`
+
+Describe baseline summary:
+
 - Objects: 40
 - Key prefixes: 37
 - Fields: 2395

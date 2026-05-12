@@ -19,6 +19,7 @@ const (
 	formulaBool
 	formulaString
 	formulaNumber
+	formulaDate
 )
 
 type formulaValue struct {
@@ -247,13 +248,47 @@ func (p *formulaParser) parseConcat() (formulaValue, bool) {
 }
 
 func (p *formulaParser) parseAdditive() (formulaValue, bool) {
-	left, ok := p.parseUnary()
+	left, ok := p.parseMultiplicative()
 	if !ok {
 		return formulaValue{}, false
 	}
 	for {
 		op := p.peek().text
 		if p.peek().typ != formulaTokenSymbol || (op != "+" && op != "-") {
+			return left, true
+		}
+		p.pos++
+		right, ok := p.parseMultiplicative()
+		if !ok {
+			return formulaValue{}, false
+		}
+		leftNumber, leftOK := left.asNumber()
+		rightNumber, rightOK := right.asNumber()
+		if (left.kind == formulaDate || looksLikeFormulaDate(left.asString())) && rightOK {
+			if updated, ok := formulaDateAddDays(left.asString(), rightNumber, op); ok {
+				left = updated
+				continue
+			}
+		}
+		if !leftOK || !rightOK {
+			return formulaValue{}, false
+		}
+		if op == "+" {
+			left = formulaValue{kind: formulaNumber, number: leftNumber + rightNumber}
+		} else {
+			left = formulaValue{kind: formulaNumber, number: leftNumber - rightNumber}
+		}
+	}
+}
+
+func (p *formulaParser) parseMultiplicative() (formulaValue, bool) {
+	left, ok := p.parseUnary()
+	if !ok {
+		return formulaValue{}, false
+	}
+	for {
+		op := p.peek().text
+		if p.peek().typ != formulaTokenSymbol || (op != "*" && op != "/") {
 			return left, true
 		}
 		p.pos++
@@ -266,11 +301,14 @@ func (p *formulaParser) parseAdditive() (formulaValue, bool) {
 		if !leftOK || !rightOK {
 			return formulaValue{}, false
 		}
-		if op == "+" {
-			left = formulaValue{kind: formulaNumber, number: leftNumber + rightNumber}
-		} else {
-			left = formulaValue{kind: formulaNumber, number: leftNumber - rightNumber}
+		if op == "*" {
+			left = formulaValue{kind: formulaNumber, number: leftNumber * rightNumber}
+			continue
 		}
+		if rightNumber == 0 {
+			return formulaValue{kind: formulaNull}, true
+		}
+		left = formulaValue{kind: formulaNumber, number: leftNumber / rightNumber}
 	}
 }
 
@@ -427,7 +465,7 @@ func (p *formulaParser) fieldValue(field string) formulaValue {
 		return formulaFieldValue(p.record, field)
 	}
 	if strings.Contains(field, ".") {
-		if value, ok := formulaRelationshipFieldValue(*p.org, p.definition, p.record, field); ok {
+		if value, ok := formulaRelationshipFieldValue(p.org, p.definition, p.record, field, p.evaluating); ok {
 			return value
 		}
 	}
@@ -514,7 +552,41 @@ func evaluateFormulaFunction(name string, args []formulaValue) (formulaValue, bo
 		if len(args) != 0 {
 			return formulaValue{}, false
 		}
-		return formulaValue{kind: formulaString, text: time.Now().UTC().Format("2006-01-02")}, true
+		return formulaValue{kind: formulaDate, text: time.Now().UTC().Format("2006-01-02")}, true
+	case "DATE":
+		if len(args) != 3 {
+			return formulaValue{}, false
+		}
+		year, ok := formulaIntArg(args[0])
+		if !ok {
+			return formulaValue{}, false
+		}
+		month, ok := formulaIntArg(args[1])
+		if !ok {
+			return formulaValue{}, false
+		}
+		day, ok := formulaIntArg(args[2])
+		if !ok {
+			return formulaValue{}, false
+		}
+		date := time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
+		return formulaValue{kind: formulaDate, text: date.Format("2006-01-02")}, true
+	case "DAY", "MONTH", "YEAR":
+		if len(args) != 1 {
+			return formulaValue{}, false
+		}
+		date, ok := parseFormulaDate(args[0].asString())
+		if !ok {
+			return formulaValue{}, false
+		}
+		switch strings.ToUpper(name) {
+		case "DAY":
+			return formulaValue{kind: formulaNumber, number: float64(date.Day())}, true
+		case "MONTH":
+			return formulaValue{kind: formulaNumber, number: float64(int(date.Month()))}, true
+		default:
+			return formulaValue{kind: formulaNumber, number: float64(date.Year())}, true
+		}
 	case "LEN":
 		if len(args) != 1 {
 			return formulaValue{}, false
@@ -525,9 +597,9 @@ func evaluateFormulaFunction(name string, args []formulaValue) (formulaValue, bo
 	}
 }
 
-func formulaRelationshipFieldValue(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, fieldPath string) (formulaValue, bool) {
+func formulaRelationshipFieldValue(org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record, fieldPath string, evaluating map[string]bool) (formulaValue, bool) {
 	parts := strings.Split(fieldPath, ".")
-	if len(parts) < 2 {
+	if org == nil || len(parts) < 2 {
 		return formulaValue{}, false
 	}
 	currentDefinition := definition
@@ -545,7 +617,7 @@ func formulaRelationshipFieldValue(org storage.OrgState, definition storage.Obje
 		if parentID == "" {
 			return formulaValue{kind: formulaNull}, true
 		}
-		parentRecord, parentDefinition, ok := formulaParentRecord(org, lookupField, parentID)
+		parentRecord, parentDefinition, ok := formulaParentRecord(*org, lookupField, parentID)
 		if !ok {
 			return formulaValue{kind: formulaNull}, true
 		}
@@ -555,6 +627,28 @@ func formulaRelationshipFieldValue(org storage.OrgState, definition storage.Obje
 	last := parts[len(parts)-1]
 	if resolved, ok := storage.ResolveFieldName(currentDefinition, org.Namespace, last); ok {
 		last = resolved
+	}
+	if fieldDef, ok := currentDefinition.Fields[last]; ok && fieldDef.Type == storage.FieldCalculated && strings.TrimSpace(fieldDef.Formula) != "" {
+		if evaluating == nil {
+			evaluating = make(map[string]bool)
+		}
+		key := currentDefinition.APIName + "." + string(currentRecord.ID) + "." + last
+		if evaluating[key] {
+			return formulaValue{kind: formulaNull}, true
+		}
+		evaluating[key] = true
+		nested := formulaParser{
+			tokens:     tokenizeFormula(html.UnescapeString(fieldDef.Formula)),
+			record:     currentRecord,
+			org:        org,
+			definition: currentDefinition,
+			evaluating: evaluating,
+		}
+		value, ok := nested.parseExpression()
+		delete(evaluating, key)
+		if ok && nested.peek().typ == formulaTokenEOF {
+			return value, true
+		}
 	}
 	return formulaFieldValue(currentRecord, last), true
 }
@@ -636,8 +730,10 @@ func formulaFieldValue(record storage.Record, field string) formulaValue {
 		return formulaValue{kind: formulaNull}
 	}
 	switch value.Kind {
-	case storage.ValueString, storage.ValueDate, storage.ValueDateTime:
+	case storage.ValueString, storage.ValueDateTime:
 		return formulaValue{kind: formulaString, text: value.String}
+	case storage.ValueDate:
+		return formulaValue{kind: formulaDate, text: value.String}
 	case storage.ValueDecimal:
 		number, err := strconv.ParseFloat(value.Decimal, 64)
 		if err != nil {
@@ -744,6 +840,8 @@ func (v formulaValue) asString() string {
 		return strconv.FormatFloat(v.number, 'f', -1, 64)
 	case formulaString:
 		return v.text
+	case formulaDate:
+		return v.text
 	default:
 		return ""
 	}
@@ -761,4 +859,40 @@ func (v formulaValue) asNumber() (float64, bool) {
 	default:
 		return 0, false
 	}
+}
+
+func formulaIntArg(value formulaValue) (int, bool) {
+	number, ok := value.asNumber()
+	if !ok {
+		return 0, false
+	}
+	return int(number), true
+}
+
+func formulaDateAddDays(dateText string, days float64, op string) (formulaValue, bool) {
+	date, ok := parseFormulaDate(dateText)
+	if !ok {
+		return formulaValue{}, false
+	}
+	if op == "-" {
+		days = -days
+	}
+	return formulaValue{kind: formulaDate, text: date.AddDate(0, 0, int(days)).Format("2006-01-02")}, true
+}
+
+func parseFormulaDate(text string) (time.Time, bool) {
+	text = strings.TrimSpace(text)
+	if len(text) >= len("2006-01-02") {
+		text = text[:len("2006-01-02")]
+	}
+	date, err := time.Parse("2006-01-02", text)
+	if err != nil {
+		return time.Time{}, false
+	}
+	return date, true
+}
+
+func looksLikeFormulaDate(text string) bool {
+	_, ok := parseFormulaDate(text)
+	return ok
 }

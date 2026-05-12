@@ -230,6 +230,9 @@ func (v Value) Equal(other Value) bool {
 			}
 		}
 		if v.Type == "Schema.SObjectType" && other.Type == "Schema.SObjectType" {
+			if sObjectTypeTokenEqual(v, other) {
+				return true
+			}
 			return mapKey(v) == mapKey(other)
 		}
 		if v.Type == "Schema.SObjectField" && other.Type == "Schema.SObjectField" {
@@ -249,10 +252,32 @@ func (v Value) Equal(other Value) bool {
 		if v.Text != "" || other.Text != "" {
 			return v.Type == other.Type && v.Text == other.Text
 		}
+		if sObjectValueType(v.Type) && sObjectValueType(other.Type) {
+			return sObjectValuesEqual(v, other)
+		}
 		return v.Type == other.Type && fmt.Sprintf("%p", v.Fields) == fmt.Sprintf("%p", other.Fields)
 	default:
 		return false
 	}
+}
+
+func sObjectValueType(typeName string) bool {
+	return strings.EqualFold(typeName, "sObject") || strings.EqualFold(typeName, "AggregateResult") ||
+		isCommonSObjectTypeName(typeName) || strings.HasSuffix(typeName, "__c") ||
+		strings.HasSuffix(typeName, "__e") || strings.HasSuffix(typeName, "__mdt")
+}
+
+func sObjectValuesEqual(left, right Value) bool {
+	if left.Type != right.Type || len(left.Fields) != len(right.Fields) {
+		return false
+	}
+	for key, leftValue := range left.Fields {
+		rightValue, ok := right.Fields[key]
+		if !ok || !leftValue.Equal(rightValue) {
+			return false
+		}
+	}
+	return true
 }
 
 func isStringComparableEnum(typeName string) bool {
@@ -391,14 +416,14 @@ func mapKey(v Value) string {
 	}
 	if v.Kind == ValueObject && v.Type == "Schema.SObjectType" {
 		if objectName, ok := v.Fields["object"]; ok && objectName.Kind == ValueString {
-			return string(v.Kind) + ":" + v.Type + ":" + objectName.Text
+			return string(v.Kind) + ":" + v.Type + ":" + schemaTokenObjectKey(objectName.Text)
 		}
 	}
 	if v.Kind == ValueObject && v.Type == "Schema.SObjectField" {
 		objectName, hasObject := v.Fields["object"]
 		fieldName, hasField := v.Fields["field"]
 		if hasObject && hasField && objectName.Kind == ValueString && fieldName.Kind == ValueString {
-			return string(v.Kind) + ":" + v.Type + ":" + objectName.Text + "." + fieldName.Text
+			return string(v.Kind) + ":" + v.Type + ":" + schemaTokenObjectKey(objectName.Text) + "." + fieldName.Text
 		}
 	}
 	if v.Kind == ValueObject && v.Type == "Schema.ChildRelationship" {
@@ -438,6 +463,22 @@ func mapKey(v Value) string {
 		return string(v.Kind) + ":" + v.Type + ":" + v.Text
 	}
 	return string(v.Kind) + ":" + v.String()
+}
+
+func schemaTokenObjectKey(name string) string {
+	if dot := strings.LastIndexByte(name, '.'); dot >= 0 && dot < len(name)-1 {
+		name = name[dot+1:]
+	}
+	return name
+}
+
+func sObjectTypeTokenEqual(left, right Value) bool {
+	leftObject, leftOK := left.Fields["object"]
+	rightObject, rightOK := right.Fields["object"]
+	if !leftOK || !rightOK || leftObject.Kind != ValueString || rightObject.Kind != ValueString {
+		return false
+	}
+	return strings.EqualFold(schemaTokenObjectKey(leftObject.Text), schemaTokenObjectKey(rightObject.Text))
 }
 
 func fflibQualifiedMethodMapKey(v Value, independentMocks bool) (string, bool) {

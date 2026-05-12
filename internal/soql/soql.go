@@ -1240,6 +1240,19 @@ func fieldKnownForMode(org storage.OrgState, definition storage.ObjectDefinition
 			}
 			found := false
 			for _, parentName := range relation.ParentObjects {
+				if strings.EqualFold(parentName, "EntityDefinition") {
+					if entityDefinitionFieldKnown(parts[1]) {
+						if !requireAllParents {
+							return true
+						}
+						found = true
+						continue
+					}
+					if requireAllParents {
+						return false
+					}
+					continue
+				}
 				canonical, ok := storage.ResolveObjectName(org, parentName)
 				if !ok {
 					return false
@@ -1261,6 +1274,12 @@ func fieldKnownForMode(org storage.OrgState, definition storage.ObjectDefinition
 	}
 	_, ok := storage.ResolveFieldName(definition, org.Namespace, field)
 	return ok
+}
+
+func entityDefinitionFieldKnown(field string) bool {
+	return strings.EqualFold(field, "QualifiedApiName") ||
+		strings.EqualFold(field, "DeveloperName") ||
+		strings.EqualFold(field, "DurableId")
 }
 
 func queryHasAggregates(query Query) bool {
@@ -1373,6 +1392,12 @@ func relationshipValue(org storage.OrgState, record storage.Record, field string
 			return storage.NullValue(), true
 		}
 		for _, parentObjectName := range relation.ParentObjects {
+			if strings.EqualFold(parentObjectName, "EntityDefinition") {
+				if value, ok := entityDefinitionRelationshipValue(parentID, parts[1]); ok {
+					return value, true
+				}
+				continue
+			}
 			canonicalParent, ok := storage.ResolveObjectName(org, parentObjectName)
 			if !ok {
 				continue
@@ -1389,6 +1414,29 @@ func relationshipValue(org storage.OrgState, record storage.Record, field string
 			}
 			return value.Clone(), true
 		}
+	}
+	return storage.Value{}, false
+}
+
+func entityDefinitionRelationshipValue(value storage.Value, field string) (storage.Value, bool) {
+	text := ""
+	switch value.Kind {
+	case storage.ValueString:
+		text = value.String
+	case storage.ValueID:
+		text = string(value.ID)
+	default:
+		return storage.Value{}, false
+	}
+	text = strings.TrimSpace(text)
+	if text == "" {
+		return storage.NullValue(), true
+	}
+	switch {
+	case strings.EqualFold(field, "QualifiedApiName"), strings.EqualFold(field, "DurableId"):
+		return storage.StringValue(text), true
+	case strings.EqualFold(field, "DeveloperName"):
+		return storage.StringValue(strings.TrimSuffix(text, "__c")), true
 	}
 	return storage.Value{}, false
 }

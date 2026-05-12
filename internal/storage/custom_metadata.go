@@ -208,6 +208,9 @@ func customMetadataValue(field Field, raw string) (Value, bool, error) {
 	case FieldDateTime:
 		return DateTimeValue(raw), false, nil
 	case FieldReference:
+		if fieldReferencesEntityDefinition(field) {
+			return StringValue(raw), false, nil
+		}
 		return Value{}, true, nil
 	case FieldID:
 		return IDValue(ID(raw)), false, nil
@@ -216,6 +219,15 @@ func customMetadataValue(field Field, raw string) (Value, bool, error) {
 	default:
 		return Value{}, false, fmt.Errorf("uses unsupported field type %s", field.Type)
 	}
+}
+
+func fieldReferencesEntityDefinition(field Field) bool {
+	for _, target := range field.ReferenceTo {
+		if strings.EqualFold(target, "EntityDefinition") {
+			return true
+		}
+	}
+	return false
 }
 
 func resolveCustomMetadataRecordID(org OrgState, raw string) (ID, bool) {

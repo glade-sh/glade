@@ -60,6 +60,13 @@ oaer compat product-namespaces --catalog catalog.json --json
 oaer compat product-namespaces --source /path/to/salesforce-docs/apex --output docs/generated/PRODUCT_NAMESPACE_COVERAGE.md
 ```
 
+When refreshing broad standard SObject field coverage from public Apex stubs,
+regenerate the field overlay before running storage or VM compatibility checks:
+
+```bash
+node scripts/generate-sobject-stub-overlay.mjs /path/to/fulgor/stubs/apex-sobject-stubs internal/storage/standard_sobject_stub_overlay_generated.go
+```
+
 Tooling snippet oracle reports can be captured from a scratch org and validated
 as stable JSON artifacts:
 

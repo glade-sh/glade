@@ -750,6 +750,125 @@ System.assert(Account.Name != Account.Id);
 	}
 }
 
+func TestExecSchemaDisplayTypeReferenceComparesCaseInsensitively(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(Schema.DisplayType.Reference, Contact.AccountId.getDescribe().getType());
+System.assert(Contact.AccountId.getDescribe().getType() == Schema.DisplayType.Reference);
+System.assert(Contact.FirstName.getDescribe().getType() != Schema.DisplayType.Reference);
+System.assertEquals('REFERENCE', Schema.DisplayType.Reference.name());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecUserInfoGetDefaultCurrency(t *testing.T) {
+	program, err := CompileAnonymous(`System.assertEquals('USD', UserInfo.getDefaultCurrency());`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecUserInfoOrganizationName(t *testing.T) {
+	program, err := CompileAnonymous(`System.assertEquals('OAER Local Org', UserInfo.getOrganizationName());`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDMLUpdateRequiredFieldToNullFails(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account acct = new Account(Name = 'Acme');
+insert acct;
+acct.Name = null;
+try {
+    update acct;
+    System.assert(false, 'expected required field failure');
+} catch (Exception e) {
+    System.assert(e.getMessage().contains('REQUIRED_FIELD_MISSING'));
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	storage.EnsureStandardObjectFields(&account.Definition)
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecNestedEnumShortNameFromSiblingSubclass(t *testing.T) {
+	methodProgram, err := CompileAnonymous(`
+System.assertEquals(QConditionGroup.LogicalOperator.OR_x, LogicalOperator.OR_x);
+return LogicalOperator.OR_x;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`System.assertEquals(QConditionGroup.LogicalOperator.OR_x, QOrGroup.value());`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "QConditionGroup"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "QConditionGroup.LogicalOperator", EnumValues: []string{"AND_x", "OR_x"}}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "QOrGroup", SuperClass: "QConditionGroup"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterMethod(Method{Name: "QOrGroup.value", ClassName: "QOrGroup", ReturnType: "QConditionGroup.LogicalOperator", IsStatic: true, Program: methodProgram}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecJSONDeserializeSchemaFieldSetMember(t *testing.T) {
+	program, err := CompileAnonymous(`
+Schema.FieldSetMember member = (Schema.FieldSetMember)JSON.deserialize('{"fieldPath":"BillingStreet","label":"Billing Street","required":false,"dbRequired":false}', Schema.FieldSetMember.class);
+System.assertEquals('BillingStreet', member.getFieldPath());
+System.assertEquals('Billing Street', member.getLabel());
+System.assertEquals(false, member.getRequired());
+System.assertEquals(false, member.getDbRequired());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecMapSObjectFieldKeysRoundTripToSObjectGet(t *testing.T) {
 	program, err := CompileAnonymous(`
 Map<String, Schema.SObjectField> fields = Account.SObjectType.getDescribe().fields.getMap();
@@ -772,6 +891,75 @@ System.assert(record.get(createdDateField) != System.now());
 	}
 	machine := New(nil)
 	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecInsertedListSObjectFieldTokenValuesStayDistinct(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String, Schema.SObjectField> fields = Group.SObjectType.getDescribe().fields.getMap();
+Schema.SObjectField idField = fields.get('Id');
+Schema.SObjectField nameField = fields.get('Name');
+List<Group> groups = new List<Group>{
+  new Group(Name = 'MatcherGroup0', DeveloperName = 'MatcherGroup0', Type = 'Queue'),
+  new Group(Name = 'MatcherGroup1', DeveloperName = 'MatcherGroup1', Type = 'Queue')
+};
+insert groups;
+List<Group> rawGroups = new List<Group>{
+  new Group(Name = 'ArrayZero', DeveloperName = 'MatcherGroupArray0', Type = 'Queue'),
+  new Group(Name = 'ArrayOne', DeveloperName = 'MatcherGroupArray1', Type = 'Queue')
+};
+System.assertNotEquals(rawGroups[0].get(nameField), rawGroups[1].get(nameField));
+SObject[] sobjectArray = rawGroups;
+System.assertNotEquals(sobjectArray[0].get(nameField), sobjectArray[1].get(nameField));
+System.assertNotEquals(sobjectArray.get(0).get(nameField), sobjectArray.get(1).get(nameField));
+insert sobjectArray;
+System.assertNotEquals(sobjectArray[0].Id, sobjectArray[1].Id);
+System.assertNotEquals(sobjectArray[0].get(nameField), sobjectArray[1].get(nameField));
+System.assertNotEquals(groups[0].Id, groups[1].Id);
+System.assertNotEquals(groups[0].get(nameField), groups[1].get(nameField));
+Map<Schema.SObjectField, Object> expected = new Map<Schema.SObjectField, Object>{
+  idField => groups[0].Id,
+  nameField => groups[0].get('Name')
+};
+List<Map<Schema.SObjectField, Object>> expectedList = new List<Map<Schema.SObjectField, Object>>{
+  expected,
+  new Map<Schema.SObjectField, Object>{
+    idField => groups[1].Id,
+    nameField => groups[1].get('Name')
+  }
+};
+System.assertEquals(expected.get(idField), expectedList[0].get(idField));
+System.assertNotEquals(expectedList[0].get(idField), expectedList[1].get(idField));
+System.assertNotEquals(expected.get(idField), groups[1].get(idField));
+System.assertNotEquals(expected.get(nameField), groups[1].get(nameField));
+List<SObject> swapped = new List<SObject>{groups[1], groups[0]};
+System.assertNotEquals(expected.get(idField), swapped[0].get(idField));
+System.assertNotEquals(expected.get(nameField), swapped[0].get(nameField));
+Boolean firstMatch = true;
+for (Schema.SObjectField f : expectedList[0].keySet()) {
+  if (swapped[0].get(f) != expectedList[0].get(f)) {
+    firstMatch = false;
+  }
+}
+System.assert(!firstMatch);
+Boolean mismatch = false;
+for (Schema.SObjectField f : expected.keySet()) {
+  Object valueToMatch = expected.get(f);
+  if (groups[1].get(f) != valueToMatch) {
+    mismatch = true;
+  }
+}
+System.assert(mismatch);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
@@ -900,7 +1088,13 @@ insert record;
 System.assert(record.CreatedDate != null);
 Map<String, Schema.SObjectField> fields = Account.SObjectType.getDescribe().fields.getMap();
 System.assertEquals('Acme', record.get(fields.get('Name')));
-System.assert(record.get(fields.get('CreatedDate')) != null);
+Boolean caught = false;
+try {
+  record.get(fields.get('CreatedDate'));
+} catch (Exception e) {
+  caught = true;
+}
+System.assert(caught);
 `)
 	if err != nil {
 		t.Fatal(err)

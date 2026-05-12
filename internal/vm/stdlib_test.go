@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/open-aer/oaer/internal/project"
 	"github.com/open-aer/oaer/internal/resource"
@@ -1130,6 +1131,17 @@ System.debug('logged without level');
 	}
 }
 
+func TestParseDatetimeTextAcceptsDateOnlyAtMidnightUTC(t *testing.T) {
+	value, err := parseDatetimeText("2026-05-02")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := time.Date(2026, 5, 2, 0, 0, 0, 0, time.UTC)
+	if !value.Equal(want) {
+		t.Fatalf("datetime = %s, want %s", value.Format(time.RFC3339), want.Format(time.RFC3339))
+	}
+}
+
 func TestExecCoreExceptionStdlibMethods(t *testing.T) {
 	program, err := CompileAnonymous(`
 Exception constructed = new DmlException('blocked');
@@ -1652,6 +1664,36 @@ System.debug(LoggingLevel.ERROR, LoggingLevel.WARN);
 	}
 }
 
+func TestExecTriggerOperationEnumStaticValues(t *testing.T) {
+	program, err := CompileAnonymous(`
+TriggerOperation operation = TriggerOperation.AFTER_INSERT;
+System.assertEquals('AFTER_INSERT', operation.name());
+System.assert(operation == TriggerOperation.AFTER_INSERT);
+System.assert(operation != TriggerOperation.BEFORE_INSERT);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecIdComparisonUsesLexicalOrder(t *testing.T) {
+	program, err := CompileAnonymous(`
+Id older = '001000000000001';
+Id newer = '001000000000002';
+System.assert(newer > older);
+System.assert(older < newer);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecTypeForNameNullAndUnknownEdges(t *testing.T) {
 	program, err := CompileAnonymous(`
 Type nullName = Type.forName(null);
@@ -1964,6 +2006,9 @@ Decimal bigLong = Decimal.valueOf('3000000000');
 Boolean truthy = Boolean.valueOf(' TRUE ');
 Boolean falsy = boolean.valueOf('no');
 Boolean nilBool = Boolean.valueOf(null);
+Integer nilInt = Integer.valueOf(null);
+Long nilLong = Long.valueOf(null);
+Decimal nilDecimal = Decimal.valueOf(null);
 System.assertEquals(42, i);
 System.assertEquals(42, signed);
 System.assertEquals(9001, l);
@@ -1977,11 +2022,17 @@ System.assertEquals(6.25, signedDouble);
 System.assertEquals(true, truthy);
 System.assertEquals(false, falsy);
 System.assertEquals(false, nilBool);
+System.assertEquals(null, nilInt);
+System.assertEquals(null, nilLong);
+System.assertEquals(null, nilDecimal);
 System.assertEquals('42', i.format());
 System.assertEquals('1,234,567', 1234567.format());
 System.assertEquals('9,001', l.format());
 System.assertEquals('10,000.5', Decimal.valueOf('10000.5').format());
 System.assertEquals('2.25', x.format());
+System.assertEquals('', 'abc'.left(-1));
+System.assertEquals('', 'abc'.right(-1));
+System.assertEquals('10.00', Decimal.valueOf('10').setScale(2).toPlainString());
 System.assertEquals(42.0, i.doubleValue());
 System.assertEquals(12, d.intValue());
 System.assertEquals(12, d.longValue());
@@ -1990,6 +2041,7 @@ System.assertEquals(12.5, d.doubleValue());
 System.assertEquals(12.5, d.abs());
 System.assertEquals(156.25, d.pow(2));
 System.assertEquals('12.5', d.format());
+System.assertEquals('10000.5', Decimal.valueOf('10000.5').toPlainString());
 Decimal halfTie = Decimal.valueOf('1.25');
 Decimal halfEvenUp = Decimal.valueOf('1.35');
 Decimal negativeHalfTie = Decimal.valueOf('-1.25');

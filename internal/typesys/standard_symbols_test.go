@@ -74,6 +74,20 @@ func TestStandardPlatformSymbolsIncludeSearchQuery(t *testing.T) {
 	search := requireStandardSymbol(t, symbols, "Search")
 	requireStandardMethod(t, search, "query", []string{"String"}, true)
 	requireStandardMethodType(t, search, "query", "List<List<SObject>>")
+
+	date := requireStandardSymbol(t, symbols, "Date")
+	requireStandardMethod(t, date, "daysInMonth", []string{"Integer", "Integer"}, true)
+}
+
+func TestStandardPlatformSymbolsIncludeUserInfoStubMethodsAndFieldTokenProperties(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+
+	userInfo := requireStandardSymbol(t, symbols, "UserInfo")
+	requireStandardMethod(t, userInfo, "getOrganizationName", nil, true)
+	requireStandardMethod(t, userInfo, "isCurrentUserLicensed", []string{"String"}, true)
+
+	field := requireStandardSymbol(t, symbols, "Schema.SObjectField")
+	requireStandardProperty(t, field, "label", "String")
 }
 
 func requireStandardSymbol(t *testing.T, symbols []TypeSymbol, name string) TypeSymbol {

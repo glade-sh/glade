@@ -714,7 +714,27 @@ func orgFromIndex(index typesys.Index, caches ...sourceCache) storage.OrgState {
 		}
 	}
 	storage.EnsureDeterministicPlatformData(&org)
+	normalizeOrgKeyPrefixes(&org)
 	return org
+}
+
+func normalizeOrgKeyPrefixes(org *storage.OrgState) {
+	if org == nil {
+		return
+	}
+	names := make([]string, 0, len(org.Objects))
+	for name := range org.Objects {
+		names = append(names, name)
+	}
+	prefixes := storage.AssignDeterministicPrefixes(names, nil)
+	for name, prefix := range prefixes {
+		state, ok := org.Objects[name]
+		if !ok || prefix == "" {
+			continue
+		}
+		state.Definition.KeyPrefix = prefix
+		org.Objects[name] = state
+	}
 }
 
 func applyApexClassRecords(org *storage.OrgState, index typesys.Index, caches ...sourceCache) {

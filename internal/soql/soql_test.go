@@ -240,6 +240,38 @@ func TestExecuteSOQLOverLoadedCustomMetadataRecords(t *testing.T) {
 	}
 }
 
+func TestExecuteEntityDefinitionMetadataRelationship(t *testing.T) {
+	sch := schema.Schema{Objects: []schema.Object{
+		{
+			Name: "TriggerStep__mdt",
+			Fields: []schema.Field{
+				{Name: "Object__c", Type: "MetadataRelationship", ReferenceTo: []string{"EntityDefinition"}},
+			},
+		},
+	}, CustomMetadataRecords: []schema.CustomMetadataRecord{
+		{FullName: "TriggerStep.MembershipUpdateAccountStep", ObjectName: "TriggerStep__mdt", DeveloperName: "MembershipUpdateAccountStep", Values: []schema.CustomMetadataValue{{Field: "Object__c", Value: "Membership__c"}}},
+	}}
+	org := storage.NewOrgState()
+	registry := sobject.BuildDescribeRegistry(sch)
+	for name, describe := range registry.Objects {
+		org.Objects[name] = storage.ObjectState{Definition: sobject.ToObjectDefinition(describe), Records: map[storage.ID]storage.Record{}}
+	}
+	if err := storage.ApplyCustomMetadataRecords(&org, sch.CustomMetadataRecords); err != nil {
+		t.Fatal(err)
+	}
+
+	result, err := ParseAndExecute(org, "SELECT DeveloperName, Object__r.QualifiedApiName FROM TriggerStep__mdt WHERE Object__r.QualifiedApiName = 'Membership__c'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 {
+		t.Fatalf("rows = %d", result.Rows)
+	}
+	if value := result.Records[0].Fields["Object__r.QualifiedApiName"]; value.Kind != storage.ValueString || value.String != "Membership__c" {
+		t.Fatalf("entity relationship projection = %#v", value)
+	}
+}
+
 func TestExecuteCustomObjectRelationshipProjectionWithMismatchedRelationshipName(t *testing.T) {
 	org := storage.NewOrgState()
 	parentDefinition := storage.ObjectDefinition{

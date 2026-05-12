@@ -1711,6 +1711,7 @@ public class AsyncMarker {
 public class MarkJob implements Queueable {
   public void execute(QueueableContext qc) {
     AsyncMarker.ran = AsyncMarker.ran + 1;
+    insert new Account(Name = 'async ran');
   }
 }
 `)
@@ -1723,7 +1724,9 @@ private class MarkJobTest {
     AsyncMarker.ran = 41;
     System.assertEquals(41, AsyncMarker.ran);
     Test.stopTest();
-    System.assertEquals(1, AsyncMarker.ran);
+    System.assertEquals(41, AsyncMarker.ran);
+    Integer asyncRows = [SELECT COUNT() FROM Account WHERE Name = 'async ran'];
+    System.assertEquals(1, asyncRows);
   }
 }
 `)
@@ -1817,9 +1820,11 @@ private class AsyncSemanticsTest {
     FutureWorker.mark(7);
     String batchId = Database.executeBatch(new CountingBatch(), 2);
     String scheduleId = System.schedule('nightly', '0 0 0 * * ?', new ScheduledWorker());
+    String scheduledBatchId = System.scheduleBatch(new CountingBatch(), 'batch later', 1, 2);
     String queueId = System.enqueueJob(new FirstQueue());
     System.assertNotEquals('', batchId);
     System.assertNotEquals('', scheduleId);
+    System.assertNotEquals('', scheduledBatchId);
     System.assertNotEquals('', queueId);
     System.assertEquals(0, AsyncState.futureRan);
     System.assertEquals(0, AsyncState.batchSum);
@@ -1829,11 +1834,11 @@ private class AsyncSemanticsTest {
     System.assertEquals(0, beforeRows);
     Test.stopTest();
     Integer afterRows = [SELECT COUNT() FROM Account];
-    System.assertEquals(7, afterRows);
+    System.assertEquals(10, afterRows);
     List<AsyncApexJob> jobs = [SELECT Id, Status, JobType FROM AsyncApexJob];
-    System.assertEquals(5, jobs.size());
+    System.assertEquals(6, jobs.size());
     List<CronTrigger> crons = [SELECT Id, State FROM CronTrigger];
-    System.assertEquals(1, crons.size());
+    System.assertEquals(2, crons.size());
     CronTrigger cron = crons.get(0);
     System.assertEquals('Complete', cron.State);
   }

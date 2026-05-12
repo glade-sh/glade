@@ -23,6 +23,10 @@ Release engineering:
 - Added release-readiness labels for server examples, MVP, Apex parity, legacy
   local tests, declarative automation, and Visualforce/Aura/LWC controller-test
   support.
+- Added a generated SObject stub field overlay for broad standard-object field
+  coverage from public Apex stub shape data, plus runtime support for
+  `Schema.SObjectField.label`, `UserInfo.getOrganizationName`,
+  `Date.daysInMonth`, and the `America/Panama` timezone.
 - Added CI release-hardening gates for the checked local-test corpus,
   post-parity readiness, UI controller discovery, and generated stdlib coverage
   drift.
