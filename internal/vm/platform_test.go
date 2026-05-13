@@ -1834,6 +1834,13 @@ System.assert(iterator.hasNext());
 Account row = iterator.next();
 System.assertEquals('Acme', row.Name);
 System.assert(!iterator.hasNext());
+
+Object inlineLocator = Database.getQueryLocator([SELECT Id, Name FROM Account]);
+Object inlineIterator = inlineLocator.iterator();
+System.assert(inlineIterator.hasNext());
+Account inlineRow = inlineIterator.next();
+System.assertEquals('Acme', inlineRow.Name);
+System.assert(!inlineIterator.hasNext());
 `)
 	if err != nil {
 		t.Fatal(err)

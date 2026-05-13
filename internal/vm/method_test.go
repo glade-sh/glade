@@ -2561,6 +2561,41 @@ System.assertEquals('object', Util.pick(true));
 	}
 }
 
+func TestRuntimeTypedNullFieldGuidesOverloadResolution(t *testing.T) {
+	listProgram, err := CompileAnonymous("return 'list';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	objectProgram, err := CompileAnonymous("return 'object';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Holder holder = new Holder();
+System.assertEquals('list', Util.pick(holder.records));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Holder", Fields: map[string]Field{
+		"records": {Name: "records", Type: "List<Account>"},
+	}}); err != nil {
+		t.Fatal(err)
+	}
+	for _, method := range []Method{
+		{Name: "Util.pick", ReturnType: "String", Params: []Param{{Name: "value", Type: "Object"}}, Program: objectProgram},
+		{Name: "Util.pick", ReturnType: "String", Params: []Param{{Name: "value", Type: "List<SObject>"}}, Program: listProgram},
+	} {
+		if err := machine.RegisterMethod(method); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestRuntimeNumericOverloadChoosesNarrowestWidening(t *testing.T) {
 	longProgram, err := CompileAnonymous("return 'long';")
 	if err != nil {

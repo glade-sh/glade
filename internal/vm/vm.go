@@ -2284,16 +2284,22 @@ platformStaticCall:
 		}
 		return Int(int64(len(value.List))), nil
 	case "Database.getQueryLocator":
-		if len(args) != 1 || args[0].Kind != ValueString {
-			return Null, fmt.Errorf("Database.getQueryLocator expects query String")
+		if len(args) != 1 || (args[0].Kind != ValueString && args[0].Kind != ValueList) {
+			return Null, fmt.Errorf("Database.getQueryLocator expects query String or inline SOQL")
 		}
-		value, err := vm.executeSOQL(args[0].Text, result)
-		if err != nil {
-			return Null, err
+		query := ""
+		value := args[0]
+		if args[0].Kind == ValueString {
+			var err error
+			query = args[0].Text
+			value, err = vm.executeSOQL(args[0].Text, result)
+			if err != nil {
+				return Null, err
+			}
 		}
 		locator := Object("Database.QueryLocator")
 		locator.Fields["Records"] = value
-		locator.Fields["Query"] = String(args[0].Text)
+		locator.Fields["Query"] = String(query)
 		return locator, nil
 	case "Security.stripInaccessible":
 		if len(args) != 2 && len(args) != 3 {
@@ -16321,6 +16327,9 @@ func apexMethodMemberName(name string) string {
 
 func defaultValue(typeName string, explicit Value) Value {
 	if explicit.Kind != "" {
+		if explicit.Kind == ValueNull && explicit.Type == "" {
+			explicit.Type = typeName
+		}
 		if (typeName == "Decimal" || typeName == "Double") && explicit.Kind == ValueInt {
 			return Decimal(float64(explicit.Int))
 		}
@@ -16333,9 +16342,9 @@ func defaultValue(typeName string, explicit Value) Value {
 	}
 	switch typeName {
 	case "String":
-		return Null
+		return Value{Kind: ValueNull, Type: typeName}
 	default:
-		return Null
+		return Value{Kind: ValueNull, Type: typeName}
 	}
 }
 
