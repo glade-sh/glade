@@ -125,7 +125,7 @@ func callJSONParserMember(receiver Value, method string, args []Value) (Value, V
 		if err != nil {
 			return Null, receiver, false, true, err
 		}
-		value, err := parseDatetimeText(text)
+		value, err := parseDatetimeTextAllowDateOnly(text)
 		if err != nil {
 			return Null, receiver, false, true, jsonParserException("JSONParser.%s cannot parse Datetime %q: %v", method, text, err)
 		}

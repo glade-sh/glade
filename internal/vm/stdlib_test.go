@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/open-aer/oaer/internal/project"
 	"github.com/open-aer/oaer/internal/resource"
@@ -975,14 +976,19 @@ System.assert(!Crypto.areEqualConstantTime(hello, Blob.valueOf('hello!')));
 	}
 }
 
-func TestExecCryptoGetRandomLongDeterministicLocalSequence(t *testing.T) {
+func TestExecCryptoRandomDeterministicLocalSequence(t *testing.T) {
 	program, err := CompileAnonymous(`
 Long first = Crypto.getRandomLong();
 Long second = Crypto.getRandomLong();
 System.assertEquals(-2152535657050944081, first);
 System.assertEquals(7960286522194355700, second);
 System.assertNotEquals(first, second);
-`)
+Integer firstInteger = Crypto.getRandomInteger();
+Integer secondInteger = Crypto.getRandomInteger();
+System.assertEquals(-2146876081, firstInteger);
+System.assertEquals(1917616620, secondInteger);
+System.assertNotEquals(firstInteger, secondInteger);
+	`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1130,10 +1136,13 @@ System.debug('logged without level');
 	}
 }
 
-func TestParseDatetimeTextRejectsDateOnly(t *testing.T) {
-	_, err := parseDatetimeText("2026-05-02")
-	if err == nil {
-		t.Fatal("expected error for date-only datetime text")
+func TestParseDatetimeTextAcceptsDateOnlyAtMidnightUTC(t *testing.T) {
+	parsed, err := parseDatetimeTextAllowDateOnly("2026-05-02")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := parsed.Format(time.RFC3339), "2026-05-02T00:00:00Z"; got != want {
+		t.Fatalf("parsed = %s, want %s", got, want)
 	}
 }
 
@@ -1560,11 +1569,6 @@ func TestBlobEncodingCryptoStdlibUnsupportedCryptoSurfaces(t *testing.T) {
 			name: "generateAESKey",
 			src:  "Crypto.generateAESKey(128);",
 			want: `unsupported call "Crypto.generateAESKey local deterministic random/key generation surface"`,
-		},
-		{
-			name: "getRandomInteger",
-			src:  "Crypto.getRandomInteger();",
-			want: `unsupported call "Crypto.getRandomInteger local deterministic random/key generation surface"`,
 		},
 	}
 	for _, tc := range tests {

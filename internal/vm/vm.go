@@ -2827,8 +2827,13 @@ platformStaticCall:
 	case "Crypto.decrypt", "Crypto.encryptWithManagedIV", "Crypto.decryptWithManagedIV",
 		"Crypto.sign", "Crypto.signWithCertificate", "Crypto.verify", "Crypto.verifyWithCertificate":
 		return Null, unsupportedCallError(callee + " local deterministic key, certificate, and encryption surfaces")
-	case "Crypto.generateAESKey", "Crypto.getRandomInteger":
+	case "Crypto.generateAESKey":
 		return Null, unsupportedCallError(callee + " local deterministic random/key generation surface")
+	case "Crypto.getRandomInteger":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Crypto.getRandomInteger expects 0 arguments")
+		}
+		return Int(int64(int32(vm.nextDeterministicCryptoLong()))), nil
 	case "Crypto.getRandomLong":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Crypto.getRandomLong expects 0 arguments")
@@ -8103,7 +8108,7 @@ func parsePlatformDatetime(value Value) (time.Time, error) {
 	if err != nil {
 		return time.Time{}, err
 	}
-	parsed, err := parseDatetimeText(text)
+	parsed, err := parseDatetimeTextAllowDateOnly(text)
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -8167,6 +8172,13 @@ func parseDatetimeText(text string) (time.Time, error) {
 		}
 	}
 	return time.Time{}, fmt.Errorf("unsupported Datetime value %q", text)
+}
+
+func parseDatetimeTextAllowDateOnly(text string) (time.Time, error) {
+	if value, err := parseDatetimeText(text); err == nil {
+		return value, nil
+	}
+	return parseDateText(text)
 }
 
 func parseDateText(text string) (time.Time, error) {
@@ -9834,7 +9846,7 @@ func typedScalarFromJSON(typeName string, raw any) (Value, bool, error) {
 		if !ok {
 			return Null, true, jsonTypeMappingError(canonical, raw)
 		}
-		value, err := parseDatetimeText(text)
+		value, err := parseDatetimeTextAllowDateOnly(text)
 		if err != nil {
 			return Null, true, jsonDeserializeException("%s", err.Error())
 		}
@@ -15645,7 +15657,7 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 				}
 				return platformScalar("Datetime", formatPlatformDatetime(parsed)), nil
 			}
-			parsed, err := parseDatetimeText(value.Text)
+			parsed, err := parseDatetimeTextAllowDateOnly(value.Text)
 			if err != nil {
 				return Null, err
 			}
