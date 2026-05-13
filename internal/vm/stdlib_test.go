@@ -2081,6 +2081,7 @@ System.assertEquals(12, Math.roundToLong(12.5));
 System.assertEquals(3.0, Math.ceil(2.1));
 System.assertEquals(2.0, Math.floor(2.9));
 System.assertEquals(2.0, Math.round(2.5));
+System.assertEquals(2.0, Math.rint(2.5));
 System.assertEquals(7, Math.max(3, 7));
 System.assertEquals(3, Math.min(3, 7));
 System.assertEquals(3.0, Math.sqrt(9));

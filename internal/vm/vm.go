@@ -1820,7 +1820,7 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"Integer.valueOf", "Long.valueOf", "Decimal.valueOf", "Double.valueOf", "Boolean.valueOf",
 		"RoundingMode.valueOf", "Id.valueOf",
 		"Pattern.compile", "Pattern.matches", "Pattern.quote",
-		"Math.abs", "Math.floor", "Math.ceil", "Math.round", "Math.roundToLong", "Math.signum",
+		"Math.abs", "Math.floor", "Math.ceil", "Math.round", "Math.rint", "Math.roundToLong", "Math.signum",
 		"Math.sqrt", "Math.acos", "Math.asin", "Math.atan", "Math.cos", "Math.sin", "Math.tan",
 		"Math.exp", "Math.log", "Math.log10", "Math.max", "Math.min", "Math.mod", "Math.pow",
 		"Math.atan2", "Math.random",
@@ -2411,7 +2411,7 @@ platformStaticCall:
 		return patternMatches(args)
 	case "Pattern.quote":
 		return patternQuote(args)
-	case "Math.abs", "Math.floor", "Math.ceil", "Math.round", "Math.roundToLong", "Math.signum", "Math.sqrt",
+	case "Math.abs", "Math.floor", "Math.ceil", "Math.round", "Math.rint", "Math.roundToLong", "Math.signum", "Math.sqrt",
 		"Math.acos", "Math.asin", "Math.atan", "Math.cos", "Math.sin", "Math.tan", "Math.exp", "Math.log", "Math.log10":
 		return mathUnary(callee, args)
 	case "Math.max", "Math.min", "Math.mod", "Math.pow", "Math.atan2":
@@ -9004,7 +9004,7 @@ func mathUnary(callee string, args []Value) (Value, error) {
 			return args[0], nil
 		}
 		return Decimal(math.Abs(n)), nil
-	case "Math.floor", "Math.ceil", "Math.round":
+	case "Math.floor", "Math.ceil", "Math.round", "Math.rint":
 		switch callee {
 		case "Math.floor":
 			return Decimal(math.Floor(n)), nil
