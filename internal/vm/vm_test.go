@@ -136,6 +136,23 @@ System.assertEquals(integerValue, decimalValue);
 	}
 }
 
+func TestExecNumericLiteralSuffixes(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(1.1, 1.1d);
+System.assertEquals(2.2, 2.2D);
+System.assertEquals(3.3, 3.3f);
+System.assertEquals(100.0, 1e2);
+System.assertEquals(100.0, 1E2d);
+System.assertEquals(10000000000, 10000000000L);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecUserTypesAndMembersAreCaseInsensitive(t *testing.T) {
 	echo, err := CompileAnonymous("return 'ok';")
 	if err != nil {

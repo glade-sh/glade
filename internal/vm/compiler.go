@@ -96,7 +96,21 @@ func lex(source string) ([]token, error) {
 					i++
 				}
 			}
-			if i < len(source) && (source[i] == 'L' || source[i] == 'l') {
+			if i < len(source) && (source[i] == 'e' || source[i] == 'E') {
+				exp := i
+				i++
+				if i < len(source) && (source[i] == '+' || source[i] == '-') {
+					i++
+				}
+				if i >= len(source) || source[i] < '0' || source[i] > '9' {
+					i = exp
+				} else {
+					for i < len(source) && source[i] >= '0' && source[i] <= '9' {
+						i++
+					}
+				}
+			}
+			if i < len(source) && strings.ContainsRune("LlDdFf", rune(source[i])) {
 				i++
 			}
 			tokens = append(tokens, token{kind: tokenNumber, text: source[start:i], pos: start})
@@ -1157,8 +1171,8 @@ func (p *parser) parsePostfix(expr ir.Expr) (ir.Expr, error) {
 func (p *parser) parsePrimary() (ir.Expr, error) {
 	switch tok := p.advance(); tok.kind {
 	case tokenNumber:
-		numberText := strings.TrimSuffix(strings.TrimSuffix(tok.text, "L"), "l")
-		if strings.Contains(numberText, ".") {
+		numberText, isDecimal := parseNumberTokenText(tok.text)
+		if isDecimal {
 			if _, err := strconv.ParseFloat(numberText, 64); err != nil {
 				return ir.Expr{}, fmt.Errorf("invalid decimal %q at byte %d", tok.text, tok.pos)
 			}
@@ -1411,6 +1425,13 @@ func (p *parser) parseNewArgs() ([]ir.Expr, []ir.NamedArg, error) {
 	default:
 		return nil, nil, fmt.Errorf("expected constructor arguments at byte %d", p.tokens[p.pos].pos)
 	}
+}
+
+func parseNumberTokenText(text string) (string, bool) {
+	if len(text) > 0 && strings.ContainsRune("LlDdFf", rune(text[len(text)-1])) {
+		text = text[:len(text)-1]
+	}
+	return text, strings.ContainsAny(text, ".eE")
 }
 
 func (p *parser) parseSOQLLiteral(pos int) (ir.Expr, error) {

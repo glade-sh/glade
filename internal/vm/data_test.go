@@ -86,8 +86,10 @@ System.assertEquals('Single', row.get('Name'));
 func TestExecSchemaSObjectTypeFieldMapPath(t *testing.T) {
 	program, err := CompileAnonymous(`
 Map<String, Schema.SObjectField> fields = Schema.SObjectType.Account.fields.getMap();
-System.assert(fields.containsKey('Name'));
-System.assert(fields.containsKey('MasterRecordId'));
+System.assert(fields.containsKey('Name'), 'Name key');
+System.assert(fields.containsKey('billingaddress'), 'billingaddress key');
+System.assert(fields.containsKey('BillingStreet'), 'BillingStreet key');
+System.assert(fields.containsKey('MasterRecordId'), 'MasterRecordId key');
 System.assertNotEquals(null, Account.SObjectType.fields.Id);
 System.assertNotEquals(null, Account.SObjectType.fields.id);
 System.assertEquals('Name', Account.SObjectType.fields.Name.Name);
@@ -338,6 +340,22 @@ System.assertEquals('001000000000001AAA', child.Parent__r.Id);
 	machine := New(nil)
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSecurityStripInaccessibleReturnsDecision(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Account> accounts = new List<Account>{ new Account(Name = 'Acme') };
+SObjectAccessDecision decision = Security.stripInaccessible(AccessType.CREATABLE, accounts);
+System.assertEquals(accounts, decision.getRecords());
+System.assertEquals(0, decision.getRemovedFields().size());
+System.assertEquals('CREATABLE', AccessType.CREATABLE.name());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
 		t.Fatal(err)
 	}
 }

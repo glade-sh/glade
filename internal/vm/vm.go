@@ -1813,6 +1813,7 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"Database.setSavepoint", "Database.rollback", "Database.insert", "Database.update", "Database.delete",
 		"Database.upsert", "Database.undelete", "Database.emptyRecycleBin", "Database.lock", "Database.unlock",
 		"Database.convertLead", "Database.merge",
+		"Security.stripInaccessible",
 		"Approval.process", "Approval.lock", "Approval.unlock", "Approval.isLocked",
 		"String.valueOf", "String.isBlank", "String.isNotBlank", "String.isEmpty", "String.isNotEmpty",
 		"String.join", "String.format", "String.getCommonPrefix", "String.getLevenshteinDistance",
@@ -1930,6 +1931,7 @@ var systemNamespaceTypes = []string{
 	"Limits",
 	"Test",
 	"UserInfo",
+	"Security",
 	"Messaging",
 	"ApexPages",
 	"RoundingMode",
@@ -2293,6 +2295,23 @@ platformStaticCall:
 		locator.Fields["Records"] = value
 		locator.Fields["Query"] = String(args[0].Text)
 		return locator, nil
+	case "Security.stripInaccessible":
+		if len(args) != 2 && len(args) != 3 {
+			return Null, fmt.Errorf("Security.stripInaccessible expects AccessType, records, and optional enforceRootObjectCRUD")
+		}
+		if args[0].Kind != ValueObject || args[0].Type != "AccessType" {
+			return Null, fmt.Errorf("Security.stripInaccessible expects AccessType")
+		}
+		if args[1].Kind != ValueList {
+			return Null, fmt.Errorf("Security.stripInaccessible expects List<SObject>")
+		}
+		if len(args) == 3 && args[2].Kind != ValueBool {
+			return Null, fmt.Errorf("Security.stripInaccessible expects Boolean enforceRootObjectCRUD")
+		}
+		decision := Object("SObjectAccessDecision")
+		decision.Fields["records"] = args[1]
+		decision.Fields["removedFields"] = Map()
+		return decision, nil
 	case "Database.setSavepoint":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Database.setSavepoint expects 0 arguments")
@@ -9134,6 +9153,8 @@ func builtinEnumStaticValue(typeName, memberName string) (Value, bool) {
 				return Value{Kind: ValueObject, Type: "AccessLevel", Text: known}, true
 			}
 		}
+	case strings.EqualFold(typeName, "AccessType"):
+		return namedEnumStaticValue("AccessType", accessTypeNames, "AccessType."+memberName)
 	case strings.EqualFold(typeName, "RoundingMode"):
 		if mode, ok := canonicalDecimalRoundingModeName(memberName); ok {
 			return Value{Kind: ValueObject, Type: "RoundingMode", Text: mode}, true
@@ -10175,6 +10196,7 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 	desc.Fields["labelPlural"] = String(definition.PluralLabel)
 	desc.Fields["keyPrefix"] = String(definition.KeyPrefix)
 	fieldsMap := Map()
+	fieldsMap.Type = "Schema.SObjectFieldMap"
 	fieldNames := make([]string, 0, len(definition.Fields))
 	for fieldName := range definition.Fields {
 		fieldNames = append(fieldNames, fieldName)
@@ -10190,20 +10212,18 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 			continue
 		}
 		token := sObjectFieldTokenFromField(name, field)
-		fieldsMap.Map[mapKey(String(apiName))] = token
-		if lowered := strings.ToLower(apiName); lowered != apiName {
-			fieldsMap.Map[mapKey(String(lowered))] = token
-		}
+		lowered := strings.ToLower(apiName)
+		fieldsMap.Map[mapKey(String(lowered))] = token
+		fieldsMap.MapKeys[mapKey(String(lowered))] = String(lowered)
 	}
 	for _, fieldName := range []string{"Id", "Name", "CreatedDate", "CreatedById", "LastModifiedDate", "LastModifiedById", "SystemModstamp"} {
-		if _, ok := fieldsMap.Map[mapKey(String(fieldName))]; ok {
+		lowered := strings.ToLower(fieldName)
+		if _, ok := fieldsMap.Map[mapKey(String(lowered))]; ok {
 			continue
 		}
 		token := sObjectFieldToken(name, fieldName)
-		fieldsMap.Map[mapKey(String(fieldName))] = token
-		if lowered := strings.ToLower(fieldName); lowered != fieldName {
-			fieldsMap.Map[mapKey(String(lowered))] = token
-		}
+		fieldsMap.Map[mapKey(String(lowered))] = token
+		fieldsMap.MapKeys[mapKey(String(lowered))] = String(lowered)
 	}
 	fields := Object("Schema.SObjectFieldMap")
 	fields.Fields["map"] = fieldsMap
@@ -12331,7 +12351,7 @@ func isBuiltinTypeName(name string) bool {
 		return true
 	}
 	switch name {
-	case "Object", "String", "Boolean", "Integer", "Long", "Decimal", "Double", "Date", "Datetime", "Time", "TimeZone", "Blob", "Id", "Type", "URL", "JSONGenerator", "JSONParser", "JSONToken", "ChildRelationship", "DescribeFieldResult", "DescribeSObjectResult", "DescribeTabResult", "DescribeTabSetResult", "PicklistEntry", "RecordTypeInfo", "XmlStreamReader", "XmlStreamWriter", "PageReference", "SelectOption", "LoggingLevel", "ApexPages.Severity", "ApexPages.StandardController", "ApexPages.StandardSetController", "RestContext", "RestRequest", "RestResponse", "Callable", "StubProvider", "InstallContext", "InstallHandler", "Auth.JWT", "ConnectApi.UserSettings", "ConnectApi.TimeZone", "Metadata.Metadata", "Metadata.MetadataType", "Metadata.DeployContainer", "Metadata.CustomMetadata", "Metadata.CustomMetadataValue", "Metadata.CustomObject", "Metadata.CustomField", "Metadata.DeployCallback", "Metadata.DeployCallBack", "Metadata.DeployResult", "Metadata.DeployStatus", "Metadata.DeployDetails", "Metadata.DeployMessage", "Metadata.DeployCallbackContext", "Metadata.AsyncResult":
+	case "Object", "String", "Boolean", "Integer", "Long", "Decimal", "Double", "Date", "Datetime", "Time", "TimeZone", "Blob", "Id", "Type", "URL", "JSONGenerator", "JSONParser", "JSONToken", "ChildRelationship", "DescribeFieldResult", "DescribeSObjectResult", "DescribeTabResult", "DescribeTabSetResult", "PicklistEntry", "RecordTypeInfo", "XmlStreamReader", "XmlStreamWriter", "PageReference", "SelectOption", "LoggingLevel", "AccessType", "SObjectAccessDecision", "ApexPages.Severity", "ApexPages.StandardController", "ApexPages.StandardSetController", "RestContext", "RestRequest", "RestResponse", "Callable", "StubProvider", "InstallContext", "InstallHandler", "Auth.JWT", "ConnectApi.UserSettings", "ConnectApi.TimeZone", "Metadata.Metadata", "Metadata.MetadataType", "Metadata.DeployContainer", "Metadata.CustomMetadata", "Metadata.CustomMetadataValue", "Metadata.CustomObject", "Metadata.CustomField", "Metadata.DeployCallback", "Metadata.DeployCallBack", "Metadata.DeployResult", "Metadata.DeployStatus", "Metadata.DeployDetails", "Metadata.DeployMessage", "Metadata.DeployCallbackContext", "Metadata.AsyncResult":
 		return true
 	default:
 		return false
@@ -15839,7 +15859,7 @@ func stringEnumCoercionTarget(typeName string) bool {
 		return true
 	}
 	switch typeName {
-	case "TriggerOperation", "RoundingMode", "System.RoundingMode", "LoggingLevel", "ApexPages.Severity",
+	case "TriggerOperation", "RoundingMode", "System.RoundingMode", "LoggingLevel", "AccessType", "System.AccessType", "ApexPages.Severity",
 		"Schema.DisplayType", "DisplayType", "Schema.SOAPType", "SOAPType",
 		"Metadata.DeployStatus", "Metadata.MetadataType":
 		return true
@@ -17407,7 +17427,15 @@ func specialMapLookup(receiver, key Value) (Value, bool) {
 		return Null, false
 	}
 	switch receiver.Type {
-	case "Schema.GlobalDescribeMap":
+	case "Schema.GlobalDescribeMap", "Schema.SObjectFieldMap":
+		for rawKey, value := range receiver.Map {
+			candidate := valueFromMapKey(rawKey)
+			if candidate.Kind == ValueString && strings.EqualFold(candidate.Text, key.Text) {
+				return value, true
+			}
+		}
+	}
+	if mapContainsOnlySObjectFieldTokens(receiver) {
 		for rawKey, value := range receiver.Map {
 			candidate := valueFromMapKey(rawKey)
 			if candidate.Kind == ValueString && strings.EqualFold(candidate.Text, key.Text) {
@@ -17425,6 +17453,18 @@ func specialMapLookup(receiver, key Value) (Value, bool) {
 		}
 	}
 	return Null, false
+}
+
+func mapContainsOnlySObjectFieldTokens(receiver Value) bool {
+	if receiver.Kind != ValueMap || len(receiver.Map) == 0 {
+		return false
+	}
+	for _, value := range receiver.Map {
+		if value.Kind != ValueObject || value.Type != "Schema.SObjectField" {
+			return false
+		}
+	}
+	return true
 }
 
 func (vm *VM) fflibIndependentMocksEnabled() bool {
@@ -18393,6 +18433,7 @@ func soapTypeForStorageField(field storage.Field) string {
 
 var schemaSOAPTypeNames = []string{"ID", "STRING", "BOOLEAN", "INTEGER", "DOUBLE", "DATE", "DATETIME", "TIME", "BASE64BINARY", "ANYTYPE"}
 var schemaDisplayTypeNames = []string{"BOOLEAN", "CURRENCY", "DATE", "DATETIME", "DOUBLE", "ID", "INTEGER", "PERCENT", "PICKLIST", "REFERENCE", "STRING", "TEXTAREA"}
+var accessTypeNames = []string{"CREATABLE", "READABLE", "UPDATABLE", "UPSERTABLE"}
 
 func schemaSOAPTypeStaticValue(name string) (Value, bool) {
 	if value, ok := namedEnumStaticValue("Schema.SOAPType", schemaSOAPTypeNames, name); ok {
@@ -19138,6 +19179,9 @@ func (vm *VM) callEnumMember(receiver Value, method string, args []Value) (Value
 	}
 	if receiver.Type == "RoundingMode" {
 		return callNamedEnumMember("RoundingMode", roundingModeNames, receiver, method, args)
+	}
+	if receiver.Type == "AccessType" {
+		return callNamedEnumMember("AccessType", accessTypeNames, receiver, method, args)
 	}
 	if receiver.Type == "TriggerOperation" {
 		return callNamedEnumMember("TriggerOperation", triggerOperationNames, receiver, method, args)
@@ -20635,6 +20679,19 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.RecordTypeInfo.isActive expects 0 arguments")
 			}
 			return receiver.Fields["active"], receiver, false, true, nil
+		}
+	case "SObjectAccessDecision":
+		switch method {
+		case "getRecords":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("SObjectAccessDecision.getRecords expects 0 arguments")
+			}
+			return receiver.Fields["records"], receiver, false, true, nil
+		case "getRemovedFields":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("SObjectAccessDecision.getRemovedFields expects 0 arguments")
+			}
+			return receiver.Fields["removedFields"], receiver, false, true, nil
 		}
 	case "Schema.ChildRelationship":
 		switch method {

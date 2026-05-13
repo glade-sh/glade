@@ -2959,6 +2959,18 @@ public static String render(final Id templateId, Map<String, Object> values) {
 	if len(params) != 2 || params[0].Type != "Id" || params[0].Name != "templateId" || params[1].Type != "Map<String, Object>" || params[1].Name != "values" {
 		t.Fatalf("params = %#v", params)
 	}
+
+	params, err = parseParams(`
+public static List<SObject> queryByIds(String query, /* do not remove param */ Set<Id> ids) {
+    return Database.query(query);
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(params) != 2 || params[0].Type != "String" || params[0].Name != "query" || params[1].Type != "Set<Id>" || params[1].Name != "ids" {
+		t.Fatalf("params = %#v", params)
+	}
 }
 
 func writeFile(t *testing.T, path, content string) {

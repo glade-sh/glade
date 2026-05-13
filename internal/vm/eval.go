@@ -8,6 +8,7 @@ import (
 )
 
 func parseLiteral(raw string) (Value, error) {
+	original := raw
 	switch strings.ToLower(raw) {
 	case "true":
 		return Bool(true), nil
@@ -20,17 +21,27 @@ func parseLiteral(raw string) (Value, error) {
 		text := strings.TrimSuffix(strings.TrimPrefix(raw, "'"), "'")
 		return String(strings.ReplaceAll(text, "''", "'")), nil
 	}
-	isLong := strings.HasSuffix(raw, "L") || strings.HasSuffix(raw, "l")
-	numberRaw := strings.TrimSuffix(strings.TrimSuffix(raw, "L"), "l")
-	if strings.Contains(numberRaw, ".") {
+	suffix := byte(0)
+	if len(raw) > 0 {
+		last := raw[len(raw)-1]
+		if strings.ContainsRune("LlDdFf", rune(last)) {
+			suffix = last
+			raw = raw[:len(raw)-1]
+		}
+	}
+	isLong := suffix == 'L' || suffix == 'l'
+	isDecimal := suffix == 'D' || suffix == 'd' || suffix == 'F' || suffix == 'f' || strings.ContainsAny(raw, ".eE")
+	if isDecimal {
+		numberRaw := raw
 		value, err := strconv.ParseFloat(numberRaw, 64)
 		if err != nil {
-			return Null, fmt.Errorf("invalid decimal literal %q", raw)
+			return Null, fmt.Errorf("invalid decimal literal %q", original)
 		}
 		out := Decimal(value)
 		out.Text = numberRaw
 		return out, nil
 	}
+	numberRaw := raw
 	value, err := strconv.ParseInt(numberRaw, 10, 64)
 	if err != nil {
 		return Null, fmt.Errorf("invalid literal %q", raw)

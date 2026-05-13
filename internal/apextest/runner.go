@@ -1208,6 +1208,7 @@ func parseParams(methodSource string) ([]vm.Param, error) {
 	if raw == "" {
 		return nil, nil
 	}
+	raw = stripApexComments(raw)
 	parts := splitTopLevelCommas(raw)
 	params := make([]vm.Param, 0, len(parts))
 	for _, part := range parts {
@@ -1228,6 +1229,47 @@ func parseParams(methodSource string) ([]vm.Param, error) {
 		})
 	}
 	return params, nil
+}
+
+func stripApexComments(source string) string {
+	var b strings.Builder
+	b.Grow(len(source))
+	for i := 0; i < len(source); i++ {
+		if source[i] == '\'' {
+			end := skipApexString(source, i)
+			b.WriteString(source[i : end+1])
+			i = end
+			continue
+		}
+		if source[i] == '/' && i+1 < len(source) {
+			switch source[i+1] {
+			case '/':
+				end := skipLineComment(source, i)
+				for ; i <= end && i < len(source); i++ {
+					if source[i] == '\r' || source[i] == '\n' {
+						b.WriteByte(source[i])
+					} else {
+						b.WriteByte(' ')
+					}
+				}
+				i--
+				continue
+			case '*':
+				end := skipBlockComment(source, i)
+				for ; i <= end && i < len(source); i++ {
+					if source[i] == '\r' || source[i] == '\n' {
+						b.WriteByte(source[i])
+					} else {
+						b.WriteByte(' ')
+					}
+				}
+				i--
+				continue
+			}
+		}
+		b.WriteByte(source[i])
+	}
+	return b.String()
 }
 
 func findMatchingParen(source string, open int) int {
