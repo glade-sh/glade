@@ -9501,6 +9501,14 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 			obj.Fields[fieldName] = value
 			continue
 		}
+		if fieldType, ok := platformJSONDTOFieldType(typeName, key); ok {
+			value, err := vm.typedValueFromJSON(fieldType, item, strict)
+			if err != nil {
+				return Null, err
+			}
+			obj.Fields[platformJSONDTOFieldName(key)] = value
+			continue
+		}
 		if fieldType, ok := vm.jsonSObjectFieldType(typeName, key); ok {
 			value, err := vm.typedValueFromJSON(fieldType, item, strict)
 			if err != nil {
@@ -9664,12 +9672,74 @@ func (vm *VM) isJSONTypedObjectTarget(typeName string) bool {
 	if strings.EqualFold(typeName, "Schema.FieldSetMember") {
 		return true
 	}
+	if _, ok := platformJSONDTOFields(typeName); ok {
+		return true
+	}
 	if vm.Org != nil {
 		if _, ok := vm.Org.Objects[typeName]; ok {
 			return true
 		}
 	}
 	return false
+}
+
+func platformJSONDTOFields(typeName string) (map[string]string, bool) {
+	resultFields := map[string]string{
+		"success":           "Boolean",
+		"id":                "Id",
+		"errors":            "List<Database.Error>",
+		"created":           "Boolean",
+		"mergedRecordIds":   "List<Id>",
+		"updatedRelatedIds": "List<Id>",
+	}
+	switch {
+	case strings.EqualFold(typeName, "Database.SaveResult"),
+		strings.EqualFold(typeName, "Database.DeleteResult"),
+		strings.EqualFold(typeName, "Database.UndeleteResult"),
+		strings.EqualFold(typeName, "Database.EmptyRecycleBinResult"),
+		strings.EqualFold(typeName, "Database.LockResult"),
+		strings.EqualFold(typeName, "Database.UnlockResult"),
+		strings.EqualFold(typeName, "Database.UpsertResult"),
+		strings.EqualFold(typeName, "Database.MergeResult"):
+		return resultFields, true
+	case strings.EqualFold(typeName, "Database.Error"):
+		return map[string]string{
+			"message":              "String",
+			"statusCode":           "String",
+			"fields":               "List<String>",
+			"extendedErrorDetails": "List<Object>",
+		}, true
+	default:
+		return nil, false
+	}
+}
+
+func platformJSONDTOFieldType(typeName, field string) (string, bool) {
+	fields, ok := platformJSONDTOFields(typeName)
+	if !ok {
+		return "", false
+	}
+	for candidate, fieldType := range fields {
+		if strings.EqualFold(candidate, field) {
+			return fieldType, true
+		}
+	}
+	return "", false
+}
+
+func platformJSONDTOFieldName(field string) string {
+	switch {
+	case strings.EqualFold(field, "statusCode"):
+		return "statusCode"
+	case strings.EqualFold(field, "mergedRecordIds"):
+		return "mergedRecordIds"
+	case strings.EqualFold(field, "updatedRelatedIds"):
+		return "updatedRelatedIds"
+	case field == "":
+		return field
+	default:
+		return strings.ToLower(field[:1]) + field[1:]
+	}
 }
 
 func typedScalarFromJSON(typeName string, raw any) (Value, bool, error) {

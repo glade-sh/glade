@@ -900,6 +900,30 @@ System.assert(strictCaught);
 	}
 }
 
+func TestExecJSONDeserializeDatabaseResultDTOs(t *testing.T) {
+	program, err := CompileAnonymous(`
+Database.SaveResult saved = JSON.deserialize('{"success":false,"id":null,"errors":[{"statusCode":"UNABLE_TO_LOCK_ROW","message":"locked","fields":["Name"]}]}', Database.SaveResult.class);
+System.assert(!saved.isSuccess());
+System.assertEquals(null, saved.getId());
+System.assertEquals(1, saved.getErrors().size());
+System.assertEquals('locked', saved.getErrors()[0].getMessage());
+System.assertEquals('UNABLE_TO_LOCK_ROW', String.valueOf(saved.getErrors()[0].getStatusCode()));
+System.assertEquals('Name', saved.getErrors()[0].getFields()[0]);
+
+Database.DeleteResult deleted = JSON.deserialize('{"success":true,"id":"001B000001DVM9t","errors":[]}', Database.DeleteResult.class);
+System.assert(deleted.isSuccess());
+System.assertEquals('001B000001DVM9t', deleted.getId());
+System.assertEquals(0, deleted.getErrors().size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecJSONDeserializeTypedMappingErrorsAreCatchable(t *testing.T) {
 	program, err := CompileAnonymous(`
 String caught = '';
