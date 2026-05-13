@@ -9590,6 +9590,12 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 		if key == "attributes" {
 			continue
 		}
+		if handled, err := vm.applyDottedSObjectJSONField(&obj, typeName, key, item, strict); handled || err != nil {
+			if err != nil {
+				return Null, err
+			}
+			continue
+		}
 		if _, hasRecords := jsonQueryResultRecords(item); hasRecords {
 			if relationshipType, ok := vm.jsonSObjectChildRelationshipType(typeName, key); ok {
 				value, err := vm.typedValueFromJSON(relationshipType, item, strict)
@@ -9664,6 +9670,12 @@ func (vm *VM) sObjectValueFromJSON(raw any, strict bool) (Value, error) {
 		if key == "attributes" {
 			continue
 		}
+		if handled, err := vm.applyDottedSObjectJSONField(&obj, typeName, key, item, strict); handled || err != nil {
+			if err != nil {
+				return Null, err
+			}
+			continue
+		}
 		if _, hasRecords := jsonQueryResultRecords(item); hasRecords {
 			if relationshipType, ok := vm.jsonSObjectChildRelationshipType(typeName, key); ok {
 				value, err := vm.typedValueFromJSON(relationshipType, item, strict)
@@ -9693,6 +9705,53 @@ func (vm *VM) sObjectValueFromJSON(raw any, strict bool) (Value, error) {
 		obj.Fields[key] = valueFromJSON(item)
 	}
 	return obj, nil
+}
+
+func (vm *VM) applyDottedSObjectJSONField(obj *Value, typeName, key string, item any, strict bool) (bool, error) {
+	relationshipName, childPath, ok := strings.Cut(key, ".")
+	if !ok || strings.TrimSpace(relationshipName) == "" || strings.TrimSpace(childPath) == "" {
+		return false, nil
+	}
+	relationshipType, ok := vm.jsonSObjectParentRelationshipType(typeName, relationshipName)
+	if !ok {
+		return false, nil
+	}
+	actualRelationshipName := relationshipName
+	relationship, exists := Null, false
+	if actual, value, ok := objectFieldValue(*obj, relationshipName); ok {
+		actualRelationshipName = actual
+		relationship = value
+		exists = true
+	}
+	if !exists || relationship.Kind == ValueNull {
+		relationship = Object(relationshipType)
+		vm.initializeFields(&relationship, relationshipType)
+	}
+	if relationship.Kind != ValueObject {
+		return true, fmt.Errorf("JSON dotted relationship %s on %s is not an SObject", relationshipName, typeName)
+	}
+	if nested, err := vm.applyDottedSObjectJSONField(&relationship, relationshipType, childPath, item, strict); nested || err != nil {
+		if err != nil {
+			return true, err
+		}
+		obj.Fields[actualRelationshipName] = relationship
+		return true, nil
+	}
+	if fieldType, ok := vm.jsonSObjectFieldType(relationshipType, childPath); ok {
+		value, err := vm.typedValueFromJSON(fieldType, item, strict)
+		if err != nil {
+			return true, err
+		}
+		relationship.Fields[vm.resolveSObjectFieldName(relationshipType, childPath)] = value
+		obj.Fields[actualRelationshipName] = relationship
+		return true, nil
+	}
+	if strict {
+		return true, newExceptionError("JSONException", fmt.Sprintf("JSON.deserializeStrict found unknown field %q for %s", childPath, relationshipType))
+	}
+	relationship.Fields[childPath] = valueFromJSON(item)
+	obj.Fields[actualRelationshipName] = relationship
+	return true, nil
 }
 
 func jsonQueryResultRecords(raw any) ([]any, bool) {
