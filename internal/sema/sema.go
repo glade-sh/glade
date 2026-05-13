@@ -1921,6 +1921,8 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 	}
 	if strings.HasPrefix(expr.Callee, "__field:") ||
 		strings.HasPrefix(expr.Callee, "__safe_field:") ||
+		strings.HasPrefix(expr.Callee, "__assignField:") ||
+		strings.HasPrefix(expr.Callee, "__newArray:") ||
 		strings.HasPrefix(expr.Callee, "__cast:") ||
 		expr.Callee == "__ternary" {
 		return nil

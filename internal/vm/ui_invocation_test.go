@@ -170,9 +170,9 @@ func TestInvokeVisualforceActionTracesStandardControllerActions(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account account = new Account(Name = 'VF Trace');
 ApexPages.StandardController controller = new ApexPages.StandardController(account);
-PageReference saved = controller.save();
-PageReference viewed = controller.view();
-PageReference cancelled = controller.cancel();
+PageReference saved = controller.SAVE();
+PageReference viewed = controller.VIEW();
+PageReference cancelled = controller.CANCEL();
 System.assertEquals('/' + account.Id, saved.getUrl());
 System.assertEquals('/' + account.Id, viewed.getUrl());
 System.assertEquals('/' + account.Id, cancelled.getUrl());

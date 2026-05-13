@@ -17466,6 +17466,24 @@ func canonicalPlatformObjectMemberName(typeName, method string) string {
 		"equals", "hashCode", "newInstance", "isAssignableFrom",
 		"send", "toExternalForm", "getProtocol", "getHost", "getAuthority",
 		"getPath", "getQuery", "getRef", "getFile", "getPort", "getDefaultPort",
+		"addHeader", "getHeader", "getHeaderKeys", "addParameter", "addParam",
+		"getParameter", "getParam", "getParameterKeys", "getParamKeys",
+		"setStaticResource", "setStatusCode", "setHeader",
+		"getId", "getRecord", "save", "quickSave", "delete", "view", "edit",
+		"cancel", "reset", "addFields",
+		"getRecords", "getSelected", "setSelected", "getPageSize", "setPageSize",
+		"getPageNumber", "first", "last", "next", "previous", "getHasNext",
+		"getHasPrevious", "getCompleteResult",
+		"setToAddresses", "setCcAddresses", "setBccAddresses", "setFileAttachments",
+		"setEntityAttachments", "setDocumentAttachments", "setTargetObjectIds",
+		"setSubject", "setPlainTextBody", "setHtmlBody", "setReplyTo",
+		"setSenderDisplayName", "setSaveAsActivity", "setTreatBodiesAsTemplate",
+		"setTreatTargetObjectAsRecipient", "setUseSignature", "setBccSender",
+		"getToAddresses", "getCcAddresses", "getBccAddresses", "getFileAttachments",
+		"getEntityAttachments", "getDocumentAttachments", "getTargetObjectIds",
+		"setWhatIds", "setTemplateId", "setDescription", "setOptOutPolicy",
+		"getWhatIds", "getTemplateId", "getDescription", "getOptOutPolicy",
+		"getSaveAsActivity",
 	}
 	if isExceptionType(typeName) {
 		known = append(known,
@@ -17779,6 +17797,10 @@ func (vm *VM) callStubProxyMember(receiver Value, method string, args []Value, r
 }
 
 func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Value, bool, error) {
+	method = canonicalStdlibMemberName(method,
+		"addError", "hasErrors", "getErrors", "get", "put", "isSet", "clear",
+		"getPopulatedFieldsAsMap", "getSObjectType",
+	)
 	switch method {
 	case "addError":
 		if reason, ok := sobjectReadOnlyReason(receiver); ok {
@@ -21322,6 +21344,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 }
 
 func callRestRequestMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	method = canonicalPlatformObjectMemberName(receiver.Type, method)
 	switch method {
 	case "addHeader":
 		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
@@ -21361,6 +21384,7 @@ func callRestRequestMember(receiver Value, method string, args []Value) (Value, 
 }
 
 func callStaticResourceCalloutMockMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	method = canonicalPlatformObjectMemberName(receiver.Type, method)
 	switch method {
 	case "setStaticResource":
 		if len(args) != 1 || args[0].Kind != ValueString {
@@ -21386,6 +21410,7 @@ func callStaticResourceCalloutMockMember(receiver Value, method string, args []V
 }
 
 func callMultiStaticResourceCalloutMockMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	method = canonicalPlatformObjectMemberName(receiver.Type, method)
 	switch method {
 	case "setStaticResource":
 		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
@@ -21657,6 +21682,7 @@ func staticResourceBodyValue(value storage.Value) (string, bool) {
 }
 
 func callRestResponseMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	method = canonicalPlatformObjectMemberName(receiver.Type, method)
 	switch method {
 	case "addHeader":
 		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
@@ -21680,6 +21706,7 @@ func callRestResponseMember(receiver Value, method string, args []Value) (Value,
 }
 
 func callSelectOptionMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	method = canonicalPlatformObjectMemberName(receiver.Type, method)
 	fieldForGetter := map[string]string{
 		"getValue":      "value",
 		"getLabel":      "label",
@@ -21781,6 +21808,7 @@ func callVisualEditorDynamicPickListRowsMember(receiver Value, method string, ar
 }
 
 func (vm *VM) callStandardControllerMember(receiver Value, method string, args []Value, result *Result) (Value, Value, bool, bool, error) {
+	method = canonicalPlatformObjectMemberName(receiver.Type, method)
 	record, ok := receiver.Fields["record"]
 	if !ok || record.Kind != ValueObject {
 		return Null, receiver, false, true, fmt.Errorf("ApexPages.StandardController has no SObject record")
@@ -21889,6 +21917,7 @@ func standardControllerTraceArgs(method string, record Value) map[string]any {
 }
 
 func (vm *VM) callStandardSetControllerMember(receiver Value, method string, args []Value, result *Result) (Value, Value, bool, bool, error) {
+	method = canonicalPlatformObjectMemberName(receiver.Type, method)
 	records := receiver.Fields["records"]
 	switch method {
 	case "getRecords":
@@ -22016,6 +22045,7 @@ func (vm *VM) standardSetDML(receiver Value, op string, result *Result) (Value, 
 }
 
 func callSingleEmailMessageMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	method = canonicalPlatformObjectMemberName(receiver.Type, method)
 	switch method {
 	case "setToAddresses", "setCcAddresses", "setBccAddresses", "setFileAttachments", "setEntityAttachments", "setDocumentAttachments", "setTargetObjectIds":
 		if len(args) != 1 || args[0].Kind != ValueList {

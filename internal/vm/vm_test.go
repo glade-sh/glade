@@ -637,6 +637,23 @@ System.assertEquals('001000000000002AAA', accountId);
 	}
 }
 
+func TestExecSObjectMembersAreCaseInsensitive(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'Acme');
+System.assertEquals('Acme', account.GET('name'));
+System.assertEquals(false, account.ISSET('Phone'));
+account.PUT('phone', '1112223333');
+System.assertEquals(true, account.ISSET('PHONE'));
+System.assertEquals('1112223333', account.GET('Phone'));
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecOverloadResolutionUsesCollectionElementType(t *testing.T) {
 	listObjectProgram, err := CompileAnonymous(`return values.size();`)
 	if err != nil {
@@ -1283,6 +1300,21 @@ current.add('one');
 System.assertEquals(1, current.size());
 System.assertEquals(1, values.get('items').size());
 `)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecChainedIndexedFieldAssignmentExpression(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Account> accounts = new List<Account>{ new Account(), new Account() };
+accounts[0].Fax = accounts[1].Fax = '1112223333';
+System.assertEquals('1112223333', accounts[0].Fax);
+System.assertEquals('1112223333', accounts[1].Fax);
+	`)
 	if err != nil {
 		t.Fatal(err)
 	}

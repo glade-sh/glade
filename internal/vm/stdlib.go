@@ -1697,6 +1697,7 @@ func patternRegexpSource(pattern Value) (string, error) {
 }
 
 func callPatternMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	method = canonicalStdlibMemberName(method, "matches", "matcher", "pattern", "split")
 	switch method {
 	case "matches":
 		value, err := patternMatches(args)
@@ -1757,6 +1758,10 @@ func callPatternMember(receiver Value, method string, args []Value) (Value, Valu
 }
 
 func callMatcherMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	method = canonicalStdlibMemberName(method,
+		"matches", "lookingAt", "find", "group", "groupCount", "start", "end",
+		"replaceAll", "replaceFirst",
+	)
 	source, input, err := matcherSourceInput(receiver)
 	if err != nil {
 		return Null, receiver, false, true, err

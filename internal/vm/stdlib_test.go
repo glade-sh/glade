@@ -167,31 +167,31 @@ req.addParameter('expand', 'true');
 req.addParameter('sort', 'name');
 RestContext.request = req;
 req.headers = null;
-req.addHeader('X-Rebuilt', 'yes');
-req.params = null;
-req.addParameter('rebuilt', 'true');
+	req.ADDHEADER('X-Rebuilt', 'yes');
+	req.params = null;
+	req.addPARAMETER('rebuilt', 'true');
 
 System.assertEquals('/services/apexrest/widgets/42?expand=true', RestContext.request.requestURI);
 System.assertEquals('/widgets/42', RestContext.request.resourcePath);
 System.assertEquals('PATCH', RestContext.request.httpMethod);
 System.assertEquals('127.0.0.1', RestContext.request.remoteAddress);
 System.assertEquals('{"name":"Acme"}', RestContext.request.requestBody.toString());
-System.assertEquals('yes', RestContext.request.getHeader('x-rebuilt'));
-System.assertEquals(1, RestContext.request.getHeaderKeys().size());
-System.assert(RestContext.request.getHeaderKeys().contains('X-Rebuilt'));
-System.assertEquals('true', RestContext.request.getParameter('rebuilt'));
-System.assertEquals(1, RestContext.request.getParameterKeys().size());
+	System.assertEquals('yes', RestContext.request.GETHEADER('x-rebuilt'));
+	System.assertEquals(1, RestContext.request.GETHEADERKEYS().size());
+	System.assert(RestContext.request.getHeaderKeys().contains('X-Rebuilt'));
+	System.assertEquals('true', RestContext.request.GETPARAMETER('rebuilt'));
+	System.assertEquals(1, RestContext.request.GETPARAMETERKEYS().size());
 System.assert(RestContext.request.getParameterKeys().contains('rebuilt'));
 
 RestContext.response.statusCode = 201;
 RestContext.response.responseBody = Blob.valueOf('created');
-RestContext.response.addHeader('Location', '/services/apexrest/widgets/41');
-RestContext.response.addHeader('location', '/services/apexrest/widgets/42');
+	RestContext.response.ADDHEADER('Location', '/services/apexrest/widgets/41');
+	RestContext.response.ADDHEADER('location', '/services/apexrest/widgets/42');
 System.assertEquals(201, RestContext.response.statusCode);
 System.assertEquals('created', RestContext.response.responseBody.toString());
 System.assertEquals('/services/apexrest/widgets/42', RestContext.response.headers.get('location'));
-System.assertEquals('/services/apexrest/widgets/42', RestContext.response.getHeader('LOCATION'));
-System.assertEquals(1, RestContext.response.getHeaderKeys().size());
+	System.assertEquals('/services/apexrest/widgets/42', RestContext.response.GETHEADER('LOCATION'));
+	System.assertEquals(1, RestContext.response.GETHEADERKEYS().size());
 System.assert(RestContext.response.getHeaderKeys().contains('location'));
 `)
 	if err != nil {

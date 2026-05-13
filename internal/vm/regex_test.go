@@ -10,11 +10,11 @@ import (
 func TestExecPatternMatcherStdlib(t *testing.T) {
 	program, err := CompileAnonymous(`
 Pattern p = Pattern.compile('([A-Z]+)([0-9]+)?');
-System.assertEquals('([A-Z]+)([0-9]+)?', p.pattern());
-Matcher m = p.matcher('abc DEF42 ghi XYZ');
-System.assertEquals(2, m.groupCount());
-System.assert(m.find());
-System.assertEquals('DEF42', m.group());
+System.assertEquals('([A-Z]+)([0-9]+)?', p.PATTERN());
+Matcher m = p.MATCHER('abc DEF42 ghi XYZ');
+System.assertEquals(2, m.GROUPCOUNT());
+System.assert(m.FIND());
+System.assertEquals('DEF42', m.GROUP());
 System.assertEquals('DEF42', m.group(0));
 System.assertEquals('DEF', m.group(1));
 System.assertEquals('42', m.group(2));

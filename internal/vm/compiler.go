@@ -809,7 +809,28 @@ func (p *parser) parseAssignmentExpression() (ir.Expr, error) {
 		return ir.Expr{Kind: ir.ExprCall, Callee: "__assign:" + name, Args: []ir.Expr{value}}, nil
 	}
 	p.pos = save
-	return p.parseTernary()
+	left, err := p.parseTernary()
+	if err != nil {
+		return ir.Expr{}, err
+	}
+	if !p.peek(tokenSymbol, "=") || p.peekNext(tokenSymbol, ">") {
+		return left, nil
+	}
+	if left.Kind != ir.ExprCall || left.Left == nil || (left.Callee != "get" && !strings.HasPrefix(left.Callee, "__field:")) {
+		return left, nil
+	}
+	p.advance()
+	value, err := p.parseAssignmentExpression()
+	if err != nil {
+		return ir.Expr{}, err
+	}
+	if left.Callee == "get" && len(left.Args) == 1 {
+		receiver := *left.Left
+		return ir.Expr{Kind: ir.ExprCall, Callee: "set", Left: &receiver, Args: []ir.Expr{left.Args[0], value}}, nil
+	}
+	field := strings.TrimPrefix(left.Callee, "__field:")
+	receiver := *left.Left
+	return ir.Expr{Kind: ir.ExprCall, Callee: "__assignField:" + field, Left: &receiver, Args: []ir.Expr{value}}, nil
 }
 
 func (p *parser) parseSwitch(pos int) (ir.Instruction, error) {
