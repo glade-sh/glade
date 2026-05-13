@@ -16678,6 +16678,19 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		}
 		value = coerced
 	}
+	for _, param := range method.Params {
+		updated, ok := frame[param.Name]
+		if !ok {
+			continue
+		}
+		for _, arg := range args {
+			if collectionAliasMatch(arg, updated) && !arg.Equal(updated) {
+				vm.propagateCollectionMutationToScope(caller, arg, updated)
+				vm.propagateCollectionMutationToStatics(arg, updated)
+				break
+			}
+		}
+	}
 	return value, nil
 }
 
@@ -17776,9 +17789,17 @@ func (vm *VM) propagateCollectionMutation(previous, updated Value) {
 	if !sameCollectionType(previous, updated) {
 		return
 	}
-	for name, value := range vm.Globals {
-		vm.Globals[name] = replaceCollectionAlias(value, previous, updated, make(map[uint64]bool))
+	vm.propagateCollectionMutationToScope(vm.Globals, previous, updated)
+	vm.propagateCollectionMutationToStatics(previous, updated)
+}
+
+func (vm *VM) propagateCollectionMutationToScope(scope map[string]Value, previous, updated Value) {
+	for name, value := range scope {
+		scope[name] = replaceCollectionAlias(value, previous, updated, make(map[uint64]bool))
 	}
+}
+
+func (vm *VM) propagateCollectionMutationToStatics(previous, updated Value) {
 	for className, class := range vm.Classes {
 		changed := false
 		for fieldName, field := range class.StaticFields {
