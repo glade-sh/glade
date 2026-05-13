@@ -2596,6 +2596,50 @@ System.assertEquals('list', Util.pick(holder.records));
 	}
 }
 
+func TestRuntimeTypedNullCollectionDowncastGuidesOverloadResolution(t *testing.T) {
+	concreteProgram, err := CompileAnonymous("return 'concrete';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+List<SObject> records = null;
+System.assertEquals('concrete', Util.pick(records));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	for _, method := range []Method{
+		{Name: "Util.pick", ReturnType: "String", Params: []Param{{Name: "value", Type: "List<Account>"}}, Program: concreteProgram},
+	} {
+		if err := machine.RegisterMethod(method); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRuntimeFFLibAnySObjectMatcherAcceptsSObjectLists(t *testing.T) {
+	program, err := CompileAnonymous(`
+fflib_MatcherDefinitions.AnySObject matcher = new fflib_MatcherDefinitions.AnySObject();
+System.assert(matcher.matches(new Account(Name = 'Acme')));
+System.assert(matcher.matches(new List<SObject>{ new Account(Name = 'Acme') }));
+System.assert(!matcher.matches(new List<SObject>()));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "fflib_MatcherDefinitions.AnySObject"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestRuntimeNumericOverloadChoosesNarrowestWidening(t *testing.T) {
 	longProgram, err := CompileAnonymous("return 'long';")
 	if err != nil {
@@ -2797,6 +2841,101 @@ System.assertEquals(5, c.score());
 			"score": {Name: "Child.score", ClassName: "Child", ReturnType: "Integer", Program: childProgram},
 		},
 	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStaticPropertySingletonDispatchesInheritedMethod(t *testing.T) {
+	getterProgram, err := CompileAnonymous(`
+if (Instance == null) {
+    Instance = new ConcreteManager();
+}
+return Instance;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	idProgram, err := CompileAnonymous("return 'ok';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+System.assertEquals('ok', Manager.Instance.identifier());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:       "Manager",
+		IsAbstract: true,
+		StaticFields: map[string]Field{
+			"Instance": {
+				Name:     "Instance",
+				Type:     "Manager",
+				Static:   true,
+				Property: true,
+				Getter:   &Method{Name: "Manager.Instance.get", ClassName: "Manager", ReturnType: "Manager", IsStatic: true, Program: getterProgram},
+			},
+		},
+		Methods: map[string]Method{
+			"identifier": {Name: "Manager.identifier", ClassName: "Manager", ReturnType: "String", Program: idProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "Manager.ConcreteManager", SuperClass: "Manager"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStaticPropertySingletonDispatchesMethodAfterGetterInitialization(t *testing.T) {
+	getterProgram, err := CompileAnonymous(`
+if (Instance == null) {
+    Instance = new ConcreteManager();
+}
+String ignored = Instance.identifier();
+return Instance;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	idProgram, err := CompileAnonymous("return 'ok';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+System.assertEquals('ok', Manager.Instance.identifier());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:       "Manager",
+		IsAbstract: true,
+		StaticFields: map[string]Field{
+			"Instance": {
+				Name:     "Instance",
+				Type:     "Manager",
+				Static:   true,
+				Property: true,
+				Getter:   &Method{Name: "Manager.Instance.get", ClassName: "Manager", ReturnType: "Manager", IsStatic: true, Program: getterProgram},
+			},
+		},
+		Methods: map[string]Method{
+			"identifier": {Name: "Manager.identifier", ClassName: "Manager", ReturnType: "String", Program: idProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "Manager.ConcreteManager", SuperClass: "Manager"}); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := machine.Execute(program); err != nil {

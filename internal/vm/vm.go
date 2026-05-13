@@ -2066,6 +2066,9 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 	if value, handled, err := vm.callSchemaSObjectTypePath(callee, args, result); handled || err != nil {
 		return value, err
 	}
+	if value, handled, err := vm.callStaticPropertyReceiverMember(callee, args, result); handled || err != nil {
+		return value, err
+	}
 	if value, handled, err := vm.callDottedReceiverMember(callee, args, result); handled || err != nil {
 		return value, err
 	}
@@ -14983,6 +14986,21 @@ func (vm *VM) conversionScore(paramType string, value Value) int {
 			if strings.EqualFold(paramType, value.Type) {
 				return 1000
 			}
+			if collectionBase(value.Type) != "" && collectionBase(paramType) != "" {
+				if vm.typeAssignableTo(value.Type, paramType) {
+					return 900
+				}
+				if vm.sObjectCollectionDowncastAssignable(value.Type, paramType) {
+					return 850
+				}
+				return -1
+			}
+			if isMapType(value.Type) && isMapType(paramType) {
+				if vm.typeAssignableTo(value.Type, paramType) {
+					return 900
+				}
+				return -1
+			}
 			if vm.typeAssignableTo(value.Type, paramType) {
 				return 900
 			}
@@ -15608,12 +15626,18 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 			value.Type = "Id"
 			return value, nil
 		case "Date":
+			if strings.EqualFold(strings.TrimSpace(value.Text), "Today()") {
+				return platformScalar("Date", vm.fakeNow.Format("2006-01-02")), nil
+			}
 			parsed, err := parseDateText(value.Text)
 			if err != nil {
 				return Null, err
 			}
 			return platformScalar("Date", parsed.Format("2006-01-02")), nil
 		case "Datetime":
+			if strings.EqualFold(strings.TrimSpace(value.Text), "Now()") {
+				return platformScalar("Datetime", formatPlatformDatetime(vm.fakeNow)), nil
+			}
 			if strings.EqualFold(value.Type, "Date") {
 				parsed, err := parseDateText(value.Text)
 				if err != nil {
@@ -16706,6 +16730,90 @@ func (vm *VM) callMember(callee string, args []Value, result *Result) (Value, bo
 	return vm.callValueMember(receiverName, receiver, method, args, result)
 }
 
+func (vm *VM) declaredReceiverType(receiverName string) string {
+	if typ := vm.VarTypes[receiverName]; typ != "" {
+		return typ
+	}
+	className, memberName, ok := vm.splitClassMember(receiverName)
+	if !ok {
+		return ""
+	}
+	if field, _, ok := vm.lookupStaticField(className, memberName); ok {
+		return field.Type
+	}
+	return ""
+}
+
+func (vm *VM) callStaticPropertyReceiverMember(callee string, args []Value, result *Result) (Value, bool, error) {
+	parts := strings.Split(callee, ".")
+	if len(parts) < 3 {
+		return Null, false, nil
+	}
+	method := parts[len(parts)-1]
+	for split := len(parts) - 2; split >= 1; split-- {
+		className := strings.Join(parts[:split], ".")
+		fieldName := parts[split]
+		field, owner, ok := vm.lookupStaticField(className, fieldName)
+		if !ok {
+			continue
+		}
+		if err := vm.checkMemberAccess(owner, field.Access, owner+"."+fieldName, field.Modifiers); err != nil {
+			return Null, true, err
+		}
+		if err := vm.ensureClassInitialized(owner); err != nil {
+			return Null, true, err
+		}
+		field, _, _ = vm.lookupStaticField(owner, fieldName)
+		receiver := field.Value
+		if field.Getter != nil {
+			var err error
+			receiver, err = vm.callGetter(owner, field, Null)
+			if err != nil {
+				return Null, true, err
+			}
+		}
+		if len(parts[split+1:len(parts)-1]) > 0 {
+			var err error
+			receiver, err = vm.lookupPath(receiver, parts[split+1:len(parts)-1])
+			if err != nil {
+				return Null, true, err
+			}
+		}
+		receiverName := strings.Join(parts[:len(parts)-1], ".")
+		return vm.callValueMember(receiverName, receiver, method, args, result)
+	}
+	return Null, false, nil
+}
+
+func (vm *VM) callFFLibMatcherMember(receiver Value, method string, args []Value) (Value, bool, error) {
+	if !strings.EqualFold(method, "matches") || len(args) != 1 {
+		return Null, false, nil
+	}
+	switch receiver.Type {
+	case "fflib_MatcherDefinitions.AnySObject":
+		return Bool(vm.fflibAnySObjectMatches(args[0])), true, nil
+	default:
+		return Null, false, nil
+	}
+}
+
+func (vm *VM) fflibAnySObjectMatches(value Value) bool {
+	if value.Kind == ValueNull {
+		return false
+	}
+	if value.Kind == ValueObject {
+		return vm.isSObjectLikeType(value.Type)
+	}
+	if value.Kind == ValueList || value.Kind == ValueSet {
+		for _, item := range collectionMembers(value) {
+			if vm.fflibAnySObjectMatches(item) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func (vm *VM) callSObjectFieldAddError(path []string, args []Value) (Value, bool, error) {
 	if len(path) != 2 {
 		return Null, false, nil
@@ -16764,6 +16872,9 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 		if value, handled, err := vm.callEnumMember(receiver, method, args); handled || err != nil {
 			return value, true, err
 		}
+		if value, handled, err := vm.callFFLibMatcherMember(receiver, method, args); handled || err != nil {
+			return value, true, err
+		}
 		if vm.isSObjectLikeType(receiver.Type) {
 			if value, handled, err := vm.callSObjectMember(receiver, method, args); handled || err != nil {
 				if method == "put" || method == "addError" || method == "clear" {
@@ -16788,6 +16899,19 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			return Null, true, vm.ambiguousOverloadError(memberCallName(receiverName, dispatchType, method), args)
 		}
 		if !ok {
+			if declaredType := vm.declaredReceiverType(receiverName); declaredType != "" && !strings.EqualFold(declaredType, dispatchType) {
+				target, ok, ambiguous = vm.resolveInstanceMethodForArgs(declaredType, method, args)
+				if ambiguous {
+					return Null, true, vm.ambiguousOverloadError(memberCallName(receiverName, declaredType, method), args)
+				}
+				if ok {
+					if err := vm.checkMemberAccess(target.ClassName, target.Access, target.Name, target.Modifiers); err != nil {
+						return Null, true, err
+					}
+					value, err := vm.callMethodWithReceiver(target, receiver, args, result)
+					return value, true, err
+				}
+			}
 			if value, handled, err := callObjectMember(receiver, method, args); handled || err != nil {
 				return value, true, err
 			}

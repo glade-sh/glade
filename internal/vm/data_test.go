@@ -360,6 +360,27 @@ System.assertEquals('CREATABLE', AccessType.CREATABLE.name());
 	}
 }
 
+func TestExecDateDefaultFormulaCoercesToDate(t *testing.T) {
+	program, err := CompileAnonymous(`
+insert new Account(Name = 'Acme');
+Account row = [SELECT RenewalDate__c FROM Account WHERE Name = 'Acme'];
+Date renewal = row.RenewalDate__c;
+System.assertEquals(Date.today(), renewal);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["RenewalDate__c"] = storage.Field{APIName: "RenewalDate__c", Type: storage.FieldDate, DefaultValue: "Today()"}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDescribeFieldTypeCanCompareUnqualifiedDisplayType(t *testing.T) {
 	program, err := CompileAnonymous(`
 Schema.DescribeFieldResult describe = Account.Name.getDescribe();
