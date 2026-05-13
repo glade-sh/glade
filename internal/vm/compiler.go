@@ -23,6 +23,22 @@ func CompileAnonymous(source string) (ir.Program, error) {
 	return program, nil
 }
 
+func compileExpressionPrefix(source string) (ir.Expr, int, error) {
+	tokens, err := lex(source)
+	if err != nil {
+		return ir.Expr{}, 0, err
+	}
+	p := parser{tokens: tokens}
+	expr, err := p.parseExpression()
+	if err != nil {
+		return ir.Expr{}, 0, err
+	}
+	if p.pos >= len(p.tokens) || p.peek(tokenEOF, "") {
+		return expr, len(source), nil
+	}
+	return expr, p.tokens[p.pos].pos, nil
+}
+
 type tokenKind string
 
 const (

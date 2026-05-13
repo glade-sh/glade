@@ -5652,9 +5652,32 @@ func (vm *VM) expandSOQLBindsWith(raw string, lookup func(string) (Value, error)
 			i = j
 			continue
 		}
+		if call != nil && shouldEvaluateSOQLBindExpression(raw, j, isCall) {
+			value, end, err := vm.evalSOQLBindExpression(raw[valueStart:], resultForLookup())
+			if err != nil {
+				return "", err
+			}
+			if value.Kind == ValueList || value.Kind == ValueSet {
+				rewriteTrailingSOQLEqualsToIn(&out)
+			}
+			out.WriteString(soqlLiteral(value))
+			i = valueStart + end
+			continue
+		}
 		value, err := lookup(nameString)
 		if err != nil && isCall && call != nil {
 			value, err = call(nameString)
+		}
+		if err != nil && call != nil {
+			value, end, evalErr := vm.evalSOQLBindExpression(raw[valueStart:], resultForLookup())
+			if evalErr == nil {
+				if value.Kind == ValueList || value.Kind == ValueSet {
+					rewriteTrailingSOQLEqualsToIn(&out)
+				}
+				out.WriteString(soqlLiteral(value))
+				i = valueStart + end
+				continue
+			}
 		}
 		if err != nil {
 			return "", err
@@ -5670,6 +5693,28 @@ func (vm *VM) expandSOQLBindsWith(raw string, lookup func(string) (Value, error)
 		}
 	}
 	return out.String(), nil
+}
+
+func shouldEvaluateSOQLBindExpression(raw string, pos int, isCall bool) bool {
+	if isCall {
+		return false
+	}
+	for pos < len(raw) && (raw[pos] == ' ' || raw[pos] == '\t' || raw[pos] == '\n' || raw[pos] == '\r') {
+		pos++
+	}
+	return pos < len(raw) && (raw[pos] == '[' || raw[pos] == '(' || raw[pos] == '.')
+}
+
+func (vm *VM) evalSOQLBindExpression(source string, result *Result) (Value, int, error) {
+	expr, end, err := compileExpressionPrefix(source)
+	if err != nil {
+		return Null, 0, err
+	}
+	value, err := vm.eval(expr, result)
+	if err != nil {
+		return Null, 0, err
+	}
+	return value, end, nil
 }
 
 func isSOQLLiteralBind(name string) bool {

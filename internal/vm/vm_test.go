@@ -1354,6 +1354,23 @@ func TestExpandSOQLBindsKeepsBooleanAndNullLiterals(t *testing.T) {
 	}
 }
 
+func TestExpandSOQLBindsEvaluatesIndexedMemberExpression(t *testing.T) {
+	machine := New(nil)
+	first := Object("Account")
+	first.Fields["Id"] = platformScalar("Id", "001000000000001AAA")
+	second := Object("Account")
+	second.Fields["Id"] = platformScalar("Id", "001000000000002AAA")
+	machine.Globals["accounts"] = List(first, second)
+	got, err := machine.expandSOQLBinds("SELECT Id FROM Account WHERE Id = : accounts [ 1 ] . Id")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "SELECT Id FROM Account WHERE Id = '001000000000002AAA'"
+	if got != want {
+		t.Fatalf("query = %q, want %q", got, want)
+	}
+}
+
 func TestExecSOQLSingleSObjectAssignmentAndReturn(t *testing.T) {
 	selectorProgram, err := CompileAnonymous(`return [SELECT Id, Name FROM Account LIMIT 1];`)
 	if err != nil {
