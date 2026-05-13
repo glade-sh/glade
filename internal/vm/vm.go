@@ -5275,6 +5275,9 @@ func asyncTotalItems(job AsyncJob) int {
 }
 
 func (vm *VM) executeSOQL(raw string, execResult *Result) (Value, error) {
+	if soql.IsSOSLFind(raw) {
+		return vm.executeSOSL(raw, execResult)
+	}
 	values, err := vm.executeSOQLRows(raw, execResult)
 	if err != nil {
 		return Null, err
@@ -5397,10 +5400,18 @@ func (vm *VM) searchQuery(args []Value) (Value, error) {
 	if len(args) != 1 || args[0].Kind != ValueString {
 		return Null, fmt.Errorf("Search.query expects query String")
 	}
+	return vm.executeSOSL(args[0].Text, nil)
+}
+
+func (vm *VM) executeSOSL(raw string, execResult *Result) (Value, error) {
 	if vm.Org == nil {
-		return Null, fmt.Errorf("Search.query requires org state")
+		return Null, fmt.Errorf("SOSL requires org state")
 	}
-	objects, err := parseSOSLReturningObjects(args[0].Text)
+	queryText, err := vm.expandSOQLBinds(raw)
+	if err != nil {
+		return Null, newExceptionError("QueryException", fmt.Sprintf("%s in query %q", err.Error(), raw))
+	}
+	objects, err := parseSOSLReturningObjects(queryText)
 	if err != nil {
 		return Null, err
 	}
@@ -5428,6 +5439,12 @@ func (vm *VM) searchQuery(args []Value) (Value, error) {
 			rows.List = append(rows.List, value)
 		}
 		groups = append(groups, rows)
+	}
+	if execResult != nil {
+		execResult.Trace = append(execResult.Trace, trace.Instant("apex.sosl", "apex.sosl", int64(len(execResult.Trace)), map[string]any{
+			"query": queryText,
+			"rows":  len(vm.fixedSearchResults),
+		}))
 	}
 	return List(groups...), nil
 }
@@ -11333,7 +11350,7 @@ func (vm *VM) callSchemaSObjectTypePath(callee string, args []Value, result *Res
 		}
 		return value, true, nil
 	}
-	if len(parts) < 4 || !schemaSObjectTypeDescribeForwardMethod(parts[len(parts)-1]) {
+	if len(parts) < 3 || !schemaSObjectTypeDescribeForwardMethod(parts[len(parts)-1]) {
 		return Null, false, nil
 	}
 	if len(args) != 0 {
@@ -11355,7 +11372,17 @@ func (vm *VM) callSchemaSObjectTypePath(callee string, args []Value, result *Res
 }
 
 func schemaSObjectTypeDescribeForwardMethod(method string) bool {
-	return strings.EqualFold(method, "getRecordTypeInfosByName")
+	for _, candidate := range []string{
+		"getName", "getLabel", "getLabelPlural", "getKeyPrefix",
+		"getRecordTypeInfos", "getRecordTypeInfosByName", "getRecordTypeInfosByDeveloperName", "getRecordTypeInfosById",
+		"getChildRelationships", "getSObjectType",
+		"isAccessible", "isCreateable", "isUpdateable", "isDeletable", "isQueryable", "isSearchable", "isCustom",
+	} {
+		if strings.EqualFold(method, candidate) {
+			return true
+		}
+	}
+	return false
 }
 
 func (vm *VM) callDottedReceiverMember(callee string, args []Value, result *Result) (Value, bool, error) {
@@ -19538,7 +19565,10 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				"object":    objectName,
 			})
 			return vm.describeSObjectValue(objectName, vm.Org.Objects[objectName].Definition), receiver, false, true, nil
-		case "getRecordTypeInfosByName", "getRecordTypeInfosById":
+		case "getRecordTypeInfosByName", "getRecordTypeInfosById",
+			"getName", "getLabel", "getLabelPlural", "getKeyPrefix",
+			"getRecordTypeInfos", "getRecordTypeInfosByDeveloperName", "getChildRelationships", "getSObjectType",
+			"isAccessible", "isCreateable", "isUpdateable", "isDeletable", "isQueryable", "isSearchable", "isCustom":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectType.%s expects 0 arguments", method)
 			}

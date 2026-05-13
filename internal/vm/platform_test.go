@@ -215,6 +215,9 @@ System.assertEquals(account.Id, rows[0][0].Id);
 System.assertEquals('Nook Inc', rows[0][0].get('Name'));
 System.assertEquals(1, rows[1].size());
 System.assertEquals(contact.Id, rows[1][0].Id);
+List<Account> inlineRows = (List<Account>)([FIND 'Nook*' IN NAME FIELDS RETURNING Account(Id, Name)][0]);
+System.assertEquals(1, inlineRows.size());
+System.assertEquals(account.Id, inlineRows[0].Id);
 `)
 	if err != nil {
 		t.Fatal(err)
