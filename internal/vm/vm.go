@@ -12123,6 +12123,7 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 			return err
 		}
 		current.Fields[actualName] = value
+		markQueriedSObjectField(&current, actualName)
 		return nil
 	}
 	resolvedField := vm.resolveSObjectFieldName(current.Type, fieldName)
@@ -12130,6 +12131,7 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 		resolvedField = actualName
 	}
 	current.Fields[resolvedField] = value
+	markQueriedSObjectField(&current, resolvedField)
 	return nil
 }
 
@@ -18020,6 +18022,7 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 			previous = Null
 		}
 		receiver.Fields[actualField] = args[1]
+		markQueriedSObjectField(&receiver, actualField)
 		return previous, true, nil
 	case "isSet":
 		if len(args) != 1 {
@@ -18137,6 +18140,18 @@ func queriedSObjectFieldsValue(objectName string, fields map[string]bool) Value 
 	return value
 }
 
+func markQueriedSObjectField(value *Value, field string) {
+	if value == nil || value.Kind != ValueObject || value.Fields == nil || strings.TrimSpace(field) == "" {
+		return
+	}
+	selected, ok := value.Fields[sobjectQueriedFieldsField]
+	if !ok || selected.Kind != ValueMap {
+		return
+	}
+	selected.Map[mapKey(String(strings.ToLower(field)))] = Bool(true)
+	value.Fields[sobjectQueriedFieldsField] = selected
+}
+
 func dmlVisibleSObjectFields(value *Value) map[string]bool {
 	fields := map[string]bool{"id": true}
 	if value == nil || value.Kind != ValueObject {
@@ -18155,8 +18170,8 @@ func (vm *VM) unqueriedSObjectFieldError(receiver Value, field string, enforceDM
 	if receiver.Kind != ValueObject {
 		return nil
 	}
-	if !enforceDML {
-		if marker, ok := receiver.Fields[sobjectDMLAccessibleField]; ok && marker.Kind == ValueBool && marker.Bool {
+	if marker, ok := receiver.Fields[sobjectDMLAccessibleField]; ok && marker.Kind == ValueBool && marker.Bool {
+		if _, _, exists := objectFieldValue(receiver, field); !exists {
 			return nil
 		}
 	}
