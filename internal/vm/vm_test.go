@@ -1036,6 +1036,22 @@ System.assertEquals('Two', nested[0][1].LastName);
 	}
 }
 
+func TestExecFixedSizeArrayAllocation(t *testing.T) {
+	program, err := CompileAnonymous(`
+Id[] ids = new Id[2];
+System.assertEquals(2, ids.size());
+System.assertEquals(null, ids[0]);
+ids[1] = '001000000000001AAA';
+System.assertEquals('001000000000001AAA', ids[1]);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSObjectGetWrongFieldTokenIsCatchable(t *testing.T) {
 	program, err := CompileAnonymous(`
 Map<String, Schema.SObjectType> globalDescribe = Schema.getGlobalDescribe();

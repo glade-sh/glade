@@ -1604,13 +1604,24 @@ System.assertEquals('All Tabs', tabSet.getLabel());
 System.assertEquals('AllTabs', tabSet.getName());
 System.assert(!tabSet.isSelected());
 List<Object> tabs = tabSet.getTabs();
-System.assertEquals(1, tabs.size());
-Object tab = tabs.get(0);
+System.assertEquals(2, tabs.size());
+Object tab;
+for (Object candidate : tabs) {
+	if (candidate.getName() == 'Widget__c') {
+		tab = candidate;
+	}
+}
+System.assertNotEquals(null, tab);
 System.assertEquals('Widget__c', tab.getName());
 System.assertEquals('Widgets', tab.getLabel());
 System.assertEquals('Widget__c', tab.getSObjectName());
 System.assert(tab.isCustom());
 System.assertEquals('Custom1: Heart', tab.getIconUrl());
+List<Object> icons = tab.getIcons();
+System.assertEquals(1, icons.size());
+Object icon = icons.get(0);
+System.assertEquals('image/svg+xml', icon.getContentType());
+System.assertEquals('/img/icon/t4v35/custom/widget_120.png.svg', icon.getUrl());
 System.assertEquals('/lightning/o/Widget__c/list', tab.getUrl());
 `)
 	if err != nil {

@@ -1423,6 +1423,17 @@ func (vm *VM) eval(expr ir.Expr, result *Result) (Value, error) {
 			entry.Fields["__value"] = value
 			return entry, nil
 		}
+		if strings.HasPrefix(expr.Callee, "__newArray:") {
+			if len(expr.Args) != 1 {
+				return Null, fmt.Errorf("array allocation requires size")
+			}
+			size, err := vm.eval(expr.Args[0], result)
+			if err != nil {
+				return Null, err
+			}
+			typeName := strings.TrimPrefix(expr.Callee, "__newArray:")
+			return vm.constructArrayValue(typeName, size)
+		}
 		if strings.HasPrefix(expr.Callee, "__field:") || strings.HasPrefix(expr.Callee, "__safe_field:") {
 			if expr.Left == nil {
 				return Null, fmt.Errorf("field access requires receiver")
@@ -9208,17 +9219,20 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 		if !ok {
 			return Null, jsonTypeMappingError(typeName, raw)
 		}
-		if !strings.EqualFold(keyType, "String") && !strings.EqualFold(keyType, "Object") {
-			return Null, jsonDeserializeException("JSON.deserialize supports Map keys only for String/Object targets, got %s", keyType)
-		}
 		out := Map()
 		out.Type = typeName
 		for key, item := range fields {
+			keyValue, err := typedJSONMapKey(keyType, key)
+			if err != nil {
+				return Null, err
+			}
 			value, err := vm.typedValueFromJSON(valueType, item, strict)
 			if err != nil {
 				return Null, err
 			}
-			out.Map[mapKey(String(key))] = value
+			encodedKey := mapKey(keyValue)
+			out.Map[encodedKey] = value
+			out.MapKeys[encodedKey] = keyValue
 		}
 		return out, nil
 	}
@@ -9561,6 +9575,20 @@ func typedScalarFromJSON(typeName string, raw any) (Value, bool, error) {
 	return Null, false, nil
 }
 
+func typedJSONMapKey(typeName, key string) (Value, error) {
+	if strings.EqualFold(typeName, "String") || strings.EqualFold(typeName, "Object") {
+		return String(key), nil
+	}
+	value, ok, err := typedScalarFromJSON(typeName, key)
+	if err != nil {
+		return Null, err
+	}
+	if ok {
+		return value, nil
+	}
+	return Null, jsonDeserializeException("JSON.deserialize supports Map keys only for scalar/String/Object targets, got %s", typeName)
+}
+
 func canonicalJSONScalarType(typeName string) string {
 	switch {
 	case strings.EqualFold(typeName, "String"):
@@ -9753,16 +9781,62 @@ func (vm *VM) schemaDescribeTabs() Value {
 }
 
 func (vm *VM) schemaDescribeTabValues() []Value {
-	if vm.Org == nil || len(vm.Org.Metadata.Tabs) == 0 {
+	if vm.Org == nil {
 		return nil
 	}
 	tabs := append([]storage.TabMetadata(nil), vm.Org.Metadata.Tabs...)
+	seen := make(map[string]struct{}, len(tabs))
+	for _, tab := range tabs {
+		if objectName := describeTabSObjectName(tab); objectName != "" {
+			seen[strings.ToLower(objectName)] = struct{}{}
+		}
+	}
+	objectNames := make([]string, 0, len(vm.Org.Objects))
+	for name, state := range vm.Org.Objects {
+		apiName := state.Definition.APIName
+		if apiName == "" {
+			apiName = name
+		}
+		if !isStandardDescribeTabObject(apiName) {
+			continue
+		}
+		key := strings.ToLower(apiName)
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		objectNames = append(objectNames, apiName)
+	}
+	sort.Strings(objectNames)
+	for _, name := range objectNames {
+		tabs = append(tabs, storage.TabMetadata{
+			Name:        name,
+			Label:       name,
+			SObjectName: name,
+		})
+	}
 	sort.Slice(tabs, func(i, j int) bool { return tabs[i].Name < tabs[j].Name })
 	values := make([]Value, 0, len(tabs))
 	for _, tab := range tabs {
+		if describeTabSObjectName(tab) == "" {
+			continue
+		}
 		values = append(values, describeTabValue(tab))
 	}
 	return values
+}
+
+func isStandardDescribeTabObject(name string) bool {
+	lowered := strings.ToLower(strings.TrimSpace(name))
+	if lowered == "" {
+		return false
+	}
+	for _, suffix := range []string{"__c", "__e", "__mdt", "__b", "__x"} {
+		if strings.HasSuffix(lowered, suffix) {
+			return false
+		}
+	}
+	return true
 }
 
 func describeTabValue(tab storage.TabMetadata) Value {
@@ -9773,15 +9847,48 @@ func describeTabValue(tab storage.TabMetadata) Value {
 	}
 	value.Fields["name"] = String(tab.Name)
 	value.Fields["label"] = String(label)
-	if strings.TrimSpace(tab.SObjectName) == "" {
+	sObjectName := describeTabSObjectName(tab)
+	if sObjectName == "" {
 		value.Fields["sObjectName"] = Null
 	} else {
-		value.Fields["sObjectName"] = String(tab.SObjectName)
+		value.Fields["sObjectName"] = String(sObjectName)
 	}
 	value.Fields["custom"] = Bool(tab.Custom)
 	value.Fields["iconUrl"] = String(tab.Motif)
+	value.Fields["icons"] = List(describeTabIconValue(tab))
 	value.Fields["url"] = String("/lightning/o/" + tab.Name + "/list")
 	return value
+}
+
+func describeTabSObjectName(tab storage.TabMetadata) string {
+	sObjectName := strings.TrimSpace(tab.SObjectName)
+	if sObjectName == "" && tab.Custom && strings.HasSuffix(strings.ToLower(tab.Name), "__c") {
+		sObjectName = tab.Name
+	}
+	return sObjectName
+}
+
+func describeTabIconValue(tab storage.TabMetadata) Value {
+	icon := Object("Schema.DescribeIconResult")
+	icon.Fields["contentType"] = String("image/svg+xml")
+	icon.Fields["height"] = Int(0)
+	icon.Fields["theme"] = String(tab.Motif)
+	icon.Fields["url"] = String(describeTabIconURL(tab))
+	icon.Fields["width"] = Int(0)
+	return icon
+}
+
+func describeTabIconURL(tab storage.TabMetadata) string {
+	name := strings.TrimSpace(tab.Name)
+	if name == "" {
+		name = "custom"
+	}
+	token := "custom"
+	if tab.Custom {
+		token = strings.ToLower(strings.TrimSuffix(strings.TrimSuffix(name, "__c"), "__tab"))
+		token = strings.ReplaceAll(token, "__", "_")
+	}
+	return "/img/icon/t4v35/custom/" + token + "_120.png.svg"
 }
 
 func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinition) Value {
@@ -13747,6 +13854,26 @@ func (vm *VM) constructValue(typeName string, args []Value, namedArgs map[string
 	return object, nil
 }
 
+func (vm *VM) constructArrayValue(typeName string, size Value) (Value, error) {
+	if size.Kind != ValueInt {
+		return Null, fmt.Errorf("array size must be Integer")
+	}
+	count := size.Int
+	if count < 0 {
+		return Null, fmt.Errorf("array size cannot be negative")
+	}
+	if count > 1000000 {
+		return Null, fmt.Errorf("array size too large")
+	}
+	values := make([]Value, int(count))
+	for i := range values {
+		values[i] = Null
+	}
+	list := List(values...)
+	list.Type = typeName
+	return vm.coerceAssignable(typeName, list)
+}
+
 func allMapEntryValues(values []Value) bool {
 	if len(values) == 0 {
 		return false
@@ -16902,6 +17029,8 @@ func canonicalPlatformObjectMemberName(typeName, method string) string {
 		"getReferenceTo", "getRelationshipName", "getPicklistValues", "getSObjectField",
 		"getFields", "getFieldPath", "getRequired", "getDbRequired",
 		"getController", "getControllerValues", "isAccessible", "isCreateable", "isUpdateable",
+		"getTabs", "isSelected", "getSObjectName", "isCustom", "getIconUrl", "getIcons",
+		"getContentType", "getHeight", "getTheme", "getWidth",
 		"to15", "to18", "getSObjectType",
 		"toStartOfMonth", "format", "toString", "date", "time",
 		"equals", "hashCode", "newInstance", "isAssignableFrom",
@@ -19552,11 +19681,44 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeTabResult.getIconUrl expects 0 arguments")
 			}
 			return receiver.Fields["iconUrl"], receiver, false, true, nil
+		case "getIcons":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeTabResult.getIcons expects 0 arguments")
+			}
+			return receiver.Fields["icons"], receiver, false, true, nil
 		case "getUrl":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeTabResult.getUrl expects 0 arguments")
 			}
 			return receiver.Fields["url"], receiver, false, true, nil
+		}
+	case "Schema.DescribeIconResult":
+		switch method {
+		case "getContentType":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeIconResult.getContentType expects 0 arguments")
+			}
+			return receiver.Fields["contentType"], receiver, false, true, nil
+		case "getHeight":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeIconResult.getHeight expects 0 arguments")
+			}
+			return receiver.Fields["height"], receiver, false, true, nil
+		case "getTheme":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeIconResult.getTheme expects 0 arguments")
+			}
+			return receiver.Fields["theme"], receiver, false, true, nil
+		case "getUrl":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeIconResult.getUrl expects 0 arguments")
+			}
+			return receiver.Fields["url"], receiver, false, true, nil
+		case "getWidth":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeIconResult.getWidth expects 0 arguments")
+			}
+			return receiver.Fields["width"], receiver, false, true, nil
 		}
 	case "Pattern":
 		return callPatternMember(receiver, method, args)

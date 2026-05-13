@@ -702,7 +702,7 @@ func (p *parser) parseComplexAssignmentLike(requireSemicolon bool) (ir.Instructi
 		p.pos = save
 		return ir.Instruction{}, false, nil
 	}
-	if left.Kind != ir.ExprCall || !strings.HasPrefix(left.Callee, "__field:") || left.Left == nil {
+	if left.Kind != ir.ExprCall || left.Left == nil || (left.Callee != "get" && !strings.HasPrefix(left.Callee, "__field:")) {
 		p.pos = save
 		return ir.Instruction{}, false, nil
 	}
@@ -714,6 +714,14 @@ func (p *parser) parseComplexAssignmentLike(requireSemicolon bool) (ir.Instructi
 		if _, err := p.expect(tokenSymbol, ";"); err != nil {
 			return ir.Instruction{}, true, err
 		}
+	}
+	if left.Kind == ir.ExprCall && left.Callee == "get" && left.Left != nil && len(left.Args) == 1 {
+		receiver := *left.Left
+		return ir.Instruction{Op: ir.OpExpr, Expr: ir.Expr{Kind: ir.ExprCall, Callee: "set", Left: &receiver, Args: []ir.Expr{left.Args[0], value}}, Pos: start.pos}, true, nil
+	}
+	if left.Kind != ir.ExprCall || !strings.HasPrefix(left.Callee, "__field:") || left.Left == nil {
+		p.pos = save
+		return ir.Instruction{}, false, nil
 	}
 	receiver := *left.Left
 	field := strings.TrimPrefix(left.Callee, "__field:")
@@ -1146,9 +1154,12 @@ func (p *parser) parsePrimary() (ir.Expr, error) {
 		return ir.Expr{Kind: ir.ExprLiteral, Value: "'" + strings.ReplaceAll(tok.text, "'", "''") + "'"}, nil
 	case tokenIdent:
 		if strings.EqualFold(tok.text, "new") {
-			typeName, err := p.parseTypeName()
+			typeName, size, err := p.parseNewTypeName()
 			if err != nil {
 				return ir.Expr{}, err
+			}
+			if size != nil {
+				return ir.Expr{Kind: ir.ExprCall, Callee: "__newArray:" + typeName, Args: []ir.Expr{*size}}, nil
 			}
 			args, namedArgs, err := p.parseNewArgs()
 			if err != nil {
@@ -1244,6 +1255,52 @@ func (p *parser) parseTypeSuffix(name string) (string, error) {
 		name += "[]"
 	}
 	return name, nil
+}
+
+func (p *parser) parseNewTypeName() (string, *ir.Expr, error) {
+	first, err := p.expect(tokenIdent, "")
+	if err != nil {
+		return "", nil, err
+	}
+	name := first.text
+	for p.match(tokenSymbol, ".") {
+		next, err := p.expect(tokenIdent, "")
+		if err != nil {
+			return "", nil, err
+		}
+		name += "." + next.text
+	}
+	if p.match(tokenSymbol, "<") {
+		var args []string
+		for {
+			arg, err := p.parseTypeName()
+			if err != nil {
+				return "", nil, err
+			}
+			args = append(args, arg)
+			if p.match(tokenSymbol, ">") {
+				break
+			}
+			if _, err := p.expect(tokenSymbol, ","); err != nil {
+				return "", nil, err
+			}
+		}
+		name += "<" + strings.Join(args, ",") + ">"
+	}
+	if p.match(tokenSymbol, "[") {
+		if p.match(tokenSymbol, "]") {
+			return name + "[]", nil, nil
+		}
+		size, err := p.parseExpression()
+		if err != nil {
+			return "", nil, err
+		}
+		if _, err := p.expect(tokenSymbol, "]"); err != nil {
+			return "", nil, err
+		}
+		return name + "[]", &size, nil
+	}
+	return name, nil, nil
 }
 
 func (p *parser) parseCastExpression() (ir.Expr, bool, error) {

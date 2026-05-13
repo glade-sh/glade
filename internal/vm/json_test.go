@@ -789,6 +789,9 @@ Type mapType = Type.forName('Map<String,Integer>');
 Map<String,Integer> counts = JSON.deserialize('{"a":1,"b":null}', mapType);
 System.assertEquals(1, counts.get('a'));
 System.assertEquals(null, counts.get('b'));
+Type idMapType = Type.forName('Map<Id,String>');
+Map<Id,String> byId = JSON.deserialize('{"001B000001DVM9t":"Acme"}', idMapType);
+System.assertEquals('Acme', byId.get(idValue));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -910,12 +913,12 @@ System.assert(caught.contains('JSON.deserialize cannot map JSON String to Intege
 
 String keyCaught = '';
 try {
-	Type mapType = Type.forName('Map<Integer,String>');
+	Type mapType = Type.forName('Map<List<String>,String>');
 	Object value = JSON.deserialize('{"1":"one"}', mapType);
 } catch (JSONException e) {
 	keyCaught = e.getMessage();
 }
-System.assert(keyCaught.contains('Map keys only for String/Object targets'));
+System.assert(keyCaught.contains('Map keys only for scalar/String/Object targets'));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1117,14 +1120,14 @@ Object n = JSON.deserialize('"not-a-number"', Integer.class);
 
 func TestExecJSONDeserializeTypedRejectsUnsupportedMapKeyTargets(t *testing.T) {
 	program, err := CompileAnonymous(`
-Type mapType = Type.forName('Map<Integer,Object>');
+Type mapType = Type.forName('Map<List<String>,Object>');
 Object value = JSON.deserialize('{"1":"one"}', mapType);
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	machine := New(nil)
-	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), "Map keys only for String/Object targets") {
+	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), "Map keys only for scalar/String/Object targets") {
 		t.Fatalf("err = %v", err)
 	}
 }
