@@ -201,6 +201,41 @@ func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 	}
 }
 
+func TestExecSearchQueryUsesFixedSearchResults(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'Nook Inc');
+insert account;
+Contact contact = new Contact(LastName = 'Nook');
+insert contact;
+Test.setFixedSearchResults(new List<Id>{account.Id, contact.Id});
+List<List<SObject>> rows = Search.query('FIND {Nook*} IN ALL FIELDS RETURNING Account(Id, Name), Contact(Id, Name) LIMIT 10');
+System.assertEquals(2, rows.size());
+System.assertEquals(1, rows[0].size());
+System.assertEquals(account.Id, rows[0][0].Id);
+System.assertEquals('Nook Inc', rows[0][0].get('Name'));
+System.assertEquals(1, rows[1].size());
+System.assertEquals(contact.Id, rows[1][0].Id);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Account", KeyPrefix: "001", Fields: map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}}},
+		Records:    map[storage.ID]storage.Record{},
+	}
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Contact", KeyPrefix: "003", Fields: map[string]storage.Field{"LastName": {APIName: "LastName", Type: storage.FieldString}, "Name": {APIName: "Name", Type: storage.FieldString}}},
+		Records:    map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecMetadataDeployContainerLocalModel(t *testing.T) {
 	program, err := CompileAnonymous(`
 Metadata.DeployContainer container = new Metadata.DeployContainer();
@@ -1767,11 +1802,6 @@ func TestExecUnsupportedTestHelperAPIsHaveStableShape(t *testing.T) {
 			name: "createSoqlStub",
 			src:  `Test.createSoqlStub(Account.class, 'SELECT Id FROM Account');`,
 			want: `unsupported call "Test.createSoqlStub local stub API"`,
-		},
-		{
-			name: "setFixedSearchResults",
-			src:  `Test.setFixedSearchResults(new List<String>{'001000000000001'});`,
-			want: `unsupported call "Test.setFixedSearchResults local SOSL fixed search results"`,
 		},
 	}
 	for _, tc := range cases {

@@ -82,6 +82,7 @@ type VM struct {
 	pageMessages       []Value
 	currentPage        Value
 	pageReferences     map[string]string
+	fixedSearchResults []Value
 	platformCache      map[string]map[string]cacheEntry
 	capturedEmails     []CapturedEmail
 	restRequest        Value
@@ -2103,6 +2104,9 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		}
 	}
 	if strings.HasPrefix(callee, "Search.") {
+		if strings.EqualFold(callee, "Search.query") {
+			return vm.searchQuery(args)
+		}
 		return Null, unsupportedCallError(callee + " local search/SOSL surface")
 	}
 platformStaticCall:
@@ -3056,7 +3060,7 @@ platformStaticCall:
 	case "Continuation.addHttpRequest", "Continuation.getResponse":
 		return Null, unsupportedCallError(callee + " local continuation callout surface")
 	case "Test.setFixedSearchResults":
-		return Null, unsupportedCallError(callee + " local SOSL fixed search results")
+		return vm.testSetFixedSearchResults(args)
 	case "Test.startTest":
 		return vm.testStart()
 	case "Test.stopTest":
@@ -5376,6 +5380,137 @@ func (vm *VM) executeSOQLRowsWithExpander(raw string, execResult *Result, expand
 		}))
 	}
 	return values, nil
+}
+
+func (vm *VM) testSetFixedSearchResults(args []Value) (Value, error) {
+	if len(args) != 1 || args[0].Kind != ValueList {
+		return Null, fmt.Errorf("Test.setFixedSearchResults expects List<Id>")
+	}
+	if err := vm.requireTestContext("Test.setFixedSearchResults"); err != nil {
+		return Null, err
+	}
+	vm.fixedSearchResults = append([]Value(nil), args[0].List...)
+	return Null, nil
+}
+
+func (vm *VM) searchQuery(args []Value) (Value, error) {
+	if len(args) != 1 || args[0].Kind != ValueString {
+		return Null, fmt.Errorf("Search.query expects query String")
+	}
+	if vm.Org == nil {
+		return Null, fmt.Errorf("Search.query requires org state")
+	}
+	objects, err := parseSOSLReturningObjects(args[0].Text)
+	if err != nil {
+		return Null, err
+	}
+	groups := make([]Value, 0, len(objects))
+	for _, spec := range objects {
+		rows := List()
+		rows.Type = "List<" + spec.ObjectName + ">"
+		for _, idValue := range vm.fixedSearchResults {
+			id, ok := valueIDString(idValue)
+			if !ok {
+				continue
+			}
+			objectName, ok := vm.sObjectNameForIDPrefix(idPrefix(id))
+			if !ok || !strings.EqualFold(objectName, spec.ObjectName) {
+				continue
+			}
+			record, ok := vm.findOrgRecord(objectName, storage.ID(id))
+			if !ok {
+				continue
+			}
+			value := vm.vmValueFromRecord(record)
+			if len(spec.Fields) > 0 {
+				value.Fields[sobjectQueriedFieldsField] = queriedSObjectFieldsValue(record.Object, spec.Fields)
+			}
+			rows.List = append(rows.List, value)
+		}
+		groups = append(groups, rows)
+	}
+	return List(groups...), nil
+}
+
+type soslReturningObject struct {
+	ObjectName string
+	Fields     map[string]bool
+}
+
+func parseSOSLReturningObjects(query string) ([]soslReturningObject, error) {
+	match := regexp.MustCompile(`(?is)\bRETURNING\s+(.+?)(?:\s+LIMIT\s+\d+\s*)?$`).FindStringSubmatch(query)
+	if len(match) != 2 {
+		return nil, unsupportedCallError("Search.query SOSL RETURNING clause")
+	}
+	parts := splitTopLevelComma(match[1])
+	out := make([]soslReturningObject, 0, len(parts))
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+		open := strings.IndexByte(part, '(')
+		close := strings.LastIndexByte(part, ')')
+		if open <= 0 || close <= open {
+			return nil, unsupportedCallError("Search.query SOSL RETURNING object clause")
+		}
+		spec := soslReturningObject{ObjectName: strings.TrimSpace(part[:open]), Fields: make(map[string]bool)}
+		fields := strings.TrimSpace(part[open+1 : close])
+		fields = trimSOSLReturningFieldList(fields)
+		for _, field := range splitTopLevelComma(fields) {
+			field = strings.TrimSpace(field)
+			if field != "" {
+				spec.Fields[strings.ToLower(field)] = true
+			}
+		}
+		out = append(out, spec)
+	}
+	return out, nil
+}
+
+func trimSOSLReturningFieldList(fields string) string {
+	lowered := strings.ToLower(fields)
+	end := len(fields)
+	for _, marker := range []string{" where ", " order by ", " limit "} {
+		if index := strings.Index(lowered, marker); index >= 0 && index < end {
+			end = index
+		}
+	}
+	return fields[:end]
+}
+
+func splitTopLevelComma(text string) []string {
+	var parts []string
+	start := 0
+	depth := 0
+	for i := 0; i < len(text); i++ {
+		switch text[i] {
+		case '(':
+			depth++
+		case ')':
+			if depth > 0 {
+				depth--
+			}
+		case ',':
+			if depth == 0 {
+				parts = append(parts, text[start:i])
+				start = i + 1
+			}
+		}
+	}
+	parts = append(parts, text[start:])
+	return parts
+}
+
+func valueIDString(value Value) (string, bool) {
+	if value.Kind == ValueString && value.Text != "" {
+		return value.Text, true
+	}
+	if value.Kind == ValueObject && strings.EqualFold(value.Type, "Id") {
+		text, err := platformScalarText(value, "Id")
+		return text, err == nil && text != ""
+	}
+	return "", false
 }
 
 func (vm *VM) queriedSObjectFields(queryText string) map[string]bool {
