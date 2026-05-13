@@ -99,6 +99,10 @@ type VM struct {
 	staticInitState    map[string]staticInitState
 	lastAmbiguous      *overloadDiagnostic
 	activeConstructors map[string]int
+	describeCache      map[string]Value
+	fieldDescribeCache map[string]Value
+	describeTabsCache  *Value
+	customDataCache    map[string]Value
 }
 
 type enumClassLookup struct {
@@ -237,28 +241,31 @@ type Trigger struct {
 
 func New(stdout io.Writer) *VM {
 	return &VM{
-		Globals:         make(map[string]Value),
-		VarTypes:        make(map[string]string),
-		Methods:         make(map[string]Method),
-		MethodOverloads: make(map[string][]Method),
-		MethodFolded:    make(map[string][]Method),
-		Classes:         make(map[string]Class),
-		classLookup:     make(map[string]Class),
-		enumLookup:      make(map[string]enumClassLookup),
-		Triggers:        make(map[string][]Trigger),
-		Stdout:          stdout,
-		limitCaps:       defaultLimitCaps(),
-		limitMode:       LimitModePermissive,
-		fakeNow:         time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC),
-		savepoints:      make(map[string]storage.OrgState),
-		emailSavepoints: make(map[string][]CapturedEmail),
-		savepointOrder:  make(map[string]int),
-		platformCache:   make(map[string]map[string]cacheEntry),
-		metadataDeploys: make(map[string]Value),
-		ctx:             context.Background(),
-		activeGetters:   make(map[string]int),
-		activeSetters:   make(map[string]int),
-		staticInitState: make(map[string]staticInitState),
+		Globals:            make(map[string]Value),
+		VarTypes:           make(map[string]string),
+		Methods:            make(map[string]Method),
+		MethodOverloads:    make(map[string][]Method),
+		MethodFolded:       make(map[string][]Method),
+		Classes:            make(map[string]Class),
+		classLookup:        make(map[string]Class),
+		enumLookup:         make(map[string]enumClassLookup),
+		Triggers:           make(map[string][]Trigger),
+		Stdout:             stdout,
+		limitCaps:          defaultLimitCaps(),
+		limitMode:          LimitModePermissive,
+		fakeNow:            time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC),
+		savepoints:         make(map[string]storage.OrgState),
+		emailSavepoints:    make(map[string][]CapturedEmail),
+		savepointOrder:     make(map[string]int),
+		platformCache:      make(map[string]map[string]cacheEntry),
+		metadataDeploys:    make(map[string]Value),
+		ctx:                context.Background(),
+		activeGetters:      make(map[string]int),
+		activeSetters:      make(map[string]int),
+		staticInitState:    make(map[string]staticInitState),
+		describeCache:      make(map[string]Value),
+		fieldDescribeCache: make(map[string]Value),
+		customDataCache:    make(map[string]Value),
 	}
 }
 
@@ -2361,6 +2368,7 @@ platformStaticCall:
 		restored := snapshot.Clone()
 		*vm.Org = restored
 		vm.capturedEmails = append([]CapturedEmail(nil), vm.emailSavepoints[idValue.Text]...)
+		vm.clearCustomDataCache()
 		for id, order := range vm.savepointOrder {
 			if order > targetOrder {
 				delete(vm.savepoints, id)
@@ -3652,6 +3660,38 @@ func scalarText(value Value) string {
 	return ""
 }
 
+func (vm *VM) customDataCachedValue(key string) (Value, bool) {
+	if key == "" || vm.customDataCache == nil {
+		return Null, false
+	}
+	value, ok := vm.customDataCache[key]
+	return value, ok
+}
+
+func (vm *VM) storeCustomDataCachedValue(key string, value Value) Value {
+	if key == "" {
+		return value
+	}
+	if vm.customDataCache == nil {
+		vm.customDataCache = make(map[string]Value)
+	}
+	vm.customDataCache[key] = value
+	return value
+}
+
+func (vm *VM) clearCustomDataCache() {
+	if len(vm.customDataCache) > 0 {
+		vm.customDataCache = make(map[string]Value)
+	}
+}
+
+func (vm *VM) clearMetadataCaches() {
+	vm.describeCache = make(map[string]Value)
+	vm.fieldDescribeCache = make(map[string]Value)
+	vm.describeTabsCache = nil
+	vm.clearCustomDataCache()
+}
+
 func (vm *VM) callCustomDataStaticMember(typeName, method string, args []Value) (Value, bool, error) {
 	objectName, definition, kind, ok := vm.customDataObject(typeName)
 	if !ok {
@@ -3670,6 +3710,10 @@ func (vm *VM) callCustomDataStaticMember(typeName, method string, args []Value) 
 		}
 		if err := unsupportedHierarchyCustomSettingStatic(definition, typeName, method); err != nil {
 			return Null, true, err
+		}
+		cacheKey := "getAll:" + strings.ToLower(objectName)
+		if cached, ok := vm.customDataCachedValue(cacheKey); ok {
+			return cached, true, nil
 		}
 		out := Map()
 		out.Type = "Map<String," + objectName + ">"
@@ -3691,7 +3735,7 @@ func (vm *VM) callCustomDataStaticMember(typeName, method string, args []Value) 
 			}
 			out.Map[mapKey(String(key))] = vm.readOnlyCustomDataValue(record, kind)
 		}
-		return out, true, nil
+		return vm.storeCustomDataCachedValue(cacheKey, out), true, nil
 	case "getInstance":
 		if strings.EqualFold(definition.Metadata["customSettingsType"], "Hierarchy") {
 			if len(args) > 1 {
@@ -3700,14 +3744,18 @@ func (vm *VM) callCustomDataStaticMember(typeName, method string, args []Value) 
 		} else if err := unsupportedHierarchyCustomSettingStatic(definition, typeName, method); err != nil {
 			return Null, true, err
 		}
+		cacheKey := "getInstance:" + strings.ToLower(objectName) + ":" + customDataArgsCacheKey(args)
+		if cached, ok := vm.customDataCachedValue(cacheKey); ok {
+			return cached, true, nil
+		}
 		record, found, err := vm.customDataGetInstance(objectName, definition, kind, args)
 		if err != nil || !found {
 			if err == nil && strings.EqualFold(definition.Metadata["customSettingsType"], "Hierarchy") {
-				return vm.readOnlyCustomDataDefaultValue(objectName, kind), true, nil
+				return vm.storeCustomDataCachedValue(cacheKey, vm.readOnlyCustomDataDefaultValue(objectName, kind)), true, nil
 			}
 			return Null, true, err
 		}
-		return vm.readOnlyCustomDataValue(record, kind), true, nil
+		return vm.storeCustomDataCachedValue(cacheKey, vm.readOnlyCustomDataValue(record, kind)), true, nil
 	case "getOrgDefaults", "getValues":
 		if strings.EqualFold(definition.Metadata["customSettingsType"], "Hierarchy") {
 			switch method {
@@ -3715,7 +3763,11 @@ func (vm *VM) callCustomDataStaticMember(typeName, method string, args []Value) 
 				if len(args) != 0 {
 					return Null, true, fmt.Errorf("%s.%s expects 0 arguments", typeName, method)
 				}
-				return vm.hierarchyCustomSettingOrgDefaults(objectName, kind), true, nil
+				cacheKey := "getOrgDefaults:" + strings.ToLower(objectName)
+				if cached, ok := vm.customDataCachedValue(cacheKey); ok {
+					return cached, true, nil
+				}
+				return vm.storeCustomDataCachedValue(cacheKey, vm.hierarchyCustomSettingOrgDefaults(objectName, kind)), true, nil
 			case "getValues":
 				if len(args) > 1 {
 					return Null, true, fmt.Errorf("%s.getValues expects optional setup owner Id", typeName)
@@ -3723,26 +3775,45 @@ func (vm *VM) callCustomDataStaticMember(typeName, method string, args []Value) 
 				if len(args) == 1 && args[0].Kind != ValueString && args[0].Kind != ValueNull {
 					return Null, true, fmt.Errorf("%s.getValues expects optional setup owner Id", typeName)
 				}
+				cacheKey := "getValues:" + strings.ToLower(objectName) + ":" + customDataArgsCacheKey(args)
+				if cached, ok := vm.customDataCachedValue(cacheKey); ok {
+					return cached, true, nil
+				}
 				if len(args) == 1 && args[0].Kind == ValueString {
 					if record, found := vm.hierarchyCustomSettingRecordForOwner(objectName, args[0].Text); found {
-						return vm.readOnlyCustomDataValue(record, kind), true, nil
+						return vm.storeCustomDataCachedValue(cacheKey, vm.readOnlyCustomDataValue(record, kind)), true, nil
 					}
-					return vm.readOnlyCustomDataDefaultValue(objectName, kind), true, nil
+					return vm.storeCustomDataCachedValue(cacheKey, vm.readOnlyCustomDataDefaultValue(objectName, kind)), true, nil
 				}
-				return vm.hierarchyCustomSettingOrgDefaults(objectName, kind), true, nil
+				return vm.storeCustomDataCachedValue(cacheKey, vm.hierarchyCustomSettingOrgDefaults(objectName, kind)), true, nil
 			}
 		}
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("%s.%s expects 0 arguments", typeName, method)
 		}
+		cacheKey := method + ":" + strings.ToLower(objectName)
+		if cached, ok := vm.customDataCachedValue(cacheKey); ok {
+			return cached, true, nil
+		}
 		record, found := vm.customDataOrgDefaultRecord(objectName)
 		if !found {
-			return vm.readOnlyCustomDataDefaultValue(objectName, kind), true, nil
+			return vm.storeCustomDataCachedValue(cacheKey, vm.readOnlyCustomDataDefaultValue(objectName, kind)), true, nil
 		}
-		return vm.readOnlyCustomDataValue(record, kind), true, nil
+		return vm.storeCustomDataCachedValue(cacheKey, vm.readOnlyCustomDataValue(record, kind)), true, nil
 	default:
 		return Null, false, nil
 	}
+}
+
+func customDataArgsCacheKey(args []Value) string {
+	if len(args) == 0 {
+		return ""
+	}
+	parts := make([]string, 0, len(args))
+	for _, arg := range args {
+		parts = append(parts, strings.ToLower(arg.String()))
+	}
+	return strings.Join(parts, "|")
 }
 
 func (vm *VM) customDataOrgDefaultRecord(objectName string) (storage.Record, bool) {
@@ -6704,7 +6775,19 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 			return results, err
 		}
 	}
+	if hasDMLSuccess(results) {
+		vm.clearCustomDataCache()
+	}
 	return results, nil
+}
+
+func hasDMLSuccess(results []dml.Result) bool {
+	for _, result := range results {
+		if result.Success {
+			return true
+		}
+	}
+	return false
 }
 
 func (vm *VM) applySObjectFieldDefaults(records []storage.Record) {
@@ -10077,16 +10160,23 @@ func (vm *VM) schemaDescribeObjectName(value Value) (string, error) {
 }
 
 func (vm *VM) schemaDescribeTabs() Value {
+	if vm.describeTabsCache != nil {
+		return *vm.describeTabsCache
+	}
 	tabs := vm.schemaDescribeTabValues()
 	if len(tabs) == 0 {
-		return List()
+		value := List()
+		vm.describeTabsCache = &value
+		return value
 	}
 	tabSet := Object("Schema.DescribeTabSetResult")
 	tabSet.Fields["name"] = String("AllTabs")
 	tabSet.Fields["label"] = String("All Tabs")
 	tabSet.Fields["tabs"] = List(tabs...)
 	tabSet.Fields["selected"] = Bool(false)
-	return List(tabSet)
+	value := List(tabSet)
+	vm.describeTabsCache = &value
+	return value
 }
 
 func (vm *VM) schemaDescribeTabValues() []Value {
@@ -10145,7 +10235,24 @@ func isStandardDescribeTabObject(name string) bool {
 			return false
 		}
 	}
-	return true
+	_, ok := standardDescribeTabObjects[lowered]
+	return ok
+}
+
+var standardDescribeTabObjects = map[string]struct{}{
+	"account":     {},
+	"campaign":    {},
+	"case":        {},
+	"contact":     {},
+	"contract":    {},
+	"event":       {},
+	"lead":        {},
+	"opportunity": {},
+	"order":       {},
+	"pricebook2":  {},
+	"product2":    {},
+	"task":        {},
+	"user":        {},
 }
 
 func describeTabValue(tab storage.TabMetadata) Value {
@@ -10201,6 +10308,12 @@ func describeTabIconURL(tab storage.TabMetadata) string {
 }
 
 func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinition) Value {
+	cacheKey := strings.ToLower(strings.TrimSpace(name))
+	if cacheKey != "" {
+		if cached, ok := vm.describeCache[cacheKey]; ok {
+			return cached
+		}
+	}
 	storage.EnsureStandardObjectFields(&definition)
 	if strings.EqualFold(definition.APIName, "Account") && len(definition.RecordTypes) == 0 {
 		storage.EnsureStandardObjectFieldsForFeatures(&definition, []string{"PersonAccounts"})
@@ -10299,6 +10412,9 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 	desc.Fields["recordTypeInfosByName"] = byName
 	desc.Fields["recordTypeInfosByDeveloperName"] = byDeveloperName
 	desc.Fields["recordTypeInfosById"] = byID
+	if cacheKey != "" {
+		vm.describeCache[cacheKey] = desc
+	}
 	return desc
 }
 
@@ -10534,6 +10650,10 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 		}
 		return Null, fmt.Errorf("Schema field describe unknown field %s.%s", objectName, fieldName)
 	}
+	cacheKey := strings.ToLower(objectName) + "." + strings.ToLower(fieldName)
+	if cached, ok := vm.fieldDescribeCache[cacheKey]; ok {
+		return cached, nil
+	}
 	field := definition.Fields[fieldName]
 	if field.APIName == "" && strings.EqualFold(fieldName, "Id") {
 		field = storage.Field{APIName: "Id", Label: "Record ID", Type: storage.FieldID}
@@ -10591,6 +10711,7 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 		picklistValues = append(picklistValues, entry)
 	}
 	desc.Fields["picklistValues"] = List(picklistValues...)
+	vm.fieldDescribeCache[cacheKey] = desc
 	return desc, nil
 }
 
@@ -18834,6 +18955,7 @@ func (vm *VM) applyCustomMetadataDeployment(item Value) error {
 	record.Fields["Id"] = storage.IDValue(recordID)
 	state.Records[recordID] = record
 	vm.Org.Objects[definition.APIName] = state
+	vm.clearMetadataCaches()
 	return nil
 }
 
@@ -18875,6 +18997,7 @@ func (vm *VM) applyCustomObjectDeployment(item Value) error {
 		state.Records = make(map[storage.ID]storage.Record)
 	}
 	vm.Org.Objects[objectName] = state
+	vm.clearMetadataCaches()
 	return nil
 }
 
@@ -18910,6 +19033,7 @@ func (vm *VM) applyCustomFieldDeployment(item Value) error {
 	}
 	state.Definition.Fields[fieldName] = field
 	vm.Org.Objects[objectName] = state
+	vm.clearMetadataCaches()
 	return nil
 }
 
