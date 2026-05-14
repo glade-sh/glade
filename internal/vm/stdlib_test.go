@@ -1226,6 +1226,8 @@ System.assertEquals(null, noMessage.getMessage());
 Exception systemPrefixed = new System.DmlException('system blocked');
 System.assertEquals('System.DmlException', systemPrefixed.getTypeName());
 System.assertEquals('System.DmlException: system blocked', systemPrefixed.toString());
+Exception aura = new AuraHandledException('aura blocked');
+System.assertEquals('System.AuraHandledException', aura.getTypeName());
 
 String caught = '';
 try {

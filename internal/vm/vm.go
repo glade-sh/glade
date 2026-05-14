@@ -17610,6 +17610,7 @@ var builtinExceptionParents = map[string]string{
 	"Exception": "Object",
 
 	"AssertException":                 "Exception",
+	"AuraHandledException":            "Exception",
 	"AsyncException":                  "Exception",
 	"CalloutException":                "Exception",
 	"DmlException":                    "Exception",
