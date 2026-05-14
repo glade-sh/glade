@@ -8,8 +8,10 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/open-aer/oaer/internal/apextest"
@@ -31,6 +33,9 @@ type LocalTestOptions struct {
 	TimeoutMS           int64
 	TopFailures         int
 	ProfileOnTimeout    bool
+	Parallelism         int
+	ProgressWriter      io.Writer
+	ForceAnalysis       bool
 }
 
 type LocalTestReport struct {
@@ -135,7 +140,9 @@ func RunLocalTests(options LocalTestOptions) (LocalTestReport, error) {
 		projectLabel = absRoot
 	}
 
+	reportLocalTestPhase(options, "load_start", started)
 	index, loadDiagnostics, err := loadLocalTestIndex(root)
+	reportLocalTestPhase(options, "load_done", started)
 	if err != nil {
 		outcome := LocalTestOutcome{
 			ProjectLabel: projectLabel,
@@ -157,17 +164,25 @@ func RunLocalTests(options LocalTestOptions) (LocalTestReport, error) {
 		TraceBlocked:        shouldTraceFocusedLocalTests(options),
 		SlowTestThresholdMS: options.SlowTestThresholdMS,
 		TimeoutMS:           options.TimeoutMS,
+		Parallelism:         localTestParallelism(options),
+		ParallelMethods:     shouldParallelizeFocusedMethods(options),
+		Progress:            localTestProgressReporter(options.ProgressWriter),
 	}
+	reportLocalTestPhase(options, "discover_start", started)
 	cases := apextest.Discover(index, testOpts)
+	cases = filterLocalTestCases(cases, options)
 	sort.SliceStable(cases, func(i, j int) bool {
 		if cases[i].ClassName == cases[j].ClassName {
 			return cases[i].MethodName < cases[j].MethodName
 		}
 		return cases[i].ClassName < cases[j].ClassName
 	})
+	reportLocalTestPhase(options, fmt.Sprintf("discover_done total=%d", len(cases)), started)
 
-	if shouldAnalyzeLocalTests(options) {
+	if shouldAnalyzeLocalTests(options, len(cases)) {
+		reportLocalTestPhase(options, "analyze_start", started)
 		semaResult := sema.Analyze(index)
+		reportLocalTestPhase(options, fmt.Sprintf("analyze_done diagnostics=%d", len(semaResult.Diagnostics)), started)
 		report.Diagnostics = append(report.Diagnostics, semaResult.Diagnostics...)
 		if firstError, ok := firstLocalTestError(semaResult.Diagnostics); ok {
 			for _, testCase := range cases {
@@ -176,12 +191,16 @@ func RunLocalTests(options LocalTestOptions) (LocalTestReport, error) {
 			finalizeLocalTestReport(&report, options, started)
 			return report, nil
 		}
+	} else if strings.TrimSpace(options.Class) == "" && strings.TrimSpace(options.Method) == "" {
+		reportLocalTestPhase(options, fmt.Sprintf("analyze_skip total=%d", len(cases)), started)
 	}
 
 	if options.ProfileOnTimeout {
 		testOpts.TraceBlocked = true
 	}
+	reportLocalTestPhase(options, "run_start", started)
 	run := apextest.RunCasesContext(context.Background(), index, testOpts, cases)
+	reportLocalTestPhase(options, "run_done", started)
 	for _, suite := range run.Suites {
 		for _, testCase := range suite.Cases {
 			if !matchesLocalTestCase(testCase.ClassName, testCase.MethodName, options) {
@@ -194,8 +213,66 @@ func RunLocalTests(options LocalTestOptions) (LocalTestReport, error) {
 	return report, nil
 }
 
-func shouldAnalyzeLocalTests(options LocalTestOptions) bool {
-	return strings.TrimSpace(options.Class) == "" && strings.TrimSpace(options.Method) == ""
+func reportLocalTestPhase(options LocalTestOptions, event string, started time.Time) {
+	if options.ProgressWriter != nil {
+		fmt.Fprintf(options.ProgressWriter, "local-tests phase %s durationMs=%d\n", event, time.Since(started).Milliseconds())
+	}
+}
+
+const largeLocalTestAnalysisThreshold = 5000
+
+func shouldAnalyzeLocalTests(options LocalTestOptions, totalCases int) bool {
+	if strings.TrimSpace(options.Class) != "" || strings.TrimSpace(options.Method) != "" {
+		return false
+	}
+	return options.ForceAnalysis || totalCases <= largeLocalTestAnalysisThreshold
+}
+
+func localTestParallelism(options LocalTestOptions) int {
+	if options.Parallelism > 0 {
+		return options.Parallelism
+	}
+	if strings.TrimSpace(options.Method) != "" {
+		return 1
+	}
+	if strings.TrimSpace(options.Class) != "" {
+		procs := runtime.GOMAXPROCS(0)
+		if procs < 2 {
+			return procs
+		}
+		if procs < 4 {
+			return procs
+		}
+		return 4
+	}
+	if runtime.GOMAXPROCS(0) < 2 {
+		return 1
+	}
+	return 2
+}
+
+func shouldParallelizeFocusedMethods(options LocalTestOptions) bool {
+	return strings.TrimSpace(options.Class) != "" && strings.TrimSpace(options.Method) == ""
+}
+
+func localTestProgressReporter(w io.Writer) func(apextest.TestProgress) {
+	if w == nil {
+		return nil
+	}
+	var mu sync.Mutex
+	return func(progress apextest.TestProgress) {
+		mu.Lock()
+		defer mu.Unlock()
+		name := progress.ClassName
+		if progress.MethodName != "" {
+			name += "." + progress.MethodName
+		}
+		if progress.DurationMS > 0 || progress.Status != "" {
+			fmt.Fprintf(w, "local-tests %s %s status=%s durationMs=%d\n", progress.Event, name, progress.Status, progress.DurationMS)
+			return
+		}
+		fmt.Fprintf(w, "local-tests %s %s\n", progress.Event, name)
+	}
 }
 
 func shouldTraceFocusedLocalTests(options LocalTestOptions) bool {

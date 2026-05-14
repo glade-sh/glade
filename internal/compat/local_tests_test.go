@@ -48,14 +48,35 @@ func TestRunLocalTestsReportsTopFailures(t *testing.T) {
 }
 
 func TestShouldAnalyzeLocalTestsSkipsFocusedRuns(t *testing.T) {
-	if !shouldAnalyzeLocalTests(LocalTestOptions{}) {
+	if !shouldAnalyzeLocalTests(LocalTestOptions{}, 12) {
 		t.Fatalf("unfiltered local test run should analyze the full project")
 	}
-	if shouldAnalyzeLocalTests(LocalTestOptions{Class: "CartItemTest"}) {
+	if shouldAnalyzeLocalTests(LocalTestOptions{Class: "CartItemTest"}, 12) {
 		t.Fatalf("class-filtered local test run should skip full-project semantic analysis")
 	}
-	if shouldAnalyzeLocalTests(LocalTestOptions{Method: "runsFast"}) {
+	if shouldAnalyzeLocalTests(LocalTestOptions{Method: "runsFast"}, 12) {
 		t.Fatalf("method-filtered local test run should skip full-project semantic analysis")
+	}
+	if shouldAnalyzeLocalTests(LocalTestOptions{}, largeLocalTestAnalysisThreshold+1) {
+		t.Fatalf("large unfiltered local test run should skip full-project semantic analysis by default")
+	}
+	if !shouldAnalyzeLocalTests(LocalTestOptions{ForceAnalysis: true}, largeLocalTestAnalysisThreshold+1) {
+		t.Fatalf("large unfiltered local test run should allow forced full-project semantic analysis")
+	}
+}
+
+func TestLocalTestParallelismCapsFocusedClassRuns(t *testing.T) {
+	if got := localTestParallelism(LocalTestOptions{}); got > 2 {
+		t.Fatalf("full-project default parallelism = %d, want at most 2", got)
+	}
+	if got := localTestParallelism(LocalTestOptions{Class: "CartSubmitterTest"}); got > 4 {
+		t.Fatalf("focused class parallelism = %d, want at most 4", got)
+	}
+	if got := localTestParallelism(LocalTestOptions{Class: "CartSubmitterTest", Parallelism: 4}); got != 4 {
+		t.Fatalf("explicit focused class parallelism = %d, want 4", got)
+	}
+	if got := localTestParallelism(LocalTestOptions{Class: "CartSubmitterTest", Method: "runs"}); got != 1 {
+		t.Fatalf("focused method parallelism = %d, want 1", got)
 	}
 }
 
@@ -74,6 +95,38 @@ func TestFocusedLocalTestsSkipTraceByDefault(t *testing.T) {
 	outcome := report.Outcomes[0]
 	if outcome.TraceEvents != 0 || outcome.ProfileEvents != 0 || len(outcome.ProfileCategories) != 0 {
 		t.Fatalf("focused outcome should not include trace/profile by default: %#v", outcome)
+	}
+}
+
+func TestRunLocalTestsClassFilterIsExact(t *testing.T) {
+	root := t.TempDir()
+	writeLocalTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeLocalTestFile(t, filepath.Join(root, "force-app/main/default/classes/CartSubmitterTest.cls"), `
+@isTest
+private class CartSubmitterTest {
+  @isTest static void runs() {
+    System.assertEquals(1, 1);
+  }
+}
+`)
+	writeLocalTestFile(t, filepath.Join(root, "force-app/main/default/classes/ScheduleWithCartSubmitterTest.cls"), `
+@isTest
+private class ScheduleWithCartSubmitterTest {
+  @isTest static void shouldNotRun() {
+    System.assert(false, 'wrong class');
+  }
+}
+`)
+
+	report, err := RunLocalTests(LocalTestOptions{Project: root, Class: "CartSubmitterTest"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if report.Summary.Total != 1 || report.Summary.Pass != 1 {
+		t.Fatalf("summary = %#v outcomes = %#v", report.Summary, report.Outcomes)
+	}
+	if report.Outcomes[0].Class != "CartSubmitterTest" {
+		t.Fatalf("outcome = %#v", report.Outcomes[0])
 	}
 }
 

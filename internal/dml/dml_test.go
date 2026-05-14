@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/open-aer/oaer/internal/soql"
 	"github.com/open-aer/oaer/internal/storage"
 )
 
@@ -21,8 +20,11 @@ func TestInsertUpdateDelete(t *testing.T) {
 			"Name": storage.StringValue("Acme"),
 		},
 	}})
-	if !insert[0].Success || insert[0].ID != "001000000000001" {
+	if !insert[0].Success || insert[0].ID == "" || insert[0].ID == "001000000000001" {
 		t.Fatalf("insert = %#v", insert)
+	}
+	if org.IDSequences["Account"] != 1 {
+		t.Fatalf("account id sequence = %d, want 1", org.IDSequences["Account"])
 	}
 	stored := org.Objects["Account"].Records[insert[0].ID]
 	if stored.System.CreatedDate != "2026-05-02T12:00:00Z" || stored.System.SystemModstamp == "" || stored.System.OwnerID == "" {
@@ -87,6 +89,36 @@ func TestUpdateRequiredFieldToNullFails(t *testing.T) {
 	}
 }
 
+func TestUpdateMatchesStoredRecordByFifteenCharacterID(t *testing.T) {
+	org := testOrg()
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name": storage.StringValue("Acme"),
+		},
+	}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert)
+	}
+
+	id18 := storage.ID(string(insert[0].ID) + "AAA")
+	update := engine.Update([]storage.Record{{
+		ID:     id18,
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name": storage.StringValue("Changed"),
+		},
+	}})
+	if !update[0].Success {
+		t.Fatalf("update = %#v", update)
+	}
+	if got := org.Objects["Account"].Records[insert[0].ID].Fields["Name"].String; got != "Changed" {
+		t.Fatalf("updated name = %q", got)
+	}
+}
+
 func TestInsertAppliesAutoNumberName(t *testing.T) {
 	org := testOrg()
 	org.Objects["Order__c"] = storage.ObjectState{
@@ -119,7 +151,10 @@ func TestDMLRecalculatesSummaryFields(t *testing.T) {
 			Fields: map[string]storage.Field{
 				"Name":       {APIName: "Name", Type: storage.FieldString},
 				"MaxTerm__c": {APIName: "MaxTerm__c", Type: storage.FieldSummary, SummarizedField: "Child__c.Term__c", SummaryForeignKey: "Child__c.Parent__c", SummaryOperation: "max"},
+				"Count__c":   {APIName: "Count__c", Type: storage.FieldSummary, SummaryForeignKey: "Child__c.Parent__c", SummaryOperation: "count"},
+				"Paid__c":    {APIName: "Paid__c", Type: storage.FieldDecimal},
 				"Total__c":   {APIName: "Total__c", Type: storage.FieldSummary, SummarizedField: "Child__c.Amount__c", SummaryForeignKey: "Child__c.Parent__c", SummaryOperation: "sum"},
+				"Balance__c": {APIName: "Balance__c", Type: storage.FieldCalculated, DisplayType: "Currency", Formula: "Total__c - Paid__c"},
 			},
 		},
 		Records: make(map[storage.ID]storage.Record),
@@ -143,7 +178,7 @@ func TestDMLRecalculatesSummaryFields(t *testing.T) {
 	}
 	children := engine.Insert([]storage.Record{
 		{Object: "Child__c", Fields: map[string]storage.Value{"Parent__c": storage.IDValue(parent[0].ID), "Term__c": storage.DecimalValue("1"), "Amount__c": storage.DecimalValue("5")}},
-		{Object: "Child__c", Fields: map[string]storage.Value{"Parent__c": storage.IDValue(parent[0].ID), "Term__c": storage.DecimalValue("12"), "Amount__c": storage.DecimalValue("7")}},
+		{Object: "Child__c", Fields: map[string]storage.Value{"Parent__c": storage.IDValue(parent[0].ID + "AAA"), "Term__c": storage.DecimalValue("12"), "Amount__c": storage.DecimalValue("7")}},
 	})
 	if !children[0].Success || !children[1].Success {
 		t.Fatalf("child insert = %#v", children)
@@ -154,6 +189,19 @@ func TestDMLRecalculatesSummaryFields(t *testing.T) {
 	}
 	if got := stored.Fields["Total__c"].Decimal; got != "12" {
 		t.Fatalf("sum summary after insert = %q", got)
+	}
+	if got := stored.Fields["Count__c"].Integer; got != 2 {
+		t.Fatalf("count summary after insert = %d", got)
+	}
+	value, _, ok := EvaluateRecordFormulaValueInOrg(org.Objects["Parent__c"].Definition.Fields["Balance__c"].Formula, org.Objects["Parent__c"].Definition.Fields["Balance__c"], &org, org.Objects["Parent__c"].Definition, storage.Record{
+		Object: "Parent__c",
+		ID:     parent[0].ID,
+		Fields: map[string]storage.Value{
+			"Paid__c": storage.DecimalValue("2"),
+		},
+	})
+	if !ok || value.Kind != storage.ValueDecimal || value.Decimal != "10" {
+		t.Fatalf("formula over summary = %#v, ok=%v; want decimal 10", value, ok)
 	}
 	parentUpdate := engine.Update([]storage.Record{{ID: parent[0].ID, Object: "Parent__c", Fields: map[string]storage.Value{
 		"Name":       storage.StringValue("Updated"),
@@ -174,6 +222,9 @@ func TestDMLRecalculatesSummaryFields(t *testing.T) {
 	if got := stored.Fields["Total__c"].Decimal; got != "8" {
 		t.Fatalf("sum summary after update = %q", got)
 	}
+	if got := stored.Fields["Count__c"].Integer; got != 2 {
+		t.Fatalf("count summary after update = %d", got)
+	}
 	deleteResult := engine.Delete([]storage.Record{{ID: children[1].ID, Object: "Child__c"}})
 	if !deleteResult[0].Success {
 		t.Fatalf("child delete = %#v", deleteResult[0])
@@ -184,6 +235,9 @@ func TestDMLRecalculatesSummaryFields(t *testing.T) {
 	}
 	if got := stored.Fields["Total__c"].Decimal; got != "5" {
 		t.Fatalf("sum summary after delete = %q", got)
+	}
+	if got := stored.Fields["Count__c"].Integer; got != 1 {
+		t.Fatalf("count summary after delete = %d", got)
 	}
 }
 
@@ -197,6 +251,7 @@ func TestInsertAppliesRecordTypeFormulaDefaults(t *testing.T) {
 				"Name":           {APIName: "Name", Type: storage.FieldString, Required: true},
 				"RecordTypeId":   {APIName: "RecordTypeId", Type: storage.FieldReference, ReferenceTo: []string{"RecordType"}, RelationshipName: "RecordType"},
 				"QuantityMax__c": {APIName: "QuantityMax__c", Type: storage.FieldDecimal, Required: true, DefaultValue: "IF($RecordType.Name == 'Merchandise', 999, 1)"},
+				"TypeName__c":    {APIName: "TypeName__c", Type: storage.FieldString, DefaultValue: "$RecordType.Name"},
 			},
 			RecordTypes: []storage.RecordTypeInfo{
 				{ID: "012000000000001AAA", DeveloperName: "Merchandise", Name: "Merchandise"},
@@ -235,6 +290,10 @@ func TestInsertAppliesRecordTypeFormulaDefaults(t *testing.T) {
 	got := org.Objects["Product__c"].Records[insert[0].ID].Fields["QuantityMax__c"]
 	if got.Kind != storage.ValueDecimal || got.Decimal != "1" {
 		t.Fatalf("QuantityMax__c = %#v; want decimal 1", got)
+	}
+	typeName := org.Objects["Product__c"].Records[insert[0].ID].Fields["TypeName__c"]
+	if typeName.Kind != storage.ValueString || typeName.String != "Membership" {
+		t.Fatalf("TypeName__c = %#v; want Membership", typeName)
 	}
 }
 
@@ -735,6 +794,7 @@ func TestReferenceValidationRestrictedDeleteAndUndelete(t *testing.T) {
 			APIName:   "Contact",
 			KeyPrefix: "003",
 			Fields: map[string]storage.Field{
+				"Name":      {APIName: "Name", Type: storage.FieldString},
 				"LastName":  {APIName: "LastName", Type: storage.FieldString},
 				"AccountId": {APIName: "AccountId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}},
 			},
@@ -788,6 +848,40 @@ func TestReferenceValidationRestrictedDeleteAndUndelete(t *testing.T) {
 	}
 }
 
+func TestReferenceValidationMatchesFifteenAndEighteenCharacterIDs(t *testing.T) {
+	org := testOrg()
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Contact",
+			KeyPrefix: "003",
+			Fields: map[string]storage.Field{
+				"Name":      {APIName: "Name", Type: storage.FieldString},
+				"LastName":  {APIName: "LastName", Type: storage.FieldString},
+				"AccountId": {APIName: "AccountId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+	account := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")},
+	}})
+	if !account[0].Success {
+		t.Fatalf("account = %#v", account)
+	}
+	contact := engine.Insert([]storage.Record{{
+		Object: "Contact",
+		Fields: map[string]storage.Value{
+			"LastName":  storage.StringValue("Smith"),
+			"AccountId": storage.IDValue(account[0].ID + "AAA"),
+		},
+	}})
+	if !contact[0].Success {
+		t.Fatalf("contact = %#v", contact)
+	}
+}
+
 func TestValidationRules(t *testing.T) {
 	org := testOrg()
 	account := org.Objects["Account"]
@@ -822,6 +916,167 @@ func TestValidationRules(t *testing.T) {
 	}})
 	if blockedUpdate[0].Success || blockedUpdate[0].Error != "blocked by validation rule" {
 		t.Fatalf("blocked update = %#v", blockedUpdate)
+	}
+}
+
+func TestValidationRulesUseFormulaScaleForPercentFields(t *testing.T) {
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Discount__c"] = storage.Field{APIName: "Discount__c", Type: storage.FieldDecimal, DisplayType: "PERCENT"}
+	account.Definition.ValidationRules = []storage.ValidationRule{{
+		Name:                  "DiscountUnder100",
+		Active:                true,
+		ErrorConditionFormula: `Discount__c > 1`,
+		ErrorMessage:          "discount too large",
+		ErrorDisplayField:     "Discount__c",
+	}}
+	org.Objects["Account"] = account
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":        storage.StringValue("Allowed"),
+			"Discount__c": storage.DecimalValue("50"),
+		},
+	}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert)
+	}
+	blocked := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":        storage.StringValue("Blocked"),
+			"Discount__c": storage.DecimalValue("150"),
+		},
+	}})
+	if blocked[0].Success || blocked[0].Error != "discount too large" {
+		t.Fatalf("blocked insert = %#v", blocked)
+	}
+}
+
+func TestValidationRuleRelationalNullIsFalse(t *testing.T) {
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Amount__c"] = storage.Field{APIName: "Amount__c", Type: storage.FieldDecimal}
+	account.Definition.ValidationRules = []storage.ValidationRule{{
+		Name:                  "PositiveAmount",
+		Active:                true,
+		ErrorConditionFormula: `Amount__c < 0`,
+		ErrorMessage:          "amount must be positive",
+		ErrorDisplayField:     "Amount__c",
+	}}
+	org.Objects["Account"] = account
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Allowed")},
+	}})
+	if !insert[0].Success {
+		t.Fatalf("insert with null amount = %#v", insert)
+	}
+	blocked := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":      storage.StringValue("Blocked"),
+			"Amount__c": storage.DecimalValue("-1"),
+		},
+	}})
+	if blocked[0].Success || blocked[0].StatusCode != "FIELD_CUSTOM_VALIDATION_EXCEPTION" {
+		t.Fatalf("negative amount insert = %#v", blocked)
+	}
+}
+
+func TestValidationRulesResolveRecordTypeName(t *testing.T) {
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["RecordTypeId"] = storage.Field{APIName: "RecordTypeId", Type: storage.FieldReference, ReferenceTo: []string{"RecordType"}}
+	account.Definition.RecordTypes = []storage.RecordTypeInfo{
+		{ID: "012000000000001AAA", Name: "Business", DeveloperName: "Business"},
+		{ID: "012000000000002AAA", Name: "Consumer", DeveloperName: "Consumer"},
+	}
+	account.Definition.ValidationRules = []storage.ValidationRule{{
+		Name:                  "BusinessRequiresCode",
+		Active:                true,
+		ErrorConditionFormula: `ISBLANK(Code__c) && $RecordType.Name != 'Consumer'`,
+		ErrorMessage:          "code required",
+		ErrorDisplayField:     "Code__c",
+	}}
+	org.Objects["Account"] = account
+	org.Objects["RecordType"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "RecordType",
+			KeyPrefix: "012",
+			Fields: map[string]storage.Field{
+				"Id":            {APIName: "Id", Type: storage.FieldID},
+				"Name":          {APIName: "Name", Type: storage.FieldString},
+				"DeveloperName": {APIName: "DeveloperName", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"012000000000001AAA": {Object: "RecordType", ID: "012000000000001AAA"},
+			"012000000000002AAA": {Object: "RecordType", ID: "012000000000002AAA"},
+		},
+	}
+	engine := NewEngine(&org)
+
+	allowed := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":         storage.StringValue("Allowed"),
+			"RecordTypeId": storage.IDValue("012000000000002AAA"),
+		},
+	}})
+	if !allowed[0].Success {
+		t.Fatalf("allowed insert = %#v", allowed)
+	}
+	blocked := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":         storage.StringValue("Blocked"),
+			"RecordTypeId": storage.IDValue("012000000000001AAA"),
+		},
+	}})
+	if blocked[0].Success || blocked[0].StatusCode != "FIELD_CUSTOM_VALIDATION_EXCEPTION" {
+		t.Fatalf("blocked insert = %#v", blocked)
+	}
+}
+
+func TestValidationRuleISNULLDoesNotTreatBlankLookupAsNull(t *testing.T) {
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Parent__c"] = storage.Field{APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}}
+	account.Definition.ValidationRules = []storage.ValidationRule{{
+		Name:                  "LegacyLookupIsNull",
+		Active:                true,
+		ErrorConditionFormula: `ISNULL(Parent__c)`,
+		ErrorMessage:          "parent missing",
+	}, {
+		Name:                  "LookupIsBlank",
+		Active:                true,
+		ErrorConditionFormula: `ISBLANK(Parent__c)`,
+		ErrorMessage:          "parent blank",
+	}}
+	org.Objects["Account"] = account
+	engine := NewEngine(&org)
+
+	blocked := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Child")},
+	}})
+	if blocked[0].Success || blocked[0].Error != "parent blank" {
+		t.Fatalf("blank lookup insert = %#v", blocked)
+	}
+
+	account.Definition.ValidationRules = account.Definition.ValidationRules[:1]
+	org.Objects["Account"] = account
+	allowed := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Legacy Allowed")},
+	}})
+	if !allowed[0].Success {
+		t.Fatalf("ISNULL lookup insert = %#v", allowed)
 	}
 }
 
@@ -959,6 +1214,13 @@ func TestValidationRulesObservedFormulaFunctions(t *testing.T) {
 			ErrorMessage:          "choose one binding object",
 			ErrorDisplayField:     "BindingObject__c",
 		},
+		{
+			Name:                  "FloorMod",
+			Active:                true,
+			ErrorConditionFormula: `FLOOR(2.9) = 2 && MOD(5, 2) = 1 && Name = "Bad Math"`,
+			ErrorMessage:          "bad math",
+			ErrorDisplayField:     "Name",
+		},
 	}
 	account.Definition.Fields["BindingObject__c"] = storage.Field{APIName: "BindingObject__c", Type: storage.FieldString}
 	account.Definition.Fields["BindingObjectAlternate__c"] = storage.Field{APIName: "BindingObjectAlternate__c", Type: storage.FieldString}
@@ -1009,6 +1271,196 @@ func TestValidationRulesObservedFormulaFunctions(t *testing.T) {
 	}})
 	if bothBindings[0].Success || bothBindings[0].Error != "choose one binding object" || bothBindings[0].Fields[0] != "BindingObject__c" {
 		t.Fatalf("both bindings = %#v", bothBindings)
+	}
+	badMath := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name": storage.StringValue("Bad Math"),
+		},
+	}})
+	if badMath[0].Success || badMath[0].Error != "bad math" || badMath[0].Fields[0] != "Name" {
+		t.Fatalf("bad math = %#v", badMath)
+	}
+}
+
+func TestCalculatedFormulaSupportsCaseAndLower(t *testing.T) {
+	field := storage.Field{APIName: "Member__c", Type: storage.FieldCalculated, DisplayType: "STRING", Formula: `CASE(LOWER(MemberOverride__c), 'yes', 'Yes', 'no', 'No', IF(ISBLANK(LapsedOn__c) || LapsedOn__c <= TODAY(), 'No', 'Yes'))`}
+	definition := storage.ObjectDefinition{
+		APIName: "Account",
+		Fields: map[string]storage.Field{
+			"MemberOverride__c": {APIName: "MemberOverride__c", Type: storage.FieldString},
+			"LapsedOn__c":       {APIName: "LapsedOn__c", Type: storage.FieldDate},
+			"Member__c":         field,
+		},
+	}
+	org := storage.OrgState{Objects: map[string]storage.ObjectState{"Account": {Definition: definition}}}
+
+	value, _, ok := EvaluateRecordFormulaValueInOrg(field.Formula, field, &org, definition, storage.Record{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"LapsedOn__c": storage.DateValue("2099-01-01"),
+		},
+	})
+	if !ok || value.Kind != storage.ValueString || value.String != "Yes" {
+		t.Fatalf("future lapsed formula = %#v, ok=%v; want Yes", value, ok)
+	}
+
+	value, _, ok = EvaluateRecordFormulaValueInOrg(field.Formula, field, &org, definition, storage.Record{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"MemberOverride__c": storage.StringValue("NO"),
+			"LapsedOn__c":       storage.DateValue("2099-01-01"),
+		},
+	})
+	if !ok || value.Kind != storage.ValueString || value.String != "No" {
+		t.Fatalf("override formula = %#v, ok=%v; want No", value, ok)
+	}
+}
+
+func TestCalculatedFormulaSupportsSalesforceEqualityOperator(t *testing.T) {
+	field := storage.Field{APIName: "Status__c", Type: storage.FieldCalculated, DisplayType: "STRING", Formula: `IF(Code__c == 'ABC' && RuleStatus__c == 'Active', 'Active', 'Inactive')`}
+	definition := storage.ObjectDefinition{
+		APIName: "CouponCode__c",
+		Fields: map[string]storage.Field{
+			"Code__c":       {APIName: "Code__c", Type: storage.FieldString},
+			"RuleStatus__c": {APIName: "RuleStatus__c", Type: storage.FieldString},
+			"Status__c":     field,
+		},
+	}
+	org := storage.OrgState{
+		Objects: map[string]storage.ObjectState{"CouponCode__c": {Definition: definition}},
+		Now:     func() time.Time { return time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC) },
+	}
+
+	value, _, ok := EvaluateRecordFormulaValueInOrg(field.Formula, field, &org, definition, storage.Record{
+		Object: "CouponCode__c",
+		Fields: map[string]storage.Value{
+			"Code__c":       storage.StringValue("ABC"),
+			"RuleStatus__c": storage.StringValue("Active"),
+		},
+	})
+	if !ok || value.Kind != storage.ValueString || value.String != "Active" {
+		t.Fatalf("formula value = %#v, ok=%v; want Active", value, ok)
+	}
+}
+
+func TestCalculatedFormulaEvaluatesCouponStatusShape(t *testing.T) {
+	field := storage.Field{APIName: "Status__c", Type: storage.FieldCalculated, DisplayType: "STRING", Formula: `IF (ISBLANK(Code__c), 'Inactive',
+    IF(OR(!ISBLANK(EndDate__c) && EndDate__c < TODAY(), RuleStatus__c == 'Inactive'), 'Expired',
+        IF(!ISBLANK(StartDate__c) && StartDate__c > TODAY(), 'Future', 'Active')
+    )
+)`}
+	definition := storage.ObjectDefinition{
+		APIName: "CouponCode__c",
+		Fields: map[string]storage.Field{
+			"Code__c":       {APIName: "Code__c", Type: storage.FieldString},
+			"StartDate__c":  {APIName: "StartDate__c", Type: storage.FieldDate},
+			"EndDate__c":    {APIName: "EndDate__c", Type: storage.FieldDate},
+			"RuleStatus__c": {APIName: "RuleStatus__c", Type: storage.FieldString},
+			"Status__c":     field,
+		},
+	}
+	org := storage.OrgState{
+		Objects: map[string]storage.ObjectState{"CouponCode__c": {Definition: definition}},
+		Now:     func() time.Time { return time.Date(2026, 5, 2, 12, 0, 0, 0, time.UTC) },
+	}
+
+	value, _, ok := EvaluateRecordFormulaValueInOrg(field.Formula, field, &org, definition, storage.Record{
+		Object: "CouponCode__c",
+		Fields: map[string]storage.Value{
+			"Code__c":       storage.StringValue("TESTCODE"),
+			"StartDate__c":  storage.DateValue("2026-05-03"),
+			"RuleStatus__c": storage.StringValue("Active"),
+		},
+	})
+	if !ok || value.Kind != storage.ValueString || value.String != "Future" {
+		t.Fatalf("future formula value = %#v, ok=%v; want Future", value, ok)
+	}
+}
+
+func TestCalculatedFormulaEvaluatesCouponStatusWithParentRelationship(t *testing.T) {
+	field := storage.Field{APIName: "Status__c", Type: storage.FieldCalculated, DisplayType: "STRING", Formula: `IF (ISBLANK(Code__c), 'Inactive',
+    IF(OR(!ISBLANK(EndDate__c) && EndDate__c < TODAY(), CouponRule__r.Status__c == 'Inactive'), 'Expired',
+        IF(!ISBLANK(StartDate__c) && StartDate__c > TODAY(), 'Future', 'Active')
+    )
+)`}
+	codeDefinition := storage.ObjectDefinition{
+		APIName: "CouponCode__c",
+		Fields: map[string]storage.Field{
+			"Code__c":       {APIName: "Code__c", Type: storage.FieldString},
+			"CouponRule__c": {APIName: "CouponRule__c", Type: storage.FieldReference, ReferenceTo: []string{"CouponRule__c"}, RelationshipName: "CouponRule__r"},
+			"StartDate__c":  {APIName: "StartDate__c", Type: storage.FieldDate},
+			"EndDate__c":    {APIName: "EndDate__c", Type: storage.FieldDate},
+			"Status__c":     field,
+		},
+	}
+	ruleDefinition := storage.ObjectDefinition{
+		APIName: "CouponRule__c",
+		Fields: map[string]storage.Field{
+			"Status__c": {APIName: "Status__c", Type: storage.FieldString},
+		},
+	}
+	org := storage.OrgState{Objects: map[string]storage.ObjectState{
+		"CouponCode__c": {Definition: codeDefinition},
+		"CouponRule__c": {
+			Definition: ruleDefinition,
+			Records: map[storage.ID]storage.Record{
+				"a02000000000001": {ID: "a02000000000001", Object: "CouponRule__c", Fields: map[string]storage.Value{"Status__c": storage.StringValue("Active")}},
+			},
+		},
+	}}
+
+	value, _, ok := EvaluateRecordFormulaValueInOrg(field.Formula, field, &org, codeDefinition, storage.Record{
+		Object: "CouponCode__c",
+		Fields: map[string]storage.Value{
+			"Code__c":       storage.StringValue("TESTCODE"),
+			"CouponRule__c": storage.IDValue("a02000000000001"),
+			"StartDate__c":  storage.DateValue("2999-01-01"),
+		},
+	})
+	if !ok || value.Kind != storage.ValueString || value.String != "Future" {
+		t.Fatalf("future relationship formula value = %#v, ok=%v; want Future", value, ok)
+	}
+}
+
+func TestCalculatedFormulaEvaluatesNestedParentCalculatedField(t *testing.T) {
+	codeStatus := storage.Field{APIName: "Status__c", Type: storage.FieldCalculated, DisplayType: "STRING", Formula: `IF(CouponRule__r.Status__c == 'Inactive', 'Expired', IF(!ISBLANK(StartDate__c) && StartDate__c > TODAY(), 'Future', 'Active'))`}
+	ruleStatus := storage.Field{APIName: "Status__c", Type: storage.FieldCalculated, DisplayType: "STRING", Formula: `IF(!ISBLANK(StartDate__c) && StartDate__c > TODAY(), 'Future', 'Active')`}
+	codeDefinition := storage.ObjectDefinition{
+		APIName: "CouponCode__c",
+		Fields: map[string]storage.Field{
+			"Code__c":       {APIName: "Code__c", Type: storage.FieldString},
+			"CouponRule__c": {APIName: "CouponRule__c", Type: storage.FieldReference, ReferenceTo: []string{"CouponRule__c"}},
+			"StartDate__c":  {APIName: "StartDate__c", Type: storage.FieldDate},
+			"Status__c":     codeStatus,
+		},
+	}
+	ruleDefinition := storage.ObjectDefinition{
+		APIName: "CouponRule__c",
+		Fields: map[string]storage.Field{
+			"StartDate__c": {APIName: "StartDate__c", Type: storage.FieldDate},
+			"Status__c":    ruleStatus,
+		},
+	}
+	org := storage.OrgState{Objects: map[string]storage.ObjectState{
+		"CouponCode__c": {Definition: codeDefinition},
+		"CouponRule__c": {
+			Definition: ruleDefinition,
+			Records: map[storage.ID]storage.Record{
+				"a02000000000001": {ID: "a02000000000001", Object: "CouponRule__c", Fields: map[string]storage.Value{"StartDate__c": storage.DateValue("2999-01-01")}},
+			},
+		},
+	}}
+
+	value, _, ok := EvaluateRecordFormulaValueInOrg(codeStatus.Formula, codeStatus, &org, codeDefinition, storage.Record{
+		Object: "CouponCode__c",
+		Fields: map[string]storage.Value{
+			"Code__c":       storage.StringValue("TESTCODE"),
+			"CouponRule__c": storage.IDValue("a02000000000001"),
+		},
+	})
+	if !ok || value.Kind != storage.ValueString || value.String != "Active" {
+		t.Fatalf("nested parent formula value = %#v, ok=%v; want Active", value, ok)
 	}
 }
 
@@ -1667,7 +2119,7 @@ func TestCustomMetadataDMLIsReadOnly(t *testing.T) {
 	}
 }
 
-func TestAttachmentBodyDMLAndSOQLRoundTrip(t *testing.T) {
+func TestAttachmentBodyDMLRoundTrip(t *testing.T) {
 	org := fileTestOrg()
 	engine := NewEngine(&org)
 	account := engine.Insert([]storage.Record{{
@@ -1688,18 +2140,7 @@ func TestAttachmentBodyDMLAndSOQLRoundTrip(t *testing.T) {
 	if !attachment[0].Success || attachment[0].ID != "00P000000000001" {
 		t.Fatalf("attachment insert = %#v", attachment)
 	}
-	query, err := soql.Parse("SELECT Id, Name, ParentId, Body FROM Attachment WHERE Id = '" + string(attachment[0].ID) + "'")
-	if err != nil {
-		t.Fatal(err)
-	}
-	result, err := soql.Execute(org, query)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(result.Records) != 1 {
-		t.Fatalf("attachment query rows = %d", len(result.Records))
-	}
-	row := result.Records[0]
+	row := org.Objects["Attachment"].Records[attachment[0].ID]
 	if row.Fields["ParentId"].ID != account[0].ID || row.Fields["Body"].Kind != storage.ValueBlob || row.Fields["Body"].String != "hello bytes" {
 		t.Fatalf("attachment row = %#v", row)
 	}
@@ -1725,7 +2166,7 @@ func TestAttachmentParentCanReferenceCurrentUser(t *testing.T) {
 	}
 }
 
-func TestDocumentBodyDMLSOQLAndDelete(t *testing.T) {
+func TestDocumentBodyDMLAndDelete(t *testing.T) {
 	org := fileTestOrg()
 	engine := NewEngine(&org)
 	document := engine.Insert([]storage.Record{{
@@ -1742,18 +2183,7 @@ func TestDocumentBodyDMLSOQLAndDelete(t *testing.T) {
 	if !document[0].Success || document[0].ID != "015000000000001" {
 		t.Fatalf("document insert = %#v", document)
 	}
-	query, err := soql.Parse("SELECT Id, Name, DeveloperName, Body, ContentType, Type, IsPublic FROM Document WHERE Id = '" + string(document[0].ID) + "'")
-	if err != nil {
-		t.Fatal(err)
-	}
-	result, err := soql.Execute(org, query)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(result.Records) != 1 {
-		t.Fatalf("document query rows = %d", len(result.Records))
-	}
-	row := result.Records[0]
+	row := org.Objects["Document"].Records[document[0].ID]
 	if row.Fields["Body"].Kind != storage.ValueBlob || row.Fields["Body"].String != "document bytes" || row.Fields["ContentType"].String != "application/pdf" || !row.Fields["IsPublic"].Boolean {
 		t.Fatalf("document row = %#v", row)
 	}
@@ -1764,12 +2194,8 @@ func TestDocumentBodyDMLSOQLAndDelete(t *testing.T) {
 	if !deleted[0].Success {
 		t.Fatalf("document delete = %#v", deleted)
 	}
-	result, err = soql.Execute(org, query)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(result.Records) != 0 {
-		t.Fatalf("deleted document query rows = %#v", result.Records)
+	if stored := org.Objects["Document"].Records[document[0].ID]; !stored.System.IsDeleted {
+		t.Fatalf("deleted document was not marked deleted: %#v", stored)
 	}
 }
 

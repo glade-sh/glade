@@ -49,6 +49,7 @@ func ApplyCustomMetadataRecords(org *OrgState, records []schema.CustomMetadataRe
 		}
 		return ordered[i].File < ordered[j].File
 	})
+	ensureCustomMetadataPrefixes(org, ordered)
 	generator := NewIDGenerator(prefixesForOrg(*org))
 	generator.Sequences = copySequences(org.IDSequences)
 	pending := make([]customMetadataPendingRecord, 0, len(ordered))
@@ -111,6 +112,36 @@ func ApplyCustomMetadataRecords(org *OrgState, records []schema.CustomMetadataRe
 		}
 	}
 	return nil
+}
+
+func ensureCustomMetadataPrefixes(org *OrgState, records []schema.CustomMetadataRecord) {
+	if org == nil {
+		return
+	}
+	names := make([]string, 0, len(org.Objects)+len(records))
+	seen := make(map[string]bool, len(org.Objects)+len(records))
+	for name := range org.Objects {
+		if !seen[name] {
+			names = append(names, name)
+			seen[name] = true
+		}
+	}
+	for _, record := range records {
+		objectName := record.ObjectName
+		if objectName == "" || seen[objectName] {
+			continue
+		}
+		names = append(names, objectName)
+		seen[objectName] = true
+	}
+	prefixes := AssignDeterministicPrefixes(names, nil)
+	for _, name := range names {
+		state := org.Objects[name]
+		if state.Definition.KeyPrefix == "" && prefixes[name] != "" {
+			state.Definition.KeyPrefix = prefixes[name]
+			org.Objects[name] = state
+		}
+	}
 }
 
 type customMetadataPendingRecord struct {

@@ -374,12 +374,25 @@ public class UsesDatabaseDML {
     List<Database.SaveResult> partialInsertResults = Database.insert(accounts, false);
     List<Database.SaveResult> optionInsertResults = Database.insert(accounts, opts);
     Database.SaveResult singleInsert = Database.insert(account, false);
+    List<Database.SaveResult> userModeInsertResults = Database.insert(accounts, false, AccessLevel.USER_MODE);
+    Database.SaveResult systemModeInsert = Database.insert(account, AccessLevel.SYSTEM_MODE);
     List<Database.SaveResult> updateResults = Database.update(accounts);
+    List<Database.SaveResult> userModeUpdateResults = Database.update(accounts, false, AccessLevel.USER_MODE);
     List<Database.DeleteResult> deleteResults = Database.delete(accounts, false);
+    List<Database.DeleteResult> userModeDeleteResults = Database.delete(accounts, false, AccessLevel.USER_MODE);
     Database.DeleteResult idDelete = Database.delete(recordId);
+    Database.DeleteResult systemModeIdDelete = Database.delete(recordId, AccessLevel.SYSTEM_MODE);
     List<Database.DeleteResult> idDeleteResults = Database.delete(recordIds, false);
     List<Database.UpsertResult> upsertResults = Database.upsert(accounts, Account.External_Id__c, false);
+    List<Database.UpsertResult> userModeExternalIdUpsert = Database.upsert(accounts, Account.External_Id__c, AccessLevel.USER_MODE);
     Database.UpsertResult singleUpsert = Database.upsert(account, Account.External_Id__c, false);
+    Database.UpsertResult singleUserModeExternalIdUpsert = Database.upsert(account, Account.External_Id__c, AccessLevel.USER_MODE);
+    List<Database.UpsertResult> systemModeUpsertResults = Database.upsert(accounts, AccessLevel.SYSTEM_MODE);
+    Database.UpsertResult singleSystemModeUpsert = Database.upsert(account, AccessLevel.SYSTEM_MODE);
+    List<Database.UpsertResult> systemModeUpsertNoExternalId = Database.upsert(accounts, true, AccessLevel.SYSTEM_MODE);
+    List<Database.UpsertResult> userModeUpsertResults = Database.upsert(accounts, Account.External_Id__c, false, AccessLevel.USER_MODE);
+    Database.UpsertResult singleUserModeUpsertNoExternalId = Database.upsert(account, false, AccessLevel.USER_MODE);
+    Database.UpsertResult systemModeSingleUpsert = Database.upsert(account, Account.External_Id__c, false, AccessLevel.SYSTEM_MODE);
   }
 }
 `)
@@ -391,6 +404,105 @@ public class UsesDatabaseDML {
 			{Name: "External_Id__c", Type: "Text"},
 		},
 	}}})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeBroadSystemStubShapes(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesBroadSystemShapes.cls"), `
+public class UsesBroadSystemShapes {
+  public enum ParameterSet {
+    SSN_PARAMETER_SET,
+    EDUCATION_PARAMETER_SET
+  }
+  public static void run(HttpRequest request, Account account, EntityParticle particle, FieldDefinition fieldDefinition) {
+    HttpRequest made = new HttpRequest();
+    made.setEndpoint('callout:example');
+    made.setMethod('GET');
+    made.setHeader('X-Test', request.getHeader('X-Test'));
+    String body = made.getBody();
+    Integer namePos = account.Name.indexOf('School');
+    Integer laterPos = account.Name.indexOf('School', namePos);
+    Datetime gmtDate = Datetime.newInstanceGmt(2026, 5, 14);
+    AsyncOptions asyncOptions = new AsyncOptions();
+    asyncOptions.MaximumQueueableStackDepth = 5;
+    Database.DMLOptions dmlOptions = new Database.DMLOptions();
+    dmlOptions.OptAllOrNone = true;
+    dmlOptions.EmailHeader.triggerUserEmail = false;
+    dmlOptions.DuplicateRuleHeader.AllowSave = true;
+    dmlOptions.AssignmentRuleHeader.UseDefaultRule = true;
+    String street = account.BillingAddress.getStreet();
+    Datetime parsed = Datetime.valueOf((Object) '2026-05-14 00:00:00');
+    Schema.DescribeSObjectResult described = account.getSObjectType().getDescribe(SObjectDescribeOptions.DEFERRED);
+    account.addError(Account.Name, 'Name is required');
+    Iterable<SObjectField> iterableFields = new List<SObjectField>{ Account.Name };
+    for (SObjectField field : iterableFields) {
+      String fieldName = field.getDescribe().getName();
+    }
+    List<EntityDefinition> entityDefinitions = new List<SObject>();
+    switch on 'equals' {
+      when equals {
+        body = 'equal';
+      }
+      when not_equals {
+        body = 'not equal';
+      }
+    }
+    ParameterSet parameterSet = ParameterSet.SSN_PARAMETER_SET;
+    Boolean entityUpdateable = particle.FieldDefinition.EntityDefinition.RunningUserEntityAccess.IsUpdatable;
+    Boolean fieldAccessible = fieldDefinition.RunningUserFieldAccess.IsAccessible;
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "UsesBroadSystemShapes.cls"),
+	}}, schema.Schema{Objects: []schema.Object{{
+		Name:   "Account",
+		Fields: []schema.Field{{Name: "BillingAddress", Type: "Address"}},
+	}}})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeConcreteSObjectRelationshipAccessors(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesConcreteSObjectAccessors.cls"), `
+public class UsesConcreteSObjectAccessors {
+  public static void run(Account record) {
+    SObject parent = record.getSObject('Parent');
+    List<SObject> children = record.getSObjects('Contacts');
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "UsesConcreteSObjectAccessors.cls"),
+	}}, schema.Schema{Objects: []schema.Object{{Name: "Account"}}})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeStandardSObjectRelationshipAccessors(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesStandardSObjectAccessors.cls"), `
+public class UsesStandardSObjectAccessors {
+  public static void run(ContentDocumentLink documentLink) {
+    Boolean matched = documentLink.ContentDocument.Title.startsWithIgnoreCase('Profile');
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "UsesStandardSObjectAccessors.cls"),
+	}}, schema.Schema{})
 
 	result := Analyze(index)
 	if result.HasErrors() {
@@ -445,6 +557,7 @@ public class UsesDates {
     Date today = Date.today();
     Date made = Date.newInstance(2026, 5, 7);
     Date parsed = Date.valueOf('2026-05-07');
+    Date parsedObject = Date.valueOf((Object) '2026-05-07');
     Date due = System.today().addDays(30);
     Date nextMonth = due.addMonths(1);
     Date nextYear = due.addYears(1);
@@ -471,6 +584,29 @@ public class UsesDates {
 `)
 	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
 		filepath.Join(root, "UsesDates.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeSystemLabelReferencesAsStrings(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesLabels.cls"), `
+public class UsesLabels {
+  public class ResultData {
+    public void addParameterField(String parameterType, String label, Object value) {}
+  }
+  public void run(ResultData resultData, Object value) {
+    resultData.addParameterField('Name', System.Label.facilityResultsFacilityName, value);
+    resultData.addParameterField('Name', Label.facilityResultsFacilityName, value);
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "UsesLabels.cls"),
 	}}, schema.Schema{})
 
 	result := Analyze(index)
@@ -506,6 +642,165 @@ public class UsesSObjectTypeFields {
 		if (diag.Code == "OAERSEMA021" || diag.Code == "OAERSEMA008") && strings.Contains(diag.Message, "SObjectType.fields") {
 			t.Fatalf("SObjectType.fields tokens should be recognized: %#v", result.Diagnostics)
 		}
+	}
+}
+
+func TestAnalyzeChainedSObjectTypeToken(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesChainedSObjectType.cls"), `
+public class UsesChainedSObjectType {
+  public static void run() {
+    Schema.SObjectType accountType = Account.SObjectType.SObjectType;
+    Schema.SObjectType customMetadataType = Credentialing_Object_Setup__mdt.SObjectType.SObjectType;
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "UsesChainedSObjectType.cls"),
+	}}, schema.Schema{Objects: []schema.Object{{Name: "Credentialing_Object_Setup__mdt"}}})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestExtractBodyForSemaSkipsCommentApostrophes(t *testing.T) {
+	source := `public class Example {
+  public static String run() {
+    if (true) {
+      // don't let this comment hide the nested block
+      if (true) {
+        return 'ok';
+      }
+    }
+    return 'fallback';
+  }
+}`
+	start := strings.Index(source, "public static String run")
+	body, _, ok := extractBodyForSema(source, diagnostic.Range{
+		Start: diagnostic.Position{Offset: start},
+		End:   diagnostic.Position{Offset: len(source) - 1},
+	})
+	if !ok {
+		t.Fatalf("expected body extraction to succeed")
+	}
+	if !strings.Contains(body, "return 'fallback';") {
+		t.Fatalf("expected body to include final return, got %q", body)
+	}
+}
+
+func TestBlockBoundsAtSkipsCommentApostrophes(t *testing.T) {
+	body := `{
+  if (true) {
+    // don't let this comment hide the close brace
+    String rec = 'first';
+  }
+  if (true) {
+    String rec = 'second';
+  }
+}`
+	pos := strings.LastIndex(body, "String rec")
+	start, end := blockBoundsAt(body, pos)
+	block := body[start:end]
+	if strings.Contains(block, "first") {
+		t.Fatalf("expected second block scope only, got %q", block)
+	}
+}
+
+func TestAnalyzeMultilineSOQLDoesNotDeclareLocals(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesMultilineSOQL.cls"), `
+public class UsesMultilineSOQL {
+  public static void run(Id recordId) {
+    Account updatedRec = [
+      SELECT Id, Name
+      FROM Account
+      WHERE Id = :recordId
+    ];
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "UsesMultilineSOQL.cls"),
+	}}, schema.Schema{Objects: []schema.Object{{Name: "Account"}}})
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "OAERSEMA006" && (strings.Contains(diag.Message, "unknown type \"SELECT\"") || strings.Contains(diag.Message, "unknown type \"WHERE\"")) {
+			t.Fatalf("SOQL query should not be treated as a local declaration: %#v", result.Diagnostics)
+		}
+	}
+}
+
+func TestAnalyzeSecurityStripInaccessibleDecision(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesSecurityStripInaccessible.cls"), `
+public class UsesSecurityStripInaccessible {
+  public static List<SObject> run(List<SObject> records) {
+    SObjectAccessDecision decision = Security.stripInaccessible(AccessType.READABLE, records, false);
+    Set<Integer> modified = decision.getModifiedIndexes();
+    Map<String, Set<String>> removed = decision.getRemovedFields();
+    return decision.getRecords();
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "UsesSecurityStripInaccessible.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeListSortComparator(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesListSortComparator.cls"), `
+public class UsesListSortComparator {
+  public class AccountComparator implements Comparator<Account> {
+    public Integer compare(Account left, Account right) {
+      return 0;
+    }
+  }
+  public static void run(List<Account> accounts) {
+    accounts.sort(new AccountComparator());
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "UsesListSortComparator.cls"),
+	}}, schema.Schema{Objects: []schema.Object{{Name: "Account"}}})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeDatacloudDuplicateResultTypes(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesDatacloudDuplicateResult.cls"), `
+public class UsesDatacloudDuplicateResult {
+  public static List<Id> run(Database.DuplicateError duplicateError) {
+    Datacloud.DuplicateResult duplicateResult = duplicateError.getDuplicateResult();
+    List<Datacloud.MatchRecord> matchRecords = duplicateResult.getMatchResults()[0].getMatchRecords();
+    List<Id> ids = new List<Id>();
+    for (Datacloud.MatchRecord match : matchRecords) {
+      ids.add(match.getRecord().Id);
+    }
+    return ids;
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "UsesDatacloudDuplicateResult.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
 	}
 }
 
@@ -902,6 +1197,45 @@ public class UsesChildRelationships {
 		Root:      root,
 		ApexFiles: []string{filepath.Join(root, "UsesChildRelationships.cls")},
 	}, schema.Schema{Objects: []schema.Object{{Name: "Account"}, {Name: "Affiliation__c"}, {Name: "Merchandise__c"}, {Name: "Registration2__c"}}})
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeChildRelationshipAddAllToSObjectList(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesChildRelationships.cls"), `
+public class UsesChildRelationships {
+  public void run(List<Account> accounts, List<VfiProvider__c> providers) {
+    List<SObject> records = new List<SObject>();
+    for (Account account : accounts) {
+      if (account.Affiliates__r?.isEmpty() == false) {
+        records.addAll(account.Affiliates__r);
+      }
+    }
+    for (VfiProvider__c provider : providers) {
+      if (provider.VfiLicense__r?.isEmpty() == false) {
+        records.addAll(provider.VfiLicense__r);
+      }
+    }
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesChildRelationships.cls")},
+	}, schema.Schema{Objects: []schema.Object{
+		{Name: "Account"},
+		{Name: "Affiliation__c"},
+		{Name: "VfiProvider__c"},
+		{Name: "VfiLicense__c", Fields: []schema.Field{{
+			Name:             "VfiProvider__c",
+			Type:             "Lookup",
+			ReferenceTo:      []string{"VfiProvider__c"},
+			RelationshipName: "VfiLicense",
+		}}},
+	}})
 	result := Analyze(index)
 	if result.HasErrors() {
 		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
@@ -3020,6 +3354,29 @@ public class Hello {
 	for _, diag := range result.Diagnostics {
 		if diag.Code == "OAERSEMA008" {
 			t.Fatalf("unexpected unknown method diagnostic: %#v", result.Diagnostics)
+		}
+	}
+}
+
+func TestAnalyzeTypedListLiteralDoesNotReportUnknownNewlitCall(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "PaymentLine__c.cls"), `public class PaymentLine__c {}`)
+	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `
+public class Hello {
+  public void run(PaymentLine__c line) {
+    List<PaymentLine__c> lines = new List<PaymentLine__c>{ line };
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "PaymentLine__c.cls"),
+		filepath.Join(root, "Hello.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "OAERSEMA008" && strings.Contains(diag.Message, "newlit:List<PaymentLine__c>") {
+			t.Fatalf("unexpected newlit diagnostic: %#v", result.Diagnostics)
 		}
 	}
 }

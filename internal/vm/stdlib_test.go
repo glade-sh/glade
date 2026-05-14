@@ -34,6 +34,8 @@ System.assert(s.containsIgnoreCase('CD'));
 System.assert(s.startsWithIgnoreCase('ab'));
 System.assert(s.endsWithIgnoreCase('def'));
 System.assert(s.equals('AbcDef'));
+System.assert('0'.equals(0));
+System.assert(!'0'.equals(null));
 System.assertEquals(-1, s.compareTo('B'));
 System.assertEquals('Abc', s.left(3));
 System.assertEquals('Def', s.right(3));
@@ -106,6 +108,7 @@ System.assertEquals(3, children.size());
 System.assertEquals(Dom.XmlNodeType.TEXT, children[0].getNodeType());
 System.assertEquals(Dom.XmlNodeType.COMMENT, children[1].getNodeType());
 System.assertEquals('child', children[2].getName());
+System.assertEquals('there', root.getChildElement('child', null).getText());
 System.assertEquals(root, children[2].getParent());
 Dom.XmlNode added = root.addChildElement('second', null, null);
 added.setAttributeNs('id', 's', null, null);
@@ -114,6 +117,16 @@ System.assert(doc.toXmlString().contains('<child id="c">there</child>'));
 System.assert(root.toXmlString().contains('<child id="c">there</child>'));
 root.removeChild(added);
 System.assertEquals(3, root.getChildren().size());
+Dom.Document built = new Dom.Document();
+Dom.XmlNode request = built.createRootElement('request', null, null);
+request.setAttribute('xmlns', 'urn:test');
+request.addChildElement('name', null, null).addTextNode('local');
+Id accountId = '001000000000001AAA';
+request.addChildElement('payer', null, null).addTextNode(accountId);
+System.assertEquals('request', built.getRootElement().getName());
+System.assert(built.toXmlString().contains('<request'));
+System.assert(built.toXmlString().contains('<name>local</name>'));
+System.assert(built.toXmlString().contains('<payer>001000000000001AAA</payer>'));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -292,6 +305,7 @@ System.assertEquals('001000000000001', page.getParameters().get('id'));
 System.assertEquals('view', page.getParameters().get('mode'));
 page.getHeaders().put('X-Local', 'yes');
 System.assertEquals('001000000000001', page.getParameters().get('id'));
+System.assertEquals('001000000000001', page.getparameters().get('id'));
 System.assertEquals('yes', page.getHeaders().get('X-Local'));
 `)
 	if err != nil {
@@ -306,6 +320,10 @@ func TestExecStringStdlibMoreMethods(t *testing.T) {
 	program, err := CompileAnonymous(`
 String letters = 'a b c 5 xyz';
 System.assertEquals('1 1 1 5 111', letters.replaceAll('[a-zA-Z]', '1'));
+System.assertEquals('aXc abc', 'abc abc'.replaceFirst('b(?=c)', 'X'));
+System.assertEquals('aXc aXc', 'abc abc'.replaceAll('b(?=c)', 'X'));
+System.assertEquals('Id, , Name FROM Account',
+	'Id, (SELECT Id FROM Contacts), Name FROM Account'.replaceAll('(?i)(?s)\\(\\s*SELECT\\s.*?\\)(?=\\s*,|\\s*FROM\\s|\\s*$)', ''));
 String lettersFirst = 'a b c 11 xyz';
 System.assertEquals('a b c 11 2z', lettersFirst.replaceFirst('[a-zA-Z]{2}', '2'));
 String splitSource = 'boo:and:moo';
@@ -337,6 +355,8 @@ System.assertEquals(0, aaa.countMatches(''));
 String hello = 'hello';
 System.assert(hello.containsAny('hx'));
 System.assert(!hello.containsAny('xz'));
+Id accountId = Id.valueOf('001000000000001');
+System.assert('prefix-001000000000001'.containsIgnoreCase(accountId));
 String abcde = 'abcde';
 System.assert(abcde.containsNone('fg'));
 System.assert(!abcde.containsNone('df'));
@@ -863,6 +883,38 @@ func TestStringRegexReplacementSplitAndUnsupportedEdges(t *testing.T) {
 	}
 }
 
+func TestExecPatternCompileSupportsTerminalPositiveLookahead(t *testing.T) {
+	program, err := CompileAnonymous(`
+Pattern pattern = Pattern.compile('(?i)(?s)\\(\\s*SELECT\\s.*?\\)(?=\\s*,|\\s*FROM\\s|\\s*$)');
+Matcher matcher = pattern.matcher('SELECT Id, (SELECT Id FROM Lines__r), Name FROM Order__c');
+System.assert(matcher.find());
+System.assertEquals('(SELECT Id FROM Lines__r)', matcher.group());
+System.assert(!pattern.matcher('(SELECT Id FROM Lines__r) trailing').find());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecPatternMatchesSupportsLeadingNegativeLookaheads(t *testing.T) {
+	program, err := CompileAnonymous(`
+String passwordPattern = '(?!^[0-9]*$)(?!^[a-zA-Z]*$)^([!-~]{8,50})$';
+System.assert(Pattern.matches(passwordPattern, 'abc123!!'));
+System.assert(!Pattern.matches(passwordPattern, '12345678'));
+System.assert(!Pattern.matches(passwordPattern, 'abcdefgh'));
+System.assert(!Pattern.matches(passwordPattern, 'a1!'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestStringRegexSplitRejectsNullableEdges(t *testing.T) {
 	var runtimeErr *RuntimeError
 	for _, pattern := range []string{"", `\b`, "^"} {
@@ -967,6 +1019,13 @@ System.assertEquals('e477384d7ca229dd1426e64b63ebf2d36ebd6d7e669a6735424e72ea6c0
 System.assert(Crypto.areEqualConstantTime(hello, Blob.valueOf('hello')));
 System.assert(!Crypto.areEqualConstantTime(hello, Blob.valueOf('hullo')));
 System.assert(!Crypto.areEqualConstantTime(hello, Blob.valueOf('hello!')));
+Blob aes128 = Crypto.generateAESKey(128);
+Blob aes192 = Crypto.generateAESKey(192);
+Blob aes256 = Crypto.generateAESKey(256);
+System.assertEquals(16, aes128.size());
+System.assertEquals(24, aes192.size());
+System.assertEquals(32, aes256.size());
+System.assertEquals('0102030405060708090a0b0c0d0e0f10', EncodingUtil.convertToHex(aes128));
 	`)
 	if err != nil {
 		t.Fatal(err)
@@ -1043,6 +1102,8 @@ Id restored = Id.valueOf('001b000001dvm9tIAH', true);
 Id restoredLowerChecksum = Id.valueOf('001b000001dvm9tiah', true);
 System.assert(valid.equals(same));
 System.assertEquals('001B000001DVM9t', valid.toString());
+System.assertEquals('001B000001DVM9tIAH', String.valueOf(valid));
+System.assertEquals('id=001B000001DVM9tIAH', 'id=' + valid);
 System.assertEquals('001B000001DVM9t', valid.to15());
 System.assertEquals('001B000001DVM9tIAH', valid.to18());
 Id longId = Id.valueOf('001B000001DVM9tIAH');
@@ -1050,6 +1111,8 @@ System.assertEquals('001B000001DVM9t', longId.to15());
 System.assertEquals('001B000001DVM9tIAH', longId.to18());
 System.assertEquals('001B000001DVM9tIAH', restored.toString());
 System.assertEquals('001B000001DVM9tIAH', restoredLowerChecksum.toString());
+List<String> ids = new List<String>{valid};
+System.assertEquals('001B000001DVM9tIAH', ids[0]);
 
 String text = 'trail';
 System.assert(text.equals('trail'));
@@ -1151,6 +1214,7 @@ func TestExecCoreExceptionStdlibMethods(t *testing.T) {
 Exception constructed = new DmlException('blocked');
 System.assertEquals('blocked', constructed.getMessage());
 System.assertEquals('System.DmlException', constructed.getTypeName());
+System.assertEquals('System.DmlException', DmlException.class.getName());
 System.assertEquals(0, constructed.getLineNumber());
 System.assertEquals('', constructed.getStackTraceString());
 System.assertEquals('System.DmlException: blocked', constructed.toString());
@@ -1565,11 +1629,6 @@ func TestBlobEncodingCryptoStdlibUnsupportedCryptoSurfaces(t *testing.T) {
 			src:  "Crypto.verifyWithCertificate('RSA-SHA256', Blob.valueOf('data'), Blob.valueOf('sig'), 'cert');",
 			want: `unsupported call "Crypto.verifyWithCertificate local deterministic key, certificate, and encryption surfaces"`,
 		},
-		{
-			name: "generateAESKey",
-			src:  "Crypto.generateAESKey(128);",
-			want: `unsupported call "Crypto.generateAESKey local deterministic random/key generation surface"`,
-		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -1678,6 +1737,38 @@ System.assert(operation != TriggerOperation.BEFORE_INSERT);
 	}
 }
 
+func TestExecTriggerGlobalsOutsideTriggerUseDefaults(t *testing.T) {
+	program, err := CompileAnonymous(`
+TriggerOperation operation = Trigger.operationType;
+System.assertEquals(null, operation);
+System.assertEquals(false, Trigger.isExecuting);
+System.assertEquals(false, Trigger.isBefore);
+System.assertEquals(null, Trigger.new);
+System.assertEquals(0, Trigger.size);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStatusCodeEnumStaticValue(t *testing.T) {
+	program, err := CompileAnonymous(`
+StatusCode code = StatusCode.FIELD_CUSTOM_VALIDATION_EXCEPTION;
+System.assertEquals('FIELD_CUSTOM_VALIDATION_EXCEPTION', String.valueOf(code));
+System.assertEquals('FIELD_CUSTOM_VALIDATION_EXCEPTION', code.name());
+System.assertEquals('FIELD_CUSTOM_VALIDATION_EXCEPTION', code.toString());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecIdComparisonUsesLexicalOrder(t *testing.T) {
 	program, err := CompileAnonymous(`
 Id older = '001000000000001';
@@ -1722,6 +1813,53 @@ System.assertEquals('System.DmlException', systemDmlType.getName());
 	}
 }
 
+func TestExecTypeForNameResolvesGenericCustomSObjectTypes(t *testing.T) {
+	program, err := CompileAnonymous(`
+Type recordsType = Type.forName('List<Widget__c>');
+System.assertEquals('List<Widget__c>', recordsType.getName());
+List<SObject> records = (List<SObject>)recordsType.newInstance();
+System.assertEquals(0, records.size());
+Type mapType = Type.forName('Map<Id, Widget__c>');
+System.assertEquals('Map<Id,Widget__c>', mapType.getName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Objects["Widget__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{APIName: "Widget__c"}}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecCustomObjectCloneCopiesFields(t *testing.T) {
+	program, err := CompileAnonymous(`
+EmailMessage original = new EmailMessage();
+original.Subject = 'first';
+EmailMessage copied = original.clone();
+copied.Subject = 'second';
+System.assertEquals('first', original.Subject);
+System.assertEquals('second', copied.Subject);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "EmailMessage",
+		Fields: map[string]Field{
+			"Subject": {Name: "Subject", Type: "String"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestCoreSystemReflectionEdgesRejectBadInputs(t *testing.T) {
 	tests := []string{
 		`System.isBatch(true);`,
@@ -1739,6 +1877,23 @@ func TestCoreSystemReflectionEdgesRejectBadInputs(t *testing.T) {
 		if _, err := Execute(program, nil); err == nil {
 			t.Fatalf("expected error for %s", source)
 		}
+	}
+}
+
+func TestExecDateIsSameDay(t *testing.T) {
+	program, err := CompileAnonymous(`
+Date day = Date.newInstance(2026, 5, 7);
+System.assert(day.isSameDay(Date.newInstance(2026, 5, 7)));
+System.assert(day.isSameDay(DateTime.newInstance(2026, 5, 7, 12, 30, 0)));
+System.assertEquals(false, day.isSameDay(Date.newInstance(2026, 5, 8)));
+System.assertEquals(day, DateTime.newInstance(2026, 5, 7, 0, 0, 0));
+System.assertNotEquals(day, DateTime.newInstance(2026, 5, 7, 12, 30, 0));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -1799,6 +1954,34 @@ System.assertEquals('Trail__c', customDescribe.getName());
 			},
 		},
 		Records: make(map[storage.ID]storage.Record),
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecIDGetSObjectTypeUsesStoredRecordWhenPrefixesCollide(t *testing.T) {
+	program, err := CompileAnonymous(`
+Id scheduleTypeId = Id.valueOf('a2D000000000001');
+Object scheduleType = scheduleTypeId.getSObjectType();
+Object describe = scheduleType.getDescribe();
+System.assertEquals('ScheduleType__mdt', describe.getName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Objects["BatchDataSource__mdt"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "BatchDataSource__mdt", KeyPrefix: "a2D", Fields: map[string]storage.Field{}},
+		Records:    make(map[storage.ID]storage.Record),
+	}
+	org.Objects["ScheduleType__mdt"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "ScheduleType__mdt", KeyPrefix: "a9Z", Fields: map[string]storage.Field{}},
+		Records: map[storage.ID]storage.Record{
+			"a2D000000000001": {Object: "ScheduleType__mdt", ID: "a2D000000000001"},
+		},
 	}
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
@@ -2084,7 +2267,7 @@ System.assertEquals(2.5, Math.mod(12.5, 5));
 System.assertEquals(12, Math.roundToLong(12.5));
 System.assertEquals(3.0, Math.ceil(2.1));
 System.assertEquals(2.0, Math.floor(2.9));
-System.assertEquals(2.0, Math.round(2.5));
+System.assertEquals(2, Math.round(2.5));
 System.assertEquals(2.0, Math.rint(2.5));
 System.assertEquals(7, Math.max(3, 7));
 System.assertEquals(3, Math.min(3, 7));
@@ -2266,6 +2449,31 @@ func TestExecNumericStdlibRejectsInvalidInputs(t *testing.T) {
 		if _, err := Execute(program, nil); err == nil {
 			t.Fatalf("expected numeric stdlib error for %s", source)
 		}
+	}
+}
+
+func TestExecNumericValueOfParseErrorsAreTypeExceptions(t *testing.T) {
+	program, err := CompileAnonymous(`
+Boolean caughtInteger = false;
+try {
+	Integer.valueOf('not an integer');
+} catch (System.TypeException e) {
+	caughtInteger = true;
+}
+Boolean caughtLong = false;
+try {
+	Long.valueOf('not a long');
+} catch (TypeException e) {
+	caughtLong = true;
+}
+System.assert(caughtInteger);
+System.assert(caughtLong);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -2574,6 +2782,46 @@ System.assertEquals(2, boxes.get(1).Rank);
 	}
 }
 
+func TestExecListSortUsesSelectOptionLabelValue(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<SelectOption> options = new List<SelectOption>{
+	new SelectOption('b', 'Beta'),
+	new SelectOption('a2', 'Alpha'),
+	new SelectOption('a1', 'Alpha')
+};
+options.sort();
+System.assertEquals('a1', options[0].getValue());
+System.assertEquals('a2', options[1].getValue());
+System.assertEquals('b', options[2].getValue());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecListSortUsesPlatformScalarOrdering(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Date> dates = new List<Date>{
+	Date.newInstance(2026, 5, 14),
+	Date.newInstance(2025, 1, 1),
+	Date.newInstance(2026, 1, 1)
+};
+dates.sort();
+System.assertEquals(Date.newInstance(2025, 1, 1), dates[0]);
+System.assertEquals(Date.newInstance(2026, 1, 1), dates[1]);
+System.assertEquals(Date.newInstance(2026, 5, 14), dates[2]);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecListSortSupportsSObjects(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account beta = new Account(Id = '001000000000002AAA', Name = 'Beta');
@@ -2748,6 +2996,21 @@ func TestCollectionStdlibCloneValueNestedCollections(t *testing.T) {
 	}
 }
 
+func TestCollectionStdlibCloneValueBreaksCycles(t *testing.T) {
+	parent := Object("Node")
+	child := Object("Node")
+	parent.Fields["Child"] = child
+	child.Fields["Parent"] = parent
+
+	cloned := cloneValue(parent)
+	if cloned.Fields["Child"].Fields["Parent"].Fields != nil {
+		t.Fatalf("cycle clone should stop at repeated reference")
+	}
+	if cloned.Fields["Child"].Fields["Parent"].Type != "Node" {
+		t.Fatalf("cycle placeholder type = %q, want Node", cloned.Fields["Child"].Fields["Parent"].Type)
+	}
+}
+
 func TestExecCollectionStdlibNullAndSObjectMapEdges(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<String> words = new List<String>{null, 'a', null};
@@ -2791,7 +3054,11 @@ Map<Id, Account> more = new Map<Id, Account>();
 more.putAll(new List<Account>{b});
 Account fromMore = more.get(b.Id);
 System.assertEquals('Beta', fromMore.Name);
-`)
+
+List<Account> maybeAccounts = null;
+Map<Id, Account> emptyById = new Map<Id, Account>(maybeAccounts);
+System.assert(emptyById.isEmpty());
+	`)
 	if err != nil {
 		t.Fatal(err)
 	}

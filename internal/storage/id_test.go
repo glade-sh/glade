@@ -32,6 +32,22 @@ func TestIDGeneratorUsesDeterministicObjectSequences(t *testing.T) {
 	}
 }
 
+func TestRuntimeIDGeneratorKeepsLogicalSequencesButOffsetsIDBody(t *testing.T) {
+	g := NewRuntimeIDGenerator(map[string]string{"Account": "001"})
+
+	id, err := g.Next("Account")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if id == "001000000000001" {
+		t.Fatalf("runtime id collided with low fake-id sequence: %s", id)
+	}
+	if g.Sequences["Account"] != 1 {
+		t.Fatalf("logical sequence = %d, want 1", g.Sequences["Account"])
+	}
+}
+
 func TestAssignDeterministicPrefixesKeepsStandardAndExplicitPrefixes(t *testing.T) {
 	prefixes := AssignDeterministicPrefixes(
 		[]string{"Widget__c", "Account", "Alpha__c"},

@@ -55,10 +55,15 @@ System.assertEquals('zzzcatzzzdogzzz', replaceFirstMatcher.replaceFirst('cat'));
 Pattern captures = Pattern.compile('([A-Z]+)([0-9]+)');
 Matcher captureReplace = captures.matcher('A1 B22');
 System.assertEquals('1-A 22-B', captureReplace.replaceAll('$2-$1'));
-System.assert(Pattern.matches('(?i)\\Qhello.world\\E', 'HELLO.WORLD'));
-System.assert(!Pattern.matches('(?i)\\Qhello.world\\E', 'HELLOXWORLD'));
+	System.assert(Pattern.matches('(?i)\\Qhello.world\\E', 'HELLO.WORLD'));
+	System.assert(!Pattern.matches('(?i)\\Qhello.world\\E', 'HELLOXWORLD'));
+	Id accountId = '001000000000001AAA';
+	System.assert(Pattern.matches('001[0-9A-Za-z]+', accountId));
+	Matcher subquery = Pattern.compile('(?i)(?s)\\(\\s*SELECT\\s.*?\\)(?=\\s*,|\\s*FROM\\s|\\s*$)').matcher('SELECT Id, (SELECT Id FROM Lines__r WHERE (Status__c = \'Open\')) FROM Account');
+	System.assert(subquery.find());
+	System.assertEquals('(SELECT Id FROM Lines__r WHERE (Status__c = \'Open\'))', subquery.group());
 
-Pattern regionWords = Pattern.compile('[A-Z]+');
+	Pattern regionWords = Pattern.compile('[A-Z]+');
 Matcher regionMatcher = regionWords.matcher('aa ABC bb DEF cc');
 System.assertEquals(0, regionMatcher.regionStart());
 System.assertEquals(16, regionMatcher.regionEnd());

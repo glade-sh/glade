@@ -63,6 +63,11 @@ func indexValueKey(value Value) string {
 }
 
 func indexValuesKey(values []Value) string {
+	for i := range values {
+		if values[i].Kind == ValueString {
+			values[i].String = strings.ToLower(values[i].String)
+		}
+	}
 	raw, err := json.Marshal(values)
 	if err != nil {
 		return ""

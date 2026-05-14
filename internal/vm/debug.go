@@ -158,39 +158,55 @@ func cloneValues(in map[string]Value) map[string]Value {
 }
 
 func cloneValue(value Value) Value {
+	return cloneValueWithSeen(value, make(map[uint64]bool))
+}
+
+func cloneValueWithSeen(value Value, seen map[uint64]bool) Value {
 	out := value
 	switch value.Kind {
 	case ValueObject, ValueList, ValueSet, ValueMap:
+		if value.Ref != 0 {
+			if seen[value.Ref] {
+				out.Fields = nil
+				out.Map = nil
+				out.MapKeys = nil
+				out.List = nil
+				out.Set = nil
+				return out
+			}
+			seen[value.Ref] = true
+			defer delete(seen, value.Ref)
+		}
 		out.Ref = newValueRef()
 	}
 	if value.Fields != nil {
 		out.Fields = make(map[string]Value, len(value.Fields))
 		for name, child := range value.Fields {
-			out.Fields[name] = cloneValue(child)
+			out.Fields[name] = cloneValueWithSeen(child, seen)
 		}
 	}
 	if value.Map != nil {
 		out.Map = make(map[string]Value, len(value.Map))
 		for name, child := range value.Map {
-			out.Map[name] = cloneValue(child)
+			out.Map[name] = cloneValueWithSeen(child, seen)
 		}
 	}
 	if value.MapKeys != nil {
 		out.MapKeys = make(map[string]Value, len(value.MapKeys))
 		for name, child := range value.MapKeys {
-			out.MapKeys[name] = cloneValue(child)
+			out.MapKeys[name] = cloneValueWithSeen(child, seen)
 		}
 	}
 	if value.List != nil {
 		out.List = make([]Value, len(value.List))
 		for i, child := range value.List {
-			out.List[i] = cloneValue(child)
+			out.List[i] = cloneValueWithSeen(child, seen)
 		}
 	}
 	if value.Set != nil {
 		out.Set = make([]Value, len(value.Set))
 		for i, child := range value.Set {
-			out.Set[i] = cloneValue(child)
+			out.Set[i] = cloneValueWithSeen(child, seen)
 		}
 	}
 	return out

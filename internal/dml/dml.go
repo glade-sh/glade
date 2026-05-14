@@ -21,8 +21,16 @@ type Engine struct {
 	AutomationTracer  func(name string, args map[string]any)
 	DeferAutomation   bool
 
-	workflowDepth int
-	flowDepth     int
+	workflowDepth  int
+	flowDepth      int
+	summaryOrder   []string
+	summaryUpdates map[string]SummaryUpdate
+}
+
+type SummaryUpdate struct {
+	Object string
+	Before storage.Record
+	After  storage.Record
 }
 
 type Result struct {
@@ -50,7 +58,7 @@ func NewEngine(org *storage.OrgState) Engine {
 			prefixes[name] = object.Definition.KeyPrefix
 		}
 	}
-	ids := storage.NewIDGenerator(prefixes)
+	ids := storage.NewRuntimeIDGenerator(prefixes)
 	ids.Sequences = copySequences(org.IDSequences)
 	return Engine{Org: org, IDs: ids, Now: func() time.Time { return time.Now().UTC() }, UserID: "005000000000001"}
 }
@@ -154,7 +162,7 @@ func (e *Engine) Undelete(records []storage.Record) []Result {
 			results[i] = resultFromError(record.ID, err)
 			continue
 		}
-		stored, ok := object.Records[record.ID]
+		storedID, stored, ok := storage.LookupRecordByID(object.Records, record.ID)
 		if !ok {
 			results[i] = resultFromError(record.ID, fmt.Errorf("dml: record %s does not exist", record.ID))
 			continue
@@ -168,7 +176,7 @@ func (e *Engine) Undelete(records []storage.Record) []Result {
 		stored.System.LastModifiedDate = stamp
 		stored.System.SystemModstamp = stamp
 		stored.System.LastModifiedByID = e.systemUserID()
-		object.Records[record.ID] = stored
+		object.Records[storedID] = stored
 		e.Org.Objects[objectName] = object
 		results[i] = Result{ID: record.ID, Success: true}
 	}
@@ -191,7 +199,7 @@ func (e *Engine) EmptyRecycleBin(records []storage.Record) []Result {
 			results[i] = resultFromError(record.ID, err)
 			continue
 		}
-		stored, ok := object.Records[record.ID]
+		storedID, stored, ok := storage.LookupRecordByID(object.Records, record.ID)
 		if !ok {
 			results[i] = resultFromError(record.ID, fmt.Errorf("dml: record %s does not exist", record.ID))
 			continue
@@ -200,7 +208,7 @@ func (e *Engine) EmptyRecycleBin(records []storage.Record) []Result {
 			results[i] = failedResult(record.ID, fmt.Sprintf("dml: record %s is not in the recycle bin", record.ID), "ENTITY_IS_NOT_IN_RECYCLE_BIN", nil)
 			continue
 		}
-		delete(object.Records, record.ID)
+		delete(object.Records, storedID)
 		e.Org.Objects[objectName] = object
 		results[i] = Result{ID: record.ID, Success: true}
 	}
@@ -297,13 +305,13 @@ func (e *Engine) setLock(records []storage.Record, locked bool) []Result {
 			results[i] = resultFromError(record.ID, err)
 			continue
 		}
-		stored, ok := object.Records[record.ID]
+		storedID, stored, ok := storage.LookupRecordByID(object.Records, record.ID)
 		if !ok || stored.System.IsDeleted {
 			results[i] = resultFromError(record.ID, fmt.Errorf("dml: record %s does not exist", record.ID))
 			continue
 		}
 		stored.System.Locked = locked
-		object.Records[record.ID] = stored
+		object.Records[storedID] = stored
 		e.Org.Objects[objectName] = object
 		results[i] = Result{ID: record.ID, Success: true}
 	}
@@ -342,13 +350,30 @@ func (e *Engine) reparentLookups(parentObject string, oldID, newID storage.ID) [
 }
 
 func (e *Engine) WithTransaction(fn func(*Engine) error) error {
-	before := e.Org.Clone()
+	before := e.Org.CloneRuntime()
 	if err := fn(e); err != nil {
 		*e.Org = before
 		e.IDs.Sequences = copySequences(before.IDSequences)
 		return err
 	}
 	return nil
+}
+
+func (e *Engine) TakeSummaryUpdates() []SummaryUpdate {
+	if e == nil || len(e.summaryOrder) == 0 || len(e.summaryUpdates) == 0 {
+		return nil
+	}
+	updates := make([]SummaryUpdate, 0, len(e.summaryOrder))
+	for _, key := range e.summaryOrder {
+		update, ok := e.summaryUpdates[key]
+		if !ok || update.Object == "" || update.Before.ID == "" || update.After.ID == "" {
+			continue
+		}
+		updates = append(updates, update)
+	}
+	e.summaryOrder = nil
+	e.summaryUpdates = nil
+	return updates
 }
 
 func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
@@ -365,7 +390,7 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 	}
 	normalizeNameFields(objectName, &record)
 	createPersonContact := objectName == "Account" && isPersonAccountRecord(record)
-	applyFieldDefaults(object.Definition, &record)
+	applyFieldDefaults(e.Org, object.Definition, &record)
 	applyAutoNumberName(object.Definition, e.IDs.Sequences[objectName]+1, &record)
 	applyCustomSettingInsertDefaults(e.Org, object.Definition, &record)
 	applySetupInsertDefaults(objectName, object.Definition, &record)
@@ -388,8 +413,13 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 	if err := e.validateUnique(objectName, object.Definition, record, ""); err != nil {
 		return "", err
 	}
-	rollbackOrg := e.Org.Clone()
-	rollbackSequences := copySequences(e.IDs.Sequences)
+	needsRollback := strings.EqualFold(objectName, "ContentVersion") || createPersonContact || (!e.DeferAutomation && hasObjectAutomation(object.Definition))
+	var rollbackOrg storage.OrgState
+	var rollbackSequences map[string]uint64
+	if needsRollback {
+		rollbackOrg = e.Org.CloneRuntime()
+		rollbackSequences = copySequences(e.IDs.Sequences)
+	}
 	if record.ID == "" {
 		id, err := e.IDs.Next(objectName)
 		if err != nil {
@@ -655,7 +685,7 @@ func defaultUserCommunityNickname(record *storage.Record) {
 	}
 }
 
-func applyFieldDefaults(definition storage.ObjectDefinition, record *storage.Record) {
+func applyFieldDefaults(org *storage.OrgState, definition storage.ObjectDefinition, record *storage.Record) {
 	if record == nil {
 		return
 	}
@@ -669,10 +699,27 @@ func applyFieldDefaults(definition storage.ObjectDefinition, record *storage.Rec
 		if record.ExplicitNulls != nil && record.ExplicitNulls[name] {
 			continue
 		}
-		if value, ok := storage.DefaultValueForRecordField(definition, *record, field); ok {
+		if value, ok := defaultValueForRecordField(org, definition, *record, field); ok {
 			record.Fields[name] = value
 		}
 	}
+}
+
+func defaultValueForRecordField(org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record, field storage.Field) (storage.Value, bool) {
+	rawDefault := strings.TrimSpace(field.DefaultValue)
+	if org != nil && strings.Contains(rawDefault, "$RecordType") {
+		if value, _, ok := EvaluateRecordFormulaValueInOrg(rawDefault, field, org, definition, record); ok {
+			return value, true
+		}
+	}
+	if value, ok := storage.DefaultValueForRecordField(definition, record, field); ok {
+		return value, true
+	}
+	if org == nil || rawDefault == "" {
+		return storage.Value{}, false
+	}
+	value, _, ok := EvaluateRecordFormulaValueInOrg(rawDefault, field, org, definition, record)
+	return value, ok
 }
 
 func applyAutoNumberName(definition storage.ObjectDefinition, sequence uint64, record *storage.Record) {
@@ -916,7 +963,7 @@ func (e *Engine) updateOne(record storage.Record) error {
 	if err := e.validateObjectID(object.Definition, record); err != nil {
 		return err
 	}
-	existing, ok := object.Records[record.ID]
+	storedID, existing, ok := storage.LookupRecordByID(object.Records, record.ID)
 	if !ok {
 		return fmt.Errorf("dml: record %s does not exist", record.ID)
 	}
@@ -930,7 +977,7 @@ func (e *Engine) updateOne(record storage.Record) error {
 	if err := e.validateReferences(object.Definition, record); err != nil {
 		return err
 	}
-	if err := e.validateUnique(objectName, object.Definition, record, record.ID); err != nil {
+	if err := e.validateUnique(objectName, object.Definition, record, storedID); err != nil {
 		return err
 	}
 	finalRecord := existing.Clone()
@@ -962,8 +1009,13 @@ func (e *Engine) updateOne(record storage.Record) error {
 	if existing.ExplicitNulls == nil {
 		existing.ExplicitNulls = make(map[string]bool)
 	}
-	rollbackOrg := e.Org.Clone()
-	rollbackSequences := copySequences(e.IDs.Sequences)
+	needsRollback := !e.DeferAutomation && hasObjectAutomation(object.Definition)
+	var rollbackOrg storage.OrgState
+	var rollbackSequences map[string]uint64
+	if needsRollback {
+		rollbackOrg = e.Org.CloneRuntime()
+		rollbackSequences = copySequences(e.IDs.Sequences)
+	}
 	stamp := e.systemTimestamp()
 	oldRecord := existing.Clone()
 	for field, value := range record.Fields {
@@ -979,7 +1031,7 @@ func (e *Engine) updateOne(record storage.Record) error {
 	existing.System.LastModifiedDate = stamp
 	existing.System.SystemModstamp = stamp
 	existing.System.LastModifiedByID = e.systemUserID()
-	object.Records[record.ID] = existing
+	object.Records[storedID] = existing
 	e.Org.Objects[objectName] = object
 	e.recalculateSummaryFieldsForChildren(objectName, oldRecord, finalRecord)
 	if strings.EqualFold(objectName, "Account") {
@@ -990,7 +1042,7 @@ func (e *Engine) updateOne(record storage.Record) error {
 		}
 	}
 	if !e.DeferAutomation {
-		if err := e.ApplyAutomation(objectName, record.ID); err != nil {
+		if err := e.ApplyAutomation(objectName, storedID); err != nil {
 			*e.Org = rollbackOrg
 			e.IDs.Sequences = rollbackSequences
 			return err
@@ -1013,17 +1065,17 @@ func (e *Engine) deleteOne(record storage.Record) error {
 	if err := e.validateObjectID(object.Definition, record); err != nil {
 		return err
 	}
-	stored, ok := object.Records[record.ID]
+	storedID, stored, ok := storage.LookupRecordByID(object.Records, record.ID)
 	if !ok {
 		return fmt.Errorf("dml: record %s does not exist", record.ID)
 	}
 	if stored.System.IsDeleted {
 		return fmt.Errorf("dml: record %s is deleted", record.ID)
 	}
-	if err := e.validateDeleteReferences(objectName, record.ID); err != nil {
+	if err := e.validateDeleteReferences(objectName, storedID); err != nil {
 		return err
 	}
-	return e.deleteRecord(objectName, record.ID, make(map[string]bool))
+	return e.deleteRecord(objectName, storedID, make(map[string]bool))
 }
 
 func (e *Engine) deleteRecord(objectName string, id storage.ID, seen map[string]bool) error {
@@ -1033,7 +1085,7 @@ func (e *Engine) deleteRecord(objectName string, id storage.ID, seen map[string]
 	}
 	seen[key] = true
 	object := e.Org.Objects[objectName]
-	stored, ok := object.Records[id]
+	storedID, stored, ok := storage.LookupRecordByID(object.Records, id)
 	if !ok {
 		return fmt.Errorf("dml: record %s does not exist", id)
 	}
@@ -1048,10 +1100,10 @@ func (e *Engine) deleteRecord(objectName string, id storage.ID, seen map[string]
 	stored.System.LastModifiedDate = stamp
 	stored.System.SystemModstamp = stamp
 	stored.System.LastModifiedByID = e.systemUserID()
-	object.Records[id] = stored
+	object.Records[storedID] = stored
 	e.Org.Objects[objectName] = object
 	e.recalculateSummaryFieldsForChildren(objectName, stored)
-	return e.cascadeDeleteChildren(objectName, id, seen)
+	return e.cascadeDeleteChildren(objectName, storedID, seen)
 }
 
 func (e *Engine) upsertByExternalID(record storage.Record, externalIDField string) (storage.ID, bool, error) {
@@ -1227,7 +1279,7 @@ func (e *Engine) validateReferences(definition storage.ObjectDefinition, record 
 				continue
 			}
 			target := e.Org.Objects[canonical]
-			parent, ok := target.Records[id]
+			_, parent, ok := storage.LookupRecordByID(target.Records, id)
 			if ok && !parent.System.IsDeleted {
 				found = true
 				break
@@ -1424,6 +1476,10 @@ func (e *Engine) ApplyAutomation(objectName string, id storage.ID) error {
 		return err
 	}
 	return nil
+}
+
+func hasObjectAutomation(definition storage.ObjectDefinition) bool {
+	return len(definition.WorkflowRules) > 0 || len(definition.FlowRules) > 0
 }
 
 func (e *Engine) applyFlowFieldUpdates(objectName string, id storage.ID) error {
@@ -2052,6 +2108,7 @@ func (e *Engine) recalculateSummaryFieldsForChildren(childObjectName string, chi
 	if e == nil || e.Org == nil || len(childRecords) == 0 {
 		return
 	}
+	recordTriggerUpdates := len(childRecords) > 1
 	canonicalChild, ok := storage.ResolveObjectName(*e.Org, childObjectName)
 	if !ok {
 		canonicalChild = childObjectName
@@ -2062,8 +2119,12 @@ func (e *Engine) recalculateSummaryFieldsForChildren(childObjectName string, chi
 			if field.Type != storage.FieldSummary {
 				continue
 			}
+			operation := strings.ToLower(strings.TrimSpace(field.SummaryOperation))
 			summaryChild, _ := splitSummaryQualifiedField(field.SummarizedField)
 			fkChild, fkField := splitSummaryQualifiedField(field.SummaryForeignKey)
+			if summaryChild == "" && operation == "count" {
+				summaryChild = fkChild
+			}
 			if summaryChild == "" || fkChild == "" || fkField == "" || !strings.EqualFold(summaryChild, fkChild) {
 				continue
 			}
@@ -2081,7 +2142,7 @@ func (e *Engine) recalculateSummaryFieldsForChildren(childObjectName string, chi
 			}
 			parentIDs := summaryParentIDs(childRecords, fkFieldName)
 			for parentID := range parentIDs {
-				parentRecord, ok := parentObject.Records[parentID]
+				storedParentID, parentRecord, ok := storage.LookupRecordByID(parentObject.Records, parentID)
 				if !ok || parentRecord.System.IsDeleted {
 					continue
 				}
@@ -2089,11 +2150,22 @@ func (e *Engine) recalculateSummaryFieldsForChildren(childObjectName string, chi
 				if !ok {
 					continue
 				}
+				oldValue, ok := parentRecord.Fields[parentFieldName]
+				if !ok {
+					oldValue = storage.NullValue()
+				}
+				if storageValuesEqual(field, oldValue, value) {
+					continue
+				}
+				beforeParent := parentRecord.Clone()
 				if parentRecord.Fields == nil {
 					parentRecord.Fields = make(map[string]storage.Value)
 				}
 				parentRecord.Fields[parentFieldName] = value
-				parentObject.Records[parentID] = parentRecord
+				parentObject.Records[storedParentID] = parentRecord
+				if recordTriggerUpdates {
+					e.recordSummaryUpdate(parentObjectName, beforeParent, parentRecord)
+				}
 				changed = true
 			}
 		}
@@ -2101,6 +2173,23 @@ func (e *Engine) recalculateSummaryFieldsForChildren(childObjectName string, chi
 			e.Org.Objects[parentObjectName] = parentObject
 		}
 	}
+}
+
+func (e *Engine) recordSummaryUpdate(objectName string, before, after storage.Record) {
+	if e == nil || before.ID == "" || after.ID == "" {
+		return
+	}
+	key := strings.ToLower(objectName) + "\x00" + strings.ToLower(string(after.ID))
+	if e.summaryUpdates == nil {
+		e.summaryUpdates = make(map[string]SummaryUpdate)
+	}
+	update, exists := e.summaryUpdates[key]
+	if !exists {
+		e.summaryOrder = append(e.summaryOrder, key)
+		update = SummaryUpdate{Object: objectName, Before: before.Clone()}
+	}
+	update.After = after.Clone()
+	e.summaryUpdates[key] = update
 }
 
 func summaryParentIDs(records []storage.Record, fkFieldName string) map[storage.ID]bool {
@@ -2120,7 +2209,11 @@ func summaryParentIDs(records []storage.Record, fkFieldName string) map[storage.
 func (e *Engine) evaluateSummaryField(parent storage.Record, field storage.Field) (storage.Value, bool) {
 	childObject, childField := splitSummaryQualifiedField(field.SummarizedField)
 	fkObject, fkField := splitSummaryQualifiedField(field.SummaryForeignKey)
-	if e == nil || e.Org == nil || parent.ID == "" || childObject == "" || childField == "" || fkObject == "" || fkField == "" || !strings.EqualFold(childObject, fkObject) {
+	operation := strings.ToLower(strings.TrimSpace(field.SummaryOperation))
+	if childObject == "" && operation == "count" {
+		childObject = fkObject
+	}
+	if e == nil || e.Org == nil || parent.ID == "" || childObject == "" || fkObject == "" || fkField == "" || !strings.EqualFold(childObject, fkObject) {
 		return storage.Value{}, false
 	}
 	canonicalChild, ok := storage.ResolveObjectName(*e.Org, childObject)
@@ -2128,20 +2221,29 @@ func (e *Engine) evaluateSummaryField(parent storage.Record, field storage.Field
 		return storage.Value{}, false
 	}
 	childState := e.Org.Objects[canonicalChild]
-	childFieldName, ok := storage.ResolveFieldName(childState.Definition, e.Org.Namespace, childField)
-	if !ok {
-		return storage.Value{}, false
+	childFieldName := ""
+	if childField != "" {
+		var ok bool
+		childFieldName, ok = storage.ResolveFieldName(childState.Definition, e.Org.Namespace, childField)
+		if !ok {
+			return storage.Value{}, false
+		}
 	}
 	fkFieldName, ok := storage.ResolveFieldName(childState.Definition, e.Org.Namespace, fkField)
 	if !ok {
 		return storage.Value{}, false
 	}
 	values := make([]float64, 0)
+	count := int64(0)
 	for _, child := range childState.Records {
-		if child.System.IsDeleted || idFromStorageValue(child.Fields[fkFieldName]) != parent.ID {
+		if child.System.IsDeleted || !storage.IDsEqual(idFromStorageValue(child.Fields[fkFieldName]), parent.ID) {
 			continue
 		}
 		if !summaryFiltersMatch(e.Org, childState.Definition, child, field.SummaryFilterItems) {
+			continue
+		}
+		if operation == "count" && childFieldName == "" {
+			count++
 			continue
 		}
 		value, ok := summaryRecordFieldValue(e.Org, childState.Definition, child, childFieldName)
@@ -2154,9 +2256,11 @@ func (e *Engine) evaluateSummaryField(parent storage.Record, field storage.Field
 		}
 		values = append(values, number)
 	}
-	operation := strings.ToLower(strings.TrimSpace(field.SummaryOperation))
 	switch operation {
 	case "count":
+		if childFieldName == "" {
+			return storage.IntegerValue(count), true
+		}
 		return storage.IntegerValue(int64(len(values))), true
 	case "", "sum":
 		total := 0.0
@@ -2297,8 +2401,10 @@ func storageValuesEqual(field storage.Field, left, right storage.Value) bool {
 	switch left.Kind {
 	case storage.ValueNull:
 		return true
-	case storage.ValueString, storage.ValueDate, storage.ValueDateTime, storage.ValueDecimal, storage.ValueBlob:
+	case storage.ValueString, storage.ValueDate, storage.ValueDateTime, storage.ValueBlob:
 		return left.String == right.String
+	case storage.ValueDecimal:
+		return left.Decimal == right.Decimal
 	case storage.ValueInteger:
 		return left.Integer == right.Integer
 	case storage.ValueBoolean:

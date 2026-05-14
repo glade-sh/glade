@@ -2,6 +2,12 @@
 
 Status date: 2026-05-07.
 
+Paused note, 2026-05-14: this remains the historical plan for the larger NU
+project, but the active local-test zero-blocker frontier has moved to
+`example-projects/sf-cred-pkg-develop`. Use
+`docs/LOCAL_APEX_TEST_EXECUTION_PLAN.md` for the current measured baseline and
+blocker list.
+
 This plan targets `example-projects/src-nmb-nu-develop` after the NUTPL
 runtime sentinel went green. The goal is to move this project from a broad
 compile-gap frontier to executable local tests without project-specific stubs or
@@ -43,7 +49,7 @@ scratch-org probe proves otherwise.
 | --- | --- | --- |
 | Nested class access to outer private/test-visible statics | `ARTransactions.ARTransaction` cannot see `ORDER_ITEM_PARAM` / `AMOUNT_PARAM`; same in `ARTransactions1`. | Sema member lookup does not consistently include enclosing type members for nested classes. |
 | Inherited fluent methods and base return types | `setField` dominates unknown-method diagnostics (`5405` instances); `toSObject`, `setParent`, `setChildren` follow. | Chained-call typing loses inherited methods and/or loses receiver type after a base-class method returns `SObjectFabricator` / `sfab_FabricatedSObject`. |
-| ApexMocks fluent stubbing | `thenReturn`, `when`, matcher calls (`match_anySObjectList`, `match_anySetOfId`, `match_anyObject`) appear after the fabricator frontier. | Sema lacks enough fluent mock/matcher call typing for fflib/ApexMocks patterns already seen in NUTPL but broader here. |
+| Fluent mock stubbing | `thenReturn`, `when`, matcher calls (`match_anySObjectList`, `match_anySetOfId`, `match_anyObject`) appear after the fabricator frontier. | Sema lacks enough fluent mock/matcher call typing for patterns already seen in NUTPL but broader here. |
 | SOQL parsing inside collection constructors and subqueries | `WHERE`, `AND`, `IN`, `INCLUDES`, and `SELECT` appear as unknown types/methods in `AccountManager.cls`. | Parser/sema treats some static SOQL contexts as Apex expressions, especially `new Map<Id, RecordType>([SELECT ...])`, child subquery `WHERE`, semi-join, and multi-select picklist `INCLUDES`. |
 | Generated properties and declaration-order member indexing | `Address` constructors cannot see `CountryCode` / `StateCode`; address constructors reported as missing despite being declared. | Type/member indexing likely misses auto-properties declared after constructors or does not resolve property names case-insensitively throughout constructor validation. |
 | Standard Schema/Describe gaps | Missing `Limits.getLimitQueryRows`, `getRecordTypeInfosById`, `Schema.DisplayType.BOOLEAN`, some standard objects such as `RecordType` behavior. | Product namespace declarations and stdlib/schema describe coverage need more generated typed declarations and VM contracts. |
@@ -251,23 +257,24 @@ Expected movement:
 - Some standard-object unknown-field diagnostics should move to either support
   or precise unsupported outcomes.
 
-### Lane F: ApexMocks And Matcher Fluent Typing
+### Lane F: Mock Framework And Matcher Fluent Typing
 
-Owner scope: `internal/sema`, `internal/vm`, ApexMocks/fflib-focused fixtures.
+Owner scope: `internal/sema`, `internal/vm`, generic mock/stub fixtures.
 
 Representative signals:
 
 - Unknown methods: `thenReturn`, `when`, `match_anySObjectList`,
   `match_anySetOfId`, `match_anyObject`, `then`.
-- High test coverage in files using `fflib_ApexMocks` patterns.
+- High test coverage in files using fluent mock/stub patterns.
 
 Tasks:
 
-- Extend sema call typing for ApexMocks fluent chains and matcher return types.
+- Extend sema call typing for fluent mock/stub chains and matcher return types.
 - Preserve mock receiver type through casts from `mocks.mock(Type.class)`.
 - Add focused fixtures that model `mocks.when(mock.method()).thenReturn(value)`
   for object, list, set, and primitive return types.
-- Keep runtime behavior deterministic and local; no project-specific mocks.
+- Keep runtime behavior deterministic and local; no framework-specific or
+  project-specific mocks.
 
 Validation:
 
@@ -321,4 +328,3 @@ Success for this batch is not "all tests pass" yet. Success is a moved frontier:
   explicit unsupported families.
 - `docs/fixtures/local-tests-example-projects.json` records reduced
   `compileGap` count or first passing subset for `src-nmb-nu-develop`.
-

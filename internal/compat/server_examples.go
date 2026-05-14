@@ -547,6 +547,8 @@ func serverExampleStorageFieldType(raw, formula string) storage.FieldType {
 		return storage.FieldDate
 	case "DateTime":
 		return storage.FieldDateTime
+	case "Location":
+		return storage.FieldLocation
 	case "Lookup", "MasterDetail", "MetadataRelationship":
 		return storage.FieldReference
 	case "Id":

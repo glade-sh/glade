@@ -102,7 +102,7 @@ func TestLoadProjectResourcesLabelsAndEndpoints(t *testing.T) {
 	if got := org.Objects["StaticResource"].Records["081000000000001"].Fields["Body"].String; got != "site-body" {
 		t.Fatalf("StaticResource body = %q", got)
 	}
-	template := org.Objects["EmailTemplate"].Records["00X000000000001"]
+	template := org.Objects["EmailTemplate"].Records["00X000000100001"]
 	if got := template.Fields["DeveloperName"].String; got != "welcome" {
 		t.Fatalf("EmailTemplate DeveloperName = %q", got)
 	}

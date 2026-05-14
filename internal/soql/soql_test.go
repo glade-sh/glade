@@ -22,6 +22,16 @@ func TestParseSimpleQuery(t *testing.T) {
 	}
 }
 
+func TestParseForView(t *testing.T) {
+	query, err := Parse("SELECT Id, Name FROM Account LIMIT 1 FOR VIEW")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if query.Object != "Account" || query.Limit != 1 || query.ForUpdate {
+		t.Fatalf("query = %#v", query)
+	}
+}
+
 func TestParseCountQuery(t *testing.T) {
 	query, err := Parse("SELECT COUNT() FROM Account")
 	if err != nil {
@@ -361,7 +371,7 @@ func TestExecuteCustomObjectRelationshipProjectionWithMismatchedRelationshipName
 				ID:     "a01000000000001",
 				Object: "Child__c",
 				Fields: map[string]storage.Value{
-					"Parent__c": storage.IDValue("a00000000000001"),
+					"Parent__c": storage.IDValue("a00000000000001AAA"),
 				},
 			},
 		},
@@ -518,6 +528,25 @@ func TestExecuteDatePartSelectFunctionGrouping(t *testing.T) {
 	assertStorageInt(t, fields["CALENDAR_YEAR(RenewalDate__c)"], 2026)
 	assertStorageInt(t, fields["renewalYear"], 2026)
 	assertStorageInt(t, fields["total"], 3)
+}
+
+func TestExecuteDatePartFunctionWithConvertTimezone(t *testing.T) {
+	org := aggregateTestOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["CreatedDate"] = storage.Field{APIName: "CreatedDate", Type: storage.FieldDateTime}
+	for id, record := range account.Records {
+		record.Fields["CreatedDate"] = storage.DateTimeValue("2026-02-02T10:30:00Z")
+		account.Records[id] = record
+	}
+	org.Objects["Account"] = account
+
+	result, err := ParseAndExecute(org, "SELECT Id FROM Account WHERE DAY_ONLY(convertTimezone(CreatedDate)) < 2026-02-03 ORDER BY Name ASC NULLS FIRST LIMIT 1000")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 3 {
+		t.Fatalf("rows = %d", result.Rows)
+	}
 }
 
 func aggregateTestOrg() storage.OrgState {
@@ -738,6 +767,13 @@ func TestExecuteDateLiteralPredicates(t *testing.T) {
 	}
 	if result.Rows != 1 || result.Records[0].ID != "001000000000002" {
 		t.Fatalf("ISO date result = %#v", result)
+	}
+	result, err = ParseAndExecuteAt(org, "SELECT Id FROM Account WHERE CreatedDate <= 2026-05-01T00:00:00Z", now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 || result.Records[0].ID != "001000000000002" {
+		t.Fatalf("ISO datetime result = %#v", result)
 	}
 }
 
@@ -1003,6 +1039,81 @@ func TestExecuteUsesSingleFieldIndexCandidates(t *testing.T) {
 	}
 	if result.Rows != 1 || result.Records[0].ID != "001000000000001" {
 		t.Fatalf("indexed result = %#v", result)
+	}
+}
+
+func TestExecuteStringEqualityIsCaseInsensitiveWithIndex(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["CouponCode__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "CouponCode__c",
+			Fields: map[string]storage.Field{
+				"Code__c": {APIName: "Code__c", Type: storage.FieldString},
+			},
+			Indexes: []storage.IndexDefinition{{Name: "CouponCode.Code", Object: "CouponCode__c", Fields: []string{"Code__c"}}},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a01000000000001": {ID: "a01000000000001", Object: "CouponCode__c", Fields: map[string]storage.Value{"Code__c": storage.StringValue("TESTCODE")}},
+		},
+	}
+	storage.RebuildIndexes(&org)
+	result, err := ParseAndExecute(org, "SELECT Id FROM CouponCode__c WHERE Code__c = 'testcode'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 || result.Records[0].ID != "a01000000000001" {
+		t.Fatalf("case-insensitive indexed result = %#v", result)
+	}
+}
+
+func TestExecuteProjectsFutureCalculatedFormulaField(t *testing.T) {
+	codeStatus := storage.Field{APIName: "Status__c", Type: storage.FieldCalculated, DisplayType: "STRING", Formula: `IF (ISBLANK(Code__c), 'Inactive',
+    IF(OR(!ISBLANK(EndDate__c) && EndDate__c < TODAY(), CouponRule__r.Status__c == 'Inactive'), 'Expired',
+        IF(!ISBLANK(StartDate__c) && StartDate__c > TODAY(), 'Future', 'Active')
+    )
+)`}
+	ruleStatus := storage.Field{APIName: "Status__c", Type: storage.FieldCalculated, DisplayType: "STRING", Formula: `IF(!ISBLANK(EndDate__c) && EndDate__c < TODAY(), 'Inactive', IF(!ISBLANK(StartDate__c) && StartDate__c > TODAY(), 'Future', 'Active'))`}
+	org := storage.NewOrgState()
+	org.Objects["CouponCode__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "CouponCode__c",
+			Fields: map[string]storage.Field{
+				"Code__c":       {APIName: "Code__c", Type: storage.FieldString},
+				"CouponRule__c": {APIName: "CouponRule__c", Type: storage.FieldReference, ReferenceTo: []string{"CouponRule__c"}},
+				"StartDate__c":  {APIName: "StartDate__c", Type: storage.FieldDate},
+				"EndDate__c":    {APIName: "EndDate__c", Type: storage.FieldDate},
+				"Status__c":     codeStatus,
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a01000000000001": {ID: "a01000000000001", Object: "CouponCode__c", Fields: map[string]storage.Value{
+				"Code__c":       storage.StringValue("TESTCODE"),
+				"CouponRule__c": storage.IDValue("a02000000000001"),
+				"StartDate__c":  storage.DateValue("2999-01-01"),
+				"Status__c":     storage.StringValue("Active"),
+			}},
+		},
+	}
+	org.Objects["CouponRule__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "CouponRule__c",
+			Fields: map[string]storage.Field{
+				"StartDate__c": {APIName: "StartDate__c", Type: storage.FieldDate},
+				"EndDate__c":   {APIName: "EndDate__c", Type: storage.FieldDate},
+				"Status__c":    ruleStatus,
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a02000000000001": {ID: "a02000000000001", Object: "CouponRule__c", Fields: map[string]storage.Value{}},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT Id, Status__c FROM CouponCode__c WHERE Code__c = 'testcode' AND Status__c = 'Future'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 || result.Records[0].Fields["Status__c"].String != "Future" {
+		t.Fatalf("future status result = %#v", result)
 	}
 }
 
@@ -1400,6 +1511,52 @@ func TestExecuteEvaluatesFormulaFieldsInWhere(t *testing.T) {
 	}
 }
 
+func TestExecuteEvaluatesParentFormulaField(t *testing.T) {
+	org := storage.NewOrgState()
+	batchDefinition := storage.ObjectDefinition{
+		APIName:   "Batch__c",
+		KeyPrefix: "a00",
+		Fields: map[string]storage.Field{
+			"Status__c": {APIName: "Status__c", Type: storage.FieldPicklist},
+		},
+	}
+	transactionDefinition := storage.ObjectDefinition{
+		APIName:   "Transaction__c",
+		KeyPrefix: "a01",
+		Fields: map[string]storage.Field{
+			"Batch__c":  {APIName: "Batch__c", Type: storage.FieldReference, ReferenceTo: []string{"Batch__c"}, RelationshipName: "Transactions"},
+			"Status__c": {APIName: "Status__c", Type: storage.FieldCalculated, Formula: "Text(Batch__r.Status__c)"},
+		},
+	}
+	org.Objects["Batch__c"] = storage.ObjectState{
+		Definition: batchDefinition,
+		Records: map[storage.ID]storage.Record{
+			"a00000000000001": {
+				ID:     "a00000000000001",
+				Object: "Batch__c",
+				Fields: map[string]storage.Value{"Status__c": storage.StringValue("Open")},
+			},
+		},
+	}
+	org.Objects["Transaction__c"] = storage.ObjectState{
+		Definition: transactionDefinition,
+		Records: map[storage.ID]storage.Record{
+			"a01000000000001": {
+				ID:     "a01000000000001",
+				Object: "Transaction__c",
+				Fields: map[string]storage.Value{"Batch__c": storage.IDValue("a00000000000001")},
+			},
+		},
+	}
+	result, err := ParseAndExecute(org, "SELECT Id, Status__c FROM Transaction__c WHERE Status__c = 'Open'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 || result.Records[0].Fields["Status__c"].String != "Open" {
+		t.Fatalf("parent formula result = %#v", result)
+	}
+}
+
 func TestExecuteNotInIgnoresNullCandidates(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Objects["Parent__c"] = storage.ObjectState{
@@ -1658,6 +1815,61 @@ func TestExecuteCustomChildRelationshipSubqueryAcceptsRuntimeSuffix(t *testing.T
 	children := result.Records[0].Children["CartItems__r"]
 	if len(children) != 1 || children[0].Fields["Name"].String != "Line" {
 		t.Fatalf("children = %#v", children)
+	}
+}
+
+func TestExecuteCustomParentRelationshipFilterUsesDerivedName(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Cart__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Cart__c",
+			Fields:  map[string]storage.Field{"Id": {APIName: "Id", Type: storage.FieldID}},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a0S000000000001": {ID: "a0S000000000001", Object: "Cart__c"},
+		},
+	}
+	org.Objects["CartItem__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "CartItem__c",
+			Fields: map[string]storage.Field{
+				"Id":      {APIName: "Id", Type: storage.FieldID},
+				"Cart__c": {APIName: "Cart__c", Type: storage.FieldReference, ReferenceTo: []string{"Cart__c"}, RelationshipName: "CartItems"},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "Cart__c",
+				ParentObjects:      []string{"Cart__c"},
+				ParentRelationship: "CartItems",
+			}},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a0I000000000001": {ID: "a0I000000000001", Object: "CartItem__c", Fields: map[string]storage.Value{"Cart__c": storage.IDValue("a0S000000000001")}},
+		},
+	}
+	org.Objects["CartItemLine__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "CartItemLine__c",
+			Fields: map[string]storage.Field{
+				"Id":          {APIName: "Id", Type: storage.FieldID},
+				"CartItem__c": {APIName: "CartItem__c", Type: storage.FieldReference, ReferenceTo: []string{"CartItem__c"}, RelationshipName: "CartItemLines"},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "CartItem__c",
+				ParentObjects:      []string{"CartItem__c"},
+				ParentRelationship: "CartItemLines",
+			}},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a0L000000000001": {ID: "a0L000000000001", Object: "CartItemLine__c", Fields: map[string]storage.Value{"CartItem__c": storage.IDValue("a0I000000000001")}},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT Id FROM CartItemLine__c WHERE CartItem__r.Cart__c = 'a0S000000000001'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Records) != 1 || result.Records[0].ID != "a0L000000000001" {
+		t.Fatalf("records = %#v", result.Records)
 	}
 }
 

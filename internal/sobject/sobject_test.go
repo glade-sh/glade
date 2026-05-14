@@ -53,7 +53,9 @@ func TestBuildDescribeRegistry(t *testing.T) {
 			{Name: "Account__c", Type: "Lookup", ReferenceTo: []string{"Account"}, RelationshipName: "Account__r", ChildRelationshipName: "Widgets__r", DeleteConstraint: "Cascade"},
 			{Name: "Who__c", Type: "Lookup", ReferenceTo: []string{"Account", "Contact"}, RelationshipName: "Who__r", ChildRelationshipName: "WhoWidgets__r"},
 			{Name: "ParentAccount__c", Type: "Lookup", ReferenceTo: []string{"Account"}, RelationshipName: "Affiliates"},
+			{Name: "Master__c", Type: "MasterDetail", ReferenceTo: []string{"Account"}, RelationshipName: "Master__r", ChildRelationshipName: "MasterWidgets__r"},
 			{Name: "Rating__c", Type: "Picklist", PicklistValues: []schema.PicklistValue{{FullName: "Hot", Label: "Hot", Default: true, Active: true}}},
+			{Name: "PrimaryLocation__c", Type: "Location"},
 		},
 		RecordTypes: []schema.RecordType{{DeveloperName: "Business", Label: "Business Widget", Active: true, Default: true}},
 	}}})
@@ -86,6 +88,9 @@ func TestBuildDescribeRegistry(t *testing.T) {
 	if got := describe.Relationships[2].ChildRelationship; got != "Affiliates" {
 		t.Fatalf("metadata relationship child name = %q", got)
 	}
+	if !describe.Relationships[3].CascadeDelete {
+		t.Fatalf("master-detail relationship did not cascade delete: %#v", describe.Relationships[3])
+	}
 	if got := describe.Fields["Rating__c"].PicklistValues; len(got) != 1 || got[0].Value != "Hot" || !got[0].Default {
 		t.Fatalf("picklist values = %#v", got)
 	}
@@ -110,6 +115,9 @@ func TestBuildDescribeRegistry(t *testing.T) {
 	}
 	if got := definition.Fields["Rating__c"].PicklistValues; len(got) != 1 || got[0].Value != "Hot" {
 		t.Fatalf("definition picklist values = %#v", got)
+	}
+	if got := definition.Fields["PrimaryLocation__c"]; got.Type != storage.FieldLocation {
+		t.Fatalf("location definition = %#v", got)
 	}
 	if got := definition.RecordTypes; len(got) != 1 || got[0].ID != "012000000000001" || got[0].DeveloperName != "Business" {
 		t.Fatalf("definition record types = %#v", got)

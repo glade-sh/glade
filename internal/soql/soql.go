@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/open-aer/oaer/internal/dml"
 	"github.com/open-aer/oaer/internal/storage"
 )
 
@@ -563,12 +564,24 @@ func matches(org storage.OrgState, definition storage.ObjectDefinition, record s
 		}
 		return !equalValues(left, condition.Value)
 	case ">":
+		if left.Kind == storage.ValueNull || condition.Value.Kind == storage.ValueNull {
+			return false
+		}
 		return compareValues(left, condition.Value) > 0
 	case ">=":
+		if left.Kind == storage.ValueNull || condition.Value.Kind == storage.ValueNull {
+			return false
+		}
 		return compareValues(left, condition.Value) >= 0
 	case "<":
+		if left.Kind == storage.ValueNull || condition.Value.Kind == storage.ValueNull {
+			return false
+		}
 		return compareValues(left, condition.Value) < 0
 	case "<=":
+		if left.Kind == storage.ValueNull || condition.Value.Kind == storage.ValueNull {
+			return false
+		}
 		return compareValues(left, condition.Value) <= 0
 	case "LIKE":
 		return likeMatch(left, condition.Value)
@@ -676,6 +689,10 @@ func projectRecord(org storage.OrgState, definition storage.ObjectDefinition, re
 			continue
 		}
 		if strings.Contains(field, ".") {
+			if relationship, missing := relationshipLookupMissing(org, record, field); missing {
+				out.Fields[relationship] = storage.NullValue()
+				continue
+			}
 			if value, ok := relationshipValue(org, record, field); ok {
 				out.Fields[field] = value
 				projectRelationshipIDs(org, record, field, out.Fields)
@@ -687,6 +704,10 @@ func projectRecord(org storage.OrgState, definition storage.ObjectDefinition, re
 		}
 		if record.HasExplicitNull(canonicalField) {
 			out.ExplicitNulls[canonicalField] = true
+			continue
+		}
+		if value, ok := calculatedFieldValue(org, definition, record, canonicalField); ok {
+			out.Fields[canonicalField] = value.Clone()
 			continue
 		}
 		if value, ok := record.GetField(canonicalField); ok {
@@ -1071,7 +1092,7 @@ func fieldDefinitionsForReference(org storage.OrgState, definition storage.Objec
 	if strings.Contains(field, ".") {
 		parts := strings.SplitN(field, ".", 2)
 		for _, relation := range definition.Relations {
-			if !relationshipNameMatches(org.Namespace, relation.ParentRelationship, parts[0]) {
+			if !parentRelationshipNameMatches(org.Namespace, relation, parts[0]) {
 				continue
 			}
 			if len(relation.ParentObjects) == 0 {
@@ -1199,7 +1220,7 @@ func validateTypeofReference(org storage.OrgState, definition storage.ObjectDefi
 	allowedTargets := map[string]bool{}
 	relationshipKnown := false
 	for _, relation := range definition.Relations {
-		if !relationshipNameMatches(org.Namespace, relation.ParentRelationship, spec.Relationship) {
+		if !parentRelationshipNameMatches(org.Namespace, relation, spec.Relationship) {
 			continue
 		}
 		relationshipKnown = true
@@ -1257,7 +1278,7 @@ func fieldKnownForMode(org storage.OrgState, definition storage.ObjectDefinition
 	if strings.Contains(field, ".") {
 		parts := strings.SplitN(field, ".", 2)
 		for _, relation := range definition.Relations {
-			if !relationshipNameMatches(org.Namespace, relation.ParentRelationship, parts[0]) {
+			if !parentRelationshipNameMatches(org.Namespace, relation, parts[0]) {
 				continue
 			}
 			if len(relation.ParentObjects) == 0 {
@@ -1374,7 +1395,7 @@ func isCustomFieldName(name string) bool {
 
 func polymorphicParentObject(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, relationship string) (string, bool) {
 	for _, relation := range definition.Relations {
-		if !relationshipNameMatches(org.Namespace, relation.ParentRelationship, relationship) {
+		if !parentRelationshipNameMatches(org.Namespace, relation, relationship) {
 			continue
 		}
 		parentID, ok := recordValue(org, definition, record, relation.Field)
@@ -1409,7 +1430,7 @@ func relationshipValue(org storage.OrgState, record storage.Record, field string
 		return storage.Value{}, false
 	}
 	for _, relation := range object.Definition.Relations {
-		if !relationshipNameMatches(org.Namespace, relation.ParentRelationship, parts[0]) {
+		if !parentRelationshipNameMatches(org.Namespace, relation, parts[0]) {
 			continue
 		}
 		parentID, ok := recordValue(org, object.Definition, record, relation.Field)
@@ -1428,7 +1449,7 @@ func relationshipValue(org storage.OrgState, record storage.Record, field string
 				continue
 			}
 			parentObject := org.Objects[canonicalParent]
-			parent, ok := parentObject.Records[idFromValue(parentID)]
+			_, parent, ok := storage.LookupRecordByID(parentObject.Records, idFromValue(parentID))
 			if !ok || parent.System.IsDeleted {
 				continue
 			}
@@ -1441,6 +1462,25 @@ func relationshipValue(org storage.OrgState, record storage.Record, field string
 		}
 	}
 	return storage.Value{}, false
+}
+
+func relationshipLookupMissing(org storage.OrgState, record storage.Record, field string) (string, bool) {
+	parts := strings.SplitN(field, ".", 2)
+	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		return "", false
+	}
+	object, ok := org.Objects[record.Object]
+	if !ok {
+		return "", false
+	}
+	for _, relation := range object.Definition.Relations {
+		if !parentRelationshipNameMatches(org.Namespace, relation, parts[0]) {
+			continue
+		}
+		parentID, ok := recordValue(org, object.Definition, record, relation.Field)
+		return parts[0], !ok || parentID.Kind == storage.ValueNull
+	}
+	return "", false
 }
 
 func entityDefinitionRelationshipValue(value storage.Value, field string) (storage.Value, bool) {
@@ -1494,7 +1534,7 @@ func parentRelationshipRecord(org storage.OrgState, record storage.Record, relat
 		return storage.Value{}, storage.Record{}, false
 	}
 	for _, relation := range object.Definition.Relations {
-		if !relationshipNameMatches(org.Namespace, relation.ParentRelationship, relationship) {
+		if !parentRelationshipNameMatches(org.Namespace, relation, relationship) {
 			continue
 		}
 		parentID, ok := recordValue(org, object.Definition, record, relation.Field)
@@ -1507,7 +1547,7 @@ func parentRelationshipRecord(org storage.OrgState, record storage.Record, relat
 				continue
 			}
 			parentObject := org.Objects[canonicalParent]
-			parent, ok := parentObject.Records[idFromValue(parentID)]
+			_, parent, ok := storage.LookupRecordByID(parentObject.Records, idFromValue(parentID))
 			if !ok || parent.System.IsDeleted {
 				continue
 			}
@@ -1527,6 +1567,24 @@ func relationshipNameMatches(namespace, canonical, candidate string) bool {
 	}
 	stripped := storage.StripNamespaceToken(namespace, candidate)
 	return canonical == stripped || strings.EqualFold(canonical, stripped)
+}
+
+func parentRelationshipNameMatches(namespace string, relation storage.Relationship, candidate string) bool {
+	if relationshipNameMatches(namespace, relation.ParentRelationship, candidate) {
+		return true
+	}
+	field := strings.TrimSpace(relation.Field)
+	if field == "" {
+		return false
+	}
+	switch {
+	case strings.HasSuffix(field, "__c"):
+		return relationshipNameMatches(namespace, strings.TrimSuffix(field, "__c")+"__r", candidate)
+	case strings.HasSuffix(field, "Id") && len(field) > len("Id"):
+		return relationshipNameMatches(namespace, strings.TrimSuffix(field, "Id"), candidate)
+	default:
+		return false
+	}
 }
 
 func idFromValue(value storage.Value) storage.ID {
@@ -1587,6 +1645,9 @@ func recordValue(org storage.OrgState, definition storage.ObjectDefinition, reco
 	if record.HasExplicitNull(canonicalField) {
 		return storage.NullValue(), true
 	}
+	if value, ok := calculatedFieldValue(org, definition, record, canonicalField); ok {
+		return value, true
+	}
 	value, ok := record.GetField(canonicalField)
 	if !ok && strings.EqualFold(definition.APIName, "Contact") && strings.EqualFold(canonicalField, "Name") {
 		return contactNameValue(record)
@@ -1601,7 +1662,18 @@ func recordValue(org storage.OrgState, definition storage.ObjectDefinition, reco
 	return value, ok
 }
 
+func calculatedFieldValue(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, field string) (storage.Value, bool) {
+	fieldDef, ok := definition.Fields[field]
+	if !ok || fieldDef.Type != storage.FieldCalculated || strings.TrimSpace(fieldDef.Formula) == "" {
+		return storage.Value{}, false
+	}
+	return calculatedRecordValue(org, definition, record, fieldDef)
+}
+
 func calculatedRecordValue(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, field storage.Field) (storage.Value, bool) {
+	if value, _, ok := dml.EvaluateRecordFormulaValueInOrg(field.Formula, field, &org, definition, record); ok {
+		return value, true
+	}
 	formula := strings.ToLower(field.Formula)
 	if strings.EqualFold(field.APIName, "Status__c") && strings.Contains(formula, "startdate__c") && strings.Contains(formula, "enddate__c") {
 		if value, ok := membershipStatusFormulaValue(org, definition, record); ok {
@@ -1689,7 +1761,9 @@ func equalValues(left, right storage.Value) bool {
 	switch left.Kind {
 	case storage.ValueNull:
 		return true
-	case storage.ValueString, storage.ValueDate, storage.ValueDateTime, storage.ValueBlob:
+	case storage.ValueString:
+		return strings.EqualFold(left.String, right.String)
+	case storage.ValueDate, storage.ValueDateTime, storage.ValueBlob:
 		return left.String == right.String
 	case storage.ValueInteger:
 		return left.Integer == right.Integer
@@ -2081,10 +2155,14 @@ func (p *parser) parseQuery() (Query, error) {
 			}
 			q.Offset = offset
 		case p.matchWord("FOR"):
-			if !p.matchWord("UPDATE") {
-				return Query{}, p.errorf("expected UPDATE after FOR")
+			switch {
+			case p.matchWord("UPDATE"):
+				q.ForUpdate = true
+			case p.matchWord("VIEW"):
+				// FOR VIEW only affects Salesforce tracking metadata; local query rows are unchanged.
+			default:
+				return Query{}, p.errorf("expected UPDATE or VIEW after FOR")
 			}
-			q.ForUpdate = true
 		case p.matchWord("ALL"):
 			if !p.matchWord("ROWS") {
 				return Query{}, p.errorf("expected ROWS after ALL")
@@ -2239,16 +2317,34 @@ func (p *parser) parseNameList() ([]string, error) {
 func (p *parser) parseFunctionArgs() ([]string, error) {
 	var args []string
 	for {
-		arg, err := p.parseName()
-		if err != nil {
-			return nil, err
-		}
-		args = append(args, arg)
-		if p.match(")") {
-			return args, nil
-		}
-		if !p.match(",") {
-			return nil, p.errorf("expected , or ) in function argument list")
+		var parts []string
+		depth := 0
+		for {
+			tok := p.advance().text
+			if tok == "" {
+				return nil, p.errorf("expected , or ) in function argument list")
+			}
+			if tok == ")" && depth == 0 {
+				if len(parts) == 0 {
+					return nil, p.errorf("expected function argument")
+				}
+				args = append(args, strings.Join(parts, ""))
+				return args, nil
+			}
+			if tok == "," && depth == 0 {
+				if len(parts) == 0 {
+					return nil, p.errorf("expected function argument")
+				}
+				args = append(args, strings.Join(parts, ""))
+				break
+			}
+			switch tok {
+			case "(":
+				depth++
+			case ")":
+				depth--
+			}
+			parts = append(parts, tok)
 		}
 	}
 }
@@ -2441,14 +2537,14 @@ func validateSelectFieldExpression(org storage.OrgState, definition storage.Obje
 	if len(expr.Args) != 1 {
 		return unsupportedSOQLErrorf("%s currently supports one field argument", expr.Func)
 	}
-	return validateFieldReference(org, definition, expr.Args[0], mode)
+	return validateFieldReference(org, definition, selectFunctionFieldArg(expr.Args[0]), mode)
 }
 
 func selectFieldExpressionValue(org storage.OrgState, definition storage.ObjectDefinition, record storage.Record, expr selectFieldExpression) (storage.Value, bool) {
 	if len(expr.Args) != 1 {
 		return storage.Value{}, false
 	}
-	value, ok := recordValue(org, definition, record, expr.Args[0])
+	value, ok := recordValue(org, definition, record, selectFunctionFieldArg(expr.Args[0]))
 	if !ok {
 		return storage.Value{}, false
 	}
@@ -2521,6 +2617,23 @@ func selectFieldExpressionValue(org storage.OrgState, definition storage.ObjectD
 		}
 	}
 	return storage.NullValue(), true
+}
+
+func selectFunctionFieldArg(arg string) string {
+	arg = strings.TrimSpace(arg)
+	open := strings.Index(arg, "(")
+	if open <= 0 || !strings.HasSuffix(arg, ")") {
+		return arg
+	}
+	fn := strings.ToUpper(strings.TrimSpace(arg[:open]))
+	if fn != "CONVERTTIMEZONE" {
+		return arg
+	}
+	inner := strings.TrimSpace(arg[open+1 : len(arg)-1])
+	if inner == "" || strings.ContainsAny(inner, ",()") {
+		return arg
+	}
+	return inner
 }
 
 func toLabelValue(org storage.OrgState, definition storage.ObjectDefinition, field string, value storage.Value) storage.Value {
@@ -3028,6 +3141,9 @@ func literalAt(text string, now time.Time) (storage.Value, storage.Value, bool, 
 		inner := strings.TrimSuffix(strings.TrimPrefix(text, "'"), "'")
 		return storage.StringValue(strings.ReplaceAll(inner, "''", "'")), storage.Value{}, false, nil
 	default:
+		if t, ok := parseISODateTime(text); ok {
+			return storage.DateTimeValue(t.Format(time.RFC3339)), storage.Value{}, false, nil
+		}
 		if t, ok := parseISODate(text); ok {
 			return storage.DateValue(t.Format("2006-01-02")), storage.Value{}, false, nil
 		}
@@ -3140,6 +3256,14 @@ func dateRange(start, end time.Time) (storage.Value, storage.Value, bool) {
 
 func parseISODate(text string) (time.Time, bool) {
 	t, err := time.Parse("2006-01-02", text)
+	if err != nil {
+		return time.Time{}, false
+	}
+	return t, true
+}
+
+func parseISODateTime(text string) (time.Time, bool) {
+	t, err := time.Parse(time.RFC3339, normalizeDateTime(text))
 	if err != nil {
 		return time.Time{}, false
 	}

@@ -42,6 +42,39 @@ private class MathTest {
 	}
 }
 
+func TestCloneRuntimeOrgIsolatesRecords(t *testing.T) {
+	org := storage.NewOrgState()
+	org.OrgID = "00D000000000001"
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Account",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: "Text"},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"001000000000001": {
+				ID:     "001000000000001",
+				Object: "Account",
+				Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")},
+			},
+		},
+	}
+
+	cloned := cloneRuntimeOrg(org)
+	account := cloned.Objects["Account"]
+	account.Records["001000000000001"].Fields["Name"] = storage.StringValue("Changed")
+	account.Definition.Fields["RuntimeOnly__c"] = storage.Field{APIName: "RuntimeOnly__c", Type: storage.FieldString}
+	cloned.Objects["Account"] = account
+
+	if got := org.Objects["Account"].Records["001000000000001"].Fields["Name"].String; got != "Acme" {
+		t.Fatalf("clone shared records with base org: %q", got)
+	}
+	if _, ok := org.Objects["Account"].Definition.Fields["RuntimeOnly__c"]; !ok {
+		t.Fatalf("runtime clone should share read-only definitions")
+	}
+}
+
 func TestRunKeepsPageParametersAndDynamicSelectorBinds(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -92,7 +125,11 @@ private class TemplateControllerTest {
 
 	run := Run(loadTestIndex(t, root), Options{})
 	if summary := run.Summary(); summary.Total != 1 || summary.Passed != 1 {
-		t.Fatalf("summary = %#v run = %#v", summary, run)
+		var problem *testreport.Problem
+		if len(run.Suites) > 0 && len(run.Suites[0].Cases) > 0 {
+			problem = run.Suites[0].Cases[0].Problem
+		}
+		t.Fatalf("summary = %#v problem = %#v cases = %#v", summary, problem, run.Suites[0].Cases)
 	}
 }
 
@@ -127,7 +164,145 @@ private class IterableBatchTest {
 
 	run := Run(loadTestIndex(t, root), Options{})
 	if summary := run.Summary(); summary.Total != 1 || summary.Passed != 1 {
-		t.Fatalf("summary = %#v run = %#v", summary, run)
+		t.Fatalf("summary = %#v cases = %#v", summary, run.Suites[0].Cases)
+	}
+}
+
+func TestRuntimeEvaluatesTemplateLexemsWithInnerClassGaps(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/MergeValues.cls"), `
+public class MergeValues {
+  private Map<String, Object> values = new Map<String, Object>();
+  public MergeValues(Map<String, Object> values) {
+    this.values.putAll(values);
+  }
+  public Object get(String path) {
+    return values.get(path);
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/TemplateEvaluator.cls"), `
+public class TemplateEvaluator {
+  private static final Pattern MERGE_FIELD_PATTERN = Pattern.compile('\\{!([\\w\\.]+)\\}');
+  public final String content;
+  private Object[] lexems;
+  private TemplateEvaluator(String content) {
+    this.content = content;
+  }
+  public static TemplateEvaluator newInstance(String content) {
+    return new TemplateEvaluator(content);
+  }
+  public String evaluate(Map<String, Object> values) {
+    compile();
+    String buffer = '';
+    MergeValues bag = new MergeValues(values);
+    for (Object lexem : lexems) {
+      Object value = evaluate(lexem, bag);
+      buffer += value == null ? '' : String.valueOf(value);
+    }
+    return buffer;
+  }
+  private void compile() {
+    lexems = new List<Object>();
+    Matcher contentMatcher = MERGE_FIELD_PATTERN.matcher(content);
+    Integer processedEnd = 0;
+    while (contentMatcher.find()) {
+      if (processedEnd < contentMatcher.start()) {
+        lexems.add(content.substring(processedEnd, contentMatcher.start()));
+      }
+      lexems.add(new Gap(contentMatcher.group(1)));
+      processedEnd = contentMatcher.end();
+    }
+    if (processedEnd < content.length()) {
+      lexems.add(content.substring(processedEnd));
+    }
+  }
+  private static Object evaluate(Object lexem, MergeValues values) {
+    if (lexem instanceof String) {
+      return lexem;
+    }
+    if (lexem instanceof Gap) {
+      return values.get(((Gap)lexem).key);
+    }
+    return null;
+  }
+  private class Gap {
+    public final String key;
+    Gap(String key) {
+      this.key = key;
+    }
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/TemplateEvaluatorTest.cls"), `
+@isTest
+private class TemplateEvaluatorTest {
+  @isTest static void evaluatesGaps() {
+    String result = TemplateEvaluator.newInstance('-start-{!valueA}-inner-{!valueB}-end-')
+      .evaluate(new Map<String, Object>{ 'valueA' => 'A', 'valueB' => 'B' });
+    System.assertEquals('-start-A-inner-B-end-', result);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if summary := run.Summary(); summary.Total != 1 || summary.Passed != 1 {
+		var problem *testreport.Problem
+		if len(run.Suites) > 0 && len(run.Suites[0].Cases) > 0 {
+			problem = run.Suites[0].Cases[0].Problem
+		}
+		t.Fatalf("summary = %#v problem = %#v cases = %#v", summary, problem, run.Suites[0].Cases)
+	}
+}
+
+func TestRuntimeInstanceOfUsesConcreteRuntimeTypeForInterfaceValues(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/MatcherProbe.cls"), `
+public class MatcherProbe {
+  public interface IMatcher {
+    Boolean matches(Object value);
+  }
+  public class Captor implements IMatcher {
+    public Object value;
+    public Boolean matches(Object value) {
+      this.value = value;
+      return true;
+    }
+    public void store(List<Object> values) {
+      values.add(value);
+    }
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/MatcherProbeTest.cls"), `
+@isTest
+private class MatcherProbeTest {
+  @isTest static void interfaceValueKeepsRuntimeType() {
+    MatcherProbe.IMatcher original = new MatcherProbe.Captor();
+    List<MatcherProbe.IMatcher> matchers = new List<MatcherProbe.IMatcher>{ original };
+    System.assert(original === matchers[0], 'list literal should keep object identity');
+    List<MatcherProbe.IMatcher> cloned = matchers.clone();
+    System.assert(original === cloned[0], 'List.clone should be shallow');
+    List<Object> values = new List<Object>();
+    for (MatcherProbe.IMatcher matcher : cloned) {
+      System.assert(matcher instanceof MatcherProbe.Captor);
+      matcher.matches('Fred');
+      ((MatcherProbe.Captor)matcher).store(values);
+    }
+    System.assertEquals('Fred', (String)values[0]);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if summary := run.Summary(); summary.Total != 1 || summary.Passed != 1 {
+		var problem *testreport.Problem
+		if len(run.Suites) > 0 && len(run.Suites[0].Cases) > 0 {
+			problem = run.Suites[0].Cases[0].Problem
+		}
+		t.Fatalf("summary = %#v problem = %#v cases = %#v", summary, problem, run.Suites[0].Cases)
 	}
 }
 
@@ -600,6 +775,49 @@ private class MathUtilTest {
 	}
 }
 
+func TestRunExecutesCaseFoldedOverloadWithNestedGenericParams(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/CaseFoldHelper.cls"), `
+public class CaseFoldHelper {
+  public static Integer reapplyCartCoupons(Set<Id> ids, Boolean preventIfExpired) {
+    Map<Id, Integer> results = new Map<Id, Integer>();
+    Map<Id, List<Account>> records = new Map<Id, List<Account>>();
+    return reapplyCartCoupons(results, ids, records, new Set<Id>(), preventIfExpired);
+  }
+
+  private static Integer reApplyCartCoupons(
+      Map<Id, Integer> results,
+      Set<Id> ids,
+      Map<Id, List<Account>> records,
+      Set<Id> seen,
+      Boolean preventIfExpired) {
+    return 7;
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/CaseFoldHelperTest.cls"), `
+@isTest
+private class CaseFoldHelperTest {
+  @isTest static void helperOverloadRuns() {
+    System.assertEquals(7, CaseFoldHelper.reapplyCartCoupons(new Set<Id>(), true));
+  }
+}
+`)
+
+	index := loadTestIndex(t, root)
+	run := Run(index, Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		methods := compileProjectMethods(index)
+		keys := make([]string, 0, len(methods))
+		for key := range methods {
+			keys = append(keys, key)
+		}
+		t.Logf("methods=%v", keys)
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
+	}
+}
+
 func TestCompileProjectMethodsIncludesDependencyTestHelpers(t *testing.T) {
 	root := t.TempDir()
 	depRoot := filepath.Join(root, "dep")
@@ -1026,8 +1244,8 @@ func TestFieldInitializerExprFallsBackToFullDeclarationStatement(t *testing.T) {
 }
 
 func TestTypeDeclarationSourceFallsBackToFullDeclarationLine(t *testing.T) {
-	source := "\t\tpublic class TestSObjectDisableBehaviourConstructor implements fflib_SObjectDomain.IConstructable\n\t\t{\n\t\t\tpublic Object construct() { return null; }\n\t\t}\n"
-	start := strings.Index(source, "TestSObjectDisableBehaviourConstructor")
+	source := "\t\tpublic class InterfaceBackedFactory implements DomainFactory.IConstructable\n\t\t{\n\t\t\tpublic Object construct() { return null; }\n\t\t}\n"
+	start := strings.Index(source, "InterfaceBackedFactory")
 	end := strings.LastIndex(source, "}") + 1
 	typeSource, err := typeDeclarationSource(source, diagnostic.Range{
 		Start: diagnostic.Position{Offset: start},
@@ -1036,7 +1254,7 @@ func TestTypeDeclarationSourceFallsBackToFullDeclarationLine(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if interfaces := parseImplements(typeSource); len(interfaces) != 1 || interfaces[0] != "fflib_SObjectDomain.IConstructable" {
+	if interfaces := parseImplements(typeSource); len(interfaces) != 1 || interfaces[0] != "DomainFactory.IConstructable" {
 		t.Fatalf("interfaces = %#v", interfaces)
 	}
 }
@@ -1158,6 +1376,102 @@ private class PropertyBoxTest {
     PropertyBox box = new PropertyBox();
     box.Name = 'acme';
     System.assertEquals('ACME!', box.Name);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v run=%#v", got, run)
+	}
+}
+
+func TestRunExecutesImplicitSuperBeforeSourceConstructorPropertySetters(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/BaseWrapper.cls"), `
+public abstract class BaseWrapper {
+  private Map<String, String> values;
+
+  protected BaseWrapper() {
+    values = new Map<String, String>();
+  }
+
+  protected void setValue(String name, String value) {
+    values.put(name, value);
+  }
+
+  public String getValue(String name) {
+    return values.get(name);
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ConcreteWrapper.cls"), `
+public class ConcreteWrapper extends BaseWrapper {
+  public ConcreteWrapper() {
+    this.Name = 'Ada';
+  }
+
+  public String Name {
+    set { setValue('name', value); }
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ConcreteWrapperTest.cls"), `
+@isTest
+private class ConcreteWrapperTest {
+  @isTest static void constructorRunsSuperBeforeSetter() {
+    ConcreteWrapper wrapper = new ConcreteWrapper();
+    System.assertEquals('Ada', wrapper.getValue('name'));
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v run=%#v", got, run)
+	}
+}
+
+func TestRunJSONDeserializeRunsZeroArgConstructorBeforePropertySetters(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/BaseWrapper.cls"), `
+public abstract class BaseWrapper {
+  private Map<String, String> values;
+
+  protected BaseWrapper() {
+    values = new Map<String, String>();
+  }
+
+  protected void setValue(String name, String value) {
+    values.put(name, value);
+  }
+
+  protected String getValueInternal(String name) {
+    return values.get(name);
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ConcreteWrapper.cls"), `
+public class ConcreteWrapper extends BaseWrapper {
+  public ConcreteWrapper() {}
+
+  public String Name {
+    get { return getValueInternal('name'); }
+    set { setValue('name', value); }
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ConcreteWrapperTest.cls"), `
+@isTest
+private class ConcreteWrapperTest {
+  @isTest static void deserializeInitializesSetterState() {
+    ConcreteWrapper wrapper = new ConcreteWrapper();
+    wrapper.Name = 'Ada';
+    String payload = JSON.serialize(wrapper, false);
+    ConcreteWrapper decoded = (ConcreteWrapper)JSON.deserialize(payload, ConcreteWrapper.class);
+    System.assertEquals('Ada', decoded.Name);
   }
 }
 `)
@@ -2870,6 +3184,21 @@ public class WidgetTestData {
 	}
 }
 
+func TestOrgFromIndexIncludesProjectProfiles(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/profiles/Nimble AMS Standard.profile-meta.xml"), `<Profile/>`)
+
+	org := orgFromIndex(loadTestIndex(t, root))
+	profiles := org.Objects["Profile"].Records
+	for _, record := range profiles {
+		if record.Fields["Name"].String == "Nimble AMS Standard" {
+			return
+		}
+	}
+	t.Fatalf("project profile row was not created; records=%#v", profiles)
+}
+
 func TestOrgFromIndexIncludesProjectStaticResources(t *testing.T) {
 	root := filepath.Join("..", "..", "example-projects", "src-nmb-nutpl-develop")
 	if _, err := os.Stat(filepath.Join(root, "sfdx-project.json")); err != nil {
@@ -2969,6 +3298,18 @@ public static List<SObject> queryByIds(String query, /* do not remove param */ S
 		t.Fatal(err)
 	}
 	if len(params) != 2 || params[0].Type != "String" || params[0].Name != "query" || params[1].Type != "Set<Id>" || params[1].Name != "ids" {
+		t.Fatalf("params = %#v", params)
+	}
+
+	params, err = parseParams(`
+private BulkPriceClassResponse getBulkPriceClassResponse(Map<Id, CartItemPricer>cartItemPricersByCartItemId) {
+    return null;
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(params) != 1 || params[0].Type != "Map<Id, CartItemPricer>" || params[0].Name != "cartItemPricersByCartItemId" {
 		t.Fatalf("params = %#v", params)
 	}
 }

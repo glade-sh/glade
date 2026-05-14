@@ -26,10 +26,11 @@ func newJSONParser(text string) (Value, error) {
 	parser.Fields["tokens"] = List(tokens...)
 	parser.Fields["index"] = Int(-1)
 	parser.Fields["cleared"] = Bool(false)
+	parser.Fields["source"] = String(text)
 	return parser, nil
 }
 
-func callJSONParserMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+func (vm *VM) callJSONParserMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
 	if receiver.Type != "JSONParser" {
 		return Null, receiver, false, false, nil
 	}
@@ -183,6 +184,12 @@ func callJSONParserMember(receiver Value, method string, args []Value) (Value, V
 			updated.Fields["cleared"] = Bool(true)
 		}
 		return Null, updated, true, true, nil
+	case "readValueAs":
+		if len(args) != 1 {
+			return Null, receiver, false, true, fmt.Errorf("JSONParser.readValueAs expects Type")
+		}
+		value, err := vm.jsonParserReadValueAs(receiver, args[0])
+		return value, receiver, false, true, err
 	default:
 		return Null, receiver, false, false, nil
 	}
@@ -193,8 +200,28 @@ func canonicalJSONParserMethod(method string) string {
 		"nextToken", "nextValue", "getCurrentToken", "getText", "getCurrentName",
 		"getIntegerValue", "getLongValue", "getDecimalValue", "getDoubleValue", "getBooleanValue",
 		"getDateValue", "getDatetimeValue", "getDateTimeValue", "getTimeValue", "getIdValue", "getBlobValue",
-		"skipChildren", "clearCurrentToken",
+		"skipChildren", "clearCurrentToken", "readValueAs",
 	)
+}
+
+func (vm *VM) jsonParserReadValueAs(receiver Value, typeArg Value) (Value, error) {
+	typeName := typeValueName(typeArg)
+	if typeName == "" {
+		return Null, fmt.Errorf("JSONParser.readValueAs expects Type")
+	}
+	source, ok := receiver.Fields["source"]
+	if !ok || source.Kind != ValueString {
+		return Null, jsonParserException("JSONParser.readValueAs missing parser source")
+	}
+	index := jsonParserIndex(receiver)
+	if index > 0 {
+		return Null, unsupportedCallError("JSONParser.readValueAs from non-root token")
+	}
+	raw, err := decodeJSONValueForDeserialize(source.Text, false)
+	if err != nil {
+		return Null, jsonDeserializeException("JSONParser.readValueAs invalid JSON input: %v", err)
+	}
+	return vm.typedValueFromJSON(typeName, raw, false)
 }
 
 func jsonParserTokenize(text string) ([]Value, error) {

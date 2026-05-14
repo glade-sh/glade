@@ -414,6 +414,7 @@ func applyStateAndCountryPicklist(org *OrgState) {
 	for _, objectName := range []string{"Account", "Contact", "Lead", "User"} {
 		EnsureStandardObject(org, objectName)
 	}
+	applyStandardFeature(org, "StateAndCountryPicklist")
 }
 
 func applyContactsToMultipleAccounts(org *OrgState) {
@@ -676,6 +677,8 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	profileID := ID("00e000000000001")
 	minimumAccessProfileID := ID("00e000000000002")
 	chatterExternalProfileID := ID("00e000000000003")
+	standardPlatformUserProfileID := ID("00e000000000004")
+	standardUserProfileID := ID("00e000000000005")
 	salesforceLicenseID := ID("100000000000001")
 	chatterExternalLicenseID := ID("100000000000002")
 	roleID := ID("00E000000000001")
@@ -729,6 +732,16 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		ID:     chatterExternalProfileID,
 		Object: "Profile",
 		Fields: map[string]Value{"Name": StringValue("Chatter External User"), "UserLicenseId": IDValue(chatterExternalLicenseID)},
+	})
+	putSeedRecord(org, "Profile", Record{
+		ID:     standardPlatformUserProfileID,
+		Object: "Profile",
+		Fields: map[string]Value{"Name": StringValue("Standard Platform User"), "UserLicenseId": IDValue(salesforceLicenseID)},
+	})
+	putSeedRecord(org, "Profile", Record{
+		ID:     standardUserProfileID,
+		Object: "Profile",
+		Fields: map[string]Value{"Name": StringValue("Standard User"), "UserLicenseId": IDValue(salesforceLicenseID)},
 	})
 	putSeedRecord(org, "UserRole", Record{
 		ID:     roleID,
@@ -785,7 +798,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	}
 	for object, sequence := range map[string]uint64{
 		"Organization":            1,
-		"Profile":                 3,
+		"Profile":                 4,
 		"UserLicense":             2,
 		"UserRole":                1,
 		"User":                    1,

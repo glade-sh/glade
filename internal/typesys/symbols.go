@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/open-aer/oaer/internal/apexast"
 	"github.com/open-aer/oaer/internal/diagnostic"
@@ -171,67 +173,127 @@ func Build(p project.Project, s schema.Schema) (idx Index) {
 }
 
 func appendProjectSymbols(idx *Index, parser *apexast.Parser, p project.Project, dependency bool, namespace, version string, seenTypes map[string][]seenTypeSymbol) {
-	for _, path := range p.ApexFiles {
-		file, err := parser.ParseFile(path)
-		if err != nil {
-			idx.Diagnostics = append(idx.Diagnostics, diagnostic.Diagnostic{
-				Severity: diagnostic.Error,
-				Code:     "OAERTYPE000",
-				Message:  err.Error(),
-				File:     path,
-			})
-			continue
-		}
+	for _, file := range projectSymbolFiles(parser, p, dependency, namespace, version) {
 		idx.Diagnostics = append(idx.Diagnostics, file.Diagnostics...)
-		if len(file.Diagnostics) > 0 {
-			continue
-		}
-		for _, decl := range file.Declarations {
-			switch decl.Kind {
-			case apexast.DeclarationClass, apexast.DeclarationInterface, apexast.DeclarationEnum:
-				if source, err := os.ReadFile(path); err == nil {
-					for _, sym := range typeSymbolsFromDeclaration(path, decl, "", string(source)) {
-						sym.Namespace = namespace
-						sym.SourceRoot = p.Root
-						sym.Version = version
-						sym.Dependency = dependency
-						key := namespaceTypeKey(sym.Namespace, sym.Name)
-						currentPackage := p.PackagePathForFile(path)
-						if previous, ok := conflictingSeenType(seenTypes[key], currentPackage); ok {
-							idx.Diagnostics = append(idx.Diagnostics, duplicateDiagnostic(sym, previous.Symbol))
-						} else {
-							seenTypes[key] = append(seenTypes[key], seenTypeSymbol{Symbol: sym, PackagePath: currentPackage})
-						}
-						idx.Types = append(idx.Types, sym)
-					}
-				} else {
-					sym := typeSymbolFromDeclaration(path, decl, "")
-					sym.Namespace = namespace
-					sym.SourceRoot = p.Root
-					sym.Version = version
-					sym.Dependency = dependency
-					key := namespaceTypeKey(sym.Namespace, sym.Name)
-					currentPackage := p.PackagePathForFile(path)
-					if previous, ok := conflictingSeenType(seenTypes[key], currentPackage); ok {
-						idx.Diagnostics = append(idx.Diagnostics, duplicateDiagnostic(sym, previous.Symbol))
-					} else {
-						seenTypes[key] = append(seenTypes[key], seenTypeSymbol{Symbol: sym, PackagePath: currentPackage})
-					}
-					idx.Types = append(idx.Types, sym)
-				}
-			case apexast.DeclarationTrigger:
-				idx.Triggers = append(idx.Triggers, TriggerSymbol{
-					Name:       decl.Name,
-					Namespace:  namespace,
-					ObjectName: decl.ObjectName,
-					Events:     decl.Events,
-					File:       path,
-					Dependency: dependency,
-					Range:      decl.Range,
-				})
+		for _, sym := range file.Types {
+			key := namespaceTypeKey(sym.Namespace, sym.Name)
+			currentPackage := p.PackagePathForFile(sym.File)
+			if previous, ok := conflictingSeenType(seenTypes[key], currentPackage); ok {
+				idx.Diagnostics = append(idx.Diagnostics, duplicateDiagnostic(sym, previous.Symbol))
+			} else {
+				seenTypes[key] = append(seenTypes[key], seenTypeSymbol{Symbol: sym, PackagePath: currentPackage})
 			}
+			idx.Types = append(idx.Types, sym)
+		}
+		idx.Triggers = append(idx.Triggers, file.Triggers...)
+	}
+}
+
+type projectSymbolFile struct {
+	Diagnostics []diagnostic.Diagnostic
+	Types       []TypeSymbol
+	Triggers    []TriggerSymbol
+}
+
+func projectSymbolFiles(parser *apexast.Parser, p project.Project, dependency bool, namespace, version string) []projectSymbolFile {
+	if len(p.ApexFiles) == 0 {
+		return nil
+	}
+	if len(p.ApexFiles) == 1 {
+		return []projectSymbolFile{projectSymbolFileFromPath(parser, p.ApexFiles[0], p.Root, dependency, namespace, version)}
+	}
+	workers := runtime.GOMAXPROCS(0)
+	if workers < 1 {
+		workers = 1
+	}
+	if workers > len(p.ApexFiles) {
+		workers = len(p.ApexFiles)
+	}
+	if workers > 8 {
+		workers = 8
+	}
+
+	type job struct {
+		Index int
+		Path  string
+	}
+	type result struct {
+		Index int
+		File  projectSymbolFile
+	}
+	jobs := make(chan job)
+	results := make(chan result, len(p.ApexFiles))
+	var wg sync.WaitGroup
+	for i := 0; i < workers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			localParser := apexast.NewParser()
+			for job := range jobs {
+				results <- result{
+					Index: job.Index,
+					File:  projectSymbolFileFromPath(localParser, job.Path, p.Root, dependency, namespace, version),
+				}
+			}
+		}()
+	}
+	go func() {
+		for i, path := range p.ApexFiles {
+			jobs <- job{Index: i, Path: path}
+		}
+		close(jobs)
+		wg.Wait()
+		close(results)
+	}()
+
+	out := make([]projectSymbolFile, len(p.ApexFiles))
+	for result := range results {
+		out[result.Index] = result.File
+	}
+	return out
+}
+
+func projectSymbolFileFromPath(parser *apexast.Parser, path, root string, dependency bool, namespace, version string) projectSymbolFile {
+	var out projectSymbolFile
+	data, err := os.ReadFile(path)
+	if err != nil {
+		out.Diagnostics = append(out.Diagnostics, diagnostic.Diagnostic{
+			Severity: diagnostic.Error,
+			Code:     "OAERTYPE000",
+			Message:  err.Error(),
+			File:     path,
+		})
+		return out
+	}
+	source := string(data)
+	file := parser.ParseSource(path, source)
+	out.Diagnostics = append(out.Diagnostics, file.Diagnostics...)
+	if len(file.Diagnostics) > 0 {
+		return out
+	}
+	for _, decl := range file.Declarations {
+		switch decl.Kind {
+		case apexast.DeclarationClass, apexast.DeclarationInterface, apexast.DeclarationEnum:
+			for _, sym := range typeSymbolsFromDeclaration(path, decl, "", source) {
+				sym.Namespace = namespace
+				sym.SourceRoot = root
+				sym.Version = version
+				sym.Dependency = dependency
+				out.Types = append(out.Types, sym)
+			}
+		case apexast.DeclarationTrigger:
+			out.Triggers = append(out.Triggers, TriggerSymbol{
+				Name:       decl.Name,
+				Namespace:  namespace,
+				ObjectName: decl.ObjectName,
+				Events:     decl.Events,
+				File:       path,
+				Dependency: dependency,
+				Range:      decl.Range,
+			})
 		}
 	}
+	return out
 }
 
 func namespaceTypeKey(namespace, name string) string {
@@ -286,7 +348,7 @@ func UpdateApexFiles(previous Index, changedPaths, deletedPaths []string) (idx I
 		idx.Triggers = append(idx.Triggers, trigger)
 	}
 	for _, path := range changedPaths {
-		file, err := parser.ParseFile(path)
+		data, err := os.ReadFile(path)
 		if err != nil {
 			idx.Diagnostics = append(idx.Diagnostics, diagnostic.Diagnostic{
 				Severity: diagnostic.Error,
@@ -296,19 +358,16 @@ func UpdateApexFiles(previous Index, changedPaths, deletedPaths []string) (idx I
 			})
 			continue
 		}
+		source := string(data)
+		file := parser.ParseSource(path, source)
 		idx.Diagnostics = append(idx.Diagnostics, file.Diagnostics...)
 		if len(file.Diagnostics) > 0 {
 			continue
 		}
-		source, sourceErr := os.ReadFile(path)
 		for _, decl := range file.Declarations {
 			switch decl.Kind {
 			case apexast.DeclarationClass, apexast.DeclarationInterface, apexast.DeclarationEnum:
-				symbols := []TypeSymbol{typeSymbolFromDeclaration(path, decl, "")}
-				if sourceErr == nil {
-					symbols = typeSymbolsFromDeclaration(path, decl, "", string(source))
-				}
-				for _, sym := range symbols {
+				for _, sym := range typeSymbolsFromDeclaration(path, decl, "", source) {
 					key := strings.ToLower(sym.Name)
 					if previous, ok := seenTypes[key]; ok {
 						idx.Diagnostics = append(idx.Diagnostics, duplicateDiagnostic(sym, previous))

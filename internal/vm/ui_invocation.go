@@ -63,7 +63,7 @@ func (vm *VM) InvokeVisualforceAction(className, methodName, pageURL string, par
 		}
 		vm.currentPage.Fields["parameters"] = pageParams
 	}
-	result := &Result{TraceFormat: trace.FormatChromeTraceEvent}
+	result := &Result{TraceFormat: trace.FormatChromeTraceEvent, traceEnabled: true}
 	appendVisualforceTrace(result, "current_page", map[string]any{
 		"className":  className,
 		"methodName": methodName,
@@ -143,7 +143,7 @@ func (vm *VM) invokeUIAction(framework, className, methodName string, params map
 		out.Error = uiInvocationError(err)
 		return out, nil
 	}
-	result := &Result{TraceFormat: trace.FormatChromeTraceEvent}
+	result := &Result{TraceFormat: trace.FormatChromeTraceEvent, traceEnabled: true}
 	value, err := vm.callMethod(method, args, result)
 	out.Trace = result.Trace
 	if err != nil {

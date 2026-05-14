@@ -15,6 +15,7 @@ type Value struct {
 	Bool    bool             `json:"bool,omitempty"`
 	Text    string           `json:"text,omitempty"`
 	Type    string           `json:"type,omitempty"`
+	Static  string           `json:"-"`
 	Runtime string           `json:"-"`
 	Ref     uint64           `json:"-"`
 	Fields  map[string]Value `json:"fields,omitempty"`
@@ -151,6 +152,17 @@ func stubProxyTypeName(value Value) (string, bool) {
 }
 
 func (v Value) Equal(other Value) bool {
+	return v.equal(other, make(map[[2]uint64]bool))
+}
+
+func (v Value) equal(other Value, seen map[[2]uint64]bool) bool {
+	if v.Ref != 0 && other.Ref != 0 {
+		key := [2]uint64{v.Ref, other.Ref}
+		if seen[key] {
+			return true
+		}
+		seen[key] = true
+	}
 	if v.Kind != other.Kind {
 		if v.Kind == ValueInt && other.Kind == ValueDecimal {
 			return float64(v.Int) == other.Decimal
@@ -195,7 +207,7 @@ func (v Value) Equal(other Value) bool {
 			return false
 		}
 		for i := range v.List {
-			if !v.List[i].Equal(other.List[i]) {
+			if !v.List[i].equal(other.List[i], seen) {
 				return false
 			}
 		}
@@ -216,7 +228,7 @@ func (v Value) Equal(other Value) bool {
 		}
 		for key, value := range v.Map {
 			otherValue, ok := other.Map[key]
-			if !ok || !value.Equal(otherValue) {
+			if !ok || !value.equal(otherValue, seen) {
 				return false
 			}
 		}
@@ -247,18 +259,37 @@ func (v Value) Equal(other Value) bool {
 			if strings.EqualFold(v.Type, "Id") && strings.EqualFold(other.Type, "Id") && value.Kind == ValueString && otherValue.Kind == ValueString {
 				return apexIDTextEqual(value.Text, otherValue.Text)
 			}
-			return strings.EqualFold(v.Type, other.Type) && value.Equal(otherValue)
+			if sameDateAndMidnightDatetime(v, other) || sameDateAndMidnightDatetime(other, v) {
+				return true
+			}
+			return strings.EqualFold(v.Type, other.Type) && value.equal(otherValue, seen)
 		}
 		if v.Text != "" || other.Text != "" {
 			return strings.EqualFold(v.Type, other.Type) && v.Text == other.Text
 		}
 		if sObjectValueType(v.Type) && sObjectValueType(other.Type) {
-			return sObjectValuesEqual(v, other)
+			return sObjectValuesEqual(v, other, seen)
 		}
 		return strings.EqualFold(v.Type, other.Type) && fmt.Sprintf("%p", v.Fields) == fmt.Sprintf("%p", other.Fields)
 	default:
 		return false
 	}
+}
+
+func sameDateAndMidnightDatetime(dateValue, datetimeValue Value) bool {
+	if !strings.EqualFold(dateValue.Type, "Date") || !strings.EqualFold(datetimeValue.Type, "Datetime") {
+		return false
+	}
+	date, err := parsePlatformDate(dateValue)
+	if err != nil {
+		return false
+	}
+	datetime, err := parsePlatformDatetime(datetimeValue)
+	if err != nil {
+		return false
+	}
+	return datetime.Hour() == 0 && datetime.Minute() == 0 && datetime.Second() == 0 && datetime.Nanosecond() == 0 &&
+		date.Year() == datetime.Year() && date.Month() == datetime.Month() && date.Day() == datetime.Day()
 }
 
 func sObjectValueType(typeName string) bool {
@@ -268,13 +299,24 @@ func sObjectValueType(typeName string) bool {
 		strings.HasSuffix(key, "__e") || strings.HasSuffix(key, "__mdt")
 }
 
-func sObjectValuesEqual(left, right Value) bool {
-	if !strings.EqualFold(left.Type, right.Type) || len(left.Fields) != len(right.Fields) {
+func sObjectValuesEqual(left, right Value, seen map[[2]uint64]bool) bool {
+	if !strings.EqualFold(left.Type, right.Type) {
 		return false
 	}
 	for key, leftValue := range left.Fields {
+		if isInternalSObjectField(key) {
+			continue
+		}
 		_, rightValue, ok := objectFieldValue(right, key)
-		if !ok || !leftValue.Equal(rightValue) {
+		if !ok || !leftValue.equal(rightValue, seen) {
+			return false
+		}
+	}
+	for key := range right.Fields {
+		if isInternalSObjectField(key) {
+			continue
+		}
+		if _, _, ok := objectFieldValue(left, key); !ok {
 			return false
 		}
 	}
@@ -412,9 +454,6 @@ func platformScalarObject(typeName string) bool {
 }
 
 func mapKey(v Value) string {
-	if key, ok := fflibQualifiedMethodMapKey(v, true); ok {
-		return key
-	}
 	if v.Kind == ValueObject && v.Type == "Schema.SObjectType" {
 		if objectName, ok := v.Fields["object"]; ok && objectName.Kind == ValueString {
 			return string(v.Kind) + ":" + v.Type + ":" + schemaTokenObjectKey(objectName.Text)
@@ -450,6 +489,17 @@ func mapKey(v Value) string {
 			return string(v.Kind) + ":" + v.Type + ":" + raw.Text
 		}
 	}
+	if v.Kind == ValueObject {
+		if isStubProxy(v) {
+			return string(v.Kind) + ":" + v.Type + ":ref:" + strconv.FormatUint(v.Ref, 10)
+		}
+		if key, ok := stableObjectFieldMapKey(v, make(map[uint64]bool)); ok {
+			return key
+		}
+		if v.Type != "" && !sObjectValueType(v.Type) && v.Ref != 0 {
+			return string(v.Kind) + ":" + v.Type + ":ref:" + strconv.FormatUint(v.Ref, 10)
+		}
+	}
 	if v.Kind == ValueObject && v.Type != "" {
 		if id, ok := v.Fields["Id"]; ok {
 			if text, ok := idValueText(id); ok && text != "" {
@@ -466,6 +516,71 @@ func mapKey(v Value) string {
 	return string(v.Kind) + ":" + v.String()
 }
 
+func stableObjectFieldMapKey(v Value, seen map[uint64]bool) (string, bool) {
+	if v.Type == "" || len(v.Fields) == 0 || sObjectValueType(v.Type) {
+		return "", false
+	}
+	if v.Ref != 0 {
+		if seen[v.Ref] {
+			return string(v.Kind) + ":" + v.Type + ":ref:" + strconv.FormatUint(v.Ref, 10), true
+		}
+		seen[v.Ref] = true
+		defer delete(seen, v.Ref)
+	}
+	names := make([]string, 0, len(v.Fields))
+	for name := range v.Fields {
+		if strings.HasPrefix(name, "__oaer") {
+			continue
+		}
+		names = append(names, name)
+	}
+	if len(names) == 0 {
+		return "", false
+	}
+	sort.Strings(names)
+	parts := make([]string, 0, len(names)+2)
+	parts = append(parts, string(v.Kind), v.Type)
+	for _, name := range names {
+		if !stableObjectMapKeyField(v.Fields[name]) {
+			continue
+		}
+		parts = append(parts, name+"="+mapKeyWithSeen(v.Fields[name], seen))
+	}
+	if len(parts) == 2 {
+		return "", false
+	}
+	return strings.Join(parts, ":"), true
+}
+
+func stableObjectMapKeyField(value Value) bool {
+	switch value.Kind {
+	case ValueNull, ValueInt, ValueDecimal, ValueBool, ValueString, ValueList, ValueSet, ValueMap:
+		return true
+	case ValueObject:
+		return strings.EqualFold(value.Type, "Type") ||
+			strings.HasPrefix(value.Type, "Schema.") ||
+			platformScalarObject(value.Type) ||
+			sObjectValueType(value.Type)
+	default:
+		return false
+	}
+}
+
+func mapKeyWithSeen(v Value, seen map[uint64]bool) string {
+	if v.Kind == ValueObject {
+		if isStubProxy(v) {
+			return string(v.Kind) + ":" + v.Type + ":ref:" + strconv.FormatUint(v.Ref, 10)
+		}
+		if key, ok := stableObjectFieldMapKey(v, seen); ok {
+			return key
+		}
+		if v.Type != "" && !sObjectValueType(v.Type) && v.Ref != 0 {
+			return string(v.Kind) + ":" + v.Type + ":ref:" + strconv.FormatUint(v.Ref, 10)
+		}
+	}
+	return mapKey(v)
+}
+
 func schemaTokenObjectKey(name string) string {
 	if dot := strings.LastIndexByte(name, '.'); dot >= 0 && dot < len(name)-1 {
 		name = name[dot+1:]
@@ -480,32 +595,6 @@ func sObjectTypeTokenEqual(left, right Value) bool {
 		return false
 	}
 	return strings.EqualFold(schemaTokenObjectKey(leftObject.Text), schemaTokenObjectKey(rightObject.Text))
-}
-
-func fflibQualifiedMethodMapKey(v Value, independentMocks bool) (string, bool) {
-	if v.Kind != ValueObject || v.Type != "fflib_QualifiedMethod" {
-		return "", false
-	}
-	typeName, typeOK := v.Fields["typeName"]
-	methodName, methodOK := v.Fields["methodName"]
-	argTypes, argTypesOK := v.Fields["methodArgTypes"]
-	if !typeOK || !methodOK || !argTypesOK {
-		return "", false
-	}
-	mockKey := "mock:null"
-	if independentMocks {
-		if mock, ok := v.Fields["mockInstance"]; ok && mock.Kind != ValueNull {
-			mockKey = fmt.Sprintf("mock:%s:%d", mock.Type, mock.Ref)
-		}
-	}
-	return strings.Join([]string{
-		string(v.Kind),
-		v.Type,
-		mapKey(typeName),
-		mapKey(methodName),
-		mapKey(argTypes),
-		mockKey,
-	}, ":"), true
 }
 
 func containsValue(values []Value, needle Value) bool {

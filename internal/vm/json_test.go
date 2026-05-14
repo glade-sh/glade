@@ -160,11 +160,11 @@ System.assertEquals(1, records.size());
 System.assertEquals('Local Probe', (String)records[0].get('Name'));
 List<string> ids = (List<string>)JSON.deserialize('["001000000000001AAA"]', List<string>.class);
 System.assertEquals('001000000000001AAA', ids[0]);
-Widget__c widget = (Widget__c)JSON.deserialize('{"Data__c":"{}"}', Widget__c.class);
+	Widget__c widget = (Widget__c)JSON.deserialize('{"Data__c":"{}"}', Widget__c.class);
 System.assertEquals('{}', (String)widget.get('Data__c'));
 Widget__c strictWidget = (Widget__c)JSON.deserializeStrict('{"Data__c":"strict"}', Widget__c.class);
 System.assertEquals('strict', (String)strictWidget.get('Data__c'));
-`)
+	`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -174,9 +174,26 @@ System.assertEquals('strict', (String)strictWidget.get('Data__c'));
 	}
 }
 
+func TestExecJSONDeserializeSObjectSystemFields(t *testing.T) {
+	program, err := CompileAnonymous(`
+Widget__c widget = (Widget__c)JSON.deserialize('{"CreatedDate":"2026-05-13T10:30:00Z","IsDeleted":false}', Widget__c.class);
+System.assertEquals(Date.newInstance(2026, 5, 13), widget.CreatedDate.date());
+System.assertEquals(false, widget.IsDeleted);
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecJSONGeneratorPrettyPrints(t *testing.T) {
 	program, err := CompileAnonymous(`
-JSONGenerator gen = JSON.createGenerator(true);
+	JSONGenerator gen = JSON.createGenerator(true);
 gen.writeStartObject();
 gen.writeStringField('name', 'Acme');
 gen.writeFieldName('items');
@@ -768,6 +785,8 @@ Boolean ok = JSON.deserialize('true', Boolean.class);
 System.assertEquals(true, ok);
 String text = JSON.deserialize('"Acme"', String.class);
 System.assertEquals('Acme', text);
+String numericText = JSON.deserialize('12.5', String.class);
+System.assertEquals('12.5', numericText);
 Object missing = JSON.deserialize('null', String.class);
 System.assertEquals(null, missing);
 Date dateValue = JSON.deserialize('"2024-02-29"', Date.class);
@@ -797,6 +816,81 @@ System.assertEquals('Acme', byId.get(idValue));
 		t.Fatal(err)
 	}
 	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecJSONRoundTripsTypedIdSObjectMap(t *testing.T) {
+	program, err := CompileAnonymous(`
+Id accountId = '001B000001DVM9tIAH';
+Map<Id, Account> accounts = new Map<Id, Account>();
+accounts.put(accountId, new Account(FirstName = 'NewFirst'));
+String raw = JSON.serialize(accounts);
+Map<Id, Account> decoded = (Map<Id, Account>)JSON.deserialize(raw, Map<Id, Account>.class);
+System.assertEquals(1, decoded.size());
+System.assert(decoded.containsKey(accountId));
+System.assertEquals('NewFirst', decoded.get(accountId).FirstName);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecJSONRoundTripTypedIdSObjectMapCanUpdateRecord(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'Old');
+insert account;
+Map<Id, Account> updates = new Map<Id, Account>();
+updates.put(account.Id, new Account(Name = 'New'));
+String raw = JSON.serialize(updates);
+Map<Id, Account> decoded = (Map<Id, Account>)JSON.deserialize(raw, Map<Id, Account>.class);
+Account updateRecord = decoded.get(account.Id);
+updateRecord.Id = account.Id;
+update updateRecord;
+Account loaded = [SELECT Name FROM Account WHERE Id = :account.Id];
+System.assertEquals('New', loaded.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecJSONRoundTripsClassWithTypedIdSObjectMap(t *testing.T) {
+	program, err := CompileAnonymous(`
+Id accountId = '001B000001DVM9tIAH';
+SavedState state = new SavedState();
+state.NewValues = new Map<Id, Account>();
+state.NewValues.put(accountId, new Account(FirstName = 'NewFirst'));
+String raw = JSON.serialize(state);
+SavedState decoded = (SavedState)JSON.deserialize(raw, SavedState.class);
+System.assertEquals(1, decoded.NewValues.size());
+System.assert(decoded.NewValues.containsKey(accountId));
+System.assertEquals('NewFirst', decoded.NewValues.get(accountId).FirstName);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "SavedState",
+		Fields: map[string]Field{
+			"NewValues": {Name: "NewValues", Type: "Map<Id,Account>"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
@@ -849,6 +943,12 @@ System.assertEquals(10, person.Scores.get('trail'));
 System.assertEquals(null, person.OptionalAddress);
 System.assertEquals(null, person.Missing);
 
+JSONParser parser = JSON.createParser('{"ExternalId":"E-9","Name":"Parser","Primary":{"City":"Root","Zip":1}}');
+JsonPerson parsed = (JsonPerson)parser.readValueAs(JsonPerson.class);
+System.assertEquals('E-9', parsed.ExternalId);
+System.assertEquals('Parser', parsed.Name);
+System.assertEquals('Root', parsed.Primary.City);
+
 Boolean strictCaught = false;
 try {
 	JsonPerson bad = JSON.deserializeStrict('{"ExternalId":"E-8","Nope":"x"}', JsonPerson.class);
@@ -897,6 +997,45 @@ System.assert(strictCaught);
 	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestTypedValueFromJSONResolvesNestedFieldTypes(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "SetupDataMapping.Rows",
+		Fields: map[string]Field{
+			"sfField": {Name: "sfField", Type: "String"},
+			"tpField": {Name: "tpField", Type: "String"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "SetupDataMapping.License",
+		Fields: map[string]Field{
+			"rows": {Name: "rows", Type: "List<Rows>"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	value, err := machine.typedValueFromJSON("SetupDataMapping.License", map[string]any{
+		"rows": []any{
+			map[string]any{"sfField": "Name", "tpField": "name"},
+		},
+	}, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rows := value.Fields["rows"]
+	if rows.Kind != ValueList || len(rows.List) != 1 {
+		t.Fatalf("rows = %#v", rows)
+	}
+	if got := rows.List[0].Type; got != "SetupDataMapping.Rows" {
+		t.Fatalf("row type = %q", got)
+	}
+	if got := rows.List[0].Fields["sfField"].Text; got != "Name" {
+		t.Fatalf("sfField = %q", got)
 	}
 }
 
@@ -1005,6 +1144,26 @@ System.assertEquals('Acme', decoded.Name);
 	}
 }
 
+func TestExecJSONDeserializeSObjectAllowsFabricatedReferenceValue(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account decoded = JSON.deserialize('{"ParentId":"Manual","Name":"Acme"}', Account.class);
+System.assertEquals('Manual', decoded.ParentId);
+System.assertEquals('Acme', decoded.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["ParentId"] = storage.Field{APIName: "ParentId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecJSONDeserializeSObjectChildRelationshipRecords(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account decoded = JSON.deserialize('{"Name":"Acme","NumberOfEmployees":"7","Contacts":{"totalSize":"2","done":"true","records":[{"attributes":{"type":"Contact"},"LastName":"One","DoNotCall":"true"},{"attributes":{"type":"Contact"},"LastName":"Two","DoNotCall":"false"}]}}', Account.class);
@@ -1036,6 +1195,67 @@ System.assertEquals(false, contacts[1].DoNotCall);
 		},
 		Records: make(map[storage.ID]storage.Record),
 	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecJSONDeserializeCustomChildRelationshipRecordsUseChildType(t *testing.T) {
+	program, err := CompileAnonymous(`
+Parent__c decoded = JSON.deserialize('{"Children__r":{"totalSize":1,"done":true,"records":[{"Parent__c":"001000000000001AAA"}]}}', Parent__c.class);
+System.assertEquals(null, decoded.Children__r[0].Parent__r.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.OrgState{Objects: map[string]storage.ObjectState{
+		"Account": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "Account",
+				KeyPrefix: "001",
+				Fields: map[string]storage.Field{
+					"Id":   {APIName: "Id", Type: storage.FieldID},
+					"Name": {APIName: "Name", Type: storage.FieldString},
+				},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+		"Parent__c": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "Parent__c",
+				KeyPrefix: "a01",
+				Fields:    map[string]storage.Field{"Id": {APIName: "Id", Type: storage.FieldID}},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+		"Child__c": {
+			Definition: storage.ObjectDefinition{
+				APIName:   "Child__c",
+				KeyPrefix: "a00",
+				Fields: map[string]storage.Field{
+					"Id":           {APIName: "Id", Type: storage.FieldID},
+					"Container__c": {APIName: "Container__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}, RelationshipName: "Children"},
+					"Parent__c":    {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Accounts"},
+				},
+				Relations: []storage.Relationship{
+					{
+						Field:              "Container__c",
+						ParentObjects:      []string{"Parent__c"},
+						ParentRelationship: "Children",
+						ChildRelationship:  "Children__r",
+					},
+					{
+						Field:              "Parent__c",
+						ParentObjects:      []string{"Account"},
+						ParentRelationship: "Accounts",
+					},
+				},
+			},
+			Records: map[storage.ID]storage.Record{},
+		},
+	}}
+	machine := New(nil)
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)

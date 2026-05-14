@@ -1,9 +1,9 @@
 package storage
 
 import (
-	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const FixtureVersion = "oaer.storage.v1"
@@ -36,6 +36,7 @@ type OrgState struct {
 	Objects      map[string]ObjectState `json:"objects"`
 	IDSequences  map[string]uint64      `json:"idSequences,omitempty"`
 	Transactions []TransactionFrame     `json:"transactions,omitempty"`
+	Now          func() time.Time       `json:"-"`
 }
 
 type MetadataRegistry struct {
@@ -740,12 +741,7 @@ func ResolveObjectName(org OrgState, name string) (string, bool) {
 			return stripped, true
 		}
 	}
-	candidates := make([]string, 0, len(org.Objects))
 	for candidate := range org.Objects {
-		candidates = append(candidates, candidate)
-	}
-	sort.Strings(candidates)
-	for _, candidate := range candidates {
 		if strings.EqualFold(candidate, name) || strings.EqualFold(candidate, prefixed) || strings.EqualFold(candidate, stripped) {
 			return candidate, true
 		}
@@ -772,17 +768,61 @@ func ResolveFieldName(definition ObjectDefinition, namespace, name string) (stri
 			return stripped, true
 		}
 	}
-	candidates := make([]string, 0, len(definition.Fields))
-	for candidate := range definition.Fields {
-		candidates = append(candidates, candidate)
+	if resolved, ok := resolveLocationComponentField(definition, namespace, name); ok {
+		return resolved, true
 	}
-	sort.Strings(candidates)
-	for _, candidate := range candidates {
+	for candidate := range definition.Fields {
 		if strings.EqualFold(candidate, name) || strings.EqualFold(candidate, prefixed) || strings.EqualFold(candidate, stripped) {
 			return candidate, true
 		}
 	}
 	return "", false
+}
+
+func resolveLocationComponentField(definition ObjectDefinition, namespace, name string) (string, bool) {
+	for _, suffix := range []string{"__Latitude__s", "__Longitude__s"} {
+		if !strings.HasSuffix(strings.ToLower(name), strings.ToLower(suffix)) {
+			continue
+		}
+		base := strings.TrimSuffix(name, suffix) + "__c"
+		for _, candidateBase := range []string{
+			NamespaceTokenName(namespace, base),
+			base,
+			StripNamespaceToken(namespace, base),
+		} {
+			field, ok := definition.Fields[candidateBase]
+			if !ok || field.Type != FieldLocation {
+				continue
+			}
+			return strings.TrimSuffix(candidateBase, "__c") + suffix, true
+		}
+		for candidate := range definition.Fields {
+			candidateBase := candidate
+			field := definition.Fields[candidateBase]
+			if field.Type != FieldLocation {
+				continue
+			}
+			candidateComponent := strings.TrimSuffix(candidateBase, "__c") + suffix
+			if strings.EqualFold(candidateComponent, name) ||
+				strings.EqualFold(candidateComponent, NamespaceTokenName(namespace, name)) ||
+				strings.EqualFold(candidateComponent, StripNamespaceToken(namespace, name)) ||
+				strings.EqualFold(locationComponentLocalName(candidateComponent, suffix), locationComponentLocalName(name, suffix)) {
+				return candidateComponent, true
+			}
+		}
+	}
+	return "", false
+}
+
+func locationComponentLocalName(name, suffix string) string {
+	if !strings.HasSuffix(strings.ToLower(name), strings.ToLower(suffix)) {
+		return name
+	}
+	base := strings.TrimSuffix(name, suffix)
+	if idx := strings.Index(base, "__"); idx > 0 && idx+2 < len(base) {
+		base = base[idx+2:]
+	}
+	return base + suffix
 }
 
 func NamespaceTokenName(namespace, name string) string {
@@ -972,6 +1012,57 @@ func (o OrgState) Clone() OrgState {
 		}
 	}
 	return out
+}
+
+// CloneRuntime returns an org copy suitable for isolated test/runtime execution.
+// Records, indexes, sequences, and transaction frames are isolated. Object
+// definitions are shared because normal test execution treats metadata as
+// read-only; runtime metadata mutation paths clone definitions before writing.
+func (o OrgState) CloneRuntime() OrgState {
+	out := o
+	if o.Objects != nil {
+		out.Objects = make(map[string]ObjectState, len(o.Objects))
+		for name, object := range o.Objects {
+			out.Objects[name] = object.CloneRuntime()
+		}
+	}
+	if o.IDSequences != nil {
+		out.IDSequences = make(map[string]uint64, len(o.IDSequences))
+		for object, sequence := range o.IDSequences {
+			out.IDSequences[object] = sequence
+		}
+	}
+	if o.Transactions != nil {
+		out.Transactions = make([]TransactionFrame, len(o.Transactions))
+		for i, transaction := range o.Transactions {
+			out.Transactions[i] = transaction.Clone()
+		}
+	}
+	return out
+}
+
+func (o ObjectState) CloneRuntime() ObjectState {
+	out := o
+	if o.Records != nil {
+		out.Records = make(map[ID]Record, len(o.Records))
+		for id, record := range o.Records {
+			out.Records[id] = record.Clone()
+		}
+	}
+	if o.Indexes != nil {
+		out.Indexes = make(map[string]IndexSet, len(o.Indexes))
+		for name, index := range o.Indexes {
+			out.Indexes[name] = index.Clone()
+		}
+	}
+	return out
+}
+
+func isRuntimeMutableDefinition(definition ObjectDefinition) bool {
+	if definition.Metadata != nil {
+		return true
+	}
+	return isCustomAPIName(definition.APIName)
 }
 
 func (t TransactionFrame) Clone() TransactionFrame {

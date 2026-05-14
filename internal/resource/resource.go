@@ -728,7 +728,7 @@ func ensureEmailTemplateObject(org *storage.OrgState) {
 	storage.EnsureStandardObject(org, "EmailTemplate")
 	object := org.Objects["EmailTemplate"]
 	for i, template := range org.Metadata.EmailTemplates {
-		id := storage.ID("00X" + leftPad(i+1, 12))
+		id := storage.ID("00X" + leftPad(i+100001, 12))
 		object.Records[id] = storage.Record{ID: id, Object: "EmailTemplate", Fields: map[string]storage.Value{
 			"Id":              storage.IDValue(id),
 			"Name":            storage.StringValue(firstNonEmpty(template.Name, template.DeveloperName)),

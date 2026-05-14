@@ -821,11 +821,10 @@ func callStringMember(receiver Value, method string, args []Value) (Value, bool,
 		if len(args) == 1 && args[0].Kind == ValueNull {
 			return Bool(false), true, nil
 		}
-		other, err := stringArg("String.equals", args)
-		if err != nil {
-			return Null, true, err
+		if len(args) != 1 {
+			return Null, true, newExceptionError("System.NullPointerException", "String.equals expects 1 argument")
 		}
-		return Bool(receiver.Text == other), true, nil
+		return Bool(receiver.Text == args[0].String()), true, nil
 	case "hashCode":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("String.hashCode expects 0 arguments")
@@ -1299,15 +1298,22 @@ func stringStatic(callee string, args []Value) (Value, error) {
 			return Null, fmt.Errorf("String.valueOf expects 1 argument")
 		}
 		if args[0].Kind == ValueNull {
-			return Null, nil
+			return Value{Kind: ValueNull, Type: "String"}, nil
+		}
+		if idText, ok := typedIDValueText(args[0]); ok {
+			return String(displayIDText(idText)), nil
 		}
 		return String(args[0].String()), nil
 	case "String.join":
-		if len(args) != 2 || args[0].Kind != ValueList || args[1].Kind != ValueString {
-			return Null, fmt.Errorf("String.join expects List and separator String")
+		if len(args) != 2 || (args[0].Kind != ValueList && args[0].Kind != ValueSet) || args[1].Kind != ValueString {
+			return Null, fmt.Errorf("String.join expects List or Set and separator String")
 		}
-		parts := make([]string, 0, len(args[0].List))
-		for _, item := range args[0].List {
+		values := args[0].List
+		if args[0].Kind == ValueSet {
+			values = args[0].Set
+		}
+		parts := make([]string, 0, len(values))
+		for _, item := range values {
 			parts = append(parts, item.String())
 		}
 		return String(strings.Join(parts, args[1].Text)), nil
@@ -1392,7 +1398,7 @@ func numericStatic(callee string, args []Value) (Value, error) {
 		case ValueString:
 			parsed, err := strconv.ParseInt(strings.TrimSpace(args[0].Text), 10, 32)
 			if err != nil {
-				return Null, fmt.Errorf("%s invalid integer %q", callee, args[0].Text)
+				return Null, newExceptionError("System.TypeException", fmt.Sprintf("%s invalid integer %q", callee, args[0].Text))
 			}
 			return Int(parsed), nil
 		default:
@@ -1413,7 +1419,7 @@ func numericStatic(callee string, args []Value) (Value, error) {
 		case ValueString:
 			parsed, err := strconv.ParseInt(strings.TrimSpace(args[0].Text), 10, 64)
 			if err != nil {
-				return Null, fmt.Errorf("%s invalid integer %q", callee, args[0].Text)
+				return Null, newExceptionError("System.TypeException", fmt.Sprintf("%s invalid integer %q", callee, args[0].Text))
 			}
 			return Int(parsed), nil
 		default:
@@ -1559,37 +1565,58 @@ func patternCompile(args []Value) (Value, error) {
 	if len(args) == 2 {
 		flags = args[1].Int
 	}
-	regexpSource, err := compilePatternSource("Pattern.compile", args[0].Text, flags)
+	regexpSource, lookaheadSource, err := compilePatternSourceWithMetadata("Pattern.compile", args[0].Text, flags)
 	if err != nil {
 		return Null, err
 	}
 	if _, err := regexp.Compile(regexpSource); err != nil {
 		return Null, newPatternSyntaxExceptionError(args[0].Text, err)
 	}
+	if lookaheadSource != "" {
+		if _, err := regexp.Compile("^(?:" + lookaheadSource + ")"); err != nil {
+			return Null, newPatternSyntaxExceptionError(args[0].Text, err)
+		}
+	}
 	pattern := Object("Pattern")
 	pattern.Fields["source"] = args[0]
 	pattern.Fields["regexpSource"] = String(regexpSource)
+	if lookaheadSource != "" {
+		pattern.Fields["lookaheadSource"] = String(lookaheadSource)
+	}
 	pattern.Fields["flags"] = Int(flags)
 	return pattern, nil
 }
 
 func patternMatches(args []Value) (Value, error) {
-	if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+	if len(args) != 2 {
 		return Null, fmt.Errorf("Pattern.matches expects regex and input Strings")
 	}
-	source, err := javaRegexQuoteEscapesToGo(args[0].Text)
+	pattern, err := stringArg("Pattern.matches", args[:1])
 	if err != nil {
-		return Null, unsupportedCallError("Pattern.matches " + err.Error())
+		return Null, fmt.Errorf("Pattern.matches expects regex and input Strings")
 	}
-	if feature := unsupportedJavaRegexFeature(source); feature != "" {
-		return Null, unsupportedCallError("Pattern.matches " + feature)
+	input, err := stringArg("Pattern.matches", args[1:])
+	if err != nil {
+		return Null, fmt.Errorf("Pattern.matches expects regex and input Strings")
+	}
+	source, negativeLookaheads, err := compilePatternMatchesSource(pattern)
+	if err != nil {
+		return Null, err
 	}
 	re, err := regexp.Compile(source)
 	if err != nil {
-		return Null, newPatternSyntaxExceptionError(args[0].Text, err)
+		return Null, newPatternSyntaxExceptionError(pattern, err)
 	}
-	indices := re.FindStringIndex(args[1].Text)
-	matched := indices != nil && indices[0] == 0 && indices[1] == len(args[1].Text)
+	indices := re.FindStringIndex(input)
+	matched := indices != nil && indices[0] == 0 && indices[1] == len(input)
+	if matched {
+		for _, lookahead := range negativeLookaheads {
+			if regexLookaheadMatches(lookahead, input, 0) {
+				matched = false
+				break
+			}
+		}
+	}
 	return Bool(matched), nil
 }
 
@@ -1615,30 +1642,72 @@ func javaPatternQuote(text string) string {
 }
 
 func compilePatternSource(callee, source string, flags int64) (string, error) {
+	regexpSource, _, err := compilePatternSourceWithMetadata(callee, source, flags)
+	return regexpSource, err
+}
+
+func compilePatternMatchesSource(source string) (string, []string, error) {
+	regexpSource, err := javaRegexQuoteEscapesToGo(source)
+	if err != nil {
+		return "", nil, unsupportedCallError("Pattern.matches " + err.Error())
+	}
+	var negativeLookaheads []string
+	regexpSource, negativeLookaheads = stripLeadingNegativeLookaheads(regexpSource)
+	if stripped, _, ok := stripTerminalPositiveLookahead(regexpSource); ok {
+		regexpSource = stripped
+	}
+	if feature := unsupportedJavaRegexFeature(regexpSource); feature != "" {
+		return "", nil, unsupportedCallError("Pattern.matches " + feature)
+	}
+	for _, lookahead := range negativeLookaheads {
+		if feature := unsupportedJavaRegexFeature(lookahead); feature != "" {
+			return "", nil, unsupportedCallError("Pattern.matches " + feature)
+		}
+		if _, err := regexp.Compile("^(?:" + lookahead + ")"); err != nil {
+			return "", nil, newPatternSyntaxExceptionError(source, err)
+		}
+	}
+	return regexpSource, negativeLookaheads, nil
+}
+
+func compilePatternSourceWithMetadata(callee, source string, flags int64) (string, string, error) {
 	if flags < 0 {
-		return "", unsupportedCallError(callee + " negative regex flags")
+		return "", "", unsupportedCallError(callee + " negative regex flags")
 	}
 	if unsupported := flags &^ patternSupportedFlags; unsupported != 0 {
-		return "", unsupportedCallError(callee + " " + unsupportedPatternFlagsFeature(unsupported))
+		return "", "", unsupportedCallError(callee + " " + unsupportedPatternFlagsFeature(unsupported))
 	}
 	regexpSource := source
+	lookaheadSource := ""
 	if flags&patternFlagLiteral != 0 {
 		regexpSource = regexp.QuoteMeta(source)
 	} else {
 		converted, err := javaRegexQuoteEscapesToGo(source)
 		if err != nil {
-			return "", unsupportedCallError(callee + " " + err.Error())
+			return "", "", unsupportedCallError(callee + " " + err.Error())
 		}
 		regexpSource = converted
+		if stripped, lookahead, ok := stripTerminalPositiveLookahead(regexpSource); ok {
+			regexpSource = stripped
+			lookaheadSource = lookahead
+		}
 		if feature := unsupportedJavaRegexFeature(regexpSource); feature != "" {
-			return "", unsupportedCallError(callee + " " + feature)
+			return "", "", unsupportedCallError(callee + " " + feature)
+		}
+		if lookaheadSource != "" {
+			if feature := unsupportedJavaRegexFeature(lookaheadSource); feature != "" {
+				return "", "", unsupportedCallError(callee + " " + feature)
+			}
 		}
 	}
 	prefix := patternFlagPrefix(flags)
-	if prefix == "" {
-		return regexpSource, nil
+	if prefix != "" {
+		regexpSource = prefix + regexpSource
+		if lookaheadSource != "" {
+			lookaheadSource = prefix + lookaheadSource
+		}
 	}
-	return prefix + regexpSource, nil
+	return regexpSource, lookaheadSource, nil
 }
 
 func patternFlagPrefix(flags int64) string {
@@ -1696,6 +1765,14 @@ func patternRegexpSource(pattern Value) (string, error) {
 	return source.Text, nil
 }
 
+func patternLookaheadSource(pattern Value) string {
+	lookaheadSource, ok := pattern.Fields["lookaheadSource"]
+	if !ok || lookaheadSource.Kind != ValueString {
+		return ""
+	}
+	return lookaheadSource.Text
+}
+
 func callPatternMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
 	method = canonicalStdlibMemberName(method, "matches", "matcher", "pattern", "split")
 	switch method {
@@ -1713,6 +1790,9 @@ func callPatternMember(receiver Value, method string, args []Value) (Value, Valu
 		matcher := Object("Matcher")
 		matcher.Fields["source"] = String(regexpSource)
 		matcher.Fields["patternSource"] = receiver.Fields["source"]
+		if lookaheadSource := patternLookaheadSource(receiver); lookaheadSource != "" {
+			matcher.Fields["lookaheadSource"] = String(lookaheadSource)
+		}
 		if flags, ok := receiver.Fields["flags"]; ok {
 			matcher.Fields["flags"] = flags
 		}
@@ -2098,6 +2178,7 @@ func matcherUsesFullInputBounds(matcher Value) bool {
 }
 
 func matcherMatchIndices(matcher Value, source, input string, region matcherRegionBounds, op matcherOp) ([]int, error) {
+	lookaheadSource := matcherLookaheadSource(matcher)
 	if !matcherUsesFullInputBounds(matcher) {
 		prefix := "^(?:"
 		suffix := ")"
@@ -2113,6 +2194,9 @@ func matcherMatchIndices(matcher Value, source, input string, region matcherRegi
 		indices := anchored.FindStringSubmatchIndex(input[region.startByte:region.endByte])
 		if indices != nil {
 			offsetRegexIndices(indices, region.startByte)
+			if !matcherLookaheadMatches(lookaheadSource, input, indices[1]) {
+				return nil, nil
+			}
 		}
 		return indices, nil
 	}
@@ -2133,12 +2217,19 @@ func matcherMatchIndices(matcher Value, source, input string, region matcherRegi
 		if op == matcherOpMatches && indices[1] != region.endByte {
 			return nil, nil
 		}
+		if !matcherLookaheadMatches(lookaheadSource, input, indices[1]) {
+			return nil, nil
+		}
 		return indices, nil
 	}
 	return nil, nil
 }
 
 func matcherFindIndices(matcher Value, re *regexp.Regexp, input string, region matcherRegionBounds, startByte int) ([]int, error) {
+	lookaheadSource := matcherLookaheadSource(matcher)
+	if lookaheadSource != "" {
+		return matcherFindIndicesWithTerminalLookahead(matcher, input, region, startByte)
+	}
 	if !matcherUsesFullInputBounds(matcher) {
 		indices := re.FindStringSubmatchIndex(input[startByte:region.endByte])
 		if indices != nil {
@@ -2158,6 +2249,77 @@ func matcherFindIndices(matcher Value, re *regexp.Regexp, input string, region m
 		}
 	}
 	return nil, nil
+}
+
+func matcherFindIndicesWithTerminalLookahead(matcher Value, input string, region matcherRegionBounds, startByte int) ([]int, error) {
+	source, inputValue, err := matcherSourceInput(matcher)
+	if err != nil {
+		return nil, err
+	}
+	if inputValue != input {
+		return nil, fmt.Errorf("Matcher stored inconsistent input")
+	}
+	lookaheadSource := matcherLookaheadSource(matcher)
+	combined, err := regexp.Compile(source + "(?:" + lookaheadSource + ")")
+	if err != nil {
+		return nil, fmt.Errorf("Matcher invalid regex: %w", err)
+	}
+	anchored, err := regexp.Compile("^(?:" + source + ")$")
+	if err != nil {
+		return nil, fmt.Errorf("Matcher invalid regex: %w", err)
+	}
+	for _, full := range combined.FindAllStringIndex(input, -1) {
+		if len(full) < 2 || full[0] < startByte || full[0] < region.startByte {
+			continue
+		}
+		if full[0] > region.endByte {
+			return nil, nil
+		}
+		for end := full[0]; end <= full[1] && end <= region.endByte; end = nextRegexSearchIndex(input, end) {
+			if !matcherLookaheadMatches(lookaheadSource, input, end) {
+				if end == full[1] {
+					break
+				}
+				continue
+			}
+			indices := anchored.FindStringSubmatchIndex(input[full[0]:end])
+			if indices == nil {
+				if end == full[1] {
+					break
+				}
+				continue
+			}
+			offsetRegexIndices(indices, full[0])
+			return indices, nil
+		}
+	}
+	return nil, nil
+}
+
+func matcherLookaheadSource(matcher Value) string {
+	lookahead, ok := matcher.Fields["lookaheadSource"]
+	if !ok || lookahead.Kind != ValueString {
+		return ""
+	}
+	return lookahead.Text
+}
+
+func matcherLookaheadMatches(lookaheadSource, input string, endByte int) bool {
+	if lookaheadSource == "" {
+		return true
+	}
+	return regexLookaheadMatches(lookaheadSource, input, endByte)
+}
+
+func regexLookaheadMatches(lookaheadSource, input string, endByte int) bool {
+	if endByte < 0 || endByte > len(input) {
+		return false
+	}
+	re, err := regexp.Compile("^(?:" + lookaheadSource + ")")
+	if err != nil {
+		return false
+	}
+	return re.MatchString(input[endByte:])
 }
 
 func validateMatcherRegion(input string, start, end int) error {
@@ -2364,11 +2526,11 @@ func callListStdlibMember(receiver Value, method string, args []Value) (Value, V
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("List.getSObjectType expects 0 arguments")
 		}
-		if elementType, ok := collectionElementType(receiver.Type); ok && strings.EqualFold(elementType, "sObject") && len(receiver.List) == 0 {
-			return Null, receiver, false, true, nil
-		}
 		if objectName := listSObjectTypeName(receiver); objectName != "" {
 			return sObjectTypeToken(objectName), receiver, false, true, nil
+		}
+		if elementType, ok := collectionElementType(receiver.Type); ok && strings.EqualFold(elementType, "sObject") && len(receiver.List) == 0 {
+			return Null, receiver, false, true, nil
 		}
 		return Null, receiver, false, true, unsupportedCallError("List.getSObjectType for non-SObject list")
 	default:
@@ -2377,6 +2539,12 @@ func callListStdlibMember(receiver Value, method string, args []Value) (Value, V
 }
 
 func listSObjectTypeName(receiver Value) string {
+	if elementType, ok := collectionElementType(receiver.Static); ok && (isCommonSObjectTypeName(elementType) || strings.HasSuffix(elementType, "__c") || strings.HasSuffix(elementType, "__e") || strings.HasSuffix(elementType, "__mdt")) {
+		return elementType
+	}
+	if elementType, ok := collectionElementType(receiver.Runtime); ok && (isCommonSObjectTypeName(elementType) || strings.HasSuffix(elementType, "__c") || strings.HasSuffix(elementType, "__e") || strings.HasSuffix(elementType, "__mdt")) {
+		return elementType
+	}
 	if elementType, ok := collectionElementType(receiver.Type); ok && (isCommonSObjectTypeName(elementType) || strings.HasSuffix(elementType, "__c") || strings.HasSuffix(elementType, "__e") || strings.HasSuffix(elementType, "__mdt") || strings.EqualFold(elementType, "sObject")) {
 		if !strings.EqualFold(elementType, "sObject") {
 			return elementType
@@ -2442,9 +2610,40 @@ func callMapStdlibMember(receiver Value, method string, args []Value) (Value, Va
 			return value, receiver, true, true, nil
 		}
 		return Null, receiver, false, true, nil
+	case "getSObjectType":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Map.getSObjectType expects 0 arguments")
+		}
+		if objectName := mapSObjectTypeName(receiver); objectName != "" {
+			return sObjectTypeToken(objectName), receiver, false, true, nil
+		}
+		return Null, receiver, false, true, newExceptionError("System.TypeException", "Map.getSObjectType requires a concrete SObject value type")
 	default:
 		return Null, receiver, false, false, nil
 	}
+}
+
+func mapSObjectTypeName(receiver Value) string {
+	if valueType := mapConcreteSObjectValueType(receiver.Type); valueType != "" {
+		return valueType
+	}
+	for _, item := range receiver.Map {
+		if item.Kind == ValueObject && item.Type != "" && item.Type != "Object" && !strings.EqualFold(item.Type, "sObject") {
+			return item.Type
+		}
+	}
+	return ""
+}
+
+func mapConcreteSObjectValueType(typeName string) string {
+	_, valueType, ok := mapTypeArgs(typeName)
+	if !ok || strings.EqualFold(valueType, "sObject") {
+		return ""
+	}
+	if isCommonSObjectTypeName(valueType) || strings.HasSuffix(valueType, "__c") || strings.HasSuffix(valueType, "__e") || strings.HasSuffix(valueType, "__mdt") {
+		return valueType
+	}
+	return ""
 }
 
 func stringArg(name string, args []Value) (string, error) {
@@ -2453,6 +2652,11 @@ func stringArg(name string, args []Value) (string, error) {
 	}
 	if args[0].Kind == ValueNull {
 		return "", newExceptionError("System.NullPointerException", fmt.Sprintf("%s expects String argument", name))
+	}
+	if strings.EqualFold(args[0].Type, "Id") {
+		if idText, ok := idValueText(args[0]); ok {
+			return idText, nil
+		}
 	}
 	if args[0].Kind != ValueString {
 		return "", newExceptionError("System.TypeException", fmt.Sprintf("%s expects String argument", name))
@@ -2931,6 +3135,9 @@ func stringRegexReplace(name, text string, args []Value, all bool) (string, erro
 	if replaced, ok, err := stringRegexReplaceNegativeLookbehindLiteral(name, text, pattern, args[1].Text, all); ok || err != nil {
 		return replaced, err
 	}
+	if stripped, lookahead, ok := stripTerminalPositiveLookahead(pattern); ok {
+		return stringRegexReplaceTerminalPositiveLookahead(name, text, stripped, lookahead, args[1].Text, all)
+	}
 	if feature := unsupportedJavaRegexFeature(pattern); feature != "" {
 		return "", unsupportedCallError(name + " " + feature)
 	}
@@ -2952,6 +3159,49 @@ func stringRegexReplace(name, text string, args []Value, all bool) (string, erro
 	var expanded []byte
 	expanded = re.ExpandString(expanded, replacement, text, indices)
 	return text[:indices[0]] + string(expanded) + text[indices[1]:], nil
+}
+
+func stringRegexReplaceTerminalPositiveLookahead(callee, text, pattern, lookahead, replacement string, all bool) (string, error) {
+	if feature := unsupportedJavaRegexFeature(pattern); feature != "" {
+		return "", unsupportedCallError(callee + " " + feature)
+	}
+	if feature := unsupportedJavaRegexFeature(lookahead); feature != "" {
+		return "", unsupportedCallError(callee + " " + feature)
+	}
+	re, err := regexp.Compile(pattern)
+	if err != nil {
+		return "", fmt.Errorf("%s invalid regex: %w", callee, err)
+	}
+	repl, err := javaReplacementToGoTemplate(callee, replacement, re.NumSubexp())
+	if err != nil {
+		return "", fmt.Errorf("%s %w", callee, err)
+	}
+	matches := re.FindAllStringSubmatchIndex(text, -1)
+	if len(matches) == 0 {
+		return text, nil
+	}
+	var out strings.Builder
+	last := 0
+	replaced := false
+	for _, indices := range matches {
+		if indices[0] < last || !regexLookaheadMatches(lookahead, text, indices[1]) {
+			continue
+		}
+		out.WriteString(text[last:indices[0]])
+		var expanded []byte
+		expanded = re.ExpandString(expanded, repl, text, indices)
+		out.Write(expanded)
+		last = indices[1]
+		replaced = true
+		if !all {
+			break
+		}
+	}
+	if !replaced {
+		return text, nil
+	}
+	out.WriteString(text[last:])
+	return out.String(), nil
 }
 
 func stringRegexReplaceNegativeLookbehindLiteral(callee, text, pattern, replacement string, all bool) (string, bool, error) {
@@ -3131,6 +3381,102 @@ func unsupportedJavaRegexFeature(source string) string {
 		}
 	}
 	return ""
+}
+
+func stripTerminalPositiveLookahead(source string) (string, string, bool) {
+	if !strings.HasSuffix(source, ")") {
+		return source, "", false
+	}
+	inClass := false
+	depth := 0
+	for i := len(source) - 1; i >= 0; i-- {
+		if isEscapedRegexByte(source, i) {
+			continue
+		}
+		switch source[i] {
+		case ']':
+			if depth == 0 {
+				inClass = true
+			}
+		case '[':
+			if depth == 0 {
+				inClass = false
+			}
+		case ')':
+			if !inClass {
+				depth++
+			}
+		case '(':
+			if inClass {
+				continue
+			}
+			depth--
+			if depth != 0 {
+				continue
+			}
+			if strings.HasPrefix(source[i:], "(?=") {
+				return source[:i], source[i+3 : len(source)-1], true
+			}
+			return source, "", false
+		}
+	}
+	return source, "", false
+}
+
+func stripLeadingNegativeLookaheads(source string) (string, []string) {
+	var lookaheads []string
+	for strings.HasPrefix(source, "(?!") {
+		end := regexGroupEnd(source, 0)
+		if end < 0 {
+			return source, lookaheads
+		}
+		lookaheads = append(lookaheads, source[3:end])
+		source = source[end+1:]
+	}
+	return source, lookaheads
+}
+
+func regexGroupEnd(source string, start int) int {
+	if start < 0 || start >= len(source) || source[start] != '(' {
+		return -1
+	}
+	inClass := false
+	depth := 0
+	for i := start; i < len(source); i++ {
+		if isEscapedRegexByte(source, i) {
+			continue
+		}
+		switch source[i] {
+		case '[':
+			if !inClass {
+				inClass = true
+			}
+		case ']':
+			if inClass {
+				inClass = false
+			}
+		case '(':
+			if !inClass {
+				depth++
+			}
+		case ')':
+			if !inClass {
+				depth--
+				if depth == 0 {
+					return i
+				}
+			}
+		}
+	}
+	return -1
+}
+
+func isEscapedRegexByte(source string, index int) bool {
+	slashes := 0
+	for i := index - 1; i >= 0 && source[i] == '\\'; i-- {
+		slashes++
+	}
+	return slashes%2 == 1
 }
 
 func javaRegexQuoteEscapesToGo(source string) (string, error) {
@@ -3982,13 +4328,18 @@ func callObjectMember(receiver Value, method string, args []Value) (Value, bool,
 			return Null, true, fmt.Errorf("Object.hashCode expects 0 arguments")
 		}
 		return Int(int64(valueHashCode(receiver))), true, nil
+	case "clone":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("Object.clone expects 0 arguments")
+		}
+		return cloneValue(receiver), true, nil
 	default:
 		return Null, false, nil
 	}
 }
 
 func canonicalObjectMemberMethod(method string) string {
-	for _, name := range []string{"toString", "equals", "hashCode"} {
+	for _, name := range []string{"toString", "equals", "hashCode", "clone"} {
 		if strings.EqualFold(method, name) {
 			return name
 		}
@@ -4112,7 +4463,7 @@ func (vm *VM) callIdMember(receiver Value, method string, args []Value) (Value, 
 		if err := validateApexID(idText); err != nil {
 			return Null, true, err
 		}
-		objectName, ok := vm.sObjectNameForIDPrefix(idText[:3])
+		objectName, ok := vm.sObjectNameForID(idText)
 		if !ok {
 			return Null, true, fmt.Errorf("System.StringException: Invalid id prefix: %s", idText[:3])
 		}
@@ -4132,6 +4483,23 @@ func idValueText(value Value) (string, bool) {
 		return platformScalarObjectText(value)
 	}
 	return "", false
+}
+
+func typedIDValueText(value Value) (string, bool) {
+	if value.Kind == ValueString && strings.EqualFold(value.Type, "Id") {
+		return value.Text, true
+	}
+	if value.Kind == ValueObject && strings.EqualFold(value.Type, "Id") {
+		return platformScalarObjectText(value)
+	}
+	return "", false
+}
+
+func displayIDText(text string) string {
+	if len(text) == 15 {
+		return apexIDTo18(text)
+	}
+	return text
 }
 
 func idMemberReceiver(value Value, method string) bool {

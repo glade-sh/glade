@@ -97,9 +97,9 @@ func (vm *VM) RegisterClass(class Class) error {
 	for _, name := range class.StaticFieldOrder {
 		field := class.StaticFields[name]
 		if field.InitialValue.Kind == "" {
-			field.InitialValue = defaultValue(field.Type, field.Value)
+			field.InitialValue = defaultStaticFieldValue(class.Name, name, field.Type, field.Value)
 		}
-		field.Value = defaultValue(field.Type, field.InitialValue)
+		field.Value = defaultStaticFieldValue(class.Name, name, field.Type, field.InitialValue)
 		class.StaticFields[name] = field
 	}
 	if class.Methods == nil {

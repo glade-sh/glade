@@ -1,6 +1,6 @@
 # Local Apex Test Execution Plan
 
-Status date: 2026-05-07.
+Status date: 2026-05-14.
 
 This plan turns the broad post-parity backlog into squad-sized implementation
 phases for full local Apex test execution. The target is not merely loading
@@ -45,8 +45,33 @@ version-pinned installed package dependency handling.
 Use `docs/APEX_PARITY_FOLLOWUP_PLAN.md` for the broader Apex language,
 runtime, platform API, tooling, and release-hardening roadmap after the
 enterprise example-project local-test path is under control.
-Use `docs/plans/2026-05-07-src-nmb-nu-develop-squad-plan.md` for the current
-parallel squad plan to move `src-nmb-nu-develop` past its compile-gap frontier.
+
+Current execution focus as of May 14, 2026: drive
+`example-projects/sf-cred-pkg-develop` to zero local-test blockers. The latest
+accurate local run used:
+
+```bash
+go build -o /private/tmp/oaer-perf ./cmd/oaer
+/private/tmp/oaer-perf compat local-tests \
+  --project ./example-projects/sf-cred-pkg-develop \
+  --parallel 4 \
+  --top-failures 60 \
+  --json
+```
+
+Measured result:
+
+```text
+total=4268 pass=2993 unsupported=157 runtimeGap=594 assertFail=524 compileError=0 internalError=0 durationMs=237758
+```
+
+The next blocker frontier is not compile loading. It is runtime fidelity:
+duplicate `Account.Vuid__c` behavior, nested enum/static member resolution for
+`ObjectMappings.MAPPING_OPERATION_TYPE.*`, Java-regex lookahead semantics,
+JSON/SObject describe shape gaps, and remaining DML/relationship metadata
+coverage. `docs/plans/2026-05-07-src-nmb-nu-develop-squad-plan.md` is retained
+as historical planning for the larger NU project but is no longer the active
+frontier while `sf-cred-pkg-develop` is the zero-blocker target.
 
 ## Execution Objective
 
@@ -141,9 +166,9 @@ Current example-project set:
 | `NPSP-rel-3.237` | Large nonprofit domain/trigger/service corpus with heavy builders, metadata, SOQL, and fluent APIs. |
 | `src-nmb-nc-develop` | Large legacy package with extensive custom metadata, UI/controller contracts, and currently expensive local runtime execution. |
 | `src-nmb-nu-develop` | Large legacy package with Workflow/Flow, Visualforce/Aura, and broad metadata shape. |
-| `src-nmb-nutpl-develop` | Smaller fflib/ApexMocks-heavy package that gives fast focused feedback on VM behavior. |
+| `src-nmb-nutpl-develop` | Smaller mock-framework-heavy package that gives fast focused feedback on VM behavior. |
 | `sf-cred-pkg-develop` | Large credentialing package with namespaces, HTTP/callout tests, map/list literal usage, and service models. |
-| `nams-workspace` | Large workspace with namespaced test setup, fflib, metadata, endpoint, and UI controller surfaces. |
+| `nams-workspace` | Large workspace with namespaced test setup, mock framework usage, metadata, endpoint, and UI controller surfaces. |
 
 Current measured runtime frontier:
 
@@ -303,10 +328,10 @@ Exit criteria:
 - Timeouts are reported as structured outcomes, not long-running shell probes.
 - The plan tracks top blocker families from measured output, not stale notes.
 
-#### Phase E2: ApexMocks And Dynamic Proxy Semantics
+#### Phase E2: Dynamic Proxy And Mock Framework Semantics
 
-Goal: make fflib/ApexMocks verification tests pass locally and unlock similar
-mock-heavy enterprise tests.
+Goal: make `System.StubProvider` / `Test.createStub`-backed mock frameworks
+pass locally and unlock mock-heavy enterprise tests.
 
 Primary write scope: `internal/vm`, `internal/apextest`, focused fixtures.
 
@@ -314,8 +339,7 @@ Current blockers:
 
 - Matcher registration/clear state is lost or observed at the wrong time:
   matcher count errors dominate NUTPL.
-- Invocation recording misses calls, causing `Wanted but not invoked:
-  fflib_QualifiedMethod{}` failures.
+- Invocation recording misses calls, causing mock-verification failures.
 - `System.StubProvider` and `Test.createStub` need Salesforce-like method-call
   metadata, argument capture, return dispatch, and exception propagation.
 - Object-key equality and map/set semantics need to preserve Apex object
@@ -330,25 +354,26 @@ Tasks:
   boundaries.
 - Preserve object identity/equality for map and set keys used by mock
   invocations.
-- Add support for common ApexMocks invocation patterns: ordered verification,
-  any-order verification, never/times verification, custom matchers, combined
-  matchers, and exception stubbing.
-- Add focused fixtures modeled on NUTPL ApexMocks classes without copying the
-  entire project into tests.
+- Add support for common mock-framework invocation patterns: ordered
+  verification, any-order verification, never/times verification, custom
+  matchers, combined matchers, and exception stubbing.
+- Add focused generic fixtures modeled on observed enterprise mock-framework
+  patterns without copying an entire project into tests.
 
 Validation:
 
 ```bash
 go test ./internal/vm ./internal/apextest
-go run ./cmd/oaer test --project example-projects/src-nmb-nutpl-develop --filter fflib_AnyOrderTest --json
-go run ./cmd/oaer test --project example-projects/src-nmb-nutpl-develop --filter fflib_InOrderTest --json
+go run ./cmd/oaer test --project example-projects/src-nmb-nutpl-develop --filter AnyOrderTest --json
+go run ./cmd/oaer test --project example-projects/src-nmb-nutpl-develop --filter InOrderTest --json
 ```
 
 Exit criteria:
 
-- NUTPL ApexMocks matcher-count errors are gone.
+- NUTPL mock-framework matcher-count errors are gone.
 - `Wanted but not invoked` failures drop to real assertion mismatches or pass.
-- No new project-specific fflib shortcuts exist in production runtime code.
+- No framework-specific or project-specific shortcuts exist in production
+  runtime code.
 
 #### Phase E3: Compiler And Apex Language Fidelity
 

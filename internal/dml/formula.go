@@ -3,6 +3,7 @@ package dml
 import (
 	"fmt"
 	"html"
+	"math"
 	"regexp"
 	"sort"
 	"strconv"
@@ -23,10 +24,12 @@ const (
 )
 
 type formulaValue struct {
-	kind   formulaKind
-	bool   bool
-	text   string
-	number float64
+	kind      formulaKind
+	bool      bool
+	text      string
+	number    float64
+	fieldType storage.FieldType
+	display   string
 }
 
 func evaluateRecordFormula(formula string, record storage.Record) (bool, bool) {
@@ -150,7 +153,7 @@ func tokenizeFormula(input string) []formulaToken {
 		}
 		if i+1 < len(input) {
 			pair := input[i : i+2]
-			if pair == "&&" || pair == "||" || pair == "!=" || pair == "<>" || pair == "<=" || pair == ">=" {
+			if pair == "&&" || pair == "||" || pair == "==" || pair == "!=" || pair == "<>" || pair == "<=" || pair == ">=" {
 				tokens = append(tokens, formulaToken{typ: formulaTokenSymbol, text: pair})
 				i += 2
 				continue
@@ -220,7 +223,7 @@ func (p *formulaParser) parseComparison() (formulaValue, bool) {
 	}
 	for {
 		op := p.peek().text
-		if p.peek().typ != formulaTokenSymbol || (op != "=" && op != "!=" && op != "<>" && op != "<" && op != ">" && op != "<=" && op != ">=") {
+		if p.peek().typ != formulaTokenSymbol || (op != "=" && op != "==" && op != "!=" && op != "<>" && op != "<" && op != ">" && op != "<=" && op != ">=") {
 			return left, true
 		}
 		p.pos++
@@ -346,7 +349,7 @@ func (p *formulaParser) parsePrimary() (formulaValue, bool) {
 			if !ok {
 				return formulaValue{}, false
 			}
-			return evaluateFormulaFunction(token.text, args)
+			return p.evaluateFormulaFunction(token.text, args)
 		}
 		switch strings.ToUpper(token.text) {
 		case "TRUE":
@@ -464,6 +467,9 @@ func (p *formulaParser) fieldValue(field string) formulaValue {
 	if p.org == nil {
 		return formulaFieldValue(p.record, field)
 	}
+	if field == "$RecordType.Name" || field == "$RecordType.DeveloperName" {
+		return formulaValue{kind: formulaString, text: formulaRecordTypeValue(p.definition, p.record, field)}
+	}
 	if strings.Contains(field, ".") {
 		if value, ok := formulaRelationshipFieldValue(p.org, p.definition, p.record, field, p.evaluating); ok {
 			return value
@@ -473,32 +479,65 @@ func (p *formulaParser) fieldValue(field string) formulaValue {
 		field = resolved
 	}
 	if p.definition.APIName != "" {
-		if fieldDef, ok := p.definition.Fields[field]; ok && fieldDef.Type == storage.FieldCalculated && strings.TrimSpace(fieldDef.Formula) != "" {
-			if p.evaluating == nil {
-				p.evaluating = make(map[string]bool)
+		if fieldDef, ok := p.definition.Fields[field]; ok {
+			if fieldDef.Type == storage.FieldSummary {
+				engine := Engine{Org: p.org}
+				if value, ok := engine.evaluateSummaryField(p.record, fieldDef); ok {
+					return formulaStorageValue(value)
+				}
 			}
-			if p.evaluating[field] {
-				return formulaValue{kind: formulaNull}
+			if fieldDef.Type == storage.FieldCalculated && strings.TrimSpace(fieldDef.Formula) != "" {
+				if p.evaluating == nil {
+					p.evaluating = make(map[string]bool)
+				}
+				if p.evaluating[field] {
+					return formulaValue{kind: formulaNull}
+				}
+				p.evaluating[field] = true
+				nested := formulaParser{
+					tokens:     tokenizeFormula(html.UnescapeString(fieldDef.Formula)),
+					record:     p.record,
+					org:        p.org,
+					definition: p.definition,
+					evaluating: p.evaluating,
+				}
+				value, ok := nested.parseExpression()
+				delete(p.evaluating, field)
+				if ok && nested.peek().typ == formulaTokenEOF {
+					return value
+				}
 			}
-			p.evaluating[field] = true
-			nested := formulaParser{
-				tokens:     tokenizeFormula(html.UnescapeString(fieldDef.Formula)),
-				record:     p.record,
-				org:        p.org,
-				definition: p.definition,
-				evaluating: p.evaluating,
-			}
-			value, ok := nested.parseExpression()
-			delete(p.evaluating, field)
-			if ok && nested.peek().typ == formulaTokenEOF {
-				return value
-			}
+		}
+	}
+	if p.definition.APIName != "" {
+		if fieldDef, ok := p.definition.Fields[field]; ok {
+			return formulaFieldValueForDefinition(p.record, field, fieldDef)
 		}
 	}
 	return formulaFieldValue(p.record, field)
 }
 
-func evaluateFormulaFunction(name string, args []formulaValue) (formulaValue, bool) {
+func formulaRecordTypeValue(definition storage.ObjectDefinition, record storage.Record, field string) string {
+	recordTypeID := ""
+	if value, ok := record.GetField("RecordTypeId"); ok {
+		recordTypeID = strings.TrimSpace(workflowValueString(value))
+	}
+	for _, recordType := range definition.RecordTypes {
+		if recordTypeID != "" && string(recordType.ID) != recordTypeID {
+			continue
+		}
+		if field == "$RecordType.DeveloperName" {
+			return recordType.DeveloperName
+		}
+		if recordType.Name != "" {
+			return recordType.Name
+		}
+		return recordType.DeveloperName
+	}
+	return ""
+}
+
+func (p *formulaParser) evaluateFormulaFunction(name string, args []formulaValue) (formulaValue, bool) {
 	switch strings.ToUpper(name) {
 	case "AND":
 		for _, arg := range args {
@@ -519,16 +558,40 @@ func evaluateFormulaFunction(name string, args []formulaValue) (formulaValue, bo
 			return formulaValue{}, false
 		}
 		return formulaValue{kind: formulaBool, bool: !args[0].truthy()}, true
-	case "ISBLANK", "ISNULL":
+	case "ISBLANK":
 		if len(args) != 1 {
 			return formulaValue{}, false
 		}
 		return formulaValue{kind: formulaBool, bool: args[0].blank()}, true
+	case "ISNULL":
+		if len(args) != 1 {
+			return formulaValue{}, false
+		}
+		return formulaValue{kind: formulaBool, bool: args[0].isNull()}, true
 	case "CONTAINS":
 		if len(args) != 2 {
 			return formulaValue{}, false
 		}
 		return formulaValue{kind: formulaBool, bool: strings.Contains(args[0].asString(), args[1].asString())}, true
+	case "CASE":
+		if len(args) < 4 {
+			return formulaValue{}, false
+		}
+		probe := args[0]
+		hasDefault := len(args)%2 == 0
+		end := len(args)
+		if hasDefault {
+			end--
+		}
+		for i := 1; i+1 < end; i += 2 {
+			if compareFormulaValues(probe, args[i], "=") {
+				return args[i+1], true
+			}
+		}
+		if hasDefault {
+			return args[len(args)-1], true
+		}
+		return formulaValue{kind: formulaNull}, true
 	case "REGEX":
 		if len(args) != 2 {
 			return formulaValue{}, false
@@ -548,11 +611,31 @@ func evaluateFormulaFunction(name string, args []formulaValue) (formulaValue, bo
 			return formulaValue{}, false
 		}
 		return formulaValue{kind: formulaString, text: args[0].asString()}, true
+	case "LOWER":
+		if len(args) != 1 {
+			return formulaValue{}, false
+		}
+		if args[0].isNull() {
+			return formulaValue{kind: formulaNull}, true
+		}
+		return formulaValue{kind: formulaString, text: strings.ToLower(args[0].asString())}, true
+	case "UPPER":
+		if len(args) != 1 {
+			return formulaValue{}, false
+		}
+		if args[0].isNull() {
+			return formulaValue{kind: formulaNull}, true
+		}
+		return formulaValue{kind: formulaString, text: strings.ToUpper(args[0].asString())}, true
 	case "TODAY":
 		if len(args) != 0 {
 			return formulaValue{}, false
 		}
-		return formulaValue{kind: formulaDate, text: time.Now().UTC().Format("2006-01-02")}, true
+		now := time.Now().UTC()
+		if p.org != nil && p.org.Now != nil {
+			now = p.org.Now().UTC()
+		}
+		return formulaValue{kind: formulaDate, text: now.Format("2006-01-02")}, true
 	case "DATE":
 		if len(args) != 3 {
 			return formulaValue{}, false
@@ -587,6 +670,31 @@ func evaluateFormulaFunction(name string, args []formulaValue) (formulaValue, bo
 		default:
 			return formulaValue{kind: formulaNumber, number: float64(date.Year())}, true
 		}
+	case "FLOOR":
+		if len(args) != 1 {
+			return formulaValue{}, false
+		}
+		number, ok := args[0].asNumber()
+		if !ok {
+			return formulaValue{}, false
+		}
+		return formulaValue{kind: formulaNumber, number: math.Floor(number)}, true
+	case "MOD":
+		if len(args) != 2 {
+			return formulaValue{}, false
+		}
+		dividend, ok := args[0].asNumber()
+		if !ok {
+			return formulaValue{}, false
+		}
+		divisor, ok := args[1].asNumber()
+		if !ok {
+			return formulaValue{}, false
+		}
+		if divisor == 0 {
+			return formulaValue{kind: formulaNull}, true
+		}
+		return formulaValue{kind: formulaNumber, number: math.Mod(dividend, divisor)}, true
 	case "LEN":
 		if len(args) != 1 {
 			return formulaValue{}, false
@@ -628,27 +736,43 @@ func formulaRelationshipFieldValue(org *storage.OrgState, definition storage.Obj
 	if resolved, ok := storage.ResolveFieldName(currentDefinition, org.Namespace, last); ok {
 		last = resolved
 	}
-	if fieldDef, ok := currentDefinition.Fields[last]; ok && fieldDef.Type == storage.FieldCalculated && strings.TrimSpace(fieldDef.Formula) != "" {
-		if evaluating == nil {
-			evaluating = make(map[string]bool)
+	if fieldDef, ok := currentDefinition.Fields[last]; ok {
+		if fieldDef.Type == storage.FieldSummary {
+			engine := Engine{Org: org}
+			if value, ok := engine.evaluateSummaryField(currentRecord, fieldDef); ok {
+				return formulaStorageValue(value), true
+			}
 		}
-		key := currentDefinition.APIName + "." + string(currentRecord.ID) + "." + last
-		if evaluating[key] {
-			return formulaValue{kind: formulaNull}, true
+		if fieldDef.Type == storage.FieldCalculated && strings.TrimSpace(fieldDef.Formula) != "" {
+			if evaluating == nil {
+				evaluating = make(map[string]bool)
+			}
+			key := currentDefinition.APIName + "." + string(currentRecord.ID) + "." + last
+			if evaluating[key] {
+				return formulaValue{kind: formulaNull}, true
+			}
+			evaluating[key] = true
+			nested := formulaParser{
+				tokens:     tokenizeFormula(html.UnescapeString(fieldDef.Formula)),
+				record:     currentRecord,
+				org:        org,
+				definition: currentDefinition,
+				evaluating: evaluating,
+			}
+			value, ok := nested.parseExpression()
+			delete(evaluating, key)
+			if ok && nested.peek().typ == formulaTokenEOF {
+				return value, true
+			}
 		}
-		evaluating[key] = true
-		nested := formulaParser{
-			tokens:     tokenizeFormula(html.UnescapeString(fieldDef.Formula)),
-			record:     currentRecord,
-			org:        org,
-			definition: currentDefinition,
-			evaluating: evaluating,
+	}
+	if fieldDef, ok := currentDefinition.Fields[last]; ok && strings.TrimSpace(fieldDef.DefaultValue) != "" {
+		if value, ok := defaultValueForRecordField(org, currentDefinition, currentRecord, fieldDef); ok {
+			return formulaStorageValueForDefinition(value, fieldDef), true
 		}
-		value, ok := nested.parseExpression()
-		delete(evaluating, key)
-		if ok && nested.peek().typ == formulaTokenEOF {
-			return value, true
-		}
+	}
+	if fieldDef, ok := currentDefinition.Fields[last]; ok {
+		return formulaFieldValueForDefinition(currentRecord, last, fieldDef), true
 	}
 	return formulaFieldValue(currentRecord, last), true
 }
@@ -729,6 +853,30 @@ func formulaFieldValue(record storage.Record, field string) formulaValue {
 	if !ok || value.Kind == storage.ValueNull {
 		return formulaValue{kind: formulaNull}
 	}
+	return formulaStorageValue(value)
+}
+
+func formulaFieldValueForDefinition(record storage.Record, field string, fieldDef storage.Field) formulaValue {
+	if field == "Id" {
+		value := formulaFieldValue(record, field)
+		value.fieldType = fieldDef.Type
+		value.display = strings.ToUpper(fieldDef.DisplayType)
+		return value
+	}
+	if record.ExplicitNulls[field] {
+		return formulaValue{kind: formulaNull, fieldType: fieldDef.Type, display: strings.ToUpper(fieldDef.DisplayType)}
+	}
+	value, ok := record.Fields[field]
+	if !ok || value.Kind == storage.ValueNull {
+		return formulaValue{kind: formulaNull, fieldType: fieldDef.Type, display: strings.ToUpper(fieldDef.DisplayType)}
+	}
+	return formulaStorageValueForDefinition(value, fieldDef)
+}
+
+func formulaStorageValue(value storage.Value) formulaValue {
+	if value.Kind == storage.ValueNull {
+		return formulaValue{kind: formulaNull}
+	}
 	switch value.Kind {
 	case storage.ValueString, storage.ValueDateTime:
 		return formulaValue{kind: formulaString, text: value.String}
@@ -751,6 +899,16 @@ func formulaFieldValue(record storage.Record, field string) formulaValue {
 	}
 }
 
+func formulaStorageValueForDefinition(value storage.Value, fieldDef storage.Field) formulaValue {
+	out := formulaStorageValue(value)
+	out.fieldType = fieldDef.Type
+	out.display = strings.ToUpper(fieldDef.DisplayType)
+	if out.kind == formulaNumber && out.display == "PERCENT" {
+		out.number = out.number / 100
+	}
+	return out
+}
+
 func validationFieldBlank(record storage.Record, field string) bool {
 	return formulaFieldValue(record, field).blank()
 }
@@ -760,12 +918,22 @@ func validationFieldEquals(record storage.Record, field, want string) bool {
 }
 
 func compareFormulaValues(left, right formulaValue, op string) bool {
+	if left.kind == formulaNull || right.kind == formulaNull {
+		switch op {
+		case "=":
+			return left.kind == formulaNull && right.kind == formulaNull
+		case "!=", "<>":
+			return left.kind != right.kind
+		default:
+			return false
+		}
+	}
 	if (left.kind == formulaNumber || right.kind == formulaNumber) && left.kind != formulaNull && right.kind != formulaNull {
 		ln, lok := left.asNumber()
 		rn, rok := right.asNumber()
 		if lok && rok {
 			switch op {
-			case "=":
+			case "=", "==":
 				return ln == rn
 			case "!=", "<>":
 				return ln != rn
@@ -784,7 +952,7 @@ func compareFormulaValues(left, right formulaValue, op string) bool {
 		lb := left.truthy()
 		rb := right.truthy()
 		switch op {
-		case "=":
+		case "=", "==":
 			return lb == rb
 		case "!=", "<>":
 			return lb != rb
@@ -795,7 +963,7 @@ func compareFormulaValues(left, right formulaValue, op string) bool {
 	ls := left.asString()
 	rs := right.asString()
 	switch op {
-	case "=":
+	case "=", "==":
 		return ls == rs
 	case "!=", "<>":
 		return ls != rs
@@ -827,6 +995,13 @@ func (v formulaValue) truthy() bool {
 
 func (v formulaValue) blank() bool {
 	return v.kind == formulaNull || (v.kind == formulaString && v.text == "")
+}
+
+func (v formulaValue) isNull() bool {
+	if v.fieldType == storage.FieldString || v.fieldType == storage.FieldReference {
+		return false
+	}
+	return v.kind == formulaNull
 }
 
 func (v formulaValue) asString() string {

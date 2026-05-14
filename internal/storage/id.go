@@ -13,9 +13,34 @@ func (id ID) String() string {
 	return string(id)
 }
 
+func IDsEqual(left, right ID) bool {
+	leftText := string(left)
+	rightText := string(right)
+	if len(leftText) >= 15 && len(rightText) >= 15 {
+		return strings.EqualFold(leftText[:15], rightText[:15])
+	}
+	return leftText == rightText
+}
+
+func LookupRecordByID(records map[ID]Record, id ID) (ID, Record, bool) {
+	if records == nil || id == "" {
+		return "", Record{}, false
+	}
+	if record, ok := records[id]; ok {
+		return id, record, true
+	}
+	for storedID, record := range records {
+		if IDsEqual(storedID, id) {
+			return storedID, record, true
+		}
+	}
+	return "", Record{}, false
+}
+
 type IDGenerator struct {
 	Prefixes  map[string]string
 	Sequences map[string]uint64
+	Offset    uint64
 }
 
 func NewIDGenerator(prefixes map[string]string) IDGenerator {
@@ -23,6 +48,12 @@ func NewIDGenerator(prefixes map[string]string) IDGenerator {
 		Prefixes:  copyStringMap(prefixes),
 		Sequences: make(map[string]uint64),
 	}
+}
+
+func NewRuntimeIDGenerator(prefixes map[string]string) IDGenerator {
+	g := NewIDGenerator(prefixes)
+	g.Offset = 1000000
+	return g
 }
 
 func (g *IDGenerator) Next(objectName string) (ID, error) {
@@ -35,7 +66,7 @@ func (g *IDGenerator) Next(objectName string) (ID, error) {
 	}
 	next := g.Sequences[objectName] + 1
 	g.Sequences[objectName] = next
-	return ID(prefix + leftPadBase36(next, 12)), nil
+	return ID(prefix + leftPadBase36(next+g.Offset, 12)), nil
 }
 
 func AssignDeterministicPrefixes(objectNames []string, explicit map[string]string) map[string]string {

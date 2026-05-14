@@ -1,6 +1,6 @@
 # Comprehensive Apex Parity Follow-Up Plan
 
-Status date: 2026-05-07.
+Status date: 2026-05-14.
 
 This plan follows `docs/LOCAL_APEX_TEST_EXECUTION_PLAN.md`. The local-test plan
 is the near-term product path: make the six enterprise example projects run
@@ -9,11 +9,12 @@ tracks the work needed for `oaer` to become a comprehensive Apex compatibility
 runtime and tooling stack, beyond the first local-test claim.
 
 Current checkpoint: `src-nmb-nutpl-develop` is the first green
-example-project runtime sentinel at `total=761 pass=761`, while the remaining
-five checked example projects still have compile-gap frontiers tracked in
-`docs/fixtures/local-tests-example-projects.json`. Keep this plan behind the
-local-test closure work until all six example projects have bounded green or
-explicitly accepted outcomes.
+example-project runtime sentinel at `total=761 pass=761`. The active
+local-test closure target is now `sf-cred-pkg-develop`; the May 14, 2026
+runtime baseline is `total=4268 pass=2993 unsupported=157 runtimeGap=594
+assertFail=524 compileError=0 internalError=0`. Keep this plan behind the
+local-test closure work until the active example-project blocker frontier is
+green or explicitly accepted.
 
 The goal is not to clone every Salesforce service. The goal is to make public
 Apex language behavior, public platform APIs, metadata-driven data behavior, and
@@ -447,7 +448,7 @@ The fastest practical path is:
 
 1. Finish the enterprise example-project runtime plan.
 2. Stabilize corpus baselines and timeout-safe reporting.
-3. Clear ApexMocks/dynamic proxy, compiler syntax, and standard schema token
+3. Clear dynamic proxy, compiler syntax, and standard schema token
    blockers because they unblock many failures at once.
 4. Drive SOQL/DML/test-isolation gaps from broad project baselines.
 5. Add declarative automation and platform API depth.

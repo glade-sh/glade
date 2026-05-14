@@ -17,6 +17,7 @@ func EnsureStandardObjectFieldsForFeatures(definition *ObjectDefinition, feature
 	if definition == nil {
 		return
 	}
+	stateAndCountryPicklistEnabled := hasCanonicalFeature(features, "StateAndCountryPicklist")
 	if definition.Fields == nil {
 		definition.Fields = make(map[string]Field)
 	}
@@ -36,6 +37,9 @@ func EnsureStandardObjectFieldsForFeatures(definition *ObjectDefinition, feature
 	}
 	for _, field := range fields {
 		ensureStandardRelationship(definition, field)
+	}
+	if !stateAndCountryPicklistEnabled {
+		removeStateAndCountryPicklistFields(definition)
 	}
 	for _, field := range definition.Fields {
 		ensureStandardRelationship(definition, field)
@@ -223,8 +227,8 @@ func standardFieldsForObject(objectName string) []Field {
 			{APIName: "NamespacePrefix", Label: "Namespace Prefix", Type: FieldString},
 			{APIName: "OwnerId", Label: "Owner ID", Type: FieldReference, ReferenceTo: []string{"User"}},
 			{APIName: "Subject", Label: "Subject", Type: FieldString},
-			{APIName: "TemplateStyle", Label: "Template Style", Type: FieldString},
-			{APIName: "TemplateType", Label: "Template Type", Type: FieldString},
+			{APIName: "TemplateStyle", Label: "Template Style", Type: FieldString, DefaultValue: "none"},
+			{APIName: "TemplateType", Label: "Template Type", Type: FieldString, DefaultValue: "text"},
 			{APIName: "TimesUsed", Label: "Times Used", Type: FieldInteger},
 		}
 	case stringsEqualFold(objectName, "KnowledgeArticleVersion") || stringsHasSuffixFold(objectName, "__kav"):
@@ -259,6 +263,7 @@ func standardFieldsForObject(objectName string) []Field {
 	case stringsHasSuffixFold(objectName, "__c"):
 		return []Field{
 			{APIName: "Name", Label: "Name", Type: FieldString},
+			{APIName: "LastActivityDate", Label: "Last Activity", Type: FieldDate, DisplayType: "DATE"},
 			{APIName: "RecordTypeId", Label: "Record Type ID", Type: FieldReference, ReferenceTo: []string{"RecordType"}, RelationshipName: "RecordType"},
 		}
 	default:
@@ -434,6 +439,11 @@ func applyStandardObjectCompatibilityOverlays(definition *ObjectDefinition) {
 		ensureReferenceTarget(definition, "FolderId", "User")
 	case stringsEqualFold(definition.APIName, "ContentVersion"):
 		allowGeneratedContentDocument(definition)
+	case stringsEqualFold(definition.APIName, "Case"):
+		markFieldOptional(definition, "BusinessHoursId")
+	case stringsEqualFold(definition.APIName, "EmailTemplate"):
+		ensureFieldDefault(definition, "TemplateStyle", "none")
+		ensureFieldDefault(definition, "TemplateType", "text")
 	}
 }
 
@@ -448,12 +458,29 @@ func markFieldRequired(definition *ObjectDefinition, fieldName string) {
 }
 
 func allowGeneratedContentDocument(definition *ObjectDefinition) {
-	field, ok := definition.Fields["ContentDocumentId"]
+	markFieldOptional(definition, "ContentDocumentId")
+}
+
+func markFieldOptional(definition *ObjectDefinition, fieldName string) {
+	resolved, ok := ResolveFieldName(*definition, "", fieldName)
 	if !ok {
 		return
 	}
+	field := definition.Fields[resolved]
 	field.Required = false
-	definition.Fields["ContentDocumentId"] = field
+	definition.Fields[resolved] = field
+}
+
+func ensureFieldDefault(definition *ObjectDefinition, fieldName string, defaultValue string) {
+	resolved, ok := ResolveFieldName(*definition, "", fieldName)
+	if !ok {
+		return
+	}
+	field := definition.Fields[resolved]
+	if field.DefaultValue == "" {
+		field.DefaultValue = defaultValue
+		definition.Fields[resolved] = field
+	}
 }
 
 func ensureReferenceTarget(definition *ObjectDefinition, fieldName string, targetName string) {
@@ -574,6 +601,27 @@ func canonicalFeatureName(feature string) string {
 	default:
 		return feature
 	}
+}
+
+func hasCanonicalFeature(features []string, want string) bool {
+	for _, feature := range features {
+		if canonicalFeatureName(feature) == want {
+			return true
+		}
+	}
+	return false
+}
+
+func removeStateAndCountryPicklistFields(definition *ObjectDefinition) {
+	for fieldName := range definition.Fields {
+		if isStateAndCountryPicklistField(fieldName) {
+			delete(definition.Fields, fieldName)
+		}
+	}
+}
+
+func isStateAndCountryPicklistField(fieldName string) bool {
+	return strings.HasSuffix(fieldName, "StateCode") || strings.HasSuffix(fieldName, "CountryCode")
 }
 
 func stringsEqualFold(left, right string) bool {

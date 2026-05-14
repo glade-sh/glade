@@ -336,6 +336,26 @@ func TestServerExampleSchemaAddsPublicAccountStandardFields(t *testing.T) {
 	}
 }
 
+func TestServerExampleSchemaMapsLocationFields(t *testing.T) {
+	org := storage.NewOrgState()
+	applyServerExampleSchema(&org, schema.Schema{Objects: []schema.Object{{
+		Name: "Account",
+		Fields: []schema.Field{{
+			Name: "pkg__PrimaryLocation__c",
+			Type: "Location",
+		}},
+	}}})
+
+	account := org.Objects["Account"]
+	field, ok := account.Definition.Fields["pkg__PrimaryLocation__c"]
+	if !ok || field.Type != storage.FieldLocation {
+		t.Fatalf("PrimaryLocation field = %#v, %v", field, ok)
+	}
+	if resolved, ok := storage.ResolveFieldName(account.Definition, org.Namespace, "PrimaryLocation__Latitude__s"); !ok || resolved != "pkg__PrimaryLocation__Latitude__s" {
+		t.Fatalf("resolve latitude = %q, %v", resolved, ok)
+	}
+}
+
 func TestServerExampleSchemaAddsEmailTemplateStandardObject(t *testing.T) {
 	org := storage.NewOrgState()
 	applyServerExampleSchema(&org, schema.Schema{})

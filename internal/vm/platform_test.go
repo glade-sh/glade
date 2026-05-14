@@ -67,6 +67,37 @@ System.assertEquals(1, Limits.getDMLRows());
 	}
 }
 
+func TestExecAssertIsInstanceOfType(t *testing.T) {
+	program, err := CompileAnonymous(`
+Object account = new Account(Name = 'Acme');
+Assert.isInstanceOfType(account, Account.class);
+Assert.isInstanceOfType(account, SObject.class, 'account is sobject');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+	failProgram, err := CompileAnonymous(`
+Object account = new Account(Name = 'Acme');
+Assert.isInstanceOfType(account, Contact.class, 'wrong type');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine = New(nil)
+	machine.SetOrg(&org)
+	_, err = machine.Execute(failProgram)
+	var runtimeErr *RuntimeError
+	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "System.AssertException" || !strings.Contains(runtimeErr.Message, "wrong type") {
+		t.Fatalf("expected AssertException wrong type, got %v", err)
+	}
+}
+
 func TestExecBuiltinConstructorsAreCaseInsensitive(t *testing.T) {
 	program, err := CompileAnonymous(`
 HttpRequest req = new httprequest();
@@ -76,6 +107,8 @@ System.assertEquals('GET', req.getMethod());
 
 PageReference page = new pagereference('/apex/Home');
 System.assertEquals('/apex/Home', page.getUrl());
+ApexPages.PageReference apexPage = new ApexPages.PageReference('/apex/Alias');
+System.assertEquals('/apex/Alias', apexPage.getUrl());
 
 Messaging.SingleEmailMessage email = new messaging.singleemailmessage();
 email.setSubject('Hello');
@@ -842,8 +875,12 @@ ApexPages.Message withoutDetail = new ApexPages.Message('INFO', 'Only summary');
 System.assertEquals('Only summary', withoutDetail.getDetail());
 ApexPages.addMessage(withDetail);
 ApexPages.addMessage(new ApexPages.message(ApexPages.Severity.Error, 'Lowercase constructor'));
+ApexPages.addMessage(withoutDetail);
 System.assert(ApexPages.hasMessages());
-System.assertEquals(2, ApexPages.getMessages().size());
+System.assert(ApexPages.hasMessages(ApexPages.Severity.ERROR));
+System.assert(ApexPages.hasMessages(ApexPages.Severity.Info));
+System.assert(!ApexPages.hasMessages(ApexPages.Severity.WARNING));
+System.assertEquals(3, ApexPages.getMessages().size());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -865,7 +902,26 @@ System.assertEquals(0, blank.getHeaders().size());
 blank.getParameters().put('id', '001B000001DVM9t');
 blank.getHeaders().put('Accept', 'text/html');
 System.assertEquals('001B000001DVM9t', blank.getParameters().get('id'));
+System.assertEquals('?id=001B000001DVM9t', blank.getUrl());
 System.assertEquals('text/html', blank.getHeaders().get('Accept'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecPageReferenceParametersPreserveIDText(t *testing.T) {
+	program, err := CompileAnonymous(`
+Id recordId = Id.valueOf('001000000000001');
+String assigned = recordId;
+System.assertEquals('001000000000001AAA', assigned);
+PageReference page = new PageReference('/apex/Order');
+page.getParameters().put('recordId', recordId);
+System.assertEquals('001000000000001AAA', page.getParameters().get('recordId'));
+System.assertEquals('/apex/Order?recordId=001000000000001AAA', page.getUrl());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -891,11 +947,13 @@ System.assertEquals('1', option.getValue());
 System.assertEquals('One', option.getLabel());
 System.assert(option.getDisabled());
 System.assertEquals(false, option.getEscapeItem());
+System.assertEquals(new SelectOption('1', 'One', true, false), option);
 option.setLabel('Changed');
 option.setDisabled(false);
 System.assertEquals('Changed', option.getLabel());
 System.assertEquals(false, option.getDisabled());
 ApexPages.StandardSetController setController = new ApexPages.StandardSetController(new List<Account>{account, new Account(Name = 'Second')});
+System.assertEquals(2, setController.getResultSize());
 setController.setPageSize(1);
 System.assertEquals(1, setController.getRecords().size());
 System.assert(setController.getHasNext());
@@ -908,8 +966,25 @@ System.assert(setController.getHasPrevious());
 	}
 	machine := New(nil)
 	org := testDataOrg()
+	storage.EnsureStandardObject(&org, "User")
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSelectOptionAcceptsIdValues(t *testing.T) {
+	program, err := CompileAnonymous(`
+Id accountId = '001B000001DVM9t';
+SelectOption option = new SelectOption(accountId, accountId);
+System.assertEquals('001B000001DVM9tIAH', option.getValue());
+System.assertEquals('001B000001DVM9tIAH', option.getLabel());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
@@ -1058,6 +1133,7 @@ System.assertEquals(true, msg.getBccSender());
 System.assertEquals(0, msg.getFileAttachments().size());
 Messaging.SingleEmailMessage second = new Messaging.SingleEmailMessage();
 second.setToAddresses(new List<String>{'second@example.test'});
+second.setPlainTextBody('Second body');
 List<Messaging.SendEmailResult> results = Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{msg, second}, false);
 System.assertEquals(1, Limits.getEmailInvocations());
 System.assertEquals(2, results.size());
@@ -1148,6 +1224,16 @@ Messaging.SingleEmailMessage merged = Messaging.renderStoredEmailTemplate('00X00
 System.assertEquals('Hello Ada at Acme', merged.getSubject());
 System.assertEquals('<p>Ada Trail / Acme</p>', merged.getHtmlBody());
 System.assertEquals('Ada Trail / Acme', merged.getPlainTextBody());
+Id whoId = '003000000000001AAA';
+Id whatId = '001000000000001AAA';
+Messaging.SingleEmailMessage mergedFromIds = Messaging.renderStoredEmailTemplate('00X000000000003AAA', whoId, whatId);
+System.assertEquals('<p>Ada Trail / Acme</p>', mergedFromIds.getHtmlBody());
+try {
+	Messaging.renderStoredEmailTemplate('00X000000000099AAA', null, null);
+	System.assert(false);
+} catch (Exception e) {
+	System.assert(e.getMessage().contains('Email template not found'));
+}
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1220,7 +1306,7 @@ System.assertEquals('Ada Trail / Acme', merged.getPlainTextBody());
 		{
 			name: "missing-template",
 			src:  `Messaging.renderStoredEmailTemplate('00X000000000099AAA', null, null);`,
-			want: `Email template not found: 00X000000000099AAA`,
+			want: `EmailException: Email template not found: 00X000000000099AAA`,
 		},
 		{
 			name: "template-id-type",
@@ -1259,15 +1345,23 @@ direct.setSaveAsActivity(true);
 direct.setEntityAttachments(new List<String>{'015000000000001AAA'});
 direct.setDocumentAttachments(new List<String>{'015000000000002AAA'});
 
-Messaging.SingleEmailMessage templated = new Messaging.SingleEmailMessage();
-templated.setToAddresses(new List<String>{'template@example.test'});
-templated.setTemplateId('00X000000000003AAA');
-templated.setTargetObjectId('003000000000001AAA');
-templated.setWhatId('001000000000001AAA');
+	Messaging.SingleEmailMessage templated = new Messaging.SingleEmailMessage();
+	templated.setToAddresses(new List<String>{'template@example.test'});
+	templated.setTemplateId('00X000000000003AAA');
+	templated.setTargetObjectId('003000000000001AAA');
+	templated.setWhatId('001000000000001AAA');
+	Messaging.SingleEmailMessage templatedWithProperties = new Messaging.SingleEmailMessage();
+	templatedWithProperties.ToAddresses = new List<String>{'property-template@example.test'};
+	templatedWithProperties.TemplateId = (Id)'00X000000000003AAA';
+	templatedWithProperties.TargetObjectId = (Id)'003000000000001AAA';
+	templatedWithProperties.WhatId = (Id)'001000000000001AAA';
 
-List<Messaging.SendEmailResult> results = Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{direct, templated});
-System.assertEquals(2, results.size());
-`)
+	List<Messaging.SendEmailResult> results = Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{direct, templated, templatedWithProperties});
+	System.assertEquals(3, results.size());
+	System.assertEquals('Hello Ada at Acme', templatedWithProperties.Subject);
+	System.assertEquals('<p>Ada Trail / Acme</p>', templatedWithProperties.HtmlBody);
+	System.assertEquals('Ada Trail / Acme', templatedWithProperties.PlainTextBody);
+	`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1278,7 +1372,7 @@ System.assertEquals(2, results.size());
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(result.CapturedEmails) != 2 {
+	if len(result.CapturedEmails) != 3 {
 		t.Fatalf("captured emails = %#v", result.CapturedEmails)
 	}
 	first := result.CapturedEmails[0]
@@ -1294,6 +1388,10 @@ System.assertEquals(2, results.size());
 	second := result.CapturedEmails[1]
 	if second.TemplateID != "00X000000000003AAA" || second.Subject != "Hello Ada at Acme" || second.HTMLBody != "<p>Ada Trail / Acme</p>" || second.PlainTextBody != "Ada Trail / Acme" {
 		t.Fatalf("templated capture = %#v", second)
+	}
+	third := result.CapturedEmails[2]
+	if third.TemplateID != "00X000000000003AAA" || third.TargetObjectID != "003000000000001AAA" || third.WhatID != "001000000000001AAA" {
+		t.Fatalf("property templated capture = %#v", third)
 	}
 }
 
@@ -1625,6 +1723,7 @@ System.assertEquals(0, emptyResults.size());
 
 Messaging.SingleEmailMessage single = new Messaging.SingleEmailMessage();
 single.setToAddresses(new List<String>{'single@example.test'});
+single.setPlainTextBody('Single body');
 Messaging.MassEmailMessage mass = new Messaging.MassEmailMessage();
 mass.setTargetObjectIds(new List<String>{'003000000000001'});
 mass.setTemplateId('00X000000000001');
@@ -1676,12 +1775,37 @@ System.assertEquals(0, mixedResults.get(1).getErrors().size());
 	}
 }
 
+func TestExecMessagingSendEmailInvalidSingleEmailHonorsAllOrNothing(t *testing.T) {
+	program, err := CompileAnonymous(`
+Messaging.SingleEmailMessage invalid = new Messaging.SingleEmailMessage();
+invalid.setToAddresses(new List<String>{'missing-body@example.test'});
+try {
+	Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{invalid});
+	System.assert(false, 'Expected EmailException');
+} catch (System.EmailException e) {
+}
+System.assertEquals(0, Limits.getEmailInvocations());
+List<Messaging.SendEmailResult> results = Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{invalid}, false);
+System.assertEquals(1, Limits.getEmailInvocations());
+System.assertEquals(false, results[0].isSuccess());
+System.assertEquals(1, results[0].getErrors().size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecHttpResponseAndSendEmailResultDefaults(t *testing.T) {
 	program, err := CompileAnonymous(`
 HttpResponse response = new HttpResponse();
 System.assertEquals(200, response.getStatusCode());
 System.assertEquals('OK', response.getStatus());
 System.assertEquals('', response.getBody());
+response.setBody('<response><status>ok</status></response>');
+System.assertEquals('response', response.getBodyDocument().getRootElement().getName());
 System.assertEquals(0, response.getHeaderKeys().size());
 System.assertEquals(null, response.getHeader('missing'));
 
@@ -1744,11 +1868,21 @@ func TestExecTestInstallInvokesInstallHandler(t *testing.T) {
 Test.testInstall(new InstallScript(), null);
 Account account = [SELECT Id, Name FROM Account WHERE Name = 'Installed'];
 System.assertEquals('Installed', account.Name);
+Test.testInstall(new InstallScript(), new Version(1, 47, 0), false);
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
-	onInstall, err := CompileAnonymous(`insert new Account(Name = 'Installed');`)
+	onInstall, err := CompileAnonymous(`
+if (context.previousVersion() == null) {
+	insert new Account(Name = 'Installed');
+} else {
+	System.assert(context.previousVersion().compareTo(new Version(1, 47, 1)) < 0);
+	System.assertEquals('1.47.0', context.previousVersion().toString());
+	System.assert(!context.isPush());
+	System.assertEquals(null, context.installerId);
+}
+`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1776,17 +1910,54 @@ System.assertEquals('Installed', account.Name);
 	}
 }
 
-func TestExecTestSetMockRejectsUnsupportedMockType(t *testing.T) {
-	program, err := CompileAnonymous(`Test.setMock('WebServiceMock', new MockResponse());`)
+func TestExecWebServiceCalloutMockInvokesDoInvoke(t *testing.T) {
+	program, err := CompileAnonymous(`
+Test.setMock('WebServiceMock', new MockResponse());
+Map<String, Object> response = new Map<String, Object>();
+WebServiceCallout.invoke(
+  new Object(),
+  'request',
+  response,
+  new String[]{'https://example.test', 'soapAction', 'requestNS', 'requestName', 'responseNS', 'responseName', 'ResponseType'}
+);
+System.assertEquals('ResponseType', response.get('response_x'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	doInvoke, err := CompileAnonymous(`response.put('response_x', responseType);`)
 	if err != nil {
 		t.Fatal(err)
 	}
 	machine := New(nil)
 	machine.EnableTestContext()
-	_, err = machine.Execute(program)
-	var runtimeErr *RuntimeError
-	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != `unsupported call "Test.setMock WebServiceMock mock surface"` {
-		t.Fatalf("err = %#v, want UnsupportedFeature WebServiceMock", err)
+	if err := machine.RegisterClass(Class{
+		Name:       "MockResponse",
+		Interfaces: []string{"WebServiceMock"},
+		Methods: map[string]Method{
+			"doInvoke": {
+				Name:       "MockResponse.doInvoke",
+				ClassName:  "MockResponse",
+				ReturnType: "void",
+				Params: []Param{
+					{Name: "stub", Type: "Object"},
+					{Name: "request", Type: "Object"},
+					{Name: "response", Type: "Map<String,Object>"},
+					{Name: "endpoint", Type: "String"},
+					{Name: "soapAction", Type: "String"},
+					{Name: "requestName", Type: "String"},
+					{Name: "responseNS", Type: "String"},
+					{Name: "responseName", Type: "String"},
+					{Name: "responseType", Type: "String"},
+				},
+				Program: doInvoke,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = machine.Execute(program); err != nil {
+		t.Fatalf("err = %v", err)
 	}
 }
 
@@ -1834,6 +2005,22 @@ System.assert(iterator.hasNext());
 Account row = iterator.next();
 System.assertEquals('Acme', row.Name);
 System.assert(!iterator.hasNext());
+Iterable<Account> typedIterable = (Iterable<Account>)locator;
+Database.QueryLocator typedLocator = (Database.QueryLocator)typedIterable;
+System.assertEquals('SELECT Id, Name FROM Account', typedLocator.getQuery());
+Integer typedCount = 0;
+for (Account typedRow : typedIterable) {
+  typedCount++;
+  System.assertEquals('Acme', typedRow.Name);
+}
+System.assertEquals(1, typedCount);
+Iterable<Object> objectIterable = (Iterable<Object>)locator;
+Integer objectCount = 0;
+for (Object objectRow : objectIterable) {
+  objectCount++;
+  System.assertNotEquals(null, objectRow);
+}
+System.assertEquals(1, objectCount);
 
 Object inlineLocator = Database.getQueryLocator([SELECT Id, Name FROM Account]);
 Object inlineIterator = inlineLocator.iterator();
@@ -1895,6 +2082,37 @@ System.assertEquals(4, Limits.getDmlStatements());
 	}
 }
 
+func TestExecDatabaseRollbackPreservesAutoNumberSequence(t *testing.T) {
+	program, err := CompileAnonymous(`
+insert new Ticket__c();
+System.Savepoint sp = Database.setSavepoint();
+insert new Ticket__c();
+Database.rollback(sp);
+insert new Ticket__c();
+List<Ticket__c> rows = [SELECT Name FROM Ticket__c ORDER BY Name];
+System.assertEquals('T-0001', rows[0].Name);
+System.assertEquals('T-0003', rows[1].Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Objects["Ticket__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Ticket__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString, AutoNumber: true, DisplayFormat: "T-{0000}"},
+			},
+		},
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecRollbackInvalidatesLaterSavepoints(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.Savepoint first = Database.setSavepoint();
@@ -1950,6 +2168,80 @@ System.assertEquals(2, Limits.getDmlStatements());
 	org := testDataOrg()
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecTestSetCreatedDateUpdatesStoredSystemField(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'Backdated');
+insert account;
+Test.setCreatedDate(account.Id, Datetime.newInstanceGmt(2026, 1, 2, 3, 4, 5));
+Account row = [SELECT Id, CreatedDate FROM Account WHERE Id = :account.Id];
+System.assertEquals('2026-01-02T03:04:05Z', row.CreatedDate.format());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStopTestDoesNotDrainChainedAsyncJobs(t *testing.T) {
+	queueProgram, err := CompileAnonymous(`Database.executeBatch(new BatchWorker(), 200);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	startProgram, err := CompileAnonymous(`return new List<SObject>{ new Account(Name = 'scope') };`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	executeProgram, err := CompileAnonymous(`insert new Account(Name = 'batch execute');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	finishProgram, err := CompileAnonymous(`insert new Account(Name = 'batch finish');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Test.startTest();
+System.enqueueJob(new QueueWorker());
+Test.stopTest();
+System.assertEquals(0, [SELECT Id FROM Account WHERE Name = 'batch execute'].size());
+System.assertEquals(0, [SELECT Id FROM Account WHERE Name = 'batch finish'].size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name: "QueueWorker",
+		Methods: map[string]Method{
+			"execute": {Name: "QueueWorker.execute", ClassName: "QueueWorker", ReturnType: "void", Program: queueProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "BatchWorker",
+		Methods: map[string]Method{
+			"start":   {Name: "BatchWorker.start", ClassName: "BatchWorker", ReturnType: "Iterable<SObject>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: startProgram},
+			"execute": {Name: "BatchWorker.execute", ClassName: "BatchWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<SObject>"}}, Program: executeProgram},
+			"finish":  {Name: "BatchWorker.finish", ClassName: "BatchWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: finishProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
@@ -2285,17 +2577,227 @@ Test.stopTest();
 	}
 }
 
-func TestExecAbortJobCompletedAndUnknownRecordsAreTypedUnsupported(t *testing.T) {
+func TestExecAbortJobCompletedRecordsAreIdempotent(t *testing.T) {
+	program, err := CompileAnonymous(`Test.startTest(); String id = System.enqueueJob(new QueueWorker()); Test.stopTest(); System.abortJob(id);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{Name: "QueueWorker"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterMethod(Method{Name: "QueueWorker.execute", ClassName: "QueueWorker"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+	for id, record := range org.Objects["AsyncApexJob"].Records {
+		status := record.Fields["Status"]
+		if status.Kind != storage.ValueString || status.String != "Aborted" {
+			t.Fatalf("job %s status = %#v, want Aborted", id, status)
+		}
+	}
+}
+
+func TestExecBatchWithEmptyStartSkipsExecuteAndRunsFinish(t *testing.T) {
+	startProgram, err := CompileAnonymous(`return new List<SObject>();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	executeProgram, err := CompileAnonymous(`insert new Account(Name = 'executed');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	finishProgram, err := CompileAnonymous(`insert new Account(Name = 'finished');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Test.startTest();
+Database.executeBatch(new BatchWorker(), 200);
+Test.stopTest();
+System.assertEquals(0, [SELECT Id FROM Account WHERE Name = 'executed'].size());
+System.assertEquals(1, [SELECT Id FROM Account WHERE Name = 'finished'].size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name: "BatchWorker",
+		Methods: map[string]Method{
+			"start":   {Name: "BatchWorker.start", ClassName: "BatchWorker", ReturnType: "Iterable<SObject>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: startProgram},
+			"execute": {Name: "BatchWorker.execute", ClassName: "BatchWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<SObject>"}}, Program: executeProgram},
+			"finish":  {Name: "BatchWorker.finish", ClassName: "BatchWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: finishProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecFailedBatchPublishesBatchApexErrorEventTrigger(t *testing.T) {
+	startProgram, err := CompileAnonymous(`return new List<SObject>{ new Account(Id = '001000000000001', Name = 'failed') };`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	executeProgram, err := CompileAnonymous(`throw new Exception('batch failed');`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	triggerProgram, err := CompileAnonymous(`
+for (BatchApexErrorEvent eventRecord : (List<BatchApexErrorEvent>)Trigger.new) {
+	insert new Account(
+		Name = 'batch error',
+		External_Key__c = eventRecord.JobScope,
+		Description = eventRecord.Phase
+	);
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+try {
+	Test.startTest();
+	Database.executeBatch(new BatchWorker(), 200);
+	Test.stopTest();
+} catch (Exception e) {
+}
+Test.getEventBus().deliver();
+Account logged = [SELECT External_Key__c, Description FROM Account WHERE Name = 'batch error'];
+System.assertEquals('001000000000001', logged.External_Key__c);
+System.assertEquals('EXECUTE', logged.Description);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["External_Key__c"] = storage.Field{APIName: "External_Key__c", Type: storage.FieldString}
+	account.Definition.Fields["Description"] = storage.Field{APIName: "Description", Type: storage.FieldString}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name: "BatchWorker",
+		Methods: map[string]Method{
+			"start":   {Name: "BatchWorker.start", ClassName: "BatchWorker", ReturnType: "Iterable<SObject>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: startProgram},
+			"execute": {Name: "BatchWorker.execute", ClassName: "BatchWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}, {Name: "scope", Type: "List<SObject>"}}, Program: executeProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "BatchApexErrorEventTrigger",
+		Object:    "BatchApexErrorEvent",
+		Timing:    triggerTimingAfter,
+		Operation: "insert",
+		Program:   triggerProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecAsyncApexJobRecordsIncludeSystemTimestamps(t *testing.T) {
+	program, err := CompileAnonymous(`
+Test.startTest();
+String id = System.enqueueJob(new QueueWorker());
+Test.stopTest();
+AsyncApexJob job = [SELECT Id, CreatedDate FROM AsyncApexJob WHERE Id = :id];
+System.assertNotEquals(null, job.CreatedDate);
+System.assertNotEquals('', job.CreatedDate.format());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{Name: "QueueWorker"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterMethod(Method{Name: "QueueWorker.execute", ClassName: "QueueWorker"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecTestEventBusDeliverIsLocalNoop(t *testing.T) {
+	program, err := CompileAnonymous(`
+Test.getEventBus().deliver();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecBatchFinishSeesCompletedAsyncApexJob(t *testing.T) {
+	startProgram, err := CompileAnonymous(`return new List<SObject>();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	finishProgram, err := CompileAnonymous(`
+AsyncApexJob job = [SELECT Id, Status, CompletedDate FROM AsyncApexJob WHERE Id = :context.getJobId()];
+System.assertEquals('Completed', job.Status);
+System.assertNotEquals(null, job.CompletedDate);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Test.startTest();
+Database.executeBatch(new BatchWorker(), 200);
+Test.stopTest();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name: "BatchWorker",
+		Methods: map[string]Method{
+			"start":  {Name: "BatchWorker.start", ClassName: "BatchWorker", ReturnType: "Iterable<SObject>", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: startProgram},
+			"finish": {Name: "BatchWorker.finish", ClassName: "BatchWorker", ReturnType: "void", Params: []Param{{Name: "context", Type: "Database.BatchableContext"}}, Program: finishProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecAbortJobUnknownRecordsAreTypedUnsupported(t *testing.T) {
 	cases := []struct {
 		name string
 		src  string
 		want string
 	}{
-		{
-			name: "completed",
-			src:  `Test.startTest(); String id = System.enqueueJob(new QueueWorker()); Test.stopTest(); System.abortJob(id);`,
-			want: `unsupported call "System.abortJob completed local async records"`,
-		},
 		{
 			name: "unknown",
 			src:  `System.abortJob('707000000999999');`,
@@ -2334,11 +2836,6 @@ func TestExecAsyncUnsupportedEdgesAreTyped(t *testing.T) {
 		want string
 	}{
 		{
-			name: "enqueue async options",
-			src:  `System.enqueueJob(new QueueWorker(), new AsyncOptions());`,
-			want: `unsupported call "System.enqueueJob AsyncOptions overload"`,
-		},
-		{
 			name: "async options getter",
 			src:  `AsyncOptions opts = new AsyncOptions(); opts.getMaximumQueueableStackDepth();`,
 			want: `unsupported call "AsyncOptions.getMaximumQueueableStackDepth local async options surface"`,
@@ -2352,11 +2849,6 @@ func TestExecAsyncUnsupportedEdgesAreTyped(t *testing.T) {
 			name: "async info",
 			src:  `AsyncInfo.getCurrentQueueableStackDepth();`,
 			want: `unsupported call "AsyncInfo.getCurrentQueueableStackDepth local async info surface"`,
-		},
-		{
-			name: "finalizer",
-			src:  `System.attachFinalizer(new QueueWorker());`,
-			want: `unsupported call "System.attachFinalizer local queueable finalizers"`,
 		},
 		{
 			name: "finalizer context job id",
@@ -2386,6 +2878,21 @@ func TestExecAsyncUnsupportedEdgesAreTyped(t *testing.T) {
 				t.Fatalf("err = %#v, want UnsupportedFeature %q", err, tc.want)
 			}
 		})
+	}
+}
+
+func TestExecSystemAttachFinalizerIsAcceptedInTests(t *testing.T) {
+	program, err := CompileAnonymous(`System.attachFinalizer(new QueueWorker());`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{Name: "QueueWorker"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -2545,6 +3052,8 @@ System.assertEquals(6, winterLocal.secondGmt());
 Datetime fromDateTime = Datetime.newInstance(Date.newInstance(2024, 7, 1), Time.newInstance(5, 30, 0, 250));
 System.assertEquals('2024-07-01T12:30:00.25Z', fromDateTime.formatGmt());
 System.assertEquals('2024-07-01T05:30:00.25-07:00', fromDateTime.format());
+String nullTimeZone;
+System.assertEquals('2024-07-01', fromDateTime.format('yyyy-MM-dd', nullTimeZone));
 System.assertEquals(Date.newInstance(2024, 7, 1), fromDateTime.dateGMT());
 Datetime fromDateTimeGmt = Datetime.newInstanceGmt(Date.newInstance(2024, 7, 1), Time.newInstance(5, 30, 0, 250));
 System.assertEquals('2024-07-01T05:30:00.25Z', fromDateTimeGmt.formatGmt());
@@ -2771,14 +3280,15 @@ System.assertEquals('https://trail.example.test:8443', orgUrl.toString());
 
 func TestExecRunAsScopesSupportedMixedDMLMode(t *testing.T) {
 	fails, err := CompileAnonymous(`
-insert new User(Username = 'setup@example.test');
-insert new Account(Name = 'Acme');
-`)
+	insert new PermissionSet(Name = 'LocalPermissions');
+	insert new Account(Name = 'Acme');
+	`)
 	if err != nil {
 		t.Fatal(err)
 	}
 	machine := New(nil)
 	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
 	if _, err := machine.Execute(fails); err == nil || !strings.Contains(err.Error(), "Mixed DML") {
@@ -2786,16 +3296,17 @@ insert new Account(Name = 'Acme');
 	}
 
 	passes, err := CompileAnonymous(`
-insert new User(Username = 'setup@example.test');
-System.runAs(new User(Id = '005-user-a', ProfileId = '00e-profile-a', Username = 'user-a@example.test')) {
-  insert new Account(Name = 'Acme');
-}
+	insert new PermissionSet(Name = 'LocalPermissions');
+	System.runAs(new User(Id = '005-user-a', ProfileId = '00e-profile-a', Username = 'user-a@example.test')) {
+	  insert new Account(Name = 'Acme');
+	}
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	machine = New(nil)
 	org = testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
 	if _, err := machine.Execute(passes); err != nil {
@@ -2803,13 +3314,55 @@ System.runAs(new User(Id = '005-user-a', ProfileId = '00e-profile-a', Username =
 	}
 }
 
+func TestExecRolelessUserDMLDoesNotTripMixedDML(t *testing.T) {
+	program, err := CompileAnonymous(`
+insert new Account(Name = 'Acme');
+insert new User(
+	Username = 'setup@example.test',
+	Alias = 'setup',
+	CommunityNickname = 'setup',
+	Email = 'setup@example.test',
+	LastName = 'Setup',
+	LocaleSidKey = 'en_US',
+	LanguageLocaleKey = 'en_US',
+	TimeZoneSidKey = 'UTC',
+	EmailEncodingKey = 'UTF-8',
+	ProfileId = '00e000000000001',
+	UserRoleId = null
+);
+insert new User(
+	Username = 'default-roleless@example.test',
+	Alias = 'defrole',
+	CommunityNickname = 'defrole',
+	Email = 'default-roleless@example.test',
+	LastName = 'Default',
+	LocaleSidKey = 'en_US',
+	LanguageLocaleKey = 'en_US',
+	TimeZoneSidKey = 'UTC',
+	EmailEncodingKey = 'UTF-8',
+	ProfileId = '00e000000000001'
+);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecMixedDMLIsCatchableAndFailedAttemptDoesNotPoisonTransaction(t *testing.T) {
 	program, err := CompileAnonymous(`
-insert new Account(Name = 'Before');
-Boolean caught = false;
-try {
-  insert new User(Username = 'setup@example.test');
-} catch (DmlException e) {
+	insert new Account(Name = 'Before');
+	Boolean caught = false;
+	try {
+	  insert new PermissionSet(Name = 'LocalPermissions');
+	} catch (DmlException e) {
   caught = true;
   System.assert(e.getMessage().contains('Mixed DML'));
 }
@@ -2821,6 +3374,7 @@ insert new Account(Name = 'After');
 	}
 	machine := New(nil)
 	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
 	if _, err := machine.Execute(program); err != nil {
@@ -2976,6 +3530,7 @@ System.assertEquals('Omega,Beta,Omega', trimmed.replace('Alpha', 'Omega'));
 List<String> pieces = trimmed.split(',');
 System.assertEquals(3, pieces.size());
 System.assertEquals('Alpha|Beta|Alpha', String.join(pieces, '|'));
+System.assertEquals('Alpha|Beta', String.join(new Set<String>{'Alpha', 'Beta'}, '|'));
 System.assert(String.isBlank('   '));
 System.assert(String.isNotBlank('x'));
 System.assert(trimmed.equalsIgnoreCase('alpha,beta,alpha'));
@@ -3003,14 +3558,22 @@ System.assertEquals(5, d.month());
 System.assertEquals(2, d.day());
 Date later = d.addDays(3);
 System.assertEquals(3, d.daysBetween(later));
+System.assertEquals(d.addDays(3), d + 3);
+System.assertEquals(d.addDays(-2), d - 2);
 Date nextMonth = d.addMonths(1);
 System.assertEquals('2026-06-02', nextMonth.format());
 Date nextYear = d.addYears(1);
 System.assertEquals('2027-05-02', nextYear.format());
 Date parsedDate = Date.valueOf('2026-05-04');
 System.assertEquals(2, d.daysBetween(parsedDate));
+Object parsedDateObjectText = '2026-05-04';
+System.assertEquals(parsedDate, Date.valueOf(parsedDateObjectText));
+Object parsedDateObject = parsedDate;
+System.assertEquals(parsedDate, Date.valueOf(parsedDateObject));
 Date parsedDateTime = Date.valueOf('2026-05-04 23:59:58');
 System.assertEquals(parsedDate, parsedDateTime);
+System.assertEquals(parsedDate, Date.valueOf('2026-5-4'));
+System.assertEquals(parsedDate, Date.valueOf('2026-5-4 23:59:58'));
 System.assertEquals(2026, Date.parse('01/01/2026').year());
 System.assertEquals(2026, Date.parse('01/01/26').year());
 Datetime dt = Datetime.now();

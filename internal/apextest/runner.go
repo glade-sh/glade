@@ -2,16 +2,22 @@ package apextest
 
 import (
 	"context"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
+	"runtime"
+	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/open-aer/oaer/internal/apexast"
 	"github.com/open-aer/oaer/internal/automation"
 	"github.com/open-aer/oaer/internal/diagnostic"
+	"github.com/open-aer/oaer/internal/ir"
 	"github.com/open-aer/oaer/internal/profile"
 	"github.com/open-aer/oaer/internal/project"
 	"github.com/open-aer/oaer/internal/resource"
@@ -31,6 +37,9 @@ type Options struct {
 	TraceBlocked        bool
 	SlowTestThresholdMS int64
 	TimeoutMS           int64
+	Parallelism         int
+	ParallelMethods     bool
+	Progress            func(TestProgress)
 }
 
 type TestCase struct {
@@ -39,6 +48,14 @@ type TestCase struct {
 	File       string
 	Range      diagnostic.Range
 	Body       string
+}
+
+type TestProgress struct {
+	Event      string
+	ClassName  string
+	MethodName string
+	DurationMS int64
+	Status     string
 }
 
 func Discover(index typesys.Index, opts Options) []TestCase {
@@ -91,31 +108,55 @@ func RunCasesContext(ctx context.Context, index typesys.Index, opts Options, cas
 	sources := newSourceCache()
 	methods := compileProjectMethods(index, sources)
 	classes := compileProjectClasses(index, methods, sources)
-	setups, setupErrors := compileTestSetupMethods(index, sources)
+	setups, setupErrors, setupInvokePrograms, setupInvokeErrors := compileTestSetupMethodsForClasses(index, testCaseClassSet(cases), sources)
 	triggers, triggerErrors := compileProjectTriggers(index, sources)
+	testMethods, testMethodErrors := compileTestMethods(cases, sources)
+	testInvokePrograms, testInvokeErrors := compileTestInvokePrograms(cases)
 	org := orgFromIndex(index, sources)
+	initializeTestOrg(&org)
 	pageNames := visualforcePageNames(index)
+	baseMachine := vm.New(nil)
+	baseMachine.SetTraceEnabled(false)
+	registerVisualforcePages(baseMachine, pageNames)
+	baseRuntimeErr := registerRuntime(baseMachine, methods, classes, append(flattenSetupMethods(setups), methodMapValues(testMethods)...), triggers)
 	suites := make(map[string][]testreport.Case)
-	setupOrgs := make(map[string]storage.OrgState)
-	setupRunErrors := make(map[string]error)
 	order := make([]string, 0)
-	for _, testCase := range cases {
+	classSeen := make(map[string]bool)
+	suiteIndexes := make(map[string][]int)
+	planned := make([]testCasePlan, len(cases))
+	results := make([]testreport.Case, len(cases))
+	for i, testCase := range cases {
+		if !classSeen[testCase.ClassName] {
+			classSeen[testCase.ClassName] = true
+			order = append(order, testCase.ClassName)
+			suites[testCase.ClassName] = nil
+		}
+		suiteIndexes[testCase.ClassName] = append(suiteIndexes[testCase.ClassName], i)
 		if err := ctx.Err(); err != nil {
-			if _, ok := suites[testCase.ClassName]; !ok {
-				order = append(order, testCase.ClassName)
-			}
-			suites[testCase.ClassName] = append(suites[testCase.ClassName], canceledCase(testCase, err))
+			results[i] = canceledCase(testCase, err)
 			continue
 		}
-		if _, ok := suites[testCase.ClassName]; !ok {
-			order = append(order, testCase.ClassName)
-			setupCtx, setupCancel := testContext(ctx, opts.TimeoutMS)
-			setupOrgs[testCase.ClassName], setupRunErrors[testCase.ClassName] = prepareTestSetupOrg(setupCtx, testCase.ClassName, methods, classes, setups[testCase.ClassName], setupErrors[testCase.ClassName], triggers, triggerErrors, org, pageNames, opts)
-			setupCancel()
+		planned[i] = testCasePlan{
+			TestCase:      testCase,
+			TestMethodErr: testMethodErrors[testCaseKey(testCase)],
+			InvokeProgram: testInvokePrograms[testCaseKey(testCase)],
+			InvokeProgErr: testInvokeErrors[testCaseKey(testCase)],
 		}
-		caseCtx, caseCancel := testContext(ctx, opts.TimeoutMS)
-		suites[testCase.ClassName] = append(suites[testCase.ClassName], runCase(caseCtx, testCase, methods, classes, setupRunErrors[testCase.ClassName], triggers, triggerErrors, setupOrgs[testCase.ClassName], pageNames, opts))
-		caseCancel()
+	}
+	setupResults := prepareTestSetups(ctx, order, baseMachine, baseRuntimeErr, setups, setupErrors, setupInvokePrograms, setupInvokeErrors, triggerErrors, org, opts)
+	for i := range planned {
+		if results[i].Status != "" {
+			continue
+		}
+		setup := setupResults[planned[i].TestCase.ClassName]
+		planned[i].SetupErr = setup.Err
+		planned[i].SetupOrg = setup.Org
+	}
+	runTestPlans(ctx, planned, results, baseMachine, baseRuntimeErr, triggerErrors, opts)
+	for className, indexes := range suiteIndexes {
+		for _, index := range indexes {
+			suites[className] = append(suites[className], results[index])
+		}
 	}
 
 	run := testreport.Run{Name: "oaer test"}
@@ -125,6 +166,177 @@ func RunCasesContext(ctx context.Context, index typesys.Index, opts Options, cas
 	return run
 }
 
+type testCasePlan struct {
+	TestCase      TestCase
+	TestMethodErr error
+	InvokeProgram ir.Program
+	InvokeProgErr error
+	SetupErr      error
+	SetupOrg      storage.OrgState
+}
+
+type testSetupResult struct {
+	Org storage.OrgState
+	Err error
+}
+
+func prepareTestSetups(ctx context.Context, classNames []string, baseMachine *vm.VM, baseRuntimeErr error, setups map[string][]vm.Method, setupErrors map[string]error, setupInvokePrograms map[string][]ir.Program, setupInvokeErrors map[string]error, triggerErrors []error, org storage.OrgState, opts Options) map[string]testSetupResult {
+	results := make(map[string]testSetupResult, len(classNames))
+	parallelism := opts.Parallelism
+	if parallelism <= 1 || len(classNames) <= 1 {
+		for _, className := range classNames {
+			reportProgress(opts, TestProgress{Event: "setup_start", ClassName: className})
+			started := time.Now()
+			setupCtx, setupCancel := testContext(ctx, opts.TimeoutMS)
+			setupOrg, setupErr := prepareTestSetupOrg(setupCtx, baseMachine, baseRuntimeErr, setups[className], setupErrors[className], setupInvokePrograms[className], setupInvokeErrors[className], triggerErrors, org, opts)
+			setupCancel()
+			reportProgress(opts, TestProgress{Event: "setup_done", ClassName: className, DurationMS: time.Since(started).Milliseconds(), Status: progressStatus(setupErr)})
+			results[className] = testSetupResult{Org: setupOrg, Err: setupErr}
+		}
+		return results
+	}
+	if parallelism > len(classNames) {
+		parallelism = len(classNames)
+	}
+	type setupJobResult struct {
+		ClassName string
+		Result    testSetupResult
+	}
+	jobs := make(chan string)
+	out := make(chan setupJobResult, len(classNames))
+	var wg sync.WaitGroup
+	for worker := 0; worker < parallelism; worker++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for className := range jobs {
+				reportProgress(opts, TestProgress{Event: "setup_start", ClassName: className})
+				started := time.Now()
+				setupCtx, setupCancel := testContext(ctx, opts.TimeoutMS)
+				setupOrg, setupErr := prepareTestSetupOrg(setupCtx, baseMachine, baseRuntimeErr, setups[className], setupErrors[className], setupInvokePrograms[className], setupInvokeErrors[className], triggerErrors, org, opts)
+				setupCancel()
+				reportProgress(opts, TestProgress{Event: "setup_done", ClassName: className, DurationMS: time.Since(started).Milliseconds(), Status: progressStatus(setupErr)})
+				out <- setupJobResult{ClassName: className, Result: testSetupResult{Org: setupOrg, Err: setupErr}}
+			}
+		}()
+	}
+	for _, className := range classNames {
+		jobs <- className
+	}
+	close(jobs)
+	wg.Wait()
+	close(out)
+	for item := range out {
+		results[item.ClassName] = item.Result
+	}
+	return results
+}
+
+func runTestPlans(ctx context.Context, planned []testCasePlan, results []testreport.Case, baseMachine *vm.VM, baseRuntimeErr error, triggerErrors []error, opts Options) {
+	parallelism := opts.Parallelism
+	if parallelism <= 1 || len(planned) <= 1 {
+		for i, plan := range planned {
+			if results[i].Status != "" {
+				continue
+			}
+			reportProgress(opts, TestProgress{Event: "test_start", ClassName: plan.TestCase.ClassName, MethodName: plan.TestCase.MethodName})
+			caseCtx, caseCancel := testContext(ctx, opts.TimeoutMS)
+			results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, opts)
+			caseCancel()
+			reportProgress(opts, TestProgress{Event: "test_done", ClassName: plan.TestCase.ClassName, MethodName: plan.TestCase.MethodName, DurationMS: results[i].DurationMS, Status: string(results[i].Status)})
+		}
+		return
+	}
+	classOrder := make([]string, 0)
+	classIndexes := make(map[string][]int)
+	for i, plan := range planned {
+		className := plan.TestCase.ClassName
+		if _, ok := classIndexes[className]; !ok {
+			classOrder = append(classOrder, className)
+		}
+		classIndexes[className] = append(classIndexes[className], i)
+	}
+	if opts.ParallelMethods && len(classOrder) == 1 && len(planned) > 1 {
+		runSingleClassTestPlans(ctx, planned, results, baseMachine, baseRuntimeErr, triggerErrors, opts, parallelism)
+		return
+	}
+	if parallelism > len(classOrder) {
+		parallelism = len(classOrder)
+	}
+	jobs := make(chan string)
+	var wg sync.WaitGroup
+	for worker := 0; worker < parallelism; worker++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for className := range jobs {
+				for _, i := range classIndexes[className] {
+					if results[i].Status != "" {
+						continue
+					}
+					plan := planned[i]
+					reportProgress(opts, TestProgress{Event: "test_start", ClassName: plan.TestCase.ClassName, MethodName: plan.TestCase.MethodName})
+					caseCtx, caseCancel := testContext(ctx, opts.TimeoutMS)
+					results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, opts)
+					caseCancel()
+					reportProgress(opts, TestProgress{Event: "test_done", ClassName: plan.TestCase.ClassName, MethodName: plan.TestCase.MethodName, DurationMS: results[i].DurationMS, Status: string(results[i].Status)})
+				}
+			}
+		}()
+	}
+	for _, className := range classOrder {
+		jobs <- className
+	}
+	close(jobs)
+	wg.Wait()
+}
+
+func runSingleClassTestPlans(ctx context.Context, planned []testCasePlan, results []testreport.Case, baseMachine *vm.VM, baseRuntimeErr error, triggerErrors []error, opts Options, parallelism int) {
+	if parallelism <= 1 {
+		parallelism = 1
+	}
+	if parallelism > len(planned) {
+		parallelism = len(planned)
+	}
+	jobs := make(chan int)
+	var wg sync.WaitGroup
+	for worker := 0; worker < parallelism; worker++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for i := range jobs {
+				if results[i].Status != "" {
+					continue
+				}
+				plan := planned[i]
+				reportProgress(opts, TestProgress{Event: "test_start", ClassName: plan.TestCase.ClassName, MethodName: plan.TestCase.MethodName})
+				caseCtx, caseCancel := testContext(ctx, opts.TimeoutMS)
+				results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, opts)
+				caseCancel()
+				reportProgress(opts, TestProgress{Event: "test_done", ClassName: plan.TestCase.ClassName, MethodName: plan.TestCase.MethodName, DurationMS: results[i].DurationMS, Status: string(results[i].Status)})
+			}
+		}()
+	}
+	for i := range planned {
+		jobs <- i
+	}
+	close(jobs)
+	wg.Wait()
+}
+
+func reportProgress(opts Options, progress TestProgress) {
+	if opts.Progress != nil {
+		opts.Progress(progress)
+	}
+}
+
+func progressStatus(err error) string {
+	if err != nil {
+		return "error"
+	}
+	return "pass"
+}
+
 func testContext(parent context.Context, timeoutMS int64) (context.Context, context.CancelFunc) {
 	if timeoutMS <= 0 {
 		return parent, func() {}
@@ -132,47 +344,56 @@ func testContext(parent context.Context, timeoutMS int64) (context.Context, cont
 	return context.WithTimeout(parent, time.Duration(timeoutMS)*time.Millisecond)
 }
 
-func prepareTestSetupOrg(ctx context.Context, className string, methods map[string]vm.Method, classes []vm.Class, setups []vm.Method, setupErr error, triggers []vm.Trigger, triggerErrors []error, org storage.OrgState, pageNames []string, opts Options) (storage.OrgState, error) {
-	setupOrg := org.Clone()
+func initializeTestOrg(org *storage.OrgState) {
+	machine := vm.New(nil)
+	machine.SetTraceEnabled(false)
+	machine.SetOrg(org)
+	machine.EnableTestContext()
+}
+
+func prepareTestSetupOrg(ctx context.Context, baseMachine *vm.VM, baseRuntimeErr error, setups []vm.Method, setupErr error, setupPrograms []ir.Program, setupProgramErr error, triggerErrors []error, org storage.OrgState, opts Options) (storage.OrgState, error) {
 	if err := ctx.Err(); err != nil {
-		return setupOrg, err
+		return org, err
+	}
+	if baseRuntimeErr != nil {
+		return org, baseRuntimeErr
 	}
 	if setupErr != nil {
-		return setupOrg, setupErr
+		return org, setupErr
+	}
+	if setupProgramErr != nil {
+		return org, setupProgramErr
 	}
 	if len(triggerErrors) > 0 {
-		return setupOrg, triggerErrors[0]
+		return org, triggerErrors[0]
 	}
 	if len(setups) == 0 {
-		return setupOrg, nil
+		return org, nil
 	}
-	machine := vm.New(nil)
+	setupOrg := cloneRuntimeOrg(org)
+	machine := baseMachine.CloneRuntime(nil)
+	machine.SetTraceEnabled(false)
 	if opts.LimitMode != "" {
 		machine.SetLimitMode(opts.LimitMode)
 	}
 	machine.SetOrg(&setupOrg)
 	machine.SetContext(ctx)
 	machine.EnableTestContext()
-	registerVisualforcePages(machine, pageNames)
-	if err := registerRuntime(machine, methods, classes, setups, triggers); err != nil {
-		return setupOrg, err
-	}
-	for _, setup := range setups {
+	for i, setup := range setups {
 		if err := ctx.Err(); err != nil {
 			return setupOrg, err
 		}
-		program, err := vm.CompileAnonymous(setup.Name + "();")
-		if err != nil {
-			return setupOrg, err
+		if i >= len(setupPrograms) {
+			return setupOrg, fmt.Errorf("missing compiled @TestSetup invocation for %s", setup.Name)
 		}
-		if _, err := machine.ExecuteInClass(program, setup.ClassName); err != nil {
+		if _, err := machine.ExecuteInClass(setupPrograms[i], setup.ClassName); err != nil {
 			return setupOrg, err
 		}
 	}
 	return setupOrg, nil
 }
 
-func runCase(ctx context.Context, testCase TestCase, methods map[string]vm.Method, classes []vm.Class, setupErr error, triggers []vm.Trigger, triggerErrors []error, org storage.OrgState, pageNames []string, opts Options) testreport.Case {
+func runCase(ctx context.Context, testCase TestCase, testMethodErr error, invokeProgram ir.Program, invokeErr error, baseMachine *vm.VM, baseRuntimeErr error, setupErr error, triggerErrors []error, org storage.OrgState, opts Options) testreport.Case {
 	if err := ctx.Err(); err != nil {
 		return canceledCase(testCase, err)
 	}
@@ -185,12 +406,6 @@ func runCase(ctx context.Context, testCase TestCase, methods map[string]vm.Metho
 	defer func() {
 		out.DurationMS = time.Since(started).Milliseconds()
 	}()
-	source, err := os.ReadFile(testCase.File)
-	if err != nil {
-		out.Status = testreport.StatusCompileError
-		out.Problem = problem("FileError", err.Error(), testCase)
-		return out
-	}
 	if setupErr != nil {
 		if errors.Is(setupErr, context.Canceled) || errors.Is(setupErr, context.DeadlineExceeded) {
 			out.Status = testreport.StatusUnsupported
@@ -201,35 +416,33 @@ func runCase(ctx context.Context, testCase TestCase, methods map[string]vm.Metho
 		out.Problem = problem("UnsupportedFeature", setupErr.Error(), testCase)
 		return out
 	}
+	if baseRuntimeErr != nil {
+		out.Status = testreport.StatusUnsupported
+		out.Problem = problem("UnsupportedFeature", baseRuntimeErr.Error(), testCase)
+		return out
+	}
 	if len(triggerErrors) > 0 {
 		out.Status = testreport.StatusUnsupported
 		out.Problem = problem("UnsupportedFeature", triggerErrors[0].Error(), testCase)
 		return out
 	}
-	testMethod, err := compileProjectMethod(testCase.ClassName, testCase.MethodName, "void", []string{"static"}, testCase.File, testCase.Range, string(source))
-	if err != nil {
+	if testMethodErr != nil {
 		out.Status = testreport.StatusUnsupported
-		out.Problem = problem("UnsupportedFeature", err.Error(), testCase)
+		out.Problem = problem("UnsupportedFeature", testMethodErr.Error(), testCase)
 		return out
 	}
-	machine := vm.New(nil)
+	if invokeErr != nil {
+		out.Status = testreport.StatusUnsupported
+		out.Problem = problem("UnsupportedFeature", invokeErr.Error(), testCase)
+		return out
+	}
+	machine := baseMachine.CloneRuntime(nil)
+	machine.SetTraceEnabled(opts.TraceBlocked || opts.SlowTestThresholdMS > 0)
 	if opts.LimitMode != "" {
 		machine.SetLimitMode(opts.LimitMode)
 	}
-	machine.SetOrg(&org)
 	machine.SetContext(ctx)
-	registerVisualforcePages(machine, pageNames)
-	if err := registerRuntime(machine, methods, classes, nil, triggers); err != nil {
-		out.Status = testreport.StatusUnsupported
-		out.Problem = problem("UnsupportedFeature", err.Error(), testCase)
-		return out
-	}
-	if err := machine.RegisterMethod(testMethod); err != nil {
-		out.Status = testreport.StatusUnsupported
-		out.Problem = problem("UnsupportedFeature", err.Error(), testCase)
-		return out
-	}
-	org = org.Clone()
+	org = cloneRuntimeOrg(org)
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
 	machine.ResetApexPageState()
@@ -238,13 +451,7 @@ func runCase(ctx context.Context, testCase TestCase, methods map[string]vm.Metho
 		out.Problem = problemFromError(err, testCase)
 		return out
 	}
-	program, err := vm.CompileAnonymous(testMethod.Name + "();")
-	if err != nil {
-		out.Status = testreport.StatusUnsupported
-		out.Problem = problem("UnsupportedFeature", err.Error(), testCase)
-		return out
-	}
-	result, err := machine.ExecuteInClass(program, testCase.ClassName)
+	result, err := machine.ExecuteInClass(invokeProgram, testCase.ClassName)
 	if err != nil {
 		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 			out.Status = testreport.StatusUnsupported
@@ -306,6 +513,38 @@ func registerRuntime(machine *vm.VM, methods map[string]vm.Method, classes []vm.
 		}
 	}
 	return nil
+}
+
+func cloneRuntimeOrg(org storage.OrgState) storage.OrgState {
+	return org.CloneRuntime()
+}
+
+func flattenSetupMethods(setups map[string][]vm.Method) []vm.Method {
+	total := 0
+	for _, methods := range setups {
+		total += len(methods)
+	}
+	out := make([]vm.Method, 0, total)
+	for _, methods := range setups {
+		out = append(out, methods...)
+	}
+	return out
+}
+
+func testCaseClassSet(cases []TestCase) map[string]bool {
+	out := make(map[string]bool, len(cases))
+	for _, testCase := range cases {
+		out[testCase.ClassName] = true
+	}
+	return out
+}
+
+func methodMapValues(methods map[string]vm.Method) []vm.Method {
+	out := make([]vm.Method, 0, len(methods))
+	for _, method := range methods {
+		out = append(out, method)
+	}
+	return out
 }
 
 // RegisterProjectRuntime compiles project classes, methods, and triggers from an
@@ -390,6 +629,7 @@ func compileProjectClasses(index typesys.Index, methods map[string]vm.Method, ca
 	var out []vm.Class
 	sources := sourceCacheFor(caches)
 	knownTypes := knownTypeNames(index.Types)
+	methodsByClass := projectMethodsByClass(methods)
 	for _, typ := range index.Types {
 		if typ.Kind != apexast.DeclarationClass && typ.Kind != apexast.DeclarationInterface && typ.Kind != apexast.DeclarationEnum {
 			continue
@@ -423,10 +663,8 @@ func compileProjectClasses(index typesys.Index, methods map[string]vm.Method, ca
 		if typ.Kind == apexast.DeclarationEnum {
 			class.EnumValues = parseEnumValues(typeSource)
 		}
-		for _, method := range methods {
-			if method.ClassName == typ.Name {
-				class.Methods[methodShortName(method.Name)+methodParamKey(method.Params)] = method
-			}
+		for _, method := range methodsByClass[typ.Name] {
+			class.Methods[methodShortName(method.Name)+methodParamKey(method.Params)] = method
 		}
 		for _, member := range typ.Members {
 			switch member.Kind {
@@ -476,6 +714,14 @@ func compileProjectClasses(index typesys.Index, methods map[string]vm.Method, ca
 			}
 		}
 		out = append(out, class)
+	}
+	return out
+}
+
+func projectMethodsByClass(methods map[string]vm.Method) map[string][]vm.Method {
+	out := make(map[string][]vm.Method)
+	for _, method := range methods {
+		out[method.ClassName] = append(out[method.ClassName], method)
 	}
 	return out
 }
@@ -532,39 +778,114 @@ func attachPropertyAccessors(field *vm.Field, className, file string, member typ
 }
 
 func compileProjectMethods(index typesys.Index, caches ...sourceCache) map[string]vm.Method {
-	out := make(map[string]vm.Method)
+	type methodCompileJob struct {
+		ClassName string
+		Kind      apexast.DeclarationKind
+		Member    typesys.MemberSymbol
+		File      string
+		Source    string
+	}
+	type methodCompileResult struct {
+		Key    string
+		Method vm.Method
+	}
 	sources := sourceCacheFor(caches)
+	var jobs []methodCompileJob
 	for _, typ := range index.Types {
 		if typ.Kind != apexast.DeclarationClass && typ.Kind != apexast.DeclarationInterface {
 			continue
 		}
+		source := ""
+		sourceLoaded := false
 		for _, member := range typ.Members {
 			if member.Kind != apexast.DeclarationMethod || member.IsTest || isTestSetup(member.Modifiers) {
 				continue
 			}
-			source, err := sources.read(typ.File)
-			if err != nil {
-				continue
-			}
-			if typ.Kind == apexast.DeclarationInterface {
-				method, err := compileProjectMethodSignature(typ.Name, member.Name, member.Type, append(member.Modifiers, "abstract"), typ.File, member.Range, source)
+			if !sourceLoaded {
+				loaded, err := sources.read(typ.File)
 				if err != nil {
 					continue
 				}
-				out[method.Name+methodParamKey(method.Params)] = method
-				continue
+				source = loaded
+				sourceLoaded = true
 			}
-			method, err := compileProjectMethod(typ.Name, member.Name, member.Type, member.Modifiers, typ.File, member.Range, source)
-			if err != nil {
-				if unsupported, ok := unsupportedProjectMethod(typ.Name, member.Name, member.Type, member.Modifiers, typ.File, member.Range, source, err); ok {
-					out[unsupported.Name+methodParamKey(unsupported.Params)] = unsupported
+			jobs = append(jobs, methodCompileJob{
+				ClassName: typ.Name,
+				Kind:      typ.Kind,
+				Member:    member,
+				File:      typ.File,
+				Source:    source,
+			})
+		}
+	}
+	results := make([]methodCompileResult, len(jobs))
+	compile := func(i int) {
+		job := jobs[i]
+		member := job.Member
+		if job.Kind == apexast.DeclarationInterface {
+			method, err := compileProjectMethodSignature(job.ClassName, member.Name, member.Type, append(member.Modifiers, "abstract"), job.File, member.Range, job.Source)
+			if err == nil {
+				results[i] = methodCompileResult{Key: method.Name + methodParamKey(method.Params), Method: method}
+			}
+			return
+		}
+		method, err := compileProjectMethod(job.ClassName, member.Name, member.Type, member.Modifiers, job.File, member.Range, job.Source)
+		if err != nil {
+			if unsupported, ok := unsupportedProjectMethod(job.ClassName, member.Name, member.Type, member.Modifiers, job.File, member.Range, job.Source, err); ok {
+				results[i] = methodCompileResult{Key: unsupported.Name + methodParamKey(unsupported.Params), Method: unsupported}
+			}
+			return
+		}
+		results[i] = methodCompileResult{Key: method.Name + methodParamKey(method.Params), Method: method}
+	}
+	workers := compileWorkers(len(jobs))
+	if workers <= 1 {
+		for i := range jobs {
+			compile(i)
+		}
+	} else {
+		work := make(chan int)
+		var wg sync.WaitGroup
+		for i := 0; i < workers; i++ {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				for index := range work {
+					compile(index)
 				}
-				continue
-			}
-			out[method.Name+methodParamKey(method.Params)] = method
+			}()
+		}
+		for i := range jobs {
+			work <- i
+		}
+		close(work)
+		wg.Wait()
+	}
+
+	out := make(map[string]vm.Method, len(results))
+	for _, result := range results {
+		if result.Key != "" {
+			out[result.Key] = result.Method
 		}
 	}
 	return out
+}
+
+func compileWorkers(total int) int {
+	if total < 64 {
+		return 1
+	}
+	workers := runtime.GOMAXPROCS(0)
+	if workers < 1 {
+		return 1
+	}
+	if workers > total {
+		workers = total
+	}
+	if workers > 8 {
+		workers = 8
+	}
+	return workers
 }
 
 func compileProjectMethodSignature(className, methodName, returnType string, modifiers []string, file string, r diagnostic.Range, source string) (vm.Method, error) {
@@ -614,15 +935,24 @@ func unsupportedProjectMethod(className, methodName, returnType string, modifier
 	}, true
 }
 
-func compileTestSetupMethods(index typesys.Index, caches ...sourceCache) (map[string][]vm.Method, map[string]error) {
+func compileTestSetupMethods(index typesys.Index, caches ...sourceCache) (map[string][]vm.Method, map[string]error, map[string][]ir.Program, map[string]error) {
+	return compileTestSetupMethodsForClasses(index, nil, caches...)
+}
+
+func compileTestSetupMethodsForClasses(index typesys.Index, selectedClasses map[string]bool, caches ...sourceCache) (map[string][]vm.Method, map[string]error, map[string][]ir.Program, map[string]error) {
 	out := make(map[string][]vm.Method)
 	errs := make(map[string]error)
+	programs := make(map[string][]ir.Program)
+	programErrs := make(map[string]error)
 	sources := sourceCacheFor(caches)
 	for _, typ := range index.Types {
 		if typ.Dependency {
 			continue
 		}
 		if typ.Kind != apexast.DeclarationClass {
+			continue
+		}
+		if selectedClasses != nil && !selectedClasses[typ.Name] {
 			continue
 		}
 		for _, member := range typ.Members {
@@ -641,9 +971,55 @@ func compileTestSetupMethods(index typesys.Index, caches ...sourceCache) (map[st
 			}
 			method.IsStatic = true
 			out[typ.Name] = append(out[typ.Name], method)
+			program, err := vm.CompileAnonymous(method.Name + "();")
+			if err != nil {
+				programErrs[typ.Name] = err
+				continue
+			}
+			programs[typ.Name] = append(programs[typ.Name], program)
 		}
 	}
-	return out, errs
+	return out, errs, programs, programErrs
+}
+
+func compileTestMethods(cases []TestCase, caches ...sourceCache) (map[string]vm.Method, map[string]error) {
+	methods := make(map[string]vm.Method, len(cases))
+	errs := make(map[string]error)
+	sources := sourceCacheFor(caches)
+	for _, testCase := range cases {
+		key := testCaseKey(testCase)
+		source, err := sources.read(testCase.File)
+		if err != nil {
+			errs[key] = err
+			continue
+		}
+		method, err := compileProjectMethod(testCase.ClassName, testCase.MethodName, "void", []string{"static"}, testCase.File, testCase.Range, source)
+		if err != nil {
+			errs[key] = err
+			continue
+		}
+		methods[key] = method
+	}
+	return methods, errs
+}
+
+func compileTestInvokePrograms(cases []TestCase) (map[string]ir.Program, map[string]error) {
+	programs := make(map[string]ir.Program, len(cases))
+	errs := make(map[string]error)
+	for _, testCase := range cases {
+		key := testCaseKey(testCase)
+		program, err := vm.CompileAnonymous(testCase.ClassName + "." + testCase.MethodName + "();")
+		if err != nil {
+			errs[key] = err
+			continue
+		}
+		programs[key] = program
+	}
+	return programs, errs
+}
+
+func testCaseKey(testCase TestCase) string {
+	return testCase.ClassName + "." + testCase.MethodName
 }
 
 func compileProjectTriggers(index typesys.Index, caches ...sourceCache) ([]vm.Trigger, []error) {
@@ -705,8 +1081,10 @@ func orgFromIndex(index typesys.Index, caches ...sourceCache) storage.OrgState {
 	}
 	applyApexClassRecords(&org, index, caches...)
 	_ = storage.ApplyCustomMetadataRecords(&org, index.CustomMetadataRecords)
+	var loadedProject *project.Project
 	if index.Project.Root != "" {
 		if p, err := project.Load(index.Project.Root); err == nil {
+			loadedProject = &p
 			_ = resource.ApplyProject(&org, p)
 			if automationIndex, err := automation.LoadProject(p); err == nil {
 				automation.ApplyToOrg(&org, automationIndex)
@@ -714,8 +1092,152 @@ func orgFromIndex(index typesys.Index, caches ...sourceCache) storage.OrgState {
 		}
 	}
 	storage.EnsureDeterministicPlatformData(&org)
+	if loadedProject != nil {
+		applyProjectProfileRecordTypeDefaults(&org, *loadedProject)
+		applyProjectProfileRecords(&org, *loadedProject)
+	}
 	normalizeOrgKeyPrefixes(&org)
 	return org
+}
+
+type profileRecordTypeVisibilityXML struct {
+	Default    bool   `xml:"default"`
+	RecordType string `xml:"recordType"`
+	Visible    bool   `xml:"visible"`
+}
+
+type profileXML struct {
+	RecordTypeVisibilities []profileRecordTypeVisibilityXML `xml:"recordTypeVisibilities"`
+}
+
+func applyProjectProfileRecordTypeDefaults(org *storage.OrgState, p project.Project) {
+	if org == nil || len(p.ProfileFiles) == 0 {
+		return
+	}
+	defaults := projectProfileRecordTypeDefaults(p.ProfileFiles)
+	for objectName, developerName := range defaults {
+		canonicalObject, ok := storage.ResolveObjectName(*org, objectName)
+		if !ok {
+			continue
+		}
+		state := org.Objects[canonicalObject]
+		changed := false
+		for i := range state.Definition.RecordTypes {
+			recordType := &state.Definition.RecordTypes[i]
+			isDefault := strings.EqualFold(recordType.DeveloperName, developerName)
+			if recordType.Default != isDefault {
+				recordType.Default = isDefault
+				changed = true
+			}
+		}
+		if changed {
+			org.Objects[canonicalObject] = state
+		}
+	}
+}
+
+func projectProfileRecordTypeDefaults(files []string) map[string]string {
+	defaults := make(map[string]string)
+	for _, file := range sortedProfileFilesForDefaults(files) {
+		for objectName, developerName := range loadProfileRecordTypeDefaults(file) {
+			if _, exists := defaults[objectName]; !exists {
+				defaults[objectName] = developerName
+			}
+		}
+	}
+	return defaults
+}
+
+func sortedProfileFilesForDefaults(files []string) []string {
+	out := append([]string(nil), files...)
+	sort.SliceStable(out, func(i, j int) bool {
+		leftAdmin := strings.EqualFold(profileNameFromPath(out[i]), "Admin")
+		rightAdmin := strings.EqualFold(profileNameFromPath(out[j]), "Admin")
+		if leftAdmin != rightAdmin {
+			return leftAdmin
+		}
+		return out[i] < out[j]
+	})
+	return out
+}
+
+func loadProfileRecordTypeDefaults(file string) map[string]string {
+	data, err := os.ReadFile(file)
+	if err != nil {
+		return nil
+	}
+	var raw profileXML
+	if err := xml.Unmarshal(data, &raw); err != nil {
+		return nil
+	}
+	out := make(map[string]string)
+	for _, visibility := range raw.RecordTypeVisibilities {
+		if !visibility.Default || !visibility.Visible {
+			continue
+		}
+		objectName, developerName, ok := strings.Cut(strings.TrimSpace(visibility.RecordType), ".")
+		if !ok || objectName == "" || developerName == "" {
+			continue
+		}
+		if _, exists := out[objectName]; !exists {
+			out[objectName] = developerName
+		}
+	}
+	return out
+}
+
+func applyProjectProfileRecords(org *storage.OrgState, p project.Project) {
+	if org == nil || len(p.ProfileFiles) == 0 {
+		return
+	}
+	state, ok := org.Objects["Profile"]
+	if !ok {
+		return
+	}
+	if state.Records == nil {
+		state.Records = make(map[storage.ID]storage.Record)
+	}
+	if org.IDSequences == nil {
+		org.IDSequences = make(map[string]uint64)
+	}
+	generator := storage.NewIDGenerator(storage.StandardKeyPrefixes())
+	generator.Sequences = org.IDSequences
+	for _, file := range p.ProfileFiles {
+		name := profileNameFromPath(file)
+		if name == "" || profileRecordExists(state, name) {
+			continue
+		}
+		id, err := generator.Next("Profile")
+		if err != nil {
+			continue
+		}
+		state.Records[id] = storage.Record{
+			ID:     id,
+			Object: "Profile",
+			Fields: map[string]storage.Value{"Name": storage.StringValue(name)},
+		}
+	}
+	org.IDSequences = generator.Sequences
+	org.Objects["Profile"] = state
+}
+
+func profileNameFromPath(path string) string {
+	name := filepath.Base(path)
+	for _, suffix := range []string{".profile-meta.xml", ".profile"} {
+		if strings.HasSuffix(strings.ToLower(name), suffix) {
+			return strings.TrimSpace(name[:len(name)-len(suffix)])
+		}
+	}
+	return ""
+}
+
+func profileRecordExists(state storage.ObjectState, name string) bool {
+	for _, record := range state.Records {
+		if strings.EqualFold(record.Fields["Name"].String, name) {
+			return true
+		}
+	}
+	return false
 }
 
 func normalizeOrgKeyPrefixes(org *storage.OrgState) {
@@ -1212,23 +1734,49 @@ func parseParams(methodSource string) ([]vm.Param, error) {
 	parts := splitTopLevelCommas(raw)
 	params := make([]vm.Param, 0, len(parts))
 	for _, part := range parts {
-		fields := strings.Fields(strings.TrimSpace(part))
-		filtered := fields[:0]
-		for _, field := range fields {
-			if strings.EqualFold(field, "final") {
-				continue
-			}
-			filtered = append(filtered, field)
-		}
-		if len(filtered) < 2 {
+		paramType, paramName, ok := parseParamTypeAndName(part)
+		if !ok {
 			return nil, fmt.Errorf("unsupported parameter %q", part)
 		}
 		params = append(params, vm.Param{
-			Type: strings.Join(filtered[:len(filtered)-1], " "),
-			Name: filtered[len(filtered)-1],
+			Type: paramType,
+			Name: paramName,
 		})
 	}
 	return params, nil
+}
+
+func parseParamTypeAndName(part string) (string, string, bool) {
+	part = strings.TrimSpace(part)
+	for {
+		fields := strings.Fields(part)
+		if len(fields) == 0 || !strings.EqualFold(fields[0], "final") {
+			break
+		}
+		part = strings.TrimSpace(strings.TrimPrefix(part, fields[0]))
+	}
+	end := len(part)
+	i := end - 1
+	for i >= 0 && isApexIdentifierPart(part[i]) {
+		i--
+	}
+	if i == end-1 {
+		return "", "", false
+	}
+	name := part[i+1:]
+	typeName := strings.TrimSpace(part[:i+1])
+	if typeName == "" || !isApexIdentifierStart(name[0]) {
+		return "", "", false
+	}
+	return typeName, name, true
+}
+
+func isApexIdentifierStart(ch byte) bool {
+	return ch == '_' || (ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z')
+}
+
+func isApexIdentifierPart(ch byte) bool {
+	return isApexIdentifierStart(ch) || (ch >= '0' && ch <= '9')
 }
 
 func stripApexComments(source string) string {

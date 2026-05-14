@@ -82,7 +82,7 @@ func evalUnary(op string, value Value) (Value, error) {
 func evalBinary(op string, left, right Value) (Value, error) {
 	switch op {
 	case "+":
-		if left.Kind == ValueString || right.Kind == ValueString {
+		if isStringConcatOperand(left) || isStringConcatOperand(right) {
 			return String(left.String() + right.String()), nil
 		}
 		if left.Kind == ValueDecimal || right.Kind == ValueDecimal {
@@ -115,6 +115,17 @@ func evalBinary(op string, left, right Value) (Value, error) {
 			return Null, fmt.Errorf("division by zero")
 		}
 		return intBinary(op, left, right, func(a, b int64) int64 { return a % b })
+	case "<<", ">>":
+		if left.Kind != ValueInt || right.Kind != ValueInt {
+			return Null, fmt.Errorf("operator %s requires Integer operands", op)
+		}
+		if right.Int < 0 || right.Int > 63 {
+			return Null, fmt.Errorf("operator %s shift count out of range", op)
+		}
+		if op == "<<" {
+			return Int(left.Int << uint(right.Int)), nil
+		}
+		return Int(left.Int >> uint(right.Int)), nil
 	case "==":
 		return Bool(left.Equal(right)), nil
 	case "!=":
@@ -122,6 +133,18 @@ func evalBinary(op string, left, right Value) (Value, error) {
 	case "<", "<=", ">", ">=":
 		if left.Kind == ValueNull || right.Kind == ValueNull {
 			return Bool(false), nil
+		}
+		if left.Kind == ValueString && right.Kind == ValueString {
+			switch op {
+			case "<":
+				return Bool(left.Text < right.Text), nil
+			case "<=":
+				return Bool(left.Text <= right.Text), nil
+			case ">":
+				return Bool(left.Text > right.Text), nil
+			default:
+				return Bool(left.Text >= right.Text), nil
+			}
 		}
 		if comparable, ok := comparablePlatformScalarText(left, right); ok {
 			a, b := comparable[0], comparable[1]
@@ -187,6 +210,10 @@ func booleanOperand(value Value) (bool, bool) {
 	return false, false
 }
 
+func isStringConcatOperand(value Value) bool {
+	return value.Kind == ValueString || (value.Kind == ValueNull && strings.EqualFold(canonicalApexScalarType(value.Type), "String"))
+}
+
 func comparablePlatformScalarText(left, right Value) ([2]string, bool) {
 	if leftText, leftOK := comparableIDText(left); leftOK {
 		if rightText, rightOK := comparableIDText(right); rightOK {
@@ -247,7 +274,12 @@ func decimalBinary(op string, left, right Value, fn func(float64, float64) float
 	if math.IsInf(result, 0) || math.IsNaN(result) {
 		return Null, fmt.Errorf("operator %s result must be finite", op)
 	}
-	return Decimal(result), nil
+	return Decimal(normalizeDecimalResult(result)), nil
+}
+
+func normalizeDecimalResult(value float64) float64 {
+	const scale = 1e12
+	return math.Round(value*scale) / scale
 }
 
 func checkIntBinaryOverflow(op string, left, right int64) error {
@@ -315,7 +347,17 @@ func coerceAssignable(typeName string, value Value) (Value, error) {
 		if value.Kind == ValueBool {
 			return value, nil
 		}
-	case "String", "Id":
+	case "String":
+		if value.Kind == ValueString {
+			return value, nil
+		}
+		if idText, ok := typedIDValueText(value); ok {
+			return String(displayIDText(idText)), nil
+		}
+		if text, ok := platformScalarObjectText(value); ok {
+			return String(text), nil
+		}
+	case "Id":
 		if value.Kind == ValueString {
 			return value, nil
 		}

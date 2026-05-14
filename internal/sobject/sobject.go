@@ -271,7 +271,7 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 					ParentRelationship: parentRelationship,
 					ChildRelationship:  childRelationship,
 					Polymorphic:        len(references) > 1,
-					CascadeDelete:      strings.EqualFold(field.DeleteConstraint, "Cascade"),
+					CascadeDelete:      strings.EqualFold(field.DeleteConstraint, "Cascade") || strings.EqualFold(field.Type, "MasterDetail"),
 					RestrictedDelete:   strings.EqualFold(field.DeleteConstraint, "Restrict"),
 				})
 			}
@@ -592,6 +592,8 @@ func storageFieldType(raw string) storage.FieldType {
 		return storage.FieldDate
 	case "DateTime":
 		return storage.FieldDateTime
+	case "Location":
+		return storage.FieldLocation
 	case "Lookup", "MasterDetail", "MetadataRelationship":
 		return storage.FieldReference
 	case "Id":

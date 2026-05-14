@@ -61,6 +61,26 @@ func TestResolveFieldNameKeepsOtherNamespace(t *testing.T) {
 	}
 }
 
+func TestResolveFieldNameMapsLocationComponentFields(t *testing.T) {
+	definition := ObjectDefinition{APIName: "Account", Fields: map[string]Field{
+		"pkg__PrimaryLocation__c": {APIName: "pkg__PrimaryLocation__c", Type: FieldLocation},
+	}}
+
+	resolved, ok := ResolveFieldName(definition, "pkg", "PrimaryLocation__Latitude__s")
+	if !ok || resolved != "pkg__PrimaryLocation__Latitude__s" {
+		t.Fatalf("ResolveFieldName(PrimaryLocation__Latitude__s) = %q, %v", resolved, ok)
+	}
+	resolved, ok = ResolveFieldName(definition, "pkg", "pkg__PrimaryLocation__Longitude__s")
+	if !ok || resolved != "pkg__PrimaryLocation__Longitude__s" {
+		t.Fatalf("ResolveFieldName(pkg__PrimaryLocation__Longitude__s) = %q, %v", resolved, ok)
+	}
+
+	resolved, ok = ResolveFieldName(definition, "", "PrimaryLocation__Latitude__s")
+	if !ok || resolved != "pkg__PrimaryLocation__Latitude__s" {
+		t.Fatalf("ResolveFieldName(PrimaryLocation__Latitude__s no namespace) = %q, %v", resolved, ok)
+	}
+}
+
 func TestDefaultValueForFieldUnquotesStringExpressions(t *testing.T) {
 	tests := []struct {
 		name string
@@ -197,6 +217,9 @@ func TestEnsureStandardObjectFieldsAddsAccountWebsiteWithoutClobber(t *testing.T
 	if _, ok := definition.Fields["PersonMailingStreet"]; ok {
 		t.Fatalf("PersonMailingStreet should be gated by PersonAccounts: %#v", definition.Fields["PersonMailingStreet"])
 	}
+	if _, ok := definition.Fields["BillingCountryCode"]; ok {
+		t.Fatalf("BillingCountryCode should be gated by StateAndCountryPicklist: %#v", definition.Fields["BillingCountryCode"])
+	}
 }
 
 func TestEnsureStandardObjectFieldsForFeaturesAddsPersonAccountShape(t *testing.T) {
@@ -206,6 +229,9 @@ func TestEnsureStandardObjectFieldsForFeaturesAddsPersonAccountShape(t *testing.
 
 	if field, ok := definition.Fields["PersonMailingStreet"]; !ok || field.Type != FieldString {
 		t.Fatalf("PersonMailingStreet field = %#v, %v", field, ok)
+	}
+	if _, ok := definition.Fields["PersonMailingStateCode"]; ok {
+		t.Fatalf("PersonMailingStateCode should be gated by StateAndCountryPicklist: %#v", definition.Fields["PersonMailingStateCode"])
 	}
 	if field, ok := definition.Fields["IsPersonAccount"]; !ok || field.Type != FieldBoolean {
 		t.Fatalf("IsPersonAccount field = %#v, %v", field, ok)
@@ -221,6 +247,19 @@ func TestEnsureStandardObjectFieldsForFeaturesAddsPersonAccountShape(t *testing.
 	}
 	if !foundPersonAccount {
 		t.Fatalf("record types missing PersonAccount: %#v", definition.RecordTypes)
+	}
+}
+
+func TestEnsureStandardObjectFieldsForFeaturesAddsStateAndCountryPicklists(t *testing.T) {
+	definition := ObjectDefinition{APIName: "Account"}
+
+	EnsureStandardObjectFieldsForFeatures(&definition, []string{"StateAndCountryPicklist"})
+
+	if field, ok := definition.Fields["BillingCountryCode"]; !ok || field.Type == "" {
+		t.Fatalf("BillingCountryCode field = %#v, %v", field, ok)
+	}
+	if field, ok := definition.Fields["ShippingStateCode"]; !ok || field.Type == "" {
+		t.Fatalf("ShippingStateCode field = %#v, %v", field, ok)
 	}
 }
 
@@ -329,6 +368,14 @@ func TestEnsureDeterministicPlatformDataSeedsCommonSalesObjects(t *testing.T) {
 	}
 }
 
+func TestEnsureStandardObjectCaseBusinessHoursDoesNotBlockInsert(t *testing.T) {
+	org := NewOrgState()
+	EnsureStandardObject(&org, "Case")
+	if org.Objects["Case"].Definition.Fields["BusinessHoursId"].Required {
+		t.Fatalf("Case.BusinessHoursId should not block local inserts")
+	}
+}
+
 func TestEnsureStandardObjectAddsSalesCloudStandardObjectShape(t *testing.T) {
 	org := NewOrgState()
 
@@ -430,6 +477,9 @@ func TestEnsureStandardObjectFieldsAddsCustomObjectNameAndRecordTypeId(t *testin
 	}
 	if field, ok := definition.Fields["Name"]; !ok || field.Type != FieldString {
 		t.Fatalf("Name field = %#v, %v", field, ok)
+	}
+	if field, ok := definition.Fields["LastActivityDate"]; !ok || field.Type != FieldDate {
+		t.Fatalf("LastActivityDate field = %#v, %v", field, ok)
 	}
 	field, ok := definition.Fields["RecordTypeId"]
 	if !ok || field.Type != FieldReference || field.RelationshipName != "RecordType" {
@@ -593,10 +643,16 @@ func TestEnsureStandardObjectAddsEmailTemplateRenderAndProbeFields(t *testing.T)
 	if template.Definition.KeyPrefix != "00X" {
 		t.Fatalf("EmailTemplate key prefix = %q", template.Definition.KeyPrefix)
 	}
-	for _, name := range []string{"ApiVersion", "Body", "DeveloperName", "HtmlValue", "IsActive", "Name", "NamespacePrefix", "Subject", "TemplateType"} {
+	for _, name := range []string{"ApiVersion", "Body", "DeveloperName", "HtmlValue", "IsActive", "Name", "NamespacePrefix", "Subject", "TemplateStyle", "TemplateType"} {
 		if field, ok := template.Definition.Fields[name]; !ok || field.APIName != name {
 			t.Fatalf("%s field = %#v, %v", name, field, ok)
 		}
+	}
+	if got := template.Definition.Fields["TemplateStyle"].DefaultValue; got != "none" {
+		t.Fatalf("TemplateStyle default = %q", got)
+	}
+	if got := template.Definition.Fields["TemplateType"].DefaultValue; got != "text" {
+		t.Fatalf("TemplateType default = %q", got)
 	}
 }
 

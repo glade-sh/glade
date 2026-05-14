@@ -65,9 +65,11 @@ Current checked status:
   advanced Flow interviews, and local UI/API serving remains tracked below.
 - The green post-parity inventory is also not a full runtime claim for every
   checked example project. The current six-project runtime baseline has
-  `src-nmb-nutpl-develop` green at `total=761 pass=761`; the remaining five
-  example projects still stop at measured compile-gap frontiers tracked in
-  `docs/fixtures/local-tests-example-projects.json`.
+  `src-nmb-nutpl-develop` green at `total=761 pass=761`. Work is currently
+  focused on `sf-cred-pkg-develop`, where the May 14, 2026 local-test run is
+  `total=4268 pass=2993 unsupported=157 runtimeGap=594 assertFail=524
+  compileError=0 internalError=0`. Remaining example-project outcomes are
+  tracked as measured runtime blocker frontiers rather than scanner findings.
 - Treat this document as the source for broad local-test support beyond the
   green server-example harness.
 
@@ -221,6 +223,18 @@ Recently cleared blocker families:
 | Workflow rule save-order metadata | No current post-parity findings. |
 | Custom label and translation resolution | No current post-parity findings. |
 | Flow and Process Builder save-order metadata | No current post-parity findings. |
+
+Current `sf-cred-pkg-develop` blocker frontier from the May 14, 2026
+`compat local-tests --parallel 4 --top-failures 60 --json` run:
+
+| Blocker family | Current count | Notes |
+| --- | ---: | --- |
+| Duplicate `Account.Vuid__c` DML behavior | 114 | 78 runtime gaps plus 36 unsupported wrappers; needs org-like uniqueness/upsert/trigger semantics, not a project-specific bypass. |
+| `ObjectMappings.MAPPING_OPERATION_TYPE.setFieldValue` resolution | 51 | Nested enum/static member lookup gap. |
+| Java regex lookahead | 26 | `Pattern.matches` and related string regex APIs need Java-compatible handling or a precise local fallback. |
+| Invalid JSON input / JSON object-to-string mapping | 34 | `deserializeUntyped` and typed deserialization need broader Salesforce-shaped coercion and error compatibility. |
+| SObject describe/null field-token gaps | 24 | Remaining `sObjectField.getDescribe`, field token, and `Schema.SObjectType` shape issues. |
+| Contact and Task standard metadata gaps | 25 | Includes required `Contact.LastName`, `Task.Type`, and `Lead.DoNotCall` shape issues. |
 
 ## Local Test Running Boundary
 
@@ -655,7 +669,7 @@ Dependency-injection libraries may use platform cache as a storage backend and
   - [ ] Cache TTL and reset behavior.
   - [ ] `ConnectApi.Organization.getSettings().orgId`.
 
-## 11. System.Callable, Stub API, And ApexMocks Compatibility
+## 11. System.Callable, Stub API, And Dynamic Proxy Compatibility
 
 Core interface dispatch is not enough for projects that use platform-provided
 dynamic call and mocking contracts.
@@ -673,7 +687,7 @@ dynamic call and mocking contracts.
   - [x] Method interception through `handleMethodCall`.
   - [ ] Full argument list, method name, return type, and exception behavior.
   - [ ] Test-only isolation and unsupported diagnostics for unsupported targets.
-- [ ] Add focused compatibility fixtures for fflib ApexMocks patterns:
+- [ ] Add focused compatibility fixtures for generic dynamic proxy patterns:
   - [x] Interface mock creation.
   - [x] Method call interception.
   - [x] Return value stubbing.

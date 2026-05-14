@@ -6,6 +6,7 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/open-aer/oaer/internal/storage"
 	"github.com/open-aer/oaer/internal/trace"
@@ -519,6 +520,21 @@ System.assertEquals('call(String, Integer)', 'call' + args);
 	}
 }
 
+func TestExecStringComparisonOperators(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assert('B' > 'A');
+System.assert('A' < 'B');
+System.assert('A' <= 'A');
+System.assert('B' >= 'A');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecBareBlockStatement(t *testing.T) {
 	program, err := CompileAnonymous(`
 Integer total = 0;
@@ -608,6 +624,22 @@ System.assertEquals('AD', params.get('L\'ANDORRE'));
 	}
 }
 
+func TestExecSObjectListAliasMutatesTypedList(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Account> accounts = new List<Account>{ new Account(Name = 'One') };
+List<SObject> records = accounts;
+records.add(new Account(Name = 'Two'));
+System.assertEquals(2, accounts.size());
+System.assertEquals('Two', accounts[1].get('Name'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestCompileAcceptsPostfixFieldAccess(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account account = new Account(Name = 'spruce');
@@ -677,6 +709,77 @@ System.assertEquals(11, Util.count(names));
 	if err := machine.RegisterMethod(Method{Name: "Util.count", ReturnType: "Integer", Params: []Param{{Name: "values", Type: "List<String>"}}, Program: listStringProgram}); err != nil {
 		t.Fatal(err)
 	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecListSObjectTypePreservesConcreteRuntimeType(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Account> accounts = new List<Account>();
+System.assertEquals(Account.SObjectType, accounts.getSObjectType());
+List<SObject> records = accounts;
+System.assertEquals(Account.SObjectType, records.getSObjectType());
+records.add(new Account(Name = 'Acme'));
+System.assertEquals(Account.SObjectType, records.getSObjectType());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecShiftOperatorsAndCompoundAssignment(t *testing.T) {
+	program, err := CompileAnonymous(`
+Integer value = 3;
+value <<= 2;
+System.assertEquals(12, value);
+value >>= 1;
+System.assertEquals(6, value);
+value %= 4;
+System.assertEquals(2, value);
+System.assertEquals(16, 1 << 4);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSwitchTypeCaseBindsSObject(t *testing.T) {
+	program, err := CompileAnonymous(`
+SObject record = new Account(Name = 'Acme');
+String name;
+switch on record {
+    when Contact contact {
+        name = contact.LastName;
+    }
+    when Account account {
+        name = account.Name;
+    }
+    when else {
+        name = 'else';
+    }
+}
+System.assertEquals('Acme', name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	storage.EnsureStandardObject(&org, "Contact")
+	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
@@ -931,6 +1034,27 @@ System.assert(record.get(createdDateField) != System.now());
 	}
 }
 
+func TestExecCastsSObjectListMapValuesToConcreteSObjectLists(t *testing.T) {
+	program, err := CompileAnonymous(`
+Id ownerId = '005000000000001AAA';
+Account account = new Account(Id = '001000000000001AAA', OwnerId = ownerId, Name = 'Acme');
+Map<Id, List<SObject>> raw = new Map<Id, List<SObject>>();
+raw.put(ownerId, new List<SObject>{ account });
+Map<Id, List<Account>> typed = (Map<Id, List<Account>>)raw;
+System.assertNotEquals(null, typed.get(ownerId));
+System.assertEquals('Acme', typed.get(ownerId)[0].Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecInsertedListSObjectFieldTokenValuesStayDistinct(t *testing.T) {
 	program, err := CompileAnonymous(`
 Map<String, Schema.SObjectField> fields = Group.SObjectType.getDescribe().fields.getMap();
@@ -1000,6 +1124,25 @@ System.assert(mismatch);
 	}
 }
 
+func TestExecDMLListLiteralPreservesSObjectAliases(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'Acme');
+Account alias = account;
+insert new List<Account>{ account };
+System.assertNotEquals(null, account.Id);
+System.assertEquals(account.Id, alias.Id);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecStringValueOfSObjectFieldUsesFieldAPIName(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals('Name', String.valueOf(Account.Name));
@@ -1037,6 +1180,74 @@ func TestExecSObjectFieldTokenUsesStandardOverlayFallback(t *testing.T) {
 	storage.EnsureStandardObjectFieldsForFeatures(&definition, []string{"PersonAccounts"})
 	if _, ok := definition.Fields["FirstName"]; !ok {
 		t.Fatalf("standard Account overlay missing FirstName")
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestStaticSObjectFieldDefaultsToFieldToken(t *testing.T) {
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "PaymentLine__c",
+		StaticFields: map[string]Field{
+			"CreatedDate": {Name: "CreatedDate", Type: "Schema.SObjectField", Static: true},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+System.assertEquals('CreatedDate', PaymentLine__c.SObjectType.getDescribe().fields.getMap().get('CreatedDate').getDescribe().getName());
+System.assertEquals('CreatedDate', PaymentLine__c.CreatedDate.getDescribe().getName());
+System.assertEquals(Schema.DisplayType.Datetime, PaymentLine__c.CreatedDate.getDescribe().getType());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Objects["PaymentLine__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "PaymentLine__c",
+			Fields: map[string]storage.Field{
+				"CreatedDate": {Type: storage.FieldDateTime},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.ResetStatics(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDescribeMapsMatchUnqualifiedNamespaceTokens(t *testing.T) {
+	program, err := CompileAnonymous(`
+Schema.SObjectType objectType = Schema.getGlobalDescribe().get('Widget__c');
+Map<String, Schema.SObjectField> fields = objectType.getDescribe().fields.getMap();
+System.assert(fields.containsKey('Thing__c'));
+System.assertEquals('pkg__Thing__c', fields.get('Thing__c').getDescribe().getName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	org.Namespace = "pkg"
+	org.Objects["pkg__Widget__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "pkg__Widget__c",
+			Fields: map[string]storage.Field{
+				"pkg__Thing__c": {APIName: "pkg__Thing__c", Type: storage.FieldString},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
 	}
 	machine := New(nil)
 	machine.SetOrg(&org)
@@ -1159,8 +1370,11 @@ System.assert(caught);
 
 func TestExecSchemaSObjectTypeFieldsPathReturnsFieldToken(t *testing.T) {
 	program, err := CompileAnonymous(`
+System.assertEquals(Account.SObjectType, Schema.Account.SObjectType);
+System.assertEquals(Schema.SObjectType.Account, Schema.Account.SObjectType);
 System.assertEquals(Contact.LastName, Schema.Contact.SObjectType.fields.lastName);
 System.assertEquals(Account.AccountNumber, Schema.Account.SObjectType.fields.AccountNumber);
+System.assertEquals(Account.SObjectType, Schema.Account.getSObjectType());
 Boolean sawContacts = false;
 for (Schema.ChildRelationship relationship : Account.SObjectType.getDescribe().getChildRelationships()) {
   if (relationship.getRelationshipName() == 'Contacts') {
@@ -1188,6 +1402,33 @@ List<SObject> records = new List<SObject>{ new Account(Name = 'Test') };
 System.assertEquals(Account.SObjectType, records.getSObjectType());
 List<Account> accounts = new List<Account>();
 System.assertEquals(Account.SObjectType, accounts.getSObjectType());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSObjectMapGetSObjectType(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<Id, Account> accounts = new Map<Id, Account>();
+System.assertEquals(Account.SObjectType, accounts.getSObjectType());
+
+Map<Id, SObject> assignedGeneric = accounts;
+System.assertEquals(Account.SObjectType, assignedGeneric.getSObjectType());
+
+Map<Id, SObject> genericRecords = new Map<Id, SObject>();
+try {
+  genericRecords.getSObjectType();
+  System.assert(false, 'expected TypeException');
+} catch (System.TypeException e) {
+  System.assert(true);
+}
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1258,12 +1499,42 @@ Object longValue = 3L;
 Object integerValue = 3;
 Object dateValue = Date.today();
 Object idString = '001000000000001AAA';
+Id typedId = '001000000000001AAA';
 System.assert(longValue instanceof Long);
 System.assert(!(longValue instanceof Integer));
 System.assert(integerValue instanceof Integer);
 System.assert(dateValue instanceof Datetime);
 System.assert(idString instanceof Id);
+System.assert(typedId instanceof String);
 System.assert(!('bob' instanceof Id));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStringEqualityOperatorIsCaseInsensitive(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assert('Prepayment refunds are not allowed.' == 'Prepayment Refunds are not allowed.');
+System.assert(!('Prepayment refunds are not allowed.' != 'Prepayment Refunds are not allowed.'));
+System.assert(new List<String>{'A'}.contains('A'));
+System.assert(!new List<String>{'A'}.contains('a'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDecimalArithmeticSuppressesBinaryFloatNoise(t *testing.T) {
+	program, err := CompileAnonymous(`
+Decimal balance = 100 - 91.63;
+System.assertEquals(8.37, balance);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1304,6 +1575,41 @@ System.assertEquals(1, values.get('items').size());
 		t.Fatal(err)
 	}
 	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMultiplicativeCompoundFieldAssignment(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account();
+account.AnnualRevenue = 10;
+account.AnnualRevenue *= 2;
+System.assertEquals(20, account.AnnualRevenue);
+account.AnnualRevenue /= 4;
+System.assertEquals(5, account.AnnualRevenue);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecIncrementDottedFieldTarget(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String, Account> accounts = new Map<String, Account>{
+	'one' => new Account(AnnualRevenue = 2)
+};
+accounts.get('one').AnnualRevenue++;
+System.assertEquals(3, accounts.get('one').AnnualRevenue);
+accounts.get('one').AnnualRevenue--;
+System.assertEquals(2, accounts.get('one').AnnualRevenue);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -1415,6 +1721,19 @@ func TestExpandSOQLBindsEvaluatesIndexedMemberExpression(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := "SELECT Id FROM Account WHERE Id = '001000000000002AAA'"
+	if got != want {
+		t.Fatalf("query = %q, want %q", got, want)
+	}
+}
+
+func TestExpandSOQLBindsEvaluatesChainedStaticCallExpression(t *testing.T) {
+	machine := New(nil)
+	machine.fakeNow = time.Date(2026, 5, 13, 10, 30, 0, 0, time.UTC)
+	got, err := machine.expandSOQLBinds("SELECT Id FROM FlowdownQueue__c WHERE LastModifiedDate <= :DateTime.now().addDays(-1)")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "SELECT Id FROM FlowdownQueue__c WHERE LastModifiedDate <= 2026-05-12T10:30:00Z"
 	if got != want {
 		t.Fatalf("query = %q, want %q", got, want)
 	}
@@ -1885,6 +2204,46 @@ System.assertEquals('four', label);
 	}
 }
 
+func TestExecEnhancedForNullCollectionIsCatchable(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<String> names;
+Boolean caught = false;
+try {
+	for (String name : names) {
+		System.debug(name);
+	}
+} catch (NullPointerException e) {
+	caught = true;
+}
+System.assertEquals(true, caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecListIndexOutOfBoundsIsCatchable(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<String> names = new List<String>();
+Boolean caught = false;
+try {
+	names.remove(-1);
+} catch (ListException e) {
+	caught = true;
+}
+System.assertEquals(true, caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSwitchBreakOnlyExitsSwitchAndContinueReachesLoop(t *testing.T) {
 	program, err := CompileAnonymous(`
 Integer seen = 0;
@@ -2103,17 +2462,41 @@ System.assertEquals('ToCustomer', String.valueOf(direction));
 
 func TestExecNestedEnumStaticValueIsCaseInsensitive(t *testing.T) {
 	program, err := CompileAnonymous(`
-Object mode = fflib_VerificationMode.ModeName.CALLS;
+Object mode = VerificationMode.ModeName.CALLS;
 System.assertEquals('calls', String.valueOf(mode));
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	machine := New(nil)
-	if err := machine.RegisterClass(Class{Name: "fflib_VerificationMode"}); err != nil {
+	if err := machine.RegisterClass(Class{Name: "VerificationMode"}); err != nil {
 		t.Fatal(err)
 	}
-	if err := machine.RegisterClass(Class{Name: "fflib_VerificationMode.ModeName", EnumValues: []string{"times", "calls"}}); err != nil {
+	if err := machine.RegisterClass(Class{Name: "VerificationMode.ModeName", EnumValues: []string{"times", "calls"}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecEnumValueOfInvalidValueIsCatchable(t *testing.T) {
+	program, err := CompileAnonymous(`
+Boolean caught = false;
+try {
+	Object mode = VerificationMode.ModeName.valueOf('missing');
+} catch (Exception e) {
+	caught = true;
+	System.assertEquals('System.IllegalArgumentException', e.getTypeName());
+	System.assert(e.getMessage().contains('No enum constant VerificationMode.ModeName.missing'));
+}
+System.assert(caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "VerificationMode.ModeName", EnumValues: []string{"times", "calls"}}); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := machine.Execute(program); err != nil {

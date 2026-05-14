@@ -3,6 +3,8 @@ package vm
 import (
 	"strings"
 	"testing"
+
+	"github.com/open-aer/oaer/internal/storage"
 )
 
 func TestExecRegisteredStaticMethod(t *testing.T) {
@@ -23,6 +25,37 @@ func TestExecRegisteredStaticMethod(t *testing.T) {
 			{Name: "b", Type: "Integer"},
 		},
 		Program: methodProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecRegisteredStaticMethodMatchesNestedSObjectCollectionMap(t *testing.T) {
+	methodProgram, err := CompileAnonymous("return values.size();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Map<Id, List<sObject>> values = new Map<Id, List<sObject>>();
+values.put('001000000000001AAA', new List<sObject>());
+System.assertEquals(1, CouponReApplier.reapplyCartCoupons(values));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if err := machine.RegisterMethod(Method{
+		Name:       "CouponReApplier.reApplyCartCoupons",
+		ClassName:  "CouponReApplier",
+		IsStatic:   true,
+		ReturnType: "Integer",
+		Params:     []Param{{Name: "values", Type: "Map<Id, List<CartItemLine__c>>"}},
+		Program:    methodProgram,
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -508,51 +541,268 @@ func TestResetStaticsClonesExplicitCollectionInitializers(t *testing.T) {
 	}
 }
 
-func TestFFLibQualifiedMethodMapKeyUsesSignatureAndMockIdentity(t *testing.T) {
+func TestCustomObjectMapKeyUsesStableFieldValues(t *testing.T) {
 	firstMock := Object("Mocked")
 	secondMock := Object("Mocked")
-	first := Object("fflib_QualifiedMethod")
+	first := Object("QualifiedMethod")
 	first.Fields["typeName"] = String("Selector")
 	first.Fields["methodName"] = String("selectById")
 	first.Fields["methodArgTypes"] = List(platformScalar("Type", "Id"))
 	first.Fields["mockInstance"] = firstMock
-	same := Object("fflib_QualifiedMethod")
+	same := Object("QualifiedMethod")
 	same.Fields["typeName"] = String("Selector")
 	same.Fields["methodName"] = String("selectById")
 	same.Fields["methodArgTypes"] = List(platformScalar("Type", "Id"))
 	same.Fields["mockInstance"] = firstMock
-	differentArgs := Object("fflib_QualifiedMethod")
+	differentArgs := Object("QualifiedMethod")
 	differentArgs.Fields["typeName"] = String("Selector")
 	differentArgs.Fields["methodName"] = String("selectById")
 	differentArgs.Fields["methodArgTypes"] = List(platformScalar("Type", "Set<Id>"))
 	differentArgs.Fields["mockInstance"] = firstMock
-	differentMock := Object("fflib_QualifiedMethod")
+	differentMock := Object("QualifiedMethod")
 	differentMock.Fields["typeName"] = String("Selector")
 	differentMock.Fields["methodName"] = String("selectById")
 	differentMock.Fields["methodArgTypes"] = List(platformScalar("Type", "Id"))
 	differentMock.Fields["mockInstance"] = secondMock
 
 	if mapKey(first) != mapKey(same) {
-		t.Fatalf("same qualified method key mismatch: %q != %q", mapKey(first), mapKey(same))
+		t.Fatalf("same value-object key mismatch: %q != %q", mapKey(first), mapKey(same))
 	}
 	if mapKey(first) == mapKey(differentArgs) {
-		t.Fatalf("qualified method key ignored argument types: %q", mapKey(first))
+		t.Fatalf("value-object key ignored argument types: %q", mapKey(first))
 	}
-	if mapKey(first) == mapKey(differentMock) {
-		t.Fatalf("qualified method key ignored mock identity: %q", mapKey(first))
-	}
-	if key, ok := fflibQualifiedMethodMapKey(first, false); !ok || key != mustFFLibQualifiedMethodMapKey(t, differentMock, false) {
-		t.Fatalf("dependent qualified method key used mock identity: %q", key)
+	if mapKey(first) != mapKey(differentMock) {
+		t.Fatalf("value-object key should ignore arbitrary object references: %q != %q", mapKey(first), mapKey(differentMock))
 	}
 }
 
-func mustFFLibQualifiedMethodMapKey(t *testing.T, value Value, independentMocks bool) string {
-	t.Helper()
-	key, ok := fflibQualifiedMethodMapKey(value, independentMocks)
-	if !ok {
-		t.Fatalf("value is not an fflib qualified method: %#v", value)
+func TestExecMapKeyUsesCustomHashCode(t *testing.T) {
+	equalsProgram, err := CompileAnonymous(`
+Key otherKey = other instanceof Key ? (Key)other : null;
+return otherKey != null && Code == otherKey.Code;
+`)
+	if err != nil {
+		t.Fatal(err)
 	}
-	return key
+	hashProgram, err := CompileAnonymous("return Code == null ? 0 : Code.hashCode();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Key left = new Key('same');
+Key right = new Key('same');
+Map<Key, String> values = new Map<Key, String>();
+values.put(left, 'matched');
+System.assertEquals('matched', values.get(right));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctorProgram, err := CompileAnonymous("Code = code;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Key",
+		Fields: map[string]Field{
+			"Code": {Name: "Code", Type: "String"},
+		},
+		Constructors: []Method{{Name: "Key.<init>", ClassName: "Key", Params: []Param{{Name: "code", Type: "String"}}, Program: ctorProgram}},
+		Methods: map[string]Method{
+			"equals":   {Name: "Key.equals", ClassName: "Key", ReturnType: "Boolean", Params: []Param{{Name: "other", Type: "Object"}}, Program: equalsProgram},
+			"hashCode": {Name: "Key.hashCode", ClassName: "Key", ReturnType: "Integer", Program: hashProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRuntimeOverloadResolutionUsesTypedNullCasts(t *testing.T) {
+	program, err := CompileAnonymous(`
+Selector selector = new Selector();
+Object placeholder = null;
+System.assertEquals('fieldsets', selector.selectById((Set<Id>)placeholder, (List<Schema.FieldSet>)placeholder));
+System.assertEquals('fieldsets', selector.selectById((Set<Id>)Matcher.anyObject(), (List<Schema.FieldSet>)Matcher.anyList()));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fieldsetsProgram, err := CompileAnonymous("return 'fieldsets';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	stringsProgram, err := CompileAnonymous("return 'strings';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	anyObjectProgram, err := CompileAnonymous("return null;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	anyListProgram, err := CompileAnonymous("return (List<Object>)null;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Selector"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "Matcher"}); err != nil {
+		t.Fatal(err)
+	}
+	for _, method := range []Method{
+		{Name: "Selector.selectById", ClassName: "Selector", ReturnType: "String", Params: []Param{{Name: "ids", Type: "Set<Id>"}, {Name: "fieldSets", Type: "List<Schema.FieldSet>"}}, Program: fieldsetsProgram},
+		{Name: "Selector.selectById", ClassName: "Selector", ReturnType: "String", Params: []Param{{Name: "ids", Type: "Set<Id>"}, {Name: "fields", Type: "Set<String>"}}, Program: stringsProgram},
+		{Name: "Matcher.anyObject", ClassName: "Matcher", ReturnType: "Object", IsStatic: true, Program: anyObjectProgram},
+		{Name: "Matcher.anyList", ClassName: "Matcher", ReturnType: "List<Object>", IsStatic: true, Program: anyListProgram},
+	} {
+		if err := machine.RegisterMethod(method); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecTestCreateStubUsesArityMetadataForTypedNullOverload(t *testing.T) {
+	providerProgram, err := CompileAnonymous("return 'handled';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Selector proxy = (Selector)Test.createStub(Selector.class, new Provider());
+Object placeholder = null;
+System.assertEquals('handled', proxy.selectById((Set<Id>)placeholder, (List<Schema.FieldSet>)placeholder));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{Name: "Selector"}); err != nil {
+		t.Fatal(err)
+	}
+	machine.MethodOverloads["Selector.selectById"] = []Method{
+		{Name: "Selector.selectById", ClassName: "Selector", ReturnType: "String", Params: []Param{{Name: "ids", Type: "Set<Id>"}, {Name: "fieldSets", Type: "List<Schema.FieldSet>"}}},
+		{Name: "Selector.selectById", ClassName: "Selector", ReturnType: "String", Params: []Param{{Name: "ids", Type: "Set<Id>"}, {Name: "fields", Type: "Set<String>"}}},
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Provider",
+		Interfaces: []string{"StubProvider"},
+		Methods: map[string]Method{
+			"handleMethodCall": {
+				Name:       "Provider.handleMethodCall",
+				ClassName:  "Provider",
+				ReturnType: "Object",
+				Params: []Param{
+					{Name: "stubbedObject", Type: "Object"},
+					{Name: "stubbedMethodName", Type: "String"},
+					{Name: "returnType", Type: "Type"},
+					{Name: "listOfParamTypes", Type: "List<Type>"},
+					{Name: "listOfParamNames", Type: "List<String>"},
+					{Name: "listOfArgs", Type: "List<Object>"},
+				},
+				Program: providerProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecTestCreateStubReportsResolvedMethodNameCasing(t *testing.T) {
+	providerProgram, err := CompileAnonymous(`
+System.assertEquals('getPaymentLinesByIds', stubbedMethodName);
+return 'handled';
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Gateway proxy = (Gateway)Test.createStub(Gateway.class, new Provider());
+System.assertEquals('handled', proxy.getPaymentLinesByIDs(new Set<Id>()));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name: "Gateway",
+		Methods: map[string]Method{
+			"getPaymentLinesByIds": {
+				Name:       "Gateway.getPaymentLinesByIds",
+				ClassName:  "Gateway",
+				ReturnType: "String",
+				Params:     []Param{{Name: "ids", Type: "Set<Id>"}},
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Provider",
+		Interfaces: []string{"StubProvider"},
+		Methods: map[string]Method{
+			"handleMethodCall": {
+				Name:       "Provider.handleMethodCall",
+				ClassName:  "Provider",
+				ReturnType: "Object",
+				Params: []Param{
+					{Name: "stubbedObject", Type: "Object"},
+					{Name: "stubbedMethodName", Type: "String"},
+					{Name: "returnType", Type: "Type"},
+					{Name: "listOfParamTypes", Type: "List<Type>"},
+					{Name: "listOfParamNames", Type: "List<String>"},
+					{Name: "listOfArgs", Type: "List<Object>"},
+				},
+				Program: providerProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRuntimeStaticLookupIgnoresAmbiguousInstanceOverloads(t *testing.T) {
+	program, err := CompileAnonymous(`
+Selector selector = new Selector();
+Object placeholder = null;
+System.assertEquals('fieldsets', selector.selectById((Set<Id>)placeholder, (List<Schema.FieldSet>)placeholder));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fieldsetsProgram, err := CompileAnonymous("return 'fieldsets';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	stringsProgram, err := CompileAnonymous("return 'strings';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Selector"}); err != nil {
+		t.Fatal(err)
+	}
+	machine.MethodOverloads["Selector.selectById"] = []Method{
+		{Name: "Selector.selectById", ClassName: "Selector", ReturnType: "String", Params: []Param{{Name: "ids", Type: "Set<Id>"}, {Name: "fieldSets", Type: "List<Schema.FieldSet>"}}, Program: fieldsetsProgram},
+		{Name: "Selector.selectById", ClassName: "Selector", ReturnType: "String", Params: []Param{{Name: "ids", Type: "Set<Id>"}, {Name: "fields", Type: "Set<String>"}}, Program: stringsProgram},
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestExecDottedStaticMethodRunsStaticInitializer(t *testing.T) {
@@ -693,6 +943,282 @@ System.assertEquals(7, c.score());
 	}
 }
 
+func TestExecExplicitEmptyConstructorCallsImplicitSuper(t *testing.T) {
+	parentCtor, err := CompileAnonymous("values = new Map<String, Object>();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	childCtor, err := CompileAnonymous("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	checkProgram, err := CompileAnonymous(`
+Child c = new Child();
+c.add('name', 'Ada');
+System.assertEquals('Ada', c.get('name'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	addProgram, err := CompileAnonymous("values.put(key, value);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	getProgram, err := CompileAnonymous("return values.get(key);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Parent",
+		Fields: map[string]Field{
+			"values": {Name: "values", Type: "Map<String,Object>"},
+		},
+		Constructors: []Method{{
+			Name:          "Parent.<init>",
+			ClassName:     "Parent",
+			Program:       parentCtor,
+			IsConstructor: true,
+		}},
+		Methods: map[string]Method{
+			"add": {Name: "Parent.add", ClassName: "Parent", Params: []Param{{Name: "key", Type: "String"}, {Name: "value", Type: "Object"}}, Program: addProgram},
+			"get": {Name: "Parent.get", ClassName: "Parent", Params: []Param{{Name: "key", Type: "String"}}, ReturnType: "Object", Program: getProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Child",
+		SuperClass: "Parent",
+		Constructors: []Method{{
+			Name:          "Child.<init>",
+			ClassName:     "Child",
+			Program:       childCtor,
+			IsConstructor: true,
+		}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(checkProgram); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecConstructorThisFieldAssignmentStillCallsImplicitSuper(t *testing.T) {
+	parentCtor, err := CompileAnonymous("values = new Map<String, Object>();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	childCtor, err := CompileAnonymous("this.label = 'Ada'; add('name', this.label);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	checkProgram, err := CompileAnonymous(`
+Child c = new Child();
+System.assertEquals('Ada', c.get('name'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	addProgram, err := CompileAnonymous("values.put(key, value);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	getProgram, err := CompileAnonymous("return values.get(key);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Parent",
+		Fields: map[string]Field{
+			"values": {Name: "values", Type: "Map<String,Object>"},
+		},
+		Constructors: []Method{{
+			Name:          "Parent.<init>",
+			ClassName:     "Parent",
+			Program:       parentCtor,
+			IsConstructor: true,
+		}},
+		Methods: map[string]Method{
+			"add": {Name: "Parent.add", ClassName: "Parent", Params: []Param{{Name: "key", Type: "String"}, {Name: "value", Type: "Object"}}, Program: addProgram},
+			"get": {Name: "Parent.get", ClassName: "Parent", Params: []Param{{Name: "key", Type: "String"}}, ReturnType: "Object", Program: getProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Child",
+		SuperClass: "Parent",
+		Fields: map[string]Field{
+			"label": {Name: "label", Type: "String"},
+		},
+		Constructors: []Method{{
+			Name:          "Child.<init>",
+			ClassName:     "Child",
+			Program:       childCtor,
+			IsConstructor: true,
+		}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(checkProgram); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecConstructorThisPropertySetterStillCallsImplicitSuper(t *testing.T) {
+	parentCtor, err := CompileAnonymous("values = new Map<String, Object>();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	childCtor, err := CompileAnonymous("this.Name = 'Ada';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	checkProgram, err := CompileAnonymous(`
+Child c = new Child();
+System.assertEquals('Ada', c.get('name'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	addProgram, err := CompileAnonymous("values.put(key, value);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	getProgram, err := CompileAnonymous("return values.get(key);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	setterProgram, err := CompileAnonymous("add('name', value);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Parent",
+		Fields: map[string]Field{
+			"values": {Name: "values", Type: "Map<String,Object>"},
+		},
+		Constructors: []Method{{
+			Name:          "Parent.<init>",
+			ClassName:     "Parent",
+			Program:       parentCtor,
+			IsConstructor: true,
+		}},
+		Methods: map[string]Method{
+			"add": {Name: "Parent.add", ClassName: "Parent", Params: []Param{{Name: "key", Type: "String"}, {Name: "value", Type: "Object"}}, Program: addProgram},
+			"get": {Name: "Parent.get", ClassName: "Parent", Params: []Param{{Name: "key", Type: "String"}}, ReturnType: "Object", Program: getProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Child",
+		SuperClass: "Parent",
+		Fields: map[string]Field{
+			"Name": {
+				Name:   "Name",
+				Type:   "String",
+				Setter: &Method{Name: "Child.Name.set", ClassName: "Child", Params: []Param{{Name: "value", Type: "String"}}, Program: setterProgram},
+			},
+		},
+		Constructors: []Method{{
+			Name:          "Child.<init>",
+			ClassName:     "Child",
+			Program:       childCtor,
+			IsConstructor: true,
+		}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(checkProgram); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecImplicitSuperConstructorRunsFullAncestorChain(t *testing.T) {
+	grandparentCtor, err := CompileAnonymous("values = new Map<String, Object>();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	parentCtor, err := CompileAnonymous("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	childCtor, err := CompileAnonymous("label = seed;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	checkProgram, err := CompileAnonymous(`
+Child c = new Child('Ada');
+c.add('name', c.label);
+System.assertEquals('Ada', c.get('name'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	addProgram, err := CompileAnonymous("values.put(key, value);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	getProgram, err := CompileAnonymous("return values.get(key);")
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Grandparent",
+		Fields: map[string]Field{
+			"values": {Name: "values", Type: "Map<String,Object>"},
+		},
+		Constructors: []Method{{
+			Name:          "Grandparent.<init>",
+			ClassName:     "Grandparent",
+			Program:       grandparentCtor,
+			IsConstructor: true,
+		}},
+		Methods: map[string]Method{
+			"add": {Name: "Grandparent.add", ClassName: "Grandparent", Params: []Param{{Name: "key", Type: "String"}, {Name: "value", Type: "Object"}}, Program: addProgram},
+			"get": {Name: "Grandparent.get", ClassName: "Grandparent", Params: []Param{{Name: "key", Type: "String"}}, ReturnType: "Object", Program: getProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Parent",
+		SuperClass: "Grandparent",
+		Constructors: []Method{{
+			Name:          "Parent.<init>",
+			ClassName:     "Parent",
+			Program:       parentCtor,
+			IsConstructor: true,
+		}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Child",
+		SuperClass: "Parent",
+		Fields: map[string]Field{
+			"label": {Name: "label", Type: "String"},
+		},
+		Constructors: []Method{{
+			Name:          "Child.<init>",
+			ClassName:     "Child",
+			Params:        []Param{{Name: "seed", Type: "String"}},
+			Program:       childCtor,
+			IsConstructor: true,
+		}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(checkProgram); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecExplicitSuperConstructorRunsAncestorDefaultConstructor(t *testing.T) {
 	grandparentCtor, err := CompileAnonymous("base = 2;")
 	if err != nil {
@@ -771,18 +1297,82 @@ System.assertEquals(9, c.score());
 	}
 }
 
-func TestExecTestCreateStubInterceptsPropertyGetter(t *testing.T) {
-	getterProgram, err := CompileAnonymous("return missing.value;")
+func TestExecCastControlsOverloadResolutionButPreservesRuntimeDispatch(t *testing.T) {
+	childProgram, err := CompileAnonymous("return choose((Base)arg);")
 	if err != nil {
 		t.Fatal(err)
 	}
-	providerProgram, err := CompileAnonymous("return null;")
+	baseProgram, err := CompileAnonymous("return arg.kind();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	kindProgram, err := CompileAnonymous("return 'child';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Chooser c = new Chooser();
+System.assertEquals('child', c.choose(new Child()));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Base",
+		Methods: map[string]Method{
+			"kind": {Name: "Base.kind", ClassName: "Base", ReturnType: "String", Modifiers: []string{"abstract"}},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Child",
+		SuperClass: "Base",
+		Methods: map[string]Method{
+			"kind": {Name: "Child.kind", ClassName: "Child", ReturnType: "String", Program: kindProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "Chooser",
+		Methods: map[string]Method{
+			"choose": {Name: "Chooser.choose", ClassName: "Chooser", Params: []Param{{Name: "arg", Type: "Child"}}, ReturnType: "String", Program: childProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	machine.MethodOverloads["Chooser.choose"] = []Method{
+		{Name: "Chooser.choose", ClassName: "Chooser", Params: []Param{{Name: "arg", Type: "Child"}}, ReturnType: "String", Program: childProgram},
+		{Name: "Chooser.choose", ClassName: "Chooser", Params: []Param{{Name: "arg", Type: "Base"}}, ReturnType: "String", Program: baseProgram},
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecTestCreateStubFallsThroughExplicitPropertyGetterWhenProviderReturnsNull(t *testing.T) {
+	getterProgram, err := CompileAnonymous("return value();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	valueProgram, err := CompileAnonymous("return 'mock';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	providerProgram, err := CompileAnonymous(`
+if (stubbedMethodName == 'value') {
+	return 'mocked method';
+}
+return null;
+`)
 	if err != nil {
 		t.Fatal(err)
 	}
 	program, err := CompileAnonymous(`
 Base proxy = (Base)Test.createStub(Base.class, new Provider());
-System.assertEquals(null, proxy.Amount);
+System.assertEquals('mocked method', proxy.Name);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -792,7 +1382,122 @@ System.assertEquals(null, proxy.Amount);
 	if err := machine.RegisterClass(Class{
 		Name: "Base",
 		Fields: map[string]Field{
-			"Amount": {Name: "Amount", Type: "Decimal", Getter: &Method{Name: "Base.Amount.get", ClassName: "Base", ReturnType: "Decimal", Program: getterProgram}},
+			"Name": {Name: "Name", Type: "String", Getter: &Method{Name: "Base.Name.get", ClassName: "Base", ReturnType: "String", Program: getterProgram}},
+		},
+		Methods: map[string]Method{
+			"value": {Name: "Base.value", ClassName: "Base", ReturnType: "String", Program: valueProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Provider",
+		Interfaces: []string{"StubProvider"},
+		Methods: map[string]Method{
+			"handleMethodCall": {
+				Name:       "Provider.handleMethodCall",
+				ClassName:  "Provider",
+				ReturnType: "Object",
+				Params: []Param{
+					{Name: "stubbedObject", Type: "Object"},
+					{Name: "stubbedMethodName", Type: "String"},
+					{Name: "returnType", Type: "Type"},
+					{Name: "listOfParamTypes", Type: "List<Type>"},
+					{Name: "listOfParamNames", Type: "List<String>"},
+					{Name: "listOfArgs", Type: "List<Object>"},
+				},
+				Program: providerProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecTestCreateStubInterceptsPropertyGetterWhenProviderReturnsValue(t *testing.T) {
+	getterProgram, err := CompileAnonymous("return missing.value;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	providerProgram, err := CompileAnonymous("return 'mocked property';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Base proxy = (Base)Test.createStub(Base.class, new Provider());
+System.assertEquals('mocked property', proxy.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name: "Base",
+		Fields: map[string]Field{
+			"Name": {Name: "Name", Type: "String", Getter: &Method{Name: "Base.Name.get", ClassName: "Base", ReturnType: "String", Program: getterProgram}},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Provider",
+		Interfaces: []string{"StubProvider"},
+		Methods: map[string]Method{
+			"handleMethodCall": {
+				Name:       "Provider.handleMethodCall",
+				ClassName:  "Provider",
+				ReturnType: "Object",
+				Params: []Param{
+					{Name: "stubbedObject", Type: "Object"},
+					{Name: "stubbedMethodName", Type: "String"},
+					{Name: "returnType", Type: "Type"},
+					{Name: "listOfParamTypes", Type: "List<Type>"},
+					{Name: "listOfParamNames", Type: "List<String>"},
+					{Name: "listOfArgs", Type: "List<Object>"},
+				},
+				Program: providerProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecTestCreateStubCollectionGetterCanInitializeBackingProperty(t *testing.T) {
+	getterProgram, err := CompileAnonymous(`
+if (Items == null) {
+	Items = new List<String>();
+}
+return Items;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	providerProgram, err := CompileAnonymous("return null;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Base proxy = (Base)Test.createStub(Base.class, new Provider());
+proxy.Items.add('Acme');
+System.assertEquals(1, proxy.Items.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name: "Base",
+		Fields: map[string]Field{
+			"Items": {Name: "Items", Type: "List<String>", Getter: &Method{Name: "Base.Items.get", ClassName: "Base", ReturnType: "List<String>", Program: getterProgram}},
 		},
 	}); err != nil {
 		t.Fatal(err)
@@ -1050,10 +1755,11 @@ func TestExecPropertyAccessorMethods(t *testing.T) {
 		t.Fatal(err)
 	}
 	program, err := CompileAnonymous(`
-Box b = new Box();
-b.Name = 'acme';
-System.assertEquals('ACME!', b.Name);
-`)
+	Box b = new Box();
+	b.Name = 'acme';
+	System.assertEquals('ACME!', b.Name);
+	System.assertEquals('ACME!', b.name);
+	`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1151,6 +1857,210 @@ System.assertEquals('Acme', b.Name);
 	}); err != nil {
 		t.Fatal(err)
 	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecPropertySetterSelfReferenceUsesBackingField(t *testing.T) {
+	setter, err := CompileAnonymous(`
+Seen = value;
+this.Name = value;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Box b = new Box();
+b.Name = 'Acme';
+System.assertEquals('Acme', b.Name);
+System.assertEquals('Acme', b.Seen);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Box",
+		Fields: map[string]Field{
+			"Seen": {Name: "Seen", Type: "String"},
+			"Name": {
+				Name:     "Name",
+				Type:     "String",
+				Property: true,
+				Setter:   &Method{Name: "Box.Name.set", ClassName: "Box", Params: []Param{{Name: "value", Type: "String"}}, Program: setter},
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStringConcatWithTypedNullStringOperand(t *testing.T) {
+	program, err := CompileAnonymous(`
+Id missing;
+Id present = '001000000000001';
+String out = (String)missing + present;
+System.assertEquals('null001000000000001', out);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMethodParameterNormalizesTypedDynamicDateLiteral(t *testing.T) {
+	methodProgram, err := CompileAnonymous(`
+System.assertEquals(Date.today(), transactionDate);
+return transactionDate;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Date raw = (Date)'TODAY()';
+Date normalized = Probe.accept(raw);
+System.assertEquals(Date.today(), normalized);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterMethod(Method{
+		Name:       "Probe.accept",
+		ClassName:  "Probe",
+		IsStatic:   true,
+		ReturnType: "Date",
+		Params:     []Param{{Name: "transactionDate", Type: "Date"}},
+		Program:    methodProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMethodParameterNormalizesDynamicDateLiteralToDatetime(t *testing.T) {
+	methodProgram, err := CompileAnonymous(`
+System.assertEquals(Datetime.newInstance(Date.today(), Time.newInstance(0, 0, 0, 0)), transactionDate);
+return transactionDate;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Date raw = (Date)'TODAY()';
+Datetime normalized = Probe.acceptDatetime(raw);
+System.assertEquals(Date.today(), normalized.date());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterMethod(Method{
+		Name:       "Probe.acceptDatetime",
+		ClassName:  "Probe",
+		IsStatic:   true,
+		ReturnType: "Datetime",
+		Params:     []Param{{Name: "transactionDate", Type: "Datetime"}},
+		Program:    methodProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecConstructorAcceptsTypedNullArguments(t *testing.T) {
+	program, err := CompileAnonymous(`
+String missing;
+Box box = new Box(missing);
+System.assertEquals(null, box.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctor, err := CompileAnonymous(`this.Name = name;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Box",
+		Fields: map[string]Field{
+			"Name": {Name: "Name", Type: "String"},
+		},
+		Constructors: []Method{{
+			Name:          "Box",
+			ClassName:     "Box",
+			IsConstructor: true,
+			Params:        []Param{{Name: "name", Type: "String"}},
+			Program:       ctor,
+		}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecPropertyGetterCanInitializeAutoProperty(t *testing.T) {
+	getter, err := CompileAnonymous(`
+if (Items == null) {
+	Items = new List<String>();
+}
+return Items;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Box b = new Box();
+b.Items.add('Acme');
+System.assertEquals(1, b.Items.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Box",
+		Fields: map[string]Field{
+			"Items": {
+				Name:     "Items",
+				Type:     "List<String>",
+				Property: true,
+				Getter:   &Method{Name: "Box.Items.get", ClassName: "Box", ReturnType: "List<String>", Program: getter},
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecListLiteralKeepsNestedListElement(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<String> names = new List<String>{ 'Ada' };
+List<Object> values = new List<Object>{ names };
+System.assertEquals(1, values.size());
+System.assert(values[0] instanceof List<String>);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
@@ -1996,6 +2906,271 @@ System.assertEquals('mock', accounts.get(0).Name);
 	}
 }
 
+func TestExecTestCreateStubStaticFactoryInterceptsMapValuesListSObject(t *testing.T) {
+	instanceGetter, err := CompileAnonymous(`
+if (mockInstance != null && Test.isRunningTest()) {
+	return mockInstance;
+}
+return new DML();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	updateProgram, err := CompileAnonymous("return null;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	providerProgram, err := CompileAnonymous(`
+if (calls == null) {
+	calls = 0;
+}
+calls = calls + 1;
+paramType = String.valueOf(listOfParamTypes[0]);
+return new List<Database.SaveResult>();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+DML.mockInstance = (DML)Test.createStub(DML.class, new Provider());
+Map<Id, Account> accountsById = new Map<Id, Account>();
+accountsById.put('001000000000001', new Account(Id = '001000000000001'));
+DML.Instance.updateRecords(accountsById.values());
+System.assertEquals(1, Provider.calls);
+System.assertEquals('List<SObject>', Provider.paramType);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{
+		Name: "DML",
+		StaticFields: map[string]Field{
+			"mockInstance": {Name: "mockInstance", Type: "DML", Static: true},
+			"Instance":     {Name: "Instance", Type: "DML", Static: true, Getter: &Method{Name: "DML.Instance", ClassName: "DML", ReturnType: "DML", IsStatic: true, Program: instanceGetter}},
+		},
+		Methods: map[string]Method{
+			"updateRecords": {Name: "DML.updateRecords", ClassName: "DML", ReturnType: "List<Database.SaveResult>", Params: []Param{{Name: "records", Type: "List<SObject>"}}, Program: updateProgram},
+		},
+		Constructors: []Method{{Name: "DML.<init>", ClassName: "DML", ReturnType: "void", IsConstructor: true}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Provider",
+		Interfaces: []string{"StubProvider"},
+		StaticFields: map[string]Field{
+			"calls":     {Name: "calls", Type: "Integer", Static: true},
+			"paramType": {Name: "paramType", Type: "String", Static: true},
+		},
+		Methods: map[string]Method{
+			"handleMethodCall": {
+				Name:       "Provider.handleMethodCall",
+				ClassName:  "Provider",
+				ReturnType: "Object",
+				Params: []Param{
+					{Name: "stubbedObject", Type: "Object"},
+					{Name: "stubbedMethodName", Type: "String"},
+					{Name: "returnType", Type: "Type"},
+					{Name: "listOfParamTypes", Type: "List<Type>"},
+					{Name: "listOfParamNames", Type: "List<String>"},
+					{Name: "listOfArgs", Type: "List<Object>"},
+				},
+				Program: providerProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecMapGetUsesCustomEqualsForObjectKeys(t *testing.T) {
+	keyCtor, err := CompileAnonymous(`
+this.typeName = typeName;
+this.methodName = methodName;
+this.methodArgTypes = methodArgTypes;
+this.mockInstance = mockInstance;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	equalsProgram, err := CompileAnonymous(`
+if (this === other) {
+	return true;
+}
+Key that = other instanceof Key ? (Key)other : null;
+return that != null
+	&& this.mockInstance === that.mockInstance
+	&& this.typeName == that.typeName
+	&& this.methodName == that.methodName
+	&& this.methodArgTypes == that.methodArgTypes;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	hashProgram, err := CompileAnonymous(`
+Integer prime = 31;
+Integer result = 1;
+result = prime * result + ((mockInstance == null) ? 0 : mockInstance.hashCode());
+result = prime * result + ((methodArgTypes == null) ? 0 : methodArgTypes.hashCode());
+result = prime * result + ((methodName == null) ? 0 : methodName.hashCode());
+result = prime * result + ((typeName == null) ? 0 : typeName.hashCode());
+return result;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	providerProgram, err := CompileAnonymous("return null;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Gateway mock = (Gateway)Test.createStub(Gateway.class, new Provider());
+List<Type> firstTypes = new List<Type>{Account.class};
+List<Type> secondTypes = new List<Type>{Account.class};
+Key first = new Key('Gateway', 'updateRecords', firstTypes, mock);
+Key second = new Key('Gateway', 'updateRecords', secondTypes, mock);
+Map<Key, String> values = new Map<Key, String>();
+values.put(first, 'hit');
+System.assertEquals('hit', values.get(second));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{
+		Name: "Gateway",
+		Methods: map[string]Method{
+			"updateRecords": {Name: "Gateway.updateRecords", ClassName: "Gateway", ReturnType: "void", Params: []Param{{Name: "records", Type: "List<SObject>"}}},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "Key",
+		Fields: map[string]Field{
+			"typeName":       {Name: "typeName", Type: "String"},
+			"methodName":     {Name: "methodName", Type: "String"},
+			"methodArgTypes": {Name: "methodArgTypes", Type: "List<Type>"},
+			"mockInstance":   {Name: "mockInstance", Type: "Object"},
+		},
+		Constructors: []Method{{
+			Name:      "Key.<init>",
+			ClassName: "Key",
+			Params: []Param{
+				{Name: "typeName", Type: "String"},
+				{Name: "methodName", Type: "String"},
+				{Name: "methodArgTypes", Type: "List<Type>"},
+				{Name: "mockInstance", Type: "Object"},
+			},
+			Program: keyCtor,
+		}},
+		Methods: map[string]Method{
+			"equals":   {Name: "Key.equals", ClassName: "Key", ReturnType: "Boolean", Params: []Param{{Name: "other", Type: "Object"}}, Program: equalsProgram},
+			"hashCode": {Name: "Key.hashCode", ClassName: "Key", ReturnType: "Integer", Program: hashProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Provider",
+		Interfaces: []string{"StubProvider"},
+		Methods: map[string]Method{
+			"handleMethodCall": {
+				Name:       "Provider.handleMethodCall",
+				ClassName:  "Provider",
+				ReturnType: "Object",
+				Params: []Param{
+					{Name: "stubbedObject", Type: "Object"},
+					{Name: "stubbedMethodName", Type: "String"},
+					{Name: "returnType", Type: "Type"},
+					{Name: "listOfParamTypes", Type: "List<Type>"},
+					{Name: "listOfParamNames", Type: "List<String>"},
+					{Name: "listOfArgs", Type: "List<Object>"},
+				},
+				Program: providerProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecAsyncDrainRestoresStaticInitializationState(t *testing.T) {
+	initProgram, err := CompileAnonymous("AsyncConstants.Query = 'SELECT Id FROM Account';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	getProgram, err := CompileAnonymous("return Query;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	jobProgram, err := CompileAnonymous("String query = AsyncConstants.getQuery();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Test.startTest();
+System.enqueueJob(new StaticInitJob());
+Test.stopTest();
+System.assertEquals('SELECT Id FROM Account', AsyncConstants.getQuery());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name: "AsyncConstants",
+		StaticFields: map[string]Field{
+			"Query": {Name: "Query", Type: "String", Static: true},
+		},
+		StaticFieldOrder: []string{"Query"},
+		StaticInitializers: []Method{{
+			Name:      "AsyncConstants.<static_init>",
+			ClassName: "AsyncConstants",
+			IsStatic:  true,
+			Program:   initProgram,
+		}},
+		Methods: map[string]Method{
+			"getQuery": {Name: "AsyncConstants.getQuery", ClassName: "AsyncConstants", ReturnType: "String", IsStatic: true, Program: getProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "StaticInitJob",
+		Interfaces: []string{"Queueable"},
+		Methods: map[string]Method{
+			"execute": {
+				Name:       "StaticInitJob.execute",
+				ClassName:  "StaticInitJob",
+				ReturnType: "void",
+				Params:     []Param{{Name: "context", Type: "QueueableContext"}},
+				Program:    jobProgram,
+			},
+		},
+		Constructors: []Method{{Name: "StaticInitJob.<init>", ClassName: "StaticInitJob", ReturnType: "void", IsConstructor: true}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestRuntimeConstructorResolvesInheritedInnerClass(t *testing.T) {
 	innerCtor, err := CompileAnonymous("this.value = value;")
 	if err != nil {
@@ -2170,6 +3345,47 @@ System.assertEquals('guarded', leaf.run());
 		SuperClass: "Middle",
 		Methods: map[string]Method{
 			"run": {Name: "Leaf.run", ClassName: "Leaf", ReturnType: "String", Program: run},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRuntimeAllowsProtectedAccessBetweenNestedSiblingClasses(t *testing.T) {
+	guarded, err := CompileAnonymous("return 'guarded';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	run, err := CompileAnonymous("return item.guarded();")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Outer.Runner runner = new Outer.Runner();
+System.assertEquals('guarded', runner.run(new Outer.Item()));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Outer"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "Outer.Item",
+		Methods: map[string]Method{
+			"guarded": {Name: "Outer.Item.guarded", ClassName: "Outer.Item", ReturnType: "String", Access: "protected", Program: guarded},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name: "Outer.Runner",
+		Methods: map[string]Method{
+			"run": {Name: "Outer.Runner.run", ClassName: "Outer.Runner", Params: []Param{{Name: "item", Type: "Outer.Item"}}, ReturnType: "String", Program: run},
 		},
 	}); err != nil {
 		t.Fatal(err)
@@ -2621,25 +3837,6 @@ System.assertEquals('concrete', Util.pick(records));
 	}
 }
 
-func TestRuntimeFFLibAnySObjectMatcherAcceptsSObjectLists(t *testing.T) {
-	program, err := CompileAnonymous(`
-fflib_MatcherDefinitions.AnySObject matcher = new fflib_MatcherDefinitions.AnySObject();
-System.assert(matcher.matches(new Account(Name = 'Acme')));
-System.assert(matcher.matches(new List<SObject>{ new Account(Name = 'Acme') }));
-System.assert(!matcher.matches(new List<SObject>()));
-`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	machine := New(nil)
-	if err := machine.RegisterClass(Class{Name: "fflib_MatcherDefinitions.AnySObject"}); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := machine.Execute(program); err != nil {
-		t.Fatal(err)
-	}
-}
-
 func TestRuntimeNumericOverloadChoosesNarrowestWidening(t *testing.T) {
 	longProgram, err := CompileAnonymous("return 'long';")
 	if err != nil {
@@ -2772,6 +3969,58 @@ func TestRuntimeNullOverloadChoosesMostSpecificType(t *testing.T) {
 	for _, method := range []Method{
 		{Name: "Util.pick", ReturnType: "String", Params: []Param{{Name: "value", Type: "Object"}}, Program: objectProgram},
 		{Name: "Util.pick", ReturnType: "String", Params: []Param{{Name: "value", Type: "String"}}, Program: stringProgram},
+	} {
+		if err := machine.RegisterMethod(method); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRuntimeTypedRelationshipNullSelectsSObjectOverload(t *testing.T) {
+	accountProgram, err := CompileAnonymous("return 'account';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	decimalProgram, err := CompileAnonymous("return 'decimal';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Child__c child = new Child__c();
+System.assertEquals('account', Util.pick(child.Parent__r));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.OrgState{Objects: map[string]storage.ObjectState{
+		"Child__c": {
+			Definition: storage.ObjectDefinition{
+				APIName: "Child__c",
+				Fields: map[string]storage.Field{
+					"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Parent__r"},
+				},
+				Relations: []storage.Relationship{{
+					Field:              "Parent__c",
+					ParentObjects:      []string{"Account"},
+					ParentRelationship: "Parent__r",
+				}},
+			},
+		},
+		"Account": {
+			Definition: storage.ObjectDefinition{
+				APIName: "Account",
+				Fields:  map[string]storage.Field{"Id": {APIName: "Id", Type: storage.FieldID}},
+			},
+		},
+	}}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	for _, method := range []Method{
+		{Name: "Util.pick", ReturnType: "String", Params: []Param{{Name: "value", Type: "Account"}}, Program: accountProgram},
+		{Name: "Util.pick", ReturnType: "String", Params: []Param{{Name: "value", Type: "Decimal"}}, Program: decimalProgram},
 	} {
 		if err := machine.RegisterMethod(method); err != nil {
 			t.Fatal(err)
@@ -3110,6 +4359,50 @@ System.assertEquals('parent', worker.work());
 	}
 }
 
+func TestExecMapInterfaceValueDispatchesConcreteMethod(t *testing.T) {
+	concreteProgram, err := CompileAnonymous("return 'concrete';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	interfaceProgram, err := CompileAnonymous("return 'interface';")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Map<Id, Worker> workers = new Map<Id, Worker>();
+Worker worker = (Worker) Type.forName('ConcreteWorker').newInstance();
+workers.put('001000000000001AAA', worker);
+Worker fromMap = workers.get('001000000000001AAA');
+System.assertEquals('concrete', fromMap.work());
+System.assertEquals('concrete', workers.get('001000000000001AAA').work());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:        "Worker",
+		IsInterface: true,
+		Methods: map[string]Method{
+			"work": {Name: "Worker.work", ClassName: "Worker", ReturnType: "String", Program: interfaceProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "ConcreteWorker",
+		Interfaces: []string{"Worker"},
+		Methods: map[string]Method{
+			"work": {Name: "ConcreteWorker.work", ClassName: "ConcreteWorker", ReturnType: "String", Program: concreteProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecInheritedStaticMembersViaSubclassName(t *testing.T) {
 	staticProgram, err := CompileAnonymous("return total;")
 	if err != nil {
@@ -3270,10 +4563,10 @@ func TestTypeHashCodeUsesTypeName(t *testing.T) {
 }
 
 func TestStubProxyStringUsesGeneratedApexStubTypeName(t *testing.T) {
-	proxy := Object("fflib_MyList")
-	proxy.Fields["__oaerStubbedType"] = String("fflib_MyList")
+	proxy := Object("MockedList")
+	proxy.Fields["__oaerStubbedType"] = String("MockedList")
 	got := proxy.String()
-	if !strings.HasPrefix(got, "fflib_MyList__sfdc_ApexStub:") {
+	if !strings.HasPrefix(got, "MockedList__sfdc_ApexStub:") {
 		t.Fatalf("proxy string = %q", got)
 	}
 }
