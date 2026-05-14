@@ -202,7 +202,7 @@ func TestEnsureStandardObjectFieldsAddsAccountWebsiteWithoutClobber(t *testing.T
 
 	EnsureStandardObjectFields(&definition)
 
-	if definition.Fields["Website"].Type != FieldAny || definition.Fields["Website"].Label != "Custom label" {
+	if definition.Fields["Website"].Type != FieldString || definition.Fields["Website"].Label != "Custom label" {
 		t.Fatalf("Website field was clobbered: %#v", definition.Fields["Website"])
 	}
 	if field, ok := definition.Fields["Phone"]; !ok || field.Type != FieldString {
@@ -276,6 +276,98 @@ func TestEnsureStandardObjectFieldsIncludesStubOverlayFields(t *testing.T) {
 	}
 	if field, ok := definition.Fields["ApexClassId"]; !ok || field.Type != FieldReference || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "ApexClass" {
 		t.Fatalf("ApexClassId field = %#v, %v", field, ok)
+	}
+}
+
+func TestEnsureStandardObjectFieldsEnrichesShallowExistingStandardFields(t *testing.T) {
+	definition := ObjectDefinition{
+		APIName: "Account",
+		Fields: map[string]Field{
+			"AnnualRevenue": {APIName: "AnnualRevenue"},
+			"Website":       {APIName: "Website", Label: "Project Website", Type: FieldAny},
+		},
+	}
+
+	EnsureStandardObjectFields(&definition)
+
+	revenue := definition.Fields["AnnualRevenue"]
+	if revenue.Type != FieldDecimal || revenue.DisplayType != "CURRENCY" || revenue.Precision != 18 {
+		t.Fatalf("AnnualRevenue was not enriched: %#v", revenue)
+	}
+	if revenue.Nillable == nil || !*revenue.Nillable || revenue.Createable == nil || !*revenue.Createable {
+		t.Fatalf("AnnualRevenue flags were not enriched: %#v", revenue)
+	}
+	website := definition.Fields["Website"]
+	if website.Label != "Project Website" || website.Type != FieldString || website.DisplayType != "URL" || website.Length != 255 {
+		t.Fatalf("Website enrichment = %#v", website)
+	}
+}
+
+func TestEnsureStandardObjectFieldsPreservesRichExistingMetadata(t *testing.T) {
+	nillable := false
+	createable := false
+	definition := ObjectDefinition{
+		APIName: "Account",
+		Fields: map[string]Field{
+			"Website": {
+				APIName:      "Website",
+				Label:        "Project Website",
+				Type:         FieldString,
+				DisplayType:  "PROJECT_URL",
+				Length:       80,
+				DefaultValue: "https://example.test",
+				Nillable:     &nillable,
+				Createable:   &createable,
+			},
+		},
+	}
+
+	EnsureStandardObjectFields(&definition)
+
+	website := definition.Fields["Website"]
+	if website.Label != "Project Website" || website.DisplayType != "PROJECT_URL" || website.Length != 80 || website.DefaultValue != "https://example.test" {
+		t.Fatalf("Website rich metadata was clobbered: %#v", website)
+	}
+	if website.Nillable == nil || *website.Nillable || website.Createable == nil || *website.Createable {
+		t.Fatalf("Website boolean metadata was clobbered: %#v", website)
+	}
+	if website.Updateable == nil || !*website.Updateable {
+		t.Fatalf("Website unset flags were not enriched: %#v", website)
+	}
+}
+
+func TestEnsureStandardObjectFieldsEnrichesPicklistDefaults(t *testing.T) {
+	definition := ObjectDefinition{
+		APIName: "Campaign",
+		Fields: map[string]Field{
+			"Status": {APIName: "Status"},
+		},
+	}
+
+	EnsureStandardObjectFields(&definition)
+
+	status := definition.Fields["Status"]
+	if status.Type != FieldPicklist || status.DisplayType != "PICKLIST" || status.DefaultValue != "Planned" || len(status.PicklistValues) == 0 {
+		t.Fatalf("Campaign.Status was not enriched: %#v", status)
+	}
+}
+
+func TestEnsureStandardObjectFieldsEnrichesShallowStubOverlayFields(t *testing.T) {
+	definition := ObjectDefinition{
+		APIName: "AIInsightAction",
+		Fields: map[string]Field{
+			"AiRecordInsightId": {APIName: "AiRecordInsightId", Type: FieldAny},
+		},
+	}
+
+	EnsureStandardObjectFields(&definition)
+
+	field := definition.Fields["AiRecordInsightId"]
+	if field.Type != FieldReference || field.DisplayType != "REFERENCE" || field.RelationshipName != "AiRecordInsight" || field.ChildRelationshipName != "AIInsightActions" {
+		t.Fatalf("AiRecordInsightId was not enriched: %#v", field)
+	}
+	if len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "AIRecordInsight" {
+		t.Fatalf("AiRecordInsightId reference targets = %#v", field.ReferenceTo)
 	}
 }
 
