@@ -55,6 +55,7 @@ type Field struct {
 	SummaryForeignKey     string          `json:"summaryForeignKey,omitempty"`
 	SummaryOperation      string          `json:"summaryOperation,omitempty"`
 	SummaryFilterItems    []SummaryFilter `json:"summaryFilterItems,omitempty"`
+	ValueSetName          string          `json:"valueSetName,omitempty"`
 	PicklistValues        []PicklistValue `json:"picklistValues,omitempty"`
 }
 
@@ -167,10 +168,16 @@ type validationRuleXML struct {
 
 type valueSetXML struct {
 	Definition valueSetDefinitionXML `xml:"valueSetDefinition"`
+	Name       string                `xml:"valueSetName"`
 }
 
 type valueSetDefinitionXML struct {
 	Values []picklistValueXML `xml:"value"`
+}
+
+type valueSetFileXML struct {
+	CustomValues   []picklistValueXML `xml:"customValue"`
+	StandardValues []picklistValueXML `xml:"standardValue"`
 }
 
 type picklistValueXML struct {
@@ -193,6 +200,10 @@ type customMetadataValueXML struct {
 
 func LoadProject(p project.Project) (Schema, error) {
 	byName := make(map[string]*Object)
+	valueSets, err := loadValueSets(p)
+	if err != nil {
+		return Schema{}, err
+	}
 
 	for _, path := range p.ObjectFiles {
 		object, err := loadObject(path)
@@ -211,6 +222,7 @@ func LoadProject(p project.Project) (Schema, error) {
 		if err != nil {
 			return Schema{}, err
 		}
+		applyValueSet(&field, valueSets)
 		object := byName[objectName]
 		if object == nil {
 			object = &Object{Name: objectName}
@@ -275,6 +287,9 @@ func LoadProject(p project.Project) (Schema, error) {
 
 	out := Schema{Objects: make([]Object, 0, len(byName)), CustomMetadataRecords: records}
 	for _, object := range byName {
+		for i := range object.Fields {
+			applyValueSet(&object.Fields[i], valueSets)
+		}
 		sort.Slice(object.Fields, func(i, j int) bool {
 			return object.Fields[i].Name < object.Fields[j].Name
 		})
@@ -490,8 +505,50 @@ func fieldFromXML(raw customFieldXML, fallback string) Field {
 		SummaryForeignKey:     strings.TrimSpace(raw.SummaryForeignKey),
 		SummaryOperation:      strings.TrimSpace(raw.SummaryOperation),
 		SummaryFilterItems:    summaryFiltersFromXML(raw.SummaryFilterItems),
+		ValueSetName:          strings.TrimSpace(raw.ValueSet.Name),
 		PicklistValues:        picklistValues(raw.ValueSet.Definition.Values),
 	}
+}
+
+func loadValueSets(p project.Project) (map[string][]PicklistValue, error) {
+	sets := make(map[string][]PicklistValue)
+	for _, path := range append(append([]string{}, p.GlobalValueSetFiles...), p.StandardValueSetFiles...) {
+		values, err := loadValueSet(path)
+		if err != nil {
+			return nil, err
+		}
+		name := valueSetNameFromPath(path)
+		if name == "" {
+			continue
+		}
+		sets[strings.ToLower(name)] = values
+	}
+	return sets, nil
+}
+
+func loadValueSet(path string) ([]PicklistValue, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	var raw valueSetFileXML
+	if err := xml.Unmarshal(escapeBareAmpersands(data), &raw); err != nil {
+		return nil, err
+	}
+	values := picklistValues(raw.CustomValues)
+	values = append(values, picklistValues(raw.StandardValues)...)
+	return values, nil
+}
+
+func applyValueSet(field *Field, valueSets map[string][]PicklistValue) {
+	if field == nil || len(field.PicklistValues) > 0 || strings.TrimSpace(field.ValueSetName) == "" {
+		return
+	}
+	values := valueSets[strings.ToLower(field.ValueSetName)]
+	if len(values) == 0 {
+		return
+	}
+	field.PicklistValues = append([]PicklistValue(nil), values...)
 }
 
 func summaryFiltersFromXML(raw []summaryFilterXML) []SummaryFilter {
@@ -575,6 +632,12 @@ func customMetadataFullName(path string) string {
 	name := filepath.Base(path)
 	name = trimMetadataSuffix(name, ".md-meta.xml")
 	return trimMetadataSuffix(name, ".md")
+}
+
+func valueSetNameFromPath(path string) string {
+	name := filepath.Base(path)
+	name = trimMetadataSuffix(name, ".globalValueSet-meta.xml")
+	return trimMetadataSuffix(name, ".standardValueSet-meta.xml")
 }
 
 func customMetadataNames(fullName string) (string, string) {

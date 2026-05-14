@@ -12,14 +12,18 @@ func TestLoadProject(t *testing.T) {
 	root := t.TempDir()
 	objectPath := filepath.Join(root, "force-app/main/objects/Thing__c/Thing__c.object-meta.xml")
 	fieldPath := filepath.Join(root, "force-app/main/objects/Thing__c/fields/Parent__c.field-meta.xml")
+	globalPicklistFieldPath := filepath.Join(root, "force-app/main/objects/Thing__c/fields/State__c.field-meta.xml")
 	formulaFieldPath := filepath.Join(root, "force-app/main/objects/Thing__c/fields/Score__c.field-meta.xml")
 	encryptedFieldPath := filepath.Join(root, "force-app/main/objects/Thing__c/fields/Secret__c.field-meta.xml")
 	rootFieldPath := filepath.Join(root, "force-app/main/objects/Thing__c/Legacy__c.field-meta.xml")
+	valueSetPath := filepath.Join(root, "force-app/main/globalValueSets/States.globalValueSet-meta.xml")
 	recordTypePath := filepath.Join(root, "force-app/main/objects/Thing__c/recordTypes/Business.recordType-meta.xml")
 	lowercaseRecordTypePath := filepath.Join(root, "force-app/main/objects/Thing__c/recordTypes/Consumer.recordtype-meta.xml")
 	validationRulePath := filepath.Join(root, "force-app/main/objects/Thing__c/validationRules/Block.validationRule-meta.xml")
 	writeFile(t, objectPath, `<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata"><label>Thing</label><pluralLabel>Things</pluralLabel><sharingModel>ReadWrite</sharingModel></CustomObject>`)
 	writeFile(t, fieldPath, `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Parent__c</fullName><label>Parent</label><type>Picklist</type><referenceTo>Thing__c</referenceTo><referenceTo>Account</referenceTo><relationshipName>Parent__r</relationshipName><childRelationshipName>Children__r</childRelationshipName><deleteConstraint>Cascade</deleteConstraint><valueSet><valueSetDefinition><value><fullName>Hot</fullName><default>true</default><label>Hot Label</label></value><value><fullName>Cold</fullName><isActive>false</isActive></value></valueSetDefinition></valueSet></CustomField>`)
+	writeFile(t, globalPicklistFieldPath, `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>State__c</fullName><label>State</label><type>Picklist</type><valueSet><restricted>true</restricted><valueSetName>States</valueSetName></valueSet></CustomField>`)
+	writeFile(t, valueSetPath, `<GlobalValueSet xmlns="http://soap.sforce.com/2006/04/metadata"><customValue><fullName>AL</fullName><default>false</default><label>Alabama</label></customValue><customValue><fullName>PA</fullName><isActive>false</isActive><label>Pennsylvania</label></customValue></GlobalValueSet>`)
 	writeFile(t, formulaFieldPath, `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Score__c</fullName><label>Score</label><type>Number</type><formula>1 + 1</formula></CustomField>`)
 	writeFile(t, encryptedFieldPath, `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Secret__c</fullName><label>Secret</label><type>EncryptedText</type></CustomField>`)
 	writeFile(t, rootFieldPath, `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Legacy__c</fullName><label>Legacy</label><type>Text</type></CustomField>`)
@@ -27,14 +31,14 @@ func TestLoadProject(t *testing.T) {
 	writeFile(t, lowercaseRecordTypePath, `<RecordType xmlns="http://soap.sforce.com/2006/04/metadata"><label>Consumer Thing</label><active>false</active></RecordType>`)
 	writeFile(t, validationRulePath, `<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Block</fullName><active>true</active><errorConditionFormula>Parent__c = "Blocked"</errorConditionFormula><errorMessage>blocked by rule</errorMessage><errorDisplayField>Parent__c</errorDisplayField></ValidationRule>`)
 
-	s, err := LoadProject(project.Project{ObjectFiles: []string{objectPath}, FieldFiles: []string{fieldPath, formulaFieldPath, encryptedFieldPath, rootFieldPath}, RecordTypeFiles: []string{recordTypePath, lowercaseRecordTypePath}, ValidationRuleFiles: []string{validationRulePath}})
+	s, err := LoadProject(project.Project{ObjectFiles: []string{objectPath}, FieldFiles: []string{fieldPath, globalPicklistFieldPath, formulaFieldPath, encryptedFieldPath, rootFieldPath}, GlobalValueSetFiles: []string{valueSetPath}, RecordTypeFiles: []string{recordTypePath, lowercaseRecordTypePath}, ValidationRuleFiles: []string{validationRulePath}})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(s.Objects) != 1 || s.Objects[0].Name != "Thing__c" {
 		t.Fatalf("objects = %#v", s.Objects)
 	}
-	if len(s.Objects[0].Fields) != 4 {
+	if len(s.Objects[0].Fields) != 5 {
 		t.Fatalf("fields = %#v", s.Objects[0].Fields)
 	}
 	fields := fieldsByName(s.Objects[0].Fields)
@@ -63,6 +67,13 @@ func TestLoadProject(t *testing.T) {
 	}
 	if values[1].Active {
 		t.Fatalf("inactive picklist value marked active: %#v", values[1])
+	}
+	state := fields["State__c"]
+	if state.ValueSetName != "States" {
+		t.Fatalf("value set name = %q", state.ValueSetName)
+	}
+	if len(state.PicklistValues) != 2 || state.PicklistValues[0].FullName != "AL" || state.PicklistValues[1].Active {
+		t.Fatalf("global picklist values = %#v", state.PicklistValues)
 	}
 	recordTypes := s.Objects[0].RecordTypes
 	if len(recordTypes) != 2 || recordTypes[0].DeveloperName != "Business" || recordTypes[0].Label != "Business Thing" || !recordTypes[0].Active || !recordTypes[0].Default {
