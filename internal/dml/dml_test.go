@@ -142,6 +142,48 @@ func TestInsertAppliesAutoNumberName(t *testing.T) {
 	}
 }
 
+func TestContactUpdateRecomputesNameFromFirstAndLastName(t *testing.T) {
+	org := testOrg()
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Contact",
+			KeyPrefix: "003",
+			Fields: map[string]storage.Field{
+				"Name":      {APIName: "Name", Type: storage.FieldString},
+				"FirstName": {APIName: "FirstName", Type: storage.FieldString},
+				"LastName":  {APIName: "LastName", Type: storage.FieldString},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	engine := NewEngine(&org)
+	insert := engine.Insert([]storage.Record{{
+		Object: "Contact",
+		Fields: map[string]storage.Value{
+			"FirstName": storage.StringValue("Old"),
+			"LastName":  storage.StringValue("Name"),
+		},
+	}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert)
+	}
+	update := engine.Update([]storage.Record{{
+		ID:     insert[0].ID,
+		Object: "Contact",
+		Fields: map[string]storage.Value{
+			"Name":      storage.StringValue("Old Name"),
+			"FirstName": storage.StringValue("New"),
+			"LastName":  storage.StringValue("Person"),
+		},
+	}})
+	if !update[0].Success {
+		t.Fatalf("update = %#v", update)
+	}
+	if got := org.Objects["Contact"].Records[insert[0].ID].Fields["Name"].String; got != "New Person" {
+		t.Fatalf("updated contact name = %q", got)
+	}
+}
+
 func TestDMLRecalculatesSummaryFields(t *testing.T) {
 	org := testOrg()
 	org.Objects["Parent__c"] = storage.ObjectState{

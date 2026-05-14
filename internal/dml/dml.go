@@ -498,7 +498,7 @@ func normalizeFirstLastName(record *storage.Record) {
 	if record.Fields == nil {
 		record.Fields = make(map[string]storage.Value)
 	}
-	if _, ok := record.Fields["Name"]; ok {
+	if _, ok := record.Fields["Name"]; ok && !hasNameComponentField(record.Fields) {
 		return
 	}
 	firstName := stringField(record.Fields, "FirstName")
@@ -509,6 +509,12 @@ func normalizeFirstLastName(record *storage.Record) {
 	case lastName != "":
 		record.Fields["Name"] = storage.StringValue(lastName)
 	}
+}
+
+func hasNameComponentField(fields map[string]storage.Value) bool {
+	_, hasFirst := fields["FirstName"]
+	_, hasLast := fields["LastName"]
+	return hasFirst || hasLast
 }
 
 func normalizePersonAccountFields(objectName string, record *storage.Record) {
