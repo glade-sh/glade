@@ -198,6 +198,113 @@ func TestStandardPlatformSymbolsIncludeGeneratedProductNamespaceStubBreadth(t *t
 	requireStandardMethodParams(t, slackBuilder, "foo", []string{"String"}, []string{"foo"}, false)
 }
 
+func TestGeneratedStubSpecsCaseInsensitiveBreadthAudit(t *testing.T) {
+	auditGeneratedStubSpecs(t, "system", systemStubSymbolSpecs)
+	auditGeneratedStubSpecs(t, "product namespace", productNamespaceSymbolSpecs)
+}
+
+func auditGeneratedStubSpecs(t *testing.T, label string, specs []StandardSymbolSpec) {
+	t.Helper()
+	byName := make(map[string]StandardSymbolSpec, len(specs))
+	for _, spec := range specs {
+		if spec.Name == "" {
+			continue
+		}
+		key := strings.ToLower(spec.Name)
+		if existing, ok := byName[key]; ok {
+			t.Fatalf("%s generated specs contain duplicate type %q and %q differing only by case", label, existing.Name, spec.Name)
+		}
+		byName[key] = spec
+		auditGeneratedStubSpecMembers(t, label, spec)
+		if spec.Kind == apexast.DeclarationEnum {
+			for _, prop := range spec.Properties {
+				if prop.Name == "" {
+					continue
+				}
+				if !prop.Static {
+					t.Fatalf("%s enum %s constant %s is not static", label, spec.Name, prop.Name)
+				}
+				if !strings.EqualFold(prop.Type, spec.Name) {
+					t.Fatalf("%s enum %s constant %s type = %q, want %q", label, spec.Name, prop.Name, prop.Type, spec.Name)
+				}
+			}
+		}
+	}
+	for _, spec := range specs {
+		for _, aliasName := range generatedEnumAliasNames(spec) {
+			alias, ok := byName[strings.ToLower(aliasName)]
+			if !ok {
+				t.Fatalf("%s enum %s has missing nested alias %s", label, spec.Name, aliasName)
+			}
+			if alias.Kind != apexast.DeclarationEnum {
+				t.Fatalf("%s nested alias %s kind = %q, want enum", label, aliasName, alias.Kind)
+			}
+			if len(alias.Properties) == 0 {
+				t.Fatalf("%s nested alias %s has no constants", label, aliasName)
+			}
+			for _, prop := range alias.Properties {
+				if !prop.Static || !strings.EqualFold(prop.Type, alias.Name) {
+					t.Fatalf("%s nested alias %s constant %s = type %q static=%v, want static %s", label, aliasName, prop.Name, prop.Type, prop.Static, alias.Name)
+				}
+			}
+		}
+	}
+}
+
+func auditGeneratedStubSpecMembers(t *testing.T, label string, spec StandardSymbolSpec) {
+	t.Helper()
+	methodCases := make(map[string]string, len(spec.Methods))
+	for _, method := range spec.Methods {
+		key := strings.ToLower(method.Name)
+		if existing, ok := methodCases[key]; ok && existing != method.Name {
+			t.Fatalf("%s generated spec %s has methods %q and %q differing only by case", label, spec.Name, existing, method.Name)
+		}
+		methodCases[key] = method.Name
+	}
+	propertyCases := make(map[string]string, len(spec.Properties))
+	for _, prop := range spec.Properties {
+		key := strings.ToLower(prop.Name)
+		if existing, ok := propertyCases[key]; ok && existing != prop.Name {
+			t.Fatalf("%s generated spec %s has properties %q and %q differing only by case", label, spec.Name, existing, prop.Name)
+		}
+		propertyCases[key] = prop.Name
+	}
+}
+
+func generatedEnumAliasNames(spec StandardSymbolSpec) []string {
+	if !hasGeneratedEnumConstants(spec) {
+		return nil
+	}
+	out := []string{}
+	for _, method := range spec.Methods {
+		if !method.Static || method.Name != "valueOf" || method.ReturnType == "" || strings.EqualFold(method.ReturnType, spec.Name) {
+			continue
+		}
+		if hasGeneratedEnumValuesMethod(spec, method.ReturnType) {
+			out = append(out, method.ReturnType)
+		}
+	}
+	return out
+}
+
+func hasGeneratedEnumConstants(spec StandardSymbolSpec) bool {
+	for _, prop := range spec.Properties {
+		if prop.Static && prop.Name != "" {
+			return true
+		}
+	}
+	return false
+}
+
+func hasGeneratedEnumValuesMethod(spec StandardSymbolSpec, typeName string) bool {
+	for _, method := range spec.Methods {
+		if method.Static && method.Name == "values" && strings.EqualFold(method.ReturnType, "List<"+typeName+">") {
+			return true
+		}
+	}
+	return false
+}
+
 func requireStandardSymbol(t *testing.T, symbols []TypeSymbol, name string) TypeSymbol {
 	t.Helper()
 	for _, symbol := range symbols {
