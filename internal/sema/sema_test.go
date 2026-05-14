@@ -537,6 +537,35 @@ public class UsesPolymorphicSObjectAccessors {
 	}
 }
 
+func TestAnalyzePolymorphicProjectSObjectRelationshipAccessors(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesPolymorphicProjectSObjectAccessors.cls"), `
+public class UsesPolymorphicProjectSObjectAccessors {
+  public static void run(Activity_Link__c link) {
+    SObject explicitParent = link.Related_To__r;
+    Id explicitId = link.Related_To__r.Id;
+    SObject inferredParent = link.Subject__r;
+    Id inferredId = link.Subject__r.Id;
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "UsesPolymorphicProjectSObjectAccessors.cls"),
+	}}, schema.Schema{Objects: []schema.Object{
+		{Name: "Account"},
+		{Name: "Contact"},
+		{Name: "Activity_Link__c", Fields: []schema.Field{
+			{Name: "Related_To__c", Type: "Lookup", ReferenceTo: []string{"Account", "Contact"}, RelationshipName: "Related_To__r"},
+			{Name: "Subject__c", Type: "Lookup", ReferenceTo: []string{"Account", "Contact"}},
+		}},
+	}})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
 func TestAnalyzeSchemaDescribeSObjectResultMethods(t *testing.T) {
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesDescribe.cls"), `
