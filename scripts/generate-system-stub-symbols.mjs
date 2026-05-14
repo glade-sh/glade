@@ -247,6 +247,7 @@ function inferMissingPropertyShape(spec, missingTypeProperties, looksLikeEnum) {
     const booleanGetterKey = `is${capitalizeIdentifier(prop.name)}`.toLowerCase();
     const inferredGetter = zeroArgMethods.get(getterKey);
     const inferredBooleanGetter = zeroArgMethods.get(booleanGetterKey);
+    const inferredBooleanNamedGetter = booleanPropertyName(prop.name) ? zeroArgMethods.get(prop.name.toLowerCase()) : undefined;
     if (inferredGetter) {
       prop.type = inferredGetter.returnType;
       prop.static = inferredGetter.static;
@@ -255,6 +256,11 @@ function inferMissingPropertyShape(spec, missingTypeProperties, looksLikeEnum) {
     if (inferredBooleanGetter) {
       prop.type = inferredBooleanGetter.returnType;
       prop.static = inferredBooleanGetter.static;
+      continue;
+    }
+    if (inferredBooleanNamedGetter) {
+      prop.type = inferredBooleanNamedGetter.returnType;
+      prop.static = inferredBooleanNamedGetter.static;
       continue;
     }
     if (looksLikeEnum) {
@@ -281,6 +287,10 @@ function inferMissingPropertyShape(spec, missingTypeProperties, looksLikeEnum) {
 function capitalizeIdentifier(value) {
   if (!value) return "";
   return value[0].toUpperCase() + value.slice(1);
+}
+
+function booleanPropertyName(value) {
+  return /^is[A-Z0-9_]/.test(value || "");
 }
 
 function constructorKey(params) {
