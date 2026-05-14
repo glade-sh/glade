@@ -115429,6 +115429,9 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 		},
 	},
 	{
+		Name: "PartyAppointmentRequest",
+	},
+	{
 		Name:       "Pattern",
 		SuperClass: "Object",
 		ConstructorSpecs: []StandardConstructorSpec{

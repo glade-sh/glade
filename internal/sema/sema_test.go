@@ -516,6 +516,27 @@ public class UsesStandardSObjectAccessors {
 	}
 }
 
+func TestAnalyzePolymorphicStandardSObjectRelationshipAccessors(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesPolymorphicSObjectAccessors.cls"), `
+public class UsesPolymorphicSObjectAccessors {
+  public static void run(Task task, ContentDocumentLink link) {
+    Id whoId = task.Who.Id;
+    Id whatId = task.What.Id;
+    Id linkedEntityId = link.LinkedEntity.Id;
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "UsesPolymorphicSObjectAccessors.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
 func TestAnalyzeSchemaDescribeSObjectResultMethods(t *testing.T) {
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesDescribe.cls"), `

@@ -443,7 +443,7 @@ function addReferencedPlaceholders(specs) {
     consider(spec.superClass);
     for (const iface of spec.interfaces) consider(iface);
     for (const ctor of spec.constructors) {
-      for (const param of ctor) consider(param);
+      for (const param of ctor) consider(param.type);
     }
     for (const method of spec.methods) {
       consider(method.returnType);

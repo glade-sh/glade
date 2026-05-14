@@ -1088,11 +1088,15 @@ func addStandardSObjectMembers(out map[string]typeMembers) {
 					Type:      semaApexTypeForStorageField(field),
 					Modifiers: []string{"public", "static", semaSyntheticStandardSObjectFieldModifier},
 				}
-				if field.RelationshipName != "" && len(field.ReferenceTo) == 1 {
+				if field.RelationshipName != "" && len(field.ReferenceTo) != 0 {
+					relationshipType := "SObject"
+					if len(field.ReferenceTo) == 1 {
+						relationshipType = field.ReferenceTo[0]
+					}
 					members.fields[normalizeName(field.RelationshipName)] = typesys.MemberSymbol{
 						Kind:      apexast.DeclarationField,
 						Name:      field.RelationshipName,
-						Type:      field.ReferenceTo[0],
+						Type:      relationshipType,
 						Modifiers: []string{"public", semaSyntheticStandardSObjectFieldModifier},
 					}
 				}
