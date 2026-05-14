@@ -137,6 +137,11 @@ func TestStandardPlatformSymbolsIncludeGeneratedSystemStubBreadth(t *testing.T) 
 	requireStandardPropertyStatic(t, cursorDeleteFilter, "NO_FILTER", "Database.Cursor.DeleteFilter", true)
 	paginationDeleteFilter := requireStandardSymbol(t, symbols, "Database.PaginationCursor.DeleteFilter")
 	requireStandardPropertyStatic(t, paginationDeleteFilter, "NO_FILTER", "Database.PaginationCursor.DeleteFilter", true)
+	accountEngagementType := requireStandardSymbol(t, symbols, "sfdatakit.DeployComponentBundleAccountEngagementConfig.AccountEngagmentDataStreamTypeEnum")
+	if accountEngagementType.Kind != apexast.DeclarationEnum {
+		t.Fatalf("sfdatakit account engagement enum kind = %q, want enum", accountEngagementType.Kind)
+	}
+	requireStandardPropertyStatic(t, accountEngagementType, "EmailActivity", "sfdatakit.DeployComponentBundleAccountEngagementConfig.AccountEngagmentDataStreamTypeEnum", true)
 }
 
 func TestStandardSymbolsFromSpecsKeepsRicherGeneratedPropertyTypes(t *testing.T) {

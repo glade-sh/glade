@@ -6622,10 +6622,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 	},
 	{
 		Name:       "commercepromotions.AdjustmentType",
+		Kind:       apexast.DeclarationEnum,
 		SuperClass: "Object",
-		ConstructorSpecs: []StandardConstructorSpec{
-			{Parameters: []StandardParameterSpec{}},
-		},
 		Methods: []StandardMethodSpec{
 			{Name: "equals", ReturnType: "Boolean", ParameterSpecs: []StandardParameterSpec{{Name: "obj", Type: "Object"}}},
 			{Name: "hashCode", ReturnType: "Integer"},
@@ -6634,20 +6632,18 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "values", ReturnType: "List<commercepromotions.PromotionTarget.AdjustmentType>", Static: true},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "FIXEDAMOUNTOFFLINEITEMTOTAL", Type: "Object", Static: true},
-			{Name: "FIXEDAMOUNTOFFTRANSACTION", Type: "Object", Static: true},
-			{Name: "FIXEDAMOUNTOFFUNITPRICE", Type: "Object", Static: true},
-			{Name: "FIXEDPRICE", Type: "Object", Static: true},
-			{Name: "PERCENTAGEDISCOUNT", Type: "Object", Static: true},
-			{Name: "TOTALFIXEDPRICE", Type: "Object", Static: true},
+			{Name: "FIXEDAMOUNTOFFLINEITEMTOTAL", Type: "commercepromotions.AdjustmentType", Static: true},
+			{Name: "FIXEDAMOUNTOFFTRANSACTION", Type: "commercepromotions.AdjustmentType", Static: true},
+			{Name: "FIXEDAMOUNTOFFUNITPRICE", Type: "commercepromotions.AdjustmentType", Static: true},
+			{Name: "FIXEDPRICE", Type: "commercepromotions.AdjustmentType", Static: true},
+			{Name: "PERCENTAGEDISCOUNT", Type: "commercepromotions.AdjustmentType", Static: true},
+			{Name: "TOTALFIXEDPRICE", Type: "commercepromotions.AdjustmentType", Static: true},
 		},
 	},
 	{
 		Name:       "commercepromotions.AssociationStatus",
+		Kind:       apexast.DeclarationEnum,
 		SuperClass: "Object",
-		ConstructorSpecs: []StandardConstructorSpec{
-			{Parameters: []StandardParameterSpec{}},
-		},
 		Methods: []StandardMethodSpec{
 			{Name: "equals", ReturnType: "Boolean", ParameterSpecs: []StandardParameterSpec{{Name: "obj", Type: "Object"}}},
 			{Name: "hashCode", ReturnType: "Integer"},
@@ -6656,9 +6652,9 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "values", ReturnType: "List<commercepromotions.PromotionTarget.AssociationStatus>", Static: true},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "BLOCKEDEXCLUSIVE", Type: "Object", Static: true},
-			{Name: "INVALID", Type: "Object", Static: true},
-			{Name: "VALID", Type: "Object", Static: true},
+			{Name: "BLOCKEDEXCLUSIVE", Type: "commercepromotions.AssociationStatus", Static: true},
+			{Name: "INVALID", Type: "commercepromotions.AssociationStatus", Static: true},
+			{Name: "VALID", Type: "commercepromotions.AssociationStatus", Static: true},
 		},
 	},
 	{
@@ -6705,10 +6701,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 	},
 	{
 		Name:       "commercepromotions.ErrorCode",
+		Kind:       apexast.DeclarationEnum,
 		SuperClass: "Object",
-		ConstructorSpecs: []StandardConstructorSpec{
-			{Parameters: []StandardParameterSpec{}},
-		},
 		Methods: []StandardMethodSpec{
 			{Name: "equals", ReturnType: "Boolean", ParameterSpecs: []StandardParameterSpec{{Name: "obj", Type: "Object"}}},
 			{Name: "hashCode", ReturnType: "Integer"},
@@ -6717,9 +6711,9 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "values", ReturnType: "List<commercepromotions.CouponInfo.ErrorCode>", Static: true},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "INVALIDCOUPON", Type: "Object", Static: true},
-			{Name: "PROMOTIONALREADYAPPLIED", Type: "Object", Static: true},
-			{Name: "UNQUALIFIEDCART", Type: "Object", Static: true},
+			{Name: "INVALIDCOUPON", Type: "commercepromotions.ErrorCode", Static: true},
+			{Name: "PROMOTIONALREADYAPPLIED", Type: "commercepromotions.ErrorCode", Static: true},
+			{Name: "UNQUALIFIEDCART", Type: "commercepromotions.ErrorCode", Static: true},
 		},
 	},
 	{
@@ -6923,10 +6917,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 	},
 	{
 		Name:       "commercepromotions.TargetType",
+		Kind:       apexast.DeclarationEnum,
 		SuperClass: "Object",
-		ConstructorSpecs: []StandardConstructorSpec{
-			{Parameters: []StandardParameterSpec{}},
-		},
 		Methods: []StandardMethodSpec{
 			{Name: "equals", ReturnType: "Boolean", ParameterSpecs: []StandardParameterSpec{{Name: "obj", Type: "Object"}}},
 			{Name: "hashCode", ReturnType: "Integer"},
@@ -6935,9 +6927,9 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "values", ReturnType: "List<commercepromotions.PromotionTarget.TargetType>", Static: true},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "TYPE_PRODUCT", Type: "Object", Static: true},
-			{Name: "TYPE_PRODUCTCATEGORY", Type: "Object", Static: true},
-			{Name: "TYPE_TRANSACTION", Type: "Object", Static: true},
+			{Name: "TYPE_PRODUCT", Type: "commercepromotions.TargetType", Static: true},
+			{Name: "TYPE_PRODUCTCATEGORY", Type: "commercepromotions.TargetType", Static: true},
+			{Name: "TYPE_TRANSACTION", Type: "commercepromotions.TargetType", Static: true},
 		},
 	},
 	{
@@ -104117,10 +104109,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 	},
 	{
 		Name:       "Database.DeleteFilter",
+		Kind:       apexast.DeclarationEnum,
 		SuperClass: "Object",
-		ConstructorSpecs: []StandardConstructorSpec{
-			{Parameters: []StandardParameterSpec{}},
-		},
 		Methods: []StandardMethodSpec{
 			{Name: "equals", ReturnType: "Boolean", ParameterSpecs: []StandardParameterSpec{{Name: "obj", Type: "Object"}}},
 			{Name: "hashCode", ReturnType: "Integer"},
@@ -104131,10 +104121,10 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "values", ReturnType: "List<Database.PaginationCursor.DeleteFilter>", Static: true},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "DELETED_ROWS_ONLY", Type: "Object", Static: true},
-			{Name: "NO_DELETED_ROWS", Type: "Object", Static: true},
-			{Name: "NO_DELETED_SHARING_ROWS", Type: "Object", Static: true},
-			{Name: "NO_FILTER", Type: "Object", Static: true},
+			{Name: "DELETED_ROWS_ONLY", Type: "Database.DeleteFilter", Static: true},
+			{Name: "NO_DELETED_ROWS", Type: "Database.DeleteFilter", Static: true},
+			{Name: "NO_DELETED_SHARING_ROWS", Type: "Database.DeleteFilter", Static: true},
+			{Name: "NO_FILTER", Type: "Database.DeleteFilter", Static: true},
 		},
 	},
 	{
@@ -105397,9 +105387,9 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "ordinal", ReturnType: "Integer"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "COMMENT", Type: "Object", Static: true},
-			{Name: "ELEMENT", Type: "Object", Static: true},
-			{Name: "TEXT", Type: "Object", Static: true},
+			{Name: "COMMENT", Type: "dom.XmlNodeType", Static: true},
+			{Name: "ELEMENT", Type: "dom.XmlNodeType", Static: true},
+			{Name: "TEXT", Type: "dom.XmlNodeType", Static: true},
 			{Name: "COMMENT", Type: "dom.XmlNodeType", Static: true},
 			{Name: "ELEMENT", Type: "dom.XmlNodeType", Static: true},
 			{Name: "TEXT", Type: "dom.XmlNodeType", Static: true},
@@ -115896,10 +115886,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 	},
 	{
 		Name:       "Process.ParameterType",
+		Kind:       apexast.DeclarationEnum,
 		SuperClass: "Object",
-		ConstructorSpecs: []StandardConstructorSpec{
-			{Parameters: []StandardParameterSpec{}},
-		},
 		Methods: []StandardMethodSpec{
 			{Name: "equals", ReturnType: "Boolean", ParameterSpecs: []StandardParameterSpec{{Name: "obj", Type: "Object"}}},
 			{Name: "hashCode", ReturnType: "Integer"},
@@ -115908,17 +115896,17 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "values", ReturnType: "List<Process.PluginDescribeResult.ParameterType>", Static: true},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "BOOLEAN", Type: "Object", Static: true},
-			{Name: "DATE", Type: "Object", Static: true},
-			{Name: "DATETIME", Type: "Object", Static: true},
-			{Name: "DECIMAL", Type: "Object", Static: true},
-			{Name: "DOUBLE", Type: "Object", Static: true},
-			{Name: "FLOAT", Type: "Object", Static: true},
-			{Name: "ID", Type: "Object", Static: true},
-			{Name: "INTEGER", Type: "Object", Static: true},
-			{Name: "LONG", Type: "Object", Static: true},
-			{Name: "STRING", Type: "Object", Static: true},
-			{Name: "TIME", Type: "Object", Static: true},
+			{Name: "BOOLEAN", Type: "Process.ParameterType", Static: true},
+			{Name: "DATE", Type: "Process.ParameterType", Static: true},
+			{Name: "DATETIME", Type: "Process.ParameterType", Static: true},
+			{Name: "DECIMAL", Type: "Process.ParameterType", Static: true},
+			{Name: "DOUBLE", Type: "Process.ParameterType", Static: true},
+			{Name: "FLOAT", Type: "Process.ParameterType", Static: true},
+			{Name: "ID", Type: "Process.ParameterType", Static: true},
+			{Name: "INTEGER", Type: "Process.ParameterType", Static: true},
+			{Name: "LONG", Type: "Process.ParameterType", Static: true},
+			{Name: "STRING", Type: "Process.ParameterType", Static: true},
+			{Name: "TIME", Type: "Process.ParameterType", Static: true},
 		},
 	},
 	{
@@ -125687,10 +125675,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 	},
 	{
 		Name:       "sfdatakit.AccountEngagmentDataStreamTypeEnum",
+		Kind:       apexast.DeclarationEnum,
 		SuperClass: "Object",
-		ConstructorSpecs: []StandardConstructorSpec{
-			{Parameters: []StandardParameterSpec{}},
-		},
 		Methods: []StandardMethodSpec{
 			{Name: "equals", ReturnType: "Boolean", ParameterSpecs: []StandardParameterSpec{{Name: "obj", Type: "Object"}}},
 			{Name: "hashCode", ReturnType: "Integer"},
@@ -125699,9 +125685,9 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "values", ReturnType: "List<sfdatakit.DeployComponentBundleAccountEngagementConfig.AccountEngagmentDataStreamTypeEnum>", Static: true},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "EmailActivity", Type: "Object"},
-			{Name: "FormActivity", Type: "Object"},
-			{Name: "WebPageActivity", Type: "Object"},
+			{Name: "EmailActivity", Type: "sfdatakit.AccountEngagmentDataStreamTypeEnum", Static: true},
+			{Name: "FormActivity", Type: "sfdatakit.AccountEngagmentDataStreamTypeEnum", Static: true},
+			{Name: "WebPageActivity", Type: "sfdatakit.AccountEngagmentDataStreamTypeEnum", Static: true},
 		},
 	},
 	{
@@ -125768,7 +125754,21 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 		},
 	},
 	{
-		Name: "sfdatakit.DeployComponentBundleAccountEngagementConfig.AccountEngagmentDataStreamTypeEnum",
+		Name:       "sfdatakit.DeployComponentBundleAccountEngagementConfig.AccountEngagmentDataStreamTypeEnum",
+		Kind:       apexast.DeclarationEnum,
+		SuperClass: "Object",
+		Methods: []StandardMethodSpec{
+			{Name: "equals", ReturnType: "Boolean", ParameterSpecs: []StandardParameterSpec{{Name: "obj", Type: "Object"}}},
+			{Name: "hashCode", ReturnType: "Integer"},
+			{Name: "ordinal", ReturnType: "Integer"},
+			{Name: "valueOf", ReturnType: "sfdatakit.DeployComponentBundleAccountEngagementConfig.AccountEngagmentDataStreamTypeEnum", ParameterSpecs: []StandardParameterSpec{{Name: "str", Type: "String"}}, Static: true},
+			{Name: "values", ReturnType: "List<sfdatakit.DeployComponentBundleAccountEngagementConfig.AccountEngagmentDataStreamTypeEnum>", Static: true},
+		},
+		Properties: []StandardPropertySpec{
+			{Name: "EmailActivity", Type: "sfdatakit.DeployComponentBundleAccountEngagementConfig.AccountEngagmentDataStreamTypeEnum", Static: true},
+			{Name: "FormActivity", Type: "sfdatakit.DeployComponentBundleAccountEngagementConfig.AccountEngagmentDataStreamTypeEnum", Static: true},
+			{Name: "WebPageActivity", Type: "sfdatakit.DeployComponentBundleAccountEngagementConfig.AccountEngagmentDataStreamTypeEnum", Static: true},
+		},
 	},
 	{
 		Name:       "sfdatakit.DeployComponentBundleCommerceConfig",

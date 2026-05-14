@@ -176,11 +176,10 @@ function parseStub(filePath) {
     }
   }
 
+  const enumFactoryTypes = enumFactoryReturnTypes(spec);
   const looksLikeEnum =
     spec.kind === "DeclarationEnum" ||
-    (missingTypeProperties.length > 0 &&
-      spec.methods.some((m) => m.static && m.name === "valueOf" && m.returnType === name) &&
-      spec.methods.some((m) => m.static && m.name === "values" && m.returnType === `List<${name}>`)) ||
+    (missingTypeProperties.length > 0 && enumFactoryTypes.length > 0) ||
     (missingTypeProperties.length > 0 &&
       missingTypeProperties.every((prop) => /^[A-Z][A-Z0-9_]*$/.test(prop.name)) &&
       spec.methods.every((method) => ["clone", "equals", "hashCode", "ordinal", "toString"].includes(method.name)));
@@ -454,11 +453,10 @@ function materializeNestedStubSpecs(specs) {
   return specs.concat([...additions.values()]).sort((a, b) => a.name.localeCompare(b.name));
 }
 
-function nestedEnumAliasNames(spec) {
-  if (!spec.properties.some((prop) => prop.static && prop.name)) return [];
+function enumFactoryReturnTypes(spec) {
   const out = [];
   for (const valueOf of spec.methods) {
-    if (!valueOf.static || valueOf.name !== "valueOf" || !valueOf.returnType || valueOf.returnType === spec.name) {
+    if (!valueOf.static || valueOf.name !== "valueOf" || !valueOf.returnType) {
       continue;
     }
     if (!spec.methods.some((method) => method.static && method.name === "values" && method.returnType === `List<${valueOf.returnType}>`)) {
@@ -467,6 +465,11 @@ function nestedEnumAliasNames(spec) {
     out.push(valueOf.returnType);
   }
   return [...new Set(out)].sort();
+}
+
+function nestedEnumAliasNames(spec) {
+	if (!spec.properties.some((prop) => prop.static && prop.name)) return [];
+	return enumFactoryReturnTypes(spec).filter((typeName) => typeName !== spec.name);
 }
 
 function enumAliasMethods(spec, aliasName) {
