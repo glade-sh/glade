@@ -1249,6 +1249,23 @@ commercepromotions.PromotionRequest cloned = (commercepromotions.PromotionReques
 System.assertEquals('buyer-one', cloned.getBuyerAccountId());
 System.assert(request.equals(request));
 System.assert(!request.equals(new commercepromotions.PromotionRequest()));
+commercepromotions.PromotionRequest named = new commercepromotions.PromotionRequest(
+	salesTransaction = new Account(Name = 'Buyer'),
+	buyerAccountId = 'buyer-two',
+	webStoreId = 'store-two',
+	couponCodes = new List<String>{'SAVE'}
+);
+System.assertEquals('buyer-two', named.getBuyerAccountId());
+System.assertEquals('store-two', named.GETWEBSTOREID());
+System.assertEquals(1, named.getCouponCodes().size());
+commercepromotions.PromotionRequest mixedCaseNamed = new commercepromotions.PromotionRequest(
+	SALESTRANSACTION = new Account(Name = 'Buyer'),
+	BUYERACCOUNTID = 'buyer-three',
+	WEBSTOREID = 'store-three',
+	COUPONCODES = new List<String>{'SHIP'}
+);
+System.assertEquals('buyer-three', mixedCaseNamed.getBuyerAccountId());
+System.assertEquals('store-three', mixedCaseNamed.GETWEBSTOREID());
 CartExtension.Cart cart = new CartExtension.Cart();
 cart.setName('local cart');
 cart.setCustomField('ExternalKey__c', 'external-one');

@@ -1319,6 +1319,16 @@ private class PassiveGeneratedStubTest {
     System.assertEquals('INVALIDCOUPON', commercepromotions.CouponInfo.ErrorCode.INVALIDCOUPON.name());
     Slack.ApiTestRequest slackRequest = Slack.ApiTestRequest.builder().foo('bar').build();
     System.assertEquals('bar', slackRequest.getFoo());
+    LoyaltyManagement.ChangeTierInputBuilder tierBuilder = new LoyaltyManagement.ChangeTierInputBuilder();
+    tierBuilder.setProgramName('Rewards');
+    tierBuilder.setTargetTierName('Gold');
+    LoyaltyManagement.ChangeTierInput tierInput = tierBuilder.build();
+    Map<String,Object> tierValues = tierInput.getAsMap();
+    System.assertEquals('Rewards', (String)tierValues.get('programName'));
+    System.assertEquals('Gold', (String)tierValues.get('targetTierName'));
+    inventorypricing.GetInventoryPricing inventoryService = new inventorypricing.GetInventoryPricing();
+    Object response = inventoryService.createResponse(new inventorypricing.InventoryPricingData());
+    System.assertEquals(null, response);
     CartExtension.Cart cart = CartExtension.CartTestUtil.createCart();
     System.assert(cart != null);
   }

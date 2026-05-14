@@ -804,7 +804,7 @@ func passiveRuntimeClassFromTypeSymbol(typ typesys.TypeSymbol, name string) vm.C
 		case apexast.DeclarationConstructor:
 			class.Constructors = append(class.Constructors, passiveRuntimeConstructorFromMember(name, member))
 		case apexast.DeclarationMethod:
-			if hasModifier(member.Modifiers, "static") || passiveFluentGeneratedMethod(member) {
+			if passiveGeneratedRuntimeMethod(member) {
 				method := passiveRuntimeMethodFromMember(name, member)
 				class.Methods[methodShortName(method.Name)+methodParamKey(method.Params)] = method
 			}
@@ -854,6 +854,18 @@ func passiveGeneratedMethodModifiers(member typesys.MemberSymbol) []string {
 		modifiers = append(modifiers, "static")
 	}
 	return modifiers
+}
+
+func passiveGeneratedRuntimeMethod(member typesys.MemberSymbol) bool {
+	if hasModifier(member.Modifiers, "static") || passiveFluentGeneratedMethod(member) {
+		return true
+	}
+	switch strings.ToLower(member.Name) {
+	case "clone", "equals", "hashcode", "ordinal", "tostring":
+		return false
+	default:
+		return true
+	}
 }
 
 func passiveFluentGeneratedMethod(member typesys.MemberSymbol) bool {

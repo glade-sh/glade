@@ -15947,16 +15947,20 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		if err := vm.runInstanceInitializers(class, object, result); err != nil {
 			return Null, err
 		}
+		ctorArgs := args
 		ctor, ok, ambiguous := vm.matchConstructor(class, args)
+		if passiveRuntimeClass(class) && vm.isPassivePlatformDTOType(typeName) && len(namedArgs) != 0 {
+			ctor, ctorArgs, ok, ambiguous = vm.matchConstructorWithNamedArgs(class, args, namedArgs)
+		}
 		if ok {
 			if err := vm.callImplicitSuperConstructor(class, ctor, object, result); err != nil {
 				return Null, err
 			}
-			if _, err := vm.callMethodWithReceiver(ctor, object, args, result); err != nil {
+			if _, err := vm.callMethodWithReceiver(ctor, object, ctorArgs, result); err != nil {
 				return Null, err
 			}
 			if passiveRuntimeClass(class) && vm.isPassivePlatformDTOType(typeName) {
-				bindPassiveConstructorArgs(&object, ctor, args)
+				bindPassiveConstructorArgs(&object, ctor, ctorArgs)
 			}
 		} else if ambiguous {
 			return Null, fmt.Errorf("ambiguous %s constructor with %d argument(s)", typeName, len(args))
@@ -16536,6 +16540,81 @@ func (vm *VM) initializeFields(object *Value, typeName string) {
 
 func (vm *VM) matchConstructor(class Class, args []Value) (Method, bool, bool) {
 	return vm.matchMethodByArgs(class.Constructors, args)
+}
+
+func (vm *VM) matchConstructorWithNamedArgs(class Class, args []Value, namedArgs map[string]Value) (Method, []Value, bool, bool) {
+	type candidateMatch struct {
+		method Method
+		args   []Value
+		score  int
+	}
+	matches := make([]candidateMatch, 0, len(class.Constructors))
+	seen := make(map[string]bool, len(class.Constructors))
+	for _, candidate := range class.Constructors {
+		orderedArgs, ok := vm.constructorArgsWithNamed(candidate, args, namedArgs)
+		if !ok {
+			continue
+		}
+		score := 0
+		applicable := true
+		for i, param := range candidate.Params {
+			paramType := vm.resolveTypeNameInClass(candidate.ClassName, param.Type)
+			paramScore := vm.conversionScore(paramType, orderedArgs[i])
+			if paramScore < 0 {
+				applicable = false
+				break
+			}
+			score += paramScore
+		}
+		if !applicable {
+			continue
+		}
+		signature := methodSignature(candidate)
+		if seen[signature] {
+			continue
+		}
+		seen[signature] = true
+		matches = append(matches, candidateMatch{method: candidate, args: orderedArgs, score: score})
+	}
+	if len(matches) == 0 {
+		return Method{}, nil, false, false
+	}
+	sort.SliceStable(matches, func(i, j int) bool {
+		return matches[i].score > matches[j].score
+	})
+	if len(matches) > 1 && matches[0].score == matches[1].score {
+		return Method{}, nil, false, true
+	}
+	return matches[0].method, matches[0].args, true, false
+}
+
+func (vm *VM) constructorArgsWithNamed(ctor Method, args []Value, namedArgs map[string]Value) ([]Value, bool) {
+	if len(ctor.Params) != len(args)+len(namedArgs) {
+		return nil, false
+	}
+	orderedArgs := make([]Value, len(ctor.Params))
+	copy(orderedArgs, args)
+	valuesByName := make(map[string]Value, len(namedArgs))
+	for name, value := range namedArgs {
+		key := strings.ToLower(strings.TrimSpace(name))
+		if key == "" {
+			return nil, false
+		}
+		if _, exists := valuesByName[key]; exists {
+			return nil, false
+		}
+		valuesByName[key] = value
+	}
+	for i := len(args); i < len(ctor.Params); i++ {
+		key := strings.ToLower(strings.TrimSpace(ctor.Params[i].Name))
+		value, ok := valuesByName[key]
+		if !ok {
+			return nil, false
+		}
+		orderedArgs[i] = value
+		delete(valuesByName, key)
+	}
+	return orderedArgs, len(valuesByName) == 0
 }
 
 func (vm *VM) callImplicitSuperConstructor(class Class, ctor Method, object Value, result *Result) error {
@@ -19367,6 +19446,13 @@ func (vm *VM) passiveGeneratedMethodReturn(method Method, frame map[string]Value
 	}
 }
 
+func passiveGeneratedSelfReturn(method Method, receiver Value, value Value) bool {
+	return methodHasModifier(method.Modifiers, "passive-generated") &&
+		receiver.Kind == ValueObject &&
+		value.Kind == ValueObject &&
+		strings.EqualFold(receiver.Type, value.Type)
+}
+
 func (vm *VM) displayString(value Value, result *Result) (string, error) {
 	if idText, ok := typedIDValueText(value); ok {
 		return displayIDText(idText), nil
@@ -19694,6 +19780,11 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 					return Null, true, err
 				}
 				value, err := vm.callMethodWithReceiver(target, receiver, args, result)
+				if err == nil && passiveGeneratedSelfReturn(target, receiver, value) {
+					if err := vm.storeReceiver(receiverName, value); err != nil {
+						return Null, true, err
+					}
+				}
 				return value, true, err
 			}
 		}
@@ -19746,6 +19837,11 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			return Null, true, err
 		}
 		value, err := vm.callMethodWithReceiver(target, receiver, args, result)
+		if err == nil && passiveGeneratedSelfReturn(target, receiver, value) {
+			if err := vm.storeReceiver(receiverName, value); err != nil {
+				return Null, true, err
+			}
+		}
 		return value, true, err
 	}
 
