@@ -1280,6 +1280,58 @@ System.assertEquals('external-one', (String)cart.getCustomField('ExternalKey__c'
 	}
 }
 
+func TestConstructPassiveGeneratedPlatformDTONamedArgsBindProperties(t *testing.T) {
+	vm := New(nil)
+	if err := vm.RegisterClass(Class{
+		Name:       "commercepromotions.PromotionRequest",
+		Namespace:  "commercepromotions",
+		SuperClass: "Object",
+		Access:     "global",
+		Fields: map[string]Field{
+			"buyerAccountId": {Name: "buyerAccountId", Type: "String", Access: "global", Property: true},
+			"webStoreId":     {Name: "webStoreId", Type: "String", Access: "global", Property: true},
+		},
+		FieldOrder: []string{"buyerAccountId", "webStoreId"},
+		Constructors: []Method{{
+			Name:          "commercepromotions.PromotionRequest.<init>",
+			ClassName:     "commercepromotions.PromotionRequest",
+			IsConstructor: true,
+			Access:        "global",
+			Params:        []Param{{Name: "param1", Type: "String"}, {Name: "param2", Type: "String"}},
+		}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	namedArgs := map[string]Value{
+		"BUYERACCOUNTID": String("buyer-one"),
+		"webStoreId":     String("store-one"),
+	}
+	class, ok := vm.lookupClass("commercepromotions.PromotionRequest")
+	if !ok {
+		t.Fatal("PromotionRequest class not registered")
+	}
+	_, orderedArgs, ok, ambiguous := vm.matchConstructorWithNamedArgs(class, nil, namedArgs)
+	if !ok || ambiguous || len(orderedArgs) != 2 {
+		t.Fatalf("placeholder constructor match ok=%v ambiguous=%v args=%#v", ok, ambiguous, orderedArgs)
+	}
+	value, err := vm.constructValue("commercepromotions.PromotionRequest", nil, namedArgs, &Result{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := value.Fields["buyerAccountId"]; got.Kind != ValueString || got.Text != "buyer-one" {
+		t.Fatalf("buyerAccountId = %#v", got)
+	}
+	if got := value.Fields["webStoreId"]; got.Kind != ValueString || got.Text != "store-one" {
+		t.Fatalf("webStoreId = %#v", got)
+	}
+	if _, ok := value.Fields["BUYERACCOUNTID"]; ok {
+		t.Fatalf("unexpected case-sensitive duplicate field: %#v", value.Fields)
+	}
+	if _, ok := value.Fields["param1"]; ok {
+		t.Fatalf("unexpected placeholder constructor field: %#v", value.Fields)
+	}
+}
+
 func TestExecRenderStoredEmailTemplate(t *testing.T) {
 	program, err := CompileAnonymous(`
 Messaging.SingleEmailMessage rendered = Messaging.renderStoredEmailTemplate('00X000000000001AAA', '003000000000001AAA', '001000000000001AAA');
