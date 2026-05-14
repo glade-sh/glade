@@ -16070,20 +16070,27 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			return Null, err
 		}
 		class, _ = vm.lookupClass(typeName)
+		passiveDTO := passiveRuntimeClass(class) && vm.isPassivePlatformDTOType(typeName)
 		object := Object(typeName)
-		for field, value := range namedArgs {
-			object.Fields[field] = value
+		if !passiveDTO {
+			for field, value := range namedArgs {
+				object.Fields[field] = value
+			}
 		}
 		vm.initializeFields(&object, typeName)
-		for field, value := range namedArgs {
-			object.Fields[field] = value
+		if passiveDTO {
+			vm.bindPassiveNamedConstructorFields(&object, namedArgs)
+		} else {
+			for field, value := range namedArgs {
+				object.Fields[field] = value
+			}
 		}
 		if err := vm.runInstanceInitializers(class, object, result); err != nil {
 			return Null, err
 		}
 		ctorArgs := args
 		ctor, ok, ambiguous := vm.matchConstructor(class, args)
-		if passiveRuntimeClass(class) && vm.isPassivePlatformDTOType(typeName) && len(namedArgs) != 0 {
+		if passiveDTO && len(namedArgs) != 0 {
 			ctor, ctorArgs, ok, ambiguous = vm.matchConstructorWithNamedArgs(class, args, namedArgs)
 		}
 		if ok {
@@ -16093,7 +16100,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			if _, err := vm.callMethodWithReceiver(ctor, object, ctorArgs, result); err != nil {
 				return Null, err
 			}
-			if passiveRuntimeClass(class) && vm.isPassivePlatformDTOType(typeName) {
+			if passiveDTO {
 				bindPassiveConstructorArgs(&object, ctor, ctorArgs)
 			}
 		} else if ambiguous {
@@ -16687,6 +16694,9 @@ func (vm *VM) matchConstructorWithNamedArgs(class Class, args []Value, namedArgs
 	for _, candidate := range class.Constructors {
 		orderedArgs, ok := vm.constructorArgsWithNamed(candidate, args, namedArgs)
 		if !ok {
+			orderedArgs, ok = vm.passiveConstructorArgsWithNamedFields(class, candidate, args, namedArgs)
+		}
+		if !ok {
 			continue
 		}
 		score := 0
@@ -16722,6 +16732,57 @@ func (vm *VM) matchConstructorWithNamedArgs(class Class, args []Value, namedArgs
 	return matches[0].method, matches[0].args, true, false
 }
 
+func (vm *VM) passiveConstructorArgsWithNamedFields(class Class, ctor Method, args []Value, namedArgs map[string]Value) ([]Value, bool) {
+	if len(ctor.Params) != len(args)+len(namedArgs) {
+		return nil, false
+	}
+	orderedArgs := make([]Value, len(ctor.Params))
+	copy(orderedArgs, args)
+	openParams := make([]int, 0, len(ctor.Params)-len(args))
+	for i := len(args); i < len(ctor.Params); i++ {
+		if !passiveGeneratedPlaceholderParam(ctor.Params[i].Name) {
+			return nil, false
+		}
+		openParams = append(openParams, i)
+	}
+	usedParams := make(map[int]bool, len(openParams))
+	for name, value := range namedArgs {
+		if strings.TrimSpace(name) == "" {
+			return nil, false
+		}
+		field, _, ok := vm.lookupField(class.Name, name)
+		if !ok {
+			return nil, false
+		}
+		fieldType := vm.resolveTypeNameInClass(class.Name, field.Type)
+		if vm.conversionScore(fieldType, value) < 0 {
+			return nil, false
+		}
+		matchedParam := -1
+		matchedScore := -1
+		for _, paramIndex := range openParams {
+			if usedParams[paramIndex] {
+				continue
+			}
+			paramType := vm.resolveTypeNameInClass(class.Name, ctor.Params[paramIndex].Type)
+			score := vm.conversionScore(paramType, value)
+			if score < 0 {
+				continue
+			}
+			if score > matchedScore {
+				matchedParam = paramIndex
+				matchedScore = score
+			}
+		}
+		if matchedParam < 0 {
+			return nil, false
+		}
+		orderedArgs[matchedParam] = value
+		usedParams[matchedParam] = true
+	}
+	return orderedArgs, len(usedParams) == len(namedArgs) && len(usedParams) == len(openParams)
+}
+
 func (vm *VM) constructorArgsWithNamed(ctor Method, args []Value, namedArgs map[string]Value) ([]Value, bool) {
 	if len(ctor.Params) != len(args)+len(namedArgs) {
 		return nil, false
@@ -16749,6 +16810,45 @@ func (vm *VM) constructorArgsWithNamed(ctor Method, args []Value, namedArgs map[
 		delete(valuesByName, key)
 	}
 	return orderedArgs, len(valuesByName) == 0
+}
+
+func (vm *VM) bindPassiveNamedConstructorFields(object *Value, namedArgs map[string]Value) {
+	if object == nil || object.Kind != ValueObject {
+		return
+	}
+	for field, value := range namedArgs {
+		object.Fields[vm.passiveConstructorFieldName(object.Type, *object, field)] = value
+	}
+}
+
+func (vm *VM) passiveConstructorFieldName(typeName string, object Value, field string) string {
+	if def, _, ok := vm.lookupField(typeName, field); ok && def.Name != "" {
+		return def.Name
+	}
+	return passiveAccessorFieldName(object, field)
+}
+
+func passiveGeneratedPlaceholderParam(name string) bool {
+	name = strings.ToLower(strings.TrimSpace(name))
+	if strings.HasPrefix(name, "arg") {
+		return passiveGeneratedPlaceholderSuffix(name[len("arg"):])
+	}
+	if strings.HasPrefix(name, "param") {
+		return passiveGeneratedPlaceholderSuffix(name[len("param"):])
+	}
+	return false
+}
+
+func passiveGeneratedPlaceholderSuffix(suffix string) bool {
+	if suffix == "" {
+		return false
+	}
+	for _, r := range suffix {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+	return true
 }
 
 func (vm *VM) callImplicitSuperConstructor(class Class, ctor Method, object Value, result *Result) error {
@@ -25614,7 +25714,7 @@ func bindPassiveConstructorArgs(object *Value, ctor Method, args []Value) {
 			return
 		}
 		field := strings.TrimSpace(ctor.Params[i].Name)
-		if field == "" || strings.HasPrefix(field, "arg") {
+		if field == "" || passiveGeneratedPlaceholderParam(field) {
 			continue
 		}
 		object.Fields[passiveAccessorFieldName(*object, field)] = arg
