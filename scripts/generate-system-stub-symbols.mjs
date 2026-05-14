@@ -55,6 +55,15 @@ function normalizeType(typeName) {
   return out;
 }
 
+function applySignatureOverrides(spec) {
+  if (spec.name !== "Database") return;
+  for (const method of spec.methods) {
+    if (method.name === "countQueryWithBinds") {
+      method.returnType = "Integer";
+    }
+  }
+}
+
 function parameterType(param) {
 	param = param.trim();
 	if (!param) return "";
@@ -196,6 +205,7 @@ function parseStub(filePath) {
     delete prop.missingType;
   }
 
+  applySignatureOverrides(spec);
   dedupeSpec(spec);
   return spec;
 }
