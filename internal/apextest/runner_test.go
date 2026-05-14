@@ -1322,6 +1322,12 @@ private class PassiveGeneratedStubTest {
     System.assertEquals('EmailActivity', sfdatakit.DeployComponentBundleAccountEngagementConfig.AccountEngagmentDataStreamTypeEnum.EmailActivity.name());
     Slack.ApiTestRequest slackRequest = Slack.ApiTestRequest.builder().foo('bar').build();
     System.assertEquals('bar', slackRequest.getFoo());
+    Slack.ApiTestRequest.Builder slackBuilder = Slack.ApiTestRequest.builder();
+    slackBuilder.foo('stored');
+    slackBuilder.error('none');
+    Slack.ApiTestRequest storedSlackRequest = slackBuilder.build();
+    System.assertEquals('stored', storedSlackRequest.getFoo());
+    System.assertEquals('none', storedSlackRequest.getError());
     LoyaltyManagement.ChangeTierInputBuilder tierBuilder = new LoyaltyManagement.ChangeTierInputBuilder();
     tierBuilder.setProgramName('Rewards');
     tierBuilder.setTargetTierName('Gold');
@@ -1332,6 +1338,22 @@ private class PassiveGeneratedStubTest {
     inventorypricing.GetInventoryPricing inventoryService = new inventorypricing.GetInventoryPricing();
     Object response = inventoryService.createResponse(new inventorypricing.InventoryPricingData());
     System.assertEquals(null, response);
+    Map<String,Object> flowInputs = new Map<String,Object>{'recordId' => '001000000000001'};
+    Flow.Interview interview = Flow.Interview.createInterview('Demo_Flow', flowInputs);
+    interview.start();
+    Map<String,Object> interviewValues = interview.getAsMap();
+    System.assertEquals('Demo_Flow', (String)interviewValues.get('flowName'));
+    Flow.Interview namespacedInterview = Flow.Interview.createInterview('pkg', 'Demo_Flow', flowInputs);
+    Map<String,Object> namespacedValues = namespacedInterview.getAsMap();
+    System.assertEquals('pkg', (String)namespacedValues.get('namespace'));
+    CartExtension.BuyerActionDetails.Builder actionBuilder = new CartExtension.BuyerActionDetails.Builder();
+    actionBuilder.withCheckoutStarted(true);
+    CartExtension.BuyerActionDetails details = actionBuilder.build();
+    System.assertEquals(true, (Boolean)details.getAsMap().get('isCheckoutStarted'));
+    CartExtension.BuyerActionDetails chainedDetails = new CartExtension.BuyerActionDetails.Builder()
+      .withCouponChanges(new List<CartExtension.CouponChange>())
+      .build();
+    System.assertEquals(0, chainedDetails.getCouponChanges().size());
     CartExtension.Cart cart = CartExtension.CartTestUtil.createCart();
     System.assert(cart != null);
   }
