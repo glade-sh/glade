@@ -23490,7 +23490,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Bool(true), receiver, false, true, nil
 			}
 			return Bool(vm.currentUserFieldPermission(objectName, fieldName, method)), receiver, false, true, nil
-		case "isAggregatable", "isFilterable", "isGroupable", "isPermissionable", "isSortable":
+		case "isAggregatable", "isFilterable", "isGroupable", "isPermissionable":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.%s expects 0 arguments", method)
 			}
