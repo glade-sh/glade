@@ -189,10 +189,8 @@ function parseStub(filePath) {
     spec.kind = "DeclarationEnum";
     spec.constructors = [];
     for (const prop of missingTypeProperties) {
-      if (/^[A-Z][A-Z0-9_]*$/.test(prop.name)) {
-        prop.type = name;
-        prop.static = true;
-      }
+      prop.type = name;
+      prop.static = true;
     }
   }
   for (const prop of spec.properties) {

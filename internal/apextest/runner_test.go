@@ -1315,6 +1315,7 @@ private class PassiveGeneratedStubTest {
     System.assertEquals('apex', action.getType());
     System.assertEquals('pkg', action.getNamespace());
     System.assertEquals('DoIt', action.getName());
+    System.assertEquals('Audience', ConnectApi.AudienceCriteriaType.Audience.name());
     CartExtension.Cart cart = CartExtension.CartTestUtil.createCart();
     System.assert(cart != null);
   }

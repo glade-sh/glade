@@ -174,6 +174,9 @@ func TestStandardPlatformSymbolsIncludeGeneratedProductNamespaceStubBreadth(t *t
 		[]string{"type", "namespace", "name"},
 		true,
 	)
+
+	audience := requireStandardSymbol(t, symbols, "ConnectApi.AudienceCriteriaType")
+	requireStandardPropertyStatic(t, audience, "Audience", "ConnectApi.AudienceCriteriaType", true)
 }
 
 func requireStandardSymbol(t *testing.T, symbols []TypeSymbol, name string) TypeSymbol {
