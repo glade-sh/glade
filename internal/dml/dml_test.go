@@ -611,6 +611,44 @@ func TestDMLRejectsCalculatedFields(t *testing.T) {
 	}
 }
 
+func TestDMLRejectsNonCreateableAndNonUpdateableFields(t *testing.T) {
+	org := testOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["CreatedDate"] = storage.Field{APIName: "CreatedDate", Type: storage.FieldDateTime, Createable: storage.BoolFlag(false), Updateable: storage.BoolFlag(false)}
+	account.Definition.Fields["External_Code__c"] = storage.Field{APIName: "External_Code__c", Type: storage.FieldString, Createable: storage.BoolFlag(true), Updateable: storage.BoolFlag(false)}
+	org.Objects["Account"] = account
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":        storage.StringValue("Acme"),
+			"CreatedDate": storage.StringValue("2026-05-14T00:00:00Z"),
+		},
+	}})
+	assertDMLErrorDetail(t, insert[0], "INVALID_FIELD_FOR_INSERT_UPDATE", "CreatedDate")
+
+	created := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name":             storage.StringValue("Acme"),
+			"External_Code__c": storage.StringValue("original"),
+		},
+	}})
+	if !created[0].Success {
+		t.Fatalf("insert = %#v", created)
+	}
+
+	update := engine.Update([]storage.Record{{
+		ID:     created[0].ID,
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"External_Code__c": storage.StringValue("changed"),
+		},
+	}})
+	assertDMLErrorDetail(t, update[0], "INVALID_FIELD_FOR_INSERT_UPDATE", "External_Code__c")
+}
+
 func TestWithTransactionRollsBackOnError(t *testing.T) {
 	org := testOrg()
 	engine := NewEngine(&org)
