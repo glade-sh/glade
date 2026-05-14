@@ -1988,8 +1988,8 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"Limits.getFutureCalls", "Limits.getLimitFutureCalls", "Limits.getBatchJobs", "Limits.getLimitBatchJobs",
 		"Limits.getScheduledJobs", "Limits.getLimitScheduledJobs",
 		"Limits.getEmailInvocations", "Limits.getLimitEmailInvocations",
-		"Database.query", "Database.queryWithBinds", "Database.countQuery", "Database.getQueryLocator",
-		"Database.setSavepoint", "Database.rollback", "Database.insert", "Database.update", "Database.delete",
+		"Database.query", "Database.queryWithBinds", "Database.countQuery", "Database.countQueryWithBinds", "Database.getQueryLocator", "Database.getQueryLocatorWithBinds",
+		"Database.setSavepoint", "Database.releaseSavepoint", "Database.rollback", "Database.insert", "Database.update", "Database.delete",
 		"Database.upsert", "Database.undelete", "Database.emptyRecycleBin", "Database.lock", "Database.unlock",
 		"Database.convertLead", "Database.merge",
 		"Security.stripInaccessible",
@@ -2025,6 +2025,7 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"ApexPages.hasMessages", "ApexPages.addMessage", "ApexPages.getMessages", "ApexPages.currentPage",
 		"Test.clearApexPageMessages", "Test.setCurrentPage", "Test.setCurrentPageReference",
 		"Test.setMock", "Test.testInstall", "Test.createStub", "Test.createSoqlStub",
+		"Test.getFlexQueueOrder", "Test.calculatePermissionSetGroup", "Test.enableChangeDataCapture", "Test.setReadOnlyApplicationMode", "Test.isSoqlStubDefined",
 		"WebServiceCallout.invoke",
 		"Test.setCreatedDate", "Test.setFixedSearchResults", "Test.startTest", "Test.stopTest", "Test.getStandardPricebookId",
 		"Test.Database.hasRecords",
@@ -2510,6 +2511,24 @@ platformStaticCall:
 			return count, nil
 		}
 		return Int(int64(len(value.List))), nil
+	case "Database.countQueryWithBinds":
+		if len(args) != 3 {
+			return Null, fmt.Errorf("Database.countQueryWithBinds expects query String, bind Map, and AccessLevel")
+		}
+		if args[0].Kind != ValueString || args[1].Kind != ValueMap {
+			return Null, fmt.Errorf("Database.countQueryWithBinds expects query String and bind Map")
+		}
+		if !isDatabaseAccessLevelValue(args[2]) {
+			return Null, fmt.Errorf("Database.countQueryWithBinds expects AccessLevel")
+		}
+		value, err := vm.executeSOQLWithBindMap(args[0].Text, args[1], result)
+		if err != nil {
+			return Null, err
+		}
+		if count, ok := aggregateCount(value); ok {
+			return count, nil
+		}
+		return Int(int64(len(value.List))), nil
 	case "Database.getQueryLocator":
 		if len(args) != 1 || (args[0].Kind != ValueString && args[0].Kind != ValueList) {
 			return Null, fmt.Errorf("Database.getQueryLocator expects query String or inline SOQL")
@@ -2527,6 +2546,24 @@ platformStaticCall:
 		locator := Object("Database.QueryLocator")
 		locator.Fields["Records"] = value
 		locator.Fields["Query"] = String(query)
+		return locator, nil
+	case "Database.getQueryLocatorWithBinds":
+		if len(args) != 3 {
+			return Null, fmt.Errorf("Database.getQueryLocatorWithBinds expects query String, bind Map, and AccessLevel")
+		}
+		if args[0].Kind != ValueString || args[1].Kind != ValueMap {
+			return Null, fmt.Errorf("Database.getQueryLocatorWithBinds expects query String and bind Map")
+		}
+		if !isDatabaseAccessLevelValue(args[2]) {
+			return Null, fmt.Errorf("Database.getQueryLocatorWithBinds expects AccessLevel")
+		}
+		value, err := vm.executeSOQLWithBindMap(args[0].Text, args[1], result)
+		if err != nil {
+			return Null, err
+		}
+		locator := Object("Database.QueryLocator")
+		locator.Fields["Records"] = value
+		locator.Fields["Query"] = String(args[0].Text)
 		return locator, nil
 	case "Security.stripInaccessible":
 		if len(args) != 2 && len(args) != 3 {
@@ -2590,6 +2627,26 @@ platformStaticCall:
 		vm.clearCustomDataCache()
 		for id, order := range vm.savepointOrder {
 			if order > targetOrder {
+				delete(vm.savepoints, id)
+				delete(vm.emailSavepoints, id)
+				delete(vm.savepointOrder, id)
+			}
+		}
+		return Null, nil
+	case "Database.releaseSavepoint":
+		if len(args) != 1 || args[0].Kind != ValueObject || args[0].Type != "System.Savepoint" {
+			return Null, fmt.Errorf("Database.releaseSavepoint expects Savepoint")
+		}
+		idValue, ok := args[0].Fields["Id"]
+		if !ok || idValue.Kind != ValueString {
+			return Null, fmt.Errorf("Database.releaseSavepoint received invalid Savepoint")
+		}
+		if _, ok := vm.savepoints[idValue.Text]; !ok {
+			return Null, fmt.Errorf("Database.releaseSavepoint received invalid Savepoint")
+		}
+		targetOrder := vm.savepointOrder[idValue.Text]
+		for id, order := range vm.savepointOrder {
+			if order >= targetOrder {
 				delete(vm.savepoints, id)
 				delete(vm.emailSavepoints, id)
 				delete(vm.savepointOrder, id)
@@ -3399,6 +3456,46 @@ platformStaticCall:
 		return vm.testCreateStub(args)
 	case "Test.createSoqlStub":
 		return Null, unsupportedCallError(callee + " local stub API")
+	case "Test.getFlexQueueOrder":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Test.getFlexQueueOrder expects 0 arguments")
+		}
+		if err := vm.requireTestContext(callee); err != nil {
+			return Null, err
+		}
+		return typedList("List<Id>"), nil
+	case "Test.calculatePermissionSetGroup":
+		if len(args) != 1 || (args[0].Kind != ValueString && args[0].Kind != ValueList) {
+			return Null, fmt.Errorf("Test.calculatePermissionSetGroup expects permission set group Id or List<String>")
+		}
+		if err := vm.requireTestContext(callee); err != nil {
+			return Null, err
+		}
+		return Null, nil
+	case "Test.enableChangeDataCapture":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Test.enableChangeDataCapture expects 0 arguments")
+		}
+		if err := vm.requireTestContext(callee); err != nil {
+			return Null, err
+		}
+		return Null, nil
+	case "Test.setReadOnlyApplicationMode":
+		if len(args) != 1 || args[0].Kind != ValueBool {
+			return Null, fmt.Errorf("Test.setReadOnlyApplicationMode expects Boolean")
+		}
+		if err := vm.requireTestContext(callee); err != nil {
+			return Null, err
+		}
+		return Null, nil
+	case "Test.isSoqlStubDefined":
+		if len(args) != 1 || !isSObjectTypeToken(args[0]) {
+			return Null, fmt.Errorf("Test.isSoqlStubDefined expects Schema.SObjectType")
+		}
+		if err := vm.requireTestContext(callee); err != nil {
+			return Null, err
+		}
+		return Bool(false), nil
 	case "Continuation.addHttpRequest", "Continuation.getResponse":
 		return Null, unsupportedCallError(callee + " local continuation callout surface")
 	case "Test.setFixedSearchResults":

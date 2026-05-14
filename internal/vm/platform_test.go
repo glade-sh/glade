@@ -2087,6 +2087,38 @@ func TestExecUnsupportedTestHelperAPIsHaveStableShape(t *testing.T) {
 	}
 }
 
+func TestExecSafeGeneratedTestHelpers(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Id> flexQueueOrder = Test.getFlexQueueOrder();
+System.assertEquals(0, flexQueueOrder.size());
+Test.calculatePermissionSetGroup('0PG000000000001');
+Test.calculatePermissionSetGroup(new List<String>{'0PG000000000001', '0PG000000000002'});
+Test.enableChangeDataCapture();
+Test.setReadOnlyApplicationMode(true);
+System.assertEquals(false, Test.isSoqlStubDefined(Account.SObjectType));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSafeGeneratedTestHelpersRequireTestContext(t *testing.T) {
+	program, err := CompileAnonymous(`Test.getFlexQueueOrder();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err == nil || !strings.Contains(err.Error(), "only available in test context") {
+		t.Fatalf("err = %v", err)
+	}
+}
+
 func TestExecDatabaseGetQueryLocator(t *testing.T) {
 	program, err := CompileAnonymous(`
 insert new Account(Name = 'Acme');
@@ -2131,6 +2163,47 @@ System.assert(!inlineIterator.hasNext());
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecDatabaseGetQueryLocatorWithBinds(t *testing.T) {
+	program, err := CompileAnonymous(`
+insert new Account(Name = 'Acme');
+insert new Account(Name = 'Beta');
+Map<String,Object> binds = new Map<String,Object>();
+binds.put('wanted', 'Beta');
+Database.QueryLocator locator = Database.getQueryLocatorWithBinds('SELECT Id, Name FROM Account WHERE Name = :wanted', binds, AccessLevel.USER_MODE);
+System.assertEquals('SELECT Id, Name FROM Account WHERE Name = :wanted', locator.getQuery());
+Object iterator = locator.iterator();
+System.assert(iterator.hasNext());
+Account row = iterator.next();
+System.assertEquals('Beta', row.Name);
+System.assert(!iterator.hasNext());
+System.assertEquals(1, Limits.getQueries());
+System.assertEquals(1, Limits.getQueryRows());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+
+	badProgram, err := CompileAnonymous(`
+Map<String,Object> binds = new Map<String,Object>();
+Database.getQueryLocatorWithBinds('SELECT Id FROM Account', binds, 'USER_MODE');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine = New(nil)
+	org = testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(badProgram); err == nil || !strings.Contains(err.Error(), "AccessLevel") {
+		t.Fatalf("expected AccessLevel error, got %v", err)
 	}
 }
 
@@ -2224,6 +2297,44 @@ Database.rollback(second);
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), "invalid Savepoint") {
 		t.Fatalf("err = %v", err)
+	}
+}
+
+func TestExecDatabaseReleaseSavepointInvalidatesReleasedAndNestedSavepoints(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.Savepoint first = Database.setSavepoint();
+insert new Account(Name = 'one');
+System.Savepoint second = Database.setSavepoint();
+insert new Account(Name = 'two');
+Database.releaseSavepoint(second);
+Database.rollback(first);
+Integer afterRollback = [SELECT COUNT() FROM Account];
+System.assertEquals(0, afterRollback);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+
+	badProgram, err := CompileAnonymous(`
+System.Savepoint first = Database.setSavepoint();
+System.Savepoint second = Database.setSavepoint();
+Database.releaseSavepoint(first);
+Database.rollback(second);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine = New(nil)
+	org = testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(badProgram); err == nil || !strings.Contains(err.Error(), "invalid Savepoint") {
+		t.Fatalf("expected invalid Savepoint error, got %v", err)
 	}
 }
 
