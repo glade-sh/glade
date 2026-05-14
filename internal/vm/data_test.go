@@ -1590,6 +1590,37 @@ System.assertEquals('Parent__r', Child__c.Parent__c.getDescribe().getRelationshi
 	}
 }
 
+func TestExecPutSObjectStoresLoadedParentRelationship(t *testing.T) {
+	program, err := CompileAnonymous(`
+Child__c child = new Child__c();
+child.putSObject(Child__c.Parent__c, new Account(Id = '001000000000001AAA', Name = 'Token Parent'));
+System.assertEquals('Token Parent', child.getSObject(Child__c.Parent__c).Name);
+child.putSObject('Parent__r', new Account(Id = '001000000000002AAA', Name = 'String Parent'));
+System.assertEquals('String Parent', child.getSObject('Parent__r').Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Child__c"] = storage.ObjectState{Definition: storage.ObjectDefinition{
+		APIName: "Child__c",
+		Fields: map[string]storage.Field{
+			"Id":        {APIName: "Id", Type: storage.FieldID},
+			"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Parent__r"},
+		},
+		Relations: []storage.Relationship{{
+			Field:              "Parent__c",
+			ParentObjects:      []string{"Account"},
+			ParentRelationship: "Parent__r",
+		}},
+	}}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSObjectCloneAndRelationshipAccessors(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account parent = new Account(Name = 'Parent');

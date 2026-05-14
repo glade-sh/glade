@@ -20328,7 +20328,7 @@ func (vm *VM) callStubProxyMember(receiver Value, method string, args []Value, r
 
 func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Value, bool, error) {
 	method = canonicalStdlibMemberName(method,
-		"addError", "hasErrors", "getErrors", "get", "put", "isSet", "clear",
+		"addError", "hasErrors", "getErrors", "get", "put", "putSObject", "isSet", "clear",
 		"getPopulatedFieldsAsMap", "getSObjectType",
 	)
 	switch method {
@@ -20410,6 +20410,36 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		receiver.Fields[actualField] = args[1]
 		markQueriedSObjectField(&receiver, actualField)
 		return previous, true, nil
+	case "putSObject":
+		if len(args) != 2 {
+			return Null, true, fmt.Errorf("SObject.putSObject expects relationship name String or Schema.SObjectField and SObject value")
+		}
+		fieldTokenArg := args[0].Kind == ValueObject && isSObjectFieldTokenType(args[0].Type)
+		fieldArg, err := vm.sObjectFieldArg(receiver.Type, args[0])
+		if err != nil {
+			return Null, true, fmt.Errorf("SObject.putSObject expects relationship name String or Schema.SObjectField and SObject value")
+		}
+		if args[1].Kind != ValueNull && (args[1].Kind != ValueObject || !vm.isSObjectLikeType(args[1].Type)) {
+			return Null, true, fmt.Errorf("SObject.putSObject expects SObject value")
+		}
+		if reason, ok := sobjectReadOnlyReason(receiver); ok {
+			return Null, true, fmt.Errorf("cannot modify read-only %s", reason)
+		}
+		relationshipName := fieldArg
+		if fieldTokenArg {
+			field := vm.resolveSObjectFieldName(receiver.Type, fieldArg)
+			if definition, fieldDef, exists := vm.sObjectFieldDefinition(receiver.Type, field); exists && fieldDef.Type == storage.FieldReference {
+				relationshipName = vm.parentRelationshipNameForReferenceField(definition, fieldDef)
+			} else if derived := lookupFieldRelationshipName(field); derived != "" {
+				relationshipName = derived
+			}
+		}
+		if relationshipName == "" {
+			return Null, true, fmt.Errorf("SObject.putSObject relationship name is blank")
+		}
+		receiver.Fields[relationshipName] = args[1]
+		markQueriedSObjectField(&receiver, relationshipName)
+		return Null, true, nil
 	case "isSet":
 		if len(args) != 1 {
 			return Null, true, fmt.Errorf("SObject.isSet expects field name String or Schema.SObjectField")
