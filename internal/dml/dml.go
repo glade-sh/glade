@@ -1181,7 +1181,7 @@ func canonicalizeRecord(namespace string, definition storage.ObjectDefinition, o
 		if _, exists := fields[canonical]; exists && canonical != field {
 			return storage.Record{}, fmt.Errorf("dml: duplicate field alias %s.%s", objectName, field)
 		}
-		fields[canonical] = value
+		fields[canonical] = normalizeStoredFieldValue(definition.Fields[canonical], value)
 	}
 	record.Fields = fields
 	nulls := make(map[string]bool, len(record.ExplicitNulls))
@@ -1195,6 +1195,26 @@ func canonicalizeRecord(namespace string, definition storage.ObjectDefinition, o
 	}
 	record.ExplicitNulls = nulls
 	return record, nil
+}
+
+func normalizeStoredFieldValue(field storage.Field, value storage.Value) storage.Value {
+	if value.Kind != storage.ValueString || !isSingleLineTextField(field) {
+		return value
+	}
+	value.String = strings.NewReplacer("\r\n", " ", "\n", " ", "\r", " ").Replace(value.String)
+	return value
+}
+
+func isSingleLineTextField(field storage.Field) bool {
+	if field.Type != storage.FieldString && field.Type != storage.FieldPicklist {
+		return false
+	}
+	switch strings.ToUpper(strings.TrimSpace(field.DisplayType)) {
+	case "TEXTAREA", "LONGTEXTAREA", "RICHTEXTAREA":
+		return false
+	default:
+		return true
+	}
 }
 
 func validateFields(definition storage.ObjectDefinition, namespace string, record storage.Record) error {
