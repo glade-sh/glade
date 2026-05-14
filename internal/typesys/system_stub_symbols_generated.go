@@ -16462,7 +16462,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "error", Type: "Exception"},
 			{Name: "errorMessage", Type: "String"},
 			{Name: "errorTypeName", Type: "String"},
-			{Name: "isSuccess", Type: "Object"},
+			{Name: "isSuccess", Type: "Boolean"},
 			{Name: "result", Type: "Object"},
 		},
 	},
@@ -110122,7 +110122,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 		},
 		Properties: []StandardPropertySpec{
 			{Name: "errors", Type: "List<Invocable.Action.Error>"},
-			{Name: "isSuccess", Type: "Object"},
+			{Name: "isSuccess", Type: "Boolean"},
 			{Name: "outputParameters", Type: "Map<String,Object>"},
 		},
 	},
