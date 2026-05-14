@@ -4682,7 +4682,12 @@ func idStatic(callee string, args []Value) (Value, error) {
 	if len(args) != 1 && len(args) != 2 {
 		return Null, fmt.Errorf("Id.valueOf expects String[, Boolean]")
 	}
-	if args[0].Kind != ValueString {
+	idText := ""
+	if args[0].Kind == ValueString {
+		idText = args[0].Text
+	} else if typedID, ok := typedIDValueText(args[0]); ok {
+		idText = typedID
+	} else {
 		return Null, fmt.Errorf("Id.valueOf expects String")
 	}
 	if len(args) == 2 {
@@ -4690,17 +4695,17 @@ func idStatic(callee string, args []Value) (Value, error) {
 			return Null, fmt.Errorf("Id.valueOf restoreCasing expects Boolean")
 		}
 		if args[1].Bool {
-			restored, err := restoreApexIDCasing(args[0].Text)
+			restored, err := restoreApexIDCasing(idText)
 			if err != nil {
 				return Null, err
 			}
-			return String(restored), nil
+			return platformScalar("Id", restored), nil
 		}
 	}
-	if err := validateApexID(args[0].Text); err != nil {
+	if err := validateApexID(idText); err != nil {
 		return Null, err
 	}
-	return String(args[0].Text), nil
+	return platformScalar("Id", idText), nil
 }
 
 func restoreApexIDCasing(text string) (string, error) {

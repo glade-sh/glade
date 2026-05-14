@@ -657,6 +657,10 @@ Exit criteria:
 - Build general platform behavior, not project-specific routing.
 - Prefer explicit unsupported diagnostics over silent no-ops.
 - Add owned compatibility fixtures before claiming a surface is supported.
+- For ambiguous Apex runtime behavior, run a minimal anonymous Apex probe
+  against `nu-dx-org` with `sf apex run --target-org nu-dx-org` before deciding
+  the local behavior. Treat the scratch-org result as the oracle and capture it
+  in a focused regression or compatibility fixture.
 - Keep local test execution separate from browser/UI rendering. Apex tests need
   controller contracts, page references, labels, resources, and metadata
   resolution first; full Visualforce/Aura/LWC serving comes later.

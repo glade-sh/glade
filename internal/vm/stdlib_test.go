@@ -1097,13 +1097,16 @@ System.assert(!accountType.equals(contactType));
 System.assertEquals(accountName.hashCode(), accountType.hashCode());
 
 Id valid = Id.valueOf('001B000001DVM9t');
+Id fromId = Id.valueOf(valid);
 Id same = Id.valueOf('001B000001DVM9t', false);
 Id restored = Id.valueOf('001b000001dvm9tIAH', true);
 Id restoredLowerChecksum = Id.valueOf('001b000001dvm9tiah', true);
 System.assert(valid.equals(same));
+System.assert(valid.equals(fromId));
 System.assertEquals('001B000001DVM9t', valid.toString());
 System.assertEquals('001B000001DVM9tIAH', String.valueOf(valid));
 System.assertEquals('id=001B000001DVM9tIAH', 'id=' + valid);
+System.assertEquals('Account', Id.valueOf('001B000001DVM9t').getSObjectType().getDescribe().getName());
 System.assertEquals('001B000001DVM9t', valid.to15());
 System.assertEquals('001B000001DVM9tIAH', valid.to18());
 Id longId = Id.valueOf('001B000001DVM9tIAH');

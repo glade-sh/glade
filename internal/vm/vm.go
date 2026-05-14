@@ -10387,13 +10387,6 @@ func decodeJSONValue(text string) (any, error) {
 	if err := decoder.Decode(&decoded); err != nil {
 		return nil, err
 	}
-	var extra any
-	if err := decoder.Decode(&extra); err != io.EOF {
-		if err == nil {
-			return nil, fmt.Errorf("JSON input contains multiple values")
-		}
-		return nil, err
-	}
 	return decoded, nil
 }
 

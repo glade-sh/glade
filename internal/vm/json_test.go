@@ -1412,6 +1412,9 @@ System.assertEquals(1, items.get(0));
 System.assertEquals('two', items.get(1));
 System.assertEquals(false, items.get(2));
 System.assertEquals(null, items.get(3).get('inner'));
+Object firstRootOnly = JSON.deserializeUntyped('{"provider":{"sfObject":"User"}},"license":{"sfObject":"Contact"}');
+System.assertEquals(true, firstRootOnly.containsKey('provider'));
+System.assertEquals(false, firstRootOnly.containsKey('license'));
 String caught = '';
 try {
 	JSON.deserializeUntyped('{"broken":');

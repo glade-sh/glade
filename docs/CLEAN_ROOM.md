@@ -37,3 +37,13 @@ invocation, and expected externally observable behavior. The expected behavior
 should come from Salesforce itself or from a written public specification, not
 from proprietary implementation internals.
 
+When runtime behavior is ambiguous, confirm it against the connected scratch org
+before changing `oaer`. Use `nu-dx-org` for small executable probes:
+
+```bash
+echo "System.debug('Hello from CLI');" | sf apex run --target-org nu-dx-org
+```
+
+Keep the probe minimal, record the observed result in the test or commit
+context, and then encode the behavior in an owned regression or compatibility
+fixture.
