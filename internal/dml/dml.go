@@ -389,6 +389,7 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 		return "", err
 	}
 	normalizeNameFields(objectName, object.Definition, &record)
+	stripImplicitReadOnlyDefaultFields(object.Definition, e.Org.Namespace, &record, true)
 	if err := validateFieldWriteability(object.Definition, e.Org.Namespace, record, true); err != nil {
 		return "", err
 	}
@@ -972,6 +973,7 @@ func (e *Engine) updateOne(record storage.Record) error {
 	if record.ID == "" {
 		return fmt.Errorf("dml: update requires id")
 	}
+	stripImplicitReadOnlyDefaultFields(object.Definition, e.Org.Namespace, &record, false)
 	if err := validateFieldWriteability(object.Definition, e.Org.Namespace, record, false); err != nil {
 		return err
 	}
@@ -1263,6 +1265,84 @@ func validateFieldWriteability(definition storage.ObjectDefinition, namespace st
 		}
 	}
 	return nil
+}
+
+func stripImplicitReadOnlyDefaultFields(definition storage.ObjectDefinition, namespace string, record *storage.Record, create bool) {
+	if record == nil {
+		return
+	}
+	for field, value := range record.Fields {
+		canonical, ok := storage.ResolveFieldName(definition, namespace, field)
+		if !ok {
+			continue
+		}
+		fieldDef := definition.Fields[canonical]
+		if fieldDef.Type == storage.FieldCalculated || fieldDef.Type == storage.FieldSummary {
+			continue
+		}
+		writeable := storage.FieldFlagValue(fieldDef.Updateable, true)
+		if create {
+			writeable = storage.FieldFlagValue(fieldDef.Createable, true)
+		}
+		if writeable || !storageFieldValueLooksImplicit(fieldDef, value) {
+			continue
+		}
+		delete(record.Fields, field)
+	}
+}
+
+func storageFieldValueLooksImplicit(field storage.Field, value storage.Value) bool {
+	if storageValueIsDefaultZero(value) {
+		return true
+	}
+	return storageValueMatchesDefault(field, value)
+}
+
+func storageValueMatchesDefault(field storage.Field, value storage.Value) bool {
+	defaultValue := strings.TrimSpace(field.DefaultValue)
+	if defaultValue == "" {
+		return false
+	}
+	switch value.Kind {
+	case storage.ValueString, storage.ValueID:
+		actual := value.String
+		if value.Kind == storage.ValueID {
+			actual = string(value.ID)
+		}
+		return strings.EqualFold(actual, strings.Trim(defaultValue, `'"`))
+	case storage.ValueBoolean:
+		switch strings.ToLower(defaultValue) {
+		case "true":
+			return value.Boolean
+		case "false":
+			return !value.Boolean
+		default:
+			return false
+		}
+	case storage.ValueInteger:
+		return strconv.FormatInt(value.Integer, 10) == defaultValue
+	case storage.ValueDecimal:
+		return value.Decimal == defaultValue
+	default:
+		return false
+	}
+}
+
+func storageValueIsDefaultZero(value storage.Value) bool {
+	switch value.Kind {
+	case storage.ValueNull:
+		return true
+	case storage.ValueBoolean:
+		return !value.Boolean
+	case storage.ValueInteger:
+		return value.Integer == 0
+	case storage.ValueDecimal:
+		return value.Decimal == "" || value.Decimal == "0" || value.Decimal == "0.0"
+	case storage.ValueString:
+		return value.String == ""
+	default:
+		return false
+	}
 }
 
 func validateFieldWriteabilityName(definition storage.ObjectDefinition, namespace, objectName, field string, create bool) error {

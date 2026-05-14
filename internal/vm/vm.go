@@ -8252,6 +8252,7 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 		if canonical, ok := storage.ResolveObjectName(*vm.Org, objectType); ok {
 			objectType = canonical
 			definition = vm.Org.Objects[canonical].Definition
+			storage.EnsureStandardObjectFields(&definition)
 		}
 	}
 	record := storage.Record{
@@ -8277,30 +8278,33 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 			}
 			continue
 		}
-		if isSObjectSystemField(field) {
-			continue
-		}
 		canonicalField := field
 		if definition.APIName != "" {
 			if resolved, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, field); ok {
 				canonicalField = resolved
 			}
 		}
-		if definition.APIName != "" {
-			if fieldDef, ok := definition.Fields[canonicalField]; ok && (fieldDef.Type == storage.FieldCalculated || fieldDef.Type == storage.FieldSummary) {
+		explicitField := isExplicitSObjectField(*value, field) || isExplicitSObjectField(*value, canonicalField)
+		if isSObjectSystemField(field) || isSObjectSystemField(canonicalField) {
+			if !explicitField {
 				continue
+			}
+		}
+		if definition.APIName != "" {
+			if fieldDef, ok := definition.Fields[canonicalField]; ok && vmImplicitDMLField(fieldDef) {
+				if !explicitField || vmImplicitDMLFieldDefaultValue(fieldDef, fieldValue) {
+					continue
+				}
 			}
 		}
 		if fieldValue.Kind == ValueList && vm.isChildRelationshipField(definition, field) {
 			continue
 		}
-		if vm.isParentRelationshipField(definition, field) || isLikelyParentRelationshipFieldName(field) {
-			if fieldValue.Kind == ValueObject {
-				if lookupField, ok := vm.parentRelationshipField(objectType, field); ok {
-					if _, hasLookup := record.GetField(lookupField); !hasLookup && !record.HasExplicitNull(lookupField) {
-						if parentID := sObjectIDFromFields(fieldValue.Fields); parentID != "" {
-							record.Fields[lookupField] = storage.IDValue(parentID)
-						}
+		if fieldValue.Kind == ValueObject && !strings.EqualFold(fieldValue.Type, "Id") && (vm.isParentRelationshipField(definition, field) || isLikelyParentRelationshipFieldName(field)) {
+			if lookupField, ok := vm.parentRelationshipField(objectType, field); ok {
+				if _, hasLookup := record.GetField(lookupField); !hasLookup && !record.HasExplicitNull(lookupField) {
+					if parentID := sObjectIDFromFields(fieldValue.Fields); parentID != "" {
+						record.Fields[lookupField] = storage.IDValue(parentID)
 					}
 				}
 			}
@@ -8599,8 +8603,8 @@ func (vm *VM) vmValueFromRecord(record storage.Record) Value {
 }
 
 func isSObjectSystemField(field string) bool {
-	switch field {
-	case "CreatedDate", "CreatedById", "LastModifiedDate", "LastModifiedById", "SystemModstamp", "OwnerId", "IsDeleted":
+	switch strings.ToLower(field) {
+	case "createddate", "createdbyid", "lastmodifieddate", "lastmodifiedbyid", "systemmodstamp", "ownerid", "isdeleted":
 		return true
 	default:
 		return false
@@ -14043,7 +14047,7 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 		if def.Setter != nil {
 			key := owner + "." + actualName
 			if vm.activeSetters[key] > 0 {
-				current.Fields[actualName] = value
+				setExplicitSObjectField(&current, actualName, value)
 				markQueriedSObjectField(&current, actualName)
 				return nil
 			}
@@ -14057,7 +14061,7 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 			_, err := vm.callMethodWithReceiver(*def.Setter, current, []Value{value}, resultForLookup())
 			return err
 		}
-		current.Fields[actualName] = value
+		setExplicitSObjectField(&current, actualName, value)
 		markQueriedSObjectField(&current, actualName)
 		return nil
 	}
@@ -14065,7 +14069,7 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 	if actualName, _, ok := objectFieldValue(current, resolvedField); ok {
 		resolvedField = actualName
 	}
-	current.Fields[resolvedField] = value
+	setExplicitSObjectField(&current, resolvedField, value)
 	markQueriedSObjectField(&current, resolvedField)
 	return nil
 }
@@ -16088,6 +16092,12 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		if err := vm.runInstanceInitializers(class, object, result); err != nil {
 			return Null, err
 		}
+		if !passiveDTO {
+			delete(object.Fields, sobjectExplicitFieldsField)
+			for field, value := range namedArgs {
+				object.Fields[field] = value
+			}
+		}
 		ctorArgs := args
 		ctor, ok, ambiguous := vm.matchConstructor(class, args)
 		if passiveDTO && len(namedArgs) != 0 {
@@ -16117,6 +16127,12 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			return Null, fmt.Errorf("%s constructor expects 0 arguments", typeName)
 		} else if err := vm.callImplicitSuperConstructor(class, Method{}, object, result); err != nil {
 			return Null, err
+		}
+		if !passiveDTO {
+			delete(object.Fields, sobjectExplicitFieldsField)
+			for field, value := range namedArgs {
+				object.Fields[field] = value
+			}
 		}
 		return object, nil
 	}
@@ -21369,7 +21385,7 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 			actualField = field
 			previous = Null
 		}
-		receiver.Fields[actualField] = args[1]
+		setExplicitSObjectField(&receiver, actualField, args[1])
 		markQueriedSObjectField(&receiver, actualField)
 		return previous, true, nil
 	case "putSObject":
@@ -21399,7 +21415,7 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		if relationshipName == "" {
 			return Null, true, fmt.Errorf("SObject.putSObject relationship name is blank")
 		}
-		receiver.Fields[relationshipName] = args[1]
+		setExplicitSObjectField(&receiver, relationshipName, args[1])
 		markQueriedSObjectField(&receiver, relationshipName)
 		return Null, true, nil
 	case "isSet":
@@ -21423,6 +21439,7 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		for field := range receiver.Fields {
 			delete(receiver.Fields, field)
 		}
+		delete(receiver.Fields, sobjectExplicitFieldsField)
 		return Null, true, nil
 	case "getPopulatedFieldsAsMap":
 		if len(args) != 0 {
@@ -21544,15 +21561,82 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 }
 
 const (
-	sobjectErrorsField        = "__oaer_errors"
-	sobjectReadOnlyField      = "__oaer_readonly"
-	sobjectQueriedFieldsField = "__oaer_queried_fields"
-	sobjectDMLAccessibleField = "__oaer_dml_accessible"
-	sobjectTriggerField       = "__oaer_trigger_record"
+	sobjectErrorsField         = "__oaer_errors"
+	sobjectReadOnlyField       = "__oaer_readonly"
+	sobjectQueriedFieldsField  = "__oaer_queried_fields"
+	sobjectExplicitFieldsField = "__oaer_explicit_fields"
+	sobjectDMLAccessibleField  = "__oaer_dml_accessible"
+	sobjectTriggerField        = "__oaer_trigger_record"
 )
 
 func isInternalSObjectField(field string) bool {
-	return field == sobjectErrorsField || field == sobjectReadOnlyField || field == sobjectQueriedFieldsField || field == sobjectDMLAccessibleField || field == sobjectTriggerField
+	return field == sobjectErrorsField || field == sobjectReadOnlyField || field == sobjectQueriedFieldsField || field == sobjectExplicitFieldsField || field == sobjectDMLAccessibleField || field == sobjectTriggerField
+}
+
+func vmImplicitDMLField(field storage.Field) bool {
+	if field.Type == storage.FieldCalculated || field.Type == storage.FieldSummary {
+		return true
+	}
+	return !storage.FieldFlagValue(field.Createable, true) || !storage.FieldFlagValue(field.Updateable, true)
+}
+
+func vmImplicitDMLFieldDefaultValue(field storage.Field, value Value) bool {
+	if field.Type == storage.FieldCalculated || field.Type == storage.FieldSummary {
+		return false
+	}
+	switch value.Kind {
+	case ValueNull:
+		return true
+	case ValueBool:
+		return !value.Bool
+	case ValueInt:
+		return value.Int == 0
+	case ValueDecimal:
+		return value.Decimal == 0
+	case ValueString:
+		return value.Text == ""
+	default:
+		return false
+	}
+}
+
+func markExplicitSObjectField(value *Value, field string) {
+	if value == nil || value.Kind != ValueObject || strings.TrimSpace(field) == "" {
+		return
+	}
+	if value.Fields == nil {
+		value.Fields = make(map[string]Value)
+	}
+	selected, ok := value.Fields[sobjectExplicitFieldsField]
+	if !ok || selected.Kind != ValueMap {
+		selected = Map()
+		selected.Type = "Map<String,Boolean>"
+	}
+	selected.Map[mapKey(String(strings.ToLower(field)))] = Bool(true)
+	value.Fields[sobjectExplicitFieldsField] = selected
+}
+
+func isExplicitSObjectField(value Value, field string) bool {
+	if value.Fields == nil || strings.TrimSpace(field) == "" {
+		return false
+	}
+	selected, ok := value.Fields[sobjectExplicitFieldsField]
+	if !ok || selected.Kind != ValueMap {
+		return false
+	}
+	flag, ok := selected.Map[mapKey(String(strings.ToLower(field)))]
+	return ok && flag.Kind == ValueBool && flag.Bool
+}
+
+func setExplicitSObjectField(value *Value, field string, fieldValue Value) {
+	if value == nil || value.Kind != ValueObject {
+		return
+	}
+	if value.Fields == nil {
+		value.Fields = make(map[string]Value)
+	}
+	value.Fields[field] = fieldValue
+	markExplicitSObjectField(value, field)
 }
 
 func markTriggerSObject(value *Value) {
