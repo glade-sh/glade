@@ -163,6 +163,10 @@ func TestStandardPlatformSymbolsIncludeGeneratedProductNamespaceStubBreadth(t *t
 
 	commerce := requireStandardSymbol(t, symbols, "commercepromotions.PromotionRequest")
 	requireStandardProperty(t, commerce, "buyerAccountId", "String")
+	requireStandardConstructorParams(t, commerce,
+		[]string{"SObject", "String", "String", "List<String>"},
+		[]string{"salesTransaction", "buyerAccountId", "webStoreId", "couponCodes"},
+	)
 }
 
 func requireStandardSymbol(t *testing.T, symbols []TypeSymbol, name string) TypeSymbol {
@@ -187,6 +191,25 @@ func requireStandardConstructor(t *testing.T, symbol TypeSymbol, params []string
 		}
 	}
 	t.Fatalf("missing constructor on %s with params %#v: %#v", standardSymbolFullName(symbol), params, symbol.Members)
+}
+
+func requireStandardConstructorParams(t *testing.T, symbol TypeSymbol, types, names []string) {
+	t.Helper()
+	if len(types) != len(names) {
+		t.Fatalf("constructor assertion mismatch: types=%#v names=%#v", types, names)
+	}
+	for _, member := range symbol.Members {
+		if member.Kind != apexast.DeclarationConstructor || !standardMemberParamsEqual(member, types) {
+			continue
+		}
+		for i, name := range names {
+			if !strings.EqualFold(member.Parameters[i].Name, name) {
+				t.Fatalf("constructor param %d on %s = %q, want %q: %#v", i, standardSymbolFullName(symbol), member.Parameters[i].Name, name, member.Parameters)
+			}
+		}
+		return
+	}
+	t.Fatalf("missing constructor on %s with params %#v: %#v", standardSymbolFullName(symbol), types, symbol.Members)
 }
 
 func requireStandardMethod(t *testing.T, symbol TypeSymbol, name string, params []string, static bool) {

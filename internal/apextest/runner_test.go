@@ -1297,11 +1297,12 @@ func TestRunRegistersPassiveGeneratedSystemStubClasses(t *testing.T) {
 @IsTest
 private class PassiveGeneratedStubTest {
   @IsTest static void generatedDtoAccessorsWork() {
-    commercepromotions.PromotionRequest request = new commercepromotions.PromotionRequest();
-    request.buyerAccountId = 'buyer-one';
-    request.webStoreId = 'store-one';
+    List<String> coupons = new List<String>{'WELCOME'};
+    commercepromotions.PromotionRequest request = new commercepromotions.PromotionRequest(new Account(Name = 'Acme'), 'buyer-one', 'store-one', coupons);
     System.assertEquals('buyer-one', request.getBuyerAccountId());
     System.assertEquals('store-one', request.getWebStoreId());
+    System.assertEquals('WELCOME', request.getCouponCodes().get(0));
+    System.assertEquals('Acme', ((Account)request.getSalesTransaction()).Name);
     Map<String,Object> values = request.getAsMap();
     System.assertEquals('buyer-one', (String)values.get('buyerAccountId'));
     commercepromotions.PromotionRequest cloned = (commercepromotions.PromotionRequest)request.clone();

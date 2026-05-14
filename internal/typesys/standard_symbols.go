@@ -9,13 +9,23 @@ import (
 )
 
 type StandardSymbolSpec struct {
-	Name         string
-	Kind         apexast.DeclarationKind
-	SuperClass   string
-	Interfaces   []string
-	Constructors [][]string
-	Methods      []StandardMethodSpec
-	Properties   []StandardPropertySpec
+	Name             string
+	Kind             apexast.DeclarationKind
+	SuperClass       string
+	Interfaces       []string
+	Constructors     [][]string
+	ConstructorSpecs []StandardConstructorSpec
+	Methods          []StandardMethodSpec
+	Properties       []StandardPropertySpec
+}
+
+type StandardConstructorSpec struct {
+	Parameters []StandardParameterSpec
+}
+
+type StandardParameterSpec struct {
+	Name string
+	Type string
 }
 
 type StandardMethodSpec struct {
@@ -99,12 +109,12 @@ func StandardSymbolsFromSpecs(specs []StandardSymbolSpec) []TypeSymbol {
 			sym.Namespace = namespace
 			sym.Name = localName
 		}
-		for _, ctor := range spec.Constructors {
+		for _, ctor := range standardConstructorSpecs(spec) {
 			sym.Members = append(sym.Members, MemberSymbol{
 				Kind:       apexast.DeclarationConstructor,
 				Name:       localStandardSymbolName(spec.Name),
 				Modifiers:  []string{"public"},
-				Parameters: standardParameters(ctor),
+				Parameters: standardSpecParameters(ctor.Parameters),
 			})
 		}
 		for _, prop := range spec.Properties {
@@ -143,6 +153,14 @@ func StandardSymbolsFromSpecs(specs []StandardSymbolSpec) []TypeSymbol {
 	return out
 }
 
+func standardConstructorSpecs(spec StandardSymbolSpec) []StandardConstructorSpec {
+	out := append([]StandardConstructorSpec(nil), spec.ConstructorSpecs...)
+	for _, ctor := range spec.Constructors {
+		out = append(out, StandardConstructorSpec{Parameters: standardParameterSpecs(ctor)})
+	}
+	return out
+}
+
 func mergeStandardSymbolSpecs(specs []StandardSymbolSpec) []StandardSymbolSpec {
 	out := make([]StandardSymbolSpec, 0, len(specs))
 	byName := make(map[string]int, len(specs))
@@ -166,6 +184,7 @@ func mergeStandardSymbolSpecs(specs []StandardSymbolSpec) []StandardSymbolSpec {
 		}
 		existing.Interfaces = appendUniqueStandardStrings(existing.Interfaces, spec.Interfaces)
 		existing.Constructors = appendUniqueStandardConstructors(existing.Constructors, spec.Constructors)
+		existing.ConstructorSpecs = appendUniqueStandardConstructorSpecs(existing.ConstructorSpecs, spec.ConstructorSpecs)
 		existing.Methods = appendUniqueStandardMethods(existing.Methods, spec.Methods)
 		existing.Properties = appendUniqueStandardProperties(existing.Properties, spec.Properties)
 	}
@@ -198,6 +217,22 @@ func appendUniqueStandardConstructors(values, additions [][]string) [][]string {
 	}
 	for _, addition := range additions {
 		key := standardTypeListKey(addition)
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		values = append(values, addition)
+	}
+	return values
+}
+
+func appendUniqueStandardConstructorSpecs(values, additions []StandardConstructorSpec) []StandardConstructorSpec {
+	seen := make(map[string]bool, len(values)+len(additions))
+	for _, value := range values {
+		seen[standardConstructorSpecKey(value)] = true
+	}
+	for _, addition := range additions {
+		key := standardConstructorSpecKey(addition)
 		if seen[key] {
 			continue
 		}
@@ -259,6 +294,14 @@ func standardMethodKey(method StandardMethodSpec) string {
 	return strings.ToLower(method.Name) + "|" + strconv.FormatBool(method.Static) + "|" + standardTypeListKey(method.Parameters)
 }
 
+func standardConstructorSpecKey(ctor StandardConstructorSpec) string {
+	types := make([]string, 0, len(ctor.Parameters))
+	for _, param := range ctor.Parameters {
+		types = append(types, param.Type)
+	}
+	return standardTypeListKey(types)
+}
+
 func standardPropertyKey(prop StandardPropertySpec) string {
 	return strings.ToLower(prop.Name) + "|" + strconv.FormatBool(prop.Static)
 }
@@ -297,9 +340,25 @@ func localStandardSymbolName(name string) string {
 }
 
 func standardParameters(types []string) []apexast.Parameter {
-	params := make([]apexast.Parameter, 0, len(types))
+	return standardSpecParameters(standardParameterSpecs(types))
+}
+
+func standardParameterSpecs(types []string) []StandardParameterSpec {
+	params := make([]StandardParameterSpec, 0, len(types))
 	for i, typ := range types {
-		params = append(params, apexast.Parameter{Name: standardParameterName(i), Type: typ})
+		params = append(params, StandardParameterSpec{Name: standardParameterName(i), Type: typ})
+	}
+	return params
+}
+
+func standardSpecParameters(specs []StandardParameterSpec) []apexast.Parameter {
+	params := make([]apexast.Parameter, 0, len(specs))
+	for i, spec := range specs {
+		name := spec.Name
+		if name == "" {
+			name = standardParameterName(i)
+		}
+		params = append(params, apexast.Parameter{Name: name, Type: spec.Type})
 	}
 	return params
 }

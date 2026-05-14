@@ -15909,6 +15909,9 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			if _, err := vm.callMethodWithReceiver(ctor, object, args, result); err != nil {
 				return Null, err
 			}
+			if passiveRuntimeClass(class) && vm.isPassivePlatformDTOType(typeName) {
+				bindPassiveConstructorArgs(&object, ctor, args)
+			}
 		} else if ambiguous {
 			return Null, fmt.Errorf("ambiguous %s constructor with %d argument(s)", typeName, len(args))
 		} else if len(args) != 0 {
@@ -25202,16 +25205,23 @@ func (vm *VM) callPassivePlatformDTOObjectMember(receiver Value, method string, 
 }
 
 func (vm *VM) isPassivePlatformDTOObject(receiver Value) bool {
-	if receiver.Kind != ValueObject || receiver.Type == "" || !strings.Contains(receiver.Type, ".") {
+	if receiver.Kind != ValueObject {
 		return false
 	}
-	if class, ok := vm.lookupClass(receiver.Type); ok && !passiveRuntimeClass(class) {
+	return vm.isPassivePlatformDTOType(receiver.Type)
+}
+
+func (vm *VM) isPassivePlatformDTOType(typeName string) bool {
+	if typeName == "" || !strings.Contains(typeName, ".") {
 		return false
 	}
-	if vm.isSObjectLikeType(receiver.Type) {
+	if class, ok := vm.lookupClass(typeName); ok && !passiveRuntimeClass(class) {
 		return false
 	}
-	namespace := receiver.Type[:strings.IndexByte(receiver.Type, '.')]
+	if vm.isSObjectLikeType(typeName) {
+		return false
+	}
+	namespace := typeName[:strings.IndexByte(typeName, '.')]
 	if namespace == "" {
 		return false
 	}
@@ -25229,9 +25239,31 @@ func passiveRuntimeClass(class Class) bool {
 	return !class.IsTest &&
 		!class.IsInterface &&
 		len(class.Methods) == 0 &&
-		len(class.Constructors) == 0 &&
+		passiveRuntimeConstructors(class.Constructors) &&
 		len(class.StaticInitializers) == 0 &&
 		len(class.InstanceInitializers) == 0
+}
+
+func passiveRuntimeConstructors(constructors []Method) bool {
+	for _, ctor := range constructors {
+		if len(ctor.Program.Instructions) != 0 {
+			return false
+		}
+	}
+	return true
+}
+
+func bindPassiveConstructorArgs(object *Value, ctor Method, args []Value) {
+	for i, arg := range args {
+		if i >= len(ctor.Params) {
+			return
+		}
+		field := strings.TrimSpace(ctor.Params[i].Name)
+		if field == "" || strings.HasPrefix(field, "arg") {
+			continue
+		}
+		object.Fields[passiveAccessorFieldName(*object, field)] = arg
+	}
 }
 
 func passiveAccessorSuffix(method, prefix string) (string, bool) {

@@ -801,9 +801,26 @@ func passiveRuntimeClassFromTypeSymbol(typ typesys.TypeSymbol, name string) vm.C
 				class.Fields[field.Name] = field
 				class.FieldOrder = append(class.FieldOrder, field.Name)
 			}
+		case apexast.DeclarationConstructor:
+			class.Constructors = append(class.Constructors, passiveRuntimeConstructorFromMember(name, member))
 		}
 	}
 	return class
+}
+
+func passiveRuntimeConstructorFromMember(className string, member typesys.MemberSymbol) vm.Method {
+	params := make([]vm.Param, 0, len(member.Parameters))
+	for _, param := range member.Parameters {
+		params = append(params, vm.Param{Name: param.Name, Type: param.Type})
+	}
+	return vm.Method{
+		Name:          className + ".<init>",
+		ClassName:     className,
+		ReturnType:    "void",
+		Params:        params,
+		IsConstructor: true,
+		Access:        "global",
+	}
 }
 
 func passiveEnumConstantField(typ typesys.TypeSymbol, member typesys.MemberSymbol) bool {

@@ -56,8 +56,8 @@ function normalizeType(typeName) {
 }
 
 function parameterType(param) {
-  param = param.trim();
-  if (!param) return "";
+	param = param.trim();
+	if (!param) return "";
   let depth = 0;
   for (let i = 0; i < param.length; i++) {
     const ch = param[i];
@@ -67,12 +67,36 @@ function parameterType(param) {
       return normalizeType(param.slice(0, i));
     }
   }
-  return normalizeType(param);
+	return normalizeType(param);
+}
+
+function parameterName(param, index) {
+	param = param.trim();
+	if (!param) return `arg${index}`;
+	let depth = 0;
+	let lastSplit = -1;
+	for (let i = 0; i < param.length; i++) {
+		const ch = param[i];
+		if (ch === "<") depth++;
+		if (ch === ">") depth = Math.max(0, depth - 1);
+		if (/\s/.test(ch) && depth === 0) {
+			lastSplit = i;
+		}
+	}
+	if (lastSplit < 0) return `arg${index}`;
+	const name = param.slice(lastSplit).trim();
+	return /^[A-Za-z_][A-Za-z0-9_]*$/.test(name) ? name : `arg${index}`;
+}
+
+function parameterSpecs(params) {
+	if (!params.trim()) return [];
+	return splitTopLevel(params)
+		.map((param, index) => ({ type: parameterType(param), name: parameterName(param, index) }))
+		.filter((param) => param.type);
 }
 
 function parameterTypes(params) {
-  if (!params.trim()) return [];
-  return splitTopLevel(params).map(parameterType).filter(Boolean);
+	return parameterSpecs(params).map((param) => param.type);
 }
 
 function declarationName(namespace, className) {
@@ -123,7 +147,7 @@ function parseStub(filePath) {
   for (const line of lines) {
     const ctor = line.match(/^\s*(?:global|public)\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(([^)]*)\)/);
     if (ctor && ctor[1] === className) {
-      spec.constructors.push(parameterTypes(ctor[2]));
+			spec.constructors.push(parameterSpecs(ctor[2]));
       continue;
     }
 
@@ -216,11 +240,15 @@ function capitalizeIdentifier(value) {
 }
 
 function constructorKey(params) {
+  return params.map((p) => p.type.toLowerCase()).join(",");
+}
+
+function parameterTypesKey(params) {
   return params.map((p) => p.toLowerCase()).join(",");
 }
 
 function methodKey(method) {
-  return `${method.name.toLowerCase()}|${method.static}|${constructorKey(method.parameters)}`;
+  return `${method.name.toLowerCase()}|${method.static}|${parameterTypesKey(method.parameters)}`;
 }
 
 function propertyKey(prop) {
@@ -254,9 +282,9 @@ function writeSpec(spec) {
   if (spec.superClass) out += `\t\tSuperClass: ${goString(spec.superClass)},\n`;
   if (spec.interfaces.length) out += `\t\tInterfaces: ${goStringSlice(spec.interfaces)},\n`;
   if (spec.constructors.length) {
-    out += "\t\tConstructors: [][]string{\n";
+    out += "\t\tConstructorSpecs: []StandardConstructorSpec{\n";
     for (const ctor of spec.constructors) {
-      out += `\t\t\t${goStringSlice(ctor)},\n`;
+      out += `\t\t\t{Parameters: []StandardParameterSpec{${ctor.map((param) => `{Name: ${goString(param.name)}, Type: ${goString(param.type)}}`).join(", ")}},},\n`;
     }
     out += "\t\t},\n";
   }
