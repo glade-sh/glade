@@ -177,13 +177,20 @@ function fieldLiteral(field) {
   return `Field{${pieces.join(", ")}}`;
 }
 
-function relationLiteral(field) {
+function childRelationshipKey(childObject, fieldName) {
+  return `${(childObject || "").toLowerCase()}.${(fieldName || "").toLowerCase()}`;
+}
+
+function relationLiteral(field, childRelationship) {
   const relationshipName = field.relationshipName || (field.name.endsWith("Id") ? field.name.slice(0, -2) : "");
   const pieces = [
     `Field: ${goString(field.name)}`,
     `ParentObjects: ${goStringSlice(field.referenceTo)}`,
   ];
   if (relationshipName) pieces.push(`ParentRelationship: ${goString(relationshipName)}`);
+  if (childRelationship?.relationshipName) pieces.push(`ChildRelationship: ${goString(childRelationship.relationshipName)}`);
+  if (childRelationship?.cascadeDelete) pieces.push("CascadeDelete: true");
+  if (childRelationship?.restrictedDelete) pieces.push("RestrictedDelete: true");
   if (field.referenceTo?.length > 1 || field.polymorphicForeignKey) pieces.push("Polymorphic: true");
   return `Relationship{${pieces.join(", ")}}`;
 }
@@ -223,10 +230,28 @@ function featureRecordTypesLiteral(groups) {
 }
 
 const files = fs.readdirSync(inputDir).filter((file) => file.endsWith(".json")).sort();
+const objects = files.map((file) => JSON.parse(fs.readFileSync(path.join(inputDir, file), "utf8")).result);
+const childRelationships = new Map();
+for (const obj of objects) {
+  for (const relationship of obj.childRelationships || []) {
+    if (!relationship.childSObject || !relationship.field || !relationship.relationshipName || relationship.deprecatedAndHidden) {
+      continue;
+    }
+    const key = childRelationshipKey(relationship.childSObject, relationship.field);
+    const existing = childRelationships.get(key);
+    if (existing && existing.relationshipName !== relationship.relationshipName) {
+      childRelationships.set(key, { conflict: true });
+      continue;
+    }
+    childRelationships.set(key, {
+      relationshipName: relationship.relationshipName,
+      cascadeDelete: Boolean(existing?.cascadeDelete || relationship.cascadeDelete),
+      restrictedDelete: Boolean(existing?.restrictedDelete || relationship.restrictedDelete),
+    });
+  }
+}
 const entries = [];
-for (const file of files) {
-  const raw = JSON.parse(fs.readFileSync(path.join(inputDir, file), "utf8"));
-  const obj = raw.result;
+for (const obj of objects) {
   const baseFields = [];
   const featureFields = {};
   for (const field of [...obj.fields].sort((a, b) => a.name.localeCompare(b.name))) {
@@ -238,7 +263,9 @@ for (const file of files) {
       baseFields.push(field);
     }
   }
-  const relations = baseFields.filter((field) => field.referenceTo?.length);
+  const relations = baseFields
+    .filter((field) => field.referenceTo?.length)
+    .map((field) => ({ field, childRelationship: childRelationships.get(childRelationshipKey(obj.name, field.name)) }));
   const baseRecordTypes = [];
   const featureRecordTypes = {};
   for (const recordType of [...(obj.recordTypeInfos || [])].sort((a, b) => a.developerName.localeCompare(b.developerName))) {
@@ -264,7 +291,7 @@ for (const entry of entries) {
   out += `\t\t${goString(obj.name)}: {\n\t\t\tDefinition: ObjectDefinition{\n\t\t\t\tAPIName: ${goString(obj.name)},\n\t\t\t\tLabel: ${goString(obj.label || obj.name)},\n\t\t\t\tPluralLabel: ${goString(obj.labelPlural || `${obj.label || obj.name}s`)},\n`;
   if (obj.keyPrefix) out += `\t\t\t\tKeyPrefix: ${goString(obj.keyPrefix)},\n`;
   out += `\t\t\t\tFields: ${mapLiteral(baseFields)},\n`;
-  out += `\t\t\t\tRelations: []Relationship{${relations.map(relationLiteral).join(", ")}},\n`;
+  out += `\t\t\t\tRelations: []Relationship{${relations.map((relation) => relationLiteral(relation.field, relation.childRelationship)).join(", ")}},\n`;
   out += `\t\t\t\tRecordTypes: ${recordTypesLiteral(baseRecordTypes)},\n`;
   out += `\t\t\t},\n`;
   out += `\t\t\tFeatureFields: ${featureFieldsLiteral(featureFields)},\n`;
