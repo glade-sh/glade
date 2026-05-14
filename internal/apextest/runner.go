@@ -719,7 +719,105 @@ func compileProjectClasses(index typesys.Index, methods map[string]vm.Method, ca
 		}
 		out = append(out, class)
 	}
+	out = append(out, passiveStandardRuntimeClasses(index.Types, out)...)
 	return out
+}
+
+func passiveStandardRuntimeClasses(indexTypes []typesys.TypeSymbol, existing []vm.Class) []vm.Class {
+	seen := make(map[string]bool, len(indexTypes)+len(existing))
+	for _, typ := range indexTypes {
+		seen[strings.ToLower(typeSymbolRuntimeName(typ))] = true
+	}
+	for _, class := range existing {
+		seen[strings.ToLower(class.Name)] = true
+	}
+	var out []vm.Class
+	for _, typ := range typesys.StandardPlatformSymbols() {
+		if typ.Kind != apexast.DeclarationClass && typ.Kind != apexast.DeclarationInterface && typ.Kind != apexast.DeclarationEnum {
+			continue
+		}
+		name := typeSymbolRuntimeName(typ)
+		if name == "" || seen[strings.ToLower(name)] || !isPassiveStandardRuntimeType(name) {
+			continue
+		}
+		class := passiveRuntimeClassFromTypeSymbol(typ, name)
+		out = append(out, class)
+		seen[strings.ToLower(name)] = true
+	}
+	return out
+}
+
+func isPassiveStandardRuntimeType(name string) bool {
+	dot := strings.IndexByte(name, '.')
+	if dot <= 0 {
+		return false
+	}
+	switch strings.ToLower(name[:dot]) {
+	case "schema", "apexpages", "messaging", "dom", "system", "database", "test",
+		"userinfo", "site", "network", "search", "approval", "security", "eventbus",
+		"restcontext", "restrequest", "restresponse":
+		return false
+	default:
+		return true
+	}
+}
+
+func passiveRuntimeClassFromTypeSymbol(typ typesys.TypeSymbol, name string) vm.Class {
+	class := vm.Class{
+		Name:         name,
+		Namespace:    typ.Namespace,
+		SuperClass:   typ.SuperClass,
+		Interfaces:   append([]string(nil), typ.Interfaces...),
+		Access:       "global",
+		IsAbstract:   hasModifier(typ.Modifiers, "abstract"),
+		IsInterface:  typ.Kind == apexast.DeclarationInterface,
+		Fields:       make(map[string]vm.Field),
+		StaticFields: make(map[string]vm.Field),
+		Methods:      make(map[string]vm.Method),
+	}
+	for _, member := range typ.Members {
+		switch member.Kind {
+		case apexast.DeclarationField, apexast.DeclarationProperty:
+			field := vm.Field{
+				Name:      member.Name,
+				Type:      member.Type,
+				Static:    hasModifier(member.Modifiers, "static"),
+				Access:    "global",
+				Modifiers: append([]string(nil), member.Modifiers...),
+				Property:  member.Kind == apexast.DeclarationProperty,
+			}
+			if field.Static && passiveEnumConstantField(typ, member) {
+				field.Value = vm.Value{Kind: vm.ValueObject, Type: name, Text: member.Name}
+				field.InitialValue = field.Value
+				class.EnumValues = append(class.EnumValues, member.Name)
+			} else {
+				field.Value = vm.Null
+				field.InitialValue = vm.Null
+			}
+			if field.Static {
+				class.StaticFields[field.Name] = field
+				class.StaticFieldOrder = append(class.StaticFieldOrder, field.Name)
+			} else {
+				class.Fields[field.Name] = field
+				class.FieldOrder = append(class.FieldOrder, field.Name)
+			}
+		}
+	}
+	return class
+}
+
+func passiveEnumConstantField(typ typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if typ.Kind == apexast.DeclarationEnum {
+		return true
+	}
+	return member.Type == "Object" && member.Name == strings.ToUpper(member.Name)
+}
+
+func typeSymbolRuntimeName(typ typesys.TypeSymbol) string {
+	if typ.Namespace == "" || strings.Contains(typ.Name, ".") {
+		return typ.Name
+	}
+	return typ.Namespace + "." + typ.Name
 }
 
 func projectMethodsByClass(methods map[string]vm.Method) map[string][]vm.Method {

@@ -1290,6 +1290,36 @@ func TestCompileProjectClassesPrefersIndexedInterfaces(t *testing.T) {
 	t.Fatal("Outer.Impl class not compiled")
 }
 
+func TestRunRegistersPassiveGeneratedSystemStubClasses(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/PassiveGeneratedStubTest.cls"), `
+@IsTest
+private class PassiveGeneratedStubTest {
+  @IsTest static void generatedDtoAccessorsWork() {
+    commercepromotions.PromotionRequest request = new commercepromotions.PromotionRequest();
+    request.buyerAccountId = 'buyer-one';
+    request.webStoreId = 'store-one';
+    System.assertEquals('buyer-one', request.getBuyerAccountId());
+    System.assertEquals('store-one', request.getWebStoreId());
+    Map<String,Object> values = request.getAsMap();
+    System.assertEquals('buyer-one', (String)values.get('buyerAccountId'));
+    commercepromotions.PromotionRequest cloned = (commercepromotions.PromotionRequest)request.clone();
+    System.assertEquals('buyer-one', cloned.getBuyerAccountId());
+    System.assertEquals('INVALIDCOUPON', commercepromotions.ErrorCode.INVALIDCOUPON.name());
+  }
+}
+`)
+	run := Run(loadTestIndex(t, root), Options{})
+	summary := run.Summary()
+	if summary.Total != 1 || summary.Passed != 1 {
+		if len(run.Suites) > 0 && len(run.Suites[0].Cases) > 0 {
+			t.Fatalf("summary = %#v problem=%#v", summary, run.Suites[0].Cases[0].Problem)
+		}
+		t.Fatalf("summary = %#v suites=%#v", summary, run.Suites)
+	}
+}
+
 func TestExtractMethodSourceUsesByteOffsets(t *testing.T) {
 	source := "// café comment before the method\npublic Integer runIt() {\n  return 7;\n}\n"
 	start := strings.Index(source, "public Integer")

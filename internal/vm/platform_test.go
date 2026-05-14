@@ -1233,6 +1233,36 @@ System.assertEquals(0, results.get(0).getErrors().size());
 	}
 }
 
+func TestExecPassiveGeneratedPlatformDTOAccessors(t *testing.T) {
+	program, err := CompileAnonymous(`
+commercepromotions.PromotionRequest request = new commercepromotions.PromotionRequest();
+System.assertEquals(null, request.getBuyerAccountId());
+request.buyerAccountId = 'buyer-one';
+request.webStoreId = 'store-one';
+System.assertEquals('buyer-one', request.getBuyerAccountId());
+System.assertEquals('store-one', request.GETWEBSTOREID());
+System.assertEquals(false, request.isActive());
+Map<String,Object> values = request.getAsMap();
+System.assertEquals('buyer-one', (String)values.get('buyerAccountId'));
+System.assertEquals('store-one', (String)values.get('webStoreId'));
+commercepromotions.PromotionRequest cloned = (commercepromotions.PromotionRequest)request.clone();
+System.assertEquals('buyer-one', cloned.getBuyerAccountId());
+System.assert(request.equals(request));
+System.assert(!request.equals(new commercepromotions.PromotionRequest()));
+CartExtension.Cart cart = new CartExtension.Cart();
+cart.setName('local cart');
+cart.setCustomField('ExternalKey__c', 'external-one');
+System.assertEquals('local cart', cart.getName());
+System.assertEquals('external-one', (String)cart.getCustomField('ExternalKey__c'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecRenderStoredEmailTemplate(t *testing.T) {
 	program, err := CompileAnonymous(`
 Messaging.SingleEmailMessage rendered = Messaging.renderStoredEmailTemplate('00X000000000001AAA', '003000000000001AAA', '001000000000001AAA');

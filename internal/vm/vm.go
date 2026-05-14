@@ -25128,7 +25128,128 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 		}
 	}
+	if value, updated, mutated, handled, err := vm.callPassivePlatformDTOObjectMember(receiver, method, args); handled || err != nil {
+		return value, updated, mutated, handled, err
+	}
 	return Null, receiver, false, false, nil
+}
+
+func (vm *VM) callPassivePlatformDTOObjectMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	if !vm.isPassivePlatformDTOObject(receiver) {
+		return Null, receiver, false, false, nil
+	}
+	if value, handled, err := callObjectMember(receiver, method, args); handled || err != nil {
+		return value, receiver, false, true, err
+	}
+	if strings.EqualFold(method, "getAsMap") {
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("%s.getAsMap expects 0 arguments", receiver.Type)
+		}
+		values := typedMap("Map<String,Object>")
+		for field, value := range receiver.Fields {
+			if strings.HasPrefix(field, "__") {
+				continue
+			}
+			values.Map[mapKey(String(field))] = value
+		}
+		return values, receiver, false, true, nil
+	}
+	if strings.EqualFold(method, "setCustomField") {
+		if len(args) != 2 || args[0].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("%s.setCustomField expects field name String and value", receiver.Type)
+		}
+		receiver.Fields[args[0].Text] = args[1]
+		return Null, receiver, true, true, nil
+	}
+	if strings.EqualFold(method, "getCustomField") {
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("%s.getCustomField expects field name String", receiver.Type)
+		}
+		if _, value, ok := objectFieldValue(receiver, args[0].Text); ok {
+			return value, receiver, false, true, nil
+		}
+		return Null, receiver, false, true, nil
+	}
+	if suffix, ok := passiveAccessorSuffix(method, "set"); ok {
+		if len(args) != 1 {
+			return Null, receiver, false, true, fmt.Errorf("%s.%s expects 1 argument", receiver.Type, method)
+		}
+		field := passiveAccessorFieldName(receiver, suffix)
+		receiver.Fields[field] = args[0]
+		return Null, receiver, true, true, nil
+	}
+	if suffix, ok := passiveAccessorSuffix(method, "get"); ok {
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("%s.%s expects 0 arguments", receiver.Type, method)
+		}
+		field := passiveAccessorFieldName(receiver, suffix)
+		if _, value, ok := objectFieldValue(receiver, field); ok {
+			return value, receiver, false, true, nil
+		}
+		return Null, receiver, false, true, nil
+	}
+	if suffix, ok := passiveAccessorSuffix(method, "is"); ok {
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("%s.%s expects 0 arguments", receiver.Type, method)
+		}
+		field := passiveAccessorFieldName(receiver, suffix)
+		if _, value, ok := objectFieldValue(receiver, field); ok {
+			return value, receiver, false, true, nil
+		}
+		return Bool(false), receiver, false, true, nil
+	}
+	return Null, receiver, false, false, nil
+}
+
+func (vm *VM) isPassivePlatformDTOObject(receiver Value) bool {
+	if receiver.Kind != ValueObject || receiver.Type == "" || !strings.Contains(receiver.Type, ".") {
+		return false
+	}
+	if class, ok := vm.lookupClass(receiver.Type); ok && !passiveRuntimeClass(class) {
+		return false
+	}
+	if vm.isSObjectLikeType(receiver.Type) {
+		return false
+	}
+	namespace := receiver.Type[:strings.IndexByte(receiver.Type, '.')]
+	if namespace == "" {
+		return false
+	}
+	switch strings.ToLower(namespace) {
+	case "schema", "apexpages", "messaging", "dom", "system", "database", "test",
+		"userinfo", "site", "network", "search", "approval", "security", "eventbus",
+		"restcontext", "restrequest", "restresponse":
+		return false
+	default:
+		return true
+	}
+}
+
+func passiveRuntimeClass(class Class) bool {
+	return !class.IsTest &&
+		!class.IsInterface &&
+		len(class.Methods) == 0 &&
+		len(class.Constructors) == 0 &&
+		len(class.StaticInitializers) == 0 &&
+		len(class.InstanceInitializers) == 0
+}
+
+func passiveAccessorSuffix(method, prefix string) (string, bool) {
+	if len(method) <= len(prefix) || !strings.EqualFold(method[:len(prefix)], prefix) {
+		return "", false
+	}
+	return method[len(prefix):], true
+}
+
+func passiveAccessorFieldName(receiver Value, suffix string) string {
+	if suffix == "" {
+		return suffix
+	}
+	field := strings.ToLower(suffix[:1]) + suffix[1:]
+	if actual, _, ok := objectFieldValue(receiver, field); ok {
+		return actual
+	}
+	return field
 }
 
 func callRestRequestMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
