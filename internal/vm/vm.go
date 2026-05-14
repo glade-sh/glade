@@ -72,6 +72,7 @@ type VM struct {
 	limitViolations    []LimitViolation
 	fakeNow            time.Time
 	currentAsyncKind   string
+	currentFinalizer   Value
 	activeExceptions   []activeException
 	currentStatement   callFrame
 	hasStatement       bool
@@ -2761,6 +2762,9 @@ platformStaticCall:
 		if len(args) != 1 || args[0].Kind != ValueObject {
 			return Null, fmt.Errorf("System.attachFinalizer expects Finalizer object")
 		}
+		if vm.currentAsyncKind == "Queueable" {
+			vm.currentFinalizer = args[0]
+		}
 		return Null, nil
 	case "AsyncInfo.hasMaxStackDepth", "System.AsyncInfo.hasMaxStackDepth":
 		if len(args) != 0 {
@@ -5301,17 +5305,30 @@ func (vm *VM) runAsyncJob(job AsyncJob, result *Result) error {
 		})
 		return err
 	case "Queueable":
-		target, ok := vm.resolveInstanceMethod(job.Object.Type, "execute")
+		args := []Value{asyncContext("QueueableContext", job.ID)}
+		target, ok, ambiguous := vm.resolveInstanceMethodForArgs(job.Object.Type, "execute", args)
+		if ambiguous {
+			return fmt.Errorf("async job %s execute method is ambiguous", job.Object.Type)
+		}
 		if !ok {
 			return fmt.Errorf("async job %s has no execute method", job.Object.Type)
 		}
-		args := []Value{asyncContext("QueueableContext", job.ID)}
 		if len(target.Params) == 0 {
 			args = nil
 		}
+		previousFinalizer := vm.currentFinalizer
+		vm.currentFinalizer = Value{}
 		_, err := vm.withAsyncKind("Queueable", func() (Value, error) {
 			return vm.callMethodWithReceiver(target, job.Object, args, result)
 		})
+		finalizer := vm.currentFinalizer
+		vm.currentFinalizer = previousFinalizer
+		if finalizer.Kind == ValueObject {
+			finalizerErr := vm.runQueueableFinalizer(finalizer, job, result)
+			if err == nil {
+				err = finalizerErr
+			}
+		}
 		return err
 	case "BatchApex":
 		_, err := vm.withAsyncKind("BatchApex", func() (Value, error) {
@@ -5350,6 +5367,24 @@ func (vm *VM) runAsyncJob(job AsyncJob, result *Result) error {
 	default:
 		return fmt.Errorf("unsupported async job kind %s", job.Kind)
 	}
+}
+
+func (vm *VM) runQueueableFinalizer(finalizer Value, job AsyncJob, result *Result) error {
+	args := []Value{asyncContext("FinalizerContext", job.ID)}
+	target, ok, ambiguous := vm.resolveInstanceMethodForArgs(finalizer.Type, "execute", args)
+	if ambiguous {
+		return fmt.Errorf("async finalizer %s execute method is ambiguous", finalizer.Type)
+	}
+	if !ok {
+		return fmt.Errorf("async finalizer %s has no execute method", finalizer.Type)
+	}
+	if len(target.Params) == 0 {
+		args = nil
+	}
+	_, err := vm.withAsyncKind("Queueable", func() (Value, error) {
+		return vm.callMethodWithReceiver(target, finalizer, args, result)
+	})
+	return err
 }
 
 func (vm *VM) withAsyncKind(kind string, run func() (Value, error)) (Value, error) {

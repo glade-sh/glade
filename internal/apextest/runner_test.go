@@ -1012,7 +1012,7 @@ private class MathUtilTest {
 
 	run := Run(loadTestIndex(t, root), Options{})
 	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
-		t.Fatalf("summary = %#v run=%#v", got, run)
+		t.Fatalf("summary = %#v problem=%#v", got, run.Suites[0].Cases[0].Problem)
 	}
 }
 
@@ -1038,7 +1038,7 @@ private class CalculatorTest {
 
 	run := Run(loadTestIndex(t, root), Options{})
 	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
-		t.Fatalf("summary = %#v run=%#v", got, run)
+		t.Fatalf("summary = %#v cases=%#v", got, run.Suites[0].Cases)
 	}
 }
 
@@ -2134,6 +2134,39 @@ private class MarkJobTest {
 	run := Run(loadTestIndex(t, root), Options{})
 	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
 		t.Fatalf("summary = %#v run=%#v", got, run)
+	}
+}
+
+func TestRunExecutesQueueableFinalizerAtStopTest(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/FinalizerJob.cls"), `
+public class FinalizerJob implements Queueable, Finalizer {
+  public void execute(QueueableContext qc) {
+    System.attachFinalizer(this);
+    insert new Account(Name = 'queueable ran');
+  }
+  public void execute(FinalizerContext fc) {
+    insert new Account(Name = 'finalizer ran');
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/FinalizerJobTest.cls"), `
+@isTest
+private class FinalizerJobTest {
+  @isTest static void stopTestRunsFinalizer() {
+    Test.startTest();
+    System.enqueueJob(new FinalizerJob());
+    Test.stopTest();
+    System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'queueable ran']);
+	System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'finalizer ran']);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v problem=%#v", got, run.Suites[0].Cases[0].Problem)
 	}
 }
 
