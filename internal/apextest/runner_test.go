@@ -2058,6 +2058,47 @@ private class SetupRandomTest {
 	}
 }
 
+func TestProjectRuntimeResolvesCustomObjectFieldTokensFromMetadata(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"verifiable"}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/VfiHospitalAffiliation__c/VfiHospitalAffiliation__c.object-meta.xml"), `
+<CustomObject>
+  <label>Hospital Affiliation</label>
+  <pluralLabel>Hospital Affiliations</pluralLabel>
+  <sharingModel>ReadWrite</sharingModel>
+</CustomObject>
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/VfiHospitalAffiliation__c/fields/Type__c.field-meta.xml"), `
+<CustomField>
+  <fullName>Type__c</fullName>
+  <label>Type</label>
+  <type>Picklist</type>
+  <valueSet>
+    <valueSetDefinition>
+      <value>
+        <fullName>AdmittingPrivileges</fullName>
+        <label>Admitting Privileges</label>
+      </value>
+    </valueSetDefinition>
+  </valueSet>
+</CustomField>
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/SchemaTokenTest.cls"), `
+@isTest
+private class SchemaTokenTest {
+  @isTest static void resolvesFieldToken() {
+    System.assertNotEquals(null, VfiHospitalAffiliation__c.Type__c);
+    System.assertEquals('Type__c', VfiHospitalAffiliation__c.Type__c.getDescribe().getName());
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v cases=%#v", got, run.Suites[0].Cases)
+	}
+}
+
 func TestRunDrainsQueueableAtStopTest(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)

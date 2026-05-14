@@ -1248,12 +1248,19 @@ Schema.SObjectType objectType = Schema.getGlobalDescribe().get('Widget__c');
 Map<String, Schema.SObjectField> fields = objectType.getDescribe().fields.getMap();
 System.assert(fields.containsKey('Thing__c'));
 System.assertEquals('pkg__Thing__c', fields.get('Thing__c').getDescribe().getName());
+
+Schema.SObjectType standardType = Schema.getGlobalDescribe().get('pkg__Opportunity');
+System.assertNotEquals(null, standardType);
+Map<String, Schema.SObjectField> standardFields = standardType.getDescribe().fields.getMap();
+System.assertNotEquals(null, standardFields.get('pkg__ContactId'));
+System.assertEquals('ContactId', standardFields.get('pkg__ContactId').getDescribe().getName());
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	org := storage.NewOrgState()
 	org.Namespace = "pkg"
+	storage.EnsureStandardObject(&org, "Opportunity")
 	org.Objects["pkg__Widget__c"] = storage.ObjectState{
 		Definition: storage.ObjectDefinition{
 			APIName: "pkg__Widget__c",
@@ -1388,6 +1395,8 @@ System.assertEquals(Account.SObjectType, Schema.Account.SObjectType);
 System.assertEquals(Schema.SObjectType.Account, Schema.Account.SObjectType);
 System.assertEquals(Contact.LastName, Schema.Contact.SObjectType.fields.lastName);
 System.assertEquals(Account.AccountNumber, Schema.Account.SObjectType.fields.AccountNumber);
+System.assertEquals(Account.AccountNumber, Account.SObjectType.getDescribe().fields.getMap().get('AccountNumber'));
+System.assertEquals(Account.AccountNumber, Account.SObjectType.getDescribe().fields.getMap().get('accountnumber'));
 System.assertEquals(Account.SObjectType, Schema.Account.getSObjectType());
 Boolean sawContacts = false;
 for (Schema.ChildRelationship relationship : Account.SObjectType.getDescribe().getChildRelationships()) {

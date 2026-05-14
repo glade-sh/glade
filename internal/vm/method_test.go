@@ -943,6 +943,124 @@ System.assertEquals(7, c.score());
 	}
 }
 
+func TestExecConstructorCanReadInheritedFieldAfterSuper(t *testing.T) {
+	parentCtor, err := CompileAnonymous("base = seed;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	childCtor, err := CompileAnonymous("super(3); bonus = this.base + 4;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	scoreProgram, err := CompileAnonymous("return bonus;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Child c = new Child();
+System.assertEquals(7, c.score());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Parent",
+		Fields: map[string]Field{
+			"base": {Name: "base", Type: "Integer"},
+		},
+		Constructors: []Method{{
+			Name:          "Parent.<init>",
+			ClassName:     "Parent",
+			Params:        []Param{{Name: "seed", Type: "Integer"}},
+			Program:       parentCtor,
+			IsConstructor: true,
+		}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Child",
+		SuperClass: "Parent",
+		Fields: map[string]Field{
+			"bonus": {Name: "bonus", Type: "Integer"},
+		},
+		Constructors: []Method{{
+			Name:          "Child.<init>",
+			ClassName:     "Child",
+			Program:       childCtor,
+			IsConstructor: true,
+		}},
+		Methods: map[string]Method{
+			"score": {Name: "Child.score", ClassName: "Child", ReturnType: "Integer", Program: scoreProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecConstructorCanReadInheritedPropertyAfterSuper(t *testing.T) {
+	parentCtor, err := CompileAnonymous("base = seed;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	childCtor, err := CompileAnonymous("super(3); bonus = this.base + 4;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	scoreProgram, err := CompileAnonymous("return bonus;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Child c = new Child();
+System.assertEquals(7, c.score());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "Parent",
+		Fields: map[string]Field{
+			"base": {Name: "base", Type: "Integer", Property: true},
+		},
+		Constructors: []Method{{
+			Name:          "Parent.<init>",
+			ClassName:     "Parent",
+			Params:        []Param{{Name: "seed", Type: "Integer"}},
+			Program:       parentCtor,
+			IsConstructor: true,
+		}},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Child",
+		SuperClass: "Parent",
+		Fields: map[string]Field{
+			"bonus": {Name: "bonus", Type: "Integer"},
+		},
+		Constructors: []Method{{
+			Name:          "Child.<init>",
+			ClassName:     "Child",
+			Program:       childCtor,
+			IsConstructor: true,
+		}},
+		Methods: map[string]Method{
+			"score": {Name: "Child.score", ClassName: "Child", ReturnType: "Integer", Program: scoreProgram},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecExplicitEmptyConstructorCallsImplicitSuper(t *testing.T) {
 	parentCtor, err := CompileAnonymous("values = new Map<String, Object>();")
 	if err != nil {

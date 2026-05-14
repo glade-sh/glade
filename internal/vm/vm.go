@@ -11517,18 +11517,24 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 		}
 		field.APIName = apiName
 		token := sObjectFieldTokenFromField(name, field)
-		lowered := strings.ToLower(apiName)
-		fieldsMap.Map[mapKey(String(lowered))] = token
-		fieldsMap.MapKeys[mapKey(String(lowered))] = String(lowered)
+		fieldsMap.Map[mapKey(String(apiName))] = token
+		fieldsMap.MapKeys[mapKey(String(apiName))] = String(apiName)
+		if lowered := strings.ToLower(apiName); lowered != apiName {
+			fieldsMap.Map[mapKey(String(lowered))] = token
+			fieldsMap.MapKeys[mapKey(String(lowered))] = String(lowered)
+		}
 	}
 	for _, fieldName := range []string{"Id", "Name", "CreatedDate", "CreatedById", "LastModifiedDate", "LastModifiedById", "SystemModstamp"} {
-		lowered := strings.ToLower(fieldName)
-		if _, ok := fieldsMap.Map[mapKey(String(lowered))]; ok {
+		if _, ok := fieldsMap.Map[mapKey(String(fieldName))]; ok {
 			continue
 		}
 		token := sObjectFieldToken(name, fieldName)
-		fieldsMap.Map[mapKey(String(lowered))] = token
-		fieldsMap.MapKeys[mapKey(String(lowered))] = String(lowered)
+		fieldsMap.Map[mapKey(String(fieldName))] = token
+		fieldsMap.MapKeys[mapKey(String(fieldName))] = String(fieldName)
+		if lowered := strings.ToLower(fieldName); lowered != fieldName {
+			fieldsMap.Map[mapKey(String(lowered))] = token
+			fieldsMap.MapKeys[mapKey(String(lowered))] = String(lowered)
+		}
 	}
 	fields := Object("Schema.SObjectFieldMap")
 	fields.Fields["map"] = fieldsMap
@@ -19608,7 +19614,7 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			key := vm.mapLookupKey(receiver, args[0])
 			value, ok := receiver.Map[key]
 			if !ok {
-				value, ok = specialMapLookup(receiver, args[0])
+				value, ok = vm.specialMapLookup(receiver, args[0])
 			}
 			if !ok {
 				var err error
@@ -19628,7 +19634,7 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			key := vm.mapLookupKey(receiver, args[0])
 			_, ok := receiver.Map[key]
 			if !ok {
-				_, ok = specialMapLookup(receiver, args[0])
+				_, ok = vm.specialMapLookup(receiver, args[0])
 			}
 			if !ok {
 				var err error
@@ -19926,15 +19932,19 @@ func (vm *VM) apexObjectHashMapKey(value Value) (string, bool) {
 	return string(ValueObject) + ":" + value.Type + ":hash:" + strconv.FormatInt(result.Int, 10), true
 }
 
-func specialMapLookup(receiver, key Value) (Value, bool) {
+func (vm *VM) specialMapLookup(receiver, key Value) (Value, bool) {
 	if receiver.Kind != ValueMap || key.Kind != ValueString {
 		return Null, false
+	}
+	namespace := ""
+	if vm != nil && vm.Org != nil {
+		namespace = vm.Org.Namespace
 	}
 	switch receiver.Type {
 	case "Schema.GlobalDescribeMap", "Schema.SObjectFieldMap":
 		for rawKey, value := range receiver.Map {
 			candidate := valueFromMapKey(rawKey)
-			if candidate.Kind == ValueString && schemaDescribeMapKeyMatches(candidate.Text, key.Text) {
+			if candidate.Kind == ValueString && schemaDescribeMapKeyMatches(namespace, candidate.Text, key.Text) {
 				return value, true
 			}
 		}
@@ -19942,7 +19952,7 @@ func specialMapLookup(receiver, key Value) (Value, bool) {
 	if mapContainsOnlySObjectFieldTokens(receiver) {
 		for rawKey, value := range receiver.Map {
 			candidate := valueFromMapKey(rawKey)
-			if candidate.Kind == ValueString && schemaDescribeMapKeyMatches(candidate.Text, key.Text) {
+			if candidate.Kind == ValueString && schemaDescribeMapKeyMatches(namespace, candidate.Text, key.Text) {
 				return value, true
 			}
 		}
@@ -19959,9 +19969,15 @@ func specialMapLookup(receiver, key Value) (Value, bool) {
 	return Null, false
 }
 
-func schemaDescribeMapKeyMatches(canonical, candidate string) bool {
+func schemaDescribeMapKeyMatches(namespace, canonical, candidate string) bool {
 	if strings.EqualFold(canonical, candidate) {
 		return true
+	}
+	if namespace != "" {
+		if strings.EqualFold(canonical, storage.StripNamespaceToken(namespace, candidate)) ||
+			strings.EqualFold(storage.StripNamespaceToken(namespace, canonical), candidate) {
+			return true
+		}
 	}
 	return strings.EqualFold(stripAnyNamespaceToken(canonical), stripAnyNamespaceToken(candidate))
 }
