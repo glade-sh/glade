@@ -389,6 +389,9 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 		return "", err
 	}
 	normalizeNameFields(objectName, &record)
+	if err := validateFieldWriteability(object.Definition, e.Org.Namespace, record, true); err != nil {
+		return "", err
+	}
 	createPersonContact := objectName == "Account" && isPersonAccountRecord(record)
 	applyFieldDefaults(e.Org, object.Definition, &record)
 	applyAutoNumberName(object.Definition, e.IDs.Sequences[objectName]+1, &record)
@@ -966,6 +969,9 @@ func (e *Engine) updateOne(record storage.Record) error {
 	if record.ID == "" {
 		return fmt.Errorf("dml: update requires id")
 	}
+	if err := validateFieldWriteability(object.Definition, e.Org.Namespace, record, false); err != nil {
+		return err
+	}
 	if err := e.validateObjectID(object.Definition, record); err != nil {
 		return err
 	}
@@ -1240,6 +1246,52 @@ func validateFields(definition storage.ObjectDefinition, namespace string, recor
 		}
 	}
 	return nil
+}
+
+func validateFieldWriteability(definition storage.ObjectDefinition, namespace string, record storage.Record, create bool) error {
+	for field := range record.Fields {
+		if err := validateFieldWriteabilityName(definition, namespace, record.Object, field, create); err != nil {
+			return err
+		}
+	}
+	for field := range record.ExplicitNulls {
+		if err := validateFieldWriteabilityName(definition, namespace, record.Object, field, create); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func validateFieldWriteabilityName(definition storage.ObjectDefinition, namespace, objectName, field string, create bool) error {
+	if field == "Id" {
+		return nil
+	}
+	canonical, ok := storage.ResolveFieldName(definition, namespace, field)
+	if !ok {
+		return nil
+	}
+	fieldDef := definition.Fields[canonical]
+	writeable := storage.FieldFlagValue(fieldDef.Updateable, true)
+	if create {
+		writeable = storage.FieldFlagValue(fieldDef.Createable, true)
+	}
+	if !writeable {
+		if allowLocalWriteabilityOverride(objectName, canonical, create) {
+			return nil
+		}
+		return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{canonical}, "dml: field %s.%s is not writeable", objectName, canonical)
+	}
+	return nil
+}
+
+func allowLocalWriteabilityOverride(objectName, field string, create bool) bool {
+	if create && strings.EqualFold(objectName, "Account") && strings.EqualFold(field, "IsPersonAccount") {
+		return true
+	}
+	if strings.EqualFold(field, "Name") && (strings.EqualFold(objectName, "Contact") || strings.EqualFold(objectName, "Lead")) {
+		return true
+	}
+	return false
 }
 
 func validateRequired(definition storage.ObjectDefinition, record storage.Record) error {
