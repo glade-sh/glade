@@ -168,6 +168,10 @@ func TestStandardPlatformSymbolsIncludeGeneratedProductNamespaceStubBreadth(t *t
 		[]string{"salesTransaction", "buyerAccountId", "webStoreId", "couponCodes"},
 	)
 
+	providerSummary := requireStandardSymbol(t, symbols, "AiCopilot.ProviderSummarySchema")
+	requireStandardProperty(t, providerSummary, "keyInfo", "List<AiCopilot.PrvdSumSectionInfo>")
+	requireStandardProperty(t, providerSummary, "changeInfo", "List<AiCopilot.PrvdSumSectionInfo>")
+
 	action := requireStandardSymbol(t, symbols, "Invocable.Action")
 	requireStandardMethodParams(t, action, "createCustomAction",
 		[]string{"String", "String", "String"},

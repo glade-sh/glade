@@ -203,9 +203,34 @@ function parseStub(filePath) {
 
 function inferMissingPropertyShape(spec, missingTypeProperties, looksLikeEnum) {
   const zeroArgMethods = new Map();
+  const constructorParamTypes = new Map();
+  const setterParamTypes = new Map();
+  function addInferredType(target, name, type, isStatic = false) {
+    const key = name.toLowerCase();
+    const existing = target.get(key);
+    if (existing && (existing.type !== type || existing.static !== isStatic)) {
+      target.set(key, { conflict: true });
+      return;
+    }
+    target.set(key, { type, static: isStatic });
+  }
+  for (const params of spec.constructors) {
+    for (const param of params) {
+      if (param.name && !param.name.startsWith("arg") && param.type) {
+        addInferredType(constructorParamTypes, param.name, param.type, false);
+      }
+    }
+  }
   for (const method of spec.methods) {
     if (method.parameters.length === 0 && method.returnType) {
       zeroArgMethods.set(method.name.toLowerCase(), method);
+      continue;
+    }
+    if (method.parameters.length === 1 && method.name.toLowerCase().startsWith("set")) {
+      const suffix = method.name.slice(3);
+      if (suffix) {
+        addInferredType(setterParamTypes, suffix, method.parameters[0].type, method.static);
+      }
     }
   }
   for (const prop of missingTypeProperties) {
@@ -224,6 +249,18 @@ function inferMissingPropertyShape(spec, missingTypeProperties, looksLikeEnum) {
       continue;
     }
     if (looksLikeEnum) {
+      continue;
+    }
+    const inferredConstructorParam = constructorParamTypes.get(prop.name.toLowerCase());
+    if (inferredConstructorParam && !inferredConstructorParam.conflict) {
+      prop.type = inferredConstructorParam.type;
+      prop.static = inferredConstructorParam.static;
+      continue;
+    }
+    const inferredSetterParam = setterParamTypes.get(prop.name.toLowerCase());
+    if (inferredSetterParam && !inferredSetterParam.conflict) {
+      prop.type = inferredSetterParam.type;
+      prop.static = inferredSetterParam.static;
       continue;
     }
     if (/^[A-Z][A-Z0-9_]*$/.test(prop.name)) {

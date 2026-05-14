@@ -332,8 +332,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "getOutputDefinition", ReturnType: "AiCopilot.GenAiPromptTemplateOutputDefinition"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "changeInfo", Type: "Object"},
-			{Name: "keyInfo", Type: "Object"},
+			{Name: "changeInfo", Type: "List<AiCopilot.PrvdSumSectionInfo>"},
+			{Name: "keyInfo", Type: "List<AiCopilot.PrvdSumSectionInfo>"},
 		},
 	},
 	{
@@ -347,7 +347,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "data", Type: "Object"},
+			{Name: "data", Type: "String"},
 		},
 	},
 	{
@@ -361,8 +361,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "sectionData", Type: "Object"},
-			{Name: "sectionName", Type: "Object"},
+			{Name: "sectionData", Type: "List<AiCopilot.PrvdSumDataInfo>"},
+			{Name: "sectionName", Type: "String"},
 		},
 	},
 	{
@@ -1179,7 +1179,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "description", Type: "Object"},
+			{Name: "description", Type: "String"},
 		},
 	},
 	{
@@ -1193,8 +1193,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "assetId", Type: "Object"},
-			{Name: "quantity", Type: "Object"},
+			{Name: "assetId", Type: "String"},
+			{Name: "quantity", Type: "Double"},
 		},
 	},
 	{
@@ -1208,7 +1208,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "swapAssets", Type: "Object"},
+			{Name: "swapAssets", Type: "List<arc_swaps.SwapAsset>"},
 		},
 	},
 	{
@@ -1773,9 +1773,9 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "isDone", Type: "Object"},
-			{Name: "result", Type: "Object"},
-			{Name: "scanLocator", Type: "Object"},
+			{Name: "isDone", Type: "Boolean"},
+			{Name: "result", Type: "Map<String,Object>"},
+			{Name: "scanLocator", Type: "String"},
 		},
 	},
 	{
@@ -4022,11 +4022,11 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "errorCode", Type: "Object"},
+			{Name: "errorCode", Type: "String"},
 			{Name: "errorCodeValue", Type: "Object"},
-			{Name: "errorMessage", Type: "Object"},
+			{Name: "errorMessage", Type: "String"},
 			{Name: "errorMessageValue", Type: "Object"},
-			{Name: "errorType", Type: "Object"},
+			{Name: "errorType", Type: "String"},
 			{Name: "errorTypeValue", Type: "Object"},
 		},
 	},
@@ -5002,7 +5002,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "graphId", Type: "Object"},
+			{Name: "graphId", Type: "String"},
 		},
 	},
 	{
@@ -5064,9 +5064,9 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 		},
 		Properties: []StandardPropertySpec{
 			{Name: "fieldValues", Type: "Object"},
-			{Name: "id", Type: "Object"},
-			{Name: "method", Type: "Object"},
-			{Name: "type", Type: "Object"},
+			{Name: "id", Type: "Id"},
+			{Name: "method", Type: "String"},
+			{Name: "type", Type: "Schema.SObjectType"},
 		},
 	},
 	{
@@ -5079,8 +5079,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "record", Type: "Object"},
-			{Name: "referenceId", Type: "Object"},
+			{Name: "record", Type: "commerceorders.RecordResource"},
+			{Name: "referenceId", Type: "String"},
 		},
 	},
 	{
@@ -5167,12 +5167,12 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "toString", ReturnType: "String"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "city", Type: "Object"},
+			{Name: "city", Type: "String"},
 			{Name: "companyName", Type: "Object"},
-			{Name: "country", Type: "Object"},
-			{Name: "postalCode", Type: "Object"},
-			{Name: "state", Type: "Object"},
-			{Name: "street", Type: "Object"},
+			{Name: "country", Type: "String"},
+			{Name: "postalCode", Type: "String"},
+			{Name: "state", Type: "String"},
+			{Name: "street", Type: "String"},
 		},
 	},
 	{
@@ -5190,7 +5190,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 		Properties: []StandardPropertySpec{
 			{Name: "accountId", Type: "Object"},
 			{Name: "email", Type: "Object"},
-			{Name: "gatewayToken", Type: "Object"},
+			{Name: "gatewayToken", Type: "String"},
 			{Name: "gatewayTokenDetails", Type: "Object"},
 			{Name: "name", Type: "Object"},
 		},
@@ -5224,10 +5224,10 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "toString", ReturnType: "String"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "email", Type: "Object"},
-			{Name: "ipAddress", Type: "Object"},
-			{Name: "macAddress", Type: "Object"},
-			{Name: "phone", Type: "Object"},
+			{Name: "email", Type: "String"},
+			{Name: "ipAddress", Type: "String"},
+			{Name: "macAddress", Type: "String"},
+			{Name: "phone", Type: "String"},
 		},
 	},
 	{
@@ -5261,7 +5261,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 		},
 		Properties: []StandardPropertySpec{
 			{Name: "accountId", Type: "Object"},
-			{Name: "amount", Type: "Object"},
+			{Name: "amount", Type: "Double"},
 			{Name: "comments", Type: "Object"},
 			{Name: "currencyIsoCode", Type: "Object"},
 			{Name: "paymentMethod", Type: "Object"},
@@ -5306,7 +5306,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 		},
 		Properties: []StandardPropertySpec{
 			{Name: "accountId", Type: "Object"},
-			{Name: "amount", Type: "Object"},
+			{Name: "amount", Type: "Double"},
 			{Name: "paymentAuthorizationId", Type: "Object"},
 		},
 	},
@@ -5416,10 +5416,10 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "toString", ReturnType: "String"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "address", Type: "Object"},
-			{Name: "id", Type: "Object"},
+			{Name: "address", Type: "commercepayments.AddressRequest"},
+			{Name: "id", Type: "String"},
 			{Name: "idType", Type: "Object"},
-			{Name: "saveForFuture", Type: "Object"},
+			{Name: "saveForFuture", Type: "Boolean"},
 		},
 	},
 	{
@@ -5472,8 +5472,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 		},
 		Properties: []StandardPropertySpec{
 			{Name: "additionalData", Type: "Object"},
-			{Name: "duplicate", Type: "Object"},
-			{Name: "idempotencyKey", Type: "Object"},
+			{Name: "duplicate", Type: "Boolean"},
+			{Name: "idempotencyKey", Type: "String"},
 		},
 	},
 	{
@@ -5513,7 +5513,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 		},
 		Properties: []StandardPropertySpec{
 			{Name: "accountId", Type: "Object"},
-			{Name: "amount", Type: "Object"},
+			{Name: "amount", Type: "Double"},
 			{Name: "paymentAuthorizationId", Type: "Object"},
 		},
 	},
@@ -5570,7 +5570,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 		Properties: []StandardPropertySpec{
 			{Name: "accountId", Type: "Object"},
 			{Name: "autoPay", Type: "Object"},
-			{Name: "cardCategory", Type: "Object"},
+			{Name: "cardCategory", Type: "commercepayments.CardCategory"},
 			{Name: "cardHolderFirstName", Type: "Object"},
 			{Name: "cardHolderLastName", Type: "Object"},
 			{Name: "cardHolderName", Type: "Object"},
@@ -5958,7 +5958,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 		},
 		Properties: []StandardPropertySpec{
 			{Name: "accountId", Type: "Object"},
-			{Name: "amount", Type: "Object"},
+			{Name: "amount", Type: "Double"},
 			{Name: "comments", Type: "Object"},
 			{Name: "currencyIsoCode", Type: "Object"},
 			{Name: "paymentMethod", Type: "Object"},
@@ -6047,8 +6047,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 		},
 		Properties: []StandardPropertySpec{
 			{Name: "accountId", Type: "Object"},
-			{Name: "amount", Type: "Object"},
-			{Name: "PaymentId", Type: "Object"},
+			{Name: "amount", Type: "Double"},
+			{Name: "PaymentId", Type: "String"},
 		},
 	},
 	{
@@ -6197,7 +6197,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 		},
 		Properties: []StandardPropertySpec{
 			{Name: "accountId", Type: "Object"},
-			{Name: "amount", Type: "Object"},
+			{Name: "amount", Type: "Double"},
 			{Name: "comments", Type: "Object"},
 			{Name: "currencyIsoCode", Type: "Object"},
 			{Name: "paymentMethod", Type: "Object"},
@@ -6486,7 +6486,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 		},
 		Properties: []StandardPropertySpec{
 			{Name: "fieldValues", Type: "Object"},
-			{Name: "type", Type: "Object"},
+			{Name: "type", Type: "Schema.SObjectType"},
 		},
 	},
 	{
@@ -7843,10 +7843,10 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "amount", Type: "Object"},
-			{Name: "orderItemSummaryId", Type: "Object"},
-			{Name: "quantity", Type: "Object"},
-			{Name: "taxAmount", Type: "Object"},
+			{Name: "amount", Type: "Double"},
+			{Name: "orderItemSummaryId", Type: "String"},
+			{Name: "quantity", Type: "Double"},
+			{Name: "taxAmount", Type: "Double"},
 		},
 	},
 	{
@@ -7917,10 +7917,10 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "errorMessage", Type: "Object"},
-			{Name: "orderSummaryId", Type: "Object"},
-			{Name: "resultItems", Type: "Object"},
-			{Name: "success", Type: "Object"},
+			{Name: "errorMessage", Type: "String"},
+			{Name: "orderSummaryId", Type: "String"},
+			{Name: "resultItems", Type: "List<commercestoretax.TaxTransactionResultItem>"},
+			{Name: "success", Type: "Boolean"},
 		},
 	},
 	{
@@ -7934,11 +7934,11 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "calculationReferenceNumber", Type: "Object"},
-			{Name: "errorMessage", Type: "Object"},
-			{Name: "orderItemSummaryId", Type: "Object"},
-			{Name: "success", Type: "Object"},
-			{Name: "transactionReferenceNumber", Type: "Object"},
+			{Name: "calculationReferenceNumber", Type: "String"},
+			{Name: "errorMessage", Type: "String"},
+			{Name: "orderItemSummaryId", Type: "String"},
+			{Name: "success", Type: "Boolean"},
+			{Name: "transactionReferenceNumber", Type: "String"},
 		},
 	},
 	{
@@ -8031,7 +8031,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "isHeaderTaxRequested", Type: "Object"},
 			{Name: "shouldVoidTax", Type: "Object"},
 			{Name: "taxTransactionType", Type: "Object"},
-			{Name: "taxType", Type: "Object"},
+			{Name: "taxType", Type: "commercetax.CalculateTaxType"},
 		},
 	},
 	{
@@ -8110,11 +8110,11 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "toString", ReturnType: "String"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "billTo", Type: "Object"},
-			{Name: "shipFrom", Type: "Object"},
-			{Name: "shipTo", Type: "Object"},
-			{Name: "soldTo", Type: "Object"},
-			{Name: "taxEngineAddress", Type: "Object"},
+			{Name: "billTo", Type: "commercetax.TaxAddressRequest"},
+			{Name: "shipFrom", Type: "commercetax.TaxAddressRequest"},
+			{Name: "shipTo", Type: "commercetax.TaxAddressRequest"},
+			{Name: "soldTo", Type: "commercetax.TaxAddressRequest"},
+			{Name: "taxEngineAddress", Type: "commercetax.TaxAddressRequest"},
 		},
 	},
 	{
@@ -8180,10 +8180,10 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "toString", ReturnType: "String"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "billTo", Type: "Object"},
-			{Name: "shipFrom", Type: "Object"},
-			{Name: "shipTo", Type: "Object"},
-			{Name: "soldTo", Type: "Object"},
+			{Name: "billTo", Type: "commercetax.TaxAddressRequest"},
+			{Name: "shipFrom", Type: "commercetax.TaxAddressRequest"},
+			{Name: "shipTo", Type: "commercetax.TaxAddressRequest"},
+			{Name: "soldTo", Type: "commercetax.TaxAddressRequest"},
 		},
 	},
 	{
@@ -8244,11 +8244,11 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "toString", ReturnType: "String"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "billTo", Type: "Object"},
-			{Name: "shipFrom", Type: "Object"},
-			{Name: "shipTo", Type: "Object"},
-			{Name: "soldTo", Type: "Object"},
-			{Name: "taxEngineAddress", Type: "Object"},
+			{Name: "billTo", Type: "commercetax.TaxAddressRequest"},
+			{Name: "shipFrom", Type: "commercetax.TaxAddressRequest"},
+			{Name: "shipTo", Type: "commercetax.TaxAddressRequest"},
+			{Name: "soldTo", Type: "commercetax.TaxAddressRequest"},
+			{Name: "taxEngineAddress", Type: "commercetax.TaxAddressRequest"},
 		},
 	},
 	{
@@ -8264,16 +8264,16 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "toString", ReturnType: "String"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "city", Type: "Object"},
-			{Name: "country", Type: "Object"},
+			{Name: "city", Type: "String"},
+			{Name: "country", Type: "String"},
 			{Name: "countryCode", Type: "Object"},
-			{Name: "latitude", Type: "Object"},
-			{Name: "locationCode", Type: "Object"},
-			{Name: "longitude", Type: "Object"},
-			{Name: "postalCode", Type: "Object"},
-			{Name: "state", Type: "Object"},
+			{Name: "latitude", Type: "Double"},
+			{Name: "locationCode", Type: "String"},
+			{Name: "longitude", Type: "Double"},
+			{Name: "postalCode", Type: "String"},
+			{Name: "state", Type: "String"},
 			{Name: "stateCode", Type: "Object"},
-			{Name: "street", Type: "Object"},
+			{Name: "street", Type: "String"},
 		},
 	},
 	{
@@ -8301,14 +8301,14 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "toString", ReturnType: "String"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "accountId", Type: "Object"},
+			{Name: "accountId", Type: "String"},
 			{Name: "additionalTaxIdentificationDetails", Type: "Object"},
 			{Name: "billingProfileId", Type: "Object"},
-			{Name: "code", Type: "Object"},
+			{Name: "code", Type: "String"},
 			{Name: "deliveryTerms", Type: "Object"},
 			{Name: "exemptionExpirationDate", Type: "Object"},
-			{Name: "exemptionNo", Type: "Object"},
-			{Name: "exemptionReason", Type: "Object"},
+			{Name: "exemptionNo", Type: "String"},
+			{Name: "exemptionReason", Type: "String"},
 			{Name: "exemptionStatus", Type: "Object"},
 			{Name: "taxIdentificationNumber", Type: "Object"},
 		},
@@ -8378,17 +8378,17 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "toString", ReturnType: "String"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "addresses", Type: "Object"},
-			{Name: "amount", Type: "Object"},
+			{Name: "addresses", Type: "commercetax.LineTaxAddressesRequest"},
+			{Name: "amount", Type: "Double"},
 			{Name: "customTaxAttributes", Type: "Object"},
-			{Name: "description", Type: "Object"},
-			{Name: "effectiveDate", Type: "Object"},
-			{Name: "lineNumber", Type: "Object"},
-			{Name: "productCode", Type: "Object"},
+			{Name: "description", Type: "String"},
+			{Name: "effectiveDate", Type: "Datetime"},
+			{Name: "lineNumber", Type: "String"},
+			{Name: "productCode", Type: "String"},
 			{Name: "productSKU", Type: "Object"},
-			{Name: "quantity", Type: "Object"},
+			{Name: "quantity", Type: "Double"},
 			{Name: "referenceDocumentCode", Type: "Object"},
-			{Name: "taxCode", Type: "Object"},
+			{Name: "taxCode", Type: "String"},
 		},
 	},
 	{
@@ -8404,7 +8404,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "toString", ReturnType: "String"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "code", Type: "Object"},
+			{Name: "code", Type: "String"},
 		},
 	},
 	{
@@ -8420,18 +8420,18 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "toString", ReturnType: "String"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "addresses", Type: "Object"},
-			{Name: "currencyIsoCode", Type: "Object"},
-			{Name: "customerDetails", Type: "Object"},
+			{Name: "addresses", Type: "commercetax.HeaderTaxAddressesRequest"},
+			{Name: "currencyIsoCode", Type: "String"},
+			{Name: "customerDetails", Type: "commercetax.TaxCustomerDetailsRequest"},
 			{Name: "customTaxAttributes", Type: "Object"},
-			{Name: "description", Type: "Object"},
-			{Name: "documentCode", Type: "Object"},
-			{Name: "effectiveDate", Type: "Object"},
-			{Name: "lineItems", Type: "Object"},
-			{Name: "referenceDocumentCode", Type: "Object"},
-			{Name: "referenceEntityId", Type: "Object"},
-			{Name: "sellerDetails", Type: "Object"},
-			{Name: "transactionDate", Type: "Object"},
+			{Name: "description", Type: "String"},
+			{Name: "documentCode", Type: "String"},
+			{Name: "effectiveDate", Type: "Datetime"},
+			{Name: "lineItems", Type: "List<commercetax.TaxLineItemRequest>"},
+			{Name: "referenceDocumentCode", Type: "String"},
+			{Name: "referenceEntityId", Type: "String"},
+			{Name: "sellerDetails", Type: "commercetax.TaxSellerDetailsRequest"},
+			{Name: "transactionDate", Type: "Datetime"},
 		},
 	},
 	{
@@ -104797,8 +104797,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "objectApiName", Type: "Object"},
-			{Name: "recordId", Type: "Object"},
+			{Name: "objectApiName", Type: "String"},
+			{Name: "recordId", Type: "String"},
 		},
 	},
 	{
@@ -104812,10 +104812,10 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "conversationIdentifier", Type: "Object"},
-			{Name: "endDateTime", Type: "Object"},
-			{Name: "recordId", Type: "Object"},
-			{Name: "startDateTime", Type: "Object"},
+			{Name: "conversationIdentifier", Type: "String"},
+			{Name: "endDateTime", Type: "Datetime"},
+			{Name: "recordId", Type: "String"},
+			{Name: "startDateTime", Type: "Datetime"},
 		},
 	},
 	{
@@ -104829,7 +104829,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "engagementRecordDetails", Type: "Object"},
+			{Name: "engagementRecordDetails", Type: "List<DataRetrieval.EngagementRecordDetails>"},
 		},
 	},
 	{
@@ -104843,7 +104843,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "records", Type: "Object"},
+			{Name: "records", Type: "List<DataRetrieval.Engagement>"},
 		},
 	},
 	{
@@ -104857,8 +104857,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "fieldName", Type: "Object"},
-			{Name: "fieldValue", Type: "Object"},
+			{Name: "fieldName", Type: "String"},
+			{Name: "fieldValue", Type: "String"},
 		},
 	},
 	{
@@ -104872,7 +104872,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "records", Type: "Object"},
+			{Name: "records", Type: "List<DataRetrieval.RecordDetailsRepresentation>"},
 		},
 	},
 	{
@@ -104886,7 +104886,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "fields", Type: "Object"},
+			{Name: "fields", Type: "List<DataRetrieval.FieldDetailsRepresentation>"},
 		},
 	},
 	{
@@ -104900,8 +104900,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "recordId", Type: "Object"},
-			{Name: "transcripts", Type: "Object"},
+			{Name: "recordId", Type: "String"},
+			{Name: "transcripts", Type: "List<DataRetrieval.Transcript>"},
 		},
 	},
 	{
@@ -104915,8 +104915,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "conversations", Type: "Object"},
-			{Name: "conversationsTokens", Type: "Object"},
+			{Name: "conversations", Type: "List<DataRetrieval.RecordTranscripts>"},
+			{Name: "conversationsTokens", Type: "Integer"},
 		},
 	},
 	{
@@ -104930,8 +104930,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "message", Type: "Object"},
-			{Name: "role", Type: "Object"},
+			{Name: "message", Type: "String"},
+			{Name: "role", Type: "String"},
 		},
 	},
 	{
@@ -105593,8 +105593,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "toString", ReturnType: "String"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "key", Type: "Object"},
-			{Name: "value", Type: "Object"},
+			{Name: "key", Type: "String"},
+			{Name: "value", Type: "String"},
 		},
 	},
 	{
@@ -105610,9 +105610,9 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "toString", ReturnType: "String"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "objectType", Type: "Object"},
-			{Name: "recordData", Type: "Object"},
-			{Name: "relatedRecordData", Type: "Object"},
+			{Name: "objectType", Type: "String"},
+			{Name: "recordData", Type: "List<embeddedai.ApexMap>"},
+			{Name: "relatedRecordData", Type: "List<embeddedai.RecordApexRepresentation>"},
 		},
 	},
 	{
@@ -105703,7 +105703,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "grade", Type: "Object"},
+			{Name: "grade", Type: "Decimal"},
 			{Name: "interval", Type: "Object"},
 		},
 	},
@@ -105717,8 +105717,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "finish", Type: "Object"},
-			{Name: "start", Type: "Object"},
+			{Name: "finish", Type: "Datetime"},
+			{Name: "start", Type: "Datetime"},
 		},
 	},
 	{
@@ -107115,8 +107115,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "getTypeName", ReturnType: "String"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "errorCode", Type: "Object"},
-			{Name: "jsonResponse", Type: "Object"},
+			{Name: "errorCode", Type: "String"},
+			{Name: "jsonResponse", Type: "String"},
 		},
 	},
 	{
@@ -107178,10 +107178,10 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "asmtQstnRespCreatedDate", Type: "Object"},
-			{Name: "id", Type: "Object"},
-			{Name: "lastModifiedDate", Type: "Object"},
-			{Name: "name", Type: "Object"},
+			{Name: "asmtQstnRespCreatedDate", Type: "String"},
+			{Name: "id", Type: "String"},
+			{Name: "lastModifiedDate", Type: "String"},
+			{Name: "name", Type: "String"},
 		},
 	},
 	{
@@ -107480,16 +107480,16 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "accountId", Type: "Object"},
-			{Name: "accountName", Type: "Object"},
-			{Name: "bedTypeId", Type: "Object"},
-			{Name: "bedTypeName", Type: "Object"},
-			{Name: "facilityId", Type: "Object"},
-			{Name: "facilityName", Type: "Object"},
-			{Name: "id", Type: "Object"},
-			{Name: "programId", Type: "Object"},
-			{Name: "programName", Type: "Object"},
-			{Name: "specialty", Type: "Object"},
+			{Name: "accountId", Type: "String"},
+			{Name: "accountName", Type: "String"},
+			{Name: "bedTypeId", Type: "String"},
+			{Name: "bedTypeName", Type: "String"},
+			{Name: "facilityId", Type: "String"},
+			{Name: "facilityName", Type: "String"},
+			{Name: "id", Type: "String"},
+			{Name: "programId", Type: "String"},
+			{Name: "programName", Type: "String"},
+			{Name: "specialty", Type: "String"},
 		},
 	},
 	{
@@ -107693,10 +107693,10 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "birthDate", Type: "Object"},
-			{Name: "firstName", Type: "Object"},
-			{Name: "id", Type: "Object"},
-			{Name: "lastName", Type: "Object"},
+			{Name: "birthDate", Type: "String"},
+			{Name: "firstName", Type: "String"},
+			{Name: "id", Type: "String"},
+			{Name: "lastName", Type: "String"},
 		},
 	},
 	{
@@ -107806,14 +107806,14 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "addressType", Type: "Object"},
-			{Name: "city", Type: "Object"},
-			{Name: "completeAddress", Type: "Object"},
-			{Name: "country", Type: "Object"},
-			{Name: "id", Type: "Object"},
-			{Name: "postalCode", Type: "Object"},
-			{Name: "state", Type: "Object"},
-			{Name: "street", Type: "Object"},
+			{Name: "addressType", Type: "String"},
+			{Name: "city", Type: "String"},
+			{Name: "completeAddress", Type: "String"},
+			{Name: "country", Type: "String"},
+			{Name: "id", Type: "String"},
+			{Name: "postalCode", Type: "String"},
+			{Name: "state", Type: "String"},
+			{Name: "street", Type: "String"},
 		},
 	},
 	{
@@ -107862,9 +107862,9 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "quoteId", Type: "Object"},
-			{Name: "referenceId", Type: "Object"},
-			{Name: "source", Type: "Object"},
+			{Name: "quoteId", Type: "String"},
+			{Name: "referenceId", Type: "String"},
+			{Name: "source", Type: "String"},
 		},
 	},
 	{
@@ -107878,24 +107878,24 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "benefitEndDate", Type: "Object"},
-			{Name: "benefitId", Type: "Object"},
-			{Name: "benefitName", Type: "Object"},
-			{Name: "benefitStartDate", Type: "Object"},
-			{Name: "catalogId", Type: "Object"},
-			{Name: "catalogName", Type: "Object"},
-			{Name: "categoryId", Type: "Object"},
-			{Name: "categoryName", Type: "Object"},
-			{Name: "coverageBenefitId", Type: "Object"},
-			{Name: "coverageBenefitItemId", Type: "Object"},
-			{Name: "coverageBenefitItemLimitId", Type: "Object"},
-			{Name: "isExistingBenefit", Type: "Object"},
-			{Name: "memberPlanId", Type: "Object"},
-			{Name: "memberPlanName", Type: "Object"},
-			{Name: "productId", Type: "Object"},
-			{Name: "productName", Type: "Object"},
-			{Name: "unitCount", Type: "Object"},
-			{Name: "unitPrice", Type: "Object"},
+			{Name: "benefitEndDate", Type: "String"},
+			{Name: "benefitId", Type: "String"},
+			{Name: "benefitName", Type: "String"},
+			{Name: "benefitStartDate", Type: "String"},
+			{Name: "catalogId", Type: "String"},
+			{Name: "catalogName", Type: "String"},
+			{Name: "categoryId", Type: "String"},
+			{Name: "categoryName", Type: "String"},
+			{Name: "coverageBenefitId", Type: "String"},
+			{Name: "coverageBenefitItemId", Type: "String"},
+			{Name: "coverageBenefitItemLimitId", Type: "String"},
+			{Name: "isExistingBenefit", Type: "Boolean"},
+			{Name: "memberPlanId", Type: "String"},
+			{Name: "memberPlanName", Type: "String"},
+			{Name: "productId", Type: "String"},
+			{Name: "productName", Type: "String"},
+			{Name: "unitCount", Type: "Decimal"},
+			{Name: "unitPrice", Type: "Decimal"},
 		},
 	},
 	{
@@ -107909,28 +107909,28 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "careResourceTerritoryId", Type: "Object"},
-			{Name: "createdDate", Type: "Object"},
-			{Name: "isTravelInventoryIncluded", Type: "Object"},
-			{Name: "locationId", Type: "Object"},
-			{Name: "operatingHoursId", Type: "Object"},
-			{Name: "opportunityId", Type: "Object"},
-			{Name: "priceBookId", Type: "Object"},
-			{Name: "productIdList", Type: "Object"},
-			{Name: "productNames", Type: "Object"},
-			{Name: "quoteEndDate", Type: "Object"},
-			{Name: "quoteEndTime", Type: "Object"},
-			{Name: "quoteId", Type: "Object"},
-			{Name: "quoteName", Type: "Object"},
-			{Name: "quotePrice", Type: "Object"},
-			{Name: "quoteStartDate", Type: "Object"},
-			{Name: "quoteStartTime", Type: "Object"},
-			{Name: "schedulingPreference", Type: "Object"},
-			{Name: "sourceType", Type: "Object"},
-			{Name: "unitCount", Type: "Object"},
-			{Name: "unitPrice", Type: "Object"},
-			{Name: "visitRecurrencePattern", Type: "Object"},
-			{Name: "visitType", Type: "Object"},
+			{Name: "careResourceTerritoryId", Type: "String"},
+			{Name: "createdDate", Type: "Date"},
+			{Name: "isTravelInventoryIncluded", Type: "Boolean"},
+			{Name: "locationId", Type: "String"},
+			{Name: "operatingHoursId", Type: "String"},
+			{Name: "opportunityId", Type: "String"},
+			{Name: "priceBookId", Type: "String"},
+			{Name: "productIdList", Type: "List<String>"},
+			{Name: "productNames", Type: "List<String>"},
+			{Name: "quoteEndDate", Type: "String"},
+			{Name: "quoteEndTime", Type: "String"},
+			{Name: "quoteId", Type: "String"},
+			{Name: "quoteName", Type: "String"},
+			{Name: "quotePrice", Type: "Decimal"},
+			{Name: "quoteStartDate", Type: "String"},
+			{Name: "quoteStartTime", Type: "String"},
+			{Name: "schedulingPreference", Type: "String"},
+			{Name: "sourceType", Type: "String"},
+			{Name: "unitCount", Type: "Decimal"},
+			{Name: "unitPrice", Type: "Decimal"},
+			{Name: "visitRecurrencePattern", Type: "String"},
+			{Name: "visitType", Type: "String"},
 		},
 	},
 	{
@@ -107944,12 +107944,12 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "accountId", Type: "Object"},
-			{Name: "recommendedBenefits", Type: "Object"},
-			{Name: "recommendedQuotes", Type: "Object"},
+			{Name: "accountId", Type: "String"},
+			{Name: "recommendedBenefits", Type: "List<healthcloudext.HomeVisitPatientBenefitDetails>"},
+			{Name: "recommendedQuotes", Type: "List<healthcloudext.HomeVisitPatientQuoteDetails>"},
 			{Name: "requestedBenefits", Type: "Object"},
 			{Name: "requestedQuotes", Type: "Object"},
-			{Name: "summary", Type: "Object"},
+			{Name: "summary", Type: "String"},
 		},
 	},
 	{
@@ -108102,12 +108102,12 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "itemFields", Type: "Object"},
-			{Name: "itemKey", Type: "Object"},
-			{Name: "itemName", Type: "Object"},
-			{Name: "leftIcon", Type: "Object"},
+			{Name: "itemFields", Type: "List<healthcloudext.ItemFieldDetails>"},
+			{Name: "itemKey", Type: "String"},
+			{Name: "itemName", Type: "String"},
+			{Name: "leftIcon", Type: "String"},
 			{Name: "requestId", Type: "Object"},
-			{Name: "rightIcon", Type: "Object"},
+			{Name: "rightIcon", Type: "String"},
 		},
 	},
 	{
@@ -108121,8 +108121,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "name", Type: "Object"},
-			{Name: "value", Type: "Object"},
+			{Name: "name", Type: "String"},
+			{Name: "value", Type: "String"},
 		},
 	},
 	{
@@ -108176,8 +108176,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "manualSchedulingRecommendations", Type: "Object"},
-			{Name: "visitType", Type: "Object"},
+			{Name: "manualSchedulingRecommendations", Type: "List<healthcloudext.ManualSchedulingRecommendations>"},
+			{Name: "visitType", Type: "String"},
 		},
 	},
 	{
@@ -108192,8 +108192,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "recommendationGrade", Type: "Object"},
-			{Name: "resourceRecommendations", Type: "Object"},
+			{Name: "recommendationGrade", Type: "String"},
+			{Name: "resourceRecommendations", Type: "List<healthcloudext.ResourceRecommendations>"},
 		},
 	},
 	{
@@ -108277,7 +108277,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "previousAssessmentResponses", Type: "Object"},
+			{Name: "previousAssessmentResponses", Type: "List<healthcloudext.QuestionResponseOutput>"},
 		},
 	},
 	{
@@ -108291,9 +108291,9 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "attributeDefinitionId", Type: "Object"},
-			{Name: "attributeValue", Type: "Object"},
-			{Name: "isAttributeDefinitionDataTypePicklist", Type: "Object"},
+			{Name: "attributeDefinitionId", Type: "String"},
+			{Name: "attributeValue", Type: "String"},
+			{Name: "isAttributeDefinitionDataTypePicklist", Type: "Boolean"},
 		},
 	},
 	{
@@ -108343,9 +108343,9 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "pricingAttributeList", Type: "Object"},
-			{Name: "productId", Type: "Object"},
-			{Name: "unitCount", Type: "Object"},
+			{Name: "pricingAttributeList", Type: "List<healthcloudext.PricingAttribute>"},
+			{Name: "productId", Type: "String"},
+			{Name: "unitCount", Type: "Integer"},
 		},
 	},
 	{
@@ -108370,10 +108370,10 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "assessmentDetails", Type: "Object"},
-			{Name: "parentQuestionIdentifier", Type: "Object"},
-			{Name: "previousResponses", Type: "Object"},
-			{Name: "questionIdentifier", Type: "Object"},
+			{Name: "assessmentDetails", Type: "healthcloudext.AssessmentDetailsOutput"},
+			{Name: "parentQuestionIdentifier", Type: "String"},
+			{Name: "previousResponses", Type: "List<healthcloudext.ResponseValueOutput>"},
+			{Name: "questionIdentifier", Type: "String"},
 		},
 	},
 	{
@@ -108459,9 +108459,9 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "isValidationSuccessful", Type: "Object"},
-			{Name: "validatedItem", Type: "Object"},
-			{Name: "validationErrorMessage", Type: "Object"},
+			{Name: "isValidationSuccessful", Type: "Boolean"},
+			{Name: "validatedItem", Type: "healthcloudext.ItemDetails"},
+			{Name: "validationErrorMessage", Type: "String"},
 		},
 	},
 	{
@@ -108475,15 +108475,15 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "currencyCode", Type: "Object"},
-			{Name: "isTravelInventoryIncluded", Type: "Object"},
-			{Name: "partyAppointmentRequest", Type: "Object"},
-			{Name: "priceBookId", Type: "Object"},
-			{Name: "pricingPreference", Type: "Object"},
-			{Name: "productPricingAttributeDetails", Type: "Object"},
-			{Name: "quoteName", Type: "Object"},
-			{Name: "relatedPartyAppointmentRequest", Type: "Object"},
-			{Name: "resourceTravelDistance", Type: "Object"},
+			{Name: "currencyCode", Type: "String"},
+			{Name: "isTravelInventoryIncluded", Type: "Boolean"},
+			{Name: "partyAppointmentRequest", Type: "PartyAppointmentRequest"},
+			{Name: "priceBookId", Type: "String"},
+			{Name: "pricingPreference", Type: "String"},
+			{Name: "productPricingAttributeDetails", Type: "List<healthcloudext.ProductPricingAttributeDetails>"},
+			{Name: "quoteName", Type: "String"},
+			{Name: "relatedPartyAppointmentRequest", Type: "PartyAppointmentRequest"},
+			{Name: "resourceTravelDistance", Type: "Double"},
 		},
 	},
 	{
@@ -108529,10 +108529,10 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "resourceId", Type: "Object"},
-			{Name: "scheduleEnd", Type: "Object"},
-			{Name: "scheduleStart", Type: "Object"},
-			{Name: "sequence", Type: "Object"},
+			{Name: "resourceId", Type: "String"},
+			{Name: "scheduleEnd", Type: "String"},
+			{Name: "scheduleStart", Type: "String"},
+			{Name: "sequence", Type: "Integer"},
 		},
 	},
 	{
@@ -108546,9 +108546,9 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "resourceId", Type: "Object"},
-			{Name: "resourceName", Type: "Object"},
-			{Name: "scheduleIntervalRecommendations", Type: "Object"},
+			{Name: "resourceId", Type: "String"},
+			{Name: "resourceName", Type: "String"},
+			{Name: "scheduleIntervalRecommendations", Type: "List<healthcloudext.ScheduleIntervalRecommendations>"},
 		},
 	},
 	{
@@ -108562,9 +108562,9 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "responseIdentifier", Type: "Object"},
-			{Name: "responseQuestionSequence", Type: "Object"},
-			{Name: "responseValue", Type: "Object"},
+			{Name: "responseIdentifier", Type: "String"},
+			{Name: "responseQuestionSequence", Type: "Integer"},
+			{Name: "responseValue", Type: "String"},
 		},
 	},
 	{
@@ -108600,10 +108600,10 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "endDateTime", Type: "Object"},
-			{Name: "grade", Type: "Object"},
-			{Name: "sequence", Type: "Object"},
-			{Name: "startDateTime", Type: "Object"},
+			{Name: "endDateTime", Type: "String"},
+			{Name: "grade", Type: "String"},
+			{Name: "sequence", Type: "Integer"},
+			{Name: "startDateTime", Type: "String"},
 		},
 	},
 	{
@@ -108851,8 +108851,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "markForDeletion", Type: "Object"},
-			{Name: "workPlanTemplateId", Type: "Object"},
+			{Name: "markForDeletion", Type: "Boolean"},
+			{Name: "workPlanTemplateId", Type: "String"},
 		},
 	},
 	{
@@ -108866,8 +108866,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "dependentWorkPlanTemplateItems", Type: "Object"},
-			{Name: "workPlanTemplateItems", Type: "Object"},
+			{Name: "dependentWorkPlanTemplateItems", Type: "List<healthcloudext.WorkPlanTemplateItem>"},
+			{Name: "workPlanTemplateItems", Type: "List<healthcloudext.WorkPlanTemplateItem>"},
 		},
 	},
 	{
@@ -109002,8 +109002,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "developerName", Type: "Object"},
-			{Name: "value", Type: "Object"},
+			{Name: "developerName", Type: "String"},
+			{Name: "value", Type: "String"},
 		},
 	},
 	{
@@ -109028,8 +109028,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "layoutType", Type: "Object"},
-			{Name: "processDetail", Type: "Object"},
+			{Name: "layoutType", Type: "String"},
+			{Name: "processDetail", Type: "List<id_verification.ProcessDetail>"},
 		},
 	},
 	{
@@ -109043,22 +109043,22 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "apexClassName", Type: "Object"},
-			{Name: "dataSourceType", Type: "Object"},
-			{Name: "developerName", Type: "Object"},
-			{Name: "displayRecordFieldName", Type: "Object"},
-			{Name: "isRetryAllowedAfterLimit", Type: "Object"},
-			{Name: "label", Type: "Object"},
-			{Name: "linkedVerificationProcessDetailName", Type: "Object"},
-			{Name: "optionalVerifierCount", Type: "Object"},
-			{Name: "retryLimit", Type: "Object"},
-			{Name: "searchObjectName", Type: "Object"},
-			{Name: "searchResultFilter", Type: "Object"},
-			{Name: "searchResultSortOrder", Type: "Object"},
-			{Name: "searchResultUniqueIdField", Type: "Object"},
-			{Name: "searchSequenceNo", Type: "Object"},
-			{Name: "searchType", Type: "Object"},
-			{Name: "verificationProcessFieldList", Type: "Object"},
+			{Name: "apexClassName", Type: "String"},
+			{Name: "dataSourceType", Type: "String"},
+			{Name: "developerName", Type: "String"},
+			{Name: "displayRecordFieldName", Type: "String"},
+			{Name: "isRetryAllowedAfterLimit", Type: "Boolean"},
+			{Name: "label", Type: "String"},
+			{Name: "linkedVerificationProcessDetailName", Type: "String"},
+			{Name: "optionalVerifierCount", Type: "Integer"},
+			{Name: "retryLimit", Type: "Integer"},
+			{Name: "searchObjectName", Type: "String"},
+			{Name: "searchResultFilter", Type: "String"},
+			{Name: "searchResultSortOrder", Type: "String"},
+			{Name: "searchResultUniqueIdField", Type: "String"},
+			{Name: "searchSequenceNo", Type: "Integer"},
+			{Name: "searchType", Type: "String"},
+			{Name: "verificationProcessFieldList", Type: "id_verification.VerificationProcessFieldList"},
 		},
 	},
 	{
@@ -109072,10 +109072,10 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "developerName", Type: "Object"},
+			{Name: "developerName", Type: "String"},
 			{Name: "isSetDeveloperName", Type: "Object"},
 			{Name: "isSetValue", Type: "Object"},
-			{Name: "value", Type: "Object"},
+			{Name: "value", Type: "String"},
 		},
 	},
 	{
@@ -109090,7 +109090,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 		},
 		Properties: []StandardPropertySpec{
 			{Name: "isSetSearchFilterList", Type: "Object"},
-			{Name: "searchFilterList", Type: "Object"},
+			{Name: "searchFilterList", Type: "List<id_verification.SearchFilter>"},
 		},
 	},
 	{
@@ -109104,9 +109104,9 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "searchFilters", Type: "Object"},
-			{Name: "searchTerm", Type: "Object"},
-			{Name: "verificationContext", Type: "Object"},
+			{Name: "searchFilters", Type: "List<id_verification.FieldValue>"},
+			{Name: "searchTerm", Type: "String"},
+			{Name: "verificationContext", Type: "id_verification.VerificationContext"},
 		},
 	},
 	{
@@ -109120,8 +109120,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "searchResultHeaders", Type: "Object"},
-			{Name: "searchResultRows", Type: "Object"},
+			{Name: "searchResultHeaders", Type: "List<id_verification.SearchResultHeader>"},
+			{Name: "searchResultRows", Type: "List<id_verification.SearchResultRow>"},
 		},
 	},
 	{
@@ -109135,9 +109135,9 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "dataType", Type: "Object"},
-			{Name: "developerName", Type: "Object"},
-			{Name: "displayLabel", Type: "Object"},
+			{Name: "dataType", Type: "String"},
+			{Name: "developerName", Type: "String"},
+			{Name: "displayLabel", Type: "String"},
 		},
 	},
 	{
@@ -109151,7 +109151,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "searchResultFieldValues", Type: "Object"},
+			{Name: "searchResultFieldValues", Type: "List<id_verification.FieldValue>"},
 		},
 	},
 	{
@@ -109165,9 +109165,9 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "objectName", Type: "Object"},
-			{Name: "selectedRecordId", Type: "Object"},
-			{Name: "selectedRecordObject", Type: "Object"},
+			{Name: "objectName", Type: "String"},
+			{Name: "selectedRecordId", Type: "String"},
+			{Name: "selectedRecordObject", Type: "List<id_verification.FieldValue>"},
 		},
 	},
 	{
@@ -109195,12 +109195,12 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "isSuccess", Type: "Object"},
-			{Name: "message", Type: "Object"},
-			{Name: "processDefinition", Type: "Object"},
-			{Name: "selectedSearchResult", Type: "Object"},
-			{Name: "selectedVerifiedResult", Type: "Object"},
-			{Name: "verifiedResult", Type: "Object"},
+			{Name: "isSuccess", Type: "Boolean"},
+			{Name: "message", Type: "String"},
+			{Name: "processDefinition", Type: "id_verification.ProcessDefinition"},
+			{Name: "selectedSearchResult", Type: "id_verification.SelectedSearchResult"},
+			{Name: "selectedVerifiedResult", Type: "id_verification.SelectedVerifiedResult"},
+			{Name: "verifiedResult", Type: "id_verification.VerifiedResult"},
 		},
 	},
 	{
@@ -109214,14 +109214,14 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "dataSourceType", Type: "Object"},
-			{Name: "dataType", Type: "Object"},
-			{Name: "developerName", Type: "Object"},
-			{Name: "fieldName", Type: "Object"},
-			{Name: "fieldType", Type: "Object"},
-			{Name: "fieldValueFormula", Type: "Object"},
-			{Name: "isManualInput", Type: "Object"},
-			{Name: "label", Type: "Object"},
+			{Name: "dataSourceType", Type: "String"},
+			{Name: "dataType", Type: "String"},
+			{Name: "developerName", Type: "String"},
+			{Name: "fieldName", Type: "String"},
+			{Name: "fieldType", Type: "String"},
+			{Name: "fieldValueFormula", Type: "String"},
+			{Name: "isManualInput", Type: "Boolean"},
+			{Name: "label", Type: "String"},
 		},
 	},
 	{
@@ -109235,7 +109235,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "verificationProcessFields", Type: "Object"},
+			{Name: "verificationProcessFields", Type: "List<id_verification.VerificationProcessField>"},
 		},
 	},
 	{
@@ -109267,8 +109267,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "optionalVerifiers", Type: "Object"},
-			{Name: "requiredVerifiers", Type: "Object"},
+			{Name: "optionalVerifiers", Type: "List<id_verification.Verifier>"},
+			{Name: "requiredVerifiers", Type: "List<id_verification.Verifier>"},
 		},
 	},
 	{
@@ -109282,8 +109282,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "developerName", Type: "Object"},
-			{Name: "verificationState", Type: "Object"},
+			{Name: "developerName", Type: "String"},
+			{Name: "verificationState", Type: "String"},
 		},
 	},
 	{
@@ -110136,9 +110136,9 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "invoiceId", Type: "Object"},
-			{Name: "reason", Type: "Object"},
-			{Name: "reasonCode", Type: "Object"},
+			{Name: "invoiceId", Type: "String"},
+			{Name: "reason", Type: "String"},
+			{Name: "reasonCode", Type: "String"},
 		},
 	},
 	{
@@ -110152,7 +110152,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "writeOffInvoiceInputList", Type: "Object"},
+			{Name: "writeOffInvoiceInputList", Type: "List<InvoiceWriteOff.WriteOffInvoiceInput>"},
 		},
 	},
 	{
@@ -110165,10 +110165,10 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "errors", Type: "Object"},
-			{Name: "invoiceId", Type: "Object"},
-			{Name: "requestIdentifier", Type: "Object"},
-			{Name: "success", Type: "Object"},
+			{Name: "errors", Type: "InvoiceWriteOff.WriteOffInvoiceResponseError"},
+			{Name: "invoiceId", Type: "String"},
+			{Name: "requestIdentifier", Type: "String"},
+			{Name: "success", Type: "Boolean"},
 		},
 	},
 	{
@@ -110181,8 +110181,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "errorCode", Type: "Object"},
-			{Name: "errorMessage", Type: "Object"},
+			{Name: "errorCode", Type: "String"},
+			{Name: "errorMessage", Type: "String"},
 		},
 	},
 	{
@@ -110196,7 +110196,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "writeOffInvoiceResponseList", Type: "Object"},
+			{Name: "writeOffInvoiceResponseList", Type: "List<InvoiceWriteOff.WriteOffInvoiceResponse>"},
 		},
 	},
 	{
@@ -110232,9 +110232,9 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "creditLineAmount", Type: "Object"},
-			{Name: "description", Type: "Object"},
-			{Name: "invoiceLineId", Type: "Object"},
+			{Name: "creditLineAmount", Type: "Double"},
+			{Name: "description", Type: "String"},
+			{Name: "invoiceLineId", Type: "String"},
 		},
 	},
 	{
@@ -110249,12 +110249,12 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "category", Type: "Object"},
-			{Name: "creditAmount", Type: "Object"},
-			{Name: "creditLineRequestInputRepresentations", Type: "Object"},
-			{Name: "description", Type: "Object"},
-			{Name: "disputeId", Type: "Object"},
-			{Name: "invoiceId", Type: "Object"},
+			{Name: "category", Type: "String"},
+			{Name: "creditAmount", Type: "Double"},
+			{Name: "creditLineRequestInputRepresentations", Type: "List<IssueCreditMemo.CreditLineRequestInputRepresentations>"},
+			{Name: "description", Type: "String"},
+			{Name: "disputeId", Type: "String"},
+			{Name: "invoiceId", Type: "String"},
 		},
 	},
 	{
@@ -110267,8 +110267,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "additionalInformation", Type: "Object"},
-			{Name: "success", Type: "Object"},
+			{Name: "additionalInformation", Type: "String"},
+			{Name: "success", Type: "Boolean"},
 		},
 	},
 	{
@@ -111721,8 +111721,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "serviceResourceId", Type: "Object"},
-			{Name: "unavailableTimeslots", Type: "Object"},
+			{Name: "serviceResourceId", Type: "String"},
+			{Name: "unavailableTimeslots", Type: "Set<lxscheduler.UnavailableTimeslot>"},
 		},
 	},
 	{
@@ -111768,8 +111768,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "timeMax", Type: "Object"},
-			{Name: "timeMin", Type: "Object"},
+			{Name: "timeMax", Type: "Datetime"},
+			{Name: "timeMin", Type: "Datetime"},
 		},
 	},
 	{
@@ -115510,7 +115510,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "graphId", Type: "Object"},
+			{Name: "graphId", Type: "String"},
 		},
 	},
 	{
@@ -115594,12 +115594,12 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "criteria", Type: "Object"},
+			{Name: "criteria", Type: "Map<String,Object>"},
 			{Name: "fieldValues", Type: "Object"},
-			{Name: "groupAction", Type: "Object"},
-			{Name: "id", Type: "Object"},
-			{Name: "method", Type: "Object"},
-			{Name: "type", Type: "Object"},
+			{Name: "groupAction", Type: "String"},
+			{Name: "id", Type: "Id"},
+			{Name: "method", Type: "String"},
+			{Name: "type", Type: "Schema.SObjectType"},
 		},
 	},
 	{
@@ -115612,8 +115612,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "record", Type: "Object"},
-			{Name: "referenceId", Type: "Object"},
+			{Name: "record", Type: "placequote.RecordResource"},
+			{Name: "referenceId", Type: "String"},
 		},
 	},
 	{
@@ -115861,10 +115861,10 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "description", Type: "Object"},
-			{Name: "name", Type: "Object"},
-			{Name: "parameterType", Type: "Object"},
-			{Name: "required", Type: "Object"},
+			{Name: "description", Type: "String"},
+			{Name: "name", Type: "String"},
+			{Name: "parameterType", Type: "Process.PluginDescribeResult.ParameterType"},
+			{Name: "required", Type: "Boolean"},
 		},
 	},
 	{
@@ -115878,9 +115878,9 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "description", Type: "Object"},
-			{Name: "name", Type: "Object"},
-			{Name: "parameterType", Type: "Object"},
+			{Name: "description", Type: "String"},
+			{Name: "name", Type: "String"},
+			{Name: "parameterType", Type: "Process.PluginDescribeResult.ParameterType"},
 		},
 	},
 	{
@@ -115973,7 +115973,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "inputParameters", Type: "Object"},
+			{Name: "inputParameters", Type: "Map<String,Object>"},
 		},
 	},
 	{
@@ -115987,7 +115987,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "outputParameters", Type: "Object"},
+			{Name: "outputParameters", Type: "Map<String,Object>"},
 		},
 	},
 	{
@@ -117319,7 +117319,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "ProductIds", Type: "Object"},
+			{Name: "ProductIds", Type: "Set<Id>"},
 		},
 	},
 	{
@@ -117383,20 +117383,20 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "account", Type: "Object"},
-			{Name: "assetId", Type: "Object"},
-			{Name: "endDate", Type: "Object"},
-			{Name: "lastAssetAction", Type: "Object"},
-			{Name: "lastAssetActionSubtype", Type: "Object"},
-			{Name: "opportunityProductId", Type: "Object"},
-			{Name: "orderItem", Type: "Object"},
-			{Name: "priceBookEntryId", Type: "Object"},
-			{Name: "priceBookId", Type: "Object"},
-			{Name: "productId", Type: "Object"},
-			{Name: "renewalPriceDetails", Type: "Object"},
-			{Name: "rootAssetOpportunity", Type: "Object"},
-			{Name: "startDate", Type: "Object"},
-			{Name: "totalLineAmount", Type: "Object"},
+			{Name: "account", Type: "String"},
+			{Name: "assetId", Type: "String"},
+			{Name: "endDate", Type: "Date"},
+			{Name: "lastAssetAction", Type: "String"},
+			{Name: "lastAssetActionSubtype", Type: "String"},
+			{Name: "opportunityProductId", Type: "String"},
+			{Name: "orderItem", Type: "String"},
+			{Name: "priceBookEntryId", Type: "String"},
+			{Name: "priceBookId", Type: "String"},
+			{Name: "productId", Type: "String"},
+			{Name: "renewalPriceDetails", Type: "List<renew_assets_summary.RenewalPriceDetail>"},
+			{Name: "rootAssetOpportunity", Type: "String"},
+			{Name: "startDate", Type: "Date"},
+			{Name: "totalLineAmount", Type: "Decimal"},
 		},
 	},
 	{
@@ -117409,8 +117409,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "netUnitPrice", Type: "Object"},
-			{Name: "quantity", Type: "Object"},
+			{Name: "netUnitPrice", Type: "Decimal"},
+			{Name: "quantity", Type: "Decimal"},
 		},
 	},
 	{
@@ -118737,7 +118737,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "graphId", Type: "Object"},
+			{Name: "graphId", Type: "String"},
 		},
 	},
 	{
@@ -118929,12 +118929,12 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "criteria", Type: "Object"},
+			{Name: "criteria", Type: "Map<String,Object>"},
 			{Name: "fieldValues", Type: "Object"},
-			{Name: "groupAction", Type: "Object"},
-			{Name: "id", Type: "Object"},
-			{Name: "method", Type: "Object"},
-			{Name: "type", Type: "Object"},
+			{Name: "groupAction", Type: "String"},
+			{Name: "id", Type: "Id"},
+			{Name: "method", Type: "String"},
+			{Name: "type", Type: "Schema.SObjectType"},
 		},
 	},
 	{
@@ -118947,8 +118947,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "record", Type: "Object"},
-			{Name: "referenceId", Type: "Object"},
+			{Name: "record", Type: "RevSalesTrxn.RecordResource"},
+			{Name: "referenceId", Type: "String"},
 		},
 	},
 	{
@@ -118999,7 +118999,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "ctxInstanceId", Type: "Object"},
+			{Name: "ctxInstanceId", Type: "String"},
 			{Name: "procedurePlanInstance", Type: "Object"},
 		},
 	},
@@ -119081,13 +119081,13 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "emailAddress", Type: "Object"},
-			{Name: "familyName", Type: "Object"},
-			{Name: "givenName", Type: "Object"},
-			{Name: "phoneNumber", Type: "Object"},
-			{Name: "phoneticFamilyName", Type: "Object"},
-			{Name: "phoneticGivenName", Type: "Object"},
-			{Name: "postalAddress", Type: "Object"},
+			{Name: "emailAddress", Type: "String"},
+			{Name: "familyName", Type: "String"},
+			{Name: "givenName", Type: "String"},
+			{Name: "phoneNumber", Type: "String"},
+			{Name: "phoneticFamilyName", Type: "String"},
+			{Name: "phoneticGivenName", Type: "String"},
+			{Name: "postalAddress", Type: "RichMessaging.PostalAddress"},
 		},
 	},
 	{
@@ -119123,9 +119123,9 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "expirationDateTime", Type: "Object"},
-			{Name: "redirectPageReference", Type: "Object"},
-			{Name: "resultStatus", Type: "Object"},
+			{Name: "expirationDateTime", Type: "Datetime"},
+			{Name: "redirectPageReference", Type: "PageReference"},
+			{Name: "resultStatus", Type: "RichMessaging.AuthRequestResultStatus"},
 		},
 	},
 	{
@@ -119155,9 +119155,9 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "productId", Type: "Object"},
-			{Name: "quantity", Type: "Object"},
-			{Name: "unitPrice", Type: "Object"},
+			{Name: "productId", Type: "String"},
+			{Name: "quantity", Type: "Integer"},
+			{Name: "unitPrice", Type: "RichMessaging.CurrencyAmount"},
 		},
 	},
 	{
@@ -119171,9 +119171,9 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "productIds", Type: "Object"},
+			{Name: "productIds", Type: "List<String>"},
 			{Name: "productIdsValue", Type: "Object"},
-			{Name: "title", Type: "Object"},
+			{Name: "title", Type: "String"},
 			{Name: "titleValue", Type: "Object"},
 		},
 	},
@@ -119188,8 +119188,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "amount", Type: "Object"},
-			{Name: "currencyCode", Type: "Object"},
+			{Name: "amount", Type: "Decimal"},
+			{Name: "currencyCode", Type: "String"},
 		},
 	},
 	{
@@ -119203,7 +119203,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "deferredDate", Type: "Object"},
+			{Name: "deferredDate", Type: "Datetime"},
 			{Name: "deferredDateValue", Type: "Object"},
 			{Name: "timingType", Type: "Object"},
 		},
@@ -119238,10 +119238,10 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "data", Type: "Object"},
-			{Name: "header", Type: "Object"},
-			{Name: "signature", Type: "Object"},
-			{Name: "version", Type: "Object"},
+			{Name: "data", Type: "String"},
+			{Name: "header", Type: "RichMessaging.EncryptedPaymentDataHeader"},
+			{Name: "signature", Type: "String"},
+			{Name: "version", Type: "String"},
 		},
 	},
 	{
@@ -119254,10 +119254,10 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "applicationData", Type: "Object"},
-			{Name: "ephemeralPublicKey", Type: "Object"},
-			{Name: "publicKeyHash", Type: "Object"},
-			{Name: "transactionId", Type: "Object"},
+			{Name: "applicationData", Type: "String"},
+			{Name: "ephemeralPublicKey", Type: "String"},
+			{Name: "publicKeyHash", Type: "String"},
+			{Name: "transactionId", Type: "String"},
 		},
 	},
 	{
@@ -119444,8 +119444,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "key", Type: "Object"},
-			{Name: "value", Type: "Object"},
+			{Name: "key", Type: "String"},
+			{Name: "value", Type: "String"},
 		},
 	},
 	{
@@ -119481,7 +119481,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "digitableLine", Type: "Object"},
+			{Name: "digitableLine", Type: "String"},
 			{Name: "digitableLineValue", Type: "Object"},
 		},
 	},
@@ -119555,11 +119555,11 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "intentLink", Type: "Object"},
+			{Name: "intentLink", Type: "String"},
 			{Name: "intentLinkValue", Type: "Object"},
-			{Name: "merchantCategoryCode", Type: "Object"},
+			{Name: "merchantCategoryCode", Type: "String"},
 			{Name: "merchantCategoryCodeValue", Type: "Object"},
-			{Name: "payeeHandle", Type: "Object"},
+			{Name: "payeeHandle", Type: "String"},
 			{Name: "payeeHandleValue", Type: "Object"},
 		},
 	},
@@ -119591,7 +119591,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "amount", Type: "Object"},
+			{Name: "amount", Type: "Double"},
 			{Name: "amountValue", Type: "Object"},
 			{Name: "automaticReloadPaymentThresholdAmount", Type: "Object"},
 			{Name: "automaticReloadPaymentThresholdAmountValue", Type: "Object"},
@@ -119599,7 +119599,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "commerceValue", Type: "Object"},
 			{Name: "discount", Type: "Object"},
 			{Name: "discountValue", Type: "Object"},
-			{Name: "label", Type: "Object"},
+			{Name: "label", Type: "String"},
 			{Name: "labelValue", Type: "Object"},
 			{Name: "lineItemType", Type: "Object"},
 			{Name: "quantity", Type: "Object"},
@@ -119608,7 +119608,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "saleAmountValue", Type: "Object"},
 			{Name: "status", Type: "Object"},
 			{Name: "statusValue", Type: "Object"},
-			{Name: "timing", Type: "Object"},
+			{Name: "timing", Type: "RichMessaging.AbstractTiming"},
 			{Name: "timingValue", Type: "Object"},
 		},
 	},
@@ -119622,9 +119622,9 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "displayName", Type: "Object"},
-			{Name: "network", Type: "Object"},
-			{Name: "paymentType", Type: "Object"},
+			{Name: "displayName", Type: "String"},
+			{Name: "network", Type: "String"},
+			{Name: "paymentType", Type: "String"},
 		},
 	},
 	{
@@ -119678,14 +119678,14 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "addressLines", Type: "Object"},
-			{Name: "administrativeArea", Type: "Object"},
-			{Name: "country", Type: "Object"},
-			{Name: "countryCode", Type: "Object"},
-			{Name: "locality", Type: "Object"},
-			{Name: "postalCode", Type: "Object"},
-			{Name: "subAdministrativeArea", Type: "Object"},
-			{Name: "subLocality", Type: "Object"},
+			{Name: "addressLines", Type: "List<String>"},
+			{Name: "administrativeArea", Type: "String"},
+			{Name: "country", Type: "String"},
+			{Name: "countryCode", Type: "String"},
+			{Name: "locality", Type: "String"},
+			{Name: "postalCode", Type: "String"},
+			{Name: "subAdministrativeArea", Type: "String"},
+			{Name: "subLocality", Type: "String"},
 		},
 	},
 	{
@@ -119709,11 +119709,11 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "catalogId", Type: "Object"},
-			{Name: "catalogOrderLineItems", Type: "Object"},
-			{Name: "channelAddressIdentifier", Type: "Object"},
-			{Name: "idempotenceKey", Type: "Object"},
-			{Name: "messagingEndUserPlatformKey", Type: "Object"},
+			{Name: "catalogId", Type: "String"},
+			{Name: "catalogOrderLineItems", Type: "List<RichMessaging.CatalogOrderLineItem>"},
+			{Name: "channelAddressIdentifier", Type: "String"},
+			{Name: "idempotenceKey", Type: "String"},
+			{Name: "messagingEndUserPlatformKey", Type: "String"},
 		},
 	},
 	{
@@ -119728,9 +119728,9 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "catalogOrderReferenceId", Type: "Object"},
-			{Name: "errorMessage", Type: "Object"},
-			{Name: "resultStatus", Type: "Object"},
+			{Name: "catalogOrderReferenceId", Type: "String"},
+			{Name: "errorMessage", Type: "String"},
+			{Name: "resultStatus", Type: "RichMessaging.ProcessCatalogOrderResultStatus"},
 		},
 	},
 	{
@@ -119769,11 +119769,11 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "externalResourceName", Type: "Object"},
-			{Name: "formValues", Type: "Object"},
-			{Name: "inReplyToMessageId", Type: "Object"},
-			{Name: "messageSessionId", Type: "Object"},
-			{Name: "messagingComponentId", Type: "Object"},
+			{Name: "externalResourceName", Type: "String"},
+			{Name: "formValues", Type: "Map<String,String>"},
+			{Name: "inReplyToMessageId", Type: "String"},
+			{Name: "messageSessionId", Type: "Id"},
+			{Name: "messagingComponentId", Type: "Id"},
 		},
 	},
 	{
@@ -119796,13 +119796,13 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "billingContact", Type: "Object"},
-			{Name: "contextRecordId", Type: "Object"},
-			{Name: "paymentData", Type: "Object"},
-			{Name: "paymentMethod", Type: "Object"},
-			{Name: "shippingContact", Type: "Object"},
-			{Name: "shippingMethod", Type: "Object"},
-			{Name: "transactionIdentifier", Type: "Object"},
+			{Name: "billingContact", Type: "RichMessaging.AddressableContact"},
+			{Name: "contextRecordId", Type: "String"},
+			{Name: "paymentData", Type: "RichMessaging.EncryptedPaymentData"},
+			{Name: "paymentMethod", Type: "RichMessaging.PaymentMethod"},
+			{Name: "shippingContact", Type: "RichMessaging.AddressableContact"},
+			{Name: "shippingMethod", Type: "RichMessaging.ShippingMethod"},
+			{Name: "transactionIdentifier", Type: "String"},
 		},
 	},
 	{
@@ -119816,8 +119816,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "errorMessage", Type: "Object"},
-			{Name: "resultStatus", Type: "Object"},
+			{Name: "errorMessage", Type: "String"},
+			{Name: "resultStatus", Type: "RichMessaging.ProcessPaymentResultStatus"},
 		},
 	},
 	{
@@ -119847,13 +119847,13 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "endDate", Type: "Object"},
+			{Name: "endDate", Type: "Date"},
 			{Name: "endDateValue", Type: "Object"},
-			{Name: "intervalCount", Type: "Object"},
+			{Name: "intervalCount", Type: "Integer"},
 			{Name: "intervalCountValue", Type: "Object"},
-			{Name: "intervalUnit", Type: "Object"},
+			{Name: "intervalUnit", Type: "RichMessaging.TimingIntervalUnit"},
 			{Name: "intervalUnitValue", Type: "Object"},
-			{Name: "startDate", Type: "Object"},
+			{Name: "startDate", Type: "Date"},
 			{Name: "startDateValue", Type: "Object"},
 			{Name: "timingType", Type: "Object"},
 		},
@@ -119869,13 +119869,13 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "amount", Type: "Object"},
+			{Name: "amount", Type: "Double"},
 			{Name: "amountValue", Type: "Object"},
-			{Name: "detail", Type: "Object"},
+			{Name: "detail", Type: "String"},
 			{Name: "detailValue", Type: "Object"},
-			{Name: "identifier", Type: "Object"},
+			{Name: "identifier", Type: "String"},
 			{Name: "identifierValue", Type: "Object"},
-			{Name: "label", Type: "Object"},
+			{Name: "label", Type: "String"},
 			{Name: "labelValue", Type: "Object"},
 			{Name: "shippingMethodType", Type: "Object"},
 		},
@@ -119892,10 +119892,10 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "duration", Type: "Object"},
+			{Name: "duration", Type: "Integer"},
 			{Name: "durationValue", Type: "Object"},
 			{Name: "endTimeValue", Type: "Object"},
-			{Name: "startTime", Type: "Object"},
+			{Name: "startTime", Type: "Datetime"},
 			{Name: "startTimeValue", Type: "Object"},
 		},
 	},
@@ -120033,8 +120033,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "robotId", Type: "Object"},
-			{Name: "sessionId", Type: "Object"},
+			{Name: "robotId", Type: "String"},
+			{Name: "sessionId", Type: "String"},
 		},
 	},
 	{
@@ -120101,8 +120101,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "errorCode", Type: "Object"},
-			{Name: "message", Type: "Object"},
+			{Name: "errorCode", Type: "String"},
+			{Name: "message", Type: "String"},
 		},
 	},
 	{
@@ -120116,10 +120116,10 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "appliedRules", Type: "Object"},
-			{Name: "errors", Type: "Object"},
-			{Name: "isSuccess", Type: "Object"},
-			{Name: "rulesApplicationSummary", Type: "Object"},
+			{Name: "appliedRules", Type: "List<String>"},
+			{Name: "errors", Type: "List<RulesAppln.RulesApplicationErrorResponse>"},
+			{Name: "isSuccess", Type: "Boolean"},
+			{Name: "rulesApplicationSummary", Type: "RulesAppln.RulesApplicationSummaryResponse"},
 		},
 	},
 	{
@@ -120133,11 +120133,11 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "areAllInvoicesConsidered", Type: "Object"},
-			{Name: "fetchedCreditMemosCount", Type: "Object"},
-			{Name: "fetchedPaymentsCount", Type: "Object"},
-			{Name: "totalCreditMemoApplications", Type: "Object"},
-			{Name: "totalPaymentApplications", Type: "Object"},
+			{Name: "areAllInvoicesConsidered", Type: "Boolean"},
+			{Name: "fetchedCreditMemosCount", Type: "Integer"},
+			{Name: "fetchedPaymentsCount", Type: "Integer"},
+			{Name: "totalCreditMemoApplications", Type: "Integer"},
+			{Name: "totalPaymentApplications", Type: "Integer"},
 		},
 	},
 	{
@@ -120873,11 +120873,11 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "errors", Type: "Object"},
-			{Name: "messageRules", Type: "Object"},
-			{Name: "productRecommendationRules", Type: "Object"},
-			{Name: "transactionContextId", Type: "Object"},
-			{Name: "visibilityRules", Type: "Object"},
+			{Name: "errors", Type: "List<String>"},
+			{Name: "messageRules", Type: "List<runtime_industries_cpq.MessageRule>"},
+			{Name: "productRecommendationRules", Type: "List<runtime_industries_cpq.ProductRecommendationRule>"},
+			{Name: "transactionContextId", Type: "String"},
+			{Name: "visibilityRules", Type: "List<runtime_industries_cpq.VisibilityRule>"},
 		},
 	},
 	{
@@ -121034,9 +121034,9 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "messages", Type: "Object"},
-			{Name: "severity", Type: "Object"},
-			{Name: "stiId", Type: "Object"},
+			{Name: "messages", Type: "List<String>"},
+			{Name: "severity", Type: "String"},
+			{Name: "stiId", Type: "String"},
 		},
 	},
 	{
@@ -121338,12 +121338,12 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "message", Type: "Object"},
-			{Name: "productIds", Type: "Object"},
-			{Name: "recordType", Type: "Object"},
-			{Name: "referenceId", Type: "Object"},
-			{Name: "scope", Type: "Object"},
-			{Name: "target", Type: "Object"},
+			{Name: "message", Type: "String"},
+			{Name: "productIds", Type: "List<String>"},
+			{Name: "recordType", Type: "String"},
+			{Name: "referenceId", Type: "String"},
+			{Name: "scope", Type: "String"},
+			{Name: "target", Type: "String"},
 		},
 	},
 	{
@@ -121583,15 +121583,15 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "attributeId", Type: "Object"},
-			{Name: "attributePicklistValueId", Type: "Object"},
-			{Name: "message", Type: "Object"},
-			{Name: "prcId", Type: "Object"},
+			{Name: "attributeId", Type: "String"},
+			{Name: "attributePicklistValueId", Type: "String"},
+			{Name: "message", Type: "String"},
+			{Name: "prcId", Type: "String"},
 			{Name: "productId", Type: "Object"},
-			{Name: "scope", Type: "Object"},
-			{Name: "stiId", Type: "Object"},
-			{Name: "target", Type: "Object"},
-			{Name: "type", Type: "Object"},
+			{Name: "scope", Type: "String"},
+			{Name: "stiId", Type: "String"},
+			{Name: "target", Type: "String"},
+			{Name: "type", Type: "String"},
 		},
 	},
 	{
@@ -121654,7 +121654,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "saveContext", Type: "Object"},
+			{Name: "saveContext", Type: "Boolean"},
 		},
 	},
 	{
@@ -121668,12 +121668,12 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "executeConfigurationRules", Type: "Object"},
-			{Name: "executePricing", Type: "Object"},
-			{Name: "executeQualificationRules", Type: "Object"},
-			{Name: "productSellingModel", Type: "Object"},
-			{Name: "saveQuote", Type: "Object"},
-			{Name: "validateProductCatalog", Type: "Object"},
+			{Name: "executeConfigurationRules", Type: "Boolean"},
+			{Name: "executePricing", Type: "Boolean"},
+			{Name: "executeQualificationRules", Type: "Boolean"},
+			{Name: "productSellingModel", Type: "String"},
+			{Name: "saveQuote", Type: "Boolean"},
+			{Name: "validateProductCatalog", Type: "Boolean"},
 		},
 	},
 	{
@@ -121687,11 +121687,11 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "executeConfigurationRules", Type: "Object"},
-			{Name: "executePricing", Type: "Object"},
-			{Name: "returnContextJSON", Type: "Object"},
-			{Name: "returnProductDetails", Type: "Object"},
-			{Name: "returnRatingResults", Type: "Object"},
+			{Name: "executeConfigurationRules", Type: "Boolean"},
+			{Name: "executePricing", Type: "Boolean"},
+			{Name: "returnContextJSON", Type: "Boolean"},
+			{Name: "returnProductDetails", Type: "Boolean"},
+			{Name: "returnRatingResults", Type: "Boolean"},
 		},
 	},
 	{
@@ -121706,9 +121706,9 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "generateClausesAsync", Type: "Object"},
-			{Name: "generateManualClauses", Type: "Object"},
-			{Name: "saveContext", Type: "Object"},
+			{Name: "generateClausesAsync", Type: "Boolean"},
+			{Name: "generateManualClauses", Type: "Boolean"},
+			{Name: "saveContext", Type: "Boolean"},
 		},
 	},
 	{
@@ -121722,11 +121722,11 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "executeConfigurationRules", Type: "Object"},
-			{Name: "executePricing", Type: "Object"},
-			{Name: "executeQualificationRules", Type: "Object"},
-			{Name: "saveQuote", Type: "Object"},
-			{Name: "validateProductCatalog", Type: "Object"},
+			{Name: "executeConfigurationRules", Type: "Boolean"},
+			{Name: "executePricing", Type: "Boolean"},
+			{Name: "executeQualificationRules", Type: "Boolean"},
+			{Name: "saveQuote", Type: "Boolean"},
+			{Name: "validateProductCatalog", Type: "Boolean"},
 		},
 	},
 	{
@@ -125704,10 +125704,10 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "dataSpaceName", Type: "Object"},
-			{Name: "label", Type: "Object"},
-			{Name: "name", Type: "Object"},
-			{Name: "templateName", Type: "Object"},
+			{Name: "dataSpaceName", Type: "String"},
+			{Name: "label", Type: "String"},
+			{Name: "name", Type: "String"},
+			{Name: "templateName", Type: "String"},
 		},
 	},
 	{
@@ -125721,8 +125721,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "apiName", Type: "Object"},
-			{Name: "label", Type: "Object"},
+			{Name: "apiName", Type: "String"},
+			{Name: "label", Type: "String"},
 		},
 	},
 	{
@@ -125736,10 +125736,10 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "componentType", Type: "Object"},
-			{Name: "label", Type: "Object"},
-			{Name: "name", Type: "Object"},
-			{Name: "templateName", Type: "Object"},
+			{Name: "componentType", Type: "String"},
+			{Name: "label", Type: "String"},
+			{Name: "name", Type: "String"},
+			{Name: "templateName", Type: "String"},
 		},
 	},
 	{
@@ -125770,7 +125770,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "instanceId", Type: "Object"},
+			{Name: "instanceId", Type: "String"},
 		},
 	},
 	{
@@ -125784,16 +125784,16 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "bundleAccountEngagementConfig", Type: "Object"},
-			{Name: "bundleCommerceConfig", Type: "Object"},
-			{Name: "bundleConnectorFrameworkConfig", Type: "Object"},
-			{Name: "bundleCRMConfig", Type: "Object"},
-			{Name: "bundleExternalConfig", Type: "Object"},
-			{Name: "bundleIngestApiConfig", Type: "Object"},
-			{Name: "bundleName", Type: "Object"},
-			{Name: "bundleStreamingAppConfig", Type: "Object"},
-			{Name: "connectorType", Type: "Object"},
-			{Name: "forceNoRefresh", Type: "Object"},
+			{Name: "bundleAccountEngagementConfig", Type: "sfdatakit.DeployComponentBundleAccountEngagementConfig"},
+			{Name: "bundleCommerceConfig", Type: "sfdatakit.DeployComponentBundleCommerceConfig"},
+			{Name: "bundleConnectorFrameworkConfig", Type: "sfdatakit.DeployComponentBundleConnectorFrameworkConfig"},
+			{Name: "bundleCRMConfig", Type: "sfdatakit.DeployComponentBundleCRMConfig"},
+			{Name: "bundleExternalConfig", Type: "sfdatakit.DeployComponentBundleExternalConfig"},
+			{Name: "bundleIngestApiConfig", Type: "sfdatakit.DeployComponentBundleIngestApiConfig"},
+			{Name: "bundleName", Type: "String"},
+			{Name: "bundleStreamingAppConfig", Type: "sfdatakit.DeployComponentBundleStreamingAppConfig"},
+			{Name: "connectorType", Type: "String"},
+			{Name: "forceNoRefresh", Type: "Boolean"},
 		},
 	},
 	{
@@ -125807,7 +125807,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "connectionName", Type: "Object"},
+			{Name: "connectionName", Type: "String"},
 		},
 	},
 	{
@@ -125821,7 +125821,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "orgId", Type: "Object"},
+			{Name: "orgId", Type: "String"},
 		},
 	},
 	{
@@ -125835,7 +125835,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "connectionName", Type: "Object"},
+			{Name: "connectionName", Type: "String"},
 		},
 	},
 	{
@@ -125849,7 +125849,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "connectorName", Type: "Object"},
+			{Name: "connectorName", Type: "String"},
 		},
 	},
 	{
@@ -125863,8 +125863,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "connectorName", Type: "Object"},
-			{Name: "streamingAppDataConnectorType", Type: "Object"},
+			{Name: "connectorName", Type: "String"},
+			{Name: "streamingAppDataConnectorType", Type: "String"},
 		},
 	},
 	{
@@ -125878,10 +125878,10 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "apiName", Type: "Object"},
-			{Name: "apiNameOverride", Type: "Object"},
-			{Name: "label", Type: "Object"},
-			{Name: "publishInterval", Type: "Object"},
+			{Name: "apiName", Type: "String"},
+			{Name: "apiNameOverride", Type: "String"},
+			{Name: "label", Type: "String"},
+			{Name: "publishInterval", Type: "String"},
 		},
 	},
 	{
@@ -125895,7 +125895,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "templateDevName", Type: "Object"},
+			{Name: "templateDevName", Type: "String"},
 		},
 	},
 	{
@@ -125909,8 +125909,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "label", Type: "Object"},
-			{Name: "name", Type: "Object"},
+			{Name: "label", Type: "String"},
+			{Name: "name", Type: "String"},
 		},
 	},
 	{
@@ -125924,8 +125924,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "label", Type: "Object"},
-			{Name: "name", Type: "Object"},
+			{Name: "label", Type: "String"},
+			{Name: "name", Type: "String"},
 		},
 	},
 	{
@@ -125939,7 +125939,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "name", Type: "Object"},
+			{Name: "name", Type: "String"},
 		},
 	},
 	{
@@ -125953,11 +125953,11 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "dataSpaceName", Type: "Object"},
-			{Name: "label", Type: "Object"},
-			{Name: "name", Type: "Object"},
-			{Name: "primaryDMO", Type: "Object"},
-			{Name: "templateDevName", Type: "Object"},
+			{Name: "dataSpaceName", Type: "String"},
+			{Name: "label", Type: "String"},
+			{Name: "name", Type: "String"},
+			{Name: "primaryDMO", Type: "String"},
+			{Name: "templateDevName", Type: "String"},
 		},
 	},
 	{
@@ -125971,8 +125971,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "label", Type: "Object"},
-			{Name: "name", Type: "Object"},
+			{Name: "label", Type: "String"},
+			{Name: "name", Type: "String"},
 		},
 	},
 	{
@@ -125986,9 +125986,9 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "apiName", Type: "Object"},
-			{Name: "dataShareDeveloperName", Type: "Object"},
-			{Name: "templateDevName", Type: "Object"},
+			{Name: "apiName", Type: "String"},
+			{Name: "dataShareDeveloperName", Type: "String"},
+			{Name: "templateDevName", Type: "String"},
 		},
 	},
 	{
@@ -126002,11 +126002,11 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "apiName", Type: "Object"},
-			{Name: "componentProperties", Type: "Object"},
-			{Name: "dataTransformDevName", Type: "Object"},
-			{Name: "dataTransformType", Type: "Object"},
-			{Name: "label", Type: "Object"},
+			{Name: "apiName", Type: "String"},
+			{Name: "componentProperties", Type: "Map<String,String>"},
+			{Name: "dataTransformDevName", Type: "String"},
+			{Name: "dataTransformType", Type: "String"},
+			{Name: "label", Type: "String"},
 		},
 	},
 	{
@@ -126020,9 +126020,9 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "apiName", Type: "Object"},
-			{Name: "dataSourceObjectDevName", Type: "Object"},
-			{Name: "label", Type: "Object"},
+			{Name: "apiName", Type: "String"},
+			{Name: "dataSourceObjectDevName", Type: "String"},
+			{Name: "label", Type: "String"},
 		},
 	},
 	{
@@ -126036,10 +126036,10 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "dataSpaceName", Type: "Object"},
-			{Name: "label", Type: "Object"},
-			{Name: "name", Type: "Object"},
-			{Name: "templateName", Type: "Object"},
+			{Name: "dataSpaceName", Type: "String"},
+			{Name: "label", Type: "String"},
+			{Name: "name", Type: "String"},
+			{Name: "templateName", Type: "String"},
 		},
 	},
 	{
@@ -126053,9 +126053,9 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "dataKitDevName", Type: "Object"},
-			{Name: "dataSpaceName", Type: "Object"},
-			{Name: "templateDevName", Type: "Object"},
+			{Name: "dataKitDevName", Type: "String"},
+			{Name: "dataSpaceName", Type: "String"},
+			{Name: "templateDevName", Type: "String"},
 		},
 	},
 	{
@@ -126069,7 +126069,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "templateDevName", Type: "Object"},
+			{Name: "templateDevName", Type: "String"},
 		},
 	},
 	{
@@ -126084,36 +126084,36 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 		},
 		Properties: []StandardPropertySpec{
 			{Name: "abnExperimentConfig", Type: "Object"},
-			{Name: "activationConfig", Type: "Object"},
-			{Name: "activationTargetConfig", Type: "Object"},
-			{Name: "analyticsAssetConfig", Type: "Object"},
-			{Name: "bundleConfig", Type: "Object"},
-			{Name: "calculatedInsightsConfig", Type: "Object"},
-			{Name: "componentType", Type: "Object"},
-			{Name: "copyFieldEnrichmentConfig", Type: "Object"},
-			{Name: "dataActionConfig", Type: "Object"},
-			{Name: "dataActionTargetConfig", Type: "Object"},
-			{Name: "dataConnectionConfig", Type: "Object"},
-			{Name: "dataGraphConfig", Type: "Object"},
-			{Name: "dataShareConfig", Type: "Object"},
-			{Name: "dataTransformConfig", Type: "Object"},
-			{Name: "dloConfig", Type: "Object"},
-			{Name: "engagementSignalConfig", Type: "Object"},
-			{Name: "identityResolutionConfig", Type: "Object"},
-			{Name: "idpConfigurationConfig", Type: "Object"},
-			{Name: "irRelatedListEnrichmentConfig", Type: "Object"},
-			{Name: "mlConfiguredModelConfig", Type: "Object"},
-			{Name: "mlPredictionJobConfig", Type: "Object"},
-			{Name: "mlRetrieverConfig", Type: "Object"},
+			{Name: "activationConfig", Type: "sfdatakit.DeployComponentMarketActivationConfig"},
+			{Name: "activationTargetConfig", Type: "sfdatakit.DeployComponentActivationTargetConfig"},
+			{Name: "analyticsAssetConfig", Type: "sfdatakit.DeployComponentAnalyticsAssetConfig"},
+			{Name: "bundleConfig", Type: "sfdatakit.DeployComponentBundleConfig"},
+			{Name: "calculatedInsightsConfig", Type: "sfdatakit.DeployComponentCalculatedInsightsConfig"},
+			{Name: "componentType", Type: "String"},
+			{Name: "copyFieldEnrichmentConfig", Type: "sfdatakit.DeployComponentCopyFieldEnrichmentConfig"},
+			{Name: "dataActionConfig", Type: "sfdatakit.DeployComponentDataActionConfig"},
+			{Name: "dataActionTargetConfig", Type: "sfdatakit.DeployComponentDataActionTargetConfig"},
+			{Name: "dataConnectionConfig", Type: "sfdatakit.DeployComponentDataConnectionConfig"},
+			{Name: "dataGraphConfig", Type: "sfdatakit.DeployComponentDataGraphConfig"},
+			{Name: "dataShareConfig", Type: "sfdatakit.DeployComponentDataShareConfig"},
+			{Name: "dataTransformConfig", Type: "sfdatakit.DeployComponentDataTransformConfig"},
+			{Name: "dloConfig", Type: "sfdatakit.DeployComponentDLOConfig"},
+			{Name: "engagementSignalConfig", Type: "sfdatakit.DeployComponentEngagementSignalConfig"},
+			{Name: "identityResolutionConfig", Type: "sfdatakit.DeployComponentIdentityResolutionConfig"},
+			{Name: "idpConfigurationConfig", Type: "sfdatakit.DeployComponentIdpConfigurationConfig"},
+			{Name: "irRelatedListEnrichmentConfig", Type: "sfdatakit.DeployComponentIrRelatedListEnrichmentConfig"},
+			{Name: "mlConfiguredModelConfig", Type: "sfdatakit.DeployComponentMlConfiguredModelConfig"},
+			{Name: "mlPredictionJobConfig", Type: "sfdatakit.DeployComponentMlPredictionJobConfig"},
+			{Name: "mlRetrieverConfig", Type: "sfdatakit.DeployComponentMlRetrieverConfig"},
 			{Name: "persnlBatchDecisionConfig", Type: "Object"},
-			{Name: "personalizationObjectiveConfig", Type: "Object"},
-			{Name: "personalizationPointConfig", Type: "Object"},
-			{Name: "personalizationRecommenderConfig", Type: "Object"},
-			{Name: "personalizationSchemaConfig", Type: "Object"},
-			{Name: "segmentConfig", Type: "Object"},
-			{Name: "semanticModelConfig", Type: "Object"},
-			{Name: "semanticSearchConfig", Type: "Object"},
-			{Name: "tuaObjectConfig", Type: "Object"},
+			{Name: "personalizationObjectiveConfig", Type: "sfdatakit.DeployComponentPersonalizationObjectiveConfig"},
+			{Name: "personalizationPointConfig", Type: "sfdatakit.DeployComponentPersonalizationPointConfig"},
+			{Name: "personalizationRecommenderConfig", Type: "sfdatakit.DeployComponentPersonalizationRecommenderConfig"},
+			{Name: "personalizationSchemaConfig", Type: "sfdatakit.DeployComponentPersonalizationSchemaConfig"},
+			{Name: "segmentConfig", Type: "sfdatakit.DeployComponentSegmentConfig"},
+			{Name: "semanticModelConfig", Type: "sfdatakit.DeployComponentSemanticModelConfig"},
+			{Name: "semanticSearchConfig", Type: "sfdatakit.DeployComponentDataSemanticSearchConfig"},
+			{Name: "tuaObjectConfig", Type: "sfdatakit.DeployComponentTuaObjectConfig"},
 		},
 	},
 	{
@@ -126127,8 +126127,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "developerName", Type: "Object"},
-			{Name: "label", Type: "Object"},
+			{Name: "developerName", Type: "String"},
+			{Name: "label", Type: "String"},
 		},
 	},
 	{
@@ -126142,8 +126142,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "apiName", Type: "Object"},
-			{Name: "label", Type: "Object"},
+			{Name: "apiName", Type: "String"},
+			{Name: "label", Type: "String"},
 		},
 	},
 	{
@@ -126157,8 +126157,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "apiName", Type: "Object"},
-			{Name: "label", Type: "Object"},
+			{Name: "apiName", Type: "String"},
+			{Name: "label", Type: "String"},
 		},
 	},
 	{
@@ -126172,8 +126172,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "apiName", Type: "Object"},
-			{Name: "label", Type: "Object"},
+			{Name: "apiName", Type: "String"},
+			{Name: "label", Type: "String"},
 		},
 	},
 	{
@@ -126187,8 +126187,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "apiName", Type: "Object"},
-			{Name: "label", Type: "Object"},
+			{Name: "apiName", Type: "String"},
+			{Name: "label", Type: "String"},
 		},
 	},
 	{
@@ -126202,10 +126202,10 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "dataSpaceName", Type: "Object"},
-			{Name: "label", Type: "Object"},
-			{Name: "name", Type: "Object"},
-			{Name: "templateName", Type: "Object"},
+			{Name: "dataSpaceName", Type: "String"},
+			{Name: "label", Type: "String"},
+			{Name: "name", Type: "String"},
+			{Name: "templateName", Type: "String"},
 		},
 	},
 	{
@@ -126219,10 +126219,10 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "dataSpaceName", Type: "Object"},
-			{Name: "label", Type: "Object"},
-			{Name: "name", Type: "Object"},
-			{Name: "templateName", Type: "Object"},
+			{Name: "dataSpaceName", Type: "String"},
+			{Name: "label", Type: "String"},
+			{Name: "name", Type: "String"},
+			{Name: "templateName", Type: "String"},
 		},
 	},
 	{
@@ -126236,10 +126236,10 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "dataSpaceName", Type: "Object"},
-			{Name: "label", Type: "Object"},
-			{Name: "name", Type: "Object"},
-			{Name: "templateName", Type: "Object"},
+			{Name: "dataSpaceName", Type: "String"},
+			{Name: "label", Type: "String"},
+			{Name: "name", Type: "String"},
+			{Name: "templateName", Type: "String"},
 		},
 	},
 	{
@@ -126253,10 +126253,10 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "dataSpaceName", Type: "Object"},
-			{Name: "label", Type: "Object"},
-			{Name: "name", Type: "Object"},
-			{Name: "templateName", Type: "Object"},
+			{Name: "dataSpaceName", Type: "String"},
+			{Name: "label", Type: "String"},
+			{Name: "name", Type: "String"},
+			{Name: "templateName", Type: "String"},
 		},
 	},
 	{
@@ -126270,10 +126270,10 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "dataSpaceName", Type: "Object"},
-			{Name: "label", Type: "Object"},
-			{Name: "name", Type: "Object"},
-			{Name: "templateName", Type: "Object"},
+			{Name: "dataSpaceName", Type: "String"},
+			{Name: "label", Type: "String"},
+			{Name: "name", Type: "String"},
+			{Name: "templateName", Type: "String"},
 		},
 	},
 	{
@@ -126287,8 +126287,8 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "label", Type: "Object"},
-			{Name: "name", Type: "Object"},
+			{Name: "label", Type: "String"},
+			{Name: "name", Type: "String"},
 		},
 	},
 	{
@@ -126302,9 +126302,9 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "apiName", Type: "Object"},
-			{Name: "dataSpaceName", Type: "Object"},
-			{Name: "displayName", Type: "Object"},
+			{Name: "apiName", Type: "String"},
+			{Name: "dataSpaceName", Type: "String"},
+			{Name: "displayName", Type: "String"},
 		},
 	},
 	{
@@ -126318,12 +126318,12 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "changeSetIdentifier", Type: "Object"},
-			{Name: "componentType", Type: "Object"},
-			{Name: "dataKitDevName", Type: "Object"},
-			{Name: "dataSpaceName", Type: "Object"},
-			{Name: "developerName", Type: "Object"},
-			{Name: "label", Type: "Object"},
+			{Name: "changeSetIdentifier", Type: "String"},
+			{Name: "componentType", Type: "String"},
+			{Name: "dataKitDevName", Type: "String"},
+			{Name: "dataSpaceName", Type: "String"},
+			{Name: "developerName", Type: "String"},
+			{Name: "label", Type: "String"},
 		},
 	},
 	{
@@ -141521,7 +141521,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "serviceAppointmentIds", Type: "Object"},
+			{Name: "serviceAppointmentIds", Type: "List<Id>"},
 		},
 	},
 	{
@@ -141801,14 +141801,14 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "clone", ReturnType: "Object"},
 		},
 		Properties: []StandardPropertySpec{
-			{Name: "action", Type: "Object"},
-			{Name: "data", Type: "Object"},
-			{Name: "entityId", Type: "Object"},
-			{Name: "entityName", Type: "Object"},
-			{Name: "organizationId", Type: "Object"},
-			{Name: "resourceType", Type: "Object"},
-			{Name: "timeStamp", Type: "Object"},
-			{Name: "userId", Type: "Object"},
+			{Name: "action", Type: "String"},
+			{Name: "data", Type: "Map<String,String>"},
+			{Name: "entityId", Type: "String"},
+			{Name: "entityName", Type: "String"},
+			{Name: "organizationId", Type: "String"},
+			{Name: "resourceType", Type: "String"},
+			{Name: "timeStamp", Type: "Datetime"},
+			{Name: "userId", Type: "String"},
 		},
 	},
 	{
@@ -142050,7 +142050,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 		},
 		Properties: []StandardPropertySpec{
 			{Name: "nextReconOffset", Type: "Object"},
-			{Name: "reconOffset", Type: "Object"},
+			{Name: "reconOffset", Type: "String"},
 			{Name: "status", Type: "Object"},
 		},
 	},
