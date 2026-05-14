@@ -133,7 +133,10 @@ func TestStandardPlatformSymbolsIncludeGeneratedSystemStubBreadth(t *testing.T) 
 	canvasTest := requireStandardSymbol(t, symbols, "Canvas.Test")
 	requireStandardPropertyStatic(t, canvasTest, "KEY_CANVAS_URL", "Object", true)
 
-	requireStandardSymbol(t, symbols, "Database.Cursor.DeleteFilter")
+	cursorDeleteFilter := requireStandardSymbol(t, symbols, "Database.Cursor.DeleteFilter")
+	requireStandardPropertyStatic(t, cursorDeleteFilter, "NO_FILTER", "Database.Cursor.DeleteFilter", true)
+	paginationDeleteFilter := requireStandardSymbol(t, symbols, "Database.PaginationCursor.DeleteFilter")
+	requireStandardPropertyStatic(t, paginationDeleteFilter, "NO_FILTER", "Database.PaginationCursor.DeleteFilter", true)
 }
 
 func TestStandardSymbolsFromSpecsKeepsRicherGeneratedPropertyTypes(t *testing.T) {

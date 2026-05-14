@@ -104074,9 +104074,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "hashCode", ReturnType: "Integer"},
 			{Name: "ordinal", ReturnType: "Integer"},
 			{Name: "valueOf", ReturnType: "Database.Cursor.DeleteFilter", ParameterSpecs: []StandardParameterSpec{{Name: "str", Type: "String"}}, Static: true},
-			{Name: "valueOf", ReturnType: "Database.PaginationCursor.DeleteFilter", ParameterSpecs: []StandardParameterSpec{{Name: "str", Type: "String"}}, Static: true},
 			{Name: "values", ReturnType: "List<Database.Cursor.DeleteFilter>", Static: true},
-			{Name: "values", ReturnType: "List<Database.PaginationCursor.DeleteFilter>", Static: true},
 		},
 		Properties: []StandardPropertySpec{
 			{Name: "DELETED_ROWS_ONLY", Type: "Database.Cursor.DeleteFilter", Static: true},
@@ -104477,7 +104475,22 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 		},
 	},
 	{
-		Name: "Database.PaginationCursor.DeleteFilter",
+		Name:       "Database.PaginationCursor.DeleteFilter",
+		Kind:       apexast.DeclarationEnum,
+		SuperClass: "Object",
+		Methods: []StandardMethodSpec{
+			{Name: "equals", ReturnType: "Boolean", ParameterSpecs: []StandardParameterSpec{{Name: "obj", Type: "Object"}}},
+			{Name: "hashCode", ReturnType: "Integer"},
+			{Name: "ordinal", ReturnType: "Integer"},
+			{Name: "valueOf", ReturnType: "Database.PaginationCursor.DeleteFilter", ParameterSpecs: []StandardParameterSpec{{Name: "str", Type: "String"}}, Static: true},
+			{Name: "values", ReturnType: "List<Database.PaginationCursor.DeleteFilter>", Static: true},
+		},
+		Properties: []StandardPropertySpec{
+			{Name: "DELETED_ROWS_ONLY", Type: "Database.PaginationCursor.DeleteFilter", Static: true},
+			{Name: "NO_DELETED_ROWS", Type: "Database.PaginationCursor.DeleteFilter", Static: true},
+			{Name: "NO_DELETED_SHARING_ROWS", Type: "Database.PaginationCursor.DeleteFilter", Static: true},
+			{Name: "NO_FILTER", Type: "Database.PaginationCursor.DeleteFilter", Static: true},
+		},
 	},
 	{
 		Name:       "Database.QueryLocator",
@@ -105382,8 +105395,6 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "equals", ReturnType: "Boolean", ParameterSpecs: []StandardParameterSpec{{Name: "obj", Type: "Object"}}},
 			{Name: "hashCode", ReturnType: "Integer"},
 			{Name: "ordinal", ReturnType: "Integer"},
-			{Name: "valueOf", ReturnType: "Dom.XmlNodeType", ParameterSpecs: []StandardParameterSpec{{Name: "str", Type: "String"}}, Static: true},
-			{Name: "values", ReturnType: "List<Dom.XmlNodeType>", Static: true},
 		},
 		Properties: []StandardPropertySpec{
 			{Name: "COMMENT", Type: "Object", Static: true},

@@ -1317,6 +1317,8 @@ private class PassiveGeneratedStubTest {
     System.assertEquals('DoIt', action.getName());
     System.assertEquals('Audience', ConnectApi.AudienceCriteriaType.Audience.name());
     System.assertEquals('INVALIDCOUPON', commercepromotions.CouponInfo.ErrorCode.INVALIDCOUPON.name());
+    System.assertEquals('NO_FILTER', Database.PaginationCursor.DeleteFilter.NO_FILTER.name());
+    System.assertEquals(4, Database.PaginationCursor.DeleteFilter.values().size());
     Slack.ApiTestRequest slackRequest = Slack.ApiTestRequest.builder().foo('bar').build();
     System.assertEquals('bar', slackRequest.getFoo());
     LoyaltyManagement.ChangeTierInputBuilder tierBuilder = new LoyaltyManagement.ChangeTierInputBuilder();

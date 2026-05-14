@@ -427,15 +427,12 @@ function materializeNestedStubSpecs(specs) {
       continue;
     }
 
-    const enumAlias = nestedEnumAliasName(spec);
-    if (enumAlias) {
+    for (const enumAlias of nestedEnumAliasNames(spec)) {
       const alias = getAddition(enumAlias);
       alias.kind = "DeclarationEnum";
       alias.superClass = spec.superClass || "Object";
       alias.constructors = [];
-      alias.methods.push(...spec.methods.map((method) => cloneMethod(method, {
-        returnType: method.returnType === spec.name ? alias.name : method.returnType.replaceAll(spec.name, alias.name),
-      })));
+      alias.methods.push(...enumAliasMethods(spec, alias.name));
       alias.properties.push(...spec.properties.map((prop) => ({
         name: prop.name,
         type: prop.static && (prop.type === "Object" || prop.type === spec.name) ? alias.name : prop.type,
@@ -457,13 +454,37 @@ function materializeNestedStubSpecs(specs) {
   return specs.concat([...additions.values()]).sort((a, b) => a.name.localeCompare(b.name));
 }
 
-function nestedEnumAliasName(spec) {
-  const valueOf = spec.methods.find((method) => method.static && method.name === "valueOf" && method.returnType && method.returnType !== spec.name);
-  if (!valueOf) return "";
-  const values = spec.methods.find((method) => method.static && method.name === "values" && method.returnType === `List<${valueOf.returnType}>`);
-  if (!values) return "";
-  if (!spec.properties.some((prop) => prop.static && prop.name)) return "";
-  return valueOf.returnType;
+function nestedEnumAliasNames(spec) {
+  if (!spec.properties.some((prop) => prop.static && prop.name)) return [];
+  const out = [];
+  for (const valueOf of spec.methods) {
+    if (!valueOf.static || valueOf.name !== "valueOf" || !valueOf.returnType || valueOf.returnType === spec.name) {
+      continue;
+    }
+    if (!spec.methods.some((method) => method.static && method.name === "values" && method.returnType === `List<${valueOf.returnType}>`)) {
+      continue;
+    }
+    out.push(valueOf.returnType);
+  }
+  return [...new Set(out)].sort();
+}
+
+function enumAliasMethods(spec, aliasName) {
+  const out = [];
+  for (const method of spec.methods) {
+    if (method.static && method.name === "valueOf") {
+      if (method.returnType === aliasName) out.push(cloneMethod(method, { returnType: aliasName }));
+      continue;
+    }
+    if (method.static && method.name === "values") {
+      if (method.returnType === `List<${aliasName}>`) out.push(cloneMethod(method, { returnType: `List<${aliasName}>` }));
+      continue;
+    }
+    out.push(cloneMethod(method, {
+      returnType: method.returnType === spec.name ? aliasName : method.returnType.replaceAll(spec.name, aliasName),
+    }));
+  }
+  return out;
 }
 
 function addReferencedPlaceholders(specs) {

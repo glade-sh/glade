@@ -737,7 +737,7 @@ func passiveStandardRuntimeClasses(indexTypes []typesys.TypeSymbol, existing []v
 			continue
 		}
 		name := typeSymbolRuntimeName(typ)
-		if name == "" || seen[strings.ToLower(name)] || !isPassiveStandardRuntimeType(name) {
+		if name == "" || seen[strings.ToLower(name)] || (typ.Kind != apexast.DeclarationEnum && !isPassiveStandardRuntimeType(name)) {
 			continue
 		}
 		class := passiveRuntimeClassFromTypeSymbol(typ, name)
