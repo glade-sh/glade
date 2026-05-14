@@ -3519,6 +3519,47 @@ Database.queryWithBinds('SELECT Id FROM Account WHERE Name = :wanted', binds, 'U
 	}
 }
 
+func TestExecDatabaseCountQueryWithBinds(t *testing.T) {
+	program, err := CompileAnonymous(`
+insert new Account(Name = 'Acme', Rating = 'Hot');
+insert new Account(Name = 'Beta', Rating = 'Warm');
+Map<String,Object> binds = new Map<String,Object>();
+binds.put('rating', 'Hot');
+Integer hotCount = Database.countQueryWithBinds('SELECT COUNT() FROM Account WHERE Rating = :rating', binds, AccessLevel.USER_MODE);
+System.assertEquals(1, hotCount);
+binds.put('ratings', new List<String>{'Hot', 'Warm'});
+Integer totalCount = Database.countQueryWithBinds('SELECT Id FROM Account WHERE Rating IN :ratings', binds, AccessLevel.SYSTEM_MODE);
+System.assertEquals(2, totalCount);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Rating"] = storage.Field{APIName: "Rating", Type: storage.FieldString}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+
+	badProgram, err := CompileAnonymous(`
+Map<String,Object> binds = new Map<String,Object>();
+binds.put('wanted', 'Acme');
+Database.countQueryWithBinds('SELECT COUNT() FROM Account WHERE Name = :wanted', binds, 'USER_MODE');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine = New(nil)
+	org = testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(badProgram); err == nil || !strings.Contains(err.Error(), "AccessLevel") {
+		t.Fatalf("expected AccessLevel error, got %v", err)
+	}
+}
+
 func TestExecSOQLBindStaticMethodCall(t *testing.T) {
 	program, err := CompileAnonymous(`
 User row = [SELECT Id FROM User WHERE Id = :UserInfo.getUserId() LIMIT 1];
