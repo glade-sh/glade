@@ -4602,6 +4602,54 @@ System.assertEquals(0, rows.size());
 	}
 }
 
+func TestRecordFromValueSkipsImplicitReadOnlyStandardFields(t *testing.T) {
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	account := Object("Account")
+	account.Fields["Name"] = String("Acme")
+	account.Fields["IsDeleted"] = Bool(false)
+	account.Fields["IsCustomerPortal"] = Bool(false)
+	record, err := machine.recordFromValue(&account)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := record.Fields["IsDeleted"]; ok {
+		t.Fatalf("implicit IsDeleted should not be DML-visible: %#v", record.Fields)
+	}
+	if _, ok := record.Fields["IsCustomerPortal"]; ok {
+		t.Fatalf("implicit IsCustomerPortal should not be DML-visible: %#v", record.Fields)
+	}
+
+	setExplicitSObjectField(&account, "IsDeleted", Bool(true))
+	record, err = machine.recordFromValue(&account)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := record.Fields["IsDeleted"]; !ok {
+		t.Fatalf("explicit non-default IsDeleted should remain VM-visible: %#v", record.Fields)
+	}
+
+	account = Object("Account")
+	account.Fields["Name"] = String("Acme")
+	account.Fields["IsDeleted"] = Bool(false)
+	account.Fields["IsCustomerPortal"] = Bool(false)
+	if _, err := machine.applyDML("insert", account, true, "", &Result{}); err != nil {
+		t.Fatalf("implicit read-only fields should not reach DML: %v", err)
+	}
+
+	attachment := Object("Attachment")
+	attachment.Fields["Name"] = String("note.txt")
+	attachment.Fields["ParentId"] = String("00100000000LFLTAA4")
+	record, err = machine.recordFromValue(&attachment)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if value, ok := record.Fields["ParentId"]; !ok || value.String == "" {
+		t.Fatalf("scalar ParentId should remain DML-visible: %#v", record.Fields)
+	}
+}
+
 func TestExecDatabaseErrorDetailsAndDmlExceptionParity(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account existing = new Account(Name = 'Existing', Code__c = 'A');
