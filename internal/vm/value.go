@@ -507,7 +507,7 @@ func mapKey(v Value) string {
 			}
 		}
 	}
-	if v.Kind == ValueString && looksLikeID(v.Text) {
+	if v.Kind == ValueString && strings.EqualFold(v.Type, "Id") && looksLikeID(v.Text) {
 		return string(ValueObject) + ":Id:" + canonicalIDMapKey(v.Text)
 	}
 	if v.Kind == ValueObject && v.Type != "" && v.Text != "" {

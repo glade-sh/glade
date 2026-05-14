@@ -1432,6 +1432,23 @@ System.assert(caught.contains('JSONException:JSON.deserializeUntyped invalid JSO
 	}
 }
 
+func TestExecJSONSerializeUntypedMapPreservesIdLikeStringKeys(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String, Object> values = (Map<String, Object>)JSON.deserializeUntyped('{"positiveParameters":[{"type":"Npi"}],"negativeParameters":[]}');
+String encoded = JSON.serialize(values);
+System.assert(encoded.contains('positiveParameters'), encoded);
+System.assert(encoded.contains('negativeParameters'), encoded);
+System.assert(!encoded.contains('positiveparametAAA'), encoded);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecJSONMalformedDeserializeErrorsAreCatchable(t *testing.T) {
 	program, err := CompileAnonymous(`
 String caught = '';
