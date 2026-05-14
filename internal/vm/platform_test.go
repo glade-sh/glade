@@ -2577,6 +2577,45 @@ Test.stopTest();
 	}
 }
 
+func TestExecAsyncInfoHasMaxStackDepthInQueueable(t *testing.T) {
+	program, err := CompileAnonymous(`
+Test.startTest();
+System.enqueueJob(new QueueWorker());
+Test.stopTest();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	queueProgram, err := CompileAnonymous(`
+System.assertEquals(false, System.AsyncInfo.hasMaxStackDepth());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name:       "QueueWorker",
+		Interfaces: []string{"Queueable"},
+		Methods: map[string]Method{
+			"execute": {
+				Name:       "QueueWorker.execute",
+				ClassName:  "QueueWorker",
+				ReturnType: "void",
+				Params:     []Param{{Name: "context", Type: "QueueableContext"}},
+				Program:    queueProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecAbortJobCompletedRecordsAreIdempotent(t *testing.T) {
 	program, err := CompileAnonymous(`Test.startTest(); String id = System.enqueueJob(new QueueWorker()); Test.stopTest(); System.abortJob(id);`)
 	if err != nil {

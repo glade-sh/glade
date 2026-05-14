@@ -2762,8 +2762,16 @@ platformStaticCall:
 			return Null, fmt.Errorf("System.attachFinalizer expects Finalizer object")
 		}
 		return Null, nil
+	case "AsyncInfo.hasMaxStackDepth", "System.AsyncInfo.hasMaxStackDepth":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("AsyncInfo.hasMaxStackDepth expects 0 arguments")
+		}
+		if vm.currentAsyncKind != "Queueable" {
+			return Null, newExceptionError("System.AsyncException", "hasMaxStackDepth is not allowed outside a Queueable of Finalizer execution")
+		}
+		return Bool(false), nil
 	case "AsyncInfo.getCurrentQueueableStackDepth", "AsyncInfo.getMaximumQueueableStackDepth",
-		"AsyncInfo.getMinimumQueueableDelayInMinutes", "AsyncInfo.hasMaxStackDepth":
+		"AsyncInfo.getMinimumQueueableDelayInMinutes":
 		return Null, unsupportedCallError(callee + " local async info surface")
 	case "Datetime.newInstance", "Datetime.newInstanceGmt":
 		if len(args) == 1 {
