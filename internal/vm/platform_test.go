@@ -3613,6 +3613,7 @@ Object nullDateObject = null;
 System.assertEquals(null, Date.valueOf(nullDateObject));
 Date parsedDateTime = Date.valueOf('2026-05-04 23:59:58');
 System.assertEquals(parsedDate, parsedDateTime);
+System.assertEquals(parsedDate, Date.valueOf('2026-05-04T23:59:58Z'));
 System.assertEquals(parsedDate, Date.valueOf('2026-5-4'));
 System.assertEquals(parsedDate, Date.valueOf('2026-5-4 23:59:58'));
 System.assertEquals(2026, Date.parse('01/01/2026').year());

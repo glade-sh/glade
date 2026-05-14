@@ -9296,6 +9296,9 @@ func parseDateText(text string) (time.Time, error) {
 			return time.Date(value.Year(), value.Month(), value.Day(), 0, 0, 0, 0, time.UTC), nil
 		}
 	}
+	if value, err := parseDatetimeText(text); err == nil {
+		return time.Date(value.Year(), value.Month(), value.Day(), 0, 0, 0, 0, time.UTC), nil
+	}
 	return time.Time{}, fmt.Errorf("unsupported Date value %q", text)
 }
 
