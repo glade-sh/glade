@@ -1316,6 +1316,9 @@ private class PassiveGeneratedStubTest {
     System.assertEquals('pkg', action.getNamespace());
     System.assertEquals('DoIt', action.getName());
     System.assertEquals('Audience', ConnectApi.AudienceCriteriaType.Audience.name());
+    System.assertEquals('INVALIDCOUPON', commercepromotions.CouponInfo.ErrorCode.INVALIDCOUPON.name());
+    Slack.ApiTestRequest slackRequest = Slack.ApiTestRequest.builder().foo('bar').build();
+    System.assertEquals('bar', slackRequest.getFoo());
     CartExtension.Cart cart = CartExtension.CartTestUtil.createCart();
     System.assert(cart != null);
   }

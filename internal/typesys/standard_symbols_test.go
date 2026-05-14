@@ -177,6 +177,13 @@ func TestStandardPlatformSymbolsIncludeGeneratedProductNamespaceStubBreadth(t *t
 
 	audience := requireStandardSymbol(t, symbols, "ConnectApi.AudienceCriteriaType")
 	requireStandardPropertyStatic(t, audience, "Audience", "ConnectApi.AudienceCriteriaType", true)
+
+	couponError := requireStandardSymbol(t, symbols, "commercepromotions.CouponInfo.ErrorCode")
+	requireStandardPropertyStatic(t, couponError, "INVALIDCOUPON", "commercepromotions.CouponInfo.ErrorCode", true)
+
+	slackBuilder := requireStandardSymbol(t, symbols, "Slack.ApiTestRequest.Builder")
+	requireStandardMethodType(t, slackBuilder, "build", "Slack.ApiTestRequest")
+	requireStandardMethodParams(t, slackBuilder, "foo", []string{"String"}, []string{"foo"}, false)
 }
 
 func requireStandardSymbol(t *testing.T, symbols []TypeSymbol, name string) TypeSymbol {

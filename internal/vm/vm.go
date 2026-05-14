@@ -19163,11 +19163,11 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		frame[param.Name] = coerced
 		frameTypes[param.Name] = paramType
 	}
-	if passiveGeneratedMethod(method) {
-		return vm.passiveGeneratedMethodReturn(method, frame), nil
-	}
 	if receiver.Kind != ValueNull {
 		frame["this"] = receiver
+	}
+	if passiveGeneratedMethod(method) {
+		return vm.passiveGeneratedMethodReturn(method, frame, receiver), nil
 	}
 	caller := vm.Globals
 	callerTypes := vm.VarTypes
@@ -19273,7 +19273,7 @@ func passiveGeneratedMethod(method Method) bool {
 		len(method.Program.Instructions) == 0
 }
 
-func (vm *VM) passiveGeneratedMethodReturn(method Method, frame map[string]Value) Value {
+func (vm *VM) passiveGeneratedMethodReturn(method Method, frame map[string]Value, receiver Value) Value {
 	returnType := vm.resolveTypeNameInClass(method.ClassName, method.ReturnType)
 	if returnType == "" || strings.EqualFold(returnType, "void") {
 		return Null
@@ -19293,6 +19293,11 @@ func (vm *VM) passiveGeneratedMethodReturn(method Method, frame map[string]Value
 	case vm.isPassivePlatformDTOType(returnType):
 		object := Object(returnType)
 		vm.initializeFields(&object, returnType)
+		if receiver.Kind == ValueObject {
+			for field, value := range receiver.Fields {
+				object.Fields[field] = value
+			}
+		}
 		bindPassiveMethodArgs(&object, method, frame)
 		return object
 	default:

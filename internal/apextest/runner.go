@@ -804,7 +804,7 @@ func passiveRuntimeClassFromTypeSymbol(typ typesys.TypeSymbol, name string) vm.C
 		case apexast.DeclarationConstructor:
 			class.Constructors = append(class.Constructors, passiveRuntimeConstructorFromMember(name, member))
 		case apexast.DeclarationMethod:
-			if hasModifier(member.Modifiers, "static") {
+			if hasModifier(member.Modifiers, "static") || passiveFluentGeneratedMethod(member) {
 				method := passiveRuntimeMethodFromMember(name, member)
 				class.Methods[methodShortName(method.Name)+methodParamKey(method.Params)] = method
 			}
@@ -842,10 +842,34 @@ func passiveRuntimeMethodFromMember(className string, member typesys.MemberSymbo
 		ClassName:  className,
 		ReturnType: member.Type,
 		Params:     params,
-		IsStatic:   true,
+		IsStatic:   hasModifier(member.Modifiers, "static"),
 		Access:     "global",
-		Modifiers:  []string{"static", "passive-generated"},
+		Modifiers:  passiveGeneratedMethodModifiers(member),
 	}
+}
+
+func passiveGeneratedMethodModifiers(member typesys.MemberSymbol) []string {
+	modifiers := []string{"passive-generated"}
+	if hasModifier(member.Modifiers, "static") {
+		modifiers = append(modifiers, "static")
+	}
+	return modifiers
+}
+
+func passiveFluentGeneratedMethod(member typesys.MemberSymbol) bool {
+	if !strings.Contains(member.Type, ".") {
+		return false
+	}
+	name := strings.ToLower(member.Name)
+	if name == "build" {
+		return true
+	}
+	if len(member.Parameters) == 0 {
+		return false
+	}
+	return name != "clone" && name != "equals" && name != "hashcode" && name != "ordinal" &&
+		name != "tostring" && !strings.HasPrefix(name, "get") && !strings.HasPrefix(name, "set") &&
+		!strings.HasPrefix(name, "is")
 }
 
 func passiveEnumConstantField(typ typesys.TypeSymbol, member typesys.MemberSymbol) bool {
