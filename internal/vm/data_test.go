@@ -1230,12 +1230,14 @@ System.assertEquals(12, amount.getPrecision());
 System.assertEquals(2, amount.getScale());
 System.assertEquals(0, amount.getLength());
 System.assert(!amount.isHtmlFormatted());
+System.assert(amount.isSortable());
 Schema.DescribeFieldResult notes = Account.Notes__c.getDescribe();
 System.assertEquals(1024, notes.getLength());
 System.assertEquals(1024, Schema.SObjectType.Account.fields.Notes__c.getLength());
 System.assertEquals(0, notes.getPrecision());
 System.assertEquals(0, notes.getScale());
 System.assert(!notes.isHtmlFormatted());
+System.assert(!notes.isSortable());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1244,7 +1246,7 @@ System.assert(!notes.isHtmlFormatted());
 	org := testDataOrg()
 	account := org.Objects["Account"]
 	account.Definition.Fields["Amount__c"] = storage.Field{APIName: "Amount__c", Type: storage.FieldDecimal, DisplayType: "CURRENCY", Precision: 12, Scale: 2}
-	account.Definition.Fields["Notes__c"] = storage.Field{APIName: "Notes__c", Type: storage.FieldString, Length: 1024}
+	account.Definition.Fields["Notes__c"] = storage.Field{APIName: "Notes__c", Type: storage.FieldString, DisplayType: "TEXTAREA", Length: 1024}
 	org.Objects["Account"] = account
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {

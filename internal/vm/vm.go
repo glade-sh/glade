@@ -23116,7 +23116,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			return describe, receiver, false, true, nil
 		}
 		switch method {
-		case "getName", "getLabel", "getType", "getSOAPType", "getSoapType", "getSObjectType", "getLength", "getPrecision", "getScale", "isHtmlFormatted", "isNillable", "isExternalId", "isUnique", "isEncrypted", "isCalculated", "isNameField", "isCustom", "getReferenceTo", "getRelationshipName", "getPicklistValues", "getController", "getControllerValues", "isAccessible", "isCreateable", "isUpdateable":
+		case "getName", "getLabel", "getType", "getSOAPType", "getSoapType", "getSObjectType", "getLength", "getPrecision", "getScale", "isHtmlFormatted", "isNillable", "isExternalId", "isUnique", "isEncrypted", "isCalculated", "isAutoNumber", "isNameField", "isCustom", "getReferenceTo", "getRelationshipName", "getPicklistValues", "getController", "getControllerValues", "isAccessible", "isCreateable", "isUpdateable", "isSortable":
 			describe, _, _, handled, err := vm.callPlatformObjectMember(receiver, "getDescribe", nil, result)
 			if err != nil || !handled {
 				return describe, receiver, false, true, err
@@ -23241,6 +23241,20 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.isHtmlFormatted expects 0 arguments")
 			}
 			return receiver.Fields["htmlFormatted"], receiver, false, true, nil
+		case "isSortable":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.isSortable expects 0 arguments")
+			}
+			if sortable, ok := receiver.Fields["sortable"]; ok {
+				return sortable, receiver, false, true, nil
+			}
+			if fieldType, ok := receiver.Fields["type"]; ok {
+				switch strings.ToUpper(typeValueText(fieldType)) {
+				case "MULTIPICKLIST", "TEXTAREA", "ENCRYPTEDSTRING", "BASE64", "ADDRESS", "LOCATION":
+					return Bool(false), receiver, false, true, nil
+				}
+			}
+			return Bool(true), receiver, false, true, nil
 		case "getReferenceTo":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getReferenceTo expects 0 arguments")
