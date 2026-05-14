@@ -2702,7 +2702,7 @@ platformStaticCall:
 			return Null, newExceptionError("System.NullPointerException", "Date.valueOf expects String")
 		}
 		if args[0].Kind == ValueNull {
-			return Null, newExceptionError("System.NullPointerException", "Date.valueOf expects String")
+			return Null, nil
 		}
 		var text string
 		if args[0].Kind == ValueString {

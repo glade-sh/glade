@@ -3570,6 +3570,7 @@ Object parsedDateObjectText = '2026-05-04';
 System.assertEquals(parsedDate, Date.valueOf(parsedDateObjectText));
 Object parsedDateObject = parsedDate;
 System.assertEquals(parsedDate, Date.valueOf(parsedDateObject));
+System.assertEquals(null, Date.valueOf(null));
 Date parsedDateTime = Date.valueOf('2026-05-04 23:59:58');
 System.assertEquals(parsedDate, parsedDateTime);
 System.assertEquals(parsedDate, Date.valueOf('2026-5-4'));
