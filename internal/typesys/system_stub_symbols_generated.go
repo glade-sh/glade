@@ -103848,7 +103848,7 @@ var systemStubSymbolSpecs = []StandardSymbolSpec{
 			{Name: "convertLead", ReturnType: "List<Database.LeadConvertResult>", ParameterSpecs: []StandardParameterSpec{{Name: "leadConverts", Type: "List<Database.LeadConvert>"}}, Static: true},
 			{Name: "countQuery", ReturnType: "Integer", ParameterSpecs: []StandardParameterSpec{{Name: "query", Type: "String"}, {Name: "accessLevel", Type: "Object"}}, Static: true},
 			{Name: "countQuery", ReturnType: "Integer", ParameterSpecs: []StandardParameterSpec{{Name: "query", Type: "String"}}, Static: true},
-			{Name: "countQueryWithBinds", ReturnType: "List<SObject>", ParameterSpecs: []StandardParameterSpec{{Name: "query", Type: "String"}, {Name: "bindMap", Type: "Map"}, {Name: "accessLevel", Type: "Object"}}, Static: true},
+			{Name: "countQueryWithBinds", ReturnType: "Integer", ParameterSpecs: []StandardParameterSpec{{Name: "query", Type: "String"}, {Name: "bindMap", Type: "Map"}, {Name: "accessLevel", Type: "Object"}}, Static: true},
 			{Name: "delete", ReturnType: "Database.DeleteResult", ParameterSpecs: []StandardParameterSpec{{Name: "id", Type: "Id"}, {Name: "allOrNothing", Type: "Boolean"}, {Name: "accessLevel", Type: "Object"}}, Static: true},
 			{Name: "delete", ReturnType: "Database.DeleteResult", ParameterSpecs: []StandardParameterSpec{{Name: "id", Type: "Id"}, {Name: "allOrNothing", Type: "Boolean"}}, Static: true},
 			{Name: "delete", ReturnType: "Database.DeleteResult", ParameterSpecs: []StandardParameterSpec{{Name: "id", Type: "Id"}, {Name: "accessLevel", Type: "Object"}}, Static: true},

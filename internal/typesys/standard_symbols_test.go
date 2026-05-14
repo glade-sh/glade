@@ -117,6 +117,8 @@ func TestStandardPlatformSymbolsIncludeGeneratedSystemStubBreadth(t *testing.T) 
 	database := requireStandardSymbol(t, symbols, "Database")
 	requireStandardMethod(t, database, "insert", []string{"SObject", "Object"}, true)
 	requireStandardMethod(t, database, "update", []string{"List<SObject>", "Object"}, true)
+	requireStandardMethodType(t, database, "countQueryWithBinds", "Integer")
+	requireStandardMethodType(t, database, "getQueryLocatorWithBinds", "Database.QueryLocator")
 
 	batchable := requireStandardSymbol(t, symbols, "Database.Batchable")
 	requireStandardMethodType(t, batchable, "start", "Iterable")
