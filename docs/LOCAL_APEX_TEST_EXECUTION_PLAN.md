@@ -664,6 +664,10 @@ Exit criteria:
   against `nu-dx-org` with `sf apex run --target-org nu-dx-org` before deciding
   the local behavior. Treat the scratch-org result as the oracle and capture it
   in a focused regression or compatibility fixture.
+- When a local-test blocker exposes a missing system class, method, field, or
+  object shape, consult `example-projects/stubs` and implement the adjacent
+  public shape where practical. Do not add a one-off signature when the stubs
+  show a small broader surface that can be modeled generically.
 - Keep local test execution separate from browser/UI rendering. Apex tests need
   controller contracts, page references, labels, resources, and metadata
   resolution first; full Visualforce/Aura/LWC serving comes later.

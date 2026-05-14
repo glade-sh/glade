@@ -11880,6 +11880,7 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 	desc.Fields["unique"] = Bool(field.Unique)
 	desc.Fields["encrypted"] = Bool(field.Encrypted)
 	desc.Fields["calculated"] = Bool(field.Type == storage.FieldCalculated)
+	desc.Fields["autoNumber"] = Bool(field.AutoNumber)
 	desc.Fields["nameField"] = Bool(isNameFieldDescribe(field))
 	desc.Fields["custom"] = Bool(isCustomSchemaName(field.APIName))
 	desc.Fields["length"] = Int(int64(describeFieldLength(field)))
@@ -11931,6 +11932,7 @@ func emptySObjectFieldDescribe(objectName string) Value {
 	desc.Fields["unique"] = Bool(false)
 	desc.Fields["encrypted"] = Bool(false)
 	desc.Fields["calculated"] = Bool(false)
+	desc.Fields["autoNumber"] = Bool(false)
 	desc.Fields["nameField"] = Bool(false)
 	desc.Fields["custom"] = Bool(false)
 	desc.Fields["length"] = Int(0)
@@ -23106,6 +23108,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.isCalculated expects 0 arguments")
 			}
 			return receiver.Fields["calculated"], receiver, false, true, nil
+		case "isAutoNumber":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.isAutoNumber expects 0 arguments")
+			}
+			return receiver.Fields["autoNumber"], receiver, false, true, nil
 		case "isNameField":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.isNameField expects 0 arguments")

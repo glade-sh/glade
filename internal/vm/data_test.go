@@ -1108,6 +1108,7 @@ Schema.DescribeFieldResult describe = Account.Name.getDescribe();
 System.assertEquals(Schema.DisplayType.STRING, describe.getType());
 System.assertEquals(DisplayType.STRING, describe.getType());
 System.assertEquals('STRING', describe.getType());
+System.assertEquals(false, describe.isAutoNumber());
 System.assertEquals(null, describe.compoundFieldName);
 System.assertEquals(null, describe.getCompoundFieldName());
 System.assertEquals('Account', Account.SObjectType.getDescribe(SObjectDescribeOptions.DEFERRED).getName());

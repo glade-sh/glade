@@ -47,3 +47,9 @@ echo "System.debug('Hello from CLI');" | sf apex run --target-org nu-dx-org
 Keep the probe minimal, record the observed result in the test or commit
 context, and then encode the behavior in an owned regression or compatibility
 fixture.
+
+When the blocker is a missing system class, method, field, or object shape,
+consult the public stubs under `example-projects/stubs` before patching. Use
+them to fill the nearby public surface area, not just the single failing member,
+while still keeping the implementation minimal and backed by scratch-org
+behavior or an owned regression.
