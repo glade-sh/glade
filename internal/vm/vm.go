@@ -11523,7 +11523,11 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 			fieldsMap.MapKeys[mapKey(String(lowered))] = String(lowered)
 		}
 	}
-	for _, fieldName := range []string{"Id", "Name", "CreatedDate", "CreatedById", "LastModifiedDate", "LastModifiedById", "SystemModstamp"} {
+	defaultFieldNames := []string{"Id", "CreatedDate", "CreatedById", "LastModifiedDate", "LastModifiedById", "SystemModstamp"}
+	if isCustomObjectLikeName(definition.APIName) {
+		defaultFieldNames = append(defaultFieldNames, "Name")
+	}
+	for _, fieldName := range defaultFieldNames {
 		if _, ok := fieldsMap.Map[mapKey(String(fieldName))]; ok {
 			continue
 		}

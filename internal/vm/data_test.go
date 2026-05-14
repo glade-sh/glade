@@ -1138,11 +1138,27 @@ switch on Account.Name.getDescribe().getType() {
 		label = 'other';
 	}
 }
+
 System.assertEquals('string', label);
 
 label = '';
 Schema.DisplayType missing = null;
 switch on missing {
+	when String {
+		label = 'string';
+	}
+	when null {
+		label = 'null';
+	}
+	when else {
+		label = 'other';
+	}
+}
+System.assertEquals('null', label);
+
+label = '';
+Schema.DescribeFieldResult missingDescribe = null;
+switch on missingDescribe?.getType() {
 	when String {
 		label = 'string';
 	}
@@ -1160,6 +1176,25 @@ System.assertEquals('null', label);
 	}
 	machine := New(nil)
 	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStandardObjectDescribeMapDoesNotSynthesizeMissingNameField(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(null, Event.SObjectType.getDescribe().fields.getMap().get('Name'));
+System.assertEquals('Subject', Event.SObjectType.getDescribe().fields.getMap().get('Subject').getDescribe().getName());
+System.assertEquals('Name', Account.SObjectType.getDescribe().fields.getMap().get('Name').getDescribe().getName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	storage.EnsureStandardObject(&org, "Event")
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
