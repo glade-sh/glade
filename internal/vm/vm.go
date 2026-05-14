@@ -1976,6 +1976,7 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 	names := []string{
 		"System.assert", "System.assertEquals", "System.assertNotEquals", "System.debug", "System.today",
 		"Assert.areEqual", "Assert.areNotEqual", "Assert.isTrue", "Assert.isFalse", "Assert.isNull", "Assert.isNotNull", "Assert.isInstanceOfType", "Assert.fail",
+		"System.equals", "System.hashCode",
 		"System.now", "System.currentTimeMillis", "System.isBatch", "System.isFuture", "System.isQueueable",
 		"System.isScheduled", "System.abortJob", "System.attachFinalizer", "System.isRunningTest",
 		"Test.isRunningTest", "System.currentPageReference", "System.setPassword", "System.enqueueJob", "System.schedule",
@@ -1988,6 +1989,12 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"Limits.getFutureCalls", "Limits.getLimitFutureCalls", "Limits.getBatchJobs", "Limits.getLimitBatchJobs",
 		"Limits.getScheduledJobs", "Limits.getLimitScheduledJobs",
 		"Limits.getEmailInvocations", "Limits.getLimitEmailInvocations",
+		"Limits.getAggregateQueries", "Limits.getLimitAggregateQueries",
+		"Limits.getFindSimilarCalls", "Limits.getLimitFindSimilarCalls",
+		"Limits.getMobilePushApexCalls", "Limits.getLimitMobilePushApexCalls",
+		"Limits.getQueryLocatorRows", "Limits.getLimitQueryLocatorRows",
+		"Limits.getSavepointRollbacks", "Limits.getLimitSavepointRollbacks",
+		"Limits.getSoslQueries", "Limits.getLimitSoslQueries",
 		"Database.query", "Database.queryWithBinds", "Database.countQuery", "Database.getQueryLocator",
 		"Database.setSavepoint", "Database.rollback", "Database.insert", "Database.update", "Database.delete",
 		"Database.upsert", "Database.undelete", "Database.emptyRecycleBin", "Database.lock", "Database.unlock",
@@ -2001,7 +2008,8 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"RoundingMode.valueOf", "Id.valueOf",
 		"Pattern.compile", "Pattern.matches", "Pattern.quote",
 		"Math.abs", "Math.floor", "Math.ceil", "Math.round", "Math.rint", "Math.roundToLong", "Math.signum",
-		"Math.sqrt", "Math.acos", "Math.asin", "Math.atan", "Math.cos", "Math.sin", "Math.tan",
+		"Math.sqrt", "Math.cbrt", "Math.acos", "Math.asin", "Math.atan", "Math.cos", "Math.sin", "Math.tan",
+		"Math.cosh", "Math.sinh", "Math.tanh",
 		"Math.exp", "Math.log", "Math.log10", "Math.max", "Math.min", "Math.mod", "Math.pow",
 		"Math.atan2", "Math.random",
 		"UUID.randomUUID",
@@ -2462,6 +2470,20 @@ platformStaticCall:
 			return Null, vm.assertError(message)
 		}
 		return Null, nil
+	case "System.equals":
+		if len(args) != 2 {
+			return Null, fmt.Errorf("System.equals expects 2 arguments")
+		}
+		equal, err := vm.apexEquals(args[0], args[1], result)
+		if err != nil {
+			return Null, err
+		}
+		return Bool(equal), nil
+	case "System.hashCode":
+		if len(args) != 1 {
+			return Null, fmt.Errorf("System.hashCode expects 1 argument")
+		}
+		return Int(int64(valueHashCode(args[0]))), nil
 	case "System.debug":
 		if len(args) != 1 && len(args) != 2 {
 			return Null, fmt.Errorf("System.debug expects message or logging level and message")
@@ -2618,7 +2640,13 @@ platformStaticCall:
 		"Limits.getFutureCalls", "Limits.getLimitFutureCalls", "Limits.getAsyncJobs", "Limits.getLimitAsyncJobs",
 		"Limits.getAsyncCalls", "Limits.getLimitAsyncCalls",
 		"Limits.getBatchJobs", "Limits.getLimitBatchJobs", "Limits.getScheduledJobs", "Limits.getLimitScheduledJobs",
-		"Limits.getEmailInvocations", "Limits.getLimitEmailInvocations":
+		"Limits.getEmailInvocations", "Limits.getLimitEmailInvocations",
+		"Limits.getAggregateQueries", "Limits.getLimitAggregateQueries",
+		"Limits.getFindSimilarCalls", "Limits.getLimitFindSimilarCalls",
+		"Limits.getMobilePushApexCalls", "Limits.getLimitMobilePushApexCalls",
+		"Limits.getQueryLocatorRows", "Limits.getLimitQueryLocatorRows",
+		"Limits.getSavepointRollbacks", "Limits.getLimitSavepointRollbacks",
+		"Limits.getSoslQueries", "Limits.getLimitSoslQueries":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
@@ -2666,8 +2694,9 @@ platformStaticCall:
 		return patternMatches(args)
 	case "Pattern.quote":
 		return patternQuote(args)
-	case "Math.abs", "Math.floor", "Math.ceil", "Math.round", "Math.rint", "Math.roundToLong", "Math.signum", "Math.sqrt",
-		"Math.acos", "Math.asin", "Math.atan", "Math.cos", "Math.sin", "Math.tan", "Math.exp", "Math.log", "Math.log10":
+	case "Math.abs", "Math.floor", "Math.ceil", "Math.round", "Math.rint", "Math.roundToLong", "Math.signum", "Math.sqrt", "Math.cbrt",
+		"Math.acos", "Math.asin", "Math.atan", "Math.cos", "Math.sin", "Math.tan", "Math.cosh", "Math.sinh", "Math.tanh",
+		"Math.exp", "Math.log", "Math.log10":
 		return mathUnary(callee, args)
 	case "Math.max", "Math.min", "Math.mod", "Math.pow", "Math.atan2":
 		return mathBinary(callee, args)
@@ -10427,6 +10456,8 @@ func mathUnary(callee string, args []Value) (Value, error) {
 			return Null, fmt.Errorf("Math.sqrt argument out of domain")
 		}
 		return finiteDecimalResult(callee, math.Sqrt(n))
+	case "Math.cbrt":
+		return finiteDecimalResult(callee, math.Cbrt(n))
 	case "Math.acos":
 		if n < -1 || n > 1 {
 			return Null, fmt.Errorf("Math.acos argument out of domain")
@@ -10445,6 +10476,12 @@ func mathUnary(callee string, args []Value) (Value, error) {
 		return finiteDecimalResult(callee, math.Sin(n))
 	case "Math.tan":
 		return finiteDecimalResult(callee, math.Tan(n))
+	case "Math.cosh":
+		return finiteDecimalResult(callee, math.Cosh(n))
+	case "Math.sinh":
+		return finiteDecimalResult(callee, math.Sinh(n))
+	case "Math.tanh":
+		return finiteDecimalResult(callee, math.Tanh(n))
 	case "Math.exp":
 		return finiteDecimalResult(callee, math.Exp(n))
 	case "Math.log":

@@ -204,6 +204,20 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 		return Int(int64(vm.limits.EmailInvokes)), true
 	case "getLimitEmailInvocations":
 		return Int(int64(vm.limitCaps.EmailInvokes)), true
+	case "getAggregateQueries", "getFindSimilarCalls", "getMobilePushApexCalls", "getQueryLocatorRows", "getSavepointRollbacks", "getSoslQueries":
+		return Int(0), true
+	case "getLimitAggregateQueries":
+		return Int(300), true
+	case "getLimitFindSimilarCalls":
+		return Int(10), true
+	case "getLimitMobilePushApexCalls":
+		return Int(10), true
+	case "getLimitQueryLocatorRows":
+		return Int(10000), true
+	case "getLimitSavepointRollbacks":
+		return Int(100), true
+	case "getLimitSoslQueries":
+		return Int(20), true
 	default:
 		return Null, false
 	}
@@ -212,13 +226,7 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 func unsupportedLimitGetter(name string) bool {
 	name = canonicalLimitGetterName(name)
 	switch name {
-	case "getAggregateQueries", "getLimitAggregateQueries",
-		"getFindSimilarCalls", "getLimitFindSimilarCalls",
-		"getMobilePushApexCalls", "getLimitMobilePushApexCalls",
-		"getPublishImmediateDML", "getLimitPublishImmediateDML",
-		"getQueryLocatorRows", "getLimitQueryLocatorRows",
-		"getSavepointRollbacks", "getLimitSavepointRollbacks",
-		"getSoslQueries", "getLimitSoslQueries":
+	case "getPublishImmediateDML", "getLimitPublishImmediateDML":
 		return true
 	default:
 		return false

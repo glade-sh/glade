@@ -1123,8 +1123,8 @@ System.assertEquals('001B000001DVM9tIAH', ids[0]);
 String text = 'trail';
 System.assert(text.equals('trail'));
 System.assert(!text.equals('ridge'));
-System.assertEquals('trail', text.toString());
 String sameText = 'trail';
+System.assertEquals('trail', text.toString());
 System.assertEquals(sameText.hashCode(), text.hashCode());
 System.assertEquals(text.hashCode(), text.HashCode());
 Integer count = 7;
@@ -1167,6 +1167,28 @@ URL protocolHostPort = new URL('https', 'example.test', 8443, '/ridge');
 System.assertEquals('https://example.test:8443/ridge', protocolHostPort.toExternalForm());
 URL relative = new URL(detailed, '../Other?x=1');
 System.assertEquals('https://example.test:8443/Other?x=1', relative.toExternalForm());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSystemStaticEqualsAndHashCode(t *testing.T) {
+	program, err := CompileAnonymous(`
+String text = 'trail';
+String sameText = 'trail';
+System.assert(System.equals(text, sameText));
+System.assert(!System.equals(text, 'ridge'));
+System.assert(System.equals(null, null));
+System.assert(!System.equals(null, text));
+System.assertEquals(text.hashCode(), System.hashCode(text));
+List<Integer> left = new List<Integer>{1, 2};
+List<Integer> right = new List<Integer>{1, 2};
+System.assert(System.equals(left, right));
+System.assertEquals(left.hashCode(), System.hashCode(right));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -2344,6 +2366,7 @@ System.assertEquals(2.0, Math.rint(2.5));
 System.assertEquals(7, Math.max(3, 7));
 System.assertEquals(3, Math.min(3, 7));
 System.assertEquals(3.0, Math.sqrt(9));
+System.assertEquals(2.0, Math.cbrt(8));
 System.assertEquals(8.0, Math.pow(2, 3));
 System.assertEquals(2147483647, Integer.MAX_VALUE);
 System.assertEquals(-2147483648, Integer.MIN_VALUE);
@@ -2354,6 +2377,9 @@ System.assert(Math.abs(Math.E - 2.718281828459045) < 0.000000000000001);
 System.assert(Math.abs(Math.sin(Math.PI / 2) - 1) < 0.000000000001);
 System.assert(Math.abs(Math.cos(0) - 1) < 0.000000000001);
 System.assert(Math.abs(Math.tan(0)) < 0.000000000001);
+System.assert(Math.abs(Math.cosh(0) - 1) < 0.000000000001);
+System.assert(Math.abs(Math.sinh(0)) < 0.000000000001);
+System.assert(Math.abs(Math.tanh(0)) < 0.000000000001);
 System.assert(Math.abs(Math.acos(1)) < 0.000000000001);
 System.assert(Math.abs(Math.asin(1) - (Math.PI / 2)) < 0.000000000001);
 System.assert(Math.abs(Math.atan(1) - (Math.PI / 4)) < 0.000000000001);

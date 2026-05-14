@@ -2412,20 +2412,8 @@ func TestExecPublishImmediateDMLLimitsGettersUnsupported(t *testing.T) {
 
 func TestExecUnsupportedLimitsGettersHaveStableShape(t *testing.T) {
 	for _, getter := range []string{
-		"getAggregateQueries",
-		"getLimitAggregateQueries",
-		"getFindSimilarCalls",
-		"getLimitFindSimilarCalls",
-		"getMobilePushApexCalls",
-		"getLimitMobilePushApexCalls",
 		"getPublishImmediateDML",
 		"getLimitPublishImmediateDML",
-		"getQueryLocatorRows",
-		"getLimitQueryLocatorRows",
-		"getSavepointRollbacks",
-		"getLimitSavepointRollbacks",
-		"getSoslQueries",
-		"getLimitSoslQueries",
 	} {
 		t.Run(getter, func(t *testing.T) {
 			program, err := CompileAnonymous("Integer used = Limits." + getter + "();")
@@ -2443,6 +2431,33 @@ func TestExecUnsupportedLimitsGettersHaveStableShape(t *testing.T) {
 			want := `unsupported call "Limits.` + getter + `"`
 			if runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != want || err.Error() != want {
 				t.Fatalf("error = (%q, %q, %q), want UnsupportedFeature %q", runtimeErr.Type, runtimeErr.Message, err.Error(), want)
+			}
+		})
+	}
+}
+
+func TestExecPassiveLimitsGettersHaveStableValues(t *testing.T) {
+	for _, getter := range []string{
+		"getAggregateQueries",
+		"getLimitAggregateQueries",
+		"getFindSimilarCalls",
+		"getLimitFindSimilarCalls",
+		"getMobilePushApexCalls",
+		"getLimitMobilePushApexCalls",
+		"getQueryLocatorRows",
+		"getLimitQueryLocatorRows",
+		"getSavepointRollbacks",
+		"getLimitSavepointRollbacks",
+		"getSoslQueries",
+		"getLimitSoslQueries",
+	} {
+		t.Run(getter, func(t *testing.T) {
+			program, err := CompileAnonymous("Integer value = Limits." + getter + "(); System.assert(value >= 0);")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := New(nil).Execute(program); err != nil {
+				t.Fatal(err)
 			}
 		})
 	}
