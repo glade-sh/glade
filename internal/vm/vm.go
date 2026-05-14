@@ -11692,6 +11692,17 @@ func isCustomSchemaName(name string) bool {
 	return strings.HasSuffix(name, "__c") || strings.HasSuffix(name, "__pc") || strings.HasSuffix(name, "__pr")
 }
 
+func compoundFieldNameValue(fieldName string) Value {
+	fieldName = strings.TrimSpace(fieldName)
+	for _, suffix := range []string{"GeocodeAccuracy", "PostalCode", "CountryCode", "StateCode", "Longitude", "Latitude", "Street", "Country", "State", "City"} {
+		if !strings.HasSuffix(fieldName, suffix) || len(fieldName) == len(suffix) {
+			continue
+		}
+		return String(strings.TrimSuffix(fieldName, suffix) + "Address")
+	}
+	return Null
+}
+
 func describeFieldLength(field storage.Field) int {
 	if field.Length > 0 {
 		return field.Length
@@ -11861,6 +11872,11 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 		return Null, fmt.Errorf("Schema field describe unknown object %s", objectName)
 	}
 	definition := vm.Org.Objects[objectName].Definition
+	definition = definition.Clone()
+	storage.EnsureStandardObjectFields(&definition)
+	if strings.EqualFold(definition.APIName, "Account") && len(definition.RecordTypes) == 0 {
+		storage.EnsureStandardObjectFieldsForFeatures(&definition, []string{"PersonAccounts"})
+	}
 	requestedFieldName := fieldName
 	fieldName, ok = storage.ResolveFieldName(definition, vm.Org.Namespace, fieldName)
 	if !ok {
@@ -11899,7 +11915,7 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 		label = field.APIName
 	}
 	desc.Fields["label"] = String(label)
-	desc.Fields["compoundFieldName"] = Null
+	desc.Fields["compoundFieldName"] = compoundFieldNameValue(field.APIName)
 	displayType := field.DisplayType
 	if displayType == "" {
 		displayType = string(field.Type)
@@ -11966,7 +11982,7 @@ func (vm *VM) describeSyntheticFieldValue(objectName, fieldName string, field st
 		label = field.APIName
 	}
 	desc.Fields["label"] = String(label)
-	desc.Fields["compoundFieldName"] = Null
+	desc.Fields["compoundFieldName"] = compoundFieldNameValue(field.APIName)
 	displayType := field.DisplayType
 	if displayType == "" {
 		displayType = string(field.Type)
@@ -12824,19 +12840,23 @@ func (vm *VM) lookupSObjectFieldToken(parts []string) (Value, bool) {
 	}
 	objectName = canonicalObject
 	definition := vm.Org.Objects[objectName].Definition
+	field := storage.Field{}
 	canonical, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, fieldName)
 	if !ok {
 		standardDefinition := definition.Clone()
 		storage.EnsureStandardObjectFieldsForFeatures(&standardDefinition, []string{"PersonAccounts"})
 		if standardField, standardOK := storage.ResolveFieldName(standardDefinition, vm.Org.Namespace, fieldName); standardOK {
 			canonical = standardField
+			field = standardDefinition.Fields[canonical]
 		} else if !isSObjectSystemField(fieldName) {
 			return Null, false
 		} else {
 			canonical = fieldName
 		}
 	}
-	field := definition.Fields[canonical]
+	if field.APIName == "" {
+		field = definition.Fields[canonical]
+	}
 	if field.APIName == "" {
 		field.APIName = canonical
 	}
