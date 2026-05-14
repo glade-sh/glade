@@ -15898,6 +15898,9 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			object.Fields[field] = value
 		}
 		vm.initializeFields(&object, typeName)
+		for field, value := range namedArgs {
+			object.Fields[field] = value
+		}
 		if err := vm.runInstanceInitializers(class, object, result); err != nil {
 			return Null, err
 		}
@@ -19160,6 +19163,9 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 		frame[param.Name] = coerced
 		frameTypes[param.Name] = paramType
 	}
+	if passiveGeneratedMethod(method) {
+		return vm.passiveGeneratedMethodReturn(method, frame), nil
+	}
 	if receiver.Kind != ValueNull {
 		frame["this"] = receiver
 	}
@@ -19260,6 +19266,38 @@ func methodHasModifier(modifiers []string, expected string) bool {
 		}
 	}
 	return false
+}
+
+func passiveGeneratedMethod(method Method) bool {
+	return methodHasModifier(method.Modifiers, "passive-generated") &&
+		len(method.Program.Instructions) == 0
+}
+
+func (vm *VM) passiveGeneratedMethodReturn(method Method, frame map[string]Value) Value {
+	returnType := vm.resolveTypeNameInClass(method.ClassName, method.ReturnType)
+	if returnType == "" || strings.EqualFold(returnType, "void") {
+		return Null
+	}
+	if class, ok := vm.lookupClass(returnType); ok {
+		returnType = class.Name
+	}
+	switch {
+	case collectionBase(returnType) == "List":
+		return typedList(returnType)
+	case collectionBase(returnType) == "Set":
+		value := Set()
+		value.Type = returnType
+		return value
+	case isMapType(returnType):
+		return typedMap(returnType)
+	case vm.isPassivePlatformDTOType(returnType):
+		object := Object(returnType)
+		vm.initializeFields(&object, returnType)
+		bindPassiveMethodArgs(&object, method, frame)
+		return object
+	default:
+		return defaultValue(returnType, Null)
+	}
 }
 
 func (vm *VM) displayString(value Value, result *Result) (string, error) {
@@ -25238,10 +25276,19 @@ func (vm *VM) isPassivePlatformDTOType(typeName string) bool {
 func passiveRuntimeClass(class Class) bool {
 	return !class.IsTest &&
 		!class.IsInterface &&
-		len(class.Methods) == 0 &&
+		passiveRuntimeMethods(class.Methods) &&
 		passiveRuntimeConstructors(class.Constructors) &&
 		len(class.StaticInitializers) == 0 &&
 		len(class.InstanceInitializers) == 0
+}
+
+func passiveRuntimeMethods(methods map[string]Method) bool {
+	for _, method := range methods {
+		if !passiveGeneratedMethod(method) {
+			return false
+		}
+	}
+	return true
 }
 
 func passiveRuntimeConstructors(constructors []Method) bool {
@@ -25263,6 +25310,20 @@ func bindPassiveConstructorArgs(object *Value, ctor Method, args []Value) {
 			continue
 		}
 		object.Fields[passiveAccessorFieldName(*object, field)] = arg
+	}
+}
+
+func bindPassiveMethodArgs(object *Value, method Method, frame map[string]Value) {
+	for _, param := range method.Params {
+		field := strings.TrimSpace(param.Name)
+		if field == "" || strings.HasPrefix(field, "arg") {
+			continue
+		}
+		value, ok := frame[field]
+		if !ok {
+			continue
+		}
+		object.Fields[passiveAccessorFieldName(*object, field)] = value
 	}
 }
 

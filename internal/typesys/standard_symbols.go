@@ -29,10 +29,11 @@ type StandardParameterSpec struct {
 }
 
 type StandardMethodSpec struct {
-	Name       string
-	ReturnType string
-	Parameters []string
-	Static     bool
+	Name           string
+	ReturnType     string
+	Parameters     []string
+	ParameterSpecs []StandardParameterSpec
+	Static         bool
 }
 
 type StandardPropertySpec struct {
@@ -139,7 +140,7 @@ func StandardSymbolsFromSpecs(specs []StandardSymbolSpec) []TypeSymbol {
 				Name:       method.Name,
 				Type:       method.ReturnType,
 				Modifiers:  modifiers,
-				Parameters: standardParameters(method.Parameters),
+				Parameters: standardMethodParameters(method),
 			})
 		}
 		out = append(out, sym)
@@ -291,7 +292,14 @@ func shouldReplaceStandardProperty(existing, addition StandardPropertySpec) bool
 }
 
 func standardMethodKey(method StandardMethodSpec) string {
-	return strings.ToLower(method.Name) + "|" + strconv.FormatBool(method.Static) + "|" + standardTypeListKey(method.Parameters)
+	types := make([]string, 0, len(method.ParameterSpecs))
+	for _, param := range method.ParameterSpecs {
+		types = append(types, param.Type)
+	}
+	if len(types) == 0 {
+		types = method.Parameters
+	}
+	return strings.ToLower(method.Name) + "|" + strconv.FormatBool(method.Static) + "|" + standardTypeListKey(types)
 }
 
 func standardConstructorSpecKey(ctor StandardConstructorSpec) string {
@@ -341,6 +349,13 @@ func localStandardSymbolName(name string) string {
 
 func standardParameters(types []string) []apexast.Parameter {
 	return standardSpecParameters(standardParameterSpecs(types))
+}
+
+func standardMethodParameters(method StandardMethodSpec) []apexast.Parameter {
+	if len(method.ParameterSpecs) != 0 {
+		return standardSpecParameters(method.ParameterSpecs)
+	}
+	return standardParameters(method.Parameters)
 }
 
 func standardParameterSpecs(types []string) []StandardParameterSpec {

@@ -156,7 +156,7 @@ function parseStub(filePath) {
       spec.methods.push({
         name: method[3],
         returnType: normalizeType(method[2]),
-        parameters: parameterTypes(method[4]),
+        parameters: parameterSpecs(method[4]),
         static: Boolean(method[1]),
       });
       continue;
@@ -244,7 +244,7 @@ function constructorKey(params) {
 }
 
 function parameterTypesKey(params) {
-  return params.map((p) => p.toLowerCase()).join(",");
+  return params.map((p) => p.type.toLowerCase()).join(",");
 }
 
 function methodKey(method) {
@@ -292,7 +292,7 @@ function writeSpec(spec) {
     out += "\t\tMethods: []StandardMethodSpec{\n";
     for (const method of spec.methods) {
       out += `\t\t\t{Name: ${goString(method.name)}, ReturnType: ${goString(method.returnType)}`;
-      if (method.parameters.length) out += `, Parameters: ${goStringSlice(method.parameters)}`;
+      if (method.parameters.length) out += `, ParameterSpecs: []StandardParameterSpec{${method.parameters.map((param) => `{Name: ${goString(param.name)}, Type: ${goString(param.type)}}`).join(", ")}}`;
       if (method.static) out += ", Static: true";
       out += "},\n";
     }

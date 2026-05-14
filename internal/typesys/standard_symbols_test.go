@@ -167,6 +167,13 @@ func TestStandardPlatformSymbolsIncludeGeneratedProductNamespaceStubBreadth(t *t
 		[]string{"SObject", "String", "String", "List<String>"},
 		[]string{"salesTransaction", "buyerAccountId", "webStoreId", "couponCodes"},
 	)
+
+	action := requireStandardSymbol(t, symbols, "Invocable.Action")
+	requireStandardMethodParams(t, action, "createCustomAction",
+		[]string{"String", "String", "String"},
+		[]string{"type", "namespace", "name"},
+		true,
+	)
 }
 
 func requireStandardSymbol(t *testing.T, symbols []TypeSymbol, name string) TypeSymbol {
@@ -210,6 +217,28 @@ func requireStandardConstructorParams(t *testing.T, symbol TypeSymbol, types, na
 		return
 	}
 	t.Fatalf("missing constructor on %s with params %#v: %#v", standardSymbolFullName(symbol), types, symbol.Members)
+}
+
+func requireStandardMethodParams(t *testing.T, symbol TypeSymbol, methodName string, types, names []string, static bool) {
+	t.Helper()
+	if len(types) != len(names) {
+		t.Fatalf("method assertion mismatch: types=%#v names=%#v", types, names)
+	}
+	for _, member := range symbol.Members {
+		if member.Kind != apexast.DeclarationMethod || !strings.EqualFold(member.Name, methodName) || !standardMemberParamsEqual(member, types) {
+			continue
+		}
+		if memberHasModifier(member, "static") != static {
+			continue
+		}
+		for i, name := range names {
+			if !strings.EqualFold(member.Parameters[i].Name, name) {
+				t.Fatalf("method param %d on %s.%s = %q, want %q: %#v", i, standardSymbolFullName(symbol), methodName, member.Parameters[i].Name, name, member.Parameters)
+			}
+		}
+		return
+	}
+	t.Fatalf("missing method %s.%s with params %#v static=%v: %#v", standardSymbolFullName(symbol), methodName, types, static, symbol.Members)
 }
 
 func requireStandardMethod(t *testing.T, symbol TypeSymbol, name string, params []string, static bool) {

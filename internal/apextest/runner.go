@@ -803,6 +803,11 @@ func passiveRuntimeClassFromTypeSymbol(typ typesys.TypeSymbol, name string) vm.C
 			}
 		case apexast.DeclarationConstructor:
 			class.Constructors = append(class.Constructors, passiveRuntimeConstructorFromMember(name, member))
+		case apexast.DeclarationMethod:
+			if hasModifier(member.Modifiers, "static") {
+				method := passiveRuntimeMethodFromMember(name, member)
+				class.Methods[methodShortName(method.Name)+methodParamKey(method.Params)] = method
+			}
 		}
 	}
 	return class
@@ -820,6 +825,26 @@ func passiveRuntimeConstructorFromMember(className string, member typesys.Member
 		Params:        params,
 		IsConstructor: true,
 		Access:        "global",
+	}
+}
+
+func passiveRuntimeMethodFromMember(className string, member typesys.MemberSymbol) vm.Method {
+	params := make([]vm.Param, 0, len(member.Parameters))
+	for i, param := range member.Parameters {
+		name := strings.TrimSpace(param.Name)
+		if name == "" {
+			name = "arg" + fmt.Sprint(i)
+		}
+		params = append(params, vm.Param{Name: name, Type: param.Type})
+	}
+	return vm.Method{
+		Name:       className + "." + member.Name,
+		ClassName:  className,
+		ReturnType: member.Type,
+		Params:     params,
+		IsStatic:   true,
+		Access:     "global",
+		Modifiers:  []string{"static", "passive-generated"},
 	}
 }
 

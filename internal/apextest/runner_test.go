@@ -1308,6 +1308,15 @@ private class PassiveGeneratedStubTest {
     commercepromotions.PromotionRequest cloned = (commercepromotions.PromotionRequest)request.clone();
     System.assertEquals('buyer-one', cloned.getBuyerAccountId());
     System.assertEquals('INVALIDCOUPON', commercepromotions.ErrorCode.INVALIDCOUPON.name());
+    commercepromotions.PromotionRequest namedRequest = new commercepromotions.PromotionRequest(salesTransaction = new Account(Name = 'Named'), buyerAccountId = 'named-buyer', webStoreId = 'named-store', couponCodes = coupons);
+    System.assertEquals('named-buyer', namedRequest.getBuyerAccountId());
+    System.assertEquals('Named', ((Account)namedRequest.getSalesTransaction()).Name);
+    Invocable.Action action = Invocable.Action.createCustomAction('apex', 'pkg', 'DoIt');
+    System.assertEquals('apex', action.getType());
+    System.assertEquals('pkg', action.getNamespace());
+    System.assertEquals('DoIt', action.getName());
+    CartExtension.Cart cart = CartExtension.CartTestUtil.createCart();
+    System.assert(cart != null);
   }
 }
 `)
