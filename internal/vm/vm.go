@@ -19656,6 +19656,10 @@ func (vm *VM) passiveGeneratedMethodReturn(method Method, frame map[string]Value
 	if class, ok := vm.lookupClass(returnType); ok {
 		returnType = class.Name
 	}
+	if receiver.Kind == ValueObject && strings.EqualFold(returnType, receiver.Type) {
+		bindPassiveMethodArgs(&receiver, method, frame)
+		return receiver
+	}
 	switch {
 	case collectionBase(returnType) == "List":
 		return typedList(returnType)
