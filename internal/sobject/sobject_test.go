@@ -127,6 +127,60 @@ func TestBuildDescribeRegistry(t *testing.T) {
 	}
 }
 
+func TestDescribeDefinitionConversionsPreserveFieldDescribeMetadata(t *testing.T) {
+	describe := DescribeSObjectResult{
+		Name: "Account",
+		Fields: map[string]DescribeFieldResult{
+			"ExternalLatitude__c": {
+				Name:                "ExternalLatitude__c",
+				Type:                storage.FieldDecimal,
+				DisplayType:         "DOUBLE",
+				Label:               "External Latitude",
+				Length:              18,
+				Precision:           9,
+				Scale:               6,
+				CompoundFieldName:   "ExternalLocation__c",
+				Nillable:            storage.BoolFlag(false),
+				DefaultedOnCreate:   storage.BoolFlag(false),
+				Accessible:          storage.BoolFlag(true),
+				Createable:          storage.BoolFlag(false),
+				Updateable:          storage.BoolFlag(false),
+				Filterable:          storage.BoolFlag(true),
+				Groupable:           storage.BoolFlag(false),
+				Sortable:            storage.BoolFlag(true),
+				Aggregatable:        storage.BoolFlag(true),
+				Permissionable:      storage.BoolFlag(true),
+				DeprecatedAndHidden: storage.BoolFlag(false),
+				CaseSensitive:       true,
+			},
+		},
+	}
+
+	definition := ToObjectDefinition(describe)
+	field := definition.Fields["ExternalLatitude__c"]
+	if field.Length != 18 || field.Precision != 9 || field.Scale != 6 || field.CompoundFieldName != "ExternalLocation__c" {
+		t.Fatalf("definition field metadata = %#v", field)
+	}
+	if storage.FieldFlagValue(field.Createable, true) || storage.FieldFlagValue(field.Updateable, true) || !storage.FieldFlagValue(field.Accessible, false) {
+		t.Fatalf("definition field flags = %#v", field)
+	}
+	if !field.CaseSensitive {
+		t.Fatalf("definition case sensitive not preserved: %#v", field)
+	}
+
+	roundTrip := FromObjectDefinition(definition)
+	roundTripField := roundTrip.Fields["ExternalLatitude__c"]
+	if roundTripField.Length != 18 || roundTripField.Precision != 9 || roundTripField.Scale != 6 || roundTripField.CompoundFieldName != "ExternalLocation__c" {
+		t.Fatalf("round-trip field metadata = %#v", roundTripField)
+	}
+	if storage.FieldFlagValue(roundTripField.Createable, true) || storage.FieldFlagValue(roundTripField.Updateable, true) || !storage.FieldFlagValue(roundTripField.Accessible, false) {
+		t.Fatalf("round-trip field flags = %#v", roundTripField)
+	}
+	if !roundTripField.CaseSensitive {
+		t.Fatalf("round-trip case sensitive not preserved: %#v", roundTripField)
+	}
+}
+
 func TestFromObjectDefinitionPreservesStandardOverlayDescribeShape(t *testing.T) {
 	definition, ok := storage.StandardObjectDefinition("AIInsightAction")
 	if !ok {

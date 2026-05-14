@@ -132,6 +132,9 @@ function fieldLiteral(field) {
   ];
   const dt = displayType(field);
   if (dt) pieces.push(`DisplayType: ${goString(dt)}`);
+  if (field.length) pieces.push(`Length: ${field.length}`);
+  if (field.precision) pieces.push(`Precision: ${field.precision}`);
+  if (field.scale) pieces.push(`Scale: ${field.scale}`);
   if (field.defaultValue !== null && field.defaultValue !== undefined) pieces.push(`DefaultValue: ${goString(String(field.defaultValue))}`);
   if (field.compoundFieldName) pieces.push(`CompoundFieldName: ${goString(field.compoundFieldName)}`);
   for (const [source, target] of [

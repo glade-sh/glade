@@ -156,12 +156,24 @@ type DescribeFieldResult struct {
 	Precision             int                         `json:"precision,omitempty"`
 	Scale                 int                         `json:"scale,omitempty"`
 	Formula               string                      `json:"formula,omitempty"`
+	CompoundFieldName     string                      `json:"compoundFieldName,omitempty"`
 	AutoNumber            bool                        `json:"autoNumber,omitempty"`
 	DisplayFormat         string                      `json:"displayFormat,omitempty"`
 	SummarizedField       string                      `json:"summarizedField,omitempty"`
 	SummaryForeignKey     string                      `json:"summaryForeignKey,omitempty"`
 	SummaryOperation      string                      `json:"summaryOperation,omitempty"`
 	SummaryFilterItems    []storage.SummaryFilterItem `json:"summaryFilterItems,omitempty"`
+	Nillable              *bool                       `json:"nillable,omitempty"`
+	DefaultedOnCreate     *bool                       `json:"defaultedOnCreate,omitempty"`
+	Accessible            *bool                       `json:"accessible,omitempty"`
+	Createable            *bool                       `json:"createable,omitempty"`
+	Updateable            *bool                       `json:"updateable,omitempty"`
+	Filterable            *bool                       `json:"filterable,omitempty"`
+	Groupable             *bool                       `json:"groupable,omitempty"`
+	Sortable              *bool                       `json:"sortable,omitempty"`
+	Aggregatable          *bool                       `json:"aggregatable,omitempty"`
+	Permissionable        *bool                       `json:"permissionable,omitempty"`
+	DeprecatedAndHidden   *bool                       `json:"deprecatedAndHidden,omitempty"`
 	ReferenceTo           []string                    `json:"referenceTo,omitempty"`
 	RelationshipName      string                      `json:"relationshipName,omitempty"`
 	ChildRelationshipName string                      `json:"childRelationshipName,omitempty"`
@@ -171,6 +183,7 @@ type DescribeFieldResult struct {
 	ExternalID            bool                        `json:"externalId,omitempty"`
 	Unique                bool                        `json:"unique,omitempty"`
 	Encrypted             bool                        `json:"encrypted,omitempty"`
+	CaseSensitive         bool                        `json:"caseSensitive,omitempty"`
 	PicklistValues        []storage.PicklistValue     `json:"picklistValues,omitempty"`
 }
 
@@ -385,6 +398,7 @@ func ToObjectDefinition(describe DescribeSObjectResult) storage.ObjectDefinition
 			Precision:             field.Precision,
 			Scale:                 field.Scale,
 			Formula:               field.Formula,
+			CompoundFieldName:     field.CompoundFieldName,
 			DefaultValue:          field.DefaultValue,
 			AutoNumber:            field.AutoNumber,
 			DisplayFormat:         field.DisplayFormat,
@@ -393,9 +407,21 @@ func ToObjectDefinition(describe DescribeSObjectResult) storage.ObjectDefinition
 			SummaryOperation:      field.SummaryOperation,
 			SummaryFilterItems:    append([]storage.SummaryFilterItem(nil), field.SummaryFilterItems...),
 			Required:              field.Required,
+			Nillable:              field.Nillable,
+			DefaultedOnCreate:     field.DefaultedOnCreate,
+			Accessible:            field.Accessible,
+			Createable:            field.Createable,
+			Updateable:            field.Updateable,
+			Filterable:            field.Filterable,
+			Groupable:             field.Groupable,
+			Sortable:              field.Sortable,
+			Aggregatable:          field.Aggregatable,
+			Permissionable:        field.Permissionable,
+			DeprecatedAndHidden:   field.DeprecatedAndHidden,
 			ExternalID:            field.ExternalID,
 			Unique:                field.Unique,
 			Encrypted:             field.Encrypted,
+			CaseSensitive:         field.CaseSensitive,
 			ReferenceTo:           append([]string(nil), field.ReferenceTo...),
 			RelationshipName:      field.RelationshipName,
 			ChildRelationshipName: field.ChildRelationshipName,
@@ -444,12 +470,24 @@ func FromObjectDefinition(definition storage.ObjectDefinition) DescribeSObjectRe
 			Precision:             field.Precision,
 			Scale:                 field.Scale,
 			Formula:               field.Formula,
+			CompoundFieldName:     field.CompoundFieldName,
 			AutoNumber:            field.AutoNumber,
 			DisplayFormat:         field.DisplayFormat,
 			SummarizedField:       field.SummarizedField,
 			SummaryForeignKey:     field.SummaryForeignKey,
 			SummaryOperation:      field.SummaryOperation,
 			SummaryFilterItems:    append([]storage.SummaryFilterItem(nil), field.SummaryFilterItems...),
+			Nillable:              field.Nillable,
+			DefaultedOnCreate:     field.DefaultedOnCreate,
+			Accessible:            field.Accessible,
+			Createable:            field.Createable,
+			Updateable:            field.Updateable,
+			Filterable:            field.Filterable,
+			Groupable:             field.Groupable,
+			Sortable:              field.Sortable,
+			Aggregatable:          field.Aggregatable,
+			Permissionable:        field.Permissionable,
+			DeprecatedAndHidden:   field.DeprecatedAndHidden,
 			ReferenceTo:           append([]string(nil), field.ReferenceTo...),
 			RelationshipName:      field.RelationshipName,
 			ChildRelationshipName: field.ChildRelationshipName,
@@ -458,6 +496,7 @@ func FromObjectDefinition(definition storage.ObjectDefinition) DescribeSObjectRe
 			ExternalID:            field.ExternalID,
 			Unique:                field.Unique,
 			Encrypted:             field.Encrypted,
+			CaseSensitive:         field.CaseSensitive,
 			PicklistValues:        append([]storage.PicklistValue(nil), field.PicklistValues...),
 		}
 	}
