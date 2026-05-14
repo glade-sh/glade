@@ -1885,7 +1885,7 @@ func TestExecuteDerivedStandardChildRelationshipSubquery(t *testing.T) {
 	contact.Records["003000000000001"] = storage.Record{ID: "003000000000001", Object: "Contact", Fields: map[string]storage.Value{"LastName": storage.StringValue("Smith"), "AccountId": storage.IDValue("001000000000001")}}
 	org.Objects["Contact"] = contact
 	task := org.Objects["Task"]
-	task.Records["00T000000000001"] = storage.Record{ID: "00T000000000001", Object: "Task", Fields: map[string]storage.Value{"Subject": storage.StringValue("Call"), "AccountId": storage.IDValue("001000000000001")}}
+	task.Records["00T000000000001"] = storage.Record{ID: "00T000000000001", Object: "Task", Fields: map[string]storage.Value{"Subject": storage.StringValue("Call"), "WhatId": storage.IDValue("001000000000001")}}
 	org.Objects["Task"] = task
 
 	result, err := ParseAndExecute(org, "SELECT Id, (SELECT Id, LastName FROM Contacts), (SELECT Id, Subject FROM Tasks) FROM Account")
@@ -1899,6 +1899,18 @@ func TestExecuteDerivedStandardChildRelationshipSubquery(t *testing.T) {
 	tasks := result.Records[0].Children["Tasks"]
 	if len(tasks) != 1 || tasks[0].Fields["Subject"].String != "Call" {
 		t.Fatalf("tasks = %#v", tasks)
+	}
+
+	child := org.Objects["Account"]
+	child.Records["001000000000002"] = storage.Record{ID: "001000000000002", Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("Sub"), "ParentId": storage.IDValue("001000000000001")}}
+	org.Objects["Account"] = child
+	result, err = ParseAndExecute(org, "SELECT Id, (SELECT Id, Name FROM ChildAccounts) FROM Account WHERE Id = '001000000000001'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	childAccounts := result.Records[0].Children["ChildAccounts"]
+	if len(childAccounts) != 1 || childAccounts[0].Fields["Name"].String != "Sub" {
+		t.Fatalf("child accounts = %#v", childAccounts)
 	}
 }
 

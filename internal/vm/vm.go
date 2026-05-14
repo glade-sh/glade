@@ -300,6 +300,19 @@ func (vm *VM) SetTraceEnabled(enabled bool) {
 	}
 }
 
+func (vm *VM) DeterministicRandomState() uint64 {
+	if vm == nil {
+		return 0
+	}
+	return vm.cryptoRandomSeq
+}
+
+func (vm *VM) SetDeterministicRandomState(seq uint64) {
+	if vm != nil {
+		vm.cryptoRandomSeq = seq
+	}
+}
+
 func copyMethodMap(in map[string]Method) map[string]Method {
 	out := make(map[string]Method, len(in))
 	for name, method := range in {
@@ -2653,7 +2666,7 @@ platformStaticCall:
 		if len(args) != 0 {
 			return Null, fmt.Errorf("UUID.randomUUID expects 0 arguments")
 		}
-		return String("00000000-0000-4000-8000-000000000001"), nil
+		return String(vm.nextDeterministicUUID()), nil
 	case "Date.today", "Date.Today", "System.today":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
@@ -3740,6 +3753,14 @@ func (vm *VM) nextDeterministicCryptoLong() int64 {
 	z = (z ^ (z >> 27)) * 0x94d049bb133111eb
 	z ^= z >> 31
 	return int64(z)
+}
+
+func (vm *VM) nextDeterministicUUID() string {
+	hi := uint64(vm.nextDeterministicCryptoLong())
+	lo := uint64(vm.nextDeterministicCryptoLong())
+	hi = (hi &^ 0xf000) | 0x4000
+	lo = (lo &^ 0xc000000000000000) | 0x8000000000000000
+	return fmt.Sprintf("%08x-%04x-%04x-%04x-%012x", uint32(hi>>32), uint16(hi>>16), uint16(hi), uint16(lo>>48), lo&0x0000ffffffffffff)
 }
 
 func unsupportedIntegrationSurface(callee string) (string, bool) {
@@ -12176,8 +12197,8 @@ func (vm *VM) lookup(name string) (Value, error) {
 				}
 				return field.Value, nil
 			}
-			if class, ok := vm.Classes[className]; ok {
-				if err := vm.ensureClassInitialized(className); err != nil {
+			if class, ok := vm.lookupClass(className); ok {
+				if err := vm.ensureClassInitialized(class.Name); err != nil {
 					return Null, err
 				}
 				for _, enumValue := range class.EnumValues {
@@ -22169,6 +22190,12 @@ func roundingModeValues(args []Value) (Value, error) {
 
 func (vm *VM) callEnumMember(receiver Value, method string, args []Value) (Value, bool, error) {
 	if receiver.Type == "JSONToken" {
+		if method == "equals" {
+			if len(args) != 1 {
+				return Null, true, fmt.Errorf("JSONToken.equals expects 1 argument")
+			}
+			return Bool(enumValuesEqual(receiver, args[0])), true, nil
+		}
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("JSONToken.%s expects 0 arguments", method)
 		}
@@ -22220,6 +22247,12 @@ func (vm *VM) callEnumMember(receiver Value, method string, args []Value) (Value
 	if !ok || len(class.EnumValues) == 0 {
 		return Null, false, nil
 	}
+	if method == "equals" {
+		if len(args) != 1 {
+			return Null, true, fmt.Errorf("%s.equals expects 1 argument", receiver.Type)
+		}
+		return Bool(enumValuesEqual(receiver, args[0])), true, nil
+	}
 	if len(args) != 0 {
 		return Null, true, fmt.Errorf("%s.%s expects 0 arguments", receiver.Type, method)
 	}
@@ -22236,6 +22269,13 @@ func (vm *VM) callEnumMember(receiver Value, method string, args []Value) (Value
 	default:
 		return Null, false, nil
 	}
+}
+
+func enumValuesEqual(left, right Value) bool {
+	if right.Kind != ValueObject {
+		return false
+	}
+	return strings.EqualFold(left.Type, right.Type) && left.Text == right.Text
 }
 
 func metadataDeployDetailsObject() Value {
@@ -22371,6 +22411,12 @@ func cloneMetadataDeployResult(result Value) Value {
 }
 
 func callNamedEnumMember(typeName string, names []string, receiver Value, method string, args []Value) (Value, bool, error) {
+	if method == "equals" {
+		if len(args) != 1 {
+			return Null, true, fmt.Errorf("%s.equals expects 1 argument", typeName)
+		}
+		return Bool(enumValuesEqual(receiver, args[0])), true, nil
+	}
 	if len(args) != 0 {
 		return Null, true, fmt.Errorf("%s.%s expects 0 arguments", typeName, method)
 	}
@@ -22390,6 +22436,12 @@ func callNamedEnumMember(typeName string, names []string, receiver Value, method
 }
 
 func callStatusCodeMember(receiver Value, method string, args []Value) (Value, bool, error) {
+	if method == "equals" {
+		if len(args) != 1 {
+			return Null, true, fmt.Errorf("StatusCode.equals expects 1 argument")
+		}
+		return Bool(enumValuesEqual(receiver, args[0])), true, nil
+	}
 	if len(args) != 0 {
 		return Null, true, fmt.Errorf("StatusCode.%s expects 0 arguments", method)
 	}

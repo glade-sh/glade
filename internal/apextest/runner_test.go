@@ -2013,6 +2013,51 @@ private class SetupDataTest {
 	}
 }
 
+func TestRunContinuesDeterministicRandomStateAfterTestSetup(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/Account.object-meta.xml"), `
+<CustomObject>
+  <label>Account</label>
+  <pluralLabel>Accounts</pluralLabel>
+  <sharingModel>ReadWrite</sharingModel>
+</CustomObject>
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/fields/Name.field-meta.xml"), `
+<CustomField>
+  <fullName>Name</fullName>
+  <label>Name</label>
+  <type>Text</type>
+</CustomField>
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/fields/Vuid__c.field-meta.xml"), `
+<CustomField>
+  <fullName>Vuid__c</fullName>
+  <label>Vuid</label>
+  <type>Text</type>
+  <unique>true</unique>
+</CustomField>
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/SetupRandomTest.cls"), `
+@isTest
+private class SetupRandomTest {
+  @TestSetup static void seed() {
+    insert new Account(Name = 'Seed', Vuid__c = UUID.randomUUID().toString());
+  }
+
+  @isTest static void methodRandomDoesNotCollideWithSetupData() {
+    insert new Account(Name = 'Method', Vuid__c = UUID.randomUUID().toString());
+    System.assertEquals(2, [SELECT COUNT() FROM Account]);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v cases=%#v", got, run.Suites[0].Cases)
+	}
+}
+
 func TestRunDrainsQueueableAtStopTest(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -3311,6 +3356,50 @@ private BulkPriceClassResponse getBulkPriceClassResponse(Map<Id, CartItemPricer>
 	}
 	if len(params) != 1 || params[0].Type != "Map<Id, CartItemPricer>" || params[0].Name != "cartItemPricersByCartItemId" {
 		t.Fatalf("params = %#v", params)
+	}
+}
+
+func TestProjectRuntimeResolvesNestedEnumConstantsInStaticInitializers(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ObjectMappings.cls"), `
+public class ObjectMappings {
+  public enum MAPPING_OPERATION_TYPE {
+    /**
+     * Sets a field value.
+     */
+    setFieldValue,
+    // Selects source records.
+    sourceObjectSelectionCriteria,
+    targetObjectSelectionCriteria
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/MappingOperationFactory.cls"), `
+public class MappingOperationFactory {
+  private static final Map<ObjectMappings.MAPPING_OPERATION_TYPE, String> operationInstances =
+    new Map<ObjectMappings.MAPPING_OPERATION_TYPE, String>{
+      ObjectMappings.MAPPING_OPERATION_TYPE.setFieldValue => 'set',
+      ObjectMappings.MAPPING_OPERATION_TYPE.sourceObjectSelectionCriteria => 'source',
+      ObjectMappings.MAPPING_OPERATION_TYPE.targetObjectSelectionCriteria => 'target'
+    };
+  public static String get(ObjectMappings.MAPPING_OPERATION_TYPE operationType) {
+    return operationInstances.get(operationType);
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/MappingOperationFactoryTest.cls"), `
+@isTest
+private class MappingOperationFactoryTest {
+  @isTest static void resolvesNestedEnumConstants() {
+    System.assertEquals('set', MappingOperationFactory.get(ObjectMappings.MAPPING_OPERATION_TYPE.setFieldValue));
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v case=%#v problem=%#v", got, run.Suites[0].Cases[0], run.Suites[0].Cases[0].Problem)
 	}
 }
 

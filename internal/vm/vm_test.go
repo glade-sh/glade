@@ -785,6 +785,20 @@ System.assertEquals('Acme', name);
 	}
 }
 
+func TestExecNamedEnumEquals(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(true, Schema.DisplayType.STRING.equals(Schema.DisplayType.STRING));
+System.assertEquals(false, Schema.DisplayType.STRING.equals(Schema.DisplayType.DATE));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecOverloadResolutionUsesTypedCollectionArgument(t *testing.T) {
 	listProgram, err := CompileAnonymous(`return 'list';`)
 	if err != nil {

@@ -156,29 +156,30 @@ type ObjectDefinition struct {
 }
 
 type Field struct {
-	APIName            string              `json:"apiName"`
-	Label              string              `json:"label,omitempty"`
-	Type               FieldType           `json:"type"`
-	DisplayType        string              `json:"displayType,omitempty"`
-	Length             int                 `json:"length,omitempty"`
-	Precision          int                 `json:"precision,omitempty"`
-	Scale              int                 `json:"scale,omitempty"`
-	Formula            string              `json:"formula,omitempty"`
-	DefaultValue       string              `json:"defaultValue,omitempty"`
-	AutoNumber         bool                `json:"autoNumber,omitempty"`
-	DisplayFormat      string              `json:"displayFormat,omitempty"`
-	SummarizedField    string              `json:"summarizedField,omitempty"`
-	SummaryForeignKey  string              `json:"summaryForeignKey,omitempty"`
-	SummaryOperation   string              `json:"summaryOperation,omitempty"`
-	SummaryFilterItems []SummaryFilterItem `json:"summaryFilterItems,omitempty"`
-	Required           bool                `json:"required,omitempty"`
-	ExternalID         bool                `json:"externalId,omitempty"`
-	Unique             bool                `json:"unique,omitempty"`
-	Encrypted          bool                `json:"encrypted,omitempty"`
-	CaseSensitive      bool                `json:"caseSensitive,omitempty"`
-	ReferenceTo        []string            `json:"referenceTo,omitempty"`
-	RelationshipName   string              `json:"relationshipName,omitempty"`
-	PicklistValues     []PicklistValue     `json:"picklistValues,omitempty"`
+	APIName               string              `json:"apiName"`
+	Label                 string              `json:"label,omitempty"`
+	Type                  FieldType           `json:"type"`
+	DisplayType           string              `json:"displayType,omitempty"`
+	Length                int                 `json:"length,omitempty"`
+	Precision             int                 `json:"precision,omitempty"`
+	Scale                 int                 `json:"scale,omitempty"`
+	Formula               string              `json:"formula,omitempty"`
+	DefaultValue          string              `json:"defaultValue,omitempty"`
+	AutoNumber            bool                `json:"autoNumber,omitempty"`
+	DisplayFormat         string              `json:"displayFormat,omitempty"`
+	SummarizedField       string              `json:"summarizedField,omitempty"`
+	SummaryForeignKey     string              `json:"summaryForeignKey,omitempty"`
+	SummaryOperation      string              `json:"summaryOperation,omitempty"`
+	SummaryFilterItems    []SummaryFilterItem `json:"summaryFilterItems,omitempty"`
+	Required              bool                `json:"required,omitempty"`
+	ExternalID            bool                `json:"externalId,omitempty"`
+	Unique                bool                `json:"unique,omitempty"`
+	Encrypted             bool                `json:"encrypted,omitempty"`
+	CaseSensitive         bool                `json:"caseSensitive,omitempty"`
+	ReferenceTo           []string            `json:"referenceTo,omitempty"`
+	RelationshipName      string              `json:"relationshipName,omitempty"`
+	ChildRelationshipName string              `json:"childRelationshipName,omitempty"`
+	PicklistValues        []PicklistValue     `json:"picklistValues,omitempty"`
 }
 
 type SummaryFilterItem struct {

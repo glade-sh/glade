@@ -203,7 +203,7 @@ func TestExecPatternRejectsJavaOnlyRegex(t *testing.T) {
 		message string
 	}{
 		{name: "lookbehind", source: `Pattern.compile('(?<=a)b');`, message: "Java regex lookbehind"},
-		{name: "lookahead", source: `Pattern.matches('a(?=b)', 'ab');`, message: "Java regex lookahead"},
+		{name: "lookahead", source: `Pattern.compile('(?=b)a');`, message: "Java regex lookahead"},
 		{name: "backreference", source: `Pattern.compile('(a)\1');`, message: "Java regex backreferences"},
 		{name: "namedGroup", source: `Pattern.compile('(?<word>a)');`, message: "Java regex named groups"},
 		{name: "atomicGroup", source: `Pattern.compile('(?>a)');`, message: "Java regex atomic groups"},
@@ -235,6 +235,52 @@ func TestExecPatternRejectsJavaOnlyRegex(t *testing.T) {
 				t.Fatalf("expected UnsupportedFeature runtime error, got %T %v", err, err)
 			}
 		})
+	}
+}
+
+func TestExecPatternMatchesNegativeLookaheadAssertions(t *testing.T) {
+	program, err := CompileAnonymous(`
+String ssn = '^(?!666|000|9\\d{2})\\d{3}-?(?!00)\\d{2}-?(?!0{4})\\d{4}$';
+System.assertEquals(true, Pattern.matches(ssn, '123-45-6789'));
+System.assertEquals(false, Pattern.matches(ssn, '666-45-6789'));
+System.assertEquals(false, Pattern.matches(ssn, '123-00-6789'));
+System.assertEquals(false, Pattern.matches(ssn, '123-45-0000'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStringSplitPositiveLookahead(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<String> parts = 'BoardType'.split('(?=[A-Z])');
+System.assertEquals(2, parts.size());
+System.assertEquals('Board', parts[0]);
+System.assertEquals('Type', parts[1]);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStringSplitEmptyPatternReturnsCharacters(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<String> parts = '123'.split('');
+System.assertEquals(3, parts.size());
+System.assertEquals('1', parts[0]);
+System.assertEquals('3', parts[2]);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
 	}
 }
 

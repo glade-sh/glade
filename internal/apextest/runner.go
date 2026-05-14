@@ -151,6 +151,7 @@ func RunCasesContext(ctx context.Context, index typesys.Index, opts Options, cas
 		setup := setupResults[planned[i].TestCase.ClassName]
 		planned[i].SetupErr = setup.Err
 		planned[i].SetupOrg = setup.Org
+		planned[i].SetupRandom = setup.Random
 	}
 	runTestPlans(ctx, planned, results, baseMachine, baseRuntimeErr, triggerErrors, opts)
 	for className, indexes := range suiteIndexes {
@@ -173,11 +174,13 @@ type testCasePlan struct {
 	InvokeProgErr error
 	SetupErr      error
 	SetupOrg      storage.OrgState
+	SetupRandom   uint64
 }
 
 type testSetupResult struct {
-	Org storage.OrgState
-	Err error
+	Org    storage.OrgState
+	Err    error
+	Random uint64
 }
 
 func prepareTestSetups(ctx context.Context, classNames []string, baseMachine *vm.VM, baseRuntimeErr error, setups map[string][]vm.Method, setupErrors map[string]error, setupInvokePrograms map[string][]ir.Program, setupInvokeErrors map[string]error, triggerErrors []error, org storage.OrgState, opts Options) map[string]testSetupResult {
@@ -188,10 +191,10 @@ func prepareTestSetups(ctx context.Context, classNames []string, baseMachine *vm
 			reportProgress(opts, TestProgress{Event: "setup_start", ClassName: className})
 			started := time.Now()
 			setupCtx, setupCancel := testContext(ctx, opts.TimeoutMS)
-			setupOrg, setupErr := prepareTestSetupOrg(setupCtx, baseMachine, baseRuntimeErr, setups[className], setupErrors[className], setupInvokePrograms[className], setupInvokeErrors[className], triggerErrors, org, opts)
+			setupOrg, setupRandom, setupErr := prepareTestSetupOrg(setupCtx, baseMachine, baseRuntimeErr, setups[className], setupErrors[className], setupInvokePrograms[className], setupInvokeErrors[className], triggerErrors, org, opts)
 			setupCancel()
 			reportProgress(opts, TestProgress{Event: "setup_done", ClassName: className, DurationMS: time.Since(started).Milliseconds(), Status: progressStatus(setupErr)})
-			results[className] = testSetupResult{Org: setupOrg, Err: setupErr}
+			results[className] = testSetupResult{Org: setupOrg, Err: setupErr, Random: setupRandom}
 		}
 		return results
 	}
@@ -213,10 +216,10 @@ func prepareTestSetups(ctx context.Context, classNames []string, baseMachine *vm
 				reportProgress(opts, TestProgress{Event: "setup_start", ClassName: className})
 				started := time.Now()
 				setupCtx, setupCancel := testContext(ctx, opts.TimeoutMS)
-				setupOrg, setupErr := prepareTestSetupOrg(setupCtx, baseMachine, baseRuntimeErr, setups[className], setupErrors[className], setupInvokePrograms[className], setupInvokeErrors[className], triggerErrors, org, opts)
+				setupOrg, setupRandom, setupErr := prepareTestSetupOrg(setupCtx, baseMachine, baseRuntimeErr, setups[className], setupErrors[className], setupInvokePrograms[className], setupInvokeErrors[className], triggerErrors, org, opts)
 				setupCancel()
 				reportProgress(opts, TestProgress{Event: "setup_done", ClassName: className, DurationMS: time.Since(started).Milliseconds(), Status: progressStatus(setupErr)})
-				out <- setupJobResult{ClassName: className, Result: testSetupResult{Org: setupOrg, Err: setupErr}}
+				out <- setupJobResult{ClassName: className, Result: testSetupResult{Org: setupOrg, Err: setupErr, Random: setupRandom}}
 			}
 		}()
 	}
@@ -241,7 +244,7 @@ func runTestPlans(ctx context.Context, planned []testCasePlan, results []testrep
 			}
 			reportProgress(opts, TestProgress{Event: "test_start", ClassName: plan.TestCase.ClassName, MethodName: plan.TestCase.MethodName})
 			caseCtx, caseCancel := testContext(ctx, opts.TimeoutMS)
-			results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, opts)
+			results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts)
 			caseCancel()
 			reportProgress(opts, TestProgress{Event: "test_done", ClassName: plan.TestCase.ClassName, MethodName: plan.TestCase.MethodName, DurationMS: results[i].DurationMS, Status: string(results[i].Status)})
 		}
@@ -277,7 +280,7 @@ func runTestPlans(ctx context.Context, planned []testCasePlan, results []testrep
 					plan := planned[i]
 					reportProgress(opts, TestProgress{Event: "test_start", ClassName: plan.TestCase.ClassName, MethodName: plan.TestCase.MethodName})
 					caseCtx, caseCancel := testContext(ctx, opts.TimeoutMS)
-					results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, opts)
+					results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts)
 					caseCancel()
 					reportProgress(opts, TestProgress{Event: "test_done", ClassName: plan.TestCase.ClassName, MethodName: plan.TestCase.MethodName, DurationMS: results[i].DurationMS, Status: string(results[i].Status)})
 				}
@@ -311,7 +314,7 @@ func runSingleClassTestPlans(ctx context.Context, planned []testCasePlan, result
 				plan := planned[i]
 				reportProgress(opts, TestProgress{Event: "test_start", ClassName: plan.TestCase.ClassName, MethodName: plan.TestCase.MethodName})
 				caseCtx, caseCancel := testContext(ctx, opts.TimeoutMS)
-				results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, opts)
+				results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts)
 				caseCancel()
 				reportProgress(opts, TestProgress{Event: "test_done", ClassName: plan.TestCase.ClassName, MethodName: plan.TestCase.MethodName, DurationMS: results[i].DurationMS, Status: string(results[i].Status)})
 			}
@@ -351,24 +354,24 @@ func initializeTestOrg(org *storage.OrgState) {
 	machine.EnableTestContext()
 }
 
-func prepareTestSetupOrg(ctx context.Context, baseMachine *vm.VM, baseRuntimeErr error, setups []vm.Method, setupErr error, setupPrograms []ir.Program, setupProgramErr error, triggerErrors []error, org storage.OrgState, opts Options) (storage.OrgState, error) {
+func prepareTestSetupOrg(ctx context.Context, baseMachine *vm.VM, baseRuntimeErr error, setups []vm.Method, setupErr error, setupPrograms []ir.Program, setupProgramErr error, triggerErrors []error, org storage.OrgState, opts Options) (storage.OrgState, uint64, error) {
 	if err := ctx.Err(); err != nil {
-		return org, err
+		return org, 0, err
 	}
 	if baseRuntimeErr != nil {
-		return org, baseRuntimeErr
+		return org, 0, baseRuntimeErr
 	}
 	if setupErr != nil {
-		return org, setupErr
+		return org, 0, setupErr
 	}
 	if setupProgramErr != nil {
-		return org, setupProgramErr
+		return org, 0, setupProgramErr
 	}
 	if len(triggerErrors) > 0 {
-		return org, triggerErrors[0]
+		return org, 0, triggerErrors[0]
 	}
 	if len(setups) == 0 {
-		return org, nil
+		return org, 0, nil
 	}
 	setupOrg := cloneRuntimeOrg(org)
 	machine := baseMachine.CloneRuntime(nil)
@@ -381,19 +384,19 @@ func prepareTestSetupOrg(ctx context.Context, baseMachine *vm.VM, baseRuntimeErr
 	machine.EnableTestContext()
 	for i, setup := range setups {
 		if err := ctx.Err(); err != nil {
-			return setupOrg, err
+			return setupOrg, machine.DeterministicRandomState(), err
 		}
 		if i >= len(setupPrograms) {
-			return setupOrg, fmt.Errorf("missing compiled @TestSetup invocation for %s", setup.Name)
+			return setupOrg, machine.DeterministicRandomState(), fmt.Errorf("missing compiled @TestSetup invocation for %s", setup.Name)
 		}
 		if _, err := machine.ExecuteInClass(setupPrograms[i], setup.ClassName); err != nil {
-			return setupOrg, err
+			return setupOrg, machine.DeterministicRandomState(), err
 		}
 	}
-	return setupOrg, nil
+	return setupOrg, machine.DeterministicRandomState(), nil
 }
 
-func runCase(ctx context.Context, testCase TestCase, testMethodErr error, invokeProgram ir.Program, invokeErr error, baseMachine *vm.VM, baseRuntimeErr error, setupErr error, triggerErrors []error, org storage.OrgState, opts Options) testreport.Case {
+func runCase(ctx context.Context, testCase TestCase, testMethodErr error, invokeProgram ir.Program, invokeErr error, baseMachine *vm.VM, baseRuntimeErr error, setupErr error, triggerErrors []error, org storage.OrgState, setupRandom uint64, opts Options) testreport.Case {
 	if err := ctx.Err(); err != nil {
 		return canceledCase(testCase, err)
 	}
@@ -437,6 +440,7 @@ func runCase(ctx context.Context, testCase TestCase, testMethodErr error, invoke
 		return out
 	}
 	machine := baseMachine.CloneRuntime(nil)
+	machine.SetDeterministicRandomState(setupRandom)
 	machine.SetTraceEnabled(opts.TraceBlocked || opts.SlowTestThresholdMS > 0)
 	if opts.LimitMode != "" {
 		machine.SetLimitMode(opts.LimitMode)
@@ -671,7 +675,7 @@ func compileProjectClasses(index typesys.Index, methods map[string]vm.Method, ca
 			case apexast.DeclarationField, apexast.DeclarationProperty:
 				field := vm.Field{
 					Name:      member.Name,
-					Type:      member.Type,
+					Type:      qualifyNestedTypeNameInType(typ.Name, member.Type, knownTypes),
 					Static:    hasModifier(member.Modifiers, "static"),
 					Access:    accessModifier(member.Modifiers),
 					Modifiers: append([]string(nil), member.Modifiers...),
@@ -739,6 +743,49 @@ func qualifyNestedTypeNames(owner string, names []string, known map[string]bool)
 	for _, name := range names {
 		out = append(out, qualifyNestedTypeName(owner, name, known))
 	}
+	return out
+}
+
+func qualifyNestedTypeNameInType(owner, name string, known map[string]bool) string {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return name
+	}
+	if strings.HasSuffix(name, "[]") {
+		element := strings.TrimSpace(strings.TrimSuffix(name, "[]"))
+		return qualifyNestedTypeNameInType(owner, element, known) + "[]"
+	}
+	if open := strings.IndexByte(name, '<'); open > 0 && strings.HasSuffix(name, ">") {
+		base := strings.TrimSpace(name[:open])
+		args := splitTypeArguments(name[open+1 : len(name)-1])
+		for i, arg := range args {
+			args[i] = qualifyNestedTypeNameInType(owner, arg, known)
+		}
+		return base + "<" + strings.Join(args, ",") + ">"
+	}
+	return qualifyNestedTypeName(owner, name, known)
+}
+
+func splitTypeArguments(args string) []string {
+	var out []string
+	start := 0
+	depth := 0
+	for i, ch := range args {
+		switch ch {
+		case '<':
+			depth++
+		case '>':
+			if depth > 0 {
+				depth--
+			}
+		case ',':
+			if depth == 0 {
+				out = append(out, strings.TrimSpace(args[start:i]))
+				start = i + 1
+			}
+		}
+	}
+	out = append(out, strings.TrimSpace(args[start:]))
 	return out
 }
 
@@ -1696,6 +1743,7 @@ func parseEnumValues(typeSource string) []string {
 	if semi := strings.IndexByte(body, ';'); semi >= 0 {
 		body = body[:semi]
 	}
+	body = stripApexComments(body)
 	var out []string
 	for _, part := range strings.Split(body, ",") {
 		name := strings.TrimSpace(part)

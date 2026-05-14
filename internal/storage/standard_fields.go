@@ -516,7 +516,18 @@ func appendUniqueStringsFold(values []string, additions ...string) []string {
 
 func mergeStandardFields(definition *ObjectDefinition, fields map[string]Field) {
 	for _, field := range fields {
-		if _, ok := ResolveFieldName(*definition, "", field.APIName); ok {
+		if existingName, ok := ResolveFieldName(*definition, "", field.APIName); ok {
+			existing := definition.Fields[existingName]
+			if existing.ChildRelationshipName == "" && field.ChildRelationshipName != "" {
+				existing.ChildRelationshipName = field.ChildRelationshipName
+			}
+			if existing.RelationshipName == "" && field.RelationshipName != "" {
+				existing.RelationshipName = field.RelationshipName
+			}
+			if len(existing.ReferenceTo) == 0 && len(field.ReferenceTo) != 0 {
+				existing.ReferenceTo = append([]string(nil), field.ReferenceTo...)
+			}
+			definition.Fields[existingName] = existing
 			continue
 		}
 		definition.Fields[field.APIName] = cloneField(field)
@@ -659,9 +670,15 @@ func ensureStandardRelationship(definition *ObjectDefinition, field Field) {
 		if stringsEqualFold(relation.Field, field.APIName) {
 			definition.Relations[i].ParentRelationship = relationshipName
 			definition.Relations[i].ParentObjects = append([]string(nil), field.ReferenceTo...)
+			if definition.Relations[i].ChildRelationship == "" && field.ChildRelationshipName != "" {
+				definition.Relations[i].ChildRelationship = field.ChildRelationshipName
+			}
 			return
 		}
 		if stringsEqualFold(relation.ParentRelationship, relationshipName) {
+			if definition.Relations[i].ChildRelationship == "" && field.ChildRelationshipName != "" {
+				definition.Relations[i].ChildRelationship = field.ChildRelationshipName
+			}
 			return
 		}
 	}
@@ -669,6 +686,7 @@ func ensureStandardRelationship(definition *ObjectDefinition, field Field) {
 		Field:              field.APIName,
 		ParentObjects:      append([]string(nil), field.ReferenceTo...),
 		ParentRelationship: relationshipName,
+		ChildRelationship:  field.ChildRelationshipName,
 	})
 }
 

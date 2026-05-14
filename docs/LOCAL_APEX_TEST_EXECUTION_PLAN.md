@@ -62,15 +62,15 @@ go build -o /private/tmp/oaer-perf ./cmd/oaer
 Measured result:
 
 ```text
-total=4268 pass=2993 unsupported=157 runtimeGap=594 assertFail=524 compileError=0 internalError=0 durationMs=237758
+total=4268 pass=3146 unsupported=98 runtimeGap=445 assertFail=579 compileError=0 internalError=0 durationMs=269872
 ```
 
 The next blocker frontier is not compile loading. It is runtime fidelity:
-duplicate `Account.Vuid__c` behavior, nested enum/static member resolution for
-`ObjectMappings.MAPPING_OPERATION_TYPE.*`, Java-regex lookahead semantics,
-JSON/SObject describe shape gaps, and remaining DML/relationship metadata
-coverage. `docs/plans/2026-05-07-src-nmb-nu-develop-squad-plan.md` is retained
-as historical planning for the larger NU project but is no longer the active
+JSON/SObject describe shape gaps, standard metadata/relationship coverage,
+remaining DML behavior, and the top assert-failure families now reached after
+the UUID, nested enum, Java-regex lookahead, and `Account.ChildAccounts`
+fixes. `docs/plans/2026-05-07-src-nmb-nu-develop-squad-plan.md` is retained as
+historical planning for the larger NU project but is no longer the active
 frontier while `sf-cred-pkg-develop` is the zero-blocker target.
 
 ## Execution Objective

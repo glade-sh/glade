@@ -1611,7 +1611,7 @@ func patternMatches(args []Value) (Value, error) {
 	matched := indices != nil && indices[0] == 0 && indices[1] == len(input)
 	if matched {
 		for _, lookahead := range negativeLookaheads {
-			if regexLookaheadMatches(lookahead, input, 0) {
+			if negativeRegexLookaheadMatches(lookahead, input) {
 				matched = false
 				break
 			}
@@ -1646,13 +1646,18 @@ func compilePatternSource(callee, source string, flags int64) (string, error) {
 	return regexpSource, err
 }
 
-func compilePatternMatchesSource(source string) (string, []string, error) {
+type regexNegativeLookaheadAssertion struct {
+	Prefix    string
+	Lookahead string
+}
+
+func compilePatternMatchesSource(source string) (string, []regexNegativeLookaheadAssertion, error) {
 	regexpSource, err := javaRegexQuoteEscapesToGo(source)
 	if err != nil {
 		return "", nil, unsupportedCallError("Pattern.matches " + err.Error())
 	}
-	var negativeLookaheads []string
-	regexpSource, negativeLookaheads = stripLeadingNegativeLookaheads(regexpSource)
+	var negativeLookaheads []regexNegativeLookaheadAssertion
+	regexpSource, negativeLookaheads = stripNegativeLookaheadAssertions(regexpSource)
 	if stripped, _, ok := stripTerminalPositiveLookahead(regexpSource); ok {
 		regexpSource = stripped
 	}
@@ -1660,10 +1665,13 @@ func compilePatternMatchesSource(source string) (string, []string, error) {
 		return "", nil, unsupportedCallError("Pattern.matches " + feature)
 	}
 	for _, lookahead := range negativeLookaheads {
-		if feature := unsupportedJavaRegexFeature(lookahead); feature != "" {
+		if feature := unsupportedJavaRegexFeature(lookahead.Lookahead); feature != "" {
 			return "", nil, unsupportedCallError("Pattern.matches " + feature)
 		}
-		if _, err := regexp.Compile("^(?:" + lookahead + ")"); err != nil {
+		if _, err := regexp.Compile("^(?:" + lookahead.Prefix + ")"); err != nil {
+			return "", nil, newPatternSyntaxExceptionError(source, err)
+		}
+		if _, err := regexp.Compile("^(?:" + lookahead.Lookahead + ")"); err != nil {
 			return "", nil, newPatternSyntaxExceptionError(source, err)
 		}
 	}
@@ -2320,6 +2328,18 @@ func regexLookaheadMatches(lookaheadSource, input string, endByte int) bool {
 		return false
 	}
 	return re.MatchString(input[endByte:])
+}
+
+func negativeRegexLookaheadMatches(assertion regexNegativeLookaheadAssertion, input string) bool {
+	prefix, err := regexp.Compile("^(?:" + assertion.Prefix + ")")
+	if err != nil {
+		return false
+	}
+	prefixMatch := prefix.FindStringIndex(input)
+	if prefixMatch == nil {
+		return false
+	}
+	return regexLookaheadMatches(assertion.Lookahead, input, prefixMatch[1])
 }
 
 func validateMatcherRegion(input string, start, end int) error {
@@ -3252,6 +3272,12 @@ func stringRegexSplit(text string, args []Value) ([]string, error) {
 }
 
 func splitRegex(name, pattern, text string, limit int64) ([]string, error) {
+	if pattern == "" {
+		return splitStringCharacters(text, limit), nil
+	}
+	if lookahead, ok := wholePositiveLookahead(pattern); ok {
+		return splitRegexPositiveLookahead(name, lookahead, text, limit)
+	}
 	if feature := unsupportedJavaRegexFeature(pattern); feature != "" {
 		return nil, unsupportedCallError(name + " " + feature)
 	}
@@ -3272,6 +3298,79 @@ func splitRegex(name, pattern, text string, limit int64) ([]string, error) {
 		return re.Split(text, int(limit)), nil
 	}
 	parts := re.Split(text, -1)
+	if limit == 0 {
+		for len(parts) > 0 && parts[len(parts)-1] == "" {
+			parts = parts[:len(parts)-1]
+		}
+	}
+	return parts, nil
+}
+
+func splitStringCharacters(text string, limit int64) []string {
+	if limit == 1 {
+		return []string{text}
+	}
+	var parts []string
+	start := 0
+	splits := int64(0)
+	for i := range text {
+		if i == 0 {
+			continue
+		}
+		if limit > 0 && splits >= limit-1 {
+			break
+		}
+		parts = append(parts, text[start:i])
+		start = i
+		splits++
+	}
+	parts = append(parts, text[start:])
+	return parts
+}
+
+func wholePositiveLookahead(pattern string) (string, bool) {
+	if !strings.HasPrefix(pattern, "(?=") || !strings.HasSuffix(pattern, ")") {
+		return "", false
+	}
+	end := regexGroupEnd(pattern, 0)
+	if end != len(pattern)-1 {
+		return "", false
+	}
+	return pattern[3:end], true
+}
+
+func splitRegexPositiveLookahead(name, lookahead, text string, limit int64) ([]string, error) {
+	if feature := unsupportedJavaRegexFeature(lookahead); feature != "" {
+		return nil, unsupportedCallError(name + " " + feature)
+	}
+	re, err := regexp.Compile("^(?:" + lookahead + ")")
+	if err != nil {
+		return nil, fmt.Errorf("%s invalid regex: %w", name, err)
+	}
+	if limit == 1 {
+		return []string{text}, nil
+	}
+	var parts []string
+	start := 0
+	splits := int64(0)
+	for i := nextRegexSearchIndex(text, 0); i <= len(text); i = nextRegexSearchIndex(text, i) {
+		if limit > 0 && splits >= limit-1 {
+			break
+		}
+		if !re.MatchString(text[i:]) {
+			if i == len(text) {
+				break
+			}
+			continue
+		}
+		parts = append(parts, text[start:i])
+		start = i
+		splits++
+		if i == len(text) {
+			break
+		}
+	}
+	parts = append(parts, text[start:])
 	if limit == 0 {
 		for len(parts) > 0 && parts[len(parts)-1] == "" {
 			parts = parts[:len(parts)-1]
@@ -3423,17 +3522,41 @@ func stripTerminalPositiveLookahead(source string) (string, string, bool) {
 	return source, "", false
 }
 
-func stripLeadingNegativeLookaheads(source string) (string, []string) {
-	var lookaheads []string
-	for strings.HasPrefix(source, "(?!") {
-		end := regexGroupEnd(source, 0)
-		if end < 0 {
-			return source, lookaheads
+func stripNegativeLookaheadAssertions(source string) (string, []regexNegativeLookaheadAssertion) {
+	var out strings.Builder
+	var lookaheads []regexNegativeLookaheadAssertion
+	inClass := false
+	for i := 0; i < len(source); {
+		if isEscapedRegexByte(source, i) {
+			out.WriteByte(source[i])
+			i++
+			continue
 		}
-		lookaheads = append(lookaheads, source[3:end])
-		source = source[end+1:]
+		switch source[i] {
+		case '[':
+			inClass = true
+		case ']':
+			inClass = false
+		case '(':
+			if !inClass && strings.HasPrefix(source[i:], "(?!") {
+				end := regexGroupEnd(source, i)
+				if end < 0 {
+					out.WriteByte(source[i])
+					i++
+					continue
+				}
+				lookaheads = append(lookaheads, regexNegativeLookaheadAssertion{
+					Prefix:    out.String(),
+					Lookahead: source[i+3 : end],
+				})
+				i = end + 1
+				continue
+			}
+		}
+		out.WriteByte(source[i])
+		i++
 	}
-	return source, lookaheads
+	return out.String(), lookaheads
 }
 
 func regexGroupEnd(source string, start int) int {

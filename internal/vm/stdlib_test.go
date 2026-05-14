@@ -2291,6 +2291,11 @@ System.assert(Math.abs(Math.log(Math.E) - 1) < 0.000000000001);
 System.assert(Math.abs(Math.log10(1000) - 3) < 0.000000000001);
 System.assert(Math.random() >= 0);
 System.assert(Math.random() < 1);
+String uuid1 = UUID.randomUUID();
+String uuid2 = UUID.randomUUID();
+System.assertNotEquals(uuid1, uuid2);
+System.assertEquals(36, uuid1.length());
+System.assertEquals('4', uuid1.substring(14, 15));
 `)
 	if err != nil {
 		t.Fatal(err)
