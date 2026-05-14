@@ -172,6 +172,17 @@ type Field struct {
 	SummaryOperation      string              `json:"summaryOperation,omitempty"`
 	SummaryFilterItems    []SummaryFilterItem `json:"summaryFilterItems,omitempty"`
 	Required              bool                `json:"required,omitempty"`
+	Nillable              *bool               `json:"nillable,omitempty"`
+	DefaultedOnCreate     *bool               `json:"defaultedOnCreate,omitempty"`
+	Accessible            *bool               `json:"accessible,omitempty"`
+	Createable            *bool               `json:"createable,omitempty"`
+	Updateable            *bool               `json:"updateable,omitempty"`
+	Filterable            *bool               `json:"filterable,omitempty"`
+	Groupable             *bool               `json:"groupable,omitempty"`
+	Sortable              *bool               `json:"sortable,omitempty"`
+	Aggregatable          *bool               `json:"aggregatable,omitempty"`
+	Permissionable        *bool               `json:"permissionable,omitempty"`
+	DeprecatedAndHidden   *bool               `json:"deprecatedAndHidden,omitempty"`
 	ExternalID            bool                `json:"externalId,omitempty"`
 	Unique                bool                `json:"unique,omitempty"`
 	Encrypted             bool                `json:"encrypted,omitempty"`
@@ -180,6 +191,17 @@ type Field struct {
 	RelationshipName      string              `json:"relationshipName,omitempty"`
 	ChildRelationshipName string              `json:"childRelationshipName,omitempty"`
 	PicklistValues        []PicklistValue     `json:"picklistValues,omitempty"`
+}
+
+func BoolFlag(value bool) *bool {
+	return &value
+}
+
+func FieldFlagValue(flag *bool, fallback bool) bool {
+	if flag == nil {
+		return fallback
+	}
+	return *flag
 }
 
 type SummaryFilterItem struct {

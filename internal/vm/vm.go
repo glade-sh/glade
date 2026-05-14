@@ -12022,6 +12022,19 @@ func describeFieldIsHTMLFormatted(field storage.Field) bool {
 	return strings.EqualFold(field.DisplayType, "RICHTEXTAREA") || strings.EqualFold(string(field.Type), "RICHTEXTAREA")
 }
 
+func describeFieldSortable(field storage.Field) bool {
+	displayType := field.DisplayType
+	if displayType == "" {
+		displayType = string(field.Type)
+	}
+	switch strings.ToUpper(displayType) {
+	case "MULTIPICKLIST", "TEXTAREA", "ENCRYPTEDSTRING", "BASE64", "BLOB", "ADDRESS", "LOCATION":
+		return false
+	default:
+		return true
+	}
+}
+
 func isCustomObjectLikeName(name string) bool {
 	name = strings.ToLower(name)
 	return strings.HasSuffix(name, "__c") || strings.HasSuffix(name, "__e") || strings.HasSuffix(name, "__mdt")
@@ -12195,7 +12208,7 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 	}
 	desc.Fields["type"] = schemaDisplayTypeValue(displayType)
 	desc.Fields["soapType"] = schemaSOAPTypeValue(soapTypeForStorageField(field))
-	desc.Fields["nillable"] = Bool(!field.Required)
+	desc.Fields["nillable"] = Bool(storage.FieldFlagValue(field.Nillable, !field.Required))
 	desc.Fields["externalId"] = Bool(field.ExternalID)
 	desc.Fields["unique"] = Bool(field.Unique)
 	desc.Fields["encrypted"] = Bool(field.Encrypted)
@@ -12209,10 +12222,10 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 	desc.Fields["htmlFormatted"] = Bool(describeFieldIsHTMLFormatted(field))
 	if defaultValue, ok := storage.DefaultValueForField(field); ok {
 		desc.Fields["defaultValue"] = vmValueFromStorage(defaultValue)
-		desc.Fields["defaultedOnCreate"] = Bool(true)
+		desc.Fields["defaultedOnCreate"] = Bool(storage.FieldFlagValue(field.DefaultedOnCreate, true))
 	} else {
 		desc.Fields["defaultValue"] = Null
-		desc.Fields["defaultedOnCreate"] = Bool(false)
+		desc.Fields["defaultedOnCreate"] = Bool(storage.FieldFlagValue(field.DefaultedOnCreate, false))
 	}
 	if strings.TrimSpace(field.DefaultValue) == "" {
 		desc.Fields["defaultValueFormula"] = Null
@@ -12233,6 +12246,15 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 		references = append(references, sObjectTypeToken(target))
 	}
 	desc.Fields["referenceTo"] = List(references...)
+	desc.Fields["accessible"] = Bool(storage.FieldFlagValue(field.Accessible, true))
+	desc.Fields["createable"] = Bool(storage.FieldFlagValue(field.Createable, true))
+	desc.Fields["updateable"] = Bool(storage.FieldFlagValue(field.Updateable, true))
+	desc.Fields["filterable"] = Bool(storage.FieldFlagValue(field.Filterable, true))
+	desc.Fields["groupable"] = Bool(storage.FieldFlagValue(field.Groupable, true))
+	desc.Fields["sortable"] = Bool(storage.FieldFlagValue(field.Sortable, describeFieldSortable(field)))
+	desc.Fields["aggregatable"] = Bool(storage.FieldFlagValue(field.Aggregatable, true))
+	desc.Fields["permissionable"] = Bool(storage.FieldFlagValue(field.Permissionable, true))
+	desc.Fields["deprecatedAndHidden"] = Bool(storage.FieldFlagValue(field.DeprecatedAndHidden, false))
 	picklistValues := make([]Value, 0, len(field.PicklistValues))
 	for _, value := range field.PicklistValues {
 		entry := Object("Schema.PicklistEntry")
@@ -12274,7 +12296,7 @@ func (vm *VM) describeSyntheticFieldValue(objectName, fieldName string, field st
 	}
 	desc.Fields["type"] = schemaDisplayTypeValue(displayType)
 	desc.Fields["soapType"] = schemaSOAPTypeValue(soapTypeForStorageField(field))
-	desc.Fields["nillable"] = Bool(!field.Required)
+	desc.Fields["nillable"] = Bool(storage.FieldFlagValue(field.Nillable, !field.Required))
 	desc.Fields["externalId"] = Bool(false)
 	desc.Fields["unique"] = Bool(false)
 	desc.Fields["encrypted"] = Bool(false)
@@ -12298,10 +12320,15 @@ func (vm *VM) describeSyntheticFieldValue(objectName, fieldName string, field st
 	desc.Fields["referenceTo"] = List(references...)
 	desc.Fields["picklistValues"] = List()
 	desc.Fields["sObjectType"] = sObjectTypeToken(objectName)
-	desc.Fields["sortable"] = Bool(true)
-	desc.Fields["accessible"] = Bool(true)
-	desc.Fields["createable"] = Bool(false)
-	desc.Fields["updateable"] = Bool(false)
+	desc.Fields["sortable"] = Bool(storage.FieldFlagValue(field.Sortable, describeFieldSortable(field)))
+	desc.Fields["accessible"] = Bool(storage.FieldFlagValue(field.Accessible, true))
+	desc.Fields["createable"] = Bool(storage.FieldFlagValue(field.Createable, false))
+	desc.Fields["updateable"] = Bool(storage.FieldFlagValue(field.Updateable, false))
+	desc.Fields["filterable"] = Bool(storage.FieldFlagValue(field.Filterable, true))
+	desc.Fields["groupable"] = Bool(storage.FieldFlagValue(field.Groupable, true))
+	desc.Fields["aggregatable"] = Bool(storage.FieldFlagValue(field.Aggregatable, true))
+	desc.Fields["permissionable"] = Bool(storage.FieldFlagValue(field.Permissionable, true))
+	desc.Fields["deprecatedAndHidden"] = Bool(storage.FieldFlagValue(field.DeprecatedAndHidden, false))
 	token := sObjectFieldTokenFromField(objectName, field)
 	desc.Fields["sObjectField"] = token
 	vm.fieldDescribeCache[cacheKey] = desc
@@ -12353,6 +12380,15 @@ func emptySObjectFieldDescribe(objectName string) Value {
 	desc.Fields["defaultValue"] = Null
 	desc.Fields["defaultValueFormula"] = Null
 	desc.Fields["defaultedOnCreate"] = Bool(false)
+	desc.Fields["accessible"] = Bool(true)
+	desc.Fields["createable"] = Bool(false)
+	desc.Fields["updateable"] = Bool(false)
+	desc.Fields["filterable"] = Bool(true)
+	desc.Fields["groupable"] = Bool(true)
+	desc.Fields["sortable"] = Bool(true)
+	desc.Fields["aggregatable"] = Bool(true)
+	desc.Fields["permissionable"] = Bool(true)
+	desc.Fields["deprecatedAndHidden"] = Bool(false)
 	desc.Fields["relationshipName"] = Null
 	desc.Fields["referenceTo"] = List()
 	desc.Fields["picklistValues"] = List()
@@ -19268,6 +19304,25 @@ func methodHasModifier(modifiers []string, expected string) bool {
 	return false
 }
 
+func describeFieldPermissionFlagName(method string) string {
+	switch method {
+	case "isCreateable":
+		return "createable"
+	case "isUpdateable":
+		return "updateable"
+	default:
+		return "accessible"
+	}
+}
+
+func describeFieldBooleanFlagName(method string) string {
+	name := strings.TrimPrefix(method, "is")
+	if name == "" {
+		return method
+	}
+	return strings.ToLower(name[:1]) + name[1:]
+}
+
 func passiveGeneratedMethod(method Method) bool {
 	return methodHasModifier(method.Modifiers, "passive-generated") &&
 		len(method.Program.Instructions) == 0
@@ -23813,6 +23868,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.%s expects 0 arguments", method)
 			}
+			fieldFlagName := describeFieldPermissionFlagName(method)
+			fieldAllowed := true
+			if value, ok := receiver.Fields[fieldFlagName]; ok && value.Kind == ValueBool {
+				fieldAllowed = value.Bool
+			}
 			objectName := ""
 			if value, ok := receiver.Fields["sObjectName"]; ok && value.Kind == ValueString {
 				objectName = value.Text
@@ -23822,12 +23882,15 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				fieldName = value.Text
 			}
 			if objectName == "" || fieldName == "" {
-				return Bool(true), receiver, false, true, nil
+				return Bool(fieldAllowed), receiver, false, true, nil
 			}
-			return Bool(vm.currentUserFieldPermission(objectName, fieldName, method)), receiver, false, true, nil
+			return Bool(fieldAllowed && vm.currentUserFieldPermission(objectName, fieldName, method)), receiver, false, true, nil
 		case "isAggregatable", "isFilterable", "isGroupable", "isPermissionable":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.%s expects 0 arguments", method)
+			}
+			if value, ok := receiver.Fields[describeFieldBooleanFlagName(method)]; ok && value.Kind == ValueBool {
+				return value, receiver, false, true, nil
 			}
 			return Bool(true), receiver, false, true, nil
 		case "isAiPredictionField", "isCascadeDelete", "isCaseSensitive", "isDependentPicklist",
@@ -23836,6 +23899,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			"isRestrictedDelete", "isRestrictedPicklist", "isSearchPrefilterable", "isWriteRequiresMasterRead":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.%s expects 0 arguments", method)
+			}
+			if value, ok := receiver.Fields[describeFieldBooleanFlagName(method)]; ok && value.Kind == ValueBool {
+				return value, receiver, false, true, nil
 			}
 			return Bool(false), receiver, false, true, nil
 		}

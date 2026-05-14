@@ -1277,6 +1277,51 @@ System.assertEquals(User.SObjectType, ownerField.getDescribe().getReferenceTo()[
 	}
 }
 
+func TestExecDescribeFieldResultUsesStorageDescribeFlags(t *testing.T) {
+	program, err := CompileAnonymous(`
+Schema.DescribeFieldResult describe = Account.SObjectType.getDescribe().fields.getMap().get('Hidden__c').getDescribe();
+System.assertEquals(false, describe.isNillable());
+System.assertEquals(false, describe.isAccessible());
+System.assertEquals(false, describe.isCreateable());
+System.assertEquals(false, describe.isUpdateable());
+System.assertEquals(false, describe.isFilterable());
+System.assertEquals(false, describe.isGroupable());
+System.assertEquals(false, describe.isSortable());
+System.assertEquals(false, describe.isAggregatable());
+System.assertEquals(false, describe.isPermissionable());
+System.assertEquals(true, describe.isDeprecatedAndHidden());
+System.assertEquals(true, describe.isDefaultedOnCreate());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Hidden__c"] = storage.Field{
+		APIName:             "Hidden__c",
+		Label:               "Hidden",
+		Type:                storage.FieldString,
+		DisplayType:         "STRING",
+		Nillable:            storage.BoolFlag(false),
+		DefaultedOnCreate:   storage.BoolFlag(true),
+		Accessible:          storage.BoolFlag(false),
+		Createable:          storage.BoolFlag(false),
+		Updateable:          storage.BoolFlag(false),
+		Filterable:          storage.BoolFlag(false),
+		Groupable:           storage.BoolFlag(false),
+		Sortable:            storage.BoolFlag(false),
+		Aggregatable:        storage.BoolFlag(false),
+		Permissionable:      storage.BoolFlag(false),
+		DeprecatedAndHidden: storage.BoolFlag(true),
+	}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDescribeFieldNumericAndTextMetadata(t *testing.T) {
 	program, err := CompileAnonymous(`
 Schema.DescribeFieldResult amount = Account.Amount__c.getDescribe();

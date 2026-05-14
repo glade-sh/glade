@@ -133,6 +133,22 @@ function fieldLiteral(field) {
   const dt = displayType(field);
   if (dt) pieces.push(`DisplayType: ${goString(dt)}`);
   if (field.defaultValue !== null && field.defaultValue !== undefined) pieces.push(`DefaultValue: ${goString(String(field.defaultValue))}`);
+  for (const [source, target] of [
+    ["nillable", "Nillable"],
+    ["defaultedOnCreate", "DefaultedOnCreate"],
+    ["createable", "Createable"],
+    ["updateable", "Updateable"],
+    ["filterable", "Filterable"],
+    ["groupable", "Groupable"],
+    ["sortable", "Sortable"],
+    ["aggregatable", "Aggregatable"],
+    ["permissionable", "Permissionable"],
+    ["deprecatedAndHidden", "DeprecatedAndHidden"],
+  ]) {
+    if (field[source] !== undefined && field[source] !== null) {
+      pieces.push(`${target}: BoolFlag(${field[source] ? "true" : "false"})`);
+    }
+  }
   if (!field.nillable && field.createable && !field.defaultedOnCreate && field.defaultValue === null && field.defaultValueFormula === null) {
     pieces.push("Required: true");
   }
