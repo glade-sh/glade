@@ -3238,6 +3238,33 @@ func TestOrgFromIndexIncludesGeneratedStandardSchema(t *testing.T) {
 	}
 }
 
+func TestOrgFromIndexIncludesProjectReferencedStandardFields(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/AssetProbe.cls"), `
+public class AssetProbe {
+	public static void touch() {
+		Asset asset = new Asset();
+		asset.ExternalIdentifier = 'external';
+	}
+}
+`)
+	index := loadTestIndex(t, root)
+
+	org := orgFromIndex(index)
+	state, ok := org.Objects["Asset"]
+	if !ok {
+		t.Fatal("Asset object was not exposed")
+	}
+	field, ok := state.Definition.Fields["ExternalIdentifier"]
+	if !ok {
+		t.Fatalf("Asset.ExternalIdentifier was not inferred; fields=%#v", state.Definition.Fields)
+	}
+	if field.Type != storage.FieldString || field.DisplayType != "STRING" {
+		t.Fatalf("Asset.ExternalIdentifier field = %#v", field)
+	}
+}
+
 func TestOrgFromIndexIncludesApexClassRows(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)

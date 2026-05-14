@@ -1126,6 +1126,7 @@ func orgFromIndex(index typesys.Index, caches ...sourceCache) storage.OrgState {
 	if index.Project.Root != "" {
 		storage.ApplyOrgShape(&org, project.OrgShapeFeatures(index.Project.Root))
 	}
+	applyProjectReferencedStandardFields(&org, index, caches...)
 	applyApexClassRecords(&org, index, caches...)
 	_ = storage.ApplyCustomMetadataRecords(&org, index.CustomMetadataRecords)
 	var loadedProject *project.Project
@@ -1145,6 +1146,139 @@ func orgFromIndex(index typesys.Index, caches ...sourceCache) storage.OrgState {
 	}
 	normalizeOrgKeyPrefixes(&org)
 	return org
+}
+
+var apexStaticFieldReferencePattern = regexp.MustCompile(`\b([A-Z][A-Za-z0-9_]*)\.([A-Za-z][A-Za-z0-9_]*)\b`)
+var apexTypedVariablePattern = regexp.MustCompile(`\b([A-Z][A-Za-z0-9_]*)\s+([A-Za-z_][A-Za-z0-9_]*)\b`)
+var apexVariableFieldReferencePattern = regexp.MustCompile(`\b([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z][A-Za-z0-9_]*)\b`)
+
+var projectReferencedStandardFieldCache sync.Map
+
+func applyProjectReferencedStandardFields(org *storage.OrgState, index typesys.Index, caches ...sourceCache) {
+	if org == nil {
+		return
+	}
+	cacheKey := ""
+	if index.Project.Root != "" {
+		cacheKey = index.Project.Root + "|" + fmt.Sprint(len(index.Types))
+		if cached, ok := projectReferencedStandardFieldCache.Load(cacheKey); ok {
+			applyReferencedStandardFieldSet(org, cached.(map[string]map[string]storage.Field))
+			return
+		}
+	}
+	inferred := make(map[string]map[string]storage.Field)
+	cache := sourceCacheFor(caches)
+	seenFiles := make(map[string]bool)
+	for _, typ := range index.Types {
+		if typ.File == "" || typ.Dependency || seenFiles[typ.File] {
+			continue
+		}
+		seenFiles[typ.File] = true
+		source, err := cache.read(typ.File)
+		if err != nil {
+			continue
+		}
+		varTypes := make(map[string]string)
+		for _, match := range apexTypedVariablePattern.FindAllStringSubmatch(source, -1) {
+			if len(match) != 3 {
+				continue
+			}
+			if _, ok := org.Objects[match[1]]; ok && storage.IsKnownStandardObject(match[1]) {
+				varTypes[match[2]] = match[1]
+			}
+		}
+		for _, match := range apexStaticFieldReferencePattern.FindAllStringSubmatchIndex(source, -1) {
+			if len(match) != 6 || apexMemberReferenceIsCall(source, match[1]) {
+				continue
+			}
+			recordProjectReferencedStandardField(org, inferred, source[match[2]:match[3]], source[match[4]:match[5]])
+		}
+		for _, match := range apexVariableFieldReferencePattern.FindAllStringSubmatchIndex(source, -1) {
+			if len(match) != 6 || apexMemberReferenceIsCall(source, match[1]) {
+				continue
+			}
+			objectName, ok := varTypes[source[match[2]:match[3]]]
+			if !ok {
+				continue
+			}
+			recordProjectReferencedStandardField(org, inferred, objectName, source[match[4]:match[5]])
+		}
+	}
+	if cacheKey != "" {
+		projectReferencedStandardFieldCache.Store(cacheKey, inferred)
+	}
+	applyReferencedStandardFieldSet(org, inferred)
+}
+
+func apexMemberReferenceIsCall(source string, end int) bool {
+	for end < len(source) {
+		switch source[end] {
+		case ' ', '\t', '\r', '\n':
+			end++
+			continue
+		case '(':
+			return true
+		default:
+			return false
+		}
+	}
+	return false
+}
+
+func recordProjectReferencedStandardField(org *storage.OrgState, inferred map[string]map[string]storage.Field, objectName, fieldName string) {
+	if fieldName == "SObjectType" || fieldName == "Fields" {
+		return
+	}
+	state, ok := org.Objects[objectName]
+	if !ok || !storage.IsKnownStandardObject(objectName) {
+		return
+	}
+	if _, ok := storage.ResolveFieldName(state.Definition, org.Namespace, fieldName); ok {
+		return
+	}
+	if inferred[objectName] == nil {
+		inferred[objectName] = make(map[string]storage.Field)
+	}
+	inferred[objectName][fieldName] = inferredReferencedStandardField(fieldName)
+}
+
+func applyReferencedStandardFieldSet(org *storage.OrgState, fields map[string]map[string]storage.Field) {
+	for objectName, objectFields := range fields {
+		state, ok := org.Objects[objectName]
+		if !ok {
+			continue
+		}
+		if state.Definition.Fields == nil {
+			state.Definition.Fields = make(map[string]storage.Field)
+		}
+		for fieldName, field := range objectFields {
+			if _, ok := storage.ResolveFieldName(state.Definition, org.Namespace, fieldName); ok {
+				continue
+			}
+			state.Definition.Fields[fieldName] = field
+		}
+		org.Objects[objectName] = state
+	}
+}
+
+func inferredReferencedStandardField(fieldName string) storage.Field {
+	field := storage.Field{APIName: fieldName, Label: fieldName, Type: storage.FieldString, DisplayType: "STRING"}
+	switch {
+	case strings.HasSuffix(fieldName, "Id"):
+		field.Type = storage.FieldReference
+		field.DisplayType = "REFERENCE"
+		field.RelationshipName = strings.TrimSuffix(fieldName, "Id")
+	case strings.HasPrefix(fieldName, "Is"), strings.HasPrefix(fieldName, "Has"):
+		field.Type = storage.FieldBoolean
+		field.DisplayType = "BOOLEAN"
+	case strings.Contains(fieldName, "Date"):
+		field.Type = storage.FieldDate
+		field.DisplayType = "DATE"
+	case strings.Contains(fieldName, "Amount"), strings.Contains(fieldName, "Price"), strings.Contains(fieldName, "Mrr"), strings.Contains(fieldName, "Quantity"):
+		field.Type = storage.FieldDecimal
+		field.DisplayType = "DOUBLE"
+	}
+	return field
 }
 
 type profileRecordTypeVisibilityXML struct {
