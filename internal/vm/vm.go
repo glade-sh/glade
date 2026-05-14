@@ -6187,6 +6187,11 @@ func (vm *VM) queriedSObjectFields(queryText string) map[string]bool {
 		}
 		fields[strings.ToLower(field)] = true
 	}
+	for _, childQuery := range query.ChildQueries {
+		if relationship := strings.TrimSpace(childQuery.Relationship); relationship != "" {
+			fields[strings.ToLower(relationship)] = true
+		}
+	}
 	if len(fields) == 0 {
 		return nil
 	}
@@ -6685,7 +6690,7 @@ func maxOrgIDSequences(left, right map[string]uint64) map[string]uint64 {
 }
 
 func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value, error) {
-	if len(args) == 0 || len(args) > 3 {
+	if len(args) == 0 || len(args) > 4 {
 		return Null, fmt.Errorf("Database.%s expects records, optional external id field, and optional allOrNone", op)
 	}
 	allOrNone := true
@@ -6719,7 +6724,19 @@ func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value
 			return Null, fmt.Errorf("Database.%s allOrNone expects Boolean", op)
 		}
 	}
-	if op == "delete" {
+	if len(args) == 4 {
+		if op != "upsert" {
+			return Null, fmt.Errorf("Database.%s expects at most records, allOrNone, and AccessLevel", op)
+		}
+		if args[2].Kind != ValueBool {
+			return Null, fmt.Errorf("Database.%s allOrNone expects Boolean", op)
+		}
+		if !isDatabaseAccessLevelValue(args[3]) {
+			return Null, fmt.Errorf("Database.%s AccessLevel overload expects AccessLevel", op)
+		}
+		allOrNone = args[2].Bool
+	}
+	if op == "delete" || op == "undelete" {
 		records, ok := vm.deleteIDsToSObjects(args[0])
 		if ok {
 			args[0] = records
@@ -6846,6 +6863,12 @@ func (vm *VM) executeDatabaseRecordAction(op string, args []Value, result *Resul
 			return Null, fmt.Errorf("Database.%s allOrNone expects Boolean", op)
 		}
 		allOrNone = args[1].Bool
+	}
+	if op == "emptyRecycleBin" {
+		records, ok := vm.deleteIDsToSObjects(args[0])
+		if ok {
+			args[0] = records
+		}
 	}
 	results, err := vm.applyDatabaseRecordAction(op, args[0], allOrNone, result)
 	if err != nil {
@@ -7001,13 +7024,26 @@ func dmlExceptionErrorDetails(results []dml.Result) Value {
 }
 
 func (vm *VM) executeDatabaseMerge(args []Value, result *Result) (Value, error) {
-	if len(args) < 2 || len(args) > 3 {
+	if len(args) < 2 || len(args) > 4 {
 		return Null, fmt.Errorf("Database.merge expects master, duplicate record(s), and optional allOrNone")
 	}
 	allOrNone := true
 	if len(args) == 3 {
+		if isDatabaseAccessLevelValue(args[2]) {
+			// USER_MODE/SYSTEM_MODE is accepted for overload parity; local merge
+			// currently uses the same in-memory DML engine for both modes.
+		} else if args[2].Kind != ValueBool {
+			return Null, fmt.Errorf("Database.merge allOrNone expects Boolean")
+		} else {
+			allOrNone = args[2].Bool
+		}
+	}
+	if len(args) == 4 {
 		if args[2].Kind != ValueBool {
 			return Null, fmt.Errorf("Database.merge allOrNone expects Boolean")
+		}
+		if !isDatabaseAccessLevelValue(args[3]) {
+			return Null, fmt.Errorf("Database.merge AccessLevel overload expects AccessLevel")
 		}
 		allOrNone = args[2].Bool
 	}
@@ -7021,7 +7057,11 @@ func (vm *VM) executeDatabaseMerge(args []Value, result *Result) (Value, error) 
 	if len(master) != 1 {
 		return Null, fmt.Errorf("Database.merge master expects one sObject")
 	}
-	duplicates, _, err := vm.recordsFromValue(args[1])
+	duplicateInput := args[1]
+	if records, ok := vm.deleteIDsToSObjects(duplicateInput); ok {
+		duplicateInput = records
+	}
+	duplicates, _, err := vm.recordsFromValue(duplicateInput)
 	if err != nil {
 		return Null, err
 	}
@@ -11498,6 +11538,12 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 	desc.Fields["labelPlural"] = String(definition.PluralLabel)
 	desc.Fields["keyPrefix"] = String(definition.KeyPrefix)
 	desc.Fields["customSetting"] = Bool(storage.IsCustomSettingDefinition(definition))
+	desc.Fields["custom"] = Bool(isCustomObjectLikeName(definition.APIName))
+	desc.Fields["feedEnabled"] = Bool(false)
+	desc.Fields["mergeable"] = Bool(false)
+	desc.Fields["mruEnabled"] = Bool(true)
+	desc.Fields["undeletable"] = Bool(true)
+	desc.Fields["deprecatedAndHidden"] = Bool(false)
 	fieldsMap := Map()
 	fieldsMap.Type = "Schema.SObjectFieldMap"
 	fieldNames := make([]string, 0, len(definition.Fields))
@@ -11668,6 +11714,22 @@ func isNameFieldDescribe(field storage.Field) bool {
 func isCustomSchemaName(name string) bool {
 	name = strings.ToLower(name)
 	return strings.HasSuffix(name, "__c") || strings.HasSuffix(name, "__pc") || strings.HasSuffix(name, "__pr")
+}
+
+func localSchemaName(name string) string {
+	parts := strings.Split(name, "__")
+	if len(parts) > 2 {
+		return strings.Join(parts[1:], "__")
+	}
+	return name
+}
+
+func methodDescribeBoolField(method string) string {
+	if strings.HasPrefix(method, "is") && len(method) > 2 {
+		name := method[2:]
+		return strings.ToLower(name[:1]) + name[1:]
+	}
+	return method
 }
 
 func describeFieldLength(field storage.Field) int {
@@ -11872,6 +11934,7 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 		label = field.APIName
 	}
 	desc.Fields["label"] = String(label)
+	desc.Fields["localName"] = String(localSchemaName(field.APIName))
 	desc.Fields["compoundFieldName"] = Null
 	displayType := field.DisplayType
 	if displayType == "" {
@@ -11891,6 +11954,18 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 	desc.Fields["precision"] = Int(int64(describeFieldPrecision(field)))
 	desc.Fields["scale"] = Int(int64(describeFieldScale(field)))
 	desc.Fields["htmlFormatted"] = Bool(describeFieldIsHTMLFormatted(field))
+	if defaultValue, ok := storage.DefaultValueForField(field); ok {
+		desc.Fields["defaultValue"] = vmValueFromStorage(defaultValue)
+		desc.Fields["defaultedOnCreate"] = Bool(true)
+	} else {
+		desc.Fields["defaultValue"] = Null
+		desc.Fields["defaultedOnCreate"] = Bool(false)
+	}
+	if strings.TrimSpace(field.DefaultValue) == "" {
+		desc.Fields["defaultValueFormula"] = Null
+	} else {
+		desc.Fields["defaultValueFormula"] = String(field.DefaultValue)
+	}
 	relationshipName := field.RelationshipName
 	if field.Type == storage.FieldReference {
 		relationshipName = vm.parentRelationshipNameForReferenceField(definition, field)
@@ -11928,6 +12003,7 @@ func emptySObjectFieldDescribe(objectName string) Value {
 	desc.Fields["name"] = String("")
 	desc.Fields["sObjectName"] = String(objectName)
 	desc.Fields["label"] = String("")
+	desc.Fields["localName"] = String("")
 	desc.Fields["compoundFieldName"] = Null
 	desc.Fields["type"] = String("")
 	desc.Fields["soapType"] = schemaSOAPTypeValue("xsd:string")
@@ -11943,6 +12019,9 @@ func emptySObjectFieldDescribe(objectName string) Value {
 	desc.Fields["precision"] = Int(0)
 	desc.Fields["scale"] = Int(0)
 	desc.Fields["htmlFormatted"] = Bool(false)
+	desc.Fields["defaultValue"] = Null
+	desc.Fields["defaultValueFormula"] = Null
+	desc.Fields["defaultedOnCreate"] = Bool(false)
 	desc.Fields["relationshipName"] = Null
 	desc.Fields["referenceTo"] = List()
 	desc.Fields["picklistValues"] = List()
@@ -19688,6 +19767,11 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 				return Null, true, fmt.Errorf("Map.size expects 0 arguments")
 			}
 			return Int(int64(len(receiver.Map))), true, nil
+		case "isEmpty":
+			if len(args) != 0 {
+				return Null, true, fmt.Errorf("Map.isEmpty expects 0 arguments")
+			}
+			return Bool(len(receiver.Map) == 0), true, nil
 		case "clone":
 			if len(args) != 0 {
 				return Null, true, fmt.Errorf("Map.clone expects 0 arguments")
@@ -23069,6 +23153,17 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getLabel expects 0 arguments")
 			}
 			return receiver.Fields["label"], receiver, false, true, nil
+		case "getLocalName":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getLocalName expects 0 arguments")
+			}
+			if value, ok := receiver.Fields["localName"]; ok {
+				return value, receiver, false, true, nil
+			}
+			if value, ok := receiver.Fields["name"]; ok && value.Kind == ValueString {
+				return String(localSchemaName(value.Text)), receiver, false, true, nil
+			}
+			return Null, receiver, false, true, nil
 		case "getCompoundFieldName":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getCompoundFieldName expects 0 arguments")
@@ -23147,6 +23242,30 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.isHtmlFormatted expects 0 arguments")
 			}
 			return receiver.Fields["htmlFormatted"], receiver, false, true, nil
+		case "getDefaultValue":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getDefaultValue expects 0 arguments")
+			}
+			if value, ok := receiver.Fields["defaultValue"]; ok {
+				return value, receiver, false, true, nil
+			}
+			return Null, receiver, false, true, nil
+		case "getDefaultValueFormula":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getDefaultValueFormula expects 0 arguments")
+			}
+			if value, ok := receiver.Fields["defaultValueFormula"]; ok {
+				return value, receiver, false, true, nil
+			}
+			return Null, receiver, false, true, nil
+		case "isDefaultedOnCreate":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.isDefaultedOnCreate expects 0 arguments")
+			}
+			if value, ok := receiver.Fields["defaultedOnCreate"]; ok {
+				return value, receiver, false, true, nil
+			}
+			return Bool(false), receiver, false, true, nil
 		case "getReferenceTo":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getReferenceTo expects 0 arguments")
@@ -23183,6 +23302,19 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Bool(true), receiver, false, true, nil
 			}
 			return Bool(vm.currentUserFieldPermission(objectName, fieldName, method)), receiver, false, true, nil
+		case "isAggregatable", "isFilterable", "isGroupable", "isPermissionable", "isSortable":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.%s expects 0 arguments", method)
+			}
+			return Bool(true), receiver, false, true, nil
+		case "isAiPredictionField", "isCascadeDelete", "isCaseSensitive", "isDependentPicklist",
+			"isDeprecatedAndHidden", "isDisplayLocationInDecimal", "isFormulaTreatNullNumberAsZero",
+			"isHighScaleNumber", "isIdLookup", "isNamePointing", "isQueryByDistance",
+			"isRestrictedDelete", "isRestrictedPicklist", "isSearchPrefilterable", "isWriteRequiresMasterRead":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.%s expects 0 arguments", method)
+			}
+			return Bool(false), receiver, false, true, nil
 		}
 	case "Schema.PicklistEntry":
 		switch method {
@@ -23856,14 +23988,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if name.Kind != ValueString {
 				return name, receiver, false, true, nil
 			}
-			local := name.Text
-			if idx := strings.LastIndex(local, "__"); idx > 0 && strings.HasSuffix(local, "__c") {
-				parts := strings.Split(local, "__")
-				if len(parts) > 2 {
-					local = strings.Join(parts[1:], "__")
-				}
-			}
-			return String(local), receiver, false, true, nil
+			return String(localSchemaName(name.Text)), receiver, false, true, nil
 		case "getLabel":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.getLabel expects 0 arguments")
@@ -23884,6 +24009,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.getFields expects 0 arguments")
 			}
 			return receiver.Fields["fields"], receiver, false, true, nil
+		case "getFieldSets":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.getFieldSets expects 0 arguments")
+			}
+			return receiver.Fields["fieldSets"], receiver, false, true, nil
 		case "getRecordTypeInfos":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.getRecordTypeInfos expects 0 arguments")
@@ -23938,6 +24068,15 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.isCustomSetting expects 0 arguments")
 			}
 			return receiver.Fields["customSetting"], receiver, false, true, nil
+		case "isDeprecatedAndHidden", "isFeedEnabled", "isMergeable", "isMruEnabled", "isUndeletable":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeSObjectResult.%s expects 0 arguments", method)
+			}
+			field := methodDescribeBoolField(method)
+			if value, ok := receiver.Fields[field]; ok && value.Kind == ValueBool {
+				return value, receiver, false, true, nil
+			}
+			return Bool(false), receiver, false, true, nil
 		}
 	case "Schema.RecordTypeInfo":
 		switch method {

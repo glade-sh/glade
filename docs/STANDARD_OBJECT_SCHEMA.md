@@ -51,6 +51,13 @@ The overlay is intentionally field-only. It fills broad compile/runtime gaps for
 standard objects such as `AsyncApexJob` without replacing the richer
 describe-driven catalog where Salesforce describe data exists.
 
+System, Schema, Database, and product namespace Apex type shapes are refreshed
+separately from the system stub corpus:
+
+```bash
+node scripts/generate-system-stub-symbols.mjs /path/to/fulgor/stubs/apex-system-stubs internal/typesys/system_stub_symbols_generated.go
+```
+
 ## Runtime Behavior
 
 `internal/storage.EnsureStandardObjectFields` merges the generated base standard

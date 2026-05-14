@@ -103,9 +103,15 @@ func (a *Analyzer) Analyze(index typesys.Index) (result Result) {
 	for _, typ := range index.Types {
 		if !typ.Dependency {
 			a.addKnown(typ.Name, TypeApex, typ.File)
+		} else if typ.Namespace == "" {
+			a.addKnown(typ.Name, TypePlatform, typ.File)
 		}
 		if typ.Namespace != "" {
-			a.addKnown(typ.Namespace+"."+typ.Name, TypeApex, typ.File)
+			kind := TypeApex
+			if typ.Dependency {
+				kind = TypePlatform
+			}
+			a.addKnown(typ.Namespace+"."+typ.Name, kind, typ.File)
 		}
 		for _, member := range typ.Members {
 			if member.Kind == apexast.DeclarationClass || member.Kind == apexast.DeclarationInterface || member.Kind == apexast.DeclarationEnum {
@@ -152,16 +158,11 @@ func countProjectTypes(types []typesys.TypeSymbol) int {
 
 func enrichIndexWithStandardSymbols(index typesys.Index) typesys.Index {
 	seen := make(map[string]bool, len(index.Types))
-	localNames := make(map[string]bool, len(index.Types))
 	for _, typ := range index.Types {
 		seen[semaTypeKey(typ.Namespace, typ.Name)] = true
-		localNames[normalizeName(typ.Name)] = true
 	}
 	for _, typ := range typesys.StandardPlatformSymbols() {
 		if seen[semaTypeKey(typ.Namespace, typ.Name)] {
-			continue
-		}
-		if typ.Namespace != "" && localNames[normalizeName(typ.Name)] {
 			continue
 		}
 		seen[semaTypeKey(typ.Namespace, typ.Name)] = true
@@ -2271,6 +2272,9 @@ func (a *Analyzer) checkIRCollectionCall(typ typesys.TypeSymbol, member typesys.
 }
 
 func (a *Analyzer) checkIRPlatformCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, receiverType, method string, args []ir.Expr, scope irSemaScope, pos, bodyOffset int, source string, model map[string]typeMembers) ([]diagnostic.Diagnostic, bool) {
+	if semaDatabaseDynamicQueryCall(receiverType, method) {
+		return nil, true
+	}
 	sig, ok := semaPlatformMethodSignatureFor(model, receiverType, method)
 	if !ok {
 		return nil, false
@@ -2760,6 +2764,9 @@ func semaResolvedIRCallReturnType(a *Analyzer, model map[string]typeMembers, rec
 	argTypes := make([]string, len(args))
 	for i, arg := range args {
 		argTypes[i] = a.inferIRExprType(arg, scope, model, currentType)
+	}
+	if semaDatabaseDynamicQueryCall(receiverType, method) {
+		return "Database.QueryResult"
 	}
 	if sig, ok := semaPlatformMethodSignatureFor(model, receiverType, method); ok {
 		return sig.returnType
@@ -4186,6 +4193,9 @@ func (a *Analyzer) diagnoseMethodCall(typ typesys.TypeSymbol, member typesys.Mem
 	for i, arg := range args {
 		argTypes[i] = inferSemaArgTypeWithModel(arg.text, scope, model)
 	}
+	if semaDatabaseDynamicQueryTextCall(callee) {
+		return nil
+	}
 	if candidate, ok, ambiguous := bestResolvedMemberByArgTypes(candidates, argTypes, model); ok {
 		if staticDiagnostic, blocked := checkSemaStaticAccess(typ, member, callee, candidate, receiverMode, start, end, source); blocked {
 			return []diagnostic.Diagnostic{staticDiagnostic}
@@ -4851,6 +4861,9 @@ func semaAssignableToType(paramType, argType string, model map[string]typeMember
 	argType = normalizeArrayType(argType)
 	paramType = semaCanonicalPlatformAlias(paramType)
 	argType = semaCanonicalPlatformAlias(argType)
+	if strings.EqualFold(argType, "Database.QueryResult") {
+		return semaDynamicQueryResultAssignableTo(paramType, model)
+	}
 	if strings.EqualFold(paramType, argType) || strings.EqualFold(paramType, "Object") {
 		return true
 	}
@@ -4897,6 +4910,17 @@ func semaAssignableToType(paramType, argType string, model map[string]typeMember
 		return true
 	}
 	return semaTypeMatches(model, argType, paramType, make(map[string]bool))
+}
+
+func semaDynamicQueryResultAssignableTo(paramType string, model map[string]typeMembers) bool {
+	if strings.EqualFold(paramType, "Object") || strings.EqualFold(paramType, "SObject") || isSemaSObjectLike(paramType, model) {
+		return true
+	}
+	base, args := semaGenericBaseAndArgs(paramType)
+	if !strings.EqualFold(base, "List") || len(args) > 1 {
+		return false
+	}
+	return len(args) == 0 || strings.EqualFold(args[0], "SObject") || isSemaSObjectLike(args[0], model)
 }
 
 func semaPlatformAssignableToType(paramType, argType string, model map[string]typeMembers) bool {
@@ -5203,6 +5227,8 @@ func semaCanonicalPlatformAlias(typeName string) string {
 		return "PageReference"
 	case "system.type":
 		return "Type"
+	case "apex_object", "system.apex_object":
+		return "Object"
 	case "system.savepoint":
 		return "Savepoint"
 	case "system.iterable":
@@ -5686,6 +5712,9 @@ func splitSemaMethodPath(callee string) (string, string, bool) {
 func inferSemaMethodCallType(arg string, scope map[string]string, model map[string]typeMembers) string {
 	arg = strings.TrimSpace(arg)
 	if receiverExpr, method, args, ok := splitLastSemaCall(arg); ok {
+		if semaDatabaseDynamicQueryTextCall(receiverExpr + "." + method) {
+			return "Database.QueryResult"
+		}
 		receiverType := semaTextReceiverType(receiverExpr, scope, model)
 		return semaResolvedCallReturnType(model, receiverType, method, args, scope)
 	}
@@ -5699,6 +5728,9 @@ func inferSemaMethodCallType(arg string, scope map[string]string, model map[stri
 		return ""
 	}
 	if strings.Contains(callee, ".") {
+		if semaDatabaseDynamicQueryTextCall(callee) {
+			return "Database.QueryResult"
+		}
 		receiver, method, ok := strings.Cut(callee, ".")
 		if !ok || method == "" {
 			return ""
@@ -5787,6 +5819,9 @@ func semaResolvedCallReturnType(model map[string]typeMembers, receiverType, meth
 	for i, arg := range args {
 		argTypes[i] = inferSemaArgTypeWithModel(arg.text, scope, model)
 	}
+	if semaDatabaseDynamicQueryCall(receiverType, method) {
+		return "Database.QueryResult"
+	}
 	if sig, ok := semaEnumMethodSignature(model, receiverType, method); ok {
 		return sig.returnType
 	}
@@ -5800,6 +5835,23 @@ func semaResolvedCallReturnType(model map[string]typeMembers, receiverType, meth
 		return candidate.member.Type
 	}
 	return ""
+}
+
+func semaDatabaseDynamicQueryCall(receiverType, method string) bool {
+	if !strings.EqualFold(semaCanonicalPlatformAlias(receiverType), "Database") {
+		return false
+	}
+	switch normalizeName(method) {
+	case "query", "querywithbinds":
+		return true
+	default:
+		return false
+	}
+}
+
+func semaDatabaseDynamicQueryTextCall(callee string) bool {
+	receiver, method, ok := strings.Cut(strings.TrimSpace(callee), ".")
+	return ok && semaDatabaseDynamicQueryCall(receiver, method)
 }
 
 func semaResolvedImplicitCallReturnType(model map[string]typeMembers, receiverType, method string, args []semaArg, scope map[string]string) string {
