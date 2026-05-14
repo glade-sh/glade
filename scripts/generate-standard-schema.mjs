@@ -133,6 +133,7 @@ function fieldLiteral(field) {
   const dt = displayType(field);
   if (dt) pieces.push(`DisplayType: ${goString(dt)}`);
   if (field.defaultValue !== null && field.defaultValue !== undefined) pieces.push(`DefaultValue: ${goString(String(field.defaultValue))}`);
+  if (field.compoundFieldName) pieces.push(`CompoundFieldName: ${goString(field.compoundFieldName)}`);
   for (const [source, target] of [
     ["nillable", "Nillable"],
     ["defaultedOnCreate", "DefaultedOnCreate"],

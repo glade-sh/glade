@@ -1322,6 +1322,39 @@ System.assertEquals(true, describe.isDefaultedOnCreate());
 	}
 }
 
+func TestExecDescribeFieldResultUsesCompoundFieldMetadata(t *testing.T) {
+	program, err := CompileAnonymous(`
+Schema.DescribeFieldResult component = Account.SObjectType.getDescribe().fields.getMap().get('ExternalLatitude__c').getDescribe();
+Schema.DescribeFieldResult container = Account.SObjectType.getDescribe().fields.getMap().get('ExternalLocation__c').getDescribe();
+System.assertEquals('ExternalLocation__c', component.getCompoundFieldName());
+System.assertEquals(null, container.getCompoundFieldName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["ExternalLocation__c"] = storage.Field{
+		APIName:     "ExternalLocation__c",
+		Label:       "External Location",
+		Type:        storage.FieldLocation,
+		DisplayType: "LOCATION",
+	}
+	account.Definition.Fields["ExternalLatitude__c"] = storage.Field{
+		APIName:           "ExternalLatitude__c",
+		Label:             "External Latitude",
+		Type:              storage.FieldDecimal,
+		DisplayType:       "DOUBLE",
+		CompoundFieldName: "ExternalLocation__c",
+	}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDescribeFieldNumericAndTextMetadata(t *testing.T) {
 	program, err := CompileAnonymous(`
 Schema.DescribeFieldResult amount = Account.Amount__c.getDescribe();

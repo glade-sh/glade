@@ -165,6 +165,7 @@ type Field struct {
 	Scale                 int                 `json:"scale,omitempty"`
 	Formula               string              `json:"formula,omitempty"`
 	DefaultValue          string              `json:"defaultValue,omitempty"`
+	CompoundFieldName     string              `json:"compoundFieldName,omitempty"`
 	AutoNumber            bool                `json:"autoNumber,omitempty"`
 	DisplayFormat         string              `json:"displayFormat,omitempty"`
 	SummarizedField       string              `json:"summarizedField,omitempty"`

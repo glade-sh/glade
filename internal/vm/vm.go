@@ -11959,6 +11959,13 @@ func compoundFieldNameValue(fieldName string) Value {
 	return Null
 }
 
+func describeCompoundFieldNameValue(field storage.Field) Value {
+	if field.CompoundFieldName != "" {
+		return String(field.CompoundFieldName)
+	}
+	return compoundFieldNameValue(field.APIName)
+}
+
 func localSchemaName(name string) string {
 	parts := strings.Split(name, "__")
 	if len(parts) > 2 {
@@ -12200,7 +12207,7 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 		label = field.APIName
 	}
 	desc.Fields["label"] = String(label)
-	desc.Fields["compoundFieldName"] = compoundFieldNameValue(field.APIName)
+	desc.Fields["compoundFieldName"] = describeCompoundFieldNameValue(field)
 	desc.Fields["localName"] = String(localSchemaName(field.APIName))
 	displayType := field.DisplayType
 	if displayType == "" {
@@ -12289,7 +12296,7 @@ func (vm *VM) describeSyntheticFieldValue(objectName, fieldName string, field st
 		label = field.APIName
 	}
 	desc.Fields["label"] = String(label)
-	desc.Fields["compoundFieldName"] = compoundFieldNameValue(field.APIName)
+	desc.Fields["compoundFieldName"] = describeCompoundFieldNameValue(field)
 	displayType := field.DisplayType
 	if displayType == "" {
 		displayType = string(field.Type)
