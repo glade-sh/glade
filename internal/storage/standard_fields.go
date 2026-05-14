@@ -437,6 +437,7 @@ func mergeStandardSObjectStubFields(definition *ObjectDefinition, features []str
 		fields = withoutPersonAccountFieldMap(fields)
 	}
 	mergeStandardFields(definition, fields)
+	applyStandardSObjectStubReadOnlyFields(definition)
 }
 
 func mergeStandardSObjectStubObjectInfo(definition *ObjectDefinition) {
@@ -449,6 +450,26 @@ func mergeStandardSObjectStubObjectInfo(definition *ObjectDefinition) {
 	}
 	if definition.PluralLabel == "" || stringsEqualFold(definition.PluralLabel, definition.APIName+"s") {
 		definition.PluralLabel = info.PluralLabel
+	}
+}
+
+func applyStandardSObjectStubReadOnlyFields(definition *ObjectDefinition) {
+	readOnlyFields, ok := standardSObjectStubReadOnlyFieldsFor(definition.APIName)
+	if !ok {
+		return
+	}
+	for _, name := range readOnlyFields {
+		field, ok := definition.Fields[name]
+		if !ok {
+			continue
+		}
+		if field.Createable == nil {
+			field.Createable = BoolFlag(false)
+		}
+		if field.Updateable == nil {
+			field.Updateable = BoolFlag(false)
+		}
+		definition.Fields[name] = field
 	}
 }
 

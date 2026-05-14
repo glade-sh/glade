@@ -483,6 +483,19 @@ func TestEnsureStandardObjectAddsGeneratedSObjectStubOverlayShape(t *testing.T) 
 	}
 }
 
+func TestEnsureStandardObjectAddsGeneratedSObjectStubAccessorFlags(t *testing.T) {
+	org := NewOrgState()
+
+	EnsureStandardObject(&org, "UserAppInfo")
+	fields := org.Objects["UserAppInfo"].Definition.Fields
+	if field := fields["Id"]; FieldFlagValue(field.Createable, true) || FieldFlagValue(field.Updateable, true) {
+		t.Fatalf("UserAppInfo.Id flags = %#v", field)
+	}
+	if field := fields["CreatedDate"]; FieldFlagValue(field.Createable, true) || FieldFlagValue(field.Updateable, true) {
+		t.Fatalf("UserAppInfo.CreatedDate flags = %#v", field)
+	}
+}
+
 func TestEnsureStandardObjectPreservesStubChildRelationshipsForSharedFields(t *testing.T) {
 	org := NewOrgState()
 

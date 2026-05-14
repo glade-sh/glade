@@ -197,7 +197,7 @@ function parseSObjectStub(filePath) {
       }
       continue;
     }
-    const propertyMatch = line.match(/^\s*global\s+([A-Za-z_][A-Za-z0-9_.]*(?:<[^>{};]+>)?)\s+([A-Za-z_][A-Za-z0-9_]*)\s*\{\s*get;/);
+    const propertyMatch = line.match(/^\s*global\s+([A-Za-z_][A-Za-z0-9_.]*(?:<[^>{};]+>)?)\s+([A-Za-z_][A-Za-z0-9_]*)\s*\{\s*get;\s*(?:(private)\s+)?set;/);
 	if (propertyMatch) {
 		const childObject = listElementType(propertyMatch[1]);
 		if (childRelationshipField && childObject) {
@@ -213,6 +213,8 @@ function parseSObjectStub(filePath) {
 		properties.set(propertyMatch[2], {
 			apexType: propertyMatch[1],
 			label: comment[0] || propertyMatch[2],
+			privateSet: propertyMatch[3] === "private",
+			settable: true,
       });
       comment = [];
       childRelationshipField = "";
@@ -223,7 +225,15 @@ function parseSObjectStub(filePath) {
 	for (const name of fieldNames) {
 		const property = properties.get(name) || { apexType: "Object", label: name };
 		const referenceTo = name.endsWith("Id") && name !== "Id" && property.apexType && !["Id", "String"].includes(property.apexType) ? [property.apexType] : [];
-		fields.push({ name, apexType: property.apexType, label: property.label, relationshipName: parentRelationships.get(name) || "", referenceTo });
+		fields.push({
+			name,
+			apexType: property.apexType,
+			label: property.label,
+			relationshipName: parentRelationships.get(name) || "",
+			referenceTo,
+			privateSet: property.privateSet,
+			settable: property.settable,
+		});
 	}
 	fields.sort((a, b) => a.name.localeCompare(b.name));
 	return { objectName, label, pluralLabel, fields, childRelationships };
@@ -285,6 +295,14 @@ for (const entry of entries) {
   out += "\t},\n";
 }
 out += `}\n\nfunc standardSObjectStubFieldsFor(objectName string) (map[string]Field, bool) {\n\tfields, ok := standardSObjectStubFieldData[objectName]\n\treturn fields, ok\n}\n\nfunc standardSObjectStubNames() []string {\n\tnames := make([]string, 0, len(standardSObjectStubFieldData))\n\tfor name := range standardSObjectStubFieldData {\n\t\tnames = append(names, name)\n\t}\n\treturn names\n}\n`;
+
+out += `\nvar standardSObjectStubReadOnlyFieldData = map[string][]string{\n`;
+for (const entry of entries) {
+	const readOnlyFields = entry.fields.filter((field) => field.privateSet).map((field) => field.name).sort();
+	if (readOnlyFields.length === 0) continue;
+	out += `\t${goString(entry.objectName)}: ${goStringSlice(readOnlyFields)},\n`;
+}
+out += `}\n\nfunc standardSObjectStubReadOnlyFieldsFor(objectName string) ([]string, bool) {\n\tfields, ok := standardSObjectStubReadOnlyFieldData[objectName]\n\treturn fields, ok\n}\n`;
 
 const relationshipsByObject = new Map();
 for (const entry of entries) {
