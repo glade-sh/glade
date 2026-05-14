@@ -141,8 +141,8 @@ func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 		},
 		{
 			name: "search api",
-			src:  `Search.find('FIND {Acme} IN ALL FIELDS RETURNING Account(Id)');`,
-			want: `unsupported call "Search.find local search/SOSL surface"`,
+			src:  `search.FIND('FIND {Acme} IN ALL FIELDS RETURNING Account(Id)');`,
+			want: `unsupported call "search.FIND local search/SOSL surface"`,
 		},
 		{
 			name: "inline sosl find",
@@ -1065,6 +1065,7 @@ System.assertEquals(null, attachment.getBody());
 System.assertEquals(null, attachment.getContentType());
 System.assertEquals(null, attachment.getFileName());
 System.assertEquals(null, attachment.getId());
+System.assertEquals(null, attachment.GETID());
 System.assertEquals(false, attachment.getInline());
 attachment.setBody(Blob.valueOf('file-body'));
 attachment.setContentType('text/plain');
@@ -1073,6 +1074,7 @@ attachment.setInline(true);
 System.assertEquals('file-body', attachment.getBody().toString());
 System.assertEquals('text/plain', attachment.getContentType());
 System.assertEquals('trail.txt', attachment.getFileName());
+System.assertEquals('trail.txt', attachment.GETFILENAME());
 System.assertEquals(true, attachment.getInline());
 Messaging.SingleEmailMessage msg = new Messaging.SingleEmailMessage();
 System.assertEquals(0, msg.getToAddresses().size());
@@ -4175,7 +4177,9 @@ Object second = results.get(1);
 System.assert(first.isSuccess(), 'first row should save');
 System.assert(!second.isSuccess(), 'second row should fail');
 System.assertNotEquals('', first.getId());
+System.assertEquals(first.getId(), first.GETID());
 List<Object> errors = second.getErrors();
+System.assertEquals(errors.size(), second.GETERRORS().size());
 System.assertEquals(1, errors.size());
 Object err = errors.get(0);
 String message = err.getMessage();

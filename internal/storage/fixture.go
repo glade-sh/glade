@@ -610,13 +610,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		"SetupEntityId":   {APIName: "SetupEntityId", Type: FieldReference, RelationshipName: "SetupEntity"},
 		"SetupEntityType": {APIName: "SetupEntityType", Type: FieldString},
 	})
-	ensureObject(org, "RecordType", "012", map[string]Field{
-		"Name":          {APIName: "Name", Type: FieldString},
-		"DeveloperName": {APIName: "DeveloperName", Type: FieldString},
-		"SobjectType":   {APIName: "SobjectType", Type: FieldString},
-		"IsActive":      {APIName: "IsActive", Type: FieldBoolean},
-		"Description":   {APIName: "Description", Type: FieldString},
-	})
+	ensureRecordTypeObject(org)
 	ensureObject(org, "Attachment", "00P", map[string]Field{
 		"Name":        {APIName: "Name", Type: FieldString, Required: true},
 		"ParentId":    {APIName: "ParentId", Type: FieldReference, ReferenceTo: []string{"Account", "Contact", "Opportunity", "User"}, RelationshipName: "Parent"},
@@ -672,9 +666,11 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	for _, objectName := range []string{"Account", "Contact", "Opportunity", "Pricebook2", "Product2"} {
 		existing := append([]RecordTypeInfo(nil), org.Objects[objectName].Definition.RecordTypes...)
 		EnsureStandardObject(org, objectName)
-		state := org.Objects[objectName]
-		state.Definition.RecordTypes = existing
-		org.Objects[objectName] = state
+		if len(existing) > 0 {
+			state := org.Objects[objectName]
+			state.Definition.RecordTypes = existing
+			org.Objects[objectName] = state
+		}
 	}
 
 	orgID := ID("00D000000000001")
@@ -895,11 +891,23 @@ func maxRecordTypeSequence(org OrgState) uint64 {
 	return max
 }
 
+func ensureRecordTypeObject(org *OrgState) {
+	ensureObject(org, "RecordType", "012", map[string]Field{
+		"Name":          {APIName: "Name", Type: FieldString},
+		"DeveloperName": {APIName: "DeveloperName", Type: FieldString},
+		"SobjectType":   {APIName: "SobjectType", Type: FieldString},
+		"IsActive":      {APIName: "IsActive", Type: FieldBoolean},
+		"Description":   {APIName: "Description", Type: FieldString},
+	})
+}
+
 func ensureRecordTypeRecords(org *OrgState) {
 	usedIDs := make(map[ID]bool)
+	usedIDObjects := make(map[ID]string)
 	if recordTypeObject := org.Objects["RecordType"]; len(recordTypeObject.Records) > 0 {
-		for id := range recordTypeObject.Records {
+		for id, record := range recordTypeObject.Records {
 			usedIDs[id] = true
+			usedIDObjects[id] = record.Fields["SobjectType"].String
 		}
 	}
 	next := uint64(1)
@@ -921,10 +929,11 @@ func ensureRecordTypeRecords(org *OrgState) {
 		}
 		EnsureRecordTypeIDField(&object.Definition)
 		for i, info := range object.Definition.RecordTypes {
-			if info.ID == "" {
+			if info.ID == "" || (usedIDs[info.ID] && !strings.EqualFold(usedIDObjects[info.ID], objectName)) {
 				info.ID, next = nextUnusedRecordTypeID(usedIDs, next)
 			}
 			usedIDs[info.ID] = true
+			usedIDObjects[info.ID] = objectName
 			if info.Name == "" {
 				info.Name = info.DeveloperName
 			}

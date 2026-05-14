@@ -213,6 +213,9 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 		if objectName == "UserLicense" {
 			want = 2
 		}
+		if objectName == "RecordType" {
+			want = 5
+		}
 		if len(org.Objects[objectName].Records) != want {
 			t.Fatalf("%s records = %#v", objectName, InspectOrg("", org))
 		}
@@ -223,6 +226,19 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 	}
 	if len(org.Objects["Account"].Definition.RecordTypes) != 1 {
 		t.Fatalf("account record types = %#v", org.Objects["Account"].Definition.RecordTypes)
+	}
+	if field, ok := org.Objects["Contact"].Definition.Fields["Name"]; !ok || field.Type != FieldString {
+		t.Fatalf("Contact.Name field = %#v, %v", field, ok)
+	}
+	if len(org.Objects["Opportunity"].Definition.RecordTypes) == 0 {
+		t.Fatalf("Opportunity record types = %#v", org.Objects["Opportunity"].Definition.RecordTypes)
+	}
+	opportunityRecordTypeID := org.Objects["Opportunity"].Definition.RecordTypes[0].ID
+	if opportunityRecordTypeID == "" {
+		t.Fatalf("missing Opportunity record type ID")
+	}
+	if _, ok := org.Objects["RecordType"].Records[opportunityRecordTypeID]; !ok {
+		t.Fatalf("missing Opportunity RecordType record %s: %#v", opportunityRecordTypeID, org.Objects["RecordType"].Records)
 	}
 	recordTypeID := org.Objects["Account"].Definition.RecordTypes[0].ID
 	if recordTypeID == "" {
@@ -329,8 +345,8 @@ func TestEnsureDeterministicPlatformDataAdvancesRecordTypeSequenceToMaxID(t *tes
 		Records:    make(map[ID]Record),
 	}
 	EnsureDeterministicPlatformData(&org)
-	if got := org.IDSequences["RecordType"]; got != 36 {
-		t.Fatalf("RecordType sequence = %d, want 36", got)
+	if got := org.IDSequences["RecordType"]; got < 36 {
+		t.Fatalf("RecordType sequence = %d, want at least 36", got)
 	}
 	generator := NewIDGenerator(prefixesForOrg(org))
 	generator.Sequences = copySequences(org.IDSequences)

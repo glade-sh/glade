@@ -28,6 +28,7 @@ func EnsureStandardObjectFieldsForFeatures(definition *ObjectDefinition, feature
 	mergeStandardSObjectStubFields(definition, features)
 	mergeStandardSObjectStubRelationships(definition, features)
 	applyStandardObjectCompatibilityOverlays(definition)
+	EnsureRecordTypeIDField(definition)
 	ensureCommonRecordTypeField(definition)
 	fields := standardFieldsForObject(definition.APIName)
 	for _, field := range fields {
@@ -319,6 +320,10 @@ func EnsureStandardObject(org *OrgState, objectName string) {
 		}
 	}
 	org.Objects[objectName] = state
+	if len(state.Definition.RecordTypes) > 0 {
+		ensureRecordTypeObject(org)
+		ensureRecordTypeRecords(org)
+	}
 }
 
 func IsKnownStandardObject(objectName string) bool {

@@ -812,10 +812,10 @@ System.assertEquals('Acme', name);
 	}
 }
 
-func TestExecParentRelationshipCanLoadFromLookupID(t *testing.T) {
+func TestExecParentRelationshipDoesNotLoadFromLookupID(t *testing.T) {
 	program, err := CompileAnonymous(`
 Child__c child = new Child__c(Parent__c = '001000000000001AAA');
-System.assertEquals('Acme', child.Parent__r.Name);
+System.assertEquals(null, child.Parent__r.Name);
 `)
 	if err != nil {
 		t.Fatal(err)

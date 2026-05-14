@@ -1467,7 +1467,7 @@ func TestAnalyzeStillFlagsUnsupportedSearchSurface(t *testing.T) {
 	writeSemaFile(t, filepath.Join(root, "UsesSearchFind.cls"), `
 public class UsesSearchFind {
   public void run(String queryText) {
-    Search.find(queryText);
+    search.FIND(queryText);
   }
 }
 `)
@@ -1477,7 +1477,7 @@ public class UsesSearchFind {
 	}, schema.Schema{})
 	result := Analyze(index)
 	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA028" && strings.Contains(diag.Message, "Search.find") {
+		if diag.Code == "OAERSEMA028" && strings.Contains(diag.Message, "search.FIND") {
 			return
 		}
 	}

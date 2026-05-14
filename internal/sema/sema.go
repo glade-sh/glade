@@ -2024,8 +2024,12 @@ func (a *Analyzer) checkIRExprVariables(typ typesys.TypeSymbol, member typesys.M
 			})
 		}
 	case ir.ExprCall:
-		if strings.HasPrefix(expr.Callee, "Search.") && !strings.EqualFold(expr.Callee, "Search.query") {
-			return []diagnostic.Diagnostic{unsupportedLocalFeatureDiagnostic(typ, member, expr.Callee+" local search/SOSL surface", bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source)}
+		if lastDot := strings.LastIndex(expr.Callee, "."); lastDot > 0 && lastDot < len(expr.Callee)-1 {
+			typeName := expr.Callee[:lastDot]
+			memberName := expr.Callee[lastDot+1:]
+			if strings.EqualFold(typeName, "Search") && !strings.EqualFold(memberName, "query") {
+				return []diagnostic.Diagnostic{unsupportedLocalFeatureDiagnostic(typ, member, expr.Callee+" local search/SOSL surface", bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source)}
+			}
 		}
 		for _, arg := range expr.Args {
 			diagnostics = append(diagnostics, a.checkIRExprVariables(typ, member, arg, scope, pos, bodyOffset, source, model, constructability)...)

@@ -2391,6 +2391,7 @@ System.assertEquals(false, System.Test.isRunningTest());
 System.System.debug('default namespace System class call');
 System.assertEquals(Date.today(), System.Date.today());
 System.assertEquals(1, System.Limits.GETQUERIES());
+System.assertEquals(16, crypto.generateAesKey(128).size());
 Map<String,Object> parsed = (Map<String,Object>)System.JSON.deserializeUntyped('{"ok":true}');
 System.assertEquals(true, (Boolean)parsed.get('ok'));
 System.assertEquals('HALF_UP', System.RoundingMode.HALF_UP.name());

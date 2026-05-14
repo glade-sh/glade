@@ -2010,6 +2010,10 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"Time.newInstance", "Time.valueOf",
 		"Blob.valueOf",
 		"URL.getSalesforceBaseUrl", "URL.getOrgDomainUrl", "URL.getCurrentRequestUrl",
+		"Crypto.generateDigest", "Crypto.generateMac", "Crypto.verifyHmac", "Crypto.areEqualConstantTime",
+		"Crypto.encrypt", "Crypto.decrypt", "Crypto.encryptWithManagedIV", "Crypto.decryptWithManagedIV",
+		"Crypto.sign", "Crypto.signWithCertificate", "Crypto.verify", "Crypto.verifyWithCertificate",
+		"Crypto.generateAESKey", "Crypto.getRandomInteger", "Crypto.getRandomLong",
 		"JSON.createGenerator", "JSON.createParser", "JSON.serialize", "JSON.serializePretty",
 		"JSON.deserializeUntyped", "JSON.deserialize", "JSON.deserializeStrict",
 		"ConnectApi.Organization.getSettings", "ConnectApi.Communities.getCommunity",
@@ -2110,6 +2114,7 @@ var systemNamespaceTypes = []string{
 	"Datetime",
 	"Time",
 	"URL",
+	"Crypto",
 	"JSON",
 	"Limits",
 	"Test",
@@ -2309,8 +2314,8 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 			return value, err
 		}
 	}
-	if strings.HasPrefix(callee, "Search.") {
-		if strings.EqualFold(callee, "Search.query") {
+	if typeName, memberName, ok := splitDottedTypeMember(callee); ok && strings.EqualFold(typeName, "Search") {
+		if strings.EqualFold(memberName, "query") {
 			return vm.searchQuery(args)
 		}
 		return Null, unsupportedCallError(callee + " local search/SOSL surface")
@@ -2676,7 +2681,7 @@ platformStaticCall:
 			return Null, fmt.Errorf("UUID.randomUUID expects 0 arguments")
 		}
 		return String(vm.nextDeterministicUUID()), nil
-	case "Date.today", "Date.Today", "System.today":
+	case "Date.today", "System.today":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
@@ -3094,7 +3099,7 @@ platformStaticCall:
 	case "Crypto.decrypt", "Crypto.encryptWithManagedIV", "Crypto.decryptWithManagedIV",
 		"Crypto.sign", "Crypto.signWithCertificate", "Crypto.verify", "Crypto.verifyWithCertificate":
 		return Null, unsupportedCallError(callee + " local deterministic key, certificate, and encryption surfaces")
-	case "Crypto.generateAESKey", "Crypto.generateAesKey":
+	case "Crypto.generateAESKey":
 		if len(args) != 1 || args[0].Kind != ValueInt {
 			return Null, fmt.Errorf("Crypto.generateAESKey expects Integer key size")
 		}
@@ -6876,6 +6881,63 @@ func isDatabaseDMLOptionsValue(value Value) bool {
 	return value.Kind == ValueObject && (strings.EqualFold(value.Type, "Database.DMLOptions") || strings.EqualFold(value.Type, "DMLOptions"))
 }
 
+func callDatabaseResultObjectMember(receiver Value, method string, args []Value) (Value, bool, error) {
+	if !databaseResultObjectLike(receiver) {
+		return Null, false, nil
+	}
+	switch apexMemberKey(method) {
+	case "issuccess":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("%s.isSuccess expects 0 arguments", receiver.Type)
+		}
+		return databaseResultObjectField(receiver, "success", Bool(false)), true, nil
+	case "getid":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("%s.getId expects 0 arguments", receiver.Type)
+		}
+		return databaseResultObjectField(receiver, "id", Null), true, nil
+	case "geterrors":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("%s.getErrors expects 0 arguments", receiver.Type)
+		}
+		return databaseResultObjectField(receiver, "errors", List()), true, nil
+	case "iscreated":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("%s.isCreated expects 0 arguments", receiver.Type)
+		}
+		return databaseResultObjectField(receiver, "created", Bool(false)), true, nil
+	}
+	return Null, false, nil
+}
+
+func databaseResultObjectLike(value Value) bool {
+	if value.Kind != ValueObject {
+		return false
+	}
+	switch {
+	case strings.EqualFold(value.Type, "Database.SaveResult"),
+		strings.EqualFold(value.Type, "Database.DeleteResult"),
+		strings.EqualFold(value.Type, "Database.UndeleteResult"),
+		strings.EqualFold(value.Type, "Database.EmptyRecycleBinResult"),
+		strings.EqualFold(value.Type, "Database.LockResult"),
+		strings.EqualFold(value.Type, "Database.UnlockResult"),
+		strings.EqualFold(value.Type, "Database.UpsertResult"):
+		return true
+	}
+	return false
+}
+
+func databaseResultObjectField(value Value, field string, fallback Value) Value {
+	if _, found, ok := objectFieldValue(value, field); ok {
+		return found
+	}
+	return fallback
+}
+
+func apexMemberKey(name string) string {
+	return strings.ToLower(strings.TrimSpace(name))
+}
+
 func newDatabaseDMLOptions() Value {
 	options := Object("Database.DMLOptions")
 	options.Fields["allowFieldTruncation"] = Bool(false)
@@ -8564,16 +8626,16 @@ func storageValueFromVM(value Value) (storage.Value, error) {
 		return storage.BooleanValue(value.Bool), nil
 	case ValueObject:
 		if raw, ok := value.Fields["value"]; ok && raw.Kind == ValueString {
-			switch value.Type {
-			case "Id", "String":
+			switch strings.ToLower(value.Type) {
+			case "id", "string":
 				return storage.StringValue(raw.Text), nil
-			case "Date":
+			case "date":
 				return storage.DateValue(raw.Text), nil
-			case "Datetime", "DateTime":
+			case "datetime":
 				return storage.DateTimeValue(raw.Text), nil
-			case "Time":
+			case "time":
 				return storage.StringValue(raw.Text), nil
-			case "Blob":
+			case "blob":
 				return storage.BlobValue(raw.Text), nil
 			}
 		}
@@ -16196,7 +16258,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		controller.Fields["pageSize"] = Int(20)
 		controller.Fields["pageNumber"] = Int(1)
 		return controller, nil
-	case "ApexPages.Message", "ApexPages.message":
+	case "ApexPages.Message":
 		if len(args) < 2 || len(args) > 3 {
 			return Null, fmt.Errorf("ApexPages.Message constructor expects severity, summary[, detail]")
 		}
@@ -19494,6 +19556,14 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 		if value, handled, err := vm.callEnumMember(receiver, method, args); handled || err != nil {
 			return value, true, err
 		}
+		if value, updated, mutated, handled, err := vm.callPlatformObjectMember(receiver, method, args, result); handled || err != nil {
+			if mutated {
+				if err := vm.storeReceiver(receiverName, updated); err != nil {
+					return Null, true, err
+				}
+			}
+			return value, true, err
+		}
 		if _, classExists := vm.lookupClass(receiver.Type); classExists {
 			dispatchType := runtimeObjectType(receiver)
 			target, ok, ambiguous := vm.resolveInstanceMethodForArgs(dispatchType, method, args)
@@ -19528,14 +19598,6 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 				}
 				return value, true, err
 			}
-		}
-		if value, updated, mutated, handled, err := vm.callPlatformObjectMember(receiver, method, args, result); handled || err != nil {
-			if mutated {
-				if err := vm.storeReceiver(receiverName, updated); err != nil {
-					return Null, true, err
-				}
-			}
-			return value, true, err
 		}
 		dispatchType := runtimeObjectType(receiver)
 		target, ok, ambiguous := vm.resolveInstanceMethodForArgs(dispatchType, method, args)
@@ -20177,6 +20239,9 @@ func canonicalCollectionMemberName(collection, method string) string {
 }
 
 func canonicalPlatformObjectMemberName(typeName, method string) string {
+	if strings.EqualFold(typeName, "TimeZone") && strings.EqualFold(method, "getID") {
+		return "getID"
+	}
 	known := []string{
 		"get", "iterator",
 		"getQuery",
@@ -20188,7 +20253,7 @@ func canonicalPlatformObjectMemberName(typeName, method string) string {
 		"newSObject", "getDescribe", "getRecordTypeInfosByName", "getRecordTypeInfosById",
 		"getRecordTypeId",
 		"getMap",
-		"getName", "getLabel", "getType", "getSOAPType", "getSoapType",
+		"getName", "getLabel", "getType", "getSoapType",
 		"isNillable", "isExternalId", "isUnique", "isEncrypted", "isNameField",
 		"getLength", "getPrecision", "getScale", "isHtmlFormatted",
 		"getReferenceTo", "getRelationshipName", "getPicklistValues", "getSObjectField",
@@ -20197,7 +20262,8 @@ func canonicalPlatformObjectMemberName(typeName, method string) string {
 		"getTabs", "isSelected", "getSObjectName", "isCustom", "getIconUrl", "getIcons",
 		"getContentType", "getHeight", "getTheme", "getWidth",
 		"to15", "to18", "getSObjectType",
-		"toStartOfMonth", "format", "toString", "date", "time", "getID",
+		"toStartOfMonth", "toEndOfMonth", "format", "formatGmt", "toString",
+		"date", "dateGmt", "time", "timeGmt", "year", "month", "day", "getTime",
 		"equals", "hashCode", "newInstance", "isAssignableFrom", "getNamespace", "getPackageName",
 		"send", "toExternalForm", "getProtocol", "getHost", "getAuthority",
 		"getPath", "getQuery", "getRef", "getFile", "getPort", "getDefaultPort",
@@ -20212,7 +20278,7 @@ func canonicalPlatformObjectMemberName(typeName, method string) string {
 		"setToAddresses", "setCcAddresses", "setBccAddresses", "setFileAttachments",
 		"setEntityAttachments", "setDocumentAttachments", "setTargetObjectIds",
 		"setBody", "setContentType", "setFileName", "setInline",
-		"getBody", "getFileName", "getInline",
+		"getBody", "getContentType", "getFileName", "getId", "getInline",
 		"setSubject", "setPlainTextBody", "setHtmlBody", "setReplyTo",
 		"setSenderDisplayName", "setSaveAsActivity", "setTreatBodiesAsTemplate",
 		"setTreatTargetObjectAsRecipient", "setUseSignature", "setBccSender",
@@ -20978,6 +21044,12 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 				}
 			}
 			if relationship, hasRelationship := vm.parentRelationshipValue(receiver, field); hasRelationship {
+				if relationship.Kind != ValueNull {
+					return relationship, true, nil
+				}
+				if fromLookupID, ok := vm.parentRelationshipValueFromLookupID(receiver, field); ok {
+					return fromLookupID, true, nil
+				}
 				return relationship, true, nil
 			}
 			return Null, true, nil
@@ -20987,6 +21059,14 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 				relationshipName := vm.parentRelationshipNameForReferenceField(definition, fieldDef)
 				if relationshipName != "" {
 					if relationship, ok := vm.parentRelationshipValue(receiver, relationshipName); ok {
+						if relationship.Kind == ValueNull {
+							if fromLookupID, hasLookupID := vm.parentRelationshipValueFromLookupID(receiver, relationshipName); hasLookupID {
+								return fromLookupID, true, nil
+							}
+						}
+						return relationship, true, nil
+					}
+					if relationship, ok := vm.parentRelationshipValueFromLookupID(receiver, relationshipName); ok {
 						return relationship, true, nil
 					}
 				}
@@ -21539,18 +21619,38 @@ func (vm *VM) parentRelationshipValue(receiver Value, relationshipName string) (
 		if relationReferencesObject(relation, "RecordType") && !queriedSObjectFieldsIncludes(receiver, relation.ParentRelationship) {
 			return vm.parentRelationshipTypedNull(relation), true
 		}
-		if parent, ok := vm.parentRelationshipRecordValue(relation, lookupValue); ok {
-			return parent, true
-		}
-		if shell := vm.parentRelationshipTypedShell(relation); shell.Kind == ValueObject {
-			return shell, true
-		}
 		return vm.parentRelationshipTypedNull(relation), true
 	}
 	return Null, false
 }
 
-func (vm *VM) parentRelationshipRecordValue(relation storage.Relationship, lookupValue Value) (Value, bool) {
+func (vm *VM) parentRelationshipValueFromLookupID(receiver Value, relationshipName string) (Value, bool) {
+	if vm == nil || vm.Org == nil || receiver.Kind != ValueObject {
+		return Null, false
+	}
+	objectName, ok := storage.ResolveObjectName(*vm.Org, receiver.Type)
+	if !ok {
+		objectName = receiver.Type
+	}
+	object, ok := vm.Org.Objects[objectName]
+	if !ok {
+		return Null, false
+	}
+	for _, relation := range object.Definition.Relations {
+		if !vmRelationshipNameMatches(vm.Org.Namespace, relation.ParentRelationship, relationshipName) &&
+			!vmParentRelationshipNameMatches(vm.Org.Namespace, relation.Field, relationshipName) {
+			continue
+		}
+		_, lookupValue, ok := objectFieldValue(receiver, relation.Field)
+		if !ok || lookupValue.Kind == ValueNull {
+			return Null, false
+		}
+		return vm.parentRelationshipShellFromLookupID(relation, lookupValue)
+	}
+	return Null, false
+}
+
+func (vm *VM) parentRelationshipShellFromLookupID(relation storage.Relationship, lookupValue Value) (Value, bool) {
 	if vm == nil || vm.Org == nil {
 		return Null, false
 	}
@@ -21563,15 +21663,12 @@ func (vm *VM) parentRelationshipRecordValue(relation storage.Relationship, looku
 		if !ok {
 			parentObject = parentName
 		}
-		object, ok := vm.Org.Objects[parentObject]
-		if !ok {
+		if strings.TrimSpace(parentObject) == "" {
 			continue
 		}
-		_, record, ok := storage.LookupRecordByID(object.Records, lookupID)
-		if !ok {
-			continue
-		}
-		return vm.vmValueFromRecord(record), true
+		parent := Object(parentObject)
+		parent.Fields["Id"] = platformScalar("Id", string(lookupID))
+		return parent, true
 	}
 	return Null, false
 }
@@ -22334,12 +22431,12 @@ func metadataFieldTypeFromValue(value Value) storage.FieldType {
 	case ValueDecimal:
 		return storage.FieldDecimal
 	case ValueObject:
-		switch value.Type {
-		case "Date":
+		switch strings.ToLower(value.Type) {
+		case "date":
 			return storage.FieldDate
-		case "Datetime", "DateTime":
+		case "datetime":
 			return storage.FieldDateTime
-		case "Id":
+		case "id":
 			return storage.FieldID
 		}
 	}
@@ -23131,6 +23228,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	if isIteratorValue(receiver) {
 		return callIteratorMember(receiver, method, args)
 	}
+	if value, handled, err := callDatabaseResultObjectMember(receiver, method, args); handled || err != nil {
+		return value, receiver, false, true, err
+	}
 	switch receiver.Type {
 	case "TestEventBus":
 		switch method {
@@ -23455,7 +23555,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			return describe, receiver, false, true, nil
 		}
 		switch method {
-		case "getName", "getLabel", "getType", "getSOAPType", "getSoapType", "getSObjectType", "getLength", "getPrecision", "getScale", "isHtmlFormatted", "isNillable", "isExternalId", "isUnique", "isEncrypted", "isCalculated", "isAutoNumber", "isNameField", "isCustom", "getReferenceTo", "getRelationshipName", "getPicklistValues", "getController", "getControllerValues", "isAccessible", "isCreateable", "isUpdateable", "isSortable":
+		case "getName", "getLabel", "getType", "getSoapType", "getSObjectType", "getLength", "getPrecision", "getScale", "isHtmlFormatted", "isNillable", "isExternalId", "isUnique", "isEncrypted", "isCalculated", "isAutoNumber", "isNameField", "isCustom", "getReferenceTo", "getRelationshipName", "getPicklistValues", "getController", "getControllerValues", "isAccessible", "isCreateable", "isUpdateable", "isSortable":
 			describe, _, _, handled, err := vm.callPlatformObjectMember(receiver, "getDescribe", nil, result)
 			if err != nil || !handled {
 				return describe, receiver, false, true, err
@@ -23526,7 +23626,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getType expects 0 arguments")
 			}
 			return receiver.Fields["type"], receiver, false, true, nil
-		case "getSOAPType", "getSoapType":
+		case "getSoapType":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.%s expects 0 arguments", method)
 			}
@@ -23882,7 +23982,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			months := (end.Year()-start.Year())*12 + int(end.Month()) - int(start.Month())
 			return Int(int64(months)), receiver, false, true, nil
-		case "year", "month", "day", "Year", "Month", "Day":
+		case "year", "month", "day":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Date.%s expects 0 arguments", method)
 			}
@@ -23890,7 +23990,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if err != nil {
 				return Null, receiver, false, true, err
 			}
-			switch strings.ToLower(method) {
+			switch method {
 			case "year":
 				return Int(int64(date.Year())), receiver, false, true, nil
 			case "month":
@@ -23966,7 +24066,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, err
 			}
 			return String(formatted), receiver, false, true, nil
-		case "date", "dateGmt", "dateGMT":
+		case "date", "dateGmt":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Datetime.%s expects 0 arguments", method)
 			}
@@ -23993,7 +24093,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, err
 			}
 			return Int(t.UnixNano() / int64(time.Millisecond)), receiver, false, true, nil
-		case "time", "timeGmt", "timeGMT":
+		case "time", "timeGmt":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Datetime.%s expects 0 arguments", method)
 			}
@@ -25761,12 +25861,9 @@ func callEmailFileAttachmentMember(receiver Value, method string, args []Value) 
 		}
 		receiver.Fields["inline"] = args[0]
 		return Null, receiver, true, true, nil
-	case "getBody", "getContentType", "getFileName", "getId", "getID", "getInline":
+	case "getBody", "getContentType", "getFileName", "getId", "getInline":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Messaging.EmailFileAttachment.%s expects 0 arguments", method)
-		}
-		if method == "getID" {
-			return receiver.Fields["id"], receiver, false, true, nil
 		}
 		return receiver.Fields[emailMessageFieldName(method)], receiver, false, true, nil
 	default:

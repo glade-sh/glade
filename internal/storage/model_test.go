@@ -535,6 +535,23 @@ func TestEnsureStandardObjectMapsCompoundStubFieldTypes(t *testing.T) {
 	}
 }
 
+func TestEnsureStandardObjectAddsRecordTypeIdFromGeneratedRecordTypes(t *testing.T) {
+	definition := ObjectDefinition{APIName: "Account"}
+
+	EnsureStandardObjectFields(&definition)
+
+	if len(definition.RecordTypes) == 0 {
+		t.Fatalf("Account record types = %#v", definition.RecordTypes)
+	}
+	field, ok := definition.Fields["RecordTypeId"]
+	if !ok || field.Type != FieldReference || field.RelationshipName != "RecordType" {
+		t.Fatalf("Account.RecordTypeId field = %#v, %v", field, ok)
+	}
+	if !hasRelationship(definition.Relations, "RecordTypeId", "RecordType", "RecordType") {
+		t.Fatalf("Account.RecordTypeId relation missing: %#v", definition.Relations)
+	}
+}
+
 func hasRelationship(relations []Relationship, fieldName, parentObject, parentRelationship string) bool {
 	for _, relation := range relations {
 		if relation.Field != fieldName || relation.ParentRelationship != parentRelationship {
