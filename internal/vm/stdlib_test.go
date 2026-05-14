@@ -1016,6 +1016,9 @@ System.assertEquals('2088df74d5f2146b48146caf4965377e9d0be3a4', EncodingUtil.con
 System.assertEquals('6e9ef29b75fffc5b7abae527d58fdadb2fe42e7219011976917343065f58ed4a', EncodingUtil.convertToHex(hmacSHA256));
 System.assertEquals(EncodingUtil.convertToHex(hmacSHA256), EncodingUtil.convertToHex(normalizedHmacSHA256));
 System.assertEquals('e477384d7ca229dd1426e64b63ebf2d36ebd6d7e669a6735424e72ea6c01d3f8b56eb39c36d8232f5427999b8d1a3f9cd1128fc69f4d75b434216810fa367e98', EncodingUtil.convertToHex(hmacSHA512));
+System.assert(Crypto.verifyHmac('hmacSHA256', message, key, hmacSHA256));
+System.assert(Crypto.verifyHmac(' HMAC-SHA256 ', message, key, normalizedHmacSHA256));
+System.assert(!Crypto.verifyHmac('hmacSHA256', Blob.valueOf('changed'), key, hmacSHA256));
 System.assert(Crypto.areEqualConstantTime(hello, Blob.valueOf('hello')));
 System.assert(!Crypto.areEqualConstantTime(hello, Blob.valueOf('hullo')));
 System.assert(!Crypto.areEqualConstantTime(hello, Blob.valueOf('hello!')));
@@ -1164,6 +1167,65 @@ URL protocolHostPort = new URL('https', 'example.test', 8443, '/ridge');
 System.assertEquals('https://example.test:8443/ridge', protocolHostPort.toExternalForm());
 URL relative = new URL(detailed, '../Other?x=1');
 System.assertEquals('https://example.test:8443/Other?x=1', relative.toExternalForm());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecTypeNamespaceContracts(t *testing.T) {
+	program, err := CompileAnonymous(`
+Type accountType = Type.forName('Account');
+System.assertEquals(null, accountType.getNamespace());
+System.assertEquals(null, accountType.getPackageName());
+System.assertEquals('System', DmlException.class.getNamespace());
+System.assertEquals('System', DmlException.class.getPackageName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecCollectionFoundationContracts(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Integer> numbers = new List<Integer>();
+System.assert(numbers.isEmpty());
+numbers.add(1);
+System.assert(!numbers.isEmpty());
+System.assertEquals(1, numbers.remove(0));
+numbers.add(2);
+numbers.clear();
+System.assertEquals(0, numbers.size());
+System.assert(numbers.isEmpty());
+
+Set<String> names = new Set<String>();
+System.assert(names.isEmpty());
+System.assert(names.add('Ada'));
+System.assert(!names.add('Ada'));
+System.assert(names.containsAll(new List<String>{'Ada'}));
+System.assert(names.remove('Ada'));
+System.assert(names.isEmpty());
+names.add('Grace');
+names.clear();
+System.assertEquals(0, names.size());
+
+Map<String,Integer> counts = new Map<String,Integer>();
+System.assert(counts.isEmpty());
+System.assertEquals(null, counts.put('a', 1));
+System.assert(counts.containsKey('a'));
+System.assert(counts.containsValue(1));
+System.assertEquals(1, counts.remove('a'));
+System.assertEquals(null, counts.remove('missing'));
+System.assert(counts.isEmpty());
+counts.put('b', 2);
+counts.clear();
+System.assertEquals(0, counts.size());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1573,6 +1635,8 @@ func TestBlobEncodingCryptoStdlibRejectsBadInputs(t *testing.T) {
 		{source: "Crypto.generateDigest('SHA-999', Blob.valueOf('x'));", want: `unsupported digest algorithm "SHA-999"`},
 		{source: "Crypto.generateMac('hmacSHA999', Blob.valueOf('x'), Blob.valueOf('key'));", want: `unsupported MAC algorithm "hmacSHA999"`},
 		{source: "Crypto.generateMac('hmacSHA256', Blob.valueOf('x'), 'key');", want: "Crypto.generateMac privateKey expects Blob"},
+		{source: "Crypto.verifyHmac('hmacSHA999', Blob.valueOf('x'), Blob.valueOf('key'), Blob.valueOf('mac'));", want: `unsupported MAC algorithm "hmacSHA999"`},
+		{source: "Crypto.verifyHmac('hmacSHA256', Blob.valueOf('x'), Blob.valueOf('key'), 'mac');", want: "Crypto.verifyHmac mac expects Blob"},
 		{source: "Crypto.encrypt('AES999', Blob.valueOf('0123456789abcdef'), Blob.valueOf('abcdef9876543210'), Blob.valueOf('x'));", want: `unsupported encryption algorithm "AES999"`},
 		{source: "Crypto.encrypt('AES256', Blob.valueOf('short'), Blob.valueOf('abcdef9876543210'), Blob.valueOf('x'));", want: "Crypto.encrypt AES256 privateKey expects 32 bytes, got 5"},
 		{source: "Crypto.encrypt(' aes-256 ', Blob.valueOf('short'), Blob.valueOf('abcdef9876543210'), Blob.valueOf('x'));", want: "Crypto.encrypt AES256 privateKey expects 32 bytes, got 5"},
@@ -2094,17 +2158,20 @@ unknown.getSObjectType();
 	}
 }
 
-func TestExecURLCurrentRequestUrlUnsupported(t *testing.T) {
-	program, err := CompileAnonymous(`URL.getCurrentRequestUrl();`)
+func TestExecURLCurrentRequestUrlUsesCurrentPage(t *testing.T) {
+	program, err := CompileAnonymous(`
+URL defaultURL = URL.getCurrentRequestUrl();
+System.assertEquals('https://local.oaer.example/apex/current', defaultURL.toExternalForm());
+PageReference current = ApexPages.currentPage();
+current.getParameters().put('mode', 'local');
+URL withParams = URL.getCurrentRequestUrl();
+System.assertEquals('https://local.oaer.example/apex/current?mode=local', withParams.toExternalForm());
+`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = Execute(program, nil)
-	if err == nil {
-		t.Fatal("expected URL.getCurrentRequestUrl to be unsupported")
-	}
-	if got := err.Error(); got != `unsupported call "URL.getCurrentRequestUrl local current request URL surface"` {
-		t.Fatalf("error = %q", got)
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
 	}
 }
 

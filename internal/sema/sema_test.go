@@ -1280,6 +1280,8 @@ func TestAnalyzeSystemTypeAliasAssignment(t *testing.T) {
 public class UsesSystemType {
   public void run() {
     System.Type classType = Type.forName('Example');
+    Boolean assignable = classType.isAssignableFrom(Type.forName('Other'));
+    Object made = classType.newInstance();
   }
 }
 `)
@@ -1290,6 +1292,33 @@ public class UsesSystemType {
 	result := Analyze(index)
 	if result.HasErrors() {
 		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeGeneratedStubMethodStaticAccess(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesGeneratedStubStaticAccess.cls"), `
+public class UsesGeneratedStubStaticAccess {
+  public void run() {
+    Boolean invalidStatic = Database.SaveResult.isSuccess();
+    Type classType = Type.forName('Example');
+    Type invalidInstance = classType.forName('Other');
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesGeneratedStubStaticAccess.cls")},
+	}, schema.Schema{})
+	result := Analyze(index)
+	var staticAccessDiagnostics int
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "OAERSEMA027" {
+			staticAccessDiagnostics++
+		}
+	}
+	if staticAccessDiagnostics != 2 {
+		t.Fatalf("expected 2 generated-stub static access diagnostics, got %d: %#v", staticAccessDiagnostics, result.Diagnostics)
 	}
 }
 

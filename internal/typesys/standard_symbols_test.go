@@ -110,6 +110,9 @@ func TestStandardPlatformSymbolsIncludeGeneratedSystemStubBreadth(t *testing.T) 
 	saveResult := requireStandardSymbol(t, symbols, "Database.SaveResult")
 	requireStandardMethod(t, saveResult, "getErrors", nil, false)
 	requireStandardMethod(t, saveResult, "isSuccess", nil, false)
+	requireStandardProperty(t, saveResult, "errors", "List<Database.Error>")
+	requireStandardProperty(t, saveResult, "id", "Id")
+	requireStandardProperty(t, saveResult, "success", "Boolean")
 
 	database := requireStandardSymbol(t, symbols, "Database")
 	requireStandardMethod(t, database, "insert", []string{"SObject", "Object"}, true)
@@ -127,7 +130,29 @@ func TestStandardPlatformSymbolsIncludeGeneratedSystemStubBreadth(t *testing.T) 
 	typeClass := requireStandardSymbol(t, symbols, "Type")
 	requireStandardMethod(t, typeClass, "isAssignableFrom", []string{"Type"}, false)
 
+	canvasTest := requireStandardSymbol(t, symbols, "Canvas.Test")
+	requireStandardPropertyStatic(t, canvasTest, "KEY_CANVAS_URL", "Object", true)
+
 	requireStandardSymbol(t, symbols, "Database.Cursor.DeleteFilter")
+}
+
+func TestStandardSymbolsFromSpecsKeepsRicherGeneratedPropertyTypes(t *testing.T) {
+	symbols := StandardSymbolsFromSpecs([]StandardSymbolSpec{{
+		Name: "Database.SaveResult",
+		Properties: []StandardPropertySpec{{
+			Name: "errors",
+			Type: "Object",
+		}},
+	}, {
+		Name: "database.saveresult",
+		Properties: []StandardPropertySpec{{
+			Name: "errors",
+			Type: "List<Database.Error>",
+		}},
+	}})
+
+	saveResult := requireStandardSymbol(t, symbols, "Database.SaveResult")
+	requireStandardProperty(t, saveResult, "errors", "List<Database.Error>")
 }
 
 func TestStandardPlatformSymbolsIncludeGeneratedProductNamespaceStubBreadth(t *testing.T) {
@@ -137,7 +162,7 @@ func TestStandardPlatformSymbolsIncludeGeneratedProductNamespaceStubBreadth(t *t
 	requireStandardMethod(t, org, "getSettings", nil, true)
 
 	commerce := requireStandardSymbol(t, symbols, "commercepromotions.PromotionRequest")
-	requireStandardProperty(t, commerce, "buyerAccountId", "Object")
+	requireStandardProperty(t, commerce, "buyerAccountId", "String")
 }
 
 func requireStandardSymbol(t *testing.T, symbols []TypeSymbol, name string) TypeSymbol {
@@ -189,6 +214,19 @@ func requireStandardProperty(t *testing.T, symbol TypeSymbol, name, typ string) 
 		}
 	}
 	t.Fatalf("missing property %s.%s type %s: %#v", standardSymbolFullName(symbol), name, typ, symbol.Members)
+}
+
+func requireStandardPropertyStatic(t *testing.T, symbol TypeSymbol, name, typ string, static bool) {
+	t.Helper()
+	for _, member := range symbol.Members {
+		if member.Kind != apexast.DeclarationProperty || !strings.EqualFold(member.Name, name) || !strings.EqualFold(member.Type, typ) {
+			continue
+		}
+		if memberHasModifier(member, "static") == static {
+			return
+		}
+	}
+	t.Fatalf("missing property %s.%s type %s static=%v: %#v", standardSymbolFullName(symbol), name, typ, static, symbol.Members)
 }
 
 func requireStandardMethodType(t *testing.T, symbol TypeSymbol, name, typ string) {

@@ -26,7 +26,7 @@ func EnsureStandardObjectFieldsForFeatures(definition *ObjectDefinition, feature
 	}
 	mergeStandardObjectDefinition(definition, features)
 	mergeStandardSObjectStubFields(definition, features)
-	mergeStandardSObjectStubRelationships(definition)
+	mergeStandardSObjectStubRelationships(definition, features)
 	applyStandardObjectCompatibilityOverlays(definition)
 	ensureCommonRecordTypeField(definition)
 	fields := standardFieldsForObject(definition.APIName)
@@ -423,6 +423,7 @@ func mergeStandardObjectDefinition(definition *ObjectDefinition, features []stri
 }
 
 func mergeStandardSObjectStubFields(definition *ObjectDefinition, features []string) {
+	mergeStandardSObjectStubObjectInfo(definition)
 	fields, ok := standardSObjectStubFieldsFor(definition.APIName)
 	if !ok {
 		return
@@ -433,10 +434,26 @@ func mergeStandardSObjectStubFields(definition *ObjectDefinition, features []str
 	mergeStandardFields(definition, fields)
 }
 
-func mergeStandardSObjectStubRelationships(definition *ObjectDefinition) {
+func mergeStandardSObjectStubObjectInfo(definition *ObjectDefinition) {
+	info, ok := standardSObjectStubObjectInfoFor(definition.APIName)
+	if !ok {
+		return
+	}
+	if definition.Label == "" || stringsEqualFold(definition.Label, definition.APIName) {
+		definition.Label = info.Label
+	}
+	if definition.PluralLabel == "" || stringsEqualFold(definition.PluralLabel, definition.APIName+"s") {
+		definition.PluralLabel = info.PluralLabel
+	}
+}
+
+func mergeStandardSObjectStubRelationships(definition *ObjectDefinition, features []string) {
 	relationships, ok := standardSObjectStubRelationshipsFor(definition.APIName)
 	if !ok {
 		return
+	}
+	if !hasCanonicalFeature(features, "PersonAccounts") {
+		relationships = withoutPersonAccountRelationships(relationships)
 	}
 	mergeStandardRelationships(definition, relationships)
 }
@@ -450,6 +467,33 @@ func withoutPersonAccountFieldMap(fields map[string]Field) map[string]Field {
 		filtered[name] = field
 	}
 	return filtered
+}
+
+func withoutPersonAccountRelationships(relationships []Relationship) []Relationship {
+	filtered := make([]Relationship, 0, len(relationships))
+	for _, relationship := range relationships {
+		if isPersonAccountRelationship(relationship) {
+			continue
+		}
+		filtered = append(filtered, relationship)
+	}
+	return filtered
+}
+
+func isPersonAccountRelationship(relationship Relationship) bool {
+	if !parentObjectsContain(relationship.ParentObjects, "Account") {
+		return false
+	}
+	return isPersonAccountField(relationship.ChildRelationship) || stringsEqualFold(relationship.Field, "ContactId") || stringsEqualFold(relationship.Field, "WhoId")
+}
+
+func parentObjectsContain(values []string, want string) bool {
+	for _, value := range values {
+		if stringsEqualFold(value, want) {
+			return true
+		}
+	}
+	return false
 }
 
 func isPersonAccountField(name string) bool {
@@ -565,6 +609,8 @@ func mergeStandardFields(definition *ObjectDefinition, fields map[string]Field) 
 			}
 			if len(existing.ReferenceTo) == 0 && len(field.ReferenceTo) != 0 {
 				existing.ReferenceTo = append([]string(nil), field.ReferenceTo...)
+			} else if len(field.ReferenceTo) != 0 {
+				existing.ReferenceTo = appendUniqueStringsFold(existing.ReferenceTo, field.ReferenceTo...)
 			}
 			definition.Fields[existingName] = existing
 			continue
@@ -587,6 +633,9 @@ func mergeStandardRelationships(definition *ObjectDefinition, relationships []Re
 				}
 				if definition.Relations[i].ChildRelationship == "" && relationship.ChildRelationship != "" {
 					definition.Relations[i].ChildRelationship = relationship.ChildRelationship
+				}
+				if relationship.Polymorphic {
+					definition.Relations[i].Polymorphic = true
 				}
 				found = true
 				break
@@ -772,6 +821,7 @@ func ensureStandardRelationship(definition *ObjectDefinition, field Field) {
 		ParentObjects:      append([]string(nil), field.ReferenceTo...),
 		ParentRelationship: relationshipName,
 		ChildRelationship:  field.ChildRelationshipName,
+		Polymorphic:        len(field.ReferenceTo) > 1,
 	})
 }
 

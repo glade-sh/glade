@@ -4,9 +4,13 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 
 const repoRoot = path.resolve(new URL("..", import.meta.url).pathname);
+const localInputRoot = path.join(repoRoot, "example-projects", "stubs", "apex-system-stubs");
+const siblingInputRoot = path.resolve(repoRoot, "..", "oaer", "example-projects", "stubs", "apex-system-stubs");
 const inputRoot = process.argv[2]
   ? path.resolve(process.argv[2])
-  : path.join(repoRoot, "example-projects", "stubs", "apex-system-stubs");
+  : fs.existsSync(localInputRoot)
+    ? localInputRoot
+    : siblingInputRoot;
 const outputFile = process.argv[3]
   ? path.resolve(process.argv[3])
   : path.join(repoRoot, "internal", "typesys", "system_stub_symbols_generated.go");
@@ -156,6 +160,7 @@ function parseStub(filePath) {
     (missingTypeProperties.length > 0 &&
       missingTypeProperties.every((prop) => /^[A-Z][A-Z0-9_]*$/.test(prop.name)) &&
       spec.methods.every((method) => ["clone", "equals", "hashCode", "ordinal", "toString"].includes(method.name)));
+  inferMissingPropertyShape(spec, missingTypeProperties, looksLikeEnum);
   if (looksLikeEnum) {
     spec.kind = "DeclarationEnum";
     spec.constructors = [];
@@ -172,6 +177,42 @@ function parseStub(filePath) {
 
   dedupeSpec(spec);
   return spec;
+}
+
+function inferMissingPropertyShape(spec, missingTypeProperties, looksLikeEnum) {
+  const zeroArgMethods = new Map();
+  for (const method of spec.methods) {
+    if (method.parameters.length === 0 && method.returnType) {
+      zeroArgMethods.set(method.name.toLowerCase(), method);
+    }
+  }
+  for (const prop of missingTypeProperties) {
+    const getterKey = `get${capitalizeIdentifier(prop.name)}`.toLowerCase();
+    const booleanGetterKey = `is${capitalizeIdentifier(prop.name)}`.toLowerCase();
+    const inferredGetter = zeroArgMethods.get(getterKey);
+    const inferredBooleanGetter = zeroArgMethods.get(booleanGetterKey);
+    if (inferredGetter) {
+      prop.type = inferredGetter.returnType;
+      prop.static = inferredGetter.static;
+      continue;
+    }
+    if (inferredBooleanGetter) {
+      prop.type = inferredBooleanGetter.returnType;
+      prop.static = inferredBooleanGetter.static;
+      continue;
+    }
+    if (looksLikeEnum) {
+      continue;
+    }
+    if (/^[A-Z][A-Z0-9_]*$/.test(prop.name)) {
+      prop.static = true;
+    }
+  }
+}
+
+function capitalizeIdentifier(value) {
+  if (!value) return "";
+  return value[0].toUpperCase() + value.slice(1).toLowerCase();
 }
 
 function constructorKey(params) {

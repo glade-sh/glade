@@ -225,18 +225,34 @@ func appendUniqueStandardMethods(values, additions []StandardMethodSpec) []Stand
 
 func appendUniqueStandardProperties(values, additions []StandardPropertySpec) []StandardPropertySpec {
 	seen := make(map[string]bool, len(values)+len(additions))
-	for _, value := range values {
-		seen[standardPropertyKey(value)] = true
+	byKey := make(map[string]int, len(values))
+	for i, value := range values {
+		key := standardPropertyKey(value)
+		seen[key] = true
+		byKey[key] = i
 	}
 	for _, addition := range additions {
 		key := standardPropertyKey(addition)
 		if seen[key] {
+			if index, ok := byKey[key]; ok && shouldReplaceStandardProperty(values[index], addition) {
+				values[index] = addition
+			}
 			continue
 		}
 		seen[key] = true
+		byKey[key] = len(values)
 		values = append(values, addition)
 	}
 	return values
+}
+
+func shouldReplaceStandardProperty(existing, addition StandardPropertySpec) bool {
+	existingType := strings.TrimSpace(existing.Type)
+	additionType := strings.TrimSpace(addition.Type)
+	if additionType == "" || strings.EqualFold(additionType, "Object") {
+		return false
+	}
+	return existingType == "" || strings.EqualFold(existingType, "Object")
 }
 
 func standardMethodKey(method StandardMethodSpec) string {

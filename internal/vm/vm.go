@@ -3034,6 +3034,27 @@ platformStaticCall:
 			return Null, err
 		}
 		return platformScalar("Blob", string(mac)), nil
+	case "Crypto.verifyHmac":
+		if len(args) != 4 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("Crypto.verifyHmac expects algorithm, input Blob, privateKey Blob, and mac Blob")
+		}
+		input, err := blobStringArg("Crypto.verifyHmac input", args[1:2])
+		if err != nil {
+			return Null, err
+		}
+		key, err := blobStringArg("Crypto.verifyHmac privateKey", args[2:3])
+		if err != nil {
+			return Null, err
+		}
+		expected, err := blobStringArg("Crypto.verifyHmac mac", args[3:])
+		if err != nil {
+			return Null, err
+		}
+		actual, err := generateMac(args[0].Text, []byte(input), []byte(key))
+		if err != nil {
+			return Null, err
+		}
+		return Bool(hmac.Equal(actual, []byte(expected))), nil
 	case "Crypto.areEqualConstantTime":
 		if len(args) != 2 {
 			return Null, fmt.Errorf("Crypto.areEqualConstantTime expects left Blob and right Blob")
@@ -3357,7 +3378,7 @@ platformStaticCall:
 		if len(args) != 0 {
 			return Null, fmt.Errorf("URL.getCurrentRequestUrl expects 0 arguments")
 		}
-		return Null, unsupportedCallError(callee + " local current request URL surface")
+		return platformScalar("URL", vm.currentRequestURL()), nil
 	case "Test.setMock":
 		return vm.testSetMock(args)
 	case "WebServiceCallout.invoke":
@@ -3645,6 +3666,23 @@ func (vm *VM) salesforceBaseURL() string {
 		return vm.serverBaseURL
 	}
 	return "https://local.oaer.example"
+}
+
+func (vm *VM) currentRequestURL() string {
+	if vm.currentPage.Kind == "" {
+		vm.currentPage = newPageReference("/apex/current")
+	}
+	raw := pageReferenceURL(vm.currentPage).String()
+	if raw == "" {
+		return vm.salesforceBaseURL()
+	}
+	if parsed, err := url.Parse(raw); err == nil && parsed.IsAbs() {
+		return parsed.String()
+	}
+	if strings.HasPrefix(raw, "/") {
+		return vm.salesforceBaseURL() + raw
+	}
+	return vm.salesforceBaseURL() + "/" + raw
 }
 
 func (vm *VM) siteBaseURL() string {
@@ -19558,6 +19596,11 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 				return Null, true, fmt.Errorf("List.size expects 0 arguments")
 			}
 			return Int(int64(len(receiver.List))), true, nil
+		case "isEmpty":
+			if len(args) != 0 {
+				return Null, true, fmt.Errorf("List.isEmpty expects 0 arguments")
+			}
+			return Bool(len(receiver.List) == 0), true, nil
 		case "get":
 			if len(args) != 1 || args[0].Kind != ValueInt {
 				return Null, true, fmt.Errorf("List.get expects integer index")
@@ -19636,6 +19679,17 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			}
 			vm.propagateCollectionMutation(previous, receiver)
 			return removed, true, nil
+		case "clear":
+			if len(args) != 0 {
+				return Null, true, fmt.Errorf("List.clear expects 0 arguments")
+			}
+			previous := receiver
+			receiver.List = nil
+			if err := vm.storeReceiver(receiverName, receiver); err != nil {
+				return Null, true, err
+			}
+			vm.propagateCollectionMutation(previous, receiver)
+			return Null, true, nil
 		case "set":
 			if len(args) != 2 || args[0].Kind != ValueInt {
 				return Null, true, fmt.Errorf("List.set expects integer index and value")
@@ -19705,6 +19759,11 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 				return Null, true, fmt.Errorf("Set.size expects 0 arguments")
 			}
 			return Int(int64(len(receiver.Set))), true, nil
+		case "isEmpty":
+			if len(args) != 0 {
+				return Null, true, fmt.Errorf("Set.isEmpty expects 0 arguments")
+			}
+			return Bool(len(receiver.Set) == 0), true, nil
 		case "contains":
 			if len(args) != 1 {
 				return Null, true, fmt.Errorf("Set.contains expects 1 argument")
@@ -19734,6 +19793,15 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 				}
 			}
 			return Bool(false), true, nil
+		case "clear":
+			if len(args) != 0 {
+				return Null, true, fmt.Errorf("Set.clear expects 0 arguments")
+			}
+			receiver.Set = nil
+			if err := vm.storeReceiver(receiverName, receiver); err != nil {
+				return Null, true, err
+			}
+			return Null, true, nil
 		case "removeAll":
 			if len(args) != 1 || (args[0].Kind != ValueList && args[0].Kind != ValueSet) {
 				return Null, true, fmt.Errorf("Set.removeAll expects List or Set")
@@ -19898,6 +19966,21 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 				}
 			}
 			return Bool(false), true, nil
+		case "remove":
+			if len(args) != 1 {
+				return Null, true, fmt.Errorf("Map.remove expects 1 argument")
+			}
+			key := vm.mapLookupKey(receiver, args[0])
+			removed := Null
+			if value, ok := receiver.Map[key]; ok {
+				removed = value
+				delete(receiver.Map, key)
+				delete(receiver.MapKeys, key)
+				if err := vm.storeReceiver(receiverName, receiver); err != nil {
+					return Null, true, err
+				}
+			}
+			return removed, true, nil
 		case "keySet":
 			if len(args) != 0 {
 				return Null, true, fmt.Errorf("Map.keySet expects 0 arguments")
@@ -19932,6 +20015,16 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 				return Null, true, fmt.Errorf("Map.isEmpty expects 0 arguments")
 			}
 			return Bool(len(receiver.Map) == 0), true, nil
+		case "clear":
+			if len(args) != 0 {
+				return Null, true, fmt.Errorf("Map.clear expects 0 arguments")
+			}
+			receiver.Map = map[string]Value{}
+			receiver.MapKeys = map[string]Value{}
+			if err := vm.storeReceiver(receiverName, receiver); err != nil {
+				return Null, true, err
+			}
+			return Null, true, nil
 		case "clone":
 			if len(args) != 0 {
 				return Null, true, fmt.Errorf("Map.clone expects 0 arguments")
@@ -19980,11 +20073,11 @@ func canonicalCollectionMemberName(collection, method string) string {
 	var known []string
 	switch collection {
 	case "List":
-		known = []string{"add", "addAll", "size", "get", "contains", "indexOf", "clone", "deepClone", "iterator", "sort", "remove", "set", "getSObjectType"}
+		known = []string{"add", "addAll", "size", "isEmpty", "get", "contains", "indexOf", "clone", "deepClone", "iterator", "sort", "remove", "clear", "set", "getSObjectType"}
 	case "Set":
-		known = []string{"add", "addAll", "size", "contains", "containsAll", "remove", "removeAll", "retainAll", "clone", "deepClone", "iterator"}
+		known = []string{"add", "addAll", "size", "isEmpty", "contains", "containsAll", "remove", "clear", "removeAll", "retainAll", "clone", "deepClone", "iterator"}
 	case "Map":
-		known = []string{"put", "putAll", "get", "containsKey", "keySet", "values", "remove", "clear", "size", "isEmpty", "clone", "deepClone"}
+		known = []string{"put", "putAll", "get", "containsKey", "containsValue", "keySet", "values", "remove", "clear", "size", "isEmpty", "clone", "deepClone"}
 	}
 	for _, candidate := range known {
 		if strings.EqualFold(method, candidate) {
@@ -20015,8 +20108,8 @@ func canonicalPlatformObjectMemberName(typeName, method string) string {
 		"getTabs", "isSelected", "getSObjectName", "isCustom", "getIconUrl", "getIcons",
 		"getContentType", "getHeight", "getTheme", "getWidth",
 		"to15", "to18", "getSObjectType",
-		"toStartOfMonth", "format", "toString", "date", "time",
-		"equals", "hashCode", "newInstance", "isAssignableFrom",
+		"toStartOfMonth", "format", "toString", "date", "time", "getID",
+		"equals", "hashCode", "newInstance", "isAssignableFrom", "getNamespace", "getPackageName",
 		"send", "toExternalForm", "getProtocol", "getHost", "getAuthority",
 		"getPath", "getQuery", "getRef", "getFile", "getPort", "getDefaultPort",
 		"addHeader", "getHeader", "getHeaderKeys", "addParameter", "addParam",
@@ -24124,6 +24217,16 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return value, receiver, false, true, nil
 			}
 			return String(receiver.Text), receiver, false, true, nil
+		}
+		if method == "getNamespace" || method == "getPackageName" {
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Type.%s expects 0 arguments", method)
+			}
+			typeName := typeValueName(receiver)
+			if prefix, _, ok := strings.Cut(typeName, "."); ok {
+				return String(prefix), receiver, false, true, nil
+			}
+			return Null, receiver, false, true, nil
 		}
 		if method == "equals" {
 			if len(args) != 1 {

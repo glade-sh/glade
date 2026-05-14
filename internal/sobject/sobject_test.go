@@ -104,6 +104,9 @@ func TestBuildDescribeRegistry(t *testing.T) {
 	if definition.Fields["Account__c"].Type != storage.FieldReference {
 		t.Fatalf("definition = %#v", definition)
 	}
+	if got := definition.Fields["Account__c"].ChildRelationshipName; got != "Widgets__r" {
+		t.Fatalf("definition child relationship name = %q", got)
+	}
 	if got := definition.Fields["RecordTypeId"]; got.Type != storage.FieldReference || len(got.ReferenceTo) != 1 || got.ReferenceTo[0] != "RecordType" {
 		t.Fatalf("RecordTypeId definition = %#v", got)
 	}
@@ -121,6 +124,45 @@ func TestBuildDescribeRegistry(t *testing.T) {
 	}
 	if got := definition.RecordTypes; len(got) != 1 || got[0].ID != "012000000000001" || got[0].DeveloperName != "Business" {
 		t.Fatalf("definition record types = %#v", got)
+	}
+}
+
+func TestFromObjectDefinitionPreservesStandardOverlayDescribeShape(t *testing.T) {
+	definition, ok := storage.StandardObjectDefinition("AIInsightAction")
+	if !ok {
+		t.Fatal("AIInsightAction should be known from the standard SObject overlay")
+	}
+
+	describe := FromObjectDefinition(definition)
+
+	if describe.Label != "AIInsightAction" || describe.PluralLabel != "AIInsightActions" {
+		t.Fatalf("describe labels = %q, %q", describe.Label, describe.PluralLabel)
+	}
+	field := describe.Fields["AiRecordInsightId"]
+	if field.Type != storage.FieldReference || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "AIRecordInsight" {
+		t.Fatalf("AiRecordInsightId reference = %#v", field)
+	}
+	if field.RelationshipName != "AiRecordInsight" || field.ChildRelationshipName != "AIInsightActions" {
+		t.Fatalf("AiRecordInsightId relationships = %#v", field)
+	}
+}
+
+func TestFromObjectDefinitionPreservesStandardOverlayPolymorphicBreadth(t *testing.T) {
+	definition, ok := storage.StandardObjectDefinition("Task")
+	if !ok {
+		t.Fatal("Task should be known")
+	}
+
+	describe := FromObjectDefinition(definition)
+
+	field := describe.Fields["WhatId"]
+	for _, target := range []string{"Account", "Opportunity", "WorkOrder"} {
+		if !containsTestString(field.ReferenceTo, target) {
+			t.Fatalf("Task.WhatId ReferenceTo missing %s: %#v", target, field.ReferenceTo)
+		}
+	}
+	if !hasDescribeRelationship(describe.Relationships, "WhatId", "Opportunity", "What", "Tasks", true) {
+		t.Fatalf("Task.WhatId relationships missing Opportunity.Tasks: %#v", describe.Relationships)
 	}
 }
 
@@ -150,4 +192,27 @@ func TestBuildDescribeRegistryDerivesCustomMetadataRelationship(t *testing.T) {
 	if got := definition.Relations[0].ParentRelationship; got != "Target__r" {
 		t.Fatalf("definition parent relationship = %q", got)
 	}
+}
+
+func containsTestString(values []string, want string) bool {
+	for _, value := range values {
+		if value == want {
+			return true
+		}
+	}
+	return false
+}
+
+func hasDescribeRelationship(relations []storage.Relationship, fieldName, parentObject, parentRelationship, childRelationship string, polymorphic bool) bool {
+	for _, relation := range relations {
+		if relation.Field != fieldName || relation.ParentRelationship != parentRelationship || relation.ChildRelationship != childRelationship || relation.Polymorphic != polymorphic {
+			continue
+		}
+		for _, candidate := range relation.ParentObjects {
+			if candidate == parentObject {
+				return true
+			}
+		}
+	}
+	return false
 }

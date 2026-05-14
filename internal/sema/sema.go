@@ -2156,7 +2156,18 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 	if receiverType == "" {
 		return nil
 	}
-	if diagnostics, handled := a.checkIRPlatformCall(typ, member, receiverType, method, expr.Args, scope, pos, bodyOffset, source, model); handled {
+	receiverMode := "implicit"
+	if explicitReceiver {
+		receiverMode = "instance"
+		if receiver, _, ok := strings.Cut(expr.Callee, "."); ok {
+			if _, scoped := scope.lookup(receiver); !scoped {
+				if _, ok := model[normalizeName(receiver)]; ok {
+					receiverMode = "class"
+				}
+			}
+		}
+	}
+	if diagnostics, handled := a.checkIRPlatformCall(typ, member, receiverType, method, expr.Args, scope, pos, bodyOffset, source, model, receiverMode); handled {
 		return diagnostics
 	}
 	if diagnostics, handled := a.checkIRCollectionCall(typ, member, receiverType, method, expr.Args, scope, pos, bodyOffset, source, model); handled {
@@ -2170,7 +2181,8 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 		if chainedReceiver, chainedMethod, ok := semaChainedCallReceiverNear(source[bodyOffset:], pos, method, scope.flat(), model, typ.Name); ok && strings.EqualFold(chainedMethod, method) {
 			receiverType = chainedReceiver
 			explicitReceiver = true
-			if diagnostics, handled := a.checkIRPlatformCall(typ, member, receiverType, method, expr.Args, scope, pos, bodyOffset, source, model); handled {
+			receiverMode = "instance"
+			if diagnostics, handled := a.checkIRPlatformCall(typ, member, receiverType, method, expr.Args, scope, pos, bodyOffset, source, model, "instance"); handled {
 				return diagnostics
 			}
 			if diagnostics, handled := a.checkIRCollectionCall(typ, member, receiverType, method, expr.Args, scope, pos, bodyOffset, source, model); handled {
@@ -2198,7 +2210,7 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 				}
 			}
 			if receiverTyp != "" {
-				if diagnostics, handled := a.checkIRPlatformCall(typ, member, receiverTyp, methodName, expr.Args, scope, pos, bodyOffset, source, model); handled {
+				if diagnostics, handled := a.checkIRPlatformCall(typ, member, receiverTyp, methodName, expr.Args, scope, pos, bodyOffset, source, model, "instance"); handled {
 					return diagnostics
 				}
 				if diagnostics, handled := a.checkIRCollectionCall(typ, member, receiverTyp, methodName, expr.Args, scope, pos, bodyOffset, source, model); handled {
@@ -2221,7 +2233,10 @@ func (a *Analyzer) checkIRCall(typ typesys.TypeSymbol, member typesys.MemberSymb
 		return []diagnostic.Diagnostic{unknownCallDiagnostic(typ, member, expr.Callee, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source)}
 	}
 	argTypes := irCallArgTypes(a, expr.Args, scope, model, typ.Name)
-	if _, ok, ambiguous := bestResolvedMemberByArgTypes(candidates, argTypes, model); ok {
+	if candidate, ok, ambiguous := bestResolvedMemberByArgTypes(candidates, argTypes, model); ok {
+		if staticDiagnostic, blocked := checkSemaStaticAccess(typ, member, expr.Callee, candidate, receiverMode, bodyOffset+pos, bodyOffset+pos+max(1, len(expr.Callee)), source); blocked {
+			return []diagnostic.Diagnostic{staticDiagnostic}
+		}
 		return nil
 	} else if ambiguous {
 		if semaArgTypesContainNullish(argTypes) {
@@ -2271,11 +2286,11 @@ func (a *Analyzer) checkIRCollectionCall(typ typesys.TypeSymbol, member typesys.
 	return []diagnostic.Diagnostic{collectionCallDiagnostic(typ, member, method, len(args), bodyOffset+pos, bodyOffset+pos+max(1, len(method)), source)}, true
 }
 
-func (a *Analyzer) checkIRPlatformCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, receiverType, method string, args []ir.Expr, scope irSemaScope, pos, bodyOffset int, source string, model map[string]typeMembers) ([]diagnostic.Diagnostic, bool) {
+func (a *Analyzer) checkIRPlatformCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, receiverType, method string, args []ir.Expr, scope irSemaScope, pos, bodyOffset int, source string, model map[string]typeMembers, receiverMode string) ([]diagnostic.Diagnostic, bool) {
 	if semaDatabaseDynamicQueryCall(receiverType, method) {
 		return nil, true
 	}
-	sig, ok := semaPlatformMethodSignatureFor(model, receiverType, method)
+	sig, ok := semaPlatformMethodSignatureForMode(model, receiverType, method, receiverMode)
 	if !ok {
 		return nil, false
 	}
@@ -3864,7 +3879,7 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 				diagnostics = append(diagnostics, enumDiagnostics...)
 				continue
 			}
-			if platformDiagnostics, handled := checkSemaPlatformCall(typ, member, receiverType, method, args, bodyOffset+match[2], bodyOffset+match[3], source, scope, model); handled {
+			if platformDiagnostics, handled := checkSemaPlatformCall(typ, member, receiverType, method, args, bodyOffset+match[2], bodyOffset+match[3], source, scope, model, "instance"); handled {
 				diagnostics = append(diagnostics, platformDiagnostics...)
 				continue
 			}
@@ -3889,7 +3904,7 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 		}
 		if strings.Contains(callee, ".") {
 			if classMethod, ok := semaClassLiteralMethod(callee); ok {
-				if platformDiagnostics, handled := checkSemaPlatformCall(typ, member, "Type", classMethod, args, bodyOffset+match[2], bodyOffset+match[3], source, scope, model); handled {
+				if platformDiagnostics, handled := checkSemaPlatformCall(typ, member, "Type", classMethod, args, bodyOffset+match[2], bodyOffset+match[3], source, scope, model, "instance"); handled {
 					diagnostics = append(diagnostics, platformDiagnostics...)
 				}
 				continue
@@ -3903,7 +3918,7 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 						diagnostics = append(diagnostics, enumDiagnostics...)
 						continue
 					}
-					if platformDiagnostics, handled := checkSemaPlatformCall(typ, member, receiverType, method, args, bodyOffset+match[2], bodyOffset+match[3], source, scope, model); handled {
+					if platformDiagnostics, handled := checkSemaPlatformCall(typ, member, receiverType, method, args, bodyOffset+match[2], bodyOffset+match[3], source, scope, model, "instance"); handled {
 						diagnostics = append(diagnostics, platformDiagnostics...)
 						continue
 					}
@@ -3920,7 +3935,7 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 							diagnostics = append(diagnostics, enumDiagnostics...)
 							continue
 						}
-						if platformDiagnostics, handled := checkSemaPlatformCall(typ, member, classMembers.name, method, args, bodyOffset+match[2], bodyOffset+match[3], source, scope, model); handled {
+						if platformDiagnostics, handled := checkSemaPlatformCall(typ, member, classMembers.name, method, args, bodyOffset+match[2], bodyOffset+match[3], source, scope, model, "class"); handled {
 							diagnostics = append(diagnostics, platformDiagnostics...)
 							continue
 						}
@@ -3943,7 +3958,7 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 					diagnostics = append(diagnostics, enumDiagnostics...)
 					continue
 				}
-				if platformDiagnostics, handled := checkSemaPlatformCall(typ, member, receiverType, method, args, bodyOffset+match[2], bodyOffset+match[3], source, scope, model); handled {
+				if platformDiagnostics, handled := checkSemaPlatformCall(typ, member, receiverType, method, args, bodyOffset+match[2], bodyOffset+match[3], source, scope, model, "instance"); handled {
 					diagnostics = append(diagnostics, platformDiagnostics...)
 					continue
 				}
@@ -3960,7 +3975,7 @@ func (a *Analyzer) checkBodyCalls(typ typesys.TypeSymbol, member typesys.MemberS
 				continue
 			}
 			if classMembers, ok := model[normalizeName(receiver)]; ok {
-				if platformDiagnostics, handled := checkSemaPlatformCall(typ, member, classMembers.name, method, args, bodyOffset+match[2], bodyOffset+match[3], source, scope, model); handled {
+				if platformDiagnostics, handled := checkSemaPlatformCall(typ, member, classMembers.name, method, args, bodyOffset+match[2], bodyOffset+match[3], source, scope, model, "class"); handled {
 					diagnostics = append(diagnostics, platformDiagnostics...)
 					continue
 				}
@@ -4141,7 +4156,7 @@ func constructorDiagnostic(typ typesys.TypeSymbol, member typesys.MemberSymbol, 
 func (a *Analyzer) diagnoseMethodCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, callee string, candidates []resolvedMember, args []semaArg, haveArgs bool, receiverMode string, start, end int, source string, scope map[string]string, model map[string]typeMembers) []diagnostic.Diagnostic {
 	if len(candidates) == 0 {
 		if receiverMode == "implicit" {
-			if platformDiagnostics, handled := checkSemaPlatformCall(typ, member, typ.Name, callee, args, start, end, source, scope, model); handled {
+			if platformDiagnostics, handled := checkSemaPlatformCall(typ, member, typ.Name, callee, args, start, end, source, scope, model, "implicit"); handled {
 				return platformDiagnostics
 			}
 		}
@@ -6667,7 +6682,14 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 }
 
 func semaPlatformMethodSignatureFor(model map[string]typeMembers, receiverType, method string) (semaCollectionSignature, bool) {
+	return semaPlatformMethodSignatureForMode(model, receiverType, method, "")
+}
+
+func semaPlatformMethodSignatureForMode(model map[string]typeMembers, receiverType, method, receiverMode string) (semaCollectionSignature, bool) {
 	if sig, ok := semaPlatformMethodSignature(receiverType, method); ok {
+		return sig, true
+	}
+	if sig, ok := semaGeneratedPlatformMethodSignature(model, receiverType, method, receiverMode); ok {
 		return sig, true
 	}
 	if sig, ok := semaCustomDataStaticMethodSignature(receiverType, method); ok {
@@ -6719,6 +6741,80 @@ func semaPlatformMethodSignatureFor(model map[string]typeMembers, receiverType, 
 	return semaCollectionSignature{}, false
 }
 
+func semaGeneratedPlatformMethodSignature(model map[string]typeMembers, receiverType, method, receiverMode string) (semaCollectionSignature, bool) {
+	if strings.TrimSpace(receiverType) == "" || strings.TrimSpace(method) == "" {
+		return semaCollectionSignature{}, false
+	}
+	candidates := resolveMemberMethods(model, receiverType, method)
+	if len(candidates) == 0 {
+		canonical := semaCanonicalPlatformAlias(receiverType)
+		if !strings.EqualFold(canonical, receiverType) {
+			candidates = resolveMemberMethods(model, canonical, method)
+		}
+	}
+	if len(candidates) == 0 {
+		return semaCollectionSignature{}, false
+	}
+	candidates = filterGeneratedPlatformMethodsByReceiverMode(candidates, receiverMode)
+	if len(candidates) == 0 {
+		return semaCollectionSignature{}, false
+	}
+	if owner, ok := model[normalizeName(candidates[0].owner)]; !ok || (!owner.dependency && !owner.sobject) {
+		return semaCollectionSignature{}, false
+	}
+	returnType := strings.TrimSpace(candidates[0].member.Type)
+	params := make([][]string, 0, len(candidates))
+	seen := make(map[string]bool)
+	for _, candidate := range candidates {
+		memberReturn := strings.TrimSpace(candidate.member.Type)
+		if memberReturn == "" {
+			memberReturn = "void"
+		}
+		if returnType == "" {
+			returnType = memberReturn
+		} else if !strings.EqualFold(returnType, memberReturn) {
+			return semaCollectionSignature{}, false
+		}
+		memberParams := make([]string, 0, len(candidate.member.Parameters))
+		for _, param := range candidate.member.Parameters {
+			memberParams = append(memberParams, param.Type)
+		}
+		signature := strings.Join(memberParams, "\x00")
+		if seen[signature] {
+			continue
+		}
+		seen[signature] = true
+		params = append(params, memberParams)
+	}
+	if returnType == "" {
+		returnType = "void"
+	}
+	return semaCollectionSignature{returnType: returnType, params: params}, true
+}
+
+func filterGeneratedPlatformMethodsByReceiverMode(candidates []resolvedMember, receiverMode string) []resolvedMember {
+	switch receiverMode {
+	case "class":
+		filtered := make([]resolvedMember, 0, len(candidates))
+		for _, candidate := range candidates {
+			if hasModifier(candidate.member.Modifiers, "static") {
+				filtered = append(filtered, candidate)
+			}
+		}
+		return filtered
+	case "instance", "super":
+		filtered := make([]resolvedMember, 0, len(candidates))
+		for _, candidate := range candidates {
+			if !hasModifier(candidate.member.Modifiers, "static") {
+				filtered = append(filtered, candidate)
+			}
+		}
+		return filtered
+	default:
+		return candidates
+	}
+}
+
 func semaCustomDataStaticMethodSignature(receiverType, method string) (semaCollectionSignature, bool) {
 	receiverType = strings.TrimSpace(receiverType)
 	if receiverType == "" {
@@ -6739,8 +6835,14 @@ func semaCustomDataStaticMethodSignature(receiverType, method string) (semaColle
 	return semaCollectionSignature{}, false
 }
 
-func checkSemaPlatformCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, receiverType, method string, args []semaArg, start, end int, source string, scope map[string]string, model map[string]typeMembers) ([]diagnostic.Diagnostic, bool) {
-	sig, ok := semaPlatformMethodSignatureFor(model, receiverType, method)
+func checkSemaPlatformCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, receiverType, method string, args []semaArg, start, end int, source string, scope map[string]string, model map[string]typeMembers, receiverMode string) ([]diagnostic.Diagnostic, bool) {
+	if semaDatabaseDynamicQueryCall(receiverType, method) {
+		return nil, true
+	}
+	if staticDiagnostic, blocked := checkGeneratedPlatformStaticAccess(typ, member, receiverType, method, receiverMode, start, end, source, model); blocked {
+		return []diagnostic.Diagnostic{staticDiagnostic}, true
+	}
+	sig, ok := semaPlatformMethodSignatureForMode(model, receiverType, method, receiverMode)
 	if !ok {
 		return nil, false
 	}
@@ -6752,6 +6854,31 @@ func checkSemaPlatformCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, 
 		return nil, true
 	}
 	return []diagnostic.Diagnostic{collectionCallDiagnostic(typ, member, method, len(args), start, end, source)}, true
+}
+
+func checkGeneratedPlatformStaticAccess(typ typesys.TypeSymbol, member typesys.MemberSymbol, receiverType, method, receiverMode string, start, end int, source string, model map[string]typeMembers) (diagnostic.Diagnostic, bool) {
+	switch receiverMode {
+	case "class", "instance", "implicit":
+	default:
+		return diagnostic.Diagnostic{}, false
+	}
+	candidates := resolveMemberMethods(model, receiverType, method)
+	if len(candidates) == 0 {
+		canonical := semaCanonicalPlatformAlias(receiverType)
+		if !strings.EqualFold(canonical, receiverType) {
+			candidates = resolveMemberMethods(model, canonical, method)
+		}
+	}
+	if len(candidates) == 0 {
+		return diagnostic.Diagnostic{}, false
+	}
+	if owner, ok := model[normalizeName(candidates[0].owner)]; !ok || (!owner.dependency && !owner.sobject) {
+		return diagnostic.Diagnostic{}, false
+	}
+	if len(filterGeneratedPlatformMethodsByReceiverMode(candidates, receiverMode)) != 0 {
+		return diagnostic.Diagnostic{}, false
+	}
+	return checkSemaStaticAccess(typ, member, method, candidates[0], receiverMode, start, end, source)
 }
 
 func semaArgsMatchAny(params [][]string, args []string, model map[string]typeMembers) bool {

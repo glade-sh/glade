@@ -217,6 +217,9 @@ func TestEnsureStandardObjectFieldsAddsAccountWebsiteWithoutClobber(t *testing.T
 	if _, ok := definition.Fields["PersonMailingStreet"]; ok {
 		t.Fatalf("PersonMailingStreet should be gated by PersonAccounts: %#v", definition.Fields["PersonMailingStreet"])
 	}
+	if _, ok := definition.Fields["PersonContactId"]; ok {
+		t.Fatalf("PersonContactId should be gated by PersonAccounts: %#v", definition.Fields["PersonContactId"])
+	}
 	if _, ok := definition.Fields["BillingCountryCode"]; ok {
 		t.Fatalf("BillingCountryCode should be gated by StateAndCountryPicklist: %#v", definition.Fields["BillingCountryCode"])
 	}
@@ -458,9 +461,13 @@ func TestEnsureStandardObjectAddsGeneratedSObjectStubOverlayShape(t *testing.T) 
 
 	EnsureStandardObject(&org, "AIApplication")
 	EnsureStandardObject(&org, "AIInsightAction")
+	EnsureStandardObject(&org, "AccountContactRelation")
 
 	if !IsKnownStandardObject("AIApplication") {
 		t.Fatalf("AIApplication should be recognized from generated SObject stubs")
+	}
+	if org.Objects["AIApplication"].Definition.PluralLabel != "AI Applications" {
+		t.Fatalf("AIApplication plural label = %q", org.Objects["AIApplication"].Definition.PluralLabel)
 	}
 	if field, ok := org.Objects["AIApplication"].Definition.Fields["DeveloperName"]; !ok || field.Type != FieldString {
 		t.Fatalf("AIApplication.DeveloperName field = %#v, %v", field, ok)
@@ -470,6 +477,9 @@ func TestEnsureStandardObjectAddsGeneratedSObjectStubOverlayShape(t *testing.T) 
 	}
 	if field, ok := org.Objects["AIInsightAction"].Definition.Fields["AiRecordInsightId"]; !ok || field.Type != FieldReference || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "AIRecordInsight" || field.ChildRelationshipName != "AIInsightActions" {
 		t.Fatalf("AIInsightAction.AiRecordInsightId field = %#v, %v", field, ok)
+	}
+	if field, ok := org.Objects["AccountContactRelation"].Definition.Fields["Roles"]; !ok || field.Label != "Roles" || field.Type != FieldString {
+		t.Fatalf("AccountContactRelation.Roles field = %#v, %v", field, ok)
 	}
 }
 
@@ -483,11 +493,45 @@ func TestEnsureStandardObjectPreservesStubChildRelationshipsForSharedFields(t *t
 	if !hasChildRelationship(task.Relations, "WhoId", "Contact", "Who", "Tasks") {
 		t.Fatalf("Task.WhoId relations missing Contact.Tasks: %#v", task.Relations)
 	}
-	if !hasChildRelationship(task.Relations, "WhoId", "Account", "Who", "PersonTasks") {
-		t.Fatalf("Task.WhoId relations missing Account.PersonTasks: %#v", task.Relations)
+	if hasChildRelationship(task.Relations, "WhoId", "Account", "Who", "PersonTasks") {
+		t.Fatalf("Task.WhoId relations should not expose feature-gated Account.PersonTasks: %#v", task.Relations)
 	}
 	if hasChildRelationship(task.Relations, "WhoId", "Contact", "Who", "PersonTasks") {
 		t.Fatalf("Task.WhoId relations should not expose Contact.PersonTasks: %#v", task.Relations)
+	}
+}
+
+func TestEnsureStandardObjectMergesStubPolymorphicReferenceBreadth(t *testing.T) {
+	definition := ObjectDefinition{
+		APIName: "Task",
+		Fields: map[string]Field{
+			"WhatId": {APIName: "WhatId", Label: "Local label", Type: FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "What"},
+		},
+	}
+
+	EnsureStandardObjectFields(&definition)
+
+	field := definition.Fields["WhatId"]
+	if field.Label != "Local label" {
+		t.Fatalf("WhatId label was clobbered: %#v", field)
+	}
+	for _, target := range []string{"Account", "Opportunity", "WorkOrder"} {
+		if !containsTestString(field.ReferenceTo, target) {
+			t.Fatalf("Task.WhatId ReferenceTo missing %s: %#v", target, field.ReferenceTo)
+		}
+	}
+	if !hasPolymorphicRelationship(definition.Relations, "WhatId", "Opportunity", "What", "Tasks") {
+		t.Fatalf("Task.WhatId relations missing polymorphic Opportunity.Tasks: %#v", definition.Relations)
+	}
+}
+
+func TestEnsureStandardObjectMapsCompoundStubFieldTypes(t *testing.T) {
+	definition := ObjectDefinition{APIName: "Contact"}
+
+	EnsureStandardObjectFields(&definition)
+
+	if field, ok := definition.Fields["MailingAddress"]; !ok || field.Type != FieldAddress || field.DisplayType != "ADDRESS" {
+		t.Fatalf("Contact.MailingAddress field = %#v, %v", field, ok)
 	}
 }
 
@@ -514,6 +558,29 @@ func hasChildRelationship(relations []Relationship, fieldName, parentObject, par
 			if candidate == parentObject {
 				return true
 			}
+		}
+	}
+	return false
+}
+
+func hasPolymorphicRelationship(relations []Relationship, fieldName, parentObject, parentRelationship, childRelationship string) bool {
+	for _, relation := range relations {
+		if relation.Field != fieldName || relation.ParentRelationship != parentRelationship || relation.ChildRelationship != childRelationship || !relation.Polymorphic {
+			continue
+		}
+		for _, candidate := range relation.ParentObjects {
+			if candidate == parentObject {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func containsTestString(values []string, want string) bool {
+	for _, value := range values {
+		if value == want {
+			return true
 		}
 	}
 	return false

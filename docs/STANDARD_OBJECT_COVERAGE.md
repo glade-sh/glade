@@ -5,10 +5,10 @@ Generated from `internal/storage` standard object metadata.
 - Objects: 1373
 - Key prefixes: 37
 - Fields: 24955
-- Relationships: 5048
+- Relationships: 5006
 - Record types: 16
 - Picklist fields: 151
-- Reference fields: 4978
+- Reference fields: 5006
 
 | Object | Key Prefix | Fields | Relationships | Record Types | Picklists | References |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
@@ -21,12 +21,12 @@ Generated from `internal/storage` standard object metadata.
 | `AIRecordInsight` | `` | 21 | 6 | 0 | 0 | 6 |
 | `AITrustAttrSetup` | `` | 13 | 3 | 0 | 0 | 3 |
 | `AITrustAttribute` | `` | 14 | 2 | 0 | 0 | 2 |
-| `AcceptedEventRelation` | `` | 13 | 6 | 0 | 0 | 5 |
+| `AcceptedEventRelation` | `` | 13 | 5 | 0 | 0 | 5 |
 | `Account` | `001` | 55 | 7 | 1 | 6 | 7 |
 | `AccountBrand` | `` | 28 | 5 | 0 | 0 | 5 |
 | `AccountBrandShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `AccountContactRelation` | `` | 15 | 5 | 0 | 0 | 4 |
-| `AccountContactRole` | `` | 12 | 5 | 0 | 0 | 4 |
+| `AccountContactRelation` | `` | 15 | 4 | 0 | 0 | 4 |
+| `AccountContactRole` | `` | 12 | 4 | 0 | 0 | 4 |
 | `AccountFeed` | `` | 19 | 5 | 0 | 0 | 5 |
 | `AccountHistory` | `` | 10 | 2 | 0 | 0 | 2 |
 | `AccountPartner` | `` | 14 | 6 | 0 | 0 | 6 |
@@ -71,7 +71,7 @@ Generated from `internal/storage` standard object metadata.
 | `AppAnalyticsQueryRequest` | `` | 24 | 2 | 0 | 0 | 2 |
 | `AppDefinition` | `` | 20 | 0 | 0 | 0 | 0 |
 | `AppMenuItem` | `` | 38 | 3 | 0 | 0 | 3 |
-| `AppTabMember` | `` | 6 | 2 | 0 | 0 | 0 |
+| `AppTabMember` | `` | 6 | 2 | 0 | 0 | 2 |
 | `AppointmentAssignmentPolicy` | `` | 13 | 2 | 0 | 0 | 2 |
 | `AppointmentCategory` | `` | 14 | 2 | 0 | 0 | 2 |
 | `AppointmentCategoryFeed` | `` | 19 | 5 | 0 | 0 | 5 |
@@ -98,7 +98,7 @@ Generated from `internal/storage` standard object metadata.
 | `ApprovalWorkItem` | `` | 19 | 7 | 0 | 0 | 7 |
 | `ApprovalWorkItemFeed` | `` | 19 | 5 | 0 | 0 | 5 |
 | `ApprovalWorkItemHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `Asset` | `02i` | 42 | 11 | 1 | 3 | 10 |
+| `Asset` | `02i` | 42 | 10 | 1 | 3 | 10 |
 | `AssetFeed` | `` | 19 | 5 | 0 | 0 | 5 |
 | `AssetHistory` | `` | 10 | 2 | 0 | 0 | 2 |
 | `AssetRelationship` | `` | 17 | 4 | 0 | 0 | 4 |
@@ -118,7 +118,7 @@ Generated from `internal/storage` standard object metadata.
 | `AuraDefinition` | `` | 11 | 3 | 0 | 0 | 3 |
 | `AuraDefinitionBundle` | `` | 13 | 2 | 0 | 0 | 2 |
 | `AuraDefinitionBundleInfo` | `` | 6 | 0 | 0 | 0 | 0 |
-| `AuraDefinitionInfo` | `` | 10 | 1 | 0 | 0 | 0 |
+| `AuraDefinitionInfo` | `` | 10 | 1 | 0 | 0 | 1 |
 | `AuthConfig` | `` | 18 | 2 | 0 | 0 | 2 |
 | `AuthConfigProviders` | `` | 9 | 4 | 0 | 0 | 4 |
 | `AuthProvParamFwdAllowlist` | `` | 10 | 3 | 0 | 0 | 3 |
@@ -182,7 +182,7 @@ Generated from `internal/storage` standard object metadata.
 | `Campaign` | `701` | 34 | 5 | 1 | 2 | 5 |
 | `CampaignFeed` | `` | 19 | 5 | 0 | 0 | 5 |
 | `CampaignHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `CampaignMember` | `00v` | 37 | 8 | 1 | 3 | 7 |
+| `CampaignMember` | `00v` | 37 | 7 | 1 | 3 | 7 |
 | `CampaignMemberStatus` | `` | 12 | 3 | 0 | 0 | 3 |
 | `CampaignShare` | `` | 9 | 3 | 0 | 0 | 3 |
 | `CardPaymentMethod` | `` | 57 | 4 | 0 | 0 | 4 |
@@ -194,10 +194,10 @@ Generated from `internal/storage` standard object metadata.
 | `CartRelatedItem` | `` | 12 | 4 | 0 | 0 | 4 |
 | `CartTax` | `` | 18 | 5 | 0 | 0 | 5 |
 | `CartValidationOutput` | `` | 17 | 5 | 0 | 0 | 5 |
-| `Case` | `500` | 51 | 13 | 1 | 6 | 12 |
+| `Case` | `500` | 51 | 12 | 1 | 6 | 12 |
 | `CaseArticle` | `` | 12 | 4 | 0 | 0 | 4 |
 | `CaseComment` | `` | 12 | 3 | 0 | 0 | 3 |
-| `CaseContactRole` | `` | 11 | 5 | 0 | 0 | 4 |
+| `CaseContactRole` | `` | 11 | 4 | 0 | 0 | 4 |
 | `CaseExternalDocument` | `` | 15 | 3 | 0 | 0 | 3 |
 | `CaseFeed` | `` | 19 | 5 | 0 | 0 | 5 |
 | `CaseHistory` | `` | 10 | 2 | 0 | 0 | 2 |
@@ -239,7 +239,7 @@ Generated from `internal/storage` standard object metadata.
 | `CollaborationGroupMemberRequest` | `` | 10 | 4 | 0 | 0 | 4 |
 | `CollaborationGroupRecord` | `` | 10 | 5 | 0 | 0 | 5 |
 | `CollaborationInvitation` | `` | 13 | 5 | 0 | 0 | 5 |
-| `ColorDefinition` | `` | 6 | 1 | 0 | 0 | 0 |
+| `ColorDefinition` | `` | 6 | 1 | 0 | 0 | 1 |
 | `CommSubscription` | `` | 12 | 3 | 0 | 0 | 3 |
 | `CommSubscriptionChannelType` | `` | 17 | 8 | 0 | 0 | 8 |
 | `CommSubscriptionChannelTypeFeed` | `` | 19 | 5 | 0 | 0 | 5 |
@@ -276,7 +276,7 @@ Generated from `internal/storage` standard object metadata.
 | `ContactPointTypeConsent` | `` | 23 | 7 | 0 | 0 | 7 |
 | `ContactPointTypeConsentHistory` | `` | 10 | 2 | 0 | 0 | 2 |
 | `ContactPointTypeConsentShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `ContactRequest` | `` | 20 | 6 | 0 | 0 | 5 |
+| `ContactRequest` | `` | 20 | 5 | 0 | 0 | 5 |
 | `ContactRequestShare` | `` | 9 | 3 | 0 | 0 | 3 |
 | `ContactShare` | `` | 9 | 3 | 0 | 0 | 3 |
 | `ContentAsset` | `` | 13 | 3 | 0 | 0 | 3 |
@@ -311,8 +311,8 @@ Generated from `internal/storage` standard object metadata.
 | `ContentWorkspacePermission` | `` | 22 | 2 | 0 | 0 | 2 |
 | `ContentWorkspaceSubscription` | `` | 3 | 2 | 0 | 0 | 2 |
 | `ContextParamMap` | `` | 10 | 3 | 0 | 0 | 3 |
-| `Contract` | `800` | 49 | 8 | 1 | 6 | 7 |
-| `ContractContactRole` | `` | 12 | 5 | 0 | 0 | 4 |
+| `Contract` | `800` | 49 | 7 | 1 | 6 | 7 |
+| `ContractContactRole` | `` | 12 | 4 | 0 | 0 | 4 |
 | `ContractFeed` | `` | 19 | 5 | 0 | 0 | 5 |
 | `ContractHistory` | `` | 10 | 2 | 0 | 0 | 2 |
 | `ContractLineItem` | `` | 28 | 9 | 0 | 0 | 9 |
@@ -339,7 +339,7 @@ Generated from `internal/storage` standard object metadata.
 | `ConversationEntry` | `` | 28 | 5 | 0 | 0 | 5 |
 | `ConversationEntryCopy` | `` | 21 | 5 | 0 | 0 | 5 |
 | `ConversationEntryCopyShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `ConversationParticipant` | `` | 20 | 5 | 0 | 0 | 4 |
+| `ConversationParticipant` | `` | 20 | 4 | 0 | 0 | 4 |
 | `CorsWhitelistEntry` | `` | 12 | 2 | 0 | 0 | 2 |
 | `Coupon` | `` | 20 | 4 | 0 | 0 | 4 |
 | `CouponCodeRedemption` | `` | 12 | 4 | 0 | 0 | 4 |
@@ -349,7 +349,7 @@ Generated from `internal/storage` standard object metadata.
 | `CouponShare` | `` | 9 | 3 | 0 | 0 | 3 |
 | `CredentialStuffingEventStore` | `` | 23 | 2 | 0 | 0 | 2 |
 | `CredentialStuffingEventStoreFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `CreditMemo` | `` | 47 | 7 | 0 | 0 | 6 |
+| `CreditMemo` | `` | 47 | 6 | 0 | 0 | 6 |
 | `CreditMemoFeed` | `` | 19 | 5 | 0 | 0 | 5 |
 | `CreditMemoHistory` | `` | 10 | 2 | 0 | 0 | 2 |
 | `CreditMemoInvApplication` | `` | 21 | 5 | 0 | 0 | 5 |
@@ -399,7 +399,7 @@ Generated from `internal/storage` standard object metadata.
 | `DecisionTableParameter` | `` | 18 | 3 | 0 | 0 | 3 |
 | `DecisionTableSourceCriteria` | `` | 13 | 3 | 0 | 0 | 3 |
 | `DecisionTblDatasetParameter` | `` | 11 | 4 | 0 | 0 | 4 |
-| `DeclinedEventRelation` | `` | 13 | 6 | 0 | 0 | 5 |
+| `DeclinedEventRelation` | `` | 13 | 5 | 0 | 0 | 5 |
 | `DelegatedAccount` | `` | 15 | 6 | 0 | 0 | 6 |
 | `DelegatedAccountFeed` | `` | 19 | 5 | 0 | 0 | 5 |
 | `DelegatedAccountHistory` | `` | 10 | 2 | 0 | 0 | 2 |
@@ -434,7 +434,7 @@ Generated from `internal/storage` standard object metadata.
 | `EmailDomainFilter` | `` | 12 | 3 | 0 | 0 | 3 |
 | `EmailDomainKey` | `` | 24 | 2 | 0 | 0 | 2 |
 | `EmailMessage` | `` | 42 | 8 | 0 | 0 | 8 |
-| `EmailMessageRelation` | `` | 10 | 4 | 0 | 0 | 3 |
+| `EmailMessageRelation` | `` | 10 | 3 | 0 | 0 | 3 |
 | `EmailRelay` | `` | 14 | 2 | 0 | 0 | 2 |
 | `EmailRoutingAddress` | `` | 9 | 3 | 0 | 0 | 3 |
 | `EmailServicesAddress` | `` | 13 | 4 | 0 | 0 | 4 |
@@ -453,17 +453,17 @@ Generated from `internal/storage` standard object metadata.
 | `EnhancedLetterhead` | `` | 13 | 2 | 0 | 0 | 2 |
 | `EnhancedLetterheadFeed` | `` | 19 | 5 | 0 | 0 | 5 |
 | `Entitlement` | `` | 29 | 10 | 0 | 0 | 10 |
-| `EntitlementContact` | `` | 12 | 5 | 0 | 0 | 4 |
+| `EntitlementContact` | `` | 12 | 4 | 0 | 0 | 4 |
 | `EntitlementFeed` | `` | 19 | 5 | 0 | 0 | 5 |
 | `EntitlementHistory` | `` | 10 | 2 | 0 | 0 | 2 |
 | `EntitlementTemplate` | `` | 14 | 4 | 0 | 0 | 4 |
-| `EntityDefinition` | `` | 53 | 2 | 0 | 0 | 1 |
+| `EntityDefinition` | `` | 53 | 2 | 0 | 0 | 2 |
 | `EntityMilestone` | `` | 30 | 6 | 0 | 0 | 6 |
 | `EntityMilestoneFeed` | `` | 19 | 5 | 0 | 0 | 5 |
 | `EntityMilestoneHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `EntityParticle` | `` | 56 | 1 | 0 | 0 | 0 |
+| `EntityParticle` | `` | 56 | 1 | 0 | 0 | 1 |
 | `EntitySubscription` | `` | 7 | 4 | 0 | 0 | 4 |
-| `Event` | `00U` | 53 | 9 | 1 | 10 | 8 |
+| `Event` | `00U` | 53 | 8 | 1 | 10 | 8 |
 | `EventBusSubscriber` | `` | 14 | 0 | 0 | 0 | 0 |
 | `EventFeed` | `` | 19 | 5 | 0 | 0 | 5 |
 | `EventLogFile` | `` | 17 | 2 | 0 | 0 | 2 |
@@ -471,7 +471,7 @@ Generated from `internal/storage` standard object metadata.
 | `EventRelayConfig` | `` | 16 | 2 | 0 | 0 | 2 |
 | `EventRelayFeedback` | `` | 18 | 3 | 0 | 0 | 3 |
 | `EventStagedInviteeEmail` | `` | 14 | 4 | 0 | 0 | 4 |
-| `EventWhoRelation` | `` | 11 | 6 | 0 | 0 | 5 |
+| `EventWhoRelation` | `` | 11 | 5 | 0 | 0 | 5 |
 | `EvfPipelineSubTaskDetails` | `` | 12 | 2 | 0 | 0 | 2 |
 | `ExpressionFilter` | `` | 12 | 3 | 0 | 0 | 3 |
 | `ExpressionFilterCriteria` | `` | 14 | 3 | 0 | 0 | 3 |
@@ -512,14 +512,14 @@ Generated from `internal/storage` standard object metadata.
 | `FeedPollChoice` | `` | 7 | 2 | 0 | 0 | 2 |
 | `FeedPollVote` | `` | 7 | 3 | 0 | 0 | 3 |
 | `FeedRevision` | `` | 12 | 3 | 0 | 0 | 3 |
-| `FieldDefinition` | `` | 47 | 4 | 0 | 0 | 2 |
+| `FieldDefinition` | `` | 47 | 4 | 0 | 0 | 4 |
 | `FieldPermissions` | `0FP` | 7 | 1 | 0 | 0 | 1 |
 | `FieldSecurityClassification` | `` | 11 | 2 | 0 | 0 | 2 |
 | `FileEventStore` | `` | 29 | 6 | 0 | 0 | 6 |
 | `FileSearchActivity` | `` | 17 | 2 | 0 | 0 | 2 |
 | `FiscalYearSettings` | `` | 15 | 1 | 0 | 0 | 1 |
 | `FlexQueueItem` | `` | 5 | 1 | 0 | 0 | 1 |
-| `FlowDefinitionView` | `` | 34 | 1 | 0 | 0 | 0 |
+| `FlowDefinitionView` | `` | 34 | 1 | 0 | 0 | 1 |
 | `FlowInterview` | `` | 21 | 3 | 0 | 0 | 3 |
 | `FlowInterviewLog` | `` | 19 | 3 | 0 | 0 | 3 |
 | `FlowInterviewLogEntry` | `` | 16 | 3 | 0 | 0 | 3 |
@@ -545,11 +545,11 @@ Generated from `internal/storage` standard object metadata.
 | `FlowRecordVersion` | `` | 37 | 9 | 0 | 0 | 9 |
 | `FlowRecordVersionOccurrence` | `` | 21 | 4 | 0 | 0 | 4 |
 | `FlowStageRelation` | `` | 14 | 3 | 0 | 0 | 3 |
-| `FlowTestResult` | `` | 17 | 6 | 0 | 0 | 3 |
+| `FlowTestResult` | `` | 17 | 6 | 0 | 0 | 6 |
 | `FlowTestResultShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `FlowTestView` | `` | 10 | 3 | 0 | 0 | 2 |
-| `FlowVariableView` | `` | 10 | 1 | 0 | 0 | 0 |
-| `FlowVersionView` | `` | 17 | 1 | 0 | 0 | 0 |
+| `FlowTestView` | `` | 10 | 3 | 0 | 0 | 3 |
+| `FlowVariableView` | `` | 10 | 1 | 0 | 0 | 1 |
+| `FlowVersionView` | `` | 17 | 1 | 0 | 0 | 1 |
 | `Folder` | `` | 13 | 3 | 0 | 0 | 3 |
 | `ForecastingAdjustment` | `` | 21 | 7 | 0 | 0 | 7 |
 | `ForecastingCategoryMapping` | `` | 9 | 2 | 0 | 0 | 2 |
@@ -570,11 +570,11 @@ Generated from `internal/storage` standard object metadata.
 | `ForecastingTypeSource` | `` | 15 | 5 | 0 | 0 | 5 |
 | `ForecastingTypeToCategory` | `` | 12 | 3 | 0 | 0 | 3 |
 | `ForecastingUserPreference` | `` | 14 | 1 | 0 | 0 | 1 |
-| `FormulaFunction` | `` | 7 | 1 | 0 | 0 | 0 |
-| `FormulaFunctionAllowedType` | `` | 4 | 1 | 0 | 0 | 0 |
+| `FormulaFunction` | `` | 7 | 1 | 0 | 0 | 1 |
+| `FormulaFunctionAllowedType` | `` | 4 | 1 | 0 | 0 | 1 |
 | `FormulaFunctionCategory` | `` | 4 | 0 | 0 | 0 | 0 |
 | `FulfillmentLineRel` | `` | 17 | 6 | 0 | 0 | 6 |
-| `FulfillmentOrder` | `` | 65 | 11 | 0 | 0 | 10 |
+| `FulfillmentOrder` | `` | 65 | 10 | 0 | 0 | 10 |
 | `FulfillmentOrderFeed` | `` | 19 | 5 | 0 | 0 | 5 |
 | `FulfillmentOrderItemAdjustment` | `` | 19 | 5 | 0 | 0 | 5 |
 | `FulfillmentOrderItemAdjustmentFeed` | `` | 19 | 5 | 0 | 0 | 5 |
@@ -598,7 +598,7 @@ Generated from `internal/storage` standard object metadata.
 | `GuestUserAnomalyEventStoreFeed` | `` | 19 | 5 | 0 | 0 | 5 |
 | `Holiday` | `` | 21 | 2 | 0 | 0 | 2 |
 | `IPAddressRange` | `` | 15 | 2 | 0 | 0 | 2 |
-| `IconDefinition` | `` | 8 | 1 | 0 | 0 | 0 |
+| `IconDefinition` | `` | 8 | 1 | 0 | 0 | 1 |
 | `Idea` | `` | 27 | 6 | 0 | 0 | 6 |
 | `IdeaComment` | `` | 13 | 3 | 0 | 0 | 3 |
 | `IdentityProviderEventStore` | `` | 13 | 3 | 0 | 0 | 3 |
@@ -625,7 +625,7 @@ Generated from `internal/storage` standard object metadata.
 | `InventoryItemReservation` | `` | 19 | 6 | 0 | 0 | 6 |
 | `InventoryReservation` | `` | 19 | 4 | 0 | 0 | 4 |
 | `InventoryReservationShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `Invoice` | `` | 47 | 7 | 0 | 0 | 6 |
+| `Invoice` | `` | 47 | 6 | 0 | 0 | 6 |
 | `InvoiceFeed` | `` | 19 | 5 | 0 | 0 | 5 |
 | `InvoiceHistory` | `` | 10 | 2 | 0 | 0 | 2 |
 | `InvoiceLine` | `` | 47 | 7 | 0 | 0 | 7 |
@@ -656,10 +656,10 @@ Generated from `internal/storage` standard object metadata.
 | `LinkedArticle` | `` | 13 | 5 | 0 | 0 | 5 |
 | `LinkedArticleFeed` | `` | 19 | 5 | 0 | 0 | 5 |
 | `LinkedArticleHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ListEmail` | `` | 24 | 6 | 0 | 0 | 5 |
-| `ListEmailIndividualRecipient` | `` | 11 | 5 | 0 | 0 | 4 |
+| `ListEmail` | `` | 24 | 5 | 0 | 0 | 5 |
+| `ListEmailIndividualRecipient` | `` | 11 | 4 | 0 | 0 | 4 |
 | `ListEmailRecipientSource` | `` | 12 | 4 | 0 | 0 | 4 |
-| `ListEmailSentResult` | `` | 18 | 6 | 0 | 0 | 5 |
+| `ListEmailSentResult` | `` | 18 | 5 | 0 | 0 | 5 |
 | `ListEmailShare` | `` | 9 | 3 | 0 | 0 | 3 |
 | `ListView` | `` | 13 | 2 | 0 | 0 | 2 |
 | `ListViewChart` | `` | 16 | 3 | 0 | 0 | 3 |
@@ -676,7 +676,7 @@ Generated from `internal/storage` standard object metadata.
 | `LiveChatObjectAccessConfig` | `` | 10 | 3 | 0 | 0 | 3 |
 | `LiveChatObjectAccessDefinition` | `` | 10 | 2 | 0 | 0 | 2 |
 | `LiveChatSensitiveDataRule` | `` | 20 | 2 | 0 | 0 | 2 |
-| `LiveChatTranscript` | `` | 47 | 12 | 0 | 0 | 11 |
+| `LiveChatTranscript` | `` | 47 | 11 | 0 | 0 | 11 |
 | `LiveChatTranscriptEvent` | `` | 16 | 4 | 0 | 0 | 4 |
 | `LiveChatTranscriptFeed` | `` | 19 | 5 | 0 | 0 | 5 |
 | `LiveChatTranscriptHistory` | `` | 10 | 2 | 0 | 0 | 2 |
@@ -738,7 +738,7 @@ Generated from `internal/storage` standard object metadata.
 | `MessagingEndUserHistory` | `` | 10 | 2 | 0 | 0 | 2 |
 | `MessagingEndUserShare` | `` | 9 | 3 | 0 | 0 | 3 |
 | `MessagingLink` | `` | 12 | 4 | 0 | 0 | 4 |
-| `MessagingSession` | `` | 36 | 10 | 0 | 0 | 9 |
+| `MessagingSession` | `` | 36 | 9 | 0 | 0 | 9 |
 | `MessagingSessionFeed` | `` | 19 | 5 | 0 | 0 | 5 |
 | `MessagingSessionHistory` | `` | 10 | 2 | 0 | 0 | 2 |
 | `MessagingSessionMetrics` | `` | 11 | 3 | 0 | 0 | 3 |
@@ -806,9 +806,9 @@ Generated from `internal/storage` standard object metadata.
 | `OperatingHoursHolidayFeed` | `` | 19 | 5 | 0 | 0 | 5 |
 | `OperatingHoursHolidayHistory` | `` | 10 | 2 | 0 | 0 | 2 |
 | `OperatingHoursShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `Opportunity` | `006` | 42 | 12 | 1 | 6 | 11 |
+| `Opportunity` | `006` | 42 | 11 | 1 | 6 | 11 |
 | `OpportunityCompetitor` | `` | 12 | 3 | 0 | 0 | 3 |
-| `OpportunityContactRole` | `00K` | 13 | 5 | 0 | 2 | 4 |
+| `OpportunityContactRole` | `00K` | 13 | 4 | 0 | 2 | 4 |
 | `OpportunityFeed` | `` | 19 | 5 | 0 | 0 | 5 |
 | `OpportunityFieldHistory` | `` | 10 | 2 | 0 | 0 | 2 |
 | `OpportunityHistory` | `` | 16 | 2 | 0 | 0 | 2 |
@@ -869,7 +869,7 @@ Generated from `internal/storage` standard object metadata.
 | `OrderPaymentSummaryShare` | `` | 9 | 3 | 0 | 0 | 3 |
 | `OrderShare` | `` | 9 | 3 | 0 | 0 | 3 |
 | `OrderStatus` | `` | 11 | 2 | 0 | 0 | 2 |
-| `OrderSummary` | `` | 84 | 12 | 0 | 0 | 11 |
+| `OrderSummary` | `` | 84 | 11 | 0 | 0 | 11 |
 | `OrderSummaryAdditionalInfo` | `` | 17 | 5 | 0 | 0 | 5 |
 | `OrderSummaryAdditionalInfoFeed` | `` | 19 | 5 | 0 | 0 | 5 |
 | `OrderSummaryAdditionalInfoShare` | `` | 9 | 3 | 0 | 0 | 3 |
@@ -884,8 +884,8 @@ Generated from `internal/storage` standard object metadata.
 | `OrgWideEmailAddress` | `` | 11 | 2 | 0 | 0 | 2 |
 | `Organization` | `00D` | 54 | 2 | 0 | 14 | 2 |
 | `OutgoingEmail` | `` | 15 | 3 | 0 | 0 | 3 |
-| `OutgoingEmailRelation` | `` | 5 | 3 | 0 | 0 | 1 |
-| `OwnerChangeOptionInfo` | `` | 8 | 2 | 0 | 0 | 0 |
+| `OutgoingEmailRelation` | `` | 5 | 2 | 0 | 0 | 2 |
+| `OwnerChangeOptionInfo` | `` | 8 | 2 | 0 | 0 | 2 |
 | `PackageLicense` | `` | 11 | 0 | 0 | 0 | 0 |
 | `Participant` | `` | 10 | 2 | 0 | 0 | 2 |
 | `Partner` | `` | 14 | 6 | 0 | 0 | 6 |
@@ -907,7 +907,7 @@ Generated from `internal/storage` standard object metadata.
 | `PaymentGroup` | `` | 10 | 3 | 0 | 0 | 3 |
 | `PaymentLineInvoice` | `` | 26 | 6 | 0 | 0 | 6 |
 | `PaymentMethod` | `` | 27 | 3 | 0 | 0 | 3 |
-| `PendingOrderSummary` | `` | 23 | 7 | 0 | 0 | 6 |
+| `PendingOrderSummary` | `` | 23 | 6 | 0 | 0 | 6 |
 | `PendingServiceRouting` | `` | 38 | 10 | 0 | 0 | 10 |
 | `PendingServiceRoutingInteractionInfo` | `` | 14 | 5 | 0 | 0 | 5 |
 | `PendingServiceRoutingShare` | `` | 9 | 3 | 0 | 0 | 3 |
@@ -929,7 +929,7 @@ Generated from `internal/storage` standard object metadata.
 | `PickTicketProduct` | `` | 17 | 4 | 0 | 0 | 4 |
 | `PickTicketProductFeed` | `` | 19 | 5 | 0 | 0 | 5 |
 | `PickTicketShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `PicklistValueInfo` | `` | 8 | 1 | 0 | 0 | 0 |
+| `PicklistValueInfo` | `` | 8 | 1 | 0 | 0 | 1 |
 | `PipelineInspectionListView` | `` | 18 | 4 | 0 | 0 | 4 |
 | `PlatformAction` | `` | 31 | 2 | 0 | 0 | 2 |
 | `PlatformCachePartition` | `` | 13 | 2 | 0 | 0 | 2 |
@@ -1032,7 +1032,7 @@ Generated from `internal/storage` standard object metadata.
 | `QuickTextShare` | `` | 9 | 3 | 0 | 0 | 3 |
 | `QuickTextUsage` | `` | 16 | 5 | 0 | 0 | 5 |
 | `QuickTextUsageShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `Quote` | `0Q0` | 74 | 9 | 1 | 6 | 8 |
+| `Quote` | `0Q0` | 74 | 8 | 1 | 6 | 8 |
 | `QuoteDocument` | `` | 14 | 4 | 0 | 0 | 4 |
 | `QuoteFeed` | `` | 19 | 5 | 0 | 0 | 5 |
 | `QuoteHistory` | `` | 10 | 2 | 0 | 0 | 2 |
@@ -1048,10 +1048,10 @@ Generated from `internal/storage` standard object metadata.
 | `RedirectWhitelistUrl` | `` | 12 | 2 | 0 | 0 | 2 |
 | `Refund` | `` | 44 | 7 | 0 | 0 | 7 |
 | `RefundLinePayment` | `` | 25 | 6 | 0 | 0 | 6 |
-| `RelatedListColumnDefinition` | `` | 11 | 1 | 0 | 0 | 0 |
-| `RelatedListDefinition` | `` | 11 | 1 | 0 | 0 | 0 |
-| `RelationshipDomain` | `` | 11 | 2 | 0 | 0 | 0 |
-| `RelationshipInfo` | `` | 8 | 1 | 0 | 0 | 0 |
+| `RelatedListColumnDefinition` | `` | 11 | 1 | 0 | 0 | 1 |
+| `RelatedListDefinition` | `` | 11 | 1 | 0 | 0 | 1 |
+| `RelationshipDomain` | `` | 11 | 2 | 0 | 0 | 2 |
+| `RelationshipInfo` | `` | 8 | 1 | 0 | 0 | 1 |
 | `ReplyEmailSettings` | `` | 18 | 2 | 0 | 0 | 2 |
 | `Report` | `` | 17 | 3 | 0 | 0 | 3 |
 | `ReportAnomalyEventStore` | `` | 21 | 2 | 0 | 0 | 2 |
@@ -1066,7 +1066,7 @@ Generated from `internal/storage` standard object metadata.
 | `ResourcePreference` | `` | 14 | 4 | 0 | 0 | 4 |
 | `ResourcePreferenceFeed` | `` | 19 | 5 | 0 | 0 | 5 |
 | `ResourcePreferenceHistory` | `` | 10 | 2 | 0 | 0 | 2 |
-| `ReturnOrder` | `` | 59 | 12 | 0 | 0 | 11 |
+| `ReturnOrder` | `` | 59 | 11 | 0 | 0 | 11 |
 | `ReturnOrderFeed` | `` | 19 | 5 | 0 | 0 | 5 |
 | `ReturnOrderHistory` | `` | 10 | 2 | 0 | 0 | 2 |
 | `ReturnOrderItemAdjustment` | `` | 16 | 5 | 0 | 0 | 5 |
@@ -1087,7 +1087,7 @@ Generated from `internal/storage` standard object metadata.
 | `ScorecardMetric` | `` | 13 | 4 | 0 | 0 | 4 |
 | `ScorecardShare` | `` | 9 | 3 | 0 | 0 | 3 |
 | `SearchActivity` | `` | 20 | 3 | 0 | 0 | 3 |
-| `SearchLayout` | `` | 12 | 2 | 0 | 0 | 1 |
+| `SearchLayout` | `` | 12 | 2 | 0 | 0 | 2 |
 | `SearchPromotionRule` | `` | 9 | 3 | 0 | 0 | 3 |
 | `SecurityCustomBaseline` | `` | 13 | 2 | 0 | 0 | 2 |
 | `SecurityHealthCheckAlertRecipient` | `` | 12 | 2 | 0 | 0 | 2 |
@@ -1095,7 +1095,7 @@ Generated from `internal/storage` standard object metadata.
 | `Seller` | `` | 17 | 4 | 0 | 0 | 4 |
 | `SellerHistory` | `` | 10 | 2 | 0 | 0 | 2 |
 | `SellerShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `ServiceAppointment` | `` | 65 | 13 | 0 | 0 | 12 |
+| `ServiceAppointment` | `` | 65 | 12 | 0 | 0 | 12 |
 | `ServiceAppointmentAttendee` | `` | 15 | 5 | 0 | 0 | 5 |
 | `ServiceAppointmentAttendeeFeed` | `` | 19 | 5 | 0 | 0 | 5 |
 | `ServiceAppointmentAttendeeHistory` | `` | 10 | 2 | 0 | 0 | 2 |
@@ -1106,7 +1106,7 @@ Generated from `internal/storage` standard object metadata.
 | `ServiceAppointmentStatus` | `` | 11 | 2 | 0 | 0 | 2 |
 | `ServiceChannel` | `` | 22 | 4 | 0 | 0 | 4 |
 | `ServiceChannelStatus` | `` | 9 | 4 | 0 | 0 | 4 |
-| `ServiceContract` | `` | 52 | 9 | 0 | 0 | 8 |
+| `ServiceContract` | `` | 52 | 8 | 0 | 0 | 8 |
 | `ServiceContractFeed` | `` | 19 | 5 | 0 | 0 | 5 |
 | `ServiceContractHistory` | `` | 10 | 2 | 0 | 0 | 2 |
 | `ServiceContractShare` | `` | 9 | 3 | 0 | 0 | 3 |
@@ -1213,7 +1213,7 @@ Generated from `internal/storage` standard object metadata.
 | `SurveyEngagementContext` | `` | 14 | 5 | 0 | 0 | 5 |
 | `SurveyEngagementContextShare` | `` | 9 | 3 | 0 | 0 | 3 |
 | `SurveyFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `SurveyInvitation` | `` | 27 | 12 | 0 | 0 | 10 |
+| `SurveyInvitation` | `` | 27 | 10 | 0 | 0 | 10 |
 | `SurveyInvitationShare` | `` | 9 | 3 | 0 | 0 | 3 |
 | `SurveyPage` | `` | 12 | 3 | 0 | 0 | 3 |
 | `SurveyQuestion` | `` | 23 | 5 | 0 | 0 | 5 |
@@ -1230,12 +1230,12 @@ Generated from `internal/storage` standard object metadata.
 | `TabDefinition` | `` | 12 | 0 | 0 | 0 | 0 |
 | `TableauHostMapping` | `` | 13 | 3 | 0 | 0 | 3 |
 | `TableauHostMappingShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `Task` | `00T` | 43 | 8 | 1 | 11 | 7 |
+| `Task` | `00T` | 43 | 7 | 1 | 11 | 7 |
 | `TaskFeed` | `` | 19 | 5 | 0 | 0 | 5 |
 | `TaskPriority` | `` | 11 | 2 | 0 | 0 | 2 |
 | `TaskRelation` | `` | 11 | 5 | 0 | 0 | 5 |
 | `TaskStatus` | `` | 11 | 2 | 0 | 0 | 2 |
-| `TaskWhoRelation` | `` | 11 | 6 | 0 | 0 | 5 |
+| `TaskWhoRelation` | `` | 11 | 5 | 0 | 0 | 5 |
 | `TenantUsageEntitlement` | `` | 19 | 2 | 0 | 0 | 2 |
 | `TestSuiteMembership` | `` | 9 | 4 | 0 | 0 | 4 |
 | `ThirdPartyAccountLink` | `` | 9 | 2 | 0 | 0 | 2 |
@@ -1253,13 +1253,13 @@ Generated from `internal/storage` standard object metadata.
 | `Translation` | `` | 9 | 2 | 0 | 0 | 2 |
 | `UiFormulaCriterion` | `` | 12 | 3 | 0 | 0 | 3 |
 | `UiFormulaRule` | `` | 14 | 3 | 0 | 0 | 3 |
-| `UndecidedEventRelation` | `` | 13 | 6 | 0 | 0 | 5 |
+| `UndecidedEventRelation` | `` | 13 | 5 | 0 | 0 | 5 |
 | `UniversalAnomalyEventStore` | `` | 21 | 2 | 0 | 0 | 2 |
 | `UniversalAnomalyEventStoreFeed` | `` | 19 | 5 | 0 | 0 | 5 |
 | `UnstructuredStorageSpace` | `` | 22 | 4 | 0 | 0 | 4 |
 | `UnstructuredStorageSpaceShare` | `` | 9 | 3 | 0 | 0 | 3 |
 | `UriEvent` | `` | 18 | 2 | 0 | 0 | 2 |
-| `User` | `005` | 198 | 11 | 0 | 13 | 10 |
+| `User` | `005` | 198 | 10 | 0 | 13 | 10 |
 | `UserAppInfo` | `` | 11 | 4 | 0 | 0 | 4 |
 | `UserAppMenuCustomization` | `` | 11 | 4 | 0 | 0 | 4 |
 | `UserAppMenuCustomizationShare` | `` | 9 | 3 | 0 | 0 | 3 |
@@ -1271,7 +1271,7 @@ Generated from `internal/storage` standard object metadata.
 | `UserDefinedLabelAssignment` | `` | 13 | 5 | 0 | 0 | 5 |
 | `UserDefinedLabelAssignmentShare` | `` | 9 | 3 | 0 | 0 | 3 |
 | `UserDefinedLabelShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `UserEmailPreferredPerson` | `` | 12 | 5 | 0 | 0 | 4 |
+| `UserEmailPreferredPerson` | `` | 12 | 4 | 0 | 0 | 4 |
 | `UserEmailPreferredPersonShare` | `` | 9 | 3 | 0 | 0 | 3 |
 | `UserEntityAccess` | `` | 13 | 1 | 0 | 0 | 1 |
 | `UserFeed` | `` | 19 | 5 | 0 | 0 | 5 |
@@ -1307,7 +1307,7 @@ Generated from `internal/storage` standard object metadata.
 | `VerificationHistory` | `` | 19 | 6 | 0 | 0 | 6 |
 | `VideoCall` | `` | 33 | 7 | 0 | 0 | 7 |
 | `VideoCallFeed` | `` | 19 | 5 | 0 | 0 | 5 |
-| `VideoCallParticipant` | `` | 14 | 5 | 0 | 0 | 4 |
+| `VideoCallParticipant` | `` | 14 | 4 | 0 | 0 | 4 |
 | `VideoCallRecording` | `` | 20 | 3 | 0 | 0 | 3 |
 | `VideoCallShare` | `` | 9 | 3 | 0 | 0 | 3 |
 | `VideoVendorAdminConsent` | `` | 10 | 2 | 0 | 0 | 2 |
@@ -1346,7 +1346,7 @@ Generated from `internal/storage` standard object metadata.
 | `WebStoreInventorySource` | `` | 20 | 4 | 0 | 0 | 4 |
 | `WebStoreNetwork` | `` | 11 | 5 | 0 | 0 | 5 |
 | `WebStoreShare` | `` | 9 | 3 | 0 | 0 | 3 |
-| `WorkOrder` | `` | 57 | 17 | 0 | 0 | 16 |
+| `WorkOrder` | `` | 57 | 16 | 0 | 0 | 16 |
 | `WorkOrderFeed` | `` | 19 | 5 | 0 | 0 | 5 |
 | `WorkOrderHistory` | `` | 10 | 2 | 0 | 0 | 2 |
 | `WorkOrderLineItem` | `` | 48 | 12 | 0 | 0 | 12 |
