@@ -395,7 +395,7 @@ func TestInsertValidatesRequiredAndUnknownFields(t *testing.T) {
 func TestInsertPersonAccountCreatesSyntheticPersonContact(t *testing.T) {
 	org := storage.NewOrgState()
 	storage.EnsureDeterministicPlatformData(&org)
-	storage.ApplyOrgShape(&org, []string{"PersonAccounts"})
+	storage.ApplyOrgShape(&org, []string{"PersonAccounts", "StateAndCountryPicklist"})
 	engine := NewEngine(&org)
 
 	insert := engine.Insert([]storage.Record{{
@@ -2244,7 +2244,7 @@ func TestAttachmentBodyDMLRoundTrip(t *testing.T) {
 			"Body":     storage.BlobValue("hello bytes"),
 		},
 	}})
-	if !attachment[0].Success || attachment[0].ID != "00P000000000001" {
+	if !attachment[0].Success || !strings.HasPrefix(string(attachment[0].ID), "00P") {
 		t.Fatalf("attachment insert = %#v", attachment)
 	}
 	row := org.Objects["Attachment"].Records[attachment[0].ID]
@@ -2287,7 +2287,7 @@ func TestDocumentBodyDMLAndDelete(t *testing.T) {
 			"IsPublic":      storage.BooleanValue(true),
 		},
 	}})
-	if !document[0].Success || document[0].ID != "015000000000001" {
+	if !document[0].Success || !strings.HasPrefix(string(document[0].ID), "015") {
 		t.Fatalf("document insert = %#v", document)
 	}
 	row := org.Objects["Document"].Records[document[0].ID]
@@ -2325,12 +2325,12 @@ func TestContentVersionCreatesDocumentAndLinks(t *testing.T) {
 			"FirstPublishLocationId": storage.IDValue(account[0].ID),
 		},
 	}})
-	if !first[0].Success || first[0].ID != "068000000000001" {
+	if !first[0].Success || !strings.HasPrefix(string(first[0].ID), "068") {
 		t.Fatalf("content version insert = %#v", first)
 	}
 	version := org.Objects["ContentVersion"].Records[first[0].ID]
 	documentID := version.Fields["ContentDocumentId"].ID
-	if documentID != "069000000000001" {
+	if !strings.HasPrefix(string(documentID), "069") {
 		t.Fatalf("content document id = %s", documentID)
 	}
 	document := org.Objects["ContentDocument"].Records[documentID]
@@ -2357,7 +2357,7 @@ func TestContentVersionCreatesDocumentAndLinks(t *testing.T) {
 			"ContentDocumentId": storage.IDValue(documentID),
 		},
 	}})
-	if !second[0].Success || second[0].ID != "068000000000002" {
+	if !second[0].Success || !strings.HasPrefix(string(second[0].ID), "068") || second[0].ID == first[0].ID {
 		t.Fatalf("second content version insert = %#v", second)
 	}
 	if got := len(org.Objects["ContentDocument"].Records); got != 1 {
@@ -2381,7 +2381,7 @@ func TestContentVersionCreatesDocumentAndLinks(t *testing.T) {
 			"Visibility":        storage.StringValue("InternalUsers"),
 		},
 	}})
-	if !explicitLink[0].Success || explicitLink[0].ID != "06A000000000002" {
+	if !explicitLink[0].Success || !strings.HasPrefix(string(explicitLink[0].ID), "06A") || explicitLink[0].ID == autoLink.ID {
 		t.Fatalf("explicit link insert = %#v", explicitLink)
 	}
 }

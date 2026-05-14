@@ -388,7 +388,7 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 	if err != nil {
 		return "", err
 	}
-	normalizeNameFields(objectName, &record)
+	normalizeNameFields(objectName, object.Definition, &record)
 	if err := validateFieldWriteability(object.Definition, e.Org.Namespace, record, true); err != nil {
 		return "", err
 	}
@@ -486,20 +486,23 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 	return record.ID, nil
 }
 
-func normalizeNameFields(objectName string, record *storage.Record) {
+func normalizeNameFields(objectName string, definition storage.ObjectDefinition, record *storage.Record) {
 	if record == nil {
 		return
 	}
 	if strings.EqualFold(objectName, "Contact") || strings.EqualFold(objectName, "Lead") {
-		normalizeFirstLastName(record)
+		normalizeFirstLastName(definition, record)
 		return
 	}
-	normalizePersonAccountFields(objectName, record)
+	normalizePersonAccountFields(objectName, definition, record)
 }
 
-func normalizeFirstLastName(record *storage.Record) {
+func normalizeFirstLastName(definition storage.ObjectDefinition, record *storage.Record) {
 	if record.Fields == nil {
 		record.Fields = make(map[string]storage.Value)
+	}
+	if _, ok := definition.Fields["Name"]; !ok {
+		return
 	}
 	if _, ok := record.Fields["Name"]; ok && !hasNameComponentField(record.Fields) {
 		return
@@ -520,7 +523,7 @@ func hasNameComponentField(fields map[string]storage.Value) bool {
 	return hasFirst || hasLast
 }
 
-func normalizePersonAccountFields(objectName string, record *storage.Record) {
+func normalizePersonAccountFields(objectName string, definition storage.ObjectDefinition, record *storage.Record) {
 	if !strings.EqualFold(objectName, "Account") || record == nil {
 		return
 	}
@@ -531,7 +534,7 @@ func normalizePersonAccountFields(objectName string, record *storage.Record) {
 		return
 	}
 	record.Fields["IsPersonAccount"] = storage.BooleanValue(true)
-	normalizeFirstLastName(record)
+	normalizeFirstLastName(definition, record)
 }
 
 func hasPersonAccountSignal(record storage.Record) bool {
@@ -965,7 +968,7 @@ func (e *Engine) updateOne(record storage.Record) error {
 	if err != nil {
 		return err
 	}
-	normalizeNameFields(objectName, &record)
+	normalizeNameFields(objectName, object.Definition, &record)
 	if record.ID == "" {
 		return fmt.Errorf("dml: update requires id")
 	}
@@ -1285,7 +1288,7 @@ func validateFieldWriteabilityName(definition storage.ObjectDefinition, namespac
 }
 
 func allowLocalWriteabilityOverride(objectName, field string, create bool) bool {
-	if create && strings.EqualFold(objectName, "Account") && strings.EqualFold(field, "IsPersonAccount") {
+	if strings.EqualFold(objectName, "Account") && strings.EqualFold(field, "IsPersonAccount") {
 		return true
 	}
 	if strings.EqualFold(field, "Name") && (strings.EqualFold(objectName, "Contact") || strings.EqualFold(objectName, "Lead")) {
