@@ -4940,7 +4940,6 @@ func (vm *VM) testStart() (Value, error) {
 	}
 	vm.testContext.Started = true
 	vm.testContext.Stopped = false
-	vm.testContext.AsyncJobs = nil
 	vm.testContext.ParentLimits = vm.limits
 	vm.testContext.ParentViolations = append([]LimitViolation(nil), vm.limitViolations...)
 	vm.ResetLimits()

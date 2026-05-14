@@ -2137,6 +2137,34 @@ private class MarkJobTest {
 	}
 }
 
+func TestRunDrainsQueueableEnqueuedBeforeStartTest(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/PreStartJob.cls"), `
+public class PreStartJob implements Queueable {
+  public void execute(QueueableContext qc) {
+    insert new Account(Name = 'pre-start async ran');
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/PreStartJobTest.cls"), `
+@isTest
+private class PreStartJobTest {
+  @isTest static void stopTestDrainsPreStartQueue() {
+    System.enqueueJob(new PreStartJob());
+    Test.startTest();
+    Test.stopTest();
+    System.assertEquals(1, [SELECT COUNT() FROM Account WHERE Name = 'pre-start async ran']);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v problem=%#v", got, run.Suites[0].Cases[0].Problem)
+	}
+}
+
 func TestRunExecutesQueueableFinalizerAtStopTest(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
