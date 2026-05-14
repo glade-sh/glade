@@ -8234,6 +8234,17 @@ func isSObjectSystemField(field string) bool {
 	}
 }
 
+func isSObjectSystemUserReferenceField(field string) bool {
+	switch {
+	case strings.EqualFold(field, "CreatedById"),
+		strings.EqualFold(field, "LastModifiedById"),
+		strings.EqualFold(field, "OwnerId"):
+		return true
+	default:
+		return false
+	}
+}
+
 func putSystemFields(value Value, fields storage.SystemFields) {
 	if fields.CreatedDate != "" {
 		value.Fields["CreatedDate"] = platformScalar("Datetime", fields.CreatedDate)
@@ -11525,7 +11536,7 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 	}
 	defaultFieldNames := []string{"Id", "CreatedDate", "CreatedById", "LastModifiedDate", "LastModifiedById", "SystemModstamp"}
 	if isCustomObjectLikeName(definition.APIName) {
-		defaultFieldNames = append(defaultFieldNames, "Name")
+		defaultFieldNames = append(defaultFieldNames, "Name", "OwnerId")
 	}
 	for _, fieldName := range defaultFieldNames {
 		if _, ok := fieldsMap.Map[mapKey(String(fieldName))]; ok {
@@ -11842,6 +11853,11 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 	requestedFieldName := fieldName
 	fieldName, ok = storage.ResolveFieldName(definition, vm.Org.Namespace, fieldName)
 	if !ok {
+		if systemField, systemOK := syntheticSObjectSystemField(fieldName); systemOK {
+			fieldName = systemField.APIName
+			field := systemField
+			return vm.describeSyntheticFieldValue(objectName, fieldName, field)
+		}
 		if strings.TrimSpace(fieldName) == "" {
 			return emptySObjectFieldDescribe(objectName), nil
 		}
@@ -11921,6 +11937,84 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 	desc.Fields["picklistValues"] = List(picklistValues...)
 	vm.fieldDescribeCache[cacheKey] = desc
 	return desc, nil
+}
+
+func (vm *VM) describeSyntheticFieldValue(objectName, fieldName string, field storage.Field) (Value, error) {
+	cacheKey := strings.ToLower(objectName) + "." + strings.ToLower(fieldName)
+	if cached, ok := vm.fieldDescribeCache[cacheKey]; ok {
+		return cached, nil
+	}
+	if field.APIName == "" {
+		field.APIName = fieldName
+	}
+	desc := Object("Schema.DescribeFieldResult")
+	desc.Fields["name"] = String(field.APIName)
+	desc.Fields["sObjectName"] = String(objectName)
+	label := field.Label
+	if label == "" {
+		label = field.APIName
+	}
+	desc.Fields["label"] = String(label)
+	desc.Fields["compoundFieldName"] = Null
+	displayType := field.DisplayType
+	if displayType == "" {
+		displayType = string(field.Type)
+	}
+	desc.Fields["type"] = schemaDisplayTypeValue(displayType)
+	desc.Fields["soapType"] = schemaSOAPTypeValue(soapTypeForStorageField(field))
+	desc.Fields["nillable"] = Bool(!field.Required)
+	desc.Fields["externalId"] = Bool(false)
+	desc.Fields["unique"] = Bool(false)
+	desc.Fields["encrypted"] = Bool(false)
+	desc.Fields["calculated"] = Bool(false)
+	desc.Fields["autoNumber"] = Bool(false)
+	desc.Fields["nameField"] = Bool(false)
+	desc.Fields["custom"] = Bool(false)
+	desc.Fields["length"] = Int(int64(describeFieldLength(field)))
+	desc.Fields["precision"] = Int(int64(describeFieldPrecision(field)))
+	desc.Fields["scale"] = Int(int64(describeFieldScale(field)))
+	desc.Fields["htmlFormatted"] = Bool(false)
+	if field.RelationshipName == "" {
+		desc.Fields["relationshipName"] = Null
+	} else {
+		desc.Fields["relationshipName"] = String(field.RelationshipName)
+	}
+	references := make([]Value, 0, len(field.ReferenceTo))
+	for _, target := range field.ReferenceTo {
+		references = append(references, sObjectTypeToken(target))
+	}
+	desc.Fields["referenceTo"] = List(references...)
+	desc.Fields["picklistValues"] = List()
+	desc.Fields["sObjectType"] = sObjectTypeToken(objectName)
+	desc.Fields["sortable"] = Bool(true)
+	desc.Fields["accessible"] = Bool(true)
+	desc.Fields["createable"] = Bool(false)
+	desc.Fields["updateable"] = Bool(false)
+	token := sObjectFieldTokenFromField(objectName, field)
+	desc.Fields["sObjectField"] = token
+	vm.fieldDescribeCache[cacheKey] = desc
+	return desc, nil
+}
+
+func syntheticSObjectSystemField(fieldName string) (storage.Field, bool) {
+	switch {
+	case strings.EqualFold(fieldName, "CreatedDate"):
+		return storage.Field{APIName: "CreatedDate", Label: "Created Date", Type: storage.FieldDateTime, DisplayType: "DATETIME"}, true
+	case strings.EqualFold(fieldName, "CreatedById"):
+		return storage.Field{APIName: "CreatedById", Label: "Created By ID", Type: storage.FieldReference, DisplayType: "REFERENCE", ReferenceTo: []string{"User"}, RelationshipName: "CreatedBy"}, true
+	case strings.EqualFold(fieldName, "LastModifiedDate"):
+		return storage.Field{APIName: "LastModifiedDate", Label: "Last Modified Date", Type: storage.FieldDateTime, DisplayType: "DATETIME"}, true
+	case strings.EqualFold(fieldName, "LastModifiedById"):
+		return storage.Field{APIName: "LastModifiedById", Label: "Last Modified By ID", Type: storage.FieldReference, DisplayType: "REFERENCE", ReferenceTo: []string{"User"}, RelationshipName: "LastModifiedBy"}, true
+	case strings.EqualFold(fieldName, "SystemModstamp"):
+		return storage.Field{APIName: "SystemModstamp", Label: "System Modstamp", Type: storage.FieldDateTime, DisplayType: "DATETIME"}, true
+	case strings.EqualFold(fieldName, "OwnerId"):
+		return storage.Field{APIName: "OwnerId", Label: "Owner ID", Type: storage.FieldReference, DisplayType: "REFERENCE", ReferenceTo: []string{"User"}, RelationshipName: "Owner"}, true
+	case strings.EqualFold(fieldName, "IsDeleted"):
+		return storage.Field{APIName: "IsDeleted", Label: "Deleted", Type: storage.FieldBoolean, DisplayType: "BOOLEAN"}, true
+	default:
+		return storage.Field{}, false
+	}
 }
 
 func emptySObjectFieldDescribe(objectName string) Value {
@@ -23151,10 +23245,24 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getReferenceTo expects 0 arguments")
 			}
+			if references, ok := receiver.Fields["referenceTo"]; ok && references.Kind == ValueList && len(references.List) > 0 {
+				return references, receiver, false, true, nil
+			}
+			if fieldName, ok := receiver.Fields["name"]; ok && fieldName.Kind == ValueString && isSObjectSystemUserReferenceField(fieldName.Text) {
+				return List(sObjectTypeToken("User")), receiver, false, true, nil
+			}
 			return receiver.Fields["referenceTo"], receiver, false, true, nil
 		case "getRelationshipName":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Schema.DescribeFieldResult.getRelationshipName expects 0 arguments")
+			}
+			if relationshipName, ok := receiver.Fields["relationshipName"]; ok && relationshipName.Kind != ValueNull {
+				return relationshipName, receiver, false, true, nil
+			}
+			if fieldName, ok := receiver.Fields["name"]; ok && fieldName.Kind == ValueString {
+				if derived := lookupFieldRelationshipName(fieldName.Text); derived != "" {
+					return String(derived), receiver, false, true, nil
+				}
 			}
 			return receiver.Fields["relationshipName"], receiver, false, true, nil
 		case "getPicklistValues":

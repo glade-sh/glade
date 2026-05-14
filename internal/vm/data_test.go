@@ -1201,6 +1201,28 @@ System.assertEquals('Name', Account.SObjectType.getDescribe().fields.getMap().ge
 	}
 }
 
+func TestExecCustomObjectDescribeMapIncludesOwnerSystemField(t *testing.T) {
+	program, err := CompileAnonymous(`
+Schema.SObjectField ownerField = Widget__c.SObjectType.getDescribe().fields.getMap().get('OwnerId');
+System.assertEquals('OwnerId', ownerField.getDescribe().getName());
+System.assertEquals('Owner', ownerField.getDescribe().getRelationshipName());
+System.assertEquals(User.SObjectType, ownerField.getDescribe().getReferenceTo()[0]);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Widget__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Widget__c", Fields: map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}}},
+		Records:    make(map[storage.ID]storage.Record),
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDescribeFieldNumericAndTextMetadata(t *testing.T) {
 	program, err := CompileAnonymous(`
 Schema.DescribeFieldResult amount = Account.Amount__c.getDescribe();
