@@ -627,21 +627,121 @@ func mergeStandardFields(definition *ObjectDefinition, fields map[string]Field) 
 	for _, field := range fields {
 		if existingName, ok := ResolveFieldName(*definition, "", field.APIName); ok {
 			existing := definition.Fields[existingName]
-			if existing.ChildRelationshipName == "" && field.ChildRelationshipName != "" {
-				existing.ChildRelationshipName = field.ChildRelationshipName
-			}
-			if existing.RelationshipName == "" && field.RelationshipName != "" {
-				existing.RelationshipName = field.RelationshipName
-			}
-			if len(existing.ReferenceTo) == 0 && len(field.ReferenceTo) != 0 {
-				existing.ReferenceTo = append([]string(nil), field.ReferenceTo...)
-			} else if len(field.ReferenceTo) != 0 {
-				existing.ReferenceTo = appendUniqueStringsFold(existing.ReferenceTo, field.ReferenceTo...)
-			}
+			enrichStandardField(&existing, field)
 			definition.Fields[existingName] = existing
 			continue
 		}
 		definition.Fields[field.APIName] = cloneField(field)
+	}
+}
+
+func enrichStandardField(existing *Field, field Field) {
+	if existing.APIName == "" {
+		existing.APIName = field.APIName
+	}
+	if existing.Label == "" {
+		existing.Label = field.Label
+	}
+	if existing.Type == "" || existing.Type == FieldAny {
+		existing.Type = field.Type
+	}
+	if existing.DisplayType == "" {
+		existing.DisplayType = field.DisplayType
+	}
+	if existing.Length == 0 {
+		existing.Length = field.Length
+	}
+	if existing.Precision == 0 {
+		existing.Precision = field.Precision
+	}
+	if existing.Scale == 0 {
+		existing.Scale = field.Scale
+	}
+	if existing.Formula == "" {
+		existing.Formula = field.Formula
+	}
+	if existing.DefaultValue == "" {
+		existing.DefaultValue = field.DefaultValue
+	}
+	if existing.CompoundFieldName == "" {
+		existing.CompoundFieldName = field.CompoundFieldName
+	}
+	if existing.DisplayFormat == "" {
+		existing.DisplayFormat = field.DisplayFormat
+	}
+	if existing.SummarizedField == "" {
+		existing.SummarizedField = field.SummarizedField
+	}
+	if existing.SummaryForeignKey == "" {
+		existing.SummaryForeignKey = field.SummaryForeignKey
+	}
+	if existing.SummaryOperation == "" {
+		existing.SummaryOperation = field.SummaryOperation
+	}
+	if len(existing.SummaryFilterItems) == 0 && len(field.SummaryFilterItems) != 0 {
+		existing.SummaryFilterItems = append([]SummaryFilterItem(nil), field.SummaryFilterItems...)
+	}
+	if field.AutoNumber {
+		existing.AutoNumber = true
+	}
+	if field.ExternalID {
+		existing.ExternalID = true
+	}
+	if field.Unique {
+		existing.Unique = true
+	}
+	if field.Encrypted {
+		existing.Encrypted = true
+	}
+	if field.CaseSensitive {
+		existing.CaseSensitive = true
+	}
+	if existing.Nillable == nil {
+		existing.Nillable = cloneBoolFlag(field.Nillable)
+	}
+	if existing.DefaultedOnCreate == nil {
+		existing.DefaultedOnCreate = cloneBoolFlag(field.DefaultedOnCreate)
+	}
+	if existing.Accessible == nil {
+		existing.Accessible = cloneBoolFlag(field.Accessible)
+	}
+	if existing.Createable == nil {
+		existing.Createable = cloneBoolFlag(field.Createable)
+	}
+	if existing.Updateable == nil {
+		existing.Updateable = cloneBoolFlag(field.Updateable)
+	}
+	if existing.Filterable == nil {
+		existing.Filterable = cloneBoolFlag(field.Filterable)
+	}
+	if existing.Groupable == nil {
+		existing.Groupable = cloneBoolFlag(field.Groupable)
+	}
+	if existing.Sortable == nil {
+		existing.Sortable = cloneBoolFlag(field.Sortable)
+	}
+	if existing.Aggregatable == nil {
+		existing.Aggregatable = cloneBoolFlag(field.Aggregatable)
+	}
+	if existing.Permissionable == nil {
+		existing.Permissionable = cloneBoolFlag(field.Permissionable)
+	}
+	if existing.DeprecatedAndHidden == nil {
+		existing.DeprecatedAndHidden = cloneBoolFlag(field.DeprecatedAndHidden)
+	}
+	if existing.ChildRelationshipName == "" {
+		existing.ChildRelationshipName = field.ChildRelationshipName
+	}
+	if existing.RelationshipName == "" {
+		existing.RelationshipName = field.RelationshipName
+	}
+	if len(existing.ReferenceTo) == 0 && len(field.ReferenceTo) != 0 {
+		existing.ReferenceTo = append([]string(nil), field.ReferenceTo...)
+	} else if len(field.ReferenceTo) != 0 {
+		existing.ReferenceTo = appendUniqueStringsFold(existing.ReferenceTo, field.ReferenceTo...)
+	}
+	if len(existing.PicklistValues) == 0 && len(field.PicklistValues) != 0 {
+		existing.PicklistValues = append([]PicklistValue(nil), field.PicklistValues...)
 	}
 }
 
@@ -724,6 +824,14 @@ func cloneField(field Field) Field {
 	field.ReferenceTo = append([]string(nil), field.ReferenceTo...)
 	field.PicklistValues = append([]PicklistValue(nil), field.PicklistValues...)
 	return field
+}
+
+func cloneBoolFlag(flag *bool) *bool {
+	if flag == nil {
+		return nil
+	}
+	value := *flag
+	return &value
 }
 
 func canonicalFeatureName(feature string) string {
