@@ -1419,6 +1419,50 @@ System.assert(sawContacts);
 	}
 }
 
+func TestExecDescribeSObjectRecordTypeMapsUseStableKeys(t *testing.T) {
+	program, err := CompileAnonymous(`
+Schema.DescribeSObjectResult describe = Account.SObjectType.getDescribe();
+Map<String, Schema.RecordTypeInfo> byName = describe.getRecordTypeInfosByName();
+Map<String, Schema.RecordTypeInfo> byDeveloperName = describe.getRecordTypeInfosByDeveloperName();
+Map<Id, Schema.RecordTypeInfo> byId = describe.getRecordTypeInfosById();
+Schema.RecordTypeInfo business = byName.get('Business Account');
+System.assertEquals('Business', business.getDeveloperName());
+System.assertEquals(business, byDeveloperName.get('Business'));
+System.assertEquals(business, byDeveloperName.get('business'));
+System.assertEquals(business, byId.get(business.getRecordTypeId()));
+System.assert(byName.keySet().contains('Business Account'));
+System.assert(byId.containsKey(business.getRecordTypeId()));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.RecordTypes = []storage.RecordTypeInfo{
+		{
+			ID:            "012000000000001AAA",
+			DeveloperName: "Business",
+			Name:          "Business Account",
+			Active:        true,
+			Available:     true,
+			Default:       true,
+		},
+		{
+			ID:            "012000000000002AAA",
+			DeveloperName: "Household",
+			Name:          "Household Account",
+			Active:        true,
+			Available:     true,
+		},
+	}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSObjectListGetSObjectType(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<SObject> records = new List<SObject>{ new Account(Name = 'Test') };

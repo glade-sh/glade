@@ -2025,7 +2025,9 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"Test.setCreatedDate", "Test.setFixedSearchResults", "Test.startTest", "Test.stopTest", "Test.getStandardPricebookId",
 		"Test.Database.hasRecords",
 		"UserInfo.getDefaultCurrency",
-		"Site.getSiteId", "Site.getBaseUrl", "Site.getPathPrefix", "Site.getAdminEmail", "Site.getAdminId",
+		"Site.getSiteId", "Site.getBaseUrl", "Site.getBaseRequestUrl", "Site.getBaseSecureUrl", "Site.getBaseCustomUrl",
+		"Site.getDomain", "Site.getName", "Site.getTemplate", "Site.getSiteType", "Site.getSiteTypeLabel",
+		"Site.getPathPrefix", "Site.getAdminEmail", "Site.getAdminId",
 		"Site.getMasterLabel", "Site.isRegistrationEnabled", "Site.isLoginEnabled", "Site.isValidUsername",
 		"Site.setExperienceId", "Site.getErrorMessage", "Site.getErrorDescription", "Site.forgotPassword",
 		"Site.login", "Site.changePassword", "Site.validatePassword", "Site.createExternalUser", "Site.createPortalUser",
@@ -3534,6 +3536,21 @@ platformStaticCall:
 			return Null, fmt.Errorf("Site.getBaseUrl expects 0 arguments")
 		}
 		return String(vm.siteBaseURL()), nil
+	case "Site.getBaseRequestUrl", "Site.getBaseSecureUrl", "Site.getBaseCustomUrl":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("%s expects 0 arguments", callee)
+		}
+		return String(""), nil
+	case "Site.getDomain", "Site.getName", "Site.getSiteType", "Site.getSiteTypeLabel":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("%s expects 0 arguments", callee)
+		}
+		return Null, nil
+	case "Site.getTemplate":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Site.getTemplate expects 0 arguments")
+		}
+		return newPageReference("/site/SiteTemplate.apexp"), nil
 	case "Site.getPathPrefix":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Site.getPathPrefix expects 0 arguments")
@@ -6857,6 +6874,54 @@ func isDatabaseAccessLevelValue(value Value) bool {
 
 func isDatabaseDMLOptionsValue(value Value) bool {
 	return value.Kind == ValueObject && (strings.EqualFold(value.Type, "Database.DMLOptions") || strings.EqualFold(value.Type, "DMLOptions"))
+}
+
+func newDatabaseDMLOptions() Value {
+	options := Object("Database.DMLOptions")
+	options.Fields["allowFieldTruncation"] = Bool(false)
+	options.Fields["AllowFieldTruncation"] = options.Fields["allowFieldTruncation"]
+	options.Fields["assignmentRuleHeader"] = newDatabaseHeaderObject("Database.AssignmentRuleHeader")
+	options.Fields["AssignmentRuleHeader"] = options.Fields["assignmentRuleHeader"]
+	options.Fields["duplicateRuleHeader"] = newDatabaseHeaderObject("Database.DuplicateRuleHeader")
+	options.Fields["DuplicateRuleHeader"] = options.Fields["duplicateRuleHeader"]
+	options.Fields["emailHeader"] = newDatabaseHeaderObject("Database.EmailHeader")
+	options.Fields["EmailHeader"] = options.Fields["emailHeader"]
+	options.Fields["localeOptions"] = Object("Database.LocaleOptions")
+	options.Fields["LocaleOptions"] = options.Fields["localeOptions"]
+	options.Fields["localizeErrors"] = Bool(false)
+	options.Fields["LocalizeErrors"] = options.Fields["localizeErrors"]
+	options.Fields["optAllOrNone"] = Bool(true)
+	options.Fields["OptAllOrNone"] = options.Fields["optAllOrNone"]
+	return options
+}
+
+func newDatabaseHeaderObject(typeName string) Value {
+	header := Object(typeName)
+	switch typeName {
+	case "Database.AssignmentRuleHeader":
+		header.Fields["AssignmentRuleId"] = Null
+		header.Fields["UseDefaultRule"] = Null
+	case "Database.DuplicateRuleHeader":
+		header.Fields["AllowSave"] = Null
+		header.Fields["RunAsCurrentUser"] = Null
+	case "Database.EmailHeader":
+		header.Fields["TriggerAutoResponseEmail"] = Null
+		header.Fields["TriggerOtherEmail"] = Null
+		header.Fields["TriggerUserEmail"] = Null
+	}
+	return header
+}
+
+func cloneDatabaseOptionsObject(value Value) Value {
+	clone := value
+	if value.Fields == nil {
+		return clone
+	}
+	clone.Fields = make(map[string]Value, len(value.Fields))
+	for field, fieldValue := range value.Fields {
+		clone.Fields[field] = fieldValue
+	}
+	return clone
 }
 
 func databaseDMLOptionsAllOrNone(value Value, fallback bool) bool {
@@ -11712,20 +11777,31 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 	desc.Fields["childRelationships"] = List(childRelationships...)
 	recordTypes := make([]Value, 0, len(definition.RecordTypes))
 	byName := Map()
-	byName.Type = "Schema.RecordTypeInfoByNameMap"
+	byName.Type = "Map<String,Schema.RecordTypeInfo>"
 	byDeveloperName := Map()
+	byDeveloperName.Type = "Map<String,Schema.RecordTypeInfo>"
 	byID := Map()
+	byID.Type = "Map<Id,Schema.RecordTypeInfo>"
 	for _, recordType := range definition.RecordTypes {
 		value := recordTypeInfoValue(recordType)
 		recordTypes = append(recordTypes, value)
 		if name := recordTypeName(recordType); name != "" {
-			byName.Map[mapKey(String(name))] = value
+			key := String(name)
+			encodedKey := mapKey(key)
+			byName.Map[encodedKey] = value
+			byName.MapKeys[encodedKey] = key
 		}
 		if recordType.DeveloperName != "" {
-			byDeveloperName.Map[mapKey(String(recordType.DeveloperName))] = value
+			key := String(recordType.DeveloperName)
+			encodedKey := mapKey(key)
+			byDeveloperName.Map[encodedKey] = value
+			byDeveloperName.MapKeys[encodedKey] = key
 		}
 		if recordType.ID != "" {
-			byID.Map[mapKey(String(string(recordType.ID)))] = value
+			key := platformScalar("Id", recordType.ID.String())
+			encodedKey := mapKey(key)
+			byID.Map[encodedKey] = value
+			byID.MapKeys[encodedKey] = key
 		}
 	}
 	desc.Fields["recordTypeInfos"] = List(recordTypes...)
@@ -14984,6 +15060,16 @@ func newSendEmailError(message string) Value {
 	return err
 }
 
+func newEmailFileAttachment() Value {
+	attachment := Object("Messaging.EmailFileAttachment")
+	attachment.Fields["body"] = Null
+	attachment.Fields["contentType"] = Null
+	attachment.Fields["fileName"] = Null
+	attachment.Fields["id"] = Null
+	attachment.Fields["inline"] = Bool(false)
+	return attachment
+}
+
 func newFailedSendEmailResult(message string) Value {
 	result := Object("Messaging.SendEmailResult")
 	result.Fields["success"] = Bool(false)
@@ -15002,13 +15088,15 @@ func newSingleEmailMessage() Value {
 	for _, field := range []string{
 		"subject", "plainTextBody", "htmlBody", "replyTo", "senderDisplayName",
 		"charset", "inReplyTo", "references", "orgWideEmailAddressId",
-		"targetObjectId", "templateId", "whatId", "optOutPolicy", "emailPriority",
+		"targetObjectId", "templateId", "templateName", "whatId", "optOutPolicy",
+		"emailPriority", "unsubscribeComment",
 	} {
 		message.Fields[field] = Null
 	}
+	message.Fields["unsubscribeUrls"] = List()
 	for _, field := range []string{
 		"saveAsActivity", "treatBodiesAsTemplate", "treatTargetObjectAsRecipient",
-		"useSignature", "bccSender",
+		"useSignature", "bccSender", "oneClickPost", "userMail",
 	} {
 		message.Fields[field] = Bool(false)
 	}
@@ -15020,10 +15108,15 @@ func newMassEmailMessage() Value {
 	for _, field := range []string{"targetObjectIds", "whatIds"} {
 		message.Fields[field] = List()
 	}
-	for _, field := range []string{"templateId", "description", "optOutPolicy"} {
+	for _, field := range []string{
+		"templateId", "description", "optOutPolicy", "replyTo", "senderDisplayName",
+		"subject", "emailPriority",
+	} {
 		message.Fields[field] = Null
 	}
-	message.Fields["saveAsActivity"] = Bool(false)
+	for _, field := range []string{"saveAsActivity", "bccSender", "useSignature"} {
+		message.Fields[field] = Bool(false)
+	}
 	return message
 }
 
@@ -15540,7 +15633,7 @@ func canonicalRuntimeTypeName(typeName string) string {
 		"Metadata.CustomMetadataValue", "Metadata.CustomObject", "Metadata.CustomField", "Metadata.Metadata",
 		"Metadata.DeployResult", "Metadata.DeployDetails", "Metadata.DeployMessage", "Metadata.DeployCallbackContext",
 		"Metadata.AsyncResult", "SelectOption", "ApexPages.StandardController", "ApexPages.StandardSetController",
-		"ApexPages.Message", "Messaging.SendEmailResult", "Messaging.SingleEmailMessage",
+		"ApexPages.Message", "Messaging.SendEmailResult", "Messaging.EmailFileAttachment", "Messaging.SingleEmailMessage",
 		"Messaging.MassEmailMessage", "Messaging.SendEmailOptions", "URL", "Version", "InstallContext",
 	} {
 		if strings.EqualFold(typeName, known) {
@@ -15794,21 +15887,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Database.DMLOptions constructor expects 0 arguments")
 		}
-		options := Object("Database.DMLOptions")
-		options.Fields["allowFieldTruncation"] = Bool(false)
-		options.Fields["AllowFieldTruncation"] = options.Fields["allowFieldTruncation"]
-		options.Fields["assignmentRuleHeader"] = Object("Database.AssignmentRuleHeader")
-		options.Fields["AssignmentRuleHeader"] = options.Fields["assignmentRuleHeader"]
-		options.Fields["duplicateRuleHeader"] = Object("Database.DuplicateRuleHeader")
-		options.Fields["DuplicateRuleHeader"] = options.Fields["duplicateRuleHeader"]
-		options.Fields["emailHeader"] = Object("Database.EmailHeader")
-		options.Fields["EmailHeader"] = options.Fields["emailHeader"]
-		options.Fields["localeOptions"] = Object("Database.LocaleOptions")
-		options.Fields["LocaleOptions"] = options.Fields["localeOptions"]
-		options.Fields["localizeErrors"] = Bool(false)
-		options.Fields["LocalizeErrors"] = options.Fields["localizeErrors"]
-		options.Fields["optAllOrNone"] = Bool(true)
-		options.Fields["OptAllOrNone"] = options.Fields["optAllOrNone"]
+		options := newDatabaseDMLOptions()
 		for field, value := range namedArgs {
 			options.Fields[field] = value
 		}
@@ -15817,17 +15896,22 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Database.AssignmentRuleHeader constructor expects 0 arguments")
 		}
-		return Object("Database.AssignmentRuleHeader"), nil
+		return newDatabaseHeaderObject("Database.AssignmentRuleHeader"), nil
 	case "Database.DuplicateRuleHeader":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Database.DuplicateRuleHeader constructor expects 0 arguments")
 		}
-		return Object("Database.DuplicateRuleHeader"), nil
+		return newDatabaseHeaderObject("Database.DuplicateRuleHeader"), nil
 	case "Database.EmailHeader":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Database.EmailHeader constructor expects 0 arguments")
 		}
-		return Object("Database.EmailHeader"), nil
+		return newDatabaseHeaderObject("Database.EmailHeader"), nil
+	case "Database.LocaleOptions":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Database.LocaleOptions constructor expects 0 arguments")
+		}
+		return Object("Database.LocaleOptions"), nil
 	case "AsyncOptions":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("AsyncOptions constructor expects 0 arguments")
@@ -16128,6 +16212,11 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			return Null, fmt.Errorf("Messaging.SendEmailResult constructor expects 0 arguments")
 		}
 		return newSendEmailResult(), nil
+	case "Messaging.EmailFileAttachment":
+		if len(args) != 0 || len(namedArgs) != 0 {
+			return Null, fmt.Errorf("Messaging.EmailFileAttachment constructor expects 0 arguments")
+		}
+		return newEmailFileAttachment(), nil
 	case "Messaging.SingleEmailMessage":
 		if len(args) != 0 || len(namedArgs) != 0 {
 			return Null, fmt.Errorf("%s constructor expects 0 arguments", typeName)
@@ -20122,14 +20211,21 @@ func canonicalPlatformObjectMemberName(typeName, method string) string {
 		"getHasPrevious", "getCompleteResult",
 		"setToAddresses", "setCcAddresses", "setBccAddresses", "setFileAttachments",
 		"setEntityAttachments", "setDocumentAttachments", "setTargetObjectIds",
+		"setBody", "setContentType", "setFileName", "setInline",
+		"getBody", "getFileName", "getInline",
 		"setSubject", "setPlainTextBody", "setHtmlBody", "setReplyTo",
 		"setSenderDisplayName", "setSaveAsActivity", "setTreatBodiesAsTemplate",
 		"setTreatTargetObjectAsRecipient", "setUseSignature", "setBccSender",
+		"setOneClickPost", "setUnsubscribeComment", "setUnsubscribeUrls",
 		"getToAddresses", "getCcAddresses", "getBccAddresses", "getFileAttachments",
 		"getEntityAttachments", "getDocumentAttachments", "getTargetObjectIds",
 		"setWhatIds", "setTemplateId", "setDescription", "setOptOutPolicy",
+		"setEmailPriority", "setOrgWideEmailAddressId", "setWhatId",
 		"getWhatIds", "getTemplateId", "getDescription", "getOptOutPolicy",
-		"getSaveAsActivity",
+		"getSaveAsActivity", "getEmailPriority", "getOrgWideEmailAddressId",
+		"getTemplateName", "getUnsubscribeComment", "getUnsubscribeUrls",
+		"getOneClickPost", "isTreatBodiesAsTemplate", "isTreatTargetObjectAsRecipient",
+		"isUserMail",
 	}
 	if isExceptionType(typeName) {
 		known = append(known,
@@ -20304,7 +20400,7 @@ func (vm *VM) specialMapLookup(receiver, key Value) (Value, bool) {
 			continue
 		}
 		developerName, ok := value.Fields["developerName"]
-		if ok && developerName.Kind == ValueString && developerName.Text == key.Text {
+		if ok && developerName.Kind == ValueString && strings.EqualFold(developerName.Text, key.Text) {
 			return value, true
 		}
 	}
@@ -24115,6 +24211,14 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			return receiver.Fields["errors"], receiver, false, true, nil
 		}
+	case "Database.DMLOptions", "Database.AssignmentRuleHeader", "Database.DuplicateRuleHeader", "Database.EmailHeader", "Database.LocaleOptions":
+		switch method {
+		case "clone":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("%s.clone expects 0 arguments", receiver.Type)
+			}
+			return cloneDatabaseOptionsObject(receiver), receiver, false, true, nil
+		}
 	case "Database.UpsertResult":
 		switch method {
 		case "isSuccess":
@@ -24769,6 +24873,8 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			return List(), receiver, false, true, nil
 		}
+	case "Messaging.EmailFileAttachment":
+		return callEmailFileAttachmentMember(receiver, method, args)
 	case "Messaging.SingleEmailMessage":
 		return callSingleEmailMessageMember(receiver, method, args)
 	case "Messaging.MassEmailMessage":
@@ -25634,6 +25740,40 @@ func (vm *VM) standardSetDML(receiver Value, op string, result *Result) (Value, 
 	return newPageReference(""), receiver, false, true, nil
 }
 
+func callEmailFileAttachmentMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	method = canonicalPlatformObjectMemberName(receiver.Type, method)
+	switch method {
+	case "setBody":
+		if len(args) != 1 || args[0].Kind != ValueObject || args[0].Type != "Blob" {
+			return Null, receiver, false, true, fmt.Errorf("Messaging.EmailFileAttachment.setBody expects Blob")
+		}
+		receiver.Fields["body"] = args[0]
+		return Null, receiver, true, true, nil
+	case "setContentType", "setFileName":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("Messaging.EmailFileAttachment.%s expects String", method)
+		}
+		receiver.Fields[emailMessageFieldName(method)] = args[0]
+		return Null, receiver, true, true, nil
+	case "setInline":
+		if len(args) != 1 || args[0].Kind != ValueBool {
+			return Null, receiver, false, true, fmt.Errorf("Messaging.EmailFileAttachment.setInline expects Boolean")
+		}
+		receiver.Fields["inline"] = args[0]
+		return Null, receiver, true, true, nil
+	case "getBody", "getContentType", "getFileName", "getId", "getID", "getInline":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Messaging.EmailFileAttachment.%s expects 0 arguments", method)
+		}
+		if method == "getID" {
+			return receiver.Fields["id"], receiver, false, true, nil
+		}
+		return receiver.Fields[emailMessageFieldName(method)], receiver, false, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
 func callSingleEmailMessageMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
 	method = canonicalPlatformObjectMemberName(receiver.Type, method)
 	switch method {
@@ -25645,7 +25785,8 @@ func callSingleEmailMessageMember(receiver Value, method string, args []Value) (
 		return Null, receiver, true, true, nil
 	case "setSubject", "setPlainTextBody", "setHtmlBody", "setReplyTo", "setSenderDisplayName",
 		"setCharset", "setInReplyTo", "setReferences", "setOrgWideEmailAddressId",
-		"setTargetObjectId", "setTemplateId", "setWhatId", "setOptOutPolicy", "setEmailPriority":
+		"setTargetObjectId", "setTemplateId", "setWhatId", "setOptOutPolicy", "setEmailPriority",
+		"setUnsubscribeComment":
 		if len(args) != 1 || (args[0].Kind != ValueString && !(args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "Id"))) {
 			return Null, receiver, false, true, fmt.Errorf("Messaging.SingleEmailMessage.%s expects String", method)
 		}
@@ -25655,17 +25796,29 @@ func callSingleEmailMessageMember(receiver Value, method string, args []Value) (
 		}
 		receiver.Fields[emailMessageFieldName(method)] = value
 		return Null, receiver, true, true, nil
-	case "setSaveAsActivity", "setTreatBodiesAsTemplate", "setTreatTargetObjectAsRecipient", "setUseSignature", "setBccSender":
+	case "setSaveAsActivity", "setTreatBodiesAsTemplate", "setTreatTargetObjectAsRecipient", "setUseSignature", "setBccSender", "setOneClickPost":
 		if len(args) != 1 || args[0].Kind != ValueBool {
 			return Null, receiver, false, true, fmt.Errorf("Messaging.SingleEmailMessage.%s expects Boolean", method)
 		}
 		receiver.Fields[emailMessageFieldName(method)] = args[0]
 		return Null, receiver, true, true, nil
+	case "setUnsubscribeUrls":
+		if len(args) != 1 || args[0].Kind != ValueList {
+			return Null, receiver, false, true, fmt.Errorf("Messaging.SingleEmailMessage.setUnsubscribeUrls expects List")
+		}
+		receiver.Fields["unsubscribeUrls"] = args[0]
+		return Null, receiver, true, true, nil
 	case "getToAddresses", "getCcAddresses", "getBccAddresses", "getFileAttachments", "getEntityAttachments", "getDocumentAttachments", "getTargetObjectIds",
 		"getSubject", "getPlainTextBody", "getHtmlBody", "getReplyTo", "getSenderDisplayName",
 		"getCharset", "getInReplyTo", "getReferences", "getOrgWideEmailAddressId",
-		"getTargetObjectId", "getTemplateId", "getWhatId", "getOptOutPolicy", "getEmailPriority",
-		"getSaveAsActivity", "getTreatBodiesAsTemplate", "getTreatTargetObjectAsRecipient", "getUseSignature", "getBccSender":
+		"getTargetObjectId", "getTemplateId", "getTemplateName", "getWhatId", "getOptOutPolicy", "getEmailPriority",
+		"getUnsubscribeComment", "getUnsubscribeUrls",
+		"getSaveAsActivity", "getTreatBodiesAsTemplate", "getTreatTargetObjectAsRecipient", "getUseSignature", "getBccSender", "getOneClickPost":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Messaging.SingleEmailMessage.%s expects 0 arguments", method)
+		}
+		return receiver.Fields[emailMessageFieldName(method)], receiver, false, true, nil
+	case "isTreatBodiesAsTemplate", "isTreatTargetObjectAsRecipient", "isUserMail":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Messaging.SingleEmailMessage.%s expects 0 arguments", method)
 		}
@@ -25676,6 +25829,7 @@ func callSingleEmailMessageMember(receiver Value, method string, args []Value) (
 }
 
 func callMassEmailMessageMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	method = canonicalPlatformObjectMemberName(receiver.Type, method)
 	switch method {
 	case "setTargetObjectIds", "setWhatIds":
 		if len(args) != 1 || args[0].Kind != ValueList {
@@ -25683,19 +25837,25 @@ func callMassEmailMessageMember(receiver Value, method string, args []Value) (Va
 		}
 		receiver.Fields[emailMessageFieldName(method)] = args[0]
 		return Null, receiver, true, true, nil
-	case "setTemplateId", "setDescription", "setOptOutPolicy":
-		if len(args) != 1 || args[0].Kind != ValueString {
+	case "setTemplateId", "setDescription", "setOptOutPolicy", "setEmailPriority", "setReplyTo", "setSenderDisplayName", "setSubject":
+		if len(args) != 1 || (args[0].Kind != ValueString && !(args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "Id"))) {
 			return Null, receiver, false, true, fmt.Errorf("Messaging.MassEmailMessage.%s expects String", method)
 		}
-		receiver.Fields[emailMessageFieldName(method)] = args[0]
+		value := args[0]
+		if idText, ok := typedIDValueText(value); ok {
+			value = String(idText)
+		}
+		receiver.Fields[emailMessageFieldName(method)] = value
 		return Null, receiver, true, true, nil
-	case "setSaveAsActivity":
+	case "setSaveAsActivity", "setBccSender", "setUseSignature":
 		if len(args) != 1 || args[0].Kind != ValueBool {
 			return Null, receiver, false, true, fmt.Errorf("Messaging.MassEmailMessage.%s expects Boolean", method)
 		}
 		receiver.Fields[emailMessageFieldName(method)] = args[0]
 		return Null, receiver, true, true, nil
-	case "getTargetObjectIds", "getWhatIds", "getTemplateId", "getDescription", "getOptOutPolicy", "getSaveAsActivity":
+	case "getTargetObjectIds", "getWhatIds", "getTemplateId", "getDescription", "getOptOutPolicy",
+		"getEmailPriority", "getReplyTo", "getSenderDisplayName", "getSubject",
+		"getSaveAsActivity", "getBccSender", "getUseSignature":
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("Messaging.MassEmailMessage.%s expects 0 arguments", method)
 		}
@@ -25708,6 +25868,10 @@ func callMassEmailMessageMember(receiver Value, method string, args []Value) (Va
 func emailMessageFieldName(method string) string {
 	if strings.HasPrefix(method, "get") && len(method) > len("get") {
 		field := strings.TrimPrefix(method, "get")
+		return strings.ToLower(field[:1]) + field[1:]
+	}
+	if strings.HasPrefix(method, "is") && len(method) > len("is") {
+		field := strings.TrimPrefix(method, "is")
 		return strings.ToLower(field[:1]) + field[1:]
 	}
 	if !strings.HasPrefix(method, "set") || len(method) <= len("set") {

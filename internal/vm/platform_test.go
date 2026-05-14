@@ -1060,6 +1060,20 @@ System.assertEquals('invalid_email', Label.Site.invalid_email);
 
 func TestExecMessagingResultAndUnsupportedEdges(t *testing.T) {
 	program, err := CompileAnonymous(`
+Messaging.EmailFileAttachment attachment = new Messaging.EmailFileAttachment();
+System.assertEquals(null, attachment.getBody());
+System.assertEquals(null, attachment.getContentType());
+System.assertEquals(null, attachment.getFileName());
+System.assertEquals(null, attachment.getId());
+System.assertEquals(false, attachment.getInline());
+attachment.setBody(Blob.valueOf('file-body'));
+attachment.setContentType('text/plain');
+attachment.setFileName('trail.txt');
+attachment.setInline(true);
+System.assertEquals('file-body', attachment.getBody().toString());
+System.assertEquals('text/plain', attachment.getContentType());
+System.assertEquals('trail.txt', attachment.getFileName());
+System.assertEquals(true, attachment.getInline());
 Messaging.SingleEmailMessage msg = new Messaging.SingleEmailMessage();
 System.assertEquals(0, msg.getToAddresses().size());
 System.assertEquals(0, msg.getCcAddresses().size());
@@ -1072,13 +1086,20 @@ System.assertEquals(null, msg.getSubject());
 System.assertEquals(null, msg.getHtmlBody());
 System.assertEquals(null, msg.getPlainTextBody());
 System.assertEquals(null, msg.getTemplateId());
+System.assertEquals(null, msg.getTemplateName());
 System.assertEquals(null, msg.getTargetObjectId());
 System.assertEquals(null, msg.getWhatId());
+System.assertEquals(null, msg.getUnsubscribeComment());
+System.assertEquals(0, msg.getUnsubscribeUrls().size());
 System.assertEquals(false, msg.getSaveAsActivity());
 System.assertEquals(false, msg.getTreatBodiesAsTemplate());
+System.assertEquals(false, msg.isTreatBodiesAsTemplate());
 System.assertEquals(false, msg.getTreatTargetObjectAsRecipient());
+System.assertEquals(false, msg.isTreatTargetObjectAsRecipient());
 System.assertEquals(false, msg.getUseSignature());
 System.assertEquals(false, msg.getBccSender());
+System.assertEquals(false, msg.getOneClickPost());
+System.assertEquals(false, msg.isUserMail());
 msg.setToAddresses(new List<String>{'trail@example.test'});
 msg.setCcAddresses(new List<String>{'copy@example.test'});
 msg.setBccAddresses(new List<String>{'blind@example.test'});
@@ -1101,10 +1122,13 @@ msg.setUseSignature(false);
 msg.setEntityAttachments(new List<String>{'015000000000001'});
 msg.setDocumentAttachments(new List<String>{'015000000000002'});
 msg.setTargetObjectIds(new List<String>{'003000000000002'});
+msg.setUnsubscribeComment('unsubscribe comment');
+msg.setUnsubscribeUrls(new List<String>{'https://example.test/unsubscribe'});
+msg.setOneClickPost(true);
 msg.setOptOutPolicy('FILTER');
 msg.setEmailPriority('High');
 msg.setBccSender(true);
-msg.setFileAttachments(new List<Object>{});
+msg.setFileAttachments(new List<Messaging.EmailFileAttachment>{attachment});
 System.assertEquals('trail@example.test', msg.getToAddresses().get(0));
 System.assertEquals('copy@example.test', msg.getCcAddresses().get(0));
 System.assertEquals('blind@example.test', msg.getBccAddresses().get(0));
@@ -1127,10 +1151,13 @@ System.assertEquals(false, msg.getUseSignature());
 System.assertEquals('015000000000001', msg.getEntityAttachments().get(0));
 System.assertEquals('015000000000002', msg.getDocumentAttachments().get(0));
 System.assertEquals('003000000000002', msg.getTargetObjectIds().get(0));
+System.assertEquals('unsubscribe comment', msg.getUnsubscribeComment());
+System.assertEquals('https://example.test/unsubscribe', msg.getUnsubscribeUrls().get(0));
 System.assertEquals('FILTER', msg.getOptOutPolicy());
 System.assertEquals('High', msg.getEmailPriority());
 System.assertEquals(true, msg.getBccSender());
-System.assertEquals(0, msg.getFileAttachments().size());
+System.assertEquals(true, msg.getOneClickPost());
+System.assertEquals('trail.txt', msg.getFileAttachments().get(0).getFileName());
 Messaging.SingleEmailMessage second = new Messaging.SingleEmailMessage();
 second.setToAddresses(new List<String>{'second@example.test'});
 second.setPlainTextBody('Second body');
@@ -1678,20 +1705,38 @@ System.assertEquals(0, mass.getWhatIds().size());
 System.assertEquals(null, mass.getTemplateId());
 System.assertEquals(null, mass.getDescription());
 System.assertEquals(null, mass.getOptOutPolicy());
+System.assertEquals(null, mass.getEmailPriority());
+System.assertEquals(null, mass.getReplyTo());
+System.assertEquals(null, mass.getSenderDisplayName());
+System.assertEquals(null, mass.getSubject());
 System.assertEquals(false, mass.getSaveAsActivity());
+System.assertEquals(false, mass.getBccSender());
+System.assertEquals(false, mass.getUseSignature());
 mass.setTargetObjectIds(new List<String>{'003000000000001', '003000000000002'});
 mass.setWhatIds(new List<String>{'001000000000001'});
 mass.setTemplateId('00X000000000001');
 mass.setDescription('Trail mass email');
 mass.setOptOutPolicy('FILTER');
+mass.setEmailPriority('High');
+mass.setReplyTo('reply@example.test');
+mass.setSenderDisplayName('Trail Sender');
+mass.setSubject('Mass subject');
 mass.setSaveAsActivity(false);
+mass.setBccSender(true);
+mass.setUseSignature(true);
 System.assertEquals('003000000000001', mass.getTargetObjectIds().get(0));
 System.assertEquals('003000000000002', mass.getTargetObjectIds().get(1));
 System.assertEquals('001000000000001', mass.getWhatIds().get(0));
 System.assertEquals('00X000000000001', mass.getTemplateId());
 System.assertEquals('Trail mass email', mass.getDescription());
 System.assertEquals('FILTER', mass.getOptOutPolicy());
+System.assertEquals('High', mass.getEmailPriority());
+System.assertEquals('reply@example.test', mass.getReplyTo());
+System.assertEquals('Trail Sender', mass.getSenderDisplayName());
+System.assertEquals('Mass subject', mass.getSubject());
 System.assertEquals(false, mass.getSaveAsActivity());
+System.assertEquals(true, mass.getBccSender());
+System.assertEquals(true, mass.getUseSignature());
 List<Messaging.SendEmailResult> results = Messaging.sendEmail(new List<Messaging.MassEmailMessage>{mass});
 System.assertEquals(1, Limits.getEmailInvocations());
 System.assertEquals(1, results.size());
@@ -3172,6 +3217,14 @@ func TestExecOrgShapeBackedSiteNetworkAndCurrencyCalls(t *testing.T) {
 System.assert(UserInfo.isMultiCurrencyOrganization());
 System.assertEquals('0DM000000000001', Site.getSiteId());
 System.assertEquals('https://local.oaer.example/local', Site.getBaseUrl());
+System.assertEquals('', Site.getBaseRequestUrl());
+System.assertEquals('', Site.getBaseSecureUrl());
+System.assertEquals('', Site.getBaseCustomUrl());
+System.assertEquals(null, Site.getDomain());
+System.assertEquals(null, Site.getName());
+System.assertEquals('/site/SiteTemplate.apexp', Site.getTemplate().getUrl());
+System.assertEquals(null, Site.getSiteType());
+System.assertEquals(null, Site.getSiteTypeLabel());
 System.assertEquals('local', Site.getPathPrefix());
 System.assertEquals('system@example.invalid', Site.getAdminEmail());
 System.assertEquals('005000000000001', Site.getAdminId());
@@ -4194,6 +4247,63 @@ System.assert(!upsertUpdate.isCreated());
 		},
 		Records: make(map[storage.ID]storage.Record),
 	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDatabaseDMLOptionsHeaderRuntimeBreadth(t *testing.T) {
+	program, err := CompileAnonymous(`
+Database.DMLOptions opts = new Database.DMLOptions();
+opts.OptAllOrNone = false;
+opts.AllowFieldTruncation = true;
+opts.LocalizeErrors = true;
+opts.EmailHeader.TriggerUserEmail = true;
+opts.EmailHeader.triggerOtherEmail = false;
+opts.DuplicateRuleHeader.AllowSave = true;
+opts.DuplicateRuleHeader.RunAsCurrentUser = true;
+opts.AssignmentRuleHeader.UseDefaultRule = true;
+opts.AssignmentRuleHeader.AssignmentRuleId = '01Q000000000001';
+Object locale = opts.LocaleOptions;
+System.assertNotEquals(null, locale);
+
+Object copied = opts.clone();
+System.assertEquals(false, copied.OptAllOrNone);
+System.assertEquals(true, copied.AllowFieldTruncation);
+System.assertEquals(true, copied.EmailHeader.TriggerUserEmail);
+System.assertEquals(false, copied.EmailHeader.triggerOtherEmail);
+System.assertEquals(true, copied.DuplicateRuleHeader.AllowSave);
+System.assertEquals(true, copied.AssignmentRuleHeader.UseDefaultRule);
+System.assertEquals('01Q000000000001', copied.AssignmentRuleHeader.AssignmentRuleId);
+
+Database.EmailHeader emailHeader = new Database.EmailHeader();
+emailHeader.TriggerAutoResponseEmail = true;
+Object emailHeaderCopy = emailHeader.clone();
+System.assertEquals(true, emailHeaderCopy.TriggerAutoResponseEmail);
+
+Database.AssignmentRuleHeader assignmentHeader = new Database.AssignmentRuleHeader();
+assignmentHeader.UseDefaultRule = true;
+System.assertEquals(true, assignmentHeader.clone().UseDefaultRule);
+
+Database.DuplicateRuleHeader duplicateHeader = new Database.DuplicateRuleHeader();
+duplicateHeader.AllowSave = true;
+System.assertEquals(true, duplicateHeader.clone().AllowSave);
+
+Database.LocaleOptions localeOptions = new Database.LocaleOptions();
+System.assertNotEquals(null, localeOptions.clone());
+
+List<Account> records = new List<Account>{new Account(Name = 'Acme'), new Account(Name = 'Beta')};
+List<Database.SaveResult> results = Database.insert(records, opts);
+System.assertEquals(2, results.size());
+System.assert(results.get(0).isSuccess());
+System.assert(results.get(1).isSuccess());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
