@@ -11,8 +11,8 @@ runtime and tooling stack, beyond the first local-test claim.
 Current checkpoint: `src-nmb-nutpl-develop` is the first green
 example-project runtime sentinel at `total=761 pass=761`. The active
 local-test closure target is now `sf-cred-pkg-develop`; the May 14, 2026
-runtime baseline is `total=4268 pass=3146 unsupported=98 runtimeGap=445
-assertFail=579 compileError=0 internalError=0`. Keep this plan behind the
+runtime baseline is `total=4268 pass=3185 unsupported=71 runtimeGap=404
+assertFail=608 compileError=0 internalError=0`. Keep this plan behind the
 local-test closure work until the active example-project blocker frontier is
 green or explicitly accepted.
 

@@ -67,7 +67,7 @@ Current checked status:
   checked example project. The current six-project runtime baseline has
   `src-nmb-nutpl-develop` green at `total=761 pass=761`. Work is currently
   focused on `sf-cred-pkg-develop`, where the May 14, 2026 local-test run is
-  `total=4268 pass=3146 unsupported=98 runtimeGap=445 assertFail=579
+  `total=4268 pass=3185 unsupported=71 runtimeGap=404 assertFail=608
   compileError=0 internalError=0`. Remaining example-project outcomes are
   tracked as measured runtime blocker frontiers rather than scanner findings.
 - Treat this document as the source for broad local-test support beyond the
@@ -232,9 +232,11 @@ Current `sf-cred-pkg-develop` blocker frontier from the May 14, 2026
 | Assert failure `expected <0>, actual <1>` | 99 | Current largest family after core runtime blockers were removed; inspect side effects and query counts rather than suppressing assertions. |
 | Assert failure `expected <1>, actual <0>` | 51 | Likely missing DML side effects or selectors returning no rows. |
 | Assert failure `expected <1>, actual <2>` | 22 | Likely duplicate side effects now visible after setup/UUID isolation fixes. |
-| Invalid JSON input / JSON object-to-string mapping | 34 | `deserializeUntyped` and typed deserialization need broader Salesforce-shaped coercion and error compatibility. |
-| SObject describe/null field-token gaps | 24 | Remaining `sObjectField.getDescribe`, field token, and `Schema.SObjectType` shape issues. |
-| Contact and Task standard metadata gaps | 25 | Includes required `Contact.LastName`, `Task.Type`, and `Lead.DoNotCall` shape issues. |
+| SObject describe/null field-token gaps | 18 | Remaining `sObjectField.getDescribe`, field token, and `Schema.SObjectType` shape issues. |
+| Contact standard metadata gaps | 17 | Current top required-field family is `Contact.LastName`. |
+| `mapObject.hasSfObject` null receiver | 16 | Setup mapping shape path now reached after JSON/Id coercion fixes. |
+| JSON object-to-string mapping | 14 | `deserializeUntyped` trailing-text behavior is fixed; remaining JSON failures are typed object-to-string coercion. |
+| HTTP/callout test contracts | 12 | `Http.send real network transport` remains unsupported where tests expect mocks or local callout contracts. |
 
 ## Local Test Running Boundary
 

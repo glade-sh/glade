@@ -62,16 +62,19 @@ go build -o /private/tmp/oaer-perf ./cmd/oaer
 Measured result:
 
 ```text
-total=4268 pass=3146 unsupported=98 runtimeGap=445 assertFail=579 compileError=0 internalError=0 durationMs=269872
+total=4268 pass=3185 unsupported=71 runtimeGap=404 assertFail=608 compileError=0 internalError=0 durationMs=448640
 ```
 
 The next blocker frontier is not compile loading. It is runtime fidelity:
-JSON/SObject describe shape gaps, standard metadata/relationship coverage,
-remaining DML behavior, and the top assert-failure families now reached after
-the UUID, nested enum, Java-regex lookahead, and `Account.ChildAccounts`
-fixes. `docs/plans/2026-05-07-src-nmb-nu-develop-squad-plan.md` is retained as
-historical planning for the larger NU project but is no longer the active
-frontier while `sf-cred-pkg-develop` is the zero-blocker target.
+SObject describe shape gaps, standard metadata/relationship coverage, remaining
+DML behavior, HTTP/callout test contracts, and the top assert-failure families
+now reached after the UUID, nested enum, Java-regex lookahead,
+`Account.ChildAccounts`, `SObject.putSObject`, lenient JSON trailing text,
+nullable `Date.valueOf(Object)`, and Id coercion fixes. The May 14 full run took
+448.6s, so use focused method/class slices for normal feedback and reserve full
+runs for checkpoint deltas. `docs/plans/2026-05-07-src-nmb-nu-develop-squad-plan.md`
+is retained as historical planning for the larger NU project but is no longer
+the active frontier while `sf-cred-pkg-develop` is the zero-blocker target.
 
 ## Execution Objective
 
