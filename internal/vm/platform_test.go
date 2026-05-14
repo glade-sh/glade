@@ -4412,6 +4412,42 @@ System.assertEquals(0, restored.getErrors().size());
 	}
 }
 
+func TestExecDatabaseIdOverloadsForRecordActionsAndMerge(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account restore = new Account(Name = 'Restore');
+insert restore;
+Id restoreId = restore.Id;
+delete restore;
+Database.UndeleteResult restored = Database.undelete(restoreId, false);
+System.assert(restored.isSuccess());
+
+Account purge = new Account(Name = 'Purge');
+insert purge;
+Id purgeId = purge.Id;
+delete purge;
+Database.EmptyRecycleBinResult emptied = Database.emptyRecycleBin(purgeId);
+System.assert(emptied.isSuccess());
+
+Account master = new Account(Name = 'Master');
+insert master;
+Account duplicate = new Account(Name = 'Duplicate');
+insert duplicate;
+Id duplicateId = duplicate.Id;
+Database.MergeResult merged = Database.merge(master, duplicateId, false, AccessLevel.USER_MODE);
+System.assert(merged.isSuccess());
+System.assertEquals(duplicateId, merged.getMergedRecordIds().get(0));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDatabaseUndeleteMixedRowsAndRollback(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account deleted = new Account(Name = 'Deleted');
@@ -4499,18 +4535,25 @@ System.assertEquals(0, rows.size());
 	}
 }
 
-func TestExecDatabaseAccessLevelOverloadUnsupported(t *testing.T) {
-	program, err := CompileAnonymous(`Database.insert(new Account(Name = 'Acme'), true, AccessLevel.USER_MODE);`)
+func TestExecDatabaseAccessLevelOverloadRunsLocalDML(t *testing.T) {
+	program, err := CompileAnonymous(`
+Database.SaveResult inserted = Database.insert(new Account(Name = 'Acme'), true, AccessLevel.USER_MODE);
+System.assert(inserted.isSuccess());
+Account upserted = new Account(Name = 'Upserted', Other_Key__c = 'ext-access');
+Database.UpsertResult upsertResult = Database.upsert(upserted, Account.Other_Key__c, false, AccessLevel.SYSTEM_MODE);
+System.assert(upsertResult.isSuccess());
+`)
 	if err != nil {
 		t.Fatal(err)
 	}
 	machine := New(nil)
 	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Other_Key__c"] = storage.Field{APIName: "Other_Key__c", Type: storage.FieldString, ExternalID: true, Unique: true}
+	org.Objects["Account"] = account
 	machine.SetOrg(&org)
-	_, err = machine.Execute(program)
-	var runtimeErr *RuntimeError
-	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != `unsupported call "Database.insert AccessLevel overload"` {
-		t.Fatalf("err = %#v, want UnsupportedFeature AccessLevel overload", err)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 

@@ -453,9 +453,61 @@ func TestEnsureStandardObjectAddsSalesCloudStandardObjectShape(t *testing.T) {
 	}
 }
 
+func TestEnsureStandardObjectAddsGeneratedSObjectStubOverlayShape(t *testing.T) {
+	org := NewOrgState()
+
+	EnsureStandardObject(&org, "AIApplication")
+	EnsureStandardObject(&org, "AIInsightAction")
+
+	if !IsKnownStandardObject("AIApplication") {
+		t.Fatalf("AIApplication should be recognized from generated SObject stubs")
+	}
+	if field, ok := org.Objects["AIApplication"].Definition.Fields["DeveloperName"]; !ok || field.Type != FieldString {
+		t.Fatalf("AIApplication.DeveloperName field = %#v, %v", field, ok)
+	}
+	if field, ok := org.Objects["AIApplication"].Definition.Fields["CreatedById"]; !ok || field.Type != FieldReference || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "User" {
+		t.Fatalf("AIApplication.CreatedById field = %#v, %v", field, ok)
+	}
+	if field, ok := org.Objects["AIInsightAction"].Definition.Fields["AiRecordInsightId"]; !ok || field.Type != FieldReference || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != "AIRecordInsight" || field.ChildRelationshipName != "AIInsightActions" {
+		t.Fatalf("AIInsightAction.AiRecordInsightId field = %#v, %v", field, ok)
+	}
+}
+
+func TestEnsureStandardObjectPreservesStubChildRelationshipsForSharedFields(t *testing.T) {
+	org := NewOrgState()
+
+	EnsureStandardObject(&org, "Contact")
+	EnsureStandardObject(&org, "Task")
+
+	task := org.Objects["Task"].Definition
+	if !hasChildRelationship(task.Relations, "WhoId", "Contact", "Who", "Tasks") {
+		t.Fatalf("Task.WhoId relations missing Contact.Tasks: %#v", task.Relations)
+	}
+	if !hasChildRelationship(task.Relations, "WhoId", "Account", "Who", "PersonTasks") {
+		t.Fatalf("Task.WhoId relations missing Account.PersonTasks: %#v", task.Relations)
+	}
+	if hasChildRelationship(task.Relations, "WhoId", "Contact", "Who", "PersonTasks") {
+		t.Fatalf("Task.WhoId relations should not expose Contact.PersonTasks: %#v", task.Relations)
+	}
+}
+
 func hasRelationship(relations []Relationship, fieldName, parentObject, parentRelationship string) bool {
 	for _, relation := range relations {
 		if relation.Field != fieldName || relation.ParentRelationship != parentRelationship {
+			continue
+		}
+		for _, candidate := range relation.ParentObjects {
+			if candidate == parentObject {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func hasChildRelationship(relations []Relationship, fieldName, parentObject, parentRelationship, childRelationship string) bool {
+	for _, relation := range relations {
+		if relation.Field != fieldName || relation.ParentRelationship != parentRelationship || relation.ChildRelationship != childRelationship {
 			continue
 		}
 		for _, candidate := range relation.ParentObjects {

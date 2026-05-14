@@ -90,6 +90,56 @@ func TestStandardPlatformSymbolsIncludeUserInfoStubMethodsAndFieldTokenPropertie
 	requireStandardProperty(t, field, "label", "String")
 }
 
+func TestStandardPlatformSymbolsIncludeGeneratedSystemStubBreadth(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+
+	testClass := requireStandardSymbol(t, symbols, "Test")
+	requireStandardMethod(t, testClass, "createStubQueryRow", []string{"Schema.SObjectType", "Map<String,Object>"}, true)
+	requireStandardMethod(t, testClass, "setCurrentPageReference", []string{"Object"}, true)
+
+	stringClass := requireStandardSymbol(t, symbols, "String")
+	requireStandardMethod(t, stringClass, "format", []string{"String", "List<Object>"}, true)
+
+	displayType := requireStandardSymbol(t, symbols, "Schema.DisplayType")
+	if displayType.Kind != apexast.DeclarationEnum {
+		t.Fatalf("Schema.DisplayType kind = %q, want enum", displayType.Kind)
+	}
+	requireStandardProperty(t, displayType, "ANYTYPE", "Schema.DisplayType")
+	requireStandardProperty(t, displayType, "LOCATION", "Schema.DisplayType")
+
+	saveResult := requireStandardSymbol(t, symbols, "Database.SaveResult")
+	requireStandardMethod(t, saveResult, "getErrors", nil, false)
+	requireStandardMethod(t, saveResult, "isSuccess", nil, false)
+
+	database := requireStandardSymbol(t, symbols, "Database")
+	requireStandardMethod(t, database, "insert", []string{"SObject", "Object"}, true)
+	requireStandardMethod(t, database, "update", []string{"List<SObject>", "Object"}, true)
+
+	batchable := requireStandardSymbol(t, symbols, "Database.Batchable")
+	requireStandardMethodType(t, batchable, "start", "Iterable")
+
+	statusCode := requireStandardSymbol(t, symbols, "StatusCode")
+	if statusCode.Kind != apexast.DeclarationEnum {
+		t.Fatalf("StatusCode kind = %q, want enum", statusCode.Kind)
+	}
+	requireStandardProperty(t, statusCode, "APEX_FAILED", "StatusCode")
+
+	typeClass := requireStandardSymbol(t, symbols, "Type")
+	requireStandardMethod(t, typeClass, "isAssignableFrom", []string{"Type"}, false)
+
+	requireStandardSymbol(t, symbols, "Database.Cursor.DeleteFilter")
+}
+
+func TestStandardPlatformSymbolsIncludeGeneratedProductNamespaceStubBreadth(t *testing.T) {
+	symbols := StandardPlatformSymbols()
+
+	org := requireStandardSymbol(t, symbols, "ConnectApi.Organization")
+	requireStandardMethod(t, org, "getSettings", nil, true)
+
+	commerce := requireStandardSymbol(t, symbols, "commercepromotions.PromotionRequest")
+	requireStandardProperty(t, commerce, "buyerAccountId", "Object")
+}
+
 func requireStandardSymbol(t *testing.T, symbols []TypeSymbol, name string) TypeSymbol {
 	t.Helper()
 	for _, symbol := range symbols {

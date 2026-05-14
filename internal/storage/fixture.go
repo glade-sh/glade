@@ -289,6 +289,10 @@ func ApplyOrgShape(org *OrgState, features []string) {
 			setOrganizationFlag(org, "IsChatterEnabled", true)
 		}
 	}
+	for name, obj := range org.Objects {
+		EnsureStandardObjectFieldsForFeatures(&obj.Definition, features)
+		org.Objects[name] = obj
+	}
 	if _, ok := org.Objects["RecordType"]; ok {
 		ensureRecordTypeRecords(org)
 	}

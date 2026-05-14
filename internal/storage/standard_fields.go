@@ -25,7 +25,8 @@ func EnsureStandardObjectFieldsForFeatures(definition *ObjectDefinition, feature
 		definition.Fields["Id"] = Field{APIName: "Id", Label: "Record ID", Type: FieldID}
 	}
 	mergeStandardObjectDefinition(definition, features)
-	mergeStandardSObjectStubFields(definition)
+	mergeStandardSObjectStubFields(definition, features)
+	mergeStandardSObjectStubRelationships(definition)
 	applyStandardObjectCompatibilityOverlays(definition)
 	ensureCommonRecordTypeField(definition)
 	fields := standardFieldsForObject(definition.APIName)
@@ -274,7 +275,7 @@ func standardFieldsForObject(objectName string) []Field {
 func withoutPersonAccountFields(fields []Field) []Field {
 	out := fields[:0]
 	for _, field := range fields {
-		if strings.HasPrefix(field.APIName, "Person") {
+		if isPersonAccountField(field.APIName) {
 			continue
 		}
 		out = append(out, field)
@@ -421,12 +422,50 @@ func mergeStandardObjectDefinition(definition *ObjectDefinition, features []stri
 	}
 }
 
-func mergeStandardSObjectStubFields(definition *ObjectDefinition) {
+func mergeStandardSObjectStubFields(definition *ObjectDefinition, features []string) {
 	fields, ok := standardSObjectStubFieldsFor(definition.APIName)
 	if !ok {
 		return
 	}
+	if stringsEqualFold(definition.APIName, "Account") && !hasCanonicalFeature(features, "PersonAccounts") {
+		fields = withoutPersonAccountFieldMap(fields)
+	}
 	mergeStandardFields(definition, fields)
+}
+
+func mergeStandardSObjectStubRelationships(definition *ObjectDefinition) {
+	relationships, ok := standardSObjectStubRelationshipsFor(definition.APIName)
+	if !ok {
+		return
+	}
+	mergeStandardRelationships(definition, relationships)
+}
+
+func withoutPersonAccountFieldMap(fields map[string]Field) map[string]Field {
+	filtered := make(map[string]Field, len(fields))
+	for name, field := range fields {
+		if isPersonAccountField(name) {
+			continue
+		}
+		filtered[name] = field
+	}
+	return filtered
+}
+
+func isPersonAccountField(name string) bool {
+	switch {
+	case strings.HasPrefix(name, "Person"):
+		return true
+	case stringsEqualFold(name, "FirstName"),
+		stringsEqualFold(name, "LastName"),
+		stringsEqualFold(name, "MiddleName"),
+		stringsEqualFold(name, "Suffix"),
+		stringsEqualFold(name, "Salutation"),
+		stringsEqualFold(name, "IsPersonAccount"):
+		return true
+	default:
+		return false
+	}
 }
 
 func applyStandardObjectCompatibilityOverlays(definition *ObjectDefinition) {
@@ -540,8 +579,15 @@ func mergeStandardRelationships(definition *ObjectDefinition, relationships []Re
 			continue
 		}
 		found := false
-		for _, existing := range definition.Relations {
-			if stringsEqualFold(existing.Field, relationship.Field) {
+		for i, existing := range definition.Relations {
+			if sameStandardRelationship(existing, relationship) {
+				definition.Relations[i].ParentObjects = appendUniqueStringsFold(definition.Relations[i].ParentObjects, relationship.ParentObjects...)
+				if definition.Relations[i].ParentRelationship == "" && relationship.ParentRelationship != "" {
+					definition.Relations[i].ParentRelationship = relationship.ParentRelationship
+				}
+				if definition.Relations[i].ChildRelationship == "" && relationship.ChildRelationship != "" {
+					definition.Relations[i].ChildRelationship = relationship.ChildRelationship
+				}
 				found = true
 				break
 			}
@@ -552,6 +598,33 @@ func mergeStandardRelationships(definition *ObjectDefinition, relationships []Re
 			definition.Relations = append(definition.Relations, copy)
 		}
 	}
+}
+
+func sameStandardRelationship(left, right Relationship) bool {
+	if !stringsEqualFold(left.Field, right.Field) {
+		return false
+	}
+	if left.ParentRelationship != "" && right.ParentRelationship != "" && !stringsEqualFold(left.ParentRelationship, right.ParentRelationship) {
+		return false
+	}
+	if left.ChildRelationship != "" && right.ChildRelationship != "" && !stringsEqualFold(left.ChildRelationship, right.ChildRelationship) {
+		return false
+	}
+	if (left.ChildRelationship == "") != (right.ChildRelationship == "") && len(left.ParentObjects) != 0 && len(right.ParentObjects) != 0 && !parentObjectsOverlap(left.ParentObjects, right.ParentObjects) {
+		return false
+	}
+	return true
+}
+
+func parentObjectsOverlap(left, right []string) bool {
+	for _, l := range left {
+		for _, r := range right {
+			if stringsEqualFold(l, r) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func mergeStandardRecordTypes(definition *ObjectDefinition, recordTypes []RecordTypeInfo) {
@@ -666,10 +739,22 @@ func ensureStandardRelationship(definition *ObjectDefinition, field Field) {
 	if relationshipName == "" || len(field.ReferenceTo) == 0 {
 		return
 	}
+	matchingFields := 0
+	for _, relation := range definition.Relations {
+		if stringsEqualFold(relation.Field, field.APIName) {
+			matchingFields++
+		}
+	}
+	if matchingFields > 1 && field.ChildRelationshipName == "" {
+		return
+	}
 	for i, relation := range definition.Relations {
 		if stringsEqualFold(relation.Field, field.APIName) {
+			if field.ChildRelationshipName != "" && relation.ChildRelationship != "" && !stringsEqualFold(relation.ChildRelationship, field.ChildRelationshipName) {
+				continue
+			}
 			definition.Relations[i].ParentRelationship = relationshipName
-			definition.Relations[i].ParentObjects = append([]string(nil), field.ReferenceTo...)
+			definition.Relations[i].ParentObjects = appendUniqueStringsFold(definition.Relations[i].ParentObjects, field.ReferenceTo...)
 			if definition.Relations[i].ChildRelationship == "" && field.ChildRelationshipName != "" {
 				definition.Relations[i].ChildRelationship = field.ChildRelationshipName
 			}

@@ -67,6 +67,14 @@ regenerate the field overlay before running storage or VM compatibility checks:
 node scripts/generate-sobject-stub-overlay.mjs /path/to/fulgor/stubs/apex-sobject-stubs internal/storage/standard_sobject_stub_overlay_generated.go
 ```
 
+When refreshing broad system, Schema, Database, and product namespace type
+shape from public Apex stubs, regenerate the type-symbol overlay before running
+type-system or semantic-analysis checks:
+
+```bash
+node scripts/generate-system-stub-symbols.mjs /path/to/fulgor/stubs/apex-system-stubs internal/typesys/system_stub_symbols_generated.go
+```
+
 Tooling snippet oracle reports can be captured from a scratch org and validated
 as stable JSON artifacts:
 

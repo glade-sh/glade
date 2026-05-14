@@ -393,6 +393,12 @@ public class UsesDatabaseDML {
     List<Database.UpsertResult> userModeUpsertResults = Database.upsert(accounts, Account.External_Id__c, false, AccessLevel.USER_MODE);
     Database.UpsertResult singleUserModeUpsertNoExternalId = Database.upsert(account, false, AccessLevel.USER_MODE);
     Database.UpsertResult systemModeSingleUpsert = Database.upsert(account, Account.External_Id__c, false, AccessLevel.SYSTEM_MODE);
+    Database.UndeleteResult idUndelete = Database.undelete(recordId);
+    List<Database.UndeleteResult> idUndeleteResults = Database.undelete(recordIds, false, AccessLevel.USER_MODE);
+    Database.EmptyRecycleBinResult idEmptyRecycleBin = Database.emptyRecycleBin(recordId);
+    List<Database.EmptyRecycleBinResult> idEmptyRecycleBinResults = Database.emptyRecycleBin(recordIds);
+    Database.MergeResult idMerge = Database.merge(account, recordId, false, AccessLevel.USER_MODE);
+    List<Database.MergeResult> idMergeResults = Database.merge(account, recordIds, AccessLevel.SYSTEM_MODE);
   }
 }
 `)
@@ -1403,6 +1409,30 @@ public class UsesSearchQuery {
 	}
 }
 
+func TestAnalyzeDatabaseQueryAssignsSingleAndListSObjectContexts(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesDatabaseQuery.cls"), `
+public class UsesDatabaseQuery {
+  public void run(String query, Map<String, Object> binds) {
+    SObject single = Database.query(query);
+    Account account = Database.query(query);
+    List<SObject> records = Database.query(query);
+    List<Account> accounts = Database.query(query);
+    SObject singleWithBinds = Database.queryWithBinds(query, binds);
+    List<Account> accountsWithBinds = Database.queryWithBinds(query, binds);
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesDatabaseQuery.cls")},
+	}, schema.Schema{Objects: []schema.Object{{Name: "Account"}}})
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected Database.query diagnostics: %#v", result.Diagnostics)
+	}
+}
+
 func TestAnalyzeStillFlagsUnsupportedSearchSurface(t *testing.T) {
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesSearchFind.cls"), `
@@ -2049,6 +2079,32 @@ public class StringValueBuilder {
 `)
 	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
 		filepath.Join(root, "StringValueBuilder.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeStringFormatAcceptsObjectListArguments(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "StringFormatBuilder.cls"), `
+public class StringFormatBuilder {
+  public String withStringList(String key, String value) {
+    return String.format('{0}{1}', new List<String>{ key, value });
+  }
+  public String withObjectList(String key, Integer count) {
+    List<Object> args = new List<Object>{ key, count };
+    return String.format('{0}{1}', args);
+  }
+  public String withMixedObjectLiteral(String key, Integer count) {
+    return String.format('{0}{1}', new List<Object>{ key, count });
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "StringFormatBuilder.cls"),
 	}}, schema.Schema{})
 
 	result := Analyze(index)

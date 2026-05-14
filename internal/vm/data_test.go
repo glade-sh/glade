@@ -1130,6 +1130,54 @@ System.assertEquals('Account', Account.SObjectType.getDescribe(SObjectDescribeOp
 	}
 }
 
+func TestExecDescribeSObjectResultStubBackedAccessors(t *testing.T) {
+	program, err := CompileAnonymous(`
+Schema.DescribeSObjectResult describe = Account.SObjectType.getDescribe();
+System.assertEquals('Account', describe.getLocalName());
+System.assertEquals(0, describe.getFieldSets().getMap().size());
+System.assertEquals(false, describe.isFeedEnabled());
+System.assertEquals(false, describe.isMergeable());
+System.assertEquals(true, describe.isMruEnabled());
+System.assertEquals(true, describe.isUndeletable());
+System.assertEquals(false, describe.isDeprecatedAndHidden());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDescribeFieldResultStubBackedAccessors(t *testing.T) {
+	program, err := CompileAnonymous(`
+Schema.DescribeFieldResult describe = Account.SObjectType.getDescribe().fields.getMap().get('Defaulted__c').getDescribe();
+System.assertEquals('Defaulted__c', describe.getLocalName());
+System.assertEquals('Fallback', describe.getDefaultValue());
+System.assertEquals('\'Fallback\'', describe.getDefaultValueFormula());
+System.assertEquals(true, describe.isDefaultedOnCreate());
+System.assertEquals(true, describe.isFilterable());
+System.assertEquals(true, describe.isGroupable());
+System.assertEquals(true, describe.isSortable());
+System.assertEquals(false, describe.isDeprecatedAndHidden());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Defaulted__c"] = storage.Field{APIName: "Defaulted__c", Type: storage.FieldString, DefaultValue: "'Fallback'"}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSwitchOnDisplayTypeMatchesUnqualifiedCaseNames(t *testing.T) {
 	program, err := CompileAnonymous(`
 String label = '';
