@@ -327,6 +327,11 @@ func EnsureStandardObject(org *OrgState, objectName string) {
 }
 
 func IsKnownStandardObject(objectName string) bool {
+	_, ok := ResolveKnownStandardObjectName(objectName)
+	return ok
+}
+
+func isKnownStandardObjectExact(objectName string) bool {
 	if objectName == "" {
 		return false
 	}
@@ -343,6 +348,19 @@ func IsKnownStandardObject(objectName string) bool {
 		return false
 	}
 	return len(standardFieldsForObject(objectName)) > 0
+}
+
+func ResolveKnownStandardObjectName(objectName string) (string, bool) {
+	objectName = strings.TrimSpace(objectName)
+	if isKnownStandardObjectExact(objectName) {
+		return objectName, true
+	}
+	for _, candidate := range KnownStandardObjectNames() {
+		if strings.EqualFold(candidate, objectName) {
+			return candidate, true
+		}
+	}
+	return "", false
 }
 
 func KnownStandardObjectNames() []string {
@@ -378,9 +396,11 @@ func KnownStandardObjectNames() []string {
 }
 
 func StandardObjectDefinition(objectName string) (ObjectDefinition, bool) {
-	if objectName == "" || !IsKnownStandardObject(objectName) {
+	canonical, ok := ResolveKnownStandardObjectName(objectName)
+	if !ok {
 		return ObjectDefinition{}, false
 	}
+	objectName = canonical
 	definition := ObjectDefinition{APIName: objectName}
 	EnsureStandardObjectFields(&definition)
 	if definition.Label == "" {

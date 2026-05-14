@@ -463,7 +463,7 @@ func mapKey(v Value) string {
 		objectName, hasObject := v.Fields["object"]
 		fieldName, hasField := v.Fields["field"]
 		if hasObject && hasField && objectName.Kind == ValueString && fieldName.Kind == ValueString {
-			return string(v.Kind) + ":" + v.Type + ":" + schemaTokenObjectKey(objectName.Text) + "." + fieldName.Text
+			return string(v.Kind) + ":" + v.Type + ":" + schemaTokenObjectKey(objectName.Text) + "." + strings.ToLower(fieldName.Text)
 		}
 	}
 	if v.Kind == ValueObject && v.Type == "Schema.ChildRelationship" {

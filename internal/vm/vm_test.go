@@ -1202,6 +1202,41 @@ func TestExecSObjectFieldTokenUsesStandardOverlayFallback(t *testing.T) {
 	}
 }
 
+func TestExecStandardSObjectDescribeUsesGeneratedOverlayWithoutOrgObject(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(Account.SObjectType, Schema.SObjectType.account);
+System.assertEquals('Account', Schema.SObjectType.account.getDescribe().getName());
+System.assertEquals('AccountNumber', Account.accountnumber.getDescribe().getName());
+System.assertEquals('AccountNumber', String.valueOf(Account.SObjectType.fields.accountnumber));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.SetOrg(&storage.OrgState{Objects: map[string]storage.ObjectState{}})
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStubSObjectDescribeUsesGeneratedOverlayWithoutOrgObject(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(ApexClass.SObjectType, Schema.SObjectType.apexclass);
+System.assertEquals('ApexClass', Schema.SObjectType.apexclass.getDescribe().getName());
+System.assertEquals('Name', ApexClass.name.getDescribe().getName());
+System.assertEquals(Schema.DisplayType.String, ApexClass.Name.getDescribe().getType());
+System.assertEquals('Name', String.valueOf(ApexClass.SObjectType.fields.name));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.SetOrg(&storage.OrgState{Objects: map[string]storage.ObjectState{}})
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestStaticSObjectFieldDefaultsToFieldToken(t *testing.T) {
 	machine := New(nil)
 	if err := machine.RegisterClass(Class{

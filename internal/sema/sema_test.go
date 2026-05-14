@@ -477,6 +477,42 @@ public class UsesBroadSystemShapes {
 	}
 }
 
+func TestAnalyzeGeneratedSystemStubsAreCaseInsensitive(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesGeneratedStubCase.cls"), `
+public class UsesGeneratedStubCase {
+  public static void run(Account account) {
+    httprequest request = new HTTPRequest();
+    request.SETendpoint('callout:example');
+    request.setMETHOD('GET');
+    String header = request.GetHEADER('X-Test');
+
+    apexpages.Message message = new APEXPages.Message(
+      SEVERITY = apexpages.Severity.ERROR,
+      SUMMARY = 'Summary',
+      DETAIL = 'Detail'
+    );
+
+    Schema.DisplayType displayType = DisplayType.sTrInG;
+    Schema.DisplayType schemaDisplayType = schema.DisplayType.PICKLIST;
+    Schema.SObjectType token = Account.SObjectType;
+
+    Database.QueryLocatorIterator locatorIterator = null;
+    system.Iterator<SObject> systemIterator = locatorIterator;
+    Iterator<SObject> shortIterator = locatorIterator;
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "UsesGeneratedStubCase.cls"),
+	}}, schema.Schema{Objects: []schema.Object{{Name: "Account"}}})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
 func TestAnalyzeConcreteSObjectRelationshipAccessors(t *testing.T) {
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesConcreteSObjectAccessors.cls"), `

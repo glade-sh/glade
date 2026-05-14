@@ -2357,7 +2357,8 @@ func (a *Analyzer) checkIRConstructorCall(typ typesys.TypeSymbol, member typesys
 		return []diagnostic.Diagnostic{constructorDiagnostic(typ, member, "new "+typeName, fmt.Sprintf("no matching %s constructor with %d argument(s)", typeName, len(expr.Args)), bodyOffset+pos, bodyOffset+pos+max(1, len(typeName)), source)}
 	}
 	argTypes := irCallArgTypes(a, expr.Args, scope, model, typ.Name)
-	if candidate, ok, ambiguous := bestMemberByArgTypes(target.constructors, argTypes, model); ok {
+	namedArgTypes := irCallNamedArgTypes(a, expr.NamedArgs, scope, model, typ.Name)
+	if candidate, ok, ambiguous := bestConstructorByArgTypes(target.constructors, argTypes, namedArgTypes, model); ok {
 		if visibilityDiagnostic, blocked := checkSemaMemberAccess(typ, member, "new "+typeName, resolvedMember{owner: target.name, member: candidate}, bodyOffset+pos, bodyOffset+pos+max(1, len(typeName)), source, model); blocked {
 			return []diagnostic.Diagnostic{visibilityDiagnostic}
 		}
@@ -2366,12 +2367,12 @@ func (a *Analyzer) checkIRConstructorCall(typ typesys.TypeSymbol, member typesys
 		if semaAllowAmbiguousPlatformConstructor(resolvedTypeName, argTypes) || semaArgTypesContainNullish(argTypes) {
 			return nil
 		}
-		return []diagnostic.Diagnostic{constructorDiagnostic(typ, member, "new "+typeName, fmt.Sprintf("ambiguous %s constructor with %d argument(s)", typeName, len(expr.Args)), bodyOffset+pos, bodyOffset+pos+max(1, len(typeName)), source)}
+		return []diagnostic.Diagnostic{constructorDiagnostic(typ, member, "new "+typeName, fmt.Sprintf("ambiguous %s constructor with %d argument(s)", typeName, len(expr.Args)+len(expr.NamedArgs)), bodyOffset+pos, bodyOffset+pos+max(1, len(typeName)), source)}
 	}
 	if a.allowsInheritedExceptionConstructor(resolvedTypeName, expr.Args, scope, model, typ.Name) {
 		return nil
 	}
-	return []diagnostic.Diagnostic{constructorDiagnostic(typ, member, "new "+typeName, fmt.Sprintf("no matching %s constructor with %d argument(s)", typeName, len(expr.Args)), bodyOffset+pos, bodyOffset+pos+max(1, len(typeName)), source)}
+	return []diagnostic.Diagnostic{constructorDiagnostic(typ, member, "new "+typeName, fmt.Sprintf("no matching %s constructor with %d argument(s)", typeName, len(expr.Args)+len(expr.NamedArgs)), bodyOffset+pos, bodyOffset+pos+max(1, len(typeName)), source)}
 }
 
 func semaAllowAmbiguousPlatformConstructor(typeName string, argTypes []string) bool {
@@ -2496,6 +2497,20 @@ func irCallArgTypes(a *Analyzer, args []ir.Expr, scope irSemaScope, model map[st
 	argTypes := make([]string, len(args))
 	for i, arg := range args {
 		argTypes[i] = resolveNestedTypeReference(model, currentType, a.inferIRExprType(arg, scope, model, currentType))
+	}
+	return argTypes
+}
+
+func irCallNamedArgTypes(a *Analyzer, args []ir.NamedArg, scope irSemaScope, model map[string]typeMembers, currentType string) map[string]string {
+	if len(args) == 0 {
+		return nil
+	}
+	argTypes := make(map[string]string, len(args))
+	for _, arg := range args {
+		if arg.Name == "" {
+			continue
+		}
+		argTypes[arg.Name] = resolveNestedTypeReference(model, currentType, a.inferIRExprType(arg.Expr, scope, model, currentType))
 	}
 	return argTypes
 }
@@ -4608,6 +4623,19 @@ func bestMemberByArgTypes(candidates []typesys.MemberSymbol, argTypes []string, 
 	return bestMemberBySpecificity(applicable, model)
 }
 
+func bestConstructorByArgTypes(candidates []typesys.MemberSymbol, positionalArgTypes []string, namedArgTypes map[string]string, model map[string]typeMembers) (typesys.MemberSymbol, bool, bool) {
+	if len(namedArgTypes) == 0 {
+		return bestMemberByArgTypes(candidates, positionalArgTypes, model)
+	}
+	applicable := make([]typesys.MemberSymbol, 0, len(candidates))
+	for _, candidate := range candidates {
+		if memberApplicableWithNamedArgs(candidate, positionalArgTypes, namedArgTypes, model) {
+			applicable = append(applicable, candidate)
+		}
+	}
+	return bestMemberBySpecificity(applicable, model)
+}
+
 func bestResolvedMemberByExactObjectTieBreak(applicable []resolvedMember, argTypes []string) (resolvedMember, bool) {
 	bestIndex := bestMemberExactObjectTieBreakIndex(len(applicable), argTypes, func(i int) typesys.MemberSymbol {
 		return applicable[i].member
@@ -4675,6 +4703,37 @@ func memberApplicable(candidate typesys.MemberSymbol, argTypes []string, model m
 	}
 	for i, param := range candidate.Parameters {
 		if semaConversionScore(param.Type, argTypes[i], model) < 0 {
+			return false
+		}
+	}
+	return true
+}
+
+func memberApplicableWithNamedArgs(candidate typesys.MemberSymbol, positionalArgTypes []string, namedArgTypes map[string]string, model map[string]typeMembers) bool {
+	if len(candidate.Parameters) != len(positionalArgTypes)+len(namedArgTypes) || len(positionalArgTypes) > len(candidate.Parameters) {
+		return false
+	}
+	used := make([]bool, len(candidate.Parameters))
+	for i, argType := range positionalArgTypes {
+		if semaConversionScore(candidate.Parameters[i].Type, argType, model) < 0 {
+			return false
+		}
+		used[i] = true
+	}
+	for name, argType := range namedArgTypes {
+		found := false
+		for i, param := range candidate.Parameters {
+			if used[i] || !strings.EqualFold(param.Name, name) {
+				continue
+			}
+			if semaConversionScore(param.Type, argType, model) < 0 {
+				return false
+			}
+			used[i] = true
+			found = true
+			break
+		}
+		if !found {
 			return false
 		}
 	}
@@ -5594,7 +5653,14 @@ func semaStaticClassFieldPathType(model map[string]typeMembers, root, fieldPath 
 func semaStaticClassFieldPathMember(model map[string]typeMembers, root, fieldPath string) (resolvedMember, bool) {
 	members, ok := model[normalizeName(root)]
 	if !ok {
-		return resolvedMember{}, false
+		canonical := semaCanonicalPlatformAlias(root)
+		if strings.EqualFold(canonical, root) {
+			return resolvedMember{}, false
+		}
+		members, ok = model[normalizeName(canonical)]
+		if !ok {
+			return resolvedMember{}, false
+		}
 	}
 	target, ok := semaResolveFieldPath(model, members.name, fieldPath)
 	if !ok || !hasModifier(target.member.Modifiers, "static") {

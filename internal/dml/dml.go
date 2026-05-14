@@ -399,6 +399,7 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 	applyCustomSettingInsertDefaults(e.Org, object.Definition, &record)
 	applySetupInsertDefaults(objectName, object.Definition, &record)
 	e.applyFileInsertDefaults(objectName, object.Definition, &record)
+	stripMissingGeneratedRecordTypeID(e.Org, &record)
 	if err := validateFields(object.Definition, e.Org.Namespace, record); err != nil {
 		return "", err
 	}
@@ -707,6 +708,9 @@ func applyFieldDefaults(org *storage.OrgState, definition storage.ObjectDefiniti
 	}
 	for name, field := range definition.Fields {
 		if _, ok := record.Fields[name]; ok {
+			continue
+		}
+		if strings.EqualFold(name, "RecordTypeId") {
 			continue
 		}
 		if record.ExplicitNulls != nil && record.ExplicitNulls[name] {
@@ -1343,6 +1347,35 @@ func storageValueIsDefaultZero(value storage.Value) bool {
 	default:
 		return false
 	}
+}
+
+func stripMissingGeneratedRecordTypeID(org *storage.OrgState, record *storage.Record) {
+	if org == nil || record == nil || record.Fields == nil {
+		return
+	}
+	value, ok := record.Fields["RecordTypeId"]
+	if !ok {
+		return
+	}
+	recordTypeID := ""
+	switch value.Kind {
+	case storage.ValueID:
+		recordTypeID = string(value.ID)
+	case storage.ValueString:
+		recordTypeID = value.String
+	default:
+		return
+	}
+	if recordTypeID != "012000000000000AAA" {
+		return
+	}
+	recordTypes, ok := org.Objects["RecordType"]
+	if ok {
+		if _, exists := recordTypes.Records[storage.ID(recordTypeID)]; exists {
+			return
+		}
+	}
+	delete(record.Fields, "RecordTypeId")
 }
 
 func validateFieldWriteabilityName(definition storage.ObjectDefinition, namespace, objectName, field string, create bool) error {

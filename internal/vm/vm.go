@@ -8290,6 +8290,9 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 				continue
 			}
 		}
+		if definition.APIName != "" && !explicitField && vmImplicitGeneratedFieldValue(canonicalField, fieldValue) {
+			continue
+		}
 		if definition.APIName != "" {
 			if fieldDef, ok := definition.Fields[canonicalField]; ok && vmImplicitDMLField(fieldDef) {
 				if !explicitField || vmImplicitDMLFieldDefaultValue(fieldDef, fieldValue) {
@@ -8326,6 +8329,14 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 				}
 			}
 			continue
+		}
+		if fieldValue.Kind == ValueNull && isLikelyParentRelationshipObjectField(field) {
+			if definition.APIName == "" {
+				continue
+			}
+			if _, ok := definition.Fields[canonicalField]; !ok {
+				continue
+			}
 		}
 		converted, err := storageValueFromVM(fieldValue)
 		if definition.APIName != "" {
@@ -12014,6 +12025,25 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 	return desc
 }
 
+func (vm *VM) describeObjectDefinition(objectName string) (string, storage.ObjectDefinition, bool) {
+	if vm.Org != nil {
+		if canonical, ok := storage.ResolveObjectName(*vm.Org, objectName); ok {
+			return canonical, vm.Org.Objects[canonical].Definition, true
+		}
+	}
+	if definition, ok := storage.StandardObjectDefinition(objectName); ok {
+		return definition.APIName, definition, true
+	}
+	switch {
+	case strings.EqualFold(objectName, "SObject"):
+		return "SObject", storage.ObjectDefinition{APIName: "SObject", Label: "SObject", PluralLabel: "SObjects"}, true
+	case strings.EqualFold(objectName, "AggregateResult"):
+		return "AggregateResult", storage.ObjectDefinition{APIName: "AggregateResult", Label: "Aggregate Result", PluralLabel: "Aggregate Results"}, true
+	default:
+		return "", storage.ObjectDefinition{}, false
+	}
+}
+
 func appendMissingRecordTypes(recordTypes []storage.RecordTypeInfo, extra []storage.RecordTypeInfo) []storage.RecordTypeInfo {
 	for _, candidate := range extra {
 		found := false
@@ -12294,21 +12324,21 @@ func recordTypeInfoValue(recordType storage.RecordTypeInfo) Value {
 }
 
 func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
-	if vm.Org == nil {
-		return Null, fmt.Errorf("Schema field describe requires org state")
-	}
-	objectName, ok := storage.ResolveObjectName(*vm.Org, objectName)
+	objectName, definition, ok := vm.describeObjectDefinition(objectName)
 	if !ok {
 		return Null, fmt.Errorf("Schema field describe unknown object %s", objectName)
 	}
-	definition := vm.Org.Objects[objectName].Definition
 	definition = definition.Clone()
 	storage.EnsureStandardObjectFields(&definition)
 	if strings.EqualFold(definition.APIName, "Account") && len(definition.RecordTypes) == 0 {
 		storage.EnsureStandardObjectFieldsForFeatures(&definition, []string{"PersonAccounts"})
 	}
 	requestedFieldName := fieldName
-	fieldName, ok = storage.ResolveFieldName(definition, vm.Org.Namespace, fieldName)
+	namespace := ""
+	if vm.Org != nil {
+		namespace = vm.Org.Namespace
+	}
+	fieldName, ok = storage.ResolveFieldName(definition, namespace, fieldName)
 	if !ok {
 		if systemField, systemOK := syntheticSObjectSystemField(fieldName); systemOK {
 			fieldName = systemField.APIName
@@ -13223,7 +13253,7 @@ func canonicalDecimalRoundingModeName(name string) (string, bool) {
 }
 
 func (vm *VM) lookupSObjectTypeToken(parts []string) (Value, bool) {
-	if vm.Org == nil {
+	if len(parts) < 2 {
 		return Null, false
 	}
 	var objectName string
@@ -13239,15 +13269,18 @@ func (vm *VM) lookupSObjectTypeToken(parts []string) (Value, bool) {
 	default:
 		return Null, false
 	}
-	canonical, ok := storage.ResolveObjectName(*vm.Org, objectName)
-	if !ok {
-		if isCommonSObjectTypeName(objectName) || isCustomObjectLikeName(objectName) {
-			canonical = objectName
-		} else {
-			return Null, false
+	if vm.Org != nil {
+		if canonical, ok := storage.ResolveObjectName(*vm.Org, objectName); ok {
+			return sObjectTypeToken(canonical), true
 		}
 	}
-	return sObjectTypeToken(canonical), true
+	if canonical, ok := storage.ResolveKnownStandardObjectName(objectName); ok {
+		return sObjectTypeToken(canonical), true
+	}
+	if isCustomObjectLikeName(objectName) {
+		return sObjectTypeToken(objectName), true
+	}
+	return Null, false
 }
 
 func (vm *VM) sObjectTypeTokenForName(objectName string) (Value, bool) {
@@ -13265,7 +13298,10 @@ func (vm *VM) sObjectTypeTokenForName(objectName string) (Value, bool) {
 			return sObjectTypeToken(canonical), true
 		}
 	}
-	if isCommonSObjectTypeName(objectName) || isCustomObjectLikeName(objectName) {
+	if canonical, ok := storage.ResolveKnownStandardObjectName(objectName); ok {
+		return sObjectTypeToken(canonical), true
+	}
+	if isCustomObjectLikeName(objectName) {
 		return sObjectTypeToken(objectName), true
 	}
 	return Null, false
@@ -13286,7 +13322,7 @@ func (vm *VM) callSObjectTypeStaticMember(typeName, method string, args []Value)
 }
 
 func (vm *VM) lookupSObjectFieldToken(parts []string) (Value, bool) {
-	if vm.Org == nil || len(parts) < 2 {
+	if len(parts) < 2 {
 		return Null, false
 	}
 	objectName := parts[0]
@@ -13304,18 +13340,21 @@ func (vm *VM) lookupSObjectFieldToken(parts []string) (Value, bool) {
 	default:
 		return Null, false
 	}
-	canonicalObject, ok := storage.ResolveObjectName(*vm.Org, objectName)
+	canonicalObject, definition, ok := vm.describeObjectDefinition(objectName)
 	if !ok {
 		return Null, false
 	}
 	objectName = canonicalObject
-	definition := vm.Org.Objects[objectName].Definition
 	field := storage.Field{}
-	canonical, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, fieldName)
+	namespace := ""
+	if vm.Org != nil {
+		namespace = vm.Org.Namespace
+	}
+	canonical, ok := storage.ResolveFieldName(definition, namespace, fieldName)
 	if !ok {
 		standardDefinition := definition.Clone()
 		storage.EnsureStandardObjectFieldsForFeatures(&standardDefinition, []string{"PersonAccounts"})
-		if standardField, standardOK := storage.ResolveFieldName(standardDefinition, vm.Org.Namespace, fieldName); standardOK {
+		if standardField, standardOK := storage.ResolveFieldName(standardDefinition, namespace, fieldName); standardOK {
 			canonical = standardField
 			field = standardDefinition.Fields[canonical]
 		} else if !isSObjectSystemField(fieldName) {
@@ -13610,34 +13649,22 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 				return Null, fmt.Errorf("Schema.SObjectType token missing object")
 			}
 			if strings.EqualFold(part, "fields") {
-				if vm.Org == nil {
-					return Null, fmt.Errorf("Schema.SObjectType.fields requires org state")
-				}
 				objectName := objectValue.Text
-				if canonical, ok := storage.ResolveObjectName(*vm.Org, objectName); ok {
-					objectName = canonical
-				}
-				state, ok := vm.Org.Objects[objectName]
+				objectName, definition, ok := vm.describeObjectDefinition(objectName)
 				if !ok {
 					return Null, fmt.Errorf("Schema.SObjectType.fields unknown object %s", objectName)
 				}
-				describe := vm.describeSObjectValue(objectName, state.Definition)
+				describe := vm.describeSObjectValue(objectName, definition)
 				current = describe.Fields["fields"]
 				continue
 			}
 			if strings.EqualFold(part, "fieldSets") {
-				if vm.Org == nil {
-					return Null, fmt.Errorf("Schema.SObjectType.fieldSets requires org state")
-				}
 				objectName := objectValue.Text
-				if canonical, ok := storage.ResolveObjectName(*vm.Org, objectName); ok {
-					objectName = canonical
-				}
-				state, ok := vm.Org.Objects[objectName]
+				objectName, definition, ok := vm.describeObjectDefinition(objectName)
 				if !ok {
 					return Null, fmt.Errorf("Schema.SObjectType.fieldSets unknown object %s", objectName)
 				}
-				describe := vm.describeSObjectValue(objectName, state.Definition)
+				describe := vm.describeSObjectValue(objectName, definition)
 				current = describe.Fields["fieldSets"]
 				continue
 			}
@@ -16562,12 +16589,18 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 	}
 	object := Object(objectType)
 	for field, value := range namedArgs {
+		explicitField := false
 		if definition.APIName != "" {
 			if canonical, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, field); ok {
 				field = canonical
+				explicitField = true
 			}
 		}
-		object.Fields[field] = value
+		if explicitField {
+			setExplicitSObjectField(&object, field, value)
+		} else {
+			object.Fields[field] = value
+		}
 	}
 	vm.initializeFields(&object, objectType)
 	if len(args) != 0 {
@@ -18811,21 +18844,11 @@ func (vm *VM) describeFromSObjectTypeToken(value Value) (Value, error) {
 	if !ok || objectValue.Kind != ValueString {
 		return Null, fmt.Errorf("Schema.SObjectType token missing object")
 	}
-	if vm.Org == nil {
-		return Null, fmt.Errorf("Schema.SObjectType.getDescribe requires org state")
-	}
-	objectName, ok := storage.ResolveObjectName(*vm.Org, objectValue.Text)
+	objectName, definition, ok := vm.describeObjectDefinition(objectValue.Text)
 	if !ok {
-		switch {
-		case strings.EqualFold(objectValue.Text, "SObject"):
-			return vm.describeSObjectValue("SObject", storage.ObjectDefinition{APIName: "SObject", Label: "SObject", PluralLabel: "SObjects"}), nil
-		case strings.EqualFold(objectValue.Text, "AggregateResult"):
-			return vm.describeSObjectValue("AggregateResult", storage.ObjectDefinition{APIName: "AggregateResult", Label: "Aggregate Result", PluralLabel: "Aggregate Results"}), nil
-		default:
-			return Null, fmt.Errorf("Schema.SObjectType.getDescribe unknown object %s", objectValue.Text)
-		}
+		return Null, fmt.Errorf("Schema.SObjectType.getDescribe unknown object %s", objectValue.Text)
 	}
-	return vm.describeSObjectValue(objectName, vm.Org.Objects[objectName].Definition), nil
+	return vm.describeSObjectValue(objectName, definition), nil
 }
 
 func (vm *VM) coerceCast(typeName string, value Value) (Value, error) {
@@ -21600,6 +21623,20 @@ func vmImplicitDMLFieldDefaultValue(field storage.Field, value Value) bool {
 	}
 }
 
+func vmImplicitGeneratedFieldValue(field string, value Value) bool {
+	if !strings.EqualFold(field, "RecordTypeId") {
+		return false
+	}
+	if value.Kind == ValueString {
+		return strings.HasPrefix(value.Text, "012")
+	}
+	if value.Kind == ValueObject && strings.EqualFold(value.Type, "Id") {
+		id, ok := sObjectIDFromValue(value)
+		return ok && strings.HasPrefix(string(id), "012")
+	}
+	return false
+}
+
 func markExplicitSObjectField(value *Value, field string) {
 	if value == nil || value.Kind != ValueObject || strings.TrimSpace(field) == "" {
 		return
@@ -23941,24 +23978,15 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if !ok || objectValue.Kind != ValueString {
 				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectType token missing object")
 			}
-			if vm.Org == nil {
-				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectType.getDescribe requires org state")
-			}
-			objectName, ok := storage.ResolveObjectName(*vm.Org, objectValue.Text)
+			objectName, definition, ok := vm.describeObjectDefinition(objectValue.Text)
 			if !ok {
-				if strings.EqualFold(objectValue.Text, "SObject") {
-					return vm.describeSObjectValue("SObject", storage.ObjectDefinition{APIName: "SObject", Label: "SObject", PluralLabel: "SObjects"}), receiver, false, true, nil
-				}
-				if strings.EqualFold(objectValue.Text, "AggregateResult") {
-					return vm.describeSObjectValue("AggregateResult", storage.ObjectDefinition{APIName: "AggregateResult", Label: "Aggregate Result", PluralLabel: "Aggregate Results"}), receiver, false, true, nil
-				}
 				return Null, receiver, false, true, fmt.Errorf("Schema.SObjectType.getDescribe unknown object %s", objectValue.Text)
 			}
 			appendTrace(result, "apex.describe.sobject", "apex.describe", map[string]any{
 				"operation": "SObjectType.getDescribe",
 				"object":    objectName,
 			})
-			return vm.describeSObjectValue(objectName, vm.Org.Objects[objectName].Definition), receiver, false, true, nil
+			return vm.describeSObjectValue(objectName, definition), receiver, false, true, nil
 		case "getRecordTypeInfosByName", "getRecordTypeInfosById",
 			"getName", "getLabel", "getLabelPlural", "getKeyPrefix",
 			"getRecordTypeInfos", "getRecordTypeInfosByDeveloperName", "getChildRelationships", "getSObjectType",
