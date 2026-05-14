@@ -1360,13 +1360,19 @@ func (vm *VM) executeSwitchBodyWithBinding(source string, body []ir.Instruction,
 }
 
 func switchCaseEnumNameMatch(value Value, expr ir.Expr, err error) (bool, bool) {
-	if err == nil || value.Kind != ValueObject || value.Text == "" || expr.Kind != ir.ExprVariable {
+	if err == nil || expr.Kind != ir.ExprVariable {
 		return false, false
 	}
 	if !strings.Contains(err.Error(), "unknown variable") {
 		return false, false
 	}
-	return expr.Name == value.Text, true
+	if value.Kind == ValueNull {
+		return strings.EqualFold(expr.Name, "null"), true
+	}
+	if value.Kind != ValueObject || value.Text == "" {
+		return false, false
+	}
+	return strings.EqualFold(expr.Name, value.Text), true
 }
 
 func (vm *VM) executeRunAs(source string, inst ir.Instruction, result *Result) (execOutcome, error) {

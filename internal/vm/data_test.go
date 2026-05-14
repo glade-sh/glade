@@ -1123,6 +1123,48 @@ System.assertEquals('Account', Account.SObjectType.getDescribe(SObjectDescribeOp
 	}
 }
 
+func TestExecSwitchOnDisplayTypeMatchesUnqualifiedCaseNames(t *testing.T) {
+	program, err := CompileAnonymous(`
+String label = '';
+switch on Account.Name.getDescribe().getType() {
+	when String {
+		label = 'string';
+	}
+	when Boolean {
+		label = 'boolean';
+	}
+	when else {
+		label = 'other';
+	}
+}
+System.assertEquals('string', label);
+
+label = '';
+Schema.DisplayType missing = null;
+switch on missing {
+	when String {
+		label = 'string';
+	}
+	when null {
+		label = 'null';
+	}
+	when else {
+		label = 'other';
+	}
+}
+System.assertEquals('null', label);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDescribeFieldNumericAndTextMetadata(t *testing.T) {
 	program, err := CompileAnonymous(`
 Schema.DescribeFieldResult amount = Account.Amount__c.getDescribe();
