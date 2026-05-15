@@ -169,6 +169,7 @@ func TestRunCompatLocalTestsBlockersOnlyAndFilters(t *testing.T) {
 		"--method", "fails",
 		"--blockers-only",
 		"--top-failures", "1",
+		"--max-failure-groups", "1",
 		"--timeout", "5000",
 		"--profile-on-timeout",
 		"--json",
@@ -176,7 +177,7 @@ func TestRunCompatLocalTestsBlockersOnlyAndFilters(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit code = %d, want 0; stderr=%q", code, stderr.String())
 	}
-	if !strings.Contains(stdout.String(), `"total": 1`) || !strings.Contains(stdout.String(), `"assertFail": 1`) || !strings.Contains(stdout.String(), `"topFailures"`) {
+	if !strings.Contains(stdout.String(), `"total": 1`) || !strings.Contains(stdout.String(), `"assertFail": 1`) || !strings.Contains(stdout.String(), `"topFailures"`) || !strings.Contains(stdout.String(), `"triageStopped": true`) {
 		t.Fatalf("stdout = %q", stdout.String())
 	}
 	if strings.Contains(stdout.String(), "PassingTest") || strings.Contains(stdout.String(), "UnsupportedTest") {

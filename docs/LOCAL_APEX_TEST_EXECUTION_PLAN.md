@@ -59,11 +59,30 @@ go build -o /private/tmp/oaer-perf ./cmd/oaer
   --json
 ```
 
+For fast blocker triage on large projects, cap the run by distinct failure
+groups instead of executing every discovered test:
+
+```bash
+go run ./cmd/oaer compat local-tests \
+  --project ./example-projects/sf-cred-pkg-develop \
+  --blockers-only \
+  --top-failures 20 \
+  --max-failure-groups 20 \
+  --timeout 20000 \
+  --parallel 4 \
+  --json
+```
+
 Measured result:
 
 ```text
 total=4268 pass=3185 unsupported=71 runtimeGap=404 assertFail=608 compileError=0 internalError=0 durationMs=448640
 ```
+
+May 15, 2026 performance note: the full `sf-cred-pkg` blocker scan took
+`durationMs=1677326` after semantic-analysis skipping, while the capped triage
+form above found 25 distinct blocker groups after running 187 of 4268 tests in
+`durationMs=101277`.
 
 The next blocker frontier is not compile loading. It is runtime fidelity:
 SObject describe shape gaps, standard metadata/relationship coverage, remaining
@@ -252,8 +271,9 @@ Tasks:
 
 - Add or refresh a checked `local-tests-corpus` baseline that records summary
   counts and top blocker families per example project.
-- Add `--top-failures`, `--timeout`, and `--profile-on-timeout` support to the
-  local-test compatibility/reporting path if missing.
+- Add `--top-failures`, `--timeout`, `--max-failure-groups`, and
+  `--profile-on-timeout` support to the local-test compatibility/reporting path
+  if missing.
 - Split local runtime outcomes into `assert_fail`, `runtime_gap`,
   `unsupported`, `compile_gap`, `internal_error`, and `timeout`.
 - Persist a small focused sentinel for each project so future runs do not need

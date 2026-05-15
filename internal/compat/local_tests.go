@@ -36,18 +36,22 @@ type LocalTestOptions struct {
 	Parallelism         int
 	ProgressWriter      io.Writer
 	ForceAnalysis       bool
+	MaxFailureGroups    int
 }
 
 type LocalTestReport struct {
-	Target       string                   `json:"target"`
-	Ready        bool                     `json:"ready"`
-	Project      string                   `json:"project"`
-	DurationMS   int64                    `json:"durationMs,omitempty"`
-	Dependencies []typesys.DependencyInfo `json:"dependencies,omitempty"`
-	Summary      LocalTestSummary         `json:"summary"`
-	Outcomes     []LocalTestOutcome       `json:"outcomes"`
-	TopFailures  []LocalTestFailureGroup  `json:"topFailures,omitempty"`
-	Diagnostics  []diagnostic.Diagnostic  `json:"diagnostics,omitempty"`
+	Target          string                   `json:"target"`
+	Ready           bool                     `json:"ready"`
+	Project         string                   `json:"project"`
+	DurationMS      int64                    `json:"durationMs,omitempty"`
+	CasesDiscovered int                      `json:"casesDiscovered,omitempty"`
+	CasesRun        int                      `json:"casesRun,omitempty"`
+	TriageStopped   bool                     `json:"triageStopped,omitempty"`
+	Dependencies    []typesys.DependencyInfo `json:"dependencies,omitempty"`
+	Summary         LocalTestSummary         `json:"summary"`
+	Outcomes        []LocalTestOutcome       `json:"outcomes"`
+	TopFailures     []LocalTestFailureGroup  `json:"topFailures,omitempty"`
+	Diagnostics     []diagnostic.Diagnostic  `json:"diagnostics,omitempty"`
 }
 
 type LocalTestSummary struct {
@@ -177,6 +181,7 @@ func RunLocalTests(options LocalTestOptions) (LocalTestReport, error) {
 		}
 		return cases[i].ClassName < cases[j].ClassName
 	})
+	report.CasesDiscovered = len(cases)
 	reportLocalTestPhase(options, fmt.Sprintf("discover_done total=%d", len(cases)), started)
 
 	if shouldAnalyzeLocalTests(options, len(cases)) {
@@ -199,16 +204,11 @@ func RunLocalTests(options LocalTestOptions) (LocalTestReport, error) {
 		testOpts.TraceBlocked = true
 	}
 	reportLocalTestPhase(options, "run_start", started)
-	run := apextest.RunCasesContext(context.Background(), index, testOpts, cases)
+	runOutcomes, casesRun, triageStopped := runLocalTestCases(index, testOpts, cases, projectLabel, options, started)
+	report.Outcomes = append(report.Outcomes, runOutcomes...)
+	report.CasesRun = casesRun
+	report.TriageStopped = triageStopped
 	reportLocalTestPhase(options, "run_done", started)
-	for _, suite := range run.Suites {
-		for _, testCase := range suite.Cases {
-			if !matchesLocalTestCase(testCase.ClassName, testCase.MethodName, options) {
-				continue
-			}
-			report.Outcomes = append(report.Outcomes, localTestRunOutcome(projectLabel, testCase))
-		}
-	}
 	finalizeLocalTestReport(&report, options, started)
 	return report, nil
 }
@@ -220,6 +220,68 @@ func reportLocalTestPhase(options LocalTestOptions, event string, started time.T
 }
 
 const largeLocalTestAnalysisThreshold = 5000
+const localTestTriageClassBatchSize = 8
+
+func runLocalTestCases(index typesys.Index, testOpts apextest.Options, cases []apextest.TestCase, projectLabel string, options LocalTestOptions, started time.Time) ([]LocalTestOutcome, int, bool) {
+	if options.MaxFailureGroups <= 0 {
+		run := apextest.RunCasesContext(context.Background(), index, testOpts, cases)
+		return localTestOutcomesFromRun(projectLabel, run, options), len(cases), false
+	}
+	outcomes := make([]LocalTestOutcome, 0)
+	casesRun := 0
+	for _, batch := range localTestCaseBatches(cases, localTestTriageClassBatchSize) {
+		reportLocalTestPhase(options, fmt.Sprintf("triage_batch_start cases=%d", len(batch)), started)
+		run := apextest.RunCasesContext(context.Background(), index, testOpts, batch)
+		outcomes = append(outcomes, localTestOutcomesFromRun(projectLabel, run, options)...)
+		casesRun += len(batch)
+		groups := localTestFailureGroupCount(outcomes)
+		reportLocalTestPhase(options, fmt.Sprintf("triage_batch_done casesRun=%d failureGroups=%d", casesRun, groups), started)
+		if groups >= options.MaxFailureGroups {
+			reportLocalTestPhase(options, fmt.Sprintf("triage_stop casesRun=%d failureGroups=%d", casesRun, groups), started)
+			return outcomes, casesRun, true
+		}
+	}
+	return outcomes, casesRun, false
+}
+
+func localTestOutcomesFromRun(projectLabel string, run testreport.Run, options LocalTestOptions) []LocalTestOutcome {
+	outcomes := make([]LocalTestOutcome, 0)
+	for _, suite := range run.Suites {
+		for _, testCase := range suite.Cases {
+			if !matchesLocalTestCase(testCase.ClassName, testCase.MethodName, options) {
+				continue
+			}
+			outcomes = append(outcomes, localTestRunOutcome(projectLabel, testCase))
+		}
+	}
+	return outcomes
+}
+
+func localTestCaseBatches(cases []apextest.TestCase, classBatchSize int) [][]apextest.TestCase {
+	if classBatchSize <= 0 || len(cases) == 0 {
+		return nil
+	}
+	var batches [][]apextest.TestCase
+	var batch []apextest.TestCase
+	classesInBatch := 0
+	lastClass := ""
+	for _, testCase := range cases {
+		if testCase.ClassName != lastClass {
+			if classesInBatch >= classBatchSize && len(batch) > 0 {
+				batches = append(batches, batch)
+				batch = nil
+				classesInBatch = 0
+			}
+			classesInBatch++
+			lastClass = testCase.ClassName
+		}
+		batch = append(batch, testCase)
+	}
+	if len(batch) > 0 {
+		batches = append(batches, batch)
+	}
+	return batches
+}
 
 func shouldAnalyzeLocalTests(options LocalTestOptions, totalCases int) bool {
 	if strings.TrimSpace(options.Class) != "" || strings.TrimSpace(options.Method) != "" {
@@ -282,10 +344,7 @@ func localTestProgressReporter(w io.Writer) func(apextest.TestProgress) {
 }
 
 func shouldTraceFocusedLocalTests(options LocalTestOptions) bool {
-	if options.TraceBlocked || options.ProfileOnTimeout {
-		return true
-	}
-	return strings.TrimSpace(options.Class) == "" && strings.TrimSpace(options.Method) == ""
+	return options.TraceBlocked || options.ProfileOnTimeout
 }
 
 func LocalTestReportFromRun(projectRoot string, run testreport.Run) LocalTestReport {
@@ -703,28 +762,7 @@ func localTestTopFailures(outcomes []LocalTestOutcome, limit int) []LocalTestFai
 	if limit <= 0 {
 		return nil
 	}
-	type key struct {
-		outcome      string
-		phase        string
-		capabilityID string
-		error        string
-	}
-	counts := make(map[key]int)
-	for _, outcome := range outcomes {
-		if outcome.Outcome == "pass" {
-			continue
-		}
-		errText := strings.TrimSpace(outcome.Error)
-		if errText != "" && len(errText) > 180 {
-			errText = errText[:180]
-		}
-		counts[key{
-			outcome:      outcome.Outcome,
-			phase:        outcome.Phase,
-			capabilityID: outcome.CapabilityID,
-			error:        errText,
-		}]++
-	}
+	counts := localTestFailureGroups(outcomes)
 	groups := make([]LocalTestFailureGroup, 0, len(counts))
 	for key, count := range counts {
 		groups = append(groups, LocalTestFailureGroup{
@@ -751,6 +789,37 @@ func localTestTopFailures(outcomes []LocalTestOutcome, limit int) []LocalTestFai
 		groups = groups[:limit]
 	}
 	return groups
+}
+
+type localTestFailureGroupKey struct {
+	outcome      string
+	phase        string
+	capabilityID string
+	error        string
+}
+
+func localTestFailureGroupCount(outcomes []LocalTestOutcome) int {
+	return len(localTestFailureGroups(outcomes))
+}
+
+func localTestFailureGroups(outcomes []LocalTestOutcome) map[localTestFailureGroupKey]int {
+	counts := make(map[localTestFailureGroupKey]int)
+	for _, outcome := range outcomes {
+		if outcome.Outcome == "pass" {
+			continue
+		}
+		errText := strings.TrimSpace(outcome.Error)
+		if errText != "" && len(errText) > 180 {
+			errText = errText[:180]
+		}
+		counts[localTestFailureGroupKey{
+			outcome:      outcome.Outcome,
+			phase:        outcome.Phase,
+			capabilityID: outcome.CapabilityID,
+			error:        errText,
+		}]++
+	}
+	return counts
 }
 
 func IsLocalTestTimeout(err error) bool {

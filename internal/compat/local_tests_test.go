@@ -1,6 +1,7 @@
 package compat
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -9,7 +10,7 @@ import (
 )
 
 func TestRunLocalTestsClassifiesBasicFixture(t *testing.T) {
-	report, err := RunLocalTests(LocalTestOptions{Project: filepath.Join("..", "..", "testdata", "local-tests", "basic")})
+	report, err := RunLocalTests(LocalTestOptions{Project: filepath.Join("..", "..", "testdata", "local-tests", "basic"), TraceBlocked: true})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -31,6 +32,18 @@ func TestRunLocalTestsClassifiesBasicFixture(t *testing.T) {
 	}
 }
 
+func TestRunLocalTestsSkipsTraceByDefault(t *testing.T) {
+	report, err := RunLocalTests(LocalTestOptions{Project: filepath.Join("..", "..", "testdata", "local-tests", "basic")})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, outcome := range report.Outcomes {
+		if outcome.TraceEvents != 0 || outcome.ProfileEvents != 0 || len(outcome.ProfileCategories) != 0 {
+			t.Fatalf("default outcome should not include trace/profile: %#v", outcome)
+		}
+	}
+}
+
 func TestRunLocalTestsReportsTopFailures(t *testing.T) {
 	report, err := RunLocalTests(LocalTestOptions{
 		Project:     filepath.Join("..", "..", "testdata", "local-tests", "basic"),
@@ -44,6 +57,46 @@ func TestRunLocalTestsReportsTopFailures(t *testing.T) {
 	}
 	if report.TopFailures[0].Count == 0 || report.TopFailures[0].Outcome == "pass" {
 		t.Fatalf("topFailures[0] = %#v", report.TopFailures[0])
+	}
+}
+
+func TestRunLocalTestsStopsAfterMaxFailureGroups(t *testing.T) {
+	root := t.TempDir()
+	writeLocalTestFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeLocalTestFile(t, filepath.Join(root, "force-app/main/default/classes/AFailingTest.cls"), `
+@isTest
+private class AFailingTest {
+  @isTest static void fails() {
+    System.assertEquals(3, 1 + 1);
+  }
+}
+`)
+	for i := 0; i < 9; i++ {
+		className := fmt.Sprintf("PassingTriage%02dTest", i)
+		writeLocalTestFile(t, filepath.Join(root, "force-app/main/default/classes/"+className+".cls"), fmt.Sprintf(`
+@isTest
+private class %s {
+  @isTest static void passes() {
+    System.assertEquals(2, 1 + 1);
+  }
+}
+`, className))
+	}
+
+	report, err := RunLocalTests(LocalTestOptions{
+		Project:          root,
+		BlockersOnly:     true,
+		TopFailures:      1,
+		MaxFailureGroups: 1,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !report.TriageStopped || report.CasesDiscovered != 10 || report.CasesRun >= report.CasesDiscovered {
+		t.Fatalf("triage fields = stopped %v discovered %d run %d", report.TriageStopped, report.CasesDiscovered, report.CasesRun)
+	}
+	if report.Summary.Total != 1 || report.Summary.AssertFailures != 1 || len(report.TopFailures) != 1 {
+		t.Fatalf("report = %#v", report)
 	}
 }
 
