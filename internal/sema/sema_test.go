@@ -1148,6 +1148,34 @@ public class UsesSecurityStripInaccessible {
 	}
 }
 
+func TestAnalyzeCoreSystemTypeAliases(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesCoreSystemTypes.cls"), `
+public class UsesCoreSystemTypes implements System.Finalizer {
+  public void execute(System.FinalizerContext context) {
+    Id jobId = context.getAsyncApexJobId();
+    String requestId = context.getRequestId();
+  }
+  public static void run(FieldSet shortFieldSet, Schema.FieldSet schemaFieldSet, System.AccessLevel accessLevel, System.AccessType accessType) {
+    List<Schema.FieldSetMember> shortMembers = shortFieldSet.getFields();
+    List<Schema.FieldSetMember> schemaMembers = schemaFieldSet.getFields();
+    System.AccessLevel systemMode = System.AccessLevel.SYSTEM_MODE;
+    AccessLevel userMode = AccessLevel.USER_MODE;
+    System.AccessType readable = System.AccessType.READABLE;
+    AccessType updatable = AccessType.UPDATABLE;
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "UsesCoreSystemTypes.cls"),
+	}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
 func TestAnalyzeCaseInsensitiveVariableBeatsSObjectToken(t *testing.T) {
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesPermissionSetGroup.cls"), `

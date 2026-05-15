@@ -5228,16 +5228,6 @@ func TestExecAsyncUnsupportedEdgesAreTyped(t *testing.T) {
 			src:  `AsyncOptions opts = new AsyncOptions(); opts.setMinimumQueueableDelayInMinutes(1);`,
 			want: `unsupported call "AsyncOptions.setMinimumQueueableDelayInMinutes local async options surface"`,
 		},
-		{
-			name: "finalizer context job id",
-			src:  `FinalizerContext fc = new FinalizerContext(); fc.getAsyncApexJobId();`,
-			want: `unsupported call "FinalizerContext.getAsyncApexJobId local queueable finalizers"`,
-		},
-		{
-			name: "finalizer context result",
-			src:  `System.FinalizerContext fc = new System.FinalizerContext(); fc.getResult();`,
-			want: `unsupported call "System.FinalizerContext.getResult local queueable finalizers"`,
-		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -5256,6 +5246,26 @@ func TestExecAsyncUnsupportedEdgesAreTyped(t *testing.T) {
 				t.Fatalf("err = %#v, want UnsupportedFeature %q", err, tc.want)
 			}
 		})
+	}
+}
+
+func TestExecFinalizerContextMethods(t *testing.T) {
+	program, err := CompileAnonymous(`
+FinalizerContext fc = new FinalizerContext();
+System.assertEquals('', fc.getAsyncApexJobId());
+System.assertEquals('', fc.getRequestId());
+System.assertEquals('SUCCESS', fc.getResult().name());
+System.assertEquals(null, fc.getException());
+System.FinalizerContext systemContext = new System.FinalizerContext();
+System.assertEquals('SUCCESS', systemContext.getResult().name());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 
