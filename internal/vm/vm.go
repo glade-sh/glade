@@ -35543,6 +35543,20 @@ func (vm *VM) callSlackLocalHarnessMember(receiver Value, method string, args []
 	receiverType := slackTestHarnessRuntimeType(receiver.Type)
 	name := strings.ToLower(method)
 	switch receiverType {
+	case "Slack.ActionDispatcher", "Slack.EventDispatcher", "Slack.ShortcutDispatcher", "Slack.SlashCommandDispatcher":
+		if name == "allowunauthenticatedusers" {
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("%s.allowUnauthenticatedUsers expects 0 arguments", receiverType)
+			}
+			return Bool(false), receiver, false, true, nil
+		}
+	case "Slack.RunnableHandler":
+		if name == "run" {
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Slack.RunnableHandler.run expects 0 arguments")
+			}
+			return Null, receiver, false, true, nil
+		}
 	case "Slack.Button":
 		if name == "click" {
 			if len(args) != 0 {
@@ -35745,6 +35759,9 @@ func slackLocalClientHarnessMethod(method Method) bool {
 	if strings.Contains(name, "post") || strings.Contains(name, "open") || strings.Contains(name, "update") {
 		return false
 	}
+	if slackLocalClientHarnessReadMethodName(name) {
+		return true
+	}
 	for _, part := range []string{"add", "archive", "close", "create", "delete", "disable", "enable", "invite", "join", "kick", "leave", "mark", "publish", "push", "remove", "rename", "revoke", "schedule", "send", "set", "share", "unarchive", "uninstall"} {
 		if strings.Contains(name, part) {
 			return false
@@ -35761,6 +35778,25 @@ func slackLocalClientHarnessMethod(method Method) bool {
 		strings.HasSuffix(name, "profileget") ||
 		strings.HasSuffix(name, "getpresence") ||
 		strings.HasSuffix(name, "lookupbyemail")
+}
+
+func slackLocalClientHarnessReadMethodName(name string) bool {
+	switch name {
+	case "bookmarkslist",
+		"chatgetpermalink",
+		"chatscheduledmessageslist",
+		"conversationslistconnectinvites",
+		"reactionsget",
+		"searchall",
+		"searchfiles",
+		"searchmessages",
+		"teamaccesslogs",
+		"teamintegrationlogs",
+		"usersidentity":
+		return true
+	default:
+		return false
+	}
 }
 
 func slackLocalClientHarnessType(typeName string) bool {

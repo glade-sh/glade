@@ -1911,6 +1911,10 @@ func slackLocalHarnessComponentBehaviorMethod(symbol typesys.TypeSymbol, member 
 	typeName := slackRuntimeBehaviorType(stubBehaviorTypeName(symbol))
 	name := strings.ToLower(member.Name)
 	switch typeName {
+	case "Slack.ActionDispatcher", "Slack.EventDispatcher", "Slack.ShortcutDispatcher", "Slack.SlashCommandDispatcher":
+		return name == "allowunauthenticatedusers" && strings.EqualFold(member.Type, "Boolean")
+	case "Slack.RunnableHandler":
+		return name == "run" && strings.EqualFold(member.Type, "void")
 	case "Slack.Button":
 		return name == "click" && strings.EqualFold(member.Type, "void")
 	case "Slack.Channel":
@@ -1969,6 +1973,9 @@ func slackLocalClientHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typ
 	if strings.Contains(name, "post") || strings.Contains(name, "open") || strings.Contains(name, "update") {
 		return false
 	}
+	if slackLocalClientHarnessReadMethodName(name) {
+		return true
+	}
 	for _, part := range []string{"add", "archive", "close", "create", "delete", "disable", "enable", "invite", "join", "kick", "leave", "mark", "publish", "push", "remove", "rename", "revoke", "schedule", "send", "set", "share", "unarchive", "uninstall"} {
 		if strings.Contains(name, part) {
 			return false
@@ -1985,6 +1992,25 @@ func slackLocalClientHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typ
 		strings.HasSuffix(name, "profileget") ||
 		strings.HasSuffix(name, "getpresence") ||
 		strings.HasSuffix(name, "lookupbyemail")
+}
+
+func slackLocalClientHarnessReadMethodName(name string) bool {
+	switch name {
+	case "bookmarkslist",
+		"chatgetpermalink",
+		"chatscheduledmessageslist",
+		"conversationslistconnectinvites",
+		"reactionsget",
+		"searchall",
+		"searchfiles",
+		"searchmessages",
+		"teamaccesslogs",
+		"teamintegrationlogs",
+		"usersidentity":
+		return true
+	default:
+		return false
+	}
 }
 
 func slackLocalClientHarnessBehaviorType(typeName string) bool {

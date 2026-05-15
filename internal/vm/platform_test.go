@@ -1972,12 +1972,18 @@ Slack.AuthTestResponse auth = bot.authTest(new Slack.AuthTestRequest());
 System.assertNotEquals(null, auth);
 Slack.UsersInfoResponse userInfo = bot.usersInfo(new Slack.UsersInfoRequest());
 System.assertNotEquals(null, userInfo);
+System.assertNotEquals(null, bot.bookmarksList(new Slack.BookmarksListRequest()));
+System.assertNotEquals(null, bot.reactionsGet(new Slack.ReactionsGetRequest()));
+System.assertNotEquals(null, bot.conversationsListConnectInvites(new Slack.ConversationsListConnectInvitesRequest()));
 
 Slack.UserClient user = new Slack.UserClient();
 Slack.ApiTestResponse api = user.apiTest(new Slack.ApiTestRequest());
 System.assertNotEquals(null, api);
 Slack.TeamInfoResponse team = user.teamInfo(new Slack.TeamInfoRequest());
 System.assertNotEquals(null, team);
+System.assertNotEquals(null, user.searchAll(new Slack.SearchAllRequest()));
+System.assertNotEquals(null, user.teamAccessLogs(new Slack.TeamAccessLogsRequest()));
+System.assertNotEquals(null, user.usersIdentity(new Slack.UsersIdentityRequest()));
 
 Slack.AppClient app = new Slack.AppClient();
 Slack.AuthTestResponse appAuth = app.AUTHTEST(new Slack.AuthTestRequest());
@@ -1989,6 +1995,27 @@ System.assertNotEquals(null, appAuth);
 	machine := New(nil)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecSlackLocalDispatcherAndRunnableHarnessDefaults(t *testing.T) {
+	program, err := CompileAnonymous(`
+Slack.ActionDispatcher actionDispatcher = new Slack.ActionDispatcher();
+System.assertEquals(false, actionDispatcher.allowUnauthenticatedUsers());
+Slack.EventDispatcher eventDispatcher = new Slack.EventDispatcher();
+System.assertEquals(false, eventDispatcher.allowUnauthenticatedUsers());
+Slack.ShortcutDispatcher shortcutDispatcher = new Slack.ShortcutDispatcher();
+System.assertEquals(false, shortcutDispatcher.allowUnauthenticatedUsers());
+Slack.SlashCommandDispatcher slashCommandDispatcher = new Slack.SlashCommandDispatcher();
+System.assertEquals(false, slashCommandDispatcher.allowUnauthenticatedUsers());
+Slack.RunnableHandler handler = new Slack.RunnableHandler();
+handler.run();
+	`)
+	if err != nil {
+		t.Fatalf("compile: %v", err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatalf("execute: %v", err)
 	}
 }
 
