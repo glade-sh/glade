@@ -279,6 +279,34 @@ func TestEnsureStandardObjectFieldsIncludesStubOverlayFields(t *testing.T) {
 	}
 }
 
+func TestEnsureStandardObjectFieldsRemovesEventNameOverlay(t *testing.T) {
+	definition := ObjectDefinition{
+		APIName: "Event",
+		Fields:  map[string]Field{"Name": {APIName: "Name", Type: FieldString}},
+	}
+
+	EnsureStandardObjectFields(&definition)
+
+	if _, ok := definition.Fields["Name"]; ok {
+		t.Fatalf("Event.Name should not be exposed in describe fields: %#v", definition.Fields["Name"])
+	}
+	if field, ok := definition.Fields["Subject"]; !ok || field.APIName != "Subject" {
+		t.Fatalf("Event.Subject field = %#v, %v", field, ok)
+	}
+}
+
+func TestEnsureStandardObjectFieldsAddsAssetExternalIdentifierOverlay(t *testing.T) {
+	definition := ObjectDefinition{APIName: "Asset", Fields: map[string]Field{}}
+	EnsureStandardObjectFields(&definition)
+	field, ok := definition.Fields["ExternalIdentifier"]
+	if !ok {
+		t.Fatalf("Asset.ExternalIdentifier missing; fields=%#v", definition.Fields)
+	}
+	if field.Type != FieldString || field.DisplayType != "STRING" {
+		t.Fatalf("Asset.ExternalIdentifier = %#v", field)
+	}
+}
+
 func TestEnsureStandardObjectFieldsUsesGeneratedStubsCaseInsensitively(t *testing.T) {
 	definition := ObjectDefinition{APIName: "asyncapexjob"}
 

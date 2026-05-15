@@ -1068,6 +1068,62 @@ System.assertEquals('https://example.test', updated.Website);
 	}
 }
 
+func TestExecEventBusPublishInTestContextRequiresExplicitDeliver(t *testing.T) {
+	triggerProgram, err := CompileAnonymous(`
+for (Local_Event__e evt : Trigger.new) {
+	Account account = [SELECT Id, Website FROM Account WHERE Id = :evt.AccountId__c LIMIT 1];
+	account.Website = evt.Url__c;
+	update account;
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'Event Account');
+insert account;
+Test.startTest();
+EventBus.publish(new Local_Event__e(AccountId__c = account.Id, Name__c = 'Trail', Url__c = 'https://example.test'));
+Account beforeDeliver = [SELECT Website FROM Account WHERE Id = :account.Id LIMIT 1];
+System.assertEquals(null, beforeDeliver.Website);
+Test.getEventBus().deliver();
+Account afterDeliver = [SELECT Website FROM Account WHERE Id = :account.Id LIMIT 1];
+System.assertEquals('https://example.test', afterDeliver.Website);
+Test.stopTest();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Local_Event__e"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Local_Event__e",
+			KeyPrefix: "e00",
+			Fields: map[string]storage.Field{
+				"AccountId__c": {APIName: "AccountId__c", Type: storage.FieldString, Required: true},
+				"Name__c":      {APIName: "Name__c", Type: storage.FieldString, Required: true},
+				"Url__c":       {APIName: "Url__c", Type: storage.FieldString, Required: true},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "LocalEventTrigger",
+		Object:    "Local_Event__e",
+		Timing:    triggerTimingAfter,
+		Operation: "insert",
+		Program:   triggerProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecPlatformEventSObjectTypeNewSObjectSeedsEventUuid(t *testing.T) {
 	program, err := CompileAnonymous(`
 Event_Recipes_Demo__e directEvent = new Event_Recipes_Demo__e();
@@ -6507,6 +6563,7 @@ System.assert(first.isSuccess(), 'first row should save');
 System.assert(!second.isSuccess(), 'second row should fail');
 System.assertNotEquals('', first.getId());
 System.assertEquals(first.getId(), first.GETID());
+System.assertEquals(Account.SObjectType, first.getId().getSObjectType());
 List<Object> errors = second.getErrors();
 System.assertEquals(errors.size(), second.GETERRORS().size());
 System.assertEquals(1, errors.size());

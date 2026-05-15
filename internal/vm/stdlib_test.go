@@ -1398,6 +1398,7 @@ formatArgs.add('Lovelace');
 System.assertEquals('Hello Ada Lovelace', String.format('Hello {0} {1}', formatArgs));
 System.assertEquals('Use {0} then Ada', String.format('Use ''{0}'' then {0}', formatArgs));
 System.assertEquals('Lovelace/Ada/Lovelace/{2}', String.format('{1}/{0}/{1}/{2}', formatArgs));
+System.assertEquals('a' + '\r\n' + 'b', 'a\r\nb');
 String alphabet = 'abcdefghijklmnopqrstuvwxyz';
 System.assertEquals('abcdefg...', alphabet.abbreviate(10));
 System.assertEquals('...ijklmn...', alphabet.abbreviate(8, 12));
@@ -2420,6 +2421,7 @@ Exception allCapsDML = new DMLException('caps blocked');
 System.assertEquals('System.DMLException', allCapsDML.getTypeName());
 Exception aura = new AuraHandledException('aura blocked');
 System.assertEquals('System.AuraHandledException', aura.getTypeName());
+System.assertEquals('aura blocked', aura.getMessage());
 
 String caught = '';
 try {

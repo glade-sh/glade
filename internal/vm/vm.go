@@ -226,6 +226,7 @@ type TestContext struct {
 	SeeAllData            bool
 	AsyncJobs             []AsyncJob
 	EventPublishes        []eventPublishCallback
+	PlatformEvents        []storage.Record
 	Draining              bool
 	HTTPMock              Value
 	WebServiceMock        Value
@@ -6247,8 +6248,12 @@ func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
 			})
 		}
 	}
-	if _, err := vm.runTriggers(triggerTimingAfter, "insert", triggerRecords, nil, result); err != nil {
-		return Null, err
+	if vm.testContext != nil && vm.testContext.Started && !vm.testContext.Stopped {
+		vm.testContext.PlatformEvents = append(vm.testContext.PlatformEvents, triggerRecords...)
+	} else {
+		if _, err := vm.runTriggers(triggerTimingAfter, "insert", triggerRecords, nil, result); err != nil {
+			return Null, err
+		}
 	}
 	appendTrace(result, "apex.eventbus.publish", "apex.eventbus", map[string]any{
 		"records":  len(records),
@@ -8201,9 +8206,12 @@ func (vm *VM) testStop(result *Result) (Value, error) {
 		return Null, fmt.Errorf("Test.stopTest cannot be called more than once")
 	}
 	vm.testContext.Stopped = true
-	err := vm.drainTestEventPublishes(result)
+	err := vm.drainTestAsync(result)
 	if err == nil {
-		err = vm.drainTestAsync(result)
+		err = vm.drainTestPlatformEvents(result)
+	}
+	if err == nil {
+		err = vm.drainTestEventPublishes(result)
 	}
 	vm.limits = vm.testContext.ParentLimits
 	vm.limitViolations = append([]LimitViolation(nil), vm.testContext.ParentViolations...)
@@ -8586,6 +8594,30 @@ func (vm *VM) drainTestEventPublishes(result *Result) error {
 	return nil
 }
 
+func (vm *VM) drainTestPlatformEvents(result *Result) error {
+	if vm.testContext == nil {
+		return nil
+	}
+	for len(vm.testContext.PlatformEvents) > 0 {
+		records := vm.testContext.PlatformEvents
+		vm.testContext.PlatformEvents = nil
+		grouped := make(map[string][]storage.Record)
+		order := make([]string, 0)
+		for _, record := range records {
+			if _, ok := grouped[record.Object]; !ok {
+				order = append(order, record.Object)
+			}
+			grouped[record.Object] = append(grouped[record.Object], record)
+		}
+		for _, objectName := range order {
+			if _, err := vm.runTriggers(triggerTimingAfter, "insert", grouped[objectName], nil, result); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 func (vm *VM) drainLocalAsync(result *Result) error {
 	return vm.drainAsyncJobs(result, &vm.localAsyncJobs, &vm.localAsyncDrain, &vm.localAsyncChain)
 }
@@ -8609,9 +8641,15 @@ func (vm *VM) drainAsyncJobs(result *Result, jobs *[]AsyncJob, draining *bool, c
 		}
 		*draining = false
 	}()
-	for len(*jobs) > 0 {
+	maxJobs := -1
+	if vm.testContext != nil {
+		maxJobs = len(*jobs)
+	}
+	processed := 0
+	for len(*jobs) > 0 && (maxJobs < 0 || processed < maxJobs) {
 		job := (*jobs)[0]
 		*jobs = (*jobs)[1:]
+		processed++
 		if vm.testContext == nil {
 			if err := vm.ResetStatics(); err != nil {
 				return err
@@ -8724,7 +8762,7 @@ func (vm *VM) runAsyncJob(job AsyncJob, result *Result) error {
 		finalizer := vm.currentFinalizer
 		vm.currentFinalizer = previousFinalizer
 		if finalizer.Kind == ValueObject {
-			finalizerErr := vm.runQueueableFinalizer(finalizer, job, result)
+			finalizerErr := vm.runQueueableFinalizer(finalizer, job, result, err)
 			if err == nil {
 				err = finalizerErr
 			}
@@ -8769,8 +8807,8 @@ func (vm *VM) runAsyncJob(job AsyncJob, result *Result) error {
 	}
 }
 
-func (vm *VM) runQueueableFinalizer(finalizer Value, job AsyncJob, result *Result) error {
-	args := []Value{asyncContext("FinalizerContext", job.ID)}
+func (vm *VM) runQueueableFinalizer(finalizer Value, job AsyncJob, result *Result, parentErr error) error {
+	args := []Value{finalizerContext(job.ID, parentErr)}
 	target, ok, ambiguous := vm.resolveInstanceMethodForArgs(finalizer.Type, "execute", args)
 	if ambiguous {
 		return fmt.Errorf("async finalizer %s execute method is ambiguous", finalizer.Type)
@@ -8980,6 +9018,28 @@ func asyncContext(typeName, jobID string) Value {
 		ctx.Fields["JobId"] = String(jobID)
 	}
 	return ctx
+}
+
+func finalizerContext(jobID string, parentErr error) Value {
+	ctx := asyncContext("FinalizerContext", jobID)
+	ctx.Fields["Result"] = parentJobResultValue("SUCCESS")
+	ctx.Fields["Exception"] = Null
+	if parentErr != nil {
+		ctx.Fields["Result"] = parentJobResultValue("UNHANDLED_EXCEPTION")
+		exception := Object("Exception")
+		exception.Fields["message"] = String(parentErr.Error())
+		ctx.Fields["Exception"] = exception
+	}
+	return ctx
+}
+
+func parentJobResultValue(name string) Value {
+	value := Value{Kind: ValueObject, Type: "ParentJobResult", Text: name}
+	value.Fields = map[string]Value{"ordinal": Int(0)}
+	if name == "UNHANDLED_EXCEPTION" {
+		value.Fields["ordinal"] = Int(1)
+	}
+	return value
 }
 
 func schedulableContext(jobID string) Value {
@@ -11534,7 +11594,9 @@ func databaseResultIDValue(id storage.ID) Value {
 	if id == "" {
 		return Null
 	}
-	return String(string(id))
+	value := String(string(id))
+	value.Type = "Id"
+	return value
 }
 
 func databaseDMLException(op string, results []dml.Result) error {
@@ -17883,6 +17945,9 @@ func (vm *VM) lookup(name string) (Value, error) {
 		return Value{Kind: ValueObject, Type: parts[0] + "." + parts[1], Text: parts[2]}, nil
 	}
 	if this, ok := vm.Globals["this"]; ok && this.Kind == ValueObject {
+		if value, ok := selectorBindParamValue(this, name); ok {
+			return value, nil
+		}
 		if actualName, value, ok := objectFieldValue(this, name); ok {
 			if field, owner, ok := vm.lookupReceiverField(this.Type, actualName); ok {
 				if err := vm.checkMemberAccess(owner, field.Access, owner+"."+actualName, field.Modifiers); err != nil {
@@ -17923,6 +17988,22 @@ func (vm *VM) lookup(name string) (Value, error) {
 		}
 	}
 	return Null, fmt.Errorf("unknown variable %q", name)
+}
+
+func selectorBindParamValue(this Value, name string) (Value, bool) {
+	_, params, ok := objectFieldValue(this, "params")
+	if !ok || params.Kind != ValueMap {
+		return Null, false
+	}
+	if value, ok := params.Map[mapKey(String(name))]; ok {
+		return value, true
+	}
+	for _, key := range params.MapKeys {
+		if key.Kind == ValueString && strings.EqualFold(key.Text, name) {
+			return params.Map[mapKey(key)], true
+		}
+	}
+	return Null, false
 }
 
 func (vm *VM) lookupThisFieldRoot(this Value, name string) (Value, Field, string, bool) {
@@ -29954,6 +30035,14 @@ func (vm *VM) callStubProxyMember(receiver Value, method string, args []Value, r
 	if err != nil {
 		return Null, true, err
 	}
+	if value.Kind == ValueNull && stubReturnCanUseReceiver(target.ReturnType, receiver) && !vm.stubProviderRecordingMode(provider) {
+		return receiver, true, nil
+	}
+	if value.Kind == ValueNull && !vm.stubProviderRecordingMode(provider) {
+		if defaulted, ok := stubCollectionDefaultValue(target.ReturnType); ok {
+			return defaulted, true, nil
+		}
+	}
 	if target.ReturnType == "" || strings.EqualFold(target.ReturnType, "void") {
 		return Null, true, nil
 	}
@@ -29962,6 +30051,32 @@ func (vm *VM) callStubProxyMember(receiver Value, method string, args []Value, r
 		return Null, true, fmt.Errorf("stubbed %s.%s return: %w", receiver.Type, method, err)
 	}
 	return coerced, true, nil
+}
+
+func stubReturnCanUseReceiver(returnType string, receiver Value) bool {
+	if receiver.Kind != ValueObject || strings.TrimSpace(returnType) == "" || strings.EqualFold(returnType, "void") {
+		return false
+	}
+	return strings.EqualFold(returnType, receiver.Type)
+}
+
+func stubCollectionDefaultValue(returnType string) (Value, bool) {
+	base := collectionBase(returnType)
+	switch base {
+	case "List":
+		value := List()
+		value.Type = returnType
+		return value, true
+	case "Set":
+		value := Set()
+		value.Type = returnType
+		return value, true
+	case "Map":
+		value := typedMap(returnType)
+		return value, true
+	default:
+		return Null, false
+	}
 }
 
 func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Value, bool, error) {
@@ -33103,9 +33218,6 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("%s.getMessage expects 0 arguments", receiver.Type)
 			}
-			if exceptionTypeName(receiver.Type) == "AuraHandledException" {
-				return String("Script-thrown exception"), receiver, false, true, nil
-			}
 			if message, ok := receiver.Fields["message"]; ok {
 				return message, receiver, false, true, nil
 			}
@@ -33318,6 +33430,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		case "deliver":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("%s.deliver expects 0 arguments", receiver.Type)
+			}
+			if err := vm.drainTestPlatformEvents(result); err != nil {
+				return Null, receiver, false, true, err
 			}
 			return Null, receiver, false, true, nil
 		case "fail":
@@ -33603,8 +33718,38 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		}
 	case "System.FinalizerContext", "FinalizerContext":
 		switch method {
-		case "getAsyncApexJobId", "getRequestId", "getResult", "getException":
-			return Null, receiver, false, true, unsupportedCallError(receiver.Type + "." + method + " local queueable finalizers")
+		case "getAsyncApexJobId":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("%s.getAsyncApexJobId expects 0 arguments", receiver.Type)
+			}
+			if jobID, ok := receiver.Fields["JobId"]; ok {
+				return jobID, receiver, false, true, nil
+			}
+			return String(""), receiver, false, true, nil
+		case "getRequestId":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("%s.getRequestId expects 0 arguments", receiver.Type)
+			}
+			if requestID, ok := receiver.Fields["RequestId"]; ok {
+				return requestID, receiver, false, true, nil
+			}
+			return String(""), receiver, false, true, nil
+		case "getResult":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("%s.getResult expects 0 arguments", receiver.Type)
+			}
+			if finalizerResult, ok := receiver.Fields["Result"]; ok {
+				return finalizerResult, receiver, false, true, nil
+			}
+			return parentJobResultValue("SUCCESS"), receiver, false, true, nil
+		case "getException":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("%s.getException expects 0 arguments", receiver.Type)
+			}
+			if exception, ok := receiver.Fields["Exception"]; ok {
+				return exception, receiver, false, true, nil
+			}
+			return Null, receiver, false, true, nil
 		}
 	case "AsyncOptions":
 		switch method {

@@ -2358,6 +2358,9 @@ public class FinalizerJob implements Queueable, Finalizer {
     insert new Account(Name = 'queueable ran');
   }
   public void execute(FinalizerContext fc) {
+    System.assertEquals(ParentJobResult.SUCCESS, fc.getResult());
+    System.assertNotEquals('', fc.getAsyncApexJobId());
+    System.assertEquals(null, fc.getException());
     insert new Account(Name = 'finalizer ran');
   }
 }
@@ -2478,7 +2481,7 @@ private class AsyncSemanticsTest {
     System.assertEquals(0, beforeRows);
     Test.stopTest();
     Integer afterRows = [SELECT COUNT() FROM Account];
-    System.assertEquals(10, afterRows);
+    System.assertEquals(9, afterRows);
     List<AsyncApexJob> jobs = [SELECT Id, Status, JobType FROM AsyncApexJob];
     System.assertEquals(6, jobs.size());
     List<CronTrigger> crons = [SELECT Id, State FROM CronTrigger];
@@ -2489,7 +2492,7 @@ private class AsyncSemanticsTest {
     System.assertEquals(12, AsyncState.batchSum);
     System.assertEquals(1, AsyncState.batchFinish);
     System.assertEquals(1, AsyncState.scheduledRan);
-    System.assertEquals(2, AsyncState.queueRan);
+    System.assertEquals(1, AsyncState.queueRan);
   }
 }
 `)

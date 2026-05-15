@@ -573,6 +573,8 @@ func applyStandardObjectCompatibilityOverlays(definition *ObjectDefinition) {
 	switch {
 	case stringsEqualFold(definition.APIName, "Account"):
 		markFieldRequired(definition, "Name")
+	case stringsEqualFold(definition.APIName, "Asset"):
+		ensureField(definition, Field{APIName: "ExternalIdentifier", Label: "External Identifier", Type: FieldString, DisplayType: "STRING", Length: 255, Createable: BoolFlag(true), Updateable: BoolFlag(true)})
 	case stringsEqualFold(definition.APIName, "Attachment"):
 		ensureReferenceTarget(definition, "ParentId", "User")
 	case stringsEqualFold(definition.APIName, "Document"):
@@ -597,6 +599,8 @@ func applyStandardObjectCompatibilityOverlays(definition *ObjectDefinition) {
 	case stringsEqualFold(definition.APIName, "EmailTemplate"):
 		ensureFieldDefault(definition, "TemplateStyle", "none")
 		ensureFieldDefault(definition, "TemplateType", "text")
+	case stringsEqualFold(definition.APIName, "Event"):
+		removeField(definition, "Name")
 	case stringsEqualFold(definition.APIName, "PermissionSetGroupComponent"):
 		markFieldCreateable(definition, "PermissionSetGroupId")
 		markFieldCreateable(definition, "PermissionSetId")
@@ -611,6 +615,14 @@ func ensureField(definition *ObjectDefinition, field Field) {
 		return
 	}
 	definition.Fields[field.APIName] = field
+}
+
+func removeField(definition *ObjectDefinition, fieldName string) {
+	resolved, ok := ResolveFieldName(*definition, "", fieldName)
+	if !ok {
+		return
+	}
+	delete(definition.Fields, resolved)
 }
 
 func markFieldRequired(definition *ObjectDefinition, fieldName string) {

@@ -539,6 +539,8 @@ func displayFieldType(raw string) string {
 		return "CURRENCY"
 	case "Percent":
 		return "PERCENT"
+	case "TextArea", "LongTextArea":
+		return "TEXTAREA"
 	default:
 		return string(storageFieldType(raw))
 	}

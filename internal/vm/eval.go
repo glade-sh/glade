@@ -19,7 +19,7 @@ func parseLiteral(raw string) (Value, error) {
 	}
 	if strings.HasPrefix(raw, "'") && strings.HasSuffix(raw, "'") {
 		text := strings.TrimSuffix(strings.TrimPrefix(raw, "'"), "'")
-		return String(strings.ReplaceAll(text, "''", "'")), nil
+		return String(unescapeApexStringLiteral(text)), nil
 	}
 	suffix := byte(0)
 	if len(raw) > 0 {
@@ -51,6 +51,48 @@ func parseLiteral(raw string) (Value, error) {
 		out.Type = "Long"
 	}
 	return out, nil
+}
+
+func unescapeApexStringLiteral(text string) string {
+	if !strings.ContainsAny(text, "'\\") {
+		return text
+	}
+	var out strings.Builder
+	out.Grow(len(text))
+	for i := 0; i < len(text); i++ {
+		if text[i] == '\'' && i+1 < len(text) && text[i+1] == '\'' {
+			out.WriteByte('\'')
+			i++
+			continue
+		}
+		if text[i] != '\\' || i+1 >= len(text) {
+			out.WriteByte(text[i])
+			continue
+		}
+		i++
+		switch text[i] {
+		case 'n':
+			out.WriteByte('\n')
+		case 'r':
+			out.WriteByte('\r')
+		case 't':
+			out.WriteByte('\t')
+		case 'b':
+			out.WriteByte('\b')
+		case 'f':
+			out.WriteByte('\f')
+		case '\\':
+			out.WriteByte('\\')
+		case '\'':
+			out.WriteByte('\'')
+		case '"':
+			out.WriteByte('"')
+		default:
+			out.WriteByte('\\')
+			out.WriteByte(text[i])
+		}
+	}
+	return out.String()
 }
 
 func evalUnary(op string, value Value) (Value, error) {

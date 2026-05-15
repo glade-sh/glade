@@ -738,6 +738,110 @@ System.assertEquals('handled', proxy.selectById((Set<Id>)placeholder, (List<Sche
 	}
 }
 
+func TestExecTestCreateStubReturnsReceiverForUnstubbedFluentSelfMethod(t *testing.T) {
+	providerProgram, err := CompileAnonymous("return null;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Fluent proxy = (Fluent)Test.createStub(Fluent.class, new Provider());
+System.assertEquals(proxy, proxy.disableSecurity().allOrNothing(false));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name: "Fluent",
+		Methods: map[string]Method{
+			"disableSecurity": {Name: "Fluent.disableSecurity", ClassName: "Fluent", ReturnType: "Fluent"},
+			"allOrNothing": {
+				Name:       "Fluent.allOrNothing",
+				ClassName:  "Fluent",
+				ReturnType: "Fluent",
+				Params:     []Param{{Name: "all", Type: "Boolean"}},
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Provider",
+		Interfaces: []string{"StubProvider"},
+		Methods: map[string]Method{
+			"handleMethodCall": {
+				Name:       "Provider.handleMethodCall",
+				ClassName:  "Provider",
+				ReturnType: "Object",
+				Params: []Param{
+					{Name: "stubbedObject", Type: "Object"},
+					{Name: "stubbedMethodName", Type: "String"},
+					{Name: "returnType", Type: "Type"},
+					{Name: "listOfParamTypes", Type: "List<Type>"},
+					{Name: "listOfParamNames", Type: "List<String>"},
+					{Name: "listOfArgs", Type: "List<Object>"},
+				},
+				Program: providerProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecTestCreateStubReturnsEmptyCollectionForUnstubbedCollectionMethod(t *testing.T) {
+	providerProgram, err := CompileAnonymous("return null;")
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Collector proxy = (Collector)Test.createStub(Collector.class, new Provider());
+System.assertEquals(0, proxy.results().size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name: "Collector",
+		Methods: map[string]Method{
+			"results": {Name: "Collector.results", ClassName: "Collector", ReturnType: "List<String>"},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{
+		Name:       "Provider",
+		Interfaces: []string{"StubProvider"},
+		Methods: map[string]Method{
+			"handleMethodCall": {
+				Name:       "Provider.handleMethodCall",
+				ClassName:  "Provider",
+				ReturnType: "Object",
+				Params: []Param{
+					{Name: "stubbedObject", Type: "Object"},
+					{Name: "stubbedMethodName", Type: "String"},
+					{Name: "returnType", Type: "Type"},
+					{Name: "listOfParamTypes", Type: "List<Type>"},
+					{Name: "listOfParamNames", Type: "List<String>"},
+					{Name: "listOfArgs", Type: "List<Object>"},
+				},
+				Program: providerProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecTestCreateStubReportsResolvedMethodNameCasing(t *testing.T) {
 	providerProgram, err := CompileAnonymous(`
 System.assertEquals('getPaymentLinesByIds', stubbedMethodName);

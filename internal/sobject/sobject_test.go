@@ -56,6 +56,7 @@ func TestBuildDescribeRegistry(t *testing.T) {
 			{Name: "Master__c", Type: "MasterDetail", ReferenceTo: []string{"Account"}, RelationshipName: "Master__r", ChildRelationshipName: "MasterWidgets__r"},
 			{Name: "Rating__c", Type: "Picklist", PicklistValues: []schema.PicklistValue{{FullName: "Hot", Label: "Hot", Default: true, Active: true}}},
 			{Name: "PrimaryLocation__c", Type: "Location"},
+			{Name: "Notes__c", Type: "LongTextArea"},
 		},
 		RecordTypes: []schema.RecordType{{DeveloperName: "Business", Label: "Business Widget", Active: true, Default: true}},
 	}}})
@@ -121,6 +122,9 @@ func TestBuildDescribeRegistry(t *testing.T) {
 	}
 	if got := definition.Fields["PrimaryLocation__c"]; got.Type != storage.FieldLocation {
 		t.Fatalf("location definition = %#v", got)
+	}
+	if got := definition.Fields["Notes__c"]; got.Type != storage.FieldString || got.DisplayType != "TEXTAREA" {
+		t.Fatalf("textarea definition = %#v", got)
 	}
 	if got := definition.RecordTypes; len(got) != 1 || got[0].ID != "012000000000001" || got[0].DeveloperName != "Business" {
 		t.Fatalf("definition record types = %#v", got)

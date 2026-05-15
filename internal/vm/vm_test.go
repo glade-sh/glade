@@ -2974,6 +2974,31 @@ System.assertEquals('boom', message);
 	}
 }
 
+func TestExecNestedCustomExceptionIsExceptionInstance(t *testing.T) {
+	program, err := CompileAnonymous(`
+Object e = new Outer.NestedException('blocked');
+System.assert(e instanceof Exception);
+try {
+	throw ((Exception)e);
+} catch (Exception caught) {
+	System.assertEquals('blocked', caught.getMessage());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Outer"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "Outer.NestedException", SuperClass: "Exception"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecCustomExceptionConstructorCanSetMessage(t *testing.T) {
 	ctor, err := CompileAnonymous(`this.setMessage(message);`)
 	if err != nil {

@@ -54,6 +54,136 @@ System.assertEquals(0, empty.size());
 	}
 }
 
+func TestExecUpdateCanClearQueriedSObjectFieldFromListElement(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account a = new Account(Name = 'Acme', External_Key__c = 'import-1');
+insert a;
+List<Account> rows = [SELECT Id, External_Key__c FROM Account WHERE Id = :a.Id];
+rows[0].External_Key__c = null;
+update rows;
+Account updated = [SELECT Id, External_Key__c FROM Account WHERE Id = :a.Id LIMIT 1];
+System.assertEquals(null, updated.External_Key__c);
+System.assert(String.isBlank(updated.External_Key__c));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["External_Key__c"] = storage.Field{APIName: "External_Key__c", Type: storage.FieldString}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecUpdateCanClearNamespacedCustomFieldSetByPut(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account a = new Account(Name = 'Acme');
+a.put('verifiable__External_Key__c', 'import-1');
+insert a;
+List<Account> rows = [SELECT Id, External_Key__c FROM Account WHERE Id = :a.Id];
+rows[0].External_Key__c = null;
+update rows;
+Account updated = [SELECT Id, External_Key__c FROM Account WHERE Id = :a.Id LIMIT 1];
+System.assertEquals(null, updated.External_Key__c);
+System.assert(String.isBlank(updated.External_Key__c));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Namespace = "verifiable"
+	account := org.Objects["Account"]
+	account.Definition.Fields["External_Key__c"] = storage.Field{APIName: "External_Key__c", Type: storage.FieldString}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDynamicSOQLInBindWithoutSpaceAndNotNull(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account parent = new Account(Name = 'Parent');
+insert parent;
+Account a = new Account(Name = 'Acme', External_Key__c = 'board-1');
+a.ParentId = parent.Id;
+insert a;
+Set<String> vuids = new Set<String>{ 'board-1' };
+List<Account> rows = Database.query('SELECT Id, External_Key__c, ParentId FROM Account WHERE External_Key__c IN:vuids AND ParentId != NULL');
+System.assertEquals(1, rows.size());
+System.assertEquals('board-1', rows[0].External_Key__c);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["External_Key__c"] = storage.Field{APIName: "External_Key__c", Type: storage.FieldString}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDynamicSOQLFindsStandardObjectFieldsUsedByDeleteRetry(t *testing.T) {
+	program, err := CompileAnonymous(`
+Contact c = new Contact(LastName = 'Hopkins', MobilePhone = 'provider-vuid');
+insert c;
+Asset board = new Asset(Name = '123456');
+board.ExternalIdentifier = 'board-vuid';
+board.ContactId = c.Id;
+insert board;
+Set<String> vuids = new Set<String>{ 'board-vuid' };
+List<SObject> rows = Database.query('SELECT Id, ExternalIdentifier, ContactId FROM Asset WHERE ExternalIdentifier IN:vuids AND ContactId != NULL');
+System.assertEquals(1, rows.size());
+SObject row = rows[0];
+System.assertEquals(board.Id, row.Id);
+System.assertEquals(c.Id, row.get('ContactId'));
+Map<Id, SObject> byId = new Map<Id, SObject>(rows);
+System.assertEquals(1, byId.size());
+System.assert(byId.containsKey(board.Id));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Asset"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Asset",
+			KeyPrefix: "02i",
+			Fields: map[string]storage.Field{
+				"Name":               {APIName: "Name", Type: storage.FieldString},
+				"ExternalIdentifier": {APIName: "ExternalIdentifier", Type: storage.FieldString},
+				"ContactId":          {APIName: "ContactId", Type: storage.FieldReference, ReferenceTo: []string{"Contact"}, RelationshipName: "Contact"},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Contact",
+			KeyPrefix: "003",
+			Fields: map[string]storage.Field{
+				"LastName":    {APIName: "LastName", Type: storage.FieldString},
+				"MobilePhone": {APIName: "MobilePhone", Type: storage.FieldString},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDatabaseDeleteListOfIdsFallsBackToExistingRecordForUnknownPrefix(t *testing.T) {
 	program, err := CompileAnonymous(`
 Id detailId = 'zzz000000000001';
