@@ -7071,9 +7071,20 @@ System.assert(updatedUser.isSuccess());
 Account upserted = new Account(Name = 'Upserted', Other_Key__c = 'ext-access');
 Database.UpsertResult upsertResult = Database.upsert(upserted, Account.Other_Key__c, false, AccessLevel.SYSTEM_MODE);
 System.assert(upsertResult.isSuccess());
+Account upsertedExternalMode = new Account(Name = 'Upserted External Mode', Other_Key__c = 'ext-access-level');
+Database.UpsertResult upsertExternalMode = Database.upsert(upsertedExternalMode, Account.Other_Key__c, AccessLevel.USER_MODE);
+System.assert(upsertExternalMode.isSuccess());
 Account upsertedModeOnly = new Account(Name = 'Upserted Mode Only', Other_Key__c = 'ext-access-mode-only');
 Database.UpsertResult upsertModeOnly = Database.upsert(upsertedModeOnly, AccessLevel.SYSTEM_MODE);
 System.assert(upsertModeOnly.isSuccess());
+List<Account> upsertedList = new List<Account>{
+	new Account(Name = 'Upserted List A', Other_Key__c = 'ext-list-a'),
+	new Account(Name = 'Upserted List B', Other_Key__c = 'ext-list-b')
+};
+List<Database.UpsertResult> upsertListResults = Database.upsert(upsertedList, Account.Other_Key__c, false, AccessLevel.SYSTEM_MODE);
+System.assertEquals(2, upsertListResults.size());
+System.assert(upsertListResults.get(0).isSuccess());
+System.assert(upsertListResults.get(1).isSuccess());
 `)
 	if err != nil {
 		t.Fatal(err)
