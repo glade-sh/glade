@@ -3659,6 +3659,57 @@ System.assertEquals(1, rows.size());
 	}
 }
 
+func TestExecDatabaseTreeSaveInsertsParentAndChildren(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'Tree Parent');
+account.put('Contacts', new List<Contact>{
+    new Contact(LastName = 'One'),
+    new Contact(LastName = 'Two')
+});
+Database.NestedSaveResult result = Database.treeSave(account);
+System.assert(result.isSuccess());
+System.assert(result.getId() != null);
+System.assertEquals(1, result.getRelationshipSaveResults().size());
+Database.RelationshipSaveResult relationship = result.getRelationshipSaveResults()[0];
+System.assertEquals('Contacts', relationship.getRelationshipName());
+System.assertEquals(2, relationship.getSaveResults().size());
+System.assert(relationship.getSaveResults()[0].isSuccess());
+
+List<Account> accounts = [SELECT Id, Name FROM Account WHERE Name = 'Tree Parent'];
+System.assertEquals(1, accounts.size());
+List<Contact> contacts = [SELECT Id, LastName, AccountId FROM Contact ORDER BY LastName];
+System.assertEquals(2, contacts.size());
+System.assertEquals(accounts[0].Id, contacts[0].AccountId);
+System.assertEquals(accounts[0].Id, contacts[1].AccountId);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Contact",
+			KeyPrefix: "003",
+			Fields: map[string]storage.Field{
+				"LastName":  {APIName: "LastName", Type: storage.FieldString},
+				"AccountId": {APIName: "AccountId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Account"},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "AccountId",
+				ParentObjects:      []string{"Account"},
+				ParentRelationship: "Account",
+				ChildRelationship:  "Contacts",
+			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSOQLForLoopCanIterateInListChunks(t *testing.T) {
 	program, err := CompileAnonymous(`
 insert new List<Account>{

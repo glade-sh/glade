@@ -2079,7 +2079,7 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"Database.insertAsync", "Database.updateAsync", "Database.deleteAsync", "Database.insertImmediate", "Database.updateImmediate", "Database.deleteImmediate",
 		"Database.getAsyncSaveResult", "Database.getAsyncDeleteResult", "Database.getDeleted", "Database.getUpdated",
 		"Database.upsert", "Database.undelete", "Database.emptyRecycleBin", "Database.lock", "Database.unlock",
-		"Database.convertLead", "Database.merge",
+		"Database.treeSave", "Database.convertLead", "Database.merge",
 		"Security.stripInaccessible",
 		"Approval.process", "Approval.lock", "Approval.unlock", "Approval.isLocked",
 		"QuickAction.describeAvailableQuickActions", "QuickAction.describeQuickActions",
@@ -2926,6 +2926,8 @@ platformStaticCall:
 	case "Database.lock", "Database.unlock":
 		op := strings.TrimPrefix(callee, "Database.")
 		return vm.executeDatabaseRecordAction(op, args, result, databaseRecordActionResultType(op))
+	case "Database.treeSave":
+		return vm.executeDatabaseTreeSave(args, result)
 	case "Database.convertLead":
 		return Null, unsupportedCallError("Database.convertLead local lead conversion surface")
 	case "Approval.lock":
@@ -9805,6 +9807,241 @@ func (vm *VM) executeDatabaseRecordAction(op string, args []Value, result *Resul
 		return Null, nil
 	}
 	return values[0], nil
+}
+
+func (vm *VM) executeDatabaseTreeSave(args []Value, result *Result) (Value, error) {
+	if len(args) != 1 {
+		return Null, fmt.Errorf("Database.treeSave expects sObject or List<SObject>")
+	}
+	if vm.Org == nil {
+		return Null, fmt.Errorf("DML requires org state")
+	}
+	listInput := args[0].Kind == ValueList
+	roots := []Value{args[0]}
+	if listInput {
+		roots = args[0].List
+	}
+	backup := cloneRuntimeOrgState(*vm.Org)
+	values := make([]Value, 0, len(roots))
+	for i := range roots {
+		value, err := vm.treeSaveOne(roots[i], result)
+		if err != nil {
+			*vm.Org = backup
+			return Null, err
+		}
+		values = append(values, value)
+		if !databaseNestedSaveSuccess(value) {
+			*vm.Org = backup
+			if listInput {
+				return List(values...), nil
+			}
+			return value, nil
+		}
+	}
+	if listInput {
+		return List(values...), nil
+	}
+	if len(values) == 0 {
+		return Null, nil
+	}
+	return values[0], nil
+}
+
+func (vm *VM) treeSaveOne(root Value, result *Result) (Value, error) {
+	if root.Kind != ValueObject {
+		return Null, fmt.Errorf("Database.treeSave expects sObject values")
+	}
+	if id := sObjectIDFromFields(root.Fields); id != "" {
+		return Null, unsupportedCallError("Database.treeSave update local tree surface")
+	}
+	children, err := vm.treeSaveChildGroups(root)
+	if err != nil {
+		return Null, err
+	}
+	parentResults, err := vm.applyDML("insert", root, true, "", result)
+	if err != nil {
+		return Null, err
+	}
+	parent := databaseNestedSaveResult(parentResults, nil)
+	if hasDMLFailures(parentResults) {
+		return parent, nil
+	}
+	parentID := parentResults[0].ID
+	relationshipResults := List()
+	for _, group := range children {
+		childList := typedList("List<" + group.childObject + ">")
+		for _, child := range group.children {
+			if err := vm.ensureTreeSaveLeaf(child); err != nil {
+				return Null, err
+			}
+			setExplicitSObjectField(&child, group.lookupField, platformScalar("Id", string(parentID)))
+			childList.List = append(childList.List, child)
+		}
+		childResults, err := vm.applyDML("insert", childList, true, "", result)
+		if err != nil {
+			return Null, err
+		}
+		relationship := Object("Database.RelationshipSaveResult")
+		relationship.Fields["relationshipName"] = String(group.relationshipName)
+		relationship.Fields["saveResults"] = List(databaseNestedSaveResults(childResults, nil)...)
+		relationshipResults.List = append(relationshipResults.List, relationship)
+		if hasDMLFailures(childResults) {
+			parent.Fields["success"] = Bool(false)
+		}
+	}
+	parent.Fields["relationshipSaveResults"] = relationshipResults
+	return parent, nil
+}
+
+type treeSaveChildGroup struct {
+	relationshipName string
+	childObject      string
+	lookupField      string
+	children         []Value
+}
+
+func (vm *VM) treeSaveChildGroups(root Value) ([]treeSaveChildGroup, error) {
+	if vm.Org == nil {
+		return nil, fmt.Errorf("DML requires org state")
+	}
+	parentObject, ok := storage.ResolveObjectName(*vm.Org, root.Type)
+	if !ok {
+		return nil, fmt.Errorf("Database.treeSave unknown object %s", root.Type)
+	}
+	groups := make([]treeSaveChildGroup, 0)
+	for field, value := range root.Fields {
+		if isInternalSObjectField(field) || value.Kind != ValueList {
+			continue
+		}
+		childObject, lookupField, relationshipName, ok, err := vm.treeSaveChildRelationship(parentObject, field)
+		if err != nil {
+			return nil, err
+		}
+		if !ok {
+			continue
+		}
+		children := make([]Value, 0, len(value.List))
+		for _, child := range value.List {
+			if child.Kind != ValueObject {
+				return nil, fmt.Errorf("Database.treeSave relationship %s expects sObject children", relationshipName)
+			}
+			if !strings.EqualFold(child.Type, childObject) {
+				return nil, fmt.Errorf("Database.treeSave relationship %s expects %s children", relationshipName, childObject)
+			}
+			children = append(children, child)
+		}
+		groups = append(groups, treeSaveChildGroup{
+			relationshipName: relationshipName,
+			childObject:      childObject,
+			lookupField:      lookupField,
+			children:         children,
+		})
+	}
+	return groups, nil
+}
+
+func (vm *VM) treeSaveChildRelationship(parentObject, relationshipName string) (string, string, string, bool, error) {
+	var childObject, lookupField, canonicalRelationship string
+	for name, state := range vm.Org.Objects {
+		for _, relation := range state.Definition.Relations {
+			if !relationshipTargetsObject(relation, parentObject) || relation.Polymorphic || strings.TrimSpace(relation.Field) == "" {
+				continue
+			}
+			childRelationship := relation.ChildRelationship
+			if childRelationship == "" {
+				childRelationship = derivedVMChildRelationshipName(state.Definition)
+			}
+			if !vmRelationshipNameMatches(vm.Org.Namespace, childRelationship, relationshipName) {
+				continue
+			}
+			if childObject != "" {
+				return "", "", "", false, unsupportedCallError("Database.treeSave ambiguous child relationship " + relationshipName)
+			}
+			childObject = name
+			lookupField = relation.Field
+			canonicalRelationship = childRelationship
+		}
+	}
+	if childObject == "" {
+		return "", "", "", false, nil
+	}
+	return childObject, lookupField, canonicalRelationship, true, nil
+}
+
+func (vm *VM) ensureTreeSaveLeaf(value Value) error {
+	if value.Kind != ValueObject {
+		return fmt.Errorf("Database.treeSave expects sObject children")
+	}
+	if id := sObjectIDFromFields(value.Fields); id != "" {
+		return unsupportedCallError("Database.treeSave update local tree surface")
+	}
+	if vm.Org == nil {
+		return fmt.Errorf("DML requires org state")
+	}
+	objectName, ok := storage.ResolveObjectName(*vm.Org, value.Type)
+	if !ok {
+		return fmt.Errorf("Database.treeSave unknown object %s", value.Type)
+	}
+	definition := vm.Org.Objects[objectName].Definition
+	for field, child := range value.Fields {
+		if child.Kind == ValueList && vm.isChildRelationshipField(definition, field) {
+			return unsupportedCallError("Database.treeSave nested child relationship local tree surface")
+		}
+	}
+	return nil
+}
+
+func databaseNestedSaveResults(results []dml.Result, relationships []Value) []Value {
+	values := make([]Value, 0, len(results))
+	for _, result := range results {
+		values = append(values, databaseNestedSaveResult([]dml.Result{result}, relationships))
+	}
+	return values
+}
+
+func databaseNestedSaveResult(results []dml.Result, relationships []Value) Value {
+	row := Object("Database.NestedSaveResult")
+	if len(results) == 0 {
+		row.Fields["success"] = Bool(false)
+		row.Fields["id"] = Null
+		row.Fields["errors"] = List()
+	} else {
+		row.Fields["success"] = Bool(results[0].Success)
+		row.Fields["id"] = databaseResultIDValue(results[0].ID)
+		row.Fields["error"] = String(results[0].Error)
+		row.Fields["errors"] = databaseErrorsList(results[0])
+	}
+	row.Fields["relationshipSaveResults"] = List(relationships...)
+	return row
+}
+
+func databaseNestedSaveSuccess(value Value) bool {
+	if value.Kind != ValueObject {
+		return false
+	}
+	success, ok := value.Fields["success"]
+	if !ok || success.Kind != ValueBool || !success.Bool {
+		return false
+	}
+	relationships, ok := value.Fields["relationshipSaveResults"]
+	if !ok || relationships.Kind != ValueList {
+		return true
+	}
+	for _, relationship := range relationships.List {
+		if relationship.Kind != ValueObject {
+			return false
+		}
+		saveResults, ok := relationship.Fields["saveResults"]
+		if !ok || saveResults.Kind != ValueList {
+			continue
+		}
+		for _, child := range saveResults.List {
+			if !databaseNestedSaveSuccess(child) {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 func (vm *VM) executeApprovalIsLocked(args []Value) (Value, error) {

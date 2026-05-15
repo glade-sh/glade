@@ -85,6 +85,7 @@ func TestStubBehaviorSeparatesServiceMethodsFromPassiveDTOs(t *testing.T) {
 	assertStubBehaviorPrefix(t, entries, "DataWeave.Script.createScript(", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "DataWeave.Script.execute(", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "Database.executeBatch(", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "Database.treeSave(", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "Callable.call(", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "StubProvider.handleMethodCall(", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "RestRequest.addHeader(", StubBehaviorImplemented)
