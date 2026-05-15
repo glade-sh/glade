@@ -2104,6 +2104,7 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"Approval.process", "Approval.lock", "Approval.unlock", "Approval.isLocked",
 		"QuickAction.describeAvailableQuickActions", "QuickAction.describeQuickActions",
 		"QuickAction.retrieveQuickActionTemplate", "QuickAction.retrieveQuickActionTemplates",
+		"QuickAction.performQuickAction", "QuickAction.performQuickActions",
 		"String.valueOf", "String.isBlank", "String.isNotBlank", "String.isEmpty", "String.isNotEmpty",
 		"String.join", "String.format", "String.getCommonPrefix", "String.getLevenshteinDistance",
 		"String.stripAll", "String.fromCharArray", "String.escapeSingleQuotes",
@@ -2134,6 +2135,7 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"BusinessHours.add", "BusinessHours.addGmt", "BusinessHours.diff", "BusinessHours.isWithin", "BusinessHours.nextStartDate",
 		"Cases.generateThreadingMessageId", "Cases.getCaseIdFromEmailHeaders", "Cases.getCaseIdFromEmailThreadId", "Cases.reparentFeedToCaseId",
 		"EmailMessages.getFormattedThreadingToken", "EmailMessages.getRecordIdFromEmail",
+		"Datacloud.FindDuplicates.findDuplicates", "Datacloud.FindDuplicatesByIds.findDuplicatesByIds",
 		"Cache.Org.getPartition", "Cache.Session.getPartition",
 		"Cache.Org.get", "Cache.Session.get", "Cache.Org.put", "Cache.Session.put",
 		"Cache.Org.remove", "Cache.Session.remove", "Cache.Org.contains", "Cache.Session.contains",
@@ -2167,6 +2169,17 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"Test.setMock", "Test.testInstall", "Test.createStub", "Test.createSoqlStub", "Test.createStubQueryRow", "Test.createStubQueryRows", "Test.loadData",
 		"Test.getFlexQueueOrder", "Test.enqueueBatchJobs", "Test.calculatePermissionSetGroup", "Test.enableChangeDataCapture", "Test.setReadOnlyApplicationMode", "Test.isSoqlStubDefined",
 		"Test.newSendEmailQuickActionDefaults",
+		"FeatureManagement.changeProtection",
+		"KbManagement.PublishingService.archiveOnlineArticle", "KbManagement.PublishingService.assignDraftArticleTask",
+		"KbManagement.PublishingService.assignDraftTranslationTask", "KbManagement.PublishingService.cancelScheduledArchivingOfArticle",
+		"KbManagement.PublishingService.cancelScheduledPublicationOfArticle", "KbManagement.PublishingService.completeTranslation",
+		"KbManagement.PublishingService.editArchivedArticle", "KbManagement.PublishingService.editOnlineArticle",
+		"KbManagement.PublishingService.editPublishedTranslation", "KbManagement.PublishingService.publishArticle",
+		"KbManagement.PublishingService.restoreOldVersion", "KbManagement.PublishingService.scheduleForPublication",
+		"KbManagement.PublishingService.setTranslationToIncomplete", "KbManagement.PublishingService.submitForTranslation",
+		"Packaging.getCurrentPackageId",
+		"RemoteObjectController.create", "RemoteObjectController.del", "RemoteObjectController.retrieve", "RemoteObjectController.updat",
+		"SupportPredictiveService.findSimilarCases",
 		"Test.getEventBus", "Test.getExternalService", "Test.invokePage",
 		"Test.invokeContinuationMethod", "Test.setContinuationResponse",
 		"Canvas.Test.mockRenderContext", "Canvas.Test.testCanvasLifecycle",
@@ -2509,6 +2522,30 @@ platformStaticCall:
 	}
 
 	switch callee {
+	case "Datacloud.FindDuplicates.findDuplicates":
+		if len(args) != 1 || args[0].Kind != ValueList {
+			return Null, fmt.Errorf("Datacloud.FindDuplicates.findDuplicates expects List<SObject>")
+		}
+		results := make([]Value, 0, len(args[0].List))
+		for _, record := range args[0].List {
+			if record.Kind != ValueObject || !vm.isSObjectLikeType(record.Type) {
+				return Null, fmt.Errorf("Datacloud.FindDuplicates.findDuplicates expects List<SObject>")
+			}
+			results = append(results, newDatacloudFindDuplicatesResult())
+		}
+		return List(results...), nil
+	case "Datacloud.FindDuplicatesByIds.findDuplicatesByIds":
+		if len(args) != 1 || args[0].Kind != ValueList {
+			return Null, fmt.Errorf("Datacloud.FindDuplicatesByIds.findDuplicatesByIds expects List<Id>")
+		}
+		results := make([]Value, 0, len(args[0].List))
+		for _, id := range args[0].List {
+			if _, ok := idValueText(id); !ok {
+				return Null, fmt.Errorf("Datacloud.FindDuplicatesByIds.findDuplicatesByIds expects List<Id>")
+			}
+			results = append(results, newDatacloudFindDuplicatesResult())
+		}
+		return List(results...), nil
 	case "System.assert":
 		if len(args) != 1 && len(args) != 2 {
 			return Null, fmt.Errorf("System.assert expects 1 or 2 arguments")
@@ -3820,6 +3857,11 @@ platformStaticCall:
 			return Bool(true), nil
 		}
 		return Bool(false), nil
+	case "FeatureManagement.changeProtection":
+		if len(args) != 3 || args[0].Kind != ValueString || args[1].Kind != ValueString || args[2].Kind != ValueString {
+			return Null, fmt.Errorf("FeatureManagement.changeProtection expects namespace, feature, and protection String values")
+		}
+		return Null, nil
 	case "BusinessHours.add", "BusinessHours.addGmt":
 		if len(args) != 3 || args[1].Kind != ValueObject || args[1].Type != "Datetime" || args[2].Kind != ValueInt {
 			return Null, fmt.Errorf("%s expects Id, Datetime, Long", callee)
@@ -4221,6 +4263,10 @@ platformStaticCall:
 		return vm.quickActionRetrieveTemplates(args)
 	case "Test.newSendEmailQuickActionDefaults":
 		return vm.testNewSendEmailQuickActionDefaults(args)
+	case "QuickAction.performQuickAction":
+		return vm.quickActionPerform(args)
+	case "QuickAction.performQuickActions":
+		return vm.quickActionPerformMany(args)
 	case "sfsqlquery.SqlTester.clearMocks":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("sfsqlquery.SqlTester.clearMocks expects 0 arguments")
@@ -4362,35 +4408,6 @@ platformStaticCall:
 			return Null, fmt.Errorf("Packaging.getCurrentPackageId expects 0 arguments")
 		}
 		return Null, nil
-	case "FeatureManagement.changeProtection":
-		if len(args) != 3 || args[0].Kind != ValueString || args[1].Kind != ValueString || args[2].Kind != ValueString {
-			return Null, fmt.Errorf("FeatureManagement.changeProtection expects apiName, typeApiName, and protection Strings")
-		}
-		return Null, nil
-	case "Datacloud.FindDuplicates.findDuplicates":
-		if len(args) != 1 || args[0].Kind != ValueList {
-			return Null, fmt.Errorf("Datacloud.FindDuplicates.findDuplicates expects List<SObject>")
-		}
-		results := make([]Value, 0, len(args[0].List))
-		for _, item := range args[0].List {
-			if item.Kind != ValueObject || !vm.isSObjectLikeType(item.Type) {
-				return Null, fmt.Errorf("Datacloud.FindDuplicates.findDuplicates expects List<SObject>")
-			}
-			results = append(results, newDatacloudFindDuplicatesResult())
-		}
-		return List(results...), nil
-	case "Datacloud.FindDuplicatesByIds.findDuplicatesByIds":
-		if len(args) != 1 || args[0].Kind != ValueList {
-			return Null, fmt.Errorf("Datacloud.FindDuplicatesByIds.findDuplicatesByIds expects List<Id>")
-		}
-		results := make([]Value, 0, len(args[0].List))
-		for _, item := range args[0].List {
-			if _, ok := idValueText(item); !ok {
-				return Null, fmt.Errorf("Datacloud.FindDuplicatesByIds.findDuplicatesByIds expects List<Id>")
-			}
-			results = append(results, newDatacloudFindDuplicatesResult())
-		}
-		return List(results...), nil
 	case "DomainCreator.getContentHostname",
 		"DomainCreator.getExperienceCloudSitesBuilderHostname",
 		"DomainCreator.getExperienceCloudSitesHostname",
@@ -4415,6 +4432,35 @@ platformStaticCall:
 			return Null, fmt.Errorf("QueueableDuplicateSignature.builder expects 0 arguments")
 		}
 		return newQueueableDuplicateSignatureBuilder(), nil
+	case "KbManagement.PublishingService.archiveOnlineArticle",
+		"KbManagement.PublishingService.assignDraftArticleTask",
+		"KbManagement.PublishingService.assignDraftTranslationTask",
+		"KbManagement.PublishingService.cancelScheduledArchivingOfArticle",
+		"KbManagement.PublishingService.cancelScheduledPublicationOfArticle",
+		"KbManagement.PublishingService.completeTranslation",
+		"KbManagement.PublishingService.publishArticle",
+		"KbManagement.PublishingService.scheduleForPublication",
+		"KbManagement.PublishingService.setTranslationToIncomplete":
+		return vm.kbPublishingServiceVoid(callee, args)
+	case "KbManagement.PublishingService.editArchivedArticle",
+		"KbManagement.PublishingService.editOnlineArticle",
+		"KbManagement.PublishingService.editPublishedTranslation",
+		"KbManagement.PublishingService.restoreOldVersion",
+		"KbManagement.PublishingService.submitForTranslation":
+		if err := vm.validateKbPublishingServiceArgs(callee, args); err != nil {
+			return Null, err
+		}
+		if len(args) == 0 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("%s expects article Id String", callee)
+		}
+		return String(args[0].Text), nil
+	case "RemoteObjectController.retrieve", "RemoteObjectController.create", "RemoteObjectController.updat", "RemoteObjectController.del":
+		return remoteObjectControllerResult(callee, args)
+	case "SupportPredictiveService.findSimilarCases":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("SupportPredictiveService.findSimilarCases expects Case Id String")
+		}
+		return typedList("List<Id>"), nil
 	case "CURRENCY.newInstance":
 		if len(args) != 2 || !isMathNumeric(args[0]) || args[1].Kind != ValueString {
 			return Null, fmt.Errorf("CURRENCY.newInstance expects Decimal and ISO code String")
@@ -5176,6 +5222,7 @@ func unsupportedIntegrationSurface(callee string) (string, bool) {
 	switch callee {
 	case "QuickAction.describeAvailableQuickActions", "QuickAction.describeQuickActions",
 		"QuickAction.retrieveQuickActionTemplate", "QuickAction.retrieveQuickActionTemplates",
+		"QuickAction.performQuickAction", "QuickAction.performQuickActions",
 		"Test.newSendEmailQuickActionDefaults":
 		return "", false
 	}
@@ -5271,6 +5318,52 @@ func (vm *VM) quickActionRetrieveTemplates(args []Value) (Value, error) {
 		out.List = append(out.List, vm.quickActionTemplateResult(name.Text, args[1]))
 	}
 	return out, nil
+}
+
+func (vm *VM) quickActionPerform(args []Value) (Value, error) {
+	if len(args) != 1 && len(args) != 2 {
+		return Null, fmt.Errorf("QuickAction.performQuickAction expects QuickActionRequest and optional Boolean")
+	}
+	if args[0].Kind != ValueObject {
+		return Null, fmt.Errorf("QuickAction.performQuickAction expects QuickActionRequest")
+	}
+	if len(args) == 2 && args[1].Kind != ValueBool {
+		return Null, fmt.Errorf("QuickAction.performQuickAction expects optional Boolean")
+	}
+	return vm.quickActionResult(args[0]), nil
+}
+
+func (vm *VM) quickActionPerformMany(args []Value) (Value, error) {
+	if len(args) != 1 && len(args) != 2 {
+		return Null, fmt.Errorf("QuickAction.performQuickActions expects List<QuickActionRequest> and optional Boolean")
+	}
+	if args[0].Kind != ValueList {
+		return Null, fmt.Errorf("QuickAction.performQuickActions expects List<QuickActionRequest>")
+	}
+	if len(args) == 2 && args[1].Kind != ValueBool {
+		return Null, fmt.Errorf("QuickAction.performQuickActions expects optional Boolean")
+	}
+	out := typedList("List<QuickAction.QuickActionResult>")
+	for _, request := range args[0].List {
+		if request.Kind != ValueObject {
+			return Null, fmt.Errorf("QuickAction.performQuickActions expects List<QuickActionRequest>")
+		}
+		out.List = append(out.List, vm.quickActionResult(request))
+	}
+	return out, nil
+}
+
+func (vm *VM) quickActionResult(request Value) Value {
+	result := Object("QuickAction.QuickActionResult")
+	result.Fields["success"] = Bool(true)
+	result.Fields["created"] = Bool(false)
+	result.Fields["errors"] = typedList("List<Database.Error>")
+	result.Fields["ids"] = typedList("List<Id>")
+	result.Fields["successmessage"] = String("")
+	if _, contextID, ok := objectFieldValue(request, "contextId"); ok {
+		result.Fields["contextid"] = contextID
+	}
+	return result
 }
 
 func (vm *VM) testNewSendEmailQuickActionDefaults(args []Value) (Value, error) {
@@ -5404,6 +5497,78 @@ func quickActionDefaultGetterValue(typeName, method string) Value {
 	default:
 		return Null
 	}
+}
+
+func (vm *VM) kbPublishingServiceVoid(callee string, args []Value) (Value, error) {
+	if err := vm.validateKbPublishingServiceArgs(callee, args); err != nil {
+		return Null, err
+	}
+	return Null, nil
+}
+
+func (vm *VM) validateKbPublishingServiceArgs(callee string, args []Value) error {
+	specs := map[string][]ValueKind{
+		"KbManagement.PublishingService.archiveOnlineArticle":                {ValueString, ValueObject},
+		"KbManagement.PublishingService.assignDraftArticleTask":              {ValueString, ValueString, ValueString, ValueObject, ValueBool},
+		"KbManagement.PublishingService.assignDraftTranslationTask":          {ValueString, ValueString, ValueString, ValueObject, ValueBool},
+		"KbManagement.PublishingService.cancelScheduledArchivingOfArticle":   {ValueString},
+		"KbManagement.PublishingService.cancelScheduledPublicationOfArticle": {ValueString},
+		"KbManagement.PublishingService.completeTranslation":                 {ValueString},
+		"KbManagement.PublishingService.editArchivedArticle":                 {ValueString},
+		"KbManagement.PublishingService.editOnlineArticle":                   {ValueString, ValueBool},
+		"KbManagement.PublishingService.editPublishedTranslation":            {ValueString, ValueString, ValueBool},
+		"KbManagement.PublishingService.publishArticle":                      {ValueString, ValueBool},
+		"KbManagement.PublishingService.restoreOldVersion":                   {ValueString, ValueInt},
+		"KbManagement.PublishingService.scheduleForPublication":              {ValueString, ValueObject},
+		"KbManagement.PublishingService.setTranslationToIncomplete":          {ValueString},
+		"KbManagement.PublishingService.submitForTranslation":                {ValueString, ValueString, ValueString, ValueObject},
+	}
+	want, ok := specs[callee]
+	if !ok {
+		return fmt.Errorf("unsupported KbManagement.PublishingService call %s", callee)
+	}
+	if len(args) != len(want) {
+		return fmt.Errorf("%s expects %d arguments", callee, len(want))
+	}
+	for i, kind := range want {
+		if kind == ValueObject && args[i].Kind == ValueObject && args[i].Type == "Datetime" {
+			continue
+		}
+		if args[i].Kind != kind {
+			return fmt.Errorf("%s argument %d has wrong type", callee, i+1)
+		}
+	}
+	return nil
+}
+
+func remoteObjectControllerResult(callee string, args []Value) (Value, error) {
+	switch callee {
+	case "RemoteObjectController.retrieve":
+		if len(args) != 3 || args[0].Kind != ValueString || args[1].Kind != ValueList || args[2].Kind != ValueMap {
+			return Null, fmt.Errorf("RemoteObjectController.retrieve expects object name, field list, and criteria map")
+		}
+	case "RemoteObjectController.create", "RemoteObjectController.updat":
+		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueMap {
+			return Null, fmt.Errorf("%s expects object name and values map", callee)
+		}
+	case "RemoteObjectController.del":
+		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueList {
+			return Null, fmt.Errorf("RemoteObjectController.del expects object name and Id list")
+		}
+	default:
+		return Null, fmt.Errorf("unsupported RemoteObjectController call %s", callee)
+	}
+	result := Map()
+	for key, value := range map[string]Value{
+		"success": Bool(true),
+		"records": List(),
+		"errors":  List(),
+	} {
+		encoded := mapKey(String(key))
+		result.Map[encoded] = value
+		result.MapKeys[encoded] = String(key)
+	}
+	return result, nil
 }
 
 func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {

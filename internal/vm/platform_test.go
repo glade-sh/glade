@@ -165,11 +165,6 @@ func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 			want: `unsupported call "EventBus.publishAfterCommit local platform event after-commit delivery surface"`,
 		},
 		{
-			name: "quick action ui",
-			src:  `QuickAction.performQuickAction(null);`,
-			want: `unsupported call "QuickAction.performQuickAction local quick action UI surface"`,
-		},
-		{
 			name: "quick action describe",
 			src:  `QuickAction.describeAvailableActions('Account');`,
 			want: `unsupported call "QuickAction.describeAvailableActions local quick action UI surface"`,
@@ -546,6 +541,30 @@ System.assertEquals(true, templates[0].isSuccess());
 	}}
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecQuickActionPerformReturnsCapturedLocalResult(t *testing.T) {
+	program, err := CompileAnonymous(`
+QuickAction.QuickActionRequest request = new QuickAction.QuickActionRequest();
+request.setQuickActionName('Account.NewTask');
+request.setContextId('001000000000001');
+QuickAction.QuickActionResult result = QuickAction.performQuickAction(request);
+System.assert(result.isSuccess());
+System.assert(!result.isCreated());
+System.assertEquals('001000000000001', String.valueOf(result.getContextId()));
+System.assertEquals(0, result.getErrors().size());
+System.assertEquals(0, result.getIds().size());
+List<QuickAction.QuickActionResult> results =
+	QuickAction.performQuickActions(new List<QuickAction.QuickActionRequest>{ request }, true);
+System.assertEquals(1, results.size());
+System.assert(results.get(0).isSuccess());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -1612,6 +1631,48 @@ System.assertEquals(accountId, EmailMessages.getRecordIdFromEmail('reply ' + tok
 System.assertEquals(accountId, EmailMessages.getRecordIdFromEmail('reply', 'body ' + token, null));
 System.assertEquals(accountId, EmailMessages.getRecordIdFromEmail('reply', null, '<span>' + token + '</span>'));
 System.assertEquals(null, EmailMessages.getRecordIdFromEmail('reply', 'missing token', null));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSafePlatformServiceHarnesses(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Datacloud.FindDuplicatesResult> duplicateRows =
+	Datacloud.FindDuplicates.findDuplicates(new List<SObject>{ new Account(Name = 'Acme') });
+System.assertEquals(1, duplicateRows.size());
+System.assertEquals(1, Datacloud.FindDuplicatesByIds.findDuplicatesByIds(new List<Id>{ '001000000000001AAA' }).size());
+
+FeatureManagement.changeProtection('pkg', 'Feature', 'Protected');
+System.assertEquals(null, Packaging.getCurrentPackageId());
+System.assertEquals(0, SupportPredictiveService.findSimilarCases('500000000000001AAA').size());
+
+String articleId = 'ka0000000000001';
+KbManagement.PublishingService.publishArticle(articleId, true);
+KbManagement.PublishingService.archiveOnlineArticle(articleId, Datetime.now());
+KbManagement.PublishingService.scheduleForPublication(articleId, Datetime.now());
+KbManagement.PublishingService.cancelScheduledPublicationOfArticle(articleId);
+KbManagement.PublishingService.cancelScheduledArchivingOfArticle(articleId);
+KbManagement.PublishingService.completeTranslation(articleId);
+KbManagement.PublishingService.setTranslationToIncomplete(articleId);
+System.assertEquals(articleId, KbManagement.PublishingService.editOnlineArticle(articleId, false));
+System.assertEquals(articleId, KbManagement.PublishingService.editArchivedArticle(articleId));
+System.assertEquals(articleId, KbManagement.PublishingService.restoreOldVersion(articleId, 1));
+System.assertEquals(articleId, KbManagement.PublishingService.submitForTranslation(articleId, 'fr', 'French', Datetime.now()));
+System.assertEquals(articleId, KbManagement.PublishingService.editPublishedTranslation(articleId, 'fr', false));
+KbManagement.PublishingService.assignDraftArticleTask(articleId, '005000000000001AAA', 'Review', Datetime.now(), true);
+KbManagement.PublishingService.assignDraftTranslationTask(articleId, 'fr', 'Review', Datetime.now(), true);
+
+Map<String,Object> retrieved = RemoteObjectController.retrieve('Account', new List<String>{'Id'}, new Map<String,Object>());
+System.assertEquals(true, retrieved.get('success'));
+System.assertEquals(true, RemoteObjectController.create('Account', new Map<String,Object>{ 'Name' => 'Acme' }).get('success'));
+System.assertEquals(true, RemoteObjectController.updat('Account', new Map<String,Object>{ 'Id' => '001000000000001AAA' }).get('success'));
+System.assertEquals(true, RemoteObjectController.del('Account', new List<String>{ '001000000000001AAA' }).get('success'));
 `)
 	if err != nil {
 		t.Fatal(err)
