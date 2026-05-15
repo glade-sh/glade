@@ -404,6 +404,8 @@ func localServiceHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesys
 	}
 	name := strings.ToLower(member.Name)
 	switch stubBehaviorTypeName(symbol) {
+	case "ApptBooking.WaitlistController":
+		return name == "call" || name == "invokemethod"
 	case "BcpProvisionService", "DistributedLedgerService":
 		return name == "enablec2c"
 	case "BusRuleDtMig.DecisionTableMigrationService":

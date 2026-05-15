@@ -490,6 +490,9 @@ System.assertEquals(0, BusinessRule.CalculationMatrixMigrationService.migrate('c
 System.assertEquals(0, BusinessRule.CalculationProcedureMigrationService.migrate(new List<String>{'cp-1'}, 'ns').size());
 System.assertEquals(0, BusinessRule.CalculationProcedureMigrationService.migrate('cp-1', 'ns').size());
 System.assertEquals(0, BusinessRule.DecisionMatrixRowMigratorService.migrate('dmv-1').size());
+ApptBooking.WaitlistController waitlist = new ApptBooking.WaitlistController();
+System.assertEquals(0, waitlist.call('local', new Map<String,Object>()).size());
+System.assertEquals(0, waitlist.invokeMethod('local', new Map<String,Object>(), new Map<String,Object>(), new Map<String,Object>()).size());
 System.assertEquals(false, data_mask.DataMaskIntegrationUtil.isCoreAllowed());
 System.assertEquals(false, data_mask.DataMaskIntegrationUtil.isLibraryInUse('lib-local'));
 String token = pref_center.TokenUtility.generateToken('subscriber-1');

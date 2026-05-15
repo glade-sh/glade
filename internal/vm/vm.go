@@ -31625,6 +31625,20 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	if value, updated, mutated, handled, err := callOrgInstrumentationServiceMember(receiver, method, args); handled || err != nil {
 		return value, updated, mutated, true, err
 	}
+	if strings.EqualFold(receiver.Type, "ApptBooking.WaitlistController") {
+		switch strings.ToLower(method) {
+		case "call":
+			if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueMap {
+				return Null, receiver, false, true, fmt.Errorf("ApptBooking.WaitlistController.call expects action String and args Map")
+			}
+			return typedMap("Map<String,Object>"), receiver, false, true, nil
+		case "invokemethod":
+			if len(args) != 4 || args[0].Kind != ValueString || args[1].Kind != ValueMap || args[2].Kind != ValueMap || args[3].Kind != ValueMap {
+				return Null, receiver, false, true, fmt.Errorf("ApptBooking.WaitlistController.invokeMethod expects action String, input Map, output Map, and options Map")
+			}
+			return typedMap("Map<String,Object>"), receiver, false, true, nil
+		}
+	}
 	if strings.EqualFold(receiver.Type, "NLPPredictions.PredictionHandler") {
 		switch strings.ToLower(method) {
 		case "handlepredictionrequest":

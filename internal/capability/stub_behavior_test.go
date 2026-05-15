@@ -122,6 +122,8 @@ func TestStubBehaviorSeparatesServiceMethodsFromPassiveDTOs(t *testing.T) {
 	assertStubBehaviorPrefix(t, entries, "pref_center.TokenUtility.generateToken(", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "pref_center.TokenUtility.generateTokens(", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "Packaging.getCurrentPackageId()", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "ApptBooking.WaitlistController.call(", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "ApptBooking.WaitlistController.invokeMethod(", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "BcpProvisionService.enableC2C()", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "DistributedLedgerService.enableC2C()", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "BusRuleDtMig.DecisionTableMigrationService.migrateDecisionTables(", StubBehaviorImplemented)
