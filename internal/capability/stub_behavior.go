@@ -777,13 +777,19 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 		case "lock", "unlock", "islocked":
 			return true
 		}
+	case "FlexQueue":
+		switch name {
+		case "moveafterjob", "movebeforejob", "movejobtoend", "movejobtofront":
+			return true
+		}
 	case "System":
 		switch name {
 		case "now", "today", "currenttimemillis", "currentpagereference", "debug", "assert",
 			"assertequals", "assertnotequals", "isrunningtest", "isbactivated", "isbatch",
 			"isfuture", "isqueueable", "isscheduled", "isfunctioncallback", "isrunningelasticcompute",
 			"getapplicationreadwritemode", "getquiddityshortcode", "requestversion",
-			"enqueuejob", "schedule", "runas",
+			"enqueuejob", "schedule", "runas", "pausejobbyid", "pausejobbyname",
+			"purgeoldasyncjobs", "resumejobbyid", "resumejobbyname",
 			"setpassword", "abortjob", "attachfinalizer", "schedulebatch":
 			return true
 		}
@@ -1133,8 +1139,6 @@ func explicitlyUnsupportedCoreBehaviorMethod(symbol typesys.TypeSymbol, member t
 		return true
 	case "Approval":
 		return name != "lock" && name != "unlock" && name != "islocked"
-	case "FlexQueue":
-		return true
 	case "Crypto":
 		switch name {
 		case "signxml":
@@ -1143,10 +1147,8 @@ func explicitlyUnsupportedCoreBehaviorMethod(symbol typesys.TypeSymbol, member t
 	case "System":
 		switch name {
 		case "changeownpassword", "getapplicationreadwritemode", "getquiddityshortcode",
-			"isfunctioncallback", "isrunningelasticcompute", "movepassword", "pausejobbyid",
-			"pausejobbyname", "purgeoldasyncjobs", "requestversion", "resetpassword",
-			"resetpasswordwithemailtemplate",
-			"resumejobbyid", "resumejobbyname":
+			"isfunctioncallback", "isrunningelasticcompute", "movepassword", "requestversion", "resetpassword",
+			"resetpasswordwithemailtemplate":
 			return true
 		}
 	case "UserManagement":

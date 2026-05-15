@@ -2169,6 +2169,8 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"Test.clearApexPageMessages", "Test.setCurrentPage", "Test.setCurrentPageReference",
 		"Test.setMock", "Test.testInstall", "Test.createStub", "Test.createSoqlStub", "Test.createStubQueryRow", "Test.createStubQueryRows", "Test.loadData",
 		"Test.getFlexQueueOrder", "Test.enqueueBatchJobs", "Test.calculatePermissionSetGroup", "Test.enableChangeDataCapture", "Test.setReadOnlyApplicationMode", "Test.isSoqlStubDefined",
+		"FlexQueue.moveAfterJob", "FlexQueue.moveBeforeJob", "FlexQueue.moveJobToEnd", "FlexQueue.moveJobToFront",
+		"System.pauseJobById", "System.pauseJobByName", "System.purgeOldAsyncJobs", "System.resumeJobById", "System.resumeJobByName",
 		"Test.newSendEmailQuickActionDefaults",
 		"FeatureManagement.changeProtection",
 		"KbManagement.PublishingService.archiveOnlineArticle", "KbManagement.PublishingService.assignDraftArticleTask",
@@ -4346,6 +4348,26 @@ platformStaticCall:
 			return Null, err
 		}
 		return typedList("List<Id>"), nil
+	case "FlexQueue.moveAfterJob", "FlexQueue.moveBeforeJob":
+		if len(args) != 2 {
+			return Null, fmt.Errorf("%s expects jobToMoveId and jobInQueueId", callee)
+		}
+		return Bool(false), nil
+	case "FlexQueue.moveJobToEnd", "FlexQueue.moveJobToFront":
+		if len(args) != 1 {
+			return Null, fmt.Errorf("%s expects jobId", callee)
+		}
+		return Bool(false), nil
+	case "System.pauseJobById", "System.pauseJobByName", "System.resumeJobById", "System.resumeJobByName":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("%s expects job identifier String", callee)
+		}
+		return Null, nil
+	case "System.purgeOldAsyncJobs":
+		if len(args) != 1 && len(args) != 2 {
+			return Null, fmt.Errorf("System.purgeOldAsyncJobs expects Date and optional limit")
+		}
+		return Int(0), nil
 	case "Test.enqueueBatchJobs":
 		if len(args) != 1 || args[0].Kind != ValueInt {
 			return Null, fmt.Errorf("Test.enqueueBatchJobs expects Integer")

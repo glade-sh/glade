@@ -3432,6 +3432,16 @@ func TestExecSafeGeneratedTestHelpers(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<Id> flexQueueOrder = Test.getFlexQueueOrder();
 System.assertEquals(0, flexQueueOrder.size());
+System.assertEquals(false, FlexQueue.moveJobToFront('707000000000001'));
+System.assertEquals(false, FlexQueue.moveJobToEnd('707000000000001'));
+System.assertEquals(false, FlexQueue.moveBeforeJob('707000000000001', '707000000000002'));
+System.assertEquals(false, FlexQueue.moveAfterJob('707000000000001', '707000000000002'));
+System.pauseJobById('08e000000000001');
+System.pauseJobByName('local job');
+System.resumeJobById('08e000000000001');
+System.resumeJobByName('local job');
+System.assertEquals(0, System.purgeOldAsyncJobs(Date.today()));
+System.assertEquals(0, System.purgeOldAsyncJobs(Date.today(), 10));
 List<Id> batchJobIds = Test.enqueueBatchJobs(2);
 System.assertEquals(2, batchJobIds.size());
 System.assertEquals('707000000000001', String.valueOf(batchJobIds.get(0)));
