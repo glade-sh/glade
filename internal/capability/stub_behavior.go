@@ -2334,7 +2334,10 @@ func slackLocalClientHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typ
 	}
 	name := strings.ToLower(member.Name)
 	if strings.Contains(name, "post") || strings.Contains(name, "open") || strings.Contains(name, "update") {
-		return false
+		return slackLocalClientHarnessCallbackMethodName(name)
+	}
+	if slackLocalClientHarnessCallbackMethodName(name) {
+		return true
 	}
 	if slackLocalClientHarnessReadMethodName(name) {
 		return true
@@ -2355,6 +2358,25 @@ func slackLocalClientHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typ
 		strings.HasSuffix(name, "profileget") ||
 		strings.HasSuffix(name, "getpresence") ||
 		strings.HasSuffix(name, "lookupbyemail")
+}
+
+func slackLocalClientHarnessCallbackMethodName(name string) bool {
+	switch name {
+	case "chatdelete",
+		"chatdeletescheduledmessage",
+		"chatmemessage",
+		"chatpostephemeral",
+		"chatpostmessage",
+		"chatschedulemessage",
+		"chatupdate",
+		"viewsopen",
+		"viewspublish",
+		"viewspush",
+		"viewsupdate":
+		return true
+	default:
+		return false
+	}
 }
 
 func slackLocalClientHarnessReadMethodName(name string) bool {

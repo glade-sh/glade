@@ -2122,6 +2122,10 @@ func TestExecSlackLocalClientReadHarness(t *testing.T) {
 Slack.BotClient bot = new Slack.BotClient();
 Slack.AuthTestResponse auth = bot.authTest(new Slack.AuthTestRequest());
 System.assertNotEquals(null, auth);
+System.assertNotEquals(null, bot.chatPostMessage(new Slack.ChatPostMessageRequest()));
+System.assertNotEquals(null, bot.chatUpdate(new Slack.ChatUpdateRequest()));
+System.assertNotEquals(null, bot.viewsOpen(new Slack.ViewsOpenRequest()));
+System.assertNotEquals(null, bot.viewsPublish(new Slack.ViewsPublishRequest()));
 Slack.UsersInfoResponse userInfo = bot.usersInfo(new Slack.UsersInfoRequest());
 System.assertNotEquals(null, userInfo);
 System.assertNotEquals(null, bot.bookmarksList(new Slack.BookmarksListRequest()));
@@ -2131,6 +2135,10 @@ System.assertNotEquals(null, bot.conversationsListConnectInvites(new Slack.Conve
 Slack.UserClient user = new Slack.UserClient();
 Slack.ApiTestResponse api = user.apiTest(new Slack.ApiTestRequest());
 System.assertNotEquals(null, api);
+System.assertNotEquals(null, user.chatPostEphemeral(new Slack.ChatPostEphemeralRequest()));
+System.assertNotEquals(null, user.chatScheduleMessage(new Slack.ChatScheduleMessageRequest()));
+System.assertNotEquals(null, user.viewsPush(new Slack.ViewsPushRequest()));
+System.assertNotEquals(null, user.viewsUpdate(new Slack.ViewsUpdateRequest()));
 Slack.TeamInfoResponse team = user.teamInfo(new Slack.TeamInfoRequest());
 System.assertNotEquals(null, team);
 System.assertNotEquals(null, user.searchAll(new Slack.SearchAllRequest()));
