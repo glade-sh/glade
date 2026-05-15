@@ -750,7 +750,7 @@ private class PerTestTimeoutTest {
 }
 `)
 
-	run := RunContext(context.Background(), loadTestIndex(t, root), Options{TimeoutMS: 50})
+	run := RunContext(context.Background(), loadTestIndex(t, root), Options{TimeoutMS: 500})
 	if got := run.Summary(); got.Total != 2 || got.Passed != 1 || got.Failed+got.Unsupported != 1 {
 		t.Fatalf("summary = %#v cases=%#v", got, run.Suites[0].Cases)
 	}

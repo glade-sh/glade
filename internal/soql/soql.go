@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/open-aer/oaer/internal/dml"
@@ -32,6 +33,25 @@ type Query struct {
 	HavingAggregates []Aggregate
 	GroupBy          []string
 	GroupMode        string
+}
+
+var parsedQueryCache sync.Map
+
+func cachedParsedQuery(input string, now time.Time) (Query, bool) {
+	value, ok := parsedQueryCache.Load(parsedQueryCacheKey(input, now))
+	if !ok {
+		return Query{}, false
+	}
+	query, ok := value.(Query)
+	return query, ok
+}
+
+func storeParsedQuery(input string, now time.Time, query Query) {
+	parsedQueryCache.Store(parsedQueryCacheKey(input, now), query)
+}
+
+func parsedQueryCacheKey(input string, now time.Time) string {
+	return now.Format(time.RFC3339Nano) + "\x00" + input
 }
 
 type OrderSpec struct {
@@ -113,12 +133,21 @@ func firstQueryWord(input string) string {
 }
 
 func ParseAt(input string, now time.Time) (Query, error) {
+	now = now.UTC()
+	if query, ok := cachedParsedQuery(input, now); ok {
+		return query, nil
+	}
 	tokens, err := lex(input)
 	if err != nil {
 		return Query{}, err
 	}
-	p := parser{tokens: tokens, now: now.UTC()}
-	return p.parseQuery()
+	p := parser{tokens: tokens, now: now}
+	query, err := p.parseQuery()
+	if err != nil {
+		return Query{}, err
+	}
+	storeParsedQuery(input, now, query)
+	return query, nil
 }
 
 func Execute(org storage.OrgState, query Query) (Result, error) {
