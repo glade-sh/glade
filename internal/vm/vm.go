@@ -2039,7 +2039,9 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"Assert.areEqual", "Assert.areNotEqual", "Assert.isTrue", "Assert.isFalse", "Assert.isNull", "Assert.isNotNull", "Assert.isInstanceOfType", "Assert.isNotInstanceOfType", "Assert.fail",
 		"System.equals", "System.hashCode",
 		"System.now", "System.currentTimeMillis", "System.isBatch", "System.isFuture", "System.isQueueable",
-		"System.isScheduled", "System.abortJob", "System.attachFinalizer", "System.isRunningTest",
+		"System.isScheduled", "System.isFunctionCallback", "System.isRunningElasticCompute",
+		"System.getApplicationReadWriteMode", "System.getQuiddityShortCode", "System.requestVersion",
+		"System.abortJob", "System.attachFinalizer", "System.isRunningTest",
 		"Test.isRunningTest", "System.currentPageReference", "System.setPassword", "System.enqueueJob", "System.schedule",
 		"Limits.getQueries", "Limits.getLimitQueries", "Limits.getQueryRows", "Limits.getLimitQueryRows",
 		"Limits.getDmlStatements", "Limits.getLimitDmlStatements", "Limits.getDMLStatements", "Limits.getLimitDMLStatements",
@@ -3080,6 +3082,32 @@ platformStaticCall:
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
 		return Bool(vm.isAsyncKind(callee)), nil
+	case "System.isFunctionCallback", "System.isRunningElasticCompute":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("%s expects 0 arguments", callee)
+		}
+		return Bool(false), nil
+	case "System.getApplicationReadWriteMode":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("System.getApplicationReadWriteMode expects 0 arguments")
+		}
+		mode := Object("ApplicationReadWriteMode")
+		mode.Fields["value"] = String("READ_WRITE")
+		return mode, nil
+	case "System.getQuiddityShortCode":
+		if len(args) != 1 {
+			return Null, fmt.Errorf("System.getQuiddityShortCode expects Quiddity")
+		}
+		name := strings.ToUpper(strings.TrimSpace(typeValueText(args[0])))
+		if name == "" && args[0].Kind == ValueString {
+			name = strings.ToUpper(strings.TrimSpace(args[0].Text))
+		}
+		return String(quiddityShortCode(name)), nil
+	case "System.requestVersion":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("System.requestVersion expects 0 arguments")
+		}
+		return vm.requestVersionValue(), nil
 	case "System.abortJob":
 		return vm.abortJob(args)
 	case "Database.scheduleBatch", "System.scheduleBatch":
@@ -4394,6 +4422,50 @@ func (vm *VM) currentQuiddityValue() Value {
 	value := Value{Kind: ValueObject, Type: "Quiddity", Text: name, Ref: newValueRef()}
 	value.Fields = map[string]Value{"ordinal": Int(0)}
 	return value
+}
+
+func quiddityShortCode(name string) string {
+	switch name {
+	case "RUNTEST_SYNC":
+		return "RT"
+	case "QUEUEABLE":
+		return "QU"
+	case "BATCH_APEX", "BATCHAPEX":
+		return "BA"
+	case "FUTURE":
+		return "FU"
+	case "SCHEDULED_APEX", "SCHEDULEDAPEX":
+		return "SA"
+	case "FUNCTION_CALLBACK":
+		return "FC"
+	default:
+		return "SY"
+	}
+}
+
+func (vm *VM) requestVersionValue() Value {
+	version := storage.DefaultRESTAPIVersion
+	if vm != nil && vm.Org != nil {
+		version = storage.EffectiveRESTAPIVersion(vm.Org.APIVersion)
+	}
+	major, minor := parseMajorMinorVersion(version)
+	out := Object("Version")
+	out.Fields["major"] = Int(int64(major))
+	out.Fields["minor"] = Int(int64(minor))
+	out.Fields["patch"] = Int(0)
+	return out
+}
+
+func parseMajorMinorVersion(version string) (int, int) {
+	parts := strings.Split(storage.NormalizeRESTAPIVersion(version), ".")
+	major, minor := 0, 0
+	if len(parts) > 0 {
+		major, _ = strconv.Atoi(parts[0])
+	}
+	if len(parts) > 1 {
+		minor, _ = strconv.Atoi(parts[1])
+	}
+	return major, minor
 }
 
 func (vm *VM) callRequestMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {

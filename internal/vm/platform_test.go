@@ -1333,6 +1333,23 @@ System.assertEquals(null, Cases.getCaseIdFromEmailThreadId('missing'));
 	}
 }
 
+func TestExecSystemDeterministicLocalHelpers(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(false, System.isFunctionCallback());
+System.assertEquals(false, System.isRunningElasticCompute());
+System.assertEquals('SY', System.getQuiddityShortCode(System.Request.getCurrent().getQuiddity()));
+System.assertEquals('65.0.0', System.requestVersion().toString());
+System.assertEquals('READ_WRITE', String.valueOf(System.getApplicationReadWriteMode()));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecOrgLimitsLocalSnapshot(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<OrgLimit> limits = OrgLimits.getAll();

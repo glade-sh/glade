@@ -408,7 +408,9 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 		switch name {
 		case "now", "today", "currenttimemillis", "currentpagereference", "debug", "assert",
 			"assertequals", "assertnotequals", "isrunningtest", "isbactivated", "isbatch",
-			"isfuture", "isqueueable", "isscheduled", "enqueuejob", "schedule", "runas",
+			"isfuture", "isqueueable", "isscheduled", "isfunctioncallback", "isrunningelasticcompute",
+			"getapplicationreadwritemode", "getquiddityshortcode", "requestversion",
+			"enqueuejob", "schedule", "runas",
 			"setpassword", "abortjob", "attachfinalizer", "schedulebatch":
 			return true
 		}
