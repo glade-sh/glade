@@ -225,7 +225,13 @@ func shouldAnalyzeLocalTests(options LocalTestOptions, totalCases int) bool {
 	if strings.TrimSpace(options.Class) != "" || strings.TrimSpace(options.Method) != "" {
 		return false
 	}
-	return options.ForceAnalysis || totalCases <= largeLocalTestAnalysisThreshold
+	if options.ForceAnalysis {
+		return true
+	}
+	if options.BlockersOnly || options.TopFailures > 0 {
+		return false
+	}
+	return totalCases <= largeLocalTestAnalysisThreshold
 }
 
 func localTestParallelism(options LocalTestOptions) int {

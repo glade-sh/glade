@@ -60,8 +60,17 @@ func TestShouldAnalyzeLocalTestsSkipsFocusedRuns(t *testing.T) {
 	if shouldAnalyzeLocalTests(LocalTestOptions{}, largeLocalTestAnalysisThreshold+1) {
 		t.Fatalf("large unfiltered local test run should skip full-project semantic analysis by default")
 	}
+	if shouldAnalyzeLocalTests(LocalTestOptions{BlockersOnly: true}, 12) {
+		t.Fatalf("blocker-only local test run should skip full-project semantic analysis")
+	}
+	if shouldAnalyzeLocalTests(LocalTestOptions{TopFailures: 10}, 12) {
+		t.Fatalf("top-failures local test run should skip full-project semantic analysis")
+	}
 	if !shouldAnalyzeLocalTests(LocalTestOptions{ForceAnalysis: true}, largeLocalTestAnalysisThreshold+1) {
 		t.Fatalf("large unfiltered local test run should allow forced full-project semantic analysis")
+	}
+	if !shouldAnalyzeLocalTests(LocalTestOptions{BlockersOnly: true, ForceAnalysis: true}, largeLocalTestAnalysisThreshold+1) {
+		t.Fatalf("forced blocker-only local test run should allow full-project semantic analysis")
 	}
 }
 
