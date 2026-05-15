@@ -245,6 +245,9 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 	if connectAPITestFixtureTargetBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "ConnectApi method returns a matching local setTest fixture when provided; live service calls remain explicitly unsupported without a fixture", true
 	}
+	if connectAPIReadOnlyHarnessBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "ConnectApi read/search method returns a deterministic local empty typed DTO/result without live service mutation", true
+	}
 	if ideasFindSimilarBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "Ideas.findSimilar returns a typed empty List<Id> without enabling Ideas reply/read-state service surfaces", true
 	}
@@ -265,6 +268,9 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 	}
 	if slackTestHarnessBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "Slack test-harness state/session method is handled locally without Slack transport", true
+	}
+	if slackLocalClientHarnessBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "Slack client auth/read/info method returns a deterministic local DTO without external transport", true
 	}
 	if slackPassiveBehaviorMethod(symbol, member) {
 		return StubBehaviorPassiveDefault, "Slack DTO, builder, or mock placeholder method returns local passive/default values without performing Slack service calls", true
@@ -1530,6 +1536,61 @@ func connectAPITestFixtureTargetBehaviorMethod(symbol typesys.TypeSymbol, member
 	return false
 }
 
+func connectAPIReadOnlyHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if member.Kind != apexast.DeclarationMethod ||
+		!stubBehaviorMemberStatic(member) ||
+		!connectAPIReadOnlyHarnessBehaviorType(stubBehaviorTypeName(symbol)) ||
+		!connectAPIReadOnlyHarnessBehaviorReturn(member.Type) {
+		return false
+	}
+	return connectAPIReadOnlyHarnessBehaviorMethodName(member.Name) && !connectAPIMutationBehaviorMethodName(member.Name)
+}
+
+func connectAPIReadOnlyHarnessBehaviorType(typeName string) bool {
+	switch typeName {
+	case "ConnectApi.ChatterFeeds",
+		"ConnectApi.ChatterGroups",
+		"ConnectApi.ChatterMessages",
+		"ConnectApi.ChatterUsers",
+		"ConnectApi.Topics",
+		"ConnectApi.Recommendations",
+		"ConnectApi.ManagedContent",
+		"ConnectApi.ManagedContentDelivery",
+		"ConnectApi.ManagedTopics",
+		"ConnectApi.ManagedContentSpaces":
+		return true
+	default:
+		return false
+	}
+}
+
+func connectAPIReadOnlyHarnessBehaviorMethodName(methodName string) bool {
+	name := strings.ToLower(methodName)
+	return strings.HasPrefix(name, "get") ||
+		strings.HasPrefix(name, "search") ||
+		strings.HasPrefix(name, "find") ||
+		strings.HasPrefix(name, "list") ||
+		strings.HasPrefix(name, "query")
+}
+
+func connectAPIMutationBehaviorMethodName(methodName string) bool {
+	name := strings.ToLower(methodName)
+	for _, prefix := range []string{
+		"add", "assign", "ban", "block", "create", "delete", "edit", "follow",
+		"join", "leave", "like", "mute", "pin", "post", "publish", "remove",
+		"send", "set", "subscribe", "unfollow", "unpublish", "update",
+	} {
+		if strings.HasPrefix(name, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
+func connectAPIReadOnlyHarnessBehaviorReturn(returnType string) bool {
+	return returnType != "" && !strings.EqualFold(returnType, "void")
+}
+
 func databaseResultDTOBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
 	if member.Kind != apexast.DeclarationMethod {
 		return false
@@ -1684,6 +1745,37 @@ func slackTestHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Me
 	default:
 		return false
 	}
+}
+
+func slackLocalClientHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if member.Kind != apexast.DeclarationMethod ||
+		strings.EqualFold(member.Type, "void") ||
+		member.Type == "" {
+		return false
+	}
+	typeName := stubBehaviorTypeName(symbol)
+	if typeName != "Slack.BotClient" && typeName != "Slack.UserClient" {
+		return false
+	}
+	name := strings.ToLower(member.Name)
+	if strings.Contains(name, "post") || strings.Contains(name, "open") || strings.Contains(name, "update") {
+		return false
+	}
+	for _, part := range []string{"add", "archive", "close", "create", "delete", "disable", "enable", "invite", "join", "kick", "leave", "mark", "publish", "push", "remove", "rename", "revoke", "schedule", "send", "set", "share", "unarchive", "uninstall"} {
+		if strings.Contains(name, part) {
+			return false
+		}
+	}
+	return strings.HasPrefix(name, "auth") ||
+		strings.HasSuffix(name, "info") ||
+		strings.HasSuffix(name, "list") ||
+		strings.HasSuffix(name, "history") ||
+		strings.HasSuffix(name, "members") ||
+		strings.HasSuffix(name, "replies") ||
+		strings.HasSuffix(name, "conversations") ||
+		strings.HasSuffix(name, "profileget") ||
+		strings.HasSuffix(name, "getpresence") ||
+		strings.HasSuffix(name, "lookupbyemail")
 }
 
 func slackServiceBehaviorType(typeName string) bool {

@@ -807,9 +807,9 @@ System.assertEquals(false, PushUpgradeCustomizationRepository.getCustomUpgradeAl
 
 func TestExecGeneratedConnectApiServiceCallsRemainUnsupported(t *testing.T) {
 	program, err := CompileAnonymous(`
-ConnectApi.FeedElementPage page = ConnectApi.ChatterFeeds.getFeedElementsFromFeed(null, null);
-System.assertEquals(null, page);
-`)
+ConnectApi.FeedElement element = ConnectApi.ChatterFeeds.postFeedElement(null, null);
+System.assertEquals(null, element);
+	`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -817,8 +817,29 @@ System.assertEquals(null, page);
 	if err == nil {
 		t.Fatal("expected generated ConnectApi service call to be unsupported")
 	}
-	if !strings.Contains(err.Error(), `unsupported call "ConnectApi.ChatterFeeds.getFeedElementsFromFeed"`) {
+	if !strings.Contains(err.Error(), `unsupported call "ConnectApi.ChatterFeeds.postFeedElement"`) {
 		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestExecConnectApiReadOnlyHarnessReturnsTypedDefaults(t *testing.T) {
+	program, err := CompileAnonymous(`
+ConnectApi.FeedElementPage feed = ConnectApi.ChatterFeeds.getFeedElementsFromFeed(null, null);
+System.assertNotEquals(null, feed);
+
+ConnectApi.ManagedContentVersionCollection content =
+	ConnectApi.ManagedContent.getAllManagedContent(null, 0, 10, 'en_US', 'News');
+System.assertNotEquals(null, content);
+
+ConnectApi.ManagedContentDeliveryChannelsRepresentation channels =
+	ConnectApi.ManagedContentDelivery.getChannels(0, 10);
+System.assertNotEquals(null, channels);
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
 	}
 }
 

@@ -1100,16 +1100,11 @@ System.assertEquals('00DLOCAL00000001', settings.orgId);
 	}
 }
 
-func TestExecConnectApiChatterUsersFollowingsHonorsSeeAllData(t *testing.T) {
+func TestExecConnectApiChatterUsersFollowingsReturnsLocalReadPage(t *testing.T) {
 	program, err := CompileAnonymous(`
-Boolean caught = false;
-try {
-	ConnectApi.ChatterUsers.getFollowings(null, UserInfo.getUserId());
-} catch (UnsupportedOperationException e) {
-	caught = true;
-}
-System.assert(caught);
-`)
+ConnectApi.FollowingPage page = ConnectApi.ChatterUsers.getFollowings(null, UserInfo.getUserId());
+System.assertNotEquals(null, page);
+	`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1130,34 +1125,6 @@ System.assert(caught);
 	}
 	machine.EnableTestContext()
 	if _, err := machine.Execute(program); err != nil {
-		t.Fatal(err)
-	}
-
-	seeAllDataProgram, err := CompileAnonymous(`
-ConnectApi.FollowingPage page = ConnectApi.ChatterUsers.getFollowings(null, UserInfo.getUserId());
-System.assertNotEquals(null, page);
-`)
-	if err != nil {
-		t.Fatal(err)
-	}
-	machine = New(nil)
-	if err := machine.RegisterClass(Class{
-		Name: "ConnectApi.ChatterUsers",
-		Methods: map[string]Method{
-			"getFollowings": {
-				Name:       "ConnectApi.ChatterUsers.getFollowings",
-				ClassName:  "ConnectApi.ChatterUsers",
-				ReturnType: "ConnectApi.FollowingPage",
-				Params:     []Param{{Name: "communityId", Type: "String"}, {Name: "userId", Type: "String"}},
-				IsStatic:   true,
-			},
-		},
-	}); err != nil {
-		t.Fatal(err)
-	}
-	machine.EnableTestContext()
-	machine.SetTestSeeAllData(true)
-	if _, err := machine.Execute(seeAllDataProgram); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -1881,6 +1848,27 @@ Slack.BotClientMock mock = new Slack.BotClientMock();
 Slack.AuthTestResponse response = mock.authTest(Slack.AuthTestRequest.builder().build());
 System.assertNotEquals(null, response);
 `)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSlackLocalClientReadHarness(t *testing.T) {
+	program, err := CompileAnonymous(`
+Slack.BotClient bot = new Slack.BotClient();
+Slack.AuthTestResponse auth = bot.authTest(new Slack.AuthTestRequest());
+System.assertNotEquals(null, auth);
+Slack.UsersInfoResponse userInfo = bot.usersInfo(new Slack.UsersInfoRequest());
+System.assertNotEquals(null, userInfo);
+
+Slack.UserClient user = new Slack.UserClient();
+Slack.TeamInfoResponse team = user.teamInfo(new Slack.TeamInfoRequest());
+System.assertNotEquals(null, team);
+	`)
 	if err != nil {
 		t.Fatal(err)
 	}

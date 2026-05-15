@@ -2510,6 +2510,9 @@ platformStaticCall:
 	if value, handled, err := vm.callConnectAPITestFixtureStatic(callee, args); handled || err != nil {
 		return value, err
 	}
+	if value, handled := vm.callConnectAPIReadOnlyStaticDefault(callee, args); handled {
+		return value, nil
+	}
 	if value, handled, err := vm.callPushUpgradeCustomizationRepository(callee, args); handled || err != nil {
 		return value, err
 	}
@@ -26329,6 +26332,66 @@ func (vm *VM) callConnectAPITestFixtureStatic(callee string, args []Value) (Valu
 	return value, true, nil
 }
 
+func (vm *VM) callConnectAPIReadOnlyStaticDefault(callee string, args []Value) (Value, bool) {
+	className, methodName, ok := vm.splitClassMember(callee)
+	if !ok || !connectAPIReadOnlyHarnessType(className) || connectAPIMutationMethod(methodName) {
+		return Null, false
+	}
+	method, ok := vm.generatedPlatformStaticMethodByNameArity(className, methodName, len(args))
+	if !ok || !connectAPIReadOnlyHarnessReturn(method.ReturnType) {
+		return Null, false
+	}
+	if !connectAPIReadOnlyHarnessMethod(methodName) {
+		return Null, false
+	}
+	return vm.generatedPlatformMethodDefaultReturn(method, Null, args), true
+}
+
+func connectAPIReadOnlyHarnessType(typeName string) bool {
+	switch typeName {
+	case "ConnectApi.ChatterFeeds",
+		"ConnectApi.ChatterGroups",
+		"ConnectApi.ChatterMessages",
+		"ConnectApi.ChatterUsers",
+		"ConnectApi.Topics",
+		"ConnectApi.Recommendations",
+		"ConnectApi.ManagedContent",
+		"ConnectApi.ManagedContentDelivery",
+		"ConnectApi.ManagedTopics",
+		"ConnectApi.ManagedContentSpaces":
+		return true
+	default:
+		return false
+	}
+}
+
+func connectAPIReadOnlyHarnessMethod(methodName string) bool {
+	name := strings.ToLower(methodName)
+	return strings.HasPrefix(name, "get") ||
+		strings.HasPrefix(name, "search") ||
+		strings.HasPrefix(name, "find") ||
+		strings.HasPrefix(name, "list") ||
+		strings.HasPrefix(name, "query")
+}
+
+func connectAPIMutationMethod(methodName string) bool {
+	name := strings.ToLower(methodName)
+	for _, prefix := range []string{
+		"add", "assign", "ban", "block", "create", "delete", "edit", "follow",
+		"join", "leave", "like", "mute", "pin", "post", "publish", "remove",
+		"send", "set", "subscribe", "unfollow", "unpublish", "update",
+	} {
+		if strings.HasPrefix(name, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
+func connectAPIReadOnlyHarnessReturn(returnType string) bool {
+	return returnType != "" && !strings.EqualFold(returnType, "void")
+}
+
 func (vm *VM) generatedPlatformStaticMethodByNameArity(className, methodName string, arity int) (Method, bool) {
 	methodsByName := generatedPlatformMethodIndex[strings.ToLower(className)]
 	if len(methodsByName) == 0 {
@@ -31699,6 +31762,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 		}
 	}
+	if strings.EqualFold(receiver.Type, "Slack.BotClient") || strings.EqualFold(receiver.Type, "Slack.UserClient") {
+		if generated, ok := vm.generatedPlatformMethodForArgs(receiver.Type, method, args, false); ok && slackLocalClientHarnessMethod(generated) {
+			return vm.generatedPlatformMethodDefaultReturn(generated, receiver, args), receiver, false, true, nil
+		}
+	}
 	if strings.HasPrefix(receiver.Type, "QuickAction.") {
 		if value, updated, mutated, handled, err := callQuickActionMember(receiver, method, args); handled || err != nil {
 			return value, updated, mutated, true, err
@@ -34897,6 +34965,37 @@ func slackGeneratedPlatformPassiveDTOMethod(method Method) bool {
 	}
 	return collectionBase(method.ReturnType) == "List" || collectionBase(method.ReturnType) == "Set" || isMapType(method.ReturnType) ||
 		len(method.Params) == 0 && strings.HasPrefix(method.ReturnType, "Slack.")
+}
+
+func slackLocalClientHarnessMethod(method Method) bool {
+	if method.ReturnType == "" || strings.EqualFold(method.ReturnType, "void") {
+		return false
+	}
+	if !(strings.EqualFold(method.ClassName, "Slack.BotClient") || strings.EqualFold(method.ClassName, "Slack.UserClient")) {
+		return false
+	}
+	name := strings.ToLower(method.Name)
+	if dot := strings.LastIndex(name, "."); dot >= 0 {
+		name = name[dot+1:]
+	}
+	if strings.Contains(name, "post") || strings.Contains(name, "open") || strings.Contains(name, "update") {
+		return false
+	}
+	for _, part := range []string{"add", "archive", "close", "create", "delete", "disable", "enable", "invite", "join", "kick", "leave", "mark", "publish", "push", "remove", "rename", "revoke", "schedule", "send", "set", "share", "unarchive", "uninstall"} {
+		if strings.Contains(name, part) {
+			return false
+		}
+	}
+	return strings.HasPrefix(name, "auth") ||
+		strings.HasSuffix(name, "info") ||
+		strings.HasSuffix(name, "list") ||
+		strings.HasSuffix(name, "history") ||
+		strings.HasSuffix(name, "members") ||
+		strings.HasSuffix(name, "replies") ||
+		strings.HasSuffix(name, "conversations") ||
+		strings.HasSuffix(name, "profileget") ||
+		strings.HasSuffix(name, "getpresence") ||
+		strings.HasSuffix(name, "lookupbyemail")
 }
 
 func passiveRuntimeClass(class Class) bool {
