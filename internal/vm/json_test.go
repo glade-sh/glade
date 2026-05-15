@@ -947,6 +947,48 @@ System.assertEquals(0, nested.get('empty').size());
 	}
 }
 
+func TestExecJSONSerializeApexClassUsesFieldDeclarationOrder(t *testing.T) {
+	program, err := CompileAnonymous(`
+OrderedPayload payload = new OrderedPayload();
+payload.parameters = new List<String>{'one'};
+payload.failureReason = 'bad';
+payload.failureCode = 'Unauthorized';
+payload.trigger = 'Manual';
+payload.status = 'Failed';
+payload.completed = 'done';
+payload.started = 'start';
+payload.source = 'Caqh';
+payload.providerId = 'provider';
+payload.id = 'id';
+System.assertEquals('{"parameters":["one"],"failureReason":"bad","failureCode":"Unauthorized","trigger":"Manual","status":"Failed","completed":"done","started":"start","source":"Caqh","providerId":"provider","id":"id"}', JSON.serialize(payload));
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "OrderedPayload",
+		Fields: map[string]Field{
+			"parameters":    {Name: "parameters", Type: "List<String>"},
+			"failureReason": {Name: "failureReason", Type: "String"},
+			"failureCode":   {Name: "failureCode", Type: "String"},
+			"trigger":       {Name: "trigger", Type: "String"},
+			"status":        {Name: "status", Type: "String"},
+			"completed":     {Name: "completed", Type: "String"},
+			"started":       {Name: "started", Type: "String"},
+			"source":        {Name: "source", Type: "String"},
+			"providerId":    {Name: "providerId", Type: "String"},
+			"id":            {Name: "id", Type: "String"},
+		},
+		FieldOrder: []string{"parameters", "failureReason", "failureCode", "trigger", "status", "completed", "started", "source", "providerId", "id"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecJSONDeserializeTypedApexClassNestedFields(t *testing.T) {
 	program, err := CompileAnonymous(`
 JsonPerson person = JSON.deserialize('{"ExternalId":"E-7","Name":"Ada","Primary":{"City":"Delta","Zip":99501},"Addresses":[{"City":"Port","Zip":1},{"City":"Lake","Zip":2}],"AddressBook":{"home":{"City":"Cabin","Zip":3}},"Tags":["north","north","south"],"Scores":{"math":9,"trail":10},"OptionalAddress":null}', JsonPerson.class);

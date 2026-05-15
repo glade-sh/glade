@@ -9,20 +9,21 @@ import (
 )
 
 type Value struct {
-	Kind    ValueKind        `json:"kind"`
-	Int     int64            `json:"int,omitempty"`
-	Decimal float64          `json:"decimal,omitempty"`
-	Bool    bool             `json:"bool,omitempty"`
-	Text    string           `json:"text,omitempty"`
-	Type    string           `json:"type,omitempty"`
-	Static  string           `json:"-"`
-	Runtime string           `json:"-"`
-	Ref     uint64           `json:"-"`
-	Fields  map[string]Value `json:"fields,omitempty"`
-	List    []Value          `json:"list,omitempty"`
-	Set     []Value          `json:"set,omitempty"`
-	Map     map[string]Value `json:"map,omitempty"`
-	MapKeys map[string]Value `json:"-"`
+	Kind     ValueKind        `json:"kind"`
+	Int      int64            `json:"int,omitempty"`
+	Decimal  float64          `json:"decimal,omitempty"`
+	Bool     bool             `json:"bool,omitempty"`
+	Text     string           `json:"text,omitempty"`
+	Type     string           `json:"type,omitempty"`
+	Static   string           `json:"-"`
+	Runtime  string           `json:"-"`
+	Ref      uint64           `json:"-"`
+	Fields   map[string]Value `json:"fields,omitempty"`
+	List     []Value          `json:"list,omitempty"`
+	Set      []Value          `json:"set,omitempty"`
+	Map      map[string]Value `json:"map,omitempty"`
+	MapKeys  map[string]Value `json:"-"`
+	MapOrder []string         `json:"-"`
 }
 
 type ValueKind string

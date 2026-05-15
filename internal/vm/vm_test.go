@@ -684,6 +684,43 @@ System.assertEquals(null, missing?.replace('a', 'b').replace('b', 'c'));
 	}
 }
 
+func TestExecSafeNavigationAssignmentUsesPlainNull(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String, Object> values = null;
+String providerId = (String) values?.get('providerId');
+System.assertEquals(null, providerId);
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDateTimeMinusIntegerAndMathExceptionAreCatchable(t *testing.T) {
+	program, err := CompileAnonymous(`
+Datetime current = Datetime.valueOfGmt('2024-02-29 12:00:00');
+Datetime prior = current - 5;
+System.assertEquals('2024-02-24T12:00:00Z', String.valueOf(prior));
+Boolean caught = false;
+try {
+	Integer result = 5 / 0;
+} catch (Exception e) {
+	caught = true;
+	System.assertEquals('System.MathException', e.getTypeName());
+	System.assert(e.getMessage().contains('Divide by 0'));
+}
+System.assert(caught);
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestCompileStringEndingWithEscapedQuote(t *testing.T) {
 	program, err := CompileAnonymous(`String value = 'BYELARUS\''; System.assertEquals('BYELARUS''', value);`)
 	if err != nil {
