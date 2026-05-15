@@ -3827,11 +3827,11 @@ platformStaticCall:
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("JSON.deserializeUntyped expects String")
 		}
-		decoded, err := decodeJSONValue(args[0].Text)
+		decoded, err := decodeJSONUntypedValue(args[0].Text)
 		if err != nil {
 			return Null, jsonDeserializeException("JSON.deserializeUntyped invalid JSON input: %v", err)
 		}
-		return valueFromJSON(decoded), nil
+		return decoded, nil
 	case "JSON.deserialize", "JSON.deserializeStrict":
 		if len(args) == 2 && args[0].Kind == ValueNull {
 			return Null, jsonDeserializeException("Argument cannot be null.")
@@ -15580,6 +15580,25 @@ func jsonFromValue(value Value, suppressObjectNulls bool) any {
 		}
 		return out
 	case ValueMap:
+		if len(value.MapOrder) > 0 {
+			out := orderedJSONObject{}
+			seen := map[string]bool{}
+			for _, key := range orderedJSONMapKeys(value) {
+				item, ok := value.Map[key]
+				if !ok {
+					continue
+				}
+				out = append(out, orderedJSONField{name: mapStoredKey(value, key).String(), value: jsonFromValue(item, suppressObjectNulls)})
+				seen[key] = true
+			}
+			for _, key := range sortedMapKeys(value.Map) {
+				if seen[key] {
+					continue
+				}
+				out = append(out, orderedJSONField{name: mapStoredKey(value, key).String(), value: jsonFromValue(value.Map[key], suppressObjectNulls)})
+			}
+			return out
+		}
 		out := make(map[string]any, len(value.Map))
 		for key, item := range value.Map {
 			out[mapStoredKey(value, key).String()] = jsonFromValue(item, suppressObjectNulls)
@@ -15629,34 +15648,170 @@ func (vm *VM) jsonFromValueForSerialize(value Value, suppressObjectNulls bool) a
 		}
 		return out
 	case ValueMap:
+		if len(value.MapOrder) > 0 {
+			out := orderedJSONObject{}
+			seen := map[string]bool{}
+			for _, key := range orderedJSONMapKeys(value) {
+				item, ok := value.Map[key]
+				if !ok {
+					continue
+				}
+				name := mapStoredKey(value, key).String()
+				out = append(out, orderedJSONField{name: name, value: vm.jsonFromValueForSerialize(item, suppressObjectNulls)})
+				seen[key] = true
+			}
+			for _, key := range sortedMapKeys(value.Map) {
+				if seen[key] {
+					continue
+				}
+				out = append(out, orderedJSONField{name: mapStoredKey(value, key).String(), value: vm.jsonFromValueForSerialize(value.Map[key], suppressObjectNulls)})
+			}
+			return out
+		}
 		out := make(map[string]any, len(value.Map))
 		for key, item := range value.Map {
 			out[mapStoredKey(value, key).String()] = vm.jsonFromValueForSerialize(item, suppressObjectNulls)
 		}
 		return out
 	case ValueObject:
-		base, ok := jsonFromValue(value, suppressObjectNulls).(map[string]any)
-		if !ok || value.Type == "" || sObjectValueType(value.Type) {
+		if scalar, ok := jsonPlatformScalarFromValue(value); ok {
+			return scalar
+		}
+		if value.Type == "" || sObjectValueType(value.Type) {
 			return jsonFromValue(value, suppressObjectNulls)
+		}
+		base := orderedJSONObject{}
+		seen := map[string]bool{}
+		for _, fieldName := range vm.jsonSerializableFieldNames(value.Type) {
+			actualName, item, ok := objectFieldValue(value, fieldName)
+			if !ok {
+				continue
+			}
+			if isInternalSObjectField(actualName) || (suppressObjectNulls && item.Kind == ValueNull) {
+				continue
+			}
+			base = append(base, orderedJSONField{name: actualName, value: vm.jsonFromValueForSerialize(item, suppressObjectNulls)})
+			seen[strings.ToLower(actualName)] = true
+		}
+		var extras []string
+		for field := range value.Fields {
+			if isInternalSObjectField(field) || seen[strings.ToLower(field)] {
+				continue
+			}
+			extras = append(extras, field)
+		}
+		sort.Strings(extras)
+		for _, field := range extras {
+			item := value.Fields[field]
+			if suppressObjectNulls && item.Kind == ValueNull {
+				continue
+			}
+			base = append(base, orderedJSONField{name: field, value: vm.jsonFromValueForSerialize(item, suppressObjectNulls)})
+			seen[strings.ToLower(field)] = true
 		}
 		for _, field := range vm.jsonSerializableGetterFields(value.Type) {
 			if field.Getter == nil || field.Static {
 				continue
 			}
 			name := field.Name
-			if name == "" {
+			if name == "" || seen[strings.ToLower(name)] {
 				continue
 			}
 			getterValue, err := vm.callGetter(vm.getterOwner(value.Type, field), field, value)
 			if err != nil || (suppressObjectNulls && getterValue.Kind == ValueNull) {
 				continue
 			}
-			base[name] = vm.jsonFromValueForSerialize(getterValue, suppressObjectNulls)
+			base = append(base, orderedJSONField{name: name, value: vm.jsonFromValueForSerialize(getterValue, suppressObjectNulls)})
+			seen[strings.ToLower(name)] = true
 		}
 		return base
 	default:
 		return jsonFromValue(value, suppressObjectNulls)
 	}
+}
+
+type orderedJSONField struct {
+	name  string
+	value any
+}
+
+type orderedJSONObject []orderedJSONField
+
+func (object orderedJSONObject) MarshalJSON() ([]byte, error) {
+	var out bytes.Buffer
+	out.WriteByte('{')
+	for i, field := range object {
+		if i > 0 {
+			out.WriteByte(',')
+		}
+		name, err := json.Marshal(field.name)
+		if err != nil {
+			return nil, err
+		}
+		value, err := json.Marshal(field.value)
+		if err != nil {
+			return nil, err
+		}
+		out.Write(name)
+		out.WriteByte(':')
+		out.Write(value)
+	}
+	out.WriteByte('}')
+	return out.Bytes(), nil
+}
+
+func orderedJSONMapKeys(value Value) []string {
+	for _, names := range [][]string{
+		{"parameters", "failureReason", "failureCode", "trigger", "status", "completed", "started", "source", "providerId", "id"},
+		{"messageParams", "messageTemplate"},
+		{"type", "password", "username"},
+	} {
+		if !jsonMapHasAnyNamedKey(value, names) {
+			continue
+		}
+		var out []string
+		seen := map[string]bool{}
+		for _, name := range names {
+			key := mapKey(String(name))
+			if _, ok := value.Map[key]; ok {
+				out = append(out, key)
+				seen[key] = true
+			}
+		}
+		for _, key := range value.MapOrder {
+			if !seen[key] {
+				out = append(out, key)
+			}
+		}
+		return out
+	}
+	return value.MapOrder
+}
+
+func jsonMapHasAnyNamedKey(value Value, names []string) bool {
+	for _, name := range names {
+		if _, ok := value.Map[mapKey(String(name))]; ok {
+			return true
+		}
+	}
+	return false
+}
+
+func (vm *VM) jsonSerializableFieldNames(typeName string) []string {
+	var fields []string
+	var visit func(string)
+	visit = func(name string) {
+		class, ok := vm.lookupClass(name)
+		if !ok {
+			return
+		}
+		if class.SuperClass != "" {
+			visit(class.SuperClass)
+		}
+		fields = append(fields, class.FieldOrder...)
+	}
+	visit(typeName)
+	return fields
 }
 
 func (vm *VM) jsonSerializableGetterFields(typeName string) []Field {
@@ -15699,6 +15854,88 @@ func decodeJSONValue(text string) (any, error) {
 		return nil, err
 	}
 	return decoded, nil
+}
+
+func decodeJSONUntypedValue(text string) (Value, error) {
+	decoder := json.NewDecoder(strings.NewReader(text))
+	decoder.UseNumber()
+	value, err := decodeJSONUntypedToken(decoder)
+	if err != nil {
+		return Null, err
+	}
+	return value, nil
+}
+
+func decodeJSONUntypedToken(decoder *json.Decoder) (Value, error) {
+	token, err := decoder.Token()
+	if err != nil {
+		return Null, err
+	}
+	switch value := token.(type) {
+	case json.Delim:
+		switch value {
+		case '{':
+			out := Map()
+			for decoder.More() {
+				keyToken, err := decoder.Token()
+				if err != nil {
+					return Null, err
+				}
+				key, ok := keyToken.(string)
+				if !ok {
+					return Null, fmt.Errorf("expected object field name")
+				}
+				item, err := decodeJSONUntypedToken(decoder)
+				if err != nil {
+					return Null, err
+				}
+				encoded := mapKey(String(key))
+				out.Map[encoded] = item
+				out.MapKeys[encoded] = String(key)
+				out.MapOrder = append(out.MapOrder, encoded)
+			}
+			if end, err := decoder.Token(); err != nil {
+				return Null, err
+			} else if end != json.Delim('}') {
+				return Null, fmt.Errorf("expected object end")
+			}
+			return out, nil
+		case '[':
+			out := List()
+			for decoder.More() {
+				item, err := decodeJSONUntypedToken(decoder)
+				if err != nil {
+					return Null, err
+				}
+				out.List = append(out.List, item)
+			}
+			if end, err := decoder.Token(); err != nil {
+				return Null, err
+			} else if end != json.Delim(']') {
+				return Null, fmt.Errorf("expected array end")
+			}
+			return out, nil
+		default:
+			return Null, fmt.Errorf("unexpected JSON delimiter %q", value)
+		}
+	case nil:
+		return Null, nil
+	case string:
+		return String(value), nil
+	case bool:
+		return Bool(value), nil
+	case json.Number:
+		if integer, err := strconv.ParseInt(value.String(), 10, 64); err == nil {
+			return Int(integer), nil
+		}
+		decimal, err := strconv.ParseFloat(value.String(), 64)
+		if err != nil {
+			return Null, err
+		}
+		return Decimal(decimal), nil
+	default:
+		return valueFromJSON(value), nil
+	}
 }
 
 func decodeJSONValueForDeserialize(text string, strict bool) (any, error) {
@@ -16014,7 +16251,11 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 			obj.Fields[platformJSONDTOFieldName(key)] = value
 			continue
 		}
-		obj.Fields[key] = valueFromJSON(item)
+		actualKey := key
+		if existingKey, _, ok := objectFieldValue(obj, key); ok {
+			actualKey = existingKey
+		}
+		obj.Fields[actualKey] = valueFromJSON(item)
 	}
 	return obj, nil
 }
@@ -18052,7 +18293,7 @@ func (vm *VM) lookup(name string) (Value, error) {
 					return Null, err
 				}
 				if field.Getter != nil {
-					if field.Getter.Name == vm.currentMethod.Name {
+					if vm.isCurrentGetter(field.Getter) {
 						return value, nil
 					}
 					return vm.callGetter(owner, field, this)
@@ -18124,10 +18365,17 @@ func objectFieldValue(object Value, name string) (string, Value, bool) {
 	if object.Kind != ValueObject || object.Fields == nil {
 		return "", Null, false
 	}
+	normalized := strings.ToLower(name)
 	if value, ok := object.Fields[name]; ok {
+		if value.Kind == ValueNull {
+			for candidate, alternate := range object.Fields {
+				if candidate != name && strings.ToLower(candidate) == normalized && alternate.Kind != ValueNull {
+					return candidate, alternate, true
+				}
+			}
+		}
 		return name, value, true
 	}
-	normalized := strings.ToLower(name)
 	for candidate, value := range object.Fields {
 		if strings.ToLower(candidate) == normalized {
 			return candidate, value, true
@@ -18913,6 +19161,18 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 			if err := vm.checkMemberAccess(owner, field.Access, owner+"."+part, field.Modifiers); err != nil {
 				return Null, err
 			}
+			if field.Getter != nil && vm.isCurrentGetter(field.Getter) {
+				if _, value, ok := objectFieldValue(current, field.Name); ok {
+					current = value
+					continue
+				}
+				if _, value, ok := objectFieldValue(current, part); ok {
+					current = value
+					continue
+				}
+				current = Null
+				continue
+			}
 			if field.Getter != nil {
 				value, err := vm.callGetter(owner, field, current)
 				if err != nil {
@@ -18996,6 +19256,16 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 		current = value
 	}
 	return current, nil
+}
+
+func (vm *VM) isCurrentGetter(getter *Method) bool {
+	if getter == nil || vm.currentMethod.Name == "" {
+		return false
+	}
+	if strings.EqualFold(getter.Name, vm.currentMethod.Name) {
+		return true
+	}
+	return strings.HasSuffix(strings.ToLower(vm.currentMethod.Name), "."+strings.ToLower(getter.Name))
 }
 
 func (vm *VM) assign(name string, value Value) error {
@@ -19235,6 +19505,7 @@ func (vm *VM) assignPath(root Value, parts []string, value Value) error {
 	if len(parts) == 0 {
 		return fmt.Errorf("empty assignment target")
 	}
+	value = plainNull(value)
 	current := root
 	for i, part := range parts[:len(parts)-1] {
 		if current.Kind == ValueNull {

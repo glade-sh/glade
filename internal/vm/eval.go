@@ -5,6 +5,7 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func parseLiteral(raw string) (Value, error) {
@@ -132,6 +133,9 @@ func evalBinary(op string, left, right Value) (Value, error) {
 		}
 		return intBinary(op, left, right, func(a, b int64) int64 { return a + b })
 	case "-":
+		if value, ok, err := platformDateArithmetic("-", left, right); ok || err != nil {
+			return value, err
+		}
 		if left.Kind == ValueDecimal || right.Kind == ValueDecimal {
 			return decimalBinary(op, left, right, func(a, b float64) float64 { return a - b })
 		}
@@ -144,17 +148,17 @@ func evalBinary(op string, left, right Value) (Value, error) {
 	case "/":
 		if left.Kind == ValueDecimal || right.Kind == ValueDecimal {
 			if decimalOf(right) == 0 {
-				return Null, fmt.Errorf("division by zero")
+				return Null, newExceptionError("MathException", "Divide by 0")
 			}
 			return decimalBinary(op, left, right, func(a, b float64) float64 { return a / b })
 		}
 		if right.Kind == ValueInt && right.Int == 0 {
-			return Null, fmt.Errorf("division by zero")
+			return Null, newExceptionError("MathException", "Divide by 0")
 		}
 		return intBinary(op, left, right, func(a, b int64) int64 { return a / b })
 	case "%":
 		if right.Kind == ValueInt && right.Int == 0 {
-			return Null, fmt.Errorf("division by zero")
+			return Null, newExceptionError("MathException", "Divide by 0")
 		}
 		return intBinary(op, left, right, func(a, b int64) int64 { return a % b })
 	case "<<", ">>":
@@ -239,6 +243,28 @@ func evalBinary(op string, left, right Value) (Value, error) {
 		return Bool(leftBool || rightBool), nil
 	default:
 		return Null, fmt.Errorf("unsupported binary operator %q", op)
+	}
+}
+
+func platformDateArithmetic(op string, left, right Value) (Value, bool, error) {
+	if op != "-" || right.Kind != ValueInt || left.Kind != ValueObject {
+		return Null, false, nil
+	}
+	switch left.Type {
+	case "Date":
+		date, err := parsePlatformDate(left)
+		if err != nil {
+			return Null, true, err
+		}
+		return platformScalar("Date", date.AddDate(0, 0, -int(right.Int)).Format("2006-01-02")), true, nil
+	case "Datetime":
+		datetime, err := parsePlatformDatetime(left)
+		if err != nil {
+			return Null, true, err
+		}
+		return platformScalar("Datetime", formatPlatformDatetime(datetime.Add(-time.Duration(right.Int)*24*time.Hour))), true, nil
+	default:
+		return Null, false, nil
 	}
 }
 
