@@ -2464,6 +2464,9 @@ func (a *Analyzer) checkIRPlatformCall(typ typesys.TypeSymbol, member typesys.Me
 	for i, arg := range args {
 		argTypes[i] = a.inferIRExprType(arg, scope, model, typ.Name)
 	}
+	if semaDatabaseDMLReturnType(receiverType, method, argTypes) != "" && len(args) <= 4 {
+		return nil, true
+	}
 	if semaArgsMatchAny(sig.params, argTypes, model) {
 		return nil, true
 	}
@@ -2986,6 +2989,9 @@ func semaResolvedIRCallReturnType(a *Analyzer, model map[string]typeMembers, rec
 	}
 	if semaDatabaseDynamicQueryCall(receiverType, method) {
 		return "Database.QueryResult"
+	}
+	if returnType := semaDatabaseDMLReturnType(receiverType, method, argTypes); returnType != "" {
+		return returnType
 	}
 	if sig, ok := semaCollectionMethodSignature(receiverType, method); ok {
 		return sig.returnType
@@ -6188,6 +6194,9 @@ func semaResolvedCallReturnType(model map[string]typeMembers, receiverType, meth
 	if semaDatabaseDynamicQueryCall(receiverType, method) {
 		return "Database.QueryResult"
 	}
+	if returnType := semaDatabaseDMLReturnType(receiverType, method, argTypes); returnType != "" {
+		return returnType
+	}
 	if sig, ok := semaEnumMethodSignature(model, receiverType, method); ok {
 		return sig.returnType
 	}
@@ -6245,6 +6254,32 @@ func semaDatabaseDynamicQueryCall(receiverType, method string) bool {
 		return true
 	default:
 		return false
+	}
+}
+
+func semaDatabaseDMLReturnType(receiverType, method string, argTypes []string) string {
+	if !strings.EqualFold(semaCanonicalPlatformAlias(receiverType), "Database") || len(argTypes) == 0 {
+		return ""
+	}
+	resultType := ""
+	switch normalizeName(method) {
+	case "insert", "update":
+		resultType = "Database.SaveResult"
+	case "delete":
+		resultType = "Database.DeleteResult"
+	case "upsert":
+		resultType = "Database.UpsertResult"
+	case "undelete":
+		resultType = "Database.UndeleteResult"
+	default:
+		return ""
+	}
+	base, _ := semaGenericBaseAndArgs(argTypes[0])
+	switch normalizeName(base) {
+	case "list", "set":
+		return "List<" + resultType + ">"
+	default:
+		return resultType
 	}
 }
 
@@ -6724,6 +6759,16 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 		}
 	case "date":
 		switch method {
+		case "today":
+			return semaCollectionSignature{returnType: "Date", params: [][]string{{}}}, true
+		case "newinstance":
+			return semaCollectionSignature{returnType: "Date", params: [][]string{{"Integer", "Integer", "Integer"}}}, true
+		case "valueof":
+			return semaCollectionSignature{returnType: "Date", params: [][]string{{"String"}, {"Object"}}}, true
+		case "parse":
+			return semaCollectionSignature{returnType: "Date", params: [][]string{{"String"}}}, true
+		case "daysinmonth":
+			return semaCollectionSignature{returnType: "Integer", params: [][]string{{"Integer", "Integer"}}}, true
 		case "adddays", "addmonths", "addyears":
 			return semaCollectionSignature{returnType: "Date", params: [][]string{{"Integer"}}}, true
 		case "day", "month", "year":
@@ -6754,6 +6799,12 @@ func semaPlatformMethodSignature(receiverType, method string) (semaCollectionSig
 			return semaCollectionSignature{returnType: "Savepoint", params: [][]string{{}}}, true
 		case "rollback":
 			return semaCollectionSignature{returnType: "void", params: [][]string{{"Savepoint"}}}, true
+		case "insert", "update":
+			return semaCollectionSignature{returnType: "Object", params: [][]string{{"SObject"}, {"SObject", "Boolean"}, {"SObject", "Database.DMLOptions"}, {"SObject", "AccessLevel"}, {"SObject", "Boolean", "AccessLevel"}, {"List<SObject>"}, {"List<SObject>", "Boolean"}, {"List<SObject>", "Database.DMLOptions"}, {"List<SObject>", "AccessLevel"}, {"List<SObject>", "Boolean", "AccessLevel"}}}, true
+		case "delete", "undelete":
+			return semaCollectionSignature{returnType: "Object", params: [][]string{{"SObject"}, {"SObject", "Boolean"}, {"SObject", "AccessLevel"}, {"SObject", "Boolean", "AccessLevel"}, {"Id"}, {"Id", "Boolean"}, {"Id", "AccessLevel"}, {"Id", "Boolean", "AccessLevel"}, {"List<SObject>"}, {"List<SObject>", "Boolean"}, {"List<SObject>", "AccessLevel"}, {"List<SObject>", "Boolean", "AccessLevel"}, {"List<Id>"}, {"List<Id>", "Boolean"}, {"List<Id>", "AccessLevel"}, {"List<Id>", "Boolean", "AccessLevel"}}}, true
+		case "upsert":
+			return semaCollectionSignature{returnType: "Object", params: [][]string{{"SObject"}, {"SObject", "Boolean"}, {"SObject", "Database.DMLOptions"}, {"SObject", "AccessLevel"}, {"SObject", "Schema.SObjectField"}, {"SObject", "Schema.SObjectField", "Boolean"}, {"SObject", "Schema.SObjectField", "AccessLevel"}, {"SObject", "Boolean", "AccessLevel"}, {"SObject", "Schema.SObjectField", "Boolean", "AccessLevel"}, {"List<SObject>"}, {"List<SObject>", "Boolean"}, {"List<SObject>", "Database.DMLOptions"}, {"List<SObject>", "AccessLevel"}, {"List<SObject>", "Schema.SObjectField"}, {"List<SObject>", "Schema.SObjectField", "Boolean"}, {"List<SObject>", "Schema.SObjectField", "AccessLevel"}, {"List<SObject>", "Boolean", "AccessLevel"}, {"List<SObject>", "Schema.SObjectField", "Boolean", "AccessLevel"}}}, true
 		}
 	case "database.querylocator":
 		switch method {
@@ -7338,7 +7389,10 @@ func checkSemaPlatformCall(typ typesys.TypeSymbol, member typesys.MemberSymbol, 
 	for i, arg := range args {
 		argTypes[i] = inferSemaArgTypeWithModel(arg.text, scope, model)
 	}
-	if semaArgsMatchAny(sig.params, argTypes, model) {
+	if semaDatabaseDMLReturnType(receiverType, method, argTypes) != "" && len(args) <= 4 {
+		return nil, true
+	}
+	if semaArgsMatchAny(sig.params, argTypes, model) || semaCollectionFieldPathArgsMatch(sig.params, args, scope, model) {
 		return nil, true
 	}
 	return []diagnostic.Diagnostic{collectionCallDiagnostic(typ, member, method, len(args), start, end, source)}, true

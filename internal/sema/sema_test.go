@@ -675,6 +675,12 @@ public class UsesDatabaseDML {
     Database.MergeResult idMerge = Database.merge(account, recordId, false, AccessLevel.USER_MODE);
     List<Database.MergeResult> idMergeResults = Database.merge(account, recordIds, AccessLevel.SYSTEM_MODE);
   }
+  public static Database.UpsertResult singleResult(Account account) {
+    return Database.upsert(account, Account.External_Id__c, false, AccessLevel.SYSTEM_MODE);
+  }
+  public static List<Database.UpsertResult> collectionResult(List<Account> accounts) {
+    return Database.upsert(accounts, Account.External_Id__c, false, AccessLevel.USER_MODE);
+  }
 }
 `)
 	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
@@ -685,6 +691,28 @@ public class UsesDatabaseDML {
 			{Name: "External_Id__c", Type: "Text"},
 		},
 	}}})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeCaseInsensitivePlatformEnumAndDateStatics(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesCaseInsensitivePlatformStatics.cls"), `
+public class UsesCaseInsensitivePlatformStatics {
+  public static void run() {
+    System.debug(logginglevel.INFO, 'info');
+    System.debug(logginglevel.ERROR, 'error');
+    Date parsed = Date.ValueOf((Object) '2026-05-07');
+    Date today = date.TODAY();
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
+		filepath.Join(root, "UsesCaseInsensitivePlatformStatics.cls"),
+	}}, schema.Schema{})
 
 	result := Analyze(index)
 	if result.HasErrors() {
