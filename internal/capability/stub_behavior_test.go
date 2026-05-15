@@ -92,6 +92,8 @@ func TestStubBehaviorSeparatesServiceMethodsFromPassiveDTOs(t *testing.T) {
 	assertStubBehaviorPrefix(t, entries, "Test.createSoqlStub(", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "Test.invokeContinuationMethod(", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "Test.setContinuationResponse(", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "Test.testNotificationActionHandler(", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "Test.testSandboxPostCopyScript(", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "Assert.isInstanceOfType(Object,Type)", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "Assert.isNotInstanceOfType(Object,Type)", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "Apex.Stack.push(String)", StubBehaviorImplemented)

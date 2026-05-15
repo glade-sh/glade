@@ -4165,6 +4165,10 @@ platformStaticCall:
 		return vm.testSetContinuationResponse(args)
 	case "Test.invokeContinuationMethod":
 		return vm.testInvokeContinuationMethod(args, result)
+	case "Test.testNotificationActionHandler":
+		return vm.testNotificationActionHandler(args, result)
+	case "Test.testSandboxPostCopyScript":
+		return vm.testSandboxPostCopyScript(args, result)
 	case "Continuation.getResponse":
 		return vm.continuationGetResponse(args)
 	case "Canvas.Test.mockRenderContext":
@@ -6668,6 +6672,72 @@ func (vm *VM) testInvokeContinuationMethod(args []Value, result *Result) (Value,
 		return Null, unsupportedCallError(args[0].Type + "." + methodValue.Text)
 	}
 	return vm.callMethodWithReceiver(target, args[0], nil, result)
+}
+
+func (vm *VM) testNotificationActionHandler(args []Value, result *Result) (Value, error) {
+	if len(args) != 2 {
+		return Null, fmt.Errorf("Test.testNotificationActionHandler expects handler and actionable notification")
+	}
+	if err := vm.requireTestContext("Test.testNotificationActionHandler"); err != nil {
+		return Null, err
+	}
+	if args[0].Kind != ValueObject || !vm.typeMatches(args[0].Type, "Messaging.NotificationActionHandler", make(map[string]bool)) {
+		return Null, fmt.Errorf("Test.testNotificationActionHandler expects Messaging.NotificationActionHandler")
+	}
+	if args[1].Kind != ValueObject || !strings.EqualFold(args[1].Type, "Messaging.ActionableNotification") {
+		return Null, fmt.Errorf("Test.testNotificationActionHandler expects Messaging.ActionableNotification")
+	}
+	target, ok, ambiguous := vm.resolveInstanceMethodForArgs(args[0].Type, "executeAction", []Value{args[1]})
+	if ambiguous {
+		return Null, vm.ambiguousOverloadError(args[0].Type+".executeAction", []Value{args[1]})
+	}
+	if !ok {
+		return Null, fmt.Errorf("Messaging.NotificationActionHandler %s must implement executeAction", args[0].Type)
+	}
+	value, err := vm.callMethodWithReceiver(target, args[0], []Value{args[1]}, result)
+	if err != nil {
+		return Null, err
+	}
+	if value.Kind == ValueNull || (value.Kind == ValueObject && strings.EqualFold(value.Type, "Messaging.ActionResult")) {
+		return value, nil
+	}
+	return Null, fmt.Errorf("Messaging.NotificationActionHandler %s executeAction must return Messaging.ActionResult", args[0].Type)
+}
+
+func (vm *VM) testSandboxPostCopyScript(args []Value, result *Result) (Value, error) {
+	if len(args) != 4 && len(args) != 5 {
+		return Null, fmt.Errorf("Test.testSandboxPostCopyScript expects script, organizationId, sandboxId, sandboxName[, isRunAsAutoProcUser]")
+	}
+	if err := vm.requireTestContext("Test.testSandboxPostCopyScript"); err != nil {
+		return Null, err
+	}
+	if args[0].Kind != ValueObject || !vm.typeMatches(args[0].Type, "SandboxPostCopy", make(map[string]bool)) {
+		return Null, fmt.Errorf("Test.testSandboxPostCopyScript expects SandboxPostCopy")
+	}
+	if !isApexIDLikeValue(args[1]) || !isApexIDLikeValue(args[2]) || args[3].Kind != ValueString {
+		return Null, fmt.Errorf("Test.testSandboxPostCopyScript expects organization Id, sandbox Id, and sandbox name")
+	}
+	runAsAutoProcUser := Bool(false)
+	if len(args) == 5 {
+		if args[4].Kind != ValueBool {
+			return Null, fmt.Errorf("Test.testSandboxPostCopyScript isRunAsAutoProcUser expects Boolean")
+		}
+		runAsAutoProcUser = args[4]
+	}
+	context := Object("SandboxContext")
+	context.Fields["organizationId"] = platformScalar("Id", scalarText(args[1]))
+	context.Fields["sandboxId"] = platformScalar("Id", scalarText(args[2]))
+	context.Fields["sandboxName"] = args[3]
+	context.Fields["isRunAsAutoProcUser"] = runAsAutoProcUser
+	target, ok, ambiguous := vm.resolveInstanceMethodForArgs(args[0].Type, "runApexClass", []Value{context})
+	if ambiguous {
+		return Null, vm.ambiguousOverloadError(args[0].Type+".runApexClass", []Value{context})
+	}
+	if !ok {
+		return Null, fmt.Errorf("SandboxPostCopy %s must implement runApexClass", args[0].Type)
+	}
+	_, err := vm.callMethodWithReceiver(target, args[0], []Value{context}, result)
+	return Null, err
 }
 
 func (vm *VM) canvasTestMockRenderContext(args []Value) (Value, error) {
@@ -29612,6 +29682,34 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	if strings.HasPrefix(receiver.Type, "Canvas.") {
 		if value, updated, mutated, handled, err := vm.callCanvasMember(receiver, method, args, result); handled || err != nil {
 			return value, updated, mutated, true, err
+		}
+	}
+	if strings.EqualFold(receiver.Type, "SandboxContext") {
+		switch strings.ToLower(method) {
+		case "organizationid":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("SandboxContext.%s expects 0 arguments", method)
+			}
+			if value, ok := receiver.Fields["organizationId"]; ok {
+				return value, receiver, false, true, nil
+			}
+			return Null, receiver, false, true, nil
+		case "sandboxid":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("SandboxContext.%s expects 0 arguments", method)
+			}
+			if value, ok := receiver.Fields["sandboxId"]; ok {
+				return value, receiver, false, true, nil
+			}
+			return Null, receiver, false, true, nil
+		case "sandboxname":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("SandboxContext.%s expects 0 arguments", method)
+			}
+			if value, ok := receiver.Fields["sandboxName"]; ok {
+				return value, receiver, false, true, nil
+			}
+			return Null, receiver, false, true, nil
 		}
 	}
 	if isExceptionType(receiver.Type) {

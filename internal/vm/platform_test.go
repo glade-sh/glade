@@ -3027,6 +3027,81 @@ func TestExecSafeGeneratedTestHelpersRequireTestContext(t *testing.T) {
 	}
 }
 
+func TestExecTestNotificationActionHandlerInvokesExecuteAction(t *testing.T) {
+	handlerProgram, err := CompileAnonymous(`
+System.assertEquals(null, notification.getActionIdentifier());
+return new Messaging.ActionResult();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Messaging.ActionResult result = Test.testNotificationActionHandler(new Handler(), new Messaging.ActionableNotification());
+System.assertEquals(false, result.isSuccess());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name:       "Handler",
+		Interfaces: []string{"Messaging.NotificationActionHandler"},
+		Methods: map[string]Method{
+			"executeAction": {
+				Name:       "Handler.executeAction",
+				ClassName:  "Handler",
+				ReturnType: "Messaging.ActionResult",
+				Params:     []Param{{Name: "notification", Type: "Messaging.ActionableNotification"}},
+				Program:    handlerProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecTestSandboxPostCopyScriptInvokesRunApexClass(t *testing.T) {
+	copyProgram, err := CompileAnonymous(`
+System.assertEquals('00D000000000001', String.valueOf(context.organizationId()));
+System.assertEquals('0GR000000000001', String.valueOf(context.sandboxId()));
+System.assertEquals('preview', context.sandboxName());
+return null;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Test.testSandboxPostCopyScript(new Copier(), '00D000000000001', '0GR000000000001', 'preview', true);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name:       "Copier",
+		Interfaces: []string{"SandboxPostCopy"},
+		Methods: map[string]Method{
+			"runApexClass": {
+				Name:       "Copier.runApexClass",
+				ClassName:  "Copier",
+				ReturnType: "void",
+				Params:     []Param{{Name: "context", Type: "SandboxContext"}},
+				Program:    copyProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDatabaseGetQueryLocator(t *testing.T) {
 	program, err := CompileAnonymous(`
 insert new Account(Name = 'Acme');

@@ -587,7 +587,7 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 			"setcreateddate", "setfixedsearchresults", "createstubqueryrow", "issoqlstubdefined",
 			"geteventbus", "getflexqueueorder", "enqueuebatchjobs", "calculatepermissionsetgroup", "enablechangedatacapture",
 			"setreadonlyapplicationmode", "testinstall", "testuninstall", "invokecontinuationmethod",
-			"setcontinuationresponse":
+			"setcontinuationresponse", "testnotificationactionhandler", "testsandboxpostcopyscript":
 			return true
 		}
 	case "Math":
@@ -938,9 +938,7 @@ func explicitlyUnsupportedCoreBehaviorMethod(symbol typesys.TypeSymbol, member t
 		}
 	case "Test":
 		switch name {
-		case "createsoqlstub", "getexternalservice", "invokecontinuationmethod",
-			"invokepage", "setcontinuationresponse",
-			"testnotificationactionhandler", "testsandboxpostcopyscript":
+		case "getexternalservice", "invokepage":
 			return true
 		}
 	case "QuickAction":
