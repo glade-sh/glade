@@ -864,6 +864,13 @@ func childRelationshipMatchRank(relation storage.Relationship, definition storag
 	return 99, false
 }
 
+func childRelationshipNameFromObject(objectName string) string {
+	if idx := strings.LastIndex(objectName, "."); idx >= 0 && idx+1 < len(objectName) {
+		return objectName[idx+1:]
+	}
+	return objectName
+}
+
 func childRelationshipNameMatches(metadataName, queryName string) bool {
 	if strings.EqualFold(metadataName, queryName) {
 		return true
@@ -1286,7 +1293,7 @@ func fieldKnownForMode(org storage.OrgState, definition storage.ObjectDefinition
 			}
 			found := false
 			for _, parentName := range relation.ParentObjects {
-				if strings.EqualFold(parentName, "EntityDefinition") {
+				if strings.EqualFold(parentName, "EntityDefinition") || strings.EqualFold(parentName, "FieldDefinition") {
 					if entityDefinitionFieldKnown(parts[1]) {
 						if !requireAllParents {
 							return true
@@ -1438,7 +1445,7 @@ func relationshipValue(org storage.OrgState, record storage.Record, field string
 			return storage.NullValue(), true
 		}
 		for _, parentObjectName := range relation.ParentObjects {
-			if strings.EqualFold(parentObjectName, "EntityDefinition") {
+			if strings.EqualFold(parentObjectName, "EntityDefinition") || strings.EqualFold(parentObjectName, "FieldDefinition") {
 				if value, ok := entityDefinitionRelationshipValue(parentID, parts[1]); ok {
 					return value, true
 				}
@@ -2084,9 +2091,9 @@ func (p *parser) parseQuery() (Query, error) {
 	if !p.matchWord("FROM") {
 		return Query{}, p.errorf("expected FROM")
 	}
-	object := p.advance().text
-	if object == "" {
-		return Query{}, p.errorf("expected object name")
+	object, err := p.parseName()
+	if err != nil {
+		return Query{}, err
 	}
 	aggregates, err := aggregateSpecs(fields)
 	if err != nil {
@@ -2206,7 +2213,7 @@ func (p *parser) parseFields() ([]string, []ChildQuery, []TypeofSpec, error) {
 			if len(query.Fields) == 0 && len(query.Typeofs) == 0 {
 				return nil, nil, nil, p.errorf("child relationship subquery requires at least one field")
 			}
-			childQueries = append(childQueries, ChildQuery{Relationship: query.Object, Query: query})
+			childQueries = append(childQueries, ChildQuery{Relationship: childRelationshipNameFromObject(query.Object), Query: query})
 			if !p.match(",") {
 				return fields, childQueries, typeofs, nil
 			}

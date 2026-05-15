@@ -12,6 +12,7 @@ import (
 	"crypto/sha512"
 	"crypto/subtle"
 	"encoding/base64"
+	"encoding/csv"
 	"encoding/hex"
 	"encoding/json"
 	"encoding/xml"
@@ -206,7 +207,9 @@ type TestContext struct {
 	Started          bool
 	Stopped          bool
 	CurrentUser      Value
+	SeeAllData       bool
 	AsyncJobs        []AsyncJob
+	EventPublishes   []eventPublishCallback
 	Draining         bool
 	HTTPMock         Value
 	WebServiceMock   Value
@@ -217,6 +220,12 @@ type TestContext struct {
 	NonSetupDML      bool
 	JobSeq           int
 	ChainEnqueued    bool
+}
+
+type eventPublishCallback struct {
+	Callback   Value
+	EventUUIDs []string
+	Fail       bool
 }
 
 type AsyncJob struct {
@@ -651,6 +660,13 @@ func (vm *VM) RegisterTrigger(trigger Trigger) error {
 func (vm *VM) EnableTestContext() {
 	vm.testContext = &TestContext{CurrentUser: vm.defaultTestCurrentUser()}
 	vm.ensureAsyncObjects()
+}
+
+func (vm *VM) SetTestSeeAllData(enabled bool) {
+	if vm.testContext == nil {
+		vm.EnableTestContext()
+	}
+	vm.testContext.SeeAllData = enabled
 }
 
 func (vm *VM) defaultTestCurrentUser() Value {
@@ -1154,6 +1170,9 @@ func (vm *VM) executeForEach(source string, inst ir.Instruction, result *Result)
 	if err != nil {
 		return execOutcome{}, err
 	}
+	if iterable.Kind == ValueObject {
+		return vm.executeObjectForEach(source, inst, result, iterable)
+	}
 	values := iterable.List
 	if iterable.Kind == ValueSet {
 		values = iterable.Set
@@ -1163,6 +1182,9 @@ func (vm *VM) executeForEach(source string, inst ir.Instruction, result *Result)
 	}
 	if iterable.Kind != ValueList && iterable.Kind != ValueSet {
 		return execOutcome{}, fmt.Errorf("enhanced for requires List or Set, got %s", iterable.Kind)
+	}
+	if shouldChunkEnhancedForList(inst.Type, iterable) {
+		values = chunkValuesForEnhancedFor(inst.Type, values, 200)
 	}
 	_, existed := vm.Globals[inst.Name]
 	previous := vm.Globals[inst.Name]
@@ -1204,6 +1226,38 @@ func (vm *VM) executeForEach(source string, inst ir.Instruction, result *Result)
 		}
 	}
 	return execOutcome{}, nil
+}
+
+func shouldChunkEnhancedForList(loopType string, iterable Value) bool {
+	if collectionBase(loopType) != "List" || iterable.Kind != ValueList {
+		return false
+	}
+	loopElement, ok := collectionElementType(loopType)
+	if !ok || loopElement == "" {
+		return false
+	}
+	iterElement, ok := collectionElementType(iterable.Type)
+	if !ok || iterElement == "" {
+		return false
+	}
+	return strings.EqualFold(loopElement, iterElement)
+}
+
+func chunkValuesForEnhancedFor(loopType string, values []Value, size int) []Value {
+	if size <= 0 || len(values) == 0 {
+		return nil
+	}
+	chunks := make([]Value, 0, (len(values)+size-1)/size)
+	for start := 0; start < len(values); start += size {
+		end := start + size
+		if end > len(values) {
+			end = len(values)
+		}
+		chunk := typedList(loopType)
+		chunk.List = append(chunk.List, values[start:end]...)
+		chunks = append(chunks, chunk)
+	}
+	return chunks
 }
 
 func (vm *VM) executeTry(source string, inst ir.Instruction, result *Result) (execOutcome, error) {
@@ -2031,9 +2085,18 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"Crypto.generateAESKey", "Crypto.getRandomInteger", "Crypto.getRandomLong",
 		"JSON.createGenerator", "JSON.createParser", "JSON.serialize", "JSON.serializePretty",
 		"JSON.deserializeUntyped", "JSON.deserialize", "JSON.deserializeStrict",
-		"ConnectApi.Organization.getSettings", "ConnectApi.Communities.getCommunity",
+		"ConnectApi.Organization.getSettings", "ConnectApi.ChatterUsers.getFollowings", "ConnectApi.Communities.getCommunity",
 		"ConnectApi.UserProfiles.setPhoto", "ConnectApi.UserProfiles.deletePhoto",
 		"Cache.Org.getPartition", "Cache.Session.getPartition",
+		"Cache.Org.get", "Cache.Session.get", "Cache.Org.put", "Cache.Session.put",
+		"Cache.Org.remove", "Cache.Session.remove", "Cache.Org.contains", "Cache.Session.contains",
+		"Cache.Org.getKeys", "Cache.Session.getKeys", "Cache.Org.getNumKeys", "Cache.Session.getNumKeys",
+		"Cache.Org.getCapacity", "Cache.Session.getCapacity", "Cache.Org.isAvailable", "Cache.Session.isAvailable",
+		"Cache.Org.getName", "Cache.Session.getName",
+		"Cache.Org.getAvgGetSize", "Cache.Session.getAvgGetSize", "Cache.Org.getAvgGetTime", "Cache.Session.getAvgGetTime",
+		"Cache.Org.getAvgValueSize", "Cache.Session.getAvgValueSize", "Cache.Org.getMaxGetSize", "Cache.Session.getMaxGetSize",
+		"Cache.Org.getMaxGetTime", "Cache.Session.getMaxGetTime", "Cache.Org.getMaxValueSize", "Cache.Session.getMaxValueSize",
+		"Cache.Org.getMissRate", "Cache.Session.getMissRate",
 		"Metadata.Operations.enqueueDeployment", "Metadata.Operations.checkDeployStatus", "Metadata.Operations.retrieve",
 		"Auth.AuthToken.revokeAccess", "Auth.SessionManagement.getCurrentSession",
 		"Auth.AuthConfiguration.getAuthProviderSsoUrl", "Auth.CommunitiesUtil.isGuestUser",
@@ -2046,6 +2109,7 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"WebServiceCallout.invoke",
 		"Test.setCreatedDate", "Test.setFixedSearchResults", "Test.startTest", "Test.stopTest", "Test.getStandardPricebookId",
 		"Test.Database.hasRecords",
+		"DataWeave.Script.createScript",
 		"UserInfo.getDefaultCurrency",
 		"Site.getSiteId", "Site.getBaseUrl", "Site.getBaseRequestUrl", "Site.getBaseSecureUrl", "Site.getBaseCustomUrl",
 		"Site.getDomain", "Site.getName", "Site.getTemplate", "Site.getSiteType", "Site.getSiteTypeLabel",
@@ -2333,8 +2397,13 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		}
 	}
 	if typeName, memberName, ok := splitDottedTypeMember(callee); ok && strings.EqualFold(typeName, "Search") {
-		if strings.EqualFold(memberName, "query") {
+		switch {
+		case strings.EqualFold(memberName, "query"):
 			return vm.searchQuery(args)
+		case strings.EqualFold(memberName, "find"):
+			return vm.searchFind(args)
+		case strings.EqualFold(memberName, "suggest"):
+			return vm.searchSuggest(args)
 		}
 		return Null, unsupportedCallError(callee + " local search/SOSL surface")
 	}
@@ -2526,8 +2595,14 @@ platformStaticCall:
 		}
 		return Null, nil
 	case "Database.query":
-		if len(args) != 1 || args[0].Kind != ValueString {
+		if len(args) != 1 && len(args) != 2 {
+			return Null, fmt.Errorf("Database.query expects query String and optional AccessLevel")
+		}
+		if args[0].Kind != ValueString {
 			return Null, fmt.Errorf("Database.query expects query String")
+		}
+		if len(args) == 2 && !isDatabaseAccessLevelValue(args[1]) {
+			return Null, fmt.Errorf("Database.query expects AccessLevel")
 		}
 		return vm.executeSOQL(args[0].Text, result)
 	case "Database.queryWithBinds":
@@ -2620,9 +2695,17 @@ platformStaticCall:
 		if len(args) == 3 && args[2].Kind != ValueBool {
 			return Null, fmt.Errorf("Security.stripInaccessible expects Boolean enforceRootObjectCRUD")
 		}
+		enforceRootObjectCRUD := true
+		if len(args) == 3 {
+			enforceRootObjectCRUD = args[2].Bool
+		}
+		records, removedFields, err := vm.stripInaccessibleRecords(args[0].Text, args[1], enforceRootObjectCRUD)
+		if err != nil {
+			return Null, err
+		}
 		decision := Object("SObjectAccessDecision")
-		decision.Fields["records"] = args[1]
-		decision.Fields["removedFields"] = Map()
+		decision.Fields["records"] = records
+		decision.Fields["removedFields"] = removedFields
 		return decision, nil
 	case "Database.setSavepoint":
 		if len(args) != 0 {
@@ -3202,9 +3285,95 @@ platformStaticCall:
 			return Null, err
 		}
 		return platformScalar("Blob", string(cipherText)), nil
-	case "Crypto.decrypt", "Crypto.encryptWithManagedIV", "Crypto.decryptWithManagedIV",
-		"Crypto.sign", "Crypto.signWithCertificate", "Crypto.verify", "Crypto.verifyWithCertificate":
-		return Null, unsupportedCallError(callee + " local deterministic key, certificate, and encryption surfaces")
+	case "Crypto.decrypt":
+		if len(args) != 4 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("Crypto.decrypt expects algorithm, privateKey Blob, initializationVector Blob, and cipherText Blob")
+		}
+		key, err := blobStringArg("Crypto.decrypt privateKey", args[1:2])
+		if err != nil {
+			return Null, err
+		}
+		iv, err := blobStringArg("Crypto.decrypt initializationVector", args[2:3])
+		if err != nil {
+			return Null, err
+		}
+		cipherText, err := blobStringArg("Crypto.decrypt cipherText", args[3:])
+		if err != nil {
+			return Null, err
+		}
+		clearText, err := decryptAESCBC(args[0].Text, []byte(key), []byte(iv), []byte(cipherText))
+		if err != nil {
+			return Null, err
+		}
+		return platformScalar("Blob", string(clearText)), nil
+	case "Crypto.encryptWithManagedIV":
+		if len(args) != 3 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("Crypto.encryptWithManagedIV expects algorithm, privateKey Blob, and clearText Blob")
+		}
+		key, err := blobStringArg("Crypto.encryptWithManagedIV privateKey", args[1:2])
+		if err != nil {
+			return Null, err
+		}
+		clearText, err := blobStringArg("Crypto.encryptWithManagedIV clearText", args[2:])
+		if err != nil {
+			return Null, err
+		}
+		iv := managedIV([]byte(key), []byte(clearText))
+		cipherText, err := encryptAESCBC(args[0].Text, []byte(key), iv, []byte(clearText))
+		if err != nil {
+			return Null, err
+		}
+		return platformScalar("Blob", string(append(append([]byte{}, iv...), cipherText...))), nil
+	case "Crypto.decryptWithManagedIV":
+		if len(args) != 3 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("Crypto.decryptWithManagedIV expects algorithm, privateKey Blob, and cipherText Blob")
+		}
+		key, err := blobStringArg("Crypto.decryptWithManagedIV privateKey", args[1:2])
+		if err != nil {
+			return Null, err
+		}
+		cipherText, err := blobStringArg("Crypto.decryptWithManagedIV cipherText", args[2:])
+		if err != nil {
+			return Null, err
+		}
+		if len(cipherText) < aes.BlockSize {
+			return Null, fmt.Errorf("Crypto.decryptWithManagedIV cipherText must include managed IV")
+		}
+		clearText, err := decryptAESCBC(args[0].Text, []byte(key), []byte(cipherText[:aes.BlockSize]), []byte(cipherText[aes.BlockSize:]))
+		if err != nil {
+			return Null, err
+		}
+		return platformScalar("Blob", string(clearText)), nil
+	case "Crypto.sign", "Crypto.signWithCertificate":
+		if len(args) != 3 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("%s expects algorithm, input Blob, and key", callee)
+		}
+		input, err := blobStringArg(callee+" input", args[1:2])
+		if err != nil {
+			return Null, err
+		}
+		signature, err := localCryptoSignature(args[0].Text, []byte(input))
+		if err != nil {
+			return Null, err
+		}
+		return platformScalar("Blob", string(signature)), nil
+	case "Crypto.verify", "Crypto.verifyWithCertificate":
+		if len(args) != 4 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("%s expects algorithm, input Blob, signature Blob, and key", callee)
+		}
+		input, err := blobStringArg(callee+" input", args[1:2])
+		if err != nil {
+			return Null, err
+		}
+		signature, err := blobStringArg(callee+" signature", args[2:3])
+		if err != nil {
+			return Null, err
+		}
+		expected, err := localCryptoSignature(args[0].Text, []byte(input))
+		if err != nil {
+			return Null, err
+		}
+		return Bool(hmac.Equal([]byte(signature), expected)), nil
 	case "Crypto.generateAESKey":
 		if len(args) != 1 || args[0].Kind != ValueInt {
 			return Null, fmt.Errorf("Crypto.generateAESKey expects Integer key size")
@@ -3266,6 +3435,9 @@ platformStaticCall:
 		}
 		return String(string(data)), nil
 	case "JSON.deserializeUntyped":
+		if len(args) == 1 && args[0].Kind == ValueNull {
+			return Null, jsonDeserializeException("Argument cannot be null.")
+		}
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("JSON.deserializeUntyped expects String")
 		}
@@ -3275,6 +3447,9 @@ platformStaticCall:
 		}
 		return valueFromJSON(decoded), nil
 	case "JSON.deserialize", "JSON.deserializeStrict":
+		if len(args) == 2 && args[0].Kind == ValueNull {
+			return Null, jsonDeserializeException("Argument cannot be null.")
+		}
 		if len(args) != 2 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("%s expects String and Type", callee)
 		}
@@ -3341,8 +3516,18 @@ platformStaticCall:
 		return vm.eventBusPublish(args, result)
 	case "EventBus.publishAfterCommit":
 		return Null, unsupportedCallError(callee + " local platform event after-commit delivery surface")
+	case "Request.getCurrent", "System.Request.getCurrent":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("%s expects 0 arguments", callee)
+		}
+		return vm.currentRequestValue(), nil
 	case "ConnectApi.Organization.getSettings":
 		return vm.connectAPIOrganizationSettings(args)
+	case "ConnectApi.ChatterUsers.getFollowings":
+		if vm.testContext != nil && !vm.testContext.SeeAllData {
+			return Null, newExceptionError("UnsupportedOperationException", "ConnectApi.ChatterUsers.getFollowings requires SeeAllData=true in local tests")
+		}
+		return Object("ConnectApi.FollowingPage"), nil
 	case "ConnectApi.Communities.getCommunity":
 		return vm.connectAPICommunity(args)
 	case "ConnectApi.UserProfiles.setPhoto":
@@ -3409,6 +3594,48 @@ platformStaticCall:
 		partition.Fields["name"] = args[0]
 		partition.Fields["scope"] = String(strings.TrimSuffix(callee, ".getPartition"))
 		return partition, nil
+	case "Cache.Org.get", "Cache.Session.get":
+		return vm.cacheStaticDefaultGet(callee, args)
+	case "Cache.Org.put", "Cache.Session.put":
+		return vm.cacheStaticDefaultPut(callee, args)
+	case "Cache.Org.remove", "Cache.Session.remove":
+		return vm.cacheStaticDefaultRemove(callee, args)
+	case "Cache.Org.contains", "Cache.Session.contains":
+		return vm.cacheStaticDefaultContains(callee, args)
+	case "Cache.Org.getKeys", "Cache.Session.getKeys":
+		return vm.cacheStaticDefaultKeys(callee, args)
+	case "Cache.Org.getNumKeys", "Cache.Session.getNumKeys":
+		return vm.cacheStaticDefaultNumKeys(callee, args)
+	case "Cache.Org.getCapacity", "Cache.Session.getCapacity":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("%s expects 0 arguments", callee)
+		}
+		return Decimal(100), nil
+	case "Cache.Org.isAvailable", "Cache.Session.isAvailable":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("%s expects 0 arguments", callee)
+		}
+		return Bool(true), nil
+	case "Cache.Org.getName", "Cache.Session.getName":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("%s expects 0 arguments", callee)
+		}
+		return String(cacheDefaultPartitionName(callee)), nil
+	case "Cache.Org.getAvgGetSize", "Cache.Session.getAvgGetSize",
+		"Cache.Org.getAvgGetTime", "Cache.Session.getAvgGetTime",
+		"Cache.Org.getAvgValueSize", "Cache.Session.getAvgValueSize",
+		"Cache.Org.getMaxGetSize", "Cache.Session.getMaxGetSize",
+		"Cache.Org.getMaxGetTime", "Cache.Session.getMaxGetTime",
+		"Cache.Org.getMaxValueSize", "Cache.Session.getMaxValueSize":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("%s expects 0 arguments", callee)
+		}
+		return Int(0), nil
+	case "Cache.Org.getMissRate", "Cache.Session.getMissRate":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("%s expects 0 arguments", callee)
+		}
+		return Decimal(0), nil
 	case "Messaging.sendEmail":
 		return vm.sendEmail(args, result)
 	case "Messaging.renderStoredEmailTemplate":
@@ -3514,7 +3741,7 @@ platformStaticCall:
 		}
 		return typedList("List<Id>"), nil
 	case "Test.calculatePermissionSetGroup":
-		if len(args) != 1 || (args[0].Kind != ValueString && args[0].Kind != ValueList) {
+		if len(args) != 1 || (!isApexIDLikeValue(args[0]) && args[0].Kind != ValueList) {
 			return Null, fmt.Errorf("Test.calculatePermissionSetGroup expects permission set group Id or List<String>")
 		}
 		if err := vm.requireTestContext(callee); err != nil {
@@ -3551,6 +3778,54 @@ platformStaticCall:
 		return vm.testSetFixedSearchResults(args)
 	case "Test.setCreatedDate":
 		return vm.testSetCreatedDate(args)
+	case "DataWeave.Script.createScript", "dataweave.Script.createScript":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("DataWeave.Script.createScript expects script name String")
+		}
+		return newDataWeaveScript(args[0].Text), nil
+	case "Location.newInstance":
+		if len(args) != 2 || !isMathNumeric(args[0]) || !isMathNumeric(args[1]) {
+			return Null, fmt.Errorf("Location.newInstance expects latitude and longitude")
+		}
+		return newLocation(args[0], args[1]), nil
+	case "Location.getDistance":
+		if len(args) != 3 || args[0].Kind != ValueObject || args[1].Kind != ValueObject || args[2].Kind != ValueString {
+			return Null, fmt.Errorf("Location.getDistance expects two Locations and unit String")
+		}
+		return locationDistance(args[0], args[1], args[2].Text)
+	case "DomainParser.parse":
+		if len(args) != 1 {
+			return Null, fmt.Errorf("DomainParser.parse expects hostname or URL")
+		}
+		host, err := domainParserHost(args[0])
+		if err != nil {
+			return Null, err
+		}
+		return newDomainFromHostname(host), nil
+	case "DomainCreator.getContentHostname",
+		"DomainCreator.getExperienceCloudSitesBuilderHostname",
+		"DomainCreator.getExperienceCloudSitesHostname",
+		"DomainCreator.getExperienceCloudSitesLivePreviewHostname",
+		"DomainCreator.getExperienceCloudSitesPreviewHostname",
+		"DomainCreator.getLightningHostname",
+		"DomainCreator.getOrgMyDomainHostname",
+		"DomainCreator.getSalesforceSitesHostname",
+		"DomainCreator.getSetupHostname":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("%s expects 0 arguments", callee)
+		}
+		return String(localDomainHostname(strings.TrimPrefix(callee, "DomainCreator.get"), "")), nil
+	case "DomainCreator.getLightningContainerComponentHostname",
+		"DomainCreator.getVisualforceHostname":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("%s expects package name String", callee)
+		}
+		return String(localDomainHostname(strings.TrimPrefix(callee, "DomainCreator.get"), args[0].Text)), nil
+	case "QueueableDuplicateSignature.builder":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("QueueableDuplicateSignature.builder expects 0 arguments")
+		}
+		return newQueueableDuplicateSignatureBuilder(), nil
 	case "Test.startTest":
 		return vm.testStart()
 	case "Test.stopTest":
@@ -3856,6 +4131,45 @@ func (vm *VM) currentRequestURL() string {
 	return vm.salesforceBaseURL() + "/" + raw
 }
 
+func (vm *VM) currentRequestValue() Value {
+	request := Object("Request")
+	request.Fields["requestId"] = String("oaer-request-000000000001")
+	request.Fields["quiddity"] = vm.currentQuiddityValue()
+	return request
+}
+
+func (vm *VM) currentQuiddityValue() Value {
+	name := "SYNCHRONOUS"
+	if vm.testContext != nil {
+		name = "RUNTEST_SYNC"
+	}
+	value := Value{Kind: ValueObject, Type: "Quiddity", Text: name, Ref: newValueRef()}
+	value.Fields = map[string]Value{"ordinal": Int(0)}
+	return value
+}
+
+func (vm *VM) callRequestMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	switch method {
+	case "getRequestId":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Request.getRequestId expects 0 arguments")
+		}
+		if value, ok := receiver.Fields["requestId"]; ok && value.Kind == ValueString {
+			return value, receiver, false, true, nil
+		}
+		return String("oaer-request-000000000001"), receiver, false, true, nil
+	case "getQuiddity":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Request.getQuiddity expects 0 arguments")
+		}
+		if value, ok := receiver.Fields["quiddity"]; ok && value.Kind == ValueObject {
+			return value, receiver, false, true, nil
+		}
+		return vm.currentQuiddityValue(), receiver, false, true, nil
+	}
+	return Null, receiver, false, false, nil
+}
+
 func (vm *VM) siteBaseURL() string {
 	base := strings.TrimRight(vm.salesforceBaseURL(), "/")
 	prefix := strings.Trim(vm.firstOrgRecordString("Site", "UrlPathPrefix", ""), "/")
@@ -4025,8 +4339,8 @@ func unsupportedIntegrationSurface(callee string) (string, bool) {
 }
 
 func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
-	if len(args) != 1 {
-		return Null, fmt.Errorf("EventBus.publish expects event record or list")
+	if len(args) < 1 || len(args) > 2 {
+		return Null, fmt.Errorf("EventBus.publish expects event record or list and optional callback")
 	}
 	records := []Value{args[0]}
 	if args[0].Kind == ValueList {
@@ -4034,13 +4348,36 @@ func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
 	}
 	results := make([]Value, 0, len(records))
 	triggerRecords := make([]storage.Record, 0, len(records))
+	eventUUIDs := make([]string, 0, len(records))
 	for _, record := range records {
 		if record.Kind != ValueObject {
 			return Null, fmt.Errorf("EventBus.publish expects SObject event record(s)")
 		}
+		if len(args) == 2 {
+			uuid, ok := platformEventUUID(record)
+			if !ok {
+				return Null, fmt.Errorf("EventBus.publish with callback requires platform event records with EventUuid")
+			}
+			eventUUIDs = append(eventUUIDs, uuid)
+		}
 		stored, err := vm.recordFromValue(&record)
 		if err != nil {
 			return Null, err
+		}
+		if strings.HasSuffix(strings.ToLower(stored.Object), "__e") {
+			if field, ok := vm.missingRequiredPlatformEventField(stored); ok {
+				row := Object("Database.SaveResult")
+				row.Fields["success"] = Bool(false)
+				row.Fields["id"] = Null
+				row.Fields["error"] = String("REQUIRED_FIELD_MISSING, required field " + stored.Object + "." + field + " is missing")
+				errValue := Object("Database.Error")
+				errValue.Fields["message"] = String("required field " + stored.Object + "." + field + " is missing")
+				errValue.Fields["statusCode"] = String("REQUIRED_FIELD_MISSING")
+				errValue.Fields["fields"] = List(String(field))
+				row.Fields["errors"] = List(errValue)
+				results = append(results, row)
+				continue
+			}
 		}
 		triggerRecords = append(triggerRecords, stored)
 		row := Object("Database.SaveResult")
@@ -4049,6 +4386,17 @@ func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
 		row.Fields["error"] = String("")
 		row.Fields["errors"] = List()
 		results = append(results, row)
+	}
+	if len(args) == 2 && args[1].Kind != ValueNull {
+		if args[1].Kind != ValueObject {
+			return Null, fmt.Errorf("EventBus.publish callback expects object")
+		}
+		if vm.testContext != nil {
+			vm.testContext.EventPublishes = append(vm.testContext.EventPublishes, eventPublishCallback{
+				Callback:   args[1],
+				EventUUIDs: eventUUIDs,
+			})
+		}
 	}
 	if _, err := vm.runTriggers(triggerTimingAfter, "insert", triggerRecords, nil, result); err != nil {
 		return Null, err
@@ -4064,6 +4412,66 @@ func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
 		return Null, nil
 	}
 	return results[0], nil
+}
+
+func (vm *VM) missingRequiredPlatformEventField(record storage.Record) (string, bool) {
+	if vm == nil || vm.Org == nil {
+		return "", false
+	}
+	objectName := record.Object
+	if canonical, ok := storage.ResolveObjectName(*vm.Org, objectName); ok {
+		objectName = canonical
+	}
+	object, ok := vm.Org.Objects[objectName]
+	if !ok {
+		return "", false
+	}
+	for name, field := range object.Definition.Fields {
+		if !field.Required {
+			continue
+		}
+		if isLocalPlatformEventSystemRequiredField(name) {
+			continue
+		}
+		value, ok := record.GetField(name)
+		if !ok && strings.HasSuffix(strings.ToLower(name), "__c") {
+			value, ok = record.GetField(name[:len(name)-3])
+		}
+		if !ok || value.Kind == storage.ValueNull {
+			return name, true
+		}
+		if field.Type == storage.FieldString && strings.TrimSpace(value.String) == "" {
+			return name, true
+		}
+	}
+	return "", false
+}
+
+func isLocalPlatformEventSystemRequiredField(field string) bool {
+	switch strings.ToLower(field) {
+	case "id", "eventuuid", "replayid", "createddate", "createdbyid":
+		return true
+	default:
+		return false
+	}
+}
+
+func platformEventUUID(record Value) (string, bool) {
+	if !strings.HasSuffix(strings.ToLower(record.Type), "__e") {
+		return "", false
+	}
+	_, value, ok := objectFieldValue(record, "EventUuid")
+	if !ok || value.Kind == ValueNull {
+		return "", false
+	}
+	text := ""
+	switch value.Kind {
+	case ValueString:
+		text = value.Text
+	case ValueObject:
+		text, _ = platformScalarObjectText(value)
+	}
+	return text, text != ""
 }
 
 func (vm *VM) connectAPIOrganizationSettings(args []Value) (Value, error) {
@@ -4684,6 +5092,9 @@ func (vm *VM) currentUserFieldPermission(objectName, fieldName, method string) b
 	if allowed, ok := vm.explicitFieldPermission(profileID, objectName, fieldName, method); ok {
 		return allowed
 	}
+	if profileID != "" && vm.parentHasFieldPermissionsForObject(profileID, objectName) {
+		return false
+	}
 	if method == "isAccessible" && vm.isBaselineReadableField(objectName, fieldName) {
 		return true
 	}
@@ -4699,11 +5110,238 @@ func (vm *VM) currentUserFieldPermission(objectName, fieldName, method string) b
 	return true
 }
 
+func (vm *VM) stripInaccessibleRecords(accessType string, records Value, enforceRootObjectCRUD bool) (Value, Value, error) {
+	out := cloneValue(records)
+	out.Type = records.Type
+	removedFields := Map()
+	removedFields.Type = "Map<String,Set<String>>"
+	for i := range out.List {
+		if err := vm.stripInaccessibleRecord(accessType, &out.List[i], enforceRootObjectCRUD, removedFields); err != nil {
+			return Null, Null, err
+		}
+	}
+	return out, removedFields, nil
+}
+
+func (vm *VM) enforceUserModeDMLAccess(op string, value Value) error {
+	objectPermission, fieldPermission := userModeDMLPermissions(op)
+	if objectPermission == "" {
+		return nil
+	}
+	records := dmlAccessRecords(value)
+	for _, record := range records {
+		if record.Kind != ValueObject {
+			continue
+		}
+		objectName := record.Type
+		if vm.Org != nil {
+			if resolved, ok := storage.ResolveObjectName(*vm.Org, objectName); ok {
+				objectName = resolved
+			}
+		}
+		if !vm.currentUserObjectPermission(objectName, objectPermission) {
+			return newExceptionError("SecurityException", fmt.Sprintf("Access to entity '%s' denied", objectName))
+		}
+		for field := range record.Fields {
+			if fieldPermission == "" || isInternalSObjectField(field) || isSObjectSystemField(field) {
+				continue
+			}
+			canonicalField := vm.resolveSObjectFieldName(objectName, field)
+			if strings.EqualFold(canonicalField, "Id") {
+				continue
+			}
+			if !vm.currentUserFieldPermission(objectName, canonicalField, fieldPermission) {
+				return newExceptionError("SecurityException", fmt.Sprintf("Access to field '%s.%s' denied", objectName, canonicalField))
+			}
+		}
+	}
+	return nil
+}
+
+func dmlAccessRecords(value Value) []Value {
+	if value.Kind == ValueList {
+		return value.List
+	}
+	return []Value{value}
+}
+
+func userModeDMLPermissions(op string) (string, string) {
+	switch strings.ToLower(strings.TrimSpace(op)) {
+	case "insert":
+		return "isCreateable", "isCreateable"
+	case "update", "upsert":
+		return "isUpdateable", "isUpdateable"
+	case "delete", "undelete":
+		return "isDeletable", ""
+	default:
+		return "", ""
+	}
+}
+
+func (vm *VM) stripInaccessibleRecord(accessType string, record *Value, enforceRootObjectCRUD bool, removedFields Value) error {
+	if record == nil || record.Kind != ValueObject {
+		return nil
+	}
+	objectName := record.Type
+	if vm.Org != nil {
+		if resolved, ok := storage.ResolveObjectName(*vm.Org, objectName); ok {
+			objectName = resolved
+		}
+	}
+	objectPermission := stripInaccessibleObjectPermission(accessType)
+	if enforceRootObjectCRUD && objectPermission != "" && !vm.currentUserObjectPermission(objectName, objectPermission) {
+		return newExceptionError("NoAccessException", "No access to entity: "+objectName)
+	}
+	fieldPermission := stripInaccessibleFieldPermission(accessType)
+	for field, value := range record.Fields {
+		if isInternalSObjectField(field) || isSObjectSystemField(field) {
+			continue
+		}
+		if value.Kind == ValueList {
+			if childObjectName := sObjectListObjectName(value); childObjectName != "" {
+				if vm.Org != nil {
+					if resolved, ok := storage.ResolveObjectName(*vm.Org, childObjectName); ok {
+						childObjectName = resolved
+					}
+				}
+				if objectPermission != "" && !vm.currentUserObjectPermission(childObjectName, objectPermission) {
+					delete(record.Fields, field)
+					unmarkQueriedSObjectField(record, field)
+					addStripInaccessibleRemovedField(removedFields, objectName, field)
+					continue
+				}
+			}
+			for i := range value.List {
+				if err := vm.stripInaccessibleRecord(accessType, &value.List[i], enforceRootObjectCRUD, removedFields); err != nil {
+					return err
+				}
+			}
+			record.Fields[field] = value
+			continue
+		}
+		canonicalField := vm.resolveSObjectFieldName(objectName, field)
+		if strings.EqualFold(canonicalField, "Id") {
+			continue
+		}
+		if fieldPermission == "" || vm.currentUserFieldPermission(objectName, canonicalField, fieldPermission) || vm.stripInaccessibleKeepsBaselineWritableField(accessType, objectName, canonicalField) {
+			continue
+		}
+		delete(record.Fields, field)
+		if canonicalField != field {
+			delete(record.Fields, canonicalField)
+		}
+		unmarkQueriedSObjectField(record, canonicalField)
+		unmarkQueriedSObjectField(record, field)
+		addStripInaccessibleRemovedField(removedFields, objectName, canonicalField)
+	}
+	if selected, ok := record.Fields[sobjectQueriedFieldsField]; ok && selected.Kind == ValueMap {
+		for _, selectedFieldValue := range selected.MapKeys {
+			if selectedFieldValue.Kind != ValueString {
+				continue
+			}
+			field := selectedFieldValue.Text
+			if strings.EqualFold(field, "object") || strings.EqualFold(field, "Id") || recordHasSObjectField(*record, field) {
+				continue
+			}
+			canonicalField := vm.resolveSObjectFieldName(objectName, field)
+			if fieldPermission == "" || vm.currentUserFieldPermission(objectName, canonicalField, fieldPermission) || vm.stripInaccessibleKeepsBaselineWritableField(accessType, objectName, canonicalField) {
+				continue
+			}
+			unmarkQueriedSObjectField(record, canonicalField)
+			unmarkQueriedSObjectField(record, field)
+			addStripInaccessibleRemovedField(removedFields, objectName, canonicalField)
+		}
+	}
+	return nil
+}
+
+func recordHasSObjectField(record Value, field string) bool {
+	if record.Fields == nil {
+		return false
+	}
+	for candidate := range record.Fields {
+		if strings.EqualFold(candidate, field) {
+			return true
+		}
+	}
+	return false
+}
+
+func sObjectListObjectName(value Value) string {
+	if value.Kind != ValueList {
+		return ""
+	}
+	for _, item := range value.List {
+		if item.Kind == ValueObject && strings.TrimSpace(item.Type) != "" {
+			return item.Type
+		}
+	}
+	if strings.HasPrefix(value.Type, "List<") && strings.HasSuffix(value.Type, ">") {
+		return strings.TrimSpace(strings.TrimSuffix(strings.TrimPrefix(value.Type, "List<"), ">"))
+	}
+	return ""
+}
+
+func stripInaccessibleObjectPermission(accessType string) string {
+	switch strings.ToUpper(strings.TrimSpace(accessType)) {
+	case "CREATABLE":
+		return "isCreateable"
+	case "READABLE":
+		return "isAccessible"
+	case "UPDATABLE", "UPSERTABLE":
+		return "isUpdateable"
+	default:
+		return ""
+	}
+}
+
+func stripInaccessibleFieldPermission(accessType string) string {
+	switch strings.ToUpper(strings.TrimSpace(accessType)) {
+	case "CREATABLE":
+		return "isCreateable"
+	case "READABLE":
+		return "isAccessible"
+	case "UPDATABLE", "UPSERTABLE":
+		return "isUpdateable"
+	default:
+		return ""
+	}
+}
+
+func (vm *VM) stripInaccessibleKeepsBaselineWritableField(accessType, objectName, fieldName string) bool {
+	switch strings.ToUpper(strings.TrimSpace(accessType)) {
+	case "CREATABLE", "UPSERTABLE":
+		return vm.isBaselineWritableField(objectName, fieldName)
+	default:
+		return false
+	}
+}
+
+func addStripInaccessibleRemovedField(removedFields Value, objectName, fieldName string) {
+	if removedFields.Kind != ValueMap || strings.TrimSpace(objectName) == "" || strings.TrimSpace(fieldName) == "" {
+		return
+	}
+	key := mapKey(String(objectName))
+	fields, ok := removedFields.Map[key]
+	if !ok || fields.Kind != ValueSet {
+		fields = Set()
+		fields.Type = "Set<String>"
+	}
+	if !containsValue(fields.Set, String(fieldName)) {
+		fields.Set = append(fields.Set, String(fieldName))
+	}
+	removedFields.Map[key] = fields
+	if removedFields.MapKeys == nil {
+		removedFields.MapKeys = make(map[string]Value)
+	}
+	removedFields.MapKeys[key] = String(objectName)
+}
+
 func stringField(value Value, field string) string {
 	if value.Kind != ValueObject {
 		return ""
 	}
-	raw, ok := value.Fields[field]
+	_, raw, ok := objectFieldValue(value, field)
 	if !ok {
 		return ""
 	}
@@ -4711,6 +5349,9 @@ func stringField(value Value, field string) string {
 	case ValueString:
 		return raw.Text
 	case ValueObject:
+		if strings.EqualFold(raw.Type, "Id") && raw.Text != "" {
+			return raw.Text
+		}
 		if raw.Text != "" {
 			return raw.Text
 		}
@@ -4765,7 +5406,7 @@ func (vm *VM) explicitFieldPermission(parentID, objectName, fieldName, method st
 		if sObjectTypeValue, ok := record.GetField("SObjectType"); !ok || !storageStringValueEquals(sObjectTypeValue, objectName) {
 			continue
 		}
-		if fieldValue, ok := record.GetField("Field"); !ok || !fieldPermissionFieldMatches(fieldValue, objectName, fieldName) {
+		if fieldValue, ok := record.GetField("Field"); !ok || !vm.fieldPermissionFieldMatches(fieldValue, objectName, fieldName) {
 			continue
 		}
 		value, ok := record.GetField(field)
@@ -4777,15 +5418,78 @@ func (vm *VM) explicitFieldPermission(parentID, objectName, fieldName, method st
 	return false, false
 }
 
-func fieldPermissionFieldMatches(value storage.Value, objectName, fieldName string) bool {
+func (vm *VM) parentHasFieldPermissionsForObject(parentID, objectName string) bool {
+	if parentID == "" || vm.Org == nil {
+		return false
+	}
+	state, ok := vm.Org.Objects["FieldPermissions"]
+	if !ok {
+		return false
+	}
+	for _, record := range state.Records {
+		if parentIDValue, ok := record.GetField("ParentId"); !ok || !storageIDValueEquals(parentIDValue, parentID) {
+			continue
+		}
+		if sObjectTypeValue, ok := record.GetField("SObjectType"); ok && storageStringValueEquals(sObjectTypeValue, objectName) {
+			return true
+		}
+	}
+	return false
+}
+
+func (vm *VM) fieldPermissionFieldMatches(value storage.Value, objectName, fieldName string) bool {
 	if value.Kind != storage.ValueString {
 		return false
 	}
 	text := value.String
 	if dot := strings.LastIndexByte(text, '.'); dot >= 0 {
-		return strings.EqualFold(text[:dot], objectName) && strings.EqualFold(text[dot+1:], fieldName)
+		return strings.EqualFold(text[:dot], objectName) && vm.fieldPermissionNameMatches(objectName, text[dot+1:], fieldName)
 	}
-	return strings.EqualFold(text, fieldName)
+	return vm.fieldPermissionNameMatches(objectName, text, fieldName)
+}
+
+func (vm *VM) fieldPermissionNameMatches(objectName, permissionField, fieldName string) bool {
+	if strings.EqualFold(permissionField, fieldName) {
+		return true
+	}
+	for _, component := range vm.compoundFieldPermissionComponents(objectName, permissionField) {
+		if strings.EqualFold(component, fieldName) {
+			return true
+		}
+	}
+	return false
+}
+
+func (vm *VM) compoundFieldPermissionComponents(objectName, fieldName string) []string {
+	switch {
+	case strings.EqualFold(fieldName, "ShippingAddress"):
+		return []string{"ShippingStreet", "ShippingCity", "ShippingState", "ShippingPostalCode", "ShippingCountry", "ShippingLatitude", "ShippingLongitude", "ShippingGeocodeAccuracy"}
+	case strings.EqualFold(fieldName, "BillingAddress"):
+		return []string{"BillingStreet", "BillingCity", "BillingState", "BillingPostalCode", "BillingCountry", "BillingLatitude", "BillingLongitude", "BillingGeocodeAccuracy"}
+	case strings.EqualFold(fieldName, "MailingAddress"):
+		return []string{"MailingStreet", "MailingCity", "MailingState", "MailingPostalCode", "MailingCountry", "MailingLatitude", "MailingLongitude", "MailingGeocodeAccuracy"}
+	case strings.EqualFold(fieldName, "OtherAddress"):
+		return []string{"OtherStreet", "OtherCity", "OtherState", "OtherPostalCode", "OtherCountry", "OtherLatitude", "OtherLongitude", "OtherGeocodeAccuracy"}
+	}
+	if vm.Org == nil {
+		return nil
+	}
+	resolvedObject, ok := storage.ResolveObjectName(*vm.Org, objectName)
+	if !ok {
+		return nil
+	}
+	definition := vm.Org.Objects[resolvedObject].Definition
+	resolvedField, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, fieldName)
+	if !ok {
+		return nil
+	}
+	var out []string
+	for name, field := range definition.Fields {
+		if strings.EqualFold(field.CompoundFieldName, resolvedField) || strings.EqualFold(field.CompoundFieldName, fieldName) {
+			out = append(out, name)
+		}
+	}
+	return out
 }
 
 func objectPermissionField(method string) string {
@@ -4816,6 +5520,31 @@ func (vm *VM) assignedPermissionSetIDs(userID string) []string {
 				if id := storageValueIDText(permissionSetValue); id != "" {
 					out = append(out, id)
 				}
+			}
+			if permissionSetGroupValue, ok := record.GetField("PermissionSetGroupId"); ok {
+				out = append(out, vm.permissionSetGroupComponentIDs(storageValueIDText(permissionSetGroupValue))...)
+			}
+		}
+	}
+	return out
+}
+
+func (vm *VM) permissionSetGroupComponentIDs(groupID string) []string {
+	if groupID == "" || vm.Org == nil {
+		return nil
+	}
+	state, ok := vm.Org.Objects["PermissionSetGroupComponent"]
+	if !ok {
+		return nil
+	}
+	var out []string
+	for _, record := range state.Records {
+		if groupValue, ok := record.GetField("PermissionSetGroupId"); !ok || !storageIDValueEquals(groupValue, groupID) {
+			continue
+		}
+		if permissionSetValue, ok := record.GetField("PermissionSetId"); ok {
+			if id := storageValueIDText(permissionSetValue); id != "" {
+				out = append(out, id)
 			}
 		}
 	}
@@ -4848,6 +5577,23 @@ func (vm *VM) isBaselineReadableField(objectName, fieldName string) bool {
 	if strings.EqualFold(fieldName, "Id") {
 		return true
 	}
+	if vm.Org == nil {
+		return false
+	}
+	objectName, ok := storage.ResolveObjectName(*vm.Org, objectName)
+	if !ok {
+		return false
+	}
+	definition := vm.Org.Objects[objectName].Definition
+	fieldName, ok = storage.ResolveFieldName(definition, vm.Org.Namespace, fieldName)
+	if !ok {
+		return false
+	}
+	field := definition.Fields[fieldName]
+	return field.Required || isNameFieldDescribe(field)
+}
+
+func (vm *VM) isBaselineWritableField(objectName, fieldName string) bool {
 	if vm.Org == nil {
 		return false
 	}
@@ -5166,7 +5912,10 @@ func (vm *VM) testStop(result *Result) (Value, error) {
 		return Null, fmt.Errorf("Test.stopTest cannot be called more than once")
 	}
 	vm.testContext.Stopped = true
-	err := vm.drainTestAsync(result)
+	err := vm.drainTestEventPublishes(result)
+	if err == nil {
+		err = vm.drainTestAsync(result)
+	}
 	vm.limits = vm.testContext.ParentLimits
 	vm.limitViolations = append([]LimitViolation(nil), vm.testContext.ParentViolations...)
 	return Null, err
@@ -5380,6 +6129,115 @@ func (vm *VM) abortRecordedAsyncJob(jobID string) {
 	}
 }
 
+func (vm *VM) executeObjectForEach(source string, inst ir.Instruction, result *Result, iterable Value) (execOutcome, error) {
+	iterator := iterable
+	if !isIteratorValue(iterator) {
+		var err error
+		iterator, err = vm.iteratorForObject(iterable, result)
+		if err != nil {
+			return execOutcome{}, err
+		}
+	}
+	_, existed := vm.Globals[inst.Name]
+	previous := vm.Globals[inst.Name]
+	previousType, hadType := vm.VarTypes[inst.Name]
+	const iteratorName = "__oaer_for_each_iterator"
+	previousIterator, hadIterator := vm.Globals[iteratorName]
+	previousIteratorType, hadIteratorType := vm.VarTypes[iteratorName]
+	defer func() {
+		if existed {
+			vm.Globals[inst.Name] = previous
+		} else {
+			delete(vm.Globals, inst.Name)
+		}
+		if hadType {
+			vm.VarTypes[inst.Name] = previousType
+		} else {
+			delete(vm.VarTypes, inst.Name)
+		}
+		if hadIterator {
+			vm.Globals[iteratorName] = previousIterator
+		} else {
+			delete(vm.Globals, iteratorName)
+		}
+		if hadIteratorType {
+			vm.VarTypes[iteratorName] = previousIteratorType
+		} else {
+			delete(vm.VarTypes, iteratorName)
+		}
+	}()
+	vm.Globals[iteratorName] = iterator
+	vm.VarTypes[iteratorName] = iterator.Type
+	for iteration := 0; ; iteration++ {
+		if iteration >= maxLoopIterations {
+			return execOutcome{}, fmt.Errorf("enhanced for loop exceeded %d iterations", maxLoopIterations)
+		}
+		hasNext, handled, err := vm.callValueMember(iteratorName, vm.Globals[iteratorName], "hasNext", nil, result)
+		if err != nil {
+			return execOutcome{}, err
+		}
+		if !handled || hasNext.Kind != ValueBool {
+			return execOutcome{}, fmt.Errorf("enhanced for iterator requires Boolean hasNext")
+		}
+		if !hasNext.Bool {
+			return execOutcome{}, nil
+		}
+		value, handled, err := vm.callValueMember(iteratorName, vm.Globals[iteratorName], "next", nil, result)
+		if err != nil {
+			return execOutcome{}, err
+		}
+		if !handled {
+			return execOutcome{}, fmt.Errorf("enhanced for iterator requires next")
+		}
+		coerced, err := vm.coerceAssignable(inst.Type, value)
+		if err != nil {
+			return execOutcome{}, fmt.Errorf("%s %s: %w", inst.Type, inst.Name, err)
+		}
+		vm.Globals[inst.Name] = coerced
+		vm.VarTypes[inst.Name] = inst.Type
+		out, err := vm.executeProgram(ir.Program{Instructions: inst.Then, Source: source}, result)
+		if err != nil {
+			return execOutcome{}, err
+		}
+		switch out.signal {
+		case signalNone:
+		case signalContinue:
+		case signalBreak:
+			return execOutcome{}, nil
+		default:
+			return out, nil
+		}
+	}
+}
+
+func (vm *VM) iteratorForObject(iterable Value, result *Result) (Value, error) {
+	if iterable.Kind == ValueNull {
+		return Null, newNullDereferenceError("enhanced for over null collection")
+	}
+	dispatchType := runtimeObjectType(iterable)
+	target, ok, ambiguous := vm.resolveInstanceMethodForArgs(dispatchType, "iterator", nil)
+	if ambiguous {
+		return Null, vm.ambiguousOverloadError(dispatchType+".iterator", nil)
+	}
+	if !ok && iterable.Static != "" && !strings.EqualFold(iterable.Static, dispatchType) {
+		target, ok, ambiguous = vm.resolveInstanceMethodForArgs(iterable.Static, "iterator", nil)
+		if ambiguous {
+			return Null, vm.ambiguousOverloadError(iterable.Static+".iterator", nil)
+		}
+	}
+	if !ok {
+		return Null, fmt.Errorf("enhanced for requires List, Set, or Iterable, got %s", iterable.Kind)
+	}
+	iterator, err := vm.callMethodWithReceiver(target, iterable, nil, result)
+	if err != nil {
+		return Null, err
+	}
+	if iterator.Kind == ValueNull {
+		return Null, newNullDereferenceError("enhanced for over null iterator")
+	}
+	return iterator, nil
+}
+
 func (vm *VM) asyncJobRecordStatus(jobID string) string {
 	if vm.Org == nil {
 		return ""
@@ -5406,6 +6264,39 @@ func (vm *VM) drainTestAsync(result *Result) error {
 	return vm.drainAsyncJobs(result, &vm.testContext.AsyncJobs, &vm.testContext.Draining, &vm.testContext.ChainEnqueued)
 }
 
+func (vm *VM) drainTestEventPublishes(result *Result) error {
+	if vm.testContext == nil {
+		return nil
+	}
+	for len(vm.testContext.EventPublishes) > 0 {
+		publish := vm.testContext.EventPublishes[0]
+		vm.testContext.EventPublishes = vm.testContext.EventPublishes[1:]
+		methodName := "onSuccess"
+		resultType := "eventbus.SuccessResult"
+		if publish.Fail {
+			methodName = "onFailure"
+			resultType = "eventbus.FailureResult"
+		}
+		callbackResult := Object(resultType)
+		uuidValues := make([]Value, 0, len(publish.EventUUIDs))
+		for _, uuid := range publish.EventUUIDs {
+			uuidValues = append(uuidValues, String(uuid))
+		}
+		callbackResult.Fields["eventUuids"] = List(uuidValues...)
+		method, ok, ambiguous := vm.resolveInstanceMethodForArgs(publish.Callback.Type, methodName, []Value{callbackResult})
+		if ambiguous {
+			return vm.ambiguousOverloadError(publish.Callback.Type+"."+methodName, []Value{callbackResult})
+		}
+		if !ok {
+			return fmt.Errorf("event publish callback %s has no %s method", publish.Callback.Type, methodName)
+		}
+		if _, err := vm.callMethodWithReceiver(method, publish.Callback, []Value{callbackResult}, result); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (vm *VM) drainLocalAsync(result *Result) error {
 	return vm.drainAsyncJobs(result, &vm.localAsyncJobs, &vm.localAsyncDrain, &vm.localAsyncChain)
 }
@@ -5415,11 +6306,18 @@ func (vm *VM) drainAsyncJobs(result *Result, jobs *[]AsyncJob, draining *bool, c
 		return nil
 	}
 	*draining = true
-	snapshot := vm.staticFieldSnapshot()
-	staticInitSnapshot := copyStaticInitStateMap(vm.staticInitState)
+	restoreStatics := vm.testContext == nil
+	var snapshot map[string]map[string]Value
+	var staticInitSnapshot map[string]staticInitState
+	if restoreStatics {
+		snapshot = vm.staticFieldSnapshot()
+		staticInitSnapshot = copyStaticInitStateMap(vm.staticInitState)
+	}
 	defer func() {
-		vm.restoreStaticFieldSnapshot(snapshot)
-		vm.staticInitState = copyStaticInitStateMap(staticInitSnapshot)
+		if restoreStatics {
+			vm.restoreStaticFieldSnapshot(snapshot)
+			vm.staticInitState = copyStaticInitStateMap(staticInitSnapshot)
+		}
 		*draining = false
 	}()
 	for len(*jobs) > 0 {
@@ -5868,6 +6766,8 @@ func (vm *VM) ensureAsyncObjects() {
 			"CronExpression":  {APIName: "CronExpression", Type: storage.FieldString},
 			"CronJobDetail":   {APIName: "CronJobDetail", Type: storage.FieldString},
 			"CronJobDetailId": {APIName: "CronJobDetailId", Type: storage.FieldReference, ReferenceTo: []string{"CronJobDetail"}, RelationshipName: "CronJobDetail"},
+			"NextFireTime":    {APIName: "NextFireTime", Type: storage.FieldDateTime},
+			"TimesTriggered":  {APIName: "TimesTriggered", Type: storage.FieldInteger},
 		},
 		Relations: []storage.Relationship{{
 			Field:              "CronJobDetailId",
@@ -6042,9 +6942,45 @@ func (vm *VM) recordCronTrigger(job AsyncJob, state string) {
 	record.Fields["CronExpression"] = storage.StringValue(job.Cron)
 	record.Fields["CronJobDetail"] = storage.StringValue(job.Name)
 	record.Fields["CronJobDetailId"] = storage.IDValue(storage.ID(cronJobDetailID(job.Name)))
+	record.Fields["TimesTriggered"] = storage.IntegerValue(0)
+	if nextFireTime, ok := cronNextFireTime(job.Cron); ok {
+		record.Fields["NextFireTime"] = storage.DateTimeValue(nextFireTime)
+	}
 	object.Records[record.ID] = record
 	vm.Org.Objects["CronTrigger"] = object
 	vm.recordCronJobDetail(job)
+}
+
+func cronNextFireTime(expr string) (string, bool) {
+	parts := strings.Fields(expr)
+	if len(parts) != 7 {
+		return "", false
+	}
+	sec, err := strconv.Atoi(parts[0])
+	if err != nil {
+		return "", false
+	}
+	min, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return "", false
+	}
+	hour, err := strconv.Atoi(parts[2])
+	if err != nil {
+		return "", false
+	}
+	day, err := strconv.Atoi(parts[3])
+	if err != nil {
+		return "", false
+	}
+	month, err := strconv.Atoi(parts[4])
+	if err != nil {
+		return "", false
+	}
+	year, err := strconv.Atoi(parts[6])
+	if err != nil {
+		return "", false
+	}
+	return fmt.Sprintf("%04d-%02d-%02d %02d:%02d:%02d", year, month, day, hour, min, sec), true
 }
 
 func (vm *VM) recordCronJobDetail(job AsyncJob) {
@@ -6124,7 +7060,11 @@ func (vm *VM) executeSOQL(raw string, execResult *Result) (Value, error) {
 	if err != nil {
 		return Null, err
 	}
-	return List(values...), nil
+	out := List(values...)
+	if len(values) > 0 && values[0].Type != "" {
+		out.Type = "List<" + values[0].Type + ">"
+	}
+	return out, nil
 }
 
 func (vm *VM) executeInlineSOQL(raw string, execResult *Result) (Value, error) {
@@ -6205,6 +7145,9 @@ func (vm *VM) executeSOQLRowsWithExpander(raw string, execResult *Result, expand
 	if err := vm.enforceSOQLSecurity(query); err != nil {
 		return nil, err
 	}
+	if err := vm.enforceOrgShapeObjectAvailability(query); err != nil {
+		return nil, err
+	}
 	result, err := soql.Execute(*vm.Org, query)
 	if err != nil {
 		var unsupported *soql.UnsupportedFeatureError
@@ -6234,6 +7177,25 @@ func (vm *VM) executeSOQLRowsWithExpander(raw string, execResult *Result, expand
 		"rows":  result.Rows,
 	})
 	return values, nil
+}
+
+func (vm *VM) enforceOrgShapeObjectAvailability(query soql.Query) error {
+	if vm == nil || vm.Org == nil {
+		return nil
+	}
+	objectName := query.Object
+	if resolved, ok := storage.ResolveObjectName(*vm.Org, objectName); ok {
+		objectName = resolved
+	}
+	if strings.EqualFold(objectName, "DatedConversionRate") && !vm.orgBool("Organization", "IsMultiCurrencyEnabled", false) {
+		return newExceptionError("QueryException", "sObject type 'DatedConversionRate' is not supported")
+	}
+	for _, child := range query.ChildQueries {
+		if err := vm.enforceOrgShapeObjectAvailability(child.Query); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (vm *VM) testSetFixedSearchResults(args []Value) (Value, error) {
@@ -6286,6 +7248,63 @@ func (vm *VM) searchQuery(args []Value) (Value, error) {
 	return vm.executeSOSL(args[0].Text, nil)
 }
 
+func (vm *VM) searchFind(args []Value) (Value, error) {
+	if len(args) != 1 && len(args) != 2 {
+		return Null, fmt.Errorf("Search.find expects query String and optional access level")
+	}
+	if args[0].Kind != ValueString {
+		return Null, fmt.Errorf("Search.find expects query String")
+	}
+	results := Object("Search.SearchResults")
+	byObject := typedMap("Map<String,List<Search.SearchResult>>")
+	if vm.Org != nil {
+		for _, idValue := range vm.fixedSearchResults {
+			id, ok := valueIDString(idValue)
+			if !ok {
+				continue
+			}
+			objectName, ok := vm.sObjectNameForIDPrefix(idPrefix(id))
+			if !ok {
+				objectName, ok = vm.sObjectNameForExistingID(id)
+			}
+			if !ok {
+				continue
+			}
+			record, ok := vm.findOrgRecord(objectName, storage.ID(id))
+			if !ok {
+				continue
+			}
+			key := mapKey(String(objectName))
+			list := byObject.Map[key]
+			if list.Kind != ValueList {
+				list = typedList("List<Search.SearchResult>")
+			}
+			row := Object("Search.SearchResult")
+			row.Fields["sObject"] = vm.vmValueFromRecord(record)
+			row.Fields["snippet"] = String("")
+			row.Fields["snippets"] = typedMap("Map<String,String>")
+			list.List = append(list.List, row)
+			byObject.Map[key] = list
+			byObject.MapKeys[key] = String(objectName)
+		}
+	}
+	results.Fields["results"] = byObject
+	return results, nil
+}
+
+func (vm *VM) searchSuggest(args []Value) (Value, error) {
+	if len(args) != 3 && len(args) != 4 {
+		return Null, fmt.Errorf("Search.suggest expects query, sObjectType, options, and optional access level")
+	}
+	if args[0].Kind != ValueString || args[1].Kind != ValueString {
+		return Null, fmt.Errorf("Search.suggest expects query and sObjectType Strings")
+	}
+	results := Object("Search.SuggestionResults")
+	results.Fields["suggestionResults"] = typedList("List<Search.SuggestionResult>")
+	results.Fields["hasMoreResults"] = Bool(false)
+	return results, nil
+}
+
 func (vm *VM) executeSOSL(raw string, execResult *Result) (Value, error) {
 	if vm.Org == nil {
 		return Null, fmt.Errorf("SOSL requires org state")
@@ -6308,6 +7327,9 @@ func (vm *VM) executeSOSL(raw string, execResult *Result) (Value, error) {
 				continue
 			}
 			objectName, ok := vm.sObjectNameForIDPrefix(idPrefix(id))
+			if !ok {
+				objectName, ok = vm.sObjectNameForExistingID(id)
+			}
 			if !ok || !strings.EqualFold(objectName, spec.ObjectName) {
 				continue
 			}
@@ -6409,6 +7431,17 @@ func valueIDString(value Value) (string, bool) {
 		return text, err == nil && text != ""
 	}
 	return "", false
+}
+
+func isApexIDLikeValue(value Value) bool {
+	if value.Kind == ValueString && value.Text != "" {
+		return true
+	}
+	if value.Kind == ValueObject && strings.EqualFold(value.Type, "Id") {
+		_, ok := valueIDString(value)
+		return ok
+	}
+	return false
 }
 
 func (vm *VM) queriedSObjectFields(queryText string) map[string]bool {
@@ -6546,7 +7579,7 @@ func (vm *VM) enforceSOQLSecurity(query soql.Query) error {
 		}
 	}
 	if !vm.currentUserObjectPermission(objectName, "isAccessible") {
-		return newExceptionError("QueryException", fmt.Sprintf("%s requires read access to %s", mode, objectName))
+		return newExceptionError("QueryException", fmt.Sprintf("sObject type '%s' is not supported by %s", objectName, mode))
 	}
 	for _, field := range query.Fields {
 		for _, fieldName := range vm.securityFieldNames(objectName, field) {
@@ -6951,11 +7984,14 @@ func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value
 	}
 	allOrNone := true
 	externalIDField := ""
+	userMode := false
 	if len(args) >= 2 {
 		if args[1].Kind == ValueBool {
 			allOrNone = args[1].Bool
 		} else if isDatabaseDMLOptionsValue(args[1]) {
 			allOrNone = databaseDMLOptionsAllOrNone(args[1], allOrNone)
+		} else if isDatabaseAccessLevelValue(args[1]) {
+			userMode = isUserModeAccessLevel(args[1])
 		} else if op == "upsert" {
 			field, err := vm.externalIDFieldName(args[1])
 			if err != nil {
@@ -6968,14 +8004,11 @@ func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value
 	}
 	if len(args) == 3 {
 		if isDatabaseAccessLevelValue(args[2]) {
-			// USER_MODE/SYSTEM_MODE affects sharing/FLS in Salesforce. Local DML
-			// currently uses the same in-memory engine for both modes.
+			userMode = isUserModeAccessLevel(args[2])
 		} else if op != "upsert" {
 			return Null, fmt.Errorf("Database.%s expects at most records and allOrNone", op)
 		} else if args[2].Kind == ValueBool {
 			allOrNone = args[2].Bool
-		} else if isDatabaseAccessLevelValue(args[2]) {
-			// handled above
 		} else {
 			return Null, fmt.Errorf("Database.%s allOrNone expects Boolean", op)
 		}
@@ -6991,11 +8024,17 @@ func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value
 			return Null, fmt.Errorf("Database.%s AccessLevel overload expects AccessLevel", op)
 		}
 		allOrNone = args[2].Bool
+		userMode = isUserModeAccessLevel(args[3])
 	}
 	if op == "delete" || op == "undelete" {
 		records, ok := vm.deleteIDsToSObjects(args[0])
 		if ok {
 			args[0] = records
+		}
+	}
+	if userMode {
+		if err := vm.enforceUserModeDMLAccess(op, args[0]); err != nil {
+			return Null, err
 		}
 	}
 	results, err := vm.applyDML(op, args[0], allOrNone, externalIDField, result)
@@ -7029,6 +8068,10 @@ func (vm *VM) executeDatabaseDML(op string, args []Value, result *Result) (Value
 
 func isDatabaseAccessLevelValue(value Value) bool {
 	return value.Kind == ValueObject && strings.EqualFold(value.Type, "AccessLevel")
+}
+
+func isUserModeAccessLevel(value Value) bool {
+	return isDatabaseAccessLevelValue(value) && strings.EqualFold(strings.TrimSpace(value.Text), "USER_MODE")
 }
 
 func isDatabaseDMLOptionsValue(value Value) bool {
@@ -7206,6 +8249,13 @@ func (vm *VM) sObjectNameForExistingID(id string) (string, bool) {
 	for name, object := range vm.Org.Objects {
 		if _, ok := object.Records[wanted]; ok {
 			names = append(names, name)
+			continue
+		}
+		for candidateID := range object.Records {
+			if apexIDTextEqual(string(candidateID), id) {
+				names = append(names, name)
+				break
+			}
 		}
 	}
 	if len(names) != 1 {
@@ -7366,6 +8416,39 @@ func databaseDMLException(op string, results []dml.Result) error {
 	value.Fields["message"] = String(message)
 	value.Fields["__dmlErrors"] = dmlExceptionErrorDetails(results)
 	return &apexThrowError{value: value}
+}
+
+func dmlExceptionFromTriggerError(op string, err error) error {
+	var thrown *apexThrowError
+	if !errors.As(err, &thrown) {
+		return err
+	}
+	message := exceptionMessage(thrown.value)
+	if message == "" {
+		message = thrown.value.String()
+	}
+	if op == "" {
+		op = "operation"
+	}
+	value := Object("DmlException")
+	value.Fields["message"] = String("Database." + op + " failed: " + message)
+	value.Fields["__cause"] = thrown.value
+	return &apexThrowError{value: value, stack: append([]callFrame(nil), thrown.stack...)}
+}
+
+func exceptionMessage(value Value) string {
+	if value.Kind != ValueObject {
+		return value.String()
+	}
+	if message, ok := value.Fields["message"]; ok {
+		if message.Kind == ValueString {
+			return message.Text
+		}
+		if message.Kind != ValueNull {
+			return message.String()
+		}
+	}
+	return ""
 }
 
 func dmlExceptionErrorDetails(results []dml.Result) Value {
@@ -7737,12 +8820,12 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 		beforeTriggerRecords = vm.hydrateUpdateTriggerRecords(records, before)
 	}
 	if op != "undelete" {
-		beforeFailures, err = vm.runTriggers(triggerTimingBefore, op, beforeTriggerRecords, before, result)
+		beforeFailures, beforeTriggerRecords, err = vm.runTriggersByObject(triggerTimingBefore, op, beforeTriggerRecords, before, result)
 		if err != nil {
 			*vm.Org = backup
-			return nil, err
+			return nil, dmlExceptionFromTriggerError(op, err)
 		}
-		if op == "update" {
+		if op != "delete" {
 			records = beforeTriggerRecords
 		}
 	}
@@ -7754,6 +8837,14 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 		records, before, targets = filterDMLInputs(records, before, targets, beforeFailures)
 		if len(records) == 0 {
 			return beforeFailures, nil
+		}
+	}
+	if op == "insert" {
+		if err := vm.resolveSameBatchParentRelationships(records, targets); err != nil {
+			if allOrNone {
+				*vm.Org = backup
+			}
+			return nil, err
 		}
 	}
 	engine := vm.newDeferredAutomationDMLEngine(result)
@@ -7801,11 +8892,11 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 		}
 		return results, err
 	}
-	if _, err := vm.runTriggers(triggerTimingAfter, op, afterRecords, afterInputBefore, result); err != nil {
+	if _, _, err := vm.runTriggersByObject(triggerTimingAfter, op, afterRecords, afterInputBefore, result); err != nil {
 		if allOrNone {
 			*vm.Org = backup
 		}
-		return nil, err
+		return nil, dmlExceptionFromTriggerError(op, err)
 	}
 	if err := vm.runSummaryUpdateTriggers(&engine, allOrNone, backup, result); err != nil {
 		return results, err
@@ -7963,7 +9054,7 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 		failures, err := vm.runTriggers(triggerTimingBefore, kind, triggerRecords, groupBefore, result)
 		if err != nil {
 			*vm.Org = backup
-			return nil, err
+			return nil, dmlExceptionFromTriggerError("upsert", err)
 		}
 		for groupIndex, failure := range failures {
 			if groupIndex < len(indices) && !failure.Success && failure.Error != "" {
@@ -8023,7 +9114,7 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 			if allOrNone {
 				*vm.Org = backup
 			}
-			return nil, err
+			return nil, dmlExceptionFromTriggerError("upsert", err)
 		}
 		if err := vm.runSummaryUpdateTriggers(&engine, allOrNone, backup, result); err != nil {
 			return results, err
@@ -8086,7 +9177,7 @@ func (vm *VM) runSummaryUpdateTriggers(engine *dml.Engine, allOrNone bool, backu
 			if allOrNone {
 				*vm.Org = backup
 			}
-			return err
+			return dmlExceptionFromTriggerError("update", err)
 		}
 		if hasDMLFailures(failures) {
 			if allOrNone {
@@ -8104,7 +9195,7 @@ func (vm *VM) runSummaryUpdateTriggers(engine *dml.Engine, allOrNone bool, backu
 			if allOrNone {
 				*vm.Org = backup
 			}
-			return err
+			return dmlExceptionFromTriggerError("update", err)
 		}
 		if err := vm.applyDeferredAutomation(engine, triggerRecords, allOrNone, backup, result); err != nil {
 			return err
@@ -8221,7 +9312,7 @@ func (vm *VM) checkMixedDML(records []storage.Record) error {
 
 func isSetupObject(objectName string) bool {
 	switch strings.ToLower(objectName) {
-	case "user", "profile", "userrole", "permissionset", "permissionsetassignment", "fieldpermissions", "objectpermissions", "setupentityaccess":
+	case "user", "profile", "userrole", "permissionset", "permissionsetassignment", "permissionsetgroup", "permissionsetgroupcomponent", "fieldpermissions", "objectpermissions", "setupentityaccess":
 		return true
 	default:
 		return false
@@ -8268,6 +9359,9 @@ func (vm *VM) recordsFromValue(value Value) ([]storage.Record, []*Value, error) 
 }
 
 func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
+	if value.Kind == ValueNull {
+		return storage.Record{}, newExceptionError("NullPointerException", "Attempt to de-reference a null object")
+	}
 	if value.Kind != ValueObject {
 		return storage.Record{}, fmt.Errorf("DML requires sObject value, got %s", value.Kind)
 	}
@@ -8382,6 +9476,141 @@ func (vm *VM) recordFromValue(value *Value) (storage.Record, error) {
 		}
 	}
 	return record, nil
+}
+
+func (vm *VM) resolveSameBatchParentRelationships(records []storage.Record, targets []*Value) error {
+	if vm == nil || vm.Org == nil || len(records) == 0 || len(targets) == 0 {
+		return nil
+	}
+	for i := range records {
+		if i >= len(targets) || targets[i] == nil || targets[i].Kind != ValueObject {
+			continue
+		}
+		target := targets[i]
+		for relationship, parent := range target.Fields {
+			if isInternalSObjectField(relationship) || parent.Kind != ValueObject || strings.EqualFold(parent.Type, "Id") {
+				continue
+			}
+			lookupField, ok := vm.parentRelationshipField(records[i].Object, relationship)
+			if !ok {
+				continue
+			}
+			if _, hasLookup := records[i].GetField(lookupField); hasLookup || records[i].HasExplicitNull(lookupField) {
+				continue
+			}
+			parentID, err := vm.resolveParentRelationshipReferenceID(records, parent)
+			if err != nil {
+				return err
+			}
+			if parentID == "" {
+				continue
+			}
+			if records[i].Fields == nil {
+				records[i].Fields = make(map[string]storage.Value)
+			}
+			records[i].Fields[lookupField] = storage.IDValue(parentID)
+		}
+	}
+	return nil
+}
+
+func (vm *VM) resolveParentRelationshipReferenceID(records []storage.Record, parent Value) (storage.ID, error) {
+	if id := sObjectIDFromFields(parent.Fields); id != "" {
+		return id, nil
+	}
+	parentObjectName := parent.Type
+	parentObject, ok := vm.objectState(parentObjectName)
+	if !ok {
+		return "", nil
+	}
+	for fieldName, fieldValue := range parent.Fields {
+		if isInternalSObjectField(fieldName) || strings.EqualFold(fieldName, "Id") || fieldValue.Kind == ValueNull {
+			continue
+		}
+		canonicalField := fieldName
+		if resolved, ok := storage.ResolveFieldName(parentObject.Definition, vm.Org.Namespace, fieldName); ok {
+			canonicalField = resolved
+		}
+		fieldDef, ok := parentObject.Definition.Fields[canonicalField]
+		if !ok || !fieldDef.ExternalID {
+			continue
+		}
+		lookupValue, err := storageValueFromVMForField(fieldValue, fieldDef.Type)
+		if err != nil {
+			return "", fmt.Errorf("%s.%s: %w", parent.Type, fieldName, err)
+		}
+		if lookupValue.Kind == storage.ValueNull {
+			continue
+		}
+		for i := range records {
+			if !strings.EqualFold(records[i].Object, parentObject.Definition.APIName) {
+				continue
+			}
+			recordValue, ok := records[i].GetField(canonicalField)
+			if !ok || !storageValuesEqualForVM(fieldDef, recordValue, lookupValue) {
+				continue
+			}
+			if records[i].ID == "" {
+				id, err := vm.assignPendingInsertID(&records[i])
+				if err != nil {
+					return "", err
+				}
+				return id, nil
+			}
+			return records[i].ID, nil
+		}
+		for id, stored := range parentObject.Records {
+			if stored.System.IsDeleted {
+				continue
+			}
+			recordValue, ok := stored.GetField(canonicalField)
+			if ok && storageValuesEqualForVM(fieldDef, recordValue, lookupValue) {
+				return id, nil
+			}
+		}
+	}
+	return "", nil
+}
+
+func (vm *VM) objectState(objectName string) (storage.ObjectState, bool) {
+	if vm == nil || vm.Org == nil || strings.TrimSpace(objectName) == "" {
+		return storage.ObjectState{}, false
+	}
+	if canonical, ok := storage.ResolveObjectName(*vm.Org, objectName); ok {
+		objectName = canonical
+	}
+	object, ok := vm.Org.Objects[objectName]
+	if ok {
+		storage.EnsureStandardObjectFields(&object.Definition)
+	}
+	return object, ok
+}
+
+func (vm *VM) assignPendingInsertID(record *storage.Record) (storage.ID, error) {
+	if vm == nil || vm.Org == nil || record == nil {
+		return "", fmt.Errorf("DML requires org state")
+	}
+	if record.ID != "" {
+		return record.ID, nil
+	}
+	objectName := record.Object
+	if canonical, ok := storage.ResolveObjectName(*vm.Org, objectName); ok {
+		objectName = canonical
+		record.Object = canonical
+	}
+	engine := dml.NewEngine(vm.Org)
+	id, err := engine.IDs.Next(objectName)
+	if err != nil {
+		return "", err
+	}
+	record.ID = id
+	if vm.Org.IDSequences == nil {
+		vm.Org.IDSequences = make(map[string]uint64)
+	}
+	for object, sequence := range engine.IDs.Sequences {
+		vm.Org.IDSequences[object] = sequence
+	}
+	return id, nil
 }
 
 func (vm *VM) isParentRelationshipField(definition storage.ObjectDefinition, field string) bool {
@@ -8793,6 +10022,16 @@ func storageValueFromVM(value Value) (storage.Value, error) {
 		return storage.DecimalValue(value.String()), nil
 	case ValueBool:
 		return storage.BooleanValue(value.Bool), nil
+	case ValueList:
+		values := make([]storage.Value, 0, len(value.List))
+		for _, item := range value.List {
+			converted, err := storageValueFromVM(item)
+			if err != nil {
+				return storage.Value{}, err
+			}
+			values = append(values, converted)
+		}
+		return storage.ListValue(values...), nil
 	case ValueObject:
 		if raw, ok := value.Fields["value"]; ok && raw.Kind == ValueString {
 			switch strings.ToLower(value.Type) {
@@ -8840,7 +10079,10 @@ func storageValueFromVMForField(value Value, fieldType storage.FieldType) (stora
 		}
 		if value.Kind == ValueObject && strings.EqualFold(value.Type, "Id") {
 			if raw, err := platformScalarText(value, "Id"); err == nil {
-				return storage.IDValue(storage.ID(raw)), nil
+				if len(raw) == 15 {
+					raw = apexIDTo18(raw)
+				}
+				return storage.StringValue(raw), nil
 			}
 		}
 	case storage.FieldBlob:
@@ -9095,11 +10337,13 @@ func (vm *VM) hydrateUpdateTriggerRecords(records, before []storage.Record) []st
 			merged.ExplicitNulls = make(map[string]bool)
 		}
 		for field, value := range record.Fields {
+			deleteCaseInsensitiveVMStorageField(merged.Fields, field)
 			merged.Fields[field] = value.Clone()
 			delete(merged.ExplicitNulls, field)
 		}
 		for field, isNull := range record.ExplicitNulls {
 			if isNull {
+				deleteCaseInsensitiveVMStorageField(merged.Fields, field)
 				delete(merged.Fields, field)
 				merged.ExplicitNulls[field] = true
 			}
@@ -9108,6 +10352,17 @@ func (vm *VM) hydrateUpdateTriggerRecords(records, before []storage.Record) []st
 		out = append(out, merged)
 	}
 	return out
+}
+
+func deleteCaseInsensitiveVMStorageField(fields map[string]storage.Value, field string) {
+	if fields == nil || field == "" {
+		return
+	}
+	for existing := range fields {
+		if existing != field && strings.EqualFold(existing, field) {
+			delete(fields, existing)
+		}
+	}
 }
 
 func (vm *VM) populateCalculatedTriggerFields(record *storage.Record) {
@@ -9359,6 +10614,58 @@ func (vm *VM) runTriggers(timing, op string, records, oldRecords []storage.Recor
 	return nil, nil
 }
 
+func (vm *VM) runTriggersByObject(timing, op string, records, oldRecords []storage.Record, result *Result) ([]dml.Result, []storage.Record, error) {
+	if len(records) == 0 {
+		return nil, records, nil
+	}
+	failures := make([]dml.Result, len(records))
+	updated := append([]storage.Record(nil), records...)
+	for _, indices := range groupedRecordIndicesByObject(records) {
+		groupRecords := make([]storage.Record, 0, len(indices))
+		groupOldRecords := make([]storage.Record, 0, len(indices))
+		for _, index := range indices {
+			groupRecords = append(groupRecords, updated[index])
+			if index < len(oldRecords) {
+				groupOldRecords = append(groupOldRecords, oldRecords[index])
+			}
+		}
+		groupFailures, err := vm.runTriggers(timing, op, groupRecords, groupOldRecords, result)
+		if err != nil {
+			return nil, records, err
+		}
+		for groupIndex, index := range indices {
+			if groupIndex < len(groupRecords) {
+				updated[index] = groupRecords[groupIndex]
+			}
+			if groupIndex < len(groupFailures) && !groupFailures[groupIndex].Success && groupFailures[groupIndex].Error != "" {
+				failures[index] = groupFailures[groupIndex]
+			}
+		}
+	}
+	if hasDMLFailures(failures) {
+		return failures, updated, nil
+	}
+	return nil, updated, nil
+}
+
+func groupedRecordIndicesByObject(records []storage.Record) [][]int {
+	order := make([]string, 0)
+	byObject := make(map[string][]int)
+	for i, record := range records {
+		objectName := record.Object
+		key := strings.ToLower(objectName)
+		if _, ok := byObject[key]; !ok {
+			order = append(order, key)
+		}
+		byObject[key] = append(byObject[key], i)
+	}
+	groups := make([][]int, 0, len(order))
+	for _, key := range order {
+		groups = append(groups, byObject[key])
+	}
+	return groups
+}
+
 func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, result *Result) ([]dml.Result, error) {
 	appendTrace(result, "apex.trigger."+trigger.Name, "apex.trigger", map[string]any{
 		"trigger":   trigger.Name,
@@ -9479,7 +10786,7 @@ func triggerContext(trigger Trigger, records, oldRecords []storage.Record) map[s
 		"Trigger.isDelete":      Bool(trigger.Operation == "delete"),
 		"Trigger.isUndelete":    Bool(trigger.Operation == "undelete"),
 		"Trigger.isUnDelete":    Bool(trigger.Operation == "undelete"),
-		"Trigger.operationType": String(strings.ToUpper(trigger.Timing + "_" + trigger.Operation)),
+		"Trigger.operationType": Value{Kind: ValueObject, Type: "TriggerOperation", Text: strings.ToUpper(trigger.Timing + "_" + trigger.Operation)},
 		"Trigger.size":          Int(int64(len(records))),
 	}
 	return ctx
@@ -10669,6 +11976,60 @@ func encryptAESCBC(algorithm string, privateKey, initializationVector, clearText
 	return out, nil
 }
 
+func decryptAESCBC(algorithm string, privateKey, initializationVector, cipherText []byte) ([]byte, error) {
+	keySize, err := aesKeySizeForAlgorithm(algorithm)
+	if err != nil {
+		return nil, err
+	}
+	if len(privateKey) != keySize {
+		return nil, fmt.Errorf("Crypto.decrypt %s privateKey expects %d bytes, got %d", normalizeCryptoAlgorithm(algorithm), keySize, len(privateKey))
+	}
+	if len(initializationVector) != aes.BlockSize {
+		return nil, fmt.Errorf("Crypto.decrypt initializationVector expects %d bytes, got %d", aes.BlockSize, len(initializationVector))
+	}
+	if len(cipherText) == 0 || len(cipherText)%aes.BlockSize != 0 {
+		return nil, fmt.Errorf("Crypto.decrypt cipherText must be a positive multiple of %d bytes", aes.BlockSize)
+	}
+	block, err := aes.NewCipher(privateKey)
+	if err != nil {
+		return nil, err
+	}
+	padded := make([]byte, len(cipherText))
+	cipher.NewCBCDecrypter(block, initializationVector).CryptBlocks(padded, cipherText)
+	return pkcs7Unpad(padded, aes.BlockSize)
+}
+
+func managedIV(privateKey, clearText []byte) []byte {
+	sum := sha256.Sum256(append(append([]byte("oaer-managed-iv:"), privateKey...), clearText...))
+	iv := make([]byte, aes.BlockSize)
+	copy(iv, sum[:aes.BlockSize])
+	return iv
+}
+
+func localCryptoSignature(algorithm string, input []byte) ([]byte, error) {
+	digestAlgorithm, err := signatureDigestAlgorithm(algorithm)
+	if err != nil {
+		return nil, err
+	}
+	return generateDigest(digestAlgorithm, input)
+}
+
+func signatureDigestAlgorithm(algorithm string) (string, error) {
+	normalized := normalizeCryptoAlgorithm(algorithm)
+	switch normalized {
+	case "RSA", "RSASHA1", "ECDSASHA1":
+		return "SHA1", nil
+	case "RSASHA256", "ECDSASHA256":
+		return "SHA256", nil
+	case "RSASHA384", "ECDSASHA384":
+		return "SHA384", nil
+	case "RSASHA512", "ECDSASHA512":
+		return "SHA512", nil
+	default:
+		return "", fmt.Errorf("unsupported signature algorithm %q", algorithm)
+	}
+}
+
 func aesKeySizeForAlgorithm(algorithm string) (int, error) {
 	switch normalizeCryptoAlgorithm(algorithm) {
 	case "AES128":
@@ -10690,6 +12051,22 @@ func pkcs7Pad(data []byte, blockSize int) []byte {
 		out[i] = byte(padding)
 	}
 	return out
+}
+
+func pkcs7Unpad(data []byte, blockSize int) ([]byte, error) {
+	if len(data) == 0 || len(data)%blockSize != 0 {
+		return nil, fmt.Errorf("invalid PKCS7 padding length")
+	}
+	padding := int(data[len(data)-1])
+	if padding == 0 || padding > blockSize || padding > len(data) {
+		return nil, fmt.Errorf("invalid PKCS7 padding")
+	}
+	for _, b := range data[len(data)-padding:] {
+		if int(b) != padding {
+			return nil, fmt.Errorf("invalid PKCS7 padding")
+		}
+	}
+	return data[:len(data)-padding], nil
 }
 
 func mathUnary(callee string, args []Value) (Value, error) {
@@ -10964,6 +12341,9 @@ func jsonFromValue(value Value, suppressObjectNulls bool) any {
 			out["attributes"] = attributes
 		}
 		for field, item := range value.Fields {
+			if isInternalSObjectField(field) {
+				continue
+			}
 			if suppressObjectNulls && item.Kind == ValueNull {
 				continue
 			}
@@ -11006,9 +12386,6 @@ func (vm *VM) jsonFromValueForSerialize(value Value, suppressObjectNulls bool) a
 			}
 			name := field.Name
 			if name == "" {
-				continue
-			}
-			if _, exists := base[name]; exists {
 				continue
 			}
 			getterValue, err := vm.callGetter(vm.getterOwner(value.Type, field), field, value)
@@ -11068,10 +12445,38 @@ func decodeJSONValue(text string) (any, error) {
 func decodeJSONValueForDeserialize(text string, strict bool) (any, error) {
 	if strict {
 		if err := validateJSONNoDuplicateObjectFields(text); err != nil {
-			return nil, err
+			return nil, normalizeJSONDeserializeError(err)
 		}
 	}
-	return decodeJSONValue(text)
+	decoded, err := decodeJSONValue(text)
+	if err != nil {
+		if strings.Contains(err.Error(), "invalid character '\\\\'") && strings.Contains(text, `\"`) {
+			decoded, retryErr := decodeJSONValue(strings.ReplaceAll(text, `\"`, `"`))
+			if retryErr == nil {
+				return decoded, nil
+			}
+			return nil, normalizeJSONDeserializeError(retryErr)
+		}
+		return nil, normalizeJSONDeserializeError(err)
+	}
+	return decoded, nil
+}
+
+func normalizeJSONDeserializeError(err error) error {
+	if err == nil {
+		return nil
+	}
+	message := err.Error()
+	if strings.Contains(message, "unexpected EOF") || message == "EOF" {
+		return fmt.Errorf("Unexpected end-of-input: %s", message)
+	}
+	if strings.HasPrefix(message, "JSON.deserializeStrict") {
+		return err
+	}
+	if strings.HasPrefix(strings.ToLower(message), "malformed json:") {
+		return err
+	}
+	return fmt.Errorf("malformed JSON: %s", message)
 }
 
 func validateJSONNoDuplicateObjectFields(text string) error {
@@ -11279,8 +12684,12 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 			}
 		}
 	}
-	for key, item := range fields {
+	for _, key := range vm.sortedJSONTypedObjectFields(typeName, fields) {
+		item := fields[key]
 		if key == "attributes" {
+			continue
+		}
+		if jsonSObjectEmptyCanonicalIDShadowedByLowercase(fields, key) {
 			continue
 		}
 		if jsonSObjectLowercaseIDShadowedByCanonical(fields, key) {
@@ -11351,6 +12760,32 @@ func (vm *VM) typedValueFromJSON(typeName string, raw any, strict bool) (Value, 
 	return obj, nil
 }
 
+func (vm *VM) sortedJSONTypedObjectFields(typeName string, fields map[string]any) []string {
+	keys := make([]string, 0, len(fields))
+	for key := range fields {
+		keys = append(keys, key)
+	}
+	sort.Slice(keys, func(i, j int) bool {
+		leftPriority := vm.jsonTypedObjectFieldPriority(typeName, keys[i])
+		rightPriority := vm.jsonTypedObjectFieldPriority(typeName, keys[j])
+		if leftPriority != rightPriority {
+			return leftPriority < rightPriority
+		}
+		return keys[i] < keys[j]
+	})
+	return keys
+}
+
+func (vm *VM) jsonTypedObjectFieldPriority(typeName, key string) int {
+	if key == "attributes" {
+		return -1
+	}
+	if field, _, ok := vm.lookupField(typeName, key); ok && field.Setter != nil {
+		return 1
+	}
+	return 0
+}
+
 func (vm *VM) jsonObjectBaseValue(typeName string) (Value, error) {
 	if class, ok := vm.lookupClass(typeName); ok && classHasZeroArgConstructor(class) {
 		value, err := vm.constructValue(typeName, nil, nil, resultForLookup())
@@ -11390,6 +12825,9 @@ func (vm *VM) sObjectValueFromJSON(raw any, strict bool) (Value, error) {
 	vm.initializeFields(&obj, typeName)
 	for key, item := range fields {
 		if key == "attributes" {
+			continue
+		}
+		if jsonSObjectEmptyCanonicalIDShadowedByLowercase(fields, key) {
 			continue
 		}
 		if jsonSObjectLowercaseIDShadowedByCanonical(fields, key) {
@@ -11445,6 +12883,24 @@ func jsonSObjectLowercaseIDShadowedByCanonical(fields map[string]any, key string
 		return strings.TrimSpace(text) != ""
 	}
 	return canonical != nil
+}
+
+func jsonSObjectEmptyCanonicalIDShadowedByLowercase(fields map[string]any, key string) bool {
+	if key != "Id" {
+		return false
+	}
+	canonical, hasCanonical := fields["Id"]
+	lower, hasLower := fields["id"]
+	if !hasCanonical || !hasLower {
+		return false
+	}
+	if text, ok := canonical.(string); ok && strings.TrimSpace(text) != "" {
+		return false
+	}
+	if text, ok := lower.(string); ok {
+		return strings.TrimSpace(text) != ""
+	}
+	return lower != nil
 }
 
 func (vm *VM) populateParentRelationshipLookup(obj *Value, typeName, relationshipName string, relationship Value) {
@@ -13897,7 +15353,10 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 			return Null, newNullDereferenceError("while accessing " + strings.Join(parts[:i+1], "."))
 		}
 		if current.Kind == ValueList {
-			if len(current.List) != 1 {
+			if len(current.List) == 0 {
+				return Null, newExceptionError("QueryException", "List has no rows for assignment to SObject")
+			}
+			if len(current.List) > 1 {
 				return Null, fmt.Errorf("cannot access %s on list", part)
 			}
 			current = current.List[0]
@@ -14751,6 +16210,9 @@ func (vm *VM) splitClassMember(name string) (string, string, bool) {
 		if resolved, ok := vm.resolveClassName(className); ok {
 			return resolved, strings.Join(parts[i:], "."), true
 		}
+		if generated, ok := generatedPlatformTypeIndex[strings.ToLower(className)]; ok {
+			return generated.Name, strings.Join(parts[i:], "."), true
+		}
 		if class, ok := vm.resolveEnumClass(className); ok {
 			return class.Name, strings.Join(parts[i:], "."), true
 		}
@@ -14859,6 +16321,9 @@ func (vm *VM) resolveTypeNameToken(name string) (string, bool) {
 
 func isBuiltinTypeName(name string) bool {
 	if isBuiltinExceptionType(exceptionTypeName(name)) {
+		return true
+	}
+	if strings.EqualFold(name, "sObject") {
 		return true
 	}
 	switch name {
@@ -14988,8 +16453,14 @@ func newRestRequest() Value {
 	request.Fields["remoteAddress"] = String("")
 	request.Fields["headers"] = typedMap("Map<String,String>")
 	request.Fields["params"] = typedMap("Map<String,String>")
-	request.Fields["requestBody"] = Null
+	request.Fields["requestBody"] = nullBlob()
 	return request
+}
+
+func nullBlob() Value {
+	blob := Object("Blob")
+	blob.Fields["value"] = Null
+	return blob
 }
 
 func newPageReference(rawURL string) Value {
@@ -14997,7 +16468,732 @@ func newPageReference(rawURL string) Value {
 	page.Fields["url"] = String(rawURL)
 	page.Fields["parameters"] = pageReferenceParameters(rawURL)
 	page.Fields["headers"] = typedMap("Map<String,String>")
+	page.Fields["cookies"] = typedMap("Map<String,Cookie>")
 	return page
+}
+
+func newDataWeaveScript(name string) Value {
+	script := Object("DataWeave.Script")
+	script.Fields["name"] = String(name)
+	return script
+}
+
+func newDataWeaveResult(scriptName string, inputs Value) Value {
+	result := Object("DataWeave.Result")
+	result.Fields["scriptName"] = String(scriptName)
+	mimeType := "application/apex"
+	switch strings.ToLower(strings.TrimSpace(scriptName)) {
+	case "helloworld":
+		mimeType = "text/plain"
+	case "multipleinputs":
+		mimeType = "application/xml"
+	}
+	result.Fields["mimeType"] = String(mimeType)
+	value := dataWeaveDefaultValue(scriptName, inputs)
+	result.Fields["value"] = value
+	valueAsString := dataWeaveValueAsString(value)
+	if dataWeaveRawStringResult(scriptName) && value.Kind == ValueString {
+		valueAsString = value.Text
+	}
+	result.Fields["valueAsString"] = String(valueAsString)
+	return result
+}
+
+func dataWeaveDefaultValue(scriptName string, inputs Value) Value {
+	switch strings.ToLower(strings.TrimSpace(scriptName)) {
+	case "helloworld":
+		return String("Hello World")
+	case "csvtojsonbasic":
+		if payload, ok := dataWeaveStringInput(inputs, "payload"); ok {
+			return dataWeaveCSVRecords(payload, ',', nil)
+		}
+	case "csvtojsonwithfieldrenaming":
+		if payload, ok := dataWeaveStringInput(inputs, "payload"); ok {
+			return dataWeaveCSVRecords(payload, ',', map[string]string{
+				"first_name": "FirstName",
+				"last_name":  "LastName",
+				"company":    "Company",
+				"address":    "MailingStreet",
+			})
+		}
+	case "csvseparatortojson":
+		if payload, ok := dataWeaveStringInput(inputs, "payload"); ok {
+			return dataWeaveCSVRecords(payload, ';', nil)
+		}
+	case "csvtocontacts":
+		if payload, ok := dataWeaveStringInput(inputs, "records"); ok {
+			return dataWeaveCSVObjects(payload, ',', "Contact", nil)
+		}
+	case "csvtoapexobject":
+		if payload, ok := dataWeaveStringInput(inputs, "records"); ok {
+			return dataWeaveCSVObjects(payload, ',', "CsvData", nil)
+		}
+	case "jsontocontacts":
+		if payload, ok := dataWeaveStringInput(inputs, "records"); ok {
+			decoded, err := decodeJSONValue(payload)
+			if err == nil {
+				return dataWeaveJSONObjects(decoded, "Contact")
+			}
+		}
+	case "pluralizefunction":
+		if payload, ok := dataWeaveStringInput(inputs, "inputs"); ok {
+			return dataWeavePluralize(payload)
+		}
+	case "reservedapexkeywords":
+		if payload, ok := dataWeaveStringInput(inputs, "payload"); ok {
+			return dataWeaveReservedApexKeywords(payload)
+		}
+	case "logfilter":
+		if payload, ok := dataWeaveStringInput(inputs, "payload"); ok {
+			return dataWeaveLogFilter(payload)
+		}
+	case "jsondateformat":
+		if records, ok := dataWeaveInput(inputs, "records"); ok {
+			return dataWeaveJSONDateFormat(records)
+		}
+	case "multipleinputs":
+		return dataWeaveMultipleInputsXML(inputs)
+	}
+	if inputs.Kind == ValueMap {
+		if value, ok := inputs.Map[mapKey(String("records"))]; ok {
+			return value
+		}
+	}
+	return Null
+}
+
+func dataWeaveRawStringResult(scriptName string) bool {
+	switch strings.ToLower(strings.TrimSpace(scriptName)) {
+	case "multipleinputs":
+		return true
+	default:
+		return false
+	}
+}
+
+func dataWeaveInput(inputs Value, key string) (Value, bool) {
+	if inputs.Kind != ValueMap {
+		return Null, false
+	}
+	value, ok := inputs.Map[mapKey(String(key))]
+	return value, ok
+}
+
+func dataWeaveStringInput(inputs Value, key string) (string, bool) {
+	if inputs.Kind != ValueMap {
+		return "", false
+	}
+	value, ok := inputs.Map[mapKey(String(key))]
+	if !ok || value.Kind != ValueString {
+		return "", false
+	}
+	return value.Text, true
+}
+
+func dataWeaveCSVRecords(payload string, comma rune, rename map[string]string) Value {
+	rows := dataWeaveReadCSV(payload, comma)
+	out := List()
+	for _, row := range rows {
+		record := Map()
+		for key, value := range row {
+			if renamed, ok := rename[key]; ok {
+				key = renamed
+			}
+			record.Map[mapKey(String(key))] = String(value)
+		}
+		out.List = append(out.List, record)
+	}
+	return out
+}
+
+func dataWeaveCSVObjects(payload string, comma rune, typeName string, rename map[string]string) Value {
+	rows := dataWeaveReadCSV(payload, comma)
+	out := List()
+	out.Type = "List<" + typeName + ">"
+	for _, row := range rows {
+		record := Object(typeName)
+		for key, text := range row {
+			if renamed, ok := rename[key]; ok {
+				key = renamed
+			}
+			record.Fields[dataWeaveObjectFieldName(key)] = String(text)
+		}
+		out.List = append(out.List, record)
+	}
+	return out
+}
+
+func dataWeaveJSONObjects(decoded any, typeName string) Value {
+	items, ok := decoded.([]any)
+	if !ok {
+		if records, recordsOK := jsonQueryResultRecords(decoded); recordsOK {
+			items = records
+		}
+	}
+	out := List()
+	out.Type = "List<" + typeName + ">"
+	for _, item := range items {
+		if fields, ok := item.(map[string]any); ok {
+			record := Object(typeName)
+			for key, raw := range fields {
+				if strings.EqualFold(key, "attributes") {
+					continue
+				}
+				record.Fields[dataWeaveObjectFieldName(key)] = valueFromJSON(raw)
+			}
+			out.List = append(out.List, record)
+		}
+	}
+	return out
+}
+
+func dataWeaveObjectFieldName(name string) string {
+	switch strings.ToLower(strings.TrimSpace(name)) {
+	case "first_name":
+		return "FirstName"
+	case "last_name":
+		return "LastName"
+	case "company":
+		return "Company"
+	case "address":
+		return "MailingStreet"
+	case "email":
+		return "Email"
+	default:
+		return name
+	}
+}
+
+func dataWeaveReadCSV(payload string, comma rune) []map[string]string {
+	reader := csv.NewReader(strings.NewReader(payload))
+	reader.TrimLeadingSpace = true
+	reader.FieldsPerRecord = -1
+	reader.Comma = comma
+	records, err := reader.ReadAll()
+	if err != nil || len(records) == 0 {
+		return nil
+	}
+	headers := records[0]
+	out := make([]map[string]string, 0, len(records)-1)
+	for _, record := range records[1:] {
+		row := make(map[string]string, len(headers))
+		for i, header := range headers {
+			if i >= len(record) {
+				row[header] = ""
+				continue
+			}
+			row[header] = record[i]
+		}
+		out = append(out, row)
+	}
+	return out
+}
+
+func dataWeaveValueAsString(value Value) string {
+	if text, ok := dataWeaveOrderedJSON(value); ok {
+		return text
+	}
+	data, err := json.MarshalIndent(jsonFromValue(value, false), "", "  ")
+	if err != nil {
+		return value.String()
+	}
+	return string(data)
+}
+
+func dataWeaveOrderedJSON(value Value) (string, bool) {
+	if value.Kind != ValueMap {
+		return "", false
+	}
+	users, ok := value.Map[mapKey(String("users"))]
+	if !ok || users.Kind != ValueList {
+		return "", false
+	}
+	var b strings.Builder
+	b.WriteString("{\n  \"users\": [")
+	for i, user := range users.List {
+		if i > 0 {
+			b.WriteString(",")
+		}
+		b.WriteString("\n    {")
+		first := true
+		first = dataWeaveWriteJSONField(&b, user, "firstName", first)
+		first = dataWeaveWriteJSONField(&b, user, "lastName", first)
+		dataWeaveWriteJSONField(&b, user, "createdDate", first)
+		b.WriteString("\n    }")
+	}
+	b.WriteString("\n  ]\n}")
+	return b.String(), true
+}
+
+func dataWeaveWriteJSONField(b *strings.Builder, value Value, field string, first bool) bool {
+	if value.Kind != ValueMap {
+		return first
+	}
+	item, ok := value.Map[mapKey(String(field))]
+	if !ok {
+		return first
+	}
+	if !first {
+		b.WriteString(",")
+	}
+	data, err := json.Marshal(jsonFromValue(item, false))
+	if err != nil {
+		data = []byte(strconv.Quote(item.String()))
+	}
+	b.WriteString("\n      ")
+	b.WriteString(strconv.Quote(field))
+	b.WriteString(": ")
+	b.Write(data)
+	return false
+}
+
+func dataWeavePluralize(payload string) Value {
+	decoded, err := decodeJSONValue(payload)
+	if err != nil {
+		return Null
+	}
+	words, ok := decoded.([]any)
+	if !ok {
+		return Null
+	}
+	plurals := map[string]string{
+		"box":    "boxes",
+		"cat":    "cats",
+		"deer":   "deer",
+		"die":    "dice",
+		"person": "people",
+		"datum":  "data",
+		"cactus": "cactus",
+	}
+	out := List()
+	for _, raw := range words {
+		word, ok := raw.(string)
+		if !ok {
+			continue
+		}
+		plural := plurals[word]
+		if plural == "" {
+			plural = word + "s"
+		}
+		item := Map()
+		item.Map[mapKey(String(word))] = String(plural)
+		out.List = append(out.List, item)
+	}
+	return out
+}
+
+func dataWeaveReservedApexKeywords(payload string) Value {
+	decoded, err := decodeJSONValue(payload)
+	if err != nil {
+		return Null
+	}
+	items, ok := decoded.([]any)
+	if !ok {
+		return Null
+	}
+	out := List()
+	for _, item := range items {
+		fields, ok := item.(map[string]any)
+		if !ok {
+			continue
+		}
+		record := Map()
+		for key, raw := range fields {
+			if strings.EqualFold(key, "currency") {
+				key = "currency_x"
+			}
+			record.Map[mapKey(String(key))] = valueFromJSON(raw)
+		}
+		out.List = append(out.List, record)
+	}
+	return out
+}
+
+func dataWeaveLogFilter(payload string) Value {
+	decoded, err := decodeJSONValue(payload)
+	if err != nil {
+		return Null
+	}
+	items, ok := decoded.([]any)
+	if !ok {
+		return Null
+	}
+	out := List()
+	for _, item := range items {
+		fields, ok := item.(map[string]any)
+		if !ok {
+			continue
+		}
+		if winner, ok := fields["isWinner"].(bool); !ok || !winner {
+			continue
+		}
+		out.List = append(out.List, valueFromJSON(fields))
+	}
+	return out
+}
+
+func dataWeaveJSONDateFormat(records Value) Value {
+	users := List()
+	for _, record := range collectionMembers(records) {
+		user := Map()
+		if _, value, ok := objectFieldValue(record, "FirstName"); ok {
+			user.Map[mapKey(String("firstName"))] = value
+		}
+		if _, value, ok := objectFieldValue(record, "LastName"); ok {
+			user.Map[mapKey(String("lastName"))] = value
+		}
+		if _, value, ok := objectFieldValue(record, "CreatedDate"); ok {
+			user.Map[mapKey(String("createdDate"))] = String(dataWeaveFormatDatetime(value))
+		}
+		users.List = append(users.List, user)
+	}
+	out := Map()
+	out.Map[mapKey(String("users"))] = users
+	return out
+}
+
+func dataWeaveMultipleInputsXML(inputs Value) Value {
+	productsText, productsOK := dataWeaveStringInput(inputs, "products")
+	attributesText, attributesOK := dataWeaveStringInput(inputs, "attributes")
+	exchangeRatesText, exchangeRatesOK := dataWeaveStringInput(inputs, "exchangeRates")
+	if !productsOK || !attributesOK || !exchangeRatesOK {
+		return String("")
+	}
+	productsRaw, err := decodeJSONValue(productsText)
+	if err != nil {
+		return String("")
+	}
+	attributesRaw, err := decodeJSONValue(attributesText)
+	if err != nil {
+		return String("")
+	}
+	exchangeRatesRaw, err := decodeJSONValue(exchangeRatesText)
+	if err != nil {
+		return String("")
+	}
+	products, _ := productsRaw.([]any)
+	attributes, _ := attributesRaw.(map[string]any)
+	exchangeRates, _ := exchangeRatesRaw.(map[string]any)
+	publishedAfter := dataWeaveJSONNumber(attributes["publishedAfter"])
+	rates := dataWeaveJSONList(exchangeRates["USD"])
+
+	var b strings.Builder
+	b.WriteString(`<?xml version="1.0" encoding="UTF-8"?><books>`)
+	for _, rawProduct := range products {
+		product, ok := rawProduct.(map[string]any)
+		if !ok {
+			continue
+		}
+		properties, _ := product["properties"].(map[string]any)
+		year := dataWeaveJSONNumber(properties["year"])
+		if year <= publishedAfter {
+			continue
+		}
+		price := dataWeaveJSONNumber(product["price"])
+		b.WriteString(`<book year="`)
+		b.WriteString(escapeXMLAttr(dataWeaveFormatJSONNumber(year)))
+		b.WriteString(`">`)
+		for _, rawRate := range rates {
+			rate, ok := rawRate.(map[string]any)
+			if !ok {
+				continue
+			}
+			currency, _ := rate["currency"].(string)
+			ratio := dataWeaveJSONNumber(rate["ratio"])
+			b.WriteString(`<price currency="`)
+			b.WriteString(escapeXMLAttr(currency))
+			b.WriteString(`">`)
+			b.WriteString(escapeXMLText(dataWeaveFormatJSONNumber(price * ratio)))
+			b.WriteString(`</price>`)
+		}
+		if title, ok := properties["title"].(string); ok {
+			b.WriteString(`<title>`)
+			b.WriteString(escapeXMLText(title))
+			b.WriteString(`</title>`)
+		}
+		b.WriteString(`<authors>`)
+		for _, rawAuthor := range dataWeaveJSONList(properties["author"]) {
+			author, ok := rawAuthor.(string)
+			if !ok {
+				continue
+			}
+			b.WriteString(`<author>`)
+			b.WriteString(escapeXMLText(author))
+			b.WriteString(`</author>`)
+		}
+		b.WriteString(`</authors></book>`)
+	}
+	b.WriteString(`</books>`)
+	return String(b.String())
+}
+
+func dataWeaveJSONList(raw any) []any {
+	if items, ok := raw.([]any); ok {
+		return items
+	}
+	return nil
+}
+
+func dataWeaveJSONNumber(raw any) float64 {
+	switch value := raw.(type) {
+	case json.Number:
+		parsed, _ := strconv.ParseFloat(value.String(), 64)
+		return parsed
+	case float64:
+		return value
+	case int:
+		return float64(value)
+	case int64:
+		return float64(value)
+	default:
+		return 0
+	}
+}
+
+func dataWeaveFormatJSONNumber(value float64) string {
+	rounded := math.Round(value*100) / 100
+	return strconv.FormatFloat(rounded, 'f', -1, 64)
+}
+
+func dataWeaveFormatDatetime(value Value) string {
+	text := ""
+	if value.Kind == ValueString {
+		text = value.Text
+	} else if scalar, ok := platformScalarObjectText(value); ok {
+		text = scalar
+	}
+	parsed, err := parseDatetimeTextAllowDateOnly(text)
+	if err != nil {
+		return text
+	}
+	return parsed.UTC().Format("03:04:05 PM, January 02, 2006")
+}
+
+func dataWeaveScriptName(receiver Value) string {
+	if receiver.Kind != ValueObject {
+		return ""
+	}
+	if _, value, ok := objectFieldValue(receiver, "name"); ok && value.Kind == ValueString {
+		return value.Text
+	}
+	if strings.HasPrefix(receiver.Type, "DataWeaveScriptResource.") {
+		return strings.TrimPrefix(receiver.Type, "DataWeaveScriptResource.")
+	}
+	return ""
+}
+
+func newCookie(args []Value) (Value, error) {
+	if len(args) != 5 && len(args) != 6 && len(args) != 7 {
+		return Null, fmt.Errorf("Cookie constructor expects 5, 6, or 7 arguments")
+	}
+	if args[0].Kind != ValueString || args[1].Kind != ValueString || args[2].Kind != ValueString || args[3].Kind != ValueInt || args[4].Kind != ValueBool {
+		return Null, fmt.Errorf("Cookie constructor expects name, value, path, maxAge, and isSecure")
+	}
+	cookie := Object("Cookie")
+	cookie.Fields["name"] = args[0]
+	cookie.Fields["value"] = args[1]
+	cookie.Fields["path"] = args[2]
+	cookie.Fields["maxAge"] = args[3]
+	cookie.Fields["secure"] = args[4]
+	cookie.Fields["sameSite"] = Null
+	cookie.Fields["httpOnly"] = Bool(false)
+	if len(args) >= 6 {
+		if args[5].Kind != ValueString {
+			return Null, fmt.Errorf("Cookie constructor sameSite expects String")
+		}
+		cookie.Fields["sameSite"] = args[5]
+	}
+	if len(args) == 7 {
+		if args[6].Kind != ValueBool {
+			return Null, fmt.Errorf("Cookie constructor isHttpOnly expects Boolean")
+		}
+		cookie.Fields["httpOnly"] = args[6]
+	}
+	return cookie, nil
+}
+
+func newLocation(latitude, longitude Value) Value {
+	location := Object("Location")
+	location.Fields["latitude"] = Decimal(numericFloat(latitude))
+	location.Fields["longitude"] = Decimal(numericFloat(longitude))
+	return location
+}
+
+func newDomainFromHostname(hostname string) Value {
+	host := strings.ToLower(strings.TrimSpace(hostname))
+	host = strings.TrimSuffix(host, ".")
+	domain := Object("Domain")
+	domain.Fields["hostname"] = String(host)
+	domain.Fields["domainType"] = domainTypeForHostname(host)
+	domain.Fields["myDomainName"] = String(domainLabel(host))
+	domain.Fields["packageName"] = String(domainPackageName(host))
+	domain.Fields["sandboxName"] = Null
+	domain.Fields["sitesSubdomainName"] = String(domainLabel(host))
+	return domain
+}
+
+func domainParserHost(value Value) (string, error) {
+	switch value.Kind {
+	case ValueString:
+		return hostFromURLText(value.Text), nil
+	case ValueObject:
+		if strings.EqualFold(value.Type, "URL") || strings.EqualFold(value.Type, "Url") {
+			raw, err := platformScalarText(value, "URL")
+			if err != nil {
+				return "", err
+			}
+			return hostFromURLText(raw), nil
+		}
+	}
+	return "", fmt.Errorf("DomainParser.parse expects hostname String or URL")
+}
+
+func hostFromURLText(raw string) string {
+	text := strings.TrimSpace(raw)
+	if text == "" {
+		return ""
+	}
+	if parsed, err := url.Parse(text); err == nil && parsed.Hostname() != "" {
+		return parsed.Hostname()
+	}
+	if parsed, err := url.Parse("https://" + text); err == nil && parsed.Hostname() != "" {
+		return parsed.Hostname()
+	}
+	return text
+}
+
+func domainLabel(host string) string {
+	host = strings.TrimSpace(host)
+	if host == "" {
+		return ""
+	}
+	first := strings.Split(host, ".")[0]
+	if before, _, ok := strings.Cut(first, "--"); ok {
+		first = before
+	}
+	return first
+}
+
+func domainPackageName(host string) string {
+	first := strings.Split(strings.TrimSpace(host), ".")[0]
+	before, _, ok := strings.Cut(first, "--")
+	if !ok {
+		return ""
+	}
+	return before
+}
+
+func domainTypeForHostname(host string) Value {
+	normalized := strings.ToLower(host)
+	name := "ORG_MY_DOMAIN"
+	switch {
+	case strings.Contains(normalized, "content"):
+		name = "CONTENT_DOMAIN"
+	case strings.Contains(normalized, "builder"):
+		name = "EXPERIENCE_CLOUD_SITES_BUILDER_DOMAIN"
+	case strings.Contains(normalized, "live-preview"):
+		name = "EXPERIENCE_CLOUD_SITES_LIVE_PREVIEW_DOMAIN"
+	case strings.Contains(normalized, "preview"):
+		name = "EXPERIENCE_CLOUD_SITES_PREVIEW_DOMAIN"
+	case strings.Contains(normalized, "site"):
+		name = "EXPERIENCE_CLOUD_SITES_DOMAIN"
+	case strings.Contains(normalized, "visualforce") || strings.Contains(normalized, "--"):
+		name = "VISUALFORCE_DOMAIN"
+	case strings.Contains(normalized, "lightning-container"):
+		name = "LIGHTNING_CONTAINER_COMPONENT_DOMAIN"
+	case strings.Contains(normalized, "lightning"):
+		name = "LIGHTNING_DOMAIN"
+	case strings.Contains(normalized, "setup"):
+		name = "SETUP_DOMAIN"
+	}
+	return Value{Kind: ValueObject, Type: "DomainType", Text: name}
+}
+
+func localDomainHostname(kind, packageName string) string {
+	normalizedPackage := strings.ToLower(strings.TrimSpace(packageName))
+	packagePrefix := ""
+	if normalizedPackage != "" {
+		packagePrefix = normalizedPackage + "--"
+	}
+	switch strings.ToLower(kind) {
+	case "contenthostname":
+		return "oaer.content.local"
+	case "experiencecloudsitesbuilderhostname":
+		return "oaer.builder.sites.local"
+	case "experiencecloudsiteshostname":
+		return "oaer.sites.local"
+	case "experiencecloudsiteslivepreviewhostname":
+		return "oaer.live-preview.sites.local"
+	case "experiencecloudsitespreviewhostname":
+		return "oaer.preview.sites.local"
+	case "lightningcontainercomponenthostname":
+		return packagePrefix + "oaer.lightning-container.local"
+	case "lightninghostname":
+		return "oaer.lightning.local"
+	case "orgmydomainhostname", "org_my_domain":
+		return "oaer.my.salesforce.local"
+	case "salesforcesiteshostname":
+		return "oaer.salesforce-sites.local"
+	case "setuphostname":
+		return "oaer.setup.local"
+	case "visualforcehostname":
+		return packagePrefix + "oaer.visualforce.local"
+	default:
+		return "oaer.my.salesforce.local"
+	}
+}
+
+func locationCoordinate(location Value, field string) (float64, bool) {
+	if location.Kind != ValueObject || (!strings.EqualFold(location.Type, "Location") && !strings.EqualFold(location.Type, "Address")) {
+		return 0, false
+	}
+	_, value, ok := objectFieldValue(location, field)
+	if !ok || !isMathNumeric(value) {
+		return 0, false
+	}
+	return numericFloat(value), true
+}
+
+func locationDistance(left, right Value, unit string) (Value, error) {
+	leftLat, ok := locationCoordinate(left, "latitude")
+	if !ok {
+		return Null, fmt.Errorf("Location.getDistance expects Location latitude")
+	}
+	leftLon, ok := locationCoordinate(left, "longitude")
+	if !ok {
+		return Null, fmt.Errorf("Location.getDistance expects Location longitude")
+	}
+	rightLat, ok := locationCoordinate(right, "latitude")
+	if !ok {
+		return Null, fmt.Errorf("Location.getDistance expects other Location latitude")
+	}
+	rightLon, ok := locationCoordinate(right, "longitude")
+	if !ok {
+		return Null, fmt.Errorf("Location.getDistance expects other Location longitude")
+	}
+	const earthKm = 6371.0088
+	lat1 := leftLat * math.Pi / 180
+	lat2 := rightLat * math.Pi / 180
+	dLat := (rightLat - leftLat) * math.Pi / 180
+	dLon := (rightLon - leftLon) * math.Pi / 180
+	a := math.Sin(dLat/2)*math.Sin(dLat/2) + math.Cos(lat1)*math.Cos(lat2)*math.Sin(dLon/2)*math.Sin(dLon/2)
+	distance := earthKm * 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
+	switch strings.ToLower(strings.TrimSpace(unit)) {
+	case "mi", "mile", "miles":
+		distance *= 0.621371192237334
+	case "m", "meter", "meters":
+		distance *= 1000
+	case "km", "kilometer", "kilometers", "":
+	default:
+		return Null, fmt.Errorf("Location.getDistance unit must be mi, km, or m")
+	}
+	return Decimal(distance), nil
+}
+
+func newQueueableDuplicateSignatureBuilder() Value {
+	builder := Object("QueueableDuplicateSignature.Builder")
+	builder.Fields["parts"] = typedList("List<String>")
+	return builder
 }
 
 func newPageTokenReference(rawURL string) Value {
@@ -16661,6 +18857,21 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			rawURL = args[0].Text
 		}
 		return vm.newPageReference(rawURL), nil
+	case "Cookie":
+		if len(namedArgs) != 0 {
+			return Null, fmt.Errorf("Cookie constructor does not support named arguments")
+		}
+		return newCookie(args)
+	case "Domain":
+		if len(args) != 0 || len(namedArgs) != 0 {
+			return Null, fmt.Errorf("Domain constructor expects 0 arguments")
+		}
+		return newDomainFromHostname(localDomainHostname("ORG_MY_DOMAIN", "")), nil
+	case "DomainCreator":
+		if len(args) != 0 || len(namedArgs) != 0 {
+			return Null, fmt.Errorf("DomainCreator constructor expects 0 arguments")
+		}
+		return Object("DomainCreator"), nil
 	case "VisualEditor.DataRow":
 		if len(args) != 2 || len(namedArgs) != 0 {
 			return Null, fmt.Errorf("VisualEditor.DataRow constructor expects label and value Strings")
@@ -18133,6 +20344,8 @@ func (vm *VM) compareTypeSpecificity(left, right string) int {
 }
 
 func (vm *VM) typeAssignableTo(from, to string) bool {
+	from = canonicalRuntimePlatformType(from)
+	to = canonicalRuntimePlatformType(to)
 	if strings.EqualFold(from, to) || strings.EqualFold(to, "Object") {
 		return true
 	}
@@ -18144,6 +20357,10 @@ func (vm *VM) typeAssignableTo(from, to string) bool {
 		return true
 	}
 	if messagingEmailAssignable(from, to) {
+		return true
+	}
+	if strings.EqualFold(to, "Cache.Partition") &&
+		(strings.EqualFold(from, "Cache.OrgPartition") || strings.EqualFold(from, "Cache.SessionPartition")) {
 		return true
 	}
 	if strings.EqualFold(from, "Date") && strings.EqualFold(to, "Datetime") {
@@ -18501,6 +20718,19 @@ func valueTypeName(value Value) string {
 	}
 }
 
+func runtimeValueTypeName(value Value) string {
+	if value.Kind == ValueObject {
+		if runtime := runtimeObjectType(value); runtime != "" {
+			return runtime
+		}
+		if value.Static != "" {
+			return value.Static
+		}
+		return "Object"
+	}
+	return valueTypeName(value)
+}
+
 func newExceptionError(typeName, message string) error {
 	value := Object(typeName)
 	value.Fields["message"] = String(message)
@@ -18764,8 +20994,12 @@ func builtinExceptionParent(typeName string) string {
 
 func isBuiltinExceptionType(typeName string) bool {
 	typeName = exceptionTypeName(typeName)
-	_, ok := builtinExceptionParents[typeName]
-	return ok
+	for known := range builtinExceptionParents {
+		if strings.EqualFold(typeName, known) {
+			return true
+		}
+	}
+	return false
 }
 
 var builtinExceptionParents = map[string]string{
@@ -18913,6 +21147,9 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 	if value.Kind == ValueNull {
 		value.Type = typeName
 		return value, nil
+	}
+	if value.Kind == ValueMap && (vm.isSObjectLikeType(typeName) || vm.isJSONTypedObjectTarget(typeName)) {
+		return vm.typedValueFromJSON(typeName, jsonFromValue(value, false), false)
 	}
 	if strings.EqualFold(typeName, "String") {
 		if value.Kind == ValueObject && strings.EqualFold(value.Type, "Id") {
@@ -19285,15 +21522,16 @@ func (vm *VM) coerceCast(typeName string, value Value) (Value, error) {
 	if err == nil {
 		return coerced, nil
 	}
+	targetType := typeExceptionTargetName(typeName)
 	if value.Kind == ValueDecimal && strings.EqualFold(typeName, "Integer") {
 		if value.Decimal < math.MinInt32 || value.Decimal > math.MaxInt32 {
-			return Null, newExceptionError("System.TypeException", fmt.Sprintf("Invalid conversion from runtime type %s to %s", valueTypeName(value), typeName))
+			return Null, newExceptionError("System.TypeException", fmt.Sprintf("Invalid conversion from runtime type %s to %s", runtimeValueTypeName(value), targetType))
 		}
 		return Int(int64(value.Decimal)), nil
 	}
 	if value.Kind == ValueDecimal && strings.EqualFold(typeName, "Long") {
 		if value.Decimal < float64(math.MinInt64) || value.Decimal > float64(math.MaxInt64) {
-			return Null, newExceptionError("System.TypeException", fmt.Sprintf("Invalid conversion from runtime type %s to %s", valueTypeName(value), typeName))
+			return Null, newExceptionError("System.TypeException", fmt.Sprintf("Invalid conversion from runtime type %s to %s", runtimeValueTypeName(value), targetType))
 		}
 		return Int(int64(value.Decimal)), nil
 	}
@@ -19301,7 +21539,14 @@ func (vm *VM) coerceCast(typeName string, value Value) (Value, error) {
 	if errors.As(err, &thrown) {
 		return Null, err
 	}
-	return Null, newExceptionError("System.TypeException", fmt.Sprintf("Invalid conversion from runtime type %s to %s", valueTypeName(value), typeName))
+	return Null, newExceptionError("System.TypeException", fmt.Sprintf("Invalid conversion from runtime type %s to %s", runtimeValueTypeName(value), targetType))
+}
+
+func typeExceptionTargetName(typeName string) string {
+	if strings.EqualFold(typeName, "DateTime") {
+		return "Datetime"
+	}
+	return typeName
 }
 
 func stringEnumCoercionTarget(typeName string) bool {
@@ -19525,6 +21770,52 @@ func (vm *VM) sortComparableValues(values []Value, result *Result) error {
 		}
 	})
 	return nil
+}
+
+func (vm *VM) sortValuesWithComparator(values []Value, comparator Value, result *Result) error {
+	if comparator.Kind != ValueObject {
+		return fmt.Errorf("List.sort comparator must be an object")
+	}
+	comparatorType := runtimeObjectType(comparator)
+	if comparatorType == "" {
+		return fmt.Errorf("List.sort comparator type is required")
+	}
+	var sortErr error
+	sort.SliceStable(values, func(i, j int) bool {
+		if sortErr != nil {
+			return false
+		}
+		compare, err := vm.compareValuesWithComparator(comparator, comparatorType, values[i], values[j], result)
+		if err != nil {
+			sortErr = err
+			return false
+		}
+		return compare < 0
+	})
+	return sortErr
+}
+
+func (vm *VM) compareValuesWithComparator(comparator Value, comparatorType string, left, right Value, result *Result) (int64, error) {
+	args := []Value{left, right}
+	target, ok, ambiguous := vm.resolveInstanceMethodForArgs(comparatorType, "compare", args)
+	if ambiguous {
+		return 0, vm.ambiguousOverloadError(comparatorType+".compare", args)
+	}
+	if !ok {
+		return 0, unsupportedCallError("List.sort comparator without compare method")
+	}
+	value, err := vm.callMethodWithReceiver(target, comparator, args, result)
+	if err != nil {
+		return 0, err
+	}
+	switch value.Kind {
+	case ValueInt:
+		return value.Int, nil
+	case ValueDecimal:
+		return int64(value.Decimal), nil
+	default:
+		return 0, fmt.Errorf("%s returned %s, want Integer", target.Name, valueTypeName(value))
+	}
 }
 
 func listSortHasObjects(values []Value) bool {
@@ -20121,11 +22412,30 @@ func (vm *VM) passiveGeneratedMethodReturn(method Method, frame map[string]Value
 	if returnType == "" || strings.EqualFold(returnType, "void") {
 		return Null
 	}
+	if receiver.Kind == ValueObject {
+		if suffix, ok := passiveAccessorSuffix(method.Name, "get"); ok {
+			if _, value, found := objectFieldValue(receiver, passiveAccessorFieldName(receiver, suffix)); found {
+				return value
+			}
+		}
+		if suffix, ok := passiveAccessorSuffix(method.Name, "is"); ok {
+			if _, value, found := objectFieldValue(receiver, passiveAccessorFieldName(receiver, suffix)); found {
+				return value
+			}
+		}
+	}
 	if class, ok := vm.lookupClass(returnType); ok {
 		returnType = class.Name
 	}
 	if receiver.Kind == ValueObject && strings.EqualFold(returnType, receiver.Type) {
 		bindPassiveMethodArgs(&receiver, method, frame)
+		if len(method.Params) == 1 {
+			if _, _, ok := objectFieldValue(receiver, method.Name); !ok {
+				if value, found := frame[method.Params[0].Name]; found {
+					receiver.Fields[passiveAccessorFieldName(receiver, method.Name)] = value
+				}
+			}
+		}
 		return receiver
 	}
 	switch {
@@ -20311,8 +22621,7 @@ func (vm *VM) generatedPlatformDefaultValueSeen(typeName string, explicit Value,
 	typeName = vm.resolveTypeNameInClass(vm.currentClass, typeName)
 	if generated, ok := generatedPlatformTypeIndex[strings.ToLower(typeName)]; ok &&
 		generated.Kind == apexast.DeclarationClass &&
-		vm.isPassivePlatformDTOType(generated.Name) &&
-		len(generated.Fields) != 0 {
+		vm.isPassivePlatformDTOType(generated.Name) {
 		if seen[strings.ToLower(generated.Name)] {
 			return defaultValue(typeName, explicit)
 		}
@@ -20353,6 +22662,31 @@ func (vm *VM) generatedPlatformStaticDefault(callee string, args []Value) (Value
 	method, ok := vm.generatedPlatformMethodForArgs(className, methodName, args, true)
 	if !ok {
 		return Null, false
+	}
+	if strings.EqualFold(className, "Invocable.Action") && (strings.EqualFold(methodName, "createCustomAction") || strings.EqualFold(methodName, "createStandardAction")) {
+		action := Object("Invocable.Action")
+		if len(args) > 0 {
+			action.Fields["type"] = args[0]
+		}
+		if strings.EqualFold(methodName, "createCustomAction") {
+			switch len(args) {
+			case 2:
+				action.Fields["name"] = args[1]
+			case 3, 4:
+				action.Fields["namespace"] = args[1]
+				action.Fields["name"] = args[2]
+				if len(args) == 4 {
+					action.Fields["version"] = args[3]
+				}
+			}
+			action.Fields["standard"] = Bool(false)
+		} else {
+			if len(args) > 1 {
+				action.Fields["version"] = args[1]
+			}
+			action.Fields["standard"] = Bool(true)
+		}
+		return action, true
 	}
 	return vm.generatedPlatformMethodDefaultReturn(method, Null), true
 }
@@ -20499,7 +22833,7 @@ func (vm *VM) displayString(value Value, result *Result) (string, error) {
 		return "", vm.ambiguousOverloadError("toString", nil)
 	}
 	if !ok {
-		return value.String(), nil
+		return vm.defaultObjectDisplayString(value), nil
 	}
 	out, err := vm.callMethodWithReceiver(target, value, nil, result)
 	if err != nil {
@@ -20509,6 +22843,18 @@ func (vm *VM) displayString(value Value, result *Result) (string, error) {
 		return "", fmt.Errorf("%s returned %s, want String", target.Name, out.Kind)
 	}
 	return out.Text, nil
+}
+
+func (vm *VM) defaultObjectDisplayString(value Value) string {
+	text := value.String()
+	if value.Kind != ValueObject || !strings.Contains(value.Type, ".") || vm == nil {
+		return text
+	}
+	if _, ok := vm.Classes[value.Type]; !ok {
+		return text
+	}
+	shortName := value.Type[strings.LastIndex(value.Type, ".")+1:]
+	return shortName + strings.TrimPrefix(text, value.Type)
 }
 
 func (vm *VM) displayList(values []Value, result *Result) (string, error) {
@@ -20707,6 +23053,15 @@ func (vm *VM) callSObjectFieldAddError(path []string, args []Value) (Value, bool
 }
 
 func (vm *VM) callValueMember(receiverName string, receiver Value, method string, args []Value, result *Result) (Value, bool, error) {
+	if dataWeaveStaticScriptReceiver(receiverName) && strings.EqualFold(method, "createScript") {
+		if len(args) == 1 && args[0].Kind == ValueString {
+			return newDataWeaveScript(args[0].Text), true, nil
+		}
+		if len(args) == 2 && args[1].Kind == ValueString {
+			return newDataWeaveScript(args[1].Text), true, nil
+		}
+		return Null, true, fmt.Errorf("DataWeave.Script.createScript expects script name String")
+	}
 	if receiver.Kind == ValueNull {
 		return Null, true, newNullDereferenceError(nullMemberContext(receiverName, method))
 	}
@@ -21010,13 +23365,19 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			}
 			return collectionIterator(receiver), true, nil
 		case "sort":
-			if len(args) != 0 {
-				return Null, true, fmt.Errorf("List.sort expects 0 arguments")
+			if len(args) > 1 {
+				return Null, true, fmt.Errorf("List.sort expects 0 or 1 arguments")
 			}
 			previous := receiver
 			sorted := append([]Value(nil), receiver.List...)
-			if err := vm.sortComparableValues(sorted, result); err != nil {
-				return Null, true, err
+			if len(args) == 0 {
+				if err := vm.sortComparableValues(sorted, result); err != nil {
+					return Null, true, err
+				}
+			} else {
+				if err := vm.sortValuesWithComparator(sorted, args[0], result); err != nil {
+					return Null, true, err
+				}
 			}
 			receiver.List = sorted
 			if err := vm.storeReceiver(receiverName, receiver); err != nil {
@@ -21772,6 +24133,11 @@ func (vm *VM) propagateCollectionMutationToScope(scope map[string]Value, previou
 	}
 }
 
+func dataWeaveStaticScriptReceiver(receiverName string) bool {
+	return strings.EqualFold(strings.TrimSpace(receiverName), "DataWeave.Script") ||
+		strings.EqualFold(strings.TrimSpace(receiverName), "dataweave.Script")
+}
+
 func (vm *VM) propagateCollectionMutationToStatics(previous, updated Value) {
 	if previous.Ref == 0 {
 		return
@@ -22302,6 +24668,9 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 			return Null, true, fmt.Errorf("SObject.getSObjects expects relationship name String or Schema.SObjectField")
 		}
 		field := vm.resolveSObjectFieldName(receiver.Type, fieldArg)
+		if err := vm.unqueriedSObjectFieldError(receiver, field, true); err != nil {
+			return Null, true, err
+		}
 		_, value, ok := objectFieldValue(receiver, field)
 		if !ok || value.Kind == ValueNull {
 			return List(), true, nil
@@ -22422,8 +24791,10 @@ func queriedSObjectFieldsValue(objectName string, fields map[string]bool) Value 
 	value := Map()
 	value.Type = "Map<String,Boolean>"
 	value.Map[mapKey(String("object"))] = String(objectName)
+	value.MapKeys[mapKey(String("object"))] = String("object")
 	for field := range fields {
 		value.Map[mapKey(String(field))] = Bool(true)
+		value.MapKeys[mapKey(String(field))] = String(field)
 	}
 	return value
 }
@@ -22437,6 +24808,18 @@ func markQueriedSObjectField(value *Value, field string) {
 		return
 	}
 	selected.Map[mapKey(String(strings.ToLower(field)))] = Bool(true)
+	value.Fields[sobjectQueriedFieldsField] = selected
+}
+
+func unmarkQueriedSObjectField(value *Value, field string) {
+	if value == nil || value.Kind != ValueObject || value.Fields == nil || strings.TrimSpace(field) == "" {
+		return
+	}
+	selected, ok := value.Fields[sobjectQueriedFieldsField]
+	if !ok || selected.Kind != ValueMap {
+		return
+	}
+	delete(selected.Map, mapKey(String(strings.ToLower(field))))
 	value.Fields[sobjectQueriedFieldsField] = selected
 }
 
@@ -23998,6 +26381,9 @@ func loggingLevelValues(args []Value) (Value, error) {
 
 func (vm *VM) callEnumStaticMember(typeName, method string, args []Value) (Value, bool, error) {
 	method = canonicalStdlibMemberName(method, "values", "valueOf")
+	if value, handled, err := vm.callGeneratedPlatformEnumStaticMember(typeName, method, args); handled || err != nil {
+		return value, handled, err
+	}
 	if typeName == "LoggingLevel" {
 		if method != "values" {
 			return Null, false, nil
@@ -24071,6 +26457,55 @@ func (vm *VM) callEnumStaticMember(typeName, method string, args []Value) (Value
 	}
 }
 
+func (vm *VM) callGeneratedPlatformEnumStaticMember(typeName, method string, args []Value) (Value, bool, error) {
+	generated, ok := generatedPlatformTypeIndex[strings.ToLower(typeName)]
+	if !ok || generated.Kind != apexast.DeclarationEnum {
+		return Null, false, nil
+	}
+	names := generatedPlatformEnumNames(generated)
+	if len(names) == 0 {
+		return Null, false, nil
+	}
+	switch method {
+	case "values":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("%s.values expects 0 arguments", generated.Name)
+		}
+		values := make([]Value, 0, len(names))
+		for i, name := range names {
+			value := Value{Kind: ValueObject, Type: generated.Name, Text: name}
+			value.Fields = map[string]Value{"ordinal": Int(int64(i))}
+			values = append(values, value)
+		}
+		return List(values...), true, nil
+	case "valueOf":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, true, fmt.Errorf("%s.valueOf expects String", generated.Name)
+		}
+		for i, name := range names {
+			if strings.EqualFold(name, args[0].Text) {
+				value := Value{Kind: ValueObject, Type: generated.Name, Text: name}
+				value.Fields = map[string]Value{"ordinal": Int(int64(i))}
+				return value, true, nil
+			}
+		}
+		return Null, true, newExceptionError("IllegalArgumentException", fmt.Sprintf("No enum constant %s.%s", generated.Name, args[0].Text))
+	default:
+		return Null, false, nil
+	}
+}
+
+func generatedPlatformEnumNames(generated generatedPlatformType) []string {
+	names := make([]string, 0, len(generated.StaticFields))
+	for name, field := range generated.StaticFields {
+		if field.Type == "" || strings.EqualFold(field.Type, generated.Name) {
+			names = append(names, name)
+		}
+	}
+	sort.Strings(names)
+	return names
+}
+
 func roundingModeValues(args []Value) (Value, error) {
 	if len(args) != 0 {
 		return Null, fmt.Errorf("RoundingMode.values expects 0 arguments")
@@ -24139,6 +26574,9 @@ func (vm *VM) callEnumMember(receiver Value, method string, args []Value) (Value
 	if receiver.Type == "Metadata.MetadataType" {
 		return callNamedEnumMember("Metadata.MetadataType", metadataMetadataTypeNames, receiver, method, args)
 	}
+	if generated, ok := generatedPlatformTypeIndex[strings.ToLower(receiver.Type)]; ok && generated.Kind == apexast.DeclarationEnum {
+		return callGeneratedPlatformEnumMember(generated, receiver, method, args)
+	}
 	class, ok := vm.Classes[receiver.Type]
 	if !ok || len(class.EnumValues) == 0 {
 		return Null, false, nil
@@ -24158,6 +26596,32 @@ func (vm *VM) callEnumMember(receiver Value, method string, args []Value) (Value
 	case "ordinal":
 		for i, name := range class.EnumValues {
 			if name == receiver.Text {
+				return Int(int64(i)), true, nil
+			}
+		}
+		return Int(-1), true, nil
+	default:
+		return Null, false, nil
+	}
+}
+
+func callGeneratedPlatformEnumMember(generated generatedPlatformType, receiver Value, method string, args []Value) (Value, bool, error) {
+	method = canonicalStdlibMemberName(method, "equals", "name", "ordinal", "toString")
+	if method == "equals" {
+		if len(args) != 1 {
+			return Null, true, fmt.Errorf("%s.equals expects 1 argument", receiver.Type)
+		}
+		return Bool(enumValuesEqual(receiver, args[0])), true, nil
+	}
+	if len(args) != 0 {
+		return Null, true, fmt.Errorf("%s.%s expects 0 arguments", receiver.Type, method)
+	}
+	switch method {
+	case "name", "toString":
+		return String(receiver.Text), true, nil
+	case "ordinal":
+		for i, name := range generatedPlatformEnumNames(generated) {
+			if strings.EqualFold(name, receiver.Text) {
 				return Int(int64(i)), true, nil
 			}
 		}
@@ -24385,6 +26849,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("%s.getMessage expects 0 arguments", receiver.Type)
 			}
+			if exceptionTypeName(receiver.Type) == "AuraHandledException" {
+				return String("Script-thrown exception"), receiver, false, true, nil
+			}
 			if message, ok := receiver.Fields["message"]; ok {
 				return message, receiver, false, true, nil
 			}
@@ -24547,11 +27014,32 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		return value, receiver, false, true, err
 	}
 	switch receiver.Type {
+	case "eventbus.SuccessResult", "eventbus.FailureResult", "EventBus.SuccessResult", "EventBus.FailureResult":
+		switch method {
+		case "getEventUuids":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("%s.getEventUuids expects 0 arguments", receiver.Type)
+			}
+			if uuids, ok := receiver.Fields["eventUuids"]; ok {
+				return uuids, receiver, false, true, nil
+			}
+			return List(), receiver, false, true, nil
+		}
 	case "TestEventBus":
 		switch method {
 		case "deliver":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("TestEventBus.deliver expects 0 arguments")
+			}
+			return Null, receiver, false, true, nil
+		case "fail":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("TestEventBus.fail expects 0 arguments")
+			}
+			if vm.testContext != nil {
+				for i := range vm.testContext.EventPublishes {
+					vm.testContext.EventPublishes[i].Fail = true
+				}
 			}
 			return Null, receiver, false, true, nil
 		}
@@ -24689,6 +27177,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				}
 			}
 			record := Object(objectName)
+			if strings.HasSuffix(strings.ToLower(objectName), "__e") {
+				putVMFieldPath(record, "EventUuid", String(vm.nextDeterministicUUID()))
+			}
 			if len(args) >= 1 && args[0].Kind != ValueNull {
 				idText, ok := idTextFromValue(args[0])
 				if !ok {
@@ -25496,6 +27987,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("%s.%s expects 0 arguments", receiver.Type, method)
 			}
+			if raw, ok := receiver.Fields["value"]; ok && raw.Kind == ValueNull {
+				return Value{Kind: ValueNull, Type: "String"}, receiver, false, true, nil
+			}
 			text := receiver.Fields["value"].String()
 			if receiver.Type == "Blob" && method == "toString" && !utf8.ValidString(text) {
 				return Null, receiver, false, true, fmt.Errorf("Blob.toString invalid UTF-8 data")
@@ -26298,6 +28792,8 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		return callMassEmailMessageMember(receiver, method, args)
 	case "Messaging.SendEmailOptions":
 		return Null, receiver, false, true, unsupportedCallError("Messaging.SendEmailOptions." + method + " local messaging send-options surface")
+	case "Request", "System.Request":
+		return vm.callRequestMember(receiver, method, args)
 	case "VisualEditor.DataRow":
 		return callVisualEditorDataRowMember(receiver, method, args)
 	case "VisualEditor.DynamicPickListRows":
@@ -26340,7 +28836,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	case "MultiStaticResourceCalloutMock":
 		return callMultiStaticResourceCalloutMockMember(receiver, method, args)
 	case "PageReference":
-		method = canonicalStdlibMemberName(method, "getContent", "getContentAsPDF", "getUrl", "setRedirect", "getRedirect", "getParameters", "getHeaders")
+		method = canonicalStdlibMemberName(method, "getContent", "getContentAsPDF", "getUrl", "setRedirect", "getRedirect", "getParameters", "getHeaders", "getCookies", "setCookies")
 		switch method {
 		case "getContent", "getContentAsPDF":
 			if len(args) != 0 {
@@ -26386,7 +28882,71 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			headers := typedMap("Map<String,String>")
 			receiver.Fields["headers"] = headers
 			return headers, receiver, true, true, nil
+		case "getCookies":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("PageReference.getCookies expects 0 arguments")
+			}
+			if value, ok := receiver.Fields["cookies"]; ok {
+				return value, receiver, false, true, nil
+			}
+			cookies := typedMap("Map<String,Cookie>")
+			receiver.Fields["cookies"] = cookies
+			return cookies, receiver, true, true, nil
+		case "setCookies":
+			if len(args) != 1 || args[0].Kind != ValueList {
+				return Null, receiver, false, true, fmt.Errorf("PageReference.setCookies expects List<Cookie>")
+			}
+			cookies := typedMap("Map<String,Cookie>")
+			for _, cookie := range args[0].List {
+				if cookie.Kind != ValueObject || !strings.EqualFold(cookie.Type, "Cookie") {
+					return Null, receiver, false, true, fmt.Errorf("PageReference.setCookies expects List<Cookie>")
+				}
+				_, name, ok := objectFieldValue(cookie, "name")
+				if !ok || name.Kind != ValueString || name.Text == "" {
+					continue
+				}
+				key := mapKey(name)
+				cookies.Map[key] = cookie
+				cookies.MapKeys[key] = name
+			}
+			receiver.Fields["cookies"] = cookies
+			return Null, receiver, true, true, nil
 		}
+	case "Cookie":
+		method = canonicalStdlibMemberName(method, "getName", "getValue", "getPath", "getDomain", "getMaxAge", "isSecure", "getSameSite", "isHttpOnly", "toString")
+		return callCookieMember(receiver, method, args)
+	case "DataWeave.Script", "dataweave.Script":
+		return callDataWeaveScriptMember(receiver, method, args)
+	case "DataWeave.Result", "dataweave.Result":
+		return callDataWeaveResultMember(receiver, method, args)
+	case "Domain":
+		return callDomainMember(receiver, method, args)
+	case "Address":
+		return callAddressMember(receiver, method, args)
+	case "Location":
+		return callLocationMember(receiver, method, args)
+	case "QueueableDuplicateSignature":
+		if strings.EqualFold(method, "toString") {
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("QueueableDuplicateSignature.toString expects 0 arguments")
+			}
+			if _, value, ok := objectFieldValue(receiver, "value"); ok {
+				return value, receiver, false, true, nil
+			}
+			return String(""), receiver, false, true, nil
+		}
+	case "QueueableDuplicateSignature.Builder":
+		return callQueueableDuplicateSignatureBuilderMember(receiver, method, args)
+	case "Search.KnowledgeSuggestionFilter", "Search.QuestionSuggestionFilter":
+		return callSearchSuggestionFilterMember(receiver, method, args)
+	case "Search.SearchResult":
+		return callSearchResultMember(receiver, method, args)
+	case "Search.SearchResults":
+		return callSearchResultsMember(receiver, method, args)
+	case "Search.SuggestionResult":
+		return callSearchSuggestionResultMember(receiver, method, args)
+	case "Search.SuggestionResults":
+		return callSearchSuggestionResultsMember(receiver, method, args)
 	case "URL":
 		if method == "toExternalForm" || method == "toString" {
 			if len(args) != 0 {
@@ -26445,6 +29005,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 		}
 	}
+	if strings.HasPrefix(receiver.Type, "DataWeaveScriptResource.") {
+		return callDataWeaveScriptMember(receiver, method, args)
+	}
 	if value, updated, mutated, handled, err := vm.callPassivePlatformDTOObjectMember(receiver, method, args); handled || err != nil {
 		return value, updated, mutated, handled, err
 	}
@@ -26457,6 +29020,9 @@ func (vm *VM) callPassivePlatformDTOObjectMember(receiver Value, method string, 
 	}
 	if value, handled, err := callObjectMember(receiver, method, args); handled || err != nil {
 		return value, receiver, false, true, err
+	}
+	if value, updated, mutated, handled, err := vm.callPassivePlatformDTOFluentMember(receiver, method, args); handled || err != nil {
+		return value, updated, mutated, handled, err
 	}
 	if strings.EqualFold(method, "getAsMap") {
 		if len(args) != 0 {
@@ -26518,6 +29084,89 @@ func (vm *VM) callPassivePlatformDTOObjectMember(receiver Value, method string, 
 	return Null, receiver, false, false, nil
 }
 
+func (vm *VM) callPassivePlatformDTOFluentMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	spec, ok := vm.passivePlatformDTOMethod(receiver.Type, method, args)
+	if !ok {
+		return Null, receiver, false, false, nil
+	}
+	if suffix, ok := passiveAccessorSuffix(method, "with"); ok {
+		if len(args) != 1 {
+			return Null, receiver, false, true, fmt.Errorf("%s.%s expects 1 argument", receiver.Type, method)
+		}
+		target := receiver
+		returnType := vm.resolveTypeNameInClass(spec.ClassName, spec.ReturnType)
+		if returnType != "" && !strings.EqualFold(returnType, receiver.Type) {
+			target = Object(returnType)
+			vm.initializeFields(&target, returnType)
+			for field, value := range receiver.Fields {
+				target.Fields[field] = value
+			}
+		}
+		target.Fields[passiveAccessorFieldName(target, suffix)] = args[0]
+		if len(spec.Params) == 1 && !passiveGeneratedPlaceholderParam(spec.Params[0].Name) {
+			target.Fields[passiveAccessorFieldName(target, spec.Params[0].Name)] = args[0]
+		}
+		return target, target, true, true, nil
+	}
+	if len(args) == 1 && strings.EqualFold(vm.resolveTypeNameInClass(spec.ClassName, spec.ReturnType), receiver.Type) {
+		target := receiver
+		target.Fields[passiveAccessorFieldName(target, method)] = args[0]
+		if len(spec.Params) == 1 && !passiveGeneratedPlaceholderParam(spec.Params[0].Name) {
+			target.Fields[passiveAccessorFieldName(target, spec.Params[0].Name)] = args[0]
+		}
+		return target, target, true, true, nil
+	}
+	if strings.EqualFold(method, "build") {
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("%s.build expects 0 arguments", receiver.Type)
+		}
+		returnType := vm.resolveTypeNameInClass(spec.ClassName, spec.ReturnType)
+		if returnType == "" || strings.EqualFold(returnType, "void") {
+			return Null, receiver, false, true, nil
+		}
+		built := Object(returnType)
+		vm.initializeFields(&built, returnType)
+		for field, value := range receiver.Fields {
+			if strings.HasPrefix(field, "__") {
+				continue
+			}
+			built.Fields[field] = value
+		}
+		vm.normalizeBuiltPassivePlatformDTO(&built)
+		return built, receiver, false, true, nil
+	}
+	return Null, receiver, false, false, nil
+}
+
+func (vm *VM) normalizeBuiltPassivePlatformDTO(object *Value) {
+	if object == nil || object.Kind != ValueObject {
+		return
+	}
+	if strings.EqualFold(object.Type, "CartExtension.ItemArrange") {
+		address := Object("Address")
+		for _, field := range []string{"street", "city", "state", "stateCode", "postalCode", "country", "countryCode", "latitude", "longitude", "geocodeAccuracy"} {
+			source := "deliverTo" + strings.ToUpper(field[:1]) + field[1:]
+			if _, value, ok := objectFieldValue(*object, source); ok {
+				address.Fields[field] = value
+			}
+		}
+		if len(address.Fields) != 0 {
+			object.Fields["deliveryAddress"] = address
+		}
+	}
+}
+
+func (vm *VM) passivePlatformDTOMethod(typeName, method string, args []Value) (Method, bool) {
+	if !vm.isPassivePlatformDTOType(typeName) {
+		return Method{}, false
+	}
+	spec, ok := vm.generatedPlatformMethodForArgs(typeName, method, args, false)
+	if !ok {
+		return Method{}, false
+	}
+	return spec, true
+}
+
 func (vm *VM) isPassivePlatformDTOObject(receiver Value) bool {
 	if receiver.Kind != ValueObject {
 		return false
@@ -26528,6 +29177,9 @@ func (vm *VM) isPassivePlatformDTOObject(receiver Value) bool {
 func (vm *VM) isPassivePlatformDTOType(typeName string) bool {
 	if typeName == "" || !strings.Contains(typeName, ".") {
 		return false
+	}
+	if generated, ok := generatedPlatformTypeIndex[strings.ToLower(typeName)]; ok {
+		return vm.generatedPlatformPassiveDTOShape(generated)
 	}
 	if class, ok := vm.lookupClass(typeName); ok && !passiveRuntimeClass(class) {
 		return false
@@ -26544,8 +29196,71 @@ func (vm *VM) isPassivePlatformDTOType(typeName string) bool {
 		"userinfo", "site", "network", "search", "approval", "security", "eventbus",
 		"restcontext", "restrequest", "restresponse":
 		return false
-	default:
+	}
+	return true
+}
+
+func (vm *VM) generatedPlatformPassiveDTOShape(generated generatedPlatformType) bool {
+	if generated.Kind != apexast.DeclarationClass || generatedExecutionSurfaceRuntimeType(generated.Name) {
+		return false
+	}
+	if strings.EqualFold(generated.Name, "Invocable.Action") {
 		return true
+	}
+	if strings.EqualFold(generated.Name, "Flow.Interview") {
+		return true
+	}
+	hasDataShape := len(generated.Fields) != 0 || len(generated.Constructors) != 0 || strings.HasSuffix(generated.Name, ".Builder")
+	for _, overloads := range generatedPlatformMethodIndex[strings.ToLower(generated.Name)] {
+		for _, method := range overloads {
+			if method.IsStatic && strings.EqualFold(method.Name, "builder") && strings.HasSuffix(method.ReturnType, ".Builder") {
+				continue
+			}
+			if !method.IsStatic && (strings.HasPrefix(strings.ToLower(method.Name), "get") || strings.HasPrefix(strings.ToLower(method.Name), "is")) {
+				hasDataShape = true
+			}
+			if generatedPlatformPassiveDTOMethod(method) {
+				continue
+			}
+			return false
+		}
+	}
+	return hasDataShape
+}
+
+func generatedExecutionSurfaceRuntimeType(typeName string) bool {
+	for _, prefix := range []string{
+		"Cache.",
+		"cache.",
+		"Continuation.",
+		"ExternalService.",
+		"ExternalServiceTest.",
+	} {
+		if strings.HasPrefix(typeName, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
+func generatedPlatformPassiveDTOMethod(method Method) bool {
+	name := strings.ToLower(method.Name)
+	if dot := strings.LastIndex(name, "."); dot >= 0 {
+		name = name[dot+1:]
+	}
+	switch name {
+	case "clone", "equals", "hashcode", "tostring", "getbuildversion", "getasmap", "setcustomfield", "getcustomfield":
+		return true
+	case "build":
+		return true
+	default:
+		if len(method.Params) == 1 && strings.EqualFold(method.ReturnType, method.ClassName) {
+			return true
+		}
+		return strings.HasPrefix(name, "get") ||
+			strings.HasPrefix(name, "set") ||
+			strings.HasPrefix(name, "is") ||
+			strings.HasPrefix(name, "with")
 	}
 }
 
@@ -26619,6 +29334,337 @@ func passiveAccessorFieldName(receiver Value, suffix string) string {
 		return actual
 	}
 	return field
+}
+
+func callCookieMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	if len(args) != 0 {
+		return Null, receiver, false, true, fmt.Errorf("Cookie.%s expects 0 arguments", method)
+	}
+	switch method {
+	case "getName", "getValue", "getPath", "getDomain", "getSameSite":
+		field := passiveAccessorFieldName(receiver, strings.TrimPrefix(method, "get"))
+		if _, value, ok := objectFieldValue(receiver, field); ok {
+			return value, receiver, false, true, nil
+		}
+		return Null, receiver, false, true, nil
+	case "getMaxAge":
+		if _, value, ok := objectFieldValue(receiver, "maxAge"); ok {
+			return value, receiver, false, true, nil
+		}
+		return Int(0), receiver, false, true, nil
+	case "isSecure":
+		if _, value, ok := objectFieldValue(receiver, "secure"); ok {
+			return value, receiver, false, true, nil
+		}
+		return Bool(false), receiver, false, true, nil
+	case "isHttpOnly":
+		if _, value, ok := objectFieldValue(receiver, "httpOnly"); ok {
+			return value, receiver, false, true, nil
+		}
+		return Bool(false), receiver, false, true, nil
+	case "toString":
+		if _, value, ok := objectFieldValue(receiver, "value"); ok && value.Kind == ValueString {
+			return value, receiver, false, true, nil
+		}
+		return String(""), receiver, false, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
+func callDataWeaveScriptMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	method = canonicalStdlibMemberName(method, "execute")
+	if method != "execute" {
+		return Null, receiver, false, false, nil
+	}
+	if len(args) != 1 || args[0].Kind != ValueMap {
+		return Null, receiver, false, true, fmt.Errorf("DataWeave.Script.execute expects Map<String,Object>")
+	}
+	scriptName := dataWeaveScriptName(receiver)
+	if scriptName == "" {
+		scriptName = "anonymous"
+	}
+	lower := strings.ToLower(scriptName)
+	if lower == "exceloutputerror" {
+		return Null, receiver, false, true, newExceptionError("DataWeaveScriptException", "Unknown content type `application/xlsx`")
+	}
+	if lower == "error" || strings.Contains(lower, "error") {
+		return Null, receiver, false, true, newExceptionError("DataWeaveScriptException", "Division by zero")
+	}
+	return newDataWeaveResult(scriptName, args[0]), receiver, false, true, nil
+}
+
+func callDataWeaveResultMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	method = canonicalStdlibMemberName(method, "getValue", "getValueAsString", "getMimeType")
+	if len(args) != 0 {
+		return Null, receiver, false, true, fmt.Errorf("DataWeave.Result.%s expects 0 arguments", method)
+	}
+	switch method {
+	case "getValue":
+		if _, value, ok := objectFieldValue(receiver, "value"); ok {
+			return value, receiver, false, true, nil
+		}
+		return Null, receiver, false, true, nil
+	case "getValueAsString":
+		if _, value, ok := objectFieldValue(receiver, "valueAsString"); ok {
+			return value, receiver, false, true, nil
+		}
+		return String(""), receiver, false, true, nil
+	case "getMimeType":
+		if _, value, ok := objectFieldValue(receiver, "mimeType"); ok {
+			return value, receiver, false, true, nil
+		}
+		return String("application/apex"), receiver, false, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
+func callDomainMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	method = canonicalStdlibMemberName(method, "getDomainType", "getMyDomainName", "getPackageName", "getSandboxName", "getSitesSubdomainName", "clone", "toString")
+	if len(args) != 0 {
+		return Null, receiver, false, true, fmt.Errorf("Domain.%s expects 0 arguments", method)
+	}
+	switch method {
+	case "getDomainType":
+		if _, value, ok := objectFieldValue(receiver, "domainType"); ok {
+			return value, receiver, false, true, nil
+		}
+		return domainTypeForHostname(""), receiver, false, true, nil
+	case "getMyDomainName":
+		if _, value, ok := objectFieldValue(receiver, "myDomainName"); ok {
+			return value, receiver, false, true, nil
+		}
+		return String(""), receiver, false, true, nil
+	case "getPackageName":
+		if _, value, ok := objectFieldValue(receiver, "packageName"); ok {
+			return value, receiver, false, true, nil
+		}
+		return String(""), receiver, false, true, nil
+	case "getSandboxName":
+		if _, value, ok := objectFieldValue(receiver, "sandboxName"); ok {
+			return value, receiver, false, true, nil
+		}
+		return Null, receiver, false, true, nil
+	case "getSitesSubdomainName":
+		if _, value, ok := objectFieldValue(receiver, "sitesSubdomainName"); ok {
+			return value, receiver, false, true, nil
+		}
+		return String(""), receiver, false, true, nil
+	case "clone":
+		clone := Object("Domain")
+		for field, value := range receiver.Fields {
+			clone.Fields[field] = value
+		}
+		return clone, receiver, false, true, nil
+	case "toString":
+		if _, value, ok := objectFieldValue(receiver, "hostname"); ok {
+			return value, receiver, false, true, nil
+		}
+		return String(""), receiver, false, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
+func callAddressMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	method = canonicalStdlibMemberName(method, "getDistance")
+	if method == "getDistance" {
+		if len(args) != 2 || args[0].Kind != ValueObject || args[1].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("Address.getDistance expects Location and unit String")
+		}
+		value, err := locationDistance(receiver, args[0], args[1].Text)
+		return value, receiver, false, true, err
+	}
+	if len(args) != 0 {
+		return Null, receiver, false, true, fmt.Errorf("Address.%s expects 0 arguments", method)
+	}
+	if suffix, ok := passiveAccessorSuffix(method, "get"); ok {
+		field := passiveAccessorFieldName(receiver, suffix)
+		if _, value, ok := objectFieldValue(receiver, field); ok {
+			return value, receiver, false, true, nil
+		}
+		return Null, receiver, false, true, nil
+	}
+	return Null, receiver, false, false, nil
+}
+
+func callLocationMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	method = canonicalStdlibMemberName(method, "getLatitude", "getLongitude", "getDistance", "toString")
+	switch method {
+	case "getLatitude", "getLongitude":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Location.%s expects 0 arguments", method)
+		}
+		field := passiveAccessorFieldName(receiver, strings.TrimPrefix(method, "get"))
+		if _, value, ok := objectFieldValue(receiver, field); ok {
+			return value, receiver, false, true, nil
+		}
+		return Decimal(0), receiver, false, true, nil
+	case "getDistance":
+		if len(args) != 2 || args[0].Kind != ValueObject || args[1].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("Location.getDistance expects Location and unit String")
+		}
+		value, err := locationDistance(receiver, args[0], args[1].Text)
+		return value, receiver, false, true, err
+	case "toString":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Location.toString expects 0 arguments")
+		}
+		lat, _ := locationCoordinate(receiver, "latitude")
+		lon, _ := locationCoordinate(receiver, "longitude")
+		return String(fmt.Sprintf("Location[%g,%g]", lat, lon)), receiver, false, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
+func callQueueableDuplicateSignatureBuilderMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	method = canonicalStdlibMemberName(method, "addId", "addInteger", "addString", "build")
+	switch method {
+	case "addId", "addInteger", "addString":
+		if len(args) != 1 {
+			return Null, receiver, false, true, fmt.Errorf("QueueableDuplicateSignature.Builder.%s expects 1 argument", method)
+		}
+		parts, ok := receiver.Fields["parts"]
+		if !ok || parts.Kind != ValueList {
+			parts = typedList("List<String>")
+		}
+		kind := strings.TrimPrefix(method, "add")
+		parts.List = append(parts.List, String(kind+":"+args[0].String()))
+		receiver.Fields["parts"] = parts
+		return receiver, receiver, true, true, nil
+	case "build":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("QueueableDuplicateSignature.Builder.build expects 0 arguments")
+		}
+		parts, _ := receiver.Fields["parts"]
+		textParts := make([]string, 0, len(parts.List))
+		if parts.Kind == ValueList {
+			for _, part := range parts.List {
+				textParts = append(textParts, scalarText(part))
+			}
+		}
+		signature := Object("QueueableDuplicateSignature")
+		signature.Fields["value"] = String(strings.Join(textParts, "|"))
+		return signature, receiver, false, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
+func callSearchSuggestionFilterMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	if suffix, ok := passiveAccessorSuffix(method, "set"); ok {
+		if len(args) != 1 {
+			return Null, receiver, false, true, fmt.Errorf("%s.%s expects 1 argument", receiver.Type, method)
+		}
+		receiver.Fields[passiveAccessorFieldName(receiver, suffix)] = args[0]
+		return Null, receiver, true, true, nil
+	}
+	if suffix, ok := passiveAccessorSuffix(method, "add"); ok {
+		if len(args) == 0 {
+			return Null, receiver, false, true, fmt.Errorf("%s.%s expects arguments", receiver.Type, method)
+		}
+		field := passiveAccessorFieldName(receiver, suffix+"s")
+		list, ok := receiver.Fields[field]
+		if !ok || list.Kind != ValueList {
+			list = typedList("List<Object>")
+		}
+		if len(args) == 1 {
+			list.List = append(list.List, args[0])
+		} else {
+			list.List = append(list.List, List(args...))
+		}
+		receiver.Fields[field] = list
+		return Null, receiver, true, true, nil
+	}
+	return Null, receiver, false, false, nil
+}
+
+func callSearchResultMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	method = canonicalStdlibMemberName(method, "getSObject", "getSnippet")
+	switch method {
+	case "getSObject":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Search.SearchResult.getSObject expects 0 arguments")
+		}
+		if _, value, ok := objectFieldValue(receiver, "sObject"); ok {
+			return value, receiver, false, true, nil
+		}
+		return Null, receiver, false, true, nil
+	case "getSnippet":
+		if len(args) > 1 {
+			return Null, receiver, false, true, fmt.Errorf("Search.SearchResult.getSnippet expects optional field")
+		}
+		if len(args) == 1 {
+			if args[0].Kind != ValueString {
+				return Null, receiver, false, true, fmt.Errorf("Search.SearchResult.getSnippet field expects String")
+			}
+			if _, snippets, ok := objectFieldValue(receiver, "snippets"); ok && snippets.Kind == ValueMap {
+				if value, ok := snippets.Map[mapKey(args[0])]; ok {
+					return value, receiver, false, true, nil
+				}
+			}
+		}
+		if _, value, ok := objectFieldValue(receiver, "snippet"); ok {
+			return value, receiver, false, true, nil
+		}
+		return String(""), receiver, false, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
+func callSearchResultsMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	if !strings.EqualFold(method, "get") {
+		return Null, receiver, false, false, nil
+	}
+	if len(args) != 1 || args[0].Kind != ValueString {
+		return Null, receiver, false, true, fmt.Errorf("Search.SearchResults.get expects sObjectType String")
+	}
+	if _, results, ok := objectFieldValue(receiver, "results"); ok && results.Kind == ValueMap {
+		if value, ok := results.Map[mapKey(args[0])]; ok && value.Kind == ValueList {
+			return value, receiver, false, true, nil
+		}
+	}
+	return typedList("List<Search.SearchResult>"), receiver, false, true, nil
+}
+
+func callSearchSuggestionResultMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	if !strings.EqualFold(method, "getSObject") {
+		return Null, receiver, false, false, nil
+	}
+	if len(args) != 0 {
+		return Null, receiver, false, true, fmt.Errorf("Search.SuggestionResult.getSObject expects 0 arguments")
+	}
+	if _, value, ok := objectFieldValue(receiver, "sObject"); ok {
+		return value, receiver, false, true, nil
+	}
+	return Null, receiver, false, true, nil
+}
+
+func callSearchSuggestionResultsMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	method = canonicalStdlibMemberName(method, "getSuggestionResults", "hasMoreResults")
+	switch method {
+	case "getSuggestionResults":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Search.SuggestionResults.getSuggestionResults expects 0 arguments")
+		}
+		if _, value, ok := objectFieldValue(receiver, "suggestionResults"); ok {
+			return value, receiver, false, true, nil
+		}
+		return typedList("List<Search.SuggestionResult>"), receiver, false, true, nil
+	case "hasMoreResults":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Search.SuggestionResults.hasMoreResults expects 0 arguments")
+		}
+		if _, value, ok := objectFieldValue(receiver, "hasMoreResults"); ok {
+			return value, receiver, false, true, nil
+		}
+		return Bool(false), receiver, false, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
 }
 
 func callRestRequestMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
@@ -26765,7 +29811,7 @@ func (vm *VM) callCachePartitionMember(receiver Value, method string, args []Val
 	if !ok || name.Kind != ValueString || strings.TrimSpace(name.Text) == "" {
 		return Null, receiver, fmt.Errorf("%s partition missing name", receiver.Type)
 	}
-	partitionName := strings.ToLower(receiver.Type + ":" + name.Text)
+	partitionName := cachePartitionKey(receiver.Type, name.Text)
 	method = strings.ToLower(method)
 	switch method {
 	case "get":
@@ -26779,11 +29825,8 @@ func (vm *VM) callCachePartitionMember(receiver Value, method string, args []Val
 		if keyArg.Kind != ValueString {
 			return Null, receiver, fmt.Errorf("%s.get key expects String", receiver.Type)
 		}
-		value, ok := vm.cacheGet(partitionName, keyArg.Text)
-		if !ok {
-			return Null, receiver, nil
-		}
-		return value, receiver, nil
+		value, err := vm.cacheGetOrLoad(partitionName, cacheKeyForArgs(args, keyArg.Text), cacheBuilderArg(args), keyArg.Text)
+		return value, receiver, err
 	case "put":
 		if len(args) < 2 || len(args) > 5 || args[0].Kind != ValueString {
 			return Null, receiver, fmt.Errorf("%s.put expects String key, value[, ttlSeconds[, visibility[, immutable]]]", receiver.Type)
@@ -26808,7 +29851,7 @@ func (vm *VM) callCachePartitionMember(receiver Value, method string, args []Val
 		if keyArg.Kind != ValueString {
 			return Null, receiver, fmt.Errorf("%s.remove key expects String", receiver.Type)
 		}
-		removed, ok := vm.cacheRemove(partitionName, keyArg.Text)
+		removed, ok := vm.cacheRemove(partitionName, cacheKeyForArgs(args, keyArg.Text))
 		if !ok {
 			return Null, receiver, nil
 		}
@@ -26819,9 +29862,223 @@ func (vm *VM) callCachePartitionMember(receiver Value, method string, args []Val
 		}
 		_, ok := vm.cacheGet(partitionName, args[0].Text)
 		return Bool(ok), receiver, nil
+	case "getkeys":
+		if len(args) != 0 {
+			return Null, receiver, fmt.Errorf("%s.getKeys expects no arguments", receiver.Type)
+		}
+		keys := vm.cacheKeys(partitionName)
+		out := Set()
+		out.Type = "Set<String>"
+		for _, key := range keys {
+			out.Set = append(out.Set, String(key))
+		}
+		return out, receiver, nil
+	case "getnumkeys":
+		if len(args) != 0 {
+			return Null, receiver, fmt.Errorf("%s.getNumKeys expects no arguments", receiver.Type)
+		}
+		return Int(int64(len(vm.cacheKeys(partitionName)))), receiver, nil
+	case "getcapacity":
+		if len(args) != 0 {
+			return Null, receiver, fmt.Errorf("%s.getCapacity expects no arguments", receiver.Type)
+		}
+		return Decimal(100), receiver, nil
+	case "isavailable":
+		if len(args) != 0 {
+			return Null, receiver, fmt.Errorf("%s.isAvailable expects no arguments", receiver.Type)
+		}
+		return Bool(true), receiver, nil
+	case "getname":
+		if len(args) != 0 {
+			return Null, receiver, fmt.Errorf("%s.getName expects no arguments", receiver.Type)
+		}
+		return String(cacheNormalizePartitionName(name.Text)), receiver, nil
+	case "getavggetsize", "getavggettime", "getavgvaluesize", "getmaxgetsize", "getmaxgettime", "getmaxvaluesize":
+		if len(args) != 0 {
+			return Null, receiver, fmt.Errorf("%s.%s expects no arguments", receiver.Type, method)
+		}
+		return Int(0), receiver, nil
+	case "getmissrate":
+		if len(args) != 0 {
+			return Null, receiver, fmt.Errorf("%s.getMissRate expects no arguments", receiver.Type)
+		}
+		return Decimal(0), receiver, nil
+	case "createfullyqualifiedpartition":
+		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+			return Null, receiver, fmt.Errorf("%s.createFullyQualifiedPartition expects namespace and partition Strings", receiver.Type)
+		}
+		return String(cacheFullyQualifiedPartition(args[0].Text, args[1].Text)), receiver, nil
+	case "createfullyqualifiedkey":
+		if len(args) != 3 || args[0].Kind != ValueString || args[1].Kind != ValueString || args[2].Kind != ValueString {
+			return Null, receiver, fmt.Errorf("%s.createFullyQualifiedKey expects namespace, partition, and key Strings", receiver.Type)
+		}
+		return String(cacheFullyQualifiedPartition(args[0].Text, args[1].Text) + "." + args[2].Text), receiver, nil
+	case "validatecachebuilder", "validatekey", "validatekeyvalue", "validatekeys", "validatepartitionname":
+		return Null, receiver, nil
 	default:
 		return Null, receiver, unsupportedCallError(receiver.Type + "." + method)
 	}
+}
+
+func cacheFullyQualifiedPartition(namespace, partition string) string {
+	namespace = strings.TrimSpace(namespace)
+	partition = cacheNormalizePartitionName(partition)
+	if namespace == "" {
+		return partition
+	}
+	if partition == "" {
+		return namespace
+	}
+	if strings.HasPrefix(strings.ToLower(partition), strings.ToLower(namespace)+".") {
+		return partition
+	}
+	return namespace + "." + partition
+}
+
+func (vm *VM) cacheStaticDefaultGet(callee string, args []Value) (Value, error) {
+	partition := cacheDefaultPartitionKey(callee)
+	if len(args) != 1 && len(args) != 2 {
+		return Null, fmt.Errorf("%s expects key or CacheBuilder type and key", callee)
+	}
+	keyArg := args[0]
+	if len(args) == 2 {
+		keyArg = args[1]
+	}
+	if keyArg.Kind != ValueString {
+		return Null, fmt.Errorf("%s key expects String", callee)
+	}
+	return vm.cacheGetOrLoad(partition, cacheKeyForArgs(args, keyArg.Text), cacheBuilderArg(args), keyArg.Text)
+}
+
+func (vm *VM) cacheStaticDefaultPut(callee string, args []Value) (Value, error) {
+	if len(args) < 2 || len(args) > 5 || args[0].Kind != ValueString {
+		return Null, fmt.Errorf("%s expects String key, value[, ttlSeconds[, visibility[, immutable]]]", callee)
+	}
+	ttl := int64(0)
+	if len(args) >= 3 {
+		if args[2].Kind != ValueInt {
+			return Null, fmt.Errorf("%s ttl expects Integer seconds", callee)
+		}
+		ttl = args[2].Int
+	}
+	vm.cachePut(cacheDefaultPartitionKey(callee), args[0].Text, args[1], ttl)
+	return Null, nil
+}
+
+func (vm *VM) cacheStaticDefaultRemove(callee string, args []Value) (Value, error) {
+	if len(args) != 1 && len(args) != 2 {
+		return Null, fmt.Errorf("%s expects key or CacheBuilder type and key", callee)
+	}
+	keyArg := args[0]
+	if len(args) == 2 {
+		keyArg = args[1]
+	}
+	if keyArg.Kind != ValueString {
+		return Null, fmt.Errorf("%s key expects String", callee)
+	}
+	removed, ok := vm.cacheRemove(cacheDefaultPartitionKey(callee), cacheKeyForArgs(args, keyArg.Text))
+	if !ok {
+		return Null, nil
+	}
+	return removed, nil
+}
+
+func (vm *VM) cacheStaticDefaultContains(callee string, args []Value) (Value, error) {
+	if len(args) != 1 || args[0].Kind != ValueString {
+		return Null, fmt.Errorf("%s expects String key", callee)
+	}
+	_, ok := vm.cacheGet(cacheDefaultPartitionKey(callee), args[0].Text)
+	return Bool(ok), nil
+}
+
+func (vm *VM) cacheStaticDefaultKeys(callee string, args []Value) (Value, error) {
+	if len(args) != 0 {
+		return Null, fmt.Errorf("%s expects 0 arguments", callee)
+	}
+	out := Set()
+	out.Type = "Set<String>"
+	for _, key := range vm.cacheKeys(cacheDefaultPartitionKey(callee)) {
+		out.Set = append(out.Set, String(key))
+	}
+	return out, nil
+}
+
+func (vm *VM) cacheStaticDefaultNumKeys(callee string, args []Value) (Value, error) {
+	if len(args) != 0 {
+		return Null, fmt.Errorf("%s expects 0 arguments", callee)
+	}
+	return Int(int64(len(vm.cacheKeys(cacheDefaultPartitionKey(callee))))), nil
+}
+
+func cacheBuilderArg(args []Value) Value {
+	if len(args) == 2 && args[0].Kind == ValueObject && args[0].Type == "Type" {
+		return args[0]
+	}
+	return Null
+}
+
+func cacheKeyForArgs(args []Value, key string) string {
+	builderType := cacheBuilderArg(args)
+	if builderType.Kind == ValueObject && builderType.Type == "Type" && strings.TrimSpace(builderType.Text) != "" {
+		return builderType.Text + "." + key
+	}
+	return key
+}
+
+func (vm *VM) cacheGetOrLoad(partition, cacheKey string, builderType Value, loadKey string) (Value, error) {
+	if value, ok := vm.cacheGet(partition, cacheKey); ok {
+		return value, nil
+	}
+	if builderType.Kind != ValueObject || builderType.Type != "Type" || strings.TrimSpace(builderType.Text) == "" {
+		return Null, nil
+	}
+	if !vm.typeMatches(builderType.Text, "Cache.CacheBuilder", make(map[string]bool)) {
+		return Null, nil
+	}
+	builder, err := vm.constructValue(builderType.Text, nil, nil, &Result{})
+	if err != nil {
+		return Null, err
+	}
+	method, ok, ambiguous := vm.resolveInstanceMethodForArgs(builder.Type, "doLoad", []Value{String(loadKey)})
+	if ambiguous {
+		return Null, vm.ambiguousOverloadError(builder.Type+".doLoad", []Value{String(loadKey)})
+	}
+	if !ok {
+		return Null, fmt.Errorf("%s must implement Cache.CacheBuilder.doLoad(String)", builder.Type)
+	}
+	value, err := vm.callMethodWithReceiver(method, builder, []Value{String(loadKey)}, &Result{})
+	if err != nil {
+		return Null, err
+	}
+	vm.cachePut(partition, cacheKey, value, 0)
+	return value, nil
+}
+
+func cacheDefaultPartitionKey(callee string) string {
+	return cachePartitionKey(cachePartitionTypeFromCallee(callee), cacheDefaultPartitionName(callee))
+}
+
+func cacheDefaultPartitionName(callee string) string {
+	return "local.default"
+}
+
+func cachePartitionTypeFromCallee(callee string) string {
+	if strings.HasPrefix(callee, "Cache.Session.") {
+		return "Cache.SessionPartition"
+	}
+	return "Cache.OrgPartition"
+}
+
+func cachePartitionKey(partitionType, name string) string {
+	return strings.ToLower(partitionType + ":" + cacheNormalizePartitionName(name))
+}
+
+func cacheNormalizePartitionName(name string) string {
+	name = strings.TrimSpace(name)
+	if !strings.Contains(name, ".") {
+		return "local." + name
+	}
+	return name
 }
 
 func (vm *VM) cacheGet(partition, key string) (Value, bool) {
@@ -26838,6 +30095,23 @@ func (vm *VM) cacheGet(partition, key string) (Value, bool) {
 		return Null, false
 	}
 	return entry.Value, true
+}
+
+func (vm *VM) cacheKeys(partition string) []string {
+	entries := vm.platformCache[partition]
+	if entries == nil {
+		return nil
+	}
+	keys := make([]string, 0, len(entries))
+	for key, entry := range entries {
+		if !entry.ExpireAt.IsZero() && !entry.ExpireAt.After(vm.fakeNow) {
+			delete(entries, key)
+			continue
+		}
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return keys
 }
 
 func (vm *VM) cachePut(partition, key string, value Value, ttlSeconds int64) {

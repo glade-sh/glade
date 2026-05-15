@@ -399,6 +399,7 @@ func TestApplyOrgShapeAddsOptionalFeatureObjectsAndRecords(t *testing.T) {
 		"PlatformCache",
 		"StateAndCountryPicklist",
 		"EnableSetPasswordInApi",
+		"MultiCurrency",
 		"AddCustomApps:3",
 		"AnalyticsAdminPerms",
 		"HealthCloudUser",
@@ -422,13 +423,27 @@ func TestApplyOrgShapeAddsOptionalFeatureObjectsAndRecords(t *testing.T) {
 	}
 	if cache := org.Objects["PlatformCachePartition"]; len(cache.Records) == 0 {
 		t.Fatalf("PlatformCachePartition records = %#v", cache.Records)
+	} else if got := cache.Records["0Px000000000001"].Fields["NamespacePrefix"].String; got != "" {
+		t.Fatalf("PlatformCachePartition NamespacePrefix = %q, want empty string", got)
+	} else if got := cache.Records["0Px000000000001"].Fields["DeveloperName"].String; got != "default" {
+		t.Fatalf("PlatformCachePartition DeveloperName = %q, want default", got)
 	}
 	if apps := org.Objects["CustomApplication"]; len(apps.Records) != 3 {
 		t.Fatalf("CustomApplication records = %d, want 3", len(apps.Records))
 	}
 	orgRecord := org.Objects["Organization"].Records["00D000000000001"]
-	if !orgRecord.Fields["IsSetPasswordInApiEnabled"].Boolean || !orgRecord.Fields["HasAnalyticsAdminPerms"].Boolean || !orgRecord.Fields["IsHealthCloudEnabled"].Boolean {
+	if !orgRecord.Fields["IsSetPasswordInApiEnabled"].Boolean || !orgRecord.Fields["HasAnalyticsAdminPerms"].Boolean || !orgRecord.Fields["IsHealthCloudEnabled"].Boolean || !orgRecord.Fields["IsMultiCurrencyEnabled"].Boolean {
 		t.Fatalf("scratch feature flags were not applied: %#v", orgRecord.Fields)
+	}
+}
+
+func TestApplyOrgShapeMultiCurrencyCreatesOrganizationFlag(t *testing.T) {
+	org := NewOrgState()
+	ApplyOrgShape(&org, []string{"MultiCurrency"})
+
+	orgRecord := org.Objects["Organization"].Records["00D000000000001"]
+	if !orgRecord.Fields["IsMultiCurrencyEnabled"].Boolean {
+		t.Fatalf("multi-currency flag was not applied: %#v", orgRecord.Fields)
 	}
 }
 
@@ -624,6 +639,28 @@ func TestEnsureStandardObjectAddsGeneratedSObjectStubAccessorFlags(t *testing.T)
 	}
 }
 
+func TestEnsureStandardObjectAppliesLocalCreateabilityOverlays(t *testing.T) {
+	org := NewOrgState()
+
+	EnsureStandardObject(&org, "ContentDistribution")
+	EnsureStandardObject(&org, "PermissionSetGroupComponent")
+
+	contentVersion := org.Objects["ContentDistribution"].Definition.Fields["ContentVersionId"]
+	if !FieldFlagValue(contentVersion.Createable, false) {
+		t.Fatalf("ContentDistribution.ContentVersionId flags = %#v", contentVersion)
+	}
+	if org.Objects["ContentDistribution"].Definition.KeyPrefix == "" {
+		t.Fatalf("ContentDistribution key prefix was empty")
+	}
+	componentFields := org.Objects["PermissionSetGroupComponent"].Definition.Fields
+	if !FieldFlagValue(componentFields["PermissionSetGroupId"].Createable, false) {
+		t.Fatalf("PermissionSetGroupComponent.PermissionSetGroupId flags = %#v", componentFields["PermissionSetGroupId"])
+	}
+	if !FieldFlagValue(componentFields["PermissionSetId"].Createable, false) {
+		t.Fatalf("PermissionSetGroupComponent.PermissionSetId flags = %#v", componentFields["PermissionSetId"])
+	}
+}
+
 func TestEnsureStandardObjectPreservesStubChildRelationshipsForSharedFields(t *testing.T) {
 	org := NewOrgState()
 
@@ -780,6 +817,19 @@ func TestEnsureStandardObjectFieldsAddsCustomMetadataIdentityFields(t *testing.T
 	}
 	if _, ok := definition.Fields["RecordTypeId"]; ok {
 		t.Fatalf("custom metadata should not get custom object RecordTypeId: %#v", definition.Fields["RecordTypeId"])
+	}
+}
+
+func TestEnsureStandardObjectFieldsAddsPlatformEventIdentityFields(t *testing.T) {
+	definition := ObjectDefinition{APIName: "Event_Recipes_Demo__e"}
+
+	EnsureStandardObjectFields(&definition)
+
+	if field, ok := definition.Fields["EventUuid"]; !ok || field.Type != FieldString {
+		t.Fatalf("EventUuid field = %#v, %v", field, ok)
+	}
+	if field, ok := definition.Fields["ReplayId"]; !ok || field.Type != FieldString {
+		t.Fatalf("ReplayId field = %#v, %v", field, ok)
 	}
 }
 

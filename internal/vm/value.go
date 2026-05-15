@@ -134,7 +134,7 @@ func (v Value) String() string {
 		if message, ok := v.Fields["message"]; ok && message.Kind == ValueString {
 			return message.Text
 		}
-		return fmt.Sprintf("%s{}", v.Type)
+		return fmt.Sprintf("%s:{}", v.Type)
 	default:
 		return fmt.Sprintf("<%s>", v.Kind)
 	}

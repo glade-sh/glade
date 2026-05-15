@@ -384,6 +384,114 @@ public class UsesInner {
 	}
 }
 
+func TestAnalyzeNestedEnumShortQualifiedAssignment(t *testing.T) {
+	root := t.TempDir()
+	classPath := filepath.Join(root, "Comparator.cls")
+	writeSemaFile(t, classPath, `
+public class Comparator {
+  public class ASCComparatorException extends Exception {}
+  public SortOrder order { get; set; }
+  public enum SortOrder { ASCENDING, DESCENDING }
+  public Comparator() {
+    order = SortOrder.ASCENDING;
+  }
+  public Comparator(Comparator.SortOrder order) {
+    if (order == null) {
+      throw new ASCComparatorException('Sort order cannot be null');
+    }
+    this.order = order;
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{classPath}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeForEachOverDynamicObjectDefersElementValidation(t *testing.T) {
+	root := t.TempDir()
+	classPath := filepath.Join(root, "DynamicIterable.cls")
+	writeSemaFile(t, classPath, `
+public class DynamicIterable {
+  public static void run(Object values) {
+    for (String value : values) {
+      System.debug(value);
+    }
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{classPath}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeUserDefinedIterableAndAddAll(t *testing.T) {
+	root := t.TempDir()
+	classPath := filepath.Join(root, "IterableClient.cls")
+	writeSemaFile(t, classPath, `
+public class IterableClient implements Iterable<RecordPage> {
+  public Iterator<RecordPage> iterator() {
+    return null;
+  }
+  public class RecordPage {
+    public List<String> getRecords() {
+      return new List<String>();
+    }
+  }
+  public static List<String> run() {
+    List<String> records = new List<String>();
+    IterableClient client = new IterableClient();
+    for (IterableClient.RecordPage page : client) {
+      records.addAll(page.getRecords());
+    }
+    return records;
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{classPath}}, schema.Schema{})
+	for _, typ := range index.Types {
+		if typ.Name == "IterableClient" && len(typ.Interfaces) == 0 {
+			t.Fatalf("missing interfaces: %#v", typ)
+		}
+	}
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeSOSLFindLiteral(t *testing.T) {
+	root := t.TempDir()
+	classPath := filepath.Join(root, "UsesSOSL.cls")
+	writeSemaFile(t, classPath, `
+public class UsesSOSL {
+  public static void run(String keyword) {
+    List<List<SObject>> searchResults = [
+      FIND :keyword
+      IN ALL FIELDS
+      RETURNING Account(Name), Contact(LastName, Account.Name)
+    ];
+    Account[] accounts = searchResults[0];
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{classPath}}, schema.Schema{
+		Objects: []schema.Object{{Name: "Account"}, {Name: "Contact"}},
+	})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
 func TestAnalyzeShortNestedTypeMatchesAnyCompatibleCandidate(t *testing.T) {
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "One.cls"), `
@@ -480,6 +588,12 @@ public class UsesProductNamespaces {
     Cache.OrgPartition partition = cache.org.getpartition('local');
     partition.put('zone', zone.id, 60, cache.visibility.all, false);
   }
+  public static Cache.Partition getPartition(Boolean session) {
+    if (session) {
+      return Cache.Session.getPartition('local');
+    }
+    return Cache.Org.getPartition('local');
+  }
 }
 `)
 	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
@@ -528,7 +642,9 @@ func TestAnalyzeDatabaseDMLCollectionOverloads(t *testing.T) {
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesDatabaseDML.cls"), `
 public class UsesDatabaseDML {
+  public static void insertAccountsViaDatabaseMethod(List<String> names, Boolean allOrNothing, System.AccessLevel accessLevel) {}
   public static void run(List<Account> accounts, Account account, Id recordId, List<Id> recordIds, Database.DMLOptions opts) {
+    insertAccountsViaDatabaseMethod(new List<String>{'Texas'}, false, AccessLevel.SYSTEM_MODE);
     List<Database.SaveResult> insertResults = Database.insert(accounts);
     List<Database.SaveResult> partialInsertResults = Database.insert(accounts, false);
     List<Database.SaveResult> optionInsertResults = Database.insert(accounts, opts);
@@ -1014,8 +1130,8 @@ func TestAnalyzeSecurityStripInaccessibleDecision(t *testing.T) {
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesSecurityStripInaccessible.cls"), `
 public class UsesSecurityStripInaccessible {
-  public static List<SObject> run(List<SObject> records) {
-    SObjectAccessDecision decision = Security.stripInaccessible(AccessType.READABLE, records, false);
+  public static List<SObject> run(System.AccessType accessType, List<SObject> records) {
+    System.SObjectAccessDecision decision = Security.stripInaccessible(accessType, records, false);
     Set<Integer> modified = decision.getModifiedIndexes();
     Map<String, Set<String>> removed = decision.getRemovedFields();
     return decision.getRecords();
@@ -1025,6 +1141,50 @@ public class UsesSecurityStripInaccessible {
 	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{
 		filepath.Join(root, "UsesSecurityStripInaccessible.cls"),
 	}}, schema.Schema{})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeCaseInsensitiveVariableBeatsSObjectToken(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesPermissionSetGroup.cls"), `
+public class UsesPermissionSetGroup {
+  private static void assignPermissionSetGroup(PermissionSetGroup permissionSetGroup) {
+    if (PermissionSetGroup.Status != 'Updated') {
+      Test.calculatePermissionSetGroup(PermissionSetGroup.Id);
+    }
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesPermissionSetGroup.cls")},
+	}, schema.Schema{Objects: []schema.Object{{Name: "PermissionSetGroup", Fields: []schema.Field{{Name: "Id", Type: "Id"}, {Name: "Status", Type: "String"}}}}})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
+func TestAnalyzeSObjectTypeFieldsPathReturnsDescribeFieldResult(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesSchemaSObjectTypeFields.cls"), `
+public class UsesSchemaSObjectTypeFields {
+  public void run() {
+    Schema.DescribeFieldResult dfr = Schema.SObjectType.Account.fields.Name;
+    Schema.SObjectField token = Account.Name;
+    System.assert(dfr.getSObjectField() == token);
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesSchemaSObjectTypeFields.cls")},
+	}, schema.Schema{Objects: []schema.Object{{Name: "Account", Fields: []schema.Field{{Name: "Name", Type: "String"}}}}})
 
 	result := Analyze(index)
 	if result.HasErrors() {
@@ -1639,6 +1799,28 @@ public class UsesLogger {
 	}
 }
 
+func TestAnalyzeGeneratedNestedEnumStaticMember(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesProcessParameterType.cls"), `
+public class UsesProcessParameterType {
+  public Process.InputParameter makeParam() {
+    return new Process.InputParameter('name', Process.PluginDescribeResult.ParameterType.STRING, true);
+  }
+  public Process.OutputParameter makeLowercaseParam() {
+    return new Process.OutputParameter('name', Process.PluginDescribeResult.ParameterType.string);
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesProcessParameterType.cls")},
+	}, schema.Schema{})
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
 func TestAnalyzeKnownSObjectCompatibilityAliases(t *testing.T) {
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesKnownSObjectAliases.cls"), `
@@ -1976,7 +2158,7 @@ public class UsesRestContext {
 	}
 }
 
-func TestAnalyzeStillFlagsUnsupportedSearchSurface(t *testing.T) {
+func TestAnalyzeAllowsSearchFindSurface(t *testing.T) {
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesSearchFind.cls"), `
 public class UsesSearchFind {
@@ -1990,12 +2172,9 @@ public class UsesSearchFind {
 		ApexFiles: []string{filepath.Join(root, "UsesSearchFind.cls")},
 	}, schema.Schema{})
 	result := Analyze(index)
-	for _, diag := range result.Diagnostics {
-		if diag.Code == "OAERSEMA028" && strings.Contains(diag.Message, "search.FIND") {
-			return
-		}
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
 	}
-	t.Fatalf("expected unsupported Search.find diagnostic: %#v", result.Diagnostics)
 }
 
 func TestAnalyzeUserRecordAccessAndAddressComparison(t *testing.T) {
@@ -3333,6 +3512,30 @@ public class Hello {
 		if diag.Code == "OAERSEMA008" && strings.Contains(diag.Message, "keySet") {
 			t.Fatalf("unexpected chained keySet diagnostic: %#v", result.Diagnostics)
 		}
+	}
+}
+
+func TestAnalyzeSOQLMapConstructorAndChunkLoop(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesSOQL.cls"), `
+public class UsesSOQL {
+  public static void run(Set<Id> accountIds) {
+    Map<Id, Account> accountsById = new Map<Id, Account>([
+      SELECT Name FROM Account WHERE Id IN :accountIds
+    ]);
+    for (List<Account> accounts : [
+      SELECT Name FROM Account
+    ]) {
+      System.debug(accounts.size());
+    }
+  }
+}
+`)
+	index := typesys.Build(project.Project{Root: root, ApexFiles: []string{filepath.Join(root, "UsesSOQL.cls")}}, schema.Schema{Objects: []schema.Object{{Name: "Account"}}})
+
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
 	}
 }
 

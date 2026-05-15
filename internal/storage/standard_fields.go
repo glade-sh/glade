@@ -65,6 +65,11 @@ func standardFieldsForObject(objectName string) []Field {
 		return nil
 	}
 	switch {
+	case strings.HasSuffix(objectName, "__e"):
+		return []Field{
+			{APIName: "EventUuid", Label: "Event UUID", Type: FieldString},
+			{APIName: "ReplayId", Label: "Replay ID", Type: FieldString},
+		}
 	case stringsEqualFold(objectName, "EntityDefinition"):
 		return []Field{
 			{APIName: "DeveloperName", Label: "Developer Name", Type: FieldString},
@@ -322,6 +327,9 @@ func EnsureStandardObject(org *OrgState, objectName string) {
 			state.Definition.PluralLabel = entry.Definition.PluralLabel
 		}
 	}
+	if state.Definition.KeyPrefix == "" {
+		state.Definition.KeyPrefix = AssignDeterministicPrefixes([]string{objectName}, nil)[objectName]
+	}
 	org.Objects[objectName] = state
 	if len(state.Definition.RecordTypes) > 0 {
 		ensureRecordTypeObject(org)
@@ -571,12 +579,38 @@ func applyStandardObjectCompatibilityOverlays(definition *ObjectDefinition) {
 		ensureReferenceTarget(definition, "FolderId", "User")
 	case stringsEqualFold(definition.APIName, "ContentVersion"):
 		allowGeneratedContentDocument(definition)
+	case stringsEqualFold(definition.APIName, "ContentDistribution"):
+		markFieldCreateable(definition, "ContentVersionId")
 	case stringsEqualFold(definition.APIName, "Case"):
 		markFieldOptional(definition, "BusinessHoursId")
+	case stringsEqualFold(definition.APIName, "EmailMessage"):
+		ensureField(definition, Field{APIName: "RelatedToId", Label: "Related To ID", Type: FieldReference, Createable: BoolFlag(true), Updateable: BoolFlag(true)})
+		ensureField(definition, Field{APIName: "ToIds", Label: "To IDs", Type: FieldAny, Createable: BoolFlag(true), Updateable: BoolFlag(true)})
+		markFieldOptional(definition, "ParentId")
+		markFieldCreateable(definition, "Incoming")
+		markFieldCreateable(definition, "IsClientManaged")
+	case stringsEqualFold(definition.APIName, "EmailMessageRelation"):
+		markFieldCreateable(definition, "EmailMessageId")
+		markFieldCreateable(definition, "RelationId")
+		markFieldCreateable(definition, "RelationType")
+		markFieldCreateable(definition, "RelationAddress")
 	case stringsEqualFold(definition.APIName, "EmailTemplate"):
 		ensureFieldDefault(definition, "TemplateStyle", "none")
 		ensureFieldDefault(definition, "TemplateType", "text")
+	case stringsEqualFold(definition.APIName, "PermissionSetGroupComponent"):
+		markFieldCreateable(definition, "PermissionSetGroupId")
+		markFieldCreateable(definition, "PermissionSetId")
 	}
+}
+
+func ensureField(definition *ObjectDefinition, field Field) {
+	if definition == nil || field.APIName == "" {
+		return
+	}
+	if _, ok := ResolveFieldName(*definition, "", field.APIName); ok {
+		return
+	}
+	definition.Fields[field.APIName] = field
 }
 
 func markFieldRequired(definition *ObjectDefinition, fieldName string) {
@@ -600,6 +634,16 @@ func markFieldOptional(definition *ObjectDefinition, fieldName string) {
 	}
 	field := definition.Fields[resolved]
 	field.Required = false
+	definition.Fields[resolved] = field
+}
+
+func markFieldCreateable(definition *ObjectDefinition, fieldName string) {
+	resolved, ok := ResolveFieldName(*definition, "", fieldName)
+	if !ok {
+		return
+	}
+	field := definition.Fields[resolved]
+	field.Createable = BoolFlag(true)
 	definition.Fields[resolved] = field
 }
 

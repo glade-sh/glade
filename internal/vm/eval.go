@@ -326,6 +326,8 @@ func decimalOf(value Value) float64 {
 }
 
 func coerceAssignable(typeName string, value Value) (Value, error) {
+	typeName = canonicalRuntimePlatformType(typeName)
+	value.Type = canonicalRuntimePlatformType(value.Type)
 	if value.Kind == ValueNull {
 		value.Type = typeName
 		return value, nil
@@ -388,6 +390,7 @@ func coerceAssignable(typeName string, value Value) (Value, error) {
 }
 
 func canonicalApexScalarType(typeName string) string {
+	typeName = canonicalRuntimePlatformType(typeName)
 	switch {
 	case strings.EqualFold(typeName, "Integer"):
 		return "Integer"
@@ -408,6 +411,29 @@ func canonicalApexScalarType(typeName string) string {
 	default:
 		return typeName
 	}
+}
+
+func canonicalRuntimePlatformType(typeName string) string {
+	typeName = strings.TrimSpace(typeName)
+	if typeName == "" {
+		return typeName
+	}
+	if keyType, valueType, ok := mapTypeArgs(typeName); ok {
+		return "Map<" + canonicalRuntimePlatformType(keyType) + "," + canonicalRuntimePlatformType(valueType) + ">"
+	}
+	if base := collectionBase(typeName); base != "" {
+		if elementType, ok := collectionElementType(typeName); ok {
+			return base + "<" + canonicalRuntimePlatformType(elementType) + ">"
+		}
+		return base
+	}
+	if rest, ok := stripLeadingSystemNamespace(typeName); ok {
+		switch strings.ToLower(rest) {
+		case "type", "object", "list", "set", "map", "iterable", "iterator", "stubprovider", "callable", "httpcalloutmock":
+			return rest
+		}
+	}
+	return typeName
 }
 
 func ensureAssignable(typeName string, value Value) error {

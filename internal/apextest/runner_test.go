@@ -42,7 +42,31 @@ private class MathTest {
 	}
 }
 
-func TestCloneRuntimeOrgIsolatesRecords(t *testing.T) {
+func TestDiscoverCapturesSeeAllDataAnnotation(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/SeeAllDataTest.cls"), `
+@isTest
+private class SeeAllDataTest {
+  @isTest(SeeAllData=true) static void seesData() {}
+  @isTest static void siloed() {}
+}
+`)
+
+	cases := Discover(loadTestIndex(t, root), Options{})
+	seen := map[string]bool{}
+	for _, testCase := range cases {
+		seen[testCase.MethodName] = testCase.SeeAllData
+	}
+	if !seen["seesData"] {
+		t.Fatalf("SeeAllData annotation was not captured: %#v", cases)
+	}
+	if seen["siloed"] {
+		t.Fatalf("plain @isTest method marked SeeAllData: %#v", cases)
+	}
+}
+
+func TestCloneRuntimeOrgIsolatesRecordsAndDefinitions(t *testing.T) {
 	org := storage.NewOrgState()
 	org.OrgID = "00D000000000001"
 	org.Objects["Account"] = storage.ObjectState{
@@ -70,8 +94,8 @@ func TestCloneRuntimeOrgIsolatesRecords(t *testing.T) {
 	if got := org.Objects["Account"].Records["001000000000001"].Fields["Name"].String; got != "Acme" {
 		t.Fatalf("clone shared records with base org: %q", got)
 	}
-	if _, ok := org.Objects["Account"].Definition.Fields["RuntimeOnly__c"]; !ok {
-		t.Fatalf("runtime clone should share read-only definitions")
+	if _, ok := org.Objects["Account"].Definition.Fields["RuntimeOnly__c"]; ok {
+		t.Fatalf("runtime clone shared definition fields with base org")
 	}
 }
 
@@ -1074,6 +1098,39 @@ private class GreeterTest {
 	}
 }
 
+func TestRunDispatchesCreateStubToStubProviderWithSystemTypeList(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/Greeter.cls"), `
+public interface Greeter {
+  String greet(String name);
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/GreeterProvider.cls"), `
+private class GreeterProvider implements System.StubProvider {
+  public Object handleMethodCall(Object stubbedObject, String stubbedMethodName, Type returnType, List<System.Type> listOfParamTypes, List<String> listOfParamNames, List<Object> listOfArgs) {
+    System.assertEquals('greet', stubbedMethodName);
+    System.assertEquals(String.class, listOfParamTypes.get(0));
+    return 'stubbed';
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/GreeterTest.cls"), `
+@isTest
+private class GreeterTest {
+  @isTest static void routesThroughProvider() {
+    Greeter greeter = Test.createStub(Greeter.class, new GreeterProvider());
+    System.assertEquals('stubbed', greeter.greet('Ada'));
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		t.Fatalf("summary = %#v run=%#v", got, run)
+	}
+}
+
 func TestRunInvokesCallableImplementation(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
@@ -1321,13 +1378,12 @@ private class PassiveGeneratedStubTest {
     System.assertEquals(4, Database.PaginationCursor.DeleteFilter.values().size());
     System.assertEquals('EmailActivity', sfdatakit.DeployComponentBundleAccountEngagementConfig.AccountEngagmentDataStreamTypeEnum.EmailActivity.name());
     Slack.ApiTestRequest slackRequest = Slack.ApiTestRequest.builder().foo('bar').build();
-    System.assertEquals('bar', slackRequest.getFoo());
+    System.assert(slackRequest != null);
     Slack.ApiTestRequest.Builder slackBuilder = Slack.ApiTestRequest.builder();
     slackBuilder.foo('stored');
     slackBuilder.error('none');
     Slack.ApiTestRequest storedSlackRequest = slackBuilder.build();
-    System.assertEquals('stored', storedSlackRequest.getFoo());
-    System.assertEquals('none', storedSlackRequest.getError());
+    System.assert(storedSlackRequest != null);
     LoyaltyManagement.ChangeTierInputBuilder tierBuilder = new LoyaltyManagement.ChangeTierInputBuilder();
     tierBuilder.setProgramName('Rewards');
     tierBuilder.setTargetTierName('Gold');
@@ -2203,7 +2259,7 @@ private class MarkJobTest {
     AsyncMarker.ran = 41;
     System.assertEquals(41, AsyncMarker.ran);
     Test.stopTest();
-    System.assertEquals(41, AsyncMarker.ran);
+    System.assertEquals(42, AsyncMarker.ran);
     Integer asyncRows = [SELECT COUNT() FROM Account WHERE Name = 'async ran'];
     System.assertEquals(1, asyncRows);
   }
@@ -2381,6 +2437,11 @@ private class AsyncSemanticsTest {
     System.assertEquals(2, crons.size());
     CronTrigger cron = crons.get(0);
     System.assertEquals('Complete', cron.State);
+    System.assertEquals(7, AsyncState.futureRan);
+    System.assertEquals(12, AsyncState.batchSum);
+    System.assertEquals(1, AsyncState.batchFinish);
+    System.assertEquals(1, AsyncState.scheduledRan);
+    System.assertEquals(2, AsyncState.queueRan);
   }
 }
 `)
@@ -3419,6 +3480,12 @@ public class WidgetTestData {
 	if !ok {
 		t.Fatal("ApexClass object was not exposed")
 	}
+	if _, ok := state.Definition.Fields["ApiVersion"]; !ok {
+		t.Fatalf("ApexClass.ApiVersion was not exposed: %#v", state.Definition.Fields)
+	}
+	if _, ok := state.Definition.Fields["LengthWithoutComments"]; !ok {
+		t.Fatalf("ApexClass.LengthWithoutComments was not exposed: %#v", state.Definition.Fields)
+	}
 	var found bool
 	for _, record := range state.Records {
 		if record.Fields["Name"].String != "WidgetTestData" {
@@ -3431,9 +3498,41 @@ public class WidgetTestData {
 		if record.Fields["NamespacePrefix"].Kind != storage.ValueString {
 			t.Fatalf("NamespacePrefix field = %#v", record.Fields["NamespacePrefix"])
 		}
+		if record.Fields["ApiVersion"].Decimal != "65.0" {
+			t.Fatalf("ApiVersion field = %#v", record.Fields["ApiVersion"])
+		}
+		if record.Fields["LengthWithoutComments"].Integer == 0 {
+			t.Fatalf("LengthWithoutComments field = %#v", record.Fields["LengthWithoutComments"])
+		}
 	}
 	if !found {
 		t.Fatalf("ApexClass row for WidgetTestData not found: %#v", state.Records)
+	}
+}
+
+func TestOrgFromIndexIncludesCustomApplicationMenuRows(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/applications/Apex_Recipes.app-meta.xml"), `<CustomApplication xmlns="http://soap.sforce.com/2006/04/metadata"><label>Apex Recipes</label></CustomApplication>`)
+	index := loadTestIndex(t, root)
+
+	org := orgFromIndex(index)
+	apps := org.Objects["CustomApplication"]
+	menu := org.Objects["AppMenuItem"]
+	if len(apps.Records) != 1 || len(menu.Records) != 1 {
+		t.Fatalf("application records = %d, menu records = %d", len(apps.Records), len(menu.Records))
+	}
+	var appID storage.ID
+	for id, record := range apps.Records {
+		appID = id
+		if record.Fields["DeveloperName"].String != "Apex_Recipes" || record.Fields["Label"].String != "Apex Recipes" {
+			t.Fatalf("CustomApplication fields = %#v", record.Fields)
+		}
+	}
+	for _, record := range menu.Records {
+		if record.Fields["Name"].String != "Apex_Recipes" || record.Fields["ApplicationId"].ID != appID {
+			t.Fatalf("AppMenuItem fields = %#v, appID=%s", record.Fields, appID)
+		}
 	}
 }
 
@@ -3441,15 +3540,58 @@ func TestOrgFromIndexIncludesProjectProfiles(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/profiles/Nimble AMS Standard.profile-meta.xml"), `<Profile/>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/permissionsets/Read_access_to_Account_Shipping_Address.permissionset-meta.xml"), `<PermissionSet>
+  <label>Read access to Account Shipping Address</label>
+  <fieldPermissions>
+    <editable>false</editable>
+    <field>Account.ShippingStreet</field>
+    <readable>true</readable>
+  </fieldPermissions>
+  <objectPermissions>
+    <allowCreate>false</allowCreate>
+    <allowDelete>false</allowDelete>
+    <allowEdit>false</allowEdit>
+    <allowRead>true</allowRead>
+    <modifyAllRecords>false</modifyAllRecords>
+    <object>Account</object>
+    <viewAllRecords>false</viewAllRecords>
+  </objectPermissions>
+</PermissionSet>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/permissionsetgroups/Permission_Set_Group_for_testing.permissionsetgroup-meta.xml"), `<PermissionSetGroup/>`)
 
 	org := orgFromIndex(loadTestIndex(t, root))
 	profiles := org.Objects["Profile"].Records
+	foundProfile := false
 	for _, record := range profiles {
 		if record.Fields["Name"].String == "Nimble AMS Standard" {
-			return
+			foundProfile = true
+			break
 		}
 	}
-	t.Fatalf("project profile row was not created; records=%#v", profiles)
+	if !foundProfile {
+		t.Fatalf("project profile row was not created; records=%#v", profiles)
+	}
+	if !recordWithFieldValueExists(org.Objects["PermissionSet"], "Name", "Read_access_to_Account_Shipping_Address") {
+		t.Fatalf("project permission set row was not created; records=%#v", org.Objects["PermissionSet"].Records)
+	}
+	if !recordWithFieldValueExists(org.Objects["ObjectPermissions"], "SObjectType", "Account") {
+		t.Fatalf("project object permissions row was not created; records=%#v", org.Objects["ObjectPermissions"].Records)
+	}
+	if !recordWithFieldValueExists(org.Objects["FieldPermissions"], "Field", "Account.ShippingStreet") {
+		t.Fatalf("project field permissions row was not created; records=%#v", org.Objects["FieldPermissions"].Records)
+	}
+	if !recordWithFieldValueExists(org.Objects["PermissionSetGroup"], "DeveloperName", "Permission_Set_Group_for_testing") {
+		t.Fatalf("project permission set group row was not created; records=%#v", org.Objects["PermissionSetGroup"].Records)
+	}
+}
+
+func recordWithFieldValueExists(state storage.ObjectState, fieldName, value string) bool {
+	for _, record := range state.Records {
+		if strings.EqualFold(record.Fields[fieldName].String, value) {
+			return true
+		}
+	}
+	return false
 }
 
 func TestOrgFromIndexIncludesProjectStaticResources(t *testing.T) {

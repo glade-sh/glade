@@ -174,6 +174,25 @@ System.assertEquals('strict', (String)strictWidget.get('Data__c'));
 	}
 }
 
+func TestExecJSONUntypedListCastsMapsToTypedSObjects(t *testing.T) {
+	program, err := CompileAnonymous(`
+Object raw = JSON.deserializeUntyped('[{"attributes":{"type":"Account"},"Name":"Acme"}]');
+List<Account> accounts = (List<Account>)raw;
+System.assertEquals(1, accounts.size());
+System.assertEquals('Acme', accounts.get(0).Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecJSONDeserializeSObjectSystemFields(t *testing.T) {
 	program, err := CompileAnonymous(`
 Widget__c widget = (Widget__c)JSON.deserialize('{"CreatedDate":"2026-05-13T10:30:00Z","IsDeleted":false}', Widget__c.class);
@@ -1092,6 +1111,23 @@ System.assert(keyCaught.contains('Map keys only for scalar/String/Object targets
 	}
 }
 
+func TestExecJSONDeserializeAcceptsApexEscapedDoubleQuotes(t *testing.T) {
+	program, err := CompileAnonymous(`
+String body = '{\"Name\":\"Acme\"}';
+Account decoded = JSON.deserialize(body, Account.class);
+System.assertEquals('Acme', decoded.Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecJSONDeserializeSObjectUsesSchemaFieldTypes(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account decoded = JSON.deserialize('{"Name":"Acme","RenewalDate__c":"2024-02-29","AnnualRevenue":12.5,"LastSeen__c":"2024-02-29T12:34:56Z","Score__c":7,"Active__c":true,"ParentId":"001B000001DVM9t"}', Account.class);
@@ -1457,14 +1493,21 @@ try {
 } catch (JSONException e) {
 	caught = e.getTypeName() + ':' + e.getMessage();
 }
-System.assert(caught.contains('JSONException:unexpected EOF'));
+System.assert(caught.contains('JSONException:Unexpected end-of-input'), caught);
+caught = '';
+try {
+	Account decoded = JSON.deserialize('}]', Account.class);
+} catch (JSONException e) {
+	caught = e.getTypeName() + ':' + e.getMessage();
+}
+System.assert(caught.contains('JSONException:malformed JSON:'), caught);
 caught = '';
 try {
 	Account decoded = JSON.deserializeStrict('{"Name":"First","Name":"Second"}', Account.class);
 } catch (JSONException e) {
 	caught = e.getTypeName() + ':' + e.getMessage();
 }
-System.assert(caught.contains('JSONException:JSON.deserializeStrict found duplicate field "Name"'));
+System.assert(caught.contains('JSONException:JSON.deserializeStrict found duplicate field "Name"'), caught);
 `)
 	if err != nil {
 		t.Fatal(err)

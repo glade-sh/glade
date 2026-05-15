@@ -363,6 +363,21 @@ func applyPersonAccounts(org *OrgState) {
 }
 
 func applyMultiCurrency(org *OrgState) {
+	setOrganizationFlag(org, "IsMultiCurrencyEnabled", true)
+	EnsureStandardObject(org, "DatedConversionRate")
+	putSeedRecord(org, "DatedConversionRate", Record{
+		ID:     "04w000000000001",
+		Object: "DatedConversionRate",
+		Fields: map[string]Value{
+			"IsoCode":          StringValue("USD"),
+			"ConversionRate":   DecimalValue("1"),
+			"StartDate":        DateValue("2000-01-01"),
+			"NextStartDate":    DateValue("4000-01-01"),
+			"SystemModstamp":   DateTimeValue("2000-01-01T00:00:00Z"),
+			"LastModifiedDate": DateTimeValue("2000-01-01T00:00:00Z"),
+			"CreatedDate":      DateTimeValue("2000-01-01T00:00:00Z"),
+		},
+	})
 	// Add CurrencyIsoCode to all objects that don't already have it
 	for name, obj := range org.Objects {
 		if obj.Definition.Fields == nil {
@@ -376,17 +391,6 @@ func applyMultiCurrency(org *OrgState) {
 			}
 		}
 		org.Objects[name] = obj
-	}
-	// Mark org as multi-currency enabled
-	if orgRec, ok := org.Objects["Organization"]; ok {
-		if orgRec.Records == nil {
-			orgRec.Records = make(map[ID]Record)
-		}
-		for id, rec := range orgRec.Records {
-			rec.Fields["IsMultiCurrencyEnabled"] = BooleanValue(true)
-			orgRec.Records[id] = rec
-		}
-		org.Objects["Organization"] = orgRec
 	}
 }
 
@@ -444,8 +448,9 @@ func applyPlatformCache(org *OrgState) {
 		ID:     "0Px000000000001",
 		Object: "PlatformCachePartition",
 		Fields: map[string]Value{
-			"DeveloperName":      StringValue("local"),
-			"MasterLabel":        StringValue("Local"),
+			"DeveloperName":      StringValue("default"),
+			"MasterLabel":        StringValue("default"),
+			"NamespacePrefix":    StringValue(""),
 			"IsDefaultPartition": BooleanValue(true),
 		},
 	})
@@ -578,8 +583,9 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		"IsOwnedByProfile": {APIName: "IsOwnedByProfile", Type: FieldBoolean},
 	})
 	ensureObject(org, "PermissionSetAssignment", "0Pa", map[string]Field{
-		"AssigneeId":      {APIName: "AssigneeId", Type: FieldReference, ReferenceTo: []string{"User"}, RelationshipName: "Assignee"},
-		"PermissionSetId": {APIName: "PermissionSetId", Type: FieldReference, ReferenceTo: []string{"PermissionSet"}, RelationshipName: "PermissionSet"},
+		"AssigneeId":           {APIName: "AssigneeId", Type: FieldReference, ReferenceTo: []string{"User"}, RelationshipName: "Assignee"},
+		"PermissionSetId":      {APIName: "PermissionSetId", Type: FieldReference, ReferenceTo: []string{"PermissionSet"}, RelationshipName: "PermissionSet"},
+		"PermissionSetGroupId": {APIName: "PermissionSetGroupId", Type: FieldReference, ReferenceTo: []string{"PermissionSetGroup"}, RelationshipName: "PermissionSetGroup"},
 	})
 	ensureObject(org, "Group", "00G", map[string]Field{
 		"Name":          {APIName: "Name", Type: FieldString, Required: true},
@@ -679,6 +685,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 	chatterExternalProfileID := ID("00e000000000003")
 	standardPlatformUserProfileID := ID("00e000000000004")
 	standardUserProfileID := ID("00e000000000005")
+	marketingUserProfileID := ID("00e000000000006")
 	salesforceLicenseID := ID("100000000000001")
 	chatterExternalLicenseID := ID("100000000000002")
 	roleID := ID("00E000000000001")
@@ -743,6 +750,11 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		Object: "Profile",
 		Fields: map[string]Value{"Name": StringValue("Standard User"), "UserLicenseId": IDValue(salesforceLicenseID)},
 	})
+	putSeedRecord(org, "Profile", Record{
+		ID:     marketingUserProfileID,
+		Object: "Profile",
+		Fields: map[string]Value{"Name": StringValue("Marketing User"), "UserLicenseId": IDValue(salesforceLicenseID)},
+	})
 	putSeedRecord(org, "UserRole", Record{
 		ID:     roleID,
 		Object: "UserRole",
@@ -781,12 +793,57 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 			"IsOwnedByProfile": BooleanValue(false),
 		},
 	})
+	putSeedRecord(org, "PermissionSet", Record{
+		ID:     ID("0PS000000000002"),
+		Object: "PermissionSet",
+		Fields: map[string]Value{
+			"Name":             StringValue("Proving_With_User_Mode_Works"),
+			"Label":            StringValue("Proving With User Mode Works"),
+			"Type":             StringValue("Regular"),
+			"IsOwnedByProfile": BooleanValue(false),
+		},
+	})
 	putSeedRecord(org, "PermissionSetAssignment", Record{
 		ID:     assignmentID,
 		Object: "PermissionSetAssignment",
 		Fields: map[string]Value{
 			"AssigneeId":      IDValue(userID),
 			"PermissionSetId": IDValue(permissionSetID),
+		},
+	})
+	putSeedRecord(org, "ObjectPermissions", Record{
+		ID:     ID("110000000000001"),
+		Object: "ObjectPermissions",
+		Fields: map[string]Value{
+			"ParentId":          IDValue(marketingUserProfileID),
+			"SObjectType":       StringValue("Account"),
+			"PermissionsRead":   BooleanValue(true),
+			"PermissionsCreate": BooleanValue(true),
+			"PermissionsEdit":   BooleanValue(true),
+			"PermissionsDelete": BooleanValue(false),
+		},
+	})
+	putSeedRecord(org, "ObjectPermissions", Record{
+		ID:     ID("110000000000002"),
+		Object: "ObjectPermissions",
+		Fields: map[string]Value{
+			"ParentId":          IDValue(marketingUserProfileID),
+			"SObjectType":       StringValue("Case"),
+			"PermissionsRead":   BooleanValue(true),
+			"PermissionsCreate": BooleanValue(true),
+			"PermissionsEdit":   BooleanValue(true),
+			"PermissionsDelete": BooleanValue(false),
+		},
+	})
+	putSeedRecord(org, "FieldPermissions", Record{
+		ID:     ID("0FP000000000001"),
+		Object: "FieldPermissions",
+		Fields: map[string]Value{
+			"ParentId":        IDValue(marketingUserProfileID),
+			"SObjectType":     StringValue("Account"),
+			"Field":           StringValue("Account.Name"),
+			"PermissionsRead": BooleanValue(true),
+			"PermissionsEdit": BooleanValue(true),
 		},
 	})
 	ensureRecordTypeRecords(org)
@@ -802,7 +859,7 @@ func EnsureDeterministicPlatformData(org *OrgState) {
 		"PermissionSet":           1,
 		"PermissionSetAssignment": 1,
 		"FieldPermissions":        1,
-		"ObjectPermissions":       1,
+		"ObjectPermissions":       2,
 		"SetupEntityAccess":       1,
 		"RecordType":              maxRecordTypeSequence(*org),
 	} {

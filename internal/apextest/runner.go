@@ -42,12 +42,35 @@ type Options struct {
 	Progress            func(TestProgress)
 }
 
+type permissionSetMetadata struct {
+	Label            string                          `xml:"label"`
+	FieldPermissions []permissionSetFieldPermission  `xml:"fieldPermissions"`
+	ObjectPermission []permissionSetObjectPermission `xml:"objectPermissions"`
+}
+
+type permissionSetFieldPermission struct {
+	Editable bool   `xml:"editable"`
+	Field    string `xml:"field"`
+	Readable bool   `xml:"readable"`
+}
+
+type permissionSetObjectPermission struct {
+	AllowCreate      bool   `xml:"allowCreate"`
+	AllowDelete      bool   `xml:"allowDelete"`
+	AllowEdit        bool   `xml:"allowEdit"`
+	AllowRead        bool   `xml:"allowRead"`
+	ModifyAllRecords bool   `xml:"modifyAllRecords"`
+	Object           string `xml:"object"`
+	ViewAllRecords   bool   `xml:"viewAllRecords"`
+}
+
 type TestCase struct {
 	ClassName  string
 	MethodName string
 	File       string
 	Range      diagnostic.Range
 	Body       string
+	SeeAllData bool
 }
 
 type TestProgress struct {
@@ -87,6 +110,7 @@ func Discover(index typesys.Index, opts Options) []TestCase {
 				MethodName: member.Name,
 				File:       typ.File,
 				Range:      member.Range,
+				SeeAllData: isSeeAllDataTest(member.Modifiers),
 			})
 		}
 	}
@@ -449,6 +473,7 @@ func runCase(ctx context.Context, testCase TestCase, testMethodErr error, invoke
 	org = cloneRuntimeOrg(org)
 	machine.SetOrg(&org)
 	machine.EnableTestContext()
+	machine.SetTestSeeAllData(testCase.SeeAllData)
 	machine.ResetApexPageState()
 	if err := machine.ResetStatics(); err != nil {
 		out.Status = testreport.StatusFail
@@ -1299,8 +1324,10 @@ func orgFromIndex(index typesys.Index, caches ...sourceCache) storage.OrgState {
 	for _, objectName := range storage.KnownStandardObjectNames() {
 		storage.EnsureStandardObject(&org, objectName)
 	}
+	features := []string(nil)
 	if index.Project.Root != "" {
-		storage.ApplyOrgShape(&org, project.OrgShapeFeatures(index.Project.Root))
+		features = project.OrgShapeFeatures(index.Project.Root)
+		storage.ApplyOrgShape(&org, features)
 	}
 	applyProjectReferencedStandardFields(&org, index, caches...)
 	applyApexClassRecords(&org, index, caches...)
@@ -1309,6 +1336,7 @@ func orgFromIndex(index typesys.Index, caches ...sourceCache) storage.OrgState {
 	if index.Project.Root != "" {
 		if p, err := project.Load(index.Project.Root); err == nil {
 			loadedProject = &p
+			applyCustomApplicationRecords(&org, p.ApplicationFiles)
 			_ = resource.ApplyProject(&org, p)
 			if automationIndex, err := automation.LoadProject(p); err == nil {
 				automation.ApplyToOrg(&org, automationIndex)
@@ -1316,9 +1344,14 @@ func orgFromIndex(index typesys.Index, caches ...sourceCache) storage.OrgState {
 		}
 	}
 	storage.EnsureDeterministicPlatformData(&org)
+	if len(features) > 0 {
+		storage.ApplyOrgShape(&org, features)
+	}
 	if loadedProject != nil {
 		applyProjectProfileRecordTypeDefaults(&org, *loadedProject)
 		applyProjectProfileRecords(&org, *loadedProject)
+		applyProjectPermissionSetRecords(&org, *loadedProject)
+		applyProjectPermissionSetGroupRecords(&org, *loadedProject)
 	}
 	normalizeOrgKeyPrefixes(&org)
 	return org
@@ -1597,6 +1630,253 @@ func profileRecordExists(state storage.ObjectState, name string) bool {
 	return false
 }
 
+func applyProjectPermissionSetRecords(org *storage.OrgState, p project.Project) {
+	if org == nil || len(p.PermissionSetFiles) == 0 {
+		return
+	}
+	storage.EnsureStandardObject(org, "PermissionSet")
+	state := org.Objects["PermissionSet"]
+	if state.Records == nil {
+		state.Records = make(map[storage.ID]storage.Record)
+	}
+	if org.IDSequences == nil {
+		org.IDSequences = make(map[string]uint64)
+	}
+	generator := storage.NewIDGenerator(storage.StandardKeyPrefixes())
+	generator.Sequences = org.IDSequences
+	for _, file := range p.PermissionSetFiles {
+		name := metadataNameFromPath(file, ".permissionset-meta.xml", ".permissionset")
+		if name == "" {
+			continue
+		}
+		id, exists := recordFieldID(state, "Name", name)
+		if !exists {
+			nextID, err := generator.Next("PermissionSet")
+			if err != nil {
+				continue
+			}
+			id = nextID
+			label := strings.ReplaceAll(name, "_", " ")
+			if metadata, ok := readPermissionSetMetadata(file); ok && strings.TrimSpace(metadata.Label) != "" {
+				label = strings.TrimSpace(metadata.Label)
+			}
+			state.Records[id] = storage.Record{
+				ID:     id,
+				Object: "PermissionSet",
+				Fields: map[string]storage.Value{
+					"Name":             storage.StringValue(name),
+					"Label":            storage.StringValue(label),
+					"Type":             storage.StringValue("Regular"),
+					"IsOwnedByProfile": storage.BooleanValue(false),
+				},
+			}
+		}
+		applyProjectPermissionSetMetadataPermissions(org, file, string(id), &generator)
+	}
+	org.IDSequences = generator.Sequences
+	org.Objects["PermissionSet"] = state
+}
+
+func readPermissionSetMetadata(file string) (permissionSetMetadata, bool) {
+	data, err := os.ReadFile(file)
+	if err != nil {
+		return permissionSetMetadata{}, false
+	}
+	var metadata permissionSetMetadata
+	if err := xml.Unmarshal(data, &metadata); err != nil {
+		return permissionSetMetadata{}, false
+	}
+	return metadata, true
+}
+
+func applyProjectPermissionSetMetadataPermissions(org *storage.OrgState, file, parentID string, generator *storage.IDGenerator) {
+	if org == nil || strings.TrimSpace(parentID) == "" || generator == nil {
+		return
+	}
+	metadata, ok := readPermissionSetMetadata(file)
+	if !ok {
+		return
+	}
+	storage.EnsureStandardObject(org, "ObjectPermissions")
+	storage.EnsureStandardObject(org, "FieldPermissions")
+	objectState := org.Objects["ObjectPermissions"]
+	if objectState.Records == nil {
+		objectState.Records = make(map[storage.ID]storage.Record)
+	}
+	fieldState := org.Objects["FieldPermissions"]
+	if fieldState.Records == nil {
+		fieldState.Records = make(map[storage.ID]storage.Record)
+	}
+	for _, permission := range metadata.ObjectPermission {
+		objectName := strings.TrimSpace(permission.Object)
+		if objectName == "" || objectPermissionRecordExists(objectState, parentID, objectName) {
+			continue
+		}
+		id, err := generator.Next("ObjectPermissions")
+		if err != nil {
+			continue
+		}
+		objectState.Records[id] = storage.Record{
+			ID:     id,
+			Object: "ObjectPermissions",
+			Fields: map[string]storage.Value{
+				"ParentId":                    storage.IDValue(storage.ID(parentID)),
+				"SObjectType":                 storage.StringValue(objectName),
+				"PermissionsRead":             storage.BooleanValue(permission.AllowRead),
+				"PermissionsCreate":           storage.BooleanValue(permission.AllowCreate),
+				"PermissionsEdit":             storage.BooleanValue(permission.AllowEdit),
+				"PermissionsDelete":           storage.BooleanValue(permission.AllowDelete),
+				"PermissionsViewAllRecords":   storage.BooleanValue(permission.ViewAllRecords),
+				"PermissionsModifyAllRecords": storage.BooleanValue(permission.ModifyAllRecords),
+			},
+		}
+	}
+	for _, permission := range metadata.FieldPermissions {
+		fieldName := strings.TrimSpace(permission.Field)
+		if fieldName == "" {
+			continue
+		}
+		objectName := fieldPermissionObjectName(fieldName)
+		if objectName == "" || fieldPermissionRecordExists(fieldState, parentID, objectName, fieldName) {
+			continue
+		}
+		id, err := generator.Next("FieldPermissions")
+		if err != nil {
+			continue
+		}
+		fieldState.Records[id] = storage.Record{
+			ID:     id,
+			Object: "FieldPermissions",
+			Fields: map[string]storage.Value{
+				"ParentId":        storage.IDValue(storage.ID(parentID)),
+				"SObjectType":     storage.StringValue(objectName),
+				"Field":           storage.StringValue(fieldName),
+				"PermissionsRead": storage.BooleanValue(permission.Readable),
+				"PermissionsEdit": storage.BooleanValue(permission.Editable),
+			},
+		}
+	}
+	org.Objects["ObjectPermissions"] = objectState
+	org.Objects["FieldPermissions"] = fieldState
+}
+
+func applyProjectPermissionSetGroupRecords(org *storage.OrgState, p project.Project) {
+	if org == nil || len(p.PermissionSetGroupFiles) == 0 {
+		return
+	}
+	storage.EnsureStandardObject(org, "PermissionSetGroup")
+	state := org.Objects["PermissionSetGroup"]
+	if state.Records == nil {
+		state.Records = make(map[storage.ID]storage.Record)
+	}
+	if org.IDSequences == nil {
+		org.IDSequences = make(map[string]uint64)
+	}
+	generator := storage.NewIDGenerator(storage.StandardKeyPrefixes())
+	generator.Sequences = org.IDSequences
+	for _, file := range p.PermissionSetGroupFiles {
+		name := metadataNameFromPath(file, ".permissionsetgroup-meta.xml", ".permissionsetgroup")
+		if name == "" || recordFieldExists(state, "DeveloperName", name) {
+			continue
+		}
+		id, err := generator.Next("PermissionSetGroup")
+		if err != nil {
+			continue
+		}
+		state.Records[id] = storage.Record{
+			ID:     id,
+			Object: "PermissionSetGroup",
+			Fields: map[string]storage.Value{
+				"DeveloperName": storage.StringValue(name),
+				"MasterLabel":   storage.StringValue(strings.ReplaceAll(name, "_", " ")),
+				"Status":        storage.StringValue("Updated"),
+			},
+		}
+	}
+	org.IDSequences = generator.Sequences
+	org.Objects["PermissionSetGroup"] = state
+}
+
+func metadataNameFromPath(path string, suffixes ...string) string {
+	name := filepath.Base(path)
+	lower := strings.ToLower(name)
+	for _, suffix := range suffixes {
+		if strings.HasSuffix(lower, suffix) {
+			return strings.TrimSpace(name[:len(name)-len(suffix)])
+		}
+	}
+	return ""
+}
+
+func recordFieldExists(state storage.ObjectState, fieldName, value string) bool {
+	_, ok := recordFieldID(state, fieldName, value)
+	return ok
+}
+
+func recordFieldID(state storage.ObjectState, fieldName, value string) (storage.ID, bool) {
+	for _, record := range state.Records {
+		if strings.EqualFold(record.Fields[fieldName].String, value) {
+			return record.ID, true
+		}
+	}
+	return "", false
+}
+
+func objectPermissionRecordExists(state storage.ObjectState, parentID, objectName string) bool {
+	for _, record := range state.Records {
+		parent, hasParent := record.GetField("ParentId")
+		objectValue, hasObject := record.GetField("SObjectType")
+		if hasParent && hasObject && storageIDValueEqualsText(parent, parentID) && storageStringValueEqualsText(objectValue, objectName) {
+			return true
+		}
+	}
+	return false
+}
+
+func fieldPermissionRecordExists(state storage.ObjectState, parentID, objectName, fieldName string) bool {
+	for _, record := range state.Records {
+		parent, hasParent := record.GetField("ParentId")
+		objectValue, hasObject := record.GetField("SObjectType")
+		fieldValue, hasField := record.GetField("Field")
+		if hasParent && hasObject && hasField &&
+			storageIDValueEqualsText(parent, parentID) &&
+			storageStringValueEqualsText(objectValue, objectName) &&
+			storageStringValueEqualsText(fieldValue, fieldName) {
+			return true
+		}
+	}
+	return false
+}
+
+func fieldPermissionObjectName(fieldName string) string {
+	if idx := strings.IndexByte(fieldName, '.'); idx > 0 {
+		return fieldName[:idx]
+	}
+	return ""
+}
+
+func storageIDValueEqualsText(value storage.Value, text string) bool {
+	switch value.Kind {
+	case storage.ValueID:
+		return strings.EqualFold(string(value.ID), text)
+	case storage.ValueString:
+		return strings.EqualFold(value.String, text)
+	default:
+		return false
+	}
+}
+
+func storageStringValueEqualsText(value storage.Value, text string) bool {
+	switch value.Kind {
+	case storage.ValueString:
+		return strings.EqualFold(value.String, text)
+	case storage.ValueID:
+		return strings.EqualFold(string(value.ID), text)
+	default:
+		return false
+	}
+}
+
 func normalizeOrgKeyPrefixes(org *storage.OrgState) {
 	if org == nil {
 		return
@@ -1631,6 +1911,7 @@ func applyApexClassRecords(org *storage.OrgState, index typesys.Index, caches ..
 			"Body":            {APIName: "Body", Label: "Body", Type: storage.FieldString},
 		},
 	}
+	storage.EnsureStandardObjectFields(&definition)
 	state := org.Objects["ApexClass"]
 	state.Definition = definition
 	if state.Records == nil {
@@ -1656,13 +1937,100 @@ func applyApexClassRecords(org *storage.OrgState, index typesys.Index, caches ..
 			ID:     id,
 			Object: "ApexClass",
 			Fields: map[string]storage.Value{
-				"Name":            {Kind: storage.ValueString, String: typ.Name},
-				"NamespacePrefix": {Kind: storage.ValueString, String: typ.Namespace},
-				"Body":            {Kind: storage.ValueString, String: source},
+				"Name":                  {Kind: storage.ValueString, String: typ.Name},
+				"NamespacePrefix":       {Kind: storage.ValueString, String: typ.Namespace},
+				"Body":                  {Kind: storage.ValueString, String: source},
+				"ApiVersion":            storage.DecimalValue("65.0"),
+				"LengthWithoutComments": storage.IntegerValue(int64(len(source))),
 			},
 		}
 	}
 	org.Objects["ApexClass"] = state
+}
+
+type customApplicationMetadata struct {
+	Label string `xml:"label"`
+}
+
+func applyCustomApplicationRecords(org *storage.OrgState, applicationFiles []string) {
+	if org == nil || len(applicationFiles) == 0 {
+		return
+	}
+	storage.EnsureStandardObject(org, "CustomApplication")
+	storage.EnsureStandardObject(org, "AppMenuItem")
+	apps := org.Objects["CustomApplication"]
+	if apps.Records == nil {
+		apps.Records = make(map[storage.ID]storage.Record)
+	}
+	menu := org.Objects["AppMenuItem"]
+	if menu.Records == nil {
+		menu.Records = make(map[storage.ID]storage.Record)
+	}
+	paths := append([]string(nil), applicationFiles...)
+	sort.Strings(paths)
+	appSeq := len(apps.Records) + 1
+	menuSeq := len(menu.Records) + 1
+	for _, path := range paths {
+		developerName := applicationDeveloperName(path)
+		if developerName == "" || customApplicationExists(apps, developerName) {
+			continue
+		}
+		label := developerName
+		if data, err := os.ReadFile(path); err == nil {
+			var meta customApplicationMetadata
+			if xml.Unmarshal(data, &meta) == nil && strings.TrimSpace(meta.Label) != "" {
+				label = strings.TrimSpace(meta.Label)
+			}
+		}
+		appID := storage.ID(fmt.Sprintf("02u%012d", appSeq))
+		menuID := storage.ID(fmt.Sprintf("0DS%012d", menuSeq))
+		appSeq++
+		menuSeq++
+		apps.Records[appID] = storage.Record{
+			ID:     appID,
+			Object: "CustomApplication",
+			Fields: map[string]storage.Value{
+				"DeveloperName": storage.StringValue(developerName),
+				"Label":         storage.StringValue(label),
+				"Name":          storage.StringValue(developerName),
+			},
+		}
+		menu.Records[menuID] = storage.Record{
+			ID:     menuID,
+			Object: "AppMenuItem",
+			Fields: map[string]storage.Value{
+				"ApplicationId": storage.IDValue(appID),
+				"Label":         storage.StringValue(label),
+				"Name":          storage.StringValue(developerName),
+				"Type":          storage.StringValue("TabSet"),
+				"SortOrder":     storage.IntegerValue(int64(menuSeq - 1)),
+			},
+		}
+	}
+	org.Objects["CustomApplication"] = apps
+	org.Objects["AppMenuItem"] = menu
+}
+
+func applicationDeveloperName(path string) string {
+	name := filepath.Base(path)
+	for _, suffix := range []string{".app-meta.xml", ".app"} {
+		if strings.HasSuffix(name, suffix) {
+			return strings.TrimSuffix(name, suffix)
+		}
+	}
+	return strings.TrimSuffix(name, filepath.Ext(name))
+}
+
+func customApplicationExists(state storage.ObjectState, developerName string) bool {
+	for _, record := range state.Records {
+		if value, ok := record.GetField("DeveloperName"); ok && value.Kind == storage.ValueString && strings.EqualFold(value.String, developerName) {
+			return true
+		}
+		if value, ok := record.GetField("Name"); ok && value.Kind == storage.ValueString && strings.EqualFold(value.String, developerName) {
+			return true
+		}
+	}
+	return false
 }
 
 func schemaFromIndex(index typesys.Index) schema.Schema {
@@ -2333,6 +2701,16 @@ func skipBlockComment(source string, start int) int {
 func isTestSetup(modifiers []string) bool {
 	for _, modifier := range modifiers {
 		if strings.EqualFold(strings.TrimPrefix(modifier, "@"), "TestSetup") {
+			return true
+		}
+	}
+	return false
+}
+
+func isSeeAllDataTest(modifiers []string) bool {
+	for _, modifier := range modifiers {
+		normalized := strings.ToLower(strings.ReplaceAll(strings.TrimPrefix(modifier, "@"), " ", ""))
+		if strings.HasPrefix(normalized, "istest(") && strings.Contains(normalized, "seealldata=true") {
 			return true
 		}
 	}

@@ -138,6 +138,7 @@ System.assertEquals(a, (Account)row);
 	}
 	machine := New(nil)
 	org := testDataOrg()
+	storage.EnsureStandardObject(&org, "EmailMessage")
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
@@ -156,6 +157,38 @@ System.assertEquals('Acme', byId.get(acme.Id).Name);
 	}
 	machine := New(nil)
 	org := testDataOrg()
+	storage.EnsureStandardObject(&org, "EmailMessage")
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecInsertEmailMessageCreatesToRelations(t *testing.T) {
+	program, err := CompileAnonymous(`
+EmailMessage message = new EmailMessage(
+    Subject = 'Test Email',
+    FromAddress = 'sender@example.invalid',
+    ToAddress = 'system@example.invalid',
+    toIds = new List<String>{ UserInfo.getUserId() },
+    Incoming = true,
+    Status = '3',
+    IsClientManaged = true,
+    MessageDate = DateTime.now()
+);
+Database.SaveResult result = Database.insert(message, false);
+System.assert(result.isSuccess(), String.valueOf(result.getErrors()));
+System.assertEquals(1, [SELECT COUNT() FROM EmailMessage]);
+System.assertEquals(1, [SELECT COUNT() FROM EmailMessageRelation]);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureDeterministicPlatformData(&org)
+	storage.EnsureStandardObject(&org, "EmailMessage")
+	storage.EnsureStandardObject(&org, "EmailMessageRelation")
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
@@ -1014,6 +1047,230 @@ System.assertEquals('CREATABLE', AccessType.CREATABLE.name());
 		t.Fatal(err)
 	}
 	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSecurityStripInaccessibleTracksRemovedFields(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Account> rows = [SELECT Id, Name, Secret__c FROM Account];
+SObjectAccessDecision decision = Security.stripInaccessible(AccessType.READABLE, rows);
+Map<String, Set<String>> removed = decision.getRemovedFields();
+System.assertEquals(1, removed.size());
+System.assert(removed.containsKey('Account'));
+System.assert(removed.get('Account').contains('Secret__c'));
+List<Account> stripped = (List<Account>)decision.getRecords();
+System.assertEquals('Acme', stripped[0].Name);
+System.assertEquals('Hidden', rows[0].Secret__c);
+Boolean caught = false;
+try {
+	System.debug(stripped[0].Secret__c);
+} catch (SObjectException e) {
+	caught = e.getMessage().contains('without querying the requested field');
+}
+System.assert(caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := stripInaccessibleTestOrg()
+	machine.SetOrg(&org)
+	machine.executionUser = stripInaccessibleTestUser()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSecurityStripInaccessibleEnforcesRootCRUD(t *testing.T) {
+	program, err := CompileAnonymous(`
+Boolean caught = false;
+try {
+	Security.stripInaccessible(AccessType.CREATABLE, new List<Account>{ new Account(Name = 'Acme') });
+} catch (NoAccessException e) {
+	caught = e.getMessage().containsIgnoreCase('no access to entity');
+}
+System.assert(caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := stripInaccessibleTestOrg()
+	delete(org.Objects["ObjectPermissions"].Records, "110000000000001")
+	machine.SetOrg(&org)
+	machine.executionUser = stripInaccessibleTestUser()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSecurityStripInaccessibleUsesProfileFieldPermissionAllowlist(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account row = new Account(Name = 'Acme', TradeStyle = 'Hidden');
+SObjectAccessDecision decision = Security.stripInaccessible(AccessType.CREATABLE, new List<Account>{ row });
+Map<String, Set<String>> removed = decision.getRemovedFields();
+System.assert(removed.get('Account').contains('TradeStyle'));
+List<Account> stripped = (List<Account>) decision.getRecords();
+System.assertEquals('Acme', stripped[0].Name);
+System.assertEquals(null, stripped[0].TradeStyle);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureDeterministicPlatformData(&org)
+	account := org.Objects["Account"]
+	account.Definition.Fields["TradeStyle"] = storage.Field{APIName: "TradeStyle", Type: storage.FieldString}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	user := Object("User")
+	user.Fields["Id"] = String("005000000000999")
+	user.Fields["ProfileId"] = String("00e000000000006")
+	machine.executionUser = user
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSecurityStripInaccessibleKeepsRequiredNameFieldsForCreate(t *testing.T) {
+	program, err := CompileAnonymous(`
+PermissionSet ps = new PermissionSet(Name = 'CreateContact', Label = 'Create Contact');
+insert ps;
+insert new ObjectPermissions(ParentId = ps.Id, SObjectType = 'Contact', PermissionsRead = true, PermissionsCreate = true);
+insert new FieldPermissions(ParentId = ps.Id, SObjectType = 'Contact', Field = 'Contact.Email', PermissionsRead = true, PermissionsEdit = true);
+Profile p = [SELECT Id FROM Profile WHERE Name = 'Minimum Access - Salesforce'];
+User u = new User(
+	Username = 'create-contact@example.invalid',
+	Alias = 'cuser',
+	Email = 'create-contact@example.invalid',
+	LastName = 'Create',
+	ProfileId = p.Id,
+	TimeZoneSidKey = 'UTC',
+	LocaleSidKey = 'en_US',
+	LanguageLocaleKey = 'en_US',
+	EmailEncodingKey = 'UTF-8'
+);
+insert u;
+insert new PermissionSetAssignment(AssigneeId = u.Id, PermissionSetId = ps.Id);
+System.runAs(u) {
+	Contact row = new Contact(LastName = 'Allowed', Email = 'allowed@example.invalid', Title = 'Hidden');
+	SObjectAccessDecision decision = Security.stripInaccessible(AccessType.CREATABLE, new List<Contact>{ row });
+	List<Contact> stripped = (List<Contact>) decision.getRecords();
+	System.assertEquals('Allowed', stripped[0].LastName);
+	System.assertEquals('allowed@example.invalid', stripped[0].Email);
+	System.assertEquals(null, stripped[0].Title);
+	System.assert(decision.getRemovedFields().get('Contact').contains('Title'));
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	storage.EnsureStandardObject(&org, "Contact")
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecPermissionSetGroupAssignmentGrantsComponentPermissions(t *testing.T) {
+	program, err := CompileAnonymous(`
+PermissionSet ps = new PermissionSet(Name = 'ReadAccountShipping', Label = 'Read Account Shipping');
+insert ps;
+insert new ObjectPermissions(ParentId = ps.Id, SObjectType = 'Account', PermissionsRead = true);
+insert new FieldPermissions(ParentId = ps.Id, SObjectType = 'Account', Field = 'Account.ShippingAddress', PermissionsRead = true);
+PermissionSetGroup psg = new PermissionSetGroup(DeveloperName = 'Read_Account_Group', MasterLabel = 'Read Account Group');
+insert psg;
+insert new PermissionSetGroupComponent(PermissionSetGroupId = psg.Id, PermissionSetId = ps.Id);
+Profile p = [SELECT Id FROM Profile WHERE Name = 'Minimum Access - Salesforce'];
+User u = new User(
+	Username = 'psg-user@example.invalid',
+	Alias = 'psguser',
+	Email = 'psg-user@example.invalid',
+	LastName = 'PSG',
+	ProfileId = p.Id,
+	TimeZoneSidKey = 'UTC',
+	LocaleSidKey = 'en_US',
+	LanguageLocaleKey = 'en_US',
+	EmailEncodingKey = 'UTF-8'
+);
+insert u;
+insert new PermissionSetAssignment(AssigneeId = u.Id, PermissionSetGroupId = psg.Id);
+System.assertEquals(1, [SELECT Id FROM PermissionSetGroupComponent WHERE PermissionSetGroupId = :psg.Id].size(), 'expected group component record');
+System.assertEquals(1, [SELECT Id FROM PermissionSetAssignment WHERE PermissionSetGroupId = :psg.Id].size(), 'expected group assignment record');
+System.runAs(u) {
+	System.assert(Account.SObjectType.getDescribe().isAccessible(), 'expected PSG component object permission to grant Account read');
+	System.assert(Account.ShippingStreet.getDescribe().isAccessible(), 'expected PSG component compound field permission to grant ShippingStreet read');
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	storage.EnsureStandardObject(&org, "PermissionSetGroup")
+	storage.EnsureStandardObject(&org, "PermissionSetGroupComponent")
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSecurityStripInaccessibleRemovesInaccessibleChildSubquery(t *testing.T) {
+	program, err := CompileAnonymous(`
+PermissionSet ps = new PermissionSet(Name = 'ReadAccountOnly', Label = 'Read Account Only');
+insert ps;
+insert new ObjectPermissions(ParentId = ps.Id, SObjectType = 'Account', PermissionsRead = true);
+insert new FieldPermissions(ParentId = ps.Id, SObjectType = 'Account', Field = 'Account.Name', PermissionsRead = true);
+Profile p = [SELECT Id FROM Profile WHERE Name = 'Minimum Access - Salesforce'];
+User u = new User(
+	Username = 'subquery-user@example.invalid',
+	Alias = 'squser',
+	Email = 'subquery-user@example.invalid',
+	LastName = 'Subquery',
+	ProfileId = p.Id,
+	TimeZoneSidKey = 'UTC',
+	LocaleSidKey = 'en_US',
+	LanguageLocaleKey = 'en_US',
+	EmailEncodingKey = 'UTF-8'
+);
+insert u;
+insert new PermissionSetAssignment(AssigneeId = u.Id, PermissionSetId = ps.Id);
+System.runAs(u) {
+	insert new Account(Name = 'Acme');
+	Account acct = [SELECT Id FROM Account WHERE Name = 'Acme'];
+	insert new Contact(AccountId = acct.Id, LastName = 'Child');
+	SObjectAccessDecision decision = Security.stripInaccessible(
+		AccessType.READABLE,
+		[SELECT Id, Name, (SELECT LastName FROM Contacts) FROM Account WHERE Id = :acct.Id]
+	);
+	List<Account> rows = (List<Account>) decision.getRecords();
+	Boolean caught = false;
+	try {
+		rows[0].getSObjects('Contacts');
+	} catch (SObjectException e) {
+		caught = e.getMessage().contains('without querying the requested field');
+	}
+	System.assert(caught);
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	storage.EnsureStandardObject(&org, "Contact")
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -2946,6 +3203,84 @@ System.runAs(u) {
 	}
 }
 
+func TestExecDatabaseUserModeChecksLocalObjectAndFieldPermissions(t *testing.T) {
+	program, err := CompileAnonymous(`
+Database.SaveResult result = Database.update(new Account(Id = '001000000000901AAA', ShippingStreet = 'Baker'), AccessLevel.USER_MODE);
+System.assert(result.isSuccess());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	account := org.Objects["Account"]
+	account.Definition.Fields["ShippingStreet"] = storage.Field{APIName: "ShippingStreet", Type: storage.FieldString}
+	account.Records["001000000000901AAA"] = storage.Record{
+		ID:     "001000000000901AAA",
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name": storage.StringValue("Acme"),
+		},
+	}
+	org.Objects["Account"] = account
+
+	user := Object("User")
+	user.Fields["Id"] = String("005000000000998")
+	user.Fields["profileId"] = String("00e000000000002")
+
+	machine := New(nil)
+	machine.SetOrg(&org)
+	machine.executionUser = user
+	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), "Access to entity 'Account' denied") {
+		t.Fatalf("err = %v, want Account access denial", err)
+	}
+
+	storage.EnsureStandardObject(&org, "PermissionSetAssignment")
+	org.Objects["ObjectPermissions"].Records["110000000000998"] = storage.Record{
+		ID:     "110000000000998",
+		Object: "ObjectPermissions",
+		Fields: map[string]storage.Value{
+			"ParentId":        storage.IDValue("0PS000000000998"),
+			"SObjectType":     storage.StringValue("Account"),
+			"PermissionsRead": storage.BooleanValue(true),
+			"PermissionsEdit": storage.BooleanValue(true),
+		},
+	}
+	org.Objects["PermissionSetAssignment"].Records["0Pa000000000998"] = storage.Record{
+		ID:     "0Pa000000000998",
+		Object: "PermissionSetAssignment",
+		Fields: map[string]storage.Value{
+			"AssigneeId":      storage.IDValue("005000000000998"),
+			"PermissionSetId": storage.IDValue("0PS000000000998"),
+		},
+	}
+	machine = New(nil)
+	machine.SetOrg(&org)
+	machine.executionUser = user
+	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), "Access to field 'Account.ShippingStreet' denied") {
+		t.Fatalf("err = %v, want ShippingStreet access denial", err)
+	}
+
+	org.Objects["FieldPermissions"].Records["0FP000000000998"] = storage.Record{
+		ID:     "0FP000000000998",
+		Object: "FieldPermissions",
+		Fields: map[string]storage.Value{
+			"ParentId":        storage.IDValue("0PS000000000998"),
+			"SObjectType":     storage.StringValue("Account"),
+			"Field":           storage.StringValue("Account.ShippingAddress"),
+			"PermissionsRead": storage.BooleanValue(true),
+			"PermissionsEdit": storage.BooleanValue(true),
+		},
+	}
+	machine = New(nil)
+	machine.SetOrg(&org)
+	machine.executionUser = user
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecCustomObjectIdDescribeNameFeedsDynamicFieldList(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<String> fields = new List<String>();
@@ -3175,6 +3510,13 @@ System.assertEquals(1, countRows);
 System.assertEquals(1, [SELECT COUNT() FROM Account]);
 Account row = [SELECT Id, Name FROM Account WHERE Name = 'Acme'];
 System.assertEquals('Acme', row.Name);
+System.assertEquals('Acme', [SELECT Id, Name FROM Account WHERE Name = 'Acme'].Name);
+try {
+	String missingName = [SELECT Id, Name FROM Account WHERE Name = 'Missing'].Name;
+	System.assert(false, 'expected QueryException');
+} catch (QueryException qe) {
+	System.assert(qe.getMessage().containsIgnoreCase('list has no rows'));
+}
 List<Account> limited = [SELECT Id FROM Account LIMIT :Limits.getLimitDMLRows()];
 System.assertEquals(1, limited.size());
 List<Account> limitedWithDate = [SELECT Id FROM Account WHERE CreatedDate <= :DateTime.now().addDays(1) LIMIT :Limits.getLimitDMLRows()];
@@ -3191,6 +3533,76 @@ System.assertEquals(1, limitedWithDate.size());
 	}
 }
 
+func TestExecDMLPersistsListStorageValues(t *testing.T) {
+	program, err := CompileAnonymous(`
+EmailMessage message = new EmailMessage();
+message.toIds = new List<String>{'one@example.test', 'two@example.test'};
+insert message;
+List<EmailMessage> rows = [SELECT Id FROM EmailMessage];
+System.assertEquals(1, rows.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureStandardObject(&org, "EmailMessage")
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSOQLForLoopCanIterateInListChunks(t *testing.T) {
+	program, err := CompileAnonymous(`
+insert new List<Account>{
+	new Account(Name = 'A'),
+	new Account(Name = 'B'),
+	new Account(Name = 'C')
+};
+Integer chunks = 0;
+Integer rows = 0;
+for (List<Account> accounts : [SELECT Id, Name FROM Account ORDER BY Name]) {
+	chunks++;
+	rows += accounts.size();
+}
+System.assertEquals(1, chunks);
+System.assertEquals(3, rows);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecEnhancedForDoesNotChunkNestedLists(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<List<Integer>> groups = new List<List<Integer>>{
+	new List<Integer>{1, 2},
+	new List<Integer>{3}
+};
+Integer chunks = 0;
+Integer rows = 0;
+for (List<Integer> groupValues : groups) {
+	chunks++;
+	rows += groupValues.size();
+}
+System.assertEquals(2, chunks);
+System.assertEquals(3, rows);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDynamicSOQLBindsAndQueryException(t *testing.T) {
 	program, err := CompileAnonymous(`
 insert new Account(Name = 'Acme', RenewalDate__c = Date.today());
@@ -3200,6 +3612,8 @@ List<Account> rows = Database.query('SELECT Id, Name FROM Account WHERE Name=:wa
 System.assertEquals(1, rows.size());
 Account first = rows.get(0);
 System.assertEquals('Acme', first.Name);
+rows = Database.query('SELECT Id, Name FROM Account WHERE Name=:wanted', AccessLevel.USER_MODE);
+System.assertEquals(1, rows.size());
 List<String> names = new List<String>{'Acme', 'Beta'};
 rows = Database.query('SELECT Id FROM Account WHERE Name IN :names ORDER BY Name');
 System.assertEquals(2, rows.size());
@@ -4843,6 +5257,50 @@ try {
 	}
 }
 
+func TestExecDMLWrapsCustomTriggerExceptionAsDmlException(t *testing.T) {
+	triggerProgram, err := CompileAnonymous(`
+throw new AccountTriggerHandlerException('Failed to insert tasks');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Account row = new Account(Name = 'Acme');
+insert row;
+row.Name = 'Changed';
+Boolean caught = false;
+try {
+	update row;
+} catch (DmlException e) {
+	caught = true;
+	System.assert(e.getMessage().containsIgnoreCase('failed to insert tasks'), e.getMessage());
+}
+System.assert(caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	machine.Classes["AccountTriggerHandlerException"] = Class{
+		Name:       "AccountTriggerHandlerException",
+		SuperClass: "Exception",
+	}
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "AccountAfterUpdateThrowsCustom",
+		Object:    "Account",
+		Timing:    triggerTimingAfter,
+		Operation: "update",
+		Program:   triggerProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecTriggerAddErrorProducesDMLResults(t *testing.T) {
 	triggerProgram, err := CompileAnonymous(`
 for (Account a : Trigger.new) {
@@ -5744,6 +6202,54 @@ System.assertEquals(2, markers.size());
 	}
 }
 
+func TestExecDMLNullAndMissingIDFailuresAreCatchable(t *testing.T) {
+	program, err := CompileAnonymous(`
+String nullDelete = '';
+try {
+	Contact contact = null;
+	delete contact;
+} catch (Exception e) {
+	nullDelete = e.getMessage();
+}
+System.assert(nullDelete.contains('Attempt to de-reference a null object'), nullDelete);
+
+String missingID = '';
+try {
+	update new Account(Name = 'No Id');
+} catch (DmlException e) {
+	missingID = e.getMessage();
+}
+System.assert(missingID.contains('Id not specified in an update call:'), missingID);
+
+Account existing = new Account(Name = 'Existing');
+insert existing;
+List<Account> queried = [SELECT Id, Name FROM Account WHERE Id = :existing.Id];
+List<Account> accounts = (List<Account>)JSON.deserialize(JSON.serialize(queried), List<Account>.class);
+for (Account account : accounts) {
+	account.Id = account.ExternalSalesforceId__c;
+}
+missingID = '';
+try {
+	update accounts;
+} catch (DmlException e) {
+	missingID = e.getMessage();
+}
+System.assert(missingID.contains('Id not specified in an update call:'), missingID);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["ExternalSalesforceId__c"] = storage.Field{APIName: "ExternalSalesforceId__c", Type: storage.FieldString}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecTriggerRecursionLimit(t *testing.T) {
 	triggerProgram, err := CompileAnonymous(`
 for (Account a : Trigger.new) {
@@ -6110,6 +6616,74 @@ func testDataOrg() storage.OrgState {
 	return org
 }
 
+func stripInaccessibleTestOrg() storage.OrgState {
+	org := testDataOrg()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Account",
+			KeyPrefix: "001",
+			Fields: map[string]storage.Field{
+				"Id":        {APIName: "Id", Type: storage.FieldID},
+				"Name":      {APIName: "Name", Type: storage.FieldString},
+				"Secret__c": {APIName: "Secret__c", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"001000000000001": {
+				ID:     "001000000000001",
+				Object: "Account",
+				Fields: map[string]storage.Value{
+					"Name":      storage.StringValue("Acme"),
+					"Secret__c": storage.StringValue("Hidden"),
+				},
+			},
+		},
+	}
+	org.Objects["Profile"] = storage.ObjectState{Records: map[storage.ID]storage.Record{
+		"00e000000000002": {
+			ID:     "00e000000000002",
+			Object: "Profile",
+			Fields: map[string]storage.Value{
+				"Name": storage.StringValue("Minimum Access - Salesforce"),
+			},
+		},
+	}}
+	org.Objects["ObjectPermissions"] = storage.ObjectState{Records: map[storage.ID]storage.Record{
+		"110000000000001": {
+			ID:     "110000000000001",
+			Object: "ObjectPermissions",
+			Fields: map[string]storage.Value{
+				"ParentId":          storage.IDValue("00e000000000002"),
+				"SObjectType":       storage.StringValue("Account"),
+				"PermissionsRead":   storage.BooleanValue(true),
+				"PermissionsCreate": storage.BooleanValue(true),
+				"PermissionsEdit":   storage.BooleanValue(true),
+			},
+		},
+	}}
+	org.Objects["FieldPermissions"] = storage.ObjectState{Records: map[storage.ID]storage.Record{
+		"0FP000000000001": {
+			ID:     "0FP000000000001",
+			Object: "FieldPermissions",
+			Fields: map[string]storage.Value{
+				"ParentId":        storage.IDValue("00e000000000002"),
+				"SObjectType":     storage.StringValue("Account"),
+				"Field":           storage.StringValue("Account.Name"),
+				"PermissionsRead": storage.BooleanValue(true),
+				"PermissionsEdit": storage.BooleanValue(true),
+			},
+		},
+	}}
+	return org
+}
+
+func stripInaccessibleTestUser() Value {
+	user := Object("User")
+	user.Fields["Id"] = String("005000000000002")
+	user.Fields["ProfileId"] = String("00e000000000002")
+	return user
+}
+
 func TestExecCustomMetadataAndCustomSettingStatics(t *testing.T) {
 	program, err := CompileAnonymous(`
 Map<String,Feature__mdt> allMetadata = Feature__mdt.getAll();
@@ -6168,6 +6742,9 @@ List<Binding__mdt> rows = [SELECT DeveloperName, Target__r.QualifiedApiName FROM
 System.assertEquals(1, rows.size());
 System.assertEquals('Default', rows[0].DeveloperName);
 System.assertEquals('Target', rows[0].Target__r.QualifiedApiName);
+List<Binding__mdt> fieldRows = [SELECT DeveloperName, Field__r.QualifiedApiName FROM Binding__mdt WHERE Field__r.QualifiedApiName = 'Status__c'];
+System.assertEquals(1, fieldRows.size());
+System.assertEquals('Status__c', fieldRows[0].Field__r.QualifiedApiName);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -6424,6 +7001,7 @@ func customMetadataRelationshipOrg() storage.OrgState {
 		Metadata:  map[string]string{"kind": "customMetadata"},
 		Fields: map[string]storage.Field{
 			"Target__c": {APIName: "Target__c", Type: storage.FieldReference, ReferenceTo: []string{"Target__mdt"}},
+			"Field__c":  {APIName: "Field__c", Type: storage.FieldReference, ReferenceTo: []string{"FieldDefinition"}, RelationshipName: "Field__r"},
 		},
 	}
 	storage.EnsureStandardObjectFields(&bindingDefinition)
@@ -6442,6 +7020,7 @@ func customMetadataRelationshipOrg() storage.OrgState {
 			"a11000000000001": {ID: "a11000000000001", Object: "Binding__mdt", Fields: map[string]storage.Value{
 				"DeveloperName": storage.StringValue("Default"),
 				"Target__c":     storage.IDValue("a10000000000001"),
+				"Field__c":      storage.StringValue("Status__c"),
 			}},
 		},
 	}

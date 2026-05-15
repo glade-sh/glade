@@ -44,6 +44,42 @@ func TestBuildStubBehaviorReportUsesStdlibEvidence(t *testing.T) {
 	}
 }
 
+func TestStubBehaviorSeparatesServiceMethodsFromPassiveDTOs(t *testing.T) {
+	report := BuildStubBehaviorReport()
+	entries := map[string]StubBehaviorEntry{}
+	for _, entry := range report.Entries {
+		entries[entry.ID] = entry
+	}
+
+	assertStubBehaviorPrefix(t, entries, "ConnectApi.Organization.getSettings(", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "ConnectApi.ChatterFeeds.getFeed(", StubBehaviorUnsupported)
+	assertStubBehaviorPrefix(t, entries, "ConnectApi.FeedElement.getBuildVersion(", StubBehaviorPassiveDefault)
+	assertStubBehaviorPrefix(t, entries, "ConnectApi.FeedElement.body(", StubBehaviorPassiveDefault)
+	assertStubBehaviorPrefix(t, entries, "Flow.Interview.start(", StubBehaviorUnsupported)
+	assertStubBehaviorPrefix(t, entries, "Cache.OrgPartition.get(String)", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "Cache.Org.get(String)", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "Cache.OrgPartition.createFullyQualifiedKey(String,String,String)", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "Cache.Org.getMissRate()", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "Continuation.addHttpRequest(", StubBehaviorUnsupported)
+	assertStubBehaviorPrefix(t, entries, "Http.send(", StubBehaviorUnsupported)
+	assertStubBehaviorPrefix(t, entries, "Search.find(", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "Assert.isInstanceOfType(Object,Type)", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "QueueableDuplicateSignature.Builder.addString(", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "Process.InputParameter.<init>(", StubBehaviorPassiveDefault)
+	assertStubBehaviorPrefix(t, entries, "CartExtension.Builder.withDeliverToCity(", StubBehaviorPassiveDefault)
+}
+
+func assertStubBehaviorPrefix(t *testing.T, entries map[string]StubBehaviorEntry, prefix string, want StubBehaviorStatus) {
+	t.Helper()
+	entry := findStubBehaviorEntry(entries, prefix)
+	if entry == nil {
+		t.Fatalf("missing stub behavior entry with prefix %q", prefix)
+	}
+	if entry.Status != want {
+		t.Fatalf("%s status = %q, want %q", entry.ID, entry.Status, want)
+	}
+}
+
 func findStubBehaviorEntry(entries map[string]StubBehaviorEntry, prefix string) *StubBehaviorEntry {
 	for id, entry := range entries {
 		if len(id) >= len(prefix) && id[:len(prefix)] == prefix {

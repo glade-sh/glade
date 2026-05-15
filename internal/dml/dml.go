@@ -136,6 +136,10 @@ func (e *Engine) upsert(records []storage.Record, externalIDField string) []Resu
 			results[i] = Result{ID: id, Success: true, Created: created}
 			continue
 		}
+		if err := e.validateUpsertIDReference(record); err != nil {
+			results[i] = resultFromError(record.ID, err)
+			continue
+		}
 		if err := e.updateOne(record); err != nil {
 			results[i] = resultFromError(record.ID, err)
 			continue
@@ -471,6 +475,16 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 			return "", err
 		}
 	}
+	if objectName == "ContentDistribution" {
+		e.afterInsertContentDistribution(record.ID)
+	}
+	if objectName == "EmailMessage" {
+		if err := e.afterInsertEmailMessage(record); err != nil {
+			*e.Org = rollbackOrg
+			e.IDs.Sequences = rollbackSequences
+			return "", err
+		}
+	}
 	if createPersonContact {
 		if err := e.afterInsertPersonAccount(record); err != nil {
 			*e.Org = rollbackOrg
@@ -793,7 +807,11 @@ func (e *Engine) afterInsertContentVersion(version storage.Record) error {
 			},
 		}
 		if path, ok := version.Fields["PathOnClient"]; ok {
-			document.Fields["FileExtension"] = storage.StringValue(fileExtension(path.String))
+			extension := fileExtension(path.String)
+			document.Fields["FileExtension"] = storage.StringValue(extension)
+			if fileType := contentDocumentFileType(extension); fileType != "" {
+				document.Fields["FileType"] = storage.StringValue(fileType)
+			}
 		}
 		id, err := e.insertPlatformRecord(document)
 		if err != nil {
@@ -822,7 +840,11 @@ func (e *Engine) afterInsertContentVersion(version storage.Record) error {
 			document.Fields["Title"] = title.Clone()
 		}
 		if path, ok := version.Fields["PathOnClient"]; ok {
-			document.Fields["FileExtension"] = storage.StringValue(fileExtension(path.String))
+			extension := fileExtension(path.String)
+			document.Fields["FileExtension"] = storage.StringValue(extension)
+			if fileType := contentDocumentFileType(extension); fileType != "" {
+				document.Fields["FileType"] = storage.StringValue(fileType)
+			}
 		}
 		contentDocumentObject.Records[contentDocumentID] = document
 		e.Org.Objects["ContentDocument"] = contentDocumentObject
@@ -843,6 +865,72 @@ func (e *Engine) afterInsertContentVersion(version storage.Record) error {
 		}
 	}
 	return nil
+}
+
+func (e *Engine) afterInsertContentDistribution(id storage.ID) {
+	object := e.Org.Objects["ContentDistribution"]
+	record, ok := object.Records[id]
+	if !ok {
+		return
+	}
+	if record.Fields == nil {
+		record.Fields = make(map[string]storage.Value)
+	}
+	base := "https://oaer.local/content/" + string(id)
+	if _, ok := record.Fields["ContentDownloadUrl"]; !ok {
+		record.Fields["ContentDownloadUrl"] = storage.StringValue(base + "/download")
+	}
+	if _, ok := record.Fields["DistributionPublicUrl"]; !ok {
+		record.Fields["DistributionPublicUrl"] = storage.StringValue(base)
+	}
+	object.Records[id] = record
+	e.Org.Objects["ContentDistribution"] = object
+}
+
+func (e *Engine) afterInsertEmailMessage(message storage.Record) error {
+	toIDs, ok := message.GetField("ToIds")
+	if !ok || toIDs.Kind != storage.ValueList {
+		return nil
+	}
+	for _, toID := range toIDs.List {
+		relationID := valueAsIDString(toID)
+		if relationID == "" {
+			continue
+		}
+		if relationID == "system" {
+			relationID = string(e.systemUserID())
+		}
+		if err := storage.ValidateID(storage.ID(relationID)); err != nil {
+			continue
+		}
+		storage.EnsureStandardObject(e.Org, "EmailMessageRelation")
+		relation := storage.Record{
+			Object: "EmailMessageRelation",
+			Fields: map[string]storage.Value{
+				"EmailMessageId": storage.IDValue(message.ID),
+				"RelationId":     storage.IDValue(storage.ID(relationID)),
+				"RelationType":   storage.StringValue("ToAddress"),
+			},
+		}
+		if toAddress, ok := message.GetField("ToAddress"); ok && toAddress.String != "" {
+			relation.Fields["RelationAddress"] = storage.StringValue(toAddress.String)
+		}
+		if _, err := e.insertPlatformRecord(relation); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func valueAsIDString(value storage.Value) string {
+	switch value.Kind {
+	case storage.ValueID:
+		return string(value.ID)
+	case storage.ValueString:
+		return strings.TrimSpace(value.String)
+	default:
+		return ""
+	}
 }
 
 func (e *Engine) insertPlatformRecord(record storage.Record) (storage.ID, error) {
@@ -1012,6 +1100,17 @@ func (e *Engine) syncPersonContact(account storage.Record) error {
 	return nil
 }
 
+func deleteCaseInsensitiveField(fields map[string]storage.Value, field string) {
+	if fields == nil || field == "" {
+		return
+	}
+	for existing := range fields {
+		if existing != field && strings.EqualFold(existing, field) {
+			delete(fields, existing)
+		}
+	}
+}
+
 func fileExtension(path string) string {
 	lastSlash := strings.LastIndexAny(path, `/\`)
 	lastDot := strings.LastIndex(path, ".")
@@ -1019,6 +1118,25 @@ func fileExtension(path string) string {
 		return ""
 	}
 	return path[lastDot+1:]
+}
+
+func contentDocumentFileType(extension string) string {
+	switch strings.ToLower(strings.TrimPrefix(extension, ".")) {
+	case "docx":
+		return "WORD_X"
+	case "xlsx":
+		return "EXCEL_X"
+	case "pptx":
+		return "POWER_POINT_X"
+	case "pdf":
+		return "PDF"
+	case "jpg", "jpeg", "gif", "png":
+		return strings.ToUpper(extension)
+	case "m4a":
+		return "M4A"
+	default:
+		return strings.ToUpper(extension)
+	}
 }
 
 func (e *Engine) updateOne(record storage.Record) error {
@@ -1070,11 +1188,13 @@ func (e *Engine) updateOne(record storage.Record) error {
 		finalRecord.ExplicitNulls = make(map[string]bool)
 	}
 	for field, value := range record.Fields {
+		deleteCaseInsensitiveField(finalRecord.Fields, field)
 		finalRecord.Fields[field] = value.Clone()
 		delete(finalRecord.ExplicitNulls, field)
 	}
 	for field, isNull := range record.ExplicitNulls {
 		if isNull {
+			deleteCaseInsensitiveField(finalRecord.Fields, field)
 			delete(finalRecord.Fields, field)
 			finalRecord.ExplicitNulls[field] = true
 		}
@@ -1231,6 +1351,25 @@ func (e *Engine) upsertByExternalID(record storage.Record, externalIDField strin
 		return "", false, err
 	}
 	return record.ID, false, nil
+}
+
+func (e *Engine) validateUpsertIDReference(record storage.Record) error {
+	object, objectName, err := e.object(record.Object)
+	if err != nil {
+		return err
+	}
+	record, err = canonicalizeRecord(e.Org.Namespace, object.Definition, objectName, record)
+	if err != nil {
+		return err
+	}
+	if err := e.validateObjectID(object.Definition, record); err != nil {
+		return err
+	}
+	storedID, existing, ok := storage.LookupRecordByID(object.Records, record.ID)
+	if !ok || existing.System.IsDeleted || storedID == "" {
+		return dmlErrorf("INVALID_CROSS_REFERENCE_KEY", []string{"Id"}, "invalid cross reference id")
+	}
+	return nil
 }
 
 func (e *Engine) object(name string) (storage.ObjectState, string, error) {
@@ -1567,10 +1706,13 @@ func isSystemManagedReadonlyField(field string) bool {
 
 func validateRequired(definition storage.ObjectDefinition, record storage.Record) error {
 	for name, field := range definition.Fields {
-		if !field.Required {
+		if !isDMLRequiredField(field) {
 			continue
 		}
-		if _, ok := record.GetField(name); ok {
+		if value, ok := record.GetField(name); ok {
+			if field.Type == storage.FieldString && strings.TrimSpace(value.String) == "" {
+				return dmlErrorf("REQUIRED_FIELD_MISSING", []string{name}, "dml: missing required field %s.%s", record.Object, name)
+			}
 			continue
 		}
 		if record.HasExplicitNull(name) {
@@ -1579,6 +1721,10 @@ func validateRequired(definition storage.ObjectDefinition, record storage.Record
 		return dmlErrorf("REQUIRED_FIELD_MISSING", []string{name}, "dml: missing required field %s.%s", record.Object, name)
 	}
 	return nil
+}
+
+func isDMLRequiredField(field storage.Field) bool {
+	return field.Required
 }
 
 func stripReadOnlyUpdateFields(definition storage.ObjectDefinition, namespace string, record *storage.Record) {
@@ -2850,6 +2996,9 @@ func resultFromError(id storage.ID, err error) Result {
 	case contains(msg, "update requires id") || contains(msg, "delete requires id") || contains(msg, "undelete requires id"):
 		code = "MISSING_ARGUMENT"
 		fields = []string{"Id"}
+		if contains(msg, "update requires id") {
+			msg = "Id not specified in an update call:"
+		}
 	case contains(msg, "does not exist"):
 		code = "ENTITY_IS_DELETED"
 	}

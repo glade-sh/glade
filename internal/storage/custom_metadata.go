@@ -254,7 +254,7 @@ func customMetadataValue(field Field, raw string) (Value, bool, error) {
 
 func fieldReferencesEntityDefinition(field Field) bool {
 	for _, target := range field.ReferenceTo {
-		if strings.EqualFold(target, "EntityDefinition") {
+		if strings.EqualFold(target, "EntityDefinition") || strings.EqualFold(target, "FieldDefinition") {
 			return true
 		}
 	}

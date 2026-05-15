@@ -33,6 +33,26 @@ func TestExecRegisteredStaticMethod(t *testing.T) {
 	}
 }
 
+func TestExecStringValueOfNestedClassUsesLocalName(t *testing.T) {
+	program, err := CompileAnonymous(`
+Outer.Inner inner = new Outer.Inner();
+System.assertEquals('Inner:{}', String.valueOf(inner));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Outer"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "Outer.Inner"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecRegisteredStaticMethodMatchesNestedSObjectCollectionMap(t *testing.T) {
 	methodProgram, err := CompileAnonymous("return values.size();")
 	if err != nil {
@@ -4583,7 +4603,7 @@ func TestExecObjectToStringDispatch(t *testing.T) {
 Named named = new Named();
 Plain plain = new Plain();
 System.assertEquals('custom', named.toString());
-System.assertEquals('Plain{}', plain.toString());
+System.assertEquals('Plain:{}', plain.toString());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -4598,6 +4618,31 @@ System.assertEquals('Plain{}', plain.toString());
 		t.Fatal(err)
 	}
 	if err := machine.RegisterClass(Class{Name: "Plain"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecTypeExceptionReportsRuntimeTypeForDowncastedObject(t *testing.T) {
+	program, err := CompileAnonymous(`
+Parent value = (Parent)new Child();
+try {
+	DateTime ignored = (DateTime)value;
+	System.assert(false, 'expected TypeException');
+} catch (System.TypeException e) {
+	System.assert(e.getMessage().contains('Invalid conversion from runtime type Child to Datetime'), e.getMessage());
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{Name: "Parent"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterClass(Class{Name: "Child", SuperClass: "Parent"}); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := machine.Execute(program); err != nil {

@@ -58,6 +58,22 @@ func TestParseIgnoresEmptyGeneratedFieldEntries(t *testing.T) {
 	}
 }
 
+func TestParseQualifiedChildRelationshipSubquery(t *testing.T) {
+	query, err := Parse("SELECT Id, (SELECT LastName FROM Account . Contacts) FROM Account")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(query.ChildQueries) != 1 {
+		t.Fatalf("child queries = %#v", query.ChildQueries)
+	}
+	if got := query.ChildQueries[0].Relationship; got != "Contacts" {
+		t.Fatalf("child relationship = %q", got)
+	}
+	if got := query.ChildQueries[0].Query.Object; got != "Account.Contacts" {
+		t.Fatalf("child query object = %q", got)
+	}
+}
+
 func TestParseEmptyInList(t *testing.T) {
 	query, err := Parse("SELECT Id FROM Account WHERE Id IN ()")
 	if err != nil {
@@ -1716,6 +1732,15 @@ func TestExecuteProjectsChildRelationshipSubquery(t *testing.T) {
 	children = result.Records[0].Children["Contacts"]
 	if len(children) != 1 || children[0].Fields["LastName"].String != "Alpha" || children[0].Fields["AccountId"].ID != "001000000000001" {
 		t.Fatalf("child FIELDS() rows = %#v", children)
+	}
+
+	result, err = ParseAndExecute(org, "SELECT Id, (SELECT LastName FROM Account.Contacts ORDER BY LastName ASC NULLS LAST LIMIT 1) FROM Account WHERE Name = 'Acme'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	children = result.Records[0].Children["Contacts"]
+	if len(children) != 1 || children[0].Fields["LastName"].String != "Alpha" {
+		t.Fatalf("qualified child relationship rows = %#v", children)
 	}
 }
 

@@ -155,6 +155,7 @@ func Build(p project.Project, s schema.Schema) (idx Index) {
 			StaticResources: len(dep.Project.StaticResourceFiles) + len(dep.Project.StaticResourceMetas),
 		})
 	}
+	appendDataWeaveScriptResourceSymbols(&idx, p)
 	appendProjectSymbols(&idx, parser, p, false, p.Namespace, "", seenTypes)
 
 	sort.Slice(idx.Types, func(i, j int) bool {
@@ -187,6 +188,82 @@ func appendProjectSymbols(idx *Index, parser *apexast.Parser, p project.Project,
 		}
 		idx.Triggers = append(idx.Triggers, file.Triggers...)
 	}
+}
+
+func appendDataWeaveScriptResourceSymbols(idx *Index, p project.Project) {
+	scriptNames := dataWeaveScriptResourceNames(p)
+	for _, name := range scriptNames {
+		idx.Types = append(idx.Types, TypeSymbol{
+			Kind:       apexast.DeclarationClass,
+			Name:       "DataWeaveScriptResource." + name,
+			File:       dataWeaveScriptResourceFile(p, name),
+			Dependency: true,
+			SuperClass: "DataWeave.Script",
+			Members: []MemberSymbol{
+				{
+					Kind:      apexast.DeclarationConstructor,
+					Name:      name,
+					Modifiers: []string{"public"},
+				},
+				{
+					Kind:      apexast.DeclarationMethod,
+					Name:      "execute",
+					Type:      "DataWeave.Result",
+					Modifiers: []string{"public", "passive-generated"},
+					Parameters: []apexast.Parameter{{
+						Name: "inputs",
+						Type: "Map<String,Object>",
+					}},
+				},
+			},
+		})
+	}
+}
+
+func dataWeaveScriptResourceNames(p project.Project) []string {
+	seen := make(map[string]bool)
+	for _, path := range append(append([]string{}, p.DataWeaveFiles...), p.DataWeaveMetas...) {
+		name := dataWeaveScriptResourceName(path)
+		if name != "" {
+			seen[strings.ToLower(name)] = true
+		}
+	}
+	names := make([]string, 0, len(seen))
+	for _, path := range append(append([]string{}, p.DataWeaveFiles...), p.DataWeaveMetas...) {
+		name := dataWeaveScriptResourceName(path)
+		key := strings.ToLower(name)
+		if name == "" || !seen[key] {
+			continue
+		}
+		names = append(names, name)
+		delete(seen, key)
+	}
+	sort.Strings(names)
+	return names
+}
+
+func dataWeaveScriptResourceName(path string) string {
+	base := filepath.Base(path)
+	base = strings.TrimSuffix(base, "-meta.xml")
+	base = strings.TrimSuffix(base, ".dwl")
+	if base == "" || base == filepath.Base(path) {
+		return ""
+	}
+	return base
+}
+
+func dataWeaveScriptResourceFile(p project.Project, name string) string {
+	for _, path := range p.DataWeaveFiles {
+		if strings.EqualFold(dataWeaveScriptResourceName(path), name) {
+			return path
+		}
+	}
+	for _, path := range p.DataWeaveMetas {
+		if strings.EqualFold(dataWeaveScriptResourceName(path), name) {
+			return path
+		}
+	}
+	return "<dataweave>"
 }
 
 type projectSymbolFile struct {

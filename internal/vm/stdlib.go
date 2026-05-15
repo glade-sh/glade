@@ -1421,10 +1421,13 @@ func stringStatic(callee string, args []Value) (Value, error) {
 		}
 		return String(b.String()), nil
 	case "String.escapeSingleQuotes":
-		if len(args) != 1 || args[0].Kind != ValueString {
+		if len(args) != 1 {
 			return Null, fmt.Errorf("String.escapeSingleQuotes expects String argument")
 		}
-		return String(strings.ReplaceAll(args[0].Text, "'", "\\'")), nil
+		if args[0].Kind == ValueNull {
+			return Null, nil
+		}
+		return String(strings.ReplaceAll(args[0].String(), "'", "\\'")), nil
 	default:
 		return Null, unsupportedCallError(callee)
 	}

@@ -144,6 +144,10 @@ func buildStubBehaviorMemberEntry(symbol typesys.TypeSymbol, typeName string, me
 		entry.Status = match.status
 		entry.Evidence = match.evidence
 		entry.Notes = match.notes
+		if status, notes, ok := localStubBehaviorEvidenceOverride(symbol, member); ok {
+			entry.Status = status
+			entry.Notes = notes
+		}
 	} else if member.Kind == apexast.DeclarationConstructor {
 		if match := evidence.lookup(typeName, ""); match != nil {
 			entry.Status = match.status
@@ -152,10 +156,25 @@ func buildStubBehaviorMemberEntry(symbol typesys.TypeSymbol, typeName string, me
 		}
 	}
 	if entry.Status == StubBehaviorUnknown && member.Kind == apexast.DeclarationMethod {
-		entry.Status = StubBehaviorPassiveDefault
-		entry.Notes = "generated platform method is callable and returns a typed default unless runtime code implements or rejects it"
+		entry.Status = StubBehaviorUnsupported
+		entry.Notes = "generated platform method has shape only; local runtime should reject it unless implemented or allowlisted as passive DTO behavior"
 	}
 	return entry
+}
+
+func localStubBehaviorEvidenceOverride(symbol typesys.TypeSymbol, member typesys.MemberSymbol) (StubBehaviorStatus, string, bool) {
+	if member.Kind != apexast.DeclarationMethod {
+		return "", "", false
+	}
+	typeName := stubBehaviorTypeName(symbol)
+	name := strings.ToLower(member.Name)
+	switch typeName {
+	case "Search":
+		if name == "find" || name == "suggest" {
+			return StubBehaviorImplemented, "local runtime models Search over fixed test search results and empty suggestion DTOs", true
+		}
+	}
+	return "", "", false
 }
 
 func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.MemberSymbol) (StubBehaviorStatus, string, bool) {
@@ -183,7 +202,7 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 	if generatedDTOAccessorBehaviorMethod(symbol, member) {
 		return StubBehaviorPassiveDefault, "passive generated DTO getter/setter returns or mutates the matching property when available, otherwise uses a typed default", true
 	}
-	if generatedDTOCollectionMethod(member) {
+	if generatedDTOBehaviorType(symbol) && generatedDTOCollectionMethod(member) {
 		return StubBehaviorPassiveDefault, "passive generated DTO collection method returns an empty typed collection", true
 	}
 	if generatedDTOBehaviorType(symbol) || generatedTopLevelPassiveBehaviorType(symbol) {
@@ -280,8 +299,17 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 		}
 	case "AsyncInfo":
 		return name == "hasmaxstackdepth"
+	case "Assert":
+		switch name {
+		case "areequal", "arenotequal", "istrue", "isfalse", "isnull", "isnotnull",
+			"isinstanceoftype", "fail":
+			return true
+		}
 	case "EventBus":
 		return name == "publish" || name == "getoperationid"
+	case "Cache.Org", "Cache.Session", "Cache.OrgPartition", "Cache.SessionPartition",
+		"cache.Org", "cache.Session", "cache.OrgPartition", "cache.SessionPartition":
+		return cacheBehaviorMethod(name)
 	case "FeatureManagement":
 		return strings.HasPrefix(name, "checkpackage") || strings.HasPrefix(name, "setpackage")
 	case "Security":
@@ -352,6 +380,8 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 		case "getdistance", "getlatitude", "getlongitude", "newinstance":
 			return true
 		}
+	case "Address":
+		return name == "getdistance"
 	case "Datetime":
 		switch name {
 		case "now", "newinstance", "newinstancegmt", "valueof", "valueofgmt", "parse",
@@ -393,8 +423,23 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 		}
 	case "PageReference":
 		switch name {
-		case "geturl", "setredirect", "getredirect", "getparameters", "setanchor", "getanchor",
+		case "geturl", "setredirect", "getredirect", "getparameters", "getheaders", "getcookies", "setcookies", "setanchor", "getanchor",
 			"setredirectcode", "getredirectcode", "forresource":
+			return true
+		}
+	case "Search":
+		return name == "query" || name == "find" || name == "suggest"
+	case "ConnectApi.Organization":
+		return name == "getsettings"
+	case "ConnectApi.Communities":
+		return name == "getcommunity"
+	case "ConnectApi.UserProfiles":
+		return name == "setphoto" || name == "deletephoto"
+	case "QueueableDuplicateSignature":
+		return name == "builder"
+	case "QueueableDuplicateSignature.Builder":
+		switch name {
+		case "addid", "addinteger", "addstring", "build":
 			return true
 		}
 	case "URL", "Url":
@@ -414,6 +459,20 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 		}
 	}
 	return false
+}
+
+func cacheBehaviorMethod(methodName string) bool {
+	switch methodName {
+	case "getpartition", "get", "put", "remove", "contains", "getkeys", "getnumkeys",
+		"getcapacity", "isavailable", "getname",
+		"getavggetsize", "getavggettime", "getavgvaluesize", "getmaxgetsize",
+		"getmaxgettime", "getmaxvaluesize", "getmissrate",
+		"createfullyqualifiedkey", "createfullyqualifiedpartition", "validatecachebuilder",
+		"validatekey", "validatekeyvalue", "validatekeys", "validatepartitionname":
+		return true
+	default:
+		return false
+	}
 }
 
 func apexPagesBehaviorMethod(typeName, methodName string) bool {
@@ -525,8 +584,12 @@ func searchDTOBehaviorMethod(typeName, methodName string) bool {
 	switch typeName {
 	case "Search.KnowledgeSuggestionFilter", "Search.QuestionSuggestionFilter":
 		return strings.HasPrefix(methodName, "add") || strings.HasPrefix(methodName, "set")
-	case "Search.SearchResult":
+	case "Search.SearchResult", "Search.SuggestionResult":
 		return strings.HasPrefix(methodName, "get")
+	case "Search.SearchResults":
+		return methodName == "get"
+	case "Search.SuggestionResults":
+		return methodName == "getsuggestionresults" || methodName == "hasmoreresults"
 	default:
 		return false
 	}
@@ -721,6 +784,12 @@ func generatedDTOBehaviorType(symbol typesys.TypeSymbol) bool {
 	if typeName == "" || !strings.Contains(typeName, ".") || symbol.Kind != apexast.DeclarationClass {
 		return false
 	}
+	if generatedExecutionSurfaceType(typeName) {
+		return false
+	}
+	if strings.HasPrefix(typeName, "ConnectApi.") {
+		return generatedPassiveDTOShape(symbol)
+	}
 	if strings.HasPrefix(typeName, "Schema.") || strings.HasPrefix(typeName, "ApexPages.") ||
 		strings.HasPrefix(typeName, "Messaging.") || strings.HasPrefix(typeName, "Dom.") ||
 		strings.HasPrefix(typeName, "System.") || strings.HasPrefix(typeName, "Database.") ||
@@ -732,7 +801,56 @@ func generatedDTOBehaviorType(symbol typesys.TypeSymbol) bool {
 		strings.HasPrefix(typeName, "RestResponse.") {
 		return false
 	}
-	return true
+	return generatedPassiveDTOShape(symbol)
+}
+
+func generatedExecutionSurfaceType(typeName string) bool {
+	for _, prefix := range []string{
+		"Flow.",
+		"Cache.",
+		"cache.",
+		"Continuation.",
+		"ExternalService.",
+		"ExternalServiceTest.",
+	} {
+		if strings.HasPrefix(typeName, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
+func generatedPassiveDTOShape(symbol typesys.TypeSymbol) bool {
+	hasDataShape := false
+	for _, member := range symbol.Members {
+		switch member.Kind {
+		case apexast.DeclarationConstructor, apexast.DeclarationProperty:
+			hasDataShape = true
+		case apexast.DeclarationMethod:
+			if generatedPassiveDTOMethod(member) {
+				continue
+			}
+			return false
+		}
+	}
+	return hasDataShape
+}
+
+func generatedPassiveDTOMethod(member typesys.MemberSymbol) bool {
+	name := strings.ToLower(member.Name)
+	if genericObjectBehaviorMethod(member) {
+		return true
+	}
+	switch {
+	case name == "getbuildversion":
+		return true
+	case strings.HasPrefix(name, "get"), strings.HasPrefix(name, "set"), strings.HasPrefix(name, "is"):
+		return true
+	case strings.HasPrefix(name, "with"), name == "build":
+		return true
+	default:
+		return false
+	}
 }
 
 func generatedTopLevelPassiveBehaviorType(symbol typesys.TypeSymbol) bool {

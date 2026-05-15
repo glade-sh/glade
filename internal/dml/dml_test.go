@@ -89,6 +89,57 @@ func TestUpdateRequiredFieldToNullFails(t *testing.T) {
 	}
 }
 
+func TestUpdateStandardNameFieldToBlankFails(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")},
+	}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert)
+	}
+
+	update := engine.Update([]storage.Record{{
+		ID:     insert[0].ID,
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("")},
+	}})
+	if update[0].Success || update[0].StatusCode != "REQUIRED_FIELD_MISSING" {
+		t.Fatalf("blank standard name update = %#v", update)
+	}
+	if got := org.Objects["Account"].Records[insert[0].ID].Fields["Name"].String; got != "Acme" {
+		t.Fatalf("stored name after failed update = %q", got)
+	}
+}
+
+func TestUpdateRequiredFieldCaseVariantCanonicalizesAlias(t *testing.T) {
+	org := testOrg()
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")},
+	}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert)
+	}
+	update := engine.Update([]storage.Record{{
+		ID:     insert[0].ID,
+		Object: "Account",
+		Fields: map[string]storage.Value{"name": storage.StringValue("Renamed")},
+	}})
+	if !update[0].Success {
+		t.Fatalf("update = %#v", update)
+	}
+	stored := org.Objects["Account"].Records[insert[0].ID]
+	if got := stored.Fields["Name"].String; got != "Renamed" {
+		t.Fatalf("stored name = %q", got)
+	}
+}
+
 func TestUpdateMatchesStoredRecordByFifteenCharacterID(t *testing.T) {
 	org := testOrg()
 	engine := NewEngine(&org)
@@ -380,6 +431,15 @@ func TestInsertValidatesRequiredAndUnknownFields(t *testing.T) {
 	if len(missing[0].Errors) != 1 || missing[0].Errors[0].StatusCode != "REQUIRED_FIELD_MISSING" || missing[0].Errors[0].Fields[0] != "Name" {
 		t.Fatalf("missing required errors = %#v", missing[0].Errors)
 	}
+	blank := engine.Insert([]storage.Record{{
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name": storage.StringValue(""),
+		},
+	}})
+	if blank[0].Success || blank[0].StatusCode != "REQUIRED_FIELD_MISSING" {
+		t.Fatalf("blank required result = %#v", blank)
+	}
 	unknown := engine.Insert([]storage.Record{{
 		Object: "Account",
 		Fields: map[string]storage.Value{
@@ -458,6 +518,49 @@ func TestInsertPersonAccountCreatesSyntheticPersonContact(t *testing.T) {
 	contact = org.Objects["Contact"].Records[contactID]
 	if got := contact.Fields["MobilePhone"].String; got != "555-0101" {
 		t.Fatalf("person contact mobile after update = %q", got)
+	}
+}
+
+func TestInsertEmailMessageCreatesToRelations(t *testing.T) {
+	org := storage.NewOrgState()
+	storage.EnsureDeterministicPlatformData(&org)
+	storage.EnsureStandardObject(&org, "EmailMessage")
+	storage.EnsureStandardObject(&org, "EmailMessageRelation")
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "EmailMessage",
+		Fields: map[string]storage.Value{
+			"Subject":         storage.StringValue("Test Email"),
+			"FromAddress":     storage.StringValue("sender@example.invalid"),
+			"ToAddress":       storage.StringValue("system@example.invalid"),
+			"ToIds":           storage.ListValue(storage.IDValue("005000000000001AAA")),
+			"Incoming":        storage.BooleanValue(true),
+			"Status":          storage.StringValue("3"),
+			"IsClientManaged": storage.BooleanValue(true),
+			"MessageDate":     storage.DateTimeValue("2026-05-02T12:00:00Z"),
+		},
+	}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert[0])
+	}
+	if got := len(org.Objects["EmailMessage"].Records); got != 1 {
+		t.Fatalf("email messages = %d, want 1", got)
+	}
+	relations := org.Objects["EmailMessageRelation"].Records
+	if got := len(relations); got != 1 {
+		t.Fatalf("email message relations = %d, want 1", got)
+	}
+	for _, relation := range relations {
+		if got := relation.Fields["EmailMessageId"].ID; got != insert[0].ID {
+			t.Fatalf("EmailMessageId = %q, want %q", got, insert[0].ID)
+		}
+		if got := relation.Fields["RelationId"].ID; got != "005000000000001AAA" {
+			t.Fatalf("RelationId = %q", got)
+		}
+		if got := relation.Fields["RelationType"].String; got != "ToAddress" {
+			t.Fatalf("RelationType = %q", got)
+		}
 	}
 }
 
@@ -1000,6 +1103,28 @@ func TestUpsertByExternalIDAndUniqueValidation(t *testing.T) {
 	}})
 	if duplicate[0].Success || duplicate[0].StatusCode != "DUPLICATE_VALUE" {
 		t.Fatalf("duplicate = %#v", duplicate)
+	}
+}
+
+func TestUpsertWithMissingExplicitIDReturnsInvalidCrossReference(t *testing.T) {
+	org := testOrg()
+	engine := NewEngine(&org)
+
+	results := engine.Upsert([]storage.Record{{
+		ID:     "001999999999999AAA",
+		Object: "Account",
+		Fields: map[string]storage.Value{
+			"Name": storage.StringValue("Missing"),
+		},
+	}})
+	if len(results) != 1 {
+		t.Fatalf("results len = %d, want 1: %#v", len(results), results)
+	}
+	if results[0].Success || results[0].StatusCode != "INVALID_CROSS_REFERENCE_KEY" {
+		t.Fatalf("upsert result = %#v", results[0])
+	}
+	if !strings.Contains(strings.ToLower(results[0].Error), "invalid cross reference id") {
+		t.Fatalf("upsert error = %q", results[0].Error)
 	}
 }
 
@@ -2484,7 +2609,7 @@ func TestContentVersionCreatesDocumentAndLinks(t *testing.T) {
 		t.Fatalf("content document id = %s", documentID)
 	}
 	document := org.Objects["ContentDocument"].Records[documentID]
-	if document.Fields["LatestPublishedVersionId"].ID != first[0].ID || document.Fields["Title"].String != "Spec" || document.Fields["FileExtension"].String != "pdf" {
+	if document.Fields["LatestPublishedVersionId"].ID != first[0].ID || document.Fields["Title"].String != "Spec" || document.Fields["FileExtension"].String != "pdf" || document.Fields["FileType"].String != "PDF" {
 		t.Fatalf("content document = %#v", document)
 	}
 	if got := len(org.Objects["ContentDocumentLink"].Records); got != 1 {
@@ -2514,7 +2639,7 @@ func TestContentVersionCreatesDocumentAndLinks(t *testing.T) {
 		t.Fatalf("content documents = %d", got)
 	}
 	document = org.Objects["ContentDocument"].Records[documentID]
-	if document.Fields["LatestPublishedVersionId"].ID != second[0].ID || document.Fields["Title"].String != "Spec v2" || document.Fields["FileExtension"].String != "pdf" {
+	if document.Fields["LatestPublishedVersionId"].ID != second[0].ID || document.Fields["Title"].String != "Spec v2" || document.Fields["FileExtension"].String != "pdf" || document.Fields["FileType"].String != "PDF" {
 		t.Fatalf("updated content document = %#v", document)
 	}
 	firstVersion := org.Objects["ContentVersion"].Records[first[0].ID]
@@ -2533,6 +2658,40 @@ func TestContentVersionCreatesDocumentAndLinks(t *testing.T) {
 	}})
 	if !explicitLink[0].Success || !strings.HasPrefix(string(explicitLink[0].ID), "06A") || explicitLink[0].ID == autoLink.ID {
 		t.Fatalf("explicit link insert = %#v", explicitLink)
+	}
+}
+
+func TestContentDistributionGeneratesLocalUrls(t *testing.T) {
+	org := fileTestOrg()
+	storage.EnsureStandardObject(&org, "ContentDistribution")
+	engine := NewEngine(&org)
+	account := engine.Insert([]storage.Record{{Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("Acme")}}})
+	version := engine.Insert([]storage.Record{{
+		Object: "ContentVersion",
+		Fields: map[string]storage.Value{
+			"Title":                  storage.StringValue("Spec"),
+			"PathOnClient":           storage.StringValue("spec.pdf"),
+			"VersionData":            storage.BlobValue("pdf bytes"),
+			"FirstPublishLocationId": storage.IDValue(account[0].ID),
+		},
+	}})
+	if !account[0].Success || !version[0].Success {
+		t.Fatalf("setup account=%#v version=%#v", account, version)
+	}
+	dist := engine.Insert([]storage.Record{{
+		Object: "ContentDistribution",
+		Fields: map[string]storage.Value{
+			"Name":             storage.StringValue("Public Link"),
+			"ContentVersionId": storage.IDValue(version[0].ID),
+			"RelatedRecordId":  storage.IDValue(account[0].ID),
+		},
+	}})
+	if !dist[0].Success {
+		t.Fatalf("content distribution insert = %#v", dist)
+	}
+	record := org.Objects["ContentDistribution"].Records[dist[0].ID]
+	if record.Fields["ContentDownloadUrl"].String == "" || record.Fields["DistributionPublicUrl"].String == "" {
+		t.Fatalf("content distribution urls = %#v", record)
 	}
 }
 

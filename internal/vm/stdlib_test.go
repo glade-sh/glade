@@ -326,14 +326,384 @@ System.assertEquals(true, page.getRedirect());
 System.assertEquals('001000000000001', page.getParameters().get('id'));
 System.assertEquals('view', page.getParameters().get('mode'));
 page.getHeaders().put('X-Local', 'yes');
+page.setCookies(new List<Cookie>{new Cookie('sid', 'abc', '/', 60, true, 'Lax', true)});
 System.assertEquals('001000000000001', page.getParameters().get('id'));
 System.assertEquals('001000000000001', page.getparameters().get('id'));
 System.assertEquals('yes', page.getHeaders().get('X-Local'));
+Cookie sid = page.getCookies().get('sid');
+System.assertEquals('sid', sid.getName());
+System.assertEquals('abc', sid.getValue());
+System.assertEquals('/', sid.getPath());
+System.assertEquals(60, sid.getMaxAge());
+System.assertEquals(true, sid.isSecure());
+System.assertEquals('Lax', sid.getSameSite());
+System.assertEquals(true, sid.isHttpOnly());
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecLocationAndQueueableDuplicateSignatureValueObjects(t *testing.T) {
+	program, err := CompileAnonymous(`
+Location left = Location.newInstance(37.7749, -122.4194);
+Location right = Location.newInstance(34.0522, -118.2437);
+Address address = new Address();
+address.latitude = 37.7749;
+address.longitude = -122.4194;
+System.assertEquals(37.7749, left.getLatitude());
+System.assertEquals(-122.4194, left.getLongitude());
+System.assertEquals(37.7749, address.getLatitude());
+System.assert(left.getDistance(right, 'mi') > 300);
+System.assert(address.getDistance(right, 'mi') > 300);
+System.assert(Location.getDistance(left, right, 'km') > 500);
+QueueableDuplicateSignature sig = QueueableDuplicateSignature.builder()
+	.addString('job')
+	.addInteger(42)
+	.addId('001000000000001AAA')
+	.build();
+System.assert(sig.toString().contains('String:job'));
+System.assert(sig.toString().contains('Integer:42'));
+System.assert(sig.toString().contains('Id:001000000000001AAA'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecProcessParameterValueObjects(t *testing.T) {
+	program, err := CompileAnonymous(`
+Process.InputParameter input = new Process.InputParameter(
+	'accountId',
+	'Account id',
+	Process.PluginDescribeResult.ParameterType.STRING,
+	true
+);
+Process.OutputParameter output = new Process.OutputParameter(
+	'status',
+	'Status text',
+	Process.PluginDescribeResult.ParameterType.BOOLEAN
+);
+System.assertEquals('accountId', input.name);
+System.assertEquals('Account id', input.description);
+System.assertEquals(Process.PluginDescribeResult.ParameterType.STRING, input.parameterType);
+System.assertEquals(true, input.required);
+System.assertEquals('status', output.name);
+System.assertEquals('Status text', output.description);
+System.assertEquals(Process.PluginDescribeResult.ParameterType.BOOLEAN, output.parameterType);
+System.assertEquals('STRING', input.parameterType.name());
+System.assertEquals(11, Process.PluginDescribeResult.ParameterType.values().size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDomainValueObjects(t *testing.T) {
+	program, err := CompileAnonymous(`
+String orgHost = DomainCreator.getOrgMyDomainHostname();
+String setupHost = DomainCreator.getSetupHostname();
+String vfHost = DomainCreator.getVisualforceHostname('pkg');
+System.assertEquals('oaer.my.salesforce.local', orgHost);
+System.assertEquals('oaer.setup.local', setupHost);
+System.assertEquals('pkg--oaer.visualforce.local', vfHost);
+Domain orgDomain = DomainParser.parse(orgHost);
+Domain vfDomain = DomainParser.parse('https://' + vfHost + '/apex/Home');
+System.assertEquals('oaer', orgDomain.getMyDomainName());
+System.assertEquals('', orgDomain.getPackageName());
+System.assertEquals(null, orgDomain.getSandboxName());
+System.assertEquals('pkg', vfDomain.getPackageName());
+System.assertEquals('pkg--oaer.visualforce.local', vfDomain.toString());
+System.assertEquals('oaer.my.salesforce.local', new Domain().toString());
+Domain cloned = (Domain)vfDomain.clone();
+System.assertEquals(vfDomain.toString(), cloned.toString());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecGeneratedDTOConstructorsAndFluentBuilders(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String,Object> context = new Map<String,Object>{'channel' => 'web'};
+CommerceBuyGrp.BuyerGroupRequest request = new CommerceBuyGrp.BuyerGroupRequest('store-one', 'account-one', context);
+System.assertEquals('store-one', request.getStoreId());
+System.assertEquals('account-one', request.getAccountId());
+System.assertEquals('web', (String)request.getRequestContextParameters().get('channel'));
+
+CartExtension.ItemArrange arrange = new CartExtension.ItemArrange.Builder()
+	.withCartItemId('0aB000000000001AAA')
+	.withProductId('01t000000000001AAA')
+	.withQuantity(3)
+	.withDeliverToCity('Portland')
+	.withDeliverToLatitude(45.5152)
+	.withDeliverToLongitude(-122.6784)
+	.build();
+System.assertEquals('0aB000000000001AAA', (String)arrange.getCartItemId());
+System.assertEquals('01t000000000001AAA', (String)arrange.getProductId());
+System.assertEquals(3, arrange.getQuantity());
+System.assertEquals('Portland', arrange.deliverToCity);
+System.assertEquals(45.5152, arrange.deliverToLatitude);
+System.assertEquals('Portland', arrange.getDeliveryAddress().getCity());
+System.assertEquals(45.5152, arrange.getDeliveryAddress().getLatitude());
+
+CartExtension.CartItemChange change = new CartExtension.CartItemChange.Builder()
+	.withAdded(true)
+	.withQuantityIncreased(true)
+	.withRemoved(false)
+	.build();
+System.assertEquals(true, change.isAdded());
+System.assertEquals(true, change.isQuantityIncreased());
+System.assertEquals(false, change.isRemoved());
+
+CartExtension.CouponChange couponChange = new CartExtension.CouponChange.Builder()
+	.withAdded(true)
+	.withRemoved(false)
+	.build();
+System.assertEquals(true, couponChange.isAdded());
+System.assertEquals(false, couponChange.isRemoved());
+
+CartExtension.CartDeliveryGroupChange deliveryChange = new CartExtension.CartDeliveryGroupChange.Builder()
+	.withChangedDeliveryGroup(new CartExtension.OptionalCartDeliveryGroup())
+	.build();
+System.assertNotEquals(null, deliveryChange.getChangedDeliveryGroup());
+
+CartExtension.BuyerActionDetails details = new CartExtension.BuyerActionDetails.Builder()
+	.withCheckoutStarted(true)
+	.withCartItemChanges(new List<CartExtension.CartItemChange>{change})
+	.withCouponChanges(new List<CartExtension.CouponChange>{couponChange})
+	.withDeliveryGroupChanges(new List<CartExtension.CartDeliveryGroupChange>{deliveryChange})
+	.build();
+System.assertEquals(true, details.isCheckoutStarted());
+System.assertEquals(1, details.getCartItemChanges().size());
+System.assertEquals(1, details.getCouponChanges().size());
+System.assertEquals(1, details.getDeliveryGroupChanges().size());
+
+CartExtension.Cart cart = new CartExtension.Cart();
+CartExtension.ItemArrangementRequest arrangementRequest = new CartExtension.ItemArrangementRequest.Builder()
+	.withCart(cart)
+	.withItemArrangeList(new List<CartExtension.ItemArrange>{arrange})
+	.build();
+System.assertEquals(cart, arrangementRequest.getCart());
+System.assertEquals(1, arrangementRequest.getItemArrangeList().size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecGeneratedConnectApiAndCommerceDTODataCarriers(t *testing.T) {
+	program, err := CompileAnonymous(`
+ConnectApi.ActionInputRepresentation action = new ConnectApi.ActionInputRepresentation();
+action.actionType = 'Flow';
+action.actionValue = 'SendEmail';
+System.assertEquals('Flow', (String)action.actionType);
+System.assertEquals('SendEmail', (String)action.actionValue);
+System.assert(action.toString().contains('ActionInputRepresentation'));
+ConnectApi.ActionInputRepresentation clonedAction = (ConnectApi.ActionInputRepresentation)action.clone();
+System.assertEquals('Flow', (String)clonedAction.actionType);
+
+ConnectApi.AccountSyncToExternalInputRepresentation sync = new ConnectApi.AccountSyncToExternalInputRepresentation();
+sync.adServerAccountId = 'external-account';
+sync.contactIds = new List<String>{'003000000000001AAA'};
+sync.customFields = new Map<String,Object>{'region' => 'NA'};
+System.assertEquals('external-account', (String)sync.adServerAccountId);
+System.assertEquals(1, ((List<String>)sync.contactIds).size());
+System.assertEquals('NA', (String)((Map<String,Object>)sync.customFields).get('region'));
+
+CommerceExtension.Resolution registered = new CommerceExtension.Resolution(CommerceExtension.ResolutionStates.EXECUTE_REGISTERED);
+CommerceExtension.Resolution provider = new CommerceExtension.Resolution('local-provider');
+System.assertEquals(CommerceExtension.ResolutionStates.EXECUTE_REGISTERED, registered.getResolutionState());
+System.assertEquals('local-provider', provider.getProviderName());
+System.assertEquals(3, CommerceExtension.ResolutionStates.values().size());
+System.assertEquals(CommerceExtension.ResolutionStates.OFF, CommerceExtension.ResolutionStates.valueOf('OFF'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecGeneratedConnectApiServiceCallsRemainUnsupported(t *testing.T) {
+	program, err := CompileAnonymous(`
+ConnectApi.FeedElementPage page = ConnectApi.ChatterFeeds.getFeedElementsFromFeed(null, null);
+System.assertEquals(null, page);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = Execute(program, nil)
+	if err == nil {
+		t.Fatal("expected generated ConnectApi service call to be unsupported")
+	}
+	if !strings.Contains(err.Error(), `unsupported call "ConnectApi.ChatterFeeds.getFeedElementsFromFeed"`) {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestExecDataWeaveScriptResultCarriers(t *testing.T) {
+	program, err := CompileAnonymous(`
+DataWeave.Script script = DataWeave.Script.createScript('helloWorld');
+DataWeave.Result result = script.execute(new Map<String,Object>());
+System.assertEquals('"Hello World"', result.getValueAsString());
+System.assertEquals('text/plain', result.getMimeType());
+System.assertEquals('"Hello World"', (String)result.valueAsString);
+
+Map<String,Object> inputs = new Map<String,Object>{'records' => new List<String>{'a', 'b'}};
+DataWeave.Result projected = DataWeave.Script.createScript('records').execute(inputs);
+System.assertEquals(2, ((List<String>)projected.getValue()).size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDataWeaveScriptErrorThrowsScriptException(t *testing.T) {
+	program, err := CompileAnonymous(`
+try {
+	DataWeave.Script.createScript('error').execute(new Map<String,Object>());
+	System.assert(false, 'expected DataWeaveScriptException');
+} catch (Exception ex) {
+	Assert.isInstanceOfType(ex, DataWeaveScriptException.class);
+	System.assert(ex.getMessage().startsWith('Division by zero'));
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDataWeaveExcelOutputErrorThrowsScriptException(t *testing.T) {
+	program, err := CompileAnonymous(`
+try {
+	DataWeave.Script.createScript('excelOutputError').execute(new Map<String,Object>{'records' => new List<Contact>{new Contact(FirstName = 'John', LastName = 'Doe')}});
+	System.assert(false, 'expected DataWeaveScriptException');
+} catch (Exception ex) {
+	Assert.isInstanceOfType(ex, DataWeaveScriptException.class);
+	System.assert(ex.getMessage().contains('application/xlsx'));
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Contact")
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDataWeaveMultipleInputsReturnsXMLString(t *testing.T) {
+	program, err := CompileAnonymous(`
+String products = '[ { "type": "book", "price": 30, "properties": { "title": "Everyday Italian", "author": [ "Giada De Laurentiis" ], "year": 2005 } } ]';
+String attributes = '{ "publishedAfter": 2004 }';
+String exchangeRates = '{ "USD": [ {"currency": "EUR", "ratio":0.92}, {"currency": "ARS", "ratio":8.76} ]}';
+String output = DataWeave.Script.createScript('multipleInputs')
+	.execute(new Map<String,Object>{'products' => products, 'attributes' => attributes, 'exchangeRates' => exchangeRates})
+	.getValueAsString();
+System.assert(output.contains('<author>Giada De Laurentiis</author>'));
+System.assert(output.contains('<price currency="ARS">262.8</price>'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDataWeaveJsonDateFormatPreservesRecipeFieldOrder(t *testing.T) {
+	program, err := CompileAnonymous(`
+Contact contact = new Contact(FirstName = 'John', LastName = 'Doe');
+contact.CreatedDate = Datetime.newInstanceGMT(2026, 5, 2, 12, 0, 0);
+String jsonText = DataWeave.Script.createScript('jsonDateFormat')
+	.execute(new Map<String,Object>{'records' => new List<Contact>{contact}})
+	.getValueAsString();
+String expected =
+	'{\n' +
+	'  "users": [\n' +
+	'    {\n' +
+	'      "firstName": "John",\n' +
+	'      "lastName": "Doe",\n' +
+	'      "createdDate": "12:00:00 PM, May 02, 2026"\n' +
+	'    }\n' +
+	'  ]\n' +
+	'}';
+System.assertEquals(expected, jsonText);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Contact")
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDataWeaveRecipeConversionsReturnStructuredValues(t *testing.T) {
+	program, err := CompileAnonymous(`
+String csv = 'FirstName,LastName,Email\nAda,Lovelace,ada@example.test\nGrace,Hopper,grace@example.test';
+DataWeave.Result contactsResult = DataWeave.Script.createScript('csvToContacts').execute(new Map<String,Object>{'records' => csv});
+List<Contact> contacts = (List<Contact>)contactsResult.getValue();
+System.assertEquals(2, contacts.size());
+System.assertEquals('Ada', contacts.get(0).FirstName);
+System.assertEquals('Hopper', contacts.get(1).LastName);
+
+String jsonText = DataWeave.Script.createScript('csvToJsonBasic').execute(new Map<String,Object>{'payload' => csv}).getValueAsString();
+System.assert(jsonText.contains('"FirstName": "Ada",'));
+List<Object> jsonList = (List<Object>)JSON.deserializeUntyped(jsonText);
+System.assertEquals(2, jsonList.size());
+Map<String,Object> first = (Map<String,Object>)jsonList.get(0);
+System.assertEquals('Ada', first.get('FirstName'));
+
+String snake = 'first_name,last_name,email\nAbel,Maclead,a.m@demo.org';
+List<Contact> snakeContacts = (List<Contact>)DataWeave.Script.createScript('csvToContacts').execute(new Map<String,Object>{'records' => snake}).getValue();
+System.assertEquals('Abel', snakeContacts.get(0).FirstName);
+List<Contact> jsonContacts = (List<Contact>)DataWeave.Script.createScript('jsonToContacts').execute(new Map<String,Object>{'records' => '[{"first_name":"Abel","last_name":"Maclead","email":"a.m@demo.org"}]'}).getValue();
+System.assertEquals('Maclead', jsonContacts.get(0).LastName);
+
+String renamedJSON = DataWeave.Script.createScript('csvToJsonWithFieldRenaming').execute(new Map<String,Object>{'payload' => 'first_name,last_name,company,address\nAbel,Maclead,Acme,Street'}).getValueAsString();
+List<Object> renamedList = (List<Object>)JSON.deserializeUntyped(renamedJSON);
+Map<String,Object> renamed = (Map<String,Object>)renamedList.get(0);
+System.assertEquals('Abel', renamed.get('FirstName'));
+System.assertEquals('Street', renamed.get('MailingStreet'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Contact")
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -670,6 +1040,8 @@ System.assertEquals('abc', replaceEmpty.remove(''));
 System.assert(String.isBlank(null));
 System.assert(!String.isNotBlank(null));
 System.assertEquals('', String.escapeSingleQuotes(''));
+System.assertEquals('001000000000001AAA', String.escapeSingleQuotes((Id)'001000000000001AAA'));
+System.assertEquals(null, String.escapeSingleQuotes(null));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1102,8 +1474,29 @@ Blob iv = Blob.valueOf('abcdef9876543210');
 Blob encrypted = Crypto.encrypt('AES256', key, iv, Blob.valueOf('hello'));
 System.assertEquals(16, encrypted.size());
 System.assertEquals('93ce19c2c83297061f55dadc424d14c3', EncodingUtil.convertToHex(encrypted));
+System.assertEquals('hello', Crypto.decrypt('AES256', key, iv, encrypted).toString());
 Blob normalized = Crypto.encrypt(' aes-256 ', key, iv, Blob.valueOf('hello'));
 System.assertEquals(EncodingUtil.convertToHex(encrypted), EncodingUtil.convertToHex(normalized));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecCryptoManagedIVAndSignatureLocalSubset(t *testing.T) {
+	program, err := CompileAnonymous(`
+Blob key = Blob.valueOf('0123456789abcdef0123456789abcdef');
+Blob encrypted = Crypto.encryptWithManagedIV('AES256', key, Blob.valueOf('hello'));
+System.assertEquals(32, encrypted.size());
+System.assertEquals('hello', Crypto.decryptWithManagedIV('AES256', key, encrypted).toString());
+Blob signature = Crypto.sign('RSA-SHA512', Blob.valueOf('hello'), Blob.valueOf('private'));
+System.assert(Crypto.verify('RSA-SHA512', Blob.valueOf('hello'), signature, Blob.valueOf('public')));
+System.assert(!Crypto.verify('RSA-SHA512', Blob.valueOf('changed'), signature, Blob.valueOf('public')));
+Blob certSignature = Crypto.signWithCertificate('RSA-SHA256', Blob.valueOf('hello'), 'cert');
+System.assert(Crypto.verifyWithCertificate('RSA-SHA256', Blob.valueOf('hello'), certSignature, 'cert'));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1336,6 +1729,8 @@ System.assertEquals(null, noMessage.getMessage());
 Exception systemPrefixed = new System.DmlException('system blocked');
 System.assertEquals('System.DmlException', systemPrefixed.getTypeName());
 System.assertEquals('System.DmlException: system blocked', systemPrefixed.toString());
+Exception allCapsDML = new DMLException('caps blocked');
+System.assertEquals('System.DMLException', allCapsDML.getTypeName());
 Exception aura = new AuraHandledException('aura blocked');
 System.assertEquals('System.AuraHandledException', aura.getTypeName());
 
@@ -1705,7 +2100,7 @@ func TestBlobEncodingCryptoStdlibRejectsBadInputs(t *testing.T) {
 	}
 }
 
-func TestBlobEncodingCryptoStdlibUnsupportedCryptoSurfaces(t *testing.T) {
+func TestBlobEncodingCryptoStdlibCryptoSurfaceErrors(t *testing.T) {
 	tests := []struct {
 		name string
 		src  string
@@ -1713,38 +2108,38 @@ func TestBlobEncodingCryptoStdlibUnsupportedCryptoSurfaces(t *testing.T) {
 	}{
 		{
 			name: "decryptWithManagedIV",
-			src:  "Crypto.decryptWithManagedIV('AES128', Blob.valueOf('key'), Blob.valueOf('data'));",
-			want: `unsupported call "Crypto.decryptWithManagedIV local deterministic key, certificate, and encryption surfaces"`,
+			src:  "Crypto.decryptWithManagedIV('AES128', Blob.valueOf('0123456789abcdef'), Blob.valueOf('data'));",
+			want: "Crypto.decryptWithManagedIV cipherText must include managed IV",
 		},
 		{
 			name: "decrypt",
-			src:  "Crypto.decrypt('AES128', Blob.valueOf('key'), Blob.valueOf('data'));",
-			want: `unsupported call "Crypto.decrypt local deterministic key, certificate, and encryption surfaces"`,
+			src:  "Crypto.decrypt('AES128', Blob.valueOf('short'), Blob.valueOf('abcdef9876543210'), Blob.valueOf('data'));",
+			want: "Crypto.decrypt AES128 privateKey expects 16 bytes, got 5",
 		},
 		{
 			name: "encryptWithManagedIV",
 			src:  "Crypto.encryptWithManagedIV('AES128', Blob.valueOf('key'), Blob.valueOf('data'));",
-			want: `unsupported call "Crypto.encryptWithManagedIV local deterministic key, certificate, and encryption surfaces"`,
+			want: "Crypto.encrypt AES128 privateKey expects 16 bytes, got 3",
 		},
 		{
 			name: "sign",
-			src:  "Crypto.sign('RSA-SHA256', Blob.valueOf('data'), Blob.valueOf('key'));",
-			want: `unsupported call "Crypto.sign local deterministic key, certificate, and encryption surfaces"`,
+			src:  "Crypto.sign('RSA-SHA999', Blob.valueOf('data'), Blob.valueOf('key'));",
+			want: `unsupported signature algorithm "RSA-SHA999"`,
 		},
 		{
 			name: "verify",
-			src:  "Crypto.verify('RSA-SHA256', Blob.valueOf('data'), Blob.valueOf('sig'), Blob.valueOf('key'));",
-			want: `unsupported call "Crypto.verify local deterministic key, certificate, and encryption surfaces"`,
+			src:  "Crypto.verify('RSA-SHA999', Blob.valueOf('data'), Blob.valueOf('sig'), Blob.valueOf('key'));",
+			want: `unsupported signature algorithm "RSA-SHA999"`,
 		},
 		{
 			name: "signWithCertificate",
-			src:  "Crypto.signWithCertificate('RSA-SHA256', Blob.valueOf('data'), 'cert');",
-			want: `unsupported call "Crypto.signWithCertificate local deterministic key, certificate, and encryption surfaces"`,
+			src:  "Crypto.signWithCertificate('RSA-SHA999', Blob.valueOf('data'), 'cert');",
+			want: `unsupported signature algorithm "RSA-SHA999"`,
 		},
 		{
 			name: "verifyWithCertificate",
-			src:  "Crypto.verifyWithCertificate('RSA-SHA256', Blob.valueOf('data'), Blob.valueOf('sig'), 'cert');",
-			want: `unsupported call "Crypto.verifyWithCertificate local deterministic key, certificate, and encryption surfaces"`,
+			src:  "Crypto.verifyWithCertificate('RSA-SHA999', Blob.valueOf('data'), Blob.valueOf('sig'), 'cert');",
+			want: `unsupported signature algorithm "RSA-SHA999"`,
 		},
 	}
 	for _, tc := range tests {
@@ -1755,14 +2150,10 @@ func TestBlobEncodingCryptoStdlibUnsupportedCryptoSurfaces(t *testing.T) {
 			}
 			_, err = Execute(program, nil)
 			if err == nil {
-				t.Fatal("expected unsupported error")
+				t.Fatal("expected error")
 			}
-			var runtimeErr *RuntimeError
-			if !errors.As(err, &runtimeErr) {
-				t.Fatalf("error type = %T, want *RuntimeError", err)
-			}
-			if runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != tc.want {
-				t.Fatalf("runtime error = (%q, %q), want %q", runtimeErr.Type, runtimeErr.Message, tc.want)
+			if err.Error() != tc.want {
+				t.Fatalf("error = %q, want %q", err.Error(), tc.want)
 			}
 		})
 	}
@@ -1845,6 +2236,16 @@ TriggerOperation operation = TriggerOperation.AFTER_INSERT;
 System.assertEquals('AFTER_INSERT', operation.name());
 System.assert(operation == TriggerOperation.AFTER_INSERT);
 System.assert(operation != TriggerOperation.BEFORE_INSERT);
+Integer matched = 0;
+switch on operation {
+  when AFTER_INSERT {
+    matched = 1;
+  }
+  when BEFORE_INSERT {
+    matched = -1;
+  }
+}
+System.assertEquals(1, matched);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1938,6 +2339,10 @@ List<SObject> records = (List<SObject>)recordsType.newInstance();
 System.assertEquals(0, records.size());
 Type mapType = Type.forName('Map<Id, Widget__c>');
 System.assertEquals('Map<Id,Widget__c>', mapType.getName());
+Type genericMapType = Type.forName('Map<String,sObject>');
+System.assertEquals('Map<String,sObject>', genericMapType.getName());
+Map<String, SObject> genericMap = (Map<String, SObject>)genericMapType.newInstance();
+System.assertEquals(0, genericMap.size());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -2901,6 +3306,50 @@ System.assertEquals(2, boxes.get(1).Rank);
 				ClassName:  "Box",
 				ReturnType: "Integer",
 				Params:     []Param{{Name: "other", Type: "Object"}},
+				Program:    compareProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecListSortUsesApexComparator(t *testing.T) {
+	compareProgram, err := CompileAnonymous(`
+if (left == right) {
+	return 0;
+}
+if (left < right) {
+	return 1;
+}
+return -1;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+List<Integer> nums = new List<Integer>{2, 1, 3};
+nums.sort(new DescComparator());
+System.assertEquals(3, nums.get(0));
+System.assertEquals(2, nums.get(1));
+System.assertEquals(1, nums.get(2));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:       "DescComparator",
+		Interfaces: []string{"Comparator<Integer>"},
+		Methods: map[string]Method{
+			"compare": {
+				Name:       "DescComparator.compare",
+				ClassName:  "DescComparator",
+				ReturnType: "Integer",
+				Params:     []Param{{Name: "left", Type: "Integer"}, {Name: "right", Type: "Integer"}},
 				Program:    compareProgram,
 			},
 		},

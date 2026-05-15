@@ -26,6 +26,8 @@ type Project struct {
 	TranslationFiles           []string                   `json:"translationFiles,omitempty"`
 	StaticResourceFiles        []string                   `json:"staticResourceFiles"`
 	StaticResourceMetas        []string                   `json:"staticResourceMetas"`
+	DataWeaveFiles             []string                   `json:"dataWeaveFiles,omitempty"`
+	DataWeaveMetas             []string                   `json:"dataWeaveMetas,omitempty"`
 	ContentAssetFiles          []string                   `json:"contentAssetFiles,omitempty"`
 	ContentAssetMetas          []string                   `json:"contentAssetMetas,omitempty"`
 	EmailTemplateFiles         []string                   `json:"emailTemplateFiles,omitempty"`
@@ -36,6 +38,7 @@ type Project struct {
 	FlowFiles                  []string                   `json:"flowFiles"`
 	ProfileFiles               []string                   `json:"profileFiles"`
 	PermissionSetFiles         []string                   `json:"permissionSetFiles"`
+	PermissionSetGroupFiles    []string                   `json:"permissionSetGroupFiles,omitempty"`
 	PermissionAssignmentFiles  []string                   `json:"permissionAssignmentFiles"`
 	ListViewFiles              []string                   `json:"listViewFiles"`
 	LayoutFiles                []string                   `json:"layoutFiles"`
@@ -265,6 +268,8 @@ func load(root string, stack map[string]bool) (Project, error) {
 	sort.Strings(p.TranslationFiles)
 	sort.Strings(p.StaticResourceFiles)
 	sort.Strings(p.StaticResourceMetas)
+	sort.Strings(p.DataWeaveFiles)
+	sort.Strings(p.DataWeaveMetas)
 	sort.Strings(p.ContentAssetFiles)
 	sort.Strings(p.ContentAssetMetas)
 	sort.Strings(p.EmailTemplateFiles)
@@ -275,6 +280,7 @@ func load(root string, stack map[string]bool) (Project, error) {
 	sort.Strings(p.FlowFiles)
 	sort.Strings(p.ProfileFiles)
 	sort.Strings(p.PermissionSetFiles)
+	sort.Strings(p.PermissionSetGroupFiles)
 	sort.Strings(p.PermissionAssignmentFiles)
 	sort.Strings(p.ListViewFiles)
 	sort.Strings(p.LayoutFiles)
@@ -457,6 +463,10 @@ func collectFiles(root string, p *Project) error {
 			p.TranslationFiles = append(p.TranslationFiles, path)
 		case strings.HasSuffix(lower, ".resource-meta.xml"), strings.HasSuffix(lower, ".staticresource-meta.xml"):
 			p.StaticResourceMetas = append(p.StaticResourceMetas, path)
+		case strings.HasSuffix(lower, ".dwl-meta.xml"):
+			p.DataWeaveMetas = append(p.DataWeaveMetas, path)
+		case strings.HasSuffix(lower, ".dwl"):
+			p.DataWeaveFiles = append(p.DataWeaveFiles, path)
 		case strings.HasSuffix(lower, ".resource"), isStaticResourceContentFile(path):
 			p.StaticResourceFiles = append(p.StaticResourceFiles, path)
 		case strings.HasSuffix(lower, ".asset-meta.xml"):
@@ -479,6 +489,8 @@ func collectFiles(root string, p *Project) error {
 			p.ProfileFiles = append(p.ProfileFiles, path)
 		case strings.HasSuffix(lower, ".permissionset"), strings.HasSuffix(lower, ".permissionset-meta.xml"):
 			p.PermissionSetFiles = append(p.PermissionSetFiles, path)
+		case strings.HasSuffix(lower, ".permissionsetgroup"), strings.HasSuffix(lower, ".permissionsetgroup-meta.xml"):
+			p.PermissionSetGroupFiles = append(p.PermissionSetGroupFiles, path)
 		case strings.HasSuffix(lower, ".permissionsetassignment"), strings.HasSuffix(lower, ".permissionsetassignment-meta.xml"):
 			p.PermissionAssignmentFiles = append(p.PermissionAssignmentFiles, path)
 		case strings.HasSuffix(lower, ".listview-meta.xml"):

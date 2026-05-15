@@ -41,6 +41,7 @@ func TestLoadSFDXProject(t *testing.T) {
 	writeFile(t, filepath.Join(root, "force-app/main/flows/Onboard.flow-meta.xml"), "<Flow/>")
 	writeFile(t, filepath.Join(root, "force-app/main/profiles/Admin.profile-meta.xml"), "<Profile/>")
 	writeFile(t, filepath.Join(root, "force-app/main/permissionsets/App.permissionset-meta.xml"), "<PermissionSet/>")
+	writeFile(t, filepath.Join(root, "force-app/main/permissionsetgroups/App.permissionsetgroup-meta.xml"), "<PermissionSetGroup/>")
 	writeFile(t, filepath.Join(root, "force-app/main/permissionSetAssignments/App.permissionsetassignment-meta.xml"), "<PermissionSetAssignment/>")
 	writeFile(t, filepath.Join(root, "force-app/main/objects/Thing__c/listViews/All.listView-meta.xml"), "<ListView/>")
 	writeFile(t, filepath.Join(root, "force-app/main/layouts/Thing__c-Thing Layout.layout-meta.xml"), "<Layout/>")
@@ -76,7 +77,7 @@ func TestLoadSFDXProject(t *testing.T) {
 	if len(p.WorkflowFiles) != 2 {
 		t.Fatalf("unexpected workflow file counts: %#v", p)
 	}
-	if len(p.FlowFiles) != 1 || len(p.ProfileFiles) != 1 || len(p.PermissionSetFiles) != 1 || len(p.PermissionAssignmentFiles) != 1 {
+	if len(p.FlowFiles) != 1 || len(p.ProfileFiles) != 1 || len(p.PermissionSetFiles) != 1 || len(p.PermissionSetGroupFiles) != 1 || len(p.PermissionAssignmentFiles) != 1 {
 		t.Fatalf("unexpected metadata stub file counts: %#v", p)
 	}
 	if len(p.ListViewFiles) != 1 || len(p.LayoutFiles) != 1 || len(p.CompactLayoutFiles) != 1 {

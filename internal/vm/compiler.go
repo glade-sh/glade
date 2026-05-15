@@ -404,6 +404,9 @@ func (p *parser) parseStatement() (ir.Instruction, error) {
 
 	for _, op := range []string{"insert", "update", "delete", "upsert", "undelete", "merge"} {
 		if p.match(tokenIdent, op) {
+			if err := p.parseOptionalDMLAccessMode(op); err != nil {
+				return ir.Instruction{}, err
+			}
 			expr, err := p.parseExpression()
 			if err != nil {
 				return ir.Instruction{}, err
@@ -429,6 +432,9 @@ func (p *parser) parseStatement() (ir.Instruction, error) {
 				if err != nil {
 					return ir.Instruction{}, err
 				}
+			}
+			if err := p.parseOptionalDMLAccessMode(op); err != nil {
+				return ir.Instruction{}, err
 			}
 			if _, err := p.expect(tokenSymbol, ";"); err != nil {
 				return ir.Instruction{}, err
@@ -485,6 +491,16 @@ func (p *parser) parseStatement() (ir.Instruction, error) {
 		return ir.Instruction{}, err
 	}
 	return ir.Instruction{Op: ir.OpExpr, Expr: expr, Pos: start.pos}, nil
+}
+
+func (p *parser) parseOptionalDMLAccessMode(op string) error {
+	if !p.match(tokenIdent, "as") {
+		return nil
+	}
+	if p.match(tokenIdent, "user") || p.match(tokenIdent, "system") {
+		return nil
+	}
+	return fmt.Errorf("%s as expects user or system at byte %d", op, p.tokens[p.pos].pos)
 }
 
 func (p *parser) parseFor(pos int) (ir.Instruction, error) {

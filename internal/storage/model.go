@@ -1039,9 +1039,9 @@ func (o OrgState) Clone() OrgState {
 }
 
 // CloneRuntime returns an org copy suitable for isolated test/runtime execution.
-// Records, indexes, sequences, and transaction frames are isolated. Object
-// definitions are shared because normal test execution treats metadata as
-// read-only; runtime metadata mutation paths clone definitions before writing.
+// Records, indexes, definitions, sequences, and transaction frames are isolated
+// so parallel test setup and execution can infer runtime metadata without
+// sharing mutable maps.
 func (o OrgState) CloneRuntime() OrgState {
 	out := o
 	if o.Objects != nil {
@@ -1067,6 +1067,7 @@ func (o OrgState) CloneRuntime() OrgState {
 
 func (o ObjectState) CloneRuntime() ObjectState {
 	out := o
+	out.Definition = o.Definition.Clone()
 	if o.Records != nil {
 		out.Records = make(map[ID]Record, len(o.Records))
 		for id, record := range o.Records {

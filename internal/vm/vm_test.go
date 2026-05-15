@@ -54,10 +54,10 @@ System.assertEquals(0, similar.size());
 	}
 }
 
-func TestExecGeneratedPlatformMethodReturnsPassiveValueObjectWithProperties(t *testing.T) {
+func TestExecGeneratedPlatformConstructsPassiveValueObjectWithProperties(t *testing.T) {
 	program, err := CompileAnonymous(`
 ConnectApi.QuestionAndAnswersSuggestions suggestions =
-	ConnectApi.QuestionAndAnswers.getSuggestions('0DB000000000001', 'reset password', '005000000000001', true, 10);
+	new ConnectApi.QuestionAndAnswersSuggestions();
 System.assertEquals(null, suggestions.articles);
 suggestions.questions = 'placeholder';
 System.assertEquals('placeholder', suggestions.questions);
@@ -884,6 +884,44 @@ System.assertEquals(Account.SObjectType, records.getSObjectType());
 	}
 }
 
+func TestExecEnhancedForUsesCustomIterableIterator(t *testing.T) {
+	iteratorProgram, err := CompileAnonymous(`
+return new List<String>{'first', 'second'}.iterator();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Client client = new Client();
+String joined = '';
+for (String item : client) {
+	joined += item + ';';
+}
+System.assertEquals('first;second;', joined);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:       "Client",
+		Interfaces: []string{"Iterable<String>"},
+		Methods: map[string]Method{
+			"iterator": {
+				Name:       "Client.iterator",
+				ClassName:  "Client",
+				ReturnType: "Iterator<String>",
+				Program:    iteratorProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecShiftOperatorsAndCompoundAssignment(t *testing.T) {
 	program, err := CompileAnonymous(`
 Integer value = 3;
@@ -1105,6 +1143,32 @@ try {
     update acct;
     System.assert(false, 'expected required field failure');
 } catch (Exception e) {
+    System.assert(e.getMessage().contains('REQUIRED_FIELD_MISSING'));
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	storage.EnsureStandardObjectFields(&account.Definition)
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDMLUpdateRequiredFieldToBlankFails(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account acct = new Account(Name = 'Acme');
+insert acct;
+acct.Name = '';
+try {
+    update acct;
+    System.assert(false, 'expected required field failure');
+} catch (DmlException e) {
     System.assert(e.getMessage().contains('REQUIRED_FIELD_MISSING'));
 }
 `)

@@ -141,8 +141,8 @@ func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 		},
 		{
 			name: "search api",
-			src:  `search.FIND('FIND {Acme} IN ALL FIELDS RETURNING Account(Id)');`,
-			want: `unsupported call "search.FIND local search/SOSL surface"`,
+			src:  `Search.unavailable('FIND {Acme} IN ALL FIELDS RETURNING Account(Id)');`,
+			want: `unsupported call "Search.unavailable local search/SOSL surface"`,
 		},
 		{
 			name: "approval process api",
@@ -195,14 +195,14 @@ func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 			want: `unsupported call "Continuation.addHttpRequest local continuation callout surface"`,
 		},
 		{
-			name: "crypto certificate api",
-			src:  `Crypto.signWithCertificate('RSA-SHA256', Blob.valueOf('payload'), 'LocalCert');`,
-			want: `unsupported call "Crypto.signWithCertificate local deterministic key, certificate, and encryption surfaces"`,
-		},
-		{
 			name: "crypto key wrapper api",
 			src:  `Crypto.getKeyStore('LocalKeys');`,
 			want: `unsupported call "Crypto.getKeyStore local key, certificate, encryption, and random surfaces"`,
+		},
+		{
+			name: "crypto key wrapper api second path",
+			src:  `Crypto.generateSelfSignedCertificate('LocalKeys');`,
+			want: `unsupported call "Crypto.generateSelfSignedCertificate local key, certificate, encryption, and random surfaces"`,
 		},
 	}
 	for _, tc := range cases {
@@ -485,6 +485,251 @@ System.assert(many.get(1).isSuccess());
 	}
 }
 
+func TestExecEventBusPublishReturnsFailureForMissingRequiredPlatformEventField(t *testing.T) {
+	program, err := CompileAnonymous(`
+Database.SaveResult result = EventBus.publish(new Local_Event__e(Name__c = 'Trail'));
+System.assert(!result.isSuccess());
+System.assertEquals(1, result.getErrors().size());
+System.assertEquals('REQUIRED_FIELD_MISSING', String.valueOf(result.getErrors()[0].getStatusCode()));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Local_Event__e"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Local_Event__e",
+			KeyPrefix: "e00",
+			Fields: map[string]storage.Field{
+				"Name__c":    {APIName: "Name__c", Type: storage.FieldString},
+				"Account__c": {APIName: "Account__c", Type: storage.FieldString, Required: true},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecEventBusPublishRequiredTextFieldAcceptsIdScalar(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'Event Account');
+insert account;
+Database.SaveResult result = EventBus.publish(new Local_Event__e(AccountId__c = account.Id, Name__c = 'Trail'));
+System.assert(result.isSuccess());
+System.assertEquals(0, result.getErrors().size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Local_Event__e"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Local_Event__e",
+			KeyPrefix: "e00",
+			Fields: map[string]storage.Field{
+				"AccountId__c": {APIName: "AccountId__c", Type: storage.FieldString, Required: true},
+				"Name__c":      {APIName: "Name__c", Type: storage.FieldString, Required: true},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecEventBusPublishAfterInsertTriggerUpdatesRelatedRecordByTextId(t *testing.T) {
+	triggerProgram, err := CompileAnonymous(`
+Set<Id> accountIds = new Set<Id>();
+for (Local_Event__e evt : Trigger.new) {
+	accountIds.add(evt.AccountId__c);
+}
+Map<Id, Account> accounts = new Map<Id, Account>([SELECT Name FROM Account WHERE Id IN :accountIds]);
+for (Local_Event__e evt : Trigger.new) {
+	accounts.get(evt.AccountId__c).Website = evt.Url__c;
+}
+update accounts.values();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'Event Account');
+insert account;
+Database.SaveResult result = EventBus.publish(new Local_Event__e(AccountId__c = account.Id, Name__c = 'Trail', Url__c = 'https://example.test'));
+System.assert(result.isSuccess());
+Account updated = [SELECT Website FROM Account WHERE Id = :account.Id LIMIT 1];
+System.assertEquals('https://example.test', updated.Website);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Local_Event__e"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Local_Event__e",
+			KeyPrefix: "e00",
+			Fields: map[string]storage.Field{
+				"AccountId__c": {APIName: "AccountId__c", Type: storage.FieldString, Required: true},
+				"Name__c":      {APIName: "Name__c", Type: storage.FieldString, Required: true},
+				"Url__c":       {APIName: "Url__c", Type: storage.FieldString, Required: true},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "LocalEventTrigger",
+		Object:    "Local_Event__e",
+		Timing:    triggerTimingAfter,
+		Operation: "insert",
+		Program:   triggerProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecPlatformEventSObjectTypeNewSObjectSeedsEventUuid(t *testing.T) {
+	program, err := CompileAnonymous(`
+Event_Recipes_Demo__e directEvent = new Event_Recipes_Demo__e();
+System.assertEquals(null, directEvent.EventUuid);
+Event_Recipes_Demo__e tokenEvent = (Event_Recipes_Demo__e) Event_Recipes_Demo__e.SObjectType.newSObject(null, true);
+System.assertNotEquals(null, tokenEvent.EventUuid);
+System.assertEquals(36, tokenEvent.EventUuid.length());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Event_Recipes_Demo__e"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Event_Recipes_Demo__e",
+			Fields: map[string]storage.Field{
+				"EventUuid":    {APIName: "EventUuid", Type: storage.FieldString},
+				"AccountId__c": {APIName: "AccountId__c", Type: storage.FieldReference},
+				"Title__c":     {APIName: "Title__c", Type: storage.FieldString},
+				"Url__c":       {APIName: "Url__c", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecEventBusPublishCallbackDeliveredAtStopTest(t *testing.T) {
+	callbackProgram, err := CompileAnonymous(`
+List<String> eventUuids = result.getEventUuids();
+insert new Task(Subject = 'success ' + eventUuids[0]);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Event_Recipes_Demo__e event = (Event_Recipes_Demo__e) Event_Recipes_Demo__e.SObjectType.newSObject(null, true);
+String uuid = event.EventUuid;
+String expected = 'success ' + uuid;
+Test.startTest();
+Database.SaveResult result = EventBus.publish(event, new PublishCallback());
+System.assert(result.isSuccess());
+Test.stopTest();
+List<Task> tasks = [SELECT Subject FROM Task WHERE Subject = :expected];
+System.assertEquals(1, tasks.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	org := testDataOrg()
+	org.Objects["Event_Recipes_Demo__e"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Event_Recipes_Demo__e", Fields: map[string]storage.Field{"EventUuid": {APIName: "EventUuid", Type: storage.FieldString}}},
+		Records:    map[storage.ID]storage.Record{},
+	}
+	storage.EnsureStandardObject(&org, "Task")
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{
+		Name: "PublishCallback",
+		Methods: map[string]Method{
+			"onSuccess": {
+				Name:       "PublishCallback.onSuccess",
+				ClassName:  "PublishCallback",
+				ReturnType: "void",
+				Params:     []Param{{Name: "result", Type: "eventbus.SuccessResult"}},
+				Program:    callbackProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecEventBusPublishCallbackFailureCanBeForced(t *testing.T) {
+	callbackProgram, err := CompileAnonymous(`
+List<String> eventUuids = result.getEventUuids();
+insert new Task(Subject = 'failure ' + eventUuids[0]);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Event_Recipes_Demo__e event = (Event_Recipes_Demo__e) Event_Recipes_Demo__e.SObjectType.newSObject(null, true);
+String uuid = event.EventUuid;
+String expected = 'failure ' + uuid;
+Test.startTest();
+EventBus.publish(event, new PublishCallback());
+Test.getEventBus().fail();
+Test.stopTest();
+List<Task> tasks = [SELECT Subject FROM Task WHERE Subject = :expected];
+System.assertEquals(1, tasks.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	org := testDataOrg()
+	org.Objects["Event_Recipes_Demo__e"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Event_Recipes_Demo__e", Fields: map[string]storage.Field{"EventUuid": {APIName: "EventUuid", Type: storage.FieldString}}},
+		Records:    map[storage.ID]storage.Record{},
+	}
+	storage.EnsureStandardObject(&org, "Task")
+	machine.SetOrg(&org)
+	if err := machine.RegisterClass(Class{
+		Name: "PublishCallback",
+		Methods: map[string]Method{
+			"onFailure": {
+				Name:       "PublishCallback.onFailure",
+				ClassName:  "PublishCallback",
+				ReturnType: "void",
+				Params:     []Param{{Name: "result", Type: "eventbus.FailureResult"}},
+				Program:    callbackProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecConnectApiOrganizationSettingsStub(t *testing.T) {
 	program, err := CompileAnonymous(`
 ConnectApi.OrganizationSettings settings = ConnectApi.Organization.getSettings();
@@ -502,6 +747,68 @@ System.assertEquals('00DLOCAL00000001', settings.orgId);
 	}
 }
 
+func TestExecConnectApiChatterUsersFollowingsHonorsSeeAllData(t *testing.T) {
+	program, err := CompileAnonymous(`
+Boolean caught = false;
+try {
+	ConnectApi.ChatterUsers.getFollowings(null, UserInfo.getUserId());
+} catch (UnsupportedOperationException e) {
+	caught = true;
+}
+System.assert(caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "ConnectApi.ChatterUsers",
+		Methods: map[string]Method{
+			"getFollowings": {
+				Name:       "ConnectApi.ChatterUsers.getFollowings",
+				ClassName:  "ConnectApi.ChatterUsers",
+				ReturnType: "ConnectApi.FollowingPage",
+				Params:     []Param{{Name: "communityId", Type: "String"}, {Name: "userId", Type: "String"}},
+				IsStatic:   true,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+
+	seeAllDataProgram, err := CompileAnonymous(`
+ConnectApi.FollowingPage page = ConnectApi.ChatterUsers.getFollowings(null, UserInfo.getUserId());
+System.assertNotEquals(null, page);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine = New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "ConnectApi.ChatterUsers",
+		Methods: map[string]Method{
+			"getFollowings": {
+				Name:       "ConnectApi.ChatterUsers.getFollowings",
+				ClassName:  "ConnectApi.ChatterUsers",
+				ReturnType: "ConnectApi.FollowingPage",
+				Params:     []Param{{Name: "communityId", Type: "String"}, {Name: "userId", Type: "String"}},
+				IsStatic:   true,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	machine.EnableTestContext()
+	machine.SetTestSeeAllData(true)
+	if _, err := machine.Execute(seeAllDataProgram); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecPlatformCachePartitions(t *testing.T) {
 	program, err := CompileAnonymous(`
 Cache.OrgPartition orgCache = Cache.Org.getPartition('local');
@@ -511,20 +818,162 @@ orgCache.put('visible', 'Trail', 60, Cache.Visibility.ALL, false);
 System.assert(orgCache.contains('name'));
 System.assertEquals('Acme', (String) orgCache.get('name'));
 System.assertEquals('Trail', (String) orgCache.get('visible'));
+Set<String> orgKeys = orgCache.getKeys();
+System.assertEquals(2, orgKeys.size());
+System.assert(orgKeys.contains('name'));
+System.assert(orgKeys.contains('visible'));
+System.assertEquals(2, orgCache.getNumKeys());
 System.assertEquals('Acme', (String) orgCache.remove('name'));
 System.assert(!orgCache.contains('name'));
+System.assertEquals(1, orgCache.getNumKeys());
 
 Cache.SessionPartition sessionCache = Cache.Session.getPartition('local');
+Cache.Partition generalSession = sessionCache;
+Cache.Partition generalOrg = orgCache;
 sessionCache.put('count', 7, 60);
 System.assertEquals(7, (Integer) sessionCache.get('count'));
+System.assert(sessionCache.getKeys().contains('count'));
+System.assertEquals(1, sessionCache.getNumKeys());
+generalSession.put('general', 'session');
+generalOrg.put('general', 'org');
+System.assertEquals('session', (String) generalSession.get('general'));
+System.assertEquals('org', (String) generalOrg.get('general'));
 System.assertEquals(null, sessionCache.get(String.class, 'missing'));
 sessionCache.remove(String.class, 'missing');
+
+System.assert(Cache.Org.isAvailable());
+System.assert(Cache.Org.getCapacity() > 0);
+System.assertEquals('local.default', Cache.Org.getName());
+System.assertEquals(0, Cache.Org.getAvgGetSize());
+System.assertEquals(0, Cache.Org.getAvgGetTime());
+System.assertEquals(0, Cache.Org.getAvgValueSize());
+System.assertEquals(0, Cache.Org.getMaxGetSize());
+System.assertEquals(0, Cache.Org.getMaxGetTime());
+System.assertEquals(0, Cache.Org.getMaxValueSize());
+System.assertEquals(0, Cache.Org.getMissRate());
+System.assertEquals('local.default.account', orgCache.createFullyQualifiedKey('local', 'default', 'account'));
+System.assertEquals('local.default', orgCache.createFullyQualifiedPartition('local', 'default'));
+orgCache.validatePartitionName('default');
+orgCache.validateKey(false, 'account');
+orgCache.validateKeyValue(false, 'account', 'value');
+Cache.Org.put('defaulted', 'org-default');
+System.assert(Cache.Org.contains('defaulted'));
+System.assertEquals('org-default', (String) Cache.Org.get('defaulted'));
+System.assert(Cache.Org.getKeys().contains('defaulted'));
+System.assertEquals(1, Cache.Org.getNumKeys());
+System.assertEquals('org-default', (String) Cache.Org.getPartition('default').get('defaulted'));
+System.assertEquals('org-default', (String) Cache.Org.remove('defaulted'));
+System.assert(!Cache.Org.contains('defaulted'));
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	machine := New(nil)
 	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecPlatformCacheBuilderLoadsAndMemoizesDefaultPartition(t *testing.T) {
+	loadProgram, err := CompileAnonymous(`return 'loaded:' + requiredButNotUsed;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Cache.OrgPartition named = Cache.Org.getPartition('local.default');
+System.assertEquals(0, named.getNumKeys());
+System.assertEquals('loaded:shape', (String) named.get(CacheLoader.class, 'shape'));
+System.assertEquals(1, named.getNumKeys());
+System.assertEquals('loaded:shape', (String) Cache.Org.get(CacheLoader.class, 'shape'));
+System.assertEquals(1, Cache.Org.getNumKeys());
+Set<String> keys = named.getKeys();
+System.assertEquals(1, keys.size());
+System.assert(keys.toString().contains('CacheLoader'));
+System.assertEquals('loaded:shape', (String) Cache.Org.remove(CacheLoader.class, 'shape'));
+System.assertEquals(0, named.getNumKeys());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:       "CacheLoader",
+		Interfaces: []string{"Cache.CacheBuilder"},
+		Methods: map[string]Method{
+			"doLoad": {
+				Name:       "CacheLoader.doLoad",
+				ClassName:  "CacheLoader",
+				ReturnType: "Object",
+				Params:     []Param{{Name: "requiredButNotUsed", Type: "String"}},
+				Program:    loadProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecPlatformCachePartitionMetadataSeedsDefaultPartition(t *testing.T) {
+	program, err := CompileAnonymous(`
+PlatformCachePartition partition = [
+	SELECT developerName, NamespacePrefix
+	FROM PlatformCachePartition
+	WHERE NamespacePrefix = ''
+	LIMIT 1
+];
+System.assertEquals('default', partition.DeveloperName);
+Cache.OrgPartition orgCache = Cache.Org.getPartition('local.' + partition.DeveloperName);
+System.assert(orgCache.isAvailable());
+System.assertEquals('local.default', orgCache.getName());
+System.assert(Cache.Org.getPartition('local.default') != null);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.ApplyOrgShape(&org, []string{"PlatformCache"})
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDatedConversionRateRequiresMultiCurrencyOrgShape(t *testing.T) {
+	program, err := CompileAnonymous(`
+Boolean caught = false;
+try {
+	Database.query('SELECT Id FROM DatedConversionRate LIMIT 1');
+} catch (QueryException e) {
+	caught = true;
+}
+System.assert(caught);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+
+	enabledProgram, err := CompileAnonymous(`
+Database.query('SELECT Id FROM DatedConversionRate LIMIT 1');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine = New(nil)
+	org = testDataOrg()
+	storage.EnsureStandardObject(&org, "DatedConversionRate")
+	storage.ApplyOrgShape(&org, []string{"MultiCurrency"})
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(enabledProgram); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -904,6 +1353,33 @@ System.assertEquals('text/html', blank.getHeaders().get('Accept'));
 		t.Fatal(err)
 	}
 	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSearchFindUsesFixedSearchResults(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'Nook Inc');
+insert account;
+Test.setFixedSearchResults(new List<Id>{account.Id});
+Search.SearchResults results = Search.find('FIND {Nook*} IN ALL FIELDS RETURNING Account(Id, Name)');
+List<Search.SearchResult> accounts = results.get('Account');
+System.assertEquals(1, accounts.size());
+System.assertEquals(account.Id, accounts[0].getSObject().Id);
+System.assertEquals('', accounts[0].getSnippet());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Account", KeyPrefix: "001", Fields: map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}}},
+		Records:    map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -2141,6 +2617,8 @@ func TestExecSafeGeneratedTestHelpers(t *testing.T) {
 List<Id> flexQueueOrder = Test.getFlexQueueOrder();
 System.assertEquals(0, flexQueueOrder.size());
 Test.calculatePermissionSetGroup('0PG000000000001');
+Id permissionSetGroupId = '0PG000000000003';
+Test.calculatePermissionSetGroup(permissionSetGroupId);
 Test.calculatePermissionSetGroup(new List<String>{'0PG000000000001', '0PG000000000002'});
 Test.enableChangeDataCapture();
 Test.setReadOnlyApplicationMode(true);
@@ -3631,6 +4109,30 @@ func TestExecRunAsScopesSupportedMixedDMLMode(t *testing.T) {
 	}
 }
 
+func TestExecMixedDMLTreatsPermissionSetGroupsAsSetupObjects(t *testing.T) {
+	program, err := CompileAnonymous(`
+PermissionSetGroup groupRecord = new PermissionSetGroup(DeveloperName = 'LocalGroup', MasterLabel = 'Local Group');
+insert groupRecord;
+PermissionSet perm = new PermissionSet(Name = 'LocalPerm');
+insert perm;
+insert new PermissionSetGroupComponent(PermissionSetGroupId = groupRecord.Id, PermissionSetId = perm.Id);
+insert new PermissionSetAssignment(PermissionSetGroupId = groupRecord.Id, AssigneeId = UserInfo.getUserId());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	storage.EnsureDeterministicPlatformData(&org)
+	storage.EnsureStandardObject(&org, "PermissionSetGroup")
+	storage.EnsureStandardObject(&org, "PermissionSetGroupComponent")
+	machine.SetOrg(&org)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecRolelessUserDMLDoesNotTripMixedDML(t *testing.T) {
 	program, err := CompileAnonymous(`
 insert new Account(Name = 'Acme');
@@ -4878,9 +5380,16 @@ func TestExecDatabaseAccessLevelOverloadRunsLocalDML(t *testing.T) {
 	program, err := CompileAnonymous(`
 Database.SaveResult inserted = Database.insert(new Account(Name = 'Acme'), true, AccessLevel.USER_MODE);
 System.assert(inserted.isSuccess());
+Database.SaveResult insertedSystem = Database.insert(new Account(Name = 'System Acme'), AccessLevel.SYSTEM_MODE);
+System.assert(insertedSystem.isSuccess());
+Database.SaveResult updatedUser = Database.update(new Account(Id = insertedSystem.getId(), Name = 'System Changed'), AccessLevel.USER_MODE);
+System.assert(updatedUser.isSuccess());
 Account upserted = new Account(Name = 'Upserted', Other_Key__c = 'ext-access');
 Database.UpsertResult upsertResult = Database.upsert(upserted, Account.Other_Key__c, false, AccessLevel.SYSTEM_MODE);
 System.assert(upsertResult.isSuccess());
+Account upsertedModeOnly = new Account(Name = 'Upserted Mode Only', Other_Key__c = 'ext-access-mode-only');
+Database.UpsertResult upsertModeOnly = Database.upsert(upsertedModeOnly, AccessLevel.SYSTEM_MODE);
+System.assert(upsertModeOnly.isSuccess());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -4892,6 +5401,60 @@ System.assert(upsertResult.isSuccess());
 	org.Objects["Account"] = account
 	machine.SetOrg(&org)
 	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecDMLKeywordsAcceptUserAndSystemMode(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account userAccount = new Account(Name = 'User Keyword');
+insert as user userAccount;
+userAccount.Name = 'User Updated';
+update as user userAccount;
+
+Account systemAccount = new Account(Name = 'System Keyword');
+insert as system systemAccount;
+systemAccount.Name = 'System Updated';
+update as system systemAccount;
+
+upsert as user new Account(Name = 'Upsert User');
+delete as system systemAccount;
+undelete as system systemAccount;
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecRequestGetCurrentBasics(t *testing.T) {
+	program, err := CompileAnonymous(`
+Request request = Request.getCurrent();
+System.assertEquals('oaer-request-000000000001', request.getRequestId());
+System.assertEquals(Quiddity.SYNCHRONOUS, request.getQuiddity());
+System.assertEquals('oaer-request-000000000001', System.Request.getCurrent().getRequestId());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	testProgram, err := CompileAnonymous(`
+System.assertEquals(Quiddity.RUNTEST_SYNC, Request.getCurrent().getQuiddity());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(testProgram); err != nil {
 		t.Fatal(err)
 	}
 }

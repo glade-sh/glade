@@ -208,7 +208,10 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 	for _, objectName := range []string{"Organization", "UserRole", "User", "Profile", "UserLicense", "PermissionSet", "PermissionSetAssignment", "RecordType"} {
 		want := 1
 		if objectName == "Profile" {
-			want = 5
+			want = 6
+		}
+		if objectName == "PermissionSet" {
+			want = 2
 		}
 		if objectName == "UserLicense" {
 			want = 2
@@ -247,7 +250,7 @@ func TestEnsureDeterministicPlatformData(t *testing.T) {
 	if _, ok := org.Objects["RecordType"].Records[recordTypeID]; !ok {
 		t.Fatalf("missing RecordType record %s: %#v", recordTypeID, org.Objects["RecordType"].Records)
 	}
-	if len(org.Objects["User"].Records) != 1 || len(org.Objects["Profile"].Records) != 5 || len(org.Objects["UserLicense"].Records) != 2 {
+	if len(org.Objects["User"].Records) != 1 || len(org.Objects["Profile"].Records) != 6 || len(org.Objects["UserLicense"].Records) != 2 {
 		t.Fatalf("platform records = %#v", InspectOrg("", org))
 	}
 	user, ok := org.Objects["User"].Records["005000000000001"]

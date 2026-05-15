@@ -125,6 +125,36 @@ public class Outer {
 	}
 }
 
+func TestBuildIndexAddsDataWeaveScriptResources(t *testing.T) {
+	root := t.TempDir()
+	scriptPath := filepath.Join(root, "force-app/main/default/dw/helloWorld.dwl")
+	metaPath := filepath.Join(root, "force-app/main/default/dw/error.dwl-meta.xml")
+	writeFile(t, scriptPath, "%dw 2.0\noutput application/json\n---\n{}")
+	writeFile(t, metaPath, "<DataWeaveResource/>")
+
+	idx := Build(project.Project{
+		Root:           root,
+		DataWeaveFiles: []string{scriptPath},
+		DataWeaveMetas: []string{metaPath},
+	}, schema.Schema{})
+	if idx.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", idx.Diagnostics)
+	}
+	types := map[string]TypeSymbol{}
+	for _, typ := range idx.Types {
+		types[typ.Name] = typ
+	}
+	for _, name := range []string{"DataWeaveScriptResource.helloWorld", "DataWeaveScriptResource.error"} {
+		typ, ok := types[name]
+		if !ok {
+			t.Fatalf("missing %s in %#v", name, idx.Types)
+		}
+		if typ.SuperClass != "DataWeave.Script" || len(typ.Members) != 2 {
+			t.Fatalf("type %s = %#v", name, typ)
+		}
+	}
+}
+
 func TestUpdateApexFilesReplacesChangedSymbolsAndDropsDeleted(t *testing.T) {
 	root := t.TempDir()
 	first := filepath.Join(root, "First.cls")
