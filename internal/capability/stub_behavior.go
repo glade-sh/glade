@@ -406,6 +406,11 @@ func localServiceHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesys
 	switch stubBehaviorTypeName(symbol) {
 	case "BcpProvisionService", "DistributedLedgerService":
 		return name == "enablec2c"
+	case "BusRuleDtMig.DecisionTableMigrationService":
+		return name == "migratedecisiontables"
+	case "BusinessRule.CalculationMatrixMigrationService", "BusinessRule.CalculationProcedureMigrationService",
+		"BusinessRule.DecisionMatrixRowMigratorService":
+		return name == "migrate"
 	case "data_mask.DataMaskIntegrationUtil":
 		switch name {
 		case "iscoreallowed", "islibraryinuse":

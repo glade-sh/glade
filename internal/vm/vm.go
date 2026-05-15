@@ -2181,6 +2181,9 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"Packaging.getCurrentPackageId",
 		"RemoteObjectController.create", "RemoteObjectController.del", "RemoteObjectController.retrieve", "RemoteObjectController.updat",
 		"SupportPredictiveService.findSimilarCases",
+		"BusRuleDtMig.DecisionTableMigrationService.migrateDecisionTables",
+		"BusinessRule.CalculationMatrixMigrationService.migrate", "BusinessRule.CalculationProcedureMigrationService.migrate",
+		"BusinessRule.DecisionMatrixRowMigratorService.migrate",
 		"Test.getEventBus", "Test.getExternalService", "Test.invokePage",
 		"Test.invokeContinuationMethod", "Test.setContinuationResponse",
 		"Canvas.Test.mockRenderContext", "Canvas.Test.testCanvasLifecycle",
@@ -4216,6 +4219,17 @@ platformStaticCall:
 	case "data_mask.DataMaskIntegrationUtil.cancelJob", "data_mask.DataMaskIntegrationUtil.getJobs",
 		"data_mask.DataMaskIntegrationUtil.getRunLogResponse", "data_mask.DataMaskIntegrationUtil.runMask":
 		return Null, unsupportedCallError(callee + " local data mask job surface")
+	case "BusRuleDtMig.DecisionTableMigrationService.migrateDecisionTables",
+		"BusinessRule.CalculationMatrixMigrationService.migrate",
+		"BusinessRule.CalculationProcedureMigrationService.migrate",
+		"BusinessRule.DecisionMatrixRowMigratorService.migrate":
+		if len(args) != 2 && !strings.EqualFold(callee, "BusinessRule.DecisionMatrixRowMigratorService.migrate") {
+			return Null, fmt.Errorf("%s expects source ids and namespace/execution type", callee)
+		}
+		if strings.EqualFold(callee, "BusinessRule.DecisionMatrixRowMigratorService.migrate") && len(args) != 1 {
+			return Null, fmt.Errorf("%s expects decision matrix version Id", callee)
+		}
+		return typedMap("Map<String,Object>"), nil
 	case "wave.Templates.cdpQueryMetadata", "wave.Templates.getSObject", "wave.Templates.getTemplate", "wave.Templates.getTemplateConfig", "wave.Templates.getTemplates":
 		return waveTemplatesStaticDefault(callee, args)
 	case "wave.Templates.getSObjects":
