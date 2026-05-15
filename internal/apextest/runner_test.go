@@ -2633,6 +2633,50 @@ private class AsyncContextIdsTest {
 	}
 }
 
+func TestRunScheduledApexExposesPendingJobWithCronTriggerRelationship(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ScheduledWorker.cls"), `
+public class ScheduledWorker {
+  public static Integer Ran = 0;
+  public void execute(SchedulableContext sc) {
+    Ran = Ran + 1;
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ScheduledWorkerTest.cls"), `
+@isTest
+private class ScheduledWorkerTest {
+  @isTest static void exposesScheduledJobRows() {
+    Test.startTest();
+    String scheduleId = System.schedule('nightly', '0 0 12 * * ?', new ScheduledWorker());
+    Test.stopTest();
+    System.assertEquals(1, ScheduledWorker.Ran);
+    List<ApexClass> classes = [SELECT Id, Name, NamespacePrefix FROM ApexClass WHERE Name = 'ScheduledWorker' AND NamespacePrefix = null];
+    System.assertEquals(1, classes.size());
+    List<AsyncApexJob> jobs = [
+      SELECT Id, Status, JobType, ApexClass.Name, CronTriggerId, CronTrigger.Id
+      FROM AsyncApexJob
+      WHERE ApexClassId = :classes.get(0).Id
+      AND Status IN ('Preparing', 'Processing', 'Queued', 'Holding')
+      AND JobType = 'ScheduledApex'
+    ];
+    System.assertEquals(1, jobs.size());
+    System.assertEquals(scheduleId, jobs.get(0).CronTriggerId);
+    System.assertEquals(scheduleId, jobs.get(0).CronTrigger.Id);
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if got := run.Summary(); got.Total != 1 || got.Passed != 1 {
+		if len(run.Suites) > 0 && len(run.Suites[0].Cases) > 0 && run.Suites[0].Cases[0].Problem != nil {
+			t.Logf("problem=%#v", *run.Suites[0].Cases[0].Problem)
+		}
+		t.Fatalf("summary = %#v cases=%#v", got, run.Suites[0].Cases)
+	}
+}
+
 func TestRunAsyncContextFlagsReflectLocalDrainKind(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)

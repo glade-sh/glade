@@ -8678,7 +8678,11 @@ func (vm *VM) drainAsyncJobs(result *Result, jobs *[]AsyncJob, draining *bool, c
 			vm.recordAsyncJob(job, "Failed", err.Error())
 			return err
 		}
-		vm.recordAsyncJob(job, "Completed", "")
+		if job.Kind == "ScheduledApex" {
+			vm.recordAsyncJob(job, "Queued", "")
+		} else {
+			vm.recordAsyncJob(job, "Completed", "")
+		}
 	}
 	return nil
 }
@@ -9089,6 +9093,7 @@ func (vm *VM) ensureAsyncObjects() {
 			"Status":            {APIName: "Status", Type: storage.FieldString},
 			"JobType":           {APIName: "JobType", Type: storage.FieldString},
 			"ApexClassId":       {APIName: "ApexClassId", Type: storage.FieldReference, ReferenceTo: []string{"ApexClass"}, RelationshipName: "ApexClass"},
+			"CronTriggerId":     {APIName: "CronTriggerId", Type: storage.FieldReference, ReferenceTo: []string{"CronTrigger"}, RelationshipName: "CronTrigger"},
 			"ApexClassName":     {APIName: "ApexClassName", Type: storage.FieldString},
 			"MethodName":        {APIName: "MethodName", Type: storage.FieldString},
 			"CreatedDate":       {APIName: "CreatedDate", Type: storage.FieldDateTime},
@@ -9106,6 +9111,10 @@ func (vm *VM) ensureAsyncObjects() {
 			Field:              "ApexClassId",
 			ParentObjects:      []string{"ApexClass"},
 			ParentRelationship: "ApexClass",
+		}, {
+			Field:              "CronTriggerId",
+			ParentObjects:      []string{"CronTrigger"},
+			ParentRelationship: "CronTrigger",
 		}},
 	})
 	ensureObject(vm.Org, storage.ObjectDefinition{
@@ -9229,6 +9238,11 @@ func (vm *VM) recordAsyncJob(job AsyncJob, status, detail string) {
 	record.Fields["ApexClassId"] = storage.IDValue(storage.ID(asyncApexClassID(className)))
 	record.Fields["ApexClassName"] = storage.StringValue(className)
 	record.Fields["MethodName"] = storage.StringValue(asyncMethodName(job))
+	if job.Kind == "ScheduledApex" || job.Kind == "ScheduledBatch" {
+		record.Fields["CronTriggerId"] = storage.IDValue(storage.ID(cronTriggerID(job.ID)))
+	} else {
+		delete(record.Fields, "CronTriggerId")
+	}
 	if existing, ok := record.Fields["TotalJobItems"]; ok && existing.Kind == storage.ValueInteger && existing.Integer > 0 && asyncJobType(job) == "BatchApex" {
 		record.Fields["TotalJobItems"] = existing
 	} else {
@@ -25604,6 +25618,12 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 		elementType, ok := collectionElementType(typeName)
 		if !ok {
 			return value, nil
+		}
+		for _, sourceType := range []string{value.Runtime, value.Static} {
+			if sourceElementType, ok := collectionElementType(sourceType); ok &&
+				strings.EqualFold(sourceElementType, "SObject") && vm.isSObjectLikeType(elementType) {
+				return value, nil
+			}
 		}
 		for i, item := range value.List {
 			coerced, err := vm.coerceAssignable(elementType, item)

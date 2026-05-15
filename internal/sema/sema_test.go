@@ -3406,6 +3406,43 @@ public class Hello {
 	}
 }
 
+func TestAnalyzePlatformEventDomainListDowncast(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "Domain.cls"), `
+public class Domain {
+  public Domain(List<SObject> records) {}
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "EventDomain.cls"), `
+public class EventDomain extends Domain {
+  public EventDomain(List<ActionEvent__e> records) {
+    super(records);
+  }
+  public class Constructor {
+    public Domain construct(List<SObject> records) {
+      return new EventDomain(records);
+    }
+  }
+}
+`)
+	writeSemaFile(t, filepath.Join(root, "ActionEvent__e.object-meta.xml"), `
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+  <label>Action Event</label>
+</CustomObject>
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "Domain.cls"), filepath.Join(root, "EventDomain.cls")},
+	}, schema.Schema{Objects: []schema.Object{{Name: "ActionEvent__e", Label: "Action Event"}}})
+
+	result := Analyze(index)
+	for _, diag := range result.Diagnostics {
+		if diag.Code == "OAERSEMA003" || diag.Code == "OAERSEMA004" {
+			t.Fatalf("unexpected platform-event list downcast diagnostic: %#v", result.Diagnostics)
+		}
+	}
+}
+
 func TestAnalyzeSObjectCloneAndAddError(t *testing.T) {
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "Hello.cls"), `

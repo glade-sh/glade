@@ -5321,7 +5321,7 @@ func isSemaSObjectLike(typeName string, model map[string]typeMembers) bool {
 	case "object", "string", "id", "boolean", "integer", "long", "double", "decimal", "date", "datetime", "time", "blob", "type", "exception":
 		return false
 	}
-	if strings.HasSuffix(normalizeName(typeName), "__c") || strings.HasSuffix(normalizeName(typeName), "__mdt") {
+	if strings.HasSuffix(normalizeName(typeName), "__c") || strings.HasSuffix(normalizeName(typeName), "__e") || strings.HasSuffix(normalizeName(typeName), "__mdt") {
 		return true
 	}
 	if isCommonSemaSObjectName(typeName) {
