@@ -2565,6 +2565,9 @@ platformStaticCall:
 	if reason, ok := unsupportedIntegrationSurface(callee); ok {
 		return Null, unsupportedCallError(callee + " " + reason)
 	}
+	if reason, ok := unsupportedCoreStaticSurface(callee); ok {
+		return Null, unsupportedCallError(callee + " " + reason)
+	}
 	if strings.HasPrefix(callee, "Limits.") && unsupportedLimitGetter(strings.TrimPrefix(callee, "Limits.")) {
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
@@ -5527,6 +5530,29 @@ func unsupportedIntegrationSurface(callee string) (string, bool) {
 		}
 	}
 	return "", false
+}
+
+func unsupportedCoreStaticSurface(callee string) (string, bool) {
+	if canonical, ok := canonicalBuiltinStaticCall(callee); ok {
+		callee = canonical
+	}
+	switch callee {
+	case "Crypto.signXml":
+		return "local XML signature surface", true
+	case "Ideas.getAllRecentReplies", "Ideas.getReadRecentReplies", "Ideas.getUnreadRecentReplies", "Ideas.markRead":
+		return "local Ideas reply/read-state service surface", true
+	case "KbManagement.PublishingService.deleteArchivedArticle",
+		"KbManagement.PublishingService.deleteArchivedArticleVersion",
+		"KbManagement.PublishingService.deleteDraftArticle",
+		"KbManagement.PublishingService.deleteDraftTranslation":
+		return "local Knowledge delete surface", true
+	case "System.changeOwnPassword", "System.movePassword", "System.resetPassword", "System.resetPasswordWithEmailTemplate":
+		return "local password/admin mutation surface", true
+	case "System.process", "System.submit":
+		return "local approval submit/process surface", true
+	default:
+		return "", false
+	}
 }
 
 func (vm *VM) quickActionDescribeAvailable(args []Value) (Value, error) {

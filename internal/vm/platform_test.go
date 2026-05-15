@@ -272,6 +272,26 @@ func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 			want: `unsupported call "Crypto.generateSelfSignedCertificate local key, certificate, encryption, and random surfaces"`,
 		},
 		{
+			name: "system password reset",
+			src:  `System.resetPassword('005000000000001', true);`,
+			want: `unsupported call "System.resetPassword local password/admin mutation surface"`,
+		},
+		{
+			name: "system password move",
+			src:  `System.movePassword('005000000000001', '005000000000002');`,
+			want: `unsupported call "System.movePassword local password/admin mutation surface"`,
+		},
+		{
+			name: "system approval process",
+			src:  `System.process(new List<SObject>(), 'Approve', 'comment', 'next');`,
+			want: `unsupported call "System.process local approval submit/process surface"`,
+		},
+		{
+			name: "system approval submit",
+			src:  `System.submit(new List<SObject>(), 'comment', 'next');`,
+			want: `unsupported call "System.submit local approval submit/process surface"`,
+		},
+		{
 			name: "data mask run job",
 			src:  `data_mask.DataMaskIntegrationUtil.runMask('{}');`,
 			want: `unsupported call "data_mask.DataMaskIntegrationUtil.runMask local data mask job surface"`,
@@ -290,6 +310,16 @@ func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 			name: "data mask run log",
 			src:  `data_mask.DataMaskIntegrationUtil.getRunLogResponse('job-local');`,
 			want: `unsupported call "data_mask.DataMaskIntegrationUtil.getRunLogResponse local data mask job surface"`,
+		},
+		{
+			name: "knowledge delete draft",
+			src:  `KbManagement.PublishingService.deleteDraftArticle('ka0000000000001');`,
+			want: `unsupported call "KbManagement.PublishingService.deleteDraftArticle local Knowledge delete surface"`,
+		},
+		{
+			name: "knowledge delete archived version",
+			src:  `KbManagement.PublishingService.deleteArchivedArticleVersion('ka0000000000001', 1);`,
+			want: `unsupported call "KbManagement.PublishingService.deleteArchivedArticleVersion local Knowledge delete surface"`,
 		},
 	}
 	for _, tc := range cases {
