@@ -173,6 +173,120 @@ System.assertEquals('Global Media', ((Account)stubbed[1]).Name);
 	}
 }
 
+func TestExecTestCreateSoqlStubDispatchesProvider(t *testing.T) {
+	providerProgram, err := CompileAnonymous(`
+Map<String, Object> row = new Map<String, Object>{'Id' => '001000000000123', 'Name' => query + ':' + String.valueOf(binds.get('name'))};
+return Test.createStubQueryRows(targetType, new List<Map<String, Object>>{row});
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Test.createSoqlStub(Account.SObjectType, new Provider());
+System.assert(Test.isSoqlStubDefined(Account.SObjectType));
+List<Account> inlineRows = [SELECT Id, Name FROM Account];
+System.assertEquals(1, inlineRows.size());
+System.assertEquals('001000000000123', inlineRows[0].Id);
+List<Account> rows = Database.queryWithBinds('SELECT Id, Name FROM Account WHERE Name = :name', new Map<String,Object>{'name' => 'Acme'});
+System.assertEquals(1, rows.size());
+System.assertEquals('001000000000123', rows[0].Id);
+System.assert(rows[0].Name.contains('SELECT Id, Name FROM Account WHERE Name ='));
+System.assert(rows[0].Name.endsWith(':Acme'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if err := machine.RegisterClass(Class{
+		Name:       "Provider",
+		Interfaces: []string{"SoqlStubProvider"},
+		Methods: map[string]Method{
+			"handleSoqlQuery": {
+				Name:       "Provider.handleSoqlQuery",
+				ClassName:  "Provider",
+				ReturnType: "List<SObject>",
+				Params: []Param{
+					{Name: "targetType", Type: "Schema.SObjectType"},
+					{Name: "query", Type: "String"},
+					{Name: "binds", Type: "Map<String,Object>"},
+				},
+				Program: providerProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecTestCreateSoqlStubRejectsUnsupportedQueryShapes(t *testing.T) {
+	providerProgram, err := CompileAnonymous(`return new List<SObject>();`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cases := []struct {
+		name string
+		src  string
+		want string
+	}{
+		{
+			name: "aggregate",
+			src:  `Integer total = [SELECT COUNT() FROM Account];`,
+			want: `unsupported call "Test.createSoqlStub aggregate query local stub surface"`,
+		},
+		{
+			name: "childRelationship",
+			src:  `List<Account> rows = [SELECT Id, (SELECT Id FROM Contacts) FROM Account];`,
+			want: `unsupported call "Test.createSoqlStub relationship query local stub surface"`,
+		},
+		{
+			name: "semiJoin",
+			src:  `List<Account> rows = [SELECT Id FROM Account WHERE Id IN (SELECT AccountId FROM Contact)];`,
+			want: `unsupported call "Test.createSoqlStub relationship query local stub surface"`,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			program, err := CompileAnonymous(tc.src)
+			if err != nil {
+				t.Fatal(err)
+			}
+			machine := New(nil)
+			machine.EnableTestContext()
+			if err := machine.RegisterClass(Class{
+				Name:       "Provider",
+				Interfaces: []string{"SoqlStubProvider"},
+				Methods: map[string]Method{
+					"handleSoqlQuery": {
+						Name:       "Provider.handleSoqlQuery",
+						ClassName:  "Provider",
+						ReturnType: "List<SObject>",
+						Params: []Param{
+							{Name: "targetType", Type: "Schema.SObjectType"},
+							{Name: "query", Type: "String"},
+							{Name: "binds", Type: "Map<String,Object>"},
+						},
+						Program: providerProgram,
+					},
+				},
+			}); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := machine.testCreateSoqlStub([]Value{sObjectTypeToken("Account"), Object("Provider")}); err != nil {
+				t.Fatal(err)
+			}
+			_, err = machine.Execute(program)
+			var runtimeErr *RuntimeError
+			if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != tc.want {
+				t.Fatalf("err = %#v, want %q", err, tc.want)
+			}
+		})
+	}
+}
+
 func TestExecTestLoadDataInsertsStaticResourceCSV(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<Account> rows = Test.loadData(Account.SObjectType, 'Accounts');

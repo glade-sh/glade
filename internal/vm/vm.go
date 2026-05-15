@@ -220,6 +220,7 @@ type TestContext struct {
 	WebServiceMock        Value
 	ContinuationResponses map[string]Value
 	ConnectAPIFixtures    map[string]Value
+	SoqlStubs             map[string]Value
 	ParentLimits          Limits
 	ParentViolations      []LimitViolation
 	RunAsDepth            int
@@ -669,6 +670,7 @@ func (vm *VM) EnableTestContext() {
 		CurrentUser:           vm.defaultTestCurrentUser(),
 		ContinuationResponses: make(map[string]Value),
 		ConnectAPIFixtures:    make(map[string]Value),
+		SoqlStubs:             make(map[string]Value),
 	}
 	vm.ensureAsyncObjects()
 }
@@ -4050,7 +4052,7 @@ platformStaticCall:
 		}
 		return vm.testCreateStub(args)
 	case "Test.createSoqlStub":
-		return Null, unsupportedCallError(callee + " local stub API")
+		return vm.testCreateSoqlStub(args)
 	case "Test.createStubQueryRow":
 		return vm.testCreateStubQueryRow(args)
 	case "Test.createStubQueryRows":
@@ -4153,7 +4155,12 @@ platformStaticCall:
 		if err := vm.requireTestContext(callee); err != nil {
 			return Null, err
 		}
-		return Bool(false), nil
+		objectName, err := vm.schemaDescribeObjectName(args[0])
+		if err != nil {
+			return Null, err
+		}
+		_, ok := vm.testContext.SoqlStubs[strings.ToLower(objectName)]
+		return Bool(ok), nil
 	case "Test.setContinuationResponse":
 		return vm.testSetContinuationResponse(args)
 	case "Test.invokeContinuationMethod":
@@ -6819,6 +6826,27 @@ func (vm *VM) testCreateStub(args []Value) (Value, error) {
 	return proxy, nil
 }
 
+func (vm *VM) testCreateSoqlStub(args []Value) (Value, error) {
+	if len(args) != 2 || !isSObjectTypeToken(args[0]) {
+		return Null, fmt.Errorf("Test.createSoqlStub expects Schema.SObjectType and SoqlStubProvider")
+	}
+	if err := vm.requireTestContext("Test.createSoqlStub"); err != nil {
+		return Null, err
+	}
+	if args[1].Kind != ValueObject || !vm.typeMatches(args[1].Type, "SoqlStubProvider", make(map[string]bool)) {
+		return Null, fmt.Errorf("Test.createSoqlStub expects SoqlStubProvider")
+	}
+	objectName, err := vm.schemaDescribeObjectName(args[0])
+	if err != nil {
+		return Null, err
+	}
+	if vm.testContext.SoqlStubs == nil {
+		vm.testContext.SoqlStubs = make(map[string]Value)
+	}
+	vm.testContext.SoqlStubs[strings.ToLower(objectName)] = args[1]
+	return Null, nil
+}
+
 func (vm *VM) testCreateStubQueryRow(args []Value) (Value, error) {
 	if len(args) != 2 || !isSObjectTypeToken(args[0]) || args[1].Kind != ValueMap {
 		return Null, fmt.Errorf("Test.createStubQueryRow expects Schema.SObjectType and Map<String,Object>")
@@ -8239,7 +8267,7 @@ func (vm *VM) executeInlineSOQL(raw string, execResult *Result) (Value, error) {
 func (vm *VM) executeSOQLWithBindMap(raw string, binds Value, execResult *Result) (Value, error) {
 	values, err := vm.executeSOQLRowsWithExpander(raw, execResult, func(query string) (string, error) {
 		return vm.expandSOQLBindsFromMap(query, binds)
-	})
+	}, binds)
 	if err != nil {
 		return Null, err
 	}
@@ -8272,15 +8300,12 @@ func (vm *VM) executeSOQLForType(raw, typeName string, result *Result) (Value, e
 }
 
 func (vm *VM) executeSOQLRows(raw string, execResult *Result) ([]Value, error) {
-	return vm.executeSOQLRowsWithExpander(raw, execResult, vm.expandSOQLBinds)
+	return vm.executeSOQLRowsWithExpander(raw, execResult, vm.expandSOQLBinds, typedMap("Map<String,Object>"))
 }
 
-func (vm *VM) executeSOQLRowsWithExpander(raw string, execResult *Result, expand func(string) (string, error)) ([]Value, error) {
+func (vm *VM) executeSOQLRowsWithExpander(raw string, execResult *Result, expand func(string) (string, error), binds Value) ([]Value, error) {
 	if soql.IsSOSLFind(raw) {
 		return nil, unsupportedCallError("SOSL/FIND local search surface")
-	}
-	if vm.Org == nil {
-		return nil, fmt.Errorf("SOQL requires org state")
 	}
 	if err := vm.incrementLimit("queries", 1); err != nil {
 		return nil, err
@@ -8299,6 +8324,12 @@ func (vm *VM) executeSOQLRowsWithExpander(raw string, execResult *Result, expand
 			return nil, &RuntimeError{Type: "UnsupportedFeature", Message: unsupported.Message}
 		}
 		return nil, newExceptionError("QueryException", fmt.Sprintf("%s in generated SOQL %q", err.Error(), queryText))
+	}
+	if values, handled, err := vm.executeSoqlStub(query, queryText, binds, execResult); handled || err != nil {
+		return values, err
+	}
+	if vm.Org == nil {
+		return nil, fmt.Errorf("SOQL requires org state")
 	}
 	if err := vm.enforceSOQLSecurity(query); err != nil {
 		return nil, err
@@ -8335,6 +8366,76 @@ func (vm *VM) executeSOQLRowsWithExpander(raw string, execResult *Result, expand
 		"rows":  result.Rows,
 	})
 	return values, nil
+}
+
+func (vm *VM) executeSoqlStub(query soql.Query, queryText string, binds Value, execResult *Result) ([]Value, bool, error) {
+	if vm.testContext == nil || len(vm.testContext.SoqlStubs) == 0 {
+		return nil, false, nil
+	}
+	objectName := query.Object
+	if vm.Org != nil {
+		if resolved, ok := storage.ResolveObjectName(*vm.Org, query.Object); ok {
+			objectName = resolved
+		}
+	}
+	provider, ok := vm.testContext.SoqlStubs[strings.ToLower(objectName)]
+	if !ok {
+		return nil, false, nil
+	}
+	if query.Count || len(query.Aggregates) > 0 || len(query.HavingAggregates) > 0 || len(query.GroupBy) > 0 || query.Having != nil {
+		return nil, true, unsupportedCallError("Test.createSoqlStub aggregate query local stub surface")
+	}
+	if len(query.ChildQueries) > 0 || len(query.Typeofs) > 0 || soqlQueryHasConditionSubquery(query.Where) {
+		return nil, true, unsupportedCallError("Test.createSoqlStub relationship query local stub surface")
+	}
+	if provider.Kind != ValueObject {
+		return nil, true, fmt.Errorf("Test.createSoqlStub provider for %s is not an object", query.Object)
+	}
+	if binds.Kind == "" || binds.Kind == ValueNull {
+		binds = typedMap("Map<String,Object>")
+	}
+	args := []Value{sObjectTypeToken(objectName), String(queryText), binds}
+	target, ok, ambiguous := vm.resolveInstanceMethodForArgs(provider.Type, "handleSoqlQuery", args)
+	if ambiguous {
+		return nil, true, vm.ambiguousOverloadError(provider.Type+".handleSoqlQuery", args)
+	}
+	if !ok {
+		return nil, true, fmt.Errorf("SoqlStubProvider %s must implement handleSoqlQuery", provider.Type)
+	}
+	value, err := vm.callMethodWithReceiver(target, provider, args, execResult)
+	if err != nil {
+		return nil, true, err
+	}
+	if value.Kind != ValueList {
+		return nil, true, fmt.Errorf("SoqlStubProvider %s handleSoqlQuery must return List<SObject>", provider.Type)
+	}
+	rows := append([]Value(nil), value.List...)
+	appendTrace(execResult, "apex.soql.stub", "apex.soql", map[string]any{
+		"query":  queryText,
+		"object": objectName,
+		"rows":   len(rows),
+	})
+	return rows, true, nil
+}
+
+func soqlQueryHasConditionSubquery(condition *soql.Condition) bool {
+	if condition == nil {
+		return false
+	}
+	if condition.Subquery != nil {
+		return true
+	}
+	for i := range condition.And {
+		if soqlQueryHasConditionSubquery(&condition.And[i]) {
+			return true
+		}
+	}
+	for i := range condition.Or {
+		if soqlQueryHasConditionSubquery(&condition.Or[i]) {
+			return true
+		}
+	}
+	return false
 }
 
 func (vm *VM) enforceOrgShapeObjectAvailability(query soql.Query) error {

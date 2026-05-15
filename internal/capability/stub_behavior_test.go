@@ -89,6 +89,7 @@ func TestStubBehaviorSeparatesServiceMethodsFromPassiveDTOs(t *testing.T) {
 	assertStubBehaviorPrefix(t, entries, "StubProvider.handleMethodCall(", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "RestRequest.addHeader(", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "RestRequest.addParameter(", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "Test.createSoqlStub(", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "Test.invokeContinuationMethod(", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "Test.setContinuationResponse(", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "Assert.isInstanceOfType(Object,Type)", StubBehaviorImplemented)

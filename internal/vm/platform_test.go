@@ -2973,11 +2973,6 @@ func TestExecUnsupportedTestHelperAPIsHaveStableShape(t *testing.T) {
 			src:  `Test.createStub(Account.class, null);`,
 			want: `unsupported call "Test.createStub local stub API"`,
 		},
-		{
-			name: "createSoqlStub",
-			src:  `Test.createSoqlStub(Account.class, 'SELECT Id FROM Account');`,
-			want: `unsupported call "Test.createSoqlStub local stub API"`,
-		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
