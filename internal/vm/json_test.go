@@ -1557,6 +1557,23 @@ System.assert(!encoded.contains('positiveparametAAA'), encoded);
 	}
 }
 
+func TestExecJSONDeserializeUntypedKeepsEscapedNewlineValid(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String, Object> values = (Map<String, Object>)JSON.deserializeUntyped('{"address":"796 N ST\\nLORTON VA 22079"}');
+String address = (String)values.get('address');
+System.assert(address.contains('\n'));
+String encoded = JSON.serialize(values);
+System.assert(encoded.contains('\\n'), encoded);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecJSONMalformedDeserializeErrorsAreCatchable(t *testing.T) {
 	program, err := CompileAnonymous(`
 String caught = '';

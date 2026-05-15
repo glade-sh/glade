@@ -1793,6 +1793,9 @@ func equalValues(left, right storage.Value) bool {
 	case storage.ValueNull:
 		return true
 	case storage.ValueString:
+		if idTextEqual(left.String, right.String) {
+			return true
+		}
 		return strings.EqualFold(left.String, right.String)
 	case storage.ValueDate, storage.ValueDateTime, storage.ValueBlob:
 		return left.String == right.String

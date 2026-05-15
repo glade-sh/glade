@@ -3338,6 +3338,81 @@ System.assertEquals(null, loaded.Note__c);
 	}
 }
 
+func TestExecDMLStoresIdAssignedToTextFieldAsComparableText(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'Acme');
+insert account;
+ActionRequest__c request = new ActionRequest__c(SourceRecordId__c = account.Id);
+insert request;
+System.assertEquals(1, [SELECT COUNT() FROM ActionRequest__c WHERE SourceRecordId__c = :account.Id]);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "Account", KeyPrefix: "001", Fields: map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}}},
+		Records:    map[storage.ID]storage.Record{},
+	}
+	org.Objects["ActionRequest__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "ActionRequest__c", KeyPrefix: "a00", Fields: map[string]storage.Field{"SourceRecordId__c": {APIName: "SourceRecordId__c", Type: storage.FieldString}}},
+		Records:    map[storage.ID]storage.Record{},
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecQueriedChildRelationshipMapExposesRuntimeSuffixAlias(t *testing.T) {
+	program, err := CompileAnonymous(`
+Parent__c parent = new Parent__c(Name = 'P');
+insert parent;
+insert new Child__c(Name = 'C', Parent__c = parent.Id);
+Parent__c queried = [SELECT Id, (SELECT Id, Name FROM Children) FROM Parent__c WHERE Id = :parent.Id];
+Map<String,Object> populated = queried.getPopulatedFieldsAsMap();
+System.assert(populated.containsKey('Children__r'));
+System.assertEquals(1, ((List<Child__c>)populated.get('Children__r')).size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	org.Objects["Parent__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Parent__c",
+			KeyPrefix: "a00",
+			Fields:    map[string]storage.Field{"Name": {APIName: "Name", Type: storage.FieldString}},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	org.Objects["Child__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Child__c",
+			KeyPrefix: "a01",
+			Fields: map[string]storage.Field{
+				"Name":      {APIName: "Name", Type: storage.FieldString},
+				"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}, RelationshipName: "Parent__r"},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "Parent__c",
+				ParentObjects:      []string{"Parent__c"},
+				ParentRelationship: "Parent__r",
+				ChildRelationship:  "Children",
+			}},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	storage.EnsureDeterministicPlatformData(&org)
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecTypedNullSObjectFieldAccessReturnsNull(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account accountRecord;
