@@ -49,6 +49,9 @@ import { getObjectInfo } from 'lightning/uiObjectInfoApi';
     deployResult.details = new Metadata.DeployDetails();
     Metadata.DeployMessage deployMessage = new Metadata.DeployMessage();
     List<Metadata.Metadata> records = Metadata.Operations.retrieve(Metadata.MetadataType.CustomMetadata, new List<String>{'Thing__mdt.Default'});
+    Metadata.Operations.updateMetadata(null);
+    System.debug('Metadata.StringOnlyType');
+    // Metadata.CommentOnlyType should not be counted.
     System.debug(Site.getAdminEmail());
     System.debug(ConnectApi.Organization.getSettings().orgId);
     ConnectApi.UserSettings settings = ConnectApi.Organization.getSettings().userSettings;
@@ -66,6 +69,8 @@ import { getObjectInfo } from 'lightning/uiObjectInfoApi';
     Attachment a = new Attachment();
     Community__mdt cfg;
   }
+  global static Metadata.DeployProblemType valueOf(String str) { return null; }
+  global static List<Metadata.DeployProblemType> values() { return null; }
 }`)
 	writeFile(t, filepath.Join(root, ".claude/worktrees/noisy/src/classes/Generated.cls"), `public class Generated {
   void run() {
@@ -149,6 +154,16 @@ import { getObjectInfo } from 'lightning/uiObjectInfoApi';
 	}
 	if !hasLineFindingContaining(report, "metadata.apex-deploy", "src/classes/UsesPlatform.cls", "Metadata.UnknownType") {
 		t.Fatalf("missing unsupported Metadata.UnknownType finding")
+	}
+	if !hasLineFindingEvidenceContaining(report, "metadata.apex-deploy", "src/classes/UsesPlatform.cls", "Metadata.Operations.updateMetadata") {
+		t.Fatalf("missing unsupported Metadata.Operations mutation finding")
+	}
+	if hasLineFindingContaining(report, "metadata.apex-deploy", "src/classes/UsesPlatform.cls", "Metadata.DeployProblemType") {
+		t.Fatalf("generated Metadata enum valueOf/values boilerplate should not be reported as a blocker")
+	}
+	if hasLineFindingContaining(report, "metadata.apex-deploy", "src/classes/UsesPlatform.cls", "Metadata.StringOnlyType") ||
+		hasLineFindingContaining(report, "metadata.apex-deploy", "src/classes/UsesPlatform.cls", "Metadata.CommentOnlyType") {
+		t.Fatalf("Metadata references in comments or strings should not be reported as blockers")
 	}
 	if !hasLineFindingContaining(report, "platform.auth-context", "src/classes/UsesPlatform.cls", "Auth.JWTUtil") {
 		t.Fatalf("missing unsupported Auth.JWTUtil finding")

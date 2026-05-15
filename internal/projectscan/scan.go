@@ -1041,7 +1041,7 @@ func suppressVisualforceControllerAttributeFinding(pattern patternDef, match []s
 }
 
 func lineForPattern(line string, pattern patternDef) string {
-	if pattern.metadataType == "ApexClass" && (pattern.capability == "custommetadata.legacy-records" || pattern.capability == "visualforce.controller-test" || pattern.capability == "labels.localization") {
+	if pattern.metadataType == "ApexClass" && (pattern.capability == "custommetadata.legacy-records" || pattern.capability == "visualforce.controller-test" || pattern.capability == "labels.localization" || pattern.capability == "metadata.apex-deploy") {
 		return stripApexCommentsAndStrings(line)
 	}
 	return line
@@ -2283,6 +2283,9 @@ func supportedAuthSymbol(symbol, evidence string) bool {
 }
 
 func supportedMetadataAPISymbol(symbol, evidence string) bool {
+	if supportedMetadataGeneratedEnumDTO(symbol, evidence) {
+		return true
+	}
 	for _, needle := range []string{
 		"Metadata.CustomMetadata", "Metadata.CustomMetadataValue",
 		"Metadata.CustomObject", "Metadata.CustomField",
@@ -2296,6 +2299,16 @@ func supportedMetadataAPISymbol(symbol, evidence string) bool {
 		}
 	}
 	return false
+}
+
+func supportedMetadataGeneratedEnumDTO(symbol, evidence string) bool {
+	if symbol == "" || !strings.HasPrefix(symbol, "Metadata.") {
+		return false
+	}
+	trimmed := strings.TrimSpace(evidence)
+	return strings.Contains(trimmed, " "+symbol+" valueOf(String") ||
+		strings.Contains(trimmed, " List<"+symbol+"> values()") ||
+		strings.Contains(trimmed, " List<"+symbol+"> values(")
 }
 
 func metadataTypeForText(rel string) string {
