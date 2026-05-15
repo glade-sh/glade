@@ -204,6 +204,10 @@ func (vm *VM) limitValue(name string) (Value, bool) {
 		return Int(int64(vm.limits.EmailInvokes)), true
 	case "getLimitEmailInvocations":
 		return Int(int64(vm.limitCaps.EmailInvokes)), true
+	case "getPublishImmediateDML":
+		return Int(0), true
+	case "getLimitPublishImmediateDML":
+		return Int(150), true
 	case "getAggregateQueries", "getApexCursorRows", "getApexCursors", "getApexPaginationCursorRows",
 		"getApexPaginationCursors", "getChildRelationshipsDescribes", "getDatabaseTime",
 		"getFetchCallsOnApexCursor", "getFieldSetsDescribes", "getFieldsDescribes",
@@ -289,8 +293,6 @@ func orgLimitValue(name string, used, limit int) Value {
 func unsupportedLimitGetter(name string) bool {
 	name = canonicalLimitGetterName(name)
 	switch name {
-	case "getPublishImmediateDML", "getLimitPublishImmediateDML":
-		return true
 	default:
 		return false
 	}

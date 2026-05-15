@@ -463,6 +463,37 @@ ConnectedApplication app = UserProvisioning.ConnectorTestUtil.createConnectedApp
 System.assertEquals('Local App', app.Name);
 new CartExtension.CartCalculateExecutorMock().calculate(new CartExtension.CartCalculateOrchestratorRequest(null, null, null));
 new CartExtension.SplitShipmentServiceMock().arrangeItems(null);
+ConnectApi.BaseEndpointExtension endpoint = new ConnectApi.BaseEndpointExtension();
+ConnectApi.EndpointExtensionRequest endpointRequest = new ConnectApi.EndpointExtensionRequest();
+ConnectApi.EndpointExtensionResponse endpointResponse = new ConnectApi.EndpointExtensionResponse('body', 1, 'etag');
+System.assertEquals(endpointRequest, endpoint.beforeGet(endpointRequest));
+System.assertEquals(endpointResponse, endpoint.afterGet(endpointResponse, endpointRequest));
+sfsqlquery.QueryHandle handle = sfsqlquery.QueryHandle.create('query-1', 'default');
+sfsqlquery.SqlQueueable queued = new sfsqlquery.SqlQueueable(handle);
+System.assertEquals('query-1', queued.getQueryId());
+System.assert(queued.getRows() != null);
+queued.chainNextJob(handle);
+queued.processDataChunk();
+queued.cancel();
+System.assertEquals(true, (Boolean)wave.Templates.getTemplates().get('local'));
+System.assertEquals(true, (Boolean)wave.Templates.getTemplate('Template').get('local'));
+Flow.Interview interview = Flow.Interview.createInterview('LocalFlow', new Map<String,Object>{ 'answer' => 42 });
+interview.start();
+System.assertEquals(42, (Integer)interview.getVariableValue('answer'));
+Continuation continuation = new Continuation(60);
+String requestLabel = continuation.addHttpRequest(new HttpRequest());
+System.assertEquals(1, continuation.getRequests().size());
+System.assert(continuation.getRequests().containsKey(requestLabel));
+Iterator<String> iter = new List<String>{'a'}.iterator();
+System.assert(iter.hasNext());
+System.assertEquals('a', (String)iter.next());
+FormulaRecalcFieldError recalcError = new FormulaRecalcFieldError();
+System.assertEquals('', recalcError.getFieldName());
+System.assertEquals('', recalcError.getFieldError());
+CartExtension.PricingCartCalculator pricing = new CartExtension.PricingCartCalculator(new CartExtension.CartCalculateExecutorMock());
+pricing.calculate(new CartExtension.CartCalculateCalculatorRequest(null, null));
+CartExtension.SplitShipmentService split = new CartExtension.SplitShipmentService(new CartExtension.SplitShipmentServiceMock());
+split.arrangeItems(null);
 Test.stopTest();
 `)
 	if err != nil {
@@ -3726,52 +3757,16 @@ System.assertEquals(1, Limits.getDmlStatements());
 	}
 }
 
-func TestExecPublishImmediateDMLLimitsGettersUnsupported(t *testing.T) {
-	for _, getter := range []string{"getPublishImmediateDML", "getLimitPublishImmediateDML"} {
-		t.Run(getter, func(t *testing.T) {
-			program, err := CompileAnonymous("Integer used = Limits." + getter + "();")
-			if err != nil {
-				t.Fatal(err)
-			}
-			_, err = New(nil).Execute(program)
-			if err == nil {
-				t.Fatal("expected unsupported feature error")
-			}
-			var runtimeErr *RuntimeError
-			if !errors.As(err, &runtimeErr) {
-				t.Fatalf("error type = %T, want *RuntimeError", err)
-			}
-			want := `unsupported call "Limits.` + getter + `"`
-			if runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != want || err.Error() != want {
-				t.Fatalf("error = (%q, %q, %q), want UnsupportedFeature %q", runtimeErr.Type, runtimeErr.Message, err.Error(), want)
-			}
-		})
+func TestExecPublishImmediateDMLLimitsGetters(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(0, Limits.getPublishImmediateDML());
+System.assertEquals(150, Limits.getLimitPublishImmediateDML());
+`)
+	if err != nil {
+		t.Fatal(err)
 	}
-}
-
-func TestExecUnsupportedLimitsGettersHaveStableShape(t *testing.T) {
-	for _, getter := range []string{
-		"getPublishImmediateDML",
-		"getLimitPublishImmediateDML",
-	} {
-		t.Run(getter, func(t *testing.T) {
-			program, err := CompileAnonymous("Integer used = Limits." + getter + "();")
-			if err != nil {
-				t.Fatal(err)
-			}
-			_, err = New(nil).Execute(program)
-			if err == nil {
-				t.Fatal("expected unsupported feature error")
-			}
-			var runtimeErr *RuntimeError
-			if !errors.As(err, &runtimeErr) {
-				t.Fatalf("error type = %T, want *RuntimeError", err)
-			}
-			want := `unsupported call "Limits.` + getter + `"`
-			if runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != want || err.Error() != want {
-				t.Fatalf("error = (%q, %q, %q), want UnsupportedFeature %q", runtimeErr.Type, runtimeErr.Message, err.Error(), want)
-			}
-		})
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 

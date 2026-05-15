@@ -370,8 +370,6 @@ func limitBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol)
 		return false
 	}
 	switch strings.ToLower(member.Name) {
-	case "getpublishimmediatedml", "getlimitpublishimmediatedml":
-		return false
 	default:
 		return strings.HasPrefix(strings.ToLower(member.Name), "get")
 	}
@@ -460,6 +458,28 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 		return name == "addheader"
 	case "Iterable":
 		return name == "iterator"
+	case "Iterator":
+		return name == "hasnext" || name == "next"
+	case "FormulaRecalcFieldError":
+		return name == "getfieldname" || name == "getfielderror"
+	case "Flow.Interview":
+		return name == "createinterview" || name == "start" || name == "getvariablevalue"
+	case "Canvas.CanvasLifecycleHandler":
+		return name == "excludecontexttypes" || name == "onrender"
+	case "Continuation":
+		return name == "addhttprequest" || name == "getrequests" || name == "getresponse"
+	case "ConnectApi.BaseEndpointExtension":
+		return strings.HasPrefix(name, "before") || strings.HasPrefix(name, "after")
+	case "sfsqlquery.SqlQueueable":
+		switch name {
+		case "cancel", "chainnextjob", "getcolumnnames", "getmetadata", "getpageoutput", "getqueryid", "getrows", "processdatachunk":
+			return true
+		}
+	case "wave.Templates":
+		switch name {
+		case "cdpquerymetadata", "getsobject", "getsobjects", "gettemplate", "gettemplateconfig", "gettemplates":
+			return true
+		}
 	case "LIST", "List", "Set", "Map":
 		switch name {
 		case "add", "addall", "addtorelationship", "clear", "contains", "containsall", "containskey",
@@ -624,7 +644,7 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 		case "isrunningtest", "getstandardpricebookid", "starttest", "stoptest", "createstub",
 			"createsoqlstub", "clearapexpagemessages", "setcurrentpage", "setcurrentpagereference", "setmock",
 			"setcreateddate", "setfixedsearchresults", "createstubqueryrow", "issoqlstubdefined",
-			"geteventbus", "getflexqueueorder", "enqueuebatchjobs", "calculatepermissionsetgroup", "enablechangedatacapture",
+			"geteventbus", "getexternalservice", "invokepage", "getflexqueueorder", "enqueuebatchjobs", "calculatepermissionsetgroup", "enablechangedatacapture",
 			"setreadonlyapplicationmode", "testinstall", "testuninstall", "invokecontinuationmethod",
 			"setcontinuationresponse", "testnotificationactionhandler", "testsandboxpostcopyscript":
 			return true

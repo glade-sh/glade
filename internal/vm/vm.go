@@ -2138,6 +2138,7 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"Messaging.reserveSingleEmailCapacity", "Messaging.reserveMassEmailCapacity",
 		"ApexPages.hasMessages", "ApexPages.addMessage", "ApexPages.addMessages", "ApexPages.getMessages", "ApexPages.currentPage",
 		"Formula.builder", "Formula.recalculateFormulas",
+		"Flow.Interview.createInterview",
 		"Test.clearApexPageMessages", "Test.setCurrentPage", "Test.setCurrentPageReference",
 		"Test.setMock", "Test.testInstall", "Test.createStub", "Test.createSoqlStub", "Test.createStubQueryRow", "Test.createStubQueryRows", "Test.loadData",
 		"Test.getFlexQueueOrder", "Test.enqueueBatchJobs", "Test.calculatePermissionSetGroup", "Test.enableChangeDataCapture", "Test.setReadOnlyApplicationMode", "Test.isSoqlStubDefined",
@@ -2149,6 +2150,8 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"functions.MockFunctionInvocationFactory.createErrorResponse", "functions.MockFunctionInvocationFactory.createSuccessResponse",
 		"SubMgmt.Test.create", "SubMgmt.Test.modify", "SubMgmt.Test.remove",
 		"UserProvisioning.ConnectorTestUtil.createConnectedApp",
+		"wave.Templates.cdpQueryMetadata", "wave.Templates.getSObject", "wave.Templates.getSObjects",
+		"wave.Templates.getTemplate", "wave.Templates.getTemplateConfig", "wave.Templates.getTemplates",
 		"sfsqlquery.SqlTester.clearMocks", "sfsqlquery.SqlTester.enqueueMockRows", "sfsqlquery.SqlTester.setMockRows", "sfsqlquery.SqlTester.setMockMetadata",
 		"sfsqlquery.SqlTester.isRunningTest", "sfsqlquery.QueryHandle.create", "sfsqlquery.SqlStatement.create",
 		"WebServiceCallout.invoke",
@@ -4097,6 +4100,13 @@ platformStaticCall:
 		app.Fields["Id"] = platformScalar("Id", "0SO000000000001")
 		app.Fields["Name"] = args[0]
 		return app, nil
+	case "wave.Templates.cdpQueryMetadata", "wave.Templates.getSObject", "wave.Templates.getTemplate", "wave.Templates.getTemplateConfig", "wave.Templates.getTemplates":
+		return waveTemplatesStaticDefault(callee, args)
+	case "wave.Templates.getSObjects":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("wave.Templates.getSObjects expects 0 arguments")
+		}
+		return typedList("List<Map<String,Object>>"), nil
 	case "ApexPages.currentPage", "System.currentPageReference":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
@@ -4260,6 +4270,8 @@ platformStaticCall:
 		return vm.testSetContinuationResponse(args)
 	case "Test.invokeContinuationMethod":
 		return vm.testInvokeContinuationMethod(args, result)
+	case "Flow.Interview.createInterview":
+		return flowInterviewCreate(args)
 	case "Test.testNotificationActionHandler":
 		return vm.testNotificationActionHandler(args, result)
 	case "Test.testSandboxPostCopyScript":
@@ -24826,6 +24838,20 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 	if len(args) != len(method.Params) {
 		return Null, fmt.Errorf("%s expects %d arguments", method.Name, len(method.Params))
 	}
+	if cartExtensionMockBackedRuntimeType(method.ClassName) || cartExtensionMockBackedRuntimeType(receiver.Type) {
+		var value Value
+		var handled bool
+		var err error
+		switch {
+		case strings.EqualFold(method.ClassName, "CartExtension.SplitShipmentService"), strings.EqualFold(receiver.Type, "CartExtension.SplitShipmentService"):
+			value, _, _, handled, err = vm.callCartExtensionMockBackedSplitShipment(receiver, apexMethodMemberName(method.Name), args)
+		default:
+			value, _, _, handled, err = vm.callCartExtensionMockBackedCalculator(receiver, apexMethodMemberName(method.Name), args)
+		}
+		if handled || err != nil {
+			return value, err
+		}
+	}
 	if method.Unsupported != "" {
 		return Null, fmt.Errorf("%s is not supported by the local VM: %s", method.Name, method.Unsupported)
 	}
@@ -25075,6 +25101,9 @@ func (vm *VM) constructGeneratedPlatformValue(typeName string, args []Value, nam
 	}
 	if sfsqlquerySafeHarnessType(generated.Name) {
 		return vm.constructSfsqlqueryHarnessValue(generated, args, namedArgs)
+	}
+	if cartExtensionMockBackedRuntimeType(generated.Name) {
+		return vm.constructCartExtensionMockBackedValue(generated, args, namedArgs)
 	}
 	if !vm.isPassivePlatformDTOType(generated.Name) && len(generated.Fields) == 0 {
 		return Null, false, nil
@@ -25479,6 +25508,47 @@ func (vm *VM) constructSfsqlqueryHarnessValue(generated generatedPlatformType, a
 		return Null, true, err
 	}
 	vm.initializeSfsqlqueryHarnessObject(&object, nil)
+	return object, true, nil
+}
+
+func cartExtensionMockBackedRuntimeType(typeName string) bool {
+	switch typeName {
+	case "CartExtension.AbstractCartCalculator", "CartExtension.CartCalculate", "CartExtension.InventoryCartCalculator",
+		"CartExtension.PricingCartCalculator", "CartExtension.PromotionsCartCalculator", "CartExtension.ShippingCartCalculator",
+		"CartExtension.TaxCartCalculator", "CartExtension.SplitShipmentService":
+		return true
+	default:
+		return false
+	}
+}
+
+func (vm *VM) constructCartExtensionMockBackedValue(generated generatedPlatformType, args []Value, namedArgs map[string]Value) (Value, bool, error) {
+	ctorArgs := args
+	if len(generated.Constructors) != 0 {
+		ctor, ok, ambiguous := vm.matchMethodByArgs(generated.Constructors, args)
+		if !ok && len(namedArgs) != 0 {
+			ctor, ctorArgs, ok, ambiguous = vm.matchGeneratedPlatformConstructorWithNamedArgs(generated, args, namedArgs)
+		}
+		if ambiguous {
+			return Null, true, fmt.Errorf("ambiguous %s constructor with %d argument(s)", generated.Name, len(args))
+		}
+		if !ok {
+			return Null, true, fmt.Errorf("%s constructor expects %s", generated.Name, generatedPlatformConstructorSummary(generated.Constructors))
+		}
+		object := vm.newGeneratedPlatformObject(generated)
+		bindPassiveConstructorArgs(&object, ctor, ctorArgs)
+		if err := vm.bindGeneratedPlatformNamedFields(&object, namedArgs); err != nil {
+			return Null, true, err
+		}
+		return object, true, nil
+	}
+	if len(args) != 0 {
+		return Null, true, fmt.Errorf("%s constructor expects 0 arguments", generated.Name)
+	}
+	object := vm.newGeneratedPlatformObject(generated)
+	if err := vm.bindGeneratedPlatformNamedFields(&object, namedArgs); err != nil {
+		return Null, true, err
+	}
 	return object, true, nil
 }
 
@@ -29300,6 +29370,50 @@ func functionInvocationError(args []Value) (Value, error) {
 	return invocation, nil
 }
 
+func waveTemplatesStaticDefault(callee string, args []Value) (Value, error) {
+	switch callee {
+	case "wave.Templates.cdpQueryMetadata":
+		if len(args) != 4 {
+			return Null, fmt.Errorf("wave.Templates.cdpQueryMetadata expects 4 arguments")
+		}
+	case "wave.Templates.getSObject", "wave.Templates.getTemplate", "wave.Templates.getTemplateConfig":
+		if len(args) != 1 && len(args) != 3 && len(args) != 4 {
+			return Null, fmt.Errorf("%s expects supported template lookup arguments", callee)
+		}
+	case "wave.Templates.getTemplates":
+		if len(args) > 1 {
+			return Null, fmt.Errorf("wave.Templates.getTemplates expects optional search options")
+		}
+	}
+	out := typedMap("Map<String,Object>")
+	out.Map[mapKey(String("local"))] = Bool(true)
+	out.MapKeys[mapKey(String("local"))] = String("local")
+	return out, nil
+}
+
+func flowInterviewCreate(args []Value) (Value, error) {
+	if len(args) != 2 && len(args) != 3 {
+		return Null, fmt.Errorf("Flow.Interview.createInterview expects flow name and input variables")
+	}
+	offset := 0
+	if len(args) == 3 {
+		if args[0].Kind != ValueString {
+			return Null, fmt.Errorf("Flow.Interview.createInterview expects namespace String")
+		}
+		offset = 1
+	}
+	if args[offset].Kind != ValueString || args[offset+1].Kind != ValueMap {
+		return Null, fmt.Errorf("Flow.Interview.createInterview expects flow name and input variables")
+	}
+	interview := Object("Flow.Interview")
+	if offset == 1 {
+		interview.Fields["namespace"] = args[0]
+	}
+	interview.Fields["flowName"] = args[offset]
+	interview.Fields["variables"] = args[offset+1]
+	return interview, nil
+}
+
 func (vm *VM) metadataEnqueueDeployment(args []Value, result *Result) (Value, error) {
 	if len(args) != 2 || args[0].Kind != ValueObject || args[0].Type != "Metadata.DeployContainer" {
 		return Null, fmt.Errorf("Metadata.Operations.enqueueDeployment expects DeployContainer and DeployCallback")
@@ -30828,6 +30942,22 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		case "getType":
 			return databaseObjectGetter(receiver, method, args, "type", Null)
 		}
+	case "ConnectApi.BaseEndpointExtension":
+		lowerMethod := strings.ToLower(method)
+		if strings.HasPrefix(lowerMethod, "before") {
+			if len(args) != 1 || args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "ConnectApi.EndpointExtensionRequest") {
+				return Null, receiver, false, true, fmt.Errorf("ConnectApi.BaseEndpointExtension.%s expects EndpointExtensionRequest", method)
+			}
+			return args[0], receiver, false, true, nil
+		}
+		if strings.HasPrefix(lowerMethod, "after") {
+			if len(args) != 2 || args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "ConnectApi.EndpointExtensionResponse") {
+				return Null, receiver, false, true, fmt.Errorf("ConnectApi.BaseEndpointExtension.%s expects EndpointExtensionResponse and request", method)
+			}
+			return args[0], receiver, false, true, nil
+		}
+	case "sfsqlquery.SqlQueueable":
+		return callSfsqlquerySqlQueueableMember(receiver, method, args)
 	case "UUID":
 		switch method {
 		case "toString":
@@ -32761,12 +32891,23 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	case "FormulaRecalcFieldError", "System.FormulaRecalcFieldError":
 		return callFormulaRecalcFieldErrorMember(receiver, method, args)
 	case "Flow.Interview":
-		if strings.EqualFold(method, "start") {
+		switch {
+		case strings.EqualFold(method, "start"):
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Flow.Interview.start expects 0 arguments")
 			}
 			receiver.Fields["started"] = Bool(true)
 			return Null, receiver, true, true, nil
+		case strings.EqualFold(method, "getVariableValue"):
+			if len(args) != 1 || args[0].Kind != ValueString {
+				return Null, receiver, false, true, fmt.Errorf("Flow.Interview.getVariableValue expects variable name String")
+			}
+			if variables, ok := receiver.Fields["variables"]; ok && variables.Kind == ValueMap {
+				if value, ok := variables.Map[mapKey(args[0])]; ok {
+					return value, receiver, false, true, nil
+				}
+			}
+			return Null, receiver, false, true, nil
 		}
 	case "VisualEditor.DataRow":
 		return callVisualEditorDataRowMember(receiver, method, args)
@@ -32962,6 +33103,12 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		return vm.callVoidMockMember(receiver, method, args)
 	case "CartExtension.SplitShipmentServiceMock":
 		return vm.callVoidMockMember(receiver, method, args)
+	case "CartExtension.AbstractCartCalculator", "CartExtension.CartCalculate", "CartExtension.InventoryCartCalculator",
+		"CartExtension.PricingCartCalculator", "CartExtension.PromotionsCartCalculator", "CartExtension.ShippingCartCalculator",
+		"CartExtension.TaxCartCalculator":
+		return vm.callCartExtensionMockBackedCalculator(receiver, method, args)
+	case "CartExtension.SplitShipmentService":
+		return vm.callCartExtensionMockBackedSplitShipment(receiver, method, args)
 	case "URL":
 		if method == "toExternalForm" || method == "toString" {
 			if len(args) != 0 {
@@ -34015,6 +34162,85 @@ func (vm *VM) callVoidMockMember(receiver Value, method string, args []Value) (V
 		return Null, receiver, false, false, nil
 	}
 	return Null, receiver, false, true, nil
+}
+
+func (vm *VM) callCartExtensionMockBackedCalculator(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	mock, ok := receiver.Fields["mockExecutor"]
+	if !ok || mock.Kind != ValueObject || !strings.EqualFold(mock.Type, "CartExtension.CartCalculateExecutorMock") {
+		return Null, receiver, false, false, nil
+	}
+	method = cartExtensionMockExecutorMethod(receiver.Type, method)
+	value, updatedMock, mutated, handled, err := vm.callVoidMockMember(mock, method, args)
+	if mutated {
+		receiver.Fields["mockExecutor"] = updatedMock
+	}
+	return value, receiver, mutated, handled, err
+}
+
+func cartExtensionMockExecutorMethod(receiverType, method string) string {
+	if !strings.EqualFold(method, "calculate") {
+		return method
+	}
+	switch receiverType {
+	case "CartExtension.InventoryCartCalculator":
+		return "inventory"
+	case "CartExtension.PricingCartCalculator":
+		return "prices"
+	case "CartExtension.PromotionsCartCalculator":
+		return "promotions"
+	case "CartExtension.ShippingCartCalculator":
+		return "shipping"
+	case "CartExtension.TaxCartCalculator":
+		return "tax"
+	default:
+		return method
+	}
+}
+
+func (vm *VM) callCartExtensionMockBackedSplitShipment(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	mock, ok := receiver.Fields["mockService"]
+	if !ok || mock.Kind != ValueObject || !strings.EqualFold(mock.Type, "CartExtension.SplitShipmentServiceMock") {
+		return Null, receiver, false, false, nil
+	}
+	value, updatedMock, mutated, handled, err := vm.callVoidMockMember(mock, method, args)
+	if mutated {
+		receiver.Fields["mockService"] = updatedMock
+	}
+	return value, receiver, mutated, handled, err
+}
+
+func callSfsqlquerySqlQueueableMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	switch method {
+	case "cancel", "processDataChunk":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("sfsqlquery.SqlQueueable.%s expects 0 arguments", method)
+		}
+		return Null, receiver, false, true, nil
+	case "chainNextJob":
+		if len(args) != 1 || args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "sfsqlquery.QueryHandle") {
+			return Null, receiver, false, true, fmt.Errorf("sfsqlquery.SqlQueueable.chainNextJob expects QueryHandle")
+		}
+		receiver.Fields["nextJob"] = args[0]
+		return Null, receiver, true, true, nil
+	case "getColumnNames":
+		return databaseObjectGetter(receiver, method, args, "columnNames", typedList("List<String>"))
+	case "getMetadata":
+		return databaseObjectGetter(receiver, method, args, "metadata", typedList("List<ConnectApi.QuerySqlMetadataItem>"))
+	case "getPageOutput":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("sfsqlquery.SqlQueueable.getPageOutput expects 0 arguments")
+		}
+		page := Object("ConnectApi.QuerySqlPageOutput")
+		page.Fields["rows"] = receiver.Fields["rows"]
+		page.Fields["metadata"] = receiver.Fields["metadata"]
+		return page, receiver, false, true, nil
+	case "getQueryId":
+		return databaseObjectGetter(receiver, method, args, "queryId", String(""))
+	case "getRows":
+		return databaseObjectGetter(receiver, method, args, "rows", typedList("List<sfsqlquery.Row>"))
+	default:
+		return Null, receiver, false, false, nil
+	}
 }
 
 func callSearchResultMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
