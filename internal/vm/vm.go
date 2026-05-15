@@ -20972,6 +20972,15 @@ func callDomDocumentMember(receiver Value, method string, args []Value) (Value, 
 }
 
 func callDomXmlNodeMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	method = canonicalStdlibMemberName(method,
+		"toXmlString", "getNodeType", "getName", "getNamespace", "getPrefix", "getText",
+		"getChildren", "getChildElements", "getChildElement", "getParent",
+		"getAttributeCount", "getAttributeKeyAt", "getAttributeKeyNsAt",
+		"getAttribute", "getAttributeValue", "getAttributeValueNs",
+		"getPrefixFor", "getNamespaceFor", "setNamespace", "setAttribute", "setAttributeNs",
+		"removeAttribute", "addTextNode", "addCommentNode", "addChildElement",
+		"removeChild", "insertBefore",
+	)
 	switch method {
 	case "toXmlString":
 		if len(args) != 0 {
@@ -33045,6 +33054,12 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	}
 	if strings.EqualFold(receiver.Type, "DataWeave.Result") {
 		return callDataWeaveResultMember(receiver, method, args)
+	}
+	if strings.EqualFold(receiver.Type, "Dom.Document") {
+		return callDomDocumentMember(receiver, method, args)
+	}
+	if strings.EqualFold(receiver.Type, "Dom.XmlNode") {
+		return callDomXmlNodeMember(receiver, method, args)
 	}
 	switch receiver.Type {
 	case "eventbus.SuccessResult", "eventbus.FailureResult", "EventBus.SuccessResult", "EventBus.FailureResult":
