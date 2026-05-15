@@ -2157,6 +2157,7 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"Ideas.findSimilar",
 		"Datacloud.FindDuplicates.findDuplicates", "Datacloud.FindDuplicatesByIds.findDuplicatesByIds",
 		"DomainParser.parse", "FeatureManagement.changeProtection", "Packaging.getCurrentPackageId",
+		"NLPPredictions.FAQPrediction.predict",
 		"RequestImpl.getCurrent", "UIRequest.getCurrent",
 		"Auth.AuthToken.revokeAccess", "Auth.SessionManagement.getCurrentSession",
 		"Auth.AuthConfiguration.getAuthProviderSsoUrl", "Auth.CommunitiesUtil.isGuestUser",
@@ -2187,6 +2188,10 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"functions.MockFunctionInvocationFactory.createErrorResponse", "functions.MockFunctionInvocationFactory.createSuccessResponse",
 		"SubMgmt.Test.create", "SubMgmt.Test.modify", "SubMgmt.Test.remove",
 		"UserProvisioning.ConnectorTestUtil.createConnectedApp",
+		"BcpProvisionService.enableC2C", "DistributedLedgerService.enableC2C",
+		"data_mask.DataMaskIntegrationUtil.cancelJob", "data_mask.DataMaskIntegrationUtil.getJobs",
+		"data_mask.DataMaskIntegrationUtil.getRunLogResponse", "data_mask.DataMaskIntegrationUtil.isCoreAllowed",
+		"data_mask.DataMaskIntegrationUtil.isLibraryInUse", "data_mask.DataMaskIntegrationUtil.runMask",
 		"wave.Templates.cdpQueryMetadata", "wave.Templates.getSObject", "wave.Templates.getSObjects",
 		"wave.Templates.getTemplate", "wave.Templates.getTemplateConfig", "wave.Templates.getTemplates",
 		"sfsqlquery.SqlTester.clearMocks", "sfsqlquery.SqlTester.enqueueMockRows", "sfsqlquery.SqlTester.setMockRows", "sfsqlquery.SqlTester.setMockMetadata",
@@ -2501,6 +2506,9 @@ platformStaticCall:
 		return value, err
 	}
 	if value, handled, err := vm.callPushUpgradeCustomizationRepository(callee, args); handled || err != nil {
+		return value, err
+	}
+	if value, handled, err := vm.callAppLauncherControllerStatic(callee, args); handled || err != nil {
 		return value, err
 	}
 	if reason, ok := unsupportedIntegrationSurface(callee); ok {
@@ -4190,6 +4198,24 @@ platformStaticCall:
 		app.Fields["Id"] = platformScalar("Id", "0SO000000000001")
 		app.Fields["Name"] = args[0]
 		return app, nil
+	case "BcpProvisionService.enableC2C", "DistributedLedgerService.enableC2C":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("%s expects 0 arguments", callee)
+		}
+		return Null, nil
+	case "data_mask.DataMaskIntegrationUtil.isCoreAllowed":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("data_mask.DataMaskIntegrationUtil.isCoreAllowed expects 0 arguments")
+		}
+		return Bool(false), nil
+	case "data_mask.DataMaskIntegrationUtil.isLibraryInUse":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("data_mask.DataMaskIntegrationUtil.isLibraryInUse expects libraryId String")
+		}
+		return Bool(false), nil
+	case "data_mask.DataMaskIntegrationUtil.cancelJob", "data_mask.DataMaskIntegrationUtil.getJobs",
+		"data_mask.DataMaskIntegrationUtil.getRunLogResponse", "data_mask.DataMaskIntegrationUtil.runMask":
+		return Null, unsupportedCallError(callee + " local data mask job surface")
 	case "wave.Templates.cdpQueryMetadata", "wave.Templates.getSObject", "wave.Templates.getTemplate", "wave.Templates.getTemplateConfig", "wave.Templates.getTemplates":
 		return waveTemplatesStaticDefault(callee, args)
 	case "wave.Templates.getSObjects":
@@ -4408,6 +4434,13 @@ platformStaticCall:
 			return Null, fmt.Errorf("Packaging.getCurrentPackageId expects 0 arguments")
 		}
 		return Null, nil
+	case "NLPPredictions.FAQPrediction.predict":
+		if len(args) != 1 || args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "NLPPredictions.FAQPredictionInput") {
+			return Null, fmt.Errorf("NLPPredictions.FAQPrediction.predict expects FAQPredictionInput")
+		}
+		result := Object("NLPPredictions.FAQPredictionResult")
+		result.Fields["matches"] = typedList("List<NLPPredictions.FAQPredictionMatch>")
+		return result, nil
 	case "DomainCreator.getContentHostname",
 		"DomainCreator.getExperienceCloudSitesBuilderHostname",
 		"DomainCreator.getExperienceCloudSitesHostname",
@@ -26106,6 +26139,127 @@ func stringValueOrEmpty(value Value) string {
 	return ""
 }
 
+func (vm *VM) callAppLauncherControllerStatic(callee string, args []Value) (Value, bool, error) {
+	className, methodName, ok := vm.splitClassMember(callee)
+	if !ok || !strings.HasPrefix(strings.ToLower(className), "applauncher.") {
+		return Null, false, nil
+	}
+	name := strings.ToLower(methodName)
+	switch strings.ToLower(className) {
+	case "applauncher.loginformcontroller":
+		switch name {
+		case "getforgotpasswordurl":
+			if len(args) != 0 {
+				return Null, true, fmt.Errorf("%s expects 0 arguments", callee)
+			}
+			return String("/ForgotPassword"), true, nil
+		case "getisselfregistrationenabled", "getisusernamepasswordenabled":
+			if len(args) != 0 {
+				return Null, true, fmt.Errorf("%s expects 0 arguments", callee)
+			}
+			return Bool(true), true, nil
+		case "getloginrightframeurl":
+			if len(args) != 0 {
+				return Null, true, fmt.Errorf("%s expects 0 arguments", callee)
+			}
+			return String(""), true, nil
+		case "getselfregistrationurl":
+			if len(args) != 0 {
+				return Null, true, fmt.Errorf("%s expects 0 arguments", callee)
+			}
+			return String("/SelfRegister"), true, nil
+		case "getusernamepasswordselfregenabled":
+			if len(args) != 0 {
+				return Null, true, fmt.Errorf("%s expects 0 arguments", callee)
+			}
+			out := typedMap("Map<String,Boolean>")
+			out.Map[mapKey(String("usernamePasswordEnabled"))] = Bool(true)
+			out.Map[mapKey(String("selfRegistrationEnabled"))] = Bool(true)
+			return out, true, nil
+		case "login", "logingetpagerefurl":
+			if len(args) != 3 {
+				return Null, true, fmt.Errorf("%s expects 3 arguments", callee)
+			}
+			return String(vm.appLauncherStartURL(args[2])), true, nil
+		case "setexperienceid":
+			if len(args) != 1 {
+				return Null, true, fmt.Errorf("%s expects 1 argument", callee)
+			}
+			return String(""), true, nil
+		}
+	case "applauncher.selfregistercontroller":
+		switch name {
+		case "getextrafields":
+			if len(args) != 1 {
+				return Null, true, fmt.Errorf("%s expects 1 argument", callee)
+			}
+			return typedList("List<Map<String,Object>>"), true, nil
+		case "isvalidpassword":
+			if len(args) != 2 {
+				return Null, true, fmt.Errorf("%s expects 2 arguments", callee)
+			}
+			password := ""
+			confirm := ""
+			if args[0].Kind == ValueString {
+				password = args[0].Text
+			}
+			if args[1].Kind == ValueString {
+				confirm = args[1].Text
+			}
+			return Bool(password != "" && password == confirm), true, nil
+		case "selfregistergetredirecturl":
+			if len(args) != 11 {
+				return Null, true, fmt.Errorf("%s expects 11 arguments", callee)
+			}
+			return String(vm.appLauncherRegistrationRedirectURL(args[6], args[8])), true, nil
+		case "commonselfregistergetredirecturl":
+			if len(args) != 13 {
+				return Null, true, fmt.Errorf("%s expects 13 arguments", callee)
+			}
+			return String(vm.appLauncherRegistrationRedirectURL(args[6], args[8])), true, nil
+		case "setexperienceid":
+			if len(args) != 1 {
+				return Null, true, fmt.Errorf("%s expects 1 argument", callee)
+			}
+			return String(""), true, nil
+		case "selfregister":
+			return Null, true, unsupportedCallError(callee + " local user registration service flow")
+		}
+	case "applauncher.sociallogincontroller":
+		switch name {
+		case "getauthproviders":
+			if len(args) != 0 {
+				return Null, true, fmt.Errorf("%s expects 0 arguments", callee)
+			}
+			return typedList("List<AuthProvider>"), true, nil
+		case "getsamlproviders":
+			if len(args) != 0 {
+				return Null, true, fmt.Errorf("%s expects 0 arguments", callee)
+			}
+			return typedList("List<SamlSsoConfig>"), true, nil
+		case "getcommunitydomainssourl", "getsamlssourl", "getsamlssourlnocache", "getssourl":
+			return Null, true, unsupportedCallError(callee + " local social login redirect flow")
+		case "handleidp":
+			return Null, true, unsupportedCallError(callee + " local identity provider callback flow")
+		}
+	}
+	return Null, false, nil
+}
+
+func (vm *VM) appLauncherStartURL(value Value) string {
+	if value.Kind == ValueString && strings.TrimSpace(value.Text) != "" {
+		return value.Text
+	}
+	return "/"
+}
+
+func (vm *VM) appLauncherRegistrationRedirectURL(confirmURL, startURL Value) string {
+	if confirmURL.Kind == ValueString && strings.TrimSpace(confirmURL.Text) != "" {
+		return confirmURL.Text
+	}
+	return vm.appLauncherStartURL(startURL)
+}
+
 func (vm *VM) callConnectAPITestFixtureStatic(callee string, args []Value) (Value, bool, error) {
 	className, methodName, ok := vm.splitClassMember(callee)
 	if !ok || !hasTypePrefixFold(className, "ConnectApi") {
@@ -31456,6 +31610,20 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	}
 	if value, updated, mutated, handled, err := callOrgInstrumentationServiceMember(receiver, method, args); handled || err != nil {
 		return value, updated, mutated, true, err
+	}
+	if strings.EqualFold(receiver.Type, "NLPPredictions.PredictionHandler") {
+		switch strings.ToLower(method) {
+		case "handlepredictionrequest":
+			if len(args) != 1 || args[0].Kind != ValueObject || !strings.HasPrefix(strings.ToLower(args[0].Type), "nlppredictions.predictionrequestcontext") {
+				return Null, receiver, false, true, fmt.Errorf("NLPPredictions.PredictionHandler.handlePredictionRequest expects PredictionRequestContext")
+			}
+			return Null, receiver, false, true, nil
+		case "handlepredictionresponse":
+			if len(args) != 1 || args[0].Kind != ValueObject || !strings.HasPrefix(strings.ToLower(args[0].Type), "nlppredictions.predictionresponsecontext") {
+				return Null, receiver, false, true, fmt.Errorf("NLPPredictions.PredictionHandler.handlePredictionResponse expects PredictionResponseContext")
+			}
+			return Null, receiver, false, true, nil
+		}
 	}
 	if value, updated, mutated, handled, err := callUserProvisioningBatchableMember(receiver, method, args); handled || err != nil {
 		return value, updated, mutated, true, err

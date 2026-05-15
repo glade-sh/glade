@@ -257,6 +257,9 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 	if localServiceHarnessBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "safe platform service method is handled by a deterministic local no-op/default-result harness; live cloud side effects remain fenced", true
 	}
+	if appLauncherControllerBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "applauncher controller helper returns deterministic local URLs, booleans, empty provider/field DTO lists, or no-op form redirects without performing authentication or registration services", true
+	}
 	if explicitlyUnsupportedCoreBehaviorMethod(symbol, member) {
 		return StubBehaviorUnsupported, "local runtime returns an explicit unsupported-feature error for this platform surface", true
 	}
@@ -300,6 +303,41 @@ func pushUpgradeCustomizationRepositoryBehaviorMethod(symbol typesys.TypeSymbol,
 		"getcustomupgradetypeforid", "getcustomupgradetypeforindex",
 		"setcustomupgradeallowedforid", "setcustomupgradeallowedforindex":
 		return true
+	default:
+		return false
+	}
+}
+
+func appLauncherControllerBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if member.Kind != apexast.DeclarationMethod {
+		return false
+	}
+	name := strings.ToLower(member.Name)
+	switch stubBehaviorTypeName(symbol) {
+	case "applauncher.LoginFormController":
+		switch name {
+		case "getforgotpasswordurl", "getisselfregistrationenabled", "getisusernamepasswordenabled",
+			"getloginrightframeurl", "getselfregistrationurl", "getusernamepasswordselfregenabled",
+			"login", "logingetpagerefurl", "setexperienceid":
+			return true
+		default:
+			return false
+		}
+	case "applauncher.SelfRegisterController":
+		switch name {
+		case "commonselfregistergetredirecturl", "getextrafields", "isvalidpassword",
+			"selfregistergetredirecturl", "setexperienceid":
+			return true
+		default:
+			return false
+		}
+	case "applauncher.SocialLoginController":
+		switch name {
+		case "getauthproviders", "getsamlproviders":
+			return true
+		default:
+			return false
+		}
 	default:
 		return false
 	}
@@ -366,6 +404,15 @@ func localServiceHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesys
 	}
 	name := strings.ToLower(member.Name)
 	switch stubBehaviorTypeName(symbol) {
+	case "BcpProvisionService", "DistributedLedgerService":
+		return name == "enablec2c"
+	case "data_mask.DataMaskIntegrationUtil":
+		switch name {
+		case "iscoreallowed", "islibraryinuse":
+			return true
+		default:
+			return false
+		}
 	case "Datacloud.FindDuplicates":
 		return name == "findduplicates"
 	case "Datacloud.FindDuplicatesByIds":
@@ -639,6 +686,10 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 		return name == "findduplicates"
 	case "Datacloud.FindDuplicatesByIds":
 		return name == "findduplicatesbyids"
+	case "NLPPredictions.FAQPrediction":
+		return name == "predict"
+	case "NLPPredictions.PredictionHandler":
+		return name == "handlepredictionrequest" || name == "handlepredictionresponse"
 	case "Security":
 		return name == "stripinaccessible"
 	case "DomainCreator":
@@ -1340,6 +1391,8 @@ func callbackInterfaceBehaviorMethod(symbol typesys.TypeSymbol, member typesys.M
 	typeName := strings.ToLower(stubBehaviorTypeName(symbol))
 	name := strings.ToLower(member.Name)
 	switch typeName {
+	case "commerceextension.resolutionstrategy":
+		return name == "resolve"
 	case "database.batchable":
 		return name == "start" || name == "execute" || name == "finish"
 	case "queueable", "finalizer":
@@ -1352,6 +1405,8 @@ func callbackInterfaceBehaviorMethod(symbol typesys.TypeSymbol, member typesys.M
 		return name == "oninitdefaults"
 	case "userprovisioning.userprovisioningplugin":
 		return name == "invoke"
+	case "readiness.productevaluator":
+		return name == "evaluatereadiness" || name == "isactive"
 	default:
 		return false
 	}

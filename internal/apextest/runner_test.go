@@ -192,6 +192,53 @@ private class IterableBatchTest {
 	}
 }
 
+func TestRunDispatchesGeneratedProductCallbackImplementations(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/CommerceResolver.cls"), `
+public class CommerceResolver implements CommerceExtension.ResolutionStrategy {
+  public CommerceExtension.Resolution resolve() {
+    return new CommerceExtension.Resolution(CommerceExtension.ResolutionStates.OFF);
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ReadinessEvaluator.cls"), `
+public class ReadinessEvaluator implements Readiness.ProductEvaluator {
+  public Boolean isActive() {
+    return true;
+  }
+  public List<Readiness.ProductScoreDetail> evaluateReadiness(Readiness.ProductEvaluationContext ctx) {
+    return new List<Readiness.ProductScoreDetail>{
+      new Readiness.ProductScoreDetail('01t000000000001AAA', 'local-rule', 100, 'ready')
+    };
+  }
+}
+`)
+	writeFile(t, filepath.Join(root, "force-app/main/classes/ProductCallbackTest.cls"), `
+@isTest
+private class ProductCallbackTest {
+  @isTest static void userCallbacksDispatchLocally() {
+    CommerceExtension.ResolutionStrategy strategy = new CommerceResolver();
+    System.assertEquals(CommerceExtension.ResolutionStates.OFF, strategy.resolve().getResolutionState());
+
+    Readiness.ProductEvaluator evaluator = new ReadinessEvaluator();
+    System.assertEquals(true, evaluator.isActive());
+    Readiness.ProductEvaluationContext context =
+      new Readiness.ProductEvaluationContext(new Set<Id>{ '01t000000000001AAA' });
+    List<Readiness.ProductScoreDetail> scores = evaluator.evaluateReadiness(context);
+    System.assertEquals(1, scores.size());
+    System.assertEquals('local-rule', scores[0].getRuleName());
+    System.assertEquals(100, scores[0].getRuleScore());
+  }
+}
+`)
+
+	run := Run(loadTestIndex(t, root), Options{})
+	if summary := run.Summary(); summary.Total != 1 || summary.Passed != 1 {
+		t.Fatalf("summary = %#v cases = %#v", summary, run.Suites[0].Cases)
+	}
+}
+
 func TestRuntimeEvaluatesTemplateLexemsWithInnerClassGaps(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}]}`)

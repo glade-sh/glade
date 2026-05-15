@@ -123,6 +123,78 @@ System.assertEquals('Hello', email.getSubject());
 	}
 }
 
+func TestExecAppLauncherControllerLocalHelpers(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals('/ForgotPassword', applauncher.LoginFormController.getForgotPasswordUrl());
+System.assertEquals('/SelfRegister', applauncher.LoginFormController.getSelfRegistrationUrl());
+System.assertEquals('', applauncher.LoginFormController.getLoginRightFrameUrl());
+System.assert(applauncher.LoginFormController.getIsSelfRegistrationEnabled());
+System.assert(applauncher.LoginFormController.getIsUsernamePasswordEnabled());
+Map<String, Boolean> enabled = applauncher.LoginFormController.getUsernamePasswordSelfRegEnabled();
+System.assertEquals(true, enabled.get('usernamePasswordEnabled'));
+System.assertEquals(true, enabled.get('selfRegistrationEnabled'));
+System.assertEquals('/home', applauncher.LoginFormController.login('local@example.test', 'secret', '/home'));
+System.assertEquals('/', applauncher.LoginFormController.loginGetPageRefUrl('local@example.test', 'secret', ''));
+System.assertEquals('', applauncher.LoginFormController.setExperienceId('0DB-local-network'));
+
+System.assert(applauncher.SelfRegisterController.isValidPassword('secret', 'secret'));
+System.assert(!applauncher.SelfRegisterController.isValidPassword('secret', 'different'));
+System.assertEquals(0, applauncher.SelfRegisterController.getExtraFields('Extra_Fields').size());
+System.assertEquals('/confirm', applauncher.SelfRegisterController.selfRegisterGetRedirectUrl('First', 'Last', 'local@example.test', 'secret', 'secret', null, '/confirm', '{}', '/start', true, true).toString());
+System.assertEquals('/start', applauncher.SelfRegisterController.commonSelfRegisterGetRedirectUrl('First', 'Last', 'local@example.test', 'secret', 'secret', null, '', '{}', '/start', true, true, false, '{}'));
+System.assertEquals('', applauncher.SelfRegisterController.setExperienceId('0DB-local-network'));
+
+System.assertEquals(0, applauncher.SocialLoginController.getAuthProviders().size());
+System.assertEquals(0, applauncher.SocialLoginController.getSamlProviders().size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecAppLauncherControllerServiceFlowsStayUnsupported(t *testing.T) {
+	cases := []struct {
+		name string
+		src  string
+		want string
+	}{
+		{
+			name: "registration service",
+			src:  `applauncher.SelfRegisterController.selfRegister('First', 'Last', 'local@example.test', 'secret', 'secret', null, '/confirm', '{}', '/start', true);`,
+			want: `unsupported call "applauncher.SelfRegisterController.selfRegister local user registration service flow"`,
+		},
+		{
+			name: "social sso redirect",
+			src:  `applauncher.SocialLoginController.getSsoUrl('/start', 'LocalProvider');`,
+			want: `unsupported call "applauncher.SocialLoginController.getSsoUrl local social login redirect flow"`,
+		},
+		{
+			name: "identity provider callback",
+			src:  `applauncher.SocialLoginController.handleIdp();`,
+			want: `unsupported call "applauncher.SocialLoginController.handleIdp local identity provider callback flow"`,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			program, err := CompileAnonymous(tc.src)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = New(nil).Execute(program)
+			if err == nil {
+				t.Fatal("expected unsupported feature error")
+			}
+			var runtimeErr *RuntimeError
+			if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != tc.want || err.Error() != tc.want {
+				t.Fatalf("error = %#v, want UnsupportedFeature %q", err, tc.want)
+			}
+		})
+	}
+}
+
 func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 	cases := []struct {
 		name string
@@ -198,6 +270,26 @@ func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 			name: "crypto key wrapper api second path",
 			src:  `Crypto.generateSelfSignedCertificate('LocalKeys');`,
 			want: `unsupported call "Crypto.generateSelfSignedCertificate local key, certificate, encryption, and random surfaces"`,
+		},
+		{
+			name: "data mask run job",
+			src:  `data_mask.DataMaskIntegrationUtil.runMask('{}');`,
+			want: `unsupported call "data_mask.DataMaskIntegrationUtil.runMask local data mask job surface"`,
+		},
+		{
+			name: "data mask inspect jobs",
+			src:  `data_mask.DataMaskIntegrationUtil.getJobs();`,
+			want: `unsupported call "data_mask.DataMaskIntegrationUtil.getJobs local data mask job surface"`,
+		},
+		{
+			name: "data mask cancel job",
+			src:  `data_mask.DataMaskIntegrationUtil.cancelJob('job-local');`,
+			want: `unsupported call "data_mask.DataMaskIntegrationUtil.cancelJob local data mask job surface"`,
+		},
+		{
+			name: "data mask run log",
+			src:  `data_mask.DataMaskIntegrationUtil.getRunLogResponse('job-local');`,
+			want: `unsupported call "data_mask.DataMaskIntegrationUtil.getRunLogResponse local data mask job surface"`,
 		},
 	}
 	for _, tc := range cases {
@@ -390,6 +482,10 @@ func TestExecLocalTelemetryProvisioningAndPrefCenterHarnesses(t *testing.T) {
 	program, err := CompileAnonymous(`
 IsvPartners.AppAnalytics.logCustomInteraction('clicked');
 UserProvisioning.UserProvisioningLog.log('0PR-local', 'Created');
+BcpProvisionService.enableC2C();
+DistributedLedgerService.enableC2C();
+System.assertEquals(false, data_mask.DataMaskIntegrationUtil.isCoreAllowed());
+System.assertEquals(false, data_mask.DataMaskIntegrationUtil.isLibraryInUse('lib-local'));
 String token = pref_center.TokenUtility.generateToken('subscriber-1');
 System.assert(token.startsWith('local-token-'));
 Map<String,String> tokens = pref_center.TokenUtility.generateTokens(new List<String>{'a', 'b'});
@@ -1574,6 +1670,23 @@ List<Datacloud.FindDuplicatesResult> byId = Datacloud.FindDuplicatesByIds.findDu
 System.assertEquals(1, byId.size());
 System.assert(byId.get(0).isSuccess());
 System.assertEquals(0, byId.get(0).getDuplicateResults().size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecNLPPredictionsLocalDefaults(t *testing.T) {
+	program, err := CompileAnonymous(`
+NLPPredictions.FAQPredictionInput input = new NLPPredictions.FAQPredictionInput('How do I reset my password?', 'local-model');
+NLPPredictions.FAQPredictionResult result = NLPPredictions.FAQPrediction.predict(input);
+System.assertEquals(0, result.getMatches().size());
+NLPPredictions.PredictionHandler handler = new NLPPredictions.PredictionHandler();
+handler.handlePredictionRequest(new NLPPredictions.PredictionRequestContextImpl());
+handler.handlePredictionResponse(new NLPPredictions.PredictionResponseContextImpl());
 `)
 	if err != nil {
 		t.Fatal(err)
