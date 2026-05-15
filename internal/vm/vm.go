@@ -17046,6 +17046,7 @@ func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinit
 	desc.Fields["deprecatedAndHidden"] = Bool(false)
 	fieldsMap := Map()
 	fieldsMap.Type = "Schema.SObjectFieldMap"
+	fieldsMap.Runtime = "sobjectfieldmap:" + name
 	fieldNames := make([]string, 0, len(definition.Fields))
 	for fieldName := range definition.Fields {
 		fieldNames = append(fieldNames, fieldName)
@@ -17475,6 +17476,11 @@ func (vm *VM) describeFieldValue(objectName, fieldName string) (Value, error) {
 			field := systemField
 			return vm.describeSyntheticFieldValue(objectName, fieldName, field)
 		}
+		if vm.canSynthesizeSchemaField(objectName) {
+			if field := syntheticSchemaField(fieldName); field.APIName != "" {
+				return vm.describeSyntheticFieldValue(objectName, field.APIName, field)
+			}
+		}
 		if strings.TrimSpace(fieldName) == "" {
 			return emptySObjectFieldDescribe(objectName), nil
 		}
@@ -17659,6 +17665,32 @@ func syntheticSObjectSystemField(fieldName string) (storage.Field, bool) {
 	default:
 		return storage.Field{}, false
 	}
+}
+
+func syntheticSchemaField(fieldName string) storage.Field {
+	fieldName = strings.TrimSpace(fieldName)
+	if dot := strings.LastIndex(fieldName, "."); dot >= 0 && dot+1 < len(fieldName) {
+		fieldName = fieldName[dot+1:]
+	}
+	if fieldName == "" || !apexIdentifierStartsUpper(fieldName) {
+		return storage.Field{}
+	}
+	field := storage.Field{APIName: fieldName, Label: fieldName, Type: storage.FieldString}
+	switch {
+	case strings.EqualFold(fieldName, "Id") || strings.HasSuffix(fieldName, "Id"):
+		field.Type = storage.FieldReference
+		field.DisplayType = "REFERENCE"
+	case strings.HasSuffix(fieldName, "Date"):
+		field.Type = storage.FieldDate
+		field.DisplayType = "DATE"
+	case strings.HasSuffix(fieldName, "DateTime") || strings.HasSuffix(fieldName, "Timestamp"):
+		field.Type = storage.FieldDateTime
+		field.DisplayType = "DATETIME"
+	case strings.HasPrefix(fieldName, "Is") || strings.HasPrefix(fieldName, "Has"):
+		field.Type = storage.FieldBoolean
+		field.DisplayType = "BOOLEAN"
+	}
+	return field
 }
 
 func emptySObjectFieldDescribe(objectName string) Value {
@@ -18509,6 +18541,13 @@ func (vm *VM) lookupSObjectFieldToken(parts []string) (Value, bool) {
 		if standardField, standardOK := storage.ResolveFieldName(standardDefinition, namespace, fieldName); standardOK {
 			canonical = standardField
 			field = standardDefinition.Fields[canonical]
+		} else if vm.canSynthesizeSchemaField(objectName) {
+			synthetic := syntheticSchemaField(fieldName)
+			if synthetic.APIName == "" {
+				return Null, false
+			}
+			canonical = synthetic.APIName
+			field = synthetic
 		} else if !isSObjectSystemField(fieldName) {
 			return Null, false
 		} else {
@@ -18522,6 +18561,16 @@ func (vm *VM) lookupSObjectFieldToken(parts []string) (Value, bool) {
 		field.APIName = canonical
 	}
 	return sObjectFieldTokenFromField(objectName, field), true
+}
+
+func (vm *VM) canSynthesizeSchemaField(objectName string) bool {
+	if canonical, ok := storage.ResolveKnownStandardObjectName(objectName); ok && strings.EqualFold(canonical, objectName) {
+		return false
+	}
+	if _, ok := storage.ResolveKnownStandardObjectName(objectName); ok {
+		return false
+	}
+	return true
 }
 
 func (vm *VM) callSchemaSObjectTypePath(callee string, args []Value, result *Result) (Value, bool, error) {
@@ -29803,6 +29852,17 @@ func (vm *VM) specialMapLookup(receiver, key Value) (Value, bool) {
 	if vm != nil && vm.Org != nil {
 		namespace = vm.Org.Namespace
 	}
+	if objectName, ok := sObjectFieldMapObjectName(receiver); ok {
+		for rawKey, value := range receiver.Map {
+			candidate := valueFromMapKey(rawKey)
+			if candidate.Kind == ValueString && schemaSObjectFieldMapKeyMatches(namespace, candidate.Text, key.Text) {
+				return value, true
+			}
+		}
+		if token, ok := vm.lookupSObjectFieldToken([]string{objectName, key.Text}); ok {
+			return token, true
+		}
+	}
 	switch receiver.Type {
 	case "Schema.GlobalDescribeMap":
 		for rawKey, value := range receiver.Map {
@@ -29837,6 +29897,15 @@ func (vm *VM) specialMapLookup(receiver, key Value) (Value, bool) {
 		}
 	}
 	return Null, false
+}
+
+func sObjectFieldMapObjectName(value Value) (string, bool) {
+	const prefix = "sobjectfieldmap:"
+	if !strings.HasPrefix(value.Runtime, prefix) {
+		return "", false
+	}
+	objectName := strings.TrimSpace(strings.TrimPrefix(value.Runtime, prefix))
+	return objectName, objectName != ""
 }
 
 func schemaSObjectFieldMapKeyMatches(namespace, canonical, candidate string) bool {
@@ -30696,7 +30765,7 @@ func unmarkQueriedSObjectField(value *Value, field string) {
 }
 
 func dmlVisibleSObjectFields(value *Value) map[string]bool {
-	fields := map[string]bool{"id": true}
+	fields := map[string]bool{"id": true, "lastmodifiedbyid": true}
 	if value == nil || value.Kind != ValueObject {
 		return fields
 	}
@@ -31002,6 +31071,12 @@ func (vm *VM) resolveSObjectFieldName(typeName, field string) string {
 	objectName, ok := storage.ResolveObjectName(*vm.Org, typeName)
 	if !ok {
 		return storage.StripNamespaceToken(vm.Org.Namespace, field)
+	}
+	if dot := strings.LastIndex(field, "."); dot >= 0 && dot+1 < len(field) {
+		prefix := field[:dot]
+		if resolvedPrefix, prefixOK := storage.ResolveObjectName(*vm.Org, prefix); prefixOK && strings.EqualFold(resolvedPrefix, objectName) {
+			field = field[dot+1:]
+		}
 	}
 	if canonical, ok := storage.ResolveFieldName(vm.Org.Objects[objectName].Definition, vm.Org.Namespace, field); ok {
 		return canonical
