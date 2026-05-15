@@ -242,6 +242,30 @@ func TestScanSuppressesLoadedLegacyObjectSource(t *testing.T) {
 	}
 }
 
+func TestScanSuppressesCustomMetadataStubSelfReferences(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"src","default":true}]}`)
+	writeFile(t, filepath.Join(root, "stubs/apex-sobject-stubs/ProbeTestMdt__mdt.cls"), `global class ProbeTestMdt__mdt extends SObject {
+  public ProbeTestMdt__mdt() {}
+}`)
+	writeFile(t, filepath.Join(root, "src/classes/UsesMetadata.cls"), `public class UsesMetadata {
+  void run() {
+    MissingConfig__mdt cfg;
+  }
+}`)
+
+	report, err := Scan(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if hasLineFinding(report, "custommetadata.legacy-records", "stubs/apex-sobject-stubs/ProbeTestMdt__mdt.cls", "ProbeTestMdt__mdt") {
+		t.Fatalf("stub self-reference should not be reported as a project custom metadata blocker")
+	}
+	if !hasLineFinding(report, "custommetadata.legacy-records", "src/classes/UsesMetadata.cls", "MissingConfig__mdt") {
+		t.Fatalf("real unresolved app custom metadata reference was not reported")
+	}
+}
+
 func TestScanSuppressesResolvedStandardSchemaReferences(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "sfdx-project.json"), `{"packageDirectories":[{"path":"force-app","default":true}],"namespace":"pkg"}`)

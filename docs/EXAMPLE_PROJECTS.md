@@ -129,10 +129,9 @@ Current status as of 2026-05-15:
   `go run ./cmd/oaer compat local-tests --check
   docs/fixtures/local-tests-corpus.json --json`.
 - A full `example-projects` post-parity inventory currently includes the public
-  stubs and is not green: `filesScanned=59479 findings=4078
-  testBlockingFindings=4078 surfaces=3`. The remaining scanner buckets are
-  `platform.cache-connectapi`, `metadata.apex-deploy`, and
-  `custommetadata.legacy-records`.
+  stubs and is not green: `filesScanned=59479 findings=4076
+  testBlockingFindings=4076 surfaces=2`. The remaining scanner buckets are
+  `platform.cache-connectapi` and `metadata.apex-deploy`.
 - `src-nmb-nutpl-develop` is the current green runtime sentinel:
   `go run ./cmd/oaer compat local-tests --project
   example-projects/src-nmb-nutpl-develop --timeout 30000 --top-failures 8
