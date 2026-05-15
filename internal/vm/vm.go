@@ -2237,8 +2237,18 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"Site.getMasterLabel", "Site.isRegistrationEnabled", "Site.isLoginEnabled", "Site.isValidUsername",
 		"Site.setExperienceId", "Site.getErrorMessage", "Site.getErrorDescription", "Site.forgotPassword",
 		"Site.login", "Site.changePassword", "Site.validatePassword", "Site.createExternalUser", "Site.createPortalUser",
+		"Site.createPersonAccountPortalUser", "Site.passwordlessLogin", "Site.setPortalUserAsAuthProvider",
 		"Network.getNetworkId", "Network.getLoginUrl", "Network.communitiesLanding",
 		"Network.forwardToAuthPage", "Network.getLogoutUrl", "Network.getSelfRegUrl",
+		"Network.createExternalUserAsync", "Network.createRecordAsync",
+		"Network.loadAllPackageDefaultNetworkDashboardSettings", "Network.loadAllPackageDefaultNetworkPulseSettings",
+		"Network.loadAllPackageDefaultNetworkWorkspaceMetricSettings",
+		"Aura.redirect",
+		"ChatterAnswers.AccountCreator.createAccount",
+		"LiveAgent.LiveAgentRealTimeSystem.cancelChatRequests", "LiveAgent.LiveAgentRealTimeSystem.routeChatRequests",
+		"LiveAgent.LiveAgentRealTimeSystem.setButtonStatus",
+		"Support.EinsteinBots.sendMessageToBot", "Support.EmailTemplateSelector.getDefaultEmailTemplateId",
+		"Support.LifeScienceAttendees.parse", "Support.LifeScienceUpdateEmailTransactions.updateRecords",
 		"LoggingLevel.values", "ApexPages.Severity.values", "RoundingMode.values",
 	}
 	calls := make(map[string]string, len(names))
@@ -4868,6 +4878,29 @@ platformStaticCall:
 			args[0].Fields["Id"] = userID
 		}
 		return userID, nil
+	case "Site.createPersonAccountPortalUser":
+		if len(args) != 3 && len(args) != 4 {
+			return Null, fmt.Errorf("Site.createPersonAccountPortalUser expects 3 or 4 arguments")
+		}
+		userID := String("005000000000E01")
+		if len(args) > 0 && args[0].Kind == ValueObject {
+			args[0].Fields["Id"] = userID
+		}
+		return userID, nil
+	case "Site.passwordlessLogin":
+		if len(args) != 3 {
+			return Null, fmt.Errorf("Site.passwordlessLogin expects user Id, verification methods, and start URL")
+		}
+		startURL := "/"
+		if args[2].Kind == ValueString && strings.TrimSpace(args[2].Text) != "" {
+			startURL = args[2].Text
+		}
+		return newPageReference(startURL), nil
+	case "Site.setPortalUserAsAuthProvider":
+		if len(args) != 2 {
+			return Null, fmt.Errorf("Site.setPortalUserAsAuthProvider expects user and account Id")
+		}
+		return Null, nil
 	case "Network.getNetworkId":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Network.getNetworkId expects 0 arguments")
@@ -4914,6 +4947,69 @@ platformStaticCall:
 			prefix = "local"
 		}
 		return String(strings.TrimRight(vm.salesforceBaseURL(), "/") + "/" + prefix + "/SelfRegister"), nil
+	case "Network.createExternalUserAsync":
+		if len(args) != 3 {
+			return Null, fmt.Errorf("Network.createExternalUserAsync expects user, contact, and account")
+		}
+		return String("707000000000001"), nil
+	case "Network.createRecordAsync":
+		if len(args) != 2 {
+			return Null, fmt.Errorf("Network.createRecordAsync expects process type and record")
+		}
+		return String("707000000000001"), nil
+	case "Network.loadAllPackageDefaultNetworkDashboardSettings", "Network.loadAllPackageDefaultNetworkPulseSettings",
+		"Network.loadAllPackageDefaultNetworkWorkspaceMetricSettings":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("%s expects 0 arguments", callee)
+		}
+		return Int(0), nil
+	case "Aura.redirect":
+		if len(args) != 1 {
+			return Null, fmt.Errorf("Aura.redirect expects target")
+		}
+		return Null, nil
+	case "ChatterAnswers.AccountCreator.createAccount":
+		if len(args) != 3 {
+			return Null, fmt.Errorf("ChatterAnswers.AccountCreator.createAccount expects first name, last name, and user Id")
+		}
+		return String("001000000000001"), nil
+	case "LiveAgent.LiveAgentRealTimeSystem.cancelChatRequests":
+		if len(args) != 1 || args[0].Kind != ValueList {
+			return Null, fmt.Errorf("LiveAgent.LiveAgentRealTimeSystem.cancelChatRequests expects request Id list")
+		}
+		return Null, nil
+	case "LiveAgent.LiveAgentRealTimeSystem.routeChatRequests":
+		if len(args) != 1 || args[0].Kind != ValueList {
+			return Null, fmt.Errorf("LiveAgent.LiveAgentRealTimeSystem.routeChatRequests expects route list")
+		}
+		return typedList("List<LiveAgent.LiveChatRoutingResult>"), nil
+	case "LiveAgent.LiveAgentRealTimeSystem.setButtonStatus":
+		if len(args) != 2 {
+			return Null, fmt.Errorf("LiveAgent.LiveAgentRealTimeSystem.setButtonStatus expects button Id and online flag")
+		}
+		return Null, nil
+	case "Support.EinsteinBots.sendMessageToBot":
+		if len(args) != 3 {
+			return Null, fmt.Errorf("Support.EinsteinBots.sendMessageToBot expects bot Id, bot version Id, and prompt")
+		}
+		return String(""), nil
+	case "Support.EmailTemplateSelector.getDefaultEmailTemplateId":
+		if len(args) != 1 {
+			return Null, fmt.Errorf("Support.EmailTemplateSelector.getDefaultEmailTemplateId expects context Id")
+		}
+		return Null, nil
+	case "Support.LifeScienceAttendees.parse":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("Support.LifeScienceAttendees.parse expects JSON String")
+		}
+		attendees := Object("Support.LifeScienceAttendees")
+		attendees.Fields["attendees"] = List()
+		return attendees, nil
+	case "Support.LifeScienceUpdateEmailTransactions.updateRecords":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("Support.LifeScienceUpdateEmailTransactions.updateRecords expects serialized record payload")
+		}
+		return Null, nil
 	case "Auth.CommunitiesUtil.isGuestUser":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Auth.CommunitiesUtil.isGuestUser expects 0 arguments")
@@ -31951,6 +32047,88 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	}
 	if value, updated, mutated, handled, err := callOrgInstrumentationServiceMember(receiver, method, args); handled || err != nil {
 		return value, updated, mutated, true, err
+	}
+	if strings.EqualFold(receiver.Type, "Site.UrlRewriter") {
+		switch strings.ToLower(method) {
+		case "generateurlfor":
+			if len(args) != 1 || args[0].Kind != ValueList {
+				return Null, receiver, false, true, fmt.Errorf("Site.UrlRewriter.generateUrlFor expects PageReference list")
+			}
+			return cloneValue(args[0]), receiver, false, true, nil
+		case "maprequesturl":
+			if len(args) != 1 || args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "PageReference") {
+				return Null, receiver, false, true, fmt.Errorf("Site.UrlRewriter.mapRequestUrl expects PageReference")
+			}
+			return args[0], receiver, false, true, nil
+		}
+	}
+	if strings.EqualFold(receiver.Type, "LiveAgent.LiveChatRouter") {
+		if !strings.EqualFold(method, "doRouting") {
+			return Null, receiver, false, false, nil
+		}
+		if len(args) != 1 || args[0].Kind != ValueList {
+			return Null, receiver, false, true, fmt.Errorf("LiveAgent.LiveChatRouter.doRouting expects routing request list")
+		}
+		return Null, receiver, false, true, nil
+	}
+	if strings.EqualFold(receiver.Type, "Support.WorkCapacityCalculation") {
+		switch strings.ToLower(method) {
+		case "calculateactualusage", "calculateestimatedusage":
+			if len(args) != 1 {
+				return Null, receiver, false, true, fmt.Errorf("Support.WorkCapacityCalculation.%s expects WorkCapacityInfo", method)
+			}
+			return Object("Support.WorkCapacityDuration"), receiver, false, true, nil
+		}
+	}
+	if strings.EqualFold(receiver.Type, "ChatterAnswers.AccountCreator") && strings.EqualFold(method, "createAccount") {
+		if len(args) != 3 {
+			return Null, receiver, false, true, fmt.Errorf("ChatterAnswers.AccountCreator.createAccount expects first name, last name, and user Id")
+		}
+		return String("001000000000001"), receiver, false, true, nil
+	}
+	if strings.EqualFold(receiver.Type, "Support.EinsteinBots") && strings.EqualFold(method, "sendMessageToBot") {
+		if len(args) != 3 {
+			return Null, receiver, false, true, fmt.Errorf("Support.EinsteinBots.sendMessageToBot expects bot Id, bot version Id, and prompt")
+		}
+		return String(""), receiver, false, true, nil
+	}
+	if strings.EqualFold(receiver.Type, "Support.EmailTemplateSelector") && strings.EqualFold(method, "getDefaultEmailTemplateId") {
+		if len(args) != 1 {
+			return Null, receiver, false, true, fmt.Errorf("Support.EmailTemplateSelector.getDefaultEmailTemplateId expects context Id")
+		}
+		return Null, receiver, false, true, nil
+	}
+	if strings.HasPrefix(receiver.Type, "RichMessaging.") {
+		switch receiver.Type {
+		case "RichMessaging.AuthRequestHandler":
+			if strings.EqualFold(method, "handleAuthRequest") {
+				if len(args) != 1 {
+					return Null, receiver, false, true, fmt.Errorf("RichMessaging.AuthRequestHandler.handleAuthRequest expects AuthRequestResponse")
+				}
+				return Object("RichMessaging.AuthRequestResult"), receiver, false, true, nil
+			}
+		case "RichMessaging.ProcessCatalogOrderHandler":
+			if strings.EqualFold(method, "processCatalogOrderRequest") {
+				if len(args) != 1 {
+					return Null, receiver, false, true, fmt.Errorf("RichMessaging.ProcessCatalogOrderHandler.processCatalogOrderRequest expects ProcessCatalogOrderRequest")
+				}
+				return Object("RichMessaging.ProcessCatalogOrderResult"), receiver, false, true, nil
+			}
+		case "RichMessaging.ProcessFormHandler":
+			if strings.EqualFold(method, "processFormRequest") {
+				if len(args) != 1 {
+					return Null, receiver, false, true, fmt.Errorf("RichMessaging.ProcessFormHandler.processFormRequest expects ProcessFormResponse")
+				}
+				return Null, receiver, false, true, nil
+			}
+		case "RichMessaging.ProcessPaymentHandler":
+			if strings.EqualFold(method, "processPaymentRequest") {
+				if len(args) != 1 {
+					return Null, receiver, false, true, fmt.Errorf("RichMessaging.ProcessPaymentHandler.processPaymentRequest expects ProcessPaymentRequest")
+				}
+				return Object("RichMessaging.ProcessPaymentResult"), receiver, false, true, nil
+			}
+		}
 	}
 	if strings.EqualFold(receiver.Type, "ApptBooking.WaitlistController") {
 		switch strings.ToLower(method) {

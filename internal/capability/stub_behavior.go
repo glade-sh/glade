@@ -418,6 +418,20 @@ func localServiceHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesys
 	switch stubBehaviorTypeName(symbol) {
 	case "ApptBooking.WaitlistController":
 		return name == "call" || name == "invokemethod"
+	case "Site.UrlRewriter":
+		return name == "generateurlfor" || name == "maprequesturl"
+	case "LiveAgent.LiveChatRouter":
+		return name == "dorouting"
+	case "Support.WorkCapacityCalculation":
+		return name == "calculateactualusage" || name == "calculateestimatedusage"
+	case "RichMessaging.AuthRequestHandler":
+		return name == "handleauthrequest"
+	case "RichMessaging.ProcessCatalogOrderHandler":
+		return name == "processcatalogorderrequest"
+	case "RichMessaging.ProcessFormHandler":
+		return name == "processformrequest"
+	case "RichMessaging.ProcessPaymentHandler":
+		return name == "processpaymentrequest"
 	case "BcpProvisionService", "DistributedLedgerService":
 		return name == "enablec2c"
 	case "BusRuleDtMig.DecisionTableMigrationService":
@@ -740,6 +754,7 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 			"getmasterlabel", "isregistrationenabled", "isloginenabled", "isvalidusername",
 			"setexperienceid", "geterrormessage", "geterrordescription", "forgotpassword",
 			"login", "changepassword", "validatepassword", "createexternaluser", "createportaluser",
+			"createpersonaccountportaluser", "passwordlesslogin", "setportaluserasauthprovider",
 			"getanalyticstrackingcode", "getbaseinsecureurl", "getcurrentsiteurl",
 			"getcustomwebaddress", "getexperienceid", "getoriginalurl",
 			"getpasswordpolicystatement", "getprefix", "ispasswordexpired":
@@ -748,9 +763,28 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 	case "Network":
 		switch name {
 		case "getnetworkid", "getloginurl", "communitieslanding", "forwardtoauthpage",
-			"getlogouturl", "getselfregurl":
+			"getlogouturl", "getselfregurl", "createexternaluserasync", "createrecordasync",
+			"loadallpackagedefaultnetworkdashboardsettings", "loadallpackagedefaultnetworkpulsesettings",
+			"loadallpackagedefaultnetworkworkspacemetricsettings":
 			return true
 		}
+	case "Aura":
+		return name == "redirect"
+	case "ChatterAnswers.AccountCreator":
+		return name == "createaccount"
+	case "LiveAgent.LiveAgentRealTimeSystem":
+		switch name {
+		case "cancelchatrequests", "routechatrequests", "setbuttonstatus":
+			return true
+		}
+	case "Support.EinsteinBots":
+		return name == "sendmessagetobot"
+	case "Support.EmailTemplateSelector":
+		return name == "getdefaultemailtemplateid"
+	case "Support.LifeScienceAttendees":
+		return name == "parse"
+	case "Support.LifeScienceUpdateEmailTransactions":
+		return name == "updaterecords"
 	case "Communities":
 		switch name {
 		case "communitieslanding", "forwardtoauthpage", "getcss", "internallogin", "login":
@@ -1262,19 +1296,6 @@ func explicitlyUnsupportedCoreBehaviorMethod(symbol typesys.TypeSymbol, member t
 	case "QuickAction":
 		switch name {
 		case "performquickaction", "performquickactions":
-			return true
-		}
-	case "Site":
-		switch name {
-		case "createpersonaccountportaluser", "passwordlesslogin", "setportaluserasauthprovider":
-			return true
-		}
-	case "Network":
-		switch name {
-		case "createexternaluserasync", "createrecordasync",
-			"loadallpackagedefaultnetworkdashboardsettings",
-			"loadallpackagedefaultnetworkpulsesettings",
-			"loadallpackagedefaultnetworkworkspacemetricsettings":
 			return true
 		}
 	case "OrgInstrumentationOperation":
