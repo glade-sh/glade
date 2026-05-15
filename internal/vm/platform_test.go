@@ -2132,6 +2132,9 @@ System.assertNotEquals(null, bot.chatPostMessage(new Slack.ChatPostMessageReques
 System.assertNotEquals(null, bot.chatUpdate(new Slack.ChatUpdateRequest()));
 System.assertNotEquals(null, bot.viewsOpen(new Slack.ViewsOpenRequest()));
 System.assertNotEquals(null, bot.viewsPublish(new Slack.ViewsPublishRequest()));
+System.assertNotEquals(null, bot.workflowsStepCompleted(new Slack.WorkflowsStepCompletedRequest()));
+System.assertNotEquals(null, bot.workflowsStepFailed(new Slack.WorkflowsStepFailedRequest()));
+System.assertNotEquals(null, bot.workflowsUpdateStep(new Slack.WorkflowsUpdateStepRequest()));
 Slack.UsersInfoResponse userInfo = bot.usersInfo(new Slack.UsersInfoRequest());
 System.assertNotEquals(null, userInfo);
 System.assertNotEquals(null, bot.bookmarksList(new Slack.BookmarksListRequest()));
