@@ -23374,6 +23374,11 @@ func (vm *VM) generatedPlatformStaticDefault(callee string, args []Value) (Value
 	if value, handled := vm.generatedOptionalWrapperStaticDefault(className, methodName, args); handled {
 		return value, true
 	}
+	if strings.EqualFold(className, "wave.QueryBuilder") {
+		if value, handled := callWaveQueryBuilderStaticDefault(methodName, args); handled {
+			return value, true
+		}
+	}
 	if !vm.generatedPlatformMethodFallbackType(className) {
 		return Null, false
 	}
@@ -23526,7 +23531,9 @@ func generatedPlatformTopLevelPassiveTypeName(typeName string) bool {
 	switch {
 	case strings.EqualFold(typeName, "Answers"),
 		strings.EqualFold(typeName, "AppExchangeTrialTemplate"),
-		strings.EqualFold(typeName, "AppExchangeUserPerms"):
+		strings.EqualFold(typeName, "AppExchangeUserPerms"),
+		strings.EqualFold(typeName, "licensing.UserLicenseDefinition"),
+		strings.EqualFold(typeName, "licensing.PlatformLicenseDefinition"):
 		return true
 	default:
 		return false
@@ -27757,6 +27764,9 @@ func versionValueString(version Value) string {
 
 func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Value, result *Result) (Value, Value, bool, bool, error) {
 	method = canonicalPlatformObjectMemberName(receiver.Type, method)
+	if value, updated, mutated, handled, err := callWaveQueryMember(receiver, method, args); handled || err != nil {
+		return value, updated, mutated, true, err
+	}
 	if value, updated, mutated, handled, err := callCompressionZipMember(receiver, method, args); handled || err != nil {
 		return value, updated, mutated, true, err
 	}
@@ -32096,6 +32106,180 @@ func blobText(value Value) string {
 
 func compressionEnumValue(typeName, name string) Value {
 	return Value{Kind: ValueObject, Type: typeName, Text: name}
+}
+
+func callWaveQueryBuilderStaticDefault(method string, args []Value) (Value, bool) {
+	switch strings.ToLower(method) {
+	case "load":
+		if len(args) != 2 {
+			return Null, false
+		}
+		node := newWaveQueryNode("load")
+		node.Fields["datasetId"] = args[0]
+		node.Fields["datasetVersionId"] = args[1]
+		return node, true
+	case "loadbydevelopername":
+		if len(args) != 1 {
+			return Null, false
+		}
+		node := newWaveQueryNode("load")
+		node.Fields["developerName"] = args[0]
+		return node, true
+	case "union":
+		if len(args) != 1 {
+			return Null, false
+		}
+		node := newWaveQueryNode("union")
+		node.Fields["nodes"] = args[0]
+		return node, true
+	case "cogroup":
+		if len(args) != 2 {
+			return Null, false
+		}
+		node := newWaveQueryNode("cogroup")
+		node.Fields["nodes"] = args[0]
+		node.Fields["groups"] = args[1]
+		return node, true
+	case "count":
+		if len(args) != 0 {
+			return Null, false
+		}
+		projection := newWaveProjectionNode("count")
+		return projection, true
+	case "get":
+		if len(args) != 1 {
+			return Null, false
+		}
+		projection := newWaveProjectionNode("get")
+		projection.Fields["projection"] = args[0]
+		return projection, true
+	default:
+		return Null, false
+	}
+}
+
+func callWaveQueryMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	switch receiver.Type {
+	case "wave.QueryNode":
+		return callWaveQueryNodeMember(receiver, method, args)
+	case "wave.ProjectionNode":
+		return callWaveProjectionNodeMember(receiver, method, args)
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
+func callWaveQueryNodeMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	switch strings.ToLower(method) {
+	case "build":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("wave.QueryNode.build expects String streamName")
+		}
+		return String(waveQueryNodeBuild(receiver, args[0].Text)), receiver, false, true, nil
+	case "execute":
+		return Null, receiver, false, true, unsupportedCallError("wave.QueryNode.execute")
+	case "cap", "filter", "foreach", "group", "order":
+		if strings.EqualFold(method, "group") && len(args) > 1 {
+			return Null, receiver, false, true, fmt.Errorf("wave.QueryNode.group expects 0 or 1 argument")
+		}
+		if !strings.EqualFold(method, "group") && len(args) != 1 {
+			return Null, receiver, false, true, fmt.Errorf("wave.QueryNode.%s expects 1 argument", method)
+		}
+		waveAppendStep(&receiver, method, args)
+		return receiver, receiver, true, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
+func callWaveProjectionNodeMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	name := strings.ToLower(method)
+	switch name {
+	case "build":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("wave.ProjectionNode.build expects 0 arguments")
+		}
+		return String(waveProjectionNodeBuild(receiver)), receiver, false, true, nil
+	case "alias":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("wave.ProjectionNode.alias expects String")
+		}
+		receiver.Fields["alias"] = args[0]
+		return receiver, receiver, true, true, nil
+	case "avg", "count", "max", "min", "sum", "unique":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("wave.ProjectionNode.%s expects 0 arguments", method)
+		}
+		receiver.Fields["aggregate"] = String(name)
+		return receiver, receiver, true, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
+func newWaveQueryNode(kind string) Value {
+	node := Object("wave.QueryNode")
+	node.Fields["kind"] = String(kind)
+	node.Fields["steps"] = typedList("List<String>")
+	return node
+}
+
+func newWaveProjectionNode(kind string) Value {
+	projection := Object("wave.ProjectionNode")
+	projection.Fields["kind"] = String(kind)
+	return projection
+}
+
+func waveAppendStep(receiver *Value, method string, args []Value) {
+	steps := typedList("List<String>")
+	if _, existing, ok := objectFieldValue(*receiver, "steps"); ok && existing.Kind == ValueList {
+		steps = existing
+	}
+	step := strings.ToLower(method)
+	if len(args) > 0 {
+		step += "(" + args[0].String() + ")"
+	} else {
+		step += "()"
+	}
+	steps.List = append(steps.List, String(step))
+	receiver.Fields["steps"] = steps
+}
+
+func waveQueryNodeBuild(node Value, streamName string) string {
+	parts := []string{streamName}
+	if _, kind, ok := objectFieldValue(node, "kind"); ok && kind.Kind == ValueString && kind.Text != "" {
+		parts = append(parts, kind.Text)
+	}
+	if _, value, ok := objectFieldValue(node, "developerName"); ok && value.Kind == ValueString {
+		parts = append(parts, value.Text)
+	} else if _, value, ok := objectFieldValue(node, "datasetId"); ok && value.Kind == ValueString {
+		parts = append(parts, value.Text)
+	}
+	if _, steps, ok := objectFieldValue(node, "steps"); ok && steps.Kind == ValueList {
+		for _, step := range steps.List {
+			if step.Kind == ValueString {
+				parts = append(parts, step.Text)
+			}
+		}
+	}
+	return strings.Join(parts, " | ")
+}
+
+func waveProjectionNodeBuild(projection Value) string {
+	kind := "projection"
+	if _, value, ok := objectFieldValue(projection, "kind"); ok && value.Kind == ValueString && value.Text != "" {
+		kind = value.Text
+	}
+	if _, value, ok := objectFieldValue(projection, "projection"); ok && value.Kind == ValueString && value.Text != "" {
+		kind = value.Text
+	}
+	if _, aggregate, ok := objectFieldValue(projection, "aggregate"); ok && aggregate.Kind == ValueString && aggregate.Text != "" {
+		kind = aggregate.Text + "(" + kind + ")"
+	}
+	if _, alias, ok := objectFieldValue(projection, "alias"); ok && alias.Kind == ValueString && alias.Text != "" {
+		kind += " as " + alias.Text
+	}
+	return kind
 }
 
 func (vm *VM) callStandardControllerMember(receiver Value, method string, args []Value, result *Result) (Value, Value, bool, bool, error) {

@@ -1574,6 +1574,48 @@ System.assertEquals(1, writer.getEntries().size());
 	}
 }
 
+func TestExecWaveQueryBuilderLocalBuild(t *testing.T) {
+	program, err := CompileAnonymous(`
+wave.ProjectionNode amount = wave.QueryBuilder.get('Amount').sum().alias('total');
+System.assertEquals('sum(Amount) as total', amount.build());
+wave.QueryNode query = wave.QueryBuilder.load('dataset', 'v1')
+	.filter('Amount > 0')
+	.group()
+	.foreach(new List<wave.ProjectionNode>{amount})
+	.cap(10);
+String built = query.build('q');
+System.assert(built.contains('q'));
+System.assert(built.contains('load'));
+System.assert(built.contains('dataset'));
+System.assert(built.contains('filter(Amount > 0)'));
+System.assert(built.contains('group()'));
+System.assert(built.contains('foreach'));
+System.assert(built.contains('cap(10)'));
+wave.QueryNode byName = wave.QueryBuilder.loadByDeveloperName('pkg.Dataset').filter(new List<String>{'A == 1', 'B == 2'});
+System.assert(byName.build('named').contains('pkg.Dataset'));
+System.assert(wave.QueryBuilder.union(new List<wave.QueryNode>{query, byName}).build('u').contains('union'));
+System.assert(wave.QueryBuilder.cogroup(new List<wave.QueryNode>{query}, new List<List<String>>{new List<String>{'AccountId'}}).build('c').contains('cogroup'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecWaveQueryExecuteExplicitUnsupported(t *testing.T) {
+	program, err := CompileAnonymous(`
+wave.QueryBuilder.load('dataset', 'v1').execute('q');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), "unsupported call") {
+		t.Fatalf("wave.QueryNode.execute error = %v, want explicit unsupported", err)
+	}
+}
+
 func TestExecCoreTypeIDURLObjectStdlib(t *testing.T) {
 	program, err := CompileAnonymous(`
 Type accountType = Type.forName('Account');

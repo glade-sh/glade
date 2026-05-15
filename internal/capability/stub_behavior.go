@@ -208,6 +208,9 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 	if compressionZipBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "compression ZIP archive type is handled by the VM local ZIP surface", true
 	}
+	if waveQueryBuilderBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "wave query builder node/projection method is handled by the VM local builder surface", true
+	}
 	if databaseResultDTOBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "Database/Approval result DTO accessor is handled by the VM result object surface", true
 	}
@@ -897,6 +900,32 @@ func compressionZipBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Memb
 	return false
 }
 
+func waveQueryBuilderBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if member.Kind != apexast.DeclarationMethod {
+		return false
+	}
+	typeName := stubBehaviorTypeName(symbol)
+	name := strings.ToLower(member.Name)
+	switch typeName {
+	case "wave.QueryBuilder":
+		switch name {
+		case "load", "loadbydevelopername", "get", "count", "union", "cogroup":
+			return true
+		}
+	case "wave.QueryNode":
+		switch name {
+		case "build", "cap", "filter", "foreach", "group", "order":
+			return true
+		}
+	case "wave.ProjectionNode":
+		switch name {
+		case "build", "alias", "avg", "count", "max", "min", "sum", "unique":
+			return true
+		}
+	}
+	return false
+}
+
 func connectAPIExternalServiceBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
 	typeName := stubBehaviorTypeName(symbol)
 	if !strings.HasPrefix(typeName, "ConnectApi.") || !stubBehaviorMemberStatic(member) {
@@ -1221,6 +1250,8 @@ func generatedTopLevelPassiveBehaviorType(symbol typesys.TypeSymbol) bool {
 	}
 	switch stubBehaviorTypeName(symbol) {
 	case "Answers", "AppExchangeTrialTemplate", "AppExchangeUserPerms":
+		return true
+	case "licensing.UserLicenseDefinition", "licensing.PlatformLicenseDefinition":
 		return true
 	default:
 		return false
