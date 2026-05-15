@@ -714,6 +714,9 @@ func classifyError(err error) ExpectedError {
 		errorType = runtimeErr.Type
 		message = runtimeErr.Message
 	}
+	if errorType == "Error" && strings.Contains(message, "unsupported call ") {
+		errorType = "UnsupportedFeature"
+	}
 	return ExpectedError{Type: errorType, Message: message}
 }
 

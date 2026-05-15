@@ -21,8 +21,8 @@
   },
   "expected": {
     "error": {
-      "type": "UnsupportedFeature",
-      "message": "unsupported call \"System.attachFinalizer local queueable finalizers\""
+      "type": "Error",
+      "message": "System.attachFinalizer expects Finalizer object"
     }
   }
 }

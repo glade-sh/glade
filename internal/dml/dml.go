@@ -1544,9 +1544,6 @@ func stripImplicitReadOnlyDefaultFields(definition storage.ObjectDefinition, nam
 			continue
 		}
 		fieldDef := definition.Fields[canonical]
-		if fieldDef.Type == storage.FieldCalculated || fieldDef.Type == storage.FieldSummary {
-			continue
-		}
 		writeable := storage.FieldFlagValue(fieldDef.Updateable, true)
 		if create {
 			writeable = storage.FieldFlagValue(fieldDef.Createable, true)
@@ -1650,6 +1647,9 @@ func validateFieldWriteabilityName(definition storage.ObjectDefinition, namespac
 		return nil
 	}
 	fieldDef := definition.Fields[canonical]
+	if fieldDef.Type == storage.FieldCalculated || fieldDef.Type == storage.FieldSummary {
+		return dmlErrorf("INVALID_FIELD_FOR_INSERT_UPDATE", []string{canonical}, "dml: field %s.%s is not writeable", objectName, canonical)
+	}
 	writeable := storage.FieldFlagValue(fieldDef.Updateable, true)
 	if create {
 		writeable = storage.FieldFlagValue(fieldDef.Createable, true)
@@ -1817,7 +1817,7 @@ func stripUnchangedNonUpdateableFields(definition storage.ObjectDefinition, name
 			continue
 		}
 		fieldDef := definition.Fields[canonical]
-		if storage.FieldFlagValue(fieldDef.Updateable, true) || fieldDef.Type == storage.FieldCalculated || fieldDef.Type == storage.FieldSummary {
+		if fieldDef.Type != storage.FieldCalculated && fieldDef.Type != storage.FieldSummary && storage.FieldFlagValue(fieldDef.Updateable, true) {
 			continue
 		}
 		existingValue, ok := existing.GetField(canonical)
@@ -1831,7 +1831,7 @@ func stripUnchangedNonUpdateableFields(definition storage.ObjectDefinition, name
 			continue
 		}
 		fieldDef := definition.Fields[canonical]
-		if storage.FieldFlagValue(fieldDef.Updateable, true) || fieldDef.Type == storage.FieldCalculated || fieldDef.Type == storage.FieldSummary {
+		if fieldDef.Type != storage.FieldCalculated && fieldDef.Type != storage.FieldSummary && storage.FieldFlagValue(fieldDef.Updateable, true) {
 			continue
 		}
 		existingValue, ok := existing.GetField(canonical)

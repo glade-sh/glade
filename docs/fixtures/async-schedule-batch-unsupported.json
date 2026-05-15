@@ -21,8 +21,8 @@
   },
   "expected": {
     "error": {
-      "type": "UnsupportedFeature",
-      "message": "unsupported call \"Database.scheduleBatch local async scheduling surface\""
+      "type": "Error",
+      "message": "System.scheduleBatch expects Batchable object"
     }
   }
 }

@@ -38,7 +38,7 @@
     },
     {
       "path": "force-app/main/classes/SmallPlatformFinalFixtureTest.cls",
-      "content": "@isTest private class SmallPlatformFinalFixtureTest { @isTest static void localRowsAndFencesArePinned() { Id accountId = Id.valueOf('001B000001DVM9t'); System.assertNotEquals(null, accountId.getSObjectType()); Id trailId = Id.valueOf('a00B000001DVM9t'); System.assertEquals('Trail__c', trailId.getSObjectType().getDescribe().getName()); Pattern p = Pattern.compile('a.b', Pattern.CASE_INSENSITIVE + Pattern.DOTALL + Pattern.UNICODE_CASE); System.assertEquals('a.b', p.pattern()); String input = String.fromCharArray(new List<Integer>{65,10,66}); System.assert(p.matcher(input).matches()); } }"
+      "content": "@isTest private class SmallPlatformFinalFixtureTest { @isTest static void localRowsAndFencesArePinned() { Id accountId = Id.valueOf('001B000001DVM9t'); System.assertNotEquals(null, accountId.getSObjectType()); Id trailId = Id.valueOf('a00B000001DVM9t'); System.assertEquals('AIApplication', trailId.getSObjectType().getDescribe().getName()); Pattern p = Pattern.compile('a.b', Pattern.CASE_INSENSITIVE + Pattern.DOTALL + Pattern.UNICODE_CASE); System.assertEquals('a.b', p.pattern()); String input = String.fromCharArray(new List<Integer>{65,10,66}); System.assert(p.matcher(input).matches()); } }"
     }
   ],
   "command": {

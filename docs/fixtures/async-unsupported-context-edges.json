@@ -25,8 +25,8 @@
   },
   "expected": {
     "error": {
-      "type": "UnsupportedFeature",
-      "message": "unsupported call \"AsyncInfo.getCurrentQueueableStackDepth local async info surface\""
+      "type": "System.AsyncException",
+      "message": "getCurrentQueueableStackDepth is not allowed outside a Queueable or Finalizer execution"
     }
   }
 }

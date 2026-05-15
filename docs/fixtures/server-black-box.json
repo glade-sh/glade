@@ -81,7 +81,7 @@
       "status": 201,
       "contains": [
         "\"success\":true",
-        "001000000000001"
+        "00100000000LFLT"
       ]
     },
     {
@@ -92,18 +92,18 @@
       "contains": [
         "\"totalSize\":1",
         "\"attributes\"",
-        "\"url\":\"/services/data/v65.0/sobjects/Account/001000000000001\"",
+        "\"url\":\"/services/data/v65.0/sobjects/Account/00100000000LFLT\"",
         "Acme"
       ]
     },
     {
       "name": "get-account",
       "method": "GET",
-      "path": "/services/data/v65.0/sobjects/Account/001000000000001",
+      "path": "/services/data/v65.0/sobjects/Account/00100000000LFLT",
       "status": 200,
       "contains": [
         "\"attributes\"",
-        "\"Id\":\"001000000000001\"",
+        "\"Id\":\"00100000000LFLT\"",
         "\"Name\":\"Acme\"",
         "\"Amount__c\":\"12.75\""
       ]
@@ -111,17 +111,21 @@
     {
       "name": "null-account-name",
       "method": "PATCH",
-      "path": "/services/data/v65.0/sobjects/Account/001000000000001",
+      "path": "/services/data/v65.0/sobjects/Account/00100000000LFLT",
       "body": "{\"Name\":null}",
-      "status": 204
+      "status": 400,
+      "contains": [
+        "\"errorCode\":\"REQUIRED_FIELD_MISSING\"",
+        "\"fields\":[\"Name\"]"
+      ]
     },
     {
       "name": "get-account-null",
       "method": "GET",
-      "path": "/services/data/v65.0/sobjects/Account/001000000000001",
+      "path": "/services/data/v65.0/sobjects/Account/00100000000LFLT",
       "status": 200,
       "contains": [
-        "\"Name\":null",
+        "\"Name\":\"Acme\"",
         "\"attributes\""
       ]
     },
@@ -144,13 +148,13 @@
       "status": 200,
       "contains": [
         "\"attributes\"",
-        "\"url\":\"/services/data/v65.0/sobjects/Account/001000000000001\""
+        "\"url\":\"/services/data/v65.0/sobjects/Account/00100000000LFLT\""
       ]
     },
     {
       "name": "delete-account",
       "method": "DELETE",
-      "path": "/services/data/v65.0/sobjects/Account/001000000000001",
+      "path": "/services/data/v65.0/sobjects/Account/00100000000LFLT",
       "status": 204
     },
     {
@@ -160,8 +164,8 @@
       "status": 200,
       "contains": [
         "\"totalSize\":1",
-        "\"Name\":null",
-        "\"url\":\"/services/data/v62.0/sobjects/Account/001000000000001\""
+        "\"Name\":\"Acme\"",
+        "\"url\":\"/services/data/v62.0/sobjects/Account/00100000000LFLT\""
       ]
     },
     {
@@ -409,7 +413,7 @@
       "status": 201,
       "contains": [
         "\"success\":true",
-        "001000000000001"
+        "00100000000LFLT"
       ]
     }
   ],
@@ -421,9 +425,9 @@
       "ok": true,
       "persistedAccounts": 1,
       "persistedObjects": 23,
-      "persistedRecords": 13,
-      "permissions": 2,
-      "profiles": 3,
+      "persistedRecords": 24,
+      "permissions": 3,
+      "profiles": 6,
       "requests": 39,
       "statuses": [
         200,
@@ -436,7 +440,7 @@
         201,
         200,
         200,
-        204,
+        400,
         200,
         200,
         200,

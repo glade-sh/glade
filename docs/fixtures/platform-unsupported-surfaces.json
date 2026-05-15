@@ -138,11 +138,11 @@
       "name": "search-query-unsupported",
       "method": "POST",
       "path": "/services/data/v61.0/tooling/executeAnonymous",
-      "body": "{\"anonymousBody\": \"Search.query('FIND {Acme} IN ALL FIELDS RETURNING Account(Id)');\"}",
+      "body": "{\"anonymousBody\": \"Search.unavailable('Acme');\"}",
       "status": 200,
       "contains": [
         "success\":false",
-        "unsupported call \\\"Search.query local search/SOSL surface\\\""
+        "unsupported call \\\"Search.unavailable local search/SOSL surface\\\""
       ]
     },
     {
@@ -160,11 +160,11 @@
       "name": "crypto-certificate-unsupported",
       "method": "POST",
       "path": "/services/data/v61.0/tooling/executeAnonymous",
-      "body": "{\"anonymousBody\": \"Crypto.signWithCertificate('RSA-SHA256', Blob.valueOf('payload'), 'LocalCert');\"}",
+      "body": "{\"anonymousBody\": \"Crypto.getKeyStore('LocalStore');\"}",
       "status": 200,
       "contains": [
         "success\":false",
-        "unsupported call \\\"Crypto.signWithCertificate local deterministic key, certificate, and encryption surfaces\\\""
+        "unsupported call \\\"Crypto.getKeyStore local key, certificate, encryption, and random surfaces\\\""
       ]
     },
     {
@@ -179,14 +179,14 @@
       ]
     },
     {
-      "name": "url-current-request-unsupported",
+      "name": "http-client-certificate-unsupported",
       "method": "POST",
       "path": "/services/data/v61.0/tooling/executeAnonymous",
-      "body": "{\"anonymousBody\": \"URL.getCurrentRequestUrl();\"}",
+      "body": "{\"anonymousBody\": \"HttpRequest req = new HttpRequest(); req.setClientCertificateName('LocalCert');\"}",
       "status": 200,
       "contains": [
         "success\":false",
-        "unsupported call \\\"URL.getCurrentRequestUrl local current request URL surface\\\""
+        "unsupported call \\\"HttpRequest.setClientCertificateName local client certificate callout surface\\\""
       ]
     },
     {

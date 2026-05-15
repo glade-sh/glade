@@ -21,8 +21,8 @@
   },
   "expected": {
     "error": {
-      "type": "UnsupportedFeature",
-      "message": "unsupported call \"Test.setFixedSearchResults local SOSL fixed search results\""
+      "type": "Error",
+      "message": "Test.setFixedSearchResults is only available in test context"
     }
   }
 }

@@ -17,14 +17,14 @@
   "source": [
     {
       "path": "anonymous.apex",
-      "content": "for (Integer i = 0; i < 11; i++) { Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage(); email.setToAddresses(new List<String>{'hello@example.test'}); Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{email}); }"
+      "content": "for (Integer i = 0; i < 11; i++) { Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage(); email.setToAddresses(new List<String>{'hello@example.test'}); email.setPlainTextBody('hello'); Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{email}); }"
     }
   ],
   "command": {
     "kind": "exec",
     "limitMode": "strict",
     "args": [
-      "for (Integer i = 0; i < 11; i++) { Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage(); email.setToAddresses(new List<String>{'hello@example.test'}); Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{email}); }"
+      "for (Integer i = 0; i < 11; i++) { Messaging.SingleEmailMessage email = new Messaging.SingleEmailMessage(); email.setToAddresses(new List<String>{'hello@example.test'}); email.setPlainTextBody('hello'); Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{email}); }"
     ]
   },
   "expected": {

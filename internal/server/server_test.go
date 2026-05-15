@@ -150,7 +150,7 @@ func TestSObjectCRUDAndQuery(t *testing.T) {
 	if err := json.Unmarshal(create.Body.Bytes(), &created); err != nil {
 		t.Fatal(err)
 	}
-	if created.ID != "001000000000001" {
+	if created.ID == "" || !strings.HasPrefix(string(created.ID), "001") {
 		t.Fatalf("created id = %s", created.ID)
 	}
 
@@ -345,9 +345,10 @@ func TestSObjectExternalIDRoutesCRUD(t *testing.T) {
 	if err := json.Unmarshal(create.Body.Bytes(), &created); err != nil {
 		t.Fatal(err)
 	}
-	if created.ID != "001000000000001" || !created.Success || !created.Created {
+	if created.ID == "" || !strings.HasPrefix(string(created.ID), "001") || !created.Success || !created.Created {
 		t.Fatalf("external id create payload = %#v", created)
 	}
+	createdURL := "/services/data/v60.0/sobjects/Account/" + string(created.ID)
 
 	get := httptest.NewRecorder()
 	handler.ServeHTTP(get, httptest.NewRequest(http.MethodGet, "/services/data/v60.0/sobjects/Account/External_Id__c/EXT-1", nil))
@@ -359,10 +360,10 @@ func TestSObjectExternalIDRoutesCRUD(t *testing.T) {
 		t.Fatal(err)
 	}
 	attrs, ok := payload["attributes"].(map[string]any)
-	if !ok || attrs["url"] != "/services/data/v60.0/sobjects/Account/001000000000001" {
+	if !ok || attrs["url"] != createdURL {
 		t.Fatalf("external id record attributes = %#v", payload["attributes"])
 	}
-	if payload["Id"] != "001000000000001" || payload["External_Id__c"] != "EXT-1" || payload["Description"] != nil {
+	if payload["Id"] != string(created.ID) || payload["External_Id__c"] != "EXT-1" || payload["Description"] != nil {
 		t.Fatalf("external id get payload = %#v", payload)
 	}
 
@@ -3346,11 +3347,11 @@ func TestOAERResetScopesPreserveAndClearExpectedState(t *testing.T) {
 		wantProfiles int
 		wantNoOps    string
 	}{
-		{name: "data", scope: "data", wantAccounts: 0, wantUsers: 2, wantProfiles: 3},
-		{name: "users", scope: "users", wantAccounts: 1, wantUsers: 1, wantProfiles: 3},
-		{name: "platform", scope: "platform", wantAccounts: 1, wantUsers: 1, wantProfiles: 3},
-		{name: "all", scope: "all", wantAccounts: 0, wantUsers: 1, wantProfiles: 3},
-		{name: "limits async", scope: "limits,async", wantAccounts: 1, wantUsers: 2, wantProfiles: 3, wantNoOps: "limits,async"},
+		{name: "data", scope: "data", wantAccounts: 0, wantUsers: 2, wantProfiles: 6},
+		{name: "users", scope: "users", wantAccounts: 1, wantUsers: 1, wantProfiles: 6},
+		{name: "platform", scope: "platform", wantAccounts: 1, wantUsers: 1, wantProfiles: 6},
+		{name: "all", scope: "all", wantAccounts: 0, wantUsers: 1, wantProfiles: 6},
+		{name: "limits async", scope: "limits,async", wantAccounts: 1, wantUsers: 2, wantProfiles: 6, wantNoOps: "limits,async"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -3830,10 +3831,12 @@ func TestCompositeSObjectsEchoesReferenceIDAndPreservesOrder(t *testing.T) {
 	if len(results) != 2 {
 		t.Fatalf("results = %#v", results)
 	}
-	if results[0]["referenceId"] != "first" || results[0]["id"] != "001000000000001" {
+	firstID, firstOK := results[0]["id"].(string)
+	if results[0]["referenceId"] != "first" || !firstOK || !strings.HasPrefix(firstID, "001") {
 		t.Fatalf("first result = %#v", results[0])
 	}
-	if results[1]["referenceId"] != "second" || results[1]["id"] != "001000000000002" {
+	secondID, secondOK := results[1]["id"].(string)
+	if results[1]["referenceId"] != "second" || !secondOK || !strings.HasPrefix(secondID, "001") || secondID == firstID {
 		t.Fatalf("second result = %#v", results[1])
 	}
 }

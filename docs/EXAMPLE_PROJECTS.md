@@ -66,14 +66,73 @@ for dir in example-projects/*; do
 done
 ```
 
+## Running Apex Tests Locally
+
+Use `oaer test` when you want the local developer test runner shape for a
+single Salesforce project:
+
+```bash
+go run ./cmd/oaer test --project example-projects/src-nmb-nutpl-develop --json
+go run ./cmd/oaer test --project example-projects/src-nmb-nutpl-develop --filter MyTestClass --json
+go run ./cmd/oaer test --project example-projects/src-nmb-nutpl-develop --filter MyTestClass.testMethod --json
+```
+
+For compatibility triage, prefer `compat local-tests`. It reports outcomes as
+`pass`, `fail`, `unsupported`, `loadError`, `compileError`, or
+`internalError`, and can cap large-project runs by distinct blocker groups:
+
+```bash
+go run ./cmd/oaer compat local-tests \
+  --project example-projects/src-nmb-nutpl-develop \
+  --timeout 30000 \
+  --top-failures 8 \
+  --json
+```
+
+Focused class or method run:
+
+```bash
+go run ./cmd/oaer compat local-tests \
+  --project example-projects/sf-cred-pkg-develop \
+  --class AccountsTriggerHandlerTest \
+  --method testSomeBehavior \
+  --json
+```
+
+Large-project blocker triage:
+
+```bash
+go build -o /tmp/oaer ./cmd/oaer
+/tmp/oaer compat local-tests \
+  --project example-projects/sf-cred-pkg-develop \
+  --blockers-only \
+  --top-failures 20 \
+  --max-failure-groups 20 \
+  --timeout 20000 \
+  --parallel 4 \
+  --json
+```
+
+Use the checked owned-corpus baseline as a fast confidence gate:
+
+```bash
+go run ./cmd/oaer compat local-tests --check docs/fixtures/local-tests-corpus.json --json
+```
+
 ## Phase Gate
 
-Current status as of 2026-05-07:
+Current status as of 2026-05-15:
 
 - The server-example execution harness is green across the checked
   `example-projects` corpus: `pass=101 fail=0 unsupported=0 missing=0`.
-- `oaer compat post-parity --json` is green for the checked corpus:
-  `filesScanned=50457 findings=0 testBlockingFindings=0 surfaces=0`.
+- The owned local-test corpus baseline is green via
+  `go run ./cmd/oaer compat local-tests --check
+  docs/fixtures/local-tests-corpus.json --json`.
+- A full `example-projects` post-parity inventory currently includes the public
+  stubs and is not green: `filesScanned=59479 findings=4078
+  testBlockingFindings=4078 surfaces=3`. The remaining scanner buckets are
+  `platform.cache-connectapi`, `metadata.apex-deploy`, and
+  `custommetadata.legacy-records`.
 - `src-nmb-nutpl-develop` is the current green runtime sentinel:
   `go run ./cmd/oaer compat local-tests --project
   example-projects/src-nmb-nutpl-develop --timeout 30000 --top-failures 8

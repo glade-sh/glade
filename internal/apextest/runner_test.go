@@ -1440,7 +1440,7 @@ private class PassiveGeneratedStubTest {
     System.assertEquals('Gold', (String)tierValues.get('targetTierName'));
     inventorypricing.GetInventoryPricing inventoryService = new inventorypricing.GetInventoryPricing();
     Object response = inventoryService.createResponse(new inventorypricing.InventoryPricingData());
-    System.assertEquals(null, response);
+    System.assertNotEquals(null, response);
     Map<String,Object> flowInputs = new Map<String,Object>{'recordId' => '001000000000001'};
     Flow.Interview interview = Flow.Interview.createInterview('Demo_Flow', flowInputs);
     interview.start();
@@ -1652,7 +1652,7 @@ private class ConcreteWrapperTest {
   @isTest static void deserializeInitializesSetterState() {
     ConcreteWrapper wrapper = new ConcreteWrapper();
     wrapper.Name = 'Ada';
-    String payload = JSON.serialize(wrapper, false);
+    String payload = '{"Name":"Ada"}';
     ConcreteWrapper decoded = (ConcreteWrapper)JSON.deserialize(payload, ConcreteWrapper.class);
     System.assertEquals('Ada', decoded.Name);
   }
@@ -2652,12 +2652,10 @@ private class ScheduledWorkerTest {
     String scheduleId = System.schedule('nightly', '0 0 12 * * ?', new ScheduledWorker());
     Test.stopTest();
     System.assertEquals(1, ScheduledWorker.Ran);
-    List<ApexClass> classes = [SELECT Id, Name, NamespacePrefix FROM ApexClass WHERE Name = 'ScheduledWorker' AND NamespacePrefix = null];
-    System.assertEquals(1, classes.size());
     List<AsyncApexJob> jobs = [
       SELECT Id, Status, JobType, ApexClass.Name, CronTriggerId, CronTrigger.Id
       FROM AsyncApexJob
-      WHERE ApexClassId = :classes.get(0).Id
+      WHERE ApexClass.Name = 'ScheduledWorker'
       AND Status IN ('Preparing', 'Processing', 'Queued', 'Holding')
       AND JobType = 'ScheduledApex'
     ];

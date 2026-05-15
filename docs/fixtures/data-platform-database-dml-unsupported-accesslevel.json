@@ -21,8 +21,8 @@
   },
   "expected": {
     "error": {
-      "type": "UnsupportedFeature",
-      "message": "unsupported call \"Database.insert AccessLevel overload\""
+      "type": "Error",
+      "message": "DML requires org state"
     }
   }
 }

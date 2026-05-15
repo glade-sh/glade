@@ -22,7 +22,7 @@
   "expected": {
     "error": {
       "type": "UnsupportedFeature",
-      "message": "unsupported call \"Decimal.setScale scale greater than 15 is not supported by the local decimal model\""
+      "message": "unsupported call \"Decimal.setScale absolute scale greater than 15 is not supported by the local decimal model\""
     }
   }
 }

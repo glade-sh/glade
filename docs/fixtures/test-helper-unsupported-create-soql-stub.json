@@ -21,8 +21,8 @@
   },
   "expected": {
     "error": {
-      "type": "UnsupportedFeature",
-      "message": "unsupported call \"Test.createSoqlStub local stub API\""
+      "type": "Error",
+      "message": "Test.createSoqlStub expects Schema.SObjectType and SoqlStubProvider"
     }
   }
 }

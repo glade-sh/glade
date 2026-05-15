@@ -33,6 +33,7 @@ private class OrgLikeRunnerTest {
     System.enqueueJob(new RunnerQueue());
     Database.SaveResult eventResult = EventBus.publish(new Widget_Event__e(Name__c = 'Local Event'));
     System.assert(eventResult.isSuccess());
+    Test.getEventBus().deliver();
     System.assertEquals(1, RunnerState.futureRan);
     System.assertNotEquals('', batchId);
     System.assertNotEquals('', scheduleId);

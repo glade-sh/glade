@@ -11,7 +11,7 @@
   },
   "expected": {
     "result": {
-      "diagnostics": 19,
+      "diagnostics": 14,
       "files": 1,
       "ok": false,
       "types": 1

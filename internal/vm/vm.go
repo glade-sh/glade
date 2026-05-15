@@ -9280,7 +9280,7 @@ func (vm *VM) recordApexClass(className string) {
 		Object: "ApexClass",
 		Fields: map[string]storage.Value{
 			"Name":            storage.StringValue(className),
-			"NamespacePrefix": storage.NullValue(),
+			"NamespacePrefix": storage.StringValue(""),
 		},
 	}
 	vm.Org.Objects["ApexClass"] = object

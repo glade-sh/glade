@@ -1,6 +1,6 @@
 # Local Apex Test Execution Plan
 
-Status date: 2026-05-14.
+Status date: 2026-05-15.
 
 This plan turns the broad post-parity backlog into squad-sized implementation
 phases for full local Apex test execution. The target is not merely loading
@@ -17,15 +17,17 @@ pass=101 fail=0 unsupported=0 missing=0
 ```
 
 The owned local-test corpus gate is green for the checked baseline, including
-intentional unsupported classifications. The broader post-parity inventory is
-also green for the checked `example-projects` corpus. A May 7, 2026 inventory
-from the current checkout reports:
+intentional unsupported classifications. The broader post-parity inventory for
+the full `example-projects` tree currently includes the public stubs and is not
+green. A May 15, 2026 inventory from the current checkout reports:
 
 ```text
-filesScanned=50457 findings=0 testBlockingFindings=0 surfaces=0
+filesScanned=59479 findings=4078 testBlockingFindings=4078 surfaces=3
 ```
 
-That inventory is implementation-aware as of this checkpoint. It suppresses
+The remaining scanner buckets are `platform.cache-connectapi`,
+`metadata.apex-deploy`, and `custommetadata.legacy-records`. The inventory is
+implementation-aware as of this checkpoint. It suppresses
 surfaces only when the project metadata, static model, or runtime fallback can
 resolve them generally: generated standard object/field metadata, loaded
 labels/translations, managed-package and platform label fallbacks, loaded static
@@ -34,9 +36,9 @@ namespace-tolerant custom metadata type references, legacy presentation
 metadata, Visualforce page/component metadata, Visualforce controller and action
 contracts, Aura/LWC Apex discovery, Workflow rules, and the modeled
 record-lookup/record-create Flow shapes are no longer reported as broad
-post-parity blockers. The zero-blocker scan is a readiness inventory result,
-not a claim that every Salesforce UI, metadata, or automation behavior is fully
-implemented at runtime.
+post-parity blockers. Inventory findings are readiness signals, not a claim
+that every Salesforce UI, metadata, or automation behavior is fully implemented
+at runtime.
 
 Use this document for parallel squad planning. Use
 `docs/POST_PARITY_TODO.md` as the exhaustive backlog and capability boundary.
@@ -196,7 +198,7 @@ Current measured runtime frontier:
 
 | Gate | Current signal |
 | --- | --- |
-| Static/readiness inventory | `go run ./cmd/oaer compat post-parity --project ./example-projects --json` reports `filesScanned=50457 findings=0 testBlockingFindings=0 surfaces=0`. |
+| Static/readiness inventory | `go run ./cmd/oaer compat post-parity --project ./example-projects --json` reports `filesScanned=59479 findings=4078 testBlockingFindings=4078 surfaces=3`; the current buckets are `platform.cache-connectapi`, `metadata.apex-deploy`, and `custommetadata.legacy-records`. |
 | Fast runtime sentinel | `go run ./cmd/oaer compat local-tests --project example-projects/src-nmb-nutpl-develop --timeout 30000 --top-failures 8 --json` reports `total=761 pass=761 fail=0 unsupported=0 loadError=0 compileError=0 internalError=0`. |
 | Six-project runtime baseline | `node scripts/baseline-local-tests-example-projects.mjs` records one green project and five compile-gap frontiers in `docs/fixtures/local-tests-example-projects.json`. |
 | Scale runtime sentinel | `go run ./cmd/oaer compat local-tests --project example-projects/src-nmb-nc-develop --timeout 30000 --top-failures 8 --json` returns structured compile-gap output rather than timing out or stack-overflowing; the current top blocker is missing `znu.Address`. |

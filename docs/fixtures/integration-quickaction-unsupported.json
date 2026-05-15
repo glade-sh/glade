@@ -21,8 +21,8 @@
   },
   "expected": {
     "error": {
-      "type": "UnsupportedFeature",
-      "message": "unsupported call \"QuickAction.performQuickAction local quick action UI surface\""
+      "type": "Error",
+      "message": "QuickAction.performQuickAction expects QuickActionRequest"
     }
   }
 }
