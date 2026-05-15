@@ -584,6 +584,34 @@ CartExtension.ItemArrangementRequest arrangementRequest = new CartExtension.Item
 	.build();
 System.assertEquals(cart, arrangementRequest.getCart());
 System.assertEquals(1, arrangementRequest.getItemArrangeList().size());
+
+pref_center.LoadFormData formData = new pref_center.LoadFormData(new Map<String,pref_center.FieldProperties>());
+formData.setTextValue('email', 'person@example.test');
+formData.setTextHint('email', 'Email');
+formData.setButtonLabel('submit', 'Save');
+formData.addOption('frequency', 'weekly', 'Weekly');
+formData.addSelectedOption('frequency', 'weekly');
+Map<String,Object> formValues = formData.getAsMap();
+Map<String,Object> textValues = (Map<String,Object>)formValues.get('textValues');
+Map<String,Object> textHints = (Map<String,Object>)formValues.get('textHints');
+Map<String,Object> buttonLabels = (Map<String,Object>)formValues.get('buttonLabels');
+Map<String,Object> optionsByField = (Map<String,Object>)formValues.get('options');
+Map<String,Object> selectedByField = (Map<String,Object>)formValues.get('selectedOptions');
+List<SelectOption> options = (List<SelectOption>)optionsByField.get('frequency');
+List<String> selected = (List<String>)selectedByField.get('frequency');
+System.assertEquals('person@example.test', (String)textValues.get('email'));
+System.assertEquals('Email', (String)textHints.get('email'));
+System.assertEquals('Save', (String)buttonLabels.get('submit'));
+System.assertEquals('weekly', options.get(0).getValue());
+System.assertEquals('Weekly', options.get(0).getLabel());
+System.assertEquals('weekly', selected.get(0));
+
+CartExtension.Cart utilCart = CartExtension.CartTestUtil.createCart(CartExtension.WebStoreTypeEnum.B2B);
+CartExtension.Cart fetchedCart = CartExtension.CartTestUtil.getCart('0aB000000000001AAA');
+System.assertNotEquals(null, utilCart);
+System.assertNotEquals(null, fetchedCart);
+System.assertEquals(CartExtension.WebStoreTypeEnum.B2B, utilCart.webStoreType);
+System.assertEquals('0aB000000000001AAA', fetchedCart.id);
 `)
 	if err != nil {
 		t.Fatal(err)

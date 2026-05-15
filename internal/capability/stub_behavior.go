@@ -241,6 +241,9 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 	if generatedOptionalWrapperBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "CartExtension optional wrapper empty/of/isPresent/get is handled by the VM optional-wrapper surface", true
 	}
+	if cartExtensionTestUtilBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "CartExtension test utility creates local Cart DTOs without running Commerce services", true
+	}
 	if sfsqlqueryHarnessBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "sfsqlquery test harness and mock row iterator methods are handled locally without executing SQL service calls", true
 	}
@@ -301,6 +304,20 @@ func generatedOptionalWrapperBehaviorMethod(symbol typesys.TypeSymbol, member ty
 	case "empty", "ispresent", "get":
 		return len(member.Parameters) == 0
 	case "of":
+		return len(member.Parameters) == 1
+	default:
+		return false
+	}
+}
+
+func cartExtensionTestUtilBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if member.Kind != apexast.DeclarationMethod || !strings.EqualFold(stubBehaviorTypeName(symbol), "CartExtension.CartTestUtil") {
+		return false
+	}
+	switch strings.ToLower(member.Name) {
+	case "createcart":
+		return len(member.Parameters) == 0 || len(member.Parameters) == 1
+	case "getcart":
 		return len(member.Parameters) == 1
 	default:
 		return false
@@ -1405,6 +1422,8 @@ func generatedPassiveDTOMethod(member typesys.MemberSymbol, typeName string) boo
 		(strings.HasPrefix(name, "add") || strings.HasPrefix(name, "remove")):
 		return true
 	case len(member.Parameters) == 2 && strings.EqualFold(member.Type, "void") && strings.HasPrefix(name, "add"):
+		return true
+	case len(member.Parameters) == 3 && strings.EqualFold(member.Type, "void") && strings.HasPrefix(name, "add"):
 		return true
 	case strings.EqualFold(member.Type, typeName):
 		return true

@@ -1479,6 +1479,8 @@ ApexPages.Message withoutDetail = new ApexPages.Message('INFO', 'Only summary');
 System.assertEquals('Only summary', withoutDetail.getDetail());
 ApexPages.Action action = new ApexPages.Action('{!save}');
 System.assertEquals('{!save}', action.getExpression());
+ApexPages.Action nullAction = new ApexPages.Action('{!null}');
+System.assertEquals(null, nullAction.invoke());
 ApexPages.Component component = new ApexPages.Component();
 System.assertEquals(null, component.getComponentById('missing'));
 ApexPages.addMessage(withDetail);
@@ -1523,6 +1525,67 @@ System.assertEquals('text/html', blank.getHeaders().get('Accept'));
 		t.Fatal(err)
 	}
 	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecFormulaBuilderEvaluateAndRecalculateLocalFields(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'Acme', Amount__c = 40, Paid__c = 12);
+formulaeval.FormulaInstance formulaInstance = Formula.builder()
+	.withFormula('Amount__c - Paid__c')
+	.withReturnType(formulaeval.FormulaReturnType.DECIMAL)
+	.build();
+System.assertEquals(28, formulaInstance.evaluate(account));
+Set<String> fields = formulaInstance.getReferencedFields();
+System.assert(fields.contains('Amount__c'));
+System.assert(fields.contains('Paid__c'));
+
+List<FormulaRecalcResult> results = Formula.recalculateFormulas(new List<SObject>{account});
+System.assertEquals(1, results.size());
+System.assert(results[0].isSuccess());
+System.assertEquals(0, results[0].getErrors().size());
+System.assertEquals(28, account.get('Balance__c'));
+
+FormulaRecalcResult single = account.recalculateFormulas();
+System.assert(single.isSuccess());
+System.assertEquals(account, single.getSObject());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Amount__c"] = storage.Field{APIName: "Amount__c", Type: storage.FieldDecimal, DisplayType: "CURRENCY"}
+	account.Definition.Fields["Paid__c"] = storage.Field{APIName: "Paid__c", Type: storage.FieldDecimal, DisplayType: "CURRENCY"}
+	account.Definition.Fields["Balance__c"] = storage.Field{APIName: "Balance__c", Type: storage.FieldCalculated, DisplayType: "CURRENCY", Formula: "Amount__c - Paid__c"}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecFormulaRecalculateReportsUnsupportedLocalExpression(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = new Account(Name = 'Acme');
+List<FormulaRecalcResult> results = Formula.recalculateFormulas(new List<SObject>{account});
+System.assertEquals(1, results.size());
+System.assert(!results[0].isSuccess());
+System.assertEquals(1, results[0].getErrors().size());
+System.assertEquals('Unsupported__c', results[0].getErrors()[0].getFieldName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Unsupported__c"] = storage.Field{APIName: "Unsupported__c", Type: storage.FieldCalculated, DisplayType: "STRING", Formula: "HYPERLINK('/x', Name)"}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -6138,11 +6201,6 @@ func TestExecUnsupportedHttpCalloutSurfacesHaveStableShape(t *testing.T) {
 		want string
 	}{
 		{
-			name: "continuation-constructor",
-			src:  `Continuation cont = new Continuation(60);`,
-			want: `unsupported call "Continuation constructor local continuation callout surface"`,
-		},
-		{
 			name: "client-certificate-name",
 			src:  `HttpRequest req = new HttpRequest(); req.setClientCertificateName('LocalCert');`,
 			want: `unsupported call "HttpRequest.setClientCertificateName local client certificate callout surface"`,
@@ -6165,6 +6223,63 @@ func TestExecUnsupportedHttpCalloutSurfacesHaveStableShape(t *testing.T) {
 				t.Fatalf("err = %#v, want %s", err, tc.want)
 			}
 		})
+	}
+}
+
+func TestExecContinuationLocalTestHarnessContainers(t *testing.T) {
+	program, err := CompileAnonymous(`
+Continuation cont = new Continuation(60);
+System.assertEquals(60, cont.Timeout);
+HttpRequest req = new HttpRequest();
+req.setEndpoint('https://example.test');
+req.setMethod('GET');
+String label = cont.addHttpRequest(req);
+System.assertEquals('request-1', label);
+System.assertEquals(req, cont.getRequests().get(label));
+HttpResponse response = new HttpResponse();
+response.setStatusCode(202);
+response.setBody('accepted');
+Test.setContinuationResponse(label, response);
+HttpResponse observed = (HttpResponse)Continuation.getResponse(label);
+System.assertEquals(202, observed.getStatusCode());
+System.assertEquals('accepted', observed.getBody());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecCanvasTestMockRenderContextAndLifecycle(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String,String> app = new Map<String,String>();
+app.put('canvasUrl', 'https://canvas.example');
+app.put('name', 'Local Canvas');
+Map<String,String> env = new Map<String,String>();
+env.put('displayLocation', 'Visualforce');
+env.put('locationUrl', '/apex/Host');
+Canvas.RenderContext ctx = Canvas.Test.mockRenderContext(app, env);
+System.assertEquals('https://canvas.example', ctx.getApplicationContext().getCanvasUrl());
+System.assertEquals('Local Canvas', ctx.getApplicationContext().getName());
+System.assertEquals('Visualforce', ctx.getEnvironmentContext().getDisplayLocation());
+System.assertEquals('/apex/Host', ctx.getEnvironmentContext().getLocationUrl());
+ctx.getEnvironmentContext().addEntityField('Account.Name');
+System.assertEquals('Account.Name', ctx.getEnvironmentContext().getEntityFields().get(0));
+Canvas.CanvasLifecycleHandler handler = new Canvas.CanvasLifecycleHandler();
+System.assertEquals(0, handler.excludeContextTypes().size());
+Canvas.Test.testCanvasLifecycle(handler, ctx);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 

@@ -209,22 +209,23 @@ type callFrame struct {
 }
 
 type TestContext struct {
-	Started          bool
-	Stopped          bool
-	CurrentUser      Value
-	SeeAllData       bool
-	AsyncJobs        []AsyncJob
-	EventPublishes   []eventPublishCallback
-	Draining         bool
-	HTTPMock         Value
-	WebServiceMock   Value
-	ParentLimits     Limits
-	ParentViolations []LimitViolation
-	RunAsDepth       int
-	SetupDML         bool
-	NonSetupDML      bool
-	JobSeq           int
-	ChainEnqueued    bool
+	Started               bool
+	Stopped               bool
+	CurrentUser           Value
+	SeeAllData            bool
+	AsyncJobs             []AsyncJob
+	EventPublishes        []eventPublishCallback
+	Draining              bool
+	HTTPMock              Value
+	WebServiceMock        Value
+	ContinuationResponses map[string]Value
+	ParentLimits          Limits
+	ParentViolations      []LimitViolation
+	RunAsDepth            int
+	SetupDML              bool
+	NonSetupDML           bool
+	JobSeq                int
+	ChainEnqueued         bool
 }
 
 type eventPublishCallback struct {
@@ -663,7 +664,10 @@ func (vm *VM) RegisterTrigger(trigger Trigger) error {
 }
 
 func (vm *VM) EnableTestContext() {
-	vm.testContext = &TestContext{CurrentUser: vm.defaultTestCurrentUser()}
+	vm.testContext = &TestContext{
+		CurrentUser:           vm.defaultTestCurrentUser(),
+		ContinuationResponses: make(map[string]Value),
+	}
 	vm.ensureAsyncObjects()
 }
 
@@ -2119,9 +2123,12 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"Messaging.sendEmail", "Messaging.renderStoredEmailTemplate",
 		"Messaging.reserveSingleEmailCapacity", "Messaging.reserveMassEmailCapacity",
 		"ApexPages.hasMessages", "ApexPages.addMessage", "ApexPages.addMessages", "ApexPages.getMessages", "ApexPages.currentPage",
+		"Formula.builder", "Formula.recalculateFormulas",
 		"Test.clearApexPageMessages", "Test.setCurrentPage", "Test.setCurrentPageReference",
 		"Test.setMock", "Test.testInstall", "Test.createStub", "Test.createSoqlStub", "Test.createStubQueryRow", "Test.createStubQueryRows", "Test.loadData",
 		"Test.getFlexQueueOrder", "Test.enqueueBatchJobs", "Test.calculatePermissionSetGroup", "Test.enableChangeDataCapture", "Test.setReadOnlyApplicationMode", "Test.isSoqlStubDefined",
+		"Test.invokeContinuationMethod", "Test.setContinuationResponse",
+		"Canvas.Test.mockRenderContext", "Canvas.Test.testCanvasLifecycle",
 		"sfsqlquery.SqlTester.clearMocks", "sfsqlquery.SqlTester.enqueueMockRows", "sfsqlquery.SqlTester.setMockRows", "sfsqlquery.SqlTester.setMockMetadata",
 		"sfsqlquery.SqlTester.isRunningTest", "sfsqlquery.QueryHandle.create", "sfsqlquery.SqlStatement.create",
 		"WebServiceCallout.invoke",
@@ -3951,6 +3958,13 @@ platformStaticCall:
 			vm.currentPage = newPageReference("/apex/current")
 		}
 		return vm.currentPage, nil
+	case "Formula.builder", "formula.builder", "System.Formula.builder", "System.formula.builder":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Formula.builder expects 0 arguments")
+		}
+		return newFormulaBuilder(), nil
+	case "Formula.recalculateFormulas", "formula.recalculateFormulas", "formula.recalculateformulas", "System.Formula.recalculateFormulas", "System.formula.recalculateFormulas", "System.formula.recalculateformulas":
+		return vm.recalculateFormulaList(args)
 	case "Test.setCurrentPage", "Test.setCurrentPageReference":
 		if len(args) != 1 || args[0].Kind != ValueObject || args[0].Type != "PageReference" {
 			return Null, fmt.Errorf("%s expects PageReference", callee)
@@ -4080,8 +4094,16 @@ platformStaticCall:
 			return Null, err
 		}
 		return Bool(false), nil
-	case "Continuation.addHttpRequest", "Continuation.getResponse":
-		return Null, unsupportedCallError(callee + " local continuation callout surface")
+	case "Test.setContinuationResponse":
+		return vm.testSetContinuationResponse(args)
+	case "Test.invokeContinuationMethod":
+		return vm.testInvokeContinuationMethod(args, result)
+	case "Continuation.getResponse":
+		return vm.continuationGetResponse(args)
+	case "Canvas.Test.mockRenderContext":
+		return vm.canvasTestMockRenderContext(args)
+	case "Canvas.Test.testCanvasLifecycle":
+		return vm.canvasTestCanvasLifecycle(args, result)
 	case "Test.setFixedSearchResults":
 		return vm.testSetFixedSearchResults(args)
 	case "Test.setCreatedDate":
@@ -4837,6 +4859,9 @@ func unsupportedIntegrationSurface(callee string) (string, bool) {
 	}
 	switch callee {
 	case "Auth.AuthConfiguration.getAuthProviderSsoUrl", "Auth.AuthToken.revokeAccess", "Auth.CommunitiesUtil.isGuestUser", "Auth.SessionManagement.getCurrentSession":
+		return "", false
+	case "Canvas.Test.mockRenderContext", "Canvas.Test.testCanvasLifecycle",
+		"Continuation.getResponse", "Test.invokeContinuationMethod", "Test.setContinuationResponse":
 		return "", false
 	}
 	for _, prefix := range []string{"Approval.", "Auth.", "QuickAction.", "Canvas.", "Continuation."} {
@@ -6314,6 +6339,129 @@ func (vm *VM) testSetMock(args []Value) (Value, error) {
 	}
 	vm.testContext.HTTPMock = args[1]
 	return Null, nil
+}
+
+func (vm *VM) testSetContinuationResponse(args []Value) (Value, error) {
+	if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueObject || !strings.EqualFold(args[1].Type, "HttpResponse") {
+		return Null, fmt.Errorf("Test.setContinuationResponse expects label String and HttpResponse")
+	}
+	if err := vm.requireTestContext("Test.setContinuationResponse"); err != nil {
+		return Null, err
+	}
+	if vm.testContext.ContinuationResponses == nil {
+		vm.testContext.ContinuationResponses = make(map[string]Value)
+	}
+	vm.testContext.ContinuationResponses[args[0].Text] = args[1]
+	return Null, nil
+}
+
+func (vm *VM) continuationGetResponse(args []Value) (Value, error) {
+	if len(args) != 1 || args[0].Kind != ValueString {
+		return Null, fmt.Errorf("Continuation.getResponse expects label String")
+	}
+	if vm.testContext == nil || vm.testContext.ContinuationResponses == nil {
+		return Null, unsupportedCallError("Continuation.getResponse local continuation callout surface")
+	}
+	if response, ok := vm.testContext.ContinuationResponses[args[0].Text]; ok {
+		return response, nil
+	}
+	return Null, unsupportedCallError("Continuation.getResponse local continuation callout surface")
+}
+
+func (vm *VM) testInvokeContinuationMethod(args []Value, result *Result) (Value, error) {
+	if len(args) != 2 || args[0].Kind != ValueObject || args[1].Kind != ValueObject || !strings.EqualFold(args[1].Type, "Continuation") {
+		return Null, fmt.Errorf("Test.invokeContinuationMethod expects controller Object and Continuation")
+	}
+	if err := vm.requireTestContext("Test.invokeContinuationMethod"); err != nil {
+		return Null, err
+	}
+	methodValue, ok := args[1].Fields["ContinuationMethod"]
+	if !ok || methodValue.Kind == ValueNull {
+		methodValue, ok = args[1].Fields["continuationMethod"]
+	}
+	if !ok || methodValue.Kind != ValueString || methodValue.Text == "" {
+		return Null, fmt.Errorf("Continuation.ContinuationMethod must be set before Test.invokeContinuationMethod")
+	}
+	target, ok, ambiguous := vm.resolveInstanceMethodForArgs(args[0].Type, methodValue.Text, nil)
+	if ambiguous {
+		return Null, vm.ambiguousOverloadError(args[0].Type+"."+methodValue.Text, nil)
+	}
+	if !ok {
+		return Null, unsupportedCallError(args[0].Type + "." + methodValue.Text)
+	}
+	return vm.callMethodWithReceiver(target, args[0], nil, result)
+}
+
+func (vm *VM) canvasTestMockRenderContext(args []Value) (Value, error) {
+	if len(args) != 2 || args[0].Kind != ValueMap || args[1].Kind != ValueMap {
+		return Null, fmt.Errorf("Canvas.Test.mockRenderContext expects app and environment Map<String,String> values")
+	}
+	if err := vm.requireTestContext("Canvas.Test.mockRenderContext"); err != nil {
+		return Null, err
+	}
+	app := Object("Canvas.ApplicationContext")
+	bindCanvasContextMap(&app, args[0])
+	env := Object("Canvas.EnvironmentContext")
+	bindCanvasContextMap(&env, args[1])
+	env.Fields["entityFields"] = typedList("List<String>")
+	ctx := Object("Canvas.RenderContext")
+	ctx.Fields["applicationContext"] = app
+	ctx.Fields["environmentContext"] = env
+	return ctx, nil
+}
+
+func (vm *VM) canvasTestCanvasLifecycle(args []Value, result *Result) (Value, error) {
+	if len(args) != 2 || args[0].Kind != ValueObject || args[1].Kind != ValueObject || !strings.EqualFold(args[1].Type, "Canvas.RenderContext") {
+		return Null, fmt.Errorf("Canvas.Test.testCanvasLifecycle expects CanvasLifecycleHandler and RenderContext")
+	}
+	if err := vm.requireTestContext("Canvas.Test.testCanvasLifecycle"); err != nil {
+		return Null, err
+	}
+	target, ok, ambiguous := vm.resolveInstanceMethodForArgs(args[0].Type, "onRender", []Value{args[1]})
+	if ambiguous {
+		return Null, vm.ambiguousOverloadError(args[0].Type+".onRender", []Value{args[1]})
+	}
+	if !ok {
+		return Null, nil
+	}
+	_, err := vm.callMethodWithReceiver(target, args[0], []Value{args[1]}, result)
+	return Null, err
+}
+
+func bindCanvasContextMap(target *Value, source Value) {
+	if target == nil || source.Kind != ValueMap {
+		return
+	}
+	for encoded, value := range source.Map {
+		keyValue := mapStoredKey(source, encoded)
+		if keyValue.Kind != ValueString {
+			continue
+		}
+		target.Fields[canvasContextFieldName(keyValue.Text)] = value
+	}
+}
+
+func canvasContextFieldName(key string) string {
+	switch strings.ToLower(strings.ReplaceAll(key, "_", "")) {
+	case "canvasurl", "keycanvasurl":
+		return "canvasUrl"
+	case "developername", "keydevelopername":
+		return "developerName"
+	case "displaylocation", "keydisplaylocation":
+		return "displayLocation"
+	case "locationurl", "keylocationurl":
+		return "locationUrl"
+	case "name", "keyname":
+		return "name"
+	case "namespace", "keynamespace":
+		return "namespace"
+	case "sublocation", "keysublocation":
+		return "sublocation"
+	case "version", "keyversion":
+		return "version"
+	default:
+		return key
+	}
 }
 
 func (vm *VM) webServiceCalloutInvoke(args []Value, result *Result) (Value, error) {
@@ -17021,6 +17169,25 @@ func builtinStaticField(typeName, fieldName string) (Value, bool) {
 		}
 	case "Dom.XmlNodeType":
 		return domXmlNodeTypeValue(fieldName)
+	case "Canvas.Test":
+		switch fieldName {
+		case "KEY_CANVAS_URL":
+			return String("canvasUrl"), true
+		case "KEY_DEVELOPER_NAME":
+			return String("developerName"), true
+		case "KEY_DISPLAY_LOCATION":
+			return String("displayLocation"), true
+		case "KEY_LOCATION_URL":
+			return String("locationUrl"), true
+		case "KEY_NAME":
+			return String("name"), true
+		case "KEY_NAMESPACE":
+			return String("namespace"), true
+		case "KEY_SUB_LOCATION":
+			return String("sublocation"), true
+		case "KEY_VERSION":
+			return String("version"), true
+		}
 	}
 	return Null, false
 }
@@ -18957,6 +19124,39 @@ func newHttpResponse() Value {
 	return response
 }
 
+func newContinuation(args []Value, namedArgs map[string]Value) (Value, error) {
+	if len(args) != 1 || len(namedArgs) != 0 || args[0].Kind != ValueInt {
+		return Null, fmt.Errorf("Continuation constructor expects timeout Integer")
+	}
+	continuation := Object("Continuation")
+	continuation.Fields["timeout"] = args[0]
+	continuation.Fields["Timeout"] = args[0]
+	continuation.Fields["ContinuationMethod"] = Null
+	continuation.Fields["state"] = Null
+	continuation.Fields["requests"] = typedMap("Map<String,HttpRequest>")
+	return continuation, nil
+}
+
+func newFormulaBuilder() Value {
+	builder := Object("formulaeval.FormulaBuilder")
+	builder.Fields["formulaText"] = String("")
+	builder.Fields["referencedFields"] = typedSet("Set<String>")
+	return builder
+}
+
+func newFormulaInstance(builder Value) Value {
+	instance := Object("formulaeval.FormulaInstance")
+	if formulaText, ok := builder.Fields["formulaText"]; ok {
+		instance.Fields["formulaText"] = formulaText
+	}
+	if referencedFields, ok := builder.Fields["referencedFields"]; ok {
+		instance.Fields["referencedFields"] = referencedFields
+	} else {
+		instance.Fields["referencedFields"] = typedSet("Set<String>")
+	}
+	return instance
+}
+
 func newSendEmailResult() Value {
 	result := Object("Messaging.SendEmailResult")
 	result.Fields["success"] = Bool(true)
@@ -19584,6 +19784,12 @@ func typedList(typeName string) Value {
 	return value
 }
 
+func typedSet(typeName string) Value {
+	value := Set()
+	value.Type = typeName
+	return value
+}
+
 func canonicalRuntimeTypeName(typeName string) string {
 	typeName = strings.TrimSpace(typeName)
 	for _, known := range []string{
@@ -19805,6 +20011,9 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		}
 		return newXmlStreamReader(args[0].Text)
 	}
+	if strings.EqualFold(typeName, "Continuation") {
+		return newContinuation(args, namedArgs)
+	}
 	if class, ok := vm.Classes[typeName]; ok {
 		if class.IsInterface {
 			return Null, fmt.Errorf("cannot instantiate interface %s", typeName)
@@ -20004,7 +20213,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		}
 		return response, nil
 	case "Continuation":
-		return Null, unsupportedCallError("Continuation constructor local continuation callout surface")
+		return newContinuation(args, namedArgs)
 	case "PageReference", "ApexPages.PageReference":
 		if len(args) > 1 || len(namedArgs) != 0 {
 			return Null, fmt.Errorf("PageReference constructor expects optional URL String")
@@ -23878,6 +24087,11 @@ func (vm *VM) generatedPlatformStaticDefault(callee string, args []Value) (Value
 			return value, true
 		}
 	}
+	if strings.EqualFold(className, "CartExtension.CartTestUtil") {
+		if value, handled := vm.callCartExtensionCartTestUtilStaticDefault(methodName, args); handled {
+			return value, true
+		}
+	}
 	if !vm.generatedPlatformMethodFallbackType(className) {
 		return Null, false
 	}
@@ -23934,6 +24148,32 @@ func (vm *VM) generatedOptionalWrapperStaticDefault(className, methodName string
 	default:
 		return Null, false
 	}
+}
+
+func (vm *VM) callCartExtensionCartTestUtilStaticDefault(methodName string, args []Value) (Value, bool) {
+	switch strings.ToLower(methodName) {
+	case "createcart":
+		if len(args) != 0 && len(args) != 1 {
+			return Null, false
+		}
+	case "getcart":
+		if len(args) != 1 {
+			return Null, false
+		}
+	default:
+		return Null, false
+	}
+	cart := vm.generatedPlatformDefaultValue("CartExtension.Cart", Null)
+	if cart.Kind != ValueObject {
+		cart = Object("CartExtension.Cart")
+	}
+	if strings.EqualFold(methodName, "createCart") && len(args) == 1 {
+		cart.Fields["webStoreType"] = args[0]
+	}
+	if strings.EqualFold(methodName, "getCart") {
+		cart.Fields["id"] = args[0]
+	}
+	return cart, true
 }
 
 func (vm *VM) newGeneratedOptionalWrapper(typeName string, present bool, value Value) Value {
@@ -24848,7 +25088,7 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 		}
 		if vm.isSObjectLikeType(receiver.Type) {
 			if value, handled, err := vm.callSObjectMember(receiver, method, args); handled || err != nil {
-				if method == "put" || method == "addError" || method == "clear" {
+				if method == "put" || method == "addError" || method == "clear" || method == "recalculateFormulas" {
 					if err := vm.storeReceiver(receiverName, receiver); err != nil {
 						return Null, true, err
 					}
@@ -26203,7 +26443,7 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 	method = canonicalStdlibMemberName(method,
 		"addError", "hasErrors", "getErrors", "get", "put", "putSObject", "isSet", "clear",
 		"getPopulatedFieldsAsMap", "getSObjectType", "getSObjects", "getQuickActionName",
-		"getAll", "getInstance", "getOrgDefaults", "getValues",
+		"getAll", "getInstance", "getOrgDefaults", "getValues", "recalculateFormulas",
 	)
 	switch method {
 	case "addError":
@@ -26374,6 +26614,17 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		return Null, true, nil
 	case "getAll", "getInstance", "getOrgDefaults", "getValues":
 		return vm.callCustomDataStaticMember(receiver.Type, method, args)
+	case "recalculateFormulas":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("SObject.recalculateFormulas expects 0 arguments")
+		}
+		result := vm.recalculateFormulaSObject(receiver)
+		if value, ok := result.Fields["sobject"]; ok && value.Kind == ValueObject {
+			for field, fieldValue := range value.Fields {
+				receiver.Fields[field] = fieldValue
+			}
+		}
+		return result, true, nil
 	case "clone":
 		if len(args) > 4 {
 			return Null, true, fmt.Errorf("SObject.clone expects 0 to 4 arguments")
@@ -28631,6 +28882,137 @@ func versionValueString(version Value) string {
 	return fmt.Sprintf("%d.%d.%d", versionComponent(version, "major"), versionComponent(version, "minor"), versionComponent(version, "patch"))
 }
 
+func (vm *VM) callCanvasMember(receiver Value, method string, args []Value, result *Result) (Value, Value, bool, bool, error) {
+	switch receiver.Type {
+	case "Canvas.RenderContext":
+		method = canonicalStdlibMemberName(method, "getApplicationContext", "getEnvironmentContext")
+		switch method {
+		case "getApplicationContext":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Canvas.RenderContext.getApplicationContext expects 0 arguments")
+			}
+			return receiver.Fields["applicationContext"], receiver, false, true, nil
+		case "getEnvironmentContext":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Canvas.RenderContext.getEnvironmentContext expects 0 arguments")
+			}
+			return receiver.Fields["environmentContext"], receiver, false, true, nil
+		}
+	case "Canvas.ApplicationContext":
+		method = canonicalStdlibMemberName(method, "getCanvasUrl", "getDeveloperName", "getName", "getNamespace", "getVersion", "setCanvasUrlPath")
+		switch method {
+		case "getCanvasUrl", "getDeveloperName", "getName", "getNamespace", "getVersion":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Canvas.ApplicationContext.%s expects 0 arguments", method)
+			}
+			return canvasStringField(receiver, strings.TrimPrefix(method, "get")), receiver, false, true, nil
+		case "setCanvasUrlPath":
+			if len(args) != 1 || args[0].Kind != ValueString {
+				return Null, receiver, false, true, fmt.Errorf("Canvas.ApplicationContext.setCanvasUrlPath expects String")
+			}
+			receiver.Fields["canvasUrl"] = args[0]
+			return Null, receiver, true, true, nil
+		}
+	case "Canvas.EnvironmentContext":
+		method = canonicalStdlibMemberName(method, "addEntityField", "addEntityFields", "getDisplayLocation", "getEntityFields", "getLocationUrl", "getParametersAsJSON", "getSublocation", "setParametersAsJSON")
+		switch method {
+		case "addEntityField":
+			if len(args) != 1 || args[0].Kind != ValueString {
+				return Null, receiver, false, true, fmt.Errorf("Canvas.EnvironmentContext.addEntityField expects String")
+			}
+			fields := receiver.Fields["entityFields"]
+			if fields.Kind != ValueList {
+				fields = typedList("List<String>")
+			}
+			fields.List = append(fields.List, args[0])
+			receiver.Fields["entityFields"] = fields
+			return Null, receiver, true, true, nil
+		case "addEntityFields":
+			if len(args) != 1 || args[0].Kind != ValueSet {
+				return Null, receiver, false, true, fmt.Errorf("Canvas.EnvironmentContext.addEntityFields expects Set<String>")
+			}
+			fields := receiver.Fields["entityFields"]
+			if fields.Kind != ValueList {
+				fields = typedList("List<String>")
+			}
+			fields.List = append(fields.List, args[0].Set...)
+			receiver.Fields["entityFields"] = fields
+			return Null, receiver, true, true, nil
+		case "getDisplayLocation", "getLocationUrl", "getSublocation":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Canvas.EnvironmentContext.%s expects 0 arguments", method)
+			}
+			return canvasStringField(receiver, strings.TrimPrefix(method, "get")), receiver, false, true, nil
+		case "getEntityFields":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Canvas.EnvironmentContext.getEntityFields expects 0 arguments")
+			}
+			fields := receiver.Fields["entityFields"]
+			if fields.Kind != ValueList {
+				return typedList("List<String>"), receiver, false, true, nil
+			}
+			return fields, receiver, false, true, nil
+		case "getParametersAsJSON":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Canvas.EnvironmentContext.getParametersAsJSON expects 0 arguments")
+			}
+			if raw, ok := receiver.Fields["parametersAsJSON"]; ok && raw.Kind == ValueString {
+				return raw, receiver, false, true, nil
+			}
+			text, err := canvasContextJSON(receiver)
+			if err != nil {
+				return Null, receiver, false, true, err
+			}
+			return String(text), receiver, false, true, nil
+		case "setParametersAsJSON":
+			if len(args) != 1 || args[0].Kind != ValueString {
+				return Null, receiver, false, true, fmt.Errorf("Canvas.EnvironmentContext.setParametersAsJSON expects String")
+			}
+			receiver.Fields["parametersAsJSON"] = args[0]
+			return Null, receiver, true, true, nil
+		}
+	case "Canvas.CanvasLifecycleHandler":
+		method = canonicalStdlibMemberName(method, "excludeContextTypes", "onRender")
+		switch method {
+		case "excludeContextTypes":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Canvas.CanvasLifecycleHandler.excludeContextTypes expects 0 arguments")
+			}
+			return typedSet("Set<Canvas.ContextTypeEnum>"), receiver, false, true, nil
+		case "onRender":
+			if len(args) != 1 || (args[0].Kind != ValueNull && (args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "Canvas.RenderContext"))) {
+				return Null, receiver, false, true, fmt.Errorf("Canvas.CanvasLifecycleHandler.onRender expects Canvas.RenderContext")
+			}
+			return Null, receiver, false, true, nil
+		}
+	}
+	_ = vm
+	_ = result
+	return Null, receiver, false, false, nil
+}
+
+func canvasStringField(receiver Value, suffix string) Value {
+	field := canvasContextFieldName(suffix)
+	if value, ok := receiver.Fields[field]; ok && (value.Kind == ValueString || value.Kind == ValueNull) {
+		return value
+	}
+	return String("")
+}
+
+func canvasContextJSON(receiver Value) (string, error) {
+	values := make(map[string]string)
+	for field, value := range receiver.Fields {
+		if value.Kind == ValueString {
+			values[field] = value.Text
+		}
+	}
+	raw, err := json.Marshal(values)
+	if err != nil {
+		return "", err
+	}
+	return string(raw), nil
+}
+
 func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Value, result *Result) (Value, Value, bool, bool, error) {
 	method = canonicalPlatformObjectMemberName(receiver.Type, method)
 	if value, updated, mutated, handled, err := vm.callSfsqlqueryHarnessMember(receiver, method, args); handled || err != nil {
@@ -28653,6 +29035,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	}
 	if value, handled, err := vm.callGeneratedOptionalWrapperMember(receiver, method, args); handled || err != nil {
 		return value, receiver, false, true, err
+	}
+	if strings.HasPrefix(receiver.Type, "Canvas.") {
+		if value, updated, mutated, handled, err := vm.callCanvasMember(receiver, method, args, result); handled || err != nil {
+			return value, updated, mutated, true, err
+		}
 	}
 	if isExceptionType(receiver.Type) {
 		switch method {
@@ -30790,6 +31177,22 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		return Null, receiver, false, true, unsupportedCallError("Messaging.SendEmailOptions." + method + " local messaging send-options surface")
 	case "Request", "System.Request":
 		return vm.callRequestMember(receiver, method, args)
+	case "formulaeval.FormulaBuilder":
+		return vm.callFormulaBuilderMember(receiver, method, args)
+	case "formulaeval.FormulaInstance":
+		return vm.callFormulaInstanceMember(receiver, method, args)
+	case "FormulaRecalcResult", "System.FormulaRecalcResult":
+		return callFormulaRecalcResultMember(receiver, method, args)
+	case "FormulaRecalcFieldError", "System.FormulaRecalcFieldError":
+		return callFormulaRecalcFieldErrorMember(receiver, method, args)
+	case "Flow.Interview":
+		if strings.EqualFold(method, "start") {
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Flow.Interview.start expects 0 arguments")
+			}
+			receiver.Fields["started"] = Bool(true)
+			return Null, receiver, true, true, nil
+		}
 	case "VisualEditor.DataRow":
 		return callVisualEditorDataRowMember(receiver, method, args)
 	case "VisualEditor.DynamicPickListRows":
@@ -30838,7 +31241,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	case "Dom.XmlNode":
 		return callDomXmlNodeMember(receiver, method, args)
 	case "Continuation":
-		return Null, receiver, false, true, unsupportedCallError("Continuation local continuation callout surface")
+		return callContinuationMember(receiver, method, args)
 	case "StaticResourceCalloutMock":
 		return callStaticResourceCalloutMockMember(receiver, method, args)
 	case "MultiStaticResourceCalloutMock":
@@ -31056,6 +31459,9 @@ func (vm *VM) callPassivePlatformDTOObjectMember(receiver Value, method string, 
 	if value, handled, err := callObjectMember(receiver, method, args); handled || err != nil {
 		return value, receiver, false, true, err
 	}
+	if value, updated, mutated, handled, err := callPrefCenterLoadFormDataMember(receiver, method, args); handled || err != nil {
+		return value, updated, mutated, handled, err
+	}
 	if value, updated, mutated, handled, err := vm.callPassivePlatformDTOFluentMember(receiver, method, args); handled || err != nil {
 		return value, updated, mutated, handled, err
 	}
@@ -31188,6 +31594,89 @@ func (vm *VM) callPassivePlatformDTOObjectMember(receiver Value, method string, 
 		return Bool(false), receiver, false, true, nil
 	}
 	return Null, receiver, false, false, nil
+}
+
+func callPrefCenterLoadFormDataMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	if !strings.EqualFold(receiver.Type, "pref_center.LoadFormData") {
+		return Null, receiver, false, false, nil
+	}
+	if len(args) == 0 || args[0].Kind != ValueString {
+		return Null, receiver, false, false, nil
+	}
+	fieldID := args[0]
+	switch strings.ToLower(method) {
+	case "addoption":
+		if len(args) != 2 && len(args) != 3 {
+			return Null, receiver, false, true, fmt.Errorf("pref_center.LoadFormData.addOption expects fieldId and option or value/label")
+		}
+		option := args[1]
+		if len(args) == 3 {
+			option = newSelectOption(args[1], args[2], Bool(false), Bool(true))
+		}
+		appendLoadFormDataListField(&receiver, "options", fieldID, option, "List<SelectOption>")
+		return Null, receiver, true, true, nil
+	case "addselectedoption":
+		if len(args) != 2 {
+			return Null, receiver, false, true, fmt.Errorf("pref_center.LoadFormData.addSelectedOption expects fieldId and option")
+		}
+		appendLoadFormDataListField(&receiver, "selectedOptions", fieldID, args[1], "List<String>")
+		return Null, receiver, true, true, nil
+	case "setbuttonlabel":
+		return setLoadFormDataMapField(&receiver, method, args, "buttonLabels")
+	case "setoptions":
+		return setLoadFormDataMapField(&receiver, method, args, "options")
+	case "setselectedoption":
+		return setLoadFormDataMapField(&receiver, method, args, "selectedOption")
+	case "setselectedoptions":
+		return setLoadFormDataMapField(&receiver, method, args, "selectedOptions")
+	case "settexthint":
+		return setLoadFormDataMapField(&receiver, method, args, "textHints")
+	case "settextvalue":
+		return setLoadFormDataMapField(&receiver, method, args, "textValues")
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
+func setLoadFormDataMapField(receiver *Value, method string, args []Value, field string) (Value, Value, bool, bool, error) {
+	if len(args) != 2 || args[0].Kind != ValueString {
+		return Null, *receiver, false, true, fmt.Errorf("pref_center.LoadFormData.%s expects fieldId and value", method)
+	}
+	setObjectMapValue(receiver, field, args[0], args[1], "Map<String,Object>")
+	return Null, *receiver, true, true, nil
+}
+
+func appendLoadFormDataListField(receiver *Value, field string, key Value, item Value, listType string) {
+	actual, mapValue, ok := objectFieldValue(*receiver, field)
+	if !ok {
+		actual = field
+	}
+	if mapValue.Kind != ValueMap {
+		mapValue = typedMap("Map<String,Object>")
+	}
+	mapKeyValue := mapKey(key)
+	listValue, ok := mapValue.Map[mapKeyValue]
+	if !ok || listValue.Kind != ValueList {
+		listValue = typedList(listType)
+	}
+	listValue.List = append(listValue.List, item)
+	mapValue.Map[mapKeyValue] = listValue
+	mapValue.MapKeys[mapKeyValue] = key
+	receiver.Fields[actual] = mapValue
+}
+
+func setObjectMapValue(receiver *Value, field string, key Value, value Value, mapType string) {
+	actual, mapValue, ok := objectFieldValue(*receiver, field)
+	if !ok {
+		actual = field
+	}
+	if mapValue.Kind != ValueMap {
+		mapValue = typedMap(mapType)
+	}
+	mapKeyValue := mapKey(key)
+	mapValue.Map[mapKeyValue] = value
+	mapValue.MapKeys[mapKeyValue] = key
+	receiver.Fields[actual] = mapValue
 }
 
 func (vm *VM) callPassivePlatformDTOCollectionMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
@@ -31530,6 +32019,9 @@ func generatedPlatformPassiveDTOMethod(method Method) bool {
 			return true
 		}
 		if len(method.Params) == 2 && strings.EqualFold(method.ReturnType, "void") && strings.HasPrefix(name, "add") {
+			return true
+		}
+		if len(method.Params) == 3 && strings.EqualFold(method.ReturnType, "void") && strings.HasPrefix(name, "add") {
 			return true
 		}
 		if len(method.Params) == 1 && strings.EqualFold(method.ReturnType, method.ClassName) {
@@ -33534,7 +34026,325 @@ func callApexPagesActionMember(receiver Value, method string, args []Value) (Val
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("ApexPages.Action.invoke expects 0 arguments")
 		}
-		return Null, receiver, false, true, unsupportedCallError("ApexPages.Action.invoke local Visualforce action invocation surface")
+		expression := ""
+		if value, ok := receiver.Fields["expression"]; ok && value.Kind == ValueString {
+			expression = strings.TrimSpace(value.Text)
+		}
+		if expression == "" || strings.EqualFold(expression, "null") || strings.EqualFold(expression, "{!null}") || strings.EqualFold(expression, "{!}") {
+			return Null, receiver, false, true, nil
+		}
+		return Null, receiver, false, true, unsupportedCallError("ApexPages.Action.invoke requires bound Visualforce controller lifecycle")
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
+func (vm *VM) callFormulaBuilderMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	method = canonicalStdlibMemberName(method, "withFormula", "withReturnType", "withType", "withGlobalVariables", "treatNumericNullAsZero", "parseAsTemplate", "build")
+	switch method {
+	case "withFormula":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("formulaeval.FormulaBuilder.withFormula expects formula String")
+		}
+		receiver.Fields["formula"] = args[0]
+		return receiver, receiver, true, true, nil
+	case "withReturnType":
+		if len(args) != 1 {
+			return Null, receiver, false, true, fmt.Errorf("formulaeval.FormulaBuilder.withReturnType expects return type")
+		}
+		receiver.Fields["returnType"] = args[0]
+		return receiver, receiver, true, true, nil
+	case "withType":
+		if len(args) != 1 {
+			return Null, receiver, false, true, fmt.Errorf("formulaeval.FormulaBuilder.withType expects context type")
+		}
+		receiver.Fields["contextType"] = args[0]
+		return receiver, receiver, true, true, nil
+	case "withGlobalVariables":
+		if len(args) != 1 || args[0].Kind != ValueList {
+			return Null, receiver, false, true, fmt.Errorf("formulaeval.FormulaBuilder.withGlobalVariables expects FormulaGlobal list")
+		}
+		receiver.Fields["globalVariables"] = args[0]
+		return receiver, receiver, true, true, nil
+	case "treatNumericNullAsZero":
+		if len(args) != 1 || args[0].Kind != ValueBool {
+			return Null, receiver, false, true, fmt.Errorf("formulaeval.FormulaBuilder.treatNumericNullAsZero expects Boolean")
+		}
+		receiver.Fields["treatNumericNullAsZero"] = args[0]
+		return receiver, receiver, true, true, nil
+	case "parseAsTemplate":
+		if len(args) != 1 || args[0].Kind != ValueBool {
+			return Null, receiver, false, true, fmt.Errorf("formulaeval.FormulaBuilder.parseAsTemplate expects Boolean")
+		}
+		receiver.Fields["templateMode"] = args[0]
+		return receiver, receiver, true, true, nil
+	case "build":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("formulaeval.FormulaBuilder.build expects 0 arguments")
+		}
+		if value, ok := receiver.Fields["templateMode"]; ok && value.Kind == ValueBool && value.Bool {
+			return Null, receiver, false, true, unsupportedCallError("formulaeval.FormulaBuilder.parseAsTemplate template evaluation")
+		}
+		instance := Object("formulaeval.FormulaInstance")
+		for field, value := range receiver.Fields {
+			instance.Fields[field] = value
+		}
+		return instance, receiver, false, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
+func (vm *VM) callFormulaInstanceMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	method = canonicalStdlibMemberName(method, "evaluate", "getReferencedFields")
+	switch method {
+	case "evaluate":
+		if len(args) != 1 {
+			return Null, receiver, false, true, fmt.Errorf("formulaeval.FormulaInstance.evaluate expects context object")
+		}
+		formula, _ := formulaInstanceText(receiver)
+		if formula == "" {
+			return Null, receiver, false, true, newExceptionError("FormulaEvaluationException", "formula text is required")
+		}
+		value, ok := vm.evaluateFormulaInstanceValue(receiver, args[0], formula)
+		if !ok {
+			return Null, receiver, false, true, unsupportedCallError("formulaeval.FormulaInstance.evaluate unsupported local formula expression")
+		}
+		return value, receiver, false, true, nil
+	case "getReferencedFields":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("formulaeval.FormulaInstance.getReferencedFields expects 0 arguments")
+		}
+		formula, _ := formulaInstanceText(receiver)
+		out := Set()
+		out.Type = "Set<String>"
+		for _, field := range formulaReferencedFields(formula) {
+			out.Set = append(out.Set, String(field))
+		}
+		return out, receiver, false, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
+func callFormulaRecalcResultMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	method = canonicalStdlibMemberName(method, "isSuccess", "getSObject", "getErrors")
+	if len(args) != 0 {
+		return Null, receiver, false, true, fmt.Errorf("%s.%s expects 0 arguments", receiver.Type, method)
+	}
+	switch method {
+	case "isSuccess":
+		if value, ok := receiver.Fields["success"]; ok {
+			return value, receiver, false, true, nil
+		}
+		return Bool(false), receiver, false, true, nil
+	case "getSObject":
+		if value, ok := receiver.Fields["sobject"]; ok {
+			return value, receiver, false, true, nil
+		}
+		return Null, receiver, false, true, nil
+	case "getErrors":
+		if value, ok := receiver.Fields["errors"]; ok {
+			return value, receiver, false, true, nil
+		}
+		return typedList("List<FormulaRecalcFieldError>"), receiver, false, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
+func callFormulaRecalcFieldErrorMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	method = canonicalStdlibMemberName(method, "getFieldName", "getFieldError")
+	if len(args) != 0 {
+		return Null, receiver, false, true, fmt.Errorf("%s.%s expects 0 arguments", receiver.Type, method)
+	}
+	switch method {
+	case "getFieldName":
+		if value, ok := receiver.Fields["fieldName"]; ok {
+			return value, receiver, false, true, nil
+		}
+		return String(""), receiver, false, true, nil
+	case "getFieldError":
+		if value, ok := receiver.Fields["fieldError"]; ok {
+			return value, receiver, false, true, nil
+		}
+		return String(""), receiver, false, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
+func (vm *VM) recalculateFormulaList(args []Value) (Value, error) {
+	if len(args) != 1 || args[0].Kind != ValueList {
+		return Null, fmt.Errorf("Formula.recalculateFormulas expects SObject list")
+	}
+	out := typedList("List<FormulaRecalcResult>")
+	for _, item := range args[0].List {
+		if item.Kind != ValueObject || !vm.isSObjectLikeType(item.Type) {
+			return Null, fmt.Errorf("Formula.recalculateFormulas expects SObject list")
+		}
+		out.List = append(out.List, vm.recalculateFormulaSObject(item))
+	}
+	return out, nil
+}
+
+func (vm *VM) recalculateFormulaSObject(item Value) Value {
+	result := Object("FormulaRecalcResult")
+	result.Fields["sobject"] = item
+	result.Fields["success"] = Bool(true)
+	errors := typedList("List<FormulaRecalcFieldError>")
+	if vm.Org == nil {
+		result.Fields["success"] = Bool(false)
+		errors.List = append(errors.List, formulaRecalcFieldError("", "org metadata is required"))
+		result.Fields["errors"] = errors
+		return result
+	}
+	objectName, ok := storage.ResolveObjectName(*vm.Org, item.Type)
+	if !ok {
+		result.Fields["success"] = Bool(false)
+		errors.List = append(errors.List, formulaRecalcFieldError("", "object metadata is required"))
+		result.Fields["errors"] = errors
+		return result
+	}
+	definition := vm.Org.Objects[objectName].Definition
+	record, ok := vm.formulaRecordFromSObject(item)
+	if !ok {
+		result.Fields["success"] = Bool(false)
+		errors.List = append(errors.List, formulaRecalcFieldError("", "SObject value cannot be converted to a formula context"))
+		result.Fields["errors"] = errors
+		return result
+	}
+	for fieldName, field := range definition.Fields {
+		if field.Type != storage.FieldCalculated || strings.TrimSpace(field.Formula) == "" {
+			continue
+		}
+		value, explicitNull, ok := dml.EvaluateRecordFormulaValueInOrg(field.Formula, field, vm.Org, definition, record)
+		if !ok {
+			result.Fields["success"] = Bool(false)
+			errors.List = append(errors.List, formulaRecalcFieldError(fieldName, "unsupported local formula expression"))
+			continue
+		}
+		if explicitNull {
+			item.Fields[fieldName] = Null
+			continue
+		}
+		item.Fields[fieldName] = vmValueFromStorage(value)
+	}
+	result.Fields["sobject"] = item
+	result.Fields["errors"] = errors
+	return result
+}
+
+func formulaRecalcFieldError(fieldName, message string) Value {
+	err := Object("FormulaRecalcFieldError")
+	err.Fields["fieldName"] = String(fieldName)
+	err.Fields["fieldError"] = String(message)
+	return err
+}
+
+func (vm *VM) evaluateFormulaInstanceValue(instance Value, context Value, formula string) (Value, bool) {
+	if context.Kind != ValueObject || !vm.isSObjectLikeType(context.Type) || vm.Org == nil {
+		return Null, false
+	}
+	objectName, ok := storage.ResolveObjectName(*vm.Org, context.Type)
+	if !ok {
+		return Null, false
+	}
+	definition := vm.Org.Objects[objectName].Definition
+	record, ok := vm.formulaRecordFromSObject(context)
+	if !ok {
+		return Null, false
+	}
+	field := storage.Field{APIName: "__formula", Type: formulaReturnFieldType(instance), Formula: formula}
+	value, explicitNull, ok := dml.EvaluateRecordFormulaValueInOrg(formula, field, vm.Org, definition, record)
+	if !ok {
+		return Null, false
+	}
+	if explicitNull {
+		return Null, true
+	}
+	return vmValueFromStorage(value), true
+}
+
+func formulaInstanceText(instance Value) (string, bool) {
+	if value, ok := instance.Fields["formula"]; ok && value.Kind == ValueString {
+		return value.Text, true
+	}
+	if value, ok := instance.Fields["formulaText"]; ok && value.Kind == ValueString {
+		return value.Text, true
+	}
+	return "", false
+}
+
+func formulaReturnFieldType(instance Value) storage.FieldType {
+	if value, ok := instance.Fields["returnType"]; ok {
+		name := strings.ToUpper(strings.TrimSpace(value.Text))
+		if name == "" && value.Kind == ValueObject {
+			name = strings.ToUpper(strings.TrimSpace(value.Text))
+		}
+		switch name {
+		case "BOOLEAN":
+			return storage.FieldBoolean
+		case "INTEGER", "LONG":
+			return storage.FieldInteger
+		case "DECIMAL", "DOUBLE":
+			return storage.FieldDecimal
+		case "DATE":
+			return storage.FieldDate
+		case "DATETIME":
+			return storage.FieldDateTime
+		case "ID":
+			return storage.FieldID
+		}
+	}
+	return storage.FieldString
+}
+
+func formulaReferencedFields(formula string) []string {
+	matches := regexp.MustCompile(`\b[A-Za-z_][A-Za-z0-9_]*(?:__c|__r)?(?:\.[A-Za-z_][A-Za-z0-9_]*(?:__c|__r)?)*\b`).FindAllString(formula, -1)
+	seen := map[string]bool{}
+	out := make([]string, 0, len(matches))
+	for _, match := range matches {
+		upper := strings.ToUpper(match)
+		switch upper {
+		case "AND", "OR", "NOT", "IF", "CASE", "ISBLANK", "ISNULL", "NULL", "TRUE", "FALSE", "TODAY", "NOW", "DATE", "DATETIMEVALUE", "TEXT", "VALUE", "LOWER", "UPPER", "FLOOR", "MOD", "REGEX", "CONTAINS":
+			continue
+		}
+		if seen[strings.ToLower(match)] {
+			continue
+		}
+		seen[strings.ToLower(match)] = true
+		out = append(out, match)
+	}
+	sort.Strings(out)
+	return out
+}
+
+func callContinuationMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	method = canonicalStdlibMemberName(method, "addHttpRequest", "getRequests")
+	switch method {
+	case "addHttpRequest":
+		if len(args) != 1 || args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "HttpRequest") {
+			return Null, receiver, false, true, fmt.Errorf("Continuation.addHttpRequest expects HttpRequest")
+		}
+		requests, ok := receiver.Fields["requests"]
+		if !ok || requests.Kind != ValueMap {
+			requests = typedMap("Map<String,HttpRequest>")
+		}
+		label := fmt.Sprintf("request-%d", len(requests.Map)+1)
+		key := mapKey(String(label))
+		requests.Map[key] = args[0]
+		requests.MapKeys[key] = String(label)
+		receiver.Fields["requests"] = requests
+		return String(label), receiver, true, true, nil
+	case "getRequests":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Continuation.getRequests expects 0 arguments")
+		}
+		if requests, ok := receiver.Fields["requests"]; ok && requests.Kind == ValueMap {
+			return requests, receiver, false, true, nil
+		}
+		return typedMap("Map<String,HttpRequest>"), receiver, false, true, nil
 	default:
 		return Null, receiver, false, false, nil
 	}

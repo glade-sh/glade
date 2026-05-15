@@ -1399,6 +1399,7 @@ private class PassiveGeneratedStubTest {
     interview.start();
     Map<String,Object> interviewValues = interview.getAsMap();
     System.assertEquals('Demo_Flow', (String)interviewValues.get('flowName'));
+    System.assertEquals(true, (Boolean)interviewValues.get('started'));
     Flow.Interview namespacedInterview = Flow.Interview.createInterview('pkg', 'Demo_Flow', flowInputs);
     Map<String,Object> namespacedValues = namespacedInterview.getAsMap();
     System.assertEquals('pkg', (String)namespacedValues.get('namespace'));
