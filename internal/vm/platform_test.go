@@ -1960,8 +1960,79 @@ Slack.UsersInfoResponse userInfo = bot.usersInfo(new Slack.UsersInfoRequest());
 System.assertNotEquals(null, userInfo);
 
 Slack.UserClient user = new Slack.UserClient();
+Slack.ApiTestResponse api = user.apiTest(new Slack.ApiTestRequest());
+System.assertNotEquals(null, api);
 Slack.TeamInfoResponse team = user.teamInfo(new Slack.TeamInfoRequest());
 System.assertNotEquals(null, team);
+
+Slack.AppClient app = new Slack.AppClient();
+Slack.AuthTestResponse appAuth = app.AUTHTEST(new Slack.AuthTestRequest());
+System.assertNotEquals(null, appAuth);
+		`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSlackLocalComponentHarnessMethods(t *testing.T) {
+	program, err := CompileAnonymous(`
+Slack.Checkbox checkbox = new Slack.Checkbox();
+checkbox.toggleValue();
+System.assertEquals(true, checkbox.getValue());
+checkbox.TOGGLEVALUE();
+System.assertEquals(false, checkbox.getValue());
+
+Slack.CheckboxGroup groupValue = new Slack.CheckboxGroup();
+groupValue.toggleValue('opt-a');
+System.assertEquals(1, groupValue.getValue().size());
+groupValue.TOGGLEVALUE('opt-a');
+System.assertEquals(0, groupValue.getValue().size());
+
+Slack.ExternalSelect selectValue = new Slack.ExternalSelect();
+selectValue.QUERY('abc');
+
+Slack.Modal modal = new Slack.Modal();
+System.assertEquals(false, modal.hasInputErrors());
+System.assertEquals(true, modal.SUBMIT());
+modal.close();
+
+Slack.Overflow overflow = new Slack.Overflow();
+overflow.clickOption('next');
+
+Slack.Message message = new Slack.Message();
+System.assertEquals(true, message.canBeSeenByUser(new Slack.TestHarness.User()));
+
+Slack.Button button = new Slack.Button();
+button.CLICK();
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSlackLocalChannelHarnessSendsSessionMessage(t *testing.T) {
+	program, err := CompileAnonymous(`
+Slack.State state = new Slack.State();
+Slack.TestHarness.Enterprise enterprise = state.createEnterprise('E1', 'Example');
+Slack.TestHarness.Team team = state.createTeam('example', enterprise);
+Slack.TestHarness.User user = state.createUser('U1', 'M User', team, 'en_US');
+Slack.TestHarness.Channel channel = state.createPublicChannel(team, 'general', 'en_US');
+Slack.TestHarness.UserSession session = state.createUserSession(user, channel);
+
+channel.addUser(user);
+System.assertEquals(true, channel.canBeOpenedByUser(user));
+Slack.TestHarness.Message message = channel.SENDMESSAGE(session, 'hello');
+System.assertEquals('hello', message.getText());
+System.assertEquals(1, session.getMessages().size());
+channel.removeUser(user);
 	`)
 	if err != nil {
 		t.Fatal(err)

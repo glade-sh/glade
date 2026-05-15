@@ -275,6 +275,9 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 	if slackTestHarnessBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "Slack test-harness state/session method is handled locally without Slack transport", true
 	}
+	if slackLocalHarnessComponentBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "Slack local test-harness component method mutates local DTO/session state or returns deterministic no-op/default values", true
+	}
 	if slackLocalClientHarnessBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "Slack client auth/read/info method returns a deterministic local DTO without external transport", true
 	}
@@ -1874,6 +1877,57 @@ func slackTestHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Me
 	}
 }
 
+func slackLocalHarnessComponentBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if member.Kind != apexast.DeclarationMethod {
+		return false
+	}
+	typeName := slackRuntimeBehaviorType(stubBehaviorTypeName(symbol))
+	name := strings.ToLower(member.Name)
+	switch typeName {
+	case "Slack.Button":
+		return name == "click" && strings.EqualFold(member.Type, "void")
+	case "Slack.Channel":
+		switch name {
+		case "adduser", "removeuser":
+			return strings.EqualFold(member.Type, "void")
+		case "canbeopenedbyuser":
+			return strings.EqualFold(member.Type, "Boolean")
+		case "sendmessage":
+			return strings.HasPrefix(member.Type, "Slack.")
+		default:
+			return false
+		}
+	case "Slack.Checkbox":
+		return name == "togglevalue" && strings.EqualFold(member.Type, "void")
+	case "Slack.CheckboxGroup":
+		return name == "togglevalue" && strings.EqualFold(member.Type, "void")
+	case "Slack.ExternalSelect":
+		return name == "query" && strings.EqualFold(member.Type, "void")
+	case "Slack.Message":
+		return name == "canbeseenbyuser" && strings.EqualFold(member.Type, "Boolean")
+	case "Slack.Modal":
+		switch name {
+		case "close":
+			return strings.EqualFold(member.Type, "void")
+		case "hasinputerrors", "submit":
+			return strings.EqualFold(member.Type, "Boolean")
+		default:
+			return false
+		}
+	case "Slack.Overflow":
+		return name == "clickoption" && strings.EqualFold(member.Type, "void")
+	default:
+		return false
+	}
+}
+
+func slackRuntimeBehaviorType(typeName string) string {
+	if strings.HasPrefix(typeName, "Slack.TestHarness.") {
+		return "Slack." + strings.TrimPrefix(typeName, "Slack.TestHarness.")
+	}
+	return typeName
+}
+
 func slackLocalClientHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
 	if member.Kind != apexast.DeclarationMethod ||
 		strings.EqualFold(member.Type, "void") ||
@@ -1881,7 +1935,7 @@ func slackLocalClientHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typ
 		return false
 	}
 	typeName := stubBehaviorTypeName(symbol)
-	if typeName != "Slack.BotClient" && typeName != "Slack.UserClient" {
+	if !slackLocalClientHarnessBehaviorType(typeName) {
 		return false
 	}
 	name := strings.ToLower(member.Name)
@@ -1893,7 +1947,8 @@ func slackLocalClientHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typ
 			return false
 		}
 	}
-	return strings.HasPrefix(name, "auth") ||
+	return name == "apitest" ||
+		strings.HasPrefix(name, "auth") ||
 		strings.HasSuffix(name, "info") ||
 		strings.HasSuffix(name, "list") ||
 		strings.HasSuffix(name, "history") ||
@@ -1903,6 +1958,12 @@ func slackLocalClientHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typ
 		strings.HasSuffix(name, "profileget") ||
 		strings.HasSuffix(name, "getpresence") ||
 		strings.HasSuffix(name, "lookupbyemail")
+}
+
+func slackLocalClientHarnessBehaviorType(typeName string) bool {
+	return typeName == "Slack.AppClient" ||
+		typeName == "Slack.BotClient" ||
+		typeName == "Slack.UserClient"
 }
 
 func slackServiceBehaviorType(typeName string) bool {

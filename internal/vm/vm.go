@@ -32189,6 +32189,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	if value, handled, err := vm.callGeneratedOptionalWrapperMember(receiver, method, args); handled || err != nil {
 		return value, receiver, false, true, err
 	}
+	if value, updated, mutated, handled, err := vm.callSlackLocalHarnessMember(receiver, method, args); handled || err != nil {
+		return value, updated, mutated, true, err
+	}
 	if strings.EqualFold(receiver.Type, "Slack.UserSession") || strings.EqualFold(receiver.Type, "Slack.TestHarness.UserSession") {
 		for _, receiverType := range []string{runtimeObjectType(receiver), receiver.Static, receiver.Type, slackTestHarnessRuntimeType(receiver.Type), "Slack.UserSession"} {
 			if generated, ok := vm.generatedPlatformMethodForArgs(receiverType, method, args, false); ok {
@@ -32201,7 +32204,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 		}
 	}
-	if strings.EqualFold(receiver.Type, "Slack.BotClient") || strings.EqualFold(receiver.Type, "Slack.UserClient") {
+	if slackLocalClientHarnessType(receiver.Type) {
 		if generated, ok := vm.generatedPlatformMethodForArgs(receiver.Type, method, args, false); ok && slackLocalClientHarnessMethod(generated) {
 			return vm.generatedPlatformMethodDefaultReturn(generated, receiver, args), receiver, false, true, nil
 		}
@@ -35406,11 +35409,206 @@ func slackGeneratedPlatformPassiveDTOMethod(method Method) bool {
 		len(method.Params) == 0 && strings.HasPrefix(method.ReturnType, "Slack.")
 }
 
+func (vm *VM) callSlackLocalHarnessMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	if receiver.Kind != ValueObject {
+		return Null, receiver, false, false, nil
+	}
+	receiverType := slackTestHarnessRuntimeType(receiver.Type)
+	name := strings.ToLower(method)
+	switch receiverType {
+	case "Slack.Button":
+		if name == "click" {
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Slack.Button.click expects 0 arguments")
+			}
+			return Null, receiver, false, true, nil
+		}
+	case "Slack.Channel":
+		switch name {
+		case "adduser":
+			if len(args) != 1 {
+				return Null, receiver, false, true, fmt.Errorf("Slack.Channel.addUser expects 1 argument")
+			}
+			members := slackStringListField(receiver, "members")
+			if userID := slackUserID(args[0]); userID != "" && !stringListContains(members, userID) {
+				members.List = append(members.List, String(userID))
+			}
+			receiver.Fields["members"] = members
+			return Null, receiver, true, true, nil
+		case "removeuser":
+			if len(args) != 1 {
+				return Null, receiver, false, true, fmt.Errorf("Slack.Channel.removeUser expects 1 argument")
+			}
+			userID := slackUserID(args[0])
+			members := slackStringListField(receiver, "members")
+			if userID != "" {
+				filtered := members.List[:0]
+				for _, item := range members.List {
+					if item.Kind != ValueString || item.Text != userID {
+						filtered = append(filtered, item)
+					}
+				}
+				members.List = filtered
+			}
+			receiver.Fields["members"] = members
+			return Null, receiver, true, true, nil
+		case "canbeopenedbyuser":
+			if len(args) != 1 {
+				return Null, receiver, false, true, fmt.Errorf("Slack.Channel.canBeOpenedByUser expects 1 argument")
+			}
+			return Bool(true), receiver, false, true, nil
+		case "sendmessage":
+			if len(args) != 2 || args[1].Kind != ValueString {
+				return Null, receiver, false, true, fmt.Errorf("Slack.Channel.sendMessage expects UserSession, String")
+			}
+			message := slackMessageForText(args[1].Text)
+			message.Fields["channel"] = receiver
+			if len(args) > 0 && args[0].Kind == ValueObject {
+				session := args[0]
+				messages := typedList("List<Slack.TestHarness.Message>")
+				if existing, ok := session.Fields["messages"]; ok && existing.Kind == ValueList {
+					messages = existing
+				}
+				messages.List = append(messages.List, message)
+				session.Fields["messages"] = messages
+			}
+			return message, receiver, false, true, nil
+		}
+	case "Slack.Checkbox":
+		switch name {
+		case "togglevalue":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Slack.Checkbox.toggleValue expects 0 arguments")
+			}
+			current := false
+			if value, ok := receiver.Fields["value"]; ok && value.Kind == ValueBool {
+				current = value.Bool
+			}
+			receiver.Fields["value"] = Bool(!current)
+			return Null, receiver, true, true, nil
+		}
+	case "Slack.CheckboxGroup":
+		switch name {
+		case "togglevalue":
+			if len(args) != 1 {
+				return Null, receiver, false, true, fmt.Errorf("Slack.CheckboxGroup.toggleValue expects 1 argument")
+			}
+			id := ""
+			if args[0].Kind == ValueString {
+				id = args[0].Text
+			} else if args[0].Kind == ValueObject {
+				if value, ok := args[0].Fields["value"]; ok && value.Kind == ValueString {
+					id = value.Text
+				}
+			}
+			values := slackStringListField(receiver, "value")
+			if id != "" {
+				if stringListContains(values, id) {
+					filtered := values.List[:0]
+					for _, item := range values.List {
+						if item.Kind != ValueString || item.Text != id {
+							filtered = append(filtered, item)
+						}
+					}
+					values.List = filtered
+				} else {
+					values.List = append(values.List, String(id))
+				}
+			}
+			receiver.Fields["value"] = values
+			return Null, receiver, true, true, nil
+		}
+	case "Slack.ExternalSelect":
+		if name == "query" {
+			if len(args) != 1 || args[0].Kind != ValueString {
+				return Null, receiver, false, true, fmt.Errorf("Slack.ExternalSelect.query expects String")
+			}
+			receiver.Fields["lastQuery"] = args[0]
+			return Null, receiver, true, true, nil
+		}
+	case "Slack.Message":
+		if name == "canbeseenbyuser" {
+			if len(args) != 1 {
+				return Null, receiver, false, true, fmt.Errorf("Slack.Message.canBeSeenByUser expects 1 argument")
+			}
+			return Bool(true), receiver, false, true, nil
+		}
+	case "Slack.Modal":
+		switch name {
+		case "close":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Slack.Modal.close expects 0 arguments")
+			}
+			receiver.Fields["closed"] = Bool(true)
+			return Null, receiver, true, true, nil
+		case "hasinputerrors":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Slack.Modal.hasInputErrors expects 0 arguments")
+			}
+			if blocks, ok := receiver.Fields["inputErrorBlocks"]; ok && blocks.Kind == ValueList {
+				return Bool(len(blocks.List) > 0), receiver, false, true, nil
+			}
+			return Bool(false), receiver, false, true, nil
+		case "submit":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Slack.Modal.submit expects 0 arguments")
+			}
+			return Bool(true), receiver, false, true, nil
+		}
+	case "Slack.Overflow":
+		if name == "clickoption" {
+			if len(args) != 1 {
+				return Null, receiver, false, true, fmt.Errorf("Slack.Overflow.clickOption expects 1 argument")
+			}
+			receiver.Fields["selectedOption"] = args[0]
+			return Null, receiver, true, true, nil
+		}
+	}
+	return Null, receiver, false, false, nil
+}
+
+func slackStringListField(receiver Value, field string) Value {
+	if value, ok := receiver.Fields[field]; ok && value.Kind == ValueList {
+		return value
+	}
+	return typedList("List<String>")
+}
+
+func slackUserID(value Value) string {
+	if value.Kind != ValueObject {
+		return ""
+	}
+	for _, field := range []string{"id", "userId", "name"} {
+		if raw, ok := value.Fields[field]; ok && raw.Kind == ValueString {
+			return raw.Text
+		}
+	}
+	return ""
+}
+
+func stringListContains(list Value, text string) bool {
+	if list.Kind != ValueList {
+		return false
+	}
+	for _, item := range list.List {
+		if item.Kind == ValueString && item.Text == text {
+			return true
+		}
+	}
+	return false
+}
+
+func slackMessageForText(text string) Value {
+	message := Object("Slack.TestHarness.Message")
+	message.Fields["text"] = String(text)
+	return message
+}
+
 func slackLocalClientHarnessMethod(method Method) bool {
 	if method.ReturnType == "" || strings.EqualFold(method.ReturnType, "void") {
 		return false
 	}
-	if !(strings.EqualFold(method.ClassName, "Slack.BotClient") || strings.EqualFold(method.ClassName, "Slack.UserClient")) {
+	if !slackLocalClientHarnessType(method.ClassName) {
 		return false
 	}
 	name := strings.ToLower(method.Name)
@@ -35425,7 +35623,8 @@ func slackLocalClientHarnessMethod(method Method) bool {
 			return false
 		}
 	}
-	return strings.HasPrefix(name, "auth") ||
+	return name == "apitest" ||
+		strings.HasPrefix(name, "auth") ||
 		strings.HasSuffix(name, "info") ||
 		strings.HasSuffix(name, "list") ||
 		strings.HasSuffix(name, "history") ||
@@ -35435,6 +35634,12 @@ func slackLocalClientHarnessMethod(method Method) bool {
 		strings.HasSuffix(name, "profileget") ||
 		strings.HasSuffix(name, "getpresence") ||
 		strings.HasSuffix(name, "lookupbyemail")
+}
+
+func slackLocalClientHarnessType(typeName string) bool {
+	return strings.EqualFold(typeName, "Slack.AppClient") ||
+		strings.EqualFold(typeName, "Slack.BotClient") ||
+		strings.EqualFold(typeName, "Slack.UserClient")
 }
 
 func passiveRuntimeClass(class Class) bool {
