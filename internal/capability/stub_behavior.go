@@ -743,7 +743,11 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 		}
 	case "UserManagement":
 		switch name {
-		case "formatphonenumber", "initselfregistration", "verifyselfregistration":
+		case "deregisterverificationmethod", "formatphonenumber", "initpasswordlesslogin",
+			"initregisterverificationmethod", "initselfregistration", "initverificationmethod",
+			"obfuscateuser", "registerverificationmethod", "sendasyncemailconfirmation",
+			"verifypasswordlesslogin", "verifyregisterverificationmethod", "verifyselfregistration",
+			"verifyverificationmethod":
 			return true
 		}
 	case "Site":
@@ -1495,7 +1499,9 @@ func userProvisioningBatchableBehaviorMethod(symbol typesys.TypeSymbol, member t
 	typeName := stubBehaviorTypeName(symbol)
 	switch typeName {
 	case "UserProvisioning.ProvisioningBatchable", "UserProvisioning.CollectingBatchable",
-		"UserProvisioning.PluginBatchable", "UserProvisioning.LinkingBatchable":
+		"UserProvisioning.PluginBatchable", "UserProvisioning.LinkingBatchable",
+		"UserProvisioning.CommittingBatchable", "UserProvisioning.DeletingBatchable",
+		"UserProvisioning.RequestingBatchable", "UserProvisioning.UPASCleaningBatchable":
 	default:
 		return false
 	}
@@ -1530,6 +1536,10 @@ func callbackInterfaceBehaviorMethod(symbol typesys.TypeSymbol, member typesys.M
 	case "quickaction.quickactiondefaultshandler":
 		return name == "oninitdefaults"
 	case "userprovisioning.userprovisioningplugin":
+		return name == "builddescribecall" || name == "describe" || name == "getpluginclassname" || name == "invoke"
+	case "userprovisioning.flowprovisionbase":
+		return name == "getflowname" || name == "getflownamespace" || name == "hasflow" || name == "hasfloworapex"
+	case "userprovisioning.userprovisioningprocesshandler", "userprovisioning.dummyconnectorapexhandler":
 		return name == "invoke"
 	case "readiness.productevaluator":
 		return name == "evaluatereadiness" || name == "isactive"
