@@ -2379,6 +2379,77 @@ System.assertEquals('Acme', returned.Name);
 	}
 }
 
+func TestExecSOQLQueriedUnsetSystemFieldIsAccessibleNull(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = [SELECT Id, LastModifiedById FROM Account WHERE Name = 'Acme' LIMIT 1];
+System.assertEquals(null, account.LastModifiedById);
+System.assertEquals('LastModifiedById', Account.SObjectType.fields.getMap().get('LastModifiedById').getDescribe().getName());
+System.assertEquals('LastModifiedById', Account.SObjectType.fields.getMap().get('Account.LastModifiedById').getDescribe().getName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := singleSOQLAssignmentOrg()
+	machine := New(nil)
+	machine.Org = &org
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestSOQLQueriedFieldsTracksDottedSelections(t *testing.T) {
+	machine := New(nil)
+	org := singleSOQLAssignmentOrg()
+	machine.Org = &org
+	fields := machine.queriedSObjectFields("SELECT Id, Account.LastModifiedById FROM Account")
+	if !fields["account.lastmodifiedbyid"] {
+		t.Fatalf("queried fields = %#v, want dotted field", fields)
+	}
+}
+
+func TestExecSOQLChildRelationshipRowsAreTypedAndCarryQueriedSystemFields(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account account = [SELECT Id, (SELECT Id, LastModifiedById FROM Children__r) FROM Account WHERE Name = 'Acme' LIMIT 1];
+System.assertEquals(1, account.Children__r.size());
+Child__c child = account.Children__r[0];
+System.assertEquals(null, child.LastModifiedById);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := singleSOQLAssignmentOrg()
+	org.Objects["Child__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Child__c",
+			Fields: map[string]storage.Field{
+				"Name":       {APIName: "Name", Type: storage.FieldString},
+				"Account__c": {APIName: "Account__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Account__r", ChildRelationshipName: "Children__r"},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "Account__c",
+				ParentObjects:      []string{"Account"},
+				ParentRelationship: "Account__r",
+				ChildRelationship:  "Children__r",
+			}},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a00000000000001": {
+				ID:     "a00000000000001",
+				Object: "Child__c",
+				Fields: map[string]storage.Value{
+					"Name":       storage.StringValue("Child"),
+					"Account__c": storage.IDValue("001000000000001"),
+				},
+			},
+		},
+	}
+	machine := New(nil)
+	machine.Org = &org
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSOQLSingleSObjectNoRowsAndMultiRowsStayExplicit(t *testing.T) {
 	noRowsProgram, err := CompileAnonymous(`Account account; account = [SELECT Id FROM Account WHERE Name = 'Missing'];`)
 	if err != nil {

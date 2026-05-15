@@ -225,6 +225,38 @@ func TestExecuteEmailTemplateStandardObjectQuery(t *testing.T) {
 	}
 }
 
+func TestExecuteProjectsQueriedSystemFieldsAsNullWhenUnset(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Account",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"001000000000001": {
+				ID:     "001000000000001",
+				Object: "Account",
+				Fields: map[string]storage.Value{
+					"Name": storage.StringValue("Acme"),
+				},
+			},
+		},
+	}
+	result, err := ParseAndExecute(org, "SELECT Id, LastModifiedById FROM Account")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Records) != 1 {
+		t.Fatalf("records = %d, want 1", len(result.Records))
+	}
+	value, ok := result.Records[0].GetField("LastModifiedById")
+	if !ok || value.Kind != storage.ValueNull {
+		t.Fatalf("LastModifiedById = %#v, %v; want projected null", value, ok)
+	}
+}
+
 func TestExecuteCustomMetadataDeveloperNameField(t *testing.T) {
 	org := storage.NewOrgState()
 	definition := storage.ObjectDefinition{
