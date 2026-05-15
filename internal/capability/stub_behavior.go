@@ -248,6 +248,9 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 	if quickActionDescribeBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "QuickAction describe/template/default methods return local read-only metadata/default DTOs without performing action side effects", true
 	}
+	if localServiceHarnessBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "safe platform service method is handled by a deterministic local no-op/default-result harness; live cloud side effects remain fenced", true
+	}
 	if explicitlyUnsupportedCoreBehaviorMethod(symbol, member) {
 		return StubBehaviorUnsupported, "local runtime returns an explicit unsupported-feature error for this platform surface", true
 	}
@@ -321,7 +324,8 @@ func quickActionDescribeBehaviorMethod(symbol typesys.TypeSymbol, member typesys
 	switch stubBehaviorTypeName(symbol) {
 	case "QuickAction":
 		switch name {
-		case "describeavailablequickactions", "describequickactions", "retrievequickactiontemplate", "retrievequickactiontemplates":
+		case "describeavailablequickactions", "describequickactions", "retrievequickactiontemplate", "retrievequickactiontemplates",
+			"performquickaction", "performquickactions":
 			return true
 		default:
 			return false
@@ -330,6 +334,45 @@ func quickActionDescribeBehaviorMethod(symbol typesys.TypeSymbol, member typesys
 		return name == "newsendemailquickactiondefaults"
 	case "QuickAction.SendEmailQuickActionDefaults":
 		return strings.HasPrefix(name, "get") || strings.HasPrefix(name, "set")
+	default:
+		return false
+	}
+}
+
+func localServiceHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if member.Kind != apexast.DeclarationMethod {
+		return false
+	}
+	name := strings.ToLower(member.Name)
+	switch stubBehaviorTypeName(symbol) {
+	case "Datacloud.FindDuplicates":
+		return name == "findduplicates"
+	case "Datacloud.FindDuplicatesByIds":
+		return name == "findduplicatesbyids"
+	case "DomainParser":
+		return name == "parse"
+	case "KbManagement.PublishingService":
+		switch name {
+		case "archiveonlinearticle", "assigndraftarticletask", "assigndrafttranslationtask",
+			"cancelscheduledarchivingofarticle", "cancelscheduledpublicationofarticle",
+			"completetranslation", "editarchivedarticle", "editonlinearticle",
+			"editpublishedtranslation", "publisharticle", "restoreoldversion",
+			"scheduleforpublication", "settranslationtoincomplete", "submitfortranslation":
+			return true
+		default:
+			return false
+		}
+	case "Packaging":
+		return name == "getcurrentpackageid"
+	case "RemoteObjectController":
+		switch name {
+		case "create", "del", "retrieve", "updat":
+			return true
+		default:
+			return false
+		}
+	case "SupportPredictiveService":
+		return name == "findsimilarcases"
 	default:
 		return false
 	}
@@ -564,7 +607,7 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 		"cache.Org", "cache.Session", "cache.Partition", "cache.OrgPartition", "cache.SessionPartition":
 		return cacheBehaviorMethod(name)
 	case "FeatureManagement":
-		return strings.HasPrefix(name, "checkpackage") || strings.HasPrefix(name, "setpackage")
+		return strings.HasPrefix(name, "checkpackage") || strings.HasPrefix(name, "setpackage") || name == "changeprotection"
 	case "Security":
 		return name == "stripinaccessible"
 	case "DomainCreator":
@@ -1275,6 +1318,8 @@ func callbackInterfaceBehaviorMethod(symbol typesys.TypeSymbol, member typesys.M
 		return name == "describe" || name == "invoke"
 	case "quickaction.quickactiondefaultshandler":
 		return name == "oninitdefaults"
+	case "userprovisioning.userprovisioningplugin":
+		return name == "invoke"
 	default:
 		return false
 	}
