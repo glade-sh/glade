@@ -23388,7 +23388,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			return Null, fmt.Errorf("Metadata.DeployContainer constructor expects 0 arguments")
 		}
 		container := Object("Metadata.DeployContainer")
-		container.Fields["metadata"] = List()
+		container.Fields["metadata"] = typedList("List<Metadata.Metadata>")
 		for field, value := range namedArgs {
 			container.Fields[field] = value
 		}
@@ -23398,7 +23398,11 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			return Null, fmt.Errorf("Metadata.CustomMetadata constructor expects 0 arguments")
 		}
 		metadata := Object("Metadata.CustomMetadata")
-		metadata.Fields["values"] = List()
+		metadata.Fields["description"] = Null
+		metadata.Fields["fullName"] = Null
+		metadata.Fields["label"] = Null
+		metadata.Fields["protected_x"] = Bool(false)
+		metadata.Fields["values"] = typedList("List<Metadata.CustomMetadataValue>")
 		for field, value := range namedArgs {
 			metadata.Fields[field] = value
 		}
@@ -23408,6 +23412,8 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			return Null, fmt.Errorf("Metadata.CustomMetadataValue constructor expects 0 arguments")
 		}
 		value := Object("Metadata.CustomMetadataValue")
+		value.Fields["field"] = Null
+		value.Fields["value"] = Null
 		for field, fieldValue := range namedArgs {
 			value.Fields[field] = fieldValue
 		}
@@ -23417,6 +23423,13 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			return Null, fmt.Errorf("Metadata.CustomObject constructor expects 0 arguments")
 		}
 		metadata := Object("Metadata.CustomObject")
+		metadata.Fields["deploymentStatus"] = Null
+		metadata.Fields["description"] = Null
+		metadata.Fields["enableActivities"] = Bool(false)
+		metadata.Fields["enableReports"] = Bool(false)
+		metadata.Fields["fullName"] = Null
+		metadata.Fields["label"] = Null
+		metadata.Fields["pluralLabel"] = Null
 		for field, value := range namedArgs {
 			metadata.Fields[field] = value
 		}
@@ -23426,6 +23439,13 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			return Null, fmt.Errorf("Metadata.CustomField constructor expects 0 arguments")
 		}
 		field := Object("Metadata.CustomField")
+		field.Fields["description"] = Null
+		field.Fields["externalId"] = Bool(false)
+		field.Fields["fullName"] = Null
+		field.Fields["label"] = Null
+		field.Fields["required"] = Bool(false)
+		field.Fields["type"] = Null
+		field.Fields["unique"] = Bool(false)
 		for name, value := range namedArgs {
 			field.Fields[name] = value
 		}
@@ -23435,6 +23455,7 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			return Null, fmt.Errorf("Metadata.Metadata constructor expects 0 arguments")
 		}
 		metadata := Object("Metadata.Metadata")
+		metadata.Fields["fullName"] = Null
 		for field, value := range namedArgs {
 			metadata.Fields[field] = value
 		}
@@ -23444,8 +23465,16 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			return Null, fmt.Errorf("Metadata.DeployResult constructor expects 0 arguments")
 		}
 		result := Object("Metadata.DeployResult")
-		result.Fields["status"] = Value{Kind: ValueObject, Type: "Metadata.DeployStatus", Text: "Succeeded", Fields: map[string]Value{"ordinal": Int(0)}}
+		result.Fields["id"] = Null
+		result.Fields["status"] = metadataDeployStatusValue("SUCCEEDED")
 		result.Fields["success"] = Bool(true)
+		result.Fields["done"] = Bool(true)
+		result.Fields["numberComponentErrors"] = Int(0)
+		result.Fields["numberComponentsDeployed"] = Int(0)
+		result.Fields["numberComponentsTotal"] = Int(0)
+		result.Fields["numberTestErrors"] = Int(0)
+		result.Fields["numberTestsCompleted"] = Int(0)
+		result.Fields["checkOnly"] = Bool(false)
 		result.Fields["details"] = metadataDeployDetailsObject()
 		for field, value := range namedArgs {
 			result.Fields[field] = value
@@ -23465,6 +23494,19 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			return Null, fmt.Errorf("Metadata.DeployMessage constructor expects 0 arguments")
 		}
 		message := Object("Metadata.DeployMessage")
+		message.Fields["changed"] = Bool(false)
+		message.Fields["columnNumber"] = Int(0)
+		message.Fields["componentType"] = Null
+		message.Fields["created"] = Bool(false)
+		message.Fields["createdDate"] = Null
+		message.Fields["deleted"] = Bool(false)
+		message.Fields["fileName"] = Null
+		message.Fields["fullName"] = Null
+		message.Fields["id"] = Null
+		message.Fields["lineNumber"] = Int(0)
+		message.Fields["problem"] = Null
+		message.Fields["problemType"] = Null
+		message.Fields["success"] = Bool(false)
 		for field, value := range namedArgs {
 			message.Fields[field] = value
 		}
@@ -33404,8 +33446,8 @@ func enumValuesEqual(left, right Value) bool {
 
 func metadataDeployDetailsObject() Value {
 	details := Object("Metadata.DeployDetails")
-	details.Fields["componentFailures"] = List()
-	details.Fields["componentSuccesses"] = List()
+	details.Fields["componentFailures"] = typedList("List<Metadata.DeployMessage>")
+	details.Fields["componentSuccesses"] = typedList("List<Metadata.DeployMessage>")
 	details.Fields["runTestResult"] = Null
 	return details
 }
@@ -36259,6 +36301,57 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			values.List = append(values.List, args[0])
 			receiver.Fields["metadata"] = values
 			return Null, receiver, true, true, nil
+		case "getMetadata":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Metadata.DeployContainer.getMetadata expects 0 arguments")
+			}
+			values := receiver.Fields["metadata"]
+			if values.Kind != ValueList {
+				values = typedList("List<Metadata.Metadata>")
+				receiver.Fields["metadata"] = values
+			}
+			return values, receiver, false, true, nil
+		case "removeMetadata":
+			if len(args) != 1 {
+				return Null, receiver, false, true, fmt.Errorf("Metadata.DeployContainer.removeMetadata expects metadata")
+			}
+			values := receiver.Fields["metadata"]
+			if values.Kind != ValueList {
+				return Bool(false), receiver, false, true, nil
+			}
+			removed := false
+			filtered := values
+			filtered.List = filtered.List[:0]
+			for _, item := range values.List {
+				if !removed && item.Equal(args[0]) {
+					removed = true
+					continue
+				}
+				filtered.List = append(filtered.List, item)
+			}
+			receiver.Fields["metadata"] = filtered
+			return Bool(removed), receiver, removed, true, nil
+		case "removeMetadataByFullName":
+			if len(args) != 1 || args[0].Kind != ValueString {
+				return Null, receiver, false, true, fmt.Errorf("Metadata.DeployContainer.removeMetadataByFullName expects fullName String")
+			}
+			values := receiver.Fields["metadata"]
+			if values.Kind != ValueList {
+				return Bool(false), receiver, false, true, nil
+			}
+			removed := false
+			filtered := values
+			filtered.List = filtered.List[:0]
+			for _, item := range values.List {
+				fullName, ok := metadataStringField(item, "fullName")
+				if !removed && ok && strings.EqualFold(fullName, args[0].Text) {
+					removed = true
+					continue
+				}
+				filtered.List = append(filtered.List, item)
+			}
+			receiver.Fields["metadata"] = filtered
+			return Bool(removed), receiver, removed, true, nil
 		}
 	case "Messaging.SendEmailResult":
 		switch method {
@@ -36621,7 +36714,10 @@ func (vm *VM) callPassivePlatformDTOObjectMember(receiver Value, method string, 
 			if strings.HasPrefix(field, "__") {
 				continue
 			}
-			values.Map[mapKey(String(field))] = value
+			key := String(field)
+			encodedKey := mapKey(key)
+			values.Map[encodedKey] = value
+			values.MapKeys[encodedKey] = key
 		}
 		return values, receiver, false, true, nil
 	}

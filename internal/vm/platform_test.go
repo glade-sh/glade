@@ -561,6 +561,37 @@ System.assertEquals('Feature.Created', records[1].fullName);
 	}
 }
 
+func TestExecMetadataEnumStaticAndInstanceBehavior(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Metadata.DeployStatus> statuses = Metadata.DeployStatus.values();
+System.assertEquals(8, statuses.size());
+System.assert(statuses.contains(Metadata.DeployStatus.SUCCEEDED));
+Metadata.DeployStatus succeeded = Metadata.DeployStatus.valueOf('SUCCEEDED');
+System.assertEquals(Metadata.DeployStatus.SUCCEEDED, succeeded);
+System.assert(succeeded.equals(Metadata.DeployStatus.SUCCEEDED));
+System.assert(!succeeded.equals(Metadata.DeployStatus.FAILED));
+System.assertEquals('SUCCEEDED', succeeded.name());
+System.assertEquals('SUCCEEDED', succeeded.toString());
+System.assertEquals('SUCCEEDED', String.valueOf(succeeded));
+Metadata.MetadataType metadataType = Metadata.MetadataType.valueOf('CustomMetadata');
+System.assertEquals(Metadata.MetadataType.CustomMetadata, metadataType);
+System.assertEquals('CustomMetadata', metadataType.name());
+System.assertEquals('CustomMetadata', Metadata.MetadataType.values()[0].toString());
+try {
+	Metadata.DeployStatus.valueOf('missing');
+	System.assert(false);
+} catch (Exception e) {
+	System.assert(e.getMessage().contains('No enum constant Metadata.DeployStatus.missing'));
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecReportsReportManagerLocalHarness(t *testing.T) {
 	program, err := CompileAnonymous(`
 Id reportId = '00O000000000001';
@@ -876,6 +907,74 @@ System.assertEquals(true, (Boolean)rows[0].get('Paid__c'));
 	}
 }
 
+func TestExecMetadataDTOConstructorsDefaultsAndMaps(t *testing.T) {
+	program, err := CompileAnonymous(`
+Metadata.DeployContainer container = new Metadata.DeployContainer();
+System.assertEquals(0, container.getMetadata().size());
+
+Metadata.CustomObject objectDef = new Metadata.CustomObject();
+System.assertEquals(false, objectDef.enableActivities);
+System.assertEquals(false, objectDef.enableReports);
+System.assertEquals(null, objectDef.fullName);
+Map<String,Object> objectValues = objectDef.getAsMap();
+System.assert(objectValues.containsKey('enableActivities'));
+System.assertEquals(false, (Boolean)objectValues.get('enableActivities'));
+
+objectDef.fullName = 'Invoice__c';
+container.addMetadata(objectDef);
+System.assertEquals(1, container.getMetadata().size());
+System.assertEquals(false, container.removeMetadataByFullName('Missing__c'));
+System.assertEquals(true, container.removeMetadataByFullName('Invoice__c'));
+System.assertEquals(0, container.getMetadata().size());
+
+Metadata.CustomMetadata item = new Metadata.CustomMetadata();
+System.assertEquals(false, item.protected_x);
+System.assertEquals(0, item.values.size());
+Metadata.CustomMetadataValue value = new Metadata.CustomMetadataValue();
+System.assertEquals(null, value.field);
+System.assertEquals(null, value.value);
+item.fullName = 'Feature.Default';
+container.addMetadata(item);
+System.assertEquals(true, container.removeMetadata(item));
+
+Metadata.CustomField field = new Metadata.CustomField();
+System.assertEquals(false, field.required);
+System.assertEquals(false, field.unique);
+System.assertEquals(false, field.externalId);
+
+Metadata.DeployResult result = new Metadata.DeployResult();
+System.assert(result.done);
+System.assert(result.success);
+System.assertEquals(0, result.numberComponentsTotal);
+System.assertEquals(0, result.numberComponentErrors);
+System.assertEquals(0, result.details.componentFailures.size());
+System.assertEquals(0, result.details.componentSuccesses.size());
+
+Metadata.DeployMessage message = new Metadata.DeployMessage();
+System.assertEquals(false, message.success);
+System.assertEquals(0, message.lineNumber);
+System.assertEquals(null, message.problem);
+Map<String,Object> messageValues = message.getAsMap();
+System.assert(messageValues.keySet().contains('success'));
+System.assertEquals(false, (Boolean)messageValues.get('success'));
+
+Metadata.AsyncResult asyncResult = new Metadata.AsyncResult();
+System.assert(asyncResult.done);
+System.assertEquals('Succeeded', asyncResult.state);
+
+Metadata.Metadata base = new Metadata.Metadata();
+System.assertEquals(null, base.fullName);
+System.assert(base.getAsMap().containsKey('fullName'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecMetadataDeploymentUnsupportedItemType(t *testing.T) {
 	program, err := CompileAnonymous(`
 Metadata.DeployContainer container = new Metadata.DeployContainer();
@@ -895,6 +994,56 @@ Metadata.Operations.enqueueDeployment(container, null);
 	var runtimeErr *RuntimeError
 	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != `unsupported call "Metadata.Operations.enqueueDeployment Metadata.Metadata metadata deploy"` {
 		t.Fatalf("err = %#v, want UnsupportedFeature Metadata.Metadata deploy", err)
+	}
+}
+
+func TestExecMetadataDeploymentUnsupportedBoundaries(t *testing.T) {
+	tests := []struct {
+		name string
+		apex string
+		org  bool
+		want string
+	}{
+		{
+			name: "custom metadata deploy without org storage",
+			apex: `
+Metadata.DeployContainer container = new Metadata.DeployContainer();
+Metadata.CustomMetadata item = new Metadata.CustomMetadata();
+item.fullName = 'Feature.Default';
+container.addMetadata(item);
+Metadata.Operations.enqueueDeployment(container, null);
+`,
+			want: `unsupported call "Metadata.Operations.enqueueDeployment requires org storage for local metadata mutation"`,
+		},
+		{
+			name: "unknown deploy status id",
+			apex: `
+Metadata.Operations.checkDeployStatus('0Af000000000999', true);
+`,
+			org:  true,
+			want: `unsupported call "Metadata.Operations.checkDeployStatus unknown local deployment 0Af000000000999"`,
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			program, err := CompileAnonymous(tc.apex)
+			if err != nil {
+				t.Fatal(err)
+			}
+			machine := New(nil)
+			if tc.org {
+				org := customDataOrg()
+				machine.SetOrg(&org)
+			}
+			_, err = machine.Execute(program)
+			if err == nil {
+				t.Fatal("expected unsupported metadata boundary")
+			}
+			var runtimeErr *RuntimeError
+			if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != tc.want {
+				t.Fatalf("err = %#v, want UnsupportedFeature %q", err, tc.want)
+			}
+		})
 	}
 }
 
