@@ -5183,6 +5183,42 @@ System.assert(new RichMessaging.AuthRequestHandler().handleAuthRequest(new RichM
 	}
 }
 
+func TestExecPlatformCallbackDefaultHarnesses(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assert(Process.SparkPlugApi.describePlugin('LocalPlugin') != null);
+System.assertEquals(0, Process.SparkPlugApi.describePlugins().size());
+System.assertEquals('{}', Process.SparkPlugApi.invokePluginWithJson('LocalPlugin', '{}'));
+System.assertEquals('local-email-verification-token', TrailblazerIdentity.generateUserEmailVerificationToken('00D000000000001', UserInfo.getUserId(), 'local@example.invalid'));
+System.assertEquals(0, TrailblazerIdentity.getUserOrgInfo(new List<String>{'local@example.invalid'}).size());
+TrailblazerIdentity.splunkLog('local', 'message');
+System.assertEquals(false, new TxnSecurity.EventCondition().evaluate(new Account()));
+System.assertEquals(false, new TxnSecurity.PolicyCondition().evaluate(null));
+new eventbus.EventPublishFailureCallback().onFailure(null);
+new eventbus.EventPublishSuccessCallback().onSuccess(null);
+System.assertEquals(0, new workflow.Action().invoke(null).size());
+new workflow.ActionDml().invoke();
+Social.DefaultInboundSocialPostHandler defaultHandler = new Social.DefaultInboundSocialPostHandler();
+System.assertEquals(null, defaultHandler.createPersonaParent(null));
+System.assertEquals('', defaultHandler.getCaseSubject(null));
+System.assertEquals('', defaultHandler.getDefaultAccountId());
+System.assertEquals(0, defaultHandler.getMaxNumberOfDaysClosedToReopenCase());
+System.assertEquals('', defaultHandler.getPersonaFirstName(null));
+System.assertEquals('', defaultHandler.getPersonaLastName(null));
+System.assertEquals(0, defaultHandler.getPostTagsThatCreateCase().size());
+System.assertEquals(false, defaultHandler.getUsingCaseAssignmentRule());
+System.assert(defaultHandler.handleInboundSocialPost(null, null, new Map<String,Object>()) != null);
+System.assert(new Social.InboundSocialPostHandler().handleInboundSocialPost(null, null, new Map<String,Object>()) != null);
+System.assert(new Social.InboundSocialPostHandlerImpl().handleInboundSocialPost(null, null, new Map<String,Object>()) != null);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecLocalCurrentUserContextDoesNotEnableRunAs(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals('005-local-user', UserInfo.getUserId());

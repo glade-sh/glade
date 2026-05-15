@@ -421,6 +421,26 @@ func localServiceHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesys
 	switch stubBehaviorTypeName(symbol) {
 	case "ApptBooking.WaitlistController":
 		return name == "call" || name == "invokemethod"
+	case "workflow.Action":
+		return name == "invoke"
+	case "workflow.ActionDml":
+		return name == "invoke"
+	case "eventbus.EventPublishFailureCallback":
+		return name == "onfailure"
+	case "eventbus.EventPublishSuccessCallback":
+		return name == "onsuccess"
+	case "TxnSecurity.EventCondition", "TxnSecurity.PolicyCondition":
+		return name == "evaluate"
+	case "Social.DefaultInboundSocialPostHandler", "Social.InboundSocialPostHandlerImpl":
+		switch name {
+		case "createpersonaparent", "getcasesubject", "getdefaultaccountid",
+			"getmaxnumberofdaysclosedtoreopencase", "getpersonafirstname",
+			"getpersonalastname", "getposttagsthatcreatecase", "getusingcaseassignmentrule",
+			"handleinboundsocialpost":
+			return true
+		}
+	case "Social.InboundSocialPostHandler":
+		return name == "handleinboundsocialpost"
 	case "Site.UrlRewriter":
 		return name == "generateurlfor" || name == "maprequesturl"
 	case "LiveAgent.LiveChatRouter":
@@ -480,6 +500,7 @@ func localServiceHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesys
 	default:
 		return false
 	}
+	return false
 }
 
 func industryControllerHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
@@ -792,6 +813,10 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 		return name == "parse"
 	case "Support.LifeScienceUpdateEmailTransactions":
 		return name == "updaterecords"
+	case "Process.SparkPlugApi":
+		return name == "describeplugin" || name == "describeplugins" || name == "invokepluginwithjson"
+	case "TrailblazerIdentity":
+		return name == "generateuseremailverificationtoken" || name == "getuserorginfo" || name == "splunklog"
 	case "Communities":
 		switch name {
 		case "communitieslanding", "forwardtoauthpage", "getcss", "internallogin", "login":
@@ -1592,15 +1617,7 @@ func localMockHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Me
 }
 
 func socialInboundDefaultHandlerBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
-	if member.Kind != apexast.DeclarationMethod || genericObjectBehaviorMethod(member) {
-		return false
-	}
-	switch stubBehaviorTypeName(symbol) {
-	case "Social.DefaultInboundSocialPostHandler", "Social.InboundSocialPostHandlerImpl":
-		return true
-	default:
-		return false
-	}
+	return false
 }
 
 func connectAPIExternalServiceBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
