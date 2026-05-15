@@ -26910,7 +26910,9 @@ func connectAPIReadOnlyHarnessType(typeName string) bool {
 		"ConnectApi.CommerceCart",
 		"ConnectApi.CommerceCatalog",
 		"ConnectApi.CommerceInventory",
+		"ConnectApi.CommercePromotions",
 		"ConnectApi.CommerceSearch",
+		"ConnectApi.CommerceStorePricing",
 		"ConnectApi.CommerceWishlist",
 		"ConnectApi.EmployeeProfiles",
 		"ConnectApi.FieldSet",
@@ -26923,10 +26925,13 @@ func connectAPIReadOnlyHarnessType(typeName string) bool {
 		"ConnectApi.Mentions",
 		"ConnectApi.NamedCredentials",
 		"ConnectApi.NavigationMenu",
+		"ConnectApi.OmnichannelInventoryService",
+		"ConnectApi.OrderSummary",
 		"ConnectApi.Personalization",
 		"ConnectApi.RecordAlert",
 		"ConnectApi.Records",
 		"ConnectApi.RecordUi",
+		"ConnectApi.Repricing",
 		"ConnectApi.Sharing",
 		"ConnectApi.Sites",
 		"ConnectApi.SmartDataDiscovery",
@@ -27016,11 +27021,23 @@ func connectAPIReadOnlyHarnessMethodAllowed(typeName, methodName string) bool {
 	case "ConnectApi.CommerceCart":
 		return connectAPICommerceCartReadMethod(name)
 	case "ConnectApi.CommerceInventory":
-		return name == "getinventorylevels"
+		return name == "getinventorylevels" ||
+			name == "checkinventoryavailability"
+	case "ConnectApi.CommercePromotions":
+		return name == "evaluate"
 	case "ConnectApi.CommerceWishlist":
 		return name == "getwishlist" ||
 			name == "getwishlistitems" ||
 			name == "getwishlistsummaries"
+	case "ConnectApi.OrderSummary":
+		return name == "adjustpreview" ||
+			name == "previewcancel" ||
+			name == "previewcancelall" ||
+			name == "previewchangeordersummary" ||
+			name == "previewreturn"
+	case "ConnectApi.Repricing":
+		return name == "productdetails" ||
+			name == "searchproducts"
 	default:
 		if connectAPIMutationMethod(name) {
 			return false
@@ -27031,7 +27048,8 @@ func connectAPIReadOnlyHarnessMethodAllowed(typeName, methodName string) bool {
 
 func connectAPICommerceBuyerExperienceReadMethod(name string) bool {
 	switch name {
-	case "getbuyerprofile", "getcommerceaccountaddress", "geteffectiveaccountdetail",
+	case "calculateadjustmentaggregates",
+		"getbuyerprofile", "getcommerceaccountaddress", "geteffectiveaccountdetail",
 		"getorderdeliverygroupsummaries", "getorderitemsummaries",
 		"getorderitemsummaryadjustments", "getordershipmentitems",
 		"getordershipments", "getordersummaries", "getordersummary",
@@ -27044,7 +27062,8 @@ func connectAPICommerceBuyerExperienceReadMethod(name string) bool {
 
 func connectAPICommerceCartReadMethod(name string) bool {
 	switch name {
-	case "getcartcollection", "getcartcompactsummary", "getcartcoupons",
+	case "calculatecart",
+		"getcartcollection", "getcartcompactsummary", "getcartcoupons",
 		"getcartitempromotion", "getcartitems", "getcartpromotions",
 		"getcartsummary", "getchildcartitems", "getproductcartitem",
 		"getproductcartitems":

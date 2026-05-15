@@ -961,6 +961,46 @@ System.assertNotEquals(null, cartSummary);
 ConnectApi.WishlistsSummary wishlistSummaries =
 	ConnectApi.CommerceWishlist.getWishlistSummaries('webstore-a', 'account-a', true);
 System.assertNotEquals(null, wishlistSummaries);
+
+ConnectApi.OrderSummaryAdjustmentAggregatesAsyncOutput adjustmentAggregates =
+	ConnectApi.CommerceBuyerExperience.calculateAdjustmentAggregates('webstore-a', null);
+System.assertNotEquals(null, adjustmentAggregates);
+
+ConnectApi.CalculateCartResult calculateCartResult =
+	ConnectApi.CommerceCart.calculateCart('webstore-a', 'cart-a', 'account-a');
+System.assertNotEquals(null, calculateCartResult);
+
+ConnectApi.InventoryCheckAvailabilityOutputRepresentation inventoryAvailability =
+	ConnectApi.CommerceInventory.checkInventoryAvailability('scope-a', null);
+System.assertNotEquals(null, inventoryAvailability);
+
+ConnectApi.PromotionEvaluation promotionEvaluation =
+	ConnectApi.CommercePromotions.evaluate(null);
+System.assertNotEquals(null, promotionEvaluation);
+
+ConnectApi.ProductPrice productPrice =
+	ConnectApi.CommerceStorePricing.getProductPrice('webstore-a', 'product-a', 'account-a');
+System.assertNotEquals(null, productPrice);
+
+ConnectApi.OCIGetInventoryAvailabilityOutputRepresentation ociAvailability =
+	ConnectApi.OmnichannelInventoryService.getInventoryAvailability(null);
+System.assertNotEquals(null, ociAvailability);
+
+ConnectApi.OCIUploadInventoryAvailabilityStatusOutputRepresentation ociUploadStatus =
+	ConnectApi.OmnichannelInventoryService.getInventoryAvailabilityUploadStatus('upload-a');
+System.assertNotEquals(null, ociUploadStatus);
+
+ConnectApi.PreviewCancelOutputRepresentation previewCancel =
+	ConnectApi.OrderSummary.previewCancel('order-summary-a', null);
+System.assertNotEquals(null, previewCancel);
+
+ConnectApi.ProductDetailsOutputRepresentation productDetails =
+	ConnectApi.Repricing.productDetails('webstore-a', 'sku-a', 'account-a', 'USD', 'en_US');
+System.assertNotEquals(null, productDetails);
+
+ConnectApi.ProductSearchOutputRepresentation repricingSearch =
+	ConnectApi.Repricing.searchProducts('webstore-a', 'sku', 0, 10, 'account-a', null);
+System.assertNotEquals(null, repricingSearch);
 	`)
 	if err != nil {
 		t.Fatal(err)
