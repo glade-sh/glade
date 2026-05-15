@@ -2,6 +2,7 @@ package compat
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
@@ -124,6 +125,12 @@ func TestShouldAnalyzeLocalTestsSkipsFocusedRuns(t *testing.T) {
 	}
 	if !shouldAnalyzeLocalTests(LocalTestOptions{BlockersOnly: true, ForceAnalysis: true}, largeLocalTestAnalysisThreshold+1) {
 		t.Fatalf("forced blocker-only local test run should allow full-project semantic analysis")
+	}
+	if shouldAnalyzeLocalTests(LocalTestOptions{Parallelism: 8}, 100) {
+		t.Fatalf("explicit parallel local test run should skip full-project semantic analysis")
+	}
+	if shouldAnalyzeLocalTests(LocalTestOptions{ProgressWriter: io.Discard}, 100) {
+		t.Fatalf("progress local test run should skip full-project semantic analysis")
 	}
 }
 

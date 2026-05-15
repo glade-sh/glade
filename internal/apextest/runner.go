@@ -167,17 +167,21 @@ func RunCasesContext(ctx context.Context, index typesys.Index, opts Options, cas
 			InvokeProgErr: testInvokeErrors[testCaseKey(testCase)],
 		}
 	}
-	setupResults := prepareTestSetups(ctx, order, baseMachine, baseRuntimeErr, setups, setupErrors, setupInvokePrograms, setupInvokeErrors, triggerErrors, org, opts)
-	for i := range planned {
-		if results[i].Status != "" {
-			continue
+	if opts.Parallelism > 1 && len(order) > 1 {
+		runTestPlansWithSetups(ctx, order, suiteIndexes, planned, results, baseMachine, baseRuntimeErr, setups, setupErrors, setupInvokePrograms, setupInvokeErrors, triggerErrors, org, opts)
+	} else {
+		setupResults := prepareTestSetups(ctx, order, baseMachine, baseRuntimeErr, setups, setupErrors, setupInvokePrograms, setupInvokeErrors, triggerErrors, org, opts)
+		for i := range planned {
+			if results[i].Status != "" {
+				continue
+			}
+			setup := setupResults[planned[i].TestCase.ClassName]
+			planned[i].SetupErr = setup.Err
+			planned[i].SetupOrg = setup.Org
+			planned[i].SetupRandom = setup.Random
 		}
-		setup := setupResults[planned[i].TestCase.ClassName]
-		planned[i].SetupErr = setup.Err
-		planned[i].SetupOrg = setup.Org
-		planned[i].SetupRandom = setup.Random
+		runTestPlans(ctx, planned, results, baseMachine, baseRuntimeErr, triggerErrors, opts)
 	}
-	runTestPlans(ctx, planned, results, baseMachine, baseRuntimeErr, triggerErrors, opts)
 	for className, indexes := range suiteIndexes {
 		for _, index := range indexes {
 			suites[className] = append(suites[className], results[index])
@@ -305,6 +309,51 @@ func runTestPlans(ctx context.Context, planned []testCasePlan, results []testrep
 						continue
 					}
 					plan := planned[i]
+					reportProgress(opts, TestProgress{Event: "test_start", ClassName: plan.TestCase.ClassName, MethodName: plan.TestCase.MethodName})
+					caseCtx, caseCancel := testContext(ctx, opts.TimeoutMS)
+					results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts)
+					caseCancel()
+					reportProgress(opts, TestProgress{Event: "test_done", ClassName: plan.TestCase.ClassName, MethodName: plan.TestCase.MethodName, DurationMS: results[i].DurationMS, Status: string(results[i].Status)})
+				}
+			}
+		}()
+	}
+	for _, className := range classOrder {
+		jobs <- className
+	}
+	close(jobs)
+	wg.Wait()
+}
+
+func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndexes map[string][]int, planned []testCasePlan, results []testreport.Case, baseMachine *vm.VM, baseRuntimeErr error, setups map[string][]vm.Method, setupErrors map[string]error, setupInvokePrograms map[string][]ir.Program, setupInvokeErrors map[string]error, triggerErrors []error, org storage.OrgState, opts Options) {
+	parallelism := opts.Parallelism
+	if parallelism > len(classOrder) {
+		parallelism = len(classOrder)
+	}
+	sort.SliceStable(classOrder, func(i, j int) bool {
+		return len(classIndexes[classOrder[i]]) > len(classIndexes[classOrder[j]])
+	})
+	jobs := make(chan string)
+	var wg sync.WaitGroup
+	for worker := 0; worker < parallelism; worker++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for className := range jobs {
+				reportProgress(opts, TestProgress{Event: "setup_start", ClassName: className})
+				started := time.Now()
+				setupCtx, setupCancel := testContext(ctx, opts.TimeoutMS)
+				setupOrg, setupRandom, setupErr := prepareTestSetupOrg(setupCtx, baseMachine, baseRuntimeErr, setups[className], setupErrors[className], setupInvokePrograms[className], setupInvokeErrors[className], triggerErrors, org, opts)
+				setupCancel()
+				reportProgress(opts, TestProgress{Event: "setup_done", ClassName: className, DurationMS: time.Since(started).Milliseconds(), Status: progressStatus(setupErr)})
+				for _, i := range classIndexes[className] {
+					if results[i].Status != "" {
+						continue
+					}
+					plan := planned[i]
+					plan.SetupErr = setupErr
+					plan.SetupOrg = setupOrg
+					plan.SetupRandom = setupRandom
 					reportProgress(opts, TestProgress{Event: "test_start", ClassName: plan.TestCase.ClassName, MethodName: plan.TestCase.MethodName})
 					caseCtx, caseCancel := testContext(ctx, opts.TimeoutMS)
 					results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts)

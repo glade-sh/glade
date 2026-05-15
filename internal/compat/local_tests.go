@@ -342,6 +342,9 @@ func shouldAnalyzeLocalTests(options LocalTestOptions, totalCases int) bool {
 	if options.ForceAnalysis {
 		return true
 	}
+	if options.Parallelism > 0 || options.ProgressWriter != nil {
+		return false
+	}
 	if options.BlockersOnly || options.TopFailures > 0 {
 		return false
 	}
