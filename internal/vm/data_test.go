@@ -6335,6 +6335,26 @@ System.assert(Trigger.isBefore);
 	}
 }
 
+func TestTriggerContextListsCarryConcreteSObjectType(t *testing.T) {
+	trigger := Trigger{Object: "ActionEvent__e", Timing: triggerTimingAfter, Operation: "insert"}
+	record := storage.Record{Object: "ActionEvent__e", Fields: map[string]storage.Value{"Payload__c": storage.StringValue("{}")}}
+	ctx := triggerContext(trigger, []storage.Record{record}, nil)
+	newList := ctx["Trigger.new"]
+	if newList.Type != "List<ActionEvent__e>" {
+		t.Fatalf("Trigger.new type = %q, want concrete SObject list", newList.Type)
+	}
+	if newList.Runtime != "List<SObject>" {
+		t.Fatalf("Trigger.new runtime = %q, want List<SObject>", newList.Runtime)
+	}
+	machine := New(nil)
+	if score := machine.conversionScore("List<SObject>", newList); score < 0 {
+		t.Fatalf("Trigger.new should be assignable to List<SObject>, score=%d", score)
+	}
+	if score := machine.conversionScore("List<ActionEvent__e>", newList); score < 0 {
+		t.Fatalf("Trigger.new should be assignable to concrete List<ActionEvent__e>, score=%d", score)
+	}
+}
+
 func TestExecAfterUpdateTriggerOldMapKeepsPreUpdateValues(t *testing.T) {
 	afterTrigger, err := CompileAnonymous(`
 for (Account newer : Trigger.new) {

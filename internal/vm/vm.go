@@ -3189,13 +3189,21 @@ platformStaticCall:
 		}
 		return uuidValue(vm.nextDeterministicUUID()), nil
 	case "UUID.fromString":
-		if len(args) != 1 || args[0].Kind != ValueString {
+		if len(args) != 1 {
 			return Null, fmt.Errorf("UUID.fromString expects String")
 		}
-		if _, err := parseUUIDText(args[0].Text); err != nil {
+		text := ""
+		if args[0].Kind == ValueString {
+			text = args[0].Text
+		} else if objectText, ok := platformScalarObjectText(args[0]); ok {
+			text = objectText
+		} else {
+			return Null, fmt.Errorf("UUID.fromString expects String")
+		}
+		if _, err := parseUUIDText(text); err != nil {
 			return Null, err
 		}
-		return uuidValue(strings.ToLower(args[0].Text)), nil
+		return uuidValue(strings.ToLower(text)), nil
 	case "Date.today", "System.today":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
@@ -3420,12 +3428,17 @@ platformStaticCall:
 		if args[0].Kind == ValueNull {
 			return Null, newExceptionError("System.NullPointerException", fmt.Sprintf("%s expects String", callee))
 		}
-		if args[0].Kind != ValueString {
+		text := ""
+		if args[0].Kind == ValueString {
+			text = args[0].Text
+		} else if objectText, ok := platformScalarObjectText(args[0]); ok {
+			text = objectText
+		} else {
 			return Null, newExceptionError("System.TypeException", fmt.Sprintf("%s expects String", callee))
 		}
-		value, err := parseDatetimeText(args[0].Text)
+		value, err := parseDatetimeText(text)
 		if err != nil {
-			return Null, newExceptionError("System.TypeException", "Invalid date/time: "+args[0].Text)
+			return Null, newExceptionError("System.TypeException", "Invalid date/time: "+text)
 		}
 		return platformScalar("Datetime", formatPlatformDatetime(value)), nil
 	case "LoggingLevel.values":
@@ -9253,7 +9266,7 @@ func (vm *VM) recordApexClass(className string) {
 		Object: "ApexClass",
 		Fields: map[string]storage.Value{
 			"Name":            storage.StringValue(className),
-			"NamespacePrefix": storage.StringValue(""),
+			"NamespacePrefix": storage.NullValue(),
 		},
 	}
 	vm.Org.Objects["ApexClass"] = object
@@ -13965,6 +13978,8 @@ func triggerContext(trigger Trigger, records, oldRecords []storage.Record) map[s
 	newMapValue := Null
 	if trigger.Operation == "insert" || trigger.Operation == "update" || trigger.Operation == "undelete" {
 		newListValue = List(newValues...)
+		newListValue.Type = "List<" + trigger.Object + ">"
+		newListValue.Runtime = "List<SObject>"
 		if trigger.Operation != "insert" || trigger.Timing == triggerTimingAfter {
 			newMapValue = newMap
 		}
@@ -13973,6 +13988,8 @@ func triggerContext(trigger Trigger, records, oldRecords []storage.Record) map[s
 	oldMapValue := Null
 	if trigger.Operation == "update" || trigger.Operation == "delete" {
 		oldListValue = List(oldValues...)
+		oldListValue.Type = "List<" + trigger.Object + ">"
+		oldListValue.Runtime = "List<SObject>"
 		oldMapValue = oldMap
 	}
 	ctx := map[string]Value{
@@ -16440,10 +16457,11 @@ func typedScalarFromJSON(typeName string, raw any) (Value, bool, error) {
 		if !ok {
 			return Null, true, jsonTypeMappingError(canonical, raw)
 		}
-		if _, err := time.Parse("2006-01-02", text); err != nil {
+		value, err := parseDateText(text)
+		if err != nil {
 			return Null, true, jsonDeserializeException("JSON.deserialize cannot parse Date %q", text)
 		}
-		return platformScalar("Date", text), true, nil
+		return platformScalar("Date", value.Format("2006-01-02")), true, nil
 	case "Datetime":
 		text, ok := raw.(string)
 		if !ok {
@@ -16483,6 +16501,16 @@ func typedScalarFromJSON(typeName string, raw any) (Value, bool, error) {
 			return Null, true, jsonDeserializeException("JSON.deserialize cannot decode Blob base64: %v", err)
 		}
 		return platformScalar("Blob", string(decoded)), true, nil
+	case "UUID":
+		text, ok := raw.(string)
+		if !ok {
+			return Null, true, jsonTypeMappingError(canonical, raw)
+		}
+		parsed, err := parseUUIDText(text)
+		if err != nil {
+			return Null, true, jsonDeserializeException("%s", err.Error())
+		}
+		return uuidValue(parsed), true, nil
 	}
 	return Null, false, nil
 }
@@ -16525,6 +16553,8 @@ func canonicalJSONScalarType(typeName string) string {
 		return "Id"
 	case strings.EqualFold(typeName, "Blob"):
 		return "Blob"
+	case strings.EqualFold(typeName, "UUID"):
+		return "UUID"
 	default:
 		return typeName
 	}
