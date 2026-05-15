@@ -1962,6 +1962,33 @@ batchable.postBatchProcessing();
 UserProvisioning.LinkingBatchable linking = new UserProvisioning.LinkingBatchable('0PR000000000001');
 System.assertEquals(false, linking.hasFlowOrApex());
 System.assertEquals('', linking.start(null).getQuery());
+UserProvisioning.CommittingBatchable committing = new UserProvisioning.CommittingBatchable();
+System.assertEquals('', committing.start(null).getQuery());
+committing.execute(null, new List<SObject>());
+committing.finish(null);
+UserProvisioning.DeletingBatchable deleting = new UserProvisioning.DeletingBatchable();
+System.assertEquals('', deleting.start(null).getQuery());
+deleting.execute(null, new List<SObject>());
+deleting.finish(null);
+UserProvisioning.RequestingBatchable requesting = new UserProvisioning.RequestingBatchable();
+System.assertEquals('', requesting.start(null).getQuery());
+requesting.execute(null, new List<UserProvisioningRequest>());
+requesting.finish(null);
+UserProvisioning.UPASCleaningBatchable cleaning = new UserProvisioning.UPASCleaningBatchable();
+System.assertEquals('', cleaning.start(null).getQuery());
+cleaning.execute(null, new List<SObject>());
+cleaning.finish(null);
+UserProvisioning.FlowProvisionBase flowBase = new UserProvisioning.FlowProvisionBase();
+System.assertEquals('', flowBase.getFlowName());
+System.assertEquals('', flowBase.getFlowNamespace());
+System.assertEquals(false, flowBase.hasFlow());
+System.assertEquals(false, flowBase.hasFlowOrApex());
+UserProvisioning.UserProvisioningPlugin plugin = new UserProvisioning.UserProvisioningPlugin();
+System.assertEquals('UserProvisioning.UserProvisioningPlugin', plugin.getPluginClassName());
+System.assert(plugin.describe() != null);
+System.assert(plugin.buildDescribeCall() != null);
+System.assert(new UserProvisioning.UserProvisioningProcessHandler().invoke(null) != null);
+System.assert(new UserProvisioning.DummyConnectorApexHandler().invoke(null) != null);
 `)
 	if err != nil {
 		t.Fatal(err)

@@ -2250,6 +2250,11 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"Support.EinsteinBots.sendMessageToBot", "Support.EmailTemplateSelector.getDefaultEmailTemplateId",
 		"Support.LifeScienceAttendees.parse", "Support.LifeScienceUpdateEmailTransactions.updateRecords",
 		"LoggingLevel.values", "ApexPages.Severity.values", "RoundingMode.values",
+		"UserManagement.deregisterVerificationMethod", "UserManagement.initPasswordlessLogin",
+		"UserManagement.initRegisterVerificationMethod", "UserManagement.initVerificationMethod",
+		"UserManagement.obfuscateUser", "UserManagement.registerVerificationMethod",
+		"UserManagement.sendAsyncEmailConfirmation", "UserManagement.verifyPasswordlessLogin",
+		"UserManagement.verifyRegisterVerificationMethod", "UserManagement.verifyVerificationMethod",
 	}
 	calls := make(map[string]string, len(names))
 	for _, name := range names {
@@ -4036,6 +4041,54 @@ platformStaticCall:
 			redirect = newPageReference(args[3].Text)
 		}
 		return newAuthVerificationResult(redirect, Bool(true), Null), nil
+	case "UserManagement.deregisterVerificationMethod", "UserManagement.obfuscateUser":
+		if len(args) < 1 || len(args) > 2 {
+			return Null, fmt.Errorf("%s expects user Id and optional extra argument", callee)
+		}
+		return Null, nil
+	case "UserManagement.initPasswordlessLogin":
+		if len(args) != 2 {
+			return Null, fmt.Errorf("UserManagement.initPasswordlessLogin expects user Id and verification method")
+		}
+		return String("local-passwordless-login"), nil
+	case "UserManagement.initRegisterVerificationMethod", "UserManagement.initVerificationMethod":
+		if len(args) != 1 && len(args) != 3 {
+			return Null, fmt.Errorf("%s expects verification method or verification method, action name, and extras", callee)
+		}
+		return String("local-verification"), nil
+	case "UserManagement.registerVerificationMethod":
+		if len(args) != 2 {
+			return Null, fmt.Errorf("UserManagement.registerVerificationMethod expects verification method and start URL")
+		}
+		startURL := "/"
+		if args[1].Kind == ValueString && strings.TrimSpace(args[1].Text) != "" {
+			startURL = args[1].Text
+		}
+		return newPageReference(startURL), nil
+	case "UserManagement.sendAsyncEmailConfirmation":
+		if len(args) != 4 {
+			return Null, fmt.Errorf("UserManagement.sendAsyncEmailConfirmation expects user Id, email template Id, network Id, and start URL")
+		}
+		return Bool(false), nil
+	case "UserManagement.verifyPasswordlessLogin":
+		if len(args) != 5 {
+			return Null, fmt.Errorf("UserManagement.verifyPasswordlessLogin expects user Id, verification method, identifier, code, and start URL")
+		}
+		redirect := newPageReference("/")
+		if args[4].Kind == ValueString && strings.TrimSpace(args[4].Text) != "" {
+			redirect = newPageReference(args[4].Text)
+		}
+		return newAuthVerificationResult(redirect, Bool(true), Null), nil
+	case "UserManagement.verifyRegisterVerificationMethod":
+		if len(args) != 2 {
+			return Null, fmt.Errorf("UserManagement.verifyRegisterVerificationMethod expects code and verification method")
+		}
+		return String("local-verification"), nil
+	case "UserManagement.verifyVerificationMethod":
+		if len(args) != 3 {
+			return Null, fmt.Errorf("UserManagement.verifyVerificationMethod expects identifier, code, and verification method")
+		}
+		return newAuthVerificationResult(newPageReference("/"), Bool(true), Null), nil
 	case "Auth.AuthToken.revokeAccess":
 		if len(args) != 3 {
 			return Null, fmt.Errorf("Auth.AuthToken.revokeAccess expects 3 arguments")
@@ -32177,6 +32230,43 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	if value, updated, mutated, handled, err := callUserProvisioningBatchableMember(receiver, method, args); handled || err != nil {
 		return value, updated, mutated, true, err
 	}
+	if strings.EqualFold(receiver.Type, "UserProvisioning.FlowProvisionBase") {
+		switch strings.ToLower(method) {
+		case "getflowname", "getflownamespace":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("UserProvisioning.FlowProvisionBase.%s expects 0 arguments", method)
+			}
+			return String(""), receiver, false, true, nil
+		case "hasflow", "hasfloworapex":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("UserProvisioning.FlowProvisionBase.%s expects 0 arguments", method)
+			}
+			return Bool(false), receiver, false, true, nil
+		}
+	}
+	if strings.EqualFold(receiver.Type, "UserProvisioning.UserProvisioningPlugin") {
+		switch strings.ToLower(method) {
+		case "builddescribecall", "describe":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("UserProvisioning.UserProvisioningPlugin.%s expects 0 arguments", method)
+			}
+			return Object("Process.PluginDescribeResult"), receiver, false, true, nil
+		case "getpluginclassname":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("UserProvisioning.UserProvisioningPlugin.getPluginClassName expects 0 arguments")
+			}
+			return String("UserProvisioning.UserProvisioningPlugin"), receiver, false, true, nil
+		}
+	}
+	if strings.EqualFold(receiver.Type, "UserProvisioning.UserProvisioningProcessHandler") ||
+		strings.EqualFold(receiver.Type, "UserProvisioning.DummyConnectorApexHandler") {
+		if strings.EqualFold(method, "invoke") {
+			if len(args) != 1 {
+				return Null, receiver, false, true, fmt.Errorf("%s.invoke expects ProvisioningProcessHandlerInput", receiver.Type)
+			}
+			return Object("UserProvisioning.ProvisioningProcessHandlerOutput"), receiver, false, true, nil
+		}
+	}
 	if value, updated, mutated, handled, err := vm.callIndustryControllerMember(receiver, method, args); handled || err != nil {
 		return value, updated, mutated, true, err
 	}
@@ -37729,7 +37819,9 @@ func callUserProvisioningBatchableMember(receiver Value, method string, args []V
 func userProvisioningBatchableType(typeName string) bool {
 	switch typeName {
 	case "UserProvisioning.ProvisioningBatchable", "UserProvisioning.CollectingBatchable",
-		"UserProvisioning.PluginBatchable", "UserProvisioning.LinkingBatchable":
+		"UserProvisioning.PluginBatchable", "UserProvisioning.LinkingBatchable",
+		"UserProvisioning.CommittingBatchable", "UserProvisioning.DeletingBatchable",
+		"UserProvisioning.RequestingBatchable", "UserProvisioning.UPASCleaningBatchable":
 		return true
 	default:
 		return false
