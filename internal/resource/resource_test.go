@@ -30,6 +30,11 @@ func TestLoadProjectResourcesLabelsAndEndpoints(t *testing.T) {
   <label>Widgets</label>
   <motif>Custom1: Heart</motif>
 </CustomTab>`)
+	writeFile(t, filepath.Join(root, "force-app/main/default/quickActions/Account.NewTask.quickAction-meta.xml"), `<QuickAction>
+  <label>New Task</label>
+  <type>Create</type>
+  <targetObject>Account</targetObject>
+</QuickAction>`)
 	writeFile(t, filepath.Join(root, "force-app/main/default/objects/Account/fieldSets/Summary.fieldSet-meta.xml"), `<FieldSet>
   <fullName>Summary</fullName>
   <label>Account Summary</label>
@@ -88,6 +93,9 @@ func TestLoadProjectResourcesLabelsAndEndpoints(t *testing.T) {
 	}
 	if len(registry.Tabs) != 1 || registry.Tabs[0].Name != "ext__Widget__c" || registry.Tabs[0].Label != "Widgets" || registry.Tabs[0].SObjectName != "ext__Widget__c" {
 		t.Fatalf("tabs = %#v", registry.Tabs)
+	}
+	if len(registry.QuickActions) != 1 || registry.QuickActions[0].Name != "Account.NewTask" || registry.QuickActions[0].TargetObject != "Account" || registry.QuickActions[0].Label != "New Task" {
+		t.Fatalf("quick actions = %#v", registry.QuickActions)
 	}
 	if len(registry.FieldSets) != 1 || registry.FieldSets[0].ObjectName != "Account" || registry.FieldSets[0].Name != "Summary" || len(registry.FieldSets[0].Fields) != 2 || !registry.FieldSets[0].Fields[0].Required {
 		t.Fatalf("field sets = %#v", registry.FieldSets)

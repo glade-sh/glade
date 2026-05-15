@@ -40,6 +40,12 @@ type tabXML struct {
 	Motif        string `xml:"motif"`
 }
 
+type quickActionXML struct {
+	Label        string `xml:"label"`
+	Type         string `xml:"type"`
+	TargetObject string `xml:"targetObject"`
+}
+
 type fieldSetXML struct {
 	FullName        string              `xml:"fullName"`
 	Label           string              `xml:"label"`
@@ -125,6 +131,13 @@ func LoadProject(p project.Project) (storage.MetadataRegistry, error) {
 			return storage.MetadataRegistry{}, err
 		}
 		registry.Tabs = append(registry.Tabs, tab)
+	}
+	for _, path := range p.QuickActionFiles {
+		action, err := loadQuickAction(path)
+		if err != nil {
+			return storage.MetadataRegistry{}, err
+		}
+		registry.QuickActions = append(registry.QuickActions, action)
 	}
 	for _, path := range p.FieldSetFiles {
 		fieldSet, err := loadFieldSet(path)
@@ -212,6 +225,37 @@ func loadTab(path string) (storage.TabMetadata, error) {
 		tab.SObjectName = name
 	}
 	return tab, nil
+}
+
+func loadQuickAction(path string) (storage.QuickActionMetadata, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return storage.QuickActionMetadata{}, err
+	}
+	var raw quickActionXML
+	if len(strings.TrimSpace(string(data))) > 0 {
+		if err := xml.Unmarshal(data, &raw); err != nil {
+			return storage.QuickActionMetadata{}, err
+		}
+	}
+	name := metadataNameFromPath(path, ".quickAction-meta.xml", ".quickaction-meta.xml", ".quickAction", ".quickaction")
+	targetObject := strings.TrimSpace(raw.TargetObject)
+	if targetObject == "" {
+		if dot := strings.IndexByte(name, '.'); dot > 0 {
+			targetObject = name[:dot]
+		}
+	}
+	label := strings.TrimSpace(raw.Label)
+	if label == "" {
+		label = name
+	}
+	return storage.QuickActionMetadata{
+		Name:         name,
+		Label:        label,
+		Type:         strings.TrimSpace(raw.Type),
+		TargetObject: targetObject,
+		File:         path,
+	}, nil
 }
 
 func loadFieldSet(path string) (storage.FieldSetMetadata, error) {
@@ -757,6 +801,7 @@ func sortRegistry(registry *storage.MetadataRegistry) {
 		return registry.Labels[i].Language < registry.Labels[j].Language
 	})
 	sort.Slice(registry.Tabs, func(i, j int) bool { return registry.Tabs[i].Name < registry.Tabs[j].Name })
+	sort.Slice(registry.QuickActions, func(i, j int) bool { return registry.QuickActions[i].Name < registry.QuickActions[j].Name })
 	sort.Slice(registry.FieldSets, func(i, j int) bool {
 		if registry.FieldSets[i].ObjectName != registry.FieldSets[j].ObjectName {
 			return registry.FieldSets[i].ObjectName < registry.FieldSets[j].ObjectName

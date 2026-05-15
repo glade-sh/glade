@@ -54,6 +54,19 @@ System.assertEquals(0, similar.size());
 	}
 }
 
+func TestExecConnectApiSetTestMethodsAreLocalNoops(t *testing.T) {
+	program, err := CompileAnonymous(`
+ConnectApi.LibraryOutput output = new ConnectApi.LibraryOutput();
+ConnectApi.AiGroundingLibrary.setTestGetLibrary('local-library', output);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecGeneratedPlatformConstructsPassiveValueObjectWithProperties(t *testing.T) {
 	program, err := CompileAnonymous(`
 ConnectApi.QuestionAndAnswersSuggestions suggestions =

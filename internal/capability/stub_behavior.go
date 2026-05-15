@@ -169,8 +169,12 @@ func localStubBehaviorEvidenceOverride(symbol typesys.TypeSymbol, member typesys
 	typeName := stubBehaviorTypeName(symbol)
 	name := strings.ToLower(member.Name)
 	switch typeName {
+	case "Schema":
+		if name == "describedatacategorygroups" || name == "describedatacategorygroupstructures" {
+			return StubBehaviorImplemented, "local runtime returns deterministic metadata-backed data category describe results", true
+		}
 	case "Search":
-		if name == "find" || name == "suggest" {
+		if name == "query" || name == "find" || name == "suggest" {
 			return StubBehaviorImplemented, "local runtime models Search over fixed test search results and empty suggestion DTOs", true
 		}
 	}
@@ -225,6 +229,12 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 	}
 	if databaseResultDTOBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "Database/Approval result DTO accessor is handled by the VM result object surface", true
+	}
+	if connectAPITestFixtureSetterBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "ConnectApi setTest fixture setter is accepted locally without calling ConnectApi services", true
+	}
+	if quickActionDescribeBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "QuickAction describe/template/default methods return local read-only metadata/default DTOs without performing action side effects", true
 	}
 	if explicitlyUnsupportedCoreBehaviorMethod(symbol, member) {
 		return StubBehaviorUnsupported, "local runtime returns an explicit unsupported-feature error for this platform surface", true
@@ -286,6 +296,28 @@ func sfsqlqueryHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesys.M
 		default:
 			return false
 		}
+	default:
+		return false
+	}
+}
+
+func quickActionDescribeBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if member.Kind != apexast.DeclarationMethod {
+		return false
+	}
+	name := strings.ToLower(member.Name)
+	switch stubBehaviorTypeName(symbol) {
+	case "QuickAction":
+		switch name {
+		case "describeavailablequickactions", "describequickactions", "retrievequickactiontemplate", "retrievequickactiontemplates":
+			return true
+		default:
+			return false
+		}
+	case "Test":
+		return name == "newsendemailquickactiondefaults"
+	case "QuickAction.SendEmailQuickActionDefaults":
+		return strings.HasPrefix(name, "get") || strings.HasPrefix(name, "set")
 	default:
 		return false
 	}
@@ -885,8 +917,13 @@ func explicitlyUnsupportedCoreBehaviorMethod(symbol typesys.TypeSymbol, member t
 	case "Test":
 		switch name {
 		case "createsoqlstub", "getexternalservice", "invokecontinuationmethod",
-			"invokepage", "newsendemailquickactiondefaults", "setcontinuationresponse",
+			"invokepage", "setcontinuationresponse",
 			"testnotificationactionhandler", "testsandboxpostcopyscript":
+			return true
+		}
+	case "QuickAction":
+		switch name {
+		case "performquickaction", "performquickactions":
 			return true
 		}
 	case "Site":
@@ -1100,12 +1137,23 @@ func connectAPIExternalServiceBehaviorMethod(symbol typesys.TypeSymbol, member t
 	if !strings.HasPrefix(typeName, "ConnectApi.") || !stubBehaviorMemberStatic(member) {
 		return false
 	}
+	if connectAPITestFixtureSetterBehaviorMethod(symbol, member) {
+		return false
+	}
 	if len(member.Parameters) == 0 &&
 		(strings.EqualFold(member.Type, typeName) ||
 			(strings.EqualFold(member.Name, "builder") && strings.HasSuffix(member.Type, ".Builder"))) {
 		return false
 	}
 	return true
+}
+
+func connectAPITestFixtureSetterBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	return member.Kind == apexast.DeclarationMethod &&
+		stubBehaviorMemberStatic(member) &&
+		strings.HasPrefix(stubBehaviorTypeName(symbol), "ConnectApi.") &&
+		strings.HasPrefix(strings.ToLower(member.Name), "settest") &&
+		strings.EqualFold(member.Type, "void")
 }
 
 func databaseResultDTOBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {

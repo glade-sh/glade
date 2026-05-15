@@ -672,6 +672,23 @@ System.assertEquals(null, page);
 	}
 }
 
+func TestExecGeneratedConnectApiSetTestFixtureReturnsLocalResult(t *testing.T) {
+	program, err := CompileAnonymous(`
+ConnectApi.FeedElementPage expected = new ConnectApi.FeedElementPage();
+ConnectApi.ChatterFeeds.setTestGetFeedElementsFromFeed('community-a', null, expected);
+ConnectApi.FeedElementPage actual = ConnectApi.ChatterFeeds.getFeedElementsFromFeed('community-a', null);
+System.assertEquals(expected, actual);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDataWeaveScriptResultCarriers(t *testing.T) {
 	program, err := CompileAnonymous(`
 DataWeave.Script script = DataWeave.Script.createScript('helloWorld');

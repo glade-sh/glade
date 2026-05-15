@@ -86,9 +86,13 @@ Status values match the compatibility dashboard: `supported`, `partial`, `stub`,
 | Pattern | `Pattern.matches` | `partial` | Whole-string Go regexp match. |
 | Schema | `DescribeFieldResult` | `partial` | Common field metadata and access booleans. |
 | Schema | `DescribeSObjectResult` | `partial` | Common object metadata, fields, record types, and child relationships. |
+| Schema | `Schema.describeDataCategoryGroupStructures` | `partial` | Deterministic local data category structures from org metadata; no external category service lookup. |
+| Schema | `Schema.describeDataCategoryGroups` | `partial` | Deterministic local data category group describes from org metadata; empty when no metadata is loaded. |
 | Schema | `Schema.describeSObjects` | `partial` | Object names and SObjectType tokens for local schema. |
 | Schema | `Schema.getGlobalDescribe` | `partial` | Local schema-backed describe map. |
-| Search | `Search.* / SOSL FIND` | `unsupported` | Cloud search and SOSL execution are not locally modeled; calls return explicit UnsupportedFeature diagnostics. |
+| Search | `Search.find` | `partial` | Returns deterministic SearchResult DTOs from Test.setFixedSearchResults; no external search ranking/snippets. |
+| Search | `Search.query / SOSL FIND` | `partial` | Parses RETURNING clauses and returns deterministic rows from Test.setFixedSearchResults, or empty result groups without external search. |
+| Search | `Search.suggest` | `partial` | Returns an empty deterministic SuggestionResults DTO; no external suggestion service. |
 | String | `String.contains` | `supported` | UTF-8 string contains. |
 | String | `String.endsWith` | `supported` | UTF-8 string suffix. |
 | String | `String.equalsIgnoreCase` | `supported` | Unicode simple fold. |

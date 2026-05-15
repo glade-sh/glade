@@ -43,6 +43,8 @@ type MetadataRegistry struct {
 	Labels                 []LabelMetadata          `json:"labels,omitempty"`
 	ManagedLabelNamespaces []string                 `json:"managedLabelNamespaces,omitempty"`
 	Tabs                   []TabMetadata            `json:"tabs,omitempty"`
+	DataCategoryGroups     []DataCategoryGroup      `json:"dataCategoryGroups,omitempty"`
+	QuickActions           []QuickActionMetadata    `json:"quickActions,omitempty"`
 	FieldSets              []FieldSetMetadata       `json:"fieldSets,omitempty"`
 	StaticResources        []StaticResourceMetadata `json:"staticResources,omitempty"`
 	ContentAssets          []ContentAssetMetadata   `json:"contentAssets,omitempty"`
@@ -69,6 +71,28 @@ type TabMetadata struct {
 	Motif       string `json:"motif,omitempty"`
 	Description string `json:"description,omitempty"`
 	File        string `json:"file,omitempty"`
+}
+
+type DataCategoryGroup struct {
+	Name        string         `json:"name"`
+	Label       string         `json:"label,omitempty"`
+	Description string         `json:"description,omitempty"`
+	SObjectName string         `json:"sObjectName,omitempty"`
+	Categories  []DataCategory `json:"categories,omitempty"`
+}
+
+type DataCategory struct {
+	Name     string         `json:"name"`
+	Label    string         `json:"label,omitempty"`
+	Children []DataCategory `json:"children,omitempty"`
+}
+
+type QuickActionMetadata struct {
+	Name         string `json:"name"`
+	Label        string `json:"label,omitempty"`
+	Type         string `json:"type,omitempty"`
+	TargetObject string `json:"targetObject,omitempty"`
+	File         string `json:"file,omitempty"`
 }
 
 type FieldSetMetadata struct {

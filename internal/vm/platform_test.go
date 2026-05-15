@@ -267,6 +267,22 @@ System.assertEquals(account.Id, inlineRows[0].Id);
 	}
 }
 
+func TestExecSearchQueryReturnsDeterministicEmptyRows(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<List<SObject>> rows = Search.query('FIND {Missing*} IN ALL FIELDS RETURNING Account(Id), Contact(Id)', null);
+System.assertEquals(2, rows.size());
+System.assertEquals(0, rows[0].size());
+System.assertEquals(0, rows[1].size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecMetadataDeployContainerLocalModel(t *testing.T) {
 	program, err := CompileAnonymous(`
 Metadata.DeployContainer container = new Metadata.DeployContainer();
@@ -337,6 +353,71 @@ System.assertEquals('Feature.Created', records[1].fullName);
 	machine := New(nil)
 	org := customDataOrg()
 	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecQuickActionDescribeAndTemplateDefaults(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<QuickAction.DescribeAvailableQuickActionResult> available =
+	QuickAction.describeAvailableQuickActions('Account');
+System.assertEquals(1, available.size());
+System.assertEquals('Account.NewTask', available[0].getName());
+System.assertEquals('New Task', available[0].getLabel());
+System.assertEquals('Create', available[0].getType());
+
+List<QuickAction.DescribeQuickActionResult> described =
+	QuickAction.describeQuickActions(new List<String>{'Account.NewTask', 'Account.Unknown'});
+System.assertEquals(2, described.size());
+System.assertEquals('Account', described[0].getTargetSobjectType());
+System.assertEquals(0, described[0].getDefaultValues().size());
+System.assertEquals('Account.Unknown', described[1].getName());
+
+QuickAction.QuickActionTemplateResult template =
+	QuickAction.retrieveQuickActionTemplate('Account.NewTask', '001000000000001');
+System.assertEquals(true, template.isSuccess());
+System.assertEquals('001000000000001', template.getContextId());
+System.assertEquals('Account.NewTask', template.getDefaultValues().getQuickActionName());
+
+List<QuickAction.QuickActionTemplateResult> templates =
+	QuickAction.retrieveQuickActionTemplates(new List<String>{'Account.NewTask'}, '001000000000001');
+System.assertEquals(1, templates.size());
+System.assertEquals(true, templates[0].isSuccess());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Metadata.QuickActions = []storage.QuickActionMetadata{{
+		Name:         "Account.NewTask",
+		Label:        "New Task",
+		Type:         "Create",
+		TargetObject: "Account",
+	}}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecTestNewSendEmailQuickActionDefaults(t *testing.T) {
+	program, err := CompileAnonymous(`
+QuickAction.SendEmailQuickActionDefaults defaults =
+	Test.newSendEmailQuickActionDefaults('001000000000001', '00T000000000001');
+System.assertEquals('SendEmail', defaults.getActionName());
+System.assertEquals('SendEmail', defaults.getActionType());
+System.assertEquals('001000000000001', defaults.getContextId());
+System.assertEquals('00T000000000001', defaults.getInReplyToId());
+System.assertEquals(0, defaults.getFromAddressList().size());
+defaults.setTemplateId('00X000000000001');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}

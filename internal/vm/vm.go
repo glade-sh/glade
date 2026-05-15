@@ -219,6 +219,7 @@ type TestContext struct {
 	HTTPMock              Value
 	WebServiceMock        Value
 	ContinuationResponses map[string]Value
+	ConnectAPIFixtures    map[string]Value
 	ParentLimits          Limits
 	ParentViolations      []LimitViolation
 	RunAsDepth            int
@@ -667,6 +668,7 @@ func (vm *VM) EnableTestContext() {
 	vm.testContext = &TestContext{
 		CurrentUser:           vm.defaultTestCurrentUser(),
 		ContinuationResponses: make(map[string]Value),
+		ConnectAPIFixtures:    make(map[string]Value),
 	}
 	vm.ensureAsyncObjects()
 }
@@ -2078,6 +2080,8 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"Database.convertLead", "Database.merge",
 		"Security.stripInaccessible",
 		"Approval.process", "Approval.lock", "Approval.unlock", "Approval.isLocked",
+		"QuickAction.describeAvailableQuickActions", "QuickAction.describeQuickActions",
+		"QuickAction.retrieveQuickActionTemplate", "QuickAction.retrieveQuickActionTemplates",
 		"String.valueOf", "String.isBlank", "String.isNotBlank", "String.isEmpty", "String.isNotEmpty",
 		"String.join", "String.format", "String.getCommonPrefix", "String.getLevenshteinDistance",
 		"String.stripAll", "String.fromCharArray", "String.escapeSingleQuotes",
@@ -2127,6 +2131,7 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"Test.clearApexPageMessages", "Test.setCurrentPage", "Test.setCurrentPageReference",
 		"Test.setMock", "Test.testInstall", "Test.createStub", "Test.createSoqlStub", "Test.createStubQueryRow", "Test.createStubQueryRows", "Test.loadData",
 		"Test.getFlexQueueOrder", "Test.enqueueBatchJobs", "Test.calculatePermissionSetGroup", "Test.enableChangeDataCapture", "Test.setReadOnlyApplicationMode", "Test.isSoqlStubDefined",
+		"Test.newSendEmailQuickActionDefaults",
 		"Test.invokeContinuationMethod", "Test.setContinuationResponse",
 		"Canvas.Test.mockRenderContext", "Canvas.Test.testCanvasLifecycle",
 		"sfsqlquery.SqlTester.clearMocks", "sfsqlquery.SqlTester.enqueueMockRows", "sfsqlquery.SqlTester.setMockRows", "sfsqlquery.SqlTester.setMockMetadata",
@@ -2436,6 +2441,9 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 	}
 platformStaticCall:
 	callee = normalizeStaticCallCasing(callee)
+	if value, handled, err := vm.callConnectAPITestFixtureStatic(callee, args); handled || err != nil {
+		return value, err
+	}
 	if reason, ok := unsupportedIntegrationSurface(callee); ok {
 		return Null, unsupportedCallError(callee + " " + reason)
 	}
@@ -3710,6 +3718,26 @@ platformStaticCall:
 			"count":     len(vm.schemaDescribeTabValues()),
 		})
 		return vm.schemaDescribeTabs(), nil
+	case "Schema.describeDataCategoryGroups":
+		if len(args) != 1 || args[0].Kind != ValueList {
+			return Null, fmt.Errorf("Schema.describeDataCategoryGroups expects List<String>")
+		}
+		describes := vm.schemaDescribeDataCategoryGroups(args[0])
+		appendTrace(result, "apex.describe.dataCategoryGroups", "apex.describe", map[string]any{
+			"operation": "describeDataCategoryGroups",
+			"count":     len(describes.List),
+		})
+		return describes, nil
+	case "Schema.describeDataCategoryGroupStructures":
+		if len(args) != 2 || args[0].Kind != ValueList || args[1].Kind != ValueBool {
+			return Null, fmt.Errorf("Schema.describeDataCategoryGroupStructures expects List<Schema.DataCategoryGroupSobjectTypePair> and Boolean")
+		}
+		describes := vm.schemaDescribeDataCategoryGroupStructures(args[0], args[1].Bool)
+		appendTrace(result, "apex.describe.dataCategoryGroupStructures", "apex.describe", map[string]any{
+			"operation": "describeDataCategoryGroupStructures",
+			"count":     len(describes.List),
+		})
+		return describes, nil
 	case "FeatureManagement.checkPermission":
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("FeatureManagement.checkPermission expects String")
@@ -4007,6 +4035,16 @@ platformStaticCall:
 		return vm.testCreateStubQueryRows(args)
 	case "Test.loadData":
 		return vm.testLoadData(args, result)
+	case "QuickAction.describeAvailableQuickActions":
+		return vm.quickActionDescribeAvailable(args)
+	case "QuickAction.describeQuickActions":
+		return vm.quickActionDescribe(args)
+	case "QuickAction.retrieveQuickActionTemplate":
+		return vm.quickActionRetrieveTemplate(args)
+	case "QuickAction.retrieveQuickActionTemplates":
+		return vm.quickActionRetrieveTemplates(args)
+	case "Test.newSendEmailQuickActionDefaults":
+		return vm.testNewSendEmailQuickActionDefaults(args)
 	case "sfsqlquery.SqlTester.clearMocks":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("sfsqlquery.SqlTester.clearMocks expects 0 arguments")
@@ -4864,6 +4902,12 @@ func unsupportedIntegrationSurface(callee string) (string, bool) {
 		"Continuation.getResponse", "Test.invokeContinuationMethod", "Test.setContinuationResponse":
 		return "", false
 	}
+	switch callee {
+	case "QuickAction.describeAvailableQuickActions", "QuickAction.describeQuickActions",
+		"QuickAction.retrieveQuickActionTemplate", "QuickAction.retrieveQuickActionTemplates",
+		"Test.newSendEmailQuickActionDefaults":
+		return "", false
+	}
 	for _, prefix := range []string{"Approval.", "Auth.", "QuickAction.", "Canvas.", "Continuation."} {
 		if len(callee) >= len(prefix) && strings.EqualFold(callee[:len(prefix)], prefix) {
 			switch prefix {
@@ -4884,6 +4928,211 @@ func unsupportedIntegrationSurface(callee string) (string, bool) {
 		}
 	}
 	return "", false
+}
+
+func (vm *VM) quickActionDescribeAvailable(args []Value) (Value, error) {
+	if len(args) != 1 || args[0].Kind != ValueString {
+		return Null, fmt.Errorf("QuickAction.describeAvailableQuickActions expects parentType String")
+	}
+	parentType := strings.TrimSpace(args[0].Text)
+	out := typedList("List<QuickAction.DescribeAvailableQuickActionResult>")
+	for _, action := range vm.quickActionMetadata() {
+		if parentType != "" && action.TargetObject != "" && !strings.EqualFold(action.TargetObject, parentType) {
+			continue
+		}
+		result := Object("QuickAction.DescribeAvailableQuickActionResult")
+		result.Fields["name"] = String(action.Name)
+		result.Fields["label"] = String(firstNonEmptyString(action.Label, action.Name))
+		result.Fields["type"] = String(firstNonEmptyString(action.Type, "Action"))
+		result.Fields["actionenumorid"] = String(action.Name)
+		out.List = append(out.List, result)
+	}
+	return out, nil
+}
+
+func (vm *VM) quickActionDescribe(args []Value) (Value, error) {
+	if len(args) != 1 || args[0].Kind != ValueList {
+		return Null, fmt.Errorf("QuickAction.describeQuickActions expects List<String>")
+	}
+	out := typedList("List<QuickAction.DescribeQuickActionResult>")
+	for _, name := range args[0].List {
+		if name.Kind != ValueString {
+			return Null, fmt.Errorf("QuickAction.describeQuickActions expects List<String>")
+		}
+		action, ok := vm.quickActionByName(name.Text)
+		if !ok {
+			action = storage.QuickActionMetadata{Name: name.Text, Label: name.Text, Type: "Action"}
+		}
+		result := Object("QuickAction.DescribeQuickActionResult")
+		result.Fields["name"] = String(action.Name)
+		result.Fields["label"] = String(firstNonEmptyString(action.Label, action.Name))
+		result.Fields["type"] = String(firstNonEmptyString(action.Type, "Action"))
+		result.Fields["actionenumorid"] = String(action.Name)
+		result.Fields["contextsobjecttype"] = String(action.TargetObject)
+		result.Fields["targetsobjecttype"] = String(action.TargetObject)
+		result.Fields["defaultvalues"] = typedList("List<QuickAction.DescribeQuickActionDefaultValue>")
+		result.Fields["parameters"] = typedList("List<QuickAction.DescribeQuickActionParameter>")
+		result.Fields["colors"] = typedList("List<Schema.DescribeColorResult>")
+		result.Fields["icons"] = typedList("List<Schema.DescribeIconResult>")
+		result.Fields["showquickactionlcheader"] = Bool(false)
+		result.Fields["showquickactionvfheader"] = Bool(false)
+		out.List = append(out.List, result)
+	}
+	return out, nil
+}
+
+func (vm *VM) quickActionRetrieveTemplate(args []Value) (Value, error) {
+	if len(args) != 2 || args[0].Kind != ValueString || !isApexIDLikeValue(args[1]) {
+		return Null, fmt.Errorf("QuickAction.retrieveQuickActionTemplate expects quickActionName String and contextId Id")
+	}
+	return vm.quickActionTemplateResult(args[0].Text, args[1]), nil
+}
+
+func (vm *VM) quickActionRetrieveTemplates(args []Value) (Value, error) {
+	if len(args) != 2 || args[0].Kind != ValueList || !isApexIDLikeValue(args[1]) {
+		return Null, fmt.Errorf("QuickAction.retrieveQuickActionTemplates expects List<String> and contextId Id")
+	}
+	out := typedList("List<QuickAction.QuickActionTemplateResult>")
+	for _, name := range args[0].List {
+		if name.Kind != ValueString {
+			return Null, fmt.Errorf("QuickAction.retrieveQuickActionTemplates expects List<String> and contextId Id")
+		}
+		out.List = append(out.List, vm.quickActionTemplateResult(name.Text, args[1]))
+	}
+	return out, nil
+}
+
+func (vm *VM) testNewSendEmailQuickActionDefaults(args []Value) (Value, error) {
+	if len(args) != 2 || !isApexIDLikeValue(args[0]) || !isApexIDLikeValue(args[1]) {
+		return Null, fmt.Errorf("Test.newSendEmailQuickActionDefaults expects contextId Id and replyToId Id")
+	}
+	if err := vm.requireTestContext("Test.newSendEmailQuickActionDefaults"); err != nil {
+		return Null, err
+	}
+	defaults := Object("QuickAction.SendEmailQuickActionDefaults")
+	defaults.Fields["actionName"] = String("SendEmail")
+	defaults.Fields["actionType"] = String("SendEmail")
+	defaults.Fields["contextId"] = args[0]
+	defaults.Fields["inReplyToId"] = args[1]
+	defaults.Fields["fromAddressList"] = typedList("List<String>")
+	defaults.Fields["targetSObject"] = Object("EmailMessage")
+	return defaults, nil
+}
+
+func (vm *VM) quickActionTemplateResult(name string, contextID Value) Value {
+	result := Object("QuickAction.QuickActionTemplateResult")
+	result.Fields["contextid"] = String(contextID.String())
+	result.Fields["success"] = Bool(true)
+	result.Fields["errors"] = typedList("List<Database.Error>")
+	result.Fields["defaultvalues"] = vm.quickActionTemplateSObject(name)
+	result.Fields["defaultvalueformulas"] = Object("SObject")
+	return result
+}
+
+func (vm *VM) quickActionTemplateSObject(name string) Value {
+	action, ok := vm.quickActionByName(name)
+	objectName := ""
+	if ok {
+		objectName = action.TargetObject
+	}
+	if objectName == "" {
+		objectName = quickActionObjectFromName(name)
+	}
+	if objectName == "" {
+		objectName = "SObject"
+	}
+	record := Object(objectName)
+	record.Fields["QuickActionName"] = String(name)
+	return record
+}
+
+func (vm *VM) quickActionByName(name string) (storage.QuickActionMetadata, bool) {
+	for _, action := range vm.quickActionMetadata() {
+		if strings.EqualFold(action.Name, name) {
+			return action, true
+		}
+	}
+	return storage.QuickActionMetadata{}, false
+}
+
+func (vm *VM) quickActionMetadata() []storage.QuickActionMetadata {
+	if vm.Org == nil {
+		return nil
+	}
+	return vm.Org.Metadata.QuickActions
+}
+
+func quickActionObjectFromName(name string) string {
+	if dot := strings.IndexByte(name, '.'); dot > 0 {
+		return name[:dot]
+	}
+	return ""
+}
+
+func firstNonEmptyString(values ...string) string {
+	for _, value := range values {
+		if strings.TrimSpace(value) != "" {
+			return value
+		}
+	}
+	return ""
+}
+
+func callQuickActionMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	method = canonicalPlatformObjectMemberName(receiver.Type, method)
+	if strings.HasPrefix(method, "get") || strings.HasPrefix(method, "is") {
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("%s.%s expects 0 arguments", receiver.Type, method)
+		}
+		prefix := "get"
+		if strings.HasPrefix(method, "is") {
+			prefix = "is"
+		}
+		field := passiveAccessorFieldName(receiver, strings.TrimPrefix(method, prefix))
+		if _, value, ok := objectFieldValue(receiver, field); ok {
+			return value, receiver, false, true, nil
+		}
+		return quickActionDefaultGetterValue(receiver.Type, method), receiver, false, true, nil
+	}
+	if strings.HasPrefix(method, "set") {
+		if len(args) != 1 {
+			return Null, receiver, false, true, fmt.Errorf("%s.%s expects 1 argument", receiver.Type, method)
+		}
+		field := passiveAccessorFieldName(receiver, strings.TrimPrefix(method, "set"))
+		receiver.Fields[field] = args[0]
+		return Null, receiver, true, true, nil
+	}
+	return Null, receiver, false, false, nil
+}
+
+func quickActionDefaultGetterValue(typeName, method string) Value {
+	switch method {
+	case "getDefaultValueFormulas", "getTargetSObject":
+		return Object("SObject")
+	case "getDefaultValues":
+		if strings.EqualFold(typeName, "QuickAction.QuickActionTemplateResult") {
+			return Object("SObject")
+		}
+		return typedList("List<QuickAction.DescribeQuickActionDefaultValue>")
+	case "getErrors":
+		return typedList("List<Database.Error>")
+	case "getIds":
+		return typedList("List<Id>")
+	case "getFromAddressList":
+		return typedList("List<String>")
+	case "getParameters":
+		return typedList("List<QuickAction.DescribeQuickActionParameter>")
+	case "getColors":
+		return typedList("List<Schema.DescribeColorResult>")
+	case "getIcons":
+		return typedList("List<Schema.DescribeIconResult>")
+	case "isSuccess":
+		return Bool(strings.EqualFold(typeName, "QuickAction.QuickActionTemplateResult"))
+	case "isCreated", "isEditableForNew", "isEditableForUpdate", "isPlaceholder", "isRequired", "isCollapsed", "isUseCollapsibleSection", "isUseHeading":
+		return Bool(false)
+	default:
+		return Null
+	}
 }
 
 func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
@@ -8129,7 +8378,10 @@ func (vm *VM) testSetCreatedDate(args []Value) (Value, error) {
 }
 
 func (vm *VM) searchQuery(args []Value) (Value, error) {
-	if len(args) != 1 || args[0].Kind != ValueString {
+	if len(args) != 1 && len(args) != 2 {
+		return Null, fmt.Errorf("Search.query expects query String and optional access level")
+	}
+	if args[0].Kind != ValueString {
 		return Null, fmt.Errorf("Search.query expects query String")
 	}
 	return vm.executeSOSL(args[0].Text, nil)
@@ -8193,9 +8445,6 @@ func (vm *VM) searchSuggest(args []Value) (Value, error) {
 }
 
 func (vm *VM) executeSOSL(raw string, execResult *Result) (Value, error) {
-	if vm.Org == nil {
-		return Null, fmt.Errorf("SOSL requires org state")
-	}
 	queryText, err := vm.expandSOQLBinds(raw)
 	if err != nil {
 		return Null, newExceptionError("QueryException", fmt.Sprintf("%s in query %q", err.Error(), raw))
@@ -8208,27 +8457,29 @@ func (vm *VM) executeSOSL(raw string, execResult *Result) (Value, error) {
 	for _, spec := range objects {
 		rows := List()
 		rows.Type = "List<" + spec.ObjectName + ">"
-		for _, idValue := range vm.fixedSearchResults {
-			id, ok := valueIDString(idValue)
-			if !ok {
-				continue
+		if vm.Org != nil {
+			for _, idValue := range vm.fixedSearchResults {
+				id, ok := valueIDString(idValue)
+				if !ok {
+					continue
+				}
+				objectName, ok := vm.sObjectNameForIDPrefix(idPrefix(id))
+				if !ok {
+					objectName, ok = vm.sObjectNameForExistingID(id)
+				}
+				if !ok || !strings.EqualFold(objectName, spec.ObjectName) {
+					continue
+				}
+				record, ok := vm.findOrgRecord(objectName, storage.ID(id))
+				if !ok {
+					continue
+				}
+				value := vm.vmValueFromRecord(record)
+				if len(spec.Fields) > 0 {
+					value.Fields[sobjectQueriedFieldsField] = queriedSObjectFieldsValue(record.Object, spec.Fields)
+				}
+				rows.List = append(rows.List, value)
 			}
-			objectName, ok := vm.sObjectNameForIDPrefix(idPrefix(id))
-			if !ok {
-				objectName, ok = vm.sObjectNameForExistingID(id)
-			}
-			if !ok || !strings.EqualFold(objectName, spec.ObjectName) {
-				continue
-			}
-			record, ok := vm.findOrgRecord(objectName, storage.ID(id))
-			if !ok {
-				continue
-			}
-			value := vm.vmValueFromRecord(record)
-			if len(spec.Fields) > 0 {
-				value.Fields[sobjectQueriedFieldsField] = queriedSObjectFieldsValue(record.Object, spec.Fields)
-			}
-			rows.List = append(rows.List, value)
 		}
 		groups = append(groups, rows)
 	}
@@ -14781,6 +15032,127 @@ func describeTabIconURL(tab storage.TabMetadata) string {
 		token = strings.ReplaceAll(token, "__", "_")
 	}
 	return "/img/icon/t4v35/custom/" + token + "_120.png.svg"
+}
+
+func (vm *VM) schemaDescribeDataCategoryGroups(sobjects Value) Value {
+	out := typedList("List<Schema.DescribeDataCategoryGroupResult>")
+	if vm.Org == nil {
+		return out
+	}
+	for _, sobject := range sobjects.List {
+		if sobject.Kind != ValueString {
+			continue
+		}
+		for _, group := range vm.dataCategoryGroupsForSObject(sobject.Text) {
+			out.List = append(out.List, describeDataCategoryGroupValue(group))
+		}
+	}
+	return out
+}
+
+func (vm *VM) schemaDescribeDataCategoryGroupStructures(pairs Value, topCategoriesOnly bool) Value {
+	out := typedList("List<Schema.DescribeDataCategoryGroupStructureResult>")
+	if vm.Org == nil {
+		return out
+	}
+	for _, pair := range pairs.List {
+		if pair.Kind != ValueObject {
+			continue
+		}
+		sobjectName := schemaPassiveStringField(pair, "sobject")
+		groupName := schemaPassiveStringField(pair, "dataCategoryGroupName")
+		for _, group := range vm.dataCategoryGroupsForSObject(sobjectName) {
+			if !vmMetadataNameMatches(group.Name, groupName) {
+				continue
+			}
+			out.List = append(out.List, describeDataCategoryGroupStructureValue(group, topCategoriesOnly))
+		}
+	}
+	return out
+}
+
+func (vm *VM) dataCategoryGroupsForSObject(sobjectName string) []storage.DataCategoryGroup {
+	if vm == nil || vm.Org == nil {
+		return nil
+	}
+	groups := make([]storage.DataCategoryGroup, 0)
+	for _, group := range vm.Org.Metadata.DataCategoryGroups {
+		if !vmMetadataNameMatches(group.SObjectName, sobjectName) {
+			continue
+		}
+		groups = append(groups, group)
+	}
+	sort.Slice(groups, func(i, j int) bool { return groups[i].Name < groups[j].Name })
+	return groups
+}
+
+func describeDataCategoryGroupValue(group storage.DataCategoryGroup) Value {
+	value := Object("Schema.DescribeDataCategoryGroupResult")
+	value.Fields["name"] = String(group.Name)
+	value.Fields["label"] = String(metadataLabel(group.Label, group.Name))
+	value.Fields["description"] = String(group.Description)
+	value.Fields["sobject"] = String(group.SObjectName)
+	value.Fields["categorycount"] = Int(int64(countDataCategories(group.Categories)))
+	return value
+}
+
+func describeDataCategoryGroupStructureValue(group storage.DataCategoryGroup, topCategoriesOnly bool) Value {
+	value := Object("Schema.DescribeDataCategoryGroupStructureResult")
+	value.Fields["name"] = String(group.Name)
+	value.Fields["label"] = String(metadataLabel(group.Label, group.Name))
+	value.Fields["description"] = String(group.Description)
+	value.Fields["sobject"] = String(group.SObjectName)
+	categories := typedList("List<Schema.DataCategory>")
+	for _, category := range group.Categories {
+		categories.List = append(categories.List, describeDataCategoryValue(category, topCategoriesOnly))
+	}
+	value.Fields["topcategories"] = categories
+	return value
+}
+
+func describeDataCategoryValue(category storage.DataCategory, topCategoriesOnly bool) Value {
+	value := Object("Schema.DataCategory")
+	value.Fields["name"] = String(category.Name)
+	value.Fields["label"] = String(metadataLabel(category.Label, category.Name))
+	children := typedList("List<Schema.DataCategory>")
+	if !topCategoriesOnly {
+		for _, child := range category.Children {
+			children.List = append(children.List, describeDataCategoryValue(child, false))
+		}
+	}
+	value.Fields["childcategories"] = children
+	return value
+}
+
+func countDataCategories(categories []storage.DataCategory) int {
+	count := 0
+	for _, category := range categories {
+		count++
+		count += countDataCategories(category.Children)
+	}
+	return count
+}
+
+func schemaPassiveStringField(value Value, field string) string {
+	_, fieldValue, ok := objectFieldValue(value, field)
+	if !ok {
+		return ""
+	}
+	if fieldValue.Kind == ValueString {
+		return fieldValue.Text
+	}
+	return ""
+}
+
+func metadataLabel(label, fallback string) string {
+	if strings.TrimSpace(label) != "" {
+		return label
+	}
+	return fallback
+}
+
+func vmMetadataNameMatches(candidate, requested string) bool {
+	return strings.EqualFold(strings.TrimSpace(candidate), strings.TrimSpace(requested))
 }
 
 func (vm *VM) describeSObjectValue(name string, definition storage.ObjectDefinition) Value {
@@ -24130,6 +24502,72 @@ func (vm *VM) generatedPlatformStaticDefault(callee string, args []Value) (Value
 	return vm.generatedPlatformMethodDefaultReturn(method, Null, args), true
 }
 
+func (vm *VM) callConnectAPITestFixtureStatic(callee string, args []Value) (Value, bool, error) {
+	className, methodName, ok := vm.splitClassMember(callee)
+	if !ok || !strings.HasPrefix(className, "ConnectApi.") {
+		return Null, false, nil
+	}
+	if connectAPITestSetterName(methodName) {
+		method, ok := vm.generatedPlatformStaticMethodByNameArity(className, methodName, len(args))
+		if !ok || !strings.EqualFold(method.ReturnType, "void") || len(args) == 0 {
+			return Null, false, nil
+		}
+		if vm.testContext == nil {
+			return Null, true, nil
+		}
+		if vm.testContext.ConnectAPIFixtures == nil {
+			vm.testContext.ConnectAPIFixtures = make(map[string]Value)
+		}
+		targetMethod := connectAPITestSetterTarget(methodName)
+		vm.testContext.ConnectAPIFixtures[connectAPITestFixtureKey(className, targetMethod, args[:len(args)-1])] = args[len(args)-1]
+		return Null, true, nil
+	}
+	if vm.testContext == nil || len(vm.testContext.ConnectAPIFixtures) == 0 {
+		return Null, false, nil
+	}
+	if _, ok := vm.generatedPlatformStaticMethodByNameArity(className, methodName, len(args)); !ok {
+		return Null, false, nil
+	}
+	value, ok := vm.testContext.ConnectAPIFixtures[connectAPITestFixtureKey(className, methodName, args)]
+	if !ok {
+		return Null, false, nil
+	}
+	return value, true, nil
+}
+
+func (vm *VM) generatedPlatformStaticMethodByNameArity(className, methodName string, arity int) (Method, bool) {
+	methodsByName := generatedPlatformMethodIndex[strings.ToLower(className)]
+	if len(methodsByName) == 0 {
+		return Method{}, false
+	}
+	for _, method := range methodsByName[strings.ToLower(methodName)] {
+		if method.IsStatic && len(method.Params) == arity {
+			return method, true
+		}
+	}
+	return Method{}, false
+}
+
+func connectAPITestSetterName(methodName string) bool {
+	return len(methodName) > len("setTest") && strings.HasPrefix(strings.ToLower(methodName), "settest")
+}
+
+func connectAPITestSetterTarget(methodName string) string {
+	target := methodName[len("setTest"):]
+	if target == "" {
+		return target
+	}
+	return strings.ToLower(target[:1]) + target[1:]
+}
+
+func connectAPITestFixtureKey(className, methodName string, args []Value) string {
+	parts := []string{strings.ToLower(className), strings.ToLower(methodName)}
+	for _, arg := range args {
+		parts = append(parts, mapKeyWithSeen(arg, map[uint64]bool{}))
+	}
+	return strings.Join(parts, "\x00")
+}
+
 func (vm *VM) generatedOptionalWrapperStaticDefault(className, methodName string, args []Value) (Value, bool) {
 	if !vm.generatedOptionalWrapperType(className) {
 		return Null, false
@@ -25879,6 +26317,13 @@ func canonicalPlatformObjectMemberName(typeName, method string) string {
 		"getTemplateName", "getUnsubscribeComment", "getUnsubscribeUrls",
 		"getOneClickPost", "isTreatBodiesAsTemplate", "isTreatTargetObjectAsRecipient",
 		"isUserMail",
+		"getActionEnumOrId", "getActionName", "getActionType", "getContextId", "getDefaultValue",
+		"getDefaultValueFormulas", "getDefaultValues", "getErrors", "getField", "getFromAddressList",
+		"getInReplyToId", "getLayout", "getParameters", "getQuickActionName", "getRecord", "getSuccessMessage",
+		"getTargetParentField", "getTargetRecordTypeId", "getTargetSObject", "getTargetSobjectType",
+		"getContextSobjectType", "getIds", "isCreated", "isEditableForNew", "isEditableForUpdate",
+		"isPlaceholder", "isRequired", "isSuccess", "setContextId", "setIgnoreTemplateSubject",
+		"setInsertTemplateBody", "setQuickActionName", "setRecord", "setTemplateId",
 	}
 	if isExceptionType(typeName) {
 		known = append(known,
@@ -29035,6 +29480,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	}
 	if value, handled, err := vm.callGeneratedOptionalWrapperMember(receiver, method, args); handled || err != nil {
 		return value, receiver, false, true, err
+	}
+	if strings.HasPrefix(receiver.Type, "QuickAction.") {
+		if value, updated, mutated, handled, err := callQuickActionMember(receiver, method, args); handled || err != nil {
+			return value, updated, mutated, true, err
+		}
 	}
 	if strings.HasPrefix(receiver.Type, "Canvas.") {
 		if value, updated, mutated, handled, err := vm.callCanvasMember(receiver, method, args, result); handled || err != nil {

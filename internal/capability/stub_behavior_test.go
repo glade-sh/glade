@@ -31,9 +31,12 @@ func TestBuildStubBehaviorReportUsesStdlibEvidence(t *testing.T) {
 	if len(stringTrim.Evidence) == 0 {
 		t.Fatalf("String.trim missing evidence")
 	}
-	search := entries["Search"]
-	if search.Status != StubBehaviorUnsupported {
-		t.Fatalf("Search status = %q", search.Status)
+	searchFind := findStubBehaviorEntry(entries, "Search.find(")
+	if searchFind == nil {
+		t.Fatalf("missing Search.find entry")
+	}
+	if searchFind.Status != StubBehaviorImplemented {
+		t.Fatalf("Search.find status = %q", searchFind.Status)
 	}
 	pageCtor := findStubBehaviorEntry(entries, "PageReference.<init>(")
 	if pageCtor == nil {
@@ -53,13 +56,15 @@ func TestStubBehaviorSeparatesServiceMethodsFromPassiveDTOs(t *testing.T) {
 
 	assertStubBehaviorPrefix(t, entries, "ConnectApi.Organization.getSettings(", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "ConnectApi.ChatterUsers.getFollowings(", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "ConnectApi.ChatterFeeds.setTestGetFeedElementsFromFeed(", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "ConnectApi.ChatterUsers.getFollowers(", StubBehaviorUnsupported)
 	assertStubBehaviorPrefix(t, entries, "ConnectApi.ChatterFeeds.getFeed(", StubBehaviorUnsupported)
 	assertStubBehaviorPrefix(t, entries, "ConnectApi.Communities.getCommunities(", StubBehaviorUnsupported)
 	assertStubBehaviorPrefix(t, entries, "ConnectApi.ABnExperimentActionEnum.Start()", StubBehaviorPassiveDefault)
 	assertStubBehaviorPrefix(t, entries, "ConnectApi.FeedElement.getBuildVersion(", StubBehaviorPassiveDefault)
 	assertStubBehaviorPrefix(t, entries, "ConnectApi.FeedElement.body(", StubBehaviorPassiveDefault)
-	assertStubBehaviorPrefix(t, entries, "Schema.describeDataCategoryGroups(", StubBehaviorUnsupported)
+	assertStubBehaviorPrefix(t, entries, "Schema.describeDataCategoryGroups(", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "Schema.describeDataCategoryGroupStructures(", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "Schema.DataCategoryGroupSobjectTypePair.setSobject(String)", StubBehaviorPassiveDefault)
 	assertStubBehaviorPrefix(t, entries, "Schema.DataCategoryGroupSobjectTypePair.getDataCategoryGroupName()", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "Schema.DataCategory.getChildCategories()", StubBehaviorImplemented)
@@ -70,6 +75,7 @@ func TestStubBehaviorSeparatesServiceMethodsFromPassiveDTOs(t *testing.T) {
 	assertStubBehaviorPrefix(t, entries, "Cache.Org.getMissRate()", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "Continuation.addHttpRequest(", StubBehaviorUnsupported)
 	assertStubBehaviorPrefix(t, entries, "Http.send(", StubBehaviorUnsupported)
+	assertStubBehaviorPrefix(t, entries, "Search.query(", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "Search.find(", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "Assert.isInstanceOfType(Object,Type)", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "Assert.isNotInstanceOfType(Object,Type)", StubBehaviorImplemented)
@@ -92,6 +98,12 @@ func TestStubBehaviorSeparatesServiceMethodsFromPassiveDTOs(t *testing.T) {
 	assertStubBehaviorPrefix(t, entries, "Collator.getInstance()", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "Collator.compare(String,String)", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "SObject.getQuickActionName()", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "QuickAction.describeAvailableQuickActions(", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "QuickAction.describeQuickActions(", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "QuickAction.retrieveQuickActionTemplate(", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "QuickAction.retrieveQuickActionTemplates(", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "QuickAction.performQuickAction(", StubBehaviorUnsupported)
+	assertStubBehaviorPrefix(t, entries, "Test.newSendEmailQuickActionDefaults(", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "SObject.getValues(String)", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "LIST.addToRelationship(", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "LIST.getAddedToRelationship()", StubBehaviorImplemented)

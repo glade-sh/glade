@@ -3478,6 +3478,56 @@ System.assertEquals('/lightning/o/Widget__c/list', tab.getUrl());
 	}
 }
 
+func TestExecDescribeDataCategoriesFromLocalMetadata(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Object> groups = Schema.describeDataCategoryGroups(new List<String>{'Knowledge__kav'});
+System.assertEquals(1, groups.size());
+Object group = groups[0];
+System.assertEquals('Products', group.getName());
+System.assertEquals('Products', group.getLabel());
+System.assertEquals('Knowledge__kav', group.getSobject());
+System.assertEquals(2, group.getCategoryCount());
+
+Schema.DataCategoryGroupSobjectTypePair pair = new Schema.DataCategoryGroupSobjectTypePair();
+pair.setSobject('Knowledge__kav');
+pair.setDataCategoryGroupName('Products');
+List<Object> structures = Schema.describeDataCategoryGroupStructures(new List<Schema.DataCategoryGroupSobjectTypePair>{pair}, false);
+System.assertEquals(1, structures.size());
+Object structure = structures[0];
+List<Object> topCategories = structure.getTopCategories();
+System.assertEquals(1, topCategories.size());
+Object hardware = topCategories[0];
+System.assertEquals('Hardware', hardware.getName());
+System.assertEquals(1, hardware.getChildCategories().size());
+
+List<Object> topOnly = Schema.describeDataCategoryGroupStructures(new List<Schema.DataCategoryGroupSobjectTypePair>{pair}, true)[0].getTopCategories();
+System.assertEquals(0, topOnly[0].getChildCategories().size());
+System.assertEquals(0, Schema.describeDataCategoryGroups(new List<String>{'Missing__kav'}).size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Metadata.DataCategoryGroups = []storage.DataCategoryGroup{{
+		Name:        "Products",
+		Label:       "Products",
+		SObjectName: "Knowledge__kav",
+		Categories: []storage.DataCategory{{
+			Name:  "Hardware",
+			Label: "Hardware",
+			Children: []storage.DataCategory{{
+				Name:  "Laptops",
+				Label: "Laptops",
+			}},
+		}},
+	}}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecDescribeUnsupportedMetadataEdges(t *testing.T) {
 	tests := []struct {
 		name   string
