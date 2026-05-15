@@ -186,6 +186,9 @@ func localStubBehaviorEvidenceOverride(symbol typesys.TypeSymbol, member typesys
 }
 
 func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.MemberSymbol) (StubBehaviorStatus, string, bool) {
+	if genericEnumConstantBehaviorMember(symbol, member) {
+		return StubBehaviorImplemented, "enum constant is materialized by the VM as a deterministic typed enum value", true
+	}
 	if member.Kind != apexast.DeclarationMethod && member.Kind != apexast.DeclarationConstructor {
 		return "", "", false
 	}
@@ -2376,6 +2379,17 @@ func genericEnumBehaviorMethod(member typesys.MemberSymbol) bool {
 	default:
 		return false
 	}
+}
+
+func genericEnumConstantBehaviorMember(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if !stubBehaviorMemberStatic(member) {
+		return false
+	}
+	if member.Kind != apexast.DeclarationField && member.Kind != apexast.DeclarationProperty {
+		return false
+	}
+	typeName := stubBehaviorTypeName(symbol)
+	return member.Type == "" || strings.EqualFold(member.Type, typeName)
 }
 
 func generatedDTOAccessorBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {

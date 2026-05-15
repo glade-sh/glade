@@ -55,6 +55,8 @@ func TestStubBehaviorSeparatesServiceMethodsFromPassiveDTOs(t *testing.T) {
 	}
 
 	assertStubBehaviorPrefix(t, entries, "ConnectApi.Organization.getSettings(", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "ConnectApi.NamedCredentialType.SecuredEndpoint", StubBehaviorImplemented)
+	assertStubBehaviorPrefix(t, entries, "ConnectApi.CredentialAuthenticationProtocol.Custom", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "ConnectApi.ChatterUsers.getFollowings(", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "ConnectApi.ChatterFeeds.setTestGetFeedElementsFromFeed(", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "ConnectApi.ChatterUsers.getFollowers(", StubBehaviorImplemented)
@@ -161,7 +163,7 @@ func TestStubBehaviorSeparatesServiceMethodsFromPassiveDTOs(t *testing.T) {
 	assertStubBehaviorPrefix(t, entries, "Ideas.getUnreadRecentReplies(String,String)", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "Ideas.markRead(String)", StubBehaviorUnsupported)
 	assertStubBehaviorPrefix(t, entries, "URL.getFileFieldURL(String,String)", StubBehaviorImplemented)
-	assertStubBehaviorPrefix(t, entries, "ConnectApi.ABnExperimentActionEnum.Start()", StubBehaviorPassiveDefault)
+	assertStubBehaviorPrefix(t, entries, "ConnectApi.ABnExperimentActionEnum.Start()", StubBehaviorImplemented)
 	assertStubBehaviorPrefix(t, entries, "ConnectApi.FeedElement.getBuildVersion(", StubBehaviorPassiveDefault)
 	assertStubBehaviorPrefix(t, entries, "ConnectApi.FeedElement.body(", StubBehaviorPassiveDefault)
 	assertStubBehaviorPrefix(t, entries, "Schema.describeDataCategoryGroups(", StubBehaviorImplemented)

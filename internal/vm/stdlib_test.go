@@ -756,6 +756,21 @@ System.assertEquals('external-account', (String)sync.adServerAccountId);
 System.assertEquals(1, ((List<String>)sync.contactIds).size());
 System.assertEquals('NA', (String)((Map<String,Object>)sync.customFields).get('region'));
 
+ConnectApi.NamedCredentialInput namedCredential = new ConnectApi.NamedCredentialInput();
+namedCredential.developerName = 'googleBooksAPIApex';
+namedCredential.type = ConnectApi.NamedCredentialType.SecuredEndpoint;
+namedCredential.calloutOptions = new ConnectApi.NamedCredentialCalloutOptionsInput();
+namedCredential.calloutOptions.generateAuthorizationHeader = true;
+System.assertEquals('googleBooksAPIApex', (String)namedCredential.developerName);
+System.assertEquals(ConnectApi.NamedCredentialType.SecuredEndpoint, namedCredential.type);
+System.assertEquals('SecuredEndpoint', ConnectApi.NamedCredentialType.SecuredEndpoint.name());
+System.assertEquals(2, ConnectApi.NamedCredentialType.SecuredEndpoint.ordinal());
+System.assertEquals(3, ConnectApi.NamedCredentialType.values().size());
+System.assertEquals(ConnectApi.NamedCredentialType.PrivateEndpoint, ConnectApi.NamedCredentialType.values()[1]);
+System.assertEquals(ConnectApi.CredentialAuthenticationProtocol.Custom, ConnectApi.CredentialAuthenticationProtocol.valueOf('Custom'));
+System.assertEquals(5, ConnectApi.CredentialAuthenticationProtocol.values().size());
+System.assertEquals(true, namedCredential.calloutOptions.generateAuthorizationHeader);
+
 CommerceExtension.Resolution registered = new CommerceExtension.Resolution(CommerceExtension.ResolutionStates.EXECUTE_REGISTERED);
 CommerceExtension.Resolution provider = new CommerceExtension.Resolution('local-provider');
 System.assertEquals(CommerceExtension.ResolutionStates.EXECUTE_REGISTERED, registered.getResolutionState());

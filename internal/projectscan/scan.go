@@ -2279,13 +2279,25 @@ func supportedCacheConnectAPISymbol(symbol, evidence string) bool {
 	for _, needle := range []string{
 		"Cache.", "ConnectApi.Organization.getSettings", "ConnectApi.Communities.getCommunity",
 		"ConnectApi.OrganizationSettings", "ConnectApi.UserSettings", "ConnectApi.TimeZone",
+		"ConnectApi.ChatterUsers.getFollowings", "ConnectApi.NamedCredentials.getExternalCredential",
 		"ConnectApi.UserProfiles.setPhoto", "ConnectApi.UserProfiles.deletePhoto",
 	} {
 		if strings.Contains(evidence, needle) {
 			return true
 		}
 	}
+	if strings.HasPrefix(symbol, "ConnectApi.") && !connectAPIMethodCallEvidence(symbol, evidence) {
+		return true
+	}
 	return false
+}
+
+func connectAPIMethodCallEvidence(symbol, evidence string) bool {
+	if symbol == "" || evidence == "" {
+		return false
+	}
+	re := regexp.MustCompile(regexp.QuoteMeta(symbol) + `\.[A-Za-z_][A-Za-z0-9_]*\s*\(`)
+	return re.FindStringIndex(evidence) != nil
 }
 
 func supportedAuthSymbol(symbol, evidence string) bool {

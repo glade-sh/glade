@@ -56,6 +56,10 @@ import { getObjectInfo } from 'lightning/uiObjectInfoApi';
     System.debug(ConnectApi.Organization.getSettings().orgId);
     ConnectApi.UserSettings settings = ConnectApi.Organization.getSettings().userSettings;
     System.debug(settings.timeZone.name);
+    ConnectApi.NamedCredentialType namedCredentialType = ConnectApi.NamedCredentialType.SecuredEndpoint;
+    System.debug(namedCredentialType);
+    System.debug(ConnectApi.NamedCredentials.getExternalCredential('googleBooksAPIApex'));
+    System.debug(ConnectApi.ChatterUsers.getFollowings(null, UserInfo.getUserId()));
     Auth.JWT jwt = new Auth.JWT();
     jwt.setIss('issuer');
     Auth.SessionManagement.getCurrentSession();
@@ -142,6 +146,15 @@ import { getObjectInfo } from 'lightning/uiObjectInfoApi';
 	}
 	if hasLineFindingContaining(report, "platform.cache-connectapi", "src/classes/UsesPlatform.cls", "ConnectApi.UserSettings") {
 		t.Fatalf("supported ConnectApi.UserSettings was reported as a blocker")
+	}
+	if hasLineFindingContaining(report, "platform.cache-connectapi", "src/classes/UsesPlatform.cls", "ConnectApi.NamedCredentialType") {
+		t.Fatalf("supported ConnectApi enum/type reference was reported as a blocker")
+	}
+	if hasLineFindingContaining(report, "platform.cache-connectapi", "src/classes/UsesPlatform.cls", "ConnectApi.NamedCredentials.getExternalCredential") {
+		t.Fatalf("supported ConnectApi.NamedCredentials.getExternalCredential was reported as a blocker")
+	}
+	if hasLineFindingContaining(report, "platform.cache-connectapi", "src/classes/UsesPlatform.cls", "ConnectApi.ChatterUsers.getFollowings") {
+		t.Fatalf("supported ConnectApi.ChatterUsers.getFollowings was reported as a blocker")
 	}
 	if hasLineFindingContaining(report, "platform.auth-context", "src/classes/UsesPlatform.cls", "Auth.JWT jwt") {
 		t.Fatalf("supported Auth.JWT model was reported as a blocker")

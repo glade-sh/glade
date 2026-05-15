@@ -6350,8 +6350,12 @@ func (vm *VM) connectAPIOrganizationSettings(args []Value) (Value, error) {
 		orgID = vm.Org.OrgID
 	}
 	settings := Object("ConnectApi.OrganizationSettings")
+	settings.Fields["id"] = String(orgID)
 	settings.Fields["orgId"] = String(orgID)
 	settings.Fields["name"] = String(vm.firstOrgRecordString("Organization", "Name", "Local Organization"))
+	settings.Fields["defaultLanguage"] = String(vm.currentUserInfoField("LanguageLocaleKey", "en_US"))
+	settings.Fields["defaultLocale"] = String(vm.currentUserInfoField("LocaleSidKey", "en_US"))
+	settings.Fields["defaultTimeZone"] = connectAPITimeZone(vm.currentUserTimeZoneID())
 	settings.Fields["userSettings"] = vm.connectAPIUserSettings()
 	return settings, nil
 }
@@ -6393,7 +6397,10 @@ func connectAPITimeZone(name string) Value {
 		name = "America/Los_Angeles"
 	}
 	tz := Object("ConnectApi.TimeZone")
+	tz.Fields["id"] = String(name)
 	tz.Fields["name"] = String(name)
+	tz.Fields["displayName"] = String(name)
+	tz.Fields["offset"] = Int(0)
 	tz.Fields["gmtOffset"] = Int(0)
 	return tz
 }
@@ -14296,13 +14303,14 @@ func CommonSObjectTypeNames() []string {
 }
 
 type generatedPlatformType struct {
-	Name         string
-	Kind         apexast.DeclarationKind
-	SuperClass   string
-	Fields       map[string]Field
-	FieldOrder   []string
-	StaticFields map[string]Field
-	Constructors []Method
+	Name             string
+	Kind             apexast.DeclarationKind
+	SuperClass       string
+	Fields           map[string]Field
+	FieldOrder       []string
+	StaticFields     map[string]Field
+	StaticFieldOrder []string
+	Constructors     []Method
 }
 
 func buildGeneratedPlatformTypeIndex() map[string]generatedPlatformType {
@@ -14332,6 +14340,7 @@ func buildGeneratedPlatformTypeIndex() map[string]generatedPlatformType {
 				}
 				if field.Static {
 					generated.StaticFields[field.Name] = field
+					generated.StaticFieldOrder = append(generated.StaticFieldOrder, field.Name)
 				} else {
 					generated.Fields[field.Name] = field
 					generated.FieldOrder = append(generated.FieldOrder, field.Name)
@@ -27217,7 +27226,9 @@ func (vm *VM) generatedPlatformStaticFieldValue(typeName, fieldName string) (Val
 		return Null, false
 	}
 	if generated.Kind == apexast.DeclarationEnum {
-		return Value{Kind: ValueObject, Type: generated.Name, Text: field.Name}, true
+		value := Value{Kind: ValueObject, Type: generated.Name, Text: field.Name}
+		value.Fields = map[string]Value{"ordinal": Int(int64(generatedPlatformEnumOrdinal(generated, field.Name)))}
+		return value, true
 	}
 	return vm.generatedPlatformDefaultValue(field.Type, field.InitialValue), true
 }
@@ -33303,13 +33314,38 @@ func (vm *VM) callGeneratedPlatformEnumStaticMember(typeName, method string, arg
 
 func generatedPlatformEnumNames(generated generatedPlatformType) []string {
 	names := make([]string, 0, len(generated.StaticFields))
-	for name, field := range generated.StaticFields {
+	seen := make(map[string]bool, len(generated.StaticFields))
+	for _, name := range generated.StaticFieldOrder {
+		field, ok := generated.StaticFields[name]
+		if !ok {
+			continue
+		}
 		if field.Type == "" || strings.EqualFold(field.Type, generated.Name) {
 			names = append(names, name)
+			seen[strings.ToLower(name)] = true
 		}
 	}
-	sort.Strings(names)
+	remaining := make([]string, 0)
+	for name, field := range generated.StaticFields {
+		if seen[strings.ToLower(name)] {
+			continue
+		}
+		if field.Type == "" || strings.EqualFold(field.Type, generated.Name) {
+			remaining = append(remaining, name)
+		}
+	}
+	sort.Strings(remaining)
+	names = append(names, remaining...)
 	return names
+}
+
+func generatedPlatformEnumOrdinal(generated generatedPlatformType, value string) int {
+	for i, name := range generatedPlatformEnumNames(generated) {
+		if strings.EqualFold(name, value) {
+			return i
+		}
+	}
+	return -1
 }
 
 func roundingModeValues(args []Value) (Value, error) {
@@ -38370,12 +38406,9 @@ func (vm *VM) callCachePartitionMember(receiver Value, method string, args []Val
 		if len(args) < 2 || len(args) > 5 || args[0].Kind != ValueString {
 			return Null, receiver, fmt.Errorf("%s.put expects String key, value[, ttlSeconds[, visibility[, immutable]]]", receiver.Type)
 		}
-		ttl := int64(0)
-		if len(args) >= 3 {
-			if args[2].Kind != ValueInt {
-				return Null, receiver, fmt.Errorf("%s.put ttl expects Integer seconds", receiver.Type)
-			}
-			ttl = args[2].Int
+		ttl, err := cachePutTTL(receiver.Type+".put", args)
+		if err != nil {
+			return Null, receiver, err
 		}
 		vm.cachePut(partitionName, args[0].Text, args[1], ttl)
 		return Null, receiver, nil
@@ -38549,15 +38582,29 @@ func (vm *VM) cacheStaticDefaultPut(callee string, args []Value) (Value, error) 
 	if len(args) < 2 || len(args) > 5 || args[0].Kind != ValueString {
 		return Null, fmt.Errorf("%s expects String key, value[, ttlSeconds[, visibility[, immutable]]]", callee)
 	}
-	ttl := int64(0)
-	if len(args) >= 3 {
-		if args[2].Kind != ValueInt {
-			return Null, fmt.Errorf("%s ttl expects Integer seconds", callee)
-		}
-		ttl = args[2].Int
+	ttl, err := cachePutTTL(callee, args)
+	if err != nil {
+		return Null, err
 	}
 	vm.cachePut(cacheDefaultPartitionKey(callee), args[0].Text, args[1], ttl)
 	return Null, nil
+}
+
+func cachePutTTL(callee string, args []Value) (int64, error) {
+	if len(args) < 3 {
+		return 0, nil
+	}
+	if args[2].Kind == ValueInt {
+		return args[2].Int, nil
+	}
+	if len(args) == 3 && cacheVisibilityValue(args[2]) {
+		return 0, nil
+	}
+	return 0, fmt.Errorf("%s ttl expects Integer seconds", callee)
+}
+
+func cacheVisibilityValue(value Value) bool {
+	return value.Kind == ValueObject && strings.EqualFold(value.Type, "Cache.Visibility")
 }
 
 func (vm *VM) cacheStaticDefaultRemove(callee string, args []Value) (Value, error) {

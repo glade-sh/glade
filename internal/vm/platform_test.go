@@ -1408,6 +1408,15 @@ func TestExecConnectApiOrganizationSettingsStub(t *testing.T) {
 	program, err := CompileAnonymous(`
 ConnectApi.OrganizationSettings settings = ConnectApi.Organization.getSettings();
 System.assertEquals('00DLOCAL00000001', settings.orgId);
+System.assertEquals('00DLOCAL00000001', settings.id);
+System.assertEquals('Local Organization', settings.name);
+System.assertEquals('en_US', settings.defaultLanguage);
+System.assertEquals('en_US', settings.defaultLocale);
+System.assertEquals('UTC', settings.defaultTimeZone.id);
+System.assertEquals('UTC', settings.defaultTimeZone.name);
+System.assertEquals('UTC', settings.defaultTimeZone.displayName);
+System.assertEquals(0, settings.defaultTimeZone.offset);
+System.assertEquals(0, settings.defaultTimeZone.gmtOffset);
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -1485,18 +1494,21 @@ func TestExecPlatformCachePartitions(t *testing.T) {
 Cache.OrgPartition orgCache = Cache.Org.getPartition('local');
 System.assertEquals(null, orgCache.get('missing'));
 orgCache.put('name', 'Acme');
+orgCache.put('namespaceVisible', 'Scoped', Cache.Visibility.NAMESPACE);
 orgCache.put('visible', 'Trail', 60, Cache.Visibility.ALL, false);
 System.assert(orgCache.contains('name'));
 System.assertEquals('Acme', (String) orgCache.get('name'));
+System.assertEquals('Scoped', (String) orgCache.get('namespaceVisible'));
 System.assertEquals('Trail', (String) orgCache.get('visible'));
 Set<String> orgKeys = orgCache.getKeys();
-System.assertEquals(2, orgKeys.size());
+System.assertEquals(3, orgKeys.size());
 System.assert(orgKeys.contains('name'));
+System.assert(orgKeys.contains('namespaceVisible'));
 System.assert(orgKeys.contains('visible'));
-System.assertEquals(2, orgCache.getNumKeys());
+System.assertEquals(3, orgCache.getNumKeys());
 System.assertEquals('Acme', (String) orgCache.remove('name'));
 System.assert(!orgCache.contains('name'));
-System.assertEquals(1, orgCache.getNumKeys());
+System.assertEquals(2, orgCache.getNumKeys());
 
 Cache.SessionPartition sessionCache = Cache.Session.getPartition('local');
 Cache.Partition generalSession = sessionCache;
@@ -1528,13 +1540,16 @@ orgCache.validatePartitionName('default');
 orgCache.validateKey(false, 'account');
 orgCache.validateKeyValue(false, 'account', 'value');
 Cache.Org.put('defaulted', 'org-default');
+Cache.Org.put('visible-default', 'org-visible', Cache.Visibility.ALL);
 System.assert(Cache.Org.contains('defaulted'));
 System.assertEquals('org-default', (String) Cache.Org.get('defaulted'));
+System.assertEquals('org-visible', (String) Cache.Org.get('visible-default'));
 System.assert(Cache.Org.getKeys().contains('defaulted'));
-System.assertEquals(1, Cache.Org.getNumKeys());
+System.assertEquals(2, Cache.Org.getNumKeys());
 System.assertEquals('org-default', (String) Cache.Org.getPartition('default').get('defaulted'));
 System.assertEquals('org-default', (String) Cache.Org.remove('defaulted'));
 System.assert(!Cache.Org.contains('defaulted'));
+System.assertEquals('org-visible', (String) Cache.Org.remove('visible-default'));
 
 Cache.SecondaryKeyApi secondary = Cache.SecondaryKeyApi.get('localFeature');
 secondary.putImmediate('alpha', 'A', 'group-1');
