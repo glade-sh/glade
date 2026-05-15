@@ -1870,6 +1870,18 @@ System.assertEquals(data, inventory.getInventoryAndPricing(data));
 System.assertEquals(data, inventory.handleInventoryPricingServiceException(new Exception('local'), data));
 System.assertNotEquals(null, inventory.createResponse(data));
 
+System.assertEquals(0, new CommerceDxSampleapp.CommerceDx_Inventory().calculateInventoryLevel('webstore', 'event'));
+new CommerceDxSampleapp.CommerceDx_Inventory().executeNonExistentMethod('webstore');
+System.assertEquals(false, new CommerceDxSampleapp.CommerceDx_Inventory_Tutorial_115().isAvailable('webstore', 'product'));
+System.assertEquals(0, WebStoreContext.getCommerceContext().size());
+commercepayments.ClientSidePaymentAdapter paymentAdapter = new commercepayments.ClientSidePaymentAdapter();
+System.assertEquals(null, paymentAdapter.getClientComponentName());
+System.assertEquals(0, paymentAdapter.getClientConfiguration().size());
+System.assertNotEquals(null, paymentAdapter.processClientRequest(new commercepayments.ClientRequestContext(), new Map<String,Object>()));
+commerce_ordermanagement.ProductExpandResponse expandResponse = new commerce_ordermanagement.ProductExpandService().returnReasons(new commerce_ordermanagement.ProductExpandRequest());
+System.assertNotEquals(null, expandResponse);
+System.assertEquals(null, expandResponse.getSucceed());
+
 System.assertEquals(true, new ime_mrm.EventManagementBudgetApi().getMngEventBudgets(new Map<String,Object>(), new Map<String,Object>(), new Map<String,Object>()).get('success'));
 System.assertEquals(true, new ime_mrm.EventManagementManagedEventApi().getMngEvent(new Map<String,Object>(), new Map<String,Object>(), new Map<String,Object>()).get('success'));
 System.assertEquals(true, new ime_mrm.EventManagementParticipantApi().getMngEventParticipantsByEvent(new Map<String,Object>(), new Map<String,Object>(), new Map<String,Object>()).get('success'));

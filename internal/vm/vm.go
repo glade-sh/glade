@@ -26499,6 +26499,12 @@ func (vm *VM) generatedPlatformStaticDefault(callee string, args []Value) (Value
 			return value, true
 		}
 	}
+	if strings.EqualFold(className, "WebStoreContext") && strings.EqualFold(methodName, "getCommerceContext") {
+		if len(args) != 0 {
+			return Null, false
+		}
+		return typedMap("Map<String,String>"), true
+	}
 	if strings.EqualFold(className, "Ideas") && strings.EqualFold(methodName, "findSimilar") {
 		method, ok := vm.generatedPlatformMethodForArgs(className, methodName, args, true)
 		if !ok {
@@ -27505,7 +27511,7 @@ func (vm *VM) generatedPlatformInstanceDefault(receiverName string, receiver Val
 }
 
 func (vm *VM) generatedPlatformMethodFallbackType(typeName string) bool {
-	if generatedPlatformTopLevelPassiveTypeName(typeName) {
+	if generatedPlatformTopLevelPassiveTypeName(typeName) || commerceLocalHarnessRuntimeType(typeName) {
 		return true
 	}
 	return vm.isPassivePlatformDTOType(typeName)
@@ -27513,6 +27519,9 @@ func (vm *VM) generatedPlatformMethodFallbackType(typeName string) bool {
 
 func (vm *VM) generatedPlatformMethodAllowsDefault(method Method) bool {
 	if industryControllerDefaultStatic(method.ClassName, method.Name) || industryControllerDefaultInstance(method.ClassName, method.Name) {
+		return true
+	}
+	if commerceLocalHarnessRuntimeMethod(method.ClassName, method.Name) {
 		return true
 	}
 	if generatedPlatformTopLevelPassiveTypeName(method.ClassName) ||
@@ -27523,6 +27532,42 @@ func (vm *VM) generatedPlatformMethodAllowsDefault(method Method) bool {
 		return slackGeneratedPlatformPassiveDTOMethod(method)
 	}
 	return vm.isPassivePlatformDTOType(method.ClassName)
+}
+
+func commerceLocalHarnessRuntimeType(typeName string) bool {
+	if strings.HasPrefix(typeName, "CommerceDxSampleapp.") {
+		return true
+	}
+	switch typeName {
+	case "WebStoreContext",
+		"commercepayments.ClientSidePaymentAdapter",
+		"commerce_ordermanagement.ProductExpandService":
+		return true
+	default:
+		return false
+	}
+}
+
+func commerceLocalHarnessRuntimeMethod(className, methodName string) bool {
+	name := strings.ToLower(methodName)
+	if strings.HasPrefix(className, "CommerceDxSampleapp.") {
+		return true
+	}
+	switch className {
+	case "WebStoreContext":
+		return name == "getcommercecontext"
+	case "commercepayments.ClientSidePaymentAdapter":
+		switch name {
+		case "getclientcomponentname", "getclientconfiguration", "processclientrequest":
+			return true
+		default:
+			return false
+		}
+	case "commerce_ordermanagement.ProductExpandService":
+		return name == "returnreasons"
+	default:
+		return false
+	}
 }
 
 func generatedPlatformTopLevelPassiveTypeName(typeName string) bool {
@@ -27576,6 +27621,9 @@ func (vm *VM) generatedPlatformMethodForArgs(className, methodName string, args 
 	method, ok, ambiguous := vm.matchMethodByArgs(candidates, args)
 	if ambiguous {
 		return Method{}, false
+	}
+	if ok && method.ClassName == "" {
+		method.ClassName = className
 	}
 	return method, ok
 }
@@ -28146,6 +28194,9 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			}
 		}
 		dispatchType := runtimeObjectType(receiver)
+		if value, handled := vm.commerceLocalHarnessInstanceDefault(receiverName, receiver, dispatchType, method, args); handled {
+			return value, true, nil
+		}
 		target, ok, ambiguous := vm.resolveInstanceMethodForArgs(dispatchType, method, args)
 		if ambiguous {
 			return Null, true, vm.ambiguousOverloadError(memberCallName(receiverName, dispatchType, method), args)
@@ -28792,6 +28843,24 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 		return value, true, nil
 	}
 	return Null, true, unsupportedCallError(memberCallName(receiverName, receiver.Type, method))
+}
+
+func (vm *VM) commerceLocalHarnessInstanceDefault(receiverName string, receiver Value, dispatchType, method string, args []Value) (Value, bool) {
+	candidates := []string{dispatchType, receiver.Type, receiver.Static, receiver.Runtime}
+	if declaredType := vm.declaredReceiverType(receiverName); declaredType != "" {
+		candidates = append(candidates, declaredType)
+	}
+	for _, candidate := range candidates {
+		if !commerceLocalHarnessRuntimeMethod(candidate, method) {
+			continue
+		}
+		generated, ok := vm.generatedPlatformMethodForArgs(candidate, method, args, false)
+		if !ok {
+			continue
+		}
+		return vm.generatedPlatformMethodDefaultReturn(generated, receiver, args), true
+	}
+	return Null, false
 }
 
 func memberCallName(receiverName, receiverType, method string) string {

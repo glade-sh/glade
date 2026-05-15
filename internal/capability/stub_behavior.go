@@ -296,6 +296,9 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 	if cartExtensionTestUtilBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "CartExtension test utility creates local Cart DTOs without running Commerce services", true
 	}
+	if commerceLocalHarnessBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "commerce sample or callback extension point returns deterministic local defaults without invoking live Commerce services", true
+	}
 	if sfsqlqueryHarnessBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "sfsqlquery test harness and mock row iterator methods are handled locally without executing SQL service calls", true
 	}
@@ -388,6 +391,47 @@ func sfsqlqueryHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesys.M
 		default:
 			return false
 		}
+	default:
+		return false
+	}
+}
+
+func commerceLocalHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if member.Kind != apexast.DeclarationMethod {
+		return false
+	}
+	typeName := stubBehaviorTypeName(symbol)
+	name := strings.ToLower(member.Name)
+	if strings.HasPrefix(typeName, "CommerceDxSampleapp.") {
+		return true
+	}
+	switch typeName {
+	case "WebStoreContext":
+		return stubBehaviorMemberStatic(member) && name == "getcommercecontext"
+	case "commercepayments.ClientSidePaymentAdapter":
+		switch name {
+		case "getclientcomponentname", "getclientconfiguration", "processclientrequest":
+			return true
+		default:
+			return false
+		}
+	case "commerce_ordermanagement.ProductExpandService":
+		return name == "returnreasons"
+	case "CartExtension.AbstractCartCalculator":
+		return name == "calculate"
+	case "CartExtension.CartCalculate":
+		switch name {
+		case "calculate", "inventory", "postshipping", "prices", "promotions", "shipping", "taxes":
+			return true
+		default:
+			return false
+		}
+	case "CartExtension.InventoryCartCalculator", "CartExtension.PricingCartCalculator",
+		"CartExtension.PromotionsCartCalculator", "CartExtension.ShippingCartCalculator",
+		"CartExtension.TaxCartCalculator":
+		return name == "calculate"
+	case "CartExtension.SplitShipmentService":
+		return name == "arrangeitems"
 	default:
 		return false
 	}
