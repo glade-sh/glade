@@ -1350,6 +1350,27 @@ System.assertEquals('READ_WRITE', String.valueOf(System.getApplicationReadWriteM
 	}
 }
 
+func TestExecAppExchangePassiveValueObjects(t *testing.T) {
+	program, err := CompileAnonymous(`
+AppExchangeTrialTemplate template = new AppExchangeTrialTemplate();
+System.assertEquals(null, template.getCreatedDate());
+System.assertEquals(null, template.getLastModifiedDate());
+System.assertEquals(null, template.getId());
+System.assertEquals(null, template.getName());
+System.assertEquals(null, template.getStatus());
+AppExchangeUserPerms perms = new AppExchangeUserPerms();
+System.assertEquals(false, perms.getCanEditBilling());
+System.assertEquals(false, perms.getCanInstall());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecOrgLimitsLocalSnapshot(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<OrgLimit> limits = OrgLimits.getAll();

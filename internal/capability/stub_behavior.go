@@ -1122,7 +1122,7 @@ func generatedTopLevelPassiveBehaviorType(symbol typesys.TypeSymbol) bool {
 		return false
 	}
 	switch stubBehaviorTypeName(symbol) {
-	case "Answers":
+	case "Answers", "AppExchangeTrialTemplate", "AppExchangeUserPerms":
 		return true
 	default:
 		return false

@@ -23321,14 +23321,14 @@ func (vm *VM) generatedPlatformInstanceDefault(receiverName string, receiver Val
 }
 
 func (vm *VM) generatedPlatformMethodFallbackType(typeName string) bool {
-	if strings.EqualFold(typeName, "Answers") {
+	if generatedPlatformTopLevelPassiveTypeName(typeName) {
 		return true
 	}
 	return vm.isPassivePlatformDTOType(typeName)
 }
 
 func (vm *VM) generatedPlatformMethodAllowsDefault(method Method) bool {
-	if strings.EqualFold(method.ClassName, "Answers") ||
+	if generatedPlatformTopLevelPassiveTypeName(method.ClassName) ||
 		strings.EqualFold(method.ClassName, "ApexPages.IdeaStandardSetController") {
 		return true
 	}
@@ -23336,6 +23336,17 @@ func (vm *VM) generatedPlatformMethodAllowsDefault(method Method) bool {
 		return slackGeneratedPlatformPassiveDTOMethod(method)
 	}
 	return vm.isPassivePlatformDTOType(method.ClassName)
+}
+
+func generatedPlatformTopLevelPassiveTypeName(typeName string) bool {
+	switch {
+	case strings.EqualFold(typeName, "Answers"),
+		strings.EqualFold(typeName, "AppExchangeTrialTemplate"),
+		strings.EqualFold(typeName, "AppExchangeUserPerms"):
+		return true
+	default:
+		return false
+	}
 }
 
 func (vm *VM) generatedPlatformReceiverTypes(receiverName string, receiver Value) []string {
