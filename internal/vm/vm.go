@@ -12141,11 +12141,21 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 		}
 		return results, err
 	}
-	if _, _, err := vm.runTriggersByObject(triggerTimingAfter, op, afterRecords, afterInputBefore, result); err != nil {
+	afterFailures, _, err := vm.runTriggersByObject(triggerTimingAfter, op, afterRecords, afterInputBefore, result)
+	if err != nil {
 		if allOrNone {
 			*vm.Org = backup
 		}
 		return nil, dmlExceptionFromTriggerError(op, err)
+	}
+	if hasDMLFailures(afterFailures) {
+		results = mergeAfterTriggerDMLResults(results, afterFailures)
+		if allOrNone {
+			*vm.Org = backup
+			return results, nil
+		}
+		vm.rollbackAfterTriggerFailures(op, afterRecords, afterFailures, backup)
+		afterRecords = filterAfterTriggerRecords(afterRecords, afterFailures)
 	}
 	if err := vm.runSummaryUpdateTriggers(&engine, allOrNone, backup, result); err != nil {
 		return results, err
@@ -12266,6 +12276,72 @@ func successfulDMLInputs(records, before []storage.Record, results []dml.Result)
 	return filteredRecords, filteredBefore, filteredResults
 }
 
+func mergeAfterTriggerDMLResults(results, afterFailures []dml.Result) []dml.Result {
+	out := append([]dml.Result(nil), results...)
+	failureIndex := 0
+	for i, result := range out {
+		if !result.Success {
+			continue
+		}
+		if failureIndex >= len(afterFailures) {
+			break
+		}
+		failure := afterFailures[failureIndex]
+		failureIndex++
+		if !failure.Success && failure.Error != "" {
+			out[i] = failure
+		}
+	}
+	return out
+}
+
+func filterAfterTriggerRecords(records []storage.Record, failures []dml.Result) []storage.Record {
+	if !hasDMLFailures(failures) {
+		return records
+	}
+	out := make([]storage.Record, 0, len(records))
+	for i, record := range records {
+		if i < len(failures) && !failures[i].Success && failures[i].Error != "" {
+			continue
+		}
+		out = append(out, record)
+	}
+	return out
+}
+
+func (vm *VM) rollbackAfterTriggerFailures(op string, records []storage.Record, failures []dml.Result, backup storage.OrgState) {
+	if vm == nil || vm.Org == nil {
+		return
+	}
+	for i, record := range records {
+		if i >= len(failures) || failures[i].Success || failures[i].Error == "" || record.ID == "" {
+			continue
+		}
+		objectName := record.Object
+		if canonical, ok := storage.ResolveObjectName(*vm.Org, objectName); ok {
+			objectName = canonical
+		}
+		current, ok := vm.Org.Objects[objectName]
+		if !ok {
+			continue
+		}
+		backupObject, hasBackupObject := backup.Objects[objectName]
+		if hasBackupObject {
+			if storedID, previous, found := storage.LookupRecordByID(backupObject.Records, record.ID); found {
+				current.Records[storedID] = previous.Clone()
+				vm.Org.Objects[objectName] = current
+				continue
+			}
+		}
+		if strings.EqualFold(op, "insert") || strings.EqualFold(op, "upsert") {
+			if storedID, _, found := storage.LookupRecordByID(current.Records, record.ID); found {
+				delete(current.Records, storedID)
+				vm.Org.Objects[objectName] = current
+			}
+		}
+	}
+}
+
 func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNone bool, externalIDField string, result *Result) ([]dml.Result, error) {
 	appendTrace(result, "apex.dml.upsert", "apex.dml", map[string]any{
 		"operation": "upsert",
@@ -12351,7 +12427,7 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 		}
 	}
 	for _, kind := range []string{"insert", "update"} {
-		groupRecords, groupBefore, groupResults, _ := successfulGroupedDMLInputs(records, before, engineResults, kinds, kind)
+		groupRecords, groupBefore, groupResults, indices := successfulGroupedDMLInputs(records, before, engineResults, kinds, kind)
 		afterRecords, err := vm.afterRecords(kind, groupRecords, groupResults)
 		if err != nil {
 			if allOrNone {
@@ -12359,11 +12435,25 @@ func (vm *VM) applyUpsertDML(records []storage.Record, targets []*Value, allOrNo
 			}
 			return results, err
 		}
-		if _, err := vm.runTriggers(triggerTimingAfter, kind, afterRecords, groupBefore, result); err != nil {
+		afterFailures, err := vm.runTriggers(triggerTimingAfter, kind, afterRecords, groupBefore, result)
+		if err != nil {
 			if allOrNone {
 				*vm.Org = backup
 			}
 			return nil, dmlExceptionFromTriggerError("upsert", err)
+		}
+		if hasDMLFailures(afterFailures) {
+			for groupIndex, failure := range afterFailures {
+				if groupIndex < len(indices) && !failure.Success && failure.Error != "" {
+					results[indices[groupIndex]] = failure
+				}
+			}
+			if allOrNone {
+				*vm.Org = backup
+				return results, nil
+			}
+			vm.rollbackAfterTriggerFailures(kind, afterRecords, afterFailures, backup)
+			afterRecords = filterAfterTriggerRecords(afterRecords, afterFailures)
 		}
 		if err := vm.runSummaryUpdateTriggers(&engine, allOrNone, backup, result); err != nil {
 			return results, err
@@ -13985,31 +14075,29 @@ func (vm *VM) runTrigger(trigger Trigger, records, oldRecords []storage.Record, 
 	if out.signal == signalThrow {
 		return nil, &apexThrowError{value: out.thrown, stack: append([]callFrame(nil), vm.callStack...)}
 	}
-	if trigger.Timing == triggerTimingBefore {
-		updated := ctx["Trigger.new"]
-		if trigger.Operation == "delete" {
-			updated = ctx["Trigger.old"]
-		}
-		if updated.Kind == ValueList {
-			failures := dmlResultsFromSObjectErrors(records, updated.List)
-			if trigger.Operation != "delete" {
-				for i, item := range updated.List {
-					if i >= len(records) {
-						break
-					}
-					record, err := vm.recordFromValue(&item)
-					if err != nil {
-						return nil, err
-					}
-					if records[i].ID != "" && record.ID == "" {
-						record.ID = records[i].ID
-					}
-					records[i] = record
+	updated := ctx["Trigger.new"]
+	if trigger.Operation == "delete" {
+		updated = ctx["Trigger.old"]
+	}
+	if updated.Kind == ValueList {
+		failures := dmlResultsFromSObjectErrors(records, updated.List)
+		if trigger.Timing == triggerTimingBefore && trigger.Operation != "delete" {
+			for i, item := range updated.List {
+				if i >= len(records) {
+					break
 				}
+				record, err := vm.recordFromValue(&item)
+				if err != nil {
+					return nil, err
+				}
+				if records[i].ID != "" && record.ID == "" {
+					record.ID = records[i].ID
+				}
+				records[i] = record
 			}
-			if hasDMLFailures(failures) {
-				return failures, nil
-			}
+		}
+		if hasDMLFailures(failures) {
+			return failures, nil
 		}
 	}
 	return nil, nil
