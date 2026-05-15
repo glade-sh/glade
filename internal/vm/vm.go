@@ -2929,7 +2929,7 @@ platformStaticCall:
 	case "Database.treeSave":
 		return vm.executeDatabaseTreeSave(args, result)
 	case "Database.convertLead":
-		return Null, unsupportedCallError("Database.convertLead local lead conversion surface")
+		return vm.executeDatabaseConvertLead(args, result)
 	case "Approval.lock":
 		return vm.executeDatabaseRecordAction("lock", args, result, "Approval.LockResult")
 	case "Approval.unlock":
@@ -9436,6 +9436,31 @@ func callDatabaseResultObjectMember(receiver Value, method string, args []Value)
 			return Null, true, fmt.Errorf("%s.getRelationshipSaveResults expects 0 arguments", receiver.Type)
 		}
 		return databaseResultObjectField(receiver, "relationshipSaveResults", List()), true, nil
+	case "getaccountid":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("%s.getAccountId expects 0 arguments", receiver.Type)
+		}
+		return databaseResultObjectField(receiver, "accountId", Null), true, nil
+	case "getcontactid":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("%s.getContactId expects 0 arguments", receiver.Type)
+		}
+		return databaseResultObjectField(receiver, "contactId", Null), true, nil
+	case "getleadid":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("%s.getLeadId expects 0 arguments", receiver.Type)
+		}
+		return databaseResultObjectField(receiver, "leadId", Null), true, nil
+	case "getopportunityid":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("%s.getOpportunityId expects 0 arguments", receiver.Type)
+		}
+		return databaseResultObjectField(receiver, "opportunityId", Null), true, nil
+	case "getrelatedpersonaccountid":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("%s.getRelatedPersonAccountId expects 0 arguments", receiver.Type)
+		}
+		return databaseResultObjectField(receiver, "relatedPersonAccountId", Null), true, nil
 	case "getrelationshipname":
 		if len(args) != 0 {
 			return Null, true, fmt.Errorf("%s.getRelationshipName expects 0 arguments", receiver.Type)
@@ -9465,6 +9490,7 @@ func databaseResultObjectLike(value Value) bool {
 		strings.EqualFold(value.Type, "Database.UndeleteResult"),
 		strings.EqualFold(value.Type, "Database.EmptyRecycleBinResult"),
 		strings.EqualFold(value.Type, "Database.LockResult"),
+		strings.EqualFold(value.Type, "Database.LeadConvertResult"),
 		strings.EqualFold(value.Type, "Database.NestedSaveResult"),
 		strings.EqualFold(value.Type, "Database.RelationshipSaveResult"),
 		strings.EqualFold(value.Type, "Database.UnlockResult"),
@@ -10042,6 +10068,250 @@ func databaseNestedSaveSuccess(value Value) bool {
 		}
 	}
 	return true
+}
+
+func (vm *VM) executeDatabaseConvertLead(args []Value, result *Result) (Value, error) {
+	if len(args) == 0 || len(args) > 3 {
+		return Null, fmt.Errorf("Database.convertLead expects LeadConvert or List<LeadConvert>")
+	}
+	if vm.Org == nil {
+		return Null, fmt.Errorf("DML requires org state")
+	}
+	allOrNone := true
+	for _, arg := range args[1:] {
+		if arg.Kind == ValueBool {
+			allOrNone = arg.Bool
+			continue
+		}
+		if isDatabaseAccessLevelValue(arg) || isDatabaseDMLOptionsValue(arg) {
+			continue
+		}
+		return Null, unsupportedCallError("Database.convertLead overload option local lead conversion surface")
+	}
+	listInput := args[0].Kind == ValueList
+	converts := []Value{args[0]}
+	if listInput {
+		converts = args[0].List
+	}
+	backup := cloneRuntimeOrgState(*vm.Org)
+	values := make([]Value, 0, len(converts))
+	for _, convert := range converts {
+		row, err := vm.convertLeadOne(convert, result)
+		if err != nil {
+			if allOrNone {
+				*vm.Org = backup
+				return Null, err
+			}
+			values = append(values, databaseLeadConvertFailure("", err.Error()))
+			continue
+		}
+		values = append(values, row)
+		if allOrNone && !databaseLeadConvertSuccess(row) {
+			*vm.Org = backup
+			break
+		}
+	}
+	if listInput {
+		return List(values...), nil
+	}
+	if len(values) == 0 {
+		return Null, nil
+	}
+	return values[0], nil
+}
+
+func (vm *VM) convertLeadOne(convert Value, result *Result) (Value, error) {
+	if vm.Org == nil {
+		return Null, fmt.Errorf("DML requires org state")
+	}
+	if convert.Kind != ValueObject || !strings.EqualFold(convert.Type, "Database.LeadConvert") {
+		return Null, fmt.Errorf("Database.convertLead expects Database.LeadConvert")
+	}
+	if databaseLeadConvertBool(convert, "bypassAccountDedupeCheck") ||
+		databaseLeadConvertBool(convert, "bypassContactDedupeCheck") ||
+		databaseLeadConvertBool(convert, "overwriteLeadSource") ||
+		databaseLeadConvertBool(convert, "sendNotificationEmail") {
+		return Null, unsupportedCallError("Database.convertLead dedupe/notification local lead conversion surface")
+	}
+	if value, ok := databaseLeadConvertField(convert, "relatedPersonAccountId"); ok && value.Kind != ValueNull {
+		return Null, unsupportedCallError("Database.convertLead person account local lead conversion surface")
+	}
+	if value, ok := databaseLeadConvertField(convert, "relatedPersonAccountRecord"); ok && value.Kind != ValueNull {
+		return Null, unsupportedCallError("Database.convertLead person account local lead conversion surface")
+	}
+	if !databaseLeadConvertBool(convert, "doNotCreateOpportunity") {
+		return Null, unsupportedCallError("Database.convertLead opportunity local lead conversion surface")
+	}
+	leadIDValue, ok := databaseLeadConvertField(convert, "leadId")
+	if !ok || !isApexIDLikeValue(leadIDValue) {
+		return databaseLeadConvertFailure("", "LeadConvert.leadId is required"), nil
+	}
+	leadID := storage.ID(scalarText(leadIDValue))
+	leadState, ok := vm.Org.Objects["Lead"]
+	if !ok {
+		return Null, fmt.Errorf("Database.convertLead requires Lead metadata")
+	}
+	storedLeadID, lead, ok := findRecordByLooseID(leadState, leadID)
+	if !ok {
+		return databaseLeadConvertFailure(string(leadID), "Lead not found"), nil
+	}
+	leadID = lead.ID
+	accountID, err := vm.convertLeadAccountID(convert, lead, result)
+	if err != nil {
+		return Null, err
+	}
+	contactID, err := vm.convertLeadContactID(convert, lead, accountID, result)
+	if err != nil {
+		return Null, err
+	}
+	updatedLeadState := vm.Org.Objects["Lead"]
+	updatedLead := updatedLeadState.Records[storedLeadID]
+	if _, ok := leadState.Definition.Fields["IsConverted"]; ok {
+		updatedLead.Fields["IsConverted"] = storage.BooleanValue(true)
+	}
+	if _, ok := leadState.Definition.Fields["ConvertedAccountId"]; ok {
+		updatedLead.Fields["ConvertedAccountId"] = storage.IDValue(accountID)
+	}
+	if _, ok := leadState.Definition.Fields["ConvertedContactId"]; ok {
+		updatedLead.Fields["ConvertedContactId"] = storage.IDValue(contactID)
+	}
+	if _, ok := leadState.Definition.Fields["Status"]; ok {
+		status := "Converted"
+		if value, ok := databaseLeadConvertField(convert, "convertedStatus"); ok && value.Kind == ValueString && strings.TrimSpace(value.Text) != "" {
+			status = value.Text
+		}
+		updatedLead.Fields["Status"] = storage.StringValue(status)
+	}
+	updatedLeadState.Records[storedLeadID] = updatedLead
+	vm.Org.Objects["Lead"] = updatedLeadState
+	row := Object("Database.LeadConvertResult")
+	row.Fields["success"] = Bool(true)
+	row.Fields["leadId"] = platformScalar("Id", string(leadID))
+	row.Fields["accountId"] = platformScalar("Id", string(accountID))
+	row.Fields["contactId"] = platformScalar("Id", string(contactID))
+	row.Fields["opportunityId"] = Null
+	row.Fields["relatedPersonAccountId"] = Null
+	row.Fields["errors"] = List()
+	return row, nil
+}
+
+func (vm *VM) convertLeadAccountID(convert Value, lead storage.Record, result *Result) (storage.ID, error) {
+	if value, ok := databaseLeadConvertField(convert, "accountId"); ok && isApexIDLikeValue(value) {
+		return storage.ID(scalarText(value)), nil
+	}
+	account := Object("Account")
+	if value, ok := databaseLeadConvertField(convert, "accountRecord"); ok && value.Kind == ValueObject && !strings.EqualFold(value.Type, "SObject") {
+		account = value
+		account.Type = "Account"
+	}
+	if _, _, ok := objectFieldValue(account, "Name"); !ok {
+		name := storageRecordStringField(lead, "Company")
+		if name == "" {
+			name = storageRecordStringField(lead, "LastName")
+		}
+		setExplicitSObjectField(&account, "Name", String(name))
+	}
+	results, err := vm.applyDML("insert", account, true, "", result)
+	if err != nil {
+		return "", err
+	}
+	if hasDMLFailures(results) {
+		return "", databaseDMLException("convertLead", results)
+	}
+	return results[0].ID, nil
+}
+
+func (vm *VM) convertLeadContactID(convert Value, lead storage.Record, accountID storage.ID, result *Result) (storage.ID, error) {
+	if value, ok := databaseLeadConvertField(convert, "contactId"); ok && isApexIDLikeValue(value) {
+		return storage.ID(scalarText(value)), nil
+	}
+	contact := Object("Contact")
+	if value, ok := databaseLeadConvertField(convert, "contactRecord"); ok && value.Kind == ValueObject && !strings.EqualFold(value.Type, "SObject") {
+		contact = value
+		contact.Type = "Contact"
+	}
+	if _, _, ok := objectFieldValue(contact, "FirstName"); !ok {
+		if first := storageRecordStringField(lead, "FirstName"); first != "" {
+			setExplicitSObjectField(&contact, "FirstName", String(first))
+		}
+	}
+	if _, _, ok := objectFieldValue(contact, "LastName"); !ok {
+		setExplicitSObjectField(&contact, "LastName", String(storageRecordStringField(lead, "LastName")))
+	}
+	if _, _, ok := objectFieldValue(contact, "AccountId"); !ok {
+		setExplicitSObjectField(&contact, "AccountId", platformScalar("Id", string(accountID)))
+	}
+	results, err := vm.applyDML("insert", contact, true, "", result)
+	if err != nil {
+		return "", err
+	}
+	if hasDMLFailures(results) {
+		return "", databaseDMLException("convertLead", results)
+	}
+	return results[0].ID, nil
+}
+
+func databaseLeadConvertField(convert Value, name string) (Value, bool) {
+	_, value, ok := objectFieldValue(convert, name)
+	return value, ok
+}
+
+func databaseLeadConvertBool(convert Value, name string) bool {
+	value, ok := databaseLeadConvertField(convert, name)
+	return ok && value.Kind == ValueBool && value.Bool
+}
+
+func databaseLeadConvertFailure(leadID, message string) Value {
+	row := Object("Database.LeadConvertResult")
+	row.Fields["success"] = Bool(false)
+	if leadID == "" {
+		row.Fields["leadId"] = Null
+	} else {
+		row.Fields["leadId"] = platformScalar("Id", leadID)
+	}
+	row.Fields["accountId"] = Null
+	row.Fields["contactId"] = Null
+	row.Fields["opportunityId"] = Null
+	row.Fields["relatedPersonAccountId"] = Null
+	row.Fields["errors"] = List(databaseErrorValue(dml.Error{StatusCode: "INVALID_FIELD", Message: message}))
+	return row
+}
+
+func databaseLeadConvertSuccess(value Value) bool {
+	if value.Kind != ValueObject {
+		return false
+	}
+	success, ok := value.Fields["success"]
+	return ok && success.Kind == ValueBool && success.Bool
+}
+
+func storageRecordStringField(record storage.Record, field string) string {
+	value, ok := record.GetField(field)
+	if !ok {
+		return ""
+	}
+	switch value.Kind {
+	case storage.ValueString:
+		return value.String
+	case storage.ValueID:
+		return string(value.ID)
+	default:
+		return ""
+	}
+}
+
+func findRecordByLooseID(object storage.ObjectState, id storage.ID) (storage.ID, storage.Record, bool) {
+	if record, ok := object.Records[id]; ok {
+		return id, record, true
+	}
+	wanted := strings.ToLower(string(id))
+	for candidateID, record := range object.Records {
+		candidate := strings.ToLower(string(candidateID))
+		if candidate == wanted || strings.HasPrefix(wanted, candidate) || strings.HasPrefix(candidate, wanted) || apexIDTextEqual(candidate, wanted) {
+			return candidateID, record, true
+		}
+	}
+	return "", storage.Record{}, false
 }
 
 func (vm *VM) executeApprovalIsLocked(args []Value) (Value, error) {
@@ -25477,6 +25747,9 @@ func (vm *VM) generatedPlatformMethodDefaultReturn(method Method, receiver Value
 			if _, value, found := objectFieldValue(receiver, passiveAccessorFieldName(receiver, suffix)); found {
 				return value
 			}
+		}
+		if suffix, ok := passiveAccessorSuffix(method.Name, "set"); ok && len(args) == 1 {
+			receiver.Fields[passiveAccessorFieldName(receiver, suffix)] = args[0]
 		}
 	}
 	switch strings.ToLower(returnType) {

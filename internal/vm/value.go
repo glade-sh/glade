@@ -336,6 +336,13 @@ func apexIDTextEqual(left, right string) bool {
 	if len(left) >= 15 && len(right) >= 15 {
 		return strings.EqualFold(left[:15], right[:15])
 	}
+	if len(left) >= 14 && len(right) >= 14 {
+		return strings.EqualFold(left[:14], right[:14])
+	}
+	if len(left) >= 12 && len(right) >= 12 {
+		return strings.HasPrefix(strings.ToLower(left), strings.ToLower(right)) ||
+			strings.HasPrefix(strings.ToLower(right), strings.ToLower(left))
+	}
 	return left == right
 }
 

@@ -537,7 +537,7 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 			"insertasync", "updateasync", "deleteasync", "insertimmediate", "updateimmediate",
 			"deleteimmediate", "getasyncsaveresult", "getasyncdeleteresult", "getdeleted", "getupdated",
 			"emptyrecyclebin", "lock", "unlock", "merge", "setsavepoint", "releasesavepoint", "rollback",
-			"executebatch", "treesave":
+			"executebatch", "treesave", "convertlead":
 			return true
 		}
 	case "Database.QueryLocator":
@@ -969,7 +969,7 @@ func explicitlyUnsupportedCoreBehaviorMethod(symbol typesys.TypeSymbol, member t
 		return name == "getcontent" || name == "getcontentaspdf" || name == "setcookies"
 	case "Database":
 		switch name {
-		case "convertlead", "getasynclocator":
+		case "getasynclocator":
 			return true
 		}
 	case "Messaging":

@@ -3710,6 +3710,79 @@ System.assertEquals(accounts[0].Id, contacts[1].AccountId);
 	}
 }
 
+func TestExecDatabaseConvertLeadCreatesAccountAndContact(t *testing.T) {
+	program, err := CompileAnonymous(`
+Lead lead = new Lead(FirstName = 'Ada', LastName = 'Lovelace', Company = 'Analytical Engines', Status = 'Open');
+insert lead;
+lead = [SELECT Id, FirstName, LastName, Company FROM Lead WHERE LastName = 'Lovelace'];
+Database.LeadConvert convert = new Database.LeadConvert();
+convert.setLeadId(lead.Id);
+convert.setConvertedStatus('Qualified');
+convert.setDoNotCreateOpportunity(true);
+System.assert(convert.getLeadId() != null, 'lead convert id set');
+Database.LeadConvertResult result = Database.convertLead(convert);
+System.assert(result.isSuccess(), 'convert success');
+System.assertEquals(lead.Id, result.getLeadId());
+System.assert(result.getAccountId() != null, 'account id');
+System.assert(result.getContactId() != null, 'contact id');
+System.assertEquals(null, result.getOpportunityId());
+
+Account account = [SELECT Id, Name FROM Account WHERE Id = :result.getAccountId()];
+System.assertEquals('Analytical Engines', account.Name);
+Contact contact = [SELECT Id, FirstName, LastName, AccountId FROM Contact WHERE Id = :result.getContactId()];
+System.assertEquals('Ada', contact.FirstName);
+System.assertEquals('Lovelace', contact.LastName);
+System.assertEquals(account.Id, contact.AccountId);
+Lead converted = [SELECT Id, IsConverted, ConvertedAccountId, ConvertedContactId, Status FROM Lead WHERE Id = :lead.Id];
+System.assertEquals(true, converted.IsConverted);
+System.assertEquals(account.Id, converted.ConvertedAccountId);
+System.assertEquals(contact.Id, converted.ConvertedContactId);
+System.assertEquals('Qualified', converted.Status);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testLeadConvertOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func testLeadConvertOrg() storage.OrgState {
+	org := testDataOrg()
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Contact",
+			KeyPrefix: "003",
+			Fields: map[string]storage.Field{
+				"FirstName": {APIName: "FirstName", Type: storage.FieldString},
+				"LastName":  {APIName: "LastName", Type: storage.FieldString, Required: true},
+				"AccountId": {APIName: "AccountId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}, RelationshipName: "Account"},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	org.Objects["Lead"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Lead",
+			KeyPrefix: "00Q",
+			Fields: map[string]storage.Field{
+				"FirstName":          {APIName: "FirstName", Type: storage.FieldString},
+				"LastName":           {APIName: "LastName", Type: storage.FieldString, Required: true},
+				"Company":            {APIName: "Company", Type: storage.FieldString},
+				"Status":             {APIName: "Status", Type: storage.FieldString},
+				"IsConverted":        {APIName: "IsConverted", Type: storage.FieldBoolean},
+				"ConvertedAccountId": {APIName: "ConvertedAccountId", Type: storage.FieldReference, ReferenceTo: []string{"Account"}},
+				"ConvertedContactId": {APIName: "ConvertedContactId", Type: storage.FieldReference, ReferenceTo: []string{"Contact"}},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	return org
+}
+
 func TestExecSOQLForLoopCanIterateInListChunks(t *testing.T) {
 	program, err := CompileAnonymous(`
 insert new List<Account>{
@@ -4615,16 +4688,16 @@ System.assert(!Approval.isLocked(a));
 	}
 }
 
-func TestExecApprovalAndConvertLeadReturnUnsupportedFeature(t *testing.T) {
+func TestExecUnsupportedDatabaseAndApprovalSurfacesReturnUnsupportedFeature(t *testing.T) {
 	tests := []struct {
 		name    string
 		source  string
 		message string
 	}{
 		{
-			name:    "convertLead",
+			name:    "convertLeadOpportunity",
 			source:  "Database.convertLead(new Database.LeadConvert());",
-			message: `unsupported call "Database.convertLead local lead conversion surface"`,
+			message: `unsupported call "Database.convertLead opportunity local lead conversion surface"`,
 		},
 		{
 			name:    "approvalProcess",
