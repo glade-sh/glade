@@ -1014,6 +1014,9 @@ func scanTextFile(path, rel string, ctx *scanContext) ([]Finding, error) {
 				if suppressSupportedFinding(pattern.capability, symbol, line) {
 					continue
 				}
+				if suppressApexStubSelfReference(pattern.capability, rel, symbol, line) {
+					continue
+				}
 				findings = append(findings, makeFinding(pattern.capability, rel, lineNo, metadataType, symbol, strings.TrimSpace(line)))
 			}
 		}
@@ -2218,6 +2221,24 @@ func supportedFileSymbol(symbol, evidence string) bool {
 	default:
 		return false
 	}
+}
+
+func suppressApexStubSelfReference(capability, rel, symbol, evidence string) bool {
+	if capability != "custommetadata.legacy-records" {
+		return false
+	}
+	rel = filepath.ToSlash(rel)
+	if !strings.HasPrefix(rel, "stubs/apex-sobject-stubs/") {
+		return false
+	}
+	symbol = strings.TrimSpace(symbol)
+	if symbol == "" || baseNoExt(rel) != symbol {
+		return false
+	}
+	trimmed := strings.TrimSpace(evidence)
+	return strings.Contains(trimmed, " class "+symbol+" ") ||
+		strings.HasPrefix(trimmed, "public "+symbol+"(") ||
+		strings.HasPrefix(trimmed, "global "+symbol+"(")
 }
 
 func suppressSupportedMetadataFinding(capability, metadataType, symbol, file string) bool {
