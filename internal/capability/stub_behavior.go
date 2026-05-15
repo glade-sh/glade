@@ -239,6 +239,9 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 	if connectAPITestFixtureTargetBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "ConnectApi method returns a matching local setTest fixture when provided; live service calls remain explicitly unsupported without a fixture", true
 	}
+	if ideasFindSimilarBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "Ideas.findSimilar returns a typed empty List<Id> without enabling Ideas reply/read-state service surfaces", true
+	}
 	if quickActionDescribeBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "QuickAction describe/template/default methods return local read-only metadata/default DTOs without performing action side effects", true
 	}
@@ -450,6 +453,10 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 		return name == "previousversion" || name == "ispush" || name == "installerid"
 	case "SandboxContext":
 		return name == "organizationid" || name == "sandboxid" || name == "sandboxname"
+	case "RequestImpl":
+		return name == "getcurrent"
+	case "UIRequest":
+		return name == "getcurrent" || name == "getrequestheader"
 	case "QueueableContext", "QueueableContextImpl":
 		return name == "getjobid"
 	case "SchedulableContext":
@@ -1468,7 +1475,9 @@ func slackTestHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Me
 			strings.HasPrefix(name, "create")
 	case "Slack.UserSession":
 		switch name {
-		case "closeallmodals", "closemodal", "openapphome", "openchannel", "postmessage":
+		case "closeallmodals", "closemodal",
+			"getapphome", "getmessagecount", "getmessages", "getmodalstack", "getopenchannel", "getstate", "gettopmodal", "getuser",
+			"openapphome", "openchannel", "postmessage":
 			return true
 		default:
 			return false
@@ -1588,6 +1597,12 @@ func generatedDTOCollectionBehaviorType(symbol typesys.TypeSymbol) bool {
 		}
 	}
 	return hasCollectionMethod
+}
+
+func ideasFindSimilarBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	return stubBehaviorTypeName(symbol) == "Ideas" &&
+		member.Kind == apexast.DeclarationMethod &&
+		strings.EqualFold(member.Name, "findSimilar")
 }
 
 func generatedExecutionSurfaceType(typeName string) bool {

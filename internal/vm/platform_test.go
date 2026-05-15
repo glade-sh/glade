@@ -4644,6 +4644,10 @@ Site.validatePassword(externalUser, 'secret', 'secret');
 System.assertEquals('0DB000000000001', Network.getNetworkId());
 System.assertEquals('https://local.oaer.example/local/login', Network.getLoginUrl(Network.getNetworkId()));
 System.assertEquals('/local', Network.communitiesLanding().getUrl());
+System.assertEquals('/start', Network.forwardToAuthPage('/start').getUrl());
+System.assertEquals('/start', Network.forwardToAuthPage('/start', 'Site').getUrl());
+System.assertEquals('https://local.oaer.example/local/secur/logout.jsp', Network.getLogoutUrl(Network.getNetworkId()));
+System.assertEquals('https://local.oaer.example/local/SelfRegister', Network.getSelfRegUrl(Network.getNetworkId()));
 System.assertEquals('https://local.oaer.example/local', ConnectApi.Communities.getCommunity(Network.getNetworkId()).siteUrl);
 ConnectApi.UserProfiles.setPhoto(Network.getNetworkId(), UserInfo.getUserId(), '069000000000001', null);
 ConnectApi.UserProfiles.deletePhoto(Network.getNetworkId(), UserInfo.getUserId());
@@ -6132,6 +6136,11 @@ Request request = Request.getCurrent();
 System.assertEquals('oaer-request-000000000001', request.getRequestId());
 System.assertEquals(Quiddity.SYNCHRONOUS, request.getQuiddity());
 System.assertEquals('oaer-request-000000000001', System.Request.getCurrent().getRequestId());
+System.assertEquals('oaer-request-000000000001', RequestImpl.getCurrent().getRequestId());
+UIRequest uiRequest = UIRequest.getCurrent();
+System.assertEquals('local.oaer.example', uiRequest.getRequestHeader('host'));
+System.assertEquals('local.oaer.example', uiRequest.getRequestHeader('Host'));
+System.assertEquals(null, uiRequest.getRequestHeader('x-missing'));
 `)
 	if err != nil {
 		t.Fatal(err)

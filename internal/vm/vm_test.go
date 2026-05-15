@@ -45,12 +45,30 @@ func TestExecGeneratedPlatformStaticMethodFallsBackToTypedDefault(t *testing.T) 
 	program, err := CompileAnonymous(`
 List<Id> similar = Answers.findSimilar(new Account(Name = 'Acme'));
 System.assertEquals(0, similar.size());
+List<Id> similarIdeas = Ideas.findSimilar(new Idea(Title = 'Acme'));
+System.assertEquals(0, similarIdeas.size());
 `)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, err := Execute(program, nil); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecIdeasReplyServiceSurfacesRemainUnsupported(t *testing.T) {
+	for _, source := range []string{
+		`Ideas.getAllRecentReplies('005000000000001', '0DB000000000001');`,
+		`Ideas.getUnreadRecentReplies('005000000000001', '0DB000000000001');`,
+		`Ideas.markRead('087000000000001');`,
+	} {
+		program, err := CompileAnonymous(source)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), "unsupported call") {
+			t.Fatalf("%s error = %v, want unsupported call", source, err)
+		}
 	}
 }
 
@@ -300,6 +318,16 @@ Slack.TestHarness.Team team = state.createTeam('example', enterprise);
 Slack.TestHarness.User user = state.createUser('muser', 'M User', team, 'en_US');
 Slack.TestHarness.Channel channel = state.createPublicChannel(team, 'general', 'en_US');
 Slack.TestHarness.UserSession session = state.createUserSession(user, channel);
+System.assertNotEquals(null, session.getState());
+System.assertNotEquals(null, session.getUser());
+System.assertNotEquals(null, session.getOpenChannel());
+System.assertEquals(0, session.getMessageCount());
+List<Slack.TestHarness.Message> initialMessages = session.getMessages();
+List<Slack.TestHarness.Modal> initialModalStack = session.getModalStack();
+System.assertEquals(0, initialMessages.size());
+System.assertEquals(0, initialModalStack.size());
+System.assertEquals(null, session.getTopModal());
+Slack.TestHarness.Home home = session.openAppHome(new Slack.App());
 Slack.TestHarness.Channel opened = session.openChannel('C1');
 Slack.TestHarness.Message message = session.postMessage('hello');
 System.assertNotEquals(null, enterprise);
@@ -307,10 +335,19 @@ System.assertNotEquals(null, team);
 System.assertNotEquals(null, user);
 System.assertNotEquals(null, channel);
 System.assertNotEquals(null, session);
+System.assertNotEquals(null, home);
+System.assertNotEquals(null, session.getAppHome());
 System.assertNotEquals(null, opened);
+System.assertNotEquals(null, session.getOpenChannel());
 System.assertNotEquals(null, message);
+System.assertEquals(1, session.getMessageCount());
+List<Slack.TestHarness.Message> messages = session.getMessages();
+System.assertEquals(1, messages.size());
 state.clearAllClientMocks();
 session.closeModal();
+session.closeAllModals();
+List<Slack.TestHarness.Modal> modalStack = session.getModalStack();
+System.assertEquals(0, modalStack.size());
 `)
 	if err != nil {
 		t.Fatal(err)

@@ -2132,6 +2132,8 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"IsvPartners.AppAnalytics.logCustomInteraction",
 		"UserProvisioning.UserProvisioningLog.log",
 		"pref_center.TokenUtility.generateToken", "pref_center.TokenUtility.generateTokens",
+		"Ideas.findSimilar",
+		"RequestImpl.getCurrent", "UIRequest.getCurrent",
 		"Auth.AuthToken.revokeAccess", "Auth.SessionManagement.getCurrentSession",
 		"Auth.AuthConfiguration.getAuthProviderSsoUrl", "Auth.CommunitiesUtil.isGuestUser",
 		"Messaging.sendEmail", "Messaging.renderStoredEmailTemplate",
@@ -2168,6 +2170,7 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"Site.setExperienceId", "Site.getErrorMessage", "Site.getErrorDescription", "Site.forgotPassword",
 		"Site.login", "Site.changePassword", "Site.validatePassword", "Site.createExternalUser", "Site.createPortalUser",
 		"Network.getNetworkId", "Network.getLoginUrl", "Network.communitiesLanding",
+		"Network.forwardToAuthPage", "Network.getLogoutUrl", "Network.getSelfRegUrl",
 		"LoggingLevel.values", "ApexPages.Severity.values", "RoundingMode.values",
 	}
 	calls := make(map[string]string, len(names))
@@ -3834,11 +3837,16 @@ platformStaticCall:
 		return vm.eventBusPublish(args, result)
 	case "EventBus.publishAfterCommit":
 		return Null, unsupportedCallError(callee + " local platform event after-commit delivery surface")
-	case "Request.getCurrent", "System.Request.getCurrent":
+	case "Request.getCurrent", "System.Request.getCurrent", "RequestImpl.getCurrent":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
 		}
 		return vm.currentRequestValue(), nil
+	case "UIRequest.getCurrent":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("UIRequest.getCurrent expects 0 arguments")
+		}
+		return vm.currentUIRequestValue(), nil
 	case "ConnectApi.Organization.getSettings":
 		return vm.connectAPIOrganizationSettings(args)
 	case "ConnectApi.ChatterUsers.getFollowings":
@@ -4648,6 +4656,33 @@ platformStaticCall:
 			return Null, fmt.Errorf("Network.communitiesLanding expects 0 arguments")
 		}
 		return newPageReference("/" + strings.Trim(vm.firstOrgRecordString("Network", "UrlPathPrefix", "local"), "/")), nil
+	case "Network.forwardToAuthPage":
+		if len(args) != 1 && len(args) != 2 {
+			return Null, fmt.Errorf("Network.forwardToAuthPage expects 1 or 2 arguments")
+		}
+		startURL := "/"
+		if args[0].Kind == ValueString && strings.TrimSpace(args[0].Text) != "" {
+			startURL = args[0].Text
+		}
+		return newPageReference(startURL), nil
+	case "Network.getLogoutUrl":
+		if len(args) != 1 {
+			return Null, fmt.Errorf("Network.getLogoutUrl expects 1 argument")
+		}
+		prefix := strings.Trim(vm.firstOrgRecordString("Network", "UrlPathPrefix", "local"), "/")
+		if prefix == "" {
+			prefix = "local"
+		}
+		return String(strings.TrimRight(vm.salesforceBaseURL(), "/") + "/" + prefix + "/secur/logout.jsp"), nil
+	case "Network.getSelfRegUrl":
+		if len(args) != 1 {
+			return Null, fmt.Errorf("Network.getSelfRegUrl expects 1 argument")
+		}
+		prefix := strings.Trim(vm.firstOrgRecordString("Network", "UrlPathPrefix", "local"), "/")
+		if prefix == "" {
+			prefix = "local"
+		}
+		return String(strings.TrimRight(vm.salesforceBaseURL(), "/") + "/" + prefix + "/SelfRegister"), nil
 	case "Auth.CommunitiesUtil.isGuestUser":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Auth.CommunitiesUtil.isGuestUser expects 0 arguments")
@@ -4692,6 +4727,15 @@ func (vm *VM) currentRequestValue() Value {
 	request := Object("Request")
 	request.Fields["requestId"] = String("oaer-request-000000000001")
 	request.Fields["quiddity"] = vm.currentQuiddityValue()
+	return request
+}
+
+func (vm *VM) currentUIRequestValue() Value {
+	request := Object("UIRequest")
+	headers := typedMap("Map<String,String>")
+	headers.Map[mapKey(String("host"))] = String(strings.TrimPrefix(strings.TrimPrefix(vm.salesforceBaseURL(), "https://"), "http://"))
+	headers.MapKeys[mapKey(String("host"))] = String("host")
+	request.Fields["headers"] = headers
 	return request
 }
 
@@ -25307,6 +25351,13 @@ func (vm *VM) generatedPlatformStaticDefault(callee string, args []Value) (Value
 			return value, true
 		}
 	}
+	if strings.EqualFold(className, "Ideas") && strings.EqualFold(methodName, "findSimilar") {
+		method, ok := vm.generatedPlatformMethodForArgs(className, methodName, args, true)
+		if !ok {
+			return Null, false
+		}
+		return vm.generatedPlatformMethodDefaultReturn(method, Null, args), true
+	}
 	if !vm.generatedPlatformMethodFallbackType(className) {
 		return Null, false
 	}
@@ -25835,7 +25886,10 @@ func (vm *VM) generatedPlatformInstanceDefault(receiverName string, receiver Val
 		if !ok {
 			continue
 		}
-		if value, handled := vm.generatedSlackTestHarnessDefaultReturn(method, args); handled {
+		if method.ClassName == "" {
+			method.ClassName = slackTestHarnessRuntimeType(receiverType)
+		}
+		if value, handled := vm.generatedSlackTestHarnessDefaultReturn(method, receiver, args); handled {
 			return value, true
 		}
 		if !vm.generatedPlatformMethodAllowsDefault(method) {
@@ -25972,12 +26026,12 @@ func (vm *VM) generatedPlatformMethodDefaultReturn(method Method, receiver Value
 	}
 }
 
-func (vm *VM) generatedSlackTestHarnessDefaultReturn(method Method, args []Value) (Value, bool) {
+func (vm *VM) generatedSlackTestHarnessDefaultReturn(method Method, receiver Value, args []Value) (Value, bool) {
 	name := strings.ToLower(method.Name)
 	if dot := strings.LastIndex(name, "."); dot >= 0 {
 		name = name[dot+1:]
 	}
-	switch method.ClassName {
+	switch slackTestHarnessRuntimeType(method.ClassName) {
 	case "Slack.State":
 		if strings.HasPrefix(name, "clear") {
 			return Null, true
@@ -25986,17 +26040,80 @@ func (vm *VM) generatedSlackTestHarnessDefaultReturn(method Method, args []Value
 			value := slackTestHarnessDefaultValue(method.ReturnType, vm.generatedPlatformDefaultValue(slackTestHarnessRuntimeType(method.ReturnType), Null))
 			if value.Kind == ValueObject {
 				bindGeneratedPlatformMethodArgs(&value, method, args)
+				if name == "createusersession" {
+					value.Fields["state"] = receiver
+					if len(args) > 1 {
+						value.Fields["openChannel"] = args[1]
+					}
+					value.Fields["messages"] = typedList("List<Slack.TestHarness.Message>")
+					value.Fields["modalStack"] = typedList("List<Slack.TestHarness.Modal>")
+				}
 			}
 			return value, true
 		}
 	case "Slack.UserSession":
 		switch name {
-		case "closeallmodals", "closemodal":
+		case "closeallmodals":
+			if receiver.Kind == ValueObject {
+				receiver.Fields["modalStack"] = typedList("List<Slack.TestHarness.Modal>")
+			}
 			return Null, true
+		case "closemodal":
+			if receiver.Kind == ValueObject {
+				if stack, ok := receiver.Fields["modalStack"]; ok && stack.Kind == ValueList && len(stack.List) > 0 {
+					stack.List = stack.List[:len(stack.List)-1]
+					receiver.Fields["modalStack"] = stack
+				}
+			}
+			return Null, true
+		case "getapphome", "getopenchannel", "getstate", "gettopmodal", "getuser":
+			if receiver.Kind == ValueObject {
+				suffix := strings.TrimPrefix(name, "get")
+				if _, value, found := objectFieldValue(receiver, passiveAccessorFieldName(receiver, suffix)); found {
+					return value, true
+				}
+				if name == "gettopmodal" {
+					if stack, ok := receiver.Fields["modalStack"]; ok && stack.Kind == ValueList && len(stack.List) > 0 {
+						return stack.List[len(stack.List)-1], true
+					}
+					return Null, true
+				}
+			}
+			return vm.generatedPlatformMethodDefaultReturn(method, receiver, args), true
+		case "getmessagecount":
+			if receiver.Kind == ValueObject {
+				if messages, ok := receiver.Fields["messages"]; ok && messages.Kind == ValueList {
+					return Int(int64(len(messages.List))), true
+				}
+			}
+			return Int(0), true
+		case "getmessages", "getmodalstack":
+			if receiver.Kind == ValueObject {
+				suffix := strings.TrimPrefix(name, "get")
+				if _, value, found := objectFieldValue(receiver, passiveAccessorFieldName(receiver, suffix)); found {
+					return value, true
+				}
+			}
+			return vm.generatedPlatformMethodDefaultReturn(method, receiver, args), true
 		case "openapphome", "openchannel", "postmessage":
 			value := slackTestHarnessDefaultValue(method.ReturnType, vm.generatedPlatformDefaultValue(slackTestHarnessRuntimeType(method.ReturnType), Null))
 			if value.Kind == ValueObject {
 				bindGeneratedPlatformMethodArgs(&value, method, args)
+				if receiver.Kind == ValueObject {
+					switch name {
+					case "openapphome":
+						receiver.Fields["appHome"] = value
+					case "openchannel":
+						receiver.Fields["openChannel"] = value
+					case "postmessage":
+						messages := typedList("List<Slack.TestHarness.Message>")
+						if existing, ok := receiver.Fields["messages"]; ok && existing.Kind == ValueList {
+							messages = existing
+						}
+						messages.List = append(messages.List, value)
+						receiver.Fields["messages"] = messages
+					}
+				}
 			}
 			return value, true
 		}
@@ -30636,6 +30753,18 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	if value, handled, err := vm.callGeneratedOptionalWrapperMember(receiver, method, args); handled || err != nil {
 		return value, receiver, false, true, err
 	}
+	if strings.EqualFold(receiver.Type, "Slack.UserSession") || strings.EqualFold(receiver.Type, "Slack.TestHarness.UserSession") {
+		for _, receiverType := range []string{runtimeObjectType(receiver), receiver.Static, receiver.Type, slackTestHarnessRuntimeType(receiver.Type), "Slack.UserSession"} {
+			if generated, ok := vm.generatedPlatformMethodForArgs(receiverType, method, args, false); ok {
+				if generated.ClassName == "" {
+					generated.ClassName = slackTestHarnessRuntimeType(receiverType)
+				}
+				if value, handled := vm.generatedSlackTestHarnessDefaultReturn(generated, receiver, args); handled {
+					return value, receiver, true, true, nil
+				}
+			}
+		}
+	}
 	if strings.HasPrefix(receiver.Type, "QuickAction.") {
 		if value, updated, mutated, handled, err := callQuickActionMember(receiver, method, args); handled || err != nil {
 			return value, updated, mutated, true, err
@@ -30958,6 +31087,21 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		}
 	case "sfsqlquery.SqlQueueable":
 		return callSfsqlquerySqlQueueableMember(receiver, method, args)
+	case "UIRequest":
+		if method == "getRequestHeader" {
+			if len(args) != 1 || args[0].Kind != ValueString {
+				return Null, receiver, false, true, fmt.Errorf("UIRequest.getRequestHeader expects header name String")
+			}
+			if headers, ok := receiver.Fields["headers"]; ok && headers.Kind == ValueMap {
+				if value, ok := headers.Map[mapKey(String(strings.ToLower(args[0].Text)))]; ok {
+					return value, receiver, false, true, nil
+				}
+				if value, ok := headers.Map[mapKey(args[0])]; ok {
+					return value, receiver, false, true, nil
+				}
+			}
+			return Null, receiver, false, true, nil
+		}
 	case "UUID":
 		switch method {
 		case "toString":
