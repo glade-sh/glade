@@ -1622,26 +1622,50 @@ func recordValue(org storage.OrgState, definition storage.ObjectDefinition, reco
 		if record.System.CreatedDate != "" {
 			return storage.DateTimeValue(record.System.CreatedDate), true
 		}
+		if value, ok := record.GetField(field); ok {
+			return value, true
+		}
+		return storage.NullValue(), true
 	case "CreatedById":
 		if record.System.CreatedByID != "" {
 			return storage.IDValue(record.System.CreatedByID), true
 		}
+		if value, ok := record.GetField(field); ok {
+			return value, true
+		}
+		return storage.NullValue(), true
 	case "LastModifiedDate":
 		if record.System.LastModifiedDate != "" {
 			return storage.DateTimeValue(record.System.LastModifiedDate), true
 		}
+		if value, ok := record.GetField(field); ok {
+			return value, true
+		}
+		return storage.NullValue(), true
 	case "LastModifiedById":
 		if record.System.LastModifiedByID != "" {
 			return storage.IDValue(record.System.LastModifiedByID), true
 		}
+		if value, ok := record.GetField(field); ok {
+			return value, true
+		}
+		return storage.NullValue(), true
 	case "SystemModstamp":
 		if record.System.SystemModstamp != "" {
 			return storage.DateTimeValue(record.System.SystemModstamp), true
 		}
+		if value, ok := record.GetField(field); ok {
+			return value, true
+		}
+		return storage.NullValue(), true
 	case "OwnerId":
 		if record.System.OwnerID != "" {
 			return storage.IDValue(record.System.OwnerID), true
 		}
+		if value, ok := record.GetField(field); ok {
+			return value, true
+		}
+		return storage.NullValue(), true
 	case "IsDeleted":
 		return storage.BooleanValue(record.System.IsDeleted), true
 	}

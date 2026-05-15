@@ -9884,8 +9884,10 @@ func (vm *VM) queriedSObjectFields(queryText string) map[string]bool {
 		if strings.Contains(field, "(") {
 			continue
 		}
+		originalField := field
 		if dot := strings.IndexByte(field, '.'); dot >= 0 {
 			relationship := field[:dot]
+			fields[strings.ToLower(originalField)] = true
 			if lookupField, ok := vm.parentRelationshipField(objectName, relationship); ok {
 				fields[strings.ToLower(lookupField)] = true
 			}
@@ -13060,7 +13062,11 @@ func (vm *VM) vmValueFromRecord(record storage.Record) Value {
 		for _, child := range records {
 			children = append(children, vm.vmValueFromRecord(child))
 		}
-		value.Fields[relationship] = List(children...)
+		list := List(children...)
+		if childType := vm.childRelationshipListType(record.Object, relationship, records); childType != "" {
+			list.Type = "List<" + childType + ">"
+		}
+		value.Fields[relationship] = list
 	}
 	for field, isNull := range record.ExplicitNulls {
 		if isNull {
@@ -13070,6 +13076,36 @@ func (vm *VM) vmValueFromRecord(record storage.Record) Value {
 	vm.hydrateParentLookupFields(value)
 	putSystemFields(value, record.System)
 	return value
+}
+
+func (vm *VM) childRelationshipListType(parentObject, relationship string, records []storage.Record) string {
+	for _, record := range records {
+		if strings.TrimSpace(record.Object) != "" {
+			return record.Object
+		}
+	}
+	if vm == nil || vm.Org == nil || strings.TrimSpace(parentObject) == "" || strings.TrimSpace(relationship) == "" {
+		return ""
+	}
+	canonicalParent, ok := storage.ResolveObjectName(*vm.Org, parentObject)
+	if !ok {
+		canonicalParent = parentObject
+	}
+	for childName, childState := range vm.Org.Objects {
+		for _, relation := range childState.Definition.Relations {
+			if !relationshipTargetsObject(relation, canonicalParent) {
+				continue
+			}
+			childRelationshipName := relation.ChildRelationship
+			if childRelationshipName == "" {
+				childRelationshipName = derivedVMChildRelationshipName(childState.Definition)
+			}
+			if childRelationshipName != "" && vmRelationshipNameMatches(vm.Org.Namespace, childRelationshipName, relationship) {
+				return childName
+			}
+		}
+	}
+	return ""
 }
 
 func isSObjectSystemField(field string) bool {
@@ -29738,10 +29774,17 @@ func (vm *VM) specialMapLookup(receiver, key Value) (Value, bool) {
 		namespace = vm.Org.Namespace
 	}
 	switch receiver.Type {
-	case "Schema.GlobalDescribeMap", "Schema.SObjectFieldMap":
+	case "Schema.GlobalDescribeMap":
 		for rawKey, value := range receiver.Map {
 			candidate := valueFromMapKey(rawKey)
 			if candidate.Kind == ValueString && schemaDescribeMapKeyMatches(namespace, candidate.Text, key.Text) {
+				return value, true
+			}
+		}
+	case "Schema.SObjectFieldMap":
+		for rawKey, value := range receiver.Map {
+			candidate := valueFromMapKey(rawKey)
+			if candidate.Kind == ValueString && schemaSObjectFieldMapKeyMatches(namespace, candidate.Text, key.Text) {
 				return value, true
 			}
 		}
@@ -29764,6 +29807,16 @@ func (vm *VM) specialMapLookup(receiver, key Value) (Value, bool) {
 		}
 	}
 	return Null, false
+}
+
+func schemaSObjectFieldMapKeyMatches(namespace, canonical, candidate string) bool {
+	if schemaDescribeMapKeyMatches(namespace, canonical, candidate) {
+		return true
+	}
+	if dot := strings.LastIndex(candidate, "."); dot >= 0 && dot+1 < len(candidate) {
+		return schemaDescribeMapKeyMatches(namespace, canonical, candidate[dot+1:])
+	}
+	return false
 }
 
 func schemaDescribeMapKeyMatches(namespace, canonical, candidate string) bool {
@@ -30939,9 +30992,16 @@ func (vm *VM) sObjectFieldDefinition(typeName, field string) (storage.ObjectDefi
 	if !ok {
 		return storage.ObjectDefinition{}, storage.Field{}, false
 	}
-	definition := vm.Org.Objects[objectName].Definition
+	definition := vm.Org.Objects[objectName].Definition.Clone()
+	storage.EnsureStandardObjectFields(&definition)
+	if strings.EqualFold(definition.APIName, "Account") && len(definition.RecordTypes) == 0 {
+		storage.EnsureStandardObjectFieldsForFeatures(&definition, []string{"PersonAccounts"})
+	}
 	fieldName, ok := storage.ResolveFieldName(definition, vm.Org.Namespace, field)
 	if !ok {
+		if systemField, systemOK := syntheticSObjectSystemField(field); systemOK {
+			return definition, systemField, true
+		}
 		return storage.ObjectDefinition{}, storage.Field{}, false
 	}
 	return definition, definition.Fields[fieldName], true
