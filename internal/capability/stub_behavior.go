@@ -1969,58 +1969,57 @@ func connectAPIReadOnlyHarnessBehaviorMethod(symbol typesys.TypeSymbol, member t
 }
 
 func connectAPIReadOnlyHarnessBehaviorType(typeName string) bool {
-	switch typeName {
-	case "ConnectApi.ChatterFeeds",
-		"ConnectApi.ChatterGroups",
-		"ConnectApi.ChatterMessages",
-		"ConnectApi.ChatterUsers",
-		"ConnectApi.ChatterFavorites",
-		"ConnectApi.Chatter",
-		"ConnectApi.Topics",
-		"ConnectApi.Recommendations",
-		"ConnectApi.ActionLinks",
-		"ConnectApi.ActionPlan",
-		"ConnectApi.Announcements",
-		"ConnectApi.CdpCalculatedInsight",
-		"ConnectApi.CdpCatalog",
-		"ConnectApi.CdpOptimizationConnectApi",
-		"ConnectApi.CdpQuery",
-		"ConnectApi.CdpQuickAttributes",
-		"ConnectApi.CdpSegment",
-		"ConnectApi.Communities",
-		"ConnectApi.CommunityModeration",
-		"ConnectApi.CommerceBuyerExperience",
-		"ConnectApi.CommerceCart",
-		"ConnectApi.CommerceCatalog",
-		"ConnectApi.CommerceInventory",
-		"ConnectApi.CommercePromotions",
-		"ConnectApi.CommerceSearch",
-		"ConnectApi.CommerceStorePricing",
-		"ConnectApi.CommerceWishlist",
-		"ConnectApi.EmployeeProfiles",
-		"ConnectApi.FieldSet",
-		"ConnectApi.Knowledge",
-		"ConnectApi.ManagedContent",
-		"ConnectApi.ManagedContentChannels",
-		"ConnectApi.ManagedContentDelivery",
-		"ConnectApi.ManagedTopics",
-		"ConnectApi.ManagedContentSpaces",
-		"ConnectApi.Mentions",
-		"ConnectApi.NamedCredentials",
-		"ConnectApi.NavigationMenu",
-		"ConnectApi.OmnichannelInventoryService",
-		"ConnectApi.OrderSummary",
-		"ConnectApi.Personalization",
-		"ConnectApi.RecordAlert",
-		"ConnectApi.Records",
-		"ConnectApi.RecordUi",
-		"ConnectApi.Repricing",
-		"ConnectApi.Sharing",
-		"ConnectApi.Sites",
-		"ConnectApi.SmartDataDiscovery",
-		"ConnectApi.EinsteinLLM",
-		"ConnectApi.UserProfiles",
-		"ConnectApi.Zones":
+	switch strings.ToLower(typeName) {
+	case "connectapi.chatterfeeds",
+		"connectapi.chattergroups",
+		"connectapi.chattermessages",
+		"connectapi.chatterusers",
+		"connectapi.chatterfavorites",
+		"connectapi.chatter",
+		"connectapi.topics",
+		"connectapi.recommendations",
+		"connectapi.actionlinks",
+		"connectapi.actionplan",
+		"connectapi.announcements",
+		"connectapi.cdpcalculatedinsight",
+		"connectapi.cdpcatalog",
+		"connectapi.cdpoptimizationconnectapi",
+		"connectapi.cdpquery",
+		"connectapi.cdpquickattributes",
+		"connectapi.cdpsegment",
+		"connectapi.communities",
+		"connectapi.communitymoderation",
+		"connectapi.commercebuyerexperience",
+		"connectapi.commercecart",
+		"connectapi.commercecatalog",
+		"connectapi.commerceinventory",
+		"connectapi.commercepromotions",
+		"connectapi.commercesearch",
+		"connectapi.commercestorepricing",
+		"connectapi.commercewishlist",
+		"connectapi.employeeprofiles",
+		"connectapi.fieldset",
+		"connectapi.knowledge",
+		"connectapi.managedcontent",
+		"connectapi.managedcontentchannels",
+		"connectapi.managedcontentdelivery",
+		"connectapi.managedtopics",
+		"connectapi.managedcontentspaces",
+		"connectapi.mentions",
+		"connectapi.namedcredentials",
+		"connectapi.navigationmenu",
+		"connectapi.nextbestaction",
+		"connectapi.personalization",
+		"connectapi.recordalert",
+		"connectapi.records",
+		"connectapi.recordui",
+		"connectapi.repricing",
+		"connectapi.sharing",
+		"connectapi.sites",
+		"connectapi.smartdatadiscovery",
+		"connectapi.einsteinllm",
+		"connectapi.userprofiles",
+		"connectapi.zones":
 		return true
 	default:
 		return false
@@ -2029,15 +2028,15 @@ func connectAPIReadOnlyHarnessBehaviorType(typeName string) bool {
 
 func connectAPIReadOnlyHarnessBehaviorMethodAllowed(typeName, methodName string) bool {
 	name := strings.ToLower(methodName)
-	switch typeName {
-	case "ConnectApi.CdpCalculatedInsight":
+	switch strings.ToLower(typeName) {
+	case "connectapi.cdpcalculatedinsight":
 		return name == "getcalculatedinsight" ||
 			name == "getcalculatedinsights" ||
 			name == "refreshstatuscalculatedinsight" ||
 			name == "validatecalculatedinsight"
-	case "ConnectApi.CdpCatalog":
+	case "connectapi.cdpcatalog":
 		return name == "getfieldlineage" || name == "getlineage"
-	case "ConnectApi.CdpOptimizationConnectApi":
+	case "connectapi.cdpoptimizationconnectapi":
 		switch name {
 		case "getdatamodelobject", "getformulafunctions", "getoptimizationdatalakeobject",
 			"getoptimizationdatalakeobjects", "getoptimizationdatamodelobjects",
@@ -2051,7 +2050,7 @@ func connectAPIReadOnlyHarnessBehaviorMethodAllowed(typeName, methodName string)
 		default:
 			return false
 		}
-	case "ConnectApi.CdpQuery":
+	case "connectapi.cdpquery":
 		switch name {
 		case "getallmetadata", "getdatagraphmetadata", "getinsightsmetadata",
 			"getmetadataentities", "getnextbatchmetadataentities", "getprofilemetadata",
@@ -2063,62 +2062,66 @@ func connectAPIReadOnlyHarnessBehaviorMethodAllowed(typeName, methodName string)
 		default:
 			return false
 		}
-	case "ConnectApi.CdpQuickAttributes":
+	case "connectapi.cdpquickattributes":
 		return name == "getquickattributebyidorname" || name == "getquickattributes"
-	case "ConnectApi.CdpSegment":
+	case "connectapi.cdpsegment":
 		return name == "getsegment" ||
 			name == "getsegmentbyid" ||
 			name == "getsegments" ||
 			name == "getsegmentsfilteredpaginated" ||
 			name == "getsegmentspaginated"
-	case "ConnectApi.EinsteinLLM":
+	case "connectapi.einsteinllm":
 		return name == "getoutputlanguages" || name == "getprompttemplates"
-	case "ConnectApi.Personalization":
+	case "connectapi.nextbestaction":
+		return name == "getrecommendation" ||
+			name == "getrecommendationreaction" ||
+			name == "getrecommendationreactions"
+	case "connectapi.personalization":
 		return name == "getaudience" ||
 			name == "getaudiencebatch" ||
 			name == "getaudiences" ||
 			name == "gettarget" ||
 			name == "gettargetbatch" ||
 			name == "gettargets"
-	case "ConnectApi.SmartDataDiscovery":
+	case "connectapi.smartdatadiscovery":
 		return strings.HasPrefix(name, "get")
-	case "ConnectApi.Chatter":
+	case "connectapi.chatter":
 		return name == "getfollowers" || name == "getsubscription"
-	case "ConnectApi.ChatterFeeds":
+	case "connectapi.chatterfeeds":
 		return connectAPIReadOnlyHarnessBehaviorMethodName(methodName) ||
 			name == "iscommenteditablebyme" ||
 			name == "isfeedelementeditablebyme" ||
 			name == "ismodified"
-	case "ConnectApi.Communities":
+	case "connectapi.communities":
 		return name == "getcommunities" || name == "getcommunitytemplates"
-	case "ConnectApi.CommunityModeration":
+	case "connectapi.communitymoderation":
 		return name == "getflagsoncomment" ||
 			name == "getflagsonfeedelement" ||
 			name == "getflagsonfeeditem"
-	case "ConnectApi.ActionLinks":
+	case "connectapi.actionlinks":
 		return strings.HasPrefix(name, "getactionlink")
-	case "ConnectApi.ActionPlan":
+	case "connectapi.actionplan":
 		return name == "getactionplantemplateitems"
-	case "ConnectApi.CommerceBuyerExperience":
+	case "connectapi.commercebuyerexperience":
 		return connectAPICommerceBuyerExperienceReadMethod(name)
-	case "ConnectApi.CommerceCart":
+	case "connectapi.commercecart":
 		return connectAPICommerceCartReadMethod(name)
-	case "ConnectApi.CommerceInventory":
+	case "connectapi.commerceinventory":
 		return name == "getinventorylevels" ||
 			name == "checkinventoryavailability"
-	case "ConnectApi.CommercePromotions":
+	case "connectapi.commercepromotions":
 		return name == "evaluate"
-	case "ConnectApi.CommerceWishlist":
+	case "connectapi.commercewishlist":
 		return name == "getwishlist" ||
 			name == "getwishlistitems" ||
 			name == "getwishlistsummaries"
-	case "ConnectApi.OrderSummary":
+	case "connectapi.ordersummary":
 		return name == "adjustpreview" ||
 			name == "previewcancel" ||
 			name == "previewcancelall" ||
 			name == "previewchangeordersummary" ||
 			name == "previewreturn"
-	case "ConnectApi.Repricing":
+	case "connectapi.repricing":
 		return name == "productdetails" ||
 			name == "searchproducts"
 	default:
