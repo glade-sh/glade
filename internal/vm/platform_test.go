@@ -1685,6 +1685,61 @@ System.assertEquals(true, copy.containsAllRows());
 	}
 }
 
+func TestExecUserInfoPackageLicenseUsesOrgAssignments(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(false, UserInfo.hasPackageLicense('050000000000001'));
+System.assertEquals(false, UserInfo.isCurrentUserLicensed('pkg'));
+System.assertEquals(false, UserInfo.isCurrentUserLicensedForPackage('050000000000001'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	licensedOrg := testDataOrg()
+	licensedOrg.Objects["PackageLicense"] = storage.ObjectState{Records: map[storage.ID]storage.Record{
+		"050000000000001": {
+			ID:     "050000000000001",
+			Object: "PackageLicense",
+			Fields: map[string]storage.Value{
+				"NamespacePrefix": storage.StringValue("pkg"),
+				"Status":          storage.StringValue("Active"),
+			},
+		},
+	}}
+	licensedOrg.Objects["UserPackageLicense"] = storage.ObjectState{Records: map[storage.ID]storage.Record{
+		"0PL000000000001": {
+			ID:     "0PL000000000001",
+			Object: "UserPackageLicense",
+			Fields: map[string]storage.Value{
+				"PackageLicenseId": storage.IDValue("050000000000001"),
+				"UserId":           storage.IDValue("005-local-user"),
+			},
+		},
+	}}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+
+	program, err = CompileAnonymous(`
+System.assertEquals(true, UserInfo.hasPackageLicense('050000000000001'));
+System.assertEquals(true, UserInfo.isCurrentUserLicensed('pkg'));
+System.assertEquals(true, UserInfo.isCurrentUserLicensedForPackage('050000000000001'));
+System.assertEquals(false, UserInfo.isCurrentUserLicensed('missing'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine = New(nil)
+	machine.SetOrg(&licensedOrg)
+	machine.executionUser = Object("User")
+	machine.executionUser.Fields["Id"] = String("005-local-user")
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecLabelsFromLocalMetadataRegistry(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals('Hello', Label.Greeting);

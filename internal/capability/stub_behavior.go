@@ -205,6 +205,9 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 	if visualEditorDynamicPickListRowsBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "VisualEditor.DynamicPickListRows method is handled by the VM local rows surface", true
 	}
+	if compressionZipBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "compression ZIP archive type is handled by the VM local ZIP surface", true
+	}
 	if databaseResultDTOBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "Database/Approval result DTO accessor is handled by the VM result object surface", true
 	}
@@ -869,6 +872,29 @@ func visualEditorDynamicPickListRowsBehaviorMethod(symbol typesys.TypeSymbol, me
 	default:
 		return false
 	}
+}
+
+func compressionZipBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	typeName := stubBehaviorTypeName(symbol)
+	if member.Kind == apexast.DeclarationConstructor {
+		return typeName == "compression.ZipWriter" || typeName == "compression.ZipReader"
+	}
+	if member.Kind != apexast.DeclarationMethod {
+		return false
+	}
+	switch typeName {
+	case "compression.ZipWriter":
+		switch strings.ToLower(member.Name) {
+		case "addentry", "getarchive", "getentries", "getentry", "getentrynames", "getlevel", "getmethod", "removeentry", "setlevel", "setmethod":
+			return true
+		}
+	case "compression.ZipReader":
+		switch strings.ToLower(member.Name) {
+		case "extract", "getentries", "getentriesmap", "getentry", "getentrynames":
+			return true
+		}
+	}
+	return false
 }
 
 func connectAPIExternalServiceBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {

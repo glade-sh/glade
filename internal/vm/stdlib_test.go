@@ -1541,6 +1541,39 @@ System.assert(Crypto.verifyWithCertificate('RSA-SHA256', Blob.valueOf('hello'), 
 	}
 }
 
+func TestExecCompressionZipRoundTrip(t *testing.T) {
+	program, err := CompileAnonymous(`
+compression.ZipWriter writer = new compression.ZipWriter();
+compression.ZipEntry first = writer.addEntry('a.txt', Blob.valueOf('alpha'));
+first.setComment('first file');
+writer.addEntry('b.txt', 'second file', Datetime.now(), compression.Method.STORED, Blob.valueOf('bravo'));
+System.assertEquals(2, writer.getEntries().size());
+System.assertEquals('a.txt', writer.getEntry('a.txt').getName());
+System.assertEquals(true, writer.getEntryNames().contains('b.txt'));
+System.assertEquals(compression.Level.DEFAULT_LEVEL, writer.getLevel());
+writer.setLevel(compression.Level.BEST_SPEED);
+writer.setMethod(compression.Method.STORED);
+System.assertEquals(compression.Level.BEST_SPEED, writer.getLevel());
+System.assertEquals(compression.Method.STORED, writer.getMethod());
+Blob archive = writer.getArchive();
+compression.ZipReader reader = new compression.ZipReader(archive);
+System.assertEquals(2, reader.getEntries().size());
+System.assertEquals('alpha', reader.extract('a.txt').toString());
+System.assertEquals('bravo', reader.extract(reader.getEntry('b.txt')).toString());
+System.assertEquals(true, reader.getEntriesMap().containsKey('a.txt'));
+System.assertEquals('a.txt', reader.getEntryNames().get(0));
+writer.removeEntry('a.txt');
+System.assertEquals(null, writer.getEntry('a.txt'));
+System.assertEquals(1, writer.getEntries().size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecCoreTypeIDURLObjectStdlib(t *testing.T) {
 	program, err := CompileAnonymous(`
 Type accountType = Type.forName('Account');
