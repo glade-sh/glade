@@ -848,6 +848,26 @@ func TestEnsureStandardObjectFieldsAddsCustomMetadataIdentityFields(t *testing.T
 	}
 }
 
+func TestEnsureStandardObjectFieldsAddsMetadataRelationshipShapes(t *testing.T) {
+	for _, tc := range []struct {
+		object       string
+		field        string
+		relationship string
+		referenceTo  string
+	}{
+		{object: "EntityDefinition", field: "RunningUserEntityAccessId", relationship: "RunningUserEntityAccess", referenceTo: "UserEntityAccess"},
+		{object: "EntityParticle", field: "FieldDefinitionId", relationship: "FieldDefinition", referenceTo: "FieldDefinition"},
+		{object: "FieldDefinition", field: "RunningUserFieldAccessId", relationship: "RunningUserFieldAccess", referenceTo: "UserFieldAccess"},
+	} {
+		definition := ObjectDefinition{APIName: tc.object}
+		EnsureStandardObjectFields(&definition)
+		field, ok := definition.Fields[tc.field]
+		if !ok || field.Type != FieldReference || field.RelationshipName != tc.relationship || len(field.ReferenceTo) != 1 || field.ReferenceTo[0] != tc.referenceTo {
+			t.Fatalf("%s.%s = %#v, %v", tc.object, tc.field, field, ok)
+		}
+	}
+}
+
 func TestEnsureStandardObjectFieldsAddsPlatformEventIdentityFields(t *testing.T) {
 	definition := ObjectDefinition{APIName: "Event_Recipes_Demo__e"}
 

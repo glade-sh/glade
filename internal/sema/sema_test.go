@@ -1735,6 +1735,29 @@ public class UsesChildRelationships {
 	}
 }
 
+func TestAnalyzeCollectionAddAllIterableAndSObjectFieldLoop(t *testing.T) {
+	root := t.TempDir()
+	writeSemaFile(t, filepath.Join(root, "UsesIterableCollections.cls"), `
+public class UsesIterableCollections {
+  public void run(Iterable<Account> accounts, Iterable<SObjectField> fields) {
+    List<SObject> records = new List<SObject>();
+    records.addAll(accounts);
+    for (SObjectField field : fields) {
+      String fieldName = field.getDescribe().getName();
+    }
+  }
+}
+`)
+	index := typesys.Build(project.Project{
+		Root:      root,
+		ApexFiles: []string{filepath.Join(root, "UsesIterableCollections.cls")},
+	}, schema.Schema{Objects: []schema.Object{{Name: "Account"}}})
+	result := Analyze(index)
+	if result.HasErrors() {
+		t.Fatalf("unexpected diagnostics: %#v", result.Diagnostics)
+	}
+}
+
 func TestAnalyzeAmbiguousNullOverloadsAccepted(t *testing.T) {
 	root := t.TempDir()
 	writeSemaFile(t, filepath.Join(root, "UsesNullOverloads.cls"), `

@@ -2293,6 +2293,35 @@ System.assertEquals(row.get('Id'), cloneThreeArgs.get('Id'));
 	}
 }
 
+func TestExecSObjectGetSObjectsUsesCanonicalChildRelationshipValue(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account row = new Account(Name = 'Parent');
+row.put('Contacts__r', new List<Contact>{new Contact(LastName = 'Child')});
+List<Contact> contacts = row.getSObjects('Contacts');
+System.assertEquals(1, contacts.size());
+System.assertEquals('Child', contacts[0].LastName);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	storage.EnsureStandardObject(&org, "Account")
+	storage.EnsureStandardObject(&org, "Contact")
+	contact := org.Objects["Contact"]
+	contact.Definition.Relations = append(contact.Definition.Relations, storage.Relationship{
+		Field:              "AccountId",
+		ParentObjects:      []string{"Account"},
+		ParentRelationship: "Account",
+		ChildRelationship:  "Contacts__r",
+	})
+	org.Objects["Contact"] = contact
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecListRelationshipBookkeeping(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<SObject> rows = new List<SObject>();
