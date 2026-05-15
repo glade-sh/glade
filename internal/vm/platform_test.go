@@ -3568,6 +3568,31 @@ System.assertEquals('ResponseType', response.get('response_x'));
 	}
 }
 
+func TestExecWebServiceCalloutWithoutMockIsUnsupportedTransport(t *testing.T) {
+	program, err := CompileAnonymous(`
+Map<String, Object> response = new Map<String, Object>();
+WebServiceCallout.invoke(
+  new Object(),
+  'request',
+  response,
+  new String[]{'https://example.test', 'soapAction', 'requestNS', 'requestName', 'responseNS', 'responseName', 'ResponseType'}
+);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.EnableTestContext()
+	result, err := machine.Execute(program)
+	var runtimeErr *RuntimeError
+	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != `unsupported call "WebServiceCallout.invoke without WebServiceMock"` {
+		t.Fatalf("err = %#v, want UnsupportedFeature missing WebServiceMock", err)
+	}
+	if result.Limits.Callouts != 1 {
+		t.Fatalf("callouts = %d, want 1", result.Limits.Callouts)
+	}
+}
+
 func TestExecUnsupportedTestHelperAPIsHaveStableShape(t *testing.T) {
 	cases := []struct {
 		name string

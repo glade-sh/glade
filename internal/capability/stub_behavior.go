@@ -230,6 +230,9 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 	if callbackInterfaceBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "callback/interface method is supplied by user Apex and dispatched through the VM when the local lifecycle invokes or user code calls it", true
 	}
+	if localTransportMockBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "callout or notification method is handled only through local test/mock harness dispatch; real transport remains explicitly unsupported", true
+	}
 	if localMockHarnessBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "test/mock harness method is handled by the VM local deterministic/no-op surface", true
 	}
@@ -1571,6 +1574,24 @@ func callbackInterfaceBehaviorMethod(symbol typesys.TypeSymbol, member typesys.M
 		return name == "invoke"
 	case "readiness.productevaluator":
 		return name == "evaluatereadiness" || name == "isactive"
+	default:
+		return false
+	}
+}
+
+func localTransportMockBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if member.Kind != apexast.DeclarationMethod {
+		return false
+	}
+	typeName := stubBehaviorTypeName(symbol)
+	name := strings.ToLower(member.Name)
+	switch typeName {
+	case "Http":
+		return name == "send" && len(member.Parameters) == 1 && strings.EqualFold(member.Parameters[0].Type, "HttpRequest")
+	case "WebServiceCallout":
+		return name == "invoke" && len(member.Parameters) == 4
+	case "Messaging.NotificationActionHandler":
+		return name == "executeaction" && len(member.Parameters) == 1
 	default:
 		return false
 	}
