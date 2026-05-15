@@ -358,6 +358,59 @@ System.assertEquals('Feature.Created', records[1].fullName);
 	}
 }
 
+func TestExecReportsReportManagerLocalHarness(t *testing.T) {
+	program, err := CompileAnonymous(`
+Id reportId = '00O000000000001';
+reports.ReportResults results = reports.ReportManager.runReport(reportId, true);
+System.assertEquals(false, results.getAllData());
+System.assertEquals(true, results.getHasDetailRows());
+System.assertEquals(0, results.getFactMap().size());
+System.assertEquals(reportId, results.getReportMetadata().getId());
+System.assertEquals('Local Report', results.getReportMetadata().getName());
+reports.ReportMetadata metadata = new reports.ReportMetadata();
+metadata.setName('Override');
+reports.ReportInstance instance = reports.ReportManager.runAsyncReport(reportId, metadata, false);
+System.assertEquals('Success', instance.getStatus());
+System.assertEquals(reportId, instance.getReportId());
+System.assertEquals(false, instance.getReportResults().getHasDetailRows());
+System.assertEquals('Override', instance.getReportResults().getReportMetadata().getName());
+System.assertEquals(instance.getId(), reports.ReportManager.getReportInstance(instance.getId()).getId());
+System.assertEquals(1, reports.ReportManager.getReportInstances(reportId).size());
+System.assertEquals(0, reports.ReportManager.getDatatypeFilterOperatorMap().size());
+reports.ReportDescribeResult describe = reports.ReportManager.describeReport(reportId);
+System.assertEquals(reportId, describe.getReportMetadata().getId());
+System.assertEquals(0, describe.getReportExtendedMetadata().getDetailColumnInfo().size());
+System.assertEquals(0, describe.getReportTypeMetadata().getStandardFilterInfos().size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecLocalTelemetryProvisioningAndPrefCenterHarnesses(t *testing.T) {
+	program, err := CompileAnonymous(`
+IsvPartners.AppAnalytics.logCustomInteraction('clicked');
+UserProvisioning.UserProvisioningLog.log('0PR-local', 'Created');
+String token = pref_center.TokenUtility.generateToken('subscriber-1');
+System.assert(token.startsWith('local-token-'));
+Map<String,String> tokens = pref_center.TokenUtility.generateTokens(new List<String>{'a', 'b'});
+System.assertEquals(2, tokens.size());
+System.assertEquals(pref_center.TokenUtility.generateToken('a'), tokens.get('a'));
+System.assert(tokens.get('a') != tokens.get('b'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecQuickActionDescribeAndTemplateDefaults(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<QuickAction.DescribeAvailableQuickActionResult> available =

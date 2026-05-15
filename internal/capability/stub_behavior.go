@@ -524,6 +524,23 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 		case "sendemail", "renderstoredemailtemplate", "reservesingleemailcapacity", "reservemassemailcapacity":
 			return true
 		}
+	case "Metadata.Operations":
+		switch name {
+		case "enqueuedeployment", "checkdeploystatus", "retrieve":
+			return true
+		}
+	case "reports.ReportManager":
+		switch name {
+		case "describereport", "getdatatypefilteroperatormap", "getreportinstance",
+			"getreportinstances", "runasyncreport", "runreport":
+			return true
+		}
+	case "IsvPartners.AppAnalytics":
+		return name == "logcustominteraction"
+	case "UserProvisioning.UserProvisioningLog":
+		return name == "log"
+	case "pref_center.TokenUtility":
+		return name == "generatetoken" || name == "generatetokens"
 	case "ApexPages":
 		switch name {
 		case "hasmessages", "addmessage", "addmessages", "getmessages", "currentpage":

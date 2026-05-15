@@ -99,6 +99,7 @@ type VM struct {
 	restResponse       Value
 	serverBaseURL      string
 	metadataDeploys    map[string]Value
+	reportInstances    map[string]Value
 	debugHooks         DebugHooks
 	hasDebugHooks      bool
 	traceEnabled       bool
@@ -285,6 +286,7 @@ func New(stdout io.Writer) *VM {
 		savepointOrder:     make(map[string]int),
 		platformCache:      make(map[string]map[string]cacheEntry),
 		metadataDeploys:    make(map[string]Value),
+		reportInstances:    make(map[string]Value),
 		traceEnabled:       true,
 		ctx:                context.Background(),
 		activeGetters:      make(map[string]int),
@@ -2124,6 +2126,12 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"Cache.Org.getMaxGetTime", "Cache.Session.getMaxGetTime", "Cache.Org.getMaxValueSize", "Cache.Session.getMaxValueSize",
 		"Cache.Org.getMissRate", "Cache.Session.getMissRate",
 		"Metadata.Operations.enqueueDeployment", "Metadata.Operations.checkDeployStatus", "Metadata.Operations.retrieve",
+		"reports.ReportManager.describeReport", "reports.ReportManager.getDatatypeFilterOperatorMap",
+		"reports.ReportManager.getReportInstance", "reports.ReportManager.getReportInstances",
+		"reports.ReportManager.runAsyncReport", "reports.ReportManager.runReport",
+		"IsvPartners.AppAnalytics.logCustomInteraction",
+		"UserProvisioning.UserProvisioningLog.log",
+		"pref_center.TokenUtility.generateToken", "pref_center.TokenUtility.generateTokens",
 		"Auth.AuthToken.revokeAccess", "Auth.SessionManagement.getCurrentSession",
 		"Auth.AuthConfiguration.getAuthProviderSsoUrl", "Auth.CommunitiesUtil.isGuestUser",
 		"Messaging.sendEmail", "Messaging.renderStoredEmailTemplate",
@@ -3847,6 +3855,32 @@ platformStaticCall:
 		return vm.metadataCheckDeployStatus(args, result)
 	case "Metadata.Operations.retrieve":
 		return vm.metadataRetrieve(args)
+	case "reports.ReportManager.describeReport":
+		return vm.reportsDescribeReport(args)
+	case "reports.ReportManager.getDatatypeFilterOperatorMap":
+		return vm.reportsDatatypeFilterOperatorMap(args)
+	case "reports.ReportManager.getReportInstance":
+		return vm.reportsGetReportInstance(args)
+	case "reports.ReportManager.getReportInstances":
+		return vm.reportsGetReportInstances(args)
+	case "reports.ReportManager.runAsyncReport":
+		return vm.reportsRunAsyncReport(args)
+	case "reports.ReportManager.runReport":
+		return vm.reportsRunReport(args)
+	case "IsvPartners.AppAnalytics.logCustomInteraction":
+		if len(args) < 1 || len(args) > 2 {
+			return Null, fmt.Errorf("IsvPartners.AppAnalytics.logCustomInteraction expects interaction label[, id]")
+		}
+		return Null, nil
+	case "UserProvisioning.UserProvisioningLog.log":
+		if len(args) != 2 && len(args) != 3 && len(args) != 5 {
+			return Null, fmt.Errorf("UserProvisioning.UserProvisioningLog.log expects 2, 3, or 5 arguments")
+		}
+		return Null, nil
+	case "pref_center.TokenUtility.generateToken":
+		return prefCenterGenerateToken(args)
+	case "pref_center.TokenUtility.generateTokens":
+		return prefCenterGenerateTokens(args)
 	case "UserManagement.initSelfRegistration":
 		if len(args) != 2 {
 			return Null, fmt.Errorf("UserManagement.initSelfRegistration expects 2 arguments")
@@ -28960,6 +28994,203 @@ func metadataDeployStatusValues(args []Value) (Value, error) {
 
 func metadataMetadataTypeValues(args []Value) (Value, error) {
 	return namedEnumValues("Metadata.MetadataType", metadataMetadataTypeNames, args)
+}
+
+func (vm *VM) reportsDescribeReport(args []Value) (Value, error) {
+	if len(args) != 1 {
+		return Null, fmt.Errorf("reports.ReportManager.describeReport expects report Id")
+	}
+	describe := Object("reports.ReportDescribeResult")
+	describe.Fields["reportMetadata"] = vm.reportsReportMetadata(args[0], Null)
+	describe.Fields["reportExtendedMetadata"] = vm.reportsReportExtendedMetadata()
+	describe.Fields["reportTypeMetadata"] = vm.reportsReportTypeMetadata()
+	return describe, nil
+}
+
+func (vm *VM) reportsDatatypeFilterOperatorMap(args []Value) (Value, error) {
+	if len(args) != 0 {
+		return Null, fmt.Errorf("reports.ReportManager.getDatatypeFilterOperatorMap expects 0 arguments")
+	}
+	return typedMap("Map<String,List<reports.FilterOperator>>"), nil
+}
+
+func (vm *VM) reportsGetReportInstance(args []Value) (Value, error) {
+	if len(args) != 1 {
+		return Null, fmt.Errorf("reports.ReportManager.getReportInstance expects instance Id")
+	}
+	instanceID := scalarText(args[0])
+	if vm.reportInstances != nil {
+		if value, ok := vm.reportInstances[instanceID]; ok {
+			return cloneValue(value), nil
+		}
+	}
+	return vm.reportsReportInstance(args[0], Null, vm.reportsReportResults(Null, Null, false)), nil
+}
+
+func (vm *VM) reportsGetReportInstances(args []Value) (Value, error) {
+	if len(args) != 1 {
+		return Null, fmt.Errorf("reports.ReportManager.getReportInstances expects report Id")
+	}
+	out := typedList("List<reports.ReportInstance>")
+	reportID := scalarText(args[0])
+	for _, instance := range vm.reportInstances {
+		if _, value, found := objectFieldValue(instance, "reportId"); found && scalarText(value) == reportID {
+			out.List = append(out.List, cloneValue(instance))
+		}
+	}
+	return out, nil
+}
+
+func (vm *VM) reportsRunAsyncReport(args []Value) (Value, error) {
+	reportID, metadata, includeDetails, err := vm.reportsReportArgs(args, "reports.ReportManager.runAsyncReport")
+	if err != nil {
+		return Null, err
+	}
+	results := vm.reportsReportResults(reportID, metadata, includeDetails)
+	instanceID := platformScalar("Id", vm.nextReportInstanceID())
+	instance := vm.reportsReportInstance(instanceID, reportID, results)
+	if vm.reportInstances == nil {
+		vm.reportInstances = make(map[string]Value)
+	}
+	vm.reportInstances[scalarText(instanceID)] = cloneValue(instance)
+	return instance, nil
+}
+
+func (vm *VM) reportsRunReport(args []Value) (Value, error) {
+	reportID, metadata, includeDetails, err := vm.reportsReportArgs(args, "reports.ReportManager.runReport")
+	if err != nil {
+		return Null, err
+	}
+	return vm.reportsReportResults(reportID, metadata, includeDetails), nil
+}
+
+func (vm *VM) reportsReportArgs(args []Value, callee string) (Value, Value, bool, error) {
+	if len(args) < 1 || len(args) > 3 {
+		return Null, Null, false, fmt.Errorf("%s expects report Id[, ReportMetadata][, includeDetails]", callee)
+	}
+	reportID := args[0]
+	metadata := Null
+	includeDetails := false
+	for _, arg := range args[1:] {
+		switch {
+		case arg.Kind == ValueBool:
+			includeDetails = arg.Bool
+		case arg.Kind == ValueObject && strings.EqualFold(arg.Type, "reports.ReportMetadata"):
+			metadata = arg
+		default:
+			return Null, Null, false, fmt.Errorf("%s expects report Id[, ReportMetadata][, includeDetails]", callee)
+		}
+	}
+	return reportID, metadata, includeDetails, nil
+}
+
+func (vm *VM) reportsReportResults(reportID, metadata Value, includeDetails bool) Value {
+	results := Object("reports.ReportResults")
+	results.Fields["allData"] = Bool(false)
+	results.Fields["factMap"] = typedMap("Map<String,reports.ReportFact>")
+	results.Fields["groupingsAcross"] = Object("reports.Dimension")
+	results.Fields["groupingsDown"] = Object("reports.Dimension")
+	results.Fields["hasDetailRows"] = Bool(includeDetails)
+	results.Fields["reportExtendedMetadata"] = vm.reportsReportExtendedMetadata()
+	results.Fields["reportMetadata"] = vm.reportsReportMetadata(reportID, metadata)
+	return results
+}
+
+func (vm *VM) reportsReportMetadata(reportID, override Value) Value {
+	if override.Kind == ValueObject && strings.EqualFold(override.Type, "reports.ReportMetadata") {
+		metadata := cloneValue(override)
+		if _, _, ok := objectFieldValue(metadata, "id"); !ok && reportID.Kind != ValueNull {
+			metadata.Fields["id"] = reportID
+		}
+		return metadata
+	}
+	metadata := Object("reports.ReportMetadata")
+	if reportID.Kind != ValueNull {
+		metadata.Fields["id"] = reportID
+	}
+	metadata.Fields["name"] = String("Local Report")
+	metadata.Fields["developerName"] = String("Local_Report")
+	metadata.Fields["groupingsAcross"] = typedList("List<reports.GroupingInfo>")
+	metadata.Fields["groupingsDown"] = typedList("List<reports.GroupingInfo>")
+	metadata.Fields["aggregates"] = typedList("List<String>")
+	metadata.Fields["buckets"] = typedList("List<reports.BucketField>")
+	metadata.Fields["detailColumns"] = typedList("List<String>")
+	metadata.Fields["reportFilters"] = typedList("List<reports.ReportFilter>")
+	metadata.Fields["historicalSnapshotDates"] = typedList("List<String>")
+	metadata.Fields["sortBy"] = typedList("List<reports.SortColumn>")
+	metadata.Fields["standardFilters"] = typedList("List<reports.StandardFilter>")
+	metadata.Fields["customSummaryFormula"] = typedMap("Map<String,reports.ReportCsf>")
+	metadata.Fields["crossFilters"] = typedList("List<reports.CrossFilter>")
+	metadata.Fields["hasDetailRows"] = Bool(false)
+	metadata.Fields["hasRecordCount"] = Bool(false)
+	metadata.Fields["showSubtotals"] = Bool(false)
+	metadata.Fields["showGrandTotal"] = Bool(false)
+	return metadata
+}
+
+func (vm *VM) reportsReportExtendedMetadata() Value {
+	metadata := Object("reports.ReportExtendedMetadata")
+	metadata.Fields["aggregateColumnInfo"] = typedMap("Map<String,reports.AggregateColumn>")
+	metadata.Fields["detailColumnInfo"] = typedMap("Map<String,reports.DetailColumn>")
+	metadata.Fields["groupingColumnInfo"] = typedMap("Map<String,reports.GroupingColumn>")
+	return metadata
+}
+
+func (vm *VM) reportsReportTypeMetadata() Value {
+	metadata := Object("reports.ReportTypeMetadata")
+	metadata.Fields["categories"] = typedList("List<reports.ReportTypeColumnCategory>")
+	metadata.Fields["standardDateFilterDurationGroups"] = typedList("List<reports.StandardDateFilterDurationGroup>")
+	metadata.Fields["standardFilterInfos"] = typedMap("Map<String,reports.StandardFilterInfo>")
+	return metadata
+}
+
+func (vm *VM) reportsReportInstance(instanceID, reportID, results Value) Value {
+	instance := Object("reports.ReportInstance")
+	instance.Fields["id"] = instanceID
+	instance.Fields["reportId"] = reportID
+	instance.Fields["reportResults"] = results
+	instance.Fields["status"] = String("Success")
+	instance.Fields["ownerId"] = platformScalar("Id", vm.currentUserInfoField("Id", "005000000000001"))
+	now := platformScalar("Datetime", formatPlatformDatetime(vm.fakeNow))
+	instance.Fields["requestDate"] = now
+	instance.Fields["completionDate"] = now
+	return instance
+}
+
+func (vm *VM) nextReportInstanceID() string {
+	return fmt.Sprintf("0LG000000%06d", len(vm.reportInstances)+1)
+}
+
+func prefCenterGenerateToken(args []Value) (Value, error) {
+	if len(args) < 1 || len(args) > 2 || args[0].Kind != ValueString {
+		return Null, fmt.Errorf("pref_center.TokenUtility.generateToken expects String[, TokenType]")
+	}
+	return String(prefCenterLocalToken(args[0], args[1:])), nil
+}
+
+func prefCenterGenerateTokens(args []Value) (Value, error) {
+	if len(args) < 1 || len(args) > 3 || args[0].Kind != ValueList {
+		return Null, fmt.Errorf("pref_center.TokenUtility.generateTokens expects List<String>[, TokenType][, DataCloudIdTokenType]")
+	}
+	out := typedMap("Map<String,String>")
+	for _, tokenValue := range args[0].List {
+		if tokenValue.Kind != ValueString {
+			return Null, fmt.Errorf("pref_center.TokenUtility.generateTokens expects List<String>")
+		}
+		key := mapKey(tokenValue)
+		out.Map[key] = String(prefCenterLocalToken(tokenValue, args[1:]))
+		out.MapKeys[key] = tokenValue
+	}
+	return out, nil
+}
+
+func prefCenterLocalToken(tokenValue Value, options []Value) string {
+	parts := []string{tokenValue.Text}
+	for _, option := range options {
+		parts = append(parts, scalarText(option))
+	}
+	sum := sha256.Sum256([]byte(strings.Join(parts, "\x00")))
+	return "local-token-" + hex.EncodeToString(sum[:])[:24]
 }
 
 func (vm *VM) metadataEnqueueDeployment(args []Value, result *Result) (Value, error) {
