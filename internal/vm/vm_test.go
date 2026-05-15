@@ -47,6 +47,9 @@ List<Id> similar = Answers.findSimilar(new Account(Name = 'Acme'));
 System.assertEquals(0, similar.size());
 List<Id> similarIdeas = Ideas.findSimilar(new Idea(Title = 'Acme'));
 System.assertEquals(0, similarIdeas.size());
+System.assertEquals(0, Ideas.getAllRecentReplies('005000000000001', '0DB000000000001').size());
+System.assertEquals(0, Ideas.getReadRecentReplies('005000000000001', '0DB000000000001').size());
+System.assertEquals(0, Ideas.getUnreadRecentReplies('005000000000001', '0DB000000000001').size());
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -58,9 +61,6 @@ System.assertEquals(0, similarIdeas.size());
 
 func TestExecIdeasReplyServiceSurfacesRemainUnsupported(t *testing.T) {
 	for _, source := range []string{
-		`Ideas.getAllRecentReplies('005000000000001', '0DB000000000001');`,
-		`Ideas.getReadRecentReplies('005000000000001', '0DB000000000001');`,
-		`Ideas.getUnreadRecentReplies('005000000000001', '0DB000000000001');`,
 		`Ideas.markRead('087000000000001');`,
 	} {
 		program, err := CompileAnonymous(source)

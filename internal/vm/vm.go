@@ -2123,7 +2123,7 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"Datetime.now", "Datetime.newInstance", "Datetime.newInstanceGmt", "Datetime.valueOf", "Datetime.valueOfGmt",
 		"Time.newInstance", "Time.valueOf",
 		"Blob.valueOf",
-		"URL.getSalesforceBaseUrl", "URL.getOrgDomainUrl", "URL.getCurrentRequestUrl",
+		"URL.getSalesforceBaseUrl", "URL.getOrgDomainUrl", "URL.getCurrentRequestUrl", "URL.getFileFieldURL",
 		"Crypto.generateDigest", "Crypto.generateMac", "Crypto.verifyHmac", "Crypto.areEqualConstantTime",
 		"Crypto.encrypt", "Crypto.decrypt", "Crypto.encryptWithManagedIV", "Crypto.decryptWithManagedIV",
 		"Crypto.sign", "Crypto.signWithCertificate", "Crypto.verify", "Crypto.verifyWithCertificate",
@@ -2153,7 +2153,7 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"IsvPartners.AppAnalytics.logCustomInteraction",
 		"UserProvisioning.UserProvisioningLog.log",
 		"pref_center.TokenUtility.generateToken", "pref_center.TokenUtility.generateTokens",
-		"Ideas.findSimilar",
+		"Ideas.findSimilar", "Ideas.getAllRecentReplies", "Ideas.getReadRecentReplies", "Ideas.getUnreadRecentReplies",
 		"Datacloud.FindDuplicates.findDuplicates", "Datacloud.FindDuplicatesByIds.findDuplicatesByIds",
 		"DomainParser.parse", "FeatureManagement.changeProtection", "Packaging.getCurrentPackageId",
 		"NLPPredictions.FAQPrediction.predict",
@@ -4402,6 +4402,11 @@ platformStaticCall:
 			return Null, fmt.Errorf("URL.getCurrentRequestUrl expects 0 arguments")
 		}
 		return platformScalar("URL", vm.currentRequestURL()), nil
+	case "URL.getFileFieldURL":
+		if len(args) != 2 {
+			return Null, fmt.Errorf("URL.getFileFieldURL expects object Id and field name")
+		}
+		return String(vm.fileFieldURL(args[0], args[1])), nil
 	case "Test.setMock":
 		return vm.testSetMock(args)
 	case "WebServiceCallout.invoke":
@@ -5137,6 +5142,13 @@ func (vm *VM) currentRequestURL() string {
 	return vm.salesforceBaseURL() + "/" + raw
 }
 
+func (vm *VM) fileFieldURL(objectID, fieldName Value) string {
+	query := url.Values{}
+	query.Set("id", stringValueOrEmpty(objectID))
+	query.Set("field", stringValueOrEmpty(fieldName))
+	return strings.TrimRight(vm.salesforceBaseURL(), "/") + "/servlet/servlet.FileDownload?" + query.Encode()
+}
+
 func (vm *VM) currentRequestValue() Value {
 	request := Object("Request")
 	request.Fields["requestId"] = String("oaer-request-000000000001")
@@ -5536,7 +5548,7 @@ func unsupportedCoreStaticSurface(callee string) (string, bool) {
 	switch callee {
 	case "Crypto.signXml":
 		return "local XML signature surface", true
-	case "Ideas.getAllRecentReplies", "Ideas.getReadRecentReplies", "Ideas.getUnreadRecentReplies", "Ideas.markRead":
+	case "Ideas.markRead":
 		return "local Ideas reply/read-state service surface", true
 	case "KbManagement.PublishingService.deleteArchivedArticle",
 		"KbManagement.PublishingService.deleteArchivedArticleVersion",
@@ -26533,6 +26545,16 @@ func (vm *VM) generatedPlatformStaticDefault(callee string, args []Value) (Value
 		}
 		return vm.generatedPlatformMethodDefaultReturn(method, Null, args), true
 	}
+	if strings.EqualFold(className, "Ideas") {
+		switch strings.ToLower(methodName) {
+		case "getallrecentreplies", "getreadrecentreplies", "getunreadrecentreplies":
+			method, ok := vm.generatedPlatformMethodForArgs(className, methodName, args, true)
+			if !ok {
+				return Null, false
+			}
+			return vm.generatedPlatformMethodDefaultReturn(method, Null, args), true
+		}
+	}
 	if !vm.generatedPlatformMethodFallbackType(className) {
 		return Null, false
 	}
@@ -26830,7 +26852,10 @@ func (vm *VM) callAppLauncherControllerStatic(callee string, args []Value) (Valu
 			}
 			return typedList("List<SamlSsoConfig>"), true, nil
 		case "getcommunitydomainssourl", "getsamlssourl", "getsamlssourlnocache", "getssourl":
-			return Null, true, unsupportedCallError(callee + " local social login redirect flow")
+			if len(args) != 2 {
+				return Null, true, fmt.Errorf("%s expects 2 arguments", callee)
+			}
+			return String(vm.appLauncherSsoURL(methodName, args[0], args[1])), true, nil
 		case "handleidp":
 			return Null, true, unsupportedCallError(callee + " local identity provider callback flow")
 		}
@@ -26850,6 +26875,21 @@ func (vm *VM) appLauncherRegistrationRedirectURL(confirmURL, startURL Value) str
 		return confirmURL.Text
 	}
 	return vm.appLauncherStartURL(startURL)
+}
+
+func (vm *VM) appLauncherSsoURL(methodName string, startURL, provider Value) string {
+	path := "sso"
+	switch strings.ToLower(methodName) {
+	case "getsamlssourl", "getsamlssourlnocache":
+		path = "saml"
+	}
+	providerName := stringValueOrEmpty(provider)
+	if providerName == "" {
+		providerName = "local"
+	}
+	query := url.Values{}
+	query.Set("startURL", vm.appLauncherStartURL(startURL))
+	return strings.TrimRight(vm.salesforceBaseURL(), "/") + "/services/auth/" + path + "/" + url.PathEscape(providerName) + "?" + query.Encode()
 }
 
 func (vm *VM) callConnectAPITestFixtureStatic(callee string, args []Value) (Value, bool, error) {
@@ -32776,6 +32816,12 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			return Object("Support.WorkCapacityDuration"), receiver, false, true, nil
 		}
+	}
+	if strings.EqualFold(receiver.Type, "Support.MilestoneTriggerTimeCalculator") && strings.EqualFold(method, "calculateMilestoneTriggerTime") {
+		if len(args) != 2 {
+			return Null, receiver, false, true, fmt.Errorf("Support.MilestoneTriggerTimeCalculator.calculateMilestoneTriggerTime expects String, String")
+		}
+		return Int(0), receiver, false, true, nil
 	}
 	if strings.EqualFold(receiver.Type, "ChatterAnswers.AccountCreator") && strings.EqualFold(method, "createAccount") {
 		if len(args) != 3 {

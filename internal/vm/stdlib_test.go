@@ -2243,6 +2243,7 @@ System.assertEquals('List[1]', left.toString());
 
 URL base = URL.getOrgDomainUrl();
 System.assertEquals('https://local.oaer.example', base.toExternalForm());
+System.assertEquals('https://local.oaer.example/servlet/servlet.FileDownload?field=Logo__c&id=001B000001DVM9t', URL.getFileFieldURL('001B000001DVM9t', 'Logo__c'));
 System.assertEquals('https', base.getProtocol());
 System.assertEquals('local.oaer.example', base.getHost());
 System.assertEquals(443, base.getDefaultPort());
