@@ -2242,6 +2242,38 @@ func TestExecuteNamespacedCustomFieldPredicate(t *testing.T) {
 	}
 }
 
+func TestExecuteNamespacedCustomMetadataAPINamePredicate(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Namespace = "pkg"
+	org.Objects["Config__mdt"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Config__mdt",
+			Fields: map[string]storage.Field{
+				"ObjectName__c": {APIName: "ObjectName__c", Type: storage.FieldString},
+				"Active__c":     {APIName: "Active__c", Type: storage.FieldBoolean},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"a00000000000001": {
+				ID:     "a00000000000001",
+				Object: "Config__mdt",
+				Fields: map[string]storage.Value{
+					"ObjectName__c": storage.StringValue("pkg__Widget__c"),
+					"Active__c":     storage.BooleanValue(true),
+				},
+			},
+		},
+	}
+
+	result, err := ParseAndExecute(org, "SELECT Id FROM Config__mdt WHERE Active__c = TRUE AND ObjectName__c = 'Widget__c'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 {
+		t.Fatalf("rows = %d, result = %#v", result.Rows, result)
+	}
+}
+
 func assertStorageInt(t *testing.T, value storage.Value, want int64) {
 	t.Helper()
 	if value.Kind != storage.ValueInteger || value.Integer != want {

@@ -5841,6 +5841,130 @@ System.assertEquals(1, survivors.size(), 'partial insert should keep only unbloc
 	}
 }
 
+func TestExecTriggerAddErrorThroughHelperHeldRecordsProducesDMLResults(t *testing.T) {
+	constructor, err := CompileAnonymous(`this.records = records;`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	validate, err := CompileAnonymous(`
+for (Account a : this.records) {
+	if (a.Name == 'Block') {
+		a.Name.addError('blocked by helper');
+	}
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	triggerProgram, err := CompileAnonymous(`
+AccountValidator validator = new AccountValidator(Trigger.new);
+validator.validate();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+List<Account> records = new List<Account>{new Account(Name = 'Block')};
+List<Object> results = Database.insert(records, false);
+System.assertEquals(1, results.size());
+Object first = results.get(0);
+System.assert(!first.isSuccess());
+System.assertEquals(1, first.getErrors().size());
+System.assertEquals('blocked by helper', first.getErrors().get(0).getMessage());
+List<Account> survivors = [SELECT Id FROM Account];
+System.assertEquals(0, survivors.size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	class := Class{
+		Name: "AccountValidator",
+		Fields: map[string]Field{
+			"records": {Name: "records", Type: "List<Account>"},
+		},
+		Constructors: []Method{{
+			Name:          "AccountValidator.<init>",
+			ClassName:     "AccountValidator",
+			ReturnType:    "void",
+			IsConstructor: true,
+			Params:        []Param{{Name: "records", Type: "List<Account>"}},
+			Program:       constructor,
+		}},
+		Methods: map[string]Method{
+			"validate": {Name: "AccountValidator.validate", ClassName: "AccountValidator", ReturnType: "void", Program: validate},
+		},
+	}
+	if err := machine.RegisterClass(class); err != nil {
+		t.Fatal(err)
+	}
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "AccountBeforeInsertHelperAddError",
+		Object:    "Account",
+		Timing:    triggerTimingBefore,
+		Operation: "insert",
+		Program:   triggerProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecTriggerCustomFieldAddErrorProducesDMLResults(t *testing.T) {
+	triggerProgram, err := CompileAnonymous(`
+for (Widget__c w : Trigger.new) {
+	if (String.isBlank(w.Code__c)) {
+		w.Code__c.addError('Code required');
+	}
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+List<Widget__c> records = new List<Widget__c>{new Widget__c(Name = 'Blocked')};
+List<Object> results = Database.insert(records, false);
+System.assertEquals(1, results.size());
+Object first = results.get(0);
+System.assert(!first.isSuccess());
+System.assertEquals('Code required', first.getErrors().get(0).getMessage());
+System.assertEquals('Code__c', first.getErrors().get(0).getFields().get(0));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := storage.NewOrgState()
+	org.Objects["Widget__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Widget__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"Name":    {APIName: "Name", Type: storage.FieldString},
+				"Code__c": {APIName: "Code__c", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine.SetOrg(&org)
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "WidgetBeforeInsertAddError",
+		Object:    "Widget__c",
+		Timing:    triggerTimingBefore,
+		Operation: "insert",
+		Program:   triggerProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestBeforeInsertTriggerCanQueryExistingRowsAndAddOverlapError(t *testing.T) {
 	triggerProgram, err := CompileAnonymous(`
 Set<Id> parentIds = new Set<Id>();

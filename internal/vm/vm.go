@@ -11954,6 +11954,20 @@ func hasDMLFailures(results []dml.Result) bool {
 	return false
 }
 
+func dmlResultsFromTargets(records []storage.Record, targets []*Value) []dml.Result {
+	if len(targets) == 0 {
+		return nil
+	}
+	values := make([]Value, len(targets))
+	for i, target := range targets {
+		if target == nil {
+			continue
+		}
+		values[i] = *target
+	}
+	return dmlResultsFromSObjectErrors(records, values)
+}
+
 func filterDMLInputs(records, before []storage.Record, targets []*Value, failures []dml.Result) ([]storage.Record, []storage.Record, []*Value) {
 	filteredRecords := make([]storage.Record, 0, len(records))
 	filteredBefore := make([]storage.Record, 0, len(before))
@@ -12058,6 +12072,10 @@ func (vm *VM) applyDML(op string, value Value, allOrNone bool, externalIDField s
 		}
 		if op != "delete" {
 			records = beforeTriggerRecords
+		}
+		targetFailures := dmlResultsFromTargets(records, targets)
+		if hasDMLFailures(targetFailures) {
+			beforeFailures = mergeDMLResults(beforeFailures, targetFailures)
 		}
 	}
 	if hasDMLFailures(beforeFailures) {
@@ -26779,11 +26797,17 @@ func (vm *VM) callMethodWithReceiver(method Method, receiver Value, args []Value
 			continue
 		}
 		for _, arg := range args {
-			if collectionAliasMatch(arg, updated) && !arg.Equal(updated) {
-				vm.propagateCollectionMutationToScope(caller, arg, updated)
-				vm.propagateCollectionMutationToStatics(arg, updated)
+			if valueAliasMatch(arg, updated) && !arg.Equal(updated) {
+				vm.propagateValueMutationToScope(caller, arg, updated)
+				vm.propagateValueMutationToStatics(arg, updated)
 				break
 			}
+		}
+	}
+	if receiver.Kind != ValueNull {
+		if updated, ok := frame["this"]; ok && valueAliasMatch(receiver, updated) && !receiver.Equal(updated) {
+			vm.propagateValueMutationToScope(caller, receiver, updated)
+			vm.propagateValueMutationToStatics(receiver, updated)
 		}
 	}
 	return value, nil
@@ -29052,6 +29076,13 @@ func (vm *VM) callSObjectFieldAddError(path []string, args []Value) (Value, bool
 		return Null, false, nil
 	}
 	root, ok := vm.Globals[path[0]]
+	if !ok {
+		lookedUp, err := vm.lookup(path[0])
+		if err == nil {
+			root = lookedUp
+			ok = true
+		}
+	}
 	if !ok || root.Kind != ValueObject || !vm.isSObjectType(root.Type) {
 		return Null, false, nil
 	}
@@ -29064,7 +29095,9 @@ func (vm *VM) callSObjectFieldAddError(path []string, args []Value) (Value, bool
 		return Null, true, err
 	}
 	addSObjectError(&root, message, []string{field})
-	vm.Globals[path[0]] = root
+	if err := vm.storeReceiver(path[0], root); err != nil {
+		return Null, true, err
+	}
 	return Null, true, nil
 }
 
@@ -29077,6 +29110,12 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			return newDataWeaveScript(args[1].Text), true, nil
 		}
 		return Null, true, fmt.Errorf("DataWeave.Script.createScript expects script name String")
+	}
+	if strings.EqualFold(method, "addError") && strings.Contains(receiverName, ".") {
+		value, handled, err := vm.callSObjectFieldAddError(strings.Split(receiverName, "."), args)
+		if handled || err != nil {
+			return value, true, err
+		}
 	}
 	if receiver.Kind == ValueNull {
 		return Null, true, newNullDereferenceError(nullMemberContext(receiverName, method))
@@ -30282,13 +30321,17 @@ func (vm *VM) propagateCollectionMutation(previous, updated Value) {
 	if !sameCollectionType(previous, updated) {
 		return
 	}
-	vm.propagateCollectionMutationToScope(vm.Globals, previous, updated)
-	vm.propagateCollectionMutationToStatics(previous, updated)
+	vm.propagateValueMutationToScope(vm.Globals, previous, updated)
+	vm.propagateValueMutationToStatics(previous, updated)
 }
 
 func (vm *VM) propagateCollectionMutationToScope(scope map[string]Value, previous, updated Value) {
+	vm.propagateValueMutationToScope(scope, previous, updated)
+}
+
+func (vm *VM) propagateValueMutationToScope(scope map[string]Value, previous, updated Value) {
 	for name, value := range scope {
-		replaced, changed := replaceCollectionAlias(value, previous, updated, make(map[uint64]bool))
+		replaced, changed := replaceValueAlias(value, previous, updated, make(map[uint64]bool))
 		if changed {
 			scope[name] = replaced
 		}
@@ -30301,6 +30344,10 @@ func dataWeaveStaticScriptReceiver(receiverName string) bool {
 }
 
 func (vm *VM) propagateCollectionMutationToStatics(previous, updated Value) {
+	vm.propagateValueMutationToStatics(previous, updated)
+}
+
+func (vm *VM) propagateValueMutationToStatics(previous, updated Value) {
 	if previous.Ref == 0 {
 		return
 	}
@@ -30313,7 +30360,7 @@ func (vm *VM) propagateCollectionMutationToStatics(previous, updated Value) {
 	for className, class := range vm.Classes {
 		changed := false
 		for fieldName, field := range class.StaticFields {
-			replaced, fieldChanged := replaceCollectionAlias(field.Value, previous, updated, make(map[uint64]bool))
+			replaced, fieldChanged := replaceValueAlias(field.Value, previous, updated, make(map[uint64]bool))
 			if fieldChanged {
 				field.Value = replaced
 				class.StaticFields[fieldName] = field
@@ -30422,7 +30469,11 @@ func collectValueRefs(value Value, refs, seen map[uint64]bool) {
 }
 
 func replaceCollectionAlias(value, previous, updated Value, seen map[uint64]bool) (Value, bool) {
-	if collectionAliasMatch(previous, value) {
+	return replaceValueAlias(value, previous, updated, seen)
+}
+
+func replaceValueAlias(value, previous, updated Value, seen map[uint64]bool) (Value, bool) {
+	if valueAliasMatch(previous, value) {
 		return updated, true
 	}
 	if value.Ref != 0 {
@@ -30435,7 +30486,7 @@ func replaceCollectionAlias(value, previous, updated Value, seen map[uint64]bool
 	switch value.Kind {
 	case ValueObject:
 		for name, child := range value.Fields {
-			replaced, childChanged := replaceCollectionAlias(child, previous, updated, seen)
+			replaced, childChanged := replaceValueAlias(child, previous, updated, seen)
 			if childChanged {
 				value.Fields[name] = replaced
 				changed = true
@@ -30443,14 +30494,14 @@ func replaceCollectionAlias(value, previous, updated Value, seen map[uint64]bool
 		}
 	case ValueMap:
 		for key, child := range value.Map {
-			replaced, childChanged := replaceCollectionAlias(child, previous, updated, seen)
+			replaced, childChanged := replaceValueAlias(child, previous, updated, seen)
 			if childChanged {
 				value.Map[key] = replaced
 				changed = true
 			}
 		}
 		for key, child := range value.MapKeys {
-			replaced, childChanged := replaceCollectionAlias(child, previous, updated, seen)
+			replaced, childChanged := replaceValueAlias(child, previous, updated, seen)
 			if childChanged {
 				value.MapKeys[key] = replaced
 				changed = true
@@ -30458,7 +30509,7 @@ func replaceCollectionAlias(value, previous, updated Value, seen map[uint64]bool
 		}
 	case ValueList:
 		for i, child := range value.List {
-			replaced, childChanged := replaceCollectionAlias(child, previous, updated, seen)
+			replaced, childChanged := replaceValueAlias(child, previous, updated, seen)
 			if childChanged {
 				value.List[i] = replaced
 				changed = true
@@ -30466,7 +30517,7 @@ func replaceCollectionAlias(value, previous, updated Value, seen map[uint64]bool
 		}
 	case ValueSet:
 		for i, child := range value.Set {
-			replaced, childChanged := replaceCollectionAlias(child, previous, updated, seen)
+			replaced, childChanged := replaceValueAlias(child, previous, updated, seen)
 			if childChanged {
 				value.Set[i] = replaced
 				changed = true
@@ -30477,10 +30528,19 @@ func replaceCollectionAlias(value, previous, updated Value, seen map[uint64]bool
 }
 
 func collectionAliasMatch(left, right Value) bool {
+	return valueAliasMatch(left, right)
+}
+
+func valueAliasMatch(left, right Value) bool {
 	if left.Kind != right.Kind {
 		return false
 	}
-	return left.Ref != 0 && left.Ref == right.Ref
+	switch left.Kind {
+	case ValueObject, ValueList, ValueSet, ValueMap:
+		return left.Ref != 0 && left.Ref == right.Ref
+	default:
+		return false
+	}
 }
 
 func sameCollectionType(left, right Value) bool {
