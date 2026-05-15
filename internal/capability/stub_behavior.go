@@ -272,6 +272,12 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 	if industryControllerUnsupportedBehaviorMethod(symbol, member) {
 		return StubBehaviorUnsupported, "industry package mutation, booking, or transaction service remains explicitly unsupported", true
 	}
+	if packagedControllerDefaultBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "packaged controller/helper method returns deterministic local empty/default DTOs, maps, booleans, strings, or no-op callback results without invoking managed services", true
+	}
+	if packagedControllerUnsupportedBehaviorMethod(symbol, member) {
+		return StubBehaviorUnsupported, "packaged mutation, external service, authentication, geocoding, archive, quote, or transaction execution surface remains explicitly unsupported", true
+	}
 	if explicitlyUnsupportedCoreBehaviorMethod(symbol, member) {
 		return StubBehaviorUnsupported, "local runtime returns an explicit unsupported-feature error for this platform surface", true
 	}
@@ -694,6 +700,119 @@ func industryControllerUnsupportedBehaviorMethod(symbol typesys.TypeSymbol, memb
 		return strings.HasPrefix(name, "create") || strings.HasPrefix(name, "update") || strings.HasPrefix(name, "delete")
 	case "RevSalesTrxn.PlaceSalesTransactionExecutor":
 		return name == "execute"
+	default:
+		return false
+	}
+}
+
+func packagedControllerDefaultBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if member.Kind != apexast.DeclarationMethod {
+		return false
+	}
+	return packagedControllerDefaultMethod(stubBehaviorTypeName(symbol), member.Name)
+}
+
+func packagedControllerUnsupportedBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if member.Kind != apexast.DeclarationMethod {
+		return false
+	}
+	return packagedControllerUnsupportedMethod(stubBehaviorTypeName(symbol), member.Name)
+}
+
+func packagedControllerDefaultMethod(typeName, methodName string) bool {
+	name := strings.ToLower(methodName)
+	if dot := strings.LastIndex(name, "."); dot >= 0 {
+		name = name[dot+1:]
+	}
+	switch typeName {
+	case "SF_Archive.ArchiverAccessor":
+		switch {
+		case strings.HasPrefix(name, "get"), strings.HasPrefix(name, "globalsearch"), strings.HasPrefix(name, "view"):
+			return true
+		case strings.HasPrefix(name, "performarchiverglobalsearch"):
+			return true
+		default:
+			return false
+		}
+	case "ime_mrm.EventManagementBudgetApi", "ime_mrm.EventManagementManagedEventApi",
+		"ime_mrm.EventManagementParticipantApi", "ime_mrm.EventManagementProductApi",
+		"ime_mrm.EventManagementSubjectApi":
+		return name == "call" || name == "invokemethod" || strings.HasPrefix(name, "get")
+	case "wavetemplate.Access":
+		return strings.HasPrefix(name, "check") || strings.HasPrefix(name, "get") || strings.Contains(name, "hasaccess")
+	case "wavetemplate.Answers":
+		return name == "get" || name == "put"
+	case "wavetemplate.NetZeroBTE_Modifier", "wavetemplate.VcommBusinessChecklistRemoter",
+		"wavetemplate.VcommBusinessConfigurationModifier", "wavetemplate.WaveTemplateConfigurationModifier":
+		return true
+	case "wave.Dags":
+		return name == "getdags"
+	case "wave.TrendedDatasetProcessor":
+		return name == "getdescription" || name == "getlabel"
+	case "applauncher.AppLauncherSetupReordererController":
+		return name == "getmodel" || name == "saveorder"
+	case "applauncher.ChangePasswordController":
+		return name == "getpasswordpolicystatement"
+	case "applauncher.ForgotPasswordController":
+		return name == "setexperienceid"
+	case "setup_service_livemessage.MessagingChannelAppleDomainController":
+		return name == "getapplepaydomain"
+	case "setup_service_itsm_teams.EinsteinAgentFinalService":
+		return name == "einsteinsendmessage"
+	case "regrelloapex.LoginFormController":
+		return name == "getforgotpasswordurl" || name == "logingetpagerefurl"
+	case "publicsectrsltn.GetAccountsAndContacts":
+		return name == "invokemethod"
+	case "pref_center.PreferenceCenterApexHandler":
+		return name == "load" || name == "submit"
+	case "formulaeval.FormulaInstance":
+		return name == "evaluate" || name == "getreferencedfields"
+	case "aiaccelerator.CustomFeatureExtractor", "aiaccelerator.SampleCustomFeatureExtractor":
+		return name == "extractfeatures"
+	case "sfdc_enablement.LearningItemEvaluationHandler":
+		return name == "evaluate"
+	case "sfdc_enablement.LearningItemSerializeDeserializer":
+		return name == "deserialize" || name == "serialize"
+	case "omnichannel.RouteWorkApexController":
+		return name == "isenabledskillbasedrouting" || name == "search"
+	case "mapslite.MapsLiteUtils":
+		return name == "accesscheck" || name == "userhasmaps"
+	case "mlplatform.PredictionServiceClient":
+		return name == "predictions"
+	case "industries_clm.OpenInterface":
+		return name == "invokemethod"
+	default:
+		return false
+	}
+}
+
+func packagedControllerUnsupportedMethod(typeName, methodName string) bool {
+	name := strings.ToLower(methodName)
+	if dot := strings.LastIndex(name, "."); dot >= 0 {
+		name = name[dot+1:]
+	}
+	switch typeName {
+	case "SF_Archive.ArchiverAccessor":
+		return strings.HasPrefix(name, "forget") || strings.HasPrefix(name, "mask") || strings.HasPrefix(name, "performunarchive")
+	case "applauncher.ChangePasswordController":
+		return strings.HasPrefix(name, "changepass")
+	case "applauncher.ForgotPasswordController":
+		return name == "forgotpassword"
+	case "setup_service_livemessage.MessagingChannelAppleDomainController":
+		return name == "uploaddomainverificationcertificate"
+	case "publicsectrsltn.AssessmentResponses":
+		return name == "storeresponses"
+	case "placequote.PlaceQuoteExecutor", "placequote.PlaceQuoteRLMApexProcessor",
+		"RevSignaling.SignalingApexProcessor", "OrgMonitorFramework":
+		return name == "execute" || name == "executeblacktabrequest"
+	case "omnichannel.RouteWorkApexController":
+		return name == "routework"
+	case "mapslite.MapsLiteUtils":
+		return name == "falcongeocoderecords"
+	case "embeddedMessaging.EmbeddedMessagingSessionHandler":
+		return name == "handlerequestwithsfdcsession"
+	case "YubiAuthForAloha":
+		return name == "validateyubikeylogin"
 	default:
 		return false
 	}
