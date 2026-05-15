@@ -238,6 +238,9 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 	if generatedOptionalWrapperBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "CartExtension optional wrapper empty/of/isPresent/get is handled by the VM optional-wrapper surface", true
 	}
+	if sfsqlqueryHarnessBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "sfsqlquery test harness and mock row iterator methods are handled locally without executing SQL service calls", true
+	}
 	if generatedDTOAccessorBehaviorMethod(symbol, member) {
 		return StubBehaviorPassiveDefault, "passive generated DTO getter/setter returns or mutates the matching property when available, otherwise uses a typed default", true
 	}
@@ -248,6 +251,38 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 		return StubBehaviorPassiveDefault, "passive generated platform method returns a typed default value unless runtime code special-cases it", true
 	}
 	return "", "", false
+}
+
+func sfsqlqueryHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if member.Kind != apexast.DeclarationMethod && member.Kind != apexast.DeclarationConstructor {
+		return false
+	}
+	typeName := stubBehaviorTypeName(symbol)
+	name := strings.ToLower(member.Name)
+	switch typeName {
+	case "sfsqlquery.QueryHandle":
+		return member.Kind == apexast.DeclarationConstructor ||
+			name == "create" || name == "tostring" || name == "withoffset" || name == "withworkloadname"
+	case "sfsqlquery.SqlStatement":
+		return member.Kind == apexast.DeclarationConstructor ||
+			name == "create" || name == "tostring" || name == "withworkloadname"
+	case "sfsqlquery.SqlRowIterator":
+		switch name {
+		case "cancel", "getcolumnnames", "getmetadata", "getqueryid", "hasnext", "iterator", "next", "tostring":
+			return true
+		default:
+			return member.Kind == apexast.DeclarationConstructor
+		}
+	case "sfsqlquery.SqlTester":
+		switch name {
+		case "clearmocks", "enqueuemockrows", "isrunningtest", "setmockmetadata", "setmockrows":
+			return true
+		default:
+			return false
+		}
+	default:
+		return false
+	}
 }
 
 func generatedOptionalWrapperBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
@@ -291,6 +326,9 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 	typeName := stubBehaviorTypeName(symbol)
 	name := strings.ToLower(member.Name)
 	if strings.HasPrefix(typeName, "Schema.") && (strings.HasPrefix(name, "get") || strings.HasPrefix(name, "is")) {
+		return true
+	}
+	if typeName == "Schema.SObjectType" && name == "newsobject" {
 		return true
 	}
 	if apexPagesBehaviorMethod(typeName, name) || messagingBehaviorMethod(typeName, name) {
@@ -585,7 +623,8 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 		}
 	case "SObject":
 		switch name {
-		case "clear", "get", "put", "getsobject", "putsobject", "getsobjecttype",
+		case "clear", "get", "put", "getall", "getinstance", "getorgdefaults", "getvalues",
+			"getsobject", "getsobjects", "putsobject", "getsobjecttype", "getquickactionname",
 			"getpopulatedfieldsasmap", "isset", "clone", "haserrors", "geterrors",
 			"adderror", "recalculateformulas", "getoptions", "setoptions", "isclone",
 			"getclonesourceid":
@@ -1219,6 +1258,9 @@ func generatedDTOBehaviorType(symbol typesys.TypeSymbol) bool {
 	if strings.HasPrefix(typeName, "ConnectApi.") {
 		return generatedPassiveDTOShape(symbol)
 	}
+	if safeSchemaPassiveDTOBehaviorType(typeName) {
+		return generatedPassiveDTOShape(symbol)
+	}
 	if strings.HasPrefix(typeName, "Schema.") || strings.HasPrefix(typeName, "ApexPages.") ||
 		strings.HasPrefix(typeName, "Messaging.") || strings.HasPrefix(typeName, "Dom.") ||
 		strings.HasPrefix(typeName, "System.") || strings.HasPrefix(typeName, "Database.") ||
@@ -1231,6 +1273,19 @@ func generatedDTOBehaviorType(symbol typesys.TypeSymbol) bool {
 		return false
 	}
 	return generatedPassiveDTOShape(symbol)
+}
+
+func safeSchemaPassiveDTOBehaviorType(typeName string) bool {
+	switch strings.ToLower(typeName) {
+	case "schema.datacategory",
+		"schema.datacategorygroupsobjecttypepair",
+		"schema.describecolorresult",
+		"schema.describedatacategorygroupresult",
+		"schema.describedatacategorygroupstructureresult":
+		return true
+	default:
+		return false
+	}
 }
 
 func generatedDTOCollectionBehaviorType(symbol typesys.TypeSymbol) bool {

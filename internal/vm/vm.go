@@ -91,6 +91,8 @@ type VM struct {
 	currentPage        Value
 	pageReferences     map[string]string
 	fixedSearchResults []Value
+	sfsqlqueryRows     []Value
+	sfsqlqueryMetadata []Value
 	platformCache      map[string]map[string]cacheEntry
 	capturedEmails     []CapturedEmail
 	restRequest        Value
@@ -2120,6 +2122,8 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"Test.clearApexPageMessages", "Test.setCurrentPage", "Test.setCurrentPageReference",
 		"Test.setMock", "Test.testInstall", "Test.createStub", "Test.createSoqlStub", "Test.createStubQueryRow", "Test.createStubQueryRows", "Test.loadData",
 		"Test.getFlexQueueOrder", "Test.enqueueBatchJobs", "Test.calculatePermissionSetGroup", "Test.enableChangeDataCapture", "Test.setReadOnlyApplicationMode", "Test.isSoqlStubDefined",
+		"sfsqlquery.SqlTester.clearMocks", "sfsqlquery.SqlTester.enqueueMockRows", "sfsqlquery.SqlTester.setMockRows", "sfsqlquery.SqlTester.setMockMetadata",
+		"sfsqlquery.SqlTester.isRunningTest", "sfsqlquery.QueryHandle.create", "sfsqlquery.SqlStatement.create",
 		"WebServiceCallout.invoke",
 		"CURRENCY.newInstance",
 		"Collator.getInstance",
@@ -3979,6 +3983,37 @@ platformStaticCall:
 		return vm.testCreateStubQueryRows(args)
 	case "Test.loadData":
 		return vm.testLoadData(args, result)
+	case "sfsqlquery.SqlTester.clearMocks":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("sfsqlquery.SqlTester.clearMocks expects 0 arguments")
+		}
+		vm.sfsqlqueryRows = nil
+		vm.sfsqlqueryMetadata = nil
+		return Null, nil
+	case "sfsqlquery.SqlTester.enqueueMockRows", "sfsqlquery.SqlTester.setMockRows":
+		if len(args) != 1 || args[0].Kind != ValueList {
+			return Null, fmt.Errorf("%s expects List<ConnectApi.QuerySqlRow>", callee)
+		}
+		if strings.HasSuffix(callee, ".setMockRows") {
+			vm.sfsqlqueryRows = nil
+		}
+		vm.sfsqlqueryRows = append(vm.sfsqlqueryRows, cloneValue(args[0]).List...)
+		return Null, nil
+	case "sfsqlquery.SqlTester.setMockMetadata":
+		if len(args) != 1 || args[0].Kind != ValueList {
+			return Null, fmt.Errorf("sfsqlquery.SqlTester.setMockMetadata expects List<ConnectApi.QuerySqlMetadataItem>")
+		}
+		vm.sfsqlqueryMetadata = append([]Value(nil), cloneValue(args[0]).List...)
+		return Null, nil
+	case "sfsqlquery.SqlTester.isRunningTest":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("sfsqlquery.SqlTester.isRunningTest expects 0 arguments")
+		}
+		return Bool(vm.testContext != nil), nil
+	case "sfsqlquery.QueryHandle.create":
+		return vm.newSfsqlqueryQueryHandle(args)
+	case "sfsqlquery.SqlStatement.create":
+		return vm.newSfsqlquerySqlStatement(args)
 	case "Test.getFlexQueueOrder":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Test.getFlexQueueOrder expects 0 arguments")
@@ -23610,6 +23645,9 @@ func (vm *VM) constructGeneratedPlatformValue(typeName string, args []Value, nam
 	if !ok || generated.Kind == apexast.DeclarationInterface || generated.Kind == apexast.DeclarationEnum || vm.isSObjectLikeType(generated.Name) {
 		return Null, false, nil
 	}
+	if sfsqlquerySafeHarnessType(generated.Name) {
+		return vm.constructSfsqlqueryHarnessValue(generated, args, namedArgs)
+	}
 	if !vm.isPassivePlatformDTOType(generated.Name) && len(generated.Fields) == 0 {
 		return Null, false, nil
 	}
@@ -23876,6 +23914,282 @@ func (vm *VM) newGeneratedOptionalWrapper(typeName string, present bool, value V
 	object.Fields["__optional_present"] = Bool(present)
 	object.Fields["__optional_value"] = value
 	return object
+}
+
+func sfsqlquerySafeHarnessType(typeName string) bool {
+	switch typeName {
+	case "sfsqlquery.QueryHandle", "sfsqlquery.SqlStatement", "sfsqlquery.SqlRowIterator", "sfsqlquery.SqlQueueable":
+		return true
+	default:
+		return false
+	}
+}
+
+func (vm *VM) constructSfsqlqueryHarnessValue(generated generatedPlatformType, args []Value, namedArgs map[string]Value) (Value, bool, error) {
+	ctorArgs := args
+	if len(generated.Constructors) != 0 {
+		ctor, ok, ambiguous := vm.matchMethodByArgs(generated.Constructors, args)
+		if !ok && len(namedArgs) != 0 {
+			ctor, ctorArgs, ok, ambiguous = vm.matchGeneratedPlatformConstructorWithNamedArgs(generated, args, namedArgs)
+		}
+		if ambiguous {
+			return Null, true, fmt.Errorf("ambiguous %s constructor with %d argument(s)", generated.Name, len(args))
+		}
+		if !ok {
+			return Null, true, fmt.Errorf("%s constructor expects %s", generated.Name, generatedPlatformConstructorSummary(generated.Constructors))
+		}
+		object := vm.newGeneratedPlatformObject(generated)
+		bindPassiveConstructorArgs(&object, ctor, ctorArgs)
+		if err := vm.bindGeneratedPlatformNamedFields(&object, namedArgs); err != nil {
+			return Null, true, err
+		}
+		vm.initializeSfsqlqueryHarnessObject(&object, ctorArgs)
+		return object, true, nil
+	}
+	if len(args) != 0 {
+		return Null, true, fmt.Errorf("%s constructor expects 0 arguments", generated.Name)
+	}
+	object := vm.newGeneratedPlatformObject(generated)
+	if err := vm.bindGeneratedPlatformNamedFields(&object, namedArgs); err != nil {
+		return Null, true, err
+	}
+	vm.initializeSfsqlqueryHarnessObject(&object, nil)
+	return object, true, nil
+}
+
+func (vm *VM) initializeSfsqlqueryHarnessObject(object *Value, args []Value) {
+	if object == nil || object.Kind != ValueObject {
+		return
+	}
+	switch object.Type {
+	case "sfsqlquery.SqlRowIterator":
+		rows := typedList("List<ConnectApi.QuerySqlRow>")
+		rows.List = append(rows.List, cloneValueSlice(vm.sfsqlqueryRows)...)
+		metadata := typedList("List<ConnectApi.QuerySqlMetadataItem>")
+		metadata.List = append(metadata.List, cloneValueSlice(vm.sfsqlqueryMetadata)...)
+		object.Fields["rows"] = rows
+		object.Fields["metadata"] = metadata
+		object.Fields["index"] = Int(0)
+		if len(args) > 0 && args[0].Kind == ValueObject {
+			if _, queryID, ok := objectFieldValue(args[0], "queryId"); ok {
+				object.Fields["queryId"] = queryID
+			}
+		}
+	case "sfsqlquery.SqlQueueable":
+		if len(args) > 0 {
+			object.Fields["input"] = args[0]
+			object.Fields["queryId"] = sfsqlqueryQueryID(args[0])
+		}
+		object.Fields["rows"] = typedList("List<sfsqlquery.Row>")
+		object.Fields["metadata"] = typedList("List<ConnectApi.QuerySqlMetadataItem>")
+		object.Fields["columnNames"] = typedList("List<String>")
+	}
+}
+
+func cloneValueSlice(values []Value) []Value {
+	out := make([]Value, 0, len(values))
+	for _, value := range values {
+		out = append(out, cloneValue(value))
+	}
+	return out
+}
+
+func (vm *VM) newSfsqlqueryQueryHandle(args []Value) (Value, error) {
+	if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+		return Null, fmt.Errorf("sfsqlquery.QueryHandle.create expects String queryId and String dataspace")
+	}
+	handle := Object("sfsqlquery.QueryHandle")
+	handle.Fields["queryId"] = args[0]
+	handle.Fields["dataspace"] = args[1]
+	return handle, nil
+}
+
+func (vm *VM) newSfsqlquerySqlStatement(args []Value) (Value, error) {
+	if len(args) != 2 || args[1].Kind != ValueString {
+		return Null, fmt.Errorf("sfsqlquery.SqlStatement.create expects query input and String dataspace")
+	}
+	statement := Object("sfsqlquery.SqlStatement")
+	if args[0].Kind == ValueString {
+		statement.Fields["sql"] = args[0]
+	} else {
+		statement.Fields["query"] = args[0]
+	}
+	statement.Fields["dataspace"] = args[1]
+	return statement, nil
+}
+
+func sfsqlqueryQueryID(input Value) Value {
+	if input.Kind != ValueObject {
+		return String("")
+	}
+	if _, queryID, ok := objectFieldValue(input, "queryId"); ok {
+		return queryID
+	}
+	return String("")
+}
+
+func (vm *VM) callSfsqlqueryHarnessMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	switch receiver.Type {
+	case "sfsqlquery.QueryHandle":
+		return callSfsqlqueryQueryHandleMember(receiver, method, args)
+	case "sfsqlquery.SqlStatement":
+		return callSfsqlquerySqlStatementMember(receiver, method, args)
+	case "sfsqlquery.SqlRowIterator":
+		return callSfsqlquerySqlRowIteratorMember(receiver, method, args)
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
+func callSfsqlqueryQueryHandleMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	switch strings.ToLower(method) {
+	case "withoffset":
+		if len(args) != 1 || args[0].Kind != ValueInt {
+			return Null, receiver, false, true, fmt.Errorf("sfsqlquery.QueryHandle.withOffset expects Long")
+		}
+		receiver.Fields["offset"] = args[0]
+		return receiver, receiver, true, true, nil
+	case "withworkloadname":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("sfsqlquery.QueryHandle.withWorkloadName expects String")
+		}
+		receiver.Fields["workloadName"] = args[0]
+		return receiver, receiver, true, true, nil
+	case "tostring":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("sfsqlquery.QueryHandle.toString expects 0 arguments")
+		}
+		if _, queryID, ok := objectFieldValue(receiver, "queryId"); ok {
+			return String(queryID.String()), receiver, false, true, nil
+		}
+		return String(""), receiver, false, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
+func callSfsqlquerySqlStatementMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	switch strings.ToLower(method) {
+	case "withworkloadname":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("sfsqlquery.SqlStatement.withWorkloadName expects String")
+		}
+		receiver.Fields["workloadName"] = args[0]
+		return receiver, receiver, true, true, nil
+	case "execute":
+		return Null, receiver, false, true, unsupportedCallError("sfsqlquery.SqlStatement.execute local SQL service")
+	case "tostring":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("sfsqlquery.SqlStatement.toString expects 0 arguments")
+		}
+		if _, sql, ok := objectFieldValue(receiver, "sql"); ok {
+			return String(sql.String()), receiver, false, true, nil
+		}
+		return String(""), receiver, false, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
+func callSfsqlquerySqlRowIteratorMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	switch strings.ToLower(method) {
+	case "cancel":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("sfsqlquery.SqlRowIterator.cancel expects 0 arguments")
+		}
+		receiver.Fields["cancelled"] = Bool(true)
+		return Null, receiver, true, true, nil
+	case "getcolumnnames":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("sfsqlquery.SqlRowIterator.getColumnNames expects 0 arguments")
+		}
+		return sfsqlqueryColumnNames(receiver), receiver, false, true, nil
+	case "getmetadata":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("sfsqlquery.SqlRowIterator.getMetadata expects 0 arguments")
+		}
+		if _, metadata, ok := objectFieldValue(receiver, "metadata"); ok && metadata.Kind == ValueList {
+			return cloneValue(metadata), receiver, false, true, nil
+		}
+		return typedList("List<ConnectApi.QuerySqlMetadataItem>"), receiver, false, true, nil
+	case "getqueryid":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("sfsqlquery.SqlRowIterator.getQueryId expects 0 arguments")
+		}
+		if _, queryID, ok := objectFieldValue(receiver, "queryId"); ok {
+			return queryID, receiver, false, true, nil
+		}
+		return String(""), receiver, false, true, nil
+	case "hasnext":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("sfsqlquery.SqlRowIterator.hasNext expects 0 arguments")
+		}
+		return Bool(sfsqlqueryIteratorHasNext(receiver)), receiver, false, true, nil
+	case "iterator":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("sfsqlquery.SqlRowIterator.iterator expects 0 arguments")
+		}
+		return receiver, receiver, false, true, nil
+	case "next":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("sfsqlquery.SqlRowIterator.next expects 0 arguments")
+		}
+		if !sfsqlqueryIteratorHasNext(receiver) {
+			return Null, receiver, false, true, unsupportedCallError("sfsqlquery.SqlRowIterator.next on exhausted mock rows")
+		}
+		_, rows, _ := objectFieldValue(receiver, "rows")
+		_, indexValue, _ := objectFieldValue(receiver, "index")
+		index := int(indexValue.Int)
+		row := Object("sfsqlquery.Row")
+		row.Fields["rawRow"] = cloneValue(rows.List[index])
+		if _, metadata, ok := objectFieldValue(receiver, "metadata"); ok {
+			row.Fields["metadata"] = cloneValue(metadata)
+		}
+		receiver.Fields["index"] = Int(int64(index + 1))
+		return row, receiver, true, true, nil
+	case "tostring":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("sfsqlquery.SqlRowIterator.toString expects 0 arguments")
+		}
+		if _, queryID, ok := objectFieldValue(receiver, "queryId"); ok && queryID.Kind == ValueString {
+			return String(queryID.Text), receiver, false, true, nil
+		}
+		return String(""), receiver, false, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
+func sfsqlqueryIteratorHasNext(receiver Value) bool {
+	if _, cancelled, ok := objectFieldValue(receiver, "cancelled"); ok && cancelled.Kind == ValueBool && cancelled.Bool {
+		return false
+	}
+	_, rows, ok := objectFieldValue(receiver, "rows")
+	if !ok || rows.Kind != ValueList {
+		return false
+	}
+	_, index, ok := objectFieldValue(receiver, "index")
+	if !ok || index.Kind != ValueInt {
+		return len(rows.List) > 0
+	}
+	return int(index.Int) < len(rows.List)
+}
+
+func sfsqlqueryColumnNames(receiver Value) Value {
+	out := typedList("List<String>")
+	_, metadata, ok := objectFieldValue(receiver, "metadata")
+	if !ok || metadata.Kind != ValueList {
+		return out
+	}
+	for _, item := range metadata.List {
+		if item.Kind != ValueObject {
+			continue
+		}
+		if _, name, ok := objectFieldValue(item, "name"); ok {
+			out.List = append(out.List, String(name.String()))
+		}
+	}
+	return out
 }
 
 func (vm *VM) callGeneratedOptionalWrapperMember(receiver Value, method string, args []Value) (Value, bool, error) {
@@ -25777,7 +26091,8 @@ func (vm *VM) callStubProxyMember(receiver Value, method string, args []Value, r
 func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Value, bool, error) {
 	method = canonicalStdlibMemberName(method,
 		"addError", "hasErrors", "getErrors", "get", "put", "putSObject", "isSet", "clear",
-		"getPopulatedFieldsAsMap", "getSObjectType",
+		"getPopulatedFieldsAsMap", "getSObjectType", "getSObjects", "getQuickActionName",
+		"getAll", "getInstance", "getOrgDefaults", "getValues",
 	)
 	switch method {
 	case "addError":
@@ -25933,6 +26248,21 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 			return Null, false, nil
 		}
 		return token, true, nil
+	case "getQuickActionName":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("SObject.getQuickActionName expects 0 arguments")
+		}
+		for _, field := range []string{"QuickActionName", "quickActionName"} {
+			if _, value, ok := objectFieldValue(receiver, field); ok {
+				if value.Kind == ValueNull || value.Kind == ValueString {
+					return value, true, nil
+				}
+				return Null, true, fmt.Errorf("SObject.getQuickActionName field %s is not a String", field)
+			}
+		}
+		return Null, true, nil
+	case "getAll", "getInstance", "getOrgDefaults", "getValues":
+		return vm.callCustomDataStaticMember(receiver.Type, method, args)
 	case "clone":
 		if len(args) > 4 {
 			return Null, true, fmt.Errorf("SObject.clone expects 0 to 4 arguments")
@@ -28192,6 +28522,9 @@ func versionValueString(version Value) string {
 
 func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Value, result *Result) (Value, Value, bool, bool, error) {
 	method = canonicalPlatformObjectMemberName(receiver.Type, method)
+	if value, updated, mutated, handled, err := vm.callSfsqlqueryHarnessMember(receiver, method, args); handled || err != nil {
+		return value, updated, mutated, true, err
+	}
 	if value, updated, mutated, handled, err := callContextIndustriesContextMember(receiver, method, args); handled || err != nil {
 		return value, updated, mutated, true, err
 	}
@@ -30859,6 +31192,9 @@ func (vm *VM) isPassivePlatformDTOType(typeName string) bool {
 		return false
 	}
 	if generated, ok := generatedPlatformTypeIndex[strings.ToLower(typeName)]; ok {
+		if safeSchemaPassiveDTOTypeName(generated.Name) {
+			return true
+		}
 		return vm.generatedPlatformPassiveDTOShape(generated) || slackGeneratedPlatformPassiveDTOType(generated)
 	}
 	if class, ok := vm.lookupClass(typeName); ok && !passiveRuntimeClass(class) {
@@ -30878,6 +31214,19 @@ func (vm *VM) isPassivePlatformDTOType(typeName string) bool {
 		return false
 	}
 	return true
+}
+
+func safeSchemaPassiveDTOTypeName(typeName string) bool {
+	switch strings.ToLower(typeName) {
+	case "schema.datacategory",
+		"schema.datacategorygroupsobjecttypepair",
+		"schema.describecolorresult",
+		"schema.describedatacategorygroupresult",
+		"schema.describedatacategorygroupstructureresult":
+		return true
+	default:
+		return false
+	}
 }
 
 func (vm *VM) generatedPlatformPassiveDTOShape(generated generatedPlatformType) bool {

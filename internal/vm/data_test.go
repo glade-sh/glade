@@ -2160,6 +2160,24 @@ System.assertEquals(row.get('Id'), cloneThreeArgs.get('Id'));
 	}
 }
 
+func TestExecSObjectQuickActionNameAccessor(t *testing.T) {
+	program, err := CompileAnonymous(`
+Account row = new Account(Name = 'Child');
+System.assertEquals(null, row.getQuickActionName());
+row.put('QuickActionName', 'Account.New');
+System.assertEquals('Account.New', row.getQuickActionName());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecAttachmentBlobRoundTrip(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account a = new Account(Name = 'Acme');
@@ -6745,6 +6763,26 @@ System.assertEquals(1, allSettings.size());
 Local_Setting__c setting = Local_Setting__c.getInstance('Default');
 System.assertEquals('Default', setting.Name);
 System.assert(!setting.pkg__Enabled__c);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := customDataOrg()
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecCustomDataAccessorsThroughSObjectSurface(t *testing.T) {
+	program, err := CompileAnonymous(`
+SObject setting = Local_Setting__c.getInstance('Default');
+System.assertEquals(1, setting.getAll().size());
+System.assertEquals('Default', setting.getValues('Default').get('Name'));
+SObject hierarchy = Hierarchy_Setting__c.getInstance();
+System.assertEquals(true, hierarchy.getOrgDefaults().get('Enabled__c'));
+System.assertEquals(true, hierarchy.getInstance('005000000000001').get('Enabled__c'));
 `)
 	if err != nil {
 		t.Fatal(err)

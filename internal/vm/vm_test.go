@@ -87,6 +87,30 @@ System.assertEquals('Solved', input.questionTitle);
 	}
 }
 
+func TestExecSchemaPassiveDTOGettersAndSetters(t *testing.T) {
+	program, err := CompileAnonymous(`
+Schema.DataCategoryGroupSobjectTypePair pair =
+	new Schema.DataCategoryGroupSobjectTypePair();
+pair.setDataCategoryGroupName('Products');
+pair.setSobject('Knowledge__kav');
+System.assertEquals('Products', pair.getDataCategoryGroupName());
+System.assertEquals('Knowledge__kav', pair.getSobject());
+
+Schema.DataCategory category = new Schema.DataCategory();
+category.name = 'Hardware';
+category.label = 'Hardware';
+System.assertEquals('Hardware', category.getName());
+System.assertEquals('Hardware', category.getLabel());
+System.assertEquals(0, category.getChildCategories().size());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestGeneratedPlatformFallbackSelectsTypeAwareOverload(t *testing.T) {
 	original := generatedPlatformMethodIndex
 	generatedPlatformMethodIndex = map[string]map[string][]Method{
@@ -150,6 +174,49 @@ func TestGeneratedPlatformInstanceMethodFallsBackToTypedDefault(t *testing.T) {
 	}
 	if !handled || value.Kind != ValueList || value.Type != "List<SelectOption>" {
 		t.Fatalf("getListViewOptions = %#v, handled %v; want typed List<SelectOption>", value, handled)
+	}
+}
+
+func TestExecSfsqlquerySqlTesterBacksMockRowIterator(t *testing.T) {
+	program, err := CompileAnonymous(`
+ConnectApi.QuerySqlRow raw = new ConnectApi.QuerySqlRow();
+raw.row = new List<Object>{'first'};
+ConnectApi.QuerySqlMetadataItem metadata = new ConnectApi.QuerySqlMetadataItem();
+metadata.name = 'Name';
+sfsqlquery.SqlTester.setMockRows(new List<ConnectApi.QuerySqlRow>{raw});
+sfsqlquery.SqlTester.setMockMetadata(new List<ConnectApi.QuerySqlMetadataItem>{metadata});
+sfsqlquery.QueryHandle handle = sfsqlquery.QueryHandle.create('query-1', 'default');
+sfsqlquery.SqlRowIterator rows = new sfsqlquery.SqlRowIterator(handle);
+System.assertEquals('query-1', rows.getQueryId());
+System.assertEquals(1, rows.getMetadata().size());
+System.assertEquals('Name', rows.getColumnNames().get(0));
+System.assertEquals(true, rows.hasNext());
+sfsqlquery.Row first = rows.next();
+ConnectApi.QuerySqlRow firstRaw = first.getRawRow();
+System.assertEquals('first', ((List<Object>)firstRaw.row).get(0));
+System.assertEquals(false, rows.hasNext());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecSfsqlquerySqlStatementExecuteUnsupported(t *testing.T) {
+	program, err := CompileAnonymous(`
+sfsqlquery.SqlStatement statement = sfsqlquery.SqlStatement.create('select Name from Account', 'default');
+statement.execute();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = Execute(program, nil)
+	var runtimeErr *RuntimeError
+	if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" ||
+		runtimeErr.Message != `unsupported call "sfsqlquery.SqlStatement.execute local SQL service"` {
+		t.Fatalf("error = %#v, want unsupported SqlStatement.execute", err)
 	}
 }
 
