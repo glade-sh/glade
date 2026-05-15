@@ -26913,6 +26913,7 @@ func connectAPIReadOnlyHarnessType(typeName string) bool {
 		"connectapi.actionlinks",
 		"connectapi.actionplan",
 		"connectapi.announcements",
+		"connectapi.botversionactivation",
 		"connectapi.cdpcalculatedinsight",
 		"connectapi.cdpcatalog",
 		"connectapi.cdpoptimizationconnectapi",
@@ -26953,6 +26954,17 @@ func connectAPIReadOnlyHarnessType(typeName string) bool {
 		"connectapi.smartdatadiscovery",
 		"connectapi.einsteinllm",
 		"connectapi.userprofiles",
+		"connectapi.emailmergefieldservice",
+		"connectapi.eventmanagementapis",
+		"connectapi.evfsdk",
+		"connectapi.example",
+		"connectapi.exampleidlapifamily",
+		"connectapi.externalmanagedaccount",
+		"connectapi.flowapprovalprocesses",
+		"connectapi.guardrail",
+		"connectapi.manufacturingsamplemanagement",
+		"connectapi.marketingintegration",
+		"connectapi.orchestration",
 		"connectapi.zones":
 		return true
 	default:
@@ -27018,6 +27030,31 @@ func connectAPIReadOnlyHarnessMethodAllowed(typeName, methodName string) bool {
 			name == "gettargetbatch" ||
 			name == "gettargets"
 	case "connectapi.smartdatadiscovery":
+		return strings.HasPrefix(name, "get")
+	case "connectapi.botversionactivation":
+		return name == "getversionactivationinfo"
+	case "connectapi.emailmergefieldservice":
+		return name == "getmergefields"
+	case "connectapi.eventmanagementapis":
+		return strings.HasPrefix(name, "get")
+	case "connectapi.evfsdk":
+		return name == "geteventtypes"
+	case "connectapi.example":
+		return strings.HasPrefix(name, "get")
+	case "connectapi.exampleidlapifamily":
+		return strings.HasPrefix(name, "get")
+	case "connectapi.externalmanagedaccount":
+		return strings.HasPrefix(name, "get")
+	case "connectapi.flowapprovalprocesses":
+		return name == "getflowapprovalprocesswithstatus"
+	case "connectapi.guardrail":
+		return strings.HasPrefix(name, "get") || name == "postvalidateguardrail"
+	case "connectapi.manufacturingsamplemanagement":
+		return name == "getproductrequirementspecification" ||
+			name == "getproductrequirementspecificationversion"
+	case "connectapi.marketingintegration":
+		return name == "getform"
+	case "connectapi.orchestration":
 		return strings.HasPrefix(name, "get")
 	case "connectapi.chatter":
 		return name == "getfollowers" || name == "getsubscription"

@@ -1001,6 +1001,54 @@ System.assertNotEquals(null, productDetails);
 ConnectApi.ProductSearchOutputRepresentation repricingSearch =
 	ConnectApi.Repricing.searchProducts('webstore-a', 'sku', 0, 10, 'account-a', null);
 System.assertNotEquals(null, repricingSearch);
+
+ConnectApi.MngEventCollectionRepresentation managedEvents =
+	ConnectApi.EventManagementApis.getMngEvents(null, null, false, null, null, null, null, false, null, 10, false, null, false, null, 0, null, false);
+System.assertNotEquals(null, managedEvents);
+
+ConnectApi.ExampleEntityRepresentation exampleEntity =
+	ConnectApi.Example.getExampleEntityWithFields('example-a', new List<String>());
+System.assertNotEquals(null, exampleEntity);
+
+ConnectApi.ExampleDinosaurOutputRepresentation dinosaur =
+	ConnectApi.ExampleIDLApiFamily.getAbstract();
+System.assertNotEquals(null, dinosaur);
+
+ConnectApi.ExternalManagedAccountCollectionOutput externalAccounts =
+	ConnectApi.ExternalManagedAccount.getExternalManagedAccounts('community-a');
+System.assertNotEquals(null, externalAccounts);
+
+ConnectApi.OrchestrationInstance orchestration =
+	ConnectApi.Orchestration.getOrchestrationInstance('orchestration-a');
+System.assertNotEquals(null, orchestration);
+
+ConnectApi.ValidationMessageRepresentation guardrailValidation =
+	ConnectApi.Guardrail.postValidateGuardrail();
+System.assertNotEquals(null, guardrailValidation);
+
+ConnectApi.Form marketingForm =
+	ConnectApi.MarketingIntegration.getForm('site-a', 'form-a');
+System.assertNotEquals(null, marketingForm);
+
+ConnectApi.BotVersionActivationInfo botActivation =
+	ConnectApi.BotVersionActivation.getVersionActivationInfo('version-a');
+System.assertNotEquals(null, botActivation);
+
+ConnectApi.EventTypesOutput eventTypes =
+	ConnectApi.EvfSdk.getEventTypes();
+System.assertNotEquals(null, eventTypes);
+
+ConnectApi.EmailMergeFieldInfo mergeFields =
+	ConnectApi.EmailMergeFieldService.getMergeFields(new List<String>());
+System.assertNotEquals(null, mergeFields);
+
+ConnectApi.FlowApprovalProcessCollection approvals =
+	ConnectApi.FlowApprovalProcesses.getFlowApprovalProcessWithStatus('flow-a', new List<String>());
+System.assertNotEquals(null, approvals);
+
+ConnectApi.SampleManagementOutputRepresentation sampleSpec =
+	ConnectApi.ManufacturingSampleManagement.getProductRequirementSpecification('spec-a');
+System.assertNotEquals(null, sampleSpec);
 	`)
 	if err != nil {
 		t.Fatal(err)
