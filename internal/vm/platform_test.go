@@ -2319,6 +2319,12 @@ System.assertNotEquals(null, userInfo);
 System.assertNotEquals(null, bot.bookmarksList(new Slack.BookmarksListRequest()));
 System.assertNotEquals(null, bot.reactionsGet(new Slack.ReactionsGetRequest()));
 System.assertNotEquals(null, bot.conversationsListConnectInvites(new Slack.ConversationsListConnectInvitesRequest()));
+System.assertNotEquals(null, bot.conversationsOpen(new Slack.ConversationsOpenRequest()));
+System.assertNotEquals(null, bot.conversationsClose(new Slack.ConversationsCloseRequest()));
+System.assertNotEquals(null, bot.conversationsMark(new Slack.ConversationsMarkRequest()));
+System.assertNotEquals(null, bot.bookmarksEdit(new Slack.BookmarksEditRequest()));
+System.assertNotEquals(null, bot.filesRemoteShare(new Slack.FilesRemoteShareRequest()));
+System.assertNotEquals(null, bot.migrationExchange(new Slack.MigrationExchangeRequest()));
 
 Slack.UserClient user = new Slack.UserClient();
 Slack.ApiTestResponse api = user.apiTest(new Slack.ApiTestRequest());
@@ -2332,6 +2338,13 @@ System.assertNotEquals(null, team);
 System.assertNotEquals(null, user.searchAll(new Slack.SearchAllRequest()));
 System.assertNotEquals(null, user.teamAccessLogs(new Slack.TeamAccessLogsRequest()));
 System.assertNotEquals(null, user.usersIdentity(new Slack.UsersIdentityRequest()));
+System.assertNotEquals(null, user.conversationsOpen(new Slack.ConversationsOpenRequest()));
+System.assertNotEquals(null, user.conversationsClose(new Slack.ConversationsCloseRequest()));
+System.assertNotEquals(null, user.conversationsMark(new Slack.ConversationsMarkRequest()));
+System.assertNotEquals(null, user.bookmarksEdit(new Slack.BookmarksEditRequest()));
+System.assertNotEquals(null, user.filesRemoteShare(new Slack.FilesRemoteShareRequest()));
+System.assertNotEquals(null, user.filesSharedPublicURL(new Slack.FilesSharedPublicURLRequest()));
+System.assertNotEquals(null, user.migrationExchange(new Slack.MigrationExchangeRequest()));
 
 Slack.AppClient app = new Slack.AppClient();
 Slack.AuthTestResponse appAuth = app.AUTHTEST(new Slack.AuthTestRequest());

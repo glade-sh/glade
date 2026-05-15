@@ -2178,7 +2178,18 @@ func connectAPIReadOnlyHarnessBehaviorMethodAllowed(typeName, methodName string)
 		return connectAPIReadOnlyHarnessBehaviorMethodName(methodName) ||
 			name == "iscommenteditablebyme" ||
 			name == "isfeedelementeditablebyme" ||
-			name == "ismodified"
+			name == "ismodified" ||
+			connectAPIChatterSoftNoOpMethod(name)
+	case "connectapi.chattergroups":
+		return connectAPIReadOnlyHarnessBehaviorMethodName(methodName) ||
+			name == "follow" ||
+			name == "requestgroupmembership"
+	case "connectapi.chattermessages":
+		return connectAPIReadOnlyHarnessBehaviorMethodName(methodName) ||
+			name == "markconversationread"
+	case "connectapi.chatterusers":
+		return connectAPIReadOnlyHarnessBehaviorMethodName(methodName) ||
+			name == "follow"
 	case "connectapi.communities":
 		return name == "getcommunities" || name == "getcommunitytemplates"
 	case "connectapi.communitymoderation":
@@ -2240,6 +2251,21 @@ func connectAPICommerceCartReadMethod(name string) bool {
 		"getcartitempromotion", "getcartitems", "getcartpromotions",
 		"getcartsummary", "getchildcartitems", "getproductcartitem",
 		"getproductcartitems":
+		return true
+	default:
+		return false
+	}
+}
+
+func connectAPIChatterSoftNoOpMethod(name string) bool {
+	switch name {
+	case "likecomment",
+		"likefeedelement",
+		"likefeeditem",
+		"sharefeedelement",
+		"sharefeeditem",
+		"voteonfeedelementpoll",
+		"voteonfeedpoll":
 		return true
 	default:
 		return false
@@ -2510,6 +2536,9 @@ func slackLocalClientHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typ
 		return false
 	}
 	name := strings.ToLower(member.Name)
+	if slackLocalClientHarnessSoftNoOpMethodName(name) {
+		return true
+	}
 	if strings.Contains(name, "post") || strings.Contains(name, "open") || strings.Contains(name, "update") {
 		return slackLocalClientHarnessCallbackMethodName(name)
 	}
@@ -2572,6 +2601,21 @@ func slackLocalClientHarnessReadMethodName(name string) bool {
 		"teamaccesslogs",
 		"teamintegrationlogs",
 		"usersidentity":
+		return true
+	default:
+		return false
+	}
+}
+
+func slackLocalClientHarnessSoftNoOpMethodName(name string) bool {
+	switch name {
+	case "bookmarksedit",
+		"conversationsclose",
+		"conversationsmark",
+		"conversationsopen",
+		"filesremoteshare",
+		"filessharedpublicurl",
+		"migrationexchange":
 		return true
 	default:
 		return false

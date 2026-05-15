@@ -827,6 +827,50 @@ func TestExecConnectApiReadOnlyHarnessReturnsTypedDefaults(t *testing.T) {
 ConnectApi.FeedElementPage feed = ConnectApi.ChatterFeeds.getFeedElementsFromFeed(null, null);
 System.assertNotEquals(null, feed);
 
+ConnectApi.ChatterLike commentLike =
+	ConnectApi.ChatterFeeds.likeComment('community-a', 'comment-a');
+System.assertNotEquals(null, commentLike);
+
+ConnectApi.ChatterLike feedElementLike =
+	ConnectApi.ChatterFeeds.likeFeedElement('community-a', 'feed-element-a');
+System.assertNotEquals(null, feedElementLike);
+
+ConnectApi.ChatterLike feedItemLike =
+	ConnectApi.ChatterFeeds.likeFeedItem('community-a', 'feed-item-a');
+System.assertNotEquals(null, feedItemLike);
+
+ConnectApi.PollCapability feedElementPoll =
+	ConnectApi.ChatterFeeds.voteOnFeedElementPoll('community-a', 'feed-element-a', 'choice-a');
+System.assertNotEquals(null, feedElementPoll);
+
+ConnectApi.FeedPoll feedPoll =
+	ConnectApi.ChatterFeeds.voteOnFeedPoll('community-a', 'feed-item-a', 'choice-a');
+System.assertNotEquals(null, feedPoll);
+
+ConnectApi.FeedElement sharedElement =
+	ConnectApi.ChatterFeeds.shareFeedElement('community-a', UserInfo.getUserId(), null, 'feed-element-a');
+System.assertNotEquals(null, sharedElement);
+
+ConnectApi.FeedItem sharedItem =
+	ConnectApi.ChatterFeeds.shareFeedItem('community-a', null, UserInfo.getUserId(), 'feed-item-a');
+System.assertNotEquals(null, sharedItem);
+
+ConnectApi.Subscription groupFollow =
+	ConnectApi.ChatterGroups.follow('community-a', 'group-a', UserInfo.getUserId());
+System.assertNotEquals(null, groupFollow);
+
+ConnectApi.GroupMembershipRequest groupMembership =
+	ConnectApi.ChatterGroups.requestGroupMembership('community-a', 'group-a');
+System.assertNotEquals(null, groupMembership);
+
+ConnectApi.ChatterConversationSummary conversation =
+	ConnectApi.ChatterMessages.markConversationRead('conversation-a', true);
+System.assertNotEquals(null, conversation);
+
+ConnectApi.Subscription userFollow =
+	ConnectApi.ChatterUsers.follow('community-a', UserInfo.getUserId(), 'subject-a');
+System.assertNotEquals(null, userFollow);
+
 ConnectApi.ManagedContentVersionCollection content =
 	ConnectApi.ManagedContent.getAllManagedContent(null, 0, 10, 'en_US', 'News');
 System.assertNotEquals(null, content);
