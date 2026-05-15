@@ -76,6 +76,19 @@ import { getObjectInfo } from 'lightning/uiObjectInfoApi';
   global static Metadata.DeployProblemType valueOf(String str) { return null; }
   global static List<Metadata.DeployProblemType> values() { return null; }
 }`)
+	writeFile(t, filepath.Join(root, "src/classes/ConnectApiWrapper.cls"), `public class ConnectApiWrapper {
+  public ConnectApi.ExternalCredential createExternalCredential(ConnectApi.ExternalCredentialInput input) {
+    return ConnectApi.NamedCredentials.createExternalCredential(input);
+  }
+  public ConnectApi.NamedCredential createNamedCredential(ConnectApi.NamedCredentialInput input) {
+    return ConnectApi.NamedCredentials.createNamedCredential(input);
+  }
+}`)
+	writeFile(t, filepath.Join(root, "src/classes/DirectNamedCredentialMutation.cls"), `public class DirectNamedCredentialMutation {
+  void run(ConnectApi.NamedCredentialInput input) {
+    ConnectApi.NamedCredentials.createNamedCredential(input);
+  }
+}`)
 	writeFile(t, filepath.Join(root, ".claude/worktrees/noisy/src/classes/Generated.cls"), `public class Generated {
   void run() {
     System.debug(Label.Generated);
@@ -183,6 +196,12 @@ import { getObjectInfo } from 'lightning/uiObjectInfoApi';
 	}
 	if !hasLineFindingContaining(report, "platform.cache-connectapi", "src/classes/UsesPlatform.cls", "ConnectApi.ChatterFeeds") {
 		t.Fatalf("missing unsupported ConnectApi.ChatterFeeds finding")
+	}
+	if hasLineFindingContaining(report, "platform.cache-connectapi", "src/classes/ConnectApiWrapper.cls", "ConnectApi.NamedCredentials") {
+		t.Fatalf("mockable ConnectApi wrapper seam was reported as a blocker")
+	}
+	if !hasLineFindingContaining(report, "platform.cache-connectapi", "src/classes/DirectNamedCredentialMutation.cls", "ConnectApi.NamedCredentials") {
+		t.Fatalf("direct ConnectApi named credential mutation should remain a blocker")
 	}
 	if !hasLineFindingEvidenceContaining(report, "site.community-context", "src/classes/UsesPlatform.cls", "Site.UnknownContext") {
 		t.Fatalf("missing unsupported Site.UnknownContext finding")

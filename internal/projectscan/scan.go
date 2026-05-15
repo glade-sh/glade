@@ -1011,7 +1011,7 @@ func scanTextFile(path, rel string, ctx *scanContext) ([]Finding, error) {
 				if ctx != nil && ctx.resolvesFinding(pattern.capability, symbol, rel, path) {
 					continue
 				}
-				if suppressSupportedFinding(pattern.capability, symbol, line) {
+				if suppressSupportedFinding(pattern.capability, symbol, line, rel) {
 					continue
 				}
 				if suppressApexStubSelfReference(pattern.capability, rel, symbol, line) {
@@ -2100,7 +2100,7 @@ func resolvedAuraFiles(ui uicontroller.Index, ctx *scanContext) map[string]bool 
 	return resolved
 }
 
-func suppressSupportedFinding(capability, symbol, evidence string) bool {
+func suppressSupportedFinding(capability, symbol, evidence, file string) bool {
 	switch capability {
 	case "labels.localization":
 		return supportedLabelSymbol(symbol, evidence)
@@ -2109,7 +2109,7 @@ func suppressSupportedFinding(capability, symbol, evidence string) bool {
 	case "site.community-context":
 		return supportedSiteCommunitySymbol(symbol, evidence)
 	case "platform.cache-connectapi":
-		return supportedCacheConnectAPISymbol(symbol, evidence)
+		return supportedCacheConnectAPISymbol(symbol, evidence, file)
 	case "platform.auth-context":
 		return supportedAuthSymbol(symbol, evidence)
 	case "metadata.apex-deploy":
@@ -2275,7 +2275,7 @@ func supportedSiteCommunitySymbol(symbol, evidence string) bool {
 	return false
 }
 
-func supportedCacheConnectAPISymbol(symbol, evidence string) bool {
+func supportedCacheConnectAPISymbol(symbol, evidence, file string) bool {
 	for _, needle := range []string{
 		"Cache.", "ConnectApi.Organization.getSettings", "ConnectApi.Communities.getCommunity",
 		"ConnectApi.OrganizationSettings", "ConnectApi.UserSettings", "ConnectApi.TimeZone",
@@ -2286,8 +2286,26 @@ func supportedCacheConnectAPISymbol(symbol, evidence string) bool {
 			return true
 		}
 	}
+	if supportedConnectAPIMockWrapperMutation(file, evidence) {
+		return true
+	}
 	if strings.HasPrefix(symbol, "ConnectApi.") && !connectAPIMethodCallEvidence(symbol, evidence) {
 		return true
+	}
+	return false
+}
+
+func supportedConnectAPIMockWrapperMutation(file, evidence string) bool {
+	if !strings.EqualFold(filepath.Base(file), "ConnectApiWrapper.cls") {
+		return false
+	}
+	for _, needle := range []string{
+		"ConnectApi.NamedCredentials.createExternalCredential(",
+		"ConnectApi.NamedCredentials.createNamedCredential(",
+	} {
+		if strings.Contains(evidence, needle) {
+			return true
+		}
 	}
 	return false
 }
