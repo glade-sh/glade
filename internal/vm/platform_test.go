@@ -1244,6 +1244,36 @@ System.assertNotEquals(null, page);
 	}
 }
 
+func TestExecConnectApiNextBestActionReadDefaults(t *testing.T) {
+	program, err := CompileAnonymous(`
+ConnectApi.Recommendation recommendation = ConnectApi.NextBestAction.getRecommendation('rec');
+ConnectApi.RecommendationReaction reaction = ConnectApi.NextBestAction.getRecommendationReaction('rec');
+ConnectApi.RecommendationReactions reactions = ConnectApi.NextBestAction.getRecommendationReactions('user', 'target', 'type', 'action', 0, 10);
+System.assertNotEquals(null, recommendation);
+System.assertNotEquals(null, reaction);
+System.assertNotEquals(null, reactions);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestConnectApiReadOnlyHarnessDispatchIsCaseInsensitive(t *testing.T) {
+	if !connectAPIReadOnlyHarnessType("connectapi.nextbestaction") {
+		t.Fatalf("lower-case ConnectApi type was not accepted")
+	}
+	if !connectAPIReadOnlyHarnessMethodAllowed("connectapi.nextbestaction", "getrecommendation") {
+		t.Fatalf("lower-case ConnectApi method was not accepted")
+	}
+	if connectAPIReadOnlyHarnessMethodAllowed("connectapi.nextbestaction", "executeStrategy") {
+		t.Fatalf("executeStrategy should remain unsupported")
+	}
+}
+
 func TestExecPlatformCachePartitions(t *testing.T) {
 	program, err := CompileAnonymous(`
 Cache.OrgPartition orgCache = Cache.Org.getPartition('local');
