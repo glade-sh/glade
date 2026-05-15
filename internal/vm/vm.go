@@ -2142,8 +2142,13 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"Test.setMock", "Test.testInstall", "Test.createStub", "Test.createSoqlStub", "Test.createStubQueryRow", "Test.createStubQueryRows", "Test.loadData",
 		"Test.getFlexQueueOrder", "Test.enqueueBatchJobs", "Test.calculatePermissionSetGroup", "Test.enableChangeDataCapture", "Test.setReadOnlyApplicationMode", "Test.isSoqlStubDefined",
 		"Test.newSendEmailQuickActionDefaults",
+		"Test.getEventBus", "Test.getExternalService", "Test.invokePage",
 		"Test.invokeContinuationMethod", "Test.setContinuationResponse",
 		"Canvas.Test.mockRenderContext", "Canvas.Test.testCanvasLifecycle",
+		"eventbus.TestEventService.publishEvent",
+		"functions.MockFunctionInvocationFactory.createErrorResponse", "functions.MockFunctionInvocationFactory.createSuccessResponse",
+		"SubMgmt.Test.create", "SubMgmt.Test.modify", "SubMgmt.Test.remove",
+		"UserProvisioning.ConnectorTestUtil.createConnectedApp",
 		"sfsqlquery.SqlTester.clearMocks", "sfsqlquery.SqlTester.enqueueMockRows", "sfsqlquery.SqlTester.setMockRows", "sfsqlquery.SqlTester.setMockMetadata",
 		"sfsqlquery.SqlTester.isRunningTest", "sfsqlquery.QueryHandle.create", "sfsqlquery.SqlStatement.create",
 		"WebServiceCallout.invoke",
@@ -4038,7 +4043,60 @@ platformStaticCall:
 		if err := vm.requireTestContext("Test.getEventBus"); err != nil {
 			return Null, err
 		}
-		return Object("TestEventBus"), nil
+		return Object("eventbus.TestBroker"), nil
+	case "Test.getExternalService":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("Test.getExternalService expects 0 arguments")
+		}
+		if err := vm.requireTestContext("Test.getExternalService"); err != nil {
+			return Null, err
+		}
+		return Object("ExternalServiceTest"), nil
+	case "Test.invokePage":
+		if len(args) != 1 || args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "PageReference") {
+			return Null, fmt.Errorf("Test.invokePage expects PageReference")
+		}
+		if err := vm.requireTestContext("Test.invokePage"); err != nil {
+			return Null, err
+		}
+		page := Object("Component.apex.page")
+		page.Fields["pageReference"] = args[0]
+		return page, nil
+	case "eventbus.TestEventService.publishEvent":
+		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueMap {
+			return Null, fmt.Errorf("eventbus.TestEventService.publishEvent expects event name and payload map")
+		}
+		if err := vm.requireTestContext("eventbus.TestEventService.publishEvent"); err != nil {
+			return Null, err
+		}
+		return Null, nil
+	case "functions.MockFunctionInvocationFactory.createSuccessResponse":
+		return functionInvocationSuccess(args)
+	case "functions.MockFunctionInvocationFactory.createErrorResponse":
+		return functionInvocationError(args)
+	case "SubMgmt.Test.create":
+		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueMap {
+			return Null, fmt.Errorf("SubMgmt.Test.create expects sObject type and attributes map")
+		}
+		return String("local-subscription-" + strings.ToLower(args[0].Text)), nil
+	case "SubMgmt.Test.modify":
+		if len(args) != 2 || args[1].Kind != ValueMap {
+			return Null, fmt.Errorf("SubMgmt.Test.modify expects record Id and attributes map")
+		}
+		return Null, nil
+	case "SubMgmt.Test.remove":
+		if len(args) != 1 {
+			return Null, fmt.Errorf("SubMgmt.Test.remove expects record Id")
+		}
+		return Null, nil
+	case "UserProvisioning.ConnectorTestUtil.createConnectedApp":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("UserProvisioning.ConnectorTestUtil.createConnectedApp expects connected app name")
+		}
+		app := Object("ConnectedApplication")
+		app.Fields["Id"] = platformScalar("Id", "0SO000000000001")
+		app.Fields["Name"] = args[0]
+		return app, nil
 	case "ApexPages.currentPage", "System.currentPageReference":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
@@ -29215,6 +29273,33 @@ func prefCenterLocalToken(tokenValue Value, options []Value) string {
 	return "local-token-" + hex.EncodeToString(sum[:])[:24]
 }
 
+func functionInvocationSuccess(args []Value) (Value, error) {
+	if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+		return Null, fmt.Errorf("functions.MockFunctionInvocationFactory.createSuccessResponse expects invocation Id and response")
+	}
+	invocation := Object("functions.FunctionInvocation")
+	invocation.Fields["invocationId"] = args[0]
+	invocation.Fields["response"] = args[1]
+	invocation.Fields["status"] = Value{Kind: ValueObject, Type: "functions.FunctionInvocationStatus", Text: "SUCCESS"}
+	invocation.Fields["error"] = Null
+	return invocation, nil
+}
+
+func functionInvocationError(args []Value) (Value, error) {
+	if len(args) != 3 || args[0].Kind != ValueString || args[2].Kind != ValueString {
+		return Null, fmt.Errorf("functions.MockFunctionInvocationFactory.createErrorResponse expects invocation Id, error type, and message")
+	}
+	errValue := Object("functions.FunctionInvocationError")
+	errValue.Fields["type"] = args[1]
+	errValue.Fields["message"] = args[2]
+	invocation := Object("functions.FunctionInvocation")
+	invocation.Fields["invocationId"] = args[0]
+	invocation.Fields["response"] = Null
+	invocation.Fields["status"] = Value{Kind: ValueObject, Type: "functions.FunctionInvocationStatus", Text: "ERROR"}
+	invocation.Fields["error"] = errValue
+	return invocation, nil
+}
+
 func (vm *VM) metadataEnqueueDeployment(args []Value, result *Result) (Value, error) {
 	if len(args) != 2 || args[0].Kind != ValueObject || args[0].Type != "Metadata.DeployContainer" {
 		return Null, fmt.Errorf("Metadata.Operations.enqueueDeployment expects DeployContainer and DeployCallback")
@@ -30685,16 +30770,16 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			return List(), receiver, false, true, nil
 		}
-	case "TestEventBus":
+	case "TestEventBus", "eventbus.TestBroker":
 		switch method {
 		case "deliver":
 			if len(args) != 0 {
-				return Null, receiver, false, true, fmt.Errorf("TestEventBus.deliver expects 0 arguments")
+				return Null, receiver, false, true, fmt.Errorf("%s.deliver expects 0 arguments", receiver.Type)
 			}
 			return Null, receiver, false, true, nil
 		case "fail":
 			if len(args) != 0 {
-				return Null, receiver, false, true, fmt.Errorf("TestEventBus.fail expects 0 arguments")
+				return Null, receiver, false, true, fmt.Errorf("%s.fail expects 0 arguments", receiver.Type)
 			}
 			if vm.testContext != nil {
 				for i := range vm.testContext.EventPublishes {
@@ -30702,6 +30787,46 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				}
 			}
 			return Null, receiver, false, true, nil
+		}
+	case "ExternalServiceTest":
+		if method == "sendCallback" {
+			if len(args) != 1 || args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "HttpRequest") {
+				return Null, receiver, false, true, fmt.Errorf("ExternalServiceTest.sendCallback expects HttpRequest")
+			}
+			return newHttpResponse(), receiver, false, true, nil
+		}
+	case "TestAsyncHttp":
+		if method == "executeHttpRequest" {
+			if len(args) != 1 || args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "HttpRequest") {
+				return Null, receiver, false, true, fmt.Errorf("TestAsyncHttp.executeHttpRequest expects HttpRequest")
+			}
+			return newHttpResponse(), receiver, false, true, nil
+		}
+	case "functions.FunctionInvokeMock":
+		if method == "respond" {
+			if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+				return Null, receiver, false, true, fmt.Errorf("functions.FunctionInvokeMock.respond expects invocation Id and payload")
+			}
+			value, err := functionInvocationSuccess(args)
+			return value, receiver, false, true, err
+		}
+	case "functions.FunctionInvocation":
+		switch method {
+		case "getError":
+			return databaseObjectGetter(receiver, method, args, "error", Null)
+		case "getInvocationId":
+			return databaseObjectGetter(receiver, method, args, "invocationId", String(""))
+		case "getResponse":
+			return databaseObjectGetter(receiver, method, args, "response", Null)
+		case "getStatus":
+			return databaseObjectGetter(receiver, method, args, "status", Value{Kind: ValueObject, Type: "functions.FunctionInvocationStatus", Text: "PENDING"})
+		}
+	case "functions.FunctionInvocationError":
+		switch method {
+		case "getMessage":
+			return databaseObjectGetter(receiver, method, args, "message", String(""))
+		case "getType":
+			return databaseObjectGetter(receiver, method, args, "type", Null)
 		}
 	case "UUID":
 		switch method {
@@ -32833,6 +32958,10 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		return callSearchSuggestionResultMember(receiver, method, args)
 	case "Search.SuggestionResults":
 		return callSearchSuggestionResultsMember(receiver, method, args)
+	case "CartExtension.CartCalculateExecutorMock":
+		return vm.callVoidMockMember(receiver, method, args)
+	case "CartExtension.SplitShipmentServiceMock":
+		return vm.callVoidMockMember(receiver, method, args)
 	case "URL":
 		if method == "toExternalForm" || method == "toString" {
 			if len(args) != 0 {
@@ -33878,6 +34007,14 @@ func callSearchSuggestionOptionMember(receiver Value, method string, args []Valu
 	default:
 		return Null, receiver, false, false, nil
 	}
+}
+
+func (vm *VM) callVoidMockMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	m, ok := vm.generatedPlatformMethodForArgs(receiver.Type, method, args, false)
+	if !ok || !strings.EqualFold(m.ReturnType, "void") {
+		return Null, receiver, false, false, nil
+	}
+	return Null, receiver, false, true, nil
 }
 
 func callSearchResultMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {

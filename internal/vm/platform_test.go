@@ -434,6 +434,47 @@ option.setLimit(5);
 	}
 }
 
+func TestExecLocalMockHarnessSurfaces(t *testing.T) {
+	program, err := CompileAnonymous(`
+Test.startTest();
+Test.getEventBus().deliver();
+eventbus.TestEventService.publishEvent('Event__e', new Map<String,Object>{ 'Name' => 'local' });
+HttpResponse callback = Test.getExternalService().sendCallback(new HttpRequest());
+System.assertEquals(200, callback.getStatusCode());
+Component.apex.page page = Test.invokePage(new PageReference('/apex/TestPage'));
+System.assert(page != null);
+HttpResponse asyncResponse = new TestAsyncHttp().executeHttpRequest(new HttpRequest());
+System.assertEquals(200, asyncResponse.getStatusCode());
+functions.FunctionInvocation ok = functions.MockFunctionInvocationFactory.createSuccessResponse('fn-1', 'done');
+System.assertEquals('fn-1', ok.getInvocationId());
+System.assertEquals('done', ok.getResponse());
+System.assertEquals('SUCCESS', ok.getStatus().name());
+functions.FunctionInvocation failed = functions.MockFunctionInvocationFactory.createErrorResponse('fn-2', functions.FunctionErrorType.RUNTIME_EXCEPTION, 'bad');
+System.assertEquals('ERROR', failed.getStatus().name());
+System.assertEquals('bad', failed.getError().getMessage());
+functions.FunctionInvocation mockResult = new functions.FunctionInvokeMock().respond('fn-3', 'payload');
+System.assertEquals('fn-3', mockResult.getInvocationId());
+System.assertEquals('payload', mockResult.getResponse());
+String created = SubMgmt.Test.create('Subscription', new Map<String,Object>{ 'Name' => 'local' });
+System.assert(created.startsWith('local-subscription-'));
+SubMgmt.Test.modify('001000000000001', new Map<String,Object>{ 'Name' => 'changed' });
+SubMgmt.Test.remove('001000000000001');
+ConnectedApplication app = UserProvisioning.ConnectorTestUtil.createConnectedApp('Local App');
+System.assertEquals('Local App', app.Name);
+new CartExtension.CartCalculateExecutorMock().calculate(new CartExtension.CartCalculateOrchestratorRequest(null, null, null));
+new CartExtension.SplitShipmentServiceMock().arrangeItems(null);
+Test.stopTest();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	machine.testContext = &TestContext{}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecQuickActionDescribeAndTemplateDefaults(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<QuickAction.DescribeAvailableQuickActionResult> available =

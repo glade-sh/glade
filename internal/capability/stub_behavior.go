@@ -227,6 +227,9 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 	if userProvisioningBatchableBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "UserProvisioning batchable helper method is handled by the VM local no-op/default surface", true
 	}
+	if localMockHarnessBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "test/mock harness method is handled by the VM local deterministic/no-op surface", true
+	}
 	if databaseResultDTOBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "Database/Approval result DTO accessor is handled by the VM result object surface", true
 	}
@@ -1199,6 +1202,46 @@ func userProvisioningBatchableBehaviorMethod(symbol typesys.TypeSymbol, member t
 		"getperbatchupr", "getuprtonewuplmap", "hasflow", "hasfloworapex",
 		"postbatchprocessing", "start":
 		return true
+	default:
+		return false
+	}
+}
+
+func localMockHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if member.Kind != apexast.DeclarationMethod {
+		return false
+	}
+	typeName := stubBehaviorTypeName(symbol)
+	name := strings.ToLower(member.Name)
+	switch typeName {
+	case "Canvas.Test":
+		return stubBehaviorMemberStatic(member) && (name == "mockrendercontext" || name == "testcanvaslifecycle")
+	case "HttpCalloutMock":
+		return name == "respond"
+	case "WebServiceMock":
+		return name == "doinvoke"
+	case "SoqlStubProvider":
+		return name == "handlesoqlquery"
+	case "eventbus.TestBroker":
+		return name == "deliver" || name == "fail"
+	case "eventbus.TestEventService":
+		return stubBehaviorMemberStatic(member) && name == "publishevent"
+	case "ExternalServiceTest":
+		return name == "sendcallback"
+	case "TestAsyncHttp":
+		return name == "executehttprequest"
+	case "functions.FunctionInvokeMock":
+		return name == "respond"
+	case "functions.MockFunctionInvocationFactory":
+		return stubBehaviorMemberStatic(member) && (name == "createerrorresponse" || name == "createsuccessresponse")
+	case "SubMgmt.Test":
+		return stubBehaviorMemberStatic(member) && (name == "create" || name == "modify" || name == "remove")
+	case "UserProvisioning.ConnectorTestUtil":
+		return stubBehaviorMemberStatic(member) && name == "createconnectedapp"
+	case "CartExtension.CartCalculateExecutorMock":
+		return strings.EqualFold(member.Type, "void")
+	case "CartExtension.SplitShipmentServiceMock":
+		return strings.EqualFold(member.Type, "void")
 	default:
 		return false
 	}
