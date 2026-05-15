@@ -27947,6 +27947,8 @@ func (vm *VM) generatedSlackTestHarnessDefaultReturn(method Method, receiver Val
 				}
 			}
 			return vm.generatedPlatformMethodDefaultReturn(method, receiver, args), true
+		case "executeevent", "executeglobalshortcut", "executemessageshortcut", "executeslashcommand":
+			return Null, true
 		case "openapphome", "openchannel", "postmessage":
 			value := slackTestHarnessDefaultValue(method.ReturnType, vm.generatedPlatformDefaultValue(slackTestHarnessRuntimeType(method.ReturnType), Null))
 			if value.Kind == ValueObject {
@@ -36016,11 +36018,43 @@ func (vm *VM) callSlackLocalHarnessMember(receiver Value, method string, args []
 	name := strings.ToLower(method)
 	switch receiverType {
 	case "Slack.ActionDispatcher", "Slack.EventDispatcher", "Slack.ShortcutDispatcher", "Slack.SlashCommandDispatcher":
-		if name == "allowunauthenticatedusers" {
+		switch name {
+		case "allowunauthenticatedusers":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("%s.allowUnauthenticatedUsers expects 0 arguments", receiverType)
 			}
 			return Bool(false), receiver, false, true, nil
+		case "invoke":
+			if len(args) != 2 {
+				return Null, receiver, false, true, fmt.Errorf("%s.invoke expects 2 arguments", receiverType)
+			}
+			return Object("Slack.ActionHandler"), receiver, false, true, nil
+		}
+	case "Slack.UserMappingUrlServiceProvider":
+		switch name {
+		case "generatepartnerauthorizationurl":
+			if len(args) != 2 {
+				return Null, receiver, false, true, fmt.Errorf("Slack.UserMappingUrlServiceProvider.generatePartnerAuthorizationUrl expects 2 arguments")
+			}
+			return String(""), receiver, false, true, nil
+		case "generateslackauthorizationurl":
+			if len(args) != 1 {
+				return Null, receiver, false, true, fmt.Errorf("Slack.UserMappingUrlServiceProvider.generateSlackAuthorizationUrl expects 1 argument")
+			}
+			return String(""), receiver, false, true, nil
+		}
+	case "Slack.UserProvisioningProvider":
+		switch name {
+		case "importusers", "revokeusersbysalesforceid":
+			if len(args) != 2 {
+				return Null, receiver, false, true, fmt.Errorf("Slack.UserProvisioningProvider.%s expects 2 arguments", method)
+			}
+			return Object("Slack.UserProvisioningResult"), receiver, false, true, nil
+		case "revokeusersbyslackid":
+			if len(args) != 1 {
+				return Null, receiver, false, true, fmt.Errorf("Slack.UserProvisioningProvider.revokeUsersBySlackId expects 1 argument")
+			}
+			return Object("Slack.UserProvisioningResult"), receiver, false, true, nil
 		}
 	case "Slack.RunnableHandler":
 		if name == "run" {
