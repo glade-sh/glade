@@ -4344,8 +4344,17 @@ platformStaticCall:
 			return Null, fmt.Errorf("data_mask.DataMaskIntegrationUtil.isLibraryInUse expects libraryId String")
 		}
 		return Bool(false), nil
-	case "data_mask.DataMaskIntegrationUtil.cancelJob", "data_mask.DataMaskIntegrationUtil.getJobs",
-		"data_mask.DataMaskIntegrationUtil.getRunLogResponse", "data_mask.DataMaskIntegrationUtil.runMask":
+	case "data_mask.DataMaskIntegrationUtil.getJobs":
+		if len(args) != 0 {
+			return Null, fmt.Errorf("data_mask.DataMaskIntegrationUtil.getJobs expects 0 arguments")
+		}
+		return String("[]"), nil
+	case "data_mask.DataMaskIntegrationUtil.getRunLogResponse":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("data_mask.DataMaskIntegrationUtil.getRunLogResponse expects jobId String")
+		}
+		return String("{}"), nil
+	case "data_mask.DataMaskIntegrationUtil.cancelJob", "data_mask.DataMaskIntegrationUtil.runMask":
 		return Null, unsupportedCallError(callee + " local data mask job surface")
 	case "BusRuleDtMig.DecisionTableMigrationService.migrateDecisionTables",
 		"BusinessRule.CalculationMatrixMigrationService.migrate",
@@ -27637,6 +27646,7 @@ func commerceLocalHarnessRuntimeType(typeName string) bool {
 	}
 	switch typeName {
 	case "WebStoreContext",
+		"commerce_inventory.CommerceInventoryService",
 		"commercepayments.ClientSidePaymentAdapter",
 		"commerce_ordermanagement.ProductExpandService":
 		return true
@@ -27653,6 +27663,13 @@ func commerceLocalHarnessRuntimeMethod(className, methodName string) bool {
 	switch className {
 	case "WebStoreContext":
 		return name == "getcommercecontext"
+	case "commerce_inventory.CommerceInventoryService":
+		switch name {
+		case "checkinventory", "getinventorylevel", "getreservation":
+			return true
+		default:
+			return false
+		}
 	case "commercepayments.ClientSidePaymentAdapter":
 		switch name {
 		case "getclientcomponentname", "getclientconfiguration", "processclientrequest":
@@ -32534,6 +32551,45 @@ func callStatusCodeMember(receiver Value, method string, args []Value) (Value, b
 	}
 }
 
+func (vm *VM) callCommerceInventoryServiceMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	if !strings.EqualFold(receiver.Type, "commerce_inventory.CommerceInventoryService") {
+		return Null, receiver, false, false, nil
+	}
+	switch strings.ToLower(method) {
+	case "getinventorylevel":
+		if len(args) != 1 {
+			return Null, receiver, false, true, fmt.Errorf("commerce_inventory.CommerceInventoryService.getInventoryLevel expects InventoryLevelsRequest")
+		}
+		response := Object("commerce_inventory.InventoryLevelsResponse")
+		items := Set()
+		items.Type = "Set<commerce_inventory.InventoryLevelsItemResponse>"
+		response.Fields["itemsInventoryLevels"] = items
+		return response, receiver, false, true, nil
+	case "getreservation":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, receiver, false, true, fmt.Errorf("commerce_inventory.CommerceInventoryService.getReservation expects reservationId String")
+		}
+		reservation := Object("commerce_inventory.InventoryReservation")
+		reservation.Fields["id"] = platformScalar("Id", args[0].Text)
+		reservation.Fields["durationInSeconds"] = Int(0)
+		reservation.Fields["items"] = typedList("List<commerce_inventory.InventoryItemReservation>")
+		return reservation, receiver, false, true, nil
+	case "checkinventory":
+		if len(args) != 1 {
+			return Null, receiver, false, true, fmt.Errorf("commerce_inventory.CommerceInventoryService.checkInventory expects InventoryCheckAvailability")
+		}
+		check := Object("commerce_inventory.InventoryCheckAvailability")
+		items := Set()
+		items.Type = "Set<commerce_inventory.InventoryCheckItemAvailability>"
+		check.Fields["inventoryCheckItemAvailability"] = items
+		return check, receiver, false, true, nil
+	case "deletereservation", "upsertreservation":
+		return Null, receiver, false, true, unsupportedCallError("commerce_inventory.CommerceInventoryService." + method + " local commerce inventory mutation surface")
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
 func compareVersionValues(left, right Value) int {
 	for _, field := range []string{"major", "minor", "patch"} {
 		lv := versionComponent(left, field)
@@ -32757,6 +32813,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			return Null, receiver, false, true, fmt.Errorf("Support.EmailTemplateSelector.getDefaultEmailTemplateId expects context Id")
 		}
 		return Null, receiver, false, true, nil
+	}
+	if value, updated, mutated, handled, err := vm.callCommerceInventoryServiceMember(receiver, method, args); handled || err != nil {
+		return value, updated, mutated, true, err
 	}
 	if strings.HasPrefix(receiver.Type, "RichMessaging.") {
 		switch receiver.Type {

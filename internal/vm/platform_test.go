@@ -384,19 +384,19 @@ func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 			want: `unsupported call "data_mask.DataMaskIntegrationUtil.runMask local data mask job surface"`,
 		},
 		{
-			name: "data mask inspect jobs",
-			src:  `data_mask.DataMaskIntegrationUtil.getJobs();`,
-			want: `unsupported call "data_mask.DataMaskIntegrationUtil.getJobs local data mask job surface"`,
-		},
-		{
 			name: "data mask cancel job",
 			src:  `data_mask.DataMaskIntegrationUtil.cancelJob('job-local');`,
 			want: `unsupported call "data_mask.DataMaskIntegrationUtil.cancelJob local data mask job surface"`,
 		},
 		{
-			name: "data mask run log",
-			src:  `data_mask.DataMaskIntegrationUtil.getRunLogResponse('job-local');`,
-			want: `unsupported call "data_mask.DataMaskIntegrationUtil.getRunLogResponse local data mask job surface"`,
+			name: "commerce inventory delete reservation",
+			src:  `new commerce_inventory.CommerceInventoryService().deleteReservation('res-local', new commerce_inventory.InventoryReservation());`,
+			want: `unsupported call "commerce_inventory.CommerceInventoryService.deleteReservation local commerce inventory mutation surface"`,
+		},
+		{
+			name: "commerce inventory upsert reservation",
+			src:  `new commerce_inventory.CommerceInventoryService().upsertReservation(new commerce_inventory.UpsertReservationRequest(0, 'res-local', '001000000000001AAA', new List<commerce_inventory.UpsertItemReservationRequest>()), new commerce_inventory.InventoryReservation(), 'ALL');`,
+			want: `unsupported call "commerce_inventory.CommerceInventoryService.upsertReservation local commerce inventory mutation surface"`,
 		},
 		{
 			name: "knowledge delete draft",
@@ -1991,6 +1991,21 @@ System.assertEquals(0, new CommerceDxSampleapp.CommerceDx_Inventory().calculateI
 new CommerceDxSampleapp.CommerceDx_Inventory().executeNonExistentMethod('webstore');
 System.assertEquals(false, new CommerceDxSampleapp.CommerceDx_Inventory_Tutorial_115().isAvailable('webstore', 'product'));
 System.assertEquals(0, WebStoreContext.getCommerceContext().size());
+System.assertEquals('[]', data_mask.DataMaskIntegrationUtil.getJobs());
+System.assertEquals('{}', data_mask.DataMaskIntegrationUtil.getRunLogResponse('job-local'));
+commerce_inventory.CommerceInventoryService inventoryService = new commerce_inventory.CommerceInventoryService();
+commerce_inventory.InventoryLevelsResponse levels = inventoryService.getInventoryLevel(
+	new commerce_inventory.InventoryLevelsRequest('LOCATION', new Set<commerce_inventory.InventoryLevelsItemRequest>()));
+System.assertNotEquals(null, levels);
+System.assertEquals(0, levels.getItemsInventoryLevels().size());
+commerce_inventory.InventoryReservation reservation = inventoryService.getReservation('0aB000000000001AAA');
+System.assertNotEquals(null, reservation);
+System.assertEquals(0, reservation.getDurationInSeconds());
+System.assertEquals(0, reservation.getItems().size());
+commerce_inventory.InventoryCheckAvailability availability = inventoryService.checkInventory(
+	new commerce_inventory.InventoryCheckAvailability(new Set<commerce_inventory.InventoryCheckItemAvailability>()));
+System.assertNotEquals(null, availability);
+System.assertEquals(0, availability.getInventoryCheckItemAvailability().size());
 commercepayments.ClientSidePaymentAdapter paymentAdapter = new commercepayments.ClientSidePaymentAdapter();
 System.assertEquals(null, paymentAdapter.getClientComponentName());
 System.assertEquals(0, paymentAdapter.getClientConfiguration().size());
