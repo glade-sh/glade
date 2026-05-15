@@ -2387,6 +2387,11 @@ func (vm *VM) call(callee string, args []Value, namedArgs map[string]Value, resu
 		if value, handled, err := vm.callEnumStaticMember(className, methodName, args); handled || err != nil {
 			return value, err
 		}
+		if packagedControllerDefaultMethod(className, methodName) || packagedControllerUnsupportedMethod(className, methodName) {
+			if value, handled, err := vm.callPackagedControllerStatic(callee, args); handled || err != nil {
+				return value, err
+			}
+		}
 		if method, ok, ambiguous := vm.resolveStaticMethodForArgs(className, methodName, args); ok {
 			if err := vm.checkMemberAccess(method.ClassName, method.Access, method.Name, method.Modifiers); err != nil {
 				return Null, err
@@ -2560,6 +2565,9 @@ platformStaticCall:
 		return value, err
 	}
 	if value, handled, err := vm.callIndustryControllerStatic(callee, args); handled || err != nil {
+		return value, err
+	}
+	if value, handled, err := vm.callPackagedControllerStatic(callee, args); handled || err != nil {
 		return value, err
 	}
 	if reason, ok := unsupportedIntegrationSurface(callee); ok {
@@ -27302,6 +27310,9 @@ func (vm *VM) generatedPlatformInstanceDefault(receiverName string, receiver Val
 }
 
 func (vm *VM) generatedPlatformMethodFallbackType(typeName string) bool {
+	if packagedControllerDefaultType(typeName) {
+		return true
+	}
 	if generatedPlatformTopLevelPassiveTypeName(typeName) {
 		return true
 	}
@@ -27309,6 +27320,9 @@ func (vm *VM) generatedPlatformMethodFallbackType(typeName string) bool {
 }
 
 func (vm *VM) generatedPlatformMethodAllowsDefault(method Method) bool {
+	if packagedControllerDefaultMethod(method.ClassName, method.Name) {
+		return true
+	}
 	if industryControllerDefaultStatic(method.ClassName, method.Name) || industryControllerDefaultInstance(method.ClassName, method.Name) {
 		return true
 	}
@@ -27330,6 +27344,192 @@ func generatedPlatformTopLevelPassiveTypeName(typeName string) bool {
 		strings.EqualFold(typeName, "licensing.UserLicenseDefinition"),
 		strings.EqualFold(typeName, "licensing.PlatformLicenseDefinition"):
 		return true
+	default:
+		return false
+	}
+}
+
+func packagedControllerDefaultType(typeName string) bool {
+	switch typeName {
+	case "SF_Archive.ArchiverAccessor",
+		"ime_mrm.EventManagementBudgetApi", "ime_mrm.EventManagementManagedEventApi",
+		"ime_mrm.EventManagementParticipantApi", "ime_mrm.EventManagementProductApi", "ime_mrm.EventManagementSubjectApi",
+		"wavetemplate.Access", "wavetemplate.Answers", "wavetemplate.NetZeroBTE_Modifier",
+		"wavetemplate.VcommBusinessChecklistRemoter", "wavetemplate.VcommBusinessConfigurationModifier",
+		"wavetemplate.WaveTemplateConfigurationModifier", "wave.Dags", "wave.TrendedDatasetProcessor",
+		"applauncher.AppLauncherSetupReordererController", "applauncher.ChangePasswordController",
+		"applauncher.ForgotPasswordController", "setup_service_livemessage.MessagingChannelAppleDomainController",
+		"setup_service_itsm_teams.EinsteinAgentFinalService", "regrelloapex.LoginFormController",
+		"publicsectrsltn.GetAccountsAndContacts", "pref_center.PreferenceCenterApexHandler",
+		"aiaccelerator.CustomFeatureExtractor",
+		"aiaccelerator.SampleCustomFeatureExtractor", "sfdc_enablement.LearningItemEvaluationHandler",
+		"sfdc_enablement.LearningItemSerializeDeserializer", "omnichannel.RouteWorkApexController",
+		"mapslite.MapsLiteUtils", "mlplatform.PredictionServiceClient", "industries_clm.OpenInterface":
+		return true
+	default:
+		return false
+	}
+}
+
+func packagedControllerDefaultMethod(typeName, methodName string) bool {
+	name := strings.ToLower(methodName)
+	if dot := strings.LastIndex(name, "."); dot >= 0 {
+		name = name[dot+1:]
+	}
+	switch typeName {
+	case "SF_Archive.ArchiverAccessor":
+		switch {
+		case strings.HasPrefix(name, "get"), strings.HasPrefix(name, "globalsearch"), strings.HasPrefix(name, "view"):
+			return true
+		case strings.HasPrefix(name, "performarchiverglobalsearch"):
+			return true
+		default:
+			return false
+		}
+	case "ime_mrm.EventManagementBudgetApi", "ime_mrm.EventManagementManagedEventApi",
+		"ime_mrm.EventManagementParticipantApi", "ime_mrm.EventManagementProductApi",
+		"ime_mrm.EventManagementSubjectApi":
+		return name == "call" || name == "invokemethod" || strings.HasPrefix(name, "get")
+	case "wavetemplate.Access":
+		return strings.HasPrefix(name, "check") || strings.HasPrefix(name, "get") || strings.Contains(name, "hasaccess")
+	case "wavetemplate.Answers":
+		return name == "get" || name == "put"
+	case "wavetemplate.NetZeroBTE_Modifier", "wavetemplate.VcommBusinessChecklistRemoter",
+		"wavetemplate.VcommBusinessConfigurationModifier", "wavetemplate.WaveTemplateConfigurationModifier":
+		return true
+	case "wave.Dags":
+		return name == "getdags"
+	case "wave.TrendedDatasetProcessor":
+		return name == "getdescription" || name == "getlabel"
+	case "applauncher.AppLauncherSetupReordererController":
+		return name == "getmodel" || name == "saveorder"
+	case "applauncher.ChangePasswordController":
+		return name == "getpasswordpolicystatement"
+	case "applauncher.ForgotPasswordController":
+		return name == "setexperienceid"
+	case "setup_service_livemessage.MessagingChannelAppleDomainController":
+		return name == "getapplepaydomain"
+	case "setup_service_itsm_teams.EinsteinAgentFinalService":
+		return name == "einsteinsendmessage"
+	case "regrelloapex.LoginFormController":
+		return name == "getforgotpasswordurl" || name == "logingetpagerefurl"
+	case "publicsectrsltn.GetAccountsAndContacts":
+		return name == "invokemethod"
+	case "pref_center.PreferenceCenterApexHandler":
+		return name == "load" || name == "submit"
+	case "aiaccelerator.CustomFeatureExtractor", "aiaccelerator.SampleCustomFeatureExtractor":
+		return name == "extractfeatures"
+	case "sfdc_enablement.LearningItemEvaluationHandler":
+		return name == "evaluate"
+	case "sfdc_enablement.LearningItemSerializeDeserializer":
+		return name == "deserialize" || name == "serialize"
+	case "omnichannel.RouteWorkApexController":
+		return name == "isenabledskillbasedrouting" || name == "search"
+	case "mapslite.MapsLiteUtils":
+		return name == "accesscheck" || name == "userhasmaps"
+	case "mlplatform.PredictionServiceClient":
+		return name == "predictions"
+	case "industries_clm.OpenInterface":
+		return name == "invokemethod"
+	default:
+		return false
+	}
+}
+
+func (vm *VM) callPackagedControllerStatic(callee string, args []Value) (Value, bool, error) {
+	className, methodName, ok := vm.splitClassMember(callee)
+	if !ok {
+		return Null, false, nil
+	}
+	if packagedControllerUnsupportedMethod(className, methodName) {
+		return Null, true, unsupportedCallError(callee)
+	}
+	if !packagedControllerDefaultMethod(className, methodName) {
+		return Null, false, nil
+	}
+	method, ok := vm.generatedPlatformMethodForArgs(className, methodName, args, true)
+	if !ok {
+		return Null, false, nil
+	}
+	if strings.EqualFold(vm.resolveTypeNameInClass(method.ClassName, method.ReturnType), "String") {
+		return String(""), true, nil
+	}
+	return vm.generatedPlatformMethodDefaultReturn(method, Null, args), true, nil
+}
+
+func (vm *VM) callPackagedControllerMember(receiver Value, methodName string, args []Value) (Value, Value, bool, bool, error) {
+	className := receiver.Type
+	if packagedControllerUnsupportedMethod(className, methodName) {
+		return Null, receiver, false, true, unsupportedCallError(className + "." + methodName)
+	}
+	if !packagedControllerDefaultMethod(className, methodName) {
+		return Null, receiver, false, false, nil
+	}
+	name := strings.ToLower(methodName)
+	if strings.EqualFold(className, "wavetemplate.Answers") {
+		switch name {
+		case "put":
+			if len(args) != 2 || args[0].Kind != ValueString {
+				return Null, receiver, false, true, fmt.Errorf("wavetemplate.Answers.put expects String and Object")
+			}
+			if receiver.Fields == nil {
+				receiver.Fields = map[string]Value{}
+			}
+			receiver.Fields["answer:"+strings.ToLower(args[0].Text)] = args[1]
+			return Null, receiver, true, true, nil
+		case "get":
+			if len(args) != 1 || args[0].Kind != ValueString {
+				return Null, receiver, false, true, fmt.Errorf("wavetemplate.Answers.get expects String")
+			}
+			if value, ok := receiver.Fields["answer:"+strings.ToLower(args[0].Text)]; ok {
+				return value, receiver, false, true, nil
+			}
+			return Null, receiver, false, true, nil
+		}
+	}
+	if strings.EqualFold(className, "aiaccelerator.SampleCustomFeatureExtractor") && name == "extractfeatures" {
+		return typedMap("Map<String,Object>"), receiver, false, true, nil
+	}
+	method, ok := vm.generatedPlatformMethodForArgs(className, methodName, args, false)
+	if !ok {
+		return Null, receiver, false, false, nil
+	}
+	if strings.EqualFold(vm.resolveTypeNameInClass(method.ClassName, method.ReturnType), "String") {
+		return String(""), receiver, false, true, nil
+	}
+	if isMapType(method.ReturnType) || strings.EqualFold(method.Name, "invokeMethod") || strings.EqualFold(method.Name, "call") {
+		return industryMapResult(), receiver, false, true, nil
+	}
+	return vm.generatedPlatformMethodDefaultReturn(method, receiver, args), receiver, false, true, nil
+}
+
+func packagedControllerUnsupportedMethod(typeName, methodName string) bool {
+	name := strings.ToLower(methodName)
+	if dot := strings.LastIndex(name, "."); dot >= 0 {
+		name = name[dot+1:]
+	}
+	switch typeName {
+	case "SF_Archive.ArchiverAccessor":
+		return strings.HasPrefix(name, "forget") || strings.HasPrefix(name, "mask") || strings.HasPrefix(name, "performunarchive")
+	case "applauncher.ChangePasswordController":
+		return strings.HasPrefix(name, "changepass")
+	case "applauncher.ForgotPasswordController":
+		return name == "forgotpassword"
+	case "setup_service_livemessage.MessagingChannelAppleDomainController":
+		return name == "uploaddomainverificationcertificate"
+	case "publicsectrsltn.AssessmentResponses":
+		return name == "storeresponses"
+	case "placequote.PlaceQuoteExecutor", "placequote.PlaceQuoteRLMApexProcessor",
+		"RevSignaling.SignalingApexProcessor", "OrgMonitorFramework":
+		return name == "execute" || name == "executeblacktabrequest"
+	case "omnichannel.RouteWorkApexController":
+		return name == "routework"
+	case "mapslite.MapsLiteUtils":
+		return name == "falcongeocoderecords"
+	case "embeddedMessaging.EmbeddedMessagingSessionHandler":
+		return name == "handlerequestwithsfdcsession"
+	case "YubiAuthForAloha":
+		return name == "validateyubikeylogin"
 	default:
 		return false
 	}
@@ -32303,6 +32503,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	}
 	if value, handled, err := callPlatformCallbackDefaultMember(receiver, method, args); handled || err != nil {
 		return value, receiver, false, true, err
+	}
+	if value, updated, mutated, handled, err := vm.callPackagedControllerMember(receiver, method, args); handled || err != nil {
+		return value, updated, mutated, true, err
 	}
 	if value, updated, mutated, handled, err := vm.callIndustryControllerMember(receiver, method, args); handled || err != nil {
 		return value, updated, mutated, true, err

@@ -195,6 +195,85 @@ func TestExecAppLauncherControllerServiceFlowsStayUnsupported(t *testing.T) {
 	}
 }
 
+func TestExecPackagedControllerLocalDefaults(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(false, mapslite.MapsLiteUtils.userHasMaps());
+System.assertEquals('', mapslite.MapsLiteUtils.accessCheck());
+System.assertEquals('', regrelloapex.LoginFormController.getForgotPasswordUrl());
+System.assertEquals('', setup_service_livemessage.MessagingChannelAppleDomainController.getApplePayDomain('local.example'));
+System.assertEquals(0, wave.Dags.getDags(new wave.DagsSearchOptions()).size());
+
+ime_mrm.EventManagementBudgetApi budget = new ime_mrm.EventManagementBudgetApi();
+Map<String,Object> budgetResult = budget.invokeMethod('get', new Map<String,Object>(), new Map<String,Object>(), new Map<String,Object>());
+System.assertEquals(true, budgetResult.get('success'));
+
+wavetemplate.Answers answers = new wavetemplate.Answers();
+answers.put('key', 'value');
+System.assertEquals('value', answers.get('key'));
+System.assertEquals(false, wavetemplate.Access.integUserHasAccessToSObjectField('Account', 'Name'));
+
+aiaccelerator.SampleCustomFeatureExtractor extractor = new aiaccelerator.SampleCustomFeatureExtractor();
+System.assertEquals(0, extractor.extractFeatures(new List<Map<String,Object>>(), new Map<String,Object>()).size());
+System.assertEquals('', omnichannel.RouteWorkApexController.search('work', 'Account', 'Name'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecPackagedControllerServiceFlowsStayUnsupported(t *testing.T) {
+	cases := []struct {
+		name string
+		src  string
+		want string
+	}{
+		{
+			name: "archive mutation",
+			src:  `SF_Archive.ArchiverAccessor.maskArchivedRecords(new List<SF_Archive.Criteria>());`,
+			want: `unsupported call "SF_Archive.ArchiverAccessor.maskArchivedRecords"`,
+		},
+		{
+			name: "domain upload",
+			src:  `setup_service_livemessage.MessagingChannelAppleDomainController.uploadDomainVerificationCertificate('local.example', 'certificate');`,
+			want: `unsupported call "setup_service_livemessage.MessagingChannelAppleDomainController.uploadDomainVerificationCertificate"`,
+		},
+		{
+			name: "maps geocode",
+			src:  `mapslite.MapsLiteUtils.falconGeocodeRecords('Account');`,
+			want: `unsupported call "mapslite.MapsLiteUtils.falconGeocodeRecords"`,
+		},
+		{
+			name: "quote execution",
+			src:  `placequote.PlaceQuoteExecutor.execute(placequote.PricingPreferenceEnum.System, new placequote.GraphRequest('graph', new List<placequote.RecordWithReferenceRequest>()));`,
+			want: `unsupported call "placequote.PlaceQuoteExecutor.execute"`,
+		},
+		{
+			name: "session handler",
+			src:  `embeddedMessaging.EmbeddedMessagingSessionHandler.handleRequestWithSfdcSession(new embeddedMessaging.EmbeddedMessagingAccessTokenRequest('channel', UserInfo.getUserId(), new List<String>()));`,
+			want: `unsupported call "embeddedMessaging.EmbeddedMessagingSessionHandler.handleRequestWithSfdcSession"`,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			program, err := CompileAnonymous(tc.src)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = New(nil).Execute(program)
+			if err == nil {
+				t.Fatal("expected unsupported feature error")
+			}
+			var runtimeErr *RuntimeError
+			if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != tc.want || err.Error() != tc.want {
+				t.Fatalf("error = %#v, want UnsupportedFeature %q", err, tc.want)
+			}
+		})
+	}
+}
+
 func TestExecUnsupportedStdlibErrorsHaveStableShape(t *testing.T) {
 	cases := []struct {
 		name string
