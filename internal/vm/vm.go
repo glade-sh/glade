@@ -25603,6 +25603,65 @@ func collectionMembers(value Value) []Value {
 	}
 }
 
+func (vm *VM) iterableCollectionMembers(value Value, result *Result, context string) ([]Value, error) {
+	switch value.Kind {
+	case ValueList, ValueSet:
+		return collectionMembers(value), nil
+	case ValueObject:
+		iterator := value
+		if !isIteratorValue(iterator) {
+			var err error
+			iterator, err = vm.iteratorForObject(value, result)
+			if err != nil {
+				return nil, fmt.Errorf("%s expects List, Set, or Iterable: %w", context, err)
+			}
+		}
+		const iteratorName = "__oaer_add_all_iterator"
+		previousIterator, hadIterator := vm.Globals[iteratorName]
+		previousIteratorType, hadIteratorType := vm.VarTypes[iteratorName]
+		defer func() {
+			if hadIterator {
+				vm.Globals[iteratorName] = previousIterator
+			} else {
+				delete(vm.Globals, iteratorName)
+			}
+			if hadIteratorType {
+				vm.VarTypes[iteratorName] = previousIteratorType
+			} else {
+				delete(vm.VarTypes, iteratorName)
+			}
+		}()
+		vm.Globals[iteratorName] = iterator
+		vm.VarTypes[iteratorName] = iterator.Type
+		values := make([]Value, 0)
+		for iteration := 0; ; iteration++ {
+			if iteration >= maxLoopIterations {
+				return nil, fmt.Errorf("%s iterable exceeded %d iterations", context, maxLoopIterations)
+			}
+			hasNext, handled, err := vm.callValueMember(iteratorName, vm.Globals[iteratorName], "hasNext", nil, result)
+			if err != nil {
+				return nil, err
+			}
+			if !handled || hasNext.Kind != ValueBool {
+				return nil, fmt.Errorf("%s iterable requires Boolean hasNext", context)
+			}
+			if !hasNext.Bool {
+				return values, nil
+			}
+			next, handled, err := vm.callValueMember(iteratorName, vm.Globals[iteratorName], "next", nil, result)
+			if err != nil {
+				return nil, err
+			}
+			if !handled {
+				return nil, fmt.Errorf("%s iterable requires next", context)
+			}
+			values = append(values, next)
+		}
+	default:
+		return nil, fmt.Errorf("%s expects List, Set, or Iterable", context)
+	}
+}
+
 func collectionIterator(value Value) Value {
 	snapshot := List(append([]Value(nil), collectionMembers(value)...)...)
 	iterator := Object(collectionIteratorType(value.Type))
@@ -28844,11 +28903,14 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			}
 			return Bool(true), true, nil
 		case "addAll":
-			if len(args) != 1 || (args[0].Kind != ValueList && args[0].Kind != ValueSet) {
-				return Null, true, fmt.Errorf("List.addAll expects List or Set")
+			if len(args) != 1 {
+				return Null, true, fmt.Errorf("List.addAll expects List, Set, or Iterable")
+			}
+			values, err := vm.iterableCollectionMembers(args[0], result, "List.addAll")
+			if err != nil {
+				return Null, true, err
 			}
 			previous := receiver
-			values := collectionMembers(args[0])
 			for _, value := range values {
 				item, err := vm.coerceCollectionElement(receiver.Type, value)
 				if err != nil {
@@ -29036,12 +29098,16 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			}
 			return Bool(false), true, nil
 		case "addAll":
-			if len(args) != 1 || (args[0].Kind != ValueList && args[0].Kind != ValueSet) {
-				return Null, true, fmt.Errorf("Set.addAll expects List or Set")
+			if len(args) != 1 {
+				return Null, true, fmt.Errorf("Set.addAll expects List, Set, or Iterable")
+			}
+			values, err := vm.iterableCollectionMembers(args[0], result, "Set.addAll")
+			if err != nil {
+				return Null, true, err
 			}
 			previous := receiver
 			changed := false
-			for _, value := range collectionMembers(args[0]) {
+			for _, value := range values {
 				item, err := vm.coerceCollectionElement(receiver.Type, value)
 				if err != nil {
 					return Null, true, fmt.Errorf("Set.addAll: %w", err)
@@ -30384,6 +30450,15 @@ func (vm *VM) callSObjectMember(receiver Value, method string, args []Value) (Va
 		field := vm.resolveSObjectFieldName(receiver.Type, fieldArg)
 		if err := vm.unqueriedSObjectFieldError(receiver, field, true); err != nil {
 			return Null, true, err
+		}
+		if _, value, ok := vm.loadedChildRelationshipValue(receiver, field); ok {
+			if value.Kind == ValueNull {
+				return List(), true, nil
+			}
+			if value.Kind != ValueList {
+				return Null, true, fmt.Errorf("SObject.getSObjects field %s is not a List", field)
+			}
+			return value, true, nil
 		}
 		_, value, ok := objectFieldValue(receiver, field)
 		if !ok || value.Kind == ValueNull {

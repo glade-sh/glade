@@ -1177,6 +1177,46 @@ System.assertEquals('first;second;', joined);
 	}
 }
 
+func TestExecAddAllUsesCustomIterableIterator(t *testing.T) {
+	iteratorProgram, err := CompileAnonymous(`
+return new List<String>{'first', 'second'}.iterator();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Client client = new Client();
+List<String> values = new List<String>{'zero'};
+values.addAll(client);
+System.assertEquals(3, values.size());
+System.assertEquals('second', values[2]);
+Set<String> uniqueValues = new Set<String>{'zero'};
+System.assert(uniqueValues.addAll(client));
+System.assert(uniqueValues.contains('first'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name:       "Client",
+		Interfaces: []string{"Iterable<String>"},
+		Methods: map[string]Method{
+			"iterator": {
+				Name:       "Client.iterator",
+				ClassName:  "Client",
+				ReturnType: "Iterator<String>",
+				Program:    iteratorProgram,
+			},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecShiftOperatorsAndCompoundAssignment(t *testing.T) {
 	program, err := CompileAnonymous(`
 Integer value = 3;

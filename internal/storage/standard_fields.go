@@ -599,6 +599,12 @@ func applyStandardObjectCompatibilityOverlays(definition *ObjectDefinition) {
 	case stringsEqualFold(definition.APIName, "EmailTemplate"):
 		ensureFieldDefault(definition, "TemplateStyle", "none")
 		ensureFieldDefault(definition, "TemplateType", "text")
+	case stringsEqualFold(definition.APIName, "EntityDefinition"):
+		ensureReferenceShape(definition, "RunningUserEntityAccessId", []string{"UserEntityAccess"}, "RunningUserEntityAccess")
+	case stringsEqualFold(definition.APIName, "EntityParticle"):
+		ensureReferenceShape(definition, "FieldDefinitionId", []string{"FieldDefinition"}, "FieldDefinition")
+	case stringsEqualFold(definition.APIName, "FieldDefinition"):
+		ensureReferenceShape(definition, "RunningUserFieldAccessId", []string{"UserFieldAccess"}, "RunningUserFieldAccess")
 	case stringsEqualFold(definition.APIName, "Event"):
 		removeField(definition, "Name")
 	case stringsEqualFold(definition.APIName, "PermissionSetGroupComponent"):
@@ -615,6 +621,30 @@ func ensureField(definition *ObjectDefinition, field Field) {
 		return
 	}
 	definition.Fields[field.APIName] = field
+}
+
+func ensureReferenceShape(definition *ObjectDefinition, fieldName string, referenceTo []string, relationshipName string) {
+	if definition == nil {
+		return
+	}
+	resolved, ok := ResolveFieldName(*definition, "", fieldName)
+	if !ok {
+		ensureField(definition, Field{APIName: fieldName, Type: FieldReference, ReferenceTo: referenceTo, RelationshipName: relationshipName})
+		return
+	}
+	field := definition.Fields[resolved]
+	if field.Type == "" || field.Type == FieldAny {
+		field.Type = FieldReference
+	}
+	if len(field.ReferenceTo) == 0 {
+		field.ReferenceTo = append([]string(nil), referenceTo...)
+	} else {
+		field.ReferenceTo = appendUniqueStringsFold(field.ReferenceTo, referenceTo...)
+	}
+	if field.RelationshipName == "" {
+		field.RelationshipName = relationshipName
+	}
+	definition.Fields[resolved] = field
 }
 
 func removeField(definition *ObjectDefinition, fieldName string) {
