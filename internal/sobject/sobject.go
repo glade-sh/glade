@@ -188,13 +188,14 @@ type DescribeFieldResult struct {
 }
 
 type DescribeRecordTypeInfo struct {
-	ID            storage.ID `json:"id,omitempty"`
-	DeveloperName string     `json:"developerName"`
-	Name          string     `json:"name,omitempty"`
-	Active        bool       `json:"active,omitempty"`
-	Available     bool       `json:"available,omitempty"`
-	Default       bool       `json:"default,omitempty"`
-	Description   string     `json:"description,omitempty"`
+	ID               storage.ID        `json:"id,omitempty"`
+	DeveloperName    string            `json:"developerName"`
+	Name             string            `json:"name,omitempty"`
+	Active           bool              `json:"active,omitempty"`
+	Available        bool              `json:"available,omitempty"`
+	Default          bool              `json:"default,omitempty"`
+	Description      string            `json:"description,omitempty"`
+	PicklistDefaults map[string]string `json:"picklistDefaults,omitempty"`
 }
 
 func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
@@ -295,13 +296,14 @@ func BuildDescribeRegistry(s schema.Schema) DescribeRegistry {
 				id = ""
 			}
 			describe.RecordTypes = append(describe.RecordTypes, DescribeRecordTypeInfo{
-				ID:            id,
-				DeveloperName: recordType.DeveloperName,
-				Name:          recordType.Label,
-				Active:        recordType.Active,
-				Available:     recordType.Active,
-				Default:       recordType.Default,
-				Description:   recordType.Description,
+				ID:               id,
+				DeveloperName:    recordType.DeveloperName,
+				Name:             recordType.Label,
+				Active:           recordType.Active,
+				Available:        recordType.Active,
+				Default:          recordType.Default,
+				Description:      recordType.Description,
+				PicklistDefaults: cloneStringMap(recordType.PicklistDefaults),
 			})
 		}
 		if len(describe.RecordTypes) > 0 {
@@ -430,13 +432,14 @@ func ToObjectDefinition(describe DescribeSObjectResult) storage.ObjectDefinition
 	}
 	for _, recordType := range describe.RecordTypes {
 		definition.RecordTypes = append(definition.RecordTypes, storage.RecordTypeInfo{
-			ID:            recordType.ID,
-			DeveloperName: recordType.DeveloperName,
-			Name:          recordType.Name,
-			Active:        recordType.Active,
-			Available:     recordType.Available,
-			Default:       recordType.Default,
-			Description:   recordType.Description,
+			ID:               recordType.ID,
+			DeveloperName:    recordType.DeveloperName,
+			Name:             recordType.Name,
+			Active:           recordType.Active,
+			Available:        recordType.Available,
+			Default:          recordType.Default,
+			Description:      recordType.Description,
+			PicklistDefaults: cloneStringMap(recordType.PicklistDefaults),
 		})
 	}
 	storage.EnsureRecordTypeIDField(&definition)
@@ -502,13 +505,14 @@ func FromObjectDefinition(definition storage.ObjectDefinition) DescribeSObjectRe
 	}
 	for _, recordType := range definition.RecordTypes {
 		describe.RecordTypes = append(describe.RecordTypes, DescribeRecordTypeInfo{
-			ID:            recordType.ID,
-			DeveloperName: recordType.DeveloperName,
-			Name:          recordType.Name,
-			Active:        recordType.Active,
-			Available:     recordType.Available,
-			Default:       recordType.Default,
-			Description:   recordType.Description,
+			ID:               recordType.ID,
+			DeveloperName:    recordType.DeveloperName,
+			Name:             recordType.Name,
+			Active:           recordType.Active,
+			Available:        recordType.Available,
+			Default:          recordType.Default,
+			Description:      recordType.Description,
+			PicklistDefaults: cloneStringMap(recordType.PicklistDefaults),
 		})
 	}
 	if len(describe.RecordTypes) > 0 {
@@ -587,6 +591,17 @@ func cloneBools(in map[string]bool) map[string]bool {
 		return nil
 	}
 	out := make(map[string]bool, len(in))
+	for name, value := range in {
+		out[name] = value
+	}
+	return out
+}
+
+func cloneStringMap(in map[string]string) map[string]string {
+	if in == nil {
+		return nil
+	}
+	out := make(map[string]string, len(in))
 	for name, value := range in {
 		out[name] = value
 	}

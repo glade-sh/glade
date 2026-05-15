@@ -398,6 +398,7 @@ func (e *Engine) insertOne(record storage.Record) (storage.ID, error) {
 		return "", err
 	}
 	createPersonContact := objectName == "Account" && isPersonAccountRecord(record)
+	applyDefaultRecordTypeID(object.Definition, &record)
 	applyFieldDefaults(e.Org, object.Definition, &record)
 	applyAutoNumberName(object.Definition, e.IDs.Sequences[objectName]+1, &record)
 	applyCustomSettingInsertDefaults(e.Org, object.Definition, &record)
@@ -734,6 +735,68 @@ func applyFieldDefaults(org *storage.OrgState, definition storage.ObjectDefiniti
 			record.Fields[name] = value
 		}
 	}
+}
+
+func applyDefaultRecordTypeID(definition storage.ObjectDefinition, record *storage.Record) {
+	if record == nil || len(definition.RecordTypes) == 0 {
+		return
+	}
+	if record.Fields == nil {
+		record.Fields = make(map[string]storage.Value)
+	}
+	if _, ok := record.GetField("RecordTypeId"); ok {
+		return
+	}
+	if record.ExplicitNulls != nil && record.ExplicitNulls["RecordTypeId"] {
+		return
+	}
+	recordType, ok := defaultRecordType(definition.RecordTypes)
+	if !ok || recordType.ID == "" {
+		return
+	}
+	record.Fields["RecordTypeId"] = storage.IDValue(recordType.ID)
+}
+
+func defaultRecordType(recordTypes []storage.RecordTypeInfo) (storage.RecordTypeInfo, bool) {
+	for _, recordType := range recordTypes {
+		if recordType.Default && recordType.Active && recordType.Available {
+			return recordType, true
+		}
+	}
+	for _, recordType := range recordTypes {
+		if recordType.Default && recordType.Active {
+			return recordType, true
+		}
+	}
+	for _, recordType := range recordTypes {
+		if recordType.Default {
+			return recordType, true
+		}
+	}
+	for _, recordType := range recordTypes {
+		if len(recordType.PicklistDefaults) > 0 && recordType.Active && recordType.Available {
+			return recordType, true
+		}
+	}
+	for _, recordType := range recordTypes {
+		if len(recordType.PicklistDefaults) > 0 && recordType.Active {
+			return recordType, true
+		}
+	}
+	for _, recordType := range recordTypes {
+		if recordType.Active && recordType.Available {
+			return recordType, true
+		}
+	}
+	for _, recordType := range recordTypes {
+		if recordType.Active {
+			return recordType, true
+		}
+	}
+	if len(recordTypes) == 0 {
+		return storage.RecordTypeInfo{}, false
+	}
+	return recordTypes[0], true
 }
 
 func defaultValueForRecordField(org *storage.OrgState, definition storage.ObjectDefinition, record storage.Record, field storage.Field) (storage.Value, bool) {
