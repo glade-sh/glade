@@ -5020,6 +5020,11 @@ Site.forgotPassword('user@example.invalid');
 User externalUser = new User(Username='external@example.invalid', LastName='External', Email='external@example.invalid', Alias='ext');
 System.assertEquals('005000000000E01', Site.createExternalUser(externalUser, '001000000000001', 'secret', false));
 System.assertEquals('005000000000E01', externalUser.Id);
+User personUser = new User(Username='person@example.invalid', LastName='Person', Email='person@example.invalid', Alias='pers');
+System.assertEquals('005000000000E01', Site.createPersonAccountPortalUser(personUser, '005000000000001', 'secret'));
+System.assertEquals('005000000000E01', personUser.Id);
+System.assertEquals('/passwordless', Site.passwordlessLogin(UserInfo.getUserId(), new List<Auth.VerificationMethod>(), '/passwordless').getUrl());
+Site.setPortalUserAsAuthProvider(personUser, '001000000000001');
 User portalUser = new User(Username='portal@example.invalid', LastName='Portal', Email='portal@example.invalid', Alias='port');
 System.assertEquals('005000000000E01', Site.createPortalUser(portalUser, '001000000000001', 'secret'));
 System.assertEquals('/next', Site.login('external@example.invalid', 'secret', '/next').getUrl());
@@ -5031,6 +5036,11 @@ System.assertEquals('/start', Network.forwardToAuthPage('/start').getUrl());
 System.assertEquals('/start', Network.forwardToAuthPage('/start', 'Site').getUrl());
 System.assertEquals('https://local.oaer.example/local/secur/logout.jsp', Network.getLogoutUrl(Network.getNetworkId()));
 System.assertEquals('https://local.oaer.example/local/SelfRegister', Network.getSelfRegUrl(Network.getNetworkId()));
+System.assertEquals('707000000000001', Network.createExternalUserAsync(externalUser, new Contact(), new Account()));
+System.assertEquals('707000000000001', Network.createRecordAsync('selfRegistration', externalUser));
+System.assertEquals(0, Network.loadAllPackageDefaultNetworkDashboardSettings());
+System.assertEquals(0, Network.loadAllPackageDefaultNetworkPulseSettings());
+System.assertEquals(0, Network.loadAllPackageDefaultNetworkWorkspaceMetricSettings());
 System.assertEquals('https://local.oaer.example/local', ConnectApi.Communities.getCommunity(Network.getNetworkId()).siteUrl);
 ConnectApi.UserProfiles.setPhoto(Network.getNetworkId(), UserInfo.getUserId(), '069000000000001', null);
 ConnectApi.UserProfiles.deletePhoto(Network.getNetworkId(), UserInfo.getUserId());
@@ -5052,6 +5062,37 @@ System.setPassword(UserInfo.getUserId(), 'local-secret');
 	storage.ApplyOrgShape(&org, []string{"MultiCurrency", "Sites", "Communities"})
 	machine := New(nil)
 	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecServiceRoutingLocalHarnesses(t *testing.T) {
+	program, err := CompileAnonymous(`
+Aura.redirect(new PageReference('/redirect'));
+Site.UrlRewriter rewriter = new Site.UrlRewriter();
+List<PageReference> rewritten = rewriter.generateUrlFor(new List<PageReference>{new PageReference('/one')});
+System.assertEquals(1, rewritten.size());
+System.assertEquals('/one', rewritten[0].getUrl());
+System.assertEquals('/two', rewriter.mapRequestUrl(new PageReference('/two')).getUrl());
+System.assertEquals('001000000000001', new ChatterAnswers.AccountCreator().createAccount('Ada', 'Lovelace', UserInfo.getUserId()));
+LiveAgent.LiveAgentRealTimeSystem.cancelChatRequests(new List<String>{'request-1'});
+LiveAgent.LiveAgentRealTimeSystem.setButtonStatus('button-1', true);
+System.assertEquals(0, LiveAgent.LiveAgentRealTimeSystem.routeChatRequests(new List<LiveAgent.LiveChatRoutingRoute>()).size());
+new LiveAgent.LiveChatRouter().doRouting(new List<LiveAgent.LiveChatRoutingRequest>());
+System.assertEquals('', new Support.EinsteinBots().sendMessageToBot('bot', 'version', 'hello'));
+System.assertEquals(null, new Support.EmailTemplateSelector().getDefaultEmailTemplateId('001000000000001'));
+System.assertEquals(0, Support.LifeScienceAttendees.parse('{}').attendees.size());
+Support.LifeScienceUpdateEmailTransactions.updateRecords('[]');
+System.assertEquals(null, new RichMessaging.ProcessFormHandler().processFormRequest(new RichMessaging.ProcessFormResponse(new Map<String,String>(), '0Mw000000000001', '0Mc000000000001', 'local', 'reply-1')));
+System.assert(new RichMessaging.ProcessPaymentHandler().processPaymentRequest(new RichMessaging.ProcessPaymentRequest('txn-1', null, null, null, null, null, '001000000000001')) != null);
+System.assert(new RichMessaging.ProcessCatalogOrderHandler().processCatalogOrderRequest(new RichMessaging.ProcessCatalogOrderRequest()) != null);
+System.assert(new RichMessaging.AuthRequestHandler().handleAuthRequest(new RichMessaging.AuthRequestResponse('token', '001000000000001', 'provider')) != null);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
 	}
