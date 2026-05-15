@@ -2081,13 +2081,13 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"RoundingMode.valueOf", "Id.valueOf",
 		"AsyncInfo.getCurrentQueueableStackDepth", "AsyncInfo.getMaximumQueueableStackDepth",
 		"AsyncInfo.getMinimumQueueableDelayInMinutes",
-		"Pattern.compile", "Pattern.matches", "Pattern.quote",
+		"Pattern.compile", "Pattern.matches", "Pattern.quote", "Matcher.quoteReplacement",
 		"Math.abs", "Math.floor", "Math.ceil", "Math.round", "Math.rint", "Math.roundToLong", "Math.signum",
 		"Math.sqrt", "Math.cbrt", "Math.acos", "Math.asin", "Math.atan", "Math.cos", "Math.sin", "Math.tan",
 		"Math.cosh", "Math.sinh", "Math.tanh",
 		"Math.exp", "Math.log", "Math.log10", "Math.max", "Math.min", "Math.mod", "Math.pow",
 		"Math.atan2", "Math.random",
-		"UUID.randomUUID",
+		"UUID.fromString", "UUID.randomUUID",
 		"Date.today", "Date.newInstance", "Date.valueOf", "Date.parse", "Date.daysInMonth",
 		"Datetime.now", "Datetime.newInstance", "Datetime.newInstanceGmt", "Datetime.valueOf", "Datetime.valueOfGmt",
 		"Time.newInstance", "Time.valueOf",
@@ -2999,6 +2999,8 @@ platformStaticCall:
 		return patternMatches(args)
 	case "Pattern.quote":
 		return patternQuote(args)
+	case "Matcher.quoteReplacement":
+		return matcherQuoteReplacement(args)
 	case "Math.abs", "Math.floor", "Math.ceil", "Math.round", "Math.rint", "Math.roundToLong", "Math.signum", "Math.sqrt", "Math.cbrt",
 		"Math.acos", "Math.asin", "Math.atan", "Math.cos", "Math.sin", "Math.tan", "Math.cosh", "Math.sinh", "Math.tanh",
 		"Math.exp", "Math.log", "Math.log10":
@@ -3014,7 +3016,15 @@ platformStaticCall:
 		if len(args) != 0 {
 			return Null, fmt.Errorf("UUID.randomUUID expects 0 arguments")
 		}
-		return String(vm.nextDeterministicUUID()), nil
+		return uuidValue(vm.nextDeterministicUUID()), nil
+	case "UUID.fromString":
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, fmt.Errorf("UUID.fromString expects String")
+		}
+		if _, err := parseUUIDText(args[0].Text); err != nil {
+			return Null, err
+		}
+		return uuidValue(strings.ToLower(args[0].Text)), nil
 	case "Date.today", "System.today":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("%s expects 0 arguments", callee)
@@ -4789,6 +4799,29 @@ func (vm *VM) nextDeterministicUUID() string {
 	hi = (hi &^ 0xf000) | 0x4000
 	lo = (lo &^ 0xc000000000000000) | 0x8000000000000000
 	return fmt.Sprintf("%08x-%04x-%04x-%04x-%012x", uint32(hi>>32), uint16(hi>>16), uint16(hi), uint16(lo>>48), lo&0x0000ffffffffffff)
+}
+
+func uuidValue(text string) Value {
+	return platformScalar("UUID", strings.ToLower(text))
+}
+
+func parseUUIDText(text string) (string, error) {
+	if len(text) != 36 {
+		return "", fmt.Errorf("UUID.fromString expects canonical UUID text")
+	}
+	for i, r := range text {
+		switch i {
+		case 8, 13, 18, 23:
+			if r != '-' {
+				return "", fmt.Errorf("UUID.fromString expects canonical UUID text")
+			}
+		default:
+			if !((r >= '0' && r <= '9') || (r >= 'a' && r <= 'f') || (r >= 'A' && r <= 'F')) {
+				return "", fmt.Errorf("UUID.fromString expects canonical UUID text")
+			}
+		}
+	}
+	return strings.ToLower(text), nil
 }
 
 func unsupportedIntegrationSurface(callee string) (string, bool) {
@@ -22425,7 +22458,7 @@ func (vm *VM) coerceAssignable(typeName string, value Value) (Value, error) {
 			}
 			return platformScalar("Datetime", formatPlatformDatetime(parsed)), nil
 		}
-		if strings.EqualFold(typeName, "String") && (strings.EqualFold(value.Type, "Id") || strings.EqualFold(value.Type, "String")) {
+		if strings.EqualFold(typeName, "String") && (strings.EqualFold(value.Type, "Id") || strings.EqualFold(value.Type, "String") || strings.EqualFold(value.Type, "UUID")) {
 			text, err := platformScalarText(value, value.Type)
 			if err != nil {
 				return Null, err
@@ -24467,6 +24500,11 @@ func (vm *VM) displayString(value Value, result *Result) (string, error) {
 			return text, nil
 		}
 	}
+	if strings.EqualFold(value.Type, "UUID") {
+		if text, err := platformScalarText(value, "UUID"); err == nil {
+			return text, nil
+		}
+	}
 	if strings.EqualFold(value.Type, "Schema.SObjectField") {
 		if fieldName, ok := value.Fields["field"]; ok && fieldName.Kind == ValueString {
 			return fieldName.Text, nil
@@ -24969,6 +25007,34 @@ func (vm *VM) callValueMember(receiverName string, receiver Value, method string
 			}
 			vm.propagateCollectionMutation(previous, receiver)
 			return Null, true, nil
+		case "addToRelationship":
+			updated, err := listAppendSObjects(receiver, "__oaer_added_to_relationship", args, "List.addToRelationship")
+			if err != nil {
+				return Null, true, err
+			}
+			if err := vm.storeReceiver(receiverName, updated); err != nil {
+				return Null, true, err
+			}
+			return Null, true, nil
+		case "markForDelete":
+			updated, err := listAppendSObjects(receiver, "__oaer_marked_for_delete", args, "List.markForDelete")
+			if err != nil {
+				return Null, true, err
+			}
+			if err := vm.storeReceiver(receiverName, updated); err != nil {
+				return Null, true, err
+			}
+			return Null, true, nil
+		case "getAddedToRelationship":
+			if len(args) != 0 {
+				return Null, true, fmt.Errorf("List.getAddedToRelationship expects 0 arguments")
+			}
+			return listRelationshipValues(receiver, "__oaer_added_to_relationship"), true, nil
+		case "getMarkedForDeletion":
+			if len(args) != 0 {
+				return Null, true, fmt.Errorf("List.getMarkedForDeletion expects 0 arguments")
+			}
+			return listRelationshipValues(receiver, "__oaer_marked_for_delete"), true, nil
 		case "size":
 			if len(args) != 0 {
 				return Null, true, fmt.Errorf("List.size expects 0 arguments")
@@ -25460,7 +25526,7 @@ func canonicalCollectionMemberName(collection, method string) string {
 	var known []string
 	switch collection {
 	case "List":
-		known = []string{"add", "addAll", "size", "isEmpty", "get", "contains", "indexOf", "clone", "deepClone", "iterator", "sort", "remove", "clear", "set", "getSObjectType"}
+		known = []string{"add", "addAll", "addToRelationship", "getAddedToRelationship", "getMarkedForDeletion", "markForDelete", "size", "isEmpty", "get", "contains", "indexOf", "clone", "deepClone", "iterator", "sort", "remove", "clear", "set", "getSObjectType"}
 	case "Set":
 		known = []string{"add", "addAll", "size", "isEmpty", "contains", "containsAll", "remove", "clear", "removeAll", "retainAll", "clone", "deepClone", "iterator"}
 	case "Map":
@@ -25472,6 +25538,51 @@ func canonicalCollectionMemberName(collection, method string) string {
 		}
 	}
 	return method
+}
+
+func listAppendSObjects(receiver Value, field string, args []Value, context string) (Value, error) {
+	if len(args) != 1 || (args[0].Kind != ValueObject && args[0].Kind != ValueList) {
+		return Null, fmt.Errorf("%s expects SObject or List<SObject>", context)
+	}
+	values := []Value{args[0]}
+	if args[0].Kind == ValueList {
+		values = args[0].List
+	}
+	if receiver.Fields == nil {
+		receiver.Fields = make(map[string]Value)
+	}
+	list := receiver.Fields[field]
+	if list.Kind != ValueList {
+		list = List()
+		list.Type = "List<SObject>"
+	}
+	for _, value := range values {
+		if value.Kind != ValueObject || !listRelationshipSObjectValue(value) {
+			return Null, fmt.Errorf("%s expects SObject or List<SObject>", context)
+		}
+		list.List = append(list.List, value)
+	}
+	receiver.Fields[field] = list
+	return receiver, nil
+}
+
+func listRelationshipValues(receiver Value, field string) Value {
+	if receiver.Fields != nil {
+		if list, ok := receiver.Fields[field]; ok && list.Kind == ValueList {
+			return list
+		}
+	}
+	out := List()
+	out.Type = "List<SObject>"
+	return out
+}
+
+func listRelationshipSObjectValue(value Value) bool {
+	return strings.EqualFold(value.Type, "SObject") ||
+		isCommonSObjectTypeName(value.Type) ||
+		strings.HasSuffix(value.Type, "__c") ||
+		strings.HasSuffix(value.Type, "__e") ||
+		strings.HasSuffix(value.Type, "__mdt")
 }
 
 func canonicalPlatformObjectMemberName(typeName, method string) string {
@@ -28578,7 +28689,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Int(0), receiver, false, true, nil
 			}
 			return Int(int64(len(details.List))), receiver, false, true, nil
-		case "getDmlMessage", "getDmlType", "getDmlStatusCode", "getDmlFields", "getDmlId", "getDmlIndex":
+		case "getDmlMessage", "getDmlType", "getDmlStatusCode", "getDmlFieldNames", "getDmlFields", "getDmlId", "getDmlIndex":
 			if exceptionTypeName(receiver.Type) != "DmlException" {
 				break
 			}
@@ -28606,6 +28717,11 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 					return Value{Kind: ValueObject, Type: "StatusCode", Text: canonical}, receiver, false, true, nil
 				}
 				return Value{Kind: ValueObject, Type: "StatusCode", Text: code}, receiver, false, true, nil
+			case "getDmlFieldNames":
+				if value, ok := detail.Fields["fields"]; ok {
+					return value, receiver, false, true, nil
+				}
+				return List(), receiver, false, true, nil
 			case "getDmlFields":
 				if value, ok := detail.Fields["fields"]; ok {
 					return value, receiver, false, true, nil
@@ -28754,6 +28870,28 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			return Null, receiver, false, true, nil
 		}
+	case "UUID":
+		switch method {
+		case "toString":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("UUID.toString expects 0 arguments")
+			}
+			text, err := platformScalarText(receiver, "UUID")
+			if err != nil {
+				return Null, receiver, false, true, err
+			}
+			return String(text), receiver, false, true, nil
+		case "equals":
+			if len(args) != 1 {
+				return Null, receiver, false, true, fmt.Errorf("UUID.equals expects 1 argument")
+			}
+			return Bool(receiver.Equal(args[0])), receiver, false, true, nil
+		case "hashCode":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("UUID.hashCode expects 0 arguments")
+			}
+			return Int(int64(valueHashCode(receiver))), receiver, false, true, nil
+		}
 	case "Version":
 		switch method {
 		case "compareTo":
@@ -28761,6 +28899,14 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("Version.compareTo expects Version")
 			}
 			return Int(int64(compareVersionValues(receiver, args[0]))), receiver, false, true, nil
+		case "major", "minor", "patch":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("Version.%s expects 0 arguments", method)
+			}
+			if value, ok := receiver.Fields[method]; ok {
+				return value, receiver, false, true, nil
+			}
+			return Int(0), receiver, false, true, nil
 		case "toString":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("Version.toString expects 0 arguments")
@@ -28894,13 +29040,22 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		case "isDone":
 			return databaseObjectGetter(receiver, method, args, "done", Bool(false))
 		}
-	case "QueueableContext", "BatchableContext", "Database.BatchableContext":
-		if method == "getJobId" {
+	case "QueueableContext", "BatchableContext", "Database.BatchableContext", "Database.BatchableContextImpl":
+		switch method {
+		case "getJobId":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("%s.getJobId expects 0 arguments", receiver.Type)
 			}
 			if jobID, ok := receiver.Fields["JobId"]; ok {
 				return jobID, receiver, false, true, nil
+			}
+			return String(""), receiver, false, true, nil
+		case "getChildJobId":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("%s.getChildJobId expects 0 arguments", receiver.Type)
+			}
+			if childJobID, ok := receiver.Fields["ChildJobId"]; ok {
+				return childJobID, receiver, false, true, nil
 			}
 			return String(""), receiver, false, true, nil
 		}
@@ -30267,6 +30422,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			return receiver.Fields["restrictedDelete"], receiver, false, true, nil
 		}
 	case "HttpRequest":
+		method = canonicalStdlibMemberName(method, "setEndpoint", "getEndpoint", "setMethod", "getMethod", "setBody", "setBodyAsBlob", "setBodyDocument", "getBodyDocument", "setClientCertificateName", "setClientCertificate", "setHeader", "getHeaderKeys", "getHeader", "setCompressed", "getCompressed", "setTimeout", "getTimeout", "getBody", "getBodyAsBlob")
 		switch method {
 		case "setEndpoint":
 			if len(args) != 1 || args[0].Kind != ValueString {
@@ -30308,6 +30464,12 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("HttpRequest.setBodyAsBlob expects Blob")
 			}
 			receiver.Fields["body"] = args[0].Fields["value"]
+			return Null, receiver, true, true, nil
+		case "setBodyDocument":
+			if len(args) != 1 || args[0].Kind != ValueObject || args[0].Type != "Dom.Document" {
+				return Null, receiver, false, true, fmt.Errorf("HttpRequest.setBodyDocument expects Dom.Document")
+			}
+			receiver.Fields["body"] = String(domDocumentXMLString(args[0]))
 			return Null, receiver, true, true, nil
 		case "setClientCertificateName":
 			if len(args) != 1 || args[0].Kind != ValueString {
@@ -30371,6 +30533,19 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("HttpRequest.getBody expects 0 arguments")
 			}
 			return receiver.Fields["body"], receiver, false, true, nil
+		case "getBodyDocument":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("HttpRequest.getBodyDocument expects 0 arguments")
+			}
+			body := ""
+			if value, ok := receiver.Fields["body"]; ok && value.Kind == ValueString {
+				body = value.Text
+			}
+			doc, err := parseDomDocument(body)
+			if err != nil {
+				return Null, receiver, false, true, newExceptionError("XmlException", err.Error())
+			}
+			return doc, receiver, false, true, nil
 		case "getBodyAsBlob":
 			if len(args) != 0 {
 				return Null, receiver, false, true, fmt.Errorf("HttpRequest.getBodyAsBlob expects 0 arguments")
@@ -30382,7 +30557,7 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			return platformScalar("Blob", body), receiver, false, true, nil
 		}
 	case "HttpResponse":
-		method = canonicalStdlibMemberName(method, "setBody", "setBodyAsBlob", "getBody", "getBodyAsBlob", "getBodyDocument", "setStatusCode", "setStatus", "getStatus", "setHeader", "getHeaderKeys", "getHeader", "getStatusCode")
+		method = canonicalStdlibMemberName(method, "setBody", "setBodyAsBlob", "getBody", "getBodyAsBlob", "getBodyDocument", "getXmlStreamReader", "setStatusCode", "setStatus", "getStatus", "setHeader", "getHeaderKeys", "getHeader", "getStatusCode")
 		switch method {
 		case "setBody":
 			if len(args) != 1 || args[0].Kind != ValueString {
@@ -30423,6 +30598,19 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, newExceptionError("XmlException", err.Error())
 			}
 			return doc, receiver, false, true, nil
+		case "getXmlStreamReader":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("HttpResponse.getXmlStreamReader expects 0 arguments")
+			}
+			body := ""
+			if value, ok := receiver.Fields["body"]; ok && value.Kind == ValueString {
+				body = value.Text
+			}
+			reader, err := newXmlStreamReader(body)
+			if err != nil {
+				return Null, receiver, false, true, err
+			}
+			return reader, receiver, false, true, nil
 		case "setStatusCode":
 			if len(args) != 1 || args[0].Kind != ValueInt {
 				return Null, receiver, false, true, fmt.Errorf("HttpResponse.setStatusCode expects Integer")

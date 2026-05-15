@@ -3047,6 +3047,14 @@ String uuid2 = UUID.randomUUID();
 System.assertNotEquals(uuid1, uuid2);
 System.assertEquals(36, uuid1.length());
 System.assertEquals('4', uuid1.substring(14, 15));
+UUID parsedUuid = UUID.fromString(uuid1);
+System.assertEquals(uuid1, parsedUuid.toString());
+System.assert(parsedUuid.equals(UUID.fromString(uuid1)));
+System.assertEquals(parsedUuid.hashCode(), UUID.fromString(uuid1).hashCode());
+Version version = new Version(1, 2, 3);
+System.assertEquals(1, version.major());
+System.assertEquals(2, version.minor());
+System.assertEquals(3, version.patch());
 `)
 	if err != nil {
 		t.Fatal(err)

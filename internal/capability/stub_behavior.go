@@ -193,6 +193,9 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 	if stringBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "String method is handled by the VM string stdlib surface", true
 	}
+	if primitiveFieldAddErrorBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "primitive addError overload is handled by the VM for SObject field-context receivers", true
+	}
 	if corePlatformBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "core platform method is handled by the VM stdlib/runtime surface", true
 	}
@@ -331,6 +334,12 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 	if typeName == "Schema.SObjectType" && name == "newsobject" {
 		return true
 	}
+	if typeName == "Comparable" && name == "compareto" {
+		return true
+	}
+	if typeName == "Comparator" && name == "compare" {
+		return true
+	}
 	if apexPagesBehaviorMethod(typeName, name) || messagingBehaviorMethod(typeName, name) {
 		return true
 	}
@@ -373,9 +382,10 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 		return strings.HasPrefix(name, "get") || strings.HasPrefix(name, "set")
 	case "LIST", "List", "Set", "Map":
 		switch name {
-		case "add", "addall", "clear", "contains", "containsall", "get", "getsobjecttype",
+		case "add", "addall", "addtorelationship", "clear", "contains", "containsall", "containskey",
+			"get", "getaddedtorelationship", "getmarkedfordeletion", "getsobjecttype",
 			"deepclone", "indexof", "isempty", "iterator", "put", "putall", "remov", "remove",
-			"removeall", "retainall", "set", "size", "sort":
+			"markfordelete", "removeall", "retainall", "set", "size", "sort", "keyset", "values":
 			return true
 		}
 	case "UserInfo":
@@ -481,6 +491,8 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 		return name == "fetchpage" || name == "fetchdeleted" || name == "getnumrecords"
 	case "Database.CursorFetchResult":
 		return name == "getrecords" || name == "getnextindex" || name == "getnumdeletedrecords" || name == "isdone"
+	case "Database.BatchableContext", "Database.BatchableContextImpl":
+		return name == "getjobid" || name == "getchildjobid"
 	case "Database.GetDeletedResult":
 		return name == "getdeletedrecords" || name == "getearliestdateavailable" || name == "getlatestdatecovered"
 	case "Database.GetUpdatedResult":
@@ -540,9 +552,19 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 		}
 	case "Pattern":
 		switch name {
-		case "matcher", "pattern", "quote":
+		case "matcher", "pattern", "quote", "split":
 			return true
 		}
+	case "Matcher":
+		return matcherBehaviorMethod(typeName, name)
+	case "Type":
+		return name == "isassignablefrom"
+	case "UUID":
+		return name == "fromstring" || name == "randomuuid"
+	case "Version":
+		return name == "compareto" || name == "major" || name == "minor" || name == "patch"
+	case "JSON":
+		return name == "creategenerator" || name == "createparser"
 	case "Location":
 		switch name {
 		case "getdistance", "getlatitude", "getlongitude", "newinstance":
@@ -580,14 +602,14 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 	case "HttpRequest":
 		switch name {
 		case "setendpoint", "getendpoint", "setmethod", "getmethod", "setbody", "setbodyasblob",
-			"getbody", "getbodyasblob", "setheader", "getheaderkeys", "getheader",
+			"setbodydocument", "getbodydocument", "getbody", "getbodyasblob", "setheader", "getheaderkeys", "getheader",
 			"setcompressed", "getcompressed", "settimeout", "gettimeout":
 			return true
 		}
 	case "HttpResponse":
 		switch name {
 		case "setbody", "setbodyasblob", "getbody", "getbodyasblob", "getbodydocument",
-			"setstatuscode", "setstatus", "getstatus", "setheader", "getheaderkeys",
+			"getxmlstreamreader", "setstatuscode", "setstatus", "getstatus", "setheader", "getheaderkeys",
 			"getheader", "getstatuscode":
 			return true
 		}
@@ -727,7 +749,7 @@ func matcherBehaviorMethod(typeName, methodName string) bool {
 	case "matches", "lookingat", "find", "group", "groupcount", "start", "end",
 		"replaceall", "replacefirst", "reset", "region", "regionstart", "regionend",
 		"usepattern", "hasanchoringbounds", "hastransparentbounds", "useanchoringbounds",
-		"usetransparentbounds":
+		"usetransparentbounds", "hitend", "pattern", "quotereplacement", "requireend":
 		return true
 	default:
 		return false
@@ -799,7 +821,7 @@ func standardExceptionBehaviorMethod(typeName, methodName string) bool {
 	switch methodName {
 	case "getmessage", "setmessage", "getcause", "initcause", "getlineNumber", "getlinenumber",
 		"getstacktrace", "getstacktracestring", "gettypeName", "gettypename",
-		"getnumdml", "getdmltype", "getdmlmessage", "getdmlstatuscode", "getdmlfields",
+		"getnumdml", "getdmltype", "getdmlmessage", "getdmlstatuscode", "getdmlfieldnames", "getdmlfields",
 		"getdmlid", "getdmlindex", "getinaccessiblefields":
 		return true
 	default:
@@ -868,7 +890,7 @@ func explicitlyUnsupportedCoreBehaviorMethod(symbol typesys.TypeSymbol, member t
 	case "Search":
 		return name != "query"
 	case "HttpRequest":
-		return name == "setclientcertificatename" || name == "setclientcertificate" || name == "setbodydocument"
+		return name == "setclientcertificatename" || name == "setclientcertificate"
 	case "PageReference":
 		return name == "getcontent" || name == "getcontentaspdf" || name == "setcookies"
 	case "Database":
@@ -885,6 +907,18 @@ func explicitlyUnsupportedCoreBehaviorMethod(symbol typesys.TypeSymbol, member t
 		return false
 	}
 	return false
+}
+
+func primitiveFieldAddErrorBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if member.Kind != apexast.DeclarationMethod || !strings.EqualFold(member.Name, "addError") {
+		return false
+	}
+	switch stubBehaviorTypeName(symbol) {
+	case "String", "Id", "Boolean", "Date", "Datetime", "Decimal", "Double", "Integer", "Long", "Time":
+		return true
+	default:
+		return false
+	}
 }
 
 func xmlStreamReaderBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
@@ -1073,6 +1107,10 @@ func databaseResultDTOBehaviorMethod(symbol typesys.TypeSymbol, member typesys.M
 	case "Database.MergeResult":
 		return name == "issuccess" || name == "getid" || name == "geterrors" ||
 			name == "getmergedrecordids" || name == "getupdatedrelatedids"
+	case "Database.NestedSaveResult":
+		return name == "issuccess" || name == "getid" || name == "geterrors" || name == "getrelationshipsaveresults"
+	case "Database.RelationshipSaveResult":
+		return name == "getrelationshipname" || name == "getsaveresults"
 	case "Database.Error":
 		return name == "getmessage" || name == "getstatuscode" || name == "getfields" ||
 			name == "getextendederrordetails"

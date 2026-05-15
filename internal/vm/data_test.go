@@ -2160,6 +2160,41 @@ System.assertEquals(row.get('Id'), cloneThreeArgs.get('Id'));
 	}
 }
 
+func TestExecListRelationshipBookkeeping(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<SObject> rows = new List<SObject>();
+Account account = new Account(Name = 'Acme');
+Contact contact = new Contact(LastName = 'Smith');
+rows.addToRelationship(account);
+rows.addToRelationship(new List<SObject>{contact});
+System.assertEquals(2, rows.getAddedToRelationship().size());
+System.assertEquals('Acme', ((Account)rows.getAddedToRelationship().get(0)).Name);
+rows.markForDelete(contact);
+rows.markForDelete(new List<SObject>{account});
+System.assertEquals(2, rows.getMarkedForDeletion().size());
+System.assertEquals('Smith', ((Contact)rows.getMarkedForDeletion().get(0)).LastName);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	org.Objects["Contact"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Contact",
+			KeyPrefix: "003",
+			Fields: map[string]storage.Field{
+				"LastName": {APIName: "LastName", Type: storage.FieldString},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSObjectQuickActionNameAccessor(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account row = new Account(Name = 'Child');
@@ -5598,6 +5633,89 @@ System.assertEquals('Rating', stringFieldError.getFields().get(0));
 	}
 	if _, err := machine.Execute(program); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestExecPrimitiveFieldAddErrorOverloadsProduceFieldErrors(t *testing.T) {
+	triggerProgram, err := CompileAnonymous(`
+for (Account a : Trigger.new) {
+	if (a.Name == 'Primitive Block') {
+		a.Flag__c.addError('boolean field');
+		a.Date__c.addError('date field');
+		a.Stamp__c.addError('datetime field');
+		a.Amount__c.addError('decimal field');
+		a.Double__c.addError('double field');
+		a.Lookup__c.addError('id field');
+		a.Count__c.addError('integer field');
+		a.Long__c.addError('long field');
+		a.Text__c.addError('string field');
+		a.Clock__c.addError('time field');
+	}
+}
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	program, err := CompileAnonymous(`
+Account blocked = new Account(Name = 'Primitive Block');
+Object result = Database.insert(blocked, false);
+System.assert(!result.isSuccess());
+List<Object> errors = result.getErrors();
+System.assertEquals(10, errors.size());
+System.assertEquals('Flag__c', errors.get(0).getFields().get(0));
+System.assertEquals('Date__c', errors.get(1).getFields().get(0));
+System.assertEquals('Stamp__c', errors.get(2).getFields().get(0));
+System.assertEquals('Amount__c', errors.get(3).getFields().get(0));
+System.assertEquals('Double__c', errors.get(4).getFields().get(0));
+System.assertEquals('Lookup__c', errors.get(5).getFields().get(0));
+System.assertEquals('Count__c', errors.get(6).getFields().get(0));
+System.assertEquals('Long__c', errors.get(7).getFields().get(0));
+System.assertEquals('Text__c', errors.get(8).getFields().get(0));
+System.assertEquals('Clock__c', errors.get(9).getFields().get(0));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	org := testDataOrg()
+	account := org.Objects["Account"]
+	account.Definition.Fields["Flag__c"] = storage.Field{APIName: "Flag__c", Type: storage.FieldBoolean}
+	account.Definition.Fields["Date__c"] = storage.Field{APIName: "Date__c", Type: storage.FieldDate}
+	account.Definition.Fields["Stamp__c"] = storage.Field{APIName: "Stamp__c", Type: storage.FieldDateTime}
+	account.Definition.Fields["Amount__c"] = storage.Field{APIName: "Amount__c", Type: storage.FieldDecimal}
+	account.Definition.Fields["Double__c"] = storage.Field{APIName: "Double__c", Type: storage.FieldDecimal}
+	account.Definition.Fields["Lookup__c"] = storage.Field{APIName: "Lookup__c", Type: storage.FieldReference, ReferenceTo: []string{"Account"}}
+	account.Definition.Fields["Count__c"] = storage.Field{APIName: "Count__c", Type: storage.FieldInteger}
+	account.Definition.Fields["Long__c"] = storage.Field{APIName: "Long__c", Type: storage.FieldInteger}
+	account.Definition.Fields["Text__c"] = storage.Field{APIName: "Text__c", Type: storage.FieldString}
+	account.Definition.Fields["Clock__c"] = storage.Field{APIName: "Clock__c", Type: storage.FieldAny}
+	org.Objects["Account"] = account
+	machine.SetOrg(&org)
+	if err := machine.RegisterTrigger(Trigger{
+		Name:      "AccountBeforeInsertPrimitiveAddError",
+		Object:    "Account",
+		Timing:    triggerTimingBefore,
+		Operation: "insert",
+		Program:   triggerProgram,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecStandalonePrimitiveAddErrorStaysUnsupported(t *testing.T) {
+	program, err := CompileAnonymous(`
+String localValue = 'not a field';
+localValue.addError('bad');
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err == nil || !strings.Contains(err.Error(), `unsupported call "localValue.addError"`) {
+		t.Fatalf("expected standalone primitive addError to stay unsupported, got %v", err)
 	}
 }
 

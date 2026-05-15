@@ -5908,6 +5908,13 @@ System.assertEquals('blob-body', req.getBodyAsBlob().toString());
 req.setBodyAsBlob(Blob.valueOf(''));
 System.assertEquals('', req.getBody());
 System.assertEquals('', EncodingUtil.convertToHex(req.getBodyAsBlob()));
+req.setBody('<request><name>local</name></request>');
+System.assertEquals('request', req.GETBODYDOCUMENT().getRootElement().getName());
+Dom.Document doc = new Dom.Document();
+doc.load('<payload><value>42</value></payload>');
+req.SETBODYDOCUMENT(doc);
+System.assert(req.getBody().contains('<payload>'));
+System.assertEquals('42', req.getBodyDocument().getRootElement().getChildElement('value', null).getText());
 req.setTimeout(120000);
 System.assertEquals(120000, req.getTimeout());
 `)
@@ -5928,6 +5935,11 @@ System.assertEquals('', res.getBody());
 System.assertEquals(0, res.getHeaderKeys().size());
 res.setBodyAsBlob(Blob.valueOf('response-body'));
 System.assertEquals('response-body', res.getBodyAsBlob().toString());
+res.setBody('<response><status>ok</status></response>');
+System.assertEquals('response', res.getBodyDocument().getRootElement().getName());
+XmlStreamReader reader = res.GETXMLSTREAMREADER();
+System.assertEquals(1, reader.next());
+System.assertEquals('response', reader.getLocalName());
 `)
 	if err != nil {
 		t.Fatal(err)

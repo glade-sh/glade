@@ -136,6 +136,10 @@ resetter.useAnchoringBounds(false);
 resetter.useTransparentBounds(true);
 System.assert(!resetter.hasAnchoringBounds());
 System.assert(resetter.hasTransparentBounds());
+System.assertEquals('[A-Z]+', resetter.pattern().pattern());
+System.assert(!resetter.hitEnd());
+System.assert(!resetter.requireEnd());
+System.assertEquals('\\$1\\\\x', Matcher.quoteReplacement('$1\\x'));
 `)
 	if err != nil {
 		t.Fatal(err)

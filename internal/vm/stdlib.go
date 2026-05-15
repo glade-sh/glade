@@ -1700,6 +1700,14 @@ func javaPatternQuote(text string) string {
 	return `\Q` + strings.ReplaceAll(text, `\E`, `\E\\E\Q`) + `\E`
 }
 
+func matcherQuoteReplacement(args []Value) (Value, error) {
+	if len(args) != 1 || args[0].Kind != ValueString {
+		return Null, fmt.Errorf("Matcher.quoteReplacement expects String")
+	}
+	quoted := strings.NewReplacer(`\`, `\\`, `$`, `\$`).Replace(args[0].Text)
+	return String(quoted), nil
+}
+
 func compilePatternSource(callee, source string, flags int64) (string, error) {
 	regexpSource, _, err := compilePatternSourceWithMetadata(callee, source, flags)
 	return regexpSource, err
@@ -1907,7 +1915,9 @@ func callPatternMember(receiver Value, method string, args []Value) (Value, Valu
 func callMatcherMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
 	method = canonicalStdlibMemberName(method,
 		"matches", "lookingAt", "find", "group", "groupCount", "start", "end",
-		"replaceAll", "replaceFirst",
+		"replaceAll", "replaceFirst", "reset", "region", "regionStart", "regionEnd",
+		"usePattern", "hasAnchoringBounds", "hasTransparentBounds", "useAnchoringBounds",
+		"useTransparentBounds", "hitEnd", "pattern", "requireEnd",
 	)
 	source, input, err := matcherSourceInput(receiver)
 	if err != nil {
@@ -2159,6 +2169,31 @@ func callMatcherMember(receiver Value, method string, args []Value) (Value, Valu
 		}
 		receiver.Fields["transparentBounds"] = args[0]
 		return receiver, receiver, true, true, nil
+	case "hitEnd", "requireEnd":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Matcher.%s expects 0 arguments", method)
+		}
+		return Bool(false), receiver, false, true, nil
+	case "pattern":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("Matcher.pattern expects 0 arguments")
+		}
+		pattern := Object("Pattern")
+		if source, ok := receiver.Fields["patternSource"]; ok && source.Kind == ValueString {
+			pattern.Fields["source"] = source
+		} else if regexpSource, ok := receiver.Fields["source"]; ok && regexpSource.Kind == ValueString {
+			pattern.Fields["source"] = regexpSource
+		} else {
+			pattern.Fields["source"] = String("")
+		}
+		pattern.Fields["regexpSource"] = receiver.Fields["source"]
+		if lookahead, ok := receiver.Fields["lookaheadSource"]; ok {
+			pattern.Fields["lookaheadSource"] = lookahead
+		}
+		if flags, ok := receiver.Fields["flags"]; ok {
+			pattern.Fields["flags"] = flags
+		}
+		return pattern, receiver, false, true, nil
 	default:
 		return Null, receiver, false, false, nil
 	}

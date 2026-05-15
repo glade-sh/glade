@@ -446,7 +446,7 @@ func canonicalTypeValueText(text string) string {
 
 func platformScalarObject(typeName string) bool {
 	switch typeName {
-	case "Blob", "Date", "Datetime", "Id", "Time", "Type", "URL":
+	case "Blob", "Date", "Datetime", "Id", "Time", "Type", "URL", "UUID":
 		return true
 	default:
 		return false
