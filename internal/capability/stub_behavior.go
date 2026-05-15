@@ -177,6 +177,10 @@ func localStubBehaviorEvidenceOverride(symbol typesys.TypeSymbol, member typesys
 		if name == "query" || name == "find" || name == "suggest" {
 			return StubBehaviorImplemented, "local runtime models Search over fixed test search results and empty suggestion DTOs", true
 		}
+	case "data_mask.DataMaskIntegrationUtil":
+		if name == "getjobs" || name == "getrunlogresponse" {
+			return StubBehaviorImplemented, "local runtime returns deterministic empty Data Mask job/read-log payloads without starting or canceling jobs", true
+		}
 	}
 	return "", "", false
 }
@@ -430,6 +434,13 @@ func commerceLocalHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesy
 		}
 	case "commerce_ordermanagement.ProductExpandService":
 		return name == "returnreasons"
+	case "commerce_inventory.CommerceInventoryService":
+		switch name {
+		case "checkinventory", "getinventorylevel", "getreservation":
+			return true
+		default:
+			return false
+		}
 	case "CartExtension.AbstractCartCalculator":
 		return name == "calculate"
 	case "CartExtension.CartCalculate":
@@ -526,7 +537,7 @@ func localServiceHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesys
 		return name == "migrate"
 	case "data_mask.DataMaskIntegrationUtil":
 		switch name {
-		case "iscoreallowed", "islibraryinuse":
+		case "getjobs", "getrunlogresponse", "iscoreallowed", "islibraryinuse":
 			return true
 		default:
 			return false
@@ -1551,7 +1562,12 @@ func explicitlyUnsupportedCoreBehaviorMethod(symbol typesys.TypeSymbol, member t
 		}
 	case "data_mask.DataMaskIntegrationUtil":
 		switch name {
-		case "canceljob", "getjobs", "getrunlogresponse", "runmask":
+		case "canceljob", "runmask":
+			return true
+		}
+	case "commerce_inventory.CommerceInventoryService":
+		switch name {
+		case "deletereservation", "upsertreservation":
 			return true
 		}
 	case "KbManagement.PublishingService":
