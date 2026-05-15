@@ -411,6 +411,29 @@ System.assert(tokens.get('a') != tokens.get('b'));
 	}
 }
 
+func TestExecVisualEditorDataRowAndSearchSuggestionOption(t *testing.T) {
+	program, err := CompileAnonymous(`
+VisualEditor.DataRow selected = new VisualEditor.DataRow('A', 42, true);
+VisualEditor.DataRow other = new VisualEditor.DataRow('B', 'value');
+System.assertEquals('A', selected.getLabel());
+System.assertEquals(42, (Integer)selected.getValue());
+System.assertEquals(true, selected.isSelected());
+System.assert(selected.compareTo(other) < 0);
+selected.setValue('changed');
+System.assertEquals('changed', selected.getValue());
+Search.SuggestionOption option = new Search.SuggestionOption();
+option.setFilter(new Search.KnowledgeSuggestionFilter());
+option.setLimit(5);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecQuickActionDescribeAndTemplateDefaults(t *testing.T) {
 	program, err := CompileAnonymous(`
 List<QuickAction.DescribeAvailableQuickActionResult> available =

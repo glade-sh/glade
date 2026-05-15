@@ -2802,13 +2802,14 @@ platformStaticCall:
 		if len(args) == 3 {
 			enforceRootObjectCRUD = args[2].Bool
 		}
-		records, removedFields, err := vm.stripInaccessibleRecords(args[0].Text, args[1], enforceRootObjectCRUD)
+		records, removedFields, modifiedIndexes, err := vm.stripInaccessibleRecords(args[0].Text, args[1], enforceRootObjectCRUD)
 		if err != nil {
 			return Null, err
 		}
 		decision := Object("SObjectAccessDecision")
 		decision.Fields["records"] = records
 		decision.Fields["removedFields"] = removedFields
+		decision.Fields["modifiedIndexes"] = modifiedIndexes
 		return decision, nil
 	case "Database.setSavepoint":
 		if len(args) != 0 {
@@ -5976,17 +5977,23 @@ func (vm *VM) currentUserFieldPermission(objectName, fieldName, method string) b
 	return true
 }
 
-func (vm *VM) stripInaccessibleRecords(accessType string, records Value, enforceRootObjectCRUD bool) (Value, Value, error) {
+func (vm *VM) stripInaccessibleRecords(accessType string, records Value, enforceRootObjectCRUD bool) (Value, Value, Value, error) {
 	out := cloneValue(records)
 	out.Type = records.Type
 	removedFields := Map()
 	removedFields.Type = "Map<String,Set<String>>"
+	modifiedIndexes := Set()
+	modifiedIndexes.Type = "Set<Integer>"
 	for i := range out.List {
-		if err := vm.stripInaccessibleRecord(accessType, &out.List[i], enforceRootObjectCRUD, removedFields); err != nil {
-			return Null, Null, err
+		modified, err := vm.stripInaccessibleRecord(accessType, &out.List[i], enforceRootObjectCRUD, removedFields)
+		if err != nil {
+			return Null, Null, Null, err
+		}
+		if modified {
+			modifiedIndexes.Set = append(modifiedIndexes.Set, Int(int64(i)))
 		}
 	}
-	return out, removedFields, nil
+	return out, removedFields, modifiedIndexes, nil
 }
 
 func (vm *VM) enforceUserModeDMLAccess(op string, value Value) error {
@@ -6044,10 +6051,11 @@ func userModeDMLPermissions(op string) (string, string) {
 	}
 }
 
-func (vm *VM) stripInaccessibleRecord(accessType string, record *Value, enforceRootObjectCRUD bool, removedFields Value) error {
+func (vm *VM) stripInaccessibleRecord(accessType string, record *Value, enforceRootObjectCRUD bool, removedFields Value) (bool, error) {
 	if record == nil || record.Kind != ValueObject {
-		return nil
+		return false, nil
 	}
+	modified := false
 	objectName := record.Type
 	if vm.Org != nil {
 		if resolved, ok := storage.ResolveObjectName(*vm.Org, objectName); ok {
@@ -6056,7 +6064,7 @@ func (vm *VM) stripInaccessibleRecord(accessType string, record *Value, enforceR
 	}
 	objectPermission := stripInaccessibleObjectPermission(accessType)
 	if enforceRootObjectCRUD && objectPermission != "" && !vm.currentUserObjectPermission(objectName, objectPermission) {
-		return newExceptionError("NoAccessException", "No access to entity: "+objectName)
+		return false, newExceptionError("NoAccessException", "No access to entity: "+objectName)
 	}
 	fieldPermission := stripInaccessibleFieldPermission(accessType)
 	for field, value := range record.Fields {
@@ -6074,12 +6082,17 @@ func (vm *VM) stripInaccessibleRecord(accessType string, record *Value, enforceR
 					delete(record.Fields, field)
 					unmarkQueriedSObjectField(record, field)
 					addStripInaccessibleRemovedField(removedFields, objectName, field)
+					modified = true
 					continue
 				}
 			}
 			for i := range value.List {
-				if err := vm.stripInaccessibleRecord(accessType, &value.List[i], enforceRootObjectCRUD, removedFields); err != nil {
-					return err
+				childModified, err := vm.stripInaccessibleRecord(accessType, &value.List[i], enforceRootObjectCRUD, removedFields)
+				if err != nil {
+					return false, err
+				}
+				if childModified {
+					modified = true
 				}
 			}
 			record.Fields[field] = value
@@ -6099,6 +6112,7 @@ func (vm *VM) stripInaccessibleRecord(accessType string, record *Value, enforceR
 		unmarkQueriedSObjectField(record, canonicalField)
 		unmarkQueriedSObjectField(record, field)
 		addStripInaccessibleRemovedField(removedFields, objectName, canonicalField)
+		modified = true
 	}
 	if selected, ok := record.Fields[sobjectQueriedFieldsField]; ok && selected.Kind == ValueMap {
 		for _, selectedFieldValue := range selected.MapKeys {
@@ -6116,9 +6130,10 @@ func (vm *VM) stripInaccessibleRecord(accessType string, record *Value, enforceR
 			unmarkQueriedSObjectField(record, canonicalField)
 			unmarkQueriedSObjectField(record, field)
 			addStripInaccessibleRemovedField(removedFields, objectName, canonicalField)
+			modified = true
 		}
 	}
-	return nil
+	return modified, nil
 }
 
 func recordHasSObjectField(record Value, field string) bool {
@@ -21348,15 +21363,22 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		}
 		return Object("DomainCreator"), nil
 	case "VisualEditor.DataRow":
-		if len(args) != 2 || len(namedArgs) != 0 {
-			return Null, fmt.Errorf("VisualEditor.DataRow constructor expects label and value Strings")
+		if (len(args) != 2 && len(args) != 3) || len(namedArgs) != 0 {
+			return Null, fmt.Errorf("VisualEditor.DataRow constructor expects label, value, and optional selected")
 		}
-		if args[0].Kind != ValueString || args[1].Kind != ValueString {
-			return Null, fmt.Errorf("VisualEditor.DataRow constructor expects label and value Strings")
+		if args[0].Kind != ValueString {
+			return Null, fmt.Errorf("VisualEditor.DataRow constructor expects label String")
+		}
+		if len(args) == 3 && args[2].Kind != ValueBool {
+			return Null, fmt.Errorf("VisualEditor.DataRow constructor selected expects Boolean")
 		}
 		row := Object("VisualEditor.DataRow")
 		row.Fields["label"] = args[0]
 		row.Fields["value"] = args[1]
+		row.Fields["selected"] = Bool(false)
+		if len(args) == 3 {
+			row.Fields["selected"] = args[2]
+		}
 		return row, nil
 	case "VisualEditor.DynamicPickListRows":
 		if len(args) > 2 || len(namedArgs) != 0 {
@@ -32199,6 +32221,14 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 				return Null, receiver, false, true, fmt.Errorf("SObjectAccessDecision.getRemovedFields expects 0 arguments")
 			}
 			return receiver.Fields["removedFields"], receiver, false, true, nil
+		case "getModifiedIndexes":
+			if len(args) != 0 {
+				return Null, receiver, false, true, fmt.Errorf("SObjectAccessDecision.getModifiedIndexes expects 0 arguments")
+			}
+			if value, ok := receiver.Fields["modifiedIndexes"]; ok {
+				return value, receiver, false, true, nil
+			}
+			return typedSet("Set<Integer>"), receiver, false, true, nil
 		}
 	case "Schema.ChildRelationship":
 		switch method {
@@ -32793,6 +32823,8 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		}
 	case "Search.KnowledgeSuggestionFilter", "Search.QuestionSuggestionFilter":
 		return callSearchSuggestionFilterMember(receiver, method, args)
+	case "Search.SuggestionOption":
+		return callSearchSuggestionOptionMember(receiver, method, args)
 	case "Search.SearchResult":
 		return callSearchResultMember(receiver, method, args)
 	case "Search.SearchResults":
@@ -33829,6 +33861,25 @@ func callSearchSuggestionFilterMember(receiver Value, method string, args []Valu
 	return Null, receiver, false, false, nil
 }
 
+func callSearchSuggestionOptionMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	switch strings.ToLower(method) {
+	case "setfilter":
+		if len(args) != 1 {
+			return Null, receiver, false, true, fmt.Errorf("Search.SuggestionOption.setFilter expects filter")
+		}
+		receiver.Fields["filter"] = args[0]
+		return Null, receiver, true, true, nil
+	case "setlimit":
+		if len(args) != 1 || args[0].Kind != ValueInt {
+			return Null, receiver, false, true, fmt.Errorf("Search.SuggestionOption.setLimit expects Integer")
+		}
+		receiver.Fields["limit"] = args[0]
+		return Null, receiver, true, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
 func callSearchResultMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
 	method = canonicalStdlibMemberName(method, "getSObject", "getSnippet")
 	switch method {
@@ -34579,6 +34630,24 @@ func callVisualEditorDataRowMember(receiver Value, method string, args []Value) 
 			return Null, receiver, false, true, fmt.Errorf("VisualEditor.DataRow.getValue expects 0 arguments")
 		}
 		return receiver.Fields["value"], receiver, false, true, nil
+	case strings.EqualFold(method, "isSelected"):
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("VisualEditor.DataRow.isSelected expects 0 arguments")
+		}
+		if value, ok := receiver.Fields["selected"]; ok && value.Kind == ValueBool {
+			return value, receiver, false, true, nil
+		}
+		return Bool(false), receiver, false, true, nil
+	case strings.EqualFold(method, "compareTo"):
+		if len(args) != 1 || args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "VisualEditor.DataRow") {
+			return Null, receiver, false, true, fmt.Errorf("VisualEditor.DataRow.compareTo expects DataRow")
+		}
+		left := scalarText(receiver.Fields["label"])
+		right := scalarText(args[0].Fields["label"])
+		if cmp := strings.Compare(left, right); cmp != 0 {
+			return Int(int64(cmp)), receiver, false, true, nil
+		}
+		return Int(int64(strings.Compare(scalarText(receiver.Fields["value"]), scalarText(args[0].Fields["value"])))), receiver, false, true, nil
 	case strings.EqualFold(method, "setLabel"):
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, receiver, false, true, fmt.Errorf("VisualEditor.DataRow.setLabel expects String")
@@ -34586,8 +34655,8 @@ func callVisualEditorDataRowMember(receiver Value, method string, args []Value) 
 		receiver.Fields["label"] = args[0]
 		return Null, receiver, true, true, nil
 	case strings.EqualFold(method, "setValue"):
-		if len(args) != 1 || args[0].Kind != ValueString {
-			return Null, receiver, false, true, fmt.Errorf("VisualEditor.DataRow.setValue expects String")
+		if len(args) != 1 {
+			return Null, receiver, false, true, fmt.Errorf("VisualEditor.DataRow.setValue expects value")
 		}
 		receiver.Fields["value"] = args[0]
 		return Null, receiver, true, true, nil

@@ -1041,6 +1041,7 @@ List<Account> accounts = new List<Account>{ new Account(Name = 'Acme') };
 SObjectAccessDecision decision = Security.stripInaccessible(AccessType.CREATABLE, accounts);
 System.assertEquals(accounts, decision.getRecords());
 System.assertEquals(0, decision.getRemovedFields().size());
+System.assertEquals(0, decision.getModifiedIndexes().size());
 System.assertEquals('CREATABLE', AccessType.CREATABLE.name());
 `)
 	if err != nil {
@@ -1059,6 +1060,8 @@ Map<String, Set<String>> removed = decision.getRemovedFields();
 System.assertEquals(1, removed.size());
 System.assert(removed.containsKey('Account'));
 System.assert(removed.get('Account').contains('Secret__c'));
+System.assertEquals(1, decision.getModifiedIndexes().size());
+System.assert(decision.getModifiedIndexes().contains(0));
 List<Account> stripped = (List<Account>)decision.getRecords();
 System.assertEquals('Acme', stripped[0].Name);
 System.assertEquals('Hidden', rows[0].Secret__c);

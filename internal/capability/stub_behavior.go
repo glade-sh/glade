@@ -438,6 +438,22 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 		}
 	case "SelectOption":
 		return strings.HasPrefix(name, "get") || strings.HasPrefix(name, "set")
+	case "FormulaRecalcResult":
+		return name == "geterrors" || name == "getsobject" || name == "issuccess"
+	case "SObjectAccessDecision":
+		return name == "getrecords" || name == "getremovedfields" || name == "getmodifiedindexes"
+	case "InstallContext":
+		return name == "previousversion" || name == "ispush" || name == "installerid"
+	case "SandboxContext":
+		return name == "organizationid" || name == "sandboxid" || name == "sandboxname"
+	case "QueueableContext", "QueueableContextImpl":
+		return name == "getjobid"
+	case "SchedulableContext":
+		return name == "gettriggerid"
+	case "RestResponse":
+		return name == "addheader"
+	case "Iterable":
+		return name == "iterator"
 	case "LIST", "List", "Set", "Map":
 		switch name {
 		case "add", "addall", "addtorelationship", "clear", "contains", "containsall", "containskey",
@@ -874,6 +890,8 @@ func searchDTOBehaviorMethod(typeName, methodName string) bool {
 	switch typeName {
 	case "Search.KnowledgeSuggestionFilter", "Search.QuestionSuggestionFilter":
 		return strings.HasPrefix(methodName, "add") || strings.HasPrefix(methodName, "set")
+	case "Search.SuggestionOption":
+		return methodName == "setfilter" || methodName == "setlimit"
 	case "Search.SearchResult", "Search.SuggestionResult":
 		return strings.HasPrefix(methodName, "get")
 	case "Search.SearchResults":
@@ -1053,8 +1071,22 @@ func domXmlNodeBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSy
 }
 
 func visualEditorDynamicPickListRowsBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
-	if !strings.EqualFold(stubBehaviorTypeName(symbol), "VisualEditor.DynamicPickListRows") ||
-		(member.Kind != apexast.DeclarationMethod && member.Kind != apexast.DeclarationConstructor) {
+	typeName := stubBehaviorTypeName(symbol)
+	if member.Kind != apexast.DeclarationMethod && member.Kind != apexast.DeclarationConstructor {
+		return false
+	}
+	if strings.EqualFold(typeName, "VisualEditor.DataRow") {
+		if member.Kind == apexast.DeclarationConstructor {
+			return true
+		}
+		switch strings.ToLower(member.Name) {
+		case "getlabel", "getvalue", "isselected", "compareto", "setlabel", "setvalue":
+			return true
+		default:
+			return false
+		}
+	}
+	if !strings.EqualFold(typeName, "VisualEditor.DynamicPickListRows") {
 		return false
 	}
 	if member.Kind == apexast.DeclarationConstructor {
