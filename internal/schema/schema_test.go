@@ -27,7 +27,7 @@ func TestLoadProject(t *testing.T) {
 	writeFile(t, formulaFieldPath, `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Score__c</fullName><label>Score</label><type>Number</type><formula>1 + 1</formula></CustomField>`)
 	writeFile(t, encryptedFieldPath, `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Secret__c</fullName><label>Secret</label><type>EncryptedText</type></CustomField>`)
 	writeFile(t, rootFieldPath, `<CustomField xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Legacy__c</fullName><label>Legacy</label><type>Text</type></CustomField>`)
-	writeFile(t, recordTypePath, `<RecordType xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Business</fullName><label>Business Thing</label><active>true</active><default>true</default><description>Business records</description></RecordType>`)
+	writeFile(t, recordTypePath, `<RecordType xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Business</fullName><label>Business Thing</label><active>true</active><default>true</default><description>Business records</description><picklistValues><picklist>State__c</picklist><values><fullName>AL</fullName><default>true</default></values><values><fullName>PA</fullName><default>false</default></values></picklistValues></RecordType>`)
 	writeFile(t, lowercaseRecordTypePath, `<RecordType xmlns="http://soap.sforce.com/2006/04/metadata"><label>Consumer Thing</label><active>false</active></RecordType>`)
 	writeFile(t, validationRulePath, `<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata"><fullName>Block</fullName><active>true</active><errorConditionFormula>Parent__c = "Blocked"</errorConditionFormula><errorMessage>blocked by rule</errorMessage><errorDisplayField>Parent__c</errorDisplayField></ValidationRule>`)
 
@@ -78,6 +78,9 @@ func TestLoadProject(t *testing.T) {
 	recordTypes := s.Objects[0].RecordTypes
 	if len(recordTypes) != 2 || recordTypes[0].DeveloperName != "Business" || recordTypes[0].Label != "Business Thing" || !recordTypes[0].Active || !recordTypes[0].Default {
 		t.Fatalf("record types = %#v", recordTypes)
+	}
+	if got := recordTypes[0].PicklistDefaults["State__c"]; got != "AL" {
+		t.Fatalf("record type picklist defaults = %#v", recordTypes[0].PicklistDefaults)
 	}
 	if recordTypes[1].DeveloperName != "Consumer" || recordTypes[1].Label != "Consumer Thing" || recordTypes[1].Active {
 		t.Fatalf("record types = %#v", recordTypes)

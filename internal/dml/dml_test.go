@@ -417,6 +417,116 @@ func TestInsertAppliesRecordTypeFormulaDefaults(t *testing.T) {
 	}
 }
 
+func TestInsertDefaultsRecordTypeIDAndRecordTypePicklistDefaults(t *testing.T) {
+	org := testOrg()
+	org.Objects["FacilityCredentialingEvent__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "FacilityCredentialingEvent__c",
+			KeyPrefix: "a01",
+			Fields: map[string]storage.Field{
+				"Name":         {APIName: "Name", Type: storage.FieldString, Required: true},
+				"RecordTypeId": {APIName: "RecordTypeId", Type: storage.FieldReference, ReferenceTo: []string{"RecordType"}, RelationshipName: "RecordType"},
+				"Type__c":      {APIName: "Type__c", Type: storage.FieldPicklist},
+			},
+			RecordTypes: []storage.RecordTypeInfo{
+				{
+					ID:               "012000000000011AAA",
+					DeveloperName:    "Internal",
+					Name:             "Internal",
+					Active:           true,
+					Available:        true,
+					Default:          true,
+					PicklistDefaults: map[string]string{"Type__c": "Initial"},
+				},
+				{
+					ID:            "012000000000012AAA",
+					DeveloperName: "CVO",
+					Name:          "CVO",
+					Active:        true,
+					Available:     true,
+				},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	org.Objects["RecordType"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "RecordType",
+			KeyPrefix: "012",
+			Fields: map[string]storage.Field{
+				"Name":          {APIName: "Name", Type: storage.FieldString},
+				"DeveloperName": {APIName: "DeveloperName", Type: storage.FieldString},
+				"SobjectType":   {APIName: "SobjectType", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{
+			"012000000000011AAA": {Object: "RecordType", ID: "012000000000011AAA"},
+			"012000000000012AAA": {Object: "RecordType", ID: "012000000000012AAA"},
+		},
+	}
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "FacilityCredentialingEvent__c",
+		Fields: map[string]storage.Value{
+			"Name": storage.StringValue("Internal"),
+		},
+	}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert[0])
+	}
+	stored := org.Objects["FacilityCredentialingEvent__c"].Records[insert[0].ID]
+	if got := stored.Fields["RecordTypeId"]; got.Kind != storage.ValueID || got.ID != "012000000000011AAA" {
+		t.Fatalf("RecordTypeId = %#v", got)
+	}
+	if got := stored.Fields["Type__c"]; got.Kind != storage.ValueString || got.String != "Initial" {
+		t.Fatalf("Type__c = %#v", got)
+	}
+}
+
+func TestInsertDefaultsRecordTypeWithPicklistDefaultsWhenNoMappingDefault(t *testing.T) {
+	org := testOrg()
+	org.Objects["Event__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Event__c",
+			KeyPrefix: "a02",
+			Fields: map[string]storage.Field{
+				"Name":         {APIName: "Name", Type: storage.FieldString, Required: true},
+				"RecordTypeId": {APIName: "RecordTypeId", Type: storage.FieldReference, ReferenceTo: []string{"RecordType"}, RelationshipName: "RecordType"},
+				"Type__c":      {APIName: "Type__c", Type: storage.FieldPicklist},
+			},
+			RecordTypes: []storage.RecordTypeInfo{
+				{ID: "012000000000021AAA", DeveloperName: "External", Name: "External", Active: true, Available: true},
+				{ID: "012000000000022AAA", DeveloperName: "Internal", Name: "Internal", Active: true, Available: true, PicklistDefaults: map[string]string{"Type__c": "Initial"}},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	org.Objects["RecordType"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{APIName: "RecordType", KeyPrefix: "012", Fields: map[string]storage.Field{}},
+		Records: map[storage.ID]storage.Record{
+			"012000000000021AAA": {Object: "RecordType", ID: "012000000000021AAA"},
+			"012000000000022AAA": {Object: "RecordType", ID: "012000000000022AAA"},
+		},
+	}
+	engine := NewEngine(&org)
+
+	insert := engine.Insert([]storage.Record{{
+		Object: "Event__c",
+		Fields: map[string]storage.Value{"Name": storage.StringValue("Event")},
+	}})
+	if !insert[0].Success {
+		t.Fatalf("insert = %#v", insert[0])
+	}
+	stored := org.Objects["Event__c"].Records[insert[0].ID]
+	if got := stored.Fields["RecordTypeId"]; got.Kind != storage.ValueID || got.ID != "012000000000022AAA" {
+		t.Fatalf("RecordTypeId = %#v", got)
+	}
+	if got := stored.Fields["Type__c"]; got.Kind != storage.ValueString || got.String != "Initial" {
+		t.Fatalf("Type__c = %#v", got)
+	}
+}
+
 func TestInsertValidatesRequiredAndUnknownFields(t *testing.T) {
 	org := testOrg()
 	engine := NewEngine(&org)

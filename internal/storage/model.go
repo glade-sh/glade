@@ -263,13 +263,14 @@ type PicklistValue struct {
 }
 
 type RecordTypeInfo struct {
-	ID            ID     `json:"id,omitempty"`
-	DeveloperName string `json:"developerName"`
-	Name          string `json:"name,omitempty"`
-	Active        bool   `json:"active,omitempty"`
-	Available     bool   `json:"available,omitempty"`
-	Default       bool   `json:"default,omitempty"`
-	Description   string `json:"description,omitempty"`
+	ID               ID                `json:"id,omitempty"`
+	DeveloperName    string            `json:"developerName"`
+	Name             string            `json:"name,omitempty"`
+	Active           bool              `json:"active,omitempty"`
+	Available        bool              `json:"available,omitempty"`
+	Default          bool              `json:"default,omitempty"`
+	Description      string            `json:"description,omitempty"`
+	PicklistDefaults map[string]string `json:"picklistDefaults,omitempty"`
 }
 
 type ValidationRule struct {
@@ -548,6 +549,11 @@ func DefaultValueForField(field Field) (Value, bool) {
 }
 
 func DefaultValueForRecordField(definition ObjectDefinition, record Record, field Field) (Value, bool) {
+	if field.Type == FieldPicklist {
+		if value, ok := defaultPicklistValueForRecordType(definition, record, field); ok {
+			return value, true
+		}
+	}
 	if value, ok := DefaultValueForField(field); ok {
 		return value, true
 	}
@@ -564,6 +570,31 @@ func DefaultValueForRecordField(definition ObjectDefinition, record Record, fiel
 		branch = trueValue
 	}
 	return defaultValueFromRaw(field, branch)
+}
+
+func defaultPicklistValueForRecordType(definition ObjectDefinition, record Record, field Field) (Value, bool) {
+	if len(definition.RecordTypes) == 0 {
+		return Value{}, false
+	}
+	recordTypeID := ""
+	if value, ok := record.GetField("RecordTypeId"); ok {
+		recordTypeID = strings.TrimSpace(defaultConditionScalar(value))
+	}
+	if recordTypeID == "" {
+		return Value{}, false
+	}
+	for _, recordType := range definition.RecordTypes {
+		if string(recordType.ID) != recordTypeID {
+			continue
+		}
+		for name, value := range recordType.PicklistDefaults {
+			if strings.EqualFold(name, field.APIName) && strings.TrimSpace(value) != "" {
+				return StringValue(value), true
+			}
+		}
+		return Value{}, false
+	}
+	return Value{}, false
 }
 
 func splitDefaultIF(raw string) (string, string, string, bool) {
@@ -990,6 +1021,15 @@ func (d ObjectDefinition) Clone() ObjectDefinition {
 		out.Relations[i].ParentObjects = append([]string(nil), d.Relations[i].ParentObjects...)
 	}
 	out.RecordTypes = append([]RecordTypeInfo(nil), d.RecordTypes...)
+	for i := range out.RecordTypes {
+		if d.RecordTypes[i].PicklistDefaults == nil {
+			continue
+		}
+		out.RecordTypes[i].PicklistDefaults = make(map[string]string, len(d.RecordTypes[i].PicklistDefaults))
+		for field, value := range d.RecordTypes[i].PicklistDefaults {
+			out.RecordTypes[i].PicklistDefaults[field] = value
+		}
+	}
 	out.ValidationRules = append([]ValidationRule(nil), d.ValidationRules...)
 	out.WorkflowRules = append([]WorkflowRule(nil), d.WorkflowRules...)
 	for i := range out.WorkflowRules {

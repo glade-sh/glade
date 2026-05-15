@@ -73,11 +73,12 @@ type PicklistValue struct {
 }
 
 type RecordType struct {
-	DeveloperName string `json:"developerName"`
-	Label         string `json:"label,omitempty"`
-	Active        bool   `json:"active,omitempty"`
-	Default       bool   `json:"default,omitempty"`
-	Description   string `json:"description,omitempty"`
+	DeveloperName    string            `json:"developerName"`
+	Label            string            `json:"label,omitempty"`
+	Active           bool              `json:"active,omitempty"`
+	Default          bool              `json:"default,omitempty"`
+	Description      string            `json:"description,omitempty"`
+	PicklistDefaults map[string]string `json:"picklistDefaults,omitempty"`
 }
 
 type ValidationRule struct {
@@ -151,11 +152,22 @@ type summaryFilterXML struct {
 }
 
 type recordTypeXML struct {
-	FullName    string `xml:"fullName"`
-	Label       string `xml:"label"`
-	Active      *bool  `xml:"active"`
-	Default     bool   `xml:"default"`
-	Description string `xml:"description"`
+	FullName       string                  `xml:"fullName"`
+	Label          string                  `xml:"label"`
+	Active         *bool                   `xml:"active"`
+	Default        bool                    `xml:"default"`
+	Description    string                  `xml:"description"`
+	PicklistValues []recordTypePicklistXML `xml:"picklistValues"`
+}
+
+type recordTypePicklistXML struct {
+	Picklist string                   `xml:"picklist"`
+	Values   []recordTypePickValueXML `xml:"values"`
+}
+
+type recordTypePickValueXML struct {
+	FullName string `xml:"fullName"`
+	Default  bool   `xml:"default"`
 }
 
 type validationRuleXML struct {
@@ -395,11 +407,12 @@ func loadRecordType(path string) (RecordType, error) {
 		active = *raw.Active
 	}
 	return RecordType{
-		DeveloperName: developerName,
-		Label:         label,
-		Active:        active,
-		Default:       raw.Default,
-		Description:   raw.Description,
+		DeveloperName:    developerName,
+		Label:            label,
+		Active:           active,
+		Default:          raw.Default,
+		Description:      raw.Description,
+		PicklistDefaults: recordTypePicklistDefaults(raw.PicklistValues),
 	}, nil
 }
 
@@ -417,12 +430,38 @@ func recordTypeFromXML(raw recordTypeXML, fallback string) RecordType {
 		active = *raw.Active
 	}
 	return RecordType{
-		DeveloperName: developerName,
-		Label:         label,
-		Active:        active,
-		Default:       raw.Default,
-		Description:   raw.Description,
+		DeveloperName:    developerName,
+		Label:            label,
+		Active:           active,
+		Default:          raw.Default,
+		Description:      raw.Description,
+		PicklistDefaults: recordTypePicklistDefaults(raw.PicklistValues),
 	}
+}
+
+func recordTypePicklistDefaults(values []recordTypePicklistXML) map[string]string {
+	defaults := make(map[string]string)
+	for _, picklist := range values {
+		field := strings.TrimSpace(picklist.Picklist)
+		if field == "" {
+			continue
+		}
+		for _, value := range picklist.Values {
+			if !value.Default {
+				continue
+			}
+			name := strings.TrimSpace(value.FullName)
+			if name == "" {
+				continue
+			}
+			defaults[field] = name
+			break
+		}
+	}
+	if len(defaults) == 0 {
+		return nil
+	}
+	return defaults
 }
 
 func loadObject(path string) (Object, error) {
