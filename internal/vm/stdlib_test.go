@@ -858,6 +858,50 @@ System.assertNotEquals(null, giftWrapProducts);
 ConnectApi.SortRulesCollection sortRules =
 	ConnectApi.CommerceSearch.getSortRules('store-a');
 System.assertNotEquals(null, sortRules);
+
+ConnectApi.CdpQueryMetadataOutput cdpMetadata =
+	ConnectApi.CdpQuery.getAllMetadata();
+System.assertNotEquals(null, cdpMetadata);
+
+ConnectApi.CdpCalculatedInsightPage calculatedInsights =
+	ConnectApi.CdpCalculatedInsight.getCalculatedInsights('space-a', 0, 10, null, null);
+System.assertNotEquals(null, calculatedInsights);
+
+ConnectApi.CdpOptimizationDefinitionCollectionRepresentation optimizations =
+	ConnectApi.CdpOptimizationConnectApi.getOptimizationDefinitions();
+System.assertNotEquals(null, optimizations);
+
+ConnectApi.CommunityPage communities =
+	ConnectApi.Communities.getCommunities();
+System.assertNotEquals(null, communities);
+
+ConnectApi.ModerationFlags commentFlags =
+	ConnectApi.CommunityModeration.getFlagsOnComment('community-a', 'comment-a');
+System.assertNotEquals(null, commentFlags);
+
+ConnectApi.FeedEntityIsEditable editable =
+	ConnectApi.ChatterFeeds.isCommentEditableByMe('community-a', 'comment-a');
+System.assertNotEquals(null, editable);
+
+ConnectApi.ActionPlanTemplateItemsOutput actionPlanItems =
+	ConnectApi.ActionPlan.getActionPlanTemplateItems('template-a');
+System.assertNotEquals(null, actionPlanItems);
+
+ConnectApi.ActionLinkDiagnosticInfo actionLinkInfo =
+	ConnectApi.ActionLinks.getActionLinkDiagnosticInfo('community-a', 'action-a');
+System.assertNotEquals(null, actionLinkInfo);
+
+ConnectApi.BuyerProfileDetail buyerProfile =
+	ConnectApi.CommerceBuyerExperience.getBuyerProfile('webstore-a');
+System.assertNotEquals(null, buyerProfile);
+
+ConnectApi.CartSummary cartSummary =
+	ConnectApi.CommerceCart.getCartSummary('webstore-a', 'account-a', 'cart-a');
+System.assertNotEquals(null, cartSummary);
+
+ConnectApi.WishlistsSummary wishlistSummaries =
+	ConnectApi.CommerceWishlist.getWishlistSummaries('webstore-a', 'account-a', true);
+System.assertNotEquals(null, wishlistSummaries);
 	`)
 	if err != nil {
 		t.Fatal(err)

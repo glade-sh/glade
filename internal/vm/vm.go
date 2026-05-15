@@ -26763,7 +26763,7 @@ func (vm *VM) callConnectAPIReadOnlyStaticDefault(callee string, args []Value) (
 	if !ok || !connectAPIReadOnlyHarnessReturn(method.ReturnType) {
 		return Null, false
 	}
-	if !connectAPIReadOnlyHarnessMethod(methodName) {
+	if !connectAPIReadOnlyHarnessMethodAllowed(className, methodName) {
 		return Null, false
 	}
 	return vm.generatedPlatformMethodDefaultReturn(method, Null, args), true
@@ -26776,11 +26776,24 @@ func connectAPIReadOnlyHarnessType(typeName string) bool {
 		"ConnectApi.ChatterMessages",
 		"ConnectApi.ChatterUsers",
 		"ConnectApi.ChatterFavorites",
+		"ConnectApi.Chatter",
 		"ConnectApi.Topics",
 		"ConnectApi.Recommendations",
+		"ConnectApi.ActionLinks",
+		"ConnectApi.ActionPlan",
 		"ConnectApi.Announcements",
+		"ConnectApi.CdpCalculatedInsight",
+		"ConnectApi.CdpCatalog",
+		"ConnectApi.CdpOptimizationConnectApi",
+		"ConnectApi.CdpQuery",
+		"ConnectApi.Communities",
+		"ConnectApi.CommunityModeration",
+		"ConnectApi.CommerceBuyerExperience",
+		"ConnectApi.CommerceCart",
 		"ConnectApi.CommerceCatalog",
+		"ConnectApi.CommerceInventory",
 		"ConnectApi.CommerceSearch",
+		"ConnectApi.CommerceWishlist",
 		"ConnectApi.EmployeeProfiles",
 		"ConnectApi.FieldSet",
 		"ConnectApi.Knowledge",
@@ -26794,6 +26807,92 @@ func connectAPIReadOnlyHarnessType(typeName string) bool {
 		"ConnectApi.NavigationMenu",
 		"ConnectApi.Sites",
 		"ConnectApi.Zones":
+		return true
+	default:
+		return false
+	}
+}
+
+func connectAPIReadOnlyHarnessMethodAllowed(typeName, methodName string) bool {
+	name := strings.ToLower(methodName)
+	if connectAPIMutationMethod(name) {
+		return false
+	}
+	switch typeName {
+	case "ConnectApi.CdpCalculatedInsight":
+		return name == "getcalculatedinsight" || name == "getcalculatedinsights"
+	case "ConnectApi.CdpCatalog":
+		return name == "getfieldlineage" || name == "getlineage"
+	case "ConnectApi.CdpOptimizationConnectApi":
+		switch name {
+		case "getdatamodelobject", "getformulafunctions", "getoptimizationdatalakeobject",
+			"getoptimizationdatalakeobjects", "getoptimizationdatamodelobjects",
+			"getoptimizationdataspaces", "getoptimizationdefinitions",
+			"getoptimizationformulaoperators", "getoptimizationorgvalues",
+			"getsingleoptimizationdefinition":
+			return true
+		default:
+			return false
+		}
+	case "ConnectApi.CdpQuery":
+		switch name {
+		case "getallmetadata", "getdatagraphmetadata", "getinsightsmetadata",
+			"getmetadataentities", "getnextbatchmetadataentities", "getprofilemetadata":
+			return true
+		default:
+			return false
+		}
+	case "ConnectApi.Chatter":
+		return name == "getfollowers" || name == "getsubscription"
+	case "ConnectApi.ChatterFeeds":
+		return connectAPIReadOnlyHarnessMethod(methodName) ||
+			name == "iscommenteditablebyme" ||
+			name == "isfeedelementeditablebyme" ||
+			name == "ismodified"
+	case "ConnectApi.Communities":
+		return name == "getcommunities" || name == "getcommunitytemplates"
+	case "ConnectApi.CommunityModeration":
+		return name == "getflagsoncomment" ||
+			name == "getflagsonfeedelement" ||
+			name == "getflagsonfeeditem"
+	case "ConnectApi.ActionLinks":
+		return strings.HasPrefix(name, "getactionlink")
+	case "ConnectApi.ActionPlan":
+		return name == "getactionplantemplateitems"
+	case "ConnectApi.CommerceBuyerExperience":
+		return connectAPICommerceBuyerExperienceReadMethod(name)
+	case "ConnectApi.CommerceCart":
+		return connectAPICommerceCartReadMethod(name)
+	case "ConnectApi.CommerceInventory":
+		return name == "getinventorylevels"
+	case "ConnectApi.CommerceWishlist":
+		return name == "getwishlist" ||
+			name == "getwishlistitems" ||
+			name == "getwishlistsummaries"
+	default:
+		return connectAPIReadOnlyHarnessMethod(methodName)
+	}
+}
+
+func connectAPICommerceBuyerExperienceReadMethod(name string) bool {
+	switch name {
+	case "getbuyerprofile", "getcommerceaccountaddress", "geteffectiveaccountdetail",
+		"getorderdeliverygroupsummaries", "getorderitemsummaries",
+		"getorderitemsummaryadjustments", "getordershipmentitems",
+		"getordershipments", "getordersummaries", "getordersummary",
+		"getordersummaryadjustments", "getpurchasedproducts", "lookupordersummary":
+		return true
+	default:
+		return false
+	}
+}
+
+func connectAPICommerceCartReadMethod(name string) bool {
+	switch name {
+	case "getcartcollection", "getcartcompactsummary", "getcartcoupons",
+		"getcartitempromotion", "getcartitems", "getcartpromotions",
+		"getcartsummary", "getchildcartitems", "getproductcartitem",
+		"getproductcartitems":
 		return true
 	default:
 		return false
