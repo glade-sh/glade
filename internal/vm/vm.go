@@ -19489,11 +19489,25 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 		row.Fields["value"] = args[1]
 		return row, nil
 	case "VisualEditor.DynamicPickListRows":
-		if len(args) != 0 || len(namedArgs) != 0 {
-			return Null, fmt.Errorf("VisualEditor.DynamicPickListRows constructor expects 0 arguments")
+		if len(args) > 2 || len(namedArgs) != 0 {
+			return Null, fmt.Errorf("VisualEditor.DynamicPickListRows constructor expects rows and optional containsAllRows")
 		}
 		rows := Object("VisualEditor.DynamicPickListRows")
-		rows.Fields["rows"] = typedList("List<VisualEditor.DataRow>")
+		list := typedList("List<VisualEditor.DataRow>")
+		if len(args) > 0 {
+			if args[0].Kind != ValueList {
+				return Null, fmt.Errorf("VisualEditor.DynamicPickListRows constructor expects List<VisualEditor.DataRow>")
+			}
+			list = args[0]
+		}
+		rows.Fields["rows"] = list
+		rows.Fields["containsAllRows"] = Bool(false)
+		if len(args) == 2 {
+			if args[1].Kind != ValueBool {
+				return Null, fmt.Errorf("VisualEditor.DynamicPickListRows constructor expects Boolean containsAllRows")
+			}
+			rows.Fields["containsAllRows"] = args[1]
+		}
 		return rows, nil
 	case "Dom.Document":
 		if len(args) != 0 || len(namedArgs) != 0 {
@@ -23265,6 +23279,9 @@ func (vm *VM) generatedPlatformStaticDefault(callee string, args []Value) (Value
 		}
 		className, methodName = callee[:dot], callee[dot+1:]
 	}
+	if value, handled := vm.generatedOptionalWrapperStaticDefault(className, methodName, args); handled {
+		return value, true
+	}
 	if !vm.generatedPlatformMethodFallbackType(className) {
 		return Null, false
 	}
@@ -23303,6 +23320,78 @@ func (vm *VM) generatedPlatformStaticDefault(callee string, args []Value) (Value
 	return vm.generatedPlatformMethodDefaultReturn(method, Null, args), true
 }
 
+func (vm *VM) generatedOptionalWrapperStaticDefault(className, methodName string, args []Value) (Value, bool) {
+	if !vm.generatedOptionalWrapperType(className) {
+		return Null, false
+	}
+	switch strings.ToLower(methodName) {
+	case "empty":
+		if len(args) != 0 {
+			return Null, false
+		}
+		return vm.newGeneratedOptionalWrapper(className, false, Null), true
+	case "of":
+		if len(args) != 1 {
+			return Null, false
+		}
+		return vm.newGeneratedOptionalWrapper(className, true, args[0]), true
+	default:
+		return Null, false
+	}
+}
+
+func (vm *VM) newGeneratedOptionalWrapper(typeName string, present bool, value Value) Value {
+	if generated, ok := generatedPlatformTypeIndex[strings.ToLower(typeName)]; ok {
+		object := vm.newGeneratedPlatformObject(generated)
+		object.Fields["__optional_present"] = Bool(present)
+		object.Fields["__optional_value"] = value
+		return object
+	}
+	object := Object(typeName)
+	object.Fields["__optional_present"] = Bool(present)
+	object.Fields["__optional_value"] = value
+	return object
+}
+
+func (vm *VM) callGeneratedOptionalWrapperMember(receiver Value, method string, args []Value) (Value, bool, error) {
+	if receiver.Kind != ValueObject || !vm.generatedOptionalWrapperType(receiver.Type) {
+		return Null, false, nil
+	}
+	switch strings.ToLower(method) {
+	case "ispresent":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("%s.isPresent expects 0 arguments", receiver.Type)
+		}
+		present, ok := receiver.Fields["__optional_present"]
+		return Bool(ok && present.Kind == ValueBool && present.Bool), true, nil
+	case "get":
+		if len(args) != 0 {
+			return Null, true, fmt.Errorf("%s.get expects 0 arguments", receiver.Type)
+		}
+		present, ok := receiver.Fields["__optional_present"]
+		if !ok || present.Kind != ValueBool || !present.Bool {
+			return Null, true, unsupportedCallError(receiver.Type + ".get on empty optional wrapper")
+		}
+		if value, ok := receiver.Fields["__optional_value"]; ok {
+			return value, true, nil
+		}
+		return Null, true, nil
+	default:
+		return Null, false, nil
+	}
+}
+
+func (vm *VM) generatedOptionalWrapperType(typeName string) bool {
+	if !strings.HasPrefix(typeName, "CartExtension.Optional") || strings.EqualFold(typeName, "CartExtension.OptionalNotCheckedException") {
+		return false
+	}
+	methodsByName := generatedPlatformMethodIndex[strings.ToLower(typeName)]
+	return len(methodsByName["empty"]) != 0 &&
+		len(methodsByName["of"]) != 0 &&
+		len(methodsByName["ispresent"]) != 0 &&
+		len(methodsByName["get"]) != 0
+}
+
 func (vm *VM) generatedPlatformInstanceDefault(receiverName string, receiver Value, methodName string, args []Value) (Value, bool) {
 	for _, receiverType := range vm.generatedPlatformReceiverTypes(receiverName, receiver) {
 		if !vm.generatedPlatformMethodFallbackType(receiverType) && !strings.EqualFold(receiverType, "ApexPages.IdeaStandardSetController") {
@@ -23311,6 +23400,9 @@ func (vm *VM) generatedPlatformInstanceDefault(receiverName string, receiver Val
 		method, ok := vm.generatedPlatformMethodForArgs(receiverType, methodName, args, false)
 		if !ok {
 			continue
+		}
+		if value, handled := vm.generatedSlackTestHarnessDefaultReturn(method, args); handled {
+			return value, true
 		}
 		if !vm.generatedPlatformMethodAllowsDefault(method) {
 			continue
@@ -23364,6 +23456,10 @@ func (vm *VM) generatedPlatformReceiverTypes(receiverName string, receiver Value
 		}
 		out = append(out, candidate)
 		seen[key] = true
+		if alias := slackTestHarnessRuntimeType(candidate); alias != candidate && !seen[strings.ToLower(alias)] {
+			out = append(out, alias)
+			seen[strings.ToLower(alias)] = true
+		}
 	}
 	return out
 }
@@ -23435,6 +23531,56 @@ func (vm *VM) generatedPlatformMethodDefaultReturn(method Method, receiver Value
 	default:
 		return vm.generatedPlatformDefaultValue(returnType, Null)
 	}
+}
+
+func (vm *VM) generatedSlackTestHarnessDefaultReturn(method Method, args []Value) (Value, bool) {
+	name := strings.ToLower(method.Name)
+	if dot := strings.LastIndex(name, "."); dot >= 0 {
+		name = name[dot+1:]
+	}
+	switch method.ClassName {
+	case "Slack.State":
+		if strings.HasPrefix(name, "clear") {
+			return Null, true
+		}
+		if strings.HasPrefix(name, "create") {
+			value := slackTestHarnessDefaultValue(method.ReturnType, vm.generatedPlatformDefaultValue(slackTestHarnessRuntimeType(method.ReturnType), Null))
+			if value.Kind == ValueObject {
+				bindGeneratedPlatformMethodArgs(&value, method, args)
+			}
+			return value, true
+		}
+	case "Slack.UserSession":
+		switch name {
+		case "closeallmodals", "closemodal":
+			return Null, true
+		case "openapphome", "openchannel", "postmessage":
+			value := slackTestHarnessDefaultValue(method.ReturnType, vm.generatedPlatformDefaultValue(slackTestHarnessRuntimeType(method.ReturnType), Null))
+			if value.Kind == ValueObject {
+				bindGeneratedPlatformMethodArgs(&value, method, args)
+			}
+			return value, true
+		}
+	}
+	return Null, false
+}
+
+func slackTestHarnessDefaultValue(typeName string, value Value) Value {
+	if strings.HasPrefix(typeName, "Slack.TestHarness.") {
+		if value.Kind == ValueObject {
+			value.Type = typeName
+			return value
+		}
+		return Object(typeName)
+	}
+	return value
+}
+
+func slackTestHarnessRuntimeType(typeName string) string {
+	if strings.HasPrefix(typeName, "Slack.TestHarness.") {
+		return "Slack." + strings.TrimPrefix(typeName, "Slack.TestHarness.")
+	}
+	return typeName
 }
 
 func bindGeneratedPlatformMethodArgs(object *Value, method Method, args []Value) {
@@ -27519,6 +27665,9 @@ func versionValueString(version Value) string {
 
 func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Value, result *Result) (Value, Value, bool, bool, error) {
 	method = canonicalPlatformObjectMemberName(receiver.Type, method)
+	if value, handled, err := vm.callGeneratedOptionalWrapperMember(receiver, method, args); handled || err != nil {
+		return value, receiver, false, true, err
+	}
 	if isExceptionType(receiver.Type) {
 		switch method {
 		case "getMessage":
@@ -31466,11 +31615,26 @@ func callVisualEditorDynamicPickListRowsMember(receiver Value, method string, ar
 		rows.List = append(rows.List, args[0])
 		receiver.Fields["rows"] = rows
 		return Null, receiver, true, true, nil
+	case strings.EqualFold(method, "addAllRows"):
+		if len(args) != 1 || args[0].Kind != ValueList {
+			return Null, receiver, false, true, fmt.Errorf("VisualEditor.DynamicPickListRows.addAllRows expects List<VisualEditor.DataRow>")
+		}
+		rows.List = append(rows.List, args[0].List...)
+		receiver.Fields["rows"] = rows
+		return Null, receiver, true, true, nil
 	case strings.EqualFold(method, "size"):
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("VisualEditor.DynamicPickListRows.size expects 0 arguments")
 		}
 		return Int(int64(len(rows.List))), receiver, false, true, nil
+	case strings.EqualFold(method, "containsAllRows"):
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("VisualEditor.DynamicPickListRows.containsAllRows expects 0 arguments")
+		}
+		if _, value, ok := objectFieldValue(receiver, "containsAllRows"); ok && value.Kind == ValueBool {
+			return value, receiver, false, true, nil
+		}
+		return Bool(false), receiver, false, true, nil
 	case strings.EqualFold(method, "get"):
 		if len(args) != 1 || args[0].Kind != ValueInt {
 			return Null, receiver, false, true, fmt.Errorf("VisualEditor.DynamicPickListRows.get expects Integer index")
@@ -31480,11 +31644,22 @@ func callVisualEditorDynamicPickListRowsMember(receiver Value, method string, ar
 			return Null, receiver, false, true, listIndexException(index)
 		}
 		return rows.List[index], receiver, false, true, nil
-	case strings.EqualFold(method, "getRows"):
+	case strings.EqualFold(method, "getRows"), strings.EqualFold(method, "getDataRows"):
 		if len(args) != 0 {
 			return Null, receiver, false, true, fmt.Errorf("VisualEditor.DynamicPickListRows.getRows expects 0 arguments")
 		}
 		return rows, receiver, false, true, nil
+	case strings.EqualFold(method, "setContainsAllRows"):
+		if len(args) != 1 || args[0].Kind != ValueBool {
+			return Null, receiver, false, true, fmt.Errorf("VisualEditor.DynamicPickListRows.setContainsAllRows expects Boolean")
+		}
+		receiver.Fields["containsAllRows"] = args[0]
+		return Null, receiver, true, true, nil
+	case strings.EqualFold(method, "sort"):
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("VisualEditor.DynamicPickListRows.sort expects 0 arguments")
+		}
+		return Null, receiver, false, true, nil
 	default:
 		return Null, receiver, false, false, nil
 	}

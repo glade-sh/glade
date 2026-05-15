@@ -202,17 +202,26 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 	if domXmlNodeBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "Dom.XmlNode method is handled by the VM DOM node surface", true
 	}
+	if visualEditorDynamicPickListRowsBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "VisualEditor.DynamicPickListRows method is handled by the VM local rows surface", true
+	}
 	if databaseResultDTOBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "Database/Approval result DTO accessor is handled by the VM result object surface", true
 	}
 	if explicitlyUnsupportedCoreBehaviorMethod(symbol, member) {
 		return StubBehaviorUnsupported, "local runtime returns an explicit unsupported-feature error for this platform surface", true
 	}
+	if slackTestHarnessBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "Slack test-harness state/session method is handled locally without Slack transport", true
+	}
 	if slackPassiveBehaviorMethod(symbol, member) {
 		return StubBehaviorPassiveDefault, "Slack DTO, builder, or mock placeholder method returns local passive/default values without performing Slack service calls", true
 	}
 	if generatedDTOCollectionBehaviorMethod(symbol, member) {
 		return StubBehaviorPassiveDefault, "passive generated DTO collection wrapper exposes local empty collection semantics", true
+	}
+	if generatedOptionalWrapperBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "CartExtension optional wrapper empty/of/isPresent/get is handled by the VM optional-wrapper surface", true
 	}
 	if generatedDTOAccessorBehaviorMethod(symbol, member) {
 		return StubBehaviorPassiveDefault, "passive generated DTO getter/setter returns or mutates the matching property when available, otherwise uses a typed default", true
@@ -224,6 +233,25 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 		return StubBehaviorPassiveDefault, "passive generated platform method returns a typed default value unless runtime code special-cases it", true
 	}
 	return "", "", false
+}
+
+func generatedOptionalWrapperBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if member.Kind != apexast.DeclarationMethod {
+		return false
+	}
+	typeName := stubBehaviorTypeName(symbol)
+	if !strings.HasPrefix(typeName, "CartExtension.Optional") || strings.EqualFold(typeName, "CartExtension.OptionalNotCheckedException") {
+		return false
+	}
+	name := strings.ToLower(member.Name)
+	switch name {
+	case "empty", "ispresent", "get":
+		return len(member.Parameters) == 0
+	case "of":
+		return len(member.Parameters) == 1
+	default:
+		return false
+	}
 }
 
 func limitBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
@@ -827,6 +855,22 @@ func domXmlNodeBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSy
 	}
 }
 
+func visualEditorDynamicPickListRowsBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if !strings.EqualFold(stubBehaviorTypeName(symbol), "VisualEditor.DynamicPickListRows") ||
+		(member.Kind != apexast.DeclarationMethod && member.Kind != apexast.DeclarationConstructor) {
+		return false
+	}
+	if member.Kind == apexast.DeclarationConstructor {
+		return true
+	}
+	switch strings.ToLower(member.Name) {
+	case "addallrows", "addrow", "containsallrows", "get", "getdatarows", "setcontainsallrows", "size", "sort":
+		return true
+	default:
+		return false
+	}
+}
+
 func connectAPIExternalServiceBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
 	typeName := stubBehaviorTypeName(symbol)
 	if !strings.HasPrefix(typeName, "ConnectApi.") || !stubBehaviorMemberStatic(member) {
@@ -967,6 +1011,28 @@ func slackPassiveBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 	return slackPassiveMethodShape(typeName, name, member.Type, member.Parameters, stubBehaviorMemberStatic(member))
 }
 
+func slackTestHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if member.Kind != apexast.DeclarationMethod {
+		return false
+	}
+	typeName := stubBehaviorTypeName(symbol)
+	name := strings.ToLower(member.Name)
+	switch typeName {
+	case "Slack.State":
+		return strings.HasPrefix(name, "clear") ||
+			strings.HasPrefix(name, "create")
+	case "Slack.UserSession":
+		switch name {
+		case "closeallmodals", "closemodal", "openapphome", "openchannel", "postmessage":
+			return true
+		default:
+			return false
+		}
+	default:
+		return false
+	}
+}
+
 func slackServiceBehaviorType(typeName string) bool {
 	short := typeName[strings.LastIndex(typeName, ".")+1:]
 	if strings.HasSuffix(short, "Client") && !strings.HasSuffix(short, "ClientMock") {
@@ -1080,13 +1146,17 @@ func generatedExecutionSurfaceType(typeName string) bool {
 }
 
 func generatedPassiveDTOShape(symbol typesys.TypeSymbol) bool {
+	typeName := stubBehaviorTypeName(symbol)
+	if strings.EqualFold(typeName, "Invocable.Action") || strings.EqualFold(typeName, "Flow.Interview") {
+		return true
+	}
 	hasDataShape := false
 	for _, member := range symbol.Members {
 		switch member.Kind {
 		case apexast.DeclarationConstructor, apexast.DeclarationProperty:
 			hasDataShape = true
 		case apexast.DeclarationMethod:
-			if generatedPassiveDTOMethod(member) {
+			if generatedPassiveDTOMethod(member, typeName) {
 				continue
 			}
 			return false
@@ -1095,7 +1165,7 @@ func generatedPassiveDTOShape(symbol typesys.TypeSymbol) bool {
 	return hasDataShape
 }
 
-func generatedPassiveDTOMethod(member typesys.MemberSymbol) bool {
+func generatedPassiveDTOMethod(member typesys.MemberSymbol, typeName string) bool {
 	name := strings.ToLower(member.Name)
 	if genericObjectBehaviorMethod(member) {
 		return true
@@ -1107,6 +1177,8 @@ func generatedPassiveDTOMethod(member typesys.MemberSymbol) bool {
 		(strings.HasPrefix(name, "add") || strings.HasPrefix(name, "remove")):
 		return true
 	case len(member.Parameters) == 2 && strings.EqualFold(member.Type, "void") && strings.HasPrefix(name, "add"):
+		return true
+	case strings.EqualFold(member.Type, typeName):
 		return true
 	case strings.HasPrefix(name, "get"), strings.HasPrefix(name, "set"), strings.HasPrefix(name, "is"):
 		return true

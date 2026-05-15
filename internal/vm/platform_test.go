@@ -1667,6 +1667,15 @@ rows.addRow(row);
 System.assertEquals(1, rows.size());
 System.assertEquals('Updated', rows.get(0).getLabel());
 System.assertEquals('next', rows.getRows().get(0).getValue());
+System.assertEquals('next', rows.getDataRows().get(0).getValue());
+System.assertEquals(false, rows.containsAllRows());
+rows.setContainsAllRows(true);
+System.assertEquals(true, rows.containsAllRows());
+VisualEditor.DynamicPickListRows copy = new VisualEditor.DynamicPickListRows(rows.getDataRows(), true);
+copy.addAllRows(rows.getDataRows());
+copy.sort();
+System.assertEquals(2, copy.size());
+System.assertEquals(true, copy.containsAllRows());
 `)
 	if err != nil {
 		t.Fatal(err)

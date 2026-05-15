@@ -182,6 +182,64 @@ System.assertEquals(true, items.isEmpty());
 	}
 }
 
+func TestExecGeneratedPlatformOptionalWrapperEmptyAndOf(t *testing.T) {
+	program, err := CompileAnonymous(`
+CartExtension.CartAdjustmentBasis item = new CartExtension.CartAdjustmentBasis();
+CartExtension.OptionalCartAdjustmentBasis present = CartExtension.OptionalCartAdjustmentBasis.of(item);
+System.assertEquals(true, present.isPresent());
+System.assertEquals(item, present.get());
+CartExtension.OptionalCartAdjustmentBasis empty = CartExtension.OptionalCartAdjustmentBasis.empty();
+System.assertEquals(false, empty.isPresent());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecGeneratedPlatformOptionalWrapperGetEmptyIsExplicitUnsupported(t *testing.T) {
+	program, err := CompileAnonymous(`
+CartExtension.OptionalCartAdjustmentBasis empty = CartExtension.OptionalCartAdjustmentBasis.empty();
+empty.get();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err == nil || !strings.Contains(err.Error(), "unsupported call") {
+		t.Fatalf("OptionalCartItem.get(empty) error = %v, want explicit unsupported", err)
+	}
+}
+
+func TestExecSlackTestHarnessLocalFactories(t *testing.T) {
+	program, err := CompileAnonymous(`
+Slack.State state = new Slack.State();
+Slack.TestHarness.Enterprise enterprise = state.createEnterprise('E1', 'Example');
+Slack.TestHarness.Team team = state.createTeam('example', enterprise);
+Slack.TestHarness.User user = state.createUser('muser', 'M User', team, 'en_US');
+Slack.TestHarness.Channel channel = state.createPublicChannel(team, 'general', 'en_US');
+Slack.TestHarness.UserSession session = state.createUserSession(user, channel);
+Slack.TestHarness.Channel opened = session.openChannel('C1');
+Slack.TestHarness.Message message = session.postMessage('hello');
+System.assertNotEquals(null, enterprise);
+System.assertNotEquals(null, team);
+System.assertNotEquals(null, user);
+System.assertNotEquals(null, channel);
+System.assertNotEquals(null, session);
+System.assertNotEquals(null, opened);
+System.assertNotEquals(null, message);
+state.clearAllClientMocks();
+session.closeModal();
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestGeneratedPlatformFallbackDoesNotMaskExplicitUnsupportedRuntimeMethods(t *testing.T) {
 	machine := New(nil)
 	result := &Result{}
