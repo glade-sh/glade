@@ -152,6 +152,10 @@ System.assertEquals('', applauncher.SelfRegisterController.setExperienceId('0DB-
 
 System.assertEquals(0, applauncher.SocialLoginController.getAuthProviders().size());
 System.assertEquals(0, applauncher.SocialLoginController.getSamlProviders().size());
+System.assertEquals('https://local.oaer.example/services/auth/sso/LocalProvider?startURL=%2Fstart', applauncher.SocialLoginController.getSsoUrl('/start', 'LocalProvider'));
+System.assertEquals('https://local.oaer.example/services/auth/sso/LocalProvider?startURL=%2Fstart', applauncher.SocialLoginController.getCommunityDomainSsoUrl('/start', 'LocalProvider'));
+System.assertEquals('https://local.oaer.example/services/auth/saml/SamlProvider?startURL=%2Fstart', applauncher.SocialLoginController.getSamlSsoUrl('/start', 'SamlProvider'));
+System.assertEquals('https://local.oaer.example/services/auth/saml/SamlProvider?startURL=%2Fstart', applauncher.SocialLoginController.getSamlSsoUrlNoCache('/start', 'SamlProvider'));
 `)
 	if err != nil {
 		t.Fatal(err)
@@ -171,11 +175,6 @@ func TestExecAppLauncherControllerServiceFlowsStayUnsupported(t *testing.T) {
 			name: "registration service",
 			src:  `applauncher.SelfRegisterController.selfRegister('First', 'Last', 'local@example.test', 'secret', 'secret', null, '/confirm', '{}', '/start', true);`,
 			want: `unsupported call "applauncher.SelfRegisterController.selfRegister local user registration service flow"`,
-		},
-		{
-			name: "social sso redirect",
-			src:  `applauncher.SocialLoginController.getSsoUrl('/start', 'LocalProvider');`,
-			want: `unsupported call "applauncher.SocialLoginController.getSsoUrl local social login redirect flow"`,
 		},
 		{
 			name: "identity provider callback",
@@ -5436,6 +5435,7 @@ System.assertEquals(0, LiveAgent.LiveAgentRealTimeSystem.routeChatRequests(new L
 new LiveAgent.LiveChatRouter().doRouting(new List<LiveAgent.LiveChatRoutingRequest>());
 System.assertEquals('', new Support.EinsteinBots().sendMessageToBot('bot', 'version', 'hello'));
 System.assertEquals(null, new Support.EmailTemplateSelector().getDefaultEmailTemplateId('001000000000001'));
+System.assertEquals(0, new Support.MilestoneTriggerTimeCalculator().calculateMilestoneTriggerTime('001000000000001', 'First_Response'));
 System.assertEquals(0, Support.LifeScienceAttendees.parse('{}').attendees.size());
 Support.LifeScienceUpdateEmailTransactions.updateRecords('[]');
 System.assertEquals(null, new RichMessaging.ProcessFormHandler().processFormRequest(new RichMessaging.ProcessFormResponse(new Map<String,String>(), '0Mw000000000001', '0Mc000000000001', 'local', 'reply-1')));

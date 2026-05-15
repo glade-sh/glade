@@ -258,7 +258,7 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 		return StubBehaviorImplemented, "ConnectApi read/search method returns a deterministic local empty typed DTO/result without live service mutation", true
 	}
 	if ideasFindSimilarBehaviorMethod(symbol, member) {
-		return StubBehaviorImplemented, "Ideas.findSimilar returns a typed empty List<Id> without enabling Ideas reply/read-state service surfaces", true
+		return StubBehaviorImplemented, "Ideas safe read helper returns a typed empty List<Id> without mutating Ideas reply/read-state service surfaces", true
 	}
 	if pushUpgradeCustomizationRepositoryBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "PushUpgradeCustomizationRepository uses VM-local deterministic in-memory repository state", true
@@ -366,7 +366,8 @@ func appLauncherControllerBehaviorMethod(symbol typesys.TypeSymbol, member types
 		}
 	case "applauncher.SocialLoginController":
 		switch name {
-		case "getauthproviders", "getsamlproviders":
+		case "getauthproviders", "getcommunitydomainssourl", "getsamlproviders",
+			"getsamlssourl", "getsamlssourlnocache", "getssourl":
 			return true
 		default:
 			return false
@@ -506,6 +507,8 @@ func localServiceHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesys
 		return name == "dorouting"
 	case "Support.WorkCapacityCalculation":
 		return name == "calculateactualusage" || name == "calculateestimatedusage"
+	case "Support.MilestoneTriggerTimeCalculator":
+		return name == "calculatemilestonetriggertime"
 	case "RichMessaging.AuthRequestHandler":
 		return name == "handleauthrequest"
 	case "RichMessaging.ProcessCatalogOrderHandler":
@@ -1319,7 +1322,7 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 		}
 	case "URL", "Url":
 		switch name {
-		case "getsalesforcebaseurl", "getorgdomainurl", "getcurrentrequesturl", "toexternalform",
+		case "getsalesforcebaseurl", "getorgdomainurl", "getcurrentrequesturl", "getfilefieldurl", "toexternalform",
 			"getprotocol", "gethost", "getauthority", "getpath", "getquery", "getref",
 			"getfile", "getport", "getdefaultport", "getuserinfo", "samefile":
 			return true
@@ -1543,7 +1546,7 @@ func explicitlyUnsupportedCoreBehaviorMethod(symbol typesys.TypeSymbol, member t
 		}
 	case "Ideas":
 		switch name {
-		case "getallrecentreplies", "getreadrecentreplies", "getunreadrecentreplies", "markread":
+		case "markread":
 			return true
 		}
 	case "data_mask.DataMaskIntegrationUtil":
@@ -2627,9 +2630,15 @@ func generatedDTOCollectionBehaviorType(symbol typesys.TypeSymbol) bool {
 }
 
 func ideasFindSimilarBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
-	return stubBehaviorTypeName(symbol) == "Ideas" &&
-		member.Kind == apexast.DeclarationMethod &&
-		strings.EqualFold(member.Name, "findSimilar")
+	if stubBehaviorTypeName(symbol) != "Ideas" || member.Kind != apexast.DeclarationMethod {
+		return false
+	}
+	switch strings.ToLower(member.Name) {
+	case "findsimilar", "getallrecentreplies", "getreadrecentreplies", "getunreadrecentreplies":
+		return true
+	default:
+		return false
+	}
 }
 
 func generatedExecutionSurfaceType(typeName string) bool {
