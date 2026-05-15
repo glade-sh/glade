@@ -3309,6 +3309,35 @@ System.assertEquals(parent.Id, child.Parent__r.Id);
 	}
 }
 
+func TestExecDMLConvertsEmptyTextToNull(t *testing.T) {
+	program, err := CompileAnonymous(`
+Widget__c widget = new Widget__c(Name = 'Widget', Note__c = '');
+insert widget;
+Widget__c loaded = [SELECT Note__c FROM Widget__c WHERE Id = :widget.Id];
+System.assertEquals(null, loaded.Note__c);
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	org.Objects["Widget__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Widget__c",
+			KeyPrefix: "a42",
+			Fields: map[string]storage.Field{
+				"Name":    {APIName: "Name", Type: storage.FieldString},
+				"Note__c": {APIName: "Note__c", Type: storage.FieldString},
+			},
+		},
+		Records: map[storage.ID]storage.Record{},
+	}
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecTypedNullSObjectFieldAccessReturnsNull(t *testing.T) {
 	program, err := CompileAnonymous(`
 Account accountRecord;

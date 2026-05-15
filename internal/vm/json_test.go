@@ -1375,6 +1375,32 @@ System.assertEquals('Second', decoded.Name);
 	}
 }
 
+func TestExecJSONDeserializeNonStrictKeepsObjectWhenFieldTargetUnsupported(t *testing.T) {
+	program, err := CompileAnonymous(`
+LooseContainer decoded = JSON.deserialize('{"name":"root","opaque":{"id":"x"}}', LooseContainer.class);
+System.assertNotEquals(null, decoded);
+System.assertEquals('root', decoded.name);
+System.assertNotEquals(null, decoded.opaque);
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if err := machine.RegisterClass(Class{
+		Name: "LooseContainer",
+		Fields: map[string]Field{
+			"name":   {Name: "name", Type: "String"},
+			"opaque": {Name: "opaque", Type: "MissingTarget"},
+		},
+		FieldOrder: []string{"name", "opaque"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecJSONDeserializeStrictRejectsUnknownApexClassFieldsAsJSONException(t *testing.T) {
 	program, err := CompileAnonymous(`
 String caught = '';
