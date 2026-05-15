@@ -1564,6 +1564,25 @@ System.assertEquals(null, Cases.getCaseIdFromEmailThreadId('missing'));
 	}
 }
 
+func TestExecEmailMessagesThreadingHelpers(t *testing.T) {
+	program, err := CompileAnonymous(`
+Id accountId = '001000000000001AAA';
+String token = EmailMessages.getFormattedThreadingToken(accountId);
+System.assert(token.contains('001000000000001AAA'));
+System.assertEquals(accountId, EmailMessages.getRecordIdFromEmail('reply ' + token, null, null));
+System.assertEquals(accountId, EmailMessages.getRecordIdFromEmail('reply', 'body ' + token, null));
+System.assertEquals(accountId, EmailMessages.getRecordIdFromEmail('reply', null, '<span>' + token + '</span>'));
+System.assertEquals(null, EmailMessages.getRecordIdFromEmail('reply', 'missing token', null));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	machine := New(nil)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecSystemDeterministicLocalHelpers(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals(false, System.isFunctionCallback());
@@ -2330,6 +2349,56 @@ func TestConstructPassiveGeneratedPlatformDTONamedArgsBindProperties(t *testing.
 	}
 	if _, ok := value.Fields["param1"]; ok {
 		t.Fatalf("unexpected placeholder constructor field: %#v", value.Fields)
+	}
+}
+
+func TestExecMessagingNotificationAndTemplateDefaults(t *testing.T) {
+	program, err := CompileAnonymous(`
+List<Messaging.RenderEmailTemplateBodyResult> rendered =
+	Messaging.renderEmailTemplate('003000000000001AAA', '001000000000001AAA', new List<String>{'Hello {!Contact.Name} / {!Account.Name}'});
+System.assertEquals(1, rendered.size());
+System.assert(rendered.get(0).getSuccess());
+System.assertEquals('Hello Ada Trail / Acme', rendered.get(0).getMergedBody());
+System.assertEquals(0, rendered.get(0).getErrors().size());
+
+Messaging.CustomNotification custom = new Messaging.CustomNotification();
+custom.setNotificationTypeId('0ML000000000001AAA');
+custom.setSenderId('005000000000001AAA');
+custom.setTitle('Title');
+custom.setBody('Body');
+custom.setTargetId('001000000000001AAA');
+custom.setTargetPageRef('/lightning/r/Account/001000000000001AAA/view');
+custom.send(new Set<String>{'005000000000001AAA'});
+
+Map<String,Object> payload = Messaging.PushNotificationPayload.apple('Alert', 'default', 1, new Map<String,Object>{'recordId' => '001000000000001AAA'});
+System.assert(payload.containsKey('aps'));
+System.assertEquals('001000000000001AAA', payload.get('recordId'));
+Messaging.PushNotification push = new Messaging.PushNotification(payload);
+push.setTtl(60);
+push.send('ConnectedApp', new Set<String>{'005000000000001AAA'});
+
+List<Messaging.SendEmailResult> messageResults = Messaging.sendEmailMessage(new List<Id>{'02s000000000001AAA'}, false);
+System.assertEquals(1, messageResults.size());
+System.assert(messageResults.get(0).isSuccess());
+
+Messaging.InboundEmail inbound = Messaging.extractInboundEmail('raw message not parsed locally', true);
+System.assertEquals(0, inbound.headers.size());
+System.assertEquals(false, inbound.plainTextBodyIsTruncated);
+
+Messaging.ActionResult actionResult = new Messaging.ActionResult.Builder().withSuccess(true).withMessage('ok').build();
+System.assert(actionResult.isSuccess());
+System.assertEquals('ok', actionResult.getMessage());
+Messaging.ActionableNotification actionable = new Messaging.ActionableNotification.Builder().withActionIdentifier('open').build();
+System.assertEquals('open', actionable.getActionIdentifier());
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	vm := New(nil)
+	org := emailTemplateTestOrg()
+	vm.SetOrg(&org)
+	if _, err := vm.Execute(program); err != nil {
+		t.Fatal(err)
 	}
 }
 

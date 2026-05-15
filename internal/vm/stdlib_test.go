@@ -618,10 +618,12 @@ System.assertEquals('oaer.setup.local', setupHost);
 System.assertEquals('pkg--oaer.visualforce.local', vfHost);
 Domain orgDomain = DomainParser.parse(orgHost);
 Domain vfDomain = DomainParser.parse('https://' + vfHost + '/apex/Home');
+Domain urlDomain = DomainParser.parse(new URL('https://Example.TEST/apex/Home'));
 System.assertEquals('oaer', orgDomain.getMyDomainName());
 System.assertEquals('', orgDomain.getPackageName());
 System.assertEquals(null, orgDomain.getSandboxName());
 System.assertEquals('pkg', vfDomain.getPackageName());
+System.assertEquals('example.test', urlDomain.toString());
 System.assertEquals('pkg--oaer.visualforce.local', vfDomain.toString());
 System.assertEquals('oaer.my.salesforce.local', new Domain().toString());
 Domain cloned = (Domain)vfDomain.clone();
@@ -1839,12 +1841,18 @@ context.evictContextDefinition(input);
 OrgInstrumentationOperation op = new OrgInstrumentationOperation();
 OrgInstrumentationContext metricContext = op.start(OrgMetricPublishTypeEnum.REQUEST_COUNT);
 System.assertNotEquals(null, metricContext);
+metricContext.startTime();
+metricContext.end();
 System.assertNotEquals(null, op.createNewSpan());
 op.publishCustomIncrementalValue('local.metric', 1L);
 op.publishRequestCountAndDuration(1L, 200, 10L);
 op.publishIncrementalValue(OrgMetricTypeEnum.REQUEST_COUNT, 1L, 200);
 op.end(metricContext);
 op.endWithStatus(metricContext, 200);
+OrgInstrumentationService service = new OrgInstrumentationService();
+HttpRequest req = new HttpRequest();
+service.propagateContext(req);
+System.assertEquals('local', req.getHeader('x-oaer-instrumentation-context'));
 `)
 	if err != nil {
 		t.Fatal(err)

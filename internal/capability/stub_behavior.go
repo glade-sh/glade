@@ -222,10 +222,13 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 		return StubBehaviorImplemented, "Context.IndustriesContext map passthrough/no-op method is handled by the VM local context surface", true
 	}
 	if orgInstrumentationBehaviorMethod(symbol, member) {
-		return StubBehaviorImplemented, "OrgInstrumentationOperation metric/span method is handled by the VM local no-op instrumentation surface", true
+		return StubBehaviorImplemented, "OrgInstrumentation metric/span/context method is handled by the VM local no-op instrumentation surface", true
 	}
 	if userProvisioningBatchableBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "UserProvisioning batchable helper method is handled by the VM local no-op/default surface", true
+	}
+	if callbackInterfaceBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "callback/interface method is supplied by user Apex and dispatched through the VM when the local lifecycle invokes or user code calls it", true
 	}
 	if localMockHarnessBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "test/mock harness method is handled by the VM local deterministic/no-op surface", true
@@ -429,6 +432,11 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 		case "generatethreadingmessageid", "getcaseidfromemailheaders", "getcaseidfromemailthreadid":
 			return true
 		}
+	case "EmailMessages":
+		switch name {
+		case "getformattedthreadingtoken", "getrecordidfromemail":
+			return true
+		}
 	case "Collator":
 		return name == "getinstance" || name == "compare"
 	case "CURRENCY":
@@ -570,7 +578,8 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 		}
 	case "Messaging":
 		switch name {
-		case "sendemail", "renderstoredemailtemplate", "reservesingleemailcapacity", "reservemassemailcapacity":
+		case "sendemail", "sendemailmessage", "renderemailtemplate", "renderstoredemailtemplate",
+			"extractinboundemail", "reservesingleemailcapacity", "reservemassemailcapacity":
 			return true
 		}
 	case "Metadata.Operations":
@@ -944,10 +953,20 @@ func messagingBehaviorMethod(typeName, methodName string) bool {
 	case "Messaging.Email", "Messaging.EmailAttachment", "Messaging.EmailFileAttachment",
 		"Messaging.SingleEmailMessage", "Messaging.MassEmailMessage",
 		"Messaging.SendEmailResult", "Messaging.SendEmailError",
-		"Messaging.RenderEmailTemplateBodyResult", "Messaging.RenderEmailTemplateError":
+		"Messaging.RenderEmailTemplateBodyResult", "Messaging.RenderEmailTemplateError",
+		"Messaging.ActionResult", "Messaging.ActionableNotification":
 		return strings.HasPrefix(methodName, "get") ||
 			strings.HasPrefix(methodName, "set") ||
 			strings.HasPrefix(methodName, "is")
+	case "Messaging.CustomNotification", "Messaging.PushNotification",
+		"Messaging.ActionResult.Builder", "Messaging.ActionableNotification.Builder", "Messaging.Builder":
+		return strings.HasPrefix(methodName, "get") ||
+			strings.HasPrefix(methodName, "set") ||
+			strings.HasPrefix(methodName, "is") ||
+			strings.HasPrefix(methodName, "with") ||
+			methodName == "send" || methodName == "build"
+	case "Messaging.PushNotificationPayload":
+		return methodName == "apple"
 	default:
 		return false
 	}
@@ -1040,8 +1059,6 @@ func explicitlyUnsupportedCoreBehaviorMethod(symbol typesys.TypeSymbol, member t
 		case "getasynclocator":
 			return true
 		}
-	case "Messaging":
-		return name == "extractinboundemail"
 	default:
 		if connectAPIExternalServiceBehaviorMethod(symbol, member) {
 			return true
@@ -1198,15 +1215,22 @@ func contextIndustriesBehaviorMethod(symbol typesys.TypeSymbol, member typesys.M
 }
 
 func orgInstrumentationBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
-	if !strings.EqualFold(stubBehaviorTypeName(symbol), "OrgInstrumentationOperation") || member.Kind != apexast.DeclarationMethod {
+	if member.Kind != apexast.DeclarationMethod {
 		return false
 	}
+	typeName := stubBehaviorTypeName(symbol)
 	switch strings.ToLower(member.Name) {
-	case "createnewspan", "end", "endwithstatus", "publishcustomhistogramvalues",
+	case "starttime":
+		return strings.EqualFold(typeName, "OrgInstrumentationContext")
+	case "end":
+		return strings.EqualFold(typeName, "OrgInstrumentationContext") || strings.EqualFold(typeName, "OrgInstrumentationOperation")
+	case "propagatecontext":
+		return strings.EqualFold(typeName, "OrgInstrumentationService")
+	case "createnewspan", "endwithstatus", "publishcustomhistogramvalues",
 		"publishcustomincrementalvalue", "publishcustompercentileset",
 		"publishincrementalvalue", "publishpercentileset",
 		"publishrequestcountandduration", "start":
-		return true
+		return strings.EqualFold(typeName, "OrgInstrumentationOperation")
 	default:
 		return false
 	}
@@ -1229,6 +1253,28 @@ func userProvisioningBatchableBehaviorMethod(symbol typesys.TypeSymbol, member t
 		"getperbatchupr", "getuprtonewuplmap", "hasflow", "hasfloworapex",
 		"postbatchprocessing", "start":
 		return true
+	default:
+		return false
+	}
+}
+
+func callbackInterfaceBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if member.Kind != apexast.DeclarationMethod {
+		return false
+	}
+	typeName := strings.ToLower(stubBehaviorTypeName(symbol))
+	name := strings.ToLower(member.Name)
+	switch typeName {
+	case "database.batchable":
+		return name == "start" || name == "execute" || name == "finish"
+	case "queueable", "finalizer":
+		return name == "execute"
+	case "metadata.deploycallback":
+		return name == "handleresult"
+	case "process.plugin":
+		return name == "describe" || name == "invoke"
+	case "quickaction.quickactiondefaultshandler":
+		return name == "oninitdefaults"
 	default:
 		return false
 	}

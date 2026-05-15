@@ -2115,6 +2115,7 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"ConnectApi.UserProfiles.setPhoto", "ConnectApi.UserProfiles.deletePhoto",
 		"BusinessHours.add", "BusinessHours.addGmt", "BusinessHours.diff", "BusinessHours.isWithin", "BusinessHours.nextStartDate",
 		"Cases.generateThreadingMessageId", "Cases.getCaseIdFromEmailHeaders", "Cases.getCaseIdFromEmailThreadId", "Cases.reparentFeedToCaseId",
+		"EmailMessages.getFormattedThreadingToken", "EmailMessages.getRecordIdFromEmail",
 		"Cache.Org.getPartition", "Cache.Session.getPartition",
 		"Cache.Org.get", "Cache.Session.get", "Cache.Org.put", "Cache.Session.put",
 		"Cache.Org.remove", "Cache.Session.remove", "Cache.Org.contains", "Cache.Session.contains",
@@ -3995,8 +3996,16 @@ platformStaticCall:
 		return Decimal(0), nil
 	case "Messaging.sendEmail":
 		return vm.sendEmail(args, result)
+	case "Messaging.sendEmailMessage":
+		return vm.sendEmailMessage(args, result)
+	case "Messaging.renderEmailTemplate":
+		return vm.renderEmailTemplate(args)
+	case "Messaging.extractInboundEmail":
+		return vm.extractInboundEmail(args)
 	case "Messaging.renderStoredEmailTemplate":
 		return vm.renderStoredEmailTemplate(args)
+	case "Messaging.PushNotificationPayload.apple":
+		return messagingPushPayloadApple(args)
 	case "ApexPages.hasMessages":
 		if len(args) > 1 {
 			return Null, fmt.Errorf("ApexPages.hasMessages expects optional ApexPages.Severity")
@@ -4140,8 +4149,7 @@ platformStaticCall:
 		vm.currentPage = args[0]
 		return Null, nil
 	case "Messaging.reserveSingleEmailCapacity", "Messaging.reserveMassEmailCapacity",
-		"Messaging.renderEmailTemplate",
-		"Messaging.sendEmailMessage", "Messaging.sendPushNotification":
+		"Messaging.sendPushNotification":
 		return Null, unsupportedCallError(callee + " local messaging transport/template surface")
 	case "URL.getSalesforceBaseUrl", "URL.getOrgDomainUrl":
 		if len(args) != 0 {
@@ -4351,16 +4359,11 @@ platformStaticCall:
 		if len(args) != 1 {
 			return Null, fmt.Errorf("Cases.generateThreadingMessageId expects Case Id")
 		}
-		id := scalarText(args[0])
-		if id == "" {
-			if text, ok := typedIDValueText(args[0]); ok {
-				id = text
-			}
-		}
+		id := idText(args[0])
 		if id == "" {
 			return Null, fmt.Errorf("Cases.generateThreadingMessageId expects Case Id")
 		}
-		return String("ref:_00Dlocal._" + id + ":ref"), nil
+		return String(formatLocalThreadingToken(id)), nil
 	case "Cases.getCaseIdFromEmailThreadId":
 		if len(args) != 1 || args[0].Kind != ValueString {
 			return Null, fmt.Errorf("Cases.getCaseIdFromEmailThreadId expects String")
@@ -4386,6 +4389,25 @@ platformStaticCall:
 		return Null, nil
 	case "Cases.reparentFeedToCaseId":
 		return Null, unsupportedCallError("Cases.reparentFeedToCaseId local feed reparenting surface")
+	case "EmailMessages.getFormattedThreadingToken":
+		if len(args) != 1 {
+			return Null, fmt.Errorf("EmailMessages.getFormattedThreadingToken expects record Id")
+		}
+		id := idText(args[0])
+		if id == "" {
+			return Null, fmt.Errorf("EmailMessages.getFormattedThreadingToken expects record Id")
+		}
+		return String(formatLocalThreadingToken(id)), nil
+	case "EmailMessages.getRecordIdFromEmail":
+		if len(args) != 3 {
+			return Null, fmt.Errorf("EmailMessages.getRecordIdFromEmail expects subject, text body, and HTML body")
+		}
+		for _, arg := range args {
+			if arg.Kind != ValueNull && arg.Kind != ValueString {
+				return Null, fmt.Errorf("EmailMessages.getRecordIdFromEmail expects String or null arguments")
+			}
+		}
+		return recordIDFromEmail(args[0], args[1], args[2]), nil
 	case "Collator.getInstance":
 		if len(args) != 0 {
 			return Null, fmt.Errorf("Collator.getInstance expects 0 arguments")
@@ -19640,7 +19662,39 @@ func currencyISOCode(value Value) string {
 	return "USD"
 }
 
+func formatLocalThreadingToken(id string) string {
+	return "ref:_00Dlocal._" + id + ":ref"
+}
+
+func idText(value Value) string {
+	id := scalarText(value)
+	if id == "" {
+		if text, ok := typedIDValueText(value); ok {
+			id = text
+		}
+	}
+	return strings.TrimSpace(id)
+}
+
+func recordIDFromEmail(subject, textBody, htmlBody Value) Value {
+	for _, value := range []Value{subject, textBody, htmlBody} {
+		if value.Kind != ValueString {
+			continue
+		}
+		if id := recordIDFromThreadID(value.Text); id.Kind != ValueNull {
+			return id
+		}
+	}
+	return Null
+}
+
 func caseIDFromThreadID(text string) Value {
+	if id := recordIDFromThreadID(text); id.Kind != ValueNull {
+		if idText, ok := typedIDValueText(id); ok && strings.HasPrefix(idText, "500") {
+			return id
+		}
+		return Null
+	}
 	start := strings.Index(text, "500")
 	if start < 0 {
 		return Null
@@ -19661,6 +19715,46 @@ func caseIDFromThreadID(text string) Value {
 		id = id[:18]
 	}
 	return platformScalar("Id", id)
+}
+
+func recordIDFromThreadID(text string) Value {
+	for _, token := range strings.FieldsFunc(text, func(r rune) bool {
+		return r <= ' ' || r == '<' || r == '>' || r == '"' || r == '\'' || r == '[' || r == ']' || r == '(' || r == ')'
+	}) {
+		if !strings.Contains(strings.ToLower(token), "ref:") {
+			continue
+		}
+		if id := idFromThreadingToken(token); id != "" {
+			return platformScalar("Id", id)
+		}
+	}
+	return Null
+}
+
+func idFromThreadingToken(token string) string {
+	found := ""
+	for i := 0; i < len(token); i++ {
+		if !isSalesforceIDChar(token[i]) {
+			continue
+		}
+		end := i
+		for end < len(token) && isSalesforceIDChar(token[end]) {
+			end++
+		}
+		if end-i >= 15 {
+			id := token[i:end]
+			if len(id) > 18 {
+				id = id[:18]
+			}
+			found = id
+		}
+		i = end
+	}
+	return found
+}
+
+func isSalesforceIDChar(ch byte) bool {
+	return (ch >= '0' && ch <= '9') || (ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z')
 }
 
 func collatorCompare(left, right string) int64 {
@@ -20415,6 +20509,14 @@ func newEmailFileAttachment() Value {
 	return attachment
 }
 
+func newRenderEmailTemplateBodyResult(mergedBody string) Value {
+	result := Object("Messaging.RenderEmailTemplateBodyResult")
+	result.Fields["success"] = Bool(true)
+	result.Fields["mergedBody"] = String(mergedBody)
+	result.Fields["errors"] = List()
+	return result
+}
+
 func newFailedSendEmailResult(message string) Value {
 	result := Object("Messaging.SendEmailResult")
 	result.Fields["success"] = Bool(false)
@@ -20463,6 +20565,94 @@ func newMassEmailMessage() Value {
 		message.Fields[field] = Bool(false)
 	}
 	return message
+}
+
+func newInboundEmail() Value {
+	email := Object("Messaging.InboundEmail")
+	for _, field := range []string{"authenticationResults", "binaryAttachments", "ccAddresses", "headers", "textAttachments", "toAddresses"} {
+		email.Fields[field] = List()
+	}
+	for _, field := range []string{
+		"fromAddress", "fromName", "htmlBody", "inReplyTo", "messageId", "plainTextBody",
+		"references", "replyTo", "subject",
+	} {
+		email.Fields[field] = Null
+	}
+	email.Fields["htmlBodyIsTruncated"] = Bool(false)
+	email.Fields["plainTextBodyIsTruncated"] = Bool(false)
+	return email
+}
+
+func newInboundEnvelope() Value {
+	envelope := Object("Messaging.InboundEnvelope")
+	envelope.Fields["fromAddress"] = Null
+	envelope.Fields["toAddress"] = Null
+	return envelope
+}
+
+func newInboundEmailResult() Value {
+	result := Object("Messaging.InboundEmailResult")
+	result.Fields["success"] = Bool(false)
+	result.Fields["message"] = Null
+	return result
+}
+
+func newActionResult() Value {
+	result := Object("Messaging.ActionResult")
+	result.Fields["success"] = Bool(false)
+	result.Fields["message"] = Null
+	result.Fields["errorCode"] = Null
+	return result
+}
+
+func newActionResultBuilder() Value {
+	builder := Object("Messaging.ActionResult.Builder")
+	builder.Fields["success"] = Bool(false)
+	builder.Fields["message"] = Null
+	builder.Fields["errorCode"] = Null
+	return builder
+}
+
+func newActionableNotification() Value {
+	notification := Object("Messaging.ActionableNotification")
+	for _, field := range []string{"actionIdentifier", "notificationTypeId", "recipientId", "senderId", "targetId", "targetPageRef"} {
+		notification.Fields[field] = Null
+	}
+	return notification
+}
+
+func newActionableNotificationBuilder() Value {
+	builder := Object("Messaging.ActionableNotification.Builder")
+	for _, field := range []string{"actionIdentifier", "notificationTypeId", "recipientId", "senderId", "targetId", "targetPageRef"} {
+		builder.Fields[field] = Null
+	}
+	return builder
+}
+
+func newCustomNotification(args []Value) Value {
+	notification := Object("Messaging.CustomNotification")
+	for _, field := range []string{"notificationTypeId", "senderId", "title", "body", "targetId", "targetPageRef"} {
+		notification.Fields[field] = Null
+	}
+	if len(args) == 6 {
+		notification.Fields["notificationTypeId"] = args[0]
+		notification.Fields["senderId"] = args[1]
+		notification.Fields["title"] = args[2]
+		notification.Fields["body"] = args[3]
+		notification.Fields["targetId"] = args[4]
+		notification.Fields["targetPageRef"] = args[5]
+	}
+	return notification
+}
+
+func newPushNotification(args []Value) Value {
+	notification := Object("Messaging.PushNotification")
+	notification.Fields["payload"] = typedMap("Map<String,Object>")
+	notification.Fields["ttl"] = Null
+	if len(args) == 1 {
+		notification.Fields["payload"] = args[0]
+	}
+	return notification
 }
 
 func isLocalEmailMessage(value Value) bool {
@@ -20519,6 +20709,71 @@ func (vm *VM) sendEmail(args []Value, result *Result) (Value, error) {
 		results = append(results, newSendEmailResult())
 	}
 	return List(results...), nil
+}
+
+func (vm *VM) sendEmailMessage(args []Value, result *Result) (Value, error) {
+	if len(args) == 0 || len(args) > 2 {
+		return Null, fmt.Errorf("Messaging.sendEmailMessage expects email message Ids and optional allOrNothing")
+	}
+	if args[0].Kind != ValueList {
+		return Null, fmt.Errorf("Messaging.sendEmailMessage expects List<Id>")
+	}
+	if len(args) == 2 && args[1].Kind != ValueBool {
+		return Null, fmt.Errorf("Messaging.sendEmailMessage allOrNothing expects Boolean")
+	}
+	for _, id := range args[0].List {
+		if _, ok := idValueText(id); !ok {
+			return Null, fmt.Errorf("Messaging.sendEmailMessage expects List<Id>")
+		}
+	}
+	if err := vm.incrementLimit("emailInvocations", 1); err != nil {
+		return Null, err
+	}
+	appendTrace(result, "apex.email.message.send", "apex.email", map[string]any{"messages": len(args[0].List)})
+	results := make([]Value, 0, len(args[0].List))
+	for range args[0].List {
+		results = append(results, newSendEmailResult())
+	}
+	return List(results...), nil
+}
+
+func (vm *VM) renderEmailTemplate(args []Value) (Value, error) {
+	if len(args) != 3 {
+		return Null, fmt.Errorf("Messaging.renderEmailTemplate expects whoId, whatId, bodies")
+	}
+	whoID := args[0]
+	whatID := args[1]
+	if args[0].Kind != ValueNull {
+		if _, ok := idValueText(args[0]); !ok {
+			return Null, fmt.Errorf("Messaging.renderEmailTemplate expects whoId String or Id")
+		}
+	}
+	if args[1].Kind != ValueNull {
+		if _, ok := idValueText(args[1]); !ok {
+			return Null, fmt.Errorf("Messaging.renderEmailTemplate expects whatId String or Id")
+		}
+	}
+	if args[2].Kind != ValueList {
+		return Null, fmt.Errorf("Messaging.renderEmailTemplate expects List<String> bodies")
+	}
+	results := make([]Value, 0, len(args[2].List))
+	for _, body := range args[2].List {
+		if body.Kind != ValueString {
+			return Null, fmt.Errorf("Messaging.renderEmailTemplate expects List<String> bodies")
+		}
+		results = append(results, newRenderEmailTemplateBodyResult(vm.renderEmailTemplateText(body.Text, whoID, whatID)))
+	}
+	return List(results...), nil
+}
+
+func (vm *VM) extractInboundEmail(args []Value) (Value, error) {
+	if len(args) != 2 || args[1].Kind != ValueBool {
+		return Null, fmt.Errorf("Messaging.extractInboundEmail expects source and includeForwardedAttachments Boolean")
+	}
+	if args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "Messaging.InboundEmail") {
+		return args[0], nil
+	}
+	return newInboundEmail(), nil
 }
 
 func localEmailValidationError(message Value) string {
@@ -21036,7 +21291,11 @@ func canonicalRuntimeTypeName(typeName string) string {
 		"Metadata.DeployResult", "Metadata.DeployDetails", "Metadata.DeployMessage", "Metadata.DeployCallbackContext",
 		"Metadata.AsyncResult", "SelectOption", "ApexPages.StandardController", "ApexPages.StandardSetController",
 		"ApexPages.Message", "Messaging.SendEmailResult", "Messaging.EmailFileAttachment", "Messaging.SingleEmailMessage",
-		"Messaging.MassEmailMessage", "Messaging.SendEmailOptions", "URL", "Version", "InstallContext",
+		"Messaging.MassEmailMessage", "Messaging.SendEmailOptions", "Messaging.CustomNotification",
+		"Messaging.PushNotification", "Messaging.ActionResult", "Messaging.ActionableNotification",
+		"Messaging.ActionResult.Builder", "Messaging.ActionableNotification.Builder", "Messaging.Builder",
+		"Messaging.InboundEmail", "Messaging.InboundEnvelope", "Messaging.InboundEmailResult",
+		"Messaging.RenderEmailTemplateBodyResult", "Messaging.RenderEmailTemplateError", "URL", "Version", "InstallContext",
 	} {
 		if strings.EqualFold(typeName, known) {
 			return known
@@ -21795,6 +22054,59 @@ func (vm *VM) constructValueWithLiteral(typeName string, args []Value, namedArgs
 			return Null, fmt.Errorf("%s constructor expects 0 arguments", typeName)
 		}
 		return Object(typeName), nil
+	case "Messaging.CustomNotification":
+		if len(namedArgs) != 0 || (len(args) != 0 && len(args) != 6) {
+			return Null, fmt.Errorf("Messaging.CustomNotification constructor expects 0 or 6 arguments")
+		}
+		for _, arg := range args {
+			if arg.Kind != ValueString && !(arg.Kind == ValueObject && strings.EqualFold(arg.Type, "Id")) {
+				return Null, fmt.Errorf("Messaging.CustomNotification constructor expects String arguments")
+			}
+		}
+		return newCustomNotification(args), nil
+	case "Messaging.PushNotification":
+		if len(namedArgs) != 0 || len(args) > 1 {
+			return Null, fmt.Errorf("Messaging.PushNotification constructor expects optional payload")
+		}
+		if len(args) == 1 && args[0].Kind != ValueMap {
+			return Null, fmt.Errorf("Messaging.PushNotification constructor expects Map<String,Object> payload")
+		}
+		return newPushNotification(args), nil
+	case "Messaging.ActionResult":
+		if len(args) != 0 || len(namedArgs) != 0 {
+			return Null, fmt.Errorf("Messaging.ActionResult constructor expects 0 arguments")
+		}
+		return newActionResult(), nil
+	case "Messaging.ActionResult.Builder", "Messaging.Builder":
+		if len(args) != 0 || len(namedArgs) != 0 {
+			return Null, fmt.Errorf("%s constructor expects 0 arguments", typeName)
+		}
+		return newActionResultBuilder(), nil
+	case "Messaging.ActionableNotification":
+		if len(args) != 0 || len(namedArgs) != 0 {
+			return Null, fmt.Errorf("Messaging.ActionableNotification constructor expects 0 arguments")
+		}
+		return newActionableNotification(), nil
+	case "Messaging.ActionableNotification.Builder":
+		if len(args) != 0 || len(namedArgs) != 0 {
+			return Null, fmt.Errorf("Messaging.ActionableNotification.Builder constructor expects 0 arguments")
+		}
+		return newActionableNotificationBuilder(), nil
+	case "Messaging.InboundEmail":
+		if len(args) != 0 || len(namedArgs) != 0 {
+			return Null, fmt.Errorf("Messaging.InboundEmail constructor expects 0 arguments")
+		}
+		return newInboundEmail(), nil
+	case "Messaging.InboundEnvelope":
+		if len(args) != 0 || len(namedArgs) != 0 {
+			return Null, fmt.Errorf("Messaging.InboundEnvelope constructor expects 0 arguments")
+		}
+		return newInboundEnvelope(), nil
+	case "Messaging.InboundEmailResult":
+		if len(args) != 0 || len(namedArgs) != 0 {
+			return Null, fmt.Errorf("Messaging.InboundEmailResult constructor expects 0 arguments")
+		}
+		return newInboundEmailResult(), nil
 	case "URL":
 		if len(namedArgs) != 0 {
 			return Null, fmt.Errorf("URL constructor does not accept named fields")
@@ -30741,6 +31053,12 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 	if value, updated, mutated, handled, err := callOrgInstrumentationOperationMember(receiver, method, args); handled || err != nil {
 		return value, updated, mutated, true, err
 	}
+	if value, updated, mutated, handled, err := callOrgInstrumentationContextMember(receiver, method, args); handled || err != nil {
+		return value, updated, mutated, true, err
+	}
+	if value, updated, mutated, handled, err := callOrgInstrumentationServiceMember(receiver, method, args); handled || err != nil {
+		return value, updated, mutated, true, err
+	}
 	if value, updated, mutated, handled, err := callUserProvisioningBatchableMember(receiver, method, args); handled || err != nil {
 		return value, updated, mutated, true, err
 	}
@@ -33016,6 +33334,22 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 			}
 			return List(), receiver, false, true, nil
 		}
+	case "Messaging.SendEmailError":
+		return callMessagingDTOGetter(receiver, method, args)
+	case "Messaging.RenderEmailTemplateBodyResult":
+		return callMessagingDTOGetter(receiver, method, args)
+	case "Messaging.RenderEmailTemplateError":
+		return callMessagingDTOGetter(receiver, method, args)
+	case "Messaging.ActionResult":
+		return callMessagingActionResultMember(receiver, method, args)
+	case "Messaging.ActionResult.Builder", "Messaging.ActionableNotification.Builder", "Messaging.Builder":
+		return callMessagingBuilderMember(receiver, method, args)
+	case "Messaging.ActionableNotification":
+		return callMessagingDTOGetter(receiver, method, args)
+	case "Messaging.CustomNotification":
+		return vm.callCustomNotificationMember(receiver, method, args, result)
+	case "Messaging.PushNotification":
+		return vm.callPushNotificationMember(receiver, method, args, result)
 	case "Messaging.EmailFileAttachment":
 		return callEmailFileAttachmentMember(receiver, method, args)
 	case "Messaging.SingleEmailMessage":
@@ -35805,6 +36139,45 @@ func callOrgInstrumentationOperationMember(receiver Value, method string, args [
 	}
 }
 
+func callOrgInstrumentationContextMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	if !strings.EqualFold(receiver.Type, "OrgInstrumentationContext") {
+		return Null, receiver, false, false, nil
+	}
+	switch strings.ToLower(method) {
+	case "starttime":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("OrgInstrumentationContext.startTime expects 0 arguments")
+		}
+		receiver.Fields["started"] = Bool(true)
+		receiver.Fields["duration"] = Int(0)
+		return Null, receiver, true, true, nil
+	case "end":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("OrgInstrumentationContext.end expects 0 arguments")
+		}
+		receiver.Fields["ended"] = Bool(true)
+		return Null, receiver, true, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
+func callOrgInstrumentationServiceMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	if !strings.EqualFold(receiver.Type, "OrgInstrumentationService") {
+		return Null, receiver, false, false, nil
+	}
+	switch strings.ToLower(method) {
+	case "propagatecontext":
+		if len(args) != 1 || args[0].Kind != ValueObject || !strings.EqualFold(args[0].Type, "HttpRequest") {
+			return Null, receiver, false, true, fmt.Errorf("OrgInstrumentationService.propagateContext expects HttpRequest")
+		}
+		httpSetHeader(args[0], "x-oaer-instrumentation-context", String("local"))
+		return Null, receiver, false, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
 func callUserProvisioningBatchableMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
 	if !userProvisioningBatchableType(receiver.Type) {
 		return Null, receiver, false, false, nil
@@ -36727,6 +37100,185 @@ func callMassEmailMessageMember(receiver Value, method string, args []Value) (Va
 	default:
 		return Null, receiver, false, false, nil
 	}
+}
+
+func callMessagingDTOGetter(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	method = canonicalPlatformObjectMemberName(receiver.Type, method)
+	field := ""
+	if suffix, ok := passiveAccessorSuffix(method, "get"); ok {
+		field = strings.ToLower(suffix[:1]) + suffix[1:]
+	} else if suffix, ok := passiveAccessorSuffix(method, "is"); ok {
+		field = strings.ToLower(suffix[:1]) + suffix[1:]
+	}
+	if field == "" {
+		return Null, receiver, false, false, nil
+	}
+	if len(args) != 0 {
+		return Null, receiver, false, true, fmt.Errorf("%s.%s expects 0 arguments", receiver.Type, method)
+	}
+	if value, ok := receiver.Fields[field]; ok {
+		return value, receiver, false, true, nil
+	}
+	if value, ok := receiver.Fields[strings.ToLower(field)]; ok {
+		return value, receiver, false, true, nil
+	}
+	return Null, receiver, false, true, nil
+}
+
+func callMessagingActionResultMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	method = canonicalPlatformObjectMemberName(receiver.Type, method)
+	switch method {
+	case "isSuccess", "getMessage", "getErrorCode":
+		return callMessagingDTOGetter(receiver, method, args)
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
+func callMessagingBuilderMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	method = canonicalPlatformObjectMemberName(receiver.Type, method)
+	if strings.EqualFold(method, "build") {
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("%s.build expects 0 arguments", receiver.Type)
+		}
+		var built Value
+		if strings.EqualFold(receiver.Type, "Messaging.ActionableNotification.Builder") {
+			built = newActionableNotification()
+		} else {
+			built = newActionResult()
+		}
+		for field, value := range receiver.Fields {
+			built.Fields[field] = value
+		}
+		return built, receiver, false, true, nil
+	}
+	if !strings.HasPrefix(method, "with") || len(method) <= len("with") {
+		return Null, receiver, false, false, nil
+	}
+	if len(args) != 1 {
+		return Null, receiver, false, true, fmt.Errorf("%s.%s expects 1 argument", receiver.Type, method)
+	}
+	field := strings.TrimPrefix(method, "with")
+	field = strings.ToLower(field[:1]) + field[1:]
+	receiver.Fields[field] = args[0]
+	return receiver, receiver, true, true, nil
+}
+
+func (vm *VM) callCustomNotificationMember(receiver Value, method string, args []Value, result *Result) (Value, Value, bool, bool, error) {
+	method = canonicalPlatformObjectMemberName(receiver.Type, method)
+	switch method {
+	case "setBody", "setNotificationTypeId", "setSenderId", "setTargetId", "setTargetPageRef", "setTitle":
+		if len(args) != 1 || (args[0].Kind != ValueString && !(args[0].Kind == ValueObject && strings.EqualFold(args[0].Type, "Id"))) {
+			return Null, receiver, false, true, fmt.Errorf("Messaging.CustomNotification.%s expects String", method)
+		}
+		value := args[0]
+		if idText, ok := typedIDValueText(value); ok {
+			value = String(idText)
+		}
+		receiver.Fields[customNotificationFieldName(method)] = value
+		return Null, receiver, true, true, nil
+	case "send":
+		if len(args) != 1 || args[0].Kind != ValueSet {
+			return Null, receiver, false, true, fmt.Errorf("Messaging.CustomNotification.send expects Set<String>")
+		}
+		appendTrace(result, "apex.notification.custom.send", "apex.notification", map[string]any{"recipients": len(args[0].Set)})
+		return Null, receiver, false, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
+func customNotificationFieldName(method string) string {
+	switch method {
+	case "setNotificationTypeId":
+		return "notificationTypeId"
+	case "setSenderId":
+		return "senderId"
+	case "setTargetId":
+		return "targetId"
+	case "setTargetPageRef":
+		return "targetPageRef"
+	default:
+		return emailMessageFieldName(method)
+	}
+}
+
+func (vm *VM) callPushNotificationMember(receiver Value, method string, args []Value, result *Result) (Value, Value, bool, bool, error) {
+	method = canonicalPlatformObjectMemberName(receiver.Type, method)
+	switch method {
+	case "setPayload":
+		if len(args) != 1 || args[0].Kind != ValueMap {
+			return Null, receiver, false, true, fmt.Errorf("Messaging.PushNotification.setPayload expects Map<String,Object>")
+		}
+		receiver.Fields["payload"] = args[0]
+		return Null, receiver, true, true, nil
+	case "setTtl":
+		if len(args) != 1 || args[0].Kind != ValueInt {
+			return Null, receiver, false, true, fmt.Errorf("Messaging.PushNotification.setTtl expects Integer")
+		}
+		receiver.Fields["ttl"] = args[0]
+		return Null, receiver, true, true, nil
+	case "send":
+		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueSet {
+			return Null, receiver, false, true, fmt.Errorf("Messaging.PushNotification.send expects application String and Set<String>")
+		}
+		appendTrace(result, "apex.notification.push.send", "apex.notification", map[string]any{"application": args[0].Text, "recipients": len(args[1].Set)})
+		return Null, receiver, false, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
+func messagingPushPayloadApple(args []Value) (Value, error) {
+	if len(args) != 4 && len(args) != 8 {
+		return Null, fmt.Errorf("Messaging.PushNotificationPayload.apple expects 4 or 8 arguments")
+	}
+	payload := typedMap("Map<String,Object>")
+	aps := typedMap("Map<String,Object>")
+	switch len(args) {
+	case 4:
+		if args[0].Kind != ValueString || args[1].Kind != ValueString || args[2].Kind != ValueInt || args[3].Kind != ValueMap {
+			return Null, fmt.Errorf("Messaging.PushNotificationPayload.apple expects alert, sound, badgeCount, userData")
+		}
+		aps.Map[mapKey(String("alert"))] = args[0]
+		aps.MapKeys[mapKey(String("alert"))] = String("alert")
+		aps.Map[mapKey(String("sound"))] = args[1]
+		aps.MapKeys[mapKey(String("sound"))] = String("sound")
+		aps.Map[mapKey(String("badge"))] = args[2]
+		aps.MapKeys[mapKey(String("badge"))] = String("badge")
+	case 8:
+		if args[0].Kind != ValueString || args[1].Kind != ValueString || args[2].Kind != ValueString || args[3].Kind != ValueList ||
+			args[4].Kind != ValueString || args[5].Kind != ValueString || args[6].Kind != ValueInt || args[7].Kind != ValueMap {
+			return Null, fmt.Errorf("Messaging.PushNotificationPayload.apple expects alertBody, actionLocKey, locKey, locArgs, launchImage, sound, badgeCount, userData")
+		}
+		alert := typedMap("Map<String,Object>")
+		for key, value := range map[string]Value{
+			"body":           args[0],
+			"action-loc-key": args[1],
+			"loc-key":        args[2],
+			"loc-args":       args[3],
+			"launch-image":   args[4],
+		} {
+			alert.Map[mapKey(String(key))] = value
+			alert.MapKeys[mapKey(String(key))] = String(key)
+		}
+		aps.Map[mapKey(String("alert"))] = alert
+		aps.MapKeys[mapKey(String("alert"))] = String("alert")
+		aps.Map[mapKey(String("sound"))] = args[5]
+		aps.MapKeys[mapKey(String("sound"))] = String("sound")
+		aps.Map[mapKey(String("badge"))] = args[6]
+		aps.MapKeys[mapKey(String("badge"))] = String("badge")
+	}
+	payload.Map[mapKey(String("aps"))] = aps
+	payload.MapKeys[mapKey(String("aps"))] = String("aps")
+	userData := args[len(args)-1]
+	for key, value := range userData.Map {
+		if decoded, ok := userData.MapKeys[key]; ok {
+			payload.MapKeys[key] = decoded
+		}
+		payload.Map[key] = value
+	}
+	return payload, nil
 }
 
 func emailMessageFieldName(method string) string {

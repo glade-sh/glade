@@ -2,27 +2,27 @@
   "name": "integration-messaging-unsupported",
   "evidence": [
     {
-      "symbol": "Messaging.renderEmailTemplate",
+      "symbol": "Messaging.sendPushNotification",
       "kind": "exec",
-      "notes": "Messaging template/transport APIs outside the local stored-template rendering and sendEmail result model return UnsupportedFeature diagnostics."
+      "notes": "Messaging transport APIs outside the local captured sendEmail, sendEmailMessage, custom notification, and push notification instance harnesses return UnsupportedFeature diagnostics."
     }
   ],
   "source": [
     {
       "path": "anonymous.apex",
-      "content": "Messaging.renderEmailTemplate('template', new List<String>{'003000000000001'}, '001000000000001');"
+      "content": "Messaging.sendPushNotification(new List<String>{'005000000000001'}, 'payload');"
     }
   ],
   "command": {
     "kind": "exec",
     "args": [
-      "Messaging.renderEmailTemplate('template', new List<String>{'003000000000001'}, '001000000000001');"
+      "Messaging.sendPushNotification(new List<String>{'005000000000001'}, 'payload');"
     ]
   },
   "expected": {
     "error": {
       "type": "UnsupportedFeature",
-      "message": "unsupported call \"Messaging.renderEmailTemplate local messaging transport/template surface\""
+      "message": "unsupported call \"Messaging.sendPushNotification local messaging transport/template surface\""
     }
   }
 }
