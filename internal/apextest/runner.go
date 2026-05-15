@@ -290,6 +290,9 @@ func runTestPlans(ctx context.Context, planned []testCasePlan, results []testrep
 	if parallelism > len(classOrder) {
 		parallelism = len(classOrder)
 	}
+	sort.SliceStable(classOrder, func(i, j int) bool {
+		return len(classIndexes[classOrder[i]]) > len(classIndexes[classOrder[j]])
+	})
 	jobs := make(chan string)
 	var wg sync.WaitGroup
 	for worker := 0; worker < parallelism; worker++ {

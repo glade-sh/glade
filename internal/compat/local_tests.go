@@ -21,6 +21,7 @@ import (
 	"github.com/open-aer/oaer/internal/sema"
 	"github.com/open-aer/oaer/internal/testreport"
 	"github.com/open-aer/oaer/internal/typesys"
+	"github.com/open-aer/oaer/internal/watch"
 )
 
 type LocalTestOptions struct {
@@ -37,6 +38,12 @@ type LocalTestOptions struct {
 	ProgressWriter      io.Writer
 	ForceAnalysis       bool
 	MaxFailureGroups    int
+	ChangedSince        string
+}
+
+type LocalTestPhaseTiming struct {
+	Name       string `json:"name"`
+	DurationMS int64  `json:"durationMs"`
 }
 
 type LocalTestReport struct {
@@ -48,6 +55,8 @@ type LocalTestReport struct {
 	CasesRun        int                      `json:"casesRun,omitempty"`
 	TriageStopped   bool                     `json:"triageStopped,omitempty"`
 	Dependencies    []typesys.DependencyInfo `json:"dependencies,omitempty"`
+	Selection       *watch.TestSelection     `json:"selection,omitempty"`
+	Phases          []LocalTestPhaseTiming   `json:"phases,omitempty"`
 	Summary         LocalTestSummary         `json:"summary"`
 	Outcomes        []LocalTestOutcome       `json:"outcomes"`
 	TopFailures     []LocalTestFailureGroup  `json:"topFailures,omitempty"`
@@ -144,9 +153,9 @@ func RunLocalTests(options LocalTestOptions) (LocalTestReport, error) {
 		projectLabel = absRoot
 	}
 
-	reportLocalTestPhase(options, "load_start", started)
+	recordLocalTestPhase(&report, options, "load_start", started)
 	index, loadDiagnostics, err := loadLocalTestIndex(root)
-	reportLocalTestPhase(options, "load_done", started)
+	recordLocalTestPhase(&report, options, "load_done", started)
 	if err != nil {
 		outcome := LocalTestOutcome{
 			ProjectLabel: projectLabel,
@@ -172,9 +181,10 @@ func RunLocalTests(options LocalTestOptions) (LocalTestReport, error) {
 		ParallelMethods:     shouldParallelizeFocusedMethods(options),
 		Progress:            localTestProgressReporter(options.ProgressWriter),
 	}
-	reportLocalTestPhase(options, "discover_start", started)
+	recordLocalTestPhase(&report, options, "discover_start", started)
 	cases := apextest.Discover(index, testOpts)
 	cases = filterLocalTestCases(cases, options)
+	cases = selectChangedLocalTestCases(&report, index, cases, root, options)
 	sort.SliceStable(cases, func(i, j int) bool {
 		if cases[i].ClassName == cases[j].ClassName {
 			return cases[i].MethodName < cases[j].MethodName
@@ -182,12 +192,12 @@ func RunLocalTests(options LocalTestOptions) (LocalTestReport, error) {
 		return cases[i].ClassName < cases[j].ClassName
 	})
 	report.CasesDiscovered = len(cases)
-	reportLocalTestPhase(options, fmt.Sprintf("discover_done total=%d", len(cases)), started)
+	recordLocalTestPhase(&report, options, fmt.Sprintf("discover_done total=%d", len(cases)), started)
 
 	if shouldAnalyzeLocalTests(options, len(cases)) {
-		reportLocalTestPhase(options, "analyze_start", started)
+		recordLocalTestPhase(&report, options, "analyze_start", started)
 		semaResult := sema.Analyze(index)
-		reportLocalTestPhase(options, fmt.Sprintf("analyze_done diagnostics=%d", len(semaResult.Diagnostics)), started)
+		recordLocalTestPhase(&report, options, fmt.Sprintf("analyze_done diagnostics=%d", len(semaResult.Diagnostics)), started)
 		report.Diagnostics = append(report.Diagnostics, semaResult.Diagnostics...)
 		if firstError, ok := firstLocalTestError(semaResult.Diagnostics); ok {
 			for _, testCase := range cases {
@@ -197,18 +207,18 @@ func RunLocalTests(options LocalTestOptions) (LocalTestReport, error) {
 			return report, nil
 		}
 	} else if strings.TrimSpace(options.Class) == "" && strings.TrimSpace(options.Method) == "" {
-		reportLocalTestPhase(options, fmt.Sprintf("analyze_skip total=%d", len(cases)), started)
+		recordLocalTestPhase(&report, options, fmt.Sprintf("analyze_skip total=%d", len(cases)), started)
 	}
 
 	if options.ProfileOnTimeout {
 		testOpts.TraceBlocked = true
 	}
-	reportLocalTestPhase(options, "run_start", started)
+	recordLocalTestPhase(&report, options, "run_start", started)
 	runOutcomes, casesRun, triageStopped := runLocalTestCases(index, testOpts, cases, projectLabel, options, started)
 	report.Outcomes = append(report.Outcomes, runOutcomes...)
 	report.CasesRun = casesRun
 	report.TriageStopped = triageStopped
-	reportLocalTestPhase(options, "run_done", started)
+	recordLocalTestPhase(&report, options, "run_done", started)
 	finalizeLocalTestReport(&report, options, started)
 	return report, nil
 }
@@ -216,6 +226,14 @@ func RunLocalTests(options LocalTestOptions) (LocalTestReport, error) {
 func reportLocalTestPhase(options LocalTestOptions, event string, started time.Time) {
 	if options.ProgressWriter != nil {
 		fmt.Fprintf(options.ProgressWriter, "local-tests phase %s durationMs=%d\n", event, time.Since(started).Milliseconds())
+	}
+}
+
+func recordLocalTestPhase(report *LocalTestReport, options LocalTestOptions, event string, started time.Time) {
+	duration := time.Since(started).Milliseconds()
+	report.Phases = append(report.Phases, LocalTestPhaseTiming{Name: event, DurationMS: duration})
+	if options.ProgressWriter != nil {
+		fmt.Fprintf(options.ProgressWriter, "local-tests phase %s durationMs=%d\n", event, duration)
 	}
 }
 
@@ -283,6 +301,40 @@ func localTestCaseBatches(cases []apextest.TestCase, classBatchSize int) [][]ape
 	return batches
 }
 
+func selectChangedLocalTestCases(report *LocalTestReport, index typesys.Index, cases []apextest.TestCase, root string, options LocalTestOptions) []apextest.TestCase {
+	if strings.TrimSpace(options.ChangedSince) == "" {
+		return cases
+	}
+	changes, err := watch.GitChangesSince(root, options.ChangedSince)
+	if err != nil {
+		report.Diagnostics = append(report.Diagnostics, diagnostic.Diagnostic{
+			Severity: diagnostic.Error,
+			Code:     "changed_since",
+			Message:  err.Error(),
+		})
+		return cases
+	}
+	selection := watch.SelectAffectedTests(index, changes)
+	report.Selection = &selection
+	if selection.Mode == watch.SelectionAll {
+		return cases
+	}
+	if selection.Mode == watch.SelectionNone {
+		return cases[:0]
+	}
+	selected := make(map[string]bool, len(selection.TestClasses))
+	for _, className := range selection.TestClasses {
+		selected[className] = true
+	}
+	out := cases[:0]
+	for _, testCase := range cases {
+		if selected[testCase.ClassName] {
+			out = append(out, testCase)
+		}
+	}
+	return out
+}
+
 func shouldAnalyzeLocalTests(options LocalTestOptions, totalCases int) bool {
 	if strings.TrimSpace(options.Class) != "" || strings.TrimSpace(options.Method) != "" {
 		return false
@@ -316,7 +368,14 @@ func localTestParallelism(options LocalTestOptions) int {
 	if runtime.GOMAXPROCS(0) < 2 {
 		return 1
 	}
-	return 2
+	procs := runtime.GOMAXPROCS(0)
+	if procs > 8 {
+		return 8
+	}
+	if procs < 2 {
+		return 1
+	}
+	return procs
 }
 
 func shouldParallelizeFocusedMethods(options LocalTestOptions) bool {

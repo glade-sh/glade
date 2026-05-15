@@ -128,8 +128,8 @@ func TestShouldAnalyzeLocalTestsSkipsFocusedRuns(t *testing.T) {
 }
 
 func TestLocalTestParallelismCapsFocusedClassRuns(t *testing.T) {
-	if got := localTestParallelism(LocalTestOptions{}); got > 2 {
-		t.Fatalf("full-project default parallelism = %d, want at most 2", got)
+	if got := localTestParallelism(LocalTestOptions{}); got < 1 || got > 8 {
+		t.Fatalf("full-project default parallelism = %d, want 1..8", got)
 	}
 	if got := localTestParallelism(LocalTestOptions{Class: "CartSubmitterTest"}); got > 4 {
 		t.Fatalf("focused class parallelism = %d, want at most 4", got)

@@ -150,6 +150,8 @@ func TestRunCompatLocalTestsJSON(t *testing.T) {
 		`"pass": 1`,
 		`"assertFail": 1`,
 		`"unsupported": 1`,
+		`"phases"`,
+		`"name": "load_start"`,
 		`"class": "PassingTest"`,
 		`"class": "FailingTest"`,
 		`"class": "UnsupportedTest"`,

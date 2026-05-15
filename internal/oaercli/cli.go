@@ -611,6 +611,7 @@ func runTest(ctx context.Context, args []string, w io.Writer) (testreport.Run, e
 	debug := false
 	traceBlocked := false
 	slowTestThresholdMS := int64(0)
+	changedSince := ""
 	debounce := watch.DefaultDebounce
 	backend := watch.BackendAuto
 	for i := 0; i < len(args); i++ {
@@ -643,6 +644,12 @@ func runTest(ctx context.Context, args []string, w io.Writer) (testreport.Run, e
 				return testreport.Run{}, fmt.Errorf("--slow-test-ms must be a non-negative integer")
 			}
 			slowTestThresholdMS = parsed
+			i++
+		case "--changed-since":
+			if i+1 >= len(args) {
+				return testreport.Run{}, errors.New("--changed-since requires a value")
+			}
+			changedSince = args[i+1]
 			i++
 		case "--junit":
 			if i+1 >= len(args) {
@@ -699,7 +706,19 @@ func runTest(ctx context.Context, args []string, w io.Writer) (testreport.Run, e
 	if watchMode {
 		return runWatchTests(ctx, root, index, apextest.Options{Filter: filter, LimitMode: limitMode, TraceBlocked: traceBlocked, SlowTestThresholdMS: slowTestThresholdMS}, watch.Config{Root: root, Debounce: debounce, Backend: backend}, watchOnce, w)
 	}
-	result := apextest.Run(index, apextest.Options{Filter: filter, LimitMode: limitMode, TraceBlocked: traceBlocked, SlowTestThresholdMS: slowTestThresholdMS})
+	testOpts := apextest.Options{Filter: filter, LimitMode: limitMode, TraceBlocked: traceBlocked, SlowTestThresholdMS: slowTestThresholdMS}
+	var result testreport.Run
+	if strings.TrimSpace(changedSince) != "" {
+		cases := apextest.Discover(index, testOpts)
+		selection, err := changedSinceSelection(root, index, changedSince)
+		if err != nil {
+			return testreport.Run{}, err
+		}
+		cases = filterSelectedTestCases(cases, selection)
+		result = apextest.RunCasesContext(ctx, index, testOpts, cases)
+	} else {
+		result = apextest.Run(index, testOpts)
+	}
 	result.Dependencies = append(result.Dependencies, index.Dependencies...)
 	if debug {
 		return result, serveDAPSnapshot(testRunSnapshot(result), w)
@@ -717,6 +736,34 @@ func runTest(ctx context.Context, args []string, w io.Writer) (testreport.Run, e
 	default:
 		return result, testreport.WriteConsole(w, result)
 	}
+}
+
+func changedSinceSelection(root string, index typesys.Index, ref string) (watch.TestSelection, error) {
+	changes, err := watch.GitChangesSince(root, ref)
+	if err != nil {
+		return watch.TestSelection{}, err
+	}
+	return watch.SelectAffectedTests(index, changes), nil
+}
+
+func filterSelectedTestCases(cases []apextest.TestCase, selection watch.TestSelection) []apextest.TestCase {
+	if selection.Mode == watch.SelectionAll {
+		return cases
+	}
+	if selection.Mode == watch.SelectionNone {
+		return cases[:0]
+	}
+	selected := make(map[string]bool, len(selection.TestClasses))
+	for _, className := range selection.TestClasses {
+		selected[className] = true
+	}
+	out := cases[:0]
+	for _, testCase := range cases {
+		if selected[testCase.ClassName] {
+			out = append(out, testCase)
+		}
+	}
+	return out
 }
 
 func testRunSnapshot(result testreport.Run) dap.Snapshot {
@@ -1515,7 +1562,7 @@ func runCompat(ctx context.Context, args []string, w io.Writer) error {
 }
 
 func compatUsage() string {
-	return "usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | local-tests [--project <root>] [--class <name>] [--method <name>] [--blockers-only] [--top-failures <n>] [--max-failure-groups <n>] [--timeout <ms-per-test>] [--parallel <n>] [--progress] [--analyze] [--profile-on-timeout] [--json] [--check <path>] | ui-controllers [--project <root>] [--json|--check <path>] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | salesforce-coverage [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--tooling-symbols <path>] [--json|--output <path>|--check <path>] | standard-objects [--json|--output <path>|--check <path>] | stub-behavior [--json|--output <path>|--check <path>] | stub-inventory [--source <dir>] [--json|--output <path>|--check <path>] | product-namespaces [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--symbols-go] [--json|--output <path>|--check <path>] | tooling-fixtures <report.json...> [--json] | evidence --catalog <path> <fixture.json...> [--json]"
+	return "usage: oaer compat validate|run <fixture.json...> | matrix|mvp [--json] [--require-ready] | local-tests [--project <root>] [--class <name>] [--method <name>] [--changed-since <ref>] [--blockers-only] [--top-failures <n>] [--max-failure-groups <n>] [--timeout <ms-per-test>] [--parallel <n>] [--progress] [--analyze] [--profile-on-timeout] [--json] [--check <path>] | ui-controllers [--project <root>] [--json|--check <path>] | post-parity [--project <root>] [--json|--output <path>|--check <path>] [--require-ready] | examples [--project <root>] [--json|--output <path>|--check <path>] | server-examples [--project <root>] [--project-filter <substring>] [--route <substring>] [--probe <substring>] [--outcome <pass|fail|unsupported|missing>] [--blockers-only] [--json] | dashboard|gaps|stdlib [--output <path>|--check <path>] | stdlib --json | docs-inventory --source <dir> [--json|--output <path>|--check <path>|--diff <path>] | catalog --inventory <path> [--json|--output <path>|--check <path>] | salesforce-coverage [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--tooling-symbols <path>] [--json|--output <path>|--check <path>] | standard-objects [--json|--output <path>|--check <path>] | stub-behavior [--json|--output <path>|--check <path>] | stub-inventory [--source <dir>] [--json|--output <path>|--check <path>] | product-namespaces [--source <dir>|--inventory <path>|--catalog <path>] [--tooling-completions <path>] [--symbols-go] [--json|--output <path>|--check <path>] | tooling-fixtures <report.json...> [--json] | evidence --catalog <path> <fixture.json...> [--json]"
 }
 
 type postParityReadiness struct {
@@ -1604,6 +1651,12 @@ func runCompatLocalTests(args []string, w io.Writer) error {
 			options.ForceAnalysis = true
 		case "--profile-on-timeout":
 			options.ProfileOnTimeout = true
+		case "--changed-since":
+			if i+1 >= len(args) {
+				return errors.New("--changed-since requires a value")
+			}
+			options.ChangedSince = args[i+1]
+			i++
 		case "--project":
 			if i+1 >= len(args) {
 				return errors.New("--project requires a value")
@@ -1627,8 +1680,8 @@ func runCompatLocalTests(args []string, w io.Writer) error {
 		}
 	}
 	if checkPath != "" {
-		if options.Project != "." || options.Class != "" || options.Method != "" || options.BlockersOnly || options.TraceBlocked || options.SlowTestThresholdMS != 0 || options.TopFailures != 0 || options.MaxFailureGroups != 0 || options.TimeoutMS != 0 || options.Parallelism != 0 || options.ProgressWriter != nil || options.ForceAnalysis || options.ProfileOnTimeout {
-			return errors.New("--check cannot be combined with --project, --class, --method, --blockers-only, --trace-blockers, --slow-test-ms, --top-failures, --max-failure-groups, --timeout, --parallel, --progress, --analyze, or --profile-on-timeout")
+		if options.Project != "." || options.Class != "" || options.Method != "" || options.BlockersOnly || options.TraceBlocked || options.SlowTestThresholdMS != 0 || options.TopFailures != 0 || options.MaxFailureGroups != 0 || options.TimeoutMS != 0 || options.Parallelism != 0 || options.ProgressWriter != nil || options.ForceAnalysis || options.ProfileOnTimeout || options.ChangedSince != "" {
+			return errors.New("--check cannot be combined with --project, --class, --method, --changed-since, --blockers-only, --trace-blockers, --slow-test-ms, --top-failures, --max-failure-groups, --timeout, --parallel, --progress, --analyze, or --profile-on-timeout")
 		}
 		report, err := compat.CheckLocalTestCorpus(checkPath)
 		if jsonOut {
