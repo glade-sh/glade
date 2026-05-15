@@ -26688,12 +26688,25 @@ func connectAPIReadOnlyHarnessType(typeName string) bool {
 		"ConnectApi.ChatterGroups",
 		"ConnectApi.ChatterMessages",
 		"ConnectApi.ChatterUsers",
+		"ConnectApi.ChatterFavorites",
 		"ConnectApi.Topics",
 		"ConnectApi.Recommendations",
+		"ConnectApi.Announcements",
+		"ConnectApi.CommerceCatalog",
+		"ConnectApi.CommerceSearch",
+		"ConnectApi.EmployeeProfiles",
+		"ConnectApi.FieldSet",
+		"ConnectApi.Knowledge",
 		"ConnectApi.ManagedContent",
+		"ConnectApi.ManagedContentChannels",
 		"ConnectApi.ManagedContentDelivery",
 		"ConnectApi.ManagedTopics",
-		"ConnectApi.ManagedContentSpaces":
+		"ConnectApi.ManagedContentSpaces",
+		"ConnectApi.Mentions",
+		"ConnectApi.NamedCredentials",
+		"ConnectApi.NavigationMenu",
+		"ConnectApi.Sites",
+		"ConnectApi.Zones":
 		return true
 	default:
 		return false
@@ -26711,6 +26724,9 @@ func connectAPIReadOnlyHarnessMethod(methodName string) bool {
 
 func connectAPIMutationMethod(methodName string) bool {
 	name := strings.ToLower(methodName)
+	if strings.Contains(name, "authurl") {
+		return true
+	}
 	for _, prefix := range []string{
 		"add", "assign", "ban", "block", "create", "delete", "edit", "follow",
 		"join", "leave", "like", "mute", "pin", "post", "publish", "remove",
