@@ -476,6 +476,8 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 			"striptrailingzeros", "pow", "valueof":
 			return true
 		}
+	case "Boolean":
+		return name == "valueof"
 	case "JSONGenerator", "JSONParser":
 		return true
 	case "HttpRequest":
