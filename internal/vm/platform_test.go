@@ -985,6 +985,8 @@ Auth.UserData data = new Auth.UserData('003000000000001', 'Ada', 'Lovelace', 'Ad
 System.assertEquals('003000000000001', data.identifier);
 System.assertEquals('ada@example.invalid', data.email);
 System.assertEquals('local-self-registration', UserManagement.initSelfRegistration(Auth.VerificationMethod.EMAIL, new User(LastName='Lovelace', Email='ada@example.invalid')));
+System.assertEquals('+1 4155550100', UserManagement.formatPhoneNumber('1', '4155550100'));
+System.assertEquals('+441234', UserManagement.formatPhoneNumber('44', '+441234'));
 Auth.VerificationResult result = UserManagement.verifySelfRegistration(Auth.VerificationMethod.EMAIL, 'local-self-registration', '12345', '/welcome');
 System.assert(result.success);
 System.assertEquals('/welcome', result.redirect.getUrl());

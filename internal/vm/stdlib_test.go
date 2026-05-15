@@ -1616,6 +1616,33 @@ wave.QueryBuilder.load('dataset', 'v1').execute('q');
 	}
 }
 
+func TestExecContextAndOrgInstrumentationLocalSurfaces(t *testing.T) {
+	program, err := CompileAnonymous(`
+Context.IndustriesContext context = new Context.IndustriesContext();
+Map<String,Object> input = new Map<String,Object>{'recordId' => '001000000000001'};
+System.assertEquals('001000000000001', context.buildContext(input).get('recordId'));
+System.assertEquals('001000000000001', context.getContext(input).get('recordId'));
+System.assertEquals('001000000000001', context.queryTags(input).get('recordId'));
+context.deleteContext(input);
+context.evictContextDefinition(input);
+OrgInstrumentationOperation op = new OrgInstrumentationOperation();
+OrgInstrumentationContext metricContext = op.start(OrgMetricPublishTypeEnum.REQUEST_COUNT);
+System.assertNotEquals(null, metricContext);
+System.assertNotEquals(null, op.createNewSpan());
+op.publishCustomIncrementalValue('local.metric', 1L);
+op.publishRequestCountAndDuration(1L, 200, 10L);
+op.publishIncrementalValue(OrgMetricTypeEnum.REQUEST_COUNT, 1L, 200);
+op.end(metricContext);
+op.endWithStatus(metricContext, 200);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Execute(program, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecCoreTypeIDURLObjectStdlib(t *testing.T) {
 	program, err := CompileAnonymous(`
 Type accountType = Type.forName('Account');

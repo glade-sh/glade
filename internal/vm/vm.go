@@ -3770,6 +3770,11 @@ platformStaticCall:
 			return Null, fmt.Errorf("UserManagement.initSelfRegistration expects 2 arguments")
 		}
 		return String("local-self-registration"), nil
+	case "UserManagement.formatPhoneNumber":
+		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueString {
+			return Null, fmt.Errorf("UserManagement.formatPhoneNumber expects country code and phone number Strings")
+		}
+		return String(formatLocalPhoneNumber(args[0].Text, args[1].Text)), nil
 	case "UserManagement.verifySelfRegistration":
 		if len(args) != 4 {
 			return Null, fmt.Errorf("UserManagement.verifySelfRegistration expects 4 arguments")
@@ -4614,6 +4619,22 @@ func (vm *VM) currentUserHasPackageLicense(packageID Value) bool {
 		}
 	}
 	return false
+}
+
+func formatLocalPhoneNumber(countryCode, phoneNumber string) string {
+	country := strings.TrimSpace(countryCode)
+	phone := strings.TrimSpace(phoneNumber)
+	if country == "" {
+		return phone
+	}
+	country = strings.TrimPrefix(country, "+")
+	if phone == "" {
+		return "+" + country
+	}
+	if strings.HasPrefix(phone, "+") {
+		return phone
+	}
+	return "+" + country + " " + phone
 }
 
 func (vm *VM) currentUserLicensedForNamespace(namespace Value) bool {
@@ -27764,6 +27785,12 @@ func versionValueString(version Value) string {
 
 func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Value, result *Result) (Value, Value, bool, bool, error) {
 	method = canonicalPlatformObjectMemberName(receiver.Type, method)
+	if value, updated, mutated, handled, err := callContextIndustriesContextMember(receiver, method, args); handled || err != nil {
+		return value, updated, mutated, true, err
+	}
+	if value, updated, mutated, handled, err := callOrgInstrumentationOperationMember(receiver, method, args); handled || err != nil {
+		return value, updated, mutated, true, err
+	}
 	if value, updated, mutated, handled, err := callWaveQueryMember(receiver, method, args); handled || err != nil {
 		return value, updated, mutated, true, err
 	}
@@ -32280,6 +32307,64 @@ func waveProjectionNodeBuild(projection Value) string {
 		kind += " as " + alias.Text
 	}
 	return kind
+}
+
+func callContextIndustriesContextMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	if !strings.EqualFold(receiver.Type, "Context.IndustriesContext") {
+		return Null, receiver, false, false, nil
+	}
+	name := strings.ToLower(method)
+	if len(args) != 1 || args[0].Kind != ValueMap {
+		return Null, receiver, false, true, fmt.Errorf("Context.IndustriesContext.%s expects Map<String,Object>", method)
+	}
+	switch name {
+	case "deletecontext", "evictcontextdefinition":
+		return Null, receiver, false, true, nil
+	case "addrecordstocontext", "buildcontext", "filteringcontext", "getcontext",
+		"getcontexttranslation", "leanerquerytags", "persistcontext",
+		"querycontextrecordsandchildren", "queryrecordstatus", "querytags",
+		"updatecontextattributes":
+		return args[0], receiver, false, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
+}
+
+func callOrgInstrumentationOperationMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	if !strings.EqualFold(receiver.Type, "OrgInstrumentationOperation") {
+		return Null, receiver, false, false, nil
+	}
+	switch strings.ToLower(method) {
+	case "createnewspan":
+		if len(args) != 0 {
+			return Null, receiver, false, true, fmt.Errorf("OrgInstrumentationOperation.createNewSpan expects 0 arguments")
+		}
+		return Object("TracerSpan"), receiver, false, true, nil
+	case "start":
+		if len(args) != 1 {
+			return Null, receiver, false, true, fmt.Errorf("OrgInstrumentationOperation.start expects publish type")
+		}
+		context := Object("OrgInstrumentationContext")
+		context.Fields["publishType"] = args[0]
+		context.Fields["started"] = Bool(true)
+		context.Fields["duration"] = Int(0)
+		return context, receiver, false, true, nil
+	case "end":
+		if len(args) != 1 {
+			return Null, receiver, false, true, fmt.Errorf("OrgInstrumentationOperation.end expects context")
+		}
+		return Null, receiver, false, true, nil
+	case "endwithstatus":
+		if len(args) != 2 {
+			return Null, receiver, false, true, fmt.Errorf("OrgInstrumentationOperation.endWithStatus expects context and status code")
+		}
+		return Null, receiver, false, true, nil
+	case "publishcustomhistogramvalues", "publishcustomincrementalvalue", "publishcustompercentileset",
+		"publishincrementalvalue", "publishpercentileset", "publishrequestcountandduration":
+		return Null, receiver, false, true, nil
+	default:
+		return Null, receiver, false, false, nil
+	}
 }
 
 func (vm *VM) callStandardControllerMember(receiver Value, method string, args []Value, result *Result) (Value, Value, bool, bool, error) {

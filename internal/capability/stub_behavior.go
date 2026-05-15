@@ -211,6 +211,12 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 	if waveQueryBuilderBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "wave query builder node/projection method is handled by the VM local builder surface", true
 	}
+	if contextIndustriesBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "Context.IndustriesContext map passthrough/no-op method is handled by the VM local context surface", true
+	}
+	if orgInstrumentationBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "OrgInstrumentationOperation metric/span method is handled by the VM local no-op instrumentation surface", true
+	}
 	if databaseResultDTOBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "Database/Approval result DTO accessor is handled by the VM result object surface", true
 	}
@@ -341,6 +347,11 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 			"ismulticurrencyorganization":
 			return true
 		}
+	case "UserManagement":
+		switch name {
+		case "formatphonenumber", "initselfregistration", "verifyselfregistration":
+			return true
+		}
 	case "Site":
 		switch name {
 		case "getsiteid", "getbaseurl", "getbaserequesturl", "getbasesecureurl",
@@ -453,7 +464,7 @@ func corePlatformBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Member
 		case "isrunningtest", "getstandardpricebookid", "starttest", "stoptest", "createstub",
 			"clearapexpagemessages", "setcurrentpage", "setcurrentpagereference", "setmock",
 			"setcreateddate", "setfixedsearchresults", "createstubqueryrow", "issoqlstubdefined",
-			"calculatepermissionsetgroup", "enablechangedatacapture",
+			"geteventbus", "getflexqueueorder", "calculatepermissionsetgroup", "enablechangedatacapture",
 			"setreadonlyapplicationmode", "testinstall", "testuninstall":
 			return true
 		}
@@ -776,10 +787,15 @@ func explicitlyUnsupportedCoreBehaviorMethod(symbol typesys.TypeSymbol, member t
 			return true
 		}
 	case "UserManagement":
-		return true
+		switch name {
+		case "formatphonenumber", "initselfregistration", "verifyselfregistration":
+			return false
+		default:
+			return true
+		}
 	case "Test":
 		switch name {
-		case "createsoqlstub", "geteventbus", "getexternalservice", "invokecontinuationmethod",
+		case "createsoqlstub", "getexternalservice", "invokecontinuationmethod",
 			"invokepage", "newsendemailquickactiondefaults", "setcontinuationresponse",
 			"testnotificationactionhandler", "testsandboxpostcopyscript":
 			return true
@@ -926,6 +942,36 @@ func waveQueryBuilderBehaviorMethod(symbol typesys.TypeSymbol, member typesys.Me
 	return false
 }
 
+func contextIndustriesBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if !strings.EqualFold(stubBehaviorTypeName(symbol), "Context.IndustriesContext") || member.Kind != apexast.DeclarationMethod {
+		return false
+	}
+	switch strings.ToLower(member.Name) {
+	case "addrecordstocontext", "buildcontext", "deletecontext", "evictcontextdefinition",
+		"filteringcontext", "getcontext", "getcontexttranslation", "leanerquerytags",
+		"persistcontext", "querycontextrecordsandchildren", "queryrecordstatus",
+		"querytags", "updatecontextattributes":
+		return true
+	default:
+		return false
+	}
+}
+
+func orgInstrumentationBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if !strings.EqualFold(stubBehaviorTypeName(symbol), "OrgInstrumentationOperation") || member.Kind != apexast.DeclarationMethod {
+		return false
+	}
+	switch strings.ToLower(member.Name) {
+	case "createnewspan", "end", "endwithstatus", "publishcustomhistogramvalues",
+		"publishcustomincrementalvalue", "publishcustompercentileset",
+		"publishincrementalvalue", "publishpercentileset",
+		"publishrequestcountandduration", "start":
+		return true
+	default:
+		return false
+	}
+}
+
 func connectAPIExternalServiceBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
 	typeName := stubBehaviorTypeName(symbol)
 	if !strings.HasPrefix(typeName, "ConnectApi.") || !stubBehaviorMemberStatic(member) {
@@ -973,7 +1019,7 @@ func stringBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol
 		"containsonly", "containswhitespace", "countmatches", "deletewhitespace", "difference",
 		"endswithignorecase", "escapecsv", "escapeecmascript", "escapehtml3", "escapehtml4",
 		"escapejava", "escapesinglequotes", "escapeunicode", "escapexml", "format",
-		"fromchararray", "getcommonprefix", "getlevenshteindistance", "indexofany",
+		"fromchararray", "getchars", "getcommonprefix", "getlevenshteindistance", "indexofany",
 		"indexofanybut", "indexofchar", "indexofdifference", "indexofignorecase",
 		"isalllowercase", "isalluppercase", "isalpha", "isalphaspace",
 		"isalphanumeric", "isalphanumericspace", "isasciiprintable", "isempty", "isnotempty",
@@ -981,7 +1027,8 @@ func stringBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol
 		"lastindexofignorecase", "left", "leftpad", "mid", "normalizespace",
 		"offsetbycodepoints", "overlay", "remove", "removeend", "removeendignorecase",
 		"removestart", "removestartignorecase", "repeat", "replaceall", "replacefirst",
-		"reverse", "right", "rightpad", "startswithignorecase", "substringafter",
+		"reverse", "right", "rightpad", "splitbycharactertype", "splitbycharactertypecamelcase",
+		"startswithignorecase", "substringafter",
 		"striphtmltags", "substringafterlast", "substringbefore", "substringbeforelast",
 		"substringbetween", "swapcase", "uncapitalize", "unescapecsv", "unescapeecmascript",
 		"unescapehtml3", "unescapehtml4", "unescapejava", "unescapeunicode", "unescapexml",
