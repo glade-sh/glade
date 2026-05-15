@@ -1772,6 +1772,100 @@ System.assertEquals(true, RemoteObjectController.del('Account', new List<String>
 	}
 }
 
+func TestExecIndustryControllerLocalDefaults(t *testing.T) {
+	program, err := CompileAnonymous(`
+System.assertEquals(0, healthcloudext.AppointmentBookingSelfService.findProviders(null).size());
+System.assertEquals(0, healthcloudext.AppointmentBookingSelfService.findAssets(null).size());
+System.assertEquals(0, healthcloudext.AppointmentBookingSelfService.findAvailableAppointmentSlots('', '', '', new List<Map<String,Object>>(), false).size());
+System.assertEquals(0, healthcloudext.AppointmentBookingSelfService.findAvailableAssetSlots('', '', '', new List<Map<String,Object>>(), false, '', '').size());
+System.assertEquals(null, healthcloudext.AppointmentBookingSelfService.logSelfServiceInstrumentation(1, 'local'));
+System.assertNotEquals(null, healthcloudext.AppointmentBookingSelfService.getGeoLocationCoordinates(null));
+System.assertNotEquals(null, healthcloudext.AppointmentBookingSelfService.validateSlotStatusSelfService(null));
+
+System.assertEquals(false, healthcloudext.IntegratedCareManagementApexHelper.checkObjectCreationAccess('Account'));
+System.assertEquals(0, healthcloudext.IntegratedCareManagementApexHelper.checkEntity('Account').size());
+System.assertEquals('a<br/>b', healthcloudext.IntegratedCareManagementApexHelper.convertMultiLineToHtml('a\nb'));
+System.assertEquals(0, healthcloudext.IntegratedCareManagementApexHelper.fetchSuggestedAssessmentsForPatient('001', 'a', 'b', 'c', 'd').size());
+System.assertEquals(0, healthcloudext.IntegratedCareManagementApexHelper.getPicklist('Account', 'Name').size());
+
+System.assertEquals(0, LoyaltyManagement.LoyaltyResources.getPointsBalance(new List<LoyaltyManagement.MemberPointBalanceInput>()).size());
+System.assertEquals(0, LoyaltyManagement.LoyaltyResources.getTier(new List<LoyaltyManagement.MemberTierInput>()).size());
+System.assertEquals(0, LoyaltyManagement.LoyaltyResources.getLoyaltyPromotions(new List<LoyaltyManagement.LoyaltyPromotionInput>()).size());
+System.assertEquals(0, LoyaltyManagement.LoyaltyResources.getLoyaltyPromotionBasedOnSalesforceCDP(new List<LoyaltyManagement.CdpBasedLoyaltyPromotionInput>()).size());
+System.assertEquals(false, LoyaltyManagement.WidgetVisibility.checkVisibility('member', new Map<String,Object>()));
+System.assertEquals(true, ((Map<String,Object>)LoyaltyManagement.WidgetCumulativePromotions.call('load', new Map<String,Object>())).get('success'));
+System.assertEquals(true, ((Map<String,Object>)LoyaltyManagement.WidgetMemberBadges.call('load', new Map<String,Object>())).get('success'));
+System.assertEquals(true, ((Map<String,Object>)LoyaltyManagement.WidgetReferMember.call('load', new Map<String,Object>())).get('success'));
+
+System.assertEquals(false, industries_docgen.DocGenPermsAndAccessChecksService.hasDocGenOrgPerm('u', 'p'));
+System.assertEquals(false, industries_docgen.DocGenPermsAndAccessChecksService.hasDocGenMetadataSetting('u', 'p'));
+System.assertEquals(false, industries_docgen.DocGenPermsAndAccessChecksService.isRuntimeUser('u', 'p', 'c'));
+
+inventorypricing.GetInventoryPricing inventory = new inventorypricing.GetInventoryPricing();
+inventorypricing.InventoryPricingData data = new inventorypricing.InventoryPricingData();
+System.assertNotEquals(null, inventory.processInput(null));
+System.assertEquals(data, inventory.getInventory(data));
+System.assertEquals(data, inventory.getPricing(data));
+System.assertEquals(data, inventory.getInventoryAndPricing(data));
+System.assertEquals(data, inventory.handleInventoryPricingServiceException(new Exception('local'), data));
+System.assertNotEquals(null, inventory.createResponse(data));
+
+System.assertEquals(true, new ime_mrm.EventManagementBudgetApi().getMngEventBudgets(new Map<String,Object>(), new Map<String,Object>(), new Map<String,Object>()).get('success'));
+System.assertEquals(true, new ime_mrm.EventManagementManagedEventApi().getMngEvent(new Map<String,Object>(), new Map<String,Object>(), new Map<String,Object>()).get('success'));
+System.assertEquals(true, new ime_mrm.EventManagementParticipantApi().getMngEventParticipantsByEvent(new Map<String,Object>(), new Map<String,Object>(), new Map<String,Object>()).get('success'));
+System.assertEquals(true, new ime_mrm.EventManagementProductApi().getMngEventProducts(new Map<String,Object>(), new Map<String,Object>(), new Map<String,Object>()).get('success'));
+System.assertEquals(true, new ime_mrm.EventManagementSubjectApi().getSubjectAssignments(new Map<String,Object>(), new Map<String,Object>(), new Map<String,Object>()).get('success'));
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := New(nil).Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestExecIndustryControllerMutationsStayUnsupported(t *testing.T) {
+	cases := []struct {
+		name string
+		src  string
+		want string
+	}{
+		{
+			name: "health booking",
+			src:  `healthcloudext.AppointmentBookingSelfService.bookSelfServiceAppointment(null);`,
+			want: `unsupported call "healthcloudext.AppointmentBookingSelfService.bookSelfServiceAppointment local industry service mutation surface"`,
+		},
+		{
+			name: "loyalty points",
+			src:  `LoyaltyManagement.LoyaltyResources.creditPoints(new List<LoyaltyManagement.PointsInput>());`,
+			want: `unsupported call "LoyaltyManagement.LoyaltyResources.creditPoints local industry service mutation surface"`,
+		},
+		{
+			name: "event create",
+			src:  `new ime_mrm.EventManagementBudgetApi().createMngEventBudget(new Map<String,Object>(), new Map<String,Object>(), new Map<String,Object>());`,
+			want: `unsupported call "ime_mrm.EventManagementBudgetApi.createMngEventBudget local industry service mutation surface"`,
+		},
+		{
+			name: "sales transaction",
+			src:  `RevSalesTrxn.PlaceSalesTransactionExecutor.execute(null, null, null, null, 'local');`,
+			want: `unsupported call "RevSalesTrxn.PlaceSalesTransactionExecutor.execute local industry service mutation surface"`,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			program, err := CompileAnonymous(tc.src)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = New(nil).Execute(program)
+			var runtimeErr *RuntimeError
+			if !errors.As(err, &runtimeErr) || runtimeErr.Type != "UnsupportedFeature" || runtimeErr.Message != tc.want {
+				t.Fatalf("err = %#v, want UnsupportedFeature %q", err, tc.want)
+			}
+		})
+	}
+}
+
 func TestExecSystemDeterministicLocalHelpers(t *testing.T) {
 	program, err := CompileAnonymous(`
 System.assertEquals(false, System.isFunctionCallback());

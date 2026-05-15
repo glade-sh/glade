@@ -263,6 +263,12 @@ func genericStubBehaviorMemberStatus(symbol typesys.TypeSymbol, member typesys.M
 	if appLauncherControllerBehaviorMethod(symbol, member) {
 		return StubBehaviorImplemented, "applauncher controller helper returns deterministic local URLs, booleans, empty provider/field DTO lists, or no-op form redirects without performing authentication or registration services", true
 	}
+	if industryControllerHarnessBehaviorMethod(symbol, member) {
+		return StubBehaviorImplemented, "industry package controller method returns deterministic local empty/default DTOs or conservative access booleans without invoking managed services", true
+	}
+	if industryControllerUnsupportedBehaviorMethod(symbol, member) {
+		return StubBehaviorUnsupported, "industry package mutation, booking, or transaction service remains explicitly unsupported", true
+	}
 	if explicitlyUnsupportedCoreBehaviorMethod(symbol, member) {
 		return StubBehaviorUnsupported, "local runtime returns an explicit unsupported-feature error for this platform surface", true
 	}
@@ -454,6 +460,90 @@ func localServiceHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesys
 		}
 	case "SupportPredictiveService":
 		return name == "findsimilarcases"
+	default:
+		return false
+	}
+}
+
+func industryControllerHarnessBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if member.Kind != apexast.DeclarationMethod {
+		return false
+	}
+	typeName := stubBehaviorTypeName(symbol)
+	name := strings.ToLower(member.Name)
+	switch typeName {
+	case "healthcloudext.AppointmentBookingSelfService":
+		switch name {
+		case "findassets", "findavailableappointmentslots", "findavailableassetslots", "findproviders",
+			"getgeolocationcoordinates", "logselfserviceinstrumentation", "validateslotstatusselfservice":
+			return true
+		default:
+			return false
+		}
+	case "healthcloudext.IntegratedCareManagementApexHelper":
+		switch name {
+		case "checkentity", "checkobjectcreationaccess", "convertmultilinetohtml",
+			"fetchsuggestedassessmentsforpatient", "getcarebarrierdetails", "getmaxaccesslevel",
+			"getmru", "getpicklist", "getsoslsearch":
+			return true
+		default:
+			return false
+		}
+	case "LoyaltyManagement.LoyaltyResources":
+		switch name {
+		case "getloyaltypromotionbasedonsalesforcecdp", "getloyaltypromotions", "getpointsbalance", "gettier":
+			return true
+		default:
+			return false
+		}
+	case "LoyaltyManagement.WidgetCumulativePromotions", "LoyaltyManagement.WidgetMemberBadges", "LoyaltyManagement.WidgetReferMember":
+		return name == "call"
+	case "LoyaltyManagement.WidgetVisibility":
+		return name == "checkvisibility"
+	case "industries_docgen.DocGenPermsAndAccessChecksService":
+		return strings.HasPrefix(name, "has") || strings.HasPrefix(name, "is")
+	case "inventorypricing.GetInventoryPricing":
+		switch name {
+		case "createresponse", "getinventory", "getinventoryandpricing", "getpricing", "handleinventorypricingserviceexception", "processinput":
+			return true
+		default:
+			return false
+		}
+	case "ime_mrm.EventManagementBudgetApi", "ime_mrm.EventManagementManagedEventApi",
+		"ime_mrm.EventManagementParticipantApi", "ime_mrm.EventManagementProductApi", "ime_mrm.EventManagementSubjectApi":
+		return strings.HasPrefix(name, "get")
+	default:
+		return false
+	}
+}
+
+func industryControllerUnsupportedBehaviorMethod(symbol typesys.TypeSymbol, member typesys.MemberSymbol) bool {
+	if member.Kind != apexast.DeclarationMethod {
+		return false
+	}
+	typeName := stubBehaviorTypeName(symbol)
+	name := strings.ToLower(member.Name)
+	switch typeName {
+	case "healthcloudext.AppointmentBookingSelfService":
+		switch name {
+		case "bookselfserviceappointment", "cancelselfserviceappointment", "createpatient", "publisheventforpft":
+			return true
+		default:
+			return false
+		}
+	case "LoyaltyManagement.LoyaltyResources":
+		switch name {
+		case "changetier", "creditpoints", "debitpoints", "issuevoucher",
+			"transfermemberpointstogroups", "updateprogressforcumulativepromotionusage":
+			return true
+		default:
+			return false
+		}
+	case "ime_mrm.EventManagementBudgetApi", "ime_mrm.EventManagementManagedEventApi",
+		"ime_mrm.EventManagementParticipantApi", "ime_mrm.EventManagementProductApi", "ime_mrm.EventManagementSubjectApi":
+		return strings.HasPrefix(name, "create") || strings.HasPrefix(name, "update") || strings.HasPrefix(name, "delete")
+	case "RevSalesTrxn.PlaceSalesTransactionExecutor":
+		return name == "execute"
 	default:
 		return false
 	}

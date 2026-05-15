@@ -2186,6 +2186,29 @@ var canonicalBuiltinStaticCalls = func() map[string]string {
 		"BusRuleDtMig.DecisionTableMigrationService.migrateDecisionTables",
 		"BusinessRule.CalculationMatrixMigrationService.migrate", "BusinessRule.CalculationProcedureMigrationService.migrate",
 		"BusinessRule.DecisionMatrixRowMigratorService.migrate",
+		"healthcloudext.AppointmentBookingSelfService.findAssets", "healthcloudext.AppointmentBookingSelfService.findAvailableAppointmentSlots",
+		"healthcloudext.AppointmentBookingSelfService.findAvailableAssetSlots", "healthcloudext.AppointmentBookingSelfService.findProviders",
+		"healthcloudext.AppointmentBookingSelfService.getGeoLocationCoordinates", "healthcloudext.AppointmentBookingSelfService.logSelfServiceInstrumentation",
+		"healthcloudext.AppointmentBookingSelfService.validateSlotStatusSelfService",
+		"healthcloudext.AppointmentBookingSelfService.bookSelfServiceAppointment", "healthcloudext.AppointmentBookingSelfService.cancelSelfServiceAppointment",
+		"healthcloudext.AppointmentBookingSelfService.createPatient", "healthcloudext.AppointmentBookingSelfService.publishEventForPFT",
+		"healthcloudext.IntegratedCareManagementApexHelper.checkEntity", "healthcloudext.IntegratedCareManagementApexHelper.checkObjectCreationAccess",
+		"healthcloudext.IntegratedCareManagementApexHelper.convertMultiLineToHtml", "healthcloudext.IntegratedCareManagementApexHelper.fetchSuggestedAssessmentsForPatient",
+		"healthcloudext.IntegratedCareManagementApexHelper.getCareBarrierDetails", "healthcloudext.IntegratedCareManagementApexHelper.getMaxAccessLevel",
+		"healthcloudext.IntegratedCareManagementApexHelper.getMru", "healthcloudext.IntegratedCareManagementApexHelper.getPicklist",
+		"healthcloudext.IntegratedCareManagementApexHelper.getSOSLSearch",
+		"LoyaltyManagement.LoyaltyResources.getLoyaltyPromotionBasedOnSalesforceCDP", "LoyaltyManagement.LoyaltyResources.getLoyaltyPromotions",
+		"LoyaltyManagement.LoyaltyResources.getPointsBalance", "LoyaltyManagement.LoyaltyResources.getTier",
+		"LoyaltyManagement.LoyaltyResources.changeTier", "LoyaltyManagement.LoyaltyResources.creditPoints",
+		"LoyaltyManagement.LoyaltyResources.debitPoints", "LoyaltyManagement.LoyaltyResources.issueVoucher",
+		"LoyaltyManagement.LoyaltyResources.transferMemberPointsToGroups", "LoyaltyManagement.LoyaltyResources.updateProgressForCumulativePromotionUsage",
+		"LoyaltyManagement.WidgetCumulativePromotions.call", "LoyaltyManagement.WidgetMemberBadges.call",
+		"LoyaltyManagement.WidgetReferMember.call", "LoyaltyManagement.WidgetVisibility.checkVisibility",
+		"industries_docgen.DocGenPermsAndAccessChecksService.hasDocGenMetadataSetting", "industries_docgen.DocGenPermsAndAccessChecksService.hasDocGenOrgPerm",
+		"industries_docgen.DocGenPermsAndAccessChecksService.hasMS365InetgrationSettingOrgPerm", "industries_docgen.DocGenPermsAndAccessChecksService.hasOmniStudioOrgPerm",
+		"industries_docgen.DocGenPermsAndAccessChecksService.isDesigner", "industries_docgen.DocGenPermsAndAccessChecksService.isRuntimeCCUser",
+		"industries_docgen.DocGenPermsAndAccessChecksService.isRuntimeUser",
+		"RevSalesTrxn.PlaceSalesTransactionExecutor.execute",
 		"Test.getEventBus", "Test.getExternalService", "Test.invokePage",
 		"Test.invokeContinuationMethod", "Test.setContinuationResponse",
 		"Canvas.Test.mockRenderContext", "Canvas.Test.testCanvasLifecycle",
@@ -2517,6 +2540,9 @@ platformStaticCall:
 		return value, err
 	}
 	if value, handled, err := vm.callAppLauncherControllerStatic(callee, args); handled || err != nil {
+		return value, err
+	}
+	if value, handled, err := vm.callIndustryControllerStatic(callee, args); handled || err != nil {
 		return value, err
 	}
 	if reason, ok := unsupportedIntegrationSurface(callee); ok {
@@ -5641,6 +5667,219 @@ func remoteObjectControllerResult(callee string, args []Value) (Value, error) {
 		result.MapKeys[encoded] = String(key)
 	}
 	return result, nil
+}
+
+func (vm *VM) callIndustryControllerStatic(callee string, args []Value) (Value, bool, error) {
+	className, methodName, ok := vm.splitClassMember(callee)
+	if !ok {
+		dot := strings.LastIndex(callee, ".")
+		if dot <= 0 || dot == len(callee)-1 {
+			return Null, false, nil
+		}
+		className, methodName = callee[:dot], callee[dot+1:]
+	}
+	if industryControllerUnsupportedStatic(className, methodName) {
+		return Null, true, unsupportedCallError(callee + " local industry service mutation surface")
+	}
+	if !industryControllerDefaultStatic(className, methodName) {
+		return Null, false, nil
+	}
+	return vm.industryControllerDefaultReturn(className, methodName, args, true)
+}
+
+func (vm *VM) callIndustryControllerMember(receiver Value, method string, args []Value) (Value, Value, bool, bool, error) {
+	className := receiver.Type
+	if industryControllerUnsupportedInstance(className, method) {
+		return Null, receiver, false, true, unsupportedCallError(className + "." + method + " local industry service mutation surface")
+	}
+	if !industryControllerDefaultInstance(className, method) {
+		return Null, receiver, false, false, nil
+	}
+	value, handled, err := vm.industryControllerDefaultReturn(className, method, args, false)
+	return value, receiver, false, handled, err
+}
+
+func (vm *VM) industryControllerDefaultReturn(className, methodName string, args []Value, static bool) (Value, bool, error) {
+	switch {
+	case industryTypeName(className, "LoyaltyManagement.WidgetVisibility") && strings.EqualFold(methodName, "checkVisibility"):
+		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueMap {
+			return Null, true, fmt.Errorf("LoyaltyManagement.WidgetVisibility.checkVisibility expects String and Map<String,Object>")
+		}
+		return Bool(false), true, nil
+	case industryEventManagementReadMethod(className, methodName):
+		if len(args) != 3 || args[0].Kind != ValueMap || args[1].Kind != ValueMap || args[2].Kind != ValueMap {
+			return Null, true, fmt.Errorf("%s.%s expects input, output, and options maps", className, methodName)
+		}
+		return industryMapResult(), true, nil
+	case industryWidgetCallMethod(className, methodName):
+		if len(args) != 2 || args[0].Kind != ValueString || args[1].Kind != ValueMap {
+			return Null, true, fmt.Errorf("%s.call expects action String and arguments map", className)
+		}
+		return industryMapResult(), true, nil
+	case industryTypeName(className, "inventorypricing.GetInventoryPricing"):
+		switch strings.ToLower(methodName) {
+		case "getinventory", "getinventoryandpricing", "getpricing":
+			if len(args) != 1 || args[0].Kind != ValueObject {
+				return Null, true, fmt.Errorf("%s.%s expects InventoryPricingData", className, methodName)
+			}
+			return args[0], true, nil
+		case "handleinventorypricingserviceexception":
+			if len(args) != 2 || args[1].Kind != ValueObject {
+				return Null, true, fmt.Errorf("%s.%s expects Exception and InventoryPricingData", className, methodName)
+			}
+			return args[1], true, nil
+		case "processinput":
+			if len(args) != 1 {
+				return Null, true, fmt.Errorf("%s.processInput expects input object", className)
+			}
+			return Object("inventorypricing.InventoryPricingData"), true, nil
+		case "createresponse":
+			if len(args) != 1 {
+				return Null, true, fmt.Errorf("%s.createResponse expects InventoryPricingData", className)
+			}
+			return industryMapResult(), true, nil
+		}
+	}
+	method, ok := vm.generatedPlatformMethodForArgs(className, methodName, args, static)
+	if !ok {
+		return Null, false, nil
+	}
+	if strings.EqualFold(className, "healthcloudext.IntegratedCareManagementApexHelper") && strings.EqualFold(methodName, "convertMultiLineToHtml") {
+		if len(args) != 1 || args[0].Kind != ValueString {
+			return Null, true, fmt.Errorf("%s.%s expects String", className, methodName)
+		}
+		text := strings.ReplaceAll(args[0].Text, "\r\n", "\n")
+		text = strings.ReplaceAll(text, "\r", "\n")
+		return String(strings.ReplaceAll(text, "\n", "<br/>")), true, nil
+	}
+	return vm.generatedPlatformMethodDefaultReturn(method, Null, args), true, nil
+}
+
+func industryControllerDefaultStatic(className, methodName string) bool {
+	name := strings.ToLower(methodName)
+	switch className {
+	case "healthcloudext.AppointmentBookingSelfService":
+		switch name {
+		case "findassets", "findavailableappointmentslots", "findavailableassetslots", "findproviders",
+			"getgeolocationcoordinates", "logselfserviceinstrumentation", "validateslotstatusselfservice":
+			return true
+		}
+	case "healthcloudext.IntegratedCareManagementApexHelper":
+		switch name {
+		case "checkentity", "checkobjectcreationaccess", "convertmultilinetohtml",
+			"fetchsuggestedassessmentsforpatient", "getcarebarrierdetails", "getmaxaccesslevel",
+			"getmru", "getpicklist", "getsoslsearch":
+			return true
+		}
+	case "LoyaltyManagement.LoyaltyResources":
+		switch name {
+		case "getloyaltypromotionbasedonsalesforcecdp", "getloyaltypromotions", "getpointsbalance", "gettier":
+			return true
+		}
+	case "LoyaltyManagement.WidgetVisibility":
+		return name == "checkvisibility"
+	case "LoyaltyManagement.WidgetCumulativePromotions", "LoyaltyManagement.WidgetMemberBadges", "LoyaltyManagement.WidgetReferMember":
+		return name == "call"
+	case "industries_docgen.DocGenPermsAndAccessChecksService":
+		return strings.HasPrefix(name, "has") || strings.HasPrefix(name, "is")
+	}
+	return false
+}
+
+func industryControllerUnsupportedStatic(className, methodName string) bool {
+	name := strings.ToLower(methodName)
+	switch className {
+	case "healthcloudext.AppointmentBookingSelfService":
+		switch name {
+		case "bookselfserviceappointment", "cancelselfserviceappointment", "createpatient", "publisheventforpft":
+			return true
+		}
+	case "LoyaltyManagement.LoyaltyResources":
+		switch name {
+		case "changetier", "creditpoints", "debitpoints", "issuevoucher",
+			"transfermemberpointstogroups", "updateprogressforcumulativepromotionusage":
+			return true
+		}
+	case "RevSalesTrxn.PlaceSalesTransactionExecutor":
+		return name == "execute"
+	}
+	return false
+}
+
+func industryControllerDefaultInstance(className, methodName string) bool {
+	name := strings.ToLower(methodName)
+	if industryWidgetCallMethod(className, methodName) {
+		return true
+	}
+	if industryTypeName(className, "inventorypricing.GetInventoryPricing") {
+		switch name {
+		case "createresponse", "getinventory", "getinventoryandpricing", "getpricing", "handleinventorypricingserviceexception", "processinput":
+			return true
+		}
+	}
+	return industryEventManagementReadMethod(className, methodName)
+}
+
+func industryControllerUnsupportedInstance(className, methodName string) bool {
+	name := strings.ToLower(methodName)
+	switch className {
+	case "ime_mrm.EventManagementBudgetApi", "ime_mrm.EventManagementManagedEventApi",
+		"ime_mrm.EventManagementParticipantApi", "ime_mrm.EventManagementProductApi", "ime_mrm.EventManagementSubjectApi":
+		return strings.HasPrefix(name, "create") || strings.HasPrefix(name, "update") || strings.HasPrefix(name, "delete")
+	default:
+		return false
+	}
+}
+
+func industryWidgetCallMethod(className, methodName string) bool {
+	if !strings.EqualFold(methodName, "call") {
+		return false
+	}
+	switch className {
+	case "LoyaltyManagement.WidgetCumulativePromotions", "LoyaltyManagement.WidgetMemberBadges", "LoyaltyManagement.WidgetReferMember",
+		"WidgetCumulativePromotions", "WidgetMemberBadges", "WidgetReferMember":
+		return true
+	default:
+		return false
+	}
+}
+
+func industryEventManagementReadMethod(className, methodName string) bool {
+	name := strings.ToLower(methodName)
+	if !strings.HasPrefix(name, "get") {
+		return false
+	}
+	switch className {
+	case "ime_mrm.EventManagementBudgetApi", "ime_mrm.EventManagementManagedEventApi",
+		"ime_mrm.EventManagementParticipantApi", "ime_mrm.EventManagementProductApi", "ime_mrm.EventManagementSubjectApi",
+		"EventManagementBudgetApi", "EventManagementManagedEventApi",
+		"EventManagementParticipantApi", "EventManagementProductApi", "EventManagementSubjectApi":
+		return true
+	default:
+		return false
+	}
+}
+
+func industryTypeName(actual, qualified string) bool {
+	if strings.EqualFold(actual, qualified) {
+		return true
+	}
+	_, short, ok := strings.Cut(qualified, ".")
+	return ok && strings.EqualFold(actual, short)
+}
+
+func industryMapResult() Value {
+	result := typedMap("Map<String,Object>")
+	for key, value := range map[string]Value{
+		"success": Bool(true),
+		"records": typedList("List<Object>"),
+		"errors":  typedList("List<Object>"),
+	} {
+		encoded := mapKey(String(key))
+		result.Map[encoded] = value
+		result.MapKeys[encoded] = String(key)
+	}
+	return result
 }
 
 func (vm *VM) eventBusPublish(args []Value, result *Result) (Value, error) {
@@ -26871,6 +27110,9 @@ func (vm *VM) generatedPlatformMethodFallbackType(typeName string) bool {
 }
 
 func (vm *VM) generatedPlatformMethodAllowsDefault(method Method) bool {
+	if industryControllerDefaultStatic(method.ClassName, method.Name) || industryControllerDefaultInstance(method.ClassName, method.Name) {
+		return true
+	}
 	if generatedPlatformTopLevelPassiveTypeName(method.ClassName) ||
 		strings.EqualFold(method.ClassName, "ApexPages.IdeaStandardSetController") {
 		return true
@@ -31739,6 +31981,9 @@ func (vm *VM) callPlatformObjectMember(receiver Value, method string, args []Val
 		}
 	}
 	if value, updated, mutated, handled, err := callUserProvisioningBatchableMember(receiver, method, args); handled || err != nil {
+		return value, updated, mutated, true, err
+	}
+	if value, updated, mutated, handled, err := vm.callIndustryControllerMember(receiver, method, args); handled || err != nil {
 		return value, updated, mutated, true, err
 	}
 	if value, updated, mutated, handled, err := callWaveQueryMember(receiver, method, args); handled || err != nil {
