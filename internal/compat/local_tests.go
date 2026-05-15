@@ -39,6 +39,7 @@ type LocalTestOptions struct {
 	ForceAnalysis       bool
 	MaxFailureGroups    int
 	ChangedSince        string
+	ParallelMethods     bool
 }
 
 type LocalTestPhaseTiming struct {
@@ -178,7 +179,7 @@ func RunLocalTests(options LocalTestOptions) (LocalTestReport, error) {
 		SlowTestThresholdMS: options.SlowTestThresholdMS,
 		TimeoutMS:           options.TimeoutMS,
 		Parallelism:         localTestParallelism(options),
-		ParallelMethods:     shouldParallelizeFocusedMethods(options),
+		ParallelMethods:     options.ParallelMethods || shouldParallelizeFocusedMethods(options),
 		Progress:            localTestProgressReporter(options.ProgressWriter),
 	}
 	recordLocalTestPhase(&report, options, "discover_start", started)
@@ -241,7 +242,7 @@ const largeLocalTestAnalysisThreshold = 5000
 const localTestTriageClassBatchSize = 8
 
 func runLocalTestCases(index typesys.Index, testOpts apextest.Options, cases []apextest.TestCase, projectLabel string, options LocalTestOptions, started time.Time) ([]LocalTestOutcome, int, bool) {
-	if options.MaxFailureGroups <= 0 {
+	if options.MaxFailureGroups <= 0 || options.Parallelism > 0 {
 		run := apextest.RunCasesContext(context.Background(), index, testOpts, cases)
 		return localTestOutcomesFromRun(projectLabel, run, options), len(cases), false
 	}

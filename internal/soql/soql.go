@@ -225,7 +225,26 @@ func candidateRecordIDs(object storage.ObjectState, where *Condition, allRows bo
 }
 
 func indexedCandidateIDs(object storage.ObjectState, where *Condition, allRows bool) ([]storage.ID, bool) {
-	if allRows || where == nil || where.Not || len(where.And) != 0 || len(where.Or) != 0 || where.Range || where.Subquery != nil || where.Op != "=" {
+	if allRows || where == nil || where.Not || len(where.Or) != 0 {
+		return nil, false
+	}
+	if len(where.And) != 0 {
+		var best []storage.ID
+		for i := range where.And {
+			ids, ok := indexedCandidateIDs(object, &where.And[i], allRows)
+			if !ok {
+				continue
+			}
+			if best == nil || len(ids) < len(best) {
+				best = ids
+			}
+		}
+		if best != nil {
+			return best, true
+		}
+		return nil, false
+	}
+	if where.Range || where.Subquery != nil || where.Op != "=" {
 		return nil, false
 	}
 	if strings.Contains(where.Field, ".") {
@@ -777,9 +796,17 @@ func executeChildRelationshipQuery(org storage.OrgState, parentDefinition storag
 		}
 		query.Where = &condition
 	}
-	ids := make([]string, 0, len(childObject.Records))
-	for id := range childObject.Records {
-		ids = append(ids, string(id))
+	var ids []string
+	if indexed, ok := storage.LookupIndex(childObject, relation.Field, storage.IDValue(parent.ID)); ok {
+		ids = make([]string, 0, len(indexed))
+		for _, id := range indexed {
+			ids = append(ids, string(id))
+		}
+	} else {
+		ids = make([]string, 0, len(childObject.Records))
+		for id := range childObject.Records {
+			ids = append(ids, string(id))
+		}
 	}
 	sort.Strings(ids)
 	matched := make([]storage.Record, 0, len(ids))

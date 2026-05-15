@@ -126,16 +126,19 @@ func RunContext(ctx context.Context, index typesys.Index, opts Options) testrepo
 }
 
 func RunCasesContext(ctx context.Context, index typesys.Index, opts Options, cases []TestCase) testreport.Run {
+	started := time.Now()
 	if cases == nil {
 		cases = Discover(index, opts)
 	}
 	sources := newSourceCache()
+	reportProgress(opts, TestProgress{Event: "compile_start"})
 	methods := compileProjectMethods(index, sources)
 	classes := compileProjectClasses(index, methods, sources)
 	setups, setupErrors, setupInvokePrograms, setupInvokeErrors := compileTestSetupMethodsForClasses(index, testCaseClassSet(cases), sources)
 	triggers, triggerErrors := compileProjectTriggers(index, sources)
 	testMethods, testMethodErrors := compileTestMethods(cases, sources)
 	testInvokePrograms, testInvokeErrors := compileTestInvokePrograms(cases)
+	reportProgress(opts, TestProgress{Event: "compile_done", DurationMS: time.Since(started).Milliseconds(), Status: "pass"})
 	org := orgFromIndex(index, sources)
 	initializeTestOrg(&org)
 	pageNames := visualforcePageNames(index)
@@ -346,6 +349,10 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 				setupOrg, setupRandom, setupErr := prepareTestSetupOrg(setupCtx, baseMachine, baseRuntimeErr, setups[className], setupErrors[className], setupInvokePrograms[className], setupInvokeErrors[className], triggerErrors, org, opts)
 				setupCancel()
 				reportProgress(opts, TestProgress{Event: "setup_done", ClassName: className, DurationMS: time.Since(started).Milliseconds(), Status: progressStatus(setupErr)})
+				if opts.ParallelMethods && len(classIndexes[className]) > 1 {
+					runClassMethodIndexes(ctx, classIndexes[className], planned, results, setupOrg, setupErr, setupRandom, baseMachine, baseRuntimeErr, triggerErrors, opts)
+					continue
+				}
 				for _, i := range classIndexes[className] {
 					if results[i].Status != "" {
 						continue
@@ -365,6 +372,43 @@ func runTestPlansWithSetups(ctx context.Context, classOrder []string, classIndex
 	}
 	for _, className := range classOrder {
 		jobs <- className
+	}
+	close(jobs)
+	wg.Wait()
+}
+
+func runClassMethodIndexes(ctx context.Context, indexes []int, planned []testCasePlan, results []testreport.Case, setupOrg storage.OrgState, setupErr error, setupRandom uint64, baseMachine *vm.VM, baseRuntimeErr error, triggerErrors []error, opts Options) {
+	parallelism := opts.Parallelism
+	if parallelism <= 1 {
+		parallelism = 1
+	}
+	if parallelism > len(indexes) {
+		parallelism = len(indexes)
+	}
+	jobs := make(chan int)
+	var wg sync.WaitGroup
+	for worker := 0; worker < parallelism; worker++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for i := range jobs {
+				if results[i].Status != "" {
+					continue
+				}
+				plan := planned[i]
+				plan.SetupErr = setupErr
+				plan.SetupOrg = setupOrg
+				plan.SetupRandom = setupRandom
+				reportProgress(opts, TestProgress{Event: "test_start", ClassName: plan.TestCase.ClassName, MethodName: plan.TestCase.MethodName})
+				caseCtx, caseCancel := testContext(ctx, opts.TimeoutMS)
+				results[i] = runCase(caseCtx, plan.TestCase, plan.TestMethodErr, plan.InvokeProgram, plan.InvokeProgErr, baseMachine, baseRuntimeErr, plan.SetupErr, triggerErrors, plan.SetupOrg, plan.SetupRandom, opts)
+				caseCancel()
+				reportProgress(opts, TestProgress{Event: "test_done", ClassName: plan.TestCase.ClassName, MethodName: plan.TestCase.MethodName, DurationMS: results[i].DurationMS, Status: string(results[i].Status)})
+			}
+		}()
+	}
+	for _, i := range indexes {
+		jobs <- i
 	}
 	close(jobs)
 	wg.Wait()

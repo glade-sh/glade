@@ -1090,6 +1090,33 @@ func TestExecuteUsesSingleFieldIndexCandidates(t *testing.T) {
 	}
 }
 
+func TestExecuteUsesSingleFieldIndexCandidatesInsideAnd(t *testing.T) {
+	org := storage.NewOrgState()
+	org.Objects["Account"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName: "Account",
+			Fields: map[string]storage.Field{
+				"Name":      {APIName: "Name", Type: storage.FieldString},
+				"Status__c": {APIName: "Status__c", Type: storage.FieldString},
+			},
+			Indexes: []storage.IndexDefinition{{Name: "Account.Name", Object: "Account", Fields: []string{"Name"}}},
+		},
+		Records: map[storage.ID]storage.Record{
+			"001000000000001": {ID: "001000000000001", Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("Acme"), "Status__c": storage.StringValue("Active")}},
+			"001000000000002": {ID: "001000000000002", Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("Beta"), "Status__c": storage.StringValue("Active")}},
+			"001000000000003": {ID: "001000000000003", Object: "Account", Fields: map[string]storage.Value{"Name": storage.StringValue("Acme"), "Status__c": storage.StringValue("Inactive")}},
+		},
+	}
+	storage.RebuildIndexes(&org)
+	result, err := ParseAndExecute(org, "SELECT Id FROM Account WHERE Status__c = 'Active' AND Name = 'Acme'")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Rows != 1 || result.Records[0].ID != "001000000000001" {
+		t.Fatalf("indexed AND result = %#v", result)
+	}
+}
+
 func TestExecuteStringEqualityIsCaseInsensitiveWithIndex(t *testing.T) {
 	org := storage.NewOrgState()
 	org.Objects["CouponCode__c"] = storage.ObjectState{
