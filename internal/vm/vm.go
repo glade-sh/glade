@@ -18826,6 +18826,13 @@ func (vm *VM) lookupPath(root Value, parts []string) (Value, error) {
 		if !ok && canonicalPart != part {
 			_, value, ok = objectFieldValue(current, part)
 		}
+		if !ok {
+			if actualName, childValue, hasChild := vm.loadedChildRelationshipValue(current, canonicalPart); hasChild {
+				canonicalPart = actualName
+				value = childValue
+				ok = true
+			}
+		}
 		if ok {
 			if _, fieldDef, exists := vm.sObjectFieldDefinition(current.Type, canonicalPart); exists && fieldDef.Type == storage.FieldSummary {
 				if summaryValue, hasSummary := vm.evaluateSummaryField(current, fieldDef); hasSummary {
@@ -30560,6 +30567,9 @@ func (vm *VM) unqueriedSObjectFieldError(receiver Value, field string, enforceDM
 	if _, ok := selected.Map[mapKey(String(strings.ToLower(field)))]; ok {
 		return nil
 	}
+	if vm.loadedChildRelationshipForField(receiver, field) {
+		return nil
+	}
 	if vm.loadedParentRelationshipForField(receiver, field) {
 		return nil
 	}
@@ -30570,6 +30580,42 @@ func (vm *VM) unqueriedSObjectFieldError(receiver Value, field string, enforceDM
 		return nil
 	}
 	return newExceptionError("SObjectException", fmt.Sprintf("SObject row was retrieved via SOQL without querying the requested field: %s.%s", receiver.Type, field))
+}
+
+func (vm *VM) loadedChildRelationshipForField(receiver Value, field string) bool {
+	_, _, ok := vm.loadedChildRelationshipValue(receiver, field)
+	return ok
+}
+
+func (vm *VM) loadedChildRelationshipValue(receiver Value, field string) (string, Value, bool) {
+	if vm == nil || vm.Org == nil || receiver.Kind != ValueObject || strings.TrimSpace(receiver.Type) == "" || strings.TrimSpace(field) == "" {
+		return "", Null, false
+	}
+	parentObject, ok := storage.ResolveObjectName(*vm.Org, receiver.Type)
+	if !ok {
+		parentObject = receiver.Type
+	}
+	for _, childState := range vm.Org.Objects {
+		for _, relation := range childState.Definition.Relations {
+			if !relationshipTargetsObject(relation, parentObject) {
+				continue
+			}
+			childRelationshipName := relation.ChildRelationship
+			if childRelationshipName == "" {
+				childRelationshipName = derivedVMChildRelationshipName(childState.Definition)
+			}
+			if childRelationshipName == "" || !vmRelationshipNameMatches(vm.Org.Namespace, childRelationshipName, field) {
+				continue
+			}
+			if actualName, value, ok := objectFieldValue(receiver, childRelationshipName); ok {
+				return actualName, value, true
+			}
+			if actualName, value, ok := objectFieldValue(receiver, field); ok {
+				return actualName, value, true
+			}
+		}
+	}
+	return "", Null, false
 }
 
 func (vm *VM) unqueriedParentRelationshipCanDefaultNull(receiver Value, field string) bool {

@@ -2919,6 +2919,54 @@ System.assertEquals('Scheduled Batch', matched.getName());
 	}
 }
 
+func TestExecChildRelationshipAccessAcceptsRuntimeSuffixAlias(t *testing.T) {
+	program, err := CompileAnonymous(`
+Parent__c parent = new Parent__c(Name = 'P');
+insert parent;
+insert new Child__c(Name = 'C', Parent__c = parent.Id);
+Parent__c queried = [SELECT Id, (SELECT Id, Name FROM Children) FROM Parent__c WHERE Id = :parent.Id];
+System.assertEquals(1, queried.Children__r.size());
+System.assertEquals('C', queried.Children__r[0].Name);
+`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org := testDataOrg()
+	org.Objects["Parent__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Parent__c",
+			KeyPrefix: "a00",
+			Fields: map[string]storage.Field{
+				"Name": {APIName: "Name", Type: storage.FieldString},
+			},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	org.Objects["Child__c"] = storage.ObjectState{
+		Definition: storage.ObjectDefinition{
+			APIName:   "Child__c",
+			KeyPrefix: "a01",
+			Fields: map[string]storage.Field{
+				"Name":      {APIName: "Name", Type: storage.FieldString},
+				"Parent__c": {APIName: "Parent__c", Type: storage.FieldReference, ReferenceTo: []string{"Parent__c"}, RelationshipName: "Parent__r"},
+			},
+			Relations: []storage.Relationship{{
+				Field:              "Parent__c",
+				ParentObjects:      []string{"Parent__c"},
+				ParentRelationship: "Parent__r",
+				ChildRelationship:  "Children",
+			}},
+		},
+		Records: make(map[storage.ID]storage.Record),
+	}
+	storage.EnsureDeterministicPlatformData(&org)
+	machine := New(nil)
+	machine.SetOrg(&org)
+	if _, err := machine.Execute(program); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestExecRecordTypeRelationshipSynthesizesFromObjectMetadata(t *testing.T) {
 	program, err := CompileAnonymous(`
 Id couponTypeId = Product__c.SObjectType.getDescribe().getRecordTypeInfosByName().get('Coupon').getRecordTypeId();
